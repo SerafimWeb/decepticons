@@ -1,8 +1,9 @@
 # PROTOCOLO UNIVERSAL — Cyber-Mech Protocol
 
 > O **como** deste projeto. As regras gerais vivem no Protocolo Serafim UM v4.2
-> (`D:\SERAFIMHUB\serafim13\protocolo-serafim-um\PROTOCOLO_SERAFIM_UM.md`), que é a fonte
-> canônica (R14). Este arquivo diz como elas se aplicam aqui e define as specs de engenharia do jogo.
+> (canônico: `D:\SERAFIMHUB\serafim13\protocolo-serafim-um\PROTOCOLO_SERAFIM_UM.md`; cópia de referência
+> no repositório: `.decepticons/PROTOCOLO_SERAFIM_UM.md`, para agentes que só enxergam o repo).
+> Este arquivo diz como elas se aplicam aqui e define as specs de engenharia do jogo.
 > Mudou uma regra? Registre no `HISTORICO_DE_DECISOES.md`.
 
 ---
