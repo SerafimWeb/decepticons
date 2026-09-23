@@ -52,7 +52,7 @@ Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 | Física | Rapier3D 0.20 SIMD (Wasm): character controller cinemático |
 | Servidor (planejado) | Colyseus em Node, rodando a mesma simulação a 60 Hz |
 | Deploy | nenhum ainda |
-| CI | hooks git locais (`.githooks/`) + GitHub Actions (`ci.yml`), ativo a partir do primeiro push para `Remoratrader/decepticons` |
+| CI | hooks git locais (`.githooks/`) + GitHub Actions (`ci.yml`, ubuntu-24.04) em `Remoratrader/decepticons` (privado) |
 | Node | `^20.19.0 \|\| >=22.12.0` (máquina de dev: 22.14) |
 
 ---

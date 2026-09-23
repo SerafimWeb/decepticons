@@ -7,7 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ
-- Protocolo Serafim UM aplicado: `.decepticons/`, `CLAUDE.md`, hooks, CI, repositório `Remoratrader/decepticons`
+- Protocolo Serafim UM aplicado: `.decepticons/`, `CLAUDE.md`, hooks, repositório `Remoratrader/decepticons` (privado) com CI verde no GitHub (ubuntu-24.04, actions v7)
 - Bundle JS de 1.182 → 182 KB gzip (Rapier com `.wasm` separado)
 - `npm run check` = typecheck + Vitest + build + budget + boot real no browser headless
 - **Engasgo da corrida corrigido**: causa medida (erosão da margem do controller do Rapier), contorno isolado em `MechBase.unstickFromGround`, teste que reprova a lógica antiga
