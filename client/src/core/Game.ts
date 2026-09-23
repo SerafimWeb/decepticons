@@ -18,6 +18,7 @@ import { PlayerController } from '../player/PlayerController';
 import { HUD } from '../ui/HUD';
 import { InputManager } from './InputManager';
 import { Quality } from './Quality';
+import { DebugPanel } from '../debug/DebugPanel';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
@@ -49,6 +50,7 @@ export class Game {
   private readonly rig: CameraRig;
   private readonly player: PlayerController;
   private readonly hud = new HUD();
+  private readonly debugPanel = new DebugPanel();
 
   private playing = false;
   private accumulator = 0;
@@ -147,6 +149,10 @@ export class Game {
     };
     input.onWheel = (dy) => this.playing && rig.onWheel(dy);
     input.onKey = (code) => {
+      if (code === 'F1') {
+        this.hud.toggleVisibility();
+        return;
+      }
       if (!this.playing) return;
       if (code === 'KeyV') this.switchCamera();
       else if (code === 'Escape' && !rig.mode.pointerLock) this.setPlaying(false);
@@ -192,6 +198,7 @@ export class Game {
     // --- Simulação em passo fixo ---
     this.accumulator += dt;
     let steps = 0;
+    const t0 = performance.now();
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
       this.player.fixedUpdate(FIXED_DT);
       this.projectiles.fixedUpdate(FIXED_DT);
@@ -199,6 +206,7 @@ export class Game {
       this.accumulator -= FIXED_DT;
       steps++;
     }
+    const tickMs = performance.now() - t0;
     if (steps === MAX_STEPS_PER_FRAME) this.accumulator = 0;
     const alpha = this.accumulator / FIXED_DT;
 
@@ -221,6 +229,7 @@ export class Game {
     
     // Atualiza medidor de FPS depois do render
     this.quality.update(dt);
+    this.debugPanel.update(dt, tickMs, this.renderer.info.render.calls);
     
     this.input.endFrame();
   }

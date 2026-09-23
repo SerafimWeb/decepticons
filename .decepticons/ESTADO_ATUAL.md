@@ -15,7 +15,8 @@
 - Game design v1 (`GAME_DESIGN.md`) + princípios G11–G14 (economia de dados, requisitos, resiliência, código)
 - Trabalho com dois agentes (Claude + Codex): `AGENTS.md` como instrução única, o `CLAUDE.md` importa ele, cópia do Protocolo Serafim UM dentro do repositório
 - G15, projeto autocontido: temporários só em `.tmp/`; o smoke não escreve mais no temp do Windows
-- Qualidade adaptativa (G12): classe `Quality` mede frame rate e degrada `pixelRatio` e desliga bloom em quedas recorrentes abaixo de 50 FPS.
+- (Gemini) Qualidade adaptativa (G12): classe `Quality` mede frame rate e degrada `pixelRatio` e desliga bloom em quedas recorrentes abaixo de 50 FPS.
+- (Gemini) Painel de debug leve (FPS, tempo de tick, draw calls) criado separadamente do HUD, permitindo ocultar o HUD (via F1) sem perder métricas técnicas, com base em G3 (separação).
 
 ## PENDENTE
 - [ ] **Jogar e confirmar** (R16): a corrida não engasga mais; conferir as 3 câmeras, rampa e barricadas

@@ -93,8 +93,8 @@ try {
     timeout: BOOT_TIMEOUT_MS,
   });
   const bootMs = Date.now() - t0;
-  // O HUD escreve FPS a cada 0,2 s dentro do frame(): prova que sim + render rodaram.
-  await page.waitForFunction(() => document.getElementById('stats')?.textContent?.includes('FPS'), null, {
+  // O DebugPanel escreve FPS a cada 0,2 s dentro do frame(): prova que sim + render rodaram.
+  await page.waitForFunction(() => document.getElementById('debug-panel')?.textContent?.includes('FPS'), null, {
     timeout: 10_000,
   });
   const hasCanvas = await page.evaluate(() => !!document.querySelector('#app canvas'));
