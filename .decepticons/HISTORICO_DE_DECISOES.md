@@ -4,6 +4,34 @@
 
 ---
 
+## [2026-09-23] Nova ordem: combate → inimigos → multiplayer; merge autorizado ao Claude nesta fase
+**Decisão (dono):** o roadmap passa a ser Fase 1 Combate, Fase 2 Inimigos (bots), Fase 3 Multiplayer, Fase 4 Lançamento, Fase 5 Monetização.
+**Motivo:** o jogo fica divertido sozinho antes do servidor; dá para fazer live contra bots; o diferencial (dano por parte) é validado cedo; os bots geram o mesmo `MechInput` do jogador, então o servidor vai reaproveitá-los para completar salas. Nada é jogado fora.
+**Processo:** o dono autorizou o Claude a mergear PRs com CI verde para seguir o combate e os inimigos. A revisão cruzada passa a ser pós-merge quando o outro agente estiver indisponível (Codex sem crédito até 24/09).
+**Quem decidiu:** dono.
+
+## [2026-09-23] Integração do trabalho do Gemini + brechas do protocolo para vários agentes
+**Contexto:** o Gemini entregou qualidade adaptativa (G12), painel de debug e HUD que some com F1, em 2 branches locais. Um deles saiu da `main` sem o PR #1, e 8 arquivos de cache de `.tmp/` entraram no commit. Ele assinou como "Codex".
+**Feito pelo Claude:** os 2 commits foram reaplicados sobre a `main`, sem os temporários e com a assinatura corrigida. A revisão cruzada achou 3 bugs, todos corrigidos:
+- o degrau 1 da qualidade não reduzia a resolução do `EffectComposer`;
+- o `DRAWS` do painel mostrava 1, porque o `renderer.info` é zerado a cada passada;
+- F1 abria a Ajuda do navegador.
+O smoke passou a reprovar menos de 10 draw calls, e comprovadamente reprovava a versão antiga.
+**Brechas fechadas:** o protocolo vale para qualquer agente, com prefixo e assinatura pelo nome real (`AGENTS.md`); branch sempre a partir da `main` atualizada; `GEMINI.md` importa o `AGENTS.md`; o `pre-commit` barra `.tmp/`, `dist/` e `node_modules/` mesmo com `.gitignore` desatualizado.
+**Quem decidiu:** Claude (revisão e integração), com o trabalho de feature do Gemini.
+
+## [2026-09-23] Painel de Debug Desacoplado & HUD Toggle
+**Decisão:** o painel de debug (FPS, Tick Time, Draw Calls) foi extraído para um módulo independente (`DebugPanel`) fora do contexto do HUD principal. Para fins de *streamer mode*, a tecla `F1` foi definida no loop global para adicionar a classe `.hidden` apenas no HUD (`display: none`), permitindo que a UI de gameplay suma enquanto as métricas técnicas podem continuar sendo validadas.
+**Por que importa:** possibilita jogar a build para lives/vídeos com a tela limpa, sem perder acesso imediato à instrumentação técnica.
+**Quem decidiu:** Gemini (assinou como "Codex" porque o protocolo só previa Claude e Codex; corrigido pelo Claude na integração), cruzando com a necessidade de separar DOM da simulação no G3.
+
+
+## [2026-09-23] Qualidade adaptativa e degraus de degradação (G12)
+**Decisão:** implementada a classe `Quality` para medir o tempo de frame. Se cair de 50 FPS na média de 2 segundos, degrada a qualidade primeiro reduzindo o `pixelRatio` para 1.0 e depois desligando o `UnrealBloomPass`. A qualidade não é restaurada se o FPS voltar a subir, para evitar flutuações irritantes.
+**Por que importa:** G12 exige a proteção para rodar em hardware fraco (integrated GPU).
+**Quem decidiu:** Gemini (assinou como "Codex"; corrigido pelo Claude na integração), com base nas restrições de G12. Testes garantiram que pequenas perdas não disparam falsos positivos, e que o tier é mantido.
+
+
 ## [2026-09-23] Conta do GitHub renomeada: Remoratrader → SerafimWeb
 **Fato:** ao abrir o primeiro PR, o GitHub devolveu `SerafimWeb/decepticons`. O token do `gh` autentica como `SerafimWeb` (usuário, não organização): a conta foi renomeada. O `gh auth status` ainda mostrava o nome antigo, guardado no login.
 **Feito:** `origin` → `https://github.com/SerafimWeb/decepticons.git`; `AGENTS.md`, `IDENTITY.md` e `ESTADO_ATUAL.md` atualizados. A entrada "Repositório: mesma conta GitHub do serafim13" continua válida: mesma conta, nome novo.

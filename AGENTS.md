@@ -1,7 +1,7 @@
 # AGENTS.md — Cyber-Mech Protocol (codinome DECEPTICONS)
 
-> Instruções para qualquer agente de código: Codex lê este arquivo direto; Claude Code lê pelo `CLAUDE.md`,
-> que importa este. **Fonte única**: não duplique estas regras em outro lugar.
+> Instruções para qualquer agente de código: Codex lê este arquivo direto; Claude Code e Gemini leem pelo `CLAUDE.md`
+> e pelo `GEMINI.md`, que importam este. **Fonte única**: não duplique estas regras em outro lugar.
 > Ativa o Protocolo Serafim UM v4.2. Não edite sem registrar no `.decepticons/HISTORICO_DE_DECISOES.md`.
 
 ## PROTOCOLO SERAFIM UM
@@ -43,24 +43,27 @@ As specs completas estão em `PROTOCOLO_UNIVERSAL.md`; este é só o índice.
 - **R13:** o que não funciona de ponta a ponta fica marcado como DEMO ou AUSENTE em `STATUS_REAL.md`.
 - **R17:** achou bug ou desalinhamento durante a tarefa? Corrija se for barato e seguro; senão, registre.
 
-## TRABALHO COM DOIS AGENTES (Claude + Codex)
+## TRABALHO COM VÁRIOS AGENTES (Claude, Codex, Gemini…)
 
-O projeto é desenvolvido em partes pelo Claude (Claude Code) e pelo Codex. Estas regras evitam que um desfaça o trabalho do outro.
+O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex e Gemini). Estas regras evitam que um desfaça o trabalho do outro. Valem para qualquer agente, inclusive um que não esteja nesta lista.
 
 1. **Uma fonte de verdade:** este arquivo + `.decepticons/`. O que ficou só no chat ou na memória de um agente não existe para o outro. Decidiu algo? Escreva no repositório.
-2. **Uma tarefa = um branch = um PR.** Nome: `claude/<tarefa>` ou `codex/<tarefa>`. Nunca commit direto em `main`; nunca dois agentes no mesmo branch.
-3. **Território:** cada agente mexe só nos arquivos da tarefa dele (divisão atual no `ESTADO_ATUAL.md`). Precisa mudar algo fora? Faça num PR pequeno separado, ou deixe registrado como pendência.
-4. **Contrato antes de paralelizar:** interfaces que os dois usam (`MechInput`, schema de estado, mensagens de rede) são definidas e mergeadas primeiro; depois cada um trabalha contra elas.
-5. **O CI decide:** PR só entra com `npm run check` verde. Teste de simulação é o árbitro técnico entre os dois (G14).
-6. **Revisão cruzada:** o PR de um agente é revisado pelo outro (evita a IA aprovando o próprio código). Quem aprova o merge é o dono.
-7. **Passagem de bastão:** ao terminar, atualize `ESTADO_ATUAL.md` (o que foi feito, o que ficou, "próxima sessão começa com") e registre decisões no topo do `HISTORICO_DE_DECISOES.md`, dizendo qual agente decidiu.
-8. **Discordou de algo registrado?** Não desfaça em silêncio. Proponha em "decisões em aberto" no `ESTADO_ATUAL.md`; o dono decide.
+2. **Uma tarefa = um branch = um PR.** Prefixo = o seu nome real: `claude/…`, `codex/…`, `gemini/…`. Nunca commit direto em `main`; nunca dois agentes no mesmo branch.
+3. **Base do branch: sempre a `main` atualizada.** `git fetch origin && git switch -c <agente>/<tarefa> origin/main`. Precisa de algo que está num PR aberto? Peça o merge ao dono antes; não parta do branch de outro agente. (Em 23/09 um branch saiu da base errada e levou temporários para o commit.)
+4. **Território:** cada agente mexe só nos arquivos da tarefa dele (divisão atual no `ESTADO_ATUAL.md`). Precisa mudar algo fora? Faça num PR pequeno separado, ou deixe registrado como pendência.
+5. **Contrato antes de paralelizar:** interfaces que vários usam (`MechInput`, schema de estado, mensagens de rede) são definidas e mergeadas primeiro; depois cada um trabalha contra elas.
+6. **O CI decide:** PR só entra com `npm run check` verde. Teste de simulação é o árbitro técnico entre os agentes (G14).
+7. **Revisão cruzada:** o PR de um agente é revisado por outro (evita a IA aprovando o próprio código). O merge é do dono, ou de quem ele autorizar (registrado no `ESTADO_ATUAL.md`).
+8. **Assine com o seu nome real** no histórico, no estado e no branch, mesmo que você não esteja listado aqui.
+9. **Passagem de bastão:** ao terminar, atualize `ESTADO_ATUAL.md` (o que foi feito, o que ficou, "próxima sessão começa com") e registre decisões no topo do `HISTORICO_DE_DECISOES.md`.
+10. **Discordou de algo registrado?** Não desfaça em silêncio. Proponha em "decisões em aberto" no `ESTADO_ATUAL.md`; o dono decide.
+11. **Antes do commit, olhe o `git status`.** O hook barra arquivos de `.tmp/`, `dist/` e `node_modules/`, e barra secrets.
 
 ## MAPA
 
 ```text
 client/src/
-  core/        Game.ts (monta os módulos + loop), InputManager.ts
+  core/        Game.ts (monta os módulos + loop), InputManager.ts, Quality.ts (qualidade adaptativa, G12)
   physics/     PhysicsWorld.ts (Rapier, FIXED_DT)
   entities/    MechBase.ts (controller, dash, dano modular, animação), Vector09.ts, meshKit.ts
   player/      PlayerController.ts (input/câmera -> MechInput, tiro)
@@ -68,7 +71,8 @@ client/src/
   environment/ Arena.ts, Destructibles.ts, DebrisSystem.ts
   combat/      ProjectileSystem.ts
   fx/          ParticleSystem.ts
-  ui/          HUD.ts
+  ui/          HUD.ts (F1 esconde)
+  debug/       DebugPanel.ts (FPS, tempo de tick, draw calls)
 scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), install-hooks.mjs
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
 .github/       workflows/ci.yml (npm run check a cada push/PR)

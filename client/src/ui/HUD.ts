@@ -4,6 +4,7 @@ import type { MechBase } from '../entities/MechBase';
 const $ = (id: string) => document.getElementById(id)!;
 
 export class HUD {
+  private readonly root = $('hud');
   private readonly overlay = $('overlay');
   private readonly cta = $('cta');
   private readonly crosshair = $('crosshair');
@@ -12,7 +13,6 @@ export class HUD {
   private readonly stats = $('stats');
   private readonly modeLabel = $('mode');
   private cursorMode = false;
-  private fps = 60;
   private textTimer = 0;
 
   setReady(): void {
@@ -21,6 +21,10 @@ export class HUD {
 
   setPaused(paused: boolean): void {
     this.overlay.classList.toggle('hidden', !paused);
+  }
+
+  toggleVisibility(): void {
+    this.root.classList.toggle('hidden');
   }
 
   setMode(mode: CameraMode): void {
@@ -42,7 +46,6 @@ export class HUD {
     this.dashFill.style.transform = `scaleX(${ready})`;
     this.dash.classList.toggle('ready', ready >= 1);
 
-    if (dt > 0) this.fps += (1 / dt - this.fps) * 0.05;
     this.textTimer -= dt;
     if (this.textTimer > 0) return;
     this.textTimer = 0.2;
@@ -51,7 +54,6 @@ export class HUD {
     this.stats.textContent =
       `${mech.stats.name}\n` +
       `VEL    ${speed.toFixed(1).padStart(5)} m/s\n` +
-      `FPS    ${Math.round(this.fps).toString().padStart(5)}\n` +
       `DEBRIS ${debrisCount.toString().padStart(5)}`;
   }
 }

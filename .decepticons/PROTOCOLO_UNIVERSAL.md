@@ -85,7 +85,8 @@
 
 **[G15] Projeto autocontido (regra do dono).** Nada do projeto é salvo fora da pasta dele: nem em outra pasta, nem em outro drive, nem no temp do sistema.
 - Temporários (experimentos, snapshots, capturas, repositórios de teste, scripts descartáveis) vão só para `.tmp/` na raiz, que o git ignora.
-- Ferramenta que escreve no temp do sistema por padrão é apontada para `.tmp/` (ex.: `scripts/smoke.mjs` faz isso com o Playwright e o Chrome).
+- Ferramenta que escreve no temp do sistema por padrão é apontada para `.tmp/` (ex.: `scripts/smoke.mjs` com o Playwright e o Chrome; `scripts/test.mjs` com o Vitest).
+- O `pre-commit` barra arquivos de `.tmp/`, `dist/` e `node_modules/` no stage, mesmo com o `.gitignore` desatualizado.
 - Conhecimento do projeto vai para `.decepticons/` ou `AGENTS.md`, nunca só para a memória de um agente.
 - Fora do nosso controle, e conhecido: caches globais de ferramentas (cache do npm, `~/.claude` do Claude Code, configuração do git/gh). Não são arquivos do projeto.
 

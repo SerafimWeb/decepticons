@@ -22,7 +22,8 @@ export class InputManager {
 
   constructor(private readonly target: HTMLElement) {
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' || e.code === 'Tab') e.preventDefault();
+      // F1 esconde o HUD; sem preventDefault o Chrome/Edge abre a própria Ajuda numa aba nova.
+      if (e.code === 'Space' || e.code === 'Tab' || e.code === 'F1') e.preventDefault();
       this.keys.add(e.code);
       if (e.repeat) return;
       this.pressed.add(e.code);

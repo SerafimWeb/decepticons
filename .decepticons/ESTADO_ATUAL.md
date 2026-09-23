@@ -1,45 +1,39 @@
 # ESTADO ATUAL — Cyber-Mech Protocol
 
-**Status:** 🟡 EM DESENVOLVIMENTO: protótipo single-player funcional, fundação pronta
+**Status:** 🟡 EM DESENVOLVIMENTO: protótipo single-player funcional
 **Última atualização:** 2026-09-23
-**Iteração atual:** início da Fase 1 (multiplayer autoritativo)
+**Iteração atual:** Fase 1 — Combate (nova ordem: combate → inimigos → multiplayer)
 
 ---
 
 ## ÚLTIMA SESSÃO FEZ
-- Protocolo Serafim UM aplicado: `.decepticons/`, `CLAUDE.md`, hooks, repositório `SerafimWeb/decepticons` (privado) com CI verde no GitHub (ubuntu-24.04, actions v7)
-- Bundle JS de 1.182 → 182 KB gzip (Rapier com `.wasm` separado)
-- `npm run check` = typecheck + Vitest + build + budget + boot real no browser headless
-- **Engasgo da corrida corrigido**: causa medida (erosão da margem do controller do Rapier), contorno isolado em `MechBase.unstickFromGround`, teste que reprova a lógica antiga
-- Destroços só cosméticos; bugs de evicção de destroços e vazamento de geometria corrigidos
-- Game design v1 (`GAME_DESIGN.md`) + princípios G11–G14 (economia de dados, requisitos, resiliência, código)
-- Trabalho com dois agentes (Claude + Codex): `AGENTS.md` como instrução única, o `CLAUDE.md` importa ele, cópia do Protocolo Serafim UM dentro do repositório
-- G15, projeto autocontido: temporários só em `.tmp/`; o smoke não escreve mais no temp do Windows
+- Fundação: Protocolo Serafim UM, CI, Vitest, smoke headless, bundle de 182 KB gzip, engasgo da corrida corrigido
+- Trabalho com vários agentes (Claude, Codex, Gemini): `AGENTS.md` único; `CLAUDE.md` e `GEMINI.md` importam ele
+- (Gemini) Qualidade adaptativa (G12), painel de debug e HUD que some com F1. O Claude reaplicou o trabalho na base certa, sem os temporários, e corrigiu 3 bugs da revisão: degrau de qualidade sem efeito, DRAWS mostrando 1, F1 abrindo a Ajuda do navegador
+- Brechas do protocolo fechadas: regra de base do branch, assinatura com o nome real do agente, hook barrando `.tmp/`, `dist/` e `node_modules/`
 
 ## PENDENTE
-- [ ] **Jogar e confirmar** (R16): a corrida não engasga mais; conferir as 3 câmeras, rampa e barricadas
-- [ ] Fase 1, passo 1: separar `MechBase` em simulação (sem render) + visual, primeiro passo de `shared/`
-- [ ] Decidir se o tiro atravessa destroços (na Fase 1)
+- [ ] **Jogar e confirmar** (R16): corrida lisa, as 3 câmeras, F1 esconde o HUD sem abrir a Ajuda do navegador
+- [ ] Fase 1 — Combate (itens no `ROADMAP.md`)
 
 ## DIVISÃO DE TRABALHO ENTRE AGENTES
-Regras de convivência no `AGENTS.md` ("Trabalho com dois agentes"). Um branch por tarefa, PR com CI verde, revisão cruzada, merge pelo dono.
+Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a partir da `main` atualizada, PR com CI verde, revisão cruzada.
+**Merge nesta fase:** o dono autorizou o Claude a mergear PRs com CI verde (combate → inimigos). A revisão cruzada acontece depois do merge, quando outro agente estiver disponível.
 
-| Agente | Território (arquivos) | Tarefas, em ordem |
+| Agente | Território (arquivos) | Situação |
 |---|---|---|
-| **Claude** | `shared/`, `server/`, `client/src/entities/`, `client/src/physics/`, `client/src/net/` (novo) | 1. Contrato (`MechInput`, validador G7, schema de estado) + separar `MechBase` em simulação/visual → `shared/`. 2. `server/` Colyseus + prediction/interpolação no cliente. |
-| **Codex** | `client/src/ui/`, `client/src/fx/`, `client/src/core/Quality.ts` (novo), `client/src/debug/` (novo) | 1. Revisar os PRs do Claude. 2. Qualidade adaptativa (G12). 3. Painel de debug leve (FPS, tempo de tick, draw calls). 4. HUD que some com uma tecla (base do modo streamer). |
-| **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só linhas de fiação e PR pequeno. Quem mergear depois faz rebase e roda `npm run check`. |
-
-**Próximo agente a trabalhar:** Claude, na tarefa 1. O Codex entra depois, pela revisão desse PR.
+| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`; depois `shared/`, `server/`, `client/src/net/` | Fase 1 — Combate, depois Fase 2 — Inimigos |
+| **Codex** | a combinar | Sem crédito até 24/09. Ao voltar: revisar os PRs de combate já mergeados |
+| **Gemini** | `client/src/core/Quality.ts`, `client/src/debug/`, `client/src/ui/` | Entregou G12, painel e F1. Disponível para revisão |
+| **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois faz rebase e roda `npm run check` |
 
 ## DECISÕES EM ABERTO
 | Decisão | Situação |
 |---|---|
-| Hospedagem do servidor | Recomendação em `DEPLOY.md` (PC de casa + Cloudflare Tunnel para playtest; Oracle Always Free São Paulo para público). Decidir ao fim da Fase 1. |
-| Tiro × destroços | Fase 1 |
+| Hospedagem do servidor | Recomendação em `DEPLOY.md`. Decidir na Fase 3 (multiplayer). |
 
 ## BLOQUEIOS
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Separar `MechBase` em `MechSim` (estado + `fixedUpdate`, sem Three.js de cena) e `MechView` (rig, animação, interpolação), mantendo `MechBase.test.ts` verde. É a base de `shared/`.
+Fase 1 — Combate: modelo de dano por parte (puro e testado), projéteis acertando Mechs e alvos de treino na arena.

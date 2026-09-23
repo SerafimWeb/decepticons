@@ -17,7 +17,9 @@
 | Barricadas destrutíveis | REAL | 6 na arena, HP e cor de dano |
 | Destroços físicos | REAL | só cosméticos: o Mech passa por eles e os empurra, sem ser bloqueado. Teto de 240, os mais antigos saem primeiro. |
 | Partículas, bloom, camera shake | REAL | |
-| HUD (VEL, FPS, DEBRIS, barra de dash) | REAL | |
+| HUD (VEL, DEBRIS, barra de dash, modo de câmera) | REAL | F1 esconde o HUD (Gemini). Confirmar jogando que o F1 não abre a Ajuda do navegador. |
+| Painel de debug (FPS, tempo de tick, draw calls) | REAL | Gemini; o total de draw calls foi corrigido e é checado pelo smoke |
+| Qualidade adaptativa (G12) | PARCIAL | Gemini; corrigida e com testes, mas ainda não medida numa GPU integrada de verdade |
 | Arena | REAL | 1 mapa: 3 prédios, plataforma com rampa, skyline |
 | Dano em Mechs / hitbox por parte | AUSENTE | `modules` existe, mas nada aplica dano a um Mech. `mobility` e `isBlind` leem um estado que nunca muda. |
 | Blind Mode (cabeça destruída) | AUSENTE | só o getter `isBlind` |

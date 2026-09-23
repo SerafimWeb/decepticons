@@ -24,6 +24,22 @@ html, body {
   inset: 0;
   pointer-events: none;
 }
+#hud.hidden {
+  display: none;
+}
+
+#debug-panel {
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #666;
+  white-space: pre;
+  pointer-events: none;
+  text-align: left;
+  z-index: 1000;
+}
 
 #crosshair {
   position: absolute;
