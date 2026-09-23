@@ -11,11 +11,19 @@
  * Chrome, depois Edge, depois o Chromium do Playwright (CI: `npx playwright install chromium`).
  * Saída: exit 0 = ok, exit 1 = falha.
  */
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { chromium } from 'playwright-core';
 import { createServer, preview } from 'vite';
+
+// Nada fora da pasta do projeto: o perfil temporário do Chrome e os artefatos do Playwright
+// vão para .tmp/smoke/ (zerada a cada execução). Precisa vir antes do import do Playwright,
+// que lê os.tmpdir() ao carregar.
+const TMP = resolve('.tmp', 'smoke');
+rmSync(TMP, { recursive: true, force: true });
+mkdirSync(TMP, { recursive: true });
+process.env.TEMP = process.env.TMP = process.env.TMPDIR = TMP;
+const { chromium } = await import('playwright-core');
 
 // Budgets em bytes gzip. Wasm tem limite próprio: ver HISTORICO_DE_DECISOES (2026-09-23).
 const JS_BUDGET = 500 * 1024;

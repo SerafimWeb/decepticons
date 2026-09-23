@@ -15,7 +15,7 @@
     "smoke:dev": "node scripts/smoke.mjs --dev",
     "check": "npm run typecheck && npm test && vite build && npm run smoke",
     "prepare": "node scripts/install-hooks.mjs",
-    "test": "vitest run"
+    "test": "node scripts/test.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-simd": "0.20.0",

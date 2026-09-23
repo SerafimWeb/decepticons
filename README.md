@@ -12,7 +12,7 @@ npm test           # testes de simulação (Vitest, no Node)
 npm run check      # typecheck + testes + build + budget (JS/Wasm gzip) + boot real no Chrome/Edge headless
 ```
 
-Contexto do projeto, decisões e pendências: pasta `.decepticons/` (comece pelo `CLAUDE.md`).
+Contexto do projeto, decisões e pendências: pasta `.decepticons/`. Instruções para agentes de código (Claude, Codex): `AGENTS.md`.
 
 ## Controles
 

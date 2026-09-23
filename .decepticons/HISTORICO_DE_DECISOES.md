@@ -4,6 +4,34 @@
 
 ---
 
+## [2026-09-23] Conta do GitHub renomeada: Remoratrader → SerafimWeb
+**Fato:** ao abrir o primeiro PR, o GitHub devolveu `SerafimWeb/decepticons`. O token do `gh` autentica como `SerafimWeb` (usuário, não organização): a conta foi renomeada. O `gh auth status` ainda mostrava o nome antigo, guardado no login.
+**Feito:** `origin` → `https://github.com/SerafimWeb/decepticons.git`; `AGENTS.md`, `IDENTITY.md` e `ESTADO_ATUAL.md` atualizados. A entrada "Repositório: mesma conta GitHub do serafim13" continua válida: mesma conta, nome novo.
+**Por que importa:** o GitHub redireciona o nome antigo só enquanto ninguém registrar "Remoratrader". O remote do serafim13 ainda usa o nome antigo; fica sinalizado para uma sessão daquele projeto (R17: não editar outro repositório daqui).
+
+## [2026-09-23] Projeto autocontido: nada fora da pasta do projeto (G15)
+**Decisão (regra do dono):** temporários e qualquer outro arquivo do projeto ficam só dentro da pasta do projeto. Nada no temp do sistema, em outras pastas ou em outro drive.
+**Aplicado:**
+- `.tmp/` na raiz, ignorada pelo git, é o único lugar para temporários.
+- O `scripts/smoke.mjs` aponta o temp do Playwright e do Chrome para `.tmp/smoke/`, zerada a cada execução.
+- O Vitest gravava os módulos transformados no temp do Windows e deixava sobras: o `npm test` agora roda por `scripts/test.mjs`, com o temp em `.tmp/vitest/`.
+- **Verificado:** comparando nome por nome o temp do Windows antes e depois de um `npm run check` completo, nenhum item novo.
+- Limpeza do que o Claude tinha deixado fora nesta sessão: snapshot inicial, scripts de experimento, captura de tela, repositório de teste dos hooks, 1 sobra do Chrome e 13 sobras do Vitest (identificadas pelo conteúdo: código deste projeto).
+- Não mexido: resíduos do Playwright de 12/09 e `scoped_dir*` do Chrome de uso normal, que são anteriores a este projeto.
+**Fora do controle, conhecido:** cache global do npm, `~/.claude` (sessões e memória do Claude Code), configuração do git/gh.
+**Quem decidiu:** dono.
+
+## [2026-09-23] Desenvolvimento com dois agentes: Claude + Codex
+**Decisão:** o dono vai desenvolver partes do projeto com o Claude (Claude Code) e partes com o Codex, os dois sob o Protocolo Serafim UM.
+**Como:**
+- `AGENTS.md` (lido pelo Codex) é a fonte única de instruções; o `CLAUDE.md` só importa ele (`@AGENTS.md`), para as regras não divergirem (R14).
+- Cópia de referência do protocolo em `.decepticons/PROTOCOLO_SERAFIM_UM.md`, porque um agente na nuvem só enxerga o repositório.
+- Um branch por tarefa (`claude/…`, `codex/…`), PR com CI verde, revisão cruzada entre os agentes, merge pelo dono.
+- Território de arquivos por agente no `ESTADO_ATUAL.md`; contrato (`shared/`) antes de paralelizar.
+**Motivo:** cada agente tem pontos fortes, mas dois agentes sem regra comum desfazem o trabalho um do outro. A revisão cruzada também resolve o AP-5 (IA revisando o próprio código).
+**Limite conhecido:** repositório privado no plano gratuito do GitHub não trava a `main` por regra de proteção. A disciplina é do processo (agentes + CI), não do GitHub.
+**Quem decidiu:** dono (divisão proposta pelo Claude; o dono pode redistribuir).
+
 ## [2026-09-23] Game design v1, viralização e princípios de arquitetura
 **Decisão:** o dono aceitou todos os padrões da sessão de definição: 8 por sala, todos contra todos com rodadas de 5 min, entrada livre sem lobby, convidado com apelido, só desktop, portal primeiro, diferencial = destruição + dano por parte. Receita: combinar os modelos para viralizar (link de sala → modo streamer, porque o dono vai fazer lives → portal com anúncio só entre rodadas → cosméticos sem vantagem de combate). Detalhes em `GAME_DESIGN.md`.
 **Princípios pedidos pelo dono:** economia de dados, requisitos baixos, leveza, resiliência, código estratégico. Viraram as regras mensuráveis G11–G14 em `PROTOCOLO_UNIVERSAL.md` (ex.: ≤ 8 KB/s de download por jogador, estado a 20 Hz, tick do servidor ≤ 2 ms).

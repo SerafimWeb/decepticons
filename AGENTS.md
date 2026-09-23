@@ -1,0 +1,98 @@
+# AGENTS.md — Cyber-Mech Protocol (codinome DECEPTICONS)
+
+> Instruções para qualquer agente de código: Codex lê este arquivo direto; Claude Code lê pelo `CLAUDE.md`,
+> que importa este. **Fonte única**: não duplique estas regras em outro lugar.
+> Ativa o Protocolo Serafim UM v4.2. Não edite sem registrar no `.decepticons/HISTORICO_DE_DECISOES.md`.
+
+## PROTOCOLO SERAFIM UM
+
+Todo agente trabalha sob o **Protocolo Serafim UM v4.2**: memória persistente, as 17 regras absolutas (R1–R17)
+e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
+- Regras gerais: `.decepticons/PROTOCOLO_SERAFIM_UM.md`, **cópia de referência, não editar**. A canônica fica em
+  `D:\SERAFIMHUB\serafim13\protocolo-serafim-um\`; quando a versão mudar, a cópia é substituída inteira.
+- Como cada regra se aplica aqui, e as specs do jogo (G1–G15): `.decepticons/PROTOCOLO_UNIVERSAL.md`.
+- Os hooks aplicam parte do protocolo sozinhos: sem `ESTADO_ATUAL.md` atualizado não há commit (M5); secret no diff bloqueia (R2); push roda o check (R15).
+
+## PASSO ZERO — ANTES DE QUALQUER AÇÃO
+
+1. `.decepticons/IDENTITY.md`: o que é, stack, restrições
+2. `.decepticons/ESTADO_ATUAL.md`: onde parou, pendências, **divisão de trabalho entre agentes**
+3. `.decepticons/ROADMAP.md`: fases
+4. `.decepticons/GAME_DESIGN.md`: o jogo, as decisões de design e o plano de viralização
+5. `.decepticons/PROTOCOLO_UNIVERSAL.md`: regras e specs de engenharia (G1–G15)
+6. Build, CI, hospedagem ou deploy? Leia `.decepticons/DEPLOY.md` antes. **Hoje não há deploy; não invente caminho nem host.**
+7. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
+
+## O QUE É
+
+Shooter de Mechs multiplayer para o navegador: Vite 8 + TypeScript 7 strict + Three.js + Rapier3D (Wasm SIMD). Hoje é um protótipo single-player; o servidor Colyseus está planejado.
+
+## REGRAS QUE MAIS PESAM AQUI
+
+As specs completas estão em `PROTOCOLO_UNIVERSAL.md`; este é só o índice.
+- **Performance primeiro:** CPU baixa com muitos jogadores. Explique o custo de CPU de cada feature.
+- **G1/G2:** gameplay só no tick fixo de 60 Hz, determinístico (sem `Math.random`, `Date.now` ou DOM na simulação).
+- **G3:** feature nova = módulo independente, ligado em `client/src/core/Game.ts` por callbacks.
+- **G4/G5:** zero `new` por frame ou tick; pools, `InstancedMesh`, tetos explícitos.
+- **G6:** Mech remoto nunca roda o character controller.
+- **G9:** importe sempre `@dimforge/rapier3d-simd-compat`; o `vite.config.ts` faz o alias para o browser. As duas versões do Rapier andam juntas.
+- **G11–G13:** metas de rede (≤ 8 KB/s de download por jogador, estado a 20 Hz), requisito mínimo = GPU integrada, servidor autoritativo com reconexão.
+- **G14:** uma simulação só (`shared/`); **toda regra de gameplay tem teste de simulação** (modelo: `client/src/entities/MechBase.test.ts`).
+- **G15 (regra do dono):** nada salvo fora da pasta do projeto. Temporários, experimentos, capturas e repositórios de teste vão só para `.tmp/` (ignorado pelo git), nunca para o temp do sistema, outra pasta ou outro drive.
+- **R2:** nada de secret em arquivo versionado. **R3:** nada de `_v2`, `_old`, `_bkp`.
+- **R13:** o que não funciona de ponta a ponta fica marcado como DEMO ou AUSENTE em `STATUS_REAL.md`.
+- **R17:** achou bug ou desalinhamento durante a tarefa? Corrija se for barato e seguro; senão, registre.
+
+## TRABALHO COM DOIS AGENTES (Claude + Codex)
+
+O projeto é desenvolvido em partes pelo Claude (Claude Code) e pelo Codex. Estas regras evitam que um desfaça o trabalho do outro.
+
+1. **Uma fonte de verdade:** este arquivo + `.decepticons/`. O que ficou só no chat ou na memória de um agente não existe para o outro. Decidiu algo? Escreva no repositório.
+2. **Uma tarefa = um branch = um PR.** Nome: `claude/<tarefa>` ou `codex/<tarefa>`. Nunca commit direto em `main`; nunca dois agentes no mesmo branch.
+3. **Território:** cada agente mexe só nos arquivos da tarefa dele (divisão atual no `ESTADO_ATUAL.md`). Precisa mudar algo fora? Faça num PR pequeno separado, ou deixe registrado como pendência.
+4. **Contrato antes de paralelizar:** interfaces que os dois usam (`MechInput`, schema de estado, mensagens de rede) são definidas e mergeadas primeiro; depois cada um trabalha contra elas.
+5. **O CI decide:** PR só entra com `npm run check` verde. Teste de simulação é o árbitro técnico entre os dois (G14).
+6. **Revisão cruzada:** o PR de um agente é revisado pelo outro (evita a IA aprovando o próprio código). Quem aprova o merge é o dono.
+7. **Passagem de bastão:** ao terminar, atualize `ESTADO_ATUAL.md` (o que foi feito, o que ficou, "próxima sessão começa com") e registre decisões no topo do `HISTORICO_DE_DECISOES.md`, dizendo qual agente decidiu.
+8. **Discordou de algo registrado?** Não desfaça em silêncio. Proponha em "decisões em aberto" no `ESTADO_ATUAL.md`; o dono decide.
+
+## MAPA
+
+```text
+client/src/
+  core/        Game.ts (monta os módulos + loop), InputManager.ts
+  physics/     PhysicsWorld.ts (Rapier, FIXED_DT)
+  entities/    MechBase.ts (controller, dash, dano modular, animação), Vector09.ts, meshKit.ts
+  player/      PlayerController.ts (input/câmera -> MechInput, tiro)
+  camera/      CameraRig.ts + modos (3ª, 1ª, tática)
+  environment/ Arena.ts, Destructibles.ts, DebrisSystem.ts
+  combat/      ProjectileSystem.ts
+  fx/          ParticleSystem.ts
+  ui/          HUD.ts
+scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), install-hooks.mjs
+.githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
+.github/       workflows/ci.yml (npm run check a cada push/PR)
+.tmp/          temporários do projeto (ignorado pelo git; G15)
+```
+
+Repositório: `github.com/SerafimWeb/decepticons` (privado), branch `main`.
+
+## COMANDOS
+
+```bash
+npm install        # instala e ativa os hooks de .githooks/
+npm run dev        # http://localhost:5173
+npm test           # testes de simulação (Vitest, no Node)
+npm run check      # typecheck + testes + build + budget + boot headless (obrigatório antes de push)
+npm run smoke:dev  # boot headless contra o dev server
+```
+
+Ambiente sem Chrome/Edge (ex.: sandbox na nuvem): rode `npm run typecheck && npm test && npx vite build`; o smoke roda no CI do PR.
+
+## ENCERRAMENTO DE SESSÃO
+
+- [ ] `npm run check` passa (ou o CI do PR está verde)
+- [ ] `.decepticons/ESTADO_ATUAL.md` reflete o estado real (o hook de commit exige)
+- [ ] Decisão relevante → nova entrada no topo de `HISTORICO_DE_DECISOES.md`
+- [ ] Feature mudou de estado → `STATUS_REAL.md`
+- [ ] Nenhum secret em arquivo versionado

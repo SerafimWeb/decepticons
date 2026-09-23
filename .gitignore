@@ -12,3 +12,6 @@ dist/
 *.p12
 *.pfx
 *.zip
+
+# Temporários do projeto (experimentos, perfil do Chrome do smoke, capturas). Nada fora da pasta do projeto.
+.tmp/

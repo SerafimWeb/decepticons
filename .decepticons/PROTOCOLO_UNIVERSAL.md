@@ -1,8 +1,9 @@
 # PROTOCOLO UNIVERSAL — Cyber-Mech Protocol
 
 > O **como** deste projeto. As regras gerais vivem no Protocolo Serafim UM v4.2
-> (`D:\SERAFIMHUB\serafim13\protocolo-serafim-um\PROTOCOLO_SERAFIM_UM.md`), que é a fonte
-> canônica (R14). Este arquivo diz como elas se aplicam aqui e define as specs de engenharia do jogo.
+> (canônico: `D:\SERAFIMHUB\serafim13\protocolo-serafim-um\PROTOCOLO_SERAFIM_UM.md`; cópia de referência
+> no repositório: `.decepticons/PROTOCOLO_SERAFIM_UM.md`, para agentes que só enxergam o repo).
+> Este arquivo diz como elas se aplicam aqui e define as specs de engenharia do jogo.
 > Mudou uma regra? Registre no `HISTORICO_DE_DECISOES.md`.
 
 ---
@@ -81,6 +82,12 @@
 - Toda regra de gameplay tem teste de simulação no Node (padrão: `client/src/entities/MechBase.test.ts`).
 - Custo explícito: dependência nova só com o custo em bundle ou CPU justificado; tick do servidor medido (meta: ≤ 2 ms para 8 Mechs).
 - Contorno de bug de biblioteca fica isolado, comentado com o diagnóstico e coberto por teste (ex.: `MechBase.unstickFromGround`).
+
+**[G15] Projeto autocontido (regra do dono).** Nada do projeto é salvo fora da pasta dele: nem em outra pasta, nem em outro drive, nem no temp do sistema.
+- Temporários (experimentos, snapshots, capturas, repositórios de teste, scripts descartáveis) vão só para `.tmp/` na raiz, que o git ignora.
+- Ferramenta que escreve no temp do sistema por padrão é apontada para `.tmp/` (ex.: `scripts/smoke.mjs` faz isso com o Playwright e o Chrome).
+- Conhecimento do projeto vai para `.decepticons/` ou `AGENTS.md`, nunca só para a memória de um agente.
+- Fora do nosso controle, e conhecido: caches globais de ferramentas (cache do npm, `~/.claude` do Claude Code, configuração do git/gh). Não são arquivos do projeto.
 
 ---
 
