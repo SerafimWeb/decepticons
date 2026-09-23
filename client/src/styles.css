@@ -64,6 +64,58 @@ html, body {
   border-radius: 50%;
 }
 
+/* Marcador de acerto: um X em volta da mira (branco; magenta quando arranca uma parte). */
+#hitmarker {
+  --hit: #ffffff;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  opacity: 0;
+  pointer-events: none;
+}
+#hitmarker::before,
+#hitmarker::after {
+  content: '';
+  position: absolute;
+  filter: drop-shadow(0 0 3px var(--hit));
+}
+#hitmarker::before {
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 2px;
+  margin-top: -1px;
+  background: linear-gradient(90deg, var(--hit) 0 30%, transparent 30% 70%, var(--hit) 70% 100%);
+}
+#hitmarker::after {
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  margin-left: -1px;
+  background: linear-gradient(180deg, var(--hit) 0 30%, transparent 30% 70%, var(--hit) 70% 100%);
+}
+#hitmarker.show { opacity: 1; }
+#hitmarker.crit { --hit: var(--magenta); width: 42px; height: 42px; }
+
+#hit-label {
+  position: absolute;
+  left: 50%;
+  top: 34px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--magenta);
+  text-shadow: 0 0 8px var(--magenta);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+#hit-label.show { opacity: 1; }
+
 #stats {
   position: absolute;
   top: 12px;

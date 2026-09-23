@@ -16,7 +16,6 @@ interface Projectile {
 const SPEED = 140;
 const LIFETIME = 2;
 const DAMAGE = 25;
-const IMPULSE = 14; // empurrão em corpos dinâmicos (destroços)
 const SPARK_COLOR = new THREE.Color(0.4, 2.2, 3.0);
 const CORE_COLOR = new THREE.Color(2.5, 2.5, 3.0);
 
@@ -28,7 +27,7 @@ const _look = new THREE.Vector3();
  * segmento percorrido (não atravessa nada em alta velocidade); o render interpola.
  */
 export class ProjectileSystem {
-  /** Chamado a cada impacto (dano em destrutíveis, futuramente em Mechs). */
+  /** Chamado a cada impacto (Mech ou destrutível; quem decide é o CombatSystem). */
   onHit?: (hit: PhysicsHit, dir: THREE.Vector3, damage: number) => void;
 
   private readonly pool: Projectile[] = [];
@@ -79,14 +78,6 @@ export class ProjectileSystem {
       const hit = this.physics.raycast(p.pos, _dir, step, p.owner);
 
       if (hit) {
-        const body = hit.collider.parent();
-        if (body?.isDynamic()) {
-          body.applyImpulseAtPoint(
-            { x: _dir.x * IMPULSE, y: _dir.y * IMPULSE + 2, z: _dir.z * IMPULSE },
-            hit.point,
-            true,
-          );
-        }
         this.onHit?.(hit, _dir, p.damage);
 
         const at = hit.point.addScaledVector(hit.normal, 0.05);

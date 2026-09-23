@@ -17,14 +17,15 @@
 - [x] (Gemini) Qualidade adaptativa (G12), painel de debug, HUD que some com F1
 
 ## 🟢 FASE 1 — Combate (atual)
-- [ ] Dano por parte: a parte sai da altura e do lado do impacto na cápsula (sem colisor extra); dano em parte destruída vai para o torso
-- [ ] Projéteis acertam Mechs; o tiro atravessa destroços (só cosméticos)
-- [ ] Efeitos: perna = lento, duas pernas = imóvel, braço direito = sem plasma, braço esquerdo = sem foguete, torso = morte
-- [ ] Morte com explosão (a carcaça vira destroço) e respawn
-- [ ] Alvos de treino (Mechs parados) para testar o combate antes dos bots
-- [ ] Feedback: marcador de acerto, parte destruída anunciada, flash de dano, peça arrancada vira destroço
+- [x] Dano por parte: a parte sai da altura e do lado do impacto na cápsula (sem colisor extra); dano em parte destruída vai para o torso
+- [x] Projéteis acertam Mechs; o tiro atravessa destroços (só cosméticos)
+- [x] Efeitos: perna = lento, duas pernas = imóvel, braço direito = sem plasma, torso = morte (braço esquerdo = sem foguete: junto com os foguetes)
+- [x] Morte com explosão (a carcaça vira destroço) e respawn
+- [x] Alvos de treino (Mechs parados) para testar o combate antes dos bots
+- [x] Feedback: marcador de acerto, parte destruída anunciada, flash de dano, peça arrancada vira destroço
 - [ ] Arma secundária: foguetes no braço esquerdo (botão direito), dano em área
-- [ ] Testes de simulação para cada regra de dano (G14)
+- [x] Testes de simulação para cada regra de dano (G14)
+- [ ] Custo de render por Mech: ~34 draw calls cada (8 Mechs ≈ 270). Juntar a geometria por material antes do multiplayer (G5)
 
 ## 🟡 FASE 2 — Inimigos (bots)
 - [ ] `BotController`: gera o mesmo `MechInput` que o jogador (patrulha, persegue, atira, recua)

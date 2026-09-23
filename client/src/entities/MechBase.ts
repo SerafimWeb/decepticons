@@ -1,5 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import { applyDamage, partAt, type DamageResult } from '../combat/damage';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
 /** Gravidade dos Mechs (mais alta que a do mundo: queda "pesada" e rápida, estilo arena shooter). */
@@ -67,8 +68,20 @@ export interface MechRig {
   muzzle: THREE.Object3D;
   thrusters: THREE.Object3D[];
   thrusterMaterial: THREE.MeshStandardMaterial;
+  /** Materiais do casco (por instância): piscam quando o Mech toma dano. */
+  hullMaterials: THREE.MeshStandardMaterial[];
   hipHeight: number;
 }
+
+/** Onde fica o "miolo" de cada parte, a partir do grupo dela no rig (para efeitos). */
+const PART_CENTER: Record<MechPart, [number, number, number]> = {
+  torso: [0, 0.95, 0],
+  head: [0, 0.2, 0],
+  leftArm: [0, -0.6, 0],
+  rightArm: [0, -0.6, 0],
+  leftLeg: [0, -0.55, 0],
+  rightLeg: [0, -0.55, 0],
+};
 
 const _wish = new THREE.Vector3();
 const _desired = { x: 0, y: 0, z: 0 };
@@ -104,6 +117,10 @@ export abstract class MechBase {
   private walkPhase = 0;
   private recoil = 0;
   private readonly rightArmBaseZ: number;
+  private hitFlash = 0;
+  private shownFlash = 0;
+  /** A 1ª pessoa esconde a cabeça do próprio Mech; parte destruída também some. */
+  private headVisibleByCamera = true;
 
   protected constructor(
     readonly stats: MechStats,
@@ -170,6 +187,21 @@ export abstract class MechBase {
     return this.modules.head <= 0;
   }
 
+  /** Torso zerado = morto: sem colisão, invisível, esperando respawn. */
+  get alive(): boolean {
+    return this.modules.torso > 0;
+  }
+
+  /** Canhão de plasma fica no braço direito. */
+  get canFirePrimary(): boolean {
+    return this.alive && this.modules.rightArm > 0;
+  }
+
+  /** Lançador secundário fica no braço esquerdo. */
+  get canFireSecondary(): boolean {
+    return this.alive && this.modules.leftArm > 0;
+  }
+
   muzzleWorldPosition(target: THREE.Vector3): THREE.Vector3 {
     return this.rig.muzzle.getWorldPosition(target);
   }
@@ -179,7 +211,81 @@ export abstract class MechBase {
   }
 
   setHeadVisible(visible: boolean): void {
-    this.rig.head.visible = visible;
+    this.headVisibleByCamera = visible;
+    this.refreshParts();
+  }
+
+  /** Centro de uma parte no mundo (para destroços e faíscas). Só em eventos, não por frame. */
+  partWorldPosition(part: MechPart, target: THREE.Vector3): THREE.Vector3 {
+    const r = this.rig;
+    const node =
+      part === 'head' ? r.head
+      : part === 'leftArm' ? r.leftArm
+      : part === 'rightArm' ? r.rightArm
+      : part === 'leftLeg' ? r.leftLeg.knee
+      : part === 'rightLeg' ? r.rightLeg.knee
+      : r.torso;
+    this.root.updateMatrixWorld(true);
+    const [x, y, z] = PART_CENTER[part];
+    return node.localToWorld(target.set(x, y, z));
+  }
+
+  /**
+   * Acerto num ponto do mundo. A parte sai de onde o impacto caiu no referencial do Mech
+   * (posição da simulação + yaw do torso), sem colisor extra por parte. Roda no tick fixo.
+   */
+  takeHit(point: THREE.Vector3, amount: number): DamageResult {
+    const dx = point.x - this.simPos.x;
+    const dz = point.z - this.simPos.z;
+    const right = dx * Math.cos(this.yaw) - dz * Math.sin(this.yaw);
+    const part = partAt(right, point.y - this.simPos.y, this.stats.height, this.stats.radius);
+    return this.damagePart(part, amount);
+  }
+
+  damagePart(part: MechPart, amount: number): DamageResult {
+    const result = applyDamage(this.modules, part, amount);
+    if (result.applied > 0) this.hitFlash = 1;
+    if (result.partDestroyed) this.refreshParts();
+    if (result.killed) this.die();
+    return result;
+  }
+
+  /** Volta inteiro em `feet`: módulos cheios, colisão ligada, peças visíveis. */
+  respawn(feet: THREE.Vector3): void {
+    Object.assign(this.modules, this.stats.maxModuleHealth);
+    this.velocity.set(0, 0, 0);
+    this.dashTimeLeft = 0;
+    this.dashCooldownLeft = 0;
+    this.jumpsLeft = this.stats.maxJumps;
+    this.grounded = false;
+    this.hitFlash = 0;
+    this.simPos.copy(feet);
+    this.prevPos.copy(feet);
+    this.root.position.copy(feet);
+    const t = { x: feet.x, y: feet.y + this.feetOffset, z: feet.z };
+    this.body.setTranslation(t, true);
+    this.body.setNextKinematicTranslation(t);
+    this.collider.setEnabled(true);
+    this.root.visible = true;
+    this.refreshParts();
+  }
+
+  private die(): void {
+    this.collider.setEnabled(false);
+    this.root.visible = false;
+    this.velocity.set(0, 0, 0);
+    this.dashTimeLeft = 0;
+  }
+
+  /** Parte destruída some do modelo (quem cuida do mundo transforma o pedaço em destroço). */
+  private refreshParts(): void {
+    const m = this.modules;
+    const r = this.rig;
+    r.head.visible = this.headVisibleByCamera && m.head > 0;
+    r.leftArm.visible = m.leftArm > 0;
+    r.rightArm.visible = m.rightArm > 0;
+    r.leftLeg.knee.visible = m.leftLeg > 0;
+    r.rightLeg.knee.visible = m.rightLeg > 0;
   }
 
   onFire(): void {
@@ -202,6 +308,7 @@ export abstract class MechBase {
 
   /** Um tick de simulação (60 Hz). Determinístico dado o input. */
   fixedUpdate(input: MechInput, dt: number): void {
+    if (!this.alive) return;
     const s = this.stats;
     const vel = this.velocity;
     this.dashCooldownLeft = Math.max(0, this.dashCooldownLeft - dt);
@@ -318,6 +425,7 @@ export abstract class MechBase {
 
   /** Interpola a posição entre ticks e anima. `alpha` = fração do próximo tick. */
   render(dt: number, alpha: number): void {
+    if (!this.alive) return;
     this.root.position.lerpVectors(this.prevPos, this.simPos, alpha);
     this.animate(dt);
   }
@@ -351,5 +459,12 @@ export abstract class MechBase {
     r.rightArm.position.z = this.rightArmBaseZ + this.recoil * 0.35;
 
     r.thrusterMaterial.emissiveIntensity = this.isDashing ? 14 : 2;
+
+    // Flash de dano no casco: só escreve no material quando o valor muda.
+    this.hitFlash = Math.max(0, this.hitFlash - dt * 6);
+    if (this.hitFlash !== this.shownFlash) {
+      this.shownFlash = this.hitFlash;
+      for (const m of r.hullMaterials) m.emissive.setRGB(this.hitFlash * 1.4, this.hitFlash * 0.35, this.hitFlash * 0.2);
+    }
   }
 }
