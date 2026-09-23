@@ -1,0 +1,21 @@
+name: CI
+
+# [R15] Mesmo check do hook pre-push: typecheck + build + budget + boot headless.
+# O runner ubuntu-latest já traz o Google Chrome; o smoke usa ele via playwright-core.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check

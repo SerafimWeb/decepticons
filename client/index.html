@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cyber-Mech Protocol</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="hud">
+      <div id="crosshair"></div>
+      <div id="stats"></div>
+      <div id="mode"></div>
+      <div id="dash">
+        <span class="label">DASH</span>
+        <div class="bar"><div class="fill" id="dash-fill"></div></div>
+      </div>
+    </div>
+
+    <div id="overlay">
+      <h1>CYBER-MECH PROTOCOL</h1>
+      <p class="sub">VECTOR-09 // protótipo de combate</p>
+      <p class="cta" id="cta">[ carregando física... ]</p>
+      <ul>
+        <li><b>WASD</b> mover</li>
+        <li><b>Mouse</b> mirar</li>
+        <li><b>Clique esq.</b> plasma</li>
+        <li><b>Shift</b> dash</li>
+        <li><b>Espaço</b> pulo (duplo)</li>
+        <li><b>V</b> câmera (3ª / 1ª / tática)</li>
+        <li><b>Scroll</b> zoom</li>
+        <li><b>Esc</b> pausar</li>
+      </ul>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

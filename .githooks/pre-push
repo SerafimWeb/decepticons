@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Protocolo Serafim UM — [R15] smoke test obrigatório antes de qualquer push.
+# typecheck + build + budget (JS/Wasm gzip) + boot real no browser headless.
+echo "▶ pre-push [R15]: npm run check"
+if ! npm run check --silent; then
+  echo "❌ PUSH BLOQUEADO [R15]: npm run check falhou. Investigue antes de subir."
+  exit 1
+fi

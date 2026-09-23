@@ -1,0 +1,5 @@
+* text=auto
+# Hooks e scripts shell precisam de LF (CRLF quebra o shebang no bash).
+.githooks/* text eol=lf
+*.sh text eol=lf
+*.wasm binary

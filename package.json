@@ -1,0 +1,33 @@
+{
+  "name": "cyber-mech-protocol",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:dev": "node scripts/smoke.mjs --dev",
+    "check": "npm run typecheck && npm test && vite build && npm run smoke",
+    "prepare": "node scripts/install-hooks.mjs",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-simd": "0.20.0",
+    "@dimforge/rapier3d-simd-compat": "0.20.0",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "playwright-core": "^1.63.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "vite-plugin-wasm": "^3.6.0",
+    "vitest": "^5.0.1"
+  }
+}
