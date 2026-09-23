@@ -17,6 +17,7 @@ import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { PlayerController } from '../player/PlayerController';
 import { HUD } from '../ui/HUD';
 import { InputManager } from './InputManager';
+import { Quality } from './Quality';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
@@ -36,7 +37,9 @@ export class Game {
   private readonly composer: EffectComposer;
   private readonly scene = new THREE.Scene();
   private readonly camera: THREE.PerspectiveCamera;
+  private readonly bloomPass: UnrealBloomPass;
 
+  private readonly quality: Quality;
   private readonly input: InputManager;
   private readonly particles = new ParticleSystem();
   private readonly debris: DebrisSystem;
@@ -82,9 +85,8 @@ export class Game {
     );
     this.composer.setSize(window.innerWidth, window.innerHeight);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.composer.addPass(
-      new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.85, 0.5, 0.9),
-    );
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.85, 0.5, 0.9);
+    this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
     window.addEventListener('resize', () => this.onResize());
 
@@ -113,6 +115,11 @@ export class Game {
     this.wireEvents();
     this.hud.setMode(this.rig.mode);
     this.hud.setReady();
+
+    this.quality = new Quality(
+      (ratio) => this.renderer.setPixelRatio(ratio),
+      (enabled) => { this.bloomPass.enabled = enabled; }
+    );
   }
 
   start(): void {
@@ -211,6 +218,10 @@ export class Game {
 
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
     this.composer.render(dt);
+    
+    // Atualiza medidor de FPS depois do render
+    this.quality.update(dt);
+    
     this.input.endFrame();
   }
 
