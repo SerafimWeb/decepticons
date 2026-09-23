@@ -83,6 +83,12 @@
 - Custo explícito: dependência nova só com o custo em bundle ou CPU justificado; tick do servidor medido (meta: ≤ 2 ms para 8 Mechs).
 - Contorno de bug de biblioteca fica isolado, comentado com o diagnóstico e coberto por teste (ex.: `MechBase.unstickFromGround`).
 
+**[G15] Projeto autocontido (regra do dono).** Nada do projeto é salvo fora da pasta dele: nem em outra pasta, nem em outro drive, nem no temp do sistema.
+- Temporários (experimentos, snapshots, capturas, repositórios de teste, scripts descartáveis) vão só para `.tmp/` na raiz, que o git ignora.
+- Ferramenta que escreve no temp do sistema por padrão é apontada para `.tmp/` (ex.: `scripts/smoke.mjs` faz isso com o Playwright e o Chrome).
+- Conhecimento do projeto vai para `.decepticons/` ou `AGENTS.md`, nunca só para a memória de um agente.
+- Fora do nosso controle, e conhecido: caches globais de ferramentas (cache do npm, `~/.claude` do Claude Code, configuração do git/gh). Não são arquivos do projeto.
+
 ---
 
 ## PARTE III — COMANDOS

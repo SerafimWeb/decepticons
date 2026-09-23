@@ -14,6 +14,7 @@
 - Destroços só cosméticos; bugs de evicção de destroços e vazamento de geometria corrigidos
 - Game design v1 (`GAME_DESIGN.md`) + princípios G11–G14 (economia de dados, requisitos, resiliência, código)
 - Trabalho com dois agentes (Claude + Codex): `AGENTS.md` como instrução única, o `CLAUDE.md` importa ele, cópia do Protocolo Serafim UM dentro do repositório
+- G15, projeto autocontido: temporários só em `.tmp/`; o smoke não escreve mais no temp do Windows
 
 ## PENDENTE
 - [ ] **Jogar e confirmar** (R16): a corrida não engasga mais; conferir as 3 câmeras, rampa e barricadas

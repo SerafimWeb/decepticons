@@ -19,7 +19,7 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 2. `.decepticons/ESTADO_ATUAL.md`: onde parou, pendências, **divisão de trabalho entre agentes**
 3. `.decepticons/ROADMAP.md`: fases
 4. `.decepticons/GAME_DESIGN.md`: o jogo, as decisões de design e o plano de viralização
-5. `.decepticons/PROTOCOLO_UNIVERSAL.md`: regras e specs de engenharia (G1–G14)
+5. `.decepticons/PROTOCOLO_UNIVERSAL.md`: regras e specs de engenharia (G1–G15)
 6. Build, CI, hospedagem ou deploy? Leia `.decepticons/DEPLOY.md` antes. **Hoje não há deploy; não invente caminho nem host.**
 7. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
 
@@ -38,6 +38,7 @@ As specs completas estão em `PROTOCOLO_UNIVERSAL.md`; este é só o índice.
 - **G9:** importe sempre `@dimforge/rapier3d-simd-compat`; o `vite.config.ts` faz o alias para o browser. As duas versões do Rapier andam juntas.
 - **G11–G13:** metas de rede (≤ 8 KB/s de download por jogador, estado a 20 Hz), requisito mínimo = GPU integrada, servidor autoritativo com reconexão.
 - **G14:** uma simulação só (`shared/`); **toda regra de gameplay tem teste de simulação** (modelo: `client/src/entities/MechBase.test.ts`).
+- **G15 (regra do dono):** nada salvo fora da pasta do projeto. Temporários, experimentos, capturas e repositórios de teste vão só para `.tmp/` (ignorado pelo git), nunca para o temp do sistema, outra pasta ou outro drive.
 - **R2:** nada de secret em arquivo versionado. **R3:** nada de `_v2`, `_old`, `_bkp`.
 - **R13:** o que não funciona de ponta a ponta fica marcado como DEMO ou AUSENTE em `STATUS_REAL.md`.
 - **R17:** achou bug ou desalinhamento durante a tarefa? Corrija se for barato e seguro; senão, registre.
