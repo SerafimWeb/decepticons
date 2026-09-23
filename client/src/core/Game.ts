@@ -173,6 +173,13 @@ export class Game {
     };
     input.onWheel = (dy) => this.playing && rig.onWheel(dy);
     input.onKey = (code) => {
+      // ' abre o painel de desempenho detalhado. O jogo lê a posição física da tecla (e.code,
+      // com nomes do teclado americano): no ABNT2 o ' fica em 'Backquote'; no US e no
+      // US-Internacional, em 'Quote'. Aceitar as duas cobre os dois teclados.
+      if (code === 'Backquote' || code === 'Quote') {
+        this.debugPanel.toggleDetailed();
+        return;
+      }
       if (code === 'F1') {
         this.hud.toggleVisibility();
         return;
@@ -256,7 +263,7 @@ export class Game {
     
     // Atualiza medidor de FPS depois do render
     this.quality.update(dt);
-    this.debugPanel.update(dt, tickMs, this.renderer.info.render.calls);
+    this.debugPanel.update(dt, tickMs, this.renderer.info, this.quality.currentTier);
     
     this.input.endFrame();
   }

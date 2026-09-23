@@ -28,7 +28,18 @@ html, body {
   display: none;
 }
 
+/* Painel de desempenho. Compacto: texto cinza discreto no canto. Detalhado (tecla '): cartão de
+   terminal no design system Serafim (obsidiana, giz, acento azul, cores semânticas).
+   Sem webfont (IDENTITY) e sem backdrop-filter: desfocar o canvas custa GPU e distorceria o FPS medido. */
 #debug-panel {
+  --ds-panel: rgba(14, 16, 32, 0.92);
+  --ds-chalk: #e4e1da;
+  --ds-c2: #9e9a93;
+  --ds-blue: #60a5fa;
+  --ds-ok: #34d399;
+  --ds-warn: #fbbf24;
+  --ds-bad: #ef4444;
+  --ds-line: rgba(228, 225, 218, 0.09);
   position: absolute;
   bottom: 12px;
   right: 14px;
@@ -40,6 +51,27 @@ html, body {
   text-align: left;
   z-index: 1000;
 }
+#debug-panel.detailed {
+  padding: 10px 14px 12px;
+  background: var(--ds-panel);
+  border: 1px solid var(--ds-line);
+  border-radius: 10px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4);
+  color: var(--ds-c2);
+  font-family: 'JetBrains Mono', ui-monospace, Consolas, 'Courier New', monospace;
+  line-height: 1.6;
+}
+#debug-panel .dp-head {
+  margin-bottom: 6px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ds-blue);
+}
+#debug-panel.detailed .dp-fps { color: var(--ds-chalk); }
+#debug-panel.detailed[data-fps='ok'] .dp-fps { color: var(--ds-ok); }
+#debug-panel.detailed[data-fps='warn'] .dp-fps { color: var(--ds-warn); }
+#debug-panel.detailed[data-fps='bad'] .dp-fps { color: var(--ds-bad); }
 
 #crosshair {
   position: absolute;
