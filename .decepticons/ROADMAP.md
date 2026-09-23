@@ -2,41 +2,51 @@
 
 > Visão macro. O detalhe da semana fica em `ESTADO_ATUAL.md`; o estado real das features, em `STATUS_REAL.md`;
 > o porquê de cada fase, em `GAME_DESIGN.md`.
+> **Ordem decidida pelo dono em 2026-09-23:** combate → inimigos → multiplayer (ver histórico).
 
 ---
 
-## ✅ FASE 0 — Protótipo single-player (concluída em 2026-09-23)
+## ✅ FASE 0 — Fundação (concluída em 2026-09-23)
 - [x] Vector-09: movimento, pulo duplo, dash, canhão de plasma
 - [x] 3 câmeras (3ª, 1ª, tática)
 - [x] Arena com barricadas destrutíveis e destroços (só cosméticos)
 - [x] Loop de 60 Hz fixo com render interpolado
 - [x] Protocolo Serafim UM: memória, hooks, smoke, budget, CI, Vitest
-- [x] Game design v1 + princípios G11–G14
+- [x] Game design v1 + princípios G11–G15
 - [x] Engasgo da corrida corrigido com teste
+- [x] (Gemini) Qualidade adaptativa (G12), painel de debug, HUD que some com F1
 
-## 🟢 FASE 1 — Multiplayer autoritativo (atual)
-- [ ] Separar `MechBase` em simulação (sem render) e visual (rig, animação, interpolação)
-- [ ] Criar `shared/` com a simulação, `MechInput` e o validador de input (G7); `tsconfig` cobrindo `client/`, `shared/`, `server/`
-- [ ] `server/` com Colyseus: `ArenaRoom` para 8, simulação a 60 Hz, estado a 20 Hz com delta (G11)
+## 🟢 FASE 1 — Combate (atual)
+- [ ] Dano por parte: a parte sai da altura e do lado do impacto na cápsula (sem colisor extra); dano em parte destruída vai para o torso
+- [ ] Projéteis acertam Mechs; o tiro atravessa destroços (só cosméticos)
+- [ ] Efeitos: perna = lento, duas pernas = imóvel, braço direito = sem plasma, braço esquerdo = sem foguete, torso = morte
+- [ ] Morte com explosão (a carcaça vira destroço) e respawn
+- [ ] Alvos de treino (Mechs parados) para testar o combate antes dos bots
+- [ ] Feedback: marcador de acerto, parte destruída anunciada, flash de dano, peça arrancada vira destroço
+- [ ] Arma secundária: foguetes no braço esquerdo (botão direito), dano em área
+- [ ] Testes de simulação para cada regra de dano (G14)
+
+## 🟡 FASE 2 — Inimigos (bots)
+- [ ] `BotController`: gera o mesmo `MechInput` que o jogador (patrulha, persegue, atira, recua)
+- [ ] Visão por raycast, erro de mira e tempo de reação por dificuldade, RNG com semente (G2)
+- [ ] HUD do próprio Mech (6 partes) e Blind Mode (cabeça destruída)
+- [ ] Rodada de 5 min com placar e reinício automático
+
+## 🟠 FASE 3 — Multiplayer autoritativo
+- [ ] Separar `MechBase` em simulação (sem render) e visual; `shared/` com simulação, `MechInput` e validador (G7)
+- [ ] `server/` com Colyseus: `ArenaRoom` para 8, simulação a 60 Hz, estado a 20 Hz com delta (G11); bots completam salas
 - [ ] Cliente: prediction + reconciliação do Mech local; Mechs remotos interpolam
-- [ ] Entrada pelo link com código da sala + apelido (sem lobby)
-- [ ] Reconexão automática e aviso "reconectando…" (G13)
-- [ ] Decidir se o tiro atravessa destroços (o servidor não terá destroços)
+- [ ] Entrada pelo link com código da sala + apelido; reconexão automática (G13)
 - [ ] Medir banda por sala e tick do servidor contra as metas do G11 e do G14
 - [ ] Prova R16: 2+ clientes reais com latência simulada; playtest pelo PC de casa + Cloudflare Tunnel
 
-## 🟡 FASE 2 — Combate (o diferencial)
-- [ ] Hitbox por parte e dano modular (perna = lento, cabeça = cego, braço = sem arma)
-- [ ] Morte, respawn rápido, rodada de 5 min com placar e reinício automático
-- [ ] Qualidade adaptativa (G12) e painel de debug leve (tick, banda, draw calls)
-
-## 🟠 FASE 3 — Lançamento e viralização
-- [ ] Modo streamer: sala de código fixo, câmera de espectador, HUD que some com uma tecla
+## 🔵 FASE 4 — Lançamento e viralização
+- [ ] Modo streamer: sala de código fixo, câmera de espectador
 - [ ] Deploy: cliente na Hostinger (ou no portal) + servidor na Oracle Always Free São Paulo (ver `DEPLOY.md`)
 - [ ] SDK do portal (CrazyGames/Poki), anúncio só entre rodadas
 - [ ] Métrica: D1 e rodadas por sessão
 
-## 🔴 FASE 4 — Monetização e conteúdo
+## 🔴 FASE 5 — Monetização e conteúdo
 - [ ] Contas + cosméticos (nunca atributo de combate) + pagamento + LGPD
 - [ ] Colossus-01 (demolição no dash) e Ferret-X (gancho + sucata)
 - [ ] Mais arenas, áudio, passe de temporada (se houver tração)

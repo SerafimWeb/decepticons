@@ -28,6 +28,16 @@ if [ -n "$SECRET_FILES" ]; then
   exit 1
 fi
 
+# [G15/R3] Temporários, build e dependências nunca entram no git, mesmo que o .gitignore
+# do branch esteja desatualizado (em 23/09 um branch antigo commitou cache de .tmp/).
+JUNK_FILES=$(git diff --cached --name-only --diff-filter=ACR | grep -E '^(\.tmp|dist|node_modules)/')
+if [ -n "$JUNK_FILES" ]; then
+  echo "❌ PROTOCOLO VIOLADO [G15]: arquivos temporários/gerados no stage:"
+  echo "$JUNK_FILES" | head -5 | sed 's/^/   /'
+  echo "   Tire do stage com: git rm -r --cached .tmp/ dist/ node_modules/"
+  exit 1
+fi
+
 # [Skill 19] Formatos de chave conhecidos nas linhas adicionadas.
 if git diff --cached -U0 --diff-filter=ACM | grep -E '^\+[^+]' \
   | grep -Eq 'sk_live_[0-9A-Za-z]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|AKIA[0-9A-Z]{16}|eyJ[A-Za-z0-9_-]{20,}\.eyJ[A-Za-z0-9_-]{20,}\.'; then
