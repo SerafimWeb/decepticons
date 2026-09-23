@@ -50,7 +50,11 @@ export class PhysicsWorld {
     this.world.removeCollider(collider, true);
   }
 
-  /** Raycast contra todo o mundo. `dir` precisa estar normalizado. */
+  /**
+   * Raycast de jogo (tiro, mira, câmera). `dir` precisa estar normalizado.
+   * Ignora corpos dinâmicos: destroços são só cosméticos e nunca bloqueiam tiro nem mira
+   * (o servidor nem terá destroços).
+   */
   raycast(
     origin: THREE.Vector3,
     dir: THREE.Vector3,
@@ -63,7 +67,14 @@ export class PhysicsWorld {
     this.rayDir.x = dir.x;
     this.rayDir.y = dir.y;
     this.rayDir.z = dir.z;
-    const hit = this.world.castRayAndGetNormal(this.ray, maxDist, true, undefined, undefined, exclude);
+    const hit = this.world.castRayAndGetNormal(
+      this.ray,
+      maxDist,
+      true,
+      RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC,
+      undefined,
+      exclude,
+    );
     if (!hit) return null;
     return {
       point: origin.clone().addScaledVector(dir, hit.timeOfImpact),

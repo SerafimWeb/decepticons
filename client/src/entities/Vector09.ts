@@ -30,12 +30,13 @@ export const VECTOR09_STATS: MechStats = {
 };
 
 const HIP = 2.5;
+const DEFAULT_PAINT = 0xd94a1a;
 
-function buildRig(): MechRig {
+function buildRig(paint: number): MechRig {
   const M = {
     armor: new THREE.MeshStandardMaterial({ color: 0x5a606c, metalness: 0.6, roughness: 0.35 }),
     frame: new THREE.MeshStandardMaterial({ color: 0x1f222a, metalness: 0.7, roughness: 0.5 }),
-    paint: new THREE.MeshStandardMaterial({ color: 0xd94a1a, metalness: 0.35, roughness: 0.45 }),
+    paint: new THREE.MeshStandardMaterial({ color: paint, metalness: 0.35, roughness: 0.45 }),
     visor: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x00e5ff, emissiveIntensity: 4 }),
     thruster: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff6a00, emissiveIntensity: 2 }),
   };
@@ -106,12 +107,18 @@ function buildRig(): MechRig {
     muzzle,
     thrusters,
     thrusterMaterial: M.thruster,
+    hullMaterials: [M.armor, M.paint],
     hipHeight: HIP,
   };
 }
 
+export interface Vector09Options {
+  /** Cor da pintura (ex.: alvos e inimigos com cor diferente do jogador). */
+  paint?: number;
+}
+
 export class Vector09 extends MechBase {
-  constructor() {
-    super(VECTOR09_STATS, buildRig());
+  constructor(options: Vector09Options = {}) {
+    super(VECTOR09_STATS, buildRig(options.paint ?? DEFAULT_PAINT));
   }
 }

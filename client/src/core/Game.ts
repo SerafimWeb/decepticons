@@ -6,7 +6,9 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { CameraRig } from '../camera/CameraRig';
+import { CombatSystem } from '../combat/CombatSystem';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
+import { TrainingTargets } from '../combat/TrainingTargets';
 import { Vector09 } from '../entities/Vector09';
 import type { MechBase } from '../entities/MechBase';
 import { Arena } from '../environment/Arena';
@@ -46,6 +48,8 @@ export class Game {
   private readonly debris: DebrisSystem;
   private readonly destructibles: Destructibles;
   private readonly projectiles: ProjectileSystem;
+  private readonly combat: CombatSystem;
+  private readonly targets: TrainingTargets;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
   private readonly player: PlayerController;
@@ -106,6 +110,11 @@ export class Game {
     this.mech.spawn(physics, new THREE.Vector3(0, 0, 25));
     this.scene.add(this.mech.root);
 
+    // --- Combate ---
+    this.combat = new CombatSystem(this.destructibles, this.debris, this.particles);
+    this.combat.register(this.mech);
+    this.targets = new TrainingTargets(this.scene, physics, this.combat, this.mech.position);
+
     // --- Jogador ---
     this.input = new InputManager(this.renderer.domElement);
     this.rig = new CameraRig({
@@ -146,7 +155,12 @@ export class Game {
       this.particles.burst(mech.position, UP, { count: 30, color: DUST_COLOR, speed: 12, life: 0.7, spread: 2.5, gravity: 4 });
     };
     mech.onDashImpact = (collider, dir) => this.destructibles.demolish(collider, dir);
-    this.projectiles.onHit = (hit, dir, damage) => this.destructibles.damage(hit.collider, damage, dir);
+    this.projectiles.onHit = (hit, dir, damage) => this.combat.onProjectileHit(hit, dir, damage);
+    this.combat.onMechHit = (e) => this.hud.showHit(e.result);
+    this.combat.onMechKilled = (_mech, at) => {
+      const falloff = 1 - at.distanceTo(mech.position) / 70;
+      if (falloff > 0) rig.addShake(0.7 * falloff);
+    };
     this.destructibles.onBreak = (center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
       if (falloff > 0) rig.addShake(0.55 * falloff);
@@ -211,6 +225,7 @@ export class Game {
     const t0 = performance.now();
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
       this.player.fixedUpdate(FIXED_DT);
+      this.targets.fixedUpdate(FIXED_DT);
       this.projectiles.fixedUpdate(FIXED_DT);
       this.physics.step();
       this.accumulator -= FIXED_DT;
@@ -222,6 +237,7 @@ export class Game {
 
     // --- Render ---
     this.mech.render(dt, alpha);
+    this.targets.render(dt, alpha);
     this.rig.update(dt);
     this.projectiles.render(alpha);
     this.debris.sync();

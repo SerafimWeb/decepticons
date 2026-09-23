@@ -11,10 +11,12 @@
 - Trabalho com vários agentes (Claude, Codex, Gemini): `AGENTS.md` único; `CLAUDE.md` e `GEMINI.md` importam ele
 - (Gemini) Qualidade adaptativa (G12), painel de debug e HUD que some com F1. O Claude reaplicou o trabalho na base certa, sem os temporários, e corrigiu 3 bugs da revisão: degrau de qualidade sem efeito, DRAWS mostrando 1, F1 abrindo a Ajuda do navegador
 - Brechas do protocolo fechadas: regra de base do branch, assinatura com o nome real do agente, hook barrando `.tmp/`, `dist/` e `node_modules/`
+- **Combate v1:** dano por parte, alvos de treino, morte com explosão e respawn, marcador de acerto, tiro atravessando destroços. 24 testes; o dono jogou e aprovou
 
 ## PENDENTE
 - [ ] **Jogar e confirmar** (R16): corrida lisa, as 3 câmeras, F1 esconde o HUD sem abrir a Ajuda do navegador
-- [ ] Fase 1 — Combate (itens no `ROADMAP.md`)
+- [ ] Fase 1 — Combate: falta a arma secundária (foguetes) e otimizar os draw calls por Mech
+- [ ] Fase 2 — Inimigos: pedido do dono para começar agora
 
 ## DIVISÃO DE TRABALHO ENTRE AGENTES
 Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a partir da `main` atualizada, PR com CI verde, revisão cruzada.
@@ -36,4 +38,4 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Fase 1 — Combate: modelo de dano por parte (puro e testado), projéteis acertando Mechs e alvos de treino na arena.
+Fase 2 — Inimigos: `BotController` gerando `MechInput` (patrulha, persegue, atira, recua), com os alvos de treino virando bots.

@@ -4,6 +4,15 @@
 
 ---
 
+## [2026-09-23] Combate v1: dano por parte, alvos de treino, morte e respawn; o tiro atravessa destroços
+**Decisão:** o dano por parte sai do ponto do impacto na cápsula que já existe (altura e lado no referencial do Mech), sem colisor por parte. Custo de física zero.
+- Dano em parte destruída vai para o torso; torso zerado = morte.
+- A regra fica em `combat/damage.ts` (pura, pronta para `shared/`); o `CombatSystem` só roteia o impacto e cuida dos efeitos de mundo.
+**Tiro × destroços (estava em aberto):** todo raycast de jogo (tiro, mira, câmera) ignora corpos dinâmicos. É a opção mais simples, coerente com "destroços são só cosméticos" (regra do dono), e o servidor não terá destroços. Perdeu-se o empurrão do tiro nos destroços; os foguetes vão devolver isso com a explosão.
+**Garantia:** 24 testes. Duas mutações (ignorar a rotação do alvo; deixar o raycast ver destroços) foram pegas pelos testes certos. O playtest automatizado no navegador viu "PERNA ESQ DESTRUÍDA → ALVO ABATIDO", e o dono jogou.
+**Custo conhecido:** cada Mech custa ~34 draw calls; os 3 alvos somam ~100. Otimizar antes do multiplayer.
+**Quem decidiu:** Claude (implementação), dentro da fase autorizada pelo dono.
+
 ## [2026-09-23] Nova ordem: combate → inimigos → multiplayer; merge autorizado ao Claude nesta fase
 **Decisão (dono):** o roadmap passa a ser Fase 1 Combate, Fase 2 Inimigos (bots), Fase 3 Multiplayer, Fase 4 Lançamento, Fase 5 Monetização.
 **Motivo:** o jogo fica divertido sozinho antes do servidor; dá para fazer live contra bots; o diferencial (dano por parte) é validado cedo; os bots geram o mesmo `MechInput` do jogador, então o servidor vai reaproveitá-los para completar salas. Nada é jogado fora.
