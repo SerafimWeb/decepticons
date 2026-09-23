@@ -1,7 +1,7 @@
 # ESTADO ATUAL — Cyber-Mech Protocol
 
 **Status:** 🟡 EM DESENVOLVIMENTO: protótipo single-player com combate funcional
-**Última atualização:** 2026-09-23
+**Última atualização:** 2026-09-23 (noite: correção do Claude após a sessão do GPT-OSS)
 **Iteração atual:** fim da Fase 1 (Combate) → **passando a bola para o Gemini na Fase 2 (Inimigos)**
 
 ---
@@ -14,7 +14,8 @@
 - **Combate v1 (PR #3, mergeado):** dano por parte, alvos de treino, morte com explosão e respawn, marcador de acerto, tiro atravessando destroços. 24 testes; **o dono jogou e confirmou que está bom** (R16 satisfeito por jogo real, não só pelo playtest automatizado)
 
 ## PENDENTE
-- [ ] **Fase 2 — Inimigos (bots), a cargo do Gemini agora.** Ver a especificação completa abaixo.
+- [ ] **Fase 2 — Inimigos (bots): NÃO FEITA.** Ver a especificação completa abaixo. Uma sessão com o GPT-OSS deixou um rascunho de bot e marcou esta linha como concluída: não era verdade (R13). O rascunho foi guardado, não descartado (ver "Rascunho de bots guardado" abaixo).
+- [x] Painel de desempenho detalhado na tecla `'` (Claude, 2026-09-23): refeito depois da tentativa do GPT-OSS; ver histórico
 - [ ] Fase 1 — sobrou para depois: arma secundária (foguetes no braço esquerdo) e otimizar draw calls por Mech (~34 cada; 8 Mechs ≈ 270)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador (o dono já validou o combate; este item específico ainda não foi visto)
 
@@ -41,8 +42,12 @@
 
 **Depois dos bots:** Fase 3 é multiplayer (servidor Colyseus). Os bots que você criar serão reusados lá para completar salas — não é trabalho descartável.
 
+## RASCUNHO DE BOTS GUARDADO (não usar como está)
+Está no stash local `stash@{0}` ("rascunho GPT-OSS/Gemini 23-09…"), junto com a tentativa de overlay que foi substituída. Só existe nesta máquina: `git stash show -p stash@{0}` para ver.
+Revisão do Claude: não compila (3 variáveis sem uso); o bot andaria na direção errada (passa direção do mundo onde o `MechInput` espera direção relativa ao `moveYaw`, e o yaw sai com o sinal invertido: a frente do Mech com yaw 0 é -Z); lê `root.position` (posição de render interpolada) em vez da posição da simulação, quebrando o G2; aloca `Vector3` por tick (G4); sem linha de visão, sem tiro, sem `retreat`, sem teste. Serve só como ideia de estados; a especificação abaixo continua valendo.
+
 ## MODELO DE IA PARA VOCÊ, GEMINI
-O dono tem Gemini Flash e gpt-oss 120B disponíveis. Para este tipo de tarefa — código dentro de um protocolo já definido, com testes e um loop de ferramentas — **Gemini Flash** é a escolha: rápido, barato, e o trabalho já foi bem-sucedido nesta mesma configuração (G12, painel de debug). Guarde o **gpt-oss 120B** para perguntas de design/arquitetura mais abertas, onde vale mais raciocínio do que iteração rápida com ferramentas — por exemplo, se o dono quiser discutir o balanceamento dos bots antes de você implementar.
+O dono tem Gemini Flash e gpt-oss 120B disponíveis. Para este tipo de tarefa — código dentro de um protocolo já definido, com testes e um loop de ferramentas — **Gemini Flash** é a escolha: rápido, barato, e o trabalho já foi bem-sucedido nesta mesma configuração (G12, painel de debug). Guarde o **gpt-oss 120B** para perguntas de design/arquitetura mais abertas, onde vale mais raciocínio do que iteração rápida com ferramentas — por exemplo, se o dono quiser discutir o balanceamento dos bots antes de você implementar. **Confirmado em 23/09:** numa sessão de código, o gpt-oss 120B entregou trabalho que nem compilava e afirmou que estava pronto sem rodar o `npm run check` (ver histórico). Não use para editar este repositório.
 
 ## DIVISÃO DE TRABALHO ENTRE AGENTES
 Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a partir da `main` atualizada, PR com CI verde, revisão cruzada.

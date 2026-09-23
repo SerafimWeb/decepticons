@@ -52,7 +52,7 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex 
 3. **Base do branch: sempre a `main` atualizada.** `git fetch origin && git switch -c <agente>/<tarefa> origin/main`. Precisa de algo que está num PR aberto? Peça o merge ao dono antes; não parta do branch de outro agente. (Em 23/09 um branch saiu da base errada e levou temporários para o commit.)
 4. **Território:** cada agente mexe só nos arquivos da tarefa dele (divisão atual no `ESTADO_ATUAL.md`). Precisa mudar algo fora? Faça num PR pequeno separado, ou deixe registrado como pendência.
 5. **Contrato antes de paralelizar:** interfaces que vários usam (`MechInput`, schema de estado, mensagens de rede) são definidas e mergeadas primeiro; depois cada um trabalha contra elas.
-6. **O CI decide:** PR só entra com `npm run check` verde. Teste de simulação é o árbitro técnico entre os agentes (G14).
+6. **O CI decide:** PR só entra com `npm run check` verde. Teste de simulação é o árbitro técnico entre os agentes (G14). **Nunca diga que algo está pronto sem rodar o `npm run check`:** o `npm run dev` aceita código que o build rejeita (em 23/09 um CSS quebrado rodava no dev, apagava a mira e não compilava no build).
 7. **Revisão cruzada:** o PR de um agente é revisado por outro (evita a IA aprovando o próprio código). O merge é do dono, ou de quem ele autorizar (registrado no `ESTADO_ATUAL.md`).
 8. **Assine com o seu nome real** no histórico, no estado e no branch, mesmo que você não esteja listado aqui.
 9. **Passagem de bastão:** ao terminar, atualize `ESTADO_ATUAL.md` (o que foi feito, o que ficou, "próxima sessão começa com") e registre decisões no topo do `HISTORICO_DE_DECISOES.md`.
@@ -72,7 +72,7 @@ client/src/
   combat/      ProjectileSystem.ts
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde)
-  debug/       DebugPanel.ts (FPS, tempo de tick, draw calls)
+  debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)
 scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), install-hooks.mjs
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
 .github/       workflows/ci.yml (npm run check a cada push/PR)

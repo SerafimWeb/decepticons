@@ -102,6 +102,29 @@ try {
   const panel = await page.evaluate(() => document.getElementById('debug-panel')?.textContent ?? '');
   const draws = Number(/DRAWS\s+(\d+)/.exec(panel)?.[1] ?? 0);
   if (draws < 10) fail(`painel de debug mostra ${draws} draw calls por frame (esperado dezenas)`);
+  // CSS quebrado derruba regras inteiras em silêncio (em 23/09 um bloco sem seletor apagou a mira).
+  const crosshair = await page.evaluate(() => getComputedStyle(document.getElementById('crosshair')).position);
+  if (crosshair !== 'absolute') fail(`mira sem estilo (position=${crosshair}): CSS quebrado em styles.css`);
+  // ' abre o painel detalhado nos dois teclados (ABNT2 = Backquote, US = Quote) e fecha de novo.
+  // Espera o texto em vez de um tempo fixo: em headless os primeiros frames são lentos.
+  const panelDetailed = (want) =>
+    page
+      .waitForFunction(
+        (want) => {
+          const p = document.getElementById('debug-panel');
+          const open = !!p?.classList.contains('detailed') && !!p.textContent?.includes('QUAL');
+          return want ? open : !p?.classList.contains('detailed');
+        },
+        want,
+        { timeout: 10_000 },
+      )
+      .then(() => true, () => false);
+  for (const code of ['Backquote', 'Quote']) {
+    await page.keyboard.press(code);
+    if (!(await panelDetailed(true))) fail(`tecla ${code} não abriu o painel de desempenho detalhado`);
+    await page.keyboard.press(code);
+    if (!(await panelDetailed(false))) fail(`tecla ${code} não fechou o painel de desempenho detalhado`);
+  }
   const hasCanvas = await page.evaluate(() => !!document.querySelector('#app canvas'));
   console.log(`boot    ${bootMs} ms até "clique para jogar" (${DEV ? 'dev server' : 'build'}, headless/SwiftShader)`);
   if (!hasCanvas) fail('canvas WebGL não foi criado');

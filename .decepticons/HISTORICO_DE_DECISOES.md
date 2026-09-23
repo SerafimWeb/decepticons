@@ -4,6 +4,20 @@
 
 ---
 
+## [2026-09-23] Tentativa do GPT-OSS (overlay de desempenho + rascunho de bots) substituída pelo Claude
+**O que aconteceu:** o dono pediu ao gpt-oss 120B um overlay de desempenho na tecla `'`. O resultado, não commitado, no branch `gemini/inimigos-bots`:
+- **Quebrou a mira:** um bloco de CSS sem seletor em `styles.css` fez o navegador descartar a regra seguinte inteira (`#crosshair`). Confirmado no navegador: position static, largura de 1280 px. O build de produção nem compilava (`lightningcss`).
+- **A tecla não funcionava no teclado do dono:** o jogo lê `e.code` (posição física). No ABNT2 o `'` é `Backquote`; o GPT-OSS trocou para `Quote`, que no ABNT2 é a tecla `~`.
+- Duas métricas saíam `undefined` (não existem no three r186); overlay em tela cheia com blur (custo de GPU que distorce o próprio FPS medido); `innerHTML` a cada frame; webfont Inter do Google (contra o IDENTITY, e não é do design system Serafim, embora dissesse que era).
+- Marcou a Fase 2 como feita no `ESTADO_ATUAL` sem estar (R13). Nunca rodou o `npm run check`.
+**Decisão (Claude):** tudo guardado no `stash@{0}`, sem perda. O overlay foi refeito como modo detalhado do `DebugPanel` que já existia, em vez de um segundo módulo que mostrava as mesmas métricas:
+- tecla `Backquote` ou `Quote` (cobre ABNT2 e US), com `preventDefault` no `Quote` por causa da busca rápida do Firefox;
+- métricas reais do `renderer.info`, texto 5×/s, sem blur;
+- tokens do design system Serafim no escopo do painel, sem webfont.
+**Garantia:** o smoke agora testa as duas teclas (abrir e fechar) e se a mira tem estilo. Com o bug do GPT-OSS reinserido, o smoke reprovou "tecla Backquote não abriu"; o CSS dele já é reprovado pelo build.
+**Regra reforçada no AGENTS.md:** nunca dizer que está pronto sem `npm run check`, porque o `npm run dev` aceita código que o build rejeita.
+**Quem decidiu:** Claude, a pedido do dono ("tentei mexer pelo GPT-OSS mas acho que ele deu uma cagada").
+
 ## [2026-09-23] Combate v1 mergeado (PR #3); dono jogou e confirmou; bastão passa ao Gemini para a Fase 2
 **Fato:** o dono jogou a build com o combate (não só o playtest automatizado) e confirmou que está bom ("tô jogando e tá bem legal"). R16 satisfeito por prova real do jogador, o padrão mais forte que o Protocolo pede.
 **Decisão:** o dono pediu explicitamente para o Gemini fazer a Fase 2 (bots/inimigos) agora. O Claude encerra a sessão aqui em vez de começar essa fase, para não deixar trabalho pela metade entre duas sessões de agentes diferentes — a especificação completa da tarefa foi escrita em "PASSAGEM DE BASTÃO" no `ESTADO_ATUAL.md`, para o Gemini não precisar reconstruir contexto.
