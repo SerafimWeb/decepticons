@@ -4,6 +4,12 @@
 
 ---
 
+## [2026-09-23] Combate v1 mergeado (PR #3); dono jogou e confirmou; bastão passa ao Gemini para a Fase 2
+**Fato:** o dono jogou a build com o combate (não só o playtest automatizado) e confirmou que está bom ("tô jogando e tá bem legal"). R16 satisfeito por prova real do jogador, o padrão mais forte que o Protocolo pede.
+**Decisão:** o dono pediu explicitamente para o Gemini fazer a Fase 2 (bots/inimigos) agora. O Claude encerra a sessão aqui em vez de começar essa fase, para não deixar trabalho pela metade entre duas sessões de agentes diferentes — a especificação completa da tarefa foi escrita em "PASSAGEM DE BASTÃO" no `ESTADO_ATUAL.md`, para o Gemini não precisar reconstruir contexto.
+**Modelo recomendado ao Gemini:** Gemini Flash para a implementação (código + testes + loop de ferramentas, igual ao que já funcionou em G12/painel de debug); gpt-oss 120B reservado para discussão de design mais aberta, se o dono quiser antes de implementar.
+**Quem decidiu:** dono (pedido de handoff); Claude (registro e especificação da tarefa).
+
 ## [2026-09-23] Combate v1: dano por parte, alvos de treino, morte e respawn; o tiro atravessa destroços
 **Decisão:** o dano por parte sai do ponto do impacto na cápsula que já existe (altura e lado no referencial do Mech), sem colisor por parte. Custo de física zero.
 - Dano em parte destruída vai para o torso; torso zerado = morte.
