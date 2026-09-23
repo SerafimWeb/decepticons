@@ -71,6 +71,9 @@ export class Game {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
+    // O composer chama render() várias vezes por frame; com autoReset o info.render só
+    // guardaria a última passada. Zeramos à mão no início do frame (ver frame()).
+    this.renderer.info.autoReset = false;
     container.appendChild(this.renderer.domElement);
 
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 800);
@@ -119,8 +122,15 @@ export class Game {
     this.hud.setReady();
 
     this.quality = new Quality(
-      (ratio) => this.renderer.setPixelRatio(ratio),
-      (enabled) => { this.bloomPass.enabled = enabled; }
+      (ratio) => {
+        // O composer guarda o próprio pixelRatio (dos render targets): sem isto a cena
+        // continuaria sendo renderizada na resolução antiga e o degrau não economizaria nada.
+        this.renderer.setPixelRatio(ratio);
+        this.composer.setPixelRatio(ratio);
+      },
+      (enabled) => {
+        this.bloomPass.enabled = enabled;
+      },
     );
   }
 
@@ -225,6 +235,7 @@ export class Game {
     this.particles.update(dt);
 
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
+    this.renderer.info.reset();
     this.composer.render(dt);
     
     // Atualiza medidor de FPS depois do render

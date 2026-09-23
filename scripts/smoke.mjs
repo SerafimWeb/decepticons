@@ -97,6 +97,11 @@ try {
   await page.waitForFunction(() => document.getElementById('debug-panel')?.textContent?.includes('FPS'), null, {
     timeout: 10_000,
   });
+  // A arena desenha dezenas de objetos: um total baixo significa contagem errada
+  // (ex.: renderer.info zerado a cada passada do pós-processamento).
+  const panel = await page.evaluate(() => document.getElementById('debug-panel')?.textContent ?? '');
+  const draws = Number(/DRAWS\s+(\d+)/.exec(panel)?.[1] ?? 0);
+  if (draws < 10) fail(`painel de debug mostra ${draws} draw calls por frame (esperado dezenas)`);
   const hasCanvas = await page.evaluate(() => !!document.querySelector('#app canvas'));
   console.log(`boot    ${bootMs} ms até "clique para jogar" (${DEV ? 'dev server' : 'build'}, headless/SwiftShader)`);
   if (!hasCanvas) fail('canvas WebGL não foi criado');
