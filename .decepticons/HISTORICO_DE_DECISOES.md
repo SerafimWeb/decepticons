@@ -4,6 +4,11 @@
 
 ---
 
+## [2026-09-23] Conta do GitHub renomeada: Remoratrader → SerafimWeb
+**Fato:** ao abrir o primeiro PR, o GitHub devolveu `SerafimWeb/decepticons`. O token do `gh` autentica como `SerafimWeb` (usuário, não organização): a conta foi renomeada. O `gh auth status` ainda mostrava o nome antigo, guardado no login.
+**Feito:** `origin` → `https://github.com/SerafimWeb/decepticons.git`; `AGENTS.md`, `IDENTITY.md` e `ESTADO_ATUAL.md` atualizados. A entrada "Repositório: mesma conta GitHub do serafim13" continua válida: mesma conta, nome novo.
+**Por que importa:** o GitHub redireciona o nome antigo só enquanto ninguém registrar "Remoratrader". O remote do serafim13 ainda usa o nome antigo; fica sinalizado para uma sessão daquele projeto (R17: não editar outro repositório daqui).
+
 ## [2026-09-23] Projeto autocontido: nada fora da pasta do projeto (G15)
 **Decisão (regra do dono):** temporários e qualquer outro arquivo do projeto ficam só dentro da pasta do projeto. Nada no temp do sistema, em outras pastas ou em outro drive.
 **Aplicado:**

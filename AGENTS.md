@@ -10,7 +10,7 @@ Todo agente trabalha sob o **Protocolo Serafim UM v4.2**: memória persistente, 
 e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 - Regras gerais: `.decepticons/PROTOCOLO_SERAFIM_UM.md`, **cópia de referência, não editar**. A canônica fica em
   `D:\SERAFIMHUB\serafim13\protocolo-serafim-um\`; quando a versão mudar, a cópia é substituída inteira.
-- Como cada regra se aplica aqui, e as specs do jogo (G1–G14): `.decepticons/PROTOCOLO_UNIVERSAL.md`.
+- Como cada regra se aplica aqui, e as specs do jogo (G1–G15): `.decepticons/PROTOCOLO_UNIVERSAL.md`.
 - Os hooks aplicam parte do protocolo sozinhos: sem `ESTADO_ATUAL.md` atualizado não há commit (M5); secret no diff bloqueia (R2); push roda o check (R15).
 
 ## PASSO ZERO — ANTES DE QUALQUER AÇÃO
@@ -69,12 +69,13 @@ client/src/
   combat/      ProjectileSystem.ts
   fx/          ParticleSystem.ts
   ui/          HUD.ts
-scripts/       smoke.mjs (budget + boot headless), install-hooks.mjs
+scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), install-hooks.mjs
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
 .github/       workflows/ci.yml (npm run check a cada push/PR)
+.tmp/          temporários do projeto (ignorado pelo git; G15)
 ```
 
-Repositório: `github.com/Remoratrader/decepticons` (privado), branch `main`.
+Repositório: `github.com/SerafimWeb/decepticons` (privado), branch `main`.
 
 ## COMANDOS
 
