@@ -16,6 +16,7 @@
   - Notebook com tela de toque continua no mouse: o modo é o jeito que o jogador entrou.
   - O `npm run check` joga num celular emulado.
 - **Site:** "Dan" no lugar de "diretor"; sem "feito em público" (pedido do dono)
+- **Kill feed e indicador de direção do dano (Gemini, integrados pelo Claude):** o branch não tinha PR. Na revisão, o indicador errava o lado com a câmera virada (o teste supunha o yaw ao contrário do jogo); corrigido, com teste que usa a frente e a direita do jogo. O kill feed saiu de cima do rótulo da câmera e do botão de pausa do toque
 - **Site em duas páginas (Claude, pedido do dono: "virar um case de desenvolvimento do game"):**
   - `/cybermech/` é a landing do jogo: capa, galeria, o que tem no jogo (seção VITRINE do `GAME_DESIGN`), ficha do Vector-09, controles, sem pay-to-win, o que está sendo construído.
   - `/cybermech/bastidores/` é o case: equipe (entregas e linhas por agente, das etiquetas dos PRs), como um pedido vira jogo, Protocolo Serafim UM, evolução (testes e linhas por merge, lidos do git), mapa da campanha, frentes, diário de decisões e entregas.
@@ -31,7 +32,6 @@
 
 ## PENDENTE
 - [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
-- [ ] **Gemini:** o kill feed está no branch `gemini/killfeed-dano` sem PR; abrir o PR (regra 13) depois de juntar a `main`
 - [ ] **Dono:** jogar no celular (deitado) e dizer se os controles de toque estão bons; no PC, testar configurações, calibração e som
 - [ ] Fase 3: foguetes (arma secundária), draw calls por Mech (~34 cada), volume e mixagem nas configurações
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
@@ -50,7 +50,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Site no ar (landing + bastidores). Próximo, a escolher pelo dono: foguetes, draw calls ou volume/mixagem |
-| **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Kill feed (branch sem PR); celular (PR #17) e som no ar |
+| **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Kill feed, indicador de dano, celular (refeito pelo Claude) e som no ar. Próxima tarefa a combinar com o dono |
 | **Codex** | a combinar | Ao voltar: revisão cruzada dos PRs mergeados desde o #12 |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
 
