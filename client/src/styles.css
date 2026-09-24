@@ -580,3 +580,73 @@ html, body {
   justify-content: flex-end;
 }
 
+/* --- Kill Feed --- */
+#kill-feed {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.kill-feed-item {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: #bbb;
+  background: rgba(6, 3, 13, 0.75);
+  padding: 3px 8px;
+  border-left: 2px solid #555;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+}
+
+.kill-feed-item.highlight {
+  color: var(--cyan);
+  border-left-color: var(--cyan);
+  text-shadow: 0 0 6px var(--cyan);
+}
+
+.kill-feed-item.hidden {
+  display: none;
+}
+
+/* --- Indicador de Direção de Dano --- */
+#damage-indicator {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 140px;
+  height: 140px;
+  transform: translate(-50%, -50%) rotate(0deg);
+  pointer-events: none;
+  opacity: 0;
+}
+
+#damage-indicator::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 12px;
+  border-radius: 50% 50% 0 0;
+  background: radial-gradient(ellipse at bottom, rgba(255, 30, 60, 0.95) 0%, transparent 75%);
+  filter: drop-shadow(0 0 6px rgba(255, 30, 60, 0.8));
+}
+
+#damage-indicator.active {
+  animation: damageArcFade 1s linear forwards;
+}
+
+@keyframes damageArcFade {
+  0% { opacity: 1; }
+  60% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+
+

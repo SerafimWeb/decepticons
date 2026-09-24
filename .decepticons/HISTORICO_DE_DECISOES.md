@@ -2,6 +2,24 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Kill feed + Indicador de direção do dano (#ux)
+**Decisão / Tarefa:** Criar o sistema de Kill Feed e o Indicador Direcional de Dano no HUD (`#ux`).
+**Como funciona:**
+- **KillFeed (`client/src/ui/KillFeed.ts`):**
+  - Canto superior direito, exibe no máximo 4 linhas de abates (ex: `KESTREL ▸ VOCÊ` ou `JOGADOR DESTRUÍDO`).
+  - Cada mensagem desaparece em 5 segundos.
+  - Pool fixo de 4 elementos HTML reutilizados no construtor (atendendo à regra G4 de zero alocação DOM em execução/abate) e atualização dos nomes exclusivamente por `textContent`.
+  - Destaque visual (classe `.highlight`) quando o jogador local está envolvido (como autor do abate ou vítima).
+- **DamageIndicator (`client/src/ui/DamageIndicator.ts`):**
+  - Arco vermelho animado via CSS (`@keyframes damageArcFade`) posicionado em volta do crosshair, sumindo em 1 s sem cálculos por frame no JS.
+  - Função pura `calculateDamageAngle` que determina o ângulo exato (0 a 360°) da origem do tiro em relação ao `yaw` da câmera do jogador (frente = 0°, direita = 90°, trás = 180°, esquerda = 270°).
+  - Testado unitariamente com 5 casos de teste cobrindo todas as orientações em `client/src/ui/DamageIndicator.test.ts`.
+- **Fiação:** Conectado diretamente em `client/src/core/Game.ts` dentro de `this.combat.onMechHit` e `this.combat.onMechKilled`.
+- **Verificação:** `npm run check` 100% verde (typecheck, 56 testes Vitest, painel, build e smoke).
+**Quem implementou:** Gemini.
+
+---
+
 ## [2026-09-24] Estande de calibração do mouse e nova escala de sensibilidade
 **Pedido do dono:** "no jogo é muito rápido para fazer essa configuração fina".
 **Decisão:** uma tela própria, com o jogo parado, que mede o giro de verdade.

@@ -18,6 +18,7 @@
 - **Bots v1 (Claude, a pedido do dono):** 3 Vector-09 inimigos que patrulham, veem só com linha de visão, reagem, perseguem, atacam andando de lado, recuam com o torso baixo e renascem longe do jogador. O jogador também morre e renasce, com integridade das 6 partes no HUD, borda vermelha ao tomar dano, tela "ABATIDO" e placar de abates/mortes. Pausar congela o mundo. 32 testes. **O dono jogou: "estão atacando bem, não ficaram perdidos, estão vindo pra cima de mim"**
 - **Tela de Configurações (#ux) (Gemini):** Implementado o componente `SettingsMenu` em `client/src/ui/SettingsMenu.ts`, botão `[ CONFIGURAÇÕES ]` no overlay de pausa, modal cyberpunk/terminal no `index.html` e estilos em `styles.css`. Permite controle de sliders de sensibilidade e FOV, checkboxes de inverter Y e painel de desempenho, selects de qualidade e dificuldade, remapeamento interativo das 7 teclas (com swap automático e bloqueio de RESERVED_KEYS) e botão de restaurar padrão. Integrado à `main` pelo Claude (o branch não tinha PR e conflitava com a rodada); revisão cruzada aprovada.
 - **Estande de calibração do mouse (Claude, pedido do dono: "no jogo é muito rápido para a configuração fina"):** `[ CALIBRAR MOUSE ]` na pausa e na tela de configurações. Faixa de bússola com o mouse preso e o jogo parado; "gravar 1 volta" transforma o gesto real em sensibilidade; DPI + cm/360; ±1%/±10%; entrada crua (sem a aceleração do Windows) ligada por padrão. **A escala mudou:** 1,00x agora = ~25 cm por volta a 800 DPI (antes ~9 cm, rápido demais); o slider vai de 0,10x a 5,00x. Esc no remapeamento de tecla agora cancela
+- **Kill feed e indicador de direção do dano (#ux) (Gemini):** Implementados `ui/KillFeed.ts` (pool fixo de 4 slots, 5s de visibilidade, nomes via `textContent`, destaque para o jogador) e `ui/DamageIndicator.ts` (arco vermelho animado por CSS, função pura de cálculo com testes unitários em `ui/DamageIndicator.test.ts`). Ligação no `Game.ts`.
 - **Regra 13 no `AGENTS.md`:** agente termina com PR → CI verde → merge, e o merge publica o site sozinho (o dono testa em produção)
 
 ## PENDENTE
@@ -39,7 +40,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Livre: próxima tarefa a escolher (foguetes, draw calls ou som) |
-| **Gemini** | `client/src/ui/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Tela de configurações no ar. Próxima tarefa proposta: kill feed + indicador de direção do dano (só `ui/`) |
+| **Gemini** | `client/src/ui/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | **Concluído:** Kill feed e indicador de direção do dano. PR mergeado. |
 | **Codex** | a combinar | Sem crédito até 24/09. Ao voltar: revisar os PRs já mergeados |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois faz rebase e roda `npm run check` |
 

@@ -20,7 +20,9 @@ import { Destructibles } from '../environment/Destructibles';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { PlayerController } from '../player/PlayerController';
+import { DamageIndicator } from '../ui/DamageIndicator';
 import { HUD } from '../ui/HUD';
+import { KillFeed } from '../ui/KillFeed';
 import { MouseCalibration } from '../ui/MouseCalibration';
 import { RoundHud } from '../ui/RoundHud';
 import { SettingsMenu } from '../ui/SettingsMenu';
@@ -69,6 +71,8 @@ export class Game {
   private readonly rig: CameraRig;
   private readonly player: PlayerController;
   private readonly hud = new HUD();
+  private readonly killFeed = new KillFeed();
+  private readonly damageIndicator = new DamageIndicator();
   private readonly debugPanel = new DebugPanel();
   /** Configurações do jogador (salvas no navegador). A tela de configurações chama `settings.update()`. */
   readonly settings = new Settings(browserStorage());
@@ -234,6 +238,9 @@ export class Game {
       if (e.shooter === mech) this.hud.showHit(e.result);
       if (e.mech === mech) {
         this.hud.showDamage();
+        if (e.shooter) {
+          this.damageIndicator.show(mech.position, e.shooter.position, rig.look.yaw);
+        }
         rig.addShake(0.12);
       } else {
         this.bots.onDamaged(e.mech, e.shooter);
@@ -245,6 +252,11 @@ export class Game {
       this.round.recordKill(dead, killer);
       const me = this.round.scoreOf(mech);
       this.hud.setScore(me?.kills ?? 0, me?.deaths ?? 0);
+
+      const deadName = dead === mech ? 'VOCÊ' : this.round.scoreOf(dead)?.name ?? 'INIMIGO';
+      const killerName = killer ? (killer === mech ? 'VOCÊ' : this.round.scoreOf(killer)?.name ?? null) : null;
+      const isPlayerInvolved = dead === mech || killer === mech;
+      this.killFeed.push(killerName, deadName, isPlayerInvolved);
     };
     this.destructibles.onBreak = (center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
@@ -348,6 +360,7 @@ export class Game {
     this.particles.update(dt);
 
     this.hud.setRespawn(this.respawner.timeLeft(this.mech));
+    this.killFeed.update(dt);
     this.roundHud.update(dt, this.round, this.input.isDown('Tab'));
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
     this.renderer.info.reset();
