@@ -68,7 +68,7 @@
 - [x] Efeitos sonoros: tiro, impacto, passos pesados, explosão (sintetizados, sem arquivos pesados) #som
 - [ ] Volume e mixagem nas configurações #som
 - [~] Controles de toque e layout para celular (Gemini no PR #17, refeito pelo Claude; o check joga num celular emulado; falta o dono confirmar num celular real) #ux
-- [~] Kill feed e indicador de direção do dano (Gemini; branch pronto, falta o PR) #ux
+- [x] Kill feed e indicador de direção do dano (Gemini; integrado e corrigido pelo Claude) #ux
 - [x] Gestão no GitHub: etiquetas automáticas por frente e por agente, modelo de PR, notas de versão por frente #base
 - [x] Página do jogo (landing) e bastidores do desenvolvimento (o case) no site, com capturas do jogo feitas a cada deploy #negocio
 - [ ] Arma secundária: foguetes no braço esquerdo (botão direito), dano em área #combate

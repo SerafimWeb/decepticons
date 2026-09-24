@@ -2,6 +2,15 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Kill feed e indicador de dano integrados; indicador corrigido
+**Integração (Claude):** o branch `gemini/killfeed-dano` estava pronto mas sem PR. Entrou por um branch de integração a partir da `main`, com o commit do Gemini preservado. O kill feed ajuda no celular: mostra quem abateu quem sem precisar do placar (Tab).
+**Revisão cruzada:**
+- Kill feed aprovado: pool fixo de 4, `textContent`, destaque do jogador.
+- **Indicador de dano com bug:** errava o lado sempre que a câmera girava. O teste do Gemini supunha yaw 90° olhando para +X, mas no jogo a frente é (-sin yaw, 0, -cos yaw), ou seja, -X. Com a câmera virada, tiro de frente aparecia vindo de trás. Correção: relativo = ângulo do atirador **+** yaw. O teste novo usa a frente e a direita do próprio jogo em 5 ângulos.
+- O kill feed ficava em cima do rótulo da câmera (`#mode`) e do botão de pausa do toque; foi reposicionado.
+**Lição:** o teste tem que derivar a convenção do código do jogo, não de uma suposição. O teste antigo passava porque codificava o mesmo engano da função.
+**Quem decidiu:** Claude (integração e correção).
+
 ## [2026-09-24] Celular: controles de toque refeitos e testados no check
 **Sintoma (dono, num Android deitado):** "não consegui jogar no celular: botões mal posicionados, um sobre o outro, muito grandes; o direcional ficou preso; não entrou no jogo, ficou na tela de config".
 **Causas (PR #17):**
@@ -57,6 +66,23 @@
 - O `--check` reprova página fora de UTF-8 ou em modo quirks; o `--verify` do deploy reprova página sem doctype ou sem `<meta charset>` no início.
 - O rodapé mostrava o codinome interno (`.decepticons/…`); o check agora reprova o codinome no painel público.
 **Quem decidiu:** Claude (R17).
+## [2026-09-24] Kill feed + Indicador de direção do dano (#ux)
+**Decisão / Tarefa:** Criar o sistema de Kill Feed e o Indicador Direcional de Dano no HUD (`#ux`).
+**Como funciona:**
+- **KillFeed (`client/src/ui/KillFeed.ts`):**
+  - Canto superior direito, exibe no máximo 4 linhas de abates (ex: `KESTREL ▸ VOCÊ` ou `JOGADOR DESTRUÍDO`).
+  - Cada mensagem desaparece em 5 segundos.
+  - Pool fixo de 4 elementos HTML reutilizados no construtor (atendendo à regra G4 de zero alocação DOM em execução/abate) e atualização dos nomes exclusivamente por `textContent`.
+  - Destaque visual (classe `.highlight`) quando o jogador local está envolvido (como autor do abate ou vítima).
+- **DamageIndicator (`client/src/ui/DamageIndicator.ts`):**
+  - Arco vermelho animado via CSS (`@keyframes damageArcFade`) posicionado em volta do crosshair, sumindo em 1 s sem cálculos por frame no JS.
+  - Função pura `calculateDamageAngle` que determina o ângulo exato (0 a 360°) da origem do tiro em relação ao `yaw` da câmera do jogador (frente = 0°, direita = 90°, trás = 180°, esquerda = 270°).
+  - Testado unitariamente com 5 casos de teste cobrindo todas as orientações em `client/src/ui/DamageIndicator.test.ts`.
+- **Fiação:** Conectado diretamente em `client/src/core/Game.ts` dentro de `this.combat.onMechHit` e `this.combat.onMechKilled`.
+- **Verificação:** `npm run check` 100% verde (typecheck, 56 testes Vitest, painel, build e smoke).
+**Quem implementou:** Gemini.
+
+---
 
 ## [2026-09-24] Estande de calibração do mouse e nova escala de sensibilidade
 **Pedido do dono:** "no jogo é muito rápido para fazer essa configuração fina".
