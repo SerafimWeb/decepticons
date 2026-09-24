@@ -39,8 +39,11 @@ export class PlayerController {
   /** Taxa do render: captura eventos de borda. */
   collect(): void {
     if (!this.active) return;
-    if (this.input.wasPressed(this.keys.jump)) this.jumpQueued = true;
-    if (this.input.wasPressed(this.keys.dash)) this.dashQueued = true;
+    if (this.input.wasPressed(this.keys.jump) || this.input.virtualJump) this.jumpQueued = true;
+    if (this.input.wasPressed(this.keys.dash) || this.input.virtualDash) this.dashQueued = true;
+    // Reseta flags virtuais após ler
+    this.input.virtualJump = false;
+    this.input.virtualDash = false;
   }
 
   /** Taxa fixa (60 Hz): monta o comando e simula. */
@@ -49,8 +52,15 @@ export class PlayerController {
     const aim = this.rig.aim;
     const cmd = this.cmd;
     const k = this.keys;
-    cmd.moveX = a ? this.input.axis(k.right, k.left) : 0;
-    cmd.moveZ = a ? this.input.axis(k.forward, k.back) : 0;
+    
+    // Mescla o direcional (teclado) com o joystick analógico (mobile)
+    let mx = a ? this.input.axis(k.right, k.left) : 0;
+    let mz = a ? this.input.axis(k.forward, k.back) : 0;
+    if (a && this.input.virtualMoveX !== 0) mx = this.input.virtualMoveX;
+    if (a && this.input.virtualMoveZ !== 0) mz = this.input.virtualMoveZ;
+    
+    cmd.moveX = mx;
+    cmd.moveZ = mz;
     cmd.moveYaw = aim.moveYaw;
     cmd.yaw = aim.yaw;
     cmd.jump = this.jumpQueued;
@@ -60,7 +70,8 @@ export class PlayerController {
     this.mech.fixedUpdate(cmd, dt);
 
     this.fireCooldown = Math.max(0, this.fireCooldown - dt);
-    if (a && this.input.mouseDown && this.fireCooldown <= 0 && this.mech.canFirePrimary) {
+    const wantsToFire = this.input.mouseDown || this.input.virtualFire;
+    if (a && wantsToFire && this.fireCooldown <= 0 && this.mech.canFirePrimary) {
       this.fire();
       this.fireCooldown = this.mech.stats.fireInterval;
     }
