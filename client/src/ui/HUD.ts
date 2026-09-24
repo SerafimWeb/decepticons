@@ -61,6 +61,11 @@ export class HUD {
     this.cta.textContent = touch ? '[ toque para jogar ]' : '[ clique para jogar ]';
   }
 
+  /** Mira acesa: um inimigo vivo está sob ela. */
+  setOnTarget(on: boolean): void {
+    this.crosshair.classList.toggle('on-target', on);
+  }
+
   setPaused(paused: boolean): void {
     this.overlay.classList.toggle('hidden', !paused);
   }

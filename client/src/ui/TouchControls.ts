@@ -1,12 +1,21 @@
 import type { InputManager } from '../core/InputManager';
 import { BASE_SENSITIVITY } from '../core/Settings';
 
-/** Radianos girados por pixel arrastado (sensibilidade 1): arrastar ~400 px, meia tela deitada, dá ~180°. */
-export const TOUCH_RAD_PER_PX = 0.008;
+/**
+ * Radianos por pixel arrastado devagar (sensibilidade 1): ~0,3°/px, para o ajuste fino em cima do alvo.
+ * Arrastar rápido acelera (touchLookGain): virar para trás continua sendo um gesto só.
+ */
+export const TOUCH_RAD_PER_PX = 0.0055;
 /** O rig multiplica o delta por radiansPerCount(s) = BASE_SENSITIVITY × s: o toque entra já convertido. */
 const LOOK_SCALE = TOUCH_RAD_PER_PX / BASE_SENSITIVITY;
 /** Até 15% do raio o direcional não anda: o polegar parado não faz o Mech escorregar. */
 const DEADZONE = 0.15;
+
+/** Ganho pela velocidade do dedo (px/ms): 1 devagar; até 2,2 num arrasto rápido (≥ 1,75 px/ms). */
+export function touchLookGain(pxPerMs: number): number {
+  const t = Math.min(1, Math.max(0, (pxPerMs - 0.25) / 1.5));
+  return 1 + 1.2 * t;
+}
 
 export interface Stick {
   /** Movimento analógico -1..1 (direita positiva). */
@@ -71,8 +80,8 @@ export class TouchControls {
   private originX = 0;
   private originY = 0;
   private radius = 1;
-  /** Dedos que miram (zona direita ou FOGO) → última posição. Entradas criadas só ao encostar. */
-  private readonly aimers = new Map<number, { x: number; y: number }>();
+  /** Dedos que miram (zona direita ou FOGO) → última posição e instante. Entradas criadas só ao encostar. */
+  private readonly aimers = new Map<number, { x: number; y: number; t: number }>();
   private readonly firePointers = new Set<number>();
 
   constructor(
@@ -128,14 +137,18 @@ export class TouchControls {
     const startAim = (e: PointerEvent, target: HTMLElement) => {
       e.preventDefault();
       target.setPointerCapture(e.pointerId);
-      this.aimers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      this.aimers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: e.timeStamp });
     };
     const aim = (e: PointerEvent) => {
       const a = this.aimers.get(e.pointerId);
       if (!a) return;
-      this.input.injectMouseDelta((e.clientX - a.x) * LOOK_SCALE, (e.clientY - a.y) * LOOK_SCALE);
+      const dx = e.clientX - a.x;
+      const dy = e.clientY - a.y;
+      const gain = touchLookGain(Math.hypot(dx, dy) / Math.max(1, e.timeStamp - a.t)) * LOOK_SCALE;
+      this.input.injectMouseDelta(dx * gain, dy * gain);
       a.x = e.clientX;
       a.y = e.clientY;
+      a.t = e.timeStamp;
     };
     const endAim = (e: PointerEvent) => {
       this.aimers.delete(e.pointerId);
@@ -181,6 +194,11 @@ export class TouchControls {
     this.aimers.clear();
     this.firePointers.clear();
     this.setFire(false);
+  }
+
+  /** Algum dedo mirando agora (a mira assistida só puxa enquanto o jogador age). */
+  get aiming(): boolean {
+    return this.aimers.size > 0;
   }
 
   setCameraLabel(text: string): void {

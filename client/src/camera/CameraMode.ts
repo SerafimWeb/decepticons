@@ -1,3 +1,4 @@
+import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import type * as THREE from 'three';
 import type { InputManager } from '../core/InputManager';
 import type { MechBase } from '../entities/MechBase';
@@ -12,6 +13,8 @@ export interface AimState {
   pitch: number; // inclinação dos braços
   moveYaw: number; // referencial do WASD
   point: THREE.Vector3; // ponto do mundo sob a mira
+  /** Colisor sob a mira (null = céu ou fora de alcance): diz se há um Mech na mira. */
+  target: RAPIER.Collider | null;
 }
 
 /** Estado de "olhar com o mouse" compartilhado entre 1ª e 3ª pessoa. */

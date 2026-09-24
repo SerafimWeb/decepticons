@@ -70,7 +70,7 @@ export class PlayerController {
     this.mech.fixedUpdate(cmd, dt);
 
     this.fireCooldown = Math.max(0, this.fireCooldown - dt);
-    const wantsToFire = this.input.mouseDown || this.input.virtualFire;
+    const wantsToFire = this.input.mouseDown || this.input.virtualFire || this.input.autoFire;
     if (a && wantsToFire && this.fireCooldown <= 0 && this.mech.canFirePrimary) {
       this.fire();
       this.fireCooldown = this.mech.stats.fireInterval;

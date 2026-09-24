@@ -19,6 +19,7 @@ import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
+import { AimAssist } from '../player/AimAssist';
 import { PlayerController } from '../player/PlayerController';
 import { DamageIndicator } from '../ui/DamageIndicator';
 import { HUD } from '../ui/HUD';
@@ -45,6 +46,8 @@ const DUST_COLOR = new THREE.Color(0.45, 0.42, 0.5);
 const UP = new THREE.Vector3(0, 1, 0);
 
 const _tmp = new THREE.Vector3();
+const _aimDir = new THREE.Vector3();
+const _aimFrom = new THREE.Vector3();
 
 /**
  * Monta os módulos e roda o loop:
@@ -72,6 +75,7 @@ export class Game {
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
   private readonly touch: TouchControls;
+  private readonly assist: AimAssist;
   private readonly player: PlayerController;
   private readonly hud = new HUD();
   private readonly killFeed = new KillFeed();
@@ -177,6 +181,7 @@ export class Game {
       occluders: arena.occluders,
     });
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles);
+    this.assist = new AimAssist(physics, this.mech, this.bots.mechs);
 
     this.wireEvents();
     // Celular e tablet (toque é o ponteiro principal) começam no modo toque; o toque ou o clique
@@ -260,6 +265,7 @@ export class Game {
       }
       if (e.mech === mech) {
         this.hud.showDamage();
+        this.vibrate(35);
         if (e.shooter) {
           this.damageIndicator.show(mech.position, e.shooter.position, rig.look.yaw);
         }
@@ -282,6 +288,7 @@ export class Game {
       const killerName = killer ? (killer === mech ? 'VOCÊ' : this.round.scoreOf(killer)?.name ?? null) : null;
       const isPlayerInvolved = dead === mech || killer === mech;
       this.killFeed.push(killerName, deadName, isPlayerInvolved);
+      if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
     };
     this.destructibles.onBreak = (center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
@@ -327,6 +334,34 @@ export class Game {
       this.input.requestLock(); // no toque: marca "jogando" e dispara onLockChange(true)
     } else if (this.rig.mode.pointerLock) this.input.requestLock();
     else this.setPlaying(true);
+  }
+
+  /**
+   * Depois do rig: mira que acende sobre um inimigo (toque e mouse); no toque, mira assistida (puxão
+   * leve enquanto o jogador age) e tiro automático. O puxão entra no olhar do próximo quadro.
+   */
+  private updateAim(dt: number): void {
+    const s = this.settings.value;
+    const touch = this.input.touchMode && this.playing;
+    const engaged = this.input.virtualMoveX !== 0 || this.input.virtualMoveZ !== 0 || this.touch.aiming || this.input.virtualFire;
+    if (!this.playing) this.assist.reset();
+    else {
+      const target = this.combat.mechOf(this.rig.aim.target);
+      const pull = this.assist.update(dt, this.camera, this.rig.look, target, touch && s.touchAimAssist, engaged);
+      this.rig.nudge(pull.yaw, pull.pitch);
+      // Mira no ponto antecipado: o tiro vai até a distância do alvo, não até a parede atrás dele.
+      if (this.assist.aimDist > 0) {
+        this.camera.getWorldDirection(_aimDir);
+        this.rig.aim.point.copy(this.camera.getWorldPosition(_aimFrom)).addScaledVector(_aimDir, this.assist.aimDist);
+      }
+    }
+    this.input.autoFire = touch && s.touchAutoFire && this.assist.fireReady;
+    this.hud.setOnTarget(this.assist.onTarget);
+  }
+
+  /** Vibração curta no toque (Android; onde não existe, não faz nada). */
+  private vibrate(pattern: number | number[]): void {
+    if (this.input.touchMode) navigator.vibrate?.(pattern);
   }
 
   private pause(): void {
@@ -387,7 +422,9 @@ export class Game {
 
     if (this.input.locked) {
       const m = this.input.consumeMouseDelta();
-      this.rig.applyMouse(m.x, m.y);
+      // Toque com mira assistida: perto de um inimigo o dedo fica mais lento (fricção do quadro anterior).
+      const f = this.input.touchMode && this.settings.value.touchAimAssist ? this.assist.friction : 1;
+      this.rig.applyMouse(m.x * f, m.y * f);
     }
     this.player.collect();
 
@@ -416,6 +453,7 @@ export class Game {
     this.mech.render(dt, alpha);
     this.bots.render(dt, alpha);
     this.rig.update(dt);
+    this.updateAim(dt);
     this.projectiles.render(alpha);
     this.debris.sync();
 

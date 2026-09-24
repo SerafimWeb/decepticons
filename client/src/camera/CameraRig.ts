@@ -14,7 +14,7 @@ const MODE_ORDER: CameraModeId[] = ['tps', 'fps', 'tactical'];
  */
 export class CameraRig {
   readonly look: LookState = { yaw: 0, pitch: -0.12 };
-  readonly aim: AimState = { yaw: 0, pitch: 0, moveYaw: 0, point: new THREE.Vector3() };
+  readonly aim: AimState = { yaw: 0, pitch: 0, moveYaw: 0, point: new THREE.Vector3(), target: null };
   /** Radianos por pixel de mouse (configurável). */
   sensitivity = BASE_SENSITIVITY;
   invertY = false;
@@ -62,6 +62,14 @@ export class CameraRig {
     if (!this.current.pointerLock) return;
     this.look.yaw -= dx * this.sensitivity;
     this.look.pitch -= dy * this.sensitivity * (this.invertY ? -1 : 1);
+    this.clampPitch();
+  }
+
+  /** Ajuste da mira assistida (radianos), nos modos de mira por delta. Respeita os limites do pitch. */
+  nudge(dYaw: number, dPitch: number): void {
+    if (!this.current.pointerLock) return;
+    this.look.yaw += dYaw;
+    this.look.pitch += dPitch;
     this.clampPitch();
   }
 

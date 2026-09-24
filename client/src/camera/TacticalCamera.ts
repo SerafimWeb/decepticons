@@ -78,6 +78,7 @@ export class TacticalCamera implements CameraMode {
     // Altura do canhão acima dos pés: mirando no chão, o tiro sai na horizontal.
     const muzzleHeight = mech.muzzleWorldPosition(_muzzle).y - mech.position.y;
     const hit = physics.raycast(camera.position, dir, 500, mech.collider);
+    aim.target = hit?.collider ?? null;
     if (hit && hit.normal.y < 0.7) {
       aim.point.copy(hit.point); // parede/lateral: mira direto nela
     } else if (hit) {

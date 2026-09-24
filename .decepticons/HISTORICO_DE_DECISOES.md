@@ -2,6 +2,24 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Mira no celular: assistida, antecipada e com tiro automático
+**Sintoma (dono, segundo teste no celular):** "a jogabilidade no celular tá estranha, tô com dificuldade de mirar e atirar".
+**Causa:** com dois polegares, o direito mira ou aperta FOGO, nunca os dois. E o plasma (140 m/s) leva ~0,3 s a 40 m: um bot andando de lado a 16 m/s sai 5 m do lugar. No PC o jogador aprende a antecipar; no dedo, quase impossível.
+**Decisão (Claude), só no modo toque, desligável na tela de configurações:**
+- **Tiro automático:** atira quando a mira acende há 0,12 s (passar de raspão não dispara).
+- **Mira assistida** (`player/AimAssist.ts`, funções puras testadas):
+  - Fricção: o dedo fica até 55% mais lento num cone de ~6° em volta do inimigo.
+  - Puxão leve no cone de ~5° e rastreio de 75% do movimento do alvo, só enquanto o jogador age (anda, mira ou atira). Parado, a mira nunca joga sozinha.
+  - Antecipação: mira onde o inimigo vai estar quando o plasma chegar. O ponto de mira fica na distância do alvo, para o tiro que sai do canhão não errar por paralaxe.
+  - Só com linha de visão até o corpo.
+- **Dedo:** 0,3°/px devagar (ajuste fino), até 2,2× num arrasto rápido.
+- **Mira que acende e vibração:** a mira acende sobre um inimigo (no mouse, o que está sob a mira); vibração ao levar tiro e ao abater (só no toque).
+**Medido:** partida emulada (844×390, toque), dedo varrendo sem tocar em FOGO. Antes: a mira acendia e nenhum tiro acertava. Depois: 4 acertos em ~6 s, nas 3 repetições.
+**No caminho:** o primeiro teste "falhou" porque o `vite build` com caminho relativo gravou em `client/.tmp/` (a raiz do Vite é `client/`) e o teste rodou o build antigo. Build manual só com caminho absoluto.
+**Justiça:** o mouse não tem assistência. No multiplayer, toque x mouse na mesma sala vira decisão em aberto (ESTADO).
+**Custo de CPU:** por quadro, um laço pelos inimigos e no máximo um raio de linha de visão, só no toque; nada alocado. De quebra, o `raycast` parou de alocar dois vetores e um objeto por chamada (a mira chama todo quadro, cada projétil todo tick).
+**Quem decidiu:** dono (pedido); Claude (desenho).
+
 ## [2026-09-24] Kill feed e indicador de dano integrados; indicador corrigido
 **Integração (Claude):** o branch `gemini/killfeed-dano` estava pronto mas sem PR. Entrou por um branch de integração a partir da `main`, com o commit do Gemini preservado. O kill feed ajuda no celular: mostra quem abateu quem sem precisar do placar (Tab).
 **Revisão cruzada:**

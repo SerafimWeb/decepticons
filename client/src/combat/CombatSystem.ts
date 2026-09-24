@@ -57,6 +57,11 @@ export class CombatSystem {
     this.byCollider.set(mech.collider.handle, mech);
   }
 
+  /** O Mech dono deste colisor (mira, tiro automático), ou undefined para cenário. */
+  mechOf(collider: RAPIER.Collider | null): MechBase | undefined {
+    return collider ? this.byCollider.get(collider.handle) : undefined;
+  }
+
   onProjectileHit(hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider): void {
     const mech = this.byCollider.get(hit.collider.handle);
     if (!mech) {

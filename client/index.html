@@ -51,6 +51,7 @@
       <ul class="touch-help">
         <li><b>Polegar esquerdo</b> andar</li>
         <li><b>Arraste à direita</b> mirar</li>
+        <li><b>Mira laranja</b> atira sozinha</li>
         <li><b>FOGO</b> segure (arraste para mirar junto)</li>
         <li><b>PULO</b> duas vezes: pulo duplo</li>
         <li><b>DASH</b> arrancada</li>
@@ -72,7 +73,7 @@
           <div class="settings-section">
             <h3>CONTROLES & CÂMERA</h3>
             <div class="setting-row">
-              <label for="setting-sens">Sensibilidade do mouse</label>
+              <label for="setting-sens"><span class="mouse-only">Sensibilidade do mouse</span><span class="touch-only">Sensibilidade da mira</span></label>
               <div class="setting-ctrl">
                 <input type="range" id="setting-sens" />
                 <span id="val-sens" class="setting-val">1.00x</span>
@@ -89,6 +90,22 @@
               <div class="setting-ctrl">
                 <input type="range" id="setting-fov" />
                 <span id="val-fov" class="setting-val">+0°</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section touch-only">
+            <h3>TOQUE (CELULAR)</h3>
+            <div class="setting-row">
+              <label for="setting-assist">Mira assistida (freia e puxa de leve perto do inimigo)</label>
+              <div class="setting-ctrl">
+                <input type="checkbox" id="setting-assist" />
+              </div>
+            </div>
+            <div class="setting-row">
+              <label for="setting-autofire">Tiro automático com o inimigo na mira</label>
+              <div class="setting-ctrl">
+                <input type="checkbox" id="setting-autofire" />
               </div>
             </div>
           </div>

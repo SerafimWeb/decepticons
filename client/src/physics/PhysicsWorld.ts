@@ -22,6 +22,8 @@ export class PhysicsWorld {
   private readonly rayOrigin = { x: 0, y: 0, z: 0 };
   private readonly rayDir = { x: 0, y: 0, z: 1 };
   private readonly ray: RAPIER.Ray;
+  /** Resultado do raycast, reaproveitado a cada chamada (G4: a mira e cada projétil chamam todo quadro/tick). */
+  private readonly hit: PhysicsHit = { point: new THREE.Vector3(), normal: new THREE.Vector3(), distance: 0, collider: null as unknown as RAPIER.Collider };
 
   static async create(): Promise<PhysicsWorld> {
     // O pacote compat (Node) exige init(); no browser o alias do vite.config aponta
@@ -76,12 +78,13 @@ export class PhysicsWorld {
       exclude,
     );
     if (!hit) return null;
-    return {
-      point: origin.clone().addScaledVector(dir, hit.timeOfImpact),
-      normal: new THREE.Vector3(hit.normal.x, hit.normal.y, hit.normal.z),
-      distance: hit.timeOfImpact,
-      collider: hit.collider,
-    };
+    // O mesmo objeto volta em todas as chamadas: quem precisar guardar, copie antes do próximo raycast.
+    const out = this.hit;
+    out.point.copy(origin).addScaledVector(dir, hit.timeOfImpact);
+    out.normal.set(hit.normal.x, hit.normal.y, hit.normal.z);
+    out.distance = hit.timeOfImpact;
+    out.collider = hit.collider;
+    return out;
   }
 
   /**
