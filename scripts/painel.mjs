@@ -320,7 +320,15 @@ const HEXGRID = encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'><path d='M28 0 L56 16 L56 48 L28 64 L0 48 L0 16 Z M28 64 L28 97' fill='none' stroke='rgba(255,176,0,0.07)' stroke-width='1'/></svg>`,
 );
 
-const html = `<title>${SITE ? 'Cyber-Mech Protocol' : 'Painel de Missão Cyber-Mech'}</title>
+// Documento completo: sem o <meta charset> o navegador lê o UTF-8 como Windows-1252 e quebra todos os
+// acentos (aconteceu no site em 24/09: o servidor manda text/html sem charset); sem o doctype, modo quirks.
+const html = `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Cyber-Mech Protocol: shooter de Mechs para o navegador. Jogue agora e acompanhe o desenvolvimento.">
+<title>${SITE ? 'Cyber-Mech Protocol' : 'Painel de Missão Cyber-Mech'}</title>
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -546,7 +554,8 @@ const html = `<title>${SITE ? 'Cyber-Mech Protocol' : 'Painel de Missão Cyber-M
     .cursor, .focus .hex { animation: none; }
   }
 </style>
-
+</head>
+<body>
 <div class="wrap">
   <div class="sysbar" role="note">
     <span>CYBER-MECH PROTOCOL // TAC-NET</span>
@@ -618,7 +627,7 @@ const html = `<title>${SITE ? 'Cyber-Mech Protocol' : 'Painel de Missão Cyber-M
     <ul class="feed frame">${feedHtml}</ul>
   </section>
 
-  <footer>fim da transmissão · gerado de .decepticons/ROADMAP.md e ESTADO_ATUAL.md · npm run painel</footer>
+  <footer>fim da transmissão · ${SITE ? 'gerado do roadmap do projeto a cada atualização' : 'gerado do ROADMAP.md e do ESTADO_ATUAL.md · npm run painel'}</footer>
 </div>
 
 <script>
@@ -651,6 +660,8 @@ const html = `<title>${SITE ? 'Cyber-Mech Protocol' : 'Painel de Missão Cyber-M
     document.getElementById('phase-clear').addEventListener('click', () => { phase = null; apply(); });
   })();
 </script>
+</body>
+</html>
 `;
 
 mkdirSync(dirname(OUT), { recursive: true });

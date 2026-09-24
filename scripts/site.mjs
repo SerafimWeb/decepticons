@@ -63,8 +63,9 @@ const ASSETS_HTACCESS = `<IfModule mod_headers.c>
 </FilesMatch>
 `;
 
+// O .html vai sem charset, como o servidor mandava até 24/09: a página tem que declarar o seu.
 const TYPES = {
-  '.html': 'text/html; charset=utf-8',
+  '.html': 'text/html',
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.wasm': 'application/wasm',
@@ -87,6 +88,9 @@ function htaccess() {
     .join('\n');
   return `# Gerado por scripts/site.mjs: não edite no servidor, edite o script.
 AddType application/wasm .wasm
+# Sem isto o LiteSpeed manda text/html sem charset (as páginas também declaram o seu).
+AddDefaultCharset UTF-8
+AddCharset UTF-8 .html .css .js .json
 <IfModule mod_headers.c>
 ${set}
   <FilesMatch "\\.html$">
@@ -130,6 +134,13 @@ function serve(prefix) {
   });
 }
 
+/** Acentos e layout: UTF-8 e modo padrão (sem quirks), mesmo com o servidor mandando text/html sem charset. */
+async function pageSane(page, name, failures) {
+  const { charset, mode } = await page.evaluate(() => ({ charset: document.characterSet, mode: document.compatMode }));
+  if (charset !== 'UTF-8') failures.push(`${name}: lido como ${charset} (acentos quebrados)`);
+  if (mode !== 'CSS1Compat') failures.push(`${name}: modo quirks (falta o <!doctype html>)`);
+}
+
 async function check() {
   const prefix = '/cybermech/';
   const server = await serve(prefix);
@@ -158,11 +169,15 @@ async function check() {
     await page.goto(base);
     const title = await page.title();
     if (title !== 'Cyber-Mech Protocol') failures.push(`título da raiz: "${title}"`);
+    await pageSane(page, 'painel', failures);
+    // O codinome interno não aparece em material público.
+    if (/decepticons/i.test(await page.evaluate(() => document.documentElement.outerHTML))) failures.push('painel: o codinome interno aparece na página pública');
     await page.click('a.play-btn');
     await page.waitForURL(`${base}jogar/`);
     await page.waitForFunction(() => document.getElementById('cta')?.textContent === '[ clique para jogar ]', null, {
       timeout: 60_000,
     });
+    await pageSane(page, 'jogo', failures);
     // Configurações salvas no navegador são lidas e aplicadas na largada (contrato core/Settings.ts).
     await page.evaluate(() => localStorage.setItem('cybermech.settings.v1', JSON.stringify({ showPerf: false })));
     await page.reload();
@@ -203,7 +218,10 @@ async function verify(url) {
     return r;
   };
   const home = await get(root);
-  if (!(await home.text()).includes('Cyber-Mech Protocol')) failures.push(`${root}: não é o painel`);
+  const homeText = await home.text();
+  if (!homeText.includes('Cyber-Mech Protocol')) failures.push(`${root}: não é o painel`);
+  if (!/^<!doctype html>/i.test(homeText) || !/<meta charset="utf-8">/i.test(homeText.slice(0, 1024))) failures.push(`${root}: sem doctype ou <meta charset> no início (acentos quebram)`);
+  if (!/utf-8/i.test(home.headers.get('content-type') ?? '')) console.warn(`::warning::${root}: servidor sem charset no Content-Type (a página declara o seu)`);
   if (!home.headers.get('content-security-policy')?.includes('wasm-unsafe-eval')) failures.push(`${root}: sem a CSP do .htaccess`);
   // O selvamkt.com.br responde 200 com uma página HTML para arquivo inexistente: status não basta.
   const game = await get(`${root}jogar/`);

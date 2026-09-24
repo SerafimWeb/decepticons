@@ -2,6 +2,17 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Página pública com acentos quebrados: causa e trava
+**Sintoma (dono):** "a página está boa, mas com caracteres quebrados".
+**Causa:** o `painel.mjs` gerava um fragmento (sem `<!doctype>`, `<meta charset>` nem `viewport`), herança de quando o painel era só local. O LiteSpeed manda `text/html` sem charset, então o navegador lia o UTF-8 como Windows-1252 e rodava em modo quirks. O teste local não pegava porque o servidor de teste mandava `charset=utf-8`.
+**Correção:**
+- O painel vira documento completo.
+- O `.htaccess` ganha `AddDefaultCharset UTF-8`.
+- O servidor de teste agora manda `text/html` sem charset, como o real.
+- O `--check` reprova página fora de UTF-8 ou em modo quirks; o `--verify` do deploy reprova página sem doctype ou sem `<meta charset>` no início.
+- O rodapé mostrava o codinome interno (`.decepticons/…`); o check agora reprova o codinome no painel público.
+**Quem decidiu:** Claude (R17).
+
 ## [2026-09-24] Estande de calibração do mouse e nova escala de sensibilidade
 **Pedido do dono:** "no jogo é muito rápido para fazer essa configuração fina".
 **Decisão:** uma tela própria, com o jogo parado, que mede o giro de verdade.

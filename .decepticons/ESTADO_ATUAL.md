@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ
+- **Acentos quebrados no site corrigidos (Claude):** a página do painel saía sem `<!doctype>` e sem `<meta charset>`, e o servidor manda `text/html` sem charset: o navegador lia como Windows-1252 ("OPERAÃ‡ÃƒO"). Agora é documento completo, o `.htaccess` força UTF-8 e o `npm run check` reprova página lida fora de UTF-8, em modo quirks ou com o codinome interno (que aparecia no rodapé)
 - Fundação: Protocolo Serafim UM, CI, Vitest, smoke headless, bundle de ~188 KB gzip, engasgo da corrida corrigido
 - Trabalho com vários agentes (Claude, Codex, Gemini): `AGENTS.md` único; `CLAUDE.md` e `GEMINI.md` importam ele
 - Combate v1 (PR #3): dano por parte, morte com explosão e respawn, marcador de acerto
