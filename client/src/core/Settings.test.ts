@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, keyLabel, sanitizeSettings, Settings } from './Settings';
+import {
+  BASE_SENSITIVITY,
+  calibrateFromCounts,
+  cmPer360,
+  DEFAULT_SETTINGS,
+  keyLabel,
+  LIMITS,
+  MIN_CALIBRATION_COUNTS,
+  sanitizeSettings,
+  sensitivityForCm360,
+  Settings,
+} from './Settings';
 
 function memoryStorage(initial?: string) {
   const data = new Map<string, string>();
@@ -30,7 +41,7 @@ describe('Settings', () => {
 
   it('dado corrompido ou editado à mão vira valor válido, campo a campo', () => {
     const s = new Settings(memoryStorage('{"sensitivity": 999, "fovOffset": "x", "quality": "ultra", "invertY": true, "keys": {"jump": "Escape", "dash": "ShiftRight", "left": "<script>"}}'));
-    expect(s.value.sensitivity).toBe(3); // limitado ao máximo
+    expect(s.value.sensitivity).toBe(LIMITS.sensitivity.max); // limitado ao máximo
     expect(s.value.fovOffset).toBe(0); // tipo errado → padrão
     expect(s.value.quality).toBe('auto'); // valor desconhecido → padrão
     expect(s.value.invertY).toBe(true); // campo válido é mantido
@@ -76,5 +87,38 @@ describe('Settings', () => {
     expect(keyLabel('KeyW')).toBe('W');
     expect(keyLabel('Space')).toBe('Espaço');
     expect(keyLabel('Digit3')).toBe('3');
+  });
+
+  it('DPI e entrada crua: válidos, limitados, e padrão seguro', () => {
+    const s = new Settings(memoryStorage('{"mouseDpi": 999999, "rawInput": "sim"}'));
+    expect(s.value.mouseDpi).toBe(LIMITS.mouseDpi.max);
+    expect(s.value.rawInput).toBe(true);
+    expect(sanitizeSettings({ mouseDpi: 1600.4 }).mouseDpi).toBe(1600);
+  });
+});
+
+describe('calibração do mouse (contas físicas)', () => {
+  it('padrão: ~25 cm por volta de 360° com 800 DPI (antes eram 9 cm)', () => {
+    expect(cmPer360(1, 800)).toBeCloseTo(24.94, 1);
+    expect(cmPer360(1, 1600)).toBeCloseTo(12.47, 1);
+  });
+
+  it('cm/360 ↔ sensibilidade vai e volta sem perder precisão', () => {
+    for (const [cm, dpi] of [[25, 800], [40, 1600], [8, 400], [60, 3200]] as const) {
+      expect(cmPer360(sensitivityForCm360(cm, dpi), dpi)).toBeCloseTo(cm, 6);
+    }
+  });
+
+  it('gravar uma volta: os pontos medidos viram a sensibilidade exata', () => {
+    const countsAtDefault = (2 * Math.PI) / BASE_SENSITIVITY; // uma volta com sensibilidade 1
+    expect(calibrateFromCounts(countsAtDefault)).toEqual({ ok: true, sensitivity: 1 });
+    expect(calibrateFromCounts(-countsAtDefault / 2).sensitivity).toBe(2); // mouse para a esquerda também vale
+  });
+
+  it('gravar uma volta: movimento curto demais é recusado; fora da faixa fica no limite', () => {
+    expect(calibrateFromCounts(MIN_CALIBRATION_COUNTS - 1).ok).toBe(false);
+    expect(calibrateFromCounts(Number.NaN).ok).toBe(false);
+    expect(calibrateFromCounts(10_000_000)).toEqual({ ok: true, sensitivity: LIMITS.sensitivity.min });
+    expect(calibrateFromCounts(MIN_CALIBRATION_COUNTS)).toEqual({ ok: true, sensitivity: LIMITS.sensitivity.max });
   });
 });

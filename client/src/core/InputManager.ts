@@ -8,6 +8,8 @@ import { normalizeKey } from './Settings';
 export class InputManager {
   mouseDown = false;
   locked = false;
+  /** Pede o Pointer Lock sem a aceleração do sistema (movimento cru), onde o navegador deixa. */
+  rawInput = true;
   /** Posição do cursor em pixels (client). */
   mouseX = window.innerWidth / 2;
   mouseY = window.innerHeight / 2;
@@ -24,9 +26,14 @@ export class InputManager {
 
   constructor(private readonly target: HTMLElement) {
     window.addEventListener('keydown', (e) => {
+      // Digitando num campo de menu (DPI, apelido…): a tecla é do campo, não do jogo.
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       // F1 esconde o HUD; sem preventDefault o Chrome/Edge abre a própria Ajuda numa aba nova.
       // Quote (' no teclado US) abre a "busca rápida" do Firefox.
-      if (e.code === 'Space' || e.code === 'Tab' || e.code === 'F1' || e.code === 'Quote') e.preventDefault();
+      if (e.code === 'Space' || e.code === 'F1' || e.code === 'Quote') e.preventDefault();
+      // Tab é o placar dentro do jogo; em menu (mouse solto e um controle em foco) navega entre controles.
+      if (e.code === 'Tab' && (this.locked || document.activeElement === document.body)) e.preventDefault();
       // Shift/Ctrl/Alt entram também pelo nome curto ("Shift"): tecla configurada vale dos dois lados.
       const key = normalizeKey(e.code);
       this.keys.add(e.code).add(key);
@@ -75,7 +82,11 @@ export class InputManager {
 
   requestLock(): void {
     // O Chrome rejeita a promise se o lock for pedido logo após um Esc.
-    Promise.resolve(this.target.requestPointerLock()).catch(() => {});
+    const lock = (options?: PointerLockOptions) => Promise.resolve(this.target.requestPointerLock(options));
+    // Sem suporte a movimento cru (ex.: Firefox, Safari), cai no lock normal.
+    lock(this.rawInput ? { unadjustedMovement: true } : undefined).catch(() => {
+      if (this.rawInput) lock().catch(() => {});
+    });
   }
 
   exitLock(): void {

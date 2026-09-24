@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import { BASE_SENSITIVITY } from '../core/Settings';
 import type { AimState, CameraContext, CameraMode, CameraModeId, LookState } from './CameraMode';
 import { FirstPersonCamera } from './FirstPersonCamera';
 import { ThirdPersonCamera } from './ThirdPersonCamera';
 import { TacticalCamera } from './TacticalCamera';
 
 const MODE_ORDER: CameraModeId[] = ['tps', 'fps', 'tactical'];
-export const BASE_SENSITIVITY = 0.0022;
+
 
 /**
  * Gerencia os modos de câmera, a sensibilidade do mouse, o camera shake e o FOV.

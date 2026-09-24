@@ -9,9 +9,21 @@ export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' 
 export type QualityPreset = 'auto' | 'alta' | 'media' | 'baixa';
 export type Difficulty = 'facil' | 'normal' | 'dificil';
 
+/**
+ * Radianos de giro por ponto do mouse com sensibilidade 1. Com 800 DPI dá ~25 cm de mouse por volta
+ * de 360° (a faixa dos shooters de mira precisa). O valor antigo (0,0022 = 9 cm) era rápido demais.
+ */
+export const BASE_SENSITIVITY = 0.0008;
+const TURN = 2 * Math.PI;
+const CM_PER_INCH = 2.54;
+
 export interface GameSettings {
   /** Multiplicador da sensibilidade do mouse (1 = padrão). */
   sensitivity: number;
+  /** DPI do mouse do jogador: só para mostrar e digitar a sensibilidade em cm por volta de 360°. */
+  mouseDpi: number;
+  /** Entrada crua do mouse (Pointer Lock sem aceleração do sistema), onde o navegador permite. */
+  rawInput: boolean;
   invertY: boolean;
   /** Graus somados ao campo de visão da 1ª e da 3ª pessoa (a tática não muda). */
   fovOffset: number;
@@ -24,12 +36,15 @@ export interface GameSettings {
 }
 
 export const LIMITS = {
-  sensitivity: { min: 0.25, max: 3, step: 0.05 },
+  sensitivity: { min: 0.1, max: 5, step: 0.01 },
+  mouseDpi: { min: 100, max: 32000, step: 50 },
   fovOffset: { min: -10, max: 20, step: 1 },
 } as const;
 
 export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   sensitivity: 1,
+  mouseDpi: 800,
+  rawInput: true,
   invertY: false,
   fovOffset: 0,
   quality: 'auto',
@@ -113,6 +128,8 @@ export function sanitizeSettings(raw: unknown): GameSettings {
   for (const { action } of KEY_ACTIONS) keys[action] = validKey(rk[action]) ?? d.keys[action];
   return {
     sensitivity: num(r.sensitivity, d.sensitivity, LIMITS.sensitivity.min, LIMITS.sensitivity.max),
+    mouseDpi: Math.round(num(r.mouseDpi, d.mouseDpi, LIMITS.mouseDpi.min, LIMITS.mouseDpi.max)),
+    rawInput: typeof r.rawInput === 'boolean' ? r.rawInput : d.rawInput,
     invertY: typeof r.invertY === 'boolean' ? r.invertY : d.invertY,
     fovOffset: Math.round(num(r.fovOffset, d.fovOffset, LIMITS.fovOffset.min, LIMITS.fovOffset.max)),
     quality: QUALITIES.includes(r.quality as QualityPreset) ? (r.quality as QualityPreset) : d.quality,
@@ -120,6 +137,38 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     showPerf: typeof r.showPerf === 'boolean' ? r.showPerf : d.showPerf,
     keys,
   };
+}
+
+// ---------- calibração do mouse (contas físicas) ----------
+
+/** Radianos de giro por ponto do mouse. */
+export function radiansPerCount(sensitivity: number): number {
+  return BASE_SENSITIVITY * sensitivity;
+}
+
+/** Centímetros de mouse para uma volta de 360°, dado o DPI. */
+export function cmPer360(sensitivity: number, dpi: number): number {
+  return (TURN / radiansPerCount(sensitivity) / dpi) * CM_PER_INCH;
+}
+
+/** Sensibilidade que dá uma volta de 360° em `cm` centímetros de mouse. */
+export function sensitivityForCm360(cm: number, dpi: number): number {
+  return TURN / ((cm / CM_PER_INCH) * dpi) / BASE_SENSITIVITY;
+}
+
+/** Menos que isto numa "volta gravada" é movimento curto demais para medir com precisão. */
+export const MIN_CALIBRATION_COUNTS = 300;
+
+/**
+ * Gravar uma volta: o jogador move o mouse a distância física que quer para 360°, e os pontos
+ * medidos viram a sensibilidade. Não precisa saber o DPI. Fora dos limites, fica no limite.
+ */
+export function calibrateFromCounts(counts: number): { ok: boolean; sensitivity: number } {
+  const c = Math.abs(counts);
+  if (!Number.isFinite(c) || c < MIN_CALIBRATION_COUNTS) return { ok: false, sensitivity: DEFAULT_SETTINGS.sensitivity };
+  const raw = TURN / c / BASE_SENSITIVITY;
+  const { min, max } = LIMITS.sensitivity;
+  return { ok: true, sensitivity: Math.min(max, Math.max(min, Math.round(raw * 1000) / 1000)) };
 }
 
 type Listener = (s: Readonly<GameSettings>) => void;
