@@ -11,7 +11,7 @@
 - Trabalho com vários agentes (Claude, Codex, Gemini): `AGENTS.md` único; `CLAUDE.md` e `GEMINI.md` importam ele
 - Combate v1 (PR #3): dano por parte, morte com explosão e respawn, marcador de acerto
 - Painel de desempenho na tecla `'` (PR #5), refeito depois da tentativa do GPT-OSS
-- **Painel de missão** (pedido do dono): página gerada do `ROADMAP.md` com a rota das fases, as 11 frentes (nível, progresso, itens) e as conquistas (PRs mergeados). `npm run painel` gera em `.tmp/painel/`; o `npm run check` reprova roadmap fora do formato. Publicado em https://claude.ai/artifact/T3X9EjnXvXNrvz1DnnrsHC (privado: o dono compartilha pelo menu Share)
+- **Painel de missão** (pedido do dono): página gerada do `ROADMAP.md` com a rota das fases, as 11 frentes (nível, progresso, itens) e as conquistas (PRs mergeados). `npm run painel` gera em `.tmp/painel/`; o `npm run check` reprova roadmap fora do formato. Vai para o site do projeto (em definição: ver decisões em aberto)
 - **Bots v1 (Claude, a pedido do dono):** 3 Vector-09 inimigos que patrulham, veem só com linha de visão, reagem, perseguem, atacam andando de lado, recuam com o torso baixo e renascem longe do jogador. O jogador também morre e renasce, com integridade das 6 partes no HUD, borda vermelha ao tomar dano, tela "ABATIDO" e placar de abates/mortes. Pausar congela o mundo. 32 testes. **O dono jogou: "estão atacando bem, não ficaram perdidos, estão vindo pra cima de mim"**
 
 ## PENDENTE

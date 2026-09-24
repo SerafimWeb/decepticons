@@ -10,7 +10,7 @@
 - O `ROADMAP.md` ganhou a tabela de 11 FRENTES (fonte única das etiquetas), uma etiqueta por item, `[~]` para "em andamento", o marcador `(atual)` na fase em foco e `## 💡 IDEIAS` (propostas sem fase, que o dono prioriza).
 - `scripts/painel.mjs` monta a rota das fases (hexágonos, a atual pulsa, clique filtra), um cartão por frente (nível, posto de LATENTE a DOMINADA, anel de progresso, itens), a próxima missão e a equipe (do `ESTADO_ATUAL.md`) e as conquistas (PRs mergeados, via git). Visual: design system Serafim.
 - `--check` entrou no `npm run check`: item sem etiqueta, etiqueta desconhecida ou fase `(atual)` ausente reprovam. Todo agente mantém o painel certo sem saber que ele existe.
-**Onde ver:** artefato privado no claude.ai, que o Claude republica ao fim de cada sessão. Para a equipe ver, o dono compartilha pelo menu Share. Outros agentes: `npm run painel` gera `.tmp/painel/painel.html`.
+**Onde ver:** `npm run painel` gera `.tmp/painel/painel.html`. Nada de artefatos do claude.ai (pedido do dono): o painel vai para o site do projeto, junto com o jogo.
 **O que o painel já mostrou:** Som, Design dos Mechs e Multiplayer estão em 0%; as ideias sem fase dessas frentes esperam prioridade do dono.
 **Quem decidiu:** Claude, a pedido do dono.
 
