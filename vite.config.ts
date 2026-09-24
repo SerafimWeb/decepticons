@@ -11,6 +11,8 @@ const RAPIER_BROWSER = { find: /^@dimforge\/rapier3d-simd-compat$/, replacement:
 
 export default defineConfig({
   root: 'client',
+  // Caminhos relativos: o mesmo build roda na raiz (smoke) e em subpasta (selvamkt.com.br/cybermech/jogar/).
+  base: './',
   plugins: [wasm()],
   resolve: { alias: [RAPIER_BROWSER] },
   // O pre-bundle do dev server quebraria o import do .wasm.

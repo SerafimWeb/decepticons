@@ -4,6 +4,22 @@
 
 ---
 
+## [2026-09-23] Site do projeto em selvamkt.com.br/cybermech + o que adotamos das práticas de estúdios AAA
+**Decisão do dono:** reunir jogo e painel num site, sem depender de localhost nem de artefatos do claude.ai: caminho `/cybermech` (não `/decepticons`, marca da Hasbro) e **público**, só com o jogo e o painel.
+**Como:**
+- `npm run site` monta `.tmp/site/`: painel na raiz, com botão "Jogar"; jogo em `/jogar/` (Vite com `base: './'`); `.htaccess` gerado com tipo do `.wasm`, cache e CSP.
+- O job `deploy` do CI publica a cada merge na `main` com check verde (o "build do dia" dos estúdios).
+- Reaproveita o padrão do CAPTIA, que já publica em `selvamkt.com.br/captia/` na mesma conta Hostinger: rsync/SSH na porta 65002, 5 tentativas, verificação com tolerância a desafio da Cloudflare.
+- **Trava a mais:** o job se recusa a rodar se o destino não terminar em `/public_html/cybermech/`, porque o `rsync --delete` com o caminho errado apagaria o site real da Selva MKT.
+- Fica dormente até o dono configurar `SITE_URL` e os secrets.
+**Garantia:** `npm run site -- --check` (no `npm run check`) serve o site em `/cybermech/` com os mesmos cabeçalhos do `.htaccess` e abre painel → Jogar → jogo no Chrome. Pegou um 404 de favicon antes de ir ao ar.
+**Práticas AAA (sugestão do Gemini), filtradas para este projeto:**
+- **Já temos:** fonte única da verdade (`.decepticons/` + `ROADMAP`); filtro por disciplina (frentes do painel); tronco estável com branches curtos e CI; revisão de código e testes antes do merge.
+- **Adotado agora:** build do dia publicado a cada merge.
+- **Viraram ideias no ROADMAP para o dono priorizar:** Issues do GitHub com severidade como rastreador de bugs; teste noturno com bots jogando no headless (a "automação de QA"); dependências entre frentes no painel.
+- **Não serve aqui:** Jira, Hansoft, Confluence (seriam uma segunda fonte de verdade para uma equipe de 1 pessoa + agentes); Perforce (não temos binários grandes: a geometria é procedural); ShotGrid e SyncSketch (não há pipeline de arte ainda); Wwise e FMOD (não existem no navegador, o som será Web Audio).
+**Quem decidiu:** dono (site, caminho, público); Claude (implementação e o filtro das práticas).
+
 ## [2026-09-23] Painel de missão gerado do ROADMAP (frentes + fases, gamificado)
 **Pedido do dono:** "muitas frentes pra cuidar (jogabilidade, responsividade, design dos robôs, armas, som, UX, cenários…); quero visualizar esse nosso painel de trabalho", algo gamificado, em fluxograma, para toda a equipe se localizar.
 **Decisão:** o painel é **gerado** do `ROADMAP.md`, não desenhado à mão; uma página feita à mão ficaria velha no primeiro PR seguinte (R14).

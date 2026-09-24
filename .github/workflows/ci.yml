@@ -1,6 +1,6 @@
 name: CI
 
-# [R15] Mesmo check do hook pre-push: typecheck + testes + build + budget + boot headless.
+# [R15] Mesmo check do hook pre-push: typecheck + testes + roadmap + build + budget + boot headless + site.
 # O runner traz o Google Chrome; o smoke usa ele via playwright-core. Imagem fixada de propósito:
 # trocar de versão (ex.: ubuntu-26.04) é decisão nossa, não migração surpresa do ubuntu-latest.
 on:
@@ -11,7 +11,7 @@ on:
 jobs:
   check:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -20,3 +20,57 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+
+  # "Build do dia": cada merge na main com check verde vai para o site (DEPLOY.md).
+  # Dormente até existir a variável de repositório SITE_URL e os secrets DEPLOY_*.
+  deploy:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.SITE_URL != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-site
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 50 # o painel lista os últimos PRs mergeados
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run site
+
+      # Mesmo padrão do deploy do CAPTIA nesta conta Hostinger: rsync + SSH (porta 65002), com
+      # novas tentativas (a proteção anti-abuso da Hostinger às vezes derruba a conexão).
+      # tr -d '\r' limpa CRLF do Windows na chave.
+      - name: Publicar via rsync
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          # O --delete apaga no servidor o que não existe aqui: com o caminho errado apagaria o site
+          # real do selvamkt.com.br. Só publica numa pasta que termina em /public_html/cybermech/.
+          case "$DEPLOY_PATH" in
+            */public_html/cybermech/) ;;
+            *) echo "::error::DEPLOY_PATH precisa terminar em /public_html/cybermech/"; exit 1 ;;
+          esac
+          printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > deploy_key
+          chmod 600 deploy_key
+          SSH="ssh -p 65002 -i deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=15"
+          ok=
+          for attempt in 1 2 3 4 5; do
+            if rsync -az --delete --chmod=D755,F644 -e "$SSH" .tmp/site/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"; then
+              ok=1; break
+            fi
+            echo "rsync: tentativa $attempt falhou; nova tentativa em $((attempt*30)) s"
+            sleep $((attempt*30))
+          done
+          rm -f deploy_key
+          [ -n "$ok" ] || { echo "::error::rsync falhou depois de 5 tentativas"; exit 1; }
+
+      - name: Conferir o site publicado
+        run: node scripts/site.mjs --verify "${{ vars.SITE_URL }}"

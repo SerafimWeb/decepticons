@@ -11,7 +11,7 @@
 **Codinome interno:** DECEPTICONS (nome da pasta e da memória `.decepticons/`)
 **Cliente:** projeto próprio
 **Propósito:** shooter de Mechs multiplayer que roda no navegador, leve o bastante para muitos jogadores simultâneos em hardware comum.
-**URL de produção:** nenhuma (sem deploy; ver `DEPLOY.md`)
+**URL de produção:** `https://www.selvamkt.com.br/cybermech/` (jogo em `/jogar/`; ver `DEPLOY.md`)
 **Início:** 2026-09-23
 
 ---
@@ -51,7 +51,7 @@ Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 | Render | Three.js 0.186 (WebGL2, EffectComposer + UnrealBloom) |
 | Física | Rapier3D 0.20 SIMD (Wasm): character controller cinemático |
 | Servidor (planejado) | Colyseus em Node, rodando a mesma simulação a 60 Hz |
-| Deploy | nenhum ainda |
+| Deploy | site estático na Hostinger (`selvamkt.com.br/cybermech/`) por rsync/SSH a cada merge na `main` |
 | CI | hooks git locais (`.githooks/`) + GitHub Actions (`ci.yml`, ubuntu-24.04) em `SerafimWeb/decepticons` (privado) |
 | Node | `^20.19.0 \|\| >=22.12.0` (máquina de dev: 22.14) |
 
