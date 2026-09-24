@@ -7,6 +7,8 @@ export class Quality {
   private frameCount = 0;
   private timeAccumulator = 0;
   private tier = 0;
+  /** Desligado quando o jogador fixa a qualidade nas configurações. */
+  private adaptive = true;
   private readonly maxTiers = 2;
 
   // Em segundos
@@ -20,8 +22,16 @@ export class Quality {
   /**
    * Chamado a cada frame do render com o tempo (dt) daquele frame.
    */
+  /** Liga/desliga o rebaixamento automático; ligar recomeça do degrau mais alto. */
+  setAdaptive(on: boolean): void {
+    this.adaptive = on;
+    this.tier = 0;
+    this.frameCount = 0;
+    this.timeAccumulator = 0;
+  }
+
   update(dt: number): void {
-    if (this.tier >= this.maxTiers) return; // Já degradou tudo
+    if (!this.adaptive || this.tier >= this.maxTiers) return;
     
     // dt máximo contabilizado para não quebrar a lógica se a aba ficar inativa
     const clampedDt = Math.min(dt, 0.1); 

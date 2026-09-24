@@ -5,9 +5,10 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-import { CameraRig } from '../camera/CameraRig';
+import { BASE_SENSITIVITY, CameraRig } from '../camera/CameraRig';
 import { CombatSystem } from '../combat/CombatSystem';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
+import { BOT_SKILLS } from '../combat/BotController';
 import { BotSystem } from '../combat/BotSystem';
 import { Respawner } from '../combat/Respawner';
 import { Vector09 } from '../entities/Vector09';
@@ -21,11 +22,14 @@ import { PlayerController } from '../player/PlayerController';
 import { HUD } from '../ui/HUD';
 import { InputManager } from './InputManager';
 import { Quality } from './Quality';
+import { browserStorage, Settings, type GameSettings, type QualityPreset } from './Settings';
 import { DebugPanel } from '../debug/DebugPanel';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
 const PLAYER_RESPAWN_S = 3;
+/** Resolução máxima do render: acima de 1,5 o custo de GPU sobe muito para pouco ganho visível. */
+const maxPixelRatio = () => Math.min(window.devicePixelRatio, 1.5);
 /** Um bot perto (entra em combate logo) e dois mais longe (chegam patrulhando). */
 const BOT_SPAWNS = [SPAWN_POINTS[2]!, SPAWN_POINTS[4]!, SPAWN_POINTS[8]!];
 const THRUSTER_COLOR = new THREE.Color(3.0, 1.0, 0.2);
@@ -60,6 +64,9 @@ export class Game {
   private readonly player: PlayerController;
   private readonly hud = new HUD();
   private readonly debugPanel = new DebugPanel();
+  /** Configurações do jogador (salvas no navegador). A tela de configurações chama `settings.update()`. */
+  readonly settings = new Settings(browserStorage());
+  private appliedQuality: QualityPreset | null = null;
 
   private playing = false;
   private kills = 0;
@@ -78,7 +85,7 @@ export class Game {
   ) {
     // --- Render ---
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    this.renderer.setPixelRatio(maxPixelRatio());
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
@@ -151,16 +158,35 @@ export class Game {
     this.hud.setReady();
 
     this.quality = new Quality(
-      (ratio) => {
-        // O composer guarda o próprio pixelRatio (dos render targets): sem isto a cena
-        // continuaria sendo renderizada na resolução antiga e o degrau não economizaria nada.
-        this.renderer.setPixelRatio(ratio);
-        this.composer.setPixelRatio(ratio);
-      },
+      (ratio) => this.setPixelRatio(ratio),
       (enabled) => {
         this.bloomPass.enabled = enabled;
       },
     );
+    this.settings.onChange((s) => this.applySettings(s));
+  }
+
+  /** O composer guarda o próprio pixelRatio (render targets): os dois mudam juntos. */
+  private setPixelRatio(ratio: number): void {
+    this.renderer.setPixelRatio(ratio);
+    this.composer.setPixelRatio(ratio);
+  }
+
+  /** Aplica as configurações do jogador: na largada e a cada mudança na tela de configurações. */
+  private applySettings(s: Readonly<GameSettings>): void {
+    this.rig.sensitivity = BASE_SENSITIVITY * s.sensitivity;
+    this.rig.invertY = s.invertY;
+    this.rig.fovOffset = s.fovOffset;
+    this.player.keys = s.keys;
+    this.bots.setSkill(BOT_SKILLS[s.difficulty]);
+    this.debugPanel.setVisible(s.showPerf);
+    if (s.quality !== this.appliedQuality) {
+      this.appliedQuality = s.quality;
+      // 'auto' começa no máximo e deixa a qualidade adaptativa rebaixar (G12); os outros fixam.
+      this.setPixelRatio(s.quality === 'media' ? 1 : s.quality === 'baixa' ? 0.75 : maxPixelRatio());
+      this.bloomPass.enabled = s.quality !== 'baixa';
+      this.quality.setAdaptive(s.quality === 'auto');
+    }
   }
 
   start(): void {
@@ -216,7 +242,7 @@ export class Game {
         return;
       }
       if (!this.playing) return;
-      if (code === 'KeyV') this.switchCamera();
+      if (code === this.settings.value.keys.camera) this.switchCamera();
       else if (code === 'Escape' && !rig.mode.pointerLock) this.setPlaying(false);
     };
   }

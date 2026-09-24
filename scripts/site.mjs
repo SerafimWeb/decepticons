@@ -163,7 +163,16 @@ async function check() {
     await page.waitForFunction(() => document.getElementById('cta')?.textContent === '[ clique para jogar ]', null, {
       timeout: 60_000,
     });
-    console.log(`site    ok: painel em ${prefix}, "Jogar" abre ${prefix}jogar/, física e loop sobem com a CSP`);
+    // Configurações salvas no navegador são lidas e aplicadas na largada (contrato core/Settings.ts).
+    await page.evaluate(() => localStorage.setItem('cybermech.settings.v1', JSON.stringify({ showPerf: false })));
+    await page.reload();
+    await page.waitForFunction(() => document.getElementById('cta')?.textContent === '[ clique para jogar ]', null, {
+      timeout: 60_000,
+    });
+    if (!(await page.evaluate(() => document.getElementById('debug-panel')?.hidden))) {
+      failures.push('configuração salva (showPerf: false) não foi aplicada');
+    }
+    console.log(`site    ok: painel em ${prefix}, "Jogar" abre ${prefix}jogar/, física e loop sobem com a CSP, configurações salvas valem`);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {

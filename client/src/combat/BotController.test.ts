@@ -8,7 +8,7 @@ import type { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
-import { BOT_SKILL_NORMAL, type BotState } from './BotController';
+import { BOT_SKILL_NORMAL, BOT_SKILLS, type BotSkill, type BotState } from './BotController';
 import { BotSystem } from './BotSystem';
 import { CombatSystem } from './CombatSystem';
 import { ProjectileSystem } from './ProjectileSystem';
@@ -28,6 +28,7 @@ interface Scenario {
   wall?: boolean;
   waypoints?: [number, number][];
   seed?: number;
+  skill?: BotSkill;
 }
 
 async function scenario(o: Scenario) {
@@ -56,6 +57,7 @@ async function scenario(o: Scenario) {
       [10, 80],
     ],
     seed: o.seed ?? 7,
+    skill: o.skill,
   });
   bots.targets = [player];
   const bot = bots.mechs[0]!;
@@ -144,6 +146,19 @@ describe('bots (inimigos)', () => {
     s.run(1.2);
     expect(s.states.has('retreat')).toBe(true);
     expect(s.distance()).toBeGreaterThan(32);
+  });
+
+  it('dificuldade: o difícil reage antes e causa mais dano que o fácil (mesmo cenário e semente)', async () => {
+    const duel = async (skill: BotSkill) => {
+      const s = await scenario({ bot: [0, 0], player: [0, -40], skill });
+      s.run(8);
+      return { firstShot: s.shots[0]!, damage: totalHealth(VECTOR09_STATS.maxModuleHealth) - totalHealth(s.player.modules) };
+    };
+    const easy = await duel(BOT_SKILLS.facil);
+    const hard = await duel(BOT_SKILLS.dificil);
+    expect(hard.firstShot).toBeLessThan(easy.firstShot);
+    expect(hard.damage).toBeGreaterThan(easy.damage);
+    expect(BOT_SKILLS.normal).toBe(BOT_SKILL_NORMAL); // o normal é o que o dono aprovou
   });
 
   it('é determinístico: mesmo cenário e semente, mesmo trajeto e mesmos tiros', async () => {

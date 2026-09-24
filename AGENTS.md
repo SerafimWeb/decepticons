@@ -63,7 +63,7 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex 
 
 ```text
 client/src/
-  core/        Game.ts (monta os módulos + loop), InputManager.ts, Quality.ts (qualidade adaptativa, G12), rng.ts (aleatório com semente)
+  core/        Game.ts (monta os módulos + loop), InputManager.ts, Quality.ts (qualidade adaptativa, G12), rng.ts (aleatório com semente), Settings.ts (configurações do jogador: contrato da UI)
   physics/     PhysicsWorld.ts (Rapier, FIXED_DT)
   entities/    MechBase.ts (controller, dash, dano modular, animação), Vector09.ts, meshKit.ts
   player/      PlayerController.ts (input/câmera -> MechInput, tiro)

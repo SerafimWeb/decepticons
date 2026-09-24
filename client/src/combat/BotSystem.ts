@@ -66,6 +66,11 @@ export class BotSystem {
     this.mechs = this.bots.map((b) => b.mech);
   }
 
+  /** Troca a dificuldade de todos os bots (vale a partir do próximo tick). */
+  setSkill(skill: BotSkill): void {
+    for (const b of this.bots) b.brain.skill = skill;
+  }
+
   /** Estado do cérebro de um bot (HUD de debug e testes). */
   brainOf(mech: MechBase): BotController | undefined {
     return this.bots.find((b) => b.mech === mech)?.brain;
