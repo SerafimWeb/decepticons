@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mulberry32 } from '../core/rng';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { DestructibleDef, Destructibles } from './Destructibles';
 
@@ -41,14 +42,24 @@ const RAMP_WIDTH = 8;
 /** Cor HDR (>1) para as linhas neon passarem do limiar do bloom. */
 const neon = (hex: number, intensity = 2.5) => new THREE.Color(hex).multiplyScalar(intensity);
 
-function mulberry32(seed: number) {
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+/**
+ * Pontos de nascimento e de patrulha: chão livre, longe de prédios, barricadas e da plataforma.
+ * O primeiro é o nascimento do jogador. Os bots também usam a lista como rota de patrulha.
+ */
+export const SPAWN_POINTS: readonly (readonly [number, number])[] = [
+  [0, 25],
+  [-18, -8],
+  [6, -18],
+  [24, 12],
+  [45, -45],
+  [-60, -60],
+  [60, 20],
+  [0, 55],
+  [-40, -5],
+  [-65, 60],
+  [70, 70],
+  [-75, 15],
+];
 
 export class Arena {
   readonly halfSize = 100;

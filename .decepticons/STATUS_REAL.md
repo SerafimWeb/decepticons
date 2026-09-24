@@ -22,8 +22,10 @@
 | Qualidade adaptativa (G12) | PARCIAL | Gemini; corrigida e com testes, mas ainda não medida numa GPU integrada de verdade |
 | Arena | REAL | 1 mapa: 3 prédios, plataforma com rampa, skyline |
 | Dano em Mechs por parte | REAL | a parte sai da altura e do lado do impacto na cápsula; dano em parte destruída vai para o torso. Testado no Node (com mutação) e jogado pelo dono |
-| Morte e respawn | REAL | torso zerado: explosão, a carcaça vira destroço, e o alvo volta em 4 s. A volta foi testada no Node; no navegador foi vista a morte, não a volta |
-| Alvos de treino | REAL | 3 Vector-09 violeta parados na arena |
+| Morte e respawn | REAL | torso zerado: explosão e carcaça em destroços. Bots voltam em 4 s, o jogador em 3 s, no ponto de nascimento mais longe de quem está vivo. Testado no Node; no navegador o dono jogou contra os bots |
+| Bots inimigos (IA) | REAL | 3 Vector-09 violeta: patrulham, veem só com linha de visão (cone de 110° na patrulha), reagem em 0,5 s, perseguem, atacam andando de lado em rajadas, recuam com o torso baixo, voltam-se para quem os acerta. Determinísticos (RNG com semente). Hoje só caçam o jogador. O dono jogou: "estão atacando bem" |
+| Dano no jogador, HUD de integridade | REAL | 6 partes no HUD, borda vermelha ao tomar dano, tela "ABATIDO" com contagem, abates/mortes |
+| Pausa | REAL | Esc/menu congela o mundo (os bots não atacam com o jogo pausado) |
 | Feedback de acerto | REAL | marcador de acerto, parte destruída anunciada ("PERNA ESQ DESTRUÍDA", "ALVO ABATIDO"), flash de dano, peça arrancada vira destroço |
 | Blind Mode (cabeça destruída) | AUSENTE | só o getter `isBlind` |
 | Braço esquerdo (lançador secundário) | DEMO | só o modelo, sem arma |

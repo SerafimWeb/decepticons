@@ -8,7 +8,7 @@ import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { CombatSystem } from './CombatSystem';
 import { ProjectileSystem } from './ProjectileSystem';
-import { TARGET_RESPAWN_S, TrainingTargets } from './TrainingTargets';
+import { Respawner } from './Respawner';
 
 const MAX = VECTOR09_STATS.maxModuleHealth;
 // Efeitos visuais não importam aqui: só a regra (o ParticleSystem precisa de DOM).
@@ -82,24 +82,39 @@ describe('combate: projétil → parte do Mech', () => {
   });
 });
 
-describe('alvos de treino', () => {
-  it(`voltam inteiros ${TARGET_RESPAWN_S} s depois de abatidos`, async () => {
+describe('Respawner', () => {
+  it('renasce depois do tempo, inteiro, no ponto mais longe de quem está vivo', async () => {
     await RAPIER.init();
     const physics = await PhysicsWorld.create();
     physics.addStaticBox(new THREE.Vector3(0, -1, 0), new THREE.Vector3(200, 2, 200));
-    const combat = new CombatSystem(destructibles, debris, particles);
-    const targets = new TrainingTargets(new THREE.Scene(), physics, combat, new THREE.Vector3(0, 0, 25));
-    const [first] = targets.mechs;
-    first!.damagePart('leftLeg', 999);
-    first!.damagePart('torso', 999);
-    expect(first!.alive).toBe(false);
+    const respawner = new Respawner([
+      [0, 0],
+      [50, 0],
+      [-50, 0],
+    ]);
+    const survivor = new Vector09();
+    survivor.spawn(physics, new THREE.Vector3(45, 0, 0));
+    const victim = new Vector09();
+    victim.spawn(physics, new THREE.Vector3(0, 0, 0));
+    respawner.track(survivor, 3);
+    let respawned = 0;
+    respawner.track(victim, 3, () => respawned++);
 
-    const ticks = Math.ceil(TARGET_RESPAWN_S / FIXED_DT);
-    for (let i = 0; i < ticks - 2; i++) targets.fixedUpdate(FIXED_DT);
-    expect(first!.alive).toBe(false); // ainda contando
-    for (let i = 0; i < 3; i++) targets.fixedUpdate(FIXED_DT);
-    expect(first!.alive).toBe(true);
-    expect(first!.modules).toEqual(MAX);
-    expect(first!.collider.isEnabled()).toBe(true);
+    victim.damagePart('leftLeg', 999);
+    victim.damagePart('torso', 999);
+    expect(victim.alive).toBe(false);
+
+    const ticks = Math.ceil(3 / FIXED_DT);
+    for (let i = 0; i < ticks - 2; i++) respawner.fixedUpdate(FIXED_DT);
+    expect(victim.alive).toBe(false); // ainda contando
+    expect(respawner.timeLeft(victim)).toBeGreaterThan(0);
+    for (let i = 0; i < 3; i++) respawner.fixedUpdate(FIXED_DT);
+    expect(victim.alive).toBe(true);
+    expect(respawned).toBe(1);
+    expect(victim.modules).toEqual(MAX);
+    expect(victim.collider.isEnabled()).toBe(true);
+    // O sobrevivente está em x=45: o ponto mais longe dele é x=-50.
+    expect(victim.simPosition.x).toBe(-50);
+    expect(respawner.timeLeft(victim)).toBeNull();
   });
 });

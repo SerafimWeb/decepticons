@@ -13,7 +13,7 @@ interface Projectile {
   owner?: RAPIER.Collider;
 }
 
-const SPEED = 140;
+export const PROJECTILE_SPEED = 140;
 const LIFETIME = 2;
 const DAMAGE = 25;
 const SPARK_COLOR = new THREE.Color(0.4, 2.2, 3.0);
@@ -27,10 +27,12 @@ const _look = new THREE.Vector3();
  * segmento percorrido (não atravessa nada em alta velocidade); o render interpola.
  */
 export class ProjectileSystem {
-  /** Chamado a cada impacto (Mech ou destrutível; quem decide é o CombatSystem). */
-  onHit?: (hit: PhysicsHit, dir: THREE.Vector3, damage: number) => void;
+  /** Chamado a cada impacto (Mech ou destrutível; quem decide é o CombatSystem). `owner` = quem atirou. */
+  onHit?: (hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider) => void;
 
   private readonly pool: Projectile[] = [];
+  private readonly friendlyMat: THREE.MeshBasicMaterial;
+  private readonly hostileMat: THREE.MeshBasicMaterial;
 
   constructor(
     scene: THREE.Scene,
@@ -40,6 +42,8 @@ export class ProjectileSystem {
   ) {
     const geo = new THREE.SphereGeometry(0.2, 8, 6);
     const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.6, 3.0, 4.0) });
+    this.hostileMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(4.0, 0.6, 2.2) });
+    this.friendlyMat = mat;
     for (let i = 0; i < size; i++) {
       const mesh = new THREE.Mesh(geo, mat);
       mesh.scale.set(1, 1, 6);
@@ -56,16 +60,18 @@ export class ProjectileSystem {
     }
   }
 
-  fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider): void {
+  /** `hostile`: plasma inimigo, em magenta, para o jogador distinguir os tiros que vêm contra ele. */
+  fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, hostile = false): void {
     const p = this.pool.find((q) => q.life <= 0);
     if (!p) return;
     p.pos.copy(origin);
     p.prev.copy(origin);
-    p.velocity.copy(dir).multiplyScalar(SPEED);
+    p.velocity.copy(dir).multiplyScalar(PROJECTILE_SPEED);
     p.life = LIFETIME;
     p.owner = owner;
     p.mesh.position.copy(origin);
     p.mesh.lookAt(_look.copy(origin).add(dir));
+    p.mesh.material = hostile ? this.hostileMat : this.friendlyMat;
     p.mesh.visible = true;
   }
 
@@ -78,7 +84,7 @@ export class ProjectileSystem {
       const hit = this.physics.raycast(p.pos, _dir, step, p.owner);
 
       if (hit) {
-        this.onHit?.(hit, _dir, p.damage);
+        this.onHit?.(hit, _dir, p.damage, p.owner);
 
         const at = hit.point.addScaledVector(hit.normal, 0.05);
         this.particles.burst(at, hit.normal, { count: 36, color: SPARK_COLOR, speed: 24, life: 0.6, spread: 0.9 });

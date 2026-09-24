@@ -119,6 +119,8 @@ export abstract class MechBase {
   private readonly rightArmBaseZ: number;
   private hitFlash = 0;
   private shownFlash = 0;
+  /** Boca do canhão em relação aos pés, com o Mech em repouso e virado para -Z (medida no rig). */
+  private readonly muzzleLocal = new THREE.Vector3();
   /** A 1ª pessoa esconde a cabeça do próprio Mech; parte destruída também some. */
   private headVisibleByCamera = true;
 
@@ -131,6 +133,8 @@ export abstract class MechBase {
     this.jumpsLeft = stats.maxJumps;
     this.rightArmBaseZ = rig.rightArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
+    this.root.updateMatrixWorld(true);
+    rig.muzzle.getWorldPosition(this.muzzleLocal);
   }
 
   /** Cria cápsula cinemática + character controller no mundo físico. */
@@ -158,8 +162,22 @@ export abstract class MechBase {
     this.root.position.copy(feet);
   }
 
+  /** Posição de render (interpolada entre ticks). Não use em regra de jogo: veja `simPosition`. */
   get position(): THREE.Vector3 {
     return this.root.position;
+  }
+
+  /** Pés na simulação (tick fixo). É o que regras de jogo e IA devem ler (G2). */
+  get simPosition(): Readonly<THREE.Vector3> {
+    return this.simPos;
+  }
+
+  /** Boca do canhão calculada da simulação (posição + yaw), sem depender do render. */
+  simMuzzle(target: THREE.Vector3): THREE.Vector3 {
+    const { x, y, z } = this.muzzleLocal;
+    const sin = Math.sin(this.yaw);
+    const cos = Math.cos(this.yaw);
+    return target.set(this.simPos.x + x * cos + z * sin, this.simPos.y + y, this.simPos.z - x * sin + z * cos);
   }
 
   get isDashing(): boolean {

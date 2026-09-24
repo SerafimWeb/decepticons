@@ -4,6 +4,27 @@
 
 ---
 
+## [2026-09-23] Bots v1: IA de inimigos, morte do jogador e pausa que congela o mundo
+**Pedido do dono:** "os inimigos ainda não se mexem… faça você" (depois do rascunho do GPT-OSS).
+**Como funciona:**
+- O `BotController` produz o mesmo `MechInput` do teclado, mais um pedido de tiro. Estados: patrulha → persegue → ataca → recua.
+- Visão só com linha de visão: raio da cabeça ao torso do alvo, a 10 Hz, com cone de 110° na patrulha e "audição" a 14 m.
+- Tempo de reação, erro de mira sorteado por tiro, antecipação parcial do alvo, giro limitado, tiro em rajadas.
+- Levar tiro de quem não via faz o bot virar e ir atrás.
+- Tudo lê a simulação (`simPosition`, `simMuzzle`) e o RNG com semente (`core/rng.ts`, extraído do `Arena.ts`, R14): o mesmo cenário dá o mesmo resultado (G2) e o servidor poderá rodar os mesmos bots.
+**Decisões:**
+- Na v1 os bots só caçam o jogador (em aberto: bots contra bots no modo todos contra todos).
+- Renascimento genérico (`Respawner`) para bots e jogador, no ponto mais longe de quem está vivo; os pontos ficam no `Arena.ts` (`SPAWN_POINTS`), e um teste garante que todos estão livres de obstáculos.
+- Plasma inimigo em magenta.
+- O marcador de acerto só aparece nos tiros do jogador.
+- **Pausar congela o mundo:** antes a simulação rodava com o menu aberto; com bots, eles atacariam o jogador pausado.
+**Garantia:**
+- 8 testes de bot com física real. Quatro defeitos reinseridos foram pegos: yaw invertido (o bug do rascunho do GPT-OSS), sem linha de visão, sem tempo de reação, `Math.random` na mira.
+- Playtest no navegador: dano só depois do clique, nenhum erro.
+- O dono jogou e aprovou.
+**Custo de CPU:** por bot por tick, 1 character controller (como o jogador) + a IA (contas de vetor, sem alocação) + 1 raycast por alvo a 10 Hz. O boot no smoke ficou igual ao da `main` numa comparação A/B (≈7 s).
+**Quem decidiu:** Claude, na fase autorizada pelo dono.
+
 ## [2026-09-23] Tentativa do GPT-OSS (overlay de desempenho + rascunho de bots) substituída pelo Claude
 **O que aconteceu:** o dono pediu ao gpt-oss 120B um overlay de desempenho na tecla `'`. O resultado, não commitado, no branch `gemini/inimigos-bots`:
 - **Quebrou a mira:** um bloco de CSS sem seletor em `styles.css` fez o navegador descartar a regra seguinte inteira (`#crosshair`). Confirmado no navegador: position static, largura de 1280 px. O build de produção nem compilava (`lightningcss`).

@@ -84,6 +84,26 @@ export class PhysicsWorld {
     };
   }
 
+  /**
+   * Primeiro colisor no caminho do raio (linha de visão da IA). Mais barato que `raycast`:
+   * sem normal e sem alocar resultado. Ignora destroços, como o `raycast`.
+   */
+  firstColliderOnRay(
+    origin: THREE.Vector3,
+    dir: THREE.Vector3,
+    maxDist: number,
+    exclude?: RAPIER.Collider,
+  ): RAPIER.Collider | null {
+    this.rayOrigin.x = origin.x;
+    this.rayOrigin.y = origin.y;
+    this.rayOrigin.z = origin.z;
+    this.rayDir.x = dir.x;
+    this.rayDir.y = dir.y;
+    this.rayDir.z = dir.z;
+    const hit = this.world.castRay(this.ray, maxDist, true, RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC, undefined, exclude);
+    return hit?.collider ?? null;
+  }
+
   step(): void {
     this.world.step();
   }
