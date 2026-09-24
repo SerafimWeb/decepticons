@@ -87,7 +87,7 @@
 
 ## 💡 IDEIAS
 > Sem fase ainda: o dono prioriza. Propostas do Claude em 2026-09-23, a partir das frentes citadas pelo dono.
-- [ ] Efeitos sonoros: tiro, impacto, passos pesados, explosão (sintetizados, sem arquivos pesados) #som
+- [x] Efeitos sonoros: tiro, impacto, passos pesados, explosão (sintetizados, sem arquivos pesados) #som
 - [ ] Música que acompanha a intensidade do combate #som
 - [ ] Pilotos com personalidade: agressivo, franco-atirador, cauteloso #ia
 - [ ] Bots contra bots no modo todos contra todos #ia
