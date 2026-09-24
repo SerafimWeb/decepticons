@@ -137,6 +137,10 @@ export class SettingsMenu {
         e.stopPropagation();
 
         const code = normalizeKey(e.code);
+        if (code === 'Escape') {
+          this.cancelRemap();
+          return;
+        }
         if (RESERVED_KEYS.includes(code)) {
           // Recusa teclas reservadas
           this.flashError(this.keyButtons[this.remappingAction]);

@@ -95,7 +95,7 @@
 - [ ] Pintura e decalques por jogador (base dos cosméticos) #mechs
 - [ ] Prédios que desmoronam em partes, não só barricadas #cenarios
 - [ ] Tela inicial com apelido e escolha de Mech #ux
-- [ ] Estande de calibração do mouse: gravar uma volta de 360° com o movimento real, cm/360, entrada crua (sem aceleração do sistema) #jogabilidade
+- [x] Estande de calibração do mouse: gravar uma volta de 360° com o movimento real, cm/360, entrada crua (sem aceleração do sistema) #jogabilidade
 - [ ] Suporte a controle (gamepad) #jogabilidade
 - [ ] Volume e mixagem nas configurações (junto com o som) #som
 - [ ] Recuo e tremor próprios de cada arma #jogabilidade

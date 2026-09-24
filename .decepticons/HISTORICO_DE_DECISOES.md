@@ -2,6 +2,18 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Estande de calibração do mouse e nova escala de sensibilidade
+**Pedido do dono:** "no jogo é muito rápido para fazer essa configuração fina".
+**Decisão:** uma tela própria, com o jogo parado, que mede o giro de verdade.
+- Faixa de bússola com o mouse preso nela, não no canvas: o jogo continua pausado.
+- "Gravar 1 volta": o jogador faz o gesto que quer para 360° e o total de pontos do mouse vira a sensibilidade (`calibrateFromCounts`). Não precisa saber o DPI; gesto com menos de 300 pontos é recusado.
+- DPI + cm/360 para quem traz a medida de outro jogo; ±1%/±10% para o ajuste fino.
+- Entrada crua (`requestPointerLock({ unadjustedMovement: true })`) ligada por padrão: sem a aceleração do Windows, o mesmo gesto gira sempre o mesmo. Se o navegador recusar, cai para o modo normal.
+**Escala nova:** 1,00x = 0,0008 rad por ponto (~25 cm por volta a 800 DPI, faixa comum em jogos de tiro); antes era 0,0022 (~9 cm, o "rápido demais"). Quem tinha salvo 1,00x fica ~2,75x mais lento. Aceito: a tela só foi ao ar hoje.
+**Custo de CPU:** zero no jogo (a tela só existe com o jogo pausado); uma multiplicação a mais por evento de mouse.
+**De quebra:** Esc durante o remapeamento de tecla cancela (nota da revisão cruzada do PR #13).
+**Quem decidiu:** dono (pedido); Claude (desenho e escala).
+
 ## [2026-09-24] Tela de configurações do Gemini integrada; do PR ao site sem esperar (regra 13)
 **Integração:** o Gemini terminou a tela (`ui/SettingsMenu.ts`) e empurrou o branch, mas não abriu PR, então nada chegava ao site. O branch dele saiu da `main` antes da rodada (PR #12), e `Game.ts`, `styles.css` e `ESTADO_ATUAL` conflitaram. O Claude juntou num branch de integração a partir da `main`, preservando o commit e a autoria do Gemini. Nos conflitos ficaram os dois lados; no ESTADO saíram as pendências que já estavam feitas.
 **Revisão cruzada (Claude):** aprovada.

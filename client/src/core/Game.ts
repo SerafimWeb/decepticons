@@ -5,7 +5,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-import { BASE_SENSITIVITY, CameraRig } from '../camera/CameraRig';
+import { CameraRig } from '../camera/CameraRig';
 import { CombatSystem } from '../combat/CombatSystem';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
 import { BOT_SKILLS } from '../combat/BotController';
@@ -21,11 +21,12 @@ import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { PlayerController } from '../player/PlayerController';
 import { HUD } from '../ui/HUD';
+import { MouseCalibration } from '../ui/MouseCalibration';
 import { RoundHud } from '../ui/RoundHud';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { InputManager } from './InputManager';
 import { Quality } from './Quality';
-import { browserStorage, Settings, type GameSettings, type QualityPreset } from './Settings';
+import { browserStorage, radiansPerCount, Settings, type GameSettings, type QualityPreset } from './Settings';
 import { DebugPanel } from '../debug/DebugPanel';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
@@ -147,6 +148,11 @@ export class Game {
     this.round.register(this.mech, 'VOCÊ');
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
     this.roundHud = new RoundHud(this.mech);
+    // Botão na tela de pausa; a calibração tem camada própria e não retoma o jogo.
+    new MouseCalibration(this.settings, [
+      document.getElementById('btn-settings')!,
+      document.getElementById('setting-sens')!.closest('.setting-row')!,
+    ]);
 
     // --- Jogador ---
     this.input = new InputManager(this.renderer.domElement);
@@ -195,7 +201,8 @@ export class Game {
 
   /** Aplica as configurações do jogador: na largada e a cada mudança na tela de configurações. */
   private applySettings(s: Readonly<GameSettings>): void {
-    this.rig.sensitivity = BASE_SENSITIVITY * s.sensitivity;
+    this.rig.sensitivity = radiansPerCount(s.sensitivity);
+    this.input.rawInput = s.rawInput;
     this.rig.invertY = s.invertY;
     this.rig.fovOffset = s.fovOffset;
     this.player.keys = s.keys;

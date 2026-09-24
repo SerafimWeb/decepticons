@@ -259,6 +259,69 @@ html, body {
 .rb-head { font-size: 11px; color: #9a8cff; border-bottom: 1px solid rgba(0, 229, 255, 0.3); }
 .rb-row.me { color: var(--orange); text-shadow: 0 0 6px var(--orange); }
 
+/* Estande de calibração do mouse (ui/MouseCalibration.ts): camada própria sobre a pausa e sobre
+   a janela de configurações (z-index 2000). */
+#overlay .btn-terminal + .btn-terminal { margin-left: 10px; }
+.setting-row + .btn-terminal { margin: 0 0 8px; align-self: flex-start; }
+.calib {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 3, 13, 0.9);
+  padding: 16px;
+}
+.calib[hidden] { display: none; }
+.calib-panel {
+  width: min(760px, 100%);
+  display: grid;
+  gap: 12px;
+  padding: 20px 22px;
+  border: 1px solid var(--cyan);
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+  letter-spacing: 1px;
+}
+.calib-title { font-size: 22px; letter-spacing: 5px; color: var(--magenta); text-shadow: 0 0 10px var(--magenta); }
+.calib-lede, .calib-hint { margin: 0; font-size: 13px; color: #9a8cff; }
+.calib-hint { color: var(--cyan); min-height: 1.4em; }
+.calib-tape {
+  position: relative;
+  height: 58px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 229, 255, 0.5);
+  cursor: crosshair;
+  outline: none;
+}
+.calib-tape:focus-visible { box-shadow: 0 0 0 2px var(--magenta); }
+.calib-strip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 4400px;
+  height: 100%;
+  background: repeating-linear-gradient(90deg, rgba(0, 229, 255, 0.7) 0 1px, transparent 1px 40px) bottom / 100% 14px no-repeat;
+}
+.calib-tick { position: absolute; top: 8px; transform: translateX(-50%); font-size: 13px; color: var(--cyan); }
+.calib-center { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--orange); box-shadow: 0 0 8px var(--orange); }
+.calib-heading { font-size: 28px; letter-spacing: 3px; color: var(--orange); text-shadow: 0 0 8px var(--orange); }
+.calib-row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.calib-label { font-size: 12px; letter-spacing: 2px; color: #9a8cff; }
+.calib-value { font-size: 20px; min-width: 56px; color: var(--cyan); }
+.calib-btn {
+  background: none;
+  border: 1px solid rgba(0, 229, 255, 0.6);
+  color: var(--cyan);
+  font: inherit;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.calib-btn:hover { background: rgba(0, 229, 255, 0.12); }
+.calib-btn.wide { padding: 8px 14px; letter-spacing: 2px; }
+.calib-btn.done { justify-self: end; border-color: var(--orange); color: var(--orange); letter-spacing: 3px; }
+.calib-input { width: 96px; background: #0b0717; border: 1px solid rgba(0, 229, 255, 0.5); color: var(--cyan); font: inherit; padding: 4px 6px; }
+.calib-check { font-size: 13px; color: #cfc8ff; cursor: pointer; }
+
 #mode {
   position: absolute;
   top: 12px;
