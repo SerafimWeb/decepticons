@@ -29,6 +29,7 @@ import { Quality } from './Quality';
 import { browserStorage, radiansPerCount, Settings, type GameSettings, type QualityPreset } from './Settings';
 import { DebugPanel } from '../debug/DebugPanel';
 import { TouchControls } from '../ui/TouchControls';
+import { AudioSystem } from '../audio/AudioSystem';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
@@ -71,6 +72,11 @@ export class Game {
   private readonly player: PlayerController;
   private readonly hud = new HUD();
   private readonly debugPanel = new DebugPanel();
+  private readonly audio = new AudioSystem();
+  /** Nó de gain do loop de chiado do Blind Mode; null = som não está tocando. */
+  private blindGain: GainNode | null = null;
+  /** Flag para detectar a transição false→true do dash a cada frame. */
+  private wasDashing = false;
   /** Configurações do jogador (salvas no navegador). A tela de configurações chama `settings.update()`. */
   readonly settings = new Settings(browserStorage());
   private appliedQuality: QualityPreset | null = null;
@@ -229,21 +235,34 @@ export class Game {
     mech.onLand = (speed) => {
       rig.addShake(THREE.MathUtils.clamp((speed - 12) / 30, 0.1, 0.6));
       this.particles.burst(mech.position, UP, { count: 30, color: DUST_COLOR, speed: 12, life: 0.7, spread: 2.5, gravity: 4 });
+      // Som de pouso: intensidade proporcional à velocidade de impacto (12..40 m/s → 0..1)
+      this.audio.playLand(THREE.MathUtils.clamp((speed - 12) / 28, 0, 1));
     };
     mech.onDashImpact = (collider, dir) => this.destructibles.demolish(collider, dir);
+    // Som de disparo: wrap do onFire do jogador (não toca para bots — só mech do jogador).
+    // O método onFire original anima o recuo; o wrap mantém esse comportamento e adiciona o som.
+    const _origFire = mech.onFire.bind(mech);
+    mech.onFire = () => { _origFire(); this.audio.playShot(); };
     this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
     this.combat.onMechHit = (e) => {
-      if (e.shooter === mech) this.hud.showHit(e.result);
+      if (e.shooter === mech) {
+        this.hud.showHit(e.result);
+        // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar)
+        this.audio.playHit();
+      }
       if (e.mech === mech) {
         this.hud.showDamage();
         rig.addShake(0.12);
       } else {
         this.bots.onDamaged(e.mech, e.shooter);
       }
+      // Parte destruída → estalo metálico
+      if (e.result.partDestroyed) this.audio.playPartDestroyed();
     };
     this.combat.onMechKilled = (dead, at, killer) => {
       const falloff = 1 - at.distanceTo(mech.position) / 70;
       if (falloff > 0) rig.addShake(0.7 * falloff);
+      this.audio.playExplosion(1 - Math.max(0, falloff));
       this.round.recordKill(dead, killer);
       const me = this.round.scoreOf(mech);
       this.hud.setScore(me?.kills ?? 0, me?.deaths ?? 0);
@@ -254,6 +273,8 @@ export class Game {
     };
 
     document.getElementById('overlay')!.addEventListener('click', () => this.resume());
+    // Resume do AudioContext na primeira interação (exigência dos navegadores)
+    document.getElementById('overlay')!.addEventListener('click', () => this.audio.resume(), { once: true });
     input.onLockChange = (locked) => {
       if (locked) this.setPlaying(true);
       else if (rig.mode.pointerLock) this.setPlaying(false);
@@ -341,12 +362,26 @@ export class Game {
     this.projectiles.render(alpha);
     this.debris.sync();
 
-    if (this.mech.isDashing) {
+    const nowDashing = this.mech.isDashing;
+    if (nowDashing) {
       const count = Math.ceil(dt * 240);
       for (const t of this.mech.thrusters) {
         this.particles.burst(t.getWorldPosition(_tmp), UP, { count, color: THRUSTER_COLOR, speed: 4, life: 0.35, spread: 0.7, gravity: -4 });
       }
     }
+    // Detecta transição false→true do dash para tocar o som uma única vez por dash
+    if (nowDashing && !this.wasDashing) this.audio.playDash();
+    this.wasDashing = nowDashing;
+
+    // Blind Mode: inicia/para o loop de chiado ao vivo
+    const blind = this.mech.isBlind && this.mech.alive;
+    if (blind && !this.blindGain) {
+      this.blindGain = this.audio.playBlindLoop();
+    } else if (!blind && this.blindGain) {
+      this.audio.stopBlindLoop(this.blindGain);
+      this.blindGain = null;
+    }
+
     this.particles.update(dt);
 
     this.hud.setRespawn(this.respawner.timeLeft(this.mech));

@@ -1,0 +1,45 @@
+# Etiquetas automáticas dos PRs (workflow etiquetas.yml, actions/labeler).
+# Frente = os arquivos que o PR mexe, com os mesmos nomes do ROADMAP.md; agente = o prefixo do branch.
+# O painel de bastidores e as notas de versão (.github/release.yml) leem estas etiquetas.
+
+'frente:jogabilidade':
+  - changed-files:
+      - any-glob-to-any-file: ['client/src/player/**', 'client/src/camera/**', 'client/src/core/InputManager.ts']
+'frente:combate':
+  - changed-files:
+      # Algum arquivo de combat/ que não seja dos bots (esses são da frente de IA).
+      - all-globs-to-any-file: ['client/src/combat/**', '!client/src/combat/Bot*']
+'frente:ia':
+  - changed-files:
+      - any-glob-to-any-file: ['client/src/combat/Bot*']
+'frente:mechs':
+  - changed-files:
+      - any-glob-to-any-file: ['client/src/entities/**']
+'frente:cenarios':
+  - changed-files:
+      - any-glob-to-any-file: ['client/src/environment/**']
+'frente:ux':
+  - changed-files:
+      - any-glob-to-any-file: ['client/src/ui/**', 'client/index.html', 'client/src/styles.css', 'client/src/core/Settings.ts']
+'frente:som':
+  - changed-files:
+      - any-glob-to-any-file: ['client/src/audio/**']
+'frente:rede':
+  - changed-files:
+      - any-glob-to-any-file: ['shared/**', 'server/**', 'client/src/net/**']
+'frente:desempenho':
+  - changed-files:
+      - any-glob-to-any-file: ['client/src/core/Quality.ts', 'client/src/debug/**', 'client/src/fx/**', 'scripts/smoke.mjs', 'vite.config.ts']
+'frente:base':
+  - changed-files:
+      - any-glob-to-any-file: ['.github/**', '.githooks/**', 'scripts/**', 'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'package.json', '.decepticons/PROTOCOLO*', '.decepticons/DEPLOY.md']
+'frente:negocio':
+  - changed-files:
+      - any-glob-to-any-file: ['.decepticons/GAME_DESIGN.md', 'scripts/landing.mjs']
+
+'agente:claude':
+  - head-branch: ['^claude/']
+'agente:gemini':
+  - head-branch: ['^gemini/']
+'agente:codex':
+  - head-branch: ['^codex/']

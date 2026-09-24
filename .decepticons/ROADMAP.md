@@ -3,6 +3,7 @@
 > Visão macro. O detalhe da semana fica em `ESTADO_ATUAL.md`; o estado real das features, em `STATUS_REAL.md`;
 > o porquê de cada fase, em `GAME_DESIGN.md`.
 > **Ordem decidida pelo dono em 2026-09-23:** combate → inimigos → multiplayer (ver histórico).
+> **Reorganizado em 2026-09-24 (pedido do dono):** antes do multiplayer, uma fase de vitrine e polimento (som, celular, site com o case). As sobras da Fase 1 foram para ela.
 >
 > **Este arquivo alimenta o painel de missão** (`npm run painel`), e o `npm run check` reprova se ele sair do formato:
 > - Fase: `## <emoji> FASE N — Título`; a fase em foco leva `(atual)` no título (só uma).
@@ -40,18 +41,16 @@
 - [x] (Gemini) Qualidade adaptativa (G12), painel de debug, HUD que some com F1 #desempenho
 - [x] Bundle de 1.182 → 188 KB gzip (Rapier com `.wasm` separado) #desempenho
 
-## 🟢 FASE 1 — Combate
+## ✅ FASE 1 — Combate
 - [x] Dano por parte: a parte sai da altura e do lado do impacto na cápsula (sem colisor extra); dano em parte destruída vai para o torso #combate
 - [x] Projéteis acertam Mechs; o tiro atravessa destroços (só cosméticos) #combate
 - [x] Efeitos: perna = lento, duas pernas = imóvel, braço direito = sem plasma, torso = morte #combate
 - [x] Morte com explosão (a carcaça vira destroço) e respawn #combate
 - [x] Alvos de treino (Mechs parados) para testar o combate antes dos bots #ia
 - [x] Retorno de acerto: marcador, parte destruída anunciada, flash de dano, peça arrancada vira destroço #combate
-- [ ] Arma secundária: foguetes no braço esquerdo (botão direito), dano em área #combate
 - [x] Testes de simulação para cada regra de dano (G14) #base
-- [ ] Custo de render por Mech: ~34 draw calls cada. Juntar a geometria por material antes do multiplayer (G5) #desempenho
 
-## 🟡 FASE 2 — Inimigos (atual)
+## ✅ FASE 2 — Inimigos
 - [x] `BotController`: gera o mesmo `MechInput` que o jogador (patrulha, persegue, atira, recua) #ia
 - [x] Visão por raycast, erro de mira e tempo de reação por dificuldade, RNG com semente (G2) #ia
 - [x] Jogador morre e renasce; renascimento longe dos inimigos (`Respawner`) #combate
@@ -65,7 +64,17 @@
 - [x] Configurações (contrato + aplicação no jogo): sensibilidade, inverter Y, campo de visão, qualidade, dificuldade, painel de desempenho, teclas remapeáveis; salvas no navegador #ux
 - [x] Tela de configurações (Gemini, sobre o contrato `core/Settings.ts`) #ux
 
-## 🟠 FASE 3 — Multiplayer autoritativo
+## 🟡 FASE 3 — Vitrine e polimento (atual)
+- [x] Efeitos sonoros: tiro, impacto, passos pesados, explosão (sintetizados, sem arquivos pesados) #som
+- [ ] Volume e mixagem nas configurações #som
+- [~] Controles de toque e layout para celular (Gemini, PR #17) #ux
+- [~] Kill feed e indicador de direção do dano (Gemini; branch pronto, falta o PR) #ux
+- [x] Gestão no GitHub: etiquetas automáticas por frente e por agente, modelo de PR, notas de versão por frente #base
+- [~] Página do jogo (landing) e bastidores do desenvolvimento (o case) no site #negocio
+- [ ] Arma secundária: foguetes no braço esquerdo (botão direito), dano em área #combate
+- [ ] Custo de render por Mech: ~34 draw calls cada. Juntar a geometria por material antes do multiplayer (G5) #desempenho
+
+## 🟠 FASE 4 — Multiplayer autoritativo
 - [ ] Separar `MechBase` em simulação (sem render) e visual; `shared/` com simulação, `MechInput` e validador (G7) #rede
 - [ ] `server/` com Colyseus: `ArenaRoom` para 8, simulação a 60 Hz, estado a 20 Hz com delta (G11); bots completam salas #rede
 - [ ] Cliente: prediction + reconciliação do Mech local; Mechs remotos interpolam #rede
@@ -73,13 +82,13 @@
 - [ ] Medir banda por sala e tick do servidor contra as metas do G11 e do G14 #desempenho
 - [ ] Prova R16: 2+ clientes reais com latência simulada; playtest pelo PC de casa + Cloudflare Tunnel #rede
 
-## 🔵 FASE 4 — Lançamento e viralização
+## 🔵 FASE 5 — Lançamento e viralização
 - [ ] Modo streamer: sala de código fixo, câmera de espectador #negocio
 - [ ] Servidor de jogo no ar (Oracle Always Free São Paulo ou outro; ver `DEPLOY.md`) #base
 - [ ] SDK do portal (CrazyGames/Poki), anúncio só entre rodadas #negocio
 - [ ] Métrica: D1 e rodadas por sessão #negocio
 
-## 🔴 FASE 5 — Monetização e conteúdo
+## 🔴 FASE 6 — Monetização e conteúdo
 - [ ] Contas + cosméticos (nunca atributo de combate) + pagamento + LGPD #negocio
 - [ ] Colossus-01 (demolição no dash) e Ferret-X (gancho + sucata) #mechs
 - [ ] Mais arenas #cenarios
@@ -87,7 +96,6 @@
 
 ## 💡 IDEIAS
 > Sem fase ainda: o dono prioriza. Propostas do Claude em 2026-09-23, a partir das frentes citadas pelo dono.
-- [ ] Efeitos sonoros: tiro, impacto, passos pesados, explosão (sintetizados, sem arquivos pesados) #som
 - [ ] Música que acompanha a intensidade do combate #som
 - [ ] Pilotos com personalidade: agressivo, franco-atirador, cauteloso #ia
 - [ ] Bots contra bots no modo todos contra todos #ia
@@ -97,7 +105,6 @@
 - [ ] Tela inicial com apelido e escolha de Mech #ux
 - [x] Estande de calibração do mouse: gravar uma volta de 360° com o movimento real, cm/360, entrada crua (sem aceleração do sistema) #jogabilidade
 - [ ] Suporte a controle (gamepad) #jogabilidade
-- [ ] Volume e mixagem nas configurações (junto com o som) #som
 - [ ] Recuo e tremor próprios de cada arma #jogabilidade
 - [ ] Medir o FPS numa GPU integrada real (meta do G12) #desempenho
 - [ ] Issues do GitHub como rastreador de bugs, com severidade (trava > bloqueia > grave > leve) e passos para reproduzir #base
