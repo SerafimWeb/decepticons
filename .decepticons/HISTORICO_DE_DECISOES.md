@@ -2,6 +2,18 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Blind Mode (#ux): Degradação do HUD com cabeça destruída
+**Decisão / Tarefa:** Implementar o Blind Mode quando a cabeça do Mech é destruída (`mech.isBlind` == true).
+**Como funciona:**
+- Quando a cabeça do Mech do jogador é destruída, o HUD aplica a classe `.blind`.
+- **Efeitos no HUD:**
+  - A mira (`#crosshair`) ganha tremor contínuo/jitter via animação CSS (`@keyframes jitter`) com cor magenta.
+  - A tela ganha uma camada de estática/chiado analógico animado (`#static-noise`).
+  - O painel de dados de integridade e estatísticas (`#stats`) é totalmente omitido.
+- **Respeito a territórios e regras:** Alterados apenas os arquivos permitidos de UI (`client/src/ui/HUD.ts`, `client/src/styles.css`, `client/index.html`).
+- **Verificação:** `npm run check` 100% verde (testes, typecheck, painel, build e smoke).
+**Quem implementou:** Gemini.
+
 ---
 
 ## [2026-09-23] Site do projeto em selvamkt.com.br/cybermech + o que adotamos das práticas de estúdios AAA

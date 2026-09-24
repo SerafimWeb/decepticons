@@ -59,7 +59,7 @@
 - [x] Painel de missão do projeto, gerado deste arquivo #base
 - [~] Site do projeto: jogo + painel em selvamkt.com.br/cybermech, publicado a cada merge ("build do dia") #base
 - [ ] Rodada de 5 min com placar e reinício automático #jogabilidade
-- [ ] Blind Mode (cabeça destruída) #ux
+- [x] Blind Mode (cabeça destruída) #ux
 - [ ] Níveis de dificuldade (fácil/difícil) sobre o `BotSkill` #ia
 
 ## 🟠 FASE 3 — Multiplayer autoritativo

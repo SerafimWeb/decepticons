@@ -112,6 +112,9 @@ export class HUD {
   }
 
   update(dt: number, mech: MechBase, cursorX: number, cursorY: number, debrisCount: number): void {
+    const isBlind = mech.isBlind;
+    this.root.classList.toggle('blind', isBlind);
+
     if (this.cursorMode) {
       this.crosshair.style.left = `${cursorX}px`;
       this.crosshair.style.top = `${cursorY}px`;
@@ -137,6 +140,11 @@ export class HUD {
     this.textTimer -= dt;
     if (this.textTimer > 0) return;
     this.textTimer = 0.2;
+
+    if (isBlind) {
+      this.stats.textContent = '';
+      return;
+    }
 
     const speed = Math.hypot(mech.velocity.x, mech.velocity.z);
     let integrity = '';

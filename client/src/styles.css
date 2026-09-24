@@ -158,6 +158,47 @@ html, body {
   white-space: pre;
 }
 
+/* Blind Mode: quando a cabeça é destruída */
+#hud.blind #stats {
+  display: none;
+}
+
+#hud.blind #crosshair {
+  animation: jitter 0.08s infinite alternate ease-in-out;
+  border-color: var(--magenta);
+  box-shadow: 0 0 10px var(--magenta);
+}
+
+@keyframes jitter {
+  0% { transform: translate(-50%, -50%) translate(-6px, 4px) rotate(-3deg); }
+  50% { transform: translate(-50%, -50%) translate(5px, -5px) rotate(4deg); }
+  100% { transform: translate(-50%, -50%) translate(-3px, -4px) rotate(2deg); }
+}
+
+/* Estática/Chiado na tela */
+#static-noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background-image: repeating-radial-gradient(circle at 50% 50%, rgba(255, 43, 214, 0.15) 0%, rgba(0, 229, 255, 0.15) 2px, transparent 4px, transparent 100px);
+  background-size: 180px 180px;
+  mix-blend-mode: screen;
+}
+
+#hud.blind #static-noise {
+  opacity: 0.45;
+  animation: noiseAnimation 0.1s steps(4) infinite;
+}
+
+@keyframes noiseAnimation {
+  0% { background-position: 0 0; }
+  25% { background-position: 40px -30px; }
+  50% { background-position: -20px 50px; }
+  75% { background-position: 50px 10px; }
+  100% { background-position: -30px -40px; }
+}
+
 /* Tomou dano: borda vermelha que some rápido. */
 #damage-vignette {
   position: absolute;
