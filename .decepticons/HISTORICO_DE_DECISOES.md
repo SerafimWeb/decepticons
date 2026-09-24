@@ -4,6 +4,18 @@
 
 ---
 
+## [2026-09-24] Painel de missão vira HUD cyberpunk das antigas
+**Pedido do dono:** "parecido com um HUD sci-fi, militar, hacker, estilo Shadowrun, BattleTech, cyberpunk das antigas, que traga estilo e personalidade". Isso substitui, **só nesta página**, o visual do design system Serafim, que tinha sido aplicado a pedido anterior do próprio dono.
+**Direção:**
+- Visual: terminal de fósforo âmbar dos anos 80/90 com varredura de CRT e vinheta; verde = sistema nominal, vermelho = crítico, ciano = posição atual.
+- Fontes: VT323 (display de terminal), Share Tech Mono (leitura), Saira Stencil (carimbo militar), todas do Google Fonts, que a CSP do site já permite.
+- Vocabulário militar e decker sobre dado real: rota das fases num mapa hexagonal (mapa de BattleTech); frentes como "sistemas da unidade" com **slots críticos** (um por item) e estado OFFLINE → MAXIMIZADO; próxima missão como "ordem de missão"; PRs como "registro de combate".
+**Personalidade com dado real:**
+- A ficha técnica do Vector-09 (blindagem por parte, movimento, dash, dano e cadência) é **lida do código do jogo**.
+- O carimbo "SEM PAY-TO-WIN" traz os itens do `GAME_DESIGN.md`.
+- Se o formato mudar, a seção some em vez de mostrar número errado (R13/R14).
+**Quem decidiu:** dono (direção); Claude (execução).
+
 ## [2026-09-24] Não é pay-to-win; configurações do jogador; dificuldade aprovada vira a "normal"
 **Princípio (dono):** "esse jogo não é pay to win, não está sendo feito para ser p2w, e sim para ser muito bom e todo mundo querer jogar". Virou seção própria no `GAME_DESIGN.md`, com a regra: nada que se compra dá vantagem de combate, e proposta que quebre isso é recusada.
 **Dificuldade (dono):** "os inimigos estão com um grau de dificuldade considerável, está bom assim". Os valores atuais viraram a `BOT_SKILL_NORMAL`, padrão das configurações. Fácil e difícil são variações em volta dela, com teste: mesmo cenário e semente, o difícil reage antes e causa mais dano.

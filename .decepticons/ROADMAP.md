@@ -57,6 +57,7 @@
 - [x] Jogador morre e renasce; renascimento longe dos inimigos (`Respawner`) #combate
 - [x] HUD do próprio Mech (6 partes), borda de dano, tela "ABATIDO", abates/mortes #ux
 - [x] Painel de missão do projeto, gerado deste arquivo #base
+- [x] Painel no visual de HUD cyberpunk das antigas (Shadowrun, BattleTech): mapa hexagonal, slots críticos, ficha técnica do Mech lida do código #base
 - [x] Site do projeto: jogo + painel em selvamkt.com.br/cybermech, publicado a cada merge ("build do dia") #base
 - [ ] Rodada de 5 min com placar e reinício automático #jogabilidade
 - [x] Blind Mode (cabeça destruída) #ux
