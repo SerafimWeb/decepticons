@@ -16,6 +16,22 @@ Toda prioridade de feature passa por aqui.
 
 ---
 
+## VITRINE (o que a landing mostra ao jogador)
+
+> A landing do site (`/cybermech/`) lê esta lista. Só entra o que está REAL no `STATUS_REAL.md`: feature nova no ar
+> → uma linha aqui; feature que saiu → sai daqui. Formato: `- **Título:** frase curta para quem vai jogar.`
+
+- **Dano por parte:** arranque uma perna e o inimigo manca; as duas e ele para; destrua a cabeça e ele fica cego.
+- **Bots que caçam você:** três pilotos que patrulham, cercam atirando de lado e recuam quando estão avariados.
+- **Rodadas de 5 minutos:** todos contra todos, placar no Tab e rodada nova sozinha, com a arena inteira de novo.
+- **Cobertura que quebra:** as barricadas viram destroços; a proteção do inimigo não dura para sempre.
+- **Dash e pulo duplo:** um Mech pesado que ainda assim escapa, flanqueia e muda de altura.
+- **Três câmeras:** terceira pessoa, cockpit em primeira pessoa e visão tática de cima.
+- **Mira do seu jeito:** calibração pelo movimento real do mouse, entrada crua e teclas remapeáveis.
+- **Som feito na hora:** efeitos sintetizados pelo próprio navegador, sem arquivos pesados para baixar.
+
+---
+
 ## PRINCÍPIO: NÃO É PAY-TO-WIN (decisão do dono, 2026-09-24)
 
 O jogo é feito para ser **muito bom e todo mundo querer jogar**, não para vender vantagem.
@@ -34,7 +50,7 @@ O jogo é feito para ser **muito bom e todo mundo querer jogar**, não para vend
 | Modo inicial | **Todos contra todos, rodadas de 5 min** | Placar por rodada; sem times, sem objetivo |
 | Entrada | **Entra e sai a qualquer hora, sem lobby** | Sala sempre aberta até 8; respawn rápido; sem matchmaking complexo |
 | Contas | **Convidado com apelido** | Sem banco de dados, sem LGPD pesada na Fase 1 |
-| Plataforma | **Desktop (mouse + teclado)** | Sem controles touch |
+| Plataforma | **Desktop (mouse + teclado) primeiro; celular em construção** (o dono pediu em 24/09) | Toque gera o mesmo `MechInput` do teclado: a simulação não sabe de onde veio o comando |
 | Distribuição | **Portal de jogos primeiro + link próprio** | SDK do portal, download pequeno |
 
 **A definir no playtest:** tempo de respawn, dano e vida por parte, mapa (1 arena por enquanto).

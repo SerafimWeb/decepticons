@@ -70,7 +70,7 @@
 - [~] Controles de toque e layout para celular (Gemini, PR #17) #ux
 - [~] Kill feed e indicador de direção do dano (Gemini; branch pronto, falta o PR) #ux
 - [x] Gestão no GitHub: etiquetas automáticas por frente e por agente, modelo de PR, notas de versão por frente #base
-- [~] Página do jogo (landing) e bastidores do desenvolvimento (o case) no site #negocio
+- [x] Página do jogo (landing) e bastidores do desenvolvimento (o case) no site, com capturas do jogo feitas a cada deploy #negocio
 - [ ] Arma secundária: foguetes no braço esquerdo (botão direito), dano em área #combate
 - [ ] Custo de render por Mech: ~34 draw calls cada. Juntar a geometria por material antes do multiplayer (G5) #desempenho
 

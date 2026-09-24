@@ -8,18 +8,27 @@ on:
     branches: [main]
   pull_request:
 
+# As páginas do site leem a lista de PRs (equipe, entregas) com o token do próprio workflow.
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
   check:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # os bastidores medem a evolução em cada merge da main
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run check
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   # "Build do dia": cada merge na main com check verde vai para o site (DEPLOY.md).
   # Dormente até existir a variável de repositório SITE_URL e os secrets DEPLOY_*.
@@ -34,13 +43,17 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 50 # o painel lista os últimos PRs mergeados
+          fetch-depth: 0 # os bastidores medem a evolução em cada merge da main
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run site
+      # --capturas: entra no jogo headless e fotografa para a landing (~30 s; falha não derruba o site).
+      - run: npm run site -- --capturas
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SITE_URL: ${{ vars.SITE_URL }}
 
       # Mesmo padrão do deploy do CAPTIA nesta conta Hostinger: rsync + SSH (porta 65002), com
       # novas tentativas (a proteção anti-abuso da Hostinger às vezes derruba a conexão).

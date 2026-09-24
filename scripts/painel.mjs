@@ -1,237 +1,198 @@
 /**
- * Painel de missão: gera uma página com as fases (rota) e as frentes de trabalho a partir de
- * .decepticons/ROADMAP.md (fases, itens, frentes) e .decepticons/ESTADO_ATUAL.md (próxima missão, equipe),
- * mais o histórico de PRs mergeados (git). Visual: design system Serafim.
+ * Bastidores (o case do desenvolvimento): equipe, fluxo da ideia ao ar, protocolo, evolução, mapa da
+ * campanha, frentes, diário de decisões e entregas. Tudo gerado do repositório (scripts/site/dados.mjs).
  *
  * Uso: npm run painel            → gera .tmp/painel/painel.html (G15: nada fora do projeto)
- *      node scripts/painel.mjs --check → só valida o formato do ROADMAP (roda no npm run check)
- *      node scripts/painel.mjs --site --out <arquivo> → versão do site (botão "Jogar" para ./jogar/)
+ *      node scripts/painel.mjs --check → só valida o ROADMAP e a VITRINE do GAME_DESIGN (roda no npm run check)
+ *      node scripts/painel.mjs --site --out <arquivo> → versão do site (/cybermech/bastidores/)
  */
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { diario, entregas, evolucao, marcos, readEstado, readRoadmap, roadmapStats, vitrine } from './site/dados.mjs';
+import { brDate, esc, HEXGRID, inline, pagina, topo, upper } from './site/tema.mjs';
 
-const ROADMAP = resolve('.decepticons/ROADMAP.md');
-const ESTADO = resolve('.decepticons/ESTADO_ATUAL.md');
 const argv = process.argv.slice(2);
 const CHECK = argv.includes('--check');
 const SITE = argv.includes('--site');
 const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : '.tmp/painel/painel.html');
-
-/** Sigla de 2 letras de cada frente no hexágono (apresentação; os dados vêm do ROADMAP). */
-const CODES = {
-  jogabilidade: 'JG',
-  combate: 'CB',
-  ia: 'IA',
-  mechs: 'MC',
-  cenarios: 'CN',
-  ux: 'UX',
-  som: 'SM',
-  rede: 'MP',
-  desempenho: 'DS',
-  base: 'BT',
-  negocio: 'NG',
-};
-
-// ---------- leitura ----------
-
-function parseRoadmap(md) {
-  const errors = [];
-  const fronts = [];
-  const phases = [];
-  let current = null;
-  md.split(/\r?\n/).forEach((line, i) => {
-    const n = i + 1;
-    const front = /^\|\s*`#([a-z-]+)`\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$/.exec(line);
-    if (front) {
-      fronts.push({ tag: front[1], name: front[2], desc: front[3] });
-      return;
-    }
-    if (line.startsWith('## ')) {
-      const phase = /FASE\s+(\d+)\s+—\s+(.+)$/.exec(line);
-      if (phase) {
-        const focus = /\(atual\)/i.test(phase[2]);
-        const title = phase[2].replace(/\s*\([^)]*\)\s*$/, '').trim();
-        current = { num: Number(phase[1]), title, focus, ideas: false, items: [] };
-        phases.push(current);
-      } else if (/IDEIAS/i.test(line)) {
-        current = { num: null, title: 'Ideias', focus: false, ideas: true, items: [] };
-        phases.push(current);
-      } else {
-        current = null;
-      }
-      return;
-    }
-    const item = /^- \[( |x|~)\]\s+(.+)$/.exec(line);
-    if (!item || !current) return;
-    const tagged = /^(.*?)\s+#([a-z-]+)\s*$/.exec(item[2]);
-    if (!tagged) {
-      errors.push(`linha ${n}: item sem etiqueta de frente: "${item[2].slice(0, 60)}"`);
-      return;
-    }
-    const status = item[1] === 'x' ? 'done' : item[1] === '~' ? 'doing' : 'todo';
-    current.items.push({ status: current.ideas && status === 'todo' ? 'idea' : status, text: tagged[1], tag: tagged[2], line: n });
-  });
-
-  const known = new Set(fronts.map((f) => f.tag));
-  if (fronts.length === 0) errors.push('tabela de FRENTES não encontrada (linhas "| `#etiqueta` | Frente | O que cobre |")');
-  for (const p of phases) {
-    if (p.items.length === 0) errors.push(`${p.ideas ? 'IDEIAS' : `FASE ${p.num}`} sem itens`);
-    for (const it of p.items) if (!known.has(it.tag)) errors.push(`linha ${it.line}: etiqueta #${it.tag} não está na tabela de FRENTES`);
-  }
-  const focused = phases.filter((p) => p.focus);
-  if (focused.length !== 1) errors.push(`precisa de exatamente uma fase com "(atual)"; há ${focused.length}`);
-  if (!phases.some((p) => !p.ideas)) errors.push('nenhuma fase "## … FASE N — Título" encontrada');
-  return { fronts, phases, errors };
-}
-
-function parseEstado(md) {
-  const section = (title) => {
-    const m = new RegExp(`^## ${title}[^\\n]*\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, 'm').exec(md);
-    return m ? m[1].trim() : '';
-  };
-  const next = section('PRÓXIMA SESSÃO');
-  const team = [];
-  for (const line of section('DIVISÃO DE TRABALHO').split(/\r?\n/)) {
-    const row = /^\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/.exec(line);
-    if (row && !/zona/i.test(row[1])) team.push({ name: row[1], role: row[3] });
-  }
-  const status = /\*\*Iteração atual:\*\*\s*(.+)/.exec(md)?.[1] ?? '';
-  return { next, team, status };
-}
-
-/** Sem shell: argumentos em lista. Fora de um repositório git, devolve vazio. */
-function git(...args) {
-  try {
-    return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-  } catch {
-    return '';
-  }
-}
+// No site, os links são relativos; no arquivo local, apontam para o site publicado.
+const BASE = SITE ? '../' : (process.env.SITE_URL || 'https://www.selvamkt.com.br/cybermech/').replace(/\/?$/, '/');
 
 // ---------- validação ----------
 
-const roadmap = parseRoadmap(readFileSync(ROADMAP, 'utf8'));
-if (roadmap.errors.length) {
-  console.error('❌ ROADMAP.md fora do formato do painel:');
-  for (const e of roadmap.errors) console.error(`   - ${e}`);
+const roadmap = readRoadmap();
+const errors = [...roadmap.errors];
+if (vitrine().length === 0) errors.push('GAME_DESIGN.md sem a seção "## VITRINE" no formato "- **Título:** frase" (a landing lê dela)');
+if (errors.length) {
+  console.error('❌ ROADMAP.md / GAME_DESIGN.md fora do formato das páginas do site:');
+  for (const e of errors) console.error(`   - ${e}`);
   process.exit(1);
 }
 if (CHECK) {
   const items = roadmap.phases.flatMap((p) => p.items).length;
-  console.log(`painel  ROADMAP ok: ${roadmap.fronts.length} frentes, ${roadmap.phases.length} grupos, ${items} itens`);
+  console.log(`painel  ROADMAP ok: ${roadmap.fronts.length} frentes, ${roadmap.phases.length} grupos, ${items} itens; VITRINE ok`);
   process.exit(0);
 }
 
-// ---------- números ----------
+// ---------- dados ----------
 
-const estado = parseEstado(readFileSync(ESTADO, 'utf8'));
 const { fronts, phases } = roadmap;
-const phaseItems = phases.filter((p) => !p.ideas).flatMap((p) => p.items);
-const done = phaseItems.filter((i) => i.status === 'done').length;
-const total = phaseItems.length;
-const ideasCount = phases.filter((p) => p.ideas).flatMap((p) => p.items).length;
-const focus = phases.find((p) => p.focus);
-const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+const stats = roadmapStats(roadmap);
+const estado = readEstado();
+const m = marcos();
+const { prs, fromGithub } = entregas();
+const evo = evolucao();
+const log = diario();
+const last = evo.at(-1) ?? { tests: 0, loc: 0 };
+const nf = (n) => n.toLocaleString('pt-BR');
 
-for (const p of phases) {
-  const d = p.items.filter((i) => i.status === 'done').length;
-  p.done = d;
-  p.state = p.ideas
-    ? 'ideas'
-    : d === p.items.length
-      ? 'done'
-      : p.focus
-        ? 'focus'
-        : d === 0 && p.num > focus.num
-          ? 'locked'
-          : 'open';
-}
+// ---------- equipe ----------
 
-/** Estado de cada frente no vocabulário de um painel de Mech, pelo quanto já foi feito. */
-const RANKS = [
-  [1, 'MAXIMIZADO', 'max'],
-  [0.67, 'NOMINAL', 'ok'],
-  [0.34, 'OPERACIONAL', 'op'],
-  [0.01, 'CRÍTICO', 'crit'],
-  [0, 'OFFLINE', 'off'],
+const TEAM = [
+  { key: 'dono', name: 'DIRETOR', org: 'humano', role: 'Define o jogo, decide as prioridades e joga cada build no site. Nenhuma IA muda o rumo sem ele.' },
+  { key: 'claude', name: 'CLAUDE', org: 'Anthropic', role: 'Arquitetura e engenharia: simulação, combate, IA dos bots, testes, CI, deploy e este site.' },
+  { key: 'gemini', name: 'GEMINI', org: 'Google', role: 'Interface e som: HUD, configurações, som sintetizado e a versão para celular.' },
+  { key: 'codex', name: 'CODEX', org: 'OpenAI', role: 'Revisão cruzada: confere o que as outras IAs entregaram. Nenhuma IA aprova o próprio código.' },
 ];
-const frontStats = fronts.map((f) => {
-  const items = phases.flatMap((p) => p.items.map((it) => ({ ...it, phase: p })).filter((it) => it.tag === f.tag));
-  const d = items.filter((i) => i.status === 'done').length;
-  const ratio = items.length ? d / items.length : 0;
-  const [, rank, rankClass] = RANKS.find(([min]) => ratio >= min);
-  return { ...f, items, done: d, ratio, rank, rankClass };
-});
+const FRONT_NAME = Object.fromEntries(fronts.map((f) => [f.tag, f.name]));
+const teamHtml = TEAM.map((t) => {
+  const mine = prs.filter((p) => p.agents.includes(t.key));
+  const tally = new Map();
+  for (const p of mine) for (const f of p.fronts) tally.set(f, (tally.get(f) ?? 0) + 1);
+  const top = [...tally].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([f]) => FRONT_NAME[f] ?? f);
+  const lines = mine.reduce((acc, p) => acc + (p.add ?? 0), 0);
+  const now =
+    estado.team.find((r) => r.name.toLowerCase() === t.key)?.role ??
+    estado.pending.filter((p) => p.who.toLowerCase() === t.key).map((p) => p.text).join(' · ');
+  const numbers =
+    t.key === 'dono'
+      ? `<div><dt>DECISÕES</dt><dd>${log.length}</dd></div><div><dt>ENTREGAS</dt><dd>${prs.length}</dd></div>`
+      : `<div><dt>ENTREGAS</dt><dd>${mine.length}</dd></div>${fromGithub ? `<div><dt>LINHAS</dt><dd>+${nf(lines)}</dd></div>` : ''}`;
+  return `<article class="member frame m-${t.key}">
+      <header><span class="agent ${t.key}">${esc(t.org)}</span><h3>${t.name}</h3></header>
+      <p class="mrole">${esc(t.role)}</p>
+      <dl class="mnum">${numbers}</dl>
+      ${top.length ? `<p class="mfronts">frentes: ${top.map(esc).join(' · ')}</p>` : ''}
+      ${now ? `<p class="mnow"><span>agora &gt;</span> ${inline(now)}</p>` : ''}
+    </article>`;
+}).join('');
 
-const head = git('log', '-1', '--format=%h·%cs');
-const feed = git('log', '--merges', '--first-parent', '--format=%cs%x09%s', '-8')
-  .split('\n')
-  .map((l) => /^(\S+)\t.*?PR #(\d+):\s*(.+)$/.exec(l))
-  .filter(Boolean)
-  .map(([, date, n, title]) => ({ date, n, title }));
+// ---------- da ideia ao ar ----------
 
-/** Ficha técnica do Vector-09 lida do código do jogo (R14). Se o formato mudar, a seção some em vez de mentir. */
-function recordSheet() {
-  try {
-    const v = readFileSync(resolve('client/src/entities/Vector09.ts'), 'utf8');
-    const p = readFileSync(resolve('client/src/combat/ProjectileSystem.ts'), 'utf8');
-    const n = (src, key) => Number(new RegExp(`\\b${key}:\\s*([\\d.]+)`).exec(src)?.[1]);
-    const armor = [
-      ['CABEÇA', n(v, 'head')],
-      ['TORSO', n(v, 'torso')],
-      ['BRAÇO E', n(v, 'leftArm')],
-      ['BRAÇO D', n(v, 'rightArm')],
-      ['PERNA E', n(v, 'leftLeg')],
-      ['PERNA D', n(v, 'rightLeg')],
-    ];
-    const s = {
-      name: /name:\s*'([^']+)'/.exec(v)?.[1],
-      speed: n(v, 'moveSpeed'),
-      dash: n(v, 'dashSpeed'),
-      jumps: n(v, 'maxJumps'),
-      fire: n(v, 'fireInterval'),
-      damage: Number(/const DAMAGE = (\d+)/.exec(p)?.[1]),
-      armor,
-    };
-    const nums = [s.speed, s.dash, s.jumps, s.fire, s.damage, ...armor.map((a) => a[1])];
-    return s.name && nums.every((x) => Number.isFinite(x) && x > 0) ? s : null;
-  } catch {
-    return null;
-  }
+const FLOW = [
+  ['PEDIDO', 'O diretor descreve o que quer, em português, do jeito que fala.', '“no jogo é muito rápido pra fazer essa configuração fina”'],
+  ['PASSO ZERO', 'Antes de tocar no código, a IA lê a memória do projeto: identidade, estado, roadmap e regras.', 'ESTADO_ATUAL · ROADMAP · AGENTS'],
+  ['PASTA PRÓPRIA', 'Cada IA trabalha no seu worktree e no seu branch, a partir da main. Duas IAs nunca dividem pasta.', 'claude/calibracao-mouse'],
+  ['CÓDIGO + TESTE', `Toda regra de jogo ganha teste de simulação: hoje são ${last.tests} testes automáticos.`, 'ida e volta do cm/360 testada'],
+  ['PULL REQUEST', 'O PR ganha sozinho as etiquetas da frente e do agente e segue um modelo: o que muda, custo de CPU, como testar.', 'PR #14 · jogabilidade · claude'],
+  ['CI', 'Tipos, testes, build, orçamento de download, boot num navegador sem tela e o site com os cabeçalhos reais. Vermelho não entra.', 'npm run check'],
+  ['NO AR', 'O merge publica o site sozinho, confere a produção e fotografa o jogo para a página inicial.', 'deploy em poucos minutos'],
+  ['PLAYTEST', 'O diretor joga no site e devolve o que sentiu. O ciclo recomeça.', '“estão atacando bem, não ficaram perdidos”'],
+];
+const flowHtml = FLOW.map(
+  ([title, text, sample], i) => `<li class="step frame">
+      <span class="snum">${String(i + 1).padStart(2, '0')}</span>
+      <h3>${title}</h3>
+      <p>${esc(text)}</p>
+      <p class="sample">${esc(sample)}</p>
+    </li>`,
+).join('');
+
+// ---------- protocolo ----------
+
+const RULES = [
+  ['MEMÓRIA NO REPOSITÓRIO', 'O que não está escrito no repositório não existe. A IA chega lendo o estado e sai deixando o bastão escrito para a próxima.'],
+  ['O TESTE É O ÁRBITRO', 'Quando duas IAs discordam sobre uma regra de jogo, quem decide é o teste de simulação, não a opinião.'],
+  ['PERFORMANCE PRIMEIRO', 'Cada feature declara o custo de CPU. Nada de alocar memória por quadro; tetos explícitos para tudo.'],
+  ['SIMULAÇÃO DETERMINÍSTICA', 'Física a 60 passos fixos por segundo, sem sorteio nem relógio no meio: mesma entrada, mesmo resultado. É a base do multiplayer.'],
+  ['VERDADE SOBRE O ESTADO', 'O que não funciona de ponta a ponta fica marcado como DEMO ou AUSENTE. “Pronto” só com o check verde.'],
+  ['TRAVAS AUTOMÁTICAS', 'Sem estado atualizado não há commit; segredo no código bloqueia; todo push roda o check; ninguém escreve direto na main.'],
+  ['REVISÃO CRUZADA', 'O código de uma IA é revisado por outra. Nenhuma aprova o próprio trabalho.'],
+  ['SEM PAY-TO-WIN', 'Nada que se compra ganha partida. Proposta que quebre isso é recusada, não importa quanto renda.'],
+];
+const rulesHtml = RULES.map(([t, d]) => `<li class="rule"><h3>${t}</h3><p>${esc(d)}</p></li>`).join('');
+
+// ---------- evolução (gráficos) ----------
+
+/** Teto "redondo" para o eixo, sem sobrar metade do gráfico vazia (51 → 60, 4.882 → 5.000). */
+function niceMax(v) {
+  const p = 10 ** Math.floor(Math.log10(Math.max(v, 1)));
+  return [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].map((k) => k * p).find((x) => x >= v);
 }
 
-/** O princípio "não é pay-to-win", do GAME_DESIGN.md (fonte única). */
-function pledge() {
-  try {
-    const g = readFileSync(resolve('.decepticons/GAME_DESIGN.md'), 'utf8').replace(/\r\n/g, '\n');
-    const sec = /## PRINCÍPIO: NÃO É PAY-TO-WIN[^\n]*\n([\s\S]*?)\n---/.exec(g)?.[1] ?? '';
-    return [...sec.matchAll(/^- (.+)$/gm)].map((m) => m[1]);
-  } catch {
-    return [];
-  }
+/**
+ * Linha em degraus (o valor muda a cada entrega), uma série por gráfico: dois números de escalas
+ * diferentes viram dois gráficos, nunca dois eixos. Sem legenda: o título diz o que é.
+ */
+function chart({ id, title, key, unit }) {
+  const W = 540;
+  const H = 210;
+  const pad = { l: 46, r: 62, t: 14, b: 30 };
+  const n = evo.length;
+  const max = niceMax(Math.max(...evo.map((e) => e[key])));
+  const x = (i) => pad.l + (n > 1 ? i / (n - 1) : 0) * (W - pad.l - pad.r);
+  const y = (v) => pad.t + (1 - v / max) * (H - pad.t - pad.b);
+  let d = `M${x(0).toFixed(1)},${y(evo[0][key]).toFixed(1)}`;
+  for (let i = 1; i < n; i++) d += `H${x(i).toFixed(1)}V${y(evo[i][key]).toFixed(1)}`;
+  const area = `${d}V${y(0).toFixed(1)}H${x(0).toFixed(1)}Z`;
+  const ticks = [0, max / 2, max]
+    .map((t) => `<line class="grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}"/><text class="tick" x="${pad.l - 8}" y="${(y(t) + 4).toFixed(1)}" text-anchor="end">${nf(t)}</text>`)
+    .join('');
+  // Rótulos do eixo x: a primeira entrega de cada dia.
+  const days = evo
+    .map((e, i) => ({ e, i }))
+    .filter(({ e, i }) => i === 0 || evo[i - 1].date !== e.date)
+    .map(({ e, i }) => `<text class="tick" x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="${i === 0 ? 'start' : 'middle'}">${brDate(e.date)}</text><line class="grid" x1="${x(i).toFixed(1)}" x2="${x(i).toFixed(1)}" y1="${H - pad.b}" y2="${H - pad.b + 5}"/>`)
+    .join('');
+  const endV = evo[n - 1][key];
+  const points = evo.map((e) => [e.pr, e.date, e[key]]);
+  return `<figure class="chart frame" id="${id}" data-unit="${esc(unit)}" data-points='${esc(JSON.stringify(points))}' data-x0="${pad.l}" data-x1="${W - pad.r}" data-w="${W}">
+      <figcaption><h3>${esc(title)}</h3><span>${nf(endV)} ${esc(unit)} hoje</span></figcaption>
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}: de ${nf(evo[0][key])} a ${nf(endV)} ${esc(unit)} em ${n} entregas">
+        ${ticks}${days}
+        <path class="area" d="${area}"/>
+        <path class="line" d="${d}"/>
+        <line class="cross" x1="0" x2="0" y1="${pad.t}" y2="${H - pad.b}" visibility="hidden"/>
+        <circle class="end" cx="${x(n - 1).toFixed(1)}" cy="${y(endV).toFixed(1)}" r="4"/>
+        <text class="endlabel" x="${(x(n - 1) + 9).toFixed(1)}" y="${(y(endV) + 4).toFixed(1)}">${nf(endV)}</text>
+      </svg>
+      <div class="tip" hidden></div>
+    </figure>`;
 }
 
-// ---------- HTML ----------
+const evoHtml =
+  evo.length > 1
+    ? `<section aria-labelledby="evolucao">
+    <span class="kicker">// telemetria · uma leitura por entrega</span>
+    <h2 id="evolucao">Evolução</h2>
+    <p class="lede">Cada ponto é um merge na <code>main</code>, medido direto no histórico do git. Os testes crescem junto com o código: regra de jogo nova, teste novo.</p>
+    <div class="charts">
+      ${chart({ id: 'ch-testes', title: 'Testes automáticos', key: 'tests', unit: 'testes' })}
+      ${chart({ id: 'ch-linhas', title: 'Linhas de TypeScript do jogo', key: 'loc', unit: 'linhas' })}
+    </div>
+    <details class="table-view"><summary>ver os números em tabela</summary>
+      <table><thead><tr><th>entrega</th><th>data</th><th>testes</th><th>linhas</th></tr></thead><tbody>${evo
+        .map((e, i) => `<tr><td>${e.pr ? `PR #${e.pr}` : `commit ${i + 1}`}</td><td>${brDate(e.date)}</td><td>${nf(e.tests)}</td><td>${nf(e.loc)}</td></tr>`)
+        .join('')}</tbody></table>
+    </details>
+  </section>`
+    : '';
 
-const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const inline = (s) =>
-  esc(s)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+// ---------- mapa da campanha e frentes (do ROADMAP) ----------
+
+const CODES = { jogabilidade: 'JG', combate: 'CB', ia: 'IA', mechs: 'MC', cenarios: 'CN', ux: 'UX', som: 'SM', rede: 'MP', desempenho: 'DS', base: 'BT', negocio: 'NG' };
 const TAG = { done: 'OK', doing: '>>', todo: '--', idea: '??' };
 const STATUS_LABEL = { done: 'feito', doing: 'em andamento', todo: 'a fazer', idea: 'ideia' };
 const PHASE_LABEL = { done: 'CONCLUÍDA', focus: 'POSIÇÃO ATUAL', open: 'EM ABERTO', locked: 'NÃO LIBERADA', ideas: 'SEM ROTA' };
 const phaseKey = (p) => (p.ideas ? 'ideias' : `f${p.num}`);
 const phaseShort = (p) => (p.ideas ? 'IDEIA' : `F${p.num}`);
-const upper = (s) => esc(s).toUpperCase();
 
 const routeHtml = phases
   .map((p) => {
     const ratio = p.items.length ? p.done / p.items.length : 0;
     const count = p.ideas ? `${p.items.length} NA FILA` : `${p.done}/${p.items.length}`;
     return `<li class="node ${p.state}">
-      <button type="button" class="node-btn" data-phase="${phaseKey(p)}" aria-pressed="false" title="Filtrar os sistemas por esta fase">
+      <button type="button" class="node-btn" data-phase="${phaseKey(p)}" aria-pressed="false" title="Filtrar as frentes por esta fase">
         <span class="hex"><span>${p.ideas ? '?' : p.num}</span></span>
         <span class="node-label">${PHASE_LABEL[p.state]}</span>
         <span class="node-title">${upper(p.title)}</span>
@@ -242,7 +203,7 @@ const routeHtml = phases
   })
   .join('');
 
-const frontsHtml = frontStats
+const frontsHtml = stats.frontStats
   .map((f) => {
     const code = CODES[f.tag] ?? f.tag.slice(0, 2).toUpperCase();
     const slots = f.items.map((it) => `<i class="s ${it.status}"></i>`).join('');
@@ -265,182 +226,98 @@ const frontsHtml = frontStats
   })
   .join('');
 
-const sheet = recordSheet();
-const maxArmor = sheet ? Math.max(...sheet.armor.map((a) => a[1])) : 1;
-const sheetHtml = sheet
-  ? `<section aria-labelledby="ficha" class="grid-2">
-    <div>
-      <span class="kicker">// ficha técnica · chassi em serviço</span>
-      <h2 id="ficha">${esc(sheet.name)}</h2>
-      <p class="lede">Números lidos direto do código do jogo: mudou no jogo, muda aqui.</p>
-    </div>
-    <div class="sheet frame">
-      <div class="armor">
-        ${sheet.armor
-          .map(
-            ([label, hp]) =>
-              `<div class="arow"><span>${label}</span><span class="abar"><i style="width:${Math.round((hp / maxArmor) * 100)}%"></i></span><b>${hp}</b></div>`,
-          )
-          .join('')}
-      </div>
-      <dl class="specs">
-        <div><dt>MOVIMENTO</dt><dd>${sheet.speed} m/s</dd></div>
-        <div><dt>DASH</dt><dd>${sheet.dash} m/s</dd></div>
-        <div><dt>SALTOS</dt><dd>${sheet.jumps}× no ar</dd></div>
-        <div><dt>ARMA</dt><dd>canhão de plasma · ${sheet.damage} de dano</dd></div>
-        <div><dt>CADÊNCIA</dt><dd>${(1 / sheet.fire).toFixed(1)} tiros/s</dd></div>
-      </dl>
-    </div>
-  </section>`
-  : '';
+// ---------- diário e entregas ----------
 
-const vows = pledge();
-const pledgeHtml = vows.length
-  ? `<aside class="pledge frame" aria-labelledby="p2w">
-    <span class="stamp" id="p2w">SEM PAY-TO-WIN</span>
-    <ul>${vows.map((v) => `<li>${inline(v)}</li>`).join('')}</ul>
-  </aside>`
-  : '';
-
-const teamHtml = estado.team
-  .map((m) => `<li><span class="who">${upper(m.name)}</span><span class="what">${inline(m.role)}</span></li>`)
+const byDay = new Map();
+for (const e of log) byDay.set(e.date, [...(byDay.get(e.date) ?? []), e]);
+const logHtml = [...byDay]
+  .map(
+    ([date, entries]) => `<li class="day">
+      <h3><time datetime="${date}">${brDate(date)}</time><span>${entries.length} decisões</span></h3>
+      <ol>${entries.map((e) => `<li>${inline(e.title)}</li>`).join('')}</ol>
+    </li>`,
+  )
   .join('');
-const feedHtml = feed
-  .map((f) => `<li><time>${f.date}</time><span class="pr">PR #${f.n}</span><span class="ft">${esc(f.title)}</span><span class="ok">[OK]</span></li>`)
+
+const prHtml = prs
+  .map(
+    (p) => `<li>
+      <span class="prn">#${p.n}</span>
+      <time datetime="${p.date}">${brDate(p.date)}</time>
+      <span class="who">${p.agents.map((a) => `<span class="agent ${esc(a)}">${esc(a)}</span>`).join(' ')}</span>
+      <span class="ft">${esc(p.title)}${p.fronts.length ? `<small class="fr">${p.fronts.map((f) => esc(FRONT_NAME[f] ?? f)).join(' · ')}</small>` : ''}</span>
+    </li>`,
+  )
   .join('');
-const segs = Array.from({ length: 24 }, (_, i) => `<i class="${i < Math.round((done / total) * 24) ? 'on' : ''}"></i>`).join('');
-const generated = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' });
-const playHtml = `<div class="play">
-      <a class="play-btn" href="./jogar/">[ ENTRAR NO COCKPIT ]</a>
-      <p class="keys"><b>WASD</b> mover · <b>MOUSE</b> mirar · <b>CLIQUE</b> atirar · <b>SHIFT</b> dash · <b>ESPAÇO</b> pulo duplo · <b>V</b> câmera · <b>'</b> desempenho · <b>F1</b> esconde o HUD</p>
-    </div>`;
 
-// Grade hexagonal do mapa de operações (estilo mapa de BattleTech), em SVG embutido.
-const HEXGRID = encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' width='56' height='97' viewBox='0 0 56 97'><path d='M28 0 L56 16 L56 48 L28 64 L0 48 L0 16 Z M28 64 L28 97' fill='none' stroke='rgba(255,176,0,0.07)' stroke-width='1'/></svg>`,
-);
+// ---------- página ----------
 
-// Documento completo: sem o <meta charset> o navegador lê o UTF-8 como Windows-1252 e quebra todos os
-// acentos (aconteceu no site em 24/09: o servidor manda text/html sem charset); sem o doctype, modo quirks.
-const html = `<!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Cyber-Mech Protocol: shooter de Mechs para o navegador. Jogue agora e acompanhe o desenvolvimento.">
-<title>${SITE ? 'Cyber-Mech Protocol' : 'Painel de Missão Cyber-Mech'}</title>
-<link rel="icon" href="data:,">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Saira+Stencil+One&display=swap">
-<style>
-  /* Terminal de fósforo âmbar dos anos 80/90 (Shadowrun, BattleTech): um visual só, escuro de propósito. */
-  :root {
-    color-scheme: dark;
-    --bg: #070604; --panel: #0c0a06; --panel2: #120e07;
-    --line: rgba(255,176,0,.2); --line2: rgba(255,176,0,.38);
-    --amber: #ffb000; --text: #ffcf70; --muted: #b8893a; --faint: #6e5424;
-    --green: #7dff72; --cyan: #5ce1ff; --red: #ff5a3c;
-    --fd: 'VT323', 'Share Tech Mono', Consolas, monospace;
-    --fb: 'Share Tech Mono', Consolas, 'Courier New', monospace;
-    --fs: 'Saira Stencil One', 'Arial Black', Impact, sans-serif;
-    --glow: 0 0 6px rgba(255,176,0,.45), 0 0 18px rgba(255,176,0,.15);
-  }
-  html { background: var(--bg); }
-  body {
-    background: radial-gradient(ellipse 90% 70% at 50% 30%, #140f06 0%, var(--bg) 70%) fixed, var(--bg);
-    color: var(--text);
-    font: 400 15px/1.6 var(--fb);
-    padding: 0 18px;
-    padding-block: 0 72px;
-  }
-  /* CRT: linhas de varredura e vinheta por cima de tudo, sem pegar clique. */
-  body::after {
-    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 20;
-    background: repeating-linear-gradient(to bottom, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
-  }
-  body::before {
-    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 21;
-    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.55) 100%);
-  }
-  .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 54px; }
-  section { display: grid; gap: 16px; }
-  h1, h2, h3 { margin: 0; font-weight: 400; text-wrap: balance; }
-  h2 { font: 400 clamp(2rem, 3.6vw, 2.9rem)/1 var(--fd); letter-spacing: .04em; color: var(--amber); text-shadow: var(--glow); text-transform: uppercase; }
-  h3 { font: 400 1.35rem/1.05 var(--fd); letter-spacing: .06em; color: var(--amber); }
-  p { margin: 0; }
-  b { color: var(--amber); font-weight: 400; }
-  code { font: inherit; color: var(--cyan); }
-  .kicker { font: 400 12px/1 var(--fb); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
-  .lede { color: var(--muted); max-width: 64ch; }
-  button { font: inherit; color: inherit; }
-  :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+const css = `
+  .hero { display: grid; gap: 18px; padding-top: 30px; }
+  .pitch { font-size: 17px; line-height: 1.6; color: var(--text); max-width: 70ch; text-wrap: pretty; }
 
-  /* Moldura de HUD: cantos em L, como retícula de cockpit. */
-  .frame { position: relative; border: 1px solid var(--line); background: var(--panel); }
-  .frame::before {
-    content: ''; position: absolute; inset: -1px; pointer-events: none;
-    --c: var(--amber);
-    background:
-      linear-gradient(var(--c), var(--c)) top left / 14px 2px no-repeat,
-      linear-gradient(var(--c), var(--c)) top left / 2px 14px no-repeat,
-      linear-gradient(var(--c), var(--c)) top right / 14px 2px no-repeat,
-      linear-gradient(var(--c), var(--c)) top right / 2px 14px no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom left / 14px 2px no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom left / 2px 14px no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom right / 14px 2px no-repeat,
-      linear-gradient(var(--c), var(--c)) bottom right / 2px 14px no-repeat;
-  }
+  .team { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+  .member { padding: 16px; display: grid; gap: 10px; align-content: start; }
+  .member header { display: grid; gap: 6px; justify-items: start; }
+  .member h3 { font-size: 1.9rem; }
+  .m-claude::before { --c: #ff9a6b; } .m-gemini::before { --c: #7fb0ff; } .m-codex::before { --c: #5fd8a8; }
+  .mrole { font-size: 13.5px; line-height: 1.5; color: var(--text); }
+  .mnum { margin: 0; display: flex; gap: 18px; }
+  .mnum div { display: grid; }
+  .mnum dt { font-size: 10.5px; letter-spacing: .2em; color: var(--muted); }
+  .mnum dd { margin: 0; font: 400 1.6rem/1 var(--fd); color: var(--amber); }
+  .mfronts { font-size: 12px; color: var(--muted); letter-spacing: .06em; }
+  .mnow { font-size: 12.5px; line-height: 1.45; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+  .mnow span { color: var(--green); }
 
-  /* --- barra do sistema --- */
-  .sysbar {
-    display: flex; flex-wrap: wrap; gap: 6px 22px; justify-content: space-between;
-    padding: 10px 0; border-bottom: 1px solid var(--line); color: var(--muted);
-    font: 400 12px/1.3 var(--fb); letter-spacing: .14em; text-transform: uppercase;
-  }
-  .sysbar .live { color: var(--green); }
-  .sysbar .live::before { content: '● '; }
+  .flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 30px 26px; counter-reset: s; }
+  .step { padding: 14px 14px 16px; display: grid; gap: 8px; align-content: start; }
+  /* Setas entre passos da mesma linha; no fim da linha, a numeração conduz. */
+  .step:not(:last-child)::after { content: '→'; position: absolute; right: -20px; top: 16px; color: var(--amber); font: 400 1.3rem/1 var(--fd); }
+  .step:nth-child(4n)::after { content: none; }
+  .loop { color: var(--green); font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; }
+  .snum { font: 400 1rem/1 var(--fd); color: var(--bg); background: var(--amber); justify-self: start; padding: 3px 6px 1px; }
+  .step h3 { font-size: 1.3rem; }
+  .step p { font-size: 13px; line-height: 1.5; color: var(--muted); }
+  .step .sample { color: var(--cyan); font-size: 12px; border-left: 2px solid var(--line2); padding-left: 8px; }
 
-  /* --- briefing --- */
-  .hero { display: grid; gap: 18px; padding-top: 26px; }
-  .boot { color: var(--green); font: 400 13px/1.4 var(--fb); letter-spacing: .06em; }
-  .cursor { animation: blink 1s step-end infinite; margin-left: 4px; }
-  @keyframes blink { 50% { opacity: 0; } }
-  .title { font: 400 clamp(3.2rem, 9vw, 7.4rem)/.86 var(--fd); letter-spacing: .02em; color: var(--amber); text-shadow: var(--glow); }
-  .title span { display: block; color: var(--text); }
-  .play { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; }
-  .play-btn {
-    font: 400 1.7rem/1 var(--fd); letter-spacing: .08em; color: var(--bg); background: var(--amber);
-    padding: 12px 22px 10px; text-decoration: none; box-shadow: 0 0 24px rgba(255,176,0,.35);
-    transition: background .15s, box-shadow .15s;
-  }
-  .play-btn:hover { background: var(--text); box-shadow: 0 0 36px rgba(255,176,0,.55); }
-  .play-btn:active { transform: translateY(1px); }
-  .keys { color: var(--muted); font-size: 13px; max-width: 72ch; }
-  .sitrep { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
-  .read { padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
-  .read .k { font-size: 11.5px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
-  .read .v { font: 400 2rem/1 var(--fd); color: var(--amber); text-shadow: var(--glow); font-variant-numeric: tabular-nums; }
-  .read .v small { font: 400 .95rem var(--fb); color: var(--muted); text-shadow: none; }
-  .xp { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 4px; }
-  .xp i { height: 9px; background: rgba(255,176,0,.1); }
-  .xp i.on { background: var(--amber); box-shadow: 0 0 6px rgba(255,176,0,.5); }
+  .rules { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .rule { background: var(--panel); padding: 14px 16px 16px; display: grid; gap: 6px; align-content: start; }
+  .rule h3 { font-size: 1.2rem; }
+  .rule p { font-size: 13px; line-height: 1.5; color: var(--muted); }
 
-  /* --- rota em mapa hexagonal --- */
+  .charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .chart { margin: 0; padding: 14px 14px 8px; display: grid; gap: 6px; }
+  .chart figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .chart figcaption span { font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+  .chart svg { width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+  .chart .grid { stroke: var(--grid); stroke-width: 1; }
+  .chart .tick { fill: var(--muted); font: 400 11px var(--fb); font-variant-numeric: tabular-nums; }
+  .chart .line { fill: none; stroke: var(--amber); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .chart .area { fill: var(--amber); opacity: .1; }
+  .chart .end { fill: var(--amber); stroke: var(--panel); stroke-width: 2; }
+  .chart .endlabel { fill: var(--text); font: 400 15px var(--fd); }
+  .chart .cross { stroke: var(--muted); stroke-width: 1; }
+  .tip { position: absolute; top: 44px; pointer-events: none; background: var(--panel2); border: 1px solid var(--line2); padding: 6px 9px; font-size: 12px; line-height: 1.4; color: var(--text); white-space: nowrap; z-index: 2; }
+  .table-view summary { cursor: pointer; color: var(--muted); font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; }
+  .table-view table { margin-top: 10px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .table-view th, .table-view td { padding: 4px 14px 4px 0; text-align: left; border-bottom: 1px solid var(--line); }
+  .table-view th { color: var(--muted); font-weight: 400; letter-spacing: .1em; }
+
   .route {
     list-style: none; margin: 0; padding: 22px 6px 14px; display: grid;
-    grid-template-columns: repeat(${phases.length}, 1fr);
+    grid-template-columns: repeat(${phases.length}, minmax(0, 1fr));
     background: url("data:image/svg+xml,${HEXGRID}") center / 56px 97px, var(--panel);
     border: 1px solid var(--line);
   }
-  .node { position: relative; display: flex; }
+  .node { position: relative; display: flex; min-width: 0; }
   .node:not(:last-child)::after {
     content: ''; position: absolute; top: 33px; left: calc(50% + 34px); right: calc(-50% + 34px); height: 0;
     border-top: 2px dashed var(--faint);
   }
   .node.done:not(:last-child)::after { border-top: 2px solid var(--green); }
   .node-btn {
-    width: 100%; background: none; border: 0; cursor: pointer; padding: 0 6px 8px;
+    width: 100%; background: none; border: 0; cursor: pointer; padding: 0 4px 8px;
     display: grid; justify-items: center; align-content: start; gap: 7px; text-align: center;
   }
   .node-btn:hover .node-title { color: var(--amber); }
@@ -454,13 +331,12 @@ const html = `<!doctype html>
   @keyframes lock { 50% { filter: drop-shadow(0 0 12px rgba(92,225,255,.9)); } }
   .node-label { font-size: 10.5px; letter-spacing: .16em; color: var(--faint); }
   .done .node-label { color: var(--green); } .open .node-label { color: var(--amber); } .focus .node-label { color: var(--cyan); }
-  .node-title { font: 400 1.2rem/1.05 var(--fd); letter-spacing: .04em; color: var(--text); max-width: 14ch; }
+  .node-title { font: 400 1.15rem/1.05 var(--fd); letter-spacing: .04em; color: var(--text); max-width: 14ch; }
   .locked .node-title { color: var(--muted); }
   .node-bar { width: 70%; height: 4px; background: rgba(255,176,0,.12); }
   .node-bar i { display: block; height: 100%; background: var(--green); }
   .node-count { font-size: 12px; color: var(--muted); letter-spacing: .08em; font-variant-numeric: tabular-nums; }
 
-  /* --- sistemas (frentes) --- */
   .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
   .chip { background: var(--panel); border: 1px solid var(--line2); padding: 6px 12px; font: 400 12px/1 var(--fb); letter-spacing: .14em; color: var(--muted); cursor: pointer; text-transform: uppercase; }
   .chip:hover { color: var(--amber); border-color: var(--amber); }
@@ -499,139 +375,46 @@ const html = `<!doctype html>
   .front.empty .empty-note { display: block; }
   .front.empty { opacity: .45; }
 
-  /* --- ficha técnica e compromisso --- */
-  .grid-2 { grid-template-columns: minmax(240px, 1fr) minmax(300px, 1.4fr); align-items: start; gap: 22px; }
-  .sheet { padding: 18px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 22px; }
-  .armor { display: grid; gap: 8px; }
-  .arow { display: grid; grid-template-columns: 70px 1fr 42px; gap: 10px; align-items: center; font-size: 13px; letter-spacing: .08em; color: var(--muted); }
-  .arow b { font: 400 1.35rem/1 var(--fd); text-align: right; }
-  .abar { height: 10px; border: 1px solid var(--line2); }
-  .abar i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--green) 0 6px, transparent 6px 8px); }
-  .specs { margin: 0; display: grid; gap: 10px; align-content: start; }
-  .specs div { display: grid; gap: 2px; }
-  .specs dt { font-size: 11px; letter-spacing: .2em; color: var(--muted); }
-  .specs dd { margin: 0; font: 400 1.35rem/1.1 var(--fd); color: var(--amber); }
-  .pledge { padding: 22px 22px 18px; display: grid; gap: 14px; }
-  .pledge::before { --c: var(--red); }
-  .stamp {
-    justify-self: start; font: 400 clamp(1.6rem, 3.4vw, 2.4rem)/1 var(--fs); letter-spacing: .08em; color: var(--red);
-    border: 3px double var(--red); padding: 8px 14px 6px; transform: rotate(-3deg); opacity: .92;
-    text-shadow: 0 0 10px rgba(255,90,60,.35);
-  }
-  .pledge ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--text); font-size: 14px; }
-  .pledge li::marker { content: '> '; color: var(--red); }
+  .log { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+  .day { border-left: 2px solid var(--line2); padding-left: 16px; display: grid; gap: 10px; }
+  .day h3 { display: flex; gap: 12px; align-items: baseline; font-size: 1.6rem; }
+  .day h3 span { font: 400 12px var(--fb); letter-spacing: .14em; color: var(--muted); text-transform: uppercase; }
+  .day ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+  .day ol li { font-size: 13.5px; line-height: 1.45; color: var(--text); position: relative; }
+  .day ol li::before { content: ''; position: absolute; left: -21px; top: .55em; width: 8px; height: 8px; background: var(--amber); box-shadow: 0 0 0 2px var(--bg); }
 
-  /* --- ordens, esquadrão, registro --- */
-  .now { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; align-items: start; }
-  .term-bar { display: flex; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--line); font-size: 11.5px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
-  .term-body { padding: 14px 16px 16px; display: grid; gap: 10px; }
-  .prompt { color: var(--green); font-size: 13px; }
-  .mission { font-size: 15px; line-height: 1.6; max-width: 62ch; }
-  .status-line { color: var(--muted); font-size: 12.5px; }
-  .team { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  .team li { display: grid; grid-template-columns: 88px 1fr; gap: 12px; font-size: 13.5px; line-height: 1.45; }
-  .who { font: 400 1.25rem/1.1 var(--fd); color: var(--cyan); letter-spacing: .06em; }
-  .what { color: var(--text); }
   .feed { list-style: none; margin: 0; padding: 6px 0; display: grid; }
-  .feed li { display: grid; grid-template-columns: 96px 70px 1fr auto; gap: 12px; padding: 8px 16px; font-size: 13.5px; border-bottom: 1px dashed var(--line); align-items: baseline; }
+  .feed li { display: grid; grid-template-columns: 44px 48px 150px 1fr; gap: 12px; padding: 8px 16px; font-size: 13.5px; border-bottom: 1px dashed var(--line); align-items: baseline; }
   .feed li:last-child { border-bottom: 0; }
+  .feed .prn { color: var(--amber); font-variant-numeric: tabular-nums; }
   .feed time { color: var(--faint); font-variant-numeric: tabular-nums; }
-  .pr { color: var(--amber); } .ok { color: var(--green); }
-  footer { color: var(--faint); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; border-top: 1px solid var(--line); padding-top: 14px; }
+  .feed .fr { display: block; color: var(--muted); font-size: 11.5px; letter-spacing: .04em; margin-top: 2px; }
 
+  .source { color: var(--faint); font-size: 12px; letter-spacing: .06em; }
+
+  @media (max-width: 980px) {
+    .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .step:nth-child(4n):not(:last-child)::after { content: '→'; }
+    .step:nth-child(2n)::after { content: none; }
+  }
   @media (max-width: 860px) {
     .route { grid-template-columns: 1fr; gap: 4px; }
     .node:not(:last-child)::after { top: 70px; bottom: -6px; left: 39px; right: auto; height: auto; border-top: 0; border-left: 2px dashed var(--faint); }
     .node.done:not(:last-child)::after { border-left: 2px solid var(--green); }
     .node-btn { grid-template-columns: 66px 1fr auto; grid-template-areas: 'hex label count' 'hex title title' 'hex bar bar'; justify-items: start; text-align: left; column-gap: 14px; }
     .hex { grid-area: hex; } .node-label { grid-area: label; } .node-title { grid-area: title; max-width: none; } .node-bar { grid-area: bar; width: 100%; } .node-count { grid-area: count; }
-    .grid-2, .sheet { grid-template-columns: 1fr; }
     .fronts { grid-template-columns: 1fr; }
-    .feed li { grid-template-columns: 1fr auto; } .feed .pr, .feed time { display: none; }
-    .team li { grid-template-columns: 1fr; gap: 2px; }
+    .feed li { grid-template-columns: 44px 1fr; row-gap: 4px; } .feed time { display: none; } .feed .ft { grid-column: 1 / -1; }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .cursor, .focus .hex { animation: none; }
+  @media (max-width: 560px) {
+    .flow { grid-template-columns: 1fr; gap: 28px; }
+    .step:nth-child(n):not(:last-child)::after { content: '↓'; right: auto; left: 50%; top: auto; bottom: -25px; }
   }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="sysbar" role="note">
-    <span>CYBER-MECH PROTOCOL // TAC-NET</span>
-    <span class="live">link seguro · main ${esc(head)}</span>
-    <span>${esc(generated)} BRT</span>
-  </div>
+`;
 
-  <header class="hero">
-    <p class="boot">&gt; conexão estabelecida. briefing da unidade carregado<span class="cursor" aria-hidden="true">█</span></p>
-    <h1 class="title">OPERAÇÃO<span>CYBER-MECH</span></h1>
-    <p class="lede">Briefing da equipe: onde estamos e o que falta vencer. Tudo aqui sai do <code>ROADMAP.md</code> do projeto${SITE ? ' e se atualiza a cada PR aprovado' : ''}.</p>
-    ${SITE ? playHtml : ''}
-    <div class="sitrep">
-      <div class="read frame"><span class="k">Fase atual</span><span class="v">F${focus.num} · ${upper(focus.title)} <small>${focus.done}/${focus.items.length}</small></span></div>
-      <div class="read frame"><span class="k">XP do projeto</span><span class="v">${done} <small>de ${total} itens</small></span><div class="xp" aria-hidden="true">${segs}</div></div>
-      <div class="read frame"><span class="k">Conclusão do roadmap</span><span class="v">${pct(done, total)}%</span></div>
-      <div class="read frame"><span class="k">Ideias na fila</span><span class="v">${ideasCount} <small>esperando prioridade</small></span></div>
-    </div>
-  </header>
-
-  <section aria-labelledby="rota">
-    <span class="kicker">// rota de operações</span>
-    <h2 id="rota">Mapa da campanha</h2>
-    <p class="lede">Cada hexágono é uma fase. O que pulsa em ciano é a posição atual da equipe. Clique num hexágono para filtrar os sistemas por fase.</p>
-    <ol class="route">${routeHtml}</ol>
-  </section>
-
-  <section aria-labelledby="frentes">
-    <span class="kicker">// sistemas da unidade</span>
-    <h2 id="frentes">Frentes de trabalho</h2>
-    <p class="lede">Cada frente é um sistema do Mech. Os slots são os itens: verde é feito, meio preenchido está em andamento, tracejado é ideia.</p>
-    <div class="toolbar" role="group" aria-label="Filtrar itens">
-      <button type="button" class="chip" data-status="all" aria-pressed="true">todos</button>
-      <button type="button" class="chip" data-status="todo" aria-pressed="false">pendente</button>
-      <button type="button" class="chip" data-status="doing" aria-pressed="false">em curso</button>
-      <button type="button" class="chip" data-status="done" aria-pressed="false">concluído</button>
-      <button type="button" class="chip" data-status="idea" aria-pressed="false">ideias</button>
-      <span class="phase-pill" id="phase-pill"><span id="phase-pill-label"></span><button type="button" id="phase-clear">[ limpar ]</button></span>
-    </div>
-    <div class="fronts">${frontsHtml}</div>
-  </section>
-
-  ${sheetHtml}
-
-  ${pledgeHtml}
-
-  <section aria-labelledby="agora">
-    <span class="kicker">// ordens em vigor</span>
-    <h2 id="agora">Ordem de missão e esquadrão</h2>
-    <div class="now">
-      <div class="term frame">
-        <div class="term-bar"><span>ordem de missão</span><span>prioridade 1</span></div>
-        <div class="term-body">
-          <span class="prompt">&gt; cat PROXIMA_SESSAO</span>
-          <p class="mission">${inline(estado.next)}</p>
-          ${estado.status ? `<p class="status-line">${inline(estado.status)}</p>` : ''}
-        </div>
-      </div>
-      <div class="term frame">
-        <div class="term-bar"><span>esquadrão</span><span>${estado.team.length} agentes</span></div>
-        <div class="term-body"><ul class="team">${teamHtml}</ul></div>
-      </div>
-    </div>
-  </section>
-
-  <section aria-labelledby="conquistas">
-    <span class="kicker">// registro de combate</span>
-    <h2 id="conquistas">O que já entrou no jogo</h2>
-    <ul class="feed frame">${feedHtml}</ul>
-  </section>
-
-  <footer>fim da transmissão · ${SITE ? 'gerado do roadmap do projeto a cada atualização' : 'gerado do ROADMAP.md e do ESTADO_ATUAL.md · npm run painel'}</footer>
-</div>
-
-<script>
+const script = `
   (() => {
+    // Filtros das frentes (status e fase).
     const cards = [...document.querySelectorAll('.front')];
     const chips = [...document.querySelectorAll('.chip')];
     const nodes = [...document.querySelectorAll('.node-btn')];
@@ -658,12 +441,123 @@ const html = `<!doctype html>
     for (const c of chips) c.addEventListener('click', () => { status = c.dataset.status; apply(); });
     for (const n of nodes) n.addEventListener('click', () => { phase = phase === n.dataset.phase ? null : n.dataset.phase; apply(); });
     document.getElementById('phase-clear').addEventListener('click', () => { phase = null; apply(); });
+
+    // Gráficos: linha vertical + dica com a entrega mais próxima do ponteiro.
+    for (const fig of document.querySelectorAll('.chart')) {
+      const pts = JSON.parse(fig.dataset.points);
+      const svg = fig.querySelector('svg');
+      const cross = fig.querySelector('.cross');
+      const tip = fig.querySelector('.tip');
+      const x0 = +fig.dataset.x0, x1 = +fig.dataset.x1, w = +fig.dataset.w;
+      const fmt = (n) => n.toLocaleString('pt-BR');
+      svg.addEventListener('pointermove', (e) => {
+        const r = svg.getBoundingClientRect();
+        const vx = ((e.clientX - r.left) / r.width) * w;
+        const i = Math.max(0, Math.min(pts.length - 1, Math.round(((vx - x0) / (x1 - x0)) * (pts.length - 1))));
+        const cx = x0 + (pts.length > 1 ? i / (pts.length - 1) : 0) * (x1 - x0);
+        cross.setAttribute('x1', cx); cross.setAttribute('x2', cx); cross.setAttribute('visibility', 'visible');
+        const [pr, date, v] = pts[i];
+        tip.textContent = (pr ? 'PR #' + pr : 'commit ' + (i + 1)) + ' · ' + date.split('-').reverse().slice(0, 2).join('/') + ' · ' + fmt(v) + ' ' + fig.dataset.unit;
+        tip.hidden = false;
+        const px = (cx / w) * r.width + svg.offsetLeft;
+        tip.style.left = Math.min(Math.max(px - tip.offsetWidth / 2, 4), fig.clientWidth - tip.offsetWidth - 4) + 'px';
+      });
+      svg.addEventListener('pointerleave', () => { cross.setAttribute('visibility', 'hidden'); tip.hidden = true; });
+    }
   })();
-</script>
-</body>
-</html>
 `;
+
+const body = `
+  ${topo({ base: BASE, current: 'bastidores', left: `CYBER-MECH PROTOCOL // BASTIDORES`, live: `atualizado a cada entrega · ${esc(m.head)}` })}
+
+  <header class="hero">
+    <p class="boot">&gt; bastidores · case de desenvolvimento${m.day ? ` · dia ${m.day} do projeto` : ''}<span class="cursor" aria-hidden="true">█</span></p>
+    <h1 class="title">BASTIDORES<span>DA OPERAÇÃO</span></h1>
+    <p class="pitch">Um diretor humano, três IAs e um protocolo. O Cyber-Mech Protocol é construído em público: cada decisão fica registrada, cada entrega passa por testes automáticos e vai para o ar sozinha. Esta página é gerada do próprio repositório a cada entrega; nenhum número aqui é digitado à mão.</p>
+    <div class="sitrep">
+      ${m.day ? `<div class="read frame"><span class="k">Dia de projeto</span><span class="v">${m.day} <small>desde ${brDate(m.first)}</small></span></div>` : ''}
+      <div class="read frame"><span class="k">Entregas</span><span class="v">${prs.length} <small>PRs no ar</small></span></div>
+      <div class="read frame"><span class="k">Testes</span><span class="v">${nf(last.tests)} <small>automáticos</small></span></div>
+      <div class="read frame"><span class="k">Linhas de código</span><span class="v">${nf(last.loc)} <small>TypeScript</small></span></div>
+      <div class="read frame"><span class="k">Roadmap</span><span class="v">${stats.pct}% <small>${stats.done}/${stats.total}</small></span></div>
+      ${m.version ? `<div class="read frame"><span class="k">Versão</span><span class="v">${esc(m.version)}</span></div>` : ''}
+    </div>
+  </header>
+
+  <section aria-labelledby="equipe">
+    <span class="kicker">// esquadrão</span>
+    <h2 id="equipe">A equipe</h2>
+    <p class="lede">Cada IA tem um território de arquivos e trabalha na própria pasta, para uma não desfazer o trabalho da outra. O diretor decide; as IAs propõem, constroem e provam com teste.</p>
+    <div class="team">${teamHtml}</div>
+    ${fromGithub ? '' : '<p class="source">Sem acesso ao GitHub neste build: entregas contadas pelo git, sem etiquetas de frente e agente.</p>'}
+  </section>
+
+  <section aria-labelledby="fluxo">
+    <span class="kicker">// da ideia ao ar</span>
+    <h2 id="fluxo">Como um pedido vira jogo</h2>
+    <p class="lede">O caminho de toda mudança, com um exemplo real: o estande de calibração do mouse, pedido numa frase e publicado no mesmo dia.</p>
+    <ol class="flow">${flowHtml}</ol>
+    <p class="loop">↺ e o ciclo recomeça no 01</p>
+  </section>
+
+  <section aria-labelledby="protocolo">
+    <span class="kicker">// regras de engajamento</span>
+    <h2 id="protocolo">Protocolo Serafim UM</h2>
+    <p class="lede">O protocolo de engenharia que toda IA segue neste projeto: memória persistente, 17 regras absolutas e um ritual de entrada e de saída a cada sessão. Parte dele é aplicada por travas automáticas, não pela boa vontade de quem programa.</p>
+    <ul class="rules">${rulesHtml}</ul>
+  </section>
+
+  ${evoHtml}
+
+  <section aria-labelledby="rota">
+    <span class="kicker">// rota de operações</span>
+    <h2 id="rota">Mapa da campanha</h2>
+    <p class="lede">Cada hexágono é uma fase. O que pulsa em ciano é onde a equipe está agora. Clique num hexágono para filtrar as frentes por fase.</p>
+    <ol class="route">${routeHtml}</ol>
+  </section>
+
+  <section aria-labelledby="frentes">
+    <span class="kicker">// sistemas da unidade</span>
+    <h2 id="frentes">Frentes de trabalho</h2>
+    <p class="lede">Cada frente é um sistema do Mech; os slots são os itens do roadmap. Verde é feito, meio preenchido está em andamento, tracejado é ideia.</p>
+    <div class="toolbar" role="group" aria-label="Filtrar itens">
+      <button type="button" class="chip" data-status="all" aria-pressed="true">todos</button>
+      <button type="button" class="chip" data-status="todo" aria-pressed="false">pendente</button>
+      <button type="button" class="chip" data-status="doing" aria-pressed="false">em curso</button>
+      <button type="button" class="chip" data-status="done" aria-pressed="false">concluído</button>
+      <button type="button" class="chip" data-status="idea" aria-pressed="false">ideias</button>
+      <span class="phase-pill" id="phase-pill"><span id="phase-pill-label"></span><button type="button" id="phase-clear">[ limpar ]</button></span>
+    </div>
+    <div class="fronts">${frontsHtml}</div>
+  </section>
+
+  <section aria-labelledby="diario">
+    <span class="kicker">// diário de bordo</span>
+    <h2 id="diario">Decisões</h2>
+    <p class="lede">Toda decisão relevante entra num cofre que só cresce: o que foi decidido, por quê e por quem. É daqui que qualquer IA recupera o contexto antes de mexer no jogo.</p>
+    <ol class="log">${logHtml}</ol>
+  </section>
+
+  <section aria-labelledby="entregas">
+    <span class="kicker">// registro de combate</span>
+    <h2 id="entregas">Entregas</h2>
+    <p class="lede">Cada linha é um pull request que passou pelo CI e foi para o ar, com quem fez e as frentes que mexeu.</p>
+    <ul class="feed frame">${prHtml}</ul>
+  </section>
+
+  <footer><span>fim da transmissão · ${SITE ? 'gerado do repositório a cada entrega' : 'gerado do ROADMAP, ESTADO, HISTORICO e git · npm run painel'}</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
+`;
+
+const html = pagina({
+  title: SITE ? 'Bastidores · Cyber-Mech Protocol' : 'Painel de Missão Cyber-Mech',
+  description: 'Como o Cyber-Mech Protocol é feito: um diretor humano e uma equipe de IAs sob o Protocolo Serafim UM, com cada decisão, teste e entrega à vista.',
+  css,
+  body,
+  script,
+});
 
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, html);
-console.log(`painel  ${OUT} (${fronts.length} frentes, ${done}/${total} itens, ${ideasCount} ideias${sheet ? ', ficha técnica' : ''}${vows.length ? ', compromisso' : ''})`);
+console.log(
+  `painel  ${OUT} (${fronts.length} frentes, ${stats.done}/${stats.total} itens, ${prs.length} entregas${fromGithub ? ' do GitHub' : ' do git'}, ${log.length} decisões, ${evo.length} leituras)`,
+);

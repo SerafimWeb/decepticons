@@ -7,7 +7,11 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24/09)
-> As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e no registro de PRs do painel.
+> As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e nas entregas dos bastidores.
+- **Site em duas páginas (Claude, pedido do dono: "virar um case de desenvolvimento do game"):**
+  - `/cybermech/` é a landing do jogo: capa, galeria, o que tem no jogo (seção VITRINE do `GAME_DESIGN`), ficha do Vector-09, controles, sem pay-to-win, o que está sendo construído.
+  - `/cybermech/bastidores/` é o case: equipe (entregas e linhas por agente, das etiquetas dos PRs), como um pedido vira jogo, Protocolo Serafim UM, evolução (testes e linhas por merge, lidos do git), mapa da campanha, frentes, diário de decisões e entregas.
+  - **Capturas automáticas:** o deploy entra no jogo headless, joga ~20 s e fotografa as três câmeras. As fotos viram a capa, a galeria e a prévia do link.
 - **Planejamento reorganizado (pedido do dono):** nova **Fase 3: Vitrine e polimento** (som, celular, kill feed, site com o case, foguetes, draw calls). O multiplayer passou a ser a Fase 4. Fases 0, 1 e 2 fechadas
 - **Gestão no GitHub (Claude):** cada PR ganha sozinho as etiquetas da frente (pelos arquivos) e do agente (pelo branch): `.github/labeler.yml` + workflow `etiquetas.yml`. Os 17 PRs antigos foram etiquetados. Modelo de PR (o que muda, custo de CPU, como testar no site) e notas de versão agrupadas por frente (`.github/release.yml`)
 - **Acentos quebrados no site corrigidos (Claude):** a página saía sem `<!doctype>` e `<meta charset>`; o check agora reprova charset errado, modo quirks e o codinome interno na página pública
@@ -18,7 +22,7 @@
 ## PENDENTE
 - [ ] **Gemini:** o PR #17 (celular) está em conflito com a `main` (o CI nem roda). Juntar a `main` no branch, rodar o `npm run check` e mergear
 - [ ] **Gemini:** o kill feed está no branch `gemini/killfeed-dano` sem PR; abrir o PR (regra 13) depois de juntar a `main`
-- [ ] **Claude:** landing do jogo em `/cybermech/` e bastidores (o case) em `/cybermech/bastidores/`, em andamento
+- [ ] **Claude:** conferir no site publicado a landing, os bastidores e as capturas feitas pelo CI
 - [ ] **Dono:** testar no site as configurações, a calibração do mouse e o som
 - [ ] Fase 3: foguetes (arma secundária), draw calls por Mech (~34 cada), volume e mixagem nas configurações
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
@@ -36,7 +40,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
-| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Site: landing do jogo + bastidores (o case do desenvolvimento) |
+| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Site no ar (landing + bastidores). Próximo, a escolher pelo dono: foguetes, draw calls ou volume/mixagem |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Celular (PR #17, em conflito) e kill feed (branch sem PR); som no ar |
 | **Codex** | a combinar | Ao voltar: revisão cruzada dos PRs mergeados desde o #12 |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
@@ -51,4 +55,4 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Gemini: juntar a `main` no PR #17 (celular) e no kill feed, e mergear os dois (regra 13). Claude: terminar a landing do jogo e a página de bastidores (o case). Dono: testar o som, as configurações e a calibração no site.
+Gemini: juntar a `main` no PR #17 (celular) e no kill feed, e mergear os dois (regra 13). Claude: conferir o site publicado e seguir para foguetes ou draw calls. Dono: testar o som, as configurações e a calibração no site.
