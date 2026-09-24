@@ -15,4 +15,5 @@ export function aimFromCamera(ctx: CameraContext, aim: AimState): void {
   const hit = physics.raycast(camera.position, _fwd, AIM_RANGE, mech.collider);
   if (hit) aim.point.copy(hit.point);
   else aim.point.copy(camera.position).addScaledVector(_fwd, AIM_RANGE);
+  aim.target = hit?.collider ?? null;
 }

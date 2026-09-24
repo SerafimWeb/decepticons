@@ -8,6 +8,12 @@
 
 ## ÚLTIMA SESSÃO FEZ (24/09)
 > As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e nas entregas dos bastidores.
+- **Mira no celular (Claude, depois do teste do dono: "dificuldade de mirar e atirar"):**
+  - Tiro automático: atira sozinho quando a mira acende.
+  - Mira assistida só no toque: freia perto do inimigo, puxa de leve, acompanha e antecipa o voo do plasma.
+  - Dedo com resposta lenta/rápida; mira acende sobre inimigos (celular e PC); vibração.
+  - Nova seção "Toque (celular)" na tela de configurações para desligar a mira assistida e o tiro automático.
+  - De quebra: o `raycast` alocava objetos a cada chamada (mira e cada projétil, todo quadro/tick); agora reaproveita (G4).
 - **Celular refeito (Claude, depois do teste do dono: "não entrou no jogo, botões um sobre o outro, direcional preso"):**
   - O toque começa a partida: antes, as áreas de toque cobriam a pausa e engoliam o toque.
   - Direcional analógico que nasce onde o polegar encosta; mirar arrastando à direita; FOGO segura e mira junto.
@@ -32,7 +38,7 @@
 
 ## PENDENTE
 - [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
-- [ ] **Dono:** jogar no celular (deitado) e dizer se os controles de toque estão bons; no PC, testar configurações, calibração e som
+- [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
 - [ ] Fase 3: foguetes (arma secundária), draw calls por Mech (~34 cada), volume e mixagem nas configurações
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
 
@@ -58,6 +64,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Decisão | Situação |
 |---|---|
 | Hospedagem do servidor | Recomendação em `DEPLOY.md`. Decidir na Fase 4 (multiplayer). |
+| Mira assistida no multiplayer | Hoje é só do toque e só contra bots. Com gente de verdade, toque x mouse na mesma sala precisa de regra: manter (padrão dos jogos de tiro no celular), reduzir contra humanos ou separar salas por tipo de controle. Decidir na Fase 4. |
 | Bots contra bots | Hoje os bots só caçam o jogador. No modo "todos contra todos" eles deveriam se enfrentar também: basta passar todos os Mechs em `BotSystem.targets`. |
 
 ## BLOQUEIOS

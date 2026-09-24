@@ -84,6 +84,12 @@ html, body {
   border-radius: 50%;
   box-shadow: 0 0 8px var(--cyan);
 }
+/* Mira acesa: um inimigo vivo está sob ela (ui/HUD.setOnTarget). */
+#crosshair.on-target {
+  border-color: var(--orange);
+  box-shadow: 0 0 12px var(--orange);
+  transform: translate(-50%, -50%) scale(1.3);
+}
 #crosshair::after {
   content: '';
   position: absolute;
@@ -693,6 +699,8 @@ html, body {
 
 /* Pausa no toque: instruções do toque no lugar das do teclado; sem calibração de mouse. */
 #overlay .touch-help, #overlay .rotate-hint { display: none; }
+/* Só no toque / só no mouse: fora do modo certo some; no modo certo, fica com o display que já tem. */
+html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 .touch #overlay .keys-help, .touch .calib-open { display: none; }
 .touch #overlay .touch-help { display: grid; }
 @media (orientation: portrait) {

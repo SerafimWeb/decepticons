@@ -24,6 +24,10 @@ export interface GameSettings {
   mouseDpi: number;
   /** Entrada crua do mouse (Pointer Lock sem aceleração do sistema), onde o navegador permite. */
   rawInput: boolean;
+  /** Toque: fricção e puxão leve da mira perto de inimigos (no mouse, nunca). */
+  touchAimAssist: boolean;
+  /** Toque: atira sozinho com um inimigo sob a mira. */
+  touchAutoFire: boolean;
   invertY: boolean;
   /** Graus somados ao campo de visão da 1ª e da 3ª pessoa (a tática não muda). */
   fovOffset: number;
@@ -45,6 +49,8 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   sensitivity: 1,
   mouseDpi: 800,
   rawInput: true,
+  touchAimAssist: true,
+  touchAutoFire: true,
   invertY: false,
   fovOffset: 0,
   quality: 'auto',
@@ -130,6 +136,8 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     sensitivity: num(r.sensitivity, d.sensitivity, LIMITS.sensitivity.min, LIMITS.sensitivity.max),
     mouseDpi: Math.round(num(r.mouseDpi, d.mouseDpi, LIMITS.mouseDpi.min, LIMITS.mouseDpi.max)),
     rawInput: typeof r.rawInput === 'boolean' ? r.rawInput : d.rawInput,
+    touchAimAssist: typeof r.touchAimAssist === 'boolean' ? r.touchAimAssist : d.touchAimAssist,
+    touchAutoFire: typeof r.touchAutoFire === 'boolean' ? r.touchAutoFire : d.touchAutoFire,
     invertY: typeof r.invertY === 'boolean' ? r.invertY : d.invertY,
     fovOffset: Math.round(num(r.fovOffset, d.fovOffset, LIMITS.fovOffset.min, LIMITS.fovOffset.max)),
     quality: QUALITIES.includes(r.quality as QualityPreset) ? (r.quality as QualityPreset) : d.quality,

@@ -83,6 +83,16 @@ describe('Settings', () => {
     }
   });
 
+  it('opções do toque: ligadas por padrão, desligáveis e salvas', () => {
+    const storage = memoryStorage();
+    const s = new Settings(storage);
+    expect(s.value.touchAimAssist).toBe(true);
+    expect(s.value.touchAutoFire).toBe(true);
+    s.update({ touchAutoFire: false });
+    expect(new Settings(storage).value.touchAutoFire).toBe(false);
+    expect(new Settings(memoryStorage('{"touchAimAssist": "sim"}')).value.touchAimAssist).toBe(true); // tipo errado → padrão
+  });
+
   it('rótulo curto das teclas', () => {
     expect(keyLabel('KeyW')).toBe('W');
     expect(keyLabel('Space')).toBe('Espaço');

@@ -20,6 +20,8 @@ const SPARK_COLOR = new THREE.Color(0.4, 2.2, 3.0);
 const CORE_COLOR = new THREE.Color(2.5, 2.5, 3.0);
 
 const _dir = new THREE.Vector3();
+const _hitAt = new THREE.Vector3();
+const _hitNormal = new THREE.Vector3();
 const _look = new THREE.Vector3();
 
 /**
@@ -84,11 +86,13 @@ export class ProjectileSystem {
       const hit = this.physics.raycast(p.pos, _dir, step, p.owner);
 
       if (hit) {
+        // O resultado do raycast é reaproveitado: copia antes que o onHit dispare outro.
+        _hitNormal.copy(hit.normal);
+        _hitAt.copy(hit.point).addScaledVector(_hitNormal, 0.05);
         this.onHit?.(hit, _dir, p.damage, p.owner);
 
-        const at = hit.point.addScaledVector(hit.normal, 0.05);
-        this.particles.burst(at, hit.normal, { count: 36, color: SPARK_COLOR, speed: 24, life: 0.6, spread: 0.9 });
-        this.particles.burst(at, hit.normal, { count: 10, color: CORE_COLOR, speed: 6, life: 0.25, gravity: 0 });
+        this.particles.burst(_hitAt, _hitNormal, { count: 36, color: SPARK_COLOR, speed: 24, life: 0.6, spread: 0.9 });
+        this.particles.burst(_hitAt, _hitNormal, { count: 10, color: CORE_COLOR, speed: 6, life: 0.25, gravity: 0 });
         this.kill(p);
         continue;
       }

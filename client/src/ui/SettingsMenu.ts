@@ -24,6 +24,8 @@ export class SettingsMenu {
   private readonly sliderSens = $('setting-sens') as HTMLInputElement;
   private readonly valSens = $('val-sens');
   private readonly chkInvertY = $('setting-inverty') as HTMLInputElement;
+  private readonly chkAssist = $('setting-assist') as HTMLInputElement;
+  private readonly chkAutoFire = $('setting-autofire') as HTMLInputElement;
   private readonly sliderFov = $('setting-fov') as HTMLInputElement;
   private readonly valFov = $('val-fov');
   private readonly selQuality = $('setting-quality') as HTMLSelectElement;
@@ -96,6 +98,9 @@ export class SettingsMenu {
     this.chkInvertY.addEventListener('change', () => {
       this.settings.update({ invertY: this.chkInvertY.checked });
     });
+
+    this.chkAssist.addEventListener('change', () => this.settings.update({ touchAimAssist: this.chkAssist.checked }));
+    this.chkAutoFire.addEventListener('change', () => this.settings.update({ touchAutoFire: this.chkAutoFire.checked }));
 
     this.sliderFov.addEventListener('input', () => {
       const val = parseInt(this.sliderFov.value, 10);
@@ -203,6 +208,8 @@ export class SettingsMenu {
     this.valSens.textContent = `${s.sensitivity.toFixed(2)}x`;
 
     this.chkInvertY.checked = s.invertY;
+    this.chkAssist.checked = s.touchAimAssist;
+    this.chkAutoFire.checked = s.touchAutoFire;
 
     this.sliderFov.value = s.fovOffset.toString();
     this.valFov.textContent = `${s.fovOffset >= 0 ? '+' : ''}${s.fovOffset}°`;

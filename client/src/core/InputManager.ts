@@ -26,6 +26,8 @@ export class InputManager {
   virtualJump = false;
   virtualDash = false;
   virtualFire = false;
+  /** Tiro automático do toque (inimigo sob a mira), decidido pelo Game a cada quadro. */
+  autoFire = false;
 
   onLockChange?: (locked: boolean) => void;
   /** Tecla pressionada (sem auto-repeat). Útil para ações que exigem gesto do usuário. */

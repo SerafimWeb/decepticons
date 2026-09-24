@@ -69,6 +69,12 @@
 - [ ] Volume e mixagem nas configurações #som
 - [~] Controles de toque e layout para celular (Gemini no PR #17, refeito pelo Claude; o check joga num celular emulado; falta o dono confirmar num celular real) #ux
 - [x] Kill feed e indicador de direção do dano (Gemini; integrado e corrigido pelo Claude) #ux
+- [x] Celular: mira assistida só no toque (freia perto do inimigo, puxa de leve, acompanha e antecipa o movimento dele) e tiro automático, desligáveis nas configurações #jogabilidade
+- [x] Mira que acende sobre um inimigo (toque e mouse) #ux
+- [x] Vibração no celular ao levar tiro e ao abater #ux
+- [ ] Ajuste fino da mira assistida depois do playtest do dono no celular #jogabilidade
+- [ ] Botão de placar no toque (no celular não existe Tab) #ux
+- [ ] Primeira partida guiada: dicas curtas no jogo (mire nas pernas, dash, pulo duplo), uma vez só #ux
 - [x] Gestão no GitHub: etiquetas automáticas por frente e por agente, modelo de PR, notas de versão por frente #base
 - [x] Página do jogo (landing) e bastidores do desenvolvimento (o case) no site, com capturas do jogo feitas a cada deploy #negocio
 - [ ] Arma secundária: foguetes no braço esquerdo (botão direito), dano em área #combate
