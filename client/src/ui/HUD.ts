@@ -16,6 +16,23 @@ const PART_DESTROYED: Record<MechPart, string> = {
 const HIT_S = 0.12;
 const CRIT_S = 0.35;
 const LABEL_S = 1.4;
+const DAMAGE_FLASH_S = 0.25;
+
+/** Integridade do próprio Mech: uma barra de 10 blocos por parte. */
+const INTEGRITY_ROWS: readonly (readonly [MechPart, string])[] = [
+  ['head', 'CABEÇA '],
+  ['torso', 'TORSO  '],
+  ['leftArm', 'BRAÇO E'],
+  ['rightArm', 'BRAÇO D'],
+  ['leftLeg', 'PERNA E'],
+  ['rightLeg', 'PERNA D'],
+];
+
+function integrityBar(value: number, max: number): string {
+  if (value <= 0) return '░░░░░░░░░░ ✗';
+  const n = Math.max(1, Math.ceil((value / max) * 10));
+  return '█'.repeat(n) + '░'.repeat(10 - n);
+}
 
 export class HUD {
   private readonly root = $('hud');
@@ -28,10 +45,17 @@ export class HUD {
   private readonly modeLabel = $('mode');
   private readonly hitmarker = $('hitmarker');
   private readonly hitLabel = $('hit-label');
+  private readonly damageVignette = $('damage-vignette');
+  private readonly death = $('death');
+  private readonly deathTimer = $('death-timer');
   private cursorMode = false;
   private textTimer = 0;
   private hitTimer = 0;
   private labelTimer = 0;
+  private damageTimer = 0;
+  private kills = 0;
+  private deaths = 0;
+  private shownRespawn = '';
 
   setReady(): void {
     this.cta.textContent = '[ clique para jogar ]';
@@ -55,6 +79,27 @@ export class HUD {
     this.hitLabel.textContent = result.killed ? 'ALVO ABATIDO' : PART_DESTROYED[result.part];
     this.hitLabel.classList.add('show');
     this.labelTimer = LABEL_S;
+  }
+
+  /** Tomou dano: borda vermelha rápida. */
+  showDamage(): void {
+    this.damageVignette.classList.add('show');
+    this.damageTimer = DAMAGE_FLASH_S;
+  }
+
+  setScore(kills: number, deaths: number): void {
+    this.kills = kills;
+    this.deaths = deaths;
+    this.textTimer = 0;
+  }
+
+  /** Segundos até renascer, ou null se está vivo. */
+  setRespawn(seconds: number | null): void {
+    const text = seconds === null ? '' : 'RENASCENDO EM ' + seconds.toFixed(1) + ' s';
+    if (text === this.shownRespawn) return;
+    this.shownRespawn = text;
+    this.death.classList.toggle('show', seconds !== null);
+    this.deathTimer.textContent = text;
   }
 
   setMode(mode: CameraMode): void {
@@ -84,15 +129,26 @@ export class HUD {
       this.labelTimer -= dt;
       if (this.labelTimer <= 0) this.hitLabel.classList.remove('show');
     }
+    if (this.damageTimer > 0) {
+      this.damageTimer -= dt;
+      if (this.damageTimer <= 0) this.damageVignette.classList.remove('show');
+    }
 
     this.textTimer -= dt;
     if (this.textTimer > 0) return;
     this.textTimer = 0.2;
 
     const speed = Math.hypot(mech.velocity.x, mech.velocity.z);
+    let integrity = '';
+    for (const [part, label] of INTEGRITY_ROWS) {
+      integrity += `\n${label} ${integrityBar(mech.modules[part], mech.stats.maxModuleHealth[part])}`;
+    }
     this.stats.textContent =
       `${mech.stats.name}\n` +
       `VEL    ${speed.toFixed(1).padStart(5)} m/s\n` +
-      `DEBRIS ${debrisCount.toString().padStart(5)}`;
+      `ABATES ${this.kills.toString().padStart(5)}\n` +
+      `MORTES ${this.deaths.toString().padStart(5)}\n` +
+      `DEBRIS ${debrisCount.toString().padStart(5)}\n` +
+      integrity;
   }
 }

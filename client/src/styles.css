@@ -158,6 +158,33 @@ html, body {
   white-space: pre;
 }
 
+/* Tomou dano: borda vermelha que some rápido. */
+#damage-vignette {
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 120px 30px rgba(255, 30, 60, 0.55);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+#damage-vignette.show { opacity: 1; transition: none; }
+
+#death {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: none;
+}
+#death.show { display: block; }
+#death .title {
+  font-size: 44px;
+  letter-spacing: 10px;
+  color: var(--magenta);
+  text-shadow: 0 0 18px var(--magenta);
+}
+#death-timer { margin-top: 8px; font-size: 14px; letter-spacing: 3px; color: var(--cyan); }
+
 #mode {
   position: absolute;
   top: 12px;

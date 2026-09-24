@@ -28,10 +28,12 @@
 - [ ] Custo de render por Mech: ~34 draw calls cada (8 Mechs ≈ 270). Juntar a geometria por material antes do multiplayer (G5)
 
 ## 🟡 FASE 2 — Inimigos (bots)
-> **A cargo do Gemini** (pedido do dono, 2026-09-23). Especificação detalhada em `ESTADO_ATUAL.md`.
-- [ ] `BotController`: gera o mesmo `MechInput` que o jogador (patrulha, persegue, atira, recua)
-- [ ] Visão por raycast, erro de mira e tempo de reação por dificuldade, RNG com semente (G2)
-- [ ] HUD do próprio Mech (6 partes) e Blind Mode (cabeça destruída)
+- [x] `BotController`: gera o mesmo `MechInput` que o jogador (patrulha, persegue, atira, recua)
+- [x] Visão por raycast, erro de mira e tempo de reação por dificuldade, RNG com semente (G2)
+- [x] Jogador morre e renasce; renascimento longe dos inimigos (`Respawner`)
+- [x] HUD do próprio Mech (6 partes), borda de dano, tela "ABATIDO", abates/mortes
+- [ ] Blind Mode (cabeça destruída)
+- [ ] Níveis de dificuldade (fácil/difícil) sobre o `BotSkill`
 - [ ] Rodada de 5 min com placar e reinício automático
 
 ## 🟠 FASE 3 — Multiplayer autoritativo

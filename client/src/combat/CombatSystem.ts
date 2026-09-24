@@ -1,3 +1,4 @@
+import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import type { MechBase, MechPart } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
@@ -29,6 +30,8 @@ const _at = new THREE.Vector3();
 export interface MechHitEvent {
   mech: MechBase;
   result: DamageResult;
+  /** Quem atirou, se foi um Mech registrado. */
+  shooter?: MechBase;
 }
 
 /**
@@ -39,8 +42,8 @@ export interface MechHitEvent {
 export class CombatSystem {
   /** Qualquer acerto que tirou vida (HUD: marcador de acerto). */
   onMechHit?: (e: MechHitEvent) => void;
-  /** Mech abatido (tremor de câmera, placar). */
-  onMechKilled?: (mech: MechBase, at: THREE.Vector3) => void;
+  /** Mech abatido (tremor de câmera, placar). `killer` = quem deu o tiro final. */
+  onMechKilled?: (mech: MechBase, at: THREE.Vector3, killer?: MechBase) => void;
 
   private readonly byCollider = new Map<number, MechBase>();
 
@@ -54,17 +57,18 @@ export class CombatSystem {
     this.byCollider.set(mech.collider.handle, mech);
   }
 
-  onProjectileHit(hit: PhysicsHit, dir: THREE.Vector3, damage: number): void {
+  onProjectileHit(hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider): void {
     const mech = this.byCollider.get(hit.collider.handle);
     if (!mech) {
       this.destructibles.damage(hit.collider, damage, dir);
       return;
     }
+    const shooter = owner ? this.byCollider.get(owner.handle) : undefined;
     const result = mech.takeHit(hit.point, damage);
     if (result.applied <= 0) return;
-    if (result.killed) this.wreck(mech, dir);
+    if (result.killed) this.wreck(mech, dir, shooter);
     else if (result.partDestroyed) this.tearOff(mech, result.part, dir);
-    this.onMechHit?.({ mech, result });
+    this.onMechHit?.({ mech, result, shooter });
   }
 
   /** A parte some do modelo (MechBase) e o pedaço cai no chão como destroço. */
@@ -74,13 +78,13 @@ export class CombatSystem {
     this.particles.burst(at, UP, { count: 40, color: SPARK, speed: 16, life: 0.6, spread: 1.4 });
   }
 
-  private wreck(mech: MechBase, dir: THREE.Vector3): void {
+  private wreck(mech: MechBase, dir: THREE.Vector3, killer?: MechBase): void {
     const at = _at.copy(mech.position);
     at.y += WRECK_CENTER_Y;
     this.debris.shatter(at, WRECK_SIZE, dir, 14);
     this.particles.burst(at, UP, { count: 120, color: FIRE, speed: 22, life: 0.8, spread: 2.2 });
     this.particles.burst(at, UP, { count: 60, color: SPARK, speed: 30, life: 0.6, spread: 1.6 });
     this.particles.burst(at, UP, { count: 70, color: SMOKE, speed: 8, life: 1.8, spread: 2.5, gravity: -1 });
-    this.onMechKilled?.(mech, at);
+    this.onMechKilled?.(mech, at, killer);
   }
 }

@@ -8,10 +8,11 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CameraRig } from '../camera/CameraRig';
 import { CombatSystem } from '../combat/CombatSystem';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
-import { TrainingTargets } from '../combat/TrainingTargets';
+import { BotSystem } from '../combat/BotSystem';
+import { Respawner } from '../combat/Respawner';
 import { Vector09 } from '../entities/Vector09';
 import type { MechBase } from '../entities/MechBase';
-import { Arena } from '../environment/Arena';
+import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import { ParticleSystem } from '../fx/ParticleSystem';
@@ -24,6 +25,9 @@ import { DebugPanel } from '../debug/DebugPanel';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
+const PLAYER_RESPAWN_S = 3;
+/** Um bot perto (entra em combate logo) e dois mais longe (chegam patrulhando). */
+const BOT_SPAWNS = [SPAWN_POINTS[2]!, SPAWN_POINTS[4]!, SPAWN_POINTS[8]!];
 const THRUSTER_COLOR = new THREE.Color(3.0, 1.0, 0.2);
 const DUST_COLOR = new THREE.Color(0.45, 0.42, 0.5);
 const UP = new THREE.Vector3(0, 1, 0);
@@ -49,7 +53,8 @@ export class Game {
   private readonly destructibles: Destructibles;
   private readonly projectiles: ProjectileSystem;
   private readonly combat: CombatSystem;
-  private readonly targets: TrainingTargets;
+  private readonly bots: BotSystem;
+  private readonly respawner: Respawner;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
   private readonly player: PlayerController;
@@ -57,6 +62,8 @@ export class Game {
   private readonly debugPanel = new DebugPanel();
 
   private playing = false;
+  private kills = 0;
+  private deaths = 0;
   private accumulator = 0;
   private last = -1;
 
@@ -107,13 +114,26 @@ export class Game {
     this.projectiles = new ProjectileSystem(this.scene, physics, this.particles);
 
     this.mech = new Vector09();
-    this.mech.spawn(physics, new THREE.Vector3(0, 0, 25));
+    const [px, pz] = SPAWN_POINTS[0]!;
+    this.mech.spawn(physics, new THREE.Vector3(px, 0, pz));
     this.scene.add(this.mech.root);
 
     // --- Combate ---
     this.combat = new CombatSystem(this.destructibles, this.debris, this.particles);
     this.combat.register(this.mech);
-    this.targets = new TrainingTargets(this.scene, physics, this.combat, this.mech.position);
+    this.respawner = new Respawner(SPAWN_POINTS);
+    this.respawner.track(this.mech, PLAYER_RESPAWN_S);
+    this.bots = new BotSystem({
+      scene: this.scene,
+      physics,
+      combat: this.combat,
+      projectiles: this.projectiles,
+      particles: this.particles,
+      respawner: this.respawner,
+      spawns: BOT_SPAWNS,
+      waypoints: SPAWN_POINTS,
+    });
+    this.bots.targets = [this.mech];
 
     // --- Jogador ---
     this.input = new InputManager(this.renderer.domElement);
@@ -155,11 +175,22 @@ export class Game {
       this.particles.burst(mech.position, UP, { count: 30, color: DUST_COLOR, speed: 12, life: 0.7, spread: 2.5, gravity: 4 });
     };
     mech.onDashImpact = (collider, dir) => this.destructibles.demolish(collider, dir);
-    this.projectiles.onHit = (hit, dir, damage) => this.combat.onProjectileHit(hit, dir, damage);
-    this.combat.onMechHit = (e) => this.hud.showHit(e.result);
-    this.combat.onMechKilled = (_mech, at) => {
+    this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
+    this.combat.onMechHit = (e) => {
+      if (e.shooter === mech) this.hud.showHit(e.result);
+      if (e.mech === mech) {
+        this.hud.showDamage();
+        rig.addShake(0.12);
+      } else {
+        this.bots.onDamaged(e.mech, e.shooter);
+      }
+    };
+    this.combat.onMechKilled = (dead, at, killer) => {
       const falloff = 1 - at.distanceTo(mech.position) / 70;
       if (falloff > 0) rig.addShake(0.7 * falloff);
+      if (dead === mech) this.deaths++;
+      else if (killer === mech) this.kills++;
+      this.hud.setScore(this.kills, this.deaths);
     };
     this.destructibles.onBreak = (center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
@@ -226,13 +257,14 @@ export class Game {
     }
     this.player.collect();
 
-    // --- Simulação em passo fixo ---
-    this.accumulator += dt;
+    // --- Simulação em passo fixo (pausado = mundo congelado: os bots não atacam no menu) ---
+    if (this.playing) this.accumulator += dt;
     let steps = 0;
     const t0 = performance.now();
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
       this.player.fixedUpdate(FIXED_DT);
-      this.targets.fixedUpdate(FIXED_DT);
+      this.bots.fixedUpdate(FIXED_DT);
+      this.respawner.fixedUpdate(FIXED_DT);
       this.projectiles.fixedUpdate(FIXED_DT);
       this.physics.step();
       this.accumulator -= FIXED_DT;
@@ -244,7 +276,7 @@ export class Game {
 
     // --- Render ---
     this.mech.render(dt, alpha);
-    this.targets.render(dt, alpha);
+    this.bots.render(dt, alpha);
     this.rig.update(dt);
     this.projectiles.render(alpha);
     this.debris.sync();
@@ -257,6 +289,7 @@ export class Game {
     }
     this.particles.update(dt);
 
+    this.hud.setRespawn(this.respawner.timeLeft(this.mech));
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
     this.renderer.info.reset();
     this.composer.render(dt);

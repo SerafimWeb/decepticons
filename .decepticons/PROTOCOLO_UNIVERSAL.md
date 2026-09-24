@@ -38,7 +38,7 @@
 
 **[G1] Loop.** Simulação em passo fixo de 60 Hz (`FIXED_DT`), no máximo 4 ticks por frame: a máquina lenta desacelera em vez de travar. Render, câmera, animação e partículas rodam na taxa do monitor, interpolados por `alpha`. Regra de gameplay nunca roda em código de taxa de render.
 
-**[G2] Simulação determinística.** `fixedUpdate` depende só de `MechInput` + estado. No caminho da simulação são proibidos `Math.random`, `Date.now`, DOM e objetos de cena. Efeito visual (partículas, shake, animação) fica fora da simulação.
+**[G2] Simulação determinística.** `fixedUpdate` depende só de `MechInput` + estado. No caminho da simulação são proibidos `Math.random`, `Date.now`, DOM e objetos de cena. Aleatoriedade na simulação (ex.: IA dos bots) só com `core/rng.ts` (semente). Regra de jogo lê `simPosition`, nunca `position` (que é a de render, interpolada). Efeito visual (partículas, shake, animação) fica fora da simulação.
 
 **[G3] Módulos.** Cada sistema é uma classe independente, instanciada e ligada em `core/Game.ts`. Sistemas conversam por callbacks (`onHit`, `onBreak`, `onLand`, `onDashImpact`), nunca importando `Game`. Feature nova = módulo novo + fiação no `Game`.
 
