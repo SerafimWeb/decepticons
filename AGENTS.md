@@ -59,7 +59,7 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex 
 10. **Discordou de algo registrado?** Não desfaça em silêncio. Proponha em "decisões em aberto" no `ESTADO_ATUAL.md`; o dono decide.
 11. **Antes do commit, olhe o `git status`.** O hook barra arquivos de `.tmp/`, `dist/` e `node_modules/`, e barra secrets.
 12. **Dois agentes ao mesmo tempo? Cada um na sua pasta.** O Git tem um branch ativo por pasta: um `git switch` de um agente muda os arquivos do outro, e um `git add -A` leva o trabalho alheio. Quem chega depois cria um worktree dentro do projeto (G15): `git worktree add .tmp/wt-<agente> -b <agente>/<tarefa> origin/main`, liga as dependências (PowerShell: `New-Item -ItemType Junction -Path .tmp\wt-<agente>\node_modules -Target node_modules`) e trabalha só lá. (Em 24/09 Claude e Gemini trabalharam na mesma pasta; o trabalho foi separado sem perda.)
-13. **Do PR ao site, sem esperar ninguém (autorizado pelo dono nesta fase).** Tarefa pronta só conta quando chega ao site. Ao terminar: `gh pr create --fill` → `gh pr checks --watch` (CI verde) → `gh pr merge --merge --delete-branch`. O merge na `main` publica o jogo e o painel em `www.selvamkt.com.br/cybermech/` sozinho, em poucos minutos: é lá que o dono testa. Branch empurrado sem PR não chega a lugar nenhum. A revisão cruzada acontece depois do merge.
+13. **Do PR ao site, sem esperar ninguém (autorizado pelo dono nesta fase).** Tarefa pronta só conta quando chega ao site. Ao terminar: `gh pr create` com o corpo no modelo `.github/pull_request_template.md` (o que muda, custo de CPU, como testar no site) → `gh pr checks --watch` (CI verde) → `gh pr merge --merge --delete-branch`. As etiquetas de frente e de agente entram sozinhas. O merge na `main` publica o jogo e o painel em `www.selvamkt.com.br/cybermech/` sozinho, em poucos minutos: é lá que o dono testa. Branch empurrado sem PR não chega a lugar nenhum. A revisão cruzada acontece depois do merge.
 
 ## MAPA
 
@@ -77,7 +77,9 @@ client/src/
   debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)
 scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), painel.mjs (painel de missão), site.mjs (site + .htaccess + teste), install-hooks.mjs
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
-.github/       workflows/ci.yml (npm run check a cada push/PR; deploy do site a cada merge na main)
+.github/       workflows/ci.yml (npm run check a cada push/PR; deploy do site a cada merge na main),
+               workflows/etiquetas.yml + labeler.yml (etiqueta de frente e de agente em cada PR),
+               release.yml (notas de versão por frente), pull_request_template.md
 .tmp/          temporários do projeto (ignorado pelo git; G15)
 ```
 
@@ -93,6 +95,7 @@ npm run check      # typecheck + testes + build + budget + boot headless (obriga
 npm run smoke:dev  # boot headless contra o dev server
 npm run painel     # painel de missão (rota das fases + frentes) em .tmp/painel/painel.html
 npm run site       # monta o site em .tmp/site/ (painel + jogo em /jogar/); `-- --check` testa em /cybermech/ com os cabeçalhos reais
+gh release create v0.<fase>.0 --generate-notes --title "Fase N — Título"   # ao fechar uma fase: notas agrupadas por frente
 ```
 
 Ambiente sem Chrome/Edge (ex.: sandbox na nuvem): rode `npm run typecheck && npm test && npx vite build`; o smoke roda no CI do PR.
