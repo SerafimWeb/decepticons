@@ -39,5 +39,5 @@
 | Slots de sucata | AUSENTE | só o stat `maxScrapSlots` |
 | Colossus-01, Ferret-X | AUSENTE | |
 | Multiplayer / servidor | AUSENTE | planejado: Colyseus |
-| Controles touch / mobile | PARCIAL | Código no ar (Gemini, PR #17: `ui/TouchControls.ts`, ligado no `InputManager` e no `PlayerController`). Não conferido num celular real nem por outro agente; sem teste de simulação |
+| Controles touch / mobile | PARCIAL | Refeito pelo Claude depois do teste do dono num celular (24/09): o toque na pausa começa a partida (tela cheia e deitado onde o navegador deixa), direcional analógico onde o polegar encosta, mirar arrastando à direita, FOGO que segura e mira junto, PULO, DASH, CAM (3ª/1ª) e pausa numa grade sem sobreposição. `npm run check` joga num celular emulado (844×390, toque): começa, anda, atira com dois polegares e pausa. Falta o dono confirmar num celular de verdade |
 | Site público (landing + bastidores + jogo) | REAL | https://www.selvamkt.com.br/cybermech/: landing na raiz, o case em `/bastidores/`, jogo em `/jogar/`. Conferido em produção (24/09, PR #19): landing com as três capturas feitas pelo runner do CI, bastidores com as entregas lidas do GitHub. Publicado a cada merge na `main` (rsync/SSH). Conferido em produção num Chrome real: painel, Jogar, jogo carregando, sem erros; CSP aplicada; `.wasm` como `application/wasm` e comprimido (735 KB) |

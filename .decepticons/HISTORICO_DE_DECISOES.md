@@ -2,6 +2,24 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Celular: controles de toque refeitos e testados no check
+**Sintoma (dono, num Android deitado):** "não consegui jogar no celular: botões mal posicionados, um sobre o outro, muito grandes; o direcional ficou preso; não entrou no jogo, ficou na tela de config".
+**Causas (PR #17):**
+- As duas áreas de toque cobriam a tela inteira mesmo com o jogo pausado e davam `preventDefault` no `touchstart`, então o toque nunca chegava à tela de pausa e o jogo nunca começava.
+- Os botões ficavam em posições percentuais soltas, e FOGO e PULO se sobrepunham.
+- O modo toque era decidido por `navigator.maxTouchPoints > 0`, o que tiraria o Pointer Lock de qualquer notebook com tela de toque.
+**Correção (Claude, a pedido do dono; território do Gemini, registrado no ESTADO):**
+- Controles só com o jogo rodando e no modo toque.
+- O modo toque vem de `(hover: none) and (pointer: coarse)` e é confirmado pelo ponteiro que inicia a partida.
+- Pointer Events com captura; direcional analógico com zona morta (`stickVector`, 4 testes); FOGO que mira junto.
+- Grade 2×2 no canto com tamanhos em `vmin`; pausa no `click`, para o mesmo toque não retomar o jogo.
+- Tela cheia deitado onde o navegador deixa; pausa ao trocar de app; sem câmera tática no toque (ela mira pelo cursor).
+- Tela de pausa com instruções de toque e que cabe na altura do celular deitado.
+**Trava:** o `site.mjs --check` joga num celular emulado (844×390, toque) e reprova se o toque não começar a partida, se o direcional não andar, se FOGO não segurar com o outro polegar no direcional ou se a pausa falhar.
+**Site:** "Dan" no lugar de "diretor"; sem "feito em público" (o dono não fará lives por enquanto).
+**Custo de CPU:** nenhum por quadro; só eventos de ponteiro, sem alocação por movimento.
+**Quem decidiu:** dono (pedido, textos); Claude (desenho dos controles).
+
 ## [2026-09-24] Landing do jogo, bastidores como case e capturas automáticas
 **Pedido do dono:** melhorar a página e "virar um case de desenvolvimento do game". Escolhas dele: **jogo + bastidores** e **bastidores às claras**.
 **O que foi feito:**

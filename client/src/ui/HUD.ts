@@ -57,8 +57,8 @@ export class HUD {
   private deaths = 0;
   private shownRespawn = '';
 
-  setReady(): void {
-    this.cta.textContent = '[ clique para jogar ]';
+  setReady(touch = false): void {
+    this.cta.textContent = touch ? '[ toque para jogar ]' : '[ clique para jogar ]';
   }
 
   setPaused(paused: boolean): void {
