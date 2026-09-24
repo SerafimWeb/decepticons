@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 # Protocolo Serafim UM — [R15] smoke test obrigatório antes de qualquer push.
 # typecheck + build + budget (JS/Wasm gzip) + boot real no browser headless.
+
+# [AGENTS.md, regra 2] Nada vai direto para a main: tudo entra por PR, com revisão e merge no GitHub.
+# A main publica o site sozinha, então um push direto pula a revisão e vai ao ar.
+# (Em 23/09 um agente fez push direto; o merge pelo GitHub não passa por este hook.)
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "❌ PUSH BLOQUEADO: push direto na main. Crie um branch <agente>/<tarefa>, abra um PR e faça o merge pelo GitHub."
+    exit 1
+  fi
+done
+
 echo "▶ pre-push [R15]: npm run check"
 if ! npm run check --silent; then
   echo "❌ PUSH BLOQUEADO [R15]: npm run check falhou. Investigue antes de subir."

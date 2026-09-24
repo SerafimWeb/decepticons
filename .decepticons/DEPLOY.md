@@ -32,7 +32,7 @@
 No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/...`). Use `MSYS_NO_PATHCONV=1 gh secret set DEPLOY_PATH -R SerafimWeb/decepticons` (lição do CAPTIA).
 
 **Cabeçalhos (`.htaccess` gerado por `scripts/site.mjs`, fonte única também do teste local):**
-- `AddType application/wasm .wasm`; compressão (`mod_deflate`; o LiteSpeed da Hostinger comprime por conta própria).
+- `AddType application/wasm .wasm`. O LiteSpeed da Hostinger comprime JS, CSS e HTML sozinho (brotli), **mas não o `.wasm`**: o build gera um `.wasm.gz` (735 KB em vez de 2,2 MB), e o `.htaccess` de `jogar/assets/` entrega essa versão a quem aceita gzip, com `Content-Type: application/wasm` e `Content-Encoding: gzip`. A regra foi testada numa pasta isolada no servidor antes de entrar, e o `--verify` reprova `.wasm` sem compressão.
 - CSP com `'wasm-unsafe-eval'` (o Rapier precisa), `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`.
 - `index.html` sem cache; `jogar/assets/` (nomes com hash) com cache de 1 ano, `immutable`.
 - **Sem HSTS:** vale para o domínio inteiro (`selvamkt.com.br`), então é decisão do dono do domínio, não deste projeto.
@@ -62,4 +62,5 @@ A hospedagem compartilhada da Hostinger **não serve** para o servidor: não man
 
 ## HISTÓRICO DE FALHAS
 
-Nenhuma até agora.
+- **2026-09-23, 1º deploy:** o site subiu certo, mas o `.wasm` saía sem compressão (2,2 MB), porque o LiteSpeed não comprime `application/wasm`. Corrigido com o `.wasm.gz` pré-comprimido (ver acima).
+- **2026-09-23, configuração:** o dono rodou os comandos `gh secret set` no PowerShell, onde `<` não existe; o bloco inteiro falhou antes de rodar (nada ficou pela metade). Os comandos de secret deste arquivo são para o **Git Bash**.

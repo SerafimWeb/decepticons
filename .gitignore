@@ -15,3 +15,6 @@ dist/
 
 # Temporários do projeto (experimentos, perfil do Chrome do smoke, capturas). Nada fora da pasta do projeto.
 .tmp/
+
+# Prints que o dono compartilha com os agentes: não são material do projeto.
+imagens/

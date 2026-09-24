@@ -36,4 +36,4 @@
 | Multiplayer / servidor | AUSENTE | planejado: Colyseus |
 | Áudio | AUSENTE | |
 | Controles touch / mobile | AUSENTE | |
-| Site público (jogo + painel) | PARCIAL | Pipeline pronto e testado localmente em `/cybermech/` com os cabeçalhos reais. **Não está no ar:** aguarda o dono configurar `SITE_URL` e os secrets `DEPLOY_*` (ver `DEPLOY.md`) |
+| Site público (jogo + painel) | REAL | https://www.selvamkt.com.br/cybermech/: painel na raiz, jogo em `/jogar/`. Publicado a cada merge na `main` (rsync/SSH). Conferido em produção num Chrome real: painel, Jogar, jogo carregando, sem erros; CSP aplicada; `.wasm` como `application/wasm` e comprimido (735 KB) |
