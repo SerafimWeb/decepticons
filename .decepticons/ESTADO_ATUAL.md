@@ -12,6 +12,7 @@
 - Combate v1 (PR #3): dano por parte, morte com explosão e respawn, marcador de acerto
 - Painel de desempenho na tecla `'` (PR #5), refeito depois da tentativa do GPT-OSS
 - **Site no ar: https://www.selvamkt.com.br/cybermech/** (painel de missão na raiz, jogo em `/jogar/`). Publica sozinho a cada merge na `main`. Secrets configurados pelo Claude a partir do setup do CAPTIA, com autorização do dono. Testado em produção num Chrome real: painel → Jogar → jogo, sem erros
+- **Painel de missão com cara de HUD cyberpunk das antigas** (pedido do dono: "militar, hacker, Shadowrun, BattleTech"): terminal de fósforo âmbar com varredura de CRT, rota das fases num mapa hexagonal, frentes como "sistemas da unidade" com slots críticos, ficha técnica do Vector-09 lida do código do jogo e o carimbo "SEM PAY-TO-WIN" lido do GAME_DESIGN
 - **Painel de missão** (pedido do dono): página gerada do `ROADMAP.md` com a rota das fases, as 11 frentes (nível, progresso, itens) e as conquistas (PRs mergeados). `npm run painel` gera em `.tmp/painel/`; o `npm run check` reprova roadmap fora do formato. Vai para o site junto com o jogo
 - **Bots v1 (Claude, a pedido do dono):** 3 Vector-09 inimigos que patrulham, veem só com linha de visão, reagem, perseguem, atacam andando de lado, recuam com o torso baixo e renascem longe do jogador. O jogador também morre e renasce, com integridade das 6 partes no HUD, borda vermelha ao tomar dano, tela "ABATIDO" e placar de abates/mortes. Pausar congela o mundo. 32 testes. **O dono jogou: "estão atacando bem, não ficaram perdidos, estão vindo pra cima de mim"**
 - **Blind Mode (#ux) (Gemini):** Implementada degradação do HUD quando `mech.isBlind` é verdadeiro (cabeça destruída): estática/chiado com animação na tela (`#static-noise`), mira tremendo/jitter no crosshair e ocultação das estatísticas/integridade dos componentes do Mech.
@@ -19,7 +20,6 @@
 ## PENDENTE
 - [ ] Fase 2: rodada de 5 min com placar e reinício automático
 - [ ] Tela de configurações (Gemini) sobre o contrato `core/Settings.ts`
-- [ ] Painel de missão com cara de HUD cyberpunk das antigas (Shadowrun, BattleTech), pedido do dono (Claude, em andamento)
 - [ ] Fase 1, sobras: arma secundária (foguetes no braço esquerdo) e otimizar os draw calls por Mech (~34 cada; 4 Mechs ≈ 190 draws)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
 
@@ -51,4 +51,4 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Claude: terminar o painel de missão no estilo HUD militar/hacker das antigas; depois a rodada de 5 min com placar. Gemini: tela de configurações.
+Claude: rodada de 5 min com placar e reinício automático (fecha a Fase 2). Gemini: tela de configurações sobre `core/Settings.ts`.
