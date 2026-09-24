@@ -20,7 +20,7 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 3. `.decepticons/ROADMAP.md`: fases
 4. `.decepticons/GAME_DESIGN.md`: o jogo, as decisões de design e o plano de viralização
 5. `.decepticons/PROTOCOLO_UNIVERSAL.md`: regras e specs de engenharia (G1–G15)
-6. Build, CI, hospedagem ou deploy? Leia `.decepticons/DEPLOY.md` antes. **Hoje não há deploy; não invente caminho nem host.**
+6. Build, CI, hospedagem ou deploy? Leia `.decepticons/DEPLOY.md` antes. Site: `www.selvamkt.com.br/cybermech/`, publicado a cada merge na `main`. **Nunca publique fora de `/cybermech/`** (a raiz é o site real da Selva MKT) e não invente host, caminho ou secret.
 7. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
 
 ## O QUE É
@@ -73,9 +73,9 @@ client/src/
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde)
   debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)
-scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), painel.mjs (painel de missão), install-hooks.mjs
+scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), painel.mjs (painel de missão), site.mjs (site + .htaccess + teste), install-hooks.mjs
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
-.github/       workflows/ci.yml (npm run check a cada push/PR)
+.github/       workflows/ci.yml (npm run check a cada push/PR; deploy do site a cada merge na main)
 .tmp/          temporários do projeto (ignorado pelo git; G15)
 ```
 
@@ -90,6 +90,7 @@ npm test           # testes de simulação (Vitest, no Node)
 npm run check      # typecheck + testes + build + budget + boot headless (obrigatório antes de push)
 npm run smoke:dev  # boot headless contra o dev server
 npm run painel     # painel de missão (rota das fases + frentes) em .tmp/painel/painel.html
+npm run site       # monta o site em .tmp/site/ (painel + jogo em /jogar/); `-- --check` testa em /cybermech/ com os cabeçalhos reais
 ```
 
 Ambiente sem Chrome/Edge (ex.: sandbox na nuvem): rode `npm run typecheck && npm test && npx vite build`; o smoke roda no CI do PR.

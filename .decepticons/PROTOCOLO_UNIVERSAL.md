@@ -19,7 +19,7 @@
 | R5 RLS | — N/A | Sem banco. Reavaliar quando houver contas ou persistência. |
 | R6 Migration com DOWN | — N/A | Sem banco. |
 | R7 Performance budget | ✅ automatizado | JS ≤ 500 KB gzip, Wasm ≤ 900 KB gzip: `scripts/smoke.mjs` reprova acima disso. LCP ainda não medido. |
-| R8 DEPLOY.md | ✅ | Existe e declara que **não há deploy**. Leia antes de qualquer mudança de build ou CI. |
+| R8 DEPLOY.md | ✅ | Site em `selvamkt.com.br/cybermech/` (rsync/SSH a cada merge na `main`, com trava de caminho). Leia antes de qualquer mudança de build, CI ou hospedagem. |
 | R9 Isolamento | ✅ | Nada compartilhado com outros projetos. |
 | R10 Secret por nome | ✅ | O `ci.yml` não usa secret hoje. Deploy futuro: só `${{ secrets.NOME }}`, nunca valor no arquivo. |
 | R11 Tokens fora do chat | ✅ | Sempre. |

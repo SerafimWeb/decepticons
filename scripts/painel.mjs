@@ -5,15 +5,18 @@
  *
  * Uso: npm run painel            → gera .tmp/painel/painel.html (G15: nada fora do projeto)
  *      node scripts/painel.mjs --check → só valida o formato do ROADMAP (roda no npm run check)
+ *      node scripts/painel.mjs --site --out <arquivo> → versão do site (botão "Jogar" para ./jogar/)
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 const ROADMAP = resolve('.decepticons/ROADMAP.md');
 const ESTADO = resolve('.decepticons/ESTADO_ATUAL.md');
-const OUT = resolve('.tmp/painel/painel.html');
-const CHECK = process.argv.includes('--check');
+const argv = process.argv.slice(2);
+const CHECK = argv.includes('--check');
+const SITE = argv.includes('--site');
+const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : '.tmp/painel/painel.html');
 
 /** Sigla de 2 letras de cada frente no hexágono (apresentação; os dados vêm do ROADMAP). */
 const CODES = {
@@ -236,9 +239,14 @@ const feedHtml = feed
   .map((f) => `<li><span class="star">✦</span><span class="pr">PR #${f.n}</span><span class="ft">${esc(f.title)}</span><time>${f.date}</time></li>`)
   .join('');
 const segs = Array.from({ length: 20 }, (_, i) => `<i class="${i < Math.round((done / total) * 20) ? 'on' : ''}"></i>`).join('');
-const generated = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+const generated = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' });
+const playHtml = `<div class="play">
+      <a class="play-btn" href="./jogar/">JOGAR AGORA <span aria-hidden="true">→</span></a>
+      <p class="keys"><b>WASD</b> mover · <b>mouse</b> mirar · <b>clique</b> atirar · <b>Shift</b> dash · <b>Espaço</b> pulo duplo · <b>V</b> câmera · <b>'</b> desempenho · <b>F1</b> esconde o HUD</p>
+    </div>`;
 
-const html = `<title>Painel de Missão Cyber-Mech</title>
+const html = `<title>${SITE ? 'Cyber-Mech Protocol' : 'Painel de Missão Cyber-Mech'}</title>
+<link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300&family=Space+Grotesk:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Orbitron:wght@600&display=swap">
@@ -290,6 +298,16 @@ const html = `<title>Painel de Missão Cyber-Mech</title>
   .stat .k { font: 400 10px/1 var(--fm); letter-spacing: .16em; text-transform: uppercase; color: var(--c3); }
   .stat .v { font: 500 1.15rem/1.25 var(--fb); font-variant-numeric: tabular-nums; }
   .stat .v small { font-size: .78rem; color: var(--c2); font-weight: 400; }
+  .play { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: center; }
+  .play-btn {
+    display: inline-flex; gap: 12px; align-items: center; padding: 14px 26px; border-radius: 10px;
+    background: var(--b2); color: #fff; text-decoration: none; font: 600 14px/1 var(--fm); letter-spacing: .14em;
+    box-shadow: 0 0 40px rgba(37,99,235,.35); transition: filter .2s var(--ease), transform .2s var(--ease);
+  }
+  .play-btn:hover { filter: brightness(1.12); }
+  .play-btn:active { transform: translateY(1px); }
+  .keys { font: 400 12px/1.7 var(--fm); color: var(--c2); max-width: 70ch; }
+  .keys b { color: var(--chalk); font-weight: 500; }
   .xp { display: grid; grid-template-columns: repeat(20, 1fr); gap: 3px; margin-top: 4px; }
   .xp i { height: 7px; border-radius: 2px; background: var(--ob5); }
   .xp i.on { background: var(--g3); box-shadow: 0 0 8px rgba(52,211,153,.35); }
@@ -418,12 +436,13 @@ const html = `<title>Painel de Missão Cyber-Mech</title>
 <div class="wrap">
   <header class="top">
     <div class="brandline">
-      <span class="kicker">// painel de missão · gerado do roadmap</span>
+      <span class="kicker">// ${SITE ? 'build do dia · painel de missão' : 'painel de missão · gerado do roadmap'}</span>
       <span class="meta">main ${esc(head)} · gerado em ${esc(generated)}</span>
     </div>
     <span class="wordmark">CYBER-MECH PROTOCOL</span>
     <h1>Onde estamos, e o que <em>falta vencer.</em></h1>
-    <p class="lede">${fronts.length} frentes de trabalho, ${phases.filter((p) => !p.ideas).length} fases. Tudo aqui vem do <code>.decepticons/ROADMAP.md</code>: quando um agente marca um item, o painel acompanha no próximo <code>npm run painel</code>.</p>
+    ${SITE ? playHtml : ''}
+    <p class="lede">${fronts.length} frentes de trabalho, ${phases.filter((p) => !p.ideas).length} fases. Tudo aqui vem do <code>.decepticons/ROADMAP.md</code>: ${SITE ? 'a cada PR aprovado, o jogo e este painel são publicados de novo.' : 'quando um agente marca um item, o painel acompanha no próximo <code>npm run painel</code>.'}</p>
     <div class="stats">
       <div class="stat"><span class="k">Fase atual</span><span class="v">Fase ${focus.num} · ${esc(focus.title)} <small>${focus.done}/${focus.items.length}</small></span></div>
       <div class="stat"><span class="k">XP do projeto</span><span class="v">${done} <small>de ${total} itens</small></span><div class="xp" aria-hidden="true">${segs}</div></div>
@@ -513,6 +532,6 @@ const html = `<title>Painel de Missão Cyber-Mech</title>
 </script>
 `;
 
-mkdirSync(resolve('.tmp/painel'), { recursive: true });
+mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, html);
 console.log(`painel  ${OUT} (${fronts.length} frentes, ${done}/${total} itens, ${ideasCount} ideias)`);

@@ -11,10 +11,11 @@
 - Trabalho com vários agentes (Claude, Codex, Gemini): `AGENTS.md` único; `CLAUDE.md` e `GEMINI.md` importam ele
 - Combate v1 (PR #3): dano por parte, morte com explosão e respawn, marcador de acerto
 - Painel de desempenho na tecla `'` (PR #5), refeito depois da tentativa do GPT-OSS
-- **Painel de missão** (pedido do dono): página gerada do `ROADMAP.md` com a rota das fases, as 11 frentes (nível, progresso, itens) e as conquistas (PRs mergeados). `npm run painel` gera em `.tmp/painel/`; o `npm run check` reprova roadmap fora do formato. Vai para o site do projeto (em definição: ver decisões em aberto)
+- **Painel de missão** (pedido do dono): página gerada do `ROADMAP.md` com a rota das fases, as 11 frentes (nível, progresso, itens) e as conquistas (PRs mergeados). `npm run painel` gera em `.tmp/painel/`; o `npm run check` reprova roadmap fora do formato. Vai para o site junto com o jogo
 - **Bots v1 (Claude, a pedido do dono):** 3 Vector-09 inimigos que patrulham, veem só com linha de visão, reagem, perseguem, atacam andando de lado, recuam com o torso baixo e renascem longe do jogador. O jogador também morre e renasce, com integridade das 6 partes no HUD, borda vermelha ao tomar dano, tela "ABATIDO" e placar de abates/mortes. Pausar congela o mundo. 32 testes. **O dono jogou: "estão atacando bem, não ficaram perdidos, estão vindo pra cima de mim"**
 
 ## PENDENTE
+- [ ] **Dono: ligar o site** (`www.selvamkt.com.br/cybermech/`). O pipeline está pronto e testado; falta configurar no GitHub a variável `SITE_URL` e os secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_PATH` e `DEPLOY_SSH_KEY` (os mesmos do CAPTIA, com o caminho terminando em `/public_html/cybermech/`). Passo a passo em `DEPLOY.md`. O merge seguinte publica
 - [ ] Fase 2: rodada de 5 min com placar e reinício automático; Blind Mode (cabeça destruída); níveis de dificuldade (os parâmetros já existem em `BotSkill`)
 - [ ] Fase 1, sobras: arma secundária (foguetes no braço esquerdo) e otimizar os draw calls por Mech (~34 cada; 4 Mechs ≈ 190 draws)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
@@ -32,8 +33,8 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
-| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`; depois `shared/`, `server/`, `client/src/net/` | Entregou combate e bots v1. Segue na Fase 2 |
-| **Gemini** | `client/src/core/Quality.ts`, `client/src/debug/`, `client/src/ui/` | Disponível para revisar os PRs de combate e de bots |
+| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Site e deploy (build do dia); depois a rodada de 5 min |
+| **Gemini** | `client/src/ui/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | **Em paralelo: Blind Mode** (#ux): com a cabeça destruída (`mech.isBlind`, que já existe), o HUD degrada (mira tremendo, estática, integridade some). Branch `gemini/blind-mode`. Só arquivos de UI: não encosta no deploy do Claude |
 | **Codex** | a combinar | Sem crédito até 24/09. Ao voltar: revisar os PRs já mergeados |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois faz rebase e roda `npm run check` |
 

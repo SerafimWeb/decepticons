@@ -57,6 +57,7 @@
 - [x] Jogador morre e renasce; renascimento longe dos inimigos (`Respawner`) #combate
 - [x] HUD do próprio Mech (6 partes), borda de dano, tela "ABATIDO", abates/mortes #ux
 - [x] Painel de missão do projeto, gerado deste arquivo #base
+- [~] Site do projeto: jogo + painel em selvamkt.com.br/cybermech, publicado a cada merge ("build do dia") #base
 - [ ] Rodada de 5 min com placar e reinício automático #jogabilidade
 - [ ] Blind Mode (cabeça destruída) #ux
 - [ ] Níveis de dificuldade (fácil/difícil) sobre o `BotSkill` #ia
@@ -71,7 +72,7 @@
 
 ## 🔵 FASE 4 — Lançamento e viralização
 - [ ] Modo streamer: sala de código fixo, câmera de espectador #negocio
-- [ ] Deploy: cliente na Hostinger (ou no portal) + servidor na Oracle Always Free São Paulo (ver `DEPLOY.md`) #base
+- [ ] Servidor de jogo no ar (Oracle Always Free São Paulo ou outro; ver `DEPLOY.md`) #base
 - [ ] SDK do portal (CrazyGames/Poki), anúncio só entre rodadas #negocio
 - [ ] Métrica: D1 e rodadas por sessão #negocio
 
@@ -94,3 +95,6 @@
 - [ ] Configurações: sensibilidade do mouse, volume, qualidade #ux
 - [ ] Recuo e tremor próprios de cada arma #jogabilidade
 - [ ] Medir o FPS numa GPU integrada real (meta do G12) #desempenho
+- [ ] Issues do GitHub como rastreador de bugs, com severidade (trava > bloqueia > grave > leve) e passos para reproduzir #base
+- [ ] Teste noturno: bots jogando sozinhos no navegador headless para achar travamentos e erros #base
+- [ ] Dependências no painel: mostrar o que trava o quê entre frentes #base
