@@ -55,7 +55,7 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex 
 6. **O CI decide:** PR só entra com `npm run check` verde. Teste de simulação é o árbitro técnico entre os agentes (G14). **Nunca diga que algo está pronto sem rodar o `npm run check`:** o `npm run dev` aceita código que o build rejeita (em 23/09 um CSS quebrado rodava no dev, apagava a mira e não compilava no build).
 7. **Revisão cruzada:** o PR de um agente é revisado por outro (evita a IA aprovando o próprio código). O merge é do dono, ou de quem ele autorizar (registrado no `ESTADO_ATUAL.md`).
 8. **Assine com o seu nome real** no histórico, no estado e no branch, mesmo que você não esteja listado aqui.
-9. **Passagem de bastão:** ao terminar, atualize `ESTADO_ATUAL.md` (o que foi feito, o que ficou, "próxima sessão começa com") e registre decisões no topo do `HISTORICO_DE_DECISOES.md`.
+9. **Passagem de bastão:** ao terminar, atualize `ESTADO_ATUAL.md` (o que foi feito, o que ficou, "próxima sessão começa com"), marque os itens no `ROADMAP.md` (cada item com a etiqueta da sua frente: é o que alimenta o painel de missão) e registre decisões no topo do `HISTORICO_DE_DECISOES.md`.
 10. **Discordou de algo registrado?** Não desfaça em silêncio. Proponha em "decisões em aberto" no `ESTADO_ATUAL.md`; o dono decide.
 11. **Antes do commit, olhe o `git status`.** O hook barra arquivos de `.tmp/`, `dist/` e `node_modules/`, e barra secrets.
 
@@ -73,7 +73,7 @@ client/src/
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde)
   debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)
-scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), install-hooks.mjs
+scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), painel.mjs (painel de missão), install-hooks.mjs
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
 .github/       workflows/ci.yml (npm run check a cada push/PR)
 .tmp/          temporários do projeto (ignorado pelo git; G15)
@@ -89,6 +89,7 @@ npm run dev        # http://localhost:5173
 npm test           # testes de simulação (Vitest, no Node)
 npm run check      # typecheck + testes + build + budget + boot headless (obrigatório antes de push)
 npm run smoke:dev  # boot headless contra o dev server
+npm run painel     # painel de missão (rota das fases + frentes) em .tmp/painel/painel.html
 ```
 
 Ambiente sem Chrome/Edge (ex.: sandbox na nuvem): rode `npm run typecheck && npm test && npx vite build`; o smoke roda no CI do PR.

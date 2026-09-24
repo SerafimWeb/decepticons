@@ -13,9 +13,10 @@
     "typecheck": "tsc",
     "smoke": "node scripts/smoke.mjs",
     "smoke:dev": "node scripts/smoke.mjs --dev",
-    "check": "npm run typecheck && npm test && vite build && npm run smoke",
+    "check": "npm run typecheck && npm test && node scripts/painel.mjs --check && vite build && npm run smoke",
     "prepare": "node scripts/install-hooks.mjs",
-    "test": "node scripts/test.mjs"
+    "test": "node scripts/test.mjs",
+    "painel": "node scripts/painel.mjs"
   },
   "dependencies": {
     "@dimforge/rapier3d-simd": "0.20.0",

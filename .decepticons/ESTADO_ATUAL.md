@@ -2,7 +2,7 @@
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots
 **Última atualização:** 2026-09-23 (noite)
-**Iteração atual:** Fase 2 (Inimigos): bots v1 prontos; falta a rodada com placar e o Blind Mode
+**Iteração atual:** Fase 2 (Inimigos): bots v1 prontos; falta a rodada com placar, o Blind Mode e a dificuldade
 
 ---
 
@@ -11,13 +11,13 @@
 - Trabalho com vários agentes (Claude, Codex, Gemini): `AGENTS.md` único; `CLAUDE.md` e `GEMINI.md` importam ele
 - Combate v1 (PR #3): dano por parte, morte com explosão e respawn, marcador de acerto
 - Painel de desempenho na tecla `'` (PR #5), refeito depois da tentativa do GPT-OSS
+- **Painel de missão** (pedido do dono): página gerada do `ROADMAP.md` com a rota das fases, as 11 frentes (nível, progresso, itens) e as conquistas (PRs mergeados). `npm run painel` gera em `.tmp/painel/`; o `npm run check` reprova roadmap fora do formato. Publicado em https://claude.ai/artifact/T3X9EjnXvXNrvz1DnnrsHC (privado: o dono compartilha pelo menu Share)
 - **Bots v1 (Claude, a pedido do dono):** 3 Vector-09 inimigos que patrulham, veem só com linha de visão, reagem, perseguem, atacam andando de lado, recuam com o torso baixo e renascem longe do jogador. O jogador também morre e renasce, com integridade das 6 partes no HUD, borda vermelha ao tomar dano, tela "ABATIDO" e placar de abates/mortes. Pausar congela o mundo. 32 testes. **O dono jogou: "estão atacando bem, não ficaram perdidos, estão vindo pra cima de mim"**
 
 ## PENDENTE
 - [ ] Fase 2: rodada de 5 min com placar e reinício automático; Blind Mode (cabeça destruída); níveis de dificuldade (os parâmetros já existem em `BotSkill`)
 - [ ] Fase 1, sobras: arma secundária (foguetes no braço esquerdo) e otimizar os draw calls por Mech (~34 cada; 4 Mechs ≈ 190 draws)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
-- [ ] Painel visual do projeto (mapa de frentes e fases), pedido do dono em 23/09
 
 ## RASCUNHO ANTIGO DE BOTS (superado)
 O rascunho do GPT-OSS continua no stash local (`git stash list`: "rascunho GPT-OSS/Gemini 23-09…"). Foi superado pelos bots v1 e pode ser descartado pelo dono (`git stash drop`). Não reaproveitar: andava na direção errada e lia a posição de render (ver histórico).
@@ -47,4 +47,4 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Painel visual do projeto (pedido do dono), depois a rodada de 5 min com placar, fechando a Fase 2.
+Rodada de 5 min com placar e reinício automático (`#jogabilidade`), depois Blind Mode e níveis de dificuldade, fechando a Fase 2. Ao fim da sessão: `npm run painel` e republicar o painel.
