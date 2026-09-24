@@ -28,6 +28,7 @@ import { InputManager } from './InputManager';
 import { Quality } from './Quality';
 import { browserStorage, radiansPerCount, Settings, type GameSettings, type QualityPreset } from './Settings';
 import { DebugPanel } from '../debug/DebugPanel';
+import { TouchControls } from '../ui/TouchControls';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
@@ -156,6 +157,7 @@ export class Game {
 
     // --- Jogador ---
     this.input = new InputManager(this.renderer.domElement);
+    new TouchControls(this.input);
     this.rig = new CameraRig({
       camera: this.camera,
       physics,

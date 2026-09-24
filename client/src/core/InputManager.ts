@@ -13,6 +13,13 @@ export class InputManager {
   /** Posição do cursor em pixels (client). */
   mouseX = window.innerWidth / 2;
   mouseY = window.innerHeight / 2;
+  
+  // Controles virtuais (Touch / Mobile)
+  virtualMoveX = 0;
+  virtualMoveZ = 0;
+  virtualJump = false;
+  virtualDash = false;
+  virtualFire = false;
 
   onLockChange?: (locked: boolean) => void;
   /** Tecla pressionada (sem auto-repeat). Útil para ações que exigem gesto do usuário. */
@@ -81,6 +88,13 @@ export class InputManager {
   }
 
   requestLock(): void {
+    // Se for mobile/touch, o Pointer Lock não funciona, mas o jogo precisa rodar.
+    if (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) {
+      this.locked = true;
+      this.onLockChange?.(true);
+      return;
+    }
+
     // O Chrome rejeita a promise se o lock for pedido logo após um Esc.
     const lock = (options?: PointerLockOptions) => Promise.resolve(this.target.requestPointerLock(options));
     // Sem suporte a movimento cru (ex.: Firefox, Safari), cai no lock normal.
@@ -90,6 +104,11 @@ export class InputManager {
   }
 
   exitLock(): void {
+    if (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) {
+      this.locked = false;
+      this.onLockChange?.(false);
+      return;
+    }
     if (document.pointerLockElement) document.exitPointerLock();
   }
 
@@ -110,6 +129,11 @@ export class InputManager {
     const d = { x: this.mouseDX, y: this.mouseDY };
     this.mouseDX = this.mouseDY = 0;
     return d;
+  }
+
+  injectMouseDelta(dx: number, dy: number): void {
+    this.mouseDX += dx;
+    this.mouseDY += dy;
   }
 
   endFrame(): void {
