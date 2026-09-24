@@ -10,6 +10,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
 
 const OUT = resolve('.tmp/site');
 const GAME = join(OUT, 'jogar');
@@ -38,6 +39,29 @@ const HEADERS = {
   'X-Frame-Options': 'SAMEORIGIN',
 };
 const IMMUTABLE = 'public, max-age=31536000, immutable';
+
+/**
+ * .htaccess de jogar/assets/: cache longo (nomes com hash) e .wasm pré-comprimido. O LiteSpeed da
+ * Hostinger comprime JS e CSS sozinho, mas serve o .wasm cru (2,2 MB em vez de ~735 KB): quem aceita
+ * gzip recebe o .wasm.gz, com o tipo e a codificação certos.
+ */
+const ASSETS_HTACCESS = `<IfModule mod_headers.c>
+  Header set Cache-Control "${IMMUTABLE}"
+</IfModule>
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP:Accept-Encoding} gzip
+  RewriteCond %{REQUEST_FILENAME}.gz -f
+  RewriteRule ^(.+\\.wasm)$ $1.gz [L]
+</IfModule>
+<FilesMatch "\\.wasm\\.gz$">
+  ForceType application/wasm
+  <IfModule mod_headers.c>
+    Header set Content-Encoding gzip
+    Header append Vary Accept-Encoding
+  </IfModule>
+</FilesMatch>
+`;
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -81,9 +105,12 @@ function build() {
   run('npx', ['vite', 'build', '--outDir', GAME, '--emptyOutDir', '--logLevel', 'warn']);
   run('node', ['scripts/painel.mjs', '--site', '--out', join(OUT, 'index.html')]);
   writeFileSync(join(OUT, '.htaccess'), htaccess());
-  // Arquivos com hash no nome nunca mudam: cache longo só nesta pasta.
-  writeFileSync(join(GAME, 'assets', '.htaccess'), `<IfModule mod_headers.c>\n  Header set Cache-Control "${IMMUTABLE}"\n</IfModule>\n`);
+  writeFileSync(join(GAME, 'assets', '.htaccess'), ASSETS_HTACCESS);
   const wasm = readdirSync(join(GAME, 'assets')).filter((f) => f.endsWith('.wasm'));
+  for (const w of wasm) {
+    const file = join(GAME, 'assets', w);
+    writeFileSync(`${file}.gz`, gzipSync(readFileSync(file), { level: 9 }));
+  }
   console.log(`site    ${OUT}  (painel na raiz, jogo em jogar/, ${wasm.length} .wasm)`);
 }
 
@@ -158,7 +185,7 @@ async function verify(url) {
   // IP do runner não é falha do site (só não dá para verificar do CI).
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
   const get = async (u, method = 'GET') => {
-    const r = await fetch(u, { method, redirect: 'follow', headers: { 'User-Agent': UA } });
+    const r = await fetch(u, { method, redirect: 'follow', headers: { 'User-Agent': UA, 'Accept-Encoding': 'gzip, br' } });
     if (r.headers.get('cf-mitigated') || (r.status === 403 && r.headers.get('server')?.includes('cloudflare'))) {
       console.warn(`::warning::Cloudflare desafiou o runner em ${u}; conferir no navegador.`);
       process.exit(0);
@@ -169,12 +196,15 @@ async function verify(url) {
   const home = await get(root);
   if (!(await home.text()).includes('Cyber-Mech Protocol')) failures.push(`${root}: não é o painel`);
   if (!home.headers.get('content-security-policy')?.includes('wasm-unsafe-eval')) failures.push(`${root}: sem a CSP do .htaccess`);
-  await get(`${root}jogar/`);
+  // O selvamkt.com.br responde 200 com uma página HTML para arquivo inexistente: status não basta.
+  const game = await get(`${root}jogar/`);
+  if (!(await game.text()).includes('id="cta"')) failures.push(`${root}jogar/: não é a página do jogo`);
   const wasm = readdirSync(join(GAME, 'assets')).find((f) => f.endsWith('.wasm'));
   if (wasm) {
     const r = await get(`${root}jogar/assets/${wasm}`, 'HEAD');
     const type = r.headers.get('content-type') ?? '';
     if (!type.startsWith('application/wasm')) failures.push(`.wasm servido como "${type}" (precisa de application/wasm)`);
+    if (!/gzip|br/.test(r.headers.get('content-encoding') ?? '')) failures.push('.wasm servido sem compressão (2,2 MB em vez de ~735 KB)');
   }
   if (failures.length) {
     console.error('❌ SITE PUBLICADO COM PROBLEMA');

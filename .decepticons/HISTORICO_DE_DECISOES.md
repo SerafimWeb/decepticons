@@ -2,6 +2,24 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+---
+
+## [2026-09-24] Site no ar; .wasm pré-comprimido; push direto na main passa a ser bloqueado
+**Site no ar:**
+- O dono autorizou o Claude a configurar tudo sozinho ("pegar os secrets nas outras pastas parecidas; deploya e commita").
+- Host, usuário e chave SSH vieram do setup documentado do CAPTIA (mesma conta Hostinger, mesma chave já autorizada no hPanel). Foram direto para o `gh`, sem aparecer em tela nem no repositório.
+- Um teste de SSH só leitura confirmou o caminho antes.
+- O primeiro deploy (rerun do CI da `main`) passou, e o site foi conferido num Chrome real em produção: painel → Jogar → jogo, sem erros.
+**`.wasm` sem compressão:** o LiteSpeed da Hostinger comprime JS, CSS e HTML, mas servia o `.wasm` cru (2,2 MB). O build passou a gerar um `.wasm.gz` (735 KB), servido por regra no `.htaccess` de `jogar/assets/`. A regra foi testada antes numa pasta isolada no servidor: tipo e codificação certos, download descomprimido idêntico byte a byte, pasta apagada depois. O download inicial cai de ~2,4 MB para ~0,9 MB (G11: ≤ 1 MB).
+**Achado no teste:** o `selvamkt.com.br` responde 200 com uma página HTML para arquivo inexistente; o `--verify` agora confere o conteúdo, não só o status.
+**Push direto na main (processo):**
+- O Blind Mode do Gemini entrou por push direto na `main`, sem PR (sem revisão cruzada; publicado no site pelo CI).
+- A revisão foi feita depois pelo Claude: código pequeno e correto, dentro do território de UI. Só o `ESTADO_ATUAL` dizia "branch pronto para merge", o que não era verdade (corrigido, R13).
+- Para não repetir: o `pre-push` agora recusa push para `refs/heads/main` (testado). O merge pelo GitHub não passa pelo hook, então o fluxo de PR segue igual.
+**Quem decidiu:** dono (autorização do deploy); Claude (execução, correção e trava).
+
+---
+
 ## [2026-09-24] Blind Mode (#ux): Degradação do HUD com cabeça destruída
 **Decisão / Tarefa:** Implementar o Blind Mode quando a cabeça do Mech é destruída (`mech.isBlind` == true).
 **Como funciona:**
@@ -13,8 +31,6 @@
 - **Respeito a territórios e regras:** Alterados apenas os arquivos permitidos de UI (`client/src/ui/HUD.ts`, `client/src/styles.css`, `client/index.html`).
 - **Verificação:** `npm run check` 100% verde (testes, typecheck, painel, build e smoke).
 **Quem implementou:** Gemini.
-
----
 
 ## [2026-09-23] Site do projeto em selvamkt.com.br/cybermech + o que adotamos das práticas de estúdios AAA
 **Decisão do dono:** reunir jogo e painel num site, sem depender de localhost nem de artefatos do claude.ai: caminho `/cybermech` (não `/decepticons`, marca da Hasbro) e **público**, só com o jogo e o painel.
