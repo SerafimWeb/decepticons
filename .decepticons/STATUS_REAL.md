@@ -39,5 +39,5 @@
 | Slots de sucata | AUSENTE | só o stat `maxScrapSlots` |
 | Colossus-01, Ferret-X | AUSENTE | |
 | Multiplayer / servidor | AUSENTE | planejado: Colyseus |
-| Controles touch / mobile | AUSENTE | |
-| Site público (landing + bastidores + jogo) | PARCIAL | Landing e bastidores (o case) testados no Chrome headless e vistos em captura de tela, desktop e celular; em produção só depois deste merge. Capturas do jogo feitas no build (testadas no Windows; no runner do CI, só no primeiro deploy). Antes: https://www.selvamkt.com.br/cybermech/: painel na raiz, jogo em `/jogar/`. Publicado a cada merge na `main` (rsync/SSH). Conferido em produção num Chrome real: painel, Jogar, jogo carregando, sem erros; CSP aplicada; `.wasm` como `application/wasm` e comprimido (735 KB) |
+| Controles touch / mobile | PARCIAL | Código no ar (Gemini, PR #17: `ui/TouchControls.ts`, ligado no `InputManager` e no `PlayerController`). Não conferido num celular real nem por outro agente; sem teste de simulação |
+| Site público (landing + bastidores + jogo) | REAL | https://www.selvamkt.com.br/cybermech/: landing na raiz, o case em `/bastidores/`, jogo em `/jogar/`. Conferido em produção (24/09, PR #19): landing com as três capturas feitas pelo runner do CI, bastidores com as entregas lidas do GitHub. Publicado a cada merge na `main` (rsync/SSH). Conferido em produção num Chrome real: painel, Jogar, jogo carregando, sem erros; CSP aplicada; `.wasm` como `application/wasm` e comprimido (735 KB) |

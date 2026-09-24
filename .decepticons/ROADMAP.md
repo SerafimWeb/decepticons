@@ -67,7 +67,7 @@
 ## 🟡 FASE 3 — Vitrine e polimento (atual)
 - [x] Efeitos sonoros: tiro, impacto, passos pesados, explosão (sintetizados, sem arquivos pesados) #som
 - [ ] Volume e mixagem nas configurações #som
-- [~] Controles de toque e layout para celular (Gemini, PR #17) #ux
+- [~] Controles de toque e layout para celular (Gemini, PR #17 no ar; falta conferir num celular real) #ux
 - [~] Kill feed e indicador de direção do dano (Gemini; branch pronto, falta o PR) #ux
 - [x] Gestão no GitHub: etiquetas automáticas por frente e por agente, modelo de PR, notas de versão por frente #base
 - [x] Página do jogo (landing) e bastidores do desenvolvimento (o case) no site, com capturas do jogo feitas a cada deploy #negocio
