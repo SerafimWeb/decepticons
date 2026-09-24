@@ -1,8 +1,8 @@
 # ESTADO ATUAL — Cyber-Mech Protocol
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots
-**Última atualização:** 2026-09-23 (noite)
-**Iteração atual:** Fase 2 (Inimigos): bots v1 prontos; falta a rodada com placar, o Blind Mode e a dificuldade
+**Última atualização:** 2026-09-24
+**Iteração atual:** Fase 2 (Inimigos) fechada; polimento de controles (calibração do mouse) antes da Fase 3 (multiplayer)
 
 ---
 
@@ -16,11 +16,11 @@
 - **Painel de missão com cara de HUD cyberpunk das antigas** (pedido do dono: "militar, hacker, Shadowrun, BattleTech"): terminal de fósforo âmbar com varredura de CRT, rota das fases num mapa hexagonal, frentes como "sistemas da unidade" com slots críticos, ficha técnica do Vector-09 lida do código do jogo e o carimbo "SEM PAY-TO-WIN" lido do GAME_DESIGN
 - **Painel de missão** (pedido do dono): página gerada do `ROADMAP.md` com a rota das fases, as 11 frentes (nível, progresso, itens) e as conquistas (PRs mergeados). `npm run painel` gera em `.tmp/painel/`; o `npm run check` reprova roadmap fora do formato. Vai para o site junto com o jogo
 - **Bots v1 (Claude, a pedido do dono):** 3 Vector-09 inimigos que patrulham, veem só com linha de visão, reagem, perseguem, atacam andando de lado, recuam com o torso baixo e renascem longe do jogador. O jogador também morre e renasce, com integridade das 6 partes no HUD, borda vermelha ao tomar dano, tela "ABATIDO" e placar de abates/mortes. Pausar congela o mundo. 32 testes. **O dono jogou: "estão atacando bem, não ficaram perdidos, estão vindo pra cima de mim"**
-- **Blind Mode (#ux) (Gemini):** Implementada degradação do HUD quando `mech.isBlind` é verdadeiro (cabeça destruída): estática/chiado com animação na tela (`#static-noise`), mira tremendo/jitter no crosshair e ocultação das estatísticas/integridade dos componentes do Mech.
+- **Tela de Configurações (#ux) (Gemini):** Implementado o componente `SettingsMenu` em `client/src/ui/SettingsMenu.ts`, botão `[ CONFIGURAÇÕES ]` no overlay de pausa, modal cyberpunk/terminal no `index.html` e estilos em `styles.css`. Permite controle de sliders de sensibilidade e FOV, checkboxes de inverter Y e painel de desempenho, selects de qualidade e dificuldade, remapeamento interativo das 7 teclas (com swap automático e bloqueio de RESERVED_KEYS) e botão de restaurar padrão. Integrado à `main` pelo Claude (o branch não tinha PR e conflitava com a rodada); revisão cruzada aprovada.
+- **Regra 13 no `AGENTS.md`:** agente termina com PR → CI verde → merge, e o merge publica o site sozinho (o dono testa em produção)
 
 ## PENDENTE
 - [ ] Estande de calibração do mouse (pedido do dono: "no jogo é muito rápido para a configuração fina"), Claude, em andamento
-- [ ] Tela de configurações (Gemini) sobre o contrato `core/Settings.ts`
 - [ ] Fase 1, sobras: arma secundária (foguetes no braço esquerdo) e otimizar os draw calls por Mech (~34 cada; 4 Mechs ≈ 190 draws)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
 
@@ -28,7 +28,7 @@
 O rascunho do GPT-OSS continua no stash local (`git stash list`: "rascunho GPT-OSS/Gemini 23-09…"). Foi superado pelos bots v1 e pode ser descartado pelo dono (`git stash drop`). Não reaproveitar: andava na direção errada e lia a posição de render (ver histórico).
 
 ## MODELOS DE IA
-- **Gemini Flash:** bom para tarefas de código bem especificadas dentro do protocolo (fez G12, painel de debug e o Blind Mode).
+- **Gemini Flash:** bom para tarefas de código bem especificadas dentro do protocolo (fez G12, painel de debug, Blind Mode e a tela de configurações).
 - **gpt-oss 120B:** só para conversa de design. Em 23/09 entregou código que nem compilava e disse que estava pronto; **não usar para editar este repositório**.
 
 ## DIVISÃO DE TRABALHO ENTRE AGENTES
@@ -37,8 +37,8 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
-| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Site e deploy (build do dia); depois a rodada de 5 min |
-| **Gemini** | `client/src/ui/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | **Próxima: tela de configurações** (#ux) sobre o contrato `client/src/core/Settings.ts` (só chama `settings.update()`; o jogo já aplica). Branch `gemini/tela-configuracoes` + PR (push direto na `main` é bloqueado) |
+| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Estande de calibração do mouse (`.tmp/wt-rodada`) |
+| **Gemini** | `client/src/ui/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Tela de configurações no ar. Próxima tarefa proposta: kill feed + indicador de direção do dano (só `ui/`) |
 | **Codex** | a combinar | Sem crédito até 24/09. Ao voltar: revisar os PRs já mergeados |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois faz rebase e roda `npm run check` |
 

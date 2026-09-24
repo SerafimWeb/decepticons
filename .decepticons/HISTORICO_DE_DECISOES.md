@@ -2,6 +2,32 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Tela de configurações do Gemini integrada; do PR ao site sem esperar (regra 13)
+**Integração:** o Gemini terminou a tela (`ui/SettingsMenu.ts`) e empurrou o branch, mas não abriu PR, então nada chegava ao site. O branch dele saiu da `main` antes da rodada (PR #12), e `Game.ts`, `styles.css` e `ESTADO_ATUAL` conflitaram. O Claude juntou num branch de integração a partir da `main`, preservando o commit e a autoria do Gemini. Nos conflitos ficaram os dois lados; no ESTADO saíram as pendências que já estavam feitas.
+**Revisão cruzada (Claude):** aprovada.
+- Usa só o contrato, troca teclas em uso, recusa teclas do sistema, sliders seguem os `LIMITS`.
+- A janela fica fora da tela de pausa, então clicar nos controles não retoma o jogo (conferido no `index.html`).
+- Nota menor: durante o remapeamento, Esc pisca como erro em vez de cancelar.
+**Processo (dono: "que as melhorias vão direto para o deploy, para testar em produção"):** regra 13 no `AGENTS.md`. Ao terminar, o agente abre o PR, espera o CI e faz o merge; o merge publica o site sozinho. A revisão cruzada vem depois.
+**De quebra (R17):** a regra 12 estava partida ao meio no `AGENTS.md` (um `\n` do caminho do worktree tinha virado quebra de linha); corrigida.
+**Quem decidiu:** dono (fluxo); Claude (integração, revisão).
+
+## [2026-09-24] Tela de Configurações (#ux) sobre o contrato core/Settings.ts
+**Decisão / Tarefa:** Criar a interface visual da tela de configurações integrada ao `core/Settings.ts`.
+**Como funciona:**
+- Criado o componente `SettingsMenu` em `client/src/ui/SettingsMenu.ts`.
+- Adicionado o botão `[ CONFIGURAÇÕES ]` no overlay de pausa (`#overlay`) e a estrutura do modal `#settings-modal` no `client/index.html`.
+- Estilizado no tema terminal/cyberpunk HUD em `client/src/styles.css`.
+- **Funcionalidades da UI:**
+  - Sliders para Sensibilidade e FOV offset.
+  - Checkboxes para Inverter eixo Y e Painel de desempenho.
+  - Selects para Qualidade gráfica e Dificuldade dos bots.
+  - Remapeamento interativo de 7 teclas com suporte a swap automático entre ações e rejeição de `RESERVED_KEYS` (`Escape`, `F1`, `Backquote`, `Quote`).
+  - Botão `[ RESTAURAR PADRÃO ]` que invoca `settings.reset()`.
+- **Fiação:** Instanciado `new SettingsMenu(this.settings)` em `client/src/core/Game.ts`.
+- **Validação:** `npm run check` 100% verde (typecheck, 45 testes do Vitest, painel, build e smoke).
+**Quem implementou:** Gemini.
+
 ---
 
 ## [2026-09-24] Rodada de 5 min com placar; dois agentes na mesma pasta → worktrees
