@@ -28,6 +28,7 @@
 | Painel de missão do projeto | REAL | `npm run painel`, gerado do ROADMAP (fases, 11 frentes, itens) + ESTADO_ATUAL (próxima missão, equipe) + PRs mergeados + ficha técnica (lida de `Vector09.ts`/`ProjectileSystem.ts`) + "sem pay-to-win" (lido do GAME_DESIGN). Visual: HUD cyberpunk das antigas (fósforo âmbar). Por enquanto só local (`.tmp/painel/`); vai para o site do projeto |
 | Configurações do jogador | PARCIAL | Contrato `core/Settings.ts` + aplicação no jogo (sensibilidade, inverter Y, FOV, qualidade fixa ou automática, dificuldade, painel de desempenho, teclas), salvas no navegador e validadas. **Ainda sem tela:** a tela é tarefa do Gemini |
 | Dificuldade dos bots | PARCIAL | Fácil, normal (aprovada pelo dono) e difícil, com teste. Escolha só pela tela de configurações, que ainda não existe; hoje vale a normal |
+| Rodada com placar | REAL | 5 min valendo abates (todos contra todos), relógio no topo (vermelho nos últimos 30 s), placar segurando Tab, intervalo de 10 s com o mundo congelado, rodada nova com todos inteiros nos pontos de nascimento, barricadas de volta e destroços limpos. Bots com indicativos (KESTREL, MAKO, VIPER). Lógica testada; o fim de rodada não foi visto no navegador (5 min) |
 | Pausa | REAL | Esc/menu congela o mundo (os bots não atacam com o jogo pausado) |
 | Feedback de acerto | REAL | marcador de acerto, parte destruída anunciada ("PERNA ESQ DESTRUÍDA", "ALVO ABATIDO"), flash de dano, peça arrancada vira destroço |
 | Blind Mode (cabeça destruída) | AUSENTE | só o getter `isBlind` |

@@ -59,7 +59,7 @@
 - [x] Painel de missão do projeto, gerado deste arquivo #base
 - [x] Painel no visual de HUD cyberpunk das antigas (Shadowrun, BattleTech): mapa hexagonal, slots críticos, ficha técnica do Mech lida do código #base
 - [x] Site do projeto: jogo + painel em selvamkt.com.br/cybermech, publicado a cada merge ("build do dia") #base
-- [ ] Rodada de 5 min com placar e reinício automático #jogabilidade
+- [x] Rodada de 5 min com placar (Tab), intervalo de 10 s e reinício automático com a arena restaurada #jogabilidade
 - [x] Blind Mode (cabeça destruída) #ux
 - [x] Níveis de dificuldade: fácil, normal (a de hoje, aprovada pelo dono) e difícil, trocáveis durante a partida #ia
 - [x] Configurações (contrato + aplicação no jogo): sensibilidade, inverter Y, campo de visão, qualidade, dificuldade, painel de desempenho, teclas remapeáveis; salvas no navegador #ux
@@ -95,6 +95,7 @@
 - [ ] Pintura e decalques por jogador (base dos cosméticos) #mechs
 - [ ] Prédios que desmoronam em partes, não só barricadas #cenarios
 - [ ] Tela inicial com apelido e escolha de Mech #ux
+- [ ] Estande de calibração do mouse: gravar uma volta de 360° com o movimento real, cm/360, entrada crua (sem aceleração do sistema) #jogabilidade
 - [ ] Suporte a controle (gamepad) #jogabilidade
 - [ ] Volume e mixagem nas configurações (junto com o som) #som
 - [ ] Recuo e tremor próprios de cada arma #jogabilidade

@@ -106,6 +106,11 @@ export class ProjectileSystem {
     }
   }
 
+  /** Some com todos os projéteis em voo (rodada nova). */
+  clear(): void {
+    for (const p of this.pool) if (p.life > 0) this.kill(p);
+  }
+
   private kill(p: Projectile): void {
     p.life = 0;
     p.mesh.visible = false;

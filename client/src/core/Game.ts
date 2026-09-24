@@ -11,6 +11,7 @@ import { ProjectileSystem } from '../combat/ProjectileSystem';
 import { BOT_SKILLS } from '../combat/BotController';
 import { BotSystem } from '../combat/BotSystem';
 import { Respawner } from '../combat/Respawner';
+import { Round } from '../combat/Round';
 import { Vector09 } from '../entities/Vector09';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
@@ -20,6 +21,7 @@ import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { PlayerController } from '../player/PlayerController';
 import { HUD } from '../ui/HUD';
+import { RoundHud } from '../ui/RoundHud';
 import { InputManager } from './InputManager';
 import { Quality } from './Quality';
 import { browserStorage, Settings, type GameSettings, type QualityPreset } from './Settings';
@@ -59,6 +61,8 @@ export class Game {
   private readonly combat: CombatSystem;
   private readonly bots: BotSystem;
   private readonly respawner: Respawner;
+  private readonly round = new Round();
+  private readonly roundHud: RoundHud;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
   private readonly player: PlayerController;
@@ -69,8 +73,6 @@ export class Game {
   private appliedQuality: QualityPreset | null = null;
 
   private playing = false;
-  private kills = 0;
-  private deaths = 0;
   private accumulator = 0;
   private last = -1;
 
@@ -141,6 +143,9 @@ export class Game {
       waypoints: SPAWN_POINTS,
     });
     this.bots.targets = [this.mech];
+    this.round.register(this.mech, 'VOCÊ');
+    for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
+    this.roundHud = new RoundHud(this.mech);
 
     // --- Jogador ---
     this.input = new InputManager(this.renderer.domElement);
@@ -164,6 +169,20 @@ export class Game {
       },
     );
     this.settings.onChange((s) => this.applySettings(s));
+  }
+
+  /**
+   * Rodada nova: todos inteiros nos pontos de nascimento, arena restaurada. A ordem importa:
+   * Mechs saem de perto das estruturas e os destroços somem antes de as barricadas voltarem.
+   */
+  private startRound(): void {
+    const [px, pz] = SPAWN_POINTS[0]!;
+    this.mech.respawn(_tmp.set(px, 0, pz));
+    this.bots.respawnAll();
+    this.projectiles.clear();
+    this.debris.clear();
+    this.destructibles.restoreAll();
+    this.hud.setScore(0, 0);
   }
 
   /** O composer guarda o próprio pixelRatio (render targets): os dois mudam juntos. */
@@ -214,9 +233,9 @@ export class Game {
     this.combat.onMechKilled = (dead, at, killer) => {
       const falloff = 1 - at.distanceTo(mech.position) / 70;
       if (falloff > 0) rig.addShake(0.7 * falloff);
-      if (dead === mech) this.deaths++;
-      else if (killer === mech) this.kills++;
-      this.hud.setScore(this.kills, this.deaths);
+      this.round.recordKill(dead, killer);
+      const me = this.round.scoreOf(mech);
+      this.hud.setScore(me?.kills ?? 0, me?.deaths ?? 0);
     };
     this.destructibles.onBreak = (center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
@@ -288,11 +307,15 @@ export class Game {
     let steps = 0;
     const t0 = performance.now();
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
-      this.player.fixedUpdate(FIXED_DT);
-      this.bots.fixedUpdate(FIXED_DT);
-      this.respawner.fixedUpdate(FIXED_DT);
-      this.projectiles.fixedUpdate(FIXED_DT);
-      this.physics.step();
+      // No intervalo entre rodadas o mundo fica congelado (placar na tela); só o relógio anda.
+      if (this.round.playing) {
+        this.player.fixedUpdate(FIXED_DT);
+        this.bots.fixedUpdate(FIXED_DT);
+        this.respawner.fixedUpdate(FIXED_DT);
+        this.projectiles.fixedUpdate(FIXED_DT);
+        this.physics.step();
+      }
+      if (this.round.fixedUpdate(FIXED_DT) === 'started') this.startRound();
       this.accumulator -= FIXED_DT;
       steps++;
     }
@@ -316,6 +339,7 @@ export class Game {
     this.particles.update(dt);
 
     this.hud.setRespawn(this.respawner.timeLeft(this.mech));
+    this.roundHud.update(dt, this.round, this.input.isDown('Tab'));
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
     this.renderer.info.reset();
     this.composer.render(dt);

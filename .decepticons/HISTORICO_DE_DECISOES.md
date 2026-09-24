@@ -4,6 +4,21 @@
 
 ---
 
+## [2026-09-24] Rodada de 5 min com placar; dois agentes na mesma pasta → worktrees
+**Rodada (fecha a Fase 2):**
+- `combat/Round.ts` é pura e determinística (só anda no tick fixo; pausa congela o relógio), para o servidor rodar a mesma.
+- 5 min valendo abates, 10 s de intervalo com o mundo congelado e o placar na tela, depois rodada nova zerada.
+- Placar: mais abates; empate, menos mortes; depois ordem de entrada. Abate vai para quem deu o tiro final.
+- Rodada nova: todos voltam inteiros aos pontos de nascimento, depois somem destroços e tiros, depois as barricadas voltam. A ordem evita colisor nascendo dentro de alguém.
+- `ui/RoundHud.ts`: relógio e placar (Tab), criados por código e com nomes como texto, nunca HTML (o apelido do jogador vai entrar aí).
+- Bots ganharam indicativos (KESTREL, MAKO, VIPER).
+- Garantia: testes da rodada, da restauração das barricadas e do `respawnAll`; o jogo sobe com a rodada no smoke e no teste do site.
+**Incidente de processo:**
+- O Gemini trocou a pasta compartilhada para o branch dele enquanto o Claude tinha trabalho não commitado, e a pasta passou a misturar os dois trabalhos.
+- O Claude fez backup, levou o que era dele para um worktree próprio (`.tmp/wt-rodada`) e tirou da pasta compartilhada só os próprios arquivos, depois de conferir que estavam idênticos ao backup (ninguém tinha mexido). O trabalho do Gemini ficou intacto.
+- Nova regra 12 no `AGENTS.md`: dois agentes ao mesmo tempo, cada um no seu worktree.
+**Quem decidiu:** Claude (rodada e separação), na fase autorizada pelo dono.
+
 ## [2026-09-24] Painel de missão vira HUD cyberpunk das antigas
 **Pedido do dono:** "parecido com um HUD sci-fi, militar, hacker, estilo Shadowrun, BattleTech, cyberpunk das antigas, que traga estilo e personalidade". Isso substitui, **só nesta página**, o visual do design system Serafim, que tinha sido aplicado a pedido anterior do próprio dono.
 **Direção:**
