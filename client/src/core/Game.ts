@@ -22,6 +22,7 @@ import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { PlayerController } from '../player/PlayerController';
 import { HUD } from '../ui/HUD';
 import { RoundHud } from '../ui/RoundHud';
+import { SettingsMenu } from '../ui/SettingsMenu';
 import { InputManager } from './InputManager';
 import { Quality } from './Quality';
 import { browserStorage, Settings, type GameSettings, type QualityPreset } from './Settings';
@@ -168,6 +169,7 @@ export class Game {
         this.bloomPass.enabled = enabled;
       },
     );
+    new SettingsMenu(this.settings);
     this.settings.onChange((s) => this.applySettings(s));
   }
 
