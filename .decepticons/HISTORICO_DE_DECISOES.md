@@ -2,6 +2,22 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Tela de Configurações (#ux) sobre o contrato core/Settings.ts
+**Decisão / Tarefa:** Criar a interface visual da tela de configurações integrada ao `core/Settings.ts`.
+**Como funciona:**
+- Criado o componente `SettingsMenu` em `client/src/ui/SettingsMenu.ts`.
+- Adicionado o botão `[ CONFIGURAÇÕES ]` no overlay de pausa (`#overlay`) e a estrutura do modal `#settings-modal` no `client/index.html`.
+- Estilizado no tema terminal/cyberpunk HUD em `client/src/styles.css`.
+- **Funcionalidades da UI:**
+  - Sliders para Sensibilidade e FOV offset.
+  - Checkboxes para Inverter eixo Y e Painel de desempenho.
+  - Selects para Qualidade gráfica e Dificuldade dos bots.
+  - Remapeamento interativo de 7 teclas com suporte a swap automático entre ações e rejeição de `RESERVED_KEYS` (`Escape`, `F1`, `Backquote`, `Quote`).
+  - Botão `[ RESTAURAR PADRÃO ]` que invoca `settings.reset()`.
+- **Fiação:** Instanciado `new SettingsMenu(this.settings)` em `client/src/core/Game.ts`.
+- **Validação:** `npm run check` 100% verde (typecheck, 45 testes do Vitest, painel, build e smoke).
+**Quem implementou:** Gemini.
+
 ---
 
 ## [2026-09-24] Painel de missão vira HUD cyberpunk das antigas

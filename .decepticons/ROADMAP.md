@@ -63,7 +63,7 @@
 - [x] Blind Mode (cabeça destruída) #ux
 - [x] Níveis de dificuldade: fácil, normal (a de hoje, aprovada pelo dono) e difícil, trocáveis durante a partida #ia
 - [x] Configurações (contrato + aplicação no jogo): sensibilidade, inverter Y, campo de visão, qualidade, dificuldade, painel de desempenho, teclas remapeáveis; salvas no navegador #ux
-- [ ] Tela de configurações (Gemini, sobre o contrato `core/Settings.ts`) #ux
+- [x] Tela de configurações (Gemini, sobre o contrato `core/Settings.ts`) #ux
 
 ## 🟠 FASE 3 — Multiplayer autoritativo
 - [ ] Separar `MechBase` em simulação (sem render) e visual; `shared/` com simulação, `MechInput` e validador (G7) #rede
