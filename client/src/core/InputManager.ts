@@ -14,6 +14,12 @@ export class InputManager {
   mouseX = window.innerWidth / 2;
   mouseY = window.innerHeight / 2;
   
+  /**
+   * Modo toque (celular/tablet, decidido pelo Game): sem Pointer Lock. "Preso" passa a significar
+   * "jogando", e o olhar chega pelo injectMouseDelta do TouchControls.
+   */
+  touchMode = false;
+
   // Controles virtuais (Touch / Mobile)
   virtualMoveX = 0;
   virtualMoveZ = 0;
@@ -88,8 +94,10 @@ export class InputManager {
   }
 
   requestLock(): void {
-    // Se for mobile/touch, o Pointer Lock não funciona, mas o jogo precisa rodar.
-    if (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) {
+    // No toque não existe Pointer Lock. Notebook com tela de toque (maxTouchPoints > 0) continua no
+    // modo mouse: quem decide é o jeito que o jogador entrou (Game.setTouchMode).
+    if (this.touchMode) {
+      this.mouseDX = this.mouseDY = 0;
       this.locked = true;
       this.onLockChange?.(true);
       return;
@@ -104,7 +112,8 @@ export class InputManager {
   }
 
   exitLock(): void {
-    if (window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0) {
+    if (this.touchMode) {
+      if (!this.locked) return;
       this.locked = false;
       this.onLockChange?.(false);
       return;

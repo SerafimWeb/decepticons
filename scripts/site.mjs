@@ -143,6 +143,53 @@ function serve(prefix) {
   });
 }
 
+/**
+ * Celular deitado (844×390, toque): o toque na pausa começa a partida, o direcional anda, FOGO segura
+ * com o outro polegar no direcional, e a pausa volta à tela de pausa. Em 24/09 os controles de toque
+ * cobriam a pausa e o jogo nunca começava no celular; este teste existe para isso não voltar.
+ */
+async function mobile(browser, url, failures) {
+  const ctx = await browser.newContext({ viewport: { width: 844, height: 390 }, isMobile: true, hasTouch: true });
+  try {
+    const page = await ctx.newPage();
+    page.on('pageerror', (e) => failures.push(`celular: ${e.message}`));
+    const cdp = await ctx.newCDPSession(page);
+    const touch = (type, touchPoints) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints });
+    const shown = (sel) => page.evaluate((q) => {
+      const e = document.querySelector(q);
+      return !!e && getComputedStyle(e).display !== 'none';
+    }, sel);
+    const controlsOn = () => page.evaluate(() => document.getElementById('touch-controls')?.classList.contains('on') ?? false);
+    const vel = () => page.evaluate(() => Number(/VEL\s+([\d.]+)/.exec(document.getElementById('stats')?.textContent ?? '')?.[1] ?? -1));
+
+    await page.goto(url);
+    await page.waitForFunction(() => document.getElementById('cta')?.textContent === '[ toque para jogar ]', null, { timeout: 60_000, polling: 250 }).catch(async (e) => { throw new Error('celular: tela de pausa não ficou pronta para o toque (cta: ' + (await page.textContent('#cta').catch(() => '?')) + ')'); });
+    if (await shown('.calib-open')) failures.push('celular: o botão de calibrar mouse aparece no toque');
+    const title = await page.locator('#overlay h1').boundingBox();
+    await page.touchscreen.tap(title.x + title.width / 2, title.y + title.height / 2);
+    await page.waitForTimeout(500);
+    if (await shown('#overlay')) return void failures.push('celular: tocar na pausa não começou a partida');
+    if (!(await controlsOn())) return void failures.push('celular: a partida começou sem os controles de toque');
+
+    // Polegar esquerdo empurra o direcional para cima; o outro segura FOGO.
+    await touch('touchStart', [{ x: 120, y: 300, id: 1 }]);
+    for (let i = 1; i <= 6; i++) await touch('touchMove', [{ x: 120, y: 300 - i * 12, id: 1 }]);
+    const fire = await page.locator('.tc-fire').boundingBox();
+    await touch('touchStart', [{ x: 120, y: 228, id: 1 }, { x: fire.x + fire.width / 2, y: fire.y + fire.height / 2, id: 2 }]);
+    await page.waitForFunction(() => /VEL\s+([1-9]|0\.[1-9])/.test(document.getElementById('stats')?.textContent ?? ''), null, { timeout: 10_000, polling: 100 }).catch(() => {});
+    if (!((await vel()) > 0)) failures.push('celular: o direcional não fez o Mech andar');
+    if (!(await page.evaluate(() => document.querySelector('.tc-fire')?.classList.contains('pressed')))) failures.push('celular: FOGO não segura com o outro polegar no direcional');
+    await touch('touchEnd', []);
+
+    const pause = await page.locator('.tc-pause').boundingBox();
+    await page.touchscreen.tap(pause.x + pause.width / 2, pause.y + pause.height / 2);
+    await page.waitForTimeout(300);
+    if (!(await shown('#overlay')) || (await controlsOn())) failures.push('celular: o botão de pausa não voltou para a tela de pausa');
+  } finally {
+    await ctx.close();
+  }
+}
+
 /** Página pública: sem o codinome interno e sem link interno quebrado. */
 async function publicPage(page, name, failures) {
   if (/decepticons/i.test(await page.evaluate(() => document.documentElement.outerHTML))) failures.push(`${name}: o codinome interno aparece na página pública`);
@@ -269,7 +316,10 @@ async function check() {
     if (!(await page.evaluate(() => document.getElementById('debug-panel')?.hidden))) {
       failures.push('configuração salva (showPerf: false) não foi aplicada');
     }
-    console.log(`site    ok: landing em ${prefix}, bastidores/, "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos`);
+    // Uma página por vez: a de trás não desenha, e o jogo do celular ficaria parado.
+    await page.close();
+    await mobile(browser, `${base}jogar/`, failures);
+    console.log(`site    ok: landing em ${prefix}, bastidores/, "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {

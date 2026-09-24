@@ -49,9 +49,12 @@ export class CameraRig {
     this.clampPitch();
   }
 
-  cycle(): CameraMode {
-    const i = MODE_ORDER.indexOf(this.current.id);
-    this.setMode(MODE_ORDER[(i + 1) % MODE_ORDER.length]);
+  /** Próxima câmera, pulando `skip` (no toque, a tática fica de fora: ela mira pelo cursor). */
+  cycle(skip?: CameraModeId): CameraMode {
+    let i = MODE_ORDER.indexOf(this.current.id);
+    do i = (i + 1) % MODE_ORDER.length;
+    while (MODE_ORDER[i] === skip);
+    this.setMode(MODE_ORDER[i]);
     return this.current;
   }
 

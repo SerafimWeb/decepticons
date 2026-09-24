@@ -42,7 +42,7 @@ const facts = [
   'mouse e teclado',
   bundle ? `${mb(bundle.total)} para baixar` : null,
   'qualidade que se ajusta ao seu PC',
-  'celular: em construção',
+  'celular: controles de toque (em teste)',
 ].filter(Boolean);
 
 const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
@@ -151,7 +151,7 @@ const recent = prs.slice(0, 5);
 const buildHtml = `<section aria-labelledby="montagem">
     <span class="kicker">// linha de montagem</span>
     <h2 id="montagem">O que está sendo construído</h2>
-    <p class="lede">O jogo é feito em público e ganha coisa nova quase todo dia. Cada entrega vai para o ar sozinha: é só recarregar.</p>
+    <p class="lede">O jogo ganha coisa nova quase todo dia. Cada entrega vai para o ar sozinha: é só recarregar.</p>
     <div class="grid-2 build">
       <div class="frame box">
         <div class="box-bar"><span>fase ${focus.num} · ${upper(focus.title)}</span><span>${focus.done}/${focus.items.length}</span></div>
@@ -258,7 +258,7 @@ const body = `
   ${pledgeHtml}
   ${buildHtml}
   ${endHtml}
-  <footer><span>Cyber-Mech Protocol · feito em público por um diretor humano e uma equipe de IAs</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
+  <footer><span>Cyber-Mech Protocol · feito por Dan e uma equipe de IAs</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
 `;
 
 const description = 'Shooter de Mechs direto no navegador: desmonte o inimigo peça por peça numa arena neon. Grátis, sem instalar e sem pay-to-win.';

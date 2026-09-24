@@ -69,6 +69,7 @@ export class Game {
   private readonly roundHud: RoundHud;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
+  private readonly touch: TouchControls;
   private readonly player: PlayerController;
   private readonly hud = new HUD();
   private readonly debugPanel = new DebugPanel();
@@ -163,7 +164,7 @@ export class Game {
 
     // --- Jogador ---
     this.input = new InputManager(this.renderer.domElement);
-    new TouchControls(this.input);
+    this.touch = new TouchControls(this.input, { onPause: () => this.pause(), onCamera: () => this.switchCamera() });
     this.rig = new CameraRig({
       camera: this.camera,
       physics,
@@ -174,8 +175,11 @@ export class Game {
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles);
 
     this.wireEvents();
+    // Celular e tablet (toque é o ponteiro principal) começam no modo toque; o toque ou o clique
+    // que inicia a partida confirma o modo (notebook com tela de toque continua no mouse).
+    this.setTouchMode(matchMedia('(hover: none) and (pointer: coarse)').matches);
     this.hud.setMode(this.rig.mode);
-    this.hud.setReady();
+    this.hud.setReady(this.input.touchMode);
 
     this.quality = new Quality(
       (ratio) => this.setPixelRatio(ratio),
@@ -272,7 +276,14 @@ export class Game {
       if (falloff > 0) rig.addShake(0.55 * falloff);
     };
 
-    document.getElementById('overlay')!.addEventListener('click', () => this.resume());
+    const overlay = document.getElementById('overlay')!;
+    // pointerdown vem antes do click: o jeito de entrar (dedo ou mouse) escolhe o modo.
+    overlay.addEventListener('pointerdown', (e) => this.setTouchMode(e.pointerType !== 'mouse'));
+    overlay.addEventListener('click', () => this.resume());
+    // Trocou de app ou de aba no meio da partida: pausa (no desktop o Pointer Lock já cai sozinho).
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && this.playing) this.pause();
+    });
     // Resume do AudioContext na primeira interação (exigência dos navegadores)
     document.getElementById('overlay')!.addEventListener('click', () => this.audio.resume(), { once: true });
     input.onLockChange = (locked) => {
@@ -299,16 +310,49 @@ export class Game {
   }
 
   private resume(): void {
-    if (this.rig.mode.pointerLock) this.input.requestLock();
+    if (this.input.touchMode) {
+      this.enterFullscreen();
+      this.input.requestLock(); // no toque: marca "jogando" e dispara onLockChange(true)
+    } else if (this.rig.mode.pointerLock) this.input.requestLock();
     else this.setPlaying(true);
   }
 
-  /** Chamado dentro do keydown (gesto do usuário), exigência do Pointer Lock. */
+  private pause(): void {
+    if (this.input.touchMode) this.input.exitLock();
+    this.setPlaying(false);
+  }
+
+  /** Modo toque: controles na tela, sem Pointer Lock, sem a câmera tática (ela mira pelo cursor). */
+  private setTouchMode(on: boolean): void {
+    this.input.touchMode = on;
+    document.documentElement.classList.toggle('touch', on);
+    if (on && !this.rig.mode.pointerLock) {
+      this.rig.setMode('tps');
+      this.hud.setMode(this.rig.mode);
+      this.touch.setCameraLabel('CAM 3ª');
+    }
+  }
+
+  /**
+   * Tela cheia deitada no celular: some a barra do navegador e sobra tela para os polegares. Só vale
+   * dentro de um gesto do jogador; onde o navegador não deixa (iPhone), o jogo segue como está.
+   */
+  private enterFullscreen(): void {
+    const root = document.documentElement;
+    if (document.fullscreenElement || !root.requestFullscreen) return;
+    root
+      .requestFullscreen({ navigationUI: 'hide' })
+      .then(() => (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.('landscape'))
+      .catch(() => {});
+  }
+
+  /** Chamado dentro do keydown ou do toque em CAM (gesto do usuário), exigência do Pointer Lock. */
   private switchCamera(): void {
-    const mode = this.rig.cycle();
+    const mode = this.rig.cycle(this.input.touchMode ? 'tactical' : undefined);
     if (mode.pointerLock && !this.input.locked) this.input.requestLock();
     else if (!mode.pointerLock && this.input.locked) this.input.exitLock();
     this.hud.setMode(mode);
+    this.touch.setCameraLabel(mode.id === 'fps' ? 'CAM 1ª' : 'CAM 3ª');
     this.updateCursor();
   }
 
@@ -316,6 +360,7 @@ export class Game {
     this.playing = playing;
     this.player.active = playing;
     this.hud.setPaused(!playing);
+    this.touch.setVisible(playing && this.input.touchMode);
     this.updateCursor();
   }
 

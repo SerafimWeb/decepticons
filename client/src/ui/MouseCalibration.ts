@@ -52,7 +52,8 @@ export class MouseCalibration {
     for (const anchor of anchors) {
       const open = document.createElement('button');
       open.type = 'button';
-      open.className = 'btn-terminal';
+      // calib-open: some no modo toque (não há mouse para calibrar).
+      open.className = 'btn-terminal calib-open';
       open.textContent = '[ CALIBRAR MOUSE ]';
       // O clique na tela de pausa retoma o jogo: aqui não pode.
       open.addEventListener('click', (e) => {

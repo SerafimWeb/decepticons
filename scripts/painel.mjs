@@ -49,7 +49,7 @@ const nf = (n) => n.toLocaleString('pt-BR');
 // ---------- equipe ----------
 
 const TEAM = [
-  { key: 'dono', name: 'DIRETOR', org: 'humano', role: 'Define o jogo, decide as prioridades e joga cada build no site. Nenhuma IA muda o rumo sem ele.' },
+  { key: 'dono', name: 'DAN', org: 'criador', role: 'Define o jogo, decide as prioridades e joga cada build no site. Nenhuma IA muda o rumo sozinha.' },
   { key: 'claude', name: 'CLAUDE', org: 'Anthropic', role: 'Arquitetura e engenharia: simulação, combate, IA dos bots, testes, CI, deploy e este site.' },
   { key: 'gemini', name: 'GEMINI', org: 'Google', role: 'Interface e som: HUD, configurações, som sintetizado e a versão para celular.' },
   { key: 'codex', name: 'CODEX', org: 'OpenAI', role: 'Revisão cruzada: confere o que as outras IAs entregaram. Nenhuma IA aprova o próprio código.' },
@@ -80,14 +80,14 @@ const teamHtml = TEAM.map((t) => {
 // ---------- da ideia ao ar ----------
 
 const FLOW = [
-  ['PEDIDO', 'O diretor descreve o que quer, em português, do jeito que fala.', '“no jogo é muito rápido pra fazer essa configuração fina”'],
+  ['PEDIDO', 'Dan descreve o que quer, em português, do jeito que fala.', '“no jogo é muito rápido pra fazer essa configuração fina”'],
   ['PASSO ZERO', 'Antes de tocar no código, a IA lê a memória do projeto: identidade, estado, roadmap e regras.', 'ESTADO_ATUAL · ROADMAP · AGENTS'],
   ['PASTA PRÓPRIA', 'Cada IA trabalha no seu worktree e no seu branch, a partir da main. Duas IAs nunca dividem pasta.', 'claude/calibracao-mouse'],
   ['CÓDIGO + TESTE', `Toda regra de jogo ganha teste de simulação: hoje são ${last.tests} testes automáticos.`, 'ida e volta do cm/360 testada'],
   ['PULL REQUEST', 'O PR ganha sozinho as etiquetas da frente e do agente e segue um modelo: o que muda, custo de CPU, como testar.', 'PR #14 · jogabilidade · claude'],
   ['CI', 'Tipos, testes, build, orçamento de download, boot num navegador sem tela e o site com os cabeçalhos reais. Vermelho não entra.', 'npm run check'],
   ['NO AR', 'O merge publica o site sozinho, confere a produção e fotografa o jogo para a página inicial.', 'deploy em poucos minutos'],
-  ['PLAYTEST', 'O diretor joga no site e devolve o que sentiu. O ciclo recomeça.', '“estão atacando bem, não ficaram perdidos”'],
+  ['PLAYTEST', 'Dan joga no site e conta o que sentiu. O ciclo recomeça.', '“estão atacando bem, não ficaram perdidos”'],
 ];
 const flowHtml = FLOW.map(
   ([title, text, sample], i) => `<li class="step frame">
@@ -473,7 +473,7 @@ const body = `
   <header class="hero">
     <p class="boot">&gt; bastidores · case de desenvolvimento${m.day ? ` · dia ${m.day} do projeto` : ''}<span class="cursor" aria-hidden="true">█</span></p>
     <h1 class="title">BASTIDORES<span>DA OPERAÇÃO</span></h1>
-    <p class="pitch">Um diretor humano, três IAs e um protocolo. O Cyber-Mech Protocol é construído em público: cada decisão fica registrada, cada entrega passa por testes automáticos e vai para o ar sozinha. Esta página é gerada do próprio repositório a cada entrega; nenhum número aqui é digitado à mão.</p>
+    <p class="pitch">Dan, três IAs e um protocolo. No Cyber-Mech Protocol, cada decisão fica registrada, cada entrega passa por testes automáticos e vai para o ar sozinha. Esta página é gerada do próprio repositório a cada entrega; nenhum número aqui é digitado à mão.</p>
     <div class="sitrep">
       ${m.day ? `<div class="read frame"><span class="k">Dia de projeto</span><span class="v">${m.day} <small>desde ${brDate(m.first)}</small></span></div>` : ''}
       <div class="read frame"><span class="k">Entregas</span><span class="v">${prs.length} <small>PRs no ar</small></span></div>
@@ -487,7 +487,7 @@ const body = `
   <section aria-labelledby="equipe">
     <span class="kicker">// esquadrão</span>
     <h2 id="equipe">A equipe</h2>
-    <p class="lede">Cada IA tem um território de arquivos e trabalha na própria pasta, para uma não desfazer o trabalho da outra. O diretor decide; as IAs propõem, constroem e provam com teste.</p>
+    <p class="lede">Cada IA tem um território de arquivos e trabalha na própria pasta, para uma não desfazer o trabalho da outra. Dan decide; as IAs propõem, constroem e provam com teste.</p>
     <div class="team">${teamHtml}</div>
     ${fromGithub ? '' : '<p class="source">Sem acesso ao GitHub neste build: entregas contadas pelo git, sem etiquetas de frente e agente.</p>'}
   </section>
@@ -550,7 +550,7 @@ const body = `
 
 const html = pagina({
   title: SITE ? 'Bastidores · Cyber-Mech Protocol' : 'Painel de Missão Cyber-Mech',
-  description: 'Como o Cyber-Mech Protocol é feito: um diretor humano e uma equipe de IAs sob o Protocolo Serafim UM, com cada decisão, teste e entrega à vista.',
+  description: 'Como o Cyber-Mech Protocol é feito: Dan e uma equipe de IAs sob o Protocolo Serafim UM, com cada decisão, teste e entrega à vista.',
   css,
   body,
   script,

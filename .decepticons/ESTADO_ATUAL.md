@@ -8,6 +8,14 @@
 
 ## ÚLTIMA SESSÃO FEZ (24/09)
 > As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e nas entregas dos bastidores.
+- **Celular refeito (Claude, depois do teste do dono: "não entrou no jogo, botões um sobre o outro, direcional preso"):**
+  - O toque começa a partida: antes, as áreas de toque cobriam a pausa e engoliam o toque.
+  - Direcional analógico que nasce onde o polegar encosta; mirar arrastando à direita; FOGO segura e mira junto.
+  - PULO, DASH, CAM e pausa numa grade que não sobrepõe, com tamanho proporcional à tela.
+  - Tela cheia deitado, pausa ao trocar de app; tela de pausa com instruções de toque e sem "calibrar mouse".
+  - Notebook com tela de toque continua no mouse: o modo é o jeito que o jogador entrou.
+  - O `npm run check` joga num celular emulado.
+- **Site:** "Dan" no lugar de "diretor"; sem "feito em público" (pedido do dono)
 - **Site em duas páginas (Claude, pedido do dono: "virar um case de desenvolvimento do game"):**
   - `/cybermech/` é a landing do jogo: capa, galeria, o que tem no jogo (seção VITRINE do `GAME_DESIGN`), ficha do Vector-09, controles, sem pay-to-win, o que está sendo construído.
   - `/cybermech/bastidores/` é o case: equipe (entregas e linhas por agente, das etiquetas dos PRs), como um pedido vira jogo, Protocolo Serafim UM, evolução (testes e linhas por merge, lidos do git), mapa da campanha, frentes, diário de decisões e entregas.
@@ -22,9 +30,9 @@
 - **Regra 13:** agente termina com PR → CI verde → merge, e o merge publica o site sozinho
 
 ## PENDENTE
-- [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles; o Claude marcou como PARCIAL)
+- [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
 - [ ] **Gemini:** o kill feed está no branch `gemini/killfeed-dano` sem PR; abrir o PR (regra 13) depois de juntar a `main`
-- [ ] **Dono:** testar no site as configurações, a calibração do mouse, o som e os controles de toque num celular
+- [ ] **Dono:** jogar no celular (deitado) e dizer se os controles de toque estão bons; no PC, testar configurações, calibração e som
 - [ ] Fase 3: foguetes (arma secundária), draw calls por Mech (~34 cada), volume e mixagem nas configurações
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
 
