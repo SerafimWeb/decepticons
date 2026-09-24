@@ -15,6 +15,7 @@ export interface DestructibleDef {
 }
 
 interface Prop {
+  def: DestructibleDef;
   group: THREE.Group;
   collider: RAPIER.Collider;
   edgeMat: THREE.LineBasicMaterial;
@@ -38,6 +39,8 @@ export class Destructibles {
   onBreak?: (center: THREE.Vector3) => void;
 
   private readonly byCollider = new Map<number, Prop>();
+  /** Todas as estruturas da arena, inteiras ou não: a rodada nova restaura as quebradas. */
+  private readonly defs: DestructibleDef[] = [];
   private readonly geo = new THREE.BoxGeometry(1, 1, 1);
   /** Arestas do cubo unitário, compartilhadas (escala por prop); só o material é por prop. */
   private readonly edgeGeo = new THREE.EdgesGeometry(this.geo);
@@ -51,6 +54,25 @@ export class Destructibles {
   ) {}
 
   add(def: DestructibleDef): void {
+    this.defs.push(def);
+    this.build(def);
+  }
+
+  /**
+   * Rodada nova: quebradas voltam, inteiras perdem o dano. Chame com os Mechs já nos pontos de
+   * nascimento (livres de estruturas) e sem destroços, senão um colisor pode nascer dentro de algo.
+   */
+  restoreAll(): void {
+    const standing = new Set<DestructibleDef>();
+    for (const prop of this.byCollider.values()) {
+      standing.add(prop.def);
+      prop.hp = prop.maxHp;
+      prop.edgeMat.color.copy(prop.accent);
+    }
+    for (const def of this.defs) if (!standing.has(def)) this.build(def);
+  }
+
+  private build(def: DestructibleDef): void {
     const center = new THREE.Vector3(def.x, def.h / 2, def.z);
     const size = new THREE.Vector3(def.w, def.h, def.d);
     const accent = new THREE.Color(def.accent).multiplyScalar(3);
@@ -67,7 +89,7 @@ export class Destructibles {
     this.scene.add(group);
 
     const collider = this.physics.addStaticBox(center, size);
-    this.byCollider.set(collider.handle, { group, collider, edgeMat, accent, center, size, hp: def.hp, maxHp: def.hp });
+    this.byCollider.set(collider.handle, { def, group, collider, edgeMat, accent, center, size, hp: def.hp, maxHp: def.hp });
   }
 
   /** Aplica dano se o colisor for destrutível. Retorna true se era. */

@@ -12,6 +12,8 @@ export const BOT_RESPAWN_S = 4;
 /** Violeta: lê como "não sou eu" contra o laranja do jogador. */
 const BOT_PAINT = 0x7b2cff;
 const MUZZLE_COLOR = new THREE.Color(3.0, 0.6, 2.0);
+/** Indicativos de chamada dos pilotos (placar). */
+const CALLSIGNS = ['KESTREL', 'MAKO', 'VIPER', 'RAVEN', 'ORCA', 'JACKAL', 'WRAITH', 'COBALT'];
 
 const _muzzle = new THREE.Vector3();
 
@@ -33,6 +35,8 @@ export interface BotSystemOptions {
 interface Bot {
   mech: MechBase;
   brain: BotController;
+  name: string;
+  home: THREE.Vector3;
 }
 
 /**
@@ -61,9 +65,22 @@ export class BotSystem {
       o.combat.register(mech);
       const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, o.skill ?? BOT_SKILL_NORMAL);
       o.respawner.track(mech, BOT_RESPAWN_S, () => brain.reset());
-      this.bots.push({ mech, brain });
+      this.bots.push({ mech, brain, name: CALLSIGNS[i % CALLSIGNS.length]!, home: new THREE.Vector3(x, 0, z) });
     });
     this.mechs = this.bots.map((b) => b.mech);
+  }
+
+  nameOf(mech: MechBase): string {
+    return this.bots.find((b) => b.mech === mech)?.name ?? 'BOT';
+  }
+
+  /** Rodada nova: todos inteiros de volta ao ponto de nascimento, olhando o centro, cérebro zerado. */
+  respawnAll(): void {
+    for (const { mech, brain, home } of this.bots) {
+      mech.respawn(home);
+      mech.applyFacing(Math.atan2(home.x, home.z), 0);
+      brain.reset();
+    }
   }
 
   /** Troca a dificuldade de todos os bots (vale a partir do próximo tick). */

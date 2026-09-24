@@ -161,6 +161,20 @@ describe('bots (inimigos)', () => {
     expect(BOT_SKILLS.normal).toBe(BOT_SKILL_NORMAL); // o normal é o que o dono aprovou
   });
 
+  it('rodada nova: respawnAll devolve o bot inteiro ao ponto de nascimento, em patrulha', async () => {
+    const s = await scenario({ bot: [0, 0], player: [0, -30] });
+    s.run(3); // anda, persegue, atira
+    s.bot.damagePart('torso', 999);
+    expect(s.bot.alive).toBe(false);
+    s.bots.respawnAll();
+    expect(s.bot.alive).toBe(true);
+    expect(s.bot.simPosition.x).toBe(0);
+    expect(s.bot.simPosition.z).toBe(0);
+    expect(s.bot.modules).toEqual(VECTOR09_STATS.maxModuleHealth);
+    expect(s.brain.state).toBe('patrol');
+    expect(s.bots.nameOf(s.bot)).toBe('KESTREL');
+  });
+
   it('é determinístico: mesmo cenário e semente, mesmo trajeto e mesmos tiros', async () => {
     const trace = async () => {
       const s = await scenario({ bot: [0, 0], player: [0, -30], seed: 3 });

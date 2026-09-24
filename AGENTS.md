@@ -58,6 +58,8 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex 
 9. **Passagem de bastão:** ao terminar, atualize `ESTADO_ATUAL.md` (o que foi feito, o que ficou, "próxima sessão começa com"), marque os itens no `ROADMAP.md` (cada item com a etiqueta da sua frente: é o que alimenta o painel de missão) e registre decisões no topo do `HISTORICO_DE_DECISOES.md`.
 10. **Discordou de algo registrado?** Não desfaça em silêncio. Proponha em "decisões em aberto" no `ESTADO_ATUAL.md`; o dono decide.
 11. **Antes do commit, olhe o `git status`.** O hook barra arquivos de `.tmp/`, `dist/` e `node_modules/`, e barra secrets.
+12. **Dois agentes ao mesmo tempo? Cada um na sua pasta.** O Git tem um branch ativo por pasta: um `git switch` de um agente muda os arquivos do outro, e um `git add -A` leva o trabalho alheio. Quem chega depois cria um worktree dentro do projeto (G15): `git worktree add .tmp/wt-<agente> -b <agente>/<tarefa> origin/main`, liga as dependências (PowerShell: `New-Item -ItemType Junction -Path .tmpwt-<agente>
+ode_modules -Target node_modules`) e trabalha só lá. (Em 24/09 Claude e Gemini trabalharam na mesma pasta; o trabalho foi separado sem perda.)
 
 ## MAPA
 

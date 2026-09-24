@@ -113,6 +113,11 @@ export class DebrisSystem {
   }
 
   /** O swap-remove embaralha a ordem do array; a mais antiga é achada pelo `born` (O(n), só no limite). */
+  /** Remove todos os destroços (rodada nova). */
+  clear(): void {
+    while (this.pieces.length) this.removeAt(this.pieces.length - 1);
+  }
+
   private oldestIndex(): number {
     let oldest = 0;
     for (let i = 1; i < this.pieces.length; i++) {
