@@ -5,6 +5,7 @@ import { ThirdPersonCamera } from './ThirdPersonCamera';
 import { TacticalCamera } from './TacticalCamera';
 
 const MODE_ORDER: CameraModeId[] = ['tps', 'fps', 'tactical'];
+export const BASE_SENSITIVITY = 0.0022;
 
 /**
  * Gerencia os modos de câmera, a sensibilidade do mouse, o camera shake e o FOV.
@@ -13,7 +14,11 @@ const MODE_ORDER: CameraModeId[] = ['tps', 'fps', 'tactical'];
 export class CameraRig {
   readonly look: LookState = { yaw: 0, pitch: -0.12 };
   readonly aim: AimState = { yaw: 0, pitch: 0, moveYaw: 0, point: new THREE.Vector3() };
-  sensitivity = 0.0022;
+  /** Radianos por pixel de mouse (configurável). */
+  sensitivity = BASE_SENSITIVITY;
+  invertY = false;
+  /** Graus somados ao FOV da 1ª e da 3ª pessoa; a visão tática não muda. */
+  fovOffset = 0;
 
   private readonly modes: Record<CameraModeId, CameraMode>;
   private current: CameraMode;
@@ -52,7 +57,7 @@ export class CameraRig {
   applyMouse(dx: number, dy: number): void {
     if (!this.current.pointerLock) return;
     this.look.yaw -= dx * this.sensitivity;
-    this.look.pitch -= dy * this.sensitivity;
+    this.look.pitch -= dy * this.sensitivity * (this.invertY ? -1 : 1);
     this.clampPitch();
   }
 
@@ -81,7 +86,8 @@ export class CameraRig {
       this.trauma = Math.max(0, this.trauma - dt * 1.6);
     }
 
-    const targetFov = this.current.fov + (mech.isDashing ? this.current.dashFovKick : 0);
+    const offset = this.current.id === 'tactical' ? 0 : this.fovOffset;
+    const targetFov = this.current.fov + offset + (mech.isDashing ? this.current.dashFovKick : 0);
     if (Math.abs(camera.fov - targetFov) > 0.01) {
       camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 10);
       camera.updateProjectionMatrix();

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { CameraRig } from '../camera/CameraRig';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import type { InputManager } from '../core/InputManager';
+import { DEFAULT_SETTINGS, type KeyAction } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 
@@ -19,6 +20,8 @@ const _dir = new THREE.Vector3();
  */
 export class PlayerController {
   active = false;
+  /** Teclas de cada ação (e.code), vindas das configurações. */
+  keys: Readonly<Record<KeyAction, string>> = DEFAULT_SETTINGS.keys;
 
   private jumpQueued = false;
   private dashQueued = false;
@@ -36,8 +39,8 @@ export class PlayerController {
   /** Taxa do render: captura eventos de borda. */
   collect(): void {
     if (!this.active) return;
-    if (this.input.wasPressed('Space')) this.jumpQueued = true;
-    if (this.input.wasPressed('ShiftLeft') || this.input.wasPressed('ShiftRight')) this.dashQueued = true;
+    if (this.input.wasPressed(this.keys.jump)) this.jumpQueued = true;
+    if (this.input.wasPressed(this.keys.dash)) this.dashQueued = true;
   }
 
   /** Taxa fixa (60 Hz): monta o comando e simula. */
@@ -45,8 +48,9 @@ export class PlayerController {
     const a = this.active;
     const aim = this.rig.aim;
     const cmd = this.cmd;
-    cmd.moveX = a ? this.input.axis('KeyD', 'KeyA') : 0;
-    cmd.moveZ = a ? this.input.axis('KeyW', 'KeyS') : 0;
+    const k = this.keys;
+    cmd.moveX = a ? this.input.axis(k.right, k.left) : 0;
+    cmd.moveZ = a ? this.input.axis(k.forward, k.back) : 0;
     cmd.moveYaw = aim.moveYaw;
     cmd.yaw = aim.yaw;
     cmd.jump = this.jumpQueued;

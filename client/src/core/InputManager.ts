@@ -1,3 +1,5 @@
+import { normalizeKey } from './Settings';
+
 /**
  * Captura teclado + mouse. Funciona com Pointer Lock (1ª/3ª pessoa: deltas do
  * mouse) e com cursor livre (visão tática: posição do cursor na tela).
@@ -25,12 +27,17 @@ export class InputManager {
       // F1 esconde o HUD; sem preventDefault o Chrome/Edge abre a própria Ajuda numa aba nova.
       // Quote (' no teclado US) abre a "busca rápida" do Firefox.
       if (e.code === 'Space' || e.code === 'Tab' || e.code === 'F1' || e.code === 'Quote') e.preventDefault();
-      this.keys.add(e.code);
+      // Shift/Ctrl/Alt entram também pelo nome curto ("Shift"): tecla configurada vale dos dois lados.
+      const key = normalizeKey(e.code);
+      this.keys.add(e.code).add(key);
       if (e.repeat) return;
-      this.pressed.add(e.code);
-      this.onKey?.(e.code);
+      this.pressed.add(e.code).add(key);
+      this.onKey?.(key);
     });
-    window.addEventListener('keyup', (e) => this.keys.delete(e.code));
+    window.addEventListener('keyup', (e) => {
+      this.keys.delete(e.code);
+      this.keys.delete(normalizeKey(e.code));
+    });
     window.addEventListener('blur', () => this.reset());
 
     document.addEventListener('mousemove', (e) => {

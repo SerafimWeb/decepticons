@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { mulberry32 } from '../core/rng';
+import type { Difficulty } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { PROJECTILE_SPEED } from './ProjectileSystem';
 
 export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat';
 
-/** Dificuldade. Hoje só existe o nível normal; os outros são só trocar estes números. */
+/** Como o bot pilota: tempo de reação, mira e ritmo de tiro. Um conjunto por nível de dificuldade. */
 export interface BotSkill {
   /** Segundos entre ver o alvo e reagir (começar a caçar e atirar). */
   reactionS: number;
@@ -20,6 +21,7 @@ export interface BotSkill {
   burstPauseS: number;
 }
 
+/** Aprovado pelo dono jogando ("grau de dificuldade considerável, está bom assim", 2026-09-24). */
 export const BOT_SKILL_NORMAL: BotSkill = {
   reactionS: 0.5,
   aimErrorRad: 0.045,
@@ -27,6 +29,12 @@ export const BOT_SKILL_NORMAL: BotSkill = {
   turnRate: 3.0,
   burstShots: 4,
   burstPauseS: 0.9,
+};
+
+export const BOT_SKILLS: Record<Difficulty, BotSkill> = {
+  facil: { reactionS: 0.9, aimErrorRad: 0.085, leadFactor: 0.15, turnRate: 2.2, burstShots: 3, burstPauseS: 1.4 },
+  normal: BOT_SKILL_NORMAL,
+  dificil: { reactionS: 0.3, aimErrorRad: 0.028, leadFactor: 0.85, turnRate: 4.0, burstShots: 5, burstPauseS: 0.7 },
 };
 
 const VISION_RANGE = 90;
@@ -111,7 +119,8 @@ export class BotController {
     private readonly physics: PhysicsWorld,
     private readonly waypoints: readonly THREE.Vector3[],
     seed: number,
-    private readonly skill: BotSkill = BOT_SKILL_NORMAL,
+    /** Pode mudar no meio da partida (tela de configurações): vale a partir do próximo tick. */
+    public skill: BotSkill = BOT_SKILL_NORMAL,
   ) {
     this.rand = mulberry32(seed);
     this.yaw = mech.yaw;

@@ -17,7 +17,9 @@
 - **Blind Mode (#ux) (Gemini):** Implementada degradação do HUD quando `mech.isBlind` é verdadeiro (cabeça destruída): estática/chiado com animação na tela (`#static-noise`), mira tremendo/jitter no crosshair e ocultação das estatísticas/integridade dos componentes do Mech.
 
 ## PENDENTE
-- [ ] Fase 2: rodada de 5 min com placar e reinício automático; níveis de dificuldade (os parâmetros já existem em `BotSkill`)
+- [ ] Fase 2: rodada de 5 min com placar e reinício automático
+- [ ] Tela de configurações (Gemini) sobre o contrato `core/Settings.ts`
+- [ ] Painel de missão com cara de HUD cyberpunk das antigas (Shadowrun, BattleTech), pedido do dono (Claude, em andamento)
 - [ ] Fase 1, sobras: arma secundária (foguetes no braço esquerdo) e otimizar os draw calls por Mech (~34 cada; 4 Mechs ≈ 190 draws)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
 
@@ -35,7 +37,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Site e deploy (build do dia); depois a rodada de 5 min |
-| **Gemini** | `client/src/ui/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | **Concluído: Blind Mode (#ux)**, entregue por push direto na `main` (sem PR; revisado depois pelo Claude, ok). Push direto na `main` agora é bloqueado pelo hook: próximas tarefas por branch `gemini/<tarefa>` + PR |
+| **Gemini** | `client/src/ui/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | **Próxima: tela de configurações** (#ux) sobre o contrato `client/src/core/Settings.ts` (só chama `settings.update()`; o jogo já aplica). Branch `gemini/tela-configuracoes` + PR (push direto na `main` é bloqueado) |
 | **Codex** | a combinar | Sem crédito até 24/09. Ao voltar: revisar os PRs já mergeados |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois faz rebase e roda `npm run check` |
 
@@ -49,4 +51,4 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Rodada de 5 min com placar e reinício automático (`#jogabilidade`), depois Blind Mode e níveis de dificuldade, fechando a Fase 2. Ao fim da sessão: `npm run painel` e republicar o painel.
+Claude: terminar o painel de missão no estilo HUD militar/hacker das antigas; depois a rodada de 5 min com placar. Gemini: tela de configurações.

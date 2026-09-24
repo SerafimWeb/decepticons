@@ -39,6 +39,10 @@ export class DebugPanel {
     this.setDetailed(false);
   }
 
+  setVisible(visible: boolean): void {
+    this.panel.hidden = !visible;
+  }
+
   toggleDetailed(): void {
     this.setDetailed(!this.detailed);
   }

@@ -16,6 +16,16 @@ Toda prioridade de feature passa por aqui.
 
 ---
 
+## PRINCÍPIO: NÃO É PAY-TO-WIN (decisão do dono, 2026-09-24)
+
+O jogo é feito para ser **muito bom e todo mundo querer jogar**, não para vender vantagem.
+- **Nada que se compra ganha partida.** Dano, vida, velocidade, armas, mira e acesso a Mechs de combate são iguais para todos e se conquistam jogando.
+- Se um dia houver dinheiro envolvido, é só estética (pintura, neon, decalques, efeitos) ou apoio ao projeto, nunca atributo de combate.
+- Anúncio (se houver) nunca interrompe a partida: só entre rodadas.
+- Qualquer proposta de feature que quebre isto é recusada, não importa quanto renda.
+
+---
+
 ## DECISÕES
 
 | Tema | Decisão | O que isso fixa na engenharia |

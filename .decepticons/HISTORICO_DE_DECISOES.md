@@ -4,6 +4,18 @@
 
 ---
 
+## [2026-09-24] Não é pay-to-win; configurações do jogador; dificuldade aprovada vira a "normal"
+**Princípio (dono):** "esse jogo não é pay to win, não está sendo feito para ser p2w, e sim para ser muito bom e todo mundo querer jogar". Virou seção própria no `GAME_DESIGN.md`, com a regra: nada que se compra dá vantagem de combate, e proposta que quebre isso é recusada.
+**Dificuldade (dono):** "os inimigos estão com um grau de dificuldade considerável, está bom assim". Os valores atuais viraram a `BOT_SKILL_NORMAL`, padrão das configurações. Fácil e difícil são variações em volta dela, com teste: mesmo cenário e semente, o difícil reage antes e causa mais dano.
+**Configurações (dono pediu "mais controles, mais configurações"):**
+- `core/Settings.ts` é o contrato entre a futura tela e o jogo: sensibilidade, inverter Y, FOV (±, 1ª e 3ª pessoa), qualidade (automática/alta/média/baixa), dificuldade, painel de desempenho e 7 teclas remapeáveis (Shift/Ctrl/Alt valem dos dois lados; Esc, F1 e ' são do sistema).
+- Salvo no `localStorage` do jogador e validado campo a campo (dado de fora, R4). Um navegador que bloqueia o armazenamento não quebra o jogo.
+- O `Game` aplica na largada e a cada mudança.
+- **Território:** o contrato toca `Quality.ts` (liga/desliga a adaptativa) e `DebugPanel.ts` (visível ou não), mudanças pequenas em território do Gemini, registradas aqui.
+- **Divisão:** o Claude fez o contrato e a aplicação; o Gemini faz a tela.
+**Garantia:** 7 testes do contrato (incluindo dado corrompido e armazenamento hostil) + teste de dificuldade. O teste do site salva uma configuração, recarrega e confere que ela vale.
+**Quem decidiu:** dono (princípio, dificuldade, pedido); Claude (contrato e divisão com o Gemini).
+
 ## [2026-09-24] Site no ar; .wasm pré-comprimido; push direto na main passa a ser bloqueado
 **Site no ar:**
 - O dono autorizou o Claude a configurar tudo sozinho ("pegar os secrets nas outras pastas parecidas; deploya e commita").

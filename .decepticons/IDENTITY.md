@@ -72,7 +72,7 @@ Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 
 **Métrica de sucesso candidata:** o jogador volta no dia seguinte (retenção D1) e joga 3+ partidas na primeira sessão.
 **Usuários e papéis:** hoje só o jogador local. Contas, papéis e persistência não existem.
-**O que o projeto NÃO deve fazer:** exigir instalação, GPU dedicada ou download pesado antes de jogar.
+**O que o projeto NÃO deve fazer:** exigir instalação, GPU dedicada ou download pesado antes de jogar. **Nunca ser pay-to-win** (princípio do dono; ver `GAME_DESIGN.md`).
 
 ---
 
