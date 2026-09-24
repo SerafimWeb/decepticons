@@ -1,0 +1,28 @@
+# Notas de versão (gh release create v0.<fase>.0 --generate-notes): PRs agrupados pela frente.
+# Um PR com várias frentes aparece na primeira que casar, nesta ordem.
+changelog:
+  categories:
+    - title: Jogabilidade
+      labels: ['frente:jogabilidade']
+    - title: Combate e armas
+      labels: ['frente:combate']
+    - title: Inimigos e IA
+      labels: ['frente:ia']
+    - title: Design dos Mechs
+      labels: ['frente:mechs']
+    - title: Cenários
+      labels: ['frente:cenarios']
+    - title: Interface e experiência
+      labels: ['frente:ux']
+    - title: Som
+      labels: ['frente:som']
+    - title: Multiplayer
+      labels: ['frente:rede']
+    - title: Desempenho
+      labels: ['frente:desempenho']
+    - title: Lançamento e negócio
+      labels: ['frente:negocio']
+    - title: Base técnica
+      labels: ['frente:base']
+    - title: Outros
+      labels: ['*']

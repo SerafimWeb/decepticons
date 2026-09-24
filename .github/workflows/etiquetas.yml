@@ -1,0 +1,19 @@
+name: Etiquetas
+
+# Etiqueta cada PR pela frente (arquivos mexidos) e pelo agente (prefixo do branch); regras em
+# .github/labeler.yml. pull_request_target roda a versão da main e não baixa o código do PR:
+# só lê a lista de arquivos, então é seguro dar permissão de escrever etiquetas.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  etiquetas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/labeler@v7

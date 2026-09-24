@@ -32,13 +32,12 @@
 | Rodada com placar | REAL | 5 min valendo abates (todos contra todos), relógio no topo (vermelho nos últimos 30 s), placar segurando Tab, intervalo de 10 s com o mundo congelado, rodada nova com todos inteiros nos pontos de nascimento, barricadas de volta e destroços limpos. Bots com indicativos (KESTREL, MAKO, VIPER). Lógica testada; o fim de rodada não foi visto no navegador (5 min) |
 | Pausa | REAL | Esc/menu congela o mundo (os bots não atacam com o jogo pausado) |
 | Feedback de acerto | REAL | marcador de acerto, parte destruída anunciada ("PERNA ESQ DESTRUÍDA", "ALVO ABATIDO"), flash de dano, peça arrancada vira destroço |
-| Blind Mode (cabeça destruída) | AUSENTE | só o getter `isBlind`; o chiado já toca via `AudioSystem` |
+| Blind Mode (cabeça destruída) | REAL | cabeça zerada: o HUD perde os números e a mira e entra estática na tela (`#hud.blind`), com chiado em loop do `AudioSystem`. Visto no código; não conferido em jogo por outro agente |
 | Áudio (efeitos sonoros) | REAL | `AudioSystem` sintetizado com Web Audio API (zero arquivos externos): tiro, impacto/hit, explosão com volume por distância, dash, pouso com intensidade proporcional, estalo de parte destruída, chiado em loop do Blind Mode. `resume()` chamado na 1ª interação (exigência do navegador). Sem custo no loop de 60 Hz (scheduler do Web Audio) |
 | Braço esquerdo (lançador secundário) | DEMO | só o modelo, sem arma |
 | Demolição no dash (Colossus-01) | PARCIAL | código pronto (`demolishOnDash`), nenhum Mech usa |
 | Slots de sucata | AUSENTE | só o stat `maxScrapSlots` |
 | Colossus-01, Ferret-X | AUSENTE | |
 | Multiplayer / servidor | AUSENTE | planejado: Colyseus |
-| Áudio | AUSENTE | |
 | Controles touch / mobile | AUSENTE | |
 | Site público (jogo + painel) | REAL | https://www.selvamkt.com.br/cybermech/: painel na raiz, jogo em `/jogar/`. Publicado a cada merge na `main` (rsync/SSH). Conferido em produção num Chrome real: painel, Jogar, jogo carregando, sem erros; CSP aplicada; `.wasm` como `application/wasm` e comprimido (735 KB) |

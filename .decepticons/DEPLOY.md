@@ -41,7 +41,7 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
 
 ---
 
-## SERVIDOR DE JOGO (Colyseus, planejado para a Fase 3)
+## SERVIDOR DE JOGO (Colyseus, planejado para a Fase 4)
 
 - Precisa de host com WebSocket persistente e processo Node longo. Hospedagem só estática ou FTP não serve.
 - Node `^20.19.0 || >=22.12.0`.

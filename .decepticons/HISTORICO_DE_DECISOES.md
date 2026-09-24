@@ -2,6 +2,20 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Planejamento reorganizado, gestão no GitHub e o site como case
+**Pedido do dono:** "reorganizar o planejamento; melhorar a página /cybermech/; implementar as melhores ferramentas de gestão e criação, para virar um case de desenvolvimento do game".
+**Escolhas do dono (perguntadas):**
+1. Páginas: **jogo + bastidores**. `/cybermech/` vira a landing do jogo; o case vai para `/cybermech/bastidores/`.
+2. **Bastidores às claras:** o case mostra a equipe de IAs (Claude, Gemini, Codex) sob o Protocolo Serafim UM.
+3. Gestão: **repositório como fonte única + GitHub automático**. Sem quadro paralelo (GitHub Projects, Notion, Trello), porque as IAs só enxergam o repositório e duas listas saem de sincronia.
+**Fases:** nova **Fase 3: Vitrine e polimento** (som, celular, kill feed, site, foguetes, draw calls): é o que a equipe está fazendo de fato antes do multiplayer. O multiplayer vira a Fase 4, o lançamento a 5 e a monetização a 6. A ordem combate → inimigos → multiplayer continua.
+**Gestão no GitHub:**
+- Etiquetas `frente:*` (as 11 do ROADMAP) e `agente:*` postas sozinhas em cada PR (`actions/labeler`, por arquivos e por prefixo do branch). Os 17 PRs antigos foram etiquetados com as mesmas regras; os PRs #2 e #13 levam também `agente:gemini`, porque integraram trabalho dele.
+- Modelo de PR com custo de CPU e "como testar no site".
+- Notas de versão agrupadas por frente; uma versão `v0.<fase>.0` a cada fase fechada.
+**De quebra (R17):** STATUS_REAL tinha o Blind Mode como AUSENTE (existe: `#hud.blind` + chiado) e duas linhas de áudio, uma REAL e outra AUSENTE.
+**Quem decidiu:** dono (páginas, bastidores, gestão, reorganizar); Claude (desenho das fases e da automação).
+
 ## [2026-09-24] Página pública com acentos quebrados: causa e trava
 **Sintoma (dono):** "a página está boa, mas com caracteres quebrados".
 **Causa:** o `painel.mjs` gerava um fragmento (sem `<!doctype>`, `<meta charset>` nem `viewport`), herança de quando o painel era só local. O LiteSpeed manda `text/html` sem charset, então o navegador lia o UTF-8 como Windows-1252 e rodava em modo quirks. O teste local não pegava porque o servidor de teste mandava `charset=utf-8`.
