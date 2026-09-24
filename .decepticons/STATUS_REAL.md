@@ -40,4 +40,4 @@
 | Colossus-01, Ferret-X | AUSENTE | |
 | Multiplayer / servidor | AUSENTE | planejado: Colyseus |
 | Controles touch / mobile | AUSENTE | |
-| Site público (jogo + painel) | REAL | https://www.selvamkt.com.br/cybermech/: painel na raiz, jogo em `/jogar/`. Publicado a cada merge na `main` (rsync/SSH). Conferido em produção num Chrome real: painel, Jogar, jogo carregando, sem erros; CSP aplicada; `.wasm` como `application/wasm` e comprimido (735 KB) |
+| Site público (landing + bastidores + jogo) | PARCIAL | Landing e bastidores (o case) testados no Chrome headless e vistos em captura de tela, desktop e celular; em produção só depois deste merge. Capturas do jogo feitas no build (testadas no Windows; no runner do CI, só no primeiro deploy). Antes: https://www.selvamkt.com.br/cybermech/: painel na raiz, jogo em `/jogar/`. Publicado a cada merge na `main` (rsync/SSH). Conferido em produção num Chrome real: painel, Jogar, jogo carregando, sem erros; CSP aplicada; `.wasm` como `application/wasm` e comprimido (735 KB) |

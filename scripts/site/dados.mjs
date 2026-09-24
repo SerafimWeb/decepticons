@@ -1,0 +1,292 @@
+/**
+ * Dados das páginas do site (landing e bastidores). Tudo sai do repositório, nada é digitado à mão:
+ * ROADMAP, ESTADO_ATUAL, GAME_DESIGN, HISTORICO_DE_DECISOES, o código do jogo, o git e (se houver
+ * acesso) a lista de PRs do GitHub. Formato que mudou → a seção some em vez de mentir (R14).
+ */
+import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
+
+const read = (path) => readFileSync(resolve(path), 'utf8').replace(/\r\n/g, '\n');
+
+/** Sem shell: argumentos em lista. Fora de um repositório git (ou comando que falha), devolve vazio. */
+export function git(...args) {
+  try {
+    return execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 32 << 20 }).trim();
+  } catch {
+    return '';
+  }
+}
+
+// ---------- ROADMAP e ESTADO ----------
+
+export function parseRoadmap(md) {
+  const errors = [];
+  const fronts = [];
+  const phases = [];
+  let current = null;
+  md.split(/\r?\n/).forEach((line, i) => {
+    const n = i + 1;
+    const front = /^\|\s*`#([a-z-]+)`\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$/.exec(line);
+    if (front) {
+      fronts.push({ tag: front[1], name: front[2], desc: front[3] });
+      return;
+    }
+    if (line.startsWith('## ')) {
+      const phase = /FASE\s+(\d+)\s+—\s+(.+)$/.exec(line);
+      if (phase) {
+        const focus = /\(atual\)/i.test(phase[2]);
+        const title = phase[2].replace(/\s*\([^)]*\)\s*$/, '').trim();
+        current = { num: Number(phase[1]), title, focus, ideas: false, items: [] };
+        phases.push(current);
+      } else if (/IDEIAS/i.test(line)) {
+        current = { num: null, title: 'Ideias', focus: false, ideas: true, items: [] };
+        phases.push(current);
+      } else {
+        current = null;
+      }
+      return;
+    }
+    const item = /^- \[( |x|~)\]\s+(.+)$/.exec(line);
+    if (!item || !current) return;
+    const tagged = /^(.*?)\s+#([a-z-]+)\s*$/.exec(item[2]);
+    if (!tagged) {
+      errors.push(`linha ${n}: item sem etiqueta de frente: "${item[2].slice(0, 60)}"`);
+      return;
+    }
+    const status = item[1] === 'x' ? 'done' : item[1] === '~' ? 'doing' : 'todo';
+    current.items.push({ status: current.ideas && status === 'todo' ? 'idea' : status, text: tagged[1], tag: tagged[2], line: n });
+  });
+
+  const known = new Set(fronts.map((f) => f.tag));
+  if (fronts.length === 0) errors.push('tabela de FRENTES não encontrada (linhas "| `#etiqueta` | Frente | O que cobre |")');
+  for (const p of phases) {
+    if (p.items.length === 0) errors.push(`${p.ideas ? 'IDEIAS' : `FASE ${p.num}`} sem itens`);
+    for (const it of p.items) if (!known.has(it.tag)) errors.push(`linha ${it.line}: etiqueta #${it.tag} não está na tabela de FRENTES`);
+  }
+  const focused = phases.filter((p) => p.focus);
+  if (focused.length !== 1) errors.push(`precisa de exatamente uma fase com "(atual)"; há ${focused.length}`);
+  if (!phases.some((p) => !p.ideas)) errors.push('nenhuma fase "## … FASE N — Título" encontrada');
+  return { fronts, phases, errors };
+}
+
+export function readRoadmap() {
+  return parseRoadmap(read('.decepticons/ROADMAP.md'));
+}
+
+/** Números do roadmap: estado de cada fase, progresso de cada frente. */
+export function roadmapStats({ fronts, phases }) {
+  const phaseItems = phases.filter((p) => !p.ideas).flatMap((p) => p.items);
+  const done = phaseItems.filter((i) => i.status === 'done').length;
+  const total = phaseItems.length;
+  const ideasCount = phases.filter((p) => p.ideas).flatMap((p) => p.items).length;
+  const focus = phases.find((p) => p.focus);
+  for (const p of phases) {
+    const d = p.items.filter((i) => i.status === 'done').length;
+    p.done = d;
+    p.state = p.ideas ? 'ideas' : d === p.items.length ? 'done' : p.focus ? 'focus' : d === 0 && p.num > focus.num ? 'locked' : 'open';
+  }
+  const next = phases.find((p) => !p.ideas && p.num === focus.num + 1) ?? null;
+  const RANKS = [
+    [1, 'MAXIMIZADO', 'max'],
+    [0.67, 'NOMINAL', 'ok'],
+    [0.34, 'OPERACIONAL', 'op'],
+    [0.01, 'CRÍTICO', 'crit'],
+    [0, 'OFFLINE', 'off'],
+  ];
+  const frontStats = fronts.map((f) => {
+    const items = phases.flatMap((p) => p.items.map((it) => ({ ...it, phase: p })).filter((it) => it.tag === f.tag));
+    const d = items.filter((i) => i.status === 'done').length;
+    const ratio = items.length ? d / items.length : 0;
+    const [, rank, rankClass] = RANKS.find(([min]) => ratio >= min);
+    return { ...f, items, done: d, ratio, rank, rankClass };
+  });
+  return { done, total, ideasCount, focus, next, frontStats, pct: total ? Math.round((done / total) * 100) : 0 };
+}
+
+export function readEstado() {
+  const md = read('.decepticons/ESTADO_ATUAL.md');
+  const section = (title) => {
+    const m = new RegExp(`^## ${title}[^\\n]*\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, 'm').exec(md);
+    return m ? m[1].trim() : '';
+  };
+  const team = [];
+  for (const line of section('DIVISÃO DE TRABALHO').split('\n')) {
+    const row = /^\|\s*\*\*(.+?)\*\*\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/.exec(line);
+    if (row && !/zona/i.test(row[1])) team.push({ name: row[1], role: row[3] });
+  }
+  // "- [ ] **Quem:** tarefa" → pendências por pessoa.
+  const pending = [...section('PENDENTE').matchAll(/^- \[ \] \*\*(.+?):\*\*\s*(.+)$/gm)].map((p) => ({ who: p[1], text: p[2] }));
+  return {
+    next: section('PRÓXIMA SESSÃO'),
+    team,
+    pending,
+    status: /\*\*Iteração atual:\*\*\s*(.+)/.exec(md)?.[1] ?? '',
+  };
+}
+
+// ---------- GAME_DESIGN ----------
+
+function designSection(title) {
+  try {
+    const g = read('.decepticons/GAME_DESIGN.md');
+    return new RegExp(`## ${title}[^\\n]*\\n([\\s\\S]*?)\\n---`).exec(g)?.[1] ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/** O princípio "não é pay-to-win" (fonte única: GAME_DESIGN.md). */
+export function pledge() {
+  return [...designSection('PRINCÍPIO: NÃO É PAY-TO-WIN').matchAll(/^- (.+)$/gm)].map((m) => m[1]);
+}
+
+/** O que o jogador encontra hoje, para a landing: `- **Título:** frase.` na seção VITRINE. */
+export function vitrine() {
+  return [...designSection('VITRINE').matchAll(/^- \*\*(.+?):\*\*\s*(.+)$/gm)].map((m) => ({ title: m[1], text: m[2] }));
+}
+
+// ---------- código do jogo ----------
+
+/** Ficha técnica do Vector-09 lida do código (R14). */
+export function recordSheet() {
+  try {
+    const v = read('client/src/entities/Vector09.ts');
+    const p = read('client/src/combat/ProjectileSystem.ts');
+    const n = (src, key) => Number(new RegExp(`\\b${key}:\\s*([\\d.]+)`).exec(src)?.[1]);
+    const armor = [
+      ['CABEÇA', n(v, 'head')],
+      ['TORSO', n(v, 'torso')],
+      ['BRAÇO E', n(v, 'leftArm')],
+      ['BRAÇO D', n(v, 'rightArm')],
+      ['PERNA E', n(v, 'leftLeg')],
+      ['PERNA D', n(v, 'rightLeg')],
+    ];
+    const s = {
+      name: /name:\s*'([^']+)'/.exec(v)?.[1],
+      speed: n(v, 'moveSpeed'),
+      dash: n(v, 'dashSpeed'),
+      jumps: n(v, 'maxJumps'),
+      fire: n(v, 'fireInterval'),
+      damage: Number(/const DAMAGE = (\d+)/.exec(p)?.[1]),
+      armor,
+    };
+    const nums = [s.speed, s.dash, s.jumps, s.fire, s.damage, ...armor.map((a) => a[1])];
+    return s.name && nums.every((x) => Number.isFinite(x) && x > 0) ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Tamanho do download do jogo (gzip, como o servidor entrega), a partir do build em `gameDir`. */
+export function bundleSize(gameDir) {
+  const assets = join(gameDir, 'assets');
+  if (!existsSync(assets)) return null;
+  let js = 0;
+  let wasm = 0;
+  for (const f of readdirSync(assets)) {
+    const size = () => gzipSync(readFileSync(join(assets, f)), { level: 9 }).length;
+    if (f.endsWith('.js') || f.endsWith('.css')) js += size();
+    else if (f.endsWith('.wasm')) wasm += size();
+  }
+  return { js, wasm, total: js + wasm };
+}
+
+// ---------- história ----------
+
+const agentOf = (branch) => /^(claude|gemini|codex)\//.exec(branch ?? '')?.[1] ?? null;
+const brDate = (iso) => new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+
+/**
+ * PRs mergeados. Do GitHub quando há acesso (`gh`, com GH_TOKEN no CI): título, branch, etiquetas de
+ * frente e agente, linhas mexidas. Sem acesso, do git (título e data; agente só pelo nome do branch).
+ */
+export function entregas() {
+  try {
+    const out = execFileSync(
+      'gh',
+      ['pr', 'list', '--state', 'merged', '--limit', '500', '--json', 'number,title,headRefName,labels,mergedAt,additions,deletions'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000 },
+    );
+    const prs = JSON.parse(out).map((p) => {
+      const labels = p.labels.map((l) => l.name);
+      const agents = labels.filter((l) => l.startsWith('agente:')).map((l) => l.slice(7));
+      return {
+        n: p.number,
+        title: p.title,
+        date: brDate(p.mergedAt),
+        agents: agents.length ? agents : [agentOf(p.headRefName)].filter(Boolean),
+        fronts: labels.filter((l) => l.startsWith('frente:')).map((l) => l.slice(7)),
+        add: p.additions,
+        del: p.deletions,
+      };
+    });
+    return { prs: prs.sort((a, b) => b.n - a.n), fromGithub: true };
+  } catch {
+    const log = git('log', '--merges', '--first-parent', '--format=%cs%x1f%s%x1f%b%x1e');
+    const prs = [];
+    for (const rec of log.split('\x1e')) {
+      const [date, subject = '', body = ''] = rec.trim().split('\x1f');
+      const ours = /PR #(\d+):\s*(.+)$/.exec(subject);
+      const gh = /pull request #(\d+) from [^/]+\/(\S+)/.exec(subject);
+      if (ours) prs.push({ n: Number(ours[1]), title: ours[2], date, agents: [], fronts: [] });
+      else if (gh) prs.push({ n: Number(gh[1]), title: body.split('\n')[0] || gh[2], date, agents: [agentOf(gh[2])].filter(Boolean), fronts: [] });
+    }
+    return { prs, fromGithub: false };
+  }
+}
+
+/** Entradas do cofre de decisões (título e data), da mais nova para a mais antiga. */
+export function diario() {
+  // Assuntos internos de conta e acesso ficam fora da página pública.
+  const INTERNO = /conta do github|mesma conta github/i;
+  return [...read('.decepticons/HISTORICO_DE_DECISOES.md').matchAll(/^## \[(\d{4}-\d{2}-\d{2})\]\s+(.+)$/gm)]
+    .map((m) => ({ date: m[1], title: m[2].trim() }))
+    .filter((e) => !INTERNO.test(e.title));
+}
+
+/**
+ * Evolução do projeto, uma medida por commit da `main` (cada merge é uma entrega): testes automáticos
+ * e linhas de TypeScript do jogo. Lido do git com `git grep` em cada commit, sem checkout.
+ * Precisa do histórico inteiro (no CI: checkout com fetch-depth 0).
+ */
+export function evolucao() {
+  const commits = git('log', '--first-parent', '--reverse', '--format=%H%x09%cs%x09%s', 'HEAD')
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [sha, date, subject] = line.split('\t');
+      const pr = /(?:PR|pull request) #(\d+)/.exec(subject)?.[1];
+      return { sha, date, pr: pr ? Number(pr) : null };
+    });
+  const shas = commits.map((c) => c.sha);
+  // Um `git grep` só para todos os commits (saída "sha:arquivo:contagem"): um processo por commit
+  // levava segundos no Windows.
+  const perCommit = (out) => {
+    const totals = new Map();
+    for (const l of out.split('\n')) {
+      const sha = l.slice(0, 40);
+      totals.set(sha, (totals.get(sha) ?? 0) + (Number(l.slice(l.lastIndexOf(':') + 1)) || 0));
+    }
+    return totals;
+  };
+  const tests = perCommit(git('grep', '-c', '-E', '^[[:space:]]*(it|test)(\\.each\\(.*\\))?\\(', ...shas, '--', '*.test.ts'));
+  const loc = perCommit(git('grep', '-c', '', ...shas, '--', 'client/src/*.ts', 'shared/*.ts', 'server/*.ts', ':!*.test.ts'));
+  return commits.map(({ sha, date, pr }) => ({ date, pr, tests: tests.get(sha) ?? 0, loc: loc.get(sha) ?? 0 }));
+}
+
+/** Versão (última tag), commit atual e dia do projeto. */
+export function marcos() {
+  const first = git('log', '--reverse', '--format=%cs').split('\n')[0] || null;
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+  const day = first ? Math.round((Date.parse(today) - Date.parse(first)) / 86_400_000) + 1 : null;
+  return {
+    version: git('describe', '--tags', '--abbrev=0') || null,
+    head: git('log', '-1', '--format=%h'),
+    headDate: git('log', '-1', '--format=%cs'),
+    first,
+    day,
+    generated: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }),
+  };
+}

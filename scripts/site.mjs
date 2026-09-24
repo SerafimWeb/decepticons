@@ -1,9 +1,14 @@
 /**
- * Site do projeto (público): painel de missão na raiz + jogo em ./jogar/. Destino: DEPLOY.md.
+ * Site do projeto (público). Destino: DEPLOY.md.
+ *   /cybermech/             landing do jogo (scripts/landing.mjs)
+ *   /cybermech/bastidores/  o case do desenvolvimento (scripts/painel.mjs --site)
+ *   /cybermech/jogar/       o jogo (vite build)
+ *   /cybermech/capturas/    imagens do jogo, feitas jogando o build (só com --capturas)
  *
- * Uso: npm run site              → monta .tmp/site/ (G15: nada fora do projeto)
- *      npm run site -- --check   → monta e testa no Chrome headless, servido em /cybermech/
- *                                  com os MESMOS cabeçalhos que o .htaccess aplica no servidor
+ * Uso: npm run site                  → monta .tmp/site/ (G15: nada fora do projeto)
+ *      npm run site -- --capturas    → idem, e antes entra no jogo headless e fotografa (o deploy usa)
+ *      npm run site -- --check       → monta e testa no Chrome headless, servido em /cybermech/
+ *                                      com os MESMOS cabeçalhos que o .htaccess aplica no servidor
  *      node scripts/site.mjs --verify <url> → confere o site publicado (roda no deploy)
  */
 import { spawnSync } from 'node:child_process';
@@ -72,6 +77,7 @@ const TYPES = {
   '.json': 'application/json',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
+  '.jpg': 'image/jpeg',
 };
 
 function run(cmd, args) {
@@ -103,11 +109,14 @@ ${set}
 `;
 }
 
-function build() {
+async function build() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
   run('npx', ['vite', 'build', '--outDir', GAME, '--emptyOutDir', '--logLevel', 'warn']);
-  run('node', ['scripts/painel.mjs', '--site', '--out', join(OUT, 'index.html')]);
+  // As capturas vêm antes das páginas: a landing só mostra as imagens que existirem.
+  if (argv.includes('--capturas')) await capture();
+  run('node', ['scripts/painel.mjs', '--site', '--out', join(OUT, 'bastidores', 'index.html')]);
+  run('node', ['scripts/landing.mjs', '--out', join(OUT, 'index.html')]);
   writeFileSync(join(OUT, '.htaccess'), htaccess());
   writeFileSync(join(GAME, 'assets', '.htaccess'), ASSETS_HTACCESS);
   const wasm = readdirSync(join(GAME, 'assets')).filter((f) => f.endsWith('.wasm'));
@@ -115,7 +124,7 @@ function build() {
     const file = join(GAME, 'assets', w);
     writeFileSync(`${file}.gz`, gzipSync(readFileSync(file), { level: 9 }));
   }
-  console.log(`site    ${OUT}  (painel na raiz, jogo em jogar/, ${wasm.length} .wasm)`);
+  console.log(`site    ${OUT}  (landing na raiz, bastidores/, jogo em jogar/, ${wasm.length} .wasm)`);
 }
 
 /** Servidor estático em /cybermech/ com os cabeçalhos do .htaccess, só para o teste local. */
@@ -134,6 +143,16 @@ function serve(prefix) {
   });
 }
 
+/** Página pública: sem o codinome interno e sem link interno quebrado. */
+async function publicPage(page, name, failures) {
+  if (/decepticons/i.test(await page.evaluate(() => document.documentElement.outerHTML))) failures.push(`${name}: o codinome interno aparece na página pública`);
+  const links = await page.evaluate(() => [...new Set([...document.querySelectorAll('a[href]')].map((a) => a.href).filter((h) => h.startsWith(location.origin)))]);
+  for (const href of links) {
+    const r = await page.request.get(href);
+    if (r.status() >= 400) failures.push(`${name}: link quebrado ${href} (HTTP ${r.status()})`);
+  }
+}
+
 /** Acentos e layout: UTF-8 e modo padrão (sem quirks), mesmo com o servidor mandando text/html sem charset. */
 async function pageSane(page, name, failures) {
   const { charset, mode } = await page.evaluate(() => ({ charset: document.characterSet, mode: document.compatMode }));
@@ -141,53 +160,116 @@ async function pageSane(page, name, failures) {
   if (mode !== 'CSS1Compat') failures.push(`${name}: modo quirks (falta o <!doctype html>)`);
 }
 
-async function check() {
-  const prefix = '/cybermech/';
-  const server = await serve(prefix);
-  const base = `http://127.0.0.1:${server.address().port}${prefix}`;
+/** Chrome/Edge do sistema (headless, WebGL por software). Temporários do browser em .tmp/ (G15). */
+async function launchBrowser() {
   const tmp = resolve('.tmp/site-check');
   mkdirSync(tmp, { recursive: true });
   process.env.TEMP = process.env.TMP = process.env.TMPDIR = tmp;
   const { chromium } = await import('playwright-core');
-  const failures = [];
-  let browser;
   for (const channel of ['chrome', 'msedge', undefined]) {
     try {
-      browser = await chromium.launch({ channel, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
-      break;
+      return await chromium.launch({ channel, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
     } catch {
       // tenta o próximo
     }
   }
+  throw new Error('nenhum browser encontrado (Chrome ou Edge)');
+}
+
+const CTA_READY = () => document.getElementById('cta')?.textContent === '[ clique para jogar ]';
+
+/**
+ * Entra no jogo headless e fotografa as três câmeras para a landing e a prévia do link. Custo: ~30 s
+ * de build, só no deploy. Falhar aqui não derruba o site: a landing sai sem imagens e o log avisa.
+ */
+async function capture() {
+  const dir = join(OUT, 'capturas');
+  mkdirSync(dir, { recursive: true });
+  const prefix = '/cybermech/';
+  const server = await serve(prefix);
+  let browser;
   try {
-    if (!browser) throw new Error('nenhum browser encontrado');
+    browser = await launchBrowser();
+    const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    await page.goto(`http://127.0.0.1:${server.address().port}${prefix}jogar/`);
+    // Sem o painel de desempenho no canto da foto.
+    await page.evaluate(() => localStorage.setItem('cybermech.settings.v1', JSON.stringify({ showPerf: false })));
+    await page.reload();
+    await page.waitForFunction(CTA_READY, null, { timeout: 60_000 });
+    // Clique no título (não nos botões da pausa) = começa a partida com o mouse preso.
+    const title = await page.locator('#overlay h1').boundingBox();
+    await page.mouse.click(title.x + title.width / 2, title.y + title.height / 2);
+    const shot = (name) => page.screenshot({ path: join(dir, name), type: 'jpeg', quality: 80 });
+    // Anda um pouco e troca tiros até os bots chegarem.
+    await page.keyboard.down('KeyW');
+    await page.waitForTimeout(1500);
+    await page.keyboard.up('KeyW');
+    for (let i = 0; i < 6; i++) {
+      await page.mouse.move(640 + (i % 2 ? 60 : -60), 360);
+      await page.mouse.down();
+      await page.waitForTimeout(400);
+      await page.mouse.up();
+      await page.waitForTimeout(900);
+    }
+    await page.mouse.down();
+    await page.waitForTimeout(300);
+    await shot('capa.jpg');
+    await page.mouse.up();
+    await page.keyboard.press('KeyV');
+    await page.waitForTimeout(1200);
+    await page.mouse.down();
+    await page.waitForTimeout(350);
+    await shot('primeira-pessoa.jpg');
+    await page.mouse.up();
+    await page.keyboard.press('KeyV');
+    await page.waitForTimeout(2500);
+    await shot('tatica.jpg');
+    console.log(`capturas ${readdirSync(dir).join(', ')}`);
+  } catch (err) {
+    rmSync(dir, { recursive: true, force: true });
+    console.warn(`::warning::capturas do jogo falharam (a landing sai sem imagens): ${err instanceof Error ? err.message : err}`);
+  } finally {
+    await browser?.close();
+    server.close();
+  }
+}
+
+async function check() {
+  const prefix = '/cybermech/';
+  const server = await serve(prefix);
+  const base = `http://127.0.0.1:${server.address().port}${prefix}`;
+  const failures = [];
+  let browser;
+  try {
+    browser = await launchBrowser();
     const page = await browser.newPage();
     // Falha de fonte do Google (rede) não é erro nosso; violação de CSP e erro de script são.
     page.on('console', (m) => m.type() === 'error' && !/fonts\.g/.test(m.text()) && failures.push(`console: ${m.text()}`));
     page.on('pageerror', (e) => failures.push(`pageerror: ${e.message}`));
     page.on('response', (r) => r.status() >= 400 && !/fonts.g/.test(r.url()) && failures.push(`HTTP ${r.status()}: ${r.url()}`));
+    // Bastidores: página própria, links internos vivos, sem o codinome.
+    await page.goto(`${base}bastidores/`);
+    if ((await page.title()) !== 'Bastidores · Cyber-Mech Protocol') failures.push(`título dos bastidores: "${await page.title()}"`);
+    await pageSane(page, 'bastidores', failures);
+    await publicPage(page, 'bastidores', failures);
+    // Landing na raiz: é por ela que se entra no jogo.
     await page.goto(base);
     const title = await page.title();
     if (title !== 'Cyber-Mech Protocol') failures.push(`título da raiz: "${title}"`);
-    await pageSane(page, 'painel', failures);
-    // O codinome interno não aparece em material público.
-    if (/decepticons/i.test(await page.evaluate(() => document.documentElement.outerHTML))) failures.push('painel: o codinome interno aparece na página pública');
+    await pageSane(page, 'landing', failures);
+    await publicPage(page, 'landing', failures);
     await page.click('a.play-btn');
     await page.waitForURL(`${base}jogar/`);
-    await page.waitForFunction(() => document.getElementById('cta')?.textContent === '[ clique para jogar ]', null, {
-      timeout: 60_000,
-    });
+    await page.waitForFunction(CTA_READY, null, { timeout: 60_000 });
     await pageSane(page, 'jogo', failures);
     // Configurações salvas no navegador são lidas e aplicadas na largada (contrato core/Settings.ts).
     await page.evaluate(() => localStorage.setItem('cybermech.settings.v1', JSON.stringify({ showPerf: false })));
     await page.reload();
-    await page.waitForFunction(() => document.getElementById('cta')?.textContent === '[ clique para jogar ]', null, {
-      timeout: 60_000,
-    });
+    await page.waitForFunction(CTA_READY, null, { timeout: 60_000 });
     if (!(await page.evaluate(() => document.getElementById('debug-panel')?.hidden))) {
       failures.push('configuração salva (showPerf: false) não foi aplicada');
     }
-    console.log(`site    ok: painel em ${prefix}, "Jogar" abre ${prefix}jogar/, física e loop sobem com a CSP, configurações salvas valem`);
+    console.log(`site    ok: landing em ${prefix}, bastidores/, "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos`);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {
@@ -219,11 +301,15 @@ async function verify(url) {
   };
   const home = await get(root);
   const homeText = await home.text();
-  if (!homeText.includes('Cyber-Mech Protocol')) failures.push(`${root}: não é o painel`);
+  if (!homeText.includes('ENTRAR NO COCKPIT')) failures.push(`${root}: não é a landing do jogo`);
   if (!/^<!doctype html>/i.test(homeText) || !/<meta charset="utf-8">/i.test(homeText.slice(0, 1024))) failures.push(`${root}: sem doctype ou <meta charset> no início (acentos quebram)`);
   if (!/utf-8/i.test(home.headers.get('content-type') ?? '')) console.warn(`::warning::${root}: servidor sem charset no Content-Type (a página declara o seu)`);
   if (!home.headers.get('content-security-policy')?.includes('wasm-unsafe-eval')) failures.push(`${root}: sem a CSP do .htaccess`);
   // O selvamkt.com.br responde 200 com uma página HTML para arquivo inexistente: status não basta.
+  const behind = await get(`${root}bastidores/`);
+  if (!(await behind.text()).includes('BASTIDORES')) failures.push(`${root}bastidores/: não é a página de bastidores`);
+  const cover = await get(`${root}capturas/capa.jpg`, 'HEAD');
+  if (!(cover.headers.get('content-type') ?? '').startsWith('image/')) console.warn(`::warning::${root}capturas/capa.jpg não é imagem: a landing está sem capturas`);
   const game = await get(`${root}jogar/`);
   if (!(await game.text()).includes('id="cta"')) failures.push(`${root}jogar/: não é a página do jogo`);
   const wasm = readdirSync(join(GAME, 'assets')).find((f) => f.endsWith('.wasm'));
@@ -244,6 +330,6 @@ async function verify(url) {
 if (argv.includes('--verify')) {
   await verify(argv[argv.indexOf('--verify') + 1]);
 } else {
-  build();
+  await build();
   if (argv.includes('--check')) await check();
 }

@@ -2,6 +2,19 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Landing do jogo, bastidores como case e capturas automáticas
+**Pedido do dono:** melhorar a página e "virar um case de desenvolvimento do game". Escolhas dele: **jogo + bastidores** e **bastidores às claras**.
+**O que foi feito:**
+- `/cybermech/` vira landing para jogador (`scripts/landing.mjs`). `/cybermech/bastidores/` vira o case (`scripts/painel.mjs`).
+- Os dados das páginas ficam num módulo só (`scripts/site/dados.mjs`) e o visual num tema comum (`scripts/site/tema.mjs`).
+- Nada na página é digitado à mão: destaques da seção VITRINE do `GAME_DESIGN`, entregas e autoria das etiquetas dos PRs, evolução por `git grep` em cada merge, diário dos títulos do HISTORICO. O `--check` reprova a VITRINE vazia.
+- **Capturas automáticas:** o deploy entra no jogo headless (SwiftShader), clica no título da pausa (não nos botões), anda, atira e fotografa as três câmeras. JPEG de ~60 KB cada. Viram capa, galeria e og:image. Falha não derruba o site (a landing sai sem imagens e o log avisa), para uma foto não segurar uma entrega.
+**Por que capturar no deploy e não versionar imagens:** a imagem nunca fica velha e não pesa no repositório. O `--check` fica rápido (as capturas custam ~30 s, só no deploy).
+**Gráfico:** dois gráficos de uma série (testes; linhas), nunca dois eixos. Degraus, porque o valor muda a cada entrega. Dica ao passar o mouse e tabela para quem não enxerga o gráfico.
+**Público vs. interno:** os bastidores publicam títulos do HISTORICO (menos os de conta e acesso), divisão de trabalho e pendências do ESTADO, ROADMAP e números. Nunca secrets nem dados do servidor (DEPLOY.md).
+**GAME_DESIGN:** a plataforma passa a "desktop primeiro; celular em construção", porque o dono pediu a versão para celular ao Gemini. O toque gera o mesmo `MechInput`.
+**Quem decidiu:** dono (páginas, bastidores às claras); Claude (desenho, capturas, fontes de dados).
+
 ## [2026-09-24] Planejamento reorganizado, gestão no GitHub e o site como case
 **Pedido do dono:** "reorganizar o planejamento; melhorar a página /cybermech/; implementar as melhores ferramentas de gestão e criação, para virar um case de desenvolvimento do game".
 **Escolhas do dono (perguntadas):**
