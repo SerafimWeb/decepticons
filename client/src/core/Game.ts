@@ -247,6 +247,7 @@ export class Game {
     this.player.keys = s.keys;
     this.bots.setSkill(BOT_SKILLS[s.difficulty]);
     this.debugPanel.setVisible(s.showPerf);
+    this.audio.setVolume(s.volume);
     if (s.quality !== this.appliedQuality) {
       this.appliedQuality = s.quality;
       // 'auto' começa no máximo e deixa a qualidade adaptativa rebaixar (G12); os outros fixam.

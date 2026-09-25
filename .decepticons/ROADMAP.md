@@ -66,7 +66,7 @@
 
 ## 🟡 FASE 3 — Vitrine e polimento (atual)
 - [x] Efeitos sonoros: tiro, impacto, passos pesados, explosão (sintetizados, sem arquivos pesados) #som
-- [ ] Volume e mixagem nas configurações #som
+- [x] Volume e mixagem nas configurações #som
 - [~] Controles de toque e layout para celular (Gemini no PR #17, refeito pelo Claude; o check joga num celular emulado; falta o dono confirmar num celular real) #ux
 - [x] Kill feed e indicador de direção do dano (Gemini; integrado e corrigido pelo Claude) #ux
 - [x] Celular: mira assistida só no toque (freia perto do inimigo, puxa de leve, acompanha e antecipa o movimento dele) e tiro automático, desligáveis nas configurações #jogabilidade

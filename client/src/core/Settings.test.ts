@@ -40,10 +40,11 @@ describe('Settings', () => {
   });
 
   it('dado corrompido ou editado à mão vira valor válido, campo a campo', () => {
-    const s = new Settings(memoryStorage('{"sensitivity": 999, "fovOffset": "x", "quality": "ultra", "invertY": true, "keys": {"jump": "Escape", "dash": "ShiftRight", "left": "<script>"}}'));
+    const s = new Settings(memoryStorage('{"sensitivity": 999, "fovOffset": "x", "quality": "ultra", "volume": 2, "invertY": true, "keys": {"jump": "Escape", "dash": "ShiftRight", "left": "<script>"}}'));
     expect(s.value.sensitivity).toBe(LIMITS.sensitivity.max); // limitado ao máximo
     expect(s.value.fovOffset).toBe(0); // tipo errado → padrão
     expect(s.value.quality).toBe('auto'); // valor desconhecido → padrão
+    expect(s.value.volume).toBe(LIMITS.volume.max); // volume limitado a 1
     expect(s.value.invertY).toBe(true); // campo válido é mantido
     expect(s.value.keys.jump).toBe('Space'); // tecla do sistema não pode
     expect(s.value.keys.dash).toBe('Shift'); // os dois Shifts valem
