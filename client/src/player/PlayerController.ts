@@ -123,7 +123,7 @@ export class PlayerController {
     if (_dir.subVectors(_to, _muzzle).dot(_fwd) < 3) _to.copy(_muzzle).addScaledVector(_fwd, AIM_RANGE);
     _dir.subVectors(_to, _muzzle).normalize();
 
-    this.projectiles.fire(_muzzle, _dir, mech.collider);
+    this.projectiles.fire(_muzzle, _dir, mech.collider, false, mech.stats.weaponDamage);
     this.particles.burst(_muzzle, _dir, { count: 10, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
     mech.onFire();
   }

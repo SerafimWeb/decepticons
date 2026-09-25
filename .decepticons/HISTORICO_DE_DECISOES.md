@@ -2,6 +2,21 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Tema "IAs rebeldes" e escala 1: andróides
+**Pedido do dono:** "o tema é que temos que defender contra IAs rebeldes; pensar na escala dos robôs. Esse que você começou pode ser a escala 2; criar os proporcionais aos robôs autônomos de hoje (humanoides, quadrúpedes) como NPCs com IA. São pequenos, mas mais ágeis que os grandes. Esses seriam o perfil 1 de tamanho."
+**Decisão (Claude):**
+- **Escalas:** 1 = robôs autônomos (~2 m); 2 = Mechs (~5 m, o Vector-09); 3 = máquinas de cerco, no futuro. Registrado no GAME_DESIGN ("TEMA E ESCALAS").
+- **Primeiro da escala 1: andróide rebelde** (`entities/Android.ts`), um humanoide gerado por código, sem copiar nenhuma marca real.
+  - Frágil: 70 de torso, cai com 3 tiros de plasma.
+  - Tiro fraco: 9 contra 25 do Mech.
+  - Ágil: arrancada de 120 m/s² contra 70 do Mech, pulo duplo, dash a cada 1,4 s.
+- **IA:** a mesma do Mech (BotController), com um **perfil de luta** por tipo (`BotProfile`). O Mech ataca a 38 m e anda de lado devagar. O andróide chega a 22 m, troca de lado a cada 0,35–0,9 s e desvia com dash em 35% das trocas. O sorteio do desvio só acontece para quem tem a chance, e os Mechs continuam com a mesma sequência de antes (determinismo e testes preservados).
+- **Dano por arma:** `MechStats.weaponDamage`. Cada tiro leva o dano de quem atirou, e a ficha da landing lê daí.
+- **Arena:** 3 Mechs + 3 andróides + o jogador. Teto: 7 character controllers.
+**Custo de CPU:** +3 character controllers e +3 cérebros de IA por tick; ~16 draw calls por andróide (o Mech tem ~34). Dentro da meta de 8 por sala (G11).
+**Próximo:** quadrúpede (cão-robô) na escala 1; afinar a animação de passo do andróide, que hoje herda a do Mech.
+**Quem decidiu:** dono (tema, escalas, pedido); Claude (números e IA, a calibrar no playtest).
+
 ## [2026-09-25] CYBERMECH; paleta neon multicolorida
 **Pedido do dono:** "mude o nome para CYBERMECH apenas, sem protocol" e "quero verde neon, vermelho, pode usar diversas cores, só não fica apenas em azul e roxo".
 **Nome:** CYBERMECH no jogo (título e pausa), no site (landing, bastidores, prévia do link), nos documentos e no `package.json`. O caminho `/cybermech/` já servia. O codinome interno continua o do repositório. "Protocolo Serafim UM" não muda: é o protocolo de engenharia, não o jogo.

@@ -74,6 +74,7 @@
 - [x] Calibragem do Vector-09: menos velocidade (12 m/s) e calor na arma (superaquece e trava; rajadas rendem mais que segurar o gatilho), para jogador e bots #combate
 - [x] Paleta neon multicolorida no jogo (verde neon, vermelho, laranja, amarelo; nunca só azul e roxo): jogador amarelo com visor verde, IAs rebeldes vermelhas #cenarios
 - [x] Nome do jogo: CYBERMECH (sem o "Protocol") #negocio
+- [x] Tema "defender contra IAs rebeldes" e escalas de robô; escala 1: andróide rebelde (~2 m), ágil e frágil, com IA de bando (3 na arena) #ia
 - [x] Vibração no celular ao levar tiro e ao abater #ux
 - [x] Botões do toque em arco em volta do polegar (FOGO para dentro da tela) e editor para arrastar e mudar o tamanho, salvo no aparelho #ux
 - [~] Ajuste fino da mira no celular com o playtest do dono: velocidade do dedo suavizada; a ajuda solta o alvo quando o jogador puxa para longe #jogabilidade
@@ -112,6 +113,7 @@
 - [ ] Pilotos com personalidade: agressivo, franco-atirador, cauteloso #ia
 - [ ] Bots contra bots no modo todos contra todos #ia
 - [ ] Bots com foguetes na dificuldade difícil #ia
+- [ ] Escala 1, segundo tipo: quadrúpede rebelde (cão-robô), mais rápido e mais baixo #mechs
 - [ ] Hangar: montar o próprio Mech (chassi, arma de cada braço, módulos), peças geradas por código e equilibradas, sem pay-to-win (prioridade do dono) #mechs
 - [ ] Parte avariada solta faísca e fumaça antes de cair #mechs
 - [ ] Pintura e decalques por jogador (base dos cosméticos) #mechs

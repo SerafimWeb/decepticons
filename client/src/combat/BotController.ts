@@ -43,8 +43,22 @@ const VISION_HALF_ANGLE = 1.9;
 const HEARING_RADIUS = 14;
 /** Linha de visão a 10 Hz, não a cada tick: 1 raio por alvo a cada 0,1 s. */
 const LOS_INTERVAL_S = 0.1;
-const ATTACK_RANGE = 38;
-const KEEP_MIN_RANGE = 14;
+/**
+ * Jeito de lutar de cada tipo de robô (além da dificuldade): a que distância ataca, quão perto aceita
+ * ficar, de quanto em quanto tempo muda o lado do zigue-zague e a chance de desviar com dash ao mudar.
+ */
+export interface BotProfile {
+  attackRange: number;
+  keepMinRange: number;
+  strafeMinS: number;
+  strafeMaxS: number;
+  dodgeChance: number;
+}
+
+/** Mech (escala 2): ataca de longe, anda de lado devagar, não desvia com dash. */
+export const MECH_PROFILE: BotProfile = { attackRange: 38, keepMinRange: 14, strafeMinS: 1, strafeMaxS: 2.2, dodgeChance: 0 };
+/** Andróide (escala 1): chega perto, muda de lado a toda hora e desvia com dash. Difícil de acertar. */
+export const ANDROID_PROFILE: BotProfile = { attackRange: 22, keepMinRange: 7, strafeMinS: 0.35, strafeMaxS: 0.9, dodgeChance: 0.35 };
 const FIRE_RANGE = 75;
 /** Só atira com o torso apontado para o alvo dentro deste ângulo. */
 const FIRE_CONE_RAD = 0.12;
@@ -53,8 +67,6 @@ const WAYPOINT_REACHED = 4;
 const RETREAT_TORSO_FRACTION = 0.35;
 const RETREAT_S = 3;
 const RETREAT_COOLDOWN_S = 8;
-const STRAFE_MIN_S = 1;
-const STRAFE_MAX_S = 2.2;
 const STUCK_CHECK_S = 0.5;
 const STUCK_DIST = 0.8;
 const SIDESTEP_S = 0.8;
@@ -123,6 +135,7 @@ export class BotController {
     seed: number,
     /** Pode mudar no meio da partida (tela de configurações): vale a partir do próximo tick. */
     public skill: BotSkill = BOT_SKILL_NORMAL,
+    readonly profile: BotProfile = MECH_PROFILE,
   ) {
     this.rand = mulberry32(seed);
     this.yaw = mech.yaw;
@@ -260,7 +273,7 @@ export class BotController {
         break;
       case 'chase':
         if (!this.target) this.state = 'patrol';
-        else if (reacted && dist <= ATTACK_RANGE) this.state = 'attack';
+        else if (reacted && dist <= this.profile.attackRange) this.state = 'attack';
         else if (this.sinceSeen > LOSE_TARGET_S && this.flatDistance(this.lastSeen) < WAYPOINT_REACHED) {
           // Chegou onde viu o alvo pela última vez e ele não está lá: desiste.
           this.target = null;
@@ -268,7 +281,7 @@ export class BotController {
         }
         break;
       case 'attack':
-        if (!this.targetVisible || dist > ATTACK_RANGE + 8) this.state = 'chase';
+        if (!this.targetVisible || dist > this.profile.attackRange + 8) this.state = 'chase';
         break;
       case 'retreat':
         this.retreatTimer -= dt;
@@ -308,12 +321,15 @@ export class BotController {
         faceYaw = this.yawTo(t);
         this.strafeTimer -= dt;
         if (this.strafeTimer <= 0) {
+          const p = this.profile;
           this.strafeSign = this.rand() < 0.5 ? -1 : 1;
-          this.strafeTimer = STRAFE_MIN_S + this.rand() * (STRAFE_MAX_S - STRAFE_MIN_S);
+          this.strafeTimer = p.strafeMinS + this.rand() * (p.strafeMaxS - p.strafeMinS);
+          // Desvio com dash para o lado novo. Só quem tem a chance sorteia (o RNG dos Mechs não muda).
+          if (p.dodgeChance > 0 && this.rand() < p.dodgeChance && this.mech.mobility > 0) this.input.dash = true;
         }
         // Anda de lado (direita do torso = (cos, -sin)) e recua (trás = (sin, cos)) se estiver perto demais.
         _move.set(Math.cos(faceYaw) * this.strafeSign, 0, -Math.sin(faceYaw) * this.strafeSign);
-        if (this.flatDistance(t) < KEEP_MIN_RANGE) {
+        if (this.flatDistance(t) < this.profile.keepMinRange) {
           _move.x += Math.sin(faceYaw);
           _move.z += Math.cos(faceYaw);
         }

@@ -64,7 +64,8 @@ export class ProjectileSystem {
   }
 
   /** `hostile`: plasma inimigo, em vermelho, para o jogador distinguir os tiros que vêm contra ele. */
-  fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, hostile = false): void {
+  /** `damage`: dano deste tiro (vem da arma de quem atira: MechStats.weaponDamage). */
+  fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, hostile = false, damage = DAMAGE): void {
     const p = this.pool.find((q) => q.life <= 0);
     if (!p) return;
     p.pos.copy(origin);
@@ -72,6 +73,7 @@ export class ProjectileSystem {
     p.velocity.copy(dir).multiplyScalar(PROJECTILE_SPEED);
     p.life = LIFETIME;
     p.owner = owner;
+    p.damage = damage;
     p.mesh.position.copy(origin);
     p.mesh.lookAt(_look.copy(origin).add(dir));
     p.mesh.material = hostile ? this.hostileMat : this.friendlyMat;

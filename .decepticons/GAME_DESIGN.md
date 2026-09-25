@@ -16,6 +16,22 @@ Toda prioridade de feature passa por aqui.
 
 ---
 
+## TEMA E ESCALAS (decisão do dono, 2026-09-25)
+
+**Tema:** IAs se rebelaram. A humanidade pilota Mechs para defender a cidade contra as máquinas rebeldes,
+do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
+
+| Escala | O que é | Hoje no jogo | Como luta |
+|---|---|---|---|
+| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~2 m) | **Andróide rebelde** (A-01, A-02…): casco branco, visor vermelho, blaster no antebraço | Pequeno, frágil (3 tiros de plasma), tiro fraco, mas **muito ágil**: arranca na hora, pula duas vezes, desvia com dash; chega perto e zigue-zagueia |
+| **2** | Mechs de combate (~5 m) | **Vector-09** (o jogador) e Mechs rebeldes (KESTREL, MAKO, VIPER) | Blindado, dano por parte, calor na arma, foguetes |
+| **3** | Máquinas de cerco (futuro) | ainda não | a definir (Colossus-01) |
+
+- O visual segue a regra da produção: tudo gerado por código. Nada de marca real: os robôs lembram os de hoje sem copiar nenhum.
+- Próximo na escala 1: um quadrúpede (cão-robô), mais rápido e mais baixo, que obriga a mirar para baixo.
+
+---
+
 ## VITRINE (o que a landing mostra ao jogador)
 
 > A landing do site (`/cybermech/`) lê esta lista. Só entra o que está REAL no `STATUS_REAL.md`: feature nova no ar
@@ -30,6 +46,7 @@ Toda prioridade de feature passa por aqui.
 - **Mira do seu jeito:** calibração pelo movimento real do mouse, entrada crua e teclas remapeáveis.
 - **Som feito na hora:** efeitos sintetizados pelo próprio navegador, sem arquivos pesados para baixar.
 - **Foguetes no braço esquerdo:** quatro no carregador e dano em área; exploda no pé do inimigo para arrancar a perna.
+- **IAs rebeldes de dois tamanhos:** Mechs blindados e andróides pequenos e ágeis que chegam perto, pulam e desviam.
 
 ---
 
