@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Setas de inimigos fora da tela (Gemini):** Indicadores visuais na borda da tela (vermelho para Mechs, menor para andróides, amarelo e piscando para técnicos), criados com pool de elementos sem alocação por quadro (`OffscreenIndicators.ts`).
 - **Armas calibradas e o Hangar em projeto (Claude; dono: "3 níveis de poder em cada arma; dano realista, sem apelação; começar a projetar o HANGAR"):**
   - Arsenal em dados (`combat/weapons.ts`) com MK I, II e III na mesma regra; poder custa carga (dano por tonelada cai a cada nível).
   - Dano recalibrado com metas travadas por 15 testes: plasma MK I derruba um Vector-09 em ~6 s de acerto perfeito (antes ~2 s); nenhum combo abaixo de 2,5 s. Plasma perde força depois de 60 m.
@@ -80,7 +81,6 @@
 
 ## PENDENTE
 - [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
-- [ ] **Gemini:** Próxima tarefa: setas-inimigos (ui/OffscreenIndicators.ts). Seta vermelha na borda da tela para inimigos fora da visão. Um PR por tarefa, a partir da `main` atualizada.
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
 - [ ] **Dono:** jogar com as armas novas (menos dano, calor compartilhado com os foguetes) e dizer se a luta ficou lenta ou rápida demais; decidir as perguntas do fim do `HANGAR.md`
 - [ ] **Dono:** ouvir a vinheta da marca no jogo (som, volume, duração) e ver a abertura da landing (numa aba anônima ela roda de novo)

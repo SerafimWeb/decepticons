@@ -93,7 +93,7 @@
 - [ ] Hangar: contrato da montagem (`LoadoutSpec` + `validateLoadout`, carga por chassi), com testes #mechs
 - [ ] Hangar: tela para montar o Mech (arma e nível em cada braço, barras de carga e calor), salva no aparelho (Gemini) #ux
 - [ ] Segundo chassi para o Hangar ter escolha de verdade #mechs
-- [ ] Setas de inimigos fora da tela (Gemini) #ux
+- [x] Setas de inimigos fora da tela (Gemini) #ux
 - [ ] Abertura da rodada ("RODADA 1 · 3·2·1 · COMBATE!") com locução sintetizada (Gemini) #ux
 - [ ] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) #ux
 - [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux

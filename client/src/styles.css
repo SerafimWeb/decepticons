@@ -199,6 +199,39 @@ html, body {
 
 /* Marcador de acerto: um X em volta da mira (branco; magenta quando arranca uma parte). */
 #hitmarker {
+
+/* Indicadores de inimigos fora da tela (ui/OffscreenIndicators.ts) */
+#offscreen-indicators {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.offscreen-indicator {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-left: 18px solid var(--alert);
+  filter: drop-shadow(0 0 6px var(--alert));
+  opacity: 0.8;
+  margin-top: -10px;
+  margin-left: -9px;
+}
+.offscreen-indicator.android {
+  border-top-width: 6px;
+  border-bottom-width: 6px;
+  border-left-width: 12px;
+  margin-top: -6px;
+  margin-left: -6px;
+}
+.offscreen-indicator.technician {
+  border-left-color: var(--warn);
+  filter: drop-shadow(0 0 8px var(--warn));
+  animation: blink 1s steps(2) infinite;
+}
   --hit: #ffffff;
   position: absolute;
   left: 50%;

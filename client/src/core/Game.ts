@@ -28,6 +28,7 @@ import { HUD } from '../ui/HUD';
 import { KillFeed } from '../ui/KillFeed';
 import { MouseCalibration } from '../ui/MouseCalibration';
 import { Onboarding } from '../ui/Onboarding';
+import { OffscreenIndicators } from '../ui/OffscreenIndicators';
 import { RoundHud } from '../ui/RoundHud';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { InputManager } from './InputManager';
@@ -98,6 +99,7 @@ export class Game {
   private readonly audio = new AudioSystem();
   /** Vinheta da SERAFIM WEB antes da primeira partida da sessão. */
   private readonly splash = new BrandSplash();
+  private readonly offscreenIndicators = new OffscreenIndicators();
   private brandShown = false;
   private readonly onboarding = new Onboarding();
   /** Nó de gain do loop de chiado do Blind Mode; null = som não está tocando. */
@@ -564,6 +566,7 @@ export class Game {
     this.hud.setRockets(this.player.launcher.ammo, this.player.launcher.reloadProgress, this.mech.canFireSecondary);
     this.hud.setHeat(this.mech.heat, this.mech.overheated);
     this.touch.setOverheated(this.mech.overheated);
+    this.offscreenIndicators.update(this.camera, this.bots, this.mech);
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
     this.renderer.info.reset();
     this.composer.render(dt);

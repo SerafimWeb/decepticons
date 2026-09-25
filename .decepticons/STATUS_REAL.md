@@ -18,6 +18,7 @@
 | Destroços físicos | REAL | só cosméticos: o Mech e o tiro passam por eles (o Mech ainda os empurra). Teto de 240, os mais antigos saem primeiro. |
 | Partículas, bloom, camera shake | REAL | |
 | HUD (VEL, DEBRIS, barra de dash, modo de câmera) | REAL | F1 esconde o HUD (Gemini). Confirmar jogando que o F1 não abre a Ajuda do navegador. |
+| Setas de inimigos fora da tela | REAL | Seta vermelha indicando Mechs fora da visão, seta amarela para técnicos. Zero alocação por quadro no pool. |
 | Painel de desempenho (FPS, tempo de tick, draw calls) | REAL | Compacto sempre no canto. A tecla `'` abre o detalhado: qualidade adaptativa, triângulos, geometrias, texturas, shaders, heap do JS (só no Chrome), no estilo de terminal do design system Serafim. Funciona no ABNT2 e no US; o smoke testa as duas teclas e o total de draw calls |
 | Qualidade adaptativa (G12) | PARCIAL | Gemini; corrigida e com testes, mas ainda não medida numa GPU integrada de verdade |
 | Arena | REAL | 1 mapa: 3 prédios, plataforma com rampa, skyline |
