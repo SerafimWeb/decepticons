@@ -110,6 +110,26 @@ html, body {
 }
 #rockets.off { opacity: 0.3; }
 
+/* Calor da arma (ui/HUD.setHeat): enche a cada tiro; vermelho perto do limite; superaquecida, pisca. */
+#heat {
+  position: absolute;
+  bottom: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: #999;
+}
+#heat .bar { width: 180px; height: 6px; border: 1px solid #444; }
+#heat .fill { height: 100%; background: var(--hot); transform-origin: left; transform: scaleX(0); }
+#heat.high { color: var(--alert); }
+#heat.high .fill { background: var(--alert); box-shadow: 0 0 8px var(--alert); }
+#heat.over { color: var(--alert); animation: blink 0.4s steps(2) infinite; }
+.tc-fire.over { border-color: var(--alert); background: rgba(255, 45, 61, 0.25); font-size: 12px; }
+
 /* Mira acesa: um inimigo vivo está sob ela (ui/HUD.setOnTarget). */
 #crosshair.on-target {
   border-color: var(--alert);
@@ -768,6 +788,8 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   #mode { font-size: 11px; }
   #dash { bottom: 10px; font-size: 11px; }
   #rockets { bottom: 28px; font-size: 10px; }
+  #heat { bottom: 46px; font-size: 10px; }
+  #heat .bar { width: 110px; }
   #dash .bar { width: 110px; }
 }
 /* --- Kill Feed --- */

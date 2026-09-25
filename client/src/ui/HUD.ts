@@ -80,6 +80,26 @@ export class HUD {
     });
   }
 
+  private readonly heatBox = document.getElementById('heat')!;
+  private readonly heatFill = document.getElementById('heat-fill')!;
+  private readonly heatLabel = this.heatBox.querySelector('.label')!;
+  private shownHeat = -1;
+  private shownOverheat = false;
+
+  /** Calor da arma: barra que enche, vermelha perto do limite; superaquecida, pisca. Só escreve no DOM quando muda. */
+  setHeat(heat: number, overheated: boolean): void {
+    const h = Math.round(heat * 50) / 50;
+    if (h === this.shownHeat && overheated === this.shownOverheat) return;
+    this.shownHeat = h;
+    this.heatFill.style.transform = `scaleX(${h})`;
+    this.heatBox.classList.toggle('high', h >= 0.7);
+    if (overheated !== this.shownOverheat) {
+      this.heatBox.classList.toggle('over', overheated);
+      this.heatLabel.textContent = overheated ? 'SUPERAQUECIDO' : 'CALOR';
+    }
+    this.shownOverheat = overheated;
+  }
+
   /** Mira acesa: um inimigo vivo está sob ela. */
   setOnTarget(on: boolean): void {
     this.crosshair.classList.toggle('on-target', on);

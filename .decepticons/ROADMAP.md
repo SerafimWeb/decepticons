@@ -71,6 +71,7 @@
 - [x] Kill feed e indicador de direção do dano (Gemini; integrado e corrigido pelo Claude) #ux
 - [x] Celular: mira assistida só no toque (freia perto do inimigo, puxa de leve, acompanha e antecipa o movimento dele) e tiro automático, desligáveis nas configurações #jogabilidade
 - [x] Mira que acende sobre um inimigo (toque e mouse) #ux
+- [x] Calibragem do Vector-09: menos velocidade (12 m/s) e calor na arma (superaquece e trava; rajadas rendem mais que segurar o gatilho), para jogador e bots #combate
 - [x] Paleta âmbar industrial no jogo e no site (sem azul e roxo): inimigos verde-oliva com visor vermelho, tiros inimigos vermelhos #cenarios
 - [x] Vibração no celular ao levar tiro e ao abater #ux
 - [x] Botões do toque em arco em volta do polegar (FOGO para dentro da tela) e editor para arrastar e mudar o tamanho, salvo no aparelho #ux

@@ -86,10 +86,12 @@ describe('MechBase: movimento', () => {
 
   it('sobe e desce a rampa sem sair do chão', async () => {
     const west = Math.PI / 2; // moveYaw que aponta para -X
-    const up = await simulate(new THREE.Vector3(-15, 0, 35), input(west), 150);
+    // Tempo proporcional à velocidade do Mech (a calibragem muda a velocidade, não a rampa).
+    const k = 16 / SPEED;
+    const up = await simulate(new THREE.Vector3(-15, 0, 35), input(west), Math.ceil(150 * k));
     expect(up.positions.at(-1)!.y).toBeCloseTo(6, 1);
 
-    const down = await simulate(new THREE.Vector3(-46, 6, 35), input(-west), 100);
+    const down = await simulate(new THREE.Vector3(-46, 6, 35), input(-west), Math.ceil(100 * k));
     expect(down.positions.at(-1)!.y).toBeCloseTo(0, 1);
     // O Rapier às vezes solta o chão por 1–2 ticks (ruído numérico, já existia). Sequência maior = quicando.
     let streak = 0;

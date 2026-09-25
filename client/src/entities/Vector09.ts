@@ -3,23 +3,30 @@ import { PALETTE } from '../core/palette';
 import { MechBase, type LegRig, type MechRig, type MechStats } from './MechBase';
 import { box, cyl, group } from './meshKit';
 
-/** Vector-09: assalto rápido, pulo duplo, dash curto; sem compartimento de sucata. */
+/**
+ * Vector-09: assalto ágil, pulo duplo, dash curto; sem compartimento de sucata.
+ * Calibrado em 24/09 (dono: "muito rápido; o tiro precisa de um respiro"): menos velocidade e calor na arma.
+ */
 export const VECTOR09_STATS: MechStats = {
   name: 'VECTOR-09',
-  moveSpeed: 16,
-  groundAccel: 95,
-  airAccel: 28,
+  moveSpeed: 12,
+  groundAccel: 70,
+  airAccel: 22,
   jumpVelocity: 13,
   maxJumps: 2,
-  dashSpeed: 50,
+  dashSpeed: 42,
   dashDuration: 0.18,
-  dashCooldown: 2.5,
+  dashCooldown: 3,
   radius: 1.3,
   height: 5.3,
   stepHeight: 0.9,
   demolishOnDash: false,
   maxScrapSlots: 0,
-  fireInterval: 0.14,
+  fireInterval: 0.18,
+  heatPerShot: 0.085,
+  heatCooling: 0.6,
+  heatCoolDelay: 0.25,
+  heatRecover: 0.35,
   maxModuleHealth: {
     torso: 300,
     head: 100,

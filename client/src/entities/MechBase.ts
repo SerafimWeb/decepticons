@@ -1,5 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import { HeatSink, type HeatStats } from '../combat/heat';
 import { applyDamage, partAt, type DamageResult } from '../combat/damage';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
@@ -18,7 +19,7 @@ const IGNORE_DEBRIS = RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC;
 export type MechPart = 'torso' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
 export type MechModules = Record<MechPart, number>;
 
-export interface MechStats {
+export interface MechStats extends HeatStats {
   name: string;
   moveSpeed: number; // m/s no chão
   groundAccel: number; // m/s² — alto = resposta "Quake", quase sem inércia
@@ -118,6 +119,8 @@ export abstract class MechBase {
   private jumpsLeft: number;
   private walkPhase = 0;
   private recoil = 0;
+  /** Calor do canhão principal (regra no tick fixo). */
+  private readonly heatSink: HeatSink;
   private leftRecoil = 0;
   private readonly rightArmBaseZ: number;
   private readonly leftArmBaseZ: number;
@@ -136,6 +139,7 @@ export abstract class MechBase {
     this.modules = { ...stats.maxModuleHealth };
     this.jumpsLeft = stats.maxJumps;
     this.rightArmBaseZ = rig.rightArm.position.z;
+    this.heatSink = new HeatSink(stats);
     this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
     this.root.updateMatrixWorld(true);
@@ -215,9 +219,18 @@ export abstract class MechBase {
     return this.modules.torso > 0;
   }
 
-  /** Canhão de plasma fica no braço direito. */
+  /** Canhão de plasma fica no braço direito; superaquecido, trava até esfriar. */
   get canFirePrimary(): boolean {
-    return this.alive && this.modules.rightArm > 0;
+    return this.alive && this.modules.rightArm > 0 && !this.heatSink.overheated;
+  }
+
+  /** Calor da arma principal (0 a 1) e se ela está travada (HUD, IA). */
+  get heat(): number {
+    return this.heatSink.heat;
+  }
+
+  get overheated(): boolean {
+    return this.heatSink.overheated;
   }
 
   /** Lançador secundário fica no braço esquerdo. */
@@ -280,6 +293,7 @@ export abstract class MechBase {
   /** Volta inteiro em `feet`: módulos cheios, colisão ligada, peças visíveis. */
   respawn(feet: THREE.Vector3): void {
     Object.assign(this.modules, this.stats.maxModuleHealth);
+    this.heatSink.reset();
     this.velocity.set(0, 0, 0);
     this.dashTimeLeft = 0;
     this.dashCooldownLeft = 0;
@@ -315,8 +329,10 @@ export abstract class MechBase {
     r.rightLeg.knee.visible = m.rightLeg > 0;
   }
 
+  /** Um tiro do canhão principal (no tick fixo): recuo na animação e calor na arma. */
   onFire(): void {
     this.recoil = 1;
+    this.heatSink.shot();
   }
 
   onFireSecondary(): void {
@@ -340,6 +356,7 @@ export abstract class MechBase {
   /** Um tick de simulação (60 Hz). Determinístico dado o input. */
   fixedUpdate(input: MechInput, dt: number): void {
     if (!this.alive) return;
+    this.heatSink.fixedUpdate(dt);
     const s = this.stats;
     const vel = this.velocity;
     this.dashCooldownLeft = Math.max(0, this.dashCooldownLeft - dt);

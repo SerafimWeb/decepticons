@@ -8,6 +8,10 @@
 
 ## ÚLTIMA SESSÃO FEZ (24/09)
 > As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e nas entregas dos bastidores.
+- **Calibragem do Vector-09 (Claude; dono: "muito rápido; o tiro precisa de um respiro, não dá pra ficar direto assim pra não apelar"):**
+  - Andar de 16 para 12 m/s, arrancada menos instantânea, dash de 50 para 42 com recarga de 3 s.
+  - Cadência de 7 para 5,5 tiros/s e **calor na arma**: ~12 tiros seguidos superaquecem e travam ~2,4 s; em rajadas não trava. Vale para jogador e bots.
+  - De quebra: um raio de visão perdido (erro numérico do Rapier) zerava a reação do bot; agora ele só esquece o alvo depois de 2 falhas seguidas.
 - **Paleta âmbar industrial (Claude; dono: "azul e roxo é a assinatura de feito com IA"):**
   - Jogo e site na mesma identidade: âmbar, laranja de sódio, vermelho de alerta, branco quente e aço.
   - Inimigos verde-oliva com visor e tiros vermelhos.

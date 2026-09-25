@@ -96,6 +96,8 @@ export class BotController {
   private readonly rand: () => number;
   private target: MechBase | null = null;
   private targetVisible = false;
+  /** Amostras de linha de visão perdidas em seguida. */
+  private losMisses = 0;
   private visibleFor = 0;
   private sinceSeen = Infinity;
   private readonly lastSeen = new THREE.Vector3();
@@ -197,7 +199,10 @@ export class BotController {
         }
       }
       if (best) this.target = best;
-      this.targetVisible = best !== null;
+      // Um raio perdido só não basta para esquecer o alvo: o Rapier às vezes deixa um raio passar
+      // direto por uma cápsula (erro numérico, 1 amostra). Esquece depois de 2 falhas seguidas (0,2 s).
+      this.losMisses = best ? 0 : this.losMisses + 1;
+      this.targetVisible = best !== null || (this.targetVisible && this.losMisses < 2 && !!this.target?.alive);
     }
     if (this.targetVisible && this.target) {
       this.visibleFor += dt;
