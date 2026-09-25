@@ -2,6 +2,13 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Pendências do Gemini concluídas pelo Claude; tela do Hangar para o Codex
+**Contexto:** o Gemini ficou sem crédito no dia com três entregas fora da `main`: setas de inimigos (PR #40, com conflito e a revisão pedindo ajustes), sons dos andróides (branch sem PR) e dicas da primeira partida (um commit depois do PR #32). O dono pediu: "veja se ele está indo bem e conclua as demandas que ele deixou abertas".
+**Decisão (Claude):**
+- **Portadas num branch do Claude** (regra 2: nunca dois agentes no mesmo branch), com os ajustes da revisão: setas sem alocação por quadro, DOM escrito só quando muda, escondidas com o jogador morto e só até 120 m; sons dos andróides com volume pela distância (antes tocavam alto do outro lado do mapa); dica de calor no primeiro "QUENTE" (e não no primeiro tiro), dica de foguetes no primeiro foguete, dica do arco vermelho mantida para tiro de Mech e a dos andróides para tiro de andróide; a contagem de dicas vistas segue a lista (era fixa em 4). O PR #40 foi fechado apontando para o novo.
+- **Tela do Hangar passa para o Codex** hoje (o Gemini está sem crédito e a tela tem prévia 3D do Mech, que é território de render). Registrado na divisão de trabalho.
+**Quem decidiu:** dono (concluir as pendências); Claude (como portar e a fila do Codex).
+
 ## [2026-09-25] Personalidades dos bots, vaga de ataque e inimigos configuráveis
 **Pedido do dono:** "está muito difícil, eles são muitos e me juntam. Os bots estão com IA? Dá para integrar Groq, Gemini, DeepSeek por API? Eles pensam igual? Um mais brabo, outro mais manso, outro fujão que ataca na covardia. Quero poder configurar mais."
 **Decisão (Claude):**

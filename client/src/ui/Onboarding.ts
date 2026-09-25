@@ -23,14 +23,18 @@ export class Onboarding {
       this.hints = {
         walk: 'USE O POLEGAR ESQUERDO PARA ANDAR',
         aim: 'ATIRE NAS PERNAS PARA DERRUBAR O ALVO',
-        rockets: 'FOGUETES CAUSAM DANO EM ÁREA',
+        rockets: 'FOGUETES: DANO EM ÁREA; EXPLODA NO PÉ DO INIMIGO',
+        heat: 'QUENTE: ATIRE EM RAJADAS E PARE PARA ESFRIAR',
+        androids: 'ANDRÓIDES SÃO PEQUENOS E ÁGEIS: MIRE COM CALMA',
         damage: 'O ARCO VERMELHO MOSTRA DE ONDE VEM O TIRO'
       };
     } else {
       this.hints = {
         walk: 'USE WASD PARA ANDAR',
         aim: 'ATIRE NAS PERNAS PARA DERRUBAR O ALVO',
-        rockets: 'FOGUETES CAUSAM DANO EM ÁREA',
+        rockets: 'FOGUETES: DANO EM ÁREA; EXPLODA NO PÉ DO INIMIGO',
+        heat: 'QUENTE: ATIRE EM RAJADAS E PARE PARA ESFRIAR',
+        androids: 'ANDRÓIDES SÃO PEQUENOS E ÁGEIS: MIRE COM CALMA',
         damage: 'O ARCO VERMELHO MOSTRA DE ONDE VEM O TIRO'
       };
     }
@@ -48,7 +52,7 @@ export class Onboarding {
     this.timer = 5; // Dica some após 5 segundos
 
     // Se mostrou todas, salva no local storage
-    if (this.shown.size >= 4) {
+    if (this.shown.size >= Object.keys(this.hints).length) {
       this.seen = true;
       try {
         localStorage.setItem(this.HAS_SEEN_KEY, 'true');
