@@ -10,6 +10,10 @@
 - **CYBERMECH (dono, 25/09):** o jogo passou a se chamar CYBERMECH, sem o "Protocol": jogo, site, documentos e pacote
 - **Paleta neon multicolorida (dono: "verde neon, vermelho, diversas cores"):** HUD e tiro do jogador em verde neon; IAs rebeldes em vermelho; prédios verde, amarelo e branco; fogo e foguetes em laranja. O site continua no âmbar de terminal
 > As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e nas entregas dos bastidores.
+- **Primeira partida guiada (Gemini):**
+  - Módulo `Onboarding.ts` adicionado com dicas de texto no rodapé sem cobrir a mira.
+  - Gatilhos contextuais disparados pelo `Game.ts` (ex: ao andar, mirar no inimigo, atirar foguetes, ou receber dano).
+  - Dicas somem automaticamente em 5s e só aparecem na primeira vez (guardadas no `localStorage`).
 - **Calibragem do Vector-09 (Claude; dono: "muito rápido; o tiro precisa de um respiro, não dá pra ficar direto assim pra não apelar"):**
   - Andar de 16 para 12 m/s, arrancada menos instantânea, dash de 50 para 42 com recarga de 3 s.
   - Cadência de 7 para 5,5 tiros/s e **calor na arma**: ~12 tiros seguidos superaquecem e travam ~2,4 s; em rajadas não trava. Vale para jogador e bots.
@@ -57,9 +61,9 @@
 
 ## PENDENTE
 - [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
-- [ ] **Gemini:** primeira partida guiada. Um PR por tarefa, a partir da `main` atualizada
+- [ ] **Gemini:** Próxima tarefa: setas-inimigos (ui/OffscreenIndicators.ts). Seta vermelha na borda da tela para inimigos fora da visão. Um PR por tarefa, a partir da `main` atualizada.
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
-- [ ] Fase 3: foguetes (arma secundária), draw calls por Mech (~34 cada)
+- [ ] Fase 3: draw calls por Mech (~34 cada)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
 
 ## RASCUNHO ANTIGO DE BOTS (superado)
