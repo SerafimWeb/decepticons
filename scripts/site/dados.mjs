@@ -169,7 +169,7 @@ export function recordSheet() {
       dash: n(v, 'dashSpeed'),
       jumps: n(v, 'maxJumps'),
       fire: n(v, 'fireInterval'),
-      damage: Number(/const DAMAGE = (\d+)/.exec(p)?.[1]),
+      damage: n(v, 'weaponDamage'),
       armor,
     };
     const nums = [s.speed, s.dash, s.jumps, s.fire, s.damage, ...armor.map((a) => a[1])];

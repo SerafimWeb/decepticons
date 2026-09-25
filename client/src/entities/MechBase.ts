@@ -35,6 +35,8 @@ export interface MechStats extends HeatStats {
   demolishOnDash: boolean; // Colossus-01: dash atravessa paredes destrutíveis
   maxScrapSlots: number; // Vector-09: 0 | Colossus-01: 1 | Ferret-X: 4
   fireInterval: number;
+  /** Dano de cada tiro da arma principal. */
+  weaponDamage: number;
   maxModuleHealth: MechModules;
 }
 

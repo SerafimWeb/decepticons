@@ -23,6 +23,7 @@ export const VECTOR09_STATS: MechStats = {
   demolishOnDash: false,
   maxScrapSlots: 0,
   fireInterval: 0.18,
+  weaponDamage: 25,
   heatPerShot: 0.085,
   heatCooling: 0.6,
   heatCoolDelay: 0.25,

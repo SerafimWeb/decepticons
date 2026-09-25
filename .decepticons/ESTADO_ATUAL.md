@@ -7,6 +7,8 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Tema e escalas (dono, 25/09: "temos que defender contra IAs rebeldes"):** escala 1 = robôs do tamanho dos humanoides de hoje; escala 2 = Mechs como o Vector-09 (GAME_DESIGN, "TEMA E ESCALAS")
+- **Andróides rebeldes, escala 1 (Claude):** 3 na arena, pequenos, frágeis e muito ágeis; a IA ganhou perfil de luta por tipo (o andróide chega perto, zigue-zagueia e desvia com dash). O dano de cada tiro agora vem da arma de quem atira
 - **CYBERMECH (dono, 25/09):** o jogo passou a se chamar CYBERMECH, sem o "Protocol": jogo, site, documentos e pacote
 - **Paleta neon multicolorida (dono: "verde neon, vermelho, diversas cores"):** HUD e tiro do jogador em verde neon; IAs rebeldes em vermelho; prédios verde, amarelo e branco; fogo e foguetes em laranja. O site continua no âmbar de terminal
 > As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e nas entregas dos bastidores.
