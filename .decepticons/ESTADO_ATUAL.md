@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Plano do multiplayer (Claude):** `MULTIPLAYER.md` com pré-requisitos, arquitetura, orçamento de banda (~4 KB/s por jogador, meta de 8), contratos e etapas M0–M8. A Fase 4 do ROADMAP virou as etapas. Revisão cruzada do PR #40 (Gemini) postada no GitHub: conflito com a main e uma alocação por quadro.
 - **Contrato do Hangar (Claude):** montagem validada (encaixe, carga de 11 t, nível), salva no aparelho, trocada no renascimento, e link de build `/jogar/?build=…`. Chassis sem 3D em `entities/chassis.ts`. A landing mostra as 9 combinações com link para jogar. **A tela do Hangar (Gemini) está liberada:** API em `HANGAR.md`, seção 2.
 - **Gestão nos bastidores (Claude; dono: "ferramentas de gerenciamento de projeto, gestão de entregas, planejamento, gráficos que digam muito"):** quadro Agora/Próximo/Depois com código por item, burn-up, linha do tempo das fases com estimativa, matriz frentes × fases e as quatro métricas DORA (hoje: ~20 deploys por dia, ~6 min do commit ao ar, 2,4% de falha, ~14 min para recuperar).
 - **Calor completo e a Oficina (Claude; dono: "oficina mecânica de alto padrão"; "tudo aumenta o calor; os mechs precisam PARAR pra resfriar"):**
@@ -107,7 +108,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
-| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Contrato do Hangar no ar (montagem, carga, link de build). Próximo: plano do multiplayer (`MULTIPLAYER.md`) |
+| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Contrato do Hangar e plano do multiplayer no ar. Próximo: M1 (separar simulação e render, `shared/`) |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Sons dos andróides (branch sem PR). Fila, um PR cada: setas de inimigos fora da tela, abertura da rodada (3·2·1), aviso de ABATE e sequência, tela de carregamento, temperatura no HUD (marca de 70%, "RESFRIANDO" com `mech.coolingBoost`), sons de calor, fim de rodada com estatísticas, música (prompts no chat de 25/09) |
 | **Codex** | proposta do Claude (25/09), o dono confirma: visual e render do mundo 3D, `client/src/fx/`, o visual de `environment/` e dos rigs (`entities/meshKit.ts`, modelos; não os stats), pós-processamento, desempenho de render; revisão cruzada dos PRs | Ao voltar (25/09 à noite), nesta ordem: 1) revisão cruzada dos PRs #36–#38 (comentários, sem reescrever); 2) draw calls por Mech de ~34 para ≤ 8 (pré-requisito do multiplayer; o smoke mede); 3) acabamento de explosões e impactos, zero alocação por quadro |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
@@ -115,7 +116,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 ## DECISÕES EM ABERTO
 | Decisão | Situação |
 |---|---|
-| Hospedagem do servidor | Recomendação em `DEPLOY.md`. Decidir na Fase 4 (multiplayer). |
+| Hospedagem do servidor | Recomendação em `DEPLOY.md`; plano em `MULTIPLAYER.md` (seção 8, com mais três decisões: mira assistida no PvP, bots nas salas, código da sala). Decidir antes da etapa M8. |
 | Mira assistida no multiplayer | Hoje é só do toque e só contra bots. Com gente de verdade, toque x mouse na mesma sala precisa de regra: manter (padrão dos jogos de tiro no celular), reduzir contra humanos ou separar salas por tipo de controle. Decidir na Fase 4. |
 | Bots contra bots | Hoje os bots só caçam o jogador. No modo "todos contra todos" eles deveriam se enfrentar também: basta passar todos os Mechs em `BotSystem.targets`. |
 
@@ -123,4 +124,4 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Claude: plano do multiplayer em `.decepticons/MULTIPLAYER.md` e revisão do PR #40 (Gemini). Gemini: tela do Hangar contra `game.hangar` (API em `HANGAR.md`). Codex: revisão cruzada e draw calls. Gemini: PR dos sons dos andróides, depois a fila de polimento. Dono: ouvir a vinheta e jogar no celular.
+Claude: etapa M1 do multiplayer (separar simulação e render, criar `shared/`). Dono: as 4 decisões do fim do `MULTIPLAYER.md` e medir o FPS numa GPU integrada. Gemini: tela do Hangar contra `game.hangar` (API em `HANGAR.md`). Codex: revisão cruzada e draw calls. Gemini: PR dos sons dos andróides, depois a fila de polimento. Dono: ouvir a vinheta e jogar no celular.
