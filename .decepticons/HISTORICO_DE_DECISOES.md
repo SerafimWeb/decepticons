@@ -2,6 +2,17 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Bastidores mostram a atividade da equipe (só dados reais)
+**Pedido do dono:** "deixa com cara de que está sendo feito por uma equipe, com várias entradas, requisições e commits", sem parecer narrativa.
+**Decisão (Claude):** mostrar a atividade que já existe, sem inventar nada. Não precisa: são dezenas de commits e de entregas em dois dias.
+- Cada commit é atribuído a quem o fez: a coautoria do Claude no próprio commit; senão, o agente do PR em que ele entrou (etiquetas); sem PR, "equipe".
+- Merge de PR na linha principal = entrega; merge de integração = commit.
+- Seção "Atividade": commits, entregas, decisões registradas e pedidos do dono atendidos (entradas do cofre que nasceram de pedido ou relato dele).
+- Mapa de calor de commits por dia e hora (horário de Brasília) e fluxo dos últimos 40 commits e entregas, com hora, agente e hash.
+- Cartões da equipe com commits por agente. A landing ganha um sinal de vida: "N commits e M entregas em D dias · último às HH:MM".
+**Limite:** nome de autor do git e nome de conta não aparecem. Os assuntos dos commits são públicos a partir de agora: nada de dado interno neles (o check já reprova o codinome).
+**Quem decidiu:** dono (pedido); Claude (fontes e forma).
+
 ## [2026-09-24] Foguetes no braço esquerdo; produção toda em código
 **Pedido do dono:** "quero adicionar a arma esquerda" e "prefiro fazer tudo aqui no código, eu só orientando e as IAs fazendo".
 **Foguetes (Claude):** módulo próprio (`combat/RocketSystem.ts`); a regra de área mora no `CombatSystem.explode`.

@@ -8,7 +8,7 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { diario, entregas, evolucao, marcos, readEstado, readRoadmap, roadmapStats, vitrine } from './site/dados.mjs';
+import { atividade, diario, entregas, evolucao, marcos, pedidos, readEstado, readRoadmap, roadmapStats, vitrine } from './site/dados.mjs';
 import { brDate, esc, HEXGRID, inline, pagina, topo, upper } from './site/tema.mjs';
 
 const argv = process.argv.slice(2);
@@ -43,6 +43,8 @@ const m = marcos();
 const { prs, fromGithub } = entregas();
 const evo = evolucao();
 const log = diario();
+const act = atividade(prs);
+const asked = pedidos();
 const last = evo.at(-1) ?? { tests: 0, loc: 0 };
 const nf = (n) => n.toLocaleString('pt-BR');
 
@@ -66,8 +68,8 @@ const teamHtml = TEAM.map((t) => {
     estado.pending.filter((p) => p.who.toLowerCase() === t.key).map((p) => p.text).join(' · ');
   const numbers =
     t.key === 'dono'
-      ? `<div><dt>DECISÕES</dt><dd>${log.length}</dd></div><div><dt>ENTREGAS</dt><dd>${prs.length}</dd></div>`
-      : `<div><dt>ENTREGAS</dt><dd>${mine.length}</dd></div>${fromGithub ? `<div><dt>LINHAS</dt><dd>+${nf(lines)}</dd></div>` : ''}`;
+      ? `<div><dt>PEDIDOS</dt><dd>${asked}</dd></div><div><dt>DECISÕES</dt><dd>${log.length}</dd></div>`
+      : `<div><dt>COMMITS</dt><dd>${act.byAgent[t.key] ?? 0}</dd></div><div><dt>ENTREGAS</dt><dd>${mine.length}</dd></div>${fromGithub ? `<div><dt>LINHAS</dt><dd>+${nf(lines)}</dd></div>` : ''}`;
   return `<article class="member frame m-${t.key}">
       <header><span class="agent ${t.key}">${esc(t.org)}</span><h3>${t.name}</h3></header>
       <p class="mrole">${esc(t.role)}</p>
@@ -76,6 +78,29 @@ const teamHtml = TEAM.map((t) => {
       ${now ? `<p class="mnow"><span>agora &gt;</span> ${inline(now)}</p>` : ''}
     </article>`;
 }).join('');
+
+// ---------- atividade (git) ----------
+
+const when = (t) => new Date(t).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', '');
+const heatHtml = act.heat.days
+  .map((d, i) => {
+    const row = act.heat.grid[i];
+    const cells = row
+      .map((n, h) => `<i class="h${n ? '' : ' zero'}" style="--v:${(n / act.heat.max).toFixed(2)}" title="${brDate(d)} · ${h}h · ${n} commit${n === 1 ? '' : 's'}"></i>`)
+      .join('');
+    return `<span class="hd">${brDate(d)}</span>${cells}`;
+  })
+  .join('');
+const hours = Array.from({ length: 24 }, (_, h) => `<span class="hh">${h % 6 === 0 ? `${String(h).padStart(2, '0')}h` : ''}</span>`).join('');
+const prTitle = new Map(prs.map((p) => [p.n, p.title]));
+const streamHtml = act.commits
+  .slice(0, 40)
+  .map((c) => {
+    // Entrega: o título do PR (o merge pelo botão do GitHub não traz o título no assunto).
+    const text = c.merge ? `entrega #${c.pr} · ${prTitle.get(c.pr) ?? c.subject.replace(/^Merge (PR #\d+: |pull request #\d+ from \S+\s*)/, '')}` : c.subject;
+    return `<li class="${c.merge ? 'delivery' : ''}"><time>${when(c.t)}</time><span class="agent ${esc(c.agent)}">${esc(c.agent)}</span><span class="msg">${esc(text)}</span><code class="sha">${esc(c.sha)}</code></li>`;
+  })
+  .join('');
 
 // ---------- da ideia ao ar ----------
 
@@ -270,6 +295,24 @@ const css = `
   .mnow { font-size: 12.5px; line-height: 1.45; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
   .mnow span { color: var(--green); }
 
+  .heat { margin: 0; padding: 14px 16px 12px; display: grid; gap: 10px; }
+  .heat figcaption { font-size: 11.5px; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
+  .heat-grid { display: grid; grid-template-columns: 48px repeat(24, minmax(0, 1fr)); gap: 3px; align-items: center; }
+  .heat-grid .hd { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .heat-grid .hh { font-size: 10.5px; color: var(--faint); }
+  .h { display: block; aspect-ratio: 1; min-height: 10px; background: rgba(255,176,0, calc(.12 + var(--v) * .88)); box-shadow: 0 0 calc(var(--v) * 8px) rgba(255,176,0,.5); }
+  .h.zero { background: transparent; box-shadow: none; border: 1px solid var(--line); }
+  .heat-legend { display: flex; gap: 4px; align-items: center; justify-content: flex-end; font-size: 11px; color: var(--muted); }
+  .heat-legend i { width: 12px; height: 12px; background: rgba(255,176,0, calc(.12 + var(--v) * .88)); }
+  .stream { max-height: 440px; overflow-y: auto; }
+  .stream ol { list-style: none; margin: 0; padding: 4px 0; }
+  .stream li { display: grid; grid-template-columns: 96px 70px 1fr auto; gap: 12px; padding: 7px 16px; font-size: 13px; border-bottom: 1px dashed var(--line); align-items: baseline; }
+  .stream li:last-child { border-bottom: 0; }
+  .stream time { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .stream .msg { color: var(--text); overflow-wrap: anywhere; }
+  .stream .sha { color: var(--faint); font-size: 11.5px; }
+  .stream li.delivery .msg { color: var(--green); }
+  .stream li.delivery .msg::before { content: '▲ '; }
   .flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 30px 26px; counter-reset: s; }
   .step { padding: 14px 14px 16px; display: grid; gap: 8px; align-content: start; }
   /* Setas entre passos da mesma linha; no fim da linha, a numeração conduz. */
@@ -404,6 +447,8 @@ const css = `
     .node-btn { grid-template-columns: 66px 1fr auto; grid-template-areas: 'hex label count' 'hex title title' 'hex bar bar'; justify-items: start; text-align: left; column-gap: 14px; }
     .hex { grid-area: hex; } .node-label { grid-area: label; } .node-title { grid-area: title; max-width: none; } .node-bar { grid-area: bar; width: 100%; } .node-count { grid-area: count; }
     .fronts { grid-template-columns: 1fr; }
+    .stream li { grid-template-columns: 1fr auto; row-gap: 2px; } .stream time { grid-column: 1; } .stream .agent { grid-column: 2; grid-row: 1; justify-self: end; } .stream .msg { grid-column: 1 / -1; } .stream .sha { display: none; }
+    .heat-grid { grid-template-columns: 40px repeat(24, minmax(0, 1fr)); gap: 2px; } .heat-grid .hh { font-size: 9px; }
     .feed li { grid-template-columns: 44px 1fr; row-gap: 4px; } .feed time { display: none; } .feed .ft { grid-column: 1 / -1; }
   }
   @media (max-width: 560px) {
@@ -476,6 +521,7 @@ const body = `
     <p class="pitch">Dan, três IAs e um protocolo. No Cyber-Mech Protocol, cada decisão fica registrada, cada entrega passa por testes automáticos e vai para o ar sozinha. Esta página é gerada do próprio repositório a cada entrega; nenhum número aqui é digitado à mão.</p>
     <div class="sitrep">
       ${m.day ? `<div class="read frame"><span class="k">Dia de projeto</span><span class="v">${m.day} <small>desde ${brDate(m.first)}</small></span></div>` : ''}
+      <div class="read frame"><span class="k">Commits</span><span class="v">${act.total}</span></div>
       <div class="read frame"><span class="k">Entregas</span><span class="v">${prs.length} <small>PRs no ar</small></span></div>
       <div class="read frame"><span class="k">Testes</span><span class="v">${nf(last.tests)} <small>automáticos</small></span></div>
       <div class="read frame"><span class="k">Linhas de código</span><span class="v">${nf(last.loc)} <small>TypeScript</small></span></div>
@@ -490,6 +536,24 @@ const body = `
     <p class="lede">Cada IA tem um território de arquivos e trabalha na própria pasta, para uma não desfazer o trabalho da outra. Dan decide; as IAs propõem, constroem e provam com teste.</p>
     <div class="team">${teamHtml}</div>
     ${fromGithub ? '' : '<p class="source">Sem acesso ao GitHub neste build: entregas contadas pelo git, sem etiquetas de frente e agente.</p>'}
+  </section>
+
+  <section aria-labelledby="atividade">
+    <span class="kicker">// canal da equipe · registro do git</span>
+    <h2 id="atividade">Atividade</h2>
+    <p class="lede">Cada commit e cada entrega, com quem fez e quando. O mapa mostra as horas de trabalho: quanto mais aceso, mais commits naquela hora.</p>
+    <div class="sitrep">
+      <div class="read frame"><span class="k">Commits</span><span class="v">${act.total}</span></div>
+      <div class="read frame"><span class="k">Entregas</span><span class="v">${act.merges} <small>no ar</small></span></div>
+      <div class="read frame"><span class="k">Decisões registradas</span><span class="v">${log.length}</span></div>
+      <div class="read frame"><span class="k">Pedidos do Dan</span><span class="v">${asked} <small>atendidos</small></span></div>
+    </div>
+    <figure class="heat frame">
+      <figcaption>commits por hora (horário de Brasília)</figcaption>
+      <div class="heat-grid" role="img" aria-label="Mapa de calor de commits por dia e hora">${heatHtml}<span></span>${hours}</div>
+      <div class="heat-legend" aria-hidden="true"><span>menos</span><i style="--v:.15"></i><i style="--v:.4"></i><i style="--v:.7"></i><i style="--v:1"></i><span>mais</span></div>
+    </figure>
+    <div class="stream frame"><ol>${streamHtml}</ol></div>
   </section>
 
   <section aria-labelledby="fluxo">

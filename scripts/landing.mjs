@@ -10,7 +10,7 @@
  */
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { bundleSize, entregas, marcos, pledge, readRoadmap, recordSheet, roadmapStats, vitrine } from './site/dados.mjs';
+import { atividade, bundleSize, entregas, marcos, pledge, readRoadmap, recordSheet, roadmapStats, vitrine } from './site/dados.mjs';
 import { brDate, esc, HEXGRID, inline, mb, pagina, topo, upper } from './site/tema.mjs';
 
 const argv = process.argv.slice(2);
@@ -26,6 +26,7 @@ const sheet = recordSheet();
 const vows = pledge();
 const features = vitrine();
 const { prs } = entregas();
+const act = atividade(prs);
 
 /** Capturas do jogo feitas pelo site.mjs --capturas (uma por câmera). O ?v= fura o cache a cada build. */
 const SHOTS = [
@@ -164,6 +165,7 @@ const buildHtml = `<section aria-labelledby="montagem">
       <div class="frame box">
         <div class="box-bar"><span>últimas entregas</span><span>${esc(m.version ?? '')}</span></div>
         <ul class="box-body recent">${recent.map((p) => `<li><time datetime="${p.date}">${brDate(p.date)}</time><span>${esc(p.title)}</span></li>`).join('')}</ul>
+        ${act.last ? `<p class="pulse">${act.total} commits e ${act.merges} entregas em ${m.day ?? 1} dia${(m.day ?? 1) > 1 ? 's' : ''} · último em ${esc(new Date(act.last).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' às'))}</p>` : ''}
       </div>
     </div>
     <p><a class="link-btn" href="./bastidores/">ver os bastidores: equipe, processo, diário e números →</a></p>
@@ -237,6 +239,8 @@ const css = `
   .todo li { display: grid; grid-template-columns: 38px 1fr; gap: 8px; }
   .todo li span { color: var(--text); } .todo li.doing span { color: var(--amber); }
   .then { color: var(--muted); font-size: 13px; }
+  .pulse { margin: 0; padding: 0 16px 14px; color: var(--green); font-size: 12px; letter-spacing: .06em; }
+  .pulse::before { content: '● '; }
   .recent li { display: grid; grid-template-columns: 48px 1fr; gap: 10px; }
   .recent time { color: var(--faint); font-variant-numeric: tabular-nums; }
 
