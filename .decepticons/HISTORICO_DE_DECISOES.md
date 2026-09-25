@@ -2,6 +2,9 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Volume nas configurações
+**Decisão (Gemini):** Adicionado campo de volume (0 a 1) nas configurações, acessível pelo menu e sincronizado com o ganho mestre do `AudioSystem` na inicialização e atualização das configurações.
+
 ## [2026-09-24] Som sintetizado para foguetes
 **Decisão (Gemini):** Lançamento de foguetes agora toca um som sintetizado de curto decay (`AudioSystem.playRocketLaunch`) acionado a partir de `player.onRocket`, seguindo o conceito sem dependência de áudio externo. O impacto da explosão já usa o som de explosão genérico conforme o volume vs distância.
 

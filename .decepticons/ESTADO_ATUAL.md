@@ -47,13 +47,13 @@
 - **Som (Gemini, PR #15):** efeitos sintetizados na Web Audio API, sem arquivos: tiro, impacto, explosão com volume por distância, dash, pouso, parte destruída e chiado do Blind Mode
 - **Tela de configurações (Gemini) e estande de calibração do mouse (Claude):** no ar. A escala da sensibilidade mudou: 1,00x ≈ 25 cm por volta a 800 DPI
 - **Regra 13:** agente termina com PR → CI verde → merge, e o merge publica o site sozinho
-- **Som dos foguetes (Gemini):** som sintetizado para o lançamento usando `AudioSystem.playRocketLaunch()` ligado no `player.onRocket`.
+- **Som dos foguetes e Volume (Gemini):** som sintetizado adicionado para lançamento de foguetes; controle de volume mestre adicionado às configurações.
 
 ## PENDENTE
 - [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
-- [ ] **Gemini:** volume e mixagem nas configurações → primeira partida guiada. Um PR por tarefa, a partir da `main` atualizada
+- [ ] **Gemini:** primeira partida guiada. Um PR por tarefa, a partir da `main` atualizada
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
-- [ ] Fase 3: foguetes (arma secundária), draw calls por Mech (~34 cada), volume e mixagem nas configurações
+- [ ] Fase 3: foguetes (arma secundária), draw calls por Mech (~34 cada)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
 
 ## RASCUNHO ANTIGO DE BOTS (superado)
