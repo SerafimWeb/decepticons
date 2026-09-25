@@ -2,6 +2,19 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Passada de consistência documental (PRs até #50)
+**Pedido do dono:** conferir os PRs mergeados até o #49 contra ESTADO_ATUAL, ROADMAP e STATUS_REAL; corrigir o que ficou para trás, conferir o item de draw calls do #43 e descrever com precisão o estágio do multiplayer depois do #49, confirmando no código.
+**Divergências corrigidas (com a evidência):**
+- **Draw calls:** o ESTADO ainda listava "draw calls por Mech (~34 cada)" como pendente; o #43 fez. Contado no código (Vector-09 e andróide montados no Node): 9 malhas cada. ROADMAP e STATUS agora falam dos dois e citam o #48 (flash branco).
+- **Pendências do Gemini já concluídas** ainda abertas no ESTADO: setas e sons dos andróides (#47), a nota do PR #17. Removidas.
+- **Próxima sessão:** dava a tela do Hangar ao Gemini, contradizendo a divisão de trabalho (passou para o Codex). Reescrita.
+- **M1 dita como "a mesma simulação no cliente e no servidor"** (ROADMAP) e "REAL" (STATUS): exagero. O servidor não existe, a simulação ainda cria malhas, materiais e objetos na cena (Arena, Destructibles, DebrisSystem, ProjectileSystem, RocketSystem, BotSystem, MechBase e modelos), chama partículas dentro das regras (Combat, Destructibles, Projectile, Rocket, BotSystem), e o tiro do jogador sai do modelo desenhado (`PlayerController`: `muzzleWorldPosition`, `rig.aim`), enquanto os bots usam `simMuzzle`. ROADMAP, STATUS (agora PARCIAL) e `MULTIPLAYER.md` (P1 parcial, nova seção 8) ajustados.
+- **Destroços "só cosméticos"** (STATUS): o teste da M1 mostrou que mudam a simulação (ordem interna do Rapier). Corrigido.
+- **"Painel de missão no ar na raiz do site"** (STATUS): a raiz é a landing; o painel virou os bastidores, e a ficha técnica e o "sem pay-to-win" estão na landing. Reescrito.
+- **Site público** (STATUS) sem a `/oficina/`. Incluída.
+**Decisão:** a separação simulação × render × efeitos precisa de decisão de arquitetura: proposta e critérios de aceitação em `MULTIPLAYER.md`, seção 9, sem implementar. Recomendação: tiro do jogador e yaw pela simulação antes da M4.
+**Quem decidiu:** dono (a passada); Claude (as correções e a proposta).
+
 ## [2026-09-25] Nomes de IAs nos bots e o guia visual dos robôs
 **Pedido do dono:** "mostrar os nomes nos bots: claude, gemini, chatgpt, qwen, anthropic, deepseek, pra ficar mais engraçado"; e "criar o style sheet dos robôs numa IA externa; preciso de um texto para explicar lá o que estamos fazendo".
 **Decisão (Claude):**

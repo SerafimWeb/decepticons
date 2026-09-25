@@ -17,8 +17,8 @@
 
 | # | O quê | Por quê | Estado |
 |---|---|---|---|
-| P1 | **Separar simulação de render** | Uma simulação só, no cliente e no servidor (G14); o servidor não pode depender de WebGL nem de DOM | ✅ M1 (25/09): `sim/Match.ts` roda a partida inteira sem tela, no Node. Pragmático: a simulação ainda usa o Three.js para matemática e grafo de cena (roda no Node sem WebGL, como os testes); tirar o Three.js do servidor fica para quando o custo de memória pedir |
-| P2 | **Draw calls por Mech de ~34 para ≤ 10** | 8 Mechs + andróides na tela numa GPU integrada (G12) | ✅ Codex (PR #43): 9 por Vector-09 |
+| P1 | **Separar simulação de render** | Uma simulação só, no cliente e no servidor (G14); o servidor não pode depender de WebGL nem de DOM | **Parcial.** M1 (PR #49): `sim/Match.ts` roda a partida inteira no Node sem WebGL nem DOM. Mas a simulação ainda **cria objetos de render** e **chama efeitos** (seção 8), e o tiro do jogador sai do modelo desenhado. A separação completa é a proposta da seção 9, a decidir |
+| P2 | **Draw calls por Mech de ~34 para ≤ 10** | 8 Mechs + andróides na tela numa GPU integrada (G12) | ✅ Codex (PR #43): 9 malhas por Vector-09 e 9 por andróide (contado no código em 25/09: uma malha combinada por pivô articulado; o flash branco que veio junto foi corrigido no PR #48) |
 | P3 | **FPS medido numa GPU integrada** | Saber a folga antes de somar rede | dono, num notebook comum, com o painel de desempenho (`'`) |
 | P4 | **Contratos de rede definidos e mergeados** (seção 5) | Regra 5 do AGENTS: contrato antes de paralelizar | a fazer (etapa M2) |
 | P5 | Montagem validável no servidor | Ninguém entra com arma adulterada | ✅ `validateLoadout` (Hangar), texto curto de ~30 bytes |
@@ -81,7 +81,7 @@ Estado de um Mech por snapshot, quantizado (G11):
 | Etapa | O quê | Quem |
 |---|---|---|
 | M0 | Este plano | Claude ✅ |
-| M1 | Partida sem tela (`sim/Match.ts`): o cliente monta a partida e desenha por cima; o servidor vai rodar a mesma classe ✅ | Claude |
+| M1 | Partida sem tela (`sim/Match.ts`): a partida inteira roda no Node sem WebGL nem DOM, determinística sem destroços; o cliente monta a partida por ela ✅ (PR #49). **Ainda não** é a simulação compartilhada: ver seções 8 e 9 | Claude |
 | M2 | Contratos e codec binário, com testes de tamanho | Claude |
 | M3 | `server/`: `ArenaRoom` com a simulação a 60 Hz, bots, entrada por `?sala=`; roda local com `npm run server` | Claude |
 | M4 | Prediction + reconciliação do Mech local; interpolação dos remotos; teste com latência e perda simuladas | Claude |
@@ -114,7 +114,70 @@ corrige. Se a correção aparecer na tela, os destroços vão para um mundo fís
 - **Mira assistida (toque) contra mouse** na mesma sala: decisão do dono (seção 8).
 - **Trapaça:** nada do que o cliente manda é número de jogo (dano, calor, vida). Input fora do limite é descartado.
 
-## 8. Decisões do dono
+## 8. Onde estamos depois do PR #49 (conferido no código em 25/09)
+
+**Já roda:**
+- `sim/Match.ts` monta e roda uma partida inteira (arena, barricadas, Mechs, bots com personalidade e diretor de ataque,
+  projéteis, foguetes, calor, dano por parte, renascimento, rodadas) no tick fixo, no Node, sem WebGL nem DOM
+  (`sim/Match.test.ts`, 4 testes). O jogo no navegador usa a mesma classe (`core/Game.ts`).
+- Determinística sem destroços (duas partidas iguais, tick a tick). Tick médio de 0,74 ms com a sala cheia (1 jogador +
+  6 bots) num PC comum; p95 2,4 ms.
+- Módulos puros, sem Three.js: armas (`combat/weapons.ts`), bancada (`balance.ts`), calor (`heat.ts`), cadência
+  (`trigger.ts`), números dos chassis (`entities/chassis.ts`, só importa tipos), validação da montagem
+  (`hangar/loadout.ts`).
+
+**Ainda depende de Three.js de render dentro da simulação** (contado nos arquivos):
+- Criam malhas, materiais ou objetos na cena: `Arena`, `Destructibles`, `DebrisSystem`, `ProjectileSystem` (pool de
+  64 malhas), `RocketSystem`, `BotSystem` (feixe do técnico), `MechBase`/`Vector09`/`Android` (o modelo articulado).
+  A `Match` exige uma `THREE.Scene`; no servidor ela seria uma cena que nunca é desenhada.
+- Chamam efeitos dentro das regras (`particles.burst`): `CombatSystem`, `Destructibles`, `ProjectileSystem`,
+  `RocketSystem`, `BotSystem`. A `Match` recebe um `ParticleSystem`; no servidor, um objeto vazio com `burst`
+  (feito nos testes com um "cast", não por um tipo próprio).
+- **O tiro do jogador sai do modelo desenhado:** `PlayerController` usa `muzzleWorldPosition` e
+  `leftMuzzleWorldPosition` (posição interpolada do modelo) e o ponto de mira da câmera (`rig.aim`). Os bots já usam
+  `simMuzzle` (da simulação). O servidor não tem como reproduzir o tiro do jogador como está.
+- **O yaw do jogador é escrito na taxa do render** (`applyFacing`, para a mira responder na hora) e o pitch do tiro não
+  está no `MechInput`. No multiplayer, os dois têm de viajar no comando de cada tick (`NetInput`, seção 5).
+- **Destroços** mudam a simulação quando estão no mesmo mundo físico (seção 7).
+
+**Ainda não existe:** contratos de rede e codec (M2), `server/` com Colyseus (M3), prediction e reconciliação (M4),
+tiros autoritativos (M5), entrada por link e reconexão (M6).
+
+## 9. Proposta de arquitetura: simulação × render × efeitos (a decidir; não implementada)
+
+**Problema:** para o servidor rodar exatamente a regra do cliente sem carregar render, e para o cliente prever o próprio
+Mech igual ao servidor, a simulação não pode depender do que está desenhado nem do relógio do quadro.
+
+**Proposta (Claude, 25/09):**
+1. **Estado da simulação sem objetos de cena:** Mechs, projéteis, foguetes e barricadas guardam só dados (posições em
+   `THREE.Vector3`/`Quaternion` podem ficar: são só matemática). Malhas, materiais e `scene.add` saem para "vistas"
+   do cliente (`MechView`, `ProjectileView`, `ArenaView`) que leem o estado depois de cada tick.
+2. **Efeitos por eventos, não por chamada:** as regras emitem eventos (`hit`, `explosion`, `partDestroyed`,
+   `propBroken`, `shot`); o cliente transforma em partículas, som e tremor; o servidor os manda pela rede como
+   evento com id (G11). A `Match` deixa de receber `ParticleSystem`.
+3. **Tiro do jogador pela simulação:** origem em `simMuzzle` e direção do yaw e pitch do comando do tick (como os
+   bots); o modelo desenhado só anima. Pitch entra no `MechInput`.
+4. **Yaw no tick:** o comando do tick carrega o yaw; a câmera continua respondendo na hora (a vista usa o yaw local).
+5. **Destroços fora do mundo da simulação:** mundo físico só deles, no cliente (ou sem colisão com nada que a
+   simulação consulte).
+
+**Critérios de aceitação** (todos, para dar a separação por concluída):
+- Um teste monta a `Match` **sem passar cena nem efeitos** e roda uma partida inteira; nenhum arquivo importado pela
+  simulação cria `Mesh`, `Material`, `Sprite`, `Line` ou `Points` (verificado por teste que varre os imports).
+- Mesma entrada, mesmo resultado: a partida do cliente e uma "partida de servidor" (sem vistas) dão o mesmo estado,
+  tick a tick, **com destroços ligados no cliente**.
+- O tiro do jogador, repetido na simulação só com os comandos gravados, acerta os mesmos alvos que no cliente.
+- Todos os testes de hoje passam sem mudar o que verificam; o `npm run check` e o jogo no site continuam iguais.
+- Tick médio da sala cheia continua ≤ 2 ms (G14), agora sem os objetos de cena.
+
+**Custo e risco:** mexe em `MechBase`, `ProjectileSystem`, `RocketSystem`, `Destructibles`, `Arena`,
+`CombatSystem`, `PlayerController` e na fiação do `Game` (território do Claude e zona compartilhada; a parte visual
+toca o território do Codex). Estimativa: 2 a 3 PRs. Pode entrar antes da M3 (o servidor já nasce sem render) ou
+depois (o servidor começa com cena descartável e a separação vem na M4, quando a prediction exigir). **Recomendação:**
+itens 3 e 4 antes da M4 (sem eles a prediction não bate); itens 1, 2 e 5 quando o custo de memória do servidor ou as
+correções visíveis pedirem. **Decisão do dono.**
+
+## 10. Decisões do dono
 
 1. **Hospedagem do servidor:** Oracle Always Free (São Paulo, custo zero, capacidade instável) ou VPS paga pequena
    (estável). Recomendação em `DEPLOY.md`.
