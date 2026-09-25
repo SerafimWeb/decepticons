@@ -4,12 +4,12 @@ import { type Stick, stickVector, touchLookGain } from './TouchControls';
 const s = (): Stick => ({ x: 0, z: 0, knobX: 0, knobY: 0 });
 
 describe('mira pelo toque', () => {
-  it('dedo devagar = ajuste fino (ganho 1); rápido acelera até 2,2; sem saltos', () => {
+  it('dedo devagar = ajuste fino (ganho 1); rápido acelera até 1,6; sem saltos', () => {
     expect(touchLookGain(0)).toBe(1);
     expect(touchLookGain(0.2)).toBe(1);
     expect(touchLookGain(1)).toBeGreaterThan(1);
-    expect(touchLookGain(1)).toBeLessThan(2.2);
-    expect(touchLookGain(5)).toBeCloseTo(2.2);
+    expect(touchLookGain(1)).toBeLessThan(1.6);
+    expect(touchLookGain(5)).toBeCloseTo(1.6);
     expect(touchLookGain(0.26) - touchLookGain(0.25)).toBeLessThan(0.01);
   });
 });

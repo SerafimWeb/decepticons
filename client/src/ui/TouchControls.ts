@@ -1,20 +1,27 @@
 import type { InputManager } from '../core/InputManager';
 import { BASE_SENSITIVITY } from '../core/Settings';
+import { DEFAULT_TOUCH_LAYOUT, PAD_BUTTONS, type PadButton, placeButtons, SCALE_LIMITS, type TouchLayout } from './touchLayout';
 
 /**
  * Radianos por pixel arrastado devagar (sensibilidade 1): ~0,3°/px, para o ajuste fino em cima do alvo.
- * Arrastar rápido acelera (touchLookGain): virar para trás continua sendo um gesto só.
+ * Arrastar rápido acelera um pouco (touchLookGain): virar para trás continua sendo um gesto só.
  */
 export const TOUCH_RAD_PER_PX = 0.0055;
 /** O rig multiplica o delta por radiansPerCount(s) = BASE_SENSITIVITY × s: o toque entra já convertido. */
 const LOOK_SCALE = TOUCH_RAD_PER_PX / BASE_SENSITIVITY;
 /** Até 15% do raio o direcional não anda: o polegar parado não faz o Mech escorregar. */
 const DEADZONE = 0.15;
+/**
+ * Suavização da velocidade do dedo (0..1, peso da leitura nova). Os eventos de toque chegam em
+ * intervalos irregulares; a velocidade crua de cada um oscila, e o ganho oscilava junto (a mira
+ * "falhava"). Com a média, o ganho acompanha o gesto, não o ruído.
+ */
+export const SPEED_SMOOTHING = 0.25;
 
-/** Ganho pela velocidade do dedo (px/ms): 1 devagar; até 2,2 num arrasto rápido (≥ 1,75 px/ms). */
+/** Ganho pela velocidade do dedo (px/ms, já suavizada): 1 devagar; até 1,6 num arrasto rápido (≥ 1,75 px/ms). */
 export function touchLookGain(pxPerMs: number): number {
   const t = Math.min(1, Math.max(0, (pxPerMs - 0.25) / 1.5));
-  return 1 + 1.2 * t;
+  return 1 + 0.6 * t;
 }
 
 export interface Stick {
@@ -51,6 +58,8 @@ export function stickVector(dx: number, dy: number, radius: number, out: Stick):
 export interface TouchActions {
   onPause(): void;
   onCamera(): void;
+  /** O jogador terminou de ajustar os botões (salvar e voltar para a pausa). */
+  onLayoutDone(layout: TouchLayout): void;
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, parent: HTMLElement, text?: string): HTMLElementTagNameMap[K] {
@@ -61,11 +70,14 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, pa
   return e;
 }
 
+const LABELS: Record<PadButton, string> = { fire: 'FOGO', jump: 'PULO', dash: 'DASH', rocket: 'FOGUETE', cam: 'CAM 3ª' };
+
 /**
  * Controles de toque (celular e tablet), visíveis só no modo toque e com o jogo rodando.
  * - Metade esquerda: direcional analógico que nasce onde o polegar encosta.
  * - Metade direita: arrastar mira; FOGO atira enquanto pressionado e também mira se o dedo arrastar.
- * - Canto direito: CAM, DASH, PULO e FOGO numa grade (nunca se sobrepõem); pausa no topo.
+ * - Botões em arco em volta do polegar direito (touchLayout.ts); o jogador pode arrastar cada um e
+ *   mudar o tamanho no editor ("Ajustar controles", na pausa). Pausa e PLACAR no topo.
  * Gera o mesmo MechInput do teclado (via InputManager): a simulação não sabe de onde veio o comando.
  * Custo: só eventos de ponteiro (nada por quadro); nenhuma alocação por movimento.
  */
@@ -73,15 +85,18 @@ export class TouchControls {
   private readonly root: HTMLDivElement;
   private readonly stick: HTMLDivElement;
   private readonly knob: HTMLDivElement;
-  private readonly camBtn: HTMLButtonElement;
-  private readonly fireBtn: HTMLButtonElement;
+  private readonly buttons = {} as Record<PadButton, HTMLButtonElement>;
+  private readonly editBar: HTMLDivElement;
+  private readonly sizeInput: HTMLInputElement;
   private readonly state: Stick = { x: 0, z: 0, knobX: 0, knobY: 0 };
+  private layout: TouchLayout = structuredClone(DEFAULT_TOUCH_LAYOUT) as TouchLayout;
+  private editing = false;
   private movePointer: number | null = null;
   private originX = 0;
   private originY = 0;
   private radius = 1;
-  /** Dedos que miram (zona direita ou FOGO) → última posição e instante. Entradas criadas só ao encostar. */
-  private readonly aimers = new Map<number, { x: number; y: number; t: number }>();
+  /** Dedos que miram (zona direita ou FOGO) → última posição, instante e velocidade suavizada. */
+  private readonly aimers = new Map<number, { x: number; y: number; t: number; v: number }>();
   private readonly firePointers = new Set<number>();
 
   constructor(
@@ -97,20 +112,39 @@ export class TouchControls {
     this.stick = el('div', 'tc-stick', this.root);
     this.knob = el('div', 'tc-knob', this.stick);
 
-    const pad = el('div', 'tc-pad', this.root);
-    this.camBtn = el('button', 'tc-btn tc-cam', pad, 'CAM 3ª');
-    const dash = el('button', 'tc-btn', pad, 'DASH');
-    const jump = el('button', 'tc-btn', pad, 'PULO');
-    this.fireBtn = el('button', 'tc-btn tc-fire', pad, 'FOGO');
-    const rocket = el('button', 'tc-btn tc-rocket', pad, 'FOGUETE');
+    for (const b of PAD_BUTTONS) {
+      const btn = el('button', `tc-btn tc-${b}`, this.root, LABELS[b]);
+      btn.type = 'button';
+      this.buttons[b] = btn;
+    }
     const pause = el('button', 'tc-pause', this.root, '❚❚');
     pause.setAttribute('aria-label', 'Pausar');
     const board = el('button', 'tc-board', this.root, 'PLACAR');
-    for (const b of [this.camBtn, dash, jump, this.fireBtn, rocket, pause, board]) b.type = 'button';
+    pause.type = board.type = 'button';
+
+    // Barra do editor de botões (só aparece ao ajustar os controles).
+    this.editBar = el('div', 'tc-editbar', this.root);
+    el('span', 'tc-edit-hint', this.editBar, 'ARRASTE OS BOTÕES');
+    const sizeLabel = el('label', 'tc-edit-size', this.editBar, 'TAMANHO ');
+    this.sizeInput = el('input', '', sizeLabel);
+    Object.assign(this.sizeInput, { type: 'range', min: String(SCALE_LIMITS.min), max: String(SCALE_LIMITS.max), step: '0.05' });
+    const reset = el('button', 'tc-edit-btn', this.editBar, 'PADRÃO');
+    const done = el('button', 'tc-edit-btn done', this.editBar, 'PRONTO');
+    reset.type = done.type = 'button';
+    this.sizeInput.addEventListener('input', () => {
+      this.layout.scale = Number(this.sizeInput.value);
+      this.applyLayout();
+    });
+    reset.addEventListener('click', () => {
+      this.layout = structuredClone(DEFAULT_TOUCH_LAYOUT) as TouchLayout;
+      this.sizeInput.value = String(this.layout.scale);
+      this.applyLayout();
+    });
+    done.addEventListener('click', () => this.stopEditing());
 
     // --- andar ---
     move.addEventListener('pointerdown', (e) => {
-      if (this.movePointer !== null) return;
+      if (this.movePointer !== null || this.editing) return;
       e.preventDefault();
       move.setPointerCapture(e.pointerId);
       this.movePointer = e.pointerId;
@@ -136,17 +170,20 @@ export class TouchControls {
     move.addEventListener('pointercancel', endMove);
 
     // --- mirar (zona da direita e o próprio FOGO) ---
+    const fire = this.buttons.fire;
     const startAim = (e: PointerEvent, target: HTMLElement) => {
       e.preventDefault();
       target.setPointerCapture(e.pointerId);
-      this.aimers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: e.timeStamp });
+      this.aimers.set(e.pointerId, { x: e.clientX, y: e.clientY, t: e.timeStamp, v: 0 });
     };
     const aim = (e: PointerEvent) => {
       const a = this.aimers.get(e.pointerId);
       if (!a) return;
       const dx = e.clientX - a.x;
       const dy = e.clientY - a.y;
-      const gain = touchLookGain(Math.hypot(dx, dy) / Math.max(1, e.timeStamp - a.t)) * LOOK_SCALE;
+      // Velocidade suavizada (média exponencial): o ganho segue o gesto, não o ruído dos eventos.
+      a.v += SPEED_SMOOTHING * (Math.hypot(dx, dy) / Math.max(4, e.timeStamp - a.t) - a.v);
+      const gain = touchLookGain(a.v) * LOOK_SCALE;
       this.input.injectMouseDelta(dx * gain, dy * gain);
       a.x = e.clientX;
       a.y = e.clientY;
@@ -156,21 +193,25 @@ export class TouchControls {
       this.aimers.delete(e.pointerId);
       if (this.firePointers.delete(e.pointerId) && this.firePointers.size === 0) this.setFire(false);
     };
-    look.addEventListener('pointerdown', (e) => startAim(e, look));
-    this.fireBtn.addEventListener('pointerdown', (e) => {
-      startAim(e, this.fireBtn);
+    look.addEventListener('pointerdown', (e) => {
+      if (!this.editing) startAim(e, look);
+    });
+    fire.addEventListener('pointerdown', (e) => {
+      if (this.editing) return;
+      startAim(e, fire);
       this.firePointers.add(e.pointerId);
       this.setFire(true);
     });
-    for (const t of [look, this.fireBtn] as HTMLElement[]) {
+    for (const t of [look, fire] as HTMLElement[]) {
       t.addEventListener('pointermove', aim);
       t.addEventListener('pointerup', endAim);
       t.addEventListener('pointercancel', endAim);
     }
 
-    // --- ações de toque único ---
+    // --- ações de toque único e de segurar ---
     const hold = (b: HTMLButtonElement, set: (on: boolean) => void) => {
       b.addEventListener('pointerdown', (e) => {
+        if (this.editing) return;
         e.preventDefault();
         b.setPointerCapture(e.pointerId);
         b.classList.add('pressed');
@@ -185,6 +226,7 @@ export class TouchControls {
     };
     const tap = (b: HTMLButtonElement, action: () => void) => {
       b.addEventListener('pointerdown', (e) => {
+        if (this.editing) return;
         e.preventDefault();
         b.classList.add('pressed');
         action();
@@ -194,20 +236,48 @@ export class TouchControls {
       b.addEventListener('pointercancel', up);
       b.addEventListener('pointerleave', up);
     };
-    tap(jump, () => (this.input.virtualJump = true));
-    tap(dash, () => (this.input.virtualDash = true));
-    tap(this.camBtn, () => this.actions.onCamera());
+    tap(this.buttons.jump, () => (this.input.virtualJump = true));
+    tap(this.buttons.dash, () => (this.input.virtualDash = true));
+    tap(this.buttons.cam, () => this.actions.onCamera());
     // Segurar: FOGUETE dispara o carregador no ritmo do intervalo; PLACAR mostra o placar (o Tab do toque).
-    hold(rocket, (on) => (this.input.virtualRocket = on));
+    hold(this.buttons.rocket, (on) => (this.input.virtualRocket = on));
     hold(board, (on) => (this.input.virtualBoard = on));
     // Pausa no click (não no pointerdown): a tela de pausa aparece depois do toque acabar e não
     // recebe o click do mesmo dedo, que retomaria o jogo na hora.
     pause.addEventListener('click', () => this.actions.onPause());
+
+    // --- editor: arrastar cada botão ---
+    for (const b of PAD_BUTTONS) {
+      const btn = this.buttons[b];
+      let grab: { id: number; dx: number; dy: number } | null = null;
+      btn.addEventListener('pointerdown', (e) => {
+        if (!this.editing) return;
+        e.preventDefault();
+        btn.setPointerCapture(e.pointerId);
+        const r = btn.getBoundingClientRect();
+        grab = { id: e.pointerId, dx: e.clientX - (r.left + r.width / 2), dy: e.clientY - (r.top + r.height / 2) };
+        btn.classList.add('pressed');
+      });
+      btn.addEventListener('pointermove', (e) => {
+        if (!this.editing || grab?.id !== e.pointerId) return;
+        this.layout.pos[b] = [(e.clientX - grab.dx) / window.innerWidth, (e.clientY - grab.dy) / window.innerHeight];
+        this.applyLayout();
+      });
+      const drop = () => {
+        grab = null;
+        btn.classList.remove('pressed');
+      };
+      btn.addEventListener('pointerup', drop);
+      btn.addEventListener('pointercancel', drop);
+    }
+
+    window.addEventListener('resize', () => this.applyLayout());
+    this.applyLayout();
   }
 
   /** Aparece só no modo toque com o jogo rodando; ao sumir, solta tudo o que estava pressionado. */
   setVisible(on: boolean): void {
-    this.root.classList.toggle('on', on);
+    this.root.classList.toggle('on', on || this.editing);
     if (on) return;
     this.releaseStick();
     this.aimers.clear();
@@ -218,13 +288,45 @@ export class TouchControls {
     for (const b of this.root.querySelectorAll('.pressed')) b.classList.remove('pressed');
   }
 
+  /** Layout salvo (ou o padrão): posições em fração da tela e tamanho. */
+  setLayout(layout: TouchLayout): void {
+    this.layout = structuredClone(layout);
+    this.applyLayout();
+  }
+
+  /** Editor: os botões aparecem sobre o jogo parado e podem ser arrastados; PRONTO salva e volta. */
+  startEditing(): void {
+    this.editing = true;
+    this.sizeInput.value = String(this.layout.scale);
+    this.root.classList.add('on', 'editing');
+    this.applyLayout();
+  }
+
   /** Algum dedo mirando agora (a mira assistida só puxa enquanto o jogador age). */
   get aiming(): boolean {
     return this.aimers.size > 0;
   }
 
   setCameraLabel(text: string): void {
-    this.camBtn.textContent = text;
+    this.buttons.cam.textContent = text;
+  }
+
+  private stopEditing(): void {
+    this.editing = false;
+    this.root.classList.remove('editing', 'on');
+    this.actions.onLayoutDone(structuredClone(this.layout));
+  }
+
+  /** Posiciona e dimensiona cada botão pelo layout (px), sempre inteiros dentro da tela. */
+  private applyLayout(): void {
+    const placed = placeButtons(this.layout, window.innerWidth, window.innerHeight);
+    for (const b of PAD_BUTTONS) {
+      const { x, y, d } = placed[b];
+      const s = this.buttons[b].style;
+      s.width = s.height = `${d}px`;
+      s.left = `${x - d / 2}px`;
+      s.top = `${y - d / 2}px`;
+    }
   }
 
   private updateStick(x: number, y: number): void {
@@ -245,6 +347,6 @@ export class TouchControls {
 
   private setFire(on: boolean): void {
     this.input.virtualFire = on;
-    this.fireBtn.classList.toggle('pressed', on);
+    this.buttons.fire.classList.toggle('pressed', on);
   }
 }

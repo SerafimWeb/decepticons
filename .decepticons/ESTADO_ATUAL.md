@@ -8,6 +8,11 @@
 
 ## ÚLTIMA SESSÃO FEZ (24/09)
 > As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e nas entregas dos bastidores.
+- **Controles de toque, terceira volta (Claude; dono: "a mira ainda falha; botões num shape quadrado, tenho que segurar na ponta"):**
+  - Botões redondos em arco em volta do polegar, com FOGO para dentro da tela.
+  - "Ajustar controles" na pausa: arrastar cada botão e mudar o tamanho, salvo no aparelho (`ui/touchLayout.ts`, com testes de não sobreposição em 7 telas).
+  - Velocidade do dedo suavizada: o ganho oscilava com os eventos irregulares.
+  - A mira assistida solta o alvo quando o jogador puxa para longe.
 - **Foguetes no braço esquerdo (Claude, pedido do dono):** casulo de 4 tubos; botão direito ou Q (remapeável) no PC, FOGUETE no toque; 4 no carregador (1 a cada 2,2 s); explosão de 6 m com dano que cai com a distância, na parte mais perto (no pé acerta a perna); indicador no HUD; 7 testes. Botão PLACAR no toque (o Tab do celular)
 - **Bastidores com a atividade da equipe (Claude, pedido do dono: "cara de equipe empenhada"):** commits de cada agente, mapa de calor por hora, fluxo dos últimos 40 commits e entregas, pedidos do dono atendidos. Tudo lido do git e dos PRs; nada inventado
 - **Produção: tudo em código (decisão do dono):** sem Unity e sem modelagem manual; Mechs gerados por código, som sintetizado. A variedade vem do Hangar (GAME_DESIGN)

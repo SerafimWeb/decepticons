@@ -2,6 +2,20 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Toque: botões em arco, editor de controles e mira sem "falha"
+**Relato do dono (terceiro teste no celular):** "a mira ainda não tá boa, meio falha; os botões num shape meio quadrado não pegam bem meu dedo; poderia ser mais livre o centro do tiro, para segurar com mais conforto, pois assim tenho que segurar bem na ponta".
+**Causas:**
+- A grade 3×2 colada no canto obrigava o polegar a ir até a ponta do celular.
+- O ganho da mira vinha da velocidade crua de cada evento de toque. Os eventos chegam em intervalos irregulares, então o ganho oscilava de um evento para o outro: a mesma arrastada girava diferente.
+- A fricção e o puxão da mira assistida continuavam agindo quando o jogador tentava tirar a mira do alvo, e a mira parecia brigar com o dedo.
+**Decisão (Claude):**
+- **Arco:** botões redondos em arco em volta do polegar (`ui/touchLayout.ts`), com FOGO a ~20% da borda direita. Posições em fração da tela, testadas sem sobreposição em 7 telas (640×360 a 1180×820) e 3 tamanhos.
+- **Editor:** "Ajustar controles" na pausa (só no toque). Arrasta cada botão, muda o tamanho (70%–140%), volta ao padrão. Fica salvo no aparelho, numa chave própria (`cybermech.touch.v1`) e validado, sem mexer no contrato de configurações que o Gemini estava editando.
+- **Mira:** velocidade do dedo com média exponencial; ganho máximo de 2,2× para 1,6×.
+- **Ajuda que solta:** puxar a mira para longe do alvo desliga fricção e puxão por 0,35 s (`movingAway`, testado). O tiro automático continua.
+**Custo de CPU:** nenhum por quadro além do que já existia; o editor só age com o jogo parado.
+**Quem decidiu:** dono (relato); Claude (desenho).
+
 ## [2026-09-24] Bastidores mostram a atividade da equipe (só dados reais)
 **Pedido do dono:** "deixa com cara de que está sendo feito por uma equipe, com várias entradas, requisições e commits", sem parecer narrativa.
 **Decisão (Claude):** mostrar a atividade que já existe, sem inventar nada. Não precisa: são dezenas de commits e de entregas em dois dias.

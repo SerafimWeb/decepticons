@@ -33,6 +33,7 @@ import { Quality } from './Quality';
 import { browserStorage, radiansPerCount, Settings, type GameSettings, type QualityPreset } from './Settings';
 import { DebugPanel } from '../debug/DebugPanel';
 import { TouchControls } from '../ui/TouchControls';
+import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
@@ -177,7 +178,16 @@ export class Game {
 
     // --- Jogador ---
     this.input = new InputManager(this.renderer.domElement);
-    this.touch = new TouchControls(this.input, { onPause: () => this.pause(), onCamera: () => this.switchCamera() });
+    this.touch = new TouchControls(this.input, {
+      onPause: () => this.pause(),
+      onCamera: () => this.switchCamera(),
+      // Editor de botões terminou: salva no aparelho e volta para a pausa.
+      onLayoutDone: (layout) => {
+        saveTouchLayout(browserStorage(), layout);
+        this.hud.setPaused(true);
+      },
+    });
+    this.touch.setLayout(loadTouchLayout(browserStorage()));
     this.rig = new CameraRig({
       camera: this.camera,
       physics,
@@ -315,6 +325,12 @@ export class Game {
     // pointerdown vem antes do click: o jeito de entrar (dedo ou mouse) escolhe o modo.
     overlay.addEventListener('pointerdown', (e) => this.setTouchMode(e.pointerType !== 'mouse'));
     overlay.addEventListener('click', () => this.resume());
+    // Ajustar controles (só no toque): esconde a pausa e abre o editor de botões com o mundo parado.
+    document.getElementById('btn-touch-layout')!.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.hud.setPaused(false);
+      this.touch.startEditing();
+    });
     // Trocou de app ou de aba no meio da partida: pausa (no desktop o Pointer Lock já cai sozinho).
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && this.playing) this.pause();
@@ -440,7 +456,11 @@ export class Game {
       const m = this.input.consumeMouseDelta();
       // Toque com mira assistida: perto de um inimigo o dedo fica mais lento (fricção do quadro anterior).
       const f = this.input.touchMode && this.settings.value.touchAimAssist ? this.assist.friction : 1;
+      const yaw0 = this.rig.look.yaw;
+      const pitch0 = this.rig.look.pitch;
       this.rig.applyMouse(m.x * f, m.y * f);
+      // Puxar a mira para longe do alvo solta a ajuda por um instante (não briga com o dedo).
+      this.assist.noteLook(this.rig.look.yaw - yaw0, this.rig.look.pitch - pitch0);
     }
     this.player.collect();
 
