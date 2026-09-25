@@ -28,6 +28,11 @@ export const VECTOR09_STATS: MechStats = {
   heatCooling: 0.6,
   heatCoolDelay: 0.25,
   heatRecover: 0.35,
+  heatIdleCooling: 2,
+  heatRun: 0.15,
+  heatJump: 0.05,
+  heatDash: 0.12,
+  heatPerDamage: 0.002,
   maxModuleHealth: {
     torso: 300,
     head: 100,

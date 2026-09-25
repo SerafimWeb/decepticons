@@ -1,6 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
-import { HeatSink, type ChassisHeat } from '../combat/heat';
+import { HeatSink, OVERHEAT_SPEED, type ChassisHeat, type HeatState } from '../combat/heat';
 import { repairModules } from '../combat/repair';
 import { applyDamage, partAt, type DamageResult } from '../combat/damage';
 import type { Loadout } from '../combat/weapons';
@@ -239,6 +239,16 @@ export abstract class MechBase {
     return this.heatSink.overheated;
   }
 
+  /** normal, QUENTE (≥ 70%) ou SUPERAQUECIDO (HUD, som, IA). */
+  get heatState(): HeatState {
+    return this.heatSink.state;
+  }
+
+  /** Parado e esfriando em dobro (o HUD mostra "RESFRIANDO"). */
+  get coolingBoost(): boolean {
+    return this.heatSink.coolingBoost;
+  }
+
   /** Lançador secundário fica no braço esquerdo; também trava com o Mech superaquecido. */
   get canFireSecondary(): boolean {
     return this.alive && this.modules.leftArm > 0 && this.loadout.secondary !== null && !this.heatSink.overheated;
@@ -296,7 +306,11 @@ export abstract class MechBase {
 
   damagePart(part: MechPart, amount: number): DamageResult {
     const result = applyDamage(this.modules, part, amount);
-    if (result.applied > 0) this.hitFlash = 1;
+    if (result.applied > 0) {
+      this.hitFlash = 1;
+      // Tomar tiro esquenta a blindagem (sem segurar o resfriamento: não é ação do Mech).
+      this.heatSink.add(result.applied * this.stats.heatPerDamage, false);
+    }
     if (result.partDestroyed) this.refreshParts();
     if (result.killed) this.die();
     return result;
@@ -344,13 +358,13 @@ export abstract class MechBase {
   /** Um tiro do canhão principal (no tick fixo): recuo na animação e calor no Mech. */
   onFire(): void {
     this.recoil = 1;
-    this.heatSink.shot(this.loadout.primary.heatPerShot);
+    this.heatSink.add(this.loadout.primary.heatPerShot);
   }
 
   /** Um disparo do braço esquerdo: recuo e o calor do lançamento. */
   onFireSecondary(): void {
     this.leftRecoil = 1;
-    if (this.loadout.secondary) this.heatSink.shot(this.loadout.secondary.heatPerShot);
+    if (this.loadout.secondary) this.heatSink.add(this.loadout.secondary.heatPerShot);
   }
 
   /**
@@ -370,9 +384,11 @@ export abstract class MechBase {
   /** Um tick de simulação (60 Hz). Determinístico dado o input. */
   fixedUpdate(input: MechInput, dt: number): void {
     if (!this.alive) return;
-    this.heatSink.fixedUpdate(dt);
     const s = this.stats;
     const vel = this.velocity;
+    // Correr esquenta na proporção da velocidade no chão (a do tick anterior; no ar não conta).
+    this.heatSink.fixedUpdate(dt, this.grounded ? Math.hypot(vel.x, vel.z) / s.moveSpeed : 0);
+    const overheated = this.heatSink.overheated;
     this.dashCooldownLeft = Math.max(0, this.dashCooldownLeft - dt);
 
     const sin = Math.sin(input.moveYaw);
@@ -380,9 +396,11 @@ export abstract class MechBase {
     _wish.set(cos * input.moveX - sin * input.moveZ, 0, -sin * input.moveX - cos * input.moveZ);
     if (_wish.lengthSq() > 1) _wish.normalize();
 
-    const mobility = this.mobility;
+    // Superaquecido: metade da velocidade, sem pulo nem dash (os sistemas entram em emergência).
+    const mobility = this.mobility * (overheated ? OVERHEAT_SPEED : 1);
 
-    if (input.dash && this.dashCooldownLeft <= 0 && mobility > 0) {
+    if (input.dash && this.dashCooldownLeft <= 0 && mobility > 0 && !overheated) {
+      this.heatSink.add(s.heatDash);
       if (_wish.lengthSq() > 0.01) this.dashDir.copy(_wish).normalize();
       else this.dashDir.set(-Math.sin(input.yaw), 0, -Math.cos(input.yaw));
       vel.x = this.dashDir.x * s.dashSpeed;
@@ -409,7 +427,8 @@ export abstract class MechBase {
       vel.y -= MECH_GRAVITY * dt;
     }
 
-    if (input.jump && this.jumpsLeft > 0 && mobility > 0) {
+    if (input.jump && this.jumpsLeft > 0 && mobility > 0 && !overheated) {
+      this.heatSink.add(s.heatJump);
       vel.y = s.jumpVelocity;
       this.jumpsLeft--;
       this.grounded = false;

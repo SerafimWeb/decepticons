@@ -5,7 +5,7 @@ import type { MechBase, MechInput } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { setLocalMove, turnToward, wrapAngle, yawOf } from './steer';
 
-export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat';
+export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat' | 'cool';
 
 /** Como o bot pilota: tempo de reação, mira e ritmo de tiro. Um conjunto por nível de dificuldade. */
 export interface BotSkill {
@@ -69,6 +69,9 @@ const WAYPOINT_REACHED = 4;
 const RETREAT_TORSO_FRACTION = 0.35;
 const RETREAT_S = 3;
 const RETREAT_COOLDOWN_S = 8;
+/** Com o Mech fervendo (ou superaquecido), o bot para para esfriar; volta a lutar abaixo de COOLED_AT. */
+const COOL_AT = 0.9;
+const COOLED_AT = 0.45;
 const STUCK_CHECK_S = 0.5;
 const STUCK_DIST = 0.8;
 const SIDESTEP_S = 0.8;
@@ -259,7 +262,16 @@ export class BotController {
       return;
     }
 
+    // Calor: superaquecido ou fervendo, para e esfria (parado esfria em dobro); volta com o Mech frio.
+    if (this.state !== 'cool' && (m.overheated || m.heat >= COOL_AT)) {
+      this.state = 'cool';
+      return;
+    }
+
     switch (this.state) {
+      case 'cool':
+        if (!m.overheated && m.heat <= COOLED_AT) this.state = this.target ? 'chase' : 'patrol';
+        break;
       case 'patrol':
         if (reacted) this.state = 'chase';
         break;
@@ -327,6 +339,10 @@ export class BotController {
         }
         break;
       }
+      case 'cool':
+        // Parado, de frente para o alvo (se houver): esfria em dobro e não atira.
+        if (this.targetVisible && this.target) faceYaw = this.yawTo(this.target.simPosition);
+        break;
       case 'retreat': {
         const from = this.target ? this.target.simPosition : this.lastSeen;
         towards(from, -1);

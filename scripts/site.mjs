@@ -123,6 +123,7 @@ async function build() {
   if (argv.includes('--capturas')) await capture();
   run('node', ['scripts/painel.mjs', '--site', '--out', join(OUT, 'bastidores', 'index.html')]);
   run('node', ['scripts/landing.mjs', '--out', join(OUT, 'index.html')]);
+  run('node', ['scripts/oficina.mjs', '--out', join(OUT, 'oficina', 'index.html')]);
   writeFileSync(join(OUT, '.htaccess'), htaccess());
   writeFileSync(join(GAME, 'assets', '.htaccess'), ASSETS_HTACCESS);
   const wasm = readdirSync(join(GAME, 'assets')).filter((f) => f.endsWith('.wasm'));
@@ -310,6 +311,12 @@ async function check() {
     if ((await page.title()) !== 'Bastidores · CYBERMECH') failures.push(`título dos bastidores: "${await page.title()}"`);
     await pageSane(page, 'bastidores', failures);
     await publicPage(page, 'bastidores', failures);
+    // Oficina: a bancada tem de sair com os gráficos da simulação (sem eles, os dados do jogo não carregaram).
+    await page.goto(`${base}oficina/`);
+    if ((await page.title()) !== 'Oficina · CYBERMECH') failures.push(`título da oficina: "${await page.title()}"`);
+    await pageSane(page, 'oficina', failures);
+    await publicPage(page, 'oficina', failures);
+    if ((await page.locator('.minis .g').count()) < 6) failures.push('oficina: faltam os gráficos da bancada (a simulação do jogo não carregou)');
     // Landing na raiz: é por ela que se entra no jogo.
     await page.goto(base);
     const title = await page.title();
@@ -335,7 +342,7 @@ async function check() {
     // Uma página por vez: a de trás não desenha, e o jogo do celular ficaria parado.
     await page.close();
     await mobile(browser, `${base}jogar/`, failures);
-    console.log(`site    ok: landing em ${prefix} com a abertura da marca e o Hangar, bastidores/, "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
+    console.log(`site    ok: landing em ${prefix} com a abertura da marca e o Hangar, oficina/ com a bancada, bastidores/, "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {
@@ -372,6 +379,8 @@ async function verify(url) {
   if (!/utf-8/i.test(home.headers.get('content-type') ?? '')) console.warn(`::warning::${root}: servidor sem charset no Content-Type (a página declara o seu)`);
   if (!home.headers.get('content-security-policy')?.includes('wasm-unsafe-eval')) failures.push(`${root}: sem a CSP do .htaccess`);
   // O selvamkt.com.br responde 200 com uma página HTML para arquivo inexistente: status não basta.
+  const shop = await get(`${root}oficina/`);
+  if (!(await shop.text()).includes('Oficina · CYBERMECH')) failures.push(`${root}oficina/: não é a oficina`);
   const behind = await get(`${root}bastidores/`);
   if (!(await behind.text()).includes('BASTIDORES')) failures.push(`${root}bastidores/: não é a página de bastidores`);
   const cover = await get(`${root}capturas/capa.jpg`, 'HEAD');

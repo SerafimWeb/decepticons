@@ -7,6 +7,9 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Calor completo e a Oficina (Claude; dono: "oficina mecânica de alto padrão"; "tudo aumenta o calor; os mechs precisam PARAR pra resfriar"):**
+  - Tiro (coeficiente de cada arma), corrida, pulo, dash e dano esquentam o mesmo dissipador; parado esfria em dobro; superaquecido trava armas, pulo e dash e anda na metade. Bots param para esfriar.
+  - Página `/cybermech/oficina/`: bancada gerada pela simulação do jogo (calor por ação, 6 exercícios de 20 s, placar, tempo por parte, dano × distância, chassis). Achado: rajadas curtas parando na pausa rendem ~64% mais dano que correr atirando.
 - **Armas calibradas e o Hangar em projeto (Claude; dono: "3 níveis de poder em cada arma; dano realista, sem apelação; começar a projetar o HANGAR"):**
   - Arsenal em dados (`combat/weapons.ts`) com MK I, II e III na mesma regra; poder custa carga (dano por tonelada cai a cada nível).
   - Dano recalibrado com metas travadas por 15 testes: plasma MK I derruba um Vector-09 em ~6 s de acerto perfeito (antes ~2 s); nenhum combo abaixo de 2,5 s. Plasma perde força depois de 60 m.
@@ -82,6 +85,7 @@
 - [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
 - [ ] **Gemini:** Próxima tarefa: setas-inimigos (ui/OffscreenIndicators.ts). Seta vermelha na borda da tela para inimigos fora da visão. Um PR por tarefa, a partir da `main` atualizada.
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
+- [ ] **Dono:** jogar com o calor completo (correr atirando ferve em ~2 s; parado esfria em dobro) e dizer se ficou punitivo demais
 - [ ] **Dono:** jogar com as armas novas (menos dano, calor compartilhado com os foguetes) e dizer se a luta ficou lenta ou rápida demais; decidir as perguntas do fim do `HANGAR.md`
 - [ ] **Dono:** ouvir a vinheta da marca no jogo (som, volume, duração) e ver a abertura da landing (numa aba anônima ela roda de novo)
 - [ ] **Gemini:** o branch `gemini/sons-androides` saiu de uma `main` antiga e está sem PR: juntar a `main` (`git merge origin/main`), rodar `npm run check` e abrir o PR (regra 13)
@@ -102,8 +106,8 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Arsenal em três níveis e o projeto do Hangar no ar. Próximo: contrato do Hangar (`LoadoutSpec` + `validateLoadout`), depois o plano do multiplayer (`MULTIPLAYER.md`) e draw calls por Mech |
-| **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Sons dos andróides (branch sem PR). Fila, um PR cada: setas de inimigos fora da tela, abertura da rodada (3·2·1), aviso de ABATE e sequência, tela de carregamento (prompt no chat de 25/09) |
-| **Codex** | a combinar | Ao voltar: revisão cruzada dos PRs mergeados desde o #12 |
+| **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Sons dos andróides (branch sem PR). Fila, um PR cada: setas de inimigos fora da tela, abertura da rodada (3·2·1), aviso de ABATE e sequência, tela de carregamento, temperatura no HUD (marca de 70%, "RESFRIANDO" com `mech.coolingBoost`), sons de calor, fim de rodada com estatísticas, música (prompts no chat de 25/09) |
+| **Codex** | proposta do Claude (25/09), o dono confirma: visual e render do mundo 3D, `client/src/fx/`, o visual de `environment/` e dos rigs (`entities/meshKit.ts`, modelos; não os stats), pós-processamento, desempenho de render; revisão cruzada dos PRs | Ao voltar (25/09 à noite), nesta ordem: 1) revisão cruzada dos PRs #36–#38 (comentários, sem reescrever); 2) draw calls por Mech de ~34 para ≤ 8 (pré-requisito do multiplayer; o smoke mede); 3) acabamento de explosões e impactos, zero alocação por quadro |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
 
 ## DECISÕES EM ABERTO

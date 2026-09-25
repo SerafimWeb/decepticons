@@ -327,6 +327,7 @@ if (arms && sheet && plan.length) {
       <div class="read frame"><span class="k">dano por tonelada</span><span class="v">${num(perTon[0] / perTon[2], 1)}×</span><span class="d">o MK I rende mais por tonelada que o MK III: poder custa carga</span></div>
     </div>
     <p class="rules-note">Teto teórico, sem errar nenhum tiro. ${arms.tests} testes de simulação travam estas metas a cada entrega: se uma mudança criar apelação, a versão não sai.</p>
+    <p><a class="link-btn" href="./oficina/">ver a bancada completa na oficina: calor, partes, distância →</a></p>
     <h3 class="sub-h">O plano</h3>
     <ol class="features">${plan
       .map((p, i) => `<li class="feature frame"><span class="fnum">${String(i + 1).padStart(2, '0')}</span><h3>${upper(p.title)}</h3><p>${inline(p.text)}</p></li>`)

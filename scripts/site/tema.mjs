@@ -180,6 +180,7 @@ export function topo({ base, current, left, live }) {
     ${live ? `<span class="live">${live}</span>` : ''}
     <nav class="nav" aria-label="Páginas">
       ${link(base, 'o jogo', 'jogo')}
+      ${link(`${base}oficina/`, 'oficina', 'oficina')}
       ${link(`${base}bastidores/`, 'bastidores', 'bastidores')}
       <a class="nav-play" href="${base}jogar/">jogar</a>
     </nav>

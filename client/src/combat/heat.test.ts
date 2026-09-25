@@ -15,7 +15,7 @@ function hold(h: HeatSink, seconds: number): number {
     h.fixedUpdate(FIXED_DT);
     timer.fixedUpdate(FIXED_DT);
     if (timer.ready && !h.overheated) {
-      h.shot(P.heatPerShot);
+      h.add(P.heatPerShot);
       shots++;
       timer.shot(P.fireInterval);
     }
@@ -33,7 +33,7 @@ describe('calor da arma (Vector-09)', () => {
 
   it('superaquecida, só volta depois de esfriar abaixo do limite (um respiro de ~2,4 s)', () => {
     const h = new HeatSink(S);
-    while (!h.overheated) h.shot(P.heatPerShot);
+    while (!h.overheated) h.add(P.heatPerShot);
     let t = 0;
     while (h.overheated) {
       h.fixedUpdate(FIXED_DT);
@@ -46,7 +46,7 @@ describe('calor da arma (Vector-09)', () => {
 
   it('não esfria no meio da rajada: só depois do atraso sem atirar', () => {
     const h = new HeatSink(S);
-    h.shot(P.heatPerShot);
+    h.add(P.heatPerShot);
     const after = h.heat;
     h.fixedUpdate(S.heatCoolDelay / 2);
     expect(h.heat).toBe(after);
@@ -66,7 +66,7 @@ describe('calor da arma (Vector-09)', () => {
       if (burst.heat >= 0.85) cooling = true;
       else if (burst.heat <= 0.1) cooling = false;
       if (!cooling && timer.ready && !burst.overheated) {
-        burst.shot(P.heatPerShot);
+        burst.add(P.heatPerShot);
         burstShots++;
         timer.shot(P.fireInterval);
       }
@@ -79,7 +79,7 @@ describe('calor da arma (Vector-09)', () => {
 
   it('renascer zera o calor', () => {
     const h = new HeatSink(S);
-    while (!h.overheated) h.shot(P.heatPerShot);
+    while (!h.overheated) h.add(P.heatPerShot);
     h.reset();
     expect(h.heat).toBe(0);
     expect(h.overheated).toBe(false);

@@ -90,6 +90,8 @@
 - [x] Som dos foguetes: disparo e voo (Gemini) #som
 - [x] Arsenal em três níveis de poder (MK I, II, III) com a mesma regra; dano recalibrado com metas de tempo para derrubar travadas por teste; calor do Mech compartilhado entre as armas; plasma perde força com a distância #combate
 - [x] Projeto do Hangar (chassi, encaixes, carga, níveis, dissipador) e a seção dele na página do jogo, com o arsenal lido do código #mechs
+- [x] Calor completo do Mech: tiro (coeficiente por arma), corrida, pulo, dash e dano esquentam; parado esfria em dobro; superaquecido trava armas, pulo e dash; bots param para esfriar #combate
+- [x] Oficina no site: bancada de testes gerada pela simulação do jogo (calor por ação, dinamômetro, dano por parte e por distância, chassis) #combate
 - [ ] Hangar: contrato da montagem (`LoadoutSpec` + `validateLoadout`, carga por chassi), com testes #mechs
 - [ ] Hangar: tela para montar o Mech (arma e nível em cada braço, barras de carga e calor), salva no aparelho (Gemini) #ux
 - [ ] Segundo chassi para o Hangar ter escolha de verdade #mechs

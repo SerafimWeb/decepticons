@@ -30,6 +30,11 @@ export const ANDROID_STATS: MechStats = {
   heatCooling: 0.7,
   heatCoolDelay: 0.2,
   heatRecover: 0.3,
+  heatIdleCooling: 2,
+  heatRun: 0.08,
+  heatJump: 0.02,
+  heatDash: 0.05,
+  heatPerDamage: 0.002,
   maxModuleHealth: {
     torso: 32,
     head: 13,

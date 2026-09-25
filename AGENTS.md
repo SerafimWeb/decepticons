@@ -76,8 +76,8 @@ client/src/
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde)
   debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)
-scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), landing.mjs (landing do jogo), painel.mjs (bastidores: o case),
-               site/dados.mjs + site/tema.mjs (dados e visual das páginas), site.mjs (site + .htaccess + capturas + teste), install-hooks.mjs
+scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), landing.mjs (landing do jogo), oficina.mjs (bancada de testes), painel.mjs (bastidores: o case),
+               site/dados.mjs + site/tema.mjs + site/graficos.mjs (dados, visual e gráficos das páginas), site.mjs (site + .htaccess + capturas + teste), install-hooks.mjs
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
 .github/       workflows/ci.yml (npm run check a cada push/PR; deploy do site a cada merge na main),
                workflows/etiquetas.yml + labeler.yml (etiqueta de frente e de agente em cada PR),

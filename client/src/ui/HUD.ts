@@ -103,7 +103,7 @@ export class HUD {
     this.heatBox.classList.toggle('high', h >= 0.7);
     if (overheated !== this.shownOverheat) {
       this.heatBox.classList.toggle('over', overheated);
-      this.heatLabel.textContent = overheated ? 'SUPERAQUECIDO' : 'CALOR';
+      this.heatLabel.textContent = overheated ? 'SUPERAQUECIDO · PARE' : 'CALOR';
     }
     this.shownOverheat = overheated;
   }
