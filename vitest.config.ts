@@ -6,5 +6,8 @@ export default defineConfig({
   test: {
     include: ['client/src/**/*.test.ts'],
     environment: 'node',
+    // Testes com física simulam dezenas de segundos de jogo: sozinhos levam ~1 s, mas com a máquina
+    // ocupada (vários arquivos em paralelo, CI) passavam dos 5 s padrão e falhavam por tempo, não por erro.
+    testTimeout: 30_000,
   },
 });

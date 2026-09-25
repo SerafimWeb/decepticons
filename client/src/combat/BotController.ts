@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { mulberry32 } from '../core/rng';
-import type { Difficulty } from '../core/Settings';
+import type { Difficulty, Persona } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { setLocalMove, turnToward, wrapAngle, yawOf } from './steer';
 
-export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat' | 'cool';
+export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat' | 'cool' | 'stalk';
 
 /** Como o bot pilota: tempo de reação, mira e ritmo de tiro. Um conjunto por nível de dificuldade. */
 export interface BotSkill {
@@ -61,16 +61,59 @@ export interface BotProfile {
 export const MECH_PROFILE: BotProfile = { attackRange: 38, keepMinRange: 14, strafeMinS: 1, strafeMaxS: 2.2, dodgeChance: 0, aimErrorScale: 1 };
 /** Andróide (escala 1): chega perto, muda de lado a toda hora e desvia com dash; difícil de acertar, mas mira mal (chato, não perigoso). */
 export const ANDROID_PROFILE: BotProfile = { attackRange: 22, keepMinRange: 7, strafeMinS: 0.35, strafeMaxS: 0.9, dodgeChance: 0.35, aimErrorScale: 2.2 };
+/**
+ * Personalidade do piloto (dono, 25/09: "um mais brabo, outro mais manso, outro fujão que ataca na
+ * covardia"). Por cima do tipo de robô (`BotProfile`) e da dificuldade (`BotSkill`): muda quão perto
+ * luta, quando recua, quando para para esfriar, quanto atira e se só ataca pelas costas.
+ */
+export interface BotPersona {
+  id: Persona;
+  /** Multiplica a distância de ataque do tipo de robô (< 1 chega mais perto). */
+  rangeScale: number;
+  /** Com o torso abaixo desta fração, recua. */
+  retreatAt: number;
+  /** Com o calor nesta fração, para para esfriar (1 = só quando superaquece). */
+  coolAt: number;
+  /** Multiplica a rajada e divide a pausa entre rajadas (> 1 atira mais). */
+  aggression: number;
+  /** Só ataca com brecha: o alvo de costas, avariado ou superaquecido; pego de frente, foge. */
+  ambush: boolean;
+  /** Prioridade na vaga de ataque (o diretor dá a vaga aos maiores primeiro). */
+  priority: number;
+}
+
+export const PERSONAS: Record<Persona, BotPersona> = {
+  /** O de sempre (aprovado pelo dono em 24/09): troca tiros de média distância e recua avariado. */
+  soldado: { id: 'soldado', rangeScale: 1, retreatAt: 0.35, coolAt: 0.9, aggression: 1, ambush: false, priority: 1 },
+  /** Vem para cima, quase não recua e atira até ferver. */
+  brabo: { id: 'brabo', rangeScale: 0.55, retreatAt: 0.12, coolAt: 1, aggression: 1.5, ambush: false, priority: 3 },
+  /** Fica longe, atira menos, recua cedo e esfria antes de ferver. */
+  manso: { id: 'manso', rangeScale: 1.45, retreatAt: 0.55, coolAt: 0.7, aggression: 0.6, ambush: false, priority: 0 },
+  /** Espreita pelas costas e só ataca com brecha; visto de frente, foge com dash. */
+  fujao: { id: 'fujao', rangeScale: 1, retreatAt: 0.6, coolAt: 0.8, aggression: 1.2, ambush: true, priority: 2 },
+};
+
+/** Sem a vaga de ataque, o bot espera nesta fração a mais da distância de ataque, sem atirar. */
+const HOLD_SCALE = 1.4;
+/** Emboscada: o alvo está "de costas" se o bot estiver a mais que isto da frente dele (~100°). */
+const AMBUSH_BACK_RAD = 1.75;
+/** Emboscada: o alvo "viu" o bot se o bot estiver dentro disto da frente dele (~35°) e perto. */
+const AMBUSH_SEEN_RAD = 0.6;
+const AMBUSH_SEEN_DIST = 60;
+/** Emboscada: brecha também quando o alvo está com o torso abaixo disto. */
+const AMBUSH_WEAK = 0.5;
+/** Espreitando, fica a esta distância, atrás do alvo. */
+const STALK_DIST = 32;
+/** Depois de fugir de uma emboscada, espera isto para fugir de novo. */
+const AMBUSH_RETREAT_COOLDOWN_S = 4;
 const FIRE_RANGE = 75;
 /** Só atira com o torso apontado para o alvo dentro deste ângulo. */
 const FIRE_CONE_RAD = 0.12;
 const LOSE_TARGET_S = 2.5;
 const WAYPOINT_REACHED = 4;
-const RETREAT_TORSO_FRACTION = 0.35;
 const RETREAT_S = 3;
 const RETREAT_COOLDOWN_S = 8;
-/** Com o Mech fervendo (ou superaquecido), o bot para para esfriar; volta a lutar abaixo de COOLED_AT. */
-const COOL_AT = 0.9;
+/** Esfriando (o gatilho é o `coolAt` da personalidade), volta a lutar abaixo disto. */
 const COOLED_AT = 0.45;
 const STUCK_CHECK_S = 0.5;
 const STUCK_DIST = 0.8;
@@ -84,6 +127,7 @@ const _aim = new THREE.Vector3();
 const _dir = new THREE.Vector3();
 const _move = new THREE.Vector3();
 const _muzzle = new THREE.Vector3();
+const _goal = new THREE.Vector3();
 
 
 /**
@@ -99,6 +143,13 @@ export class BotController {
   readonly shotDir = new THREE.Vector3();
   wantsToFire = false;
   state: BotState = 'patrol';
+  /**
+   * Vaga de ataque (o diretor do `BotSystem` distribui; sem diretor, sempre tem): sem ela o bot espera
+   * afastado, sem atirar. É o que impede todos de caírem em cima do jogador ao mesmo tempo.
+   */
+  hasToken = true;
+  /** Há quanto tempo segura a vaga (o diretor passa a vez depois de um turno). */
+  tokenHeld = 0;
 
   private readonly rand: () => number;
   private target: MechBase | null = null;
@@ -131,12 +182,29 @@ export class BotController {
     /** Pode mudar no meio da partida (tela de configurações): vale a partir do próximo tick. */
     public skill: BotSkill = BOT_SKILL_NORMAL,
     readonly profile: BotProfile = MECH_PROFILE,
+    /** Pode mudar no meio da partida (configurações): vale a partir do próximo tick. */
+    public persona: BotPersona = PERSONAS.soldado,
   ) {
     this.rand = mulberry32(seed);
     this.yaw = mech.yaw;
-    this.burstLeft = skill.burstShots;
+    this.burstLeft = this.burstSize();
     this.waypoint = Math.floor(this.rand() * waypoints.length);
     this.stuckFrom.copy(mech.simPosition);
+  }
+
+  /** Distância em que ataca: a do tipo de robô, ajustada pela personalidade. */
+  get attackRange(): number {
+    return this.profile.attackRange * this.persona.rangeScale;
+  }
+
+  /** Quer a vaga de ataque: está lutando com um alvo à vista. */
+  get wantsToken(): boolean {
+    return this.targetVisible && (this.state === 'attack' || this.state === 'retreat');
+  }
+
+  /** O alvo que está caçando (diretor: distância até ele). */
+  get currentTarget(): MechBase | null {
+    return this.target;
   }
 
   /** Levou tiro de alguém que não estava vendo: vira e vai atrás. */
@@ -155,9 +223,10 @@ export class BotController {
     this.targetVisible = false;
     this.visibleFor = 0;
     this.sinceSeen = Infinity;
-    this.burstLeft = this.skill.burstShots;
+    this.burstLeft = this.burstSize();
     this.fireCooldown = 0;
     this.retreatTimer = 0;
+    this.tokenHeld = 0;
     this.sidestepTimer = 0;
     this.yaw = this.mech.yaw;
     this.stuckFrom.copy(this.mech.simPosition);
@@ -251,7 +320,7 @@ export class BotController {
     if (
       this.state !== 'retreat' &&
       reacted &&
-      torso < RETREAT_TORSO_FRACTION &&
+      torso < this.persona.retreatAt &&
       this.retreatCooldown <= 0 &&
       m.mobility > 0
     ) {
@@ -263,9 +332,29 @@ export class BotController {
     }
 
     // Calor: superaquecido ou fervendo, para e esfria (parado esfria em dobro); volta com o Mech frio.
-    if (this.state !== 'cool' && (m.overheated || m.heat >= COOL_AT)) {
+    if (this.state !== 'cool' && (m.overheated || m.heat >= this.persona.coolAt)) {
       this.state = 'cool';
       return;
+    }
+
+    // Emboscada (fujão): sem brecha, espreita pelas costas; com brecha, ataca; pego de frente, foge.
+    if (this.persona.ambush && this.target && reacted) {
+      const open = this.opening(this.target);
+      if (this.state === 'attack' && !open && this.seenBy(this.target) && this.retreatCooldown <= 0 && m.mobility > 0) {
+        this.state = 'retreat';
+        this.retreatTimer = RETREAT_S;
+        this.retreatCooldown = AMBUSH_RETREAT_COOLDOWN_S;
+        this.input.dash = true;
+        return;
+      }
+      if ((this.state === 'chase' || this.state === 'attack') && !open) {
+        this.state = 'stalk';
+        return;
+      }
+      if (this.state === 'stalk' && open) {
+        this.state = 'attack';
+        return;
+      }
     }
 
     switch (this.state) {
@@ -277,7 +366,7 @@ export class BotController {
         break;
       case 'chase':
         if (!this.target) this.state = 'patrol';
-        else if (reacted && dist <= this.profile.attackRange) this.state = 'attack';
+        else if (reacted && dist <= this.attackRange) this.state = 'attack';
         else if (this.sinceSeen > LOSE_TARGET_S && this.flatDistance(this.lastSeen) < WAYPOINT_REACHED) {
           // Chegou onde viu o alvo pela última vez e ele não está lá: desiste.
           this.target = null;
@@ -285,7 +374,14 @@ export class BotController {
         }
         break;
       case 'attack':
-        if (!this.targetVisible || dist > this.profile.attackRange + 8) this.state = 'chase';
+        // Sem a vaga, espera mais longe: só volta a perseguir se passar dessa distância de espera.
+        if (!this.targetVisible || dist > this.attackRange * (this.hasToken ? 1 : HOLD_SCALE) + 8) this.state = 'chase';
+        break;
+      case 'stalk':
+        if (!this.target || (!this.targetVisible && this.sinceSeen > LOSE_TARGET_S)) {
+          this.target = null;
+          this.state = 'patrol';
+        }
         break;
       case 'retreat':
         this.retreatTimer -= dt;
@@ -333,7 +429,7 @@ export class BotController {
         }
         // Anda de lado (direita do torso = (cos, -sin)) e recua (trás = (sin, cos)) se estiver perto demais.
         _move.set(Math.cos(faceYaw) * this.strafeSign, 0, -Math.sin(faceYaw) * this.strafeSign);
-        if (this.flatDistance(t) < this.profile.keepMinRange) {
+        if (this.flatDistance(t) < (this.hasToken ? this.profile.keepMinRange : this.attackRange * HOLD_SCALE)) {
           _move.x += Math.sin(faceYaw);
           _move.z += Math.cos(faceYaw);
         }
@@ -343,6 +439,15 @@ export class BotController {
         // Parado, de frente para o alvo (se houver): esfria em dobro e não atira.
         if (this.targetVisible && this.target) faceYaw = this.yawTo(this.target.simPosition);
         break;
+      case 'stalk': {
+        // Para as costas do alvo (a frente dele é (-sin, -cos)), a uma distância segura, olhando para ele.
+        if (!this.target) break;
+        const t = this.target.simPosition;
+        _goal.set(t.x + Math.sin(this.target.yaw) * STALK_DIST, 0, t.z + Math.cos(this.target.yaw) * STALK_DIST);
+        towards(_goal);
+        faceYaw = this.targetVisible ? this.yawTo(t) : yawOf(_move.x, _move.z);
+        break;
+      }
       case 'retreat': {
         const from = this.target ? this.target.simPosition : this.lastSeen;
         towards(from, -1);
@@ -405,7 +510,8 @@ export class BotController {
     this.pitch = Math.atan2(_dir.y, Math.hypot(_dir.x, _dir.z));
 
     const facingOff = Math.abs(wrapAngle(this.yawTo(tp) - this.yaw));
-    if (dist > FIRE_RANGE || facingOff > FIRE_CONE_RAD || this.fireCooldown > 0 || !m.canFirePrimary) return;
+    if (this.hasToken) this.tokenHeld += dt;
+    if (dist > FIRE_RANGE || facingOff > FIRE_CONE_RAD || this.fireCooldown > 0 || !m.canFirePrimary || !this.hasToken) return;
 
     // Erro de mira: gira a direção um pouco em yaw e em pitch.
     _dir.normalize();
@@ -424,9 +530,29 @@ export class BotController {
     if (this.burstLeft > 0) {
       this.fireCooldown = Math.max(this.fireCooldown, -dt) + m.loadout.primary.fireInterval;
     } else {
-      this.burstLeft = this.skill.burstShots;
-      this.fireCooldown = this.skill.burstPauseS * (0.8 + this.rand() * 0.4);
+      this.burstLeft = this.burstSize();
+      this.fireCooldown = (this.skill.burstPauseS / this.persona.aggression) * (0.8 + this.rand() * 0.4);
     }
+  }
+
+  private burstSize(): number {
+    return Math.max(1, Math.round(this.skill.burstShots * this.persona.aggression));
+  }
+
+  /** Brecha para a emboscada: o alvo de costas para o bot, avariado ou superaquecido. */
+  private opening(t: MechBase): boolean {
+    if (t.overheated || t.modules.torso < t.stats.maxModuleHealth.torso * AMBUSH_WEAK) return true;
+    const me = this.mech.simPosition;
+    const tp = t.simPosition;
+    return Math.abs(wrapAngle(yawOf(me.x - tp.x, me.z - tp.z) - t.yaw)) > AMBUSH_BACK_RAD;
+  }
+
+  /** O alvo está olhando para o bot, e perto. */
+  private seenBy(t: MechBase): boolean {
+    const me = this.mech.simPosition;
+    const tp = t.simPosition;
+    if (Math.hypot(me.x - tp.x, me.z - tp.z) > AMBUSH_SEEN_DIST) return false;
+    return Math.abs(wrapAngle(yawOf(me.x - tp.x, me.z - tp.z) - t.yaw)) < AMBUSH_SEEN_RAD;
   }
 
   private nextWaypoint(): void {

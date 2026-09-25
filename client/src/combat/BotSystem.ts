@@ -5,7 +5,8 @@ import { Android } from '../entities/Android';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
-import { ANDROID_PROFILE, BOT_SKILL_NORMAL, BotController, type BotSkill, MECH_PROFILE } from './BotController';
+import { PERSONA_LABELS, type Persona } from '../core/Settings';
+import { ANDROID_PROFILE, BOT_SKILL_NORMAL, BotController, type BotSkill, MECH_PROFILE, PERSONAS } from './BotController';
 import type { CombatSystem } from './CombatSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
 import { REPAIR_RATE } from './repair';
@@ -18,6 +19,12 @@ const BOT_PAINT = PALETTE.enemyPaint;
 const MUZZLE_COLOR = GLOW.enemyMuzzle;
 /** Indicativos de chamada dos pilotos (placar). */
 const CALLSIGNS = ['KESTREL', 'MAKO', 'VIPER', 'RAVEN', 'ORCA', 'JACKAL', 'WRAITH', 'COBALT'];
+/** O diretor redistribui as vagas de ataque a cada tanto (não a cada tick: 5 vezes por segundo basta). */
+const DIRECTOR_INTERVAL_S = 0.2;
+/** Turno de quem tem a vaga: passado isto, a vaga vai para quem está esperando (revezam). */
+const TURN_S = 7;
+/** Custo de uma vaga: um Mech conta 1, um andróide conta ½ (é fraco). */
+const ANDROID_COST = 0.5;
 
 const _muzzle = new THREE.Vector3();
 
@@ -38,6 +45,8 @@ export interface BotSystemOptions {
   waypoints: readonly (readonly [number, number])[];
   seed?: number;
   skill?: BotSkill;
+  /** Personalidade de cada Mech rebelde, na ordem dos `spawns` (padrão: soldado). */
+  personas?: readonly Persona[];
 }
 
 interface Bot {
@@ -62,6 +71,16 @@ export class BotSystem {
   targets: readonly MechBase[] = [];
   readonly mechs: readonly MechBase[];
   private readonly bots: Bot[] = [];
+  /**
+   * Vaga de ataque: quantos podem atacar o mesmo alvo ao mesmo tempo (Mech conta 1, andróide ½). Os
+   * outros esperam afastados, sem atirar, e revezam a cada turno (dono, 25/09: "eles são muitos e me
+   * juntam"). Técnica clássica de jogos de tiro: pressão constante, sem todo mundo de uma vez.
+   */
+  maxAttackers = Infinity;
+  private directorTimer = 0;
+  /** Cérebros de combate (o diretor só olha para eles) e a fila ordenada, reaproveitados: sem alocar. */
+  private readonly fighters: { bot: Bot; brain: BotController; key: number }[] = [];
+  private readonly cand: { bot: Bot; brain: BotController; key: number }[] = [];
   private readonly projectiles: ProjectileSystem;
   private readonly particles: ParticleSystem;
 
@@ -79,11 +98,18 @@ export class BotSystem {
     };
     const fighter = (mech: MechBase, p: readonly [number, number], name: string, i: number, android: boolean) => {
       const home = place(mech, p);
-      const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, o.skill ?? BOT_SKILL_NORMAL, android ? ANDROID_PROFILE : MECH_PROFILE);
+      const persona = PERSONAS[(!android && o.personas?.[i]) || 'soldado'];
+      const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, o.skill ?? BOT_SKILL_NORMAL, android ? ANDROID_PROFILE : MECH_PROFILE, persona);
       o.respawner.track(mech, BOT_RESPAWN_S, () => brain.reset());
       this.bots.push({ mech, brain, name, home });
     };
-    o.spawns.forEach((p, i) => fighter(new Vector09({ paint: BOT_PAINT, visor: PALETTE.signal }), p, CALLSIGNS[i % CALLSIGNS.length]!, i, false));
+    // No placar, o indicativo e a personalidade (KESTREL·BRABO): o jogador aprende quem é quem.
+    const callsign = (i: number) => {
+      const persona = o.personas?.[i];
+      return persona && persona !== 'soldado' ? `${CALLSIGNS[i % CALLSIGNS.length]}·${PERSONA_LABELS[persona].label.toUpperCase()}` : CALLSIGNS[i % CALLSIGNS.length]!;
+    };
+    o.spawns.forEach((p, i) => fighter(new Vector09({ paint: BOT_PAINT, visor: PALETTE.signal }), p, callsign(i), i, false));
+
     // Andróides: numerados como unidades de uma frota (A-01, A-02…); sementes depois das dos Mechs.
     (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android(), p, `A-${String(i + 1).padStart(2, '0')}`, o.spawns.length + i, true));
     // Técnicos (T-01…): consertam os Mechs rebeldes; visor amarelo para o jogador achar e caçar primeiro.
@@ -100,6 +126,7 @@ export class BotSystem {
       this.bots.push({ mech, brain, name: `T-${String(i + 1).padStart(2, '0')}`, home, beam });
     });
     this.mechs = this.bots.map((b) => b.mech);
+    for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0 });
   }
 
   nameOf(mech: MechBase): string {
@@ -112,6 +139,15 @@ export class BotSystem {
       mech.respawn(home);
       mech.applyFacing(Math.atan2(home.x, home.z), 0);
       brain.reset();
+    }
+  }
+
+  /** Troca a personalidade de cada Mech rebelde, na ordem (vale a partir do próximo tick). */
+  setPersonas(list: readonly Persona[]): void {
+    let i = 0;
+    for (const b of this.bots) {
+      if (!(b.brain instanceof BotController) || b.mech instanceof Android) continue;
+      b.brain.persona = PERSONAS[list[i++] ?? 'soldado'];
     }
   }
 
@@ -138,7 +174,54 @@ export class BotSystem {
     this.brainOf(mech)?.alert(shooter);
   }
 
+  /**
+   * Diretor de ataque: dá as vagas a quem quer atacar, nesta ordem: quem já tem a vaga e está no turno,
+   * a prioridade da personalidade (o brabo primeiro), e o mais perto do alvo. Determinístico (ordem
+   * estável, sem sorteio); roda 5 vezes por segundo. Custo: um laço e uma ordenação de ≤ 7 bots.
+   */
+  private direct(dt: number): void {
+    this.directorTimer -= dt;
+    if (this.directorTimer > 0) return;
+    this.directorTimer = DIRECTOR_INTERVAL_S;
+    const cand = this.cand;
+    cand.length = 0;
+    for (const q of this.fighters) {
+      const { brain } = q;
+      const target = brain.currentTarget;
+      if (!q.bot.mech.alive || !brain.wantsToken || !target) {
+        brain.hasToken = false;
+        brain.tokenHeld = 0;
+        continue;
+      }
+      const onTurn = brain.hasToken && brain.tokenHeld < TURN_S ? 0 : 1;
+      const me = q.bot.mech.simPosition;
+      const tp = target.simPosition;
+      q.key = onTurn * 1e6 - brain.persona.priority * 1e4 + Math.min(Math.hypot(me.x - tp.x, me.z - tp.z), 9999);
+      // Inserção ordenada (≤ 7 bots), no mesmo array de sempre: nada alocado.
+      let i = cand.length;
+      cand.push(q);
+      while (i > 0 && cand[i - 1]!.key > q.key) {
+        cand[i] = cand[i - 1]!;
+        i--;
+      }
+      cand[i] = q;
+    }
+    let budget = this.maxAttackers;
+    for (const q of cand) {
+      const cost = q.bot.mech instanceof Android ? ANDROID_COST : 1;
+      if (cost <= budget + 1e-9) {
+        if (!q.brain.hasToken) q.brain.tokenHeld = 0;
+        q.brain.hasToken = true;
+        budget -= cost;
+      } else {
+        q.brain.hasToken = false;
+        q.brain.tokenHeld = 0;
+      }
+    }
+  }
+
   fixedUpdate(dt: number): void {
+    this.direct(dt);
     for (const { mech, brain } of this.bots) {
       mech.fixedUpdate(brain.think(dt, this.targets), dt);
       // Técnico no alcance: o conserto é regra do tick (quem escolhe o Mech é o cérebro).
