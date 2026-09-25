@@ -7,19 +7,18 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { CameraRig } from '../camera/CameraRig';
-import { CombatSystem } from '../combat/CombatSystem';
-import { ProjectileSystem } from '../combat/ProjectileSystem';
-import { RocketSystem } from '../combat/RocketSystem';
+import type { CombatSystem } from '../combat/CombatSystem';
+import type { ProjectileSystem } from '../combat/ProjectileSystem';
+import type { RocketSystem } from '../combat/RocketSystem';
 import { BOT_SKILLS } from '../combat/BotController';
-import { BotSystem } from '../combat/BotSystem';
-import { Respawner } from '../combat/Respawner';
-import { Round } from '../combat/Round';
+import type { BotSystem } from '../combat/BotSystem';
+import type { Respawner } from '../combat/Respawner';
+import type { Round } from '../combat/Round';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
 import type { MechBase } from '../entities/MechBase';
-import { Arena, SPAWN_POINTS } from '../environment/Arena';
-import { DebrisSystem } from '../environment/DebrisSystem';
-import { Destructibles } from '../environment/Destructibles';
+import type { DebrisSystem } from '../environment/DebrisSystem';
+import type { Destructibles } from '../environment/Destructibles';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
@@ -42,20 +41,12 @@ import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
 import { BrandSplash } from '../brand/BrandSplash';
 import { Hangar } from '../hangar/Hangar';
+import { Match } from '../sim/Match';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
-const PLAYER_RESPAWN_S = 3;
 /** Resolução máxima do render: acima de 1,5 o custo de GPU sobe muito para pouco ganho visível. */
 const maxPixelRatio = () => Math.min(window.devicePixelRatio, 1.5);
-/** Um bot perto (entra em combate logo) e dois mais longe (chegam patrulhando). */
-const BOT_SPAWNS = [SPAWN_POINTS[2]!, SPAWN_POINTS[4]!, SPAWN_POINTS[8]!];
-/**
- * IAs rebeldes na arena: 3 Mechs, 3 andróides de combate e 1 técnico. Teto: 7 bots + o jogador =
- * 8 character controllers, o tamanho de sala do jogo (G11).
- */
-const ANDROID_SPAWNS = [SPAWN_POINTS[5]!, SPAWN_POINTS[6]!, SPAWN_POINTS[9]!];
-const TECHNICIAN_SPAWNS = [SPAWN_POINTS[10]!];
 const THRUSTER_COLOR = new THREE.Color(3.0, 1.0, 0.2);
 const DUST_COLOR = GLOW.dust;
 const UP = new THREE.Vector3(0, 1, 0);
@@ -67,9 +58,10 @@ const SMOKE_COLOR = GLOW.smoke;
 const _aimFrom = new THREE.Vector3();
 
 /**
- * Monta os módulos e roda o loop:
- *  - simulação (Mech, projéteis, física) em passo fixo de 60 Hz;
- *  - render (câmera, animação, partículas) na taxa do monitor, interpolado.
+ * O jogo no navegador: monta a partida (`sim/Match`, a simulação que o servidor também vai rodar) e
+ * põe por cima o que é do cliente, e roda o loop:
+ *  - simulação em passo fixo de 60 Hz (a partida e o controle do jogador);
+ *  - render (câmera, animação, partículas, HUD, som) na taxa do monitor, interpolado.
  */
 export class Game {
   private readonly renderer: THREE.WebGLRenderer;
@@ -81,6 +73,8 @@ export class Game {
   private readonly quality: Quality;
   private readonly input: InputManager;
   private readonly particles = new ParticleSystem();
+  /** A partida (sem tela): arena, bots, tiros, dano, rodadas. As partes abaixo são atalhos para ela. */
+  private readonly match: Match;
   private readonly debris: DebrisSystem;
   private readonly destructibles: Destructibles;
   private readonly projectiles: ProjectileSystem;
@@ -88,7 +82,7 @@ export class Game {
   private readonly combat: CombatSystem;
   private readonly bots: BotSystem;
   private readonly respawner: Respawner;
-  private readonly round = new Round();
+  private readonly round: Round;
   private readonly roundHud: RoundHud;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
@@ -127,7 +121,7 @@ export class Game {
 
   private constructor(
     container: HTMLElement,
-    private readonly physics: PhysicsWorld,
+    physics: PhysicsWorld,
   ) {
     // --- Render ---
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
@@ -159,42 +153,14 @@ export class Game {
     this.composer.addPass(new OutputPass());
     window.addEventListener('resize', () => this.onResize());
 
-    // --- Mundo ---
+    // --- A partida (a simulação única; quantos inimigos vêm das configurações e mudam ao reiniciar) ---
     this.scene.add(this.particles.points);
-    this.debris = new DebrisSystem(this.scene, physics);
-    this.destructibles = new Destructibles(this.scene, physics, this.debris, this.particles);
-    const arena = new Arena(this.scene, physics, this.destructibles);
-    this.projectiles = new ProjectileSystem(this.scene, physics, this.particles);
-    this.rockets = new RocketSystem(this.scene, physics, this.particles);
-
-    this.mech = new Vector09({ loadout: this.hangar.equipped });
-    const [px, pz] = SPAWN_POINTS[0]!;
-    this.mech.spawn(physics, new THREE.Vector3(px, 0, pz));
-    this.scene.add(this.mech.root);
-
-    // --- Combate ---
-    this.combat = new CombatSystem(this.destructibles, this.debris, this.particles);
-    this.combat.register(this.mech);
-    this.respawner = new Respawner(SPAWN_POINTS);
-    this.respawner.track(this.mech, PLAYER_RESPAWN_S, () => this.equipPending());
-    // Quantos inimigos e quem são (configurações: a contagem vale ao reiniciar a partida).
     const foes = this.settings.value;
-    this.bots = new BotSystem({
-      scene: this.scene,
-      physics,
-      combat: this.combat,
-      projectiles: this.projectiles,
-      particles: this.particles,
-      respawner: this.respawner,
-      spawns: BOT_SPAWNS.slice(0, foes.enemyMechs),
-      androidSpawns: ANDROID_SPAWNS.slice(0, foes.enemyAndroids),
-      technicianSpawns: foes.technician ? TECHNICIAN_SPAWNS : [],
-      personas: foes.enemyPersonas,
-      waypoints: SPAWN_POINTS,
-    });
-    this.bots.targets = [this.mech];
-    this.round.register(this.mech, 'VOCÊ');
-    for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
+    this.match = new Match({ physics, scene: this.scene, particles: this.particles, foes });
+    ({ debris: this.debris, destructibles: this.destructibles, projectiles: this.projectiles, rockets: this.rockets } = this.match);
+    ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
+    this.mech = new Vector09({ loadout: this.hangar.equipped });
+    this.match.addPlayer(this.mech, 'VOCÊ', 0, () => this.equipPending());
     // Sons dos andróides (Gemini): tiro e pouso, mais baixos quanto mais longe do jogador.
     for (const b of this.bots.mechs) {
       if (!(b instanceof Android)) continue;
@@ -229,9 +195,10 @@ export class Game {
       physics,
       input: this.input,
       mech: this.mech,
-      occluders: arena.occluders,
+      occluders: this.match.arena.occluders,
     });
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets);
+    this.match.pilots.push(this.player);
     this.assist = new AimAssist(physics, this.mech, this.bots.mechs);
 
     this.wireEvents();
@@ -267,20 +234,10 @@ export class Game {
     this.player.rearm();
   }
 
-  /**
-   * Rodada nova: todos inteiros nos pontos de nascimento, arena restaurada. A ordem importa:
-   * Mechs saem de perto das estruturas e os destroços somem antes de as barricadas voltarem.
-   */
+  /** Rodada nova: a partida já pôs todos de volta e restaurou a arena; aqui, o que é do jogador local. */
   private startRound(): void {
-    const [px, pz] = SPAWN_POINTS[0]!;
-    this.mech.respawn(_tmp.set(px, 0, pz));
-    this.bots.respawnAll();
-    this.projectiles.clear();
-    this.rockets.clear();
     this.equipPending();
     this.player.launcher.refill();
-    this.debris.clear();
-    this.destructibles.restoreAll();
     this.hud.setScore(0, 0);
     this.onboarding.trigger('walk');
   }
@@ -325,7 +282,6 @@ export class Game {
       // Som de pouso: intensidade proporcional à velocidade de impacto (12..40 m/s → 0..1)
       this.audio.playLand(THREE.MathUtils.clamp((speed - 12) / 28, 0, 1));
     };
-    mech.onDashImpact = (collider, dir) => this.destructibles.demolish(collider, dir);
     // Som de disparo: wrap do onFire do jogador (não toca para bots — só mech do jogador).
     // O método onFire original anima o recuo; o wrap mantém esse comportamento e adiciona o som.
     const _origFire = mech.onFire.bind(mech);
@@ -334,8 +290,7 @@ export class Game {
       this.audio.playRocketLaunch();
       this.onboarding.trigger('rockets');
     };
-    this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
-    this.combat.onMechHit = (e) => {
+    this.match.onMechHit = (e) => {
       if (e.shooter === mech) {
         this.hud.showHit(e.result);
         // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar)
@@ -349,17 +304,14 @@ export class Game {
           this.damageIndicator.show(mech.position, e.shooter.position, rig.look.yaw);
         }
         rig.addShake(0.12);
-      } else {
-        this.bots.onDamaged(e.mech, e.shooter);
       }
       // Parte destruída → estalo metálico
       if (e.result.partDestroyed) this.audio.playPartDestroyed();
     };
-    this.combat.onMechKilled = (dead, at, killer) => {
+    this.match.onMechKilled = (dead, at, killer) => {
       const falloff = 1 - at.distanceTo(mech.position) / 70;
       if (falloff > 0) rig.addShake(0.7 * falloff);
       this.audio.playExplosion(1 - Math.max(0, falloff));
-      this.round.recordKill(dead, killer);
       const me = this.round.scoreOf(mech);
       this.hud.setScore(me?.kills ?? 0, me?.deaths ?? 0);
 
@@ -369,15 +321,15 @@ export class Game {
       this.killFeed.push(killerName, deadName, isPlayerInvolved);
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
     };
-    // Foguete: a regra de dano em área é do CombatSystem; aqui, fogo, fumaça, tremor e som.
-    this.rockets.onExplode = (at, dir, owner, w) => {
-      this.combat.explode(at, dir, owner, w);
+    // Foguete: o dano em área já foi aplicado pela partida; aqui, fogo, fumaça, tremor e som.
+    this.match.onExplosion = (at) => {
       this.particles.burst(at, UP, { count: 70, color: BLAST_COLOR, speed: 18, life: 0.75, size: 2.2, expansion: 0.9, spread: 2.4, gravity: 2 });
       this.particles.burst(at, UP, { count: 24, color: SMOKE_COLOR, speed: 4, life: 1.4, size: 2.7, expansion: 1.2, spread: 1.6, gravity: -1.5 });
       const dist = at.distanceTo(mech.position);
       if (dist < 40) rig.addShake(0.5 * (1 - dist / 40));
       this.audio.playExplosion(dist);
     };
+    this.match.onRoundStart = () => this.startRound();
     this.destructibles.onBreak = (center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
       if (falloff > 0) rig.addShake(0.55 * falloff);
@@ -551,16 +503,8 @@ export class Game {
     let steps = 0;
     const t0 = performance.now();
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
-      // No intervalo entre rodadas o mundo fica congelado (placar na tela); só o relógio anda.
-      if (this.round.playing) {
-        this.player.fixedUpdate(FIXED_DT);
-        this.bots.fixedUpdate(FIXED_DT);
-        this.respawner.fixedUpdate(FIXED_DT);
-        this.projectiles.fixedUpdate(FIXED_DT);
-        this.rockets.fixedUpdate(FIXED_DT);
-        this.physics.step();
-      }
-      if (this.round.fixedUpdate(FIXED_DT) === 'started') this.startRound();
+      // A partida roda o controle do jogador, os bots, os tiros e a física; entre rodadas, só o relógio.
+      this.match.step(FIXED_DT);
       this.accumulator -= FIXED_DT;
       steps++;
     }

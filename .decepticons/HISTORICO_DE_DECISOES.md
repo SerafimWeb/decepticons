@@ -2,6 +2,17 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] M1 do multiplayer: a partida sem tela
+**Pedido do dono:** "quero aplicar o multiplayer; dá para criar o servidor no meu PC?"
+**Decisão (Claude):**
+- **`sim/Match.ts`** tem a partida inteira (arena, barricadas, Mechs, bots, projéteis, foguetes, dano, renascimento, rodadas) no tick fixo, sem WebGL nem DOM. As regras que estavam espalhadas no `Game.ts` (acerto → alerta do bot, abate → placar, explosão → dano em área, dash → demolição) foram para a partida; o `Game` só ouve eventos para tela, som e vibração. O servidor vai instanciar a mesma classe.
+- **Pragmático:** a simulação continua usando o Three.js para matemática e grafo de cena (roda no Node sem WebGL, como os testes sempre rodaram). Tirar o Three.js do servidor só se a memória pedir.
+- **Servidor sem destroços** (`debris: false`): não vão pela rede e custam CPU.
+- **Achado:** destroços no mesmo mundo físico mudam a ordem interna do Rapier e a partida diverge depois do primeiro estilhaço (e com `Math.random`, entre execuções). O servidor, sem destroços, é determinístico (testado); o cliente corrige pela reconciliação (M4); plano B registrado: mundo físico só para os destroços.
+- **Medido:** 0,74 ms por tick em média com a sala cheia (meta de 2 ms, G14).
+**Custo de CPU:** nenhum a mais no cliente (a mesma ordem de tick de antes).
+**Quem decidiu:** Claude.
+
 ## [2026-09-25] Correção: Mechs brancos depois da junção de malhas
 **Achado (Claude, jogando o build para testar as setas):** o Vector-09 e os andróides apareciam brancos e brilhando. Na junção das malhas por articulação (PR #43, Codex), o uniforme do flash de dano começava com `new THREE.Color()`, que no Three.js é **branco**; o flash só é reescrito quando o Mech toma dano, então o casco inteiro brilhava branco até o primeiro tiro.
 **Decisão:** a cor nasce preta (`new THREE.Color(0, 0, 0)`). Uma linha, no território do Codex (regra 4: correção pequena e segura; ele fica sabendo pela revisão cruzada).
