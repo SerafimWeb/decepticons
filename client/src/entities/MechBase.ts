@@ -1,6 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { HeatSink, type HeatStats } from '../combat/heat';
+import { repairModules } from '../combat/repair';
 import { applyDamage, partAt, type DamageResult } from '../combat/damage';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
@@ -282,6 +283,12 @@ export abstract class MechBase {
     const right = dx * Math.cos(this.yaw) - dz * Math.sin(this.yaw);
     const part = partAt(right, point.y - this.simPos.y, this.stats.height, this.stats.radius);
     return this.damagePart(part, amount);
+  }
+
+  /** Conserto (técnico): devolve vida à parte mais avariada que ainda existe. Devolve quanto consertou. */
+  repair(amount: number): number {
+    if (!this.alive) return 0;
+    return repairModules(this.modules, this.stats.maxModuleHealth, amount);
   }
 
   damagePart(part: MechPart, amount: number): DamageResult {

@@ -23,12 +23,21 @@ do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
 
 | Escala | O que é | Hoje no jogo | Como luta |
 |---|---|---|---|
-| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~2 m) | **Andróide rebelde** (A-01, A-02…): casco branco, visor vermelho, blaster no antebraço | Pequeno, frágil (3 tiros de plasma), tiro fraco, mas **muito ágil**: arranca na hora, pula duas vezes, desvia com dash; chega perto e zigue-zagueia |
+| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~2 m) | **Andróide de combate** (A-01…): casco branco, visor vermelho, blaster no antebraço. **Técnico** (T-01…): visor amarelo, conserta os Mechs | **Mais chato do que perigoso:** cai com 2 tiros de plasma, o tiro dele quase não tira vida e a mira é solta, mas é muito ágil (arranca na hora, pula duas vezes, desvia com dash) |
 | **2** | Mechs de combate (~5 m) | **Vector-09** (o jogador) e Mechs rebeldes (KESTREL, MAKO, VIPER) | Blindado, dano por parte, calor na arma, foguetes |
 | **3** | Máquinas de cerco (futuro) | ainda não | a definir (Colossus-01) |
 
 - O visual segue a regra da produção: tudo gerado por código. Nada de marca real: os robôs lembram os de hoje sem copiar nenhum.
 - Próximo na escala 1: um quadrúpede (cão-robô), mais rápido e mais baixo, que obriga a mirar para baixo.
+
+**Funções da escala 1** (dono, 25/09). Os humanoides fazem o que um humano faria no campo de batalha:
+| Função | O que faz | Situação |
+|---|---|---|
+| Combate | Enxame chato: chega perto, zigue-zagueia, atira fraco | no jogo |
+| **Técnico** | Conserta os Mechs rebeldes com um feixe (a parte mais avariada que ainda existe); foge do jogador; escolta quando não há o que consertar. **Alvo prioritário** | no jogo |
+| Coletor | Junta peças dos destroços para reconstruir partes arrancadas (o técnico sozinho não traz parte de volta) | planejado |
+| Logística | Leva munição e foguetes aos Mechs | planejado |
+| **Piloto** | Embarca em máquinas vazias do hangar e pilota, como um humano (Mech sem piloto fica parado; matar o piloto desliga o Mech) | planejado, junto com o Hangar |
 
 ---
 
@@ -47,6 +56,7 @@ do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
 - **Som feito na hora:** efeitos sintetizados pelo próprio navegador, sem arquivos pesados para baixar.
 - **Foguetes no braço esquerdo:** quatro no carregador e dano em área; exploda no pé do inimigo para arrancar a perna.
 - **IAs rebeldes de dois tamanhos:** Mechs blindados e andróides pequenos e ágeis que chegam perto, pulam e desviam.
+- **Técnicos inimigos:** andróides de visor amarelo consertam os Mechs rebeldes; derrube eles primeiro.
 
 ---
 

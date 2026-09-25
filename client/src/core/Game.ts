@@ -45,8 +45,12 @@ const PLAYER_RESPAWN_S = 3;
 const maxPixelRatio = () => Math.min(window.devicePixelRatio, 1.5);
 /** Um bot perto (entra em combate logo) e dois mais longe (chegam patrulhando). */
 const BOT_SPAWNS = [SPAWN_POINTS[2]!, SPAWN_POINTS[4]!, SPAWN_POINTS[8]!];
-/** Andróides rebeldes (escala 1). Teto de bots na arena: 6 (3 Mechs + 3 andróides) + o jogador = 7 character controllers. */
+/**
+ * IAs rebeldes na arena: 3 Mechs, 3 andróides de combate e 1 técnico. Teto: 7 bots + o jogador =
+ * 8 character controllers, o tamanho de sala do jogo (G11).
+ */
 const ANDROID_SPAWNS = [SPAWN_POINTS[5]!, SPAWN_POINTS[6]!, SPAWN_POINTS[9]!];
+const TECHNICIAN_SPAWNS = [SPAWN_POINTS[10]!];
 const THRUSTER_COLOR = new THREE.Color(3.0, 1.0, 0.2);
 const DUST_COLOR = GLOW.dust;
 const UP = new THREE.Vector3(0, 1, 0);
@@ -170,6 +174,7 @@ export class Game {
       respawner: this.respawner,
       spawns: BOT_SPAWNS,
       androidSpawns: ANDROID_SPAWNS,
+      technicianSpawns: TECHNICIAN_SPAWNS,
       waypoints: SPAWN_POINTS,
     });
     this.bots.targets = [this.mech];

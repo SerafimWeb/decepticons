@@ -7,6 +7,11 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Andróides "rápidos, mas fracos" e o técnico (Claude, pedido do dono):**
+  - Andróides de combate: 2 tiros derrubam, tiro de 4, mira solta.
+  - **T-01** conserta os Mechs rebeldes com um feixe amarelo e foge do jogador. Alvo prioritário.
+  - Funções futuras da escala 1 no GAME_DESIGN: coletor, logística e piloto de máquinas.
+  - A arena agora tem 8 unidades (o tamanho de sala). Código de direção comum aos cérebros em `combat/steer.ts`.
 - **Cidade estilo Tron (dono: "volte o ciano, o pink, vermelho aceso, amarelo fluorescente; sci-fi espacial"):** prédios, barricadas e horizonte multicoloridos, grade ciano e céu estrelado; verde segue sendo do jogador e vermelho das IAs
 - **Tema e escalas (dono, 25/09: "temos que defender contra IAs rebeldes"):** escala 1 = robôs do tamanho dos humanoides de hoje; escala 2 = Mechs como o Vector-09 (GAME_DESIGN, "TEMA E ESCALAS")
 - **Andróides rebeldes, escala 1 (Claude):** 3 na arena, pequenos, frágeis e muito ágeis; a IA ganhou perfil de luta por tipo (o andróide chega perto, zigue-zagueia e desvia com dash). O dano de cada tiro agora vem da arma de quem atira

@@ -4,6 +4,7 @@ import type { Difficulty } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { PROJECTILE_SPEED } from './ProjectileSystem';
+import { setLocalMove, turnToward, wrapAngle, yawOf } from './steer';
 
 export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat';
 
@@ -53,12 +54,14 @@ export interface BotProfile {
   strafeMinS: number;
   strafeMaxS: number;
   dodgeChance: number;
+  /** Multiplica o erro de mira da dificuldade (1 = como está; maior = mira mais solta). */
+  aimErrorScale: number;
 }
 
 /** Mech (escala 2): ataca de longe, anda de lado devagar, não desvia com dash. */
-export const MECH_PROFILE: BotProfile = { attackRange: 38, keepMinRange: 14, strafeMinS: 1, strafeMaxS: 2.2, dodgeChance: 0 };
-/** Andróide (escala 1): chega perto, muda de lado a toda hora e desvia com dash. Difícil de acertar. */
-export const ANDROID_PROFILE: BotProfile = { attackRange: 22, keepMinRange: 7, strafeMinS: 0.35, strafeMaxS: 0.9, dodgeChance: 0.35 };
+export const MECH_PROFILE: BotProfile = { attackRange: 38, keepMinRange: 14, strafeMinS: 1, strafeMaxS: 2.2, dodgeChance: 0, aimErrorScale: 1 };
+/** Andróide (escala 1): chega perto, muda de lado a toda hora e desvia com dash; difícil de acertar, mas mira mal (chato, não perigoso). */
+export const ANDROID_PROFILE: BotProfile = { attackRange: 22, keepMinRange: 7, strafeMinS: 0.35, strafeMaxS: 0.9, dodgeChance: 0.35, aimErrorScale: 2.2 };
 const FIRE_RANGE = 75;
 /** Só atira com o torso apontado para o alvo dentro deste ângulo. */
 const FIRE_CONE_RAD = 0.12;
@@ -80,16 +83,6 @@ const _dir = new THREE.Vector3();
 const _move = new THREE.Vector3();
 const _muzzle = new THREE.Vector3();
 
-function wrapAngle(a: number): number {
-  a = (a + Math.PI) % (2 * Math.PI);
-  if (a < 0) a += 2 * Math.PI;
-  return a - Math.PI;
-}
-
-/** Yaw que faz o Mech olhar para a direção (dx, dz): com yaw 0 a frente dele é -Z. */
-function yawOf(dx: number, dz: number): number {
-  return Math.atan2(-dx, -dz);
-}
 
 /**
  * IA de um Mech inimigo. Produz o mesmo `MechInput` que o teclado do jogador, e um pedido de
@@ -345,16 +338,9 @@ export class BotController {
 
     this.unstick(dt, faceYaw);
 
-    this.yaw = wrapAngle(this.yaw + THREE.MathUtils.clamp(wrapAngle(faceYaw - this.yaw), -this.skill.turnRate * dt, this.skill.turnRate * dt));
+    this.yaw = turnToward(this.yaw, faceYaw, this.skill.turnRate * dt);
 
-    // Mundo → referencial do torso: frente = (-sin, -cos), direita = (cos, -sin).
-    const sin = Math.sin(this.yaw);
-    const cos = Math.cos(this.yaw);
-    const cmd = this.input;
-    cmd.moveYaw = this.yaw;
-    cmd.yaw = this.yaw;
-    cmd.moveX = _move.x * cos - _move.z * sin;
-    cmd.moveZ = -_move.x * sin - _move.z * cos;
+    setLocalMove(this.input, _move.x, _move.z, this.yaw);
   }
 
   /** Encalhou (andando e quase parado)? Na patrulha troca de destino; em combate dá um passo de lado e pula. */
@@ -408,13 +394,14 @@ export class BotController {
 
     // Erro de mira: gira a direção um pouco em yaw e em pitch.
     _dir.normalize();
-    const e = (this.rand() * 2 - 1) * this.skill.aimErrorRad;
+    const err = this.skill.aimErrorRad * this.profile.aimErrorScale;
+    const e = (this.rand() * 2 - 1) * err;
     const ce = Math.cos(e);
     const se = Math.sin(e);
     const x = _dir.x * ce + _dir.z * se;
     _dir.z = -_dir.x * se + _dir.z * ce;
     _dir.x = x;
-    _dir.y += (this.rand() * 2 - 1) * this.skill.aimErrorRad;
+    _dir.y += (this.rand() * 2 - 1) * err;
     this.shotDir.copy(_dir.normalize());
     this.wantsToFire = true;
 

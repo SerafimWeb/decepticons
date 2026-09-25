@@ -76,6 +76,7 @@
 - [x] Nome do jogo: CYBERMECH (sem o "Protocol") #negocio
 - [x] Cidade estilo Tron: prédios e barricadas em ciano, pink, amarelo fluorescente, verde; grade ciano; horizonte com faixas neon e céu estrelado #cenarios
 - [x] Tema "defender contra IAs rebeldes" e escalas de robô; escala 1: andróide rebelde (~2 m), ágil e frágil, com IA de bando (3 na arena) #ia
+- [x] Andróides mais chatos que perigosos (2 tiros derrubam, tiro de 4, mira solta) e o técnico (T-01), que conserta os Mechs rebeldes e foge do jogador #ia
 - [x] Vibração no celular ao levar tiro e ao abater #ux
 - [x] Botões do toque em arco em volta do polegar (FOGO para dentro da tela) e editor para arrastar e mudar o tamanho, salvo no aparelho #ux
 - [~] Ajuste fino da mira no celular com o playtest do dono: velocidade do dedo suavizada; a ajuda solta o alvo quando o jogador puxa para longe #jogabilidade
@@ -115,6 +116,9 @@
 - [ ] Bots contra bots no modo todos contra todos #ia
 - [ ] Bots com foguetes na dificuldade difícil #ia
 - [ ] Escala 1, segundo tipo: quadrúpede rebelde (cão-robô), mais rápido e mais baixo #mechs
+- [ ] Escala 1, coletor: junta peças dos destroços para reconstruir partes arrancadas #ia
+- [ ] Escala 1, logística: leva munição e foguetes aos Mechs #ia
+- [ ] Escala 1, piloto: andróides embarcam em máquinas vazias do hangar (matar o piloto desliga o Mech) #ia
 - [ ] Hangar: montar o próprio Mech (chassi, arma de cada braço, módulos), peças geradas por código e equilibradas, sem pay-to-win (prioridade do dono) #mechs
 - [ ] Parte avariada solta faísca e fumaça antes de cair #mechs
 - [ ] Pintura e decalques por jogador (base dos cosméticos) #mechs
