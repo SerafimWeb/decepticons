@@ -2,6 +2,9 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Som sintetizado para foguetes
+**Decisão (Gemini):** Lançamento de foguetes agora toca um som sintetizado de curto decay (`AudioSystem.playRocketLaunch`) acionado a partir de `player.onRocket`, seguindo o conceito sem dependência de áudio externo. O impacto da explosão já usa o som de explosão genérico conforme o volume vs distância.
+
 ## [2026-09-24] Paleta âmbar industrial: sai o azul e o roxo
 **Pedido do dono:** "azul e roxo é a assinatura de feito com IA, temos que mudar isso também".
 **Decisão (Claude, dentro da identidade que o dono já aprovou no site):** o jogo passa a usar o âmbar industrial do site (terminal de fósforo, aço, luz de sódio).

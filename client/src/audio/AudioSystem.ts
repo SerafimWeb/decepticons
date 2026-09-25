@@ -437,4 +437,37 @@ export class AudioSystem {
     feedback.stop(now + 0.45);
     feedback.onended = () => { fg.disconnect(); };
   }
+
+  /**
+   * FOGUETES — lançamento.
+   * Sopro/whoosh sintetizado curto.
+   */
+  playRocketLaunch(): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer) return;
+
+    const now = ctx.currentTime;
+
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    
+    // Filtro passa-banda subindo
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(400, now);
+    filter.frequency.exponentialRampToValueAtTime(1500, now + 0.3);
+    filter.Q.value = 0.5;
+
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0, now);
+    ng.gain.linearRampToValueAtTime(0.4, now + 0.05);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+    src.connect(filter);
+    filter.connect(ng);
+    ng.connect(masterGain);
+    src.start(now);
+    src.stop(now + 0.45);
+    src.onended = () => { ng.disconnect(); filter.disconnect(); };
+  }
 }
