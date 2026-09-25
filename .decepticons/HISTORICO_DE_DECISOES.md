@@ -29,6 +29,13 @@
 - O site do projeto fica no âmbar de terminal, que o dono já aprovou.
 **Quem decidiu:** dono (nome, direção das cores); Claude (tons).
 
+## [2026-09-24] Primeira partida guiada
+**Decisão (Gemini):** Implementado `Onboarding.ts` que apresenta dicas contextuais sem cobrir a mira.
+- Textos se adaptam para PC e Toque (ex: 'USE WASD...' x 'USE O POLEGAR ESQUERDO...').
+- Gatilhos dinâmicos via `Game.ts` respondendo a movimento, inimigo na mira, dano recebido e disparos de arma.
+- O componente usa `localStorage` para aparecer apenas na primeira vez.
+- Estilo minimalista fixado acima dos comandos básicos e com `opacity` transitório.
+
 ## [2026-09-24] Calibragem do Vector-09: menos velocidade e calor na arma
 **Pedido do dono:** "esse primeiro robô está muito rápido, e a sequência de tiro dele precisa dar um respiro; não dá pra ficar direto assim, pra não apelar tanto".
 **Decisão (Claude):**

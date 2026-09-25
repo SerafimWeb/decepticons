@@ -864,3 +864,27 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   60% { opacity: 0.8; }
   100% { opacity: 0; }
 }
+
+/* === ONBOARDING === */
+#onboarding {
+  position: absolute;
+  bottom: 25vh;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--ink);
+  background: rgba(10, 9, 6, 0.8);
+  padding: 8px 16px;
+  border: 1px solid var(--accent);
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 2px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(255, 176, 0, 0.2);
+  z-index: 1000;
+}
+#onboarding.show {
+  opacity: 1;
+}

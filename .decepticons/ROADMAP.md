@@ -79,7 +79,7 @@
 - [x] Botões do toque em arco em volta do polegar (FOGO para dentro da tela) e editor para arrastar e mudar o tamanho, salvo no aparelho #ux
 - [~] Ajuste fino da mira no celular com o playtest do dono: velocidade do dedo suavizada; a ajuda solta o alvo quando o jogador puxa para longe #jogabilidade
 - [x] Botão de placar no toque (no celular não existe Tab) #ux
-- [ ] Primeira partida guiada: dicas curtas no jogo (mire nas pernas, dash, pulo duplo), uma vez só #ux
+- [x] Primeira partida guiada: dicas curtas no jogo (mire nas pernas, andar, foguetes, arco vermelho), uma vez só #ux
 - [x] Gestão no GitHub: etiquetas automáticas por frente e por agente, modelo de PR, notas de versão por frente #base
 - [x] Página do jogo (landing) e bastidores do desenvolvimento (o case) no site, com capturas do jogo feitas a cada deploy #negocio
 - [x] Bastidores com a atividade da equipe: commits por agente, mapa de calor por hora, fluxo de commits e entregas, pedidos do dono atendidos (tudo do git e dos PRs) #negocio

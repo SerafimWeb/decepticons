@@ -27,6 +27,7 @@ import { DamageIndicator } from '../ui/DamageIndicator';
 import { HUD } from '../ui/HUD';
 import { KillFeed } from '../ui/KillFeed';
 import { MouseCalibration } from '../ui/MouseCalibration';
+import { Onboarding } from '../ui/Onboarding';
 import { RoundHud } from '../ui/RoundHud';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { InputManager } from './InputManager';
@@ -90,6 +91,7 @@ export class Game {
   private readonly damageIndicator = new DamageIndicator();
   private readonly debugPanel = new DebugPanel();
   private readonly audio = new AudioSystem();
+  private readonly onboarding = new Onboarding();
   /** Nó de gain do loop de chiado do Blind Mode; null = som não está tocando. */
   private blindGain: GainNode | null = null;
   /** Flag para detectar a transição false→true do dash a cada frame. */
@@ -233,6 +235,7 @@ export class Game {
     this.debris.clear();
     this.destructibles.restoreAll();
     this.hud.setScore(0, 0);
+    this.onboarding.trigger('walk');
   }
 
   /** O composer guarda o próprio pixelRatio (render targets): os dois mudam juntos. */
@@ -277,7 +280,7 @@ export class Game {
     // Som de disparo: wrap do onFire do jogador (não toca para bots — só mech do jogador).
     // O método onFire original anima o recuo; o wrap mantém esse comportamento e adiciona o som.
     const _origFire = mech.onFire.bind(mech);
-    mech.onFire = () => { _origFire(); this.audio.playShot(); };
+    mech.onFire = () => { _origFire(); this.audio.playShot(); this.onboarding.trigger('rockets'); };
     this.player.onRocket = () => this.audio.playRocketLaunch();
     this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
     this.combat.onMechHit = (e) => {
@@ -288,6 +291,7 @@ export class Game {
       }
       if (e.mech === mech) {
         this.hud.showDamage();
+        this.onboarding.trigger('damage');
         this.vibrate(35);
         if (e.shooter) {
           this.damageIndicator.show(mech.position, e.shooter.position, rig.look.yaw);
@@ -395,6 +399,7 @@ export class Game {
     }
     this.input.autoFire = touch && s.touchAutoFire && this.assist.fireReady;
     this.hud.setOnTarget(this.assist.onTarget);
+    if (this.assist.onTarget) this.onboarding.trigger('aim');
   }
 
   /** Vibração curta no toque (Android; onde não existe, não faz nada). */
@@ -525,6 +530,7 @@ export class Game {
 
     this.hud.setRespawn(this.respawner.timeLeft(this.mech));
     this.killFeed.update(dt);
+    this.onboarding.update(dt);
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
     this.hud.setRockets(this.player.launcher.ammo, this.player.launcher.reloadProgress, this.mech.canFireSecondary);
     this.hud.setHeat(this.mech.heat, this.mech.overheated);
