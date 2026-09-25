@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Cidade estilo Tron (dono: "volte o ciano, o pink, vermelho aceso, amarelo fluorescente; sci-fi espacial"):** prédios, barricadas e horizonte multicoloridos, grade ciano e céu estrelado; verde segue sendo do jogador e vermelho das IAs
 - **Tema e escalas (dono, 25/09: "temos que defender contra IAs rebeldes"):** escala 1 = robôs do tamanho dos humanoides de hoje; escala 2 = Mechs como o Vector-09 (GAME_DESIGN, "TEMA E ESCALAS")
 - **Andróides rebeldes, escala 1 (Claude):** 3 na arena, pequenos, frágeis e muito ágeis; a IA ganhou perfil de luta por tipo (o andróide chega perto, zigue-zagueia e desvia com dash). O dano de cada tiro agora vem da arma de quem atira
 - **CYBERMECH (dono, 25/09):** o jogo passou a se chamar CYBERMECH, sem o "Protocol": jogo, site, documentos e pacote

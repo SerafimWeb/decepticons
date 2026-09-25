@@ -38,11 +38,12 @@ Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 | Quente (fogo, foguetes, barricadas) | `#ff8a1f` laranja |
 | Atenção | `#ffe14d` amarelo |
 | Alerta (IAs rebeldes, dano, alvo na mira) | `#ff2d3d` vermelho |
-| Texto claro, prédios | `#eef2e8` branco |
+| Texto claro | `#eef2e8` branco |
+| Cidade (prédios, barricadas, horizonte), estilo Tron | ciano `#00e5ff`, pink `#ff2bd6`, amarelo fluorescente `#e8ff1a`, vermelho, verde, laranja; grade ciano; céu estrelado |
 | Jogador | `#e0a21a` amarelo de perigo, visor verde |
 | IAs rebeldes | `#8c1f22` vermelho escuro, visor vermelho |
 
-**Nunca só azul e roxo.** Nova cor entra primeiro no `palette.ts` / `:root`, nunca solta no código.
+**Leitura de combate acima de tudo:** verde é sempre do jogador e vermelho sempre das IAs; a cidade pode usar todas as cores. **Nunca só azul e roxo.** Nova cor entra primeiro no `palette.ts` / `:root`, nunca solta no código.
 
 **Fonte:** monoespaçada do sistema (`Consolas`, `Courier New`), sem webfont para não pesar o carregamento.
 **Render:** brilho via bloom HDR (cores > 1.0 passam do limiar); geometria procedural com primitivas, sem assets externos por enquanto.

@@ -74,6 +74,7 @@
 - [x] Calibragem do Vector-09: menos velocidade (12 m/s) e calor na arma (superaquece e trava; rajadas rendem mais que segurar o gatilho), para jogador e bots #combate
 - [x] Paleta neon multicolorida no jogo (verde neon, vermelho, laranja, amarelo; nunca só azul e roxo): jogador amarelo com visor verde, IAs rebeldes vermelhas #cenarios
 - [x] Nome do jogo: CYBERMECH (sem o "Protocol") #negocio
+- [x] Cidade estilo Tron: prédios e barricadas em ciano, pink, amarelo fluorescente, verde; grade ciano; horizonte com faixas neon e céu estrelado #cenarios
 - [x] Tema "defender contra IAs rebeldes" e escalas de robô; escala 1: andróide rebelde (~2 m), ágil e frágil, com IA de bando (3 na arena) #ia
 - [x] Vibração no celular ao levar tiro e ao abater #ux
 - [x] Botões do toque em arco em volta do polegar (FOGO para dentro da tela) e editor para arrastar e mudar o tamanho, salvo no aparelho #ux

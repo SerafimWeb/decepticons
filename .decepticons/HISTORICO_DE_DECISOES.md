@@ -2,6 +2,15 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Cidade estilo Tron
+**Pedido do dono:** "os prédios podem ser coloridos: volte aquele ciano, o pink inicial, vermelho aceso, amarelo fluorescente; cores bem coloridas, estilo Tron, sci-fi moderno, espacial".
+**Decisão (Claude):**
+- **Cidade:** ciano, pink e amarelo fluorescente nos prédios; barricadas cada uma de uma cor neon; plataforma e borda em pink; grade do chão em ciano.
+- **Horizonte:** faixas neon e luzes de topo em cores sorteadas (semente fixa: sempre a mesma cidade) e um céu de 900 estrelas.
+- **Leitura de combate:** verde continua sendo do jogador e vermelho das IAs rebeldes, o que é do combate não some no meio das cores.
+**Custo:** +2 draw calls no horizonte (faixas instanciadas e estrelas), tudo estático; nada por quadro. As cores por instância saem do mesmo sorteio com semente.
+**Quem decidiu:** dono (direção); Claude (distribuição das cores).
+
 ## [2026-09-25] Tema "IAs rebeldes" e escala 1: andróides
 **Pedido do dono:** "o tema é que temos que defender contra IAs rebeldes; pensar na escala dos robôs. Esse que você começou pode ser a escala 2; criar os proporcionais aos robôs autônomos de hoje (humanoides, quadrúpedes) como NPCs com IA. São pequenos, mas mais ágeis que os grandes. Esses seriam o perfil 1 de tamanho."
 **Decisão (Claude):**
