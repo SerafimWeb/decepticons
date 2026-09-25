@@ -5,9 +5,14 @@ export interface BurstOptions {
   color: THREE.Color; // pode ser HDR (>1) para acender o bloom
   speed: number;
   life: number; // segundos
+  size?: number; // multiplicador do tamanho de tela; maior em explosões e fumaça
+  expansion?: number; // variação de tamanho até o fim da vida: positivo cresce, negativo encolhe
   spread?: number; // 0 = cone fechado na normal, 1+ = quase esférico
   gravity?: number;
 }
+
+/** Teto G5: o cursor circular sempre mantém, no máximo, esta quantidade de partículas vivas. */
+export const MAX_PARTICLES = 3000;
 
 const _v = new THREE.Vector3();
 
@@ -31,6 +36,7 @@ function makeSprite(): THREE.Texture {
 export class ParticleSystem {
   readonly points: THREE.Points;
 
+  private readonly max: number;
   private readonly pos: Float32Array;
   private readonly col: Float32Array;
   private readonly base: Float32Array;
@@ -38,11 +44,19 @@ export class ParticleSystem {
   private readonly life: Float32Array;
   private readonly maxLife: Float32Array;
   private readonly gravity: Float32Array;
+  private readonly baseSize: Float32Array;
+  private readonly size: Float32Array;
+  private readonly expansion: Float32Array;
   private readonly posAttr: THREE.BufferAttribute;
   private readonly colAttr: THREE.BufferAttribute;
+  private readonly sizeAttr: THREE.BufferAttribute;
   private cursor = 0;
 
-  constructor(private readonly max = 3000) {
+  constructor(max = MAX_PARTICLES) {
+    if (!Number.isInteger(max) || max < 1 || max > MAX_PARTICLES) {
+      throw new RangeError(`ParticleSystem aceita de 1 a ${MAX_PARTICLES} partículas`);
+    }
+    this.max = max;
     this.pos = new Float32Array(max * 3);
     this.col = new Float32Array(max * 3);
     this.base = new Float32Array(max * 3);
@@ -50,30 +64,40 @@ export class ParticleSystem {
     this.life = new Float32Array(max);
     this.maxLife = new Float32Array(max);
     this.gravity = new Float32Array(max);
+    this.baseSize = new Float32Array(max);
+    this.size = new Float32Array(max);
+    this.expansion = new Float32Array(max);
 
     const geo = new THREE.BufferGeometry();
     this.posAttr = new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage);
     this.colAttr = new THREE.BufferAttribute(this.col, 3).setUsage(THREE.DynamicDrawUsage);
     geo.setAttribute('position', this.posAttr);
     geo.setAttribute('color', this.colAttr);
+    this.sizeAttr = new THREE.BufferAttribute(this.size, 1).setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('particleScale', this.sizeAttr);
 
-    this.points = new THREE.Points(
-      geo,
-      new THREE.PointsMaterial({
-        size: 0.45,
-        map: makeSprite(),
-        vertexColors: true,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      }),
-    );
+    const material = new THREE.PointsMaterial({
+      size: 0.45,
+      map: makeSprite(),
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    material.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute float particleScale;')
+        .replace('gl_PointSize = size;', 'gl_PointSize = size * particleScale;');
+    };
+    material.customProgramCacheKey = () => 'cybermech-particle-size-v1';
+    this.points = new THREE.Points(geo, material);
     this.points.frustumCulled = false;
   }
 
   burst(origin: THREE.Vector3, normal: THREE.Vector3, o: BurstOptions): void {
     const spread = o.spread ?? 1;
-    for (let n = 0; n < o.count; n++) {
+    const count = Math.min(this.max, Math.max(0, Math.trunc(o.count)));
+    for (let n = 0; n < count; n++) {
       const i = this.cursor;
       this.cursor = (this.cursor + 1) % this.max;
       const i3 = i * 3;
@@ -94,6 +118,9 @@ export class ParticleSystem {
 
       this.maxLife[i] = this.life[i] = o.life * (0.5 + Math.random() * 0.5);
       this.gravity[i] = o.gravity ?? 20;
+      this.baseSize[i] = (o.size ?? 1) * (0.75 + Math.random() * 0.5);
+      this.size[i] = this.baseSize[i];
+      this.expansion[i] = o.expansion ?? 0;
     }
   }
 
@@ -105,6 +132,7 @@ export class ParticleSystem {
       this.life[i] -= dt;
       if (this.life[i] <= 0) {
         this.col[i3] = this.col[i3 + 1] = this.col[i3 + 2] = 0;
+        this.size[i] = 0;
         continue;
       }
       this.vel[i3 + 1] -= this.gravity[i] * dt;
@@ -119,11 +147,13 @@ export class ParticleSystem {
         this.vel[i3 + 1] *= -0.35;
       }
       const t = this.life[i] / this.maxLife[i];
+      this.size[i] = Math.max(0, this.baseSize[i] * (1 + this.expansion[i] * (1 - t)));
       this.col[i3] = this.base[i3] * t;
       this.col[i3 + 1] = this.base[i3 + 1] * t;
       this.col[i3 + 2] = this.base[i3 + 2] * t;
     }
     this.posAttr.needsUpdate = true;
     this.colAttr.needsUpdate = true;
+    this.sizeAttr.needsUpdate = true;
   }
 }

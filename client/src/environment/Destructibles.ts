@@ -137,8 +137,8 @@ export class Destructibles {
 
     this.debris.shatter(prop.center, prop.size, dir, force);
     const up = new THREE.Vector3(0, 1, 0);
-    this.particles.burst(prop.center, up, { count: 90, color: SPARK, speed: 26, life: 0.9, spread: 1.6 });
-    this.particles.burst(prop.center, up, { count: 60, color: DUST, speed: 10, life: 1.6, spread: 2.5, gravity: 2 });
+    this.particles.burst(prop.center, up, { count: 90, color: SPARK, speed: 26, life: 0.9, size: 1.35, expansion: -0.35, spread: 1.6 });
+    this.particles.burst(prop.center, up, { count: 60, color: DUST, speed: 10, life: 1.6, size: 2.2, expansion: 1.35, spread: 2.5, gravity: 2 });
     this.onBreak?.(prop.center);
   }
 }
