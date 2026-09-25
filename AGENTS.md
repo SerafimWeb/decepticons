@@ -67,7 +67,8 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex 
 client/src/
   core/        Game.ts (monta os módulos + loop), InputManager.ts, Quality.ts (qualidade adaptativa, G12), rng.ts (aleatório com semente), Settings.ts (configurações do jogador: contrato da UI)
   physics/     PhysicsWorld.ts (Rapier, FIXED_DT)
-  entities/    MechBase.ts (controller, dash, dano modular, animação), Vector09.ts, meshKit.ts
+  entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts
+  hangar/      loadout.ts (contrato da montagem: LoadoutSpec, validateLoadout), Hangar.ts (montagem salva, link ?build=, API da tela)
   player/      PlayerController.ts (input/câmera -> MechInput, tiro)
   camera/      CameraRig.ts + modos (3ª, 1ª, tática)
   environment/ Arena.ts, Destructibles.ts, DebrisSystem.ts

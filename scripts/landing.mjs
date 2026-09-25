@@ -319,6 +319,24 @@ if (arms && sheet && plan.length) {
     <h3 class="sub-h">Arsenal · três níveis de poder</h3>
     <div class="arsenal">${arms.weapons.map(wpnCard).join('')}</div>
     <p class="wpn-legend">MK II: +20% de dano, +15% de calor e +50% de carga. MK III: +40%, +30% e o dobro. DANO/S = gatilho apertado por 30 s, contando as travas por calor e as recargas. DERRUBA EM = tempo para derrubar o torso de um ${esc(arms.target)} (${arms.torso} de vida) com todos os tiros no alvo.</p>
+    <h3 class="sub-h">Monte dentro da carga</h3>
+    <p class="lede">O ${esc(arms.target)} carrega até ${tons(arms.capacity)} de armas. Das nove combinações de plasma e foguetes, cabem ${arms.builds.flat().filter((b) => b.fits).length}: um braço no MK III obriga o outro a ficar leve. O tempo é o dos dois braços juntos derrubando o torso, com todos os tiros no alvo.</p>
+    <div class="wpn-scroll"><table class="builds">
+      <thead><tr><th scope="col"><span class="sr">plasma</span></th>${arms.tier.map((t) => `<th scope="col">FOGUETES ${t.label}</th>`).join('')}</tr></thead>
+      <tbody>${arms.builds
+        .map(
+          (row, p) =>
+            `<tr><th scope="row">PLASMA ${arms.tier[p].label}</th>${row
+              .map((b) =>
+                b.fits
+                  ? `<td class="fit${b.p === 0 && b.r === 0 ? ' factory' : ''}"><b>${tons(b.mass)}</b><span>${num(b.ttk, 1)} s</span><a href="./jogar/?build=${esc(b.key)}">${b.p === 0 && b.r === 0 ? 'de fábrica' : 'jogar →'}</a></td>`
+                  : `<td class="over"><b>${tons(b.mass)}</b><span>não cabe</span></td>`,
+              )
+              .join('')}</tr>`,
+        )
+        .join('')}</tbody>
+    </table></div>
+    <p class="rules-note">Cada montagem que cabe é um link: abre o jogo já com ela. O mesmo link serve para mandar o seu build a alguém. A tela do Hangar, dentro do jogo, está em construção.</p>
     <h3 class="sub-h">Regras de equilíbrio</h3>
     <div class="sitrep">
       <div class="read frame"><span class="k">uma arma sozinha</span><span class="v">≥ ${num(single, 1)} s</span><span class="d">para derrubar um Mech, mesmo no MK III</span></div>
@@ -456,6 +474,17 @@ const css = `
   .wpn-table td { color: var(--text); }
   .wpn-table tr.key td { color: var(--amber); }
   .wpn-note { padding: 10px 14px 12px; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+  .builds { width: 100%; border-collapse: separate; border-spacing: 4px; font-variant-numeric: tabular-nums; }
+  .builds th { font-weight: 400; font-size: 11px; letter-spacing: .14em; color: var(--muted); text-align: center; padding: 4px; white-space: nowrap; }
+  .builds tbody th { text-align: left; }
+  .builds td { border: 1px solid var(--line2); background: var(--panel); padding: 10px 8px; text-align: center; vertical-align: top; }
+  .builds td b { display: block; font: 400 1.35rem/1 var(--fd); color: var(--amber); }
+  .builds td span { display: block; font-size: 12.5px; color: var(--text); margin: 2px 0 6px; }
+  .builds td a { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--bone); text-decoration: none; border-bottom: 1px dashed var(--bone); }
+  .builds td.factory { border-color: var(--green); }
+  .builds td.over { border-style: dashed; border-color: var(--line); background: transparent; }
+  .builds td.over b { color: var(--faint); }
+  .builds td.over span { color: var(--red); margin-bottom: 0; }
   .wpn-legend, .rules-note { color: var(--muted); font-size: 13px; max-width: 90ch; }
   .read .d { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

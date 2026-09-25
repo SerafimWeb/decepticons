@@ -25,8 +25,8 @@ const _dir = new THREE.Vector3();
  */
 export class PlayerController {
   active = false;
-  /** Carregador do braço esquerdo (regra no tick fixo; o HUD lê daqui). */
-  readonly launcher: RocketLauncher;
+  /** Carregador do braço esquerdo (regra no tick fixo; o HUD lê daqui). Refeito ao trocar de armas. */
+  launcher: RocketLauncher;
   /** Um foguete saiu (som). */
   onRocket?: () => void;
   /** Teclas de cada ação (e.code), vindas das configurações. */
@@ -47,6 +47,12 @@ export class PlayerController {
     private readonly rockets: RocketSystem,
   ) {
     this.launcher = new RocketLauncher(mech.loadout.secondary ?? weapon('rockets'));
+  }
+
+  /** O Mech trocou de armas (Hangar): carregador novo, cheio, com o lançador montado. */
+  rearm(): void {
+    this.launcher = new RocketLauncher(this.mech.loadout.secondary ?? weapon('rockets'));
+    this.trigger.reset();
   }
 
   /** Taxa do render: captura eventos de borda. */

@@ -21,7 +21,7 @@ decide o estilo.
 
 ## 2. Modelo de dados (contrato)
 
-Estado em 25/09: **o que já está no código** está marcado ✅; o resto é proposta.
+Estado em 25/09 (fim do dia): **o que já está no código** está marcado ✅; o resto é proposta.
 
 | Tipo | Onde | O que carrega |
 |---|---|---|
@@ -29,12 +29,22 @@ Estado em 25/09: **o que já está no código** está marcado ✅; o resto é pr
 | `TIERS` ✅ | `combat/weapons.ts` | a regra dos níveis: MK II = ×1,2 dano, ×1,15 calor, ×1,5 massa; MK III = ×1,4, ×1,3, ×2 |
 | `Loadout` ✅ | `combat/weapons.ts` | `{ primary, secondary }`: o que vai em cada braço. Hoje cada chassi traz o de fábrica (`MechStats.loadout`) e o Mech expõe `mech.loadout` |
 | `ChassisHeat` ✅ | `combat/heat.ts` | o dissipador do chassi: resfriamento, atraso, limite de volta. **Um dissipador para todas as armas** |
-| `ChassisSpec` | proposta | `MechStats` + `capacity` (t), encaixes disponíveis e blindagem base por parte |
-| `LoadoutSpec` | proposta, `shared/` | o que viaja e se salva: `{ chassis, arms: [{ id, tier }, { id, tier }], modules: [id…], armor: [por parte] }` |
-| `validateLoadout(spec)` | proposta, `shared/` | regra pura: encaixe compatível, carga ≤ capacidade, nível liberado; devolve o `Loadout` pronto ou o motivo da recusa |
+| `MechStats` + `weaponCapacity` ✅ | `entities/chassis.ts` | os números de cada chassi sem 3D (o servidor e o site leem daqui) e a **carga de armas**: Vector-09 = 11 t |
+| `LoadoutSpec` ✅ | `hangar/loadout.ts` | o que viaja e se salva: `{ v: 1, chassis, right: { id, tier }, left: { id, tier } \| null }`; texto curto `v1.vector09.plasma-2.rockets-0` (`loadoutKey`/`parseLoadoutKey`) para link e rede. Módulos e blindagem entram numa versão 2 do formato |
+| `validateLoadout(spec)` ✅ | `hangar/loadout.ts` | regra pura, sem 3D: formato, chassi, arma, nível, encaixe (energia no direito, munição no esquerdo), carga ≤ capacidade, nível liberado. Devolve o `Loadout` pronto ou o motivo (`formato`, `chassi`, `arma`, `nível`, `encaixe`, `carga`, `bloqueado`). Vai para `shared/` com a separação do multiplayer |
 
 **Encaixes:** braço direito = arma de **energia** (tiro principal, limitado pelo calor); braço esquerdo = arma de
 **munição** (carregador que recarrega sozinho). Ombros e torso = **módulos**. Perna não leva nada: é mobilidade.
+
+**API para a tela (Gemini):** `game.hangar` (`hangar/Hangar.ts`):
+- `current`: a montagem atual (salva no aparelho em `cybermech.hangar.v1`, ou a de um link `?build=`, ou a de fábrica);
+- `check(spec)`: validação na hora (carga usada, capacidade, motivo da recusa);
+- `report(spec)`: números da simulação para a tela: carga, tempo para derrubar um torso, em quantos segundos ferve correndo com tudo disparando, dano em 20 s;
+- `apply(spec)`: salva e agenda; o Mech troca de armas no próximo renascimento (ou na rodada nova), inteiro e frio;
+- `key`: o texto do link para compartilhar; `onChange`: avisa quando a montagem muda;
+- `armOptions('right' | 'left')` e `TIERS`: o que listar em cada braço.
+
+**Carga de 11 t no Vector-09 (25/09):** das 9 combinações de plasma e foguetes cabem 6. MK III num braço obriga MK I no outro; MK II nos dois cabe. **Achado:** com os dois braços disparando, todas as montagens derrubam um torso em 3,3–3,5 s, porque o calor do Mech é o limite. O nível decide nas rajadas de uma arma só (plasma MK III 5,0 s contra 6,2 s do MK I). Quem administra o calor ganha, não quem subiu de nível.
 
 ## 3. Chassis (proposta, a calibrar no playtest)
 
@@ -107,7 +117,7 @@ com o jogo pausado.
 ## 9. Etapas (um PR cada)
 
 1. ✅ Arsenal em dados, três níveis, calor do Mech, cadência exata, metas de equilíbrio travadas por teste (Claude).
-2. `LoadoutSpec` + `validateLoadout` + capacidade por chassi, com testes (Claude). **Contrato: entra antes da tela.**
+2. ✅ `LoadoutSpec` + `validateLoadout` + carga por chassi + montagem salva + link `?build=`, com testes (Claude, 25/09).
 3. Tela do Hangar contra o contrato (Gemini).
 4. Blindagem distribuível e o segundo chassi (Claude).
 5. Módulos (Claude + Gemini no visual).

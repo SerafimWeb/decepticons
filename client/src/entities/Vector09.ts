@@ -1,47 +1,12 @@
 import * as THREE from 'three';
-import { weapon } from '../combat/weapons';
+import type { Loadout } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
-import { MechBase, type LegRig, type MechRig, type MechStats } from './MechBase';
+import { VECTOR09_STATS } from './chassis';
+import { MechBase, type LegRig, type MechRig } from './MechBase';
 import { box, cyl, group } from './meshKit';
 
-/**
- * Vector-09: assalto ágil, pulo duplo, dash curto; sem compartimento de sucata.
- * Calibrado em 24/09 (dono: "muito rápido; o tiro precisa de um respiro"): menos velocidade e calor na arma.
- * Armas em 25/09 (arsenal em `combat/weapons.ts`): plasma MK I no braço direito, foguetes MK I no esquerdo.
- */
-export const VECTOR09_STATS: MechStats = {
-  name: 'VECTOR-09',
-  moveSpeed: 12,
-  groundAccel: 70,
-  airAccel: 22,
-  jumpVelocity: 13,
-  maxJumps: 2,
-  dashSpeed: 42,
-  dashDuration: 0.18,
-  dashCooldown: 3,
-  radius: 1.3,
-  height: 5.3,
-  stepHeight: 0.9,
-  demolishOnDash: false,
-  maxScrapSlots: 0,
-  loadout: { primary: weapon('plasma'), secondary: weapon('rockets') },
-  heatCooling: 0.6,
-  heatCoolDelay: 0.25,
-  heatRecover: 0.35,
-  heatIdleCooling: 2,
-  heatRun: 0.15,
-  heatJump: 0.05,
-  heatDash: 0.12,
-  heatPerDamage: 0.002,
-  maxModuleHealth: {
-    torso: 300,
-    head: 100,
-    leftArm: 120,
-    rightArm: 120,
-    leftLeg: 150,
-    rightLeg: 150,
-  },
-};
+/** Os números do Vector-09 ficam em `chassis.ts` (sem 3D: o servidor e o site leem de lá). */
+export { VECTOR09_STATS };
 
 const HIP = 2.5;
 const DEFAULT_PAINT = PALETTE.playerPaint;
@@ -135,10 +100,12 @@ export interface Vector09Options {
   paint?: number;
   /** Cor do visor e das luzes da cabeça: âmbar no jogador, vermelho no inimigo. */
   visor?: number;
+  /** Armas nos braços (Hangar); sem isso, as de fábrica. */
+  loadout?: Loadout;
 }
 
 export class Vector09 extends MechBase {
   constructor(options: Vector09Options = {}) {
-    super(VECTOR09_STATS, buildRig(options.paint ?? DEFAULT_PAINT, options.visor ?? PALETTE.green));
+    super(VECTOR09_STATS, buildRig(options.paint ?? DEFAULT_PAINT, options.visor ?? PALETTE.green), options.loadout);
   }
 }
