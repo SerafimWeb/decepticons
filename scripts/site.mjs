@@ -80,8 +80,14 @@ const TYPES = {
   '.jpg': 'image/jpeg',
 };
 
-function run(cmd, args) {
-  const r = spawnSync(cmd, args, { stdio: 'inherit', shell: process.platform === 'win32' });
+/** Build do jogo lido do git (tag, commits desde ela e hash); argumentos em lista, sem shell. */
+function buildId() {
+  const r = spawnSync('git', ['describe', '--tags', '--always'], { encoding: 'utf8' });
+  return r.status === 0 ? r.stdout.trim() : 'dev';
+}
+
+function run(cmd, args, env) {
+  const r = spawnSync(cmd, args, { stdio: 'inherit', shell: process.platform === 'win32', env: env ? { ...process.env, ...env } : process.env });
   if (r.status !== 0) {
     console.error(`❌ falhou: ${cmd} ${args.join(' ')}`);
     process.exit(1);
@@ -112,7 +118,7 @@ ${set}
 async function build() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
-  run('npx', ['vite', 'build', '--outDir', GAME, '--emptyOutDir', '--logLevel', 'warn']);
+  run('npx', ['vite', 'build', '--outDir', GAME, '--emptyOutDir', '--logLevel', 'warn'], { VITE_BUILD: buildId() });
   // As capturas vêm antes das páginas: a landing só mostra as imagens que existirem.
   if (argv.includes('--capturas')) await capture();
   run('node', ['scripts/painel.mjs', '--site', '--out', join(OUT, 'bastidores', 'index.html')]);
@@ -167,7 +173,10 @@ async function mobile(browser, url, failures) {
     if (await shown('.calib-open')) failures.push('celular: o botão de calibrar mouse aparece no toque');
     const title = await page.locator('#overlay h1').boundingBox();
     await page.touchscreen.tap(title.x + title.width / 2, title.y + title.height / 2);
-    await page.waitForTimeout(500);
+    // Primeira partida: a vinheta da marca (~1,9 s) vem antes; a partida começa quando ela termina.
+    await page.waitForTimeout(300);
+    if (!(await shown('#brand-splash'))) failures.push('celular: a vinheta da marca não apareceu na primeira partida');
+    await page.waitForFunction(() => document.getElementById('touch-controls')?.classList.contains('on'), null, { timeout: 6_000, polling: 100 }).catch(() => {});
     if (await shown('#overlay')) return void failures.push('celular: tocar na pausa não começou a partida');
     if (!(await controlsOn())) return void failures.push('celular: a partida começou sem os controles de toque');
 
@@ -246,7 +255,9 @@ async function capture() {
     // Clique no título (não nos botões da pausa) = começa a partida com o mouse preso.
     const title = await page.locator('#overlay h1').boundingBox();
     await page.mouse.click(title.x + title.width / 2, title.y + title.height / 2);
-    const shot = (name) => page.screenshot({ path: join(dir, name), type: 'jpeg', quality: 80 });
+    // O primeiro clique abre a vinheta da marca (~2 s); a partida começa quando ela acaba.
+    await page.waitForFunction(() => !document.querySelector('#brand-splash.on'), null, { timeout: 8000 });
+    const shot =(name) => page.screenshot({ path: join(dir, name), type: 'jpeg', quality: 80 });
     // Anda um pouco e troca tiros até os bots chegarem.
     await page.keyboard.down('KeyW');
     await page.waitForTimeout(1500);
@@ -305,6 +316,9 @@ async function check() {
     if (title !== 'CYBERMECH') failures.push(`título da raiz: "${title}"`);
     await pageSane(page, 'landing', failures);
     await publicPage(page, 'landing', failures);
+    // Abertura da marca: roda na primeira visita da sessão e sai da frente sozinha (senão cobre o botão).
+    if (!(await page.evaluate(() => sessionStorage.getItem('cybermech.intro') === '1'))) failures.push('landing: a abertura da marca não rodou');
+    await page.waitForFunction(() => !document.getElementById('intro'), null, { timeout: 8000 });
     await page.click('a.play-btn');
     await page.waitForURL(`${base}jogar/`);
     await page.waitForFunction(CTA_READY, null, { timeout: 60_000 });
@@ -319,7 +333,7 @@ async function check() {
     // Uma página por vez: a de trás não desenha, e o jogo do celular ficaria parado.
     await page.close();
     await mobile(browser, `${base}jogar/`, failures);
-    console.log(`site    ok: landing em ${prefix}, bastidores/, "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
+    console.log(`site    ok: landing em ${prefix} com a abertura da marca, bastidores/, "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {

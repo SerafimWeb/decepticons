@@ -39,6 +39,78 @@ const cover = SHOTS.find((s) => s.file === 'capa.jpg');
 
 // ---------- blocos ----------
 
+/**
+ * Abertura da marca (dono, 25/09): chuva de pontos verdes em matriz e o emblema da SERAFIM WEB por
+ * ~2 s, como as vinhetas de console. Uma vez por sessão, pula com clique, toque ou tecla, e não roda
+ * com "reduzir movimento". Sem JavaScript, fica escondida. As imagens são as do jogo (jogar/brand/) e
+ * só baixam quando a abertura roda. Custo: um canvas 2D de ~2 s, ~150 pontos por quadro; depois sai do DOM.
+ */
+const BRAND = existsSync(join(ROOT, 'jogar', 'brand', 'serafim-web.webp'));
+const INTRO_JS = `(() => {
+  const el = document.getElementById('intro');
+  let seen = false;
+  try { seen = sessionStorage.getItem('cybermech.intro') === '1'; sessionStorage.setItem('cybermech.intro', '1'); } catch (e) {}
+  if (seen || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.remove(); return; }
+  for (const img of el.querySelectorAll('img[data-src]')) img.src = img.dataset.src;
+  el.hidden = false;
+  const cv = el.querySelector('canvas');
+  const ctx = cv.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = (cv.width = Math.round(innerWidth * dpr));
+  const H = (cv.height = Math.round(innerHeight * dpr));
+  const cell = 13 * dpr;
+  const cols = Math.ceil(W / cell);
+  const y = new Float32Array(cols);
+  const v = new Float32Array(cols);
+  for (let i = 0; i < cols; i++) { y[i] = (Math.random() - 0.75) * H; v[i] = ((0.6 + Math.random()) * H) / 1000; }
+  let last = performance.now();
+  let raf = 0;
+  const draw = (now) => {
+    const dt = Math.min(now - last, 50);
+    last = now;
+    ctx.fillStyle = 'rgba(0,0,0,' + (1 - Math.pow(0.85, dt / 16.7)).toFixed(3) + ')';
+    ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < cols; i++) {
+      y[i] += v[i] * dt;
+      if (y[i] > H + cell) y[i] = -Math.random() * H * 0.5;
+      const cy = Math.floor(y[i] / cell) * cell + cell / 2;
+      ctx.fillStyle = i % 7 === 3 ? '#27f0ff' : '#39ff6a';
+      ctx.beginPath();
+      ctx.arc(i * cell + cell / 2, cy - cell, 1.5 * dpr, 0, 6.2832);
+      ctx.fill();
+      ctx.fillStyle = '#e4ffe9';
+      ctx.beginPath();
+      ctx.arc(i * cell + cell / 2, cy, 1.9 * dpr, 0, 6.2832);
+      ctx.fill();
+    }
+    raf = requestAnimationFrame(draw);
+  };
+  raf = requestAnimationFrame(draw);
+  const SKIP = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+  let over = false;
+  const end = () => {
+    if (over) return;
+    over = true;
+    el.classList.add('out');
+    for (const t of SKIP) removeEventListener(t, end, true);
+    setTimeout(() => { cancelAnimationFrame(raf); el.remove(); }, 350);
+  };
+  for (const t of SKIP) addEventListener(t, end, { capture: true, passive: true });
+  setTimeout(end, 1900);
+})();`;
+const introHtml = BRAND
+  ? `<div id="intro" hidden aria-hidden="true">
+    <canvas></canvas>
+    <div class="in-mark">
+      <img class="in-emblem" data-src="jogar/brand/serafim-emblem.webp" width="240" height="240" alt="">
+      <img class="in-word" data-src="jogar/brand/serafim-web.webp" width="1100" height="251" alt="">
+      <span class="in-tag">apresenta</span>
+    </div>
+    <span class="in-skip">pular ▸</span>
+  </div>
+  <script>${INTRO_JS}</script>`
+  : '';
+
 const facts = [
   'mouse e teclado',
   bundle ? `${mb(bundle.total)} para baixar` : null,
@@ -48,6 +120,7 @@ const facts = [
 
 const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
     <div class="hero-copy">
+      <p class="presents">SERAFIM WEB apresenta</p>
       <p class="boot">&gt; shooter de mechs · direto no navegador · grátis<span class="cursor" aria-hidden="true">█</span></p>
       <h1 class="title">CYBER<span>MECH</span></h1>
       <p class="pitch">Pilote um Mech de combate numa arena industrial e desmonte o inimigo peça por peça. Abriu o link, está jogando: sem instalar, sem conta e sem pay-to-win.</p>
@@ -244,6 +317,27 @@ const css = `
   .recent li { display: grid; grid-template-columns: 48px 1fr; gap: 10px; }
   .recent time { color: var(--faint); font-variant-numeric: tabular-nums; }
 
+  .presents { font-size: 11px; letter-spacing: .42em; text-transform: uppercase; color: var(--faint); }
+
+  /* abertura da marca */
+  #intro { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: #000; transition: opacity .35s ease-out; }
+  #intro[hidden] { display: none; }
+  #intro.out { opacity: 0; pointer-events: none; }
+  #intro canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .in-mark { position: relative; z-index: 1; isolation: isolate; display: grid; justify-items: center; gap: 12px; padding: 36px 44px; }
+  .in-mark::before { content: ''; position: absolute; inset: -40% -25%; z-index: -1; background: radial-gradient(closest-side, #000 45%, rgba(0,0,0,.75) 70%, transparent); }
+  .in-emblem { width: clamp(84px, 16vmin, 132px); height: auto; opacity: 0; animation: in-emblem .7s .25s cubic-bezier(.2,.9,.3,1.25) forwards; }
+  .in-word { width: min(76vw, 430px); height: auto; mix-blend-mode: screen; opacity: 0; animation: in-word .6s .55s ease-out forwards; }
+  .in-tag { font-size: 11px; letter-spacing: .6em; padding-left: .6em; text-transform: uppercase; color: #8fa596; opacity: 0; animation: in-show .5s .95s forwards; }
+  .in-skip { position: absolute; right: 18px; bottom: 16px; font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: #3f4d44; }
+  @keyframes in-emblem {
+    0% { opacity: 0; transform: scale(.55); filter: brightness(3) drop-shadow(0 0 30px #39ff6a); }
+    60% { opacity: 1; }
+    100% { opacity: 1; transform: none; filter: brightness(1) drop-shadow(0 0 16px rgba(57,255,106,.5)); }
+  }
+  @keyframes in-word { from { opacity: 0; clip-path: inset(0 50% 0 50%); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+  @keyframes in-show { to { opacity: 1; } }
+
   .final { padding: 32px 24px; justify-items: center; text-align: center; background: url("data:image/svg+xml,${HEXGRID}") center / 56px 97px, var(--panel); }
 
   @media (max-width: 900px) {
@@ -253,6 +347,7 @@ const css = `
 `;
 
 const body = `
+  ${introHtml}
   ${topo({ base: './', current: 'jogo', left: `CYBERMECH // ${esc(m.version ?? 'protótipo')}`, live: `build de hoje · ${esc(m.head)}` })}
   ${heroHtml}
   ${galleryHtml}
@@ -262,7 +357,7 @@ const body = `
   ${pledgeHtml}
   ${buildHtml}
   ${endHtml}
-  <footer><span>CYBERMECH · feito por Dan e uma equipe de IAs</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
+  <footer><span>CYBERMECH © ${new Date().getFullYear()} <b>SERAFIM WEB</b> · feito por Dan e uma equipe de IAs</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
 `;
 
 const description = 'Shooter de Mechs direto no navegador: desmonte o inimigo peça por peça numa arena industrial. Grátis, sem instalar e sem pay-to-win.';

@@ -1,12 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
-**Última atualização:** 2026-09-24 (tarde)
+**Última atualização:** 2026-09-25
 **Iteração atual:** Fase 3 (Vitrine e polimento): som, celular, kill feed e o site com o case; depois a Fase 4 (multiplayer)
 
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Marca SERAFIM WEB (Claude; dono: "ar de grande estúdio"; "nossa marca por 1 a 2 segundos, como SEGA, Konami, PlayStation"):**
+  - **Vinheta no jogo** (`client/src/brand/`): no primeiro "clique para jogar", tela preta, o emblema acende, o letreiro abre e toca uma vinheta sonora sintetizada (sopro, impacto grave, acorde com eco), ~1,9 s. Clique ou tecla pula. Roda no primeiro clique porque o navegador só libera som depois de um gesto.
+  - **Abertura na landing:** chuva de pontos verdes em matriz com o emblema e o letreiro, ~2 s, uma vez por sessão; pula com clique, toque ou tecla; não roda com "reduzir movimento".
+  - **Assinatura discreta:** "um jogo SERAFIM WEB" na pausa; versão do build no canto da pausa (`CYBERMECH v0.2.0-… · © 2026 SERAFIM WEB`, lida do `git describe`); "SERAFIM WEB apresenta" na landing; © nos rodapés; `<meta name="author">`. Nada no HUD de combate.
+  - Arquivos em `client/public/brand/`: emblema de `serafim13/vetorserafim.png` e letreiro com o fundo tirado por código (~56 KB juntos).
 - **Andróides "rápidos, mas fracos" e o técnico (Claude, pedido do dono):**
   - Andróides de combate: 2 tiros derrubam, tiro de 4, mira solta.
   - **T-01** conserta os Mechs rebeldes com um feixe amarelo e foge do jogador. Alvo prioritário.
@@ -71,6 +76,8 @@
 - [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
 - [ ] **Gemini:** Próxima tarefa: setas-inimigos (ui/OffscreenIndicators.ts). Seta vermelha na borda da tela para inimigos fora da visão. Um PR por tarefa, a partir da `main` atualizada.
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
+- [ ] **Dono:** ouvir a vinheta da marca no jogo (som, volume, duração) e ver a abertura da landing (numa aba anônima ela roda de novo)
+- [ ] **Gemini:** o branch `gemini/sons-androides` saiu de uma `main` antiga e está sem PR: juntar a `main` (`git merge origin/main`), rodar `npm run check` e abrir o PR (regra 13)
 - [ ] Fase 3: draw calls por Mech (~34 cada)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
 
@@ -87,8 +94,8 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
-| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Foguetes e atividade da equipe no ar. Próximo: calibrar mira e foguetes com o playtest do dono; depois draw calls por Mech (antes do multiplayer) |
-| **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Som dos foguetes, volume e mixagem, primeira partida guiada (prompt no chat de 24/09; nesta ordem, um PR cada) |
+| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Marca SERAFIM WEB no ar (vinheta, abertura da landing, assinatura). Próximo: plano do multiplayer (`MULTIPLAYER.md`) e draw calls por Mech |
+| **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Sons dos andróides (branch sem PR). Fila, um PR cada: setas de inimigos fora da tela, abertura da rodada (3·2·1), aviso de ABATE e sequência, tela de carregamento (prompt no chat de 25/09) |
 | **Codex** | a combinar | Ao voltar: revisão cruzada dos PRs mergeados desde o #12 |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
 
@@ -103,4 +110,4 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Gemini: juntar a `main` no kill feed e mergear (regra 13). Claude: conferir o site publicado e seguir para foguetes ou draw calls. Dono: testar o som, as configurações e a calibração no site.
+Claude: plano do multiplayer em `.decepticons/MULTIPLAYER.md` (o que falta antes, arquitetura, contratos, etapas) e draw calls por Mech. Gemini: PR dos sons dos andróides, depois a fila de polimento. Dono: ouvir a vinheta e jogar no celular.

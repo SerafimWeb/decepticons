@@ -2,6 +2,17 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Marca SERAFIM WEB: vinheta de abertura e assinatura discreta
+**Pedido do dono:** "qualidade que deixe o jogo mais profissional, ar de grande estúdio; adicione sutilmente nossa marca SERAFIM WEB. No início, a nossa marca como antigamente nos games (SEGA, Konami, PlayStation), com som característico e a logo por 1 a 2 segundos; na página /cybermech/ também, como o efeito matrix de pontos verdes do site do serafim13".
+**Decisão (Claude):**
+- **Vinheta no jogo** (`brand/BrandSplash.ts` e `brand/sting.ts`): ~1,9 s, uma vez por carregamento, no primeiro "clique para jogar". O navegador não deixa tocar som antes de um gesto do jogador, por isso ela não abre sozinha ao carregar. Clique ou tecla pula (só depois de 0,35 s, para o clique de entrada não pular). A partida começa quando ela acaba, com o mouse já preso.
+- **Som sintetizado** na Web Audio (sopro, impacto grave, acorde em cascata com eco, colchão), sem arquivo, pelo volume mestre das configurações.
+- **Abertura da landing:** chuva de pontos verdes (o verde do jogo) num canvas 2D, com o emblema e o letreiro. Uma vez por sessão (`sessionStorage`), pula com qualquer gesto, não roda com "reduzir movimento" e sai do DOM no fim. As imagens só baixam quando ela roda. O check do site confere que ela roda e sai da frente do botão.
+- **Assinatura discreta:** "um jogo SERAFIM WEB" na pausa, versão do build com © no canto (do `git describe`, via `VITE_BUILD`), "SERAFIM WEB apresenta" na landing, © nos rodapés, `<meta name="author">`. Nada no HUD de combate.
+- **Arquivos:** emblema de `serafim13/vetorserafim.png` (240 px) e letreiro (fundo transparente, tirado por código), em WebP, ~56 KB juntos, em `client/public/brand/`.
+**Custo de CPU:** zero durante a partida: a vinheta é animação CSS antes do jogo começar, e o som são ~12 nós do Web Audio que se desligam sozinhos. A chuva da landing é um canvas de ~2 s (~100–150 pontos por quadro) e depois some.
+**Quem decidiu:** dono (marca, vinheta, efeito); Claude (duração, som, quando toca).
+
 ## [2026-09-25] Andróides mais chatos que perigosos; o técnico; funções da escala 1
 **Pedido do dono:** "os andróides têm que ser mais fracos e tirar menos vida; mais massantes do que perigosos, rápidos mas fracos. Alguns são pra reparar os outros bots, coletar peças, entregar munição, fazer manutenção nos robôs maiores, e podem pilotar mechs (os humanoides vão poder fazer as mesmas ações que humanos, como pilotar as máquinas do hangar)". E: "manter o jogo leve para escalar com muitos jogadores; código limpo, arquitetura profissional".
 **Decisão (Claude):**

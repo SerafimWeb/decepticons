@@ -131,6 +131,54 @@ html, body {
 #heat.over { color: var(--alert); animation: blink 0.4s steps(2) infinite; }
 .tc-fire.over { border-color: var(--alert); background: rgba(255, 45, 61, 0.25); font-size: 12px; }
 
+/* Vinheta da marca (brand/BrandSplash.ts): emblema acende, letreiro sobe, tudo some em ~1,9 s. */
+#brand-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2vmin;
+  background: #000;
+  pointer-events: none;
+}
+#brand-splash.on { display: flex; animation: bs-fade 1.9s ease-in-out forwards; }
+.bs-glow {
+  position: absolute;
+  width: 60vmin;
+  height: 60vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 229, 255, 0.28), transparent 65%);
+  opacity: 0;
+}
+.bs-emblem { width: min(28vmin, 200px); height: auto; opacity: 0; }
+.bs-word { width: min(70vw, 620px); height: auto; mix-blend-mode: screen; opacity: 0; }
+.bs-tag { color: #9aa3a8; letter-spacing: 8px; font-size: 12px; text-transform: uppercase; opacity: 0; }
+#brand-splash.on .bs-glow { animation: bs-glow 1.9s ease-out forwards; }
+#brand-splash.on .bs-emblem { animation: bs-emblem 1.9s cubic-bezier(0.2, 0.9, 0.2, 1) forwards; }
+#brand-splash.on .bs-word { animation: bs-word 1.9s ease-out forwards; }
+#brand-splash.on .bs-tag { animation: bs-tag 1.9s ease-out forwards; }
+@keyframes bs-fade { 0%, 82% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes bs-glow { 0%, 15% { opacity: 0; transform: scale(0.6); } 25% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.5; transform: scale(1); } }
+@keyframes bs-emblem {
+  0%, 12% { opacity: 0; transform: scale(1.35); filter: brightness(3) blur(6px); }
+  20% { opacity: 1; transform: scale(1); filter: brightness(2.2) blur(0); }
+  24% { opacity: 0.55; }
+  28%, 100% { opacity: 1; filter: brightness(1) drop-shadow(0 0 14px rgba(0, 229, 255, 0.7)); }
+}
+@keyframes bs-word { 0%, 24% { opacity: 0; transform: translateY(8px); } 38%, 100% { opacity: 1; transform: none; } }
+@keyframes bs-tag { 0%, 45% { opacity: 0; } 60%, 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  #brand-splash.on, #brand-splash.on * { animation-duration: 0.01s !important; opacity: 1 !important; }
+}
+
+/* Assinatura do estúdio e build na pausa. */
+#overlay .studio { margin: -18px 0 22px; font-size: 11px; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; }
+#overlay .studio b { color: var(--ink); font-weight: 600; }
+#overlay .build-tag { position: absolute; right: 14px; bottom: 10px; margin: 0; font-size: 10px; letter-spacing: 1px; color: #56605a; }
+
 /* Mira acesa: um inimigo vivo está sob ela (ui/HUD.setOnTarget). */
 #crosshair.on-target {
   border-color: var(--alert);

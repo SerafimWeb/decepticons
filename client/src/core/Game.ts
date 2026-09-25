@@ -37,6 +37,7 @@ import { DebugPanel } from '../debug/DebugPanel';
 import { TouchControls } from '../ui/TouchControls';
 import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
+import { BrandSplash } from '../brand/BrandSplash';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
@@ -95,6 +96,9 @@ export class Game {
   private readonly damageIndicator = new DamageIndicator();
   private readonly debugPanel = new DebugPanel();
   private readonly audio = new AudioSystem();
+  /** Vinheta da SERAFIM WEB antes da primeira partida da sessão. */
+  private readonly splash = new BrandSplash();
+  private brandShown = false;
   private readonly onboarding = new Onboarding();
   /** Nó de gain do loop de chiado do Blind Mode; null = som não está tocando. */
   private blindGain: GainNode | null = null;
@@ -215,6 +219,7 @@ export class Game {
     this.setTouchMode(matchMedia('(hover: none) and (pointer: coarse)').matches);
     this.hud.setMode(this.rig.mode);
     this.hud.setReady(this.input.touchMode);
+    this.hud.setBuild(`CYBERMECH ${import.meta.env.VITE_BUILD ?? 'dev'} · © ${new Date().getFullYear()} SERAFIM WEB`);
 
     this.quality = new Quality(
       (ratio) => this.setPixelRatio(ratio),
@@ -353,7 +358,7 @@ export class Game {
     // Resume do AudioContext na primeira interação (exigência dos navegadores)
     document.getElementById('overlay')!.addEventListener('click', () => this.audio.resume(), { once: true });
     input.onLockChange = (locked) => {
-      if (locked) this.setPlaying(true);
+      if (locked) this.startPlaying();
       else if (rig.mode.pointerLock) this.setPlaying(false);
     };
     input.onWheel = (dy) => this.playing && rig.onWheel(dy);
@@ -376,11 +381,30 @@ export class Game {
   }
 
   private resume(): void {
+    // Primeira partida da sessão: vinheta da marca (o clique é o gesto que libera o som). O mouse já
+    // fica preso agora (o Pointer Lock só pode ser pedido dentro do clique); o mundo espera a vinheta.
+    if (!this.brandShown) {
+      this.brandShown = true;
+      this.audio.resume();
+      this.hud.setPaused(false);
+      this.splash.play(this.audio.output, () => this.afterBrand());
+    }
     if (this.input.touchMode) {
       this.enterFullscreen();
       this.input.requestLock(); // no toque: marca "jogando" e dispara onLockChange(true)
     } else if (this.rig.mode.pointerLock) this.input.requestLock();
-    else this.setPlaying(true);
+    else this.startPlaying();
+  }
+
+  /** Começa a partida, a não ser que a vinheta ainda esteja na tela (ela chama afterBrand no fim). */
+  private startPlaying(): void {
+    if (!this.splash.running) this.setPlaying(true);
+  }
+
+  /** Fim da vinheta: entra na partida se o mouse ainda estiver preso (ou no toque); senão, volta à pausa. */
+  private afterBrand(): void {
+    if (this.input.locked || !this.rig.mode.pointerLock) this.setPlaying(true);
+    else this.hud.setPaused(true);
   }
 
   /**

@@ -156,6 +156,7 @@ export function pagina({ title, description, css, body, script = '', og = null }
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
+<meta name="author" content="SERAFIM WEB">
 <meta name="theme-color" content="#070604">${ogTags}
 <link rel="icon" href="data:,">
 ${FONTS}

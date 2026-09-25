@@ -56,6 +56,11 @@ export class AudioSystem {
     this.noiseBuffer = makeNoiseBuffer(this.ctx);
   }
 
+  /** Contexto e saída com o volume mestre, para sons fora da partida (vinheta da marca). Null antes do primeiro gesto. */
+  get output(): { ctx: AudioContext; out: AudioNode } | null {
+    return this.ctx && this.masterGain && this.enabled ? { ctx: this.ctx, out: this.masterGain } : null;
+  }
+
   /** Atualiza o volume global em tempo real. */
   setVolume(v: number): void {
     this.masterVolume = v;
