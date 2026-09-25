@@ -82,15 +82,19 @@ describe('andróide rebelde (escala 1)', () => {
     expect(a.modules.head).toBe(ANDROID_STATS.maxModuleHealth.head);
   });
 
-  it('é frágil: 3 tiros de plasma no peito derrubam', async () => {
+  it('é frágil e mais chato do que perigoso: 2 tiros de plasma derrubam; o tiro dele tira pouco', async () => {
     const physics = await world();
     const combat = new CombatSystem(destructibles, debris, particles);
     const a = new Android();
     a.spawn(physics, new THREE.Vector3(0, 0, 0));
     combat.register(a);
     const chest = new THREE.Vector3(0, 1.4, -ANDROID_STATS.radius);
-    for (let i = 0; i < 3; i++) a.takeHit(chest, VECTOR09_STATS.weaponDamage);
+    a.takeHit(chest, VECTOR09_STATS.weaponDamage);
+    expect(a.alive).toBe(true);
+    a.takeHit(chest, VECTOR09_STATS.weaponDamage);
     expect(a.alive).toBe(false);
+    // Precisa de mais de 70 tiros para derrubar o torso de um Mech.
+    expect(VECTOR09_STATS.maxModuleHealth.torso / ANDROID_STATS.weaponDamage).toBeGreaterThan(70);
   });
 
   it('o BotSystem põe Mechs e andróides na arena, cada um com o seu jeito de lutar', async () => {

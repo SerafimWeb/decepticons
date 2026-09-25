@@ -5,9 +5,10 @@ import { box, cyl, group } from './meshKit';
 
 /**
  * Andróide rebelde, escala 1: um robô autônomo do tamanho dos humanoides de hoje (~2 m), uma IA
- * rebelde a pé. Pequeno, frágil e com tiro fraco, mas muito mais ágil que um Mech: arranca quase
- * na hora, pula duas vezes e desvia com dash a cada 1,4 s. Alvo pequeno: acertar exige mira de
- * verdade (no toque, a mira assistida ajuda).
+ * rebelde a pé. Mais chato do que perigoso (dono, 25/09: "rápido, mas fraco"): cai com 2 tiros de
+ * plasma e o tiro dele quase não tira vida, mas arranca na hora, pula duas vezes e desvia com dash
+ * a cada 1,4 s. Alvo pequeno: acertar exige mira de verdade (no toque, a mira assistida ajuda).
+ * O mesmo corpo serve ao técnico (visor amarelo), que conserta os Mechs em vez de atirar.
  */
 export const ANDROID_STATS: MechStats = {
   name: 'ANDRÓIDE A-1',
@@ -24,19 +25,19 @@ export const ANDROID_STATS: MechStats = {
   stepHeight: 0.45,
   demolishOnDash: false,
   maxScrapSlots: 0,
-  fireInterval: 0.3,
-  weaponDamage: 9,
+  fireInterval: 0.4,
+  weaponDamage: 4,
   heatPerShot: 0.12,
   heatCooling: 0.7,
   heatCoolDelay: 0.2,
   heatRecover: 0.3,
   maxModuleHealth: {
-    torso: 70,
-    head: 30,
-    leftArm: 35,
-    rightArm: 35,
-    leftLeg: 40,
-    rightLeg: 40,
+    torso: 50,
+    head: 20,
+    leftArm: 25,
+    rightArm: 25,
+    leftLeg: 30,
+    rightLeg: 30,
   },
 };
 

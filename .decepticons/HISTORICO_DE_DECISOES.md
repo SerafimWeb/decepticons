@@ -2,6 +2,18 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Andróides mais chatos que perigosos; o técnico; funções da escala 1
+**Pedido do dono:** "os andróides têm que ser mais fracos e tirar menos vida; mais massantes do que perigosos, rápidos mas fracos. Alguns são pra reparar os outros bots, coletar peças, entregar munição, fazer manutenção nos robôs maiores, e podem pilotar mechs (os humanoides vão poder fazer as mesmas ações que humanos, como pilotar as máquinas do hangar)". E: "manter o jogo leve para escalar com muitos jogadores; código limpo, arquitetura profissional".
+**Decisão (Claude):**
+- **Combate mais fraco:** torso 70 → 50 (2 tiros de plasma), dano por tiro 9 → 4, cadência 0,3 → 0,4 s, mira 2,2× mais solta (`BotProfile.aimErrorScale`). Continuam rápidos e desviando.
+- **Técnico** (`combat/TechnicianController.ts`, visor amarelo, T-01):
+  - Vai até o Mech rebelde mais avariado (reavalia a cada 0,5 s) e conserta 18 de vida/s na parte mais avariada que ainda existe (`combat/repair.ts`, regra pura). Parte arrancada não volta: isso fica para o coletor.
+  - Foge com dash quando o jogador chega a 16 m; volta a trabalhar a 24 m. Não atira. É o alvo prioritário, e isso cria decisão tática.
+- **Arquitetura:** os dois cérebros têm a mesma interface (think → MechInput, alert, reset). A direção comum (ângulos, giro, movimento no referencial do torso) saiu do BotController para `combat/steer.ts`, sem mudar comportamento (os testes dos bots passam iguais). O conserto é aplicado pelo BotSystem no tick fixo. O feixe é uma linha de 2 pontos por técnico, atualizada no render sem alocar.
+- **Funções futuras** (GAME_DESIGN e ROADMAP): coletor (peças dos destroços reconstroem partes), logística (munição e foguetes) e piloto (andróide embarca em máquina vazia do hangar; matar o piloto desliga o Mech).
+**Custo de CPU:** técnico = 1 character controller + um laço por ≤3 aliados e pelos alvos por tick, sem raycast. Arena com 8 unidades (7 bots + jogador), o tamanho de sala do G11.
+**Quem decidiu:** dono (papéis, força); Claude (números, IA, arquitetura).
+
 ## [2026-09-25] Cidade estilo Tron
 **Pedido do dono:** "os prédios podem ser coloridos: volte aquele ciano, o pink inicial, vermelho aceso, amarelo fluorescente; cores bem coloridas, estilo Tron, sci-fi moderno, espacial".
 **Decisão (Claude):**
