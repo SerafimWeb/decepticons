@@ -2,6 +2,15 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Rig do Vector-09 reduzido para 9 draw calls
+**Motivo:** o painel de desempenho mostrava cerca de 34 chamadas por Vector-09, acima do orçamento para a arena e as salas multiplayer.
+**Decisão (Remoratrader/Codex):** fundir as malhas estáticas por pivô articulado ao construir o rig. Cada grupo articulado passa a desenhar uma geometria com cor, metal, rugosidade e emissão por vértice; emissão dinâmica do propulsor, flash de dano e visibilidade por parte seguem ativos.
+- O Vector-09 cai de ~34 para 9 draw calls; cada grupo de articulação continua sendo ocultado independentemente quando sua parte é destruída.
+- A combinação ocorre uma vez na construção do modelo. O loop de render não cria objetos nem buffers adicionais.
+- No build atual, o painel marcou 99 draw calls para a cena inteira parada (inclui ambiente, partículas e demais Mechs); por isso o orçamento por rig foi conferido na estrutura de pivôs, não inferido do total da cena.
+**Custo de CPU:** trabalho de geometria apenas na criação do rig; 9 submissões de desenho por Vector-09 em cada frame.
+**Quem decidiu:** Remoratrader/Codex (otimização dentro do território de render).
+
 ## [2026-09-25] Plano do multiplayer
 **Pedido do dono:** "já podemos começar a planejar o multiplayer? Ou ainda há tarefas anteriores?"
 **Decisão (Claude):** plano em `MULTIPLAYER.md`.

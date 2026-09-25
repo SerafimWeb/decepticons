@@ -19,6 +19,7 @@
 | Partículas, bloom, camera shake | REAL | |
 | HUD (VEL, DEBRIS, barra de dash, modo de câmera) | REAL | F1 esconde o HUD (Gemini). Confirmar jogando que o F1 não abre a Ajuda do navegador. |
 | Painel de desempenho (FPS, tempo de tick, draw calls) | REAL | Compacto sempre no canto. A tecla `'` abre o detalhado: qualidade adaptativa, triângulos, geometrias, texturas, shaders, heap do JS (só no Chrome), no estilo de terminal do design system Serafim. Funciona no ABNT2 e no US; o smoke testa as duas teclas e o total de draw calls |
+| Render do Vector-09 | REAL | Rig combina a geometria estática de cada pivô articulado em um draw call (9 por Mech, antes ~34); cor, material, emissão, flash de dano e visibilidade das partes são preservados. O painel mede o total da cena; geometria combinada é criada uma vez ao montar o rig. |
 | Qualidade adaptativa (G12) | PARCIAL | Gemini; corrigida e com testes, mas ainda não medida numa GPU integrada de verdade |
 | Arena | REAL | 1 mapa: 3 prédios, plataforma com rampa, skyline |
 | Dano em Mechs por parte | REAL | a parte sai da altura e do lado do impacto na cápsula; dano em parte destruída vai para o torso. Testado no Node (com mutação) e jogado pelo dono |

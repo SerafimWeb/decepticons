@@ -3,7 +3,7 @@ import type { Loadout } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
 import { VECTOR09_STATS } from './chassis';
 import { MechBase, type LegRig, type MechRig } from './MechBase';
-import { box, cyl, group } from './meshKit';
+import { batchRigMeshes, box, cyl, group } from './meshKit';
 
 /** Os números do Vector-09 ficam em `chassis.ts` (sem 3D: o servidor e o site leem de lá). */
 export { VECTOR09_STATS };
@@ -20,6 +20,7 @@ function buildRig(paint: number, visor: number): MechRig {
     rocket: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff7a1a, emissiveIntensity: 3 }),
     thruster: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff6a00, emissiveIntensity: 2 }),
   };
+  M.thruster.userData.mechDynamicEmission = true;
 
   const model = new THREE.Group();
   const pelvis = group(model, 0, HIP, 0);
@@ -77,6 +78,7 @@ function buildRig(paint: number, visor: number): MechRig {
   }
   const leftMuzzle = group(leftArm, -0.05, -1.12, -1.2);
 
+  const batchedMaterial = batchRigMeshes(model, [M.armor, M.paint]);
   return {
     model,
     pelvis,
@@ -89,8 +91,9 @@ function buildRig(paint: number, visor: number): MechRig {
     muzzle,
     leftMuzzle,
     thrusters,
-    thrusterMaterial: M.thruster,
-    hullMaterials: [M.armor, M.paint],
+    thrusterMaterial: batchedMaterial,
+    setDashVisual: batchedMaterial.userData.setDash,
+    hullMaterials: [batchedMaterial],
     hipHeight: HIP,
   };
 }

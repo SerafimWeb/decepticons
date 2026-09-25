@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PALETTE } from '../core/palette';
 import { ANDROID_STATS } from './chassis';
 import { MechBase, type LegRig, type MechRig } from './MechBase';
-import { box, cyl, group } from './meshKit';
+import { batchRigMeshes, box, cyl, group } from './meshKit';
 
 /** Os números do andróide ficam em `chassis.ts` (sem 3D: o servidor e o site leem de lá). */
 export { ANDROID_STATS };
@@ -56,6 +56,7 @@ function buildRig(paint: number, visor: number): MechRig {
   box(leftArm, 0.11, 0.3, 0.12, M.frame, 0, -0.15, 0);
   box(leftArm, 0.12, 0.3, 0.13, M.shell, 0, -0.45, 0);
 
+  const batchedMaterial = batchRigMeshes(model, [M.shell]);
   return {
     model,
     pelvis,
@@ -67,8 +68,8 @@ function buildRig(paint: number, visor: number): MechRig {
     rightLeg,
     muzzle,
     thrusters: [],
-    thrusterMaterial: M.thruster,
-    hullMaterials: [M.shell],
+    thrusterMaterial: batchedMaterial,
+    hullMaterials: [batchedMaterial],
     hipHeight: HIP,
   };
 }
