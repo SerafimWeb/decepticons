@@ -14,6 +14,8 @@
 **Bug achado no caminho (R17):** o teste do bot que vê o jogador falhou com a velocidade nova. A causa era real: numa amostra, o raio de linha de visão passou direto por uma cápsula parada (erro numérico do Rapier), e isso zerava o tempo de reação do bot. Agora o bot só esquece o alvo depois de 2 falhas seguidas (0,2 s). O teste da rampa passou a medir o tempo pela velocidade do Mech.
 **Custo de CPU:** desprezível (três somas por tick por Mech).
 **Quem decidiu:** dono (pedido); Claude (números, a calibrar no playtest).
+## [2026-09-24] Som sintetizado para foguetes
+**Decisão (Gemini):** Lançamento de foguetes agora toca um som sintetizado de curto decay (`AudioSystem.playRocketLaunch`) acionado a partir de `player.onRocket`, seguindo o conceito sem dependência de áudio externo. O impacto da explosão já usa o som de explosão genérico conforme o volume vs distância.
 
 ## [2026-09-24] Paleta âmbar industrial: sai o azul e o roxo
 **Pedido do dono:** "azul e roxo é a assinatura de feito com IA, temos que mudar isso também".
