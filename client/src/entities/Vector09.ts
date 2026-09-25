@@ -38,6 +38,7 @@ function buildRig(paint: number): MechRig {
     frame: new THREE.MeshStandardMaterial({ color: 0x1f222a, metalness: 0.7, roughness: 0.5 }),
     paint: new THREE.MeshStandardMaterial({ color: paint, metalness: 0.35, roughness: 0.45 }),
     visor: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x00e5ff, emissiveIntensity: 4 }),
+    rocket: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff7a1a, emissiveIntensity: 3 }),
     thruster: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff6a00, emissiveIntensity: 2 }),
   };
 
@@ -87,13 +88,15 @@ function buildRig(paint: number): MechRig {
   cyl(rightArm, 0.2, 0.1, M.visor, 0, -1.05, -1.9, Math.PI / 2);
   const muzzle = group(rightArm, 0, -1.05, -2.2);
 
-  // Braço esquerdo: lançador secundário (placeholder).
+  // Braço esquerdo: lançador de foguetes (casulo com 4 tubos, bocas acesas em laranja).
   const leftArm = group(torso, -1.35, 1.45, 0);
   box(leftArm, 0.7, 0.6, 0.9, M.paint, -0.1, 0.1, 0);
   box(leftArm, 0.4, 0.9, 0.45, M.frame, 0, -0.55, 0);
-  box(leftArm, 0.5, 0.8, 0.55, M.armor, 0, -1.1, -0.2);
-  box(leftArm, 0.45, 0.35, 0.7, M.frame, -0.1, -1.1, -0.6);
-  box(leftArm, 0.3, 0.08, 0.05, M.visor, -0.1, -1.05, -0.96);
+  box(leftArm, 0.85, 0.85, 1.3, M.armor, -0.05, -1.12, -0.35);
+  for (const [x, y] of [[-0.25, -0.93], [0.15, -0.93], [-0.25, -1.31], [0.15, -1.31]] as const) {
+    cyl(leftArm, 0.13, 0.2, M.rocket, x, y, -1.02, Math.PI / 2);
+  }
+  const leftMuzzle = group(leftArm, -0.05, -1.12, -1.2);
 
   return {
     model,
@@ -105,6 +108,7 @@ function buildRig(paint: number): MechRig {
     leftLeg,
     rightLeg,
     muzzle,
+    leftMuzzle,
     thrusters,
     thrusterMaterial: M.thruster,
     hullMaterials: [M.armor, M.paint],

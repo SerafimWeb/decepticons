@@ -2,6 +2,21 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Foguetes no braço esquerdo; produção toda em código
+**Pedido do dono:** "quero adicionar a arma esquerda" e "prefiro fazer tudo aqui no código, eu só orientando e as IAs fazendo".
+**Foguetes (Claude):** módulo próprio (`combat/RocketSystem.ts`); a regra de área mora no `CombatSystem.explode`.
+- 4 no carregador, recarga contínua de 1 a cada 2,2 s, intervalo de 0,3 s, 75 m/s: visível no ar, dá para desviar de longe.
+- Explosão de 6 m: 75 no centro, cai em linha reta até zero na borda. A distância é medida até a superfície da cápsula.
+- Acerta a parte mais perto, pela mesma regra de zonas do plasma: no pé, a perna; no peito, o torso. Tática nova: arrancar a perna de quem está atrás da barricada.
+- Quem dispara não se fere (sem pulo de foguete por enquanto). Barricadas no raio levam dano.
+- Braço esquerdo destruído = sem foguetes; morto, o carregador enche.
+- Controles: botão direito ou Q (remapeável) no PC; FOGUETE no toque (segurar dispara no ritmo); PLACAR no toque segura o placar (o Tab do celular).
+- Testes: 7 (dano em área, carregador, recarga, perna x cabeça, dono imune, foguete voando com física real).
+**Produção (decisão do dono):** sem Unity (seria reescrever tudo e o download iria de ~1 MB para dezenas de MB) e sem modelagem manual. Mechs montados por código a partir de peças, som sintetizado; a variedade vem do Hangar. Registrado no GAME_DESIGN ("PRODUÇÃO: TUDO EM CÓDIGO").
+**Divisão:** o Gemini pega som dos foguetes, volume e mixagem, e primeira partida guiada (um PR cada, depois deste merge).
+**Custo de CPU:** por foguete em voo, um raycast por tick e 2 partículas; explosão = um laço pelos Mechs e pelas barricadas (evento, não por quadro).
+**Quem decidiu:** dono (arma, produção em código); Claude (números e regras, a calibrar no playtest).
+
 ## [2026-09-24] Mira no celular: assistida, antecipada e com tiro automático
 **Sintoma (dono, segundo teste no celular):** "a jogabilidade no celular tá estranha, tô com dificuldade de mirar e atirar".
 **Causa:** com dois polegares, o direito mira ou aperta FOGO, nunca os dois. E o plasma (140 m/s) leva ~0,3 s a 40 m: um bot andando de lado a 16 m/s sai 5 m do lugar. No PC o jogador aprende a antecipar; no dedo, quase impossível.

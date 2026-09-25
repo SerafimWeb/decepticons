@@ -102,9 +102,11 @@ export class TouchControls {
     const dash = el('button', 'tc-btn', pad, 'DASH');
     const jump = el('button', 'tc-btn', pad, 'PULO');
     this.fireBtn = el('button', 'tc-btn tc-fire', pad, 'FOGO');
+    const rocket = el('button', 'tc-btn tc-rocket', pad, 'FOGUETE');
     const pause = el('button', 'tc-pause', this.root, '❚❚');
     pause.setAttribute('aria-label', 'Pausar');
-    for (const b of [this.camBtn, dash, jump, this.fireBtn, pause]) b.type = 'button';
+    const board = el('button', 'tc-board', this.root, 'PLACAR');
+    for (const b of [this.camBtn, dash, jump, this.fireBtn, rocket, pause, board]) b.type = 'button';
 
     // --- andar ---
     move.addEventListener('pointerdown', (e) => {
@@ -167,6 +169,20 @@ export class TouchControls {
     }
 
     // --- ações de toque único ---
+    const hold = (b: HTMLButtonElement, set: (on: boolean) => void) => {
+      b.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        b.setPointerCapture(e.pointerId);
+        b.classList.add('pressed');
+        set(true);
+      });
+      const up = () => {
+        b.classList.remove('pressed');
+        set(false);
+      };
+      b.addEventListener('pointerup', up);
+      b.addEventListener('pointercancel', up);
+    };
     const tap = (b: HTMLButtonElement, action: () => void) => {
       b.addEventListener('pointerdown', (e) => {
         e.preventDefault();
@@ -181,6 +197,9 @@ export class TouchControls {
     tap(jump, () => (this.input.virtualJump = true));
     tap(dash, () => (this.input.virtualDash = true));
     tap(this.camBtn, () => this.actions.onCamera());
+    // Segurar: FOGUETE dispara o carregador no ritmo do intervalo; PLACAR mostra o placar (o Tab do toque).
+    hold(rocket, (on) => (this.input.virtualRocket = on));
+    hold(board, (on) => (this.input.virtualBoard = on));
     // Pausa no click (não no pointerdown): a tela de pausa aparece depois do toque acabar e não
     // recebe o click do mesmo dedo, que retomaria o jogo na hora.
     pause.addEventListener('click', () => this.actions.onPause());
@@ -194,6 +213,9 @@ export class TouchControls {
     this.aimers.clear();
     this.firePointers.clear();
     this.setFire(false);
+    this.input.virtualRocket = false;
+    this.input.virtualBoard = false;
+    for (const b of this.root.querySelectorAll('.pressed')) b.classList.remove('pressed');
   }
 
   /** Algum dedo mirando agora (a mira assistida só puxa enquanto o jogador age). */

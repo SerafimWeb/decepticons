@@ -103,6 +103,23 @@ export class Destructibles {
     return true;
   }
 
+  /**
+   * Explosão: cada destrutível a menos de `radius` da caixa leva dano que cai com a distância
+   * (máximo no centro, zero na borda). Poucos destrutíveis por arena: um laço simples basta.
+   */
+  damageInRadius(at: THREE.Vector3, radius: number, maxDamage: number, dir: THREE.Vector3): void {
+    for (const prop of [...this.byCollider.values()]) {
+      const c = prop.center;
+      const h = prop.size;
+      // Distância do ponto até a caixa (0 se dentro).
+      const dx = Math.max(0, Math.abs(at.x - c.x) - h.x / 2);
+      const dy = Math.max(0, Math.abs(at.y - c.y) - h.y / 2);
+      const dz = Math.max(0, Math.abs(at.z - c.z) - h.z / 2);
+      const d = Math.hypot(dx, dy, dz);
+      if (d < radius) this.damage(prop.collider, Math.round(maxDamage * (1 - d / radius)), dir);
+    }
+  }
+
   /** Quebra instantânea (ex.: dash do Colossus-01). */
   demolish(collider: RAPIER.Collider, dir: THREE.Vector3): boolean {
     const prop = this.byCollider.get(collider.handle);

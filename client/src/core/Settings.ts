@@ -5,7 +5,7 @@
  */
 
 /** Ações do teclado que o jogador pode trocar. O valor é `KeyboardEvent.code` (posição física). */
-export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'camera';
+export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera';
 export type QualityPreset = 'auto' | 'alta' | 'media' | 'baixa';
 export type Difficulty = 'facil' | 'normal' | 'dificil';
 
@@ -64,6 +64,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
     right: 'KeyD',
     jump: 'Space',
     dash: 'Shift',
+    secondary: 'KeyQ',
     camera: 'KeyV',
   }),
 });
@@ -76,6 +77,7 @@ export const KEY_ACTIONS: readonly { action: KeyAction; label: string }[] = [
   { action: 'right', label: 'Direita' },
   { action: 'jump', label: 'Pulo' },
   { action: 'dash', label: 'Dash' },
+  { action: 'secondary', label: 'Foguetes' },
   { action: 'camera', label: 'Trocar câmera' },
 ];
 

@@ -66,6 +66,8 @@ export interface MechRig {
   leftLeg: LegRig;
   rightLeg: LegRig;
   muzzle: THREE.Object3D;
+  /** Boca do lançador do braço esquerdo (sem ela, os foguetes saem do meio do braço). */
+  leftMuzzle?: THREE.Object3D;
   thrusters: THREE.Object3D[];
   thrusterMaterial: THREE.MeshStandardMaterial;
   /** Materiais do casco (por instância): piscam quando o Mech toma dano. */
@@ -116,7 +118,9 @@ export abstract class MechBase {
   private jumpsLeft: number;
   private walkPhase = 0;
   private recoil = 0;
+  private leftRecoil = 0;
   private readonly rightArmBaseZ: number;
+  private readonly leftArmBaseZ: number;
   private hitFlash = 0;
   private shownFlash = 0;
   /** Boca do canhão em relação aos pés, com o Mech em repouso e virado para -Z (medida no rig). */
@@ -132,6 +136,7 @@ export abstract class MechBase {
     this.modules = { ...stats.maxModuleHealth };
     this.jumpsLeft = stats.maxJumps;
     this.rightArmBaseZ = rig.rightArm.position.z;
+    this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
     this.root.updateMatrixWorld(true);
     rig.muzzle.getWorldPosition(this.muzzleLocal);
@@ -224,6 +229,10 @@ export abstract class MechBase {
     return this.rig.muzzle.getWorldPosition(target);
   }
 
+  leftMuzzleWorldPosition(target: THREE.Vector3): THREE.Vector3 {
+    return (this.rig.leftMuzzle ?? this.rig.leftArm).getWorldPosition(target);
+  }
+
   headWorldPosition(target: THREE.Vector3): THREE.Vector3 {
     return this.rig.head.getWorldPosition(target);
   }
@@ -308,6 +317,10 @@ export abstract class MechBase {
 
   onFire(): void {
     this.recoil = 1;
+  }
+
+  onFireSecondary(): void {
+    this.leftRecoil = 1;
   }
 
   /**
@@ -475,6 +488,8 @@ export abstract class MechBase {
 
     this.recoil = Math.max(0, this.recoil - dt * 9);
     r.rightArm.position.z = this.rightArmBaseZ + this.recoil * 0.35;
+    this.leftRecoil = Math.max(0, this.leftRecoil - dt * 5);
+    r.leftArm.position.z = this.leftArmBaseZ + this.leftRecoil * 0.5;
 
     r.thrusterMaterial.emissiveIntensity = this.isDashing ? 14 : 2;
 

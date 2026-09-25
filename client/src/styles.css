@@ -84,6 +84,29 @@ html, body {
   border-radius: 50%;
   box-shadow: 0 0 8px var(--cyan);
 }
+/* Carregador de foguetes (ui/HUD.setRockets): 4 pips; o que está recarregando enche pela --fill. */
+#rockets {
+  position: absolute;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--orange);
+}
+#rockets .pips { display: flex; gap: 4px; }
+#rockets .pips i {
+  --fill: 1;
+  width: 16px;
+  height: 8px;
+  border: 1px solid var(--orange);
+  background: linear-gradient(90deg, var(--orange) calc(var(--fill) * 100%), transparent 0);
+}
+#rockets.off { opacity: 0.3; }
+
 /* Mira acesa: um inimigo vivo está sob ela (ui/HUD.setOnTarget). */
 #crosshair.on-target {
   border-color: var(--orange);
@@ -648,12 +671,13 @@ html, body {
   right: var(--tc-edge-r);
   bottom: var(--tc-edge-b);
   display: grid;
-  grid-template-columns: auto auto;
+  grid-template-columns: auto auto auto;
+  grid-template-areas: '. cam dash' 'rocket jump fire';
   gap: var(--tc-gap);
   align-items: center;
   justify-items: center;
 }
-.tc-btn, .tc-pause {
+.tc-btn, .tc-pause, .tc-board {
   display: grid;
   place-items: center;
   padding: 0;
@@ -671,6 +695,14 @@ html, body {
   background: rgba(255, 43, 214, 0.14);
 }
 .tc-btn.pressed { background: rgba(255, 43, 214, 0.5); }
+.tc-cam { grid-area: cam; }
+.tc-pad > .tc-btn:nth-child(2) { grid-area: dash; }
+.tc-pad > .tc-btn:nth-child(3) { grid-area: jump; }
+.tc-fire { grid-area: fire; }
+.tc-rocket { grid-area: rocket; font-size: 10px; letter-spacing: 0; border-color: var(--orange); background: rgba(255, 106, 0, 0.12); }
+.tc-rocket.pressed { background: rgba(255, 106, 0, 0.5); }
+/* Abaixo da pausa (o seletor com id vence a regra comum de posição, que vem depois). */
+#touch-controls .tc-board { top: calc(max(10px, env(safe-area-inset-top)) + 52px); font-size: 9px; letter-spacing: 0; }
 .tc-cam { font-size: 11px; border-color: rgba(0, 229, 255, 0.6); background: rgba(0, 229, 255, 0.1); }
 .tc-fire {
   width: var(--tc-fire);
@@ -681,7 +713,7 @@ html, body {
   background: rgba(255, 106, 0, 0.2);
 }
 .tc-fire.pressed { background: rgba(255, 106, 0, 0.55); box-shadow: 0 0 18px var(--orange); }
-.tc-pause {
+.tc-pause, .tc-board {
   position: absolute;
   top: max(10px, env(safe-area-inset-top));
   right: var(--tc-edge-r);
@@ -695,7 +727,7 @@ html, body {
 
 /* HUD no toque: a câmera aparece no botão CAM, e o canto de cima é da pausa. */
 .touch #mode { display: none; }
-.touch #debug-panel { bottom: auto; top: 62px; right: var(--tc-edge-r); }
+.touch #debug-panel { bottom: auto; top: 114px; right: var(--tc-edge-r); }
 
 /* Pausa no toque: instruções do toque no lugar das do teclado; sem calibração de mouse. */
 #overlay .touch-help, #overlay .rotate-hint { display: none; }
@@ -719,6 +751,7 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   #stats { top: 8px; left: 10px; font-size: 10px; }
   #mode { font-size: 11px; }
   #dash { bottom: 10px; font-size: 11px; }
+  #rockets { bottom: 28px; font-size: 10px; }
   #dash .bar { width: 110px; }
 }
 /* --- Kill Feed --- */

@@ -73,11 +73,12 @@
 - [x] Mira que acende sobre um inimigo (toque e mouse) #ux
 - [x] Vibração no celular ao levar tiro e ao abater #ux
 - [ ] Ajuste fino da mira assistida depois do playtest do dono no celular #jogabilidade
-- [ ] Botão de placar no toque (no celular não existe Tab) #ux
+- [x] Botão de placar no toque (no celular não existe Tab) #ux
 - [ ] Primeira partida guiada: dicas curtas no jogo (mire nas pernas, dash, pulo duplo), uma vez só #ux
 - [x] Gestão no GitHub: etiquetas automáticas por frente e por agente, modelo de PR, notas de versão por frente #base
 - [x] Página do jogo (landing) e bastidores do desenvolvimento (o case) no site, com capturas do jogo feitas a cada deploy #negocio
-- [ ] Arma secundária: foguetes no braço esquerdo (botão direito), dano em área #combate
+- [x] Arma secundária: foguetes no braço esquerdo (botão direito ou Q; FOGUETE no toque), 4 no carregador, dano em área #combate
+- [ ] Som dos foguetes: disparo e voo (Gemini) #som
 - [ ] Custo de render por Mech: ~34 draw calls cada. Juntar a geometria por material antes do multiplayer (G5) #desempenho
 
 ## 🟠 FASE 4 — Multiplayer autoritativo
@@ -105,6 +106,8 @@
 - [ ] Música que acompanha a intensidade do combate #som
 - [ ] Pilotos com personalidade: agressivo, franco-atirador, cauteloso #ia
 - [ ] Bots contra bots no modo todos contra todos #ia
+- [ ] Bots com foguetes na dificuldade difícil #ia
+- [ ] Hangar: montar o próprio Mech (chassi, arma de cada braço, módulos), peças geradas por código e equilibradas, sem pay-to-win (prioridade do dono) #mechs
 - [ ] Parte avariada solta faísca e fumaça antes de cair #mechs
 - [ ] Pintura e decalques por jogador (base dos cosméticos) #mechs
 - [ ] Prédios que desmoronam em partes, não só barricadas #cenarios
