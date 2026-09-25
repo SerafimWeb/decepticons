@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PALETTE } from '../core/palette';
+import { CITY_NEON, PALETTE } from '../core/palette';
 import { mulberry32 } from '../core/rng';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { DestructibleDef, Destructibles } from './Destructibles';
@@ -20,19 +20,19 @@ export interface Occluder {
 }
 
 const BUILDINGS: BlockDef[] = [
-  { x: -28, z: -35, w: 16, d: 16, h: 30, accent: PALETTE.green },
-  { x: 32, z: -15, w: 12, d: 22, h: 20, accent: PALETTE.yellow },
-  { x: 4, z: -70, w: 24, d: 12, h: 42, accent: PALETTE.bone },
+  { x: -28, z: -35, w: 16, d: 16, h: 30, accent: PALETTE.cyan },
+  { x: 32, z: -15, w: 12, d: 22, h: 20, accent: PALETTE.pink },
+  { x: 4, z: -70, w: 24, d: 12, h: 42, accent: PALETTE.fluo },
 ];
 
 // Barricadas destrutíveis (cobertura que vira destroço).
 const BARRICADES: DestructibleDef[] = [
-  { x: -8, z: 0, w: 8, d: 2, h: 2.2, accent: PALETTE.sodium, hp: 400 },
-  { x: 14, z: 8, w: 2, d: 8, h: 2.2, accent: PALETTE.sodium, hp: 400 },
-  { x: -30, z: 10, w: 6, d: 6, h: 3.5, accent: PALETTE.sodium, hp: 700 },
+  { x: -8, z: 0, w: 8, d: 2, h: 2.2, accent: PALETTE.fluo, hp: 400 },
+  { x: 14, z: 8, w: 2, d: 8, h: 2.2, accent: PALETTE.cyan, hp: 400 },
+  { x: -30, z: 10, w: 6, d: 6, h: 3.5, accent: PALETTE.pink, hp: 700 },
   { x: 10, z: -38, w: 10, d: 2, h: 2.2, accent: PALETTE.sodium, hp: 400 },
-  { x: 22, z: 30, w: 3, d: 3, h: 6, accent: PALETTE.sodium, hp: 500 },
-  { x: -14, z: 32, w: 12, d: 1.5, h: 4, accent: PALETTE.sodium, hp: 600 },
+  { x: 22, z: 30, w: 3, d: 3, h: 6, accent: PALETTE.green, hp: 500 },
+  { x: -14, z: 32, w: 12, d: 1.5, h: 4, accent: PALETTE.fluo, hp: 600 },
 ];
 
 // Plataforma elevada + rampa (testa subida de rampa e pulo de cima).
@@ -114,7 +114,7 @@ export class Arena {
         new THREE.Vector3(h, 0.05, h),
         new THREE.Vector3(-h, 0.05, h),
       ]),
-      new THREE.LineBasicMaterial({ color: neon(PALETTE.green, 3) }),
+      new THREE.LineBasicMaterial({ color: neon(PALETTE.pink, 3) }),
     );
     this.scene.add(border);
 
@@ -156,7 +156,7 @@ export class Arena {
 
   private buildPlatform(): void {
     const p = PLATFORM;
-    this.addSolid(new THREE.Vector3(p.x, p.h / 2, p.z), new THREE.Vector3(p.w, p.h, p.d), PALETTE.green);
+    this.addSolid(new THREE.Vector3(p.x, p.h / 2, p.z), new THREE.Vector3(p.w, p.h, p.d), PALETTE.pink);
 
     // Rampa descendo da borda +X da plataforma até o chão.
     const angle = Math.atan2(p.h, RAMP_RUN);
@@ -169,7 +169,7 @@ export class Arena {
       p.z,
     );
     const rot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -angle);
-    this.addSolid(center, new THREE.Vector3(length, thickness, RAMP_WIDTH), PALETTE.green, undefined, rot);
+    this.addSolid(center, new THREE.Vector3(length, thickness, RAMP_WIDTH), PALETTE.pink, undefined, rot);
   }
 
   private addSolid(
@@ -197,7 +197,29 @@ export class Arena {
     return g;
   }
 
-  /** Silhuetas de megaprédios fora da arena (sem colisão, 2 draw calls). */
+  /**
+   * Horizonte fora da arena, sem colisão: torres escuras com uma faixa neon cada e uma luz no topo,
+   * em cores sorteadas da cidade (semente fixa), mais um céu de estrelas. 4 draw calls no total
+   * (instâncias + pontos), estático: nada por quadro.
+   */
+  /** Céu estrelado (espacial): pontos numa casca bem longe, na metade de cima. 1 draw call, estático. */
+  private buildStars(rand: () => number): THREE.Points {
+    const n = 900;
+    const pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const a = rand() * Math.PI * 2;
+      const up = 0.08 + rand() * 0.92; // só acima do horizonte
+      const r = 600;
+      const flat = Math.sqrt(1 - up * up);
+      pos.set([Math.cos(a) * flat * r, up * r, Math.sin(a) * flat * r], i * 3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const stars = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, fog: false }));
+    stars.frustumCulled = false;
+    return stars;
+  }
+
   private buildSkyline(): void {
     const rand = mulberry32(1337);
     const count = 80;
@@ -207,16 +229,17 @@ export class Arena {
       new THREE.MeshStandardMaterial({ color: PALETTE.steelDark, metalness: 0.2, roughness: 0.9 }),
       count,
     );
-    const beacons = new THREE.InstancedMesh(
-      new THREE.SphereGeometry(0.8, 8, 6),
-      new THREE.MeshBasicMaterial({ color: neon(PALETTE.signal, 4) }),
-      count,
-    );
+    // Cor por instância (HDR, para o bloom): a luz do topo e a faixa de cada torre.
+    const beacons = new THREE.InstancedMesh(new THREE.SphereGeometry(0.8, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }), count);
+    const bands = new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff }), count);
+    const tint = new THREE.Color();
 
     const m = new THREE.Matrix4();
     const q = new THREE.Quaternion();
     const p = new THREE.Vector3();
     const s = new THREE.Vector3();
+    const bandPos = new THREE.Vector3();
+    const bandSize = new THREE.Vector3();
     for (let i = 0; i < count; i++) {
       const angle = rand() * Math.PI * 2;
       const radius = 140 + rand() * 140;
@@ -225,9 +248,15 @@ export class Arena {
       p.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
       s.set(w, h, 10 + rand() * 22);
       towers.setMatrixAt(i, m.compose(p, q, s));
+      const color = CITY_NEON[Math.floor(rand() * CITY_NEON.length)]!;
+      // Faixa luminosa numa altura sorteada, um pouco maior que a torre (aparece por fora).
+      const bandY = h * (0.35 + rand() * 0.55);
+      bands.setMatrixAt(i, m.compose(bandPos.set(p.x, bandY, p.z), q, bandSize.set(s.x + 0.3, 0.6, s.z + 0.3)));
+      bands.setColorAt(i, tint.setHex(color).multiplyScalar(2.2));
       p.y = h + 1;
       beacons.setMatrixAt(i, m.compose(p, q, s.set(1, 1, 1)));
+      beacons.setColorAt(i, tint.setHex(color).multiplyScalar(4));
     }
-    this.scene.add(towers, beacons);
+    this.scene.add(towers, bands, beacons, this.buildStars(rand));
   }
 }
