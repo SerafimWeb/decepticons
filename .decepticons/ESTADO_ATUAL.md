@@ -7,6 +7,8 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Bots com personalidade e sem "me juntam" (Claude; dono: "muito difícil, eles são muitos e me juntam"):** brabo, manso, fujão e soldado; diretor de ataque com no máximo 2 atacando juntos (os outros esperam afastados e revezam); padrão com 2 andróides em vez de 3. Tudo configurável na seção "Inimigos" das configurações (Claude fez a seção num PR pequeno, com o aval da regra 4; o Gemini não precisa mais do item 3 da fila dele).
+
 - **FX de explosões e impactos (Remoratrader/Codex):** pontos com tamanho e expansão por partícula; fogo, faíscas, fumaça, poeira e impacto ganharam escalas e durações distintas. O pool tem teto explícito de 3000, sobrescreve as partículas mais antigas e usa buffers tipados fixos (sem alocação no update por frame).
 - **Plano do multiplayer (Claude):** `MULTIPLAYER.md` com pré-requisitos, arquitetura, orçamento de banda (~4 KB/s por jogador, meta de 8), contratos e etapas M0–M8. A Fase 4 do ROADMAP virou as etapas. Revisão cruzada do PR #40 (Gemini) postada no GitHub: conflito com a main e uma alocação por quadro.
 - **Contrato do Hangar (Claude):** montagem validada (encaixe, carga de 11 t, nível), salva no aparelho, trocada no renascimento, e link de build `/jogar/?build=…`. Chassis sem 3D em `entities/chassis.ts`. A landing mostra as 9 combinações com link para jogar. **A tela do Hangar (Gemini) está liberada:** API em `HANGAR.md`, seção 2.
@@ -89,6 +91,7 @@
 - [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
 - [ ] **Gemini:** Próxima tarefa: setas-inimigos (ui/OffscreenIndicators.ts). Seta vermelha na borda da tela para inimigos fora da visão. Um PR por tarefa, a partir da `main` atualizada.
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
+- [ ] **Dono:** jogar com o diretor de ataque (no máximo 2 atacando juntos) e as personalidades; dizer se ficou fácil demais (dá para subir "Atacam ao mesmo tempo" nas configurações)
 - [ ] **Dono:** jogar com o calor completo (correr atirando ferve em ~2 s; parado esfria em dobro) e dizer se ficou punitivo demais
 - [ ] **Dono:** jogar com as armas novas (menos dano, calor compartilhado com os foguetes) e dizer se a luta ficou lenta ou rápida demais; decidir as perguntas do fim do `HANGAR.md`
 - [ ] **Dono:** ouvir a vinheta da marca no jogo (som, volume, duração) e ver a abertura da landing (numa aba anônima ela roda de novo)

@@ -96,6 +96,8 @@
 - [x] Hangar: contrato da montagem (`LoadoutSpec` + `validateLoadout`, carga de 11 t no Vector-09), montagem salva no aparelho e link de build (`?build=`), com testes #mechs
 - [ ] Hangar: tela para montar o Mech (arma e nível em cada braço, barras de carga e calor), salva no aparelho (Gemini) #ux
 - [ ] Segundo chassi para o Hangar ter escolha de verdade #mechs
+- [x] Bots com personalidade (brabo, manso, fujão, soldado) e diretor de ataque: no máximo 2 atacando juntos, os outros esperam a vez #ia
+- [x] Inimigos configuráveis: quantidade de Mechs e andróides, técnico, personalidade de cada Mech e quantos atacam juntos #ux
 - [ ] Setas de inimigos fora da tela (Gemini) #ux
 - [ ] Abertura da rodada ("RODADA 1 · 3·2·1 · COMBATE!") com locução sintetizada (Gemini) #ux
 - [ ] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) #ux
@@ -129,6 +131,7 @@
 - [ ] Passe de temporada (se houver tração) #negocio
 
 ## 💡 IDEIAS
+- [ ] Rádio das IAs rebeldes: provocações geradas por modelo de linguagem no servidor, entre rodadas (nunca decidindo o combate) #ia
 > Sem fase ainda: o dono prioriza. Propostas do Claude em 2026-09-23, a partir das frentes citadas pelo dono.
 - [ ] Música que acompanha a intensidade do combate #som
 - [ ] Pilotos com personalidade: agressivo, franco-atirador, cauteloso #ia

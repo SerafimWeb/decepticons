@@ -47,7 +47,7 @@ do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
 > → uma linha aqui; feature que saiu → sai daqui. Formato: `- **Título:** frase curta para quem vai jogar.`
 
 - **Dano por parte:** arranque uma perna e o inimigo manca; as duas e ele para; destrua a cabeça e ele fica cego.
-- **Bots que caçam você:** três pilotos que patrulham, cercam atirando de lado e recuam quando estão avariados.
+- **Pilotos com personalidade:** o brabo vem para cima, o manso atira de longe e o fujão espera você virar de costas. Eles revezam o ataque em vez de caírem todos juntos, e dá para escolher quantos e quem são.
 - **Rodadas de 5 minutos:** todos contra todos, placar no Tab e rodada nova sozinha, com a arena inteira de novo.
 - **Cobertura que quebra:** as barricadas viram destroços; a proteção do inimigo não dura para sempre.
 - **Dash e pulo duplo:** um Mech pesado que ainda assim escapa, flanqueia e muda de altura.

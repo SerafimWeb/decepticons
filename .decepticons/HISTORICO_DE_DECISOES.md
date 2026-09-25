@@ -2,6 +2,17 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Personalidades dos bots, vaga de ataque e inimigos configuráveis
+**Pedido do dono:** "está muito difícil, eles são muitos e me juntam. Os bots estão com IA? Dá para integrar Groq, Gemini, DeepSeek por API? Eles pensam igual? Um mais brabo, outro mais manso, outro fujão que ataca na covardia. Quero poder configurar mais."
+**Decisão (Claude):**
+- **Sem modelo de linguagem no combate:** cada chamada leva 0,2–2 s e o bot decide 60 vezes por segundo; custaria por chamada e por jogador; não é reproduzível (quebra G1/G2, o servidor e os testes); e a chave de API ficaria exposta no navegador. A IA de jogo (estados, percepção, parâmetros) é o que os estúdios usam. Um modelo de linguagem faz sentido **entre rodadas**, no servidor: o "rádio" das IAs rebeldes provocando o jogador (ideia no ROADMAP).
+- **Personalidades** (`PERSONAS` em `combat/BotController.ts`), por cima do tipo de robô e da dificuldade: **brabo** (chega a 55% da distância, quase não recua, só para de atirar superaquecido, rajadas 1,5×), **manso** (1,45× mais longe, recua com 55% do torso, esfria em 70%, atira 0,6×), **fujão** (espreita pelas costas; ataca quando o alvo está de costas, avariado ou superaquecido; visto de frente, foge com dash), **soldado** (o de antes).
+- **Diretor de ataque** (`BotSystem`): vagas de ataque por alvo (Mech conta 1, andróide ½; padrão 2). Quem não tem vaga espera 1,4× mais longe, sem atirar. A vaga vai primeiro para quem já está no turno, depois pela personalidade (brabo antes), depois o mais perto; o turno dura 7 s e passa. Roda 5 vezes por segundo, sem alocar. É a técnica dos jogos de tiro para dar pressão constante sem todo mundo de uma vez.
+- **Configurável** (`GameSettings`): Mechs (0–3), andróides (0–3) e técnico valem ao reiniciar; a personalidade de cada Mech e quantos atacam juntos valem na hora. **Padrão novo:** 3 Mechs (KESTREL brabo, MAKO soldado, VIPER fujão), 2 andróides (eram 3), técnico, 2 atacando juntos. O placar mostra a personalidade (KESTREL·BRABO).
+- **De quebra (R17):** os testes com física passavam dos 5 s padrão do Vitest com a máquina ocupada e falhavam por tempo; o limite subiu para 30 s.
+**Custo de CPU:** diretor a 5 Hz com ≤ 7 bots (um laço e uma inserção ordenada); a emboscada são duas contas de ângulo por tick. Nada alocado.
+**Quem decidiu:** dono (personalidades, menos pressão, configurar); Claude (parâmetros, diretor, por que não usar modelo de linguagem no combate).
+
 ## [2026-09-25] Explosões com tamanho por partícula e teto fixo
 **Motivo:** partículas do mesmo tamanho davam pouca leitura de profundidade em impactos e explosões, apesar do pool fixo.
 **Decisão (Remoratrader/Codex):** manter um único `THREE.Points`, acrescentando `particleScale` e expansão ao longo da vida em typed arrays pré-alocados. Fogo, fumaça, poeira e faíscas usam tamanhos e curvas próprias; o sprite e o shader seguem o mesmo draw call.

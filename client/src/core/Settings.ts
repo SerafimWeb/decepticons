@@ -8,6 +8,8 @@
 export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera';
 export type QualityPreset = 'auto' | 'alta' | 'media' | 'baixa';
 export type Difficulty = 'facil' | 'normal' | 'dificil';
+/** Personalidade de um Mech inimigo (os números ficam em `combat/BotController.ts`, `PERSONAS`). */
+export type Persona = 'soldado' | 'brabo' | 'manso' | 'fujao';
 
 /**
  * Radianos de giro por ponto do mouse com sensibilidade 1. Com 800 DPI dá ~25 cm de mouse por volta
@@ -34,6 +36,16 @@ export interface GameSettings {
   /** 'auto' = qualidade adaptativa (G12); os outros fixam a qualidade. */
   quality: QualityPreset;
   difficulty: Difficulty;
+  /** Mechs rebeldes na arena (vale ao reiniciar a partida). */
+  enemyMechs: number;
+  /** Andróides de combate na arena (vale ao reiniciar a partida). */
+  enemyAndroids: number;
+  /** Técnico que conserta os Mechs rebeldes (vale ao reiniciar a partida). */
+  technician: boolean;
+  /** Personalidade de cada Mech rebelde, na ordem (KESTREL, MAKO, VIPER). Vale na hora. */
+  enemyPersonas: Persona[];
+  /** Quantos atacam ao mesmo tempo (Mech conta 1, andróide ½); os outros esperam a vez. Vale na hora. */
+  maxAttackers: number;
   /** Painel de desempenho compacto no canto (FPS, tick, draws). */
   showPerf: boolean;
   /** Volume mestre do áudio (0 a 1) */
@@ -46,6 +58,9 @@ export const LIMITS = {
   mouseDpi: { min: 100, max: 32000, step: 50 },
   fovOffset: { min: -10, max: 20, step: 1 },
   volume: { min: 0, max: 1, step: 0.05 },
+  enemyMechs: { min: 0, max: 3, step: 1 },
+  enemyAndroids: { min: 0, max: 3, step: 1 },
+  maxAttackers: { min: 0.5, max: 4, step: 0.5 },
 } as const;
 
 export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
@@ -59,6 +74,12 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   quality: 'auto',
   // A dificuldade de hoje foi aprovada pelo dono como a "normal" (2026-09-24).
   difficulty: 'normal',
+  // Dono, 25/09: "muito difícil, eles são muitos e me juntam": menos andróides e no máximo 2 atacando juntos.
+  enemyMechs: 3,
+  enemyAndroids: 2,
+  technician: true,
+  enemyPersonas: Object.freeze(['brabo', 'soldado', 'fujao']) as Persona[],
+  maxAttackers: 2,
   showPerf: true,
   volume: 0.8,
   keys: Object.freeze({
@@ -98,6 +119,13 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
   dificil: 'Difícil',
 };
 
+export const PERSONA_LABELS: Record<Persona, { label: string; about: string }> = {
+  soldado: { label: 'Soldado', about: 'troca tiros de média distância e recua avariado' },
+  brabo: { label: 'Brabo', about: 'vem para cima, quase não recua e atira até ferver' },
+  manso: { label: 'Manso', about: 'fica longe, atira menos e recua cedo' },
+  fujao: { label: 'Fujão', about: 'espreita pelas costas, ataca com brecha e foge se for visto' },
+};
+
 /** Teclas do sistema: não podem ser usadas em ações (Esc pausa, F1 esconde o HUD, ' abre o painel). */
 export const RESERVED_KEYS: readonly string[] = ['Escape', 'F1', 'Backquote', 'Quote'];
 
@@ -117,6 +145,8 @@ export function keyLabel(code: string): string {
 
 const QUALITIES: readonly QualityPreset[] = ['auto', 'alta', 'media', 'baixa'];
 const DIFFICULTIES: readonly Difficulty[] = ['facil', 'normal', 'dificil'];
+const PERSONAS: readonly Persona[] = ['soldado', 'brabo', 'manso', 'fujao'];
+const ENEMY_SLOTS = 3;
 
 function num(v: unknown, fallback: number, min: number, max: number): number {
   return typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
@@ -148,6 +178,14 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     fovOffset: Math.round(num(r.fovOffset, d.fovOffset, LIMITS.fovOffset.min, LIMITS.fovOffset.max)),
     quality: QUALITIES.includes(r.quality as QualityPreset) ? (r.quality as QualityPreset) : d.quality,
     difficulty: DIFFICULTIES.includes(r.difficulty as Difficulty) ? (r.difficulty as Difficulty) : d.difficulty,
+    enemyMechs: Math.round(num(r.enemyMechs, d.enemyMechs, LIMITS.enemyMechs.min, LIMITS.enemyMechs.max)),
+    enemyAndroids: Math.round(num(r.enemyAndroids, d.enemyAndroids, LIMITS.enemyAndroids.min, LIMITS.enemyAndroids.max)),
+    technician: typeof r.technician === 'boolean' ? r.technician : d.technician,
+    enemyPersonas: Array.from({ length: ENEMY_SLOTS }, (_, i) => {
+      const p = Array.isArray(r.enemyPersonas) ? (r.enemyPersonas[i] as unknown) : undefined;
+      return PERSONAS.includes(p as Persona) ? (p as Persona) : d.enemyPersonas[i]!;
+    }),
+    maxAttackers: Math.round(num(r.maxAttackers, d.maxAttackers, LIMITS.maxAttackers.min, LIMITS.maxAttackers.max) * 2) / 2,
     showPerf: typeof r.showPerf === 'boolean' ? r.showPerf : d.showPerf,
     volume: num(r.volume, d.volume, LIMITS.volume.min, LIMITS.volume.max),
     keys,

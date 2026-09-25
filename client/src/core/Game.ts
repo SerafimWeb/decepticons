@@ -172,6 +172,8 @@ export class Game {
     this.combat.register(this.mech);
     this.respawner = new Respawner(SPAWN_POINTS);
     this.respawner.track(this.mech, PLAYER_RESPAWN_S, () => this.equipPending());
+    // Quantos inimigos e quem são (configurações: a contagem vale ao reiniciar a partida).
+    const foes = this.settings.value;
     this.bots = new BotSystem({
       scene: this.scene,
       physics,
@@ -179,9 +181,10 @@ export class Game {
       projectiles: this.projectiles,
       particles: this.particles,
       respawner: this.respawner,
-      spawns: BOT_SPAWNS,
-      androidSpawns: ANDROID_SPAWNS,
-      technicianSpawns: TECHNICIAN_SPAWNS,
+      spawns: BOT_SPAWNS.slice(0, foes.enemyMechs),
+      androidSpawns: ANDROID_SPAWNS.slice(0, foes.enemyAndroids),
+      technicianSpawns: foes.technician ? TECHNICIAN_SPAWNS : [],
+      personas: foes.enemyPersonas,
       waypoints: SPAWN_POINTS,
     });
     this.bots.targets = [this.mech];
@@ -274,6 +277,8 @@ export class Game {
     this.rig.fovOffset = s.fovOffset;
     this.player.keys = s.keys;
     this.bots.setSkill(BOT_SKILLS[s.difficulty]);
+    this.bots.setPersonas(s.enemyPersonas);
+    this.bots.maxAttackers = s.maxAttackers;
     this.debugPanel.setVisible(s.showPerf);
     this.audio.setVolume(s.volume);
     if (s.quality !== this.appliedQuality) {
