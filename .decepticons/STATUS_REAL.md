@@ -3,7 +3,7 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
-Última revisão: 2026-09-23
+Última revisão: 2026-09-25
 
 | Feature | Estado | Observação |
 |---|---|---|
@@ -43,4 +43,5 @@
 | Colossus-01, Ferret-X | AUSENTE | |
 | Multiplayer / servidor | AUSENTE | planejado: Colyseus |
 | Controles touch / mobile | PARCIAL | Refeito pelo Claude depois do teste do dono num celular (24/09): o toque na pausa começa a partida (tela cheia e deitado onde o navegador deixa), direcional analógico onde o polegar encosta, mirar arrastando à direita, FOGO que segura e mira junto, PULO, DASH, CAM (3ª/1ª) e pausa numa grade sem sobreposição. **Mira no toque (24/09, depois do segundo teste do dono: "dificuldade de mirar e atirar"):** dedo com resposta lenta/rápida, mira assistida (fricção, puxão, rastreio, antecipação do plasma) e tiro automático, desligáveis na tela de configurações; mira acende; vibração. Numa partida emulada, sem tocar em FOGO, 4 acertos em ~6 s (antes, zero). **Ergonomia (terceiro teste do dono: "botões num shape quadrado, tenho que segurar na ponta"):** botões redondos em arco, FOGO para dentro da tela; "Ajustar controles" na pausa abre o editor (arrastar e tamanho), salvo no aparelho; o check emulado arrastou, salvou e recarregou. O dono ainda não confirmou num celular de verdade `npm run check` joga num celular emulado (844×390, toque): começa, anda, atira com dois polegares e pausa. Falta o dono confirmar num celular de verdade |
+| Marca SERAFIM WEB (vinheta e assinatura) | REAL | Vinheta de ~1,9 s no primeiro "clique para jogar" (emblema, letreiro, som sintetizado), pula com clique ou tecla; abertura com chuva de pontos na landing, uma vez por sessão. O check do site confere a vinheta no celular emulado e a abertura da landing; vistas em captura headless (desktop e celular). O som ainda não foi ouvido pelo dono |
 | Site público (landing + bastidores + jogo) | REAL | https://www.selvamkt.com.br/cybermech/: landing na raiz, o case em `/bastidores/`, jogo em `/jogar/`. Conferido em produção (24/09, PR #19): landing com as três capturas feitas pelo runner do CI, bastidores com as entregas lidas do GitHub. Publicado a cada merge na `main` (rsync/SSH). Conferido em produção num Chrome real: painel, Jogar, jogo carregando, sem erros; CSP aplicada; `.wasm` como `application/wasm` e comprimido (735 KB) |

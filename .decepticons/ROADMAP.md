@@ -74,6 +74,7 @@
 - [x] Calibragem do Vector-09: menos velocidade (12 m/s) e calor na arma (superaquece e trava; rajadas rendem mais que segurar o gatilho), para jogador e bots #combate
 - [x] Paleta neon multicolorida no jogo (verde neon, vermelho, laranja, amarelo; nunca só azul e roxo): jogador amarelo com visor verde, IAs rebeldes vermelhas #cenarios
 - [x] Nome do jogo: CYBERMECH (sem o "Protocol") #negocio
+- [x] Marca SERAFIM WEB: vinheta de abertura no jogo (emblema, letreiro e som sintetizado, ~2 s, pula com clique) e abertura com chuva de pontos verdes na página do jogo; assinatura discreta na pausa, na versão e nos rodapés #negocio
 - [x] Cidade estilo Tron: prédios e barricadas em ciano, pink, amarelo fluorescente, verde; grade ciano; horizonte com faixas neon e céu estrelado #cenarios
 - [x] Tema "defender contra IAs rebeldes" e escalas de robô; escala 1: andróide rebelde (~2 m), ágil e frágil, com IA de bando (3 na arena) #ia
 - [x] Andróides mais chatos que perigosos (2 tiros derrubam, tiro de 4, mira solta) e o técnico (T-01), que conserta os Mechs rebeldes e foge do jogador #ia
@@ -87,6 +88,10 @@
 - [x] Bastidores com a atividade da equipe: commits por agente, mapa de calor por hora, fluxo de commits e entregas, pedidos do dono atendidos (tudo do git e dos PRs) #negocio
 - [x] Arma secundária: foguetes no braço esquerdo (botão direito ou Q; FOGUETE no toque), 4 no carregador, dano em área #combate
 - [x] Som dos foguetes: disparo e voo (Gemini) #som
+- [ ] Setas de inimigos fora da tela (Gemini) #ux
+- [ ] Abertura da rodada ("RODADA 1 · 3·2·1 · COMBATE!") com locução sintetizada (Gemini) #ux
+- [ ] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) #ux
+- [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux
 - [ ] Custo de render por Mech: ~34 draw calls cada. Juntar a geometria por material antes do multiplayer (G5) #desempenho
 
 ## 🟠 FASE 4 — Multiplayer autoritativo

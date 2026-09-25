@@ -57,6 +57,14 @@ export class HUD {
   private deaths = 0;
   private shownRespawn = '';
 
+  /** Assinatura de build no canto da pausa: versão, build e estúdio (como os jogos de estúdio mostram). */
+  setBuild(text: string): void {
+    const el = document.createElement('p');
+    el.className = 'build-tag';
+    el.textContent = text;
+    this.overlay.append(el);
+  }
+
   setReady(touch = false): void {
     this.cta.textContent = touch ? '[ toque para jogar ]' : '[ clique para jogar ]';
   }

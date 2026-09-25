@@ -609,7 +609,7 @@ const body = `
     <ul class="feed frame">${prHtml}</ul>
   </section>
 
-  <footer><span>fim da transmissão · ${SITE ? 'gerado do repositório a cada entrega' : 'gerado do ROADMAP, ESTADO, HISTORICO e git · npm run painel'}</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
+  <footer><span>CYBERMECH © ${new Date().getFullYear()} <b>SERAFIM WEB</b> · fim da transmissão ·${SITE ? 'gerado do repositório a cada entrega' : 'gerado do ROADMAP, ESTADO, HISTORICO e git · npm run painel'}</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
 `;
 
 const html = pagina({
