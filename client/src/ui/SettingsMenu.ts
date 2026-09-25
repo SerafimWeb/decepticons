@@ -31,6 +31,8 @@ export class SettingsMenu {
   private readonly selQuality = $('setting-quality') as HTMLSelectElement;
   private readonly selDiff = $('setting-diff') as HTMLSelectElement;
   private readonly chkShowPerf = $('setting-showperf') as HTMLInputElement;
+  private readonly sliderVolume = $('setting-volume') as HTMLInputElement;
+  private readonly valVolume = $('val-volume');
 
   private remappingAction: KeyAction | null = null;
   private keyButtons: Record<KeyAction, HTMLButtonElement>;
@@ -61,6 +63,10 @@ export class SettingsMenu {
     this.sliderFov.min = LIMITS.fovOffset.min.toString();
     this.sliderFov.max = LIMITS.fovOffset.max.toString();
     this.sliderFov.step = LIMITS.fovOffset.step.toString();
+
+    this.sliderVolume.min = LIMITS.volume.min.toString();
+    this.sliderVolume.max = LIMITS.volume.max.toString();
+    this.sliderVolume.step = LIMITS.volume.step.toString();
 
     // Select options
     this.selQuality.innerHTML = (['auto', 'alta', 'media', 'baixa'] as QualityPreset[])
@@ -119,6 +125,12 @@ export class SettingsMenu {
 
     this.chkShowPerf.addEventListener('change', () => {
       this.settings.update({ showPerf: this.chkShowPerf.checked });
+    });
+
+    this.sliderVolume.addEventListener('input', () => {
+      const val = parseFloat(this.sliderVolume.value);
+      this.valVolume.textContent = `${Math.round(val * 100)}%`;
+      this.settings.update({ volume: val });
     });
 
     // Keys remapping buttons
@@ -218,6 +230,9 @@ export class SettingsMenu {
     this.selQuality.value = s.quality;
     this.selDiff.value = s.difficulty;
     this.chkShowPerf.checked = s.showPerf;
+
+    this.sliderVolume.value = s.volume.toString();
+    this.valVolume.textContent = `${Math.round(s.volume * 100)}%`;
 
     for (const { action } of KEY_ACTIONS) {
       if (this.remappingAction === action) continue;

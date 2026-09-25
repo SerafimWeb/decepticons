@@ -36,6 +36,8 @@ export interface GameSettings {
   difficulty: Difficulty;
   /** Painel de desempenho compacto no canto (FPS, tick, draws). */
   showPerf: boolean;
+  /** Volume mestre do áudio (0 a 1) */
+  volume: number;
   keys: Record<KeyAction, string>;
 }
 
@@ -43,6 +45,7 @@ export const LIMITS = {
   sensitivity: { min: 0.1, max: 5, step: 0.01 },
   mouseDpi: { min: 100, max: 32000, step: 50 },
   fovOffset: { min: -10, max: 20, step: 1 },
+  volume: { min: 0, max: 1, step: 0.05 },
 } as const;
 
 export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
@@ -57,6 +60,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   // A dificuldade de hoje foi aprovada pelo dono como a "normal" (2026-09-24).
   difficulty: 'normal',
   showPerf: true,
+  volume: 0.8,
   keys: Object.freeze({
     forward: 'KeyW',
     back: 'KeyS',
@@ -145,6 +149,7 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     quality: QUALITIES.includes(r.quality as QualityPreset) ? (r.quality as QualityPreset) : d.quality,
     difficulty: DIFFICULTIES.includes(r.difficulty as Difficulty) ? (r.difficulty as Difficulty) : d.difficulty,
     showPerf: typeof r.showPerf === 'boolean' ? r.showPerf : d.showPerf,
+    volume: num(r.volume, d.volume, LIMITS.volume.min, LIMITS.volume.max),
     keys,
   };
 }
