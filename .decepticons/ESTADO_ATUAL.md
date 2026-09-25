@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Nomes das IAs nos bots (Claude; pedido do dono):** CLAUDE·BRABO, GEMINI, CHATGPT·FUJÃO, QWEN, DEEPSEEK, ANTHROPIC (técnico), com o nome sobre a cabeça. **Guia visual dos robôs** e textos para a IA de imagem em `ESTILO_ROBOS.md`.
 - **M1 do multiplayer (Claude):** `sim/Match.ts`, a partida inteira sem tela; o jogo monta a partida por ela e o servidor vai rodar a mesma. 0,74 ms por tick com a sala cheia. Achado: destroços no mesmo mundo físico mudam a simulação (o servidor roda sem eles).
 - **Correção: Mechs brancos (Claude, achado jogando):** depois do PR #43 (Codex), o casco saía todo branco e brilhando até o primeiro dano: a cor do flash de dano nascia branca (`new THREE.Color()`). Agora nasce preta; Vector-09 amarelo e rebeldes vermelhos de volta.
 - **Pendências do Gemini concluídas (Claude; o Gemini ficou sem crédito no dia):** setas de inimigos fora da tela (PR #40, com os ajustes da revisão), sons dos andróides com volume pela distância, dicas novas da primeira partida (calor, foguetes, andróides). O PR #40 foi fechado apontando para o do Claude.
@@ -94,6 +95,7 @@
 - [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
 - [ ] **Gemini:** Próxima tarefa: setas-inimigos (ui/OffscreenIndicators.ts). Seta vermelha na borda da tela para inimigos fora da visão. Um PR por tarefa, a partir da `main` atualizada.
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
+- [ ] **Dono:** gerar as pranchas dos robôs numa IA de imagem com os textos do `ESTILO_ROBOS.md` e salvar em `.tmp/arte/`
 - [ ] **Dono:** jogar com o diretor de ataque (no máximo 2 atacando juntos) e as personalidades; dizer se ficou fácil demais (dá para subir "Atacam ao mesmo tempo" nas configurações)
 - [ ] **Dono:** jogar com o calor completo (correr atirando ferve em ~2 s; parado esfria em dobro) e dizer se ficou punitivo demais
 - [ ] **Dono:** jogar com as armas novas (menos dano, calor compartilhado com os foguetes) e dizer se a luta ficou lenta ou rápida demais; decidir as perguntas do fim do `HANGAR.md`
@@ -125,6 +127,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 |---|---|
 | Hospedagem do servidor | Recomendação em `DEPLOY.md`; plano em `MULTIPLAYER.md` (seção 8, com mais três decisões: mira assistida no PvP, bots nas salas, código da sala). Decidir antes da etapa M8. |
 | Mira assistida no multiplayer | Hoje é só do toque e só contra bots. Com gente de verdade, toque x mouse na mesma sala precisa de regra: manter (padrão dos jogos de tiro no celular), reduzir contra humanos ou separar salas por tipo de controle. Decidir na Fase 4. |
+| Nomes de marcas nos bots | CLAUDE, GEMINI, CHATGPT, QWEN, DEEPSEEK e ANTHROPIC são marcas registradas. Antes do lançamento (portais, anúncios), manter ou trocar por paródias (ex.: CLAWD, JEMINI, CHAD-GPT). A troca é a lista `BOT_NAMES`. |
 | Bots contra bots | Hoje os bots só caçam o jogador. No modo "todos contra todos" eles deveriam se enfrentar também: basta passar todos os Mechs em `BotSystem.targets`. |
 
 ## BLOQUEIOS

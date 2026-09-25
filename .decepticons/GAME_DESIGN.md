@@ -23,10 +23,12 @@ do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
 
 | Escala | O que é | Hoje no jogo | Como luta |
 |---|---|---|---|
-| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~2 m) | **Andróide de combate** (A-01…): casco branco, visor vermelho, blaster no antebraço. **Técnico** (T-01…): visor amarelo, conserta os Mechs | **Mais chato do que perigoso:** cai com 2 tiros de plasma, o tiro dele quase não tira vida e a mira é solta, mas é muito ágil (arranca na hora, pula duas vezes, desvia com dash) |
-| **2** | Mechs de combate (~5 m) | **Vector-09** (o jogador) e Mechs rebeldes (KESTREL, MAKO, VIPER) | Blindado, dano por parte, calor na arma, foguetes |
+| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~2 m) | **Andróide de combate** (QWEN, DEEPSEEK, MISTRAL): casco branco, visor vermelho, blaster no antebraço. **Técnico** (ANTHROPIC): visor amarelo, conserta os Mechs | **Mais chato do que perigoso:** cai com 2 tiros de plasma, o tiro dele quase não tira vida e a mira é solta, mas é muito ágil (arranca na hora, pula duas vezes, desvia com dash) |
+| **2** | Mechs de combate (~5 m) | **Vector-09** (o jogador) e Mechs rebeldes (CLAUDE, GEMINI, CHATGPT) | Blindado, dano por parte, calor na arma, foguetes |
 | **3** | Máquinas de cerco (futuro) | ainda não | a definir (Colossus-01) |
 
+- **Nomes (dono, 25/09: "pra ficar mais engraçado"):** as IAs rebeldes levam nomes de IAs de verdade (`BOT_NAMES` em `combat/BotSystem.ts`), com o nome e a personalidade sobre a cabeça. São marcas registradas: antes do lançamento, decidir se viram paródias.
+- **Guia visual e briefing para IA de imagem:** `ESTILO_ROBOS.md`.
 - O visual segue a regra da produção: tudo gerado por código. Nada de marca real: os robôs lembram os de hoje sem copiar nenhum.
 - Próximo na escala 1: um quadrúpede (cão-robô), mais rápido e mais baixo, que obriga a mirar para baixo.
 

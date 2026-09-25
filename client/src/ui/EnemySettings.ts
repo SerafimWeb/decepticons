@@ -1,7 +1,8 @@
+import { BOT_NAMES } from '../combat/BotSystem';
 import { LIMITS, PERSONA_LABELS, type GameSettings, type Persona, type Settings } from '../core/Settings';
 
-/** Indicativos dos Mechs rebeldes, na ordem das personalidades (`GameSettings.enemyPersonas`). */
-const CALLSIGNS = ['KESTREL', 'MAKO', 'VIPER'];
+/** Nomes dos Mechs rebeldes, na ordem das personalidades (`GameSettings.enemyPersonas`). */
+const CALLSIGNS = BOT_NAMES.mechs;
 const PERSONAS: readonly Persona[] = ['soldado', 'brabo', 'manso', 'fujao'];
 const ATTACKERS = [1, 1.5, 2, 3, 4];
 
