@@ -9,6 +9,7 @@
 ## ÚLTIMA SESSÃO FEZ (24/09)
 > As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e nas entregas dos bastidores.
 - **Foguetes no braço esquerdo (Claude, pedido do dono):** casulo de 4 tubos; botão direito ou Q (remapeável) no PC, FOGUETE no toque; 4 no carregador (1 a cada 2,2 s); explosão de 6 m com dano que cai com a distância, na parte mais perto (no pé acerta a perna); indicador no HUD; 7 testes. Botão PLACAR no toque (o Tab do celular)
+- **Bastidores com a atividade da equipe (Claude, pedido do dono: "cara de equipe empenhada"):** commits de cada agente, mapa de calor por hora, fluxo dos últimos 40 commits e entregas, pedidos do dono atendidos. Tudo lido do git e dos PRs; nada inventado
 - **Produção: tudo em código (decisão do dono):** sem Unity e sem modelagem manual; Mechs gerados por código, som sintetizado. A variedade vem do Hangar (GAME_DESIGN)
 - **Mira no celular (Claude, depois do teste do dono: "dificuldade de mirar e atirar"):**
   - Tiro automático: atira sozinho quando a mira acende.
@@ -58,7 +59,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
-| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Site no ar (landing + bastidores). Próximo, a escolher pelo dono: foguetes, draw calls ou volume/mixagem |
+| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Foguetes e atividade da equipe no ar. Próximo: calibrar mira e foguetes com o playtest do dono; depois draw calls por Mech (antes do multiplayer) |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Som dos foguetes, volume e mixagem, primeira partida guiada (prompt no chat de 24/09; nesta ordem, um PR cada) |
 | **Codex** | a combinar | Ao voltar: revisão cruzada dos PRs mergeados desde o #12 |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |

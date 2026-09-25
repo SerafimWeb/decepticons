@@ -77,6 +77,7 @@
 - [ ] Primeira partida guiada: dicas curtas no jogo (mire nas pernas, dash, pulo duplo), uma vez só #ux
 - [x] Gestão no GitHub: etiquetas automáticas por frente e por agente, modelo de PR, notas de versão por frente #base
 - [x] Página do jogo (landing) e bastidores do desenvolvimento (o case) no site, com capturas do jogo feitas a cada deploy #negocio
+- [x] Bastidores com a atividade da equipe: commits por agente, mapa de calor por hora, fluxo de commits e entregas, pedidos do dono atendidos (tudo do git e dos PRs) #negocio
 - [x] Arma secundária: foguetes no braço esquerdo (botão direito ou Q; FOGUETE no toque), 4 no carregador, dano em área #combate
 - [ ] Som dos foguetes: disparo e voo (Gemini) #som
 - [ ] Custo de render por Mech: ~34 draw calls cada. Juntar a geometria por material antes do multiplayer (G5) #desempenho

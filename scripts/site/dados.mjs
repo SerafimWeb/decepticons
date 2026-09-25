@@ -237,6 +237,95 @@ export function entregas() {
   }
 }
 
+const BRT = 'America/Sao_Paulo';
+const AGENTS = ['claude', 'gemini', 'codex'];
+
+/**
+ * Atividade da equipe, commit a commit, lida do git (uma chamada só). Cada commit é atribuído a quem
+ * o fez: coautoria do Claude no próprio commit; senão, o agente do PR em que ele entrou (etiquetas
+ * do GitHub ou prefixo do branch); sem PR, "equipe". Merges da main aparecem como entregas.
+ * Também devolve o mapa de calor (commits por dia e hora, no horário de Brasília).
+ */
+export function atividade(prs) {
+  const raw = git('log', '--format=%H%x1f%P%x1f%ct%x1f%s%x1f%(trailers:key=Co-Authored-By,valueonly,separator=;)%x1e', 'HEAD');
+  const list = raw
+    .split('\x1e')
+    .map((r) => r.trim())
+    .filter(Boolean)
+    .map((r) => {
+      const [sha, parents, ct, subject, co] = r.split('\x1f');
+      return { sha, parents: parents ? parents.split(' ') : [], t: Number(ct) * 1000, subject, co: co ?? '' };
+    });
+  const bySha = new Map(list.map((c) => [c.sha, c]));
+  const prAgents = new Map(prs.map((p) => [p.n, p.agents]));
+  const reachable = (from) => {
+    const seen = new Set();
+    const stack = [from];
+    while (stack.length) {
+      const s = stack.pop();
+      if (!s || seen.has(s)) continue;
+      seen.add(s);
+      stack.push(...(bySha.get(s)?.parents ?? []));
+    }
+    return seen;
+  };
+  // Cada merge da main (primeiro pai) diz de que PR vieram os commits que ele trouxe.
+  const prOf = new Map();
+  const deliveries = new Set();
+  for (let cur = list[0]; cur; cur = bySha.get(cur.parents[0])) {
+    const n = Number(/(?:PR|pull request) #(\d+)/.exec(cur.subject)?.[1]);
+    if (!n || cur.parents.length < 2) continue;
+    const base = reachable(cur.parents[0]);
+    const stack = [cur.parents[1]];
+    while (stack.length) {
+      const s = stack.pop();
+      if (!s || base.has(s) || prOf.has(s)) continue;
+      prOf.set(s, n);
+      stack.push(...(bySha.get(s)?.parents ?? []));
+    }
+    prOf.set(cur.sha, n);
+    deliveries.add(cur.sha);
+  }
+  // Entrega = merge de um PR na linha principal; merge de integração (trabalho) conta como commit.
+  const commits = list.map((c) => {
+    const merge = deliveries.has(c.sha);
+    const pr = prOf.get(c.sha) ?? null;
+    const team = pr ? (prAgents.get(pr) ?? []) : [];
+    let agent;
+    if (/claude/i.test(c.co)) agent = 'claude';
+    else if (merge) agent = team[0] ?? 'equipe';
+    else agent = team.find((a) => a !== 'claude') ?? team[0] ?? 'equipe';
+    return { sha: c.sha.slice(0, 7), t: c.t, subject: c.subject, agent, pr, merge };
+  });
+
+  const byAgent = Object.fromEntries([...AGENTS, 'equipe'].map((a) => [a, 0]));
+  const dayOf = (t) => new Date(t).toLocaleDateString('sv-SE', { timeZone: BRT });
+  const hourOf = (t) => Number(new Date(t).toLocaleString('en-US', { timeZone: BRT, hour: 'numeric', hourCycle: 'h23' }));
+  const heat = new Map();
+  for (const c of commits) {
+    if (c.merge) continue;
+    byAgent[c.agent] = (byAgent[c.agent] ?? 0) + 1;
+    const d = dayOf(c.t);
+    if (!heat.has(d)) heat.set(d, Array(24).fill(0));
+    heat.get(d)[hourOf(c.t)]++;
+  }
+  const days = [...heat.keys()].sort();
+  return {
+    commits,
+    total: commits.filter((c) => !c.merge).length,
+    merges: commits.filter((c) => c.merge).length,
+    byAgent,
+    heat: { days, grid: days.map((d) => heat.get(d)), max: Math.max(1, ...[...heat.values()].flat()) },
+    last: commits[0]?.t ?? null,
+  };
+}
+
+/** Pedidos do dono atendidos: entradas do cofre que nasceram de um pedido ou relato dele. */
+export function pedidos() {
+  const entries = read('.decepticons/HISTORICO_DE_DECISOES.md').split(/^## \[/m).slice(1);
+  return entries.filter((e) => /pedido do dono|sintoma \(dono|\(pedido do dono|pedido do dono/i.test(e)).length;
+}
+
 /** Entradas do cofre de decisões (título e data), da mais nova para a mais antiga. */
 export function diario() {
   // Assuntos internos de conta e acesso ficam fora da página pública.
