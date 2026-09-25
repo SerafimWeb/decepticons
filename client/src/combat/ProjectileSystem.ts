@@ -99,8 +99,8 @@ export class ProjectileSystem {
         _hitAt.copy(hit.point).addScaledVector(_hitNormal, 0.05);
         this.onHit?.(hit, _dir, hitDamage(p.weapon, p.traveled + hit.distance), p.owner);
 
-        this.particles.burst(_hitAt, _hitNormal, { count: 36, color: SPARK_COLOR, speed: 24, life: 0.6, spread: 0.9 });
-        this.particles.burst(_hitAt, _hitNormal, { count: 10, color: CORE_COLOR, speed: 6, life: 0.25, gravity: 0 });
+        this.particles.burst(_hitAt, _hitNormal, { count: 36, color: SPARK_COLOR, speed: 27, life: 0.55, size: 1.4, expansion: -0.35, spread: 0.9 });
+        this.particles.burst(_hitAt, _hitNormal, { count: 10, color: CORE_COLOR, speed: 6, life: 0.25, size: 2.2, expansion: 0.6, gravity: 0 });
         this.kill(p);
         continue;
       }
