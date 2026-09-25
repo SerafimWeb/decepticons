@@ -13,6 +13,14 @@
 **Custo de CPU:** diretor a 5 Hz com ≤ 7 bots (um laço e uma inserção ordenada); a emboscada são duas contas de ângulo por tick. Nada alocado.
 **Quem decidiu:** dono (personalidades, menos pressão, configurar); Claude (parâmetros, diretor, por que não usar modelo de linguagem no combate).
 
+## [2026-09-25] Explosões com tamanho por partícula e teto fixo
+**Motivo:** partículas do mesmo tamanho davam pouca leitura de profundidade em impactos e explosões, apesar do pool fixo.
+**Decisão (Remoratrader/Codex):** manter um único `THREE.Points`, acrescentando `particleScale` e expansão ao longo da vida em typed arrays pré-alocados. Fogo, fumaça, poeira e faíscas usam tamanhos e curvas próprias; o sprite e o shader seguem o mesmo draw call.
+- `MAX_PARTICLES = 3000` é o teto global; o construtor pode reduzi-lo, nunca aumentá-lo. Bursts são limitados ao tamanho do pool e substituem partículas mais antigas.
+- O `update()` escreve apenas nos buffers existentes; não cria vetores, arrays, materiais ou geometria por quadro.
+**Custo de CPU:** percorre no máximo 3000 slots por frame e atualiza posição, cor e tamanho no mesmo `THREE.Points`.
+**Quem decidiu:** Remoratrader/Codex (acabamento dentro do território visual).
+
 ## [2026-09-25] Rig do Vector-09 reduzido para 9 draw calls
 **Motivo:** o painel de desempenho mostrava cerca de 34 chamadas por Vector-09, acima do orçamento para a arena e as salas multiplayer.
 **Decisão (Remoratrader/Codex):** fundir as malhas estáticas por pivô articulado ao construir o rig. Cada grupo articulado passa a desenhar uma geometria com cor, metal, rugosidade e emissão por vértice; emissão dinâmica do propulsor, flash de dano e visibilidade por parte seguem ativos.

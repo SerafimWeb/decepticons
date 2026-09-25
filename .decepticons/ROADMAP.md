@@ -104,6 +104,7 @@
 - [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux
 - [ ] Medir o FPS num notebook com GPU integrada, com o painel de desempenho (pré-requisito do multiplayer; dono) #desempenho
 - [x] Render do Vector-09: 9 draw calls por rig articulado (antes ~34), com as peças ainda destacáveis #desempenho
+- [x] FX: explosões, impactos, fumaça e destroços com escala animada; pool explícito de 3000 partículas sem alocação por frame #desempenho
 
 ## 🟠 FASE 4 — Multiplayer autoritativo
 - [x] Plano técnico (`MULTIPLAYER.md`): pré-requisitos, arquitetura, orçamento de banda, contratos, etapas M0–M8 #rede

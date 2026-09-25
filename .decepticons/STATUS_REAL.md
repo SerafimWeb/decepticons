@@ -16,7 +16,7 @@
 | Canhão de plasma | REAL | Raycast do segmento por tick, pool de 64; só dispara com o braço direito inteiro. Desde 25/09 os números vêm do arsenal (`combat/weapons.ts`): 16 de dano, 4,5 tiros/s exatos (a cadência não arredonda mais para o tick), 140 m/s, dano cheio até 60 m e 40% a 200 m, onde o projétil some. Testado (queda por distância, cadência média) |
 | Barricadas destrutíveis | REAL | 6 na arena, HP e cor de dano |
 | Destroços físicos | REAL | só cosméticos: o Mech e o tiro passam por eles (o Mech ainda os empurra). Teto de 240, os mais antigos saem primeiro. |
-| Partículas, bloom, camera shake | REAL | |
+| Partículas, bloom, camera shake | REAL | `MAX_PARTICLES = 3000`, pool circular com descarte das mais antigas, 1 draw call; faíscas, fogo e fumaça animam o tamanho em buffers pré-alocados, sem objetos alocados por frame. Explosões e impactos têm núcleo e expansão visual. |
 | HUD (VEL, DEBRIS, barra de dash, modo de câmera) | REAL | F1 esconde o HUD (Gemini). Confirmar jogando que o F1 não abre a Ajuda do navegador. |
 | Painel de desempenho (FPS, tempo de tick, draw calls) | REAL | Compacto sempre no canto. A tecla `'` abre o detalhado: qualidade adaptativa, triângulos, geometrias, texturas, shaders, heap do JS (só no Chrome), no estilo de terminal do design system Serafim. Funciona no ABNT2 e no US; o smoke testa as duas teclas e o total de draw calls |
 | Render do Vector-09 | REAL | Rig combina a geometria estática de cada pivô articulado em um draw call (9 por Mech, antes ~34); cor, material, emissão, flash de dano e visibilidade das partes são preservados. O painel mede o total da cena; geometria combinada é criada uma vez ao montar o rig. |

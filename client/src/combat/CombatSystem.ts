@@ -113,16 +113,16 @@ export class CombatSystem {
   private tearOff(mech: MechBase, part: MechPart, dir: THREE.Vector3): void {
     const at = mech.partWorldPosition(part, _at);
     this.debris.shatter(at, PART_CHUNK[part], dir, 8);
-    this.particles.burst(at, UP, { count: 40, color: SPARK, speed: 16, life: 0.6, spread: 1.4 });
+    this.particles.burst(at, UP, { count: 40, color: SPARK, speed: 18, life: 0.6, size: 1.5, expansion: -0.3, spread: 1.4 });
   }
 
   private wreck(mech: MechBase, dir: THREE.Vector3, killer?: MechBase): void {
     const at = _at.copy(mech.position);
     at.y += WRECK_CENTER_Y;
     this.debris.shatter(at, WRECK_SIZE, dir, 14);
-    this.particles.burst(at, UP, { count: 120, color: FIRE, speed: 22, life: 0.8, spread: 2.2 });
-    this.particles.burst(at, UP, { count: 60, color: SPARK, speed: 30, life: 0.6, spread: 1.6 });
-    this.particles.burst(at, UP, { count: 70, color: SMOKE, speed: 8, life: 1.8, spread: 2.5, gravity: -1 });
+    this.particles.burst(at, UP, { count: 120, color: FIRE, speed: 22, life: 0.9, size: 2.1, expansion: 0.8, spread: 2.2 });
+    this.particles.burst(at, UP, { count: 60, color: SPARK, speed: 32, life: 0.65, size: 1.25, expansion: -0.45, spread: 1.6 });
+    this.particles.burst(at, UP, { count: 70, color: SMOKE, speed: 8, life: 1.8, size: 2.6, expansion: 1.25, spread: 2.5, gravity: -1 });
     this.onMechKilled?.(mech, at, killer);
   }
 }
