@@ -20,6 +20,19 @@ const PULL_MAX = 0.5;
  * a mira vai junto). Sem isso, um bot andando de lado a 20 m escapa do puxão.
  */
 export const TRACK = 0.75;
+/**
+ * Quando o jogador puxa a mira para longe do alvo, a ajuda some por este tempo (s): sem fricção e sem
+ * puxão, para trocar de alvo ou olhar em volta sem a mira "brigar" com o dedo.
+ */
+export const RELEASE_TIME = 0.35;
+/** Movimento do dedo num quadro (rad) a partir do qual conta como "puxar para longe". */
+const RELEASE_MIN = 0.004;
+
+/** O dedo está levando a mira para longe do alvo? (o movimento vai contra o erro). */
+export function movingAway(inYaw: number, inPitch: number, errYaw: number, errPitch: number): boolean {
+  return inYaw * errYaw + inPitch * errPitch < 0 && Math.hypot(inYaw, inPitch) > RELEASE_MIN;
+}
+
 /** Tempo com o tiro "certo" antes do tiro automático (s): passar a mira de raspão não dispara. */
 export const AUTO_FIRE_DELAY = 0.12;
 /** Onde mirar no inimigo: fração da altura (meio do torso; a mesma dos bots). */
@@ -122,6 +135,10 @@ export class AimAssist {
   private lastTarget: MechBase | null = null;
   private lastYaw = 0;
   private lastPitch = 0;
+  /** Erro até o alvo no quadro anterior e o tempo que falta com a ajuda solta. */
+  private lastErrYaw = 0;
+  private lastErrPitch = 0;
+  private release = 0;
 
   constructor(
     private readonly physics: PhysicsWorld,
@@ -152,7 +169,13 @@ export class AimAssist {
     return pull;
   }
 
+  /** Quanto o dedo girou a mira neste quadro (rad): puxar para longe solta a ajuda por RELEASE_TIME. */
+  noteLook(dYaw: number, dPitch: number): void {
+    if (this.lastTarget && movingAway(dYaw, dPitch, this.lastErrYaw, this.lastErrPitch)) this.release = RELEASE_TIME;
+  }
+
   reset(): void {
+    this.release = 0;
     this.lastTarget = null;
     this.friction = 1;
     this.aimDist = 0;
@@ -188,11 +211,16 @@ export class AimAssist {
       return false;
     }
 
-    this.friction = frictionFor(_best.angle);
+    this.lastErrYaw = _best.dYaw;
+    this.lastErrPitch = _best.dPitch;
+    // Soltando o alvo: sem fricção nem puxão até o tempo acabar (o tiro automático continua valendo).
+    const released = this.release > 0;
+    if (released) this.release = Math.max(0, this.release - dt);
+    this.friction = released ? 1 : frictionFor(_best.angle);
     // Direção absoluta do ponto antecipado; o quanto ela andou desde o quadro anterior é o rastreio.
     const yawNow = look.yaw + _best.dYaw;
     const pitchNow = look.pitch + _best.dPitch;
-    if (engaged && _best.angle < PULL_CONE) {
+    if (engaged && !released && _best.angle < PULL_CONE) {
       pull.yaw = pullStep(_best.dYaw, dt);
       pull.pitch = pullStep(_best.dPitch, dt);
       if (best === this.lastTarget) {
