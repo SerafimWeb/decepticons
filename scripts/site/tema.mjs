@@ -144,7 +144,7 @@ export function pagina({ title, description, css, body, script = '', og = null }
   const ogTags = og
     ? `
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Cyber-Mech Protocol">
+<meta property="og:site_name" content="CYBERMECH">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${esc(og.url)}">${og.image ? `\n<meta property="og:image" content="${esc(og.image)}">\n<meta name="twitter:card" content="summary_large_image">` : ''}`

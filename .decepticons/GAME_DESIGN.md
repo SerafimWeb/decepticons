@@ -1,4 +1,4 @@
-# GAME DESIGN — Cyber-Mech Protocol
+# GAME DESIGN — CYBERMECH
 
 > O que o jogo é e por que cada decisão existe. As regras técnicas derivadas
 > (G11–G14: economia de dados, requisitos, resiliência, código) moram em `PROTOCOLO_UNIVERSAL.md`.

@@ -1,4 +1,4 @@
-# Cyber-Mech Protocol
+# CYBERMECH
 
 Protótipo de shooter de Mechs multiplayer para o navegador. Vite + TypeScript + Three.js + Rapier3D (Wasm/SIMD).
 

@@ -1,4 +1,4 @@
-# GEMINI.md — Cyber-Mech Protocol
+# GEMINI.md — CYBERMECH
 
 As instruções do projeto são as mesmas para todos os agentes e vivem no `AGENTS.md` (fonte única). Leia-o inteiro antes de qualquer ação:
 

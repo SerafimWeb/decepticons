@@ -1,4 +1,4 @@
-# CLAUDE.md — Cyber-Mech Protocol
+# CLAUDE.md — CYBERMECH
 
 As instruções do projeto são as mesmas para todos os agentes e vivem no `AGENTS.md` (fonte única):
 

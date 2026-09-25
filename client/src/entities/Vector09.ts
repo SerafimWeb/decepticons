@@ -133,6 +133,6 @@ export interface Vector09Options {
 
 export class Vector09 extends MechBase {
   constructor(options: Vector09Options = {}) {
-    super(VECTOR09_STATS, buildRig(options.paint ?? DEFAULT_PAINT, options.visor ?? PALETTE.amber));
+    super(VECTOR09_STATS, buildRig(options.paint ?? DEFAULT_PAINT, options.visor ?? PALETTE.green));
   }
 }

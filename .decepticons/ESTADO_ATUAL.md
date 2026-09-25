@@ -1,4 +1,4 @@
-# ESTADO ATUAL — Cyber-Mech Protocol
+# ESTADO ATUAL — CYBERMECH
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
 **Última atualização:** 2026-09-24 (tarde)
@@ -6,7 +6,9 @@
 
 ---
 
-## ÚLTIMA SESSÃO FEZ (24/09)
+## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **CYBERMECH (dono, 25/09):** o jogo passou a se chamar CYBERMECH, sem o "Protocol": jogo, site, documentos e pacote
+- **Paleta neon multicolorida (dono: "verde neon, vermelho, diversas cores"):** HUD e tiro do jogador em verde neon; IAs rebeldes em vermelho; prédios verde, amarelo e branco; fogo e foguetes em laranja. O site continua no âmbar de terminal
 > As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e nas entregas dos bastidores.
 - **Calibragem do Vector-09 (Claude; dono: "muito rápido; o tiro precisa de um respiro, não dá pra ficar direto assim pra não apelar"):**
   - Andar de 16 para 12 m/s, arrancada menos instantânea, dash de 50 para 42 com recarga de 3 s.

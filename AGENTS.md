@@ -1,4 +1,4 @@
-# AGENTS.md — Cyber-Mech Protocol (codinome DECEPTICONS)
+# AGENTS.md — CYBERMECH (codinome DECEPTICONS)
 
 > Instruções para qualquer agente de código: Codex lê este arquivo direto; Claude Code e Gemini leem pelo `CLAUDE.md`
 > e pelo `GEMINI.md`, que importam este. **Fonte única**: não duplique estas regras em outro lugar.

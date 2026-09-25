@@ -1,4 +1,4 @@
-# PROTOCOLO UNIVERSAL — Cyber-Mech Protocol
+# PROTOCOLO UNIVERSAL — CYBERMECH
 
 > O **como** deste projeto. As regras gerais vivem no Protocolo Serafim UM v4.2
 > (canônico: `D:\SERAFIMHUB\serafim13\protocolo-serafim-um\PROTOCOLO_SERAFIM_UM.md`; cópia de referência

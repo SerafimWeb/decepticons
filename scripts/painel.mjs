@@ -513,12 +513,12 @@ const script = `
 `;
 
 const body = `
-  ${topo({ base: BASE, current: 'bastidores', left: `CYBER-MECH PROTOCOL // BASTIDORES`, live: `atualizado a cada entrega · ${esc(m.head)}` })}
+  ${topo({ base: BASE, current: 'bastidores', left: `CYBERMECH // BASTIDORES`, live: `atualizado a cada entrega · ${esc(m.head)}` })}
 
   <header class="hero">
     <p class="boot">&gt; bastidores · case de desenvolvimento${m.day ? ` · dia ${m.day} do projeto` : ''}<span class="cursor" aria-hidden="true">█</span></p>
     <h1 class="title">BASTIDORES<span>DA OPERAÇÃO</span></h1>
-    <p class="pitch">Dan, três IAs e um protocolo. No Cyber-Mech Protocol, cada decisão fica registrada, cada entrega passa por testes automáticos e vai para o ar sozinha. Esta página é gerada do próprio repositório a cada entrega; nenhum número aqui é digitado à mão.</p>
+    <p class="pitch">Dan, três IAs e um protocolo. No CYBERMECH, cada decisão fica registrada, cada entrega passa por testes automáticos e vai para o ar sozinha. Esta página é gerada do próprio repositório a cada entrega; nenhum número aqui é digitado à mão.</p>
     <div class="sitrep">
       ${m.day ? `<div class="read frame"><span class="k">Dia de projeto</span><span class="v">${m.day} <small>desde ${brDate(m.first)}</small></span></div>` : ''}
       <div class="read frame"><span class="k">Commits</span><span class="v">${act.total}</span></div>
@@ -613,8 +613,8 @@ const body = `
 `;
 
 const html = pagina({
-  title: SITE ? 'Bastidores · Cyber-Mech Protocol' : 'Painel de Missão Cyber-Mech',
-  description: 'Como o Cyber-Mech Protocol é feito: Dan e uma equipe de IAs sob o Protocolo Serafim UM, com cada decisão, teste e entrega à vista.',
+  title: SITE ? 'Bastidores · CYBERMECH' : 'Painel de Missão CYBERMECH',
+  description: 'Como o CYBERMECH é feito: Dan e uma equipe de IAs sob o Protocolo Serafim UM, com cada decisão, teste e entrega à vista.',
   css,
   body,
   script,
