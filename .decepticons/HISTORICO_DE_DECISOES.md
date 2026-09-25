@@ -2,6 +2,11 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Correção: Mechs brancos depois da junção de malhas
+**Achado (Claude, jogando o build para testar as setas):** o Vector-09 e os andróides apareciam brancos e brilhando. Na junção das malhas por articulação (PR #43, Codex), o uniforme do flash de dano começava com `new THREE.Color()`, que no Three.js é **branco**; o flash só é reescrito quando o Mech toma dano, então o casco inteiro brilhava branco até o primeiro tiro.
+**Decisão:** a cor nasce preta (`new THREE.Color(0, 0, 0)`). Uma linha, no território do Codex (regra 4: correção pequena e segura; ele fica sabendo pela revisão cruzada).
+**Lição para a revisão:** mudança visual de render pede captura de tela no PR (o check headless só confere que sobe, não a cor).
+
 ## [2026-09-25] Pendências do Gemini concluídas pelo Claude; tela do Hangar para o Codex
 **Contexto:** o Gemini ficou sem crédito no dia com três entregas fora da `main`: setas de inimigos (PR #40, com conflito e a revisão pedindo ajustes), sons dos andróides (branch sem PR) e dicas da primeira partida (um commit depois do PR #32). O dono pediu: "veja se ele está indo bem e conclua as demandas que ele deixou abertas".
 **Decisão (Claude):**

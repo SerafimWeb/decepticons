@@ -58,7 +58,8 @@ export function batchRigMeshes(root: THREE.Object3D, hullMaterials: readonly THR
   const hull = new Set(hullMaterials);
   const replacedMaterials = new Set<THREE.Material>();
   const material = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, metalness: 0, roughness: 1 });
-  const flash = { value: new THREE.Color() };
+  // Preto de saída: `new THREE.Color()` nasce branco, e o casco brilhava branco até o primeiro dano.
+  const flash = { value: new THREE.Color(0, 0, 0) };
   const dash = { value: 1 };
 
   material.onBeforeCompile = (shader) => {
