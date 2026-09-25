@@ -2,6 +2,18 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Calibragem do Vector-09: menos velocidade e calor na arma
+**Pedido do dono:** "esse primeiro robô está muito rápido, e a sequência de tiro dele precisa dar um respiro; não dá pra ficar direto assim, pra não apelar tanto".
+**Decisão (Claude):**
+- **Movimento:** 16 → 12 m/s, aceleração no chão 95 → 70, no ar 28 → 22, dash 50 → 42 m/s, recarga do dash 2,5 → 3 s.
+- **Tiro:** cadência 0,14 → 0,18 s (7 → 5,5 tiros/s), com **calor**, o clássico dos jogos de Mech (`combat/heat.ts`, regra do Mech, vale para bots).
+  - Cada tiro soma 8,5%; ~12 seguidos superaquecem e a arma trava até voltar a 35%.
+  - Só esfria 0,25 s depois do último tiro, a 60%/s; superaquecida, a metade.
+  - Resultado (testado): segurar o gatilho rende ~2 tiros/s; rajadas de 5 com 1 s de pausa, ~2,6 tiros/s, sem travar. Antes do castigo de resfriamento, os dois davam quase o mesmo, e superaquecer não pesava.
+- **HUD:** barra CALOR, vermelha perto do limite, piscando "SUPERAQUECIDO"; no toque o FOGO vira "QUENTE".
+**Bug achado no caminho (R17):** o teste do bot que vê o jogador falhou com a velocidade nova. A causa era real: numa amostra, o raio de linha de visão passou direto por uma cápsula parada (erro numérico do Rapier), e isso zerava o tempo de reação do bot. Agora o bot só esquece o alvo depois de 2 falhas seguidas (0,2 s). O teste da rampa passou a medir o tempo pela velocidade do Mech.
+**Custo de CPU:** desprezível (três somas por tick por Mech).
+**Quem decidiu:** dono (pedido); Claude (números, a calibrar no playtest).
 ## [2026-09-24] Volume nas configurações
 **Decisão (Gemini):** Adicionado campo de volume (0 a 1) nas configurações, acessível pelo menu e sincronizado com o ganho mestre do `AudioSystem` na inicialização e atualização das configurações.
 

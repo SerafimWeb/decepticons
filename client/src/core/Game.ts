@@ -524,6 +524,8 @@ export class Game {
     this.killFeed.update(dt);
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
     this.hud.setRockets(this.player.launcher.ammo, this.player.launcher.reloadProgress, this.mech.canFireSecondary);
+    this.hud.setHeat(this.mech.heat, this.mech.overheated);
+    this.touch.setOverheated(this.mech.overheated);
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
     this.renderer.info.reset();
     this.composer.render(dt);

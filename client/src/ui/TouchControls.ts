@@ -307,6 +307,14 @@ export class TouchControls {
     return this.aimers.size > 0;
   }
 
+  /** Arma superaquecida: o FOGO avisa (e o tiro não sai até esfriar). */
+  setOverheated(on: boolean): void {
+    const b = this.buttons.fire;
+    if (b.classList.contains('over') === on) return;
+    b.classList.toggle('over', on);
+    b.textContent = on ? 'QUENTE' : LABELS.fire;
+  }
+
   setCameraLabel(text: string): void {
     this.buttons.cam.textContent = text;
   }
