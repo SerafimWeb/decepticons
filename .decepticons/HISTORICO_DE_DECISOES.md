@@ -2,6 +2,16 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Plano do multiplayer
+**Pedido do dono:** "já podemos começar a planejar o multiplayer? Ou ainda há tarefas anteriores?"
+**Decisão (Claude):** plano em `MULTIPLAYER.md`.
+- **Pré-requisitos:** separar simulação e render (`shared/`); draw calls por Mech ≤ 10 (Codex); FPS medido numa GPU integrada (dono); contratos de rede mergeados antes da rede (regra 5). A montagem já é validável no servidor (Hangar).
+- **Arquitetura:** Colyseus, uma sala por partida, a mesma simulação a 60 Hz no servidor; estado a 20 Hz com delta; prediction e reconciliação do Mech local; remotos interpolam ~100 ms atrás sem character controller; tiros com compensação de latência até 150 ms; reconexão de 15 s.
+- **Banda estimada:** ~18 B por Mech por snapshot → ~4 KB/s de download por jogador (meta de 8) e ~0,6 KB/s de upload (meta de 2). Medir na etapa M7.
+- **Etapas M0–M8**, um PR cada; Gemini faz as telas do online contra os contratos, Codex o render.
+**Custo:** nenhum agora (só documento).
+**Quem decidiu:** Claude (arquitetura, etapas); o dono decide hospedagem, mira assistida no PvP, bots nas salas e o formato do código da sala.
+
 ## [2026-09-25] Contrato do Hangar: montagem, carga e link de build
 **Pedido do dono:** seguir com o Hangar ("pode prosseguir").
 **Decisão (Claude):**

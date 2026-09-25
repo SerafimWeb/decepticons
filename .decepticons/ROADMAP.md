@@ -100,13 +100,18 @@
 - [ ] Abertura da rodada ("RODADA 1 · 3·2·1 · COMBATE!") com locução sintetizada (Gemini) #ux
 - [ ] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) #ux
 - [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux
+- [ ] Medir o FPS num notebook com GPU integrada, com o painel de desempenho (pré-requisito do multiplayer; dono) #desempenho
 - [ ] Custo de render por Mech: ~34 draw calls cada. Juntar a geometria por material antes do multiplayer (G5) #desempenho
 
 ## 🟠 FASE 4 — Multiplayer autoritativo
-- [ ] Separar `MechBase` em simulação (sem render) e visual; `shared/` com simulação, `MechInput` e validador (G7) #rede
-- [ ] `server/` com Colyseus: `ArenaRoom` para 8, simulação a 60 Hz, estado a 20 Hz com delta (G11); bots completam salas #rede
-- [ ] Cliente: prediction + reconciliação do Mech local; Mechs remotos interpolam #rede
-- [ ] Entrada pelo link com código da sala + apelido; reconexão automática (G13) #rede
+- [x] Plano técnico (`MULTIPLAYER.md`): pré-requisitos, arquitetura, orçamento de banda, contratos, etapas M0–M8 #rede
+- [ ] M1: separar `MechBase` em simulação (sem render) e visual; `shared/` com simulação, `MechInput` e validador (G7) #rede
+- [ ] M2: contratos de rede (`NetInput`, `MechState`, mensagens) e codec binário com teste de tamanho #rede
+- [ ] M3: `server/` com Colyseus: `ArenaRoom` para 8, simulação a 60 Hz, estado a 20 Hz com delta (G11); bots completam salas #rede
+- [ ] M4: cliente com prediction + reconciliação do Mech local; Mechs remotos interpolam #rede
+- [ ] M5: tiros autoritativos com compensação de latência; eventos de acerto, parte e abate #combate
+- [ ] M6: entrada pelo link com código da sala + apelido; reconexão automática (G13) #rede
+- [ ] Telas do online: apelido, código da sala, jogadores, placar e ping (Gemini) #ux
 - [ ] Medir banda por sala e tick do servidor contra as metas do G11 e do G14 #desempenho
 - [ ] Prova R16: 2+ clientes reais com latência simulada; playtest pelo PC de casa + Cloudflare Tunnel #rede
 

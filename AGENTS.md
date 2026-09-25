@@ -18,7 +18,7 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 1. `.decepticons/IDENTITY.md`: o que é, stack, restrições
 2. `.decepticons/ESTADO_ATUAL.md`: onde parou, pendências, **divisão de trabalho entre agentes**
 3. `.decepticons/ROADMAP.md`: fases
-4. `.decepticons/GAME_DESIGN.md`: o jogo, as decisões de design e o plano de viralização
+4. `.decepticons/GAME_DESIGN.md`: o jogo, as decisões de design e o plano de viralização (Hangar: `HANGAR.md`; multiplayer: `MULTIPLAYER.md`)
 5. `.decepticons/PROTOCOLO_UNIVERSAL.md`: regras e specs de engenharia (G1–G15)
 6. Build, CI, hospedagem ou deploy? Leia `.decepticons/DEPLOY.md` antes. Site: `www.selvamkt.com.br/cybermech/`, publicado a cada merge na `main`. **Nunca publique fora de `/cybermech/`** (a raiz é o site real da Selva MKT) e não invente host, caminho ou secret.
 7. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
