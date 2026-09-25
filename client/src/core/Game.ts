@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLOW } from './palette';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -44,13 +45,13 @@ const maxPixelRatio = () => Math.min(window.devicePixelRatio, 1.5);
 /** Um bot perto (entra em combate logo) e dois mais longe (chegam patrulhando). */
 const BOT_SPAWNS = [SPAWN_POINTS[2]!, SPAWN_POINTS[4]!, SPAWN_POINTS[8]!];
 const THRUSTER_COLOR = new THREE.Color(3.0, 1.0, 0.2);
-const DUST_COLOR = new THREE.Color(0.45, 0.42, 0.5);
+const DUST_COLOR = GLOW.dust;
 const UP = new THREE.Vector3(0, 1, 0);
 
 const _tmp = new THREE.Vector3();
 const _aimDir = new THREE.Vector3();
 const BLAST_COLOR = new THREE.Color(3.2, 1.3, 0.25);
-const SMOKE_COLOR = new THREE.Color(0.35, 0.32, 0.38);
+const SMOKE_COLOR = GLOW.smoke;
 const _aimFrom = new THREE.Vector3();
 
 /**

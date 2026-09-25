@@ -29,16 +29,22 @@
 
 Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 
+**Âmbar industrial** (decisão do dono em 24/09: "azul e roxo é a assinatura de feito com IA"). A mesma identidade do site. Mundo 3D em `client/src/core/palette.ts`; interface nas variáveis do `styles.css`.
+
 | Papel | Cor |
 |---|---|
-| Fundo | `#06030d` |
-| Primária (HUD, neon) | `#00e5ff` ciano |
-| Secundária (títulos, grid) | `#ff2bd6` magenta |
-| Destaque (dash pronto, barricadas, propulsores) | `#ff6a00` laranja |
-| Apoio (subtítulo, prédios) | `#9a8cff` / `#9a5cff` violeta |
+| Fundo | `#0a0906` quase preto quente |
+| Destaque (HUD, mira, contornos) | `#ffb000` âmbar |
+| Quente (títulos, fogo, foguetes, luz de sódio) | `#ff7a1a` laranja |
+| Alerta (inimigo, dano, alvo na mira) | `#ff3b1f` vermelho |
+| Texto claro, prédios secundários | `#e8dcc4` branco quente |
+| Inimigos | `#6f7a3a` verde-oliva, visor vermelho |
+| Jogador | `#d94a1a` laranja-ferrugem, visor âmbar |
+
+**Sem azul nem roxo.** Nova cor entra primeiro no `palette.ts` / `:root`, nunca solta no código.
 
 **Fonte:** monoespaçada do sistema (`Consolas`, `Courier New`), sem webfont para não pesar o carregamento.
-**Render:** neon via bloom HDR (cores > 1.0 passam do limiar); geometria procedural com primitivas, sem assets externos por enquanto.
+**Render:** brilho via bloom HDR (cores > 1.0 passam do limiar); geometria procedural com primitivas, sem assets externos por enquanto.
 
 ---
 

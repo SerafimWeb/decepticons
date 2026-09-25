@@ -1,5 +1,6 @@
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import { GLOW, PALETTE } from '../core/palette';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { DebrisSystem } from './DebrisSystem';
@@ -28,7 +29,7 @@ interface Prop {
 
 const DAMAGED = new THREE.Color(3, 0.15, 0.1);
 const SPARK = new THREE.Color(3.0, 1.2, 0.2);
-const DUST = new THREE.Color(0.35, 0.33, 0.4);
+const DUST = GLOW.dust;
 
 /**
  * Estruturas quebráveis: um colisor estático simples enquanto intactas;
@@ -44,7 +45,7 @@ export class Destructibles {
   private readonly geo = new THREE.BoxGeometry(1, 1, 1);
   /** Arestas do cubo unitário, compartilhadas (escala por prop); só o material é por prop. */
   private readonly edgeGeo = new THREE.EdgesGeometry(this.geo);
-  private readonly mat = new THREE.MeshStandardMaterial({ color: 0x2a2d36, metalness: 0.3, roughness: 0.8 });
+  private readonly mat = new THREE.MeshStandardMaterial({ color: PALETTE.steel, metalness: 0.3, roughness: 0.8 });
 
   constructor(
     private readonly scene: THREE.Scene,

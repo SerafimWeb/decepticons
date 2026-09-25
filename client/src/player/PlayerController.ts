@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLOW } from '../core/palette';
 import type { CameraRig } from '../camera/CameraRig';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import { RocketLauncher, type RocketSystem } from '../combat/RocketSystem';
@@ -7,7 +8,7 @@ import { DEFAULT_SETTINGS, type KeyAction } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 
-const MUZZLE_COLOR = new THREE.Color(0.6, 2.5, 3.5);
+const MUZZLE_COLOR = GLOW.playerMuzzle;
 const ROCKET_FLASH = new THREE.Color(3.0, 1.2, 0.3);
 const AIM_RANGE = 400;
 

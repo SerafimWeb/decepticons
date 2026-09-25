@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PALETTE } from '../core/palette';
 import { MechBase, type LegRig, type MechRig, type MechStats } from './MechBase';
 import { box, cyl, group } from './meshKit';
 
@@ -30,14 +31,14 @@ export const VECTOR09_STATS: MechStats = {
 };
 
 const HIP = 2.5;
-const DEFAULT_PAINT = 0xd94a1a;
+const DEFAULT_PAINT = PALETTE.playerPaint;
 
-function buildRig(paint: number): MechRig {
+function buildRig(paint: number, visor: number): MechRig {
   const M = {
-    armor: new THREE.MeshStandardMaterial({ color: 0x5a606c, metalness: 0.6, roughness: 0.35 }),
-    frame: new THREE.MeshStandardMaterial({ color: 0x1f222a, metalness: 0.7, roughness: 0.5 }),
+    armor: new THREE.MeshStandardMaterial({ color: PALETTE.armor, metalness: 0.6, roughness: 0.35 }),
+    frame: new THREE.MeshStandardMaterial({ color: PALETTE.frame, metalness: 0.7, roughness: 0.5 }),
     paint: new THREE.MeshStandardMaterial({ color: paint, metalness: 0.35, roughness: 0.45 }),
-    visor: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x00e5ff, emissiveIntensity: 4 }),
+    visor: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: visor, emissiveIntensity: 4 }),
     rocket: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff7a1a, emissiveIntensity: 3 }),
     thruster: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xff6a00, emissiveIntensity: 2 }),
   };
@@ -119,10 +120,12 @@ function buildRig(paint: number): MechRig {
 export interface Vector09Options {
   /** Cor da pintura (ex.: alvos e inimigos com cor diferente do jogador). */
   paint?: number;
+  /** Cor do visor e das luzes da cabeça: âmbar no jogador, vermelho no inimigo. */
+  visor?: number;
 }
 
 export class Vector09 extends MechBase {
   constructor(options: Vector09Options = {}) {
-    super(VECTOR09_STATS, buildRig(options.paint ?? DEFAULT_PAINT));
+    super(VECTOR09_STATS, buildRig(options.paint ?? DEFAULT_PAINT, options.visor ?? PALETTE.amber));
   }
 }
