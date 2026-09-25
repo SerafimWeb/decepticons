@@ -8,6 +8,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { CameraRig } from '../camera/CameraRig';
 import { CombatSystem } from '../combat/CombatSystem';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
+import { RocketSystem } from '../combat/RocketSystem';
 import { BOT_SKILLS } from '../combat/BotController';
 import { BotSystem } from '../combat/BotSystem';
 import { Respawner } from '../combat/Respawner';
@@ -47,6 +48,8 @@ const UP = new THREE.Vector3(0, 1, 0);
 
 const _tmp = new THREE.Vector3();
 const _aimDir = new THREE.Vector3();
+const BLAST_COLOR = new THREE.Color(3.2, 1.3, 0.25);
+const SMOKE_COLOR = new THREE.Color(0.35, 0.32, 0.38);
 const _aimFrom = new THREE.Vector3();
 
 /**
@@ -67,6 +70,7 @@ export class Game {
   private readonly debris: DebrisSystem;
   private readonly destructibles: Destructibles;
   private readonly projectiles: ProjectileSystem;
+  private readonly rockets: RocketSystem;
   private readonly combat: CombatSystem;
   private readonly bots: BotSystem;
   private readonly respawner: Respawner;
@@ -139,6 +143,7 @@ export class Game {
     this.destructibles = new Destructibles(this.scene, physics, this.debris, this.particles);
     const arena = new Arena(this.scene, physics, this.destructibles);
     this.projectiles = new ProjectileSystem(this.scene, physics, this.particles);
+    this.rockets = new RocketSystem(this.scene, physics, this.particles);
 
     this.mech = new Vector09();
     const [px, pz] = SPAWN_POINTS[0]!;
@@ -180,7 +185,7 @@ export class Game {
       mech: this.mech,
       occluders: arena.occluders,
     });
-    this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles);
+    this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets);
     this.assist = new AimAssist(physics, this.mech, this.bots.mechs);
 
     this.wireEvents();
@@ -209,6 +214,8 @@ export class Game {
     this.mech.respawn(_tmp.set(px, 0, pz));
     this.bots.respawnAll();
     this.projectiles.clear();
+    this.rockets.clear();
+    this.player.launcher.refill();
     this.debris.clear();
     this.destructibles.restoreAll();
     this.hud.setScore(0, 0);
@@ -289,6 +296,15 @@ export class Game {
       const isPlayerInvolved = dead === mech || killer === mech;
       this.killFeed.push(killerName, deadName, isPlayerInvolved);
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
+    };
+    // Foguete: a regra de dano em área é do CombatSystem; aqui, fogo, fumaça, tremor e som.
+    this.rockets.onExplode = (at, dir, owner) => {
+      this.combat.explode(at, dir, owner);
+      this.particles.burst(at, UP, { count: 70, color: BLAST_COLOR, speed: 16, life: 0.6, spread: 2.4, gravity: 2 });
+      this.particles.burst(at, UP, { count: 24, color: SMOKE_COLOR, speed: 4, life: 1.4, spread: 1.6, gravity: -1.5 });
+      const dist = at.distanceTo(mech.position);
+      if (dist < 40) rig.addShake(0.5 * (1 - dist / 40));
+      this.audio.playExplosion(dist);
     };
     this.destructibles.onBreak = (center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
@@ -439,6 +455,7 @@ export class Game {
         this.bots.fixedUpdate(FIXED_DT);
         this.respawner.fixedUpdate(FIXED_DT);
         this.projectiles.fixedUpdate(FIXED_DT);
+        this.rockets.fixedUpdate(FIXED_DT);
         this.physics.step();
       }
       if (this.round.fixedUpdate(FIXED_DT) === 'started') this.startRound();
@@ -455,6 +472,7 @@ export class Game {
     this.rig.update(dt);
     this.updateAim(dt);
     this.projectiles.render(alpha);
+    this.rockets.render(alpha);
     this.debris.sync();
 
     const nowDashing = this.mech.isDashing;
@@ -481,7 +499,8 @@ export class Game {
 
     this.hud.setRespawn(this.respawner.timeLeft(this.mech));
     this.killFeed.update(dt);
-    this.roundHud.update(dt, this.round, this.input.isDown('Tab'));
+    this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
+    this.hud.setRockets(this.player.launcher.ammo, this.player.launcher.reloadProgress, this.mech.canFireSecondary);
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
     this.renderer.info.reset();
     this.composer.render(dt);

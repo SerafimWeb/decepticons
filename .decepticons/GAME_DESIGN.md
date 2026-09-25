@@ -29,6 +29,19 @@ Toda prioridade de feature passa por aqui.
 - **Três câmeras:** terceira pessoa, cockpit em primeira pessoa e visão tática de cima.
 - **Mira do seu jeito:** calibração pelo movimento real do mouse, entrada crua e teclas remapeáveis.
 - **Som feito na hora:** efeitos sintetizados pelo próprio navegador, sem arquivos pesados para baixar.
+- **Foguetes no braço esquerdo:** quatro no carregador e dano em área; exploda no pé do inimigo para arrancar a perna.
+
+---
+
+## PRODUÇÃO: TUDO EM CÓDIGO (decisão do dono, 2026-09-24)
+
+O dono dirige e as IAs constroem; nada é feito à mão, peça por peça. O investimento vai para jogabilidade,
+criatividade e para a configuração dos robôs (o que testa a habilidade real do jogador), não para anos de modelagem.
+- **Sem Unity:** seria reescrever o jogo, e o download passaria de ~1 MB para dezenas de MB. Abrir o link e jogar em segundos é o pitch.
+- **Sem modelagem manual no Blender:** os Mechs são montados por código a partir de peças (`entities/meshKit.ts`). Mech novo, arma nova ou pintura nova = parâmetros, não horas de arte. O estilo low-poly neon é escolha, e é legível até num celular.
+- **Som sintetizado, texturas e animação procedurais:** nenhum arquivo pesado, tudo versionado e revisável como código.
+- **Se um dia faltar detalhe:** peças mais ricas também saem de código (geometria procedural, ou scripts que geram glTF), sem trabalho artesanal.
+- **Onde a variedade nasce:** no Hangar (montar o Mech com chassi, armas e módulos equilibrados), não em modelos únicos feitos à mão.
 
 ---
 

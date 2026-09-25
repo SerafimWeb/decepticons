@@ -61,6 +61,25 @@ export class HUD {
     this.cta.textContent = touch ? '[ toque para jogar ]' : '[ clique para jogar ]';
   }
 
+  private readonly rockets = document.getElementById('rockets')!;
+  private readonly rocketPips = [...document.querySelectorAll<HTMLElement>('#rockets .pips i')];
+  private shownRockets = -1;
+  private shownReload = -1;
+  private shownRocketsOff = false;
+
+  /** Carregador do braço esquerdo: pips cheios, o próximo enchendo; apagado sem o braço. Só escreve no DOM quando muda. */
+  setRockets(ammo: number, reload: number, available: boolean): void {
+    const r = Math.round(reload * 10) / 10;
+    if (ammo === this.shownRockets && r === this.shownReload && available !== this.shownRocketsOff) return;
+    this.shownRockets = ammo;
+    this.shownReload = r;
+    this.shownRocketsOff = !available;
+    this.rockets.classList.toggle('off', !available);
+    this.rocketPips.forEach((pip, i) => {
+      pip.style.setProperty('--fill', i < ammo ? '1' : i === ammo ? String(r) : '0');
+    });
+  }
+
   /** Mira acesa: um inimigo vivo está sob ela. */
   setOnTarget(on: boolean): void {
     this.crosshair.classList.toggle('on-target', on);

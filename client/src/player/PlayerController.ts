@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import type { CameraRig } from '../camera/CameraRig';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
+import { RocketLauncher, type RocketSystem } from '../combat/RocketSystem';
 import type { InputManager } from '../core/InputManager';
 import { DEFAULT_SETTINGS, type KeyAction } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 
 const MUZZLE_COLOR = new THREE.Color(0.6, 2.5, 3.5);
+const ROCKET_FLASH = new THREE.Color(3.0, 1.2, 0.3);
 const AIM_RANGE = 400;
 
 const _muzzle = new THREE.Vector3();
@@ -20,6 +22,10 @@ const _dir = new THREE.Vector3();
  */
 export class PlayerController {
   active = false;
+  /** Carregador do braço esquerdo (regra no tick fixo; o HUD lê daqui). */
+  readonly launcher = new RocketLauncher();
+  /** Um foguete saiu (som). */
+  onRocket?: () => void;
   /** Teclas de cada ação (e.code), vindas das configurações. */
   keys: Readonly<Record<KeyAction, string>> = DEFAULT_SETTINGS.keys;
 
@@ -34,6 +40,7 @@ export class PlayerController {
     private readonly rig: CameraRig,
     private readonly projectiles: ProjectileSystem,
     private readonly particles: ParticleSystem,
+    private readonly rockets: RocketSystem,
   ) {}
 
   /** Taxa do render: captura eventos de borda. */
@@ -75,6 +82,33 @@ export class PlayerController {
       this.fire();
       this.fireCooldown = this.mech.stats.fireInterval;
     }
+
+    // Foguetes: segurar dispara o carregador no ritmo do intervalo. Morto, o carregador enche
+    // (renasce pronto). Braço esquerdo destruído = sem foguetes.
+    if (!this.mech.alive) this.launcher.refill();
+    else this.launcher.fixedUpdate(dt);
+    const wantsRocket = this.input.mouseDown2 || this.input.isDown(k.secondary) || this.input.virtualRocket;
+    if (a && wantsRocket && this.mech.canFireSecondary && this.launcher.tryFire()) this.fireRocket();
+  }
+
+  private fireRocket(): void {
+    const { mech } = this;
+    mech.leftMuzzleWorldPosition(_muzzle);
+    this.aimFrom(_muzzle);
+    this.rockets.fire(_muzzle, _dir, mech.collider);
+    this.particles.burst(_muzzle, _dir, { count: 14, color: ROCKET_FLASH, speed: 8, life: 0.25, spread: 0.6, gravity: 0 });
+    mech.onFireSecondary();
+    this.onRocket?.();
+  }
+
+  /** Direção do tiro saindo de `from` até o ponto sob a mira (em _dir). */
+  private aimFrom(from: THREE.Vector3): void {
+    const { yaw, pitch, point } = this.rig.aim;
+    _fwd.set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
+    // Se o alvo estiver "atrás" da boca (ex.: mirando o chão perto do pé), atira reto.
+    _to.copy(point);
+    if (_dir.subVectors(_to, from).dot(_fwd) < 3) _to.copy(from).addScaledVector(_fwd, AIM_RANGE);
+    _dir.subVectors(_to, from).normalize();
   }
 
   private fire(): void {

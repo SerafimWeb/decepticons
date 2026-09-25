@@ -7,6 +7,8 @@ import { normalizeKey } from './Settings';
  */
 export class InputManager {
   mouseDown = false;
+  /** Botão direito (foguetes). */
+  mouseDown2 = false;
   locked = false;
   /** Pede o Pointer Lock sem a aceleração do sistema (movimento cru), onde o navegador deixa. */
   rawInput = true;
@@ -28,6 +30,9 @@ export class InputManager {
   virtualFire = false;
   /** Tiro automático do toque (inimigo sob a mira), decidido pelo Game a cada quadro. */
   autoFire = false;
+  /** Toque: FOGUETE e PLACAR pressionados. */
+  virtualRocket = false;
+  virtualBoard = false;
 
   onLockChange?: (locked: boolean) => void;
   /** Tecla pressionada (sem auto-repeat). Útil para ações que exigem gesto do usuário. */
@@ -74,9 +79,11 @@ export class InputManager {
 
     target.addEventListener('mousedown', (e) => {
       if (e.button === 0) this.mouseDown = true;
+      if (e.button === 2) this.mouseDown2 = true;
     });
     window.addEventListener('mouseup', (e) => {
       if (e.button === 0) this.mouseDown = false;
+      if (e.button === 2) this.mouseDown2 = false;
     });
     target.addEventListener('contextmenu', (e) => e.preventDefault());
     target.addEventListener(
@@ -154,7 +161,7 @@ export class InputManager {
   private reset(): void {
     this.keys.clear();
     this.pressed.clear();
-    this.mouseDown = false;
+    this.mouseDown = this.mouseDown2 = false;
     this.mouseDX = this.mouseDY = 0;
   }
 }

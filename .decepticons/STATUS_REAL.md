@@ -34,7 +34,7 @@
 | Feedback de acerto | REAL | marcador de acerto, parte destruída anunciada ("PERNA ESQ DESTRUÍDA", "ALVO ABATIDO"), flash de dano, peça arrancada vira destroço |
 | Blind Mode (cabeça destruída) | REAL | cabeça zerada: o HUD perde os números e a mira e entra estática na tela (`#hud.blind`), com chiado em loop do `AudioSystem`. Visto no código; não conferido em jogo por outro agente |
 | Áudio (efeitos sonoros) | REAL | `AudioSystem` sintetizado com Web Audio API (zero arquivos externos): tiro, impacto/hit, explosão com volume por distância, dash, pouso com intensidade proporcional, estalo de parte destruída, chiado em loop do Blind Mode. `resume()` chamado na 1ª interação (exigência do navegador). Sem custo no loop de 60 Hz (scheduler do Web Audio) |
-| Braço esquerdo (lançador secundário) | DEMO | só o modelo, sem arma |
+| Foguetes (braço esquerdo) | REAL | Casulo de 4 tubos; botão direito ou Q (remapeável) no PC, FOGUETE no toque. 4 no carregador, recarga de 1 a cada 2,2 s, 75 m/s, explosão de 6 m com dano que cai com a distância, na parte mais perto (no pé acerta a perna). Quem dispara não se fere; barricadas no raio também levam. Braço esquerdo destruído = sem foguetes. 7 testes (regras + voo com física real); visto no navegador headless. Só o jogador tem foguetes; o dono ainda não jogou |
 | Demolição no dash (Colossus-01) | PARCIAL | código pronto (`demolishOnDash`), nenhum Mech usa |
 | Slots de sucata | AUSENTE | só o stat `maxScrapSlots` |
 | Colossus-01, Ferret-X | AUSENTE | |
