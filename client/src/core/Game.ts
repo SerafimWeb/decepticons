@@ -30,6 +30,7 @@ import { MouseCalibration } from '../ui/MouseCalibration';
 import { Onboarding } from '../ui/Onboarding';
 import { RoundHud } from '../ui/RoundHud';
 import { SettingsMenu } from '../ui/SettingsMenu';
+import { EnemySettings } from '../ui/EnemySettings';
 import { InputManager } from './InputManager';
 import { Quality } from './Quality';
 import { browserStorage, radiansPerCount, Settings, type GameSettings, type QualityPreset } from './Settings';
@@ -234,6 +235,8 @@ export class Game {
       },
     );
     new SettingsMenu(this.settings);
+    // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
+    new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician });
     this.settings.onChange((s) => this.applySettings(s));
   }
 
