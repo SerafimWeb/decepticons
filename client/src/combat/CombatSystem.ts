@@ -7,7 +7,7 @@ import type { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
 import type { DamageResult } from './damage';
-import { BLAST_RADIUS, ROCKET_DAMAGE, splashDamage } from './RocketSystem';
+import { splashDamage, weapon, type WeaponStats } from './weapons';
 
 /** Tamanho do pedaço que vira destroço quando a parte é arrancada. */
 const PART_CHUNK: Record<MechPart, THREE.Vector3> = {
@@ -61,12 +61,12 @@ export class CombatSystem {
   }
 
   /**
-   * Explosão de foguete em `at`: cada Mech a menos de BLAST_RADIUS da superfície da cápsula leva
+   * Explosão da arma `w` em `at`: cada Mech a menos do raio da explosão da superfície da cápsula leva
    * dano que cai com a distância, na parte mais perto da explosão (no pé acerta a perna, no peito o
    * torso: a mesma regra de zonas do plasma). Quem disparou não se fere. Barricadas no raio também.
    * Regra de simulação: usa a posição do tick (simPosition), nunca a de render.
    */
-  explode(at: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider): void {
+  explode(at: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, w: WeaponStats = weapon('rockets')): void {
     const shooter = owner ? this.byCollider.get(owner.handle) : undefined;
     for (const mech of this.byCollider.values()) {
       if (!mech.alive || mech === shooter) continue;
@@ -79,7 +79,7 @@ export class CombatSystem {
       const flat = Math.hypot(dx, dz);
       const k = flat > radius ? radius / flat : 1;
       _near.set(p.x + dx * k, y, p.z + dz * k);
-      const damage = splashDamage(Math.hypot(Math.max(0, flat - radius), at.y - y));
+      const damage = splashDamage(w, Math.hypot(Math.max(0, flat - radius), at.y - y));
       if (damage <= 0) continue;
       const result = mech.takeHit(_near, damage);
       if (result.applied <= 0) continue;
@@ -87,7 +87,7 @@ export class CombatSystem {
       else if (result.partDestroyed) this.tearOff(mech, result.part, dir);
       this.onMechHit?.({ mech, result, shooter });
     }
-    this.destructibles.damageInRadius(at, BLAST_RADIUS, ROCKET_DAMAGE, dir);
+    this.destructibles.damageInRadius(at, w.blastRadius, w.damage, dir);
   }
 
   /** O Mech dono deste colisor (mira, tiro automático), ou undefined para cenário. */

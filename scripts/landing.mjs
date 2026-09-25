@@ -10,7 +10,7 @@
  */
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { atividade, bundleSize, entregas, marcos, pledge, readRoadmap, recordSheet, roadmapStats, vitrine } from './site/dados.mjs';
+import { arsenal, atividade, bundleSize, entregas, hangarPlan, jogo, marcos, pledge, readRoadmap, recordSheet, roadmapStats, vitrine } from './site/dados.mjs';
 import { brDate, esc, HEXGRID, inline, mb, pagina, topo, upper } from './site/tema.mjs';
 
 const argv = process.argv.slice(2);
@@ -22,7 +22,10 @@ const roadmap = readRoadmap();
 const stats = roadmapStats(roadmap);
 const m = marcos();
 const bundle = bundleSize(join(ROOT, 'jogar'));
-const sheet = recordSheet();
+const game = await jogo();
+const sheet = recordSheet(game);
+const arms = arsenal(game);
+const plan = hangarPlan();
 const vows = pledge();
 const features = vitrine();
 const { prs } = entregas();
@@ -187,7 +190,8 @@ const sheetHtml = sheet
         <div><dt>MOVIMENTO</dt><dd>${sheet.speed} m/s</dd></div>
         <div><dt>DASH</dt><dd>${sheet.dash} m/s</dd></div>
         <div><dt>SALTOS</dt><dd>${sheet.jumps}× no ar</dd></div>
-        <div><dt>ARMA</dt><dd>canhão de plasma · ${sheet.damage} de dano</dd></div>
+        <div><dt>ARMA</dt><dd>${esc(sheet.primary.toLowerCase())} · ${sheet.damage} de dano</dd></div>
+        ${sheet.secondary ? `<div><dt>BRAÇO ESQUERDO</dt><dd>${esc(sheet.secondary.toLowerCase())}</dd></div>` : ''}
         <div><dt>CADÊNCIA</dt><dd>${(1 / sheet.fire).toFixed(1).replace('.', ',')} tiros/s</dd></div>
       </dl>
     </div>
@@ -218,6 +222,117 @@ const pledgeHtml = vows.length
     <ul>${vows.map((v) => `<li>${inline(v)}</li>`).join('')}</ul>
   </aside>`
   : '';
+
+// Hangar (em projeto): planta com os encaixes, o arsenal nos três níveis e as metas de equilíbrio.
+// Tudo o que é número vem do código do jogo (dados.mjs → jogo()); o plano vem do GAME_DESIGN.
+const num = (x, d = 0) => x.toFixed(d).replace('.', ',');
+const pct = (x) => `${Math.round(x * 100)}%`;
+const tons = (x) => `${String(x).replace('.', ',')} t`;
+
+/** Planta do Vector-09 de frente (a direita dele fica à esquerda de quem olha); números = legenda. */
+const BLUEPRINT = `<svg class="bp" viewBox="0 0 300 312" role="img" aria-label="Planta do Mech com seis encaixes numerados: braço direito, braço esquerdo, torso, ombros, cabeça e pernas">
+      <rect class="plan" x="62" y="68" width="30" height="26"/><rect class="plan" x="208" y="68" width="30" height="26"/>
+      <rect x="128" y="30" width="44" height="34"/><rect class="visor" x="136" y="44" width="28" height="5"/>
+      <rect x="90" y="70" width="120" height="94"/><rect class="visor" x="112" y="92" width="76" height="5"/>
+      <rect x="58" y="98" width="30" height="74"/><rect x="64" y="172" width="18" height="48"/><rect class="visor" x="66" y="216" width="14" height="4"/>
+      <rect x="212" y="98" width="30" height="62"/><rect x="204" y="148" width="44" height="42"/>
+      <circle cx="216" cy="160" r="5"/><circle cx="236" cy="160" r="5"/><circle cx="216" cy="178" r="5"/><circle cx="236" cy="178" r="5"/>
+      <rect x="110" y="166" width="80" height="22"/>
+      <rect x="112" y="190" width="30" height="100"/><rect x="158" y="190" width="30" height="100"/>
+      <rect x="104" y="290" width="44" height="10"/><rect x="152" y="290" width="44" height="10"/>
+      <g class="n"><circle cx="73" cy="126" r="11"/><text x="73" y="126">1</text></g>
+      <g class="n"><circle cx="227" cy="122" r="11"/><text x="227" y="122">2</text></g>
+      <g class="n"><circle cx="150" cy="130" r="11"/><text x="150" y="130">3</text></g>
+      <g class="n"><circle cx="77" cy="81" r="11"/><text x="77" y="81">4</text></g>
+      <g class="n"><circle cx="223" cy="81" r="11"/><text x="223" y="81">4</text></g>
+      <g class="n"><circle cx="150" cy="15" r="11"/><text x="150" y="15">5</text></g>
+      <g class="n"><circle cx="127" cy="240" r="11"/><text x="127" y="240">6</text></g>
+      <g class="n"><circle cx="173" cy="240" r="11"/><text x="173" y="240">6</text></g>
+    </svg>`;
+
+function wpnRows(w) {
+  const head =
+    w.kind === 'energy'
+      ? [
+          ['DANO/TIRO', (t) => t.damage],
+          ['CADÊNCIA', (t) => `${num(t.rate, 1)}/s`],
+          ['CALOR/TIRO', (t) => pct(t.heat)],
+        ]
+      : [
+          ['DANO NO CENTRO', (t) => t.damage],
+          ['RECARGA', (t) => `${num(t.reload, 1)} s`],
+          ['CALOR/DISPARO', (t) => pct(t.heat)],
+        ];
+  return [
+    ...head,
+    ['DANO/S', (t) => num(t.dps)],
+    ['DERRUBA EM', (t) => `${num(t.ttk, 1)} s`, 'key'],
+    ['CARGA', (t) => tons(t.mass)],
+  ];
+}
+
+function wpnCard(w, i) {
+  const note =
+    w.kind === 'energy'
+      ? `dano cheio até ${w.optimal} m, cai até ${pct(w.minFactor)} a ${w.max} m, onde o projétil se desfaz · ${w.speed} m/s`
+      : `${w.magazine} no carregador · explosão de ${num(w.blast)} m, o dano cai até zero na borda · ${w.speed} m/s: de longe, dá para desviar`;
+  return `<article class="wpn frame">
+        <header class="wpn-bar"><span class="wpn-id">WPN-0${i + 1}</span><h3>${upper(w.name)}</h3><span class="wpn-kind">${w.kind === 'energy' ? 'energia' : 'munição'} · ${esc(w.slot)}</span></header>
+        <div class="wpn-scroll"><table class="wpn-table">
+          <thead><tr><th scope="col"><span class="sr">atributo</span></th>${w.tiers.map((t, k) => `<th scope="col">${t.label}${k === 0 ? '<small>no jogo</small>' : ''}</th>`).join('')}</tr></thead>
+          <tbody>${wpnRows(w)
+            .map(([label, f, cls]) => `<tr${cls ? ` class="${cls}"` : ''}><th scope="row">${label}</th>${w.tiers.map((t) => `<td>${f(t)}</td>`).join('')}</tr>`)
+            .join('')}</tbody>
+        </table></div>
+        <p class="wpn-note">${note}</p>
+      </article>`;
+}
+
+let hangarHtml = '';
+if (arms && sheet && plan.length) {
+  const single = Math.min(...arms.weapons.flatMap((w) => w.tiers.map((t) => t.ttk)));
+  const combo = Math.min(...arms.combo.map((c) => c.ttk));
+  const energy = arms.weapons.find((w) => w.kind === 'energy');
+  const gain = Math.round((1 - energy.tiers[2].ttk / energy.tiers[0].ttk) * 100);
+  const perTon = energy.tiers.map((t) => t.dps / t.mass);
+  const load = arms.weapons.reduce((sum, w) => sum + w.tiers[0].mass, 0);
+  const [a0, a1] = arms.weapons;
+  const legend = [
+    ['BRAÇO D · ENERGIA', `${a0.name} MK I · ${tons(a0.tiers[0].mass)}`],
+    ['BRAÇO E · MUNIÇÃO', `${a1.name} MK I · ${tons(a1.tiers[0].mass)}`],
+    ['TORSO · DISSIPADOR', `um dissipador para todas as armas · ${arms.torso} de blindagem`],
+    ['OMBROS · MÓDULOS', 'em projeto: dissipador extra, radar, escudo, reparo', 'plan'],
+    ['CABEÇA · SENSORES', `${sheet.armor[0][1]} de blindagem; destruída, o piloto fica cego`],
+    ['PERNAS · MOBILIDADE', `${sheet.speed} m/s, dash de ${sheet.dash} m/s; sem as duas, o Mech para`],
+  ];
+  hangarHtml = `<section aria-labelledby="hangar">
+    <span class="kicker">// hangar · em projeto</span>
+    <h2 id="hangar">Hangar: monte o seu Mech</h2>
+    <p class="lede">O Hangar é onde o Mech é montado: chassi, uma arma em cada braço, módulos nos ombros. Toda arma tem três níveis de poder com a mesma regra, e todo poder pesa: quem monta escolhe onde gastar. Na luta, quem decide continua sendo o piloto. Os números abaixo são lidos do código do jogo a cada versão.</p>
+    <div class="grid-2 blueprint">
+      <figure class="bp-fig frame">${BLUEPRINT}<figcaption>${esc(arms.target)} · encaixes · tracejado = em projeto</figcaption></figure>
+      <div class="stack">
+        <ol class="bp-legend">${legend.map(([k, v, cls], i) => `<li${cls ? ` class="${cls}"` : ''}><span class="bp-n" aria-hidden="true">${i + 1}</span><div><b>${k}</b><span>${esc(v)}</span></div></li>`).join('')}</ol>
+        <p class="bp-load">carga das armas de fábrica: <b>${tons(load)}</b> · a carga máxima de cada chassi entra com o Hangar</p>
+      </div>
+    </div>
+    <h3 class="sub-h">Arsenal · três níveis de poder</h3>
+    <div class="arsenal">${arms.weapons.map(wpnCard).join('')}</div>
+    <p class="wpn-legend">MK II: +20% de dano, +15% de calor e +50% de carga. MK III: +40%, +30% e o dobro. DANO/S = gatilho apertado por 30 s, contando as travas por calor e as recargas. DERRUBA EM = tempo para derrubar o torso de um ${esc(arms.target)} (${arms.torso} de vida) com todos os tiros no alvo.</p>
+    <h3 class="sub-h">Regras de equilíbrio</h3>
+    <div class="sitrep">
+      <div class="read frame"><span class="k">uma arma sozinha</span><span class="v">≥ ${num(single, 1)} s</span><span class="d">para derrubar um Mech, mesmo no MK III</span></div>
+      <div class="read frame"><span class="k">os dois braços juntos</span><span class="v">≥ ${num(combo, 1)} s</span><span class="d">o calor do Mech trava antes de terminar o serviço</span></div>
+      <div class="read frame"><span class="k">MK III contra MK I</span><span class="v">−${gain}%</span><span class="d">de tempo no plasma: dá para sentir, mas não decide a luta</span></div>
+      <div class="read frame"><span class="k">dano por tonelada</span><span class="v">${num(perTon[0] / perTon[2], 1)}×</span><span class="d">o MK I rende mais por tonelada que o MK III: poder custa carga</span></div>
+    </div>
+    <p class="rules-note">Teto teórico, sem errar nenhum tiro. ${arms.tests} testes de simulação travam estas metas a cada entrega: se uma mudança criar apelação, a versão não sai.</p>
+    <h3 class="sub-h">O plano</h3>
+    <ol class="features">${plan
+      .map((p, i) => `<li class="feature frame"><span class="fnum">${String(i + 1).padStart(2, '0')}</span><h3>${upper(p.title)}</h3><p>${inline(p.text)}</p></li>`)
+      .join('')}</ol>
+  </section>`;
+}
 
 const { focus, next } = stats;
 const building = focus.items.filter((i) => i.status !== 'done');
@@ -303,6 +418,47 @@ const css = `
   .pledge ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--text); font-size: 14px; }
   .pledge li::marker { content: '> '; color: var(--red); }
 
+  .sub-h { font: 400 1.5rem/1.1 var(--fd); letter-spacing: .06em; text-transform: uppercase; margin-top: 12px; }
+  .blueprint { align-items: center; }
+  .bp-fig {
+    margin: 0; padding: 18px 18px 34px; display: grid; justify-items: center;
+    background: linear-gradient(rgba(255,176,0,.06) 1px, transparent 1px) 0 0 / 20px 20px, linear-gradient(90deg, rgba(255,176,0,.06) 1px, transparent 1px) 0 0 / 20px 20px, var(--panel);
+  }
+  .bp { width: 100%; max-width: 300px; height: auto; }
+  .bp rect, .bp circle { fill: none; stroke: var(--amber); stroke-width: 1.5; }
+  .bp .plan { stroke: var(--muted); stroke-dasharray: 4 3; }
+  .bp .visor { fill: var(--green); stroke: none; }
+  .bp .n circle { fill: var(--bg); stroke: var(--amber); }
+  .bp .n text { fill: var(--amber); font: 13px var(--fb); text-anchor: middle; dominant-baseline: central; }
+  .bp-fig figcaption { position: absolute; left: 0; bottom: 0; padding: 4px 10px; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .bp-legend { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+  .bp-legend li { display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; font-size: 14px; }
+  .bp-legend li > div { display: grid; gap: 2px; }
+  .bp-n { width: 22px; height: 22px; margin-top: 1px; border: 1.5px solid var(--amber); border-radius: 50%; display: grid; place-items: center; font-size: 12px; line-height: 1; color: var(--amber); }
+  .bp-legend b { font-size: 12px; letter-spacing: .16em; }
+  .bp-legend div span { color: var(--text); }
+  .bp-legend li.plan b, .bp-legend li.plan div span { color: var(--muted); }
+  .bp-legend li.plan .bp-n { border-style: dashed; border-color: var(--muted); color: var(--muted); }
+  .bp-load { color: var(--muted); font-size: 13px; }
+  .arsenal { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+  .wpn { display: grid; align-content: start; min-width: 0; }
+  .wpn-bar { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .wpn-id { font-size: 11px; letter-spacing: .18em; color: var(--bg); background: var(--amber); padding: 2px 6px 1px; }
+  .wpn-bar h3 { flex: 1; min-width: 12ch; }
+  .wpn-kind { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .wpn-scroll { overflow-x: auto; }
+  .wpn-table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  .wpn-table th, .wpn-table td { padding: 7px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .wpn-table thead th { font: 400 1.15rem/1 var(--fd); color: var(--amber); letter-spacing: .06em; vertical-align: bottom; }
+  .wpn-table thead small { display: block; font: 400 9.5px/1.4 var(--fb); letter-spacing: .16em; color: var(--green); text-transform: uppercase; }
+  .wpn-table tbody th { text-align: left; font-weight: 400; font-size: 11px; letter-spacing: .14em; color: var(--muted); }
+  .wpn-table td { color: var(--text); }
+  .wpn-table tr.key td { color: var(--amber); }
+  .wpn-note { padding: 10px 14px 12px; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+  .wpn-legend, .rules-note { color: var(--muted); font-size: 13px; max-width: 90ch; }
+  .read .d { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
   .build { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .box-bar { display: flex; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--line); font-size: 11.5px; letter-spacing: .2em; color: var(--muted); text-transform: uppercase; }
   .box-body { padding: 14px 16px 16px; display: grid; gap: 12px; margin: 0; }
@@ -342,6 +498,7 @@ const css = `
 
   @media (max-width: 900px) {
     .hero.with-shot, .grid-2, .build, .sheet { grid-template-columns: 1fr; }
+    .wpn-table th, .wpn-table td { padding: 7px 8px; }
     .hero-shot { order: -1; }
   }
 `;
@@ -355,6 +512,7 @@ const body = `
   ${sheetHtml}
   ${keysHtml}
   ${pledgeHtml}
+  ${hangarHtml}
   ${buildHtml}
   ${endHtml}
   <footer><span>CYBERMECH © ${new Date().getFullYear()} <b>SERAFIM WEB</b> · feito por Dan e uma equipe de IAs</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>

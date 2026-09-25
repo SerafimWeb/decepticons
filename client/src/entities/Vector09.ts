@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { weapon } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
 import { MechBase, type LegRig, type MechRig, type MechStats } from './MechBase';
 import { box, cyl, group } from './meshKit';
@@ -6,6 +7,7 @@ import { box, cyl, group } from './meshKit';
 /**
  * Vector-09: assalto ágil, pulo duplo, dash curto; sem compartimento de sucata.
  * Calibrado em 24/09 (dono: "muito rápido; o tiro precisa de um respiro"): menos velocidade e calor na arma.
+ * Armas em 25/09 (arsenal em `combat/weapons.ts`): plasma MK I no braço direito, foguetes MK I no esquerdo.
  */
 export const VECTOR09_STATS: MechStats = {
   name: 'VECTOR-09',
@@ -22,9 +24,7 @@ export const VECTOR09_STATS: MechStats = {
   stepHeight: 0.9,
   demolishOnDash: false,
   maxScrapSlots: 0,
-  fireInterval: 0.18,
-  weaponDamage: 25,
-  heatPerShot: 0.085,
+  loadout: { primary: weapon('plasma'), secondary: weapon('rockets') },
   heatCooling: 0.6,
   heatCoolDelay: 0.25,
   heatRecover: 0.35,

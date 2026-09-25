@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { GLOW } from '../core/palette';
 import type { CameraRig } from '../camera/CameraRig';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
-import { RocketLauncher, type RocketSystem } from '../combat/RocketSystem';
+import type { RocketSystem } from '../combat/RocketSystem';
+import { FireTimer, RocketLauncher } from '../combat/trigger';
+import { weapon } from '../combat/weapons';
 import type { InputManager } from '../core/InputManager';
 import { DEFAULT_SETTINGS, type KeyAction } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
@@ -24,7 +26,7 @@ const _dir = new THREE.Vector3();
 export class PlayerController {
   active = false;
   /** Carregador do braço esquerdo (regra no tick fixo; o HUD lê daqui). */
-  readonly launcher = new RocketLauncher();
+  readonly launcher: RocketLauncher;
   /** Um foguete saiu (som). */
   onRocket?: () => void;
   /** Teclas de cada ação (e.code), vindas das configurações. */
@@ -32,7 +34,8 @@ export class PlayerController {
 
   private jumpQueued = false;
   private dashQueued = false;
-  private fireCooldown = 0;
+  /** Cadência do canhão principal, sem arredondar para o tick. */
+  private readonly trigger = new FireTimer();
   private readonly cmd: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
 
   constructor(
@@ -42,7 +45,9 @@ export class PlayerController {
     private readonly projectiles: ProjectileSystem,
     private readonly particles: ParticleSystem,
     private readonly rockets: RocketSystem,
-  ) {}
+  ) {
+    this.launcher = new RocketLauncher(mech.loadout.secondary ?? weapon('rockets'));
+  }
 
   /** Taxa do render: captura eventos de borda. */
   collect(): void {
@@ -77,11 +82,11 @@ export class PlayerController {
 
     this.mech.fixedUpdate(cmd, dt);
 
-    this.fireCooldown = Math.max(0, this.fireCooldown - dt);
+    this.trigger.fixedUpdate(dt);
     const wantsToFire = this.input.mouseDown || this.input.virtualFire || this.input.autoFire;
-    if (a && wantsToFire && this.fireCooldown <= 0 && this.mech.canFirePrimary) {
+    if (a && wantsToFire && this.trigger.ready && this.mech.canFirePrimary) {
       this.fire();
-      this.fireCooldown = this.mech.stats.fireInterval;
+      this.trigger.shot(this.mech.loadout.primary.fireInterval);
     }
 
     // Foguetes: segurar dispara o carregador no ritmo do intervalo. Morto, o carregador enche
@@ -96,7 +101,7 @@ export class PlayerController {
     const { mech } = this;
     mech.leftMuzzleWorldPosition(_muzzle);
     this.aimFrom(_muzzle);
-    this.rockets.fire(_muzzle, _dir, mech.collider);
+    this.rockets.fire(_muzzle, _dir, mech.collider, this.launcher.weapon);
     this.particles.burst(_muzzle, _dir, { count: 14, color: ROCKET_FLASH, speed: 8, life: 0.25, spread: 0.6, gravity: 0 });
     mech.onFireSecondary();
     this.onRocket?.();
@@ -123,7 +128,7 @@ export class PlayerController {
     if (_dir.subVectors(_to, _muzzle).dot(_fwd) < 3) _to.copy(_muzzle).addScaledVector(_fwd, AIM_RANGE);
     _dir.subVectors(_to, _muzzle).normalize();
 
-    this.projectiles.fire(_muzzle, _dir, mech.collider, false, mech.stats.weaponDamage);
+    this.projectiles.fire(_muzzle, _dir, mech.collider, false, mech.loadout.primary);
     this.particles.burst(_muzzle, _dir, { count: 10, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
     mech.onFire();
   }

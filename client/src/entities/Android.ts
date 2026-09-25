@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { weapon } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
 import { MechBase, type LegRig, type MechRig, type MechStats } from './MechBase';
 import { box, cyl, group } from './meshKit';
@@ -25,19 +26,17 @@ export const ANDROID_STATS: MechStats = {
   stepHeight: 0.45,
   demolishOnDash: false,
   maxScrapSlots: 0,
-  fireInterval: 0.4,
-  weaponDamage: 4,
-  heatPerShot: 0.12,
+  loadout: { primary: weapon('blaster'), secondary: null },
   heatCooling: 0.7,
   heatCoolDelay: 0.2,
   heatRecover: 0.3,
   maxModuleHealth: {
-    torso: 50,
-    head: 20,
-    leftArm: 25,
-    rightArm: 25,
-    leftLeg: 30,
-    rightLeg: 30,
+    torso: 32,
+    head: 13,
+    leftArm: 16,
+    rightArm: 16,
+    leftLeg: 19,
+    rightLeg: 19,
   },
 };
 

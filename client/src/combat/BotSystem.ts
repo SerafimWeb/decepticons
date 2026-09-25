@@ -145,7 +145,7 @@ export class BotSystem {
       if (brain instanceof TechnicianController && brain.repairTarget) brain.repairTarget.repair(REPAIR_RATE * dt);
       if (!brain.wantsToFire) continue;
       mech.simMuzzle(_muzzle);
-      this.projectiles.fire(_muzzle, brain.shotDir, mech.collider, true, mech.stats.weaponDamage);
+      this.projectiles.fire(_muzzle, brain.shotDir, mech.collider, true, mech.loadout.primary);
       this.particles.burst(_muzzle, brain.shotDir, { count: 8, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
       mech.onFire();
     }

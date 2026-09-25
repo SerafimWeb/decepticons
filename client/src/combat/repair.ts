@@ -1,7 +1,7 @@
 import type { MechModules, MechPart } from '../entities/MechBase';
 
 /** Pontos de vida que um técnico devolve por segundo. */
-export const REPAIR_RATE = 18;
+export const REPAIR_RATE = 8;
 /** Distância máxima (m, entre os centros) para o feixe de conserto alcançar o Mech. */
 export const REPAIR_RANGE = 7;
 

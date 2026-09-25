@@ -3,7 +3,6 @@ import { mulberry32 } from '../core/rng';
 import type { Difficulty } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
-import { PROJECTILE_SPEED } from './ProjectileSystem';
 import { setLocalMove, turnToward, wrapAngle, yawOf } from './steer';
 
 export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat';
@@ -380,7 +379,7 @@ export class BotController {
     // Mira no torso, antecipando parte do movimento do alvo (tempo de voo do plasma).
     const tp = t.simPosition;
     const dist = this.flatDistance(tp);
-    const flight = dist / PROJECTILE_SPEED;
+    const flight = dist / m.loadout.primary.speed;
     _aim
       .set(tp.x, tp.y + t.stats.height * AIM_HEIGHT, tp.z)
       .addScaledVector(t.velocity, flight * this.skill.leadFactor);
@@ -407,7 +406,7 @@ export class BotController {
 
     this.burstLeft--;
     if (this.burstLeft > 0) {
-      this.fireCooldown = m.stats.fireInterval;
+      this.fireCooldown = Math.max(this.fireCooldown, -dt) + m.loadout.primary.fireInterval;
     } else {
       this.burstLeft = this.skill.burstShots;
       this.fireCooldown = this.skill.burstPauseS * (0.8 + this.rand() * 0.4);

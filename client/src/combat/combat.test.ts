@@ -1,5 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import { weapon } from './weapons';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { VECTOR09_STATS, Vector09 } from '../entities/Vector09';
 import type { DebrisSystem } from '../environment/DebrisSystem';
@@ -46,14 +47,14 @@ describe('combate: projétil → parte do Mech', () => {
     // Alvo com yaw 0 olha para -Z; a direita dele é +X. Atirador à frente dele (em -Z).
     const { target, shoot } = await arena(0);
     shoot(new THREE.Vector3(0.5, 1.0, -20), new THREE.Vector3(0, 0, 1));
-    expect(target.modules.rightLeg).toBe(MAX.rightLeg - 25);
+    expect(target.modules.rightLeg).toBe(MAX.rightLeg - weapon('plasma').damage);
     expect(target.modules.leftLeg).toBe(MAX.leftLeg);
   });
 
   it('a parte segue a rotação do alvo (virado ao contrário, o mesmo lado vira a perna esquerda)', async () => {
     const { target, shoot } = await arena(Math.PI);
     shoot(new THREE.Vector3(0.5, 1.0, 20), new THREE.Vector3(0, 0, -1));
-    expect(target.modules.leftLeg).toBe(MAX.leftLeg - 25);
+    expect(target.modules.leftLeg).toBe(MAX.leftLeg - weapon('plasma').damage);
     expect(target.modules.rightLeg).toBe(MAX.rightLeg);
   });
 
@@ -63,7 +64,7 @@ describe('combate: projétil → parte do Mech', () => {
     physics.world.createCollider(RAPIER.ColliderDesc.cuboid(1, 1, 1), body);
     physics.step();
     shoot(new THREE.Vector3(0, 3.5, -20), new THREE.Vector3(0, 0, 1));
-    expect(target.modules.torso).toBe(MAX.torso - 25);
+    expect(target.modules.torso).toBe(MAX.torso - weapon('plasma').damage);
   });
 
   it('braço direito destruído desliga o plasma; torso zerado mata e desliga a colisão', async () => {

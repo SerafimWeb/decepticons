@@ -2,6 +2,7 @@ import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { ANDROID_PROFILE, MECH_PROFILE } from '../combat/BotController';
+import { weapon } from '../combat/weapons';
 import { BotSystem } from '../combat/BotSystem';
 import { CombatSystem } from '../combat/CombatSystem';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
@@ -17,6 +18,7 @@ import { VECTOR09_STATS, Vector09 } from './Vector09';
 const particles = { burst: () => {} } as unknown as ParticleSystem;
 const debris = { shatter: () => {} } as unknown as DebrisSystem;
 const destructibles = { damage: () => false, damageInRadius: () => {} } as unknown as Destructibles;
+const PLASMA = weapon('plasma');
 const FORWARD: MechInput = { moveX: 0, moveZ: 1, moveYaw: 0, yaw: 0, jump: false, dash: false };
 
 async function world() {
@@ -34,7 +36,7 @@ describe('andróide rebelde (escala 1)', () => {
     expect(ANDROID_STATS.height).toBeLessThan(VECTOR09_STATS.height / 2);
     expect(ANDROID_STATS.groundAccel).toBeGreaterThan(VECTOR09_STATS.groundAccel);
     expect(ANDROID_STATS.dashCooldown).toBeLessThan(VECTOR09_STATS.dashCooldown);
-    expect(ANDROID_STATS.weaponDamage).toBeLessThan(VECTOR09_STATS.weaponDamage);
+    expect(ANDROID_STATS.loadout.primary.damage).toBeLessThan(VECTOR09_STATS.loadout.primary.damage);
   });
 
   it('anda na velocidade dele, sem sair do chão, e chega nela mais rápido que o Mech', async () => {
@@ -73,12 +75,12 @@ describe('andróide rebelde (escala 1)', () => {
     const projectiles = new ProjectileSystem(new THREE.Scene(), physics, particles);
     projectiles.onHit = (hit, dir, dmg, owner) => combat.onProjectileHit(hit, dir, dmg, owner);
     physics.step();
-    projectiles.fire(new THREE.Vector3(0.2, 0.4, -20), new THREE.Vector3(0, 0, 1), undefined, false, 25);
+    projectiles.fire(new THREE.Vector3(0.2, 0.4, -20), new THREE.Vector3(0, 0, 1), undefined, false, PLASMA);
     for (let i = 0; i < 20; i++) {
       projectiles.fixedUpdate(FIXED_DT);
       physics.step();
     }
-    expect(a.modules.rightLeg).toBe(ANDROID_STATS.maxModuleHealth.rightLeg - 25);
+    expect(a.modules.rightLeg).toBe(ANDROID_STATS.maxModuleHealth.rightLeg - PLASMA.damage);
     expect(a.modules.head).toBe(ANDROID_STATS.maxModuleHealth.head);
   });
 
@@ -89,12 +91,12 @@ describe('andróide rebelde (escala 1)', () => {
     a.spawn(physics, new THREE.Vector3(0, 0, 0));
     combat.register(a);
     const chest = new THREE.Vector3(0, 1.4, -ANDROID_STATS.radius);
-    a.takeHit(chest, VECTOR09_STATS.weaponDamage);
+    a.takeHit(chest, PLASMA.damage);
     expect(a.alive).toBe(true);
-    a.takeHit(chest, VECTOR09_STATS.weaponDamage);
+    a.takeHit(chest, PLASMA.damage);
     expect(a.alive).toBe(false);
     // Precisa de mais de 70 tiros para derrubar o torso de um Mech.
-    expect(VECTOR09_STATS.maxModuleHealth.torso / ANDROID_STATS.weaponDamage).toBeGreaterThan(70);
+    expect(VECTOR09_STATS.maxModuleHealth.torso / ANDROID_STATS.loadout.primary.damage).toBeGreaterThan(70);
   });
 
   it('o BotSystem põe Mechs e andróides na arena, cada um com o seu jeito de lutar', async () => {
