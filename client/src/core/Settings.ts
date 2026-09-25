@@ -42,7 +42,7 @@ export interface GameSettings {
   enemyAndroids: number;
   /** Técnico que conserta os Mechs rebeldes (vale ao reiniciar a partida). */
   technician: boolean;
-  /** Personalidade de cada Mech rebelde, na ordem (KESTREL, MAKO, VIPER). Vale na hora. */
+  /** Personalidade de cada Mech rebelde, na ordem (CLAUDE, GEMINI, CHATGPT). Vale na hora. */
   enemyPersonas: Persona[];
   /** Quantos atacam ao mesmo tempo (Mech conta 1, andróide ½); os outros esperam a vez. Vale na hora. */
   maxAttackers: number;

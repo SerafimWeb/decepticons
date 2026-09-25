@@ -29,6 +29,7 @@ import { KillFeed } from '../ui/KillFeed';
 import { MouseCalibration } from '../ui/MouseCalibration';
 import { Onboarding } from '../ui/Onboarding';
 import { OffscreenIndicators } from '../ui/OffscreenIndicators';
+import { Nameplates } from '../ui/Nameplates';
 import { RoundHud } from '../ui/RoundHud';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { EnemySettings } from '../ui/EnemySettings';
@@ -100,6 +101,8 @@ export class Game {
   private readonly onboarding = new Onboarding();
   /** Setas na borda da tela para inimigos fora da visão. */
   private readonly offscreen = new OffscreenIndicators();
+  /** Nome sobre a cabeça de cada IA rebelde. */
+  private readonly nameplates: Nameplates;
   /** Nó de gain do loop de chiado do Blind Mode; null = som não está tocando. */
   private blindGain: GainNode | null = null;
   /** Flag para detectar a transição false→true do dash a cada frame. */
@@ -161,6 +164,7 @@ export class Game {
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     this.mech = new Vector09({ loadout: this.hangar.equipped });
     this.match.addPlayer(this.mech, 'VOCÊ', 0, () => this.equipPending());
+    this.nameplates = new Nameplates(this.scene, this.bots);
     // Sons dos andróides (Gemini): tiro e pouso, mais baixos quanto mais longe do jogador.
     for (const b of this.bots.mechs) {
       if (!(b instanceof Android)) continue;
@@ -515,6 +519,7 @@ export class Game {
     // --- Render ---
     this.mech.render(dt, alpha);
     this.bots.render(dt, alpha);
+    this.nameplates.update(this.mech);
     this.rig.update(dt);
     this.updateAim(dt);
     this.projectiles.render(alpha);

@@ -2,6 +2,15 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Nomes de IAs nos bots e o guia visual dos robôs
+**Pedido do dono:** "mostrar os nomes nos bots: claude, gemini, chatgpt, qwen, anthropic, deepseek, pra ficar mais engraçado"; e "criar o style sheet dos robôs numa IA externa; preciso de um texto para explicar lá o que estamos fazendo".
+**Decisão (Claude):**
+- **Nomes por tipo** (`BOT_NAMES`, uma lista só): Mechs CLAUDE, GEMINI, CHATGPT; andróides QWEN, DEEPSEEK e MISTRAL (o terceiro andróide, fora da lista do dono); técnico ANTHROPIC (o que conserta os outros). O placar mostra a personalidade junto (CLAUDE·BRABO).
+- **Nome sobre a cabeça:** sprite de tamanho fixo na tela, com teste de profundidade (atrás de prédio some: sem ver através de parede), só até 90 m, vermelho, amarelo no técnico. Até 7 draw calls a mais; só a posição muda por quadro.
+- **Marcas registradas:** os nomes são de empresas e produtos reais. No protótipo gratuito é brincadeira; antes do lançamento (portais, anúncios) o dono decide se viram paródias (decisão em aberto). A troca é uma lista.
+- **Guia visual** (`ESTILO_ROBOS.md`): regras de estilo (blocos que dá para montar em código, 6 partes legíveis, encaixes de arma, respiros de calor, cor por lado), paleta com os valores do `palette.ts`, os personagens e os futuros, o formato das pranchas e os textos prontos para a IA de imagem. As imagens são referência; o Codex traduz em peças do `meshKit`.
+**Quem decidiu:** dono (nomes, pranchas); Claude (qual nome em qual bot, formato do briefing).
+
 ## [2026-09-25] M1 do multiplayer: a partida sem tela
 **Pedido do dono:** "quero aplicar o multiplayer; dá para criar o servidor no meu PC?"
 **Decisão (Claude):**

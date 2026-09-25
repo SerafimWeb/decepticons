@@ -17,8 +17,18 @@ export const BOT_RESPAWN_S = 4;
 /** IA rebelde: vermelho, com visor e tiros vermelhos (o jogador é amarelo com verde neon). */
 const BOT_PAINT = PALETTE.enemyPaint;
 const MUZZLE_COLOR = GLOW.enemyMuzzle;
-/** Indicativos de chamada dos pilotos (placar). */
-const CALLSIGNS = ['KESTREL', 'MAKO', 'VIPER', 'RAVEN', 'ORCA', 'JACKAL', 'WRAITH', 'COBALT'];
+/**
+ * Nomes das IAs rebeldes (dono, 25/09: "pra ficar mais engraçado"), por tipo, na ordem em que entram na
+ * arena. **Marcas registradas de empresas reais:** servem ao protótipo; antes do lançamento (portais,
+ * anúncios), decidir se viram paródias (decisão em aberto no ESTADO_ATUAL). É a única lista a trocar.
+ */
+export const BOT_NAMES = {
+  mechs: ['CLAUDE', 'GEMINI', 'CHATGPT'],
+  androids: ['QWEN', 'DEEPSEEK', 'MISTRAL'],
+  technicians: ['ANTHROPIC'],
+} as const;
+
+const pick = (list: readonly string[], i: number, prefix: string) => list[i] ?? `${prefix}-${String(i + 1).padStart(2, '0')}`;
 /** O diretor redistribui as vagas de ataque a cada tanto (não a cada tick: 5 vezes por segundo basta). */
 const DIRECTOR_INTERVAL_S = 0.2;
 /** Turno de quem tem a vaga: passado isto, a vaga vai para quem está esperando (revezam). */
@@ -103,16 +113,17 @@ export class BotSystem {
       o.respawner.track(mech, BOT_RESPAWN_S, () => brain.reset());
       this.bots.push({ mech, brain, name, home });
     };
-    // No placar, o indicativo e a personalidade (KESTREL·BRABO): o jogador aprende quem é quem.
-    const callsign = (i: number) => {
+    // No placar e no nome sobre a cabeça, o nome e a personalidade (CLAUDE·BRABO): o jogador aprende quem é quem.
+    const mechName = (i: number) => {
       const persona = o.personas?.[i];
-      return persona && persona !== 'soldado' ? `${CALLSIGNS[i % CALLSIGNS.length]}·${PERSONA_LABELS[persona].label.toUpperCase()}` : CALLSIGNS[i % CALLSIGNS.length]!;
+      const name = pick(BOT_NAMES.mechs, i, 'M');
+      return persona && persona !== 'soldado' ? `${name}·${PERSONA_LABELS[persona].label.toUpperCase()}` : name;
     };
-    o.spawns.forEach((p, i) => fighter(new Vector09({ paint: BOT_PAINT, visor: PALETTE.signal }), p, callsign(i), i, false));
+    o.spawns.forEach((p, i) => fighter(new Vector09({ paint: BOT_PAINT, visor: PALETTE.signal }), p, mechName(i), i, false));
 
-    // Andróides: numerados como unidades de uma frota (A-01, A-02…); sementes depois das dos Mechs.
-    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android(), p, `A-${String(i + 1).padStart(2, '0')}`, o.spawns.length + i, true));
-    // Técnicos (T-01…): consertam os Mechs rebeldes; visor amarelo para o jogador achar e caçar primeiro.
+    // Andróides: sementes depois das dos Mechs.
+    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android(), p, pick(BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true));
+    // Técnicos: consertam os Mechs rebeldes; visor amarelo para o jogador achar e caçar primeiro.
     const allies = this.bots.filter((b) => b.mech instanceof Vector09).map((b) => b.mech);
     (o.technicianSpawns ?? []).forEach((p, i) => {
       const mech = new Android({ visor: PALETTE.fluo });
@@ -123,7 +134,7 @@ export class BotSystem {
       beam.visible = false;
       beam.frustumCulled = false;
       o.scene.add(beam);
-      this.bots.push({ mech, brain, name: `T-${String(i + 1).padStart(2, '0')}`, home, beam });
+      this.bots.push({ mech, brain, name: pick(BOT_NAMES.technicians, i, 'T'), home, beam });
     });
     this.mechs = this.bots.map((b) => b.mech);
     for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0 });

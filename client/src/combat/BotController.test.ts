@@ -188,7 +188,7 @@ describe('bots (inimigos)', () => {
     expect(s.bot.simPosition.z).toBe(0);
     expect(s.bot.modules).toEqual(VECTOR09_STATS.maxModuleHealth);
     expect(s.brain.state).toBe('patrol');
-    expect(s.bots.nameOf(s.bot)).toBe('KESTREL');
+    expect(s.bots.nameOf(s.bot)).toBe('CLAUDE');
   });
 
   it('é determinístico: mesmo cenário e semente, mesmo trajeto e mesmos tiros', async () => {

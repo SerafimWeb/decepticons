@@ -94,8 +94,10 @@ try {
   });
   const bootMs = Date.now() - t0;
   // O DebugPanel escreve FPS a cada 0,2 s dentro do frame(): prova que sim + render rodaram.
+  // Com a máquina ocupada (vários agentes compilando, CI), os primeiros quadros em SwiftShader levam
+  // segundos: o mesmo teto do boot, para não reprovar por tempo o que não é defeito.
   await page.waitForFunction(() => document.getElementById('debug-panel')?.textContent?.includes('FPS'), null, {
-    timeout: 10_000,
+    timeout: BOOT_TIMEOUT_MS,
   });
   // A arena desenha dezenas de objetos: um total baixo significa contagem errada
   // (ex.: renderer.info zerado a cada passada do pós-processamento).
