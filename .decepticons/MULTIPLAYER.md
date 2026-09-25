@@ -17,8 +17,8 @@
 
 | # | O quê | Por quê | Estado |
 |---|---|---|---|
-| P1 | **Separar simulação de render**: `MechBase` vira `MechSim` (controller, regras, calor, dano, sem Three.js no que o servidor usa) + `MechView` (modelo, animação, efeitos). O mesmo para projéteis e foguetes. Nasce o `shared/` | Uma simulação só, no cliente e no servidor (G14); o servidor não pode carregar WebGL | começou: chassis (`entities/chassis.ts`), armas, calor, cadência, bancada e Hangar já são módulos puros |
-| P2 | **Draw calls por Mech de ~34 para ≤ 10** | 8 Mechs + andróides na tela numa GPU integrada (G12) | Codex (território de render) |
+| P1 | **Separar simulação de render** | Uma simulação só, no cliente e no servidor (G14); o servidor não pode depender de WebGL nem de DOM | ✅ M1 (25/09): `sim/Match.ts` roda a partida inteira sem tela, no Node. Pragmático: a simulação ainda usa o Three.js para matemática e grafo de cena (roda no Node sem WebGL, como os testes); tirar o Three.js do servidor fica para quando o custo de memória pedir |
+| P2 | **Draw calls por Mech de ~34 para ≤ 10** | 8 Mechs + andróides na tela numa GPU integrada (G12) | ✅ Codex (PR #43): 9 por Vector-09 |
 | P3 | **FPS medido numa GPU integrada** | Saber a folga antes de somar rede | dono, num notebook comum, com o painel de desempenho (`'`) |
 | P4 | **Contratos de rede definidos e mergeados** (seção 5) | Regra 5 do AGENTS: contrato antes de paralelizar | a fazer (etapa M2) |
 | P5 | Montagem validável no servidor | Ninguém entra com arma adulterada | ✅ `validateLoadout` (Hangar), texto curto de ~30 bytes |
@@ -81,7 +81,7 @@ Estado de um Mech por snapshot, quantizado (G11):
 | Etapa | O quê | Quem |
 |---|---|---|
 | M0 | Este plano | Claude ✅ |
-| M1 | Separação simulação × render (P1), `shared/` criado; os testes de hoje passam sem mudar de sentido | Claude |
+| M1 | Partida sem tela (`sim/Match.ts`): o cliente monta a partida e desenha por cima; o servidor vai rodar a mesma classe ✅ | Claude |
 | M2 | Contratos e codec binário, com testes de tamanho | Claude |
 | M3 | `server/`: `ArenaRoom` com a simulação a 60 Hz, bots, entrada por `?sala=`; roda local com `npm run server` | Claude |
 | M4 | Prediction + reconciliação do Mech local; interpolação dos remotos; teste com latência e perda simuladas | Claude |
@@ -95,6 +95,17 @@ contra os contratos da M2; Codex reduz as draw calls (P2) e cuida do visual dos 
 efeito de entrada e saída).
 
 ## 7. Riscos
+
+**Medido na M1 (25/09, `sim/Match.test.ts`):** a sala cheia do padrão (1 jogador + 3 Mechs + 2 andróides + técnico)
+roda sem tela a **0,74 ms por tick em média** (p95 2,4 ms, picos raros de coleta de lixo) num PC comum: dentro da meta
+de 2 ms do G14. Um núcleo aguenta ~20 salas.
+
+**Achado da M1: destroços mexem na simulação.** Estão no mesmo mundo físico: mesmo ignorados pelos raios e pelo
+controlador dos Mechs, eles mudam a árvore interna do Rapier e a ordem das colisões que o Mech resolve. A partida com
+destroços diverge ~1 s depois do primeiro estilhaço, e duas partidas com destroços divergem entre si (`Math.random`).
+O servidor roda **sem** destroços (determinístico, testado). No cliente, a diferença é pequena e a reconciliação da M4
+corrige. Se a correção aparecer na tela, os destroços vão para um mundo físico só deles.
+
 
 - **CPU do servidor:** 8 character controllers + raycasts a 60 Hz por sala. Meta de ≤ 2 ms por tick; medir na M3 e na
   M7. Se estourar: menos raycasts por tick nos bots, ou salas menores.

@@ -109,7 +109,7 @@
 
 ## 🟠 FASE 4 — Multiplayer autoritativo
 - [x] Plano técnico (`MULTIPLAYER.md`): pré-requisitos, arquitetura, orçamento de banda, contratos, etapas M0–M8 #rede
-- [ ] M1: separar `MechBase` em simulação (sem render) e visual; `shared/` com simulação, `MechInput` e validador (G7) #rede
+- [x] M1: partida sem tela (`sim/Match.ts`): a mesma simulação no cliente e no servidor; roda no Node a 0,74 ms por tick com a sala cheia #rede
 - [ ] M2: contratos de rede (`NetInput`, `MechState`, mensagens) e codec binário com teste de tamanho #rede
 - [ ] M3: `server/` com Colyseus: `ArenaRoom` para 8, simulação a 60 Hz, estado a 20 Hz com delta (G11); bots completam salas #rede
 - [ ] M4: cliente com prediction + reconciliação do Mech local; Mechs remotos interpolam #rede

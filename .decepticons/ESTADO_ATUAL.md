@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **M1 do multiplayer (Claude):** `sim/Match.ts`, a partida inteira sem tela; o jogo monta a partida por ela e o servidor vai rodar a mesma. 0,74 ms por tick com a sala cheia. Achado: destroços no mesmo mundo físico mudam a simulação (o servidor roda sem eles).
 - **Correção: Mechs brancos (Claude, achado jogando):** depois do PR #43 (Codex), o casco saía todo branco e brilhando até o primeiro dano: a cor do flash de dano nascia branca (`new THREE.Color()`). Agora nasce preta; Vector-09 amarelo e rebeldes vermelhos de volta.
 - **Pendências do Gemini concluídas (Claude; o Gemini ficou sem crédito no dia):** setas de inimigos fora da tela (PR #40, com os ajustes da revisão), sons dos andróides com volume pela distância, dicas novas da primeira partida (calor, foguetes, andróides). O PR #40 foi fechado apontando para o do Claude.
 - **Bots com personalidade e sem "me juntam" (Claude; dono: "muito difícil, eles são muitos e me juntam"):** brabo, manso, fujão e soldado; diretor de ataque com no máximo 2 atacando juntos (os outros esperam afastados e revezam); padrão com 2 andróides em vez de 3. Tudo configurável na seção "Inimigos" das configurações (Claude fez a seção num PR pequeno, com o aval da regra 4; o Gemini não precisa mais do item 3 da fila dele).
@@ -114,7 +115,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
-| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Contrato do Hangar e plano do multiplayer no ar. Próximo: M1 (separar simulação e render, `shared/`) |
+| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | M1 do multiplayer no ar (partida sem tela). Próximo: M2 (contratos e codec) e M3 (servidor no PC do dono) |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Sem crédito em 25/09; as pendências dele foram concluídas pelo Claude. Ao voltar, um PR cada: abertura da rodada (3·2·1), aviso de ABATE e sequência, tela de carregamento, temperatura no HUD (marca de 70%, "RESFRIANDO" com `mech.coolingBoost`), sons de calor, fim de rodada com estatísticas, música. **A tela do Hangar passou para o Codex** |
 | **Codex** | visual e render do mundo 3D (`client/src/fx/`, o visual de `environment/` e dos modelos em `entities/meshKit.ts` e nos rigs, sem stats nem regras), pós-processamento, desempenho de render; revisão cruzada; **em 25/09, a tela do Hangar** (`ui/HangarMenu.ts`, com prévia 3D) | Feito: draw calls 34 → 9 (#43), explosões e impactos (#44). Fila, um PR cada: 1) tela do Hangar contra `game.hangar` (`HANGAR.md`, seção 2); 2) calor visível no Mech (blindagem acende ao esquentar, vapor ao superaquecer, com `mech.heatState` e `mech.coolingBoost`); 3) visual de cada nível de arma (MK II e MK III diferentes, trocando no `equip`); 4) revisão cruzada dos PRs #45 a #47 |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
@@ -130,4 +131,4 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Claude: etapa M1 do multiplayer (separar simulação e render, criar `shared/`). Dono: as 4 decisões do fim do `MULTIPLAYER.md` e medir o FPS numa GPU integrada. Gemini: tela do Hangar contra `game.hangar` (API em `HANGAR.md`). Codex: confirmar CI/merge do PR de FX e ficar disponível para revisão cruzada. Gemini: PR dos sons dos andróides, depois a fila de polimento. Dono: ouvir a vinheta e jogar no celular.
+Claude: M2 (contratos de rede e codec) e M3 (servidor Colyseus no PC do dono, sala por link `?sala=`). Dono: as 4 decisões do fim do `MULTIPLAYER.md` e medir o FPS numa GPU integrada. Gemini: tela do Hangar contra `game.hangar` (API em `HANGAR.md`). Codex: confirmar CI/merge do PR de FX e ficar disponível para revisão cruzada. Gemini: PR dos sons dos andróides, depois a fila de polimento. Dono: ouvir a vinheta e jogar no celular.

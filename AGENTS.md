@@ -68,6 +68,7 @@ client/src/
   core/        Game.ts (monta os módulos + loop), InputManager.ts, Quality.ts (qualidade adaptativa, G12), rng.ts (aleatório com semente), Settings.ts (configurações do jogador: contrato da UI)
   physics/     PhysicsWorld.ts (Rapier, FIXED_DT)
   entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts
+  sim/         Match.ts (a partida inteira sem tela: o que o servidor roda; o Game desenha por cima)
   hangar/      loadout.ts (contrato da montagem: LoadoutSpec, validateLoadout), Hangar.ts (montagem salva, link ?build=, API da tela)
   player/      PlayerController.ts (input/câmera -> MechInput, tiro)
   camera/      CameraRig.ts + modos (3ª, 1ª, tática)
