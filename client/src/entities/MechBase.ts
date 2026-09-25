@@ -36,8 +36,10 @@ export interface MechStats extends ChassisHeat {
   stepHeight: number; // degraus que sobe sem pular
   demolishOnDash: boolean; // Colossus-01: dash atravessa paredes destrutíveis
   maxScrapSlots: number; // Vector-09: 0 | Colossus-01: 1 | Ferret-X: 4
-  /** Armas de fábrica do chassi (o Hangar vai trocar). Dano, cadência e calor vêm de cada arma. */
+  /** Armas de fábrica do chassi (o Hangar troca). Dano, cadência e calor vêm de cada arma. */
   loadout: Loadout;
+  /** Carga máxima das armas nos braços (t): o orçamento do Hangar. */
+  weaponCapacity: number;
   maxModuleHealth: MechModules;
 }
 
@@ -124,8 +126,8 @@ export abstract class MechBase {
   private recoil = 0;
   /** Calor do Mech: um dissipador para todas as armas (regra no tick fixo). */
   private readonly heatSink: HeatSink;
-  /** Armas nos braços. Hoje, as de fábrica do chassi; o Hangar vai montar outras. */
-  readonly loadout: Loadout;
+  /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
+  private armed: Loadout;
   private leftRecoil = 0;
   private readonly rightArmBaseZ: number;
   private readonly leftArmBaseZ: number;
@@ -139,13 +141,14 @@ export abstract class MechBase {
   protected constructor(
     readonly stats: MechStats,
     protected readonly rig: MechRig,
+    loadout: Loadout = stats.loadout,
   ) {
     this.root.add(rig.model);
     this.modules = { ...stats.maxModuleHealth };
     this.jumpsLeft = stats.maxJumps;
     this.rightArmBaseZ = rig.rightArm.position.z;
     this.heatSink = new HeatSink(stats);
-    this.loadout = stats.loadout;
+    this.armed = loadout;
     this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
     this.root.updateMatrixWorld(true);
@@ -237,6 +240,19 @@ export abstract class MechBase {
 
   get overheated(): boolean {
     return this.heatSink.overheated;
+  }
+
+  get loadout(): Loadout {
+    return this.armed;
+  }
+
+  /**
+   * Troca as armas (Hangar). O jogo chama no renascimento: o Mech volta com a montagem nova e frio.
+   * A montagem já vem validada (`hangar/loadout.ts`); aqui só se aplica.
+   */
+  equip(loadout: Loadout): void {
+    this.armed = loadout;
+    this.heatSink.reset();
   }
 
   /** normal, QUENTE (≥ 70%) ou SUPERAQUECIDO (HUD, som, IA). */

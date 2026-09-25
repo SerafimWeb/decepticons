@@ -38,6 +38,7 @@ import { TouchControls } from '../ui/TouchControls';
 import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
 import { BrandSplash } from '../brand/BrandSplash';
+import { Hangar } from '../hangar/Hangar';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
@@ -106,6 +107,8 @@ export class Game {
   private wasDashing = false;
   /** Configurações do jogador (salvas no navegador). A tela de configurações chama `settings.update()`. */
   readonly settings = new Settings(browserStorage());
+  /** Montagem do Mech (Hangar): salva no aparelho ou vinda de um link `?build=`. A tela do Hangar usa isto. */
+  readonly hangar = new Hangar();
   private appliedQuality: QualityPreset | null = null;
 
   private playing = false;
@@ -159,7 +162,7 @@ export class Game {
     this.projectiles = new ProjectileSystem(this.scene, physics, this.particles);
     this.rockets = new RocketSystem(this.scene, physics, this.particles);
 
-    this.mech = new Vector09();
+    this.mech = new Vector09({ loadout: this.hangar.equipped });
     const [px, pz] = SPAWN_POINTS[0]!;
     this.mech.spawn(physics, new THREE.Vector3(px, 0, pz));
     this.scene.add(this.mech.root);
@@ -168,7 +171,7 @@ export class Game {
     this.combat = new CombatSystem(this.destructibles, this.debris, this.particles);
     this.combat.register(this.mech);
     this.respawner = new Respawner(SPAWN_POINTS);
-    this.respawner.track(this.mech, PLAYER_RESPAWN_S);
+    this.respawner.track(this.mech, PLAYER_RESPAWN_S, () => this.equipPending());
     this.bots = new BotSystem({
       scene: this.scene,
       physics,
@@ -231,6 +234,14 @@ export class Game {
     this.settings.onChange((s) => this.applySettings(s));
   }
 
+  /** Montagem nova do Hangar entra no renascimento: armas trocadas, carregador cheio, Mech frio. */
+  private equipPending(): void {
+    const loadout = this.hangar.takePending();
+    if (!loadout) return;
+    this.mech.equip(loadout);
+    this.player.rearm();
+  }
+
   /**
    * Rodada nova: todos inteiros nos pontos de nascimento, arena restaurada. A ordem importa:
    * Mechs saem de perto das estruturas e os destroços somem antes de as barricadas voltarem.
@@ -241,6 +252,7 @@ export class Game {
     this.bots.respawnAll();
     this.projectiles.clear();
     this.rockets.clear();
+    this.equipPending();
     this.player.launcher.refill();
     this.debris.clear();
     this.destructibles.restoreAll();

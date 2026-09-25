@@ -1,49 +1,11 @@
 import * as THREE from 'three';
-import { weapon } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
-import { MechBase, type LegRig, type MechRig, type MechStats } from './MechBase';
+import { ANDROID_STATS } from './chassis';
+import { MechBase, type LegRig, type MechRig } from './MechBase';
 import { box, cyl, group } from './meshKit';
 
-/**
- * Andróide rebelde, escala 1: um robô autônomo do tamanho dos humanoides de hoje (~2 m), uma IA
- * rebelde a pé. Mais chato do que perigoso (dono, 25/09: "rápido, mas fraco"): cai com 2 tiros de
- * plasma e o tiro dele quase não tira vida, mas arranca na hora, pula duas vezes e desvia com dash
- * a cada 1,4 s. Alvo pequeno: acertar exige mira de verdade (no toque, a mira assistida ajuda).
- * O mesmo corpo serve ao técnico (visor amarelo), que conserta os Mechs em vez de atirar.
- */
-export const ANDROID_STATS: MechStats = {
-  name: 'ANDRÓIDE A-1',
-  moveSpeed: 10.5,
-  groundAccel: 120,
-  airAccel: 40,
-  jumpVelocity: 10,
-  maxJumps: 2,
-  dashSpeed: 30,
-  dashDuration: 0.14,
-  dashCooldown: 1.4,
-  radius: 0.45,
-  height: 2,
-  stepHeight: 0.45,
-  demolishOnDash: false,
-  maxScrapSlots: 0,
-  loadout: { primary: weapon('blaster'), secondary: null },
-  heatCooling: 0.7,
-  heatCoolDelay: 0.2,
-  heatRecover: 0.3,
-  heatIdleCooling: 2,
-  heatRun: 0.08,
-  heatJump: 0.02,
-  heatDash: 0.05,
-  heatPerDamage: 0.002,
-  maxModuleHealth: {
-    torso: 32,
-    head: 13,
-    leftArm: 16,
-    rightArm: 16,
-    leftLeg: 19,
-    rightLeg: 19,
-  },
-};
+/** Os números do andróide ficam em `chassis.ts` (sem 3D: o servidor e o site leem de lá). */
+export { ANDROID_STATS };
 
 const HIP = 1.0;
 

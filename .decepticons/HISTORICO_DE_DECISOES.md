@@ -2,6 +2,19 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Contrato do Hangar: montagem, carga e link de build
+**Pedido do dono:** seguir com o Hangar ("pode prosseguir").
+**Decisão (Claude):**
+- **Contrato antes da tela** (regra 5 do AGENTS): `LoadoutSpec` (só ids e níveis) e `validateLoadout` (regra pura, sem 3D) em `hangar/loadout.ts`. Nada vindo de armazenamento, link ou rede é confiado; os números saem sempre do catálogo.
+- **Carga de armas de 11 t no Vector-09:** cabem 6 das 9 combinações; os dois braços no máximo, nunca. A carga que sobra vira blindagem numa próxima etapa (versão 2 do formato).
+- **Os números dos chassis saíram dos arquivos de modelo** para `entities/chassis.ts`, sem Three.js: é o primeiro passo da separação simulação × render que o multiplayer pede, e o site ficou mais leve (não carrega mais o Three.js no build).
+- **O Mech troca de armas no renascimento** (`MechBase.equip`, `PlayerController.rearm`), inteiro e frio; o jogo lê a montagem salva ao abrir.
+- **Link de build** (`/jogar/?build=v1.vector09.plasma-2.rockets-0`): compartilhar montagem é viral e deixa o dono testar os níveis antes da tela existir. A landing ganhou a grade das 9 combinações, cada uma com link.
+- **Progressão ainda não existe:** todos os níveis estão liberados para todo mundo, igual (sem pay-to-win). O contrato já aceita o filtro de nível bloqueado.
+- **Achado:** com os dois braços, todas as montagens derrubam em 3,3–3,5 s (o calor do Mech limita). O nível pesa nas rajadas de uma arma só.
+**Custo de CPU:** zero por tick; a validação roda ao abrir o jogo e ao aplicar.
+**Quem decidiu:** Claude (formato, carga, onde aplicar); o dono decide a progressão e o segundo chassi.
+
 ## [2026-09-25] Gestão do projeto nos bastidores
 **Pedido do dono:** "caprichar mais nos bastidores: introduzir as ferramentas de gerenciamento de projetos, gestão de entregas, planejamento, e mais elementos gráficos no roadmap (criativo e objetivo, gráficos que impactem e digam muito sobre o projeto)"; e antes: "tornar cada vez mais profissional, técnico e expert a forma como expomos nosso trabalho".
 **Decisão (Claude):**
