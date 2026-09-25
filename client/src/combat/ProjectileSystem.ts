@@ -1,5 +1,6 @@
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import { GLOW } from '../core/palette';
 import type { PhysicsHit, PhysicsWorld } from '../physics/PhysicsWorld';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 
@@ -16,8 +17,8 @@ interface Projectile {
 export const PROJECTILE_SPEED = 140;
 const LIFETIME = 2;
 const DAMAGE = 25;
-const SPARK_COLOR = new THREE.Color(0.4, 2.2, 3.0);
-const CORE_COLOR = new THREE.Color(2.5, 2.5, 3.0);
+const SPARK_COLOR = GLOW.spark;
+const CORE_COLOR = GLOW.core;
 
 const _dir = new THREE.Vector3();
 const _hitAt = new THREE.Vector3();
@@ -43,8 +44,8 @@ export class ProjectileSystem {
     size = 64,
   ) {
     const geo = new THREE.SphereGeometry(0.2, 8, 6);
-    const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0.6, 3.0, 4.0) });
-    this.hostileMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(4.0, 0.6, 2.2) });
+    const mat = new THREE.MeshBasicMaterial({ color: GLOW.friendlyPlasma });
+    this.hostileMat = new THREE.MeshBasicMaterial({ color: GLOW.hostilePlasma });
     this.friendlyMat = mat;
     for (let i = 0; i < size; i++) {
       const mesh = new THREE.Mesh(geo, mat);
@@ -62,7 +63,7 @@ export class ProjectileSystem {
     }
   }
 
-  /** `hostile`: plasma inimigo, em magenta, para o jogador distinguir os tiros que vêm contra ele. */
+  /** `hostile`: plasma inimigo, em vermelho, para o jogador distinguir os tiros que vêm contra ele. */
   fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, hostile = false): void {
     const p = this.pool.find((q) => q.life <= 0);
     if (!p) return;

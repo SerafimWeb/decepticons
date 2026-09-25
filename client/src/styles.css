@@ -1,8 +1,11 @@
+/* Âmbar industrial (core/palette.ts): a mesma identidade do site; sem o azul e o roxo do neon genérico. */
 :root {
-  --cyan: #00e5ff;
-  --magenta: #ff2bd6;
-  --orange: #ff6a00;
-  --bg: #06030d;
+  --accent: #ffb000; /* âmbar: HUD, mira, destaques */
+  --hot: #ff7a1a; /* laranja de sódio: títulos, fogo, foguetes */
+  --alert: #ff3b1f; /* vermelho: inimigo, dano, alvo na mira */
+  --ink: #e8dcc4; /* branco quente: texto claro */
+  --muted: #b8893a;
+  --bg: #0a0906;
 }
 
 * { box-sizing: border-box; }
@@ -12,7 +15,7 @@ html, body {
   height: 100%;
   overflow: hidden;
   background: var(--bg);
-  color: var(--cyan);
+  color: var(--accent);
   font-family: 'Consolas', 'Courier New', monospace;
   user-select: none;
 }
@@ -32,10 +35,10 @@ html, body {
    terminal no design system Serafim (obsidiana, giz, acento azul, cores semânticas).
    Sem webfont (IDENTITY) e sem backdrop-filter: desfocar o canvas custa GPU e distorceria o FPS medido. */
 #debug-panel {
-  --ds-panel: rgba(14, 16, 32, 0.92);
+  --ds-panel: rgba(20, 17, 12, 0.92);
   --ds-chalk: #e4e1da;
   --ds-c2: #9e9a93;
-  --ds-blue: #60a5fa;
+  --ds-accent: #ffb000;
   --ds-ok: #34d399;
   --ds-warn: #fbbf24;
   --ds-bad: #ef4444;
@@ -66,7 +69,7 @@ html, body {
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--ds-blue);
+  color: var(--ds-accent);
 }
 #debug-panel.detailed .dp-fps { color: var(--ds-chalk); }
 #debug-panel.detailed[data-fps='ok'] .dp-fps { color: var(--ds-ok); }
@@ -80,9 +83,9 @@ html, body {
   width: 22px;
   height: 22px;
   transform: translate(-50%, -50%);
-  border: 2px solid var(--cyan);
+  border: 2px solid var(--accent);
   border-radius: 50%;
-  box-shadow: 0 0 8px var(--cyan);
+  box-shadow: 0 0 8px var(--accent);
 }
 /* Carregador de foguetes (ui/HUD.setRockets): 4 pips; o que está recarregando enche pela --fill. */
 #rockets {
@@ -95,22 +98,22 @@ html, body {
   gap: 10px;
   font-size: 12px;
   letter-spacing: 2px;
-  color: var(--orange);
+  color: var(--hot);
 }
 #rockets .pips { display: flex; gap: 4px; }
 #rockets .pips i {
   --fill: 1;
   width: 16px;
   height: 8px;
-  border: 1px solid var(--orange);
-  background: linear-gradient(90deg, var(--orange) calc(var(--fill) * 100%), transparent 0);
+  border: 1px solid var(--hot);
+  background: linear-gradient(90deg, var(--hot) calc(var(--fill) * 100%), transparent 0);
 }
 #rockets.off { opacity: 0.3; }
 
 /* Mira acesa: um inimigo vivo está sob ela (ui/HUD.setOnTarget). */
 #crosshair.on-target {
-  border-color: var(--orange);
-  box-shadow: 0 0 12px var(--orange);
+  border-color: var(--alert);
+  box-shadow: 0 0 12px var(--alert);
   transform: translate(-50%, -50%) scale(1.3);
 }
 #crosshair::after {
@@ -121,7 +124,7 @@ html, body {
   width: 4px;
   height: 4px;
   transform: translate(-50%, -50%);
-  background: var(--magenta);
+  background: var(--hot);
   border-radius: 50%;
 }
 
@@ -160,7 +163,7 @@ html, body {
   background: linear-gradient(180deg, var(--hit) 0 30%, transparent 30% 70%, var(--hit) 70% 100%);
 }
 #hitmarker.show { opacity: 1; }
-#hitmarker.crit { --hit: var(--magenta); width: 42px; height: 42px; }
+#hitmarker.crit { --hit: var(--alert); width: 42px; height: 42px; }
 
 #hit-label {
   position: absolute;
@@ -170,8 +173,8 @@ html, body {
   white-space: nowrap;
   font-size: 12px;
   letter-spacing: 2px;
-  color: var(--magenta);
-  text-shadow: 0 0 8px var(--magenta);
+  color: var(--hot);
+  text-shadow: 0 0 8px var(--hot);
   opacity: 0;
   transition: opacity 0.15s;
 }
@@ -183,7 +186,7 @@ html, body {
   left: 14px;
   font-size: 13px;
   letter-spacing: 1px;
-  text-shadow: 0 0 6px var(--cyan);
+  text-shadow: 0 0 6px var(--accent);
   white-space: pre;
 }
 
@@ -194,8 +197,8 @@ html, body {
 
 #hud.blind #crosshair {
   animation: jitter 0.08s infinite alternate ease-in-out;
-  border-color: var(--magenta);
-  box-shadow: 0 0 10px var(--magenta);
+  border-color: var(--hot);
+  box-shadow: 0 0 10px var(--hot);
 }
 
 @keyframes jitter {
@@ -210,7 +213,7 @@ html, body {
   inset: 0;
   pointer-events: none;
   opacity: 0;
-  background-image: repeating-radial-gradient(circle at 50% 50%, rgba(255, 43, 214, 0.15) 0%, rgba(0, 229, 255, 0.15) 2px, transparent 4px, transparent 100px);
+  background-image: repeating-radial-gradient(circle at 50% 50%, rgba(255, 122, 26, 0.15) 0%, rgba(255, 176, 0, 0.15) 2px, transparent 4px, transparent 100px);
   background-size: 180px 180px;
   mix-blend-mode: screen;
 }
@@ -250,10 +253,10 @@ html, body {
 #death .title {
   font-size: 44px;
   letter-spacing: 10px;
-  color: var(--magenta);
-  text-shadow: 0 0 18px var(--magenta);
+  color: var(--hot);
+  text-shadow: 0 0 18px var(--hot);
 }
-#death-timer { margin-top: 8px; font-size: 14px; letter-spacing: 3px; color: var(--cyan); }
+#death-timer { margin-top: 8px; font-size: 14px; letter-spacing: 3px; color: var(--accent); }
 
 /* Rodada: relógio no topo e placar (Tab segurado ou intervalo). Criados por ui/RoundHud.ts. */
 .round-clock {
@@ -263,10 +266,10 @@ html, body {
   transform: translateX(-50%);
   font-size: 14px;
   letter-spacing: 3px;
-  color: var(--cyan);
-  text-shadow: 0 0 8px var(--cyan);
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent);
 }
-.round-clock.hurry { color: var(--magenta); text-shadow: 0 0 10px var(--magenta); animation: blink 1s steps(2) infinite; }
+.round-clock.hurry { color: var(--hot); text-shadow: 0 0 10px var(--hot); animation: blink 1s steps(2) infinite; }
 .round-board {
   position: absolute;
   left: 50%;
@@ -274,19 +277,19 @@ html, body {
   transform: translate(-50%, -50%);
   min-width: min(520px, 92vw);
   padding: 18px 22px 16px;
-  background: rgba(6, 3, 13, 0.88);
-  border: 1px solid var(--cyan);
-  box-shadow: 0 0 24px rgba(0, 229, 255, 0.25);
+  background: rgba(10, 9, 6, 0.88);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 24px rgba(255, 176, 0, 0.25);
   letter-spacing: 2px;
 }
 .round-board[hidden] { display: none; }
-.rb-title { font-size: 20px; color: var(--magenta); text-shadow: 0 0 10px var(--magenta); }
-.rb-sub { margin: 4px 0 14px; font-size: 12px; color: #9a8cff; }
+.rb-title { font-size: 20px; color: var(--hot); text-shadow: 0 0 10px var(--hot); }
+.rb-sub { margin: 4px 0 14px; font-size: 12px; color: var(--muted); }
 .rb-rows { list-style: none; margin: 0; padding: 0; }
 .rb-row { display: grid; grid-template-columns: 34px 1fr 80px 80px; gap: 8px; padding: 5px 0; font-size: 14px; }
 .rb-row span:nth-child(n + 3) { text-align: right; }
-.rb-head { font-size: 11px; color: #9a8cff; border-bottom: 1px solid rgba(0, 229, 255, 0.3); }
-.rb-row.me { color: var(--orange); text-shadow: 0 0 6px var(--orange); }
+.rb-head { font-size: 11px; color: var(--muted); border-bottom: 1px solid rgba(255, 176, 0, 0.3); }
+.rb-row.me { color: var(--hot); text-shadow: 0 0 6px var(--hot); }
 
 /* Estande de calibração do mouse (ui/MouseCalibration.ts): camada própria sobre a pausa e sobre
    a janela de configurações (z-index 2000). */
@@ -298,7 +301,7 @@ html, body {
   z-index: 2100;
   display: grid;
   place-items: center;
-  background: rgba(6, 3, 13, 0.9);
+  background: rgba(10, 9, 6, 0.9);
   padding: 16px;
 }
 .calib[hidden] { display: none; }
@@ -307,49 +310,49 @@ html, body {
   display: grid;
   gap: 12px;
   padding: 20px 22px;
-  border: 1px solid var(--cyan);
-  box-shadow: 0 0 30px rgba(0, 229, 255, 0.2);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 30px rgba(255, 176, 0, 0.2);
   letter-spacing: 1px;
 }
-.calib-title { font-size: 22px; letter-spacing: 5px; color: var(--magenta); text-shadow: 0 0 10px var(--magenta); }
-.calib-lede, .calib-hint { margin: 0; font-size: 13px; color: #9a8cff; }
-.calib-hint { color: var(--cyan); min-height: 1.4em; }
+.calib-title { font-size: 22px; letter-spacing: 5px; color: var(--hot); text-shadow: 0 0 10px var(--hot); }
+.calib-lede, .calib-hint { margin: 0; font-size: 13px; color: var(--muted); }
+.calib-hint { color: var(--accent); min-height: 1.4em; }
 .calib-tape {
   position: relative;
   height: 58px;
   overflow: hidden;
-  border: 1px solid rgba(0, 229, 255, 0.5);
+  border: 1px solid rgba(255, 176, 0, 0.5);
   cursor: crosshair;
   outline: none;
 }
-.calib-tape:focus-visible { box-shadow: 0 0 0 2px var(--magenta); }
+.calib-tape:focus-visible { box-shadow: 0 0 0 2px var(--hot); }
 .calib-strip {
   position: absolute;
   top: 0;
   left: 50%;
   width: 4400px;
   height: 100%;
-  background: repeating-linear-gradient(90deg, rgba(0, 229, 255, 0.7) 0 1px, transparent 1px 40px) bottom / 100% 14px no-repeat;
+  background: repeating-linear-gradient(90deg, rgba(255, 176, 0, 0.7) 0 1px, transparent 1px 40px) bottom / 100% 14px no-repeat;
 }
-.calib-tick { position: absolute; top: 8px; transform: translateX(-50%); font-size: 13px; color: var(--cyan); }
-.calib-center { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--orange); box-shadow: 0 0 8px var(--orange); }
-.calib-heading { font-size: 28px; letter-spacing: 3px; color: var(--orange); text-shadow: 0 0 8px var(--orange); }
+.calib-tick { position: absolute; top: 8px; transform: translateX(-50%); font-size: 13px; color: var(--accent); }
+.calib-center { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--hot); box-shadow: 0 0 8px var(--hot); }
+.calib-heading { font-size: 28px; letter-spacing: 3px; color: var(--hot); text-shadow: 0 0 8px var(--hot); }
 .calib-row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
-.calib-label { font-size: 12px; letter-spacing: 2px; color: #9a8cff; }
-.calib-value { font-size: 20px; min-width: 56px; color: var(--cyan); }
+.calib-label { font-size: 12px; letter-spacing: 2px; color: var(--muted); }
+.calib-value { font-size: 20px; min-width: 56px; color: var(--accent); }
 .calib-btn {
   background: none;
-  border: 1px solid rgba(0, 229, 255, 0.6);
-  color: var(--cyan);
+  border: 1px solid rgba(255, 176, 0, 0.6);
+  color: var(--accent);
   font: inherit;
   padding: 5px 10px;
   cursor: pointer;
 }
-.calib-btn:hover { background: rgba(0, 229, 255, 0.12); }
+.calib-btn:hover { background: rgba(255, 176, 0, 0.12); }
 .calib-btn.wide { padding: 8px 14px; letter-spacing: 2px; }
-.calib-btn.done { justify-self: end; border-color: var(--orange); color: var(--orange); letter-spacing: 3px; }
-.calib-input { width: 96px; background: #0b0717; border: 1px solid rgba(0, 229, 255, 0.5); color: var(--cyan); font: inherit; padding: 4px 6px; }
-.calib-check { font-size: 13px; color: #cfc8ff; cursor: pointer; }
+.calib-btn.done { justify-self: end; border-color: var(--hot); color: var(--hot); letter-spacing: 3px; }
+.calib-input { width: 96px; background: #14110b; border: 1px solid rgba(255, 176, 0, 0.5); color: var(--accent); font: inherit; padding: 4px 6px; }
+.calib-check { font-size: 13px; color: var(--ink); cursor: pointer; }
 
 #mode {
   position: absolute;
@@ -357,8 +360,8 @@ html, body {
   right: 14px;
   font-size: 13px;
   letter-spacing: 2px;
-  color: var(--magenta);
-  text-shadow: 0 0 6px var(--magenta);
+  color: var(--hot);
+  text-shadow: 0 0 6px var(--hot);
 }
 
 #dash {
@@ -384,9 +387,9 @@ html, body {
   background: #555;
   transform-origin: left;
 }
-#dash.ready { color: var(--orange); text-shadow: 0 0 8px var(--orange); }
-#dash.ready .bar { border-color: var(--orange); }
-#dash.ready .fill { background: var(--orange); box-shadow: 0 0 10px var(--orange); }
+#dash.ready { color: var(--hot); text-shadow: 0 0 8px var(--hot); }
+#dash.ready .bar { border-color: var(--hot); }
+#dash.ready .fill { background: var(--hot); box-shadow: 0 0 10px var(--hot); }
 
 #overlay {
   position: fixed;
@@ -395,7 +398,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(6, 3, 13, 0.78);
+  background: rgba(10, 9, 6, 0.78);
   cursor: pointer;
   text-align: center;
 }
@@ -404,28 +407,28 @@ html, body {
   margin: 0;
   font-size: clamp(28px, 6vw, 56px);
   letter-spacing: 6px;
-  color: var(--magenta);
-  text-shadow: 0 0 18px var(--magenta);
+  color: var(--hot);
+  text-shadow: 0 0 18px var(--hot);
 }
-#overlay .sub { margin: 6px 0 28px; color: #9a8cff; letter-spacing: 3px; }
+#overlay .sub { margin: 6px 0 28px; color: var(--muted); letter-spacing: 3px; }
 #overlay .cta { font-size: 20px; animation: blink 1.2s steps(2) infinite; }
 .btn-terminal {
   margin-top: 14px;
   padding: 8px 16px;
-  background: rgba(6, 3, 13, 0.9);
-  border: 1px solid var(--cyan);
-  color: var(--cyan);
+  background: rgba(10, 9, 6, 0.9);
+  border: 1px solid var(--accent);
+  color: var(--accent);
   font-family: 'Consolas', 'Courier New', monospace;
   font-size: 14px;
   letter-spacing: 2px;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 0 10px rgba(255, 176, 0, 0.2);
   transition: all 0.15s ease;
 }
 .btn-terminal:hover {
-  background: var(--cyan);
+  background: var(--accent);
   color: var(--bg);
-  box-shadow: 0 0 16px var(--cyan);
+  box-shadow: 0 0 16px var(--accent);
 }
 
 #overlay ul {
@@ -438,7 +441,7 @@ html, body {
   color: #aaa;
   font-size: 14px;
 }
-#overlay b { color: var(--cyan); }
+#overlay b { color: var(--accent); }
 
 @keyframes blink { 50% { opacity: 0.25; } }
 
@@ -450,7 +453,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(6, 3, 13, 0.88);
+  background: rgba(10, 9, 6, 0.88);
   backdrop-filter: blur(6px);
 }
 #settings-modal.hidden {
@@ -463,10 +466,10 @@ html, body {
   max-height: 85vh;
   display: flex;
   flex-direction: column;
-  background: #0e1020;
-  border: 1px solid var(--cyan);
-  box-shadow: 0 0 24px rgba(0, 229, 255, 0.25);
-  color: var(--cyan);
+  background: #14110b;
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 24px rgba(255, 176, 0, 0.25);
+  color: var(--accent);
   font-family: 'Consolas', 'Courier New', monospace;
 }
 
@@ -475,15 +478,15 @@ html, body {
   justify-content: space-between;
   align-items: center;
   padding: 12px 18px;
-  border-bottom: 1px solid rgba(0, 229, 255, 0.2);
-  background: rgba(0, 229, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 176, 0, 0.2);
+  background: rgba(255, 176, 0, 0.05);
 }
 .settings-header h2 {
   margin: 0;
   font-size: 18px;
   letter-spacing: 4px;
-  color: var(--magenta);
-  text-shadow: 0 0 8px var(--magenta);
+  color: var(--hot);
+  text-shadow: 0 0 8px var(--hot);
 }
 .btn-close {
   background: transparent;
@@ -494,7 +497,7 @@ html, body {
   cursor: pointer;
 }
 .btn-close:hover {
-  color: var(--magenta);
+  color: var(--hot);
 }
 
 .settings-body {
@@ -519,7 +522,7 @@ html, body {
   margin: 0 0 4px 0;
   font-size: 12px;
   letter-spacing: 2px;
-  color: var(--orange);
+  color: var(--hot);
   text-transform: uppercase;
 }
 
@@ -538,25 +541,25 @@ html, body {
 .setting-val {
   min-width: 50px;
   text-align: right;
-  color: var(--cyan);
+  color: var(--accent);
   font-weight: bold;
 }
 
 /* Form Controls */
 .settings-box input[type='range'] {
-  accent-color: var(--cyan);
+  accent-color: var(--accent);
   cursor: pointer;
 }
 .settings-box input[type='checkbox'] {
   width: 16px;
   height: 16px;
-  accent-color: var(--cyan);
+  accent-color: var(--accent);
   cursor: pointer;
 }
 .settings-box select {
-  background: #06030d;
-  border: 1px solid var(--cyan);
-  color: var(--cyan);
+  background: #0a0906;
+  border: 1px solid var(--accent);
+  color: var(--accent);
   font-family: inherit;
   padding: 4px 8px;
   cursor: pointer;
@@ -576,9 +579,9 @@ html, body {
   color: #ccc;
 }
 .btn-key {
-  background: #06030d;
+  background: #0a0906;
   border: 1px solid #444;
-  color: var(--cyan);
+  color: var(--accent);
   font-family: inherit;
   font-size: 12px;
   padding: 4px 8px;
@@ -588,11 +591,11 @@ html, body {
   transition: all 0.15s ease;
 }
 .btn-key:hover {
-  border-color: var(--cyan);
+  border-color: var(--accent);
 }
 .btn-key.listening {
-  border-color: var(--magenta);
-  color: var(--magenta);
+  border-color: var(--hot);
+  color: var(--hot);
   animation: blink 0.6s infinite alternate;
 }
 .btn-key.error {
@@ -603,8 +606,8 @@ html, body {
 
 .settings-footer {
   padding: 12px 18px;
-  border-top: 1px solid rgba(0, 229, 255, 0.2);
-  background: rgba(0, 229, 255, 0.05);
+  border-top: 1px solid rgba(255, 176, 0, 0.2);
+  background: rgba(255, 176, 0, 0.05);
   display: flex;
   justify-content: flex-end;
 }
@@ -613,9 +616,6 @@ html, body {
    Tamanhos presos à menor dimensão da tela (vmin): o mesmo layout serve de celular pequeno a tablet. */
 :root {
   --tc-stick: clamp(104px, 30vmin, 150px);
-  --tc-btn: clamp(50px, 14vmin, 66px);
-  --tc-fire: clamp(66px, 20vmin, 92px);
-  --tc-gap: clamp(8px, 2.6vmin, 14px);
   --tc-edge-r: max(14px, env(safe-area-inset-right));
   --tc-edge-l: max(14px, env(safe-area-inset-left));
   --tc-edge-b: max(12px, env(safe-area-inset-bottom));
@@ -647,8 +647,8 @@ html, body {
   width: var(--tc-stick);
   height: var(--tc-stick);
   border-radius: 50%;
-  border: 2px solid rgba(0, 229, 255, 0.5);
-  background: rgba(0, 229, 255, 0.07);
+  border: 2px solid rgba(255, 176, 0, 0.5);
+  background: rgba(255, 176, 0, 0.07);
   opacity: 0.35;
   pointer-events: none;
 }
@@ -661,22 +661,12 @@ html, body {
   height: 42%;
   margin: -21% 0 0 -21%;
   border-radius: 50%;
-  background: rgba(0, 229, 255, 0.55);
-  box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+  background: rgba(255, 176, 0, 0.55);
+  box-shadow: 0 0 12px rgba(255, 176, 0, 0.5);
 }
 
-/* Botões numa grade no canto: CAM DASH / PULO FOGO. A grade impede sobreposição. */
-.tc-pad {
-  position: absolute;
-  right: var(--tc-edge-r);
-  bottom: var(--tc-edge-b);
-  display: grid;
-  grid-template-columns: auto auto auto;
-  grid-template-areas: '. cam dash' 'rocket jump fire';
-  gap: var(--tc-gap);
-  align-items: center;
-  justify-items: center;
-}
+/* Botões redondos em arco em volta do polegar direito (ui/touchLayout.ts). Posição e tamanho vêm do
+   layout (inline, em px); o jogador pode arrastar e redimensionar no editor. */
 .tc-btn, .tc-pause, .tc-board {
   display: grid;
   place-items: center;
@@ -688,31 +678,57 @@ html, body {
   cursor: pointer;
 }
 .tc-btn {
-  width: var(--tc-btn);
-  height: var(--tc-btn);
+  position: absolute;
   border-radius: 50%;
-  border: 2px solid rgba(255, 43, 214, 0.65);
-  background: rgba(255, 43, 214, 0.14);
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  background: rgba(20, 16, 10, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
-.tc-btn.pressed { background: rgba(255, 43, 214, 0.5); }
-.tc-cam { grid-area: cam; }
-.tc-pad > .tc-btn:nth-child(2) { grid-area: dash; }
-.tc-pad > .tc-btn:nth-child(3) { grid-area: jump; }
-.tc-fire { grid-area: fire; }
-.tc-rocket { grid-area: rocket; font-size: 10px; letter-spacing: 0; border-color: var(--orange); background: rgba(255, 106, 0, 0.12); }
-.tc-rocket.pressed { background: rgba(255, 106, 0, 0.5); }
+.tc-btn.pressed { background: rgba(255, 255, 255, 0.28); }
+.tc-rocket { font-size: 10px; letter-spacing: 0; border-color: var(--hot); background: rgba(255, 122, 26, 0.14); }
+.tc-rocket.pressed { background: rgba(255, 122, 26, 0.5); }
+.tc-cam { font-size: 11px; }
+.tc-fire {
+  font-size: 15px;
+  letter-spacing: 2px;
+  border-width: 3px;
+  border-color: var(--hot);
+  background: rgba(255, 122, 26, 0.22);
+}
+.tc-fire.pressed { background: rgba(255, 122, 26, 0.55); box-shadow: 0 0 18px var(--hot); }
 /* Abaixo da pausa (o seletor com id vence a regra comum de posição, que vem depois). */
 #touch-controls .tc-board { top: calc(max(10px, env(safe-area-inset-top)) + 52px); font-size: 9px; letter-spacing: 0; }
-.tc-cam { font-size: 11px; border-color: rgba(0, 229, 255, 0.6); background: rgba(0, 229, 255, 0.1); }
-.tc-fire {
-  width: var(--tc-fire);
-  height: var(--tc-fire);
-  font-size: 14px;
-  letter-spacing: 2px;
-  border-color: var(--orange);
-  background: rgba(255, 106, 0, 0.2);
+
+/* Editor de botões: o jogo parado ao fundo, só os botões (arrastáveis) e a barra no topo. */
+.tc-editbar { display: none; }
+#touch-controls.editing { background: rgba(10, 9, 6, 0.55); }
+#touch-controls.editing .tc-zone,
+#touch-controls.editing .tc-stick,
+#touch-controls.editing .tc-pause,
+#touch-controls.editing .tc-board { display: none; }
+#touch-controls.editing .tc-btn { outline: 2px dashed rgba(255, 255, 255, 0.6); outline-offset: 4px; cursor: grab; }
+#touch-controls.editing .tc-editbar {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  background: rgba(10, 9, 6, 0.9);
+  border: 1px solid var(--hot);
+  color: #fff;
+  font: 12px/1.2 'Consolas', 'Courier New', monospace;
+  letter-spacing: 1px;
+  max-width: calc(100vw - 24px);
 }
-.tc-fire.pressed { background: rgba(255, 106, 0, 0.55); box-shadow: 0 0 18px var(--orange); }
+.tc-edit-hint { color: var(--hot); }
+.tc-edit-size { display: flex; align-items: center; gap: 8px; }
+.tc-edit-btn { background: none; border: 1px solid #fff; color: #fff; font: inherit; padding: 8px 12px; cursor: pointer; }
+.tc-edit-btn.done { border-color: var(--hot); color: var(--hot); }
 .tc-pause, .tc-board {
   position: absolute;
   top: max(10px, env(safe-area-inset-top));
@@ -720,8 +736,8 @@ html, body {
   width: 44px;
   height: 44px;
   border-radius: 8px;
-  border: 1px solid rgba(0, 229, 255, 0.6);
-  background: rgba(6, 3, 13, 0.6);
+  border: 1px solid rgba(255, 176, 0, 0.6);
+  background: rgba(10, 9, 6, 0.6);
   font-size: 14px;
 }
 
@@ -738,7 +754,7 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 @media (orientation: portrait) {
   .touch #overlay .rotate-hint { display: block; }
 }
-.rotate-hint { margin: 14px 0 0; color: var(--orange); letter-spacing: 2px; }
+.rotate-hint { margin: 14px 0 0; color: var(--hot); letter-spacing: 2px; }
 
 /* Telas baixas (celular deitado): tudo menor para caber sem cortar o título. */
 @media (max-height: 500px) {
@@ -772,7 +788,7 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   font-size: 12px;
   letter-spacing: 1px;
   color: #bbb;
-  background: rgba(6, 3, 13, 0.75);
+  background: rgba(10, 9, 6, 0.75);
   padding: 3px 8px;
   border-left: 2px solid #555;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
@@ -780,9 +796,9 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 }
 
 .kill-feed-item.highlight {
-  color: var(--cyan);
-  border-left-color: var(--cyan);
-  text-shadow: 0 0 6px var(--cyan);
+  color: var(--accent);
+  border-left-color: var(--accent);
+  text-shadow: 0 0 6px var(--accent);
 }
 
 .kill-feed-item.hidden {

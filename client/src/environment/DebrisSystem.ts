@@ -1,5 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import { GLOW } from '../core/palette';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
 interface Piece {
@@ -12,7 +13,7 @@ interface Piece {
 const MAX_PIECES = 240;
 const MAX_PIECES_PER_BREAK = 24;
 const HOT_COLOR = new THREE.Color(1.0, 0.35, 0.05);
-const METAL_COLOR = new THREE.Color(0.22, 0.23, 0.27);
+const METAL_COLOR = GLOW.metal;
 
 const _m = new THREE.Matrix4();
 const _p = new THREE.Vector3();

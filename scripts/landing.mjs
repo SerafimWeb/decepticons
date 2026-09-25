@@ -30,8 +30,8 @@ const act = atividade(prs);
 
 /** Capturas do jogo feitas pelo site.mjs --capturas (uma por câmera). O ?v= fura o cache a cada build. */
 const SHOTS = [
-  { file: 'capa.jpg', w: 1280, h: 720, alt: 'O Vector-09 de costas, em terceira pessoa, na arena neon, com o HUD de integridade das seis partes', label: 'terceira pessoa' },
-  { file: 'primeira-pessoa.jpg', w: 1280, h: 720, alt: 'Cockpit em primeira pessoa trocando tiros de plasma com Mechs inimigos entre prédios neon', label: 'cockpit' },
+  { file: 'capa.jpg', w: 1280, h: 720, alt: 'O Vector-09 de costas, em terceira pessoa, na arena industrial, com o HUD de integridade das seis partes', label: 'terceira pessoa' },
+  { file: 'primeira-pessoa.jpg', w: 1280, h: 720, alt: 'Cockpit em primeira pessoa trocando tiros de plasma com Mechs inimigos entre prédios de aço', label: 'cockpit' },
   { file: 'tatica.jpg', w: 1280, h: 720, alt: 'Câmera tática vista de cima: o Mech do jogador entre barricadas', label: 'câmera tática' },
 ].filter((s) => existsSync(join(ROOT, 'capturas', s.file)));
 const shotSrc = (s) => `capturas/${s.file}?v=${esc(m.head)}`;
@@ -50,7 +50,7 @@ const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
     <div class="hero-copy">
       <p class="boot">&gt; shooter de mechs · direto no navegador · grátis<span class="cursor" aria-hidden="true">█</span></p>
       <h1 class="title">CYBER-MECH<span>PROTOCOL</span></h1>
-      <p class="pitch">Pilote um Mech de combate numa arena neon e desmonte o inimigo peça por peça. Abriu o link, está jogando: sem instalar, sem conta e sem pay-to-win.</p>
+      <p class="pitch">Pilote um Mech de combate numa arena industrial e desmonte o inimigo peça por peça. Abriu o link, está jogando: sem instalar, sem conta e sem pay-to-win.</p>
       <div class="cta">
         <a class="play-btn" href="./jogar/">[ ENTRAR NO COCKPIT ]</a>
         <a class="link-btn" href="./bastidores/">como este jogo é feito →</a>
@@ -265,7 +265,7 @@ const body = `
   <footer><span>Cyber-Mech Protocol · feito por Dan e uma equipe de IAs</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
 `;
 
-const description = 'Shooter de Mechs direto no navegador: desmonte o inimigo peça por peça numa arena neon. Grátis, sem instalar e sem pay-to-win.';
+const description = 'Shooter de Mechs direto no navegador: desmonte o inimigo peça por peça numa arena industrial. Grátis, sem instalar e sem pay-to-win.';
 const html = pagina({
   title: 'Cyber-Mech Protocol',
   description,

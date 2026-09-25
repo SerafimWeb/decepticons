@@ -1,5 +1,6 @@
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import { GLOW } from '../core/palette';
 import type { MechBase, MechPart } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
 import type { Destructibles } from '../environment/Destructibles';
@@ -24,7 +25,7 @@ const WRECK_CENTER_Y = 2.4;
 const UP = new THREE.Vector3(0, 1, 0);
 const SPARK = new THREE.Color(3.0, 1.3, 0.3);
 const FIRE = new THREE.Color(3.5, 1.1, 0.15);
-const SMOKE = new THREE.Color(0.32, 0.3, 0.36);
+const SMOKE = GLOW.smoke;
 
 const _at = new THREE.Vector3();
 const _near = new THREE.Vector3();

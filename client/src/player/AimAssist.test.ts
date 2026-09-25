@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { type AimError, aimErrorTo, FRICTION_CONE, FRICTION_MIN, frictionFor, leadPoint, PULL_CONE, pullStep } from './AimAssist';
+import { type AimError, aimErrorTo, FRICTION_CONE, FRICTION_MIN, frictionFor, leadPoint, movingAway, PULL_CONE, pullStep } from './AimAssist';
 
 const err = (): AimError => ({ dYaw: 0, dPitch: 0, angle: 0, dist: 0 });
 const cam = new THREE.Vector3(0, 5, 0);
@@ -41,6 +41,19 @@ describe('mira assistida: antecipação', () => {
     const p = leadPoint(cam, new THREE.Vector3(0, 5, -70), 16, 0, 140, new THREE.Vector3());
     expect(p.x).toBeCloseTo(8, 5);
     expect(p.y).toBeCloseTo(5);
+  });
+});
+
+describe('mira assistida: soltar o alvo', () => {
+  it('puxar o dedo para longe do alvo solta a ajuda; para perto ou parado, não', () => {
+    // Alvo à esquerda (erro de yaw positivo): girar para a direita (yaw diminui) é puxar para longe.
+    expect(movingAway(-0.01, 0, 0.03, 0)).toBe(true);
+    expect(movingAway(0.01, 0, 0.03, 0)).toBe(false);
+    expect(movingAway(0, 0, 0.03, 0)).toBe(false);
+    // Tremida mínima do dedo não conta.
+    expect(movingAway(-0.001, 0, 0.03, 0)).toBe(false);
+    // Vertical também: alvo acima, dedo descendo a mira.
+    expect(movingAway(0, -0.01, 0, 0.05)).toBe(true);
   });
 });
 

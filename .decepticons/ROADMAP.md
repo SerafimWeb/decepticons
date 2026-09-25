@@ -71,8 +71,10 @@
 - [x] Kill feed e indicador de direção do dano (Gemini; integrado e corrigido pelo Claude) #ux
 - [x] Celular: mira assistida só no toque (freia perto do inimigo, puxa de leve, acompanha e antecipa o movimento dele) e tiro automático, desligáveis nas configurações #jogabilidade
 - [x] Mira que acende sobre um inimigo (toque e mouse) #ux
+- [x] Paleta âmbar industrial no jogo e no site (sem azul e roxo): inimigos verde-oliva com visor vermelho, tiros inimigos vermelhos #cenarios
 - [x] Vibração no celular ao levar tiro e ao abater #ux
-- [ ] Ajuste fino da mira assistida depois do playtest do dono no celular #jogabilidade
+- [x] Botões do toque em arco em volta do polegar (FOGO para dentro da tela) e editor para arrastar e mudar o tamanho, salvo no aparelho #ux
+- [~] Ajuste fino da mira no celular com o playtest do dono: velocidade do dedo suavizada; a ajuda solta o alvo quando o jogador puxa para longe #jogabilidade
 - [x] Botão de placar no toque (no celular não existe Tab) #ux
 - [ ] Primeira partida guiada: dicas curtas no jogo (mire nas pernas, dash, pulo duplo), uma vez só #ux
 - [x] Gestão no GitHub: etiquetas automáticas por frente e por agente, modelo de PR, notas de versão por frente #base

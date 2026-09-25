@@ -5,6 +5,32 @@
 ## [2026-09-24] Volume nas configurações
 **Decisão (Gemini):** Adicionado campo de volume (0 a 1) nas configurações, acessível pelo menu e sincronizado com o ganho mestre do `AudioSystem` na inicialização e atualização das configurações.
 
+## [2026-09-24] Paleta âmbar industrial: sai o azul e o roxo
+**Pedido do dono:** "azul e roxo é a assinatura de feito com IA, temos que mudar isso também".
+**Decisão (Claude, dentro da identidade que o dono já aprovou no site):** o jogo passa a usar o âmbar industrial do site (terminal de fósforo, aço, luz de sódio).
+- **Arena:** contornos em âmbar, branco quente e laranja de sódio; chão de aço com grade âmbar; luz quente; balizas vermelhas.
+- **Mechs:** jogador laranja-ferrugem com visor âmbar; inimigos verde-oliva com visor vermelho.
+- **Tiros:** do jogador em âmbar, do inimigo em vermelho, para saber de onde vem cada tiro.
+- **Interface:** tokens com nome de papel (`--accent` âmbar, `--hot` laranja, `--alert` vermelho, `--ink` branco quente); a mira fica vermelha sobre o inimigo; fundos azul-marinho viraram marrom-escuro.
+- **Site:** o ciano secundário virou branco quente (links, fase atual); o Gemini deixou de ser azul nos cartões.
+- **Regra nova (IDENTITY):** cor nova entra primeiro no `core/palette.ts` / `:root`; nada de azul nem roxo.
+**Custo de CPU:** nenhum (só troca de cor; os materiais são os mesmos).
+**Quem decidiu:** dono (sair do azul/roxo); Claude (paleta, a ajustar com o olho do dono).
+
+## [2026-09-24] Toque: botões em arco, editor de controles e mira sem "falha"
+**Relato do dono (terceiro teste no celular):** "a mira ainda não tá boa, meio falha; os botões num shape meio quadrado não pegam bem meu dedo; poderia ser mais livre o centro do tiro, para segurar com mais conforto, pois assim tenho que segurar bem na ponta".
+**Causas:**
+- A grade 3×2 colada no canto obrigava o polegar a ir até a ponta do celular.
+- O ganho da mira vinha da velocidade crua de cada evento de toque. Os eventos chegam em intervalos irregulares, então o ganho oscilava de um evento para o outro: a mesma arrastada girava diferente.
+- A fricção e o puxão da mira assistida continuavam agindo quando o jogador tentava tirar a mira do alvo, e a mira parecia brigar com o dedo.
+**Decisão (Claude):**
+- **Arco:** botões redondos em arco em volta do polegar (`ui/touchLayout.ts`), com FOGO a ~20% da borda direita. Posições em fração da tela, testadas sem sobreposição em 7 telas (640×360 a 1180×820) e 3 tamanhos.
+- **Editor:** "Ajustar controles" na pausa (só no toque). Arrasta cada botão, muda o tamanho (70%–140%), volta ao padrão. Fica salvo no aparelho, numa chave própria (`cybermech.touch.v1`) e validado, sem mexer no contrato de configurações que o Gemini estava editando.
+- **Mira:** velocidade do dedo com média exponencial; ganho máximo de 2,2× para 1,6×.
+- **Ajuda que solta:** puxar a mira para longe do alvo desliga fricção e puxão por 0,35 s (`movingAway`, testado). O tiro automático continua.
+**Custo de CPU:** nenhum por quadro além do que já existia; o editor só age com o jogo parado.
+**Quem decidiu:** dono (relato); Claude (desenho).
+
 ## [2026-09-24] Bastidores mostram a atividade da equipe (só dados reais)
 **Pedido do dono:** "deixa com cara de que está sendo feito por uma equipe, com várias entradas, requisições e commits", sem parecer narrativa.
 **Decisão (Claude):** mostrar a atividade que já existe, sem inventar nada. Não precisa: são dezenas de commits e de entregas em dois dias.
