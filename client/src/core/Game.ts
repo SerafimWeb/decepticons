@@ -275,6 +275,7 @@ export class Game {
     // O método onFire original anima o recuo; o wrap mantém esse comportamento e adiciona o som.
     const _origFire = mech.onFire.bind(mech);
     mech.onFire = () => { _origFire(); this.audio.playShot(); };
+    this.player.onRocket = () => this.audio.playRocketLaunch();
     this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
     this.combat.onMechHit = (e) => {
       if (e.shooter === mech) {
