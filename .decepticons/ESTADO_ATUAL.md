@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Gestão nos bastidores (Claude; dono: "ferramentas de gerenciamento de projeto, gestão de entregas, planejamento, gráficos que digam muito"):** quadro Agora/Próximo/Depois com código por item, burn-up, linha do tempo das fases com estimativa, matriz frentes × fases e as quatro métricas DORA (hoje: ~20 deploys por dia, ~6 min do commit ao ar, 2,4% de falha, ~14 min para recuperar).
 - **Calor completo e a Oficina (Claude; dono: "oficina mecânica de alto padrão"; "tudo aumenta o calor; os mechs precisam PARAR pra resfriar"):**
   - Tiro (coeficiente de cada arma), corrida, pulo, dash e dano esquentam o mesmo dissipador; parado esfria em dobro; superaquecido trava armas, pulo e dash e anda na metade. Bots param para esfriar.
   - Página `/cybermech/oficina/`: bancada gerada pela simulação do jogo (calor por ação, 6 exercícios de 20 s, placar, tempo por parte, dano × distância, chassis). Achado: rajadas curtas parando na pausa rendem ~64% mais dano que correr atirando.

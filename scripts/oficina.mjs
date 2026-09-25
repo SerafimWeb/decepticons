@@ -194,7 +194,7 @@ function build() {
     <h2 id="partes">Tempo para destruir cada parte</h2>
     <p class="lede">Gatilho apertado, parado, todos os tiros na mesma parte de um ${esc(V.name)}. Quanto mais intenso, mais rápido. A perna cai bem antes do torso: mirar é a habilidade que mais rende.</p>
     ${ttk}
-    <p class="heat-legend"><span>mais rápido</span><i></i><span>mais lento</span></p>
+    <p class="hm-legend"><span>mais rápido</span><i></i><span>mais lento</span></p>
   </section>
 
   <section aria-labelledby="distancia">

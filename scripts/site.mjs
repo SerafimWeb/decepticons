@@ -311,6 +311,8 @@ async function check() {
     if ((await page.title()) !== 'Bastidores · CYBERMECH') failures.push(`título dos bastidores: "${await page.title()}"`);
     await pageSane(page, 'bastidores', failures);
     await publicPage(page, 'bastidores', failures);
+    // Gestão: quadro, burn-up e linha do tempo saem do histórico do ROADMAP (precisa do git inteiro).
+    if ((await page.locator('section[aria-labelledby="gestao"] .lane').count()) < 2) failures.push('bastidores: a seção de gestão sumiu (sem o histórico do ROADMAP no git?)');
     // Oficina: a bancada tem de sair com os gráficos da simulação (sem eles, os dados do jogo não carregaram).
     await page.goto(`${base}oficina/`);
     if ((await page.title()) !== 'Oficina · CYBERMECH') failures.push(`título da oficina: "${await page.title()}"`);

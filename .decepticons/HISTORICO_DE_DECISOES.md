@@ -2,6 +2,18 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Gestão do projeto nos bastidores
+**Pedido do dono:** "caprichar mais nos bastidores: introduzir as ferramentas de gerenciamento de projetos, gestão de entregas, planejamento, e mais elementos gráficos no roadmap (criativo e objetivo, gráficos que impactem e digam muito sobre o projeto)"; e antes: "tornar cada vez mais profissional, técnico e expert a forma como expomos nosso trabalho".
+**Decisão (Claude):**
+- **Quadro Agora / Próximo / Depois** (fase atual, próxima, demais) com um código por item (frente + posição na frente: CB-07, UX-12), a frente e o agente quando o item diz quem faz.
+- **Burn-up** do escopo contra os feitos, com o histórico do ROADMAP lido do git (uma leitura por commit, um processo git só). Mostra também quanto o escopo cresceu.
+- **Linha do tempo das fases** com as datas reais de início e fim; só a fase atual tem estimativa, pelo ritmo das últimas 72 h, marcada como estimativa. Fases futuras não têm data: os itens delas são grandes demais para prever pelo ritmo.
+- **Matriz frentes × fases:** onde o esforço foi e o que vem.
+- **Métricas DORA** (as quatro de entrega contínua da indústria): frequência de deploy, lead time do primeiro commit ao ar, taxa de falha de mudança e tempo de recuperação, lidas das execuções do CI na `main` e do git. O lead time sai do git (os commits de cada PR), porque a API do GitHub recusa a lista de commits de todos os PRs (limite de nós).
+- **Achado:** `entregas()` caía em silêncio para o git quando a resposta do GitHub passava de 1 MB (limite padrão do Node); agora com buffer de 64 MB.
+**Custo:** só no build do site (~1 s a mais). Nada no jogo.
+**Quem decidiu:** dono (pedido); Claude (quais ferramentas e métricas).
+
 ## [2026-09-25] Calor completo do Mech e a Oficina (bancada de testes)
 **Pedido do dono:** "investir no sistema de balanceamento, como uma oficina mecânica de alto padrão, para estudar e avaliar o desempenho dos robôs, armas e defesas: um jogo de estratégia realista e objetivo. Criticidade do calor: dano, correr sem parar, usar armas, pular, dash, tudo pode aumentar o calor, então eventualmente os mechs precisam PARAR pra resfriar; cada arma com seu coeficiente de calor".
 **Decisão (Claude):**

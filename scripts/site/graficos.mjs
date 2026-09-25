@@ -61,8 +61,9 @@ export const CHART_CSS = `
   .heatmap thead th { text-align: center; }
   .heatmap thead th small { display: block; letter-spacing: .08em; color: var(--faint); }
   .heatmap td { text-align: center; padding: 10px 6px; color: var(--text); font-size: 14px; border: 1px solid var(--line); }
-  .heat-legend { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
-  .heat-legend i { display: inline-block; width: 90px; height: 10px; background: linear-gradient(90deg, rgba(255,176,0,.9), rgba(255,176,0,.08)); border: 1px solid var(--line); }
+  .heatmap td.empty { color: var(--faint); border-style: dashed; }
+  .hm-legend { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+  .hm-legend i { display: inline-block; width: 90px; height: 10px; background: linear-gradient(90deg, rgba(255,176,0,.9), rgba(255,176,0,.08)); border: 1px solid var(--line); }
   .scroll-x { overflow-x: auto; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .table-view summary { cursor: pointer; color: var(--muted); font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; }
@@ -170,6 +171,7 @@ export function heatTable({ rows, cols, cells, strong, caption }) {
       (r, i) =>
         `<tr><th scope="row">${esc(r)}</th>${cells[i]
           .map((c) => {
+            if (c.v === null) return `<td class="empty">${esc(c.text)}</td>`;
             const k = strong(c.v);
             return `<td style="background:rgba(255,176,0,${(0.06 + 0.55 * k).toFixed(3)})" title="${esc(c.title)}">${esc(c.text)}</td>`;
           })
@@ -178,3 +180,107 @@ export function heatTable({ rows, cols, cells, strong, caption }) {
     .join('');
   return `<div class="scroll-x"><table class="heatmap">${caption ? `<caption class="sr">${esc(caption)}</caption>` : ''}${head}<tbody>${body}</tbody></table></div>`;
 }
+
+/**
+ * Burn-up: o escopo (tracejado) e o que já foi feito (âmbar, com área) ao longo do tempo, no mesmo
+ * eixo. `points`: [{ t (ms), total, done }]. Rótulos diretos na ponta de cada linha.
+ */
+export function burnup({ title, caption, points, dayTicks, ariaLabel }) {
+  const W = 320;
+  const H = 170;
+  const pad = { l: 30, r: 58, t: 10, b: 22 };
+  const t0 = points[0].t;
+  const t1 = points.at(-1).t;
+  const max = niceMax(Math.max(...points.map((p) => p.total)));
+  const x = (t) => pad.l + ((t - t0) / (t1 - t0 || 1)) * (W - pad.l - pad.r);
+  const y = (v) => pad.t + (1 - v / max) * (H - pad.t - pad.b);
+  const step = (key) => points.map((p, i) => (i ? `H${x(p.t).toFixed(1)}V${y(p[key]).toFixed(1)}` : `M${x(p.t).toFixed(1)},${y(p[key]).toFixed(1)}`)).join('');
+  const done = step('done');
+  const end = points.at(-1);
+  const grid = [0, max / 2, max]
+    .map((v) => `<line class="grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="tick" x="${pad.l - 5}" y="${(y(v) + 3.5).toFixed(1)}" text-anchor="end">${nf(v)}</text>`)
+    .join('');
+  const xt = dayTicks.map(({ t, label }) => `<text class="tick" x="${x(t).toFixed(1)}" y="${H - 5}" text-anchor="middle">${esc(label)}</text>`).join('');
+  return `<figure class="g frame">
+      <figcaption><h3>${esc(title)}</h3>${caption ? `<p>${caption}</p>` : ''}</figcaption>
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(ariaLabel ?? title)}">
+        ${grid}
+        <path class="area" d="${done}V${y(0).toFixed(1)}H${x(t0).toFixed(1)}Z"/>
+        <path class="scope" d="${step('total')}"/>
+        <path class="line" d="${done}"/>
+        <text class="val" x="${(x(t1) + 5).toFixed(1)}" y="${(y(end.total) + 4).toFixed(1)}">${nf(end.total)} escopo</text>
+        <text class="val" x="${(x(t1) + 5).toFixed(1)}" y="${(y(end.done) + 4).toFixed(1)}" style="fill:var(--amber)">${nf(end.done)} feitos</text>
+        ${xt}
+      </svg>
+    </figure>`;
+}
+
+/**
+ * Linha do tempo (Gantt) em HTML: uma linha por fase, barra do início ao fim (ou até hoje), com a
+ * estimativa tracejada. `rows`: [{ label, start, end, forecast, state, note, title }], datas em ms.
+ */
+export function gantt({ title, caption, rows, t0, t1, today, ticks }) {
+  const pos = (t) => Math.max(0, Math.min(100, ((t - t0) / (t1 - t0)) * 100));
+  const lines = rows
+    .map((r) => {
+      let bars = '';
+      if (r.start !== null) {
+        const until = r.end ?? today;
+        bars += `<i class="gb ${r.end ? 'done' : 'live'}" style="left:${pos(r.start).toFixed(2)}%;width:${Math.max(0.8, pos(until) - pos(r.start)).toFixed(2)}%" title="${esc(r.title)}"></i>`;
+        if (!r.end && r.forecast) bars += `<i class="gb fc" style="left:${pos(today).toFixed(2)}%;width:${Math.max(0.8, pos(r.forecast) - pos(today)).toFixed(2)}%" title="estimativa pelo ritmo atual"></i>`;
+      }
+      return `<li class="gr ${r.state}"><span class="gl">${esc(r.label)}</span><span class="gt">${bars}<b class="today" style="left:${pos(today).toFixed(2)}%"></b></span><span class="gn">${esc(r.note)}</span></li>`;
+    })
+    .join('');
+  const axis = ticks.map(({ t, label }) => `<span style="left:${pos(t).toFixed(2)}%">${esc(label)}</span>`).join('');
+  return `<figure class="g frame">
+      <figcaption><h3>${esc(title)}</h3>${caption ? `<p>${caption}</p>` : ''}</figcaption>
+      <div class="gantt"><div class="gaxis"><span class="gl"></span><span class="gticks">${axis}<b class="today-l" style="left:${pos(today).toFixed(2)}%">hoje</b></span><span class="gn"></span></div><ol>${lines}</ol></div>
+    </figure>`;
+}
+
+export const PM_CSS = `
+  .g .scope { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 3; }
+  .gantt { display: grid; gap: 6px; font-size: 12.5px; }
+  .gantt ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .gaxis, .gr { display: grid; grid-template-columns: minmax(10ch, 14rem) 1fr 15ch; gap: 10px; align-items: center; }
+  .gticks, .gt { position: relative; height: 16px; }
+  .gticks span, .gticks b { position: absolute; transform: translateX(-50%); color: var(--muted); font-size: 11px; font-weight: 400; white-space: nowrap; }
+  .gticks b { color: var(--green); top: -2px; }
+  .gt { background: rgba(255,176,0,.05); }
+  .gb { position: absolute; top: 3px; bottom: 3px; border-radius: 2px; }
+  .gb.done { background: var(--green); }
+  .gb.live { background: var(--amber); }
+  .gb.fc { background: repeating-linear-gradient(90deg, var(--amber) 0 4px, transparent 4px 7px); opacity: .7; }
+  .gt .today { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--green); }
+  .gl { color: var(--text); }
+  .gr.locked .gl, .gr.locked .gn { color: var(--faint); }
+  .gn { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  @media (max-width: 620px) {
+    /* Rótulo e nota numa linha, a barra embaixo com a largura toda: todas as linhas no mesmo eixo. */
+    .gaxis, .gr { grid-template-columns: 1fr auto; grid-template-areas: "l n" "t t"; gap: 4px 10px; }
+    .gr .gl { grid-area: l; }
+    .gr .gn { grid-area: n; }
+    .gr .gt { grid-area: t; }
+    .gaxis { grid-template-areas: "t t"; }
+    .gaxis .gl, .gaxis .gn { display: none; }
+    .gaxis .gticks { grid-area: t; }
+  }
+  .board { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; align-items: start; }
+  .lane { padding: 12px; display: grid; gap: 10px; align-content: start; }
+  .lane > header { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+  .lane > header h3 { font-size: 1.35rem; }
+  .lane > header span { color: var(--muted); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; }
+  .lane.now::before { --c: var(--green); }
+  .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .card { border: 1px solid var(--line); background: var(--panel2); padding: 8px 10px; display: grid; gap: 4px; font-size: 13px; line-height: 1.45; }
+  .card.doing { border-left: 3px solid var(--amber); }
+  .card .cid { font-size: 11px; letter-spacing: .14em; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .card .cid b { color: var(--amber); font-weight: 400; }
+  .card .ct { color: var(--text); }
+  .card.phase .ct { font: 400 1.1rem/1.2 var(--fd); letter-spacing: .04em; }
+  .dora { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 14px; }
+  .dora .read .d { color: var(--muted); font-size: 12px; line-height: 1.4; }
+  .dora .read .ref { color: var(--green); font-size: 11px; letter-spacing: .08em; }
+  .pm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 16px; align-items: start; }
+`;
