@@ -94,7 +94,7 @@
 - [x] Oficina no site: bancada de testes gerada pela simulação do jogo (calor por ação, dinamômetro, dano por parte e por distância, chassis) #combate
 - [x] Gestão nos bastidores: quadro Agora/Próximo/Depois com código por item, burn-up do escopo, linha do tempo das fases com estimativa, matriz frentes × fases e as quatro métricas DORA de entrega contínua #negocio
 - [x] Hangar: contrato da montagem (`LoadoutSpec` + `validateLoadout`, carga de 11 t no Vector-09), montagem salva no aparelho e link de build (`?build=`), com testes #mechs
-- [ ] Hangar: tela para montar o Mech (arma e nível em cada braço, barras de carga e calor), salva no aparelho (Gemini) #ux
+- [ ] Hangar: tela para montar o Mech (arma e nível em cada braço, barras de carga e calor), salva no aparelho (passou do Gemini para o Codex em 25/09) #ux
 - [ ] Segundo chassi para o Hangar ter escolha de verdade #mechs
 - [x] Bots com personalidade (brabo, manso, fujão, soldado) e diretor de ataque: no máximo 2 atacando juntos, os outros esperam a vez #ia
 - [x] IAs rebeldes com nomes de IAs (CLAUDE, GEMINI, CHATGPT, QWEN, DEEPSEEK, ANTHROPIC) e o nome sobre a cabeça #ux
@@ -106,12 +106,13 @@
 - [ ] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) #ux
 - [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux
 - [ ] Medir o FPS num notebook com GPU integrada, com o painel de desempenho (pré-requisito do multiplayer; dono) #desempenho
-- [x] Render do Vector-09: 9 draw calls por rig articulado (antes ~34), com as peças ainda destacáveis #desempenho
+- [x] Render dos robôs: 9 draw calls por Vector-09 e por andróide, uma malha combinada por pivô articulado (antes ~34), com as peças ainda destacáveis (Codex, PR #43) #desempenho
 - [x] FX: explosões, impactos, fumaça e destroços com escala animada; pool explícito de 3000 partículas sem alocação por frame #desempenho
 
 ## 🟠 FASE 4 — Multiplayer autoritativo
 - [x] Plano técnico (`MULTIPLAYER.md`): pré-requisitos, arquitetura, orçamento de banda, contratos, etapas M0–M8 #rede
-- [x] M1: partida sem tela (`sim/Match.ts`): a mesma simulação no cliente e no servidor; roda no Node a 0,74 ms por tick com a sala cheia #rede
+- [x] M1: partida sem tela (`sim/Match.ts`): a partida inteira roda no Node sem WebGL nem DOM, determinística sem destroços, 0,74 ms por tick com a sala cheia. Ainda cria objetos de render e o tiro do jogador sai do modelo desenhado (`MULTIPLAYER.md`, seção 8) #rede
+- [ ] Separar simulação, render e efeitos: tiro do jogador e yaw pela simulação, efeitos por eventos, sem objetos de cena na simulação (proposta e critérios em `MULTIPLAYER.md`, seção 9; decisão do dono) #rede
 - [ ] M2: contratos de rede (`NetInput`, `MechState`, mensagens) e codec binário com teste de tamanho #rede
 - [ ] M3: `server/` com Colyseus: `ArenaRoom` para 8, simulação a 60 Hz, estado a 20 Hz com delta (G11); bots completam salas #rede
 - [ ] M4: cliente com prediction + reconciliação do Mech local; Mechs remotos interpolam #rede

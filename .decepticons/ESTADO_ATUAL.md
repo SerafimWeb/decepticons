@@ -2,7 +2,7 @@
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
 **Última atualização:** 2026-09-25
-**Iteração atual:** Fase 3 (Vitrine e polimento): som, celular, kill feed e o site com o case; depois a Fase 4 (multiplayer)
+**Iteração atual:** fim da Fase 3 (Vitrine e polimento: tela do Hangar, polimento de interface e som) e começo da Fase 4 (multiplayer: M1 feita em parte, `MULTIPLAYER.md`, seção 8)
 
 ---
 
@@ -92,23 +92,21 @@
 - **Som dos foguetes e Volume (Gemini):** som sintetizado adicionado para lançamento de foguetes; controle de volume mestre adicionado às configurações.
 
 ## PENDENTE
-- [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
-- [ ] **Gemini:** Próxima tarefa: setas-inimigos (ui/OffscreenIndicators.ts). Seta vermelha na borda da tela para inimigos fora da visão. Um PR por tarefa, a partir da `main` atualizada.
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
 - [ ] **Dono:** gerar as pranchas dos robôs numa IA de imagem com os textos do `ESTILO_ROBOS.md` e salvar em `.tmp/arte/`
 - [ ] **Dono:** jogar com o diretor de ataque (no máximo 2 atacando juntos) e as personalidades; dizer se ficou fácil demais (dá para subir "Atacam ao mesmo tempo" nas configurações)
 - [ ] **Dono:** jogar com o calor completo (correr atirando ferve em ~2 s; parado esfria em dobro) e dizer se ficou punitivo demais
 - [ ] **Dono:** jogar com as armas novas (menos dano, calor compartilhado com os foguetes) e dizer se a luta ficou lenta ou rápida demais; decidir as perguntas do fim do `HANGAR.md`
 - [ ] **Dono:** ouvir a vinheta da marca no jogo (som, volume, duração) e ver a abertura da landing (numa aba anônima ela roda de novo)
-- [ ] **Gemini:** o branch `gemini/sons-androides` saiu de uma `main` antiga e está sem PR: juntar a `main` (`git merge origin/main`), rodar `npm run check` e abrir o PR (regra 13)
-- [ ] Fase 3: draw calls por Mech (~34 cada)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
+- [ ] **Dono:** decidir a separação simulação × render × efeitos (`MULTIPLAYER.md`, seção 9) e as 4 decisões da seção 10
 
 ## RASCUNHO ANTIGO DE BOTS (superado)
 O rascunho do GPT-OSS continua no stash local (`git stash list`: "rascunho GPT-OSS/Gemini 23-09…"). Foi superado pelos bots v1 e pode ser descartado pelo dono (`git stash drop`). Não reaproveitar: andava na direção errada e lia a posição de render (ver histórico).
 
 ## MODELOS DE IA
 - **Gemini Flash:** bom para tarefas de código bem especificadas dentro do protocolo (fez G12, painel de debug, Blind Mode, tela de configurações e som). Costuma esquecer o PR: conferir se o branch virou PR.
+- **Codex (OpenAI):** bom em render e desempenho (#43: draw calls 34 → 9; #44: explosões). Mudança visual pede captura de tela no PR: o #43 deixou os robôs brancos até o primeiro dano sem o check perceber (corrigido no #48).
 - **gpt-oss 120B:** só para conversa de design. Em 23/09 entregou código que nem compilava e disse que estava pronto; **não usar para editar este repositório**.
 
 ## DIVISÃO DE TRABALHO ENTRE AGENTES
@@ -119,14 +117,15 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 |---|---|---|
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | M1 do multiplayer no ar (partida sem tela). Próximo: M2 (contratos e codec) e M3 (servidor no PC do dono) |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Sem crédito em 25/09; as pendências dele foram concluídas pelo Claude. Ao voltar, um PR cada: abertura da rodada (3·2·1), aviso de ABATE e sequência, tela de carregamento, temperatura no HUD (marca de 70%, "RESFRIANDO" com `mech.coolingBoost`), sons de calor, fim de rodada com estatísticas, música. **A tela do Hangar passou para o Codex** |
-| **Codex** | visual e render do mundo 3D (`client/src/fx/`, o visual de `environment/` e dos modelos em `entities/meshKit.ts` e nos rigs, sem stats nem regras), pós-processamento, desempenho de render; revisão cruzada; **em 25/09, a tela do Hangar** (`ui/HangarMenu.ts`, com prévia 3D) | Feito: draw calls 34 → 9 (#43), explosões e impactos (#44). Fila, um PR cada: 1) tela do Hangar contra `game.hangar` (`HANGAR.md`, seção 2); 2) calor visível no Mech (blindagem acende ao esquentar, vapor ao superaquecer, com `mech.heatState` e `mech.coolingBoost`); 3) visual de cada nível de arma (MK II e MK III diferentes, trocando no `equip`); 4) revisão cruzada dos PRs #45 a #47 |
+| **Codex** | visual e render do mundo 3D (`client/src/fx/`, o visual de `environment/` e dos modelos em `entities/meshKit.ts` e nos rigs, sem stats nem regras), pós-processamento, desempenho de render; revisão cruzada; **em 25/09, a tela do Hangar** (`ui/HangarMenu.ts`, com prévia 3D) | Feito: draw calls 34 → 9 (#43), explosões e impactos (#44). Fila, um PR cada: 1) tela do Hangar contra `game.hangar` (`HANGAR.md`, seção 2); 2) calor visível no Mech (blindagem acende ao esquentar, vapor ao superaquecer, com `mech.heatState` e `mech.coolingBoost`); 3) visual de cada nível de arma (MK II e MK III diferentes, trocando no `equip`); 4) revisão cruzada dos PRs #45 a #50 |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
 
 ## DECISÕES EM ABERTO
 | Decisão | Situação |
 |---|---|
-| Hospedagem do servidor | Recomendação em `DEPLOY.md`; plano em `MULTIPLAYER.md` (seção 8, com mais três decisões: mira assistida no PvP, bots nas salas, código da sala). Decidir antes da etapa M8. |
+| Hospedagem do servidor | Recomendação em `DEPLOY.md`; plano em `MULTIPLAYER.md` (seção 10, com mais três decisões: mira assistida no PvP, bots nas salas, código da sala). Decidir antes da etapa M8. |
 | Mira assistida no multiplayer | Hoje é só do toque e só contra bots. Com gente de verdade, toque x mouse na mesma sala precisa de regra: manter (padrão dos jogos de tiro no celular), reduzir contra humanos ou separar salas por tipo de controle. Decidir na Fase 4. |
+| Separação simulação × render × efeitos | Proposta e critérios de aceitação em `MULTIPLAYER.md`, seção 9. Recomendação: tiro do jogador e yaw pela simulação antes da M4; o resto quando memória do servidor ou correções visíveis pedirem. |
 | Nomes de marcas nos bots | CLAUDE, GEMINI, CHATGPT, QWEN, DEEPSEEK e ANTHROPIC são marcas registradas. Antes do lançamento (portais, anúncios), manter ou trocar por paródias (ex.: CLAWD, JEMINI, CHAD-GPT). A troca é a lista `BOT_NAMES`. |
 | Bots contra bots | Hoje os bots só caçam o jogador. No modo "todos contra todos" eles deveriam se enfrentar também: basta passar todos os Mechs em `BotSystem.targets`. |
 
@@ -134,4 +133,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Claude: M2 (contratos de rede e codec) e M3 (servidor Colyseus no PC do dono, sala por link `?sala=`). Dono: as 4 decisões do fim do `MULTIPLAYER.md` e medir o FPS numa GPU integrada. Gemini: tela do Hangar contra `game.hangar` (API em `HANGAR.md`). Codex: confirmar CI/merge do PR de FX e ficar disponível para revisão cruzada. Gemini: PR dos sons dos andróides, depois a fila de polimento. Dono: ouvir a vinheta e jogar no celular.
+- **Claude:** M2 (contratos de rede e codec: `NetInput` com yaw e pitch, estado, mensagens), que não depende da separação; depois a M3 (servidor Colyseus no PC do dono, sala por `?sala=`) com a cena descartável e efeitos vazios, conforme a decisão sobre a seção 9 do `MULTIPLAYER.md`.
+- **Codex:** tela do Hangar contra `game.hangar` (`HANGAR.md`, seção 2), calor visível no Mech, visual dos níveis de arma e revisão cruzada dos PRs #45 a #50.
+- **Gemini** (quando voltar o crédito): a fila da divisão de trabalho acima; a tela do Hangar não é mais dele.
+- **Dono:** testar no site (nomes sobre os bots, diretor de ataque, calor, setas), decidir a seção 9 e as decisões da seção 10 do `MULTIPLAYER.md`, gerar as pranchas dos robôs (`ESTILO_ROBOS.md`) e medir o FPS num notebook com GPU integrada.
