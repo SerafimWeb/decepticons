@@ -276,12 +276,38 @@ const brDate = (iso) => new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'A
  * PRs mergeados. Do GitHub quando há acesso (`gh`, com GH_TOKEN no CI): título, branch, etiquetas de
  * frente e agente, linhas mexidas. Sem acesso, do git (título e data; agente só pelo nome do branch).
  */
+/**
+ * Lead time de cada PR, do git: do primeiro commit do branch até o merge na `main`. Os commits do PR são
+ * os do segundo pai do merge, subindo até cair num commit da `main` (os branches saem da `main`). Um
+ * processo git só. Devolve Map(número do PR → horas).
+ */
+export function leadTimes() {
+  const byHash = new Map();
+  for (const rec of git('log', '--format=%H%x1f%P%x1f%at%x1f%ct%x1f%s', 'HEAD').split('\n')) {
+    const [h, parents = '', at, ct, subject = ''] = rec.split('\x1f');
+    if (h) byHash.set(h, { parents: parents.split(' ').filter(Boolean), at: Number(at) * 1000, ct: Number(ct) * 1000, subject });
+  }
+  const main = new Set();
+  for (let h = git('rev-parse', 'HEAD'); h && byHash.has(h); h = byHash.get(h).parents[0]) main.add(h);
+  const leads = new Map();
+  for (const h of main) {
+    const c = byHash.get(h);
+    const pr = /(?:PR|pull request) #(\d+)/.exec(c.subject)?.[1];
+    if (!pr || c.parents.length < 2) continue;
+    let first = Infinity;
+    for (let b = c.parents[1]; b && byHash.has(b) && !main.has(b); b = byHash.get(b).parents[0]) first = Math.min(first, byHash.get(b).at);
+    if (Number.isFinite(first)) leads.set(Number(pr), (c.ct - first) / 3_600_000);
+  }
+  return leads;
+}
+
 export function entregas() {
+  const leads = leadTimes();
   try {
     const out = execFileSync(
       'gh',
-      ['pr', 'list', '--state', 'merged', '--limit', '500', '--json', 'number,title,headRefName,labels,mergedAt,additions,deletions'],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000 },
+      ['pr', 'list', '--state', 'merged', '--limit', '500', '--json', 'number,title,headRefName,labels,createdAt,mergedAt,additions,deletions'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000, maxBuffer: 64 << 20 },
     );
     const prs = JSON.parse(out).map((p) => {
       const labels = p.labels.map((l) => l.name);
@@ -294,6 +320,9 @@ export function entregas() {
         fronts: labels.filter((l) => l.startsWith('frente:')).map((l) => l.slice(7)),
         add: p.additions,
         del: p.deletions,
+        // Lead time (DORA): do primeiro commit da mudança até o merge (do git); sem ele, do PR aberto.
+        leadH: leads.get(p.number) ?? (Date.parse(p.mergedAt) - Date.parse(p.createdAt)) / 3_600_000,
+        mergedAt: p.mergedAt,
       };
     });
     return { prs: prs.sort((a, b) => b.n - a.n), fromGithub: true };
@@ -437,6 +466,97 @@ export function evolucao() {
   const tests = perCommit(git('grep', '-c', '-E', '^[[:space:]]*(it|test)(\\.each\\(.*\\))?\\(', ...shas, '--', '*.test.ts'));
   const loc = perCommit(git('grep', '-c', '', ...shas, '--', 'client/src/*.ts', 'shared/*.ts', 'server/*.ts', ':!*.test.ts'));
   return commits.map(({ sha, date, pr }) => ({ date, pr, tests: tests.get(sha) ?? 0, loc: loc.get(sha) ?? 0 }));
+}
+
+/**
+ * Histórico do ROADMAP: uma leitura por commit que mexeu nele, mais a de agora. Cada leitura conta os
+ * itens do escopo (fases, sem as ideias), os feitos e o progresso de cada fase (pelo título, que é o que
+ * sobrevive às renumerações). Base do burn-up, da linha do tempo das fases e do ritmo. Um processo git
+ * para todas as versões (`cat-file --batch`): um por commit levava segundos no Windows.
+ */
+export function historicoRoadmap() {
+  const path = '.decepticons/ROADMAP.md';
+  const log = git('log', '--reverse', '--format=%H%x1f%cI', '--', path).split('\n').filter(Boolean);
+  const snaps = [];
+  const count = (md, t) => {
+    const phases = parseRoadmap(md).phases.filter((p) => !p.ideas);
+    const items = phases.flatMap((p) => p.items);
+    snaps.push({
+      t,
+      total: items.length,
+      done: items.filter((i) => i.status === 'done').length,
+      phases: phases.map((p) => ({ title: p.title, total: p.items.length, done: p.items.filter((i) => i.status === 'done').length, active: p.items.some((i) => i.status !== 'todo') })),
+    });
+  };
+  if (log.length) {
+    try {
+      const input = log.map((l) => `${l.split('\x1f')[0]}:${path}`).join('\n') + '\n';
+      const buf = execFileSync('git', ['cat-file', '--batch'], { input, maxBuffer: 64 << 20, stdio: ['pipe', 'pipe', 'ignore'] });
+      let at = 0;
+      for (const l of log) {
+        const nl = buf.indexOf(10, at);
+        const header = buf.subarray(at, nl).toString();
+        const size = Number(header.split(' ')[2]);
+        at = nl + 1;
+        if (Number.isFinite(size)) {
+          count(buf.subarray(at, at + size).toString('utf8'), new Date(l.split('\x1f')[1]).getTime());
+          at += size + 1;
+        }
+      }
+    } catch {
+      // Sem git (ou histórico raso): só a leitura de agora.
+    }
+  }
+  count(read(path), Date.now());
+  return snaps;
+}
+
+const median = (xs) => {
+  const s = [...xs].sort((a, b) => a - b);
+  return s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : null;
+};
+
+/**
+ * Entrega contínua: as quatro métricas do DORA, lidas do GitHub. Cada execução do CI na `main` (um
+ * push = um merge) é um deploy: se passou, o site foi atualizado; se falhou, é uma mudança que falhou.
+ * `prs` traz o lead time de cada mudança (do primeiro commit ao merge). Sem acesso ao GitHub: null.
+ */
+export function pipeline(prs) {
+  try {
+    const out = execFileSync('gh', ['run', 'list', '--workflow', 'ci.yml', '--branch', 'main', '--limit', '300', '--json', 'conclusion,createdAt,updatedAt,event'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 30_000,
+    });
+    const runs = JSON.parse(out)
+      .filter((r) => r.event === 'push' && (r.conclusion === 'success' || r.conclusion === 'failure'))
+      .map((r) => ({ t0: Date.parse(r.createdAt), t1: Date.parse(r.updatedAt), ok: r.conclusion === 'success' }))
+      .sort((a, b) => a.t0 - b.t0);
+    if (!runs.length) return null;
+    const good = runs.filter((r) => r.ok);
+    const deployMin = median(good.map((r) => (r.t1 - r.t0) / 60_000)) ?? 0;
+    // Recuperação: da primeira falha de uma sequência até o próximo deploy que passou.
+    const recover = [];
+    runs.forEach((r, i) => {
+      if (r.ok || (i > 0 && !runs[i - 1].ok)) return;
+      const next = runs.slice(i + 1).find((x) => x.ok);
+      if (next) recover.push((next.t1 - r.t1) / 3_600_000);
+    });
+    const days = Math.max(1, (runs.at(-1).t1 - runs[0].t0) / 86_400_000);
+    const leads = prs.map((p) => p.leadH).filter((h) => Number.isFinite(h) && h >= 0);
+    return {
+      deploys: good.length,
+      perDay: good.length / days,
+      leadH: (median(leads) ?? 0) + deployMin / 60,
+      failRate: (runs.length - good.length) / runs.length,
+      failures: runs.length - good.length,
+      runs: runs.length,
+      mttrH: median(recover),
+      deployMin,
+    };
+  } catch {
+    return null;
+  }
 }
 
 /** Versão (última tag), commit atual e dia do projeto. */

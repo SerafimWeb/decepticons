@@ -8,7 +8,8 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { atividade, diario, entregas, evolucao, marcos, pedidos, readEstado, readRoadmap, roadmapStats, vitrine } from './site/dados.mjs';
+import { atividade, diario, entregas, evolucao, historicoRoadmap, marcos, pedidos, pipeline, readEstado, readRoadmap, roadmapStats, vitrine } from './site/dados.mjs';
+import { burnup, CHART_CSS, gantt, heatTable, pct, PM_CSS, rankBars } from './site/graficos.mjs';
 import { brDate, esc, HEXGRID, inline, pagina, topo, upper } from './site/tema.mjs';
 
 const argv = process.argv.slice(2);
@@ -54,7 +55,7 @@ const TEAM = [
   { key: 'dono', name: 'DAN', org: 'criador', role: 'Define o jogo, decide as prioridades e joga cada build no site. Nenhuma IA muda o rumo sozinha.' },
   { key: 'claude', name: 'CLAUDE', org: 'Anthropic', role: 'Arquitetura e engenharia: simulação, combate, IA dos bots, testes, CI, deploy e este site.' },
   { key: 'gemini', name: 'GEMINI', org: 'Google', role: 'Interface e som: HUD, configurações, som sintetizado e a versão para celular.' },
-  { key: 'codex', name: 'CODEX', org: 'OpenAI', role: 'Revisão cruzada: confere o que as outras IAs entregaram. Nenhuma IA aprova o próprio código.' },
+  { key: 'codex', name: 'CODEX', org: 'OpenAI', role: 'Visual e desempenho de render do mundo 3D (efeitos, cenário, modelos) e revisão cruzada: confere o que as outras IAs entregaram. Nenhuma IA aprova o próprio código.' },
 ];
 const FRONT_NAME = Object.fromEntries(fronts.map((f) => [f.tag, f.name]));
 const teamHtml = TEAM.map((t) => {
@@ -251,6 +252,160 @@ const frontsHtml = stats.frontStats
   })
   .join('');
 
+// ---------- gestão (sala de operações) ----------
+
+const DAY = 86_400_000;
+const NOW = Date.now();
+const dayLabel = (t) => new Date(t).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit' });
+/** Meia-noite (Brasília) de cada dia entre t0 e t1, para os eixos de tempo. */
+function dayTicks(t0, t1) {
+  const out = [];
+  const first = Date.parse(`${new Date(t0).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' })}T00:00:00-03:00`);
+  for (let t = first + DAY; t <= t1; t += DAY) out.push({ t, label: dayLabel(t) });
+  return out;
+}
+const span = (ms) => (ms < DAY ? `${Math.max(1, Math.round(ms / 3_600_000))} h` : `${(ms / DAY).toFixed(1).replace('.', ',')} dias`);
+
+const snaps = historicoRoadmap().filter((x) => x.total > 0);
+const dora = pipeline(prs);
+const focusPhase = stats.focus;
+const nextPhase = stats.next;
+// Ritmo: itens feitos nas últimas 72 h (a leitura mais antiga dentro da janela serve de base).
+const latest = snaps.at(-1);
+const base = [...snaps].reverse().find((x) => x.t <= NOW - 3 * DAY) ?? snaps[0];
+const pace = latest && base ? (latest.done - base.done) / Math.max(1, (latest.t - base.t) / DAY) : 0;
+const focusLeft = focusPhase.items.length - focusPhase.done;
+const eta = pace > 0 ? focusLeft / pace : null;
+
+// Código de cada item (frente + posição na frente, na ordem do ROADMAP): CB-07, UX-12...
+const itemId = new Map();
+for (const f of stats.frontStats) f.items.forEach((it, i) => itemId.set(it.line, `${CODES[f.tag] ?? f.tag.slice(0, 2).toUpperCase()}-${String(i + 1).padStart(2, '0')}`));
+const AGENT_RE = /\((Claude|Gemini|Codex)\b[^)]*\)/i;
+const card = (it) => {
+  const who = AGENT_RE.exec(it.text)?.[1]?.toLowerCase();
+  const text = it.text.replace(/\s*\([^)]*\)\s*$/, '');
+  return `<li class="card ${it.status}"><span class="cid"><b>${itemId.get(it.line) ?? ''}</b>${esc(FRONT_NAME[it.tag] ?? it.tag)}${it.status === 'doing' ? ' · em curso' : ''}${who ? ` <span class="agent ${who}">${who}</span>` : ''}</span><span class="ct">${inline(text)}</span></li>`;
+};
+const nowItems = focusPhase.items.filter((i) => i.status !== 'done').sort((a, b) => (b.status === 'doing') - (a.status === 'doing'));
+const later = phases.filter((p) => !p.ideas && p.num > (nextPhase?.num ?? focusPhase.num));
+const ideasPhase = phases.find((p) => p.ideas);
+const boardHtml = `<div class="board">
+      <div class="lane now frame"><header><h3>AGORA</h3><span>fase ${focusPhase.num} · ${nowItems.length} abertos</span></header><ol class="cards">${nowItems.map(card).join('')}</ol></div>
+      ${nextPhase ? `<div class="lane frame"><header><h3>PRÓXIMO</h3><span>fase ${nextPhase.num} · ${nextPhase.items.length} itens</span></header><ol class="cards">${nextPhase.items.map(card).join('')}</ol></div>` : ''}
+      <div class="lane frame"><header><h3>DEPOIS</h3><span>${later.length} fases</span></header><ol class="cards">${later
+        .map((p) => `<li class="card phase"><span class="cid"><b>F${p.num}</b>${p.items.length} itens</span><span class="ct">${upper(p.title)}</span></li>`)
+        .join('')}${ideasPhase ? `<li class="card phase"><span class="cid"><b>??</b>${ideasPhase.items.length} na fila</span><span class="ct">IDEIAS</span></li>` : ''}</ol></div>
+    </div>`;
+
+let gestaoHtml = '';
+if (snaps.length > 1) {
+  const t0 = snaps[0].t;
+  const burnHtml = burnup({
+    title: 'Burn-up do roadmap',
+    caption: `Tracejado: o escopo (itens nas fases). Âmbar: os feitos. O escopo cresce junto: <b>+${latest.total - snaps[0].total} itens</b> desde ${dayLabel(t0)}.`,
+    points: snaps.map((x) => ({ t: x.t, total: x.total, done: x.done })),
+    dayTicks: dayTicks(t0, NOW),
+    ariaLabel: `Burn-up: de ${snaps[0].done} de ${snaps[0].total} itens em ${dayLabel(t0)} para ${latest.done} de ${latest.total} hoje`,
+  });
+  const rows = phases
+    .filter((p) => !p.ideas)
+    .map((p) => {
+      const series = snaps.map((x) => ({ t: x.t, ph: x.phases.find((q) => q.title === p.title) }));
+      const start = series.find((x) => x.ph && (x.ph.done > 0 || x.ph.active))?.t ?? null;
+      let end = null;
+      if (p.state === 'done') {
+        for (let i = series.length - 1; i >= 0; i--) {
+          const ph = series[i].ph;
+          if (ph && ph.total > 0 && ph.done === ph.total) end = series[i].t;
+          else break;
+        }
+      }
+      const forecast = p.focus && eta !== null ? NOW + eta * DAY : null;
+      const note = end ? span(end - start) : start ? `${p.done}/${p.items.length}${forecast ? ` · ~${span(forecast - NOW)}` : ''}` : 'não iniciada';
+      return {
+        label: `F${p.num} · ${p.title.toUpperCase()}`,
+        start: end && start === null ? end : start,
+        end,
+        forecast,
+        state: p.state,
+        note,
+        title: end ? `${p.title}: de ${dayLabel(start ?? end)} a ${dayLabel(end)}` : start ? `${p.title}: desde ${dayLabel(start)}` : p.title,
+      };
+    });
+  const t1 = Math.max(NOW, ...rows.map((r) => r.forecast ?? 0)) + DAY * 0.3;
+  const ganttHtml = gantt({
+    title: 'Linha do tempo das fases',
+    caption: `Verde: fechada. Âmbar: em curso. Tracejado: estimativa pelo ritmo dos últimos 3 dias (${nf(Math.round(pace))} itens/dia), refeita a cada entrega.`,
+    rows,
+    t0,
+    t1,
+    today: NOW,
+    ticks: dayTicks(t0, t1),
+  });
+  const cols = phases.map((p) => ({ label: p.ideas ? 'IDEIAS' : `F${p.num}`, sub: p.ideas ? 'na fila' : `${p.done}/${p.items.length}` }));
+  const matrix = heatTable({
+    rows: fronts.map((f) => f.name.toUpperCase()),
+    cols,
+    cells: fronts.map((f) =>
+      phases.map((p) => {
+        const its = p.items.filter((i) => i.tag === f.tag);
+        if (!its.length) return { v: null, text: '·' };
+        if (p.ideas) return { v: 0, text: String(its.length), title: `${f.name}: ${its.length} ideias na fila` };
+        const d = its.filter((i) => i.status === 'done').length;
+        return { v: d / its.length, text: `${d}/${its.length}`, title: `${f.name}, fase ${p.num}: ${d} de ${its.length} feitos` };
+      }),
+    ),
+    strong: (v) => v,
+    caption: 'Itens feitos de cada frente em cada fase',
+  });
+  const byFront = new Map();
+  for (const p of prs) for (const f of p.fronts) byFront.set(f, (byFront.get(f) ?? 0) + 1);
+  const frontBars = byFront.size
+    ? rankBars({
+        title: 'Entregas por frente',
+        caption: 'PRs no ar que mexeram em cada frente (etiquetas automáticas pelos arquivos).',
+        items: [...byFront].sort((a, b) => b[1] - a[1]).map(([f, n]) => ({ label: FRONT_NAME[f] ?? f, value: n })),
+        fmt: (v) => nf(v),
+      })
+    : '';
+  const leadBars = rankBars({
+    title: 'Lead time das últimas entregas',
+    caption: 'Do primeiro commit do PR ao merge na main; o deploy leva mais alguns minutos.',
+    items: prs.slice(0, 12).map((p) => ({ label: `#${p.n} ${p.title.length > 26 ? `${p.title.slice(0, 25)}…` : p.title}`, value: Math.max(0, p.leadH * 60), note: p.agents[0] ?? '' })),
+    fmt: (v) => `${nf(Math.round(v))} min`,
+  });
+  const doraHtml = dora
+    ? `<div class="dora">
+      <div class="read frame"><span class="k">frequência de deploy</span><span class="v">${nf(Math.round(dora.perDay))} <small>por dia</small></span><span class="d">${dora.deploys} deploys: cada merge na main vai para o ar sozinho</span><span class="ref">elite DORA: várias vezes por dia</span></div>
+      <div class="read frame"><span class="k">lead time</span><span class="v">${nf(Math.max(1, Math.round(dora.leadH * 60)))} <small>min</small></span><span class="d">mediana, do primeiro commit ao site no ar (deploy de ~${nf(Math.round(dora.deployMin))} min)</span><span class="ref">elite DORA: menos de 1 hora</span></div>
+      <div class="read frame"><span class="k">falha de mudança</span><span class="v">${pct(dora.failRate, 1)}</span><span class="d">${dora.failures} de ${dora.runs} deploys falharam no CI ou na publicação</span><span class="ref">elite DORA: até 15%</span></div>
+      <div class="read frame"><span class="k">recuperação</span><span class="v">${dora.mttrH === null ? '—' : `${nf(Math.max(1, Math.round(dora.mttrH * 60)))} <small>min</small>`}</span><span class="d">da falha até o próximo deploy bom</span><span class="ref">elite DORA: menos de 1 hora</span></div>
+    </div>`
+    : '<p class="source">Sem acesso ao GitHub neste build: métricas de entrega indisponíveis.</p>';
+
+  gestaoHtml = `<section aria-labelledby="gestao">
+    <span class="kicker">// sala de operações · gestão do projeto</span>
+    <h2 id="gestao">Gestão</h2>
+    <p class="lede">O projeto é gerido como produto de estúdio: quadro de prioridades, escopo e ritmo medidos a cada entrega, métricas de entrega contínua. Tudo lido do ROADMAP, do git e do GitHub; nenhum número é digitado.</p>
+    <div class="sitrep">
+      <div class="read frame"><span class="k">Ritmo</span><span class="v">${nf(Math.round(pace))} <small>itens/dia (72 h)</small></span></div>
+      <div class="read frame"><span class="k">Escopo</span><span class="v">${latest.total} <small>+${latest.total - snaps[0].total} desde ${dayLabel(t0)}</small></span></div>
+      <div class="read frame"><span class="k">Fase atual</span><span class="v">${pct(focusPhase.done / focusPhase.items.length)} <small>${focusLeft} abertos</small></span></div>
+      <div class="read frame"><span class="k">Previsão da fase</span><span class="v">${eta === null ? '—' : `~${span(eta * DAY)}`} <small>no ritmo atual</small></span></div>
+    </div>
+    <h3 class="sub-h">Quadro de prioridades</h3>
+    ${boardHtml}
+    <div class="pm-grid">${burnHtml}${ganttHtml}</div>
+    <h3 class="sub-h">Frentes × fases</h3>
+    <p class="lede">Quanto de cada frente já foi feito em cada fase: mais aceso, mais completo. Mostra onde o esforço foi e o que espera à frente.</p>
+    ${matrix}
+    <h3 class="sub-h">Entrega contínua · métricas DORA</h3>
+    <p class="lede">As quatro métricas que a indústria usa para medir times de software (programa DORA, do Google Cloud), medidas nas execuções do CI e no git.</p>
+    ${doraHtml}
+    <div class="pm-grid">${frontBars}${leadBars}</div>
+  </section>`;
+}
+
 // ---------- diário e entregas ----------
 
 const byDay = new Map();
@@ -278,6 +433,9 @@ const prHtml = prs
 // ---------- página ----------
 
 const css = `
+  ${CHART_CSS}
+  ${PM_CSS}
+  .sub-h { font: 400 1.5rem/1.1 var(--fd); letter-spacing: .06em; text-transform: uppercase; margin-top: 12px; }
   .hero { display: grid; gap: 18px; padding-top: 30px; }
   .pitch { font-size: 17px; line-height: 1.6; color: var(--text); max-width: 70ch; text-wrap: pretty; }
 
@@ -579,6 +737,8 @@ const body = `
     <p class="lede">Cada hexágono é uma fase. O que pulsa em branco é onde a equipe está agora. Clique num hexágono para filtrar as frentes por fase.</p>
     <ol class="route">${routeHtml}</ol>
   </section>
+
+  ${gestaoHtml}
 
   <section aria-labelledby="frentes">
     <span class="kicker">// sistemas da unidade</span>
