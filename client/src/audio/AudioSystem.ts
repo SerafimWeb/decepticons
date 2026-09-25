@@ -294,6 +294,71 @@ export class AudioSystem {
   }
 
   /**
+   * TIRO DO ANDRÓIDE — blaster agudo (escala 1).
+   * Oscilador de onda quadrada alto/curto + envelope rápido, sem muito rastro.
+   */
+  playAndroidShot(gain = 1): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled || gain < 0.03) return;
+
+    const now = ctx.currentTime;
+    
+    // Oscilador de onda quadrada (timbre mais retro/sintético)
+    const osc = ctx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(1200, now); // bem agudo
+    osc.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.setValueAtTime(0.2 * gain, now); // volume menor (é fraco)
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    osc.connect(oscGain);
+    oscGain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.09);
+    osc.onended = () => { oscGain.disconnect(); };
+  }
+
+  /**
+   * PASSO DO ANDRÓIDE — passos leves e metálicos rápidos.
+   */
+  playAndroidStep(gain = 1): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer || gain < 0.03) return;
+
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(150, now + 0.04);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(0.08 * gain, now);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    osc.connect(og);
+    og.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.06);
+    osc.onended = () => { og.disconnect(); };
+
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 1200;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.05 * gain, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+    src.connect(filter);
+    filter.connect(ng);
+    ng.connect(masterGain);
+    src.start(now);
+    src.stop(now + 0.05);
+    src.onended = () => { ng.disconnect(); filter.disconnect(); };
+  }
+
+  /**
    * CHIADO DE BLIND MODE — estática quando a cabeça do Mech é destruída.
    * Ruído branco filtrado em loop; chame `stopBlind()` para parar.
    * Retorna o nó de controle para que o chamador possa parar.

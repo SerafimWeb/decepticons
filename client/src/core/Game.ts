@@ -15,6 +15,7 @@ import { BotSystem } from '../combat/BotSystem';
 import { Respawner } from '../combat/Respawner';
 import { Round } from '../combat/Round';
 import { Vector09 } from '../entities/Vector09';
+import { Android } from '../entities/Android';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { DebrisSystem } from '../environment/DebrisSystem';
@@ -28,6 +29,7 @@ import { HUD } from '../ui/HUD';
 import { KillFeed } from '../ui/KillFeed';
 import { MouseCalibration } from '../ui/MouseCalibration';
 import { Onboarding } from '../ui/Onboarding';
+import { OffscreenIndicators } from '../ui/OffscreenIndicators';
 import { RoundHud } from '../ui/RoundHud';
 import { SettingsMenu } from '../ui/SettingsMenu';
 import { EnemySettings } from '../ui/EnemySettings';
@@ -102,6 +104,8 @@ export class Game {
   private readonly splash = new BrandSplash();
   private brandShown = false;
   private readonly onboarding = new Onboarding();
+  /** Setas na borda da tela para inimigos fora da visão. */
+  private readonly offscreen = new OffscreenIndicators();
   /** Nó de gain do loop de chiado do Blind Mode; null = som não está tocando. */
   private blindGain: GainNode | null = null;
   /** Flag para detectar a transição false→true do dash a cada frame. */
@@ -191,6 +195,16 @@ export class Game {
     this.bots.targets = [this.mech];
     this.round.register(this.mech, 'VOCÊ');
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
+    // Sons dos andróides (Gemini): tiro e pouso, mais baixos quanto mais longe do jogador.
+    for (const b of this.bots.mechs) {
+      if (!(b instanceof Android)) continue;
+      const fire = b.onFire.bind(b);
+      b.onFire = () => {
+        fire();
+        this.audio.playAndroidShot(this.nearness(b));
+      };
+      b.onLand = () => this.audio.playAndroidStep(this.nearness(b));
+    }
     this.roundHud = new RoundHud(this.mech);
     // Botão na tela de pausa; a calibração tem camada própria e não retoma o jogo.
     new MouseCalibration(this.settings, [
@@ -238,6 +252,11 @@ export class Game {
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician });
     this.settings.onChange((s) => this.applySettings(s));
+  }
+
+  /** 1 perto do jogador, 0 a 70 m ou mais: o volume dos sons de um bot. */
+  private nearness(m: MechBase): number {
+    return Math.max(0, 1 - m.position.distanceTo(this.mech.position) / 70);
   }
 
   /** Montagem nova do Hangar entra no renascimento: armas trocadas, carregador cheio, Mech frio. */
@@ -310,8 +329,11 @@ export class Game {
     // Som de disparo: wrap do onFire do jogador (não toca para bots — só mech do jogador).
     // O método onFire original anima o recuo; o wrap mantém esse comportamento e adiciona o som.
     const _origFire = mech.onFire.bind(mech);
-    mech.onFire = () => { _origFire(); this.audio.playShot(); this.onboarding.trigger('rockets'); };
-    this.player.onRocket = () => this.audio.playRocketLaunch();
+    mech.onFire = () => { _origFire(); this.audio.playShot(); };
+    this.player.onRocket = () => {
+      this.audio.playRocketLaunch();
+      this.onboarding.trigger('rockets');
+    };
     this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
     this.combat.onMechHit = (e) => {
       if (e.shooter === mech) {
@@ -321,7 +343,7 @@ export class Game {
       }
       if (e.mech === mech) {
         this.hud.showDamage();
-        this.onboarding.trigger('damage');
+        this.onboarding.trigger(e.shooter instanceof Android ? 'androids' : 'damage');
         this.vibrate(35);
         if (e.shooter) {
           this.damageIndicator.show(mech.position, e.shooter.position, rig.look.yaw);
@@ -583,6 +605,8 @@ export class Game {
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
     this.hud.setRockets(this.player.launcher.ammo, this.player.launcher.reloadProgress, this.mech.canFireSecondary);
     this.hud.setHeat(this.mech.heat, this.mech.overheated);
+    if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
+    this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
     this.renderer.info.reset();
