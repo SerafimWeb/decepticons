@@ -296,13 +296,13 @@ async function check() {
     page.on('response', (r) => r.status() >= 400 && !/fonts.g/.test(r.url()) && failures.push(`HTTP ${r.status()}: ${r.url()}`));
     // Bastidores: página própria, links internos vivos, sem o codinome.
     await page.goto(`${base}bastidores/`);
-    if ((await page.title()) !== 'Bastidores · Cyber-Mech Protocol') failures.push(`título dos bastidores: "${await page.title()}"`);
+    if ((await page.title()) !== 'Bastidores · CYBERMECH') failures.push(`título dos bastidores: "${await page.title()}"`);
     await pageSane(page, 'bastidores', failures);
     await publicPage(page, 'bastidores', failures);
     // Landing na raiz: é por ela que se entra no jogo.
     await page.goto(base);
     const title = await page.title();
-    if (title !== 'Cyber-Mech Protocol') failures.push(`título da raiz: "${title}"`);
+    if (title !== 'CYBERMECH') failures.push(`título da raiz: "${title}"`);
     await pageSane(page, 'landing', failures);
     await publicPage(page, 'landing', failures);
     await page.click('a.play-btn');

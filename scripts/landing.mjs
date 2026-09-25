@@ -49,7 +49,7 @@ const facts = [
 const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
     <div class="hero-copy">
       <p class="boot">&gt; shooter de mechs · direto no navegador · grátis<span class="cursor" aria-hidden="true">█</span></p>
-      <h1 class="title">CYBER-MECH<span>PROTOCOL</span></h1>
+      <h1 class="title">CYBER<span>MECH</span></h1>
       <p class="pitch">Pilote um Mech de combate numa arena industrial e desmonte o inimigo peça por peça. Abriu o link, está jogando: sem instalar, sem conta e sem pay-to-win.</p>
       <div class="cta">
         <a class="play-btn" href="./jogar/">[ ENTRAR NO COCKPIT ]</a>
@@ -253,7 +253,7 @@ const css = `
 `;
 
 const body = `
-  ${topo({ base: './', current: 'jogo', left: `CYBER-MECH PROTOCOL // ${esc(m.version ?? 'protótipo')}`, live: `build de hoje · ${esc(m.head)}` })}
+  ${topo({ base: './', current: 'jogo', left: `CYBERMECH // ${esc(m.version ?? 'protótipo')}`, live: `build de hoje · ${esc(m.head)}` })}
   ${heroHtml}
   ${galleryHtml}
   ${featuresHtml}
@@ -262,12 +262,12 @@ const body = `
   ${pledgeHtml}
   ${buildHtml}
   ${endHtml}
-  <footer><span>Cyber-Mech Protocol · feito por Dan e uma equipe de IAs</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
+  <footer><span>CYBERMECH · feito por Dan e uma equipe de IAs</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
 `;
 
 const description = 'Shooter de Mechs direto no navegador: desmonte o inimigo peça por peça numa arena industrial. Grátis, sem instalar e sem pay-to-win.';
 const html = pagina({
-  title: 'Cyber-Mech Protocol',
+  title: 'CYBERMECH',
   description,
   css,
   body,

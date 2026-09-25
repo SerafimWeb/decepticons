@@ -1,4 +1,4 @@
-# IDENTITY — Cyber-Mech Protocol
+# IDENTITY — CYBERMECH
 
 > A alma do projeto: o quê, para quem, como fala, como parece.
 > As regras técnicas ficam em `PROTOCOLO_UNIVERSAL.md`.
@@ -7,7 +7,7 @@
 
 ## 1. SOBRE O PROJETO
 
-**Nome público:** Cyber-Mech Protocol
+**Nome público:** CYBERMECH (até 25/09: "Cyber-Mech Protocol"; o dono tirou o "Protocol")
 **Codinome interno:** DECEPTICONS (nome da pasta e da memória `.decepticons/`)
 **Cliente:** projeto próprio
 **Propósito:** shooter de Mechs multiplayer que roda no navegador, leve o bastante para muitos jogadores simultâneos em hardware comum.
@@ -29,19 +29,20 @@
 
 Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 
-**Âmbar industrial** (decisão do dono em 24/09: "azul e roxo é a assinatura de feito com IA"). A mesma identidade do site. Mundo 3D em `client/src/core/palette.ts`; interface nas variáveis do `styles.css`.
+**Neon tático, multicolorido** (dono, 25/09: "verde neon, vermelho, pode usar diversas cores, só não fica apenas em azul e roxo"). Mundo 3D em `client/src/core/palette.ts`; interface nas variáveis do `styles.css`. O site do projeto segue no âmbar de terminal.
 
 | Papel | Cor |
 |---|---|
-| Fundo | `#0a0906` quase preto quente |
-| Destaque (HUD, mira, contornos) | `#ffb000` âmbar |
-| Quente (títulos, fogo, foguetes, luz de sódio) | `#ff7a1a` laranja |
-| Alerta (inimigo, dano, alvo na mira) | `#ff3b1f` vermelho |
-| Texto claro, prédios secundários | `#e8dcc4` branco quente |
-| Inimigos | `#6f7a3a` verde-oliva, visor vermelho |
-| Jogador | `#d94a1a` laranja-ferrugem, visor âmbar |
+| Fundo | `#06080a` quase preto |
+| Destaque (HUD, mira, tiro do jogador, título) | `#39ff6a` verde neon |
+| Quente (fogo, foguetes, barricadas) | `#ff8a1f` laranja |
+| Atenção | `#ffe14d` amarelo |
+| Alerta (IAs rebeldes, dano, alvo na mira) | `#ff2d3d` vermelho |
+| Texto claro, prédios | `#eef2e8` branco |
+| Jogador | `#e0a21a` amarelo de perigo, visor verde |
+| IAs rebeldes | `#8c1f22` vermelho escuro, visor vermelho |
 
-**Sem azul nem roxo.** Nova cor entra primeiro no `palette.ts` / `:root`, nunca solta no código.
+**Nunca só azul e roxo.** Nova cor entra primeiro no `palette.ts` / `:root`, nunca solta no código.
 
 **Fonte:** monoespaçada do sistema (`Consolas`, `Courier New`), sem webfont para não pesar o carregamento.
 **Render:** brilho via bloom HDR (cores > 1.0 passam do limiar); geometria procedural com primitivas, sem assets externos por enquanto.
@@ -91,4 +92,4 @@ Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 
 ---
 
-*IDENTITY.md v1.0 | Cyber-Mech Protocol | 2026-09-23*
+*IDENTITY.md v1.1 | CYBERMECH | 2026-09-25*

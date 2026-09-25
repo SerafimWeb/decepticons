@@ -1,6 +1,18 @@
-# HISTÓRICO DE DECISÕES — Cyber-Mech Protocol
+# HISTÓRICO DE DECISÕES — CYBERMECH
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
+
+## [2026-09-25] CYBERMECH; paleta neon multicolorida
+**Pedido do dono:** "mude o nome para CYBERMECH apenas, sem protocol" e "quero verde neon, vermelho, pode usar diversas cores, só não fica apenas em azul e roxo".
+**Nome:** CYBERMECH no jogo (título e pausa), no site (landing, bastidores, prévia do link), nos documentos e no `package.json`. O caminho `/cybermech/` já servia. O codinome interno continua o do repositório. "Protocolo Serafim UM" não muda: é o protocolo de engenharia, não o jogo.
+**Paleta (Claude):** o âmbar de ontem ficou monocromático. Agora é neon tático:
+- **Verde neon** para o que é do jogador: HUD, mira, tiro, visor e título.
+- **Vermelho** para as IAs rebeldes: Mechs vermelhos, visor e tiros.
+- **Laranja e amarelo** para fogo, foguetes e perigo. O jogador tem pintura amarela de perigo.
+- Prédios em verde, amarelo e branco, e grade verde no chão.
+- Tudo continua saindo do `core/palette.ts` e dos tokens do `styles.css`: a troca foi de valores, não de código.
+- O site do projeto fica no âmbar de terminal, que o dono já aprovou.
+**Quem decidiu:** dono (nome, direção das cores); Claude (tons).
 
 ## [2026-09-24] Calibragem do Vector-09: menos velocidade e calor na arma
 **Pedido do dono:** "esse primeiro robô está muito rápido, e a sequência de tiro dele precisa dar um respiro; não dá pra ficar direto assim, pra não apelar tanto".

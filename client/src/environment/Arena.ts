@@ -20,9 +20,9 @@ export interface Occluder {
 }
 
 const BUILDINGS: BlockDef[] = [
-  { x: -28, z: -35, w: 16, d: 16, h: 30, accent: PALETTE.amber },
-  { x: 32, z: -15, w: 12, d: 22, h: 20, accent: PALETTE.bone },
-  { x: 4, z: -70, w: 24, d: 12, h: 42, accent: PALETTE.sodium },
+  { x: -28, z: -35, w: 16, d: 16, h: 30, accent: PALETTE.green },
+  { x: 32, z: -15, w: 12, d: 22, h: 20, accent: PALETTE.yellow },
+  { x: 4, z: -70, w: 24, d: 12, h: 42, accent: PALETTE.bone },
 ];
 
 // Barricadas destrutíveis (cobertura que vira destroço).
@@ -114,7 +114,7 @@ export class Arena {
         new THREE.Vector3(h, 0.05, h),
         new THREE.Vector3(-h, 0.05, h),
       ]),
-      new THREE.LineBasicMaterial({ color: neon(PALETTE.amber, 3) }),
+      new THREE.LineBasicMaterial({ color: neon(PALETTE.green, 3) }),
     );
     this.scene.add(border);
 
@@ -156,7 +156,7 @@ export class Arena {
 
   private buildPlatform(): void {
     const p = PLATFORM;
-    this.addSolid(new THREE.Vector3(p.x, p.h / 2, p.z), new THREE.Vector3(p.w, p.h, p.d), PALETTE.amber);
+    this.addSolid(new THREE.Vector3(p.x, p.h / 2, p.z), new THREE.Vector3(p.w, p.h, p.d), PALETTE.green);
 
     // Rampa descendo da borda +X da plataforma até o chão.
     const angle = Math.atan2(p.h, RAMP_RUN);
@@ -169,7 +169,7 @@ export class Arena {
       p.z,
     );
     const rot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -angle);
-    this.addSolid(center, new THREE.Vector3(length, thickness, RAMP_WIDTH), PALETTE.amber, undefined, rot);
+    this.addSolid(center, new THREE.Vector3(length, thickness, RAMP_WIDTH), PALETTE.green, undefined, rot);
   }
 
   private addSolid(

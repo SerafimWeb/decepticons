@@ -1,4 +1,4 @@
-# DEPLOY — Cyber-Mech Protocol
+# DEPLOY — CYBERMECH
 
 > Fonte canônica de infraestrutura (R8). Leia antes de mexer em build, CI ou hospedagem.
 

@@ -1,4 +1,4 @@
-# ROADMAP — Cyber-Mech Protocol
+# ROADMAP — CYBERMECH
 
 > Visão macro. O detalhe da semana fica em `ESTADO_ATUAL.md`; o estado real das features, em `STATUS_REAL.md`;
 > o porquê de cada fase, em `GAME_DESIGN.md`.
@@ -72,7 +72,8 @@
 - [x] Celular: mira assistida só no toque (freia perto do inimigo, puxa de leve, acompanha e antecipa o movimento dele) e tiro automático, desligáveis nas configurações #jogabilidade
 - [x] Mira que acende sobre um inimigo (toque e mouse) #ux
 - [x] Calibragem do Vector-09: menos velocidade (12 m/s) e calor na arma (superaquece e trava; rajadas rendem mais que segurar o gatilho), para jogador e bots #combate
-- [x] Paleta âmbar industrial no jogo e no site (sem azul e roxo): inimigos verde-oliva com visor vermelho, tiros inimigos vermelhos #cenarios
+- [x] Paleta neon multicolorida no jogo (verde neon, vermelho, laranja, amarelo; nunca só azul e roxo): jogador amarelo com visor verde, IAs rebeldes vermelhas #cenarios
+- [x] Nome do jogo: CYBERMECH (sem o "Protocol") #negocio
 - [x] Vibração no celular ao levar tiro e ao abater #ux
 - [x] Botões do toque em arco em volta do polegar (FOGO para dentro da tela) e editor para arrastar e mudar o tamanho, salvo no aparelho #ux
 - [~] Ajuste fino da mira no celular com o playtest do dono: velocidade do dedo suavizada; a ajuda solta o alvo quando o jogador puxa para longe #jogabilidade

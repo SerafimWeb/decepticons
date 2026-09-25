@@ -1,4 +1,4 @@
-# STATUS_REAL — Cyber-Mech Protocol
+# STATUS_REAL — CYBERMECH
 
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.

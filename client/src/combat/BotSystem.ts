@@ -11,7 +11,7 @@ import type { Respawner } from './Respawner';
 
 export const BOT_RESPAWN_S = 4;
 /** Violeta: lê como "não sou eu" contra o laranja do jogador. */
-/** Inimigo: verde-oliva militar, visor e tiros vermelhos (o jogador é laranja com âmbar). */
+/** IA rebelde: vermelho, com visor e tiros vermelhos (o jogador é amarelo com verde neon). */
 const BOT_PAINT = PALETTE.enemyPaint;
 const MUZZLE_COLOR = GLOW.enemyMuzzle;
 /** Indicativos de chamada dos pilotos (placar). */
