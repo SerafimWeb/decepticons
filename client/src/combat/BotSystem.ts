@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLOW, PALETTE } from '../core/palette';
 import type { MechBase } from '../entities/MechBase';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
@@ -10,8 +11,9 @@ import type { Respawner } from './Respawner';
 
 export const BOT_RESPAWN_S = 4;
 /** Violeta: lê como "não sou eu" contra o laranja do jogador. */
-const BOT_PAINT = 0x7b2cff;
-const MUZZLE_COLOR = new THREE.Color(3.0, 0.6, 2.0);
+/** Inimigo: verde-oliva militar, visor e tiros vermelhos (o jogador é laranja com âmbar). */
+const BOT_PAINT = PALETTE.enemyPaint;
+const MUZZLE_COLOR = GLOW.enemyMuzzle;
 /** Indicativos de chamada dos pilotos (placar). */
 const CALLSIGNS = ['KESTREL', 'MAKO', 'VIPER', 'RAVEN', 'ORCA', 'JACKAL', 'WRAITH', 'COBALT'];
 
@@ -58,7 +60,7 @@ export class BotSystem {
     const waypoints = o.waypoints.map(([x, z]) => new THREE.Vector3(x, 0, z));
     const seed = o.seed ?? 1;
     o.spawns.forEach(([x, z], i) => {
-      const mech = new Vector09({ paint: BOT_PAINT });
+      const mech = new Vector09({ paint: BOT_PAINT, visor: PALETTE.signal });
       mech.spawn(o.physics, new THREE.Vector3(x, 0, z));
       mech.applyFacing(Math.atan2(x, z), 0); // nasce olhando para o centro da arena
       o.scene.add(mech.root);

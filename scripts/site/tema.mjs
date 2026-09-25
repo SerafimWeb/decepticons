@@ -25,7 +25,7 @@ export const BASE_CSS = `
     --bg: #070604; --panel: #0c0a06; --panel2: #120e07;
     --line: rgba(255,176,0,.2); --line2: rgba(255,176,0,.38); --grid: rgba(255,176,0,.12);
     --amber: #ffb000; --text: #ffcf70; --muted: #b8893a; --faint: #6e5424;
-    --green: #7dff72; --cyan: #5ce1ff; --red: #ff5a3c;
+    --green: #7dff72; --bone: #f2e6cf; --red: #ff5a3c;
     --fd: 'VT323', 'Share Tech Mono', Consolas, monospace;
     --fb: 'Share Tech Mono', Consolas, 'Courier New', monospace;
     --fs: 'Saira Stencil One', 'Arial Black', Impact, sans-serif;
@@ -57,13 +57,13 @@ export const BASE_CSS = `
   h3 { font: 400 1.35rem/1.05 var(--fd); letter-spacing: .06em; color: var(--amber); }
   p { margin: 0; }
   b { color: var(--amber); font-weight: 400; }
-  code { font: inherit; color: var(--cyan); }
-  a { color: var(--cyan); }
+  code { font: inherit; color: var(--bone); }
+  a { color: var(--bone); }
   img { max-width: 100%; display: block; }
   .kicker { font: 400 12px/1.3 var(--fb); letter-spacing: .22em; text-transform: uppercase; color: var(--muted); }
   .lede { color: var(--muted); max-width: 66ch; text-wrap: pretty; }
   button { font: inherit; color: inherit; }
-  :focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--bone); outline-offset: 3px; }
 
   /* Moldura de HUD: cantos em L, como retícula de cockpit. */
   .frame { position: relative; border: 1px solid var(--line); background: var(--panel); }
@@ -109,7 +109,7 @@ export const BASE_CSS = `
   }
   .play-btn:hover { background: var(--text); box-shadow: 0 0 36px rgba(255,176,0,.55); }
   .play-btn:active { transform: translateY(1px); }
-  .link-btn { color: var(--cyan); text-decoration: none; letter-spacing: .12em; text-transform: uppercase; font-size: 13px; border-bottom: 1px dashed var(--cyan); padding-bottom: 2px; }
+  .link-btn { color: var(--bone); text-decoration: none; letter-spacing: .12em; text-transform: uppercase; font-size: 13px; border-bottom: 1px dashed var(--bone); padding-bottom: 2px; }
   .link-btn:hover { color: var(--text); border-color: var(--text); }
 
   /* --- leituras numéricas --- */
@@ -121,7 +121,7 @@ export const BASE_CSS = `
 
   /* --- chips de agente e frente --- */
   .agent { display: inline-block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; padding: 1px 6px; border: 1px solid currentColor; }
-  .agent.claude { color: #ff9a6b; } .agent.gemini { color: #7fb0ff; } .agent.codex { color: #5fd8a8; } .agent.dono { color: var(--amber); }
+  .agent.claude { color: #ff9a6b; } .agent.gemini { color: var(--bone); } .agent.codex { color: #5fd8a8; } .agent.dono { color: var(--amber); }
 
   footer { color: var(--faint); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; }
   footer a { color: var(--muted); }

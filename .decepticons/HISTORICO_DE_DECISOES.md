@@ -2,6 +2,18 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-24] Paleta âmbar industrial: sai o azul e o roxo
+**Pedido do dono:** "azul e roxo é a assinatura de feito com IA, temos que mudar isso também".
+**Decisão (Claude, dentro da identidade que o dono já aprovou no site):** o jogo passa a usar o âmbar industrial do site (terminal de fósforo, aço, luz de sódio).
+- **Arena:** contornos em âmbar, branco quente e laranja de sódio; chão de aço com grade âmbar; luz quente; balizas vermelhas.
+- **Mechs:** jogador laranja-ferrugem com visor âmbar; inimigos verde-oliva com visor vermelho.
+- **Tiros:** do jogador em âmbar, do inimigo em vermelho, para saber de onde vem cada tiro.
+- **Interface:** tokens com nome de papel (`--accent` âmbar, `--hot` laranja, `--alert` vermelho, `--ink` branco quente); a mira fica vermelha sobre o inimigo; fundos azul-marinho viraram marrom-escuro.
+- **Site:** o ciano secundário virou branco quente (links, fase atual); o Gemini deixou de ser azul nos cartões.
+- **Regra nova (IDENTITY):** cor nova entra primeiro no `core/palette.ts` / `:root`; nada de azul nem roxo.
+**Custo de CPU:** nenhum (só troca de cor; os materiais são os mesmos).
+**Quem decidiu:** dono (sair do azul/roxo); Claude (paleta, a ajustar com o olho do dono).
+
 ## [2026-09-24] Toque: botões em arco, editor de controles e mira sem "falha"
 **Relato do dono (terceiro teste no celular):** "a mira ainda não tá boa, meio falha; os botões num shape meio quadrado não pegam bem meu dedo; poderia ser mais livre o centro do tiro, para segurar com mais conforto, pois assim tenho que segurar bem na ponta".
 **Causas:**

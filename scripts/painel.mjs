@@ -285,7 +285,7 @@ const css = `
   .member { padding: 16px; display: grid; gap: 10px; align-content: start; }
   .member header { display: grid; gap: 6px; justify-items: start; }
   .member h3 { font-size: 1.9rem; }
-  .m-claude::before { --c: #ff9a6b; } .m-gemini::before { --c: #7fb0ff; } .m-codex::before { --c: #5fd8a8; }
+  .m-claude::before { --c: #ff9a6b; } .m-gemini::before { --c: var(--bone); } .m-codex::before { --c: #5fd8a8; }
   .mrole { font-size: 13.5px; line-height: 1.5; color: var(--text); }
   .mnum { margin: 0; display: flex; gap: 18px; }
   .mnum div { display: grid; }
@@ -322,7 +322,7 @@ const css = `
   .snum { font: 400 1rem/1 var(--fd); color: var(--bg); background: var(--amber); justify-self: start; padding: 3px 6px 1px; }
   .step h3 { font-size: 1.3rem; }
   .step p { font-size: 13px; line-height: 1.5; color: var(--muted); }
-  .step .sample { color: var(--cyan); font-size: 12px; border-left: 2px solid var(--line2); padding-left: 8px; }
+  .step .sample { color: var(--bone); font-size: 12px; border-left: 2px solid var(--line2); padding-left: 8px; }
 
   .rules { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); }
   .rule { background: var(--panel); padding: 14px 16px 16px; display: grid; gap: 6px; align-content: start; }
@@ -364,16 +364,16 @@ const css = `
     display: grid; justify-items: center; align-content: start; gap: 7px; text-align: center;
   }
   .node-btn:hover .node-title { color: var(--amber); }
-  .node-btn[aria-pressed="true"] { outline: 1px dashed var(--cyan); outline-offset: 4px; }
+  .node-btn[aria-pressed="true"] { outline: 1px dashed var(--bone); outline-offset: 4px; }
   .hex { width: 66px; height: 66px; display: grid; place-items: center; clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0 50%); background: var(--faint); }
   .hex span { width: 62px; height: 62px; display: grid; place-items: center; clip-path: inherit; background: var(--panel2); font: 400 2.1rem/1 var(--fd); color: var(--muted); }
   .done .hex { background: var(--green); } .done .hex span { color: var(--green); }
   .open .hex { background: var(--amber); } .open .hex span { color: var(--amber); }
-  .focus .hex { background: var(--cyan); animation: lock 1.6s ease-in-out infinite; } .focus .hex span { color: var(--cyan); }
+  .focus .hex { background: var(--bone); animation: lock 1.6s ease-in-out infinite; } .focus .hex span { color: var(--bone); }
   .ideas .hex { background: repeating-linear-gradient(45deg, var(--muted) 0 3px, transparent 3px 6px); }
-  @keyframes lock { 50% { filter: drop-shadow(0 0 12px rgba(92,225,255,.9)); } }
+  @keyframes lock { 50% { filter: drop-shadow(0 0 12px rgba(242,230,207,.9)); } }
   .node-label { font-size: 10.5px; letter-spacing: .16em; color: var(--faint); }
-  .done .node-label { color: var(--green); } .open .node-label { color: var(--amber); } .focus .node-label { color: var(--cyan); }
+  .done .node-label { color: var(--green); } .open .node-label { color: var(--amber); } .focus .node-label { color: var(--bone); }
   .node-title { font: 400 1.15rem/1.05 var(--fd); letter-spacing: .04em; color: var(--text); max-width: 14ch; }
   .locked .node-title { color: var(--muted); }
   .node-bar { width: 70%; height: 4px; background: rgba(255,176,0,.12); }
@@ -384,9 +384,9 @@ const css = `
   .chip { background: var(--panel); border: 1px solid var(--line2); padding: 6px 12px; font: 400 12px/1 var(--fb); letter-spacing: .14em; color: var(--muted); cursor: pointer; text-transform: uppercase; }
   .chip:hover { color: var(--amber); border-color: var(--amber); }
   .chip[aria-pressed="true"] { background: var(--amber); color: var(--bg); border-color: var(--amber); }
-  .phase-pill { display: none; gap: 10px; align-items: center; margin-left: auto; color: var(--cyan); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
+  .phase-pill { display: none; gap: 10px; align-items: center; margin-left: auto; color: var(--bone); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
   .phase-pill.on { display: inline-flex; }
-  .phase-pill button { background: none; border: 1px solid var(--cyan); padding: 5px 9px; cursor: pointer; color: var(--cyan); letter-spacing: .14em; }
+  .phase-pill button { background: none; border: 1px solid var(--bone); padding: 5px 9px; cursor: pointer; color: var(--bone); letter-spacing: .14em; }
   .fronts { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; align-items: start; }
   .front { padding: 16px 16px 14px; display: grid; gap: 12px; }
   .front header { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; }
@@ -411,7 +411,7 @@ const css = `
   .it.done .tag { color: var(--green); } .it.done .t { color: var(--muted); }
   .it.doing .tag { color: var(--amber); }
   .it.todo .tag { color: var(--text); }
-  .it.idea .tag { color: var(--cyan); } .it.idea .t { color: var(--muted); }
+  .it.idea .tag { color: var(--bone); } .it.idea .t { color: var(--muted); }
   .it .ph { font-size: 11px; color: var(--faint); letter-spacing: .08em; }
   .it[hidden] { display: none; }
   .empty-note { display: none; font-size: 12px; letter-spacing: .14em; color: var(--faint); }
@@ -576,7 +576,7 @@ const body = `
   <section aria-labelledby="rota">
     <span class="kicker">// rota de operações</span>
     <h2 id="rota">Mapa da campanha</h2>
-    <p class="lede">Cada hexágono é uma fase. O que pulsa em ciano é onde a equipe está agora. Clique num hexágono para filtrar as frentes por fase.</p>
+    <p class="lede">Cada hexágono é uma fase. O que pulsa em branco é onde a equipe está agora. Clique num hexágono para filtrar as frentes por fase.</p>
     <ol class="route">${routeHtml}</ol>
   </section>
 

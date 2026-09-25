@@ -8,6 +8,10 @@
 
 ## ÚLTIMA SESSÃO FEZ (24/09)
 > As sessões anteriores estão no `HISTORICO_DE_DECISOES.md` (cofre) e nas entregas dos bastidores.
+- **Paleta âmbar industrial (Claude; dono: "azul e roxo é a assinatura de feito com IA"):**
+  - Jogo e site na mesma identidade: âmbar, laranja de sódio, vermelho de alerta, branco quente e aço.
+  - Inimigos verde-oliva com visor e tiros vermelhos.
+  - Mundo 3D pelo `core/palette.ts`; interface por tokens com nome de papel (`--accent`, `--hot`, `--alert`, `--ink`).
 - **Controles de toque, terceira volta (Claude; dono: "a mira ainda falha; botões num shape quadrado, tenho que segurar na ponta"):**
   - Botões redondos em arco em volta do polegar, com FOGO para dentro da tela.
   - "Ajustar controles" na pausa: arrastar cada botão e mudar o tamanho, salvo no aparelho (`ui/touchLayout.ts`, com testes de não sobreposição em 7 telas).

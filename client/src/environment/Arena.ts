@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PALETTE } from '../core/palette';
 import { mulberry32 } from '../core/rng';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { DestructibleDef, Destructibles } from './Destructibles';
@@ -19,19 +20,19 @@ export interface Occluder {
 }
 
 const BUILDINGS: BlockDef[] = [
-  { x: -28, z: -35, w: 16, d: 16, h: 30, accent: 0x00e5ff },
-  { x: 32, z: -15, w: 12, d: 22, h: 20, accent: 0xff2bd6 },
-  { x: 4, z: -70, w: 24, d: 12, h: 42, accent: 0x9a5cff },
+  { x: -28, z: -35, w: 16, d: 16, h: 30, accent: PALETTE.amber },
+  { x: 32, z: -15, w: 12, d: 22, h: 20, accent: PALETTE.bone },
+  { x: 4, z: -70, w: 24, d: 12, h: 42, accent: PALETTE.sodium },
 ];
 
 // Barricadas destrutíveis (cobertura que vira destroço).
 const BARRICADES: DestructibleDef[] = [
-  { x: -8, z: 0, w: 8, d: 2, h: 2.2, accent: 0xff6a00, hp: 400 },
-  { x: 14, z: 8, w: 2, d: 8, h: 2.2, accent: 0xff6a00, hp: 400 },
-  { x: -30, z: 10, w: 6, d: 6, h: 3.5, accent: 0xff6a00, hp: 700 },
-  { x: 10, z: -38, w: 10, d: 2, h: 2.2, accent: 0xff6a00, hp: 400 },
-  { x: 22, z: 30, w: 3, d: 3, h: 6, accent: 0xff6a00, hp: 500 },
-  { x: -14, z: 32, w: 12, d: 1.5, h: 4, accent: 0xff6a00, hp: 600 },
+  { x: -8, z: 0, w: 8, d: 2, h: 2.2, accent: PALETTE.sodium, hp: 400 },
+  { x: 14, z: 8, w: 2, d: 8, h: 2.2, accent: PALETTE.sodium, hp: 400 },
+  { x: -30, z: 10, w: 6, d: 6, h: 3.5, accent: PALETTE.sodium, hp: 700 },
+  { x: 10, z: -38, w: 10, d: 2, h: 2.2, accent: PALETTE.sodium, hp: 400 },
+  { x: 22, z: 30, w: 3, d: 3, h: 6, accent: PALETTE.sodium, hp: 500 },
+  { x: -14, z: 32, w: 12, d: 1.5, h: 4, accent: PALETTE.sodium, hp: 600 },
 ];
 
 // Plataforma elevada + rampa (testa subida de rampa e pulo de cima).
@@ -66,21 +67,21 @@ export class Arena {
   readonly occluders: Occluder[] = [];
 
   private readonly boxGeo = new THREE.BoxGeometry(1, 1, 1);
-  private readonly solidMat = new THREE.MeshStandardMaterial({ color: 0x2a2d36, metalness: 0.3, roughness: 0.8 });
+  private readonly solidMat = new THREE.MeshStandardMaterial({ color: PALETTE.steel, metalness: 0.3, roughness: 0.8 });
 
   constructor(
     private readonly scene: THREE.Scene,
     private readonly physics: PhysicsWorld,
     destructibles: Destructibles,
   ) {
-    scene.background = new THREE.Color(0x06030d);
-    scene.fog = new THREE.FogExp2(0x0b0518, 0.0095);
+    scene.background = new THREE.Color(PALETTE.sky);
+    scene.fog = new THREE.FogExp2(PALETTE.fog, 0.0095);
 
-    scene.add(new THREE.HemisphereLight(0x7a6cff, 0x10081a, 0.9));
-    const key = new THREE.DirectionalLight(0xff4fd8, 1.2);
+    scene.add(new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 0.9));
+    const key = new THREE.DirectionalLight(PALETTE.keyLight, 1.2);
     key.position.set(40, 80, 30);
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0x00d5ff, 0.7);
+    const rim = new THREE.DirectionalLight(PALETTE.rimLight, 0.6);
     rim.position.set(-60, 40, -40);
     scene.add(rim);
 
@@ -94,14 +95,14 @@ export class Arena {
   private buildFloorAndBounds(): void {
     const floor = new THREE.Mesh(
       new THREE.PlaneGeometry(700, 700),
-      new THREE.MeshStandardMaterial({ color: 0x07060c, metalness: 0.4, roughness: 0.7 }),
+      new THREE.MeshStandardMaterial({ color: PALETTE.ground, metalness: 0.4, roughness: 0.7 }),
     );
     floor.rotation.x = -Math.PI / 2;
     this.scene.add(floor);
     this.physics.addStaticBox(new THREE.Vector3(0, -1, 0), new THREE.Vector3(800, 2, 800));
 
     const h = this.halfSize;
-    const grid = new THREE.GridHelper(h * 2, (h * 2) / 4, 0xff2bd6, 0x5a1a9a);
+    const grid = new THREE.GridHelper(h * 2, (h * 2) / 4, PALETTE.gridMain, PALETTE.gridSub);
     grid.position.y = 0.02;
     (grid.material as THREE.LineBasicMaterial).color.setScalar(1.4);
     this.scene.add(grid);
@@ -113,7 +114,7 @@ export class Arena {
         new THREE.Vector3(h, 0.05, h),
         new THREE.Vector3(-h, 0.05, h),
       ]),
-      new THREE.LineBasicMaterial({ color: neon(0x00e5ff, 3) }),
+      new THREE.LineBasicMaterial({ color: neon(PALETTE.amber, 3) }),
     );
     this.scene.add(border);
 
@@ -155,7 +156,7 @@ export class Arena {
 
   private buildPlatform(): void {
     const p = PLATFORM;
-    this.addSolid(new THREE.Vector3(p.x, p.h / 2, p.z), new THREE.Vector3(p.w, p.h, p.d), 0x00e5ff);
+    this.addSolid(new THREE.Vector3(p.x, p.h / 2, p.z), new THREE.Vector3(p.w, p.h, p.d), PALETTE.amber);
 
     // Rampa descendo da borda +X da plataforma até o chão.
     const angle = Math.atan2(p.h, RAMP_RUN);
@@ -168,7 +169,7 @@ export class Arena {
       p.z,
     );
     const rot = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -angle);
-    this.addSolid(center, new THREE.Vector3(length, thickness, RAMP_WIDTH), 0x00e5ff, undefined, rot);
+    this.addSolid(center, new THREE.Vector3(length, thickness, RAMP_WIDTH), PALETTE.amber, undefined, rot);
   }
 
   private addSolid(
@@ -203,12 +204,12 @@ export class Arena {
     const geo = new THREE.BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
     const towers = new THREE.InstancedMesh(
       geo,
-      new THREE.MeshStandardMaterial({ color: 0x0e1018, metalness: 0.2, roughness: 0.9 }),
+      new THREE.MeshStandardMaterial({ color: PALETTE.steelDark, metalness: 0.2, roughness: 0.9 }),
       count,
     );
     const beacons = new THREE.InstancedMesh(
       new THREE.SphereGeometry(0.8, 8, 6),
-      new THREE.MeshBasicMaterial({ color: neon(0xff2040, 4) }),
+      new THREE.MeshBasicMaterial({ color: neon(PALETTE.signal, 4) }),
       count,
     );
 
