@@ -76,6 +76,7 @@ export interface MechRig {
   leftMuzzle?: THREE.Object3D;
   thrusters: THREE.Object3D[];
   thrusterMaterial: THREE.MeshStandardMaterial;
+  setDashVisual?: (active: boolean) => void;
   /** Materiais do casco (por instância): piscam quando o Mech toma dano. */
   hullMaterials: THREE.MeshStandardMaterial[];
   hipHeight: number;
@@ -557,13 +558,18 @@ export abstract class MechBase {
     this.leftRecoil = Math.max(0, this.leftRecoil - dt * 5);
     r.leftArm.position.z = this.leftArmBaseZ + this.leftRecoil * 0.5;
 
-    r.thrusterMaterial.emissiveIntensity = this.isDashing ? 14 : 2;
+    if (r.setDashVisual) r.setDashVisual(this.isDashing);
+    else r.thrusterMaterial.emissiveIntensity = this.isDashing ? 14 : 2;
 
     // Flash de dano no casco: só escreve no material quando o valor muda.
     this.hitFlash = Math.max(0, this.hitFlash - dt * 6);
     if (this.hitFlash !== this.shownFlash) {
       this.shownFlash = this.hitFlash;
-      for (const m of r.hullMaterials) m.emissive.setRGB(this.hitFlash * 1.4, this.hitFlash * 0.35, this.hitFlash * 0.2);
+      for (const m of r.hullMaterials) {
+        const setHitFlash = m.userData.setHitFlash;
+        if (typeof setHitFlash === 'function') setHitFlash(this.hitFlash);
+        else m.emissive.setRGB(this.hitFlash * 1.4, this.hitFlash * 0.35, this.hitFlash * 0.2);
+      }
     }
   }
 }

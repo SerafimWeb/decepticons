@@ -101,7 +101,7 @@
 - [ ] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) #ux
 - [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux
 - [ ] Medir o FPS num notebook com GPU integrada, com o painel de desempenho (pré-requisito do multiplayer; dono) #desempenho
-- [ ] Custo de render por Mech: ~34 draw calls cada. Juntar a geometria por material antes do multiplayer (G5) #desempenho
+- [x] Render do Vector-09: 9 draw calls por rig articulado (antes ~34), com as peças ainda destacáveis #desempenho
 
 ## 🟠 FASE 4 — Multiplayer autoritativo
 - [x] Plano técnico (`MULTIPLAYER.md`): pré-requisitos, arquitetura, orçamento de banda, contratos, etapas M0–M8 #rede
