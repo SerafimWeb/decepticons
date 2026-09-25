@@ -140,6 +140,22 @@ describe('bots (inimigos)', () => {
     expect(totalHealth(s.player.modules)).toBeLessThan(totalHealth(VECTOR09_STATS.maxModuleHealth));
   });
 
+  it('superaquecido, para no lugar para esfriar e não atira; frio, volta a lutar', async () => {
+    const s = await scenario({ bot: [0, 0], player: [0, -30] });
+    s.run(1.5);
+    while (!s.bot.overheated) s.bot.onFire();
+    const shots = s.shots.length;
+    s.run(0.4); // freia (superaquecido, anda na metade e não dá dash)
+    const at = s.bot.simPosition.clone();
+    s.run(0.6);
+    expect(s.brain.state).toBe('cool');
+    expect(s.shots.length).toBe(shots);
+    expect(Math.hypot(s.bot.simPosition.x - at.x, s.bot.simPosition.z - at.z)).toBeLessThan(0.5);
+    s.run(3);
+    expect(s.bot.overheated).toBe(false);
+    expect(s.brain.state).not.toBe('cool');
+  });
+
   it('com o torso baixo recua', async () => {
     const s = await scenario({ bot: [0, 0], player: [0, -30] });
     s.bot.modules.torso = VECTOR09_STATS.maxModuleHealth.torso * 0.25;

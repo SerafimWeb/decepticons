@@ -2,6 +2,20 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Calor completo do Mech e a Oficina (bancada de testes)
+**Pedido do dono:** "investir no sistema de balanceamento, como uma oficina mecânica de alto padrão, para estudar e avaliar o desempenho dos robôs, armas e defesas: um jogo de estratégia realista e objetivo. Criticidade do calor: dano, correr sem parar, usar armas, pular, dash, tudo pode aumentar o calor, então eventualmente os mechs precisam PARAR pra resfriar; cada arma com seu coeficiente de calor".
+**Decisão (Claude):**
+- **Tudo esquenta o mesmo dissipador:** tiro (coeficiente de cada arma), corrida (15%/s na velocidade máxima, proporcional), pulo 5%, dash 12%, dano recebido 0,2% por ponto (sem segurar o resfriamento). Chassi esfria 60%/s; **parado, em dobro**.
+- **Criticidade:** QUENTE a partir de 70% (aviso). Superaquecido em 100%: armas travadas, sem pulo nem dash, metade da velocidade; o resfriamento de emergência vai na metade, parado ou não, e andando a corrida ainda soma (~2,4 s parado, ~3 s andando para voltar a 35%).
+- **Por que a corrida é 15%/s e não mais:** a 30%/s, quem atira andando (o normal num jogo de tiro) fervia em 1,3 s e passava 80% do tempo travado. A 15%/s ferve em 1,8 s segurando o gatilho, e em rajadas curtas parando na pausa nunca ferve.
+- **Por que parado não esfria em dobro quando já superaqueceu:** senão o piloto "torre" (parado segurando o gatilho) voltava rápido demais e derrubava um Mech mais depressa que as metas de equilíbrio (combos abaixo de 2,5 s).
+- **IA:** fervendo (≥ 90%) ou superaquecido, o bot para no lugar e esfria (estado `cool`), sem atirar; volta a 45%. Janela para o jogador punir.
+- **Oficina** (`/cybermech/oficina/`, `scripts/oficina.mjs`): bancada gerada pela simulação do jogo (`combat/balance.ts → drill`: corrida, rajadas, pausas, dash, pulo). Mostra o calor de cada ação, seis exercícios de 20 s (dinamômetro), o placar de dano, o tempo para destruir cada parte, o dano pela distância e os chassis. Um teste confere que a bancada bate com o Mech de verdade (física, correndo e atirando).
+- **Achado da bancada:** rajadas de 6 parando na pausa causam ~64% mais dano que correr com o gatilho apertado, e nunca fervem. Administrar o calor é a estratégia.
+- **Gráficos** (`scripts/site/graficos.mjs`): uma série por gráfico (três cores em linhas não passaram no teste de daltonismo; viraram gráficos lado a lado na mesma escala), barras em HTML para o texto ficar legível no celular.
+**Custo de CPU:** no jogo, uma multiplicação e uma soma por tick para a corrida; pulo, dash e dano são somas por evento. Nada alocado. A oficina roda só no build do site (~1 s).
+**Quem decidiu:** dono (tudo esquenta, parar para esfriar, oficina); Claude (coeficientes, criticidade, bancada, gráficos).
+
 ## [2026-09-25] Arsenal em três níveis, dano calibrado, calor do Mech e o projeto do Hangar
 **Pedido do dono:** "calibrar melhor o poder das armas pra ficarem mais realistas; padronizar com 3 níveis de poder em cada arma (pra quando tivermos upgrades); cálculos de dano realistas, sem apelação. O jogo tem que ser jogável e equilibrado: a diferença vem da técnica, das habilidades e da customização. Quero começar a projetar o HANGAR, e isso vai na página do jogo, onde está o roadmap".
 **Decisão (Claude):**

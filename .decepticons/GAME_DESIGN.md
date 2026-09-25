@@ -55,7 +55,7 @@ do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
 - **Mira do seu jeito:** calibração pelo movimento real do mouse, entrada crua e teclas remapeáveis.
 - **Som feito na hora:** efeitos sintetizados pelo próprio navegador, sem arquivos pesados para baixar.
 - **Foguetes no braço esquerdo:** quatro no carregador e dano em área; exploda no pé do inimigo para arrancar a perna.
-- **Calor que decide a troca de tiros:** plasma e foguetes esquentam o mesmo Mech; quem administra o calor atira mais, quem dispara tudo trava.
+- **Calor que decide a troca de tiros:** tiro, corrida, pulo, dash e até levar tiro esquentam o Mech; parado ele esfria em dobro. Quem administra o calor causa mais dano; quem dispara tudo correndo trava.
 - **Dano que respeita a distância:** o plasma perde força depois de 60 m; chegar perto rende, mas expõe.
 - **IAs rebeldes de dois tamanhos:** Mechs blindados e andróides pequenos e ágeis que chegam perto, pulam e desviam.
 - **Técnicos inimigos:** andróides de visor amarelo consertam os Mechs rebeldes; derrube eles primeiro.

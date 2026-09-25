@@ -160,9 +160,14 @@ export async function jogo() {
     const load = async (p) => (await runnerImport(resolve(p), { configFile: false, logLevel: 'silent' })).module;
     const weapons = await load('client/src/combat/weapons.ts');
     const balance = await load('client/src/combat/balance.ts');
+    const heat = await load('client/src/combat/heat.ts');
     const { VECTOR09_STATS } = await load('client/src/entities/Vector09.ts');
-    const tests = (read('client/src/combat/weapons.test.ts').match(/^\s+it\(/gm) ?? []).length;
-    return { weapons, balance, vector: VECTOR09_STATS, tests };
+    const { ANDROID_STATS } = await load('client/src/entities/Android.ts');
+    const count = (file) => (read(file).match(/^\s+it\(/gm) ?? []).length;
+    const tests = count('client/src/combat/weapons.test.ts');
+    // Testes que travam as regras da bancada: armas, calor e o Mech de verdade contra a bancada.
+    const benchTests = tests + count('client/src/combat/heat.test.ts') + count('client/src/entities/MechHeat.test.ts');
+    return { weapons, balance, heat, vector: VECTOR09_STATS, android: ANDROID_STATS, tests, benchTests };
   } catch (err) {
     console.warn(`::warning::site sem os dados do jogo: ${err instanceof Error ? err.message : err}`);
     return null;
