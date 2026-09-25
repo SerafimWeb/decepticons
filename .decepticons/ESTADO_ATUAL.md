@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Correção: Mechs brancos (Claude, achado jogando):** depois do PR #43 (Codex), o casco saía todo branco e brilhando até o primeiro dano: a cor do flash de dano nascia branca (`new THREE.Color()`). Agora nasce preta; Vector-09 amarelo e rebeldes vermelhos de volta.
 - **Pendências do Gemini concluídas (Claude; o Gemini ficou sem crédito no dia):** setas de inimigos fora da tela (PR #40, com os ajustes da revisão), sons dos andróides com volume pela distância, dicas novas da primeira partida (calor, foguetes, andróides). O PR #40 foi fechado apontando para o do Claude.
 - **Bots com personalidade e sem "me juntam" (Claude; dono: "muito difícil, eles são muitos e me juntam"):** brabo, manso, fujão e soldado; diretor de ataque com no máximo 2 atacando juntos (os outros esperam afastados e revezam); padrão com 2 andróides em vez de 3. Tudo configurável na seção "Inimigos" das configurações (Claude fez a seção num PR pequeno, com o aval da regra 4; o Gemini não precisa mais do item 3 da fila dele).
 
