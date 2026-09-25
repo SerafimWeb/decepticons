@@ -1,0 +1,120 @@
+# HANGAR — especificação técnica (em projeto)
+
+> Documento de design do sistema de montagem de Mechs. Dono do tema: Claude (simulação, contrato, equilíbrio);
+> a tela é do Gemini (território `client/src/ui/`). O resumo para o jogador fica em `GAME_DESIGN.md`, seção HANGAR
+> (a landing lê de lá). Criado em 2026-09-25, a pedido do dono: "quero começar a projetar nosso HANGAR pra receber
+> os mechs"; "3 níveis de poder em cada arma; dano realista, sem apelação; a diferença vem da técnica, das
+> habilidades e da customização de cada jogador".
+
+## 1. Objetivo
+
+Dar a cada jogador um Mech montado do seu jeito **sem que ninguém fique simplesmente mais forte**. Montar é
+escolher trocas: mais poder de fogo custa blindagem, mobilidade ou calor. A habilidade decide a luta; o Hangar
+decide o estilo.
+
+**Princípios (não negociáveis):**
+1. **Orçamento fechado.** Todo chassi tem uma carga máxima; tudo o que se monta pesa. Não existe peça "de graça".
+2. **Uma regra para todos os níveis.** MK I, MK II e MK III seguem a mesma tabela (`combat/weapons.ts`, `TIERS`).
+3. **Metas de equilíbrio travadas por teste.** Nenhuma montagem passa do limite de tempo para derrubar (seção 4).
+4. **Conquistado jogando, nunca comprado** (`GAME_DESIGN.md`, "Não é pay-to-win").
+5. **Mesma simulação no cliente e no servidor** (G14): a validação da montagem é uma função pura em `shared/`.
+
+## 2. Modelo de dados (contrato)
+
+Estado em 25/09: **o que já está no código** está marcado ✅; o resto é proposta.
+
+| Tipo | Onde | O que carrega |
+|---|---|---|
+| `WeaponStats` ✅ | `combat/weapons.ts` | arma já no nível: dano, cadência, calor por tiro, carregador, velocidade, alcance ótimo/máximo, queda com a distância, raio de explosão, massa |
+| `TIERS` ✅ | `combat/weapons.ts` | a regra dos níveis: MK II = ×1,2 dano, ×1,15 calor, ×1,5 massa; MK III = ×1,4, ×1,3, ×2 |
+| `Loadout` ✅ | `combat/weapons.ts` | `{ primary, secondary }`: o que vai em cada braço. Hoje cada chassi traz o de fábrica (`MechStats.loadout`) e o Mech expõe `mech.loadout` |
+| `ChassisHeat` ✅ | `combat/heat.ts` | o dissipador do chassi: resfriamento, atraso, limite de volta. **Um dissipador para todas as armas** |
+| `ChassisSpec` | proposta | `MechStats` + `capacity` (t), encaixes disponíveis e blindagem base por parte |
+| `LoadoutSpec` | proposta, `shared/` | o que viaja e se salva: `{ chassis, arms: [{ id, tier }, { id, tier }], modules: [id…], armor: [por parte] }` |
+| `validateLoadout(spec)` | proposta, `shared/` | regra pura: encaixe compatível, carga ≤ capacidade, nível liberado; devolve o `Loadout` pronto ou o motivo da recusa |
+
+**Encaixes:** braço direito = arma de **energia** (tiro principal, limitado pelo calor); braço esquerdo = arma de
+**munição** (carregador que recarrega sozinho). Ombros e torso = **módulos**. Perna não leva nada: é mobilidade.
+
+## 3. Chassis (proposta, a calibrar no playtest)
+
+| Chassi | Classe | Carga | Blindagem | Velocidade | Dissipador | Estado |
+|---|---|---|---|---|---|---|
+| Ferret-X | leve | 12 t | 70% | 14 m/s | rápido | ausente |
+| **Vector-09** | médio | 18 t | 100% (torso 300) | 12 m/s | 0,6/s | **no jogo** (armas de fábrica: 7 t) |
+| Colossus-01 | pesado | 26 t | 140% | 9 m/s | lento | ausente (ou vira a escala 3: decisão do dono) |
+
+**Blindagem extra:** a carga que sobra das armas vira blindagem (proposta: 1 t = +30 de vida, distribuída pelo
+jogador entre as partes, com teto por parte). É isso que fecha a conta: MK III nos dois braços deixa o Mech
+sensivelmente mais frágil.
+
+**Módulos (proposta):** dissipador extra (+15% de resfriamento), radar (vê mais longe), escudo frontal
+(absorve dano por alguns segundos, recarrega), kit de reparo (conserta uma parte uma vez por vida). Cada um com
+massa e, quando fizer sentido, os mesmos três níveis.
+
+## 4. Equilíbrio (no código desde 25/09)
+
+Medido pela simulação do jogo (`combat/balance.ts`: cadência, calor e carregador no tick fixo), com **todos os
+tiros no torso** de um Vector-09 (300). É o teto teórico: no jogo, errar e se mover deixam tudo mais lento.
+
+| Meta | Valor hoje | Teste |
+|---|---|---|
+| Plasma MK I derruba em 5 a 7,5 s de gatilho apertado | 6,2 s | `weapons.test.ts` |
+| Nenhuma arma sozinha, em nenhum nível, abaixo de 4,5 s | 5,0 s (plasma MK III) | idem |
+| Nenhum combo dos dois braços abaixo de 2,5 s (o calor compartilhado segura) | 3,1 s (MK III + MK III) | idem |
+| Combinar os braços rende (combo < 75% do plasma sozinho) | 3,5 s contra 6,2 s | idem |
+| MK III de 10% a 40% mais rápido que o MK I | plasma 18%, foguetes 35% | idem |
+| Dano por tonelada cai a cada nível (poder custa carga) | plasma 11,9 → 8,3 → 7,0 | idem |
+| Mirar na perna rende (perna < metade do tempo do torso) | 2,0 s | idem |
+| Arma leve não ameaça Mech (blaster do andróide > 25 s) | 36 s | idem |
+
+**Por que o calor é do Mech, e não de cada arma:** com calor separado, plasma MK III + foguetes MK III
+derrubavam um Mech em 0,9 s (tudo descarregado de uma vez). Com um dissipador só, disparar os dois braços
+esquenta o Mech inteiro, ele trava antes de terminar o serviço, e o combo fica em ~3 s. É também o mais
+realista: o calor de toda arma sai pelo mesmo chassi.
+
+**Dano e distância:** o plasma tem dano cheio até 60 m e cai em linha reta até 40% a 200 m, onde se desfaz. O
+foguete não perde força com a distância, mas é lento (75 m/s): de longe, dá tempo de desviar. A explosão cai
+do centro (100%) até a borda do raio (0).
+
+## 5. Progressão (proposta)
+
+- Tudo do combate se libera **jogando**: experiência por rodada (abates, partes arrancadas, técnicos derrubados).
+- Ordem sugerida: MK II das armas de fábrica → segundo chassi → módulos → MK III.
+- Sem compra, sem atalho pago. Vender, só pintura e neon (`GAME_DESIGN.md`).
+- Sem conta (convidado): o progresso fica no aparelho. Com contas (Fase 6), vai para o servidor.
+
+## 6. Tela do Hangar (proposta para o Gemini)
+
+Fluxo: pausa → `[ HANGAR ]` → Mech girando no centro (o mesmo modelo do jogo, gerado por código) → encaixes
+clicáveis em volta (braço D, braço E, ombros, torso) → escolher arma e nível → barra de **carga** e barra de
+**calor** (quanto o Mech esquenta com tudo disparando) atualizam na hora, lidas de `balance.ts` → `[ APLICAR ]`
+vale no próximo renascimento. Montagem salva no aparelho (`cybermech.hangar.v1`), validada ao carregar.
+
+## 7. Multiplayer
+
+- O cliente manda só o `LoadoutSpec` (ids e níveis, ~10 bytes) ao entrar e ao trocar, nunca números de dano.
+- O servidor roda `validateLoadout` (a mesma função do cliente) e usa **os números dele**: montagem adulterada é
+  recusada, não aplicada (G13).
+- Os outros jogadores recebem só `{ chassis, arms }` para desenhar o Mech (as armas aparecem no modelo).
+
+## 8. Custo de CPU
+
+Zero por tick além do que já existe: a arma é um objeto congelado lido na hora do tiro (`weapon(id, tier)` não
+aloca), o calor é um dissipador por Mech. A queda por distância é uma conta por impacto. A tela do Hangar só roda
+com o jogo pausado.
+
+## 9. Etapas (um PR cada)
+
+1. ✅ Arsenal em dados, três níveis, calor do Mech, cadência exata, metas de equilíbrio travadas por teste (Claude).
+2. `LoadoutSpec` + `validateLoadout` + capacidade por chassi, com testes (Claude). **Contrato: entra antes da tela.**
+3. Tela do Hangar contra o contrato (Gemini).
+4. Blindagem distribuível e o segundo chassi (Claude).
+5. Módulos (Claude + Gemini no visual).
+6. Progressão (depois do multiplayer, junto com as contas).
+
+## 10. Decisões do dono
+
+- Colossus-01: chassi pesado do Hangar (escala 2) ou máquina de cerco (escala 3)?
+- Nível liberado vale para todas as armas daquele tipo, ou cada arma sobe separado?
+- No multiplayer, salas separadas por nível de Hangar, ou todos juntos (o orçamento de carga já equilibra)?

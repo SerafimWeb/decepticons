@@ -2,69 +2,7 @@ import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
-
-/** Foguete: mais lento que o plasma (140 m/s) e visível no ar; quem está longe tem tempo de desviar. */
-export const ROCKET_SPEED = 75;
-/** Dano no centro da explosão; cai em linha reta até zero na borda do raio. */
-export const ROCKET_DAMAGE = 75;
-/** Raio da explosão (m), medido até a superfície da cápsula do Mech. */
-export const BLAST_RADIUS = 6;
-/** Carregador do lançador: foguetes prontos, intervalo entre disparos e tempo para recarregar um. */
-export const ROCKET_AMMO = 4;
-export const ROCKET_INTERVAL = 0.3;
-export const ROCKET_RELOAD = 2.2;
-const LIFETIME = 3;
-
-/**
- * Dano da explosão a `dist` metros da superfície do alvo: máximo no centro, zero na borda do raio.
- * Inteiro, como o dano do plasma (os módulos mostram números redondos).
- */
-export function splashDamage(dist: number, radius = BLAST_RADIUS, max = ROCKET_DAMAGE): number {
-  if (dist >= radius) return 0;
-  return Math.round(max * (1 - Math.max(0, dist) / radius));
-}
-
-/**
- * Carregador do braço esquerdo. Regra de jogo pura (G14): roda no tick fixo, sem física nem render.
- * Recarrega um foguete por vez, continuamente, enquanto não estiver cheio.
- */
-export class RocketLauncher {
-  ammo = ROCKET_AMMO;
-  private cooldown = 0;
-  private reload = 0;
-
-  fixedUpdate(dt: number): void {
-    this.cooldown = Math.max(0, this.cooldown - dt);
-    if (this.ammo >= ROCKET_AMMO) {
-      this.reload = 0;
-      return;
-    }
-    this.reload += dt;
-    if (this.reload >= ROCKET_RELOAD) {
-      this.reload -= ROCKET_RELOAD;
-      this.ammo++;
-    }
-  }
-
-  /** Gasta um foguete se houver e o intervalo tiver passado. */
-  tryFire(): boolean {
-    if (this.ammo <= 0 || this.cooldown > 0) return false;
-    this.ammo--;
-    this.cooldown = ROCKET_INTERVAL;
-    return true;
-  }
-
-  /** 0..1 do próximo foguete (para o HUD); 1 com o carregador cheio. */
-  get reloadProgress(): number {
-    return this.ammo >= ROCKET_AMMO ? 1 : this.reload / ROCKET_RELOAD;
-  }
-
-  /** Rodada nova ou renascimento: carregador cheio. */
-  refill(): void {
-    this.ammo = ROCKET_AMMO;
-    this.cooldown = this.reload = 0;
-  }
-}
+import { weapon, type WeaponStats } from './weapons';
 
 interface Rocket {
   mesh: THREE.Mesh;
@@ -72,6 +10,8 @@ interface Rocket {
   pos: THREE.Vector3;
   velocity: THREE.Vector3;
   life: number;
+  /** O lançador de quem disparou (velocidade, alcance e a explosão). */
+  weapon: WeaponStats;
   owner?: RAPIER.Collider;
 }
 
@@ -89,7 +29,7 @@ const _look = new THREE.Vector3();
  */
 export class RocketSystem {
   /** Explosão no ponto `at` (cópia reaproveitada: use na hora). `dir` = direção do voo. */
-  onExplode?: (at: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider) => void;
+  onExplode?: (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
 
   private readonly pool: Rocket[] = [];
 
@@ -105,17 +45,19 @@ export class RocketSystem {
       const mesh = new THREE.Mesh(geo, mat);
       mesh.visible = false;
       scene.add(mesh);
-      this.pool.push({ mesh, prev: new THREE.Vector3(), pos: new THREE.Vector3(), velocity: new THREE.Vector3(), life: 0 });
+      this.pool.push({ mesh, prev: new THREE.Vector3(), pos: new THREE.Vector3(), velocity: new THREE.Vector3(), life: 0, weapon: weapon('rockets') });
     }
   }
 
-  fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider): void {
+  /** `w`: o lançador de quem dispara (os foguetes são lentos: quem está longe tem tempo de desviar). */
+  fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, w: WeaponStats = weapon('rockets')): void {
     const r = this.pool.find((q) => q.life <= 0);
     if (!r) return;
     r.pos.copy(origin);
     r.prev.copy(origin);
-    r.velocity.copy(dir).multiplyScalar(ROCKET_SPEED);
-    r.life = LIFETIME;
+    r.velocity.copy(dir).multiplyScalar(w.speed);
+    r.life = w.maxRange / w.speed;
+    r.weapon = w;
     r.owner = owner;
     r.mesh.position.copy(origin);
     r.mesh.lookAt(_look.copy(origin).add(dir));
@@ -125,8 +67,9 @@ export class RocketSystem {
   fixedUpdate(dt: number): void {
     for (const r of this.pool) {
       if (r.life <= 0) continue;
-      const step = ROCKET_SPEED * dt;
-      _dir.copy(r.velocity).divideScalar(ROCKET_SPEED);
+      const speed = r.weapon.speed;
+      const step = speed * dt;
+      _dir.copy(r.velocity).divideScalar(speed);
       const hit = this.physics.raycast(r.pos, _dir, step, r.owner);
       if (hit) {
         // Um pouco antes da superfície: a explosão não nasce dentro da parede.
@@ -160,6 +103,6 @@ export class RocketSystem {
     r.life = 0;
     r.mesh.visible = false;
     _dir.copy(r.velocity).normalize();
-    this.onExplode?.(at, _dir, r.owner);
+    this.onExplode?.(at, _dir, r.owner, r.weapon);
   }
 }

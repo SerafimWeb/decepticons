@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLOW } from '../core/palette';
 import type { PhysicsHit, PhysicsWorld } from '../physics/PhysicsWorld';
 import type { ParticleSystem } from '../fx/ParticleSystem';
+import { hitDamage, weapon, type WeaponStats } from './weapons';
 
 interface Projectile {
   mesh: THREE.Mesh;
@@ -10,13 +11,13 @@ interface Projectile {
   pos: THREE.Vector3;
   velocity: THREE.Vector3;
   life: number;
-  damage: number;
+  /** A arma de quem atirou (velocidade, alcance, dano e queda com a distância). */
+  weapon: WeaponStats;
+  /** Metros já percorridos: o plasma perde força com a distância. */
+  traveled: number;
   owner?: RAPIER.Collider;
 }
 
-export const PROJECTILE_SPEED = 140;
-const LIFETIME = 2;
-const DAMAGE = 25;
 const SPARK_COLOR = GLOW.spark;
 const CORE_COLOR = GLOW.core;
 
@@ -30,7 +31,7 @@ const _look = new THREE.Vector3();
  * segmento percorrido (não atravessa nada em alta velocidade); o render interpola.
  */
 export class ProjectileSystem {
-  /** Chamado a cada impacto (Mech ou destrutível; quem decide é o CombatSystem). `owner` = quem atirou. */
+  /** Chamado a cada impacto (Mech ou destrutível; quem decide é o CombatSystem). `damage` já vem com a queda por distância; `owner` = quem atirou. */
   onHit?: (hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider) => void;
 
   private readonly pool: Projectile[] = [];
@@ -58,22 +59,26 @@ export class ProjectileSystem {
         pos: new THREE.Vector3(),
         velocity: new THREE.Vector3(),
         life: 0,
-        damage: DAMAGE,
+        weapon: weapon('plasma'),
+        traveled: 0,
       });
     }
   }
 
-  /** `hostile`: plasma inimigo, em vermelho, para o jogador distinguir os tiros que vêm contra ele. */
-  /** `damage`: dano deste tiro (vem da arma de quem atira: MechStats.weaponDamage). */
-  fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, hostile = false, damage = DAMAGE): void {
+  /**
+   * `hostile`: plasma inimigo, em vermelho, para o jogador distinguir os tiros que vêm contra ele.
+   * `w`: a arma de quem atira (velocidade, alcance e dano; o dano cai com a distância percorrida).
+   */
+  fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, hostile = false, w: WeaponStats = weapon('plasma')): void {
     const p = this.pool.find((q) => q.life <= 0);
     if (!p) return;
     p.pos.copy(origin);
     p.prev.copy(origin);
-    p.velocity.copy(dir).multiplyScalar(PROJECTILE_SPEED);
-    p.life = LIFETIME;
+    p.velocity.copy(dir).multiplyScalar(w.speed);
+    p.life = w.maxRange / w.speed;
     p.owner = owner;
-    p.damage = damage;
+    p.weapon = w;
+    p.traveled = 0;
     p.mesh.position.copy(origin);
     p.mesh.lookAt(_look.copy(origin).add(dir));
     p.mesh.material = hostile ? this.hostileMat : this.friendlyMat;
@@ -92,7 +97,7 @@ export class ProjectileSystem {
         // O resultado do raycast é reaproveitado: copia antes que o onHit dispare outro.
         _hitNormal.copy(hit.normal);
         _hitAt.copy(hit.point).addScaledVector(_hitNormal, 0.05);
-        this.onHit?.(hit, _dir, p.damage, p.owner);
+        this.onHit?.(hit, _dir, hitDamage(p.weapon, p.traveled + hit.distance), p.owner);
 
         this.particles.burst(_hitAt, _hitNormal, { count: 36, color: SPARK_COLOR, speed: 24, life: 0.6, spread: 0.9 });
         this.particles.burst(_hitAt, _hitNormal, { count: 10, color: CORE_COLOR, speed: 6, life: 0.25, gravity: 0 });
@@ -102,6 +107,7 @@ export class ProjectileSystem {
 
       p.prev.copy(p.pos);
       p.pos.addScaledVector(p.velocity, dt);
+      p.traveled += step;
       p.life -= dt;
       if (p.life <= 0) this.kill(p);
     }

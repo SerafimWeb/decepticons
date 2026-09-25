@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import type { LookState } from '../camera/CameraMode';
-import { PROJECTILE_SPEED } from '../combat/ProjectileSystem';
 import type { MechBase } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
@@ -190,7 +189,7 @@ export class AimAssist {
     for (const m of this.enemies) {
       if (!m.alive || m === this.player) continue;
       _torso.copy(m.position).y += m.stats.height * AIM_HEIGHT;
-      leadPoint(_cam, _torso, m.velocity.x, m.velocity.z, PROJECTILE_SPEED, _lead);
+      leadPoint(_cam, _torso, m.velocity.x, m.velocity.z, this.player.loadout.primary.speed, _lead);
       aimErrorTo(_cam, look.yaw, look.pitch, _lead.x, _lead.y, _lead.z, _err);
       if (_err.dist > RANGE || _err.angle >= FRICTION_CONE) continue;
       if (!best || _err.angle < _best.angle) {

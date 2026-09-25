@@ -1,8 +1,9 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
-import { HeatSink, type HeatStats } from '../combat/heat';
+import { HeatSink, type ChassisHeat } from '../combat/heat';
 import { repairModules } from '../combat/repair';
 import { applyDamage, partAt, type DamageResult } from '../combat/damage';
+import type { Loadout } from '../combat/weapons';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
 /** Gravidade dos Mechs (mais alta que a do mundo: queda "pesada" e rápida, estilo arena shooter). */
@@ -20,7 +21,7 @@ const IGNORE_DEBRIS = RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC;
 export type MechPart = 'torso' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
 export type MechModules = Record<MechPart, number>;
 
-export interface MechStats extends HeatStats {
+export interface MechStats extends ChassisHeat {
   name: string;
   moveSpeed: number; // m/s no chão
   groundAccel: number; // m/s² — alto = resposta "Quake", quase sem inércia
@@ -35,9 +36,8 @@ export interface MechStats extends HeatStats {
   stepHeight: number; // degraus que sobe sem pular
   demolishOnDash: boolean; // Colossus-01: dash atravessa paredes destrutíveis
   maxScrapSlots: number; // Vector-09: 0 | Colossus-01: 1 | Ferret-X: 4
-  fireInterval: number;
-  /** Dano de cada tiro da arma principal. */
-  weaponDamage: number;
+  /** Armas de fábrica do chassi (o Hangar vai trocar). Dano, cadência e calor vêm de cada arma. */
+  loadout: Loadout;
   maxModuleHealth: MechModules;
 }
 
@@ -122,8 +122,10 @@ export abstract class MechBase {
   private jumpsLeft: number;
   private walkPhase = 0;
   private recoil = 0;
-  /** Calor do canhão principal (regra no tick fixo). */
+  /** Calor do Mech: um dissipador para todas as armas (regra no tick fixo). */
   private readonly heatSink: HeatSink;
+  /** Armas nos braços. Hoje, as de fábrica do chassi; o Hangar vai montar outras. */
+  readonly loadout: Loadout;
   private leftRecoil = 0;
   private readonly rightArmBaseZ: number;
   private readonly leftArmBaseZ: number;
@@ -143,6 +145,7 @@ export abstract class MechBase {
     this.jumpsLeft = stats.maxJumps;
     this.rightArmBaseZ = rig.rightArm.position.z;
     this.heatSink = new HeatSink(stats);
+    this.loadout = stats.loadout;
     this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
     this.root.updateMatrixWorld(true);
@@ -227,7 +230,7 @@ export abstract class MechBase {
     return this.alive && this.modules.rightArm > 0 && !this.heatSink.overheated;
   }
 
-  /** Calor da arma principal (0 a 1) e se ela está travada (HUD, IA). */
+  /** Calor do Mech (0 a 1) e se as armas estão travadas por superaquecimento (HUD, IA). */
   get heat(): number {
     return this.heatSink.heat;
   }
@@ -236,9 +239,9 @@ export abstract class MechBase {
     return this.heatSink.overheated;
   }
 
-  /** Lançador secundário fica no braço esquerdo. */
+  /** Lançador secundário fica no braço esquerdo; também trava com o Mech superaquecido. */
   get canFireSecondary(): boolean {
-    return this.alive && this.modules.leftArm > 0;
+    return this.alive && this.modules.leftArm > 0 && this.loadout.secondary !== null && !this.heatSink.overheated;
   }
 
   muzzleWorldPosition(target: THREE.Vector3): THREE.Vector3 {
@@ -338,14 +341,16 @@ export abstract class MechBase {
     r.rightLeg.knee.visible = m.rightLeg > 0;
   }
 
-  /** Um tiro do canhão principal (no tick fixo): recuo na animação e calor na arma. */
+  /** Um tiro do canhão principal (no tick fixo): recuo na animação e calor no Mech. */
   onFire(): void {
     this.recoil = 1;
-    this.heatSink.shot();
+    this.heatSink.shot(this.loadout.primary.heatPerShot);
   }
 
+  /** Um disparo do braço esquerdo: recuo e o calor do lançamento. */
   onFireSecondary(): void {
     this.leftRecoil = 1;
+    if (this.loadout.secondary) this.heatSink.shot(this.loadout.secondary.heatPerShot);
   }
 
   /**

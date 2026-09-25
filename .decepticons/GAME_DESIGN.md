@@ -55,6 +55,8 @@ do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
 - **Mira do seu jeito:** calibração pelo movimento real do mouse, entrada crua e teclas remapeáveis.
 - **Som feito na hora:** efeitos sintetizados pelo próprio navegador, sem arquivos pesados para baixar.
 - **Foguetes no braço esquerdo:** quatro no carregador e dano em área; exploda no pé do inimigo para arrancar a perna.
+- **Calor que decide a troca de tiros:** plasma e foguetes esquentam o mesmo Mech; quem administra o calor atira mais, quem dispara tudo trava.
+- **Dano que respeita a distância:** o plasma perde força depois de 60 m; chegar perto rende, mas expõe.
 - **IAs rebeldes de dois tamanhos:** Mechs blindados e andróides pequenos e ágeis que chegam perto, pulam e desviam.
 - **Técnicos inimigos:** andróides de visor amarelo consertam os Mechs rebeldes; derrube eles primeiro.
 
@@ -94,6 +96,19 @@ O jogo é feito para ser **muito bom e todo mundo querer jogar**, não para vend
 | Distribuição | **Portal de jogos primeiro + link próprio** | SDK do portal, download pequeno |
 
 **A definir no playtest:** tempo de respawn, dano e vida por parte, mapa (1 arena por enquanto).
+
+---
+
+## HANGAR (em projeto, dono 25/09: "projetar nosso HANGAR pra receber os mechs")
+
+> A landing lê esta lista (formato `- **Título:** frase.`). Especificação técnica completa em `HANGAR.md`.
+
+- **Chassi:** o esqueleto do Mech define velocidade, blindagem, dissipador e a carga que ele aguenta. Hoje o Vector-09 (médio); depois um leve e um pesado.
+- **Encaixes:** o braço direito leva uma arma de energia, o esquerdo uma de munição; ombros e torso recebem módulos (dissipador extra, radar, escudo, reparo).
+- **Carga:** tudo o que se monta pesa. A carga do chassi é o orçamento: arma mais forte deixa menos espaço para blindagem e módulos.
+- **Três níveis de poder:** toda arma tem MK I, MK II e MK III com a mesma regra (+20% de dano por nível, mais calor e +50% de peso). O MK III bate mais forte, mas rende menos por tonelada.
+- **Calor do Mech:** todas as armas esquentam o mesmo dissipador. Disparar tudo junto trava o Mech antes de terminar o serviço: nenhum combo derruba de uma vez.
+- **Conquistado jogando:** chassis, armas e níveis se liberam em combate, nunca na loja. À venda, só pintura e neon.
 
 ---
 

@@ -316,6 +316,8 @@ async function check() {
     if (title !== 'CYBERMECH') failures.push(`título da raiz: "${title}"`);
     await pageSane(page, 'landing', failures);
     await publicPage(page, 'landing', failures);
+    // Hangar: os números saem do código do jogo; se o carregamento falhar, a seção some sem erro. Aqui é erro.
+    if ((await page.locator('section[aria-labelledby="hangar"] .wpn').count()) < 2) failures.push('landing: a seção do Hangar sumiu (o site não conseguiu ler o arsenal do código do jogo)');
     // Abertura da marca: roda na primeira visita da sessão e sai da frente sozinha (senão cobre o botão).
     if (!(await page.evaluate(() => sessionStorage.getItem('cybermech.intro') === '1'))) failures.push('landing: a abertura da marca não rodou');
     await page.waitForFunction(() => !document.getElementById('intro'), null, { timeout: 8000 });
@@ -333,7 +335,7 @@ async function check() {
     // Uma página por vez: a de trás não desenha, e o jogo do celular ficaria parado.
     await page.close();
     await mobile(browser, `${base}jogar/`, failures);
-    console.log(`site    ok: landing em ${prefix} com a abertura da marca, bastidores/, "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
+    console.log(`site    ok: landing em ${prefix} com a abertura da marca e o Hangar, bastidores/, "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {

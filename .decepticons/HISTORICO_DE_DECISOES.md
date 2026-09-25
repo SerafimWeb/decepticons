@@ -2,6 +2,20 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Arsenal em três níveis, dano calibrado, calor do Mech e o projeto do Hangar
+**Pedido do dono:** "calibrar melhor o poder das armas pra ficarem mais realistas; padronizar com 3 níveis de poder em cada arma (pra quando tivermos upgrades); cálculos de dano realistas, sem apelação. O jogo tem que ser jogável e equilibrado: a diferença vem da técnica, das habilidades e da customização. Quero começar a projetar o HANGAR, e isso vai na página do jogo, onde está o roadmap".
+**Decisão (Claude):**
+- **Arma é dado** (`combat/weapons.ts`): dano, cadência, calor por tiro, carregador, velocidade, alcance ótimo e máximo, queda com a distância, raio de explosão e massa. O Mech carrega um `loadout` (braço direito: energia; esquerdo: munição), que é o encaixe do Hangar. Tabela montada uma vez: pedir uma arma no tick não aloca (G4).
+- **Três níveis, uma regra só:** MK II = ×1,2 de dano, ×1,15 de calor, ×1,5 de massa; MK III = ×1,4, ×1,3, ×2. **Poder custa carga:** o dano por tonelada cai a cada nível, então subir de nível é escolha, não vantagem pura.
+- **Metas de tempo para derrubar** (torso do Vector-09, todos os tiros no alvo; `combat/balance.ts` roda as regras do tick fixo), travadas por teste: plasma MK I entre 5 e 7,5 s (hoje 6,2 s; antes era ~2 s: apelação); nenhuma arma sozinha abaixo de 4,5 s; nenhum combo dos dois braços abaixo de 2,5 s; MK III 10–40% mais rápido que o MK I; mirar na perna rende.
+- **Calor do Mech, não da arma:** com calor separado, plasma MK III + foguetes MK III derrubavam em 0,9 s. Com um dissipador só para o chassi (o que é também o mais realista), o combo trava o Mech antes e fica em ~3 s.
+- **Números:** plasma 25 → 16 de dano, 0,18 → 0,22 s; dano cheio até 60 m, 40% a 200 m. Foguete 75 → 40 no centro, 15% de calor por disparo. Andróide com vida em escala (torso 50 → 32: continua caindo com 2 tiros de plasma). Técnico conserta 8/s (era 18), para não anular o novo dano.
+- **Cadência exata (R17):** o tiro esperava ticks inteiros (0,18 s virava 0,2 s); agora a sobra do tick passa para o próximo tiro (`combat/trigger.ts`), sem acumular crédito com o gatilho solto.
+- **Hangar em projeto:** especificação em `HANGAR.md` (contrato, chassis, carga, módulos, progressão, tela, rede, etapas); resumo público na seção HANGAR do `GAME_DESIGN`. Próximo passo é o contrato (`LoadoutSpec` + `validateLoadout`), antes da tela (regra 5 do AGENTS).
+- **Página do jogo:** nova seção "Hangar" com a planta do Vector-09, o arsenal nos três níveis e as regras de equilíbrio. Os números saem do TypeScript do jogo, carregado pelo Vite no build do site (`dados.mjs → jogo()`), sem cópia nem regex; a ficha técnica passou a vir do mesmo lugar.
+**Custo de CPU:** nenhum a mais por tick (a arma é um objeto congelado; a queda por distância é uma conta por impacto). O site leva ~2 s a mais no build para carregar os módulos do jogo.
+**Quem decidiu:** dono (três níveis, equilíbrio, Hangar); Claude (regra dos níveis, metas, calor do Mech, números).
+
 ## [2026-09-25] Marca SERAFIM WEB: vinheta de abertura e assinatura discreta
 **Pedido do dono:** "qualidade que deixe o jogo mais profissional, ar de grande estúdio; adicione sutilmente nossa marca SERAFIM WEB. No início, a nossa marca como antigamente nos games (SEGA, Konami, PlayStation), com som característico e a logo por 1 a 2 segundos; na página /cybermech/ também, como o efeito matrix de pontos verdes do site do serafim13".
 **Decisão (Claude):**

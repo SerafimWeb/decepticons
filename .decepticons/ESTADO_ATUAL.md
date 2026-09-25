@@ -7,6 +7,12 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Armas calibradas e o Hangar em projeto (Claude; dono: "3 níveis de poder em cada arma; dano realista, sem apelação; começar a projetar o HANGAR"):**
+  - Arsenal em dados (`combat/weapons.ts`) com MK I, II e III na mesma regra; poder custa carga (dano por tonelada cai a cada nível).
+  - Dano recalibrado com metas travadas por 15 testes: plasma MK I derruba um Vector-09 em ~6 s de acerto perfeito (antes ~2 s); nenhum combo abaixo de 2,5 s. Plasma perde força depois de 60 m.
+  - Calor passou a ser do Mech: plasma e foguetes esquentam o mesmo dissipador.
+  - Cadência exata: o tiro não arredonda mais para o tick.
+  - Hangar especificado em `HANGAR.md`; a página do jogo ganhou a seção "Hangar" (planta do Mech, arsenal, regras de equilíbrio, plano), com números lidos do código.
 - **Marca SERAFIM WEB (Claude; dono: "ar de grande estúdio"; "nossa marca por 1 a 2 segundos, como SEGA, Konami, PlayStation"):**
   - **Vinheta no jogo** (`client/src/brand/`): no primeiro "clique para jogar", tela preta, o emblema acende, o letreiro abre e toca uma vinheta sonora sintetizada (sopro, impacto grave, acorde com eco), ~1,9 s. Clique ou tecla pula. Roda no primeiro clique porque o navegador só libera som depois de um gesto.
   - **Abertura na landing:** chuva de pontos verdes em matriz com o emblema e o letreiro, ~2 s, uma vez por sessão; pula com clique, toque ou tecla; não roda com "reduzir movimento".
@@ -76,6 +82,7 @@
 - [ ] **Gemini:** atualizar o `STATUS_REAL` e o `ROADMAP` quando entregar (o PR #17 entrou sem mexer neles). O celular foi refeito pelo Claude a pedido do dono: antes de mexer em `ui/TouchControls.ts`, puxe a `main`
 - [ ] **Gemini:** Próxima tarefa: setas-inimigos (ui/OffscreenIndicators.ts). Seta vermelha na borda da tela para inimigos fora da visão. Um PR por tarefa, a partir da `main` atualizada.
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
+- [ ] **Dono:** jogar com as armas novas (menos dano, calor compartilhado com os foguetes) e dizer se a luta ficou lenta ou rápida demais; decidir as perguntas do fim do `HANGAR.md`
 - [ ] **Dono:** ouvir a vinheta da marca no jogo (som, volume, duração) e ver a abertura da landing (numa aba anônima ela roda de novo)
 - [ ] **Gemini:** o branch `gemini/sons-androides` saiu de uma `main` antiga e está sem PR: juntar a `main` (`git merge origin/main`), rodar `npm run check` e abrir o PR (regra 13)
 - [ ] Fase 3: draw calls por Mech (~34 cada)
@@ -94,7 +101,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
-| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Marca SERAFIM WEB no ar (vinheta, abertura da landing, assinatura). Próximo: plano do multiplayer (`MULTIPLAYER.md`) e draw calls por Mech |
+| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Arsenal em três níveis e o projeto do Hangar no ar. Próximo: contrato do Hangar (`LoadoutSpec` + `validateLoadout`), depois o plano do multiplayer (`MULTIPLAYER.md`) e draw calls por Mech |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Sons dos andróides (branch sem PR). Fila, um PR cada: setas de inimigos fora da tela, abertura da rodada (3·2·1), aviso de ABATE e sequência, tela de carregamento (prompt no chat de 25/09) |
 | **Codex** | a combinar | Ao voltar: revisão cruzada dos PRs mergeados desde o #12 |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
@@ -110,4 +117,4 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-Claude: plano do multiplayer em `.decepticons/MULTIPLAYER.md` (o que falta antes, arquitetura, contratos, etapas) e draw calls por Mech. Gemini: PR dos sons dos andróides, depois a fila de polimento. Dono: ouvir a vinheta e jogar no celular.
+Claude: contrato do Hangar (`LoadoutSpec` + `validateLoadout`, para o Gemini fazer a tela contra ele), depois o plano do multiplayer em `.decepticons/MULTIPLAYER.md` e draw calls por Mech. Gemini: PR dos sons dos andróides, depois a fila de polimento. Dono: ouvir a vinheta e jogar no celular.

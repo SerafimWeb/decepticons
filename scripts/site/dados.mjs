@@ -149,34 +149,103 @@ export function vitrine() {
 
 // ---------- código do jogo ----------
 
-/** Ficha técnica do Vector-09 lida do código (R14). */
-export function recordSheet() {
+/**
+ * Carrega do TypeScript do jogo, pelo mesmo compilador do build (Vite), o que o site mostra: o chassi
+ * e o arsenal. O número da página é o número do jogo, sem cópia nem regex (R14). Os módulos lidos não
+ * tocam em WebGL nem em DOM. Falhou? Devolve null, a seção some e o log avisa.
+ */
+export async function jogo() {
   try {
-    const v = read('client/src/entities/Vector09.ts');
-    const p = read('client/src/combat/ProjectileSystem.ts');
-    const n = (src, key) => Number(new RegExp(`\\b${key}:\\s*([\\d.]+)`).exec(src)?.[1]);
-    const armor = [
-      ['CABEÇA', n(v, 'head')],
-      ['TORSO', n(v, 'torso')],
-      ['BRAÇO E', n(v, 'leftArm')],
-      ['BRAÇO D', n(v, 'rightArm')],
-      ['PERNA E', n(v, 'leftLeg')],
-      ['PERNA D', n(v, 'rightLeg')],
-    ];
-    const s = {
-      name: /name:\s*'([^']+)'/.exec(v)?.[1],
-      speed: n(v, 'moveSpeed'),
-      dash: n(v, 'dashSpeed'),
-      jumps: n(v, 'maxJumps'),
-      fire: n(v, 'fireInterval'),
-      damage: n(v, 'weaponDamage'),
-      armor,
-    };
-    const nums = [s.speed, s.dash, s.jumps, s.fire, s.damage, ...armor.map((a) => a[1])];
-    return s.name && nums.every((x) => Number.isFinite(x) && x > 0) ? s : null;
-  } catch {
+    const { runnerImport } = await import('vite');
+    const load = async (p) => (await runnerImport(resolve(p), { configFile: false, logLevel: 'silent' })).module;
+    const weapons = await load('client/src/combat/weapons.ts');
+    const balance = await load('client/src/combat/balance.ts');
+    const { VECTOR09_STATS } = await load('client/src/entities/Vector09.ts');
+    const tests = (read('client/src/combat/weapons.test.ts').match(/^\s+it\(/gm) ?? []).length;
+    return { weapons, balance, vector: VECTOR09_STATS, tests };
+  } catch (err) {
+    console.warn(`::warning::site sem os dados do jogo: ${err instanceof Error ? err.message : err}`);
     return null;
   }
+}
+
+/** Ficha técnica do Vector-09 (chassi e armas de fábrica), do código do jogo. */
+export function recordSheet(game) {
+  if (!game) return null;
+  const v = game.vector;
+  const m = v.maxModuleHealth;
+  const p = v.loadout.primary;
+  return {
+    name: v.name,
+    speed: v.moveSpeed,
+    dash: v.dashSpeed,
+    jumps: v.maxJumps,
+    fire: p.fireInterval,
+    damage: p.damage,
+    primary: p.name,
+    secondary: v.loadout.secondary?.name ?? null,
+    armor: [
+      ['CABEÇA', m.head],
+      ['TORSO', m.torso],
+      ['BRAÇO E', m.leftArm],
+      ['BRAÇO D', m.rightArm],
+      ['PERNA E', m.leftLeg],
+      ['PERNA D', m.rightLeg],
+    ],
+  };
+}
+
+/**
+ * Arsenal do Hangar: cada arma de Mech nos três níveis, com o dano sustentado e o tempo para derrubar o
+ * torso do Vector-09 calculados pela mesma simulação do jogo (`combat/balance.ts`: teto teórico, todos
+ * os tiros no alvo). O blaster fica de fora: é a arma dos andróides.
+ */
+export function arsenal(game) {
+  if (!game) return null;
+  const { weapons: W, balance: B, vector: v } = game;
+  const torso = v.maxModuleHealth.torso;
+  const ids = W.WEAPON_IDS.filter((id) => id !== 'blaster');
+  const levels = [0, 1, 2];
+  return {
+    target: v.name,
+    torso,
+    tests: game.tests,
+    weapons: ids.map((id) => {
+      const base = W.weapon(id, 0);
+      return {
+        id,
+        name: base.name,
+        kind: base.kind,
+        speed: base.speed,
+        optimal: base.optimalRange,
+        max: base.maxRange,
+        minFactor: base.minFactor,
+        blast: base.blastRadius,
+        magazine: base.magazine,
+        slot: id === v.loadout.primary.id ? 'braço direito' : 'braço esquerdo',
+        tiers: levels.map((t) => {
+          const w = W.weapon(id, t);
+          return {
+            label: W.TIERS[t].label,
+            damage: w.damage,
+            rate: 1 / w.fireInterval,
+            heat: w.heatPerShot,
+            reload: w.reload,
+            mass: w.mass,
+            dps: B.sustainedDps(w, v),
+            ttk: B.timeToKill([w], v, torso),
+          };
+        }),
+      };
+    }),
+    combo: levels.map((t) => ({ label: W.TIERS[t].label, ttk: B.timeToKill([W.weapon('plasma', t), W.weapon('rockets', t)], v, torso) })),
+    tier: W.TIERS,
+  };
+}
+
+/** O Hangar em projeto, para a landing: `- **Título:** frase.` na seção HANGAR do GAME_DESIGN. */
+export function hangarPlan() {
+  return [...designSection('HANGAR').matchAll(/^- \*\*(.+?):\*\*\s*(.+)$/gm)].map((m) => ({ title: m[1], text: m[2] }));
 }
 
 /** Tamanho do download do jogo (gzip, como o servidor entrega), a partir do build em `gameDir`. */

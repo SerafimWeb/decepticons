@@ -71,7 +71,8 @@ client/src/
   player/      PlayerController.ts (input/câmera -> MechInput, tiro)
   camera/      CameraRig.ts + modos (3ª, 1ª, tática)
   environment/ Arena.ts, Destructibles.ts, DebrisSystem.ts
-  combat/      ProjectileSystem.ts, CombatSystem.ts, damage.ts (dano por parte), BotController.ts (IA), BotSystem.ts, Respawner.ts
+  combat/      weapons.ts (arsenal: armas em 3 níveis), balance.ts (metas de equilíbrio), trigger.ts (cadência, carregador), heat.ts (calor do Mech),
+               ProjectileSystem.ts, RocketSystem.ts, CombatSystem.ts, damage.ts (dano por parte), BotController.ts (IA), BotSystem.ts, Respawner.ts
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde)
   debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)

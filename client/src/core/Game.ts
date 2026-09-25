@@ -328,8 +328,8 @@ export class Game {
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
     };
     // Foguete: a regra de dano em área é do CombatSystem; aqui, fogo, fumaça, tremor e som.
-    this.rockets.onExplode = (at, dir, owner) => {
-      this.combat.explode(at, dir, owner);
+    this.rockets.onExplode = (at, dir, owner, w) => {
+      this.combat.explode(at, dir, owner, w);
       this.particles.burst(at, UP, { count: 70, color: BLAST_COLOR, speed: 16, life: 0.6, spread: 2.4, gravity: 2 });
       this.particles.burst(at, UP, { count: 24, color: SMOKE_COLOR, speed: 4, life: 1.4, spread: 1.6, gravity: -1.5 });
       const dist = at.distanceTo(mech.position);

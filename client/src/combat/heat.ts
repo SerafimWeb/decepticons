@@ -1,17 +1,17 @@
 /**
- * Calor da arma principal: cada tiro esquenta; parado de atirar, esfria. Chegou a 100%, superaquece e
- * a arma trava até esfriar abaixo de `heatRecover`. É o "respiro" do tiro (pedido do dono: "não dá
- * pra ficar direto assim"): atirar em rajadas rende mais que segurar o gatilho.
+ * Calor do Mech: cada tiro, de qualquer arma, esquenta o mesmo dissipador; parado de atirar, esfria.
+ * Chegou a 100%, superaquece e as armas travam até esfriar abaixo de `heatRecover`. É o "respiro" do
+ * tiro (pedido do dono: "não dá pra ficar direto assim"): rajadas rendem mais que segurar o gatilho, e
+ * disparar tudo junto (plasma + foguetes) esquenta tanto que nenhum combo derruba um Mech de uma vez.
+ * O dissipador é do chassi (`ChassisHeat`); o calor por tiro é da arma (`weapons.ts`).
  * Regra de simulação (G1/G2): roda no tick fixo, sem relógio nem sorteio. Vale para jogador e bots.
  */
-export interface HeatStats {
-  /** Calor por tiro (fração de 0 a 1). */
-  heatPerShot: number;
+export interface ChassisHeat {
   /** Quanto esfria por segundo, depois do atraso. */
   heatCooling: number;
   /** Segundos sem atirar antes de começar a esfriar. */
   heatCoolDelay: number;
-  /** Superaquecido, a arma volta abaixo deste calor. */
+  /** Superaquecido, as armas voltam abaixo deste calor. */
   heatRecover: number;
 }
 
@@ -23,10 +23,11 @@ export class HeatSink {
   overheated = false;
   private sinceShot = 0;
 
-  constructor(private readonly stats: HeatStats) {}
+  constructor(private readonly stats: ChassisHeat) {}
 
-  shot(): void {
-    this.heat = Math.min(1, this.heat + this.stats.heatPerShot);
+  /** Saiu um tiro que gera `heat` de calor (o `heatPerShot` da arma). */
+  shot(heat: number): void {
+    this.heat = Math.min(1, this.heat + heat);
     this.sinceShot = 0;
     if (this.heat >= 1) this.overheated = true;
   }
