@@ -46,3 +46,5 @@
   - head-branch: ['^gemini/']
 'agente:codex':
   - head-branch: ['^codex/']
+'agente:qwen':
+  - head-branch: ['^qwen/']

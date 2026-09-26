@@ -1,12 +1,13 @@
 # ESTADO ATUAL — CYBERMECH
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
-**Última atualização:** 2026-09-25
+**Última atualização:** 2026-09-26
 **Iteração atual:** fim da Fase 3 (Vitrine e polimento: tela do Hangar, polimento de interface e som) e começo da Fase 4 (multiplayer: M1 feita em parte, `MULTIPLAYER.md`, seção 8)
 
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–26/09)
+- **Qwen entra no time (Qwen; dono: "agora estamos inserindo voce no nosso time de agentes"):** oficialização no projeto: `AGENTS.md` e a divisão de trabalho ganham o Qwen (papel transversal — qualidade, documentação e testes, sem tocar no caminho crítico de simulação/rede do Claude); o painel (`scripts/painel.mjs` e `site/dados.mjs`) e a etiqueta de agente (`labeler.yml`, prefixo `qwen/`) passam a reconhecê-lo na sala de controle e nas entregas. Decisão registrada no histórico.
 - **Regra 13 do AGENTS (Claude, R17):** o PR #71 foi mergeado com o CI ainda rodando, porque o `gh pr checks --watch` voltou antes de o check existir. O CI terminou verde (check e deploy), e a regra agora diz para esperar o check aparecer antes do `--watch`.
 - **Hangar 2.0, camada 3 (Claude):** teste de disparo (o Mech vira para o alvo do galpão e dispara 4 s no ritmo real, com tempo, tiros, dano e calor na tela) e montagens salvas nos atalhos 1 a 4. Com isso, as três camadas do Hangar 2.0 estão no ar.
 - **Hangar 2.0, camada 2 (Claude):** a interface do Hangar reescrita no desenho da referência: topo com carga, piloto e modo; chassi com a planta de cada robô; console "caminhos de montagem" com os braços, o nível de potência e barras da arma nova contra a atual; leituras embaixo; marcadores presos aos braços do Mech; celular em pé (abas embaixo) e deitado (painel ao lado). Falta a camada 3: testar disparo num alvo e montagens 1 a 4.
@@ -139,6 +140,7 @@ O rascunho do GPT-OSS continua no stash local (`git stash list`: "rascunho GPT-O
 ## MODELOS DE IA
 - **Gemini Flash:** bom para tarefas de código bem especificadas dentro do protocolo (fez G12, painel de debug, Blind Mode, tela de configurações e som). Costuma esquecer o PR: conferir se o branch virou PR.
 - **Codex (OpenAI):** bom em render e desempenho (#43: draw calls 34 → 9; #44: explosões). Mudança visual pede captura de tela no PR: o #43 deixou os robôs brancos até o primeiro dano sem o check perceber (corrigido no #48).
+- **Qwen (Alibaba, via API DeepSeek):** transversal — qualidade, documentação e testes: auditoria de arquitetura, relatórios do processo e segunda opinião na revisão cruzada. Não toca no caminho crítico de simulação/rede (território do Claude); roda `npm run check` antes de declarar pronto.
 - **gpt-oss 120B:** só para conversa de design. Em 23/09 entregou código que nem compilava e disse que estava pronto; **não usar para editar este repositório**.
 
 ## DIVISÃO DE TRABALHO ENTRE AGENTES
@@ -150,6 +152,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | M1 do multiplayer no ar (partida sem tela). Próximo: M2 (contratos e codec) e M3 (servidor no PC do dono) |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Sem crédito em 25/09; as pendências dele foram concluídas pelo Claude. Ao voltar, um PR cada: 1) passos: o `playStep` dele agora toca a cada passo (`MechBase.onFootstep`, desde o #54); deixar o do Mech grave e pesado, com variação entre os pés, e o do andróide leve; 2) temperatura no HUD (marca de 70%, "RESFRIANDO" com `mech.coolingBoost`) e sons de calor; 3) telas do online contra os contratos da M2 (`shared/net/messages.ts`: apelido, código da sala, lista de jogadores com `ROSTER`, ping com `PING`/`PONG`), podendo começar antes do servidor; 4) abertura da rodada (3·2·1) e fim de rodada com estatísticas, com os textos num lugar só para trocar pelo vocabulário de CTI se o dono aprovar o `UNIVERSO.md`; 5) aviso de ABATE e sequência; 6) tela de carregamento; 7) música. **A tela do Hangar passou para o Codex** |
 | **Codex** | visual e render do mundo 3D (`client/src/fx/`, o visual de `environment/` e dos modelos em `entities/meshKit.ts` e nos rigs, sem stats nem regras), pós-processamento, desempenho de render; revisão cruzada (a tela do Hangar passou para o Claude em 26/09: Hangar 2.0) | Feito: draw calls 34 → 9 (#43), explosões e impactos (#44), blueprints visuais leve/médio/pesado (9 malhas articuladas cada), tela inicial do Hangar. Fila, um PR cada: 0) **fichas de design** do Mech leve e pesado, do andróide e das 4 armas, pelos modelos da pasta `fichas/`; 1) calor visível no Mech (blindagem acende ao esquentar, vapor ao superaquecer, com `mech.heatState` e `mech.coolingBoost`); 2) visual de cada nível de arma (MK II e MK III diferentes, trocando no `equip`); 3) revisão cruzada dos PRs #45 a #55 |
+| **Qwen** | transversal — documentação (`.decepticons/`), testes de simulação (novos `*.test.ts`), relatórios do processo (`scripts/painel.mjs`, `scripts/site/`, o site) e auditoria de arquitetura (segunda opinião na revisão cruzada). Não mexe em `client/src/{sim,combat,entities,physics,player,net}`, `server/` nem `shared/` sem combinar com o dono do território | Entrou no time em 26/09 (oficialização no painel e na etiqueta). Próximo: relatório de saúde técnica (cobertura, débito da seção 9, budget, tick) para a divulgação |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
 
 ## DECISÕES EM ABERTO
@@ -168,4 +171,5 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - **Claude:** completar o online: evento de barricada quebrada (`PROP_BROKEN`), placar e nomes da sala vindos do servidor, teste com latência e perda simuladas; depois a M5 (acertos com compensação de latência) e a M6 (entrada com apelido e reconexão, com as telas do Gemini).
 - **Codex:** fichas de design pendentes do Mech leve e pesado, do andróide e das quatro armas; depois calor visível, visual dos níveis de arma e revisão cruzada dos PRs #45 a #55. O dono deve testar o Hangar após o deploy.
 - **Gemini** (quando voltar o crédito): a fila da divisão de trabalho acima, começando pelos passos e pelo calor no HUD; a tela do Hangar não é mais dele.
+- **Qwen:** relatório de saúde técnica do projeto (cobertura de testes, débito da seção 9 do `MULTIPLAYER.md`, budget, tick do servidor) para alimentar a divulgação; depois, apoiar o Obsidian como camada de leitura sobre `.decepticons/`.
 - **Dono:** testar no site (peso do Mech, calor novo, andróides menores, jogar de andróide, revezamento dos bots), decidir o universo (`UNIVERSO.md`, seção 7), a seção 9 e as decisões da seção 10 do `MULTIPLAYER.md`, salvar em `.tmp/arte/` os conceitos de robô que quer ver no jogo e medir o FPS num notebook com GPU integrada.
