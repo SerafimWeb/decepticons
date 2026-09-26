@@ -2,6 +2,16 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Peso dos Mechs, andróides menores, calor com fôlego e fila justa no diretor
+**Pedido do dono:** "ainda pode diminuir um pouco a proporção dos andróides, parecem grandes"; "talvez os Mechs estejam muito rápidos, considerando o peso e a massa deles"; "o heat está muito rigoroso, o robô tem pouco desempenho pra fugir e combater contra outros 3".
+**Decisão (Claude):**
+- **Escala:** andróide de 2 m → 1,6 m (cápsula, degrau e modelo, que agora escala com a altura do chassi). O Mech de 5,3 m fica 3,3× mais alto. Teste: o modelo tem a altura da cápsula (o tiro acerta o que se vê).
+- **Peso:** Vector-09 de 12 → 9 m/s, aceleração 70 → 30 (arranca e freia em ~0,3 s), no ar 22 → 14, dash 42 → 34. O andróide (10,5 m/s) passou a correr mais que o Mech: o pequeno escapa, o grande esmaga. A passada escala com a altura (Mech com passos lentos, andróide com passos curtos) e cada passo toca o som de passo que o Gemini tinha feito e ninguém chamava; o Mech do jogador treme a câmera de leve, e um Mech gigante a até 25 m de um pequeno treme a câmera dele a cada passo.
+- **Calor com fôlego:** escolhido numa varredura de 960 calibragens contra as regras travadas por teste (arma sozinha ≥ 4,5 s, combo ≥ 2,5 s, plasma MK I entre 5 e 7,5 s, rajadas rendem mais que segurar). Plasma 9% → 7% por tiro (~15 tiros), foguete 15% → 18% (segura o combo), resfriamento 0,6 → 0,7/s, volta a 40% (era 35%): trava de ~2 s. Movimento quase não esquenta (corrida 15 → 6%/s, pulo 5 → 3%, dash 12 → 7%). Superaquecido anda a 75% (era 50%): dá para fugir, ainda sem pulo e dash. O teste "rajadas andando fervem" virou "rajadas longas andando fervem; parando na pausa, não".
+- **Diretor de ataque (R17, achado ao afrouxar o calor):** o revezamento dependia do superaquecimento. Quem terminava o turno disputava a vaga pela distância e, sendo o mais perto, ganhava de novo; e quem ganhava a vaga de longe entrava em perseguição e largava a vaga no caminho. Agora o fim do turno vai para o fim da fila, quem espera há mais tempo vai primeiro (depois da prioridade da personalidade), e a vaga vale durante a aproximação. Teste: com vaga para 1, os três atiram em 20 s.
+**Custo de CPU:** nenhum a mais por tick (números). Por quadro, uma comparação de sinal por robô para o passo; um som e um tremor por passo.
+**Quem decidiu:** dono (menor, mais lento, calor mais folgado); Claude (números, varredura, correções do diretor).
+
 ## [2026-09-25] Jogar de andróide contra Mechs gigantes
 **Pedido do dono:** "da mesma forma que podemos jogar com os mechs, também quero poder jogar com andróides menores, e quero ter a impressão de que estou combatendo um mech bem maior que o android!"
 **Decisão (Claude):**

@@ -5,7 +5,7 @@ import type { CombatSystem } from './CombatSystem';
 const CONTACT = 0.6;
 /** Um pisão por passo: o mesmo robô não é esmagado de novo antes disto (s). */
 export const STEP_S = 0.35;
-/** Só esmaga quem é pelo menos este tanto mais alto (Mech de 5,3 m × andróide de 2 m). */
+/** Só esmaga quem é pelo menos este tanto mais alto (Mech de 5,3 m × andróide de 1,6 m). */
 const SCALE = 2;
 /** "Andando na direção": o comando de movimento aponta para o pequeno (cosseno do ângulo). */
 const TOWARD = 0.5;

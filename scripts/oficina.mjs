@@ -162,7 +162,7 @@ function build() {
       <div class="read frame"><span class="k">dissipador</span><span class="v">${pct(V.heatCooling)}/s</span><span class="d">quanto o ${esc(V.name)} esfria andando</span></div>
       <div class="read frame"><span class="k">parado</span><span class="v">×${nf(V.heatIdleCooling)}</span><span class="d">esfria em dobro: parar é a manobra de resfriamento</span></div>
       <div class="read frame"><span class="k">quente</span><span class="v">≥ ${pct(H.HOT)}</span><span class="d">aviso no painel: a próxima rajada pode travar</span></div>
-      <div class="read frame"><span class="k">superaquecido</span><span class="v">100%</span><span class="d">armas travadas, sem pulo nem dash, metade da velocidade até voltar a ${pct(V.heatRecover)}</span></div>
+      <div class="read frame"><span class="k">superaquecido</span><span class="v">100%</span><span class="d">armas travadas, sem pulo nem dash, ${pct(H.OVERHEAT_SPEED)} da velocidade até voltar a ${pct(V.heatRecover)}</span></div>
     </div>`;
 
   return `

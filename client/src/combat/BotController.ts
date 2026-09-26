@@ -155,6 +155,8 @@ export class BotController {
   hasToken = true;
   /** Há quanto tempo segura a vaga (o diretor passa a vez depois de um turno). */
   tokenHeld = 0;
+  /** Há quanto tempo espera a vaga (fila justa: quem espera há mais tempo vai primeiro). */
+  tokenWait = 0;
 
   private readonly rand: () => number;
   private target: MechBase | null = null;
@@ -202,9 +204,12 @@ export class BotController {
     return this.profile.attackRange * this.persona.rangeScale;
   }
 
-  /** Quer a vaga de ataque: está lutando com um alvo à vista. */
+  /**
+   * Quer a vaga de ataque: está lutando com um alvo à vista, ou acabou de ganhar a vaga e está chegando
+   * perto (de longe, quem ganha a vaga persegue até o alcance; sem isso, largava a vaga no caminho).
+   */
   get wantsToken(): boolean {
-    return this.targetVisible && (this.state === 'attack' || this.state === 'retreat');
+    return this.targetVisible && (this.state === 'attack' || this.state === 'retreat' || (this.state === 'chase' && this.hasToken));
   }
 
   /** O alvo que está caçando (diretor: distância até ele). */
@@ -232,6 +237,7 @@ export class BotController {
     this.fireCooldown = 0;
     this.retreatTimer = 0;
     this.tokenHeld = 0;
+    this.tokenWait = 0;
     this.sidestepTimer = 0;
     this.yaw = this.mech.yaw;
     this.stuckFrom.copy(this.mech.simPosition);

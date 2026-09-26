@@ -11,9 +11,14 @@
  * O que esfria: o chassi, depois de um atraso sem picos. **Parado, esfria em dobro.**
  *
  * Criticidade: a partir de 70% o Mech está QUENTE (aviso). Em 100% SUPERAQUECE: armas travadas, sem pulo
- * nem dash, metade da velocidade, e esfria na metade do ritmo, até voltar abaixo de `heatRecover`.
- * Parado, isso leva ~2,4 s; andando, ~3 s. E quem para antes de ferver esfria em dobro: no fim, todo
- * Mech precisa parar para esfriar.
+ * nem dash, 3/4 da velocidade (dá para fugir), e esfria na metade do ritmo, até voltar abaixo de
+ * `heatRecover`. Parado, isso leva ~2 s; andando, um pouco mais. E quem para antes de ferver esfria em
+ * dobro: no fim, todo Mech precisa parar para esfriar.
+ *
+ * Calibragem de 25/09 (dono: "o calor está muito rigoroso; pouco desempenho para fugir e combater contra
+ * 3"): ~15 tiros de plasma segurando (eram ~12), trava de ~2 s (era ~2,4), correr quase não esquenta,
+ * superaquecido anda a 75% (era 50%). Os foguetes esquentam um pouco mais (18%): o combo dos dois braços
+ * continua sem derrubar um Mech em menos de 2,5 s.
  *
  * Regra de simulação (G1/G2): tick fixo, sem relógio nem sorteio. Vale para jogador e bots.
  */
@@ -39,7 +44,7 @@ export interface ChassisHeat {
 /** Fração do resfriamento enquanto superaquecido. */
 export const OVERHEAT_COOLING = 0.5;
 /** Fração da velocidade enquanto superaquecido. */
-export const OVERHEAT_SPEED = 0.5;
+export const OVERHEAT_SPEED = 0.75;
 /** A partir daqui o Mech está QUENTE (aviso no HUD e no som). */
 export const HOT = 0.7;
 /** Abaixo desta fração da velocidade máxima, o Mech conta como parado (esfria em dobro). */

@@ -78,7 +78,8 @@ describe('MechBase: movimento', () => {
     const stop = straight.positions.at(-1)!;
     expect(stop.x).toBeCloseTo(26 - VECTOR09_STATS.radius - 0.05, 1);
 
-    const diagonal = await simulate(new THREE.Vector3(10, 0, -20), input(x, 1, 0.4), 60);
+    // Tempo proporcional à velocidade do Mech (a calibragem muda a velocidade, não a parede).
+    const diagonal = await simulate(new THREE.Vector3(10, 0, -20), input(x, 1, 0.4), Math.ceil(60 * (16 / SPEED)));
     const end = diagonal.positions.at(-1)!;
     expect(end.x).toBeLessThan(26);
     expect(end.z).toBeGreaterThan(-20 + 3); // continuou andando em Z, colado na parede

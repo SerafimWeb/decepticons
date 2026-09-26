@@ -9,8 +9,10 @@ import { batchRigMeshes, box, cyl, group } from './meshKit';
 export { ANDROID_STATS };
 
 const HIP = 1.0;
+/** Altura em que as peças abaixo foram desenhadas; o modelo é escalado para a altura do chassi. */
+const MODEL_HEIGHT = 2;
 
-function buildRig(paint: number, visor: number, tool: AndroidTool): MechRig {
+function buildRig(paint: number, visor: number, tool: AndroidTool, height: number): MechRig {
   const M = {
     shell: new THREE.MeshStandardMaterial({ color: paint, metalness: 0.25, roughness: 0.4 }),
     frame: new THREE.MeshStandardMaterial({ color: PALETTE.frame, metalness: 0.7, roughness: 0.5 }),
@@ -78,6 +80,8 @@ function buildRig(paint: number, visor: number, tool: AndroidTool): MechRig {
   }
 
   const batchedMaterial = batchRigMeshes(model, [M.shell]);
+  // As juntas animam em coordenadas do modelo (quadril em HIP); a escala vale para tudo abaixo dele.
+  model.scale.setScalar(height / MODEL_HEIGHT);
   return {
     model,
     pelvis,
@@ -117,6 +121,7 @@ export interface AndroidOptions {
 
 export class Android extends MechBase {
   constructor(options: AndroidOptions = {}) {
-    super(options.stats ?? ANDROID_STATS, buildRig(options.paint ?? PALETTE.bone, options.visor ?? PALETTE.signal, options.tool ?? 'chainsaw'), options.loadout);
+    const stats = options.stats ?? ANDROID_STATS;
+    super(stats, buildRig(options.paint ?? PALETTE.bone, options.visor ?? PALETTE.signal, options.tool ?? 'chainsaw', stats.height), options.loadout);
   }
 }

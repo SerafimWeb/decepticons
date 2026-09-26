@@ -414,11 +414,11 @@ export class AudioSystem {
 
   /**
    * PASSO DO MECH — batida pesada rítmica.
-   * Deve ser chamado no evento de passo (ex.: a cada X ticks de movimento no chão).
+   * Chamado no evento de passo (`MechBase.onFootstep`). `gain` 0..1: força do passo × distância até o jogador.
    */
-  playStep(): void {
+  playStep(gain = 1): void {
     const { ctx, masterGain } = this;
-    if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer) return;
+    if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer || gain < 0.02) return;
 
     const now = ctx.currentTime;
 
@@ -427,7 +427,7 @@ export class AudioSystem {
     osc.frequency.setValueAtTime(120, now);
     osc.frequency.exponentialRampToValueAtTime(30, now + 0.08);
     const og = ctx.createGain();
-    og.gain.setValueAtTime(0.25, now);
+    og.gain.setValueAtTime(0.25 * gain, now);
     og.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
     osc.connect(og);
     og.connect(masterGain);
@@ -441,7 +441,7 @@ export class AudioSystem {
     filter.type = 'lowpass';
     filter.frequency.value = 400;
     const ng = ctx.createGain();
-    ng.gain.setValueAtTime(0.15, now);
+    ng.gain.setValueAtTime(0.15 * gain, now);
     ng.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
     src.connect(filter);
     filter.connect(ng);

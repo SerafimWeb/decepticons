@@ -24,14 +24,14 @@ function hold(h: HeatSink, seconds: number): number {
 }
 
 describe('calor da arma (Vector-09)', () => {
-  it('segurar o gatilho superaquece depois de ~12 tiros e a arma trava', () => {
+  it('segurar o gatilho superaquece depois de ~15 tiros (~3 s) e a arma trava', () => {
     const h = new HeatSink(S);
-    const shots = hold(h, 3);
+    const shots = hold(h, 4);
     expect(shots).toBe(Math.ceil(1 / P.heatPerShot));
     expect(h.overheated).toBe(true);
   });
 
-  it('superaquecida, só volta depois de esfriar abaixo do limite (um respiro de ~2,4 s)', () => {
+  it('superaquecida, só volta depois de esfriar abaixo do limite (um respiro de ~2 s)', () => {
     const h = new HeatSink(S);
     while (!h.overheated) h.add(P.heatPerShot);
     let t = 0;
@@ -40,8 +40,8 @@ describe('calor da arma (Vector-09)', () => {
       t += FIXED_DT;
     }
     expect(h.heat).toBeLessThanOrEqual(S.heatRecover);
-    expect(t).toBeGreaterThan(2);
-    expect(t).toBeLessThan(3);
+    expect(t).toBeGreaterThan(1.6);
+    expect(t).toBeLessThan(2.4);
   });
 
   it('não esfria no meio da rajada: só depois do atraso sem atirar', () => {

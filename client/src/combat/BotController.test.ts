@@ -101,7 +101,8 @@ describe('bots (inimigos)', () => {
   it('vê o jogador à frente, espera o tempo de reação, persegue na direção certa e atira', async () => {
     // Bot na origem olhando para -Z (nasce olhando o centro); jogador 60 m à frente.
     const s = await scenario({ bot: [0, 0], player: [0, -60] });
-    s.run(4);
+    // Tempo proporcional à velocidade do Mech: a 9 m/s ele vira, anda ~25 m e atira perto de 4,3 s.
+    s.run(4 * (12 / VECTOR09_STATS.moveSpeed) + 0.5);
     expect(s.shots.length).toBeGreaterThan(0);
     expect(s.shots[0]!).toBeGreaterThanOrEqual(BOT_SKILL_NORMAL.reactionS);
     expect(s.distance()).toBeLessThan(50); // chegou mais perto: andou para o lado certo

@@ -61,8 +61,9 @@ describe('partida sem tela (M1 do multiplayer: o que o servidor vai rodar)', () 
     // partidas com destroços divergem entre si (eles usam Math.random). O servidor roda SEM destroços
     // (determinístico, teste acima); no cliente, a reconciliação da M4 absorve a diferença. Se as correções
     // aparecerem, os destroços vão para um mundo físico só deles (MULTIPLAYER.md, riscos).
-    const withDebris = await play(20, true);
-    const without = await play(20, false);
+    // 40 s: o bastante para uma barricada quebrar no meio da luta (o momento depende da calibragem).
+    const withDebris = await play(40, true);
+    const without = await play(40, false);
     expect(without.where).not.toBe(withDebris.where);
   });
 

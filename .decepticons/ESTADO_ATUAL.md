@@ -7,6 +7,11 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Peso, escala e fôlego (Claude; dono: "andróides parecem grandes"; "Mechs rápidos para o peso"; "o calor está muito rigoroso, pouco desempenho para fugir e combater contra 3"):**
+  - Andróides de 1,6 m (eram 2 m); o modelo escala com a altura do chassi.
+  - Vector-09 a 9 m/s (era 12), arrancada e freada de ~0,3 s (inércia), dash 34 m/s. Passada proporcional à perna; passos com som (o `playStep` do Gemini passou a tocar) e tremor leve; Mech gigante perto de quem é pequeno treme a câmera a cada passo.
+  - Calor com fôlego: ~15 tiros de plasma segurando (eram 12), trava de ~2 s (era 2,4), correr quase não esquenta, superaquecido anda a 75% (era 50%). O combo continua acima de 2,5 s (varredura de 960 calibragens contra as regras de equilíbrio).
+  - Achados no diretor de ataque (R17): o turno só passava quando o atacante superaquecia (quem terminava o turno ganhava a vaga de novo por estar mais perto), e quem ganhava a vaga de longe largava no caminho. Agora: fim do turno vai para o fim da fila, quem espera há mais tempo vai primeiro, e a vaga vale durante a aproximação.
 - **Jogar de andróide (Claude; dono: "também quero poder jogar com andróides menores, com a impressão de combater um Mech bem maior"):** botão `[ PILOTAR ANDRÓIDE ]` na pausa (ou o link da landing, `?build=v1.android.blaster-0.chainsaw-0`). Andróide de 2 m com blaster no clique esquerdo e motosserra no direito (só encostado), 3× a vida do rebelde; câmera baixa e perto, na escala do andróide, para os Mechs de 5,3 m parecerem enormes. Mech rebelde andando para cima pisa nele (2 passos). A escolha fica no Hangar (chassi `android`).
 - **Motosserra e pisão (Claude; pedido do dono):** andróides com motosserra (só corta encostado, pega as pernas), Mech esmaga andróide encostado andando para cima dele (2 passos), nomes sobre a cabeça menores e nítidos.
 - **Nomes das IAs nos bots (Claude; pedido do dono):** CLAUDE·BRABO, GEMINI, CHATGPT·FUJÃO, QWEN, DEEPSEEK, ANTHROPIC (técnico), com o nome sobre a cabeça. **Guia visual dos robôs** e textos para a IA de imagem em `ESTILO_ROBOS.md`.
@@ -99,7 +104,7 @@
 - [ ] **Dono:** jogar com as motosserras (andróides colados nas pernas) e pisar neles (ande para cima de um encostado)
 - [ ] **Dono:** jogar de andróide (pausa → `[ PILOTAR ANDRÓIDE ]`): a câmera passa a sensação de Mech gigante? Vida, blaster e motosserra estão justos? A animação de passo ainda é a do Mech
 - [ ] **Dono:** jogar com o diretor de ataque (no máximo 2 atacando juntos) e as personalidades; dizer se ficou fácil demais (dá para subir "Atacam ao mesmo tempo" nas configurações)
-- [ ] **Dono:** jogar com o calor completo (correr atirando ferve em ~2 s; parado esfria em dobro) e dizer se ficou punitivo demais
+- [ ] **Dono:** jogar com o calor novo (~15 tiros segurando, trava de ~2 s, superaquecido anda a 75%) e o Mech mais pesado (9 m/s, com inércia e passos): ficou bom para lutar contra 3? Se ainda apertar, o próximo ajuste é o resfriamento
 - [ ] **Dono:** jogar com as armas novas (menos dano, calor compartilhado com os foguetes) e dizer se a luta ficou lenta ou rápida demais; decidir as perguntas do fim do `HANGAR.md`
 - [ ] **Dono:** ouvir a vinheta da marca no jogo (som, volume, duração) e ver a abertura da landing (numa aba anônima ela roda de novo)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador

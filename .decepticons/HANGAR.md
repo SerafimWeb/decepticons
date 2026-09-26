@@ -53,7 +53,7 @@ Estado em 25/09 (fim do dia): **o que já está no código** está marcado ✅; 
 | Chassi | Classe | Carga | Blindagem | Velocidade | Dissipador | Estado |
 |---|---|---|---|---|---|---|
 | Ferret-X | leve | 12 t | 70% | 14 m/s | rápido | ausente |
-| **Vector-09** | médio | 18 t | 100% (torso 300) | 12 m/s | 0,6/s | **no jogo** (armas de fábrica: 7 t) |
+| **Vector-09** | médio | 18 t | 100% (torso 300) | 9 m/s | 0,7/s | **no jogo** (armas de fábrica: 7 t) |
 | Colossus-01 | pesado | 26 t | 140% | 9 m/s | lento | ausente (ou vira a escala 3: decisão do dono) |
 
 **Blindagem extra:** a carga que sobra das armas vira blindagem (proposta: 1 t = +30 de vida, distribuída pelo

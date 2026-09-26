@@ -86,7 +86,7 @@ describe('calor do Mech: tudo esquenta (Vector-09)', () => {
     expect(s.m.coolingBoost).toBe(true);
   });
 
-  it('superaquecido: armas travadas, sem pulo nem dash, metade da velocidade', async () => {
+  it('superaquecido: armas travadas, sem pulo nem dash, 3/4 da velocidade (dá para fugir)', async () => {
     const s = await bench();
     s.heatUp(1);
     expect(s.m.heatState).toBe('overheated');
@@ -101,7 +101,7 @@ describe('calor do Mech: tudo esquenta (Vector-09)', () => {
     expect(s.speed()).toBeCloseTo(V.moveSpeed * OVERHEAT_SPEED, 0);
   });
 
-  it('para voltar do superaquecimento, parar compensa: ~2,4 s parado, mais andando', async () => {
+  it('para voltar do superaquecimento, parar compensa: ~2 s parado, mais andando', async () => {
     const recover = async (cmd: MechInput) => {
       const s = await bench();
       s.heatUp(1);
@@ -114,9 +114,9 @@ describe('calor do Mech: tudo esquenta (Vector-09)', () => {
     };
     const still = await recover(IDLE);
     const moving = await recover(RUN);
-    expect(still).toBeGreaterThan(2);
-    expect(still).toBeLessThan(3);
-    expect(moving).toBeGreaterThan(still * 1.2);
+    expect(still).toBeGreaterThan(1.6);
+    expect(still).toBeLessThan(2.4);
+    expect(moving).toBeGreaterThan(still * 1.1);
   });
 
   it('a bancada da oficina bate com o Mech de verdade (correndo com o gatilho apertado)', async () => {
@@ -149,9 +149,11 @@ describe('oficina: administrar o calor é estratégia', () => {
     expect(burst.damage).toBeGreaterThan(heldStill.damage);
   });
 
-  it('as mesmas rajadas sem parar na pausa fervem: o que esfria é parar', () => {
-    const moving = drill(V, { speed: 1, fire: [P], burst: { shots: 6, pause: 1.2 } }, 20);
+  it('rajadas longas (8 tiros, 1 s de pausa): andando na pausa fervem; parando na pausa, não. O que esfria é parar', () => {
+    const moving = drill(V, { speed: 1, fire: [P], burst: { shots: 8, pause: 1 } }, 20);
+    const stopping = drill(V, { speed: 1, fire: [P], burst: { shots: 8, pause: 1 }, stopInPause: true }, 20);
     expect(moving.overheatAt).not.toBeNull();
+    expect(stopping.overheatAt).toBeNull();
   });
 
   it('manobrar sozinho (correr, dash, pulo) não ferve; manobrar atirando ferve mais rápido que atirar parado', () => {
