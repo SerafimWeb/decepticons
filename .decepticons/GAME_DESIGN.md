@@ -25,7 +25,7 @@ com Mechs; a camada de inteligência fala a língua de CTI (incidente, TTPs, IOC
 
 | Escala | O que é | Hoje no jogo | Como luta |
 |---|---|---|---|
-| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~1,6 m) | **Andróide de combate** (KUEN, DIPSIK, MISTRAU): casco branco, visor vermelho, blaster no antebraço. **Técnico** (ANTRÓPICO): visor amarelo, conserta os Mechs | **Mais chato do que perigoso:** cai com 2 tiros de plasma ou **2 pisões** de Mech; ataca com **motosserra**, que só corta encostado e pega as pernas do Mech; muito ágil (arranca na hora, pula duas vezes, desvia com dash) |
+| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~1,6 m) | **Andróide de combate** (KUEN, DIPSIK, MISTRAU): casco branco, visor vermelho, blaster no antebraço. **Técnico** (ENTRÓPICO): visor amarelo, conserta os Mechs | **Mais chato do que perigoso:** cai com 2 tiros de plasma ou **2 pisões** de Mech; ataca com **motosserra**, que só corta encostado e pega as pernas do Mech; muito ágil (arranca na hora, pula duas vezes, desvia com dash) |
 | **2** | Mechs de combate (~5 m) | **Vector-09** (o jogador) e Mechs rebeldes (CLAWD, GEMINAI, CHAD-GPT) | Blindado, dano por parte, calor na arma, foguetes |
 | **3** | Máquinas de cerco (futuro) | ainda não | a definir (Colossus-01) |
 
@@ -64,6 +64,7 @@ com Mechs; a camada de inteligência fala a língua de CTI (incidente, TTPs, IOC
 - **Dano que respeita a distância:** o plasma perde força depois de 60 m; chegar perto rende, mas expõe.
 - **IAs rebeldes de dois tamanhos:** Mechs blindados e andróides pequenos e ágeis que chegam perto, pulam e desviam.
 - **Motosserras e pisões:** os andróides grudam nas suas pernas com motosserras; ande para cima deles e dois passos esmagam.
+- **Ajuste as potências:** mude o dano, a vida e a velocidade de cada arma e de cada lado, veja na hora o que isso faz com a luta e mande o link do seu ajuste para quem quiser.
 - **Jogue a pé:** troque o Mech por um andróide de 1,6 m com blaster e motosserra e enfrente Mechs com mais que o triplo da sua altura.
 - **Técnicos inimigos:** andróides de visor amarelo consertam os Mechs rebeldes; derrube eles primeiro.
 

@@ -44,7 +44,7 @@ A proposta anterior de blocos fictícios (Coalizão Atlântica, Liga do Pacífic
 | Facção | Papel | No jogo |
 |---|---|---|
 | **SERAFIM** | CSIRT com braço cinético; neutra, contratada por quem foi atacado | o jogador, o Hangar, a Oficina, as URIs (Vector-09) |
-| **IAs rebeldes** | os adversários: cada IA é um *threat actor* com perfil próprio | os bots: CLAWD, GEMINAI, CHAD-GPT (Mechs), KUEN, DIPSIK, MISTRAU (andróides), ANTRÓPICO (técnico) |
+| **IAs rebeldes** | os adversários: cada IA é um *threat actor* com perfil próprio | os bots: CLAWD, GEMINAI, CHAD-GPT (Mechs), KUEN, DIPSIK, MISTRAU (andróides), ENTRÓPICO (técnico) |
 | **Consórcios** | as grandes empresas de tecnologia (fictícias) que treinaram os modelos. Contratam a SERAFIM, mas escondem o tamanho do Vazamento | patrocinam arenas e eventos; fonte de tensão na história (quem vazou?) |
 | **Blocos** | Estados e alianças que disputam os recursos | notícias, contratos, temporadas |
 
@@ -78,7 +78,7 @@ CTI diz algo que o termo de jogo não diz.
 | Soldado | ataca em rajadas, recua avariado | Execução (TA0002) |
 | Manso | atira de longe, recua cedo | Reconhecimento (TA0043) |
 | Fujão | espreita pelas costas, só ataca com brecha | Evasão de defesa (TA0005) |
-| Técnico (ANTRÓPICO) | conserta os Mechs rebeldes | Persistência (TA0003): mantém o ataque vivo |
+| Técnico (ENTRÓPICO) | conserta os Mechs rebeldes | Persistência (TA0003): mantém o ataque vivo |
 | Andróides | enxame rápido, motosserra nas pernas | Movimento lateral (TA0008), em bando como uma botnet |
 
 **Ficha de ameaça de cada IA** (landing e tela de carregamento): codinome, visto pela primeira vez, motivação, TTPs,
@@ -113,7 +113,7 @@ marca SERAFIM.
   SERAFIM. Para levar a esse chat: portais de jogos e redes de anúncio têm regras para conteúdo político; vale conferir as
   do portal escolhido antes do lançamento (Fase 5).
 - **Empresas reais só como paródia:** os bots já usam paródias (CLAWD, GEMINAI, CHAD-GPT, KUEN, DIPSIK, MISTRAU,
-  ANTRÓPICO); os consórcios seguem o mesmo estilo.
+  ENTRÓPICO); os consórcios seguem o mesmo estilo.
 - **Sem clichê de "hacker"** (capuz, código verde caindo) no jogo; a chuva de pontos é da marca, na abertura.
 
 ## 7. Decisões do dono

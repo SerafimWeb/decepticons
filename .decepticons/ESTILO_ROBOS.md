@@ -48,7 +48,7 @@ IAs rebeldes. Visual low-poly neon, estilo "Tron": cidade escura com linhas de l
 | **VECTOR-09** (o jogador) | Mech, 5,3 m | Assalto ágil, ombros largos, pernas digitígradas curtas e fortes, cabeça pequena com visor em faixa. Canhão de plasma no antebraço direito; casulo de 4 tubos de foguete no esquerdo; dois propulsores nas costas. Amarelo com verde neon |
 | **Mechs rebeldes** | Mech, 5,3 m | O mesmo chassi tomado pelas IAs, vermelho escuro com visor vermelho. Três personalidades (os nomes são dos bots no jogo): **CLAWD, o brabo** (placas extras de blindagem na frente, postura inclinada para o ataque); **GEMINAI, o soldado** (padrão, equilibrado); **CHAD-GPT, o fujão** (mais leve, cabeça com sensores grandes, postura de quem espreita) |
 | **Andróide de combate** (KUEN, DIPSIK, MISTRAU) | Humanoide, 1,6 m | Parecido com os humanoides de hoje, sem copiar nenhum: casco branco liso, estrutura escura, faixa de visor vermelha, blaster no antebraço, mochila de baterias. Ágil, magro |
-| **Técnico** (ANTRÓPICO) | Humanoide, 1,6 m | O mesmo corpo do andróide, visor amarelo, ferramenta de reparo no lugar do blaster (emite um feixe amarelo), mochila maior com peças |
+| **Técnico** (ENTRÓPICO) | Humanoide, 1,6 m | O mesmo corpo do andróide, visor amarelo, ferramenta de reparo no lugar do blaster (emite um feixe amarelo), mochila maior com peças |
 | Futuro: **Ferret-X** | Mech leve, ~4,5 m | Rápido, pernas longas, pouca blindagem |
 | Futuro: **Colossus-01** | Mech pesado, ~6,5 m | Largo, blindagem grossa, atravessa paredes no dash |
 | Futuro: **cão-robô rebelde** | Quadrúpede, ~1 m de altura | Baixo e rápido; obriga a mirar para baixo |
