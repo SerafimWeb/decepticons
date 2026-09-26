@@ -825,6 +825,154 @@ html, body {
   font-size: 14px;
 }
 
+/* Hangar: oficina de montagem sobre a partida pausada. A tela só anima CSS enquanto está aberta. */
+#hangar-modal {
+  --hangar-cyan: #70e9ff;
+  --hangar-cyan-dim: #328ba0;
+  --hangar-line: rgba(112, 233, 255, 0.23);
+  --hangar-panel: rgba(7, 16, 23, 0.96);
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  color: #d8f5fa;
+  background:
+    linear-gradient(rgba(4, 11, 17, 0.93), rgba(4, 11, 17, 0.95)),
+    radial-gradient(ellipse at 52% 46%, rgba(25, 126, 153, 0.22), transparent 49%),
+    #050a0f;
+  font-family: 'Consolas', 'Courier New', monospace;
+  letter-spacing: 0.04em;
+  isolation: isolate;
+}
+#hangar-modal.hidden { display: none; }
+#hangar-modal.live-preview { background: rgba(4, 11, 17, 0.68); }
+#hangar-modal.live-preview .hangar-stage { background: rgba(4, 10, 15, 0.1); }
+#hangar-modal.live-preview .hangar-mech { display: none; }
+html.hangar-open #hud, html.hangar-open #debug-panel { visibility: hidden; }
+#hangar-modal button, #hangar-modal select, #hangar-modal input { font: inherit; }
+#hangar-modal button { color: inherit; }
+#hangar-modal :focus-visible { outline: 2px solid #d7fbff; outline-offset: 2px; }
+.hangar-header {
+  min-height: 66px;
+  padding: 9px clamp(16px, 3vw, 46px);
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid var(--hangar-line);
+  background: rgba(5, 12, 18, 0.94);
+}
+.hangar-brand { display: flex; align-items: center; gap: 12px; min-width: 300px; color: var(--hangar-cyan); }
+.hangar-mark {
+  width: 36px; height: 36px; display: grid; place-items: center;
+  border: 1px solid var(--hangar-cyan); transform: rotate(45deg);
+  color: #effdff; font-size: 18px; font-weight: 800; text-shadow: 0 0 10px var(--hangar-cyan);
+}
+.hangar-mark::first-letter { transform: rotate(-45deg); }
+.hangar-brand b { display: block; font-size: 19px; letter-spacing: 0.16em; }
+.hangar-brand small { display: block; margin-top: 4px; color: #839ba4; font-size: 9px; letter-spacing: 0.18em; }
+.hangar-header-state { margin-left: auto; display: flex; align-items: center; gap: 9px; color: #8eaab3; font-size: 10px; letter-spacing: 0.13em; }
+.hangar-header-state b { padding-left: 14px; color: #d9f8fc; font-size: 12px; }
+.hangar-live-dot { width: 7px; height: 7px; border-radius: 50%; background: #74f5b2; box-shadow: 0 0 10px #74f5b2; }
+.hangar-close { width: 38px; height: 38px; border: 1px solid var(--hangar-line); background: transparent; cursor: pointer; font-size: 24px !important; color: #9cc8d2 !important; }
+.hangar-close:hover, .hangar-back:hover { border-color: var(--hangar-cyan); color: #effdff !important; }
+.hangar-workspace { flex: 1 0 auto; min-height: 490px; display: grid; grid-template-columns: minmax(190px, 0.8fr) minmax(360px, 1.55fr) minmax(280px, 1fr); gap: 14px; padding: 16px clamp(14px, 2vw, 30px); }
+.hangar-rail { min-width: 0; padding: 17px; border: 1px solid var(--hangar-line); background: linear-gradient(145deg, rgba(11, 25, 35, 0.99), rgba(6, 13, 19, 0.99)); }
+.hangar-section-label { display: flex; align-items: center; gap: 9px; color: var(--hangar-cyan); font-size: 11px; letter-spacing: 0.16em; }
+.hangar-section-label > span { color: #537987; font-size: 10px; }
+.hangar-chassis-list { display: grid; gap: 9px; margin: 13px 0 22px; }
+.hangar-chassis-card { width: 100%; padding: 12px; display: grid; gap: 7px; text-align: left; border: 1px solid rgba(137, 182, 194, 0.18); background: rgba(4, 11, 16, 0.58); cursor: pointer; }
+.hangar-chassis-card:hover, .hangar-chassis-card.selected { border-color: var(--hangar-cyan); background: rgba(25, 107, 127, 0.2); }
+.hangar-chassis-card.selected { box-shadow: inset 3px 0 var(--hangar-cyan); }
+.hangar-chassis-card span { color: #6e9eaa; font-size: 9px; letter-spacing: 0.15em; }
+.hangar-chassis-card b { color: #e0faff; font-size: 15px; letter-spacing: 0.08em; }
+.hangar-chassis-card small { color: #8da4ab; font-size: 10px; }
+.hangar-spec-card { padding-top: 14px; border-top: 1px solid rgba(137, 182, 194, 0.15); }
+.hangar-spec-card .hangar-section-label { margin-bottom: 10px; font-size: 9px; }
+.hangar-spec-row { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(137, 182, 194, 0.1); font-size: 9px; color: #79939b; }
+.hangar-spec-row b { color: #d8f5fa; white-space: nowrap; font-size: 10px; }
+.hangar-footnote { margin: 14px 0 0; color: #71858b; font-size: 9px; line-height: 1.6; }
+
+.hangar-stage { position: relative; min-height: 455px; overflow: hidden; display: grid; place-items: center; border: 1px solid rgba(112, 233, 255, 0.25); background: radial-gradient(ellipse at 50% 58%, rgba(33, 156, 183, 0.17), rgba(6, 15, 23, 0.42) 50%, rgba(4, 10, 15, 0.8)); }
+.hangar-stage::before, .hangar-stage::after { content: ''; position: absolute; z-index: 1; pointer-events: none; }
+.hangar-stage::before { inset: 9px; border: 1px solid rgba(112, 233, 255, 0.08); clip-path: polygon(0 0, 20% 0, 20% 1px, 80% 1px, 80% 0, 100% 0, 100% 22%, calc(100% - 1px) 22%, calc(100% - 1px) 78%, 100% 78%, 100% 100%, 0 100%, 0 78%, 1px 78%, 1px 22%, 0 22%); }
+.hangar-stage-grid { position: absolute; inset: 0; opacity: 0.18; background-image: linear-gradient(rgba(112, 233, 255, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(112, 233, 255, 0.12) 1px, transparent 1px); background-size: 36px 36px; mask-image: linear-gradient(transparent, #000 24%, #000 77%, transparent); }
+.hangar-stage-top { position: absolute; z-index: 3; top: 15px; left: 18px; right: 18px; display: flex; justify-content: space-between; color: #75aab5; font-size: 9px; letter-spacing: 0.15em; }
+.hangar-stage-top span:last-child { color: var(--hangar-cyan); }
+.hangar-orbit { position: absolute; bottom: 74px; left: 50%; width: 260px; height: 74px; border: 1px solid rgba(102, 228, 252, 0.34); border-radius: 50%; transform: translateX(-50%) rotateX(63deg); box-shadow: 0 0 22px rgba(72, 214, 243, 0.08); }
+.hangar-orbit-b { width: 202px; height: 52px; bottom: 83px; border-color: rgba(102, 228, 252, 0.22); }
+.hangar-platform { position: absolute; bottom: 76px; left: 50%; width: 230px; height: 38px; border: 1px solid rgba(112, 233, 255, 0.8); border-radius: 50%; transform: translateX(-50%); background: radial-gradient(ellipse, rgba(91, 226, 247, 0.24), rgba(7, 29, 38, 0.7) 58%, rgba(4, 12, 18, 0.9)); box-shadow: 0 0 24px rgba(71, 220, 248, 0.23); }
+.hangar-platform::before { content: ''; position: absolute; inset: 7px 22px; border: 1px solid rgba(112, 233, 255, 0.5); border-radius: 50%; }
+.hangar-platform i { position: absolute; top: 50%; width: 5px; height: 5px; border-radius: 50%; background: #b8f8ff; box-shadow: 0 0 9px #70e9ff; }
+.hangar-platform i:nth-child(1) { left: 20%; }.hangar-platform i:nth-child(2) { left: 49%; }.hangar-platform i:nth-child(3) { right: 20%; }
+.hangar-mech { position: absolute; z-index: 2; top: 49%; left: 50%; width: min(70%, 390px); height: min(84%, 440px); transform: translate(-50%, -50%); filter: drop-shadow(0 0 13px rgba(67, 216, 246, 0.18)); transition: transform 0.2s ease; }
+.hangar-mech svg { width: 100%; height: 100%; overflow: visible; }
+.holo-back-lines { fill: none; stroke: rgba(109, 227, 250, 0.13); stroke-width: 1; stroke-dasharray: 3 7; }
+.holo-robot { fill: url(#hangar-shell); stroke: rgba(169, 242, 255, 0.8); stroke-width: 2.2; stroke-linejoin: bevel; }
+.holo-glass { fill: #70e9ff; stroke: #d7fbff; stroke-width: 2; filter: drop-shadow(0 0 6px #70e9ff); }
+.holo-panel { fill: url(#hangar-dark); stroke: rgba(181, 245, 255, 0.78); stroke-width: 2; }
+.holo-dark { fill: url(#hangar-dark); stroke: rgba(181, 245, 255, 0.45); stroke-width: 1.5; }
+.holo-detail { fill: none; stroke: rgba(207, 249, 255, 0.72); stroke-width: 3; stroke-linecap: square; }
+.holo-cyan { fill: none; stroke: #8ef1ff; stroke-width: 3; stroke-linecap: round; filter: drop-shadow(0 0 4px #70e9ff); }
+.hangar-mech.is-android { transform: translate(-50%, -50%) scale(0.68, 0.88); }
+.hangar-hotspot { position: absolute; z-index: 4; display: flex; align-items: center; gap: 7px; padding: 6px 9px; border: 1px solid rgba(112, 233, 255, 0.4); background: rgba(4, 14, 21, 0.78); color: #a7dbe5 !important; cursor: pointer; font-size: 9px !important; letter-spacing: 0.1em; }
+.hangar-hotspot b { color: var(--hangar-cyan); }.hangar-hotspot:hover, .hangar-hotspot.active { border-color: var(--hangar-cyan); background: rgba(41, 150, 175, 0.36); box-shadow: 0 0 12px rgba(112, 233, 255, 0.18); }
+.hotspot-right { top: 44%; right: 8%; }.hotspot-left { top: 44%; left: 8%; }
+.hangar-stage-caption { position: absolute; z-index: 3; bottom: 17px; left: 16px; right: 16px; display: grid; justify-items: center; gap: 4px; text-align: center; }
+.hangar-stage-caption b { color: #dffbff; font-size: 13px; letter-spacing: 0.2em; text-shadow: 0 0 12px rgba(112, 233, 255, 0.75); }
+.hangar-stage-caption span { color: #7ca4ad; font-size: 9px; }
+
+.hangar-slot-list { display: grid; gap: 7px; margin: 13px 0 19px; }
+.hangar-slot-card { width: 100%; min-height: 55px; display: flex; align-items: center; gap: 10px; padding: 8px; text-align: left; border: 1px solid rgba(137, 182, 194, 0.18); background: rgba(4, 11, 16, 0.54); cursor: pointer; }
+.hangar-slot-card:hover, .hangar-slot-card.selected { border-color: var(--hangar-cyan); background: rgba(25, 107, 127, 0.17); }
+.slot-glyph { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid rgba(112, 233, 255, 0.35); color: var(--hangar-cyan); font-size: 11px; }
+.slot-copy { display: grid; gap: 4px; min-width: 0; }.slot-copy small { color: #719ba5; font-size: 8px; letter-spacing: 0.13em; }.slot-copy b { overflow: hidden; color: #d8f5fa; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.slot-tier { margin-left: auto; color: #8cecff; font-size: 9px; white-space: nowrap; }.hangar-slot-card.empty .slot-copy b, .hangar-slot-card.empty .slot-tier { color: #71858b; }
+.hangar-weapon-label { padding-top: 14px; border-top: 1px solid rgba(137, 182, 194, 0.15); }
+.hangar-weapon-editor { margin-top: 11px; }.hangar-field-label { display: block; margin: 10px 0 6px; color: #7499a2; font-size: 8px; letter-spacing: 0.13em; }
+.hangar-weapon-editor select { width: 100%; min-height: 38px; padding: 7px 10px; border: 1px solid rgba(112, 233, 255, 0.36); border-radius: 0; outline: none; background: #07131b; color: #d9f8fc; font-size: 11px; }
+.hangar-weapon-editor select:disabled { color: #d9f8fc; opacity: 1; }.hangar-weapon-hint { display: block; min-height: 26px; padding-top: 6px; color: #78949c; font-size: 8px; line-height: 1.45; }
+.hangar-tier-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+.hangar-tier { min-width: 0; padding: 8px 4px; border: 1px solid rgba(137, 182, 194, 0.19); background: rgba(4, 11, 16, 0.6); cursor: pointer; }.hangar-tier b, .hangar-tier small { display: block; }.hangar-tier b { font-size: 10px; }.hangar-tier small { margin-top: 5px; color: #738d95; font-size: 7px; white-space: nowrap; }.hangar-tier:hover, .hangar-tier.selected { border-color: var(--hangar-cyan); color: #c8f7ff; background: rgba(41, 150, 175, 0.17); }
+.hangar-tier.selected small { color: #83d9e8; }.hangar-weapon-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 11px; padding-top: 9px; border-top: 1px solid rgba(137, 182, 194, 0.13); }.hangar-weapon-stats span { display: grid; gap: 4px; color: #718e97; font-size: 7px; }.hangar-weapon-stats b { color: #d5f6fb; font-size: 9px; }
+.hangar-tier:disabled { opacity: 0.4; cursor: not-allowed; }
+.hangar-module-stubs { display: grid; gap: 6px; margin-top: 13px; color: #66818a; font-size: 8px; }.hangar-module-stubs > span { color: #7499a2; letter-spacing: 0.13em; }.hangar-module-stubs b { display: flex; justify-content: space-between; padding: 7px 8px; border: 1px dashed rgba(137, 182, 194, 0.17); font-size: 8px; font-weight: 400; }.hangar-module-stubs i { color: #536d75; font-size: 7px; font-style: normal; }
+
+.hangar-footer { padding: 0 clamp(14px, 2vw, 30px) 15px; }.hangar-metrics { display: grid; grid-template-columns: 1.2fr repeat(3, 1fr); border: 1px solid var(--hangar-line); background: rgba(6, 15, 21, 0.94); }
+.hangar-metric { min-width: 0; padding: 11px 15px; border-left: 1px solid rgba(112, 233, 255, 0.13); }.hangar-metric:first-child { border-left: 0; }.hangar-metric > span { display: block; color: #78949c; font-size: 8px; letter-spacing: 0.12em; }.hangar-metric > b { display: block; margin-top: 7px; color: #d9f8fc; font-size: 17px; letter-spacing: 0.06em; }.hangar-metric > small { display: block; margin-top: 5px; color: #6f858b; font-size: 8px; }
+.hangar-meter { height: 4px; margin-top: 8px; background: rgba(137, 182, 194, 0.16); }.hangar-meter i { display: block; height: 100%; background: linear-gradient(90deg, #63dff5, #b0f6ff); box-shadow: 0 0 8px rgba(112, 233, 255, 0.45); transition: width 0.16s ease; }.hangar-meter i.over { background: #ff5b67; box-shadow: 0 0 8px rgba(255, 45, 61, 0.55); }
+.hangar-actions { min-height: 50px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }.hangar-share { display: flex; min-width: 200px; max-width: 470px; flex: 1; }.hangar-share input { min-width: 0; flex: 1; padding: 8px; border: 1px solid rgba(112, 233, 255, 0.16); background: rgba(4, 11, 16, 0.6); color: #83abb4; font-size: 9px !important; }.hangar-share button { padding: 8px 10px; border: 1px solid rgba(112, 233, 255, 0.34); background: transparent; color: #9bdce7 !important; font-size: 8px !important; cursor: pointer; }.hangar-action-buttons { display: flex; align-items: center; justify-content: flex-end; gap: 9px; }.hangar-action-buttons button { min-height: 36px; padding: 8px 15px; font-size: 9px !important; letter-spacing: 0.1em; cursor: pointer; }.hangar-back { border: 1px solid rgba(137, 182, 194, 0.24); background: transparent; color: #8baab2 !important; }.hangar-apply { border: 1px solid #79eaff; background: linear-gradient(105deg, rgba(25, 119, 143, 0.9), rgba(17, 66, 83, 0.9)); color: #e5fcff !important; box-shadow: 0 0 14px rgba(112, 233, 255, 0.14); }.hangar-apply span { margin-left: 10px; font-size: 16px; }.hangar-apply:disabled { border-color: #71474b; background: #26171a; color: #916b70 !important; cursor: not-allowed; box-shadow: none; }.hangar-action-buttons #hangar-message { max-width: 260px; color: #8de6a9; font-size: 8px; line-height: 1.4; }.hangar-action-buttons #hangar-message[data-kind='error'] { color: #ff747c; }
+
+@media (max-width: 1050px) {
+  .hangar-workspace { grid-template-columns: minmax(165px, 0.72fr) minmax(300px, 1.28fr) minmax(255px, 1fr); gap: 9px; padding-inline: 10px; }
+  .hangar-rail { padding: 12px; }.hangar-footer { padding-inline: 10px; }
+  .hangar-metric { padding-inline: 10px; }.hangar-metric > b { font-size: 14px; }
+  .hangar-brand { min-width: 250px; }
+}
+@media (max-width: 780px) {
+  #hangar-modal { overflow-y: auto; }
+  .hangar-header { position: sticky; top: 0; z-index: 6; min-height: 58px; padding: 8px 12px; }
+  .hangar-brand { min-width: 0; }.hangar-brand b { font-size: 15px; }.hangar-brand small { font-size: 7px; }.hangar-header-state { margin-left: auto; font-size: 8px; }.hangar-header-state b { display: none; }
+  .hangar-workspace { min-height: auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 10px; }
+  .hangar-stage { grid-column: 1 / -1; grid-row: 1; min-height: 360px; }
+  .hangar-chassis-rail { grid-column: 1; }.hangar-loadout-rail { grid-column: 2; }
+  .hangar-chassis-list { grid-template-columns: 1fr; }.hangar-footer { padding: 0 10px 12px; }
+  .hangar-metrics { grid-template-columns: repeat(2, 1fr); }.hangar-metric:nth-child(3) { border-left: 0; border-top: 1px solid rgba(112, 233, 255, 0.13); }.hangar-metric:nth-child(4) { border-top: 1px solid rgba(112, 233, 255, 0.13); }
+  .hangar-actions { align-items: stretch; flex-direction: column; padding-top: 9px; }.hangar-share { max-width: none; }.hangar-action-buttons { justify-content: space-between; flex-wrap: wrap; }.hangar-action-buttons #hangar-message { flex: 1 0 100%; max-width: none; min-height: 14px; }
+}
+@media (max-width: 520px) {
+  .hangar-header-state { display: none; }.hangar-close { margin-left: auto; }
+  .hangar-workspace { grid-template-columns: 1fr; }.hangar-stage { grid-column: 1; min-height: 320px; }
+  .hangar-chassis-rail, .hangar-loadout-rail { grid-column: 1; }.hangar-chassis-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hangar-chassis-card { padding: 9px; }.hangar-chassis-card b { font-size: 12px; }.hangar-spec-card { display: none; }
+  .hangar-loadout-rail { display: grid; grid-template-columns: 1fr; }.hangar-stage .hotspot-right { right: 2%; }.hangar-stage .hotspot-left { left: 2%; }
+  .hangar-metric { padding: 9px; }.hangar-metric > b { font-size: 13px; }.hangar-action-buttons button { flex: 1; padding-inline: 8px; font-size: 8px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #hangar-modal *, #hangar-modal *::before, #hangar-modal *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
+
 /* HUD no toque: a câmera aparece no botão CAM, e o canto de cima é da pausa. */
 .touch #mode { display: none; }
 .touch #debug-panel { bottom: auto; top: 114px; right: var(--tc-edge-r); }
