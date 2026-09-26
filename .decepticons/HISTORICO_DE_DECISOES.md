@@ -2,6 +2,16 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] O grafo da arquitetura na oficina
+**Pedido do dono:** "inserir o grafo la na pagina da oficina como um elemento visual impactante", referenciando o `ecossistema.html` (SERAFIM) e o pipeline STERM/ABADDON.
+**Decisão (Qwen, com aval do dono):**
+- **Grafo de força próprio, sem biblioteca.** O ecossistema usa `3d-force-graph` + Three.js (~1,4 MB de libs); aqui o grafo é desenhado por código (~25 KB), no neon do jogo, alinhado ao princípio "tudo gerado por código" e à leveza do projeto. Basta a CSP `'self'` + inline, sem hospedar vendor.
+- **Conteúdo lido do código:** os nós são os módulos (a pasta de primeiro nível) e as arestas, os imports entre eles, extraídos dos próprios `.ts` (`site/dados.mjs → arquitetura()`). Muda sozinho quando o código muda (R14); nada digitado à mão. Fora: os testes e o CSS.
+- **Visual e interação:** física de repulsão/mola em 3D, projeção com profundidade e auto-rotação, glow por camada, hover que isola as ligações, arrastar que gira e puxa os módulos, roda para o zoom, enquadramento automático; e uma tabela alternativa para quem não vê o grafo.
+- **Na oficina, logo após o hero**, e no `site --check` (o canvas tem de desenhar, senão o check falha).
+**Custo:** ~25 KB inline na página da oficina (0 no jogo, 0 no bundle); nenhuma dependência nova.
+**Quem decidiu:** dono (fazer o grafo, contido no próprio código); Qwen (técnica, conteúdo e visual).
+
 ## [2026-09-26] Qwen (DeepSeek) entra no time de agentes
 **Pedido do dono:** "agora estamos inserindo voce (qwen com api deepseek) no nosso time de agentes"; "ajude a arrumar no geral, com cuidado pra nao atrapalhar o que o claude está fazendo".
 **Decisão (Qwen, com aval do dono):**

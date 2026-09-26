@@ -7,7 +7,8 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { jogo, marcos } from './site/dados.mjs';
+import { arquitetura, jogo, marcos } from './site/dados.mjs';
+import { GRAFO_CSS, grafoOficina } from './site/grafo.mjs';
 import { CHART_CSS, divergingBars, heatTable, lineChart, nf, pct, rankBars } from './site/graficos.mjs';
 import { esc, pagina, topo } from './site/tema.mjs';
 
@@ -15,6 +16,8 @@ const argv = process.argv.slice(2);
 const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : '.tmp/site/oficina/index.html');
 const m = marcos();
 const game = await jogo();
+// O grafo da arquitetura: os módulos e quem importa quem, lido dos próprios arquivos (dados.mjs → arquitetura()).
+const grafo = grafoOficina(arquitetura());
 
 function build() {
   const { weapons: W, balance: B, heat: H, vector: V, android: A } = game;
@@ -172,6 +175,8 @@ function build() {
     <p class="pitch">Aqui cada Mech, arma e defesa passa pela bancada antes de ir para a arena. Os gráficos saem da mesma simulação que roda no jogo, refeita a cada versão: nada é desenhado à mão. É assim que o equilíbrio vira número, e a estratégia, uma escolha que dá para medir.</p>
   </header>
 
+  ${grafo.html}
+
   <section aria-labelledby="calor">
     <span class="kicker">// termodinâmica · ${esc(V.name)}</span>
     <h2 id="calor">O calor decide a luta</h2>
@@ -227,6 +232,7 @@ function build() {
 
 const css = `
   ${CHART_CSS}
+  ${GRAFO_CSS}
   .o-hero { display: grid; gap: 16px; padding-top: 30px; }
   .pitch { font-size: 17px; line-height: 1.6; color: var(--text); max-width: 64ch; text-wrap: pretty; }
   .read .d { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
@@ -251,6 +257,7 @@ const html = pagina({
   description: 'A bancada de testes do CYBERMECH: calor, armas e defesas dos Mechs medidos pela simulação do jogo a cada versão.',
   css,
   body,
+  script: grafo.script,
 });
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, html);
