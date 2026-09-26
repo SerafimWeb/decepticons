@@ -40,11 +40,11 @@ const NAME_BYTES = NAME_MAX * 2;
 const BUILD_RE = /^[a-z0-9.-]{1,48}$/;
 const ROOM_RE = /^[A-Z0-9-]{1,12}$/;
 
-/** Apelido: só letras, números, espaço, ponto, hífen e sublinhado; até 16; vazio vira PILOTO. */
+/** Apelido: só letras, números, espaço, ponto, hífen, sublinhado e o ponto do meio (CLAWD·BRABO); até 16; vazio vira PILOTO. */
 export function sanitizeName(s: string): string {
   const clean = s
     .normalize('NFC')
-    .replace(/[^\p{L}\p{N} ._-]/gu, '')
+    .replace(/[^\p{L}\p{N} ._·-]/gu, '')
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, NAME_MAX)

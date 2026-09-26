@@ -143,6 +143,22 @@ export class Match {
   }
 
   /**
+   * Tira um jogador da partida (saiu da sala): regras, placar, renascimento, cena e física. Antes, ele "cai"
+   * (torso a zero, sem contar abate): os bots que o caçavam largam o alvo.
+   */
+  removePlayer(mech: MechBase): void {
+    const i = this.players.indexOf(mech);
+    if (i < 0) return;
+    this.players.splice(i, 1);
+    mech.modules.torso = 0;
+    this.combat.unregister(mech);
+    this.respawner.untrack(mech);
+    this.round.unregister(mech);
+    this.scene.remove(mech.root);
+    mech.despawn(this.physics);
+  }
+
+  /**
    * Corte corpo a corpo de um jogador (motosserra do andróide pilotado): pega o inimigo vivo mais perto
    * dentro do alcance da arma. Regra da partida (o controle só pede); sem ninguém perto, nada acontece.
    */

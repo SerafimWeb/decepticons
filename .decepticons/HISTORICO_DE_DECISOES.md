@@ -2,6 +2,18 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] M3 do multiplayer: o servidor de jogo, com `ws` no lugar do Colyseus
+**Pedido do dono:** "segue pro multiplayer; prossiga".
+**Decisão (Claude):**
+- **`ws` em vez de Colyseus:** o protocolo é nosso (binário da M2); o Colyseus daria salas e reconexão, que cabem em ~200 linhas nossas. Uma dependência pequena, sem sub-dependências, no lugar de um framework. Se houver vários servidores com matchmaking entre eles, o Colyseus volta à mesa.
+- **`server/`:** `Server.ts` (HTTP + WebSocket, salas por `?sala=`, criadas na entrada, fechadas 30 s depois de vazias, um laço de 60 Hz com acumulador para todas as salas), `ArenaRoom.ts` (a `Match` de uma sala, sem tela, efeitos nem destroços; bots do padrão; entrada, recusa, estado a 20 Hz com o `ack` de cada um, ping, saída), `NetPilot.ts` (um comando por tick, na ordem; sem comando novo, repete o movimento sem pulo e dash; tiro pelas mesmas regras do jogador local, saindo da simulação na direção do comando).
+- **Validação no servidor (G7, G13):** montagem pelo `validateLoadout` do Hangar (quem monta MK III nos dois braços é recusado), versão do protocolo, sala cheia (8), mensagem torta ignorada sem derrubar a sala, mensagem acima de 1 KB derruba a conexão.
+- **Sair da partida:** a `Match` ganhou `removePlayer` (e o combate, o renascimento, o placar e a física, as operações de retirar). O jogador que sai "cai" antes (os bots largam o alvo).
+- **`npm run server`** roda o TypeScript direto pelo carregador do Vite (como o site lê o jogo); instruções para rede de casa e Cloudflare Tunnel no `DEPLOY.md`. O `node_modules` do worktree do Claude virou uma pasta própria no `npm install` (o npm troca a junção por pasta); o da pasta principal ficou intacto.
+- **Medido:** 0,5 ms por tick com 1 jogador e os 6 bots; estado a 20 Hz; 8 testes, dois com clientes WebSocket de verdade.
+**Custo de CPU:** no servidor, a partida inteira por sala (medida acima) e ~240 bytes codificados por jogador a 20 Hz. No jogo, nada ainda.
+**Quem decidiu:** dono (seguir); Claude (`ws`, formato do servidor).
+
 ## [2026-09-26] Blueprints visuais procedurais para Mechs leve, médio e pesado
 **Pedido do dono:** "quero que voce assuma essa responsabilidade de implementar esses detalhes graficos" sobre as referências enviadas (`cybermech1.png` e `cybermech2.png`).
 **Decisão (Codex):**

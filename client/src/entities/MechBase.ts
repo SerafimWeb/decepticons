@@ -192,6 +192,15 @@ export abstract class MechBase {
     this.root.position.copy(feet);
   }
 
+  /**
+   * Tira a cápsula e o character controller do mundo físico (jogador que saiu da sala). Depois disto o Mech
+   * não pode mais ser simulado.
+   */
+  despawn(physics: PhysicsWorld): void {
+    physics.world.removeCharacterController(this.controller);
+    physics.world.removeRigidBody(this.body); // leva o colisor junto
+  }
+
   /** Posição de render (interpolada entre ticks). Não use em regra de jogo: veja `simPosition`. */
   get position(): THREE.Vector3 {
     return this.root.position;

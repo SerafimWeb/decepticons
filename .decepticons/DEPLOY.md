@@ -44,10 +44,22 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
 
 ---
 
-## SERVIDOR DE JOGO (Colyseus, planejado para a Fase 4)
+## SERVIDOR DE JOGO (Node + `ws`, M3 em 26/09)
 
 - Precisa de host com WebSocket persistente e processo Node longo. Hospedagem só estática ou FTP não serve.
 - Node `^20.19.0 || >=22.12.0`.
+
+**No PC de casa (hoje):**
+1. Na pasta do projeto: `npm install` (uma vez) e `npm run server`. Aparece
+   `CYBERMECH · servidor de jogo em ws://localhost:2567/?sala=ARENA`. Outra porta: `PORT=3000 npm run server`
+   (no PowerShell, `$env:PORT=3000; npm run server`).
+2. A cada 10 s o servidor mostra as salas abertas, os jogadores e o tempo médio do tick (meta: até 2 ms).
+3. **Rede de casa:** os outros computadores usam `ws://IP-DESTE-PC:2567`. Na primeira vez, o Windows pergunta se
+   libera o Node no firewall: libere só para redes privadas.
+4. **Pela internet (playtest):** Cloudflare Tunnel, sem abrir porta nem mostrar o IP:
+   `cloudflared tunnel --url http://localhost:2567` dá um endereço `https://….trycloudflare.com`; o jogo usa o
+   mesmo endereço com `wss://`. O endereço muda a cada vez que o túnel sobe.
+5. O jogo no site ainda não conecta sozinho: isso é a M4 (prediction) e a M6 (entrada pelo link).
 
 **Opções avaliadas em 2026-09-23 (sem decisão). Ofertas gratuitas mudam: confira antes de adotar.**
 A hospedagem compartilhada da Hostinger **não serve** para o servidor: não mantém um processo Node rodando o tempo todo, e os limites de CPU estrangulariam uma simulação a 60 Hz. VPS da Hostinger funcionaria, mas é pago.

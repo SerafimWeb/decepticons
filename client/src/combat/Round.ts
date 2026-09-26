@@ -39,6 +39,12 @@ export class Round {
     this.rows.push({ mech, name, kills: 0, deaths: 0 });
   }
 
+  /** Sai do placar (jogador que saiu da sala). */
+  unregister(mech: MechBase): void {
+    const i = this.rows.findIndex((r) => r.mech === mech);
+    if (i >= 0) this.rows.splice(i, 1);
+  }
+
   scoreOf(mech: MechBase): Readonly<Standing> | undefined {
     return this.rows.find((r) => r.mech === mech);
   }
