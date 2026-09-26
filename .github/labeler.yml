@@ -36,6 +36,9 @@
 'frente:negocio':
   - changed-files:
       - any-glob-to-any-file: ['.decepticons/GAME_DESIGN.md', 'scripts/landing.mjs']
+'frente:universo':
+  - changed-files:
+      - any-glob-to-any-file: ['.decepticons/UNIVERSO.md', '.decepticons/ESTILO_ROBOS.md']
 
 'agente:claude':
   - head-branch: ['^claude/']

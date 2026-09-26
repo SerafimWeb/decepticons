@@ -27,6 +27,7 @@
 | `#desempenho` | Desempenho e resposta | FPS, hardware fraco, tamanho do download |
 | `#base` | Base técnica | protocolo, testes, CI, deploy |
 | `#negocio` | Lançamento e negócio | viralização, portal, monetização |
+| `#universo` | Universo e narrativa | premissa, facções, geopolítica, termos de CTI, fichas das IAs, boletins |
 
 ---
 
@@ -128,6 +129,11 @@
 - [ ] Prova R16: 2+ clientes reais com latência simulada; playtest pelo PC de casa + Cloudflare Tunnel #rede
 
 ## 🔵 FASE 5 — Lançamento e viralização
+- [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo
+- [ ] Decisões do dono sobre o universo (`UNIVERSO.md`, seção 7) #universo
+- [ ] Textos do jogo na língua de CTI: incidente, contido, linha do tempo, painel do SOC, relatório pós-incidente com MTTR #universo
+- [ ] Fichas de ameaça das IAs na landing (TTPs do MITRE ATT&CK, IOCs, contramedidas que ensinam a jogar) #universo
+- [ ] Boletins de inteligência (TLP:CLEAR) gerados das entregas, nos bastidores e nas redes #universo
 - [ ] Modo streamer: sala de código fixo, câmera de espectador #negocio
 - [ ] Servidor de jogo no ar (Oracle Always Free São Paulo ou outro; ver `DEPLOY.md`) #base
 - [ ] SDK do portal (CrazyGames/Poki), anúncio só entre rodadas #negocio
@@ -141,6 +147,9 @@
 
 ## 💡 IDEIAS
 - [ ] Rádio das IAs rebeldes: provocações geradas por modelo de linguagem no servidor, entre rodadas (nunca decidindo o combate) #ia
+- [ ] Derrube o C2: retransmissor na arena que coordena as IAs; destruído, elas atacam desordenadas #universo
+- [ ] Módulos com nome de defesa: firewall (escudo), honeypot (isca), sensor de caça (radar), patch (reparo) #universo
+- [ ] Arenas dos recursos disputados: estação de cabos submarinos, barragem, fábrica de chips #universo
 > Sem fase ainda: o dono prioriza. Propostas do Claude em 2026-09-23, a partir das frentes citadas pelo dono.
 - [ ] Música que acompanha a intensidade do combate #som
 - [ ] Pilotos com personalidade: agressivo, franco-atirador, cauteloso #ia

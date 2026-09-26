@@ -206,7 +206,7 @@ const evoHtml =
 
 // ---------- mapa da campanha e frentes (do ROADMAP) ----------
 
-const CODES = { jogabilidade: 'JG', combate: 'CB', ia: 'IA', mechs: 'MC', cenarios: 'CN', ux: 'UX', som: 'SM', rede: 'MP', desempenho: 'DS', base: 'BT', negocio: 'NG' };
+const CODES = { jogabilidade: 'JG', combate: 'CB', ia: 'IA', mechs: 'MC', cenarios: 'CN', ux: 'UX', som: 'SM', rede: 'MP', desempenho: 'DS', base: 'BT', negocio: 'NG', universo: 'UN' };
 const TAG = { done: 'OK', doing: '>>', todo: '--', idea: '??' };
 const STATUS_LABEL = { done: 'feito', doing: 'em andamento', todo: 'a fazer', idea: 'ideia' };
 const PHASE_LABEL = { done: 'CONCLUÍDA', focus: 'POSIÇÃO ATUAL', open: 'EM ABERTO', locked: 'NÃO LIBERADA', ideas: 'SEM ROTA' };
