@@ -1,4 +1,4 @@
-import { weapon } from '../combat/weapons';
+import { weapon, type WeaponId } from '../combat/weapons';
 import type { MechStats } from './MechBase';
 
 /**
@@ -90,6 +90,34 @@ export const ANDROID_STATS: MechStats = {
   },
 };
 
-/** Chassis que o jogador pode montar no Hangar (o andróide é só das IAs rebeldes). */
-export const CHASSIS = { vector09: VECTOR09_STATS } as const satisfies Record<string, MechStats>;
+/**
+ * Andróide pilotado pelo jogador (dono, 25/09: "também quero poder jogar com andróides menores e ter a
+ * impressão de que estou combatendo um Mech bem maior"). O mesmo corpo de 2 m e a mesma agilidade do
+ * rebelde, mas 3× a vida (o jogador não pode cair com 2 tiros de plasma). Blaster no braço direito e
+ * motosserra no esquerdo: de longe incomoda; colado, serra as pernas do Mech. Continua pequeno: um Mech
+ * rebelde que anda para cima dele encostado esmaga em 2 passos, como qualquer pequeno.
+ */
+export const PILOT_ANDROID_STATS: MechStats = {
+  ...ANDROID_STATS,
+  name: 'ANDRÓIDE',
+  loadout: { primary: weapon('blaster'), secondary: weapon('chainsaw') },
+  weaponCapacity: 3,
+  maxModuleHealth: {
+    torso: 96,
+    head: 40,
+    leftArm: 48,
+    rightArm: 48,
+    leftLeg: 57,
+    rightLeg: 57,
+  },
+};
+
+/** Chassis que o jogador pode pilotar (o andróide rebelde e o técnico são só das IAs). */
+export const CHASSIS = { vector09: VECTOR09_STATS, android: PILOT_ANDROID_STATS } as const satisfies Record<string, MechStats>;
 export type ChassisId = keyof typeof CHASSIS;
+
+/** O que cada braço aceita em cada chassi: o Hangar só oferece e só valida estas armas. */
+export const ARM_SLOTS: Record<ChassisId, { right: readonly WeaponId[]; left: readonly WeaponId[] }> = {
+  vector09: { right: ['plasma'], left: ['rockets'] },
+  android: { right: ['blaster'], left: ['chainsaw'] },
+};

@@ -34,8 +34,10 @@ export class FirstPersonCamera implements CameraMode {
     _fwd.set(0, 0, -1).applyQuaternion(camera.quaternion);
     mech.headWorldPosition(camera.position);
     // À frente do casco: o torso não tapa a visão olhando reto, só ao olhar para baixo.
-    camera.position.y += 0.3;
-    camera.position.addScaledVector(_fwd, 1.1);
+    // Na escala do robô (no andróide, o olho fica na altura de uma pessoa).
+    const scale = mech.stats.height / 5.3;
+    camera.position.y += 0.3 * scale;
+    camera.position.addScaledVector(_fwd, 1.1 * scale);
 
     aimFromCamera(this.ctx, aim);
   }

@@ -62,6 +62,7 @@ do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
 - **Dano que respeita a distância:** o plasma perde força depois de 60 m; chegar perto rende, mas expõe.
 - **IAs rebeldes de dois tamanhos:** Mechs blindados e andróides pequenos e ágeis que chegam perto, pulam e desviam.
 - **Motosserras e pisões:** os andróides grudam nas suas pernas com motosserras; ande para cima deles e dois passos esmagam.
+- **Jogue a pé:** troque o Mech por um andróide de 2 m com blaster e motosserra e enfrente Mechs com mais que o dobro da sua altura.
 - **Técnicos inimigos:** andróides de visor amarelo consertam os Mechs rebeldes; derrube eles primeiro.
 
 ---

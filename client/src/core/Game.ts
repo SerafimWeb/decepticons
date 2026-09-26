@@ -42,6 +42,9 @@ import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
 import { BrandSplash } from '../brand/BrandSplash';
 import { Hangar } from '../hangar/Hangar';
+import { PILOT_ANDROID_STATS } from '../entities/chassis';
+import { PALETTE } from './palette';
+import { PilotSwitch } from '../ui/PilotSwitch';
 import { Match } from '../sim/Match';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
@@ -162,7 +165,11 @@ export class Game {
     this.match = new Match({ physics, scene: this.scene, particles: this.particles, foes });
     ({ debris: this.debris, destructibles: this.destructibles, projectiles: this.projectiles, rockets: this.rockets } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
-    this.mech = new Vector09({ loadout: this.hangar.equipped });
+    // O piloto escolhe o chassi (Hangar): Vector-09 ou andróide, sempre nas cores do jogador.
+    this.mech =
+      this.hangar.current.chassis === 'android'
+        ? new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout: this.hangar.equipped })
+        : new Vector09({ loadout: this.hangar.equipped });
     this.match.addPlayer(this.mech, 'VOCÊ', 0, () => this.equipPending());
     this.nameplates = new Nameplates(this.scene, this.bots);
     // Sons dos andróides (Gemini): tiro e pouso, mais baixos quanto mais longe do jogador.
@@ -203,6 +210,8 @@ export class Game {
     });
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets);
     this.match.pilots.push(this.player);
+    this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
+    this.hud.setSecondaryLabel(this.mech.loadout.secondary?.kind === 'melee' ? 'MOTOSSERRA' : 'FOGUETES');
     this.assist = new AimAssist(physics, this.mech, this.bots.mechs);
 
     this.wireEvents();
@@ -219,6 +228,7 @@ export class Game {
         this.bloomPass.enabled = enabled;
       },
     );
+    new PilotSwitch(this.hangar);
     new SettingsMenu(this.settings);
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician });
@@ -555,7 +565,8 @@ export class Game {
     this.killFeed.update(dt);
     this.onboarding.update(dt);
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
-    this.hud.setRockets(this.player.launcher.ammo, this.player.launcher.reloadProgress, this.mech.canFireSecondary);
+    const saw = this.mech.loadout.secondary?.kind === 'melee';
+    this.hud.setRockets(saw ? 4 : this.player.launcher.ammo, saw ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);
     this.hud.setHeat(this.mech.heat, this.mech.overheated);
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);

@@ -76,6 +76,12 @@ export class HUD {
   private shownRocketsOff = false;
 
   /** Carregador do braço esquerdo: pips cheios, o próximo enchendo; apagado sem o braço. Só escreve no DOM quando muda. */
+  /** Nome da arma do braço esquerdo no HUD (FOGUETES no Mech, MOTOSSERRA no andróide). */
+  setSecondaryLabel(text: string): void {
+    const label = this.rockets.querySelector('.label');
+    if (label) label.textContent = text;
+  }
+
   setRockets(ammo: number, reload: number, available: boolean): void {
     const r = Math.round(reload * 10) / 10;
     if (ammo === this.shownRockets && r === this.shownReload && available !== this.shownRocketsOff) return;
