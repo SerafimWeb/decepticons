@@ -25,8 +25,8 @@ com Mechs; a camada de inteligência fala a língua de CTI (incidente, TTPs, IOC
 
 | Escala | O que é | Hoje no jogo | Como luta |
 |---|---|---|---|
-| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~1,6 m) | **Andróide de combate** (QWEN, DEEPSEEK, MISTRAL): casco branco, visor vermelho, blaster no antebraço. **Técnico** (ANTHROPIC): visor amarelo, conserta os Mechs | **Mais chato do que perigoso:** cai com 2 tiros de plasma ou **2 pisões** de Mech; ataca com **motosserra**, que só corta encostado e pega as pernas do Mech; muito ágil (arranca na hora, pula duas vezes, desvia com dash) |
-| **2** | Mechs de combate (~5 m) | **Vector-09** (o jogador) e Mechs rebeldes (CLAUDE, GEMINI, CHATGPT) | Blindado, dano por parte, calor na arma, foguetes |
+| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~1,6 m) | **Andróide de combate** (KUEN, DIPSIK, MISTRAU): casco branco, visor vermelho, blaster no antebraço. **Técnico** (ANTRÓPICO): visor amarelo, conserta os Mechs | **Mais chato do que perigoso:** cai com 2 tiros de plasma ou **2 pisões** de Mech; ataca com **motosserra**, que só corta encostado e pega as pernas do Mech; muito ágil (arranca na hora, pula duas vezes, desvia com dash) |
+| **2** | Mechs de combate (~5 m) | **Vector-09** (o jogador) e Mechs rebeldes (CLAWD, GEMINAI, CHAD-GPT) | Blindado, dano por parte, calor na arma, foguetes |
 | **3** | Máquinas de cerco (futuro) | ainda não | a definir (Colossus-01) |
 
 - **Nomes (dono, 25/09: "pra ficar mais engraçado"):** as IAs rebeldes levam nomes de IAs de verdade (`BOT_NAMES` em `combat/BotSystem.ts`), com o nome e a personalidade sobre a cabeça. São marcas registradas: antes do lançamento, decidir se viram paródias.

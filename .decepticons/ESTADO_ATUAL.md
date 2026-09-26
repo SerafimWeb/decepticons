@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Nomes de paródia e a geopolítica com o dono (Claude):** os bots viraram CLAWD, GEMINAI, CHAD-GPT (Mechs), KUEN, DIPSIK, MISTRAU (andróides) e ANTRÓPICO (técnico); a decisão sobre marcas registradas saiu das decisões em aberto. Geopolítica: Brasil no centro, BRICS diante do imperialismo norte-americano, desenvolvida pelo dono num chat dedicado do SERAFIM; o resultado volta para o `UNIVERSO.md`. Os agentes não escrevem geopolítica nem roteiro até lá.
 - **Proposta do universo (Claude; dono: "geopolítica geral, big techs, segurança digital, pois somos SERAFIM, e termos do CTI"):** `UNIVERSO.md` com a premissa (as IAs caçam chips, energia e dados; a SERAFIM responde ao incidente com Mechs), geopolítica fictícia com o Brasil no centro, consórcios fictícios, o glossário de CTI aplicado ao jogo (incidente, TTPs do ATT&CK, C2, Red × Blue × Purple, boletins TLP:CLEAR) e mecânicas sugeridas. Frente nova `#universo`. Aguarda as decisões da seção 7.
 - **Peso, escala e fôlego (Claude; dono: "andróides parecem grandes"; "Mechs rápidos para o peso"; "o calor está muito rigoroso, pouco desempenho para fugir e combater contra 3"):**
   - Andróides de 1,6 m (eram 2 m); o modelo escala com a altura do chassi.
@@ -136,7 +137,6 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Hospedagem do servidor | Recomendação em `DEPLOY.md`; plano em `MULTIPLAYER.md` (seção 10, com mais três decisões: mira assistida no PvP, bots nas salas, código da sala). Decidir antes da etapa M8. |
 | Mira assistida no multiplayer | Hoje é só do toque e só contra bots. Com gente de verdade, toque x mouse na mesma sala precisa de regra: manter (padrão dos jogos de tiro no celular), reduzir contra humanos ou separar salas por tipo de controle. Decidir na Fase 4. |
 | Separação simulação × render × efeitos | Proposta e critérios de aceitação em `MULTIPLAYER.md`, seção 9. Recomendação: tiro do jogador e yaw pela simulação antes da M4; o resto quando memória do servidor ou correções visíveis pedirem. |
-| Nomes de marcas nos bots | CLAUDE, GEMINI, CHATGPT, QWEN, DEEPSEEK e ANTHROPIC são marcas registradas. Antes do lançamento (portais, anúncios), manter ou trocar por paródias (ex.: CLAWD, JEMINI, CHAD-GPT). A troca é a lista `BOT_NAMES`. |
 | Universo (`UNIVERSO.md`, seção 7) | Premissa, Brasil no centro do mapa, quanto de CTI entra (só textos ou também mecânicas) e nomes dos consórcios. Nada muda no jogo antes do aval. |
 | Bots contra bots | Hoje os bots só caçam o jogador. No modo "todos contra todos" eles deveriam se enfrentar também: basta passar todos os Mechs em `BotSystem.targets`. |
 

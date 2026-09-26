@@ -162,8 +162,8 @@ describe('andróide rebelde (escala 1)', () => {
     const [mech, a1, a2] = bots.mechs;
     expect(mech).toBeInstanceOf(Vector09);
     expect(a1).toBeInstanceOf(Android);
-    expect(bots.nameOf(a1!)).toBe('QWEN');
-    expect(bots.nameOf(a2!)).toBe('DEEPSEEK');
+    expect(bots.nameOf(a1!)).toBe('KUEN');
+    expect(bots.nameOf(a2!)).toBe('DIPSIK');
     expect(bots.brainOf(mech!)!.profile).toBe(MECH_PROFILE);
     expect(bots.brainOf(a1!)!.profile).toBe(ANDROID_PROFILE);
   });
