@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { downloadPerSecond, snapshotBytes, unitsWithinBudget, uploadPerSecond } from './budget';
 import { fromAngle, Reader, toAngle, toFrac, Writer } from './codec';
-import { DOWNLOAD_BUDGET, INPUT_HZ, INPUTS_PER_PACKET, MAX_INPUTS_PER_PACKET, NO_UNIT, PROTOCOL_VERSION, ROOM_UNITS, SNAPSHOT_HZ, UPLOAD_BUDGET, WIRE_OVERHEAD } from './constants';
+import { DOWNLOAD_BUDGET, INPUT_HZ, INPUTS_PER_PACKET, MAX_INPUTS_PER_PACKET, NO_UNIT, PROTOCOL_VERSION, ROOM_UNITS, UPLOAD_BUDGET, WIRE_OVERHEAD } from './constants';
 import { EVENT, EVENT_BYTES, type EventKind } from './events';
 import { INPUT_BYTES, newNetInput, type NetInput } from './input';
 import {
@@ -214,22 +215,15 @@ describe('rede: mensagens', () => {
   });
 });
 
-/**
- * Download de um jogador por segundo, com a moldura: estado de `units` unidades a 20 Hz, mandando tudo, e os eventos
- * de uma luta intensa (40 tiros, 20 acertos, 3 explosões, 2 partes arrancadas, 1 abate e 1 renascimento por segundo).
- */
-function downloadPerSecond(units: number): number {
-  const snapshot = encodeSnapshot(new Writer(), fullSnapshot(units)).length;
-  const events = 40 * EVENT_BYTES[EVENT.SHOT] + 20 * EVENT_BYTES[EVENT.HIT] + 3 * EVENT_BYTES[EVENT.EXPLOSION] + 2 * EVENT_BYTES[EVENT.PART_LOST] + EVENT_BYTES[EVENT.KILL] + EVENT_BYTES[EVENT.SPAWN];
-  return (snapshot * SNAPSHOT_HZ + EVENTS_HEADER_BYTES * SNAPSHOT_HZ + events) * WIRE_OVERHEAD;
-}
-
 describe('rede: orçamento de banda (G11)', () => {
   it('upload: comandos a 30 pacotes por segundo cabem em 2 KB/s com a moldura', () => {
-    const w = new Writer();
-    const packet = encodeInputs(w, [input(1), input(2)], INPUTS_PER_PACKET).length;
-    const perSecond = packet * INPUT_HZ * WIRE_OVERHEAD;
-    expect(perSecond).toBeLessThan(UPLOAD_BUDGET * 0.5);
+    const packet = encodeInputs(new Writer(), [input(1), input(2)], INPUTS_PER_PACKET).length;
+    expect(uploadPerSecond()).toBe(packet * INPUT_HZ * WIRE_OVERHEAD);
+    expect(uploadPerSecond()).toBeLessThan(UPLOAD_BUDGET * 0.5);
+  });
+
+  it('o estado tem tamanho fixo: a conta da banda vale para qualquer luta (conteúdo não muda o tamanho)', () => {
+    expect(encodeSnapshot(new Writer(), fullSnapshot(12)).length).toBe(snapshotBytes(12));
   });
 
   it('download: sala cheia (8 Mechs, 3 andróides e o técnico) a 20 Hz, numa luta intensa, cabe em 8 KB/s com folga', () => {
@@ -237,9 +231,8 @@ describe('rede: orçamento de banda (G11)', () => {
   });
 
   it('o teto sem delta: até 15 unidades cabem mandando tudo a cada estado; acima, só com o delta (M7)', () => {
-    let n = 1;
-    while (downloadPerSecond(n + 1) < DOWNLOAD_BUDGET) n++;
-    expect(n).toBe(15);
-    expect(n).toBeGreaterThanOrEqual(ROOM_UNITS + 3);
+    expect(unitsWithinBudget()).toBe(15);
+    expect(unitsWithinBudget()).toBeGreaterThanOrEqual(ROOM_UNITS + 3);
+    expect(downloadPerSecond(16)).toBeGreaterThanOrEqual(DOWNLOAD_BUDGET);
   });
 });

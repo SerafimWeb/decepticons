@@ -354,6 +354,31 @@ if (arms && sheet && plan.length) {
   </section>`;
 }
 
+// ---------- online: as etapas do multiplayer (ROADMAP, fase 4) e os números da rede (código) ----------
+const net = game?.net;
+const onlinePhase = roadmap.phases.find((p) => /multiplayer/i.test(p.title));
+let onlineHtml = '';
+if (net && onlinePhase) {
+  const kbs = (b) => `${(b / 1024).toFixed(1).replace('.', ',')} KB/s`;
+  // Para quem joga: sem os parênteses de arquivo e só a primeira frase de cada etapa.
+  const clean = (t) => t.replace(/\s*\([^)]*\)/g, '').replace(/`/g, '').split('. ')[0];
+  const ready = onlinePhase.items.filter((i) => i.status === 'done').length;
+  const mark = { done: '[OK]', doing: '[>>]', todo: '[--]' };
+  onlineHtml = `<section aria-labelledby="online">
+    <span class="kicker">// fase ${onlinePhase.num} · multiplayer</span>
+    <h2 id="online">Online: salas de ${net.ROOM_SIZE} pilotos</h2>
+    <p class="lede">O multiplayer está sendo montado em etapas. O servidor decide o que importa (dano, calor, quem caiu), o seu Mech responde na hora, e cada etapa só entra quando os testes provam que ela cabe na conexão de um celular.</p>
+    <div class="sitrep">
+      <div class="read frame"><span class="k">servidor</span><span class="v">${net.SIM_HZ} Hz</span><span class="d">a mesma simulação do jogo, ${net.SIM_HZ} passos por segundo, decidindo tudo</span></div>
+      <div class="read frame"><span class="k">estado da sala</span><span class="v">${net.SNAPSHOT_HZ} Hz</span><span class="d">${net.SNAPSHOT_HZ} vezes por segundo, ${net.unitBytes} bytes por robô: posição, mira, vida de cada parte e calor</span></div>
+      <div class="read frame"><span class="k">download por jogador</span><span class="v">${kbs(net.download)}</span><span class="d">sala cheia (${net.ROOM_UNITS} robôs) numa luta intensa; a meta é ${kbs(net.DOWNLOAD_BUDGET)}</span></div>
+      <div class="read frame"><span class="k">seu comando</span><span class="v">${net.inputBytes} bytes</span><span class="d">por passo (${kbs(net.upload)}); dano e vida nunca saem do seu aparelho</span></div>
+    </div>
+    <ul class="todo frame stages">${onlinePhase.items.map((i) => `<li class="${i.status}"><span>${mark[i.status] ?? '[--]'}</span>${inline(clean(i.text))}</li>`).join('')}</ul>
+    <p class="rules-note">${ready} de ${onlinePhase.items.length} etapas prontas. Os números acima são medidos pelos ${net.tests} testes da rede a cada entrega; mandando o estado inteiro a cada vez, cabem até ${net.maxUnits} robôs por sala dentro da meta.</p>
+  </section>`;
+}
+
 const { focus, next } = stats;
 const building = focus.items.filter((i) => i.status !== 'done');
 const recent = prs.slice(0, 5);
@@ -498,6 +523,9 @@ const css = `
   .todo, .recent { list-style: none; padding: 0; display: grid; gap: 7px; font-size: 13.5px; line-height: 1.45; }
   .todo li { display: grid; grid-template-columns: 38px 1fr; gap: 8px; }
   .todo li span { color: var(--text); } .todo li.doing span { color: var(--amber); }
+  .stages { margin: 18px 0 12px; padding: 16px 18px; }
+  .stages li.done span { color: var(--green); }
+  .stages li.done { color: var(--muted); }
   .then { color: var(--muted); font-size: 13px; }
   .pulse { margin: 0; padding: 0 16px 14px; color: var(--green); font-size: 12px; letter-spacing: .06em; }
   .pulse::before { content: '● '; }
@@ -544,6 +572,7 @@ const body = `
   ${keysHtml}
   ${pledgeHtml}
   ${hangarHtml}
+  ${onlineHtml}
   ${buildHtml}
   ${endHtml}
   <footer><span>CYBERMECH © ${new Date().getFullYear()} <b>SERAFIM WEB</b> · feito por Dan e uma equipe de IAs</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
