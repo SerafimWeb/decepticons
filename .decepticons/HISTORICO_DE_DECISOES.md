@@ -2,13 +2,21 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] O grafo da oficina: "o mapa do CYBERMECH" (setores desenhados)
+**Pedido do dono:** "o grafo ainda nao ta bom nao… temos TANTA coisa pra compor ele! mas ainda nao ta nem no formato nem apresentacao ideal, precisa desenvolver melhor ele!"
+**Decisão (Qwen):**
+- **Formato desenhado, não físico:** virou um **SVG gerado no build** (posições determinísticas e simétricas), o núcleo no centro e cada **frente do ROADMAP** num setor ao redor. Sai a bola de força e o canvas animado — a leitura não depende mais de física.
+- **Compõe o projeto inteiro:** cada módulo traz arquivos, linhas e **quantos testes o cobrem** (`arquitetura()`); a cor é a **frente** (`MOD_FRENTE`); os selos são a **equipe** que entregou a frente, das etiquetas dos PRs (`porModulo(prs)`).
+- **Leitura:** o hover isola as ligações do módulo e mostra a dica; legenda das frentes e da equipe; tabela alternativa com tudo.
+**Custo:** SVG inline na oficina (0 no jogo, 0 no bundle); sem biblioteca.
+**Quem decidiu:** dono (o formato e a composição); Qwen (o desenho e a leitura).
+
 ## [2026-09-26] 🎯 MARCO — Primeira sessão multiplayer real, e a VISÃO daqui pra frente
 **Achado (dono):** "consegui conectar 2 aparelhos online na mesma sala!!!!!!!! CONGRATS! isso deve ser celebrado e devidamente registrado nas landing pages."
 **O que aconteceu:** o dono ligou dois aparelhos próprios na mesma sala pelo túnel público `wss://jogo.selvamkt.com.br`. Prova R16 cumprida. Servidor no ar 24 h no PC de casa, DNS na Cloudflare com o site continuando idêntico (nuvem cinza em cada registro), túnel na nuvem laranja só em `jogo.selvamkt.com.br`. Botão `[ JOGAR ONLINE ]` funcionando pra qualquer um no mundo.
 **Visão declarada pelo dono:** "continuar desenvolvendo o jogo, melhorando, adicionando novas armas, robôs, tecnologias, missões em fases, CTF red x blue, trazer novidades quase diariamente (mas pra isso precisamos de JOGADORES TESTANDO E SE DESAFIANDO!); futuramente ainda mais amplo, integrado, com um mundo vasto, muitas possibilidades, customização, personalização, mantendo o equilíbrio entre as armas e equipamentos."
 **Decisão:** VISÃO gravada em `.decepticons/VISAO.md` (norte de longo prazo, editável só pelo dono). ROADMAP reescrito: Fase 5 vira "Modos, missões e novidades semanais" com CTF Vermelho × Azul, missões em fases, DM por equipes, arma nova toda semana, cosméticos, personalização, painel de balanço; Fase 6 concentra universo/comunicação; Fase 7 é "Mundo vasto e integrado" (AoI, delta, veículos, terreno streaming, destrutíveis v2, multi-região). STATUS_REAL do multiplayer sobe pra REAL. Landing celebra o marco na seção do online.
 **Quem decidiu:** Dan.
-
 
 ## [2026-09-26] O grafo da oficina: o layout em constelações
 **Pedido do dono:** "o grafo precisa de um capricho, ele parece um emaranhado de coisas. não tá bonito nem funcional para quem vê pela primeira vez!"
