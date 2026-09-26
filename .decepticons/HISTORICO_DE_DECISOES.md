@@ -2,6 +2,17 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Proposta do universo: geopolítica, big techs, SERAFIM e CTI
+**Pedido do dono:** "integrar uma visão de geopolítica geral, integrar big techs, universo de segurança digital (pois somos SERAFIM), e também usar termos do CTI de cibersegurança".
+**Proposta (Claude), em `UNIVERSO.md`, aguardando o dono:**
+- **Premissa:** o Vazamento dos pesos de modelos de fronteira; as IAs tomam fábricas de robôs e caçam computação (chips, energia, dados), não "a humanidade". A SERAFIM é um CSIRT com braço cinético; o Mech é uma Unidade de Resposta a Incidentes.
+- **Geopolítica fictícia com dinâmica real:** blocos inventados, nenhum país real como vilão; o Brasil no centro do mapa (energia limpa, datacenters, cabos submarinos de Fortaleza).
+- **Big techs como consórcios fictícios** por arquétipo; marcas reais só como paródia (mesma decisão pendente dos nomes dos bots).
+- **Regra de estilo:** o mundo físico fala a língua de Mech; a camada de inteligência (rodada, placar, fichas, notícias) fala CTI. Rodada = incidente (ciclo do NIST SP 800-61 rev. 2), personalidades = táticas do MITRE ATT&CK, diretor de ataque = o C2 das IAs, PvP = Red × Blue, contra bots = Purple Team, notas de versão = boletins TLP:CLEAR.
+- **Cuidados:** termos no sentido correto (TLP só para compartilhamento), nenhum grupo de ameaça real, nenhum clichê de hacker.
+- Frente nova `#universo` no ROADMAP, no painel e nas etiquetas dos PRs.
+**Quem decidiu:** dono (o pedido); Claude (a proposta). Pendente: as 4 decisões da seção 7.
+
 ## [2026-09-25] Peso dos Mechs, andróides menores, calor com fôlego e fila justa no diretor
 **Pedido do dono:** "ainda pode diminuir um pouco a proporção dos andróides, parecem grandes"; "talvez os Mechs estejam muito rápidos, considerando o peso e a massa deles"; "o heat está muito rigoroso, o robô tem pouco desempenho pra fugir e combater contra outros 3".
 **Decisão (Claude):**

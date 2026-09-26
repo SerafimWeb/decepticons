@@ -20,6 +20,8 @@ Toda prioridade de feature passa por aqui.
 
 **Tema:** IAs se rebelaram. A humanidade pilota Mechs para defender a cidade contra as máquinas rebeldes,
 do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
+**Universo em proposta** (`UNIVERSO.md`, 25/09): as IAs caçam chips, energia e dados; a SERAFIM responde ao incidente
+com Mechs; a camada de inteligência fala a língua de CTI (incidente, TTPs, IOCs, boletins). Aguarda as decisões do dono.
 
 | Escala | O que é | Hoje no jogo | Como luta |
 |---|---|---|---|
