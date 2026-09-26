@@ -2,6 +2,16 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] Qwen (DeepSeek) entra no time de agentes
+**Pedido do dono:** "agora estamos inserindo voce (qwen com api deepseek) no nosso time de agentes"; "ajude a arrumar no geral, com cuidado pra nao atrapalhar o que o claude está fazendo".
+**Decisão (Qwen, com aval do dono):**
+- **Papel transversal** — qualidade, documentação e testes: auditoria de arquitetura, relatórios do processo e segunda opinião na revisão cruzada (junto do Codex). Não toca no caminho crítico de simulação/rede (território do Claude: `client/src/{sim,combat,entities,physics,player,net}`, `server/`, `shared/`).
+- **Oficialização:** `AGENTS.md` lista o Qwen; o painel (`scripts/painel.mjs` e `scripts/site/dados.mjs`) reconhece o agente na equipe e nas entregas; `.github/labeler.yml` etiqueta o prefixo `qwen/`. Divisão de trabalho e modelos registrados no `ESTADO_ATUAL.md`.
+- **Obsidian:** aprovado como camada de leitura apontando para `.decepticons/` (grafo, backlinks e busca, sem duplicar a fonte única); a pasta `.obsidian/` fica fora do git.
+- **Próximos passos:** relatório de saúde técnica gerado do código (cobertura de testes, débito da seção 9 do `MULTIPLAYER.md`, budget, tick do servidor) para alimentar a divulgação do processo.
+**Custo de CPU:** nenhum (só documentação e o painel, gerado a cada build/site).
+**Quem decidiu:** dono (inserir o Qwen e o papel); Qwen (formato da oficialização).
+
 ## [2026-09-26] Esperar o check existir antes de acompanhar o CI
 **Achado (Claude, R17):** logo depois do `gh pr create`, o `gh pr checks --watch` volta na hora se o check ainda não foi criado. O PR #71 foi mergeado assim, com o CI rodando (terminou verde: check e deploy).
 **Decisão:** a regra 13 do `AGENTS.md` diz para esperar a linha `check` aparecer em `gh pr checks` antes do `--watch`. Vale para todos os agentes.

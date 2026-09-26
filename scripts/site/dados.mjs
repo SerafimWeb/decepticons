@@ -311,7 +311,7 @@ export function bundleSize(gameDir) {
 
 // ---------- história ----------
 
-const agentOf = (branch) => /^(claude|gemini|codex)\//.exec(branch ?? '')?.[1] ?? null;
+const agentOf = (branch) => /^(claude|gemini|codex|qwen)\//.exec(branch ?? '')?.[1] ?? null;
 const brDate = (iso) => new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
 
 /**
@@ -383,7 +383,7 @@ export function entregas() {
 }
 
 const BRT = 'America/Sao_Paulo';
-const AGENTS = ['claude', 'gemini', 'codex'];
+const AGENTS = ['claude', 'gemini', 'codex', 'qwen'];
 
 /**
  * Atividade da equipe, commit a commit, lida do git (uma chamada só). Cada commit é atribuído a quem

@@ -43,12 +43,12 @@ As specs completas estão em `PROTOCOLO_UNIVERSAL.md`; este é só o índice.
 - **R13:** o que não funciona de ponta a ponta fica marcado como DEMO ou AUSENTE em `STATUS_REAL.md`.
 - **R17:** achou bug ou desalinhamento durante a tarefa? Corrija se for barato e seguro; senão, registre.
 
-## TRABALHO COM VÁRIOS AGENTES (Claude, Codex, Gemini…)
+## TRABALHO COM VÁRIOS AGENTES (Claude, Codex, Gemini, Qwen…)
 
-O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex e Gemini). Estas regras evitam que um desfaça o trabalho do outro. Valem para qualquer agente, inclusive um que não esteja nesta lista.
+O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex, Gemini e Qwen). Estas regras evitam que um desfaça o trabalho do outro. Valem para qualquer agente, inclusive um que não esteja nesta lista.
 
 1. **Uma fonte de verdade:** este arquivo + `.decepticons/`. O que ficou só no chat ou na memória de um agente não existe para o outro. Decidiu algo? Escreva no repositório.
-2. **Uma tarefa = um branch = um PR.** Prefixo = o seu nome real: `claude/…`, `codex/…`, `gemini/…`. Nunca commit direto em `main`; nunca dois agentes no mesmo branch.
+2. **Uma tarefa = um branch = um PR.** Prefixo = o seu nome real: `claude/…`, `codex/…`, `gemini/…`, `qwen/…`. Nunca commit direto em `main`; nunca dois agentes no mesmo branch.
 3. **Base do branch: sempre a `main` atualizada.** `git fetch origin && git switch -c <agente>/<tarefa> origin/main`. Precisa de algo que está num PR aberto? Peça o merge ao dono antes; não parta do branch de outro agente. (Em 23/09 um branch saiu da base errada e levou temporários para o commit.)
 4. **Território:** cada agente mexe só nos arquivos da tarefa dele (divisão atual no `ESTADO_ATUAL.md`). Precisa mudar algo fora? Faça num PR pequeno separado, ou deixe registrado como pendência.
 5. **Contrato antes de paralelizar:** interfaces que vários usam (`MechInput`, schema de estado, mensagens de rede) são definidas e mergeadas primeiro; depois cada um trabalha contra elas.

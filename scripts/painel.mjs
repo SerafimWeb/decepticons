@@ -56,6 +56,7 @@ const TEAM = [
   { key: 'claude', name: 'CLAUDE', org: 'Anthropic', role: 'Arquitetura e engenharia: simulação, combate, IA dos bots, testes, CI, deploy e este site.' },
   { key: 'gemini', name: 'GEMINI', org: 'Google', role: 'Interface e som: HUD, configurações, som sintetizado e a versão para celular.' },
   { key: 'codex', name: 'CODEX', org: 'OpenAI', role: 'Visual e desempenho de render do mundo 3D (efeitos, cenário, modelos) e revisão cruzada: confere o que as outras IAs entregaram. Nenhuma IA aprova o próprio código.' },
+  { key: 'qwen', name: 'QWEN', org: 'Alibaba', role: 'Qualidade, documentação e testes: auditoria de arquitetura, relatórios do processo e segunda opinião na revisão cruzada.' },
 ];
 const FRONT_NAME = Object.fromEntries(fronts.map((f) => [f.tag, f.name]));
 const teamHtml = TEAM.map((t) => {
