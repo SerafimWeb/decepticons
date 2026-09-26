@@ -36,6 +36,10 @@ export class PlayerController {
   /** Teclas de cada ação (e.code), vindas das configurações. */
   keys: Readonly<Record<KeyAction, string>> = DEFAULT_SETTINGS.keys;
 
+  /** Gatilhos apertados no último tick (o multiplayer manda no comando). */
+  firing = false;
+  secondaryHeld = false;
+
   private jumpQueued = false;
   private dashQueued = false;
   /** Cadência do canhão principal, sem arredondar para o tick. */
@@ -57,6 +61,11 @@ export class PlayerController {
   rearm(): void {
     this.launcher = new RocketLauncher(this.mech.loadout.secondary ?? weapon('rockets'));
     this.trigger.reset();
+  }
+
+  /** O comando do último tick (o multiplayer manda para o servidor). */
+  get command(): Readonly<MechInput> {
+    return this.cmd;
   }
 
   /** Taxa do render: captura eventos de borda. */
@@ -94,6 +103,7 @@ export class PlayerController {
 
     this.trigger.fixedUpdate(dt);
     const wantsToFire = this.input.mouseDown || this.input.virtualFire || this.input.autoFire;
+    this.firing = a && wantsToFire;
     if (a && wantsToFire && this.trigger.ready && this.mech.canFirePrimary) {
       this.fire();
       this.trigger.shot(this.mech.loadout.primary.fireInterval);
@@ -104,6 +114,7 @@ export class PlayerController {
     if (!this.mech.alive) this.launcher.refill();
     else this.launcher.fixedUpdate(dt);
     const wantsRocket = this.input.mouseDown2 || this.input.isDown(k.secondary) || this.input.virtualRocket;
+    this.secondaryHeld = a && wantsRocket;
     const secondary = this.mech.loadout.secondary;
     if (secondary?.kind === 'melee') {
       // Motosserra: segurar o botão corta o inimigo encostado mais perto, no ritmo da arma.

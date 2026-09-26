@@ -59,6 +59,12 @@ export class CombatSystem {
     private readonly particles: ParticleSystem,
   ) {}
 
+  /**
+   * Dano ligado. No multiplayer o cliente desliga: só o servidor tira vida (e quebra barricada); aqui os tiros
+   * continuam parando nos robôs e soltando faísca.
+   */
+  damageEnabled = true;
+
   register(mech: MechBase): void {
     this.byCollider.set(mech.collider.handle, mech);
   }
@@ -75,6 +81,7 @@ export class CombatSystem {
    * Regra de simulação: usa a posição do tick (simPosition), nunca a de render.
    */
   explode(at: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, w: WeaponStats = weapon('rockets')): void {
+    if (!this.damageEnabled) return;
     const shooter = owner ? this.byCollider.get(owner.handle) : undefined;
     for (const mech of this.byCollider.values()) {
       if (!mech.alive || mech === shooter) continue;
@@ -104,6 +111,7 @@ export class CombatSystem {
    * Regra de simulação (posições do tick). Faíscas no ponto do corte.
    */
   melee(attacker: MechBase, target: MechBase, w: WeaponStats): void {
+    if (!this.damageEnabled) return;
     if (!attacker.alive || !target.alive) return;
     const a = attacker.simPosition;
     const t = target.simPosition;
@@ -125,6 +133,7 @@ export class CombatSystem {
 
   /** Pisão (`crush.ts`): o grande tira `amount` do torso do pequeno. Conta o abate para quem pisou. */
   crush(big: MechBase, small: MechBase, amount: number): void {
+    if (!this.damageEnabled) return;
     const result = small.damagePart('torso', amount);
     if (result.applied <= 0) return;
     const s = small.simPosition;
@@ -142,6 +151,7 @@ export class CombatSystem {
   }
 
   onProjectileHit(hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider): void {
+    if (!this.damageEnabled) return;
     const mech = this.byCollider.get(hit.collider.handle);
     if (!mech) {
       this.destructibles.damage(hit.collider, damage, dir);

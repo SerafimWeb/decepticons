@@ -127,7 +127,8 @@
 - [x] Landing: seção do online com as etapas e os números da rede lidos do código #negocio
 - [x] M2: contratos de rede (`NetInput`, estado de cada unidade, eventos, mensagens) e codec binário com teste de tamanho: sala cheia em ~6,2 KB/s #rede
 - [x] M3: servidor de jogo (`server/`, Node + `ws`): salas por código, a partida a 60 Hz com os bots, estado a 20 Hz, `npm run server` no PC de casa #rede
-- [ ] M4: cliente com prediction + reconciliação do Mech local; Mechs remotos interpolam #rede
+- [x] M4: jogo online pelo link (`?sala=&servidor=`): previsão do seu Mech com correção pelo servidor, robôs remotos interpolados, tiros e abates dos outros #rede
+- [ ] Online completo: barricadas quebrando (evento), placar e nomes da sala, teste com latência e perda simuladas #rede
 - [ ] M5: tiros autoritativos com compensação de latência; eventos de acerto, parte e abate #combate
 - [ ] M6: entrada pelo link com código da sala + apelido; reconexão automática (G13) #rede
 - [ ] Telas do online: apelido, código da sala, jogadores, placar e ping (Gemini) #ux

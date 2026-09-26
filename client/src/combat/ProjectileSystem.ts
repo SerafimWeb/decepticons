@@ -33,6 +33,8 @@ const _look = new THREE.Vector3();
 export class ProjectileSystem {
   /** Chamado a cada impacto (Mech ou destrutível; quem decide é o CombatSystem). `damage` já vem com a queda por distância; `owner` = quem atirou. */
   onHit?: (hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider) => void;
+  /** Um tiro saiu (o servidor do multiplayer manda como evento). */
+  onFired?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
 
   private readonly pool: Projectile[] = [];
   private readonly friendlyMat: THREE.MeshBasicMaterial;
@@ -70,6 +72,7 @@ export class ProjectileSystem {
    * `w`: a arma de quem atira (velocidade, alcance e dano; o dano cai com a distância percorrida).
    */
   fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, hostile = false, w: WeaponStats = weapon('plasma')): void {
+    this.onFired?.(origin, dir, owner, w);
     const p = this.pool.find((q) => q.life <= 0);
     if (!p) return;
     p.pos.copy(origin);

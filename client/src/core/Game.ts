@@ -48,6 +48,11 @@ import { PowerStore } from '../tuning/PowerStore';
 import { PALETTE } from './palette';
 import { PilotSwitch } from '../ui/PilotSwitch';
 import { PowerSettings } from '../ui/PowerSettings';
+import { parseLoadoutKey } from '../hangar/loadout';
+import { onlineConfig } from '../net/onlineConfig';
+import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
+import { defaultPower } from '../tuning/power';
+import type { RosterEntry } from '../../../shared/net/messages';
 import { Match } from '../sim/Match';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
@@ -100,6 +105,9 @@ export class Game {
   private readonly player: PlayerController;
   private readonly hud = new HUD();
   private readonly killFeed = new KillFeed();
+  /** Jogo online (M4): a sessão com o servidor, ou null no jogo de sempre. */
+  private readonly online: OnlineSession | null;
+  private readonly netStatus = document.createElement('div');
   private readonly damageIndicator = new DamageIndicator();
   private readonly debugPanel = new DebugPanel();
   private readonly audio = new AudioSystem();
@@ -168,10 +176,21 @@ export class Game {
 
     // --- A partida (a simulação única; quantos inimigos vêm das configurações e mudam ao reiniciar) ---
     this.scene.add(this.particles.points);
-    const foes = this.settings.value;
-    // Potências do painel (por arma e por clã): montadas uma vez, aqui; mudam ao reiniciar.
-    const power = this.power.current;
-    this.match = new Match({ physics, scene: this.scene, particles: this.particles, foes, power });
+    // Online (M4): /jogar/?sala=CODIGO[&servidor=wss://…][&nome=Dan]. A partida local fica sem bots, sem dano e sem
+    // rodada própria (quem decide é o servidor); o jogo prevê o seu Mech e desenha os outros.
+    const net = onlineConfig(location.search, location.hostname);
+    const online = net && !('error' in net) ? net : null;
+    const foes = online ? { ...this.settings.value, enemyMechs: 0, enemyAndroids: 0, technician: false } : this.settings.value;
+    // Potências do painel (por arma e por clã): montadas uma vez, aqui; mudam ao reiniciar. Online, o padrão do servidor.
+    const power = online ? defaultPower() : this.power.current;
+    this.match = new Match({
+      physics,
+      scene: this.scene,
+      particles: this.particles,
+      foes,
+      power,
+      ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY } : {}),
+    });
     ({ debris: this.debris, destructibles: this.destructibles, projectiles: this.projectiles, rockets: this.rockets } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     // O piloto escolhe o chassi (Hangar): Vector-09 ou andróide, sempre nas cores do jogador.
@@ -180,6 +199,8 @@ export class Game {
         ? new Android({ stats: poweredStats(PILOT_ANDROID_STATS, power, 'player'), paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout: poweredLoadout(this.hangar.equipped, power, 'player') })
         : new Vector09({ stats: poweredStats(VECTOR09_STATS, power, 'player'), loadout: poweredLoadout(this.hangar.equipped, power, 'player') });
     this.match.addPlayer(this.mech, 'VOCÊ', 0, () => this.equipPending());
+    // Online, quem faz renascer é o servidor.
+    if (online) this.match.respawner.untrack(this.mech);
     this.nameplates = new Nameplates(this.scene, this.bots);
     // Sons dos andróides (Gemini): tiro e pouso, mais baixos quanto mais longe do jogador.
     for (const b of this.bots.mechs) {
@@ -220,6 +241,30 @@ export class Game {
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets);
     this.match.pilots.push(this.player);
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
+    this.netStatus.className = 'net-status';
+    if (online) {
+      this.online = new OnlineSession({
+        ...online,
+        build: this.hangar.key,
+        match: this.match,
+        me: this.mech,
+        commander: this.player,
+        aim: () => this.rig.aim,
+        makeUnit: (e) => this.makeRemote(e),
+        scene: this.scene,
+        onStatus: (s) => this.showNet(s),
+        onKill: (killer, dead, mine) => this.killFeed.push(killer, dead, mine),
+      });
+      this.match.pilots.push(this.online);
+      document.body.append(this.netStatus);
+    } else {
+      this.online = null;
+      if (net && 'error' in net) {
+        this.netStatus.textContent = `ONLINE: ${net.error} · jogando offline`;
+        this.netStatus.classList.add('bad');
+        document.body.append(this.netStatus);
+      }
+    }
     this.hud.setSecondaryLabel(this.mech.loadout.secondary?.kind === 'melee' ? 'MOTOSSERRA' : 'FOGUETES');
     this.assist = new AimAssist(physics, this.mech, this.bots.mechs);
 
@@ -243,6 +288,33 @@ export class Game {
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician });
     new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
+  }
+
+  /**
+   * O robô de outro participante da sala online: os bots com as cores de sempre; outra pessoa, com o chassi da
+   * montagem dela e visor ciano (verde é você; vermelho, as IAs).
+   */
+  private makeRemote(e: RosterEntry): MechBase {
+    if (e.kind === 'mech') return new Vector09({ paint: PALETTE.enemyPaint, visor: PALETTE.signal });
+    if (e.kind === 'android') return new Android();
+    if (e.kind === 'technician') return new Android({ visor: PALETTE.fluo, tool: 'repair' });
+    return parseLoadoutKey(e.build)?.chassis === 'android'
+      ? new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.cyan, tool: 'pilot' })
+      : new Vector09({ visor: PALETTE.cyan });
+  }
+
+  /** Linha de status do online, no topo: sala, ping e pessoas; ou o motivo da recusa ou da queda. */
+  private showNet(s: OnlineStatus): void {
+    const text =
+      s.state === 'na sala'
+        ? `ONLINE · SALA ${s.room} · ${s.rttMs} ms · ${s.players} piloto${s.players === 1 ? '' : 's'}`
+        : s.state === 'conectando'
+          ? `ONLINE · CONECTANDO À SALA ${s.room}…`
+          : s.state === 'recusado'
+            ? `ONLINE · RECUSADO (${s.reason === 'cheia' ? 'sala cheia' : s.reason === 'versao' ? 'versão diferente: recarregue' : s.reason === 'montagem' ? 'montagem inválida' : 'erro'})`
+            : 'ONLINE · CONEXÃO CAIU: recarregue a página';
+    this.netStatus.textContent = text;
+    this.netStatus.classList.toggle('bad', s.state === 'recusado' || s.state === 'caiu');
   }
 
   /** 1 perto do jogador, 0 a 70 m ou mais: o volume dos sons de um bot. */
@@ -564,6 +636,7 @@ export class Game {
     // --- Render ---
     this.mech.render(dt, alpha);
     this.bots.render(dt, alpha);
+    this.online?.render(dt, now);
     this.nameplates.update(this.mech);
     this.rig.update(dt);
     this.updateAim(dt);

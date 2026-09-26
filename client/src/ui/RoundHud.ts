@@ -12,6 +12,8 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, pa
 }
 
 function clock(seconds: number): string {
+  // Online, a rodada é a do servidor: o relógio local não conta.
+  if (!Number.isFinite(seconds)) return '--:--';
   const s = Math.max(0, Math.ceil(seconds));
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }

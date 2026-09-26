@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–26/09)
+- **M4 do multiplayer, primeira versão (Claude):** o jogo joga online. Com o servidor rodando (`npm run server`), `/jogar/?sala=ARENA&servidor=…&nome=Dan` entra na sala: o seu Mech é previsto na hora e corrigido pelo servidor, os outros aparecem interpolados, os tiros e abates dos outros chegam por evento. Testado contra o servidor de verdade (4 testes) e no navegador. Limites: barricadas não quebram no online, placar e nomes ainda locais, sem teste de latência simulada.
 - **M3 do multiplayer (Claude):** o servidor de jogo existe: `npm run server` sobe um servidor WebSocket (`ws`) com salas por `?sala=`, cada uma rodando a partida inteira a 60 Hz com os bots (0,5 ms por tick), recebendo os comandos dos jogadores e mandando o estado a 20 Hz. Montagem validada no servidor, recusa de sala cheia, versão e montagem adulterada, saída limpa. Testado com 2 clientes WebSocket de verdade. **Ainda falta o jogo no navegador conectar (M4).** Revisão cruzada do PR #63 (kit de Mechs do Codex) postada.
 - **Landing com o online (Claude; dono: "continua alimentando as landing pages com o que estamos fazendo"):** seção "Online: salas de 8 pilotos" com as etapas da fase 4 (do ROADMAP) e os números da rede lidos do código (`shared/net/budget.ts`, a mesma conta que os testes travam): servidor a 60 Hz, estado a 20 Hz com 19 bytes por robô, ~6,2 KB/s de download na sala cheia, comando de 9 bytes. A cada etapa entregue, a seção se atualiza sozinha.
 - **Kit visual procedural de Mechs (Codex, pedido do dono):** imagens de referência guardadas em `.tmp/arte/`; `entities/mechBlueprint.ts` define Ferret leve, Vector-09 médio e Colossus pesado com dimensões numéricas. O rig médio do Vector agora é gerado pelo blueprint e mantém pintura, visor, respiros, canhão, foguetes, pivôs, flash de dano e dash. Cada blueprint vira 9 malhas articuladas (até 10 draw calls); chanfros e painéis são geometria, sem textura externa. Leve e pesado são, por enquanto, conceitos visuais: não ganharam stats ou colisores de gameplay. Captura preta lado a lado em `.decepticons/arte/mech-blueprints.png`; fonte da captura em `scripts/capture-blueprints.mjs`.
@@ -112,6 +113,7 @@
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
 - [ ] **Dono:** conferir no jogo as novas formas e proporções do Vector-09; dizer se a leitura de leve/médio/pesado bate com as imagens de referência
 - [ ] **Dono:** jogar com as motosserras (andróides colados nas pernas) e pisar neles (ande para cima de um encostado)
+- [ ] **Dono:** jogar online com alguém: `npm run server` no PC, o túnel do Cloudflare (`DEPLOY.md`, "Servidor de jogo") e o link `/jogar/?sala=ARENA&servidor=https://….trycloudflare.com&nome=…` para os dois. Dizer como ficou a sensação (atraso, correções, tiros)
 - [ ] **Dono:** mexer nas potências (configurações → POTÊNCIAS) e dizer se falta algum controle (pontaria dos bots, tamanho do carregador, número de pulos...); quando achar um ajuste bom, mande o link: vira o padrão com teste
 - [ ] **Dono:** jogar de andróide (pausa → `[ PILOTAR ANDRÓIDE ]`): a câmera passa a sensação de Mech gigante? Vida, blaster e motosserra estão justos?
 - [ ] **Dono:** jogar com o diretor de ataque (no máximo 2 atacando juntos) e as personalidades; dizer se ficou fácil demais (dá para subir "Atacam ao mesmo tempo" nas configurações)
@@ -153,7 +155,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-- **Claude:** M4: o jogo no navegador entra numa sala (`/jogar/?sala=CODIGO&servidor=…`), manda os comandos, prevê o próprio Mech e corrige pelo `ack`, e desenha os outros interpolados. Para isso, o tiro do jogador passa a sair da simulação também no cliente (seção 9, item 3, do `MULTIPLAYER.md`).
+- **Claude:** completar o online: evento de barricada quebrada (`PROP_BROKEN`), placar e nomes da sala vindos do servidor, teste com latência e perda simuladas; depois a M5 (acertos com compensação de latência) e a M6 (entrada com apelido e reconexão, com as telas do Gemini).
 - **Codex:** kit de Mechs por parâmetros a partir dos conceitos do dono, depois a tela do Hangar, o calor visível, o visual dos níveis de arma e a revisão cruzada dos PRs #45 a #55 (fila na divisão de trabalho).
 - **Gemini** (quando voltar o crédito): a fila da divisão de trabalho acima, começando pelos passos e pelo calor no HUD; a tela do Hangar não é mais dele.
 - **Dono:** testar no site (peso do Mech, calor novo, andróides menores, jogar de andróide, revezamento dos bots), decidir o universo (`UNIVERSO.md`, seção 7), a seção 9 e as decisões da seção 10 do `MULTIPLAYER.md`, salvar em `.tmp/arte/` os conceitos de robô que quer ver no jogo e medir o FPS num notebook com GPU integrada.

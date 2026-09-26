@@ -30,6 +30,8 @@ const _look = new THREE.Vector3();
 export class RocketSystem {
   /** Explosão no ponto `at` (cópia reaproveitada: use na hora). `dir` = direção do voo. */
   onExplode?: (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
+  /** Um foguete saiu (o servidor do multiplayer manda como evento). */
+  onFired?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
 
   private readonly pool: Rocket[] = [];
 
@@ -51,6 +53,7 @@ export class RocketSystem {
 
   /** `w`: o lançador de quem dispara (os foguetes são lentos: quem está longe tem tempo de desviar). */
   fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, w: WeaponStats = weapon('rockets')): void {
+    this.onFired?.(origin, dir, owner, w);
     const r = this.pool.find((q) => q.life <= 0);
     if (!r) return;
     r.pos.copy(origin);
