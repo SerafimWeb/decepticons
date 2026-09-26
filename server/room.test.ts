@@ -172,7 +172,8 @@ describe('M3: a sala do servidor', () => {
 describe('M3: o servidor de verdade, pela rede', () => {
   let server: GameServer;
   beforeAll(async () => {
-    server = await startServer({ port: 0, host: '127.0.0.1' });
+    // No teste todo mundo sai de 127.0.0.1: por isso o `perIp` bem largo. As defesas ganham blocos próprios abaixo.
+    server = await startServer({ port: 0, host: '127.0.0.1', guard: { perIp: 100, total: 200, msgs: 200, burst: 200 } });
   });
   afterAll(async () => {
     await server.close();
@@ -255,5 +256,56 @@ describe('M3: o servidor de verdade, pela rede', () => {
     expect(server.rooms.get('SALA-B')!.humanCount).toBe(1);
     a.ws.close();
     b.ws.close();
+  });
+});
+
+describe('M3: defesas do servidor (mesmo domínio da Selva MKT, DEPLOY.md)', () => {
+  /** Abre uma conexão: `open()` promete quando o handshake termina; `closeCode()` promete o motivo do fechamento. */
+  function open(port: number, sala = 'CAPZ') {
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/?sala=${sala}`);
+    ws.binaryType = 'arraybuffer';
+    const opened = new Promise<void>((resolve, reject) => {
+      ws.onopen = () => resolve();
+      ws.onerror = () => reject(new Error('sem conexão'));
+    });
+    const closed = new Promise<number>((resolve) => {
+      ws.onclose = (e: { code: number }) => resolve(e.code);
+    });
+    return { ws, opened, closed };
+  }
+
+  it('teto por IP: um mesmo endereço não consegue abrir mais que `perIp` conexões', async () => {
+    const s = await startServer({ port: 0, host: '127.0.0.1', guard: { perIp: 2, total: 10, msgs: 60, burst: 30 } });
+    try {
+      const conns = [open(s.port), open(s.port), open(s.port)];
+      // A terceira conexão a chegar cai com 4013; qualquer das três pode ser essa (a ordem depende da rede).
+      // Aguardo a contagem da porteira em vez de casar por nome.
+      const t0 = Date.now();
+      while (s.guard.rejected.ip < 1) {
+        if (Date.now() - t0 > 5000) throw new Error('recusa não veio');
+        await new Promise((r) => setTimeout(r, 10));
+      }
+      expect(s.guard.rejected.ip).toBe(1);
+      // Fecho os três (o recusado já fechou com 4013; os outros dois fecham agora, com 1005/1000).
+      for (const c of conns) c.ws.close();
+      const codes = await Promise.all(conns.map((c) => c.closed));
+      expect(codes.filter((c) => c === 4013).length).toBe(1);
+    } finally {
+      await s.close();
+    }
+  });
+
+  it('taxa por conexão: quem manda mais que o balde aguenta é derrubado', async () => {
+    const s = await startServer({ port: 0, host: '127.0.0.1', guard: { perIp: 10, total: 10, msgs: 10, burst: 5 } });
+    try {
+      const c = open(s.port, 'FLUD');
+      await c.opened;
+      // Dispara mais que o balde (nominal 10 + folga 5 = 15) de uma vez, tudo binário.
+      for (let i = 0; i < 30; i++) c.ws.send(new Uint8Array([0]));
+      expect(await c.closed).toBe(4008);
+      expect(s.guard.rejected.flood).toBe(1);
+    } finally {
+      await s.close();
+    }
   });
 });

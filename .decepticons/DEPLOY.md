@@ -71,20 +71,58 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
 **Servidor público 24 h no PC de casa (26/09): quem abre o site clica em "Jogar online" e entra.**
 O túnel rápido (`trycloudflare.com`) muda de endereço toda vez que sobe: serve para teste, não para o público. Para
 um endereço fixo, o túnel nomeado da Cloudflare (grátis, sem abrir porta, sem mostrar o IP de casa), que exige um
-domínio cadastrado na Cloudflare. Passo a passo, uma vez só:
-1. **Domínio:** um domínio só do jogo (ex.: `cybermech.com.br` no registro.br, ~R$ 40 por ano), com os nameservers
-   trocados para os da Cloudflare (plano grátis). Alternativa sem custo: levar o DNS do `selvamkt.com.br` para a
-   Cloudflare, mas isso mexe no site real da Selva MKT (decisão do dono, `ESTADO_ATUAL`).
-2. **Túnel:** Cloudflare Zero Trust → Networks → Tunnels → criar um túnel `cybermech` → Windows → rodar o comando
-   `cloudflared.exe service install …` que a página mostra (o token dele é segredo: nunca no repositório nem no chat).
-   Em "Public hostname": `jogo.<domínio>` apontando para `http://localhost:2567`. O túnel vira um serviço do Windows.
+domínio cadastrado na Cloudflare. **Decisão do dono em 26/09: manter no mesmo domínio (`selvamkt.com.br`)**, com o
+subdomínio `jogo.selvamkt.com.br` só para o servidor de jogo. As proteções que garantem que um projeto não estraga
+o outro ficam em "Servidor no mesmo domínio", logo abaixo.
+
+Passo a passo, uma vez só:
+1. **DNS na Cloudflare (o site continua igual):** entrar em `dash.cloudflare.com` → Add a site → `selvamkt.com.br`
+   → plano Free. A Cloudflare lê a zona do Hostinger e mostra tudo que encontrou. Confira que **todos** os registros
+   antigos estão lá (`A @ 82.25.73.129`, `AAAA @ 2a02:4780:13:816:0:305f:eea0:4`, `www` CNAME, `ftp`, `autodiscover`,
+   `MX mx1/mx2.hostinger.com`, `TXT SPF v=spf1 include:_spf.mail.hostinger.com ~all`, mais quaisquer chaves de e-mail
+   `hostingermail-*._domainkey`; o painel do Hostinger tem a lista). Marque **cada um deles como "DNS only" (nuvem
+   cinza)**: a Cloudflare só resolve nome, o tráfego vai direto para o Hostinger, e o site da Selva MKT continua
+   idêntico ao que é hoje. No `registro.br`, troque os nameservers para os dois que a Cloudflare deu (algo como
+   `ada.ns.cloudflare.com` e `sam.ns.cloudflare.com`). Propaga em minutos a algumas horas; enquanto propaga, tudo
+   segue funcionando pelos servidores antigos.
+2. **Túnel do jogo:** dash.cloudflare.com → Zero Trust → Networks → Tunnels → Create → nome `cybermech` → Windows.
+   A tela mostra um comando `cloudflared.exe service install <TOKEN>`. **O token é segredo:** nunca no repositório,
+   nunca no chat; rode direto no PowerShell como administrador. O túnel vira um serviço do Windows. Depois, em
+   "Public hostname": `jogo.selvamkt.com.br` → `http://localhost:2567`, com **WebSocket ligado** (a Cloudflare pergunta;
+   é obrigatório para o jogo). A Cloudflare cria sozinha um CNAME `jogo` → `<uuid>.cfargotunnel.com` e liga a
+   nuvenzinha laranja **só nesse subdomínio**; o resto da zona segue cinza.
 3. **Servidor:** PowerShell como administrador, na pasta do projeto: `.\scripts\servidor-windows.ps1`. O servidor
    sobe com o Windows, reinicia se cair e grava o log em `.tmp\servidor\`. Para o PC não dormir:
-   `powercfg /change standby-timeout-ac 0`.
+   `powercfg /change standby-timeout-ac 0`. Sem mexer em nada, o processo escuta só em `127.0.0.1:2567` (o túnel fala
+   daqui): não aparece na rede de casa nem em nenhum outro lugar da internet.
 4. **Site:** no GitHub, Settings → Secrets and variables → Actions → **Variables** (não é segredo) →
-   `GAME_SERVER_URL` = `wss://jogo.<domínio>`. No próximo merge, o site sai com `[ JOGAR ONLINE ]` na landing e na
-   pausa do jogo.
+   `GAME_SERVER_URL` = `wss://jogo.selvamkt.com.br`. No próximo merge, o site sai com `[ JOGAR ONLINE ]` na landing
+   e na pausa do jogo, apontando para o túnel.
 5. **Com o PC desligado**, quem clica em online vê "servidor fora do ar" e volta ao jogo offline em 3 s.
+
+### Servidor no mesmo domínio (proteção entre os dois projetos)
+
+Cliente e servidor moram na mesma zona; as proteções abaixo garantem que um não derruba o outro:
+
+- **Nuvem cinza no site, laranja só no `jogo.`:** a Cloudflare não passa por dentro do site da Selva MKT. Se um dia
+  a Cloudflare cair inteira, o site continua no ar pelo Hostinger; se o servidor de jogo cair, o site também.
+- **CSP do site já libera `wss:` para o `connect-src`:** o site chama o `jogo.` pelo túnel, e nada mais.
+- **Servidor escuta em `127.0.0.1`:** o `main.ts` traz `HOST=127.0.0.1` como padrão. Ninguém alcança o processo do
+  jogo pela rede de casa nem pela internet sem passar pelo túnel. Precisa expor à LAN para um playtest? `HOST=0.0.0.0`
+  na chamada do `npm run server` (ou da tarefa do Windows).
+- **Porteira do servidor (`server/guard.ts`):** teto de 4 conexões abertas por IP, 400 no total, 60 mensagens/s por
+  conexão (com folga de 30 para picos). Excesso fecha com códigos de aplicação (`4013` = tente mais tarde, `4008` =
+  taxa alta demais) e o contador aparece no log de 10 s. O IP real do jogador vem do cabeçalho `cf-connecting-ip` da
+  Cloudflare **só quando** o soquete direto é o localhost (o túnel): um cabeçalho vindo de outra máquina não engana
+  a porteira (G7).
+- **Serviço isolado:** o `scripts/servidor-windows.ps1` sobe como usuário limitado (S4U), sem senha guardada, e grava
+  log só em `.tmp/servidor/` (G15). Nada fora da pasta do projeto.
+- **Segredos:** o token do túnel fica no serviço do Windows, não no repositório. O `GAME_SERVER_URL` é variável
+  pública do GitHub, não segredo.
+
+Complementos que a Cloudflare oferece (todos gratuitos, opcionais): em `jogo.selvamkt.com.br` → Security → WAF →
+"Custom rules", uma regra "Block if URI Path not starts with `/`" fecha varreduras óbvias; e um Rate Limit de 20
+requisições HTTP/min por IP (o WebSocket depois de ligado não conta) evita bombardeio de handshake.
 
 **O que o PC aguenta:** 0,5 ms de CPU por tick por sala (um núcleo leva ~20 salas); ~50 KB/s de upload por sala cheia
 (8 pessoas), longe do limite de uma fibra comum. **Custo:** o domínio e a energia do PC ligado (depende do PC; um
