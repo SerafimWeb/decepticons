@@ -3,6 +3,17 @@ import { CHASSIS, type ChassisId } from '../entities/chassis';
 import { Hangar } from '../hangar/Hangar';
 import { armOptions, factorySpec, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { reloadWithout } from '../core/url';
+import type { Loadout } from '../combat/weapons';
+
+/** O que a tela pede ao jogo: abrir e fechar o galpão 3D, mostrar a montagem, girar e aplicar na hora. */
+export interface HangarPreview {
+  open(): void;
+  close(): void;
+  show?(chassis: ChassisId, loadout: Loadout): void;
+  rotate?(dx: number): void;
+  /** Montagem do mesmo chassi aplicada: o jogo troca as armas (ou explica por que não) e devolve o aviso. */
+  applied?(): string;
+}
 
 const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string; detail: string }> = {
   vector09: { title: 'VECTOR-09', className: 'MÉDIO · ASSALTO', detail: 'Equilíbrio entre alcance e mobilidade.' },
@@ -29,7 +40,7 @@ export class HangarMenu {
 
   constructor(
     private readonly hangar: Hangar,
-    private readonly preview: { open(): void; close(): void },
+    private readonly preview: HangarPreview,
     button = document.getElementById('btn-hangar'),
   ) {
     this.draft = copySpec(hangar.current);
@@ -123,6 +134,22 @@ export class HangarMenu {
       this.open();
     });
     this.root.addEventListener('click', (event) => this.onClick(event));
+    // Arrastar no palco gira o Mech no pedestal (mouse e dedo).
+    const stage = this.root.querySelector<HTMLElement>('.hangar-stage');
+    let lastX: number | null = null;
+    stage?.addEventListener('pointerdown', (e) => {
+      if ((e.target as Element).closest('button')) return;
+      lastX = e.clientX;
+      stage.setPointerCapture(e.pointerId);
+    });
+    stage?.addEventListener('pointermove', (e) => {
+      if (lastX === null) return;
+      this.preview.rotate?.(e.clientX - lastX);
+      lastX = e.clientX;
+    });
+    const release = () => (lastX = null);
+    stage?.addEventListener('pointerup', release);
+    stage?.addEventListener('pointercancel', release);
     this.root.addEventListener('change', (event) => this.onChange(event));
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && !this.root.classList.contains('hidden')) this.close();
@@ -213,7 +240,7 @@ export class HangarMenu {
       reloadWithout('build');
       return;
     }
-    this.message = 'Montagem salva · entra no próximo renascimento.';
+    this.message = this.preview.applied?.() ?? 'Montagem salva · entra no próximo renascimento.';
     this.messageKind = 'info';
     this.render();
   }
@@ -245,11 +272,12 @@ export class HangarMenu {
     const selectedWeapon = selectedArm ? weapon(selectedArm.id, selectedArm.tier) : null;
     const capPct = Math.min(100, (report.mass / report.capacity) * 100);
     const name = label.title;
-    const showLiveModel = spec.chassis === this.hangar.current.chassis;
-    this.root.classList.toggle('live-preview', showLiveModel);
+    // O galpão 3D mostra a montagem do rascunho (a válida; fora da carga, as armas de fábrica do chassi).
+    this.root.classList.add('scene-3d');
+    this.preview.show?.(spec.chassis, report.check.ok ? report.check.loadout : chassis.loadout);
 
     this.setText('#hangar-header-name', name);
-    this.setText('#hangar-preview-mode', showLiveModel ? 'CENA 3D · MODELO AO VIVO' : 'PRÉVIA ESQUEMÁTICA');
+    this.setText('#hangar-preview-mode', 'GALPÃO 3D · ARRASTE PARA GIRAR');
     this.setText('#hangar-preview-class', label.className);
     this.setText('#hangar-mech-title', name);
     this.setText('#hangar-mech-detail', label.detail);

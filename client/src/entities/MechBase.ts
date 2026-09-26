@@ -328,9 +328,13 @@ export abstract class MechBase {
    * Troca as armas (Hangar). O jogo chama no renascimento: o Mech volta com a montagem nova e frio.
    * A montagem já vem validada (`hangar/loadout.ts`); aqui só se aplica.
    */
-  equip(loadout: Loadout): void {
+  /**
+   * Troca as armas. No renascimento o Mech volta frio; trocando pelo Hangar no meio da partida (`keepHeat`), o calor
+   * fica: a pausa não vira um jeito de esfriar.
+   */
+  equip(loadout: Loadout, keepHeat = false): void {
     this.armed = loadout;
-    this.heatSink.reset();
+    if (!keepHeat) this.heatSink.reset();
   }
 
   /** normal, QUENTE (≥ 70%) ou SUPERAQUECIDO (HUD, som, IA). */

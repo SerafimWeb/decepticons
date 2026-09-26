@@ -57,6 +57,7 @@ import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { Match } from '../sim/Match';
 import { HangarMenu } from '../ui/HangarMenu';
+import { HangarScene } from '../hangar/HangarScene';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
@@ -135,10 +136,10 @@ export class Game {
   private appliedQuality: QualityPreset | null = null;
 
   private playing = false;
-  private hangarPreviewing = false;
-  private hangarPreviewYaw = 0;
-  private hangarPreviewTime = 0;
-  private hangarPreviewScale = 1;
+  /** O galpão 3D do Hangar (feito na primeira vez que abre) e se ele está na tela no lugar da arena. */
+  private hangarScene: HangarScene | null = null;
+  private hangarView = false;
+  private readonly renderPass: RenderPass;
   private accumulator = 0;
   private last = -1;
 
@@ -175,7 +176,8 @@ export class Game {
       new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }),
     );
     this.composer.setSize(window.innerWidth, window.innerHeight);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.renderPass = new RenderPass(this.scene, this.camera);
+    this.composer.addPass(this.renderPass);
     this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.85, 0.5, 0.9);
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
@@ -290,17 +292,23 @@ export class Game {
         this.bloomPass.enabled = enabled;
       },
     );
+    // Hangar: enquanto está aberto, o desenho troca a arena pelo galpão (o jogo está pausado).
     new HangarMenu(this.hangar, {
       open: () => {
-        this.hangarPreviewing = true;
-        this.hangarPreviewYaw = this.mech.root.rotation.y;
-        this.hangarPreviewTime = 0;
-        this.hangarPreviewScale = Math.min(1, 3.2 / this.mech.stats.height);
+        this.hangarScene ??= new HangarScene();
+        this.hangarView = true;
+        this.renderPass.scene = this.hangarScene.scene;
+        this.renderPass.camera = this.hangarScene.camera;
+        this.resizeHangar();
       },
       close: () => {
-        this.hangarPreviewing = false;
-        this.mech.root.scale.set(1, 1, 1);
+        this.hangarView = false;
+        this.renderPass.scene = this.scene;
+        this.renderPass.camera = this.camera;
       },
+      show: (chassis, loadout) => this.hangarScene?.show(chassis, loadout),
+      rotate: (dx) => this.hangarScene?.rotate(dx),
+      applied: () => this.applyHangarNow(),
     });
     new PilotSwitch(this.hangar);
     new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null);
@@ -349,11 +357,28 @@ export class Game {
   }
 
   /** Montagem nova do Hangar entra no renascimento: armas trocadas, carregador cheio, Mech frio. */
-  private equipPending(): void {
+  private equipPending(keepHeat = false): void {
     const loadout = this.hangar.takePending();
     if (!loadout) return;
-    this.mech.equip(poweredLoadout(loadout, this.power.current, 'player'));
+    this.mech.equip(poweredLoadout(loadout, this.power.current, 'player'), keepHeat);
     this.player.rearm();
+    this.hud.setSecondaryLabel(this.mech.loadout.secondary?.kind === 'melee' ? 'MOTOSSERRA' : 'FOGUETES');
+  }
+
+  /**
+   * "Aplicar montagem" no Hangar (mesmo chassi): offline, as armas trocam na hora, com o calor de agora. Online, o
+   * servidor só conhece a montagem da entrada na sala: vale na próxima entrada. Devolve o aviso para a tela.
+   */
+  private applyHangarNow(): string {
+    if (this.online) return 'Montagem salva · no online, vale ao entrar de novo na sala.';
+    this.equipPending(true);
+    return 'Montagem aplicada: as armas já estão no Mech.';
+  }
+
+  /** O galpão ocupa a tela; no computador, o painel da direita é mais largo que o da esquerda: o Mech vai um pouco para a esquerda, no meio do vão. */
+  private resizeHangar(): void {
+    const w = window.innerWidth;
+    this.hangarScene?.resize(w, window.innerHeight, w > 900 ? 0.06 : 0);
   }
 
   /** Rodada nova: a partida já pôs todos de volta e restaurou a arena; aqui, o que é do jogador local. */
@@ -665,12 +690,7 @@ export class Game {
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);
     this.rig.update(dt);
-    if (this.hangarPreviewing) {
-      this.hangarPreviewTime += dt;
-      this.mech.root.rotation.y = this.hangarPreviewYaw + this.hangarPreviewTime * 0.16;
-      this.mech.root.scale.setScalar(this.hangarPreviewScale);
-      this.mech.root.position.y += this.mech.stats.height * (1 - this.hangarPreviewScale) * 0.5 + this.mech.stats.height * 0.32;
-    }
+    if (this.hangarView) this.hangarScene!.update(dt);
     this.updateAim(dt);
     this.projectiles.render(alpha);
     this.rockets.render(alpha);
@@ -724,5 +744,6 @@ export class Game {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.composer.setSize(window.innerWidth, window.innerHeight);
+    if (this.hangarView) this.resizeHangar();
   }
 }
