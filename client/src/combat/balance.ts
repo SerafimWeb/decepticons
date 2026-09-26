@@ -25,6 +25,8 @@ export interface Drill {
   dashEvery?: number;
   /** Um pulo a cada tantos segundos. */
   jumpEvery?: number;
+  /** Cada tiro que sai (segundo do exercício e a arma): o teste de disparo do Hangar desenha a partir disto. */
+  onShot?: (t: number, w: WeaponStats) => void;
 }
 
 export interface DrillResult {
@@ -81,6 +83,7 @@ export function drill(chassis: ChassisHeat, d: Drill, seconds: number, hp = Infi
       if (!fired) return;
       out.damage += g.w.damage;
       heat.add(g.w.heatPerShot);
+      d.onShot?.(t, g.w);
       if (k === 0 && d.burst && ++inBurst >= d.burst.shots) {
         inBurst = 0;
         pause = d.burst.pause;

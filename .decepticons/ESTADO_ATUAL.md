@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–26/09)
+- **Hangar 2.0, camada 3 (Claude):** teste de disparo (o Mech vira para o alvo do galpão e dispara 4 s no ritmo real, com tempo, tiros, dano e calor na tela) e montagens salvas nos atalhos 1 a 4. Com isso, as três camadas do Hangar 2.0 estão no ar.
 - **Hangar 2.0, camada 2 (Claude):** a interface do Hangar reescrita no desenho da referência: topo com carga, piloto e modo; chassi com a planta de cada robô; console "caminhos de montagem" com os braços, o nível de potência e barras da arma nova contra a atual; leituras embaixo; marcadores presos aos braços do Mech; celular em pé (abas embaixo) e deitado (painel ao lado). Falta a camada 3: testar disparo num alvo e montagens 1 a 4.
 - **Hangar 2.0, camada 1 (Claude; dono: "a tela do Hangar não está funcionando direito, não ficou nada a ver com a foto"; decidiu que o Claude refaz):** galpão 3D próprio no lugar da arena (pedestal com coluna de holograma, anel de varredura, lâmpadas quentes, passarelas, Mechs parados no fundo, telas de holograma), o Mech da montagem girando no pedestal (arrastar gira; andróide ampliado), e o "aplicar" trocando as armas na hora (offline, com o calor de agora). Referência salva em `.tmp/arte/hangar-referencia.png`. Próximas camadas: interface holográfica e celular; testar disparo e montagens 1 a 4.
 - **Testes estáveis com a máquina cheia (Claude, R17):** depois dos merges do #66 (Hangar do Codex) e do #67, a `main` inteira falhou uma vez com os 28 arquivos em paralelo: o teste dos destroços dependia de uma barricada quebrar por acaso (agora todas quebram no primeiro tick) e o servidor do teste online, sobrecarregado, descartava comandos (a fila do piloto remoto foi de ~0,25 s para ~0,5 s). A suíte inteira passou 3 vezes seguidas.
@@ -121,6 +122,7 @@
 - [ ] **Dono:** jogar com as motosserras (andróides colados nas pernas) e pisar neles (ande para cima de um encostado)
 - [ ] **Dono:** pôr o servidor público no ar 24 h: escolher o domínio, criar o túnel nomeado da Cloudflare, rodar `scripts\servidor-windows.ps1` e criar a variável `GAME_SERVER_URL` no GitHub (`DEPLOY.md`, "Servidor público 24 h")
 - [ ] **Dono:** jogar online com alguém: `npm run server` no PC, o túnel do Cloudflare (`DEPLOY.md`, "Servidor de jogo") e o link `/jogar/?sala=ARENA&servidor=https://….trycloudflare.com&nome=…` para os dois. Dizer como ficou a sensação (atraso, correções, tiros)
+- [ ] **Dono:** abrir o Hangar novo (pausa → `[ ABRIR HANGAR ]`): galpão, interface, testar disparo, atalhos 1 a 4, no computador e no celular. O que ainda está longe da imagem de referência?
 - [ ] **Dono:** mexer nas potências (configurações → POTÊNCIAS) e dizer se falta algum controle (pontaria dos bots, tamanho do carregador, número de pulos...); quando achar um ajuste bom, mande o link: vira o padrão com teste
 - [ ] **Dono:** jogar de andróide (pausa → `[ PILOTAR ANDRÓIDE ]`): a câmera passa a sensação de Mech gigante? Vida, blaster e motosserra estão justos?
 - [ ] **Dono:** jogar com o diretor de ataque (no máximo 2 atacando juntos) e as personalidades; dizer se ficou fácil demais (dá para subir "Atacam ao mesmo tempo" nas configurações)

@@ -314,6 +314,8 @@ export class Game {
       rotate: (dx) => this.hangarScene?.rotate(dx),
       applied: () => this.applyHangarNow(),
       status: () => (online ? `ONLINE · SALA ${online.room}` : 'OFFLINE'),
+      test: (data, arm) => this.hangarScene?.startTest(data, arm),
+      stopTest: () => this.hangarScene?.stopTest(),
     });
     new PilotSwitch(this.hangar);
     new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null);
@@ -704,6 +706,7 @@ export class Game {
       const w = window.innerWidth;
       const h = window.innerHeight;
       this.hangarMenu.placeHotspots(hs.armScreen('rightArm', w, h, _hotRight) ? _hotRight : null, hs.armScreen('leftArm', w, h, _hotLeft) ? _hotLeft : null);
+      this.hangarMenu.testFrame(hs.testProgress());
     }
     this.updateAim(dt);
     this.projectiles.render(alpha);

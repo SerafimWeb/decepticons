@@ -2,6 +2,13 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] Hangar 2.0, camada 3: testar disparo e montagens 1 a 4
+**Pedido do dono:** a imagem de referência do Hangar (botão "test firing", atalhos 1 a 4).
+**Decisão (Claude):**
+- **Teste de disparo pelas regras do jogo:** a bancada da oficina (`drill`) ganhou um aviso opcional de cada tiro (`onShot`); `hangar/testFire.ts` roda 4 s de gatilho apertado e devolve a hora de cada tiro e o calor. A cena desenha a partir disso e a tela conta: nada é animação inventada. Painéis somem, câmera abre para o Mech e o alvo, o Mech vira para o alvo e só então atira.
+- **Atalhos 1 a 4:** vazio salva a montagem da tela; cheio carrega (e teclas 1 a 4); `SALVAR` sobrescreve. Validados na leitura (salvo adulterado vira vazio).
+**Quem decidiu:** Claude (dentro do pedido do dono).
+
 ## [2026-09-26] Hangar 2.0, camada 2: a interface holográfica
 **Pedido do dono:** a tela do Hangar "não ficou nada a ver" com a imagem de referência.
 **Decisão (Claude):** a interface foi reescrita (`ui/HangarMenu.ts`, mesma lógica de montagem) no desenho da referência: barra de topo, painel do chassi com a planta em traço, console "caminhos de montagem" (armas; blindagem e módulos só como "em breve", sem fingir que existem), barras da arma nova contra a atual com seta de melhora, faixa de leituras, marcadores presos aos braços (a cena informa onde cada braço está na tela a cada quadro, sem alocar). Vidro ciano com colchetes nos cantos em vez de recorte (o recorte cortaria o brilho). Celular: em pé, abas embaixo; deitado, painel ao lado e o Mech deslocado para a esquerda pela câmera. Sem moeda nem "tech points" de mentira no topo: só o que o jogo tem (carga, piloto, modo).
