@@ -2,6 +2,14 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Bastidores viram a Sala de controle
+**Pedido do dono:** "continue documentando esses nossos processos, novidades, lá no bastidores (podemos chamar de sala de controle)".
+**Decisão (Claude):**
+- **Nome e endereço:** "Sala de controle", em `/cybermech/sala-de-controle/`. O endereço antigo `/bastidores/` vira uma página que leva para a nova (sem script, vale com a CSP), para nenhum link compartilhado quebrar. Navegação, landing, AGENTS.md e DEPLOY.md atualizados.
+- **Seções novas, lidas dos documentos a cada entrega:** novidades no topo (as 5 últimas decisões e entregas); "Na mesa do Dan" (tabela de decisões em aberto e testes pendentes do dono, do ESTADO_ATUAL); "Do conceito ao robô" (o fluxo e a lista das fichas de design, do README das fichas). Para documentar um processo novo, basta registrar nos documentos: a página se atualiza sozinha.
+- O check do site confere a página nova, as novidades, as fichas e o redirecionamento.
+**Quem decidiu:** dono (nome e pedido); Claude (seções e redirecionamento).
+
 ## [2026-09-25] Fichas de design: o documento que o dono aprova antes do código
 **Pedido do dono:** "faça o MODELO das fichas de design, pra eu solicitar ao Codex pra completar".
 **Decisão (Claude):** pasta `fichas/` (junto dos documentos do projeto), uma ficha por robô e por arma, com dois modelos (`MODELO_ROBO.md`, `MODELO_ARMA.md`) e um exemplo preenchido (`vector-09.md`). Fluxo: rascunho → proposta (PR só com a ficha) → aprovada (dono) → no jogo (Claude: números e testes; Codex: visual; Gemini: som). Cada meta de equilíbrio da ficha vira teste. **A ficha propõe, o código decide:** se divergirem, vale `chassis.ts` e `weapons.ts`.

@@ -78,7 +78,7 @@ client/src/
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde)
   debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)
-scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), landing.mjs (landing do jogo), oficina.mjs (bancada de testes), painel.mjs (bastidores: o case),
+scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), landing.mjs (landing do jogo), oficina.mjs (bancada de testes), painel.mjs (sala de controle: o case),
                site/dados.mjs + site/tema.mjs + site/graficos.mjs (dados, visual e gráficos das páginas), site.mjs (site + .htaccess + capturas + teste), install-hooks.mjs
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
 .github/       workflows/ci.yml (npm run check a cada push/PR; deploy do site a cada merge na main),
@@ -97,8 +97,8 @@ npm run dev        # http://localhost:5173
 npm test           # testes de simulação (Vitest, no Node)
 npm run check      # typecheck + testes + build + budget + boot headless (obrigatório antes de push)
 npm run smoke:dev  # boot headless contra o dev server
-npm run painel     # bastidores (equipe, fluxo, evolução, rota das fases, frentes, diário) em .tmp/painel/painel.html
-npm run site       # monta o site em .tmp/site/ (landing, bastidores/, jogar/); `-- --capturas` fotografa o jogo; `-- --check` testa em /cybermech/
+npm run painel     # sala de controle (novidades, equipe, mesa do Dan, fluxo, fichas, evolução, rota, frentes, decisões) em .tmp/painel/painel.html
+npm run site       # monta o site em .tmp/site/ (landing, oficina/, sala-de-controle/, jogar/); `-- --capturas` fotografa o jogo; `-- --check` testa em /cybermech/
 gh release create v0.<fase>.0 --generate-notes --title "Fase N — Título"   # ao fechar uma fase: notas agrupadas por frente
 ```
 

@@ -1,14 +1,14 @@
 /**
- * Bastidores (o case do desenvolvimento): equipe, fluxo da ideia ao ar, protocolo, evolução, mapa da
+ * Sala de controle (o case do desenvolvimento; até 25/09, "bastidores"): equipe, fluxo da ideia ao ar, protocolo, evolução, mapa da
  * campanha, frentes, diário de decisões e entregas. Tudo gerado do repositório (scripts/site/dados.mjs).
  *
  * Uso: npm run painel            → gera .tmp/painel/painel.html (G15: nada fora do projeto)
  *      node scripts/painel.mjs --check → só valida o ROADMAP e a VITRINE do GAME_DESIGN (roda no npm run check)
- *      node scripts/painel.mjs --site --out <arquivo> → versão do site (/cybermech/bastidores/)
+ *      node scripts/painel.mjs --site --out <arquivo> → versão do site (/cybermech/sala-de-controle/)
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { atividade, diario, entregas, evolucao, historicoRoadmap, marcos, pedidos, pipeline, readEstado, readRoadmap, roadmapStats, vitrine } from './site/dados.mjs';
+import { atividade, diario, entregas, evolucao, fichas, historicoRoadmap, marcos, pedidos, pipeline, readEstado, readRoadmap, roadmapStats, vitrine } from './site/dados.mjs';
 import { burnup, CHART_CSS, gantt, heatTable, pct, PM_CSS, rankBars } from './site/graficos.mjs';
 import { brDate, esc, HEXGRID, inline, pagina, topo, upper } from './site/tema.mjs';
 
@@ -430,6 +430,49 @@ const prHtml = prs
   )
   .join('');
 
+// ---------- novidades, mesa do Dan e fichas de design ----------
+
+// Nada de caminho interno na página pública (a pasta dos documentos tem o codinome).
+const pub = (s) => s.replace(/\.decepticons\//g, '');
+const newsHtml = `<div class="news">
+    <div class="frame"><h3>últimas decisões <a href="#diario">todas →</a></h3><ol>${log
+      .slice(0, 5)
+      .map((e) => `<li><time datetime="${e.date}">${brDate(e.date)}</time>${inline(pub(e.title))}</li>`)
+      .join('')}</ol></div>
+    <div class="frame"><h3>últimas entregas <a href="#entregas">todas →</a></h3><ol>${prs
+      .slice(0, 5)
+      .map((p) => `<li><time datetime="${p.date}">${brDate(p.date)}</time><span class="prn">#${p.n}</span>${esc(p.title)}</li>`)
+      .join('')}</ol></div>
+  </div>`;
+
+const ownerTests = estado.pending.filter((p) => /^dono$/i.test(p.who));
+const mesaHtml =
+  estado.open.length || ownerTests.length
+    ? `<section aria-labelledby="mesa">
+    <span class="kicker">// aguardando o Dan</span>
+    <h2 id="mesa">Na mesa do Dan</h2>
+    <p class="lede">O que só o dono decide ou testa. As IAs propõem, com critérios e uma recomendação; enquanto a decisão não sai, nada disso muda no jogo.</p>
+    ${estado.open.length ? `<ul class="rules">${estado.open.map((d) => `<li class="rule"><h3>${inline(pub(d.title))}</h3><p>${inline(pub(d.text))}</p></li>`).join('')}</ul>` : ''}
+    ${ownerTests.length ? `<h3 class="sub-h">Para testar no site</h3><ul class="checks frame">${ownerTests.map((t) => `<li>${inline(pub(t.text))}</li>`).join('')}</ul>` : ''}
+  </section>`
+    : '';
+
+const F = fichas();
+const fichasHtml = F.sheets.length
+  ? `<section aria-labelledby="fichas">
+    <span class="kicker">// processo criativo</span>
+    <h2 id="fichas">Do conceito ao robô</h2>
+    <p class="lede">Todo robô e toda arma nascem numa ficha de design: identidade, como se joga com ele e contra ele, silhueta e números. O dono aprova a ficha; as metas de equilíbrio dela viram teste antes de o robô entrar no jogo. A ficha propõe, o código decide.</p>
+    <ol class="flow">${F.flow
+      .map((s, i) => `<li class="step frame"><span class="snum">${String(i + 1).padStart(2, '0')}</span><h3>${upper(s.status)}</h3><p>${inline(pub(s.what))}</p><p class="sample">${inline(pub(s.who))}</p></li>`)
+      .join('')}</ol>
+    <h3 class="sub-h">Fichas</h3>
+    <ul class="feed frame sheets">${F.sheets
+      .map((s) => `<li><span class="st${s.done ? ' ok' : ''}">${s.done ? 'feita' : 'a fazer'}</span><span class="ft">${inline(pub(s.file))}<small class="fr">${inline(pub(s.type))} · ${inline(pub(s.ref))}</small></span><span class="who">${inline(pub(s.state))}</span></li>`)
+      .join('')}</ul>
+  </section>`
+  : '';
+
 // ---------- página ----------
 
 const css = `
@@ -593,6 +636,24 @@ const css = `
 
   .source { color: var(--faint); font-size: 12px; letter-spacing: .06em; }
 
+  .news { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  .news > div { padding: 12px 0 4px; }
+  .news h3 { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 0 16px 10px; font-size: 1.1rem; border-bottom: 1px dashed var(--line); }
+  .news h3 a { font: 400 12px var(--fb); letter-spacing: .08em; color: var(--muted); }
+  .news ol { list-style: none; margin: 0; padding: 0; }
+  .news li { padding: 8px 16px; font-size: 13.5px; line-height: 1.45; border-bottom: 1px dashed var(--line); }
+  .news li:last-child { border-bottom: 0; }
+  .news time { color: var(--faint); font-variant-numeric: tabular-nums; margin-right: 10px; }
+  .news .prn { color: var(--amber); margin-right: 8px; font-variant-numeric: tabular-nums; }
+  .sub-h { margin: 24px 0 10px; font-size: 1.2rem; }
+  .checks { list-style: none; margin: 0; padding: 6px 0; }
+  .checks li { position: relative; padding: 8px 16px 8px 46px; font-size: 13.5px; line-height: 1.5; border-bottom: 1px dashed var(--line); }
+  .checks li:last-child { border-bottom: 0; }
+  .checks li::before { content: '[ ]'; position: absolute; left: 14px; color: var(--amber); }
+  .sheets li { grid-template-columns: 64px 1fr minmax(0, 240px); }
+  .sheets .st { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .sheets .st.ok { color: var(--green); }
+  .sheets .who { color: var(--muted); font-size: 12.5px; }
   @media (max-width: 980px) {
     .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .step:nth-child(4n):not(:last-child)::after { content: '→'; }
@@ -671,11 +732,11 @@ const script = `
 `;
 
 const body = `
-  ${topo({ base: BASE, current: 'bastidores', left: `CYBERMECH // BASTIDORES`, live: `atualizado a cada entrega · ${esc(m.head)}` })}
+  ${topo({ base: BASE, current: 'sala', left: `CYBERMECH // SALA DE CONTROLE`, live: `atualizado a cada entrega · ${esc(m.head)}` })}
 
   <header class="hero">
-    <p class="boot">&gt; bastidores · case de desenvolvimento${m.day ? ` · dia ${m.day} do projeto` : ''}<span class="cursor" aria-hidden="true">█</span></p>
-    <h1 class="title">BASTIDORES<span>DA OPERAÇÃO</span></h1>
+    <p class="boot">&gt; sala de controle · como o jogo é feito${m.day ? ` · dia ${m.day} do projeto` : ''}<span class="cursor" aria-hidden="true">█</span></p>
+    <h1 class="title">SALA DE CONTROLE<span>DA OPERAÇÃO</span></h1>
     <p class="pitch">Dan, três IAs e um protocolo. No CYBERMECH, cada decisão fica registrada, cada entrega passa por testes automáticos e vai para o ar sozinha. Esta página é gerada do próprio repositório a cada entrega; nenhum número aqui é digitado à mão.</p>
     <div class="sitrep">
       ${m.day ? `<div class="read frame"><span class="k">Dia de projeto</span><span class="v">${m.day} <small>desde ${brDate(m.first)}</small></span></div>` : ''}
@@ -688,6 +749,12 @@ const body = `
     </div>
   </header>
 
+  <section aria-labelledby="novidades">
+    <span class="kicker">// transmissão</span>
+    <h2 id="novidades">Novidades</h2>
+    ${newsHtml}
+  </section>
+
   <section aria-labelledby="equipe">
     <span class="kicker">// esquadrão</span>
     <h2 id="equipe">A equipe</h2>
@@ -695,6 +762,8 @@ const body = `
     <div class="team">${teamHtml}</div>
     ${fromGithub ? '' : '<p class="source">Sem acesso ao GitHub neste build: entregas contadas pelo git, sem etiquetas de frente e agente.</p>'}
   </section>
+
+  ${mesaHtml}
 
   <section aria-labelledby="atividade">
     <span class="kicker">// canal da equipe · registro do git</span>
@@ -721,6 +790,8 @@ const body = `
     <ol class="flow">${flowHtml}</ol>
     <p class="loop">↺ e o ciclo recomeça no 01</p>
   </section>
+
+  ${fichasHtml}
 
   <section aria-labelledby="protocolo">
     <span class="kicker">// regras de engajamento</span>
@@ -773,7 +844,7 @@ const body = `
 `;
 
 const html = pagina({
-  title: SITE ? 'Bastidores · CYBERMECH' : 'Painel de Missão CYBERMECH',
+  title: SITE ? 'Sala de controle · CYBERMECH' : 'Painel de Missão CYBERMECH',
   description: 'Como o CYBERMECH é feito: Dan e uma equipe de IAs sob o Protocolo Serafim UM, com cada decisão, teste e entrega à vista.',
   css,
   body,

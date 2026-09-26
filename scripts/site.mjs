@@ -1,7 +1,8 @@
 /**
  * Site do projeto (público). Destino: DEPLOY.md.
  *   /cybermech/             landing do jogo (scripts/landing.mjs)
- *   /cybermech/bastidores/  o case do desenvolvimento (scripts/painel.mjs --site)
+ *   /cybermech/sala-de-controle/  o case do desenvolvimento (scripts/painel.mjs --site)
+ *   /cybermech/bastidores/  o endereço antigo: página que leva para a sala de controle
  *   /cybermech/jogar/       o jogo (vite build)
  *   /cybermech/capturas/    imagens do jogo, feitas jogando o build (só com --capturas)
  *
@@ -115,13 +116,32 @@ ${set}
 `;
 }
 
+/** Página do endereço antigo dos bastidores: leva para a sala de controle (sem script: vale com a CSP). */
+const MOVED = `<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="0; url=../sala-de-controle/">
+<link rel="canonical" href="../sala-de-controle/">
+<title>Sala de controle · CYBERMECH</title>
+</head>
+<body style="background:#0b0c0a;color:#e8e2cf;font-family:monospace;padding:24px">
+<p>Os bastidores agora são a <a style="color:#ffb000" href="../sala-de-controle/">sala de controle</a>.</p>
+</body>
+</html>
+`;
+
 async function build() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
   run('npx', ['vite', 'build', '--outDir', GAME, '--emptyOutDir', '--logLevel', 'warn'], { VITE_BUILD: buildId() });
   // As capturas vêm antes das páginas: a landing só mostra as imagens que existirem.
   if (argv.includes('--capturas')) await capture();
-  run('node', ['scripts/painel.mjs', '--site', '--out', join(OUT, 'bastidores', 'index.html')]);
+  run('node', ['scripts/painel.mjs', '--site', '--out', join(OUT, 'sala-de-controle', 'index.html')]);
+  // Endereço antigo (até 25/09): quem tiver o link cai na sala de controle.
+  mkdirSync(join(OUT, 'bastidores'), { recursive: true });
+  writeFileSync(join(OUT, 'bastidores', 'index.html'), MOVED);
   run('node', ['scripts/landing.mjs', '--out', join(OUT, 'index.html')]);
   run('node', ['scripts/oficina.mjs', '--out', join(OUT, 'oficina', 'index.html')]);
   writeFileSync(join(OUT, '.htaccess'), htaccess());
@@ -131,7 +151,7 @@ async function build() {
     const file = join(GAME, 'assets', w);
     writeFileSync(`${file}.gz`, gzipSync(readFileSync(file), { level: 9 }));
   }
-  console.log(`site    ${OUT}  (landing na raiz, bastidores/, jogo em jogar/, ${wasm.length} .wasm)`);
+  console.log(`site    ${OUT}  (landing na raiz, sala-de-controle/, jogo em jogar/, ${wasm.length} .wasm)`);
 }
 
 /** Servidor estático em /cybermech/ com os cabeçalhos do .htaccess, só para o teste local. */
@@ -306,13 +326,19 @@ async function check() {
     page.on('console', (m) => m.type() === 'error' && !/fonts\.g/.test(m.text()) && failures.push(`console: ${m.text()}`));
     page.on('pageerror', (e) => failures.push(`pageerror: ${e.message}`));
     page.on('response', (r) => r.status() >= 400 && !/fonts.g/.test(r.url()) && failures.push(`HTTP ${r.status()}: ${r.url()}`));
-    // Bastidores: página própria, links internos vivos, sem o codinome.
-    await page.goto(`${base}bastidores/`);
-    if ((await page.title()) !== 'Bastidores · CYBERMECH') failures.push(`título dos bastidores: "${await page.title()}"`);
-    await pageSane(page, 'bastidores', failures);
-    await publicPage(page, 'bastidores', failures);
+    // Sala de controle: página própria, links internos vivos, sem o codinome.
+    await page.goto(`${base}sala-de-controle/`);
+    if ((await page.title()) !== 'Sala de controle · CYBERMECH') failures.push(`título da sala de controle: "${await page.title()}"`);
+    await pageSane(page, 'sala de controle', failures);
+    await publicPage(page, 'sala de controle', failures);
     // Gestão: quadro, burn-up e linha do tempo saem do histórico do ROADMAP (precisa do git inteiro).
-    if ((await page.locator('section[aria-labelledby="gestao"] .lane').count()) < 2) failures.push('bastidores: a seção de gestão sumiu (sem o histórico do ROADMAP no git?)');
+    if ((await page.locator('section[aria-labelledby="gestao"] .lane').count()) < 2) failures.push('sala de controle: a seção de gestão sumiu (sem o histórico do ROADMAP no git?)');
+    // Novidades e fichas de design saem dos documentos: sem elas, o parser não achou as tabelas.
+    if ((await page.locator('.news li').count()) < 2) failures.push('sala de controle: sem novidades (decisões e entregas)');
+    if ((await page.locator('.sheets li').count()) < 1) failures.push('sala de controle: sem as fichas de design');
+    // Endereço antigo: leva para a sala de controle.
+    await page.goto(`${base}bastidores/`);
+    await page.waitForURL(/sala-de-controle\/$/, { timeout: 5000 }).catch(() => failures.push('bastidores/: não levou para a sala de controle'));
     // Oficina: a bancada tem de sair com os gráficos da simulação (sem eles, os dados do jogo não carregaram).
     await page.goto(`${base}oficina/`);
     if ((await page.title()) !== 'Oficina · CYBERMECH') failures.push(`título da oficina: "${await page.title()}"`);
@@ -345,7 +371,7 @@ async function check() {
     // Uma página por vez: a de trás não desenha, e o jogo do celular ficaria parado.
     await page.close();
     await mobile(browser, `${base}jogar/`, failures);
-    console.log(`site    ok: landing em ${prefix} com a abertura da marca e o Hangar, oficina/ com a bancada, bastidores/, "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
+    console.log(`site    ok: landing em ${prefix} com a abertura da marca e o Hangar, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {
@@ -384,8 +410,10 @@ async function verify(url) {
   // O selvamkt.com.br responde 200 com uma página HTML para arquivo inexistente: status não basta.
   const shop = await get(`${root}oficina/`);
   if (!(await shop.text()).includes('Oficina · CYBERMECH')) failures.push(`${root}oficina/: não é a oficina`);
-  const behind = await get(`${root}bastidores/`);
-  if (!(await behind.text()).includes('BASTIDORES')) failures.push(`${root}bastidores/: não é a página de bastidores`);
+  const control = await get(`${root}sala-de-controle/`);
+  if (!(await control.text()).includes('SALA DE CONTROLE')) failures.push(`${root}sala-de-controle/: não é a sala de controle`);
+  const old = await get(`${root}bastidores/`);
+  if (!(await old.text()).includes('sala-de-controle/')) failures.push(`${root}bastidores/: não leva para a sala de controle`);
   const cover = await get(`${root}capturas/capa.jpg`, 'HEAD');
   if (!(cover.headers.get('content-type') ?? '').startsWith('image/')) console.warn(`::warning::${root}capturas/capa.jpg não é imagem: a landing está sem capturas`);
   const game = await get(`${root}jogar/`);

@@ -104,6 +104,7 @@
 - [x] Jogar de andróide: chassi `android` no Hangar (blaster + motosserra), câmera na escala dele para os Mechs parecerem gigantes, troca na pausa #mechs
 - [x] Peso dos Mechs (9 m/s, inércia, passos com som e tremor) e andróides de 1,6 m #mechs
 - [x] Modelos de ficha de design (robô e arma) e a ficha do Vector-09 como exemplo (pasta `fichas/`) #mechs
+- [x] Sala de controle (antigos bastidores): novidades, mesa do Dan e o processo criativo das fichas, lidos dos documentos #base
 - [ ] Fichas do Mech leve, do pesado, do andróide e das 4 armas (Codex) #mechs
 - [x] Calor com fôlego: ~15 tiros segurando, trava de ~2 s, superaquecido anda a 75% #combate
 - [x] Diretor de ataque com fila justa: fim do turno vai para o fim da fila, quem espera mais vai primeiro #ia

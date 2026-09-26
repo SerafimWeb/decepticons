@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Sala de controle (Claude; dono: "continue documentando nossos processos e novidades no bastidores; podemos chamar de sala de controle"):** a página virou `/cybermech/sala-de-controle/` (o endereço antigo leva para lá), com novidades no topo, "Na mesa do Dan" (as decisões em aberto e os testes pendentes deste arquivo) e "Do conceito ao robô" (o fluxo e a lista das fichas de design). Tudo lido dos documentos a cada entrega: para aparecer lá, basta registrar aqui.
 - **Fichas de design (Claude; dono: "faça o modelo das fichas de design pra eu solicitar ao Codex completar"):** pasta `fichas/` (junto dos documentos do projeto) com o fluxo (rascunho → proposta → aprovada → no jogo; quem preenche o quê), `MODELO_ROBO.md`, `MODELO_ARMA.md` e o exemplo `vector-09.md` com os números do código e da simulação. Fichas a fazer: leve, pesado, andróide e as 4 armas (Codex).
 - **Nomes de paródia e a geopolítica com o dono (Claude):** os bots viraram CLAWD, GEMINAI, CHAD-GPT (Mechs), KUEN, DIPSIK, MISTRAU (andróides) e ANTRÓPICO (técnico); a decisão sobre marcas registradas saiu das decisões em aberto. Geopolítica: Brasil no centro, BRICS diante do imperialismo norte-americano, desenvolvida pelo dono num chat dedicado do SERAFIM; o resultado volta para o `UNIVERSO.md`. Os agentes não escrevem geopolítica nem roteiro até lá.
 - **Proposta do universo (Claude; dono: "geopolítica geral, big techs, segurança digital, pois somos SERAFIM, e termos do CTI"):** `UNIVERSO.md` com a premissa (as IAs caçam chips, energia e dados; a SERAFIM responde ao incidente com Mechs), geopolítica fictícia com o Brasil no centro, consórcios fictícios, o glossário de CTI aplicado ao jogo (incidente, TTPs do ATT&CK, C2, Red × Blue × Purple, boletins TLP:CLEAR) e mecânicas sugeridas. Frente nova `#universo`. Aguarda as decisões da seção 7.
@@ -105,7 +106,7 @@
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
 - [ ] **Dono:** gerar as pranchas dos robôs numa IA de imagem com os textos do `ESTILO_ROBOS.md` e salvar em `.tmp/arte/`
 - [ ] **Dono:** jogar com as motosserras (andróides colados nas pernas) e pisar neles (ande para cima de um encostado)
-- [ ] **Dono:** jogar de andróide (pausa → `[ PILOTAR ANDRÓIDE ]`): a câmera passa a sensação de Mech gigante? Vida, blaster e motosserra estão justos? A animação de passo ainda é a do Mech
+- [ ] **Dono:** jogar de andróide (pausa → `[ PILOTAR ANDRÓIDE ]`): a câmera passa a sensação de Mech gigante? Vida, blaster e motosserra estão justos?
 - [ ] **Dono:** jogar com o diretor de ataque (no máximo 2 atacando juntos) e as personalidades; dizer se ficou fácil demais (dá para subir "Atacam ao mesmo tempo" nas configurações)
 - [ ] **Dono:** jogar com o calor novo (~15 tiros segurando, trava de ~2 s, superaquecido anda a 75%) e o Mech mais pesado (9 m/s, com inércia e passos): ficou bom para lutar contra 3? Se ainda apertar, o próximo ajuste é o resfriamento
 - [ ] **Dono:** jogar com as armas novas (menos dano, calor compartilhado com os foguetes) e dizer se a luta ficou lenta ou rápida demais; decidir as perguntas do fim do `HANGAR.md`
@@ -138,7 +139,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Hospedagem do servidor | Recomendação em `DEPLOY.md`; plano em `MULTIPLAYER.md` (seção 10, com mais três decisões: mira assistida no PvP, bots nas salas, código da sala). Decidir antes da etapa M8. |
 | Mira assistida no multiplayer | Hoje é só do toque e só contra bots. Com gente de verdade, toque x mouse na mesma sala precisa de regra: manter (padrão dos jogos de tiro no celular), reduzir contra humanos ou separar salas por tipo de controle. Decidir na Fase 4. |
 | Separação simulação × render × efeitos | Proposta e critérios de aceitação em `MULTIPLAYER.md`, seção 9. Recomendação: tiro do jogador e yaw pela simulação antes da M4; o resto quando memória do servidor ou correções visíveis pedirem. |
-| Universo (`UNIVERSO.md`, seção 7) | Premissa, Brasil no centro do mapa, quanto de CTI entra (só textos ou também mecânicas) e nomes dos consórcios. Nada muda no jogo antes do aval. |
+| Universo (`UNIVERSO.md`, seção 7) | Brasil no centro, no contexto dos BRICS, já decidido. Premissa, roteiro, quanto de CTI entra (só textos ou também mecânicas) e nomes dos consórcios: com o dono, no chat do SERAFIM. Nada muda no jogo antes do aval. |
 | Bots contra bots | Hoje os bots só caçam o jogador. No modo "todos contra todos" eles deveriam se enfrentar também: basta passar todos os Mechs em `BotSystem.targets`. |
 
 ## BLOQUEIOS
