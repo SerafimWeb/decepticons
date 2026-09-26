@@ -2,6 +2,20 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] M2 do multiplayer: contratos de rede e codec binário
+**Pedido do dono:** "segue pro multiplayer".
+**Decisão (Claude):**
+- **Contratos em `shared/net/`, sem dependência do cliente** (o servidor importa direto): ritmos e tetos, codec, comando (`NetInput`), estado de cada unidade (`UnitState`), eventos e mensagens. Ponte com a simulação em `client/src/net/adapters.ts`; se a lista de partes ou de armas da rede se desencontrar da do jogo, o build quebra.
+- **Binário próprio, não o schema do Colyseus:** o Colyseus leva as nossas mensagens como bytes. O tamanho de cada campo é nosso e o teste de banda mede o que vai no fio (G11). O delta fica para quando precisar.
+- **Quantização:** posição dos pés em cm (16 bits, ±327 m; a arena tem ±100 m), ângulos em 16 bits, vida de cada parte e calor em frações de 8 bits, com um fio de vida nunca virando zero (parte viva não chega arrancada).
+- **O estado leva o `ack`** (o último comando do jogador já aplicado pelo servidor): é o que a reconciliação da M4 precisa.
+- **O tiro viaja no comando:** pitch e os dois gatilhos no `NetInput` (MULTIPLAYER.md, seção 8).
+- **Nada de fora é confiado:** leitura além do fim, quantidade impossível, bit de botão desconhecido, parte ou arma fora da lista, montagem fora do formato: a mensagem inteira é recusada. Apelido limpo (letras, números, espaço, ponto, hífen; até 16).
+- **Sem alocação por mensagem** nos caminhos de todo tick (G4): o escritor escreve sempre no mesmo buffer; o leitor lê bytes sem `DataView` e escreve em objetos do chamador.
+- **Medido:** comando 9 B, unidade 19 B; sala cheia (8 Mechs, 3 andróides, técnico: 12 unidades) numa luta intensa em ~6,2 KB/s de download por jogador, ~0,8 KB/s de upload (metas 8 e 2). Mandando tudo a cada estado, cabem 15 unidades; acima disso, delta.
+**Custo de CPU:** nenhum no jogo ainda (nada usa a rede). No servidor, codificar o estado de 12 unidades é escrever ~240 bytes por cliente a 20 Hz.
+**Quem decidiu:** dono (seguir para o multiplayer); Claude (formato, números, validação).
+
 ## [2026-09-25] O técnico rebelde se chama ENTRÓPICO
 **Pedido do dono:** "chama de Entropico".
 **Decisão:** o técnico (o andróide que conserta os Mechs rebeldes) passa de ANTRÓPICO para ENTRÓPICO: a alusão continua, e entropia combina com quem remenda máquina quebrada. Troca só em `BOT_NAMES` e nos documentos. A vitrine da landing ganha as potências (o painel de ajuste já está no jogo).
