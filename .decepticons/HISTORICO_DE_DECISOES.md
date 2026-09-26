@@ -2,6 +2,11 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] Hangar 2.0, camada 2: a interface holográfica
+**Pedido do dono:** a tela do Hangar "não ficou nada a ver" com a imagem de referência.
+**Decisão (Claude):** a interface foi reescrita (`ui/HangarMenu.ts`, mesma lógica de montagem) no desenho da referência: barra de topo, painel do chassi com a planta em traço, console "caminhos de montagem" (armas; blindagem e módulos só como "em breve", sem fingir que existem), barras da arma nova contra a atual com seta de melhora, faixa de leituras, marcadores presos aos braços (a cena informa onde cada braço está na tela a cada quadro, sem alocar). Vidro ciano com colchetes nos cantos em vez de recorte (o recorte cortaria o brilho). Celular: em pé, abas embaixo; deitado, painel ao lado e o Mech deslocado para a esquerda pela câmera. Sem moeda nem "tech points" de mentira no topo: só o que o jogo tem (carga, piloto, modo).
+**Quem decidiu:** Claude (dentro do pedido do dono).
+
 ## [2026-09-26] Hangar 2.0: o Claude refaz a tela, começando pelo galpão 3D
 **Pedido do dono:** "a tela do hangar não está funcionando direito; precisamos adicionar muitas camadas de qualidade; a inspiração veio desta foto e não ficou NADA A VER". Na pergunta de quem refaz, o dono escolheu o Claude.
 **Diagnóstico (no navegador):** o centro era a câmera do jogo com o Mech de costas no meio da arena, bots e prédios atrás; o andróide aparecia como desenho esquemático; o "aplicar" com o mesmo chassi só valia no próximo renascimento (parecia quebrado); no celular não cabia. Sem erros de console.

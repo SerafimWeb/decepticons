@@ -1,9 +1,8 @@
-import { TIERS, weapon, type Tier, type WeaponId } from '../combat/weapons';
-import { CHASSIS, type ChassisId } from '../entities/chassis';
-import { Hangar } from '../hangar/Hangar';
-import { armOptions, factorySpec, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
+import { TIERS, weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { reloadWithout } from '../core/url';
-import type { Loadout } from '../combat/weapons';
+import { CHASSIS, type ChassisId } from '../entities/chassis';
+import type { Hangar } from '../hangar/Hangar';
+import { armOptions, factorySpec, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 
 /** O que a tela pede ao jogo: abrir e fechar o galpão 3D, mostrar a montagem, girar e aplicar na hora. */
 export interface HangarPreview {
@@ -13,30 +12,84 @@ export interface HangarPreview {
   rotate?(dx: number): void;
   /** Montagem do mesmo chassi aplicada: o jogo troca as armas (ou explica por que não) e devolve o aviso. */
   applied?(): string;
+  /** Linha de estado do topo: "OFFLINE" ou a sala online. */
+  status?(): string;
 }
 
 const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string; detail: string }> = {
   vector09: { title: 'VECTOR-09', className: 'MÉDIO · ASSALTO', detail: 'Equilíbrio entre alcance e mobilidade.' },
   android: { title: 'ANDRÓIDE A-1', className: 'LEVE · PILOTO', detail: 'Pequeno e ágil; vence no combate próximo.' },
 };
-
 const SLOT_LABEL: Record<ArmSlot, string> = { right: 'BRAÇO DIREITO', left: 'BRAÇO ESQUERDO' };
-const SLOT_SHORT: Record<ArmSlot, string> = { right: 'D', left: 'E' };
+const SLOT_NUM: Record<ArmSlot, string> = { right: '01', left: '02' };
 const WEAPON_HINT: Record<WeaponId, string> = {
-  plasma: 'Energia · alcance médio · calor por disparo',
-  rockets: 'Munição · área de impacto · recarga automática',
+  plasma: 'Energia · dano cheio até 60 m · calor por disparo',
+  rockets: 'Munição · explosão em área · recarga automática',
   blaster: 'Energia · leve · alcance curto',
-  chainsaw: 'Corpo a corpo · alcance de 1,2 m',
+  chainsaw: 'Corpo a corpo · só corta encostado',
 };
 
-/** Montagem visual do Mech; só consulta o contrato existente e nunca participa do tick de combate. */
+/** Ícones de traço (24×24) de cada arma. */
+const WEAPON_ICON: Record<WeaponId, string> = {
+  plasma: '<path d="M3 13h11l2-3h5v6h-5l-2-3" /><circle cx="7" cy="13" r="2.5" /><path d="M16 10v6" />',
+  rockets: '<rect x="4" y="6" width="14" height="12" rx="1" /><circle cx="8" cy="10" r="1.6" /><circle cx="14" cy="10" r="1.6" /><circle cx="8" cy="14" r="1.6" /><circle cx="14" cy="14" r="1.6" /><path d="M18 9h3v6h-3" />',
+  blaster: '<path d="M4 9h13l2 2v2H9l-1 5H5l1-5H4z" /><path d="M17 11h4" />',
+  chainsaw: '<rect x="3" y="9" width="7" height="7" rx="1" /><path d="M10 10h9a2.5 2.5 0 0 1 0 5h-9" /><path d="M12 10l1-2M15 10l1-2M18 10l1-2M12 15l1 2M15 15l1 2M18 15l1 2" />',
+};
+
+/** Planta em traço de cada chassi (60×84), no cartão do painel da esquerda. */
+const CHASSIS_ICON: Record<ChassisId, string> = {
+  vector09:
+    '<rect x="24" y="4" width="12" height="10" /><rect x="16" y="16" width="28" height="24" /><rect x="6" y="18" width="9" height="22" /><rect x="45" y="18" width="9" height="22" /><rect x="18" y="42" width="10" height="26" /><rect x="32" y="42" width="10" height="26" /><path d="M14 72h16M30 72h16" /><path d="M2 44h4M54 44h4" />',
+  android:
+    '<rect x="26" y="4" width="8" height="9" /><rect x="22" y="15" width="16" height="22" /><rect x="15" y="17" width="5" height="20" /><rect x="40" y="17" width="5" height="20" /><rect x="23" y="39" width="6" height="30" /><rect x="31" y="39" width="6" height="30" /><path d="M20 72h10M30 72h10M45 30h10" />',
+};
+
+/** Leituras de cada arma, como barras: o máximo é o maior valor do arsenal no MK III. */
+interface StatRow {
+  key: string;
+  label: string;
+  unit: string;
+  get(w: WeaponStats): number;
+  digits: number;
+  /** Maior é pior (calor, carga): a seta de melhora inverte. */
+  lowerIsBetter?: boolean;
+}
+const STATS: StatRow[] = [
+  { key: 'dmg', label: 'DANO', unit: '', get: (w) => w.damage, digits: 0 },
+  { key: 'rate', label: 'CADÊNCIA', unit: '/s', get: (w) => 1 / w.fireInterval, digits: 1 },
+  { key: 'heat', label: 'CALOR', unit: '%/s', get: (w) => (w.heatPerShot / w.fireInterval) * 100, digits: 0, lowerIsBetter: true },
+  { key: 'range', label: 'ALCANCE', unit: ' m', get: (w) => w.maxRange, digits: 0 },
+  { key: 'mass', label: 'CARGA', unit: ' t', get: (w) => w.mass, digits: 1, lowerIsBetter: true },
+];
+const STAT_MAX: Record<string, number> = Object.fromEntries(STATS.map((s) => [s.key, Math.max(...WEAPON_IDS.map((id) => s.get(weapon(id, 2))))]));
+
+const num = (x: number, digits: number) => x.toFixed(digits).replace('.', ',');
+
+type Tab = 'chassi' | 'armas' | 'numeros';
+
+/**
+ * Hangar 2.0, camada 2 (Claude, 26/09; a primeira versão foi do Codex): a interface holográfica sobre o galpão 3D,
+ * no desenho da imagem de referência do dono (\`.tmp/arte/hangar-referencia.png\`).
+ * - Topo: marca, carga, piloto e o modo (offline ou a sala online).
+ * - Esquerda: o chassi, com a planta de cada robô em traço, e as leituras dele.
+ * - Direita: o console "caminhos de montagem" (armas; blindagem e módulos em breve), os dois braços, o nível de
+ *   potência e as barras de cada arma, a nova contra a atual.
+ * - Embaixo: as leituras da simulação (carga, calor, tempo para derrubar, dano) e o link da montagem.
+ * - No Mech: marcadores dos braços presos a eles, que acompanham o giro do pedestal.
+ * - No celular: o galpão ocupa a tela e os painéis viram abas embaixo.
+ * Só consulta o contrato (\`Hangar\`) e nunca participa do tick de combate.
+ */
 export class HangarMenu {
   private readonly root: HTMLDivElement;
   private readonly pauseOverlay = document.getElementById('overlay');
   private draft: LoadoutSpec;
   private selectedSlot: ArmSlot = 'right';
+  private tab: Tab = 'armas';
   private message = '';
   private messageKind: 'info' | 'error' = 'info';
+  private readonly hotRight: HTMLElement;
+  private readonly hotLeft: HTMLElement;
 
   constructor(
     private readonly hangar: Hangar,
@@ -51,121 +104,125 @@ export class HangarMenu {
     this.root.setAttribute('aria-modal', 'true');
     this.root.setAttribute('aria-label', 'Hangar de montagem');
     this.root.innerHTML = `
-      <header class="hangar-header">
-        <div class="hangar-brand"><span class="hangar-mark" aria-hidden="true">C</span><span><b>CYBERMECH</b><small>HANGAR · CENTRO DE MONTAGEM</small></span></div>
-        <div class="hangar-header-state"><span class="hangar-live-dot"></span><span>SISTEMA LOCAL</span><b id="hangar-header-name"></b></div>
-        <button class="hangar-close" type="button" data-action="close" aria-label="Voltar à pausa">×</button>
-      </header>
-      <div class="hangar-workspace">
-        <aside class="hangar-rail hangar-chassis-rail">
-          <div class="hangar-section-label"><span>01</span> CHASSI</div>
-          <div id="hangar-chassis-list" class="hangar-chassis-list"></div>
-          <div class="hangar-spec-card">
-            <div class="hangar-section-label"><span>LEITURA DO CHASSI</span></div>
-            <div class="hangar-spec-row"><span>ALTURA</span><b id="hangar-height"></b></div>
-            <div class="hangar-spec-row"><span>VELOCIDADE</span><b id="hangar-speed"></b></div>
-            <div class="hangar-spec-row"><span>BLINDAGEM · TORSO</span><b id="hangar-armor"></b></div>
-            <div class="hangar-spec-row"><span>DISSIPADOR</span><b id="hangar-cooling"></b></div>
-          </div>
-          <p class="hangar-footnote">Os números vêm do chassi e do arsenal reais do jogo.</p>
-        </aside>
-
-        <section class="hangar-stage" aria-label="Prévia do Mech">
-          <div class="hangar-stage-grid"></div>
-          <div class="hangar-stage-top"><span id="hangar-preview-mode"></span><span id="hangar-preview-class"></span></div>
-          <div class="hangar-orbit hangar-orbit-a"></div><div class="hangar-orbit hangar-orbit-b"></div>
-          <div class="hangar-platform"><i></i><i></i><i></i></div>
-          <div class="hangar-mech hologram-vector" id="hangar-mech">
-            <svg viewBox="0 0 420 510" role="img" aria-label="Silhueta holográfica do robô selecionado">
-              <defs>
-                <linearGradient id="hangar-shell" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d9f8ff" stop-opacity=".9"/><stop offset=".42" stop-color="#55b9d0" stop-opacity=".55"/><stop offset="1" stop-color="#163342" stop-opacity=".8"/></linearGradient>
-                <linearGradient id="hangar-dark" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#25495a"/><stop offset="1" stop-color="#09131c"/></linearGradient>
-              </defs>
-              <g class="holo-back-lines"><path d="M210 20v455M56 110h308M74 400h272"/></g>
-              <g class="holo-robot">
-                <path class="holo-outline" d="M174 48 191 29h38l18 19v39l-12 18h-50l-11-18z"/>
-                <path class="holo-glass" d="m184 65 10-8h31l10 9-4 14h-44z"/>
-                <path class="holo-outline" d="m157 108 53-13 53 13 28 25-10 92-71 25-71-25-10-92z"/>
-                <path class="holo-panel" d="m176 121 34-8 34 8 15 48-49 20-49-20z"/>
-                <path class="holo-detail" d="M169 119 145 133v47l21 11m85-72 24 14v47l-21 11M190 210l20 8 20-8v32"/>
-                <path class="holo-outline" d="m142 123-27 7-25 29 9 47 26 8 17-25-11-26 20-16zm136 0 27 7 25 29-9 47-26 8-17-25 11-26-20-16z"/>
-                <path class="holo-outline" d="m103 198-20 26 8 76 22 21 26-12-7-67 15-24zm214 0 20 26-8 76-22 21-26-12 7-67-15-24z"/>
-                <path class="holo-detail" d="m97 236 30-7m-33 42 31-8m168-34 30 7m-27 35 31 8"/>
-                <path class="holo-outline" d="m160 238 50 11 50-11 22 55-20 75-52 15-52-15-20-75z"/>
-                <path class="holo-dark" d="m155 270 55 9 55-9-13 37-42 11-42-11z"/>
-                <path class="holo-outline" d="m165 375 42 10-7 57-17 30-48-3 2-21 20-21zm90 0-42 10 7 57 17 30 48-3-2-21-20-21z"/>
-                <path class="holo-outline" d="m137 459 47 1 16 14 3 18h-79l3-20zm146 0-47 1-16 14-3 18h79l-3-20z"/>
-                <path class="holo-detail" d="m158 388 36 8m-42 39 41 2m69-49-36 8m42 39-41 2"/>
-                <path class="holo-cyan" d="M193 72h34m-17 0v25m-64 46h18m117 0h18M210 192v36m-79 33 21 3m137-3-21 3M177 314l33 9 33-9"/>
-              </g>
-            </svg>
-          </div>
-          <button class="hangar-hotspot hotspot-right" type="button" data-slot="right" aria-label="Selecionar braço direito"><b>01</b><span>BRAÇO D</span></button>
-          <button class="hangar-hotspot hotspot-left" type="button" data-slot="left" aria-label="Selecionar braço esquerdo"><b>02</b><span>BRAÇO E</span></button>
-          <div class="hangar-stage-caption"><b id="hangar-mech-title"></b><span id="hangar-mech-detail"></span></div>
-        </section>
-
-        <aside class="hangar-rail hangar-loadout-rail">
-          <div class="hangar-section-label"><span>02</span> ENCAIXES</div>
-          <div id="hangar-slot-list" class="hangar-slot-list"></div>
-          <div class="hangar-section-label hangar-weapon-label"><span>03</span> CONFIGURAÇÃO</div>
-          <div id="hangar-weapon-editor" class="hangar-weapon-editor"></div>
-          <div class="hangar-module-stubs">
-            <span>MÓDULOS</span><b>OMBROS <i>EM BREVE</i></b><b>TORSO <i>EM BREVE</i></b>
-          </div>
-        </aside>
+      <div class="hg-stage" aria-hidden="true">
+        <button class="hg-hotspot" id="hg-hot-right" type="button" data-slot="right" tabindex="-1"><i></i><span><b>01</b> BRAÇO D</span></button>
+        <button class="hg-hotspot" id="hg-hot-left" type="button" data-slot="left" tabindex="-1"><i></i><span><b>02</b> BRAÇO E</span></button>
+        <div class="hg-caption"><b id="hangar-mech-title"></b><span id="hangar-mech-detail"></span><small>ARRASTE PARA GIRAR</small></div>
       </div>
-
-      <footer class="hangar-footer">
-        <div class="hangar-metrics">
-          <div class="hangar-metric hangar-mass"><span>CARGA DO CHASSI</span><b id="hangar-mass-value"></b><div class="hangar-meter"><i id="hangar-mass-fill"></i></div><small id="hangar-mass-caption"></small></div>
-          <div class="hangar-metric"><span>SUPERAQUECIMENTO</span><b id="hangar-heat-value"></b><small>simulação padrão · correndo e disparando</small></div>
-          <div class="hangar-metric"><span>TEMPO PARA DERRUBAR</span><b id="hangar-ttk-value"></b><small>alvo parado · acerto perfeito · padrão</small></div>
-          <div class="hangar-metric"><span>DANO EM 20 S</span><b id="hangar-damage-value"></b><small>calor e recarga · configuração padrão</small></div>
+      <header class="hg-top">
+        <div class="hg-brand"><svg class="hg-emblem" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 29 9v14l-13 7L3 23V9z" /><path d="M16 8 23 12v8l-7 4-7-4v-8z" /></svg><span><b>CYBERMECH</b><small>HANGAR · CENTRO DE MONTAGEM</small></span></div>
+        <div class="hg-chips">
+          <span class="hg-chip"><i>CARGA</i><b id="hg-top-load"></b></span>
+          <span class="hg-chip"><i>PILOTO</i><b id="hg-top-pilot"></b></span>
+          <span class="hg-chip hg-mode"><em></em><b id="hg-top-mode"></b></span>
         </div>
-        <div class="hangar-actions">
-          <div class="hangar-share"><input id="hangar-build-link" aria-label="Link da montagem" readonly><button type="button" data-action="copy">COPIAR LINK</button></div>
-          <div class="hangar-action-buttons"><span id="hangar-message" role="status"></span><button class="hangar-back" type="button" data-action="close">VOLTAR</button><button class="hangar-apply" type="button" data-action="apply">APLICAR MONTAGEM <span>›</span></button></div>
+        <button class="hg-close" type="button" data-action="close" aria-label="Voltar à pausa">×</button>
+      </header>
+      <aside class="hg-panel hg-chassis" data-tab="chassi">
+        <div class="hg-head"><span>01</span> CHASSI <em>HGR-01</em></div>
+        <div id="hangar-chassis-list" class="hg-chassis-list"></div>
+        <dl class="hg-specs">
+          <div><dt>ALTURA</dt><dd id="hangar-height"></dd></div>
+          <div><dt>VELOCIDADE</dt><dd id="hangar-speed"></dd></div>
+          <div><dt>BLINDAGEM · TORSO</dt><dd id="hangar-armor"></dd></div>
+          <div><dt>DISSIPADOR</dt><dd id="hangar-cooling"></dd></div>
+        </dl>
+        <p class="hg-note">Números lidos do chassi e do arsenal do jogo.</p>
+      </aside>
+      <section class="hg-panel hg-console" data-tab="armas">
+        <div class="hg-head"><span>02</span> CAMINHOS DE MONTAGEM <em>CFG-02</em></div>
+        <div class="hg-paths" aria-label="Caminhos de montagem">
+          <button type="button" class="hg-path selected"><svg viewBox="0 0 24 24" aria-hidden="true">${WEAPON_ICON.plasma}</svg><b>ARMAS</b><small>braços D e E</small></button>
+          <button type="button" class="hg-path soon" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /></svg><b>BLINDAGEM</b><small>em breve</small></button>
+          <button type="button" class="hg-path soon" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" /><path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" /></svg><b>MÓDULOS</b><small>em breve</small></button>
         </div>
-      </footer>`;
+        <div id="hangar-slot-list" class="hg-slots"></div>
+        <div id="hangar-weapon-editor" class="hg-editor"></div>
+        <div class="hg-actions">
+          <span id="hangar-message" role="status"></span>
+          <button class="hg-btn hg-ghost" type="button" data-action="close">VOLTAR</button>
+          <button class="hg-btn hangar-apply" type="button" data-action="apply">APLICAR MONTAGEM ›</button>
+        </div>
+      </section>
+      <footer class="hg-panel hg-readout" data-tab="numeros">
+        <div class="hg-metric hg-load"><span>CARGA DO CHASSI</span><b id="hangar-mass-value"></b><div class="hg-meter"><i id="hangar-mass-fill"></i></div><small id="hangar-mass-caption"></small></div>
+        <div class="hg-metric"><span>FERVE EM</span><b id="hangar-heat-value"></b><small>correndo e disparando tudo</small></div>
+        <div class="hg-metric"><span>DERRUBA UM MECH EM</span><b id="hangar-ttk-value"></b><small>torso, acerto perfeito</small></div>
+        <div class="hg-metric"><span>DANO EM 20 S</span><b id="hangar-damage-value"></b><small>com calor e recarga</small></div>
+        <div class="hg-share"><input id="hangar-build-link" aria-label="Link da montagem" readonly><button type="button" data-action="copy">COPIAR LINK</button></div>
+      </footer>
+      <nav class="hg-tabs" aria-label="Painéis do Hangar">
+        <button type="button" data-tab-btn="chassi">CHASSI</button>
+        <button type="button" data-tab-btn="armas">ARMAS</button>
+        <button type="button" data-tab-btn="numeros">NÚMEROS</button>
+        <button class="hg-tab-apply" type="button" data-action="apply">APLICAR ›</button>
+      </nav>`;
     document.body.append(this.root);
+    this.hotRight = this.root.querySelector<HTMLElement>('#hg-hot-right')!;
+    this.hotLeft = this.root.querySelector<HTMLElement>('#hg-hot-left')!;
     button?.addEventListener('click', (event) => {
       event.stopPropagation();
       this.open();
     });
     this.root.addEventListener('click', (event) => this.onClick(event));
-    // Arrastar no palco gira o Mech no pedestal (mouse e dedo).
-    const stage = this.root.querySelector<HTMLElement>('.hangar-stage');
+    this.root.addEventListener('change', (event) => this.onChange(event));
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && this.isOpen) this.close();
+    });
+    // Arrastar no galpão (fora dos painéis) gira o Mech no pedestal, com mouse ou dedo.
+    const stage = this.root.querySelector<HTMLElement>('.hg-stage')!;
     let lastX: number | null = null;
-    stage?.addEventListener('pointerdown', (e) => {
+    stage.addEventListener('pointerdown', (e) => {
       if ((e.target as Element).closest('button')) return;
       lastX = e.clientX;
       stage.setPointerCapture(e.pointerId);
     });
-    stage?.addEventListener('pointermove', (e) => {
+    stage.addEventListener('pointermove', (e) => {
       if (lastX === null) return;
       this.preview.rotate?.(e.clientX - lastX);
       lastX = e.clientX;
     });
     const release = () => (lastX = null);
-    stage?.addEventListener('pointerup', release);
-    stage?.addEventListener('pointercancel', release);
-    this.root.addEventListener('change', (event) => this.onChange(event));
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !this.root.classList.contains('hidden')) this.close();
-    });
+    stage.addEventListener('pointerup', release);
+    stage.addEventListener('pointercancel', release);
     this.render();
+  }
+
+  get isOpen(): boolean {
+    return !this.root.classList.contains('hidden');
+  }
+
+  /**
+   * Por quadro, com o Hangar aberto: os marcadores dos braços na posição da tela onde cada braço está (null = fora).
+   * Nada alocado além do texto do estilo.
+   */
+  placeHotspots(right: { x: number; y: number } | null, left: { x: number; y: number } | null): void {
+    const w = window.innerWidth;
+    const place = (el: HTMLElement, p: { x: number; y: number } | null) => {
+      el.hidden = p === null;
+      if (!p) return;
+      el.style.transform = `translate(${Math.round(p.x)}px, ${Math.round(p.y)}px)`;
+      // O rótulo aponta para fora do Mech, mas nunca sai da tela.
+      let toLeft = p.x < w * 0.45;
+      if (toLeft && p.x < 170) toLeft = false;
+      else if (!toLeft && p.x > w - 170) toLeft = true;
+      el.classList.toggle('to-left', toLeft);
+    };
+    place(this.hotRight, right);
+    place(this.hotLeft, left);
   }
 
   private open(): void {
     this.draft = copySpec(this.hangar.current);
     this.message = '';
-    this.root.classList.remove('hidden');
+    this.root.classList.remove('hidden', 'hg-enter');
+    void this.root.offsetWidth; // reinicia a animação de entrada
+    this.root.classList.add('hg-enter');
     this.pauseOverlay?.classList.add('hidden');
     document.documentElement.classList.add('hangar-open');
     this.preview.open();
     this.render();
-    this.root.querySelector<HTMLButtonElement>('[data-action="close"]')?.focus();
+    this.root.querySelector<HTMLButtonElement>('.hangar-apply')?.focus();
   }
 
   private close(): void {
@@ -177,26 +234,35 @@ export class HangarMenu {
 
   private onClick(event: MouseEvent): void {
     const target = event.target instanceof Element ? event.target : null;
+    const tab = target?.closest<HTMLButtonElement>('[data-tab-btn]')?.dataset.tabBtn;
+    if (tab === 'chassi' || tab === 'armas' || tab === 'numeros') {
+      this.tab = tab;
+      this.render();
+      return;
+    }
     const slot = target?.closest<HTMLButtonElement>('[data-slot]')?.dataset.slot;
     if (slot === 'right' || slot === 'left') {
       this.selectedSlot = slot;
+      this.tab = 'armas';
       this.message = '';
       this.render();
       return;
     }
     const chassis = target?.closest<HTMLButtonElement>('[data-chassis]')?.dataset.chassis;
     if (chassis === 'vector09' || chassis === 'android') {
-      this.draft = factorySpec(chassis);
-      this.selectedSlot = 'right';
-      this.message = 'Montagem de fábrica carregada. Aplique para confirmar.';
-      this.messageKind = 'info';
+      if (chassis !== this.draft.chassis) {
+        this.draft = chassis === this.hangar.current.chassis ? copySpec(this.hangar.current) : factorySpec(chassis);
+        this.selectedSlot = 'right';
+        this.message = chassis === this.hangar.current.chassis ? '' : 'Piloto novo: aplique para trocar (a partida recomeça).';
+        this.messageKind = 'info';
+      }
       this.render();
       return;
     }
     const tier = target?.closest<HTMLButtonElement>('[data-tier]')?.dataset.tier;
     if (tier === '0' || tier === '1' || tier === '2') {
       const selected = Number(tier) as Tier;
-      this.draft = withArm(this.draft, this.selectedSlot, (arm) => arm ? { ...arm, tier: selected } : null);
+      this.draft = withArm(this.draft, this.selectedSlot, (arm) => (arm ? { ...arm, tier: selected } : null));
       this.message = '';
       this.render();
       return;
@@ -216,13 +282,11 @@ export class HangarMenu {
 
   private onChange(event: Event): void {
     const target = event.target;
-    if (!(target instanceof HTMLSelectElement)) return;
-    if (target.id === 'hangar-weapon-select') {
-      const selected = target.value as WeaponId | '';
-      this.draft = withArm(this.draft, this.selectedSlot, () => selected ? { id: selected, tier: this.draft[this.selectedSlot]?.tier ?? 0 } : null);
-      this.message = '';
-      this.render();
-    }
+    if (!(target instanceof HTMLSelectElement) || target.id !== 'hangar-weapon-select') return;
+    const selected = target.value as WeaponId | '';
+    this.draft = withArm(this.draft, this.selectedSlot, () => (selected ? { id: selected, tier: this.draft[this.selectedSlot]?.tier ?? 0 } : null));
+    this.message = '';
+    this.render();
   }
 
   private apply(): void {
@@ -237,22 +301,20 @@ export class HangarMenu {
     if (previousChassis !== this.draft.chassis) {
       this.message = 'Trocando piloto…';
       this.messageKind = 'info';
+      this.renderMessage();
       reloadWithout('build');
       return;
     }
-    this.message = this.preview.applied?.() ?? 'Montagem salva · entra no próximo renascimento.';
+    this.message = this.preview.applied?.() ?? 'Montagem salva.';
     this.messageKind = 'info';
     this.render();
   }
 
   private async copyLink(): Promise<void> {
-    const url = new URL(location.href);
-    url.searchParams.set('build', loadoutKey(this.draft));
     const input = this.root.querySelector<HTMLInputElement>('#hangar-build-link')!;
-    input.value = url.toString();
     try {
       await navigator.clipboard.writeText(input.value);
-      this.message = 'Link copiado.';
+      this.message = 'Link copiado: quem abrir entra com esta montagem.';
     } catch {
       input.focus();
       input.select();
@@ -263,66 +325,85 @@ export class HangarMenu {
   }
 
   private render(): void {
-    const chassis = CHASSIS[this.draft.chassis];
-    const label = CHASSIS_LABEL[this.draft.chassis];
     const spec = this.draft;
+    const chassis = CHASSIS[spec.chassis];
+    const label = CHASSIS_LABEL[spec.chassis];
     const report = this.hangar.report(spec);
-    const selectedArm = spec[this.selectedSlot];
-    const available = armOptions(this.selectedSlot, spec.chassis);
-    const selectedWeapon = selectedArm ? weapon(selectedArm.id, selectedArm.tier) : null;
-    const capPct = Math.min(100, (report.mass / report.capacity) * 100);
-    const name = label.title;
+    const current = this.hangar.current;
+    this.root.dataset.tab = this.tab;
+    for (const b of this.root.querySelectorAll<HTMLButtonElement>('[data-tab-btn]')) b.classList.toggle('selected', b.dataset.tabBtn === this.tab);
+
     // O galpão 3D mostra a montagem do rascunho (a válida; fora da carga, as armas de fábrica do chassi).
-    this.root.classList.add('scene-3d');
     this.preview.show?.(spec.chassis, report.check.ok ? report.check.loadout : chassis.loadout);
 
-    this.setText('#hangar-header-name', name);
-    this.setText('#hangar-preview-mode', 'GALPÃO 3D · ARRASTE PARA GIRAR');
-    this.setText('#hangar-preview-class', label.className);
-    this.setText('#hangar-mech-title', name);
-    this.setText('#hangar-mech-detail', label.detail);
-    this.root.querySelector('#hangar-mech')?.classList.toggle('is-android', spec.chassis === 'android');
-    this.setText('#hangar-height', `${chassis.height.toFixed(1).replace('.', ',')} m`);
-    this.setText('#hangar-speed', `${chassis.moveSpeed.toFixed(1).replace('.', ',')} m/s`);
-    this.setText('#hangar-armor', `${chassis.maxModuleHealth.torso} HP`);
-    this.setText('#hangar-cooling', `${(chassis.heatCooling * 100).toFixed(0)}% / s`);
+    this.setText('hg-top-load', `${num(report.mass, 1)} / ${num(report.capacity, 0)} t`);
+    this.setText('hg-top-pilot', label.title);
+    this.setText('hg-top-mode', this.preview.status?.() ?? 'OFFLINE');
+    this.setText('hangar-mech-title', label.title);
+    this.setText('hangar-mech-detail', `${label.className} · ${label.detail}`);
+    this.setText('hangar-height', `${num(chassis.height, 1)} m`);
+    this.setText('hangar-speed', `${num(chassis.moveSpeed, 1)} m/s`);
+    this.setText('hangar-armor', `${chassis.maxModuleHealth.torso} HP`);
+    this.setText('hangar-cooling', `${Math.round(chassis.heatCooling * 100)}% / s`);
 
     const chassisList = this.root.querySelector<HTMLElement>('#hangar-chassis-list')!;
-    chassisList.innerHTML = (Object.keys(CHASSIS) as ChassisId[]).map((id) => {
-      const item = CHASSIS_LABEL[id];
-      const selected = id === spec.chassis;
-      return `<button class="hangar-chassis-card${selected ? ' selected' : ''}" type="button" data-chassis="${id}" aria-pressed="${selected}"><span>${item.className}</span><b>${item.title}</b><small>${CHASSIS[id].weaponCapacity} t · ${CHASSIS[id].height.toFixed(1).replace('.', ',')} m</small></button>`;
-    }).join('');
+    chassisList.innerHTML = (Object.keys(CHASSIS) as ChassisId[])
+      .map((id) => {
+        const c = CHASSIS[id];
+        const l = CHASSIS_LABEL[id];
+        const selected = id === spec.chassis;
+        const inUse = id === current.chassis;
+        return `<button class="hg-chassis-card${selected ? ' selected' : ''}" type="button" data-chassis="${id}" aria-pressed="${selected}"><svg viewBox="0 0 60 84" aria-hidden="true">${CHASSIS_ICON[id]}</svg><span><small>${l.className}</small><b>${l.title}</b><em>${num(c.weaponCapacity, 0)} t de carga · ${num(c.height, 1)} m${inUse ? ' · EM USO' : ''}</em></span></button>`;
+      })
+      .join('');
 
     const slotList = this.root.querySelector<HTMLElement>('#hangar-slot-list')!;
-    slotList.innerHTML = (['right', 'left'] as const).map((slot) => {
-      const arm = spec[slot];
-      const item = arm ? weapon(arm.id, arm.tier) : null;
-      const selected = slot === this.selectedSlot;
-      return `<button class="hangar-slot-card${selected ? ' selected' : ''}${!item ? ' empty' : ''}" type="button" data-slot="${slot}" aria-pressed="${selected}"><span class="slot-glyph">${SLOT_SHORT[slot]}</span><span class="slot-copy"><small>${SLOT_LABEL[slot]}</small><b>${item?.name ?? 'SEM ARMA'}</b></span><span class="slot-tier">${item ? `MK ${['I', 'II', 'III'][item.tier]}` : '—'}</span></button>`;
-    }).join('');
-    this.root.querySelector<HTMLButtonElement>('.hotspot-right')?.classList.toggle('active', this.selectedSlot === 'right');
-    this.root.querySelector<HTMLButtonElement>('.hotspot-left')?.classList.toggle('active', this.selectedSlot === 'left');
+    slotList.innerHTML = (['right', 'left'] as const)
+      .map((slot) => {
+        const arm = spec[slot];
+        const w = arm ? weapon(arm.id, arm.tier) : null;
+        const selected = slot === this.selectedSlot;
+        return `<button class="hg-slot${selected ? ' selected' : ''}${w ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${w ? WEAPON_ICON[w.id] : '<path d="M6 12h12" />'}</svg><span><small>${SLOT_LABEL[slot]}</small><b>${w?.name ?? 'VAZIO'}</b></span><em>${w ? TIERS[w.tier]!.label : '—'}</em></button>`;
+      })
+      .join('');
 
+    const arm = spec[this.selectedSlot];
+    const w = arm ? weapon(arm.id, arm.tier) : null;
+    const nowArm = current.chassis === spec.chassis ? current[this.selectedSlot] : null;
+    const was = nowArm ? weapon(nowArm.id, nowArm.tier) : null;
+    const options = armOptions(this.selectedSlot, spec.chassis)
+      .map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name}</option>`)
+      .join('');
     const editor = this.root.querySelector<HTMLElement>('#hangar-weapon-editor')!;
-    const weaponOptions = available.map((id) => `<option value="${id}"${selectedArm?.id === id ? ' selected' : ''}>${weapon(id).name}</option>`).join('');
-    editor.innerHTML = `<label class="hangar-field-label" for="hangar-weapon-select">ARMAMENTO</label><select id="hangar-weapon-select"${this.selectedSlot === 'left' ? '' : ' disabled'}>${this.selectedSlot === 'left' ? '<option value="">SEM ARMA</option>' : ''}${weaponOptions}</select><span class="hangar-weapon-hint">${selectedWeapon ? WEAPON_HINT[selectedWeapon.id] : 'Encaixe vazio · reduz o peso total.'}</span><div class="hangar-field-label tier-label">NÍVEL DE POTÊNCIA</div><div class="hangar-tier-list">${TIERS.map((tier, index) => `<button class="hangar-tier${selectedArm?.tier === index ? ' selected' : ''}" type="button" data-tier="${index}" aria-pressed="${selectedArm?.tier === index}"${selectedArm ? '' : ' disabled'}><b>${tier.label}</b><small>${index === 0 ? 'PADRÃO' : `+${Math.round((tier.damage - 1) * 100)}% DANO`}</small></button>`).join('')}</div>${selectedWeapon ? `<div class="hangar-weapon-stats"><span>DANO <b>${selectedWeapon.damage}</b></span><span>CADÊNCIA <b>${(1 / selectedWeapon.fireInterval).toFixed(1).replace('.', ',')}/s</b></span><span>CARGA <b>${selectedWeapon.mass.toFixed(1).replace('.', ',')} t</b></span></div>` : ''}`;
+    editor.innerHTML = `
+      <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ARMAMENTO</label>
+      <select id="hangar-weapon-select">${this.selectedSlot === 'left' ? `<option value=""${arm ? '' : ' selected'}>VAZIO (menos carga)</option>` : ''}${options}</select>
+      <p class="hg-hint">${w ? WEAPON_HINT[w.id] : 'Encaixe vazio: sobra carga para o outro braço.'}</p>
+      <div class="hg-label">NÍVEL DE POTÊNCIA</div>
+      <div class="hg-tiers">${TIERS.map((t, i) => `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : `+${Math.round((t.damage - 1) * 100)}% dano`}</small></button>`).join('')}</div>
+      ${w ? `<div class="hg-bars">${STATS.map((s) => bar(s, w, was)).join('')}</div><p class="hg-legend"><i class="now"></i> esta montagem <i class="was"></i> a que está no Mech</p>` : ''}`;
 
-    this.setText('#hangar-mass-value', `${report.mass.toFixed(1).replace('.', ',')} / ${report.capacity} t`);
-    this.setText('#hangar-mass-caption', `${Math.max(0, report.capacity - report.mass).toFixed(1).replace('.', ',')} t livres`);
+    const capPct = Math.min(100, (report.mass / report.capacity) * 100);
     const fill = this.root.querySelector<HTMLElement>('#hangar-mass-fill')!;
     fill.style.width = `${capPct}%`;
-    fill.classList.toggle('over', !report.check.ok && report.check.error === 'carga');
-    this.setText('#hangar-heat-value', report.overheatAt === null ? 'ESTÁVEL' : `${report.overheatAt.toFixed(1).replace('.', ',')} s`);
-    this.setText('#hangar-ttk-value', Number.isFinite(report.ttkTorso) ? `${report.ttkTorso.toFixed(1).replace('.', ',')} s` : '—');
-    this.setText('#hangar-damage-value', `${Math.round(report.damage20)} HP`);
-    const buildLink = this.root.querySelector<HTMLInputElement>('#hangar-build-link')!;
+    const over = !report.check.ok && report.check.error === 'carga';
+    fill.classList.toggle('over', over);
+    this.setText('hangar-mass-value', `${num(report.mass, 1)} / ${num(report.capacity, 0)} t`);
+    this.setText('hangar-mass-caption', over ? 'PASSOU DA CARGA: alivie um braço' : `${num(Math.max(0, report.capacity - report.mass), 1)} t livres`);
+    this.setText('hangar-heat-value', report.overheatAt === null ? 'NÃO FERVE' : `${num(report.overheatAt, 1)} s`);
+    this.setText('hangar-ttk-value', Number.isFinite(report.ttkTorso) ? `${num(report.ttkTorso, 1)} s` : '—');
+    this.setText('hangar-damage-value', `${Math.round(report.damage20)} HP`);
     const shareUrl = new URL(location.href);
     shareUrl.searchParams.set('build', loadoutKey(spec));
-    buildLink.value = shareUrl.toString();
-    const apply = this.root.querySelector<HTMLButtonElement>('[data-action="apply"]')!;
-    apply.disabled = !report.check.ok;
-    apply.title = report.check.ok ? 'Salvar a montagem' : report.check.detail;
+    shareUrl.searchParams.delete('sala');
+    this.root.querySelector<HTMLInputElement>('#hangar-build-link')!.value = shareUrl.toString();
+    for (const apply of this.root.querySelectorAll<HTMLButtonElement>('[data-action="apply"]')) {
+      apply.disabled = !report.check.ok;
+      apply.title = report.check.ok ? 'Salvar e aplicar a montagem' : report.check.detail;
+    }
+    this.hotLeft.querySelector('span')!.innerHTML = `<b>02</b> ${spec.left ? 'BRAÇO E' : 'BRAÇO E · VAZIO'}`;
+    this.hotRight.classList.toggle('selected', this.selectedSlot === 'right');
+    this.hotLeft.classList.toggle('selected', this.selectedSlot === 'left');
     this.renderMessage();
   }
 
@@ -333,10 +414,21 @@ export class HangarMenu {
     node.dataset.kind = this.messageKind;
   }
 
-  private setText(selector: string, text: string): void {
-    const node = this.root.querySelector<HTMLElement>(selector);
+  private setText(id: string, text: string): void {
+    const node = this.root.querySelector<HTMLElement>(`#${id}`);
     if (node) node.textContent = text;
   }
+}
+
+/** Uma barra de leitura: o valor da arma escolhida e, por baixo, o da que está no Mech (se for outra). */
+function bar(s: StatRow, w: WeaponStats, was: WeaponStats | null): string {
+  const v = s.get(w);
+  const max = STAT_MAX[s.key] || 1;
+  const old = was ? s.get(was) : null;
+  const delta = old === null ? 0 : v - old;
+  const better = s.lowerIsBetter ? delta < 0 : delta > 0;
+  const mark = Math.abs(delta) < 1e-6 ? '' : `<em class="${better ? 'up' : 'down'}">${delta > 0 ? '▲' : '▼'}</em>`;
+  return `<div class="hg-bar"><span>${s.label}</span><div class="hg-track"><i class="was" style="width:${old === null ? 0 : Math.min(100, (old / max) * 100)}%"></i><i class="now" style="width:${Math.min(100, (v / max) * 100)}%"></i></div><b>${num(v, s.digits)}${s.unit}</b>${mark}</div>`;
 }
 
 function copySpec(spec: LoadoutSpec): LoadoutSpec {
