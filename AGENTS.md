@@ -69,6 +69,7 @@ client/src/
   physics/     PhysicsWorld.ts (Rapier, FIXED_DT)
   entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts
   sim/         Match.ts (a partida inteira sem tela: o que o servidor roda; o Game desenha por cima)
+  net/         adapters.ts (ponte entre a simulação e os contratos de rede)
   hangar/      loadout.ts (contrato da montagem: LoadoutSpec, validateLoadout), Hangar.ts (montagem salva, link ?build=, API da tela)
   tuning/      power.ts (potências: multiplicadores por arma e por clã, link, relatório de equilíbrio), PowerStore.ts (salvas, ?potencias=)
   player/      PlayerController.ts (input/câmera -> MechInput, tiro)
@@ -79,6 +80,7 @@ client/src/
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde)
   debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)
+shared/net/    contratos do multiplayer, sem dependência do cliente: constants.ts, codec.ts, input.ts, state.ts, events.ts, messages.ts
 scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), landing.mjs (landing do jogo), oficina.mjs (bancada de testes), painel.mjs (sala de controle: o case),
                site/dados.mjs + site/tema.mjs + site/graficos.mjs (dados, visual e gráficos das páginas), site.mjs (site + .htaccess + capturas + teste), install-hooks.mjs
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)

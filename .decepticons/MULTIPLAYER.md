@@ -20,7 +20,7 @@
 | P1 | **Separar simulação de render** | Uma simulação só, no cliente e no servidor (G14); o servidor não pode depender de WebGL nem de DOM | **Parcial.** M1 (PR #49): `sim/Match.ts` roda a partida inteira no Node sem WebGL nem DOM. Mas a simulação ainda **cria objetos de render** e **chama efeitos** (seção 8), e o tiro do jogador sai do modelo desenhado. A separação completa é a proposta da seção 9, a decidir |
 | P2 | **Draw calls por Mech de ~34 para ≤ 10** | 8 Mechs + andróides na tela numa GPU integrada (G12) | ✅ Codex (PR #43): 9 malhas por Vector-09 e 9 por andróide (contado no código em 25/09: uma malha combinada por pivô articulado; o flash branco que veio junto foi corrigido no PR #48) |
 | P3 | **FPS medido numa GPU integrada** | Saber a folga antes de somar rede | dono, num notebook comum, com o painel de desempenho (`'`) |
-| P4 | **Contratos de rede definidos e mergeados** (seção 5) | Regra 5 do AGENTS: contrato antes de paralelizar | a fazer (etapa M2) |
+| P4 | **Contratos de rede definidos e mergeados** (seção 5) | Regra 5 do AGENTS: contrato antes de paralelizar | ✅ M2 (Claude, 26/09): `shared/net/`, com testes de tamanho e de ida e volta numa partida real |
 | P5 | Montagem validável no servidor | Ninguém entra com arma adulterada | ✅ `validateLoadout` (Hangar), texto curto de ~30 bytes |
 
 ## 3. Arquitetura
@@ -67,14 +67,26 @@ Estado de um Mech por snapshot, quantizado (G11):
 - **Download estimado: ~4 KB/s por jogador** (meta: 8). **Upload:** input de ~8 B a 60 Hz, em pacotes de 2 ticks:
   ~0,6 KB/s (meta: 2).
 
-## 5. Contratos (etapa M2, mergeados antes de qualquer rede)
+## 5. Contratos (etapa M2, ✅ 26/09)
+
+Em `shared/net/`, sem nenhuma dependência do cliente (o servidor importa direto). Ponte com a simulação do jogo em
+`client/src/net/adapters.ts`.
 
 | Contrato | Conteúdo | Onde |
 |---|---|---|
-| `NetInput` | `seq`, `tick`, `moveX`/`moveZ` (int8), `moveYaw`/`yaw`/`pitch` (16 bits), botões em bitmask: pulo, dash, tiro, secundária | `shared/net/input.ts` |
-| `MechState` | os campos da tabela da seção 4 + id e montagem (`loadoutKey`) | `shared/net/state.ts` (schema do Colyseus) |
-| Mensagens | `join { nome, build }`, `welcome { id, tick, sala }`, `input`, `event { tipo, dados }`, `leave` | `shared/net/messages.ts` |
-| Codec | ida e volta de cada mensagem, com teste de tamanho em bytes (o teste falha se estourar o orçamento) | `shared/net/codec.test.ts` |
+| Ritmos e tetos | 60 Hz de simulação, estado a 20 Hz, comandos a 30 Hz (2 ticks por pacote), sala de 8 Mechs (12 unidades com andróides e técnico), metas de banda | `constants.ts` |
+| Codec | escritor e leitor de bytes sobre um buffer reutilizado (sem alocação por mensagem, G4); quantização: posição em cm (16 bits), ângulos em 16 bits, frações em 8 bits; leitura torta recusa a mensagem inteira (G7) | `codec.ts` |
+| `NetInput` | comando de um tick: eixos (8 bits), `moveYaw`, `yaw` e `pitch` (16 bits), botões pulo, dash, tiro e secundária. **9 bytes**; o pacote leva o primeiro tick e os seguintes são consecutivos | `input.ts` |
+| `UnitState` | id, posição dos pés, yaw e pitch, vida das 6 partes (fração; um fio de vida nunca vira zero), calor, flags vivo, no chão, dash, superaquecido. **19 bytes** | `state.ts` |
+| Eventos | acerto (6 B), parte arrancada (3), abate (3), explosão (8), barricada (3), tiro (7), renascimento (2) | `events.ts` |
+| Mensagens | cliente: `JOIN` (apelido limpo e montagem), `INPUT`, `PING`, `LEAVE`; servidor: `WELCOME` (id, tick, sala), `ROSTER` (quem está na sala, com a montagem), `SNAPSHOT` (com o `ack`: o último comando seu já aplicado, para a reconciliação da M4), `EVENTS`, `PONG`, `REJECT` | `messages.ts` |
+| Testes | ida e volta de cada mensagem, tamanho em bytes, recusa do que vem torto, orçamento de banda e uma partida real passando pelo codec | `codec.test.ts`, `client/src/net/adapters.test.ts` |
+
+**Decisão da M2:** formato binário próprio, não o schema do Colyseus. O Colyseus leva as nossas mensagens como bytes;
+assim o tamanho de cada campo é nosso e o teste de banda mede o que vai no fio (G11). O delta (mandar só o que mudou)
+fica para quando precisar: **medido na M2, mandando tudo a cada estado, a sala cheia (12 unidades) gasta ~6,2 KB/s de
+download por jogador numa luta intensa, e cabem até 15 unidades antes de passar da meta de 8 KB/s**. Upload: ~0,8 KB/s
+(meta 2).
 
 ## 6. Etapas (um PR cada)
 
@@ -82,7 +94,7 @@ Estado de um Mech por snapshot, quantizado (G11):
 |---|---|---|
 | M0 | Este plano | Claude ✅ |
 | M1 | Partida sem tela (`sim/Match.ts`): a partida inteira roda no Node sem WebGL nem DOM, determinística sem destroços; o cliente monta a partida por ela ✅ (PR #49). **Ainda não** é a simulação compartilhada: ver seções 8 e 9 | Claude |
-| M2 | Contratos e codec binário, com testes de tamanho | Claude |
+| M2 | Contratos e codec binário, com testes de tamanho ✅ (26/09) | Claude |
 | M3 | `server/`: `ArenaRoom` com a simulação a 60 Hz, bots, entrada por `?sala=`; roda local com `npm run server` | Claude |
 | M4 | Prediction + reconciliação do Mech local; interpolação dos remotos; teste com latência e perda simuladas | Claude |
 | M5 | Tiros autoritativos com compensação de latência; eventos de acerto, parte e abate | Claude |
@@ -140,7 +152,9 @@ corrige. Se a correção aparecer na tela, os destroços vão para um mundo fís
   está no `MechInput`. No multiplayer, os dois têm de viajar no comando de cada tick (`NetInput`, seção 5).
 - **Destroços** mudam a simulação quando estão no mesmo mundo físico (seção 7).
 
-**Ainda não existe:** contratos de rede e codec (M2), `server/` com Colyseus (M3), prediction e reconciliação (M4),
+**Feito depois:** contratos de rede e codec (M2, 26/09, seção 5).
+
+**Ainda não existe:** `server/` com Colyseus (M3), prediction e reconciliação (M4),
 tiros autoritativos (M5), entrada por link e reconexão (M6).
 
 ## 9. Proposta de arquitetura: simulação × render × efeitos (a decidir; não implementada)
