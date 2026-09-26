@@ -9,12 +9,13 @@ export { ANDROID_STATS };
 
 const HIP = 1.0;
 
-function buildRig(paint: number, visor: number): MechRig {
+function buildRig(paint: number, visor: number, tool: AndroidTool): MechRig {
   const M = {
     shell: new THREE.MeshStandardMaterial({ color: paint, metalness: 0.25, roughness: 0.4 }),
     frame: new THREE.MeshStandardMaterial({ color: PALETTE.frame, metalness: 0.7, roughness: 0.5 }),
     visor: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: visor, emissiveIntensity: 4 }),
     thruster: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: visor, emissiveIntensity: 1 }),
+    saw: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: PALETTE.sodium, emissiveIntensity: 2.2 }),
   };
 
   const model = new THREE.Group();
@@ -44,12 +45,22 @@ function buildRig(paint: number, visor: number): MechRig {
   box(head, 0.2, 0.24, 0.22, M.shell, 0, 0.12, 0);
   box(head, 0.18, 0.05, 0.02, M.visor, 0, 0.14, -0.115);
 
-  // Braço direito: antebraço vira um blaster apontado para a frente.
+  // Braço direito: o antebraço é a ferramenta. Motosserra (combate): motor no punho e a lâmina para a
+  // frente, com as bordas dos dentes acesas em laranja. Ferramenta de conserto (técnico): o antebraço antigo.
   const rightArm = group(torso, 0.3, 0.52, 0);
   box(rightArm, 0.11, 0.3, 0.12, M.frame, 0, -0.15, 0);
-  box(rightArm, 0.13, 0.13, 0.42, M.shell, 0, -0.32, -0.15);
-  cyl(rightArm, 0.035, 0.12, M.visor, 0, -0.32, -0.38, Math.PI / 2);
-  const muzzle = group(rightArm, 0, -0.32, -0.45);
+  let muzzle: THREE.Object3D;
+  if (tool === 'chainsaw') {
+    box(rightArm, 0.15, 0.15, 0.28, M.shell, 0, -0.32, -0.08);
+    box(rightArm, 0.045, 0.13, 0.62, M.frame, 0, -0.32, -0.52);
+    box(rightArm, 0.05, 0.025, 0.62, M.saw, 0, -0.395, -0.52);
+    box(rightArm, 0.05, 0.025, 0.62, M.saw, 0, -0.245, -0.52);
+    muzzle = group(rightArm, 0, -0.32, -0.83);
+  } else {
+    box(rightArm, 0.13, 0.13, 0.42, M.shell, 0, -0.32, -0.15);
+    cyl(rightArm, 0.035, 0.12, M.visor, 0, -0.32, -0.38, Math.PI / 2);
+    muzzle = group(rightArm, 0, -0.32, -0.45);
+  }
 
   // Braço esquerdo: mão livre (sem arma secundária).
   const leftArm = group(torso, -0.3, 0.52, 0);
@@ -74,15 +85,20 @@ function buildRig(paint: number, visor: number): MechRig {
   };
 }
 
+/** O que vai no antebraço direito: motosserra (combate) ou a ferramenta de conserto (técnico). */
+export type AndroidTool = 'chainsaw' | 'repair';
+
 export interface AndroidOptions {
   /** Cor do casco (padrão: branco, como os humanoides de hoje). */
   paint?: number;
   /** Cor do visor e das luzes (padrão: vermelho de IA rebelde). */
   visor?: number;
+  /** Ferramenta do antebraço (padrão: motosserra). */
+  tool?: AndroidTool;
 }
 
 export class Android extends MechBase {
   constructor(options: AndroidOptions = {}) {
-    super(ANDROID_STATS, buildRig(options.paint ?? PALETTE.bone, options.visor ?? PALETTE.signal));
+    super(ANDROID_STATS, buildRig(options.paint ?? PALETTE.bone, options.visor ?? PALETTE.signal, options.tool ?? 'chainsaw'));
   }
 }

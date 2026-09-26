@@ -98,6 +98,7 @@
 - [ ] Segundo chassi para o Hangar ter escolha de verdade #mechs
 - [x] Bots com personalidade (brabo, manso, fujão, soldado) e diretor de ataque: no máximo 2 atacando juntos, os outros esperam a vez #ia
 - [x] IAs rebeldes com nomes de IAs (CLAUDE, GEMINI, CHATGPT, QWEN, DEEPSEEK, ANTHROPIC) e o nome sobre a cabeça #ux
+- [x] Andróides com motosserra (só corta encostado, pega as pernas do Mech) e pisão dos Mechs (andar para cima de um andróide encostado: 2 passos matam) #combate
 - [ ] Conceitos visuais dos robôs numa IA de imagem (briefing em `ESTILO_ROBOS.md`, dono) e tradução em peças do `meshKit` (Codex) #mechs
 - [x] Inimigos configuráveis: quantidade de Mechs e andróides, técnico, personalidade de cada Mech e quantos atacam juntos #ux
 - [x] Setas de inimigos fora da tela (Gemini; concluído pelo Claude com a revisão) #ux

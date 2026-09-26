@@ -92,10 +92,12 @@ export class BotSystem {
   private readonly fighters: { bot: Bot; brain: BotController; key: number }[] = [];
   private readonly cand: { bot: Bot; brain: BotController; key: number }[] = [];
   private readonly projectiles: ProjectileSystem;
+  private readonly combat: CombatSystem;
   private readonly particles: ParticleSystem;
 
   constructor(o: BotSystemOptions) {
     this.projectiles = o.projectiles;
+    this.combat = o.combat;
     this.particles = o.particles;
     const waypoints = o.waypoints.map(([x, z]) => new THREE.Vector3(x, 0, z));
     const seed = o.seed ?? 1;
@@ -126,7 +128,7 @@ export class BotSystem {
     // Técnicos: consertam os Mechs rebeldes; visor amarelo para o jogador achar e caçar primeiro.
     const allies = this.bots.filter((b) => b.mech instanceof Vector09).map((b) => b.mech);
     (o.technicianSpawns ?? []).forEach((p, i) => {
-      const mech = new Android({ visor: PALETTE.fluo });
+      const mech = new Android({ visor: PALETTE.fluo, tool: 'repair' });
       const home = place(mech, p);
       const brain = new TechnicianController(mech, allies);
       o.respawner.track(mech, BOT_RESPAWN_S, () => brain.reset());
@@ -238,6 +240,13 @@ export class BotSystem {
       // Técnico no alcance: o conserto é regra do tick (quem escolhe o Mech é o cérebro).
       if (brain instanceof TechnicianController && brain.repairTarget) brain.repairTarget.repair(REPAIR_RATE * dt);
       if (!brain.wantsToFire) continue;
+      // Motosserra: o corte é regra do combate (sem projétil).
+      if (mech.loadout.primary.kind === 'melee') {
+        const target = brain instanceof BotController ? brain.currentTarget : null;
+        if (target) this.combat.melee(mech, target, mech.loadout.primary);
+        mech.onFire();
+        continue;
+      }
       mech.simMuzzle(_muzzle);
       this.projectiles.fire(_muzzle, brain.shotDir, mech.collider, true, mech.loadout.primary);
       this.particles.burst(_muzzle, brain.shotDir, { count: 8, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });

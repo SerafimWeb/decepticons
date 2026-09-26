@@ -125,6 +125,8 @@ export abstract class MechBase {
   private jumpsLeft: number;
   private walkPhase = 0;
   private recoil = 0;
+  /** Para onde o comando do tick manda andar, no mundo (0..1 de intensidade). O pisão lê daqui. */
+  readonly moveIntent = new THREE.Vector3();
   /** Calor do Mech: um dissipador para todas as armas (regra no tick fixo). */
   private readonly heatSink: HeatSink;
   /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
@@ -412,6 +414,7 @@ export abstract class MechBase {
     const cos = Math.cos(input.moveYaw);
     _wish.set(cos * input.moveX - sin * input.moveZ, 0, -sin * input.moveX - cos * input.moveZ);
     if (_wish.lengthSq() > 1) _wish.normalize();
+    this.moveIntent.copy(_wish);
 
     // Superaquecido: metade da velocidade, sem pulo nem dash (os sistemas entram em emergência).
     const mobility = this.mobility * (overheated ? OVERHEAT_SPEED : 1);

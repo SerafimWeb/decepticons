@@ -455,6 +455,46 @@ export class AudioSystem {
    * PARTE DESTRUÍDA — pedaço arrancado do Mech.
    * Estalo metálico agudo + microfonia estridente (estádio/rádio danificado).
    */
+  /**
+   * MOTOSSERRA — um corte (5 por segundo): serra grave com o motor tremendo e o chiado do metal.
+   * `gain` 0..1 pela distância até o jogador; longe demais, nem toca.
+   */
+  playChainsaw(gain = 1): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer || gain < 0.03) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(95, now);
+    osc.frequency.linearRampToValueAtTime(120, now + 0.08);
+    osc.frequency.linearRampToValueAtTime(100, now + 0.17);
+    const og = ctx.createGain();
+    og.gain.setValueAtTime(0.0001, now);
+    og.gain.exponentialRampToValueAtTime(0.14 * gain, now + 0.02);
+    og.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    osc.connect(og);
+    og.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.19);
+    osc.onended = () => og.disconnect();
+
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 2400;
+    band.Q.value = 2;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.1 * gain, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    src.connect(band);
+    band.connect(ng);
+    ng.connect(masterGain);
+    src.start(now);
+    src.stop(now + 0.17);
+    src.onended = () => { ng.disconnect(); band.disconnect(); };
+  }
+
   playPartDestroyed(): void {
     const { ctx, masterGain } = this;
     if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer) return;

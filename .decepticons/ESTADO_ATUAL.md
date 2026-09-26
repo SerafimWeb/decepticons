@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
+- **Motosserra e pisão (Claude; pedido do dono):** andróides com motosserra (só corta encostado, pega as pernas), Mech esmaga andróide encostado andando para cima dele (2 passos), nomes sobre a cabeça menores e nítidos. Próximo: jogar de andróide contra Mechs gigantes.
 - **Nomes das IAs nos bots (Claude; pedido do dono):** CLAUDE·BRABO, GEMINI, CHATGPT·FUJÃO, QWEN, DEEPSEEK, ANTHROPIC (técnico), com o nome sobre a cabeça. **Guia visual dos robôs** e textos para a IA de imagem em `ESTILO_ROBOS.md`.
 - **M1 do multiplayer (Claude):** `sim/Match.ts`, a partida inteira sem tela; o jogo monta a partida por ela e o servidor vai rodar a mesma. 0,74 ms por tick com a sala cheia. Achado: destroços no mesmo mundo físico mudam a simulação (o servidor roda sem eles).
 - **Correção: Mechs brancos (Claude, achado jogando):** depois do PR #43 (Codex), o casco saía todo branco e brilhando até o primeiro dano: a cor do flash de dano nascia branca (`new THREE.Color()`). Agora nasce preta; Vector-09 amarelo e rebeldes vermelhos de volta.
@@ -94,6 +95,7 @@
 ## PENDENTE
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
 - [ ] **Dono:** gerar as pranchas dos robôs numa IA de imagem com os textos do `ESTILO_ROBOS.md` e salvar em `.tmp/arte/`
+- [ ] **Dono:** jogar com as motosserras (andróides colados nas pernas) e pisar neles (ande para cima de um encostado)
 - [ ] **Dono:** jogar com o diretor de ataque (no máximo 2 atacando juntos) e as personalidades; dizer se ficou fácil demais (dá para subir "Atacam ao mesmo tempo" nas configurações)
 - [ ] **Dono:** jogar com o calor completo (correr atirando ferve em ~2 s; parado esfria em dobro) e dizer se ficou punitivo demais
 - [ ] **Dono:** jogar com as armas novas (menos dano, calor compartilhado com os foguetes) e dizer se a luta ficou lenta ou rápida demais; decidir as perguntas do fim do `HANGAR.md`

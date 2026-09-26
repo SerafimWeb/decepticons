@@ -29,12 +29,15 @@ const SMOKE = GLOW.smoke;
 
 const _at = new THREE.Vector3();
 const _near = new THREE.Vector3();
+const _dir = new THREE.Vector3();
 
 export interface MechHitEvent {
   mech: MechBase;
   result: DamageResult;
   /** Quem atirou, se foi um Mech registrado. */
   shooter?: MechBase;
+  /** Como: tiro ou explosão (padrão), corte de motosserra ou pisão. */
+  kind?: 'melee' | 'crush';
 }
 
 /**
@@ -88,6 +91,44 @@ export class CombatSystem {
       this.onMechHit?.({ mech, result, shooter });
     }
     this.destructibles.damageInRadius(at, w.blastRadius, w.damage, dir);
+  }
+
+  /**
+   * Corte corpo a corpo (motosserra): só acerta encostado (distância entre as cápsulas ≤ alcance da arma),
+   * na altura do meio do atacante presa ao corpo do alvo; num Mech, a lâmina de um andróide pega a perna.
+   * Regra de simulação (posições do tick). Faíscas no ponto do corte.
+   */
+  melee(attacker: MechBase, target: MechBase, w: WeaponStats): void {
+    if (!attacker.alive || !target.alive) return;
+    const a = attacker.simPosition;
+    const t = target.simPosition;
+    const dx = a.x - t.x;
+    const dz = a.z - t.z;
+    const d = Math.hypot(dx, dz) || 1;
+    if (d - attacker.stats.radius - target.stats.radius > w.maxRange) return;
+    const y = Math.min(t.y + target.stats.height, Math.max(t.y, a.y + attacker.stats.height * 0.5));
+    _near.set(t.x + (dx / d) * target.stats.radius, y, t.z + (dz / d) * target.stats.radius);
+    const result = target.takeHit(_near, w.damage);
+    if (result.applied <= 0) return;
+    // Faíscas saem para cima; destroço e carcaça são empurrados para longe de quem cortou.
+    this.particles.burst(_near, UP, { count: 10, color: SPARK, speed: 12, life: 0.3, size: 0.8, spread: 0.9 });
+    _dir.set(-dx / d, 0, -dz / d);
+    if (result.killed) this.wreck(target, _dir, attacker);
+    else if (result.partDestroyed) this.tearOff(target, result.part, _dir);
+    this.onMechHit?.({ mech: target, result, shooter: attacker, kind: 'melee' });
+  }
+
+  /** Pisão (`crush.ts`): o grande tira `amount` do torso do pequeno. Conta o abate para quem pisou. */
+  crush(big: MechBase, small: MechBase, amount: number): void {
+    const result = small.damagePart('torso', amount);
+    if (result.applied <= 0) return;
+    const s = small.simPosition;
+    _dir.set(s.x - big.simPosition.x, 0, s.z - big.simPosition.z).normalize();
+    _near.set(s.x, s.y + small.stats.height * 0.5, s.z);
+    this.particles.burst(_near, UP, { count: 24, color: SPARK, speed: 14, life: 0.45, size: 1, spread: 1.6 });
+    if (result.killed) this.wreck(small, _dir, big);
+    else if (result.partDestroyed) this.tearOff(small, result.part, _dir);
+    this.onMechHit?.({ mech: small, result, shooter: big, kind: 'crush' });
   }
 
   /** O Mech dono deste colisor (mira, tiro automático), ou undefined para cenário. */

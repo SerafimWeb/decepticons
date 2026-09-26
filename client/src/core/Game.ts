@@ -309,6 +309,9 @@ export class Game {
         }
         rig.addShake(0.12);
       }
+      // Motosserra (andróide colado em alguém) e pisão: sons próprios, mais baixos de longe.
+      if (e.kind === 'melee' && e.shooter) this.audio.playChainsaw(this.nearness(e.shooter));
+      if (e.kind === 'crush') this.audio.playPartDestroyed();
       // Parte destruída → estalo metálico
       if (e.result.partDestroyed) this.audio.playPartDestroyed();
     };
