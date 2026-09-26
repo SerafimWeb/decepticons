@@ -21,7 +21,7 @@ export class PilotSwitch {
     btn.type = 'button';
     btn.className = 'btn-terminal';
     btn.textContent = other === 'android' ? '[ PILOTAR ANDRÓIDE ]' : '[ PILOTAR MECH ]';
-    btn.title = other === 'android' ? 'Jogar com um andróide de 2 m contra os Mechs' : 'Voltar para o Vector-09';
+    btn.title = other === 'android' ? 'Jogar com um andróide de 1,6 m contra os Mechs' : 'Voltar para o Vector-09';
     btn.addEventListener('click', (e) => {
       // A pausa inteira é o botão de "jogar": sem isto o clique também retomaria a partida.
       e.stopPropagation();

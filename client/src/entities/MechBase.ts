@@ -8,6 +8,8 @@ import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
 /** Gravidade dos Mechs (mais alta que a do mundo: queda "pesada" e rápida, estilo arena shooter). */
 export const MECH_GRAVITY = 32;
+/** Fase da passada por metro andado × altura do robô (0,55 rad/m no Vector-09 de 5,3 m). */
+const STRIDE = 0.55 * 5.3;
 const CONTROLLER_OFFSET = 0.05;
 const HARD_LANDING_SPEED = 14;
 const MAX_CLIMB_ANGLE = (50 * Math.PI) / 180;
@@ -108,6 +110,11 @@ export abstract class MechBase {
 
   /** Pouso forte (velocidade vertical de impacto). */
   onLand?: (impactSpeed: number) => void;
+  /**
+   * Um pé tocou o chão andando (visual, no quadro; não é regra de jogo). `weight` 0..1: quanto do passo
+   * cheio (velocidade atual ÷ máxima). Para som de passo e tremor de câmera.
+   */
+  onFootstep?: (weight: number) => void;
   /** Encostou em algo durante o dash (só dispara se `demolishOnDash`). */
   onDashImpact?: (collider: RAPIER.Collider, dir: THREE.Vector3) => void;
 
@@ -124,6 +131,8 @@ export abstract class MechBase {
   private readonly dashDir = new THREE.Vector3();
   private jumpsLeft: number;
   private walkPhase = 0;
+  /** Lado do último passo (sinal do seno da passada): a troca de sinal é um pé tocando o chão. */
+  private stepSide = 1;
   private recoil = 0;
   /** Para onde o comando do tick manda andar, no mundo (0..1 de intensidade). O pisão lê daqui. */
   readonly moveIntent = new THREE.Vector3();
@@ -416,7 +425,7 @@ export abstract class MechBase {
     if (_wish.lengthSq() > 1) _wish.normalize();
     this.moveIntent.copy(_wish);
 
-    // Superaquecido: metade da velocidade, sem pulo nem dash (os sistemas entram em emergência).
+    // Superaquecido: 3/4 da velocidade (dá para fugir), sem pulo nem dash (os sistemas entram em emergência).
     const mobility = this.mobility * (overheated ? OVERHEAT_SPEED : 1);
 
     if (input.dash && this.dashCooldownLeft <= 0 && mobility > 0 && !overheated) {
@@ -539,9 +548,15 @@ export abstract class MechBase {
     const air = this.grounded ? 0 : 1;
     const k = 1 - Math.exp(-dt * 14);
 
-    this.walkPhase += hSpeed * dt * 0.55;
+    // Passada proporcional à perna: o Mech de 5,3 m dá passos lentos e pesados; o andróide, curtos e rápidos.
+    this.walkPhase += (hSpeed * dt * STRIDE) / this.stats.height;
     const sw = Math.sin(this.walkPhase);
     const cw = Math.cos(this.walkPhase);
+    const side = sw >= 0 ? 1 : -1;
+    if (side !== this.stepSide) {
+      this.stepSide = side;
+      if (amt > 0.25) this.onFootstep?.(amt);
+    }
 
     const lHip = sw * 0.7 * amt + air * 0.55;
     const rHip = -sw * 0.7 * amt - air * 0.25;

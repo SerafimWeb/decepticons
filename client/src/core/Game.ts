@@ -49,6 +49,8 @@ import { Match } from '../sim/Match';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
+/** Até esta distância (m) o passo de um Mech gigante treme a câmera de quem é pequeno. */
+const GIANT_STEP_RANGE = 25;
 /** Resolução máxima do render: acima de 1,5 o custo de GPU sobe muito para pouco ganho visível. */
 const maxPixelRatio = () => Math.min(window.devicePixelRatio, 1.5);
 const THRUSTER_COLOR = new THREE.Color(3.0, 1.0, 0.2);
@@ -296,6 +298,28 @@ export class Game {
       // Som de pouso: intensidade proporcional à velocidade de impacto (12..40 m/s → 0..1)
       this.audio.playLand(THREE.MathUtils.clamp((speed - 12) / 28, 0, 1));
     };
+    // Passos (dono: "os Mechs rápidos demais para o peso"): o som de passo do Gemini passa a tocar.
+    // O Mech do jogador pisa com um tremor leve; os Mechs rebeldes pisam mais baixo de longe, e um
+    // gigante perto de um pequeno treme a câmera: de andróide, sente-se cada passo do Mech.
+    mech.onFootstep = (w) => {
+      if (mech instanceof Android) {
+        this.audio.playAndroidStep(0.3 * w);
+        return;
+      }
+      this.audio.playStep(w);
+      rig.addShake(0.18 * w);
+    };
+    for (const b of this.bots.mechs) {
+      if (b instanceof Android) continue;
+      b.onFootstep = (w) => {
+        const near = this.nearness(b);
+        if (near <= 0) return;
+        this.audio.playStep(near * w);
+        const giant = THREE.MathUtils.clamp(b.stats.height / this.mech.stats.height - 1, 0, 1);
+        const close = Math.max(0, 1 - b.position.distanceTo(this.mech.position) / GIANT_STEP_RANGE);
+        if (giant > 0 && close > 0) rig.addShake(0.4 * giant * close * close * w);
+      };
+    }
     // Som de disparo: wrap do onFire do jogador (não toca para bots — só mech do jogador).
     // O método onFire original anima o recuo; o wrap mantém esse comportamento e adiciona o som.
     const _origFire = mech.onFire.bind(mech);

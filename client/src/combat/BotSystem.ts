@@ -189,7 +189,8 @@ export class BotSystem {
 
   /**
    * Diretor de ataque: dá as vagas a quem quer atacar, nesta ordem: quem já tem a vaga e está no turno,
-   * a prioridade da personalidade (o brabo primeiro), e o mais perto do alvo. Determinístico (ordem
+   * a prioridade da personalidade (o brabo primeiro), quem espera há mais tempo, e o mais perto do alvo.
+   * Quem terminou o turno vai para o fim da fila. Determinístico (ordem
    * estável, sem sorteio); roda 5 vezes por segundo. Custo: um laço e uma ordenação de ≤ 7 bots.
    */
   private direct(dt: number): void {
@@ -206,10 +207,14 @@ export class BotSystem {
         brain.tokenHeld = 0;
         continue;
       }
-      const onTurn = brain.hasToken && brain.tokenHeld < TURN_S ? 0 : 1;
+      // 0 = no turno; 1 = esperando; 2 = o turno acabou: vai para o fim da fila (sem isso, o mais perto do
+      // alvo, que é quem estava atacando, ganhava a vaga de novo e só largava quando superaquecia).
+      const onTurn = !brain.hasToken ? 1 : brain.tokenHeld < TURN_S ? 0 : 2;
       const me = q.bot.mech.simPosition;
       const tp = target.simPosition;
-      q.key = onTurn * 1e6 - brain.persona.priority * 1e4 + Math.min(Math.hypot(me.x - tp.x, me.z - tp.z), 9999);
+      // Prioridade (passos de 1e4) > espera (passos de 100 a cada 0,2 s, até 99) > distância (até 99 m).
+      const waited = Math.min(Math.round(brain.tokenWait / DIRECTOR_INTERVAL_S), 99);
+      q.key = onTurn * 1e6 - brain.persona.priority * 1e4 - waited * 100 + Math.min(Math.hypot(me.x - tp.x, me.z - tp.z), 99);
       // Inserção ordenada (≤ 7 bots), no mesmo array de sempre: nada alocado.
       let i = cand.length;
       cand.push(q);
@@ -225,10 +230,12 @@ export class BotSystem {
       if (cost <= budget + 1e-9) {
         if (!q.brain.hasToken) q.brain.tokenHeld = 0;
         q.brain.hasToken = true;
+        q.brain.tokenWait = 0;
         budget -= cost;
       } else {
         q.brain.hasToken = false;
         q.brain.tokenHeld = 0;
+        q.brain.tokenWait += DIRECTOR_INTERVAL_S;
       }
     }
   }

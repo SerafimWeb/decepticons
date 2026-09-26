@@ -30,7 +30,7 @@ export class ThirdPersonCamera implements CameraMode {
     const { camera, look, mech, physics } = this.ctx;
     const q = camera.quaternion.setFromEuler(_euler.set(look.pitch, look.yaw, 0, 'YXZ'));
 
-    // Na escala do robô: num andróide de 2 m a câmera fica na altura de uma pessoa, e o Mech rebelde
+    // Na escala do robô: num andróide de 1,6 m a câmera fica na altura de uma pessoa, e o Mech rebelde
     // aparece gigante (dono: "a impressão de que estou combatendo um Mech bem maior"). Mínimo de 45%
     // para o andróide não ficar colado na câmera.
     const scale = Math.max(0.45, mech.stats.height / 5.3);
