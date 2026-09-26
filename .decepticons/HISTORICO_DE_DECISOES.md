@@ -2,6 +2,16 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] Blueprints visuais procedurais para Mechs leve, médio e pesado
+**Pedido do dono:** "quero que voce assuma essa responsabilidade de implementar esses detalhes graficos" sobre as referências enviadas (`cybermech1.png` e `cybermech2.png`).
+**Decisão (Codex):**
+- As imagens ficam como referência local em `.tmp/arte/` (ignorada pelo Git); o mapeamento adotado segue a prancha de três robôs: centro = leve, esquerda = médio, direita = pesado.
+- `entities/mechBlueprint.ts` descreve Ferret, Vector-09 e Colossus por dimensões e atributos visuais; o Vector-09 de gameplay usa o blueprint médio. Os três usam juntas e seis partes, peças com chanfros, respiros emissores, cabeça, placas e armamento procedural.
+- Cada pivô articulado vira uma malha combinada. Os três blueprints ficam em 9 draw calls/malhas; geometria chanfrada temporária é liberada depois da fusão. A captura preta lado a lado é versionada em `.decepticons/arte/mech-blueprints.png`, gerada por `scripts/capture-blueprints.mjs`.
+- Leve e pesado são apenas conceitos visuais até o dono definir e testar stats, colisores e equilíbrio. Nenhuma regra de combate ou stat do Vector-09 mudou.
+**Custo de CPU:** geração das placas chanfradas e fusão acontecem uma vez por rig na criação; não há trabalho nem alocação por quadro. O render mantém nove malhas por rig, abaixo do teto de dez; startup e triângulos ainda não têm benchmark dedicado.
+**Quem decidiu:** dono (usar as referências e delegar a implementação gráfica); Codex (parâmetros, proporções e técnica de malha).
+
 ## [2026-09-26] A landing mostra o multiplayer em construção, com os números do código
 **Pedido do dono:** "continua alimentando as landing pages com o que tamo fazendo".
 **Decisão (Claude):** seção "Online: salas de 8 pilotos" na landing, depois do Hangar: as etapas da fase 4 lidas do ROADMAP (feitas em verde) e quatro leituras da rede lidas do código pelo site (servidor, estado da sala, download por jogador, comando). A conta da banda saiu do teste para `shared/net/budget.ts`: o teste trava e o site mostra o mesmo número. O check do site falha se a seção sumir. Regra que fica: toda frente nova que tiver número vira seção com o número vindo do código, nunca digitado.

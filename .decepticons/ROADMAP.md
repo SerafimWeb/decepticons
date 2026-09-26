@@ -109,7 +109,7 @@
 - [x] Calor com fôlego: ~15 tiros segurando, trava de ~2 s, superaquecido anda a 75% #combate
 - [x] Potências: painel do dono por arma e por clã, com o efeito na luta e aviso de apelação, salvo e por link #combate
 - [x] Diretor de ataque com fila justa: fim do turno vai para o fim da fila, quem espera mais vai primeiro #ia
-- [ ] Conceitos visuais dos robôs numa IA de imagem (briefing em `ESTILO_ROBOS.md`, dono) e tradução em peças do `meshKit` (Codex) #mechs
+- [x] Conceitos visuais fornecidos pelo dono e traduzidos em blueprints procedurais leve/médio/pesado; 9 malhas articuladas por rig, captura de silhuetas no PR (Codex) #mechs
 - [x] Inimigos configuráveis: quantidade de Mechs e andróides, técnico, personalidade de cada Mech e quantos atacam juntos #ux
 - [x] Setas de inimigos fora da tela (Gemini; concluído pelo Claude com a revisão) #ux
 - [x] Sons dos andróides: tiro e pouso, mais baixos de longe (Gemini; integrado pelo Claude) #som
