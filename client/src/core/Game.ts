@@ -49,7 +49,9 @@ import { PALETTE } from './palette';
 import { PilotSwitch } from '../ui/PilotSwitch';
 import { PowerSettings } from '../ui/PowerSettings';
 import { parseLoadoutKey } from '../hangar/loadout';
-import { onlineConfig } from '../net/onlineConfig';
+import { defaultServer, onlineConfig } from '../net/onlineConfig';
+import { OnlineSwitch } from '../ui/OnlineSwitch';
+import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
@@ -183,7 +185,8 @@ export class Game {
     this.scene.add(this.particles.points);
     // Online (M4): /jogar/?sala=CODIGO[&servidor=wss://…][&nome=Dan]. A partida local fica sem bots, sem dano e sem
     // rodada própria (quem decide é o servidor); o jogo prevê o seu Mech e desenha os outros.
-    const net = onlineConfig(location.search, location.hostname);
+    const publicServer = import.meta.env.VITE_GAME_SERVER;
+    const net = onlineConfig(location.search, location.hostname, publicServer);
     const online = net && !('error' in net) ? net : null;
     const foes = online ? { ...this.settings.value, enemyMechs: 0, enemyAndroids: 0, technician: false } : this.settings.value;
     // Potências do painel (por arma e por clã): montadas uma vez, aqui; mudam ao reiniciar. Online, o padrão do servidor.
@@ -300,6 +303,7 @@ export class Game {
       },
     });
     new PilotSwitch(this.hangar);
+    new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null);
     new SettingsMenu(this.settings);
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician });
@@ -332,6 +336,11 @@ export class Game {
             : 'ONLINE · CONEXÃO CAIU: recarregue a página';
     this.netStatus.textContent = text;
     this.netStatus.classList.toggle('bad', s.state === 'recusado' || s.state === 'caiu');
+    // Nem chegou a entrar (servidor desligado, PC do servidor fora do ar): avisa e volta ao jogo offline.
+    if (s.state === 'caiu' && !this.online?.joined) {
+      this.netStatus.textContent = 'SERVIDOR ONLINE FORA DO AR · voltando ao jogo offline…';
+      setTimeout(() => reloadWithout('sala'), 3000);
+    }
   }
 
   /** 1 perto do jogador, 0 a 70 m ou mais: o volume dos sons de um bot. */

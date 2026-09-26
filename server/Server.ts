@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
-import { ROOM_MAX } from '../shared/net/constants';
+import { ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { ArenaRoom, type Peer } from './ArenaRoom';
 
 /** Maior mensagem aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
@@ -39,6 +39,16 @@ export async function startServer(opts: { port?: number; host?: string; log?: (l
   const rooms = new Map<string, ArenaRoom>();
   const creating = new Map<string, Promise<ArenaRoom>>();
   const emptyFor = new Map<string, number>();
+  /** Conexões em cada sala (contando quem ainda não mandou o JOIN): é o que decide se a sala está cheia. */
+  const occupancy = new Map<string, number>();
+  /** Sala pedida cheia: a próxima (ARENA, ARENA-2, ARENA-3...). Quem clica em "Jogar online" nunca fica de fora. */
+  const pickRoom = (code: string): string => {
+    const base = code.replace(/-\d+$/, '');
+    let n = code === base ? 1 : Number(code.slice(base.length + 1));
+    let c = code;
+    while ((occupancy.get(c) ?? 0) >= ROOM_SIZE && n < 99) c = `${base}-${++n}`.slice(0, ROOM_MAX);
+    return c;
+  };
 
   const roomFor = (code: string): Promise<ArenaRoom> => {
     const open = rooms.get(code);
@@ -63,11 +73,13 @@ export async function startServer(opts: { port?: number; host?: string; log?: (l
   const wss = new WebSocketServer({ server: http, maxPayload: MAX_MESSAGE });
 
   wss.on('connection', (ws: WebSocket, req) => {
-    const code = roomCode(req.url);
-    if (!code) {
+    const asked = roomCode(req.url);
+    if (!asked) {
       ws.close(1008, 'sala');
       return;
     }
+    const code = pickRoom(asked);
+    occupancy.set(code, (occupancy.get(code) ?? 0) + 1);
     const peer: Peer = {
       send: (bytes) => {
         if (ws.readyState === ws.OPEN) ws.send(Buffer.from(bytes));
@@ -81,7 +93,10 @@ export async function startServer(opts: { port?: number; host?: string; log?: (l
       const bytes = data instanceof Buffer ? data : Buffer.concat(Array.isArray(data) ? data : [Buffer.from(data as ArrayBuffer)]);
       void room.then((r) => r.receive(peer, bytes));
     });
-    ws.on('close', () => void room.then((r) => r.leave(peer)));
+    ws.on('close', () => {
+      occupancy.set(code, Math.max(0, (occupancy.get(code) ?? 1) - 1));
+      void room.then((r) => r.leave(peer));
+    });
     ws.on('error', () => ws.terminate());
   });
 

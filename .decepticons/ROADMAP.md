@@ -128,6 +128,8 @@
 - [x] M2: contratos de rede (`NetInput`, estado de cada unidade, eventos, mensagens) e codec binário com teste de tamanho: sala cheia em ~6,2 KB/s #rede
 - [x] M3: servidor de jogo (`server/`, Node + `ws`): salas por código, a partida a 60 Hz com os bots, estado a 20 Hz, `npm run server` no PC de casa #rede
 - [x] M4: jogo online pelo link (`?sala=&servidor=`): previsão do seu Mech com correção pelo servidor, robôs remotos interpolados, tiros e abates dos outros #rede
+- [x] Jogar online com um clique: botão na landing e na pausa, sala pública com a próxima abrindo quando enche, volta ao offline com o servidor fora #rede
+- [ ] Servidor público no ar 24 h: domínio, túnel nomeado da Cloudflare e `GAME_SERVER_URL` no GitHub (dono; passo a passo no `DEPLOY.md`) #rede
 - [ ] Online completo: barricadas quebrando (evento), placar e nomes da sala, teste com latência e perda simuladas #rede
 - [ ] M5: tiros autoritativos com compensação de latência; eventos de acerto, parte e abate #combate
 - [ ] M6: entrada pelo link com código da sala + apelido; reconexão automática (G13) #rede

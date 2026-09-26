@@ -68,6 +68,32 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
    - No topo da tela aparece `ONLINE · SALA ARENA · 42 ms · 2 pilotos`. Sem `servidor` fora do PC do servidor, o
      jogo avisa e joga offline.
 
+**Servidor público 24 h no PC de casa (26/09): quem abre o site clica em "Jogar online" e entra.**
+O túnel rápido (`trycloudflare.com`) muda de endereço toda vez que sobe: serve para teste, não para o público. Para
+um endereço fixo, o túnel nomeado da Cloudflare (grátis, sem abrir porta, sem mostrar o IP de casa), que exige um
+domínio cadastrado na Cloudflare. Passo a passo, uma vez só:
+1. **Domínio:** um domínio só do jogo (ex.: `cybermech.com.br` no registro.br, ~R$ 40 por ano), com os nameservers
+   trocados para os da Cloudflare (plano grátis). Alternativa sem custo: levar o DNS do `selvamkt.com.br` para a
+   Cloudflare, mas isso mexe no site real da Selva MKT (decisão do dono, `ESTADO_ATUAL`).
+2. **Túnel:** Cloudflare Zero Trust → Networks → Tunnels → criar um túnel `cybermech` → Windows → rodar o comando
+   `cloudflared.exe service install …` que a página mostra (o token dele é segredo: nunca no repositório nem no chat).
+   Em "Public hostname": `jogo.<domínio>` apontando para `http://localhost:2567`. O túnel vira um serviço do Windows.
+3. **Servidor:** PowerShell como administrador, na pasta do projeto: `.\scripts\servidor-windows.ps1`. O servidor
+   sobe com o Windows, reinicia se cair e grava o log em `.tmp\servidor\`. Para o PC não dormir:
+   `powercfg /change standby-timeout-ac 0`.
+4. **Site:** no GitHub, Settings → Secrets and variables → Actions → **Variables** (não é segredo) →
+   `GAME_SERVER_URL` = `wss://jogo.<domínio>`. No próximo merge, o site sai com `[ JOGAR ONLINE ]` na landing e na
+   pausa do jogo.
+5. **Com o PC desligado**, quem clica em online vê "servidor fora do ar" e volta ao jogo offline em 3 s.
+
+**O que o PC aguenta:** 0,5 ms de CPU por tick por sala (um núcleo leva ~20 salas); ~50 KB/s de upload por sala cheia
+(8 pessoas), longe do limite de uma fibra comum. **Custo:** o domínio e a energia do PC ligado (depende do PC; um
+desktop comum gasta algumas dezenas de reais por mês). **Distância:** o servidor fica no Brasil; o seu próprio Mech
+responde na hora em qualquer lugar (previsão), mas quem está longe vê os outros e os acertos com mais atraso: América
+do Sul ~20–80 ms, EUA ~120–180 ms, Europa ~200–250 ms, Rússia e Ásia ~250–350 ms. A China pode ter bloqueios e
+lentidão imprevisíveis na Cloudflare. Quando houver jogadores fora da América do Sul com frequência, um segundo
+servidor perto deles resolve (o código é o mesmo).
+
 **Opções avaliadas em 2026-09-23 (sem decisão). Ofertas gratuitas mudam: confira antes de adotar.**
 A hospedagem compartilhada da Hostinger **não serve** para o servidor: não mantém um processo Node rodando o tempo todo, e os limites de CPU estrangulariam uma simulação a 60 Hz. VPS da Hostinger funcionaria, mas é pago.
 

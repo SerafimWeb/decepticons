@@ -7,6 +7,7 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–26/09)
+- **Jogar online com um clique (Claude; dono: "quero que outra pessoa possa simplesmente clicar em online e entrar na mesma sala, do Brasil, EUA, Rússia, China, mesmo que eu deixe o PC ligado 24 h"):** `[ JOGAR ONLINE ]` na landing e na pausa, sala pública `ARENA` (cheia, abre `ARENA-2`...), volta ao offline quando o servidor está fora do ar, e `scripts/servidor-windows.ps1` para o servidor subir com o Windows. O botão aparece quando o dono criar o endereço fixo (domínio + túnel nomeado da Cloudflare) e puser `GAME_SERVER_URL` nas variáveis do GitHub (`DEPLOY.md`).
 - **M4 do multiplayer, primeira versão (Claude):** o jogo joga online. Com o servidor rodando (`npm run server`), `/jogar/?sala=ARENA&servidor=…&nome=Dan` entra na sala: o seu Mech é previsto na hora e corrigido pelo servidor, os outros aparecem interpolados, os tiros e abates dos outros chegam por evento. Testado contra o servidor de verdade (4 testes) e no navegador. Limites: barricadas não quebram no online, placar e nomes ainda locais, sem teste de latência simulada.
 - **M3 do multiplayer (Claude):** o servidor de jogo existe: `npm run server` sobe um servidor WebSocket (`ws`) com salas por `?sala=`, cada uma rodando a partida inteira a 60 Hz com os bots (0,5 ms por tick), recebendo os comandos dos jogadores e mandando o estado a 20 Hz. Montagem validada no servidor, recusa de sala cheia, versão e montagem adulterada, saída limpa. Testado com 2 clientes WebSocket de verdade. **Ainda falta o jogo no navegador conectar (M4).** Revisão cruzada do PR #63 (kit de Mechs do Codex) postada.
 - **Landing com o online (Claude; dono: "continua alimentando as landing pages com o que estamos fazendo"):** seção "Online: salas de 8 pilotos" com as etapas da fase 4 (do ROADMAP) e os números da rede lidos do código (`shared/net/budget.ts`, a mesma conta que os testes travam): servidor a 60 Hz, estado a 20 Hz com 19 bytes por robô, ~6,2 KB/s de download na sala cheia, comando de 9 bytes. A cada etapa entregue, a seção se atualiza sozinha.
@@ -115,6 +116,7 @@
 - [ ] **Dono:** conferir no jogo as novas formas e proporções do Vector-09; dizer se a leitura de leve/médio/pesado bate com as imagens de referência
 - [ ] **Dono:** testar o Hangar em desktop e celular: MK III deve atualizar a carga, aplicar armas no respawn, trocar piloto e copiar um link que abre a mesma montagem
 - [ ] **Dono:** jogar com as motosserras (andróides colados nas pernas) e pisar neles (ande para cima de um encostado)
+- [ ] **Dono:** pôr o servidor público no ar 24 h: escolher o domínio, criar o túnel nomeado da Cloudflare, rodar `scripts\servidor-windows.ps1` e criar a variável `GAME_SERVER_URL` no GitHub (`DEPLOY.md`, "Servidor público 24 h")
 - [ ] **Dono:** jogar online com alguém: `npm run server` no PC, o túnel do Cloudflare (`DEPLOY.md`, "Servidor de jogo") e o link `/jogar/?sala=ARENA&servidor=https://….trycloudflare.com&nome=…` para os dois. Dizer como ficou a sensação (atraso, correções, tiros)
 - [ ] **Dono:** mexer nas potências (configurações → POTÊNCIAS) e dizer se falta algum controle (pontaria dos bots, tamanho do carregador, número de pulos...); quando achar um ajuste bom, mande o link: vira o padrão com teste
 - [ ] **Dono:** jogar de andróide (pausa → `[ PILOTAR ANDRÓIDE ]`): a câmera passa a sensação de Mech gigante? Vida, blaster e motosserra estão justos?
@@ -147,7 +149,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 ## DECISÕES EM ABERTO
 | Decisão | Situação |
 |---|---|
-| Hospedagem do servidor | Recomendação em `DEPLOY.md`; plano em `MULTIPLAYER.md` (seção 10, com mais três decisões: mira assistida no PvP, bots nas salas, código da sala). Decidir antes da etapa M8. |
+| Hospedagem do servidor | Dono (26/09): começar com o PC de casa 24 h. Falta decidir o **domínio do endereço fixo**: um domínio só do jogo na Cloudflare (recomendado, ~R$ 40/ano) ou levar o DNS do `selvamkt.com.br` para a Cloudflare (grátis, mas mexe no site da Selva MKT). Oracle ou VPS depois, com o mesmo código. Seguem abertas: mira assistida no PvP e bots nas salas (`MULTIPLAYER.md`, seção 10). |
 | Mira assistida no multiplayer | Hoje é só do toque e só contra bots. Com gente de verdade, toque x mouse na mesma sala precisa de regra: manter (padrão dos jogos de tiro no celular), reduzir contra humanos ou separar salas por tipo de controle. Decidir na Fase 4. |
 | Separação simulação × render × efeitos | Proposta e critérios de aceitação em `MULTIPLAYER.md`, seção 9. Recomendação: tiro do jogador e yaw pela simulação antes da M4; o resto quando memória do servidor ou correções visíveis pedirem. |
 | Universo (`UNIVERSO.md`, seção 7) | Brasil no centro, no contexto dos BRICS, já decidido. Premissa, roteiro, quanto de CTI entra (só textos ou também mecânicas) e nomes dos consórcios: com o dono, no chat do SERAFIM. Nada muda no jogo antes do aval. |

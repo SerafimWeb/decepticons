@@ -216,9 +216,11 @@ correções visíveis pedirem. **Decisão do dono.**
 
 ## 10. Decisões do dono
 
-1. **Hospedagem do servidor:** Oracle Always Free (São Paulo, custo zero, capacidade instável) ou VPS paga pequena
-   (estável). Recomendação em `DEPLOY.md`.
+1. **Hospedagem do servidor:** o dono quer começar com o PC de casa ligado 24 h (26/09). Caminho: túnel nomeado da
+   Cloudflare com endereço fixo (`DEPLOY.md`); falta escolher o domínio. Oracle Always Free ou VPS depois, com o mesmo
+   código, quando houver público.
 2. **Mira assistida no PvP:** manter (padrão dos jogos de tiro no celular), reduzir contra humanos, ou separar salas
    por tipo de controle.
 3. **Bots nas salas online:** completam até 8 (sala sempre cheia) ou só quando houver menos de N humanos.
-4. **Nome e código da sala:** código curto aleatório (`/jogar/?sala=K7Q2`) ou nome escolhido.
+4. **Nome e código da sala:** ✅ (26/09) quem clica em "Jogar online" entra na sala pública `ARENA`; cheia, o servidor
+   abre `ARENA-2`, `ARENA-3`... Sala com código próprio continua pelo link (`?sala=K7Q2`).

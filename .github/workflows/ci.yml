@@ -55,6 +55,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           SITE_URL: ${{ vars.SITE_URL }}
+          # Servidor público do multiplayer (endereço, não é segredo): liga o "Jogar online" do jogo e da landing.
+          VITE_GAME_SERVER: ${{ vars.GAME_SERVER_URL }}
 
       # Mesmo padrão do deploy do CAPTIA nesta conta Hostinger: rsync + SSH (porta 65002), com
       # novas tentativas (a proteção anti-abuso da Hostinger às vezes derruba a conexão).
