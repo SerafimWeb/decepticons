@@ -136,9 +136,13 @@ costas no meio da arena, com prédios e bots atrás; o andróide aparecia como d
    aparece ampliado (mínimo de 3,2 m, como um holograma de montagem). Tudo feito por código, sem arquivo para baixar.
    **Aplicar na hora:** offline, as armas trocam na hora, com o calor de agora (a pausa não esfria o Mech); online, vale
    na próxima entrada na sala (o servidor só conhece a montagem da entrada).
-2. **Interface holográfica** no desenho da referência: barra de topo (marca, carga e pontos), console grande de
-   "caminhos de customização" (armas, blindagem, módulos), leituras presas ao pedestal, marcadores de braço presos ao
-   Mech, vidro ciano com cantos chanfrados e linhas de varredura; versão de celular em abas.
+2. ✅ **Interface holográfica** no desenho da referência (`ui/HangarMenu.ts`, reescrita): barra de topo (marca, carga,
+   piloto, offline ou a sala online), painel do chassi com a planta de cada robô em traço, console "caminhos de montagem"
+   (armas; blindagem e módulos marcados "em breve"), os dois braços com ícone, nível de potência e barras de dano,
+   cadência, calor, alcance e carga (a arma nova contra a que está no Mech, com seta de melhora ou piora), faixa de
+   leituras embaixo, marcadores dos braços presos a eles (acompanham o giro, com traço até o rótulo), vidro ciano com
+   colchetes nos cantos e linhas de varredura, entrada acendendo como holograma. Celular em pé: galpão em cima, um
+   painel por vez embaixo, com abas; deitado: Mech à esquerda, painel à direita.
 3. **Testar disparo e montagens 1 a 4:** um alvo no galpão para disparar a arma escolhida (dano por tiro, calor subindo,
    tempo para derrubar ao vivo) e quatro montagens salvas nos atalhos 1 a 4.
 

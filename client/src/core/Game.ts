@@ -59,6 +59,9 @@ import { Match } from '../sim/Match';
 import { HangarMenu } from '../ui/HangarMenu';
 import { HangarScene } from '../hangar/HangarScene';
 
+/** Onde os braços do Mech do Hangar estão na tela (reaproveitados por quadro). */
+const _hotRight = { x: 0, y: 0 };
+const _hotLeft = { x: 0, y: 0 };
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
 /** Até esta distância (m) o passo de um Mech gigante treme a câmera de quem é pequeno. */
@@ -139,6 +142,7 @@ export class Game {
   /** O galpão 3D do Hangar (feito na primeira vez que abre) e se ele está na tela no lugar da arena. */
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
+  private readonly hangarMenu: HangarMenu;
   private readonly renderPass: RenderPass;
   private accumulator = 0;
   private last = -1;
@@ -293,7 +297,7 @@ export class Game {
       },
     );
     // Hangar: enquanto está aberto, o desenho troca a arena pelo galpão (o jogo está pausado).
-    new HangarMenu(this.hangar, {
+    this.hangarMenu = new HangarMenu(this.hangar, {
       open: () => {
         this.hangarScene ??= new HangarScene();
         this.hangarView = true;
@@ -309,6 +313,7 @@ export class Game {
       show: (chassis, loadout) => this.hangarScene?.show(chassis, loadout),
       rotate: (dx) => this.hangarScene?.rotate(dx),
       applied: () => this.applyHangarNow(),
+      status: () => (online ? `ONLINE · SALA ${online.room}` : 'OFFLINE'),
     });
     new PilotSwitch(this.hangar);
     new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null);
@@ -378,7 +383,10 @@ export class Game {
   /** O galpão ocupa a tela; no computador, o painel da direita é mais largo que o da esquerda: o Mech vai um pouco para a esquerda, no meio do vão. */
   private resizeHangar(): void {
     const w = window.innerWidth;
-    this.hangarScene?.resize(w, window.innerHeight, w > 900 ? 0.06 : 0);
+    // Computador: painel da esquerda estreito e console da direita largo; celular: painéis embaixo, Mech no centro.
+    const h = window.innerHeight;
+    // Celular deitado: o painel ocupa a metade da direita e o Mech vai para a esquerda.
+    this.hangarScene?.resize(w, h, h <= 540 && w > h ? 0.48 : w > 900 ? 0.12 : 0);
   }
 
   /** Rodada nova: a partida já pôs todos de volta e restaurou a arena; aqui, o que é do jogador local. */
@@ -690,7 +698,13 @@ export class Game {
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);
     this.rig.update(dt);
-    if (this.hangarView) this.hangarScene!.update(dt);
+    if (this.hangarView) {
+      const hs = this.hangarScene!;
+      hs.update(dt);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      this.hangarMenu.placeHotspots(hs.armScreen('rightArm', w, h, _hotRight) ? _hotRight : null, hs.armScreen('leftArm', w, h, _hotLeft) ? _hotLeft : null);
+    }
     this.updateAim(dt);
     this.projectiles.render(alpha);
     this.rockets.render(alpha);

@@ -21,6 +21,8 @@ const IDLE_AFTER_DRAG_S = 3;
 /** Robô pequeno (o andróide, 1,6 m) aparece ampliado no pedestal, como num holograma de montagem: dá para ver as peças. */
 const MIN_SHOWN_HEIGHT = 3.2;
 
+const _arm = new THREE.Vector3();
+
 /** Piso de placas de grade: bordas ciano e grade fina (canvas, feito uma vez). */
 function floorTexture(): THREE.CanvasTexture {
   const c = document.createElement('canvas');
@@ -363,6 +365,20 @@ export class HangarScene {
       this.height = m.stats.height * scale;
       this.frame();
     }
+  }
+
+  /**
+   * Onde um braço do Mech do pedestal está na tela (px), para os marcadores da interface. Falso se o braço não existe
+   * ou está atrás da câmera. Nada alocado.
+   */
+  armScreen(part: 'rightArm' | 'leftArm', width: number, height: number, out: { x: number; y: number }): boolean {
+    const m = this.shown;
+    if (!m || m.modules[part] <= 0) return false;
+    m.partWorldPosition(part, _arm).project(this.camera);
+    if (_arm.z > 1) return false;
+    out.x = (_arm.x * 0.5 + 0.5) * width;
+    out.y = (-_arm.y * 0.5 + 0.5) * height;
+    return true;
   }
 
   /** Gira a plataforma (arrastar o dedo ou o mouse); a volta sozinha espera um pouco. */
