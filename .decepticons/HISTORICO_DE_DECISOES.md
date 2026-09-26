@@ -2,6 +2,11 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] Esperar o check existir antes de acompanhar o CI
+**Achado (Claude, R17):** logo depois do `gh pr create`, o `gh pr checks --watch` volta na hora se o check ainda não foi criado. O PR #71 foi mergeado assim, com o CI rodando (terminou verde: check e deploy).
+**Decisão:** a regra 13 do `AGENTS.md` diz para esperar a linha `check` aparecer em `gh pr checks` antes do `--watch`. Vale para todos os agentes.
+**Quem decidiu:** Claude.
+
 ## [2026-09-26] Hangar 2.0, camada 3: testar disparo e montagens 1 a 4
 **Pedido do dono:** a imagem de referência do Hangar (botão "test firing", atalhos 1 a 4).
 **Decisão (Claude):**
