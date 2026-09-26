@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BotSystem } from '../combat/BotSystem';
 import { CombatSystem, type MechHitEvent } from '../combat/CombatSystem';
+import { CrushRule } from '../combat/crush';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
 import { RocketSystem } from '../combat/RocketSystem';
 import { Respawner } from '../combat/Respawner';
@@ -58,6 +59,8 @@ export class Match {
   readonly respawner: Respawner;
   readonly bots: BotSystem;
   readonly round = new Round();
+  /** Pisão: robô grande andando na direção de um pequeno encostado. */
+  readonly crush: CrushRule;
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
   readonly pilots: Pilot[] = [];
   /** Mechs de gente (os bots caçam estes). */
@@ -86,6 +89,7 @@ export class Match {
     this.rockets = new RocketSystem(o.scene, o.physics, o.particles);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.respawner = new Respawner(SPAWN_POINTS);
+    this.crush = new CrushRule(this.combat);
     this.bots = new BotSystem({
       scene: o.scene,
       physics: o.physics,
@@ -141,6 +145,10 @@ export class Match {
     if (this.round.playing) {
       for (const p of this.pilots) p.fixedUpdate(dt);
       this.bots.fixedUpdate(dt);
+      // Pisão nos dois sentidos: Mech do jogador em andróide rebelde, e Mech rebelde num jogador pequeno.
+      this.crush.tick(dt);
+      this.crush.check(this.players, this.bots.mechs);
+      this.crush.check(this.bots.mechs, this.players);
       this.respawner.fixedUpdate(dt);
       this.projectiles.fixedUpdate(dt);
       this.rockets.fixedUpdate(dt);

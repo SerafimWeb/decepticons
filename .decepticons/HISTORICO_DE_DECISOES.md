@@ -2,6 +2,17 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Motosserra dos andróides, pisão dos Mechs e nomes nítidos
+**Pedido do dono:** "dê motosserras para os autobots pequenos; ele tem que ficar perto de nós pra usar; mas se andarmos na direção dele, 2 passos matam eles (são pequenos). Os nomes estão muito grandes e meio borrados."
+**Decisão (Claude):**
+- **Motosserra** (arma corpo a corpo no catálogo, `kind: 'melee'`): 4 de dano a cada 0,2 s (20/s), alcance de 1,2 m entre as cápsulas, na altura do andróide: num Mech, a perna. Sozinha, arranca uma perna em ~7,5 s; em dupla, na metade. Três níveis como as outras armas.
+- **IA corpo a corpo:** a 18 m o andróide parte para cima, gruda no alvo e circula em volta cortando; sem a vaga de ataque, espera afastado (o diretor continua limitando quantos atacam).
+- **Pisão** (`combat/crush.ts`): um robô ao menos 2× mais alto, andando (comando do tick) na direção de um pequeno encostado, tira metade do torso a cada passo de 0,35 s: dois passos matam, e o abate conta para quem pisou. Vale nos dois sentidos, então um Mech rebelde também vai pisar num jogador de andróide.
+- **Risco × recompensa:** o andróide precisa chegar colado para ferir, e colado ele morre pisado.
+- **Nomes:** menores e nítidos: textura pequena (256×32) sem mipmap, contorno escuro no lugar do brilho que borrava.
+**Custo de CPU:** pisão = laço grandes × pequenos (≤ 8 × 8) por tick com contas de distância; corte = uma conta por mordida. Nada alocado por tick.
+**Quem decidiu:** dono (motosserra, pisão, 2 passos); Claude (números, alcance, IA).
+
 ## [2026-09-25] Passada de consistência documental (PRs até #50)
 **Pedido do dono:** conferir os PRs mergeados até o #49 contra ESTADO_ATUAL, ROADMAP e STATUS_REAL; corrigir o que ficou para trás, conferir o item de draw calls do #43 e descrever com precisão o estágio do multiplayer depois do #49, confirmando no código.
 **Divergências corrigidas (com a evidência):**

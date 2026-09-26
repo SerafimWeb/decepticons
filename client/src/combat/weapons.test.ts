@@ -73,8 +73,13 @@ describe('equilíbrio: sem apelação (Vector-09, torso de 300, todos os tiros n
     expect(leg).toBeLessThan(timeToKill([weapon('plasma')], V, TORSO) / 2);
   });
 
-  it('arma leve não ameaça blindagem pesada: o blaster do andróide leva mais de 25 s para o torso', () => {
-    expect(timeToKill([ANDROID_STATS.loadout.primary], ANDROID_STATS, TORSO)).toBeGreaterThan(25);
+  it('arma leve não ameaça blindagem pesada: o blaster leva mais de 25 s para o torso', () => {
+    expect(timeToKill([weapon('blaster')], ANDROID_STATS, TORSO)).toBeGreaterThan(25);
+  });
+
+  it('motosserra do andróide: chata, não mortal: sozinha leva mais de 6 s para arrancar uma perna', () => {
+    expect(ANDROID_STATS.loadout.primary.id).toBe('chainsaw');
+    expect(timeToKill([weapon('chainsaw')], ANDROID_STATS, V.maxModuleHealth.leftLeg)).toBeGreaterThan(6);
   });
 
   it('o andróide segue frágil: 2 tiros de plasma MK I no peito derrubam', () => {

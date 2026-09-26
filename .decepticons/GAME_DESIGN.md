@@ -23,7 +23,7 @@ do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
 
 | Escala | O que é | Hoje no jogo | Como luta |
 |---|---|---|---|
-| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~2 m) | **Andróide de combate** (QWEN, DEEPSEEK, MISTRAL): casco branco, visor vermelho, blaster no antebraço. **Técnico** (ANTHROPIC): visor amarelo, conserta os Mechs | **Mais chato do que perigoso:** cai com 2 tiros de plasma, o tiro dele quase não tira vida e a mira é solta, mas é muito ágil (arranca na hora, pula duas vezes, desvia com dash) |
+| **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~2 m) | **Andróide de combate** (QWEN, DEEPSEEK, MISTRAL): casco branco, visor vermelho, blaster no antebraço. **Técnico** (ANTHROPIC): visor amarelo, conserta os Mechs | **Mais chato do que perigoso:** cai com 2 tiros de plasma ou **2 pisões** de Mech; ataca com **motosserra**, que só corta encostado e pega as pernas do Mech; muito ágil (arranca na hora, pula duas vezes, desvia com dash) |
 | **2** | Mechs de combate (~5 m) | **Vector-09** (o jogador) e Mechs rebeldes (CLAUDE, GEMINI, CHATGPT) | Blindado, dano por parte, calor na arma, foguetes |
 | **3** | Máquinas de cerco (futuro) | ainda não | a definir (Colossus-01) |
 
@@ -61,6 +61,7 @@ do robô do tamanho de uma pessoa ao Mech tomado pelas IAs.
 - **Monte e compartilhe o seu build (prévia):** escolha o nível de cada arma dentro da carga do chassi e mande o link para quem quiser jogar com a mesma montagem.
 - **Dano que respeita a distância:** o plasma perde força depois de 60 m; chegar perto rende, mas expõe.
 - **IAs rebeldes de dois tamanhos:** Mechs blindados e andróides pequenos e ágeis que chegam perto, pulam e desviam.
+- **Motosserras e pisões:** os andróides grudam nas suas pernas com motosserras; ande para cima deles e dois passos esmagam.
 - **Técnicos inimigos:** andróides de visor amarelo consertam os Mechs rebeldes; derrube eles primeiro.
 
 ---

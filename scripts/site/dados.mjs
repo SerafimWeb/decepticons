@@ -210,7 +210,8 @@ export function arsenal(game) {
   if (!game) return null;
   const { weapons: W, balance: B, vector: v } = game;
   const torso = v.maxModuleHealth.torso;
-  const ids = W.WEAPON_IDS.filter((id) => id !== 'blaster');
+  // Só as armas dos braços do Mech (energia e munição); blaster e motosserra são dos andróides.
+  const ids = W.WEAPON_IDS.filter((id) => id !== 'blaster' && W.weapon(id).kind !== 'melee');
   const levels = [0, 1, 2];
   return {
     target: v.name,

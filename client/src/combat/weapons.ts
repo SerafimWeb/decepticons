@@ -37,7 +37,7 @@ export const TIERS: readonly TierRule[] = [
   { label: 'MK III', damage: 1.4, heat: 1.3, mass: 2 },
 ];
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'chainsaw';
 
 /** Arma pronta para o combate, já no nível escolhido. Tudo em unidades do jogo (m, s, t). */
 export interface WeaponStats {
@@ -45,8 +45,11 @@ export interface WeaponStats {
   /** Nome para a interface e o site. */
   name: string;
   tier: Tier;
-  /** Energia: tiro ilimitado, limitado só pelo calor. Munição: carregador que recarrega sozinho (e também esquenta). */
-  kind: 'energy' | 'ammo';
+  /**
+   * Energia: tiro ilimitado, limitado só pelo calor. Munição: carregador que recarrega sozinho (e também
+   * esquenta). Corpo a corpo: corta o que está encostado (alcance = distância entre as cápsulas), sem projétil.
+   */
+  kind: 'energy' | 'ammo' | 'melee';
   /** Dano por tiro (energia) ou no centro da explosão (munição), inteiro. */
   damage: number;
   /** Segundos entre dois tiros. */
@@ -121,6 +124,27 @@ const BASE: Record<WeaponId, WeaponBase> = {
     minFactor: 0.5,
     blastRadius: 0,
     mass: 0.5,
+  },
+  /**
+   * Motosserra dos andróides (dono, 25/09: "ele tem que ficar perto de nós pra usar"): corta o que está
+   * encostado, na altura do andróide (num Mech, as pernas). 5 cortes por segundo, 20 de dano/s: sozinha,
+   * arranca uma perna do Vector-09 em ~7,5 s; em dupla, na metade. Chato, não mortal: o jogador pisa.
+   */
+  chainsaw: {
+    id: 'chainsaw',
+    name: 'Motosserra',
+    kind: 'melee',
+    damage: 4,
+    fireInterval: 0.2,
+    heatPerShot: 0.012,
+    magazine: 0,
+    reload: 0,
+    speed: 0,
+    optimalRange: 1.2,
+    maxRange: 1.2,
+    minFactor: 1,
+    blastRadius: 0,
+    mass: 1.5,
   },
 };
 

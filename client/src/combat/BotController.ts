@@ -55,12 +55,17 @@ export interface BotProfile {
   dodgeChance: number;
   /** Multiplica o erro de mira da dificuldade (1 = como está; maior = mira mais solta). */
   aimErrorScale: number;
+  /** Arma corpo a corpo: vai colado no alvo e circula em volta dele, cortando. */
+  melee?: boolean;
 }
 
 /** Mech (escala 2): ataca de longe, anda de lado devagar, não desvia com dash. */
 export const MECH_PROFILE: BotProfile = { attackRange: 38, keepMinRange: 14, strafeMinS: 1, strafeMaxS: 2.2, dodgeChance: 0, aimErrorScale: 1 };
-/** Andróide (escala 1): chega perto, muda de lado a toda hora e desvia com dash; difícil de acertar, mas mira mal (chato, não perigoso). */
-export const ANDROID_PROFILE: BotProfile = { attackRange: 22, keepMinRange: 7, strafeMinS: 0.35, strafeMaxS: 0.9, dodgeChance: 0.35, aimErrorScale: 2.2 };
+/**
+ * Andróide (escala 1) com motosserra: a 18 m parte para cima, gruda no alvo, circula em volta cortando
+ * as pernas e desvia com dash; difícil de acertar, mas quem chega perto de um Mech corre o risco do pisão.
+ */
+export const ANDROID_PROFILE: BotProfile = { attackRange: 18, keepMinRange: 0, strafeMinS: 0.35, strafeMaxS: 0.9, dodgeChance: 0.35, aimErrorScale: 2.2, melee: true };
 /**
  * Personalidade do piloto (dono, 25/09: "um mais brabo, outro mais manso, outro fujão que ataca na
  * covardia"). Por cima do tipo de robô (`BotProfile`) e da dificuldade (`BotSkill`): muda quão perto
@@ -427,6 +432,16 @@ export class BotController {
           // Desvio com dash para o lado novo. Só quem tem a chance sorteia (o RNG dos Mechs não muda).
           if (p.dodgeChance > 0 && this.rand() < p.dodgeChance && this.mech.mobility > 0) this.input.dash = true;
         }
+        // Corpo a corpo, com a vaga: vai colado no alvo e circula devagar em volta dele.
+        if (this.profile.melee && this.hasToken) {
+          const gap = this.flatDistance(t) - this.mech.stats.radius - this.target.stats.radius;
+          towards(t);
+          const side = gap < this.mech.loadout.primary.maxRange * 0.6 ? 1 : 0.35;
+          if (gap < this.mech.loadout.primary.maxRange * 0.6) _move.set(0, 0, 0);
+          _move.x += Math.cos(faceYaw) * this.strafeSign * side;
+          _move.z -= Math.sin(faceYaw) * this.strafeSign * side;
+          break;
+        }
         // Anda de lado (direita do torso = (cos, -sin)) e recua (trás = (sin, cos)) se estiver perto demais.
         _move.set(Math.cos(faceYaw) * this.strafeSign, 0, -Math.sin(faceYaw) * this.strafeSign);
         if (this.flatDistance(t) < (this.hasToken ? this.profile.keepMinRange : this.attackRange * HOLD_SCALE)) {
@@ -500,6 +515,16 @@ export class BotController {
     // Mira no torso, antecipando parte do movimento do alvo (tempo de voo do plasma).
     const tp = t.simPosition;
     const dist = this.flatDistance(tp);
+    // Corpo a corpo: sem mira nem antecipação; corta enquanto estiver encostado (quem aplica é o BotSystem).
+    if (this.profile.melee) {
+      m.applyFacing(this.yaw, 0);
+      if (this.hasToken) this.tokenHeld += dt;
+      const w = m.loadout.primary;
+      if (dist - m.stats.radius - t.stats.radius > w.maxRange || this.fireCooldown > 0 || !m.canFirePrimary || !this.hasToken) return;
+      this.wantsToFire = true;
+      this.fireCooldown = Math.max(this.fireCooldown, -dt) + w.fireInterval;
+      return;
+    }
     const flight = dist / m.loadout.primary.speed;
     _aim
       .set(tp.x, tp.y + t.stats.height * AIM_HEIGHT, tp.z)
