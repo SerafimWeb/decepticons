@@ -16,7 +16,8 @@
 
 | Etiqueta | Frente | O que cobre |
 |---|---|---|
-| `#jogabilidade` | Jogabilidade | movimento, câmeras, modos de jogo, sensação de controle |
+| `#jogabilidade` | Jogabilidade | movimento, câmeras, sensação de controle |
+| `#modos` | Modos de jogo | CTF, missões em fases, deathmatch por equipes, desafios diários |
 | `#combate` | Combate e armas | dano, armas, projéteis, retorno de acerto |
 | `#ia` | Inimigos e IA | bots, dificuldade, comportamento dos pilotos |
 | `#mechs` | Design dos Mechs | classes de Mech, modelos, animação |
@@ -133,30 +134,51 @@
 - [x] M3: servidor de jogo (`server/`, Node + `ws`): salas por código, a partida a 60 Hz com os bots, estado a 20 Hz, `npm run server` no PC de casa #rede
 - [x] M4: jogo online pelo link (`?sala=&servidor=`): previsão do seu Mech com correção pelo servidor, robôs remotos interpolados, tiros e abates dos outros #rede
 - [x] Jogar online com um clique: botão na landing e na pausa, sala pública com a próxima abrindo quando enche, volta ao offline com o servidor fora #rede
-- [ ] Servidor público no ar 24 h: domínio, túnel nomeado da Cloudflare e `GAME_SERVER_URL` no GitHub (dono; passo a passo no `DEPLOY.md`) #rede
+- [x] Servidor público no ar 24 h: domínio, túnel nomeado da Cloudflare e `GAME_SERVER_URL` no GitHub (dono; 26/09/2026: `jogo.selvamkt.com.br` no túnel Cloudflare, servidor em `127.0.0.1:2567` no PC de casa, tarefa do Windows, PC sem sleep) #rede
+- [x] Prova R16: 2+ clientes reais jogando na mesma sala (26/09/2026: dois aparelhos do dono, primeira sessão online ponta a ponta) #rede
 - [ ] Online completo: barricadas quebrando (evento), placar e nomes da sala, teste com latência e perda simuladas #rede
 - [ ] M5: tiros autoritativos com compensação de latência; eventos de acerto, parte e abate #combate
 - [ ] M6: entrada pelo link com código da sala + apelido; reconexão automática (G13) #rede
 - [ ] Telas do online: apelido, código da sala, jogadores, placar e ping (Gemini) #ux
 - [ ] Medir banda por sala e tick do servidor contra as metas do G11 e do G14 #desempenho
-- [ ] Prova R16: 2+ clientes reais com latência simulada; playtest pelo PC de casa + Cloudflare Tunnel #rede
 
-## 🔵 FASE 5 — Lançamento e viralização
+## 🔵 FASE 5 — Modos, missões e novidades semanais (o jogo que puxa o jogador de volta amanhã)
+
+Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o que atrai gente pra testar, se desafiar e voltar.
+
+- [ ] **CTF Vermelho × Azul (2v2 pra começar):** duas equipes, uma bandeira em cada base, `sim/Match.ts` com times; ganha a primeira equipe a capturar 3 vezes ou a com mais capturas em 8 min. Balanceado pra bandeira + Mech pesado ficar em risco simétrico ao Mech leve com dash #modos
+- [ ] **Missões em fases (cooperativo ou solo):** 3-5 fases com objetivos crescentes (defesa, escolta, invasão), com um evento de rede novo (`OBJECTIVE_STATE`) e um mapa por missão #modos
+- [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
+- [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio
+- [ ] **Nova arma toda semana** (com teste de balanço em `combat/balance.ts`; nenhuma abaixo do TTK do arsenal atual, nenhuma acima do teto de dano por segundo) #combate
+- [ ] **Colossus-01 (demolição no dash) e Ferret-X (gancho + sucata):** dois chassis novos, com blueprints Codex e stats no `entities/chassis.ts` #mechs
+- [ ] **Personalização visual (cosmética, nunca combate):** apelido, cor da carcaça, decalque, pintura por parte, salva no navegador antes da conta (`hangar/loadout.ts` estende com uma seção "aparência") #negocio
+- [ ] **Placar e nomes vindos do servidor** com histórico de partidas do jogador (na sua sessão, sem conta ainda) #ux
+- [ ] **Painel de balanço na sala de controle:** quantas partidas cada arma venceu, tempo médio até morte, distribuição de dano; alimenta as decisões semanais de ajuste #negocio
+- [ ] **Desafios diários pequenos** (ex.: "5 abates com plasma MK I", "acabar uma partida sem morrer"): recompensa cosmética #modos
+
+## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
 - [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo
 - [ ] Decisões do dono sobre o universo (`UNIVERSO.md`, seção 7) #universo
 - [ ] Textos do jogo na língua de CTI: incidente, contido, linha do tempo, painel do SOC, relatório pós-incidente com MTTR #universo
 - [ ] Fichas de ameaça das IAs na landing (TTPs do MITRE ATT&CK, IOCs, contramedidas que ensinam a jogar) #universo
 - [ ] Boletins de inteligência (TLP:CLEAR) gerados das entregas, nos bastidores e nas redes #universo
-- [ ] Modo streamer: sala de código fixo, câmera de espectador #negocio
-- [ ] Servidor de jogo no ar (Oracle Always Free São Paulo ou outro; ver `DEPLOY.md`) #base
 - [ ] SDK do portal (CrazyGames/Poki), anúncio só entre rodadas #negocio
 - [ ] Métrica: D1 e rodadas por sessão #negocio
 
-## 🔴 FASE 6 — Monetização e conteúdo
-- [ ] Contas + cosméticos (nunca atributo de combate) + pagamento + LGPD #negocio
-- [ ] Colossus-01 (demolição no dash) e Ferret-X (gancho + sucata) #mechs
-- [ ] Mais arenas #cenarios
-- [ ] Passe de temporada (se houver tração) #negocio
+## 🔴 FASE 7 — Mundo vasto e integrado (o horizonte)
+
+Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com jogadores testando de verdade e servidor pago em SP.
+
+- [ ] **Interest management (AoI):** cada jogador recebe só as unidades num raio dele. Destrava 32-64 jogadores por sala #rede
+- [ ] **Delta encoding no estado:** só campos que mudaram desde o último ack, corta 30-60% da banda #rede
+- [ ] **Veículos:** jipe e tanque com `DynamicRayCastVehicleController` do Rapier, driver+passageiro por rede #combate
+- [ ] **Terreno com streaming:** setores carregados sob demanda; mapa 1-2 km² sem estourar wasm/GPU #cenarios
+- [ ] **Destrutíveis v2:** prédios com paredes que caem, sincronizados por `PROP_BROKEN` #cenarios
+- [ ] **Multi-região (VPS SP + hemisfério norte):** matchmaking joga cada um na sala mais perto #base
+- [ ] **Contas + LGPD + cosméticos pagos** (nunca atributo de combate) #negocio
+- [ ] **Passe de temporada** (se houver tração) #negocio
+- [ ] **WebTransport (quando o Firefox terminar):** UDP no navegador, corta jitter em rede ruim #rede
 
 ## 💡 IDEIAS
 - [ ] Rádio das IAs rebeldes: provocações geradas por modelo de linguagem no servidor, entre rodadas (nunca decidindo o combate) #ia

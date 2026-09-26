@@ -380,6 +380,7 @@ if (net && onlinePhase) {
     </div>
     <ul class="todo frame stages">${onlinePhase.items.map((i) => `<li class="${i.status}"><span>${mark[i.status] ?? '[--]'}</span>${inline(clean(i.text))}</li>`).join('')}</ul>
     <p>${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA">[ JOGAR ONLINE AGORA ]</a>' : '<span class="rules-note">O servidor público entra no ar em breve: hoje o online roda em teste, num PC.</span>'}</p>
+    <p class="milestone frame">🎯 <strong>Primeira sessão online ponta a ponta:</strong> 26/09/2026, dois aparelhos do dono jogaram juntos na mesma sala pelo túnel público (<code>jogo.selvamkt.com.br</code>). Agora o servidor fica no ar 24 h; convide alguém e testem juntos.</p>
     <p class="rules-note">${ready} de ${onlinePhase.items.length} etapas prontas. Os números acima são medidos pelos ${net.tests} testes da rede a cada entrega; mandando o estado inteiro a cada vez, cabem até ${net.maxUnits} robôs por sala dentro da meta.</p>
   </section>`;
 }
@@ -532,6 +533,9 @@ const css = `
   /* Jogar online: mesmo botão, no verde do jogador (o âmbar é o do jogo offline). */
   .play-btn.online { background: var(--green); box-shadow: 0 0 24px rgba(57,255,106,.35); }
   .stages li.done span { color: var(--green); }
+  /* Marco: quando um marco novo entra, ele aparece dentro da própria seção que ele completa. */
+  .milestone { padding: 12px 16px; color: var(--text); font-size: 13.5px; max-width: 90ch; margin: 14px 0; border-left: 3px solid var(--green); }
+  .milestone code { color: var(--green); }
   .stages li.done { color: var(--muted); }
   .then { color: var(--muted); font-size: 13px; }
   .pulse { margin: 0; padding: 0 16px 14px; color: var(--green); font-size: 12px; letter-spacing: .06em; }
