@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { Loadout } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
 import { VECTOR09_STATS } from './chassis';
-import { MechBase, type LegRig, type MechRig } from './MechBase';
+import { MechBase, type LegRig, type MechRig, type MechStats } from './MechBase';
 import { batchRigMeshes, box, cyl, group } from './meshKit';
 
 /** Os números do Vector-09 ficam em `chassis.ts` (sem 3D: o servidor e o site leem de lá). */
@@ -105,10 +105,12 @@ export interface Vector09Options {
   visor?: number;
   /** Armas nos braços (Hangar); sem isso, as de fábrica. */
   loadout?: Loadout;
+  /** Números do chassi (padrão: os do Vector-09; as potências do painel trocam). */
+  stats?: MechStats;
 }
 
 export class Vector09 extends MechBase {
   constructor(options: Vector09Options = {}) {
-    super(VECTOR09_STATS, buildRig(options.paint ?? DEFAULT_PAINT, options.visor ?? PALETTE.green), options.loadout);
+    super(options.stats ?? VECTOR09_STATS, buildRig(options.paint ?? DEFAULT_PAINT, options.visor ?? PALETTE.green), options.loadout);
   }
 }

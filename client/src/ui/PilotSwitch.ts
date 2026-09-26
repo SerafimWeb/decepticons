@@ -1,4 +1,5 @@
 import type { Hangar } from '../hangar/Hangar';
+import { reloadWithout } from '../core/url';
 import { factorySpec } from '../hangar/loadout';
 
 /**
@@ -26,7 +27,8 @@ export class PilotSwitch {
       // A pausa inteira é o botão de "jogar": sem isto o clique também retomaria a partida.
       e.stopPropagation();
       hangar.apply(factorySpec(other));
-      location.reload();
+      // Sem o ?build= do endereço: senão o link de build reaplicaria o chassi antigo.
+      reloadWithout('build');
     });
     before.parentElement.insertBefore(btn, before);
   }

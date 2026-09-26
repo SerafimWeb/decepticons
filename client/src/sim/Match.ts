@@ -14,6 +14,7 @@ import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
+import type { PowerSpec } from '../tuning/power';
 
 /**
  * IAs rebeldes na arena: até 3 Mechs, 3 andróides de combate e 1 técnico. Teto: 7 bots + o jogador =
@@ -42,6 +43,8 @@ export interface MatchOptions {
   foes: Foes;
   /** Destroços físicos (cosméticos). O servidor desliga: não vão pela rede e custam CPU (G11). */
   debris?: boolean;
+  /** Potências do painel (laboratório do dono). O servidor usa o padrão. */
+  power?: PowerSpec;
 }
 
 /**
@@ -103,6 +106,7 @@ export class Match {
       technicianSpawns: o.foes.technician ? TECHNICIAN_SPAWNS : [],
       personas: o.foes.enemyPersonas,
       waypoints: SPAWN_POINTS,
+      power: o.power,
     });
     this.bots.targets = this.players;
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
