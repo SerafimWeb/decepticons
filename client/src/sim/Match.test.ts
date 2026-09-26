@@ -18,9 +18,11 @@ const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
  * Uma partida como o servidor vai rodar: sem tela, sem DOM, com a sala cheia (1 jogador + os bots do
  * padrão) e o jogador parado (os bots vêm atrás dele). Devolve um resumo e o tempo médio do tick.
  */
-async function play(seconds: number, debris: boolean) {
+async function play(seconds: number, debris: boolean, breakAll = false) {
   const physics = await PhysicsWorld.create();
   const match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: DEFAULT_SETTINGS, debris });
+  // Todas as barricadas quebradas no começo: o mapa fica igual com e sem destroços; só os estilhaços mudam.
+  if (breakAll) match.destructibles.damageInRadius(new THREE.Vector3(0, 0, 0), 500, 1e6, new THREE.Vector3(0, 1, 0));
   const player = new Vector09();
   match.addPlayer(player, 'VOCÊ');
   match.pilots.push({ fixedUpdate: (dt) => player.fixedUpdate(IDLE, dt) });
@@ -61,9 +63,10 @@ describe('partida sem tela (M1 do multiplayer: o que o servidor vai rodar)', () 
     // partidas com destroços divergem entre si (eles usam Math.random). O servidor roda SEM destroços
     // (determinístico, teste acima); no cliente, a reconciliação da M4 absorve a diferença. Se as correções
     // aparecerem, os destroços vão para um mundo físico só deles (MULTIPLAYER.md, riscos).
-    // 40 s: o bastante para uma barricada quebrar no meio da luta (o momento depende da calibragem).
-    const withDebris = await play(40, true);
-    const without = await play(40, false);
+    // Todas as barricadas quebram no primeiro tick nas duas partidas (antes o teste esperava uma quebrar por acaso
+    // em 40 s e, com a máquina ocupada, às vezes nenhuma quebrava). A única diferença são os estilhaços.
+    const withDebris = await play(20, true, true);
+    const without = await play(20, false, true);
     expect(without.where).not.toBe(withDebris.where);
   });
 
