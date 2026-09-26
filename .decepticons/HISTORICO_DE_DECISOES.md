@@ -2,6 +2,13 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Nomes de paródia nos bots; geopolítica e roteiro vão para o chat do SERAFIM
+**Pedido do dono:** "sobre os nomes, usa assim: chad-gpt, geminai, kuen, dipsik, nomes meio engraçados, que as pessoas entendam a alusão"; "vamos considerar Brasil no centro, BRICS no contexto vs imperialismo norte-americano; vou levar isso pro outro chat dedicado dentro do SERAFIM; a parte de universo e roteiro vou pedir pro outro chat".
+**Decisão:**
+- **Nomes (dono; Claude completou no mesmo estilo):** CLAWD, GEMINAI, CHAD-GPT (Mechs), KUEN, DIPSIK, MISTRAU (andróides), ANTRÓPICO (técnico). Resolve a decisão em aberto das marcas registradas. CLAWD, MISTRAU e ANTRÓPICO foram escolhas do Claude; trocar é mexer só em `BOT_NAMES`.
+- **Geopolítica (dono):** Brasil no centro, contexto BRICS × imperialismo norte-americano. Desenvolvimento no chat do SERAFIM; o `UNIVERSO.md` recebe o texto final e continua sendo a fonte dos agentes. Os blocos fictícios da proposta ficam superados. Registrado para aquele chat: portais e redes de anúncio têm regras para conteúdo político.
+**Quem decidiu:** dono.
+
 ## [2026-09-25] Proposta do universo: geopolítica, big techs, SERAFIM e CTI
 **Pedido do dono:** "integrar uma visão de geopolítica geral, integrar big techs, universo de segurança digital (pois somos SERAFIM), e também usar termos do CTI de cibersegurança".
 **Proposta (Claude), em `UNIVERSO.md`, aguardando o dono:**

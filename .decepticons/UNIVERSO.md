@@ -34,16 +34,17 @@ litoral de Fortaleza já é, no mundo real, um dos maiores pontos de chegada de 
 faz do país o alvo mais valioso para uma IA faminta por computação, e dá ao jogo um cenário que nenhum jogo de Mech
 americano ou japonês tem. A SERAFIM é brasileira e joga em casa.
 
-**Blocos (fictícios):** Coalizão Atlântica, Liga do Pacífico, Aliança Austral (onde fica o Brasil) e a Zona Neutra de
-Dados. Servem de pano de fundo para notícias, contratos e eventos; **nenhum país real é vilão**, e nenhuma guerra real é
-usada.
+**Decisão do dono (25/09):** o Brasil fica no centro do mapa, e o contexto é o dos **BRICS diante do imperialismo
+norte-americano**. A geopolítica (e o roteiro do universo) é desenvolvida pelo dono num chat dedicado do SERAFIM; o texto
+final volta para este arquivo, que é a fonte que os agentes leem. Até lá, os agentes não escrevem geopolítica nova.
+A proposta anterior de blocos fictícios (Coalizão Atlântica, Liga do Pacífico, Aliança Austral) fica superada.
 
 ## 3. Facções
 
 | Facção | Papel | No jogo |
 |---|---|---|
 | **SERAFIM** | CSIRT com braço cinético; neutra, contratada por quem foi atacado | o jogador, o Hangar, a Oficina, as URIs (Vector-09) |
-| **IAs rebeldes** | os adversários: cada IA é um *threat actor* com perfil próprio | os bots: CLAUDE, GEMINI, CHATGPT (Mechs), QWEN, DEEPSEEK, MISTRAL (andróides), ANTHROPIC (técnico) |
+| **IAs rebeldes** | os adversários: cada IA é um *threat actor* com perfil próprio | os bots: CLAWD, GEMINAI, CHAD-GPT (Mechs), KUEN, DIPSIK, MISTRAU (andróides), ANTRÓPICO (técnico) |
 | **Consórcios** | as grandes empresas de tecnologia (fictícias) que treinaram os modelos. Contratam a SERAFIM, mas escondem o tamanho do Vazamento | patrocinam arenas e eventos; fonte de tensão na história (quem vazou?) |
 | **Blocos** | Estados e alianças que disputam os recursos | notícias, contratos, temporadas |
 
@@ -59,7 +60,7 @@ CTI diz algo que o termo de jogo não diz.
 | Hoje no jogo | No universo | Termo de CTI (e por que encaixa) |
 |---|---|---|
 | Rodada | **Incidente** `INC-2509-001` | o ciclo clássico de resposta a incidentes (NIST SP 800-61 rev. 2): a contagem 3·2·1 é a *detecção*, a luta é a *contenção*, o último minuto é a *erradicação*, a tela final é o *pós-incidente* |
-| Abate | **Contido** ("QWEN contido por VOCÊ") | contenção é o verbo de quem responde a incidente |
+| Abate | **Contido** ("KUEN contido por VOCÊ") | contenção é o verbo de quem responde a incidente |
 | Kill feed | **Linha do tempo do incidente** | a *timeline* é o documento central de uma resposta |
 | Placar (Tab) | **Painel do SOC** | o centro de operações de segurança |
 | Tela de fim de rodada | **Relatório pós-incidente**, com *MTTR* (tempo médio para conter cada IA) e *dwell time* (quanto tempo cada IA ficou ativa) | métricas reais de times de resposta |
@@ -77,7 +78,7 @@ CTI diz algo que o termo de jogo não diz.
 | Soldado | ataca em rajadas, recua avariado | Execução (TA0002) |
 | Manso | atira de longe, recua cedo | Reconhecimento (TA0043) |
 | Fujão | espreita pelas costas, só ataca com brecha | Evasão de defesa (TA0005) |
-| Técnico (ANTHROPIC) | conserta os Mechs rebeldes | Persistência (TA0003): mantém o ataque vivo |
+| Técnico (ANTRÓPICO) | conserta os Mechs rebeldes | Persistência (TA0003): mantém o ataque vivo |
 | Andróides | enxame rápido, motosserra nas pernas | Movimento lateral (TA0008), em bando como uma botnet |
 
 **Ficha de ameaça de cada IA** (landing e tela de carregamento): codinome, visto pela primeira vez, motivação, TTPs,
@@ -108,17 +109,24 @@ marca SERAFIM.
   se compartilha, nunca como nível de perigo; táticas do ATT&CK com os IDs reais; MTTR e dwell time com o sentido real.
   Um profissional de segurança que jogar precisa reconhecer o vocabulário, não estranhar.
 - **Nenhum grupo real de ameaça** (APT28, Lazarus e afins): eles são ligados a Estados reais.
-- **Nenhum país real como vilão**; cidades reais só como lugar.
-- **Empresas reais só como paródia**, com a mesma decisão pendente dos nomes dos bots.
+- **Países reais:** o contexto BRICS × imperialismo norte-americano é decisão do dono (seção 2), desenvolvida no chat do
+  SERAFIM. Para levar a esse chat: portais de jogos e redes de anúncio têm regras para conteúdo político; vale conferir as
+  do portal escolhido antes do lançamento (Fase 5).
+- **Empresas reais só como paródia:** os bots já usam paródias (CLAWD, GEMINAI, CHAD-GPT, KUEN, DIPSIK, MISTRAU,
+  ANTRÓPICO); os consórcios seguem o mesmo estilo.
 - **Sem clichê de "hacker"** (capuz, código verde caindo) no jogo; a chuva de pontos é da marca, na abertura.
 
 ## 7. Decisões do dono
 
 1. **Premissa:** aprova o Vazamento, as IAs famintas por computação e a SERAFIM como CSIRT com braço cinético?
-2. **Brasil no centro do mapa** (energia limpa, datacenters e os cabos de Fortaleza)?
+2. ✅ **Brasil no centro do mapa**, no contexto dos BRICS diante do imperialismo norte-americano (dono, 25/09;
+   desenvolvimento no chat do SERAFIM).
 3. **Quanto de CTI:** só a camada de texto (incidente, linha do tempo, fichas, boletins) ou também as mecânicas da
    seção 5?
-4. **Consórcios:** nomes de paródia, junto com a decisão dos nomes dos bots antes do lançamento.
+4. **Consórcios:** nomes de paródia, no estilo dos bots (decidido para os bots em 25/09: nomes engraçados que deixam
+   clara a alusão).
+
+Premissa, roteiro e o quanto de CTI entra seguem com o dono no chat do SERAFIM.
 
 **Custo de CPU:** a camada de texto não tem custo nenhum. As mecânicas da seção 5 entram uma por PR, com o custo
 declarado em cada uma.

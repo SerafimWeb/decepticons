@@ -18,14 +18,14 @@ export const BOT_RESPAWN_S = 4;
 const BOT_PAINT = PALETTE.enemyPaint;
 const MUZZLE_COLOR = GLOW.enemyMuzzle;
 /**
- * Nomes das IAs rebeldes (dono, 25/09: "pra ficar mais engraçado"), por tipo, na ordem em que entram na
- * arena. **Marcas registradas de empresas reais:** servem ao protótipo; antes do lançamento (portais,
- * anúncios), decidir se viram paródias (decisão em aberto no ESTADO_ATUAL). É a única lista a trocar.
+ * Nomes das IAs rebeldes, por tipo, na ordem em que entram na arena. Paródias das IAs de verdade (dono, 25/09:
+ * "chad-gpt, geminai, kuen, dipsik: nomes meio engraçados, que as pessoas entendam a alusão"), no lugar das
+ * marcas registradas. É a única lista a trocar.
  */
 export const BOT_NAMES = {
-  mechs: ['CLAUDE', 'GEMINI', 'CHATGPT'],
-  androids: ['QWEN', 'DEEPSEEK', 'MISTRAL'],
-  technicians: ['ANTHROPIC'],
+  mechs: ['CLAWD', 'GEMINAI', 'CHAD-GPT'],
+  androids: ['KUEN', 'DIPSIK', 'MISTRAU'],
+  technicians: ['ANTRÓPICO'],
 } as const;
 
 const pick = (list: readonly string[], i: number, prefix: string) => list[i] ?? `${prefix}-${String(i + 1).padStart(2, '0')}`;

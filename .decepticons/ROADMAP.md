@@ -98,7 +98,8 @@
 - [ ] Hangar: tela para montar o Mech (arma e nível em cada braço, barras de carga e calor), salva no aparelho (passou do Gemini para o Codex em 25/09) #ux
 - [ ] Segundo chassi para o Hangar ter escolha de verdade #mechs
 - [x] Bots com personalidade (brabo, manso, fujão, soldado) e diretor de ataque: no máximo 2 atacando juntos, os outros esperam a vez #ia
-- [x] IAs rebeldes com nomes de IAs (CLAUDE, GEMINI, CHATGPT, QWEN, DEEPSEEK, ANTHROPIC) e o nome sobre a cabeça #ux
+- [x] IAs rebeldes com nomes de IAs e o nome sobre a cabeça #ux
+- [x] Nomes de paródia no lugar das marcas: CLAWD, GEMINAI, CHAD-GPT, KUEN, DIPSIK, MISTRAU, ANTRÓPICO #universo
 - [x] Andróides com motosserra (só corta encostado, pega as pernas do Mech) e pisão dos Mechs (andar para cima de um andróide encostado: 2 passos matam) #combate
 - [x] Jogar de andróide: chassi `android` no Hangar (blaster + motosserra), câmera na escala dele para os Mechs parecerem gigantes, troca na pausa #mechs
 - [x] Peso dos Mechs (9 m/s, inércia, passos com som e tremor) e andróides de 1,6 m #mechs
