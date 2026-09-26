@@ -37,8 +37,11 @@
  efeitos, destroços, partículas: só locais
 ```
 
-- **Servidor:** Node com Colyseus; a simulação é a mesma do cliente (`shared/`), com o Rapier em Wasm (já roda no
-  Node: é assim que os testes rodam hoje). Bots rodam no servidor e completam a sala até 8.
+- **Servidor:** Node com `ws` (M3, 26/09: no lugar do Colyseus, ver abaixo); a simulação é a mesma do cliente, com o
+  Rapier em Wasm (roda no Node, como nos testes). Bots rodam no servidor e completam a sala até 8.
+- **Por que `ws` e não Colyseus (decisão da M3):** o protocolo é nosso (binário da M2), então o Colyseus só daria
+  salas e reconexão, que cabem em ~200 linhas nossas, com uma dependência pequena e sem sub-dependências no lugar de
+  um framework inteiro. Se um dia houver vários servidores com matchmaking entre eles, o Colyseus volta à mesa.
 - **Mech local:** prediction com o mesmo `MechSim`; guarda os inputs sem confirmação (número de sequência); ao chegar
   o estado autoritativo, volta para ele e re-simula os pendentes. Correção pequena é suavizada no visual, não teleporta.
 - **Mechs remotos:** interpolam entre dois snapshots, ~100 ms no passado; **nunca rodam o character controller** (G6).
@@ -95,7 +98,7 @@ download por jogador numa luta intensa, e cabem até 15 unidades antes de passar
 | M0 | Este plano | Claude ✅ |
 | M1 | Partida sem tela (`sim/Match.ts`): a partida inteira roda no Node sem WebGL nem DOM, determinística sem destroços; o cliente monta a partida por ela ✅ (PR #49). **Ainda não** é a simulação compartilhada: ver seções 8 e 9 | Claude |
 | M2 | Contratos e codec binário, com testes de tamanho ✅ (26/09) | Claude |
-| M3 | `server/`: `ArenaRoom` com a simulação a 60 Hz, bots, entrada por `?sala=`; roda local com `npm run server` | Claude |
+| M3 | `server/`: `ArenaRoom` com a simulação a 60 Hz, bots, entrada por `?sala=`; roda local com `npm run server` ✅ (26/09) | Claude |
 | M4 | Prediction + reconciliação do Mech local; interpolação dos remotos; teste com latência e perda simuladas | Claude |
 | M5 | Tiros autoritativos com compensação de latência; eventos de acerto, parte e abate | Claude |
 | M6 | Entrada pelo link com apelido, reconexão, "reconectando…" | Claude (rede) + Gemini (telas) |
@@ -154,7 +157,12 @@ corrige. Se a correção aparecer na tela, os destroços vão para um mundo fís
 
 **Feito depois:** contratos de rede e codec (M2, 26/09, seção 5).
 
-**Ainda não existe:** `server/` com Colyseus (M3), prediction e reconciliação (M4),
+**Feito depois:** o servidor (M3, 26/09): `server/` com `ws`, salas por código, a `Match` a 60 Hz por sala (0,5 ms
+por tick com 1 jogador e os bots), o piloto remoto (`NetPilot`) aplicando um comando por tick, na ordem, com o `ack`,
+e o tiro saindo da simulação na direção de yaw e pitch do comando (seção 9, item 3, só no servidor por enquanto).
+`npm run server` no PC do dono (`DEPLOY.md`).
+
+**Ainda não existe:** prediction e reconciliação (M4),
 tiros autoritativos (M5), entrada por link e reconexão (M6).
 
 ## 9. Proposta de arquitetura: simulação × render × efeitos (a decidir; não implementada)

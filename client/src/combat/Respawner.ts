@@ -25,6 +25,12 @@ export class Respawner {
     this.entries.push({ mech, delayS, left: null, onRespawn });
   }
 
+  /** Para de acompanhar (jogador que saiu da sala). */
+  untrack(mech: MechBase): void {
+    const i = this.entries.findIndex((e) => e.mech === mech);
+    if (i >= 0) this.entries.splice(i, 1);
+  }
+
   /** Segundos até renascer; null se está vivo ou não é acompanhado. */
   timeLeft(mech: MechBase): number | null {
     return this.entries.find((e) => e.mech === mech)?.left ?? null;

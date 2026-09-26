@@ -80,6 +80,7 @@ client/src/
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde)
   debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)
+server/        servidor de jogo (M3): Server.ts (ws, salas, laço de 60 Hz), ArenaRoom.ts (a partida de uma sala), NetPilot.ts (piloto remoto), main.ts
 shared/net/    contratos do multiplayer, sem dependência do cliente: constants.ts, codec.ts, input.ts, state.ts, events.ts, messages.ts
 scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), landing.mjs (landing do jogo), oficina.mjs (bancada de testes), painel.mjs (sala de controle: o case),
                site/dados.mjs + site/tema.mjs + site/graficos.mjs (dados, visual e gráficos das páginas), site.mjs (site + .htaccess + capturas + teste), install-hooks.mjs
@@ -101,6 +102,7 @@ npm test           # testes de simulação (Vitest, no Node)
 npm run check      # typecheck + testes + build + budget + boot headless (obrigatório antes de push)
 npm run smoke:dev  # boot headless contra o dev server
 npm run painel     # sala de controle (novidades, equipe, mesa do Dan, fluxo, fichas, evolução, rota, frentes, decisões) em .tmp/painel/painel.html
+npm run server     # servidor de jogo do multiplayer em ws://localhost:2567/?sala=ARENA (DEPLOY.md)
 npm run site       # monta o site em .tmp/site/ (landing, oficina/, sala-de-controle/, jogar/); `-- --capturas` fotografa o jogo; `-- --check` testa em /cybermech/
 gh release create v0.<fase>.0 --generate-notes --title "Fase N — Título"   # ao fechar uma fase: notas agrupadas por frente
 ```

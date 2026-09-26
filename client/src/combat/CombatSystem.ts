@@ -63,6 +63,11 @@ export class CombatSystem {
     this.byCollider.set(mech.collider.handle, mech);
   }
 
+  /** Tira o Mech das regras (jogador que saiu da sala). */
+  unregister(mech: MechBase): void {
+    if (this.byCollider.get(mech.collider.handle) === mech) this.byCollider.delete(mech.collider.handle);
+  }
+
   /**
    * Explosão da arma `w` em `at`: cada Mech a menos do raio da explosão da superfície da cápsula leva
    * dano que cai com a distância, na parte mais perto da explosão (no pé acerta a perna, no peito o
