@@ -2,6 +2,13 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] Multiplayer no mesmo domínio (`selvamkt.com.br`), com defesas
+**Achado (dono):** "por enquanto vamos manter em selvamkt.com.br … faremos as defesas e proteções pra um projeto nao estragar ou atrapalhar o outro". A alternativa era um domínio novo só do jogo.
+**Decisão:** o servidor de jogo mora em `jogo.selvamkt.com.br`, atrás de um túnel nomeado da Cloudflare. O DNS de `selvamkt.com.br` vai para a Cloudflare (Free), mas **cada registro existente do site fica em nuvem cinza** (só resolução de nome; o tráfego do site continua indo direto para o Hostinger, sem passar pela Cloudflare). Só o `jogo.` fica em nuvem laranja e é proxiado pelo túnel.
+**Proteção do servidor:** por padrão o processo do jogo escuta em `127.0.0.1:2567` (o túnel fala daqui). Porteira em `server/guard.ts`: 4 conexões abertas por IP, 400 no total, 60 mensagens/s por conexão com folga de 30. `cf-connecting-ip` só vale quando o soquete direto é o localhost.
+**Quem decidiu:** Dan.
+
+
 ## [2026-09-26] O grafo da arquitetura na oficina
 **Pedido do dono:** "inserir o grafo la na pagina da oficina como um elemento visual impactante", referenciando o `ecossistema.html` (SERAFIM) e o pipeline STERM/ABADDON.
 **Decisão (Qwen, com aval do dono):**
