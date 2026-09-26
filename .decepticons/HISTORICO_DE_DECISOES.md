@@ -2,6 +2,15 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] Jogar online com um clique, com o servidor no PC de casa 24 h
+**Pedido do dono:** "o multiplayer só vai funcionar se eu enviar o link? Quero que outra pessoa possa simplesmente clicar em multiplayer e entrar na mesma sala, do Brasil, EUA, Rússia, China, mesmo que eu precise deixar meu PC ligado 24 h. Dá pra ser, ou só com a Oracle?"
+**Decisão:**
+- **Dá, sem a Oracle** (dono: PC 24 h). O que faltava era um endereço fixo: o túnel rápido muda a cada vez. O túnel nomeado da Cloudflare dá o endereço fixo, grátis, sem abrir porta, e exige um domínio na Cloudflare (decisão do dono: domínio próprio do jogo, recomendado, ou o DNS do `selvamkt.com.br`).
+- **No jogo (Claude):** `[ JOGAR ONLINE ]` na landing e na pausa, que aparece quando o site tem o endereço do servidor (variável `GAME_SERVER_URL` do GitHub, passada ao build como `VITE_GAME_SERVER`; é endereço, não segredo). Todos entram na sala pública `ARENA`; cheia (8, contando quem ainda está conectando), o servidor abre `ARENA-2`, `ARENA-3`... Com o servidor fora do ar, o jogo avisa e volta ao offline em 3 s.
+- **No PC:** `scripts/servidor-windows.ps1` registra o servidor no Agendador de Tarefas (sobe com o Windows, reinicia se cair, log em `.tmp/servidor/`). O túnel é um serviço do próprio cloudflared.
+- **Distância:** servidor no Brasil; o próprio Mech responde na hora em qualquer lugar, mas quem está longe vê os outros e os acertos com mais atraso (EUA ~150 ms, Europa ~220, Rússia e Ásia ~300). Um segundo servidor perto desses jogadores resolve quando houver público lá.
+**Quem decidiu:** dono (PC 24 h, um clique); Claude (sala pública automática, variável do endereço, script do Windows).
+
 ## [2026-09-26] M4 do multiplayer: o jogo joga online (primeira versão)
 **Pedido do dono:** "segue pro multiplayer; prossiga".
 **Decisão (Claude):**

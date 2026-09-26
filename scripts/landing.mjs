@@ -121,6 +121,9 @@ const facts = [
   'celular: controles de toque (em teste)',
 ].filter(Boolean);
 
+// Servidor público do multiplayer (variável GAME_SERVER_URL do GitHub, a mesma que o jogo recebe no build).
+const ONLINE = Boolean(process.env.VITE_GAME_SERVER?.trim());
+
 const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
     <div class="hero-copy">
       <p class="presents">SERAFIM WEB apresenta</p>
@@ -129,6 +132,7 @@ const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
       <p class="pitch">Pilote um Mech de combate numa arena industrial e desmonte o inimigo peça por peça. Abriu o link, está jogando: sem instalar, sem conta e sem pay-to-win.</p>
       <div class="cta">
         <a class="play-btn" href="./jogar/">[ ENTRAR NO COCKPIT ]</a>
+        ${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA">[ JOGAR ONLINE ]</a>' : ''}
         <a class="link-btn" href="./sala-de-controle/">como este jogo é feito →</a>
       </div>
       <ul class="facts">${facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
@@ -375,6 +379,7 @@ if (net && onlinePhase) {
       <div class="read frame"><span class="k">seu comando</span><span class="v">${net.inputBytes} bytes</span><span class="d">por passo (${kbs(net.upload)}); dano e vida nunca saem do seu aparelho</span></div>
     </div>
     <ul class="todo frame stages">${onlinePhase.items.map((i) => `<li class="${i.status}"><span>${mark[i.status] ?? '[--]'}</span>${inline(clean(i.text))}</li>`).join('')}</ul>
+    <p>${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA">[ JOGAR ONLINE AGORA ]</a>' : '<span class="rules-note">O servidor público entra no ar em breve: hoje o online roda em teste, num PC.</span>'}</p>
     <p class="rules-note">${ready} de ${onlinePhase.items.length} etapas prontas. Os números acima são medidos pelos ${net.tests} testes da rede a cada entrega; mandando o estado inteiro a cada vez, cabem até ${net.maxUnits} robôs por sala dentro da meta.</p>
   </section>`;
 }
@@ -524,6 +529,8 @@ const css = `
   .todo li { display: grid; grid-template-columns: 38px 1fr; gap: 8px; }
   .todo li span { color: var(--text); } .todo li.doing span { color: var(--amber); }
   .stages { margin: 18px 0 12px; padding: 16px 18px; }
+  /* Jogar online: mesmo botão, no verde do jogador (o âmbar é o do jogo offline). */
+  .play-btn.online { background: var(--green); box-shadow: 0 0 24px rgba(57,255,106,.35); }
   .stages li.done span { color: var(--green); }
   .stages li.done { color: var(--muted); }
   .then { color: var(--muted); font-size: 13px; }

@@ -231,6 +231,17 @@ describe('M3: o servidor de verdade, pela rede', () => {
     b.ws.close();
   });
 
+  it('sala cheia abre a próxima: o 9º que clica em Jogar online cai na ARENA-2, não fica de fora', async () => {
+    const all = Array.from({ length: ROOM_SIZE + 1 }, () => client('ARENA'));
+    await Promise.all(all.map((c) => c.open));
+    for (const [i, c] of all.entries()) c.ws.send(join(`P${i}`));
+    for (const c of all) await c.until(() => c.of(MSG.WELCOME).length > 0);
+    const rooms = all.map((c) => decodeWelcome(c.of(MSG.WELCOME)[0]!)!.room);
+    expect(rooms.filter((r) => r === 'ARENA').length).toBe(ROOM_SIZE);
+    expect(rooms.filter((r) => r === 'ARENA-2').length).toBe(1);
+    for (const c of all) c.ws.close();
+  });
+
   it('salas diferentes não se misturam', async () => {
     const a = client('SALA-A');
     const b = client('SALA-B');
