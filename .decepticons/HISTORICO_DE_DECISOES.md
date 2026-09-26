@@ -29,6 +29,17 @@
 **Custo de CPU:** no servidor, a partida inteira por sala (medida acima) e ~240 bytes codificados por jogador a 20 Hz. No jogo, nada ainda.
 **Quem decidiu:** dono (seguir); Claude (`ws`, formato do servidor).
 
+## [2026-09-26] Primeira tela do Hangar com preview reutilizado do jogo
+**Pedido do dono:** "crie o hangar baseado nessa ideia", com uma oficina futurista, um Mech central, seleção de encaixes e painéis técnicos.
+**Decisão (Codex):**
+- `[ ABRIR HANGAR ]` leva da pausa ou da tela inicial a uma composição em tela inteira: chassi, encaixes dos braços, editor de níveis, carga, calor, TTK, dano em 20 s, copiar link e aplicar montagem.
+- O Vector/andróide atuais usam a cena pausada e o modelo 3D já carregado. O rig do piloto ganha escala temporária, elevação e rotação lenta enquanto o Hangar está aberto; escala e pose são restabelecidas ao sair. Isso evita um segundo renderer WebGL e duplicação de geometria. Pré-selecionar outro chassi mostra uma silhueta esquemática até aplicar e recarregar.
+- `HangarMenu` consulta somente `game.hangar`, `CHASSIS`, `ARM_SLOTS`, `TIERS` e o catálogo de armas. Não cria stats nem regras. As leituras de calor, TTK e dano representam a simulação padrão, sem ajustes experimentais de POTÊNCIAS. Ombros e torso são explicitamente futuros.
+- Troca de arma usa o próximo respawn do contrato; troca de piloto recarrega sem o parâmetro `?build=` obsoleto. O link codifica o rascunho atual.
+**Custo de CPU:** nenhum tick extra; enquanto a tela está aberta (partida pausada), transformações escalares e rotação do modelo por quadro, no mesmo renderer e nas mesmas draw calls. A interface só recalcula relatórios em ações do jogador; sem alocação por quadro introduzida.
+**Verificação:** browser headless desktop: abriu pela tela inicial, MK III alterou carga 7,0 → 10,0 t, montagem persistiu e a troca para andróide recarregou o piloto. `npm run check` passou após o rebase: 200 testes, build, budgets, smoke e check do site. Playtest real do dono fica pendente.
+**Quem decidiu:** dono (referência visual); Codex (composição, preview compartilhado e fluxo contra o contrato).
+
 ## [2026-09-26] Blueprints visuais procedurais para Mechs leve, médio e pesado
 **Pedido do dono:** "quero que voce assuma essa responsabilidade de implementar esses detalhes graficos" sobre as referências enviadas (`cybermech1.png` e `cybermech2.png`).
 **Decisão (Codex):**

@@ -107,16 +107,18 @@ O jogo é feito para ser **muito bom e todo mundo querer jogar**, não para vend
 
 ---
 
-## HANGAR (em projeto, dono 25/09: "projetar nosso HANGAR pra receber os mechs")
+## HANGAR (primeira tela disponível; módulos e progressão seguem planejados)
 
 > A landing lê esta lista (formato `- **Título:** frase.`). Especificação técnica completa em `HANGAR.md`.
 
-- **Chassi:** o esqueleto do Mech define velocidade, blindagem, dissipador e a carga que ele aguenta. Hoje o Vector-09 (médio); depois um leve e um pesado.
-- **Encaixes:** o braço direito leva uma arma de energia, o esquerdo uma de munição; ombros e torso recebem módulos (dissipador extra, radar, escudo, reparo).
-- **Carga:** tudo o que se monta pesa. A carga do chassi é o orçamento: arma mais forte deixa menos espaço para blindagem e módulos.
+- **Chassi:** escolha no Hangar entre o Vector-09 médio e o andróide A-1 leve; a troca de piloto recarrega a partida.
+- **Encaixes:** monte as armas compatíveis nos braços e escolha entre MK I, MK II e MK III. Ombros e torso ficam reservados para módulos futuros.
+- **Carga:** o peso das armas precisa caber no limite do chassi. O Hangar mostra o espaço livre e bloqueia uma montagem acima da capacidade.
 - **Três níveis de poder:** toda arma tem MK I, MK II e MK III com a mesma regra (+20% de dano por nível, mais calor e +50% de peso). O MK III bate mais forte, mas rende menos por tonelada.
 - **Calor do Mech:** todas as armas esquentam o mesmo dissipador. Disparar tudo junto trava o Mech antes de terminar o serviço: nenhum combo derruba de uma vez.
-- **Conquistado jogando:** chassis, armas e níveis se liberam em combate, nunca na loja. À venda, só pintura e neon.
+- **Simulação:** carga, calor, dano em 20 s e tempo estimado para derrubar um torso são atualizados na tela com os valores padrão do jogo. Ajustes experimentais de POTÊNCIAS não entram na previsão.
+- **Salvo no aparelho:** a montagem fica no navegador e pode ser compartilhada por link. As armas novas entram no próximo respawn; mudar de piloto recarrega a partida.
+- **Conquistado jogando:** a progressão ainda está planejada; o protótipo atual libera todos os níveis para teste. Nunca haverá vantagem comprada. À venda, só pintura e neon.
 
 ---
 

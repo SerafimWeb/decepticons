@@ -1,7 +1,7 @@
 # HANGAR — especificação técnica (em projeto)
 
 > Documento de design do sistema de montagem de Mechs. Dono do tema: Claude (simulação, contrato, equilíbrio);
-> a tela é do Gemini (território `client/src/ui/`). O resumo para o jogador fica em `GAME_DESIGN.md`, seção HANGAR
+> tela inicial implementada pelo Codex em `client/src/ui/HangarMenu.ts`. O resumo para o jogador fica em `GAME_DESIGN.md`, seção HANGAR
 > (a landing lê de lá). Criado em 2026-09-25, a pedido do dono: "quero começar a projetar nosso HANGAR pra receber
 > os mechs"; "3 níveis de poder em cada arma; dano realista, sem apelação; a diferença vem da técnica, das
 > habilidades e da customização de cada jogador".
@@ -96,12 +96,24 @@ do centro (100%) até a borda do raio (0).
 - Sem compra, sem atalho pago. Vender, só pintura e neon (`GAME_DESIGN.md`).
 - Sem conta (convidado): o progresso fica no aparelho. Com contas (Fase 6), vai para o servidor.
 
-## 6. Tela do Hangar (proposta para o Gemini)
+## 6. Tela do Hangar (primeira versão, Codex)
 
-Fluxo: pausa → `[ HANGAR ]` → Mech girando no centro (o mesmo modelo do jogo, gerado por código) → encaixes
-clicáveis em volta (braço D, braço E, ombros, torso) → escolher arma e nível → barra de **carga** e barra de
-**calor** (quanto o Mech esquenta com tudo disparando) atualizam na hora, lidas de `balance.ts` → `[ APLICAR ]`
-vale no próximo renascimento. Montagem salva no aparelho (`cybermech.hangar.v1`), validada ao carregar.
+Fluxo implementado: tela inicial ou pausa → `[ ABRIR HANGAR ]` → escolher Vector-09 ou andróide A-1 → selecionar
+braço direito/esquerdo no painel ou no hotspot da silhueta → escolher nível MK e, no braço esquerdo, esvaziar o
+encaixe → conferir carga, calor, TTK e dano → `[ APLICAR MONTAGEM ]`. A montagem usa `game.hangar`; segue validada
+e salva em `cybermech.hangar.v1`. Troca de arma entra no próximo respawn; troca de piloto aplica a montagem de
+fábrica e recarrega a partida sem reaplicar um `?build=` antigo. O link mostrado na tela codifica o rascunho atual.
+
+**Prévia:** quando o chassi selecionado é o piloto atual, a tela mostra o Mech real da partida pausada pelo
+renderer existente. O rig é reduzido e levantado só durante a tela e gira lentamente no eixo; ao sair, escala e
+pose voltam ao jogo. Não há segundo renderer, cena extra nem malha nova. Ao pré-selecionar um chassi diferente,
+aparece uma silhueta esquemática até aplicar/recarregar, evitando mostrar o modelo errado.
+
+**Leituras:** carga, calor, dano e TTK vêm da simulação padrão (`game.hangar.report`), não incluem ajustes
+experimentais do painel POTÊNCIAS. Aplicar um nível inválido por carga é bloqueado pela validação do contrato.
+Ombros e torso aparecem como slots futuros, sem fingir que módulos já existem. A versão inicial foi verificada
+no browser em desktop para seleção, alteração de carga, persistência MK III e troca de piloto; falta playtest do
+dono em desktop e celular.
 
 ## 7. Multiplayer
 
@@ -120,7 +132,7 @@ com o jogo pausado.
 
 1. ✅ Arsenal em dados, três níveis, calor do Mech, cadência exata, metas de equilíbrio travadas por teste (Claude).
 2. ✅ `LoadoutSpec` + `validateLoadout` + carga por chassi + montagem salva + link `?build=`, com testes (Claude, 25/09).
-3. Tela do Hangar contra o contrato (Gemini).
+3. ✅ Tela inicial do Hangar contra o contrato (Codex, 2026-09-26).
 4. Blindagem distribuível e o segundo chassi (Claude).
 5. Módulos (Claude + Gemini no visual).
 6. Progressão (depois do multiplayer, junto com as contas).

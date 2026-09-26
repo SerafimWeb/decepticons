@@ -54,6 +54,7 @@ import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { Match } from '../sim/Match';
+import { HangarMenu } from '../ui/HangarMenu';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
 const MAX_STEPS_PER_FRAME = 4;
@@ -132,6 +133,10 @@ export class Game {
   private appliedQuality: QualityPreset | null = null;
 
   private playing = false;
+  private hangarPreviewing = false;
+  private hangarPreviewYaw = 0;
+  private hangarPreviewTime = 0;
+  private hangarPreviewScale = 1;
   private accumulator = 0;
   private last = -1;
 
@@ -282,6 +287,18 @@ export class Game {
         this.bloomPass.enabled = enabled;
       },
     );
+    new HangarMenu(this.hangar, {
+      open: () => {
+        this.hangarPreviewing = true;
+        this.hangarPreviewYaw = this.mech.root.rotation.y;
+        this.hangarPreviewTime = 0;
+        this.hangarPreviewScale = Math.min(1, 3.2 / this.mech.stats.height);
+      },
+      close: () => {
+        this.hangarPreviewing = false;
+        this.mech.root.scale.set(1, 1, 1);
+      },
+    });
     new PilotSwitch(this.hangar);
     new SettingsMenu(this.settings);
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
@@ -639,6 +656,12 @@ export class Game {
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);
     this.rig.update(dt);
+    if (this.hangarPreviewing) {
+      this.hangarPreviewTime += dt;
+      this.mech.root.rotation.y = this.hangarPreviewYaw + this.hangarPreviewTime * 0.16;
+      this.mech.root.scale.setScalar(this.hangarPreviewScale);
+      this.mech.root.position.y += this.mech.stats.height * (1 - this.hangarPreviewScale) * 0.5 + this.mech.stats.height * 0.32;
+    }
     this.updateAim(dt);
     this.projectiles.render(alpha);
     this.rockets.render(alpha);

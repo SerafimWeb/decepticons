@@ -95,8 +95,8 @@
 - [x] Oficina no site: bancada de testes gerada pela simulação do jogo (calor por ação, dinamômetro, dano por parte e por distância, chassis) #combate
 - [x] Gestão nos bastidores: quadro Agora/Próximo/Depois com código por item, burn-up do escopo, linha do tempo das fases com estimativa, matriz frentes × fases e as quatro métricas DORA de entrega contínua #negocio
 - [x] Hangar: contrato da montagem (`LoadoutSpec` + `validateLoadout`, carga de 11 t no Vector-09), montagem salva no aparelho e link de build (`?build=`), com testes #mechs
-- [ ] Hangar: tela para montar o Mech (arma e nível em cada braço, barras de carga e calor), salva no aparelho (passou do Gemini para o Codex em 25/09) #ux
-- [ ] Segundo chassi para o Hangar ter escolha de verdade #mechs
+- [x] Hangar: tela de montagem com preview 3D ao vivo, armas e níveis nos braços, carga, calor, simulação de combate, gravação local e link compartilhável #ux
+- [x] Segundo piloto selecionável no Hangar: andróide A-1 com blaster e motosserra (troca recarrega a partida) #mechs
 - [x] Bots com personalidade (brabo, manso, fujão, soldado) e diretor de ataque: no máximo 2 atacando juntos, os outros esperam a vez #ia
 - [x] IAs rebeldes com nomes de IAs e o nome sobre a cabeça #ux
 - [x] Nomes de paródia no lugar das marcas: CLAWD, GEMINAI, CHAD-GPT, KUEN, DIPSIK, MISTRAU, ENTRÓPICO #universo
