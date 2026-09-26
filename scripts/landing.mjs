@@ -1,6 +1,6 @@
 /**
  * Landing do jogo (raiz do site, /cybermech/): para quem vai jogar. O que é, como está, o que tem,
- * controles, o compromisso "sem pay-to-win" e o que está sendo construído. Os bastidores (o case do
+ * controles, o compromisso "sem pay-to-win" e o que está sendo construído. A sala de controle (o case do
  * desenvolvimento) ficam em scripts/painel.mjs.
  *
  * Uso: node scripts/landing.mjs --out <.tmp/site/index.html>
@@ -129,7 +129,7 @@ const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
       <p class="pitch">Pilote um Mech de combate numa arena industrial e desmonte o inimigo peça por peça. Abriu o link, está jogando: sem instalar, sem conta e sem pay-to-win.</p>
       <div class="cta">
         <a class="play-btn" href="./jogar/">[ ENTRAR NO COCKPIT ]</a>
-        <a class="link-btn" href="./bastidores/">como este jogo é feito →</a>
+        <a class="link-btn" href="./sala-de-controle/">como este jogo é feito →</a>
       </div>
       <ul class="facts">${facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
     </div>
@@ -376,7 +376,7 @@ const buildHtml = `<section aria-labelledby="montagem">
         ${act.last ? `<p class="pulse">${act.total} commits e ${act.merges} entregas em ${m.day ?? 1} dia${(m.day ?? 1) > 1 ? 's' : ''} · último em ${esc(new Date(act.last).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' às'))}</p>` : ''}
       </div>
     </div>
-    <p><a class="link-btn" href="./bastidores/">ver os bastidores: equipe, processo, diário e números →</a></p>
+    <p><a class="link-btn" href="./sala-de-controle/">entrar na sala de controle: equipe, processo, decisões e números →</a></p>
   </section>`;
 
 const endHtml = `<section class="final frame" aria-labelledby="final">

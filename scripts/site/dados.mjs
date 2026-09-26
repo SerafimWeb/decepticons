@@ -105,6 +105,15 @@ export function roadmapStats({ fronts, phases }) {
   return { done, total, ideasCount, focus, next, frontStats, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
+/** Linhas de uma tabela markdown, sem o cabeçalho e sem a linha de traços: cada linha vira a lista de células. */
+function tableRows(md) {
+  return md
+    .split('\n')
+    .map((l) => /^\|(.+)\|\s*$/.exec(l)?.[1].split('|').map((c) => c.trim()))
+    .filter((c) => c && !/^:?-+:?$/.test(c[0]))
+    .slice(1);
+}
+
 export function readEstado() {
   const md = read('.decepticons/ESTADO_ATUAL.md');
   const section = (title) => {
@@ -118,10 +127,13 @@ export function readEstado() {
   }
   // "- [ ] **Quem:** tarefa" → pendências por pessoa.
   const pending = [...section('PENDENTE').matchAll(/^- \[ \] \*\*(.+?):\*\*\s*(.+)$/gm)].map((p) => ({ who: p[1], text: p[2] }));
+  // Decisões que esperam o dono: "| Decisão | Situação |".
+  const open = tableRows(section('DECISÕES EM ABERTO')).map(([title, text]) => ({ title, text }));
   return {
     next: section('PRÓXIMA SESSÃO'),
     team,
     pending,
+    open,
     status: /\*\*Iteração atual:\*\*\s*(.+)/.exec(md)?.[1] ?? '',
   };
 }
@@ -445,6 +457,24 @@ export function atividade(prs) {
 export function pedidos() {
   const entries = read('.decepticons/HISTORICO_DE_DECISOES.md').split(/^## \[/m).slice(1);
   return entries.filter((e) => /pedido do dono|sintoma \(dono|\(pedido do dono|pedido do dono/i.test(e)).length;
+}
+
+/**
+ * Fichas de design (pasta `fichas/` dos documentos): o fluxo de status e a lista de fichas, lidos do README
+ * delas. Sem a pasta, listas vazias (a seção some).
+ */
+export function fichas() {
+  let md;
+  try {
+    md = read('.decepticons/fichas/README.md');
+  } catch {
+    return { flow: [], sheets: [] };
+  }
+  const section = (title) => new RegExp(`^## ${title}[^\\n]*\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, 'm').exec(md)?.[1] ?? '';
+  return {
+    flow: tableRows(section('Como uma ficha anda')).map(([status, who, what]) => ({ status: status.replace(/`/g, ''), who, what })),
+    sheets: tableRows(section('Fichas a fazer')).map(([file, type, ref, state]) => ({ file, type, ref, done: /✅/.test(state), state: state.replace('✅', '').replace(/^a fazer\s*/i, '').replace(/^\((.*)\)$/, '$1').trim() })),
+  };
 }
 
 /** Entradas do cofre de decisões (título e data), da mais nova para a mais antiga. */

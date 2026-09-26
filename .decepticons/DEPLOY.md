@@ -8,7 +8,7 @@
 
 **Endereço:** `https://www.selvamkt.com.br/cybermech/` (decisão do dono em 2026-09-23: caminho `/cybermech`, **público**).
 - `/cybermech/`: landing do jogo, para quem vai jogar (`scripts/landing.mjs`; os destaques vêm da seção VITRINE do `GAME_DESIGN.md`).
-- `/cybermech/bastidores/`: o case do desenvolvimento (`scripts/painel.mjs --site`): equipe, fluxo, protocolo, evolução, mapa da campanha, frentes, diário e entregas.
+- `/cybermech/sala-de-controle/`: o case do desenvolvimento (`scripts/painel.mjs --site`; até 25/09 era `/bastidores/`, que agora leva para lá): equipe, fluxo, protocolo, evolução, mapa da campanha, frentes, diário e entregas.
 - `/cybermech/jogar/`: o jogo (build do Vite com `base: './'`, funciona em qualquer subpasta).
 - `/cybermech/capturas/`: três imagens do jogo feitas pelo próprio deploy (`site.mjs --capturas`): entra no build headless, joga ~20 s e fotografa as três câmeras. Viram a capa da landing e a prévia do link (og:image). Se falharem, a landing sai sem imagens e o log avisa.
 - **O que vai a público (decisão do dono em 24/09: bastidores às claras):** as páginas são geradas, nenhum documento interno vai inteiro. Dos bastidores saem só os títulos do `HISTORICO`, a divisão de trabalho e as pendências por pessoa do `ESTADO_ATUAL`, o `ROADMAP` e números do git e dos PRs. Nunca secrets, host, usuário ou caminho do servidor. O `--check` reprova o codinome interno em qualquer página pública.
@@ -20,7 +20,7 @@
 `npm run site -- --capturas` (monta `.tmp/site/` e fotografa o jogo) → rsync por SSH para a Hostinger → `node scripts/site.mjs --verify <SITE_URL>`.
 - Mesmo padrão do deploy do CAPTIA nesta conta Hostinger: SSH na **porta 65002**, **5 tentativas** com espera crescente (a proteção anti-abuso da Hostinger às vezes derruba a conexão do runner).
 - **Trava de segurança:** o `rsync --delete` apaga no servidor o que não existe localmente. O job se recusa a rodar se `DEPLOY_PATH` não terminar em `/public_html/cybermech/`, para nunca apagar o site real.
-- **Verificação:** landing, `/bastidores/` e `/jogar/` com o conteúdo certo (o servidor responde 200 até para arquivo inexistente), doctype e `<meta charset>` no início, a CSP aplicada e o `.wasm` servido como `application/wasm` e comprimido; capa ausente só avisa. Se a Cloudflare desafiar o IP do runner, o job avisa e não falha (conferir no navegador).
+- **Verificação:** landing, `/oficina/`, `/sala-de-controle/` (e `/bastidores/` levando para ela) e `/jogar/` com o conteúdo certo (o servidor responde 200 até para arquivo inexistente), doctype e `<meta charset>` no início, a CSP aplicada e o `.wasm` servido como `application/wasm` e comprimido; capa ausente só avisa. Se a Cloudflare desafiar o IP do runner, o job avisa e não falha (conferir no navegador).
 
 **Configuração no GitHub (dono), sem valor nenhum no repositório (R2/R10) nem no chat (R11):**
 
