@@ -27,7 +27,7 @@ const MUZZLE_COLOR = GLOW.enemyMuzzle;
 export const BOT_NAMES = {
   mechs: ['CLAWD', 'GEMINAI', 'CHAD-GPT'],
   androids: ['KUEN', 'DIPSIK', 'MISTRAU'],
-  technicians: ['ANTRÓPICO'],
+  technicians: ['ENTRÓPICO'],
 } as const;
 
 const pick = (list: readonly string[], i: number, prefix: string) => list[i] ?? `${prefix}-${String(i + 1).padStart(2, '0')}`;

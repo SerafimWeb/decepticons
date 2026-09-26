@@ -2,6 +2,11 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] O técnico rebelde se chama ENTRÓPICO
+**Pedido do dono:** "chama de Entropico".
+**Decisão:** o técnico (o andróide que conserta os Mechs rebeldes) passa de ANTRÓPICO para ENTRÓPICO: a alusão continua, e entropia combina com quem remenda máquina quebrada. Troca só em `BOT_NAMES` e nos documentos. A vitrine da landing ganha as potências (o painel de ajuste já está no jogo).
+**Quem decidiu:** dono.
+
 ## [2026-09-25] Potências: o painel de ajuste do dono, por arma e por clã
 **Pedido do dono:** "seria bom termos um painel de controle que eu possa configurar as potências das armas, dos robôs etc., pra ficar mais fácil de eu customizar também (por arma, por clã, etc.)".
 **Decisão (Claude):**
