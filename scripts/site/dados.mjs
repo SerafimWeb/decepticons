@@ -5,7 +5,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
 const read = (path) => readFileSync(resolve(path), 'utf8').replace(/\r\n/g, '\n');
@@ -617,6 +617,68 @@ export function pipeline(prs) {
   } catch {
     return null;
   }
+}
+
+// ---------- arquitetura (o grafo dos módulos) ----------
+
+/**
+ * O mapa da arquitetura do CYBERMECH, lido dos próprios arquivos: um nó por módulo (a pasta de primeiro
+ * nível) e uma aresta para cada import entre módulos. Muda sozinho quando o código muda; nada digitado à
+ * mão (R14). Ficam fora os testes e o CSS. Alimenta o grafo da oficina.
+ */
+export function arquitetura() {
+  const ROOTS = ['client/src', 'shared', 'server', 'scripts'];
+  const norm = (p) => p.replace(/\\/g, '/');
+  const moduleOf = (path, base) => {
+    if (base !== 'client/src') return base.replace(/\/.*$/, '');
+    const rel = path.slice(base.length + 1);
+    const slash = rel.indexOf('/');
+    return slash === -1 ? 'raiz' : rel.slice(0, slash);
+  };
+  const files = [];
+  const walk = (dir, base) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = norm(join(dir, e.name));
+      if (e.isDirectory()) walk(p, base);
+      else if (e.name.endsWith('.ts') && !e.name.endsWith('.test.ts')) files.push({ path: p, module: moduleOf(p, base) });
+    }
+  };
+  for (const r of ROOTS) if (existsSync(r)) walk(r, r);
+  const byPath = new Map(files.map((f) => [f.path, f]));
+
+  const nodes = new Map();
+  const node = (id) => {
+    if (!nodes.has(id)) nodes.set(id, { id, files: 0, loc: 0, imports: new Set(), importedBy: new Set() });
+    return nodes.get(id);
+  };
+  const weight = new Map();
+  for (const f of files) {
+    const src = read(f.path);
+    const me = node(f.module);
+    me.files++;
+    me.loc += src.split('\n').length;
+    const specs = [
+      ...src.matchAll(/\bfrom\s+['"](\.[^'"]+)['"]/g),
+      ...src.matchAll(/\bimport\s+['"](\.[^'"]+)['"]/g),
+    ].map((m) => m[1]);
+    for (const spec of specs) {
+      const p = norm(join(dirname(f.path), spec));
+      const hit = [`${p}.ts`, `${p}.tsx`, `${p}/index.ts`].map((c) => byPath.get(c)).find(Boolean);
+      if (!hit || hit.module === f.module) continue;
+      me.imports.add(hit.module);
+      node(hit.module).importedBy.add(f.module);
+      const key = `${f.module}|${hit.module}`;
+      weight.set(key, (weight.get(key) ?? 0) + 1);
+    }
+  }
+  return {
+    nodes: [...nodes.values()].map((n) => ({ ...n, imports: [...n.imports].sort(), importedBy: [...n.importedBy].sort() })),
+    links: [...weight].map(([key, w]) => {
+      const [source, target] = key.split('|');
+      return { source, target, weight: w };
+    }),
+    files: files.length,
+  };
 }
 
 /** Versão (última tag), commit atual e dia do projeto. */
