@@ -624,7 +624,7 @@ export function pipeline(prs) {
 /**
  * O mapa da arquitetura do CYBERMECH, lido dos próprios arquivos: um nó por módulo (a pasta de primeiro
  * nível) e uma aresta para cada import entre módulos. Muda sozinho quando o código muda; nada digitado à
- * mão (R14). Ficam fora os testes e o CSS. Alimenta o grafo da oficina.
+ * mão (R14). Conta também os testes que cobrem cada módulo. Fica de fora o CSS. Alimenta o grafo da oficina.
  */
 export function arquitetura() {
   const ROOTS = ['client/src', 'shared', 'server', 'scripts'];
@@ -636,11 +636,15 @@ export function arquitetura() {
     return slash === -1 ? 'raiz' : rel.slice(0, slash);
   };
   const files = [];
+  const tests = new Map(); // módulo → nº de testes (`it`) que o cobrem
   const walk = (dir, base) => {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
       const p = norm(join(dir, e.name));
       if (e.isDirectory()) walk(p, base);
-      else if (e.name.endsWith('.ts') && !e.name.endsWith('.test.ts')) files.push({ path: p, module: moduleOf(p, base) });
+      else if (e.name.endsWith('.test.ts')) {
+        const m = moduleOf(p, base);
+        tests.set(m, (tests.get(m) ?? 0) + (read(p).match(/^\s+it\(/gm) ?? []).length);
+      } else if (e.name.endsWith('.ts')) files.push({ path: p, module: moduleOf(p, base) });
     }
   };
   for (const r of ROOTS) if (existsSync(r)) walk(r, r);
@@ -672,13 +676,41 @@ export function arquitetura() {
     }
   }
   return {
-    nodes: [...nodes.values()].map((n) => ({ ...n, imports: [...n.imports].sort(), importedBy: [...n.importedBy].sort() })),
+    nodes: [...nodes.values()].map((n) => ({ ...n, tests: tests.get(n.id) ?? 0, imports: [...n.imports].sort(), importedBy: [...n.importedBy].sort() })),
     links: [...weight].map(([key, w]) => {
       const [source, target] = key.split('|');
       return { source, target, weight: w };
     }),
     files: files.length,
   };
+}
+
+/** A frente do ROADMAP de cada módulo (o vocabulário do `ROADMAP.md`): agrupa e dá a cor do grafo. */
+export const MOD_FRENTE = {
+  physics: 'jogabilidade', player: 'jogabilidade', camera: 'jogabilidade',
+  combat: 'combate',
+  entities: 'mechs', hangar: 'mechs',
+  environment: 'cenarios',
+  ui: 'ux', tuning: 'ux',
+  audio: 'som',
+  net: 'rede', shared: 'rede', server: 'rede',
+  fx: 'desempenho', debug: 'desempenho',
+  core: 'base', sim: 'base', raiz: 'base', scripts: 'base',
+  brand: 'negocio',
+};
+
+/**
+ * Quem cuida de cada módulo: os agentes dos PRs da frente dele (Claude, Gemini, Codex, Qwen), do que mais
+ * entregou para o que menos. Sai das etiquetas dos PRs (`entregas()`), nada digitado à mão.
+ */
+export function porModulo(prs) {
+  const out = {};
+  for (const [mod, frente] of Object.entries(MOD_FRENTE)) {
+    const per = new Map();
+    for (const p of prs) if (p.fronts.includes(frente)) for (const ag of p.agents) per.set(ag, (per.get(ag) ?? 0) + 1);
+    out[mod] = [...per.entries()].sort((a, b) => b[1] - a[1]).map(([ag]) => ag);
+  }
+  return out;
 }
 
 /** Versão (última tag), commit atual e dia do projeto. */

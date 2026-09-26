@@ -346,16 +346,11 @@ async function check() {
     await pageSane(page, 'oficina', failures);
     await publicPage(page, 'oficina', failures);
     if ((await page.locator('.minis .g').count()) < 6) failures.push('oficina: faltam os gráficos da bancada (a simulação do jogo não carregou)');
-    // O grafo da arquitetura desenha no cliente (grafo de força próprio, sem biblioteca): canvas vazio = script quebrou.
-    const arqPx = await page.evaluate(() => {
-      const cv = document.querySelector('.arq canvas');
-      if (!cv) return -1;
-      const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
-      let p = 0;
-      for (let i = 3; i < d.length; i += 4) if (d[i] > 8) p++;
-      return p;
-    });
-    if (arqPx < 1000) failures.push(`oficina: o grafo da arquitetura não desenhou (px=${arqPx})`);
+    // O mapa da arquitetura (SVG gerado no build): tem de sair com os módulos e as ligações.
+    const arqMods = await page.locator('.arq .mod').count();
+    const arqEdges = await page.locator('.arq .edge').count();
+    if (arqMods < 10) failures.push(`oficina: o mapa da arquitetura saiu com ${arqMods} módulos`);
+    if (arqEdges < 20) failures.push(`oficina: o mapa da arquitetura saiu com ${arqEdges} ligações`);
     // Landing na raiz: é por ela que se entra no jogo.
     await page.goto(base);
     const title = await page.title();

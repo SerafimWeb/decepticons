@@ -7,7 +7,7 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { arquitetura, jogo, marcos } from './site/dados.mjs';
+import { arquitetura, entregas, jogo, marcos, porModulo } from './site/dados.mjs';
 import { GRAFO_CSS, grafoOficina } from './site/grafo.mjs';
 import { CHART_CSS, divergingBars, heatTable, lineChart, nf, pct, rankBars } from './site/graficos.mjs';
 import { esc, pagina, topo } from './site/tema.mjs';
@@ -16,8 +16,8 @@ const argv = process.argv.slice(2);
 const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : '.tmp/site/oficina/index.html');
 const m = marcos();
 const game = await jogo();
-// O grafo da arquitetura: os módulos e quem importa quem, lido dos próprios arquivos (dados.mjs → arquitetura()).
-const grafo = grafoOficina(arquitetura());
+// O mapa da arquitetura: módulos, testes e frentes (arquitetura()) e a equipe de cada frente (das etiquetas dos PRs).
+const grafo = grafoOficina(arquitetura(), porModulo(entregas().prs));
 
 function build() {
   const { weapons: W, balance: B, heat: H, vector: V, android: A } = game;
