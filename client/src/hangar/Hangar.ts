@@ -5,6 +5,9 @@ import { FACTORY_LOADOUT, loadoutKey, parseLoadoutKey, validateLoadout, type Loa
 
 /** Onde a montagem fica salva no aparelho (sem conta: o progresso é do aparelho). */
 export const HANGAR_STORAGE_KEY = 'cybermech.hangar.v1';
+/** As montagens dos atalhos 1 a 4. */
+export const PRESETS_STORAGE_KEY = 'cybermech.hangar.presets.v1';
+export const PRESET_COUNT = 4;
 
 /** Números de uma montagem para a tela do Hangar, da mesma simulação do jogo (teto teórico). */
 export interface LoadoutReport {
@@ -87,6 +90,32 @@ export class Hangar {
     this.pending = check.loadout;
     this.write(spec);
     this.onChange?.(spec);
+    return check;
+  }
+
+  /** As montagens salvas nos atalhos 1 a 4 (null = atalho vazio). Montagem salva que não vale mais vira vazio. */
+  presets(): (LoadoutSpec | null)[] {
+    const out: (LoadoutSpec | null)[] = Array.from({ length: PRESET_COUNT }, () => null);
+    try {
+      const raw: unknown = JSON.parse(this.storage?.getItem(PRESETS_STORAGE_KEY) ?? '[]');
+      if (Array.isArray(raw)) raw.slice(0, PRESET_COUNT).forEach((s, i) => (out[i] = validateLoadout(s).ok ? (s as LoadoutSpec) : null));
+    } catch {
+      // Salvo estragado: atalhos vazios.
+    }
+    return out;
+  }
+
+  /** Salva uma montagem no atalho `index` (0 a 3). Montagem inválida não é salva. */
+  savePreset(index: number, spec: LoadoutSpec): LoadoutCheck {
+    const check = validateLoadout(spec);
+    if (!check.ok || index < 0 || index >= PRESET_COUNT) return check;
+    const list = this.presets();
+    list[index] = spec;
+    try {
+      this.storage?.setItem(PRESETS_STORAGE_KEY, JSON.stringify(list));
+    } catch {
+      // Sem armazenamento: o atalho vale só nesta sessão (não guardado).
+    }
     return check;
   }
 

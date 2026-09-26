@@ -3,6 +3,8 @@ import { reloadWithout } from '../core/url';
 import { CHASSIS, type ChassisId } from '../entities/chassis';
 import type { Hangar } from '../hangar/Hangar';
 import { armOptions, factorySpec, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
+import { PRESET_COUNT } from '../hangar/Hangar';
+import { testAt, testFire, type TestFire } from '../hangar/testFire';
 
 /** O que a tela pede ao jogo: abrir e fechar o galpão 3D, mostrar a montagem, girar e aplicar na hora. */
 export interface HangarPreview {
@@ -14,7 +16,13 @@ export interface HangarPreview {
   applied?(): string;
   /** Linha de estado do topo: "OFFLINE" ou a sala online. */
   status?(): string;
+  /** Teste de disparo: o galpão mostra o Mech atirando no alvo, no ritmo do teste. */
+  test?(data: TestFire, arm: ArmSlot): void;
+  stopTest?(): void;
 }
+
+/** Os tiros do teste começam depois que o Mech vira para o alvo (s). */
+const TEST_TURN_S = 0.5;
 
 const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string; detail: string }> = {
   vector09: { title: 'VECTOR-09', className: 'MÉDIO · ASSALTO', detail: 'Equilíbrio entre alcance e mobilidade.' },
@@ -90,6 +98,8 @@ export class HangarMenu {
   private messageKind: 'info' | 'error' = 'info';
   private readonly hotRight: HTMLElement;
   private readonly hotLeft: HTMLElement;
+  /** Teste de disparo em andamento (os números da tela saem dele). */
+  private testing: TestFire | null = null;
 
   constructor(
     private readonly hangar: Hangar,
@@ -108,6 +118,17 @@ export class HangarMenu {
         <button class="hg-hotspot" id="hg-hot-right" type="button" data-slot="right" tabindex="-1"><i></i><span><b>01</b> BRAÇO D</span></button>
         <button class="hg-hotspot" id="hg-hot-left" type="button" data-slot="left" tabindex="-1"><i></i><span><b>02</b> BRAÇO E</span></button>
         <div class="hg-caption"><b id="hangar-mech-title"></b><span id="hangar-mech-detail"></span><small>ARRASTE PARA GIRAR</small></div>
+        <div class="hg-presets" id="hg-presets" aria-label="Montagens salvas nos atalhos 1 a 4"></div>
+      </div>
+      <div class="hg-test" id="hg-test" hidden>
+        <div class="hg-test-head"><em>TESTE DE DISPARO</em><b id="hg-test-weapon"></b></div>
+        <div class="hg-test-grid">
+          <div><span>TEMPO</span><b id="hg-test-time"></b></div>
+          <div><span>TIROS</span><b id="hg-test-shots"></b></div>
+          <div><span>DANO</span><b id="hg-test-dmg"></b></div>
+        </div>
+        <div class="hg-test-heat"><span>CALOR</span><div class="hg-meter"><i id="hg-test-heatbar"></i></div><b id="hg-test-state"></b></div>
+        <button class="hg-btn" type="button" data-action="stop-test">PARAR</button>
       </div>
       <header class="hg-top">
         <div class="hg-brand"><svg class="hg-emblem" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 29 9v14l-13 7L3 23V9z" /><path d="M16 8 23 12v8l-7 4-7-4v-8z" /></svg><span><b>CYBERMECH</b><small>HANGAR · CENTRO DE MONTAGEM</small></span></div>
@@ -167,7 +188,15 @@ export class HangarMenu {
     this.root.addEventListener('click', (event) => this.onClick(event));
     this.root.addEventListener('change', (event) => this.onChange(event));
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && this.isOpen) this.close();
+      if (!this.isOpen) return;
+      if (event.key === 'Escape') {
+        if (this.testing) this.endTest(true);
+        else this.close();
+        return;
+      }
+      // 1 a 4 carregam a montagem do atalho (fora de campo de texto).
+      const n = Number(event.key);
+      if (n >= 1 && n <= PRESET_COUNT && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLSelectElement)) this.loadPreset(n - 1);
     });
     // Arrastar no galpão (fora dos painéis) gira o Mech no pedestal, com mouse ou dedo.
     const stage = this.root.querySelector<HTMLElement>('.hg-stage')!;
@@ -203,13 +232,85 @@ export class HangarMenu {
       if (!p) return;
       el.style.transform = `translate(${Math.round(p.x)}px, ${Math.round(p.y)}px)`;
       // O rótulo aponta para fora do Mech, mas nunca sai da tela.
+      // No computador, os painéis cobrem as laterais: o rótulo fica no vão entre eles.
+      const minX = w > 900 ? 330 : 170;
+      const maxX = w > 900 ? w - 470 : w - 170;
       let toLeft = p.x < w * 0.45;
-      if (toLeft && p.x < 170) toLeft = false;
-      else if (!toLeft && p.x > w - 170) toLeft = true;
+      if (toLeft && p.x < minX) toLeft = false;
+      else if (!toLeft && p.x > maxX) toLeft = true;
       el.classList.toggle('to-left', toLeft);
     };
     place(this.hotRight, right);
     place(this.hotLeft, left);
+  }
+
+  /**
+   * Por quadro, com o Hangar aberto: o andamento do teste de disparo na cena (null = acabou ou não há teste). A tela
+   * mostra tempo, tiros, dano e calor do próprio teste, no mesmo segundo do desenho.
+   */
+  testFrame(progress: { t: number; seconds: number } | null): void {
+    const data = this.testing;
+    if (!data) return;
+    if (!progress) {
+      this.endTest(false);
+      return;
+    }
+    const t = Math.max(0, progress.t - TEST_TURN_S);
+    const at = testAt(data, t);
+    this.setText('hg-test-time', `${num(Math.min(t, data.seconds), 1)} / ${num(data.seconds, 0)} s`);
+    this.setText('hg-test-shots', String(at.shots));
+    this.setText('hg-test-dmg', String(at.damage));
+    const bar = this.root.querySelector<HTMLElement>('#hg-test-heatbar')!;
+    bar.style.width = `${Math.round(at.heat * 100)}%`;
+    bar.classList.toggle('over', at.locked);
+    this.setText('hg-test-state', at.locked ? 'SUPERAQUECEU: ARMAS TRAVADAS' : `${Math.round(at.heat * 100)}%`);
+  }
+
+  private startTest(): void {
+    const arm = this.draft[this.selectedSlot];
+    if (!arm) return;
+    const w = weapon(arm.id, arm.tier);
+    const data = testFire(CHASSIS[this.draft.chassis], w);
+    this.testing = data;
+    // Sem a animação de entrada: ela seguraria os painéis visíveis (o fim da animação vale mais que o estilo).
+    this.root.classList.remove('hg-enter');
+    this.root.classList.add('hg-testing');
+    this.root.querySelector<HTMLElement>('#hg-test')!.hidden = false;
+    this.setText('hg-test-weapon', `${w.name.toUpperCase()} ${TIERS[w.tier]!.label}`);
+    this.testFrame({ t: 0, seconds: data.seconds });
+    this.preview.test?.(data, this.selectedSlot);
+  }
+
+  /** Fim do teste (acabou ou parou): os painéis voltam e o resumo fica na mensagem. */
+  private endTest(stopped: boolean): void {
+    const data = this.testing;
+    if (!data) return;
+    this.testing = null;
+    if (stopped) this.preview.stopTest?.();
+    this.root.classList.remove('hg-testing');
+    this.root.querySelector<HTMLElement>('#hg-test')!.hidden = true;
+    const heat = data.overheatAt === null ? 'sem ferver' : `ferveu em ${num(data.overheatAt, 1)} s`;
+    this.message = stopped ? 'Teste interrompido.' : `Teste: ${data.shots.length} disparos e ${data.damage} de dano em ${num(data.seconds, 0)} s, ${heat}.`;
+    this.messageKind = 'info';
+    this.renderMessage();
+  }
+
+  /** Atalho cheio: carrega a montagem no rascunho (aplicar continua sendo do botão). */
+  private loadPreset(index: number): void {
+    const p = this.hangar.presets()[index];
+    if (!p) return;
+    this.draft = copySpec(p);
+    this.selectedSlot = 'right';
+    this.message = `Atalho ${index + 1} carregado: aplique para usar.`;
+    this.messageKind = 'info';
+    this.render();
+  }
+
+  private savePreset(index: number): void {
+    const check = this.hangar.savePreset(index, this.draft);
+    this.message = check.ok ? `Montagem salva no atalho ${index + 1}.` : check.detail;
+    this.messageKind = check.ok ? 'info' : 'error';
+    this.render();
   }
 
   private open(): void {
@@ -226,6 +327,7 @@ export class HangarMenu {
   }
 
   private close(): void {
+    this.endTest(true);
     this.root.classList.add('hidden');
     this.pauseOverlay?.classList.remove('hidden');
     document.documentElement.classList.remove('hangar-open');
@@ -267,7 +369,29 @@ export class HangarMenu {
       this.render();
       return;
     }
+    const load = target?.closest<HTMLButtonElement>('[data-preset-load]')?.dataset.presetLoad;
+    if (load !== undefined) {
+      const i = Number(load);
+      if (this.hangar.presets()[i]) this.loadPreset(i);
+      else this.savePreset(i);
+      return;
+    }
+    const save = target?.closest<HTMLButtonElement>('[data-preset-save]')?.dataset.presetSave;
+    if (save !== undefined) {
+      this.savePreset(Number(save));
+      return;
+    }
     const action = target?.closest<HTMLButtonElement>('[data-action]')?.dataset.action;
+    if (action === 'test') {
+      event.stopPropagation();
+      this.startTest();
+      return;
+    }
+    if (action === 'stop-test') {
+      event.stopPropagation();
+      this.endTest(true);
+      return;
+    }
     if (action === 'close') {
       event.stopPropagation();
       this.close();
@@ -381,6 +505,7 @@ export class HangarMenu {
       <p class="hg-hint">${w ? WEAPON_HINT[w.id] : 'Encaixe vazio: sobra carga para o outro braço.'}</p>
       <div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : `+${Math.round((t.damage - 1) * 100)}% dano`}</small></button>`).join('')}</div>
+      <button class="hg-test-btn" type="button" data-action="test"${arm ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>
       ${w ? `<div class="hg-bars">${STATS.map((s) => bar(s, w, was)).join('')}</div><p class="hg-legend"><i class="now"></i> esta montagem <i class="was"></i> a que está no Mech</p>` : ''}`;
 
     const capPct = Math.min(100, (report.mass / report.capacity) * 100);
@@ -402,6 +527,16 @@ export class HangarMenu {
       apply.title = report.check.ok ? 'Salvar e aplicar a montagem' : report.check.detail;
     }
     this.hotLeft.querySelector('span')!.innerHTML = `<b>02</b> ${spec.left ? 'BRAÇO E' : 'BRAÇO E · VAZIO'}`;
+    // Atalhos 1 a 4: vazio salva a montagem da tela; cheio carrega (e o SALVAR pequeno sobrescreve).
+    const draftKey = loadoutKey(spec);
+    this.root.querySelector<HTMLElement>('#hg-presets')!.innerHTML = this.hangar
+      .presets()
+      .map((p, i) => {
+        const active = p !== null && loadoutKey(p) === draftKey;
+        const label = p ? presetLabel(p) : 'VAZIO · salvar';
+        return `<div class="hg-preset${p ? '' : ' empty'}${active ? ' active' : ''}"><button type="button" data-preset-load="${i}" title="${p ? `Carregar o atalho ${i + 1} (tecla ${i + 1})` : 'Salvar esta montagem aqui'}"><b>${i + 1}</b><small>${label}</small></button>${p ? `<button class="hg-preset-save" type="button" data-preset-save="${i}" title="Salvar a montagem da tela neste atalho">SALVAR</button>` : ''}</div>`;
+      })
+      .join('');
     this.hotRight.classList.toggle('selected', this.selectedSlot === 'right');
     this.hotLeft.classList.toggle('selected', this.selectedSlot === 'left');
     this.renderMessage();
@@ -418,6 +553,12 @@ export class HangarMenu {
     const node = this.root.querySelector<HTMLElement>(`#${id}`);
     if (node) node.textContent = text;
   }
+}
+
+/** Rótulo curto de um atalho: chassi e nível de cada braço (ex.: "V09 · III / I"). */
+function presetLabel(p: LoadoutSpec): string {
+  const tier = (a: LoadoutSpec[ArmSlot]) => (a ? ['I', 'II', 'III'][a.tier] : '—');
+  return `${p.chassis === 'android' ? 'A-1' : 'V09'} · ${tier(p.right)} / ${tier(p.left)}`;
 }
 
 /** Uma barra de leitura: o valor da arma escolhida e, por baixo, o da que está no Mech (se for outra). */

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { Loadout } from '../combat/weapons';
+import type { TestFire } from './testFire';
 import { PALETTE } from '../core/palette';
 import { Android } from '../entities/Android';
 import { PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
@@ -22,6 +23,71 @@ const IDLE_AFTER_DRAG_S = 3;
 const MIN_SHOWN_HEIGHT = 3.2;
 
 const _arm = new THREE.Vector3();
+const _v = new THREE.Vector3();
+/** Alvo do teste de disparo: à direita e atrás do pedestal. */
+const TARGET = new THREE.Vector3(15, 0, -9);
+const TARGET_H = 6;
+/** Projéteis de teste na tela ao mesmo tempo, e a velocidade visual deles (m/s). */
+const SHOTS_POOL = 16;
+const FLASH_POOL = 8;
+
+interface Shot {
+  mesh: THREE.Mesh;
+  from: THREE.Vector3;
+  to: THREE.Vector3;
+  t: number;
+  dur: number;
+}
+
+interface Flash {
+  mesh: THREE.Mesh;
+  t: number;
+}
+
+/** Brilho redondo (canvas) do impacto no alvo. */
+function flashTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d')!;
+  const r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  r.addColorStop(0, 'rgba(255,255,255,1)');
+  r.addColorStop(0.3, 'rgba(255,220,160,0.8)');
+  r.addColorStop(1, 'rgba(255,140,40,0)');
+  g.fillStyle = r;
+  g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+
+/** Placa do alvo: anéis concêntricos (canvas). */
+function targetTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#0b1318';
+  g.fillRect(0, 0, 256, 256);
+  for (let r = 120; r > 0; r -= 24) {
+    g.strokeStyle = r % 48 === 0 ? 'rgba(255,176,90,0.95)' : 'rgba(106,232,255,0.9)';
+    g.lineWidth = 5;
+    g.beginPath();
+    g.arc(128, 128, r, 0, Math.PI * 2);
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(255,176,90,1)';
+  g.beginPath();
+  g.arc(128, 128, 10, 0, Math.PI * 2);
+  g.fill();
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Diferença de ângulo pelo lado mais curto. */
+function shortAngle(a: number, b: number): number {
+  let d = b - a;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return d;
+}
 
 /** Piso de placas de grade: bordas ciano e grade fina (canvas, feito uma vez). */
 function floorTexture(): THREE.CanvasTexture {
@@ -163,6 +229,20 @@ export class HangarScene {
   private sinceDrag = IDLE_AFTER_DRAG_S;
   /** Fração da largura que o painel da direita cobre: o Mech fica no espaço que sobra (0 no celular). */
   private shift = 0;
+  private width = 0;
+  private screenH = 0;
+  // Teste de disparo: o alvo, os projéteis e brilhos de impacto (pools feitos uma vez), e o andamento.
+  private readonly targetMat: THREE.MeshStandardMaterial;
+  private readonly shotsPool: Shot[] = [];
+  private readonly flashes: Flash[] = [];
+  private test: { data: TestFire; arm: 'right' | 'left'; t: number; next: number; aimFrom: number; aimTo: number } | null = null;
+  /** 0 = câmera do Hangar, 1 = câmera aberta do teste (mistura suave entre as duas). */
+  private testCam = 0;
+  private readonly camHome = new THREE.Vector3();
+  private readonly lookHome = new THREE.Vector3();
+  private readonly camTest = new THREE.Vector3();
+  private readonly lookTest = new THREE.Vector3();
+  private readonly look = new THREE.Vector3();
 
   constructor() {
     const s = this.scene;
@@ -249,6 +329,54 @@ export class HangarScene {
     this.buildHall();
     this.turntable.position.y = PEDESTAL_TOP;
     s.add(this.turntable);
+
+    // Estande de tiro: postes, a placa do alvo e a base; acende a cada impacto.
+    // Só os anéis acendem no impacto (o mapa de emissão é a própria textura do alvo).
+    const rings = targetTexture();
+    this.targetMat = new THREE.MeshStandardMaterial({ map: rings, emissive: 0xffffff, emissiveMap: rings, emissiveIntensity: 0.25, roughness: 0.6, metalness: 0.3 });
+    const post = new THREE.MeshStandardMaterial({ color: 0x1b242b, roughness: 0.6, metalness: 0.7 });
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(4.4, 4.4, 0.3), [post, post, post, post, this.targetMat, post]);
+    plate.position.set(TARGET.x, TARGET_H, TARGET.z);
+    plate.lookAt(0, TARGET_H, 0);
+    s.add(plate);
+    for (const dx of [-2.6, 2.6]) {
+      const p = new THREE.Mesh(new THREE.BoxGeometry(0.3, TARGET_H + 2.2, 0.3), post);
+      p.position.copy(plate.position).add(_v.set(dx, 0, 0).applyQuaternion(plate.quaternion));
+      p.position.y = (TARGET_H + 2.2) / 2;
+      s.add(p);
+    }
+    const shotMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xbff6ff).multiplyScalar(3) });
+    for (let i = 0; i < SHOTS_POOL; i++) {
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.6, 6), shotMat.clone());
+      mesh.visible = false;
+      s.add(mesh);
+      this.shotsPool.push({ mesh, from: new THREE.Vector3(), to: new THREE.Vector3(), t: 1, dur: 1 });
+    }
+    const flashMat = new THREE.MeshBasicMaterial({ map: flashTexture(), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+    for (let i = 0; i < FLASH_POOL; i++) {
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), flashMat.clone());
+      mesh.visible = false;
+      s.add(mesh);
+      this.flashes.push({ mesh, t: 1 });
+    }
+  }
+
+  /**
+   * Teste de disparo: o Mech vira para o alvo e dispara a arma do braço escolhido no ritmo do teste (`testFire`, as
+   * regras do jogo). A câmera abre para mostrar o Mech e o alvo. Chame `testProgress` a cada quadro.
+   */
+  startTest(data: TestFire, arm: 'right' | 'left'): void {
+    const aimTo = Math.atan2(-(TARGET.x - 0), -(TARGET.z - 0));
+    this.test = { data, arm, t: 0, next: 0, aimFrom: this.turntable.rotation.y, aimTo };
+  }
+
+  /** O teste em andamento: segundo atual e duração (null = sem teste). */
+  testProgress(): { t: number; seconds: number } | null {
+    return this.test ? { t: this.test.t, seconds: this.test.data.seconds } : null;
+  }
+
+  stopTest(): void {
+    this.test = null;
   }
 
   /** Galpão: paredes com colunas, passarela com guarda-corpo, lâmpadas penduradas, Mechs e telas no fundo. */
@@ -394,22 +522,116 @@ export class HangarScene {
     this.frame(width, height);
   }
 
-  private frame(width = 0, height = 0): void {
+  private frame(width = this.width, height = this.screenH): void {
     const h = this.height;
     // Mais perto do andróide (1,6 m) que do Mech (5,3 m), sempre um pouco de baixo: o robô parece grande.
     const dist = 4 + h * 3.2;
-    this.camera.position.set(dist * 0.26, PEDESTAL_TOP + h * 0.5, dist);
-    this.camera.lookAt(0, PEDESTAL_TOP + h * 0.48, 0);
-    if (width > 0 && this.shift > 0) this.camera.setViewOffset(width, height, (width * this.shift) / 2, 0, width, height);
-    else if (width > 0) this.camera.clearViewOffset();
+    this.camHome.set(dist * 0.26, PEDESTAL_TOP + h * 0.5, dist);
+    this.lookHome.set(0, PEDESTAL_TOP + h * 0.48, 0);
+    // Teste: de trás e do lado do Mech, vendo o Mech e o alvo juntos.
+    this.camTest.set(-9, 9, 20);
+    this.lookTest.set(TARGET.x * 0.45, PEDESTAL_TOP + h * 0.45, TARGET.z * 0.45);
+    this.width = width;
+    this.screenH = height;
+    this.placeCamera();
+  }
+
+  private placeCamera(): void {
+    const k = this.testCam * this.testCam * (3 - 2 * this.testCam);
+    this.camera.position.lerpVectors(this.camHome, this.camTest, k);
+    this.look.lerpVectors(this.lookHome, this.lookTest, k);
+    this.camera.lookAt(this.look);
+    // Durante o teste os painéis somem: a câmera usa a tela toda.
+    const shift = this.shift * (1 - k);
+    if (this.width > 0 && shift > 0) this.camera.setViewOffset(this.width, this.screenH, (this.width * shift) / 2, 0, this.width, this.screenH);
+    else this.camera.clearViewOffset();
     this.camera.updateProjectionMatrix();
+  }
+
+  /** Um tiro do teste: da boca da arma até um ponto do alvo (motosserra só solta faísca na lâmina). */
+  private fire(test: { data: TestFire; arm: 'right' | 'left' }): void {
+    const m = this.shown;
+    if (!m) return;
+    const w = test.data.weapon;
+    const from = _v;
+    if (test.arm === 'left') m.leftMuzzleWorldPosition(from);
+    else m.muzzleWorldPosition(from);
+    if (w.kind === 'melee') {
+      this.flash(from, 0.7);
+      return;
+    }
+    const shot = this.shotsPool.find((s) => s.t >= s.dur);
+    if (!shot) return;
+    shot.from.copy(from);
+    // Espalha um pouco pelo alvo, de forma fixa (sem sorteio): o desenho de cada tiro muda com a ordem.
+    const k = test.data.shots.length ? this.shotsPool.indexOf(shot) : 0;
+    shot.to.set(TARGET.x + Math.sin(k * 2.3) * 0.9, TARGET_H + Math.cos(k * 1.7) * 0.9, TARGET.z + Math.sin(k * 1.1) * 0.5);
+    const visualSpeed = w.kind === 'ammo' ? 45 : 110;
+    shot.dur = shot.from.distanceTo(shot.to) / visualSpeed;
+    shot.t = 0;
+    const mat = shot.mesh.material as THREE.MeshBasicMaterial;
+    mat.color.set(w.kind === 'ammo' ? 0xffb05a : 0xbff6ff).multiplyScalar(3);
+    shot.mesh.scale.set(w.kind === 'ammo' ? 2.2 : 1, w.kind === 'ammo' ? 0.8 : 1, w.kind === 'ammo' ? 2.2 : 1);
+    shot.mesh.position.copy(shot.from);
+    shot.mesh.lookAt(shot.to);
+    shot.mesh.rotateX(Math.PI / 2);
+    shot.mesh.visible = true;
+  }
+
+  private flash(at: THREE.Vector3, size: number): void {
+    const f = this.flashes.find((x) => x.t >= 1);
+    if (!f) return;
+    f.t = 0;
+    f.mesh.position.copy(at);
+    f.mesh.scale.setScalar(size);
+    f.mesh.visible = true;
+  }
+
+  private updateShots(dt: number): void {
+    for (const s of this.shotsPool) {
+      if (s.t >= s.dur) continue;
+      s.t += dt;
+      if (s.t >= s.dur) {
+        s.mesh.visible = false;
+        this.flash(s.to, 1.4);
+        this.targetMat.emissiveIntensity = 1.6;
+        continue;
+      }
+      s.mesh.position.lerpVectors(s.from, s.to, s.t / s.dur);
+    }
+    for (const f of this.flashes) {
+      if (f.t >= 1) continue;
+      f.t += dt * 4;
+      f.mesh.lookAt(this.camera.position);
+      (f.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 1 - f.t);
+      if (f.t >= 1) f.mesh.visible = false;
+    }
+    this.targetMat.emissiveIntensity = Math.max(0.25, this.targetMat.emissiveIntensity - dt * 5);
   }
 
   /** Por quadro, com o Hangar aberto. */
   update(dt: number): void {
     this.time += dt;
     this.sinceDrag += dt;
-    if (this.sinceDrag > IDLE_AFTER_DRAG_S) this.turntable.rotation.y += (dt * Math.PI * 2) / TURN_S;
+    const test = this.test;
+    if (test) {
+      test.t += dt;
+      // Vira para o alvo no primeiro meio segundo; os tiros começam depois disso.
+      const turn = Math.min(1, test.t / 0.5);
+      this.turntable.rotation.y = test.aimFrom + shortAngle(test.aimFrom, test.aimTo) * turn;
+      const shots = test.data.shots;
+      while (test.next < shots.length && shots[test.next]! + 0.5 <= test.t) {
+        this.fire(test);
+        test.next++;
+      }
+      if (test.t > test.data.seconds + 1.2) this.test = null;
+    } else if (this.sinceDrag > IDLE_AFTER_DRAG_S) this.turntable.rotation.y += (dt * Math.PI * 2) / TURN_S;
+    const camGoal = this.test ? 1 : 0;
+    if (this.testCam !== camGoal) {
+      this.testCam = camGoal > this.testCam ? Math.min(1, this.testCam + dt * 1.6) : Math.max(0, this.testCam - dt * 1.6);
+      this.placeCamera();
+    }
+    this.updateShots(dt);
     this.holo.offset.y -= dt * 0.08;
     this.holoInner.offset.y += dt * 0.05;
     this.holoInner.offset.x += dt * 0.01;

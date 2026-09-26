@@ -1043,6 +1043,51 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
 /* Abas: só no celular. */
 .hg-tabs { display: none; }
 
+/* Atalhos 1 a 4, embaixo do pedestal (como na referência). */
+.hg-presets { position: absolute; left: 44%; bottom: 128px; transform: translateX(-50%); display: flex; gap: 10px; z-index: 1; }
+.hg-preset { position: relative; display: grid; }
+.hg-preset > button:first-child {
+  display: grid; justify-items: center; gap: 2px; width: 74px; padding: 8px 4px 6px; cursor: pointer;
+  border: 1px solid var(--hg-edge); background: rgba(4, 20, 30, 0.78); box-shadow: inset 0 0 16px rgba(106, 232, 255, 0.08);
+}
+.hg-preset > button:first-child b { font-size: 24px; line-height: 1; color: #eafcff; text-shadow: 0 0 10px var(--hg-c); }
+.hg-preset > button:first-child small { font-size: 8px; letter-spacing: 0.06em; color: var(--hg-dim); white-space: nowrap; }
+.hg-preset.empty > button:first-child { border-style: dashed; opacity: 0.75; }
+.hg-preset.active > button:first-child { border-color: var(--hg-c); background: rgba(24, 104, 128, 0.55); box-shadow: 0 0 16px rgba(106, 232, 255, 0.35); }
+.hg-preset-save {
+  position: absolute; left: 50%; top: -18px; transform: translateX(-50%); padding: 1px 6px; font-size: 8px !important; letter-spacing: 0.12em;
+  cursor: pointer; border: 1px solid var(--hg-edge); background: rgba(4, 20, 30, 0.9); opacity: 0; transition: opacity 0.15s;
+}
+.hg-preset:hover .hg-preset-save, .hg-preset-save:focus-visible { opacity: 1; }
+
+/* Botão de teste e o painel do teste. */
+.hg-test-btn {
+  width: 100%; margin-top: 10px; padding: 9px; cursor: pointer; font-size: 11px !important; letter-spacing: 0.18em;
+  border: 1px solid var(--hg-warm); color: #ffe2bf !important; background: rgba(60, 34, 8, 0.45); box-shadow: 0 0 12px rgba(255, 176, 90, 0.2);
+}
+.hg-test-btn:hover { box-shadow: 0 0 20px rgba(255, 176, 90, 0.45); }
+.hg-test-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+#hangar-modal.hg-testing .hg-panel, #hangar-modal.hg-testing .hg-top, #hangar-modal.hg-testing .hg-tabs,
+#hangar-modal.hg-testing .hg-presets, #hangar-modal.hg-testing .hg-hotspot, #hangar-modal.hg-testing .hg-caption {
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.hg-test {
+  position: absolute; z-index: 3; left: 50%; bottom: 26px; transform: translateX(-50%); width: min(520px, calc(100% - 24px));
+  display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--hg-warm);
+  background: linear-gradient(180deg, rgba(40, 24, 6, 0.7), rgba(10, 8, 6, 0.82)); box-shadow: 0 0 26px rgba(255, 176, 90, 0.25);
+}
+.hg-test[hidden] { display: none; }
+.hg-test-head { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; letter-spacing: 0.2em; }
+.hg-test-head em { font-style: normal; color: var(--hg-warm); }
+.hg-test-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.hg-test-grid span, .hg-test-heat span { display: block; font-size: 9px; letter-spacing: 0.2em; color: #c9a57d; }
+.hg-test-grid b { font-size: 22px; color: #fff4e6; }
+.hg-test-heat { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.hg-test-heat b { font-size: 11px; color: #fff4e6; min-width: 60px; text-align: right; }
+.hg-test .hg-meter i { background: var(--hg-warm); box-shadow: 0 0 10px var(--hg-warm); }
+.hg-test .hg-meter i.over { background: var(--hg-bad); box-shadow: 0 0 10px var(--hg-bad); }
+.hg-test .hg-btn { justify-self: end; padding: 7px 14px; font-size: 10px !important; }
+
 /* Entrada: os painéis acendem, como um holograma ligando. */
 #hangar-modal.hg-enter .hg-panel, #hangar-modal.hg-enter .hg-top { animation: hg-on 0.45s ease-out both; }
 #hangar-modal.hg-enter .hg-chassis { animation-delay: 0.08s; }
@@ -1092,6 +1137,10 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
   .hg-tabs button.selected { border-color: var(--hg-c); background: rgba(24, 104, 128, 0.55); }
   .hg-tabs .hg-tab-apply { color: #031017; font-weight: 700; background: linear-gradient(180deg, #8ff0ff, var(--hg-c2)); border-color: var(--hg-c); }
   .hg-caption { left: 50%; top: 58px; }
+  .hg-presets { left: 50%; bottom: auto; top: 118px; gap: 6px; }
+  .hg-preset > button:first-child { width: 58px; padding: 5px 2px 4px; }
+  .hg-preset > button:first-child b { font-size: 16px; }
+  .hg-preset-save { opacity: 1; top: auto; bottom: -16px; }
   .hg-caption b { font-size: 16px; }
   .hg-caption span { display: none; }
   .hg-hotspot span { font-size: 9px; padding: 3px 7px; }
@@ -1106,6 +1155,8 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
   .hg-chassis, .hg-console, .hg-readout { max-height: none; align-self: stretch; }
   .hg-slots, .hg-bars { grid-template-columns: 1fr; }
   .hg-caption { left: 26%; top: 50px; }
+  .hg-presets { left: 26%; top: auto; bottom: 10px; }
+  .hg-preset-save { bottom: auto; top: -16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   #hangar-modal *, #hangar-modal *::before, #hangar-modal *::after { animation: none !important; transition-duration: 0.01ms !important; }

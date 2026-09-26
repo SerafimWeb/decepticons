@@ -99,7 +99,7 @@
 - [x] Segundo piloto selecionável no Hangar: andróide A-1 com blaster e motosserra (troca recarrega a partida) #mechs
 - [x] Hangar 2.0, camada 1: galpão 3D próprio com pedestal de holograma, o Mech girando, armas aplicadas na hora #ux
 - [x] Hangar 2.0, camada 2: interface holográfica no desenho da referência, versão de celular #ux
-- [ ] Hangar 2.0, camada 3: testar disparo num alvo do galpão e montagens salvas 1 a 4 #ux
+- [x] Hangar 2.0, camada 3: testar disparo num alvo do galpão e montagens salvas 1 a 4 #ux
 - [x] Bots com personalidade (brabo, manso, fujão, soldado) e diretor de ataque: no máximo 2 atacando juntos, os outros esperam a vez #ia
 - [x] IAs rebeldes com nomes de IAs e o nome sobre a cabeça #ux
 - [x] Nomes de paródia no lugar das marcas: CLAWD, GEMINAI, CHAD-GPT, KUEN, DIPSIK, MISTRAU, ENTRÓPICO #universo

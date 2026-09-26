@@ -143,8 +143,11 @@ costas no meio da arena, com prédios e bots atrás; o andróide aparecia como d
    leituras embaixo, marcadores dos braços presos a eles (acompanham o giro, com traço até o rótulo), vidro ciano com
    colchetes nos cantos e linhas de varredura, entrada acendendo como holograma. Celular em pé: galpão em cima, um
    painel por vez embaixo, com abas; deitado: Mech à esquerda, painel à direita.
-3. **Testar disparo e montagens 1 a 4:** um alvo no galpão para disparar a arma escolhida (dano por tiro, calor subindo,
-   tempo para derrubar ao vivo) e quatro montagens salvas nos atalhos 1 a 4.
+3. ✅ **Testar disparo e montagens 1 a 4:** `▶ TESTAR DISPARO` esconde os painéis, abre a câmera, vira o Mech para o
+   alvo do galpão e dispara a arma do braço escolhido por 4 s, no ritmo das regras do jogo (`hangar/testFire.ts` usa a
+   bancada da oficina com a hora de cada tiro: cadência, carregador, calor e trava). A tela conta tempo, tiros, dano e o
+   calor subindo até travar; no fim, o resumo. Os atalhos 1 a 4 embaixo do pedestal: vazio salva a montagem da tela,
+   cheio carrega (teclas 1 a 4), `SALVAR` sobrescreve; salvos em `cybermech.hangar.presets.v1`, validados na leitura.
 
 **Critérios de aceite de cada camada:** captura de tela no PR (computador e celular), sem erro no console, o jogo
 offline e online iguais ao de antes, e nenhum custo por quadro com o Hangar fechado.
