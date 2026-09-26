@@ -7,7 +7,8 @@
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–25/09)
-- **Motosserra e pisão (Claude; pedido do dono):** andróides com motosserra (só corta encostado, pega as pernas), Mech esmaga andróide encostado andando para cima dele (2 passos), nomes sobre a cabeça menores e nítidos. Próximo: jogar de andróide contra Mechs gigantes.
+- **Jogar de andróide (Claude; dono: "também quero poder jogar com andróides menores, com a impressão de combater um Mech bem maior"):** botão `[ PILOTAR ANDRÓIDE ]` na pausa (ou o link da landing, `?build=v1.android.blaster-0.chainsaw-0`). Andróide de 2 m com blaster no clique esquerdo e motosserra no direito (só encostado), 3× a vida do rebelde; câmera baixa e perto, na escala do andróide, para os Mechs de 5,3 m parecerem enormes. Mech rebelde andando para cima pisa nele (2 passos). A escolha fica no Hangar (chassi `android`).
+- **Motosserra e pisão (Claude; pedido do dono):** andróides com motosserra (só corta encostado, pega as pernas), Mech esmaga andróide encostado andando para cima dele (2 passos), nomes sobre a cabeça menores e nítidos.
 - **Nomes das IAs nos bots (Claude; pedido do dono):** CLAUDE·BRABO, GEMINI, CHATGPT·FUJÃO, QWEN, DEEPSEEK, ANTHROPIC (técnico), com o nome sobre a cabeça. **Guia visual dos robôs** e textos para a IA de imagem em `ESTILO_ROBOS.md`.
 - **M1 do multiplayer (Claude):** `sim/Match.ts`, a partida inteira sem tela; o jogo monta a partida por ela e o servidor vai rodar a mesma. 0,74 ms por tick com a sala cheia. Achado: destroços no mesmo mundo físico mudam a simulação (o servidor roda sem eles).
 - **Correção: Mechs brancos (Claude, achado jogando):** depois do PR #43 (Codex), o casco saía todo branco e brilhando até o primeiro dano: a cor do flash de dano nascia branca (`new THREE.Color()`). Agora nasce preta; Vector-09 amarelo e rebeldes vermelhos de volta.
@@ -96,6 +97,7 @@
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
 - [ ] **Dono:** gerar as pranchas dos robôs numa IA de imagem com os textos do `ESTILO_ROBOS.md` e salvar em `.tmp/arte/`
 - [ ] **Dono:** jogar com as motosserras (andróides colados nas pernas) e pisar neles (ande para cima de um encostado)
+- [ ] **Dono:** jogar de andróide (pausa → `[ PILOTAR ANDRÓIDE ]`): a câmera passa a sensação de Mech gigante? Vida, blaster e motosserra estão justos? A animação de passo ainda é a do Mech
 - [ ] **Dono:** jogar com o diretor de ataque (no máximo 2 atacando juntos) e as personalidades; dizer se ficou fácil demais (dá para subir "Atacam ao mesmo tempo" nas configurações)
 - [ ] **Dono:** jogar com o calor completo (correr atirando ferve em ~2 s; parado esfria em dobro) e dizer se ficou punitivo demais
 - [ ] **Dono:** jogar com as armas novas (menos dano, calor compartilhado com os foguetes) e dizer se a luta ficou lenta ou rápida demais; decidir as perguntas do fim do `HANGAR.md`
@@ -138,4 +140,4 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - **Claude:** M2 (contratos de rede e codec: `NetInput` com yaw e pitch, estado, mensagens), que não depende da separação; depois a M3 (servidor Colyseus no PC do dono, sala por `?sala=`) com a cena descartável e efeitos vazios, conforme a decisão sobre a seção 9 do `MULTIPLAYER.md`.
 - **Codex:** tela do Hangar contra `game.hangar` (`HANGAR.md`, seção 2), calor visível no Mech, visual dos níveis de arma e revisão cruzada dos PRs #45 a #50.
 - **Gemini** (quando voltar o crédito): a fila da divisão de trabalho acima; a tela do Hangar não é mais dele.
-- **Dono:** testar no site (nomes sobre os bots, diretor de ataque, calor, setas), decidir a seção 9 e as decisões da seção 10 do `MULTIPLAYER.md`, gerar as pranchas dos robôs (`ESTILO_ROBOS.md`) e medir o FPS num notebook com GPU integrada.
+- **Dono:** testar no site (jogar de andróide, motosserras e pisão, nomes sobre os bots, diretor de ataque, calor, setas), decidir a seção 9 e as decisões da seção 10 do `MULTIPLAYER.md`, gerar as pranchas dos robôs (`ESTILO_ROBOS.md`) e medir o FPS num notebook com GPU integrada.

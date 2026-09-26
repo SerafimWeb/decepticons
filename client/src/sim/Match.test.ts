@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import type { MechInput } from '../entities/MechBase';
+import { Android } from '../entities/Android';
+import { PILOT_ANDROID_STATS } from '../entities/chassis';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
@@ -68,5 +70,30 @@ describe('partida sem tela (M1 do multiplayer: o que o servidor vai rodar)', () 
     const r = await play(20, false);
     // Folga para máquina ocupada (CI, testes em paralelo): o número de referência sai do log da M7.
     expect(r.msPerTick).toBeLessThan(8);
+  });
+});
+
+describe('jogar de andróide (a partida)', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('a motosserra do jogador corta o inimigo encostado mais perto; longe de todos, não corta ninguém', async () => {
+    const physics = await PhysicsWorld.create();
+    const match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: { ...DEFAULT_SETTINGS, enemyMechs: 1, enemyAndroids: 0, technician: false }, debris: false });
+    const pilot = new Android({ stats: PILOT_ANDROID_STATS, tool: 'pilot' });
+    match.addPlayer(pilot, 'VOCÊ');
+    const saw = pilot.loadout.secondary!;
+    const rebel = match.bots.mechs[0]!;
+    const total = () => Object.values(rebel.modules).reduce((a, b) => a + b, 0);
+    const full = total();
+    match.meleeNearest(pilot, saw);
+    expect(total()).toBe(full);
+    // Encosta o jogador na frente do Mech rebelde e corta: pega a perna dele.
+    const r = rebel.simPosition;
+    pilot.respawn(new THREE.Vector3(r.x, 0, r.z - (rebel.stats.radius + pilot.stats.radius + 0.3)));
+    match.meleeNearest(pilot, saw);
+    expect(total()).toBe(full - saw.damage);
+    expect(rebel.modules.leftLeg + rebel.modules.rightLeg).toBeLessThan(rebel.stats.maxModuleHealth.leftLeg * 2);
   });
 });

@@ -42,7 +42,9 @@ Estado em 25/09 (fim do dia): **o que já está no código** está marcado ✅; 
 - `report(spec)`: números da simulação para a tela: carga, tempo para derrubar um torso, em quantos segundos ferve correndo com tudo disparando, dano em 20 s;
 - `apply(spec)`: salva e agenda; o Mech troca de armas no próximo renascimento (ou na rodada nova), inteiro e frio;
 - `key`: o texto do link para compartilhar; `onChange`: avisa quando a montagem muda;
-- `armOptions('right' | 'left')` e `TIERS`: o que listar em cada braço.
+- `armOptions('right' | 'left', chassis)` e `TIERS`: o que listar em cada braço de cada chassi (`ARM_SLOTS` em `entities/chassis.ts`); `factorySpec(chassis)`: a montagem de fábrica de um chassi.
+
+**Segundo chassi (25/09): `android`,** o andróide pilotado: blaster no braço direito, motosserra no esquerdo, carga de 3 t (os dois no MK III não cabem). Trocar de chassi troca o modelo inteiro: hoje o botão da pausa salva e recarrega a partida; a tela do Hangar pode fazer igual.
 
 **Carga de 11 t no Vector-09 (25/09):** das 9 combinações de plasma e foguetes cabem 6. MK III num braço obriga MK I no outro; MK II nos dois cabe. **Achado:** com os dois braços disparando, todas as montagens derrubam um torso em 3,3–3,5 s, porque o calor do Mech é o limite. O nível decide nas rajadas de uma arma só (plasma MK III 5,0 s contra 6,2 s do MK I). Quem administra o calor ganha, não quem subiu de nível.
 

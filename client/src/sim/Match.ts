@@ -6,6 +6,7 @@ import { ProjectileSystem } from '../combat/ProjectileSystem';
 import { RocketSystem } from '../combat/RocketSystem';
 import { Respawner } from '../combat/Respawner';
 import { Round } from '../combat/Round';
+import type { WeaponStats } from '../combat/weapons';
 import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
@@ -135,6 +136,26 @@ export class Match {
     this.respawner.track(mech, PLAYER_RESPAWN_S, onRespawn);
     this.round.register(mech, name);
     this.players.push(mech);
+  }
+
+  /**
+   * Corte corpo a corpo de um jogador (motosserra do andróide pilotado): pega o inimigo vivo mais perto
+   * dentro do alcance da arma. Regra da partida (o controle só pede); sem ninguém perto, nada acontece.
+   */
+  meleeNearest(attacker: MechBase, w: WeaponStats): void {
+    const foes = this.players.includes(attacker) ? this.bots.mechs : this.players;
+    const a = attacker.simPosition;
+    let best: MechBase | null = null;
+    let bestGap = w.maxRange;
+    for (const m of foes) {
+      if (!m.alive) continue;
+      const gap = Math.hypot(m.simPosition.x - a.x, m.simPosition.z - a.z) - m.stats.radius - attacker.stats.radius;
+      if (gap <= bestGap) {
+        bestGap = gap;
+        best = m;
+      }
+    }
+    if (best) this.combat.melee(attacker, best, w);
   }
 
   /**

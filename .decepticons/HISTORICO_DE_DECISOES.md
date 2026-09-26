@@ -2,6 +2,17 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Jogar de andróide contra Mechs gigantes
+**Pedido do dono:** "da mesma forma que podemos jogar com os mechs, também quero poder jogar com andróides menores, e quero ter a impressão de que estou combatendo um mech bem maior que o android!"
+**Decisão (Claude):**
+- **Chassi no Hangar:** `android` é o segundo chassi do contrato (`CHASSIS`, `ARM_SLOTS`): blaster no braço direito, motosserra no esquerdo, carga de 3 t. `armOptions(slot, chassis)` e `factorySpec(chassis)` para a tela do Hangar. Link: `?build=v1.android.blaster-0.chainsaw-0`.
+- **Vida do piloto:** 3× a do andróide rebelde (torso 96): o jogador não cai com 2 tiros de plasma, mas continua morrendo em 2 pisões (a regra é metade do torso por passo, qualquer que seja a vida).
+- **Motosserra do jogador:** segurar o clique direito corta o inimigo vivo mais perto dentro do alcance (1,2 m), na cadência da arma. Sem mira: corpo a corpo é chegar colado.
+- **Sensação de escala:** a câmera de 3ª pessoa escala com a altura do chassi (distância e pivô × altura/5,3, mínimo 45%) e a de 1ª pessoa também. Olhando de 2 m, um Mech de 5,3 m ocupa a tela de baixo para cima.
+- **Troca de piloto:** botão na pausa; salva a montagem de fábrica do outro chassi e recarrega a partida (trocar o modelo inteiro no meio da rodada não vale o risco). A pausa mostra as armas do piloto atual.
+**Custo de CPU:** nenhum por tick além do corte (uma busca linear pelos inimigos, ≤ 8, só quando segura o botão); a câmera faz as mesmas contas com um fator a mais.
+**Quem decidiu:** dono (jogar de andróide, escala); Claude (armas, vida, câmera, troca por recarga).
+
 ## [2026-09-25] Motosserra dos andróides, pisão dos Mechs e nomes nítidos
 **Pedido do dono:** "dê motosserras para os autobots pequenos; ele tem que ficar perto de nós pra usar; mas se andarmos na direção dele, 2 passos matam eles (são pequenos). Os nomes estão muito grandes e meio borrados."
 **Decisão (Claude):**

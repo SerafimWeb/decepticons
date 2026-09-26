@@ -337,6 +337,7 @@ if (arms && sheet && plan.length) {
         .join('')}</tbody>
     </table></div>
     <p class="rules-note">Cada montagem que cabe é um link: abre o jogo já com ela. O mesmo link serve para mandar o seu build a alguém. A tela do Hangar, dentro do jogo, está em construção.</p>
+    ${arms.pilot ? `<p><a class="link-btn" href="./jogar/?build=${esc(arms.pilot.key)}">ou jogue a pé: andróide de ${num(arms.pilot.height, 1)} m, blaster e motosserra, contra Mechs de ${num(arms.pilot.mechHeight, 1)} m →</a></p>` : ''}
     <h3 class="sub-h">Regras de equilíbrio</h3>
     <div class="sitrep">
       <div class="read frame"><span class="k">uma arma sozinha</span><span class="v">≥ ${num(single, 1)} s</span><span class="d">para derrubar um Mech, mesmo no MK III</span></div>

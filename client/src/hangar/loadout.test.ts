@@ -5,7 +5,7 @@ import { weapon, type Tier } from '../combat/weapons';
 import { VECTOR09_STATS, Vector09 } from '../entities/Vector09';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Hangar, HANGAR_STORAGE_KEY } from './Hangar';
-import { armOptions, FACTORY_LOADOUT, loadoutKey, parseLoadoutKey, validateLoadout, type LoadoutSpec } from './loadout';
+import { armOptions, FACTORY_LOADOUT, factorySpec, loadoutKey, parseLoadoutKey, validateLoadout, type LoadoutSpec } from './loadout';
 
 const LEVELS: Tier[] = [0, 1, 2];
 const build = (p: Tier, r: Tier | null): LoadoutSpec => ({ v: 1, chassis: 'vector09', right: { id: 'plasma', tier: p }, left: r === null ? null : { id: 'rockets', tier: r } });
@@ -58,6 +58,21 @@ describe('Hangar: contrato da montagem', () => {
     // Há escolha de verdade: das 9 combinações, cabem 6 e ficam 3 de fora.
     const fits = LEVELS.flatMap((p) => LEVELS.map((r) => validateLoadout(build(p, r)).ok)).filter(Boolean).length;
     expect(fits).toBe(6);
+  });
+
+  it('andróide pilotado: blaster no braço direito, motosserra no esquerdo, carga de 3 t', () => {
+    const android = factorySpec('android');
+    expect(android).toEqual({ v: 1, chassis: 'android', right: { id: 'blaster', tier: 0 }, left: { id: 'chainsaw', tier: 0 } });
+    expect(validateLoadout(android)).toMatchObject({ ok: true, mass: 2 });
+    expect(armOptions('right', 'android')).toEqual(['blaster']);
+    expect(armOptions('left', 'android')).toEqual(['chainsaw']);
+    // Arma de Mech não vai no andróide, e motosserra não vai no Mech.
+    expect(validateLoadout({ ...android, right: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(validateLoadout({ ...FACTORY_LOADOUT, left: { id: 'chainsaw', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    // Os dois no máximo não cabem (1 t + 3 t).
+    expect(validateLoadout({ ...android, right: { id: 'blaster', tier: 2 }, left: { id: 'chainsaw', tier: 2 } })).toMatchObject({ ok: false, error: 'carga' });
+    expect(parseLoadoutKey(loadoutKey(android))).toEqual(android);
+    expect(loadoutKey(android)).toBe('v1.android.blaster-0.chainsaw-0');
   });
 
   it('nível bloqueado (progressão) é recusado', () => {

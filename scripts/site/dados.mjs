@@ -162,13 +162,13 @@ export async function jogo() {
     const balance = await load('client/src/combat/balance.ts');
     const heat = await load('client/src/combat/heat.ts');
     // Os números dos chassis ficam num arquivo sem 3D: o site não carrega o Three.js.
-    const { VECTOR09_STATS, ANDROID_STATS } = await load('client/src/entities/chassis.ts');
+    const { VECTOR09_STATS, ANDROID_STATS, PILOT_ANDROID_STATS } = await load('client/src/entities/chassis.ts');
     const hangar = await load('client/src/hangar/loadout.ts');
     const count = (file) => (read(file).match(/^\s+it\(/gm) ?? []).length;
     const tests = count('client/src/combat/weapons.test.ts');
     // Testes que travam as regras da bancada: armas, calor e o Mech de verdade contra a bancada.
     const benchTests = tests + count('client/src/combat/heat.test.ts') + count('client/src/entities/MechHeat.test.ts');
-    return { weapons, balance, heat, hangar, vector: VECTOR09_STATS, android: ANDROID_STATS, tests, benchTests };
+    return { weapons, balance, heat, hangar, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, tests, benchTests };
   } catch (err) {
     console.warn(`::warning::site sem os dados do jogo: ${err instanceof Error ? err.message : err}`);
     return null;
@@ -256,6 +256,13 @@ export function arsenal(game) {
         return { p, r, fits: check.ok, mass: check.mass, key: game.hangar.loadoutKey(spec), ttk: B.timeToKill([W.weapon('plasma', p), W.weapon('rockets', r)], v, torso) };
       }),
     ),
+    // Jogar a pé: o andróide pilotado, com a montagem de fábrica dele (blaster + motosserra).
+    pilot: game.pilot && {
+      key: game.hangar.loadoutKey(game.hangar.factorySpec('android')),
+      height: game.pilot.height,
+      mechHeight: v.height,
+      torso: game.pilot.maxModuleHealth.torso,
+    },
   };
 }
 

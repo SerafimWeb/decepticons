@@ -2,7 +2,7 @@ import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { Android } from '../entities/Android';
-import { ANDROID_STATS } from '../entities/chassis';
+import { ANDROID_STATS, PILOT_ANDROID_STATS } from '../entities/chassis';
 import type { MechInput } from '../entities/MechBase';
 import { VECTOR09_STATS, Vector09 } from '../entities/Vector09';
 import type { DebrisSystem } from '../environment/DebrisSystem';
@@ -132,6 +132,28 @@ describe('pisão: o Mech esmaga o andróide andando para cima dele', () => {
     const away = await duel(0.2);
     away.run(BACK, 1);
     expect(away.android.modules.torso).toBe(ANDROID_STATS.maxModuleHealth.torso);
+  });
+
+  it('vale ao contrário: um Mech rebelde esmaga o andróide do jogador em 2 passos (mais vida, mesma regra)', async () => {
+    const physics = await PhysicsWorld.create();
+    physics.addStaticBox(new THREE.Vector3(0, -1, 0), new THREE.Vector3(200, 2, 200));
+    const combat = new CombatSystem(destructibles, debris, particles);
+    const rebel = new Vector09();
+    rebel.spawn(physics, new THREE.Vector3(0, 0, 0));
+    const pilot = new Android({ stats: PILOT_ANDROID_STATS, tool: 'pilot' });
+    pilot.spawn(physics, new THREE.Vector3(0, 0, -(VECTOR09_STATS.radius + PILOT_ANDROID_STATS.radius + 0.2)));
+    combat.register(rebel);
+    combat.register(pilot);
+    const crush = new CrushRule(combat);
+    for (let t = 0; t < STEP_S * 1.5 + 0.2; t += FIXED_DT) {
+      rebel.fixedUpdate(FORWARD, FIXED_DT);
+      pilot.fixedUpdate(IDLE, FIXED_DT);
+      crush.tick(FIXED_DT);
+      crush.check([rebel], [pilot]);
+      physics.step();
+    }
+    expect(PILOT_ANDROID_STATS.maxModuleHealth.torso).toBeGreaterThan(ANDROID_STATS.maxModuleHealth.torso * 2);
+    expect(pilot.alive).toBe(false);
   });
 
   it('só o grande esmaga o pequeno: andróide não pisa em Mech, Mech não pisa em Mech', async () => {

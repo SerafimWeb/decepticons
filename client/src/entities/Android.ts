@@ -1,7 +1,8 @@
 import * as THREE from 'three';
+import type { Loadout } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
 import { ANDROID_STATS } from './chassis';
-import { MechBase, type LegRig, type MechRig } from './MechBase';
+import { MechBase, type LegRig, type MechRig, type MechStats } from './MechBase';
 import { batchRigMeshes, box, cyl, group } from './meshKit';
 
 /** Os números do andróide ficam em `chassis.ts` (sem 3D: o servidor e o site leem de lá). */
@@ -62,10 +63,19 @@ function buildRig(paint: number, visor: number, tool: AndroidTool): MechRig {
     muzzle = group(rightArm, 0, -0.32, -0.45);
   }
 
-  // Braço esquerdo: mão livre (sem arma secundária).
+  // Braço esquerdo: mão livre; no andróide pilotado, a motosserra (o direito fica com o blaster).
   const leftArm = group(torso, -0.3, 0.52, 0);
   box(leftArm, 0.11, 0.3, 0.12, M.frame, 0, -0.15, 0);
-  box(leftArm, 0.12, 0.3, 0.13, M.shell, 0, -0.45, 0);
+  let leftMuzzle: THREE.Object3D | undefined;
+  if (tool === 'pilot') {
+    box(leftArm, 0.15, 0.15, 0.28, M.shell, 0, -0.32, -0.08);
+    box(leftArm, 0.045, 0.13, 0.62, M.frame, 0, -0.32, -0.52);
+    box(leftArm, 0.05, 0.025, 0.62, M.saw, 0, -0.395, -0.52);
+    box(leftArm, 0.05, 0.025, 0.62, M.saw, 0, -0.245, -0.52);
+    leftMuzzle = group(leftArm, 0, -0.32, -0.83);
+  } else {
+    box(leftArm, 0.12, 0.3, 0.13, M.shell, 0, -0.45, 0);
+  }
 
   const batchedMaterial = batchRigMeshes(model, [M.shell]);
   return {
@@ -78,6 +88,7 @@ function buildRig(paint: number, visor: number, tool: AndroidTool): MechRig {
     leftLeg,
     rightLeg,
     muzzle,
+    leftMuzzle,
     thrusters: [],
     thrusterMaterial: batchedMaterial,
     hullMaterials: [batchedMaterial],
@@ -85,8 +96,11 @@ function buildRig(paint: number, visor: number, tool: AndroidTool): MechRig {
   };
 }
 
-/** O que vai no antebraço direito: motosserra (combate) ou a ferramenta de conserto (técnico). */
-export type AndroidTool = 'chainsaw' | 'repair';
+/**
+ * O que vai nos antebraços: motosserra no direito (rebelde de combate), ferramenta de conserto (técnico) ou,
+ * no andróide pilotado pelo jogador, blaster no direito e motosserra no esquerdo.
+ */
+export type AndroidTool = 'chainsaw' | 'repair' | 'pilot';
 
 export interface AndroidOptions {
   /** Cor do casco (padrão: branco, como os humanoides de hoje). */
@@ -95,10 +109,14 @@ export interface AndroidOptions {
   visor?: number;
   /** Ferramenta do antebraço (padrão: motosserra). */
   tool?: AndroidTool;
+  /** Números do chassi (padrão: o rebelde; o jogador usa `PILOT_ANDROID_STATS`). */
+  stats?: MechStats;
+  /** Armas nos braços (Hangar); sem isso, as de fábrica do chassi. */
+  loadout?: Loadout;
 }
 
 export class Android extends MechBase {
   constructor(options: AndroidOptions = {}) {
-    super(ANDROID_STATS, buildRig(options.paint ?? PALETTE.bone, options.visor ?? PALETTE.signal, options.tool ?? 'chainsaw'));
+    super(options.stats ?? ANDROID_STATS, buildRig(options.paint ?? PALETTE.bone, options.visor ?? PALETTE.signal, options.tool ?? 'chainsaw'), options.loadout);
   }
 }

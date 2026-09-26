@@ -4,7 +4,7 @@ import type { CameraRig } from '../camera/CameraRig';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import type { RocketSystem } from '../combat/RocketSystem';
 import { FireTimer, RocketLauncher } from '../combat/trigger';
-import { weapon } from '../combat/weapons';
+import { weapon, type WeaponStats } from '../combat/weapons';
 import type { InputManager } from '../core/InputManager';
 import { DEFAULT_SETTINGS, type KeyAction } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
@@ -29,6 +29,10 @@ export class PlayerController {
   launcher: RocketLauncher;
   /** Um foguete saiu (som). */
   onRocket?: () => void;
+  /** Corte corpo a corpo (motosserra no braço esquerdo): quem aplica é a partida (`Match.meleeNearest`). */
+  melee?: (w: WeaponStats) => void;
+  /** Cadência da arma do braço esquerdo quando ela é corpo a corpo. */
+  private readonly sawTrigger = new FireTimer();
   /** Teclas de cada ação (e.code), vindas das configurações. */
   keys: Readonly<Record<KeyAction, string>> = DEFAULT_SETTINGS.keys;
 
@@ -100,7 +104,16 @@ export class PlayerController {
     if (!this.mech.alive) this.launcher.refill();
     else this.launcher.fixedUpdate(dt);
     const wantsRocket = this.input.mouseDown2 || this.input.isDown(k.secondary) || this.input.virtualRocket;
-    if (a && wantsRocket && this.mech.canFireSecondary && this.launcher.tryFire()) this.fireRocket();
+    const secondary = this.mech.loadout.secondary;
+    if (secondary?.kind === 'melee') {
+      // Motosserra: segurar o botão corta o inimigo encostado mais perto, no ritmo da arma.
+      this.sawTrigger.fixedUpdate(dt);
+      if (a && wantsRocket && this.sawTrigger.ready && this.mech.canFireSecondary) {
+        this.melee?.(secondary);
+        this.mech.onFireSecondary();
+        this.sawTrigger.shot(secondary.fireInterval);
+      }
+    } else if (a && wantsRocket && this.mech.canFireSecondary && this.launcher.tryFire()) this.fireRocket();
   }
 
   private fireRocket(): void {

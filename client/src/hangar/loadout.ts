@@ -1,5 +1,5 @@
 import { weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId } from '../combat/weapons';
-import { CHASSIS, type ChassisId } from '../entities/chassis';
+import { ARM_SLOTS, CHASSIS, type ChassisId } from '../entities/chassis';
 
 /**
  * Contrato do Hangar (AGENTS, regra 5: o contrato entra antes da tela). Uma montagem é só ids e níveis
@@ -8,7 +8,8 @@ import { CHASSIS, type ChassisId } from '../entities/chassis';
  * catálogo (`combat/weapons.ts`) e do chassi (`entities/chassis.ts`), e o servidor faz a mesma conta.
  *
  * Regras (especificação em `.decepticons/HANGAR.md`):
- * - braço direito leva arma de **energia**; braço esquerdo, arma de **munição** ou nada;
+ * - cada chassi diz o que vai em cada braço (`ARM_SLOTS`): no Vector-09, energia no direito e munição no
+ *   esquerdo; no andróide, blaster no direito e motosserra no esquerdo; o esquerdo pode ficar vazio;
  * - a soma das massas cabe na **carga** do chassi (`weaponCapacity`): poder custa carga;
  * - nível bloqueado (progressão, quando existir) é recusado.
  * Sem Three.js nem DOM: roda igual no navegador, nos testes e no servidor.
@@ -25,9 +26,9 @@ export interface ArmSpec {
 export interface LoadoutSpec {
   v: typeof LOADOUT_VERSION;
   chassis: ChassisId;
-  /** Braço direito: arma de energia. */
+  /** Braço direito (Vector-09: energia; andróide: blaster). */
   right: ArmSpec;
-  /** Braço esquerdo: arma de munição, ou nada. */
+  /** Braço esquerdo (Vector-09: munição; andróide: motosserra), ou nada. */
   left: ArmSpec | null;
 }
 
@@ -45,13 +46,17 @@ export const FACTORY_LOADOUT: LoadoutSpec = {
   left: { id: 'rockets', tier: 0 },
 };
 
-/** Braço que aceita cada tipo de arma. */
-const SLOT_KIND = { right: 'energy', left: 'ammo' } as const;
-export type ArmSlot = keyof typeof SLOT_KIND;
+export type ArmSlot = 'right' | 'left';
 
-/** Armas que cabem num braço (pelo tipo), na ordem do catálogo. O blaster é arma de andróide: fora. */
-export function armOptions(slot: ArmSlot): readonly WeaponId[] {
-  return WEAPON_IDS.filter((id) => id !== 'blaster' && weapon(id).kind === SLOT_KIND[slot]);
+/** Armas que cabem num braço do chassi (padrão: Vector-09), na ordem do catálogo. */
+export function armOptions(slot: ArmSlot, chassis: ChassisId = 'vector09'): readonly WeaponId[] {
+  return ARM_SLOTS[chassis][slot];
+}
+
+/** A montagem de fábrica de um chassi (as armas com que ele sai da fábrica, no nível delas). */
+export function factorySpec(chassis: ChassisId): LoadoutSpec {
+  const l = CHASSIS[chassis].loadout;
+  return { v: LOADOUT_VERSION, chassis, right: { id: l.primary.id, tier: l.primary.tier }, left: l.secondary ? { id: l.secondary.id, tier: l.secondary.tier } : null };
 }
 
 const isTier = (t: unknown): t is Tier => t === 0 || t === 1 || t === 2;
@@ -78,7 +83,7 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   for (const [slot, arm] of arms) {
     if (!(WEAPON_IDS as readonly string[]).includes(arm.id)) return fail('arma', `arma ${String(arm.id)} não existe`, 0, capacity);
     if (!isTier(arm.tier)) return fail('nível', `nível ${String(arm.tier)} não existe`, 0, capacity);
-    if (!armOptions(slot).includes(arm.id)) return fail('encaixe', `${weapon(arm.id).name} não vai no braço ${slot === 'right' ? 'direito' : 'esquerdo'}`, 0, capacity);
+    if (!armOptions(slot, s.chassis).includes(arm.id)) return fail('encaixe', `${weapon(arm.id).name} não vai no braço ${slot === 'right' ? 'direito' : 'esquerdo'} do ${chassis.name}`, 0, capacity);
     if (!unlocked(arm.id, arm.tier)) return fail('bloqueado', `${weapon(arm.id, arm.tier).name} ainda bloqueado`, 0, capacity);
     mass += weapon(arm.id, arm.tier).mass;
   }
