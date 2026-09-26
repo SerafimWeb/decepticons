@@ -14,7 +14,7 @@
       - any-glob-to-any-file: ['client/src/combat/Bot*']
 'frente:mechs':
   - changed-files:
-      - any-glob-to-any-file: ['client/src/entities/**']
+      - any-glob-to-any-file: ['client/src/entities/**', '.decepticons/fichas/**']
 'frente:cenarios':
   - changed-files:
       - any-glob-to-any-file: ['client/src/environment/**']

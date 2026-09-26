@@ -2,6 +2,11 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Fichas de design: o documento que o dono aprova antes do código
+**Pedido do dono:** "faça o MODELO das fichas de design, pra eu solicitar ao Codex pra completar".
+**Decisão (Claude):** pasta `fichas/` (junto dos documentos do projeto), uma ficha por robô e por arma, com dois modelos (`MODELO_ROBO.md`, `MODELO_ARMA.md`) e um exemplo preenchido (`vector-09.md`). Fluxo: rascunho → proposta (PR só com a ficha) → aprovada (dono) → no jogo (Claude: números e testes; Codex: visual; Gemini: som). Cada meta de equilíbrio da ficha vira teste. **A ficha propõe, o código decide:** se divergirem, vale `chassis.ts` e `weapons.ts`.
+**Quem decidiu:** dono (o pedido); Claude (formato e fluxo).
+
 ## [2026-09-25] Nomes de paródia nos bots; geopolítica e roteiro vão para o chat do SERAFIM
 **Pedido do dono:** "sobre os nomes, usa assim: chad-gpt, geminai, kuen, dipsik, nomes meio engraçados, que as pessoas entendam a alusão"; "vamos considerar Brasil no centro, BRICS no contexto vs imperialismo norte-americano; vou levar isso pro outro chat dedicado dentro do SERAFIM; a parte de universo e roteiro vou pedir pro outro chat".
 **Decisão:**
