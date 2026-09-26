@@ -96,7 +96,7 @@ do centro (100%) até a borda do raio (0).
 - Sem compra, sem atalho pago. Vender, só pintura e neon (`GAME_DESIGN.md`).
 - Sem conta (convidado): o progresso fica no aparelho. Com contas (Fase 6), vai para o servidor.
 
-## 6. Tela do Hangar (primeira versão, Codex)
+## 6. Tela do Hangar (primeira versão, Codex; substituída pelo Hangar 2.0, seção 6b)
 
 Fluxo implementado: tela inicial ou pausa → `[ ABRIR HANGAR ]` → escolher Vector-09 ou andróide A-1 → selecionar
 braço direito/esquerdo no painel ou no hotspot da silhueta → escolher nível MK e, no braço esquerdo, esvaziar o
@@ -114,6 +114,36 @@ experimentais do painel POTÊNCIAS. Aplicar um nível inválido por carga é blo
 Ombros e torso aparecem como slots futuros, sem fingir que módulos já existem. A versão inicial foi verificada
 no browser em desktop para seleção, alteração de carga, persistência MK III e troca de piloto; falta playtest do
 dono em desktop e celular.
+
+## 6b. Hangar 2.0 (Claude, desde 26/09)
+
+**Pedido do dono (26/09):** "a tela do Hangar não está funcionando direito; precisa de muitas camadas de qualidade; a
+inspiração veio desta foto e não ficou nada a ver". Referência: `.tmp/arte/hangar-referencia.png` (galpão industrial,
+Mech num pedestal com coluna de holograma ciano, lâmpadas quentes, passarelas com Mechs e pessoas, telas de holograma
+flutuando, console grande de "caminhos de customização", mesa de controle, barra de topo, atalhos 1 a 4). O dono
+decidiu que o Claude refaz, em camadas, um PR por camada, com captura de tela em cada uma.
+
+**Problemas da primeira versão** (vistos no navegador em 26/09): o centro mostrava a câmera do jogo olhando o Mech de
+costas no meio da arena, com prédios e bots atrás; o andróide aparecia como desenho esquemático (inconsistente); o
+"aplicar" com o mesmo chassi só valia no próximo renascimento (parecia não funcionar); no celular não cabia.
+
+**Camadas:**
+1. ✅ **Galpão 3D próprio** (`hangar/HangarScene.ts`): desenhado no lugar da arena enquanto o Hangar está aberto (o jogo
+   fica pausado). Piso de placas com bordas ciano, pedestal com anéis e disco de montagem, coluna de holograma dupla com
+   linhas de varredura correndo, anel de varredura subindo e descendo pelo Mech, lâmpadas quentes com fachos e tremor,
+   luz de frente e contraluz, passarelas, Mechs e andróides escuros parados, telas de holograma com a planta de um Mech,
+   névoa. O Mech da montagem fica no pedestal, girando sozinho (uma volta a cada 28 s); arrastar gira. Robô pequeno
+   aparece ampliado (mínimo de 3,2 m, como um holograma de montagem). Tudo feito por código, sem arquivo para baixar.
+   **Aplicar na hora:** offline, as armas trocam na hora, com o calor de agora (a pausa não esfria o Mech); online, vale
+   na próxima entrada na sala (o servidor só conhece a montagem da entrada).
+2. **Interface holográfica** no desenho da referência: barra de topo (marca, carga e pontos), console grande de
+   "caminhos de customização" (armas, blindagem, módulos), leituras presas ao pedestal, marcadores de braço presos ao
+   Mech, vidro ciano com cantos chanfrados e linhas de varredura; versão de celular em abas.
+3. **Testar disparo e montagens 1 a 4:** um alvo no galpão para disparar a arma escolhida (dano por tiro, calor subindo,
+   tempo para derrubar ao vivo) e quatro montagens salvas nos atalhos 1 a 4.
+
+**Critérios de aceite de cada camada:** captura de tela no PR (computador e celular), sem erro no console, o jogo
+offline e online iguais ao de antes, e nenhum custo por quadro com o Hangar fechado.
 
 ## 7. Multiplayer
 

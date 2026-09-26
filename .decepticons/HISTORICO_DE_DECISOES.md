@@ -2,6 +2,15 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] Hangar 2.0: o Claude refaz a tela, começando pelo galpão 3D
+**Pedido do dono:** "a tela do hangar não está funcionando direito; precisamos adicionar muitas camadas de qualidade; a inspiração veio desta foto e não ficou NADA A VER". Na pergunta de quem refaz, o dono escolheu o Claude.
+**Diagnóstico (no navegador):** o centro era a câmera do jogo com o Mech de costas no meio da arena, bots e prédios atrás; o andróide aparecia como desenho esquemático; o "aplicar" com o mesmo chassi só valia no próximo renascimento (parecia quebrado); no celular não cabia. Sem erros de console.
+**Decisão (Claude):**
+- **Território:** a tela do Hangar passa do Codex para o Claude (Hangar 2.0, `HANGAR.md`, seção 6b). A lógica da primeira versão (seleção, níveis, carga, leituras, link) é reaproveitada; o visual é refeito em três camadas, um PR cada, com captura.
+- **Camada 1:** galpão 3D próprio (`hangar/HangarScene.ts`), desenhado no lugar da arena com o jogo pausado, feito todo por código (texturas em canvas). O Mech da montagem no pedestal, girando; robô pequeno ampliado para ser lido. Custo só com o Hangar aberto.
+- **Aplicar na hora:** offline, as armas trocam na hora mantendo o calor (`MechBase.equip(loadout, keepHeat)`: a pausa não esfria); online, na próxima entrada na sala. Teste novo.
+**Quem decidiu:** dono (refazer, com o Claude); Claude (camadas, galpão, aplicar na hora).
+
 ## [2026-09-26] Testes que falhavam só com a máquina cheia
 **Achado (Claude, R17):** com o #66 e o #67 juntos na `main`, a suíte inteira (28 arquivos em paralelo) falhou uma vez, e cada teste passava sozinho.
 **Decisão:** o teste "destroços mexem na partida" deixa de depender do acaso (todas as barricadas quebram no primeiro tick nas duas partidas; a única diferença são os estilhaços). A fila de comandos do piloto remoto no servidor vai de 16 para 32 (~0,5 s): sobrecarregado, o servidor descartava comandos e o Mech andava menos que o previsto; o teste online confere o que importa (andou, e a previsão termina onde o servidor diz). Suíte inteira verde 3 vezes seguidas.

@@ -847,6 +847,19 @@ html, body {
   isolation: isolate;
 }
 #hangar-modal.hidden { display: none; }
+/* Galpão 3D (Hangar 2.0, camada 1): o fundo da tela fica aberto para a cena; os painéis viram vidro. */
+#hangar-modal.scene-3d { background: linear-gradient(90deg, rgba(3, 8, 12, 0.55), transparent 24%, transparent 62%, rgba(3, 8, 12, 0.6)); }
+#hangar-modal.scene-3d .hangar-stage { background: transparent; border-color: transparent; cursor: grab; touch-action: pan-y; }
+#hangar-modal.scene-3d .hangar-stage:active { cursor: grabbing; }
+#hangar-modal.scene-3d .hangar-mech,
+#hangar-modal.scene-3d .hangar-platform,
+#hangar-modal.scene-3d .hangar-orbit,
+#hangar-modal.scene-3d .hangar-stage-grid,
+#hangar-modal.scene-3d .hangar-stage::before { display: none; }
+#hangar-modal.scene-3d .hangar-rail,
+#hangar-modal.scene-3d .hangar-metrics,
+#hangar-modal.scene-3d .hangar-header,
+#hangar-modal.scene-3d .hangar-footer { background: rgba(5, 14, 20, 0.62); backdrop-filter: blur(6px); }
 #hangar-modal.live-preview { background: rgba(4, 11, 17, 0.68); }
 #hangar-modal.live-preview .hangar-stage { background: rgba(4, 10, 15, 0.1); }
 #hangar-modal.live-preview .hangar-mech { display: none; }

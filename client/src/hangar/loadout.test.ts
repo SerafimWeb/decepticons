@@ -154,4 +154,19 @@ describe('Mech com a montagem do Hangar', () => {
     expect(m.loadout.primary).toBe(weapon('plasma', 0));
     expect(m.heat).toBe(0);
   });
+
+  it('trocar pelo Hangar no meio da partida mantém o calor: a pausa não vira um jeito de esfriar', async () => {
+    const physics = await PhysicsWorld.create();
+    physics.addStaticBox(new THREE.Vector3(0, -1, 0), new THREE.Vector3(200, 2, 200));
+    const m = new Vector09();
+    m.spawn(physics, new THREE.Vector3(0, 0, 0));
+    for (let i = 0; i < 5; i++) m.onFire();
+    const hot = m.heat;
+    expect(hot).toBeGreaterThan(0.2);
+    const heavy = validateLoadout(build(2, 0));
+    if (!heavy.ok) throw new Error('montagem de teste inválida');
+    m.equip(heavy.loadout, true);
+    expect(m.loadout.primary).toBe(weapon('plasma', 2));
+    expect(m.heat).toBeCloseTo(hot, 6);
+  });
 });
