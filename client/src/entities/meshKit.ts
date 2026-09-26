@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
 /** Helpers de geometria procedural para montar Mechs com primitivas. */
 
@@ -21,6 +21,43 @@ export function box(
   m.position.set(x, y, z);
   parent.add(m);
   return m;
+}
+
+/** Caixa chanfrada procedural para as grandes placas do casco; costuma ser fundida no pivô logo após criar. */
+export function beveledBox(
+  parent: THREE.Object3D,
+  w: number,
+  h: number,
+  d: number,
+  bevel: number,
+  mat: THREE.Material,
+  x = 0,
+  y = 0,
+  z = 0,
+): THREE.Mesh {
+  const edge = Math.max(0.001, Math.min(bevel, w * 0.2, h * 0.2, d * 0.2));
+  const shape = new THREE.Shape();
+  shape.moveTo(-w / 2, -h / 2);
+  shape.lineTo(w / 2, -h / 2);
+  shape.lineTo(w / 2, h / 2);
+  shape.lineTo(-w / 2, h / 2);
+  shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: d - edge * 2,
+    bevelEnabled: true,
+    bevelSegments: 1,
+    steps: 1,
+    bevelSize: edge,
+    bevelThickness: edge,
+    curveSegments: 1,
+  });
+  geometry.center();
+  geometry.computeVertexNormals();
+  geometry.userData.mechOwnedGeometry = true;
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.position.set(x, y, z);
+  parent.add(mesh);
+  return mesh;
 }
 
 /** Cilindro ao longo de Y; `rotX = Math.PI / 2` deita no eixo Z. */
@@ -88,7 +125,12 @@ export function batchRigMeshes(root: THREE.Object3D, hullMaterials: readonly THR
       const sourceMaterial = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
       if (!(sourceMaterial instanceof THREE.MeshStandardMaterial)) continue;
       replacedMaterials.add(sourceMaterial);
-      const geometry = mesh.geometry.clone();
+      let geometry = mesh.geometry.clone();
+      if (!geometry.index) {
+        const indexed = mergeVertices(geometry, 1e-4);
+        geometry.dispose();
+        geometry = indexed;
+      }
       mesh.updateMatrix();
       geometry.applyMatrix4(mesh.matrix);
       const count = geometry.getAttribute('position').count;
@@ -121,7 +163,10 @@ export function batchRigMeshes(root: THREE.Object3D, hullMaterials: readonly THR
     const merged = mergeGeometries(pieces, false);
     for (const piece of pieces) piece.dispose();
     if (!merged) throw new Error('Não foi possível combinar a geometria do rig');
-    for (const mesh of meshes) parent.remove(mesh);
+    for (const mesh of meshes) {
+      parent.remove(mesh);
+      if (mesh.geometry.userData.mechOwnedGeometry === true) mesh.geometry.dispose();
+    }
     parent.add(new THREE.Mesh(merged, material));
   };
   mergePart(root);
