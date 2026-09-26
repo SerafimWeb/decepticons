@@ -2,12 +2,20 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] O grafo da oficina: o layout em constelações
+**Pedido do dono:** "o grafo precisa de um capricho, ele parece um emaranhado de coisas. não tá bonito nem funcional para quem vê pela primeira vez!"
+**Decisão (Qwen):**
+- **De bola de força para constelações:** cada camada mora num polo próprio (o núcleo no centro). A física puxa o nó para o polo da sua camada e só as cordas intra-camada entram na física — as entre camadas são visuais, senão o núcleo (ligado a todos) colapsaria o grafo no meio.
+- **Menos ruído:** por padrão aparecem só as cordas fortes (peso ≥ 4) e as intra-camada, com espessura e alpha pela força; as fracas aparecem no foco. O nó cresce com o peso e com quantos dependem dele.
+- **Leitura guiada:** rótulo em cada constelação (no centroide); nome do módulo só nos grandes e no foco; clique trava o foco (isola as ligações), hover mostra o detalhe; a tabela alternativa ganhou a camada.
+**Custo:** continua ~25 KB inline, sem biblioteca.
+**Quem decidiu:** dono (o capricho); Qwen (layout, física e leitura).
+
 ## [2026-09-26] Multiplayer no mesmo domínio (`selvamkt.com.br`), com defesas
 **Achado (dono):** "por enquanto vamos manter em selvamkt.com.br … faremos as defesas e proteções pra um projeto nao estragar ou atrapalhar o outro". A alternativa era um domínio novo só do jogo.
 **Decisão:** o servidor de jogo mora em `jogo.selvamkt.com.br`, atrás de um túnel nomeado da Cloudflare. O DNS de `selvamkt.com.br` vai para a Cloudflare (Free), mas **cada registro existente do site fica em nuvem cinza** (só resolução de nome; o tráfego do site continua indo direto para o Hostinger, sem passar pela Cloudflare). Só o `jogo.` fica em nuvem laranja e é proxiado pelo túnel.
 **Proteção do servidor:** por padrão o processo do jogo escuta em `127.0.0.1:2567` (o túnel fala daqui). Porteira em `server/guard.ts`: 4 conexões abertas por IP, 400 no total, 60 mensagens/s por conexão com folga de 30. `cf-connecting-ip` só vale quando o soquete direto é o localhost.
 **Quem decidiu:** Dan.
-
 
 ## [2026-09-26] O grafo da arquitetura na oficina
 **Pedido do dono:** "inserir o grafo la na pagina da oficina como um elemento visual impactante", referenciando o `ecossistema.html` (SERAFIM) e o pipeline STERM/ABADDON.
