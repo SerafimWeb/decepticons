@@ -107,6 +107,7 @@
 - [x] Sala de controle (antigos bastidores): novidades, mesa do Dan e o processo criativo das fichas, lidos dos documentos #base
 - [ ] Fichas do Mech leve, do pesado, do andróide e das 4 armas (Codex) #mechs
 - [x] Calor com fôlego: ~15 tiros segurando, trava de ~2 s, superaquecido anda a 75% #combate
+- [x] Potências: painel do dono por arma e por clã, com o efeito na luta e aviso de apelação, salvo e por link #combate
 - [x] Diretor de ataque com fila justa: fim do turno vai para o fim da fila, quem espera mais vai primeiro #ia
 - [ ] Conceitos visuais dos robôs numa IA de imagem (briefing em `ESTILO_ROBOS.md`, dono) e tradução em peças do `meshKit` (Codex) #mechs
 - [x] Inimigos configuráveis: quantidade de Mechs e andróides, técnico, personalidade de cada Mech e quantos atacam juntos #ux

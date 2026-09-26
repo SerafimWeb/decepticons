@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLOW, PALETTE } from '../core/palette';
 import type { MechBase } from '../entities/MechBase';
 import { Android } from '../entities/Android';
+import { ANDROID_STATS, VECTOR09_STATS } from '../entities/chassis';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
@@ -12,6 +13,7 @@ import type { ProjectileSystem } from './ProjectileSystem';
 import { REPAIR_RATE } from './repair';
 import { TechnicianController } from './TechnicianController';
 import type { Respawner } from './Respawner';
+import { defaultPower, poweredStats, type PowerSpec } from '../tuning/power';
 
 export const BOT_RESPAWN_S = 4;
 /** IA rebelde: vermelho, com visor e tiros vermelhos (o jogador é amarelo com verde neon). */
@@ -57,6 +59,8 @@ export interface BotSystemOptions {
   skill?: BotSkill;
   /** Personalidade de cada Mech rebelde, na ordem dos `spawns` (padrão: soldado). */
   personas?: readonly Persona[];
+  /** Potências do painel (por arma e por clã); sem isso, o padrão do jogo. */
+  power?: PowerSpec;
 }
 
 interface Bot {
@@ -94,6 +98,8 @@ export class BotSystem {
   private readonly projectiles: ProjectileSystem;
   private readonly combat: CombatSystem;
   private readonly particles: ParticleSystem;
+  /** Ritmo do conserto do técnico (potência do clã; 1 = padrão). */
+  private readonly repairScale: number;
 
   constructor(o: BotSystemOptions) {
     this.projectiles = o.projectiles;
@@ -121,14 +127,19 @@ export class BotSystem {
       const name = pick(BOT_NAMES.mechs, i, 'M');
       return persona && persona !== 'soldado' ? `${name}·${PERSONA_LABELS[persona].label.toUpperCase()}` : name;
     };
-    o.spawns.forEach((p, i) => fighter(new Vector09({ paint: BOT_PAINT, visor: PALETTE.signal }), p, mechName(i), i, false));
+    // Potências: os números de cada clã são montados uma vez aqui (nada muda no tick).
+    const power = o.power ?? defaultPower();
+    const mechStats = poweredStats(VECTOR09_STATS, power, 'mechs');
+    const androidStats = poweredStats(ANDROID_STATS, power, 'androids');
+    this.repairScale = power.clans.technician.damage;
+    o.spawns.forEach((p, i) => fighter(new Vector09({ paint: BOT_PAINT, visor: PALETTE.signal, stats: mechStats }), p, mechName(i), i, false));
 
     // Andróides: sementes depois das dos Mechs.
-    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android(), p, pick(BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true));
+    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true));
     // Técnicos: consertam os Mechs rebeldes; visor amarelo para o jogador achar e caçar primeiro.
     const allies = this.bots.filter((b) => b.mech instanceof Vector09).map((b) => b.mech);
     (o.technicianSpawns ?? []).forEach((p, i) => {
-      const mech = new Android({ visor: PALETTE.fluo, tool: 'repair' });
+      const mech = new Android({ visor: PALETTE.fluo, tool: 'repair', stats: poweredStats(ANDROID_STATS, power, 'technician') });
       const home = place(mech, p);
       const brain = new TechnicianController(mech, allies);
       o.respawner.track(mech, BOT_RESPAWN_S, () => brain.reset());
@@ -245,7 +256,7 @@ export class BotSystem {
     for (const { mech, brain } of this.bots) {
       mech.fixedUpdate(brain.think(dt, this.targets), dt);
       // Técnico no alcance: o conserto é regra do tick (quem escolhe o Mech é o cérebro).
-      if (brain instanceof TechnicianController && brain.repairTarget) brain.repairTarget.repair(REPAIR_RATE * dt);
+      if (brain instanceof TechnicianController && brain.repairTarget) brain.repairTarget.repair(REPAIR_RATE * this.repairScale * dt);
       if (!brain.wantsToFire) continue;
       // Motosserra: o corte é regra do combate (sem projétil).
       if (mech.loadout.primary.kind === 'melee') {

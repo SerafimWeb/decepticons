@@ -42,9 +42,12 @@ import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
 import { BrandSplash } from '../brand/BrandSplash';
 import { Hangar } from '../hangar/Hangar';
-import { PILOT_ANDROID_STATS } from '../entities/chassis';
+import { PILOT_ANDROID_STATS, VECTOR09_STATS } from '../entities/chassis';
+import { poweredLoadout, poweredStats } from '../tuning/power';
+import { PowerStore } from '../tuning/PowerStore';
 import { PALETTE } from './palette';
 import { PilotSwitch } from '../ui/PilotSwitch';
+import { PowerSettings } from '../ui/PowerSettings';
 import { Match } from '../sim/Match';
 
 /** Máximo de ticks por frame: se a máquina engasgar, o jogo desacelera em vez de travar. */
@@ -116,6 +119,8 @@ export class Game {
   readonly settings = new Settings(browserStorage());
   /** Montagem do Mech (Hangar): salva no aparelho ou vinda de um link `?build=`. A tela do Hangar usa isto. */
   readonly hangar = new Hangar();
+  /** Potências (painel do dono): as salvas no aparelho ou as de um link `?potencias=`. */
+  readonly power = new PowerStore(browserStorage(), location.search);
   private appliedQuality: QualityPreset | null = null;
 
   private playing = false;
@@ -164,14 +169,16 @@ export class Game {
     // --- A partida (a simulação única; quantos inimigos vêm das configurações e mudam ao reiniciar) ---
     this.scene.add(this.particles.points);
     const foes = this.settings.value;
-    this.match = new Match({ physics, scene: this.scene, particles: this.particles, foes });
+    // Potências do painel (por arma e por clã): montadas uma vez, aqui; mudam ao reiniciar.
+    const power = this.power.current;
+    this.match = new Match({ physics, scene: this.scene, particles: this.particles, foes, power });
     ({ debris: this.debris, destructibles: this.destructibles, projectiles: this.projectiles, rockets: this.rockets } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     // O piloto escolhe o chassi (Hangar): Vector-09 ou andróide, sempre nas cores do jogador.
     this.mech =
       this.hangar.current.chassis === 'android'
-        ? new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout: this.hangar.equipped })
-        : new Vector09({ loadout: this.hangar.equipped });
+        ? new Android({ stats: poweredStats(PILOT_ANDROID_STATS, power, 'player'), paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout: poweredLoadout(this.hangar.equipped, power, 'player') })
+        : new Vector09({ stats: poweredStats(VECTOR09_STATS, power, 'player'), loadout: poweredLoadout(this.hangar.equipped, power, 'player') });
     this.match.addPlayer(this.mech, 'VOCÊ', 0, () => this.equipPending());
     this.nameplates = new Nameplates(this.scene, this.bots);
     // Sons dos andróides (Gemini): tiro e pouso, mais baixos quanto mais longe do jogador.
@@ -234,6 +241,7 @@ export class Game {
     new SettingsMenu(this.settings);
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician });
+    new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
   }
 
@@ -246,7 +254,7 @@ export class Game {
   private equipPending(): void {
     const loadout = this.hangar.takePending();
     if (!loadout) return;
-    this.mech.equip(loadout);
+    this.mech.equip(poweredLoadout(loadout, this.power.current, 'player'));
     this.player.rearm();
   }
 

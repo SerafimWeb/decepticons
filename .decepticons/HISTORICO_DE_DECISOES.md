@@ -2,6 +2,19 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-25] Potências: o painel de ajuste do dono, por arma e por clã
+**Pedido do dono:** "seria bom termos um painel de controle que eu possa configurar as potências das armas, dos robôs etc., pra ficar mais fácil de eu customizar também (por arma, por clã, etc.)".
+**Decisão (Claude):**
+- **Multiplicadores sobre o padrão** (25% a 400%), não números absolutos: continuam valendo quando o padrão for recalibrado. Por arma: dano, cadência (tiros e recarga), calor por tiro, alcance; vale para todos que usam a arma. Por clã (você, Mechs rebeldes, andróides rebeldes, técnico): dano (no técnico, o ritmo do conserto), vida de cada parte, velocidade (andar, arrancada e dash; o tempo de arrancada não muda; pulo e tamanho não mudam, o cenário foi feito para eles) e calor de tudo.
+- **Montado uma vez, ao começar a partida** (`tuning/power.ts`, regra pura): em 100% são os mesmos objetos do jogo; nada é criado nem muda no tick. Por isso vale ao reiniciar.
+- **Tela:** seção POTÊNCIAS nas configurações, com o efeito calculado na hora pela mesma simulação das metas (quanto tempo você leva para derrubar um rebelde e eles você, o combo, a motosserra na perna, tiros para derrubar um andróide) e aviso de apelação abaixo das metas travadas (arma sozinha 4,5 s, combo 2,5 s). Salva no aparelho; link `?potencias=p1.plasma-d150.mechs-v200` para outro aparelho; aviso na pausa quando a partida está ajustada.
+- **O padrão continua sendo a lei:** os testes de equilíbrio travam o padrão; um ajuste bom do dono vira o padrão num PR com teste. No multiplayer, a sala usa o padrão do servidor.
+- **Clã** hoje é o tipo de robô; quando o universo definir clãs (no chat do SERAFIM), entram na mesma lista.
+- **R17:** `[ PILOTAR MECH ]` recarregava com o `?build=` do link da landing, e o link reaplicava o andróide. Agora a troca recarrega sem o parâmetro (`core/url.ts`).
+- Toca território do Gemini (`index.html`, `styles.css`, `ui/`): uma seção nova, no visual da tela, pela regra 4.
+**Custo de CPU:** nenhum no jogo. A tela roda a simulação de equilíbrio (6 contas curtas) a cada mudança, com o jogo pausado.
+**Quem decidiu:** dono (o painel, por arma e por clã); Claude (multiplicadores, campos, metas na tela).
+
 ## [2026-09-25] Bastidores viram a Sala de controle
 **Pedido do dono:** "continue documentando esses nossos processos, novidades, lá no bastidores (podemos chamar de sala de controle)".
 **Decisão (Claude):**

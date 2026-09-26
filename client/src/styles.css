@@ -969,3 +969,32 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   filter: drop-shadow(0 0 8px var(--warn));
   animation: blink 1s steps(2) infinite;
 }
+
+/* Potências (painel do dono, na tela de configurações; ui/PowerSettings.ts) */
+.power-note { margin: 0 0 4px; font-size: 12px; line-height: 1.5; color: #999; }
+.power-grid { display: grid; grid-template-columns: minmax(0, 1fr) repeat(4, 58px); gap: 6px 8px; align-items: center; font-size: 12px; color: #ccc; }
+.power-grid .pt { grid-column: 1 / -1; margin-top: 8px; font-size: 11px; letter-spacing: 2px; color: var(--hot); text-transform: uppercase; }
+.power-grid .ph { font-size: 10px; letter-spacing: 1px; color: #888; text-transform: uppercase; text-align: center; }
+.power-grid .pl { min-width: 0; }
+@media (max-width: 520px) {
+  .power-grid { grid-template-columns: minmax(0, 1fr) repeat(4, 44px); gap: 5px 4px; font-size: 11px; }
+  .power-grid .ph { font-size: 9px; letter-spacing: 0; }
+  .settings-box .power-grid input[type='number'] { font-size: 11px; padding: 4px 0; }
+}
+.settings-box .power-grid input[type='number'] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 2px;
+  background: #06080a;
+  border: 1px solid #444;
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 12px;
+  text-align: center;
+}
+.settings-box .power-grid input.changed { border-color: var(--hot); color: var(--hot); }
+.power-report { display: grid; gap: 4px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.45; color: #ccc; }
+.power-report li.warn { color: var(--alert); }
+.power-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+.power-status { font-size: 11px; line-height: 1.5; color: #999; overflow-wrap: anywhere; }
+.power-flag { margin: 6px 0 0; font-size: 11px; letter-spacing: 2px; color: var(--hot); }

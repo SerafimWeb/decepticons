@@ -70,6 +70,7 @@ client/src/
   entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts
   sim/         Match.ts (a partida inteira sem tela: o que o servidor roda; o Game desenha por cima)
   hangar/      loadout.ts (contrato da montagem: LoadoutSpec, validateLoadout), Hangar.ts (montagem salva, link ?build=, API da tela)
+  tuning/      power.ts (potências: multiplicadores por arma e por clã, link, relatório de equilíbrio), PowerStore.ts (salvas, ?potencias=)
   player/      PlayerController.ts (input/câmera -> MechInput, tiro)
   camera/      CameraRig.ts + modos (3ª, 1ª, tática)
   environment/ Arena.ts, Destructibles.ts, DebrisSystem.ts
