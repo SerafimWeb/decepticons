@@ -21,6 +21,7 @@ const IGNORE_DEBRIS = RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC;
 
 /** Partes com vida independente (dano localizado). */
 export type MechPart = 'torso' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
+const PARTS: readonly MechPart[] = ['torso', 'head', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg'];
 export type MechModules = Record<MechPart, number>;
 
 export interface MechStats extends ChassisHeat {
@@ -199,6 +200,62 @@ export abstract class MechBase {
   despawn(physics: PhysicsWorld): void {
     physics.world.removeCharacterController(this.controller);
     physics.world.removeRigidBody(this.body); // leva o colisor junto
+  }
+
+  /**
+   * Pose vinda do servidor (multiplayer) para um robô remoto: posição dos pés, mira e a velocidade estimada entre
+   * dois estados (anima as pernas). Nunca roda o character controller (G6); a cápsula só acompanha, para os tiros
+   * pararem nele e a câmera não atravessar.
+   */
+  setNetPose(x: number, y: number, z: number, yaw: number, pitch: number, vx: number, vz: number, grounded: boolean): void {
+    this.simPos.set(x, y, z);
+    this.prevPos.copy(this.simPos);
+    this.root.position.copy(this.simPos);
+    this.velocity.set(vx, 0, vz);
+    this.grounded = grounded;
+    this.applyFacing(yaw, pitch);
+    this.body.setNextKinematicTranslation({ x, y: y + this.feetOffset, z });
+  }
+
+  /**
+   * Desloca o Mech (correção da previsão pelo servidor, no multiplayer): simulação, desenho e cápsula juntos.
+   * A velocidade não muda: o movimento continua de onde o servidor diz que ele está.
+   */
+  nudge(dx: number, dy: number, dz: number): void {
+    this.simPos.x += dx;
+    this.simPos.y += dy;
+    this.simPos.z += dz;
+    this.prevPos.x += dx;
+    this.prevPos.y += dy;
+    this.prevPos.z += dz;
+    const t = { x: this.simPos.x, y: this.simPos.y + this.feetOffset, z: this.simPos.z };
+    this.body.setTranslation(t, true);
+    this.body.setNextKinematicTranslation(t);
+  }
+
+  /**
+   * Vida, calor e vivo vindos do servidor (multiplayer): a vida de cada parte chega como fração da máxima. Só o
+   * servidor tira vida; aqui a parte some, o robô cai ou volta, como ele disser. `heat` null = manter o previsto.
+   */
+  applyNetVitals(parts: Readonly<Record<MechPart, number>>, heat: number | null, alive: boolean): void {
+    const max = this.stats.maxModuleHealth;
+    let changed = false;
+    for (const p of PARTS) {
+      const f = parts[p];
+      const v = f <= 0 ? 0 : Math.max(1, Math.round(f * max[p]));
+      if (this.modules[p] !== v) {
+        this.modules[p] = v;
+        changed = true;
+      }
+    }
+    if (heat !== null) this.heatSink.heat = heat;
+    if (!alive && this.root.visible) this.die();
+    else if (alive && !this.root.visible) {
+      this.collider.setEnabled(true);
+      this.root.visible = true;
+      changed = true;
+    }
+    if (changed) this.refreshParts();
   }
 
   /** Posição de render (interpolada entre ticks). Não use em regra de jogo: veja `simPosition`. */

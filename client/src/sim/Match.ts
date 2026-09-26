@@ -45,6 +45,10 @@ export interface MatchOptions {
   debris?: boolean;
   /** Potências do painel (laboratório do dono). O servidor usa o padrão. */
   power?: PowerSpec;
+  /** Dano ligado (padrão). No cliente do multiplayer, desligado: quem tira vida é o servidor. */
+  damage?: boolean;
+  /** Duração da rodada (s). No cliente do multiplayer, infinita: a rodada é a do servidor. */
+  roundS?: number;
 }
 
 /**
@@ -62,7 +66,7 @@ export class Match {
   readonly combat: CombatSystem;
   readonly respawner: Respawner;
   readonly bots: BotSystem;
-  readonly round = new Round();
+  readonly round: Round;
   /** Pisão: robô grande andando na direção de um pequeno encostado. */
   readonly crush: CrushRule;
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
@@ -79,12 +83,14 @@ export class Match {
   /** Rodada nova começou (todos já estão de volta aos pontos de nascimento). */
   onRoundStart?: () => void;
 
-  private readonly physics: PhysicsWorld;
+  /** O mundo físico da partida (o multiplayer põe nele os robôs remotos, só para colisão). */
+  readonly physics: PhysicsWorld;
   private readonly scene: THREE.Scene;
   private readonly _spawn = new THREE.Vector3();
 
   constructor(o: MatchOptions) {
     this.physics = o.physics;
+    this.round = o.roundS === undefined ? new Round() : new Round(o.roundS);
     this.scene = o.scene;
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
@@ -92,6 +98,7 @@ export class Match {
     this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles);
     this.rockets = new RocketSystem(o.scene, o.physics, o.particles);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
+    this.combat.damageEnabled = o.damage !== false;
     this.respawner = new Respawner(SPAWN_POINTS);
     this.crush = new CrushRule(this.combat);
     this.bots = new BotSystem({

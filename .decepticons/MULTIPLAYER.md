@@ -99,7 +99,7 @@ download por jogador numa luta intensa, e cabem até 15 unidades antes de passar
 | M1 | Partida sem tela (`sim/Match.ts`): a partida inteira roda no Node sem WebGL nem DOM, determinística sem destroços; o cliente monta a partida por ela ✅ (PR #49). **Ainda não** é a simulação compartilhada: ver seções 8 e 9 | Claude |
 | M2 | Contratos e codec binário, com testes de tamanho ✅ (26/09) | Claude |
 | M3 | `server/`: `ArenaRoom` com a simulação a 60 Hz, bots, entrada por `?sala=`; roda local com `npm run server` ✅ (26/09) | Claude |
-| M4 | Prediction + reconciliação do Mech local; interpolação dos remotos; teste com latência e perda simuladas | Claude |
+| M4 | Prediction + reconciliação do Mech local; interpolação dos remotos; teste com latência e perda simuladas. ✅ primeira versão (26/09): previsão com correção pelo `ack`, remotos a 100 ms, tiros e abates por evento; falta o teste com latência e perda simuladas | Claude |
 | M5 | Tiros autoritativos com compensação de latência; eventos de acerto, parte e abate | Claude |
 | M6 | Entrada pelo link com apelido, reconexão, "reconectando…" | Claude (rede) + Gemini (telas) |
 | M7 | Medir banda por sala e tick do servidor contra G11 e G14; playtest R16 com 2+ clientes reais (PC do dono + Cloudflare Tunnel) | Claude + dono |
@@ -161,6 +161,21 @@ corrige. Se a correção aparecer na tela, os destroços vão para um mundo fís
 por tick com 1 jogador e os bots), o piloto remoto (`NetPilot`) aplicando um comando por tick, na ordem, com o `ack`,
 e o tiro saindo da simulação na direção de yaw e pitch do comando (seção 9, item 3, só no servidor por enquanto).
 `npm run server` no PC do dono (`DEPLOY.md`).
+
+**Feito depois:** o jogo online (M4, primeira versão, 26/09): `/jogar/?sala=…&servidor=…` entra na sala.
+- O seu Mech é previsto na hora. O histórico da previsão por tick é comparado com o estado do servidor no tick do
+  `ack`, e a diferença é corrigida aos poucos (20% por tick; acima de 3 m, pula). O que foi previsto depois do `ack`
+  é deslocado junto, sem precisar re-simular.
+- Os outros robôs são desenhados 100 ms no passado, interpolando entre dois estados, sem character controller (G6).
+- Vida, morte e renascimento do seu Mech vêm do servidor. A partida local roda sem bots, sem dano
+  (`CombatSystem.damageEnabled`) e sem rodada própria.
+- O comando leva a mira: yaw e pitch da boca do Mech (pela simulação) até o ponto sob a mira. O tiro no servidor vai
+  onde a mira está (seção 9, itens 3 e 4, no online).
+- Eventos `SHOT` viram o projétil visual dos outros; `KILL` vira a lista de abates.
+- Medido: no mesmo PC, a previsão fica a menos de 30 cm do servidor depois de andar e parar; um desvio de 5 m volta
+  em menos de 0,8 s; testado com 2 jogadores e no navegador de verdade.
+- **Limites desta versão:** barricadas não quebram no online (falta o evento `PROP_BROKEN`, M5); o placar (Tab) e os
+  nomes sobre a cabeça ainda são os locais; sem teste com latência e perda simuladas; as potências valem só offline.
 
 **Ainda não existe:** prediction e reconciliação (M4),
 tiros autoritativos (M5), entrada por link e reconexão (M6).

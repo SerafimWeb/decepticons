@@ -131,6 +131,19 @@ describe('M3: a sala do servidor', () => {
     room.dispose();
   });
 
+  it('sem comando novo (pausa, rede travada), o Mech para: não anda sozinho no servidor', async () => {
+    const room = await ArenaRoom.create('PARADO');
+    const dan = new FakePeer();
+    room.receive(dan, join());
+    const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
+    room.receive(dan, inputs(1, 8, { moveZ: 1 }));
+    for (let i = 0; i < 40; i++) room.step(); // 8 comandos e 32 ticks sem nada
+    const z1 = room.positionOf(me)!.z;
+    for (let i = 0; i < 30; i++) room.step();
+    expect(Math.abs(room.positionOf(me)!.z - z1)).toBeLessThan(0.05);
+    room.dispose();
+  });
+
   it('sair: o Mech sai da partida e da lista de todos; o id volta a valer', async () => {
     const room = await ArenaRoom.create('SAIDA');
     const a = new FakePeer();

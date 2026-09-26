@@ -338,6 +338,21 @@ html, body {
   color: var(--accent);
   text-shadow: 0 0 8px var(--accent);
 }
+/* Online (M4): sala, ping e pessoas, embaixo do relógio da rodada */
+.net-status {
+  position: fixed;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-shadow: 0 0 6px var(--accent);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.net-status.bad { color: var(--alert); text-shadow: 0 0 6px var(--alert); }
 .round-clock.hurry { color: var(--hot); text-shadow: 0 0 10px var(--hot); animation: blink 1s steps(2) infinite; }
 .round-board {
   position: absolute;

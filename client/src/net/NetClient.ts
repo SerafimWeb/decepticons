@@ -1,0 +1,125 @@
+import { Writer } from '../../../shared/net/codec';
+import { PROTOCOL_VERSION } from '../../../shared/net/constants';
+import type { NetInput } from '../../../shared/net/input';
+import {
+  decodeEvents,
+  decodePong,
+  decodeReject,
+  decodeRoster,
+  decodeSnapshot,
+  decodeWelcome,
+  encodeInputs,
+  encodeJoin,
+  encodeLeave,
+  encodePing,
+  messageType,
+  MSG,
+  newEventBatch,
+  newSnapshot,
+  type EventBatch,
+  type RejectReason,
+  type RosterEntry,
+  type Snapshot,
+  type WelcomeMsg,
+} from '../../../shared/net/messages';
+
+/** O que o cliente ouve do servidor. O estado e os eventos chegam em objetos reutilizados: leia na hora. */
+export interface NetClientEvents {
+  open(): void;
+  welcome(m: WelcomeMsg): void;
+  roster(entries: RosterEntry[]): void;
+  snapshot(s: Snapshot): void;
+  events(b: EventBatch): void;
+  /** Ida e volta até o servidor (ms). */
+  pong(rttMs: number): void;
+  reject(reason: RejectReason): void;
+  closed(): void;
+}
+
+/**
+ * A conexão do jogo com o servidor (M4): WebSocket binário, as mensagens da M2. Mensagem que não decodifica é
+ * ignorada. Manda uma cópia de cada mensagem (o escritor reaproveita o buffer dele).
+ */
+export class NetClient {
+  private readonly ws: WebSocket;
+  private readonly w = new Writer(1024);
+  private readonly snap = newSnapshot();
+  private readonly batch = newEventBatch();
+  private queued: Uint8Array<ArrayBuffer>[] = [];
+
+  constructor(
+    url: string,
+    private readonly on: Partial<NetClientEvents>,
+  ) {
+    this.ws = new WebSocket(url);
+    this.ws.binaryType = 'arraybuffer';
+    this.ws.onopen = () => {
+      for (const b of this.queued) this.ws.send(b);
+      this.queued = [];
+      this.on.open?.();
+    };
+    this.ws.onmessage = (e) => {
+      if (e.data instanceof ArrayBuffer) this.receive(new Uint8Array(e.data));
+    };
+    this.ws.onclose = () => this.on.closed?.();
+    this.ws.onerror = () => {};
+  }
+
+  get isOpen(): boolean {
+    return this.ws.readyState === WebSocket.OPEN;
+  }
+
+  join(name: string, build: string): void {
+    this.send(encodeJoin(this.w, { protocol: PROTOCOL_VERSION, name, build }));
+  }
+
+  sendInputs(inputs: readonly NetInput[], count: number): void {
+    if (this.isOpen) this.send(encodeInputs(this.w, inputs, count));
+  }
+
+  ping(): void {
+    if (this.isOpen) this.send(encodePing(this.w, performance.now()));
+  }
+
+  close(): void {
+    if (this.isOpen) this.send(encodeLeave(this.w));
+    this.ws.close();
+  }
+
+  private send(bytes: Uint8Array): void {
+    const copy = bytes.slice();
+    if (this.isOpen) this.ws.send(copy);
+    else if (this.ws.readyState === WebSocket.CONNECTING) this.queued.push(copy);
+  }
+
+  private receive(bytes: Uint8Array): void {
+    switch (messageType(bytes)) {
+      case MSG.WELCOME: {
+        const m = decodeWelcome(bytes);
+        if (m) this.on.welcome?.(m);
+        return;
+      }
+      case MSG.ROSTER: {
+        const r = decodeRoster(bytes);
+        if (r) this.on.roster?.(r);
+        return;
+      }
+      case MSG.SNAPSHOT:
+        if (decodeSnapshot(bytes, this.snap)) this.on.snapshot?.(this.snap);
+        return;
+      case MSG.EVENTS:
+        if (decodeEvents(bytes, this.batch)) this.on.events?.(this.batch);
+        return;
+      case MSG.PONG: {
+        const p = decodePong(bytes);
+        if (p) this.on.pong?.((performance.now() - p.clientTime) >>> 0);
+        return;
+      }
+      case MSG.REJECT: {
+        const r = decodeReject(bytes);
+        if (r) this.on.reject?.(r);
+        return;
+      }
+    }
+  }
+}

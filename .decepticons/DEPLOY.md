@@ -59,7 +59,14 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
 4. **Pela internet (playtest):** Cloudflare Tunnel, sem abrir porta nem mostrar o IP:
    `cloudflared tunnel --url http://localhost:2567` dá um endereço `https://….trycloudflare.com`; o jogo usa o
    mesmo endereço com `wss://`. O endereço muda a cada vez que o túnel sobe.
-5. O jogo no site ainda não conecta sozinho: isso é a M4 (prediction) e a M6 (entrada pelo link).
+5. **Jogar (M4, 26/09):** o endereço do jogo com `?sala=` entra online.
+   - No próprio PC do servidor: `https://www.selvamkt.com.br/cybermech/jogar/?sala=ARENA&servidor=ws://localhost:2567&nome=Dan`
+     (ou `npm run dev` e `http://localhost:5173/?sala=ARENA`).
+   - Pela internet: suba o túnel e todo mundo abre
+     `https://www.selvamkt.com.br/cybermech/jogar/?sala=ARENA&servidor=https://….trycloudflare.com&nome=SeuNome`
+     (o jogo troca o `https://` por `wss://`).
+   - No topo da tela aparece `ONLINE · SALA ARENA · 42 ms · 2 pilotos`. Sem `servidor` fora do PC do servidor, o
+     jogo avisa e joga offline.
 
 **Opções avaliadas em 2026-09-23 (sem decisão). Ofertas gratuitas mudam: confira antes de adotar.**
 A hospedagem compartilhada da Hostinger **não serve** para o servidor: não mantém um processo Node rodando o tempo todo, e os limites de CPU estrangulariam uma simulação a 60 Hz. VPS da Hostinger funcionaria, mas é pago.

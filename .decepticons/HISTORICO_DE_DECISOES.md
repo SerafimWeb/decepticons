@@ -2,6 +2,21 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] M4 do multiplayer: o jogo joga online (primeira versão)
+**Pedido do dono:** "segue pro multiplayer; prossiga".
+**Decisão (Claude):**
+- **Entrada pelo link:** `/jogar/?sala=CODIGO` liga o online; `&servidor=` diz onde está o servidor (no próprio PC, `ws://localhost:2567` por padrão; endereço `https://` de túnel vira `wss://`); `&nome=` é o apelido até a tela da M6. Sem `sala`, o jogo é o de sempre.
+- **Módulo próprio** (`net/OnlineSession.ts`, G3), entrando como mais um piloto da partida local, depois do jogador. A partida local fica sem bots, sem dano (`CombatSystem.damageEnabled`) e sem rodada; as potências valem só offline.
+- **Previsão com correção por deslocamento:** o histórico da previsão por tick é comparado com o estado do servidor no tick do `ack`; a diferença entra aos poucos (20% por tick; acima de 3 m, pula), e o que foi previsto depois do `ack` é deslocado junto. Não precisa re-simular nem mandar velocidade no estado (o contrato da M2 fica como está).
+- **Remotos a 100 ms** interpolados entre dois estados, com a velocidade estimada animando as pernas, sem character controller (G6). Pessoas com visor ciano (verde é você; vermelho, as IAs).
+- **O tiro vai onde a mira está:** o comando leva yaw e pitch da boca do Mech (pela simulação) até o ponto sob a mira; o servidor atira da boca com essa direção (`MULTIPLAYER.md`, seção 9, itens 3 e 4, no online).
+- **Eventos:** `SHOT` (o cliente desenha o projétil visual saindo da boca do robô remoto) e `KILL` (lista de abates).
+- **Sem comando por 10 ticks** (pausa, rede travada), o Mech para no servidor: não anda sozinho.
+- **CSP do site:** `connect-src` libera `ws://localhost` e `wss:` (o endereço do servidor vem do link).
+- **Limites registrados:** barricadas não quebram no online (M5, evento `PROP_BROKEN`); placar e nomes ainda locais; falta teste com latência e perda simuladas.
+**Custo de CPU:** no cliente, por tick, guardar uma posição e montar um comando de 9 bytes; por quadro, interpolar até 11 robôs. Sem alocação nesses caminhos.
+**Quem decidiu:** dono (seguir); Claude (formato do online).
+
 ## [2026-09-26] M3 do multiplayer: o servidor de jogo, com `ws` no lugar do Colyseus
 **Pedido do dono:** "segue pro multiplayer; prossiga".
 **Decisão (Claude):**

@@ -8,6 +8,8 @@ import { newNetInput, type NetInput } from '../shared/net/input';
 
 /** Comandos guardados por jogador: ~0,25 s de folga para a rede oscilar. */
 const QUEUE = 16;
+/** Sem comando novo por este tanto de ticks (pausa, rede travada), o Mech para: não anda sozinho. */
+const STARVED_TICKS = 10;
 
 const _origin = new THREE.Vector3();
 const _dir = new THREE.Vector3();
@@ -28,6 +30,7 @@ export class NetPilot implements Pilot {
   private head = 0;
   private size = 0;
   private lastQueued = 0;
+  private starved = 0;
   private readonly current = newNetInput();
   private readonly cmd: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
   private readonly trigger = new FireTimer();
@@ -68,9 +71,16 @@ export class NetPilot implements Pilot {
       this.head = (this.head + 1) % QUEUE;
       this.size--;
       this.ack = c.tick;
+      this.starved = 0;
     } else {
       c.jump = false;
       c.dash = false;
+      if (++this.starved > STARVED_TICKS) {
+        c.moveX = 0;
+        c.moveZ = 0;
+        c.fire = false;
+        c.secondary = false;
+      }
     }
     const m = this.mech;
     m.applyFacing(c.yaw, c.pitch);

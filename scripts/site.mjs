@@ -35,7 +35,8 @@ const HEADERS = {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     'font-src https://fonts.gstatic.com',
     "img-src 'self' data:",
-    "connect-src 'self'",
+    // Multiplayer (M4): o servidor no próprio PC (ws://localhost) ou por túnel/hospedagem (wss://).
+    "connect-src 'self' ws://localhost:* ws://127.0.0.1:* wss:",
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'none'",

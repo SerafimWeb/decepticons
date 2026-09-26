@@ -1,4 +1,6 @@
+import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import type { WeaponStats } from '../client/src/combat/weapons';
 import { DEFAULT_SETTINGS } from '../client/src/core/Settings';
 import { Android } from '../client/src/entities/Android';
 import { PILOT_ANDROID_STATS } from '../client/src/entities/chassis';
@@ -6,15 +8,17 @@ import type { MechBase } from '../client/src/entities/MechBase';
 import { Vector09 } from '../client/src/entities/Vector09';
 import type { ParticleSystem } from '../client/src/fx/ParticleSystem';
 import { factorySpec, loadoutKey, parseLoadoutKey, validateLoadout } from '../client/src/hangar/loadout';
-import { unitFromMech } from '../client/src/net/adapters';
+import { netWeaponIndex, unitFromMech } from '../client/src/net/adapters';
 import { FIXED_DT, PhysicsWorld } from '../client/src/physics/PhysicsWorld';
 import { Match } from '../client/src/sim/Match';
 import { Writer } from '../shared/net/codec';
-import { MAX_UNITS, PROTOCOL_VERSION, ROOM_SIZE, SIM_HZ, SNAPSHOT_HZ } from '../shared/net/constants';
+import { MAX_EVENTS, MAX_UNITS, NO_UNIT, PROTOCOL_VERSION, ROOM_SIZE, SIM_HZ, SNAPSHOT_HZ } from '../shared/net/constants';
+import { EVENT } from '../shared/net/events';
 import {
   decodeInputs,
   decodeJoin,
   decodePing,
+  encodeEvents,
   encodePong,
   encodeReject,
   encodeRoster,
@@ -22,6 +26,7 @@ import {
   encodeWelcome,
   messageType,
   MSG,
+  newEventBatch,
   newInputPacket,
   newSnapshot,
   type RejectReason,
@@ -74,6 +79,8 @@ export class ArenaRoom {
   private readonly w = new Writer(4096);
   private readonly snapshot = newSnapshot();
   private readonly packet = newInputPacket();
+  /** Eventos juntados entre dois estados (tiros e abates), mandados logo depois do estado. */
+  private readonly events = newEventBatch();
   /** Sala fechada: o mundo físico foi liberado; mensagens e saídas que ainda chegarem são ignoradas. */
   private disposed = false;
 
@@ -86,6 +93,11 @@ export class ArenaRoom {
     private readonly physics: PhysicsWorld,
   ) {
     this.match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: DEFAULT_SETTINGS, debris: false });
+    // Eventos para os clientes desenharem o que o servidor decidiu: cada tiro (o cliente faz o projétil visual)
+    // e cada abate (lista de abates).
+    this.match.projectiles.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
+    this.match.rockets.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
+    this.match.onMechKilled = (dead, _at, killer) => this.kill(dead, killer);
     const mechBuild = loadoutKey(factorySpec('vector09'));
     for (const mech of this.match.bots.mechs) {
       const kind: UnitKind = mech instanceof Vector09 ? 'mech' : this.match.bots.technicianOf(mech) ? 'technician' : 'android';
@@ -139,8 +151,15 @@ export class ArenaRoom {
     const t0 = performance.now();
     this.match.step(FIXED_DT);
     this.tick++;
-    if (this.tick % SNAPSHOT_EVERY === 0 && this.humans.size) this.broadcastSnapshot();
+    if (!this.humans.size) this.events.count = 0;
+    else if (this.tick % SNAPSHOT_EVERY === 0) this.broadcastSnapshot();
     this.tickMs += (performance.now() - t0 - this.tickMs) * 0.02;
+  }
+
+  /** Onde o servidor diz que está a unidade (pés), para diagnóstico e teste. */
+  positionOf(id: number): Readonly<THREE.Vector3> | null {
+    for (const u of this.units) if (u.id === id) return u.mech.simPosition;
+    return null;
   }
 
   /** Libera o mundo físico (sala vazia fechando). */
@@ -178,6 +197,34 @@ export class ArenaRoom {
     peer.close();
   }
 
+  private idOf(mech: MechBase | undefined): number {
+    for (const u of this.units) if (u.mech === mech) return u.id;
+    return NO_UNIT;
+  }
+
+  private shot(owner: RAPIER.Collider | undefined, dir: THREE.Vector3, w: WeaponStats): void {
+    const b = this.events;
+    if (!owner || b.count >= MAX_EVENTS) return;
+    let id = NO_UNIT;
+    for (const u of this.units) if (u.mech.collider === owner) id = u.id;
+    if (id === NO_UNIT) return;
+    const e = b.list[b.count++]!;
+    e.kind = EVENT.SHOT;
+    e.unit = id;
+    e.index = netWeaponIndex(w.id);
+    e.yaw = Math.atan2(-dir.x, -dir.z);
+    e.pitch = Math.asin(Math.max(-1, Math.min(1, dir.y)));
+  }
+
+  private kill(dead: MechBase, killer: MechBase | undefined): void {
+    const b = this.events;
+    if (b.count >= MAX_EVENTS) return;
+    const e = b.list[b.count++]!;
+    e.kind = EVENT.KILL;
+    e.unit = this.idOf(dead);
+    e.other = killer ? this.idOf(killer) : NO_UNIT;
+  }
+
   /** Menor id livre (os ids de quem saiu voltam a valer). */
   private freeId(): number {
     let id = 0;
@@ -200,6 +247,12 @@ export class ArenaRoom {
     for (const h of this.humans.values()) {
       s.ack = h.pilot.ack;
       h.peer.send(encodeSnapshot(this.w, s));
+    }
+    if (this.events.count) {
+      this.events.tick = this.tick;
+      const bytes = encodeEvents(this.w, this.events);
+      for (const h of this.humans.values()) h.peer.send(bytes);
+      this.events.count = 0;
     }
   }
 }
