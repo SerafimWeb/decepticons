@@ -2,6 +2,11 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] Testes que falhavam só com a máquina cheia
+**Achado (Claude, R17):** com o #66 e o #67 juntos na `main`, a suíte inteira (28 arquivos em paralelo) falhou uma vez, e cada teste passava sozinho.
+**Decisão:** o teste "destroços mexem na partida" deixa de depender do acaso (todas as barricadas quebram no primeiro tick nas duas partidas; a única diferença são os estilhaços). A fila de comandos do piloto remoto no servidor vai de 16 para 32 (~0,5 s): sobrecarregado, o servidor descartava comandos e o Mech andava menos que o previsto; o teste online confere o que importa (andou, e a previsão termina onde o servidor diz). Suíte inteira verde 3 vezes seguidas.
+**Quem decidiu:** Claude.
+
 ## [2026-09-26] Jogar online com um clique, com o servidor no PC de casa 24 h
 **Pedido do dono:** "o multiplayer só vai funcionar se eu enviar o link? Quero que outra pessoa possa simplesmente clicar em multiplayer e entrar na mesma sala, do Brasil, EUA, Rússia, China, mesmo que eu precise deixar meu PC ligado 24 h. Dá pra ser, ou só com a Oracle?"
 **Decisão:**

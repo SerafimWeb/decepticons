@@ -6,8 +6,11 @@ import { mechInputFromNet } from '../client/src/net/adapters';
 import type { Match, Pilot } from '../client/src/sim/Match';
 import { newNetInput, type NetInput } from '../shared/net/input';
 
-/** Comandos guardados por jogador: ~0,25 s de folga para a rede oscilar. */
-const QUEUE = 16;
+/**
+ * Comandos guardados por jogador: ~0,5 s de folga para a rede (ou o servidor) engasgar. Com 16 (~0,25 s), um servidor
+ * sobrecarregado descartava comandos e o Mech andava menos que o previsto (visto no teste com a máquina cheia).
+ */
+const QUEUE = 32;
 /** Sem comando novo por este tanto de ticks (pausa, rede travada), o Mech para: não anda sozinho. */
 const STARVED_TICKS = 10;
 
