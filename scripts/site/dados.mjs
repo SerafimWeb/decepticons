@@ -177,10 +177,22 @@ export async function jogo() {
     const { VECTOR09_STATS, ANDROID_STATS, PILOT_ANDROID_STATS } = await load('client/src/entities/chassis.ts');
     const hangar = await load('client/src/hangar/loadout.ts');
     const count = (file) => (read(file).match(/^\s+it\(/gm) ?? []).length;
+    // Rede (multiplayer): ritmos, tetos e a conta da banda, do mesmo código que os testes travam.
+    const netConst = await load('shared/net/constants.ts');
+    const budget = await load('shared/net/budget.ts');
+    const net = {
+      ...netConst,
+      inputBytes: (await load('shared/net/input.ts')).INPUT_BYTES,
+      unitBytes: (await load('shared/net/state.ts')).UNIT_BYTES,
+      download: budget.downloadPerSecond(netConst.ROOM_UNITS),
+      upload: budget.uploadPerSecond(),
+      maxUnits: budget.unitsWithinBudget(),
+      tests: count('shared/net/codec.test.ts') + count('client/src/net/adapters.test.ts'),
+    };
     const tests = count('client/src/combat/weapons.test.ts');
     // Testes que travam as regras da bancada: armas, calor e o Mech de verdade contra a bancada.
     const benchTests = tests + count('client/src/combat/heat.test.ts') + count('client/src/entities/MechHeat.test.ts');
-    return { weapons, balance, heat, hangar, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, tests, benchTests };
+    return { weapons, balance, heat, hangar, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, tests, benchTests, net };
   } catch (err) {
     console.warn(`::warning::site sem os dados do jogo: ${err instanceof Error ? err.message : err}`);
     return null;

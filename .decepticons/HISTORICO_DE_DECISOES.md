@@ -2,6 +2,11 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] A landing mostra o multiplayer em construção, com os números do código
+**Pedido do dono:** "continua alimentando as landing pages com o que tamo fazendo".
+**Decisão (Claude):** seção "Online: salas de 8 pilotos" na landing, depois do Hangar: as etapas da fase 4 lidas do ROADMAP (feitas em verde) e quatro leituras da rede lidas do código pelo site (servidor, estado da sala, download por jogador, comando). A conta da banda saiu do teste para `shared/net/budget.ts`: o teste trava e o site mostra o mesmo número. O check do site falha se a seção sumir. Regra que fica: toda frente nova que tiver número vira seção com o número vindo do código, nunca digitado.
+**Quem decidiu:** dono (o pedido); Claude (a seção e a fonte dos números).
+
 ## [2026-09-26] M2 do multiplayer: contratos de rede e codec binário
 **Pedido do dono:** "segue pro multiplayer".
 **Decisão (Claude):**

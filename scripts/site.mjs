@@ -354,6 +354,8 @@ async function check() {
     // Hangar: os números saem do código do jogo; se o carregamento falhar, a seção some sem erro. Aqui é erro.
     if ((await page.locator('table.builds td.fit a').count()) < 3) failures.push('landing: a grade de montagens do Hangar sumiu (validação do Hangar não carregou)');
     if ((await page.locator('section[aria-labelledby="hangar"] .wpn').count()) < 2) failures.push('landing: a seção do Hangar sumiu (o site não conseguiu ler o arsenal do código do jogo)');
+    // Online: os números saem do código da rede (shared/net) e as etapas, do ROADMAP.
+    if ((await page.locator('section[aria-labelledby="online"] .stages li').count()) < 3) failures.push('landing: a seção do multiplayer sumiu (o site não leu a rede ou a fase 4 do ROADMAP)');
     // Abertura da marca: roda na primeira visita da sessão e sai da frente sozinha (senão cobre o botão).
     if (!(await page.evaluate(() => sessionStorage.getItem('cybermech.intro') === '1'))) failures.push('landing: a abertura da marca não rodou');
     await page.waitForFunction(() => !document.getElementById('intro'), null, { timeout: 8000 });
@@ -371,7 +373,7 @@ async function check() {
     // Uma página por vez: a de trás não desenha, e o jogo do celular ficaria parado.
     await page.close();
     await mobile(browser, `${base}jogar/`, failures);
-    console.log(`site    ok: landing em ${prefix} com a abertura da marca e o Hangar, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
+    console.log(`site    ok: landing em ${prefix} com a abertura da marca, o Hangar e o online, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {
