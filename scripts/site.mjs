@@ -351,6 +351,11 @@ async function check() {
     const arqEdges = await page.locator('.arq .edge').count();
     if (arqMods < 10) failures.push(`oficina: o mapa da arquitetura saiu com ${arqMods} módulos`);
     if (arqEdges < 20) failures.push(`oficina: o mapa da arquitetura saiu com ${arqEdges} ligações`);
+    // O ícone de cada módulo (um por tipo de elemento, a ideia do grafo do ABBADON): um por chip, um por frente.
+    const arqIcones = await page.locator('.arq .mod svg').count();
+    const legendaIcones = await page.locator('.arq-legenda svg').count();
+    if (arqIcones < arqMods) failures.push(`oficina: o mapa saiu com ${arqIcones} ícones para ${arqMods} módulos`);
+    if (legendaIcones < 8) failures.push(`oficina: a legenda do mapa saiu com ${legendaIcones} ícones de frente`);
     // A saúde técnica, lida do repositório no build: os indicadores e a lista de onde ainda falta teste.
     const saudeCards = await page.locator('.saude .read').count();
     const saudeRows = await page.locator('.saude tbody tr').count();
