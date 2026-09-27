@@ -18,10 +18,11 @@ Um **shooter de Mechs online, no navegador**, com combate rápido e sensação d
 - **Servidor perto do jogador.** Brasil primeiro, depois um segundo servidor no hemisfério norte quando houver gente de fora com frequência.
 - **Mundo que faz sentido narrativo:** IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips e dados. A ficção do `UNIVERSO.md` conversa com a jogabilidade (não é enfeite, dá nome às armas, às fases, aos inimigos).
 
-## MODOS DE JOGO DECLARADOS PELO DONO (2026-09-26)
+## MODOS DE JOGO DECLARADOS PELO DONO (2026-09-26 / 2026-09-27)
 
 - **CTF Vermelho × Azul** (Capture The Flag) — duas equipes, uma bandeira em cada base, dois pilotos por equipe pra começar; escala pra 4v4 e 8v8 depois.
 - **Missões em fases** — sequência de objetivos com dificuldade crescente, cooperativa ou solo, com um alvo por fase (defesa, escolta, invasão, resgate).
+- **Modo sobrevivência** (estilo Project Zomboid, declarado 27/09) — ondas crescentes de androides humanoides, pessoas e Mechs rebeldes; mapa vivo com setores que fecham; solo ou cooperativo; a dificuldade sobe com o número de ondas vencidas. Referência declarada: "combatendo androides humanoides, pessoas, e outros Mechs".
 - **Deathmatch por equipes** (o online atual, escalando pra times).
 - **Modo streamer** — sala de código fixo, câmera de espectador, integrado a Twitch/YouTube.
 
@@ -37,10 +38,20 @@ Um **shooter de Mechs online, no navegador**, com combate rápido e sensação d
 
 ## MUNDO GRANDE, INTEGRADO (a longo prazo)
 
-- **Vasto:** mapas grandes com streaming (setores carregam sob demanda), 32-64 pilotos por partida com `interest management` (cada jogador só recebe as unidades num raio dele).
-- **Muitas possibilidades:** veículos (jipe, tanque), destrutíveis por chunks, classes de piloto (assalto, engenharia, apoio), missões diárias.
+- **Vasto:** mapas grandes com streaming (setores carregam sob demanda), 32-64 pilotos por partida com `interest management` (cada jogador só recebe as unidades num raio dele). **Declarado pelo dono (27/09):** cenários precisam escalar pra muitos jogadores simultâneos sem perda ou lag — `interest management` é o caminho, e o servidor autoritativo (Claude) já é a base.
+- **Muitas possibilidades:** veículos (jipe, tanque, **veículos de transporte que carregam robôs e tropas** — declarado 27/09), destrutíveis por chunks, classes de piloto (assalto, engenharia, apoio), missões diárias.
+- **Escalas de unidade:** Mech = escala 2, androide = escala 1, **drones = sub-escala 1** (proporcionais ao androide, pequenos perto dos Mechs; declarado 27/09 — incluem habilidade de voo). Convenção numérica documentada; toda nova unidade declara sua escala.
 - **Personalização profunda:** pintura por parte, decalque, história do piloto, tabela de estatísticas pessoal — tudo salvo em conta com login social simples (LGPD, R7).
 - **Equilíbrio matemático travado:** nenhum item pode passar dos tetos de `combat/balance.ts`. Nenhum cosmético pode dar vantagem. Esta regra não muda.
+
+## TRIPULAÇÃO DUPLA NOS MECHS (conceito declarado 27/09)
+
+Mechs maiores (futura escala 3+) podem ter **mais de um operador** com papéis distintos:
+- **Piloto** — controla o movimento (WASD, dash, pulo); câmera de manobrabilidade.
+- **Artilheiro** — controla as armas; câmera independente de mira; pode alternar entre arma padrão (com camada extra de precisão) e arma exclusiva de artilheiro (terceira arma montada no torso ou topo do Mech).
+- **Mecânico (em batalha)** — realiza tarefas de reparo de partes danificadas em tempo real; não atira, mas mantém o Mech operacional. Um bot pode assumir o papel de piloto para o humano focar nas armas ou no reparo, e vice-versa.
+
+Esse sistema também serve para **testes de balanceamento**: diferentes combinações piloto-bot × artilheiro-bot permitem comparar padrões objetivamente. A interface (HUD, câmeras, indicadores de papel) é território do Gemini; o contrato de `MechInput` dual e a autoridade de rede são do Claude. Mechs com tripulação entram após o CTF 2v2 estar estável.
 
 ### Conceitos declarados pelo dono (2026-09-27)
 

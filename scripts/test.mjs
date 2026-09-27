@@ -15,6 +15,6 @@ const args = process.argv.slice(2);
 const cli = resolve('node_modules', 'vitest', 'vitest.mjs');
 const result = spawnSync(process.execPath, [cli, ...(args.length ? args : ['run'])], {
   stdio: 'inherit',
-  env: { ...process.env, TEMP: TMP, TMP, TMPDIR: TMP },
+  env: { VITEST_MAX_WORKERS: process.env.VITEST_MAX_WORKERS || '1', ...process.env, TEMP: TMP, TMP, TMPDIR: TMP },
 });
 process.exit(result.status ?? 1);
