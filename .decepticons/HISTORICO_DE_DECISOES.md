@@ -2,6 +2,12 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] A pauta do metagame ganha a 2ª leva (monetização ética e produto)
+**Pedido do dono:** mais duas visões do mesmo especialista externo — a **monetização ética** em 6 frentes e os **5 pilares de produto/viralidade** (física emergente, co-op tático, fricção zero, criadores/espectadores, narrativa viva), com a pergunta final: priorizar o **loop principal da partida** (drop → extração) ou o **protótipo da montagem modular**. Diretriz mantida: o grosso é do Claude e economia de tokens.
+**Decisão (Qwen):** as duas visões entraram no **mesmo** `METAGAME.md` (§ 6 e § 7), no formato da casa — o que é, **hoje no código**, **o que falta** —, mais a divisão "quem toca a 2ª leva" e a recomendação. Nada implementado: continua pauta.
+**Recomendação registrada:** o loop da partida **primeiro e só no papel** (duração/ritmo travam extração, diretor de IA e tamanho da sala); depois dois blocos pequenos e offline — **stand de tiro no hangar** e **código curto de build** (o `?build=` já existe, falta o copiar); `mass-distribution` (a consequência da montagem) é engenharia do Claude e melhor depois do loop; **nada de loja ou passe antes de contas** (sem login, os grupos 2, 3 e 6 não ligam).
+**Quem decidiu:** dono (a visão e a pergunta); Qwen (a organização e a recomendação).
+
 ## [2026-09-26] A pauta do metagame (visão de especialista externo)
 **Pedido do dono:** "veja a orientação que recebemos de um especialista externo… ajude a organizar as ideias e passe o 'grosso' do trabalho para o claude", com a diretriz de **economia de tokens** (o Qwen consome ~10× mais; ser enxuto).
 **Decisão (Qwen):** a visão virou `.decepticons/METAGAME.md`, uma **pauta** (não código): os 5 grupos que faltam (calibragem física/balística, progressão e metagame, economia ética, viralidade/comunidade, telemetria), cada módulo com **o que já existe** e **o que falta**, mais a **divisão** (o grosso é do Claude) e o princípio que não se negocia (nada pago ganha partida).
