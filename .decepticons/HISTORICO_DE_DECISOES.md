@@ -2,6 +2,14 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] A banda do drone vira especificação (e a revisão cruzada do MissionHUD)
+**Pedidos (via Gemini, repassados pelo dono):** revisar o PR da interface de missões (MissionHUD); atualizar o grafo e a saúde técnica da oficina com o novo módulo e os 219 testes; detalhar no `METAGAME.md` § 8 o orçamento de banda e a técnica de sincronização dos drones.
+**Decisão (Qwen):**
+- **§ 8.2 escrita — o drone cabe:** **registro de unidade leve de 10 bytes** (id, posição, yaw, bandeiras — sem partes, calor nem pitch) a **5 Hz** = **60 B/s por drone**; os 8 do pior caso somam **480 B/s**, levando a sala de 6,2 para **6,7 KB/s de 8,0 (83%)**. Com trilha pré-calculada, ~0 B/s em voo. Interpolação com **amortecimento de 200 ms**, extrapolação limitada a **250 ms**, correção só acima de ~1,5 m; nascer, morrer, trocar de alvo e atirar vão por **evento**. O teste que trava: sala cheia + 8 drones abaixo dos 8 192 B/s, em `shared/net` (frente do Claude).
+- **Revisão cruzada (PR #88):** o branch `gemini/missoes-hud` estava **sem PR** — abri o PR e postei o parecer. A interface é boa e o contrato de callbacks (G3) é útil, mas **o módulo não está ligado a nada** (nenhum arquivo o importa: a tela não existe no jogo) e o PR mexe em `scripts/test.mjs` ligando `VITEST_MAX_WORKERS=1` no runner de **todos** — variável que o **Vitest 5 não lê** (o pacote não tem nenhuma leitura de `process.env.VITEST_*`; o que existe é a *flag* `--maxWorkers`), então é placebo e o flake do `teto por IP` continua. Ainda: `innerHTML` com texto que o contrato diz vir do sim/servidor, 3 dos 5 testes novos que não verificam o que prometem (e um com nome que não corresponde ao corpo) e dois ajustes menores.
+- **O grafo e a saúde técnica não precisam de trabalho manual:** o mapa é por módulo (diretório) e o `MissionHUD` mora em `client/src/ui/`, que já é o módulo `ui`; a contagem de testes é lida no build. Depois do merge, os **219 testes** e as linhas novas aparecem sozinhos na oficina.
+**Quem decidiu:** dono (os pedidos); Qwen (a especificação, a revisão e o parecer); Claude (implementação, quando o drone entrar).
+
 ## [2026-09-27] Horizonte futuro registrado na visão e na landing
 
 O dono registrou cinco conceitos para evolução do CYBERMECH: capacidade de mapas e jogadores; piloto e artilheiro no mesmo Mech; drones menores que andróides; transporte de robôs e tropas; missões de sobrevivência em fases. Foram documentados em `VISAO.md`, `METAGAME.md` § 10 e `ROADMAP.md`, e apresentados na landing em seção “em estudo” separada da VITRINE de funcionalidades reais. Não foram definidos prazos, número-alvo de jogadores, escala exata do drone nem persistência das missões. A ordem técnica é uma sugestão, sem prioridade aprovada.

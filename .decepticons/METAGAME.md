@@ -133,6 +133,39 @@ de fixar quantos drones por partida. (A conta da banda é a mesma que o `npm tes
 desta seção, em 27/09, saiu com o número errado — 15 unidades e 6,8 KB/s —, corrigido aqui: são **12 unidades** e **6,2 KB/s no
 total**. A conclusão não muda.)
 
+### 8.2 A sincronização do drone, em números (2026-09-27)
+
+O § 10 pede "limitar quantidade e frequência de estado; caber no G11". Esta é a especificação do lado da banda, para o
+Claude implementar quando o drone entrar.
+
+**O registro de unidade leve** (serve para o drone e para qualquer coisa que voe ou role sozinha):
+
+| Campo | Bytes | Por que |
+|---|---|---|
+| id, x/y/z, yaw, flags | 1 + 6 + 2 + 1 | mesmas quantizações do Mech (`i16` em cm, `u16` de ângulo); a bandeira basta com vivo/engajando/recuando |
+| **total** | **10** | contra os **19** de um Mech: o drone não tem seis partes, calor nem pitch |
+
+**Os ritmos possíveis:**
+
+| Ritmo | Por drone | 8 drones (um por jogador) | Contra a meta de 8,0 KB/s |
+|---|---|---|---|
+| Estado a 20 Hz, como um Mech | 240 B/s | 1,9 KB/s | 24% da meta só para enxame — não vale |
+| **Estado a 5 Hz** (recomendado) | **60 B/s** | **480 B/s** | 6,2 KB/s de hoje + 0,5 = **6,7 KB/s (83%)**: cabe |
+| Trilha pré-calculada (patrulha) | ~0 B/s em voo | ~0 B/s | o spawn leva `path id` + instante; só a correção entra no estado |
+
+**Como o cliente desenha sem tremer** (5 Hz + interpolação — o mesmo princípio que o online já usa para os Mechs):
+1. **O servidor é a autoridade:** ele move o drone (trilha e desvio); o cliente nunca decide posição.
+2. **Amortecimento de 200 ms** — exatamente o intervalo de dois estados a 5 Hz — interpolando entre os dois últimos recebidos; é o que faz o movimento parecer 20 Hz.
+3. **Sem estado novo, extrapola no máximo 250 ms** na última velocidade e depois **congela** (~2,5 m de erro a 10 m/s). Para alvo pequeno, resolve; drone que manobra muito sobe para 10 Hz **só enquanto engaja**.
+4. **Corrige só quando o erro passa de ~1,5 m:** corrigir sempre faz o drone "pular", e o pulo incomoda mais que o erro.
+5. **Fora do alcance (AoI, quando entrar) o drone nem é replicado** — um rastro no HUD substitui o corpo.
+
+**O que vai por evento, não por estado:** nascer e morrer (`SPAWN`/`KILL` já existem), a troca de alvo e o tiro do drone (`SHOT`). Nenhum campo novo no estado.
+
+**O teste que trava isso (G14, frente do Claude):** um caso em `shared/net` que monte a sala cheia **mais 8 drones a 5 Hz**, com os eventos de luta do `FIGHT_EVENTS_PER_SECOND`, e exija ficar abaixo dos 8 192 B/s. Mesma família dos testes de orçamento que já existem: o número deixa de ser promessa e passa a ser regra.
+
+**O que não fazer:** drone a 20 Hz como um Mech; drone **pilotado** pelo jogador a 20 Hz e um por jogador (isso estoura de verdade); e contar com delta/AoI para salvar o caso — quando existirem, o drone já tem que caber sem eles.
+
 ## 9. Elementos do cenário, zonas e pilotagem (2026-09-27)
 
 Pedido do dono no mesmo dia: **torres**, **zonas de regeneração**, **zonas de resfriamento** (onde o Mech atira sem esquentar
@@ -148,7 +181,7 @@ isso cabe na banda se valer uma regra só: **só o que se move precisa de bytes 
 | Andróide **sai** do Mech | evento de spawn do andróide no ponto do Mech | 1 evento | Claude |
 | Entrada dos bots no cenário | o **visual** (cápsula, portão, descida de órbita) é do Codex; **onde e quando** nascem é do diretor de ataque (`adaptive-ai-director`, § 2) | a do `SPAWN` que já existe | Codex (visual) + Claude (regra) |
 
-**Cuidado com o teto:** `MAX_UNITS = 32` (o id cabe em 1 byte) e a sala cheia de hoje usa 15 — torres, zonas e drones moram
+**Cuidado com o teto:** `MAX_UNITS = 32` (o id cabe em 1 byte) e a sala cheia de hoje usa 12 — torres, zonas e drones moram
 dentro dele, mas **quem aperta primeiro é a banda, não o formato**. Bandeira nova nas flags (ex.: "tem piloto") muda o
 protocolo: subir `PROTOCOL_VERSION`, porque por desenho o servidor recusa cliente de versão diferente. E a regra do
 `GAME_DESIGN.md` continua valendo: zona de cura e de resfriamento são **vantagem tática de posicionamento**, iguais para os
