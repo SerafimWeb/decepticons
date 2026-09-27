@@ -18,7 +18,6 @@ import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
 import type { MechBase } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
-import type { Destructibles } from '../environment/Destructibles';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
@@ -97,7 +96,6 @@ export class Game {
   /** A partida (sem tela): arena, bots, tiros, dano, rodadas. As partes abaixo são atalhos para ela. */
   private readonly match: Match;
   private readonly debris: DebrisSystem;
-  private readonly destructibles: Destructibles;
   private readonly projectiles: ProjectileSystem;
   private readonly rockets: RocketSystem;
   private readonly combat: CombatSystem;
@@ -205,7 +203,7 @@ export class Game {
       power,
       ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY } : {}),
     });
-    ({ debris: this.debris, destructibles: this.destructibles, projectiles: this.projectiles, rockets: this.rockets } = this.match);
+    ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     // O piloto escolhe o chassi (Hangar): Vector-09 ou andróide, sempre nas cores do jogador.
     this.mech =
@@ -268,6 +266,7 @@ export class Game {
         scene: this.scene,
         onStatus: (s) => this.showNet(s),
         onKill: (killer, dead, mine) => this.killFeed.push(killer, dead, mine),
+        onScore: (kills, deaths) => this.hud.setScore(kills, deaths),
       });
       this.match.pilots.push(this.online);
       document.body.append(this.netStatus);
@@ -512,7 +511,7 @@ export class Game {
       this.audio.playExplosion(dist);
     };
     this.match.onRoundStart = () => this.startRound();
-    this.destructibles.onBreak = (center) => {
+    this.match.onPropBroken = (_id, center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
       if (falloff > 0) rig.addShake(0.55 * falloff);
     };

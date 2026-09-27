@@ -268,6 +268,8 @@ describe('M3: defesas do servidor (mesmo domínio da Selva MKT, DEPLOY.md)', () 
       ws.onopen = () => resolve();
       ws.onerror = () => reject(new Error('sem conexão'));
     });
+    // Quem é recusado pela porteira dispara `onerror` sem que ninguém aguarde `opened`; catch aqui evita rejeição solta.
+    opened.catch(() => {});
     const closed = new Promise<number>((resolve) => {
       ws.onclose = (e: { code: number }) => resolve(e.code);
     });

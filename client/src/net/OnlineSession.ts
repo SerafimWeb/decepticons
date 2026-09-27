@@ -63,6 +63,16 @@ export interface OnlineSessionOptions {
   scene: THREE.Scene;
   onStatus?: (s: OnlineStatus) => void;
   onKill?: (killer: string | null, dead: string, meInvolved: boolean) => void;
+  /** Placar do jogador local (o servidor não conta a rodada offline; a gente conta pelos eventos KILL). */
+  onScore?: (kills: number, deaths: number) => void;
+}
+
+/** Linha do placar do multiplayer, montada só com os eventos KILL vindos do servidor. */
+export interface OnlineStanding {
+  id: number;
+  name: string;
+  kills: number;
+  deaths: number;
 }
 
 interface Remote {
@@ -103,6 +113,8 @@ export class OnlineSession implements Pilot {
   readonly remotes = new Map<number, Remote>();
   private readonly client: NetClient;
   private readonly names = new Map<number, string>();
+  /** Placar acumulado por unidade (só monta com os KILL do servidor; nunca invade a simulação). */
+  private readonly scores = new Map<number, { kills: number; deaths: number }>();
   private humans = 0;
   private state: OnlineStatus['state'] = 'conectando';
   private reason: string | undefined;
@@ -300,8 +312,48 @@ export class OnlineSession implements Pilot {
         const dead = e.unit === this.myId ? 'VOCÊ' : (this.names.get(e.unit) ?? 'INIMIGO');
         const killer = e.other === NO_UNIT ? null : e.other === this.myId ? 'VOCÊ' : (this.names.get(e.other) ?? null);
         this.o.onKill?.(killer, dead, e.unit === this.myId || e.other === this.myId);
+        this.recordKill(e.unit, e.other);
+      } else if (e.kind === EVENT.PROP_BROKEN) {
+        this.o.match.destructibles.breakById(e.amount);
+      } else if (e.kind === EVENT.ARENA_RESET) {
+        // O servidor iniciou uma rodada nova: as barricadas voltam e o placar zera.
+        this.o.match.destructibles.restoreAll();
+        this.o.match.debris.clear();
+        this.scores.clear();
+        this.o.onScore?.(0, 0);
       }
     }
+  }
+
+  /** KILL vindo do servidor: um a mais para quem derrubou (se foi outro), um a mais para quem caiu. */
+  private recordKill(deadId: number, killerId: number): void {
+    const dead = this.rowFor(deadId);
+    dead.deaths++;
+    if (killerId !== NO_UNIT && killerId !== deadId) this.rowFor(killerId).kills++;
+    if (this.myId >= 0) {
+      const me = this.scores.get(this.myId);
+      this.o.onScore?.(me?.kills ?? 0, me?.deaths ?? 0);
+    }
+  }
+
+  private rowFor(id: number): { kills: number; deaths: number } {
+    let row = this.scores.get(id);
+    if (!row) {
+      row = { kills: 0, deaths: 0 };
+      this.scores.set(id, row);
+    }
+    return row;
+  }
+
+  /** Placar da sala: quem mais abateu no topo; empate, quem menos morreu; depois, id crescente. */
+  standings(): OnlineStanding[] {
+    const rows: OnlineStanding[] = [];
+    for (const [id, name] of this.names) {
+      const s = this.scores.get(id);
+      rows.push({ id, name, kills: s?.kills ?? 0, deaths: s?.deaths ?? 0 });
+    }
+    rows.sort((a, b) => b.kills - a.kills || a.deaths - b.deaths || a.id - b.id);
+    return rows;
   }
 
   /** O tiro de outro robô: o projétil visual sai da boca dele, na direção que o servidor mandou. */
