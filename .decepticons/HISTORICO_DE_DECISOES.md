@@ -2,6 +2,11 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-26] A pauta do metagame (visão de especialista externo)
+**Pedido do dono:** "veja a orientação que recebemos de um especialista externo… ajude a organizar as ideias e passe o 'grosso' do trabalho para o claude", com a diretriz de **economia de tokens** (o Qwen consome ~10× mais; ser enxuto).
+**Decisão (Qwen):** a visão virou `.decepticons/METAGAME.md`, uma **pauta** (não código): os 5 grupos que faltam (calibragem física/balística, progressão e metagame, economia ética, viralidade/comunidade, telemetria), cada módulo com **o que já existe** e **o que falta**, mais a **divisão** (o grosso é do Claude) e o princípio que não se negocia (nada pago ganha partida).
+**Quem decidiu:** dono (a visão e a prioridade); Qwen (a organização e a documentação).
+
 ## [2026-09-26] O grafo da oficina: "o mapa do CYBERMECH" (setores desenhados)
 **Pedido do dono:** "o grafo ainda nao ta bom nao… temos TANTA coisa pra compor ele! mas ainda nao ta nem no formato nem apresentacao ideal, precisa desenvolver melhor ele!"
 **Decisão (Qwen):**
