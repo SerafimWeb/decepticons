@@ -34,6 +34,7 @@
 | [`pesado.md`](pesado.md) | robô pesado | prancha do dono, figuras 5 e 6 | proposta Codex; stats de gameplay aguardam Claude e dono |
 | [`androide.md`](androide.md) | escala 1: rebelde, técnico e pilotado | rig de `Android.ts` | proposta Codex; números copiados do código |
 | [`plasma.md`](plasma.md), [`foguetes.md`](foguetes.md), [`blaster.md`](blaster.md), [`motosserra.md`](motosserra.md) | armas de hoje | `combat/weapons.ts` | propostas Codex; números copiados do código |
+| [`drone.md`](drone.md) | escala 1, três classes por função: reconhecimento, ataque e conserto | decisão do dono de 27/09 (`METAGAME.md` § 8 e § 8.2) | proposta Qwen; **silhueta (Codex) e números (Claude) aguardam**; 6 perguntas abertas para o dono |
 
 As fichas marcadas como **proposta** não aprovam mudanças de gameplay. O Ferret-X e o Colossus-01 ainda não têm
 stats/slots no código; `?` indica decisões pendentes, nunca um valor para implementar sem teste e aprovação.

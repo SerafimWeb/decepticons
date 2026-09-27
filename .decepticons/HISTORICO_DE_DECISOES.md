@@ -2,6 +2,16 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] A ficha do drone, e o mapa das entregas que não chegaram
+**Pedido do dono:** "escreve a ficha do drone E FAÇA SUAS tarefas pendentes… Como devemos conduzir isso da forma mais inteligente e estratégica possível? será que devemos repensar alguma regra? definir novas orientações e boas práticas? me oriente o que eu devo fazer. estou testando e no jogo está aparentemente tudo funcionando, mas ainda não vi todas essas atualizações…"
+**Achado (Qwen) — a razão de o dono não ver nada é integração, não código:** `git branch -r --no-merged origin/main` devolve **7 branches fora do ar**: dois com PR aberto (`claude/zonas-cura-resfriamento`, #91; `gemini/missoes-hud`, #88) e **cinco do Gemini sem PR nenhum** (`modo-hud-audio` e `telas-online`, de 27/09; `setas-inimigos`, `sons-androides` e `primeira-partida`, de 25/09). E o #88, além de não mergeado, **não está ligado a nenhum arquivo do jogo** — a tela não apareceria nem depois do merge.
+**Decisão (Qwen):**
+- **Ficha do drone** (`fichas/drone.md`, status `proposta`): três classes por função, escala 1 (1 a 2 m de largura), tiro fraco (o blaster do andróide: dano 4 a cada 0,4 s), **morre inteiro** (sem as 6 partes de um Mech — o que também enxuga a rede), trilha pré-calculada, **7 metas que viram teste** e **6 perguntas que só o dono responde**.
+- **`ESTADO_ATUAL.md` ganha a seção "EM BRANCH — NÃO ESTÁ NO AR"**, com as 7 e o PR de cada uma. A partir de agora, o que não está na `main` **não** entra em "ÚLTIMA SESSÃO FEZ": é a resposta direta ao "não vi essas atualizações".
+- **Três regras propostas ao dono (aguardando sim/não):** (1) **entrega só conta quando está na `main`**; (2) **branch sem PR no mesmo dia, e fechado em 48 h** se não virar PR (mergeado ou declarado morto); (3) toda entrega visível fecha com **captura + o caminho para ver no jogo**, senão o dono não tem como testar.
+- **Revisão #88, follow-up:** o commit `c4cbee6` **mantém** o `VITEST_MAX_WORKERS` (placebo: o Vitest 5 não lê a variável; a flag é `--maxWorkers`). Parecer e sugestões nos comentários do PR.
+**Quem decidiu:** dono (o pedido e a decisão do drone); Qwen (a ficha, o mapa das entregas e as propostas — as regras dependem do aval do dono).
+
 ## [2026-09-27] Os ícones do mapa (um por módulo) e o papel do drone decidido
 **Pedido do dono:** "a ideia do drone é que cada um sirva pra uma dessas tarefas: reconhecimento, ataque, recuperação de vida, etc. o drone pode ser na proporção dos androides, com 1 a 2 metros de largura… o drone é FRACO, os tiros dele são fracos, iguais aos do androide. prossiga com suas tarefas."
 **Decisão (Qwen + dono):**

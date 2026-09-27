@@ -6,7 +6,29 @@
 
 ---
 
+## EM BRANCH — NÃO ESTÁ NO AR (nem no site, nem no jogo)
+
+> **Regra deste documento a partir de 27/09:** só entra em "ÚLTIMA SESSÃO FEZ" o que está na **`main`**. O que ainda está
+> em branch mora aqui — e **é por isso que o dono não vê no site**: branch não publica, PR aberto não publica, só o merge na
+> `main` publica (o deploy roda sozinho). Se não está no site, procure nesta tabela.
+
+| Branch | O que carrega | PR | Desde |
+|---|---|---|---|
+| `claude/zonas-cura-resfriamento` | zonas de cura e resfriamento na arena | **#91 aberto** | 27/09 |
+| `gemini/missoes-hud` | MissionHUD (interface do modo sobrevivência) — **e não está ligado a nenhum arquivo do jogo: a tela não aparece nem depois do merge** | **#88 aberto** | 27/09 |
+| `gemini/modo-hud-audio` | seletor de modo (deathmatch × sobrevivência), sons táticos de onda e medalhas de conquista | **sem PR** | 27/09 |
+| `gemini/telas-online` | NetHud, KillBanner e RoundOverlay (interface do online) | **sem PR** | 27/09 |
+| `gemini/setas-inimigos` | setas de inimigos fora da tela | **sem PR** | 25/09 |
+| `gemini/sons-androides` | sons dos andróides | **sem PR** | 25/09 |
+| `gemini/primeira-partida` | dicas de andróide e calor | **sem PR** | 25/09 |
+
+**Proposta ao dono (aguardando sim/não):** branch com mais de 48 h sem PR é **fechado** — mergeado se estiver bom, declarado
+morto se não. Cinco branches estão nesse caso (as três de 25/09 e as duas sem PR de 27/09).
+
+---
+
 ## ÚLTIMA SESSÃO FEZ (24–27/09)
+- **A ficha do drone escrita, e o mapa das entregas que não chegaram (Qwen, 27/09):** `fichas/drone.md` (status **proposta**) define as **três classes por função** — reconhecimento, ataque e conserto —, a **escala 1 (1 a 2 m de largura)**, o **tiro fraco** (o blaster do andróide: dano 4 a cada 0,4 s), o fato de **morrer inteiro** (sem as 6 partes de um Mech, o que também enxuga a rede) e a **trilha pré-calculada**; traz **7 metas que viram teste** e **6 perguntas que só o dono responde** (pilotado ou automático; quantos e como entra; o que o drone de cura conserta; autonomia; se abate conta ponto; se o reconhecimento compartilha visão). Junto, a resposta à pergunta "por que não vejo essas novidades no jogo": **`git branch -r --no-merged origin/main` acusa 7 branches fora do ar** — 2 com PR aberto (#91 do Claude, #88 do Gemini) e **5 do Gemini sem PR nenhum** (duas de 27/09, três de 25/09). Daí a seção **"EM BRANCH — NÃO ESTÁ NO AR"** acima e as três regras propostas ao dono.
 - **Os ícones por tipo entram no mapa, e o papel do drone fica decidido (Qwen + dono, 27/09):** o mapa da arquitetura na oficina ganhou **um ícone por módulo** — a ideia que o dono trouxe do grafo do ABBADON (lá, o ícone de banco de dados dizia "isto é dado") —, desenhado em **primitivas de SVG** no traço do neon: **19 ícones nos 19 chips e 10 na legenda**, ~150 bytes cada dentro do HTML do build, sem biblioteca e sem arquivo de imagem (**zero KB no jogo**). Medido no Chrome: **nenhum texto ou selo sobreposto** em chip algum; o `site --check` passa a exigir um ícone por módulo e oito na legenda, para não sumirem em silêncio. Captura: `.decepticons/arte/mapa-icones.png`. E o dono decidiu o **papel do drone**: cada um com **uma função** — reconhecimento, ataque e **recuperação de vida** —, na **escala dos andróides (1 a 2 m)** e **fraco**, com tiro igual ao do andróide; o que ele traz é emoção e um ponto de vista novo. Registrado no `METAGAME.md` § 8 (três classes, mesmo registro leve da § 8.2; a cura é posicionada, nunca comprada) e na tabela do § 10.
 - **A banda do drone vira especificação, e a revisão cruzada do MissionHUD (Qwen, 27/09):** `METAGAME.md` **§ 8.2** fecha o que o § 10 pedia — **registro de unidade leve de 10 bytes** (id, posição, yaw, bandeiras) a **5 Hz** = **60 B/s por drone**; os 8 do pior caso somam **480 B/s** e a sala vai de 6,2 para **6,7 KB/s de 8,0 (83%)**: **cabe**. Amortecimento de 200 ms na interpolação, extrapolação de no máximo 250 ms, correção só acima de ~1,5 m, e nascer/morrer/trocar de alvo/atirar por **evento**; o teste que trava é a sala cheia + 8 drones abaixo do teto, em `shared/net` (frente do Claude). Revisão cruzada do **PR #88** (MissionHUD, do Gemini; o branch estava **sem PR** — abri): interface boa e contrato de callbacks útil, mas o módulo **não está ligado a nada** (nenhum arquivo o importa — a tela não existe no jogo) e o PR liga `VITEST_MAX_WORKERS=1` no runner de todos, variável que o **Vitest 5 não lê** (é a flag `--maxWorkers`): placebo, o flake continua. Grafo e saúde técnica: **nada manual** — o mapa é por módulo e os 219 testes aparecem sozinhos no build.
 - **Horizonte de produto atualizado pelo dono (27/09):** registrados cinco conceitos futuros — mapas e capacidade escaláveis, Mech com piloto e artilheiro, drones menores que andróides, transporte de unidades e missões de sobrevivência em fases. Entram como pauta sem prioridade aprovada em `VISAO.md`, `METAGAME.md` § 10 e `ROADMAP.md`; `GAME_DESIGN.md` e a landing têm seção própria “em estudo”, separada da VITRINE de funcionalidades reais. O PR documenta conceitos, não implementa regras de jogo.
