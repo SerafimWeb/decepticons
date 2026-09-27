@@ -80,6 +80,8 @@ export class Match {
   onMechKilled?: (dead: MechBase, at: THREE.Vector3, killer?: MechBase) => void;
   /** Foguete explodiu em `at` (o dano já foi aplicado): fogo, fumaça, tremor, som. */
   onExplosion?: (at: THREE.Vector3) => void;
+  /** Barricada quebrou (o servidor manda `PROP_BROKEN` com o `id`; o cliente aplica a mesma no visual). */
+  onPropBroken?: (id: number, at: THREE.Vector3) => void;
   /** Rodada nova começou (todos já estão de volta aos pontos de nascimento). */
   onRoundStart?: () => void;
 
@@ -94,6 +96,7 @@ export class Match {
     this.scene = o.scene;
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
+    this.destructibles.onBreak = (id, at) => this.onPropBroken?.(id, at);
     this.arena = new Arena(o.scene, o.physics, this.destructibles);
     this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles);
     this.rockets = new RocketSystem(o.scene, o.physics, o.particles);

@@ -16,6 +16,8 @@ export interface DestructibleDef {
 }
 
 interface Prop {
+  /** Id estável (posição em `defs`): mesmo no cliente e no servidor, para o evento de rede. */
+  id: number;
   def: DestructibleDef;
   group: THREE.Group;
   collider: RAPIER.Collider;
@@ -27,6 +29,8 @@ interface Prop {
   maxHp: number;
 }
 
+const REMOTE_DIR = new THREE.Vector3(0, 1, 0);
+
 const DAMAGED = new THREE.Color(3, 0.15, 0.1);
 const SPARK = new THREE.Color(3.0, 1.2, 0.2);
 const DUST = GLOW.dust;
@@ -37,9 +41,12 @@ const DUST = GLOW.dust;
  * No multiplayer, só o servidor decide a quebra e envia WALL_FRACTURED(id).
  */
 export class Destructibles {
-  onBreak?: (center: THREE.Vector3) => void;
+  /** Uma barricada quebrou: `id` estável (posição em `defs`), `center` onde ela estava. No multiplayer, o servidor
+   * envia `PROP_BROKEN(id)` para os clientes desenharem o mesmo. */
+  onBreak?: (id: number, center: THREE.Vector3) => void;
 
   private readonly byCollider = new Map<number, Prop>();
+  private readonly byId = new Map<number, Prop>();
   /** Todas as estruturas da arena, inteiras ou não: a rodada nova restaura as quebradas. */
   private readonly defs: DestructibleDef[] = [];
   private readonly geo = new THREE.BoxGeometry(1, 1, 1);
@@ -55,8 +62,9 @@ export class Destructibles {
   ) {}
 
   add(def: DestructibleDef): void {
+    const id = this.defs.length;
     this.defs.push(def);
-    this.build(def);
+    this.build(def, id);
   }
 
   /**
@@ -64,16 +72,30 @@ export class Destructibles {
    * nascimento (livres de estruturas) e sem destroços, senão um colisor pode nascer dentro de algo.
    */
   restoreAll(): void {
-    const standing = new Set<DestructibleDef>();
+    const standing = new Set<number>();
     for (const prop of this.byCollider.values()) {
-      standing.add(prop.def);
+      standing.add(prop.id);
       prop.hp = prop.maxHp;
       prop.edgeMat.color.copy(prop.accent);
     }
-    for (const def of this.defs) if (!standing.has(def)) this.build(def);
+    for (let id = 0; id < this.defs.length; id++) if (!standing.has(id)) this.build(this.defs[id]!, id);
   }
 
-  private build(def: DestructibleDef): void {
+  /** Os ids das barricadas ainda em pé (para teste e diagnóstico). */
+  standingIds(): number[] {
+    return [...this.byId.keys()].sort((a, b) => a - b);
+  }
+
+  /**
+   * Multiplayer: o servidor mandou `PROP_BROKEN(id)` — quebra a mesma barricada no cliente, sem calcular dano.
+   * Se ela já não existe (evento chegou repetido), não faz nada.
+   */
+  breakById(id: number): void {
+    const prop = this.byId.get(id);
+    if (prop) this.shatter(prop, REMOTE_DIR, 10);
+  }
+
+  private build(def: DestructibleDef, id: number): void {
     const center = new THREE.Vector3(def.x, def.h / 2, def.z);
     const size = new THREE.Vector3(def.w, def.h, def.d);
     const accent = new THREE.Color(def.accent).multiplyScalar(3);
@@ -90,7 +112,9 @@ export class Destructibles {
     this.scene.add(group);
 
     const collider = this.physics.addStaticBox(center, size);
-    this.byCollider.set(collider.handle, { def, group, collider, edgeMat, accent, center, size, hp: def.hp, maxHp: def.hp });
+    const prop: Prop = { id, def, group, collider, edgeMat, accent, center, size, hp: def.hp, maxHp: def.hp };
+    this.byCollider.set(collider.handle, prop);
+    this.byId.set(id, prop);
   }
 
   /** Aplica dano se o colisor for destrutível. Retorna true se era. */
@@ -131,6 +155,7 @@ export class Destructibles {
 
   private shatter(prop: Prop, dir: THREE.Vector3, force: number): void {
     this.byCollider.delete(prop.collider.handle);
+    this.byId.delete(prop.id);
     this.physics.removeCollider(prop.collider);
     this.scene.remove(prop.group);
     prop.edgeMat.dispose();
@@ -139,6 +164,6 @@ export class Destructibles {
     const up = new THREE.Vector3(0, 1, 0);
     this.particles.burst(prop.center, up, { count: 90, color: SPARK, speed: 26, life: 0.9, size: 1.35, expansion: -0.35, spread: 1.6 });
     this.particles.burst(prop.center, up, { count: 60, color: DUST, speed: 10, life: 1.6, size: 2.2, expansion: 1.35, spread: 2.5, gravity: 2 });
-    this.onBreak?.(prop.center);
+    this.onBreak?.(prop.id, prop.center);
   }
 }

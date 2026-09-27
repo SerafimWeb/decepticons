@@ -98,6 +98,8 @@ export class ArenaRoom {
     this.match.projectiles.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
     this.match.rockets.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
     this.match.onMechKilled = (dead, _at, killer) => this.kill(dead, killer);
+    this.match.onPropBroken = (id) => this.propBroken(id);
+    this.match.onRoundStart = () => this.arenaReset();
     const mechBuild = loadoutKey(factorySpec('vector09'));
     for (const mech of this.match.bots.mechs) {
       const kind: UnitKind = mech instanceof Vector09 ? 'mech' : this.match.bots.technicianOf(mech) ? 'technician' : 'android';
@@ -223,6 +225,23 @@ export class ArenaRoom {
     e.kind = EVENT.KILL;
     e.unit = this.idOf(dead);
     e.other = killer ? this.idOf(killer) : NO_UNIT;
+  }
+
+  /** Barricada quebrou: o cliente aplica pelo `id`, sem calcular dano. */
+  private propBroken(id: number): void {
+    const b = this.events;
+    if (b.count >= MAX_EVENTS) return;
+    const e = b.list[b.count++]!;
+    e.kind = EVENT.PROP_BROKEN;
+    e.amount = id;
+  }
+
+  /** Rodada nova: o cliente restaura as barricadas e limpa destroços; o snapshot seguinte já traz todos vivos. */
+  private arenaReset(): void {
+    const b = this.events;
+    if (b.count >= MAX_EVENTS) return;
+    const e = b.list[b.count++]!;
+    e.kind = EVENT.ARENA_RESET;
   }
 
   /** Menor id livre (os ids de quem saiu voltam a valer). */

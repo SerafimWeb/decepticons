@@ -2,6 +2,11 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] Online: barricadas e placar vindos do servidor
+**Achado (dono):** "sim, prossiga" (sequência do PR #77, próximo passo era fechar o online).
+**Decisão:** o servidor autoritativo passa a mandar `PROP_BROKEN(id)` a cada barricada que quebra e `ARENA_RESET` na rodada nova; o cliente aplica pelo `id` estável (nova `Destructibles.breakById`). O placar do multiplayer é montado pelos `KILL` que o servidor já enviava (o cliente offline em `damage: false` nunca contaria): `OnlineSession.standings()` + `onScore` alimentam o HUD.
+**Quem decidiu:** Dan.
+
 ## [2026-09-27] A pauta do metagame ganha a 2ª leva (monetização ética e produto)
 **Pedido do dono:** mais duas visões do mesmo especialista externo — a **monetização ética** em 6 frentes e os **5 pilares de produto/viralidade** (física emergente, co-op tático, fricção zero, criadores/espectadores, narrativa viva), com a pergunta final: priorizar o **loop principal da partida** (drop → extração) ou o **protótipo da montagem modular**. Diretriz mantida: o grosso é do Claude e economia de tokens.
 **Decisão (Qwen):** as duas visões entraram no **mesmo** `METAGAME.md` (§ 6 e § 7), no formato da casa — o que é, **hoje no código**, **o que falta** —, mais a divisão "quem toca a 2ª leva" e a recomendação. Nada implementado: continua pauta.
@@ -21,6 +26,7 @@
 - **Leitura:** o hover isola as ligações do módulo e mostra a dica; legenda das frentes e da equipe; tabela alternativa com tudo.
 **Custo:** SVG inline na oficina (0 no jogo, 0 no bundle); sem biblioteca.
 **Quem decidiu:** dono (o formato e a composição); Qwen (o desenho e a leitura).
+
 
 ## [2026-09-26] 🎯 MARCO — Primeira sessão multiplayer real, e a VISÃO daqui pra frente
 **Achado (dono):** "consegui conectar 2 aparelhos online na mesma sala!!!!!!!! CONGRATS! isso deve ser celebrado e devidamente registrado nas landing pages."

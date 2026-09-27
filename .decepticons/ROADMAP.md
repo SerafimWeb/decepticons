@@ -136,7 +136,7 @@
 - [x] Jogar online com um clique: botão na landing e na pausa, sala pública com a próxima abrindo quando enche, volta ao offline com o servidor fora #rede
 - [x] Servidor público no ar 24 h: domínio, túnel nomeado da Cloudflare e `GAME_SERVER_URL` no GitHub (dono; 26/09/2026: `jogo.selvamkt.com.br` no túnel Cloudflare, servidor em `127.0.0.1:2567` no PC de casa, tarefa do Windows, PC sem sleep) #rede
 - [x] Prova R16: 2+ clientes reais jogando na mesma sala (26/09/2026: dois aparelhos do dono, primeira sessão online ponta a ponta) #rede
-- [ ] Online completo: barricadas quebrando (evento), placar e nomes da sala, teste com latência e perda simuladas #rede
+- [x] Barricadas quebrando pelo servidor (`PROP_BROKEN`) e volta na rodada nova (`ARENA_RESET`); placar do jogador feito pelos `KILL` do servidor #rede
 - [ ] M5: tiros autoritativos com compensação de latência; eventos de acerto, parte e abate #combate
 - [ ] M6: entrada pelo link com código da sala + apelido; reconexão automática (G13) #rede
 - [ ] Telas do online: apelido, código da sala, jogadores, placar e ping (Gemini) #ux

@@ -15,11 +15,13 @@ export const EVENT = {
   PROP_BROKEN: 5,
   SHOT: 6,
   SPAWN: 7,
+  /** Rodada nova no servidor: barricadas voltam, destroços somem. Sem payload. */
+  ARENA_RESET: 8,
 } as const;
 export type EventKind = (typeof EVENT)[keyof typeof EVENT];
 
 /** Bytes de cada tipo de evento, com o byte do tipo. */
-export const EVENT_BYTES: Record<EventKind, number> = { 1: 6, 2: 3, 3: 3, 4: 8, 5: 3, 6: 7, 7: 2 };
+export const EVENT_BYTES: Record<EventKind, number> = { 1: 6, 2: 3, 3: 3, 4: 8, 5: 3, 6: 7, 7: 2, 8: 1 };
 
 /** Um evento num objeto reutilizado. Os campos que valem dependem do tipo (ver cada um). */
 export interface NetEvent {
@@ -69,6 +71,8 @@ export function writeEvent(w: Writer, e: NetEvent): void {
     case EVENT.SPAWN:
       w.u8(e.unit);
       break;
+    case EVENT.ARENA_RESET:
+      break;
   }
 }
 
@@ -111,6 +115,8 @@ export function readEvent(r: Reader, out: NetEvent, parts: number): void {
       break;
     case EVENT.SPAWN:
       out.unit = r.u8();
+      break;
+    case EVENT.ARENA_RESET:
       break;
     default:
       r.bad = true;
