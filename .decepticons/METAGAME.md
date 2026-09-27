@@ -93,6 +93,24 @@ código curto de build, o espectador/replay e a telemetria (custo de CPU medido 
 carroceria, cenários de hangar, animações de execução e pódio, captura em 4K. **Gemini** — loja, passe e telas de
 progressão, cockpit e HUD temático, hub de eventos e funil. **Qwen** — a pauta, os testes de simulação e o balanço.
 
+## 8. Drones em combate — o que presta do STERM (2026-09-27)
+
+Fui ler o grafo 3D do pipeline ABBADON (`D:\SERAFIMHUB\sterm-1`) e a "navegação por drone" de lá. Veredito curto: **o
+drone do STERM é uma câmera sobre trilhos, não uma unidade de combate** — não tem navmesh, busca de caminho, desvio de
+obstáculo nem física (é um Catmull-Rom pré-calculado + `lerp`, com a máquina de estados `panorama → approach → inspect
+→ depart`). **Não existe IA de drone para reaproveitar.** O que presta são três ideias, e as três são baratas:
+
+| Ideia do STERM | O que serve aqui | Dono |
+|---|---|---|
+| `DRONE_PRIORITY` — a câmera escolhe o nó mais crítico (CVE → segredo → domínio…) | **Prioridade de alvo do drone:** ele caça o que já está ferido (perna travada, braço destruído, cabeça cega) em vez de escolher por distância — encaixa direto no dano por parte que já existe (`combat/damage.ts`) | Claude |
+| 4 modos de voo × 4 altitudes, cada perfil um conjunto de números | **Modos de drone:** patrulha alta, reconhecimento e "colar no alvo" — cada modo é só um perfil (altura, distância, velocidade) sobre o mesmo controlador | Claude (IA) + Gemini (HUD) |
+| Trilha montada **antes**; câmera e lógica **fora** do tick | Regra de ouro para tudo que voa no CYBERMECH: trilha pronta no spawn, `rng.ts` no lugar de `Math.random`, vetores pré-alocados — senão quebra G2 e G4 | Claude |
+
+**O que é novo de verdade (não vem do STERM):** desvio de obstáculo com Rapier (raycast + separação), ponto de recuo, e o
+**custo no orçamento de rede** — o drone conta como unidade (19 bytes, `shared/net/budget.ts`), então um drone por jogador
+mexe no teto de 8 KB/s de download e na área de interesse. É engenharia de simulação: **território do Claude**, e depois
+do loop da partida definido (§ 7). Decisão de fase com o dono.
+
 ## Divisão (o grosso é do Claude)
 
 - **Claude** — a engenharia: `mass-distribution`, `ammo-ballistics`, `adaptive-ai-director`, `matchmaking-rating`,
