@@ -30,7 +30,10 @@
 | Ficha | Tipo | Referência | Situação |
 |---|---|---|---|
 | `vector-09.md` | robô médio (jogador) | o Mech de hoje | ✅ exemplo preenchido |
-| `leve.md` | robô leve (batedor) | prancha do dono, figuras 3 e 4 (`.tmp/arte/`) | a fazer (Codex) |
-| `pesado.md` | robô pesado | prancha do dono, figuras 5 e 6 | a fazer (Codex) |
-| `androide.md` | escala 1: rebelde, técnico e pilotado | o andróide de hoje | a fazer (Codex) |
-| `plasma.md`, `foguetes.md`, `blaster.md`, `motosserra.md` | armas de hoje | `combat/weapons.ts` | a fazer (Codex, números copiados do código) |
+| [`leve.md`](leve.md) | robô leve (batedor) | prancha do dono, figuras 3 e 4 (`.tmp/arte/`) | proposta Codex; stats de gameplay aguardam Claude e dono |
+| [`pesado.md`](pesado.md) | robô pesado | prancha do dono, figuras 5 e 6 | proposta Codex; stats de gameplay aguardam Claude e dono |
+| [`androide.md`](androide.md) | escala 1: rebelde, técnico e pilotado | rig de `Android.ts` | proposta Codex; números copiados do código |
+| [`plasma.md`](plasma.md), [`foguetes.md`](foguetes.md), [`blaster.md`](blaster.md), [`motosserra.md`](motosserra.md) | armas de hoje | `combat/weapons.ts` | propostas Codex; números copiados do código |
+
+As fichas marcadas como **proposta** não aprovam mudanças de gameplay. O Ferret-X e o Colossus-01 ainda não têm
+stats/slots no código; `?` indica decisões pendentes, nunca um valor para implementar sem teste e aprovação.

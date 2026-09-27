@@ -10,6 +10,10 @@
 - **A regra que faz o cenário caber:** só o que se move precisa de bytes por estado. Zonas de cura e de resfriamento são **volumes estáticos da arena: 0 B/s**; torres são posição fixa + estado curto; e o andróide que **entra** no Mech sai da lista de unidades — **economiza** 456 B/s enquanto está dentro (bandeira "tem piloto" no byte de flags; sobra metade dos bits).
 **Decisão (Qwen):** registrado em `METAGAME.md` — § 8.1 (a conta da banda e as cinco formas de baratear o drone) e § 9 (torres, zonas, entrar/sair do Mech e a entrada dos bots no cenário: **visual é do Codex, onde/quando nascem é do diretor do Claude**, G3/G14). A decisão de quantos drones por partida e em que fase é do dono.
 **Quem decidiu:** dono (os elementos e a prioridade); Qwen (a conta e o registro); Claude (a engenharia, quando entrar).
+## [2026-09-27] Fichas de design visuais e técnicas (Codex)
+**Entrega:** propostas para o Ferret-X leve, Colossus-01 pesado, andróide A-1 e canhão de plasma, casulo de foguetes, blaster e motosserra em `.decepticons/fichas/`.
+**Critério:** dimensões visuais vêm dos blueprints/rigs; números existentes vêm de `chassis.ts` e `combat/weapons.ts`. O que ainda não existe para os chassis leve e pesado fica `?`, aguardando Claude e o dono. As propostas não autorizam stats, slots nem mudança de combate.
+**Próximo:** Codex começa a camada visual de calor no Mech; stats dos chassis permanecem com Claude após decisão do dono.
 
 ## [2026-09-27] O que o STERM ensina: os ícones do grafo e a ideia do drone
 **Pedido do dono:** "no /sterm-1, no motor pipeline ABBADON, o grafo 3d dele tem uma configuração muito bonita e funcional, onde usamos o ícone holográfico de um banco de dados pra representar dados, e outros ícones que façam sentido pra cada tipo de elemento no grafo (nosso obsidian)… ainda no sterm, muito tempo atrás criamos uma navegação por drone. Veja se aquele conhecimento é valido pra implementarmos aqui de alguma forma (para inserirmos drones no combate), ou introduzirmos isso no planejamento".
