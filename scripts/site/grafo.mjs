@@ -42,6 +42,46 @@ const MOD_NOME = { raiz: 'app', shared: 'shared', scripts: 'scripts' };
 const nf = (n) => n.toLocaleString('pt-BR');
 const frenteOf = (id) => (FRENTES[MOD_FRENTE[id] ?? 'base'] ?? FRENTES.base);
 
+/**
+ * O ícone de cada módulo — a ideia que o dono trouxe do grafo do STERM: um símbolo por tipo de elemento, não
+ * só uma cor (lá, o ícone de banco de dados dizia "isto é dado"). Aqui são primitivas de SVG desenhadas à mão,
+ * no traço do neon do jogo: sem biblioteca e sem arquivo de imagem — cerca de 150 bytes por ícone dentro do
+ * HTML do build, zero requisição e zero KB no jogo (G12). O que não estiver no mapa cai no ícone da frente.
+ */
+const ICONES = {
+  physics: '<path d="M12 3v10m0 0l-4-4m4 4l4-4"/><path d="M4 20h16"/>',
+  player: '<circle cx="12" cy="6" r="2.6"/><path d="M12 9v6M8.5 20l3.5-5 3.5 5M6 13l6 2 6-2"/>',
+  camera: '<rect x="3" y="7" width="12" height="10" rx="2"/><path d="M15 12l6-3v6l-6-3z"/>',
+  combat: '<circle cx="12" cy="12" r="6"/><path d="M12 3v3m0 12v3M3 12h3m12 0h3"/>',
+  entities: '<rect x="7" y="9" width="10" height="9" rx="2"/><path d="M12 4v5M9.5 13h.01M14.5 13h.01M9 18v3m6-3v3"/>',
+  hangar: '<path d="M14 4a5 5 0 00-6 6l-5 5 3 3 5-5a5 5 0 006-6l-2.5 2.5-2-2z"/>',
+  environment: '<path d="M3 20h18"/><path d="M5 20V9l5-4 5 4v11"/><path d="M15 20v-6h4v6"/>',
+  ui: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M9 20h6M12 16v4"/>',
+  tuning: '<path d="M5 8h14M5 16h14"/><circle cx="9" cy="8" r="2.2"/><circle cx="15" cy="16" r="2.2"/>',
+  audio: '<path d="M4 9v6h3l5 4V5L7 9H4z"/><path d="M16 9a4 4 0 010 6"/>',
+  net: '<circle cx="12" cy="5" r="2.4"/><circle cx="5" cy="18" r="2.4"/><circle cx="19" cy="18" r="2.4"/><path d="M12 7.5l-5.5 8M12 7.5l5.5 8M7.5 18h9"/>',
+  shared: '<path d="M4 9h13l-3-3M20 15H7l3 3"/>',
+  server: '<rect x="4" y="4" width="16" height="6" rx="1.6"/><rect x="4" y="14" width="16" height="6" rx="1.6"/><path d="M8 7h.01M8 17h.01"/>',
+  fx: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  debug: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h.01"/>',
+  core: '<rect x="7" y="7" width="10" height="10" rx="2"/><path d="M12 3v4m0 10v4M3 12h4m10 0h4"/>',
+  sim: '<path d="M20 12a8 8 0 11-2.4-5.7"/><path d="M20 4v5h-5"/>',
+  raiz: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
+  scripts: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9l2.5 2.5L7 14M12 15h5"/>',
+  brand: '<path d="M4 4h11l5 5-8 8-8-8z"/><circle cx="9" cy="9" r="1.4"/>',
+};
+/** A que ícone uma frente cai quando o módulo não tem o seu (e o ícone que a legenda mostra). */
+const FRENTE_ICONE = {
+  jogabilidade: 'player', combate: 'combat', mechs: 'entities', cenarios: 'environment', ux: 'ui',
+  som: 'audio', rede: 'net', desempenho: 'fx', base: 'core', negocio: 'brand',
+};
+
+/** O ícone de um módulo (ou da frente dele), no traço do neon. `x`/`y` só valem dentro de um SVG. */
+const icone = (id, cor, x = 0, y = 0, tam = 14, traco = 1.8) => {
+  const forma = ICONES[id] ?? ICONES[FRENTE_ICONE[MOD_FRENTE[id] ?? 'base']] ?? ICONES.core;
+  return `<svg x="${x}" y="${y}" width="${tam}" height="${tam}" viewBox="0 0 24 24" fill="none" stroke="${cor}" stroke-width="${traco}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${forma}</svg>`;
+};
+
 export const GRAFO_CSS = `
   .arq { margin: 0; padding: 0; border: 1px solid var(--line); background: #050704; overflow: hidden; }
   .arq figcaption { padding: 16px 18px 6px; display: grid; gap: 4px; }
@@ -177,7 +217,8 @@ export function grafoOficina(arq, equipe) {
     return `<g class="mod" data-id="${esc(m.id)}" data-dica="${esc(dica)}">
       <rect class="chip" x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h - 5}" rx="6" fill="#0a0d08" stroke="${cor}" stroke-opacity=".6"/>
       <rect x="${p.x}" y="${p.y}" width="3" height="${p.h - 5}" rx="1.5" fill="${cor}"/>
-      <text x="${p.x + 12}" y="${p.y + 16}" font-family="var(--fb)" font-size="13" fill="#eef2e8">${esc(MOD_NOME[m.id] ?? m.id)}</text>
+      ${icone(m.id, cor, p.x + 9, p.y + 6)}
+      <text x="${p.x + 26}" y="${p.y + 16}" font-family="var(--fb)" font-size="13" fill="#eef2e8">${esc(MOD_NOME[m.id] ?? m.id)}</text>
       <text x="${p.x + 12}" y="${p.y + 28}" font-family="var(--fb)" font-size="10" fill="#8b9a8f">${esc(metrica)}</text>
       ${selos}
     </g>`;
@@ -212,7 +253,9 @@ export function grafoOficina(arq, equipe) {
     <text x="${cx}" y="${cy + 50}" text-anchor="middle" font-family="var(--fb)" font-size="11" fill="#8b9a8f">${arq.links.length} dependências</text>
   </g>`;
 
-  const legenda = frentes.map((f) => `<li><i style="background:${(FRENTES[f] ?? FRENTES.base).cor}"></i>${esc((FRENTES[f] ?? FRENTES.base).rotulo)}</li>`).join('');
+  const legenda = frentes
+    .map((f) => `<li>${icone(FRENTE_ICONE[f] ?? 'core', (FRENTES[f] ?? FRENTES.base).cor)}${esc((FRENTES[f] ?? FRENTES.base).rotulo)}</li>`)
+    .join('');
   const usados = [...new Set(Object.values(equipe).flat())].filter((a) => AGENTES[a]);
   const equipeHtml = usados.map((a) => `<li><b style="background:${AGENTES[a].cor}">${AGENTES[a].letra}</b>${esc(a)}</li>`).join('');
 
