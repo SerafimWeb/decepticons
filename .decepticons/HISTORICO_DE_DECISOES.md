@@ -2,6 +2,16 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] O que o STERM ensina: os ícones do grafo e a ideia do drone
+**Pedido do dono:** "no /sterm-1, no motor pipeline ABBADON, o grafo 3d dele tem uma configuração muito bonita e funcional, onde usamos o ícone holográfico de um banco de dados pra representar dados, e outros ícones que façam sentido pra cada tipo de elemento no grafo (nosso obsidian)… ainda no sterm, muito tempo atrás criamos uma navegação por drone. Veja se aquele conhecimento é valido pra implementarmos aqui de alguma forma (para inserirmos drones no combate), ou introduzirmos isso no planejamento".
+**Achado (Qwen, leitura de `D:\SERAFIMHUB\sterm-1`, sem tocar em nada):**
+- **Os ícones:** o grafo do ABBADON (`src/components/pipeline/AttackSurfaceGraph3D.tsx`, 7 051 linhas) tem um **registro tipo → ícone** (`NODE_ICONS`, linhas 157–172; `DNSRecord`/`CloudAsset`/`Container` → `Database`, `CVE` → `Skull`, `WAF` → `Shield`, `Framework` → `Cpu`), com um **registro irmão de cores por tipo**; o corpo do nó é **geometria por tipo** (3 níveis de LOD por distância) e o ícone é **DOM** (drei `<Html>`), não textura. O brilho é falso e barato: `emissive` + cascas transparentes + névoa + poeira em `InstancedMesh`, **sem pós-processamento**. Stack: React + `@react-three/fiber` + `drei` (não é `3d-force-graph`; o README está velho).
+- **O drone:** `DroneViewController` (~530 linhas) é **câmera sobre trilhos**, não unidade de combate — Catmull-Rom pré-calculado, `lerp` com easing, máquina de estados `panorama → approach → inspect → depart`, 4 modos × 4 altitudes, e um `DRONE_PRIORITY` que escolhe o nó mais crítico. **Não há** navmesh, busca de caminho, desvio de obstáculo, raycast nem física.
+**Decisão (Qwen):**
+- **Os ícones eu faço, no mapa da oficina:** o nosso grafo é **SVG gerado no build**, então o ícone vira `<path>` embutido — zero KB, zero DOM por frame, determinístico. O que no STERM exigiu React/DOM aqui sai de graça; registrado como próximo trabalho do Qwen.
+- **O drone vai para o planejamento, com o Claude:** o STERM **não** entrega IA de drone (não há navegação de unidade para portar). Entra como bloco novo na pauta (`METAGAME.md` § 8), com o que presta (prioridade de alvo pelo dano por parte, modos de voo como perfis de números, trilha pré-calculada e lógica fora do tick) e o que é engenharia nova (desvio com Rapier, ponto de recuo, e o **custo na rede**: o drone conta como unidade, 19 bytes, teto de 8 KB/s). Fase: com o dono.
+**Quem decidiu:** dono (o pedido); Qwen (a leitura e o encaminhamento); Claude (território, quando o bloco entrar).
+
 ## [2026-09-27] Online: barricadas e placar vindos do servidor
 **Achado (dono):** "sim, prossiga" (sequência do PR #77, próximo passo era fechar o online).
 **Decisão:** o servidor autoritativo passa a mandar `PROP_BROKEN(id)` a cada barricada que quebra e `ARENA_RESET` na rodada nova; o cliente aplica pelo `id` estável (nova `Destructibles.breakById`). O placar do multiplayer é montado pelos `KILL` que o servidor já enviava (o cliente offline em `damage: false` nunca contaria): `OnlineSession.standings()` + `onScore` alimentam o HUD.
