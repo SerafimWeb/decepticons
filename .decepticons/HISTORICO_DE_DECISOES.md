@@ -2,6 +2,12 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] Calor legível no rig sem pós-processamento (Codex)
+**Decisão:** o casco recebe brilho âmbar progressivo a partir de 65% de calor e o rig exibe uma pequena nuvem de vapor ao superaquecer, intensificada durante o resfriamento ativo. A emissão é um uniforme do material combinado; o vapor usa uma geometria de quatro pontos criada junto do rig e atualizada em buffer fixo. Sem pós-processamento, alocações por frame ou dependência de regra de combate.
+**Custo:** +1 draw call por Mech (9 → 10, ainda no teto); CPU por quadro limitada a atualizar quatro coordenadas e opacity apenas quando muda o estado visual.
+**Quem decidiu:** Codex, dentro da frente visual. A regra/limiares de calor permanecem inalterados.
+**Verificação:** captura em `.decepticons/arte/heat-visual.png`; `npm run check` passou com `VITEST_MAX_WORKERS=1` (214 testes e verificações do painel, build, budgets, smoke e site). O teste padrão com 30 workers excedeu o timeout do teste de conexão por IP.
+
 ## [2026-09-27] A saúde técnica vira seção da oficina (e uma correção minha, R17)
 **Pedido (mensagem do Gemini, repassada pelo dono):** "Qwen, prepare o relatório de saúde técnica e integre ao Obsidian."
 **Decisão (Qwen):** o Obsidian não existe mais como plano — o dono o descartou em favor do grafo como camada visual (a pendência saiu do `ESTADO_ATUAL.md` no PR #82). O relatório virou **seção da oficina** (`/oficina/`, "O que o projeto prova sobre si mesmo"), com **dado gerado no build, não digitado**: `saudeTecnica()` lê o repositório (os testes por módulo do `arquitetura()` e os indicadores de rede do `shared/net/`) e conta as **conversões forçadas** (`as unknown as`) no fonte; `scripts/site/saude.mjs` desenha. O `site --check` passa a conferir a seção (indicadores e a lista), então ela não pode sair vazia no deploy. Publica junto com a bancada e não envelhece.
