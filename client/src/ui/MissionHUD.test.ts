@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MissionHUD } from './MissionHUD';
+import { MissionHUD, getMissionMedals } from './MissionHUD';
 import type { MissionStats, WaveBriefing } from './MissionHUD';
 
 describe('MissionHUD (interface do modo sobrevivência)', () => {
@@ -64,5 +64,14 @@ describe('MissionHUD (interface do modo sobrevivência)', () => {
   it('hide: pode ser chamado sem showWaveHud prévio sem lançar', () => {
     const hud = new MissionHUD();
     expect(() => hud.hide()).not.toThrow();
+  });
+
+  it('getMissionMedals: gera conquistas corretas conforme os stats', () => {
+    const medals = getMissionMedals(true, { waveReached: 5, kills: 10, damageDealt: 2000, survivalSeconds: 300 });
+    expect(medals.length).toBe(4);
+    expect(medals.map(m => m.title)).toContain('SOBREVIVENTE SÊNIOR');
+    expect(medals.map(m => m.title)).toContain('CAÇADOR DE IAs');
+    expect(medals.map(m => m.title)).toContain('DEVASTADOR DE AÇO');
+    expect(medals.map(m => m.title)).toContain('VETERANO DE ONDAS');
   });
 });

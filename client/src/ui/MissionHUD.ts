@@ -46,6 +46,30 @@ function fmtTime(secs: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+export interface MedalBadge {
+  icon: string;
+  title: string;
+  description: string;
+}
+
+/** Calcula as medalhas de conquista conquistadas com base nas estatísticas finais da missão. */
+export function getMissionMedals(survived: boolean, stats: MissionStats): MedalBadge[] {
+  const medals: MedalBadge[] = [];
+  if (survived || stats.waveReached >= 5) {
+    medals.push({ icon: '🏅', title: 'SOBREVIVENTE SÊNIOR', description: 'Completou 5+ ondas ou sobreviveu' });
+  }
+  if (stats.kills >= 8) {
+    medals.push({ icon: '🎯', title: 'CAÇADOR DE IAs', description: 'Eliminou 8 ou mais robôs rebeldes' });
+  }
+  if (stats.damageDealt >= 1500) {
+    medals.push({ icon: '💥', title: 'DEVASTADOR DE AÇO', description: 'Causou 1500+ de dano total' });
+  }
+  if (stats.waveReached >= 3) {
+    medals.push({ icon: '⚡', title: 'VETERANO DE ONDAS', description: 'Resistiu a 3 ou mais ondas' });
+  }
+  return medals;
+}
+
 export class MissionHUD {
   private readonly briefingEl: HTMLElement;
   private readonly waveHudEl: HTMLElement;
@@ -215,6 +239,24 @@ export class MissionHUD {
 
     const title = survived ? 'MISSÃO CONCLUÍDA' : 'PILOTO ABATIDO';
     const titleClass = survived ? 'survived' : 'failed';
+    const medals = getMissionMedals(survived, stats);
+
+    const medalsHtml = medals.length > 0
+      ? `<div class="mission-medals-section">
+          <div class="mission-medals-title">// CONQUISTAS OBTIDAS</div>
+          <div class="mission-medals-grid">
+            ${medals.map((m, idx) => `
+              <div class="mission-medal-card" style="animation-delay: ${idx * 0.15}s">
+                <span class="medal-icon">${m.icon}</span>
+                <div class="medal-info">
+                  <div class="medal-name">${m.title}</div>
+                  <div class="medal-desc">${m.description}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>`
+      : '';
 
     this.summaryEl.innerHTML = `
       <div class="mission-summary-inner">
@@ -224,8 +266,9 @@ export class MissionHUD {
           <li>ABATES         <span>${stats.kills}</span></li>
           <li>DANO CAUSADO   <span>${stats.damageDealt.toFixed(0)}</span></li>
           <li>TEMPO          <span>${fmtTime(stats.survivalSeconds)}</span></li>
-          ${stats.bonus ? `<li class="bonus">BÔNUS  <span>${stats.bonus}</span></li>` : ''}
+          ${stats.bonus ? `<li class="bonus animated-bonus">★ BÔNUS  <span>${stats.bonus}</span></li>` : ''}
         </ul>
+        ${medalsHtml}
         <div class="mission-summary-actions">
           <button id="btn-mission-retry" class="btn-terminal">[ TENTAR NOVAMENTE ]</button>
           <button id="btn-mission-exit" class="btn-terminal">[ SAIR ]</button>

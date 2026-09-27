@@ -1609,3 +1609,136 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   justify-content: center;
 }
 
+/* Medalhas de conquista e bônus animado no resumo */
+.animated-bonus {
+  animation: pulseGold 1.5s infinite alternate;
+}
+.animated-bonus span {
+  color: var(--warn) !important;
+  text-shadow: 0 0 8px var(--warn);
+}
+
+@keyframes pulseGold {
+  from { opacity: 0.85; }
+  to { opacity: 1; filter: drop-shadow(0 0 4px var(--warn)); }
+}
+
+.mission-medals-section {
+  margin: 16px 0 20px 0;
+}
+.mission-medals-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.mission-medals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 8px;
+}
+.mission-medal-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(18, 26, 22, 0.8);
+  border: 1px solid rgba(57, 255, 106, 0.25);
+  border-radius: 6px;
+  animation: medalSlideIn 0.4s ease-out backwards;
+}
+.medal-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.medal-name {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+}
+.medal-desc {
+  font-size: 10px;
+  color: #a0b0a5;
+  margin-top: 2px;
+}
+
+@keyframes medalSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Seletor de Modo de Jogo (ModeSelector) ───────────────────────────────── */
+.game-mode-selector {
+  margin: 14px 0;
+  width: 100%;
+  max-width: 440px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+.mode-selector-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 6px;
+  text-align: left;
+}
+.mode-selector-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.btn-mode {
+  padding: 10px 14px;
+  background: rgba(10, 14, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: #ccc;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+.btn-mode:hover {
+  border-color: var(--accent);
+  background: rgba(18, 26, 22, 0.9);
+}
+.btn-mode.active {
+  border-color: var(--accent);
+  background: rgba(20, 36, 26, 0.95);
+  box-shadow: 0 0 12px rgba(57, 255, 106, 0.2);
+}
+.mode-btn-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.mode-title {
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #fff;
+}
+.btn-mode.active .mode-title {
+  color: var(--accent);
+}
+.mode-badge {
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+}
+.btn-mode.active .mode-badge {
+  background: rgba(57, 255, 106, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(57, 255, 106, 0.3);
+}
+.mode-desc {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #8a9a8f;
+}
+
+
+

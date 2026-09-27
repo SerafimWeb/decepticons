@@ -580,4 +580,92 @@ export class AudioSystem {
     src.stop(now + 0.45);
     src.onended = () => { ng.disconnect(); filter.disconnect(); };
   }
+
+  // ── Sons do Modo Sobrevivência ─────────────────────────────────────────────
+
+  /**
+   * SIRENE DE ONDA — Alarme tático pulsante (2 impulsos grave-agudo alternados).
+   */
+  playWaveSiren(): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(350, now);
+    osc.frequency.linearRampToValueAtTime(700, now + 0.25);
+    osc.frequency.linearRampToValueAtTime(350, now + 0.5);
+    osc.frequency.linearRampToValueAtTime(750, now + 0.75);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.001, now);
+    gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+    gain.gain.setValueAtTime(0.3, now + 0.7);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.86);
+    osc.onended = () => gain.disconnect();
+  }
+
+  /**
+   * BIPE DE CONTAGEM REGRESSIVA — tático curto.
+   * `isFinal`: true para a última contagem (tom agudo e mais marcante).
+   */
+  playCountdownBeep(isFinal = false): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+
+    const now = ctx.currentTime;
+    const freq = isFinal ? 1600 : 900;
+    const duration = isFinal ? 0.25 : 0.08;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(isFinal ? 0.35 : 0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + duration + 0.01);
+    osc.onended = () => gain.disconnect();
+  }
+
+  /**
+   * ONDA LIMPA — Acorde ascendente sintetizado (C-E-G vitorioso).
+   */
+  playWaveClearSound(): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+
+    const now = ctx.currentTime;
+    const freqs = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6
+
+    freqs.forEach((freq, idx) => {
+      if (!ctx || !masterGain) return;
+      const startTime = now + idx * 0.08;
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.linearRampToValueAtTime(0.2, startTime + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(startTime);
+      osc.stop(startTime + 0.42);
+      osc.onended = () => gain.disconnect();
+    });
+  }
 }
+

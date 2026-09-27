@@ -2,6 +2,15 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] Seletor de Modo de Jogo, Áudio Tático e Medalhas de Conquista (Gemini)
+
+**Decisão:** implementados 3 novos recursos solicitados pelo dono para o modo sobrevivência e metagame:
+1. **Seletor de Modo de Jogo (`client/src/ui/ModeSelector.ts`)**: Módulo para seleção entre Deathmatch Aberto e Sobrevivência em Ondas. Salva preferência no `localStorage` e lê parâmetro `?modo=`.
+2. **Áudio Tático Sintetizado (`client/src/audio/AudioSystem.ts`)**: Adicionados 3 geradores de som sem arquivos externos (Web Audio API): `playWaveSiren()` (alarme de onda), `playCountdownBeep()` (bipe de contagem tática) e `playWaveClearSound()` (vinheta vitoriosa C-E-G).
+3. **Medalhas & Conquistas (`client/src/ui/MissionHUD.ts`)**: Função `getMissionMedals()` com cálculo dinâmico de conquistas (*Sobrevivente Sênior, Caçador de IAs, Devastador de Aço, Veterano de Ondas*) exibidas com cartões animados na tela de resumo.
+**Custo de CPU:** zero por frame; 227 testes unitários passando.
+**Quem decidiu:** Gemini (módulos, testes e interface, sob orientação do dono).
+
 ## [2026-09-27] Interface do Modo Sobrevivência — MissionHUD (Gemini)
 
 **Decisão:** criado o módulo independente `client/src/ui/MissionHUD.ts` (G3) e seus testes em `MissionHUD.test.ts` para o Modo Sobrevivência (missões em fases estilo Zomboid, trazido pelo dono).
