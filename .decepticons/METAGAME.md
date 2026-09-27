@@ -107,9 +107,50 @@ obstáculo nem física (é um Catmull-Rom pré-calculado + `lerp`, com a máquin
 | Trilha montada **antes**; câmera e lógica **fora** do tick | Regra de ouro para tudo que voa no CYBERMECH: trilha pronta no spawn, `rng.ts` no lugar de `Math.random`, vetores pré-alocados — senão quebra G2 e G4 | Claude |
 
 **O que é novo de verdade (não vem do STERM):** desvio de obstáculo com Rapier (raycast + separação), ponto de recuo, e o
-**custo no orçamento de rede** — o drone conta como unidade (19 bytes, `shared/net/budget.ts`), então um drone por jogador
-mexe no teto de 8 KB/s de download e na área de interesse. É engenharia de simulação: **território do Claude**, e depois
-do loop da partida definido (§ 7). Decisão de fase com o dono.
+custo na banda — que tem conta e tem saída (§ 8.1). É engenharia de simulação: **território do Claude**, e depois do loop
+da partida definido (§ 7). Decisão de fase com o dono.
+
+### 8.1 Quanto pesa (e como fica barato)
+
+Números do nosso próprio código, não estimativa: uma unidade custa **19 bytes** (`UNIT_BYTES`, `shared/net/state.ts`), o
+estado vai a **20 Hz** e a moldura do WebSocket soma 20% (`WIRE_OVERHEAD = 1.2`) → **456 B/s por unidade**. O teto é de
+**8 192 B/s** por jogador (`DOWNLOAD_BUDGET`). A sala cheia de hoje (8 Mechs + 3 andróides + o técnico = 15 unidades) gasta
+**6,8 KB/s só de estado** — sobram ~1,4 KB/s para todos os eventos da luta. Um drone por jogador seriam **+3,6 KB/s: não
+cabe**. Mas o drone não precisa custar 19 bytes nem 20 Hz:
+
+| Como | Efeito | Observação |
+|---|---|---|
+| **Registro curto de unidade leve** (id + posição + yaw + flags ≈ 10 B) | 456 → ~240 B/s | drone não tem seis partes nem calor; é um segundo formato no mesmo codec |
+| **Estado do drone a 5 Hz**, o resto o cliente extrapola | ~4× menos | voa em trajetória suave; a extrapolação erra pouco |
+| **Trilha pré-calculada** (o evento de spawn leva `path id` + instante; o servidor manda só correção) | **~0 B/s** em voo | é a ideia do STERM pagando em **banda**, não só em determinismo — vale para drone de patrulha, **não** para drone pilotado pelo jogador |
+| **Teto por esquadrão** (1 drone por time, ou habilidade com recarga) | divide por 4 | decisão do dono: o drone vira recurso tático, não equipamento padrão |
+| **Alcance (AoI) e delta** — o próximo passo já previsto do online | corta o agregado inteiro | passando de ~20 unidades, o delta deixa de ser opção |
+
+Duas ou três dessas linhas juntas deixam o drone quase de graça em banda. O que **não** dá para fugir é o desvio de
+obstáculo e o ponto de recuo: é física nova dentro do tick, e é aí que aparece o custo de CPU — medir com a sala cheia antes
+de fixar quantos drones por partida. (A medição antiga do site falava em 6,2 KB/s na sala cheia; a conta de hoje dá 6,8 —
+quando o drone entrar, reconferir pelo `npm test`, que é quem trava o orçamento.)
+
+## 9. Elementos do cenário, zonas e pilotagem (2026-09-27)
+
+Pedido do dono no mesmo dia: **torres**, **zonas de regeneração**, **zonas de resfriamento** (onde o Mech atira sem esquentar
+tanto), os **andróides entrando e saindo dos Mechs** — e a **entrada dos bots no cenário**, esta ele já mandou ao Codex. Tudo
+isso cabe na banda se valer uma regra só: **só o que se move precisa de bytes por estado.**
+
+| Elemento | Como entra | Custo na banda | Dono |
+|---|---|---|---|
+| Torres | posição fixa da arena (uma vez); vida/calor num estado curto e disparo/quebra por evento | ~0–3 B por torre | Claude (sim) + Codex (visual) |
+| Zona de regeneração | volume fixo da arena, definido uma vez; quem cura é o servidor (autoridade) | **0 B** | Claude |
+| Zona de resfriamento | idem, volume estático; dá bônus de resfriamento dentro dele (o `coolingBoost` de `combat/heat.ts` já existe) | **0 B** | Claude |
+| Andróide **entra** no Mech | o andróide **sai da lista de unidades** enquanto está dentro; o Mech ganha a bandeira "tem piloto" (o byte de flags usa 4 dos 8 bits) | **−456 B/s** enquanto dentro: **economiza** | Claude (sim) + Gemini (tecla/HUD) |
+| Andróide **sai** do Mech | evento de spawn do andróide no ponto do Mech | 1 evento | Claude |
+| Entrada dos bots no cenário | o **visual** (cápsula, portão, descida de órbita) é do Codex; **onde e quando** nascem é do diretor de ataque (`adaptive-ai-director`, § 2) | a do `SPAWN` que já existe | Codex (visual) + Claude (regra) |
+
+**Cuidado com o teto:** `MAX_UNITS = 32` (o id cabe em 1 byte) e a sala cheia de hoje usa 15 — torres, zonas e drones moram
+dentro dele, mas **quem aperta primeiro é a banda, não o formato**. Bandeira nova nas flags (ex.: "tem piloto") muda o
+protocolo: subir `PROTOCOL_VERSION`, porque por desenho o servidor recusa cliente de versão diferente. E a regra do
+`GAME_DESIGN.md` continua valendo: zona de cura e de resfriamento são **vantagem tática de posicionamento**, iguais para os
+dois times — nunca algo que se compra.
 
 ## Divisão (o grosso é do Claude)
 
