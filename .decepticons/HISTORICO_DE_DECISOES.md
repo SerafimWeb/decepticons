@@ -2,6 +2,12 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] Zonas de cura e resfriamento na arena
+**Pedido (dono):** "3 mechs + 3 andróides que se regeneram, fica muito difícil! preciso de um turret, ou um lugar pra recuperar a vida, ou um resfriador pra me ajudar a ter mais fôlego! pensemos e apliquemos evoluções de combate! se não o jogador não continua a jogar se sempre for massacrado!" — no mesmo dia, o Gemini pediu (repassado pelo dono) uma máquina de estados de Ondas em `sim/Match.ts` ligada ao `MissionHUD` e sincronizada no servidor.
+**Decisão (Claude):** priorizar a menor entrega que já alivia a dificuldade hoje, sem esperar o modo Sobrevivência inteiro: implementar as zonas que o Qwen já tinha especificado em `METAGAME.md` § 9 (zona de cura e de resfriamento, custo de rede 0 B/s, vantagem de posicionamento igual para os dois lados). Ficaram de fora nesta entrega: torres (precisam de vida/calor em rede e IA de mira, escopo maior) e a máquina de estados de Ondas (pedido do Gemini — registrado em `ESTADO_ATUAL.md`, "PRÓXIMA SESSÃO COMEÇA COM", para não empilhar duas features grandes na mesma sessão).
+**O que ficou:** `combat/Zone.ts` (regra pura, testável), `combat/heat.ts` ganha `HeatSink.ventExternal`, `MechBase.vent()`, fiação em `sim/Match.ts` (vale para jogadores e bots, então também no servidor, por ser a mesma simulação) e visual provisório em `environment/Arena.ts` (Codex pode substituir). 6 testes novos, `npm run check` verde.
+**Quem decidiu:** dono (o pedido); Claude (a implementação e o escopo do que ficou para depois).
+
 ## [2026-09-27] A banda do drone vira especificação (e a revisão cruzada do MissionHUD)
 **Pedidos (via Gemini, repassados pelo dono):** revisar o PR da interface de missões (MissionHUD); atualizar o grafo e a saúde técnica da oficina com o novo módulo e os 219 testes; detalhar no `METAGAME.md` § 8 o orçamento de banda e a técnica de sincronização dos drones.
 **Decisão (Qwen):**

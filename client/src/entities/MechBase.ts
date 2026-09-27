@@ -398,10 +398,16 @@ export abstract class MechBase {
     return this.damagePart(part, amount);
   }
 
-  /** Conserto (técnico): devolve vida à parte mais avariada que ainda existe. Devolve quanto consertou. */
+  /** Conserto (técnico ou zona de cura): devolve vida à parte mais avariada que ainda existe. Devolve quanto consertou. */
   repair(amount: number): number {
     if (!this.alive) return 0;
     return repairModules(this.modules, this.stats.maxModuleHealth, amount);
+  }
+
+  /** Ventilação externa (zona de resfriamento): tira calor direto, sem exigir estar parado nem sem tiro recente. */
+  vent(amount: number): void {
+    if (!this.alive) return;
+    this.heatSink.ventExternal(amount);
   }
 
   damagePart(part: MechPart, amount: number): DamageResult {
