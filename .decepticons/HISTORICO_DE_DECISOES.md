@@ -2,6 +2,13 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] Interface do Modo Sobrevivência — MissionHUD (Gemini)
+
+**Decisão:** criado o módulo independente `client/src/ui/MissionHUD.ts` (G3) e seus testes em `MissionHUD.test.ts` para o Modo Sobrevivência (missões em fases estilo Zomboid, trazido pelo dono).
+O módulo gerencia 3 estados de UI: briefing tático (com efeito de digitação nas ameaças e timer de início automático), HUD compacto no canto superior direito (barra de progresso e tempo), banner "ONDA LIMPA" animado e tela de resumo pós-combate.
+Estilos CSS responsivos neon/obsidiana adicionados em `styles.css`. O módulo opera sem alocações por frame (G4 na UI, updates no DOM só quando os valores mudam) e é totalmente compatível com headless/Node.
+**Quem decidiu:** Gemini (interface e testes, sob orientação do dono e especificações de G3/G4).
+
 ## [2026-09-27] Horizonte futuro registrado na visão e na landing
 
 O dono registrou cinco conceitos para evolução do CYBERMECH: capacidade de mapas e jogadores; piloto e artilheiro no mesmo Mech; drones menores que andróides; transporte de robôs e tropas; missões de sobrevivência em fases. Foram documentados em `VISAO.md`, `METAGAME.md` § 10 e `ROADMAP.md`, e apresentados na landing em seção “em estudo” separada da VITRINE de funcionalidades reais. Não foram definidos prazos, número-alvo de jogadores, escala exata do drone nem persistência das missões. A ordem técnica é uma sugestão, sem prioridade aprovada.

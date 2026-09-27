@@ -1350,3 +1350,262 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 .power-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
 .power-status { font-size: 11px; line-height: 1.5; color: #999; overflow-wrap: anywhere; }
 .power-flag { margin: 6px 0 0; font-size: 11px; letter-spacing: 2px; color: var(--hot); }
+
+/* ─── MissionHUD (Modo Sobrevivência / Estilo Zomboid) ─────────────────────── */
+#mission-briefing,
+#mission-summary {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 6, 8, 0.88);
+  backdrop-filter: blur(6px);
+  z-index: 900;
+  pointer-events: auto;
+}
+
+#mission-briefing.hidden,
+#mission-summary.hidden,
+#mission-wave-hud.hidden {
+  display: none !important;
+}
+
+.mission-briefing-inner,
+.mission-summary-inner {
+  width: 90%;
+  max-width: 520px;
+  padding: 24px 28px;
+  background: rgba(12, 16, 20, 0.95);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 0 24px rgba(57, 255, 106, 0.15), inset 0 0 12px rgba(0, 0, 0, 0.8);
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+.mission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+.mission-tag { color: var(--muted); }
+.mission-wave-num { color: var(--accent); font-weight: bold; }
+
+.mission-title {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  letter-spacing: 1.5px;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.mission-threat-level {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.mission-threat-level.low { color: var(--accent); border: 1px solid var(--accent); }
+.mission-threat-level.medium { color: var(--warn); border: 1px solid var(--warn); }
+.mission-threat-level.high { color: var(--hot); border: 1px solid var(--hot); }
+.mission-threat-level.critical { color: var(--alert); border: 1px solid var(--alert); background: rgba(255, 45, 61, 0.1); }
+
+.mission-threats {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+  min-height: 80px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #c0d0c5;
+}
+.mission-threats li.typing {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.mission-briefing-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-mission-go {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #000;
+  background: var(--accent);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-mission-go:hover {
+  background: #50ff7d;
+  box-shadow: 0 0 12px var(--accent);
+  transform: translateY(-1px);
+}
+
+.mission-auto-timer {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+/* ── HUD de Onda Compacto (Canto Superior Direito) ────────────────────────── */
+#mission-wave-hud {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 800;
+  pointer-events: none;
+}
+
+.wave-hud-inner {
+  padding: 10px 14px;
+  background: rgba(10, 14, 18, 0.85);
+  border: 1px solid rgba(57, 255, 106, 0.3);
+  border-radius: 6px;
+  min-width: 160px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+.wave-hud-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+.wave-hud-label span { color: var(--accent); font-weight: bold; }
+
+.wave-hud-progress {
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  margin: 2px 0 6px 0;
+}
+
+.wave-hud-bar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.wave-hud-bar-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--accent);
+  transform-origin: left;
+  transition: transform 0.2s linear, background-color 0.3s ease;
+}
+.wave-hud-bar-fill.high {
+  background: var(--warn);
+}
+
+.wave-hud-time {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* ── Banner ONDA LIMPA ────────────────────────────────────────────────────── */
+.wave-clear-banner {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  padding: 16px 32px;
+  background: rgba(6, 12, 8, 0.9);
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(57, 255, 106, 0.4);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none;
+  z-index: 850;
+}
+.wave-clear-banner.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.wave-clear-title {
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent);
+}
+.wave-clear-time {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.wave-clear-bonus {
+  font-size: 13px;
+  color: var(--warn);
+  margin-top: 8px;
+  font-weight: bold;
+}
+
+/* ── Tela de Resumo ───────────────────────────────────────────────────────── */
+.mission-summary-title {
+  font-size: 22px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.mission-summary-title.survived { color: var(--accent); text-shadow: 0 0 12px var(--accent); }
+.mission-summary-title.failed { color: var(--alert); text-shadow: 0 0 12px var(--alert); }
+
+.mission-summary-wave {
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: #ccc;
+  margin-bottom: 20px;
+}
+
+.mission-summary-stats {
+  list-style: none;
+  padding: 12px 16px;
+  margin: 0 0 24px 0;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.mission-summary-stats li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.mission-summary-stats li:last-child { border-bottom: none; }
+.mission-summary-stats li span { color: #fff; font-weight: bold; }
+.mission-summary-stats li.bonus span { color: var(--warn); }
+
+.mission-summary-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
