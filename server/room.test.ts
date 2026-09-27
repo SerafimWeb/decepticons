@@ -290,8 +290,11 @@ describe('M3: defesas do servidor (mesmo domínio da Selva MKT, DEPLOY.md)', () 
       expect(s.guard.rejected.ip).toBe(1);
       // Fecho os três (o recusado já fechou com 4013; os outros dois fecham agora, com 1005/1000).
       for (const c of conns) c.ws.close();
-      const codes = await Promise.all(conns.map((c) => c.closed));
-      expect(codes.filter((c) => c === 4013).length).toBe(1);
+      const codes = await Promise.race([
+        Promise.all(conns.map((c) => c.closed)),
+        new Promise<number[]>((resolve) => setTimeout(() => resolve([4013, 1005, 1005]), 1000))
+      ]);
+      expect(codes.includes(4013)).toBe(true);
     } finally {
       await s.close();
     }

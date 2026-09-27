@@ -57,6 +57,7 @@ import type { RosterEntry } from '../../../shared/net/messages';
 import { Match } from '../sim/Match';
 import { HangarMenu } from '../ui/HangarMenu';
 import { HangarScene } from '../hangar/HangarScene';
+import { OnlineLobby } from '../ui/OnlineLobby';
 
 /** Onde os braços do Mech do Hangar estão na tela (reaproveitados por quadro). */
 const _hotRight = { x: 0, y: 0 };
@@ -141,6 +142,7 @@ export class Game {
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
   private readonly hangarMenu: HangarMenu;
+  private readonly lobby = new OnlineLobby();
   private readonly renderPass: RenderPass;
   private accumulator = 0;
   private last = -1;
@@ -254,7 +256,10 @@ export class Game {
     this.match.pilots.push(this.player);
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
     this.netStatus.className = 'net-status';
-    if (online) {
+    
+    const shouldConnect = online && online.explicitName;
+
+    if (shouldConnect) {
       this.online = new OnlineSession({
         ...online,
         build: this.hangar.key,
@@ -272,7 +277,10 @@ export class Game {
       document.body.append(this.netStatus);
     } else {
       this.online = null;
-      if (net && 'error' in net) {
+      if (online) {
+        // Wanted to go online but missing name
+        this.lobby.show(online.room);
+      } else if (net && 'error' in net) {
         this.netStatus.textContent = `ONLINE: ${net.error} · jogando offline`;
         this.netStatus.classList.add('bad');
         document.body.append(this.netStatus);
@@ -340,6 +348,16 @@ export class Game {
 
   /** Linha de status do online, no topo: sala, ping e pessoas; ou o motivo da recusa ou da queda. */
   private showNet(s: OnlineStatus): void {
+    if (s.state === 'conectando') {
+      this.lobby.setConnecting(true, `CONECTANDO À SALA ${s.room}…`);
+    } else if (s.state === 'na sala') {
+      this.lobby.hide();
+    } else if (s.state === 'recusado') {
+      this.lobby.setConnecting(true, `RECUSADO: ${s.reason || 'erro'}`);
+    } else {
+      this.lobby.setConnecting(true, 'CONEXÃO CAIU');
+    }
+
     const text =
       s.state === 'na sala'
         ? `ONLINE · SALA ${s.room} · ${s.rttMs} ms · ${s.players} piloto${s.players === 1 ? '' : 's'}`
@@ -740,7 +758,7 @@ export class Game {
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
     const saw = this.mech.loadout.secondary?.kind === 'melee';
     this.hud.setRockets(saw ? 4 : this.player.launcher.ammo, saw ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);
-    this.hud.setHeat(this.mech.heat, this.mech.overheated);
+    this.hud.setHeat(this.mech.heat, this.mech.overheated, this.mech.coolingBoost);
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);
