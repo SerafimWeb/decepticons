@@ -1,6 +1,9 @@
 import type { CameraMode } from '../camera/CameraMode';
 import type { DamageResult } from '../combat/damage';
 import type { MechBase, MechPart } from '../entities/MechBase';
+import { KillBanner } from './KillBanner';
+import { NetHud } from './NetHud';
+import { RoundOverlay } from './RoundOverlay';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -35,6 +38,9 @@ function integrityBar(value: number, max: number): string {
 }
 
 export class HUD {
+  readonly net = new NetHud();
+  readonly killBanner = new KillBanner();
+  readonly roundOverlay = new RoundOverlay();
   private readonly root = $('hud');
   private readonly overlay = $('overlay');
   private readonly cta = $('cta');
