@@ -10,7 +10,7 @@
  */
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { arsenal, atividade, bundleSize, entregas, hangarPlan, jogo, marcos, pledge, readRoadmap, recordSheet, roadmapStats, vitrine } from './site/dados.mjs';
+import { arsenal, atividade, bundleSize, entregas, hangarPlan, horizonte, jogo, marcos, pledge, readRoadmap, recordSheet, roadmapStats, vitrine } from './site/dados.mjs';
 import { brDate, esc, HEXGRID, inline, mb, pagina, topo, upper } from './site/tema.mjs';
 
 const argv = process.argv.slice(2);
@@ -28,6 +28,7 @@ const arms = arsenal(game);
 const plan = hangarPlan();
 const vows = pledge();
 const features = vitrine();
+const futureIdeas = horizonte();
 const { prs } = entregas();
 const act = atividade(prs);
 
@@ -169,6 +170,17 @@ const featuresHtml = features.length
       .map(
         (f, i) => `<li class="feature frame"><span class="fnum">${String(i + 1).padStart(2, '0')}</span><h3>${upper(f.title)}</h3><p>${inline(f.text)}</p></li>`,
       )
+      .join('')}</ol>
+  </section>`
+  : '';
+
+const horizonHtml = futureIdeas.length
+  ? `<section aria-labelledby="horizonte">
+    <span class="kicker">// ideias em estudo · sem data prometida</span>
+    <h2 id="horizonte">O que estamos explorando</h2>
+    <p class="lede">Direções futuras em avaliação. Elas ainda não fazem parte do jogo e podem mudar conforme os testes e as prioridades do projeto.</p>
+    <ol class="features">${futureIdeas
+      .map((idea, i) => `<li class="feature frame"><span class="fnum">${String(i + 1).padStart(2, '0')}</span><h3>${upper(idea.title)}</h3><p>${inline(idea.text)}</p></li>`)
       .join('')}</ol>
   </section>`
   : '';
@@ -579,6 +591,7 @@ const body = `
   ${heroHtml}
   ${galleryHtml}
   ${featuresHtml}
+  ${horizonHtml}
   ${sheetHtml}
   ${keysHtml}
   ${pledgeHtml}

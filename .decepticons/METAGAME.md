@@ -186,3 +186,16 @@ modular?** Minha leitura, e é de propósito a mais barata de executar:
 
 O dono prioriza: quais grupos entram primeiro e em que fase do `ROADMAP.md`. Depois disso, um PR por bloco,
 pelo dono do território, com a ficha de design (`fichas/`) antes do código.
+## 10. Conceitos do dono — escala, tripulação e campanhas (2026-09-27)
+
+Direções futuras, não funcionalidades anunciadas nem decisões de implementação. Antes de virar código, fechar contrato, orçamento e critério de playtest. A VITRINE continua listando apenas o que está REAL em `STATUS_REAL.md`.
+
+| Conceito | Direção inicial | Dependências e guardrails | Frentes sugeridas |
+|---|---|---|---|
+| Mapas maiores e mais jogadores | Escalar por medição; não escolher número-alvo sem teste | Medir CPU do tick, banda e render; otimizar AoI/delta e streaming por setor; testar latência sob carga antes de elevar o teto | Claude: rede/simulação; Codex: render/streaming; Qwen: orçamento; dono valida hardware |
+| Mech com piloto e artilheiro | Piloto conduz e orienta casco; artilheiro controla mira e armas; bot pode ocupar um posto | Contrato de entradas por papel, autoridade, reconexão e saída de ocupante; protótipo em sala privada com bots e dois clientes | Claude: sim/protocolo; Gemini: UI/HUD; Codex: cockpit/visuais |
+| Drones voadores pequenos | Unidade de reconhecimento abaixo da escala do andróide (classe 1); proporção ainda não decidida | Definir papel antes da IA; limitar quantidade e frequência de estado; manter silhuetas legíveis e caber no G11 | Claude: voo/rede; Codex: rig/FX; Gemini: HUD; Qwen: orçamento/testes |
+| Veículos de transporte | Levar Mechs, andróides e tropas por setores | Embarcado não executa movimento independente; definir autoridade, colisão, embarque/desembarque e limite de ocupantes | Claude: física/rede; Codex: modelos visuais; Gemini: controles/HUD |
+| Sobrevivência por fases | Operações contra andróides humanoides, humanos e Mechs, inspiradas no gênero de *Project Zomboid* | Definir “humanos” (NPC/jogadores), câmera, objetivos, progressão e persistência em ficha curta; não assumir MMO persistente | Dono: escopo; Claude: missão/servidor; Codex: cenários/ameaças; Gemini: fluxo; Qwen: balanço |
+
+**Ordem técnica sugerida, não priorizada pelo dono:** medir online real; obter baseline de carga; prototipar dupla em sala privada; especificar loop de missão antes de criar campanha; fechar orçamento/autonomia do drone e contrato de ocupação antes de drones e transporte.

@@ -70,6 +70,20 @@ com Mechs; a camada de inteligência fala a língua de CTI (incidente, TTPs, IOC
 
 ---
 
+## HORIZONTE (em estudo; sem data prometida)
+
+> Direções futuras; não representam funcionalidades disponíveis nem compromisso de entrega.
+
+- **Mapas maiores e mais jogadores:** ampliar capacidade após medir custo de servidor, banda e render, com otimizações graduais para preservar latência e hardware integrado.
+- **Tripulação de dois operadores:** piloto conduz o Mech; artilheiro opera mira e armas. Bots poderão ocupar uma função em testes.
+- **Drones voadores pequenos:** unidades de reconhecimento menores que os andróides; escala e regras ainda serão definidas.
+- **Transporte de unidades:** veículos e plataformas para levar Mechs, andróides e tropas pelo cenário.
+- **Missões de sobrevivência em fases:** operações contra andróides humanoides, humanos e Mechs, inspiradas no ritmo de sobrevivência de *Project Zomboid*. Persistência, objetivos e formato ainda serão definidos.
+
+As ideias são detalhadas em `METAGAME.md` § 10 e permanecem sem prioridade aprovada até decisão do dono.
+
+---
+
 ## PRODUÇÃO: TUDO EM CÓDIGO (decisão do dono, 2026-09-24)
 
 O dono dirige e as IAs constroem; nada é feito à mão, peça por peça. O investimento vai para jogabilidade,

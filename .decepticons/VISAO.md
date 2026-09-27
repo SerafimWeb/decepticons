@@ -42,6 +42,16 @@ Um **shooter de Mechs online, no navegador**, com combate rápido e sensação d
 - **Personalização profunda:** pintura por parte, decalque, história do piloto, tabela de estatísticas pessoal — tudo salvo em conta com login social simples (LGPD, R7).
 - **Equilíbrio matemático travado:** nenhum item pode passar dos tetos de `combat/balance.ts`. Nenhum cosmético pode dar vantagem. Esta regra não muda.
 
+### Conceitos declarados pelo dono (2026-09-27)
+
+- Ampliar mapas e capacidade de jogadores por medições e otimizações graduais, sem sacrificar latência ou suporte a GPU integrada.
+- Permitir tripulação de dois jogadores na mesma máquina: piloto conduz; artilheiro mira e opera as armas. Bots podem ocupar um papel nos testes.
+- Criar drones voadores menores que os andróides, preservando a escala relativa (Mech 2, andróide 1); proporção e controle exigem ficha.
+- Introduzir veículos e plataformas que transportem robôs e tropas.
+- Evoluir para missões de sobrevivência em fases contra andróides humanoides, humanos e outros Mechs, usando *Project Zomboid* como referência de gênero. Formato e persistência seguem em aberto.
+
+Estes conceitos não são prioridade nem promessa de entrega; ver `METAGAME.md` § 10 e `ROADMAP.md`.
+
 ## O QUE ISTO NÃO É
 
 - **Não é pay-to-win.** Compra troca aparência, nunca dano ou vida.
