@@ -2,6 +2,10 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] Horizonte futuro registrado na visão e na landing
+
+O dono registrou cinco conceitos para evolução do CYBERMECH: capacidade de mapas e jogadores; piloto e artilheiro no mesmo Mech; drones menores que andróides; transporte de robôs e tropas; missões de sobrevivência em fases. Foram documentados em `VISAO.md`, `METAGAME.md` § 10 e `ROADMAP.md`, e apresentados na landing em seção “em estudo” separada da VITRINE de funcionalidades reais. Não foram definidos prazos, número-alvo de jogadores, escala exata do drone nem persistência das missões. A ordem técnica é uma sugestão, sem prioridade aprovada.
+
 ## [2026-09-27] Calor legível no rig sem pós-processamento (Codex)
 **Decisão:** o casco recebe brilho âmbar progressivo a partir de 65% de calor e o rig exibe uma pequena nuvem de vapor ao superaquecer, intensificada durante o resfriamento ativo. A emissão é um uniforme do material combinado; o vapor usa uma geometria de quatro pontos criada junto do rig e atualizada em buffer fixo. Sem pós-processamento, alocações por frame ou dependência de regra de combate.
 **Custo:** +1 draw call por Mech (9 → 10, ainda no teto); CPU por quadro limitada a atualizar quatro coordenadas e opacity apenas quando muda o estado visual.

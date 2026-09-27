@@ -159,6 +159,11 @@ export function vitrine() {
   return [...designSection('VITRINE').matchAll(/^- \*\*(.+?):\*\*\s*(.+)$/gm)].map((m) => ({ title: m[1], text: m[2] }));
 }
 
+/** Direções futuras explicitamente separadas do que já está no jogo. */
+export function horizonte() {
+  return [...designSection('HORIZONTE').matchAll(/^- \*\*(.+?):\*\*\s*(.+)$/gm)].map((m) => ({ title: m[1], text: m[2] }));
+}
+
 // ---------- código do jogo ----------
 
 /**

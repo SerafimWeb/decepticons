@@ -173,7 +173,8 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 
 - [ ] **Interest management (AoI):** cada jogador recebe só as unidades num raio dele. Destrava 32-64 jogadores por sala #rede
 - [ ] **Delta encoding no estado:** só campos que mudaram desde o último ack, corta 30-60% da banda #rede
-- [ ] **Veículos:** jipe e tanque com `DynamicRayCastVehicleController` do Rapier, driver+passageiro por rede #combate
+- [ ] **Capacidade para mapas maiores e mais jogadores:** medir CPU/banda por jogador; combinar AoI, delta e setores carregados sob demanda antes de elevar o teto de sala; sem regressão de latência #rede
+- [ ] **Veículos de transporte:** jipe/tanque e plataformas que carreguem Mechs, andróides e tropas; ocupantes sincronizados como passageiros, sem simular tripulação fora da vista #combate
 - [ ] **Terreno com streaming:** setores carregados sob demanda; mapa 1-2 km² sem estourar wasm/GPU #cenarios
 - [ ] **Destrutíveis v2:** prédios com paredes que caem, sincronizados por `PROP_BROKEN` #cenarios
 - [ ] **Multi-região (VPS SP + hemisfério norte):** matchmaking joga cada um na sala mais perto #base
@@ -182,6 +183,9 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] **WebTransport (quando o Firefox terminar):** UDP no navegador, corta jitter em rede ruim #rede
 
 ## 💡 IDEIAS
+- [ ] **Mech com dois operadores:** piloto controla movimento e orientação do casco; artilheiro mira/dispara; servidor coordena papéis e entradas concorrentes, com bots e humanos #rede
+- [ ] **Drones voadores pequenos:** classe visual abaixo do andróide (referência de escala: Mech 2, andróide 1); movimento, teto de unidades e banda precisam caber no orçamento #mechs
+- [ ] **Missões de sobrevivência por fases:** referência de ritmo e persistência de *Project Zomboid*, adaptada a operações de combate contra andróides humanoides, humanos e outros Mechs; definir loop, objetivos e escopo antes de codar #modos
 - [ ] Rádio das IAs rebeldes: provocações geradas por modelo de linguagem no servidor, entre rodadas (nunca decidindo o combate) #ia
 - [ ] Derrube o C2: retransmissor na arena que coordena as IAs; destruído, elas atacam desordenadas #universo
 - [ ] Módulos com nome de defesa: firewall (escudo), honeypot (isca), sensor de caça (radar), patch (reparo) #universo

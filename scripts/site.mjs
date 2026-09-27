@@ -367,6 +367,8 @@ async function check() {
     if ((await page.locator('section[aria-labelledby="hangar"] .wpn').count()) < 2) failures.push('landing: a seção do Hangar sumiu (o site não conseguiu ler o arsenal do código do jogo)');
     // Online: os números saem do código da rede (shared/net) e as etapas, do ROADMAP.
     if ((await page.locator('section[aria-labelledby="online"] .stages li').count()) < 3) failures.push('landing: a seção do multiplayer sumiu (o site não leu a rede ou a fase 4 do ROADMAP)');
+    if ((await page.locator('section[aria-labelledby="horizonte"] .feature').count()) !== 5) failures.push('landing: a seção de ideias futuras sumiu ou não tem os cinco conceitos registrados');
+    if (await page.locator('section[aria-labelledby="horizonte"] .kicker').textContent() !== '// ideias em estudo · sem data prometida') failures.push('landing: ideias futuras precisam estar marcadas como estudo sem data prometida');
     // Abertura da marca: roda na primeira visita da sessão e sai da frente sozinha (senão cobre o botão).
     if (!(await page.evaluate(() => sessionStorage.getItem('cybermech.intro') === '1'))) failures.push('landing: a abertura da marca não rodou');
     await page.waitForFunction(() => !document.getElementById('intro'), null, { timeout: 8000 });
