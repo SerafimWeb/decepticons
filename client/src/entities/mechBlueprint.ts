@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE } from '../core/palette';
 import type { LegRig, MechRig } from './MechBase';
-import { batchRigMeshes, beveledBox, box, cyl, group } from './meshKit';
+import { batchRigMeshes, beveledBox, box, cyl, group, heatVapor } from './meshKit';
 
 /** Parâmetros visuais apenas; não altera colisão, massa, vida, calor ou armas da simulação. */
 export interface MechBlueprint {
@@ -101,6 +101,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
 
   const torso = group(pelvis, 0, 0.3 * scale, 0);
   torso.name = 'torso';
+  const updateVapor = heatVapor(torso, blueprint.backPack.width * 0.32, torsoD * 0.78 + blueprint.backPack.depth * 0.5 + 0.08 * scale);
   beveledBox(torso, torsoW, torsoH, torsoD, Math.min(torsoW, torsoH, torsoD) * 0.055, M.armor, 0, torsoH * 0.68, 0);
   beveledBox(torso, torsoW * 1.04, 0.2 * scale, torsoD * 1.04, 0.07 * scale, M.paint, 0, torsoH * 1.18, 0);
   box(torso, torsoW * 0.62, 0.12 * scale, 0.06 * scale, M.visor, 0, torsoH * 0.78, -torsoD * 0.53);
@@ -153,11 +154,16 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const leftMuzzle = group(leftArm, 0, -blueprint.arms.upperLength * 1.5, -blueprint.arms.forearmDepth * 0.8);
 
   const batchedMaterial = batchRigMeshes(model, [M.armor, M.paint]);
+  const setHeatVisual = (dt: number, heat: number, overheated: boolean, coolingBoost: boolean): void => {
+    const setHeat = batchedMaterial.userData.setHeat;
+    if (typeof setHeat === 'function') setHeat(Math.max(0, (heat - 0.65) / 0.35) * (overheated ? 0.62 : 0.52));
+    updateVapor(dt, heat, overheated, coolingBoost);
+  };
   model.userData.blueprint = blueprint.id;
   model.scale.setScalar(scale);
   return {
     model, pelvis, torso, head, leftArm, rightArm, leftLeg, rightLeg, muzzle, leftMuzzle,
     thrusters, thrusterMaterial: batchedMaterial, setDashVisual: batchedMaterial.userData.setDash,
-    hullMaterials: [batchedMaterial], hipHeight,
+    hullMaterials: [batchedMaterial], hipHeight, setHeatVisual,
   };
 }

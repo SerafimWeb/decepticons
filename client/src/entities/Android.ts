@@ -3,7 +3,7 @@ import type { Loadout } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
 import { ANDROID_STATS } from './chassis';
 import { MechBase, type LegRig, type MechRig, type MechStats } from './MechBase';
-import { batchRigMeshes, box, cyl, group } from './meshKit';
+import { batchRigMeshes, box, cyl, group, heatVapor } from './meshKit';
 
 /** Os números do andróide ficam em `chassis.ts` (sem 3D: o servidor e o site leem de lá). */
 export { ANDROID_STATS };
@@ -39,6 +39,7 @@ function buildRig(paint: number, visor: number, tool: AndroidTool, height: numbe
 
   // Tronco em casco claro, faixa acesa no peito e mochila de baterias.
   const torso = group(pelvis, 0, 0.1, 0);
+  const updateVapor = heatVapor(torso, 0.18, 0.31);
   box(torso, 0.46, 0.55, 0.28, M.shell, 0, 0.32, 0);
   box(torso, 0.3, 0.05, 0.02, M.visor, 0, 0.44, -0.15);
   box(torso, 0.32, 0.32, 0.14, M.frame, 0, 0.32, 0.2);
@@ -80,6 +81,11 @@ function buildRig(paint: number, visor: number, tool: AndroidTool, height: numbe
   }
 
   const batchedMaterial = batchRigMeshes(model, [M.shell]);
+  const setHeatVisual = (dt: number, heat: number, overheated: boolean, coolingBoost: boolean): void => {
+    const setHeat = batchedMaterial.userData.setHeat;
+    if (typeof setHeat === 'function') setHeat(Math.max(0, (heat - 0.65) / 0.35) * (overheated ? 0.62 : 0.52));
+    updateVapor(dt, heat, overheated, coolingBoost);
+  };
   // As juntas animam em coordenadas do modelo (quadril em HIP); a escala vale para tudo abaixo dele.
   model.scale.setScalar(height / MODEL_HEIGHT);
   return {
@@ -97,6 +103,7 @@ function buildRig(paint: number, visor: number, tool: AndroidTool, height: numbe
     thrusterMaterial: batchedMaterial,
     hullMaterials: [batchedMaterial],
     hipHeight: HIP,
+    setHeatVisual,
   };
 }
 

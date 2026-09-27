@@ -86,6 +86,46 @@ export function group(parent: THREE.Object3D, x = 0, y = 0, z = 0): THREE.Group 
   return g;
 }
 
+/** Pequena nuvem de vapor fixa no rig; geometria/material são criados uma vez e só alternam opacity. */
+export function heatVapor(parent: THREE.Object3D, width: number, rearZ: number): (dt: number, heat: number, overheated: boolean, coolingBoost: boolean) => void {
+  const positions = new Float32Array([
+    -width, 0.65, rearZ, -width * 0.33, 0.85, rearZ, width * 0.33, 0.72, rearZ, width, 0.92, rearZ,
+  ]);
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({
+    color: 0xffdfbd, size: 0.36, transparent: true, opacity: 0,
+    depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true,
+  });
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <color_fragment>',
+      '#include <color_fragment>\nfloat vaporEdge = distance(gl_PointCoord, vec2(0.5));\ndiffuseColor.a *= 1.0 - smoothstep(0.12, 0.5, vaporEdge);',
+    );
+  };
+  material.customProgramCacheKey = () => 'cybermech-heat-vapor-v1';
+  const vapor = new THREE.Points(geometry, material);
+  vapor.frustumCulled = false;
+  vapor.visible = false;
+  parent.add(vapor);
+  let shown = -1;
+  let phase = 0;
+  return (dt, heat, overheated, coolingBoost) => {
+    const intensity = overheated ? (coolingBoost ? 0.58 : 0.32) : 0;
+    const next = intensity === 0 ? 0 : intensity * Math.min(1, Math.max(0, (heat - 0.8) * 3));
+    if (Math.abs(next - shown) >= 0.025) {
+      shown = next;
+      material.opacity = next;
+      vapor.visible = next > 0.02;
+    }
+    if (next > 0.02) {
+      phase = (phase + dt * 0.45) % 1;
+      for (let i = 0; i < 4; i++) positions[i * 3 + 1] = 0.65 + ((phase + i * 0.25) % 1) * 0.5;
+      geometry.attributes.position.needsUpdate = true;
+    }
+  };
+}
+
 /**
  * Combina as malhas estáticas filhas de cada pivô articulado. Cada pivô vira um draw call,
  * mantendo materiais por vértice (cor, metal, rugosidade e emissão) e a visibilidade da peça.
@@ -98,22 +138,25 @@ export function batchRigMeshes(root: THREE.Object3D, hullMaterials: readonly THR
   // Preto de saída: `new THREE.Color()` nasce branco, e o casco brilhava branco até o primeiro dano.
   const flash = { value: new THREE.Color(0, 0, 0) };
   const dash = { value: 1 };
+  const heat = { value: 0 };
 
   material.onBeforeCompile = (shader) => {
     shader.uniforms.mechHitFlashColor = flash;
     shader.uniforms.mechDashScale = dash;
+    shader.uniforms.mechHeatGlow = heat;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nattribute float mechHull;\nattribute float mechDash;\nattribute float mechRoughness;\nattribute float mechMetalness;\nattribute vec3 mechEmission;\nvarying float vMechHull;\nvarying float vMechDash;\nvarying float vMechRoughness;\nvarying float vMechMetalness;\nvarying vec3 vMechEmission;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMechHull = mechHull;\nvMechDash = mechDash;\nvMechRoughness = mechRoughness;\nvMechMetalness = mechMetalness;\nvMechEmission = mechEmission;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform vec3 mechHitFlashColor;\nuniform float mechDashScale;\nvarying float vMechHull;\nvarying float vMechDash;\nvarying float vMechRoughness;\nvarying float vMechMetalness;\nvarying vec3 vMechEmission;')
+      .replace('#include <common>', '#include <common>\nuniform vec3 mechHitFlashColor;\nuniform float mechDashScale;\nuniform float mechHeatGlow;\nvarying float vMechHull;\nvarying float vMechDash;\nvarying float vMechRoughness;\nvarying float vMechMetalness;\nvarying vec3 vMechEmission;')
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = vMechRoughness;')
       .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = vMechMetalness;')
-      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vMechEmission * mix(1.0, mechDashScale, vMechDash) + mechHitFlashColor * vMechHull;');
+      .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vMechEmission * mix(1.0, mechDashScale, vMechDash) + mechHitFlashColor * vMechHull + vec3(1.0, 0.18, 0.015) * mechHeatGlow * vMechHull;');
   };
-  material.customProgramCacheKey = () => 'cybermech-articulated-batch-v1';
+  material.customProgramCacheKey = () => 'cybermech-articulated-batch-v2';
   material.userData.setHitFlash = (value: number) => flash.value.setRGB(value * 1.4, value * 0.35, value * 0.2);
   material.userData.setDash = (active: boolean) => { dash.value = active ? 7 : 1; };
+  material.userData.setHeat = (value: number) => { heat.value = value; };
 
   const mergePart = (parent: THREE.Object3D): void => {
     for (const child of [...parent.children]) mergePart(child);

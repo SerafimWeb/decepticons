@@ -123,6 +123,7 @@
 - [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux
 - [ ] Medir o FPS num notebook com GPU integrada, com o painel de desempenho (pré-requisito do multiplayer; dono) #desempenho
 - [x] Render dos robôs: 9 draw calls por Vector-09 e por andróide, uma malha combinada por pivô articulado (antes ~34), com as peças ainda destacáveis (Codex, PR #43) #desempenho
+- [x] Sinais visuais de calor no rig: emissivo progressivo e vapor no superaquecimento, sem alocação por frame e até 10 draw calls (Codex; check verde) #mechs
 - [x] FX: explosões, impactos, fumaça e destroços com escala animada; pool explícito de 3000 partículas sem alocação por frame #desempenho
 
 ## 🟠 FASE 4 — Multiplayer autoritativo

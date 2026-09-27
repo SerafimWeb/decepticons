@@ -80,6 +80,8 @@ export interface MechRig {
   thrusters: THREE.Object3D[];
   thrusterMaterial: THREE.MeshStandardMaterial;
   setDashVisual?: (active: boolean) => void;
+  /** Atualiza sinais visuais de calor sem tocar na simulação. */
+  setHeatVisual?: (dt: number, heat: number, overheated: boolean, coolingBoost: boolean) => void;
   /** Materiais do casco (por instância): piscam quando o Mech toma dano. */
   hullMaterials: THREE.MeshStandardMaterial[];
   hipHeight: number;
@@ -648,6 +650,8 @@ export abstract class MechBase {
 
     if (r.setDashVisual) r.setDashVisual(this.isDashing);
     else r.thrusterMaterial.emissiveIntensity = this.isDashing ? 14 : 2;
+
+    r.setHeatVisual?.(dt, this.heat, this.overheated, this.coolingBoost);
 
     // Flash de dano no casco: só escreve no material quando o valor muda.
     this.hitFlash = Math.max(0, this.hitFlash - dt * 6);
