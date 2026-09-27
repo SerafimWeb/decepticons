@@ -351,6 +351,11 @@ async function check() {
     const arqEdges = await page.locator('.arq .edge').count();
     if (arqMods < 10) failures.push(`oficina: o mapa da arquitetura saiu com ${arqMods} módulos`);
     if (arqEdges < 20) failures.push(`oficina: o mapa da arquitetura saiu com ${arqEdges} ligações`);
+    // A saúde técnica, lida do repositório no build: os indicadores e a lista de onde ainda falta teste.
+    const saudeCards = await page.locator('.saude .read').count();
+    const saudeRows = await page.locator('.saude tbody tr').count();
+    if (saudeCards < 4) failures.push(`oficina: a saúde técnica saiu com ${saudeCards} indicadores`);
+    if (saudeRows < 1) failures.push('oficina: a saúde técnica saiu sem a lista dos módulos sem teste');
     // Landing na raiz: é por ela que se entra no jogo.
     await page.goto(base);
     const title = await page.title();

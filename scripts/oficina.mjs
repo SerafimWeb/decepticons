@@ -7,9 +7,10 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { arquitetura, entregas, jogo, marcos, porModulo } from './site/dados.mjs';
+import { arquitetura, entregas, jogo, marcos, porModulo, saudeTecnica } from './site/dados.mjs';
 import { GRAFO_CSS, grafoOficina } from './site/grafo.mjs';
 import { CHART_CSS, divergingBars, heatTable, lineChart, nf, pct, rankBars } from './site/graficos.mjs';
+import { saudeOficina } from './site/saude.mjs';
 import { esc, pagina, topo } from './site/tema.mjs';
 
 const argv = process.argv.slice(2);
@@ -17,7 +18,10 @@ const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : '
 const m = marcos();
 const game = await jogo();
 // O mapa da arquitetura: módulos, testes e frentes (arquitetura()) e a equipe de cada frente (das etiquetas dos PRs).
-const grafo = grafoOficina(arquitetura(), porModulo(entregas().prs));
+// A mesma leitura do repositório alimenta a saúde técnica: testes por módulo, onde falta teste e o orçamento de banda.
+const arq = arquitetura();
+const grafo = grafoOficina(arq, porModulo(entregas().prs));
+const saude = saudeOficina(saudeTecnica(arq, game));
 
 function build() {
   const { weapons: W, balance: B, heat: H, vector: V, android: A } = game;
@@ -218,6 +222,8 @@ function build() {
       <tbody>${chassisRows.join('')}</tbody>
     </table></div>
   </section>
+
+  ${saude}
 
   <section class="method frame" aria-labelledby="metodo">
     <h2 id="metodo">Como a bancada mede</h2>

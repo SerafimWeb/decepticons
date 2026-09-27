@@ -713,6 +713,45 @@ export function porModulo(prs) {
   return out;
 }
 
+/**
+ * A saúde técnica do repositório, medida dele mesmo: quantos testes travam as regras, em quantos módulos,
+ * onde falta teste próprio, quantas conversões forçadas o tipo não garante e o que resta do orçamento de
+ * banda (das constantes de `shared/net/`, a mesma conta que os testes travam). Nada digitado à mão.
+ */
+export function saudeTecnica(arq, game) {
+  const semTeste = arq.nodes
+    .filter((n) => n.tests === 0)
+    .sort((a, b) => b.loc - a.loc)
+    .map((n) => ({ id: n.id, frente: MOD_FRENTE[n.id] ?? 'base', files: n.files, loc: n.loc }));
+
+  let forcados = 0;
+  let arquivosTs = 0;
+  const conta = (dir) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) conta(p);
+      else if (e.name.endsWith('.ts')) {
+        arquivosTs++;
+        forcados += (read(p).match(/as unknown as/g) ?? []).length;
+      }
+    }
+  };
+  for (const r of ['client/src', 'shared', 'server']) if (existsSync(r)) conta(r);
+
+  return {
+    testes: arq.nodes.reduce((s, n) => s + n.tests, 0),
+    modulos: arq.nodes.length,
+    arquivos: arq.files,
+    linhas: arq.nodes.reduce((s, n) => s + n.loc, 0),
+    comTeste: arq.nodes.length - semTeste.length,
+    semTeste,
+    forcados,
+    arquivosTs,
+    net: game?.net ?? null,
+    benchTests: game?.benchTests ?? null,
+  };
+}
+
 /** Versão (última tag), commit atual e dia do projeto. */
 export function marcos() {
   const first = git('log', '--reverse', '--format=%cs').split('\n')[0] || null;

@@ -2,6 +2,13 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] A saúde técnica vira seção da oficina (e uma correção minha, R17)
+**Pedido (mensagem do Gemini, repassada pelo dono):** "Qwen, prepare o relatório de saúde técnica e integre ao Obsidian."
+**Decisão (Qwen):** o Obsidian não existe mais como plano — o dono o descartou em favor do grafo como camada visual (a pendência saiu do `ESTADO_ATUAL.md` no PR #82). O relatório virou **seção da oficina** (`/oficina/`, "O que o projeto prova sobre si mesmo"), com **dado gerado no build, não digitado**: `saudeTecnica()` lê o repositório (os testes por módulo do `arquitetura()` e os indicadores de rede do `shared/net/`) e conta as **conversões forçadas** (`as unknown as`) no fonte; `scripts/site/saude.mjs` desenha. O `site --check` passa a conferir a seção (indicadores e a lista), então ela não pode sair vazia no deploy. Publica junto com a bancada e não envelhece.
+**Primeiros números publicados:** **214 testes** em 19 módulos, **12 dos 19 com teste próprio (63%)** — a lista dos 7 sem teste fica à vista de propósito, como bússola de onde uma regra nova entra sem rede; **19 bytes por robô a 20 Hz**, sala cheia em **6,2 KB/s dos 8,0** da meta (cabem 15 unidades antes de delta); **28 conversões forçadas em 117 arquivos TypeScript** — o débito que a seção 9 do `MULTIPLAYER.md` vigia, agora contado em número.
+**Correção (R17):** a entrada desta mesma data sobre o drone na banda saiu com **15 unidades** e **6,8 KB/s** — erro de soma meu (`ROOM_UNITS = 8 + 3 + 1 = 12`) contra a medição que o próprio `MULTIPLAYER.md` já registrava (12 unidades, **6,2 KB/s no total**, estado + eventos). A conclusão não muda — um drone por jogador (+3,6 KB/s) continua não cabendo —, mas os números foram corrigidos no `METAGAME.md` § 8.1 e no `ESTADO_ATUAL.md`. Remédio para a causa: a partir de agora a banda tem um lugar onde é **medida** (a oficina), não estimada de cabeça.
+**Quem decidiu:** dono (o pedido); Qwen (o formato, a implementação e a correção).
+
 ## [2026-09-27] O drone na banda, e os elementos do cenário (torres, zonas, pilotagem)
 **Pedido do dono:** "mas será q o drone vai pesar tanto? e como fazemos pra melhorar esse consumo então, pois os drones eu acho que serão um diferencial excelente… quero também que tenhamos outros elementos (turrets, zonas de regeneração, zonas de resfriamento onde o robô possa ficar atirando sem aquecer tanto), quero também que os andróides possam entrar e sair dos bots" — mais a **entrada dos bots no cenário** (ideia já mandada por ele ao Codex) e a lembrança de que no STERM aquilo se chamava **"balão"**, não drone.
 **Achado (Qwen), com os números do nosso código:**

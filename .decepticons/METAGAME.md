@@ -114,9 +114,10 @@ da partida definido (§ 7). Decisão de fase com o dono.
 
 Números do nosso próprio código, não estimativa: uma unidade custa **19 bytes** (`UNIT_BYTES`, `shared/net/state.ts`), o
 estado vai a **20 Hz** e a moldura do WebSocket soma 20% (`WIRE_OVERHEAD = 1.2`) → **456 B/s por unidade**. O teto é de
-**8 192 B/s** por jogador (`DOWNLOAD_BUDGET`). A sala cheia de hoje (8 Mechs + 3 andróides + o técnico = 15 unidades) gasta
-**6,8 KB/s só de estado** — sobram ~1,4 KB/s para todos os eventos da luta. Um drone por jogador seriam **+3,6 KB/s: não
-cabe**. Mas o drone não precisa custar 19 bytes nem 20 Hz:
+**8 192 B/s** por jogador (`DOWNLOAD_BUDGET`). A sala cheia de hoje (**12 unidades** — `ROOM_UNITS`: 8 Mechs, 3 andróides e o
+técnico) usa **6,2 KB/s** no total, pela própria conta do site (`downloadPerSecond`, a mesma que os testes travam): 5,3 KB/s
+de estado + ~0,9 KB/s dos eventos da luta. Sobram ~1,8 KB/s, e o código calcula que **cabem 15 unidades** antes de precisar
+de delta. Um drone por jogador seriam **+3,6 KB/s: não cabe**. Mas o drone não precisa custar 19 bytes nem 20 Hz:
 
 | Como | Efeito | Observação |
 |---|---|---|
@@ -128,8 +129,9 @@ cabe**. Mas o drone não precisa custar 19 bytes nem 20 Hz:
 
 Duas ou três dessas linhas juntas deixam o drone quase de graça em banda. O que **não** dá para fugir é o desvio de
 obstáculo e o ponto de recuo: é física nova dentro do tick, e é aí que aparece o custo de CPU — medir com a sala cheia antes
-de fixar quantos drones por partida. (A medição antiga do site falava em 6,2 KB/s na sala cheia; a conta de hoje dá 6,8 —
-quando o drone entrar, reconferir pelo `npm test`, que é quem trava o orçamento.)
+de fixar quantos drones por partida. (A conta da banda é a mesma que o `npm test` trava e a oficina publica; a primeira versão
+desta seção, em 27/09, saiu com o número errado — 15 unidades e 6,8 KB/s —, corrigido aqui: são **12 unidades** e **6,2 KB/s no
+total**. A conclusão não muda.)
 
 ## 9. Elementos do cenário, zonas e pilotagem (2026-09-27)
 
