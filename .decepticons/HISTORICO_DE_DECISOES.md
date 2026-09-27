@@ -2,6 +2,14 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] Os ícones do mapa (um por módulo) e o papel do drone decidido
+**Pedido do dono:** "a ideia do drone é que cada um sirva pra uma dessas tarefas: reconhecimento, ataque, recuperação de vida, etc. o drone pode ser na proporção dos androides, com 1 a 2 metros de largura… o drone é FRACO, os tiros dele são fracos, iguais aos do androide. prossiga com suas tarefas."
+**Decisão (Qwen + dono):**
+- **Ícones por tipo no mapa da oficina — a ideia do ABBADON, agora de verdade:** `scripts/site/grafo.mjs` ganhou um **registro módulo → ícone** (20 formas desenhadas à mão em primitivas de SVG) com queda para o ícone da frente; cada chip mostra o seu e a legenda virou icônica (o pontinho de cor saiu). Sem biblioteca e sem arquivo de imagem: ~150 bytes por ícone dentro do HTML do build, zero requisição e **zero KB no jogo** — o que no STERM exigiu React/DOM aqui sai de graça, porque o mapa é SVG gerado no build.
+- **Medido, não "achei bonito":** 19 ícones para 19 módulos, 10 na legenda e **nenhuma sobreposição** de texto ou selo (medido no Chrome); o `site --check` passa a exigir os ícones, então não somem sem ninguém notar. Captura em `.decepticons/arte/mapa-icones.png`. Ressalva honesta: **o modelo que eu rodo não lê imagem**, então o julgamento do desenho é do dono — cada forma é uma linha do registro, trocar é barato.
+- **Drone decidido:** **três classes por função** (reconhecimento, ataque, recuperação de vida), **escala dos andróides (1 a 2 m)** e **tiro fraco, o do andróide**; o valor dele é emoção e perspectiva nova, não poder de fogo. Consequências registradas no `METAGAME.md` § 8 e § 10: a função **não muda o custo na rede** (mesmo registro leve de 10 bytes a 5 Hz, § 8.2), a cura é **posicionada** (nunca vantagem comprada) e o drone **não substitui** o Mech de assalto.
+**Quem decidiu:** dono (o papel do drone e o pedido); Qwen (o desenho dos ícones, a medição e o registro).
+
 ## [2026-09-27] A banda do drone vira especificação (e a revisão cruzada do MissionHUD)
 **Pedidos (via Gemini, repassados pelo dono):** revisar o PR da interface de missões (MissionHUD); atualizar o grafo e a saúde técnica da oficina com o novo módulo e os 219 testes; detalhar no `METAGAME.md` § 8 o orçamento de banda e a técnica de sincronização dos drones.
 **Decisão (Qwen):**
