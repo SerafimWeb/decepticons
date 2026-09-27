@@ -2,6 +2,15 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] O drone na banda, e os elementos do cenário (torres, zonas, pilotagem)
+**Pedido do dono:** "mas será q o drone vai pesar tanto? e como fazemos pra melhorar esse consumo então, pois os drones eu acho que serão um diferencial excelente… quero também que tenhamos outros elementos (turrets, zonas de regeneração, zonas de resfriamento onde o robô possa ficar atirando sem aquecer tanto), quero também que os andróides possam entrar e sair dos bots" — mais a **entrada dos bots no cenário** (ideia já mandada por ele ao Codex) e a lembrança de que no STERM aquilo se chamava **"balão"**, não drone.
+**Achado (Qwen), com os números do nosso código:**
+- **O "balão" existe e a memória do dono está certa:** `DemoGraph3D.tsx:326` (`BalloonCamera`, ciclo automático com oscilação vertical suave) e o modo `'balloon'` em `HuntGraph3D.tsx:20/49`. É **câmera**, como o drone — não unidade. Nada de IA de vôo lá.
+- **Quanto pesa:** `UNIT_BYTES = 19` (`shared/net/state.ts`) × 20 Hz × `WIRE_OVERHEAD = 1.2` = **456 B/s por unidade**; o teto é `DOWNLOAD_BUDGET = 8 192 B/s`. A sala cheia de hoje (15 unidades) gasta **6,8 KB/s só de estado**. Um drone por jogador (+3,6 KB/s) **não cabe**; um drone por esquadrão, com registro curto de unidade leve, a 5 Hz e com trilha pré-calculada, fica **quase de graça**.
+- **A regra que faz o cenário caber:** só o que se move precisa de bytes por estado. Zonas de cura e de resfriamento são **volumes estáticos da arena: 0 B/s**; torres são posição fixa + estado curto; e o andróide que **entra** no Mech sai da lista de unidades — **economiza** 456 B/s enquanto está dentro (bandeira "tem piloto" no byte de flags; sobra metade dos bits).
+**Decisão (Qwen):** registrado em `METAGAME.md` — § 8.1 (a conta da banda e as cinco formas de baratear o drone) e § 9 (torres, zonas, entrar/sair do Mech e a entrada dos bots no cenário: **visual é do Codex, onde/quando nascem é do diretor do Claude**, G3/G14). A decisão de quantos drones por partida e em que fase é do dono.
+**Quem decidiu:** dono (os elementos e a prioridade); Qwen (a conta e o registro); Claude (a engenharia, quando entrar).
+
 ## [2026-09-27] O que o STERM ensina: os ícones do grafo e a ideia do drone
 **Pedido do dono:** "no /sterm-1, no motor pipeline ABBADON, o grafo 3d dele tem uma configuração muito bonita e funcional, onde usamos o ícone holográfico de um banco de dados pra representar dados, e outros ícones que façam sentido pra cada tipo de elemento no grafo (nosso obsidian)… ainda no sterm, muito tempo atrás criamos uma navegação por drone. Veja se aquele conhecimento é valido pra implementarmos aqui de alguma forma (para inserirmos drones no combate), ou introduzirmos isso no planejamento".
 **Achado (Qwen, leitura de `D:\SERAFIMHUB\sterm-1`, sem tocar em nada):**
