@@ -47,7 +47,7 @@ export class DebugPanel {
     this.setDetailed(!this.detailed);
   }
 
-  update(dt: number, tickMs: number, info: THREE.WebGLRenderer['info'], tier: number): void {
+  update(dt: number, tickMs: number, info: THREE.WebGLRenderer['info'], tier: number, debrisCount: number): void {
     if (dt > 0) this.fps += (1 / dt - this.fps) * 0.05;
     this.textTimer -= dt;
     if (this.textTimer > 0) return;
@@ -56,7 +56,9 @@ export class DebugPanel {
     const fps = Math.round(this.fps);
     this.fpsLine.textContent = `FPS   ${fps.toString().padStart(4)}`;
     this.coreLines.textContent =
-      `TICK  ${tickMs.toFixed(1).padStart(4)}ms\n` + `DRAWS ${info.render.calls.toString().padStart(4)}`;
+      `TICK  ${tickMs.toFixed(1).padStart(4)}ms\n` + 
+      `DRAWS ${info.render.calls.toString().padStart(4)}\n` +
+      `DEBRIS ${debrisCount.toString().padStart(4)}`;
     if (!this.detailed) return;
 
     this.panel.dataset.fps = fps >= 55 ? 'ok' : fps >= 30 ? 'warn' : 'bad';

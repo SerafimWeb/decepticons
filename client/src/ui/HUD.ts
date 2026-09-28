@@ -49,7 +49,7 @@ export class HUD {
   private readonly dashFill = $('dash-fill');
   private readonly stats = $('stats');
   private readonly missionStatus = $('mission-status');
-  private readonly missionSummary = $('mission-summary');
+  private readonly missionSummary = $('round-summary');
   private readonly modeLabel = $('mode');
   private readonly hitmarker = $('hitmarker');
   private readonly hitLabel = $('hit-label');
@@ -274,7 +274,7 @@ export class HUD {
     }
   }
 
-  update(dt: number, mech: MechBase, cursorX: number, cursorY: number, debrisCount: number): void {
+  update(dt: number, mech: MechBase, cursorX: number, cursorY: number): void {
     const isBlind = mech.isBlind;
     this.root.classList.toggle('blind', isBlind);
 
@@ -327,7 +327,6 @@ export class HUD {
       `VEL    ${speed.toFixed(1).padStart(5)} m/s\n` +
       `ABATES ${this.kills.toString().padStart(5)}\n` +
       `MORTES ${this.deaths.toString().padStart(5)}\n` +
-      `DEBRIS ${debrisCount.toString().padStart(5)}\n` +
       integrity;
   }
 }
