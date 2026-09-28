@@ -2,7 +2,7 @@
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
 **Última atualização:** 2026-09-28
-**Iteração atual:** Fase 5 tem Sobrevivência e CTF solo jogáveis no cliente; metagame Gemini entregue em branch (`gemini/modo-hud-audio`); servidor no ar 24 h.
+**Iteração atual:** Fase 5 — Sobrevivência e CTF solo jogáveis no cliente; MissionHUD/Seletor de Modo/CtfHud/DailyChallenges/AudioSirens na `main` (PR #103 mergeado 28/09); servidor no ar 24 h.
 
 ---
 
@@ -16,7 +16,7 @@
 |---|---|---|---|
 <<<<<<< HEAD
 | `claude/zonas-cura-resfriamento` | zonas de cura e resfriamento na arena | **#91 aberto** | 27/09 |
-| `gemini/modo-hud-audio` | Seletor de Modo, MissionHUD, CTF HUD, DailyChallenges, Efeitos Sonoros de Onda, refatoração DOM com textContent | **Pronto (push feito)** | 28/09 |
+| `gemini/modo-hud-audio` | Seletor de Modo, MissionHUD, CTF HUD, DailyChallenges, Efeitos Sonoros de Onda, refatoração DOM | **✅ #103 mergeado na `main`** | 28/09 |
 
 ---
 
