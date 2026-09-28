@@ -3,10 +3,11 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
-Última revisão: 2026-09-26
+Última revisão: 2026-09-27
 
 | Feature | Estado | Observação |
 |---|---|---|
+| Zonas de cura e resfriamento | REAL | `combat/Zone.ts`: zona de cura (+20 vida/s na parte mais avariada) e de resfriamento (ventila 0,35 calor/s direto, sem esperar o atraso do tiro), volumes fixos na arena, valem para jogadores e bots (regra do `Match.step()`, então automática no servidor também). Visual provisório (disco + anel neon, sem colisor) em `Arena.ts`. 6 testes (`Zone.test.ts`); `npm run check` verde. **Não testado pelo dono ainda.** Turres (`METAGAME.md` § 9) e o modo Sobrevivência (ondas, pedido do Gemini) seguem AUSENTES |
 | Movimento WASD (aceleração estilo arena) | REAL | engasgo da corrida corrigido em 2026-09-23; coberto por `MechBase.test.ts` |
 | Pulo duplo | REAL | Vector-09 `maxJumps: 2` |
 | Dash com cooldown | REAL | 2,5 s; FOV abre durante o dash |

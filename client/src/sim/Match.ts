@@ -7,6 +7,7 @@ import { RocketSystem } from '../combat/RocketSystem';
 import { Respawner } from '../combat/Respawner';
 import { Round } from '../combat/Round';
 import type { WeaponStats } from '../combat/weapons';
+import { ZoneSystem } from '../combat/Zone';
 import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
@@ -69,6 +70,8 @@ export class Match {
   readonly round: Round;
   /** Pisão: robô grande andando na direção de um pequeno encostado. */
   readonly crush: CrushRule;
+  /** Zonas de cura e resfriamento (vantagem tática de posicionamento, igual para os dois lados). */
+  readonly zones = new ZoneSystem();
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
   readonly pilots: Pilot[] = [];
   /** Mechs de gente (os bots caçam estes). */
@@ -200,6 +203,8 @@ export class Match {
       this.crush.tick(dt);
       this.crush.check(this.players, this.bots.mechs);
       this.crush.check(this.bots.mechs, this.players);
+      this.zones.fixedUpdate(dt, this.players);
+      this.zones.fixedUpdate(dt, this.bots.mechs);
       this.respawner.fixedUpdate(dt);
       this.projectiles.fixedUpdate(dt);
       this.rockets.fixedUpdate(dt);

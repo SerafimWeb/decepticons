@@ -105,4 +105,14 @@ export class HeatSink {
     this.idle = true;
     this.sinceSpike = 0;
   }
+
+  /**
+   * Ventilação externa (zona de resfriamento, `combat/Zone.ts`): tira calor direto, sem esperar o
+   * atraso do tiro nem exigir estar parado. Não some com o superaquecimento sozinha (`fixedUpdate`
+   * ainda decide isso pelo `heatRecover`), só reduz o calor mais rápido enquanto o Mech está na zona.
+   */
+  ventExternal(amount: number): void {
+    this.heat = Math.max(0, this.heat - amount);
+    if (this.overheated && this.heat <= this.stats.heatRecover) this.overheated = false;
+  }
 }
