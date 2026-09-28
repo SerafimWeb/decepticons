@@ -18,6 +18,26 @@
 
 ---
 
+- **A tese da diversão, da competição e da viralidade — e a peça que falta em cada uma (Qwen, 28/09).** Pedido do
+  dono: *"quero que você pense como vamos tornar o jogo mais divertido… mais competitivo… quais os diferenciais que
+  devemos explorar pra tornar o jogo mais viral"*, com três hipóteses na mesa (outros Mechs, missões na fase, novas
+  armas). Resposta em **`DIVERSAO.md`** (documento novo; análise e recomendação, **não** escopo aprovado): a tese é
+  que o diferencial do jogo **não é catálogo, é consequência**, e cada hipótese foi respondida com o código da `main`.
+  - **Legibilidade do alvo é o melhor custo/efeito:** as 6 partes, o **calor do alvo** e as bandeiras
+    `dashing`/`overheated` **já viajam no estado** (`shared/net/state.ts:8-30`, 19 B por unidade) — falta só o
+    visual (fumaça, mancar, esquema do alvo ao mirar). Ganho grande a **0 B de rede e sem regra nova**.
+  - **Os três Mechs rebeldes não têm ficha:** compartilham `VECTOR09_STATS` e diferem só na persona
+    (`BotSystem.ts:141`). Dar ficha a CLAWD/GEMINAI/CHAD-GPT é a estratégia mais barata que existe.
+  - **Cada braço aceita exatamente uma arma** (`ARM_SLOTS`, `chassis.ts:124`): o Hangar promete montagem e a decisão
+    tem quatro linhas — abrir o catálogo por encaixe vem antes de "mais armas".
+  - **Achados de progressão (R17 — registro, não conserto; `ui/` e `hangar/` são do Gemini):** `addXp()` só é
+    chamado em `claimReward()` (`ui/DailyChallenges.ts:90,138`) — **o nível não sobe jogando**; `trackWaveOrRound()`
+    (`:127`) não tem chamador — a missão de sobreviver ondas nunca progride; `validateLoadout` tem o gancho de
+    "conquistado jogando" sem chamador (`hangar/loadout.ts:70`).
+  - **Pendente do dono:** 6 decisões no § 12 (a escala 3 como encontro ou chassi; prioridade entre melhorar o que
+    existe e conteúdo novo; as fichas dos rebeldes; o modificador semanal como primeiro evento; a câmera de abate no
+    PvP; o conserto da progressão). Seis ideias entram no `ROADMAP.md` (IDEIAS) com o caminho da proposta.
+  - `npm run check` verde: **300 testes**, painel, build, budget, smoke e site.
 - **A tela inicial deixa de quebrar em duas linhas, e os botões param de disputar espaço (Claude, 28/09).**
   Pedido do dono, com captura anotada: *"corrige a tela inicial, tira os 2 botões juntos, realinha o 'como é
   feito', melhora o título"*. Causa raiz: `.title { display: block }` no `<span>` forçava "CYBER"/"MECH" em
