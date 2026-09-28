@@ -420,7 +420,8 @@ export class AudioSystem {
    */
   playAndroidStep(gain = 1): void {
     if (gain < 0.03) return;
-    if (this.playSample('step_heavy', gain * 0.7)) return;
+    // maxDuration 0,12 s: passo de andróide é bem mais rápido que o do Mech
+    if (this.playSample('step_heavy', gain * 0.7, 1, 0.12)) return;
     const { ctx, masterGain } = this;
     if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer) return;
 
@@ -515,7 +516,8 @@ export class AudioSystem {
    */
   playStep(gain = 1): void {
     if (gain < 0.02) return;
-    if (this.playSample('step_mech', gain * 0.8)) return;
+    // maxDuration 0,25 s: impede sobreposição de tails quando o Mech anda (eco)
+    if (this.playSample('step_mech', gain * 0.8, 1, 0.25)) return;
     const { ctx, masterGain } = this;
     if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer) return;
 
