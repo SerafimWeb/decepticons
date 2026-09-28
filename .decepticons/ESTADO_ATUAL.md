@@ -14,11 +14,17 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-<<<<<<< HEAD
 | `claude/zonas-cura-resfriamento` | zonas de cura e resfriamento na arena | **#91 aberto** | 27/09 |
-| `gemini/modo-hud-audio` | Seletor de Modo, MissionHUD, CTF HUD, DailyChallenges, Efeitos Sonoros de Onda, refatoração DOM com textContent | **Pronto (push feito)** | 28/09 |
+| `gemini/modo-hud-audio` | Seletor de Modo, MissionHUD, CTF HUD, DailyChallenges, Efeitos Sonoros de Onda | **Pronto (push feito)** | 28/09 |
+| `gemini/integracao-audio-samples` | Integração completa de arquivos reais de áudio (.wav/.mp3) no AudioSystem | **Pronto** | 28/09 |
 
 ---
+
+- **Integração de Samples Reais de Áudio (Gemini, 28/09):**
+  - **Mapeamento e Padronização**: Renomeados 11 samples gerados via ElevenLabs em `client/public/audio/` para nomes padronizados (`logo_serafim.mp3`, `ui_transition.mp3`, `shot_plasma.wav`, `hit.mp3`, `ambient_bram.mp3`, `step_mech.mp3`, etc).
+  - **Carregador de Buffers (`AudioSystem.ts`)**: Implementado `loadSample()` e mapa de `pendingBuffers`. Agora o sistema suporta buscar `.wav`/`.mp3` via rede, sem bloquear a UI.
+  - **Fallback Procedural (Design Híbrido)**: Todos os métodos sonoros principais (`playShot`, `playHit`, `playStep`, `playAndroidShot`, `playAndroidStep`) ganharam `playSample(nome)`. Se o áudio não foi baixado, o jogo recai no sintetizador procedural original para economizar CPU.
+  - **Vinhetas e Transições (`BrandSplash.ts` e `Game.ts`)**: Vinheta `playLogoSerafim()` executada na entrada da Serafim Web (com fallback extraído do `playBrandSting`). Sons de UI (`playUiTransition()`) disparados no botão de mudança de modos (Arena/Sobrevivência). Som de Bram ambiental (`ambient_bram.mp3`) ativado no gancho `onWaveStart`.
 
 - **Seletor de Modos, MissionHUD Conectado, CTF HUD, Missões Diárias e UI Online (Gemini, 27/09):**
   - **Fiação & Ativação no Jogo (`Game.ts`)**: `ModeSelector` e `DailyChallenges` integrados ao menu `#overlay`, abrindo automaticamente o briefing do `MissionHUD` ao selecionar Sobrevivência ou pressionar atalho tático (`KeyM`/`KeyB`). Contabilização automática de dano e abates para missões diárias.

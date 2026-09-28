@@ -174,6 +174,19 @@ export class Game {
     container: HTMLElement,
     physics: PhysicsWorld,
   ) {
+    // Carrega samples de áudio (assíncrono)
+    this.audio.loadSample('logo_serafim', './audio/logo_serafim.mp3');
+    this.audio.loadSample('ui_transition', './audio/ui_transition.mp3');
+    this.audio.loadSample('ui_bass', './audio/ui_bass.mp3');
+    this.audio.loadSample('ambient_bram', './audio/ambient_bram.mp3');
+    this.audio.loadSample('ambient_action', './audio/ambient_action.mp3');
+    this.audio.loadSample('shot_plasma', './audio/shot_plasma.wav');
+    this.audio.loadSample('shot_heavy', './audio/shot_heavy.mp3');
+    this.audio.loadSample('shot_futuristic', './audio/shot_futuristic.wav');
+    this.audio.loadSample('hit', './audio/hit.mp3');
+    this.audio.loadSample('step_mech', './audio/step_mech.mp3');
+    this.audio.loadSample('step_heavy', './audio/step_heavy.mp3');
+
     // --- Render ---
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(maxPixelRatio());
@@ -604,7 +617,10 @@ export class Game {
       this.audio.playExplosion(dist);
     };
     this.match.onRoundStart = () => this.startRound();
-    this.match.onWaveStart = (wave, total, _mechs, _androids, title) => this.hud.setMissionWave(wave, total, title);
+    this.match.onWaveStart = (wave, total, _mechs, _androids, title) => {
+      this.hud.setMissionWave(wave, total, title);
+      this.audio.playAmbientBram();
+    };
     this.match.onWaveProgress = (wave, killed, total, elapsedS) => this.hud.setMissionProgress(wave, killed, total, elapsedS);
     this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
     this.match.onMissionEnd = (survived, waveReached, stats) => {
@@ -717,7 +733,7 @@ export class Game {
       this.brandShown = true;
       this.audio.resume();
       this.hud.setPaused(false);
-      this.splash.play(this.audio.output, () => this.afterBrand());
+      this.splash.play(() => this.audio.playLogoSerafim(), () => this.afterBrand());
     }
     if (this.input.touchMode) {
       this.enterFullscreen();
@@ -732,6 +748,7 @@ export class Game {
     button.textContent = `[ MODO: ${label} · TROCAR ]`;
     button.addEventListener('click', (event) => {
       event.stopPropagation();
+      this.audio.playUiTransition();
       const url = new URL(location.href);
       if (this.gameMode === 'deathmatch') {
         url.searchParams.set('modo', 'survival');

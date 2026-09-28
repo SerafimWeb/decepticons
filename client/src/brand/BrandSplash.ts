@@ -1,5 +1,3 @@
-import { playBrandSting } from './sting';
-
 /** Quanto a vinheta fica na tela (ms). */
 const DURATION_MS = 1900;
 /** O mesmo clique que abriu a vinheta não pode pulá-la. */
@@ -42,8 +40,8 @@ export class BrandSplash {
     window.addEventListener('keydown', skip, true);
   }
 
-  /** Mostra a vinheta; `audio` = saída do jogo (sem ela, só a imagem). Chama `onDone` no fim. */
-  play(audio: { ctx: AudioContext; out: AudioNode } | null, onDone: () => void): void {
+  /** Mostra a vinheta. `playAudio` é um callback para acionar o som (ex: samples). Chama `onDone` no fim. */
+  play(playAudio: (() => void) | null, onDone: () => void): void {
     this.onDone = onDone;
     this.running = true;
     this.startedAt = performance.now();
@@ -51,7 +49,7 @@ export class BrandSplash {
     this.root.classList.remove('on');
     void this.root.offsetWidth;
     this.root.classList.add('on');
-    if (audio) playBrandSting(audio.ctx, audio.out);
+    if (playAudio) playAudio();
     this.timer = window.setTimeout(() => this.finish(), DURATION_MS);
   }
 

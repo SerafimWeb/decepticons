@@ -13,6 +13,8 @@
  *    ou desconectado).
  */
 
+import { playBrandSting } from '../brand/sting';
+
 /** Frequência de corte do filtro passa-baixa do ruído (ms padrão). */
 const NOISE_CUTOFF = 2200;
 
@@ -38,6 +40,10 @@ export class AudioSystem {
   /** Buffer de ruído branco pré-gerado (reutilizado em impacto e explosão). */
   private noiseBuffer: AudioBuffer | null = null;
 
+  /** Samples de áudio carregados via fetch (.mp3, .wav) */
+  private samples: Map<string, AudioBuffer> = new Map();
+  private pendingBuffers: Map<string, ArrayBuffer> = new Map();
+
   // ── Inicialização (preguiçosa, na primeira interação) ──────────────────────
 
   /**
@@ -54,7 +60,58 @@ export class AudioSystem {
     this.masterGain.gain.value = this.masterVolume;
     this.masterGain.connect(this.ctx.destination);
     this.noiseBuffer = makeNoiseBuffer(this.ctx);
+
+    for (const [name, data] of this.pendingBuffers) {
+      this.ctx.decodeAudioData(data)
+        .then(buf => this.samples.set(name, buf))
+        .catch(err => console.warn(`[AudioSystem] Erro ao decodificar ${name}:`, err));
+    }
+    this.pendingBuffers.clear();
   }
+
+  /**
+   * Inicia o carregamento de um sample de áudio.
+   * Não bloqueia a thread.
+   */
+  loadSample(name: string, url: string): void {
+    fetch(url)
+      .then(res => res.arrayBuffer())
+      .then(data => {
+        if (this.ctx) {
+          this.ctx.decodeAudioData(data)
+            .then(buf => this.samples.set(name, buf))
+            .catch(err => console.warn(`[AudioSystem] Erro ao decodificar ${name}:`, err));
+        } else {
+          this.pendingBuffers.set(name, data);
+        }
+      })
+      .catch(err => console.warn(`[AudioSystem] Erro ao baixar sample ${name}:`, err));
+  }
+
+  /**
+   * Toca um sample carregado, se existir. 
+   * Retorna true se tocou (evitando a síntese procedural).
+   */
+  private playSample(name: string, gain = 1, pitch = 1): boolean {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return false;
+    
+    const buffer = this.samples.get(name);
+    if (!buffer) return false;
+
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.playbackRate.value = pitch;
+    
+    const ng = ctx.createGain();
+    ng.gain.value = gain;
+    
+    src.connect(ng);
+    ng.connect(masterGain);
+    src.start(ctx.currentTime);
+    return true;
+  }
+
 
   /** Contexto e saída com o volume mestre, para sons fora da partida (vinheta da marca). Null antes do primeiro gesto. */
   get output(): { ctx: AudioContext; out: AudioNode } | null {
@@ -67,6 +124,24 @@ export class AudioSystem {
     if (this.masterGain) this.masterGain.gain.value = v;
   }
 
+  // ── Sons de Interface / Transição ──────────────────────────────────────────
+
+  playLogoSerafim(): void {
+    if (this.playSample('logo_serafim')) return;
+    if (this.ctx && this.masterGain && this.enabled) {
+      playBrandSting(this.ctx, this.masterGain);
+    }
+  }
+
+  playUiTransition(): void {
+    if (this.playSample('ui_transition')) return;
+    this.playCountdownBeep(false); // Fallback
+  }
+
+  playAmbientBram(): void {
+    this.playSample('ambient_bram', 0.5);
+  }
+
   // ── Sons de jogabilidade ───────────────────────────────────────────────────
 
   /**
@@ -75,6 +150,7 @@ export class AudioSystem {
    * ruído com decay ultrarrápido (\"crack\" metálico) + squelch de rádio.
    */
   playShot(): void {
+    if (this.playSample('shot_plasma', 0.8)) return;
     const { ctx, masterGain } = this;
     if (!ctx || !masterGain || !this.enabled) return;
 
@@ -129,6 +205,7 @@ export class AudioSystem {
    * Ruído filtrado com decay curto + pequeno bipe de confirmação.
    */
   playHit(): void {
+    if (this.playSample('hit', 0.6)) return;
     const { ctx, masterGain } = this;
     if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer) return;
 
@@ -300,6 +377,7 @@ export class AudioSystem {
   playAndroidShot(gain = 1): void {
     const { ctx, masterGain } = this;
     if (!ctx || !masterGain || !this.enabled || gain < 0.03) return;
+    if (this.playSample('shot_futuristic', gain * 0.5)) return;
 
     const now = ctx.currentTime;
     
@@ -324,8 +402,10 @@ export class AudioSystem {
    * PASSO DO ANDRÓIDE — passos leves e metálicos rápidos.
    */
   playAndroidStep(gain = 1): void {
+    if (gain < 0.03) return;
+    if (this.playSample('step_heavy', gain * 0.7)) return;
     const { ctx, masterGain } = this;
-    if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer || gain < 0.03) return;
+    if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer) return;
 
     const now = ctx.currentTime;
 
@@ -417,8 +497,10 @@ export class AudioSystem {
    * Chamado no evento de passo (`MechBase.onFootstep`). `gain` 0..1: força do passo × distância até o jogador.
    */
   playStep(gain = 1): void {
+    if (gain < 0.02) return;
+    if (this.playSample('step_mech', gain * 0.8)) return;
     const { ctx, masterGain } = this;
-    if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer || gain < 0.02) return;
+    if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer) return;
 
     const now = ctx.currentTime;
 
