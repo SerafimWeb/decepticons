@@ -148,6 +148,14 @@ costas no meio da arena, com prédios e bots atrás; o andróide aparecia como d
    bancada da oficina com a hora de cada tiro: cadência, carregador, calor e trava). A tela conta tempo, tiros, dano e o
    calor subindo até travar; no fim, o resumo. Os atalhos 1 a 4 embaixo do pedestal: vazio salva a montagem da tela,
    cheio carrega (teclas 1 a 4), `SALVAR` sobrescreve; salvos em `cybermech.hangar.presets.v1`, validados na leitura.
+4. **Treino manual de mira (Codex, em branch; não publicado):** `◎ TREINO DE MIRA · ALVO MÓVEL` captura o mouse e usa
+   o mesmo `CameraRig`/sensibilidade do jogo, com um andróide de escala 1 andando de lado a lado, sem atacar nem
+   receber dano de combate. Segurar o botão esquerdo dispara no ritmo da arma selecionada; o raio da câmera só mede
+   acerto no alvo e alimenta o contador local (disparos, acertos, precisão). `Esc` libera o mouse e retorna ao Hangar.
+   Não substitui o teste balístico de 4 s: não simula dano, calor, dispersão nem projétil em física. O modelo usa a
+   animação procedural já existente; movimento determinístico a 2,4 m/s numa faixa de 9 m. Pool de tiros e flashes
+   existente, zero objetos por quadro; custo extra de render só durante o Hangar/treino (+o rig do Android, oculto
+   fora do treino). Toque não oferece este modo: continua usando o teste de disparo.
 
 **Critérios de aceite de cada camada:** captura de tela no PR (computador e celular), sem erro no console, o jogo
 offline e online iguais ao de antes, e nenhum custo por quadro com o Hangar fechado.
@@ -179,3 +187,6 @@ com o jogo pausado.
 - Colossus-01: chassi pesado do Hangar (escala 2) ou máquina de cerco (escala 3)?
 - Nível liberado vale para todas as armas daquele tipo, ou cada arma sobe separado?
 - No multiplayer, salas separadas por nível de Hangar, ou todos juntos (o orçamento de carga já equilibra)?
+
+
+O treino móvel aceita somente armas de tiro; a motosserra continua coberta pelo teste de disparo existente.

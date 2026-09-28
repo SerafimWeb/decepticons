@@ -7,6 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { CameraRig } from '../camera/CameraRig';
+import type { CameraModeId } from '../camera/CameraMode';
 import type { CombatSystem } from '../combat/CombatSystem';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import type { RocketSystem } from '../combat/RocketSystem';
@@ -141,6 +142,8 @@ export class Game {
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
   private readonly hangarMenu: HangarMenu;
+  private aimPracticeInterval = 0.18;
+  private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
   private readonly renderPass: RenderPass;
   private accumulator = 0;
   private last = -1;
@@ -315,6 +318,31 @@ export class Game {
       status: () => (online ? `ONLINE · SALA ${online.room}` : 'OFFLINE'),
       test: (data, arm) => this.hangarScene?.startTest(data, arm),
       stopTest: () => this.hangarScene?.stopTest(),
+      aimPractice: (w) => {
+        this.savedPracticeLook = { yaw: this.rig.look.yaw, pitch: this.rig.look.pitch, mode: this.rig.mode.id };
+        this.aimPracticeInterval = w.fireInterval;
+        if (!this.rig.mode.pointerLock) {
+          this.rig.setMode('tps');
+          this.hud.setMode(this.rig.mode);
+        }
+        this.rig.look.yaw = 0;
+        this.rig.look.pitch = -0.14;
+        this.hangarScene?.startAimPractice();
+        this.input.requestLock();
+      },
+      canAimPractice: () => !this.input.touchMode,
+      stopAimPractice: () => {
+        this.hangarScene?.stopAimPractice();
+        const previous = this.savedPracticeLook;
+        if (previous) {
+          this.rig.setMode(previous.mode);
+          this.rig.look.yaw = previous.yaw;
+          this.rig.look.pitch = previous.pitch;
+          this.hud.setMode(this.rig.mode);
+          this.savedPracticeLook = null;
+        }
+        this.input.exitLock();
+      },
     });
     new PilotSwitch(this.hangar);
     new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null);
@@ -533,6 +561,10 @@ export class Game {
     // Resume do AudioContext na primeira interação (exigência dos navegadores)
     document.getElementById('overlay')!.addEventListener('click', () => this.audio.resume(), { once: true });
     input.onLockChange = (locked) => {
+      if (this.hangarMenu?.isAimTraining) {
+        if (!locked) this.hangarMenu.endAimPractice(false);
+        return;
+      }
       if (locked) this.startPlaying();
       else if (rig.mode.pointerLock) this.setPlaying(false);
     };
@@ -702,6 +734,10 @@ export class Game {
     if (this.hangarView) {
       const hs = this.hangarScene!;
       hs.update(dt);
+      if (this.hangarMenu.isAimTraining) {
+        hs.updateAimPractice(dt, this.rig.look.yaw, this.rig.look.pitch, this.input.mouseDown, this.aimPracticeInterval);
+        this.hangarMenu.aimPracticeFrame(hs.aimPracticeTime, hs.aimPracticeShots, hs.aimPracticeHits, hs.aimPracticeAccuracy);
+      }
       const w = window.innerWidth;
       const h = window.innerHeight;
       this.hangarMenu.placeHotspots(hs.armScreen('rightArm', w, h, _hotRight) ? _hotRight : null, hs.armScreen('leftArm', w, h, _hotLeft) ? _hotLeft : null);

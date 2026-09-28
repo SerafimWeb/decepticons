@@ -20,6 +20,7 @@
 | `gemini/setas-inimigos` | setas de inimigos fora da tela | **sem PR** | 25/09 |
 | `gemini/sons-androides` | sons dos andróides | **sem PR** | 25/09 |
 | `gemini/primeira-partida` | dicas de andróide e calor | **sem PR** | 25/09 |
+| `codex/hangar-moving-target` | Treino manual de mira no Hangar: andróide móvel inofensivo, mira pelo `CameraRig`, disparos/acertos/precisão; captura em `arte/aim-practice.png`. `npm run check` completo passou na repetição (222 testes, painel, build, budget, smoke e site); browser confirmou Pointer Lock e disparo | **PR ainda não aberto; branch local pronto para push** | 27/09 |
 
 **Regra em vigor (o dono aprovou em 27/09):** branch com mais de 48 h sem PR é **fechado** — mergeado se estiver bom, declarado
 morto se não. Cinco branches estão nesse caso hoje (as três de 25/09 e as duas sem PR de 27/09). As três regras estão no
@@ -216,7 +217,8 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 ## PRÓXIMA SESSÃO COMEÇA COM
 - **Claude:** implementar a máquina de estados de Ondas em `sim/Match.ts` (mesmo padrão do `Round`: tick fixo, sem relógio real — spawner progressivo de andróides/bots, contagem de abates, intervalo de briefing, resumo de fim de missão), decisão de arquitetura já registrada acima ("onde mora a máquina de Ondas"). Ligar ao contrato de callbacks que o `MissionHUD` já espera, sem mudar a assinatura (confirmado nesta sessão). Depois, sincronizar a progressão de ondas e o spawn no servidor (`server/ArenaRoom.ts`) para o modo sobrevivência multiplayer. Considerar também torres (`METAGAME.md` § 9, ainda pendente) como terceira ferramenta de fôlego, se as zonas de cura/resfriamento (PR #91) não bastarem no playtest do dono.
-- **Codex:** o `server/room.test.ts > teto por IP` que travava o PR do bunker está corrigido (raiz: `WebSocket` do Node no Windows, não concorrência do Vitest — ver "ÚLTIMA SESSÃO FEZ" acima); `npm run check` deve passar agora. A revisão da simulação do bunker (`Respawner.faceNearestOpponent`, `MechBase.setSpawnReveal`) já saiu aprovada; falta só abrir o PR. O alvo móvel do estande (`hangar/testFire.movingTargetOffset`) já está pronto para a cena do galpão usar.
+- **Codex:** entregar primeiro o treino manual de mira no Hangar (branch desta sessão; precisa de PR/revisão cruzada e playtest após merge). Depois, retomar a integração visual do bunker seguindo o contrato de spawn já revisado, e avaliar o estande com alvo móvel do `testFire`.
+
 - **Codex:** horizonte futuro documentado em seção “em estudo” na landing e em `.decepticons/`; nenhuma ideia implementada ou priorizada. Aguardar decisão do dono antes de converter em tarefas de gameplay.
 - **Codex:** PR de sinais visuais de calor pronto para revisão; próxima tarefa visual é cosmética dos níveis de armas sem alterar stats/hitbox. O dono ainda deve testar o Hangar 2.0 e o calor após o deploy.
 - **Claude:** completar o online: evento de barricada quebrada (`PROP_BROKEN`), placar e nomes da sala vindos do servidor, teste com latência e perda simuladas; depois a M5 (acertos com compensação de latência) e a M6 (entrada com apelido e reconexão, com as telas do Gemini).
