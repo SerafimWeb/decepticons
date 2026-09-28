@@ -15,10 +15,23 @@
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
 | `claude/zonas-cura-resfriamento` | zonas de cura e resfriamento na arena | **#91 aberto** | 27/09 |
-| `gemini/modo-hud-audio` | Seletor de Modo, MissionHUD, CTF HUD, DailyChallenges, Efeitos Sonoros de Onda | **Pronto (push feito)** | 28/09 |
-| `gemini/integracao-audio-samples` | Integração completa de arquivos reais de áudio (.wav/.mp3) no AudioSystem | **Pronto** | 28/09 |
+| `claude/samples-de-audio` | os 11 arquivos de som que faltavam no repositório | **em PR** | 28/09 |
 
 ---
+
+- **Os sons novos não tocavam no site: faltavam os arquivos (Claude, 28/09, R17).** O dono relatou
+  "o Gemini disse que fez a parte dele mas o som ainda não tô ouvindo os novos". O código de
+  carregamento estava na `main` (PR #103 e o commit `07d4182`), mas **nenhum dos 11 samples estava
+  versionado** — `git ls-files client/public/audio` devolvia só o `README.md`. No site, os 11
+  `fetch` davam 404 e o `AudioSystem` caía no sintetizador antigo **sem reclamar** (o fallback é
+  silencioso por desenho). Na máquina do Gemini tocava, porque lá os arquivos existem soltos.
+  - Os 11 samples entraram no repositório: **2,2 MB** ao todo.
+  - `client/public/audio/.gitignore` passa a **ignorar tudo e liberar só os 11 nomes**: a pasta é
+    também a bancada onde a matéria-prima cai (brutos do Elevenlabs com `#` e espaço no nome, e um
+    `IMG_0960.MOV` de 29 MB que apareceu lá). Sem o filtro, um `git add -A` levava tudo para o deploy.
+  - O `README.md` da pasta listava outros nomes de arquivo (`explosion.mp3`, `dash.mp3`, `chainsaw.mp3`)
+    que o `Game.ts` nunca carregou; agora lista o que existe de verdade e diz que publicar um sample
+    exige **as duas etapas** (registrar no `Game.ts` e liberar no `.gitignore`).
 
 - **Integração de Samples Reais de Áudio (Gemini, 28/09):**
   - **Mapeamento e Padronização**: Renomeados 11 samples gerados via ElevenLabs em `client/public/audio/` para nomes padronizados (`logo_serafim.mp3`, `ui_transition.mp3`, `shot_plasma.wav`, `hit.mp3`, `ambient_bram.mp3`, `step_mech.mp3`, etc).
