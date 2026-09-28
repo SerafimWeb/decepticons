@@ -105,6 +105,8 @@ const lerp = THREE.MathUtils.lerp;
 export abstract class MechBase {
   readonly root = new THREE.Group();
   readonly velocity = new THREE.Vector3();
+  /** Modificador temporário de regra (CTF: portador da bandeira corre a 85%; o dash não muda). */
+  moveSpeedScale = 1;
   readonly modules: MechModules;
   yaw = 0;
   pitch = 0;
@@ -532,8 +534,8 @@ export abstract class MechBase {
       this.dashTimeLeft -= dt;
     } else {
       const maxDelta = (this.grounded ? s.groundAccel : s.airAccel) * dt;
-      let dx = _wish.x * s.moveSpeed * mobility - vel.x;
-      let dz = _wish.z * s.moveSpeed * mobility - vel.z;
+      let dx = _wish.x * s.moveSpeed * this.moveSpeedScale * mobility - vel.x;
+      let dz = _wish.z * s.moveSpeed * this.moveSpeedScale * mobility - vel.z;
       const len = Math.hypot(dx, dz);
       if (len > maxDelta) {
         dx *= maxDelta / len;

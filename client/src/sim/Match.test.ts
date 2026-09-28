@@ -9,6 +9,7 @@ import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { Match } from './Match';
+import { CTF_BASES, CTF_CARRIER_SPEED } from './CaptureTheFlag';
 import { WAVE_BRIEFING_S, WAVE_CLEAR_S } from './SurvivalWaves';
 
 const IDLE: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
@@ -139,5 +140,37 @@ describe('missão Sobrevivência integrada à partida', () => {
     expect(starts).toEqual([1, 2]);
     expect(active).toHaveLength(3);
     expect(active.filter((m) => m instanceof Android)).toHaveLength(2);
+  });
+});
+
+describe('Capture The Flag integrado à partida', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('monta dois defensores, registra o jogador azul e captura de ponta a ponta', async () => {
+    const physics = await PhysicsWorld.create();
+    const match = new Match({
+      physics,
+      scene: new THREE.Scene(),
+      particles: NO_FX,
+      foes: DEFAULT_SETTINGS,
+      debris: false,
+      mode: 'ctf',
+    });
+    const pilot = new Vector09();
+    match.addPlayer(pilot, 'VOCÊ');
+    expect(match.bots.mechs).toHaveLength(2);
+    expect(match.ctf?.teamOf(pilot)).toBe('blue');
+
+    pilot.respawn(new THREE.Vector3(CTF_BASES.red.x, 0, CTF_BASES.red.z));
+    match.step(FIXED_DT);
+    expect(match.ctf?.flag('red').carrier).toBe(pilot);
+    expect(pilot.moveSpeedScale).toBe(CTF_CARRIER_SPEED);
+
+    pilot.respawn(new THREE.Vector3(CTF_BASES.blue.x, 0, CTF_BASES.blue.z));
+    match.step(FIXED_DT);
+    expect(match.ctf?.scores.blue.captures).toBe(1);
+    expect(match.ctf?.flag('red').phase).toBe('home');
   });
 });

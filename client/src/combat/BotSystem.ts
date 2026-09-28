@@ -49,6 +49,8 @@ export interface BotSystemOptions {
   respawner: Respawner;
   /** Desligado em missões com pool: a própria regra decide quando cada unidade volta. */
   respawn?: boolean;
+  /** No CTF, cada defensor renasce na própria base em vez do ponto global mais distante. */
+  respawnAtHome?: boolean;
   /** Onde cada Mech rebelde (escala 2) nasce (x, z): um por ponto. */
   spawns: readonly (readonly [number, number])[];
   /** Onde cada andróide rebelde (escala 1) nasce (x, z): um por ponto. */
@@ -120,7 +122,12 @@ export class BotSystem {
       const home = place(mech, p);
       const persona = PERSONAS[(!android && o.personas?.[i]) || 'soldado'];
       const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, o.skill ?? BOT_SKILL_NORMAL, android ? ANDROID_PROFILE : MECH_PROFILE, persona);
-      if (o.respawn !== false) o.respawner.track(mech, BOT_RESPAWN_S, () => brain.reset());
+      if (o.respawn !== false) {
+        o.respawner.track(mech, BOT_RESPAWN_S, () => {
+          if (o.respawnAtHome) mech.respawn(home);
+          brain.reset();
+        });
+      }
       this.bots.push({ mech, brain, name, home });
     };
     // No placar e no nome sobre a cabeça, o nome e a personalidade (CLAUDE·BRABO): o jogador aprende quem é quem.

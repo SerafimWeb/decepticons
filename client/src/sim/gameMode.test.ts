@@ -11,5 +11,8 @@ describe('modo da partida', () => {
     expect(gameModeFromSearch('')).toBe('deathmatch');
     expect(gameModeFromSearch('?modo=inventado')).toBe('deathmatch');
   });
-});
 
+  it('aceita o modo CTF', () => {
+    expect(gameModeFromSearch('?modo=ctf')).toBe('ctf');
+  });
+});

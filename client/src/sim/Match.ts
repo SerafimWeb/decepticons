@@ -16,6 +16,12 @@ import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
+import {
+  CTF_BASES,
+  CaptureTheFlag,
+  type CtfScore,
+  type CtfTeam,
+} from './CaptureTheFlag';
 import type { GameMode } from './gameMode';
 import {
   SURVIVAL_MAX_ANDROIDS,
@@ -32,6 +38,13 @@ import {
 export const BOT_SPAWNS = [SPAWN_POINTS[2]!, SPAWN_POINTS[4]!, SPAWN_POINTS[8]!];
 export const ANDROID_SPAWNS = [SPAWN_POINTS[5]!, SPAWN_POINTS[6]!, SPAWN_POINTS[9]!];
 export const TECHNICIAN_SPAWNS = [SPAWN_POINTS[10]!];
+/** Dois defensores offline do CTF, perto da base vermelha e sem sobrepor a bandeira. */
+export const CTF_DEFENDER_SPAWNS: readonly (readonly [number, number])[] = [
+  [68, -72],
+  [72, -62],
+];
+/** Piloto nasce ao lado do mastro: área segura legível, sem sobrepor a bandeira. */
+const CTF_PLAYER_OFFSET_X = 5;
 /** Segundos até o jogador renascer (os bots: `BOT_RESPAWN_S`). */
 export const PLAYER_RESPAWN_S = 3;
 
@@ -58,7 +71,7 @@ export interface MatchOptions {
   damage?: boolean;
   /** Duração da rodada (s). No cliente do multiplayer, infinita: a rodada é a do servidor. */
   roundS?: number;
-  /** Regra da missão. `deathmatch` preserva a arena atual; sobrevivência estreia offline. */
+  /** Regra da missão. `deathmatch` preserva a arena atual; os objetivos estreiam offline. */
   mode?: GameMode;
 }
 
@@ -80,6 +93,8 @@ export class Match {
   readonly round: Round;
   /** Máquina da missão, presente apenas no modo Sobrevivência. */
   readonly waves: SurvivalWaves | null;
+  /** Regra pura de bandeiras, presente apenas no modo CTF. */
+  readonly ctf: CaptureTheFlag | null;
   /** Pisão: robô grande andando na direção de um pequeno encostado. */
   readonly crush: CrushRule;
   /** Zonas de cura e resfriamento (vantagem tática de posicionamento, igual para os dois lados). */
@@ -104,6 +119,11 @@ export class Match {
   onWaveProgress?: (wave: number, killed: number, total: number, elapsedS: number) => void;
   onWaveClear?: (wave: number, elapsedS: number) => void;
   onMissionEnd?: (survived: boolean, waveReached: number, stats: MissionStats) => void;
+  /** Eventos primitivos do CTF; HUD e render assinam sem entrar na simulação. */
+  onCtfFlag?: (event: 'pickup' | 'drop' | 'return', owner: CtfTeam, actor?: CtfTeam) => void;
+  onCtfCapture?: (team: CtfTeam, blue: number, red: number) => void;
+  onCtfProgress?: (timeLeft: number, blue: Readonly<CtfScore>, red: Readonly<CtfScore>) => void;
+  onCtfEnd?: (winner: CtfTeam | null, blue: Readonly<CtfScore>, red: Readonly<CtfScore>) => void;
 
   /** O mundo físico da partida (o multiplayer põe nele os robôs remotos, só para colisão). */
   readonly physics: PhysicsWorld;
@@ -112,8 +132,9 @@ export class Match {
 
   constructor(o: MatchOptions) {
     const survival = o.mode === 'survival';
+    const ctf = o.mode === 'ctf';
     this.physics = o.physics;
-    this.round = survival ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
+    this.round = survival || ctf ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
     this.scene = o.scene;
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
@@ -132,10 +153,11 @@ export class Match {
       projectiles: this.projectiles,
       particles: o.particles,
       respawner: this.respawner,
-      spawns: BOT_SPAWNS.slice(0, survival ? SURVIVAL_MAX_MECHS : o.foes.enemyMechs),
-      androidSpawns: ANDROID_SPAWNS.slice(0, survival ? SURVIVAL_MAX_ANDROIDS : o.foes.enemyAndroids),
-      technicianSpawns: !survival && o.foes.technician ? TECHNICIAN_SPAWNS : [],
+      spawns: ctf ? CTF_DEFENDER_SPAWNS : BOT_SPAWNS.slice(0, survival ? SURVIVAL_MAX_MECHS : o.foes.enemyMechs),
+      androidSpawns: ctf ? [] : ANDROID_SPAWNS.slice(0, survival ? SURVIVAL_MAX_ANDROIDS : o.foes.enemyAndroids),
+      technicianSpawns: !survival && !ctf && o.foes.technician ? TECHNICIAN_SPAWNS : [],
       respawn: !survival,
+      respawnAtHome: ctf,
       personas: o.foes.enemyPersonas,
       waypoints: SPAWN_POINTS,
       power: o.power,
@@ -152,6 +174,17 @@ export class Match {
         })
       : null;
     if (this.waves) this.bots.setRoster(0, 0);
+    this.ctf = ctf
+      ? new CaptureTheFlag({
+          onFlagPickup: (owner, carrier) => this.onCtfFlag?.('pickup', owner, carrier),
+          onFlagDrop: (owner) => this.onCtfFlag?.('drop', owner),
+          onFlagReturn: (owner) => this.onCtfFlag?.('return', owner),
+          onCapture: (team, blue, red) => this.onCtfCapture?.(team, blue, red),
+          onProgress: (timeLeft, blue, red) => this.onCtfProgress?.(timeLeft, blue, red),
+          onMatchEnd: (winner, blue, red) => this.onCtfEnd?.(winner, blue, red),
+        })
+      : null;
+    if (this.ctf) for (const bot of this.bots.mechs) this.ctf.register(bot, 'red');
 
     // As regras ficam aqui; a tela e o som só ouvem os eventos.
     this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
@@ -168,6 +201,7 @@ export class Match {
     };
     this.combat.onMechKilled = (dead, at, killer) => {
       this.round.recordKill(dead, killer);
+      this.ctf?.onKilled(dead, killer);
       if (this.waves && this.bots.mechs.includes(dead) && this.waves.recordEnemyKilled()) {
         this.projectiles.clear();
         this.rockets.clear();
@@ -181,15 +215,26 @@ export class Match {
    * Entra um Mech de gente: nasce no ponto `spawnIndex`, entra no combate, no renascimento e no placar,
    * e os bots passam a caçá-lo. `onRespawn`: o dono do Mech troca o que precisar (ex.: a montagem do Hangar).
    */
-  addPlayer(mech: MechBase, name: string, spawnIndex = this.players.length, onRespawn?: () => void): void {
-    const [x, z] = SPAWN_POINTS[spawnIndex % SPAWN_POINTS.length]!;
+  addPlayer(mech: MechBase, name: string, spawnIndex = this.players.length, onRespawn?: () => void, team: CtfTeam = 'blue'): void {
+    const [x, z] = this.ctf
+      ? [CTF_BASES[team].x + (team === 'blue' ? CTF_PLAYER_OFFSET_X : -CTF_PLAYER_OFFSET_X), CTF_BASES[team].z]
+      : SPAWN_POINTS[spawnIndex % SPAWN_POINTS.length]!;
     mech.spawn(this.physics, this._spawn.set(x, 0, z));
     this.scene.add(mech.root);
     mech.onDashImpact = (collider, dir) => this.destructibles.demolish(collider, dir);
     this.combat.register(mech);
-    if (!this.waves) this.respawner.track(mech, PLAYER_RESPAWN_S, onRespawn);
+    if (!this.waves) {
+      this.respawner.track(mech, PLAYER_RESPAWN_S, () => {
+        if (this.ctf) {
+          const base = CTF_BASES[team];
+          mech.respawn(this._spawn.set(base.x + (team === 'blue' ? CTF_PLAYER_OFFSET_X : -CTF_PLAYER_OFFSET_X), 0, base.z));
+        }
+        onRespawn?.();
+      });
+    }
     this.round.register(mech, name);
     this.players.push(mech);
+    this.ctf?.register(mech, team);
   }
 
   /**
@@ -204,6 +249,7 @@ export class Match {
     this.combat.unregister(mech);
     this.respawner.untrack(mech);
     this.round.unregister(mech);
+    this.ctf?.unregister(mech);
     this.scene.remove(mech.root);
     mech.despawn(this.physics);
   }
@@ -248,25 +294,30 @@ export class Match {
       this.projectiles.fixedUpdate(dt);
       this.rockets.fixedUpdate(dt);
       this.physics.step();
+      this.ctf?.fixedUpdate(dt);
     }
     if (this.round.fixedUpdate(dt) !== 'started') return false;
     this.restart();
     return true;
   }
 
-  /** Recomeça uma missão de Sobrevivência usando o mesmo pool e os mesmos corpos físicos. */
+  /** Recomeça o objetivo usando os mesmos corpos físicos e pools. */
   restartMission(): void {
-    if (!this.waves) return;
+    if (!this.waves && !this.ctf) return;
     this.players.forEach((m, i) => {
-      const [x, z] = SPAWN_POINTS[i % SPAWN_POINTS.length]!;
+      const [x, z] = this.ctf
+        ? [CTF_BASES.blue.x + CTF_PLAYER_OFFSET_X, CTF_BASES.blue.z]
+        : SPAWN_POINTS[i % SPAWN_POINTS.length]!;
       m.respawn(this._spawn.set(x, 0, z));
     });
+    if (this.ctf) this.bots.respawnAll();
     this.projectiles.clear();
     this.rockets.clear();
     this.debris.clear();
     this.destructibles.restoreAll();
     this.round.resetScores();
-    this.waves.reset();
+    this.waves?.reset();
+    this.ctf?.reset();
   }
 
   private applyWaveRoster(plan: WavePlan | null): void {
