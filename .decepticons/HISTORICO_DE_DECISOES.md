@@ -13,6 +13,54 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] O deploy das fichas não saiu: um 404 de fonte derrubou o check da `main`
+**Achado (Qwen, R17, no mesmo dia):** o PR #98 (as fichas de Ondas e CTF) mergeou com o CI **do PR** verde, mas o
+**CI do push na `main` falhou** no `site --check` e o job de **deploy foi pulado** — as fichas estavam na `main` e
+**não apareciam no site** (conferido no ar: a lista de fichas da sala de controle ainda tinha 6 linhas). A falha:
+`console: Failed to load resource … 404`, sem URL. A causa está no **próprio verificador**: o handler de `response`
+já ignorava as URLs de fonte do Google (`fonts.g…`), mas o handler de `console` filtrava pelo **texto** da mensagem —
+e o texto de um 404 é só "Failed to load resource", sem a URL. Um woff2 do Google Fonts que não veio virou erro fatal
+da checagem, e o site deixou de publicar.
+**Achado de quebra, no mesmo log:** a linha `site    ok: …` era impressa **dentro** do `try`, antes do bloco que julga
+as falhas — o log do CI mostrou "site ok" e "❌ SITE FALHOU" na mesma execução. Uma checagem que diz "ok" quando
+falhou é pior do que não dizer nada.
+**Correção (Qwen):** o handler de `console` passa a **ignorar mensagens de falha de carregamento** (delegando o status
+HTTP ao handler de `response`, que traz a URL e continua pegando qualquer 404/500 que **não** seja de fonte); violação
+de CSP e erro de script seguem fatais. E a linha de sucesso foi movida para **depois** do julgamento das falhas.
+Nada disso afeta o jogo: é o verificador do site, e a `main` volta a publicar no merge seguinte.
+**Quem decidiu:** Qwen (o achado e a correção).
+
+## [2026-09-27] A ficha de balanço das Ondas, e por que os testes do CTF ainda não podem existir
+**Pedido (dono, repassando o plano do Gemini):** "Qwen, crie a ficha de balanço das Ondas (quantidade de inimigos e
+vida por onda) e os testes de simulação do CTF." As outras tarefas do mesmo plano são de outros: máquina de Ondas e
+regra do CTF em `sim/Match.ts` (Claude), HUD do CTF e painel de desafios/XP (Gemini), bandeira e bases 3D (Codex).
+**Decisão (Qwen):**
+- **`fichas/ondas.md` (proposta)** — o balanço do modo sobrevivência em números, com a regra que sustenta o resto:
+  **a onda é uma fila com teto de corpos vivos**, porque o motor de hoje só deixa **3 Mechs + 3 andróides** na arena,
+  no máximo **4 atacando juntos** (`maxAttackers`) e **32 unidades por sala** (`MAX_UNITS`, id de 1 byte) — uma onda
+  "cheia" seria ilegal no jogo e estouraria o protocolo. **11 ondas tabeladas** (andróides de 3 a 16 na fila; o
+  primeiro Mech na 4, o primeiro técnico na 5, o terceiro Mech na 10; simultaneidade 1 → 4) com a **vida total** de
+  cada uma. **A vida por inimigo é fixa** (andróide 32, Mech 300, de qualquer onda): inflar vida quebraria as metas de
+  dano por parte que o jogo todo respeita ("dois tiros derrubam") e o jogador perderia a leitura da luta — inimigo
+  mais duro, quando o dono quiser, é **chassi novo com ficha** (Ferret-X/Colossus-01, já no ROADMAP), não um
+  multiplicador invisível. **12 metas viram teste**, entre elas as duas que já são decisão do dono ("termina quando o
+  piloto cai") e a que protege a zona de cura ("a pausa entre ondas dá tempo de usar a zona"). A tabela foi montada
+  para caber nas bandas de ameaça que o `ui/MissionHUD.ts` (Gemini) já tem: **1–2 BAIXO, 3–5 MÉDIO, 6–9 ALTO, 10+
+  CRÍTICO**, com as medalhas por `waveReached >= 3` e `>= 5`.
+- **`fichas/ctf.md` (proposta)** — a parte do pedido que **existe hoje**: os testes do CTF **não podem nascer antes da
+  regra** (G14 e a regra 5 do `AGENTS.md`, contrato antes de paralelizar; conferido: `client/src/sim/` não tem
+  `team`, `flag` nem `bandeira`). O entregável é a **especificação de 15 testes** — nome, o que cada um monta e o que
+  prova — para o Claude implementar regra e teste no mesmo PR. O que o dono já decidiu no ROADMAP está fixado: 2v2
+  no primeiro corte, uma bandeira por base, **3 capturas** ou mais capturas em **8 min**, empate desempatado por
+  abates; e a alavanca de equilíbrio que ele pediu no mesmo item ("bandeira + Mech pesado em risco simétrico ao Mech
+  leve com dash") virou teste: **o portador corre mais devagar** e a exposição do leve e do pesado é travada dentro de
+  uma tolerância. Custo de rede: **0 B/s** (base e bandeira no chão são pontos fixos → evento; carregada, é **um bit**
+  nas flags de quem carrega, que já viajam a 20 Hz ⇒ **subir `PROTOCOL_VERSION`**).
+- **`STATUS_REAL.md`:** duas linhas novas, **AUSENTE** nas duas — é o estado real (modo sobrevivência e CTF não
+  existem no jogo). O `fichas/README.md` passa a reconhecer **fichas de modo**, não só de robô e de arma.
+**Quem decidiu:** dono (o pedido; e, antes, o fim do modo sobrevivência e o alvo de capturas do CTF); Qwen (a tabela
+de ondas, as metas, a especificação dos testes e o custo de rede).
+
 ## [2026-09-27] A base de recarga do drone (com canhão) e a blindagem das páginas públicas
 **Pedido do dono:** 1) Bateria do drone: **cada carga rende 70 a 80% do tempo de partida**; o **piloto automático volta
 sozinho quando a bateria chega a 15–10%**; **cada lado tem a sua base carregadora**; a base merece um **canhão/turret de

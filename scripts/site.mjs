@@ -344,8 +344,16 @@ async function check() {
   try {
     browser = await launchBrowser();
     const page = await browser.newPage();
-    // Falha de fonte do Google (rede) não é erro nosso; violação de CSP e erro de script são.
-    page.on('console', (m) => m.type() === 'error' && !/fonts\.g/.test(m.text()) && failures.push(`console: ${m.text()}`));
+    // Fonte do Google que não carrega não é erro nosso: a página cai no monoespaçado do sistema, e o
+    // aviso de rede não interrompe nada. O console **não diz qual recurso falhou**, então
+    // "Failed to load resource" fica por conta do handler de response, que traz a URL — foi ele que
+    // derrubou o check da `main` em 27/09/2026: um 404 de woff2 do Google Fonts virou
+    // `console: Failed to load resource`, o filtro de fonte não achou a URL no texto e o deploy não saiu.
+    page.on('console', (m) => {
+      const texto = m.text();
+      if (texto.includes('Failed to load resource')) return;
+      if (m.type() === 'error' && !/fonts\.g/.test(texto)) failures.push(`console: ${texto}`);
+    });
     page.on('pageerror', (e) => failures.push(`pageerror: ${e.message}`));
     page.on('response', (r) => r.status() >= 400 && !/fonts.g/.test(r.url()) && failures.push(`HTTP ${r.status()}: ${r.url()}`));
     // Sala de controle: página própria, links internos vivos, sem o codinome.
@@ -415,7 +423,6 @@ async function check() {
     // Uma página por vez: a de trás não desenha, e o jogo do celular ficaria parado.
     await page.close();
     await mobile(browser, `${base}jogar/`, failures);
-    console.log(`site    ok: landing em ${prefix} com a abertura da marca, o Hangar e o online, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, texto não selecionável e sem cópia nas três páginas, celular joga pelo toque`);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {
@@ -427,6 +434,9 @@ async function check() {
     for (const f of failures) console.error(`   - ${f}`);
     process.exit(1);
   }
+  // Só depois de saber que não houve falha: antes, esta linha saía junto do "❌ SITE FALHOU" e dizia
+  // "ok" para um check vermelho (visto em 27/09/2026, no log do CI da `main`).
+  console.log(`site    ok: landing em ${prefix} com a abertura da marca, o Hangar e o online, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, texto não selecionável e sem cópia nas três páginas, celular joga pelo toque`);
 }
 
 /** Confere o site publicado: páginas no ar, .wasm com o tipo certo, CSP aplicada. */
