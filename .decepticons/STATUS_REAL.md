@@ -7,6 +7,9 @@
 
 | Feature | Estado | Observação |
 |---|---|---|
+| CI/pre-push confiável (`npm run check`) | REAL | `server/room.test.ts > teto por IP` endurecido: causa raiz era o `WebSocket` global do Node (undici), que no Windows às vezes só dispara `error` sem nunca `close` numa conexão recusada — trocado pelo `WebSocket` do pacote `ws` e o teste reescrito para abrir as vagas em sequência (sem corrida de chegada). `client/src/net/online.test.ts` ganhou o mesmo tipo de folga (esperar convergir, não prazo fixo) em 3 asserções de tempo real. 5 execuções seguidas em concorrência total, zero flake (antes: falhava sob carga). Sem teto de workers no `scripts/test.mjs` |
+| Modo Sobrevivência (Ondas) | AUSENTE | Decisão de arquitetura registrada (roda dentro do `Match`, como o `Round`); contrato do `MissionHUD` confirmado sem mudanças. A máquina de estados em si (spawner, briefing, sincronização no servidor) ainda não existe |
+| Alvo móvel do estande (Hangar) | REAL | `hangar/testFire.movingTargetOffset(t)`: puro, determinístico, vaivém de ±3 m a cada 10,5 s. Só cenário — não muda a conta de dano do teste de disparo. Falta a cena (`HangarScene.ts`) usar a função para animar a malha |
 | Zonas de cura e resfriamento | REAL | `combat/Zone.ts`: zona de cura (+20 vida/s na parte mais avariada) e de resfriamento (ventila 0,35 calor/s direto, sem esperar o atraso do tiro), volumes fixos na arena, valem para jogadores e bots (regra do `Match.step()`, então automática no servidor também). Visual provisório (disco + anel neon, sem colisor) em `Arena.ts`. 6 testes (`Zone.test.ts`); `npm run check` verde. **Não testado pelo dono ainda.** Turres (`METAGAME.md` § 9) e o modo Sobrevivência (ondas, pedido do Gemini) seguem AUSENTES |
 | Movimento WASD (aceleração estilo arena) | REAL | engasgo da corrida corrigido em 2026-09-23; coberto por `MechBase.test.ts` |
 | Pulo duplo | REAL | Vector-09 `maxJumps: 2` |

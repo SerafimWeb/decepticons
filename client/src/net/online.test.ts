@@ -117,6 +117,16 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     // Andou (a 9 m/s por 1 s são ~8 m; com a máquina cheia, o servidor do teste pode ficar para trás e o jogo corrige
     // para onde ele está, que é o que importa: a previsão termina onde o servidor diz).
     expect(z0 - local.z).toBeGreaterThan(2);
+    // A correção é gradual (20%/tick, salta acima de 3 m): com a máquina cheia, o servidor pode ter ficado
+    // para trás durante o `play` e só alcançar no fim, sem ticks sobrando para o cliente terminar de convergir.
+    // Dou a mesma folga que o `join()` já dá acima, em vez de um prazo fixo de tempo real.
+    {
+      const t0 = performance.now();
+      while (Math.hypot(local.x - auth.x, local.z - auth.z) >= 0.3) {
+        if (performance.now() - t0 > 8000) break; // deixa a asserção abaixo falhar com a mensagem de sempre
+        await play([dan], 200);
+      }
+    }
     expect(Math.hypot(local.x - auth.x, local.z - auth.z)).toBeLessThan(0.3);
     // Os robôs dos outros seguem o servidor (desenhados ~100 ms atrás).
     for (const [id, r] of dan.session.remotes) {
@@ -134,6 +144,14 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     await play([dan], 800);
     const local = dan.me.simPosition;
     const auth = serverPos('M4B', dan);
+    // Mesma folga da outra convergência acima: com a máquina cheia, dar mais tempo real em vez de um prazo fixo.
+    {
+      const t0 = performance.now();
+      while (Math.hypot(local.x - auth.x, local.z - auth.z) >= 0.3) {
+        if (performance.now() - t0 > 8000) break;
+        await play([dan], 200);
+      }
+    }
     expect(Math.hypot(local.x - auth.x, local.z - auth.z)).toBeLessThan(0.3);
     dan.session.dispose();
   });
@@ -146,7 +164,13 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     expect(other?.kind).toBe('human');
     const x0 = other!.mech.simPosition.x;
     a.commander.command.moveX = 1; // Alfa anda para a direita
-    await play([a, b], 1000);
+    // Jogo até o movimento chegar pela rede (com a máquina cheia, o servidor do teste pode demorar mais
+    // que os ~350 ms nominais para ticar e mandar o estado; a mesma folga que o `join` já dá acima).
+    const t0 = performance.now();
+    while (other!.mech.simPosition.x - x0 <= 3) {
+      if (performance.now() - t0 > 8000) break; // deixa a asserção abaixo falhar com a mensagem de sempre
+      await play([a, b], 200);
+    }
     expect(other!.mech.simPosition.x - x0).toBeGreaterThan(3);
     a.session.dispose();
     b.session.dispose();
