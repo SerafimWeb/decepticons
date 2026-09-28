@@ -18,6 +18,22 @@
 
 ---
 
+- **A tela inicial deixa de quebrar em duas linhas, e os botões param de disputar espaço (Claude, 28/09).**
+  Pedido do dono, com captura anotada: *"corrige a tela inicial, tira os 2 botões juntos, realinha o 'como é
+  feito', melhora o título"*. Causa raiz: `.title { display: block }` no `<span>` forçava "CYBER"/"MECH" em
+  duas linhas sempre (mesmo quando cabia numa só), e o botão `.play-btn` tinha fonte de 1,7rem — dois botões
+  desse tamanho não cabem nos ~510 px da coluna de texto do hero, então "JOGAR ONLINE" e o link "como este
+  jogo é feito" quebravam amontoados um sobre o outro, exatamente o que o dono circulou.
+  - `.title` (compartilhado com `oficina/` e `sala-de-controle/`, `scripts/site/tema.mjs`): tira o
+    `display: block` do `<span>` — "CYBERMECH" tenta ficar numa linha só e só quebra se faltar espaço de
+    verdade, com `word-break: keep-all` para não partir a palavra no meio.
+  - `.play-btn`: fonte responsiva (`clamp(1.05rem, 1.5vw, 1.3rem)` em vez de fixa em 1,7rem) — os dois
+    botões cabem lado a lado em qualquer largura de desktop.
+  - `.cta` (só em `scripts/landing.mjs`, não é compartilhada): os dois botões agora moram em `.cta-buttons`
+    (sua própria linha, com wrap limpo), e "como este jogo é feito →" ganha linha própria embaixo, nunca
+    mais espremido ao lado de um botão.
+  - Sem teste de simulação (é geração de HTML/CSS estático); validado pelo `site --check` (headless, as
+    três páginas que usam `.title`) e por captura real do hero antes/depois.
 - **O servidor passa a dizer quem está jogando, e a página mostra (Claude, 28/09).** Pedido do dono:
   *"tem como deixarmos na página, permanentemente, a info se o servidor está online, quantas pessoas
   jogando?"*. O servidor de jogo ganhou **`GET /status`** no mesmo processo e na mesma porta do WebSocket;

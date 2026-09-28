@@ -100,11 +100,12 @@ export const BASE_CSS = `
   .boot { color: var(--green); font: 400 13px/1.4 var(--fb); letter-spacing: .06em; }
   .cursor { animation: blink 1s step-end infinite; margin-left: 4px; }
   @keyframes blink { 50% { opacity: 0; } }
-  .title { font: 400 clamp(3.2rem, 9vw, 7.4rem)/.86 var(--fd); letter-spacing: .02em; color: var(--amber); text-shadow: var(--glow); }
-  .title span { display: block; color: var(--text); }
+  /* Título: uma palavra só (CYBERMECH), duas cores — quebra sozinho se faltar espaço, nunca força duas linhas. */
+  .title { font: 400 clamp(2.6rem, 6.6vw, 5.4rem)/1.05 var(--fd); letter-spacing: .03em; color: var(--amber); text-shadow: var(--glow); word-break: keep-all; margin: 2px 0 0; }
+  .title span { color: var(--text); }
   .play-btn {
-    display: inline-block; font: 400 1.7rem/1 var(--fd); letter-spacing: .08em; color: var(--bg); background: var(--amber);
-    padding: 12px 22px 10px; text-decoration: none; box-shadow: 0 0 24px rgba(255,176,0,.35);
+    display: inline-block; font: 400 clamp(1.05rem, 1.5vw, 1.3rem)/1 var(--fd); letter-spacing: .07em; color: var(--bg); background: var(--amber);
+    padding: 13px 22px 11px; text-decoration: none; box-shadow: 0 0 24px rgba(255,176,0,.35); white-space: nowrap;
     transition: background .15s, box-shadow .15s;
   }
   .play-btn:hover { background: var(--text); box-shadow: 0 0 36px rgba(255,176,0,.55); }
