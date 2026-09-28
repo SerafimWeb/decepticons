@@ -32,11 +32,15 @@ export class RoundHud {
   private shownClock = '';
   private textTimer = 0;
 
-  constructor(private readonly me: MechBase) {
+  constructor(
+    private readonly me: MechBase,
+    private readonly visible = true,
+  ) {
     const hud = document.getElementById('hud')!;
     this.clockEl = el('div', 'round-clock', hud);
     this.board = el('div', 'round-board', hud);
     this.board.hidden = true;
+    this.clockEl.hidden = !visible;
     this.title = el('div', 'rb-title', this.board);
     this.sub = el('div', 'rb-sub', this.board);
     const head = el('div', 'rb-row rb-head', this.board);
@@ -45,6 +49,7 @@ export class RoundHud {
   }
 
   update(dt: number, round: Round, holdingTab: boolean): void {
+    if (!this.visible) return;
     const text = round.playing ? `RODADA ${round.number} · ${clock(round.timeLeft)}` : `FIM DA RODADA ${round.number}`;
     if (text !== this.shownClock) {
       this.shownClock = text;

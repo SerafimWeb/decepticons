@@ -10,6 +10,10 @@
 > nova**; **termina quando o piloto cai**. Tela de briefing, HUD de onda, resumo final com estatísticas."
 > Onde eu não sei, está `?` — melhor uma pergunta do que um número inventado.
 
+> **Estado real após o primeiro corte (Codex, 28/09):** Sobrevivência solo já funciona em cinco ondas simultâneas
+> de 2, 3, 4, 5 e 6 inimigos. A tabela de 11 ondas com fila abaixo continua como **proposta de expansão**, sujeita ao
+> playtest do corte curto; ela não descreve os números publicados hoje. O `STATUS_REAL.md` é a fonte do que está no jogo.
+
 ## 1. Identidade em uma frase
 O modo em que o piloto **não tem placar a favor**: ele segura o máximo de ondas até cair. A onda não é um enxame, é
 uma **fila com pressão crescente** — o que muda de uma onda para a outra é quantos ainda faltam, que tipo entrou na

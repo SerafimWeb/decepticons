@@ -259,6 +259,24 @@ html, body {
   white-space: pre;
 }
 
+#mission-status {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: min(430px, 88vw);
+  padding: 9px 14px;
+  border: 1px solid rgba(57, 255, 106, 0.5);
+  background: rgba(6, 8, 10, 0.78);
+  color: var(--accent);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-align: center;
+  text-shadow: 0 0 8px var(--accent);
+}
+#mission-status[hidden] { display: none; }
+#mission-status.clear { color: var(--hot); border-color: var(--hot); text-shadow: 0 0 10px var(--hot); }
+
 /* Blind Mode: quando a cabeça é destruída */
 #hud.blind #stats {
   display: none;
@@ -496,6 +514,17 @@ html, body {
 }
 #overlay .sub { margin: 6px 0 28px; color: var(--muted); letter-spacing: 3px; }
 #overlay .cta { font-size: 20px; animation: blink 1.2s steps(2) infinite; }
+#mission-summary {
+  max-width: min(640px, 90vw);
+  margin: -4px 0 10px;
+  color: var(--hot);
+  font-size: 13px;
+  line-height: 1.7;
+  letter-spacing: 2px;
+  white-space: pre-line;
+  text-shadow: 0 0 8px var(--hot);
+}
+#mission-summary[hidden] { display: none; }
 .btn-terminal {
   margin-top: 14px;
   padding: 8px 16px;

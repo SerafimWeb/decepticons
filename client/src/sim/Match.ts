@@ -16,6 +16,14 @@ import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
+import type { GameMode } from './gameMode';
+import {
+  SURVIVAL_MAX_ANDROIDS,
+  SURVIVAL_MAX_MECHS,
+  SurvivalWaves,
+  type MissionStats,
+  type WavePlan,
+} from './SurvivalWaves';
 
 /**
  * IAs rebeldes na arena: até 3 Mechs, 3 andróides de combate e 1 técnico. Teto: 7 bots + o jogador =
@@ -50,6 +58,8 @@ export interface MatchOptions {
   damage?: boolean;
   /** Duração da rodada (s). No cliente do multiplayer, infinita: a rodada é a do servidor. */
   roundS?: number;
+  /** Regra da missão. `deathmatch` preserva a arena atual; sobrevivência estreia offline. */
+  mode?: GameMode;
 }
 
 /**
@@ -68,6 +78,8 @@ export class Match {
   readonly respawner: Respawner;
   readonly bots: BotSystem;
   readonly round: Round;
+  /** Máquina da missão, presente apenas no modo Sobrevivência. */
+  readonly waves: SurvivalWaves | null;
   /** Pisão: robô grande andando na direção de um pequeno encostado. */
   readonly crush: CrushRule;
   /** Zonas de cura e resfriamento (vantagem tática de posicionamento, igual para os dois lados). */
@@ -87,6 +99,11 @@ export class Match {
   onPropBroken?: (id: number, at: THREE.Vector3) => void;
   /** Rodada nova começou (todos já estão de volta aos pontos de nascimento). */
   onRoundStart?: () => void;
+  /** Contrato da interface de missão: nenhuma destas funções pertence à simulação. */
+  onWaveStart?: (wave: number, total: number, mechs: number, androids: number, title: string) => void;
+  onWaveProgress?: (wave: number, killed: number, total: number, elapsedS: number) => void;
+  onWaveClear?: (wave: number, elapsedS: number) => void;
+  onMissionEnd?: (survived: boolean, waveReached: number, stats: MissionStats) => void;
 
   /** O mundo físico da partida (o multiplayer põe nele os robôs remotos, só para colisão). */
   readonly physics: PhysicsWorld;
@@ -94,8 +111,9 @@ export class Match {
   private readonly _spawn = new THREE.Vector3();
 
   constructor(o: MatchOptions) {
+    const survival = o.mode === 'survival';
     this.physics = o.physics;
-    this.round = o.roundS === undefined ? new Round() : new Round(o.roundS);
+    this.round = survival ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
     this.scene = o.scene;
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
@@ -114,15 +132,26 @@ export class Match {
       projectiles: this.projectiles,
       particles: o.particles,
       respawner: this.respawner,
-      spawns: BOT_SPAWNS.slice(0, o.foes.enemyMechs),
-      androidSpawns: ANDROID_SPAWNS.slice(0, o.foes.enemyAndroids),
-      technicianSpawns: o.foes.technician ? TECHNICIAN_SPAWNS : [],
+      spawns: BOT_SPAWNS.slice(0, survival ? SURVIVAL_MAX_MECHS : o.foes.enemyMechs),
+      androidSpawns: ANDROID_SPAWNS.slice(0, survival ? SURVIVAL_MAX_ANDROIDS : o.foes.enemyAndroids),
+      technicianSpawns: !survival && o.foes.technician ? TECHNICIAN_SPAWNS : [],
+      respawn: !survival,
       personas: o.foes.enemyPersonas,
       waypoints: SPAWN_POINTS,
       power: o.power,
     });
     this.bots.targets = this.players;
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
+    this.waves = survival
+      ? new SurvivalWaves({
+          onRoster: (plan) => this.applyWaveRoster(plan),
+          onWaveStart: (plan) => this.onWaveStart?.(plan.wave, plan.mechs + plan.androids, plan.mechs, plan.androids, plan.title),
+          onWaveProgress: (wave, killed, total, elapsedS) => this.onWaveProgress?.(wave, killed, total, elapsedS),
+          onWaveClear: (wave, elapsedS) => this.onWaveClear?.(wave, elapsedS),
+          onMissionEnd: (survived, stats) => this.onMissionEnd?.(survived, this.waves?.wave ?? 1, stats),
+        })
+      : null;
+    if (this.waves) this.bots.setRoster(0, 0);
 
     // As regras ficam aqui; a tela e o som só ouvem os eventos.
     this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
@@ -132,10 +161,18 @@ export class Match {
     };
     this.combat.onMechHit = (e) => {
       if (!this.players.includes(e.mech)) this.bots.onDamaged(e.mech, e.shooter);
+      if (this.waves && e.shooter && this.players.includes(e.shooter) && this.bots.mechs.includes(e.mech)) {
+        this.waves.recordDamage(e.result.applied);
+      }
       this.onMechHit?.(e);
     };
     this.combat.onMechKilled = (dead, at, killer) => {
       this.round.recordKill(dead, killer);
+      if (this.waves && this.bots.mechs.includes(dead) && this.waves.recordEnemyKilled()) {
+        this.projectiles.clear();
+        this.rockets.clear();
+      }
+      if (this.waves && this.players.includes(dead) && this.players.every((player) => !player.alive)) this.waves.fail();
       this.onMechKilled?.(dead, at, killer);
     };
   }
@@ -150,7 +187,7 @@ export class Match {
     this.scene.add(mech.root);
     mech.onDashImpact = (collider, dir) => this.destructibles.demolish(collider, dir);
     this.combat.register(mech);
-    this.respawner.track(mech, PLAYER_RESPAWN_S, onRespawn);
+    if (!this.waves) this.respawner.track(mech, PLAYER_RESPAWN_S, onRespawn);
     this.round.register(mech, name);
     this.players.push(mech);
   }
@@ -197,6 +234,8 @@ export class Match {
    */
   step(dt: number): boolean {
     if (this.round.playing) {
+      this.waves?.fixedUpdate(dt, this.players.some((player) => player.alive));
+      if (this.waves?.ended) return false;
       for (const p of this.pilots) p.fixedUpdate(dt);
       this.bots.fixedUpdate(dt);
       // Pisão nos dois sentidos: Mech do jogador em andróide rebelde, e Mech rebelde num jogador pequeno.
@@ -213,6 +252,29 @@ export class Match {
     if (this.round.fixedUpdate(dt) !== 'started') return false;
     this.restart();
     return true;
+  }
+
+  /** Recomeça uma missão de Sobrevivência usando o mesmo pool e os mesmos corpos físicos. */
+  restartMission(): void {
+    if (!this.waves) return;
+    this.players.forEach((m, i) => {
+      const [x, z] = SPAWN_POINTS[i % SPAWN_POINTS.length]!;
+      m.respawn(this._spawn.set(x, 0, z));
+    });
+    this.projectiles.clear();
+    this.rockets.clear();
+    this.debris.clear();
+    this.destructibles.restoreAll();
+    this.round.resetScores();
+    this.waves.reset();
+  }
+
+  private applyWaveRoster(plan: WavePlan | null): void {
+    const active = this.bots.setRoster(plan?.mechs ?? 0, plan?.androids ?? 0);
+    if (plan) {
+      this.bots.maxAttackers = plan.maxAttackers;
+      if (active !== plan.mechs + plan.androids) throw new Error('Pool da missão não cobre o plano da onda');
+    }
   }
 
   /**
