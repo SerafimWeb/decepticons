@@ -6,6 +6,7 @@ import { Android } from '../entities/Android';
 import { PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
 import type { MechBase } from '../entities/MechBase';
 import { Vector09 } from '../entities/Vector09';
+import { AIM_TARGET_SPEED, aimTargetDirectionAt, aimTargetXAt } from './aimPractice';
 
 const CYAN = 0x5ce1ff;
 const WARM = 0xffb05a;
@@ -233,6 +234,22 @@ export class HangarScene {
   private screenH = 0;
   // Teste de disparo: o alvo, os projéteis e brilhos de impacto (pools feitos uma vez), e o andamento.
   private readonly targetMat: THREE.MeshStandardMaterial;
+  /** Alvo sem IA de combate: só animação de passada e trilha fixa durante o treino manual. */
+  private readonly aimTarget: Android;
+  private readonly aimTargetRing: THREE.Mesh;
+  private readonly practiceRay = new THREE.Ray();
+  private readonly practiceOrigin = new THREE.Vector3();
+  private readonly practiceDirection = new THREE.Vector3();
+  private readonly practiceCenter = new THREE.Vector3();
+  private readonly practiceSphere = new THREE.Sphere(new THREE.Vector3(), 0.62);
+  private readonly practiceHit = new THREE.Vector3();
+  private readonly practiceEuler = new THREE.Euler(0, 0, 0, 'YXZ');
+  private practiceActive = false;
+  private practiceTime = 0;
+  private practiceCooldown = 0;
+  private practiceShots = 0;
+  private practiceHits = 0;
+  private practiceAccuracy = 0;
   private readonly shotsPool: Shot[] = [];
   private readonly flashes: Flash[] = [];
   private test: { data: TestFire; arm: 'right' | 'left'; t: number; next: number; aimFrom: number; aimTo: number } | null = null;
@@ -359,6 +376,17 @@ export class HangarScene {
       s.add(mesh);
       this.flashes.push({ mesh, t: 1 });
     }
+
+    this.aimTarget = new Android({ paint: 0x75858e, visor: WARM, tool: 'repair' });
+    this.aimTarget.root.visible = false;
+    s.add(this.aimTarget.root);
+    this.aimTargetRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.9, 0.035, 6, 32),
+      new THREE.MeshBasicMaterial({ color: CYAN, transparent: true, opacity: 0.85 }),
+    );
+    this.aimTargetRing.rotation.x = Math.PI / 2;
+    this.aimTargetRing.visible = false;
+    s.add(this.aimTargetRing);
   }
 
   /**
@@ -377,6 +405,98 @@ export class HangarScene {
 
   stopTest(): void {
     this.test = null;
+  }
+
+  /** Inicia uma linha de tiro isolada da simulação; câmera usa yaw/pitch reais do CameraRig. */
+  startAimPractice(): void {
+    this.practiceActive = true;
+    this.practiceTime = 0;
+    this.practiceCooldown = 0;
+    this.practiceShots = 0;
+    this.practiceHits = 0;
+    this.practiceAccuracy = 0;
+    this.aimTarget.root.visible = true;
+    this.aimTargetRing.visible = true;
+    this.turntable.rotation.y = 0;
+    this.camera.clearViewOffset();
+    this.camera.fov = 72;
+    this.camera.updateProjectionMatrix();
+  }
+
+  stopAimPractice(): void {
+    this.practiceActive = false;
+    this.aimTarget.root.visible = false;
+    this.aimTargetRing.visible = false;
+    this.camera.fov = 38;
+    this.camera.updateProjectionMatrix();
+    this.placeCamera();
+  }
+
+  get aimPracticeShots(): number {
+    return this.practiceShots;
+  }
+
+  get aimPracticeHits(): number {
+    return this.practiceHits;
+  }
+
+  get aimPracticeTime(): number {
+    return this.practiceTime;
+  }
+
+  get aimPracticeAccuracy(): number {
+    return this.practiceAccuracy;
+  }
+
+  /** Aim pelo mesmo input/sensibilidade do jogador; tiro e acerto só afetam o placar do treino. */
+  updateAimPractice(dt: number, yaw: number, pitch: number, firing: boolean, fireInterval: number): void {
+    if (!this.practiceActive) return;
+    this.camera.position.set(0, 2.35, 17);
+    this.camera.quaternion.setFromEuler(this.practiceEuler.set(pitch, yaw, 0, 'YXZ'));
+    this.camera.updateMatrixWorld();
+    this.practiceCooldown = Math.max(0, this.practiceCooldown - dt);
+    if (firing && this.practiceCooldown <= 0) {
+      this.practiceCooldown = Math.max(0.08, fireInterval);
+      this.fireAimPracticeShot();
+    }
+  }
+
+  private fireAimPracticeShot(): void {
+    this.practiceShots++;
+    this.practiceOrigin.copy(this.camera.position);
+    this.camera.getWorldDirection(this.practiceDirection);
+    this.practiceRay.set(this.practiceOrigin, this.practiceDirection);
+    this.practiceCenter.copy(this.aimTarget.root.position).add(_v.set(0, 0.9, 0));
+    this.practiceSphere.center.copy(this.practiceCenter);
+    const hit = this.practiceRay.intersectSphere(this.practiceSphere, this.practiceHit);
+    if (hit) {
+      this.practiceHits++;
+      this.practiceAccuracy = Math.round((this.practiceHits / this.practiceShots) * 100);
+      this.flash(hit, 0.9);
+    } else {
+      this.practiceAccuracy = Math.round((this.practiceHits / this.practiceShots) * 100);
+    }
+
+    let shot: Shot | undefined;
+    for (const candidate of this.shotsPool) {
+      if (candidate.t >= candidate.dur) {
+        shot = candidate;
+        break;
+      }
+    }
+    if (!shot) return;
+    shot.from.copy(this.practiceOrigin);
+    if (hit) shot.to.copy(hit);
+    else shot.to.copy(this.practiceOrigin).addScaledVector(this.practiceDirection, 22);
+    shot.dur = shot.from.distanceTo(shot.to) / 110;
+    shot.t = 0;
+    const mat = shot.mesh.material as THREE.MeshBasicMaterial;
+    mat.color.set(0xbff6ff).multiplyScalar(3);
+    shot.mesh.scale.set(1, 1, 1);
+    shot.mesh.position.copy(shot.from);
+    shot.mesh.lookAt(shot.to);
+    shot.mesh.rotateX(Math.PI / 2);
+    shot.mesh.visible = true;
   }
 
   /** Galpão: paredes com colunas, passarela com guarda-corpo, lâmpadas penduradas, Mechs e telas no fundo. */
@@ -533,6 +653,10 @@ export class HangarScene {
     this.lookTest.set(TARGET.x * 0.45, PEDESTAL_TOP + h * 0.45, TARGET.z * 0.45);
     this.width = width;
     this.screenH = height;
+    if (this.practiceActive) {
+      this.camera.updateProjectionMatrix();
+      return;
+    }
     this.placeCamera();
   }
 
@@ -614,7 +738,16 @@ export class HangarScene {
     this.time += dt;
     this.sinceDrag += dt;
     const test = this.test;
-    if (test) {
+    if (this.practiceActive) {
+      this.practiceTime += dt;
+      const x = aimTargetXAt(this.practiceTime);
+      const direction = aimTargetDirectionAt(this.practiceTime);
+      this.aimTarget.velocity.set(direction * AIM_TARGET_SPEED, 0, 0);
+      this.aimTarget.render(dt, 1);
+      this.aimTarget.root.position.set(x, 0, 7);
+      this.aimTarget.root.rotation.y = direction > 0 ? -Math.PI / 2 : Math.PI / 2;
+      this.aimTargetRing.position.set(x, 0.06, 7);
+    } else if (test) {
       test.t += dt;
       // Vira para o alvo no primeiro meio segundo; os tiros começam depois disso.
       const turn = Math.min(1, test.t / 0.5);
@@ -626,10 +759,12 @@ export class HangarScene {
       }
       if (test.t > test.data.seconds + 1.2) this.test = null;
     } else if (this.sinceDrag > IDLE_AFTER_DRAG_S) this.turntable.rotation.y += (dt * Math.PI * 2) / TURN_S;
-    const camGoal = this.test ? 1 : 0;
-    if (this.testCam !== camGoal) {
-      this.testCam = camGoal > this.testCam ? Math.min(1, this.testCam + dt * 1.6) : Math.max(0, this.testCam - dt * 1.6);
-      this.placeCamera();
+    if (!this.practiceActive) {
+      const camGoal = this.test ? 1 : 0;
+      if (this.testCam !== camGoal) {
+        this.testCam = camGoal > this.testCam ? Math.min(1, this.testCam + dt * 1.6) : Math.max(0, this.testCam - dt * 1.6);
+        this.placeCamera();
+      }
     }
     this.updateShots(dt);
     this.holo.offset.y -= dt * 0.08;

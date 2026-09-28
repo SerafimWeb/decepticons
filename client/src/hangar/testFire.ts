@@ -44,3 +44,19 @@ export function testAt(test: TestFire, t: number): { shots: number; damage: numb
     locked: test.overheatAt !== null && t >= test.overheatAt && (test.heat[i] ?? 0) > 0.4,
   };
 }
+
+/** Metros de vaivém lateral do alvo móvel (Codex, cena do estande em `HangarScene.ts`). */
+export const MOVING_TARGET_RANGE_M = 3;
+/** Segundos de um ciclo completo (ida e volta). */
+export const MOVING_TARGET_PERIOD_S = 10.5;
+
+/**
+ * Deslocamento lateral (m, eixo local do estande) do alvo móvel, puro em função do tempo decorrido
+ * (G2: sem `Math.random`, sem relógio de verdade). O alvo é só cenário: nunca atira, nunca causa dano
+ * e não entra na conta de `testFire`/`testAt` (o cálculo continua acerto perfeito, na cadência da arma;
+ * mover o alvo não muda tiro, calor nem dano — é o mesmo estande, só com mais vida visual). Quem anima
+ * a malha (`HangarScene.ts`) chama isto a cada quadro com o `t` acumulado do teste.
+ */
+export function movingTargetOffset(t: number): number {
+  return Math.sin((t / MOVING_TARGET_PERIOD_S) * Math.PI * 2) * MOVING_TARGET_RANGE_M;
+}

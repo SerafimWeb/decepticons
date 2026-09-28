@@ -48,6 +48,8 @@ export class HUD {
   private readonly dash = $('dash');
   private readonly dashFill = $('dash-fill');
   private readonly stats = $('stats');
+  private readonly missionStatus = $('mission-status');
+  private readonly missionSummary = $('mission-summary');
   private readonly modeLabel = $('mode');
   private readonly hitmarker = $('hitmarker');
   private readonly hitLabel = $('hit-label');
@@ -62,6 +64,9 @@ export class HUD {
   private kills = 0;
   private deaths = 0;
   private shownRespawn = '';
+  private shownMission = '';
+  private ctfNoticeTimer = 0;
+  private ctfProgressText = '';
 
   /** Assinatura de build no canto da pausa: versão, build e estúdio (como os jogos de estúdio mostram). */
   setBuild(text: string): void {
@@ -73,6 +78,91 @@ export class HUD {
 
   setReady(touch = false): void {
     this.cta.textContent = touch ? '[ toque para jogar ]' : '[ clique para jogar ]';
+  }
+
+  setMissionMode(enabled: boolean): void {
+    this.missionStatus.hidden = !enabled;
+    if (enabled) this.resetMission();
+  }
+
+  setCtfMode(enabled: boolean): void {
+    this.missionStatus.hidden = !enabled;
+    this.missionStatus.classList.toggle('ctf', enabled);
+    if (enabled) this.resetCtf();
+  }
+
+  resetMission(): void {
+    this.shownMission = '';
+    this.missionSummary.hidden = true;
+    this.missionSummary.textContent = '';
+    this.missionStatus.classList.remove('clear');
+    this.setMissionText('MISSÃO SOBREVIVÊNCIA · PREPARAÇÃO');
+    this.setReady(document.documentElement.classList.contains('touch'));
+  }
+
+  resetCtf(): void {
+    this.shownMission = '';
+    this.missionSummary.hidden = true;
+    this.missionSummary.textContent = '';
+    this.missionStatus.classList.remove('clear');
+    this.ctfNoticeTimer = 0;
+    this.ctfProgressText = 'CTF · AZUL 0 × 0 VERMELHO · 08:00';
+    this.setMissionText(this.ctfProgressText);
+    this.setReady(document.documentElement.classList.contains('touch'));
+  }
+
+  setCtfProgress(timeLeft: number, blue: number, red: number): void {
+    const seconds = Math.max(0, Math.ceil(timeLeft));
+    const clock = `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+    this.ctfProgressText = `CTF · AZUL ${blue} × ${red} VERMELHO · ${clock}`;
+    if (this.ctfNoticeTimer <= 0) {
+      this.missionStatus.classList.remove('clear');
+      this.setMissionText(this.ctfProgressText);
+    }
+  }
+
+  showCtfEvent(text: string): void {
+    this.missionStatus.classList.add('clear');
+    this.ctfNoticeTimer = 1.5;
+    this.setMissionText(text);
+  }
+
+  setCtfEnd(winner: 'blue' | 'red' | null, blue: number, red: number, blueKills: number, redKills: number): void {
+    const title = winner === 'blue' ? 'VITÓRIA DO TIME AZUL' : winner === 'red' ? 'VITÓRIA DO TIME VERMELHO' : 'EMPATE';
+    this.missionStatus.classList.toggle('clear', winner === 'blue');
+    this.setMissionText(`CTF ENCERRADO · ${title}`);
+    this.missionSummary.hidden = false;
+    this.missionSummary.textContent = `${title}\nCAPTURAS ${blue} × ${red} · ABATES ${blueKills} × ${redKills}`;
+    this.cta.textContent = '[ clique para jogar de novo ]';
+  }
+
+  setMissionWave(wave: number, total: number, title: string): void {
+    this.missionStatus.classList.remove('clear');
+    this.setMissionText(`ONDA ${wave}/5 · ${title.toUpperCase()} · 0/${total}`);
+  }
+
+  setMissionProgress(wave: number, killed: number, total: number, elapsedS: number): void {
+    this.missionStatus.classList.remove('clear');
+    this.setMissionText(`ONDA ${wave}/5 · ALVOS ${killed}/${total} · ${Math.floor(elapsedS)} s`);
+  }
+
+  showMissionClear(wave: number, elapsedS: number): void {
+    this.missionStatus.classList.add('clear');
+    this.setMissionText(`ONDA ${wave} ELIMINADA · ${elapsedS.toFixed(1)} s`);
+  }
+
+  setMissionEnd(survived: boolean, waveReached: number, kills: number, seconds: number): void {
+    this.missionStatus.classList.toggle('clear', survived);
+    this.setMissionText(survived ? 'MISSÃO CONCLUÍDA' : `MISSÃO FALHOU · ONDA ${waveReached}`);
+    this.missionSummary.hidden = false;
+    this.missionSummary.textContent = `${survived ? 'TODAS AS ONDAS ELIMINADAS' : 'UNIDADE DE COMBATE PERDIDA'}\n${kills} ABATES · ${seconds.toFixed(1)} s`;
+    this.cta.textContent = '[ clique para tentar de novo ]';
+  }
+
+  private setMissionText(text: string): void {
+    if (text === this.shownMission) return;
+    this.shownMission = text;
+    this.missionStatus.textContent = text;
   }
 
   private readonly rockets = document.getElementById('rockets')!;
@@ -187,6 +277,14 @@ export class HUD {
   update(dt: number, mech: MechBase, cursorX: number, cursorY: number, debrisCount: number): void {
     const isBlind = mech.isBlind;
     this.root.classList.toggle('blind', isBlind);
+
+    if (this.ctfNoticeTimer > 0) {
+      this.ctfNoticeTimer -= dt;
+      if (this.ctfNoticeTimer <= 0 && this.ctfProgressText) {
+        this.missionStatus.classList.remove('clear');
+        this.setMissionText(this.ctfProgressText);
+      }
+    }
 
     if (this.cursorMode) {
       this.crosshair.style.left = `${cursorX}px`;

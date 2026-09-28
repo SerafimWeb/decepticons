@@ -11,7 +11,10 @@
 - **Escala:** 1 (humanoide, ~1,6 m), **com 1 a 2 m de largura** — do tamanho do andróide em silhueta, abaixo dele em massa
 - **Classe:** apoio
 - **Lado:** jogador; a IA rebelde pode usar a mesma classe depois (os dois)
-- **Papel em uma frase:** um par extra de olhos, de tiros fracos ou de conserto, que voa e muda o ponto de vista da luta
+- **Como entra na partida (dono, 27/09):** o **cenário ideal é o drone ser adição ao Mech** — não consome vaga de Mech nem de andróide; se não couber, conta como **uma unidade do time** (vaga de andróide)
+- **Pilotagem (dono, 27/09):** os **dois modos** — pilotado pelo jogador **ou** piloto automático
+- **Peso na partida (dono, 27/09):** o drone **conta na partida** — é elemento dela, não enfeite. Ideia registrada para depois, sem prioridade: **modos só de drone** (`METAGAME.md` § 10)
+- **Papel em uma frase:** um par extra de olhos, de tiros fracos ou de conserto, que voa, é **mais ágil que o andróide** e muda o ponto de vista da luta
 
 ## 2. Fantasia de jogo
 - **Pilotar é:** estar acima da confusão — a arena vista de cima, o Mech pequeno lá embaixo. É a emoção que o dono pediu
@@ -56,7 +59,17 @@
 | Arma (DRONE-A) | **blaster leve** (o do andróide): dano 4, cadência 0,4 s, alcance ótimo 25 m, máximo 120 m | o mesmo blaster | decisão do dono: "o tiro dele é igual ao do andróide" |
 | Conserto (DRONE-C) | ? /s | técnico ENTRÓPICO: `?` | |
 | Calor | sem dissipador próprio `?` | dissipa 0,7/s | proposta: **pente/recarga** no lugar do calor |
-| Autonomia de voo | ? | — | sem limite, um drone é vantagem permanente: precisa de um teto |
+| **Bateria (autonomia)** | **70 a 80% do tempo de partida** — 210 a 240 s de voo numa rodada de 5 min | — | decisão do dono (27/09, 3ª rodada): **tem bateria, como drone de verdade**; o resto do tempo ele está pousado, recarregando |
+| **Recarga** | pousar na **base do próprio lado** (no alto) e esperar `?` s | — | decisão do dono: **cada lado tem a sua base** — a recarga não é disputada; é também o motivo de a arena ter altura |
+| **Volta sozinho** | entre **15 e 10% de bateria** (≈ 20 a 36 s de voo) o **piloto automático** larga a função e volta para a base | — | decisão do dono: não se perde drone por esquecimento; quem pilota no manual é que aceita o risco |
+
+### 4.1 A base e o canhão da base (dono, 27/09, 3ª rodada)
+
+- **Uma base por lado, no alto** (prédio ou torre). Por ser **ponto fixo da arena**, custa **0 B/s** de estado, como as zonas de cura e resfriamento — quem recarrega é o servidor, e o saldo sai dos eventos (pousou / levantou / cheia).
+- **O canhão da base** existe para **expulsar drone do outro time**: "nada muito violento". Isso é uma regra de alvo, não só um dano: **ele engaja drone e mais nada** — Mech e andróide passam por perto sem serem mirados. É dissuasão anti-enxame, não arma de guerra.
+- **Não pesa no jogo** (pedido do dono, textual): posição fixa, sem corpo rígido, sem alocação por tiro, mira decidida no servidor e disparo por **evento** — o alvo é uma lista curta de drones, não a cena inteira. O número que falta medir é o mesmo dos drones: **custo por tick com a sala cheia** (§ 9).
+- **Os andróides mecânicos do próprio lado também dão carga no drone** — é a **recarga móvel**: o drone não precisa voltar à base para receber carga. Como o andróide já roda no `fixedUpdate` do `Match.step()`, isso é um raio de proximidade, não física nova.
+- **O que ainda falta saber do canhão:** quantos tiros derrubam um drone, qual o alcance, se dá para o inimigo **calar** a defesa (base destrutível) e se ele atira em drone pousado na base dele — são os itens 5 e 8 das perguntas em aberto (§ 10).
 
 ## 5. Armas e módulos de fábrica
 - **DRONE-R:** nenhuma arma. Sensor: vê e, se aprovado, **compartilha a visão** com os aliados.
@@ -64,10 +77,14 @@
 - **DRONE-C:** nenhuma arma. Módulo de conserto de alcance curto.
 
 ## 6. Como o jogador comanda e como a IA usa
-- **Comando (proposta):** uma tecla de função solta/traz o drone; a **função é do drone**, não do jogador — quem pilota não
-  vira artilheiro.
-- **Trilha:** pré-calculada no nascimento (patrulha) — é o que faz o drone custar ~0 B/s em voo (§ 8.2). Voo livre só se o
-  dono escolher drone **pilotado** (aí o custo sobe, ver § 10).
+- **Comando (decidido pelo dono, 27/09):** o drone aceita **os dois modos** — **pilotado** (você voa) ou **piloto automático**
+  (ele cumpre a função sozinho). A função é do drone: quem pilota não vira artilheiro.
+- **O que o piloto automático faz (dono, 27/09):** cumpre a função escolhida **e** cuida da própria bateria — entre **15 e 10%**
+  ele larga o que estava fazendo e **volta sozinho para a base** do lado dele. O jogador pode assumir o controle no meio do voo
+  (pergunta 7).
+- **Custo por modo (§ 8.2):** no automático, a trilha é pré-calculada no nascimento e o voo custa **~0 B/s**; no pilotado, o
+  comando entra no canal de entrada e o estado vai no ritmo da unidade — a decisão de **quantos drones por partida** é que
+  diz se cabe.
 - **Determinismo (G2):** trilha e escolha de alvo com `rng.ts`, nunca `Math.random`; nada de DOM na simulação (G1/G2).
 - **IA (se a IA usar drones):** prioridade de alvo pelo que já está ferido (`METAGAME.md` § 8, vindo do STERM).
 
@@ -79,26 +96,62 @@
 5. **"Oito drones na sala cabem no orçamento de banda"** — é o teste de infraestrutura da § 8.2 (10 bytes a 5 Hz).
 6. **"O drone é determinístico: mesma semente, mesmo trajeto."** (a trilha é pré-calculada)
 7. **"Um drone não marca inimigo atrás de parede."** (só vale se o reconhecimento compartilhar visão)
+8. **"A bateria não permite a partida inteira no ar"** — o tempo total de voo é menor que a duração de uma partida.
+9. **"Recarregar exige pousar numa plataforma elevada"** — no chão da arena não recarrega.
+10. **"A bateria rende de 70 a 80% da partida"** — somando ida, volta e recargas, o tempo de voo fica nessa faixa (dono, 27/09).
+11. **"O piloto automático entrega o drone na base"** — entre 15 e 10% ele larga a função e **chega** à base do lado dele; o
+    teste é a chegada (mesma semente, mesmo trajeto).
+12. **"A base defende contra drone, não contra Mech"** — o canhão da base **não engaja** Mech nem andróide: se um deles levar
+    tiro dela em algum cenário, é bug, não equilíbrio.
+13. **"A base não vaza estado"** — a recarga acontece por evento (pousou / levantou / cheia); nenhum byte novo por tick,
+    como as zonas de cura e resfriamento.
 
 ## 8. Som (Gemini)
 - **Voo:** zumbido contínuo, mais agudo perto e mais grave longe (dá a dica de posição que o jogador precisa).
 - **Tiro:** o do blaster, mais fino.
+- **Base:** um pio curto de "carregando" e a mudança do zumbido quando o drone pousa (é o aviso de que ele está parado e
+  indefeso no alto).
 - **Dano e queda:** estalo curto + silêncio (avisar que o drone caiu importa mais que o som em si).
 
 ## 9. Custo de CPU e riscos
 - **Banda:** 10 bytes a 5 Hz = **60 B/s por drone**; 8 drones = **480 B/s** — a sala vai de 6,2 para 6,7 KB/s de 8,0 (83%).
   Com trilha pré-calculada, ~0 B/s em voo. **Um drone pilotado a 20 Hz e um por jogador não cabe** (3,6 KB/s).
+- **Base de recarga (uma por lado):** ponto fixo no alto → **0 B/s** de estado, como as zonas; o resto é evento
+  (pousou / levantou / cheia). Nada de estado por tick.
+- **Canhão da base:** alvo **só drone** (filtro de alvo, não de distância), posição fixa, mirar no servidor e atirar por
+  **evento** (o mesmo `SHOT` das armas). Sem corpo rígido, sem alocação por tiro: o custo é um raycast curto contra poucos
+  drones — **não é uma unidade nova na simulação**. Medir junto com o desvio dos drones, na sala cheia.
 - **CPU:** o custo real é o **desvio de obstáculo** (raycast no Rapier por drone); medir com a sala cheia antes de fixar
   quantos drones por partida. Sem alocação por tick (pools, vetores pré-alocados — G4).
-- **Render:** malha pequena, mas oito delas viram draw calls: manter o teto da seção 3.
+- **Render:** malha pequena, mas oito delas viram draw calls: manter o teto da seção 3. O canhão da base é estático (uma
+  malha e, no máximo, um traço de tiro reaproveitado).
 - **Risco de design:** enxame dominando a partida (mitigado por fragilidade + autonomia) e a "punição de olhar para cima"
-  (quem pilota drone perde a noção do chão) — é o que faz a classe ser tática e não obrigatória.
+  (quem pilota drone perde a noção do chão) — é o que faz a classe ser tática e não obrigatória. A base no alto é o que
+  impede o drone de ser onipresente: **quem quer enxame gasta tempo de voo voltando**.
 
 ## 10. Perguntas para o dono
-1. O drone é **pilotado por você** (você voa) ou **automático** (segue você e cumpre a função)? Isso decide o custo: o
-   pilotado a 20 Hz custa 456 B/s (não cabe um por jogador); o automático com trilha pré-calculada custa quase zero.
-2. **Quantos** e **como entra** na partida: habilidade com recarga, item de partida ou escolha no Hangar?
-3. O **DRONE-C conserta as partes** (como o técnico ENTRÓPICO) ou dá "vida" genérica? E ele é metade ou o dobro do técnico?
-4. O drone tem **autonomia** (bateria/tempo de voo) ou voa a partida toda?
-5. **Abater um drone conta ponto** no placar (hoje o placar é por abate de Mech)?
-6. O **reconhecimento compartilha a visão** com os aliados (marca inimigos no HUD deles) ou serve só para quem o solta?
+**Respondidas em 27/09 (1ª e 2ª rodadas):** os **dois modos** de pilotagem (pilotado ou automático); a **bateria** com
+recarga pousando no alto; e o cenário ideal de o drone ser **adição ao Mech** (§ 1).
+
+**Respondidas em 27/09 (3ª rodada, à noite, junto com a leitura das páginas do site):**
+- **Autonomia:** **70 a 80% do tempo de partida** — 210 a 240 s de voo numa rodada de 5 min.
+- **Base:** **cada lado tem a sua** (não é ponto disputado), no alto, com um **canhão de defesa** leve.
+- **Volta:** o **piloto automático** volta sozinho para a base entre **15 e 10%** de bateria.
+- **Recarga móvel:** os **andróides mecânicos** do próprio lado também dão carga no drone.
+- **Peso na partida:** o drone **conta na partida**; no futuro, **modos só de drone** (ideia registrada, sem prioridade).
+
+**Em aberto:**
+1. **Quantos** e **como entra** na partida: habilidade com recarga, item de partida ou escolha no Hangar?
+2. O **DRONE-C conserta as partes** (como o técnico ENTRÓPICO) ou dá "vida" genérica? É metade ou o dobro do técnico?
+3. **Abater um drone conta ponto** no placar (hoje o placar é por abate de Mech)?
+4. O **reconhecimento compartilha a visão** com os aliados (marca inimigos no HUD deles) ou serve só para quem o solta?
+5. **Quanto tempo dura a recarga** na base, e **quantos ciclos de voo cabem** numa partida? (com 70–80% de voo o tempo é
+   curto: o número decide se o drone voa uma vez ou duas) E o **canhão da base**: quantos tiros derrubam um drone e qual o
+   alcance dele?
+6. **Bateria vazia no voo manual:** o drone pousa forçado (e pode ser recuperado) ou cai e é destruído?
+7. **Piloto automático fora da volta:** ele segue o dono, patrulha um perímetro ou vai para onde a função for melhor? Como o
+   dono o chama de volta ou assume o controle no meio do voo?
+8. **A defesa da base pode ser calada?** A base é destrutível (o inimigo derruba o canhão) ou a defesa é permanente?
+
+**Ideia registrada sem prioridade:** **modos só de drone** — uma partida em que todos voam (o dono citou em 27/09). Não
+entra no escopo até ele priorizar.

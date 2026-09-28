@@ -19,6 +19,10 @@ export interface HangarPreview {
   /** Teste de disparo: o galpão mostra o Mech atirando no alvo, no ritmo do teste. */
   test?(data: TestFire, arm: ArmSlot): void;
   stopTest?(): void;
+  /** Treino manual no galpão: recebe a arma selecionada, sem simular dano no jogo. */
+  aimPractice?(weapon: WeaponStats): void;
+  stopAimPractice?(): void;
+  canAimPractice?(): boolean;
 }
 
 /** Os tiros do teste começam depois que o Mech vira para o alvo (s). */
@@ -100,6 +104,11 @@ export class HangarMenu {
   private readonly hotLeft: HTMLElement;
   /** Teste de disparo em andamento (os números da tela saem dele). */
   private testing: TestFire | null = null;
+  private aimTraining = false;
+
+  get isAimTraining(): boolean {
+    return this.aimTraining;
+  }
 
   constructor(
     private readonly hangar: Hangar,
@@ -120,15 +129,17 @@ export class HangarMenu {
         <div class="hg-caption"><b id="hangar-mech-title"></b><span id="hangar-mech-detail"></span><small>ARRASTE PARA GIRAR</small></div>
         <div class="hg-presets" id="hg-presets" aria-label="Montagens salvas nos atalhos 1 a 4"></div>
       </div>
+      <div class="hg-aim-reticle" aria-hidden="true"><i></i></div>
       <div class="hg-test" id="hg-test" hidden>
-        <div class="hg-test-head"><em>TESTE DE DISPARO</em><b id="hg-test-weapon"></b></div>
+        <div class="hg-test-head"><em id="hg-test-title">TESTE DE DISPARO</em><b id="hg-test-weapon"></b></div>
         <div class="hg-test-grid">
           <div><span>TEMPO</span><b id="hg-test-time"></b></div>
-          <div><span>TIROS</span><b id="hg-test-shots"></b></div>
-          <div><span>DANO</span><b id="hg-test-dmg"></b></div>
+          <div><span id="hg-test-shots-label">TIROS</span><b id="hg-test-shots"></b></div>
+          <div><span id="hg-test-dmg-label">DANO</span><b id="hg-test-dmg"></b></div>
         </div>
-        <div class="hg-test-heat"><span>CALOR</span><div class="hg-meter"><i id="hg-test-heatbar"></i></div><b id="hg-test-state"></b></div>
-        <button class="hg-btn" type="button" data-action="stop-test">PARAR</button>
+        <div class="hg-test-heat"><span id="hg-test-heat-label">CALOR</span><div class="hg-meter"><i id="hg-test-heatbar"></i></div><b id="hg-test-state"></b></div>
+        <p id="hg-practice-help" hidden>MOVA A MIRA E SEGURE O BOTÃO ESQUERDO · ESC PARA SAIR</p>
+        <button class="hg-btn" type="button" data-action="stop-test" id="hg-test-stop">PARAR</button>
       </div>
       <header class="hg-top">
         <div class="hg-brand"><svg class="hg-emblem" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 29 9v14l-13 7L3 23V9z" /><path d="M16 8 23 12v8l-7 4-7-4v-8z" /></svg><span><b>CYBERMECH</b><small>HANGAR · CENTRO DE MONTAGEM</small></span></div>
@@ -190,10 +201,12 @@ export class HangarMenu {
     document.addEventListener('keydown', (event) => {
       if (!this.isOpen) return;
       if (event.key === 'Escape') {
-        if (this.testing) this.endTest(true);
+        if (this.aimTraining) this.endAimPractice(true);
+        else if (this.testing) this.endTest(true);
         else this.close();
         return;
       }
+      if (this.aimTraining || this.testing) return;
       // 1 a 4 carregam a montagem do atalho (fora de campo de texto).
       const n = Number(event.key);
       if (n >= 1 && n <= PRESET_COUNT && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLSelectElement)) this.loadPreset(n - 1);
@@ -266,6 +279,16 @@ export class HangarMenu {
     this.setText('hg-test-state', at.locked ? 'SUPERAQUECEU: ARMAS TRAVADAS' : `${Math.round(at.heat * 100)}%`);
   }
 
+  /** Atualiza a leitura do treino manual sem re-renderizar a tela a cada quadro. */
+  aimPracticeFrame(seconds: number, shots: number, hits: number, accuracy: number): void {
+    if (!this.aimTraining) return;
+    this.setText('hg-test-time', `${num(seconds, 1)} s`);
+    this.setText('hg-test-shots', String(shots));
+    this.setText('hg-test-dmg', String(hits));
+    this.root.querySelector<HTMLElement>('#hg-test-heatbar')!.style.width = `${accuracy}%`;
+    this.setText('hg-test-state', `${accuracy}%`);
+  }
+
   private startTest(): void {
     const arm = this.draft[this.selectedSlot];
     if (!arm) return;
@@ -279,6 +302,55 @@ export class HangarMenu {
     this.setText('hg-test-weapon', `${w.name.toUpperCase()} ${TIERS[w.tier]!.label}`);
     this.testFrame({ t: 0, seconds: data.seconds });
     this.preview.test?.(data, this.selectedSlot);
+  }
+
+  private startAimPractice(): void {
+    const arm = this.draft[this.selectedSlot];
+    if (!arm || !this.preview.aimPractice) return;
+    const selectedWeapon = weapon(arm.id, arm.tier);
+    if (selectedWeapon.kind === 'melee') {
+      this.message = 'O alvo móvel treina armas de tiro. Use TESTAR DISPARO para conferir a motosserra.';
+      this.messageKind = 'info';
+      this.renderMessage();
+      return;
+    }
+    if (this.preview.canAimPractice && !this.preview.canAimPractice()) {
+      this.message = 'O treino manual usa mouse e teclado. No toque, use TESTAR DISPARO.';
+      this.messageKind = 'info';
+      this.renderMessage();
+      return;
+    }
+    this.aimTraining = true;
+    this.root.classList.remove('hg-enter');
+    this.root.classList.add('hg-testing', 'hg-aim-training');
+    this.root.querySelector<HTMLElement>('#hg-test')!.hidden = false;
+    this.setText('hg-test-title', 'TREINO DE MIRA');
+    this.setText('hg-test-weapon', `ALVO MÓVEL · ${this.selectedSlot === 'right' ? 'BRAÇO D' : 'BRAÇO E'}`);
+    this.setText('hg-test-shots-label', 'DISPAROS');
+    this.setText('hg-test-dmg-label', 'ACERTOS');
+    this.setText('hg-test-heat-label', 'PRECISÃO');
+    this.setText('hg-test-state', '0%');
+    this.root.querySelector<HTMLElement>('#hg-practice-help')!.hidden = false;
+    this.setText('hg-test-stop', 'ESC PARA SAIR');
+    this.preview.aimPractice(selectedWeapon);
+  }
+
+  /** Chamado ao soltar Esc ou quando o navegador encerra o Pointer Lock. */
+  endAimPractice(stopped: boolean): void {
+    if (!this.aimTraining) return;
+    this.aimTraining = false;
+    this.preview.stopAimPractice?.();
+    this.root.classList.remove('hg-testing', 'hg-aim-training');
+    this.root.querySelector<HTMLElement>('#hg-test')!.hidden = true;
+    this.root.querySelector<HTMLElement>('#hg-practice-help')!.hidden = true;
+    this.setText('hg-test-title', 'TESTE DE DISPARO');
+    this.setText('hg-test-shots-label', 'TIROS');
+    this.setText('hg-test-dmg-label', 'DANO');
+    this.setText('hg-test-heat-label', 'CALOR');
+    this.setText('hg-test-stop', 'PARAR');
+    this.message = stopped ? 'Treino de mira encerrado.' : 'Treino encerrado: mouse liberado.';
+    this.messageKind = 'info';
+    this.renderMessage();
   }
 
   /** Fim do teste (acabou ou parou): os painéis voltam e o resumo fica na mensagem. */
@@ -327,6 +399,7 @@ export class HangarMenu {
   }
 
   private close(): void {
+    this.endAimPractice(true);
     this.endTest(true);
     this.root.classList.add('hidden');
     this.pauseOverlay?.classList.remove('hidden');
@@ -387,9 +460,15 @@ export class HangarMenu {
       this.startTest();
       return;
     }
+    if (action === 'aim-practice') {
+      event.stopPropagation();
+      this.startAimPractice();
+      return;
+    }
     if (action === 'stop-test') {
       event.stopPropagation();
-      this.endTest(true);
+      if (this.aimTraining) this.endAimPractice(true);
+      else this.endTest(true);
       return;
     }
     if (action === 'close') {
@@ -506,6 +585,7 @@ export class HangarMenu {
       <div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : `+${Math.round((t.damage - 1) * 100)}% dano`}</small></button>`).join('')}</div>
       <button class="hg-test-btn" type="button" data-action="test"${arm ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>
+      <button class="hg-practice-btn" type="button" data-action="aim-practice"${arm ? '' : ' disabled'}>◎ TREINO DE MIRA · ALVO MÓVEL</button>
       ${w ? `<div class="hg-bars">${STATS.map((s) => bar(s, w, was)).join('')}</div><p class="hg-legend"><i class="now"></i> esta montagem <i class="was"></i> a que está no Mech</p>` : ''}`;
 
     const capPct = Math.min(100, (report.mass / report.capacity) * 100);

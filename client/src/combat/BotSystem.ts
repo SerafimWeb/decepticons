@@ -47,6 +47,10 @@ export interface BotSystemOptions {
   projectiles: ProjectileSystem;
   particles: ParticleSystem;
   respawner: Respawner;
+  /** Desligado em missões com pool: a própria regra decide quando cada unidade volta. */
+  respawn?: boolean;
+  /** No CTF, cada defensor renasce na própria base em vez do ponto global mais distante. */
+  respawnAtHome?: boolean;
   /** Onde cada Mech rebelde (escala 2) nasce (x, z): um por ponto. */
   spawns: readonly (readonly [number, number])[];
   /** Onde cada andróide rebelde (escala 1) nasce (x, z): um por ponto. */
@@ -118,7 +122,12 @@ export class BotSystem {
       const home = place(mech, p);
       const persona = PERSONAS[(!android && o.personas?.[i]) || 'soldado'];
       const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, o.skill ?? BOT_SKILL_NORMAL, android ? ANDROID_PROFILE : MECH_PROFILE, persona);
-      o.respawner.track(mech, BOT_RESPAWN_S, () => brain.reset());
+      if (o.respawn !== false) {
+        o.respawner.track(mech, BOT_RESPAWN_S, () => {
+          if (o.respawnAtHome) mech.respawn(home);
+          brain.reset();
+        });
+      }
       this.bots.push({ mech, brain, name, home });
     };
     // No placar e no nome sobre a cabeça, o nome e a personalidade (CLAUDE·BRABO): o jogador aprende quem é quem.
@@ -142,7 +151,7 @@ export class BotSystem {
       const mech = new Android({ visor: PALETTE.fluo, tool: 'repair', stats: poweredStats(ANDROID_STATS, power, 'technician') });
       const home = place(mech, p);
       const brain = new TechnicianController(mech, allies);
-      o.respawner.track(mech, BOT_RESPAWN_S, () => brain.reset());
+      if (o.respawn !== false) o.respawner.track(mech, BOT_RESPAWN_S, () => brain.reset());
       const beam = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3)), new THREE.LineBasicMaterial({ color: BEAM_COLOR }));
       beam.visible = false;
       beam.frustumCulled = false;
@@ -164,6 +173,35 @@ export class BotSystem {
       mech.applyFacing(Math.atan2(home.x, home.z), 0);
       brain.reset();
     }
+  }
+
+  /**
+   * Ativa um recorte do pool por tipo e guarda o restante. Usado apenas entre ondas, nunca cria ou
+   * remove objetos. Devolve quantos inimigos ficaram ativos para a regra conferir seu teto.
+   */
+  setRoster(mechCount: number, androidCount: number): number {
+    let mechs = 0;
+    let androids = 0;
+    let active = 0;
+    for (const { mech, brain, home, beam } of this.bots) {
+      if (!(brain instanceof BotController)) {
+        mech.deactivate();
+        if (beam) beam.visible = false;
+        continue;
+      }
+      const android = mech instanceof Android;
+      const enabled = android ? androids++ < androidCount : mechs++ < mechCount;
+      if (!enabled) {
+        mech.deactivate();
+        continue;
+      }
+      mech.respawn(home);
+      mech.applyFacing(Math.atan2(home.x, home.z), 0);
+      brain.reset();
+      active++;
+    }
+    this.directorTimer = 0;
+    return active;
   }
 
   /** Troca a personalidade de cada Mech rebelde, na ordem (vale a partir do próximo tick). */
@@ -254,6 +292,7 @@ export class BotSystem {
   fixedUpdate(dt: number): void {
     this.direct(dt);
     for (const { mech, brain } of this.bots) {
+      if (!mech.alive) continue;
       mech.fixedUpdate(brain.think(dt, this.targets), dt);
       // Técnico no alcance: o conserto é regra do tick (quem escolhe o Mech é o cérebro).
       if (brain instanceof TechnicianController && brain.repairTarget) brain.repairTarget.repair(REPAIR_RATE * this.repairScale * dt);

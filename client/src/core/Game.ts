@@ -7,6 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { CameraRig } from '../camera/CameraRig';
+import type { CameraModeId } from '../camera/CameraMode';
 import type { CombatSystem } from '../combat/CombatSystem';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import type { RocketSystem } from '../combat/RocketSystem';
@@ -18,6 +19,7 @@ import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
 import type { MechBase } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
+import { CtfObjectives } from '../environment/CtfObjectives';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
@@ -55,6 +57,8 @@ import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { Match } from '../sim/Match';
+import { gameModeFromSearch, type GameMode } from '../sim/gameMode';
+import { SURVIVAL_MAX_ANDROIDS, SURVIVAL_MAX_MECHS } from '../sim/SurvivalWaves';
 import { HangarMenu } from '../ui/HangarMenu';
 import { HangarScene } from '../hangar/HangarScene';
 import { OnlineLobby } from '../ui/OnlineLobby';
@@ -100,6 +104,7 @@ export class Game {
   private readonly particles = new ParticleSystem();
   /** A partida (sem tela): arena, bots, tiros, dano, rodadas. As partes abaixo são atalhos para ela. */
   private readonly match: Match;
+  private readonly gameMode: GameMode;
   private readonly debris: DebrisSystem;
   private readonly projectiles: ProjectileSystem;
   private readonly rockets: RocketSystem;
@@ -107,6 +112,8 @@ export class Game {
   private readonly bots: BotSystem;
   private readonly respawner: Respawner;
   private readonly round: Round;
+  /** Bandeiras, bases e zonas holográficas: cinco draw calls, somente no modo CTF. */
+  private readonly ctfObjectives: CtfObjectives | null;
   private readonly roundHud: RoundHud;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
@@ -146,11 +153,14 @@ export class Game {
   private appliedQuality: QualityPreset | null = null;
 
   private playing = false;
+  private missionEnded = false;
   /** O galpão 3D do Hangar (feito na primeira vez que abre) e se ele está na tela no lugar da arena. */
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
   private readonly hangarMenu: HangarMenu;
   private readonly lobby = new OnlineLobby();
+  private aimPracticeInterval = 0.18;
+  private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
   private readonly renderPass: RenderPass;
   private accumulator = 0;
   private last = -1;
@@ -202,7 +212,12 @@ export class Game {
     const publicServer = import.meta.env.VITE_GAME_SERVER;
     const net = onlineConfig(location.search, location.hostname, publicServer);
     const online = net && !('error' in net) ? net : null;
-    const foes = online ? { ...this.settings.value, enemyMechs: 0, enemyAndroids: 0, technician: false } : this.settings.value;
+    this.gameMode = online ? 'deathmatch' : gameModeFromSearch(location.search);
+    const foes = online
+      ? { ...this.settings.value, enemyMechs: 0, enemyAndroids: 0, technician: false }
+      : this.gameMode === 'survival'
+        ? { ...this.settings.value, enemyMechs: SURVIVAL_MAX_MECHS, enemyAndroids: SURVIVAL_MAX_ANDROIDS, technician: false }
+        : this.settings.value;
     // Potências do painel (por arma e por clã): montadas uma vez, aqui; mudam ao reiniciar. Online, o padrão do servidor.
     const power = online ? defaultPower() : this.power.current;
     this.match = new Match({
@@ -211,10 +226,12 @@ export class Game {
       particles: this.particles,
       foes,
       power,
+      mode: this.gameMode,
       ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY } : {}),
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
+    this.ctfObjectives = this.match.ctf ? new CtfObjectives(this.scene) : null;
     // O piloto escolhe o chassi (Hangar): Vector-09 ou andróide, sempre nas cores do jogador.
     this.mech =
       this.hangar.current.chassis === 'android'
@@ -234,7 +251,7 @@ export class Game {
       };
       b.onLand = () => this.audio.playAndroidStep(this.nearness(b));
     }
-    this.roundHud = new RoundHud(this.mech);
+    this.roundHud = new RoundHud(this.mech, this.gameMode === 'deathmatch');
     // Botão na tela de pausa; a calibração tem camada própria e não retoma o jogo.
     new MouseCalibration(this.settings, [
       document.getElementById('btn-settings')!,
@@ -298,11 +315,15 @@ export class Game {
     this.assist = new AimAssist(physics, this.mech, this.bots.mechs);
 
     this.wireEvents();
+    this.configureModeSwitch();
     // Celular e tablet (toque é o ponteiro principal) começam no modo toque; o toque ou o clique
     // que inicia a partida confirma o modo (notebook com tela de toque continua no mouse).
     this.setTouchMode(matchMedia('(hover: none) and (pointer: coarse)').matches);
     this.hud.setMode(this.rig.mode);
     this.hud.setReady(this.input.touchMode);
+    if (this.gameMode === 'survival') this.hud.setMissionMode(true);
+    else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
+    else this.hud.setMissionMode(false);
     this.hud.setBuild(`CYBERMECH ${import.meta.env.VITE_BUILD ?? 'dev'} · © ${new Date().getFullYear()} SERAFIM WEB`);
 
     this.quality = new Quality(
@@ -331,6 +352,31 @@ export class Game {
       status: () => (online ? `ONLINE · SALA ${online.room}` : 'OFFLINE'),
       test: (data, arm) => this.hangarScene?.startTest(data, arm),
       stopTest: () => this.hangarScene?.stopTest(),
+      aimPractice: (w) => {
+        this.savedPracticeLook = { yaw: this.rig.look.yaw, pitch: this.rig.look.pitch, mode: this.rig.mode.id };
+        this.aimPracticeInterval = w.fireInterval;
+        if (!this.rig.mode.pointerLock) {
+          this.rig.setMode('tps');
+          this.hud.setMode(this.rig.mode);
+        }
+        this.rig.look.yaw = 0;
+        this.rig.look.pitch = -0.14;
+        this.hangarScene?.startAimPractice();
+        this.input.requestLock();
+      },
+      canAimPractice: () => !this.input.touchMode,
+      stopAimPractice: () => {
+        this.hangarScene?.stopAimPractice();
+        const previous = this.savedPracticeLook;
+        if (previous) {
+          this.rig.setMode(previous.mode);
+          this.rig.look.yaw = previous.yaw;
+          this.rig.look.pitch = previous.pitch;
+          this.hud.setMode(this.rig.mode);
+          this.savedPracticeLook = null;
+        }
+        this.input.exitLock();
+      },
     });
     new PilotSwitch(this.hangar);
     new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null);
@@ -455,7 +501,7 @@ export class Game {
     this.player.keys = s.keys;
     this.bots.setSkill(BOT_SKILLS[s.difficulty]);
     this.bots.setPersonas(s.enemyPersonas);
-    this.bots.maxAttackers = s.maxAttackers;
+    if (!this.match.waves || this.match.waves.phase !== 'active') this.bots.maxAttackers = s.maxAttackers;
     this.debugPanel.setVisible(s.showPerf);
     this.audio.setVolume(s.volume);
     if (s.quality !== this.appliedQuality) {
@@ -558,6 +604,31 @@ export class Game {
       this.audio.playExplosion(dist);
     };
     this.match.onRoundStart = () => this.startRound();
+    this.match.onWaveStart = (wave, total, _mechs, _androids, title) => this.hud.setMissionWave(wave, total, title);
+    this.match.onWaveProgress = (wave, killed, total, elapsedS) => this.hud.setMissionProgress(wave, killed, total, elapsedS);
+    this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
+    this.match.onMissionEnd = (survived, waveReached, stats) => {
+      this.missionEnded = true;
+      this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds);
+      this.setPlaying(false);
+      this.input.exitLock();
+    };
+    this.match.onCtfFlag = (event, owner) => {
+      const flag = owner === 'blue' ? 'AZUL' : 'VERMELHA';
+      const action = event === 'pickup' ? 'TOMADA' : event === 'drop' ? 'DERRUBADA' : 'DEVOLVIDA';
+      this.hud.showCtfEvent(`BANDEIRA ${flag} ${action}`);
+    };
+    this.match.onCtfCapture = (team, blue, red) => {
+      this.ctfObjectives?.flashCapture();
+      this.hud.showCtfEvent(`${team === 'blue' ? 'AZUL' : 'VERMELHO'} CAPTUROU · ${blue} × ${red}`);
+    };
+    this.match.onCtfProgress = (timeLeft, blue, red) => this.hud.setCtfProgress(timeLeft, blue.captures, red.captures);
+    this.match.onCtfEnd = (winner, blue, red) => {
+      this.missionEnded = true;
+      this.hud.setCtfEnd(winner, blue.captures, red.captures, blue.kills, red.kills);
+      this.setPlaying(false);
+      this.input.exitLock();
+    };
     this.match.onPropBroken = (_id, center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
       if (falloff > 0) rig.addShake(0.55 * falloff);
@@ -580,6 +651,10 @@ export class Game {
     // Resume do AudioContext na primeira interação (exigência dos navegadores)
     document.getElementById('overlay')!.addEventListener('click', () => this.audio.resume(), { once: true });
     input.onLockChange = (locked) => {
+      if (this.hangarMenu?.isAimTraining) {
+        if (!locked) this.hangarMenu.endAimPractice(false);
+        return;
+      }
       if (locked) this.startPlaying();
       else if (rig.mode.pointerLock) this.setPlaying(false);
     };
@@ -628,6 +703,14 @@ export class Game {
   }
 
   private resume(): void {
+    if (this.missionEnded) {
+      this.missionEnded = false;
+      this.match.restartMission();
+      this.player.launcher.refill();
+      this.hud.setScore(0, 0);
+      if (this.gameMode === 'ctf') this.hud.resetCtf();
+      else this.hud.resetMission();
+    }
     // Primeira partida da sessão: vinheta da marca (o clique é o gesto que libera o som). O mouse já
     // fica preso agora (o Pointer Lock só pode ser pedido dentro do clique); o mundo espera a vinheta.
     if (!this.brandShown) {
@@ -641,6 +724,23 @@ export class Game {
       this.input.requestLock(); // no toque: marca "jogando" e dispara onLockChange(true)
     } else if (this.rig.mode.pointerLock) this.input.requestLock();
     else this.startPlaying();
+  }
+
+  private configureModeSwitch(): void {
+    const button = document.getElementById('btn-mode')!;
+    const label = this.gameMode === 'survival' ? 'SOBREVIVÊNCIA' : this.gameMode === 'ctf' ? 'CAPTURE A BANDEIRA' : 'ARENA';
+    button.textContent = `[ MODO: ${label} · TROCAR ]`;
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const url = new URL(location.href);
+      if (this.gameMode === 'deathmatch') {
+        url.searchParams.set('modo', 'survival');
+        url.searchParams.delete('sala');
+        url.searchParams.delete('servidor');
+      } else if (this.gameMode === 'survival') url.searchParams.set('modo', 'ctf');
+      else url.searchParams.delete('modo');
+      location.assign(url);
+    });
   }
 
   /** Começa a partida, a não ser que a vinheta ainda esteja na tela (ela chama afterBrand no fim). */
@@ -768,12 +868,17 @@ export class Game {
     // --- Render ---
     this.mech.render(dt, alpha);
     this.bots.render(dt, alpha);
+    if (this.match.ctf && this.ctfObjectives) this.ctfObjectives.update(dt, this.match.ctf);
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);
     this.rig.update(dt);
     if (this.hangarView) {
       const hs = this.hangarScene!;
       hs.update(dt);
+      if (this.hangarMenu.isAimTraining) {
+        hs.updateAimPractice(dt, this.rig.look.yaw, this.rig.look.pitch, this.input.mouseDown, this.aimPracticeInterval);
+        this.hangarMenu.aimPracticeFrame(hs.aimPracticeTime, hs.aimPracticeShots, hs.aimPracticeHits, hs.aimPracticeAccuracy);
+      }
       const w = window.innerWidth;
       const h = window.innerHeight;
       this.hangarMenu.placeHotspots(hs.armScreen('rightArm', w, h, _hotRight) ? _hotRight : null, hs.armScreen('leftArm', w, h, _hotLeft) ? _hotLeft : null);

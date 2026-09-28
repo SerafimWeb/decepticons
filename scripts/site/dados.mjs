@@ -295,11 +295,6 @@ export function arsenal(game) {
   };
 }
 
-/** O Hangar em projeto, para a landing: `- **Título:** frase.` na seção HANGAR do GAME_DESIGN. */
-export function hangarPlan() {
-  return [...designSection('HANGAR').matchAll(/^- \*\*(.+?):\*\*\s*(.+)$/gm)].map((m) => ({ title: m[1], text: m[2] }));
-}
-
 /** Tamanho do download do jogo (gzip, como o servidor entrega), a partir do build em `gameDir`. */
 export function bundleSize(gameDir) {
   const assets = join(gameDir, 'assets');

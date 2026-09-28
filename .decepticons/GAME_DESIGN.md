@@ -127,7 +127,9 @@ O jogo é feito para ser **muito bom e todo mundo querer jogar**, não para vend
 
 ## HANGAR (primeira tela disponível; módulos e progressão seguem planejados)
 
-> A landing lê esta lista (formato `- **Título:** frase.`). Especificação técnica completa em `HANGAR.md`.
+> Especificação técnica completa em `HANGAR.md`. Esta lista é a **especificação do Hangar**, não uma seção da
+> landing: a landing mostra o Hangar pelos números do próprio jogo (planta dos encaixes, arsenal nos três
+> níveis e a grade de montagens, de `dados.mjs → jogo()`), e a lista abaixo não se repete lá (dono, 27/09/2026).
 
 - **Chassi:** escolha no Hangar entre o Vector-09 médio e o andróide A-1 leve; a troca de piloto recarrega a partida.
 - **Encaixes:** monte as armas compatíveis nos braços e escolha entre MK I, MK II e MK III. Ombros e torso ficam reservados para módulos futuros.

@@ -3,14 +3,12 @@
  * O Vitest grava os módulos transformados em os.tmpdir() e nem sempre limpa ao sair; os workers
  * herdam este ambiente. Argumentos extras vão direto para o Vitest (ex.: npm test -- --watch).
  *
- * Teto de workers (achado em 27/09, Qwen registrou o sintoma em ESTADO_ATUAL.md): com `isolate`
- * (padrão do Vitest 5), cada arquivo de teste ganha um worker próprio — 31 arquivos aqui viram 31
- * processos, cada um abrindo servidor WebSocket e física de verdade. Numa máquina de poucos núcleos,
- * isso estoura o relógio: os testes que dependem de tempo real (o teto por IP do `server/guard.ts`,
- * a janela de banda do M4) competem por CPU e estouram o timeout, sem nenhuma mudança de código.
- * `VITEST_MAX_WORKERS` não existe no Vitest 5 (só a flag `--maxWorkers`); por isso o teto vai aqui,
- * de propósito, para o hook de pre-push e o CI de qualquer agente ficarem determinísticos por padrão.
- * Quem passar `--maxWorkers` explícito (ex.: para depurar com mais paralelismo) sobrescreve este teto.
+ * Sobre o flake do `server/room.test.ts > teto por IP` (27/09): não é concorrência do Vitest — é o
+ * `WebSocket` global do Node (undici) que, no Windows, às vezes só dispara `error` numa conexão que o
+ * servidor fecha logo após o handshake, sem nunca disparar `close` (Qwen achou a causa raiz; revisão
+ * do PR #91). O teste agora usa o `WebSocket` do pacote `ws` (o mesmo do servidor) e o flake sumiu; não
+ * há teto de workers aqui. Se `npm run check` voltar a flakar, é sintoma novo — investigar de novo, não
+ * reintroduzir o `--maxWorkers` baixo (revisão do Qwen, PR #91: serializa o CI de todo mundo à toa).
  */
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
@@ -21,14 +19,8 @@ rmSync(TMP, { recursive: true, force: true });
 mkdirSync(TMP, { recursive: true });
 
 const args = process.argv.slice(2);
-const hasOwnWorkerCap = args.some((a) => a.startsWith('--maxWorkers'));
-// 1 worker por padrão: medido em 27/09, 2 e 4 ainda flakam de vez em quando (real WebSocket + física
-// de verdade competindo por CPU); só 1 foi 100% estável. O hook de pre-push roda uma vez por push, não
-// por iteração — confiabilidade do portão pesa mais que os segundos a mais. Quem quiser mais
-// paralelismo (ex.: só rodando um arquivo específico) passa `--maxWorkers` explícito e sobrescreve.
-const finalArgs = [...(args.length ? args : ['run']), ...(hasOwnWorkerCap ? [] : ['--maxWorkers=1'])];
 const cli = resolve('node_modules', 'vitest', 'vitest.mjs');
-const result = spawnSync(process.execPath, [cli, ...finalArgs], {
+const result = spawnSync(process.execPath, [cli, ...(args.length ? args : ['run'])], {
   stdio: 'inherit',
   env: { ...process.env, TEMP: TMP, TMP, TMPDIR: TMP },
 });

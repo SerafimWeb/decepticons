@@ -3,7 +3,7 @@ import { weapon } from '../combat/weapons';
 import { VECTOR09_STATS } from '../entities/chassis';
 import { Hangar, PRESETS_STORAGE_KEY } from './Hangar';
 import { FACTORY_LOADOUT, factorySpec, type LoadoutSpec } from './loadout';
-import { testAt, testFire, TEST_FIRE_S } from './testFire';
+import { MOVING_TARGET_PERIOD_S, MOVING_TARGET_RANGE_M, movingTargetOffset, testAt, testFire, TEST_FIRE_S } from './testFire';
 
 function memory(initial: Record<string, string> = {}) {
   const data = new Map(Object.entries(initial));
@@ -41,6 +41,18 @@ describe('Hangar: teste de disparo', () => {
     const t = testFire(VECTOR09_STATS, weapon('rockets'));
     expect(t.shots.filter((s) => s < 1.2).length).toBe(4);
     expect(t.shots.filter((s) => s >= 1.2 && s < 2).length).toBeLessThanOrEqual(1);
+  });
+});
+
+describe('Hangar: alvo móvel do estande (Codex)', () => {
+  it('é puro e determinístico: o mesmo t sempre dá o mesmo deslocamento', () => {
+    expect(movingTargetOffset(3.7)).toBe(movingTargetOffset(3.7));
+  });
+
+  it('nunca passa da faixa e volta a zero a cada ciclo completo', () => {
+    for (let t = 0; t < 40; t += 0.3) expect(Math.abs(movingTargetOffset(t))).toBeLessThanOrEqual(MOVING_TARGET_RANGE_M + 1e-9);
+    expect(movingTargetOffset(0)).toBeCloseTo(0, 5);
+    expect(movingTargetOffset(MOVING_TARGET_PERIOD_S)).toBeCloseTo(0, 5);
   });
 });
 

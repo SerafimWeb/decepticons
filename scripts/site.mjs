@@ -238,6 +238,27 @@ async function pageSane(page, name, failures) {
   if (mode !== 'CSS1Compat') failures.push(`${name}: modo quirks (falta o <!doctype html>)`);
 }
 
+/**
+ * Anti-cópia (pedido do dono, 27/09/2026): o texto público não pode ser selecionado nem copiado.
+ * A prova é no navegador, não no CSS: o estilo computado tem de ser `none`, um "selecionar tudo" não
+ * pode pegar caractere nenhum, e um evento de cópia disparado à mão tem de voltar bloqueado.
+ * Isto é fricção contra clone manual; não é segurança (quem lê o HTML continua lendo, e isso é esperado).
+ */
+async function antiCopy(page, name, failures) {
+  const r = await page.evaluate(() => {
+    const wrap = document.querySelector('.wrap');
+    const ev = new Event('copy', { cancelable: true, bubbles: true });
+    document.body.dispatchEvent(ev);
+    document.execCommand('selectAll');
+    const texto = String(window.getSelection() ?? '').trim();
+    window.getSelection()?.removeAllRanges();
+    return { select: wrap ? getComputedStyle(wrap).userSelect : 'sem .wrap', chars: texto.length, bloqueado: ev.defaultPrevented };
+  });
+  if (r.select !== 'none') failures.push(`anti-cópia (${name}): o texto público é selecionável (user-select: ${r.select})`);
+  if (r.chars > 0) failures.push(`anti-cópia (${name}): o "selecionar tudo" ainda pegou ${r.chars} caracteres`);
+  if (!r.bloqueado) failures.push(`anti-cópia (${name}): o evento de cópia não foi bloqueado`);
+}
+
 /** Chrome/Edge do sistema (headless, WebGL por software). Temporários do browser em .tmp/ (G15). */
 async function launchBrowser() {
   const tmp = resolve('.tmp/site-check');
@@ -323,8 +344,16 @@ async function check() {
   try {
     browser = await launchBrowser();
     const page = await browser.newPage();
-    // Falha de fonte do Google (rede) não é erro nosso; violação de CSP e erro de script são.
-    page.on('console', (m) => m.type() === 'error' && !/fonts\.g/.test(m.text()) && failures.push(`console: ${m.text()}`));
+    // Fonte do Google que não carrega não é erro nosso: a página cai no monoespaçado do sistema, e o
+    // aviso de rede não interrompe nada. O console **não diz qual recurso falhou**, então
+    // "Failed to load resource" fica por conta do handler de response, que traz a URL — foi ele que
+    // derrubou o check da `main` em 27/09/2026: um 404 de woff2 do Google Fonts virou
+    // `console: Failed to load resource`, o filtro de fonte não achou a URL no texto e o deploy não saiu.
+    page.on('console', (m) => {
+      const texto = m.text();
+      if (texto.includes('Failed to load resource')) return;
+      if (m.type() === 'error' && !/fonts\.g/.test(texto)) failures.push(`console: ${texto}`);
+    });
     page.on('pageerror', (e) => failures.push(`pageerror: ${e.message}`));
     page.on('response', (r) => r.status() >= 400 && !/fonts.g/.test(r.url()) && failures.push(`HTTP ${r.status()}: ${r.url()}`));
     // Sala de controle: página própria, links internos vivos, sem o codinome.
@@ -332,6 +361,7 @@ async function check() {
     if ((await page.title()) !== 'Sala de controle · CYBERMECH') failures.push(`título da sala de controle: "${await page.title()}"`);
     await pageSane(page, 'sala de controle', failures);
     await publicPage(page, 'sala de controle', failures);
+    await antiCopy(page, 'sala de controle', failures);
     // Gestão: quadro, burn-up e linha do tempo saem do histórico do ROADMAP (precisa do git inteiro).
     if ((await page.locator('section[aria-labelledby="gestao"] .lane').count()) < 2) failures.push('sala de controle: a seção de gestão sumiu (sem o histórico do ROADMAP no git?)');
     // Novidades e fichas de design saem dos documentos: sem elas, o parser não achou as tabelas.
@@ -345,6 +375,7 @@ async function check() {
     if ((await page.title()) !== 'Oficina · CYBERMECH') failures.push(`título da oficina: "${await page.title()}"`);
     await pageSane(page, 'oficina', failures);
     await publicPage(page, 'oficina', failures);
+    await antiCopy(page, 'oficina', failures);
     if ((await page.locator('.minis .g').count()) < 6) failures.push('oficina: faltam os gráficos da bancada (a simulação do jogo não carregou)');
     // O mapa da arquitetura (SVG gerado no build): tem de sair com os módulos e as ligações.
     const arqMods = await page.locator('.arq .mod').count();
@@ -367,11 +398,12 @@ async function check() {
     if (title !== 'CYBERMECH') failures.push(`título da raiz: "${title}"`);
     await pageSane(page, 'landing', failures);
     await publicPage(page, 'landing', failures);
+    await antiCopy(page, 'landing', failures);
     // Hangar: os números saem do código do jogo; se o carregamento falhar, a seção some sem erro. Aqui é erro.
     if ((await page.locator('table.builds td.fit a').count()) < 3) failures.push('landing: a grade de montagens do Hangar sumiu (validação do Hangar não carregou)');
     if ((await page.locator('section[aria-labelledby="hangar"] .wpn').count()) < 2) failures.push('landing: a seção do Hangar sumiu (o site não conseguiu ler o arsenal do código do jogo)');
-    // Online: os números saem do código da rede (shared/net) e as etapas, do ROADMAP.
-    if ((await page.locator('section[aria-labelledby="online"] .stages li').count()) < 3) failures.push('landing: a seção do multiplayer sumiu (o site não leu a rede ou a fase 4 do ROADMAP)');
+    // Online: o ritmo da rede sai do código (shared/net) e a contagem de etapas, do ROADMAP.
+    if ((await page.locator('section[aria-labelledby="online"] .read').count()) < 3) failures.push('landing: a seção do multiplayer sumiu (o site não leu a rede ou a fase 4 do ROADMAP)');
     if ((await page.locator('section[aria-labelledby="horizonte"] .feature').count()) !== 5) failures.push('landing: a seção de ideias futuras sumiu ou não tem os cinco conceitos registrados');
     if (await page.locator('section[aria-labelledby="horizonte"] .kicker').textContent() !== '// ideias em estudo · sem data prometida') failures.push('landing: ideias futuras precisam estar marcadas como estudo sem data prometida');
     // Abertura da marca: roda na primeira visita da sessão e sai da frente sozinha (senão cobre o botão).
@@ -391,7 +423,6 @@ async function check() {
     // Uma página por vez: a de trás não desenha, e o jogo do celular ficaria parado.
     await page.close();
     await mobile(browser, `${base}jogar/`, failures);
-    console.log(`site    ok: landing em ${prefix} com a abertura da marca, o Hangar e o online, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, celular joga pelo toque`);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {
@@ -403,6 +434,9 @@ async function check() {
     for (const f of failures) console.error(`   - ${f}`);
     process.exit(1);
   }
+  // Só depois de saber que não houve falha: antes, esta linha saía junto do "❌ SITE FALHOU" e dizia
+  // "ok" para um check vermelho (visto em 27/09/2026, no log do CI da `main`).
+  console.log(`site    ok: landing em ${prefix} com a abertura da marca, o Hangar e o online, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, texto não selecionável e sem cópia nas três páginas, celular joga pelo toque`);
 }
 
 /** Confere o site publicado: páginas no ar, .wasm com o tipo certo, CSP aplicada. */
@@ -427,6 +461,8 @@ async function verify(url) {
   if (!/^<!doctype html>/i.test(homeText) || !/<meta charset="utf-8">/i.test(homeText.slice(0, 1024))) failures.push(`${root}: sem doctype ou <meta charset> no início (acentos quebram)`);
   if (!/utf-8/i.test(home.headers.get('content-type') ?? '')) console.warn(`::warning::${root}: servidor sem charset no Content-Type (a página declara o seu)`);
   if (!home.headers.get('content-security-policy')?.includes('wasm-unsafe-eval')) failures.push(`${root}: sem a CSP do .htaccess`);
+  // Anti-cópia: a página publicada tem de trazer o CSS que impede selecionar o texto.
+  if (!/user-select:\s*none/.test(homeText)) failures.push(`${root}: a landing saiu sem a camada anti-cópia (texto selecionável)`);
   // O selvamkt.com.br responde 200 com uma página HTML para arquivo inexistente: status não basta.
   const shop = await get(`${root}oficina/`);
   if (!(await shop.text()).includes('Oficina · CYBERMECH')) failures.push(`${root}oficina/: não é a oficina`);

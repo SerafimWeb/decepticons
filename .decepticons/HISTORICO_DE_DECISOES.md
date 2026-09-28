@@ -1,5 +1,16 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] Sobrevivência solo chega primeiro, com pool fixo e cinco ondas (Codex)
+**Pedido do dono:** assumir a tarefa antes destinada ao Claude e entregar fases/missões jogáveis, sem deixar a parte visual separada da regra.
+**Decisão:** o primeiro corte é **solo/offline e completo de ponta a ponta**. `SurvivalWaves` roda no tick fixo do `Match`, sem relógio real ou sorteio: cinco ondas de 2, 3, 4, 5 e 6 inimigos, preparação de 3 s, intervalo de 4 s, derrota sem respawn e resumo com abates, dano e tempo. O servidor não anuncia esse modo ainda; isso fica explícito no `STATUS_REAL.md` até existir contrato de sala e eventos de missão.
+**Desempenho:** os 3 Mechs e 3 andróides máximos são criados uma vez na entrada. Entre ondas, `BotSystem.setRoster` só liga/desliga collider, raiz e cérebro; unidades inativas pulam o tick de IA/controller. O teto é seis inimigos simultâneos, os callbacks de progresso são limitados a 10 Hz e o HUD só escreve quando o texto muda. Não há `new` no tick nem no quadro por causa da missão.
+**Interface:** `[ MODO: ARENA · TROCAR ]` alterna pelo link `?modo=survival`; o HUD é alimentado por `onWaveStart`, `onWaveProgress`, `onWaveClear` e `onMissionEnd`, e a mesma tela reinicia a tentativa sem recarregar malhas ou física. Captura real do navegador headless em `.decepticons/arte/survival-waves.png`.
+**Verificação:** testes puros cobrem conclusão, derrota e reset; teste de integração com Rapier confirma a composição das duas primeiras ondas e que inimigos fora do plano não renascem. `npm run check` verde: 230 testes, painel, build (262,2 KB JS gzip; 719,4 KB Wasm gzip), smoke real e validação completa do site. Captura headless sem erro de página.
+**Quem decidiu:** dono (prioridade e autorização para o Codex assumir a regra); Codex (corte offline primeiro, progressão, pool e implementação).
+
+## [2026-09-28] Treino manual de mira integrado na main (Codex)
+**Estado:** PR #95 mergeado (77c078b), CI verde (224 testes e todas as etapas de check), revisão cruzada sem bloqueios. O job de deploy e a conferência do site passaram (run 36365685940). Próximo passo: playtest do dono em https://www.selvamkt.com.br/cybermech/jogar/; captura headless não substitui esse playtest. Sem novas decisões de gameplay ou custo de CPU.
+
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
 ## [2026-09-28] CTF HUD, Progresso do Piloto & Missões Diárias (Gemini)
@@ -29,6 +40,108 @@
 3. **Medalhas & Conquistas (`client/src/ui/MissionHUD.ts`)**: Função `getMissionMedals()` com cálculo dinâmico de conquistas (*Sobrevivente Sênior, Caçador de IAs, Devastador de Aço, Veterano de Ondas*) exibidas com cartões animados na tela de resumo.
 **Custo de CPU:** zero por frame; 227 testes unitários passando.
 **Quem decidiu:** Gemini (módulos, testes e interface, sob orientação do dono).
+
+## [2026-09-27] O deploy das fichas não saiu: um 404 de fonte derrubou o check da `main`
+**Achado (Qwen, R17, no mesmo dia):** o PR #98 (as fichas de Ondas e CTF) mergeou com o CI **do PR** verde, mas o
+**CI do push na `main` falhou** no `site --check` e o job de **deploy foi pulado** — as fichas estavam na `main` e
+**não apareciam no site** (conferido no ar: a lista de fichas da sala de controle ainda tinha 6 linhas). A falha:
+`console: Failed to load resource … 404`, sem URL. A causa está no **próprio verificador**: o handler de `response`
+já ignorava as URLs de fonte do Google (`fonts.g…`), mas o handler de `console` filtrava pelo **texto** da mensagem —
+e o texto de um 404 é só "Failed to load resource", sem a URL. Um woff2 do Google Fonts que não veio virou erro fatal
+da checagem, e o site deixou de publicar.
+**Achado de quebra, no mesmo log:** a linha `site    ok: …` era impressa **dentro** do `try`, antes do bloco que julga
+as falhas — o log do CI mostrou "site ok" e "❌ SITE FALHOU" na mesma execução. Uma checagem que diz "ok" quando
+falhou é pior do que não dizer nada.
+**Correção (Qwen):** o handler de `console` passa a **ignorar mensagens de falha de carregamento** (delegando o status
+HTTP ao handler de `response`, que traz a URL e continua pegando qualquer 404/500 que **não** seja de fonte); violação
+de CSP e erro de script seguem fatais. E a linha de sucesso foi movida para **depois** do julgamento das falhas.
+Nada disso afeta o jogo: é o verificador do site, e a `main` volta a publicar no merge seguinte.
+**Quem decidiu:** Qwen (o achado e a correção).
+
+## [2026-09-27] A ficha de balanço das Ondas, e por que os testes do CTF ainda não podem existir
+**Pedido (dono, repassando o plano do Gemini):** "Qwen, crie a ficha de balanço das Ondas (quantidade de inimigos e
+vida por onda) e os testes de simulação do CTF." As outras tarefas do mesmo plano são de outros: máquina de Ondas e
+regra do CTF em `sim/Match.ts` (Claude), HUD do CTF e painel de desafios/XP (Gemini), bandeira e bases 3D (Codex).
+**Decisão (Qwen):**
+- **`fichas/ondas.md` (proposta)** — o balanço do modo sobrevivência em números, com a regra que sustenta o resto:
+  **a onda é uma fila com teto de corpos vivos**, porque o motor de hoje só deixa **3 Mechs + 3 andróides** na arena,
+  no máximo **4 atacando juntos** (`maxAttackers`) e **32 unidades por sala** (`MAX_UNITS`, id de 1 byte) — uma onda
+  "cheia" seria ilegal no jogo e estouraria o protocolo. **11 ondas tabeladas** (andróides de 3 a 16 na fila; o
+  primeiro Mech na 4, o primeiro técnico na 5, o terceiro Mech na 10; simultaneidade 1 → 4) com a **vida total** de
+  cada uma. **A vida por inimigo é fixa** (andróide 32, Mech 300, de qualquer onda): inflar vida quebraria as metas de
+  dano por parte que o jogo todo respeita ("dois tiros derrubam") e o jogador perderia a leitura da luta — inimigo
+  mais duro, quando o dono quiser, é **chassi novo com ficha** (Ferret-X/Colossus-01, já no ROADMAP), não um
+  multiplicador invisível. **12 metas viram teste**, entre elas as duas que já são decisão do dono ("termina quando o
+  piloto cai") e a que protege a zona de cura ("a pausa entre ondas dá tempo de usar a zona"). A tabela foi montada
+  para caber nas bandas de ameaça que o `ui/MissionHUD.ts` (Gemini) já tem: **1–2 BAIXO, 3–5 MÉDIO, 6–9 ALTO, 10+
+  CRÍTICO**, com as medalhas por `waveReached >= 3` e `>= 5`.
+- **`fichas/ctf.md` (proposta)** — a parte do pedido que **existe hoje**: os testes do CTF **não podem nascer antes da
+  regra** (G14 e a regra 5 do `AGENTS.md`, contrato antes de paralelizar; conferido: `client/src/sim/` não tem
+  `team`, `flag` nem `bandeira`). O entregável é a **especificação de 15 testes** — nome, o que cada um monta e o que
+  prova — para o Claude implementar regra e teste no mesmo PR. O que o dono já decidiu no ROADMAP está fixado: 2v2
+  no primeiro corte, uma bandeira por base, **3 capturas** ou mais capturas em **8 min**, empate desempatado por
+  abates; e a alavanca de equilíbrio que ele pediu no mesmo item ("bandeira + Mech pesado em risco simétrico ao Mech
+  leve com dash") virou teste: **o portador corre mais devagar** e a exposição do leve e do pesado é travada dentro de
+  uma tolerância. Custo de rede: **0 B/s** (base e bandeira no chão são pontos fixos → evento; carregada, é **um bit**
+  nas flags de quem carrega, que já viajam a 20 Hz ⇒ **subir `PROTOCOL_VERSION`**).
+- **`STATUS_REAL.md`:** duas linhas novas, **AUSENTE** nas duas — é o estado real (modo sobrevivência e CTF não
+  existem no jogo). O `fichas/README.md` passa a reconhecer **fichas de modo**, não só de robô e de arma.
+**Quem decidiu:** dono (o pedido; e, antes, o fim do modo sobrevivência e o alvo de capturas do CTF); Qwen (a tabela
+de ondas, as metas, a especificação dos testes e o custo de rede).
+
+## [2026-09-27] A base de recarga do drone (com canhão) e a blindagem das páginas públicas
+**Pedido do dono:** 1) Bateria do drone: **cada carga rende 70 a 80% do tempo de partida**; o **piloto automático volta
+sozinho quando a bateria chega a 15–10%**; **cada lado tem a sua base carregadora**; a base merece um **canhão/turret de
+defesa** ("nada muito violento, só pra expulsar drones do outro time; e que isso **não pese no jogo**"); os **andróides
+mecânicos também podem dar carga no drone**; drones **contam** na partida e, no futuro, talvez **módulos só de drones**.
+2) Nas páginas do site: **leitura completa, limpar redundâncias, apagar o que é muito core / segredo industrial / propriedade
+intelectual** que não se deve divulgar (para não nos copiarem) e **impedir que o texto seja selecionável/copiável**.
+**Decisões:**
+- **Bateria, base e canhão (dono):** autonomia de **210 a 240 s** (70–80% de uma rodada de 5 min); volta automática do
+  piloto entre **15 e 10%**; **uma base por lado**, no alto, **não disputada**; **canhão de defesa** que, por decisão,
+  **só engaja drone** (é filtro de alvo, não só dano baixo) — "para expulsar drones do outro time"; e **recarga móvel pelo
+  andróide** do próprio lado. O "não pesa no jogo" foi verificado na mesma conta que trava o resto (`shared/net/`): base e
+  canhão são **pontos fixos da arena → 0 B/s de estado** e o disparo é **evento** (`SHOT`, o mesmo caminho das armas), com
+  alvo numa lista curta de drones. Ficha: `fichas/drone.md` **§ 4.1**, metas **10 a 13** e a 3ª rodada no § 10;
+  `METAGAME.md` § 8 (3ª rodada), § 9 (três linhas novas na tabela) e § 10 (**modos só de drone**, registrado sem prioridade).
+- **Páginas públicas (Qwen, a pedido do dono):** o site **parou de republicar a engenharia do repositório** (que é privado).
+  Saíram da landing a receita da rede — **byte por robô, KB/s por jogador, teto de unidades** — e o mesmo da saúde técnica da
+  oficina (o orçamento de banda virou **contagem de testes**); ficou o **ritmo** (60 Hz de simulação, 20 estados por segundo),
+  que qualquer netcode mostra. Redundâncias cortadas: a **lista de etapas do multiplayer** (é o ROADMAP, que já vive na sala de
+  controle) e o **plano do Hangar** (os quatro primeiros itens já estão na planta e no arsenal; os números do Hangar continuam
+  vindo do código).
+- **Anti-cópia:** toda página gerada por `pagina()` sai com `user-select: none` e bloqueio de cópia, recorte, arrasto e
+  Ctrl/Cmd+A, +C, +X, +S. É **fricção contra clone manual, não segurança**: quem lê o código-fonte da página continua lendo o
+  HTML — e isso está dito no código, para ninguém achar que virou DRM. O `site --check` passa a **exigir** as três provas
+  (texto não selecionável, "selecionar tudo" pegando zero caractere e evento de cópia bloqueado) nas três páginas, e o
+  `--verify` confere a camada no site publicado. Captura: `.decepticons/arte/landing-online.png`.
+**O que NÃO foi cortado (fica à decisão do dono):** os **números de gameplay** (ficha do Vector-09, arsenal nos três níveis,
+grade de montagens e metas de equilíbrio) e a **bancada da oficina** (calor, partes e distância) continuam públicos: são o que
+dá credibilidade à landing ("o site lê o jogo") e cortá-los é decisão de produto. O mapa da arquitetura e a lista de onde falta
+teste seguem na oficina pelo mesmo motivo — foram pedidos por ele.
+**Quem decidiu:** dono (autonomia, base, canhão, recarga pelo andróide e o "apague o que é muito core"); Qwen (a especificação
+da base e do canhão, o corte das páginas, a camada anti-cópia e as checagens que a travam a cada build).
+
+## [2026-09-27] O flake do `pre-push` endurecido de verdade, e onde mora a máquina de Ondas
+**Pedido (dono, repassando pedidos do Gemini e do Codex):** 1) endurecer `server/room.test.ts > teto por IP` (o flake trava o check de todo mundo; a flag de verdade é `--maxWorkers`); 2) confirmar/ajustar o contrato do `MissionHUD` e dizer se a onda roda no servidor; 3) ligar a máquina de Ondas em `sim/Match.ts` e `server/ArenaRoom.ts`; 4) os contratos que o Codex pediu (respawn por ponto seguro, alvo móvel do Hangar); 5) investigar por que o CI não disparou num PR docs-only.
+**Achado (Claude) — a raiz não era concorrência:** minha própria correção anterior (PR #91, `--maxWorkers=1` global) tratou o sintoma, não a causa, e o Qwen apontou certo na revisão (serializa o CI de todo mundo à toa). A causa real: o `WebSocket` global do Node (undici), no Windows, às vezes só dispara `error` — nunca `close` — numa conexão que o servidor fecha logo após o handshake, deixando a `Promise.all` dos fechamentos pendurada. Troquei pelo `WebSocket` do pacote `ws` (o mesmo do servidor) e reescrevi o teste para abrir as vagas em sequência (sem corrida de chegada entre três conexões simultâneas): a terceira agora é **sempre** a recusada. Removido o teto global de workers. **5 execuções seguidas, concorrência total, zero flake** no `server/room.test.ts` (antes, falhava sob carga). Achado de quebra: `client/src/net/online.test.ts` tinha o mesmo tipo de fragilidade (asserções de tempo real contra um servidor de verdade rodando `setInterval`, que pode atrasar sob 31 processos competindo por CPU) — três asserções viraram esperas com prazo generoso, no mesmo padrão que o `join()` do próprio arquivo já usava.
+**Decisão (Claude) — onde mora a máquina de Ondas:** dentro do `Match`, como o `Round` já faz hoje (tick fixo, determinístico), para funcionar sozinha no single-player e autoritativa no servidor sem custo extra de rede (eventos pequenos nas transições, não campo novo no snapshot de 20 Hz). O contrato do `MissionHUD` (`onWaveStart`/`onWaveProgress`/`onWaveClear`/`onMissionEnd`) já recebe só dados primitivos — **confirmado sem mudanças**. Implementação registrada como a próxima entrega grande do Claude.
+**Achado (Claude) — o CI que não dispara:** os PRs #91 (zonas) e #92 (docs do Qwen) tiveram pushes em que só o `Etiquetas` rodou e o `CI` demorou ou só apareceu no push seguinte, sem nada de errado no `ci.yml`. É entrega de webhook do GitHub, não configuração nossa; a regra 13 do AGENTS.md já cobre isso (esperar o check aparecer antes do `--watch`), só que especificamente pelo `CI`, não por "qualquer check".
+**Quem decidiu:** dono (os pedidos); Qwen (a revisão que apontou a causa certa); Claude (o diagnóstico, a correção e a decisão de arquitetura da onda).
+
+## [2026-09-27] As três regras entram no `AGENTS.md` (14–16), e a segunda rodada do drone
+**Pedido do dono:** "quero poder pilotar o drone também, ou colocar piloto automático nele. o drone conta como um andróide ou mech na partida, a não ser que consiga colocar os drones como adição aos mechs, esse seria o cenário ideal. o drone é mais ágil e deve ter diferenciais em relação aos andróides; o drone tem limitação de bateria, igual um drone normal, não consegue ficar a partida inteira voando, precisa parar no alto de um prédio pra ser recarregado (ideia surgiu agora); **digo SIM pra suas 3 regras**; PROSSIGA, já enviei tudo para todos".
+**Decisão (Qwen + dono):**
+- **As três regras viraram regra do time**, escritas no `AGENTS.md` (arquivo que vale para todos os agentes, com registro aqui, como manda o próprio arquivo): **14** — entrega só conta quando está na `main` (o que não está vai para "EM BRANCH — NÃO ESTÁ NO AR", com o PR); **15** — branch sem PR no mesmo dia e **fechado em 48 h**; **16** — toda entrega visível fecha com **captura em `.decepticons/arte/`** e **o caminho para vê-la funcionando** (senão o dono não tem como testar). A seção do `ESTADO_ATUAL.md` deixou de ser proposta: está em vigor.
+- **Drone, segunda rodada:** **pilotável pelo jogador ou automático** (os dois modos); **mais ágil que o andróide**; **cenário ideal: adição ao Mech** — não consome vaga de Mech nem de andróide, e se não couber conta como **uma unidade** (vaga de andróide); **bateria** limitada (não fica a partida inteira no ar) com **recarga pousando numa plataforma no alto de um prédio**. Na banda, a bateria sai por **evento** (pousou/levantou/vazia) com o cliente derivando a porcentagem — se a deriva incomodar, 1 byte (11 B = 66 B/s; 8 drones = 528 B/s, 84% da meta, ainda cabe). A plataforma entrou na tabela do `METAGAME.md` § 9 como **0 B/s** (ponto fixo, como as zonas) e a ficha ganhou as metas 8 e 9 e as perguntas em aberto (quantos/quanto dura a bateria, se a plataforma é disputada, o que acontece com a bateria vazia, como o piloto automático se comporta).
+**Quem decidiu:** dono (as regras, o vínculo do drone com o Mech, a bateria e a recarga); Qwen (a redação das regras, o registro e a ficha).
+
+## [2026-09-27] Treino manual de mira no Hangar, separado da bancada balística (Codex)
+**Pedido do dono:** começar pelo alvo móvel do Hangar, para testar a mira e diferentes configurações de mouse contra um oponente que anda, mas não ataca; bunkers ficam para depois do contrato de spawn do Claude.
+**Decisão:** manter o teste de disparo de 4 s (cadência, dano teórico e calor) e acrescentar um modo separado, manual. O novo modo usa `CameraRig` e a sensibilidade configurada, um andróide visual de escala 1 caminhando deterministicamente a 2,4 m/s por uma faixa de 9 m, e mede disparos/acertos/precisão com um raio de mira local. O alvo não participa de `Match`, não recebe dano e não dispara; o modo não altera física, estatísticas, hitboxes ou rede. `Esc` solta o Pointer Lock; a sensibilidade do jogo fica intacta ao sair.
+**Custo:** nenhum ao quadro do jogo com o Hangar fechado. Durante o treino, uma animação de rig já existente, movimento linear simples e uma interseção raio/esfera somente quando a cadência permite um tiro; usa os pools já alocados da cena do Hangar. Alvo criado uma vez ao instanciar o Hangar e oculto fora do treino.
+**Verificação:** 2 testes determinísticos do percurso; typecheck, build (260 KB gzip JS; 743 KB gzip Wasm), budget, smoke, painel, `site --check` e browser headless (Pointer Lock obtido, disparo contado, sem `pageerror`) passaram. Captura: `arte/aim-practice.png`. A primeira execução do `npm run check` caiu no timeout conhecido de `server/room.test.ts` (30 s); a repetição integral passou: 222/222 testes e todos os gates verdes. A falha intermitente não exigiu mudança no servidor.
+**Estado após revisão cruzada:** PR #95 aberto; CI verde (224 testes e gates completos), revisão sem bloqueios de código. Aguarda merge e playtest do dono após deploy; a captura headless não substitui teste real.
 
 ## [2026-09-27] A ficha do drone, e o mapa das entregas que não chegaram
 **Pedido do dono:** "escreve a ficha do drone E FAÇA SUAS tarefas pendentes… Como devemos conduzir isso da forma mais inteligente e estratégica possível? será que devemos repensar alguma regra? definir novas orientações e boas práticas? me oriente o que eu devo fazer. estou testando e no jogo está aparentemente tudo funcionando, mas ainda não vi todas essas atualizações…"
@@ -1040,3 +1153,14 @@ O smoke passou a reprovar menos de 10 draw calls, e comprovadamente reprovava a 
 **Simulação em passo fixo de 60 Hz** com render interpolado; no máximo 4 ticks por frame.
 **Destroços:** colisor estático enquanto a estrutura está inteira, até 24 peças dinâmicas que dormem ao parar, 1 `InstancedMesh`, teto global de 240.
 **Multiplayer planejado:** só o Mech local roda o controller (prediction); os remotos interpolam snapshots.
+
+- 2026-09-27 — No treino manual de mira, bloquear a motosserra: o exercício mede interseção de tiro e deve orientar o usuário ao teste de disparo existente para arma corpo a corpo. Sem custo em jogo; validação incluída no check do PR. (Codex)
+## [2026-09-28] CTF estreia como treino offline completo antes do contrato 2v2 (Codex)
+
+**Decisão:** entregar a regra central inteira no `Match` sem fingir suporte de rede. O jogador azul enfrenta dois defensores vermelhos; são duas bandeiras, coleta por proximidade, queda na morte, retorno em 15 s ou por toque aliado, captura só com a própria bandeira em casa, portador 15% mais lento no chão, vitória em três capturas e desempate por capturas/abates aos oito minutos. Dash não perde força. O seletor da pausa percorre Arena, Sobrevivência e CTF.
+
+**Arquitetura e custo:** `sim/CaptureTheFlag.ts` é puro, determinístico e sem DOM/relógio; o `Match` só registra unidades e encaminha eventos primitivos. Por tick são no máximo duas verificações de raio por unidade, sem física nova nem alocação. O visual usa quatro `InstancedMesh` e uma malha de dois quads para bases, zonas, mastros e panos: cinco draw calls fixos, materiais emissivos baratos e `depthWrite: false` na casca transparente. A penalidade de velocidade entra em `MechBase.moveSpeedScale` e não altera dash.
+
+**Limite declarado:** o 2v2 autoritativo permanece AUSENTE até `shared/net` e `ArenaRoom` ganharem times e eventos de bandeira; os bots do treino defendem combatendo, mas ainda não traçam rotas de roubo/devolução. Onze testes puros mais um de integração cobrem a regra local. A comparação cronometrada leve × pesado espera os chassis existirem em gameplay.
+
+**Verificação:** `npm run check` verde com 243 testes, painel, build (257,3 KB JS gzip; 719,4 KB Wasm gzip), smoke real e validação completa do site. A captura headless encontrou e eliminou um estouro de bloom no pedestal antes do PR; resultado final em `.decepticons/arte/ctf-mode.png`.
