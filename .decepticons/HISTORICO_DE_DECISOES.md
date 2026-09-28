@@ -1,5 +1,9 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] Integração Híbrida de Áudio Real e Procedural (Gemini)
+**Contexto**: O cliente forneceu áudios renderizados (ElevenLabs) para armas, ambiente, passos e UI, pedindo integração prioritária da vinheta.
+**Decisão**: O `AudioSystem` foi refatorado para suportar arquivos de áudio `.mp3` e `.wav` usando buffers via rede `fetch` sem bloquear a thread. Manteve-se o sistema procedural original, ativado automaticamente como fallback. Isso reduz o custo de CPU caso o arquivo não seja carregado ou atrase e garante alta resiliência à aplicação online.
+**Interface**: Vinheta real (`logo_serafim.mp3`) ligada na abertura (brand splash) e sons de tela (`ui_transition.mp3`) ativados na mudança de modo. Música de tensão (`ambient_bram.mp3`) é engatilhada a cada `onWaveStart` do modo de Sobrevivência. Em caso de falta do arquivo, o som continuará sintetizado localmente.
 ## [2026-09-28] Sobrevivência solo chega primeiro, com pool fixo e cinco ondas (Codex)
 **Pedido do dono:** assumir a tarefa antes destinada ao Claude e entregar fases/missões jogáveis, sem deixar a parte visual separada da regra.
 **Decisão:** o primeiro corte é **solo/offline e completo de ponta a ponta**. `SurvivalWaves` roda no tick fixo do `Match`, sem relógio real ou sorteio: cinco ondas de 2, 3, 4, 5 e 6 inimigos, preparação de 3 s, intervalo de 4 s, derrota sem respawn e resumo com abates, dano e tempo. O servidor não anuncia esse modo ainda; isso fica explícito no `STATUS_REAL.md` até existir contrato de sala e eventos de missão.
