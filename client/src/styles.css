@@ -1071,6 +1071,15 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
 #hangar-modal.hg-testing .hg-presets, #hangar-modal.hg-testing .hg-hotspot, #hangar-modal.hg-testing .hg-caption {
   opacity: 0; pointer-events: none; transition: opacity 0.3s;
 }
+#hangar-modal.hg-aim-training .hg-stage { pointer-events: none; }
+.hg-aim-reticle { display: none; position: fixed; z-index: 2; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); pointer-events: none; }
+#hangar-modal.hg-aim-training .hg-aim-reticle { display: block; }
+.hg-aim-reticle::before, .hg-aim-reticle::after, .hg-aim-reticle i {
+  content: ''; position: absolute; display: block; background: #ffd199; box-shadow: 0 0 0 1px #00151d, 0 0 6px #ff8f36;
+}
+.hg-aim-reticle::before { width: 24px; height: 2px; left: -1px; top: 10px; }
+.hg-aim-reticle::after { width: 2px; height: 24px; left: 10px; top: -1px; }
+.hg-aim-reticle i { width: 7px; height: 7px; left: 7.5px; top: 7.5px; border: 1px solid #00151d; border-radius: 50%; }
 .hg-test {
   position: absolute; z-index: 3; left: 50%; bottom: 26px; transform: translateX(-50%); width: min(520px, calc(100% - 24px));
   display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--hg-warm);
@@ -1087,6 +1096,14 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
 .hg-test .hg-meter i { background: var(--hg-warm); box-shadow: 0 0 10px var(--hg-warm); }
 .hg-test .hg-meter i.over { background: var(--hg-bad); box-shadow: 0 0 10px var(--hg-bad); }
 .hg-test .hg-btn { justify-self: end; padding: 7px 14px; font-size: 10px !important; }
+#hg-practice-help { margin: 0; text-align: center; font-size: 10px; letter-spacing: .14em; color: #c5f8ff; }
+#hg-practice-help[hidden] { display: none; }
+.hg-practice-btn {
+  width: 100%; margin-top: 7px; padding: 9px; cursor: pointer; font-size: 11px !important; letter-spacing: .13em;
+  border: 1px solid rgba(92, 225, 255, .75); color: #c5f8ff !important; background: rgba(8, 42, 54, .65);
+}
+.hg-practice-btn:hover { box-shadow: 0 0 18px rgba(92, 225, 255, .38); }
+.hg-practice-btn:disabled { opacity: .35; cursor: not-allowed; }
 
 /* Entrada: os painéis acendem, como um holograma ligando. */
 #hangar-modal.hg-enter .hg-panel, #hangar-modal.hg-enter .hg-top { animation: hg-on 0.45s ease-out both; }
