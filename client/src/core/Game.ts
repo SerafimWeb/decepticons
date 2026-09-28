@@ -7,6 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { CameraRig } from '../camera/CameraRig';
+import { KillCam } from '../camera/KillCam';
 import type { CameraModeId } from '../camera/CameraMode';
 import type { CombatSystem } from '../combat/CombatSystem';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
@@ -118,6 +119,8 @@ export class Game {
   private readonly roundHud: RoundHud;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
+  /** Câmera de abate local: render puro; o multiplayer não a aciona até a decisão de PvP. */
+  private readonly killCam: KillCam;
   private readonly touch: TouchControls;
   private readonly assist: AimAssist;
   private readonly player: PlayerController;
@@ -292,6 +295,7 @@ export class Game {
       mech: this.mech,
       occluders: this.match.arena.occluders,
     });
+    this.killCam = new KillCam(this.camera, physics, this.match.arena.occluders);
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets);
     this.match.pilots.push(this.player);
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
@@ -611,6 +615,7 @@ export class Game {
       const killerName = killer ? (killer === mech ? 'VOCÊ' : this.round.scoreOf(killer)?.name ?? null) : null;
       const isPlayerInvolved = dead === mech || killer === mech;
       this.killFeed.push(killerName, deadName, isPlayerInvolved);
+      if (!this.online && dead === mech && killer && killer !== mech) this.killCam.start(killer, at);
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
     };
     // Foguete: o dano em área já foi aplicado pela partida; aqui, fogo, fumaça, tremor e som.
@@ -836,6 +841,10 @@ export class Game {
 
   /** Chamado dentro do keydown ou do toque em CAM (gesto do usuário), exigência do Pointer Lock. */
   private switchCamera(): void {
+    if (this.killCam.active) {
+      this.killCam.cancel();
+      return;
+    }
     const mode = this.rig.cycle(this.input.touchMode ? 'tactical' : undefined);
     if (mode.pointerLock && !this.input.locked) this.input.requestLock();
     else if (!mode.pointerLock && this.input.locked) this.input.exitLock();
@@ -893,7 +902,9 @@ export class Game {
     if (this.match.ctf && this.ctfObjectives) this.ctfObjectives.update(dt, this.match.ctf);
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);
-    this.rig.update(dt);
+    if (this.mech.alive && this.killCam.overridesRig) this.killCam.release();
+    if (!this.killCam.overridesRig) this.rig.update(dt);
+    this.killCam.update(dt);
     if (this.hangarView) {
       const hs = this.hangarScene!;
       hs.update(dt);
@@ -933,7 +944,7 @@ export class Game {
 
     this.particles.update(dt);
 
-    this.hud.setRespawn(this.respawner.timeLeft(this.mech));
+    this.hud.setRespawn(this.respawner.timeLeft(this.mech), this.killCam.active);
     this.killFeed.update(dt);
     this.onboarding.update(dt);
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);

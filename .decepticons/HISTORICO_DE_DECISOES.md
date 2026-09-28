@@ -1,5 +1,14 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] Câmera de abate estreia offline; PvP espera decisão do dono (Codex)
+**Pedido do dono:** durante os segundos antes do respawn, acompanhar quem derrubou o jogador e produzir enquadramentos úteis para conteúdo.
+**Decisão:** `camera/KillCam.ts` é render puro e independente, ligado no `Game` apenas pelo `Match.onMechKilled`. Ele troca uma referência ao bot matador por morte, enquadra primeiro o local da carcaça e depois acompanha o alvo. A câmera escolhe uma posição livre entre costas/laterais/frente uma vez no abate, faz um raycast de proteção por quadro e reaproveita a translucidez dos prédios da câmera tática. `V`/`CAM` cancela imediatamente; no respawn, a pose mistura de volta em 0,38 s.
+**Limite de PvP:** no online a feature permanece AUSENTE. Mostrar o matador revela posição por três segundos; isso é uma decisão de regra competitiva, registrada em `ESTADO_ATUAL.md`, não uma escolha que o código deve tomar sozinho.
+**Desempenho:** zero malhas/draw calls, zero alocação por quadro e um raycast de câmera por quadro — durante o abate ele substitui, em vez de somar, o raycast do `CameraRig`. Microbenchmark local da matemática, câmera e três caixas oclusoras: **0,0009 ms/quadro**; quatro raycasts extras só uma vez, ao escolher o ombro na morte. Cinco testes isolados; a simulação não mudou.
+**Prova:** captura real em `.decepticons/arte/camera-de-abate-codex.png`; caminho: `/cybermech/jogar/` → Arena → ser abatido por um bot → `CÂMERA DE ABATE [V: SAIR]`. `npm run check` verde: 300 testes, painel, build, budgets, smoke e site.
+**Revisão cruzada no mesmo ciclo:** o PR #105 foi lido arquivo a arquivo. O cache de status em 1 s e a suspensão de tráfego em aba oculta estão adequados. A issue #106 registra duas arestas: corrida de `visibilitychange` pode duplicar a cadeia de polling, e a CSP bloqueia `/status` de uma origem passada por `?servidor=` embora permita seu WebSocket.
+**Quem decidiu:** dono (pedido da câmera e limite inicial offline); Codex (arquitetura visual, enquadramento e revisão #105).
+
 ## [2026-09-28] O status do servidor é HTTP, não WebSocket — e "de pé sem contagem" é um estado próprio (Claude)
 **Pedido do dono:** *"tem como deixarmos na página, permanentemente, a info se o servidor está online, quantas pessoas jogando?"*
 **Decisão 1 — perguntar por HTTP:** o servidor de jogo ganhou `GET /status` no mesmo processo e na mesma porta do WebSocket (`server/Server.ts`), com o contrato em `shared/net/status.ts`. A alternativa era abrir um WebSocket só para perguntar: custaria o handshake, ocuparia uma das 4 conexões por IP da porteira (`server/guard.ts`) e faria a sala existir sem ninguém jogando. Um GET não faz nada disso.

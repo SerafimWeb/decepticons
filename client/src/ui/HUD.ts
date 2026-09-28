@@ -257,8 +257,8 @@ export class HUD {
   }
 
   /** Segundos até renascer, ou null se está vivo. */
-  setRespawn(seconds: number | null): void {
-    const text = seconds === null ? '' : 'RENASCENDO EM ' + seconds.toFixed(1) + ' s';
+  setRespawn(seconds: number | null, killCam = false): void {
+    const text = seconds === null ? '' : `RENASCENDO EM ${seconds.toFixed(1)} s${killCam ? ' · CÂMERA DE ABATE [V: SAIR]' : ''}`;
     if (text === this.shownRespawn) return;
     this.shownRespawn = text;
     this.death.classList.toggle('show', seconds !== null);
