@@ -148,7 +148,7 @@ costas no meio da arena, com prédios e bots atrás; o andróide aparecia como d
    bancada da oficina com a hora de cada tiro: cadência, carregador, calor e trava). A tela conta tempo, tiros, dano e o
    calor subindo até travar; no fim, o resumo. Os atalhos 1 a 4 embaixo do pedestal: vazio salva a montagem da tela,
    cheio carrega (teclas 1 a 4), `SALVAR` sobrescreve; salvos em `cybermech.hangar.presets.v1`, validados na leitura.
-4. **Treino manual de mira (Codex, em branch; não publicado):** `◎ TREINO DE MIRA · ALVO MÓVEL` captura o mouse e usa
+4. **Treino manual de mira (Codex, PR #95 mergeado; aguardando playtest do dono):** `◎ TREINO DE MIRA · ALVO MÓVEL` captura o mouse e usa
    o mesmo `CameraRig`/sensibilidade do jogo, com um andróide de escala 1 andando de lado a lado, sem atacar nem
    receber dano de combate. Segurar o botão esquerdo dispara no ritmo da arma selecionada; o raio da câmera só mede
    acerto no alvo e alimenta o contador local (disparos, acertos, precisão). `Esc` libera o mouse e retorna ao Hangar.

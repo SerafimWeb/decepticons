@@ -1,5 +1,8 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] Treino manual de mira integrado na main (Codex)
+**Estado:** PR #95 mergeado (77c078b), CI verde (224 testes e todas as etapas de check), revisão cruzada sem bloqueios. O job de deploy e a conferência do site passaram (run 36365685940). Próximo passo: playtest do dono em https://www.selvamkt.com.br/cybermech/jogar/; captura headless não substitui esse playtest. Sem novas decisões de gameplay ou custo de CPU.
+
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
 ## [2026-09-27] O flake do `pre-push` endurecido de verdade, e onde mora a máquina de Ondas
