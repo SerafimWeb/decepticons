@@ -1,0 +1,26 @@
+# Só entram no repositório os samples que o jogo realmente carrega.
+#
+# Esta pasta é também a bancada onde a matéria-prima do banco de sons cai (arquivos
+# brutos do Elevenlabs, com `#` e espaço no nome, e até um .MOV de 29 MB que apareceu
+# aqui em 28/09). Tudo isso é ignorado por padrão: um `git add -A` distraído levaria
+# dezenas de MB para o repositório e para o deploy.
+#
+# Para publicar um sample novo: registre-o em `client/src/core/Game.ts` (loadSample)
+# e acrescente uma linha `!nome.ext` aqui. Sem as duas coisas, o site toca o fallback
+# sintetizado — foi o que aconteceu em 28/09, quando o código subiu sem os arquivos.
+*
+!.gitignore
+!README.md
+
+# Os 11 carregados por Game.ts:
+!logo_serafim.mp3
+!ui_transition.mp3
+!ui_bass.mp3
+!ambient_bram.mp3
+!ambient_action.mp3
+!shot_plasma.wav
+!shot_heavy.mp3
+!shot_futuristic.wav
+!hit.mp3
+!step_mech.mp3
+!step_heavy.mp3

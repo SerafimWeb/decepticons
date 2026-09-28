@@ -2,7 +2,7 @@
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
 **Última atualização:** 2026-09-28
-**Iteração atual:** Fase 5 — Sobrevivência e CTF solo jogáveis no cliente; MissionHUD/Seletor de Modo/CtfHud/DailyChallenges/AudioSirens na `main` (PR #103 mergeado 28/09); servidor no ar 24 h.
+**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo e câmera de abate offline jogáveis no cliente; MissionHUD/Seletor de Modo/CtfHud/DailyChallenges/AudioSirens na `main`; servidor no ar 24 h.
 
 ---
 
@@ -14,11 +14,65 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-<<<<<<< HEAD
-| `claude/zonas-cura-resfriamento` | zonas de cura e resfriamento na arena | **#91 aberto** | 27/09 |
-| `gemini/modo-hud-audio` | Seletor de Modo, MissionHUD, CTF HUD, DailyChallenges, Efeitos Sonoros de Onda, refatoração DOM | **✅ #103 mergeado na `main`** | 28/09 |
+| — | Nenhuma entrega ativa conhecida fora da `main` ao encerrar esta sessão | — | 28/09 |
 
 ---
+
+- **A tela inicial deixa de quebrar em duas linhas, e os botões param de disputar espaço (Claude, 28/09).**
+  Pedido do dono, com captura anotada: *"corrige a tela inicial, tira os 2 botões juntos, realinha o 'como é
+  feito', melhora o título"*. Causa raiz: `.title { display: block }` no `<span>` forçava "CYBER"/"MECH" em
+  duas linhas sempre (mesmo quando cabia numa só), e o botão `.play-btn` tinha fonte de 1,7rem — dois botões
+  desse tamanho não cabem nos ~510 px da coluna de texto do hero, então "JOGAR ONLINE" e o link "como este
+  jogo é feito" quebravam amontoados um sobre o outro, exatamente o que o dono circulou.
+  - `.title` (compartilhado com `oficina/` e `sala-de-controle/`, `scripts/site/tema.mjs`): tira o
+    `display: block` do `<span>` — "CYBERMECH" tenta ficar numa linha só e só quebra se faltar espaço de
+    verdade, com `word-break: keep-all` para não partir a palavra no meio.
+  - `.play-btn`: fonte responsiva (`clamp(1.05rem, 1.5vw, 1.3rem)` em vez de fixa em 1,7rem) — os dois
+    botões cabem lado a lado em qualquer largura de desktop.
+  - `.cta` (só em `scripts/landing.mjs`, não é compartilhada): os dois botões agora moram em `.cta-buttons`
+    (sua própria linha, com wrap limpo), e "como este jogo é feito →" ganha linha própria embaixo, nunca
+    mais espremido ao lado de um botão.
+  - Sem teste de simulação (é geração de HTML/CSS estático); validado pelo `site --check` (headless, as
+    três páginas que usam `.title`) e por captura real do hero antes/depois.
+- **O servidor passa a dizer quem está jogando, e a página mostra (Claude, 28/09).** Pedido do dono:
+  *"tem como deixarmos na página, permanentemente, a info se o servidor está online, quantas pessoas
+  jogando?"*. O servidor de jogo ganhou **`GET /status`** no mesmo processo e na mesma porta do WebSocket;
+  o contrato vive em `shared/net/status.ts` (usado pelo servidor, pelo jogo, pela landing e pelos testes).
+  - **Landing:** `● 1 PILOTO EM COMBATE AGORA` embaixo dos botões, e o próprio botão vira
+    `[ JOGAR ONLINE · 1 AGORA ]`. Captura: `.decepticons/arte/status-servidor-landing.png`.
+  - **Pausa do jogo:** a mesma linha no canto de cima (`client/src/ui/ServerStatus.ts`), perguntando a cada
+    20 s **só com a pausa à vista** — entrou em combate, para de perguntar. Captura: `status-servidor.png`.
+  - **Custo:** resposta de ~70 bytes montada no máximo 1×/s no servidor; ~350 bytes por pergunta com os
+    cabeçalhos, ~18 B/s por aba (0,2% do orçamento do G11). Fora do laço de 60 Hz, zero alocação por quadro.
+  - **Só números agregados** (protocolo, pilotos, salas, tamanho da sala, tempo de pé): nenhum apelido, IP ou
+    código de sala, porque a resposta é pública. A CSP do site libera **a origem exata** do `GAME_SERVER_URL`.
+  - **Pendência do dono, não do código:** o servidor que está no ar desde 26/09 roda o código anterior, sem
+    `/status`. Até ele ser reiniciado, a página vai dizer **`SERVIDOR ONLINE · SEM CONTAGEM DE PILOTOS`** —
+    online, sem o número. Reiniciar é `.\scripts\servidor-windows.ps1` (ou reiniciar a tarefa do Windows).
+  - Achado de quebra (R17): o prazo de 4 s da sondagem abortava a leitura do corpo quando o boot do jogo
+    travava a thread; a tela dizia "sem contagem" sem motivo. Corrigido, com teste.
+  - Achado de quebra (R17): `STATUS_REAL.md` tinha a linha `| Multiplayer / servidor | AUSENTE |`
+    contradizendo as duas linhas acima dela (servidor e jogo online, REAL, no ar desde 26/09). Removida.
+
+- **Os sons novos não tocavam no site: faltavam os arquivos (Claude, 28/09, R17).** O dono relatou
+  "o Gemini disse que fez a parte dele mas o som ainda não tô ouvindo os novos". O código de
+  carregamento estava na `main` (PR #103 e o commit `07d4182`), mas **nenhum dos 11 samples estava
+  versionado** — `git ls-files client/public/audio` devolvia só o `README.md`. No site, os 11
+  `fetch` davam 404 e o `AudioSystem` caía no sintetizador antigo **sem reclamar** (o fallback é
+  silencioso por desenho). Na máquina do Gemini tocava, porque lá os arquivos existem soltos.
+  - Os 11 samples entraram no repositório: **2,2 MB** ao todo.
+  - `client/public/audio/.gitignore` passa a **ignorar tudo e liberar só os 11 nomes**: a pasta é
+    também a bancada onde a matéria-prima cai (brutos do Elevenlabs com `#` e espaço no nome, e um
+    `IMG_0960.MOV` de 29 MB que apareceu lá). Sem o filtro, um `git add -A` levava tudo para o deploy.
+  - O `README.md` da pasta listava outros nomes de arquivo (`explosion.mp3`, `dash.mp3`, `chainsaw.mp3`)
+    que o `Game.ts` nunca carregou; agora lista o que existe de verdade e diz que publicar um sample
+    exige **as duas etapas** (registrar no `Game.ts` e liberar no `.gitignore`).
+
+- **Integração de Samples Reais de Áudio (Gemini, 28/09):**
+  - **Mapeamento e Padronização**: Renomeados 11 samples gerados via ElevenLabs em `client/public/audio/` para nomes padronizados (`logo_serafim.mp3`, `ui_transition.mp3`, `shot_plasma.wav`, `hit.mp3`, `ambient_bram.mp3`, `step_mech.mp3`, etc).
+  - **Carregador de Buffers (`AudioSystem.ts`)**: Implementado `loadSample()` e mapa de `pendingBuffers`. Agora o sistema suporta buscar `.wav`/`.mp3` via rede, sem bloquear a UI.
+  - **Fallback Procedural (Design Híbrido)**: Todos os métodos sonoros principais (`playShot`, `playHit`, `playStep`, `playAndroidShot`, `playAndroidStep`) ganharam `playSample(nome)`. Se o áudio não foi baixado, o jogo recai no sintetizador procedural original para economizar CPU.
+  - **Vinhetas e Transições (`BrandSplash.ts` e `Game.ts`)**: Vinheta `playLogoSerafim()` executada na entrada da Serafim Web (com fallback extraído do `playBrandSting`). Sons de UI (`playUiTransition()`) disparados no botão de mudança de modos (Arena/Sobrevivência). Som de Bram ambiental (`ambient_bram.mp3`) ativado no gancho `onWaveStart`.
 
 - **Seletor de Modos, MissionHUD Conectado, CTF HUD, Missões Diárias e UI Online (Gemini, 27/09):**
   - **Fiação & Ativação no Jogo (`Game.ts`)**: `ModeSelector` e `DailyChallenges` integrados ao menu `#overlay`, abrindo automaticamente o briefing do `MissionHUD` ao selecionar Sobrevivência ou pressionar atalho tático (`KeyM`/`KeyB`). Contabilização automática de dano e abates para missões diárias.
@@ -29,22 +83,11 @@
   - **Efeitos Sonoros Táticos (`AudioSystem.ts` + `AudioSystem.test.ts`)**: Sintetizadores Web Audio sem arquivos externos: `playWaveSiren()` (alarme de onda), `playCountdownBeep()` (contagem tática) e `playWaveClearSound()` (vinheta vitoriosa C-E-G).
   - **Consolidação de Ramos UI (`NetHud`, `KillBanner`, `RoundOverlay`)**: Interfaces do multiplayer online (M6-UI) unificadas no branch `gemini/modo-hud-audio`.
   - **Limpeza no Harness (`scripts/test.mjs`)**: Removida redundância `VITEST_MAX_WORKERS` do env (mantendo a flag `--maxWorkers=1`).
-=======
-| `gemini/missoes-hud` | MissionHUD (interface do modo sobrevivência) — **e não está ligado a nenhum arquivo do jogo: a tela não aparece nem depois do merge** | **#88 aberto** | 27/09 |
-| `gemini/modo-hud-audio` | seletor de modo (deathmatch × sobrevivência), sons táticos de onda e medalhas de conquista | **sem PR** | 27/09 |
-| `gemini/telas-online` | NetHud, KillBanner e RoundOverlay (interface do online) | **sem PR** | 27/09 |
-| `gemini/setas-inimigos` | setas de inimigos fora da tela | **sem PR** | 25/09 |
-| `gemini/sons-androides` | sons dos andróides | **sem PR** | 25/09 |
-| `gemini/primeira-partida` | dicas de andróide e calor | **sem PR** | 25/09 |
-
-**Regra em vigor (o dono aprovou em 27/09):** branch com mais de 48 h sem PR é **fechado** — mergeado se estiver bom, declarado
-morto se não. Cinco branches estão nesse caso hoje (as três de 25/09 e as duas sem PR de 27/09). As três regras estão no
-`AGENTS.md` (**14, 15 e 16**), valendo para todos os agentes: entrega só conta na `main`; branch sem PR no mesmo dia e fechado
-em 48 h; e toda entrega visível fecha com **captura em `arte/` + o caminho para vê-la funcionando**.
-
 ---
 
 ## ÚLTIMA SESSÃO FEZ (24–28/09)
+- **Câmera de quem te matou, offline (Codex, 28/09):** ao morrer para um bot, a câmera acompanha o matador de um ponto alto e atrás dele; no primeiro segundo ainda olha para o local/destroços do jogador, escolhe um ombro livre junto de paredes e torna translúcido o prédio que corta a visão. O contador continua na tela, `V`/`CAM` devolve a câmera imediatamente e o respawn mistura de volta em 0,38 s. É render puro: zero mudança em simulação/input/respawn, zero draw call e alocação por quadro; um raycast substitui o da câmera normal. Microbenchmark da matemática com três oclusores: 0,0009 ms/quadro. Cinco testes de câmera; `npm run check` verde com 300 testes, painel, build, budgets, smoke e site. **Onde testar:** abrir `/cybermech/jogar/`, entrar na Arena e deixar um bot abater; a linha `CÂMERA DE ABATE [V: SAIR]` aparece. Captura real: `.decepticons/arte/camera-de-abate-codex.png`. **Online AUSENTE** até o dono decidir se revelar o matador no PvP é justo.
+- **Revisão cruzada do PR #105 (Codex, 28/09):** cache de `GET /status` em 1 s aprovado para a carga prevista; aba oculta deixa de gerar tráfego de rede. Dois defeitos foram registrados na issue **#106** sem reescrever o código do Claude: `visibilitychange` durante uma requisição pode criar duas cadeias de polling, e a CSP aceita o WebSocket de `?servidor=` mas bloqueia o `https://.../status` dessa origem explícita. A linha antiga que dizia que o PR #105 ainda estava em branch e um marcador `=======` residual deste arquivo foram removidos.
 - **CTF Vermelho × Azul jogável (Codex, PR #102, 28/09):** o seletor Arena → Sobrevivência → CTF monta um treino offline com dois defensores vermelhos. `CaptureTheFlag` roda no tick fixo: bandeiras na base, coleta, queda, retorno em 15 s, captura condicionada à própria bandeira, −15% de velocidade terrestre do portador, placar, três capturas, relógio de 8 min e desempate por abates. O visual custa cinco draw calls fixos (quatro `InstancedMesh` + uma malha de dois quads), sem física, sombra ou alocação por quadro. HUD e reinício funcionam pelo mesmo contrato de eventos. O 2v2 online e a IA tática de objetivo permanecem explicitamente ausentes. `npm run check` verde com 243 testes, build, budgets, smoke e site; captura real: `.decepticons/arte/ctf-mode.png`.
 - **Sobrevivência solo jogável (Codex, 28/09):** a máquina determinística `SurvivalWaves` entrou no `Match` com cinco hordas progressivas (2, 3, 4, 5 e 6 inimigos; 20 abates), preparação de 3 s, intervalo de 4 s, contagem de abates/tempo/dano, derrota quando o último piloto cai, vitória e reinício. O jogo pré-aloca um pool máximo de 3 Mechs + 3 andróides ao carregar e só ativa o recorte da onda; unidades fora do plano não rodam IA/controller, não renderizam e não renascem. A pausa ganhou seletor Arena × Sobrevivência, e o HUD recebe `onWaveStart`, `onWaveProgress`, `onWaveClear` e `onMissionEnd`. Funciona offline em `/jogar/?modo=survival`; o online permanece explicitamente ausente. `npm run check` verde com 230 testes e todos os gates; captura headless real em `.decepticons/arte/survival-waves.png`.
 - **O deploy das fichas não saiu, e o motivo era o próprio verificador (Qwen, 27/09, R17):** o PR #98 mergeou com o CI **do PR** verde, mas o **CI do push na `main` falhou** no `site --check` e o **job de deploy foi pulado** — as fichas estavam na `main` e **não** no site (conferido no ar: a lista ainda tinha 6 fichas). A falha era um **404 de fonte do Google** tratado como fatal pelo verificador: o handler de `response` já ignorava `fonts.g…` (pela URL), mas o de `console` filtrava pelo **texto** — e o texto de um 404 não tem a URL. **Corrigido:** o `console` ignora falha de carregamento (o `response` reporta, com a URL, e continua pegando qualquer 404 que não seja de fonte); CSP e erro de script seguem fatais. Achado de quebra no mesmo log: a linha `site ok` saía **antes** do julgamento das falhas (o log trouxe "site ok" e "❌ SITE FALHOU" juntos) — agora sai depois. **O jogo não muda:** é o verificador do site, e a `main` volta a publicar no merge seguinte.
@@ -203,6 +246,7 @@ em 48 h; e toda entrega visível fecha com **captura em `arte/` + o caminho para
 - [ ] **Dono:** decidir a separação simulação × render × efeitos (`MULTIPLAYER.md`, seção 9) e as 4 decisões da seção 10
 - [ ] **Dono:** jogar com as zonas de cura (canto sudeste) e resfriamento (canto noroeste) contra 3 Mechs + 3 andróides; dizer se +20 vida/s e 0,35 calor/s deixam a luta justa, ou se ainda precisa baixar `enemyMechs`/`enemyAndroids` nas configurações enquanto isso
 - [ ] **Dono:** abrir `/cybermech/jogar/?modo=survival`, completar ou perder uma tentativa e dizer se o salto 2→6 inimigos, os intervalos e a ausência de respawn ficaram justos
+- [ ] **Dono:** na Arena offline, deixar um bot abater o jogador e avaliar a câmera de abate; `V` deve sair na hora e o respawn deve voltar sem corte brusco
 
 ## RASCUNHO ANTIGO DE BOTS (superado)
 O rascunho do GPT-OSS continua no stash local (`git stash list`: "rascunho GPT-OSS/Gemini 23-09…"). Foi superado pelos bots v1 e pode ser descartado pelo dono (`git stash drop`). Não reaproveitar: andava na direção errada e lia a posição de render (ver histórico).
@@ -221,7 +265,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 |---|---|---|
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Sem crédito nesta rodada; o modo Sobrevivência solo foi assumido pelo Codex por autorização do dono. A sincronização online dos modos continua na frente de rede quando o contrato existir. |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Branch `gemini/modo-hud-audio` consolidado (MissionHUD ligado, Seletor de Modo, Efeitos Sonoros Táticos de Onda, UI Online, textContent seguro). |
-| **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, desempenho e revisão cruzada; por autorização explícita do dono, também assume os modos enquanto Claude está sem crédito | Feito: draw calls 34 → 9 (#43), explosões (#44), blueprints, Hangar/treino, calor visual, Sobrevivência solo e CTF offline. Próximo: playtest/balanço dos modos; depois retoma os cosméticos MK II/MK III. |
+| **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, câmeras, desempenho e revisão cruzada; por autorização explícita do dono, também assume os modos enquanto Claude está sem crédito | Feito: draw calls 34 → 9 (#43), explosões (#44), blueprints, Hangar/treino, calor visual, Sobrevivência, CTF offline e câmera de abate offline. Próximo: playtest da câmera/modos; depois retoma os cosméticos MK II/MK III. |
 | **Qwen** | transversal — documentação (`.decepticons/`), testes de simulação (novos `*.test.ts`), relatórios do processo (`scripts/painel.mjs`, `scripts/site/`, o site) e auditoria de arquitetura (segunda opinião na revisão cruzada). Não mexe em `client/src/{sim,combat,entities,physics,player,net}`, `server/` nem `shared/` sem combinar com o dono do território | Entrou no time em 26/09 (oficialização no painel e na etiqueta). Próximo: relatório de saúde técnica (cobertura, débito da seção 9, budget, tick) para a divulgação |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
 
@@ -234,13 +278,29 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Separação simulação × render × efeitos | Proposta e criteria de aceitação em `MULTIPLAYER.md`, seção 9. Recomendação: tiro do jogador e yaw pela simulação antes da M4; o resto quando memória do servidor ou correções visíveis pedirem. |
 | Universo (`UNIVERSO.md`, seção 7) | Brasil no centro, no contexto dos BRICS, já decidido. Premissa, roteiro, quanto de CTI entra (só textos ou também mecânicas) e nomes dos consórcios: com o dono, no chat do SERAFIM. Nada muda no jogo antes do aval. |
 | Bots contra bots | Hoje os bots só caçam o jogador. No modo "todos contra todos" eles deveriam se enfrentar também: basta passar todos os Mechs em `BotSystem.targets`. |
+| Câmera de abate no PvP | O corte offline segue o bot que matou. No online isso revelaria a posição do adversário durante 3 s. **Decidir:** liberar como ferramenta de conteúdo, atrasar/limitar a visão, ou manter ausente em partidas competitivas. Até a decisão, o online conserva a câmera normal e `STATUS_REAL.md` marca AUSENTE. |
+| Revisão do status do servidor (#106) | Corrigir duas arestas do PR #105: impedir cadeias duplicadas de polling quando `visibilitychange` ocorre durante `fetch`, e definir a política de CSP para o `/status` de um `?servidor=` explícito. O cache de 1 s e a ausência de tráfego com aba oculta foram aprovados. |
 
 ## BLOQUEIOS
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-- **Gemini:** Acompanhar merge do PR `gemini/modo-hud-audio` e validação do deploy no site (`/cybermech/`). Começar pelas telas do online e calor no HUD.
-- **Codex:** concluir o PR/deploy do CTF e pedir ao dono um playtest em `?modo=ctf`. Aguardar revisão/aprovação do dono nas propostas de fichas. Fichas de design e sinais visuais de calor no rig.
+- **Gemini:** **limpar a tela de pausa** (o dono marcou na captura: informação demais, coisas redundantes) e
+  **telas de carregamento melhores**. Dois defeitos já diagnosticados pelo Claude em 28/09, para começar por eles:
+  1. **`mission-summary` é um id disputado por dois módulos.** `client/index.html:51` tem um `<p id="mission-summary">`
+     **dentro do `#overlay`** (a pausa), e `MissionHUD._getOrCreate('mission-summary')` reaproveita esse mesmo nó em vez
+     de criar o dele dentro do `#hud` — então o resumo da missão nasce dentro da tela de pausa. Some-se a isso o CSS
+     duplicado: `styles.css` define `#mission-summary` duas vezes (a linha de texto da pausa, e o painel de tela cheia
+     do MissionHUD com `position:absolute; inset:0; z-index:900`), e a segunda vence. Sugestão: o nó antigo da pausa
+     vira `#round-summary` (HUD.ts + index.html + CSS) e o MissionHUD passa a criar o dele.
+  2. **O briefing abre atrás da pausa.** `#mission-briefing` tem `z-index:900` mas vive dentro do `#hud`, e o `#overlay`
+     vem depois no DOM sem `z-index` — logo a pausa pinta por cima. É por isso que na captura do dono o
+     `[ clique para jogar ]` aparece em cima do título da missão, e o `[ INICIAR MISSÃO ]` não recebe clique nenhum
+     (a pausa inteira é um botão de retomar). Decidir qual das duas telas manda enquanto as duas estão abertas.
+- **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
+- **Codex:** acompanhar o playtest da câmera de abate offline e do CTF; depois retomar cosméticos MK II/MK III e as fichas visuais aprovadas.
 - **Claude:** definir e implementar o contrato autoritativo para escolher o modo da sala e transportar as transições de onda/objetivo; completar o online. Sincronizar máquina de estados de Ondas da simulação.
 - **Qwen:** relatório de saúde técnica do projeto e ícones no mapa da oficina.
+- **Dono (primeiro de tudo, 28/09):** **reiniciar o servidor de jogo de casa** para ele passar a responder
+  `/status` — até lá a página diz "SERVIDOR ONLINE · SEM CONTAGEM DE PILOTOS" (online, sem o número).
 - **Dono:** Testar no site o Seletor de Modo, a abertura do Briefing da Missão (`KeyM` / `KeyB` ou selecionar Sobrevivência), os alarmes de onda, as medalhas de conquista e o jogo offline de Sobrevivência/CTF. Decidir o universo (`UNIVERSO.md`, seção 7), a seção 9 e as decisões da seção 10 do `MULTIPLAYER.md`.

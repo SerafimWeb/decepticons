@@ -49,7 +49,7 @@ export class HUD {
   private readonly dashFill = $('dash-fill');
   private readonly stats = $('stats');
   private readonly missionStatus = $('mission-status');
-  private readonly missionSummary = $('mission-summary');
+  private readonly missionSummary = $('round-summary');
   private readonly modeLabel = $('mode');
   private readonly hitmarker = $('hitmarker');
   private readonly hitLabel = $('hit-label');
@@ -257,8 +257,8 @@ export class HUD {
   }
 
   /** Segundos até renascer, ou null se está vivo. */
-  setRespawn(seconds: number | null): void {
-    const text = seconds === null ? '' : 'RENASCENDO EM ' + seconds.toFixed(1) + ' s';
+  setRespawn(seconds: number | null, killCam = false): void {
+    const text = seconds === null ? '' : `RENASCENDO EM ${seconds.toFixed(1)} s${killCam ? ' · CÂMERA DE ABATE [V: SAIR]' : ''}`;
     if (text === this.shownRespawn) return;
     this.shownRespawn = text;
     this.death.classList.toggle('show', seconds !== null);
@@ -274,7 +274,7 @@ export class HUD {
     }
   }
 
-  update(dt: number, mech: MechBase, cursorX: number, cursorY: number, debrisCount: number): void {
+  update(dt: number, mech: MechBase, cursorX: number, cursorY: number): void {
     const isBlind = mech.isBlind;
     this.root.classList.toggle('blind', isBlind);
 
@@ -327,7 +327,6 @@ export class HUD {
       `VEL    ${speed.toFixed(1).padStart(5)} m/s\n` +
       `ABATES ${this.kills.toString().padStart(5)}\n` +
       `MORTES ${this.deaths.toString().padStart(5)}\n` +
-      `DEBRIS ${debrisCount.toString().padStart(5)}\n` +
       integrity;
   }
 }

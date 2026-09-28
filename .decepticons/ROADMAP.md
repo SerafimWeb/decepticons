@@ -35,6 +35,7 @@
 ## ✅ FASE 0 — Fundação
 - [x] Vector-09: movimento, pulo duplo, dash, canhão de plasma #jogabilidade
 - [x] 3 câmeras (3ª, 1ª, tática) #jogabilidade
+- [x] Câmera de abate offline: segue o bot matador durante o respawn, enquadra os destroços no primeiro segundo, `V` cancela e a volta à câmera do jogador é suavizada; online aguarda decisão de PvP #jogabilidade
 - [x] Arena com barricadas destrutíveis e destroços (só cosméticos) #cenarios
 - [x] Loop de 60 Hz fixo com render interpolado #base
 - [x] Protocolo Serafim UM: memória, hooks, smoke, budget, CI, Vitest #base
@@ -133,6 +134,7 @@
 - [x] M1: partida sem tela (`sim/Match.ts`): a partida inteira roda no Node sem WebGL nem DOM, determinística sem destroços, 0,74 ms por tick com a sala cheia. Ainda cria objetos de render e o tiro do jogador sai do modelo desenhado (`MULTIPLAYER.md`, seção 8) #rede
 - [ ] Separar simulação, render e efeitos: tiro do jogador e yaw pela simulação, efeitos por eventos, sem objetos de cena na simulação (proposta e critérios em `MULTIPLAYER.md`, seção 9; decisão do dono) #rede
 - [x] Landing: seção do online com o ritmo da rede lido do código (a lista de etapas fica na sala de controle; o tamanho em bytes, só no repositório — pedido do dono, 27/09) #negocio
+- [x] Landing: título de uma linha só e botões numa linha própria, sem sobrepor o link "como é feito" (Claude, 28/09) #negocio
 - [x] M2: contratos de rede (`NetInput`, estado de cada unidade, eventos, mensagens) e codec binário com teste de tamanho: sala cheia em ~6,2 KB/s #rede
 - [x] M3: servidor de jogo (`server/`, Node + `ws`): salas por código, a partida a 60 Hz com os bots, estado a 20 Hz, `npm run server` no PC de casa #rede
 - [x] M4: jogo online pelo link (`?sala=&servidor=`): previsão do seu Mech com correção pelo servidor, robôs remotos interpolados, tiros e abates dos outros #rede
@@ -140,6 +142,7 @@
 - [x] Servidor público no ar 24 h: domínio, túnel nomeado da Cloudflare e `GAME_SERVER_URL` no GitHub (dono; 26/09/2026: `jogo.selvamkt.com.br` no túnel Cloudflare, servidor em `127.0.0.1:2567` no PC de casa, tarefa do Windows, PC sem sleep) #rede
 - [x] Prova R16: 2+ clientes reais jogando na mesma sala (26/09/2026: dois aparelhos do dono, primeira sessão online ponta a ponta) #rede
 - [x] Barricadas quebrando pelo servidor (`PROP_BROKEN`) e volta na rodada nova (`ARENA_RESET`); placar do jogador feito pelos `KILL` do servidor #rede
+- [x] Status do servidor na página: `GET /status` no servidor de jogo; a landing e a pausa mostram online/fora do ar e quantos pilotos estão em combate agora, sem abrir conexão de jogo (Claude, 28/09) #rede
 - [ ] M5: tiros autoritativos com compensação de latência; eventos de acerto, parte e abate #combate
 - [ ] M6: entrada pelo link com código da sala + apelido; reconexão automática (G13) #rede
 - [ ] Telas do online: apelido, código da sala, jogadores, placar e ping (Gemini) #ux
@@ -156,6 +159,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Missões em fases (cooperativo ou solo):** 3-5 fases com objetivos crescentes (defesa, escolta, invasão), com um evento de rede novo (`OBJECTIVE_STATE`) e um mapa por missão #modos
 - [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio
+- [ ] **Decidir câmera de abate no PvP:** seguir o adversário revela sua posição; escolher entre liberar, atrasar/limitar ou manter ausente no competitivo #rede
 - [ ] **Nova arma toda semana** (com teste de balanço em `combat/balance.ts`; nenhuma abaixo do TTK do arsenal atual, nenhuma acima do teto de dano por segundo) #combate
 - [ ] **Colossus-01 (demolição no dash) e Ferret-X (gancho + sucata):** dois chassis novos, com blueprints Codex e stats no `entities/chassis.ts` #mechs
 - [ ] **Personalização visual (cosmética, nunca combate):** apelido, cor da carcaça, decalque, pintura por parte, salva no navegador antes da conta (`hangar/loadout.ts` estende com uma seção "aparência") #negocio

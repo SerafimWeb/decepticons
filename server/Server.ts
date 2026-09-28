@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
 import { ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
+import { serverStatus, STATUS_PATH } from '../shared/net/status';
 import { ArenaRoom, type Peer } from './ArenaRoom';
 import { clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
 
@@ -79,7 +80,38 @@ export async function startServer(
     return p;
   };
 
-  const http = createServer((_req, res) => {
+  /**
+   * `GET /status`: o que a landing e a pausa do jogo perguntam para dizer "servidor online · 2 pilotos" sem
+   * abrir conexão de jogo (contrato em `shared/net/status.ts`). Só números agregados, liberado para qualquer
+   * origem (o site mora em outro endereço). A resposta é montada no máximo **uma vez por segundo**: mil
+   * perguntas no mesmo segundo custam uma soma sobre as salas, e nada disso toca o laço de 60 Hz.
+   */
+  const startedAt = Date.now();
+  let statusBody = '';
+  let statusAt = 0;
+  const status = (): string => {
+    const now = Date.now();
+    if (statusBody && now - statusAt < 1000) return statusBody;
+    let players = 0;
+    for (const r of rooms.values()) players += r.humanCount;
+    statusBody = JSON.stringify(serverStatus(players, rooms.size, (now - startedAt) / 1000));
+    statusAt = now;
+    return statusBody;
+  };
+
+  const http = createServer((req, res) => {
+    const path = (req.url ?? '/').split('?')[0];
+    if (path === STATUS_PATH) {
+      const body = status();
+      res.writeHead(200, {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store',
+        'access-control-allow-origin': '*',
+        'content-length': Buffer.byteLength(body),
+      });
+      res.end(req.method === 'HEAD' ? undefined : body);
+      return;
+    }
     res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });
     res.end(`CYBERMECH · servidor de jogo · ${rooms.size} sala(s)\n`);
   });

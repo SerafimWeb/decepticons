@@ -7,6 +7,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { CameraRig } from '../camera/CameraRig';
+import { KillCam } from '../camera/KillCam';
 import type { CameraModeId } from '../camera/CameraMode';
 import type { CombatSystem } from '../combat/CombatSystem';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
@@ -52,6 +53,7 @@ import { PowerSettings } from '../ui/PowerSettings';
 import { parseLoadoutKey } from '../hangar/loadout';
 import { defaultServer, onlineConfig } from '../net/onlineConfig';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
+import { ServerStatus } from '../ui/ServerStatus';
 import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
@@ -117,6 +119,8 @@ export class Game {
   private readonly roundHud: RoundHud;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
+  /** Câmera de abate local: render puro; o multiplayer não a aciona até a decisão de PvP. */
+  private readonly killCam: KillCam;
   private readonly touch: TouchControls;
   private readonly assist: AimAssist;
   private readonly player: PlayerController;
@@ -174,6 +178,20 @@ export class Game {
     container: HTMLElement,
     physics: PhysicsWorld,
   ) {
+    // Carrega samples de áudio (assíncrono)
+    const base = import.meta.env.BASE_URL;
+    this.audio.loadSample('logo_serafim', base + 'audio/logo_serafim.mp3');
+    this.audio.loadSample('ui_transition', base + 'audio/ui_transition.mp3');
+    this.audio.loadSample('ui_bass', base + 'audio/ui_bass.mp3');
+    this.audio.loadSample('ambient_bram', base + 'audio/ambient_bram.mp3');
+    this.audio.loadSample('ambient_action', base + 'audio/ambient_action.mp3');
+    this.audio.loadSample('shot_plasma', base + 'audio/shot_plasma.wav');
+    this.audio.loadSample('shot_heavy', base + 'audio/shot_heavy.mp3');
+    this.audio.loadSample('shot_futuristic', base + 'audio/shot_futuristic.wav');
+    this.audio.loadSample('hit', base + 'audio/hit.mp3');
+    this.audio.loadSample('step_mech', base + 'audio/step_mech.mp3');
+    this.audio.loadSample('step_heavy', base + 'audio/step_heavy.mp3');
+
     // --- Render ---
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
     this.renderer.setPixelRatio(maxPixelRatio());
@@ -254,7 +272,6 @@ export class Game {
     this.roundHud = new RoundHud(this.mech, this.gameMode === 'deathmatch');
     // Botão na tela de pausa; a calibração tem camada própria e não retoma o jogo.
     new MouseCalibration(this.settings, [
-      document.getElementById('btn-settings')!,
       document.getElementById('setting-sens')!.closest('.setting-row')!,
     ]);
 
@@ -277,6 +294,7 @@ export class Game {
       mech: this.mech,
       occluders: this.match.arena.occluders,
     });
+    this.killCam = new KillCam(this.camera, physics, this.match.arena.occluders);
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets);
     this.match.pilots.push(this.player);
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
@@ -380,6 +398,9 @@ export class Game {
     });
     new PilotSwitch(this.hangar);
     new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null);
+    // A linha "SERVIDOR ONLINE · 2 PILOTOS EM COMBATE" na pausa: um GET a cada 20 s, só com a pausa à vista.
+    // Só o servidor público do build ou o `&servidor=` do link (o motivo do `defaultServer` ficar fora: ServerStatus.ts).
+    new ServerStatus(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
     new SettingsMenu(this.settings);
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician });
@@ -593,6 +614,7 @@ export class Game {
       const killerName = killer ? (killer === mech ? 'VOCÊ' : this.round.scoreOf(killer)?.name ?? null) : null;
       const isPlayerInvolved = dead === mech || killer === mech;
       this.killFeed.push(killerName, deadName, isPlayerInvolved);
+      if (!this.online && dead === mech && killer && killer !== mech) this.killCam.start(killer, at);
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
     };
     // Foguete: o dano em área já foi aplicado pela partida; aqui, fogo, fumaça, tremor e som.
@@ -604,7 +626,10 @@ export class Game {
       this.audio.playExplosion(dist);
     };
     this.match.onRoundStart = () => this.startRound();
-    this.match.onWaveStart = (wave, total, _mechs, _androids, title) => this.hud.setMissionWave(wave, total, title);
+    this.match.onWaveStart = (wave, total, _mechs, _androids, title) => {
+      this.hud.setMissionWave(wave, total, title);
+      this.audio.playAmbientBram();
+    };
     this.match.onWaveProgress = (wave, killed, total, elapsedS) => this.hud.setMissionProgress(wave, killed, total, elapsedS);
     this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
     this.match.onMissionEnd = (survived, waveReached, stats) => {
@@ -717,7 +742,7 @@ export class Game {
       this.brandShown = true;
       this.audio.resume();
       this.hud.setPaused(false);
-      this.splash.play(this.audio.output, () => this.afterBrand());
+      this.splash.play(() => this.audio.playLogoSerafim(), () => this.afterBrand());
     }
     if (this.input.touchMode) {
       this.enterFullscreen();
@@ -732,6 +757,7 @@ export class Game {
     button.textContent = `[ MODO: ${label} · TROCAR ]`;
     button.addEventListener('click', (event) => {
       event.stopPropagation();
+      this.audio.playUiTransition();
       const url = new URL(location.href);
       if (this.gameMode === 'deathmatch') {
         url.searchParams.set('modo', 'survival');
@@ -814,6 +840,10 @@ export class Game {
 
   /** Chamado dentro do keydown ou do toque em CAM (gesto do usuário), exigência do Pointer Lock. */
   private switchCamera(): void {
+    if (this.killCam.active) {
+      this.killCam.cancel();
+      return;
+    }
     const mode = this.rig.cycle(this.input.touchMode ? 'tactical' : undefined);
     if (mode.pointerLock && !this.input.locked) this.input.requestLock();
     else if (!mode.pointerLock && this.input.locked) this.input.exitLock();
@@ -871,7 +901,9 @@ export class Game {
     if (this.match.ctf && this.ctfObjectives) this.ctfObjectives.update(dt, this.match.ctf);
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);
-    this.rig.update(dt);
+    if (this.mech.alive && this.killCam.overridesRig) this.killCam.release();
+    if (!this.killCam.overridesRig) this.rig.update(dt);
+    this.killCam.update(dt);
     if (this.hangarView) {
       const hs = this.hangarScene!;
       hs.update(dt);
@@ -911,7 +943,7 @@ export class Game {
 
     this.particles.update(dt);
 
-    this.hud.setRespawn(this.respawner.timeLeft(this.mech));
+    this.hud.setRespawn(this.respawner.timeLeft(this.mech), this.killCam.active);
     this.killFeed.update(dt);
     this.onboarding.update(dt);
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
@@ -921,13 +953,13 @@ export class Game {
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);
-    this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
+    this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY);
     this.renderer.info.reset();
     this.composer.render(dt);
     
     // Atualiza medidor de FPS depois do render
     this.quality.update(dt);
-    this.debugPanel.update(dt, tickMs, this.renderer.info, this.quality.currentTier);
+    this.debugPanel.update(dt, tickMs, this.renderer.info, this.quality.currentTier, this.debris.count);
     
     this.input.endFrame();
   }

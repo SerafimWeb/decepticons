@@ -1,22 +1,42 @@
-# Sons do Jogo (ElevenLabs / Audio Samples) — CYBERMECH
+# Sons do jogo (samples) — CYBERMECH
 
-Coloque aqui os arquivos de áudio gerados no ElevenLabs ou de bibliotecas de SFX em formato `.mp3`, `.ogg` ou `.wav`.
+O `AudioSystem` toca o sample quando ele existe e cai no gerador sintético quando não existe
+(*fallback*). O fallback é silencioso do ponto de vista do erro: **se o arquivo faltar, o jogo não
+reclama, só soa diferente** — foi o que aconteceu em 28/09, quando o código de carregamento entrou
+na `main` sem os arquivos e o site ficou tocando os sons antigos.
 
-O `AudioSystem` detecta e carrega os sons automaticamente. Se um arquivo de áudio estiver presente, o jogo toca o sample de alta qualidade com variação de tom (*pitch shift*) e áudio 3D. Se o arquivo não for encontrado, o jogo usa o gerador sintético de reserva (*fallback*).
+## Duas coisas, sempre as duas
 
-## Nomes e Mapeamento de Arquivos
+Para um sample tocar no site é preciso:
 
-| Nome do Efeito | Nome do Arquivo Esperado em `public/audio/` | Descrição |
+1. registrá-lo em **`client/src/core/Game.ts`** (`this.audio.loadSample('nome', base + 'audio/arquivo.ext')`);
+2. liberá-lo no **`.gitignore` desta pasta** (`!arquivo.ext`).
+
+A pasta ignora tudo por padrão porque é também a bancada onde a matéria-prima cai: arquivos brutos
+do Elevenlabs com `#` e espaço no nome, versões descartadas, e uma vez um `.MOV` de 29 MB. Sem o
+filtro, um `git add -A` levaria dezenas de MB para o repositório e para o deploy.
+
+## O que está publicado hoje (11 samples, 2,2 MB)
+
+| Nome no código | Arquivo | Onde toca |
 |---|---|---|
-| Passo de Mech | `step_mech.mp3` | Batida pesada metálica de passo de robô de 11t |
-| Passo de Andróide | `step_android.mp3` | Estalo mecânico/servo leve de passo de andróide |
-| Tiro de Plasma | `shot_plasma.mp3` | Canhão de plasma com grave e rastro de energia |
-| Tiro de Andróide | `shot_android.mp3` | Blaster agudo de andróide |
-| Impacto / Acerto | `hit.mp3` | Impacto de projétil na blindagem metálica |
-| Explosão / Abate | `explosion.mp3` | Explosão profunda com grave e detritos |
-| Dash / Esquiva | `dash.mp3` | Jato/whoosh de propulsor |
-| Pouso | `land.mp3` | Impacto do Mech aterrissando no chão |
-| Foguetes | `rocket.mp3` | Disparo/sopro de casulo de foguetes |
-| Alarme de Calor | `hot.mp3` | Aviso grave/sonoro de Mech em 70%+ de calor |
-| Alívio de Calor | `heat_relief.mp3` | Clique de reset + liberação de pressão mecânica |
-| Motosserra | `chainsaw.mp3` | Corte ruidoso de motosserra metálica |
+| `logo_serafim` | `logo_serafim.mp3` | vinheta da marca, no primeiro clique |
+| `ui_transition` | `ui_transition.mp3` | transição de tela |
+| `ui_bass` | `ui_bass.mp3` | grave de interface |
+| `ambient_bram` | `ambient_bram.mp3` | ambiência |
+| `ambient_action` | `ambient_action.mp3` | ambiência de combate |
+| `shot_plasma` | `shot_plasma.wav` | canhão de plasma |
+| `shot_heavy` | `shot_heavy.mp3` | tiro pesado |
+| `shot_futuristic` | `shot_futuristic.wav` | tiro do andróide |
+| `hit` | `hit.mp3` | impacto na blindagem |
+| `step_mech` | `step_mech.mp3` | passo do Mech |
+| `step_heavy` | `step_heavy.mp3` | passo pesado |
+
+Formatos: `.mp3` e `.wav`. **Nada de `#`, espaço ou parêntese no nome** — `#` numa URL é separador
+de fragmento, e o `fetch` buscaria só o pedaço antes dele.
+
+## Sons ainda sintetizados (sem sample)
+
+Explosão, dash, pouso, foguetes, alarme de calor, motosserra, sirene de onda, bipe de contagem e
+vinheta de onda limpa continuam vindo do gerador procedural do `AudioSystem`. Para trocar qualquer
+um por sample, siga as duas etapas acima.
