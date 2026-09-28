@@ -269,7 +269,6 @@ export class Game {
     this.roundHud = new RoundHud(this.mech, this.gameMode === 'deathmatch');
     // Botão na tela de pausa; a calibração tem camada própria e não retoma o jogo.
     new MouseCalibration(this.settings, [
-      document.getElementById('btn-settings')!,
       document.getElementById('setting-sens')!.closest('.setting-row')!,
     ]);
 
@@ -943,13 +942,13 @@ export class Game {
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);
-    this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
+    this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY);
     this.renderer.info.reset();
     this.composer.render(dt);
     
     // Atualiza medidor de FPS depois do render
     this.quality.update(dt);
-    this.debugPanel.update(dt, tickMs, this.renderer.info, this.quality.currentTier);
+    this.debugPanel.update(dt, tickMs, this.renderer.info, this.quality.currentTier, this.debris.count);
     
     this.input.endFrame();
   }

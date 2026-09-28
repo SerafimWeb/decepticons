@@ -94,8 +94,10 @@ export class AudioSystem {
   /**
    * Toca um sample carregado, se existir. 
    * Retorna true se tocou (evitando a síntese procedural).
+   * `maxDuration`: se > 0, limita a duração do sample com fade-out nos últimos 30 ms,
+   *                evitando tails de reverb embutidos nos arquivos.
    */
-  private playSample(name: string, gain = 1, pitch = 1): boolean {
+  private playSample(name: string, gain = 1, pitch = 1, maxDuration = 0): boolean {
     const { ctx, masterGain } = this;
     if (!ctx || !masterGain || !this.enabled) return false;
     
@@ -111,7 +113,19 @@ export class AudioSystem {
     
     src.connect(ng);
     ng.connect(masterGain);
-    src.start(ctx.currentTime);
+
+    const now = ctx.currentTime;
+    src.start(now);
+
+    if (maxDuration > 0 && buffer.duration > maxDuration) {
+      // Fade-out nos últimos 30 ms para cortar a cauda do sample sem clique
+      const fadeStart = now + maxDuration - 0.03;
+      ng.gain.setValueAtTime(gain, fadeStart);
+      ng.gain.linearRampToValueAtTime(0, now + maxDuration);
+      src.stop(now + maxDuration + 0.001);
+    }
+
+    src.onended = () => ng.disconnect();
     return true;
   }
 
@@ -153,7 +167,7 @@ export class AudioSystem {
    * ruído com decay ultrarrápido (\"crack\" metálico) + squelch de rádio.
    */
   playShot(): void {
-    if (this.playSample('shot_plasma', 0.8)) return;
+    if (this.playSample('shot_plasma', 0.8, 1, 0.3)) return;
     const { ctx, masterGain } = this;
     if (!ctx || !masterGain || !this.enabled) return;
 
@@ -208,7 +222,7 @@ export class AudioSystem {
    * Ruído filtrado com decay curto + pequeno bipe de confirmação.
    */
   playHit(): void {
-    if (this.playSample('hit', 0.6)) return;
+    if (this.playSample('hit', 0.6, 1, 0.15)) return;
     const { ctx, masterGain } = this;
     if (!ctx || !masterGain || !this.enabled || !this.noiseBuffer) return;
 
