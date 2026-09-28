@@ -5,7 +5,7 @@ import { batchRigMeshes, beveledBox, box, cyl, group, heatVapor } from './meshKi
 
 /** Parâmetros visuais apenas; não altera colisão, massa, vida, calor ou armas da simulação. */
 export interface MechBlueprint {
-  readonly id: 'ferret' | 'vector09' | 'colossus';
+  readonly id: 'ferret' | 'vector09' | 'heavy' | 'colossus01';
   readonly label: string;
   readonly referenceHeight: number;
   readonly torso: { readonly width: number; readonly height: number; readonly depth: number };
@@ -40,9 +40,9 @@ export const MEDIUM_MECH_BLUEPRINT: MechBlueprint = {
   vents: { count: 2, width: 0.16, height: 0.42 }, backPack: { width: 1.02, height: 0.86, depth: 0.62 },
 };
 
-/** Colossus-01: pesado e largo, com pernas compactas e blindagem espessa. Blueprint visual, sem stats. */
+/** Pesado padrão: largo e blindado, ainda uma classe de escala 2. Blueprint visual, sem stats. */
 export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
-  id: 'colossus', label: 'PESADO', referenceHeight: 6.5,
+  id: 'heavy', label: 'PESADO', referenceHeight: 6.5,
   torso: { width: 2.62, height: 1.72, depth: 1.88 },
   head: { width: 0.86, height: 0.58, depth: 0.88, antenna: 0.08 },
   shoulders: { width: 1.04, height: 0.88, depth: 1.08 }, hips: { width: 1.7, depth: 1.18 },
@@ -51,7 +51,27 @@ export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
   vents: { count: 4, width: 0.18, height: 0.5 }, backPack: { width: 1.42, height: 1.04, depth: 0.78 },
 };
 
-export const MECH_BLUEPRINTS: readonly MechBlueprint[] = [LIGHT_MECH_BLUEPRINT, MEDIUM_MECH_BLUEPRINT, HEAVY_MECH_BLUEPRINT];
+/**
+ * Colossus-01: máquina de cerco da escala 3. Não é o pesado de escala 2 aumentado:
+ * recebe uma base larga, tronco alto e pernas que criam espaço para o jogador circular.
+ * São parâmetros estritamente visuais; IA, vida e armas entram no encontro em outro módulo.
+ */
+export const COLOSSUS_01_BLUEPRINT: MechBlueprint = {
+  id: 'colossus01', label: 'COLOSSUS-01', referenceHeight: 14,
+  torso: { width: 5.8, height: 3.8, depth: 4.2 },
+  head: { width: 1.65, height: 1.05, depth: 1.5, antenna: 0 },
+  shoulders: { width: 2.25, height: 1.75, depth: 2.15 }, hips: { width: 3.95, depth: 2.5 },
+  legs: { hipWidth: 2.2, thighWidth: 1.65, shinWidth: 1.45, upperLength: 3.05, lowerLength: 2.85, footLength: 3.25, digitigrade: 0 },
+  arms: { mountX: 4.45, upperWidth: 1.2, upperLength: 2.15, forearmWidth: 1.62, forearmDepth: 3.1 },
+  vents: { count: 5, width: 0.42, height: 1.15 }, backPack: { width: 3.2, height: 2.55, depth: 1.85 },
+};
+
+export const MECH_BLUEPRINTS: readonly MechBlueprint[] = [
+  LIGHT_MECH_BLUEPRINT,
+  MEDIUM_MECH_BLUEPRINT,
+  HEAVY_MECH_BLUEPRINT,
+  COLOSSUS_01_BLUEPRINT,
+];
 
 export interface BlueprintRigOptions {
   readonly paint?: number;
@@ -135,8 +155,8 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     box(g, blueprint.arms.upperWidth, blueprint.arms.upperLength, blueprint.arms.upperWidth, M.frame, 0, -blueprint.arms.upperLength * 0.72, 0);
     box(g, blueprint.arms.forearmWidth, blueprint.arms.forearmWidth, blueprint.arms.forearmDepth, M.armor, 0, -blueprint.arms.upperLength * 1.5, -blueprint.arms.forearmDepth * 0.2);
     if (isLeft) {
-      const rows = blueprint.id === 'colossus' ? 3 : 2;
-      const cols = blueprint.id === 'colossus' ? 2 : 2;
+      const rows = blueprint.id === 'heavy' || blueprint.id === 'colossus01' ? 3 : 2;
+      const cols = 2;
       for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
         const cx = (col - (cols - 1) / 2) * blueprint.arms.forearmWidth * 0.42;
         const cy = -blueprint.arms.upperLength * 1.5 + (row - (rows - 1) / 2) * blueprint.arms.forearmWidth * 0.38;

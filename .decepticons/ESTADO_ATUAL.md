@@ -14,7 +14,7 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| — | Nenhuma entrega ativa conhecida fora da `main` ao encerrar esta sessão | — | 28/09 |
+| `codex/colossus-01` | Colossus-01 definido como boss de escala 3 (14 m), rig procedural e captura de silhueta; ainda sem encontro/jogabilidade | PR a abrir | 28/09 |
 
 ---
 
@@ -280,6 +280,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Bots contra bots | Hoje os bots só caçam o jogador. No modo "todos contra todos" eles deveriam se enfrentar também: basta passar todos os Mechs em `BotSystem.targets`. |
 | Câmera de abate no PvP | O corte offline segue o bot que matou. No online isso revelaria a posição do adversário durante 3 s. **Decidir:** liberar como ferramenta de conteúdo, atrasar/limitar a visão, ou manter ausente em partidas competitivas. Até a decisão, o online conserva a câmera normal e `STATUS_REAL.md` marca AUSENTE. |
 | Revisão do status do servidor (#106) | Corrigir duas arestas do PR #105: impedir cadeias duplicadas de polling quando `visibilitychange` ocorre durante `fetch`, e definir a política de CSP para o `/status` de um `?servidor=` explícito. O cache de 1 s e a ausência de tráfego com aba oculta foram aprovados. |
+| Colossus-01: arma e encontro | O dono fechou escala 3 e 14 m. Faltam a assinatura de arma, a máquina de fases, valores de combate e a forma do modo assimétrico; o próximo PR do Codex inicia pelo encontro offline determinístico. |
 
 ## BLOQUEIOS
 - Nenhum.
@@ -298,7 +299,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
      `[ clique para jogar ]` aparece em cima do título da missão, e o `[ INICIAR MISSÃO ]` não recebe clique nenhum
      (a pausa inteira é um botão de retomar). Decidir qual das duas telas manda enquanto as duas estão abertas.
 - **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
-- **Codex:** acompanhar o playtest da câmera de abate offline e do CTF; depois retomar cosméticos MK II/MK III e as fichas visuais aprovadas.
+- **Codex:** concluir PR visual do Colossus-01 e, depois do merge, iniciar o encontro offline determinístico com IA própria, pontos fracos e câmera de escala 3. A arma, números e modo assimétrico seguem decisões abertas.
 - **Claude:** definir e implementar o contrato autoritativo para escolher o modo da sala e transportar as transições de onda/objetivo; completar o online. Sincronizar máquina de estados de Ondas da simulação.
 - **Qwen:** relatório de saúde técnica do projeto e ícones no mapa da oficina.
 - **Dono (primeiro de tudo, 28/09):** **reiniciar o servidor de jogo de casa** para ele passar a responder

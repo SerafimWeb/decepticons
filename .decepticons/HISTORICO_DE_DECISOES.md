@@ -1,5 +1,12 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] Colossus-01 vira o primeiro boss de escala 3, com 14 m (Codex + dono)
+**Pedido do dono:** criar o estágio 3 de tamanho, novos bosses que possam ser circundados em combate e deixá-los disponíveis para uso em uma etapa posterior.
+**Decisão:** o Colossus-01 deixa de disputar o lugar de Mech pesado de escala 2. Ele passa a ser máquina de cerco de **14 m**, 2,64 vezes a altura do Vector-09. O pesado de escala 2 continua uma linha de chassi separada, perto de 6,5 m.
+**Visual:** `COLOSSUS_01_BLUEPRINT` cria base larga, pernas afastadas, torso alto, ombros massivos e cinco respiros por lado. As seis partes preservam seus pivôs e a geometria é fundida na construção: **9 malhas visíveis e uma camada opcional de vapor**, dentro do teto de 10 draws. A prova comparativa em `.decepticons/arte/mech-blueprints.png` mede 4,5 m, 5,3 m, 6,5 m e 14 m.
+**Ordem de entrega:** primeiro o rig e a escala; depois um encontro offline determinístico, com IA de boss separada da IA de soldados, pontos fracos e câmera própria; só depois sandbox/Hangar e modo online assimétrico. A simulação, os valores de vida/ataque e a arma assinatura não foram inventados nesta etapa.
+**Quem decidiu:** dono (escala 3, boss e futuro uso pilotável); Codex (14 m, separação conceitual, silhueta, orçamento de render e sequência técnica).
+
 ## [2026-09-28] Câmera de abate estreia offline; PvP espera decisão do dono (Codex)
 **Pedido do dono:** durante os segundos antes do respawn, acompanhar quem derrubou o jogador e produzir enquadramentos úteis para conteúdo.
 **Decisão:** `camera/KillCam.ts` é render puro e independente, ligado no `Game` apenas pelo `Match.onMechKilled`. Ele troca uma referência ao bot matador por morte, enquadra primeiro o local da carcaça e depois acompanha o alvo. A câmera escolhe uma posição livre entre costas/laterais/frente uma vez no abate, faz um raycast de proteção por quadro e reaproveita a translucidez dos prédios da câmera tática. `V`/`CAM` cancela imediatamente; no respawn, a pose mistura de volta em 0,38 s.
