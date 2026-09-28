@@ -1,6 +1,7 @@
 # FICHAS DE DESIGN — CYBERMECH
 
-> Uma ficha por robô e por arma: o que ele é, como se joga com ele e contra ele, a silhueta e os números.
+> Uma ficha por robô, por arma **e por modo de jogo**: o que ele é, como se joga com ele e contra ele, a silhueta
+> (ou o ritmo) e os números.
 > É o documento que o dono aprova antes de qualquer coisa entrar no jogo. Modelos: `MODELO_ROBO.md` e `MODELO_ARMA.md`.
 > Exemplo preenchido: `vector-09.md`.
 
@@ -35,6 +36,8 @@
 | [`androide.md`](androide.md) | escala 1: rebelde, técnico e pilotado | rig de `Android.ts` | proposta Codex; números copiados do código |
 | [`plasma.md`](plasma.md), [`foguetes.md`](foguetes.md), [`blaster.md`](blaster.md), [`motosserra.md`](motosserra.md) | armas de hoje | `combat/weapons.ts` | propostas Codex; números copiados do código |
 | [`drone.md`](drone.md) | escala 1, três classes por função: reconhecimento, ataque e conserto | decisão do dono de 27/09 (`METAGAME.md` § 8 e § 8.2) | proposta Qwen; **silhueta (Codex) e números (Claude) aguardam**; 6 perguntas abertas para o dono |
+| [`ondas.md`](ondas.md) | **modo** sobrevivência: o balanço das ondas (quantidade, tipo e vida por onda) | declaração do dono de 27/09 (`ROADMAP.md`, Fase 5) | proposta Qwen; **a máquina de estados é do Claude** e o HUD, do Gemini; 7 perguntas abertas para o dono |
+| [`ctf.md`](ctf.md) | **modo** CTF Vermelho × Azul: regras e **a especificação dos 15 testes** | decisão do dono no `ROADMAP.md` (Fase 5: 2v2, 3 capturas ou mais em 8 min) | proposta Qwen; **os `it()` nascem no PR da regra (Claude)**; 7 perguntas abertas para o dono |
 
 As fichas marcadas como **proposta** não aprovam mudanças de gameplay. O Ferret-X e o Colossus-01 ainda não têm
 stats/slots no código; `?` indica decisões pendentes, nunca um valor para implementar sem teste e aprovação.
