@@ -35,6 +35,7 @@
 ## ✅ FASE 0 — Fundação
 - [x] Vector-09: movimento, pulo duplo, dash, canhão de plasma #jogabilidade
 - [x] 3 câmeras (3ª, 1ª, tática) #jogabilidade
+- [x] Câmera de abate offline: segue o bot matador durante o respawn, enquadra os destroços no primeiro segundo, `V` cancela e a volta à câmera do jogador é suavizada; online aguarda decisão de PvP #jogabilidade
 - [x] Arena com barricadas destrutíveis e destroços (só cosméticos) #cenarios
 - [x] Loop de 60 Hz fixo com render interpolado #base
 - [x] Protocolo Serafim UM: memória, hooks, smoke, budget, CI, Vitest #base
@@ -157,6 +158,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Missões em fases (cooperativo ou solo):** 3-5 fases com objetivos crescentes (defesa, escolta, invasão), com um evento de rede novo (`OBJECTIVE_STATE`) e um mapa por missão #modos
 - [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio
+- [ ] **Decidir câmera de abate no PvP:** seguir o adversário revela sua posição; escolher entre liberar, atrasar/limitar ou manter ausente no competitivo #rede
 - [ ] **Nova arma toda semana** (com teste de balanço em `combat/balance.ts`; nenhuma abaixo do TTK do arsenal atual, nenhuma acima do teto de dano por segundo) #combate
 - [ ] **Colossus-01 (demolição no dash) e Ferret-X (gancho + sucata):** dois chassis novos, com blueprints Codex e stats no `entities/chassis.ts` #mechs
 - [ ] **Personalização visual (cosmética, nunca combate):** apelido, cor da carcaça, decalque, pintura por parte, salva no navegador antes da conta (`hangar/loadout.ts` estende com uma seção "aparência") #negocio

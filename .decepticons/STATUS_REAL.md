@@ -23,6 +23,7 @@
 | Câmera 3ª pessoa (com colisão) | REAL | |
 | Câmera 1ª pessoa (cockpit) | REAL | |
 | Câmera tática (top-down, mira no cursor) | REAL | prédios entre a câmera e o Mech ficam translúcidos |
+| Câmera de abate | PARCIAL | **REAL no offline:** ao morrer para um bot, segue o matador durante o contador, começa olhando os destroços, evita paredes, deixa prédio oclusor translúcido, `V`/`CAM` sai na hora e o respawn retorna em transição de 0,38 s. Cinco testes e captura em `.decepticons/arte/camera-de-abate-codex.png`. **AUSENTE no online:** revelar a posição do jogador que matou depende de decisão de PvP. |
 | Canhão de plasma | REAL | Raycast do segmento por tick, pool de 64; só dispara com o braço direito inteiro. Desde 25/09 os números vêm do arsenal (`combat/weapons.ts`): 16 de dano, 4,5 tiros/s exatos (a cadência não arredonda mais para o tick), 140 m/s, dano cheio até 60 m e 40% a 200 m, onde o projétil some. Testado (queda por distância, cadência média) |
 | Barricadas destrutíveis | REAL | 6 na arena, HP e cor de dano |
 | Destroços físicos | REAL | Cosméticos para os raios: tiro, linha de visão dos bots e o controlador dos Mechs os ignoram (o Mech ainda os empurra). Teto de 240, os mais antigos saem primeiro. **Mas mudam a simulação:** estão no mesmo mundo físico e alteram a ordem interna do Rapier; a partida diverge depois do primeiro estilhaço, e entre execuções (`Math.random`). O servidor vai rodar sem eles (`MULTIPLAYER.md`, seção 7) |
