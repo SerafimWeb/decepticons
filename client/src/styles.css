@@ -1444,7 +1444,6 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 .power-status { font-size: 11px; line-height: 1.5; color: #999; overflow-wrap: anywhere; }
 .power-flag { margin: 6px 0 0; font-size: 11px; letter-spacing: 2px; color: var(--hot); }
 
-<<<<<<< HEAD
 /* ─── MissionHUD (Modo Sobrevivência / Estilo Zomboid) ─────────────────────── */
 #mission-briefing,
 #mission-summary {
