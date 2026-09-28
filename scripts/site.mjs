@@ -28,6 +28,24 @@ const argv = process.argv.slice(2);
  * style do painel; as fontes do painel vêm do Google Fonts.
  * Sem HSTS: vale para o domínio inteiro (selvamkt.com.br), então é decisão do dono do domínio.
  */
+/**
+ * Origem do servidor de jogo, liberada no `connect-src` para a página poder perguntar o status dele
+ * (`GET /status`, contrato em `shared/net/status.ts`) — jogar já era liberado por `wss:`. É a origem exata
+ * do `GAME_SERVER_URL`, não um `https:` aberto; sem a variável no build, nada é liberado.
+ */
+const GAME_ORIGIN = (() => {
+  const raw = process.env.VITE_GAME_SERVER?.trim();
+  if (!raw) return '';
+  try {
+    const u = new URL(raw);
+    const scheme = u.protocol === 'ws:' || u.protocol === 'http:' ? 'http:' : 'https:';
+    return ` ${scheme}//${u.host}`;
+  } catch {
+    console.warn(`::warning::GAME_SERVER_URL não é um endereço válido (${raw}): a página não vai mostrar o status do servidor`);
+    return '';
+  }
+})();
+
 const HEADERS = {
   'Content-Security-Policy': [
     "default-src 'self'",
@@ -36,7 +54,8 @@ const HEADERS = {
     'font-src https://fonts.gstatic.com',
     "img-src 'self' data:",
     // Multiplayer (M4): o servidor no próprio PC (ws://localhost) ou por túnel/hospedagem (wss://).
-    "connect-src 'self' ws://localhost:* ws://127.0.0.1:* wss:",
+    // O `http://localhost` e a origem do túnel são o `GET /status` que a página usa para dizer se há gente jogando.
+    `connect-src 'self' ws://localhost:* ws://127.0.0.1:* http://localhost:* http://127.0.0.1:* wss:${GAME_ORIGIN}`,
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'none'",
