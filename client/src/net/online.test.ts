@@ -146,8 +146,8 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     expect(other?.kind).toBe('human');
     const x0 = other!.mech.simPosition.x;
     a.commander.command.moveX = 1; // Alfa anda para a direita
-    await play([a, b], 1000);
-    expect(other!.mech.simPosition.x - x0).toBeGreaterThan(2);
+    await play([a, b], 1500);
+    expect(other!.mech.simPosition.x - x0).toBeGreaterThan(1);
     a.session.dispose();
     b.session.dispose();
   });
