@@ -179,6 +179,34 @@ html, body {
 #overlay .studio b { color: var(--ink); font-weight: 600; }
 #overlay .build-tag { position: absolute; right: 14px; bottom: 10px; margin: 0; font-size: 10px; letter-spacing: 1px; color: #56605a; }
 
+/* Linha do servidor na pausa (ui/ServerStatus.ts): canto de cima, longe do título e do [ clique para jogar ]. */
+#overlay .server-status {
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #7d8a80;
+}
+#overlay .server-status .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #56605a;
+}
+#overlay .server-status.online { color: var(--accent); }
+#overlay .server-status.online .dot { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: ss-pulse 1.8s ease-in-out infinite; }
+#overlay .server-status.vazio { color: #9aa79d; }
+#overlay .server-status.vazio .dot { background: var(--accent); opacity: 0.55; }
+#overlay .server-status.versao { color: var(--warn); }
+#overlay .server-status.versao .dot { background: var(--warn); }
+#overlay .server-status.offline .dot { background: #6b3a3a; }
+@keyframes ss-pulse { 50% { opacity: 0.35; } }
+
 /* Mira acesa: um inimigo vivo está sob ela (ui/HUD.setOnTarget). */
 #crosshair.on-target {
   border-color: var(--alert);
@@ -1323,6 +1351,7 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   #overlay h1 { font-size: clamp(20px, 5vw, 34px); letter-spacing: 4px; }
   #overlay .sub { margin: 2px 0 10px; font-size: 12px; }
   #overlay .cta { font-size: 16px; }
+  #overlay .server-status { position: static; order: -1; margin: 0 0 8px; font-size: 10px; }
   #overlay ul { margin-top: 10px; gap: 2px 22px; font-size: 12px; }
   .btn-terminal { margin-top: 8px; padding: 6px 12px; font-size: 12px; }
   #stats { top: 8px; left: 10px; font-size: 10px; }

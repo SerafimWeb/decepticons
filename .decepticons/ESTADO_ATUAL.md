@@ -15,9 +15,29 @@
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
 | `claude/zonas-cura-resfriamento` | zonas de cura e resfriamento na arena | **#91 aberto** | 27/09 |
-| `claude/samples-de-audio` | os 11 arquivos de som que faltavam no repositório | **em PR** | 28/09 |
+| `claude/status-do-servidor` | status do servidor na landing e na pausa (online + quantos pilotos) | **em PR** | 28/09 |
 
 ---
+
+- **O servidor passa a dizer quem está jogando, e a página mostra (Claude, 28/09).** Pedido do dono:
+  *"tem como deixarmos na página, permanentemente, a info se o servidor está online, quantas pessoas
+  jogando?"*. O servidor de jogo ganhou **`GET /status`** no mesmo processo e na mesma porta do WebSocket;
+  o contrato vive em `shared/net/status.ts` (usado pelo servidor, pelo jogo, pela landing e pelos testes).
+  - **Landing:** `● 1 PILOTO EM COMBATE AGORA` embaixo dos botões, e o próprio botão vira
+    `[ JOGAR ONLINE · 1 AGORA ]`. Captura: `.decepticons/arte/status-servidor-landing.png`.
+  - **Pausa do jogo:** a mesma linha no canto de cima (`client/src/ui/ServerStatus.ts`), perguntando a cada
+    20 s **só com a pausa à vista** — entrou em combate, para de perguntar. Captura: `status-servidor.png`.
+  - **Custo:** resposta de ~70 bytes montada no máximo 1×/s no servidor; ~350 bytes por pergunta com os
+    cabeçalhos, ~18 B/s por aba (0,2% do orçamento do G11). Fora do laço de 60 Hz, zero alocação por quadro.
+  - **Só números agregados** (protocolo, pilotos, salas, tamanho da sala, tempo de pé): nenhum apelido, IP ou
+    código de sala, porque a resposta é pública. A CSP do site libera **a origem exata** do `GAME_SERVER_URL`.
+  - **Pendência do dono, não do código:** o servidor que está no ar desde 26/09 roda o código anterior, sem
+    `/status`. Até ele ser reiniciado, a página vai dizer **`SERVIDOR ONLINE · SEM CONTAGEM DE PILOTOS`** —
+    online, sem o número. Reiniciar é `.\scripts\servidor-windows.ps1` (ou reiniciar a tarefa do Windows).
+  - Achado de quebra (R17): o prazo de 4 s da sondagem abortava a leitura do corpo quando o boot do jogo
+    travava a thread; a tela dizia "sem contagem" sem motivo. Corrigido, com teste.
+  - Achado de quebra (R17): `STATUS_REAL.md` tinha a linha `| Multiplayer / servidor | AUSENTE |`
+    contradizendo as duas linhas acima dela (servidor e jogo online, REAL, no ar desde 26/09). Removida.
 
 - **Os sons novos não tocavam no site: faltavam os arquivos (Claude, 28/09, R17).** O dono relatou
   "o Gemini disse que fez a parte dele mas o som ainda não tô ouvindo os novos". O código de
@@ -258,8 +278,22 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
-- **Gemini:** Acompanhar merge do PR `gemini/modo-hud-audio` e validação do deploy no site (`/cybermech/`). Começar pelas telas do online e calor no HUD.
+- **Gemini:** **limpar a tela de pausa** (o dono marcou na captura: informação demais, coisas redundantes) e
+  **telas de carregamento melhores**. Dois defeitos já diagnosticados pelo Claude em 28/09, para começar por eles:
+  1. **`mission-summary` é um id disputado por dois módulos.** `client/index.html:51` tem um `<p id="mission-summary">`
+     **dentro do `#overlay`** (a pausa), e `MissionHUD._getOrCreate('mission-summary')` reaproveita esse mesmo nó em vez
+     de criar o dele dentro do `#hud` — então o resumo da missão nasce dentro da tela de pausa. Some-se a isso o CSS
+     duplicado: `styles.css` define `#mission-summary` duas vezes (a linha de texto da pausa, e o painel de tela cheia
+     do MissionHUD com `position:absolute; inset:0; z-index:900`), e a segunda vence. Sugestão: o nó antigo da pausa
+     vira `#round-summary` (HUD.ts + index.html + CSS) e o MissionHUD passa a criar o dele.
+  2. **O briefing abre atrás da pausa.** `#mission-briefing` tem `z-index:900` mas vive dentro do `#hud`, e o `#overlay`
+     vem depois no DOM sem `z-index` — logo a pausa pinta por cima. É por isso que na captura do dono o
+     `[ clique para jogar ]` aparece em cima do título da missão, e o `[ INICIAR MISSÃO ]` não recebe clique nenhum
+     (a pausa inteira é um botão de retomar). Decidir qual das duas telas manda enquanto as duas estão abertas.
+- **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
 - **Codex:** concluir o PR/deploy do CTF e pedir ao dono um playtest em `?modo=ctf`. Aguardar revisão/aprovação do dono nas propostas de fichas. Fichas de design e sinais visuais de calor no rig.
 - **Claude:** definir e implementar o contrato autoritativo para escolher o modo da sala e transportar as transições de onda/objetivo; completar o online. Sincronizar máquina de estados de Ondas da simulação.
 - **Qwen:** relatório de saúde técnica do projeto e ícones no mapa da oficina.
+- **Dono (primeiro de tudo, 28/09):** **reiniciar o servidor de jogo de casa** para ele passar a responder
+  `/status` — até lá a página diz "SERVIDOR ONLINE · SEM CONTAGEM DE PILOTOS" (online, sem o número).
 - **Dono:** Testar no site o Seletor de Modo, a abertura do Briefing da Missão (`KeyM` / `KeyB` ou selecionar Sobrevivência), os alarmes de onda, as medalhas de conquista e o jogo offline de Sobrevivência/CTF. Decidir o universo (`UNIVERSO.md`, seção 7), a seção 9 e as decisões da seção 10 do `MULTIPLAYER.md`.

@@ -124,6 +124,49 @@ const facts = [
 // Servidor público do multiplayer (variável GAME_SERVER_URL do GitHub, a mesma que o jogo recebe no build).
 const ONLINE = Boolean(process.env.VITE_GAME_SERVER?.trim());
 
+/**
+ * Status do servidor na própria landing (dono, 28/09: "tem como deixarmos na página, permanentemente, a info
+ * se o servidor está online, quantas pessoas jogando?"). O endereço, o caminho e o intervalo vêm do contrato
+ * do jogo (`shared/net/status.ts`, via dados.mjs): o texto é o da landing, os números são do servidor.
+ *
+ * Custo para quem abre a página: um GET de ~350 bytes ao abrir e outro a cada 20 s, só com a aba na frente.
+ * Falhou (servidor desligado, túnel fora do ar, sem rede)? A linha diz "fora do ar" e o botão de jogar
+ * offline continua exatamente como estava.
+ */
+const STATUS_URL = game?.net?.statusUrl ?? null;
+const STATUS_POLL_S = game?.net?.statusPollS ?? 20;
+const STATUS_JS = `(() => {
+  const el = document.getElementById('srv');
+  const label = el.querySelector('span');
+  const online = document.querySelector('.play-btn.online');
+  const baseLabel = online ? online.textContent : '';
+  const paint = (cls, text) => { el.className = 'srv ' + cls; label.textContent = text; };
+  const ask = async () => {
+    if (document.visibilityState === 'hidden') return;
+    try {
+      const res = await fetch(${JSON.stringify(STATUS_URL ?? '')}, { cache: 'no-store', credentials: 'omit' });
+      if (!res.ok) throw new Error('http ' + res.status);
+      // Servidor de pé que ainda não conhece /status (versão anterior a 28/09) responde texto: online sem contagem.
+      let n = null;
+      try { const s = await res.json(); if (Number.isFinite(s.players) && s.players >= 0) n = s.players; } catch (e) {}
+      if (n === null) paint('vazio', 'SERVIDOR ONLINE · SEM CONTAGEM DE PILOTOS');
+      else if (n > 0) paint('on', n === 1 ? '1 PILOTO EM COMBATE AGORA' : n + ' PILOTOS EM COMBATE AGORA');
+      else paint('vazio', 'SERVIDOR ONLINE · ARENA VAZIA · SEJA O PRIMEIRO');
+      if (online) online.textContent = n ? '[ JOGAR ONLINE · ' + n + ' AGORA ]' : baseLabel;
+    } catch (e) {
+      paint('off', 'SERVIDOR FORA DO AR · O JOGO OFFLINE CONTINUA VALENDO');
+      if (online) online.textContent = baseLabel;
+    }
+  };
+  document.addEventListener('visibilitychange', ask);
+  ask();
+  setInterval(ask, ${STATUS_POLL_S * 1000});
+})();`;
+const statusHtml = STATUS_URL
+  ? `<p class="srv" id="srv"><i class="dot"></i><span>PROCURANDO O SERVIDOR…</span></p>
+      <script>${STATUS_JS}</script>`
+  : '';
+
 const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
     <div class="hero-copy">
       <p class="presents">SERAFIM WEB apresenta</p>
@@ -135,6 +178,7 @@ const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
         ${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA">[ JOGAR ONLINE ]</a>' : ''}
         <a class="link-btn" href="./sala-de-controle/">como este jogo é feito →</a>
       </div>
+      ${statusHtml}
       <ul class="facts">${facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
     </div>
     ${
@@ -536,6 +580,14 @@ const css = `
   .todo li span { color: var(--text); } .todo li.doing span { color: var(--amber); }
   /* Jogar online: mesmo botão, no verde do jogador (o âmbar é o do jogo offline). */
   .play-btn.online { background: var(--green); box-shadow: 0 0 24px rgba(57,255,106,.35); }
+  /* Status do servidor, perguntado pela página (GET /status): verde com gente, apagado fora do ar. */
+  .srv { display: flex; align-items: center; gap: 9px; margin: -4px 0 0; font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .srv .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; }
+  .srv.on { color: var(--green); }
+  .srv.on .dot { background: var(--green); box-shadow: 0 0 10px rgba(125,255,114,.8); animation: srv-pulse 1.8s ease-in-out infinite; }
+  .srv.vazio .dot { background: var(--green); opacity: .5; }
+  .srv.off .dot { background: #7a3a3a; }
+  @keyframes srv-pulse { 50% { opacity: .35; } }
   /* Marco: quando um marco novo entra, ele aparece dentro da própria seção que ele completa. */
   .milestone { padding: 12px 16px; color: var(--text); font-size: 13.5px; max-width: 90ch; margin: 14px 0; border-left: 3px solid var(--green); }
   .milestone code { color: var(--green); }

@@ -1,5 +1,16 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] O status do servidor é HTTP, não WebSocket — e "de pé sem contagem" é um estado próprio (Claude)
+**Pedido do dono:** *"tem como deixarmos na página, permanentemente, a info se o servidor está online, quantas pessoas jogando?"*
+**Decisão 1 — perguntar por HTTP:** o servidor de jogo ganhou `GET /status` no mesmo processo e na mesma porta do WebSocket (`server/Server.ts`), com o contrato em `shared/net/status.ts`. A alternativa era abrir um WebSocket só para perguntar: custaria o handshake, ocuparia uma das 4 conexões por IP da porteira (`server/guard.ts`) e faria a sala existir sem ninguém jogando. Um GET não faz nada disso.
+**Custo (medido, não estimado):** a resposta tem ~70 bytes e é montada **no máximo uma vez por segundo** — mil perguntas no mesmo segundo custam uma soma sobre as salas abertas. Com os cabeçalhos, cada pergunta custa ~350 bytes; a cada 20 s, ~18 B/s por aba aberta, **0,2% do orçamento de 8 KB/s de um jogador (G11)**. Nada disso toca o laço de 60 Hz nem aloca por quadro (G4).
+**Decisão 2 — só números agregados:** a resposta traz protocolo, pilotos, salas, tamanho da sala e tempo de pé. **Nenhum apelido, IP ou código de sala**, porque ela é pública (`access-control-allow-origin: *`: o site mora em outro endereço). Quem estiver jogando não aparece para ninguém.
+**Decisão 3 — três estados, não dois:** um servidor **de pé que ainda não conhece `/status`** (o processo no ar desde 26/09) não é "fora do ar". A tela diz `SERVIDOR ONLINE · SEM CONTAGEM DE PILOTOS`. Dizer "fora do ar" sobre um servidor jogável seria mentira na tela, e foi o que apareceu na primeira medição contra o servidor de casa.
+**CSP:** o `connect-src` do site passou a liberar **a origem exata** do `GAME_SERVER_URL` (e `http://localhost`), não um `https:` aberto. Sem a variável no build, nada é liberado e a linha não aparece.
+**Achado de quebra (R17):** o prazo de 4 s da sondagem estava armado também durante a leitura do corpo. No boot do jogo (Wasm + arena) a thread principal trava alguns segundos, o temporizador dispara depois e abortava o corpo de uma resposta que **já tinha chegado** — a tela dizia "sem contagem" sem motivo. O prazo agora é desarmado quando a resposta chega; há teste para isso.
+**Quem decidiu:** dono (o pedido); Claude (HTTP em vez de WebSocket, dados agregados, os três estados, origem exata na CSP).
+
+
 ## [2026-09-28] Integração Híbrida de Áudio Real e Procedural (Gemini)
 **Contexto**: O cliente forneceu áudios renderizados (ElevenLabs) para armas, ambiente, passos e UI, pedindo integração prioritária da vinheta.
 **Decisão**: O `AudioSystem` foi refatorado para suportar arquivos de áudio `.mp3` e `.wav` usando buffers via rede `fetch` sem bloquear a thread. Manteve-se o sistema procedural original, ativado automaticamente como fallback. Isso reduz o custo de CPU caso o arquivo não seja carregado ou atrase e garante alta resiliência à aplicação online.

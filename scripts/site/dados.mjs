@@ -185,8 +185,12 @@ export async function jogo() {
     // Rede (multiplayer): ritmos, tetos e a conta da banda, do mesmo código que os testes travam.
     const netConst = await load('shared/net/constants.ts');
     const budget = await load('shared/net/budget.ts');
+    // Status público do servidor (GET /status): a landing pergunta sozinha se há gente jogando agora.
+    const status = await load('shared/net/status.ts');
     const net = {
       ...netConst,
+      statusUrl: status.statusUrl(process.env.VITE_GAME_SERVER),
+      statusPollS: status.STATUS_POLL_S,
       inputBytes: (await load('shared/net/input.ts')).INPUT_BYTES,
       unitBytes: (await load('shared/net/state.ts')).UNIT_BYTES,
       download: budget.downloadPerSecond(netConst.ROOM_UNITS),
