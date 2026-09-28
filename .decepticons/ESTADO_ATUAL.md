@@ -14,9 +14,46 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| — | Nenhuma entrega ativa conhecida fora da `main` ao encerrar esta sessão | — | 28/09 |
+| `claude/atualizacao-e-metricas` | atualização automática do servidor (puxar, verificar, só então trocar) + métricas de produto (funil de cliques e partidas) | **em PR** | 28/09 |
 
 ---
+
+- **Atualização automática do servidor, e métricas de produto (Claude, 28/09, PR `claude/atualizacao-e-metricas`).**
+  Dois pedidos do dono na mesma mensagem.
+  - **"Tem como o servidor reiniciar sozinho quando for necessário... e quando eu estiver dormindo?"** — o
+    servidor já reiniciava sozinho **se caísse** (desde 26/09, `servidor-windows.ps1`); o que faltava era
+    reiniciar sozinho **quando o código muda**. Desenho: **puxar, nunca receber** — nenhum endpoint novo
+    escutando a internet (zero superfície nova); a cada 10 min o PC pergunta ao GitHub se a `main` avançou
+    (`scripts/atualizar-servidor.mjs`), e só troca o código depois de passar pelo mesmo portão do CI —
+    `typecheck` + os testes de `server/` e `shared/` — local e em segundos. **Falhou → volta sozinho para o
+    commit anterior, o servidor que já está no ar nunca é tocado.** Roda numa **worktree separada da pasta
+    onde o dono edita** (`.tmp/wt-servidor-prod/`), porque um `git reset --hard` automático na pasta principal
+    apagaria uma edição não commitada dele um dia qualquer — o script **recusa rodar** fora de uma worktree
+    (testado). Log em `.tmp/servidor/atualizacao.log`. Passo a passo em `DEPLOY.md`, seção "Atualização
+    automática". **Pendência do dono, não do código:** migrar o servidor de hoje (rodando na pasta principal)
+    para a worktree, então rodar `servidor-atualizar.ps1` uma vez.
+  - **"Quero trackear o consumo, quantas pessoas clicaram, onde clicam, onde saem, se jogaram tantas
+    partidas."** `POST /evento` no mesmo servidor de jogo (contrato `shared/net/telemetry.ts`), lista fechada
+    de 9 eventos (visita à landing, os três cliques da landing, boot do jogo, partida iniciada/terminada,
+    troca de modo, Hangar aberto) — qualquer outro nome recusa com 400. **Decisão de privacidade, antes de
+    login/LGPD existir:** `GET /eventos/resumo` devolve só contagens agregadas por evento (24h e total), nunca
+    um evento cru nem um IP; sem cookie, sem id persistente entre sessões (um id sorteado por aba, nunca
+    gravado). Corpo maior que 256 bytes recusa com 413; cada IP tem um balde próprio de 30 eventos/min (não é
+    o `Guard` do WebSocket — é um limitador HTTP separado, com teste de rajada). O emissor
+    (`client/src/core/telemetry.ts`, `scripts/landing.mjs`) usa `sendBeacon` (sobrevive a fechar a aba) com
+    fallback a `fetch keepalive`; qualquer erro é engolido, como o fallback silencioso do `AudioSystem` — a
+    telemetria nunca pode travar nem atrasar o jogo. **Ainda não tem visualização** (o resumo existe, um
+    painel na sala de controle lendo `GET /eventos/resumo` é o próximo passo natural, não construído agora).
+  - **Achado de infraestrutura, não de código (R17, para quem ler o log desta sessão):** o `npm ci` do PC do
+    dono travou de forma persistente e reproduzível num binário nativo do `@rolldown` (`EPERM`, "rejeitado
+    pelo sistema operacional" — a mensagem do próprio npm aponta antivírus) por mais de 10 minutos seguidos,
+    mesmo depois de eu remover o arquivo manualmente e tentar de novo várias vezes — cada tentativa
+    **encolheu** o `node_modules` (de 39 para 4 pacotes) em vez de consertar, porque `npm ci` apaga tudo antes
+    de reinstalar. **`npm run check` não rodou localmente nesta sessão por causa disso** — o código deste PR
+    foi revisado manualmente (é pequeno e segue padrões já testados no projeto: mesma forma de `status.ts`,
+    mesmo padrão de balde de `guard.ts`) e a verificação real é o CI do PR. **Se isso acontecer de novo:** não
+    insista em `npm ci` repetido (piora); investigue o antivírus (exceção para a pasta `node_modules` do
+    projeto) antes.
 
 - **A tela inicial deixa de quebrar em duas linhas, e os botões param de disputar espaço (Claude, 28/09).**
   Pedido do dono, com captura anotada: *"corrige a tela inicial, tira os 2 botões juntos, realinha o 'como é
