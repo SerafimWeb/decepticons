@@ -149,6 +149,7 @@
 
 Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o que atrai gente pra testar, se desafiar e voltar.
 
+- [x] **Interface CTF e Placar de Times (CtfHud):** placar Azul vs Vermelho, badges de posse de bandeira, banners de evento animados (`showEventBanner`), com testes #modos
 - [x] **Sobrevivência solo em Ondas:** cinco hordas progressivas (20 abates no total), briefing/intervalo, derrota/vitória, estatísticas e reinício; pool fixo de até 3 Mechs + 3 andróides, seletor na pausa e HUD de missão. Online fica para um contrato de rede próprio #modos
 - [x] **CTF Vermelho × Azul — treino offline jogável:** uma bandeira em cada base, dois defensores, captura só com a própria bandeira em casa, queda/retorno, portador 15% mais lento, três capturas ou desempate em 8 min; regra pura no `Match`, HUD, bases/bandeiras holográficas em cinco draw calls e seletor na pausa #modos
 - [ ] **CTF 2v2 online autoritativo:** times no contrato de sala, eventos de bandeira/captura no protocolo, bots preenchendo vagas e validação de banda; o treino offline não anuncia suporte de rede #rede
@@ -160,7 +161,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Personalização visual (cosmética, nunca combate):** apelido, cor da carcaça, decalque, pintura por parte, salva no navegador antes da conta (`hangar/loadout.ts` estende com uma seção "aparência") #negocio
 - [ ] **Placar e nomes vindos do servidor** com histórico de partidas do jogador (na sua sessão, sem conta ainda) #ux
 - [ ] **Painel de balanço na sala de controle:** quantas partidas cada arma venceu, tempo médio até morte, distribuição de dano; alimenta as decisões semanais de ajuste #negocio
-- [ ] **Desafios diários pequenos** (ex.: "5 abates com plasma MK I", "acabar uma partida sem morrer"): recompensa cosmética #modos
+- [x] **Desafios diários e progressão (DailyChallenges):** Nível de Piloto, barra XP, Créditos ₵, 3 missões diárias com recompensas ("5 abates com plasma", "causar 500 de dano", "derrotar 3 andróides"), salvas localmente e integradas no `Game.ts` #modos
+- [x] **Modo sobrevivência e MissionHUD:** interface completa (briefing tático com digitação, HUD de onda, sirenes de alarme, banner ONDA LIMPA e resumo de estatísticas/medalhas) #modos
 
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
 - [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo
@@ -187,9 +189,9 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] **WebTransport (quando o Firefox terminar):** UDP no navegador, corta jitter em rede ruim #rede
 
 ## 💡 IDEIAS
-- [ ] **Mech com dois operadores:** piloto controla movimento e orientação do casco; artilheiro mira/dispara; servidor coordena papéis e entradas concorrentes, com bots e humanos #rede
-- [ ] **Drones voadores pequenos:** classe visual abaixo do andróide (referência de escala: Mech 2, andróide 1); movimento, teto de unidades e banda precisam caber no orçamento #mechs
-- [ ] **Missões de sobrevivência por fases:** referência de ritmo e persistência de *Project Zomboid*, adaptada a operações de combate contra andróides humanoides, humanos e outros Mechs; definir loop, objetivos e escopo antes de codar #modos
+- [ ] **Mech com dois operadores** (27/09 — expandido): papéis possíveis: Piloto (movimento, dash, pulo), Artilheiro (mira independente, terceira arma exclusiva no topo do Mech), Mecânico (reparo em tempo real de partes danificadas). Um bot pode ocupar qualquer papel. Alternância rápida Piloto⇔Artilheiro por tecla. Serve para testes A/B de balanceamento com combinações bot×humano. Interface (HUD de papel, câmera do artilheiro, indicador de mecânico): **Gemini**. Contrato `MechInput` dual + autoridade de rede: **Claude** #mechs
+- [ ] **Drones voadores pequenos** (27/09 — expandido): sub-escala 1, proporcionais ao androide (que é escala 1 = ~1,6 m), portanto visualmente pequenos perto dos Mechs de escala 2 (~5,3 m). Modelos e efeitos de voo: **Codex**. HUD de status da frota e câmera de visão do drone: **Gemini** #mechs
+- [ ] **Missões de sobrevivência por fases** (27/09 — expandido): referência *Project Zomboid*, ondas crescentes de androides humanoides + Mechs rebeldes, mapa com setores que fecham, solo ou co-op. Lógica de ondas no servidor: **Claude**. Interface completa (briefing, HUD de onda, resumo final): **Gemini** #modos
 - [ ] Rádio das IAs rebeldes: provocações geradas por modelo de linguagem no servidor, entre rodadas (nunca decidindo o combate) #ia
 - [ ] Derrube o C2: retransmissor na arena que coordena as IAs; destruído, elas atacam desordenadas #universo
 - [ ] Módulos com nome de defesa: firewall (escudo), honeypot (isca), sensor de caça (radar), patch (reparo) #universo

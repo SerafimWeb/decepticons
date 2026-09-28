@@ -61,6 +61,11 @@ import { gameModeFromSearch, type GameMode } from '../sim/gameMode';
 import { SURVIVAL_MAX_ANDROIDS, SURVIVAL_MAX_MECHS } from '../sim/SurvivalWaves';
 import { HangarMenu } from '../ui/HangarMenu';
 import { HangarScene } from '../hangar/HangarScene';
+import { OnlineLobby } from '../ui/OnlineLobby';
+import { ModeSelector } from '../ui/ModeSelector';
+import { MissionHUD } from '../ui/MissionHUD';
+import { CtfHud } from '../ui/CtfHud';
+import { DailyChallenges } from '../ui/DailyChallenges';
 
 /** Onde os braços do Mech do Hangar estão na tela (reaproveitados por quadro). */
 const _hotRight = { x: 0, y: 0 };
@@ -116,6 +121,10 @@ export class Game {
   private readonly assist: AimAssist;
   private readonly player: PlayerController;
   private readonly hud = new HUD();
+  private readonly modeSelector = new ModeSelector();
+  private readonly missionHud = new MissionHUD();
+  readonly ctfHud = new CtfHud();
+  private readonly dailyChallenges = new DailyChallenges();
   private readonly killFeed = new KillFeed();
   /** Jogo online (M4): a sessão com o servidor, ou null no jogo de sempre. */
   private readonly online: OnlineSession | null;
@@ -149,6 +158,7 @@ export class Game {
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
   private readonly hangarMenu: HangarMenu;
+  private readonly lobby = new OnlineLobby();
   private aimPracticeInterval = 0.18;
   private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
   private readonly renderPass: RenderPass;
@@ -271,7 +281,10 @@ export class Game {
     this.match.pilots.push(this.player);
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
     this.netStatus.className = 'net-status';
-    if (online) {
+    
+    const shouldConnect = online && online.explicitName;
+
+    if (shouldConnect) {
       this.online = new OnlineSession({
         ...online,
         build: this.hangar.key,
@@ -289,7 +302,10 @@ export class Game {
       document.body.append(this.netStatus);
     } else {
       this.online = null;
-      if (net && 'error' in net) {
+      if (online) {
+        // Wanted to go online but missing name
+        this.lobby.show(online.room);
+      } else if (net && 'error' in net) {
         this.netStatus.textContent = `ONLINE: ${net.error} · jogando offline`;
         this.netStatus.classList.add('bad');
         document.body.append(this.netStatus);
@@ -369,6 +385,22 @@ export class Game {
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician });
     new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
+
+    this.modeSelector.attachTo(document.getElementById('overlay'));
+    this.modeSelector.onModeChange((mode) => {
+      if (mode === 'survival') {
+        this.triggerMissionBriefing();
+      }
+    });
+
+    this.missionHud.onRetry = () => {
+      this.triggerMissionBriefing();
+    };
+    this.missionHud.onExit = () => {
+      this.missionHud.hide();
+    };
+
+    this.dailyChallenges.attachTo(document.getElementById('overlay'));
   }
 
   /**
@@ -386,6 +418,16 @@ export class Game {
 
   /** Linha de status do online, no topo: sala, ping e pessoas; ou o motivo da recusa ou da queda. */
   private showNet(s: OnlineStatus): void {
+    if (s.state === 'conectando') {
+      this.lobby.setConnecting(true, `CONECTANDO À SALA ${s.room}…`);
+    } else if (s.state === 'na sala') {
+      this.lobby.hide();
+    } else if (s.state === 'recusado') {
+      this.lobby.setConnecting(true, `RECUSADO: ${s.reason || 'erro'}`);
+    } else {
+      this.lobby.setConnecting(true, 'CONEXÃO CAIU');
+    }
+
     const text =
       s.state === 'na sala'
         ? `ONLINE · SALA ${s.room} · ${s.rttMs} ms · ${s.players} piloto${s.players === 1 ? '' : 's'}`
@@ -517,6 +559,7 @@ export class Game {
     this.match.onMechHit = (e) => {
       if (e.shooter === mech) {
         this.hud.showHit(e.result);
+        this.dailyChallenges.trackDamage(e.result.applied);
         // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar)
         this.audio.playHit();
       }
@@ -541,6 +584,10 @@ export class Game {
       this.audio.playExplosion(1 - Math.max(0, falloff));
       const me = this.round.scoreOf(mech);
       this.hud.setScore(me?.kills ?? 0, me?.deaths ?? 0);
+
+      if (killer === mech && dead !== mech) {
+        this.dailyChallenges.trackKill(dead instanceof Android ? 'android' : 'mech');
+      }
 
       const deadName = dead === mech ? 'VOCÊ' : this.round.scoreOf(dead)?.name ?? 'INIMIGO';
       const killerName = killer ? (killer === mech ? 'VOCÊ' : this.round.scoreOf(killer)?.name ?? null) : null;
@@ -624,10 +671,35 @@ export class Game {
         this.hud.toggleVisibility();
         return;
       }
+      if (code === 'KeyM' || code === 'KeyB') {
+        this.triggerMissionBriefing();
+        return;
+      }
       if (!this.playing) return;
       if (code === this.settings.value.keys.camera) this.switchCamera();
       else if (code === 'Escape' && !rig.mode.pointerLock) this.setPlaying(false);
     };
+  }
+
+  /** Abre o briefing do modo sobrevivência com alarme tático e dados de exemplo. */
+  triggerMissionBriefing(): void {
+    this.audio.playWaveSiren();
+    this.missionHud.showBriefing(
+      {
+        wave: 1,
+        title: 'DEFESA DO PROTOCOLO SERAFIM',
+        threats: [
+          'Detector de movimento indicando aproximação de horda.',
+          'Andróides insurgentes classe V-09 detectados no setor 4.',
+          'Objetivo: Eliminar todas as unidades hostis e manter integridade.',
+        ],
+        autoStartSecs: 10,
+      },
+      () => {
+        this.hud.setPaused(false);
+        this.missionHud.showWaveHud(1, 10);
+      }
+    );
   }
 
   private resume(): void {
@@ -845,7 +917,7 @@ export class Game {
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
     const saw = this.mech.loadout.secondary?.kind === 'melee';
     this.hud.setRockets(saw ? 4 : this.player.launcher.ammo, saw ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);
-    this.hud.setHeat(this.mech.heat, this.mech.overheated);
+    this.hud.setHeat(this.mech.heat, this.mech.overheated, this.mech.coolingBoost);
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);

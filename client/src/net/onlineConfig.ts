@@ -18,6 +18,7 @@ export interface OnlineConfig {
   url: string;
   room: string;
   name: string;
+  explicitName: boolean;
 }
 
 const ROOM_RE = /^[A-Z0-9-]{1,12}$/;
@@ -40,5 +41,6 @@ export function onlineConfig(search: string, hostname: string, publicServer?: st
   if (!/^wss?:\/\/[^\s/?#]+/.test(server)) return { error: 'endereço do servidor inválido (ws:// ou wss://)' };
   const url = new URL(server);
   url.searchParams.set('sala', room);
-  return { url: url.toString(), room, name: (q.get('nome') ?? '').trim() || 'PILOTO' };
+  const rawName = (q.get('nome') ?? '').trim();
+  return { url: url.toString(), room, name: rawName || 'PILOTO', explicitName: !!rawName };
 }

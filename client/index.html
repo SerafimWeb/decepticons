@@ -198,6 +198,36 @@
       </div>
     </div>
 
+    <!-- Modal do Online Lobby -->
+    <div id="online-lobby" class="hidden">
+      <div class="settings-box" style="max-width: 400px; margin: auto;">
+        <div class="settings-header">
+          <h2>MULTIPLAYER ONLINE</h2>
+          <button id="btn-lobby-close" class="btn-close">[X]</button>
+        </div>
+        <div class="settings-body">
+          <div class="settings-section">
+            <h3>CONECTAR</h3>
+            <div class="setting-row">
+              <label for="lobby-name">Apelido do Piloto</label>
+              <div class="setting-ctrl">
+                <input type="text" id="lobby-name" maxlength="16" placeholder="PILOTO" class="text-input" />
+              </div>
+            </div>
+            <div class="setting-row">
+              <label for="lobby-room">Código da Sala</label>
+              <div class="setting-ctrl">
+                <input type="text" id="lobby-room" maxlength="12" value="ARENA" class="text-input" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-footer">
+          <button id="btn-lobby-connect" class="btn-terminal">[ ENTRAR NA SALA ]</button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -53,6 +53,10 @@ com Mechs; a camada de inteligência fala a língua de CTI (incidente, TTPs, IOC
 - **Dano por parte:** arranque uma perna e o inimigo manca; as duas e ele para; destrua a cabeça e ele fica cego.
 - **Pilotos com personalidade:** o brabo vem para cima, o manso atira de longe e o fujão espera você virar de costas. Eles revezam o ataque em vez de caírem todos juntos, e dá para escolher quantos e quem são.
 - **Rodadas de 5 minutos:** todos contra todos, placar no Tab e rodada nova sozinha, com a arena inteira de novo.
+- **Seleção de Modos no Lobby:** escolha entre Arena Aberta Deathmatch ou Modo Sobrevivência por Ondas.
+- **Sobrevivência por Ondas & MissionHUD:** enfrente hordas inimigas com briefing tático, sirenes de alarme e medalhas de conquista.
+- **Capture a Bandeira (CTF HUD):** placar em tempo real entre Time Azul e Vermelho com notificações de eventos de bandeira.
+- **Desafios Diários e Progressão:** suba o Nível de Piloto, acumule Créditos ₵ e resgate recompensas cumprindo 3 missões diárias.
 - **Cobertura que quebra:** as barricadas viram destroços; a proteção do inimigo não dura para sempre.
 - **Dash e pulo duplo:** um Mech pesado que ainda assim escapa, flanqueia e muda de altura.
 - **Três câmeras:** terceira pessoa, cockpit em primeira pessoa e visão tática de cima.
