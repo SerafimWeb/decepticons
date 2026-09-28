@@ -20,7 +20,7 @@
 | `gemini/setas-inimigos` | setas de inimigos fora da tela | **sem PR** | 25/09 |
 | `gemini/sons-androides` | sons dos andróides | **sem PR** | 25/09 |
 | `gemini/primeira-partida` | dicas de andróide e calor | **sem PR** | 25/09 |
-| `codex/hangar-moving-target` | Treino manual de mira no Hangar: andróide móvel inofensivo, mira pelo `CameraRig`, disparos/acertos/precisão; captura em `arte/aim-practice.png`. `npm run check` completo passou na repetição (222 testes, painel, build, budget, smoke e site); browser confirmou Pointer Lock e disparo | **PR ainda não aberto; branch local pronto para push** | 27/09 |
+| `codex/hangar-moving-target` | Treino manual de mira no Hangar: andróide móvel inofensivo, mira pelo `CameraRig`, disparos/acertos/precisão; captura em `arte/aim-practice.png`. `npm run check` completo passou sobre a main atual (224 testes, painel, build, budget, smoke e site); browser confirmou Pointer Lock e disparo | **PR #95 aberto; CI verde, revisão cruzada sem bloqueios; aguardando merge e playtest** | 27/09 |
 
 **Regra em vigor (o dono aprovou em 27/09):** branch com mais de 48 h sem PR é **fechado** — mergeado se estiver bom, declarado
 morto se não. Cinco branches estão nesse caso hoje (as três de 25/09 e as duas sem PR de 27/09). As três regras estão no

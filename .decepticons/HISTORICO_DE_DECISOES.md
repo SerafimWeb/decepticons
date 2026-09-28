@@ -21,7 +21,7 @@
 **Decisão:** manter o teste de disparo de 4 s (cadência, dano teórico e calor) e acrescentar um modo separado, manual. O novo modo usa `CameraRig` e a sensibilidade configurada, um andróide visual de escala 1 caminhando deterministicamente a 2,4 m/s por uma faixa de 9 m, e mede disparos/acertos/precisão com um raio de mira local. O alvo não participa de `Match`, não recebe dano e não dispara; o modo não altera física, estatísticas, hitboxes ou rede. `Esc` solta o Pointer Lock; a sensibilidade do jogo fica intacta ao sair.
 **Custo:** nenhum ao quadro do jogo com o Hangar fechado. Durante o treino, uma animação de rig já existente, movimento linear simples e uma interseção raio/esfera somente quando a cadência permite um tiro; usa os pools já alocados da cena do Hangar. Alvo criado uma vez ao instanciar o Hangar e oculto fora do treino.
 **Verificação:** 2 testes determinísticos do percurso; typecheck, build (260 KB gzip JS; 743 KB gzip Wasm), budget, smoke, painel, `site --check` e browser headless (Pointer Lock obtido, disparo contado, sem `pageerror`) passaram. Captura: `arte/aim-practice.png`. A primeira execução do `npm run check` caiu no timeout conhecido de `server/room.test.ts` (30 s); a repetição integral passou: 222/222 testes e todos os gates verdes. A falha intermitente não exigiu mudança no servidor.
-**Próximo:** abrir PR para revisão cruzada. O código ainda não está no jogo publicado até merge/deploy.
+**Estado após revisão cruzada:** PR #95 aberto; CI verde (224 testes e gates completos), revisão sem bloqueios de código. Aguarda merge e playtest do dono após deploy; a captura headless não substitui teste real.
 
 
 ## [2026-09-27] A ficha do drone, e o mapa das entregas que não chegaram
