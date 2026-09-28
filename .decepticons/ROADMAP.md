@@ -118,6 +118,7 @@
 - [x] Inimigos configuráveis: quantidade de Mechs e andróides, técnico, personalidade de cada Mech e quantos atacam juntos #ux
 - [x] Setas de inimigos fora da tela (Gemini; concluído pelo Claude com a revisão) #ux
 - [x] Sons dos andróides: tiro e pouso, mais baixos de longe (Gemini; integrado pelo Claude) #som
+- [x] Zonas de cura e resfriamento na arena (dono: "preciso de um lugar pra recuperar a vida, ou um resfriador pra ter mais fôlego"): vantagem de posicionamento igual para os dois lados, custo de rede zero #combate
 - [ ] Abertura da rodada ("RODADA 1 · 3·2·1 · COMBATE!") com locução sintetizada (Gemini) #ux
 - [ ] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) #ux
 - [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux

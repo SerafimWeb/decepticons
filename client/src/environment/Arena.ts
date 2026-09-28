@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ARENA_ZONES } from '../combat/Zone';
 import { CITY_NEON, PALETTE } from '../core/palette';
 import { mulberry32 } from '../core/rng';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
@@ -90,6 +91,33 @@ export class Arena {
     for (const b of BARRICADES) destructibles.add(b);
     this.buildPlatform();
     this.buildSkyline();
+    this.buildZones();
+  }
+
+  /**
+   * Disco no chão + anel de cada zona (`combat/Zone.ts`, sem colisor: a regra é por distância, não
+   * física). Verde = cura, ciano = resfriamento, mesma leitura de cor do resto do jogo. Visual provisório
+   * (2 draw calls por zona, estático); Codex pode substituir por algo mais elaborado depois.
+   */
+  private buildZones(): void {
+    for (const z of ARENA_ZONES) {
+      const accent = z.kind === 'heal' ? PALETTE.green : PALETTE.cyan;
+      const disc = new THREE.Mesh(
+        new THREE.CircleGeometry(z.radius, 32),
+        new THREE.MeshBasicMaterial({ color: neon(accent, 0.9), transparent: true, opacity: 0.18, depthWrite: false }),
+      );
+      disc.rotation.x = -Math.PI / 2;
+      disc.position.set(z.x, 0.03, z.z);
+      this.scene.add(disc);
+
+      const ringPts: THREE.Vector3[] = [];
+      const segs = 48;
+      for (let i = 0; i <= segs; i++) {
+        const a = (i / segs) * Math.PI * 2;
+        ringPts.push(new THREE.Vector3(z.x + Math.cos(a) * z.radius, 0.05, z.z + Math.sin(a) * z.radius));
+      }
+      this.scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ringPts), new THREE.LineBasicMaterial({ color: neon(accent, 3) })));
+    }
   }
 
   private buildFloorAndBounds(): void {

@@ -8,7 +8,8 @@
 | Feature | Estado | Observação |
 |---|---|---|
 | Seletor de Modo de Jogo (ModeSelector) | REAL | Gemini (27/09): `client/src/ui/ModeSelector.ts` e `ModeSelector.test.ts`. Seleção entre Deathmatch e Sobrevivência com salvamento no localStorage (`cybermech_game_mode`) e URL `?modo=` |
-| Interface do Modo Sobrevivência (MissionHUD) | PARCIAL | Gemini (27/09): `client/src/ui/MissionHUD.ts` (briefing tático com digitação, HUD de onda compacto, banner ONDA LIMPA, conquistas/medalhas no resumo final) e testes em `MissionHUD.test.ts`. Falta o loop de controle de ondas no servidor/simulação |
+| Interface do Modo Sobrevivência (MissionHUD) | PARCIAL | Gemini (27/09): `client/src/ui/MissionHUD.ts` (briefing tático com digitação, HUD de onda compacto, banner ONDA LIMPA, conquistas/medalhas no resumo final) e testes em `MissionHUD.test.ts`. |
+| Zonas de cura e resfriamento | REAL | `combat/Zone.ts`: zona de cura (+20 vida/s na parte mais avariada) e de resfriamento (ventila 0,35 calor/s direto, sem esperar o atraso do tiro), volumes fixos na arena. 6 testes (`Zone.test.ts`). |
 | Movimento WASD (aceleração estilo arena) | REAL | engasgo da corrida corrigido em 2026-09-23; coberto por `MechBase.test.ts` |
 | Pulo duplo | REAL | Vector-09 `maxJumps: 2` |
 | Dash com cooldown | REAL | 2,5 s; FOV abre durante o dash |

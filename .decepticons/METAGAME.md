@@ -95,6 +95,14 @@ progressão, cockpit e HUD temático, hub de eventos e funil. **Qwen** — a pau
 
 ## 8. Drones em combate — o que presta do STERM (2026-09-27)
 
+**O papel do drone, decidido pelo dono (27/09/2026):** cada drone serve a **uma função** — **reconhecimento**, **ataque** ou
+**recuperação de vida** —, na **escala dos andróides (1 a 2 m de largura)**, e é **fraco**: o tiro dele é o do andróide, não o
+de um Mech. O que ele traz não é poder de fogo, é **emoção e um novo ponto de vista** (voar e ver a arena de cima). O que fica
+registrado com isso: (a) são **três classes**, uma por função, e todas usam o **mesmo registro leve da § 8.2** — a função muda o
+comportamento, não o tamanho na rede; (b) o drone de **recuperação** é apoio, como o técnico ENTRÓPICO: cura **posicionada**,
+nunca vantagem comprada (`GAME_DESIGN.md`, "NÃO É PAY-TO-WIN"); (c) sendo fraco, ele **não substitui** o Mech de assalto — se a
+função pesar na partida, o ajuste é no teto (`combat/balance.ts`), com teste, como todo o resto.
+
 Fui ler o grafo 3D do pipeline ABBADON (`D:\SERAFIMHUB\sterm-1`) e a "navegação por drone" de lá. Veredito curto: **o
 drone do STERM é uma câmera sobre trilhos, não uma unidade de combate** — não tem navmesh, busca de caminho, desvio de
 obstáculo nem física (é um Catmull-Rom pré-calculado + `lerp`, com a máquina de estados `panorama → approach → inspect
@@ -227,7 +235,7 @@ Direções futuras, não funcionalidades anunciadas nem decisões de implementa�
 |---|---|---|---|
 | Mapas maiores e mais jogadores | Escalar por medição; não escolher número-alvo sem teste | Medir CPU do tick, banda e render; otimizar AoI/delta e streaming por setor; testar latência sob carga antes de elevar o teto | Claude: rede/simulação; Codex: render/streaming; Qwen: orçamento; dono valida hardware |
 | Mech com piloto e artilheiro | Piloto conduz e orienta casco; artilheiro controla mira e armas; bot pode ocupar um posto | Contrato de entradas por papel, autoridade, reconexão e saída de ocupante; protótipo em sala privada com bots e dois clientes | Claude: sim/protocolo; Gemini: UI/HUD; Codex: cockpit/visuais |
-| Drones voadores pequenos | Unidade de reconhecimento abaixo da escala do andróide (classe 1); proporção ainda não decidida | Definir papel antes da IA; limitar quantidade e frequência de estado; manter silhuetas legíveis e caber no G11 | Claude: voo/rede; Codex: rig/FX; Gemini: HUD; Qwen: orçamento/testes |
+| Drones voadores pequenos | **Papel definido pelo dono (27/09): uma função por drone — reconhecimento, ataque e recuperação de vida —, na escala dos andróides (1 a 2 m de largura) e com tiro fraco, o do andróide** (§ 8) | Limitar quantidade e frequência de estado; silhuetas legíveis e caber no G11 (a conta está na § 8.2: 10 bytes a 5 Hz, 60 B/s por drone) | Claude: voo/rede; Codex: rig/FX; Gemini: HUD; Qwen: orçamento/testes |
 | Veículos de transporte | Levar Mechs, andróides e tropas por setores | Embarcado não executa movimento independente; definir autoridade, colisão, embarque/desembarque e limite de ocupantes | Claude: física/rede; Codex: modelos visuais; Gemini: controles/HUD |
 | Sobrevivência por fases | Operações contra andróides humanoides, humanos e Mechs, inspiradas no gênero de *Project Zomboid* | Definir “humanos” (NPC/jogadores), câmera, objetivos, progressão e persistência em ficha curta; não assumir MMO persistente | Dono: escopo; Claude: missão/servidor; Codex: cenários/ameaças; Gemini: fluxo; Qwen: balanço |
 

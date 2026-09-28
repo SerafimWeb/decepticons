@@ -6,14 +6,35 @@
 
 ---
 
-## ÚLTIMA SESSÃO FEZ (24–27/09)
+## EM BRANCH — NÃO ESTÁ NO AR (nem no site, nem no jogo)
+
+> **Regra deste documento a partir de 27/09:** só entra em "ÚLTIMA SESSÃO FEZ" o que está na **`main`**. O que ainda está
+> em branch mora aqui — e **é por isso que o dono não vê no site**: branch não publica, PR aberto não publica, só o merge na
+> `main` publica (o deploy roda sozinho). Se não está no site, procure nesta tabela.
+
+| Branch | O que carrega | PR | Desde |
+|---|---|---|---|
+| `claude/zonas-cura-resfriamento` | zonas de cura e resfriamento na arena | **#91 aberto** | 27/09 |
+| `gemini/missoes-hud` | MissionHUD (interface do modo sobrevivência) — **e não está ligado a nenhum arquivo do jogo: a tela não aparece nem depois do merge** | **#88 aberto** | 27/09 |
+| `gemini/modo-hud-audio` | seletor de modo (deathmatch × sobrevivência), sons táticos de onda e medalhas de conquista | **sem PR** | 27/09 |
+| `gemini/telas-online` | NetHud, KillBanner e RoundOverlay (interface do online) | **sem PR** | 27/09 |
+| `gemini/setas-inimigos` | setas de inimigos fora da tela | **sem PR** | 25/09 |
+| `gemini/sons-androides` | sons dos andróides | **sem PR** | 25/09 |
+| `gemini/primeira-partida` | dicas de andróide e calor | **sem PR** | 25/09 |
+
+**Proposta ao dono (aguardando sim/não):** branch com mais de 48 h sem PR é **fechado** — mergeado se estiver bom, declarado
+morto se não. Cinco branches estão nesse caso (as três de 25/09 e as duas sem PR de 27/09).
+
+---
+
 - **Seletor de Modos, Sons do Modo Sobrevivência e Conquistas no MissionHUD (Gemini, 27/09):**
   - **Seletor de Modo (`ModeSelector.ts` + `ModeSelector.test.ts`)**: Módulo de seleção entre Deathmatch Aberto e Sobrevivência por Ondas, com salvamento no `localStorage` (`cybermech_game_mode`) e parâmetro de URL (`?modo=`), com estilos CSS responsivos.
   - **Efeitos Sonoros Táticos (`AudioSystem.ts` + `AudioSystem.test.ts`)**: Três novos sintetizadores de Web Audio sem arquivos externos: `playWaveSiren()` (alarme de onda), `playCountdownBeep()` (contagem tática) e `playWaveClearSound()` (vinheta vitoriosa C-E-G).
   - **Conquistas & Medalhas no MissionHUD (`MissionHUD.ts` + `MissionHUD.test.ts`)**: Função `getMissionMedals()` com medalhas animadas de conquista (*Sobrevivente Sênior, Caçador de IAs, Devastador de Aço, Veterano de Ondas*) e animação em `styles.css`.
   - 227 testes unitários passando, 0 alocação por frame.
-- **Interface do Modo Sobrevivência — MissionHUD (Gemini, 27/09):** criado o módulo independente `client/src/ui/MissionHUD.ts` (G3) e seus testes de simulação (`MissionHUD.test.ts`), atendendo à visão de fases/sobrevivência estilo Zomboid trazida pelo dono. Possui 3 estados: briefing tático com efeito de digitação nas ameaças e timer de início automático, HUD compacto no canto superior direito com barra de progresso da onda e cronômetro, banner animado "ONDA LIMPA" com bônus, e tela de resumo pós-combate (vitória ou derrota) com abates, dano e tempo de sobrevivência. Estilos CSS responsivos neon/obsidiana adicionados em `styles.css`. Sem alocação por frame.
-- **A banda do drone vira especificação, e a revisão cruzada do MissionHUD (Qwen, 27/09):** `METAGAME.md` **§ 8.2** fecha o que o § 10 pedia — **registro de unidade leve de 10 bytes** (id, posição, yaw, bandeiras) a **5 Hz** = **60 B/s por drone**; os 8 do pior caso somam **480 B/s** e a sala vai de 6,2 para **6,7 KB/s de 8,0 (83%)**: **cabe**. Amortecimento de 200 ms na interpolação, extrapolação de no máximo 250 ms, correção só acima de ~1,5 m, e nascer/morrer/trocar de alvo/atirar por **evento**. Grafo e saúde técnica: **nada manual** — o mapa é por módulo e os 219 testes aparecem sozinhos no build.
+- **A ficha do drone escrita, e o mapa das entregas que não chegaram (Qwen, 27/09):** `fichas/drone.md` (status **proposta**) define as **três classes por função** — reconhecimento, ataque e conserto —, a **escala 1 (1 a 2 m de largura)**, o **tiro fraco** (o blaster do andróide: dano 4 a cada 0,4 s), o fato de **morrer inteiro** (sem as 6 partes de um Mech, o que também enxuga a rede) e a **trilha pré-calculada**; traz **7 metas que viram teste** e **6 perguntas que só o dono responde** (pilotado ou automático; quantos e como entra; o que o drone de cura conserta; autonomia; se abate conta ponto; se o reconhecimento compartilha visão).
+- **Teto de workers do Vitest, endurecido de vez (Claude, 27/09, R17):** `scripts/test.mjs` agora fixa `--maxWorkers=1` por padrão para o pre-push e CI ficarem determinísticos.
+- **Zonas de cura e resfriamento (Claude, 27/09):** duas zonas na arena (`combat/Zone.ts`): cura e resfriamento. Custo de rede 0 B/s.
 - **Horizonte de produto atualizado pelo dono (27/09):** registrados cinco conceitos futuros — mapas e capacidade escaláveis, Mech com piloto e artilheiro, drones menores que andróides, transporte de unidades e missões de sobrevivência em fases. Entram como pauta sem prioridade aprovada em `VISAO.md`, `METAGAME.md` § 10 e `ROADMAP.md`; `GAME_DESIGN.md` e a landing têm seção própria “em estudo”, separada da VITRINE de funcionalidades reais. O PR documenta conceitos, não implementa regras de jogo.
 - **Sinais visuais de calor no rig (Codex, 27/09):** emissivo âmbar progressivo no casco a partir de 65% e quatro pontos de vapor ascendentes no superaquecimento, também quando resfria ativamente. Geometria/material pré-criados; atualização reutiliza buffers/uniformes, sem alocação por frame. +1 draw call por rig (9 → 10, teto mantido). `npm run check` passou com `VITEST_MAX_WORKERS=1` (214 testes, painel, build, budget, smoke e validação do site); com concorrência padrão o teste de limite por IP excedeu timeout. **(Nota do Qwen, 27/09 — para ninguém contar com um conserto que não existe: o Vitest 5 não lê `VITEST_MAX_WORKERS`; não há nenhuma leitura de `process.env.VITEST_*` no pacote, a variável de verdade é a flag `--maxWorkers`. O que "passou" foi o flake passando, e ele segue aberto: endurecer o `teto por IP` é da frente do Claude, dono do `server/`.)** Captura visual: `arte/heat-visual.png`.
 - **O drone na banda, e os elementos do cenário (Qwen; dono: "mas será q o drone vai pesar tanto? e como fazemos pra melhorar esse consumo então… quero também que tenhamos outros elementos (turrets, zonas de regeneração, zonas de resfriamento…), quero também que os andróides possam entrar e sair dos bots"):** a conta, feita com os números do nosso código — `UNIT_BYTES = 19` × 20 Hz × moldura 1,2 = **456 B/s por unidade**, teto de `DOWNLOAD_BUDGET = 8 192 B/s`; a sala cheia de hoje (**12** robôs) usa **6,2 KB/s** dos 8,0 da meta — medido pela própria conta do site, que é a mesma dos testes —, então **um drone por jogador não cabe** (+3,6 KB/s). Saída registrada em `METAGAME.md` **§ 8.1**: registro curto de unidade leve (~10 B), estado do drone a 5 Hz com extrapolação, **trilha pré-calculada** (o spawn leva `path id` + instante → ~0 B/s em voo, a ideia do STERM pagando em banda), teto por esquadrão e o delta/AoI já previsto. E o **§ 9** novo: torres, zonas de cura/resfriamento (**volumes estáticos: 0 B/s**) e o andróide que **entra no Mech economiza 456 B/s** enquanto está dentro (bandeira "tem piloto"; nova bandeira = subir `PROTOCOL_VERSION`). A **entrada dos bots no cenário** (ideia do dono, já mandada ao Codex) ficou com o visual do Codex e o **onde/quando nascem** com o diretor do Claude (G3/G14). Conferido: o "balão" existe mesmo no STERM (`DemoGraph3D.tsx:326`, modo `'balloon'`) — e é câmera também.
@@ -154,6 +175,7 @@
 - [ ] **Dono:** ouvir a vinheta da marca no jogo (som, volume, duração) e ver a abertura da landing (numa aba anônima ela roda de novo)
 - [ ] Confirmar em jogo real que F1 esconde o HUD sem abrir a Ajuda do navegador
 - [ ] **Dono:** decidir a separação simulação × render × efeitos (`MULTIPLAYER.md`, seção 9) e as 4 decisões da seção 10
+- [ ] **Dono:** jogar com as zonas de cura (canto sudeste) e resfriamento (canto noroeste) contra 3 Mechs + 3 andróides; dizer se +20 vida/s e 0,35 calor/s deixam a luta justa, ou se ainda precisa baixar `enemyMechs`/`enemyAndroids` nas configurações enquanto isso
 
 ## RASCUNHO ANTIGO DE BOTS (superado)
 O rascunho do GPT-OSS continua no stash local (`git stash list`: "rascunho GPT-OSS/Gemini 23-09…"). Foi superado pelos bots v1 e pode ser descartado pelo dono (`git stash drop`). Não reaproveitar: andava na direção errada e lia a posição de render (ver histórico).
@@ -179,7 +201,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 ## DECISÕES EM ABERTO
 | Decisão | Situação |
 |---|---|
-| Drones, torres e zonas na partida | A banda aperta antes do formato: a sala cheia de hoje (12 robôs) já usa 6,2 KB/s dos 8,0 KB/s disponíveis por jogador. **Decidir:** drone por jogador (não cabe hoje), um drone por esquadrão, ou habilidade com recarga; e se vale o pacote que barateia (registro curto de unidade leve + estado a 5 Hz + **trilha pré-calculada**, com a conta no `METAGAME.md`, § 8.1). Torres e zonas de cura/resfriamento custam **0 B de estado** — só o volume fixo na arena (§ 9). |
+| Drones e torres na partida | A banda aperta antes do formato: a sala cheia de hoje (12 robôs) já usa 6,2 KB/s dos 8,0 KB/s disponíveis por jogador. **Decidir:** drone por jogador (não cabe hoje), um drone por esquadrão, ou habilidade com recarga; e se vale o pacote que barateia (registro curto de unidade leve + estado a 5 Hz + **trilha pré-calculada**, com a conta no `METAGAME.md`, § 8.1). **Zonas de cura/resfriamento já implementadas** (Claude, 27/09, `combat/Zone.ts`): custam 0 B, valem também no online. Torres seguem pendentes: precisam de vida/calor num estado curto e disparo por evento (§ 9). |
 | Hospedagem do servidor | Dono (26/09): começar com o PC de casa 24 h. Falta decidir o **domínio do endereço fixo**: um domínio só do jogo na Cloudflare (recomendado, ~R$ 40/ano) ou levar o DNS do `selvamkt.com.br` para a Cloudflare (grátis, mas mexe no site da Selva MKT). Oracle ou VPS depois, com o mesmo código. Seguem abertas: mira assistida no PvP e bots nas salas (`MULTIPLAYER.md`, seção 10). |
 | Mira assistida no multiplayer | Hoje é só do toque e só contra bots. Com gente de verdade, toque x mouse na mesma sala precisa de regra: manter (padrão dos jogos de tiro no celular), reduzir contra humanos ou separar salas por tipo de controle. Decidir na Fase 4. |
 | Separação simulação × render × efeitos | Proposta e critérios de aceitação em `MULTIPLAYER.md`, seção 9. Recomendação: tiro do jogador e yaw pela simulação antes da M4; o resto quando memória do servidor ou correções visíveis pedirem. |
@@ -190,6 +212,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
+- **Claude:** modo Sobrevivência (pedido do Gemini, repassado pelo dono, 27/09) — máquina de estados de Ondas em `sim/Match.ts` (spawner progressivo de andróides/bots, contagem de abates, intervalo de briefing, resumo de fim de missão), ligada ao contrato de callbacks que o `MissionHUD` já espera (`onWaveStart`, `onWaveProgress`, `onWaveClear`, `onMissionEnd`; módulo em `gemini/modo-hud-audio`, ainda não mergeado — conferir se o PR subiu antes de integrar). Depois, sincronizar a progressão de ondas e o spawn no servidor (`server/ArenaRoom.ts`) para o modo sobrevivência multiplayer. Considerar também torres (`METAGAME.md` § 9, ainda pendente) como terceira ferramenta de fôlego, se as zonas de cura/resfriamento (feitas nesta sessão) não bastarem no playtest do dono.
 - **Codex:** horizonte futuro documentado em seção “em estudo” na landing e em `.decepticons/`; nenhuma ideia implementada ou priorizada. Aguardar decisão do dono antes de converter em tarefas de gameplay.
 - **Codex:** PR de sinais visuais de calor pronto para revisão; próxima tarefa visual é cosmética dos níveis de armas sem alterar stats/hitbox. O dono ainda deve testar o Hangar 2.0 e o calor após o deploy.
 - **Claude:** completar o online: evento de barricada quebrada (`PROP_BROKEN`), placar e nomes da sala vindos do servidor, teste com latência e perda simuladas; depois a M5 (acertos com compensação de latência) e a M6 (entrada com apelido e reconexão, com as telas do Gemini).
