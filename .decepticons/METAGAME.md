@@ -103,6 +103,13 @@ comportamento, não o tamanho na rede; (b) o drone de **recuperação** é apoio
 nunca vantagem comprada (`GAME_DESIGN.md`, "NÃO É PAY-TO-WIN"); (c) sendo fraco, ele **não substitui** o Mech de assalto — se a
 função pesar na partida, o ajuste é no teto (`combat/balance.ts`), com teste, como todo o resto.
 
+**Segunda rodada de decisões (27/09, à noite):** o drone é **pilotável pelo jogador *ou* automático** (os dois modos); é **mais
+ágil que o andróide**; o **cenário ideal é o drone ser adição ao Mech** — não consome vaga no time —, e se não couber ele conta
+como **uma unidade** (vaga de andróide); tem **bateria** (não fica a partida inteira voando) e **recarrega pousando numa
+plataforma no alto de um prédio** — o que também dá à arena um motivo para ter altura. Na banda, a bateria **não precisa viajar
+em cada estado**: o cliente deriva a porcentagem da taxa conhecida mais os eventos (pousou/levantou/vazia); se a deriva
+incomodar, um byte no registro leve (11 B = 66 B/s por drone; 8 drones = 528 B/s, **84%** da meta — ainda cabe).
+
 Fui ler o grafo 3D do pipeline ABBADON (`D:\SERAFIMHUB\sterm-1`) e a "navegação por drone" de lá. Veredito curto: **o
 drone do STERM é uma câmera sobre trilhos, não uma unidade de combate** — não tem navmesh, busca de caminho, desvio de
 obstáculo nem física (é um Catmull-Rom pré-calculado + `lerp`, com a máquina de estados `panorama → approach → inspect
@@ -185,6 +192,7 @@ isso cabe na banda se valer uma regra só: **só o que se move precisa de bytes 
 | Torres | posição fixa da arena (uma vez); vida/calor num estado curto e disparo/quebra por evento | ~0–3 B por torre | Claude (sim) + Codex (visual) |
 | Zona de regeneração | volume fixo da arena, definido uma vez; quem cura é o servidor (autoridade) | **0 B** | Claude |
 | Zona de resfriamento | idem, volume estático; dá bônus de resfriamento dentro dele (o `coolingBoost` de `combat/heat.ts` já existe) | **0 B** | Claude |
+| **Plataforma de recarga do drone** | ponto fixo **no alto** (prédio/torre) que só o drone alcança; quem recarrega é o servidor e o saldo sai dos eventos (pousou/levantou) | **0 B** (posição fixa, como as zonas) | Claude (sim) + Codex (a altura no cenário) |
 | Andróide **entra** no Mech | o andróide **sai da lista de unidades** enquanto está dentro; o Mech ganha a bandeira "tem piloto" (o byte de flags usa 4 dos 8 bits) | **−456 B/s** enquanto dentro: **economiza** | Claude (sim) + Gemini (tecla/HUD) |
 | Andróide **sai** do Mech | evento de spawn do andróide no ponto do Mech | 1 evento | Claude |
 | Entrada dos bots no cenário | o **visual** (cápsula, portão, descida de órbita) é do Codex; **onde e quando** nascem é do diretor de ataque (`adaptive-ai-director`, § 2) | a do `SPAWN` que já existe | Codex (visual) + Claude (regra) |
