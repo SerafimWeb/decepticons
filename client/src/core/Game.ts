@@ -54,6 +54,7 @@ import { parseLoadoutKey } from '../hangar/loadout';
 import { defaultServer, onlineConfig } from '../net/onlineConfig';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
+import { Telemetry } from './telemetry';
 import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
@@ -162,6 +163,8 @@ export class Game {
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
   private readonly hangarMenu: HangarMenu;
+  /** Métricas de produto (dono, 28/09): poucos eventos de funil, nunca por quadro. */
+  private readonly telemetry: Telemetry;
   private readonly lobby = new OnlineLobby();
   private aimPracticeInterval = 0.18;
   private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
@@ -340,6 +343,8 @@ export class Game {
     this.setTouchMode(matchMedia('(hover: none) and (pointer: coarse)').matches);
     this.hud.setMode(this.rig.mode);
     this.hud.setReady(this.input.touchMode);
+    this.telemetry = new Telemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
+    this.telemetry.enviar('boot_ok');
     if (this.gameMode === 'survival') this.hud.setMissionMode(true);
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
     else this.hud.setMissionMode(false);
@@ -354,6 +359,7 @@ export class Game {
     // Hangar: enquanto está aberto, o desenho troca a arena pelo galpão (o jogo está pausado).
     this.hangarMenu = new HangarMenu(this.hangar, {
       open: () => {
+        this.telemetry.enviar('hangar_aberto');
         this.hangarScene ??= new HangarScene();
         this.hangarView = true;
         this.renderPass.scene = this.hangarScene.scene;
@@ -626,7 +632,10 @@ export class Game {
       if (dist < 40) rig.addShake(0.5 * (1 - dist / 40));
       this.audio.playExplosion(dist);
     };
-    this.match.onRoundStart = () => this.startRound();
+    this.match.onRoundStart = () => {
+      this.telemetry.enviar('partida_iniciada');
+      this.startRound();
+    };
     this.match.onWaveStart = (wave, total, _mechs, _androids, title) => {
       this.hud.setMissionWave(wave, total, title);
       this.audio.playAmbientBram();
@@ -634,6 +643,7 @@ export class Game {
     this.match.onWaveProgress = (wave, killed, total, elapsedS) => this.hud.setMissionProgress(wave, killed, total, elapsedS);
     this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
     this.match.onMissionEnd = (survived, waveReached, stats) => {
+      this.telemetry.enviar('partida_terminada');
       this.missionEnded = true;
       this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds);
       this.setPlaying(false);
@@ -650,6 +660,7 @@ export class Game {
     };
     this.match.onCtfProgress = (timeLeft, blue, red) => this.hud.setCtfProgress(timeLeft, blue.captures, red.captures);
     this.match.onCtfEnd = (winner, blue, red) => {
+      this.telemetry.enviar('partida_terminada');
       this.missionEnded = true;
       this.hud.setCtfEnd(winner, blue.captures, red.captures, blue.kills, red.kills);
       this.setPlaying(false);
@@ -722,6 +733,7 @@ export class Game {
         autoStartSecs: 10,
       },
       () => {
+        this.telemetry.enviar('partida_iniciada');
         this.hud.setPaused(false);
         this.missionHud.showWaveHud(1, 10);
       }
@@ -758,6 +770,7 @@ export class Game {
     button.textContent = `[ MODO: ${label} · TROCAR ]`;
     button.addEventListener('click', (event) => {
       event.stopPropagation();
+      this.telemetry.enviar('modo_trocado');
       this.audio.playUiTransition();
       const url = new URL(location.href);
       if (this.gameMode === 'deathmatch') {

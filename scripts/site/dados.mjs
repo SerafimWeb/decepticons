@@ -187,10 +187,14 @@ export async function jogo() {
     const budget = await load('shared/net/budget.ts');
     // Status público do servidor (GET /status): a landing pergunta sozinha se há gente jogando agora.
     const status = await load('shared/net/status.ts');
+    // Métricas de produto (POST /evento): a landing conta visita e cliques quando há servidor de jogo.
+    const serverUrl = await load('shared/net/serverUrl.ts');
+    const telemetry = await load('shared/net/telemetry.ts');
     const net = {
       ...netConst,
       statusUrl: status.statusUrl(process.env.VITE_GAME_SERVER),
       statusPollS: status.STATUS_POLL_S,
+      eventoUrl: serverUrl.serverHttpUrl(process.env.VITE_GAME_SERVER, telemetry.EVENTO_PATH),
       inputBytes: (await load('shared/net/input.ts')).INPUT_BYTES,
       unitBytes: (await load('shared/net/state.ts')).UNIT_BYTES,
       download: budget.downloadPerSecond(netConst.ROOM_UNITS),

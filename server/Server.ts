@@ -4,8 +4,10 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
 import { ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
+import { type EventoEnviado, EVENTO_MAX_BYTES, EVENTO_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
 import { ArenaRoom, type Peer } from './ArenaRoom';
 import { clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
+import { Telemetria } from './telemetria';
 
 /** Maior mensagem aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
 const MAX_MESSAGE = 1024;
@@ -99,6 +101,15 @@ export async function startServer(
     return statusBody;
   };
 
+  /**
+   * Métricas de produto (dono, 28/09: "quero trackear o consumo, quantas pessoas clicaram, onde clicam,
+   * onde saem, se jogaram tantas partidas"). `POST /evento` conta um evento da lista fechada (contrato em
+   * `shared/net/telemetry.ts`); `GET /eventos/resumo` devolve só contagens agregadas — nunca um evento cru,
+   * nunca um IP. A agregação em si (`Telemetria`, com teste próprio) já limita a memória sozinha; aqui só a
+   * porta HTTP: corpo pequeno, decodifica ou descarta, nunca lança.
+   */
+  const telemetria = new Telemetria();
+
   const http = createServer((req, res) => {
     const path = (req.url ?? '/').split('?')[0];
     if (path === STATUS_PATH) {
@@ -110,6 +121,64 @@ export async function startServer(
         'content-length': Buffer.byteLength(body),
       });
       res.end(req.method === 'HEAD' ? undefined : body);
+      return;
+    }
+    if (path === RESUMO_PATH && req.method === 'GET') {
+      const body = JSON.stringify(telemetria.resumo());
+      res.writeHead(200, {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store',
+        'access-control-allow-origin': '*',
+      });
+      res.end(body);
+      return;
+    }
+    if (path === EVENTO_PATH && req.method === 'POST') {
+      const ip = clientIp(req.socket.remoteAddress, req.headers['cf-connecting-ip']);
+      let bytes = 0;
+      let chunks: Buffer[] = [];
+      let recusado = false;
+      req.on('data', (chunk: Buffer) => {
+        if (recusado) return;
+        bytes += chunk.length;
+        if (bytes > EVENTO_MAX_BYTES) {
+          recusado = true;
+          chunks = [];
+          res.writeHead(413, { 'access-control-allow-origin': '*' });
+          res.end();
+          req.destroy();
+          return;
+        }
+        chunks.push(chunk);
+      });
+      req.on('end', () => {
+        if (recusado) return;
+        let evento: EventoEnviado | null = null;
+        try {
+          evento = parseEvento(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'));
+        } catch {
+          evento = null;
+        }
+        if (!evento) {
+          res.writeHead(400, { 'access-control-allow-origin': '*' });
+          res.end();
+          return;
+        }
+        const ok = telemetria.registrar(evento.nome, ip) === 'ok';
+        res.writeHead(ok ? 204 : 429, { 'access-control-allow-origin': '*' });
+        res.end();
+      });
+      req.on('error', () => res.destroyed || res.end());
+      return;
+    }
+    if (path === EVENTO_PATH && req.method === 'OPTIONS') {
+      // Preflight do CORS: o navegador manda antes do POST cross-origin com content-type: application/json.
+      res.writeHead(204, {
+        'access-control-allow-origin': '*',
+        'access-control-allow-methods': 'POST, OPTIONS',
+        'access-control-allow-headers': 'content-type',
+      });
+      res.end();
       return;
     }
     res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });

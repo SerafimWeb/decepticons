@@ -1,5 +1,47 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] Atualização automática: puxar em vez de receber, e nunca sem verificar (Claude)
+**Pedido do dono:** *"tem como o servidor reiniciar sozinho quando for necessário ou isso fragiliza ele? como
+aplicarmos inteligência no gerenciamento, proteção, manutenção e atualização do servidor? (e quando eu estiver
+dormindo?)"*
+**Decisão 1 — puxar, nunca receber:** a alternativa óbvia era um webhook (o CI do GitHub chamando um endpoint
+novo no PC de casa quando o deploy termina). Rejeitada: isso abre uma porta nova escutando a internet, mais
+superfície de ataque, num PC doméstico sem a proteção de uma hospedagem de verdade. Em vez disso, o próprio PC
+pergunta ao GitHub a cada 10 min se a `main` avançou (`git fetch`). Zero portas novas; a única coisa que sai é
+tráfego de saída, igual a abrir um navegador.
+**Decisão 2 — nunca trocar sem verificar:** o código novo só entra depois de passar pelo mesmo portão que o CI
+roda — `typecheck` + os testes de `server/` e `shared/` (não a suíte inteira: são os que importam para esse
+processo, e rodam em segundos, não minutos). Falhou o gate: `git reset --hard` para o commit anterior, e **o
+servidor que já está no ar nunca é tocado** — continua exatamente como estava até uma atualização passar.
+**Decisão 3 — nunca na pasta onde o dono edita:** um `git reset --hard` automático rodando na pasta principal
+apagaria uma edição não commitada dele, um dia qualquer, sem aviso — inaceitável. A automação roda só numa
+`git worktree` separada (`.tmp/wt-servidor-prod/`, convenção já usada pelos agentes para isolamento, regra 12
+do `AGENTS.md`), e o script **recusa rodar** fora de uma worktree — não é só documentação, é checado em código.
+**Pendência do dono:** migrar o servidor de casa (hoje na pasta principal) para a worktree e rodar
+`servidor-atualizar.ps1` uma vez; até lá, o reinício continua manual (`DEPLOY.md` tem o comando certo —
+`Restart-ScheduledTask` **não existe** no módulo `ScheduledTasks` do Windows, é sempre `Stop` + `Start`).
+**Quem decidiu:** dono (o pedido, e a pergunta certa: "isso fragiliza?"); Claude (puxar em vez de receber,
+o portão de verificação, a worktree separada).
+
+## [2026-09-28] Métricas de produto: contagem agregada, nunca por pessoa, antes de existir login (Claude)
+**Pedido do dono:** *"quero sim trackear o consumo, quantas pessoas clicaram, onde clicam, onde saem, se
+jogaram tantas partidas, para sabermos mais dados e métricas do jogo."*
+**Decisão — self-hosted no próprio servidor de jogo, não um serviço de terceiro:** Google Analytics ou
+Plausible/Umami de terceiro foram descartados por dois motivos: dependência externa nova (contra o espírito do
+G15 — nada do projeto mora fora dele) e, mais importante, **o dono ainda não decidiu a política de LGPD**
+(`ROADMAP.md`, item "Contas + LGPD" em aberto). Um serviço de terceiro tomaria essa decisão por omissão, antes
+da hora. A saída: o próprio servidor de jogo (já rodando 24h) ganha `POST /evento` e `GET /eventos/resumo`.
+**A régua de privacidade, decidida agora para não precisar refazer depois:** lista fechada de eventos (nomear
+o quê se conta, não abrir para qualquer string); resposta pública é **só contagem agregada por evento**, nunca
+um evento cru nem um IP; **nenhum id persistente entre sessões** — sem cookie, sem `localStorage`, um id
+sorteado por aba que nunca é gravado em lugar nenhum, existe só para o servidor não contar duas vezes o mesmo
+clique se o navegador reenviar. Esta régua provavelmente **fica mais permissiva** quando existir login (dono
+optar por analytics por conta, por exemplo) — mas o caminho contrário, apertar depois de já ter coletado
+detalhado, é o que gera problema de LGPD; começar restrito é a decisão certa nesta ordem.
+**Quem decidiu:** dono (o pedido); Claude (self-hosted em vez de terceiro, a régua de privacidade, o que fica
+de fora até o login existir).
+
+
 ## [2026-09-28] Câmera de abate estreia offline; PvP espera decisão do dono (Codex)
 **Pedido do dono:** durante os segundos antes do respawn, acompanhar quem derrubou o jogador e produzir enquadramentos úteis para conteúdo.
 **Decisão:** `camera/KillCam.ts` é render puro e independente, ligado no `Game` apenas pelo `Match.onMechKilled`. Ele troca uma referência ao bot matador por morte, enquadra primeiro o local da carcaça e depois acompanha o alvo. A câmera escolhe uma posição livre entre costas/laterais/frente uma vez no abate, faz um raycast de proteção por quadro e reaproveita a translucidez dos prédios da câmera tática. `V`/`CAM` cancela imediatamente; no respawn, a pose mistura de volta em 0,38 s.
