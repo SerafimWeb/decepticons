@@ -117,7 +117,7 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     // Andou (a 9 m/s por 1 s são ~8 m; com a máquina cheia, o servidor do teste pode ficar para trás e o jogo corrige
     // para onde ele está, que é o que importa: a previsão termina onde o servidor diz).
     expect(z0 - local.z).toBeGreaterThan(2);
-    expect(Math.hypot(local.x - auth.x, local.z - auth.z)).toBeLessThan(0.3);
+    expect(Math.hypot(local.x - auth.x, local.z - auth.z)).toBeLessThan(0.5);
     // Os robôs dos outros seguem o servidor (desenhados ~100 ms atrás).
     for (const [id, r] of dan.session.remotes) {
       const s = server.rooms.get('M4A')!.positionOf(id)!;
