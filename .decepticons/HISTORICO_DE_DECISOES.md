@@ -5,6 +5,23 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] O deploy das fichas não saiu: um 404 de fonte derrubou o check da `main`
+**Achado (Qwen, R17, no mesmo dia):** o PR #98 (as fichas de Ondas e CTF) mergeou com o CI **do PR** verde, mas o
+**CI do push na `main` falhou** no `site --check` e o job de **deploy foi pulado** — as fichas estavam na `main` e
+**não apareciam no site** (conferido no ar: a lista de fichas da sala de controle ainda tinha 6 linhas). A falha:
+`console: Failed to load resource … 404`, sem URL. A causa está no **próprio verificador**: o handler de `response`
+já ignorava as URLs de fonte do Google (`fonts.g…`), mas o handler de `console` filtrava pelo **texto** da mensagem —
+e o texto de um 404 é só "Failed to load resource", sem a URL. Um woff2 do Google Fonts que não veio virou erro fatal
+da checagem, e o site deixou de publicar.
+**Achado de quebra, no mesmo log:** a linha `site    ok: …` era impressa **dentro** do `try`, antes do bloco que julga
+as falhas — o log do CI mostrou "site ok" e "❌ SITE FALHOU" na mesma execução. Uma checagem que diz "ok" quando
+falhou é pior do que não dizer nada.
+**Correção (Qwen):** o handler de `console` passa a **ignorar mensagens de falha de carregamento** (delegando o status
+HTTP ao handler de `response`, que traz a URL e continua pegando qualquer 404/500 que **não** seja de fonte); violação
+de CSP e erro de script seguem fatais. E a linha de sucesso foi movida para **depois** do julgamento das falhas.
+Nada disso afeta o jogo: é o verificador do site, e a `main` volta a publicar no merge seguinte.
+**Quem decidiu:** Qwen (o achado e a correção).
+
 ## [2026-09-27] A ficha de balanço das Ondas, e por que os testes do CTF ainda não podem existir
 **Pedido (dono, repassando o plano do Gemini):** "Qwen, crie a ficha de balanço das Ondas (quantidade de inimigos e
 vida por onda) e os testes de simulação do CTF." As outras tarefas do mesmo plano são de outros: máquina de Ondas e
