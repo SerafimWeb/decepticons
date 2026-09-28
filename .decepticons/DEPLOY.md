@@ -91,14 +91,62 @@ Passo a passo, uma vez só:
    "Public hostname": `jogo.selvamkt.com.br` → `http://localhost:2567`, com **WebSocket ligado** (a Cloudflare pergunta;
    é obrigatório para o jogo). A Cloudflare cria sozinha um CNAME `jogo` → `<uuid>.cfargotunnel.com` e liga a
    nuvenzinha laranja **só nesse subdomínio**; o resto da zona segue cinza.
-3. **Servidor:** PowerShell como administrador, na pasta do projeto: `.\scripts\servidor-windows.ps1`. O servidor
-   sobe com o Windows, reinicia se cair e grava o log em `.tmp\servidor\`. Para o PC não dormir:
-   `powercfg /change standby-timeout-ac 0`. Sem mexer em nada, o processo escuta só em `127.0.0.1:2567` (o túnel fala
-   daqui): não aparece na rede de casa nem em nenhum outro lugar da internet.
+3. **Servidor, numa worktree separada da pasta onde você edita (recomendado desde 28/09; ver "Atualização
+   automática" abaixo do motivo):**
+   ```powershell
+   git worktree add .tmp\wt-servidor-prod origin/main
+   New-Item -ItemType Junction -Path .tmp\wt-servidor-prod\node_modules -Target node_modules
+   cd .tmp\wt-servidor-prod
+   .\scripts\servidor-windows.ps1
+   ```
+   PowerShell como administrador. O servidor sobe com o Windows, reinicia se cair e grava o log em
+   `.tmp\servidor\` (dentro da worktree). Para o PC não dormir: `powercfg /change standby-timeout-ac 0`.
+   Sem mexer em nada, o processo escuta só em `127.0.0.1:2567` (o túnel fala daqui): não aparece na rede de
+   casa nem em nenhum outro lugar da internet.
+   **Reiniciar manualmente** (PowerShell como administrador — `Restart-ScheduledTask` **não existe** no
+   módulo `ScheduledTasks`, é sempre parar e começar):
+   ```powershell
+   Stop-ScheduledTask -TaskName "CYBERMECH servidor"; Start-Sleep 2; Start-ScheduledTask -TaskName "CYBERMECH servidor"
+   ```
 4. **Site:** no GitHub, Settings → Secrets and variables → Actions → **Variables** (não é segredo) →
    `GAME_SERVER_URL` = `wss://jogo.selvamkt.com.br`. No próximo merge, o site sai com `[ JOGAR ONLINE ]` na landing
    e na pausa do jogo, apontando para o túnel.
 5. **Com o PC desligado**, quem clica em online vê "servidor fora do ar" e volta ao jogo offline em 3 s.
+
+### Atualização automática (Claude, 28/09; dono: "tem como o servidor reiniciar sozinho quando for necessário
+### ou isso fragiliza ele? como aplicarmos inteligência... e quando eu estiver dormindo?")
+
+**Decisão de arquitetura: puxar, nunca receber.** Em vez de um webhook (o CI chamando um endpoint novo no PC
+de casa — mais uma porta escutando a internet, mais superfície de ataque), o próprio PC pergunta ao GitHub de
+tempos em tempos se há código novo. Zero portas novas abertas; o `git fetch` é a única saída, e sai pela
+mesma internet de sempre.
+
+```powershell
+cd .tmp\wt-servidor-prod        # a MESMA worktree do passo 3, não a pasta principal
+.\scripts\servidor-atualizar.ps1
+```
+
+O que a tarefa "CYBERMECH atualizar" faz a cada 10 min (`scripts\atualizar-e-reiniciar.ps1` →
+`scripts\atualizar-servidor.mjs`):
+1. `git fetch origin main`; se não avançou, não faz nada (nem escreve no log).
+2. Se avançou: `git merge --ff-only`, e **só então** roda o mesmo portão que o CI roda — `npm run typecheck`
+   e os testes de `server/` e `shared/` (não a suíte inteira: são os que importam para o processo do
+   servidor, e rodam em segundos). `npm ci` só quando o `package-lock.json` mudou.
+3. **Passou:** reinicia o "CYBERMECH servidor" — agora com o código novo.
+4. **Falhou:** `git reset --hard` para o commit anterior. **O servidor que já está no ar nunca é tocado** —
+   continua rodando o último código bom, do início ao fim; ninguém percebe que uma atualização quebrada
+   existiu, exceto no log.
+
+**Por que uma worktree separada, e não a pasta onde você mexe no código (G15 + segurança):** um `git reset
+--hard` automático rodando na sua pasta de trabalho apagaria qualquer edição sua não commitada, um dia
+qualquer, sem aviso. O script **recusa rodar** fora de uma worktree — testado, não só documentado.
+
+**Enquanto você dorme:** o log (`.tmp\servidor\atualizacao.log`, na worktree) registra cada atualização
+tentada, cada rollback e o motivo. `main.ts` já imprime salas/jogadores/tick a cada 10 s no
+`.tmp\servidor\servidor.log` de sempre — os dois logs juntos contam a história completa da noite.
+
+**Para desligar** (voltar a atualizar só manualmente): `.\scripts\servidor-atualizar.ps1 -Remover`, de
+dentro da worktree.
 
 ### Servidor no mesmo domínio (proteção entre os dois projetos)
 
@@ -117,6 +165,12 @@ Cliente e servidor moram na mesma zona; as proteções abaixo garantem que um n�
   a porteira (G7).
 - **Serviço isolado:** o `scripts/servidor-windows.ps1` sobe como usuário limitado (S4U), sem senha guardada, e grava
   log só em `.tmp/servidor/` (G15). Nada fora da pasta do projeto.
+- **Métricas de produto (`GET /eventos/resumo`, `POST /evento`, `server/telemetria.ts`):** contrato em
+  `shared/net/telemetry.ts`. Lista fechada de 9 nomes de evento — qualquer outro nome recusa com 400, então
+  ninguém injeta contagem inventada no painel. Corpo maior que 256 bytes recusa com 413 sem terminar de ler.
+  Cada IP tem um balde de 30 eventos, recarregando 0,5/s — próprio, separado do `Guard` do WebSocket. A
+  resposta do resumo é só números agregados por evento (últimas 24h e desde que o servidor subiu): nenhum
+  evento cru, nenhum IP, nenhuma sala. Sem cookie e sem id persistente entre sessões.
 - **Segredos:** o token do túnel fica no serviço do Windows, não no repositório. O `GAME_SERVER_URL` é variável
   pública do GitHub, não segredo.
 

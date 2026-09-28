@@ -14,6 +14,7 @@
  * 0,2% do orçamento de download de um jogador (G11), e nenhuma delas entra no laço de 60 Hz.
  */
 import { PROTOCOL_VERSION, ROOM_SIZE } from './constants';
+import { serverHttpUrl } from './serverUrl';
 
 /** Caminho do status no servidor de jogo (o mesmo processo do WebSocket, outra porta não existe). */
 export const STATUS_PATH = '/status';
@@ -70,19 +71,5 @@ export function parseStatus(raw: unknown): ServerStatus | null {
  * `https` (o dono cola o endereço do túnel dos dois jeitos); qualquer outra coisa devolve `null`.
  */
 export function statusUrl(gameServer: string | undefined | null): string | null {
-  const raw = gameServer?.trim();
-  if (!raw) return null;
-  let url: URL;
-  try {
-    url = new URL(raw);
-  } catch {
-    return null;
-  }
-  const scheme = { 'ws:': 'http:', 'wss:': 'https:', 'http:': 'http:', 'https:': 'https:' }[url.protocol];
-  if (!scheme) return null;
-  url.protocol = scheme;
-  url.pathname = STATUS_PATH;
-  url.search = '';
-  url.hash = '';
-  return url.toString();
+  return serverHttpUrl(gameServer, STATUS_PATH);
 }
