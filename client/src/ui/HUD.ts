@@ -1,6 +1,9 @@
 import type { CameraMode } from '../camera/CameraMode';
 import type { DamageResult } from '../combat/damage';
 import type { MechBase, MechPart } from '../entities/MechBase';
+import { KillBanner } from './KillBanner';
+import { NetHud } from './NetHud';
+import { RoundOverlay } from './RoundOverlay';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -35,6 +38,9 @@ function integrityBar(value: number, max: number): string {
 }
 
 export class HUD {
+  readonly net = new NetHud();
+  readonly killBanner = new KillBanner();
+  readonly roundOverlay = new RoundOverlay();
   private readonly root = $('hud');
   private readonly overlay = $('overlay');
   private readonly cta = $('cta');
@@ -99,19 +105,28 @@ export class HUD {
   private readonly heatLabel = this.heatBox.querySelector('.label')!;
   private shownHeat = -1;
   private shownOverheat = false;
+  private shownCooling = false;
 
   /** Calor da arma: barra que enche, vermelha perto do limite; superaquecida, pisca. Só escreve no DOM quando muda. */
-  setHeat(heat: number, overheated: boolean): void {
+  setHeat(heat: number, overheated: boolean, coolingBoost: boolean): void {
     const h = Math.round(heat * 50) / 50;
-    if (h === this.shownHeat && overheated === this.shownOverheat) return;
+    if (h === this.shownHeat && overheated === this.shownOverheat && coolingBoost === this.shownCooling) return;
+    
     this.shownHeat = h;
+    this.shownOverheat = overheated;
+    this.shownCooling = coolingBoost;
+    
     this.heatFill.style.transform = `scaleX(${h})`;
     this.heatBox.classList.toggle('high', h >= 0.7);
-    if (overheated !== this.shownOverheat) {
-      this.heatBox.classList.toggle('over', overheated);
-      this.heatLabel.textContent = overheated ? 'SUPERAQUECIDO · PARE' : 'CALOR';
+    this.heatBox.classList.toggle('over', overheated);
+    
+    if (overheated) {
+      this.heatLabel.textContent = 'SUPERAQUECIDO · PARE';
+    } else if (coolingBoost) {
+      this.heatLabel.textContent = 'RESFRIANDO';
+    } else {
+      this.heatLabel.textContent = 'CALOR';
     }
-    this.shownOverheat = overheated;
   }
 
   /** Mira acesa: um inimigo vivo está sob ela. */
