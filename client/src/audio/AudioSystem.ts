@@ -75,7 +75,10 @@ export class AudioSystem {
    */
   loadSample(name: string, url: string): void {
     fetch(url)
-      .then(res => res.arrayBuffer())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.arrayBuffer();
+      })
       .then(data => {
         if (this.ctx) {
           this.ctx.decodeAudioData(data)

@@ -175,17 +175,18 @@ export class Game {
     physics: PhysicsWorld,
   ) {
     // Carrega samples de áudio (assíncrono)
-    this.audio.loadSample('logo_serafim', './audio/logo_serafim.mp3');
-    this.audio.loadSample('ui_transition', './audio/ui_transition.mp3');
-    this.audio.loadSample('ui_bass', './audio/ui_bass.mp3');
-    this.audio.loadSample('ambient_bram', './audio/ambient_bram.mp3');
-    this.audio.loadSample('ambient_action', './audio/ambient_action.mp3');
-    this.audio.loadSample('shot_plasma', './audio/shot_plasma.wav');
-    this.audio.loadSample('shot_heavy', './audio/shot_heavy.mp3');
-    this.audio.loadSample('shot_futuristic', './audio/shot_futuristic.wav');
-    this.audio.loadSample('hit', './audio/hit.mp3');
-    this.audio.loadSample('step_mech', './audio/step_mech.mp3');
-    this.audio.loadSample('step_heavy', './audio/step_heavy.mp3');
+    const base = import.meta.env.BASE_URL;
+    this.audio.loadSample('logo_serafim', base + 'audio/logo_serafim.mp3');
+    this.audio.loadSample('ui_transition', base + 'audio/ui_transition.mp3');
+    this.audio.loadSample('ui_bass', base + 'audio/ui_bass.mp3');
+    this.audio.loadSample('ambient_bram', base + 'audio/ambient_bram.mp3');
+    this.audio.loadSample('ambient_action', base + 'audio/ambient_action.mp3');
+    this.audio.loadSample('shot_plasma', base + 'audio/shot_plasma.wav');
+    this.audio.loadSample('shot_heavy', base + 'audio/shot_heavy.mp3');
+    this.audio.loadSample('shot_futuristic', base + 'audio/shot_futuristic.wav');
+    this.audio.loadSample('hit', base + 'audio/hit.mp3');
+    this.audio.loadSample('step_mech', base + 'audio/step_mech.mp3');
+    this.audio.loadSample('step_heavy', base + 'audio/step_heavy.mp3');
 
     // --- Render ---
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
