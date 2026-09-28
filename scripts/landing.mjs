@@ -174,11 +174,13 @@ const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
       <h1 class="title">CYBER<span>MECH</span></h1>
       <p class="pitch">Pilote um Mech de combate numa arena industrial e desmonte o inimigo peça por peça. Abriu o link, está jogando: sem instalar, sem conta e sem pay-to-win.</p>
       <div class="cta">
-        <a class="play-btn" href="./jogar/">[ ENTRAR NO COCKPIT ]</a>
-        ${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA">[ JOGAR ONLINE ]</a>' : ''}
-        <a class="link-btn" href="./sala-de-controle/">como este jogo é feito →</a>
+        <div class="cta-buttons">
+          <a class="play-btn" href="./jogar/">[ ENTRAR NO COCKPIT ]</a>
+          ${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA">[ JOGAR ONLINE ]</a>' : ''}
+        </div>
+        ${statusHtml}
+        <a class="link-btn cta-more" href="./sala-de-controle/">como este jogo é feito →</a>
       </div>
-      ${statusHtml}
       <ul class="facts">${facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
     </div>
     ${
@@ -469,10 +471,12 @@ const endHtml = `<section class="final frame" aria-labelledby="final">
 
 const css = `
   .hero { display: grid; gap: 28px; padding-top: 30px; align-items: center; }
-  .hero.with-shot { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+  .hero.with-shot { grid-template-columns: minmax(300px, 1fr) minmax(0, 1.05fr); }
   .hero-copy { display: grid; gap: 18px; min-width: 0; }
   .pitch { font-size: 17px; line-height: 1.6; color: var(--text); max-width: 46ch; text-wrap: pretty; }
-  .cta { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; }
+  .cta { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .cta-buttons { display: flex; flex-wrap: wrap; gap: 12px 16px; }
+  .cta .cta-more { margin-top: 2px; }
   .facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; }
   .facts li::before { content: '▸ '; color: var(--amber); }
   .hero-shot, .shot { margin: 0; overflow: hidden; }
