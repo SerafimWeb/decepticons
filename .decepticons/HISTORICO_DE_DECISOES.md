@@ -2,6 +2,15 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-28] CTF HUD, Progresso do Piloto & Missões Diárias (Gemini)
+
+**Decisão:** entregue a camada de retenção de metagame e interface do Capture the Flag (item 3 solicitado pelo dono):
+1. **Interface do Modo CTF (`client/src/ui/CtfHud.ts` + `CtfHud.test.ts`)**: Módulo com placar de equipes (Time Azul × Time Vermelho), indicador de estado da bandeira (*NA BASE / ROUBADA / CAÍDA*) e banners animados de evento (`showEventBanner`).
+2. **Progresso do Piloto & Missões Diárias (`client/src/ui/DailyChallenges.ts` + `DailyChallenges.test.ts`)**: Nível do Piloto, barra de XP (1000 XP/nível), Carteira de Créditos (₵) e 3 Missões Diárias renováveis por dia civil. Atribuição de XP e Créditos com botão `[ RESGATAR ]`.
+3. **Integração no Jogo (`Game.ts`)**: Painel de desafios acoplado ao `#overlay`. Contabilização automática de dano causado e abates em tempo real nas missões.
+**Custo de CPU:** Zero no loop de física; reativo apenas a eventos de jogo e interação no menu. 249 testes passando.
+**Quem decidiu:** Gemini (execução do plano de retenção aprovado pelo dono).
+
 ## [2026-09-28] Fiação do MissionHUD, Segurança de DOM (textContent) e Unificação de Branches (Gemini)
 
 **Decisão:** atendidas as 4 solicitações pendentes para consolidação do trabalho de UI & HUD:

@@ -19,8 +19,10 @@
 
 ---
 
-- **Seletor de Modos, MissionHUD Conectado, Sons do Modo Sobrevivência, UI Online e Conquistas (Gemini, 27/09):**
-  - **Fiação & Ativação no Jogo (`Game.ts`)**: `ModeSelector` integrado ao menu `#overlay`, abrindo automaticamente o briefing do `MissionHUD` ao selecionar Modo Sobrevivência ou ao acionar o atalho tático (`KeyM`/`KeyB`), acompanhado da sirene de alarme.
+- **Seletor de Modos, MissionHUD Conectado, CTF HUD, Missões Diárias e UI Online (Gemini, 27/09):**
+  - **Fiação & Ativação no Jogo (`Game.ts`)**: `ModeSelector` e `DailyChallenges` integrados ao menu `#overlay`, abrindo automaticamente o briefing do `MissionHUD` ao selecionar Sobrevivência ou pressionar atalho tático (`KeyM`/`KeyB`). Contabilização automática de dano e abates para missões diárias.
+  - **Interface do Modo CTF (`CtfHud.ts` + `CtfHud.test.ts`)**: Placar de equipes (Time Azul × Time Vermelho), indicador de status da bandeira (*Na Base, Roubada, Caída*) e banners animados de anúncio de eventos táticos (`showEventBanner`).
+  - **Progresso do Piloto & Missões Diárias (`DailyChallenges.ts` + `DailyChallenges.test.ts`)**: Nível do Piloto, barra de XP (1000 XP/nível), Carteira de Créditos (₵) e 3 Missões Diárias renováveis a cada dia civil com persistência em `localStorage` (`cybermech_pilot_progression`).
   - **Segurança de DOM (`MissionHUD.ts`)**: Substituição completa de interpolações de strings variáveis em `innerHTML` por atribuições seguras `textContent` e nós de DOM dinâmicos (`getMissionMedals`, banners de onda limpa e medalhas animadas).
   - **Seletor de Modo (`ModeSelector.ts` + `ModeSelector.test.ts`)**: Módulo de seleção entre Deathmatch Aberto e Sobrevivência por Ondas, com salvamento no `localStorage` (`cybermech_game_mode`) e parâmetro de URL (`?modo=`).
   - **Efeitos Sonoros Táticos (`AudioSystem.ts` + `AudioSystem.test.ts`)**: Sintetizadores Web Audio sem arquivos externos: `playWaveSiren()` (alarme de onda), `playCountdownBeep()` (contagem tática) e `playWaveClearSound()` (vinheta vitoriosa C-E-G).

@@ -60,6 +60,8 @@ import { HangarScene } from '../hangar/HangarScene';
 import { OnlineLobby } from '../ui/OnlineLobby';
 import { ModeSelector } from '../ui/ModeSelector';
 import { MissionHUD } from '../ui/MissionHUD';
+import { CtfHud } from '../ui/CtfHud';
+import { DailyChallenges } from '../ui/DailyChallenges';
 
 /** Onde os braços do Mech do Hangar estão na tela (reaproveitados por quadro). */
 const _hotRight = { x: 0, y: 0 };
@@ -114,6 +116,8 @@ export class Game {
   private readonly hud = new HUD();
   private readonly modeSelector = new ModeSelector();
   private readonly missionHud = new MissionHUD();
+  private readonly ctfHud = new CtfHud();
+  private readonly dailyChallenges = new DailyChallenges();
   private readonly killFeed = new KillFeed();
   /** Jogo online (M4): a sessão com o servidor, ou null no jogo de sempre. */
   private readonly online: OnlineSession | null;
@@ -349,6 +353,8 @@ export class Game {
     this.missionHud.onExit = () => {
       this.missionHud.hide();
     };
+
+    this.dailyChallenges.attachTo(document.getElementById('overlay'));
   }
 
   /**
@@ -507,6 +513,7 @@ export class Game {
     this.match.onMechHit = (e) => {
       if (e.shooter === mech) {
         this.hud.showHit(e.result);
+        this.dailyChallenges.trackDamage(e.result.damage);
         // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar)
         this.audio.playHit();
       }
@@ -531,6 +538,10 @@ export class Game {
       this.audio.playExplosion(1 - Math.max(0, falloff));
       const me = this.round.scoreOf(mech);
       this.hud.setScore(me?.kills ?? 0, me?.deaths ?? 0);
+
+      if (killer === mech && dead !== mech) {
+        this.dailyChallenges.trackKill(dead instanceof Android ? 'android' : 'mech');
+      }
 
       const deadName = dead === mech ? 'VOCÊ' : this.round.scoreOf(dead)?.name ?? 'INIMIGO';
       const killerName = killer ? (killer === mech ? 'VOCÊ' : this.round.scoreOf(killer)?.name ?? null) : null;
