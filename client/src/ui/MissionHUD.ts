@@ -106,22 +106,31 @@ export class MissionHUD {
       <div class="mission-briefing-inner">
         <div class="mission-header">
           <span class="mission-tag">// MISSÃO</span>
-          <span class="mission-wave-num">ONDA ${wave}</span>
+          <span class="mission-wave-num" id="mission-wave-num"></span>
         </div>
-        <h2 class="mission-title">${b.title.toUpperCase()}</h2>
+        <h2 class="mission-title" id="mission-title"></h2>
         <div class="mission-threat-level ${levelClass}">
-          NÍVEL DE AMEAÇA // <strong>${level}</strong>
+          NÍVEL DE AMEAÇA // <strong id="mission-threat-level"></strong>
         </div>
         <ul class="mission-threats" id="mission-threats-list"></ul>
         <div class="mission-briefing-footer">
           <button id="btn-mission-start" class="btn-terminal btn-mission-go">[ INICIAR MISSÃO ]</button>
-          ${b.autoStartSecs ? `<span class="mission-auto-timer" id="mission-auto-timer">AUTO ${b.autoStartSecs}s</span>` : ''}
+          ${b.autoStartSecs ? `<span class="mission-auto-timer" id="mission-auto-timer"></span>` : ''}
         </div>
       </div>
     `;
     this.briefingEl.classList?.remove('hidden');
 
     if (typeof document !== 'undefined') {
+      const waveEl = document.getElementById('mission-wave-num');
+      if (waveEl) waveEl.textContent = `ONDA ${wave}`;
+      const titleEl = document.getElementById('mission-title');
+      if (titleEl) titleEl.textContent = b.title.toUpperCase();
+      const levelEl = document.getElementById('mission-threat-level');
+      if (levelEl) levelEl.textContent = level;
+      const timerEl = document.getElementById('mission-auto-timer');
+      if (timerEl && b.autoStartSecs) timerEl.textContent = `AUTO ${b.autoStartSecs}s`;
+
       document.getElementById('btn-mission-start')?.addEventListener('click', () => this._triggerStart());
       const listEl = document.getElementById('mission-threats-list');
       if (listEl) this._typeThreats(b.threats, listEl);
@@ -216,11 +225,24 @@ export class MissionHUD {
     const banner = document.createElement('div');
     banner.id = 'wave-clear-banner';
     banner.className = 'wave-clear-banner';
-    banner.innerHTML = `
-      <div class="wave-clear-title">ONDA ${wave} ELIMINADA</div>
-      <div class="wave-clear-time">// ${fmtTime(timeSecs)}</div>
-      ${bonusText ? `<div class="wave-clear-bonus">${bonusText}</div>` : ''}
-    `;
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'wave-clear-title';
+    titleEl.textContent = `ONDA ${wave} ELIMINADA`;
+    banner.appendChild(titleEl);
+
+    const timeEl = document.createElement('div');
+    timeEl.className = 'wave-clear-time';
+    timeEl.textContent = `// ${fmtTime(timeSecs)}`;
+    banner.appendChild(timeEl);
+
+    if (bonusText) {
+      const bonusEl = document.createElement('div');
+      bonusEl.className = 'wave-clear-bonus';
+      bonusEl.textContent = bonusText;
+      banner.appendChild(bonusEl);
+    }
+
     document.getElementById('hud')?.appendChild(banner);
 
     // Entrada com animação e saída automática
@@ -241,34 +263,20 @@ export class MissionHUD {
     const titleClass = survived ? 'survived' : 'failed';
     const medals = getMissionMedals(survived, stats);
 
-    const medalsHtml = medals.length > 0
-      ? `<div class="mission-medals-section">
-          <div class="mission-medals-title">// CONQUISTAS OBTIDAS</div>
-          <div class="mission-medals-grid">
-            ${medals.map((m, idx) => `
-              <div class="mission-medal-card" style="animation-delay: ${idx * 0.15}s">
-                <span class="medal-icon">${m.icon}</span>
-                <div class="medal-info">
-                  <div class="medal-name">${m.title}</div>
-                  <div class="medal-desc">${m.description}</div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>`
-      : '';
-
     this.summaryEl.innerHTML = `
       <div class="mission-summary-inner">
-        <div class="mission-summary-title ${titleClass}">${title}</div>
-        <div class="mission-summary-wave">ONDAS COMPLETADAS: <strong>${stats.waveReached}</strong></div>
+        <div class="mission-summary-title ${titleClass}" id="summary-title"></div>
+        <div class="mission-summary-wave">ONDAS COMPLETADAS: <strong id="summary-waves"></strong></div>
         <ul class="mission-summary-stats">
-          <li>ABATES         <span>${stats.kills}</span></li>
-          <li>DANO CAUSADO   <span>${stats.damageDealt.toFixed(0)}</span></li>
-          <li>TEMPO          <span>${fmtTime(stats.survivalSeconds)}</span></li>
-          ${stats.bonus ? `<li class="bonus animated-bonus">★ BÔNUS  <span>${stats.bonus}</span></li>` : ''}
+          <li>ABATES         <span id="summary-kills"></span></li>
+          <li>DANO CAUSADO   <span id="summary-damage"></span></li>
+          <li>TEMPO          <span id="summary-time"></span></li>
+          <li id="summary-bonus-item" class="bonus animated-bonus hidden">★ BÔNUS  <span id="summary-bonus"></span></li>
         </ul>
-        ${medalsHtml}
+        <div id="summary-medals-section" class="mission-medals-section hidden">
+          <div class="mission-medals-title">// CONQUISTAS OBTIDAS</div>
+          <div class="mission-medals-grid" id="summary-medals-grid"></div>
+        </div>
         <div class="mission-summary-actions">
           <button id="btn-mission-retry" class="btn-terminal">[ TENTAR NOVAMENTE ]</button>
           <button id="btn-mission-exit" class="btn-terminal">[ SAIR ]</button>
@@ -278,6 +286,60 @@ export class MissionHUD {
     this.summaryEl.classList?.remove('hidden');
 
     if (typeof document !== 'undefined') {
+      const titleEl = document.getElementById('summary-title');
+      if (titleEl) titleEl.textContent = title;
+      const waveEl = document.getElementById('summary-waves');
+      if (waveEl) waveEl.textContent = String(stats.waveReached);
+      const killsEl = document.getElementById('summary-kills');
+      if (killsEl) killsEl.textContent = String(stats.kills);
+      const damageEl = document.getElementById('summary-damage');
+      if (damageEl) damageEl.textContent = stats.damageDealt.toFixed(0);
+      const timeEl = document.getElementById('summary-time');
+      if (timeEl) timeEl.textContent = fmtTime(stats.survivalSeconds);
+
+      if (stats.bonus) {
+        const bonusItem = document.getElementById('summary-bonus-item');
+        const bonusEl = document.getElementById('summary-bonus');
+        if (bonusItem && bonusEl) {
+          bonusItem.classList.remove('hidden');
+          bonusEl.textContent = stats.bonus;
+        }
+      }
+
+      if (medals.length > 0) {
+        const sectionEl = document.getElementById('summary-medals-section');
+        const gridEl = document.getElementById('summary-medals-grid');
+        if (sectionEl && gridEl) {
+          sectionEl.classList.remove('hidden');
+          medals.forEach((m, idx) => {
+            const card = document.createElement('div');
+            card.className = 'mission-medal-card';
+            card.style.animationDelay = `${idx * 0.15}s`;
+
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'medal-icon';
+            iconSpan.textContent = m.icon;
+            card.appendChild(iconSpan);
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'medal-info';
+
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'medal-name';
+            nameDiv.textContent = m.title;
+            infoDiv.appendChild(nameDiv);
+
+            const descDiv = document.createElement('div');
+            descDiv.className = 'medal-desc';
+            descDiv.textContent = m.description;
+            infoDiv.appendChild(descDiv);
+
+            card.appendChild(infoDiv);
+            gridEl.appendChild(card);
+          });
+        }
+      }
+
       document.getElementById('btn-mission-retry')?.addEventListener('click', () => this.onRetry?.());
       document.getElementById('btn-mission-exit')?.addEventListener('click', () => this.onExit?.());
     }

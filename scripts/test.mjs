@@ -30,6 +30,6 @@ const finalArgs = [...(args.length ? args : ['run']), ...(hasOwnWorkerCap ? [] :
 const cli = resolve('node_modules', 'vitest', 'vitest.mjs');
 const result = spawnSync(process.execPath, [cli, ...finalArgs], {
   stdio: 'inherit',
-  env: { VITEST_MAX_WORKERS: process.env.VITEST_MAX_WORKERS || '1', ...process.env, TEMP: TMP, TMP, TMPDIR: TMP },
+  env: { ...process.env, TEMP: TMP, TMP, TMPDIR: TMP },
 });
 process.exit(result.status ?? 1);

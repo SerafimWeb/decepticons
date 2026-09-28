@@ -58,6 +58,8 @@ import { Match } from '../sim/Match';
 import { HangarMenu } from '../ui/HangarMenu';
 import { HangarScene } from '../hangar/HangarScene';
 import { OnlineLobby } from '../ui/OnlineLobby';
+import { ModeSelector } from '../ui/ModeSelector';
+import { MissionHUD } from '../ui/MissionHUD';
 
 /** Onde os braços do Mech do Hangar estão na tela (reaproveitados por quadro). */
 const _hotRight = { x: 0, y: 0 };
@@ -110,6 +112,8 @@ export class Game {
   private readonly assist: AimAssist;
   private readonly player: PlayerController;
   private readonly hud = new HUD();
+  private readonly modeSelector = new ModeSelector();
+  private readonly missionHud = new MissionHUD();
   private readonly killFeed = new KillFeed();
   /** Jogo online (M4): a sessão com o servidor, ou null no jogo de sempre. */
   private readonly online: OnlineSession | null;
@@ -331,6 +335,20 @@ export class Game {
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician });
     new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
+
+    this.modeSelector.attachTo(document.getElementById('overlay'));
+    this.modeSelector.onModeChange((mode) => {
+      if (mode === 'survival') {
+        this.triggerMissionBriefing();
+      }
+    });
+
+    this.missionHud.onRetry = () => {
+      this.triggerMissionBriefing();
+    };
+    this.missionHud.onExit = () => {
+      this.missionHud.hide();
+    };
   }
 
   /**
@@ -567,10 +585,35 @@ export class Game {
         this.hud.toggleVisibility();
         return;
       }
+      if (code === 'KeyM' || code === 'KeyB') {
+        this.triggerMissionBriefing();
+        return;
+      }
       if (!this.playing) return;
       if (code === this.settings.value.keys.camera) this.switchCamera();
       else if (code === 'Escape' && !rig.mode.pointerLock) this.setPlaying(false);
     };
+  }
+
+  /** Abre o briefing do modo sobrevivência com alarme tático e dados de exemplo. */
+  triggerMissionBriefing(): void {
+    this.audio.playWaveSiren();
+    this.missionHud.showBriefing(
+      {
+        wave: 1,
+        title: 'DEFESA DO PROTOCOLO SERAFIM',
+        threats: [
+          'Detector de movimento indicando aproximação de horda.',
+          'Andróides insurgentes classe V-09 detectados no setor 4.',
+          'Objetivo: Eliminar todas as unidades hostis e manter integridade.',
+        ],
+        autoStartSecs: 10,
+      },
+      () => {
+        this.hud.setPaused(false);
+        this.missionHud.showWaveHud(1, 10);
+      }
+    );
   }
 
   private resume(): void {

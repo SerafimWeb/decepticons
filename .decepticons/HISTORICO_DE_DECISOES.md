@@ -2,6 +2,16 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-28] Fiação do MissionHUD, Segurança de DOM (textContent) e Unificação de Branches (Gemini)
+
+**Decisão:** atendidas as 4 solicitações pendentes para consolidação do trabalho de UI & HUD:
+1. **Unificação dos Branches**: Consolidados `telas-online`, `missoes-hud` e `modo-hud-audio` no branch unificado `gemini/modo-hud-audio`.
+2. **Conexão do MissionHUD e Seletor no Jogo (`Game.ts`)**: `MissionHUD` e `ModeSelector` instanciados e conectados no `#overlay`. Selecionar o modo Sobrevivência ou acionar a tecla tática (`KeyM`/`KeyB`) dispara o briefing ao vivo com alarme tático (`playWaveSiren`).
+3. **Remoção de Redundância no Vitest (`scripts/test.mjs`)**: Removida a linha de env `VITEST_MAX_WORKERS` (recorrendo ao `--maxWorkers=1` já configurado na CLI).
+4. **Segurança de DOM (textContent)**: Refatoradas todas as interpolações de strings variáveis em `innerHTML` dentro de `MissionHUD.ts` (briefing, banner de onda limpa, tela de resumo, medalhas) para atribuições diretas de `textContent` e construção de nós do DOM.
+**Custo de CPU:** Zero por frame; apenas atribuições quando há eventos de UI. Todos os testes unitários passando.
+**Quem decidiu:** Gemini (execução das orientações do dono).
+
 ## [2026-09-27] Seletor de Modo de Jogo, Áudio Tático e Medalhas de Conquista (Gemini)
 
 **Decisão:** implementados 3 novos recursos solicitados pelo dono para o modo sobrevivência e metagame:
