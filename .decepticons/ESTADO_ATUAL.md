@@ -1,8 +1,8 @@
 # ESTADO ATUAL — CYBERMECH
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
-**Última atualização:** 2026-09-27
-**Iteração atual:** Fase 4 (multiplayer autoritativo) na virada — servidor no ar 24 h e primeira sessão real cumprida em 26/09/2026; próximas entregas visam Fase 5 (Modos, missões e novidades semanais, `VISAO.md`), começando por barricadas online, placar e nomes da sala, teste com latência simulada, e CTF Vermelho × Azul 2v2
+**Última atualização:** 2026-09-28
+**Iteração atual:** Fase 4 (multiplayer autoritativo) / Fase 5 (Modos e retenção) — servidor no ar 24 h e primeira sessão real cumprida em 26/09/2026; metagame Gemini entregue em branch (`gemini/modo-hud-audio`: MissionHUD, CtfHud, DailyChallenges, Audio sirens, ModeSelector, DOM refactoring).
 
 ---
 
@@ -15,7 +15,7 @@
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
 | `claude/zonas-cura-resfriamento` | zonas de cura e resfriamento na arena | **#91 aberto** | 27/09 |
-| `gemini/modo-hud-audio` | Seletor de Modo, MissionHUD (briefing/resumo/conquistas com textContent seguro), Sons Táticos de Onda, NetHud, KillBanner e RoundOverlay ligados ao Game.ts | **PR em abertura** | 27/09 |
+| `gemini/modo-hud-audio` | Seletor de Modo, MissionHUD, CTF HUD, DailyChallenges, Efeitos Sonoros de Onda, refatoração DOM com textContent | **Pronto (push feito)** | 28/09 |
 
 ---
 

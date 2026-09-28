@@ -148,7 +148,8 @@
 
 Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o que atrai gente pra testar, se desafiar e voltar.
 
-- [ ] **CTF Vermelho × Azul (2v2 pra começar):** duas equipes, uma bandeira em cada base, `sim/Match.ts` com times; ganha a primeira equipe a capturar 3 vezes ou a com mais capturas em 8 min. Balanceado pra bandeira + Mech pesado ficar em risco simétrico ao Mech leve com dash #modos
+- [x] **Interface CTF e Placar de Times (CtfHud):** placar Azul vs Vermelho, badges de posse de bandeira, banners de evento animados (`showEventBanner`), com testes #modos
+- [ ] **Bandeiras 3D e Bases de CTF:** capturas e interações no mapa arena e simulação #modos
 - [ ] **Missões em fases (cooperativo ou solo):** 3-5 fases com objetivos crescentes (defesa, escolta, invasão), com um evento de rede novo (`OBJECTIVE_STATE`) e um mapa por missão #modos
 - [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio
@@ -157,8 +158,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Personalização visual (cosmética, nunca combate):** apelido, cor da carcaça, decalque, pintura por parte, salva no navegador antes da conta (`hangar/loadout.ts` estende com uma seção "aparência") #negocio
 - [ ] **Placar e nomes vindos do servidor** com histórico de partidas do jogador (na sua sessão, sem conta ainda) #ux
 - [ ] **Painel de balanço na sala de controle:** quantas partidas cada arma venceu, tempo médio até morte, distribuição de dano; alimenta as decisões semanais de ajuste #negocio
-- [ ] **Desafios diários pequenos** (ex.: "5 abates com plasma MK I", "acabar uma partida sem morrer"): recompensa cosmética #modos
-- [ ] **Modo sobrevivência** (declarado dono 27/09, referência: Project Zomboid): ondas de inimigos crescentes (androides, Mechs rebeldes, "pessoas"), mapa vivo com setores que fecham, solo ou cooperativo; a cada onda a IA fica mais agressiva e nova; termina quando o piloto cai. Tela de briefing, HUD de onda, resumo final com estatísticas. Gemini cuida da interface; Claude cuida da lógica de ondas no servidor #modos
+- [x] **Desafios diários e progressão (DailyChallenges):** Nível de Piloto, barra XP, Créditos ₵, 3 missões diárias com recompensas ("5 abates com plasma", "causar 500 de dano", "derrotar 3 andróides"), salvas localmente e integradas no `Game.ts` #modos
+- [x] **Modo sobrevivência e MissionHUD:** interface completa (briefing tático com digitação, HUD de onda, sirenes de alarme, banner ONDA LIMPA e resumo de estatísticas/medalhas) #modos
 
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
 - [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo

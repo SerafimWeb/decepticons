@@ -3,12 +3,15 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
-Última revisão: 2026-09-27
+Última revisão: 2026-09-28
 
 | Feature | Estado | Observação |
 |---|---|---|
 | Seletor de Modo de Jogo (ModeSelector) | REAL | Gemini (27/09): `client/src/ui/ModeSelector.ts` e `ModeSelector.test.ts`. Seleção entre Deathmatch e Sobrevivência com salvamento no localStorage (`cybermech_game_mode`) e URL `?modo=` |
-| Interface do Modo Sobrevivência (MissionHUD) | PARCIAL | Gemini (27/09): `client/src/ui/MissionHUD.ts` (briefing tático com digitação, HUD de onda compacto, banner ONDA LIMPA, conquistas/medalhas no resumo final) e testes em `MissionHUD.test.ts`. |
+| Interface do Modo Sobrevivência (MissionHUD) | REAL | Gemini (28/09): `client/src/ui/MissionHUD.ts` (briefing tático com digitação, HUD de onda compacto, sirenes de alarme, banner ONDA LIMPA, conquistas/medalhas no resumo final) e testes em `MissionHUD.test.ts`. |
+| Sons Contextuais de Onda (AudioSystem) | REAL | Gemini (28/09): `playWaveSiren()`, `playCountdownBeep()`, `playWaveClearSound()` sintetizados via Web Audio API. |
+| HUD de Capture the Flag (CtfHud) | REAL | Gemini (28/09): `client/src/ui/CtfHud.ts` (placar Azul vs Vermelho, badges de posse da bandeira, banners de evento animados `showEventBanner`) e testes em `CtfHud.test.ts`. |
+| Desafios Diários & Progressão (DailyChallenges) | REAL | Gemini (28/09): `client/src/ui/DailyChallenges.ts` (Nível de Piloto, barra de XP, Créditos ₵, 3 missões diárias com resgate e rastreamento em tempo real) e testes em `DailyChallenges.test.ts`. |
 | Zonas de cura e resfriamento | REAL | `combat/Zone.ts`: zona de cura (+20 vida/s na parte mais avariada) e de resfriamento (ventila 0,35 calor/s direto, sem esperar o atraso do tiro), volumes fixos na arena. 6 testes (`Zone.test.ts`). |
 | Movimento WASD (aceleração estilo arena) | REAL | engasgo da corrida corrigido em 2026-09-23; coberto por `MechBase.test.ts` |
 | Pulo duplo | REAL | Vector-09 `maxJumps: 2` |
