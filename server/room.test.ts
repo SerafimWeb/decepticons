@@ -1,5 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { WebSocket } from 'ws';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/constants';
 import { newNetInput, type NetInput } from '../shared/net/input';
@@ -279,19 +280,19 @@ describe('M3: defesas do servidor (mesmo domínio da Selva MKT, DEPLOY.md)', () 
   it('teto por IP: um mesmo endereço não consegue abrir mais que `perIp` conexões', async () => {
     const s = await startServer({ port: 0, host: '127.0.0.1', guard: { perIp: 2, total: 10, msgs: 60, burst: 30 } });
     try {
-      const conns = [open(s.port), open(s.port), open(s.port)];
-      // A terceira conexão a chegar cai com 4013; qualquer das três pode ser essa (a ordem depende da rede).
-      // Aguardo a contagem da porteira em vez de casar por nome.
-      const t0 = Date.now();
-      while (s.guard.rejected.ip < 1) {
-        if (Date.now() - t0 > 5000) throw new Error('recusa não veio');
-        await new Promise((r) => setTimeout(r, 10));
-      }
+      // Abro as `perIp` vagas uma de cada vez, esperando o handshake de cada uma terminar antes da
+      // próxima: sem isso, numa máquina sobrecarregada (muitos testes em paralelo), a ordem de chegada
+      // das três conexões não é garantida em 5 s, e "qualquer uma pode ser a recusada" vira instável.
+      // Com as vagas já ocupadas de verdade, a terceira SEMPRE é a recusada — determinístico mesmo sob
+      // carga (só depende do handshake dela mesma, não de uma corrida entre três).
+      const fill = [open(s.port), open(s.port)];
+      await Promise.all(fill.map((c) => c.opened));
+      const extra = open(s.port);
+      const code = await extra.closed; // sem prazo próprio: o timeout do teste (Vitest) já cobre o caso "nunca fechou"
+      expect(code).toBe(4013);
       expect(s.guard.rejected.ip).toBe(1);
-      // Fecho os três (o recusado já fechou com 4013; os outros dois fecham agora, com 1005/1000).
-      for (const c of conns) c.ws.close();
-      const codes = await Promise.all(conns.map((c) => c.closed));
-      expect(codes.filter((c) => c === 4013).length).toBe(1);
+      for (const c of fill) c.ws.close();
+      await Promise.all(fill.map((c) => c.closed));
     } finally {
       await s.close();
     }
