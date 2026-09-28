@@ -59,6 +59,8 @@ export class HUD {
   private deaths = 0;
   private shownRespawn = '';
   private shownMission = '';
+  private ctfNoticeTimer = 0;
+  private ctfProgressText = '';
 
   /** Assinatura de build no canto da pausa: versão, build e estúdio (como os jogos de estúdio mostram). */
   setBuild(text: string): void {
@@ -77,6 +79,12 @@ export class HUD {
     if (enabled) this.resetMission();
   }
 
+  setCtfMode(enabled: boolean): void {
+    this.missionStatus.hidden = !enabled;
+    this.missionStatus.classList.toggle('ctf', enabled);
+    if (enabled) this.resetCtf();
+  }
+
   resetMission(): void {
     this.shownMission = '';
     this.missionSummary.hidden = true;
@@ -84,6 +92,42 @@ export class HUD {
     this.missionStatus.classList.remove('clear');
     this.setMissionText('MISSÃO SOBREVIVÊNCIA · PREPARAÇÃO');
     this.setReady(document.documentElement.classList.contains('touch'));
+  }
+
+  resetCtf(): void {
+    this.shownMission = '';
+    this.missionSummary.hidden = true;
+    this.missionSummary.textContent = '';
+    this.missionStatus.classList.remove('clear');
+    this.ctfNoticeTimer = 0;
+    this.ctfProgressText = 'CTF · AZUL 0 × 0 VERMELHO · 08:00';
+    this.setMissionText(this.ctfProgressText);
+    this.setReady(document.documentElement.classList.contains('touch'));
+  }
+
+  setCtfProgress(timeLeft: number, blue: number, red: number): void {
+    const seconds = Math.max(0, Math.ceil(timeLeft));
+    const clock = `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+    this.ctfProgressText = `CTF · AZUL ${blue} × ${red} VERMELHO · ${clock}`;
+    if (this.ctfNoticeTimer <= 0) {
+      this.missionStatus.classList.remove('clear');
+      this.setMissionText(this.ctfProgressText);
+    }
+  }
+
+  showCtfEvent(text: string): void {
+    this.missionStatus.classList.add('clear');
+    this.ctfNoticeTimer = 1.5;
+    this.setMissionText(text);
+  }
+
+  setCtfEnd(winner: 'blue' | 'red' | null, blue: number, red: number, blueKills: number, redKills: number): void {
+    const title = winner === 'blue' ? 'VITÓRIA DO TIME AZUL' : winner === 'red' ? 'VITÓRIA DO TIME VERMELHO' : 'EMPATE';
+    this.missionStatus.classList.toggle('clear', winner === 'blue');
+    this.setMissionText(`CTF ENCERRADO · ${title}`);
+    this.missionSummary.hidden = false;
+    this.missionSummary.textContent = `${title}\nCAPTURAS ${blue} × ${red} · ABATES ${blueKills} × ${redKills}`;
+    this.cta.textContent = '[ clique para jogar de novo ]';
   }
 
   setMissionWave(wave: number, total: number, title: string): void {
@@ -218,6 +262,14 @@ export class HUD {
   update(dt: number, mech: MechBase, cursorX: number, cursorY: number, debrisCount: number): void {
     const isBlind = mech.isBlind;
     this.root.classList.toggle('blind', isBlind);
+
+    if (this.ctfNoticeTimer > 0) {
+      this.ctfNoticeTimer -= dt;
+      if (this.ctfNoticeTimer <= 0 && this.ctfProgressText) {
+        this.missionStatus.classList.remove('clear');
+        this.setMissionText(this.ctfProgressText);
+      }
+    }
 
     if (this.cursorMode) {
       this.crosshair.style.left = `${cursorX}px`;

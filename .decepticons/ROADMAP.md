@@ -150,7 +150,8 @@
 Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o que atrai gente pra testar, se desafiar e voltar.
 
 - [x] **Sobrevivência solo em Ondas:** cinco hordas progressivas (20 abates no total), briefing/intervalo, derrota/vitória, estatísticas e reinício; pool fixo de até 3 Mechs + 3 andróides, seletor na pausa e HUD de missão. Online fica para um contrato de rede próprio #modos
-- [ ] **CTF Vermelho × Azul (2v2 pra começar):** duas equipes, uma bandeira em cada base, `sim/Match.ts` com times; ganha a primeira equipe a capturar 3 vezes ou a com mais capturas em 8 min. Balanceado pra bandeira + Mech pesado ficar em risco simétrico ao Mech leve com dash #modos
+- [x] **CTF Vermelho × Azul — treino offline jogável:** uma bandeira em cada base, dois defensores, captura só com a própria bandeira em casa, queda/retorno, portador 15% mais lento, três capturas ou desempate em 8 min; regra pura no `Match`, HUD, bases/bandeiras holográficas em cinco draw calls e seletor na pausa #modos
+- [ ] **CTF 2v2 online autoritativo:** times no contrato de sala, eventos de bandeira/captura no protocolo, bots preenchendo vagas e validação de banda; o treino offline não anuncia suporte de rede #rede
 - [ ] **Missões em fases (cooperativo ou solo):** 3-5 fases com objetivos crescentes (defesa, escolta, invasão), com um evento de rede novo (`OBJECTIVE_STATE`) e um mapa por missão #modos
 - [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio

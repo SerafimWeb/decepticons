@@ -1,9 +1,8 @@
 # FICHA · CTF (Vermelho × Azul)
 
-> **Status:** proposta · **Autor:** Qwen (a pedido do dono, 27/09/2026, pelo pedido do Gemini: "crie os testes de
-> simulação do CTF") · **Data:** 2026-09-27
-> **O que esta ficha é:** as **regras que os testes vão travar** — a lista de testes da § 4 é o entregável pedido.
-> **O que ela não é:** o código (Claude), o HUD (Gemini) e a bandeira/efeitos em 3D (Codex).
+> **Status:** implementado no treino offline; 2v2 online pendente · **Autores:** Qwen (ficha) e Codex (regra, HUD e visual) · **Atualização:** 2026-09-28
+> **O que esta ficha é:** a regra canônica do CTF e a matriz de testes. O primeiro corte implementa o núcleo inteiro
+> em `sim/CaptureTheFlag.ts`, integrado ao `Match`, com HUD e objetivos 3D. O contrato de rede segue pendente.
 > **O que o dono já decidiu** (`ROADMAP.md`, Fase 5): "duas equipes, **uma bandeira em cada base**, `sim/Match.ts`
 > com times; **ganha a primeira equipe a capturar 3 vezes ou a com mais capturas em 8 min**. Balanceado pra bandeira
 > + Mech pesado ficar em risco simétrico ao Mech leve com dash." Começa em **2v2**.
@@ -66,13 +65,14 @@ Mesma regra das zonas e da base do drone: **só o que se move precisa de bytes p
 14. **"É determinístico":** mesma semente e mesmos inputs → mesmos instantes de captura e mesmo vencedor.
 15. **"O servidor decide":** captura nasce do servidor, nunca do cliente (mesma autoridade do resto do online).
 
-## 5. Divisão e o que falta
-- **Claude:** times e regras em `sim/Match.ts` + os testes da § 4 (pedido do Gemini já em curso). O contrato de times
-  é o primeiro pedaço — todo o resto (HUD, visual, testes) depende dele.
-- **Gemini:** HUD do CTF (placar Azul × Vermelho, indicador de bandeira: quem carrega, onde está a nossa) — já pedido.
-- **Codex:** bandeira e bases em 3D, e o efeito da captura — já pedido.
-- **Qwen:** esta ficha e a § 4; depois, revisão de balanço com o CTF existindo (a tabela de preços e o relógio da
-  partida são decisão de dono, medida na simulação).
+## 5. Implementação e o que falta
+- **Real no treino offline:** itens 2 a 11 e 14; a penalidade mecânica do item 12 também está travada. Há 11 testes
+  puros e um teste de integração com Rapier. O jogador azul enfrenta dois defensores vermelhos e pode completar a
+  partida inteira. HUD, bases, bandeiras carregáveis e pulso de captura estão ligados ao jogo.
+- **Balanço pendente:** a comparação cronometrada entre chassis leve e pesado do item 12 depende dos dois chassis
+  existirem como gameplay; hoje são apenas blueprints visuais.
+- **Rede pendente:** itens 13 e 15, times 2v2 no servidor, eventos no protocolo e bots completando vagas. Até esse
+  contrato existir, `STATUS_REAL.md` mantém o online como AUSENTE e o modo se apresenta como treino offline.
 
 ## 6. Perguntas para o dono
 1. **A arena de hoje é pequena para 3 capturas em 8 min.** Ou o mapa cresce (duas bases afastadas), ou o número cai

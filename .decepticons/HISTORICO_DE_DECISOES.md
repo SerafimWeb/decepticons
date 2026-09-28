@@ -1127,3 +1127,12 @@ O smoke passou a reprovar menos de 10 draw calls, e comprovadamente reprovava a 
 **Multiplayer planejado:** só o Mech local roda o controller (prediction); os remotos interpolam snapshots.
 
 - 2026-09-27 — No treino manual de mira, bloquear a motosserra: o exercício mede interseção de tiro e deve orientar o usuário ao teste de disparo existente para arma corpo a corpo. Sem custo em jogo; validação incluída no check do PR. (Codex)
+## [2026-09-28] CTF estreia como treino offline completo antes do contrato 2v2 (Codex)
+
+**Decisão:** entregar a regra central inteira no `Match` sem fingir suporte de rede. O jogador azul enfrenta dois defensores vermelhos; são duas bandeiras, coleta por proximidade, queda na morte, retorno em 15 s ou por toque aliado, captura só com a própria bandeira em casa, portador 15% mais lento no chão, vitória em três capturas e desempate por capturas/abates aos oito minutos. Dash não perde força. O seletor da pausa percorre Arena, Sobrevivência e CTF.
+
+**Arquitetura e custo:** `sim/CaptureTheFlag.ts` é puro, determinístico e sem DOM/relógio; o `Match` só registra unidades e encaminha eventos primitivos. Por tick são no máximo duas verificações de raio por unidade, sem física nova nem alocação. O visual usa quatro `InstancedMesh` e uma malha de dois quads para bases, zonas, mastros e panos: cinco draw calls fixos, materiais emissivos baratos e `depthWrite: false` na casca transparente. A penalidade de velocidade entra em `MechBase.moveSpeedScale` e não altera dash.
+
+**Limite declarado:** o 2v2 autoritativo permanece AUSENTE até `shared/net` e `ArenaRoom` ganharem times e eventos de bandeira; os bots do treino defendem combatendo, mas ainda não traçam rotas de roubo/devolução. Onze testes puros mais um de integração cobrem a regra local. A comparação cronometrada leve × pesado espera os chassis existirem em gameplay.
+
+**Verificação:** `npm run check` verde com 243 testes, painel, build (257,3 KB JS gzip; 719,4 KB Wasm gzip), smoke real e validação completa do site. A captura headless encontrou e eliminou um estouro de bloom no pedestal antes do PR; resultado final em `.decepticons/arte/ctf-mode.png`.

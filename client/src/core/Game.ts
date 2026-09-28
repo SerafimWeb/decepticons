@@ -19,6 +19,7 @@ import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
 import type { MechBase } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
+import { CtfObjectives } from '../environment/CtfObjectives';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
@@ -106,6 +107,8 @@ export class Game {
   private readonly bots: BotSystem;
   private readonly respawner: Respawner;
   private readonly round: Round;
+  /** Bandeiras, bases e zonas holográficas: cinco draw calls, somente no modo CTF. */
+  private readonly ctfObjectives: CtfObjectives | null;
   private readonly roundHud: RoundHud;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
@@ -218,6 +221,7 @@ export class Game {
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
+    this.ctfObjectives = this.match.ctf ? new CtfObjectives(this.scene) : null;
     // O piloto escolhe o chassi (Hangar): Vector-09 ou andróide, sempre nas cores do jogador.
     this.mech =
       this.hangar.current.chassis === 'android'
@@ -301,7 +305,9 @@ export class Game {
     this.setTouchMode(matchMedia('(hover: none) and (pointer: coarse)').matches);
     this.hud.setMode(this.rig.mode);
     this.hud.setReady(this.input.touchMode);
-    this.hud.setMissionMode(this.gameMode === 'survival');
+    if (this.gameMode === 'survival') this.hud.setMissionMode(true);
+    else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
+    else this.hud.setMissionMode(false);
     this.hud.setBuild(`CYBERMECH ${import.meta.env.VITE_BUILD ?? 'dev'} · © ${new Date().getFullYear()} SERAFIM WEB`);
 
     this.quality = new Quality(
@@ -560,6 +566,22 @@ export class Game {
       this.setPlaying(false);
       this.input.exitLock();
     };
+    this.match.onCtfFlag = (event, owner) => {
+      const flag = owner === 'blue' ? 'AZUL' : 'VERMELHA';
+      const action = event === 'pickup' ? 'TOMADA' : event === 'drop' ? 'DERRUBADA' : 'DEVOLVIDA';
+      this.hud.showCtfEvent(`BANDEIRA ${flag} ${action}`);
+    };
+    this.match.onCtfCapture = (team, blue, red) => {
+      this.ctfObjectives?.flashCapture();
+      this.hud.showCtfEvent(`${team === 'blue' ? 'AZUL' : 'VERMELHO'} CAPTUROU · ${blue} × ${red}`);
+    };
+    this.match.onCtfProgress = (timeLeft, blue, red) => this.hud.setCtfProgress(timeLeft, blue.captures, red.captures);
+    this.match.onCtfEnd = (winner, blue, red) => {
+      this.missionEnded = true;
+      this.hud.setCtfEnd(winner, blue.captures, red.captures, blue.kills, red.kills);
+      this.setPlaying(false);
+      this.input.exitLock();
+    };
     this.match.onPropBroken = (_id, center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
       if (falloff > 0) rig.addShake(0.55 * falloff);
@@ -614,7 +636,8 @@ export class Game {
       this.match.restartMission();
       this.player.launcher.refill();
       this.hud.setScore(0, 0);
-      this.hud.resetMission();
+      if (this.gameMode === 'ctf') this.hud.resetCtf();
+      else this.hud.resetMission();
     }
     // Primeira partida da sessão: vinheta da marca (o clique é o gesto que libera o som). O mouse já
     // fica preso agora (o Pointer Lock só pode ser pedido dentro do clique); o mundo espera a vinheta.
@@ -633,16 +656,17 @@ export class Game {
 
   private configureModeSwitch(): void {
     const button = document.getElementById('btn-mode')!;
-    button.textContent = this.gameMode === 'survival' ? '[ MODO: SOBREVIVÊNCIA · TROCAR ]' : '[ MODO: ARENA · TROCAR ]';
+    const label = this.gameMode === 'survival' ? 'SOBREVIVÊNCIA' : this.gameMode === 'ctf' ? 'CAPTURE A BANDEIRA' : 'ARENA';
+    button.textContent = `[ MODO: ${label} · TROCAR ]`;
     button.addEventListener('click', (event) => {
       event.stopPropagation();
       const url = new URL(location.href);
-      if (this.gameMode === 'survival') url.searchParams.delete('modo');
-      else {
+      if (this.gameMode === 'deathmatch') {
         url.searchParams.set('modo', 'survival');
         url.searchParams.delete('sala');
         url.searchParams.delete('servidor');
-      }
+      } else if (this.gameMode === 'survival') url.searchParams.set('modo', 'ctf');
+      else url.searchParams.delete('modo');
       location.assign(url);
     });
   }
@@ -772,6 +796,7 @@ export class Game {
     // --- Render ---
     this.mech.render(dt, alpha);
     this.bots.render(dt, alpha);
+    if (this.match.ctf && this.ctfObjectives) this.ctfObjectives.update(dt, this.match.ctf);
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);
     this.rig.update(dt);

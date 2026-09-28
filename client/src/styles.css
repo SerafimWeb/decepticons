@@ -276,6 +276,7 @@ html, body {
 }
 #mission-status[hidden] { display: none; }
 #mission-status.clear { color: var(--hot); border-color: var(--hot); text-shadow: 0 0 10px var(--hot); }
+#mission-status.ctf { border-color: rgba(0, 229, 255, 0.7); box-shadow: inset 4px 0 #00e5ff, inset -4px 0 #ff2d3d; }
 
 /* Blind Mode: quando a cabeça é destruída */
 #hud.blind #stats {
