@@ -5,6 +5,39 @@
 
 > Cofre append-only (M2). Nunca edite entradas antigas. Entrada nova SEMPRE no topo.
 
+## [2026-09-27] A base de recarga do drone (com canhão) e a blindagem das páginas públicas
+**Pedido do dono:** 1) Bateria do drone: **cada carga rende 70 a 80% do tempo de partida**; o **piloto automático volta
+sozinho quando a bateria chega a 15–10%**; **cada lado tem a sua base carregadora**; a base merece um **canhão/turret de
+defesa** ("nada muito violento, só pra expulsar drones do outro time; e que isso **não pese no jogo**"); os **andróides
+mecânicos também podem dar carga no drone**; drones **contam** na partida e, no futuro, talvez **módulos só de drones**.
+2) Nas páginas do site: **leitura completa, limpar redundâncias, apagar o que é muito core / segredo industrial / propriedade
+intelectual** que não se deve divulgar (para não nos copiarem) e **impedir que o texto seja selecionável/copiável**.
+**Decisões:**
+- **Bateria, base e canhão (dono):** autonomia de **210 a 240 s** (70–80% de uma rodada de 5 min); volta automática do
+  piloto entre **15 e 10%**; **uma base por lado**, no alto, **não disputada**; **canhão de defesa** que, por decisão,
+  **só engaja drone** (é filtro de alvo, não só dano baixo) — "para expulsar drones do outro time"; e **recarga móvel pelo
+  andróide** do próprio lado. O "não pesa no jogo" foi verificado na mesma conta que trava o resto (`shared/net/`): base e
+  canhão são **pontos fixos da arena → 0 B/s de estado** e o disparo é **evento** (`SHOT`, o mesmo caminho das armas), com
+  alvo numa lista curta de drones. Ficha: `fichas/drone.md` **§ 4.1**, metas **10 a 13** e a 3ª rodada no § 10;
+  `METAGAME.md` § 8 (3ª rodada), § 9 (três linhas novas na tabela) e § 10 (**modos só de drone**, registrado sem prioridade).
+- **Páginas públicas (Qwen, a pedido do dono):** o site **parou de republicar a engenharia do repositório** (que é privado).
+  Saíram da landing a receita da rede — **byte por robô, KB/s por jogador, teto de unidades** — e o mesmo da saúde técnica da
+  oficina (o orçamento de banda virou **contagem de testes**); ficou o **ritmo** (60 Hz de simulação, 20 estados por segundo),
+  que qualquer netcode mostra. Redundâncias cortadas: a **lista de etapas do multiplayer** (é o ROADMAP, que já vive na sala de
+  controle) e o **plano do Hangar** (os quatro primeiros itens já estão na planta e no arsenal; os números do Hangar continuam
+  vindo do código).
+- **Anti-cópia:** toda página gerada por `pagina()` sai com `user-select: none` e bloqueio de cópia, recorte, arrasto e
+  Ctrl/Cmd+A, +C, +X, +S. É **fricção contra clone manual, não segurança**: quem lê o código-fonte da página continua lendo o
+  HTML — e isso está dito no código, para ninguém achar que virou DRM. O `site --check` passa a **exigir** as três provas
+  (texto não selecionável, "selecionar tudo" pegando zero caractere e evento de cópia bloqueado) nas três páginas, e o
+  `--verify` confere a camada no site publicado. Captura: `.decepticons/arte/landing-online.png`.
+**O que NÃO foi cortado (fica à decisão do dono):** os **números de gameplay** (ficha do Vector-09, arsenal nos três níveis,
+grade de montagens e metas de equilíbrio) e a **bancada da oficina** (calor, partes e distância) continuam públicos: são o que
+dá credibilidade à landing ("o site lê o jogo") e cortá-los é decisão de produto. O mapa da arquitetura e a lista de onde falta
+teste seguem na oficina pelo mesmo motivo — foram pedidos por ele.
+**Quem decidiu:** dono (autonomia, base, canhão, recarga pelo andróide e o "apague o que é muito core"); Qwen (a especificação
+da base e do canhão, o corte das páginas, a camada anti-cópia e as checagens que a travam a cada build).
+
 ## [2026-09-27] O flake do `pre-push` endurecido de verdade, e onde mora a máquina de Ondas
 **Pedido (dono, repassando pedidos do Gemini e do Codex):** 1) endurecer `server/room.test.ts > teto por IP` (o flake trava o check de todo mundo; a flag de verdade é `--maxWorkers`); 2) confirmar/ajustar o contrato do `MissionHUD` e dizer se a onda roda no servidor; 3) ligar a máquina de Ondas em `sim/Match.ts` e `server/ArenaRoom.ts`; 4) os contratos que o Codex pediu (respawn por ponto seguro, alvo móvel do Hangar); 5) investigar por que o CI não disparou num PR docs-only.
 **Achado (Claude) — a raiz não era concorrência:** minha própria correção anterior (PR #91, `--maxWorkers=1` global) tratou o sintoma, não a causa, e o Qwen apontou certo na revisão (serializa o CI de todo mundo à toa). A causa real: o `WebSocket` global do Node (undici), no Windows, às vezes só dispara `error` — nunca `close` — numa conexão que o servidor fecha logo após o handshake, deixando a `Promise.all` dos fechamentos pendurada. Troquei pelo `WebSocket` do pacote `ws` (o mesmo do servidor) e reescrevi o teste para abrir as vagas em sequência (sem corrida de chegada entre três conexões simultâneas): a terceira agora é **sempre** a recusada. Removido o teto global de workers. **5 execuções seguidas, concorrência total, zero flake** no `server/room.test.ts` (antes, falhava sob carga). Achado de quebra: `client/src/net/online.test.ts` tinha o mesmo tipo de fragilidade (asserções de tempo real contra um servidor de verdade rodando `setInterval`, que pode atrasar sob 31 processos competindo por CPU) — três asserções viraram esperas com prazo generoso, no mesmo padrão que o `join()` do próprio arquivo já usava.

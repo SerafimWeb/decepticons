@@ -10,7 +10,7 @@
  */
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { arsenal, atividade, bundleSize, entregas, hangarPlan, horizonte, jogo, marcos, pledge, readRoadmap, recordSheet, roadmapStats, vitrine } from './site/dados.mjs';
+import { arsenal, atividade, bundleSize, entregas, horizonte, jogo, marcos, pledge, readRoadmap, recordSheet, roadmapStats, vitrine } from './site/dados.mjs';
 import { brDate, esc, HEXGRID, inline, mb, pagina, topo, upper } from './site/tema.mjs';
 
 const argv = process.argv.slice(2);
@@ -25,7 +25,6 @@ const bundle = bundleSize(join(ROOT, 'jogar'));
 const game = await jogo();
 const sheet = recordSheet(game);
 const arms = arsenal(game);
-const plan = hangarPlan();
 const vows = pledge();
 const features = vitrine();
 const futureIdeas = horizonte();
@@ -240,7 +239,9 @@ const pledgeHtml = vows.length
   : '';
 
 // Hangar (em projeto): planta com os encaixes, o arsenal nos três níveis e as metas de equilíbrio.
-// Tudo o que é número vem do código do jogo (dados.mjs → jogo()); o plano vem do GAME_DESIGN.
+// Tudo o que é número vem do código do jogo (dados.mjs → jogo()). O plano de construção do Hangar
+// (`GAME_DESIGN.md`, seção HANGAR) não se repete aqui: os quatro primeiros itens dele já aparecem na
+// planta e no arsenal, e o roadmap fica na sala de controle.
 const num = (x, d = 0) => x.toFixed(d).replace('.', ',');
 const pct = (x) => `${Math.round(x * 100)}%`;
 const tons = (x) => `${String(x).replace('.', ',')} t`;
@@ -305,7 +306,7 @@ function wpnCard(w, i) {
 }
 
 let hangarHtml = '';
-if (arms && sheet && plan.length) {
+if (arms && sheet) {
   const single = Math.min(...arms.weapons.flatMap((w) => w.tiers.map((t) => t.ttk)));
   const combo = Math.min(...arms.combo.map((c) => c.ttk));
   const energy = arms.weapons.find((w) => w.kind === 'energy');
@@ -363,37 +364,29 @@ if (arms && sheet && plan.length) {
     </div>
     <p class="rules-note">Teto teórico, sem errar nenhum tiro. ${arms.tests} testes de simulação travam estas metas a cada entrega: se uma mudança criar apelação, a versão não sai.</p>
     <p><a class="link-btn" href="./oficina/">ver a bancada completa na oficina: calor, partes, distância →</a></p>
-    <h3 class="sub-h">O plano</h3>
-    <ol class="features">${plan
-      .map((p, i) => `<li class="feature frame"><span class="fnum">${String(i + 1).padStart(2, '0')}</span><h3>${upper(p.title)}</h3><p>${inline(p.text)}</p></li>`)
-      .join('')}</ol>
   </section>`;
 }
 
-// ---------- online: as etapas do multiplayer (ROADMAP, fase 4) e os números da rede (código) ----------
+// ---------- online: o estado do multiplayer (ROADMAP, fase 4) ----------
+// Publica o ritmo (60 Hz de simulação, 20 estados por segundo), não o tamanho: byte por robô, KB/s por
+// jogador e teto de unidades são a engenharia que mora no repositório privado e o site não republica.
 const net = game?.net;
 const onlinePhase = roadmap.phases.find((p) => /multiplayer/i.test(p.title));
 let onlineHtml = '';
 if (net && onlinePhase) {
-  const kbs = (b) => `${(b / 1024).toFixed(1).replace('.', ',')} KB/s`;
-  // Para quem joga: sem os parênteses de arquivo e só a primeira frase de cada etapa.
-  const clean = (t) => t.replace(/\s*\([^)]*\)/g, '').replace(/`/g, '').split('. ')[0];
   const ready = onlinePhase.items.filter((i) => i.status === 'done').length;
-  const mark = { done: '[OK]', doing: '[>>]', todo: '[--]' };
   onlineHtml = `<section aria-labelledby="online">
     <span class="kicker">// fase ${onlinePhase.num} · multiplayer</span>
     <h2 id="online">Online: salas de ${net.ROOM_SIZE} pilotos</h2>
     <p class="lede">O multiplayer está sendo montado em etapas. O servidor decide o que importa (dano, calor, quem caiu), o seu Mech responde na hora, e cada etapa só entra quando os testes provam que ela cabe na conexão de um celular.</p>
     <div class="sitrep">
       <div class="read frame"><span class="k">servidor</span><span class="v">${net.SIM_HZ} Hz</span><span class="d">a mesma simulação do jogo, ${net.SIM_HZ} passos por segundo, decidindo tudo</span></div>
-      <div class="read frame"><span class="k">estado da sala</span><span class="v">${net.SNAPSHOT_HZ} Hz</span><span class="d">${net.SNAPSHOT_HZ} vezes por segundo, ${net.unitBytes} bytes por robô: posição, mira, vida de cada parte e calor</span></div>
-      <div class="read frame"><span class="k">download por jogador</span><span class="v">${kbs(net.download)}</span><span class="d">sala cheia (${net.ROOM_UNITS} robôs) numa luta intensa; a meta é ${kbs(net.DOWNLOAD_BUDGET)}</span></div>
-      <div class="read frame"><span class="k">seu comando</span><span class="v">${net.inputBytes} bytes</span><span class="d">por passo (${kbs(net.upload)}); dano e vida nunca saem do seu aparelho</span></div>
+      <div class="read frame"><span class="k">estado da sala</span><span class="v">${net.SNAPSHOT_HZ} ×/s</span><span class="d">o que mudou de posição, mira e vida chega ${net.SNAPSHOT_HZ} vezes por segundo — e só isso</span></div>
+      <div class="read frame"><span class="k">no seu aparelho</span><span class="v">0 decisões</span><span class="d">dano, calor e quem caiu saem do servidor: o seu Mech desenha, não julga</span></div>
     </div>
-    <ul class="todo frame stages">${onlinePhase.items.map((i) => `<li class="${i.status}"><span>${mark[i.status] ?? '[--]'}</span>${inline(clean(i.text))}</li>`).join('')}</ul>
     <p>${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA">[ JOGAR ONLINE AGORA ]</a>' : '<span class="rules-note">O servidor público entra no ar em breve: hoje o online roda em teste, num PC.</span>'}</p>
     <p class="milestone frame">🎯 <strong>Primeira sessão online ponta a ponta:</strong> 26/09/2026, dois aparelhos do dono jogaram juntos na mesma sala pelo túnel público (<code>jogo.selvamkt.com.br</code>). Agora o servidor fica no ar 24 h; convide alguém e testem juntos.</p>
-    <p class="rules-note">${ready} de ${onlinePhase.items.length} etapas prontas. Os números acima são medidos pelos ${net.tests} testes da rede a cada entrega; mandando o estado inteiro a cada vez, cabem até ${net.maxUnits} robôs por sala dentro da meta.</p>
+    <p class="rules-note">${ready} de ${onlinePhase.items.length} etapas prontas. A conta da rede é medida pelos ${net.tests} testes de orçamento a cada entrega: se a sala cheia não couber na meta, a versão não sai.</p>
   </section>`;
 }
 
@@ -541,14 +534,11 @@ const css = `
   .todo, .recent { list-style: none; padding: 0; display: grid; gap: 7px; font-size: 13.5px; line-height: 1.45; }
   .todo li { display: grid; grid-template-columns: 38px 1fr; gap: 8px; }
   .todo li span { color: var(--text); } .todo li.doing span { color: var(--amber); }
-  .stages { margin: 18px 0 12px; padding: 16px 18px; }
   /* Jogar online: mesmo botão, no verde do jogador (o âmbar é o do jogo offline). */
   .play-btn.online { background: var(--green); box-shadow: 0 0 24px rgba(57,255,106,.35); }
-  .stages li.done span { color: var(--green); }
   /* Marco: quando um marco novo entra, ele aparece dentro da própria seção que ele completa. */
   .milestone { padding: 12px 16px; color: var(--text); font-size: 13.5px; max-width: 90ch; margin: 14px 0; border-left: 3px solid var(--green); }
   .milestone code { color: var(--green); }
-  .stages li.done { color: var(--muted); }
   .then { color: var(--muted); font-size: 13px; }
   .pulse { margin: 0; padding: 0 16px 14px; color: var(--green); font-size: 12px; letter-spacing: .06em; }
   .pulse::before { content: '● '; }

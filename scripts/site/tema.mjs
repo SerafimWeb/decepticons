@@ -126,10 +126,32 @@ export const BASE_CSS = `
   footer { color: var(--faint); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; }
   footer a { color: var(--muted); }
 
+  /* Anti-cópia (pedido do dono, 27/09/2026): o texto público não é selecionável nem arrastável.
+     É fricção contra quem tenta clonar o texto com o mouse — não é segurança: quem lê o código-fonte
+     da página continua lendo o HTML, porque HTML é texto por definição. O que some é a seleção, o
+     Ctrl+C e o Ctrl+S. Ver a checagem em scripts/site.mjs (--check e --verify). */
+  .wrap, .wrap * { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+  .wrap img { -webkit-user-drag: none; }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 `;
+
+/**
+ * O JavaScript da anti-cópia: sem seleção, o Ctrl+C não tem o que levar. Bloqueia os eventos de cópia
+ * (mouse ou teclado), o recorte e o arrasto; Ctrl/Cmd+A, +C, +X e +S caem no mesmo bloqueio. De
+ * propósito **não** bloqueia o menu do botão direito nem o Ctrl+U: não impedem ninguém de ler o HTML e
+ * quebram o uso normal da página (abrir um link em outra aba, inspecionar o próprio jogo).
+ */
+const ANTI_COPY_JS = `(() => {
+  const bloqueia = (e) => e.preventDefault();
+  for (const tipo of ['copy', 'cut', 'dragstart', 'selectstart']) addEventListener(tipo, bloqueia, true);
+  addEventListener('keydown', (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+    if ('acxs'.includes(e.key.toLowerCase())) e.preventDefault();
+  }, true);
+})();`;
 
 const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -166,6 +188,7 @@ ${FONTS}
 <div class="wrap">
 ${body}
 </div>
+<script>${ANTI_COPY_JS}</script>
 ${script ? `<script>${script}</script>` : ''}
 </body>
 </html>
