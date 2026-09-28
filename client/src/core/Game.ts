@@ -56,6 +56,8 @@ import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { Match } from '../sim/Match';
+import { gameModeFromSearch, type GameMode } from '../sim/gameMode';
+import { SURVIVAL_MAX_ANDROIDS, SURVIVAL_MAX_MECHS } from '../sim/SurvivalWaves';
 import { HangarMenu } from '../ui/HangarMenu';
 import { HangarScene } from '../hangar/HangarScene';
 
@@ -96,6 +98,7 @@ export class Game {
   private readonly particles = new ParticleSystem();
   /** A partida (sem tela): arena, bots, tiros, dano, rodadas. As partes abaixo são atalhos para ela. */
   private readonly match: Match;
+  private readonly gameMode: GameMode;
   private readonly debris: DebrisSystem;
   private readonly projectiles: ProjectileSystem;
   private readonly rockets: RocketSystem;
@@ -138,6 +141,7 @@ export class Game {
   private appliedQuality: QualityPreset | null = null;
 
   private playing = false;
+  private missionEnded = false;
   /** O galpão 3D do Hangar (feito na primeira vez que abre) e se ele está na tela no lugar da arena. */
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
@@ -195,7 +199,12 @@ export class Game {
     const publicServer = import.meta.env.VITE_GAME_SERVER;
     const net = onlineConfig(location.search, location.hostname, publicServer);
     const online = net && !('error' in net) ? net : null;
-    const foes = online ? { ...this.settings.value, enemyMechs: 0, enemyAndroids: 0, technician: false } : this.settings.value;
+    this.gameMode = online ? 'deathmatch' : gameModeFromSearch(location.search);
+    const foes = online
+      ? { ...this.settings.value, enemyMechs: 0, enemyAndroids: 0, technician: false }
+      : this.gameMode === 'survival'
+        ? { ...this.settings.value, enemyMechs: SURVIVAL_MAX_MECHS, enemyAndroids: SURVIVAL_MAX_ANDROIDS, technician: false }
+        : this.settings.value;
     // Potências do painel (por arma e por clã): montadas uma vez, aqui; mudam ao reiniciar. Online, o padrão do servidor.
     const power = online ? defaultPower() : this.power.current;
     this.match = new Match({
@@ -204,6 +213,7 @@ export class Game {
       particles: this.particles,
       foes,
       power,
+      mode: this.gameMode,
       ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY } : {}),
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets } = this.match);
@@ -227,7 +237,7 @@ export class Game {
       };
       b.onLand = () => this.audio.playAndroidStep(this.nearness(b));
     }
-    this.roundHud = new RoundHud(this.mech);
+    this.roundHud = new RoundHud(this.mech, this.gameMode === 'deathmatch');
     // Botão na tela de pausa; a calibração tem camada própria e não retoma o jogo.
     new MouseCalibration(this.settings, [
       document.getElementById('btn-settings')!,
@@ -285,11 +295,13 @@ export class Game {
     this.assist = new AimAssist(physics, this.mech, this.bots.mechs);
 
     this.wireEvents();
+    this.configureModeSwitch();
     // Celular e tablet (toque é o ponteiro principal) começam no modo toque; o toque ou o clique
     // que inicia a partida confirma o modo (notebook com tela de toque continua no mouse).
     this.setTouchMode(matchMedia('(hover: none) and (pointer: coarse)').matches);
     this.hud.setMode(this.rig.mode);
     this.hud.setReady(this.input.touchMode);
+    this.hud.setMissionMode(this.gameMode === 'survival');
     this.hud.setBuild(`CYBERMECH ${import.meta.env.VITE_BUILD ?? 'dev'} · © ${new Date().getFullYear()} SERAFIM WEB`);
 
     this.quality = new Quality(
@@ -441,7 +453,7 @@ export class Game {
     this.player.keys = s.keys;
     this.bots.setSkill(BOT_SKILLS[s.difficulty]);
     this.bots.setPersonas(s.enemyPersonas);
-    this.bots.maxAttackers = s.maxAttackers;
+    if (!this.match.waves || this.match.waves.phase !== 'active') this.bots.maxAttackers = s.maxAttackers;
     this.debugPanel.setVisible(s.showPerf);
     this.audio.setVolume(s.volume);
     if (s.quality !== this.appliedQuality) {
@@ -539,6 +551,15 @@ export class Game {
       this.audio.playExplosion(dist);
     };
     this.match.onRoundStart = () => this.startRound();
+    this.match.onWaveStart = (wave, total, _mechs, _androids, title) => this.hud.setMissionWave(wave, total, title);
+    this.match.onWaveProgress = (wave, killed, total, elapsedS) => this.hud.setMissionProgress(wave, killed, total, elapsedS);
+    this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
+    this.match.onMissionEnd = (survived, waveReached, stats) => {
+      this.missionEnded = true;
+      this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds);
+      this.setPlaying(false);
+      this.input.exitLock();
+    };
     this.match.onPropBroken = (_id, center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
       if (falloff > 0) rig.addShake(0.55 * falloff);
@@ -588,6 +609,13 @@ export class Game {
   }
 
   private resume(): void {
+    if (this.missionEnded) {
+      this.missionEnded = false;
+      this.match.restartMission();
+      this.player.launcher.refill();
+      this.hud.setScore(0, 0);
+      this.hud.resetMission();
+    }
     // Primeira partida da sessão: vinheta da marca (o clique é o gesto que libera o som). O mouse já
     // fica preso agora (o Pointer Lock só pode ser pedido dentro do clique); o mundo espera a vinheta.
     if (!this.brandShown) {
@@ -601,6 +629,22 @@ export class Game {
       this.input.requestLock(); // no toque: marca "jogando" e dispara onLockChange(true)
     } else if (this.rig.mode.pointerLock) this.input.requestLock();
     else this.startPlaying();
+  }
+
+  private configureModeSwitch(): void {
+    const button = document.getElementById('btn-mode')!;
+    button.textContent = this.gameMode === 'survival' ? '[ MODO: SOBREVIVÊNCIA · TROCAR ]' : '[ MODO: ARENA · TROCAR ]';
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const url = new URL(location.href);
+      if (this.gameMode === 'survival') url.searchParams.delete('modo');
+      else {
+        url.searchParams.set('modo', 'survival');
+        url.searchParams.delete('sala');
+        url.searchParams.delete('servidor');
+      }
+      location.assign(url);
+    });
   }
 
   /** Começa a partida, a não ser que a vinheta ainda esteja na tela (ela chama afterBrand no fim). */

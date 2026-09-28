@@ -1,5 +1,13 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] Sobrevivência solo chega primeiro, com pool fixo e cinco ondas (Codex)
+**Pedido do dono:** assumir a tarefa antes destinada ao Claude e entregar fases/missões jogáveis, sem deixar a parte visual separada da regra.
+**Decisão:** o primeiro corte é **solo/offline e completo de ponta a ponta**. `SurvivalWaves` roda no tick fixo do `Match`, sem relógio real ou sorteio: cinco ondas de 2, 3, 4, 5 e 6 inimigos, preparação de 3 s, intervalo de 4 s, derrota sem respawn e resumo com abates, dano e tempo. O servidor não anuncia esse modo ainda; isso fica explícito no `STATUS_REAL.md` até existir contrato de sala e eventos de missão.
+**Desempenho:** os 3 Mechs e 3 andróides máximos são criados uma vez na entrada. Entre ondas, `BotSystem.setRoster` só liga/desliga collider, raiz e cérebro; unidades inativas pulam o tick de IA/controller. O teto é seis inimigos simultâneos, os callbacks de progresso são limitados a 10 Hz e o HUD só escreve quando o texto muda. Não há `new` no tick nem no quadro por causa da missão.
+**Interface:** `[ MODO: ARENA · TROCAR ]` alterna pelo link `?modo=survival`; o HUD é alimentado por `onWaveStart`, `onWaveProgress`, `onWaveClear` e `onMissionEnd`, e a mesma tela reinicia a tentativa sem recarregar malhas ou física. Captura real do navegador headless em `.decepticons/arte/survival-waves.png`.
+**Verificação:** testes puros cobrem conclusão, derrota e reset; teste de integração com Rapier confirma a composição das duas primeiras ondas e que inimigos fora do plano não renascem. `npm run check` verde: 230 testes, painel, build (262,2 KB JS gzip; 719,4 KB Wasm gzip), smoke real e validação completa do site. Captura headless sem erro de página.
+**Quem decidiu:** dono (prioridade e autorização para o Codex assumir a regra); Codex (corte offline primeiro, progressão, pool e implementação).
+
 ## [2026-09-28] Treino manual de mira integrado na main (Codex)
 **Estado:** PR #95 mergeado (77c078b), CI verde (224 testes e todas as etapas de check), revisão cruzada sem bloqueios. O job de deploy e a conferência do site passaram (run 36365685940). Próximo passo: playtest do dono em https://www.selvamkt.com.br/cybermech/jogar/; captura headless não substitui esse playtest. Sem novas decisões de gameplay ou custo de CPU.
 

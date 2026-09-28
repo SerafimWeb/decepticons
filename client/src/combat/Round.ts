@@ -59,6 +59,11 @@ export class Round {
     if (k) k.kills++;
   }
 
+  /** Zera o placar sem trocar a rodada (reinício de missão). */
+  resetScores(): void {
+    for (const r of this.rows) r.kills = r.deaths = 0;
+  }
+
   /** Placar: mais abates primeiro; empate, menos mortes; depois a ordem de entrada. */
   standings(): readonly Readonly<Standing>[] {
     return [...this.rows].sort((a, b) => b.kills - a.kills || a.deaths - b.deaths);
@@ -75,7 +80,7 @@ export class Round {
     this.phase = 'playing';
     this.timeLeft = this.durationS;
     this.number++;
-    for (const r of this.rows) r.kills = r.deaths = 0;
+    this.resetScores();
     return 'started';
   }
 }

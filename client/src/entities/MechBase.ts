@@ -443,6 +443,16 @@ export abstract class MechBase {
     this.refreshParts();
   }
 
+  /**
+   * Retira uma unidade pré-alocada da simulação sem destruí-la. Modos por ondas usam isto para manter
+   * um pool fixo de Mechs: sem `new`, sem corpo físico novo e sem render enquanto a unidade está fora.
+   */
+  deactivate(): void {
+    this.modules.torso = 0;
+    this.die();
+    this.refreshParts();
+  }
+
   private die(): void {
     this.collider.setEnabled(false);
     this.root.visible = false;
