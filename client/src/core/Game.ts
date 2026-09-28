@@ -116,7 +116,7 @@ export class Game {
   private readonly hud = new HUD();
   private readonly modeSelector = new ModeSelector();
   private readonly missionHud = new MissionHUD();
-  private readonly ctfHud = new CtfHud();
+  readonly ctfHud = new CtfHud();
   private readonly dailyChallenges = new DailyChallenges();
   private readonly killFeed = new KillFeed();
   /** Jogo online (M4): a sessão com o servidor, ou null no jogo de sempre. */
@@ -513,7 +513,7 @@ export class Game {
     this.match.onMechHit = (e) => {
       if (e.shooter === mech) {
         this.hud.showHit(e.result);
-        this.dailyChallenges.trackDamage(e.result.damage);
+        this.dailyChallenges.trackDamage(e.result.applied);
         // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar)
         this.audio.playHit();
       }

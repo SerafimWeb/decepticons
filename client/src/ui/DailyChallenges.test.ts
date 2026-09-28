@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DailyChallenges, defaultChallenges } from './DailyChallenges';
+import { DailyChallenges } from './DailyChallenges';
 
 describe('DailyChallenges (Progresso do Piloto & Missões Diárias)', () => {
   it('inicializa com nível 1 e desafios padrão', () => {
