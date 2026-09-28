@@ -110,6 +110,15 @@ plataforma no alto de um prédio** — o que também dá à arena um motivo para
 em cada estado**: o cliente deriva a porcentagem da taxa conhecida mais os eventos (pousou/levantou/vazia); se a deriva
 incomodar, um byte no registro leve (11 B = 66 B/s por drone; 8 drones = 528 B/s, **84%** da meta — ainda cabe).
 
+**Terceira rodada (dono, 27/09, à noite):** a bateria ganhou número — **70 a 80% do tempo de partida** (210 a 240 s de voo
+numa rodada de 5 min) —, o **piloto automático volta para a base entre 15 e 10%**, e **cada lado tem a sua base** de recarga no
+alto (não é ponto disputado), com um **canhão de defesa** leve que existe para **expulsar drone do outro time**: por decisão,
+ele **engaja drone e mais nada** — Mech e andróide não são alvo. E os **andróides mecânicos do próprio lado também dão carga
+no drone**: a base é o posto fixo, o andróide é a recarga móvel. O drone **conta na partida**; **modos só de drone** ficam
+registrados como ideia no § 10, sem prioridade. Custo de tudo isso: a base e o canhão são **pontos fixos da arena → 0 B/s de
+estado**, como as zonas; o disparo do canhão é **evento** (`SHOT`, o mesmo caminho das armas) e o alvo é uma lista curta de
+drones — o "não pesa no jogo", que o dono pediu, em números. Ficha: `fichas/drone.md` (§ 4.1, § 9 e metas 10 a 13).
+
 Fui ler o grafo 3D do pipeline ABBADON (`D:\SERAFIMHUB\sterm-1`) e a "navegação por drone" de lá. Veredito curto: **o
 drone do STERM é uma câmera sobre trilhos, não uma unidade de combate** — não tem navmesh, busca de caminho, desvio de
 obstáculo nem física (é um Catmull-Rom pré-calculado + `lerp`, com a máquina de estados `panorama → approach → inspect
@@ -192,7 +201,9 @@ isso cabe na banda se valer uma regra só: **só o que se move precisa de bytes 
 | Torres | posição fixa da arena (uma vez); vida/calor num estado curto e disparo/quebra por evento | ~0–3 B por torre | Claude (sim) + Codex (visual) |
 | Zona de regeneração | volume fixo da arena, definido uma vez; quem cura é o servidor (autoridade) | **0 B** | Claude |
 | Zona de resfriamento | idem, volume estático; dá bônus de resfriamento dentro dele (o `coolingBoost` de `combat/heat.ts` já existe) | **0 B** | Claude |
-| **Plataforma de recarga do drone** | ponto fixo **no alto** (prédio/torre) que só o drone alcança; quem recarrega é o servidor e o saldo sai dos eventos (pousou/levantou) | **0 B** (posição fixa, como as zonas) | Claude (sim) + Codex (a altura no cenário) |
+| **Base de recarga do drone** (uma por lado) | ponto fixo **no alto** (prédio/torre) que só o drone alcança; quem recarrega é o servidor e o saldo sai dos eventos (pousou/levantou/cheia); **é de cada lado, não é disputada** | **0 B** (posição fixa, como as zonas) | Claude (sim) + Codex (a altura no cenário) |
+| **Canhão de defesa da base** | engaja **só drone** (é filtro de alvo, não de distância); posição fixa, mira no servidor, disparo por evento; sem corpo rígido e sem alocação por tiro | **0 B** de estado — o tiro é o `SHOT` que já existe | Claude (sim) + Codex (visual) |
+| **Recarga pelo andróide** | o andróide mecânico do próprio lado dá carga no drone (recarga móvel): raio de proximidade dentro do `Match.step()`, sem física nova | **0 B** (o andróide já está na lista de unidades) | Claude (sim) |
 | Andróide **entra** no Mech | o andróide **sai da lista de unidades** enquanto está dentro; o Mech ganha a bandeira "tem piloto" (o byte de flags usa 4 dos 8 bits) | **−456 B/s** enquanto dentro: **economiza** | Claude (sim) + Gemini (tecla/HUD) |
 | Andróide **sai** do Mech | evento de spawn do andróide no ponto do Mech | 1 evento | Claude |
 | Entrada dos bots no cenário | o **visual** (cápsula, portão, descida de órbita) é do Codex; **onde e quando** nascem é do diretor de ataque (`adaptive-ai-director`, § 2) | a do `SPAWN` que já existe | Codex (visual) + Claude (regra) |
@@ -243,8 +254,9 @@ Direções futuras, não funcionalidades anunciadas nem decisões de implementa�
 |---|---|---|---|
 | Mapas maiores e mais jogadores | Escalar por medição; não escolher número-alvo sem teste | Medir CPU do tick, banda e render; otimizar AoI/delta e streaming por setor; testar latência sob carga antes de elevar o teto | Claude: rede/simulação; Codex: render/streaming; Qwen: orçamento; dono valida hardware |
 | Mech com piloto e artilheiro | Piloto conduz e orienta casco; artilheiro controla mira e armas; bot pode ocupar um posto | Contrato de entradas por papel, autoridade, reconexão e saída de ocupante; protótipo em sala privada com bots e dois clientes | Claude: sim/protocolo; Gemini: UI/HUD; Codex: cockpit/visuais |
-| Drones voadores pequenos | **Papel definido pelo dono (27/09): uma função por drone — reconhecimento, ataque e recuperação de vida —, na escala dos andróides (1 a 2 m de largura) e com tiro fraco, o do andróide** (§ 8) | Limitar quantidade e frequência de estado; silhuetas legíveis e caber no G11 (a conta está na § 8.2: 10 bytes a 5 Hz, 60 B/s por drone) | Claude: voo/rede; Codex: rig/FX; Gemini: HUD; Qwen: orçamento/testes |
+| Drones voadores pequenos | **Papel definido pelo dono (27/09): uma função por drone — reconhecimento, ataque e recuperação de vida —, na escala dos andróides (1 a 2 m de largura) e com tiro fraco, o do andróide** (§ 8). **Bateria de 70 a 80% da partida, volta automática entre 15 e 10%, base de recarga de cada lado com canhão que só engaja drone, e recarga também pelo andróide** (§ 8, § 9; `fichas/drone.md` § 4.1) | Limitar quantidade e frequência de estado; silhuetas legíveis e caber no G11 (a conta está na § 8.2: 10 bytes a 5 Hz, 60 B/s por drone); base e canhão como pontos fixos (0 B/s) | Claude: voo/rede; Codex: rig/FX; Gemini: HUD; Qwen: orçamento/testes |
 | Veículos de transporte | Levar Mechs, andróides e tropas por setores | Embarcado não executa movimento independente; definir autoridade, colisão, embarque/desembarque e limite de ocupantes | Claude: física/rede; Codex: modelos visuais; Gemini: controles/HUD |
 | Sobrevivência por fases | Operações contra andróides humanoides, humanos e Mechs, inspiradas no gênero de *Project Zomboid* | Definir “humanos” (NPC/jogadores), câmera, objetivos, progressão e persistência em ficha curta; não assumir MMO persistente | Dono: escopo; Claude: missão/servidor; Codex: cenários/ameaças; Gemini: fluxo; Qwen: balanço |
+| Modos só de drone | Partida em que **todos voam** (o dono citou em 27/09, ao decidir que o drone conta na partida) | Depende do drone existir e da bateria/base provarem o ritmo; a conta de banda do enxame (§ 8.2) é o teto a respeitar | Dono: escopo; Claude: sim/rede; Gemini: HUD; Qwen: balanço |
 
 **Ordem técnica sugerida, não priorizada pelo dono:** medir online real; obter baseline de carga; prototipar dupla em sala privada; especificar loop de missão antes de criar campanha; fechar orçamento/autonomia do drone e contrato de ocupação antes de drones e transporte.
