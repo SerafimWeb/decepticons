@@ -1,7 +1,7 @@
 # ESTADO ATUAL — CYBERMECH
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
-**Última atualização:** 2026-09-28
+**Última atualização:** 2026-09-29
 **Iteração atual:** Fase 5 tem Sobrevivência, CTF solo, câmera de abate offline e o painel do alvo (legibilidade do dano) no cliente; servidor no ar 24 h.
 
 ---
@@ -503,7 +503,14 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
   funcionando; XP/créditos continuam em `localStorage` por enquanto.
 - **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
 - **Codex:** concluir PR visual do Colossus-01 e, depois do merge, iniciar o encontro offline determinístico com IA própria, pontos fracos e câmera de escala 3. A arma, números e modo assimétrico seguem decisões abertas.
-- **Claude:** definir e implementar o contrato autoritativo para escolher o modo da sala e transportar as transições de onda/objetivo; completar o online. Sincronizar máquina de estados de Ondas da simulação.
+- **Claude (atualizado 29/09, o que ficou desta sessão):** três frentes abertas, nenhuma decidida ainda —
+  (1) **Mech parado afunda no chão** (achado, não corrigido; ver "DECISÕES EM ABERTO", precisa de tempo
+  dedicado ao character controller do Rapier); (2) **arma de assinatura por fabricante** (ofereci propor
+  2-3 conceitos concretos — Vanta/guerra eletrônica, Forge/impacto — dono ainda não respondeu); (3) **Mech
+  de tripulação do Colossus** (piloto + artilheiros, priorizado pelo dono para depois do solo, que já está
+  no ar). Mais antigo, ainda válido: definir e implementar o contrato autoritativo para escolher o modo da
+  sala e transportar as transições de onda/objetivo; completar o online; sincronizar máquina de estados de
+  Ondas da simulação.
 - **Qwen:** a fila do `DIVERSAO.md` § 10 — **item 2 (conserto da progressão)** e adiante; o item 1 já tem a metade de HUD no jogo (painel do alvo) e a metade visual (sinais no próprio modelo) segue com a frente visual.
 - **Dono (primeiro de tudo, 28/09):** **reiniciar o servidor de jogo de casa** para ele passar a responder
   `/status` — até lá a página diz "SERVIDOR ONLINE · SEM CONTAGEM DE PILOTOS" (online, sem o número).
