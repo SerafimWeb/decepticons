@@ -26,6 +26,7 @@ import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
 import { PlayerController } from '../player/PlayerController';
 import { DamageIndicator } from '../ui/DamageIndicator';
+import { TargetPanel } from '../ui/TargetPanel';
 import { HUD } from '../ui/HUD';
 import { KillFeed } from '../ui/KillFeed';
 import { MouseCalibration } from '../ui/MouseCalibration';
@@ -135,6 +136,7 @@ export class Game {
   private readonly online: OnlineSession | null;
   private readonly netStatus = document.createElement('div');
   private readonly damageIndicator = new DamageIndicator();
+  private readonly targetPanel = new TargetPanel();
   private readonly debugPanel = new DebugPanel();
   private readonly audio = new AudioSystem();
   /** Vinheta da SERAFIM WEB antes da primeira partida da sessão. */
@@ -801,9 +803,11 @@ export class Game {
     const s = this.settings.value;
     const touch = this.input.touchMode && this.playing;
     const engaged = this.input.virtualMoveX !== 0 || this.input.virtualMoveZ !== 0 || this.touch.aiming || this.input.virtualFire;
+    let aimed: MechBase | undefined;
     if (!this.playing) this.assist.reset();
     else {
       const target = this.combat.mechOf(this.rig.aim.target);
+      aimed = target;
       const pull = this.assist.update(dt, this.camera, this.rig.look, target, touch && s.touchAimAssist, engaged);
       this.rig.nudge(pull.yaw, pull.pitch);
       // Mira no ponto antecipado: o tiro vai até a distância do alvo, não até a parede atrás dele.
@@ -812,6 +816,8 @@ export class Game {
         this.rig.aim.point.copy(this.camera.getWorldPosition(_aimFrom)).addScaledVector(_aimDir, this.assist.aimDist);
       }
     }
+    // O painel do alvo mostra o que já vem no estado — partes, calor e bandeiras — sem custo de rede.
+    this.targetPanel.update(dt, this.playing && this.mech.alive ? (aimed ?? null) : null);
     this.input.autoFire = touch && s.touchAutoFire && this.assist.fireReady;
     this.hud.setOnTarget(this.assist.onTarget);
     if (this.assist.onTarget) this.onboarding.trigger('aim');

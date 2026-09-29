@@ -2,7 +2,7 @@
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
 **Última atualização:** 2026-09-28
-**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo e câmera de abate offline jogáveis no cliente; servidor no ar 24 h.
+**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo, câmera de abate offline e o painel do alvo (legibilidade do dano) no cliente; servidor no ar 24 h.
 
 ---
 
@@ -18,6 +18,20 @@
 
 ---
 
+- **O alvo fica legível, e a escala 3 já tem decisão (Qwen, 28/09).** Na mesma mensagem o dono decidiu duas coisas: **a
+  escala 3 é encontro e, depois, Mech de tripulação** (vários jogadores na mesma máquina, um por arma ou papel), e a
+  fila de trabalho é a do `DIVERSAO.md` § 10, *"a mais prioritária e sequencial possível"*. Ele liberou as frentes do
+  **Claude e do Gemini** (pararam por crédito), então o item 1 da fila começou pela metade de HUD:
+  - `client/src/ui/TargetPanel.ts` (+ 8 testes) mostra, do inimigo sob a mira, **as 6 partes** (barra de 10 blocos,
+    `✗` na parte destruída), **o calor** e as **bandeiras** (`SUPERAQUECIDO · TRAVADO`, `EM DASH`), com o chassi no
+    topo — a informação que transforma "mirei na perna" em decisão informada.
+  - **Custo zero:** é tudo o que **já vinha no estado da rede** (19 B por unidade) — nenhum byte a mais, nenhuma regra
+    nova, nenhuma alocação por quadro (o texto é remontado a 10 Hz).
+  - **Prova:** captura real no jogo em `arte/alvo-legivel.png` (o quadro pegou o rebelde **travado**, com o torso
+    avariado). Caminho: `/jogar/` → mirar um inimigo. **Não leio imagem: o veredito estético é do dono.**
+  - `STATUS_REAL.md` marca **PARCIAL**: falta a outra metade do item 1 — os sinais no próprio modelo (fumaça na parte
+    avariada, mancar, arma pendurada, vapor de quem vai travar), frente visual.
+  - **Próximo da fila:** item 2, o conserto da progressão (XP por jogar, onda contada, gancho de "conquistado jogando").
 - **A ficha do CTF confere com o código: 12 dos 15 testes estão travados (Qwen, 28/09).** Auditoria item por item da
   `fichas/ctf.md` § 4 contra `client/src/sim/CaptureTheFlag.test.ts` (11 testes) e o teste de integração do CTF no
   `Match` — o mapa item → teste está na § 5 da ficha. **O item 1 é o único offline em aberto** (contrato: partida de

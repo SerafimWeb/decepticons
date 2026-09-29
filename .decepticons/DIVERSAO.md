@@ -73,7 +73,10 @@ rápido e frágil, que avança) entrega as duas coisas que a estratégia pede **
 (Codex), ficha (Qwen).
 **A escala 3 (Colossus-01) é outra conversa:** não é "mais um inimigo", é **encontro** — o alvo que precisa de dois
 pilotos e vinte segundos de fogo. É a âncora natural do co-op e da onda-chefe; solta num deathmatch 1v1, vira
-frustração (e o teto de corpos vivos já é apertado: 3 Mechs + 3 andróides).
+frustração (e o teto de corpos vivos já é apertado: 3 Mechs + 3 andróides). **O dono confirmou em 28/09:** a escala
+3 é encontro **e**, depois, **jogável com tripulação** — vários jogadores na mesma máquina, cada um cuidando de uma
+arma ou papel (mísseis, metralhadoras, lança-chamas, recuperação). Encontro primeiro; a tripulação é a evolução
+natural da mesma máquina, não um segundo projeto.
 
 **(b) "Desafios e missões na fase" — sim: é a espinha da retenção e a mais barata agora.**
 Ondas já existem (5 ondas, briefing de 3 s, intervalo de 4 s, resumo). **Missão é a mesma casca com um objetivo e um
@@ -195,7 +198,7 @@ Os três primeiros são conserto pequeno e destravam a retenção que já deveri
 
 | # | Item | O que destrava | Custo | Dono |
 |---|---|---|---|---|
-| 1 | **Legibilidade do alvo** (fumaça, mancar, esquema ao mirar, calor do alvo) | melhora o jogo que já existe, valoriza o técnico e a "visão de jogo" | FX + HUD, **0 B** | Codex + Gemini |
+| 1 | ✅ **em execução — a leitura em painel está no jogo** (`ui/TargetPanel.ts`, 8 testes, captura em `arte/alvo-legivel.png`); faltam os sinais no próprio modelo | melhora o jogo que já existe, valoriza o técnico e a "visão de jogo" | FX (visual) | Codex |
 | 2 | **Consertar a progressão** (XP por jogar, onda contada, gancho com chamador) | retenção que já deveria funcionar | pequeno | Gemini |
 | 3 | **Ficha própria dos 3 Mechs rebeldes** (longo / pesado / rápido) | reconhecimento + contra-jogo: a estratégia mais barata que existe | números + silhueta | Claude + Codex + Qwen |
 | 4 | **Recibo da partida + cartão compartilhável** | "quero melhorar" + o motivo de mandar o link | telas, local | Gemini + Claude |
@@ -207,6 +210,11 @@ Os três primeiros são conserto pequeno e destravam a retenção que já deveri
 | 10 | **Escala 3 como encontro cooperativo** | a âncora do co-op e da onda-chefe | grande (já em `codex/colossus-01`) | Codex + Claude |
 
 Depois: contas/loja/cosméticos, MMR, veículos, mapas grandes.
+
+> **Estado da fila (28/09):** o dono aprovou esta ordem — *"a mais prioritária e sequencial possível"* — e liberou as
+> frentes do Claude e do Gemini, que pararam. **Item 1, metade de HUD, feito:** o painel do alvo está no jogo
+> (`client/src/ui/TargetPanel.ts`, 8 testes, captura em `arte/alvo-legivel.png`); faltam os sinais no
+> modelo, na frente visual. O resto da fila segue na ordem acima.
 
 **Como saber se funcionou** (medir, não achar): rodadas por sessão e volta no dia seguinte (as metas da `VISAO.md`);
 **variedade de montagem** (quantas builds diferentes aparecem — mede se a decisão existe); **recorde de ondas** (mede a
@@ -225,10 +233,10 @@ escada); e o **painel de balanço** por arma/chassi que já está na pauta (mede
 
 ## 12. Perguntas para o dono
 
-1. **Escala 3 (Colossus):** entra como **encontro** (onda-chefe/co-op) ou como **chassi jogável**? Muda o desenho
-   inteiro — e o teto de corpos vivos.
-2. **Prioridade:** "melhorar o que existe" (legibilidade + progressão) ou "conteúdo novo" (missão em fases)? Minha
-   recomendação é a primeira: encarece menos e melhora tudo o que já está no ar.
+1. ~~**Escala 3 (Colossus):** entra como **encontro** (onda-chefe/co-op) ou como **chassi jogável**?~~ **Respondido
+   em 28/09:** as duas — **encontro** e, futuramente, **jogável com tripulação** (um jogador por arma/papel).
+2. ~~**Prioridade:** "melhorar o que existe" ou "conteúdo novo"?~~ **Respondido em 28/09:** a ordem deste § 10, *"a
+   mais prioritária e sequencial possível"*.
 3. **Abro as fichas dos três Mechs rebeldes** (CLAWD / GEMINAI / CHAD-GPT) como proposta, para o Codex desenhar e o
    Claude calibrar?
 4. **Modificador semanal** pode ser o primeiro evento público do jogo?
