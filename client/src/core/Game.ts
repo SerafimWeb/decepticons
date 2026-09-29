@@ -537,13 +537,18 @@ export class Game {
     if (!this.match.waves || this.match.waves.phase !== 'active') this.bots.maxAttackers = s.maxAttackers;
     this.debugPanel.setVisible(s.showPerf);
     this.audio.setVolume(s.volume);
-    if (s.quality !== this.appliedQuality) {
+    if (s.quality !== this.appliedQuality && !this.recorder.gravando) {
       this.appliedQuality = s.quality;
-      // 'auto' começa no máximo e deixa a qualidade adaptativa rebaixar (G12); os outros fixam.
-      this.setPixelRatio(s.quality === 'media' ? 1 : s.quality === 'baixa' ? 0.75 : maxPixelRatio());
-      this.bloomPass.enabled = s.quality !== 'baixa';
-      this.quality.setAdaptive(s.quality === 'auto');
+      this.aplicarQualidade(s.quality);
     }
+  }
+
+  /** 'auto' começa no máximo e deixa a qualidade adaptativa rebaixar (G12); os outros fixam. Extraído de
+   * `applySettings` para o "modo captura" da gravação (dono, 28/09) reusar ao restaurar depois do F9. */
+  private aplicarQualidade(quality: GameSettings['quality']): void {
+    this.setPixelRatio(quality === 'media' ? 1 : quality === 'baixa' ? 0.75 : maxPixelRatio());
+    this.bloomPass.enabled = quality !== 'baixa';
+    this.quality.setAdaptive(quality === 'auto');
   }
 
   start(): void {
@@ -714,8 +719,17 @@ export class Game {
         return;
       }
       // Gravação nativa (dono, 28/09): de propósito fora do keys-help da tela inicial — é para uso interno.
+      // "Modo captura": trava a resolução no máximo e desliga o rebaixamento automático (G12) enquanto
+      // grava — sem isso, a própria gravação derruba o FPS, e a qualidade adaptativa reage baixando a
+      // resolução no meio do take (o problema que o dono já tinha descrito do OBS, mas causado pelo jogo).
       if (code === 'F9') {
+        const iniciando = !this.recorder.gravando;
+        if (iniciando) {
+          this.quality.setAdaptive(false);
+          this.setPixelRatio(Math.max(2, window.devicePixelRatio));
+        }
         this.recorder.alternar();
+        if (!iniciando) this.aplicarQualidade(this.settings.value.quality);
         return;
       }
       if (code === 'KeyM' || code === 'KeyB') {

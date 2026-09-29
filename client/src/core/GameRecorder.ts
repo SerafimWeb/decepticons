@@ -11,6 +11,11 @@ import type { AudioSystem } from '../audio/AudioSystem';
  * `keys-help` da tela inicial, um indicador `● REC` aparece só enquanto grava. Nada disso é carregado ou
  * medido para quem não aperta a tecla.
  *
+ * **"Modo captura" (`Game.ts`, no mesmo F9):** trava a resolução no máximo e desliga o rebaixamento
+ * automático de qualidade (G12) enquanto grava — sem isso, a própria gravação derruba o FPS, e a
+ * qualidade adaptativa reagiria baixando a resolução no meio do take (o mesmo problema que o dono já
+ * descrevia do OBS, só que causado pelo próprio jogo se reagindo à carga da gravação).
+ *
  * **Custo:** zero enquanto não está gravando (nenhum listener, nenhum nó extra no grafo de áudio, nenhum
  * quadro extra copiado). Gravando, é o próprio navegador comprimindo em paralelo (thread separada do
  * `MediaRecorder`); o único custo no `frame()` do jogo é um `captureFrame()` — sem ele o `MediaRecorder`
