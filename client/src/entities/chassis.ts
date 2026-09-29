@@ -117,6 +117,58 @@ export const PILOT_ANDROID_STATS: MechStats = {
 };
 
 /**
+ * Arara-B1: chassi leve e ágil de escala 1, batedor — primeiro modelo da **Arara Foundry** (Manaus, ver
+ * `.decepticons/VISAO.md` § fabricantes). Pernas longas, pouca blindagem, dash curto e rápido: sente-se
+ * frágil de propósito — vence pela mobilidade, cai fácil se ficar parado. Usa o blueprint visual próprio
+ * (`LIGHT_MECH_BLUEPRINT`, já existia, nunca tinha sido ligado a um chassi pilotável).
+ */
+export const ARARA_B1_STATS: MechStats = {
+  ...VECTOR09_STATS,
+  name: 'ARARA-B1',
+  moveSpeed: 13,
+  groundAccel: 40,
+  dashSpeed: 42,
+  dashCooldown: 2,
+  height: 4.5,
+  radius: 1.0,
+  weaponCapacity: 8,
+  maxModuleHealth: {
+    torso: 200,
+    head: 70,
+    leftArm: 80,
+    rightArm: 80,
+    leftLeg: 100,
+    rightLeg: 100,
+  },
+};
+
+/**
+ * Onça-B2: chassi pesado de escala 2, resistente e lento — segundo modelo da Arara Foundry. Blindagem
+ * grossa e carga alta, sem a velocidade do Arara-B1; não é o Colossus (escala 3, máquina de cerco de
+ * 14 m) — este é o "pesado" de tamanho normal, do porte de um Mech grande, não de um boss. Usa o
+ * blueprint visual próprio (`HEAVY_MECH_BLUEPRINT`, idem, nunca tinha sido ligado).
+ */
+export const ONCA_B2_STATS: MechStats = {
+  ...VECTOR09_STATS,
+  name: 'ONÇA-B2',
+  moveSpeed: 6,
+  groundAccel: 20,
+  dashSpeed: 25,
+  dashCooldown: 4,
+  height: 6.5,
+  radius: 1.6,
+  weaponCapacity: 16,
+  maxModuleHealth: {
+    torso: 450,
+    head: 150,
+    leftArm: 180,
+    rightArm: 180,
+    leftLeg: 220,
+    rightLeg: 220,
+  },
+};
+
+/**
  * Colossus-01: **máquina de cerco de escala 3 (14 m)**. Nasce como boss da missão (`Vector09` do pool de
  * bots, com o blueprint de 14 m e perfil de cerco) e, desde 29/09, também entra em `CHASSIS` como chassi
  * solo pilotável — os mesmos números, sem cópia.
@@ -154,7 +206,13 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
  * dono sentir a escala antes de qualquer ajuste. O Mech de tripulação (piloto + artilheiros nas armas
  * direcionais, pedido na mesma mensagem) é a próxima etapa — este PR entrega só o solo.
  */
-export const CHASSIS = { vector09: VECTOR09_STATS, android: PILOT_ANDROID_STATS, colossus01: COLOSSUS_BOSS_STATS } as const satisfies Record<string, MechStats>;
+export const CHASSIS = {
+  vector09: VECTOR09_STATS,
+  android: PILOT_ANDROID_STATS,
+  colossus01: COLOSSUS_BOSS_STATS,
+  arara: ARARA_B1_STATS,
+  onca: ONCA_B2_STATS,
+} as const satisfies Record<string, MechStats>;
 export type ChassisId = keyof typeof CHASSIS;
 
 /** O que cada braço aceita em cada chassi: o Hangar só oferece e só valida estas armas. */
@@ -163,4 +221,7 @@ export const ARM_SLOTS: Record<ChassisId, { right: readonly WeaponId[]; left: re
   android: { right: ['blaster'], left: ['chainsaw'] },
   // Sem arma exclusiva (decisão de 29/09 no combate justo): o mesmo plasma/foguetes de qualquer Mech.
   colossus01: { right: ['plasma'], left: ['rockets'] },
+  // Escolha entre dois tipos por braço: o leve ganha opção de arma mais leve (blaster) sem perder o plasma.
+  arara: { right: ['plasma', 'blaster'], left: ['rockets', 'blaster'] },
+  onca: { right: ['plasma', 'rockets'], left: ['plasma', 'rockets'] },
 };

@@ -5,7 +5,7 @@ import { PALETTE } from '../core/palette';
 import { Android } from '../entities/Android';
 import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
 import type { MechBase } from '../entities/MechBase';
-import { COLOSSUS_01_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
+import { COLOSSUS_01_BLUEPRINT, HEAVY_MECH_BLUEPRINT, LIGHT_MECH_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
 import { Vector09 } from '../entities/Vector09';
 import { AIM_TARGET_SPEED, aimTargetDirectionAt, aimTargetXAt } from './aimPractice';
 
@@ -24,7 +24,11 @@ const IDLE_AFTER_DRAG_S = 3;
 /** Robô pequeno (o andróide, 1,6 m) aparece ampliado no pedestal, como num holograma de montagem: dá para ver as peças. */
 const MIN_SHOWN_HEIGHT = 3.2;
 /** Blueprint visual de cada chassi que passa pelo `Vector09` no pedestal (o andróide tem classe própria). */
-const BLUEPRINT_BY_CHASSIS: Partial<Record<ChassisId, MechBlueprint>> = { colossus01: COLOSSUS_01_BLUEPRINT };
+const BLUEPRINT_BY_CHASSIS: Partial<Record<ChassisId, MechBlueprint>> = {
+  colossus01: COLOSSUS_01_BLUEPRINT,
+  arara: LIGHT_MECH_BLUEPRINT,
+  onca: HEAVY_MECH_BLUEPRINT,
+};
 
 const _arm = new THREE.Vector3();
 const _v = new THREE.Vector3();
