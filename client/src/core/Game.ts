@@ -45,7 +45,8 @@ import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
 import { BrandSplash } from '../brand/BrandSplash';
 import { Hangar } from '../hangar/Hangar';
-import { PILOT_ANDROID_STATS, VECTOR09_STATS } from '../entities/chassis';
+import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
+import { COLOSSUS_01_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { PALETTE } from './palette';
@@ -79,6 +80,8 @@ const _hotLeft = { x: 0, y: 0 };
 const MAX_STEPS_PER_FRAME = 4;
 /** Até esta distância (m) o passo de um Mech gigante treme a câmera de quem é pequeno. */
 const GIANT_STEP_RANGE = 25;
+/** Blueprint visual de cada chassi pilotável pelo `Vector09` (o andróide tem classe própria). */
+const BLUEPRINT_BY_CHASSIS: Partial<Record<ChassisId, MechBlueprint>> = { colossus01: COLOSSUS_01_BLUEPRINT };
 /** Resolução máxima do render: acima de 1,5 o custo de GPU sobe muito para pouco ganho visível. */
 const maxPixelRatio = () => Math.min(window.devicePixelRatio, 1.5);
 const THRUSTER_COLOR = new THREE.Color(3.0, 1.0, 0.2);
@@ -259,11 +262,19 @@ export class Game {
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     this.ctfObjectives = this.match.ctf ? new CtfObjectives(this.scene) : null;
-    // O piloto escolhe o chassi (Hangar): Vector-09 ou andróide, sempre nas cores do jogador.
+    // O piloto escolhe o chassi (Hangar): qualquer um em CHASSIS, sempre nas cores do jogador. O andróide
+    // tem classe própria (ferramenta, sem blueprint); os outros passam pelo Vector09 com o blueprint certo
+    // (`BLUEPRINT_BY_CHASSIS`) — sem isso, um chassi novo nasce com a silhueta do Vector-09 esticada (era o
+    // bug do Colossus como boss, achado e corrigido em 29/09).
+    const chassisId: ChassisId = this.hangar.current.chassis;
     this.mech =
-      this.hangar.current.chassis === 'android'
+      chassisId === 'android'
         ? new Android({ stats: poweredStats(PILOT_ANDROID_STATS, power, 'player'), paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout: poweredLoadout(this.hangar.equipped, power, 'player') })
-        : new Vector09({ stats: poweredStats(VECTOR09_STATS, power, 'player'), loadout: poweredLoadout(this.hangar.equipped, power, 'player') });
+        : new Vector09({
+            stats: poweredStats(CHASSIS[chassisId], power, 'player'),
+            loadout: poweredLoadout(this.hangar.equipped, power, 'player'),
+            blueprint: BLUEPRINT_BY_CHASSIS[chassisId],
+          });
     this.match.addPlayer(this.mech, 'VOCÊ', 0, () => this.equipPending());
     // Online, quem faz renascer é o servidor.
     if (online) this.match.respawner.untrack(this.mech);

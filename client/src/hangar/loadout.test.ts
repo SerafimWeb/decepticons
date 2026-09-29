@@ -31,7 +31,7 @@ describe('Hangar: contrato da montagem', () => {
     expect(validateLoadout(null)).toMatchObject({ ok: false, error: 'formato' });
     expect(validateLoadout('v1')).toMatchObject({ ok: false, error: 'formato' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, v: 2 })).toMatchObject({ ok: false, error: 'formato' });
-    expect(validateLoadout({ ...FACTORY_LOADOUT, chassis: 'colossus01' })).toMatchObject({ ok: false, error: 'chassi' });
+    expect(validateLoadout({ ...FACTORY_LOADOUT, chassis: 'ferret' })).toMatchObject({ ok: false, error: 'chassi' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, chassis: '__proto__' })).toMatchObject({ ok: false, error: 'chassi' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'laser', tier: 0 } })).toMatchObject({ ok: false, error: 'arma' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'plasma', tier: 3 } })).toMatchObject({ ok: false, error: 'nível' });
