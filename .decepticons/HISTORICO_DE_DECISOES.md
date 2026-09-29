@@ -1,5 +1,20 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] O tamanho 3 vira inimigo: o Colossus-01 entra como boss da Sobrevivência (Qwen)
+**Pedido do dono:** *"quero que conclua o tamanho 3 dos bots (colossus)"* — depois de resolver os conflitos e as pendências abertas, com a meta declarada de *"lançarmos uma versão jogável multiplayer e com os 3 tamanhos disponíveis para testes"*.
+**Decisão:** o Colossus deixa de ser só visual e deixa de ser um "pesado de 6,5 m": entra como **inimigo** no primeiro corte do encontro, **offline**, como a ficha (`fichas/pesado.md` § 4) mandava — pool **pré-alocado** (nada criado no tick), **vaga própria** no recorte da onda e **callbacks** para a interface.
+- **`COLOSSUS_BOSS_STATS`** (`entities/chassis.ts`): 14 m, raio 3,6 m (`radius * 2 < height`, exigência da cápsula do Rapier), **5 m/s**, sem pulo nem dash, **pernas 600 e torso 1 600** — derrubar é derrubar as pernas, que é o que a ficha promete ("giro lento, flanco exposto"). Fica **fora de `CHASSIS`** de propósito: não é chassi de Hangar.
+- **`BOSS_PROFILE`** (`combat/BotController.ts`): 46 m de alcance, 24 m de distância mínima, `dodgeChance: 0` — domina o espaço e **não desvia**; quem chega perto é que tem chance.
+- **`BotSystem`**: o boss nasce **uma vez**, no ponto dedicado (`COLOSSUS_SPAWN`), com nome próprio (`COLOSSUS-01`) e sem personalidade de piloto (não é um rebelde, é uma máquina); `setRoster(mechs, androids, boss)` o conta na vaga dele, então **nas ondas 1 a 5 ele fica desativado** como o resto do pool.
+- **`SurvivalWaves`**: **onda 6 — "COLOSSUS-01 · CERCO"**, com dois andróides de escolta; a missão **só termina quando ele cai** (teste próprio). A tela deixou de mentir: o contrato `onWaveStart` ganhou o número de ondas e o HUD escreve `ONDA 6/6` em vez do "/5" fixo.
+**Consequência assumida (e travada em teste):** com o dobro da altura de um Vector-09, o Colossus **esmaga um Mech parado em dois passos** — é a mesma regra do pisão, agora com o maior de todos. Se o dono preferir um Colossus que não pise, é uma linha no `CrushRule`; por ora está documentado na ficha e no `STATUS_REAL.md`.
+**De graça:** o **painel do alvo** entregue hoje de manhã (PR #116) já mostra as 6 partes, o calor e as bandeiras do Colossus — nenhuma linha nova para isso.
+**Falta (registrado no `ROADMAP.md` e no `STATUS_REAL.md`):** máquina de fases própria (hoje a IA é a comum, com perfil de cerco), pontos fracos/respiros, arma assinatura, HUD de chefe com barra e o **modo assimétrico online** — que é o que falta para a meta dos "3 tamanhos no multiplayer".
+**Pendências de integração zeradas nesta sessão:** #110 fechado por obsoleto, os três branches órfãos do Gemini (25/09, sem PR, conteúdo refeito na `main`) declarados mortos e apagados (regra 15) — **zero PRs abertos e nada fora da `main`**. Achado de caminho (R17): o `node_modules` compartilhado estava **incompleto** (faltavam 7 pacotes e o `.bin`), o que quebrava `npm run` para qualquer agente; reparado com `npm install` na raiz, **sem tocar no `package-lock.json`**.
+**Desempenho:** nenhuma alocação por tick (o boss entra no pool já criado), nenhum draw call novo (o rig de 14 m veio no PR #113) e nenhum byte a mais na rede (é uma unidade como as outras).
+**Prova:** `npm run typecheck` limpo e **373 testes verdes**, incluindo 3 novos do pool/boss (`combat/colossusBoss.test.ts`, com o ponto de nascimento medido para a cápsula de 14 m) e 1 novo da onda (`sim/SurvivalWaves.test.ts`). Falta o playtest do dono: `?modo=survival`, chegar à onda 6 e derrubar as pernas dele.
+**Quem decidiu:** dono (o tamanho 3 como inimigo e a prioridade); Qwen (os números de partida, o perfil de cerco, a vaga no pool, a onda 6 e os testes).
+
 ## [2026-09-28] Login: SQLite embutido em vez de dependência nova, e o esqueleto antes da tela (Claude)
 **Pedido do dono, decidido junto por três perguntas:** persistência (SQLite no próprio PC do servidor, contra
 Postgres gerenciado), método (e-mail + senha, contra OAuth ou link mágico) e escopo (só o esqueleto — criar

@@ -136,9 +136,9 @@ export class HUD {
     this.cta.textContent = '[ clique para jogar de novo ]';
   }
 
-  setMissionWave(wave: number, total: number, title: string): void {
+  setMissionWave(wave: number, total: number, title: string, waves: number): void {
     this.missionStatus.classList.remove('clear');
-    this.setMissionText(`ONDA ${wave}/5 · ${title.toUpperCase()} · 0/${total}`);
+    this.setMissionText(`ONDA ${wave}/${waves} · ${title.toUpperCase()} · 0/${total}`);
   }
 
   setMissionProgress(wave: number, killed: number, total: number, elapsedS: number): void {

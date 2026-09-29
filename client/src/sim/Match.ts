@@ -26,18 +26,21 @@ import type { GameMode } from './gameMode';
 import {
   SURVIVAL_MAX_ANDROIDS,
   SURVIVAL_MAX_MECHS,
+  SURVIVAL_WAVE_PLANS,
   SurvivalWaves,
   type MissionStats,
   type WavePlan,
 } from './SurvivalWaves';
 
 /**
- * IAs rebeldes na arena: até 3 Mechs, 3 andróides de combate e 1 técnico. Teto: 7 bots + o jogador =
- * 8 character controllers, o tamanho de sala do jogo (G11).
+ * IAs rebeldes na arena: até 3 Mechs, 3 andróides de combate e 1 técnico (ou, na missão, o Colossus de
+ * escala 3 no lugar do técnico). Teto: 7 bots + o jogador = 8 character controllers, o tamanho de sala do jogo (G11).
  */
 export const BOT_SPAWNS = [SPAWN_POINTS[2]!, SPAWN_POINTS[4]!, SPAWN_POINTS[8]!];
 export const ANDROID_SPAWNS = [SPAWN_POINTS[5]!, SPAWN_POINTS[6]!, SPAWN_POINTS[9]!];
 export const TECHNICIAN_SPAWNS = [SPAWN_POINTS[10]!];
+/** O Colossus (escala 3) nasce longe do jogador e de frente para ele: 14 m de cápsula pedem espaço. */
+export const COLOSSUS_SPAWN = [SPAWN_POINTS[7]!] as const;
 /** Dois defensores offline do CTF, perto da base vermelha e sem sobrepor a bandeira. */
 export const CTF_DEFENDER_SPAWNS: readonly (readonly [number, number])[] = [
   [68, -72],
@@ -114,8 +117,11 @@ export class Match {
   onPropBroken?: (id: number, at: THREE.Vector3) => void;
   /** Rodada nova começou (todos já estão de volta aos pontos de nascimento). */
   onRoundStart?: () => void;
-  /** Contrato da interface de missão: nenhuma destas funções pertence à simulação. */
-  onWaveStart?: (wave: number, total: number, mechs: number, androids: number, title: string) => void;
+  /**
+   * Contrato da interface de missão: nenhuma destas funções pertence à simulação. `total` inclui o Colossus
+   * quando a onda tem boss, e `waves` é quantas ondas a missão tem (a tela escreve "ONDA 6/6").
+   */
+  onWaveStart?: (wave: number, total: number, mechs: number, androids: number, title: string, waves: number) => void;
   onWaveProgress?: (wave: number, killed: number, total: number, elapsedS: number) => void;
   onWaveClear?: (wave: number, elapsedS: number) => void;
   onMissionEnd?: (survived: boolean, waveReached: number, stats: MissionStats) => void;
@@ -156,6 +162,7 @@ export class Match {
       spawns: ctf ? CTF_DEFENDER_SPAWNS : BOT_SPAWNS.slice(0, survival ? SURVIVAL_MAX_MECHS : o.foes.enemyMechs),
       androidSpawns: ctf ? [] : ANDROID_SPAWNS.slice(0, survival ? SURVIVAL_MAX_ANDROIDS : o.foes.enemyAndroids),
       technicianSpawns: !survival && !ctf && o.foes.technician ? TECHNICIAN_SPAWNS : [],
+      bossSpawn: survival ? COLOSSUS_SPAWN[0] : undefined,
       respawn: !survival,
       respawnAtHome: ctf,
       personas: o.foes.enemyPersonas,
@@ -167,7 +174,7 @@ export class Match {
     this.waves = survival
       ? new SurvivalWaves({
           onRoster: (plan) => this.applyWaveRoster(plan),
-          onWaveStart: (plan) => this.onWaveStart?.(plan.wave, plan.mechs + plan.androids, plan.mechs, plan.androids, plan.title),
+          onWaveStart: (plan) => this.onWaveStart?.(plan.wave, plan.mechs + plan.androids + (plan.boss ? 1 : 0), plan.mechs, plan.androids, plan.title, SURVIVAL_WAVE_PLANS.length),
           onWaveProgress: (wave, killed, total, elapsedS) => this.onWaveProgress?.(wave, killed, total, elapsedS),
           onWaveClear: (wave, elapsedS) => this.onWaveClear?.(wave, elapsedS),
           onMissionEnd: (survived, stats) => this.onMissionEnd?.(survived, this.waves?.wave ?? 1, stats),
@@ -321,10 +328,11 @@ export class Match {
   }
 
   private applyWaveRoster(plan: WavePlan | null): void {
-    const active = this.bots.setRoster(plan?.mechs ?? 0, plan?.androids ?? 0);
+    const boss = plan?.boss ? 1 : 0;
+    const active = this.bots.setRoster(plan?.mechs ?? 0, plan?.androids ?? 0, boss);
     if (plan) {
       this.bots.maxAttackers = plan.maxAttackers;
-      if (active !== plan.mechs + plan.androids) throw new Error('Pool da missão não cobre o plano da onda');
+      if (active !== plan.mechs + plan.androids + boss) throw new Error('Pool da missão não cobre o plano da onda');
     }
   }
 

@@ -2,12 +2,12 @@ import * as THREE from 'three';
 import { GLOW, PALETTE } from '../core/palette';
 import type { MechBase } from '../entities/MechBase';
 import { Android } from '../entities/Android';
-import { ANDROID_STATS, VECTOR09_STATS } from '../entities/chassis';
+import { ANDROID_STATS, COLOSSUS_BOSS_STATS, VECTOR09_STATS } from '../entities/chassis';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { PERSONA_LABELS, type Persona } from '../core/Settings';
-import { ANDROID_PROFILE, BOT_SKILL_NORMAL, BotController, type BotSkill, MECH_PROFILE, PERSONAS } from './BotController';
+import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BotController, type BotSkill, MECH_PROFILE, PERSONAS } from './BotController';
 import type { CombatSystem } from './CombatSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
 import { REPAIR_RATE } from './repair';
@@ -57,6 +57,8 @@ export interface BotSystemOptions {
   androidSpawns?: readonly (readonly [number, number])[];
   /** Onde cada andróide técnico nasce (x, z): conserta os Mechs rebeldes, não atira. */
   technicianSpawns?: readonly (readonly [number, number])[];
+  /** Onde o Colossus (escala 3) nasce (x, z): um só, com perfil de cerco. Sem isto, a missão não tem boss. */
+  bossSpawn?: readonly [number, number];
   /** Rota de patrulha (x, z). */
   waypoints: readonly (readonly [number, number])[];
   seed?: number;
@@ -89,6 +91,8 @@ export class BotSystem {
   targets: readonly MechBase[] = [];
   readonly mechs: readonly MechBase[];
   private readonly bots: Bot[] = [];
+  /** O Colossus (escala 3), quando a missão tem boss: guardado à parte para o recorte de onda contá-lo. */
+  private bossMech: MechBase | null = null;
   /**
    * Vaga de ataque: quantos podem atacar o mesmo alvo ao mesmo tempo (Mech conta 1, andróide ½). Os
    * outros esperam afastados, sem atirar, e revezam a cada turno (dono, 25/09: "eles são muitos e me
@@ -145,6 +149,15 @@ export class BotSystem {
 
     // Andróides: sementes depois das dos Mechs.
     (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true));
+    // O Colossus (escala 3), quando a missão tem boss: nasce no ponto dedicado, com o perfil de cerco e sem
+    // personalidade de piloto (não é um rebelde, é uma máquina). Entra no pool como os outros: nada é criado no tick.
+    if (o.bossSpawn) {
+      const boss = new Vector09({ paint: BOT_PAINT, visor: PALETTE.signal, stats: poweredStats(COLOSSUS_BOSS_STATS, power, 'mechs') });
+      const home = place(boss, o.bossSpawn);
+      const brain = new BotController(boss, o.physics, waypoints, seed * 1000 + 900, o.skill ?? BOT_SKILL_NORMAL, BOSS_PROFILE, PERSONAS.soldado);
+      this.bots.push({ mech: boss, brain, name: 'COLOSSUS-01', home });
+      this.bossMech = boss;
+    }
     // Técnicos: consertam os Mechs rebeldes; visor amarelo para o jogador achar e caçar primeiro.
     const allies = this.bots.filter((b) => b.mech instanceof Vector09).map((b) => b.mech);
     (o.technicianSpawns ?? []).forEach((p, i) => {
@@ -179,7 +192,7 @@ export class BotSystem {
    * Ativa um recorte do pool por tipo e guarda o restante. Usado apenas entre ondas, nunca cria ou
    * remove objetos. Devolve quantos inimigos ficaram ativos para a regra conferir seu teto.
    */
-  setRoster(mechCount: number, androidCount: number): number {
+  setRoster(mechCount: number, androidCount: number, bossCount = 0): number {
     let mechs = 0;
     let androids = 0;
     let active = 0;
@@ -189,8 +202,9 @@ export class BotSystem {
         if (beam) beam.visible = false;
         continue;
       }
+      // O Colossus tem vaga própria: não é um Mech rebelde, e é a onda que decide se ele entra.
       const android = mech instanceof Android;
-      const enabled = android ? androids++ < androidCount : mechs++ < mechCount;
+      const enabled = mech === this.bossMech ? bossCount > 0 : android ? androids++ < androidCount : mechs++ < mechCount;
       if (!enabled) {
         mech.deactivate();
         continue;
