@@ -18,15 +18,22 @@ export interface MechBlueprint {
   readonly backPack: { readonly width: number; readonly height: number; readonly depth: number };
 }
 
-/** Ferret-X: leve e esguio, com pernas longas e sensores altos. Blueprint visual, sem stats de gameplay. */
+/**
+ * Ferret-X / Arara-B1: leve e esguio — não é o Vector-09 encolhido. Torso pequeno, pernas compridas e
+ * bem digitígradas (joelho invertido, quase de ave), pés e braços finos. Achado do dono (29/09, comparando
+ * lado a lado com o Onça-B2 e o Colossus): as proporções antigas eram quase a mesma forma só escalada —
+ * a mesma armadilha de design que a conversa de referência descreve ("três robôs com ombros diferentes").
+ * Agora a razão largura/altura do torso e o comprimento relativo das pernas são deliberadamente diferentes
+ * do médio e do pesado, não só o tamanho.
+ */
 export const LIGHT_MECH_BLUEPRINT: MechBlueprint = {
   id: 'ferret', label: 'LEVE', referenceHeight: 4.5,
-  torso: { width: 1.28, height: 1.03, depth: 0.94 },
-  head: { width: 0.56, height: 0.43, depth: 0.56, antenna: 0.24 },
-  shoulders: { width: 0.56, height: 0.55, depth: 0.62 }, hips: { width: 0.84, depth: 0.58 },
-  legs: { hipWidth: 0.39, thighWidth: 0.39, shinWidth: 0.28, upperLength: 0.92, lowerLength: 1.08, footLength: 0.83, digitigrade: 0.32 },
-  arms: { mountX: 0.96, upperWidth: 0.34, upperLength: 0.72, forearmWidth: 0.42, forearmDepth: 0.82 },
-  vents: { count: 3, width: 0.12, height: 0.34 }, backPack: { width: 0.68, height: 0.82, depth: 0.48 },
+  torso: { width: 1.0, height: 0.85, depth: 0.72 },
+  head: { width: 0.46, height: 0.38, depth: 0.5, antenna: 0.42 },
+  shoulders: { width: 0.4, height: 0.4, depth: 0.46 }, hips: { width: 0.6, depth: 0.42 },
+  legs: { hipWidth: 0.3, thighWidth: 0.24, shinWidth: 0.17, upperLength: 1.35, lowerLength: 1.55, footLength: 0.6, digitigrade: 0.55 },
+  arms: { mountX: 0.68, upperWidth: 0.22, upperLength: 0.56, forearmWidth: 0.28, forearmDepth: 0.56 },
+  vents: { count: 3, width: 0.1, height: 0.3 }, backPack: { width: 0.56, height: 0.68, depth: 0.4 },
 };
 
 /** Vector-09: assalto médio, mantendo a proporção visual aprovada do modelo atual. */
@@ -40,15 +47,20 @@ export const MEDIUM_MECH_BLUEPRINT: MechBlueprint = {
   vents: { count: 2, width: 0.16, height: 0.42 }, backPack: { width: 1.02, height: 0.86, depth: 0.62 },
 };
 
-/** Pesado padrão: largo e blindado, ainda uma classe de escala 2. Blueprint visual, sem stats. */
+/**
+ * Onça-B2: pesado de escala 2 — baixo, largo e atarracado, não o médio esticado. Torso alto e fundo,
+ * pernas curtas e grossas com pés grandes (estabilidade, centro de massa baixo), cabeça pequena e sem
+ * antena (lê mais "animal predador" que "robô sensor"). A largura do torso passa a da altura: silhueta
+ * de urso/felino agachado, não de humanoide P/M/G. Ver nota do Arara-B1 sobre o achado do dono (29/09).
+ */
 export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
   id: 'heavy', label: 'PESADO', referenceHeight: 6.5,
-  torso: { width: 2.62, height: 1.72, depth: 1.88 },
-  head: { width: 0.86, height: 0.58, depth: 0.88, antenna: 0.08 },
-  shoulders: { width: 1.04, height: 0.88, depth: 1.08 }, hips: { width: 1.7, depth: 1.18 },
-  legs: { hipWidth: 0.72, thighWidth: 0.76, shinWidth: 0.7, upperLength: 1.34, lowerLength: 1.28, footLength: 1.42, digitigrade: 0 },
-  arms: { mountX: 1.96, upperWidth: 0.58, upperLength: 1.02, forearmWidth: 0.78, forearmDepth: 1.42 },
-  vents: { count: 4, width: 0.18, height: 0.5 }, backPack: { width: 1.42, height: 1.04, depth: 0.78 },
+  torso: { width: 3.1, height: 2.3, depth: 2.3 },
+  head: { width: 0.7, height: 0.42, depth: 0.8, antenna: 0 },
+  shoulders: { width: 1.4, height: 0.85, depth: 1.35 }, hips: { width: 2.15, depth: 1.55 },
+  legs: { hipWidth: 0.95, thighWidth: 0.95, shinWidth: 0.85, upperLength: 1.05, lowerLength: 0.95, footLength: 1.65, digitigrade: 0 },
+  arms: { mountX: 2.3, upperWidth: 0.76, upperLength: 0.85, forearmWidth: 1.0, forearmDepth: 1.75 },
+  vents: { count: 5, width: 0.2, height: 0.42 }, backPack: { width: 1.6, height: 0.85, depth: 0.9 },
 };
 
 /**
