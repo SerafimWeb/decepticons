@@ -720,14 +720,18 @@ export class Game {
         return;
       }
       // Gravação nativa (dono, 28/09): de propósito fora do keys-help da tela inicial — é para uso interno.
-      // "Modo captura": trava a resolução no máximo e desliga o rebaixamento automático (G12) enquanto
-      // grava — sem isso, a própria gravação derruba o FPS, e a qualidade adaptativa reage baixando a
-      // resolução no meio do take (o problema que o dono já tinha descrito do OBS, mas causado pelo jogo).
+      // "Modo captura": trava a resolução no teto de qualidade "alta" (`maxPixelRatio()`, ≤1.5) e desliga o
+      // rebaixamento automático (G12) enquanto grava — sem isso, a própria gravação derruba o FPS, e a
+      // qualidade adaptativa reage baixando a resolução no meio do take (o problema que o dono já tinha
+      // descrito do OBS, mas causado pelo jogo). Forçar acima desse teto (era `Math.max(2, devicePixelRatio)`,
+      // até 3x+ em telas de alta densidade) foi o que causava o soluço e o vídeo com quadros perdidos
+      // relatado pelo dono em 29/09 — o próprio WebGL não aguentava o pixel count somado ao encode do
+      // MediaRecorder rodando ao vivo.
       if (code === 'F9') {
         const iniciando = !this.recorder.gravando;
         if (iniciando) {
           this.quality.setAdaptive(false);
-          this.setPixelRatio(Math.max(2, window.devicePixelRatio));
+          this.setPixelRatio(maxPixelRatio());
         }
         this.recorder.alternar();
         if (!iniciando) this.aplicarQualidade(this.settings.value.quality);
