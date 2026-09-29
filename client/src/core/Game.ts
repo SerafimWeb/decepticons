@@ -646,8 +646,8 @@ export class Game {
       this.telemetry.enviar('partida_iniciada');
       this.startRound();
     };
-    this.match.onWaveStart = (wave, total, _mechs, _androids, title) => {
-      this.hud.setMissionWave(wave, total, title);
+    this.match.onWaveStart = (wave, total, _mechs, _androids, title, waves) => {
+      this.hud.setMissionWave(wave, total, title, waves);
       this.audio.playAmbientBram();
     };
     this.match.onWaveProgress = (wave, killed, total, elapsedS) => this.hud.setMissionProgress(wave, killed, total, elapsedS);

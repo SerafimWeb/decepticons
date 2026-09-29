@@ -14,9 +14,7 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `claude/login-esqueleto` | esqueleto de contas (criar/entrar/sair, e-mail + senha, SQLite local) — sem tela | **#115** | 28/09 |
-| `gemini/modo-hud-audio` | só um retalho do `ESTADO_ATUAL.md`: o código dele já entrou na `main` por outros PRs | **#110 aberto (obsoleto — Gemini fecha)** | 27/09 |
-| `gemini/primeira-partida`, `gemini/setas-inimigos`, `gemini/sons-androides` | sobras de 25/09 do Gemini, sem PR; o conteúdo foi refeito na `main` por outras frentes | **sem PR** | 25/09 |
+| — | **Nada fora da `main` (28/09).** O login e a gravação entraram (#115, #117); o #110 virou obsoleto (só um retalho do `ESTADO_ATUAL.md`) e foi fechado; e os três branches órfãos do Gemini de 25/09 — `primeira-partida`, `setas-inimigos`, `sons-androides`, sem PR e com o conteúdo refeito na `main` — foram declarados mortos e apagados (regra 15). | — | 28/09 |
 
 ---
 
@@ -80,6 +78,25 @@
     a identidade visual do painel é o passo seguinte — hoje o `/mesa` só sabe desenhar cenas roteirizadas,
     não editar um clipe de gameplay de verdade.
 
+- **O tamanho 3 está no jogo: o Colossus-01 entra como boss da Sobrevivência (Qwen, 28/09).** O visual de escala 3
+  (14 m) já existia; agora existe o **inimigo**. Ele fecha a missão offline como **onda 6**, com dois andróides de
+  escolta:
+  - **`COLOSSUS_BOSS_STATS`** (`entities/chassis.ts`, fora de `CHASSIS` de propósito — não é chassi de Hangar):
+    14 m, raio 3,6 m, **5 m/s** (metade de um Vector-09), sem pulo nem dash, **pernas 600 e torso 1 600** — derrubar
+    é derrubar as pernas, o que dá sentido às metas da ficha ("giro lento, flanco exposto").
+  - **`BOSS_PROFILE`** (`combat/BotController.ts`): domina o espaço a 46 m e **não desvia**; o giro lento é a fraqueza
+    que a ficha promete. O pool é **pré-alocado** com **vaga própria** no recorte da onda (`setRoster` do `BotSystem`)
+    e o ponto de nascimento tem teste para a cápsula de 14 m — nada é criado no tick (G4).
+  - **Só entra na onda que pede o boss:** nas ondas 1 a 5 ele fica desativado, como o resto do pool.
+  - **Consequência assumida:** com o dobro da altura de um Vector-09, ele **esmaga um Mech parado em dois passos**
+    (a mesma regra do pisão). Não se fica na frente dele.
+  - **O painel do alvo paga aqui:** as 6 partes, o calor e as bandeiras do Colossus aparecem ao mirar — o mesmo
+    módulo entregue hoje de manhã, sem uma linha nova.
+  - **Falta:** máquina de fases própria (hoje é a IA comum com perfil de cerco), pontos fracos/respiros, arma
+    assinatura, HUD de chefe com barra e o modo assimétrico online.
+  - **Pendências resolvidas de quebra:** PRs abertos zerados (#110 fechado por obsoleto) e os três branches órfãos do
+    Gemini apagados; `npm install` na raiz restaurado (faltavam 7 pacotes e o `.bin`, o que quebrava `npm run` para
+    qualquer agente).
 - **O alvo fica legível, e a escala 3 já tem decisão (Qwen, 28/09).** Na mesma mensagem o dono decidiu duas coisas: **a
   escala 3 é encontro e, depois, Mech de tripulação** (vários jogadores na mesma máquina, um por arma ou papel), e a
   fila de trabalho é a do `DIVERSAO.md` § 10, *"a mais prioritária e sequencial possível"*. Ele liberou as frentes do

@@ -39,9 +39,9 @@
 
 O primeiro encontro não altera as regras atuais. Ele terá módulo próprio e determinístico, pré-alocará o boss e só usará callbacks para HUD, efeitos e som.
 
-- A cápsula, a vida por parte, a velocidade, os ataques e os pontos fracos ainda não estão em `chassis.ts`.
-- A IA comum não dirige o Colossus; o próximo PR cria uma máquina de fases separada.
-- O boss aparece como final da Sobrevivência offline antes de qualquer modo online.
+- **Feito (Qwen, 28/09):** cápsula, vida por parte e velocidade estão em `chassis.ts` (`COLOSSUS_BOSS_STATS`: 14 m, raio 3,6 m, 5 m/s, sem pulo nem dash, pernas 600 e torso 1 600); o pool é pré-alocado no `BotSystem` com **vaga própria** no recorte da onda; e ele é dirigido pela IA comum com o **perfil de cerco** (`BOSS_PROFILE`: ataca a 46 m e **não desvia** — o giro lento é a fraqueza). É o fecho da onda 6 da Sobrevivência offline, nasce em ponto dedicado (testado para a cápsula de 14 m) e o **painel do alvo** mostra as partes e o calor dele.
+- **Consequência assumida:** com o dobro da altura de um Vector-09, ele **esmaga um Mech parado em dois passos** — é a mesma regra do pisão, agora com o maior de todos.
+- **Falta:** máquina de fases própria (hoje a IA é a comum, com perfil de cerco), pontos fracos/respiros, arma assinatura, HUD de chefe e o modo assimétrico online.
 
 ## 5. Caminho para pilotar
 

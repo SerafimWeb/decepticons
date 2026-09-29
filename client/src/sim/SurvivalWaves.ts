@@ -7,14 +7,17 @@ export interface WavePlan {
   readonly wave: number;
   readonly mechs: number;
   readonly androids: number;
+  /** A onda fecha a missão com o Colossus (escala 3), que ocupa uma vaga própria no pool de bots. */
+  readonly boss?: boolean;
   /** Orçamento do diretor: Mech custa 1, andróide custa 0,5. */
   readonly maxAttackers: number;
   readonly title: string;
 }
 
 /**
- * Primeira missão vertical: cinco ondas, no máximo seis inimigos vivos. O teto é deliberado: preserva
- * os oito character controllers previstos para uma sala (jogador + seis inimigos + uma vaga futura).
+ * Primeira missão vertical: **seis ondas** — as cinco primeiras com até seis inimigos vivos e a última
+ * fechada pelo **Colossus-01 (escala 3)**, que ocupa uma vaga própria no pool. O teto é deliberado:
+ * preserva os oito character controllers previstos para uma sala (jogador + sete inimigos no pior caso).
  */
 export const SURVIVAL_WAVE_PLANS: readonly WavePlan[] = Object.freeze([
   Object.freeze({ wave: 1, mechs: 0, androids: 2, maxAttackers: 1, title: 'Contato inicial' }),
@@ -22,6 +25,7 @@ export const SURVIVAL_WAVE_PLANS: readonly WavePlan[] = Object.freeze([
   Object.freeze({ wave: 3, mechs: 1, androids: 3, maxAttackers: 2, title: 'Cerco tático' }),
   Object.freeze({ wave: 4, mechs: 2, androids: 3, maxAttackers: 2.5, title: 'Linha de ruptura' }),
   Object.freeze({ wave: 5, mechs: 3, androids: 3, maxAttackers: 3, title: 'Última resistência' }),
+  Object.freeze({ wave: 6, mechs: 0, androids: 2, boss: true, maxAttackers: 2, title: 'COLOSSUS-01 · CERCO' }),
 ]);
 
 export const SURVIVAL_MAX_MECHS = 3;
@@ -143,7 +147,7 @@ export class SurvivalWaves {
     this.phase = 'active';
     this.wave = plan.wave;
     this.killed = 0;
-    this.total = plan.mechs + plan.androids;
+    this.total = plan.mechs + plan.androids + (plan.boss ? 1 : 0);
     this.waveElapsed = 0;
     this.progressLeft = WAVE_PROGRESS_INTERVAL_S;
     this.callbacks.onRoster(plan);

@@ -164,7 +164,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio
 - [ ] **Decidir câmera de abate no PvP:** seguir o adversário revela sua posição; escolher entre liberar, atrasar/limitar ou manter ausente no competitivo #rede
 - [ ] **Nova arma toda semana** (com teste de balanço em `combat/balance.ts`; nenhuma abaixo do TTK do arsenal atual, nenhuma acima do teto de dano por segundo) #combate
-- [~] **Colossus-01, primeira máquina de cerco:** visual de escala 3 fechado em 14 m e rig procedural entregue; próximo PR cria encontro offline determinístico, fases e pontos fracos. Depois: sandbox/Hangar e modo assimétrico. #mechs
+- [~] **Colossus-01, primeira máquina de cerco:** visual de escala 3 (14 m) fechado e o **bot do boss no jogo** — fecho da Sobrevivência offline (onda 6), com pool pré-alocado, vaga própria no recorte da onda, perfil de cerco e dano por parte (as pernas caem antes do torso). Próximo: máquina de fases e pontos fracos próprios, HUD de chefe, arma assinatura; depois, sandbox/Hangar e o modo assimétrico. #mechs
 - [ ] **Ferret-X (gancho + sucata) e pesado de escala 2:** chassis novos com blueprints e stats no `entities/chassis.ts` #mechs
 - [ ] **Personalização visual (cosmética, nunca combate):** apelido, cor da carcaça, decalque, pintura por parte, salva no navegador antes da conta (`hangar/loadout.ts` estende com uma seção "aparência") #negocio
 - [ ] **Placar e nomes vindos do servidor** com histórico de partidas do jogador (na sua sessão, sem conta ainda) #ux

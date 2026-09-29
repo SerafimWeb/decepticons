@@ -116,6 +116,34 @@ export const PILOT_ANDROID_STATS: MechStats = {
   },
 };
 
+/**
+ * Colossus-01: **máquina de cerco de escala 3 (14 m)**, inimiga. Não entra em `CHASSIS` de propósito — não é
+ * chassi de Hangar, é o boss da missão (`Vector09` do pool de bots, com o blueprint de 14 m e perfil de cerco).
+ *
+ * O peso está nas partes, não numa barra de vida única: **as duas pernas (600) caem antes do torso (1 600)**,
+ * então derrubar o Colossus é derrubar as pernas primeiro — o que dá sentido às metas da ficha ("giro lento,
+ * flanco exposto") e usa o dano por parte que o jogo já tem. Números de partida: o primeiro corte do encontro;
+ * o equilíbrio fino fica com `combat/balance.ts` e os testes.
+ */
+export const COLOSSUS_BOSS_STATS: MechStats = {
+  ...VECTOR09_STATS,
+  name: 'COLOSSUS-01',
+  height: 14,
+  radius: 3.6, // < height/2: a cápsula do Rapier não aceita raio maior que a metade da altura
+  stepHeight: 2.4,
+  moveSpeed: 5, // metade de um Vector-09: dá tempo de circular, e é o que a ficha promete
+  groundAccel: 10,
+  airAccel: 3,
+  jumpVelocity: 0,
+  maxJumps: 0,
+  dashSpeed: 0,
+  dashDuration: 0,
+  dashCooldown: 1,
+  demolishOnDash: false,
+  weaponCapacity: 24,
+  maxModuleHealth: { torso: 1600, head: 400, leftArm: 500, rightArm: 500, leftLeg: 600, rightLeg: 600 },
+};
+
 /** Chassis que o jogador pode pilotar (o andróide rebelde e o técnico são só das IAs). */
 export const CHASSIS = { vector09: VECTOR09_STATS, android: PILOT_ANDROID_STATS } as const satisfies Record<string, MechStats>;
 export type ChassisId = keyof typeof CHASSIS;
