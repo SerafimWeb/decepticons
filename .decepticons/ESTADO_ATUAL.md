@@ -2,7 +2,7 @@
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
 **Última atualização:** 2026-09-28
-**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo e câmera de abate offline jogáveis no cliente; servidor no ar 24 h.
+**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo, câmera de abate offline e o painel do alvo (legibilidade do dano) no cliente; servidor no ar 24 h.
 
 ---
 
@@ -14,7 +14,9 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `claude/login-esqueleto` | esqueleto de contas (criar/entrar/sair, e-mail + senha, SQLite local) — sem tela | **em PR** | 28/09 |
+| `claude/login-esqueleto` | esqueleto de contas (criar/entrar/sair, e-mail + senha, SQLite local) — sem tela | **#115** | 28/09 |
+| `gemini/modo-hud-audio` | só um retalho do `ESTADO_ATUAL.md`: o código dele já entrou na `main` por outros PRs | **#110 aberto (obsoleto — Gemini fecha)** | 27/09 |
+| `gemini/primeira-partida`, `gemini/setas-inimigos`, `gemini/sons-androides` | sobras de 25/09 do Gemini, sem PR; o conteúdo foi refeito na `main` por outras frentes | **sem PR** | 25/09 |
 
 ---
 
@@ -39,6 +41,48 @@
     num servidor próprio para não interferir nos outros testes de conta).
   - **Não migrado (decisão do dono, fica para depois):** XP, créditos e missões diárias continuam em
     `localStorage` (`DailyChallenges.ts`) — migrar para a conta é o próximo corte, não este.
+
+- **O alvo fica legível, e a escala 3 já tem decisão (Qwen, 28/09).** Na mesma mensagem o dono decidiu duas coisas: **a
+  escala 3 é encontro e, depois, Mech de tripulação** (vários jogadores na mesma máquina, um por arma ou papel), e a
+  fila de trabalho é a do `DIVERSAO.md` § 10, *"a mais prioritária e sequencial possível"*. Ele liberou as frentes do
+  **Claude e do Gemini** (pararam por crédito), então o item 1 da fila começou pela metade de HUD:
+  - `client/src/ui/TargetPanel.ts` (+ 8 testes) mostra, do inimigo sob a mira, **as 6 partes** (barra de 10 blocos,
+    `✗` na parte destruída), **o calor** e as **bandeiras** (`SUPERAQUECIDO · TRAVADO`, `EM DASH`), com o chassi no
+    topo — a informação que transforma "mirei na perna" em decisão informada.
+  - **Custo zero:** é tudo o que **já vinha no estado da rede** (19 B por unidade) — nenhum byte a mais, nenhuma regra
+    nova, nenhuma alocação por quadro (o texto é remontado a 10 Hz).
+  - **Prova:** captura real no jogo em `arte/alvo-legivel.png` (o quadro pegou o rebelde **travado**, com o torso
+    avariado). Caminho: `/jogar/` → mirar um inimigo. **Não leio imagem: o veredito estético é do dono.**
+  - `STATUS_REAL.md` marca **PARCIAL**: falta a outra metade do item 1 — os sinais no próprio modelo (fumaça na parte
+    avariada, mancar, arma pendurada, vapor de quem vai travar), frente visual.
+  - **Próximo da fila:** item 2, o conserto da progressão (XP por jogar, onda contada, gancho de "conquistado jogando").
+- **A ficha do CTF confere com o código: 12 dos 15 testes estão travados (Qwen, 28/09).** Auditoria item por item da
+  `fichas/ctf.md` § 4 contra `client/src/sim/CaptureTheFlag.test.ts` (11 testes) e o teste de integração do CTF no
+  `Match` — o mapa item → teste está na § 5 da ficha. **O item 1 é o único offline em aberto** (contrato: partida de
+  CTF sem time, ou com time sem bandeira na base, tem de falhar em vez de começar torta) e é barato de fechar, na
+  frente do Codex/Claude (`sim/` é território deles). Os itens 13 e 15 dependem do contrato de rede; a simetria
+  cronometrada do item 12 depende dos dois chassis existirem como gameplay. Além dos 15 itens, há um teste a mais que
+  trava os callbacks do HUD (`onFlagPickup`/`onCapture`/`onMatchEnd`). Nenhuma linha de código mudou.
+- **A tese da diversão, da competição e da viralidade — e a peça que falta em cada uma (Qwen, 28/09).** Pedido do
+  dono: *"quero que você pense como vamos tornar o jogo mais divertido… mais competitivo… quais os diferenciais que
+  devemos explorar pra tornar o jogo mais viral"*, com três hipóteses na mesa (outros Mechs, missões na fase, novas
+  armas). Resposta em **`DIVERSAO.md`** (documento novo; análise e recomendação, **não** escopo aprovado): a tese é
+  que o diferencial do jogo **não é catálogo, é consequência**, e cada hipótese foi respondida com o código da `main`.
+  - **Legibilidade do alvo é o melhor custo/efeito:** as 6 partes, o **calor do alvo** e as bandeiras
+    `dashing`/`overheated` **já viajam no estado** (`shared/net/state.ts:8-30`, 19 B por unidade) — falta só o
+    visual (fumaça, mancar, esquema do alvo ao mirar). Ganho grande a **0 B de rede e sem regra nova**.
+  - **Os três Mechs rebeldes não têm ficha:** compartilham `VECTOR09_STATS` e diferem só na persona
+    (`BotSystem.ts:141`). Dar ficha a CLAWD/GEMINAI/CHAD-GPT é a estratégia mais barata que existe.
+  - **Cada braço aceita exatamente uma arma** (`ARM_SLOTS`, `chassis.ts:124`): o Hangar promete montagem e a decisão
+    tem quatro linhas — abrir o catálogo por encaixe vem antes de "mais armas".
+  - **Achados de progressão (R17 — registro, não conserto; `ui/` e `hangar/` são do Gemini):** `addXp()` só é
+    chamado em `claimReward()` (`ui/DailyChallenges.ts:90,138`) — **o nível não sobe jogando**; `trackWaveOrRound()`
+    (`:127`) não tem chamador — a missão de sobreviver ondas nunca progride; `validateLoadout` tem o gancho de
+    "conquistado jogando" sem chamador (`hangar/loadout.ts:70`).
+  - **Pendente do dono:** 6 decisões no § 12 (a escala 3 como encontro ou chassi; prioridade entre melhorar o que
+    existe e conteúdo novo; as fichas dos rebeldes; o modificador semanal como primeiro evento; a câmera de abate no
+    PvP; o conserto da progressão). Seis ideias entram no `ROADMAP.md` (IDEIAS) com o caminho da proposta.
+  - `npm run check` verde: **300 testes**, painel, build, budget, smoke e site.
 
 - **Atualização automática do servidor, e métricas de produto (Claude, 28/09, PR `claude/atualizacao-e-metricas`).**
   Dois pedidos do dono na mesma mensagem.
@@ -338,6 +382,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Bots contra bots | Hoje os bots só caçam o jogador. No modo "todos contra todos" eles deveriam se enfrentar também: basta passar todos os Mechs em `BotSystem.targets`. |
 | Câmera de abate no PvP | O corte offline segue o bot que matou. No online isso revelaria a posição do adversário durante 3 s. **Decidir:** liberar como ferramenta de conteúdo, atrasar/limitar a visão, ou manter ausente em partidas competitivas. Até a decisão, o online conserva a câmera normal e `STATUS_REAL.md` marca AUSENTE. |
 | Revisão do status do servidor (#106) | Corrigir duas arestas do PR #105: impedir cadeias duplicadas de polling quando `visibilitychange` ocorre durante `fetch`, e definir a política de CSP para o `/status` de um `?servidor=` explícito. O cache de 1 s e a ausência de tráfego com aba oculta foram aprovados. |
+| Colossus-01: arma e encontro | O dono fechou escala 3 e 14 m. Faltam a assinatura de arma, a máquina de fases, valores de combate e a forma do modo assimétrico; o próximo PR do Codex inicia pelo encontro offline determinístico. |
 
 ## BLOQUEIOS
 - Nenhum.
@@ -365,9 +410,9 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
   sua de UX. **Sem progressão migrada ainda** (decisão do dono): a tela só precisa provar entrar/sair
   funcionando; XP/créditos continuam em `localStorage` por enquanto.
 - **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
-- **Codex:** acompanhar o playtest da câmera de abate offline e do CTF; depois retomar cosméticos MK II/MK III e as fichas visuais aprovadas.
+- **Codex:** concluir PR visual do Colossus-01 e, depois do merge, iniciar o encontro offline determinístico com IA própria, pontos fracos e câmera de escala 3. A arma, números e modo assimétrico seguem decisões abertas.
 - **Claude:** definir e implementar o contrato autoritativo para escolher o modo da sala e transportar as transições de onda/objetivo; completar o online. Sincronizar máquina de estados de Ondas da simulação.
-- **Qwen:** relatório de saúde técnica do projeto e ícones no mapa da oficina.
+- **Qwen:** a fila do `DIVERSAO.md` § 10 — **item 2 (conserto da progressão)** e adiante; o item 1 já tem a metade de HUD no jogo (painel do alvo) e a metade visual (sinais no próprio modelo) segue com a frente visual.
 - **Dono (primeiro de tudo, 28/09):** **reiniciar o servidor de jogo de casa** para ele passar a responder
   `/status` — até lá a página diz "SERVIDOR ONLINE · SEM CONTAGEM DE PILOTOS" (online, sem o número).
 - **Dono:** Testar no site o Seletor de Modo, a abertura do Briefing da Missão (`KeyM` / `KeyB` ou selecionar Sobrevivência), os alarmes de onda, as medalhas de conquista e o jogo offline de Sobrevivência/CTF. Decidir o universo (`UNIVERSO.md`, seção 7), a seção 9 e as decisões da seção 10 do `MULTIPLAYER.md`.

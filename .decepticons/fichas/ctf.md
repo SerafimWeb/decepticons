@@ -8,6 +8,8 @@
 > + Mech pesado ficar em risco simétrico ao Mech leve com dash." Começa em **2v2**.
 
 ## 1. Por que esta ficha existe antes de um teste
+> **Fechado em 28/09/2026 (Qwen):** a regra entrou (`sim/CaptureTheFlag.ts`, integrada ao `Match`) **com o teste no
+> mesmo PR**, como esta seção exigia — e a auditoria item por item dos 15 testes está na § 5.
 **Os testes do CTF não podem ser escritos antes da regra.** G14 (toda regra de gameplay tem teste de simulação) e a
 regra 5 do `AGENTS.md` (contrato antes de paralelizar) dizem a mesma coisa por dois ângulos: o teste nasce **no PR
 que cria a regra**, contra o contrato já fixado. Conferido em 27/09/2026: `client/src/sim/` **não tem** nenhuma
@@ -65,14 +67,37 @@ Mesma regra das zonas e da base do drone: **só o que se move precisa de bytes p
 14. **"É determinístico":** mesma semente e mesmos inputs → mesmos instantes de captura e mesmo vencedor.
 15. **"O servidor decide":** captura nasce do servidor, nunca do cliente (mesma autoridade do resto do online).
 
-## 5. Implementação e o que falta
-- **Real no treino offline:** itens 2 a 11 e 14; a penalidade mecânica do item 12 também está travada. Há 11 testes
-  puros e um teste de integração com Rapier. O jogador azul enfrenta dois defensores vermelhos e pode completar a
-  partida inteira. HUD, bases, bandeiras carregáveis e pulso de captura estão ligados ao jogo.
-- **Balanço pendente:** a comparação cronometrada entre chassis leve e pesado do item 12 depende dos dois chassis
-  existirem como gameplay; hoje são apenas blueprints visuais.
-- **Rede pendente:** itens 13 e 15, times 2v2 no servidor, eventos no protocolo e bots completando vagas. Até esse
-  contrato existir, `STATUS_REAL.md` mantém o online como AUSENTE e o modo se apresenta como treino offline.
+## 5. Implementação e a cobertura dos 15 testes
+
+**Auditoria (28/09/2026, Qwen):** lidos `sim/CaptureTheFlag.test.ts` (11 testes) e o teste de integração do CTF no
+`Match` — **12 dos 15 itens da § 4 estão travados por teste hoje**, e o item 1 é o único em aberto que não depende de
+rede nem de conteúdo novo.
+
+| Item da § 4 | O que o cobre |
+|---|---|
+| 2 | "começa com uma bandeira na base de cada time" |
+| 3 e 4 | "só o adversário dentro do raio pega a bandeira" — e o defensor parado na própria base **não** a carrega |
+| 5 e 9 | "abater o portador larga a bandeira onde ele caiu" — abate sobe no placar, captura **não** |
+| 6 | "bandeira largada volta em 15 s ou ao toque de um defensor" — os dois caminhos no mesmo teste |
+| 7 | "não captura enquanto a própria bandeira está fora da base" |
+| 8 | "captura devolve as bandeiras e soma somente a captura" |
+| 10 | "a terceira captura encerra na hora" |
+| 11 | "aos 8 minutos desempata por capturas, depois por abates, ou declara empate" |
+| 12 (metade) | "portador perde 15% da corrida e recupera ao largar" |
+| 14 | "é determinístico para a mesma sequência de posições e ticks" |
+| **1** | **sem teste — único item offline em aberto** |
+| 12 (simetria cronometrada leve × pesado) | pendente: depende dos dois chassis existirem como gameplay — hoje são blueprints visuais |
+| 13 e 15 | pendentes: dependem do contrato de rede (bandeira como bit nas flags, `PROTOCOL_VERSION`, captura decidida pelo servidor) |
+
+**Fora da especificação, e bom:** há um teste a mais — "emite eventos primitivos para HUD e futura rede"
+(`onFlagPickup`, `onCapture`, `onMatchEnd`) — que trava o contrato dos callbacks antes de o HUD depender deles.
+
+**O item 1 é barato de fechar:** uma partida de CTF **sem time, ou com time sem bandeira na base**, tem de falhar no
+contrato em vez de começar torta. É uma asserção no arquivo da regra, na frente do Codex/Claude (`sim/` é território
+deles — eu registro aqui, não escrevo lá).
+
+**Real no treino offline:** 11 testes puros + 1 de integração com Rapier; o jogador azul enfrenta dois defensores
+vermelhos e pode completar a partida inteira. HUD, bases, bandeiras carregáveis e pulso de captura ligados ao jogo.
 
 ## 6. Perguntas para o dono
 1. **A arena de hoje é pequena para 3 capturas em 8 min.** Ou o mapa cresce (duas bases afastadas), ou o número cai
