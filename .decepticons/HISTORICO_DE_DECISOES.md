@@ -1,5 +1,12 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-29] Correção: F9 travava e perdia quadro por forçar resolução acima do teto do motor (Claude)
+**Relato do dono:** *"tentei salvar um video, mas ainda nao ficou bom. o video trava, fica com frames pulados, e parece que nao salvou corretamente"*.
+**Causa:** o "modo captura" do F9 (PR #117) forçava `pixelRatio = Math.max(2, devicePixelRatio)` durante a gravação — em telas de alta densidade isso passa de 2x, 2.5x ou até 3x, **acima do próprio teto que o jogo usa na qualidade "alta"** (`maxPixelRatio()`, travado em 1.5 desde sempre por custo de GPU). Com o WebGL renderizando 2 a 4x mais pixels e o `MediaRecorder` codificando VP9 ao vivo ao mesmo tempo, o quadro a quadro no `frame()` engasgava — exatamente o problema do OBS que a feature existia para resolver, agora causado pelo próprio jogo (já era o risco anotado no comentário original do código).
+**Correção:** o "modo captura" agora usa `maxPixelRatio()` (o mesmo teto da qualidade "alta", ≤1.5) em vez de forçar um mínimo de 2x. Continua travando a qualidade no máximo e desligando o rebaixamento adaptativo (G12) enquanto grava — só não ultrapassa mais o teto que o resto do jogo já respeita.
+**Desempenho:** sem custo novo — é uma redução do pico de pixels durante a gravação, não uma feature nova.
+**Prova:** `npm run check` verde (380 testes, build, budget, boot). Teste real do dono com F9 ainda pendente de confirmação.
+
 ## [2026-09-29] Combate justo: a missão mais leve, o Colossus equilibrado e o `?onda=` abrindo o teste (Qwen)
 **Pedido do dono:** *"o COLOSSUS, se pisar no mech, deve custar vida sim, por isso não devemos entrar embaixo dele. Mas como faremos o combate justo? ele não pode ser absurdamente forte (tipo um tiro mata o mech), pra que possamos ter combates épicos e com inteligência, conseguirmos superar eles"* — e, na mesma mensagem: *"tentei jogar mas nao consegui passar da fase 4 do survivel, ta DIFICIL!"*.
 **Decisão 1 — o pisão fica, e é o preço de ficar embaixo dele:** o dono confirmou a regra. Ela continua valendo (o Colossus, com o dobro da altura de um Vector-09, esmaga um Mech parado em dois passos) e está travada em teste.
