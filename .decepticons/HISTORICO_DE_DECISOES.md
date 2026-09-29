@@ -21,6 +21,27 @@ com mensagens de erro em português prontas para aparecer na tela, e a tarefa da
 **Quem decidiu:** dono (as três perguntas, respondidas via `AskUserQuestion` nesta sessão); Claude (`node:sqlite`
 em vez de `better-sqlite3`, hash de senha e de token de sessão, a separação backend/tela entre agentes).
 
+## [2026-09-28] Gravação nativa: captura manual de quadro em vez de `preserveDrawingBuffer` sempre ligado (Claude)
+**Pedido do dono, depois de reclamar da qualidade do OBS:** *"se pudermos gravar direto no jogo ficaria
+perfeito"*. Decisão de escopo (28/09, mais cedo): só o dono usa, sem feature pública de gravação.
+**Decisão técnica — o problema real e por que a solução óbvia era ruim:** um canvas WebGL não entrega quadro
+nenhum para `canvas.captureStream()` a menos que o navegador preserve o buffer de desenho entre quadros
+(`preserveDrawingBuffer: true` na criação do `WebGLRenderer`). A saída óbvia — ligar essa opção — tem custo
+de GPU **permanente, para todo jogador**, só para os raros minutos em que o dono aperta uma tecla. Rejeitada.
+**Solução:** `canvas.captureStream(0)` (modo manual, zero quadros automáticos) + um `requestFrame()` chamado
+uma vez por quadro do laço de render, só quando a gravação está ligada. Sem gravar, é um `if` que devolve na
+hora — nenhum custo para o resto do jogo.
+**Achado de quebra durante a implementação (R17):** a intuição de "pedir mais um quadro garantido bem antes
+de `stop()`, para não perder o último instante" parecia certa e **quebrava a gravação** — o gravador nunca
+fechava com conteúdo. Confirmado testando as duas versões lado a lado no mesmo navegador: sem esse pedido
+extra, funciona sempre que testado; com ele, nunca. Removido.
+**Verificação:** Chrome de verdade, arquivo `.webm` validado com `ffprobe` (VP9 1280×720 + Opus). A
+automação headless (Chrome + SwiftShader, usada nos outros testes do projeto) se mostrou instável
+especificamente para esta API — registrado como limitação do ambiente de teste, não do código, com pedido
+explícito de confirmação manual do dono.
+**Quem decidiu:** dono (o pedido, e a decisão anterior de manter privado); Claude (captura manual em vez de
+`preserveDrawingBuffer` permanente, tecla escondida do `keys-help`, o achado do `requestFrame` antes do stop).
+
 ## [2026-09-28] Dois marcadores de conflito estavam commitados na `main` (Qwen, R17)
 **Achado:** ao resolver o conflito do PR #113 (o Colossus-01 do Codex), a varredura do repositório (`git grep`) mostrou **dois marcadores de merge commitados** — `>>>>>>> origin/main` no fim de um parágrafo do `ESTADO_ATUAL.md` e `>>>>>>> 66886e7e…` no fim de uma entrada deste arquivo. Os dois **já estavam na `main`** (não vieram do branch do Codex) e passaram por todos os portões: o `site --check` não procura por eles e nenhum teste lê documentos. Como o `ESTADO_ATUAL.md` e este cofre alimentam a **sala de controle publicada**, era resíduo de merge visível na página.
 **Decisão:** remover os dois na própria resolução do merge — uma linha cada, sem tocar em mais nada — e varrer o repositório inteiro para confirmar que não sobrou nenhum. A varredura (`git grep -n ">>>>>>>"`) fica como o jeito rápido de conferir antes de publicar.

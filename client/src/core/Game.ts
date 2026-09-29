@@ -55,6 +55,7 @@ import { parseLoadoutKey } from '../hangar/loadout';
 import { defaultServer, onlineConfig } from '../net/onlineConfig';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
+import { GameRecorder } from './GameRecorder';
 import { Telemetry } from './telemetry';
 import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
@@ -167,6 +168,8 @@ export class Game {
   private readonly hangarMenu: HangarMenu;
   /** Métricas de produto (dono, 28/09): poucos eventos de funil, nunca por quadro. */
   private readonly telemetry: Telemetry;
+  /** Gravação nativa de gameplay (dono, 28/09): tecla escondida, só para uso interno. */
+  private readonly recorder: GameRecorder;
   private readonly lobby = new OnlineLobby();
   private aimPracticeInterval = 0.18;
   private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
@@ -346,6 +349,7 @@ export class Game {
     this.hud.setReady(this.input.touchMode);
     this.telemetry = new Telemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
     this.telemetry.enviar('boot_ok');
+    this.recorder = new GameRecorder(this.renderer.domElement, this.audio);
     if (this.gameMode === 'survival') this.hud.setMissionMode(true);
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
     else this.hud.setMissionMode(false);
@@ -533,13 +537,18 @@ export class Game {
     if (!this.match.waves || this.match.waves.phase !== 'active') this.bots.maxAttackers = s.maxAttackers;
     this.debugPanel.setVisible(s.showPerf);
     this.audio.setVolume(s.volume);
-    if (s.quality !== this.appliedQuality) {
+    if (s.quality !== this.appliedQuality && !this.recorder.gravando) {
       this.appliedQuality = s.quality;
-      // 'auto' começa no máximo e deixa a qualidade adaptativa rebaixar (G12); os outros fixam.
-      this.setPixelRatio(s.quality === 'media' ? 1 : s.quality === 'baixa' ? 0.75 : maxPixelRatio());
-      this.bloomPass.enabled = s.quality !== 'baixa';
-      this.quality.setAdaptive(s.quality === 'auto');
+      this.aplicarQualidade(s.quality);
     }
+  }
+
+  /** 'auto' começa no máximo e deixa a qualidade adaptativa rebaixar (G12); os outros fixam. Extraído de
+   * `applySettings` para o "modo captura" da gravação (dono, 28/09) reusar ao restaurar depois do F9. */
+  private aplicarQualidade(quality: GameSettings['quality']): void {
+    this.setPixelRatio(quality === 'media' ? 1 : quality === 'baixa' ? 0.75 : maxPixelRatio());
+    this.bloomPass.enabled = quality !== 'baixa';
+    this.quality.setAdaptive(quality === 'auto');
   }
 
   start(): void {
@@ -707,6 +716,20 @@ export class Game {
       }
       if (code === 'F1') {
         this.hud.toggleVisibility();
+        return;
+      }
+      // Gravação nativa (dono, 28/09): de propósito fora do keys-help da tela inicial — é para uso interno.
+      // "Modo captura": trava a resolução no máximo e desliga o rebaixamento automático (G12) enquanto
+      // grava — sem isso, a própria gravação derruba o FPS, e a qualidade adaptativa reage baixando a
+      // resolução no meio do take (o problema que o dono já tinha descrito do OBS, mas causado pelo jogo).
+      if (code === 'F9') {
+        const iniciando = !this.recorder.gravando;
+        if (iniciando) {
+          this.quality.setAdaptive(false);
+          this.setPixelRatio(Math.max(2, window.devicePixelRatio));
+        }
+        this.recorder.alternar();
+        if (!iniciando) this.aplicarQualidade(this.settings.value.quality);
         return;
       }
       if (code === 'KeyM' || code === 'KeyB') {
@@ -975,7 +998,8 @@ export class Game {
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY);
     this.renderer.info.reset();
     this.composer.render(dt);
-    
+    this.recorder.capturarQuadro();
+
     // Atualiza medidor de FPS depois do render
     this.quality.update(dt);
     this.debugPanel.update(dt, tickMs, this.renderer.info, this.quality.currentTier, this.debris.count);
