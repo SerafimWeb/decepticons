@@ -117,8 +117,9 @@ export const PILOT_ANDROID_STATS: MechStats = {
 };
 
 /**
- * Colossus-01: **máquina de cerco de escala 3 (14 m)**, inimiga. Não entra em `CHASSIS` de propósito — não é
- * chassi de Hangar, é o boss da missão (`Vector09` do pool de bots, com o blueprint de 14 m e perfil de cerco).
+ * Colossus-01: **máquina de cerco de escala 3 (14 m)**. Nasce como boss da missão (`Vector09` do pool de
+ * bots, com o blueprint de 14 m e perfil de cerco) e, desde 29/09, também entra em `CHASSIS` como chassi
+ * solo pilotável — os mesmos números, sem cópia.
  *
  * O peso está nas partes, não numa barra de vida única: **as duas pernas (600) caem antes do torso (1 600)**,
  * então derrubar o Colossus é derrubar as pernas primeiro — o que dá sentido às metas da ficha ("giro lento,
@@ -144,12 +145,22 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
   maxModuleHealth: { torso: 1200, head: 260, leftArm: 380, rightArm: 380, leftLeg: 450, rightLeg: 450 },
 };
 
-/** Chassis que o jogador pode pilotar (o andróide rebelde e o técnico são só das IAs). */
-export const CHASSIS = { vector09: VECTOR09_STATS, android: PILOT_ANDROID_STATS } as const satisfies Record<string, MechStats>;
+/**
+ * Chassis que o jogador pode pilotar (o andróide rebelde e o técnico são só das IAs).
+ * **Colossus-01 (dono, 29/09: "quero poder escolher o colossus pra ver como é jogar com ele"):** entrou como
+ * chassi solo, pilotado por 1 jogador só, com todas as armas — a mesma máquina que já existe como boss
+ * (`COLOSSUS_BOSS_STATS`), sem números novos. **Não balanceado contra os bots**: 1200 de torso e 24 t de
+ * carga são os do encontro; jogar com ele contra Mechs normais é claramente mais forte, de propósito, para o
+ * dono sentir a escala antes de qualquer ajuste. O Mech de tripulação (piloto + artilheiros nas armas
+ * direcionais, pedido na mesma mensagem) é a próxima etapa — este PR entrega só o solo.
+ */
+export const CHASSIS = { vector09: VECTOR09_STATS, android: PILOT_ANDROID_STATS, colossus01: COLOSSUS_BOSS_STATS } as const satisfies Record<string, MechStats>;
 export type ChassisId = keyof typeof CHASSIS;
 
 /** O que cada braço aceita em cada chassi: o Hangar só oferece e só valida estas armas. */
 export const ARM_SLOTS: Record<ChassisId, { right: readonly WeaponId[]; left: readonly WeaponId[] }> = {
   vector09: { right: ['plasma'], left: ['rockets'] },
   android: { right: ['blaster'], left: ['chainsaw'] },
+  // Sem arma exclusiva (decisão de 29/09 no combate justo): o mesmo plasma/foguetes de qualquer Mech.
+  colossus01: { right: ['plasma'], left: ['rockets'] },
 };

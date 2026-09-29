@@ -3,8 +3,9 @@ import type { Loadout } from '../combat/weapons';
 import type { TestFire } from './testFire';
 import { PALETTE } from '../core/palette';
 import { Android } from '../entities/Android';
-import { PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
+import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
 import type { MechBase } from '../entities/MechBase';
+import { COLOSSUS_01_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
 import { Vector09 } from '../entities/Vector09';
 import { AIM_TARGET_SPEED, aimTargetDirectionAt, aimTargetXAt } from './aimPractice';
 
@@ -22,6 +23,8 @@ const TURN_S = 28;
 const IDLE_AFTER_DRAG_S = 3;
 /** Robô pequeno (o andróide, 1,6 m) aparece ampliado no pedestal, como num holograma de montagem: dá para ver as peças. */
 const MIN_SHOWN_HEIGHT = 3.2;
+/** Blueprint visual de cada chassi que passa pelo `Vector09` no pedestal (o andróide tem classe própria). */
+const BLUEPRINT_BY_CHASSIS: Partial<Record<ChassisId, MechBlueprint>> = { colossus01: COLOSSUS_01_BLUEPRINT };
 
 const _arm = new THREE.Vector3();
 const _v = new THREE.Vector3();
@@ -600,7 +603,7 @@ export class HangarScene {
       m =
         chassis === 'android'
           ? new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout })
-          : new Vector09({ loadout });
+          : new Vector09({ stats: CHASSIS[chassis], loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassis] });
       this.displays.set(chassis, m);
     }
     m.equip(loadout);

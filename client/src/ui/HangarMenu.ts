@@ -31,6 +31,8 @@ const TEST_TURN_S = 0.5;
 const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string; detail: string }> = {
   vector09: { title: 'VECTOR-09', className: 'MÉDIO · ASSALTO', detail: 'Equilíbrio entre alcance e mobilidade.' },
   android: { title: 'ANDRÓIDE A-1', className: 'LEVE · PILOTO', detail: 'Pequeno e ágil; vence no combate próximo.' },
+  // Chassi solo do boss (29/09): mesmos números do encontro, sem balancear contra os bots de propósito.
+  colossus01: { title: 'COLOSSUS-01', className: 'ESCALA 3 · CERCO', detail: 'Lento e blindado; devastador de perto.' },
 };
 const SLOT_LABEL: Record<ArmSlot, string> = { right: 'BRAÇO DIREITO', left: 'BRAÇO ESQUERDO' };
 const SLOT_NUM: Record<ArmSlot, string> = { right: '01', left: '02' };
@@ -55,6 +57,9 @@ const CHASSIS_ICON: Record<ChassisId, string> = {
     '<rect x="24" y="4" width="12" height="10" /><rect x="16" y="16" width="28" height="24" /><rect x="6" y="18" width="9" height="22" /><rect x="45" y="18" width="9" height="22" /><rect x="18" y="42" width="10" height="26" /><rect x="32" y="42" width="10" height="26" /><path d="M14 72h16M30 72h16" /><path d="M2 44h4M54 44h4" />',
   android:
     '<rect x="26" y="4" width="8" height="9" /><rect x="22" y="15" width="16" height="22" /><rect x="15" y="17" width="5" height="20" /><rect x="40" y="17" width="5" height="20" /><rect x="23" y="39" width="6" height="30" /><rect x="31" y="39" width="6" height="30" /><path d="M20 72h10M30 72h10M45 30h10" />',
+  // Base bem mais larga e pernas grossas (escala 3): a planta lê "pesado e lento" ao lado das outras duas.
+  colossus01:
+    '<rect x="22" y="2" width="16" height="10" /><rect x="10" y="14" width="40" height="26" /><rect x="1" y="16" width="10" height="24" /><rect x="49" y="16" width="10" height="24" /><rect x="12" y="42" width="14" height="28" /><rect x="34" y="42" width="14" height="28" /><path d="M8 74h18M34 74h18" /><path d="M0 44h2M58 44h2" />',
 };
 
 /** Leituras de cada arma, como barras: o máximo é o maior valor do arsenal no MK III. */

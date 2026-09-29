@@ -1,5 +1,15 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-29] Colossus-01 vira chassi solo pilotável (Claude)
+**Pedido do dono, priorizado por ele entre três frentes grandes** ("Colossus jogável (solo) primeiro", *vs.* Mech de tripulação e o framework modular de chassis): *"quero poder escolher o colossus pra ver como é jogar com ele"*.
+
+**O que mudou:** `COLOSSUS_BOSS_STATS` entrou em `CHASSIS` (`entities/chassis.ts`) como `colossus01`, com `ARM_SLOTS` reaproveitando plasma/foguetes (sem arma exclusiva, decisão já registrada). A construção do Mech do jogador em `Game.ts` deixou de ser um `if (android) ... else (sempre Vector-09)` e passou a ler `CHASSIS[chassisId]` genericamente, com um mapa `BLUEPRINT_BY_CHASSIS` para o visual certo (o mesmo achado do PR anterior: sem isso, qualquer chassi novo nasce esticando o Vector-09). O Hangar ganhou o cartão do Colossus (`HangarMenu.ts`: rótulo e ícone em traço próprio) e o pedestal 3D passou a montar o modelo com o blueprint e os stats certos (`HangarScene.ts` — antes só o andróide tinha stats próprios ali; o Vector-09 e agora o Colossus usam `CHASSIS[chassis]`).
+**Território:** `HangarMenu.ts` e `HangarScene.ts` não são meus (UI é do Gemini, render/Hangar 3D é do Codex) — mudança pequena e aditiva (entradas de dicionário, sem redesenhar nada), no mesmo padrão já usado nesta sessão para o `AudioSystem.ts`, disclosed aqui.
+**De propósito, não balanceado:** 1200 de torso e 24 t de carga contra bots normais é claramente mais forte — é para o dono sentir a escala, não a versão final.
+**Verificado ao vivo** (Playwright + Chrome real, não só typecheck): `?build=v1.colossus01.plasma-2.rockets-0` entra direto com o Colossus; HUD mostra "COLOSSUS-01", velocidade bate com a stat (5,0 m/s andando), silhueta com ombros largos e quadrados, visivelmente diferente do Vector-09; zero erro de console/página.
+**Não incluído (fica para depois, com o dono ciente):** balanceamento contra bots; o Mech de tripulação (piloto + artilheiros) — próxima etapa, precisa de arquitetura de rede; o afundamento parado no chão (achado acima) continua presente, mais visível numa máquina que fica muito tempo parada.
+**Prova:** `npm run check` verde (380 testes — 1 teste antigo que usava `'colossus01'` como exemplo de chassi inválido foi trocado por `'ferret'`, já que agora é válido de propósito).
+
 ## [2026-09-29] Colossus: modelo visual próprio ligado; achado um afundamento real no chão parado (Claude)
 **Relato do dono, jogando de verdade:** *"agora eu consegui chegar no colossus, mas ele estava 'flutuando' na tela, nao ta andando no chao. E quero que ele seja um modelo de robô diferente do vector 09!"*
 
