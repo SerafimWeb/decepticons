@@ -167,6 +167,30 @@ const statusHtml = STATUS_URL
       <script>${STATUS_JS}</script>`
   : '';
 
+/**
+ * Métricas de produto (dono, 28/09: "quero trackear o consumo, quantas pessoas clicaram, onde clicam, onde
+ * saem, se jogaram tantas partidas"). Contrato em `shared/net/telemetry.ts`: lista fechada de eventos, sem
+ * cookie e sem id persistente — um id sorteado só para esta visita, nunca gravado. Sem servidor de jogo
+ * configurado, `EVENTO_URL` é null e este script nem entra na página.
+ */
+const EVENTO_URL = game?.net?.eventoUrl ?? null;
+const EVENTO_JS = `(() => {
+  const url = ${JSON.stringify(EVENTO_URL ?? '')};
+  const aba = Math.random().toString(36).slice(2, 18) + Math.random().toString(36).slice(2, 10);
+  const mandar = (nome) => {
+    try {
+      const corpo = JSON.stringify({ nome, aba });
+      if (navigator.sendBeacon) navigator.sendBeacon(url, new Blob([corpo], { type: 'text/plain' }));
+      else fetch(url, { method: 'POST', body: corpo, headers: { 'content-type': 'application/json' }, keepalive: true, mode: 'cors' }).catch(() => {});
+    } catch (e) {}
+  };
+  mandar('landing_view');
+  for (const el of document.querySelectorAll('[data-evento]')) {
+    el.addEventListener('click', () => mandar(el.dataset.evento), { capture: true });
+  }
+})();`;
+const eventoHtml = EVENTO_URL ? `<script>${EVENTO_JS}</script>` : '';
+
 const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
     <div class="hero-copy">
       <p class="presents">SERAFIM WEB apresenta</p>
@@ -175,11 +199,11 @@ const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
       <p class="pitch">Pilote um Mech de combate numa arena industrial e desmonte o inimigo peça por peça. Abriu o link, está jogando: sem instalar, sem conta e sem pay-to-win.</p>
       <div class="cta">
         <div class="cta-buttons">
-          <a class="play-btn" href="./jogar/">[ ENTRAR NO COCKPIT ]</a>
-          ${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA">[ JOGAR ONLINE ]</a>' : ''}
+          <a class="play-btn" href="./jogar/" data-evento="click_cockpit">[ ENTRAR NO COCKPIT ]</a>
+          ${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA" data-evento="click_online">[ JOGAR ONLINE ]</a>' : ''}
         </div>
         ${statusHtml}
-        <a class="link-btn cta-more" href="./sala-de-controle/">como este jogo é feito →</a>
+        <a class="link-btn cta-more" href="./sala-de-controle/" data-evento="click_como_e_feito">como este jogo é feito →</a>
       </div>
       <ul class="facts">${facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
     </div>
@@ -430,7 +454,7 @@ if (net && onlinePhase) {
       <div class="read frame"><span class="k">estado da sala</span><span class="v">${net.SNAPSHOT_HZ} ×/s</span><span class="d">o que mudou de posição, mira e vida chega ${net.SNAPSHOT_HZ} vezes por segundo — e só isso</span></div>
       <div class="read frame"><span class="k">no seu aparelho</span><span class="v">0 decisões</span><span class="d">dano, calor e quem caiu saem do servidor: o seu Mech desenha, não julga</span></div>
     </div>
-    <p>${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA">[ JOGAR ONLINE AGORA ]</a>' : '<span class="rules-note">O servidor público entra no ar em breve: hoje o online roda em teste, num PC.</span>'}</p>
+    <p>${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA" data-evento="click_online">[ JOGAR ONLINE AGORA ]</a>' : '<span class="rules-note">O servidor público entra no ar em breve: hoje o online roda em teste, num PC.</span>'}</p>
     <p class="milestone frame">🎯 <strong>Primeira sessão online ponta a ponta:</strong> 26/09/2026, dois aparelhos do dono jogaram juntos na mesma sala pelo túnel público (<code>jogo.selvamkt.com.br</code>). Agora o servidor fica no ar 24 h; convide alguém e testem juntos.</p>
     <p class="rules-note">${ready} de ${onlinePhase.items.length} etapas prontas. A conta da rede é medida pelos ${net.tests} testes de orçamento a cada entrega: se a sala cheia não couber na meta, a versão não sai.</p>
   </section>`;
@@ -464,7 +488,7 @@ const buildHtml = `<section aria-labelledby="montagem">
 const endHtml = `<section class="final frame" aria-labelledby="final">
     <h2 id="final">Cockpit liberado</h2>
     <p class="lede">A rodada dura cinco minutos. Três pilotos já estão na arena esperando você.</p>
-    <a class="play-btn" href="./jogar/">[ ENTRAR NO COCKPIT ]</a>
+    <a class="play-btn" href="./jogar/" data-evento="click_cockpit">[ ENTRAR NO COCKPIT ]</a>
   </section>`;
 
 // ---------- página ----------
@@ -635,6 +659,7 @@ const body = `
   ${introHtml}
   ${topo({ base: './', current: 'jogo', left: `CYBERMECH // ${esc(m.version ?? 'protótipo')}`, live: `build de hoje · ${esc(m.head)}` })}
   ${heroHtml}
+  ${eventoHtml}
   ${galleryHtml}
   ${featuresHtml}
   ${horizonHtml}

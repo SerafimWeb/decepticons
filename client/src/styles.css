@@ -380,6 +380,31 @@ html, body {
   white-space: pre;
 }
 
+/* Painel do alvo sob a mira: as partes, o calor e as bandeiras que já vêm no estado da rede (0 B a mais). */
+#target-panel {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 45, 61, 0.45);
+  background: rgba(6, 8, 10, 0.6);
+  color: var(--hot);
+  font-size: 12px;
+  line-height: 1.35;
+  letter-spacing: 1px;
+  text-align: left;
+  text-shadow: 0 0 6px var(--hot);
+  pointer-events: none;
+}
+#target-panel[hidden] { display: none; }
+#target-name {
+  margin-bottom: 4px;
+  letter-spacing: 2px;
+}
+#target-body { white-space: pre; }
+#hud.blind #target-panel { display: none; }
+
 #mission-status {
   position: absolute;
   top: 12px;
@@ -636,7 +661,7 @@ html, body {
 }
 #overlay .sub { margin: 6px 0 28px; color: var(--muted); letter-spacing: 3px; }
 #overlay .cta { font-size: 20px; animation: blink 1.2s steps(2) infinite; }
-#mission-summary {
+#round-summary {
   max-width: min(640px, 90vw);
   margin: -4px 0 10px;
   color: var(--hot);
@@ -646,7 +671,7 @@ html, body {
   white-space: pre-line;
   text-shadow: 0 0 8px var(--hot);
 }
-#mission-summary[hidden] { display: none; }
+#round-summary[hidden] { display: none; }
 .btn-terminal {
   margin-top: 14px;
   padding: 8px 16px;
@@ -677,6 +702,11 @@ html, body {
   font-size: 14px;
 }
 #overlay b { color: var(--accent); }
+
+/* Ajuda de controles recolhível na pausa */
+.help-details { margin-top: 14px; }
+.help-details summary { display: inline-block; list-style: none; margin: 0; }
+.help-details summary::-webkit-details-marker { display: none; }
 
 @keyframes blink { 50% { opacity: 0.25; } }
 
@@ -1355,6 +1385,7 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   #overlay ul { margin-top: 10px; gap: 2px 22px; font-size: 12px; }
   .btn-terminal { margin-top: 8px; padding: 6px 12px; font-size: 12px; }
   #stats { top: 8px; left: 10px; font-size: 10px; }
+  #target-panel { right: 10px; font-size: 10px; }
   #mode { font-size: 11px; }
   #dash { bottom: 10px; font-size: 11px; }
   #rockets { bottom: 28px; font-size: 10px; }

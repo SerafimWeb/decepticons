@@ -45,7 +45,7 @@ O primeiro encontro não altera as regras atuais. Ele terá módulo próprio e d
 
 ## 5. Caminho para pilotar
 
-Após o encontro ser validado, o Colossus entra primeiro em sandbox/Hangar. O modo online será assimétrico: um Colossus contra uma equipe, com piloto e artilheiro possíveis. Ele não entra nas salas normais enquanto mapa, câmera e rede não tiverem sido medidos para isso.
+Após o encontro ser validado, o Colossus entra primeiro em sandbox/Hangar. O modo online será assimétrico: um Colossus contra uma equipe, **com vários jogadores na mesma máquina — um por arma ou papel** (mísseis, metralhadoras, lança-chamas, recuperação), como o dono decidiu em 28/09; piloto e artilheiro são os dois primeiros postos. Ele não entra nas salas normais enquanto mapa, câmera e rede não tiverem sido medidos para isso.
 
 ## 6. Som (Gemini)
 
@@ -54,5 +54,6 @@ Após o encontro ser validado, o Colossus entra primeiro em sandbox/Hangar. O mo
 
 ## 7. Decisões fechadas e abertas
 
-- **Fechado pelo dono:** Colossus-01 é escala 3, 14 m, primeiro boss e futuro chassi de modo próprio.
-- **Aberto:** assinatura de arma, valores de combate, fases, quantidade de jogadores do modo assimétrico e momento em que será selecionável no Hangar.
+- **Fechado pelo dono:** Colossus-01 é escala 3, 14 m, primeiro boss e futuro chassi de modo próprio — **encontro primeiro e, depois, jogável com tripulação** (28/09).
+- **Nota de escopo:** o pesado de escala 2 (~6,5 m) **continua existindo** como blueprint visual (`HEAVY_MECH_BLUEPRINT`), mas esta ficha, que era dele, passou a descrever o Colossus; se o pesado voltar a ter ficha, é ficha nova.
+- **Aberto:** assinatura de arma, valores de combate, fases, **quantos jogadores** operam a máquina e o momento em que ela será selecionável no Hangar.

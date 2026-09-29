@@ -2,7 +2,7 @@
 
 **Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
 **Última atualização:** 2026-09-28
-**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo e câmera de abate offline jogáveis no cliente; servidor no ar 24 h.
+**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo, câmera de abate offline e o painel do alvo (legibilidade do dano) no cliente; servidor no ar 24 h.
 
 ---
 
@@ -14,9 +14,91 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `codex/colossus-01` | Colossus-01 definido como boss de escala 3 (14 m), rig procedural e captura de silhueta; ainda sem encontro/jogabilidade | PR a abrir | 28/09 |
+| `claude/login-esqueleto` | esqueleto de contas (auth no cliente e no servidor, com testes) — parado com o Claude; **com conflito com a `main`**, e é por isso que ele não tem CI | **#115 aberto** | 28/09 |
+| `claude/gravacao-nativa` | captura nativa de gameplay (`F9` liga/desliga) — o item de viralidade do clipe | **sem PR** | 28/09 |
+| `gemini/modo-hud-audio` | só um retalho do `ESTADO_ATUAL.md`: o código dele já entrou na `main` por outros PRs | **#110 aberto (obsoleto)** | 27/09 |
+| `gemini/primeira-partida`, `gemini/setas-inimigos`, `gemini/sons-androides` | sobras de 25/09 do Gemini, sem PR; o conteúdo foi refeito na `main` por outras frentes | **sem PR** | 25/09 |
 
 ---
+
+- **O alvo fica legível, e a escala 3 já tem decisão (Qwen, 28/09).** Na mesma mensagem o dono decidiu duas coisas: **a
+  escala 3 é encontro e, depois, Mech de tripulação** (vários jogadores na mesma máquina, um por arma ou papel), e a
+  fila de trabalho é a do `DIVERSAO.md` § 10, *"a mais prioritária e sequencial possível"*. Ele liberou as frentes do
+  **Claude e do Gemini** (pararam por crédito), então o item 1 da fila começou pela metade de HUD:
+  - `client/src/ui/TargetPanel.ts` (+ 8 testes) mostra, do inimigo sob a mira, **as 6 partes** (barra de 10 blocos,
+    `✗` na parte destruída), **o calor** e as **bandeiras** (`SUPERAQUECIDO · TRAVADO`, `EM DASH`), com o chassi no
+    topo — a informação que transforma "mirei na perna" em decisão informada.
+  - **Custo zero:** é tudo o que **já vinha no estado da rede** (19 B por unidade) — nenhum byte a mais, nenhuma regra
+    nova, nenhuma alocação por quadro (o texto é remontado a 10 Hz).
+  - **Prova:** captura real no jogo em `arte/alvo-legivel.png` (o quadro pegou o rebelde **travado**, com o torso
+    avariado). Caminho: `/jogar/` → mirar um inimigo. **Não leio imagem: o veredito estético é do dono.**
+  - `STATUS_REAL.md` marca **PARCIAL**: falta a outra metade do item 1 — os sinais no próprio modelo (fumaça na parte
+    avariada, mancar, arma pendurada, vapor de quem vai travar), frente visual.
+  - **Próximo da fila:** item 2, o conserto da progressão (XP por jogar, onda contada, gancho de "conquistado jogando").
+- **A ficha do CTF confere com o código: 12 dos 15 testes estão travados (Qwen, 28/09).** Auditoria item por item da
+  `fichas/ctf.md` § 4 contra `client/src/sim/CaptureTheFlag.test.ts` (11 testes) e o teste de integração do CTF no
+  `Match` — o mapa item → teste está na § 5 da ficha. **O item 1 é o único offline em aberto** (contrato: partida de
+  CTF sem time, ou com time sem bandeira na base, tem de falhar em vez de começar torta) e é barato de fechar, na
+  frente do Codex/Claude (`sim/` é território deles). Os itens 13 e 15 dependem do contrato de rede; a simetria
+  cronometrada do item 12 depende dos dois chassis existirem como gameplay. Além dos 15 itens, há um teste a mais que
+  trava os callbacks do HUD (`onFlagPickup`/`onCapture`/`onMatchEnd`). Nenhuma linha de código mudou.
+- **A tese da diversão, da competição e da viralidade — e a peça que falta em cada uma (Qwen, 28/09).** Pedido do
+  dono: *"quero que você pense como vamos tornar o jogo mais divertido… mais competitivo… quais os diferenciais que
+  devemos explorar pra tornar o jogo mais viral"*, com três hipóteses na mesa (outros Mechs, missões na fase, novas
+  armas). Resposta em **`DIVERSAO.md`** (documento novo; análise e recomendação, **não** escopo aprovado): a tese é
+  que o diferencial do jogo **não é catálogo, é consequência**, e cada hipótese foi respondida com o código da `main`.
+  - **Legibilidade do alvo é o melhor custo/efeito:** as 6 partes, o **calor do alvo** e as bandeiras
+    `dashing`/`overheated` **já viajam no estado** (`shared/net/state.ts:8-30`, 19 B por unidade) — falta só o
+    visual (fumaça, mancar, esquema do alvo ao mirar). Ganho grande a **0 B de rede e sem regra nova**.
+  - **Os três Mechs rebeldes não têm ficha:** compartilham `VECTOR09_STATS` e diferem só na persona
+    (`BotSystem.ts:141`). Dar ficha a CLAWD/GEMINAI/CHAD-GPT é a estratégia mais barata que existe.
+  - **Cada braço aceita exatamente uma arma** (`ARM_SLOTS`, `chassis.ts:124`): o Hangar promete montagem e a decisão
+    tem quatro linhas — abrir o catálogo por encaixe vem antes de "mais armas".
+  - **Achados de progressão (R17 — registro, não conserto; `ui/` e `hangar/` são do Gemini):** `addXp()` só é
+    chamado em `claimReward()` (`ui/DailyChallenges.ts:90,138`) — **o nível não sobe jogando**; `trackWaveOrRound()`
+    (`:127`) não tem chamador — a missão de sobreviver ondas nunca progride; `validateLoadout` tem o gancho de
+    "conquistado jogando" sem chamador (`hangar/loadout.ts:70`).
+  - **Pendente do dono:** 6 decisões no § 12 (a escala 3 como encontro ou chassi; prioridade entre melhorar o que
+    existe e conteúdo novo; as fichas dos rebeldes; o modificador semanal como primeiro evento; a câmera de abate no
+    PvP; o conserto da progressão). Seis ideias entram no `ROADMAP.md` (IDEIAS) com o caminho da proposta.
+  - `npm run check` verde: **300 testes**, painel, build, budget, smoke e site.
+
+- **Atualização automática do servidor, e métricas de produto (Claude, 28/09, PR `claude/atualizacao-e-metricas`).**
+  Dois pedidos do dono na mesma mensagem.
+  - **"Tem como o servidor reiniciar sozinho quando for necessário... e quando eu estiver dormindo?"** — o
+    servidor já reiniciava sozinho **se caísse** (desde 26/09, `servidor-windows.ps1`); o que faltava era
+    reiniciar sozinho **quando o código muda**. Desenho: **puxar, nunca receber** — nenhum endpoint novo
+    escutando a internet (zero superfície nova); a cada 10 min o PC pergunta ao GitHub se a `main` avançou
+    (`scripts/atualizar-servidor.mjs`), e só troca o código depois de passar pelo mesmo portão do CI —
+    `typecheck` + os testes de `server/` e `shared/` — local e em segundos. **Falhou → volta sozinho para o
+    commit anterior, o servidor que já está no ar nunca é tocado.** Roda numa **worktree separada da pasta
+    onde o dono edita** (`.tmp/wt-servidor-prod/`), porque um `git reset --hard` automático na pasta principal
+    apagaria uma edição não commitada dele um dia qualquer — o script **recusa rodar** fora de uma worktree
+    (testado). Log em `.tmp/servidor/atualizacao.log`. Passo a passo em `DEPLOY.md`, seção "Atualização
+    automática". **Pendência do dono, não do código:** migrar o servidor de hoje (rodando na pasta principal)
+    para a worktree, então rodar `servidor-atualizar.ps1` uma vez.
+  - **"Quero trackear o consumo, quantas pessoas clicaram, onde clicam, onde saem, se jogaram tantas
+    partidas."** `POST /evento` no mesmo servidor de jogo (contrato `shared/net/telemetry.ts`), lista fechada
+    de 9 eventos (visita à landing, os três cliques da landing, boot do jogo, partida iniciada/terminada,
+    troca de modo, Hangar aberto) — qualquer outro nome recusa com 400. **Decisão de privacidade, antes de
+    login/LGPD existir:** `GET /eventos/resumo` devolve só contagens agregadas por evento (24h e total), nunca
+    um evento cru nem um IP; sem cookie, sem id persistente entre sessões (um id sorteado por aba, nunca
+    gravado). Corpo maior que 256 bytes recusa com 413; cada IP tem um balde próprio de 30 eventos/min (não é
+    o `Guard` do WebSocket — é um limitador HTTP separado, com teste de rajada). O emissor
+    (`client/src/core/telemetry.ts`, `scripts/landing.mjs`) usa `sendBeacon` (sobrevive a fechar a aba) com
+    fallback a `fetch keepalive`; qualquer erro é engolido, como o fallback silencioso do `AudioSystem` — a
+    telemetria nunca pode travar nem atrasar o jogo. **Ainda não tem visualização** (o resumo existe, um
+    painel na sala de controle lendo `GET /eventos/resumo` é o próximo passo natural, não construído agora).
+  - **Achado de infraestrutura, não de código (R17, para quem ler o log desta sessão):** o `npm ci` do PC do
+    dono travou de forma persistente e reproduzível num binário nativo do `@rolldown` (`EPERM`, "rejeitado
+    pelo sistema operacional" — a mensagem do próprio npm aponta antivírus) por mais de 10 minutos seguidos,
+    mesmo depois de eu remover o arquivo manualmente e tentar de novo várias vezes — cada tentativa
+    **encolheu** o `node_modules` (de 39 para 4 pacotes) em vez de consertar, porque `npm ci` apaga tudo antes
+    de reinstalar. **`npm run check` não rodou localmente nesta sessão por causa disso** — o código deste PR
+    foi revisado manualmente (é pequeno e segue padrões já testados no projeto: mesma forma de `status.ts`,
+    mesmo padrão de balde de `guard.ts`) e a verificação real é o CI do PR. **Se isso acontecer de novo:** não
+    insista em `npm ci` repetido (piora); investigue o antivírus (exceção para a pasta `node_modules` do
+    projeto) antes.
 
 - **A tela inicial deixa de quebrar em duas linhas, e os botões param de disputar espaço (Claude, 28/09).**
   Pedido do dono, com captura anotada: *"corrige a tela inicial, tira os 2 botões juntos, realinha o 'como é
@@ -108,7 +190,6 @@
 - **O drone na banda, e os elementos do cenário (Qwen; dono: "mas será q o drone vai pesar tanto? e como fazemos pra melhorar esse consumo então… quero também que tenhamos outros elementos (turrets, zonas de regeneração, zonas de resfriamento…), quero também que os andróides possam entrar e sair dos bots"):** a conta, feita com os números do nosso código — `UNIT_BYTES = 19` × 20 Hz × moldura 1,2 = **456 B/s por unidade**, teto de `DOWNLOAD_BUDGET = 8 192 B/s`; a sala cheia de hoje (**12** robôs) usa **6,2 KB/s** dos 8,0 da meta — medido pela própria conta do site, que é a mesma dos testes —, então **um drone por jogador não cabe** (+3,6 KB/s). Saída registrada em `METAGAME.md` **§ 8.1**: registro curto de unidade leve (~10 B), estado do drone a 5 Hz com extrapolação, **trilha pré-calculada** (o spawn leva `path id` + instante → ~0 B/s em voo, a ideia do STERM pagando em banda), teto por esquadrão e o delta/AoI já previsto. E o **§ 9** novo: torres, zonas de cura/resfriamento (**volumes estáticos: 0 B/s**) e o andróide que **entra no Mech economiza 456 B/s** enquanto está dentro (bandeira "tem piloto"; nova bandeira = subir `PROTOCOL_VERSION`). A **entrada dos bots no cenário** (ideia do dono, já mandada ao Codex) ficou com o visual do Codex e o **onde/quando nascem** com o diretor do Claude (G3/G14). Conferido: o "balão" existe mesmo no STERM (`DemoGraph3D.tsx:326`, modo `'balloon'`) — e é câmera também.
 - **Fichas de design (Codex, 27/09):** propostas para Ferret-X, Colossus-01, andróide A-1 e as quatro armas. Números existentes foram copiados do código; stats e slots ainda inexistentes do leve/pesado ficaram como `?`, sem inventar regras. Próximo da fila visual: calor no rig; níveis de arma depois. Aprovação das propostas e decisões abertas ficam com o dono/Claude.
 - **O que o STERM ensina: os ícones do grafo e a ideia do drone (Qwen; dono: "no /sterm-1, no motor pipeline ABBADON, o grafo 3d… usamos o ícone holográfico de um banco de dados pra representar dados… muito tempo atrás criamos uma navegação por drone. Veja se aquele conhecimento é valido… para inserirmos drones no combate"):** leitura de `D:\SERAFIMHUB\sterm-1` (só leitura, nada tocado). O grafo do ABBADON tem um **registro tipo → ícone** (`NODE_ICONS`, 30 tipos: ícone de banco de dados para dado/asset, caveira para vulnerabilidade, escudo para defesa) com **cor por tipo**, corpo por geometria e brilho falso sem pós-processamento — **isso eu trago para o mapa da oficina**, onde o ícone vira `<path>` SVG embutido (zero KB, sem DOM por frame, determinístico). Já o drone de lá é **câmera sobre trilhos**, não unidade de combate: não há navegação de unidade para portar. Então o drone entra como **bloco de planejamento** (`METAGAME.md` § 8): prioridade de alvo pelo que já está ferido (encaixa no dano por parte), modos de voo como perfis de números e trilha pré-calculada fora do tick; desvio com Rapier e o **custo na rede** (o drone conta como unidade: 19 bytes, teto de 8 KB/s de download) ficam com o Claude, depois do loop da partida.
->>>>>>> origin/main
 - **Online mais fechado: barricadas e placar do servidor (Claude, 27/09):** o servidor emite `PROP_BROKEN(id)` quando uma barricada quebra e `ARENA_RESET` na rodada nova; o cliente aplica pelo `id` estável, sem calcular dano local. O placar do jogador online passa a vir dos eventos `KILL` do servidor (antes o cliente offline não conta): `OnlineSession.standings()` monta a lista com nomes do roster, e `onScore(kills, deaths)` alimenta o HUD. 2 novos tipos de evento no protocolo (`ARENA_RESET` = 1 byte). Nenhuma alocação por tick.
 - **A pauta do metagame, 2ª leva (Qwen; dono: mais duas visões do especialista externo):** `.decepticons/METAGAME.md` ganhou a **monetização ética em 6 frentes** (§ 6 — expressão modular estilo Gunpla, piloto/cabine com voz de IA de bordo, passe de temporada com missões que forçam builds, execuções e celebração, cenários de hangar, licenças/colaborações; nada muda dano, blindagem, hitbox ou cadência) e os **5 pilares de produto e viralidade** (§ 7 — física emergente "clipável", co-op tático/PvEvP, fricção zero de entrada, criadores e espectadores, narrativa viva por setores), cada um com **hoje no código** e **o que falta**, mais "quem toca a 2ª leva" e a **recomendação do Qwen**: loop da partida primeiro (no papel), depois stand de tiro no hangar e código curto de build (o `?build=` já existe), `mass-distribution` com o Claude, e **nada de loja ou passe antes de contas**. É pauta, não código.
 - **A pauta do metagame (Qwen; dono: visão de um especialista externo):** registrada em `.decepticons/METAGAME.md` — os 5 grupos que faltam para metagame, economia justa, retenção e viralidade (calibragem física/balística, progressão, economia ética, viralidade, telemetria), cada bloco com **o que já existe** e **o que falta**, e a divisão: **o grosso é do Claude** (engenharia), Codex (visual), Gemini (interface), Qwen (pauta, testes, balanço). É pauta, não código; o dono prioriza. Vários blocos são extensão do que já temos (calor, dano por parte, `?build=`).
@@ -301,7 +382,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
 - **Codex:** concluir PR visual do Colossus-01 e, depois do merge, iniciar o encontro offline determinístico com IA própria, pontos fracos e câmera de escala 3. A arma, números e modo assimétrico seguem decisões abertas.
 - **Claude:** definir e implementar o contrato autoritativo para escolher o modo da sala e transportar as transições de onda/objetivo; completar o online. Sincronizar máquina de estados de Ondas da simulação.
-- **Qwen:** relatório de saúde técnica do projeto e ícones no mapa da oficina.
+- **Qwen:** a fila do `DIVERSAO.md` § 10 — **item 2 (conserto da progressão)** e adiante; o item 1 já tem a metade de HUD no jogo (painel do alvo) e a metade visual (sinais no próprio modelo) segue com a frente visual.
 - **Dono (primeiro de tudo, 28/09):** **reiniciar o servidor de jogo de casa** para ele passar a responder
   `/status` — até lá a página diz "SERVIDOR ONLINE · SEM CONTAGEM DE PILOTOS" (online, sem o número).
 - **Dono:** Testar no site o Seletor de Modo, a abertura do Briefing da Missão (`KeyM` / `KeyB` ou selecionar Sobrevivência), os alarmes de onda, as medalhas de conquista e o jogo offline de Sobrevivência/CTF. Decidir o universo (`UNIVERSO.md`, seção 7), a seção 9 e as decisões da seção 10 do `MULTIPLAYER.md`.

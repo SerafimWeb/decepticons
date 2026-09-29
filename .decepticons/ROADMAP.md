@@ -112,6 +112,8 @@
 - [x] Peso dos Mechs (9 m/s, inércia, passos com som e tremor) e andróides de 1,6 m #mechs
 - [x] Modelos de ficha de design (robô e arma) e a ficha do Vector-09 como exemplo (pasta `fichas/`) #mechs
 - [x] Sala de controle (antigos bastidores): novidades, mesa do Dan e o processo criativo das fichas, lidos dos documentos #base
+- [x] Atualização automática do servidor de jogo: puxa a `main` a cada 10 min, só troca o código depois de passar por typecheck e testes, reverte sozinho se falhar; nunca toca o servidor no ar sem verificar antes (Claude, 28/09) #base
+- [x] Métricas de produto: funil de cliques da landing, boot, início/fim de partida e troca de modo, contados no servidor de jogo sem IP nem identificação pessoal (Claude, 28/09) #negocio
 - [x] Fichas propostas do Mech leve e pesado, andróide e 4 armas; stats não existentes seguem pendentes #mechs
 - [x] Calor com fôlego: ~15 tiros segurando, trava de ~2 s, superaquecido anda a 75% #combate
 - [x] Potências: painel do dono por arma e por clã, com o efeito na luta e aviso de apelação, salvo e por link #combate
@@ -194,6 +196,12 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] **WebTransport (quando o Firefox terminar):** UDP no navegador, corta jitter em rede ruim #rede
 
 ## 💡 IDEIAS
+- [~] **Legibilidade do alvo (dano por parte visível):** a **leitura em painel** está no jogo — ao mirar um inimigo aparecem as 6 partes, o calor e as bandeiras (`SUPERAQUECIDO · TRAVADO`, `EM DASH`), tudo lido do que **já vem no estado** (19 B por unidade, `shared/net/state.ts`; **0 B a mais**), em `ui/TargetPanel.ts` com captura real em `arte/alvo-legivel.png` (Qwen, 28/09). **Falta a outra metade:** fumaça e faísca na parte avariada, o Mech mancando visto de longe, a arma destruída pendurada e o vapor de quem vai travar — frente visual (Codex). Proposta e números em `DIVERSAO.md` § 7 #combate
+- [ ] **Recibo da partida e cartão compartilhável:** precisão, partes destruídas, dano por calor, travamentos por superaquecimento, onda alcançada — no fim da rodada, com uma imagem local para mandar no link. Proposta em `DIVERSAO.md` § 7 e § 8 #ux
+- [ ] **Marcador de alvo (ping):** uma tecla marca o alvo para o time; viaja como evento, sem estado novo. Proposta em `DIVERSAO.md` § 6 #modos
+- [ ] **Catálogo por encaixe e as células vazias da grade de situações:** hoje cada braço aceita exatamente uma arma (`ARM_SLOTS`, `chassis.ts:124`); abrir 2–3 opções por braço e cobrir precisão, controle e suporte. Proposta e grade em `DIVERSAO.md` § 4 e § 5 #combate
+- [ ] **Ficha própria dos três Mechs rebeldes:** CLAWD (longo), GEMINAI (pesado) e CHAD-GPT (rápido) compartilham `VECTOR09_STATS` e diferem só na persona (`BotSystem.ts:141`); números e metas (Claude), silhueta (Codex), ficha (Qwen). Proposta em `DIVERSAO.md` § 4 #ia
+- [ ] **Modificador semanal:** uma flag de regra e uma linha de HUD ("sem foguetes", "calor dobrado", "caça ao técnico") como novidade barata que força build diferente. Proposta em `DIVERSAO.md` § 9 #modos
 - [ ] **Mech com dois operadores** (27/09 — expandido): papéis possíveis: Piloto (movimento, dash, pulo), Artilheiro (mira independente, terceira arma exclusiva no topo do Mech), Mecânico (reparo em tempo real de partes danificadas). Um bot pode ocupar qualquer papel. Alternância rápida Piloto⇔Artilheiro por tecla. Serve para testes A/B de balanceamento com combinações bot×humano. Interface (HUD de papel, câmera do artilheiro, indicador de mecânico): **Gemini**. Contrato `MechInput` dual + autoridade de rede: **Claude** #mechs
 - [ ] **Drones voadores pequenos** (27/09 — expandido): sub-escala 1, proporcionais ao androide (que é escala 1 = ~1,6 m), portanto visualmente pequenos perto dos Mechs de escala 2 (~5,3 m). Modelos e efeitos de voo: **Codex**. HUD de status da frota e câmera de visão do drone: **Gemini** #mechs
 - [ ] **Missões de sobrevivência por fases** (27/09 — expandido): referência *Project Zomboid*, ondas crescentes de androides humanoides + Mechs rebeldes, mapa com setores que fecham, solo ou co-op. Lógica de ondas no servidor: **Claude**. Interface completa (briefing, HUD de onda, resumo final): **Gemini** #modos

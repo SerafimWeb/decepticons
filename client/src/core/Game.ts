@@ -26,6 +26,7 @@ import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
 import { PlayerController } from '../player/PlayerController';
 import { DamageIndicator } from '../ui/DamageIndicator';
+import { TargetPanel } from '../ui/TargetPanel';
 import { HUD } from '../ui/HUD';
 import { KillFeed } from '../ui/KillFeed';
 import { MouseCalibration } from '../ui/MouseCalibration';
@@ -54,6 +55,7 @@ import { parseLoadoutKey } from '../hangar/loadout';
 import { defaultServer, onlineConfig } from '../net/onlineConfig';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
+import { Telemetry } from './telemetry';
 import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
@@ -134,6 +136,7 @@ export class Game {
   private readonly online: OnlineSession | null;
   private readonly netStatus = document.createElement('div');
   private readonly damageIndicator = new DamageIndicator();
+  private readonly targetPanel = new TargetPanel();
   private readonly debugPanel = new DebugPanel();
   private readonly audio = new AudioSystem();
   /** Vinheta da SERAFIM WEB antes da primeira partida da sessão. */
@@ -162,6 +165,8 @@ export class Game {
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
   private readonly hangarMenu: HangarMenu;
+  /** Métricas de produto (dono, 28/09): poucos eventos de funil, nunca por quadro. */
+  private readonly telemetry: Telemetry;
   private readonly lobby = new OnlineLobby();
   private aimPracticeInterval = 0.18;
   private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
@@ -272,7 +277,6 @@ export class Game {
     this.roundHud = new RoundHud(this.mech, this.gameMode === 'deathmatch');
     // Botão na tela de pausa; a calibração tem camada própria e não retoma o jogo.
     new MouseCalibration(this.settings, [
-      document.getElementById('btn-settings')!,
       document.getElementById('setting-sens')!.closest('.setting-row')!,
     ]);
 
@@ -340,6 +344,8 @@ export class Game {
     this.setTouchMode(matchMedia('(hover: none) and (pointer: coarse)').matches);
     this.hud.setMode(this.rig.mode);
     this.hud.setReady(this.input.touchMode);
+    this.telemetry = new Telemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
+    this.telemetry.enviar('boot_ok');
     if (this.gameMode === 'survival') this.hud.setMissionMode(true);
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
     else this.hud.setMissionMode(false);
@@ -354,6 +360,7 @@ export class Game {
     // Hangar: enquanto está aberto, o desenho troca a arena pelo galpão (o jogo está pausado).
     this.hangarMenu = new HangarMenu(this.hangar, {
       open: () => {
+        this.telemetry.enviar('hangar_aberto');
         this.hangarScene ??= new HangarScene();
         this.hangarView = true;
         this.renderPass.scene = this.hangarScene.scene;
@@ -626,7 +633,10 @@ export class Game {
       if (dist < 40) rig.addShake(0.5 * (1 - dist / 40));
       this.audio.playExplosion(dist);
     };
-    this.match.onRoundStart = () => this.startRound();
+    this.match.onRoundStart = () => {
+      this.telemetry.enviar('partida_iniciada');
+      this.startRound();
+    };
     this.match.onWaveStart = (wave, total, _mechs, _androids, title) => {
       this.hud.setMissionWave(wave, total, title);
       this.audio.playAmbientBram();
@@ -634,6 +644,7 @@ export class Game {
     this.match.onWaveProgress = (wave, killed, total, elapsedS) => this.hud.setMissionProgress(wave, killed, total, elapsedS);
     this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
     this.match.onMissionEnd = (survived, waveReached, stats) => {
+      this.telemetry.enviar('partida_terminada');
       this.missionEnded = true;
       this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds);
       this.setPlaying(false);
@@ -650,6 +661,7 @@ export class Game {
     };
     this.match.onCtfProgress = (timeLeft, blue, red) => this.hud.setCtfProgress(timeLeft, blue.captures, red.captures);
     this.match.onCtfEnd = (winner, blue, red) => {
+      this.telemetry.enviar('partida_terminada');
       this.missionEnded = true;
       this.hud.setCtfEnd(winner, blue.captures, red.captures, blue.kills, red.kills);
       this.setPlaying(false);
@@ -722,6 +734,7 @@ export class Game {
         autoStartSecs: 10,
       },
       () => {
+        this.telemetry.enviar('partida_iniciada');
         this.hud.setPaused(false);
         this.missionHud.showWaveHud(1, 10);
       }
@@ -758,6 +771,7 @@ export class Game {
     button.textContent = `[ MODO: ${label} · TROCAR ]`;
     button.addEventListener('click', (event) => {
       event.stopPropagation();
+      this.telemetry.enviar('modo_trocado');
       this.audio.playUiTransition();
       const url = new URL(location.href);
       if (this.gameMode === 'deathmatch') {
@@ -789,9 +803,11 @@ export class Game {
     const s = this.settings.value;
     const touch = this.input.touchMode && this.playing;
     const engaged = this.input.virtualMoveX !== 0 || this.input.virtualMoveZ !== 0 || this.touch.aiming || this.input.virtualFire;
+    let aimed: MechBase | undefined;
     if (!this.playing) this.assist.reset();
     else {
       const target = this.combat.mechOf(this.rig.aim.target);
+      aimed = target;
       const pull = this.assist.update(dt, this.camera, this.rig.look, target, touch && s.touchAimAssist, engaged);
       this.rig.nudge(pull.yaw, pull.pitch);
       // Mira no ponto antecipado: o tiro vai até a distância do alvo, não até a parede atrás dele.
@@ -800,6 +816,8 @@ export class Game {
         this.rig.aim.point.copy(this.camera.getWorldPosition(_aimFrom)).addScaledVector(_aimDir, this.assist.aimDist);
       }
     }
+    // O painel do alvo mostra o que já vem no estado — partes, calor e bandeiras — sem custo de rede.
+    this.targetPanel.update(dt, this.playing && this.mech.alive ? (aimed ?? null) : null);
     this.input.autoFire = touch && s.touchAutoFire && this.assist.fireReady;
     this.hud.setOnTarget(this.assist.onTarget);
     if (this.assist.onTarget) this.onboarding.trigger('aim');
@@ -954,13 +972,13 @@ export class Game {
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);
-    this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.debris.count);
+    this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY);
     this.renderer.info.reset();
     this.composer.render(dt);
     
     // Atualiza medidor de FPS depois do render
     this.quality.update(dt);
-    this.debugPanel.update(dt, tickMs, this.renderer.info, this.quality.currentTier);
+    this.debugPanel.update(dt, tickMs, this.renderer.info, this.quality.currentTier, this.debris.count);
     
     this.input.endFrame();
   }

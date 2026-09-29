@@ -21,8 +21,8 @@ const CRIT_S = 0.35;
 const LABEL_S = 1.4;
 const DAMAGE_FLASH_S = 0.25;
 
-/** Integridade do próprio Mech: uma barra de 10 blocos por parte. */
-const INTEGRITY_ROWS: readonly (readonly [MechPart, string])[] = [
+/** Integridade do próprio Mech: uma barra de 10 blocos por parte (o painel do alvo lê igual). */
+export const INTEGRITY_ROWS: readonly (readonly [MechPart, string])[] = [
   ['head', 'CABEÇA '],
   ['torso', 'TORSO  '],
   ['leftArm', 'BRAÇO E'],
@@ -31,7 +31,7 @@ const INTEGRITY_ROWS: readonly (readonly [MechPart, string])[] = [
   ['rightLeg', 'PERNA D'],
 ];
 
-function integrityBar(value: number, max: number): string {
+export function integrityBar(value: number, max: number): string {
   if (value <= 0) return '░░░░░░░░░░ ✗';
   const n = Math.max(1, Math.ceil((value / max) * 10));
   return '█'.repeat(n) + '░'.repeat(10 - n);
@@ -49,7 +49,7 @@ export class HUD {
   private readonly dashFill = $('dash-fill');
   private readonly stats = $('stats');
   private readonly missionStatus = $('mission-status');
-  private readonly missionSummary = $('mission-summary');
+  private readonly missionSummary = $('round-summary');
   private readonly modeLabel = $('mode');
   private readonly hitmarker = $('hitmarker');
   private readonly hitLabel = $('hit-label');
@@ -274,7 +274,7 @@ export class HUD {
     }
   }
 
-  update(dt: number, mech: MechBase, cursorX: number, cursorY: number, debrisCount: number): void {
+  update(dt: number, mech: MechBase, cursorX: number, cursorY: number): void {
     const isBlind = mech.isBlind;
     this.root.classList.toggle('blind', isBlind);
 
@@ -327,7 +327,6 @@ export class HUD {
       `VEL    ${speed.toFixed(1).padStart(5)} m/s\n` +
       `ABATES ${this.kills.toString().padStart(5)}\n` +
       `MORTES ${this.deaths.toString().padStart(5)}\n` +
-      `DEBRIS ${debrisCount.toString().padStart(5)}\n` +
       integrity;
   }
 }
