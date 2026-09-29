@@ -70,6 +70,26 @@ export class AudioSystem {
   }
 
   /**
+   * Ponto de saída pro gravador nativo (`core/GameRecorder.ts`, dono: gravações próprias, alta qualidade,
+   * sem OBS). Mudança pequena e aditiva neste arquivo (território do Gemini, `AGENTS.md` regra 4): só
+   * conecta/desconecta um `AudioNode` extra no mesmo `masterGain` que já toca no alto-falante — nenhum som
+   * existente muda. `null` quando o áudio ainda não iniciou (antes do primeiro gesto do jogador).
+   */
+  get context(): AudioContext | null {
+    return this.ctx;
+  }
+  connectRecorder(dest: AudioNode): void {
+    this.masterGain?.connect(dest);
+  }
+  disconnectRecorder(dest: AudioNode): void {
+    try {
+      this.masterGain?.disconnect(dest);
+    } catch {
+      // já desconectado; nada a fazer.
+    }
+  }
+
+  /**
    * Inicia o carregamento de um sample de áudio.
    * Não bloqueia a thread.
    */

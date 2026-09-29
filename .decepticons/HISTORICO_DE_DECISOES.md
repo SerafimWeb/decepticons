@@ -1,5 +1,27 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] Gravação nativa: captura manual de quadro em vez de `preserveDrawingBuffer` sempre ligado (Claude)
+**Pedido do dono, depois de reclamar da qualidade do OBS:** *"se pudermos gravar direto no jogo ficaria
+perfeito"*. Decisão de escopo (28/09, mais cedo): só o dono usa, sem feature pública de gravação.
+**Decisão técnica — o problema real e por que a solução óbvia era ruim:** um canvas WebGL não entrega quadro
+nenhum para `canvas.captureStream()` a menos que o navegador preserve o buffer de desenho entre quadros
+(`preserveDrawingBuffer: true` na criação do `WebGLRenderer`). A saída óbvia — ligar essa opção — tem custo
+de GPU **permanente, para todo jogador**, só para os raros minutos em que o dono aperta uma tecla. Rejeitada.
+**Solução:** `canvas.captureStream(0)` (modo manual, zero quadros automáticos) + um `requestFrame()` chamado
+uma vez por quadro do laço de render, só quando a gravação está ligada. Sem gravar, é um `if` que devolve na
+hora — nenhum custo para o resto do jogo.
+**Achado de quebra durante a implementação (R17):** a intuição de "pedir mais um quadro garantido bem antes
+de `stop()`, para não perder o último instante" parecia certa e **quebrava a gravação** — o gravador nunca
+fechava com conteúdo. Confirmado testando as duas versões lado a lado no mesmo navegador: sem esse pedido
+extra, funciona sempre que testado; com ele, nunca. Removido.
+**Verificação:** Chrome de verdade, arquivo `.webm` validado com `ffprobe` (VP9 1280×720 + Opus). A
+automação headless (Chrome + SwiftShader, usada nos outros testes do projeto) se mostrou instável
+especificamente para esta API — registrado como limitação do ambiente de teste, não do código, com pedido
+explícito de confirmação manual do dono.
+**Quem decidiu:** dono (o pedido, e a decisão anterior de manter privado); Claude (captura manual em vez de
+`preserveDrawingBuffer` permanente, tecla escondida do `keys-help`, o achado do `requestFrame` antes do stop).
+
+
 ## [2026-09-28] A escala 3 é o Mech de tripulação — e o alvo fica legível (Qwen)
 **Pedido do dono:** *"Escala 3 é encontro **E** futuramente vamos poder jogar com eles também (acho que é nesse tipo de mech que poderemos colocar vários jogadores operando um só, cada jogador cuida de uma arma, mísseis, metralhadoras, lança-chamas, recuperação, etc); prioridade é a mais prioritária e sequencial possível; pode prosseguir com as tarefas do gemini e do claude, pois eles acabaram o credito e pararam de trabalhar. prossiga"*
 **Decisão 1 — a escala 3:** ela é **encontro** (o alvo que pede mais de um piloto) **e, depois, jogável como Mech de tripulação** — vários jogadores na mesma máquina, um por arma ou papel (mísseis, metralhadoras, lança-chamas, recuperação). Encontro primeiro; a tripulação é a evolução da mesma máquina, não um segundo projeto. Registrado em `METAGAME.md` § 10 e no `ROADMAP.md`; o `VISAO.md` é do dono e não foi tocado.

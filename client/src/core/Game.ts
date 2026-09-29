@@ -55,6 +55,7 @@ import { parseLoadoutKey } from '../hangar/loadout';
 import { defaultServer, onlineConfig } from '../net/onlineConfig';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
+import { GameRecorder } from './GameRecorder';
 import { Telemetry } from './telemetry';
 import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
@@ -167,6 +168,8 @@ export class Game {
   private readonly hangarMenu: HangarMenu;
   /** Métricas de produto (dono, 28/09): poucos eventos de funil, nunca por quadro. */
   private readonly telemetry: Telemetry;
+  /** Gravação nativa de gameplay (dono, 28/09): tecla escondida, só para uso interno. */
+  private readonly recorder: GameRecorder;
   private readonly lobby = new OnlineLobby();
   private aimPracticeInterval = 0.18;
   private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
@@ -346,6 +349,7 @@ export class Game {
     this.hud.setReady(this.input.touchMode);
     this.telemetry = new Telemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
     this.telemetry.enviar('boot_ok');
+    this.recorder = new GameRecorder(this.renderer.domElement, this.audio);
     if (this.gameMode === 'survival') this.hud.setMissionMode(true);
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
     else this.hud.setMissionMode(false);
@@ -709,6 +713,11 @@ export class Game {
         this.hud.toggleVisibility();
         return;
       }
+      // Gravação nativa (dono, 28/09): de propósito fora do keys-help da tela inicial — é para uso interno.
+      if (code === 'F9') {
+        this.recorder.alternar();
+        return;
+      }
       if (code === 'KeyM' || code === 'KeyB') {
         this.triggerMissionBriefing();
         return;
@@ -975,7 +984,8 @@ export class Game {
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY);
     this.renderer.info.reset();
     this.composer.render(dt);
-    
+    this.recorder.capturarQuadro();
+
     // Atualiza medidor de FPS depois do render
     this.quality.update(dt);
     this.debugPanel.update(dt, tickMs, this.renderer.info, this.quality.currentTier, this.debris.count);
