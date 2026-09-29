@@ -21,8 +21,8 @@ const CRIT_S = 0.35;
 const LABEL_S = 1.4;
 const DAMAGE_FLASH_S = 0.25;
 
-/** Integridade do próprio Mech: uma barra de 10 blocos por parte. */
-const INTEGRITY_ROWS: readonly (readonly [MechPart, string])[] = [
+/** Integridade do próprio Mech: uma barra de 10 blocos por parte (o painel do alvo lê igual). */
+export const INTEGRITY_ROWS: readonly (readonly [MechPart, string])[] = [
   ['head', 'CABEÇA '],
   ['torso', 'TORSO  '],
   ['leftArm', 'BRAÇO E'],
@@ -31,7 +31,7 @@ const INTEGRITY_ROWS: readonly (readonly [MechPart, string])[] = [
   ['rightLeg', 'PERNA D'],
 ];
 
-function integrityBar(value: number, max: number): string {
+export function integrityBar(value: number, max: number): string {
   if (value <= 0) return '░░░░░░░░░░ ✗';
   const n = Math.max(1, Math.ceil((value / max) * 10));
   return '█'.repeat(n) + '░'.repeat(10 - n);
