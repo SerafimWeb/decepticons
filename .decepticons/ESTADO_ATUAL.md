@@ -49,11 +49,13 @@
     suas próprias gravações, primeiro vamos só nós usarmos") continua valendo: é recurso interno, não
     feature de jogador.
   - **"Modo captura" junto do F9 (item R0 de `PROPOSTA-REPLAY.md`, achado numa proposta antiga de 28/09 em
-    `.tmp/video/`):** trava a resolução no máximo (`Math.max(2, devicePixelRatio)`) e desliga o
-    rebaixamento automático de qualidade (G12) enquanto grava. Sem isso, a própria gravação derruba o FPS, a
-    qualidade adaptativa reage baixando a resolução no meio do take — o mesmo problema que o dono já tinha
-    descrito do OBS, causado dessa vez pelo próprio jogo. Some com o F9 de novo, voltando pra configuração
-    de qualidade que o jogador tinha escolhido.
+    `.tmp/video/`):** trava a resolução no teto de qualidade "alta" (`maxPixelRatio()`, ≤1.5 — **corrigido em
+    29/09, PR `claude/fix-gravacao-pixelratio`**: era `Math.max(2, devicePixelRatio)`, que passava esse teto
+    em telas de alta densidade e derrubava o FPS de verdade, causando o próprio soluço/quadro perdido que o
+    dono relatou ao testar) e desliga o rebaixamento automático de qualidade (G12) enquanto grava. Sem isso,
+    a própria gravação derruba o FPS, a qualidade adaptativa reage baixando a resolução no meio do take — o
+    mesmo problema que o dono já tinha descrito do OBS, causado dessa vez pelo próprio jogo. Some com o F9 de
+    novo, voltando pra configuração de qualidade que o jogador tinha escolhido.
   - **Achado técnico real, não trivial:** um canvas WebGL não guarda o quadro entre desenhos
     (`preserveDrawingBuffer: false`, e **continua assim para todo jogador** — ligar isso sempre custaria GPU
     de todo mundo só para os raros minutos em que o dono grava). A saída: `captureStream(0)` (modo manual) +
