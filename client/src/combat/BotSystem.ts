@@ -3,6 +3,7 @@ import { GLOW, PALETTE } from '../core/palette';
 import type { MechBase } from '../entities/MechBase';
 import { Android } from '../entities/Android';
 import { ANDROID_STATS, COLOSSUS_BOSS_STATS, VECTOR09_STATS } from '../entities/chassis';
+import { COLOSSUS_01_BLUEPRINT } from '../entities/mechBlueprint';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
@@ -152,7 +153,12 @@ export class BotSystem {
     // O Colossus (escala 3), quando a missão tem boss: nasce no ponto dedicado, com o perfil de cerco e sem
     // personalidade de piloto (não é um rebelde, é uma máquina). Entra no pool como os outros: nada é criado no tick.
     if (o.bossSpawn) {
-      const boss = new Vector09({ paint: BOT_PAINT, visor: PALETTE.signal, stats: poweredStats(COLOSSUS_BOSS_STATS, power, 'mechs') });
+      const boss = new Vector09({
+        paint: BOT_PAINT,
+        visor: PALETTE.signal,
+        stats: poweredStats(COLOSSUS_BOSS_STATS, power, 'mechs'),
+        blueprint: COLOSSUS_01_BLUEPRINT,
+      });
       const home = place(boss, o.bossSpawn);
       const brain = new BotController(boss, o.physics, waypoints, seed * 1000 + 900, o.skill ?? BOT_SKILL_NORMAL, BOSS_PROFILE, PERSONAS.soldado);
       this.bots.push({ mech: boss, brain, name: 'COLOSSUS-01', home });
