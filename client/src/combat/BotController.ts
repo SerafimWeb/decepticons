@@ -70,8 +70,13 @@ export const ANDROID_PROFILE: BotProfile = { attackRange: 18, keepMinRange: 0, s
  * Colossus (escala 3, cerco): domina o espaço de longe e **não desvia nem corre** — o giro lento é a fraqueza
  * que a ficha promete ("circular e expor o flanco"). Chegar perto é a resposta do jogador; ficar no aberto
  * na frente dele, não.
+ *
+ * `aimErrorScale: 1.8` é decisão de **equilíbrio** (dono, 29/09: *"não pode ser absurdamente forte... pra que
+ * possamos ter combates épicos e com inteligência"*): a máquina é grande, a torre é lenta e os tiros saem
+ * espalhados. O dano por tiro continua sendo o do plasma de qualquer rebelde — o que o Colossus tem de
+ * diferente não é peso de fogo, é vida e espaço. Quem se expõe muito tempo morre; quem circula, vence.
  */
-export const BOSS_PROFILE: BotProfile = { attackRange: 46, keepMinRange: 24, strafeMinS: 2.6, strafeMaxS: 4.2, dodgeChance: 0, aimErrorScale: 1.3 };
+export const BOSS_PROFILE: BotProfile = { attackRange: 46, keepMinRange: 24, strafeMinS: 2.6, strafeMaxS: 4.2, dodgeChance: 0, aimErrorScale: 1.8 };
 /**
  * Personalidade do piloto (dono, 25/09: "um mais brabo, outro mais manso, outro fujão que ataca na
  * covardia"). Por cima do tipo de robô (`BotProfile`) e da dificuldade (`BotSkill`): muda quão perto

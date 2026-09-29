@@ -1,6 +1,10 @@
 /** Preparação antes da primeira horda e intervalo depois de limpar cada onda. */
 export const WAVE_BRIEFING_S = 3;
-export const WAVE_CLEAR_S = 4;
+/**
+ * Intervalo entre ondas: **6 s** (era 4). O dono jogou e achou a missão dura demais — este é o único respiro
+ * para atravessar a arena até a **zona de cura** (20 vida/s) antes da horda seguinte.
+ */
+export const WAVE_CLEAR_S = 6;
 export const WAVE_PROGRESS_INTERVAL_S = 0.1;
 
 export interface WavePlan {
@@ -15,16 +19,17 @@ export interface WavePlan {
 }
 
 /**
- * Primeira missão vertical: **seis ondas** — as cinco primeiras com até seis inimigos vivos e a última
- * fechada pelo **Colossus-01 (escala 3)**, que ocupa uma vaga própria no pool. O teto é deliberado:
- * preserva os oito character controllers previstos para uma sala (jogador + sete inimigos no pior caso).
+ * Primeira missão vertical: **seis ondas**, fechada pelo **Colossus-01 (escala 3)**, que ocupa uma vaga
+ * própria no pool. O teto de vivos é deliberado (respeita os oito character controllers de uma sala), mas o
+ * que manda no ritmo é o **orçamento do diretor**: quantos atacam ao mesmo tempo. Ele baixou em 29/09 — o
+ * dono jogou e não passou da quarta onda, e a causa era cair em cima dele com três atacantes por vez.
  */
 export const SURVIVAL_WAVE_PLANS: readonly WavePlan[] = Object.freeze([
   Object.freeze({ wave: 1, mechs: 0, androids: 2, maxAttackers: 1, title: 'Contato inicial' }),
-  Object.freeze({ wave: 2, mechs: 1, androids: 2, maxAttackers: 1.5, title: 'Blindagem rebelde' }),
-  Object.freeze({ wave: 3, mechs: 1, androids: 3, maxAttackers: 2, title: 'Cerco tático' }),
-  Object.freeze({ wave: 4, mechs: 2, androids: 3, maxAttackers: 2.5, title: 'Linha de ruptura' }),
-  Object.freeze({ wave: 5, mechs: 3, androids: 3, maxAttackers: 3, title: 'Última resistência' }),
+  Object.freeze({ wave: 2, mechs: 1, androids: 2, maxAttackers: 1, title: 'Blindagem rebelde' }),
+  Object.freeze({ wave: 3, mechs: 1, androids: 2, maxAttackers: 1.5, title: 'Cerco tático' }),
+  Object.freeze({ wave: 4, mechs: 2, androids: 2, maxAttackers: 2, title: 'Linha de ruptura' }),
+  Object.freeze({ wave: 5, mechs: 2, androids: 3, maxAttackers: 2.5, title: 'Última resistência' }),
   Object.freeze({ wave: 6, mechs: 0, androids: 2, boss: true, maxAttackers: 2, title: 'COLOSSUS-01 · CERCO' }),
 ]);
 
@@ -55,19 +60,29 @@ export interface SurvivalWaveCallbacks {
  */
 export class SurvivalWaves {
   phase: WavePhase = 'briefing';
-  wave = 1;
+  wave: number;
   killed = 0;
   total = 0;
   waveElapsed = 0;
   missionElapsed = 0;
   damageDealt = 0;
-  private planIndex = 0;
+  private planIndex: number;
   private phaseLeft = WAVE_BRIEFING_S;
   private progressLeft = 0;
   private completedWaves = 0;
   private totalKills = 0;
 
-  constructor(private readonly callbacks: SurvivalWaveCallbacks) {}
+  /**
+   * `firstWave` (1 a 6) é o atalho de bancada `?onda=`: começa a missão naquela onda, para ver o encontro
+   * com o Colossus sem vencer as cinco anteriores. Fora do intervalo, a missão começa na 1.
+   */
+  constructor(
+    private readonly callbacks: SurvivalWaveCallbacks,
+    private readonly firstWave = 1,
+  ) {
+    this.wave = this.firstWave;
+    this.planIndex = this.firstWave - 1;
+  }
 
   get ended(): boolean {
     return this.phase === 'completed' || this.phase === 'failed';
@@ -79,13 +94,13 @@ export class SurvivalWaves {
 
   reset(): void {
     this.phase = 'briefing';
-    this.wave = 1;
+    this.wave = this.firstWave;
     this.killed = 0;
     this.total = 0;
     this.waveElapsed = 0;
     this.missionElapsed = 0;
     this.damageDealt = 0;
-    this.planIndex = 0;
+    this.planIndex = this.firstWave - 1;
     this.phaseLeft = WAVE_BRIEFING_S;
     this.progressLeft = 0;
     this.completedWaves = 0;

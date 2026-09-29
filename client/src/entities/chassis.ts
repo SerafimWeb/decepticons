@@ -141,7 +141,7 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
   dashCooldown: 1,
   demolishOnDash: false,
   weaponCapacity: 24,
-  maxModuleHealth: { torso: 1600, head: 400, leftArm: 500, rightArm: 500, leftLeg: 600, rightLeg: 600 },
+  maxModuleHealth: { torso: 1200, head: 260, leftArm: 380, rightArm: 380, leftLeg: 450, rightLeg: 450 },
 };
 
 /** Chassis que o jogador pode pilotar (o andróide rebelde e o técnico são só das IAs). */

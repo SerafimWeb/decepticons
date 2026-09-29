@@ -76,6 +76,8 @@ export interface MatchOptions {
   roundS?: number;
   /** Regra da missão. `deathmatch` preserva a arena atual; os objetivos estreiam offline. */
   mode?: GameMode;
+  /** Onda em que a missão começa (1 a 6). É o atalho de bancada `?onda=`; fora do intervalo, começa na 1. */
+  startWave?: number;
 }
 
 /**
@@ -178,7 +180,7 @@ export class Match {
           onWaveProgress: (wave, killed, total, elapsedS) => this.onWaveProgress?.(wave, killed, total, elapsedS),
           onWaveClear: (wave, elapsedS) => this.onWaveClear?.(wave, elapsedS),
           onMissionEnd: (survived, stats) => this.onMissionEnd?.(survived, this.waves?.wave ?? 1, stats),
-        })
+        }, o.startWave)
       : null;
     if (this.waves) this.bots.setRoster(0, 0);
     this.ctf = ctf
