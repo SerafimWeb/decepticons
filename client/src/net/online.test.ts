@@ -32,7 +32,7 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
   let server: GameServer;
   beforeAll(async () => {
     await RAPIER.init();
-    server = await startServer({ port: 0, host: '127.0.0.1' });
+    server = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
   });
   afterAll(async () => {
     await server.close();

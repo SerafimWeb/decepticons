@@ -192,7 +192,8 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] **Terreno com streaming:** setores carregados sob demanda; mapa 1-2 km² sem estourar wasm/GPU #cenarios
 - [ ] **Destrutíveis v2:** prédios com paredes que caem, sincronizados por `PROP_BROKEN` #cenarios
 - [ ] **Multi-região (VPS SP + hemisfério norte):** matchmaking joga cada um na sala mais perto #base
-- [ ] **Contas + LGPD + cosméticos pagos** (nunca atributo de combate) #negocio
+- [x] Esqueleto de contas: criar conta, entrar, sair (e-mail + senha, SQLite no servidor, sem UI ainda) — primeiro corte, sem progressão migrada (Claude, 28/09) #negocio
+- [ ] **Contas + LGPD + cosméticos pagos** (nunca atributo de combate; falta a tela e migrar a progressão do `localStorage`) #negocio
 - [ ] **Passe de temporada** (se houver tração) #negocio
 - [ ] **WebTransport (quando o Firefox terminar):** UDP no navegador, corta jitter em rede ruim #rede
 

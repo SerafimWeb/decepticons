@@ -174,7 +174,7 @@ describe('M3: o servidor de verdade, pela rede', () => {
   let server: GameServer;
   beforeAll(async () => {
     // No teste todo mundo sai de 127.0.0.1: por isso o `perIp` bem largo. As defesas ganham blocos próprios abaixo.
-    server = await startServer({ port: 0, host: '127.0.0.1', guard: { perIp: 100, total: 200, msgs: 200, burst: 200 } });
+    server = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 100, total: 200, msgs: 200, burst: 200 } });
   });
   afterAll(async () => {
     await server.close();
@@ -278,7 +278,7 @@ describe('M3: defesas do servidor (mesmo domínio da Selva MKT, DEPLOY.md)', () 
   }
 
   it('teto por IP: um mesmo endereço não consegue abrir mais que `perIp` conexões', async () => {
-    const s = await startServer({ port: 0, host: '127.0.0.1', guard: { perIp: 2, total: 10, msgs: 60, burst: 30 } });
+    const s = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 2, total: 10, msgs: 60, burst: 30 } });
     try {
       // Abro as `perIp` vagas uma de cada vez, esperando o handshake de cada uma terminar antes da
       // próxima: sem isso, numa máquina sobrecarregada (muitos testes em paralelo), a ordem de chegada
@@ -299,7 +299,7 @@ describe('M3: defesas do servidor (mesmo domínio da Selva MKT, DEPLOY.md)', () 
   });
 
   it('taxa por conexão: quem manda mais que o balde aguenta é derrubado', async () => {
-    const s = await startServer({ port: 0, host: '127.0.0.1', guard: { perIp: 10, total: 10, msgs: 10, burst: 5 } });
+    const s = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 10, total: 10, msgs: 10, burst: 5 } });
     try {
       const c = open(s.port, 'FLUD');
       await c.opened;

@@ -15,11 +15,32 @@
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
 | `claude/login-esqueleto` | esqueleto de contas (criar/entrar/sair, e-mail + senha, SQLite local) — sem tela | **#115** | 28/09 |
-| `claude/gravacao-nativa` | gravação nativa de gameplay (F9), alta qualidade, sem OBS + modo captura | **#117** | 28/09 |
 | `gemini/modo-hud-audio` | só um retalho do `ESTADO_ATUAL.md`: o código dele já entrou na `main` por outros PRs | **#110 aberto (obsoleto — Gemini fecha)** | 27/09 |
 | `gemini/primeira-partida`, `gemini/setas-inimigos`, `gemini/sons-androides` | sobras de 25/09 do Gemini, sem PR; o conteúdo foi refeito na `main` por outras frentes | **sem PR** | 25/09 |
 
 ---
+
+- **Esqueleto de contas: criar, entrar, sair (Claude, 28/09, PR `claude/login-esqueleto`).** Pedido do dono,
+  depois de decidir junto: **SQLite no próprio PC do servidor**, **e-mail + senha**, e **só o esqueleto**
+  primeiro (sem migrar progressão ainda).
+  - **Banco:** `node:sqlite` embutido do Node — **zero dependência nova**, decisão direta da dor do dia com
+    o `@rolldown` travando a instalação (evitar mais um binário nativo como `better-sqlite3`). Arquivo em
+    `.tmp/servidor/contas.db`, ao lado do log de sempre: sobrevive à atualização automática e a um rollback
+    dela (`git reset --hard` só mexe em arquivos versionados). **Exige Node 22.12+** — `package.json` não
+    aceita mais Node 20 (`node:sqlite` não existe lá); atualizado o `engines`.
+  - **Segurança:** senha em `scrypt` com sal por conta (`node:crypto`, sem dependência); sessão é um token
+    aleatório de 32 bytes que o cliente guarda — o banco só grava o **hash** dele (um vazamento do
+    `contas.db` não dá sessão utilizável a ninguém). 8 tentativas a cada 10 min por IP em `/conta/entrar` e
+    `/conta/criar` juntas (`server/login.ts`), separado do `Guard` do WebSocket e da `Telemetria`.
+  - **Rotas** no mesmo processo HTTP do `/status` e `/evento`: `POST /conta/criar`, `POST /conta/entrar`
+    (devolvem `{token, email}`), `POST /conta/sair`, `GET /conta/eu`. Contrato `shared/net/auth.ts`.
+  - **Cliente pronto, sem tela:** `client/src/net/auth.ts` (`ContaCliente`) — `criar()`, `entrar()`, `sair()`,
+    `eu()`, nunca lança, mensagens de erro prontas para mostrar. **A tela é território do Gemini**
+    (`client/src/ui/`) — pendência em "PRÓXIMA SESSÃO COMEÇA COM".
+  - 28 testes (validação pura, banco com `:memory:`, HTTP de ponta a ponta, limite de tentativas isolado
+    num servidor próprio para não interferir nos outros testes de conta).
+  - **Não migrado (decisão do dono, fica para depois):** XP, créditos e missões diárias continuam em
+    `localStorage` (`DailyChallenges.ts`) — migrar para a conta é o próximo corte, não este.
 
 - **Gravação nativa de gameplay: F9 liga/desliga, sem OBS (Claude, 28/09, PR `claude/gravacao-nativa`).**
   Pedido do dono: *"quero eu poder gravar bons vídeos jogando"*, depois de reclamar que a qualidade do OBS
@@ -417,6 +438,15 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
      vem depois no DOM sem `z-index` — logo a pausa pinta por cima. É por isso que na captura do dono o
      `[ clique para jogar ]` aparece em cima do título da missão, e o `[ INICIAR MISSÃO ]` não recebe clique nenhum
      (a pausa inteira é um botão de retomar). Decidir qual das duas telas manda enquanto as duas estão abertas.
+- **Gemini:** **tela de criar conta / entrar** (dono, 28/09: "partir para login?"). O backend já está pronto e
+  testado (`claude/login-esqueleto`, mergeado): `client/src/net/auth.ts` (`ContaCliente`) tem `criar(email,
+  senha)`, `entrar(email, senha)`, `sair(token)`, `eu(token)` — todos devolvem `{token, email}` ou `{erro:
+  string}` prontos para mostrar, nunca lançam. Falta só a tela: um par de campos (e-mail, senha), os botões
+  criar/entrar, e onde guardar o `token` no navegador (`localStorage`, o padrão do resto do jogo — `Settings`,
+  `Hangar`, `DailyChallenges` já fazem assim) para o `eu()` confirmar a sessão ao abrir o jogo. Sugestão de
+  lugar: um item novo em `[ CONFIGURAÇÕES ]` ou um botão ao lado do `[ JOGAR ONLINE ]` na pausa — decisão
+  sua de UX. **Sem progressão migrada ainda** (decisão do dono): a tela só precisa provar entrar/sair
+  funcionando; XP/créditos continuam em `localStorage` por enquanto.
 - **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
 - **Codex:** concluir PR visual do Colossus-01 e, depois do merge, iniciar o encontro offline determinístico com IA própria, pontos fracos e câmera de escala 3. A arma, números e modo assimétrico seguem decisões abertas.
 - **Claude:** definir e implementar o contrato autoritativo para escolher o modo da sala e transportar as transições de onda/objetivo; completar o online. Sincronizar máquina de estados de Ondas da simulação.
