@@ -160,12 +160,15 @@ fabricantes de *hardware*, quem constrói o chassi, não quem treinou a IA rebel
 |---|---|---|---|
 | **Arara Foundry** | Manaus, Amazônia | bioinspiração, adaptação ao terreno difícil | pernas digitígradas, plaqueamento orgânico, nomes de fauna brasileira |
 | **Forge Systems** | Minas Gerais (corredor industrial) | "hardware resolve": robustez antes de sofisticação | blocos largos, blindagem grossa, pouca curva |
-| **Vanta Works** | (a decidir — litoral? São José dos Campos?) | reconhecimento e guerra eletrônica antes do confronto direto | perfil baixo, sensores grandes, quadrúpede/pernas invertidas |
+| **Vanta Works** | **Faria Lima, São Paulo** (dono, 29/09) | reconhecimento e guerra eletrônica antes do confronto direto — a "informação como vantagem" do distrito financeiro, em armadura | perfil baixo, sensores grandes, quadrúpede/pernas invertidas |
 | **SERAFIM (linha própria)** | interna | o que a SERAFIM já opera hoje — Vector-09, o andróide-piloto | os chassis atuais do Hangar, sem mudar nome nem número |
 
 A âncora brasileira da **Arara Foundry** conversa direto com a decisão já aprovada do §2 (Brasil no centro
 do mapa) — dá uma origem concreta para os primeiros chassis novos, sem precisar fechar ainda a geopolítica
-mais ampla (§7, itens ainda em aberto).
+mais ampla (§7, itens ainda em aberto). **Direção do dono (29/09):** os fabricantes vão representar, mesmo
+que distantes fisicamente, outras figuras importantes do universo real de tecnologia — cada um como uma
+alusão fictícia (no mesmo espírito dos consórcios do §3 e dos nomes dos bots), não uma cópia. Arara Foundry
+(Manaus) e Vanta Works (Faria Lima) já têm origem; os próximos fabricantes decidem a deles quando entrarem.
 
 **Classes de escala** (o que já orienta os chassis no código, `entities/chassis.ts`):
 
