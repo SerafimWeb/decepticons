@@ -198,11 +198,8 @@ const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
       <h1 class="title">CYBER<span>MECH</span></h1>
       <p class="pitch">Pilote um Mech de combate numa arena industrial e desmonte o inimigo peça por peça. Abriu o link, está jogando: sem instalar, sem conta e sem pay-to-win.</p>
       <div class="cta">
-        <div class="cta-buttons">
-          <a class="play-btn" href="./jogar/" data-evento="click_cockpit">[ ENTRAR NO COCKPIT ]</a>
-          ${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA" data-evento="click_online">[ JOGAR ONLINE ]</a>' : ''}
-        </div>
-        ${statusHtml}
+        <a class="play-btn" href="./jogar/" data-evento="click_cockpit">[ ENTRAR NO COCKPIT ]</a>
+        ${ONLINE ? `<p class="cta-online"><a class="play-btn online" href="./jogar/?sala=ARENA" data-evento="click_online">[ jogar online ]</a>${statusHtml}</p>` : statusHtml}
         <a class="link-btn cta-more" href="./sala-de-controle/" data-evento="click_como_e_feito">como este jogo é feito →</a>
       </div>
       <ul class="facts">${facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
@@ -218,16 +215,49 @@ const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
   </header>`;
 
 const galleryShots = SHOTS.filter((s) => s !== cover);
+/*
+ * Carrossel, não grade fixa (dono, 29/09: "seria bom que essas fotos fiquem girando num carrossel pra
+ * nao ficarem se repetindo"): troca sozinha a cada 4,5 s, pausa se o dedo/mouse estiver em cima, respeita
+ * "menos movimento" do sistema. Com 1 imagem só, os pontos somem e nada gira (nada a girar).
+ */
+const CAROUSEL_JS = `(() => {
+  const root = document.querySelector('.carousel');
+  if (!root) return;
+  const track = root.querySelector('.carousel-track');
+  const frames = [...track.children];
+  const dots = [...root.querySelectorAll('.carousel-dots button')];
+  if (frames.length < 2) return;
+  let i = 0, timer = null;
+  const show = (n) => {
+    i = (n + frames.length) % frames.length;
+    frames.forEach((f, k) => f.classList.toggle('on', k === i));
+    dots.forEach((d, k) => d.setAttribute('aria-current', k === i ? 'true' : 'false'));
+  };
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const restart = () => {
+    clearInterval(timer);
+    if (!reduced) timer = setInterval(() => show(i + 1), 4500);
+  };
+  dots.forEach((d, k) => d.addEventListener('click', () => { show(k); restart(); }));
+  root.addEventListener('mouseenter', () => clearInterval(timer));
+  root.addEventListener('mouseleave', restart);
+  show(0);
+  restart();
+})();`;
 const galleryHtml = galleryShots.length
   ? `<section aria-labelledby="combate">
     <span class="kicker">// imagens de combate</span>
     <h2 id="combate">Três câmeras, uma arena</h2>
     <p class="lede">Estas imagens não são montagem: a cada nova versão, o robô que publica o site entra no jogo, joga alguns segundos e fotografa. O que você vê aqui é o build que está no ar.</p>
-    <div class="gallery">${galleryShots
-      .map(
-        (s) => `<figure class="shot frame"><img src="${shotSrc(s)}" width="${s.w}" height="${s.h}" alt="${esc(s.alt)}" loading="lazy"><figcaption>${esc(s.label)}</figcaption></figure>`,
-      )
-      .join('')}</div>
+    <div class="carousel">
+      <div class="carousel-track">${galleryShots
+        .map(
+          (s, i) => `<figure class="shot frame${i === 0 ? ' on' : ''}"><img src="${shotSrc(s)}" width="${s.w}" height="${s.h}" alt="${esc(s.alt)}" loading="lazy"><figcaption>${esc(s.label)}</figcaption></figure>`,
+        )
+        .join('')}</div>
+      ${galleryShots.length > 1 ? `<div class="carousel-dots">${galleryShots.map((s, i) => `<button type="button" aria-label="${esc(s.label)}" aria-current="${i === 0 ? 'true' : 'false'}"></button>`).join('')}</div>` : ''}
+    </div>
+    <script>${CAROUSEL_JS}</script>
   </section>`
   : '';
 
@@ -498,8 +528,10 @@ const css = `
   .hero.with-shot { grid-template-columns: minmax(300px, 1fr) minmax(0, 1.05fr); }
   .hero-copy { display: grid; gap: 18px; min-width: 0; }
   .pitch { font-size: 17px; line-height: 1.6; color: var(--text); max-width: 46ch; text-wrap: pretty; }
-  .cta { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
-  .cta-buttons { display: flex; flex-wrap: wrap; gap: 12px 16px; }
+  .cta { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+  /* Uma só ação em destaque (ENTRAR NO COCKPIT); jogar online é a opção de baixo, menor e discreta —
+     nunca dois botões do mesmo peso lado a lado (achado do dono, 29/09: confunde qual é a ação principal). */
+  .cta-online { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 0; }
   .cta .cta-more { margin-top: 2px; }
   .facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; }
   .facts li::before { content: '▸ '; color: var(--amber); }
@@ -510,7 +542,17 @@ const css = `
     font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
   }
   .hero-shot figcaption::before { content: '● '; color: var(--red); }
-  .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .carousel { display: grid; gap: 12px; max-width: 640px; }
+  .carousel-track { position: relative; display: grid; }
+  .carousel-track .shot { grid-area: 1 / 1; opacity: 0; visibility: hidden; transition: opacity .5s ease; }
+  .carousel-track .shot.on { position: relative; opacity: 1; visibility: visible; }
+  .carousel-track .shot:not(.on) { position: absolute; inset: 0; }
+  .carousel-dots { display: flex; gap: 8px; justify-content: center; }
+  .carousel-dots button {
+    width: 9px; height: 9px; border-radius: 50%; border: 1px solid var(--amber); background: transparent;
+    padding: 0; cursor: pointer;
+  }
+  .carousel-dots button[aria-current="true"] { background: var(--amber); box-shadow: 0 0 8px rgba(255,176,0,.6); }
 
   .features { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; counter-reset: f; }
   .feature { padding: 16px 16px 18px; display: grid; gap: 8px; align-content: start; }
@@ -606,8 +648,7 @@ const css = `
   .todo, .recent { list-style: none; padding: 0; display: grid; gap: 7px; font-size: 13.5px; line-height: 1.45; }
   .todo li { display: grid; grid-template-columns: 38px 1fr; gap: 8px; }
   .todo li span { color: var(--text); } .todo li.doing span { color: var(--amber); }
-  /* Jogar online: mesmo botão, no verde do jogador (o âmbar é o do jogo offline). */
-  .play-btn.online { background: var(--green); box-shadow: 0 0 24px rgba(57,255,106,.35); }
+  /* Estilo do .play-btn.online (contorno, secundário) mora em site/tema.mjs — compartilhado com o resto do site. */
   /* Status do servidor, perguntado pela página (GET /status): verde com gente, apagado fora do ar. */
   .srv { display: flex; align-items: center; gap: 9px; margin: -4px 0 0; font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   .srv .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--faint); flex: none; }

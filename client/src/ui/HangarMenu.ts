@@ -428,8 +428,9 @@ export class HangarMenu {
       this.render();
       return;
     }
-    const chassis = target?.closest<HTMLButtonElement>('[data-chassis]')?.dataset.chassis;
-    if (chassis === 'vector09' || chassis === 'android') {
+    const chassisAttr = target?.closest<HTMLButtonElement>('[data-chassis]')?.dataset.chassis;
+    const chassis = chassisAttr && chassisAttr in CHASSIS ? (chassisAttr as ChassisId) : null;
+    if (chassis) {
       if (chassis !== this.draft.chassis) {
         this.draft = chassis === this.hangar.current.chassis ? copySpec(this.hangar.current) : factorySpec(chassis);
         this.selectedSlot = 'right';
@@ -640,10 +641,13 @@ export class HangarMenu {
   }
 }
 
+/** Sigla curta de cada chassi, para caber no atalho do preset. */
+const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-1', colossus01: 'C01' };
+
 /** Rótulo curto de um atalho: chassi e nível de cada braço (ex.: "V09 · III / I"). */
 function presetLabel(p: LoadoutSpec): string {
   const tier = (a: LoadoutSpec[ArmSlot]) => (a ? ['I', 'II', 'III'][a.tier] : '—');
-  return `${p.chassis === 'android' ? 'A-1' : 'V09'} · ${tier(p.right)} / ${tier(p.left)}`;
+  return `${CHASSIS_SIGLA[p.chassis]} · ${tier(p.right)} / ${tier(p.left)}`;
 }
 
 /** Uma barra de leitura: o valor da arma escolhida e, por baixo, o da que está no Mech (se for outra). */
