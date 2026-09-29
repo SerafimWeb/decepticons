@@ -148,6 +148,28 @@ tentada, cada rollback e o motivo. `main.ts` já imprime salas/jogadores/tick a 
 **Para desligar** (voltar a atualizar só manualmente): `.\scripts\servidor-atualizar.ps1 -Remover`, de
 dentro da worktree.
 
+### Contas de piloto (login, Claude 28/09 — só o esqueleto: criar conta, entrar, sair)
+
+**Banco:** SQLite embutido do Node (`node:sqlite`, sem dependência nova — depois da dor do dia com o binário
+nativo do `@rolldown`, evitar mais um binário nativo como `better-sqlite3` foi a decisão certa). Arquivo em
+`.tmp/servidor/contas.db`, ao lado do log de sempre: **gitignored, sobrevive à atualização automática** (que
+só mexe em arquivos versionados) e ao `git reset --hard` de um rollback.
+**Requisito:** Node **22.12 ou mais novo** (`node:sqlite` não existe no Node 20) — o `package.json` só aceita
+essa faixa agora; quem tinha Node 20 no PC do servidor precisa atualizar.
+**Senha:** nunca em texto — `scrypt` com sal por conta (`node:crypto`, também sem dependência nova).
+**Sessão:** token aleatório de 32 bytes que o cliente guarda; o banco só grava o hash SHA-256 dele — um
+vazamento do arquivo `contas.db` não dá sessão utilizável a ninguém. 30 dias de validade.
+**Tentativas:** `/conta/entrar` e `/conta/criar` dividem uma régua de 8 tentativas a cada 10 min por IP
+(`server/login.ts`), separada do `Guard` do WebSocket e do balde da `Telemetria` — o risco aqui é diferente
+(alguém testando senha).
+**Rotas** (mesmo processo HTTP do `/status` e do `/evento`): `POST /conta/criar`, `POST /conta/entrar`
+(devolvem `{token, email}`), `POST /conta/sair` e `GET /conta/eu` (cabeçalho `x-cybermech-sessao`). Contrato
+em `shared/net/auth.ts`.
+**Ainda não tem tela.** A API existe e tem `client/src/net/auth.ts` (`ContaCliente`) pronta para consumir; a
+tela de criar conta/entrar é território do Gemini (`client/src/ui/`) — pendência registrada em
+`ESTADO_ATUAL.md`. Progressão do piloto (XP, créditos, missões) continua em `localStorage`; migrar para a
+conta é o próximo corte, não feito agora (decisão do dono: só o esqueleto primeiro).
+
 ### Servidor no mesmo domínio (proteção entre os dois projetos)
 
 Cliente e servidor moram na mesma zona; as proteções abaixo garantem que um não derruba o outro:

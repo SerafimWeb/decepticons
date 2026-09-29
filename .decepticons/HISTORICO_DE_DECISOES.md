@@ -1,5 +1,27 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-28] Login: SQLite embutido em vez de dependência nova, e o esqueleto antes da tela (Claude)
+**Pedido do dono, decidido junto por três perguntas:** persistência (SQLite no próprio PC do servidor, contra
+Postgres gerenciado), método (e-mail + senha, contra OAuth ou link mágico) e escopo (só o esqueleto — criar
+conta, entrar, sair — sem migrar progressão ainda).
+**Decisão — `node:sqlite` embutido, não `better-sqlite3`:** os dois fariam o trabalho; a diferença é que
+`better-sqlite3` é mais um binário nativo por plataforma — e a sessão de hoje passou mais de dez minutos com
+`npm ci` travado num binário nativo do `@rolldown` (antivírus, o mesmo tipo de arquivo). Evitar adicionar
+exatamente a categoria de dependência que acabou de causar dor, quando existe uma opção sem dependência
+nenhuma, é a escolha óbvia — mesmo sendo `node:sqlite` uma API experimental do Node (registrado, com um
+plano: toda leitura/escrita passa só por `server/contas.ts`, então trocar de banco depois é mudar um arquivo).
+**Custo colateral aceito:** o `package.json` deixa de aceitar Node 20 (`node:sqlite` só existe a partir do
+22.5) — o projeto já roda em Node 22 no CI e no servidor de casa, então o custo real é baixo, mas é real e
+está registrado no `engines`.
+**Decisão — backend primeiro, tela depois, por outro agente:** território (`AGENTS.md`) — a API e o banco são
+`server/`/`shared/`/`client/src/net/` (Claude); a tela é `client/src/ui/` (Gemini). Construir os dois numa PR
+só quebraria a regra de território sem necessidade: o cliente (`ContaCliente`) já está pronto para consumir,
+com mensagens de erro em português prontas para aparecer na tela, e a tarefa da tela ficou registrada em
+"PRÓXIMA SESSÃO COMEÇA COM" com o contrato exato a chamar.
+**Quem decidiu:** dono (as três perguntas, respondidas via `AskUserQuestion` nesta sessão); Claude (`node:sqlite`
+em vez de `better-sqlite3`, hash de senha e de token de sessão, a separação backend/tela entre agentes).
+
+
 ## [2026-09-28] Atualização automática: puxar em vez de receber, e nunca sem verificar (Claude)
 **Pedido do dono:** *"tem como o servidor reiniciar sozinho quando for necessário ou isso fragiliza ele? como
 aplicarmos inteligência no gerenciamento, proteção, manutenção e atualização do servidor? (e quando eu estiver

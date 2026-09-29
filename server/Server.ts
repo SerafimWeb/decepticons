@@ -1,12 +1,17 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
+import { CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_SAIR_PATH, parseCredenciais, SESSAO_HEADER } from '../shared/net/auth';
 import { ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
 import { type EventoEnviado, EVENTO_MAX_BYTES, EVENTO_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
 import { ArenaRoom, type Peer } from './ArenaRoom';
+import { Contas } from './contas';
 import { clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
+import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
 import { Telemetria } from './telemetria';
 
 /** Maior mensagem aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
@@ -18,6 +23,41 @@ export const DEFAULT_ROOM = 'ARENA';
 /** Bind padrão: só localhost (o túnel da Cloudflare fala com `127.0.0.1`; nada vaza pela rede de casa nem pela internet). */
 export const DEFAULT_HOST = '127.0.0.1';
 const ROOM_RE = /^[A-Z0-9-]{1,12}$/;
+
+/**
+ * Lê o corpo de um `POST` pequeno com teto de tamanho (G7: nunca confiar no `content-length` anunciado).
+ * `'grande'`: o chamador escreve a resposta (413) — **não destrua a conexão antes disso**: um `req.destroy()`
+ * antes do `res.end()` derruba o socket e o cliente nunca vê a resposta (era exatamente isso, nessa ordem
+ * errada, que fazia o teste de corpo grande falhar de vez em quando com "other side closed"). Os bytes
+ * extras que ainda chegarem depois de `recusado` são só descartados, não acumulados. Compartilhado por
+ * `/evento` e as rotas de conta, que têm o mesmo formato (JSON pequeno, sem streaming).
+ */
+function lerCorpoLimitado(req: import('node:http').IncomingMessage, maxBytes: number): Promise<Buffer | 'grande'> {
+  return new Promise((resolve) => {
+    let bytes = 0;
+    const chunks: Buffer[] = [];
+    let recusado = false;
+    req.on('data', (chunk: Buffer) => {
+      if (recusado) return;
+      bytes += chunk.length;
+      if (bytes > maxBytes) {
+        recusado = true;
+        resolve('grande');
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      if (!recusado) resolve(Buffer.concat(chunks));
+    });
+    req.on('error', () => {
+      if (!recusado) {
+        recusado = true;
+        resolve('grande'); // a conexão quebrou de qualquer jeito; a resposta nunca chega
+      }
+    });
+  });
+}
 
 export interface GameServer {
   port: number;
@@ -47,7 +87,18 @@ export function roomCode(url: string | undefined): string | null {
  * delas (G4 vale para a simulação; aqui é uma cópia de ~240 bytes por jogador, 20 vezes por segundo).
  */
 export async function startServer(
-  opts: { port?: number; host?: string; log?: (line: string) => void; guard?: Partial<GuardConfig> } = {},
+  opts: {
+    port?: number;
+    host?: string;
+    log?: (line: string) => void;
+    guard?: Partial<GuardConfig>;
+    /** Caminho do banco de contas. Padrão: `.tmp/servidor/contas.db` (gitignored, sobrevive à atualização
+     * automática). Testes passam `:memory:`. */
+    dbContas?: string;
+    /** Régua de tentativas de `/conta/entrar` e `/conta/criar` (padrão: 8 a cada 10 min por IP). Testes
+     * que fazem muitas chamadas do mesmo IP alargam para não confundir rate limit com o que estão testando. */
+    limiteLogin?: Partial<typeof LIMITE_LOGIN_DEFAULTS>;
+  } = {},
 ): Promise<GameServer> {
   const log = opts.log ?? (() => {});
   const guard = new Guard({ ...GUARD_DEFAULTS, ...opts.guard });
@@ -110,7 +161,18 @@ export async function startServer(
    */
   const telemetria = new Telemetria();
 
-  const http = createServer((req, res) => {
+  /**
+   * Contas de piloto (dono, 28/09: "partir para login?"): SQLite no próprio PC (`server/contas.ts`, contrato
+   * em `shared/net/auth.ts`). Só o esqueleto por decisão do dono — criar conta, entrar, sair; sem
+   * progressão migrada do `localStorage` ainda. `LimiteLogin` é a régua de tentativas, separada do `Guard`
+   * do WebSocket e do balde da `Telemetria`: o risco aqui (alguém testando senha) pede um teto mais apertado.
+   */
+  const dbCaminho = opts.dbContas ?? resolve(import.meta.dirname, '..', '.tmp', 'servidor', 'contas.db');
+  if (dbCaminho !== ':memory:') mkdirSync(dirname(dbCaminho), { recursive: true });
+  const contas = new Contas(dbCaminho);
+  const limiteLogin = new LimiteLogin(opts.limiteLogin);
+
+  const http = createServer(async (req, res) => {
     const path = (req.url ?? '/').split('?')[0];
     if (path === STATUS_PATH) {
       const body = status();
@@ -135,40 +197,26 @@ export async function startServer(
     }
     if (path === EVENTO_PATH && req.method === 'POST') {
       const ip = clientIp(req.socket.remoteAddress, req.headers['cf-connecting-ip']);
-      let bytes = 0;
-      let chunks: Buffer[] = [];
-      let recusado = false;
-      req.on('data', (chunk: Buffer) => {
-        if (recusado) return;
-        bytes += chunk.length;
-        if (bytes > EVENTO_MAX_BYTES) {
-          recusado = true;
-          chunks = [];
-          res.writeHead(413, { 'access-control-allow-origin': '*' });
-          res.end();
-          req.destroy();
-          return;
-        }
-        chunks.push(chunk);
-      });
-      req.on('end', () => {
-        if (recusado) return;
-        let evento: EventoEnviado | null = null;
-        try {
-          evento = parseEvento(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}'));
-        } catch {
-          evento = null;
-        }
-        if (!evento) {
-          res.writeHead(400, { 'access-control-allow-origin': '*' });
-          res.end();
-          return;
-        }
-        const ok = telemetria.registrar(evento.nome, ip) === 'ok';
-        res.writeHead(ok ? 204 : 429, { 'access-control-allow-origin': '*' });
+      const corpo = await lerCorpoLimitado(req, EVENTO_MAX_BYTES);
+      if (corpo === 'grande') {
+        res.writeHead(413, { 'access-control-allow-origin': '*' });
         res.end();
-      });
-      req.on('error', () => res.destroyed || res.end());
+        return;
+      }
+      let evento: EventoEnviado | null = null;
+      try {
+        evento = parseEvento(JSON.parse(corpo.toString('utf8') || '{}'));
+      } catch {
+        evento = null;
+      }
+      if (!evento) {
+        res.writeHead(400, { 'access-control-allow-origin': '*' });
+        res.end();
+        return;
+      }
+      const ok = telemetria.registrar(evento.nome, ip) === 'ok';
+      res.writeHead(ok ? 204 : 429, { 'access-control-allow-origin': '*' });
+      res.end();
       return;
     }
     if (path === EVENTO_PATH && req.method === 'OPTIONS') {
@@ -179,6 +227,95 @@ export async function startServer(
         'access-control-allow-headers': 'content-type',
       });
       res.end();
+      return;
+    }
+    if (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH) {
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'access-control-allow-origin': '*',
+          'access-control-allow-methods': 'POST, OPTIONS',
+          'access-control-allow-headers': 'content-type',
+        });
+        res.end();
+        return;
+      }
+      if (req.method !== 'POST') {
+        res.writeHead(405, { 'access-control-allow-origin': '*' });
+        res.end();
+        return;
+      }
+      const ip = clientIp(req.socket.remoteAddress, req.headers['cf-connecting-ip']);
+      if (!limiteLogin.permitir(ip)) {
+        res.writeHead(429, { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' });
+        res.end(JSON.stringify({ erro: 'tentativas demais; espere um pouco' }));
+        return;
+      }
+      const corpo = await lerCorpoLimitado(req, 1024);
+      const enviarJson = (codigo: number, dados: unknown) => {
+        res.writeHead(codigo, { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' });
+        res.end(JSON.stringify(dados));
+      };
+      if (corpo === 'grande') {
+        enviarJson(413, { erro: 'pedido grande demais' });
+        return;
+      }
+      let credenciais: { email: string; senha: string } | null = null;
+      try {
+        credenciais = parseCredenciais(JSON.parse(corpo.toString('utf8') || '{}'));
+      } catch {
+        credenciais = null;
+      }
+      if (!credenciais) {
+        enviarJson(400, { erro: 'e-mail ou senha inválidos' });
+        return;
+      }
+      if (path === CONTA_CRIAR_PATH) {
+        const r = await contas.criar(credenciais.email, credenciais.senha);
+        if (!r.ok) {
+          enviarJson(409, { erro: 'este e-mail já tem conta' });
+          return;
+        }
+        const token = contas.criarSessao(r.conta.id);
+        log(`conta criada: ${r.conta.email}`);
+        enviarJson(201, { token, email: r.conta.email });
+        return;
+      }
+      // CONTA_ENTRAR_PATH: a mesma mensagem para "não existe" e "senha errada" — não ajuda ninguém a
+      // descobrir por tentativa se um e-mail está cadastrado.
+      const conta = await contas.autenticar(credenciais.email, credenciais.senha);
+      if (!conta) {
+        enviarJson(401, { erro: 'e-mail ou senha incorretos' });
+        return;
+      }
+      const token = contas.criarSessao(conta.id);
+      enviarJson(200, { token, email: conta.email });
+      return;
+    }
+    if (path === CONTA_SAIR_PATH && (req.method === 'POST' || req.method === 'OPTIONS')) {
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'access-control-allow-origin': '*',
+          'access-control-allow-methods': 'POST, OPTIONS',
+          'access-control-allow-headers': `content-type, ${SESSAO_HEADER}`,
+        });
+        res.end();
+        return;
+      }
+      const token = req.headers[SESSAO_HEADER];
+      if (typeof token === 'string') contas.encerrarSessao(token);
+      res.writeHead(204, { 'access-control-allow-origin': '*' });
+      res.end();
+      return;
+    }
+    if (path === CONTA_EU_PATH && req.method === 'GET') {
+      const token = req.headers[SESSAO_HEADER];
+      const conta = typeof token === 'string' ? contas.validarSessao(token) : null;
+      res.writeHead(conta ? 200 : 401, {
+        'content-type': 'application/json; charset=utf-8',
+        'access-control-allow-origin': '*',
+        'cache-control': 'no-store',
+      });
+      res.end(conta ? JSON.stringify({ email: conta.email }) : JSON.stringify({ erro: 'sem sessão' }));
       return;
     }
     res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });
@@ -296,6 +433,7 @@ export async function startServer(
         wss.close(() => http.close(() => resolve()));
         for (const r of rooms.values()) r.dispose();
         rooms.clear();
+        contas.close();
       }),
   };
 }

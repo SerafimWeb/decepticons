@@ -14,9 +14,31 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `claude/atualizacao-e-metricas` | atualização automática do servidor (puxar, verificar, só então trocar) + métricas de produto (funil de cliques e partidas) | **em PR** | 28/09 |
+| `claude/login-esqueleto` | esqueleto de contas (criar/entrar/sair, e-mail + senha, SQLite local) — sem tela | **em PR** | 28/09 |
 
 ---
+
+- **Esqueleto de contas: criar, entrar, sair (Claude, 28/09, PR `claude/login-esqueleto`).** Pedido do dono,
+  depois de decidir junto: **SQLite no próprio PC do servidor**, **e-mail + senha**, e **só o esqueleto**
+  primeiro (sem migrar progressão ainda).
+  - **Banco:** `node:sqlite` embutido do Node — **zero dependência nova**, decisão direta da dor do dia com
+    o `@rolldown` travando a instalação (evitar mais um binário nativo como `better-sqlite3`). Arquivo em
+    `.tmp/servidor/contas.db`, ao lado do log de sempre: sobrevive à atualização automática e a um rollback
+    dela (`git reset --hard` só mexe em arquivos versionados). **Exige Node 22.12+** — `package.json` não
+    aceita mais Node 20 (`node:sqlite` não existe lá); atualizado o `engines`.
+  - **Segurança:** senha em `scrypt` com sal por conta (`node:crypto`, sem dependência); sessão é um token
+    aleatório de 32 bytes que o cliente guarda — o banco só grava o **hash** dele (um vazamento do
+    `contas.db` não dá sessão utilizável a ninguém). 8 tentativas a cada 10 min por IP em `/conta/entrar` e
+    `/conta/criar` juntas (`server/login.ts`), separado do `Guard` do WebSocket e da `Telemetria`.
+  - **Rotas** no mesmo processo HTTP do `/status` e `/evento`: `POST /conta/criar`, `POST /conta/entrar`
+    (devolvem `{token, email}`), `POST /conta/sair`, `GET /conta/eu`. Contrato `shared/net/auth.ts`.
+  - **Cliente pronto, sem tela:** `client/src/net/auth.ts` (`ContaCliente`) — `criar()`, `entrar()`, `sair()`,
+    `eu()`, nunca lança, mensagens de erro prontas para mostrar. **A tela é território do Gemini**
+    (`client/src/ui/`) — pendência em "PRÓXIMA SESSÃO COMEÇA COM".
+  - 28 testes (validação pura, banco com `:memory:`, HTTP de ponta a ponta, limite de tentativas isolado
+    num servidor próprio para não interferir nos outros testes de conta).
+  - **Não migrado (decisão do dono, fica para depois):** XP, créditos e missões diárias continuam em
+    `localStorage` (`DailyChallenges.ts`) — migrar para a conta é o próximo corte, não este.
 
 - **Atualização automática do servidor, e métricas de produto (Claude, 28/09, PR `claude/atualizacao-e-metricas`).**
   Dois pedidos do dono na mesma mensagem.
@@ -145,7 +167,6 @@
 - **O drone na banda, e os elementos do cenário (Qwen; dono: "mas será q o drone vai pesar tanto? e como fazemos pra melhorar esse consumo então… quero também que tenhamos outros elementos (turrets, zonas de regeneração, zonas de resfriamento…), quero também que os andróides possam entrar e sair dos bots"):** a conta, feita com os números do nosso código — `UNIT_BYTES = 19` × 20 Hz × moldura 1,2 = **456 B/s por unidade**, teto de `DOWNLOAD_BUDGET = 8 192 B/s`; a sala cheia de hoje (**12** robôs) usa **6,2 KB/s** dos 8,0 da meta — medido pela própria conta do site, que é a mesma dos testes —, então **um drone por jogador não cabe** (+3,6 KB/s). Saída registrada em `METAGAME.md` **§ 8.1**: registro curto de unidade leve (~10 B), estado do drone a 5 Hz com extrapolação, **trilha pré-calculada** (o spawn leva `path id` + instante → ~0 B/s em voo, a ideia do STERM pagando em banda), teto por esquadrão e o delta/AoI já previsto. E o **§ 9** novo: torres, zonas de cura/resfriamento (**volumes estáticos: 0 B/s**) e o andróide que **entra no Mech economiza 456 B/s** enquanto está dentro (bandeira "tem piloto"; nova bandeira = subir `PROTOCOL_VERSION`). A **entrada dos bots no cenário** (ideia do dono, já mandada ao Codex) ficou com o visual do Codex e o **onde/quando nascem** com o diretor do Claude (G3/G14). Conferido: o "balão" existe mesmo no STERM (`DemoGraph3D.tsx:326`, modo `'balloon'`) — e é câmera também.
 - **Fichas de design (Codex, 27/09):** propostas para Ferret-X, Colossus-01, andróide A-1 e as quatro armas. Números existentes foram copiados do código; stats e slots ainda inexistentes do leve/pesado ficaram como `?`, sem inventar regras. Próximo da fila visual: calor no rig; níveis de arma depois. Aprovação das propostas e decisões abertas ficam com o dono/Claude.
 - **O que o STERM ensina: os ícones do grafo e a ideia do drone (Qwen; dono: "no /sterm-1, no motor pipeline ABBADON, o grafo 3d… usamos o ícone holográfico de um banco de dados pra representar dados… muito tempo atrás criamos uma navegação por drone. Veja se aquele conhecimento é valido… para inserirmos drones no combate"):** leitura de `D:\SERAFIMHUB\sterm-1` (só leitura, nada tocado). O grafo do ABBADON tem um **registro tipo → ícone** (`NODE_ICONS`, 30 tipos: ícone de banco de dados para dado/asset, caveira para vulnerabilidade, escudo para defesa) com **cor por tipo**, corpo por geometria e brilho falso sem pós-processamento — **isso eu trago para o mapa da oficina**, onde o ícone vira `<path>` SVG embutido (zero KB, sem DOM por frame, determinístico). Já o drone de lá é **câmera sobre trilhos**, não unidade de combate: não há navegação de unidade para portar. Então o drone entra como **bloco de planejamento** (`METAGAME.md` § 8): prioridade de alvo pelo que já está ferido (encaixa no dano por parte), modos de voo como perfis de números e trilha pré-calculada fora do tick; desvio com Rapier e o **custo na rede** (o drone conta como unidade: 19 bytes, teto de 8 KB/s de download) ficam com o Claude, depois do loop da partida.
->>>>>>> origin/main
 - **Online mais fechado: barricadas e placar do servidor (Claude, 27/09):** o servidor emite `PROP_BROKEN(id)` quando uma barricada quebra e `ARENA_RESET` na rodada nova; o cliente aplica pelo `id` estável, sem calcular dano local. O placar do jogador online passa a vir dos eventos `KILL` do servidor (antes o cliente offline não conta): `OnlineSession.standings()` monta a lista com nomes do roster, e `onScore(kills, deaths)` alimenta o HUD. 2 novos tipos de evento no protocolo (`ARENA_RESET` = 1 byte). Nenhuma alocação por tick.
 - **A pauta do metagame, 2ª leva (Qwen; dono: mais duas visões do especialista externo):** `.decepticons/METAGAME.md` ganhou a **monetização ética em 6 frentes** (§ 6 — expressão modular estilo Gunpla, piloto/cabine com voz de IA de bordo, passe de temporada com missões que forçam builds, execuções e celebração, cenários de hangar, licenças/colaborações; nada muda dano, blindagem, hitbox ou cadência) e os **5 pilares de produto e viralidade** (§ 7 — física emergente "clipável", co-op tático/PvEvP, fricção zero de entrada, criadores e espectadores, narrativa viva por setores), cada um com **hoje no código** e **o que falta**, mais "quem toca a 2ª leva" e a **recomendação do Qwen**: loop da partida primeiro (no papel), depois stand de tiro no hangar e código curto de build (o `?build=` já existe), `mass-distribution` com o Claude, e **nada de loja ou passe antes de contas**. É pauta, não código.
 - **A pauta do metagame (Qwen; dono: visão de um especialista externo):** registrada em `.decepticons/METAGAME.md` — os 5 grupos que faltam para metagame, economia justa, retenção e viralidade (calibragem física/balística, progressão, economia ética, viralidade, telemetria), cada bloco com **o que já existe** e **o que falta**, e a divisão: **o grosso é do Claude** (engenharia), Codex (visual), Gemini (interface), Qwen (pauta, testes, balanço). É pauta, não código; o dono prioriza. Vários blocos são extensão do que já temos (calor, dano por parte, `?build=`).
@@ -334,6 +355,15 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
      vem depois no DOM sem `z-index` — logo a pausa pinta por cima. É por isso que na captura do dono o
      `[ clique para jogar ]` aparece em cima do título da missão, e o `[ INICIAR MISSÃO ]` não recebe clique nenhum
      (a pausa inteira é um botão de retomar). Decidir qual das duas telas manda enquanto as duas estão abertas.
+- **Gemini:** **tela de criar conta / entrar** (dono, 28/09: "partir para login?"). O backend já está pronto e
+  testado (`claude/login-esqueleto`, mergeado): `client/src/net/auth.ts` (`ContaCliente`) tem `criar(email,
+  senha)`, `entrar(email, senha)`, `sair(token)`, `eu(token)` — todos devolvem `{token, email}` ou `{erro:
+  string}` prontos para mostrar, nunca lançam. Falta só a tela: um par de campos (e-mail, senha), os botões
+  criar/entrar, e onde guardar o `token` no navegador (`localStorage`, o padrão do resto do jogo — `Settings`,
+  `Hangar`, `DailyChallenges` já fazem assim) para o `eu()` confirmar a sessão ao abrir o jogo. Sugestão de
+  lugar: um item novo em `[ CONFIGURAÇÕES ]` ou um botão ao lado do `[ JOGAR ONLINE ]` na pausa — decisão
+  sua de UX. **Sem progressão migrada ainda** (decisão do dono): a tela só precisa provar entrar/sair
+  funcionando; XP/créditos continuam em `localStorage` por enquanto.
 - **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
 - **Codex:** acompanhar o playtest da câmera de abate offline e do CTF; depois retomar cosméticos MK II/MK III e as fichas visuais aprovadas.
 - **Claude:** definir e implementar o contrato autoritativo para escolher o modo da sala e transportar as transições de onda/objetivo; completar o online. Sincronizar máquina de estados de Ondas da simulação.

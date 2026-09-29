@@ -14,7 +14,7 @@ async function resumo(port: number) {
 describe('POST /evento e GET /eventos/resumo: telemetria de produto pela porta HTTP', () => {
   let server: GameServer;
   beforeAll(async () => {
-    server = await startServer({ port: 0, host: '127.0.0.1', guard: { perIp: 100, total: 200, msgs: 200, burst: 200 } });
+    server = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 100, total: 200, msgs: 200, burst: 200 } });
   });
   afterAll(async () => {
     await server.close();
