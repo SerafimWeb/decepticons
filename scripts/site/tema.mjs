@@ -110,6 +110,13 @@ export const BASE_CSS = `
   }
   .play-btn:hover { background: var(--text); box-shadow: 0 0 36px rgba(255,176,0,.55); }
   .play-btn:active { transform: translateY(1px); }
+  /* Ação secundária (jogar online): contorno, sem preenchimento nem brilho — nunca compete de igual
+     para igual com o botão principal (ENTRAR NO COCKPIT). */
+  .play-btn.online {
+    background: transparent; color: var(--green); border: 1px solid var(--green);
+    padding: 8px 16px 6px; font-size: .85rem; box-shadow: none; text-transform: lowercase;
+  }
+  .play-btn.online:hover { background: var(--green); color: var(--bg); box-shadow: 0 0 18px rgba(57,255,106,.4); }
   .link-btn { color: var(--bone); text-decoration: none; letter-spacing: .12em; text-transform: uppercase; font-size: 13px; border-bottom: 1px dashed var(--bone); padding-bottom: 2px; }
   .link-btn:hover { color: var(--text); border-color: var(--text); }
 

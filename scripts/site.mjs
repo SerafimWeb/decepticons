@@ -314,11 +314,29 @@ async function capture() {
     await page.evaluate(() => localStorage.setItem('cybermech.settings.v1', JSON.stringify({ showPerf: false })));
     await page.reload();
     await page.waitForFunction(CTA_READY, null, { timeout: 60_000 });
-    // Clique no título (não nos botões da pausa) = começa a partida com o mouse preso.
-    const title = await page.locator('#overlay h1').boundingBox();
-    await page.mouse.click(title.x + title.width / 2, title.y + title.height / 2);
+    await page.bringToFront();
+    /*
+     * Achado (29/09): o Pointer Lock às vezes não é concedido nem depois do clique — medido até com
+     * Chrome de verdade, não só o Chromium empacotado do CI. O clique acontece, mas o jogo nunca sai
+     * da pausa, e as três fotos saem idênticas (a tela de pausa, três vezes). Sem um jeito de forçar
+     * o Pointer Lock, o jeito é tentar de novo várias vezes, com a aba em primeiro plano, e CONFERIR
+     * de verdade que travou antes de continuar — nunca assumir que um clique bastou.
+     */
+    let travou = false;
+    for (let tentativa = 0; tentativa < 8 && !travou; tentativa++) {
+      if (tentativa > 0) await page.waitForTimeout(500);
+      // Relê o retângulo a cada tentativa: o layout pode ter mudado (ex.: status do servidor chegou).
+      const title = await page.locator('#overlay h1').boundingBox();
+      await page.mouse.click(title.x + title.width / 2, title.y + title.height / 2);
+      travou = await page
+        .waitForFunction(() => !!document.pointerLockElement, null, { timeout: 1200 })
+        .then(() => true)
+        .catch(() => false);
+    }
+    if (!travou) throw new Error('Pointer Lock nunca foi concedido depois de 8 cliques — sem isso o jogo fica preso na pausa e a captura sairia toda igual');
     // O primeiro clique abre a vinheta da marca (~2 s); a partida começa quando ela acaba.
     await page.waitForFunction(() => !document.querySelector('#brand-splash.on'), null, { timeout: 8000 });
+    if (await page.locator('#overlay').isVisible()) throw new Error('a partida não começou (tela de pausa ainda visível depois da vinheta) — capturaria a pausa, não o jogo');
     const shot =(name) => page.screenshot({ path: join(dir, name), type: 'jpeg', quality: 80 });
     // Anda um pouco e troca tiros até os bots chegarem.
     await page.keyboard.down('KeyW');
