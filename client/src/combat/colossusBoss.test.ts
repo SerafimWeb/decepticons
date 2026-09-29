@@ -2,11 +2,13 @@ import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { COLOSSUS_BOSS_STATS, VECTOR09_STATS } from '../entities/chassis';
+import type { MechInput } from '../entities/MechBase';
+import { Vector09 } from '../entities/Vector09';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import type { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
-import { PhysicsWorld } from '../physics/PhysicsWorld';
+import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { ANDROID_SPAWNS, BOT_SPAWNS, COLOSSUS_SPAWN } from '../sim/Match';
 import { BotSystem } from './BotSystem';
 import { CombatSystem } from './CombatSystem';
@@ -96,5 +98,62 @@ describe('Colossus-01 (escala 3) no pool de bots', () => {
       return true;
     });
     expect(blocked, `ponto (${x}, ${z})`).toBe(0);
+  });
+});
+
+/**
+ * Duelo medido (não estimado): o que o dono pediu em 29/09 — *"ele não pode ser absurdamente forte (tipo um
+ * tiro matar o Mech), pra que possamos ter combates épicos e com inteligência, conseguirmos superar eles"*.
+ * Aqui a IA de verdade atira (erro de mira, tempo de reação, rajadas e pausa para esfriar), o tiro viaja e
+ * colide: nada de conta no papel.
+ */
+describe('Colossus-01: o duelo é justo', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('um piloto parado no aberto aguenta vários segundos — e leva dano (o duelo aconteceu)', async () => {
+    const { physics } = await arena();
+    const scene = new THREE.Scene();
+    const combat = new CombatSystem(destructibles, debris, particles);
+    const projectiles = new ProjectileSystem(scene, physics, particles);
+    projectiles.onHit = (hit, dir, dmg, owner) => combat.onProjectileHit(hit, dir, dmg, owner);
+    const player = new Vector09();
+    player.spawn(physics, new THREE.Vector3(SPAWN_POINTS[0]![0], 0, SPAWN_POINTS[0]![1]));
+    combat.register(player);
+    const bots = new BotSystem({
+      scene,
+      physics,
+      combat,
+      projectiles,
+      particles,
+      respawner: new Respawner(SPAWN_POINTS),
+      spawns: [],
+      androidSpawns: [],
+      bossSpawn: COLOSSUS_SPAWN[0],
+      waypoints: SPAWN_POINTS,
+    });
+    bots.targets = [player];
+    bots.setRoster(0, 0, 1);
+    physics.step();
+
+    // Pior caso possível: o piloto não anda, não atira e não usa cobertura — só aguenta o tranco.
+    const idle: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
+    const limit = Math.round(20 / FIXED_DT);
+    let survived = 0;
+    for (let i = 0; i < limit && player.alive; i++) {
+      player.fixedUpdate(idle, FIXED_DT);
+      bots.fixedUpdate(FIXED_DT);
+      projectiles.fixedUpdate(FIXED_DT);
+      physics.step();
+      survived += FIXED_DT;
+    }
+
+    // Levou dano: o Colossus atirou de verdade (senão este teste passaria com ele quebrado).
+    expect(player.modules.torso).toBeLessThan(VECTOR09_STATS.maxModuleHealth.torso);
+    // Meta de equilíbrio, **medida**: parado no aberto, sem reagir, o piloto aguentou os 20 s inteiros do
+    // teste (o `aimErrorScale` 1.8 e as pausas para esfriar fazem o Colossus pressionar sem ser injusto).
+    // A meta fica em 15 s para travar a faixa: nem saco de pancadas para o jogador, nem execução.
+    expect(survived).toBeGreaterThanOrEqual(15);
   });
 });

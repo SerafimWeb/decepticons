@@ -62,8 +62,8 @@ import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { Match } from '../sim/Match';
-import { gameModeFromSearch, type GameMode } from '../sim/gameMode';
-import { SURVIVAL_MAX_ANDROIDS, SURVIVAL_MAX_MECHS } from '../sim/SurvivalWaves';
+import { gameModeFromSearch, waveFromSearch, type GameMode } from '../sim/gameMode';
+import { SURVIVAL_MAX_ANDROIDS, SURVIVAL_MAX_MECHS, SURVIVAL_WAVE_PLANS } from '../sim/SurvivalWaves';
 import { HangarMenu } from '../ui/HangarMenu';
 import { HangarScene } from '../hangar/HangarScene';
 import { OnlineLobby } from '../ui/OnlineLobby';
@@ -253,6 +253,7 @@ export class Game {
       foes,
       power,
       mode: this.gameMode,
+      startWave: waveFromSearch(location.search, SURVIVAL_WAVE_PLANS.length),
       ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY } : {}),
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets } = this.match);

@@ -33,8 +33,22 @@ $ajustes = New-ScheduledTaskSettingsSet -RestartCount 999 -RestartInterval (New-
 # S4U: roda com o seu usuário, logado ou não, sem guardar senha.
 $quem = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType S4U -RunLevel Limited
 
-Register-ScheduledTask -TaskName $nome -Action $acao -Trigger $gatilho -Settings $ajustes -Principal $quem -Force | Out-Null
+try {
+  Register-ScheduledTask -TaskName $nome -Action $acao -Trigger $gatilho -Settings $ajustes -Principal $quem -Force | Out-Null
+} catch {
+  Write-Host "FALHOU: não deu para registrar a tarefa ($($_.Exception.Message))."
+  Write-Host "A causa mais comum: este script precisa de PowerShell COMO ADMINISTRADOR — registrar tarefa no Agendador exige elevação."
+  Write-Host "Nada foi alterado: a tarefa antiga (se existir) segue como estava. Abra o PowerShell como administrador e rode de novo."
+  exit 1
+}
+# O `Register` pode não lançar e ainda assim não registrar (foi o que aconteceu em 29/09 com acesso negado):
+# conferir antes de cantar vitória — o script chegou a dizer "Pronto" sem tarefa nenhuma registrada.
+if (-not (Get-ScheduledTask -TaskName $nome -ErrorAction SilentlyContinue)) {
+  Write-Host "FALHOU: a tarefa '$nome' não existe no Agendador depois do registro — rode como administrador."
+  exit 1
+}
 Start-ScheduledTask -TaskName $nome
 Write-Host "Pronto: o servidor sobe com o Windows e reinicia se cair."
+Write-Host "Pasta de onde ele roda: $raiz"
 Write-Host "Log: $raiz\.tmp\servidor\servidor.log"
 Write-Host "Para o PC não dormir na tomada: powercfg /change standby-timeout-ac 0"

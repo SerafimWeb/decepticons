@@ -19,7 +19,7 @@ describe('máquina de Ondas', () => {
     expect(waves.phase).toBe('completed');
     expect(start).toHaveBeenCalledTimes(6);
     expect(clear).toHaveBeenCalledTimes(6);
-    expect(end).toHaveBeenCalledWith(true, expect.objectContaining({ wavesCleared: 6, kills: 23 }));
+    expect(end).toHaveBeenCalledWith(true, expect.objectContaining({ wavesCleared: 6, kills: 20 }));
     expect(roster).toHaveBeenLastCalledWith(null);
   });
 

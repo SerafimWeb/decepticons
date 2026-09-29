@@ -78,6 +78,22 @@
     a identidade visual do painel é o passo seguinte — hoje o `/mesa` só sabe desenhar cenas roteirizadas,
     não editar um clipe de gameplay de verdade.
 
+- **A missão ficou justa e o Colossus equilibrado — e você pode pular direto para ele (Qwen, 29/09).** O dono jogou
+  e relatou: *"não consegui passar da fase 4 do survival, tá DIFÍCIL"*, e pediu o combate justo com o Colossus
+  (*"não pode ser absurdamente forte... combates épicos e com inteligência"*) — mantendo o pisão como **custo** de
+  ficar embaixo dele.
+  - **A causa da dificuldade era o orçamento do diretor**, não a contagem: o plano é fixo e o `Game` sobrescreve as
+    configurações de inimigos na missão, então o jogador não tinha alavanca. **Atacantes simultâneos por onda:
+    1 → 1 → 1,5 → 2 → 2,5** (era até 3), **menos Mechs** no meio (onda 5: 2 em vez de 3) e **intervalo de 6 s** (era
+    4) para usar a zona de cura. Abates totais: **20** (eram 23).
+  - **Colossus equilibrado e medido:** pernas **450** (até 10 s cada), torso **1 200** (até 30 s), `aimErrorScale`
+    1.8; **sem arma exclusiva** (o dano por tiro é o do plasma de qualquer rebelde). O **duelo medido** mostra um
+    piloto **parado no aberto aguentando mais de 20 s** — o perigo dele é espaço e pisão, não execução.
+  - **Atalho de bancada novo:** **`?modo=survival&onda=6`** começa direto na onda do Colossus (leitor puro e
+    testado em `sim/gameMode.ts`).
+  - **R17:** o `scripts/servidor-windows.ps1` dizia "Pronto: o servidor sobe com o Windows" **depois de o registro
+    da tarefa falhar com "Acesso negado"**. Agora ele confere a tarefa e falha com `exit 1`; a causa do erro era
+    rodar o PowerShell **sem administrador**.
 - **O tamanho 3 está no jogo: o Colossus-01 entra como boss da Sobrevivência (Qwen, 28/09).** O visual de escala 3
   (14 m) já existia; agora existe o **inimigo**. Ele fecha a missão offline como **onda 6**, com dois andróides de
   escolta:
