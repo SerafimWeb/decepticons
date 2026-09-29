@@ -14,12 +14,50 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `claude/login-esqueleto` | esqueleto de contas (auth no cliente e no servidor, com testes) — parado com o Claude; **com conflito com a `main`**, e é por isso que ele não tem CI | **#115 aberto** | 28/09 |
-| `claude/gravacao-nativa` | captura nativa de gameplay (`F9` liga/desliga) — o item de viralidade do clipe | **sem PR** | 28/09 |
-| `gemini/modo-hud-audio` | só um retalho do `ESTADO_ATUAL.md`: o código dele já entrou na `main` por outros PRs | **#110 aberto (obsoleto)** | 27/09 |
+| `claude/login-esqueleto` | esqueleto de contas (criar/entrar/sair, e-mail + senha, SQLite local) — sem tela | **#115** | 28/09 |
+| `claude/gravacao-nativa` | gravação nativa de gameplay (F9), alta qualidade, sem OBS + modo captura | **#117** | 28/09 |
+| `gemini/modo-hud-audio` | só um retalho do `ESTADO_ATUAL.md`: o código dele já entrou na `main` por outros PRs | **#110 aberto (obsoleto — Gemini fecha)** | 27/09 |
 | `gemini/primeira-partida`, `gemini/setas-inimigos`, `gemini/sons-androides` | sobras de 25/09 do Gemini, sem PR; o conteúdo foi refeito na `main` por outras frentes | **sem PR** | 25/09 |
 
 ---
+
+- **Gravação nativa de gameplay: F9 liga/desliga, sem OBS (Claude, 28/09, PR `claude/gravacao-nativa`).**
+  Pedido do dono: *"quero eu poder gravar bons vídeos jogando"*, depois de reclamar que a qualidade do OBS
+  estava ruim. `canvas.captureStream()` + `MediaRecorder` direto do WebGL — grava só os pixels do jogo, no
+  framerate real, sem recompor a janela inteira do PC.
+  - **Tecla escondida de propósito.** F9 liga/desliga, um indicador `● REC` aparece só enquanto grava; a
+    tecla não está no `keys-help` da tela inicial — decisão de 28/09 ("não vamos deixar os usuários fazerem
+    suas próprias gravações, primeiro vamos só nós usarmos") continua valendo: é recurso interno, não
+    feature de jogador.
+  - **"Modo captura" junto do F9 (item R0 de `PROPOSTA-REPLAY.md`, achado numa proposta antiga de 28/09 em
+    `.tmp/video/`):** trava a resolução no máximo (`Math.max(2, devicePixelRatio)`) e desliga o
+    rebaixamento automático de qualidade (G12) enquanto grava. Sem isso, a própria gravação derruba o FPS, a
+    qualidade adaptativa reage baixando a resolução no meio do take — o mesmo problema que o dono já tinha
+    descrito do OBS, causado dessa vez pelo próprio jogo. Some com o F9 de novo, voltando pra configuração
+    de qualidade que o jogador tinha escolhido.
+  - **Achado técnico real, não trivial:** um canvas WebGL não guarda o quadro entre desenhos
+    (`preserveDrawingBuffer: false`, e **continua assim para todo jogador** — ligar isso sempre custaria GPU
+    de todo mundo só para os raros minutos em que o dono grava). A saída: `captureStream(0)` (modo manual) +
+    um `requestFrame()` chamado uma vez por quadro do `Game.frame()`, logo depois do `composer.render()` —
+    pega o conteúdo certo, no instante certo, sem o custo permanente. **Achado de quebra no meio do caminho
+    (R17):** chamar `requestFrame()` de novo bem antes do `stop()` (pensando em "garantir o último quadro")
+    na verdade **quebrava** a finalização do gravador nesse ambiente — o oposto do que parecia. Removido;
+    sem ele, a gravação fecha certo.
+  - **Áudio:** `AudioSystem.ts` ganhou três métodos pequenos e aditivos (`context`, `connectRecorder`,
+    `disconnectRecorder`) — território do Gemini, mudança mínima registrada aqui por transparência (`AGENTS.md`
+    regra 4): só conecta/desconecta um nó extra no mesmo `masterGain` que já toca no alto-falante, nenhum som
+    existente muda.
+  - **Verificação real, com ressalva honesta:** confirmado de ponta a ponta em Chrome de verdade — arquivo
+    `.webm` válido (VP9 1280×720 + Opus, conferido com `ffprobe`) baixado depois de F9 ligar/desligar. A
+    automação headless (`SwiftShader`, renderização por software) se mostrou **instável** para captar o
+    quadro a tempo em alguns testes — sintoma do ambiente de teste, não do código (o mesmo código, quando
+    funciona, produz um vídeo correto; falha só quando o navegador headless não entrega nenhum quadro real a
+    tempo). **Peça ao dono um teste manual real** (F9, jogar alguns segundos, F9, olhar a pasta Downloads)
+    como confirmação definitiva — é o tipo de recurso que só um navegador de verdade, com GPU, prova.
+  - **Próximo passo, não feito agora:** as gravações caem na pasta de Downloads do navegador, soltas. Levar
+    esses `.webm` para dentro do `/mesa` (o editor de motion graphics em `.tmp/video/`) para cortar e aplicar
+    a identidade visual do painel é o passo seguinte — hoje o `/mesa` só sabe desenhar cenas roteirizadas,
+    não editar um clipe de gameplay de verdade.
 
 - **O alvo fica legível, e a escala 3 já tem decisão (Qwen, 28/09).** Na mesma mensagem o dono decidiu duas coisas: **a
   escala 3 é encontro e, depois, Mech de tripulação** (vários jogadores na mesma máquina, um por arma ou papel), e a

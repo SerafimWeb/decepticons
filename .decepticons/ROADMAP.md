@@ -99,6 +99,7 @@
 - [x] Gestão nos bastidores: quadro Agora/Próximo/Depois com código por item, burn-up do escopo, linha do tempo das fases com estimativa, matriz frentes × fases e as quatro métricas DORA de entrega contínua #negocio
 - [x] Hangar: contrato da montagem (`LoadoutSpec` + `validateLoadout`, carga de 11 t no Vector-09), montagem salva no aparelho e link de build (`?build=`), com testes #mechs
 - [x] Hangar: tela de montagem com preview 3D ao vivo, armas e níveis nos braços, carga, calor, simulação de combate, gravação local e link compartilhável #ux
+- [x] Gravação nativa de gameplay em alta qualidade (F9, tecla escondida, só para o dono): captura direto do WebGL, sem OBS, com áudio do jogo (Claude, 28/09) #ux
 - [x] Segundo piloto selecionável no Hangar: andróide A-1 com blaster e motosserra (troca recarrega a partida) #mechs
 - [x] Hangar 2.0, camada 1: galpão 3D próprio com pedestal de holograma, o Mech girando, armas aplicadas na hora #ux
 - [x] Hangar 2.0, camada 2: interface holográfica no desenho da referência, versão de celular #ux
