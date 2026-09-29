@@ -1,5 +1,11 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-29] Novo doc: `FERRAMENTAS.md` — onboarding de operação para o dono (Claude)
+**Pedido do dono:** *"o que vc fez de /video/leiame.md, e as outras considerações importantes durante o jogo, devem ser insertidos nos tutoriais, seja o onboarding de jogar, seja o onboarding para gerir, gerenciar, organizar configurar, e realizar as tarefas acessórias, como gravar, editar os motion videos, etc."*
+**Decisão:** criado `.decepticons/FERRAMENTAS.md` — o "como o dono realiza a tarefa" para F9 (gravação), a mesa de vídeo (`/mesa`, as 3 camadas: formulário, gerar por IA, clipe de gameplay real) e pilotar o Colossus-01, com os achados que valem a pena não redescobrir (o Mech parado que afunda no chão). Referenciado no `AGENTS.md`, Passo Zero, item 7.
+**Onboarding *de jogar* (in-game) não mudou:** conferido o `keys-help` da tela inicial e o `Onboarding.ts` (dicas contextuais) — nada do que saiu nesta sessão pertence lá. O F9 continua de propósito fora de qualquer tela de ajuda (decisão de 28/09, "só nós usarmos"); o Colossus já é descoberto sozinho ao abrir o Hangar, do mesmo jeito que o andróide sempre foi, sem precisar de dica extra.
+**Por que não só apontar pro `.tmp/video/LEIAME.md`:** aquele arquivo é local e não vai para o git (G15) — some se o `.tmp/` for limpo ou numa máquina nova. O `FERRAMENTAS.md` é o resumo permanente e versionado; o `LEIAME.md` continua sendo o manual completo, só que agora citado de um lugar que sobrevive.
+
 ## [2026-09-29] Colossus-01 vira chassi solo pilotável (Claude)
 **Pedido do dono, priorizado por ele entre três frentes grandes** ("Colossus jogável (solo) primeiro", *vs.* Mech de tripulação e o framework modular de chassis): *"quero poder escolher o colossus pra ver como é jogar com ele"*.
 
