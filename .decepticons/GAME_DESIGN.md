@@ -163,6 +163,9 @@ O melhor de cada modelo, em ordem. Cada etapa só entra quando a anterior provar
 
 **Métrica de sucesso:** volta no dia seguinte (D1) e joga 3+ rodadas na primeira sessão.
 
+> Esta lista é o **plano**; onde cada item encosta no código de hoje, qual peça falta e em que ordem eu faria,
+> está em `DIVERSAO.md` (Qwen, 28/09).
+
 ---
 
 ## PRINCÍPIOS DE ARQUITETURA (pedido do dono)

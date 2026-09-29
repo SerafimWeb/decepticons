@@ -88,6 +88,10 @@ esvazia o matchmaking em meses, mata o clipe assistível e abre mão da cena de 
 | Criadores e espectadores | câmera de espectador para casters, **código de build curto** (`CM-HEAVY-V9-SNIPER`) importável com um clique, replay pós-partida para render 4K | link `?build=` já existe (longo) | código curto com copiar/colar; killcam/espectador (§ 4); ferramenta de replay |
 | Narrativa viva e metagame global | guerra comunitária por setores (as vitórias de todos somam) e eventos semanais que mudam o meta (tempestade eletromagnética derruba escudo, falha de suprimentos) | `UNIVERSO.md` | hub comunitário (§ 4) e eventos dirigidos pelo servidor |
 
+> **Onde esta pauta encosta no jogo de hoje** — o que falta para a diversão acontecer com o que já está na `main`,
+> e a ordem recomendada por custo × efeito — está em `DIVERSAO.md` (Qwen, 28/09). Aqui fica o *quê*; lá fica o
+> *quando*.
+
 **Quem toca a 2ª leva:** **Claude** — o estado de pane crítica e os efeitos que empurram, o co-op/extração, o
 código curto de build, o espectador/replay e a telemetria (custo de CPU medido em cada um). **Codex** — kits de
 carroceria, cenários de hangar, animações de execução e pódio, captura em 4K. **Gemini** — loja, passe e telas de
