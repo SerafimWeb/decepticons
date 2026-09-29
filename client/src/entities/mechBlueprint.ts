@@ -69,9 +69,9 @@ export const MEDIUM_MECH_BLUEPRINT: MechBlueprint = {
  * pernas curtas e grossas com pés grandes (estabilidade, centro de massa baixo), cabeça pequena e sem
  * antena (lê mais "animal predador" que "robô sensor"). A largura do torso passa a da altura: silhueta
  * de urso/felino agachado, não de humanoide P/M/G. Ver nota do Arara-B1 sobre o achado do dono (29/09).
- * **Cauda (29/09, mesmo achado):** braço e cabeça já estão presos à mira e à zona de acerto — mexer nos
- * dois vira retrabalho de mira/dano, então a identidade animal extra entra por um apêndice puramente
- * decorativo (`tail`), sem tocar nenhum dos dois.
+ * **Sem cauda (29/09→29/09):** chegou a ganhar uma cauda decorativa (`tail`) no mesmo dia; o dono viu ao
+ * vivo, achou fraca ("bosta") e não resolvia a queixa real (silhueta de blocos) — removida da mesma
+ * sessão. A capacidade `tail` continua disponível no tipo e no builder pra quem precisar depois.
  */
 export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
   id: 'heavy', label: 'PESADO', referenceHeight: 6.5,
@@ -81,7 +81,6 @@ export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
   legs: { hipWidth: 0.95, thighWidth: 0.95, shinWidth: 0.85, upperLength: 1.05, lowerLength: 0.95, footLength: 1.65, digitigrade: 0 },
   arms: { mountX: 2.3, upperWidth: 0.76, upperLength: 0.85, forearmWidth: 1.0, forearmDepth: 1.75 },
   vents: { count: 5, width: 0.2, height: 0.42 }, backPack: { width: 1.6, height: 0.85, depth: 0.9 },
-  tail: { segments: 3, baseRadius: 0.34, length: 2.1, droop: 0.6 },
 };
 
 /**
