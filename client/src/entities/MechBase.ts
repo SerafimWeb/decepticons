@@ -666,6 +666,10 @@ export abstract class MechBase {
     this.leftRecoil = Math.max(0, this.leftRecoil - dt * 5);
     r.leftArm.position.z = this.leftArmBaseZ + this.leftRecoil * 0.5;
 
+    // Canhão-torre (Colossus e afins): gira devagar sozinho, decorativo — a mira de verdade continua
+    // nos braços. G4: um if e uma soma, sem alocação; só roda quando o blueprint marcou `head.turret`.
+    if (r.head.userData.turret) r.head.rotation.y += dt * 0.35;
+
     if (r.setDashVisual) r.setDashVisual(this.isDashing);
     else r.thrusterMaterial.emissiveIntensity = this.isDashing ? 14 : 2;
 
