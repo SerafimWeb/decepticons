@@ -21,6 +21,17 @@ explícito de confirmação manual do dono.
 **Quem decidiu:** dono (o pedido, e a decisão anterior de manter privado); Claude (captura manual em vez de
 `preserveDrawingBuffer` permanente, tecla escondida do `keys-help`, o achado do `requestFrame` antes do stop).
 
+## [2026-09-28] Dois marcadores de conflito estavam commitados na `main` (Qwen, R17)
+**Achado:** ao resolver o conflito do PR #113 (o Colossus-01 do Codex), a varredura do repositório (`git grep`) mostrou **dois marcadores de merge commitados** — `>>>>>>> origin/main` no fim de um parágrafo do `ESTADO_ATUAL.md` e `>>>>>>> 66886e7e…` no fim de uma entrada deste arquivo. Os dois **já estavam na `main`** (não vieram do branch do Codex) e passaram por todos os portões: o `site --check` não procura por eles e nenhum teste lê documentos. Como o `ESTADO_ATUAL.md` e este cofre alimentam a **sala de controle publicada**, era resíduo de merge visível na página.
+**Decisão:** remover os dois na própria resolução do merge — uma linha cada, sem tocar em mais nada — e varrer o repositório inteiro para confirmar que não sobrou nenhum. A varredura (`git grep -n ">>>>>>>"`) fica como o jeito rápido de conferir antes de publicar.
+**Quem decidiu:** Qwen (achado e conserto, R17 — barato e seguro).
+
+## [2026-09-28] Colossus-01 vira o primeiro boss de escala 3, com 14 m (Codex + dono)
+**Pedido do dono:** criar o estágio 3 de tamanho, novos bosses que possam ser circundados em combate e deixá-los disponíveis para uso em uma etapa posterior.
+**Decisão:** o Colossus-01 deixa de disputar o lugar de Mech pesado de escala 2. Ele passa a ser máquina de cerco de **14 m**, 2,64 vezes a altura do Vector-09. O pesado de escala 2 continua uma linha de chassi separada, perto de 6,5 m.
+**Visual:** `COLOSSUS_01_BLUEPRINT` cria base larga, pernas afastadas, torso alto, ombros massivos e cinco respiros por lado. As seis partes preservam seus pivôs e a geometria é fundida na construção: **9 malhas visíveis e uma camada opcional de vapor**, dentro do teto de 10 draws. A prova comparativa em `.decepticons/arte/mech-blueprints.png` mede 4,5 m, 5,3 m, 6,5 m e 14 m.
+**Ordem de entrega:** primeiro o rig e a escala; depois um encontro offline determinístico, com IA de boss separada da IA de soldados, pontos fracos e câmera própria; só depois sandbox/Hangar e modo online assimétrico. A simulação, os valores de vida/ataque e a arma assinatura não foram inventados nesta etapa.
+**Quem decidiu:** dono (escala 3, boss e futuro uso pilotável); Codex (14 m, separação conceitual, silhueta, orçamento de render e sequência técnica).
 
 ## [2026-09-28] A escala 3 é o Mech de tripulação — e o alvo fica legível (Qwen)
 **Pedido do dono:** *"Escala 3 é encontro **E** futuramente vamos poder jogar com eles também (acho que é nesse tipo de mech que poderemos colocar vários jogadores operando um só, cada jogador cuida de uma arma, mísseis, metralhadoras, lança-chamas, recuperação, etc); prioridade é a mais prioritária e sequencial possível; pode prosseguir com as tarefas do gemini e do claude, pois eles acabaram o credito e pararam de trabalhar. prossiga"*
@@ -287,7 +298,6 @@ da base e do canhão, o corte das páginas, a camada anti-cópia e as checagens 
 - **Medido, não "achei bonito":** 19 ícones para 19 módulos, 10 na legenda e **nenhuma sobreposição** de texto ou selo (medido no Chrome); o `site --check` passa a exigir os ícones, então não somem sem ninguém notar. Captura em `.decepticons/arte/mapa-icones.png`. Ressalva honesta: **o modelo que eu rodo não lê imagem**, então o julgamento do desenho é do dono — cada forma é uma linha do registro, trocar é barato.
 - **Drone decidido:** **três classes por função** (reconhecimento, ataque, recuperação de vida), **escala dos andróides (1 a 2 m)** e **tiro fraco, o do andróide**; o valor dele é emoção e perspectiva nova, não poder de fogo. Consequências registradas no `METAGAME.md` § 8 e § 10: a função **não muda o custo na rede** (mesmo registro leve de 10 bytes a 5 Hz, § 8.2), a cura é **posicionada** (nunca vantagem comprada) e o drone **não substitui** o Mech de assalto.
 **Quem decidiu:** dono (o papel do drone e o pedido); Qwen (o desenho dos ícones, a medição e o registro).
->>>>>>> 66886e7e175785ab836472451ebbbeb1e2c6a224
 
 ## [2026-09-27] A banda do drone vira especificação (e a revisão cruzada do MissionHUD)
 **Pedidos (via Gemini, repassados pelo dono):** revisar o PR da interface de missões (MissionHUD); atualizar o grafo e a saúde técnica da oficina com o novo módulo e os 219 testes; detalhar no `METAGAME.md` § 8 o orçamento de banda e a técnica de sincronização dos drones.
