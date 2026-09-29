@@ -138,3 +138,54 @@ declarado em cada uma.
 3. Boletins de inteligência nos bastidores, gerados das entregas (Claude).
 4. Mecânicas da seção 5, uma por PR (Claude: regra e teste; Codex: visual).
 5. Arenas temáticas: estação de cabos, barragem, fábrica de chips (Codex: visual; Claude: colisão e rotas dos bots).
+
+## 9. Fabricantes das URIs e classes de chassi (proposta, Claude 29/09)
+
+> Pedido do dono: estruturar já, a partir de uma conversa com um "especialista" externo (gramática de
+> mechs por classe × arquitetura × função, e nomenclatura de fabricantes) e de 4 fichas de referência que
+> ele gerou (`d:/imagens cybermech/` — pasta pessoal do dono, fora do repositório, não versionada). **Não
+> copio a conversa nem os nomes ao pé da letra** (o próprio dono avisou que "nem tudo é o ideal"): adapto
+> ao que o jogo já tem — o Hangar, os chassis que já existem em código, a SERAFIM sendo brasileira.
+
+**A ideia central do especialista, que vale a pena adotar:** altura sozinha não define a classe de um
+Mech, e três chassis com a mesma "silhueta de boneco" em P/M/G é o erro mais comum de concept art de
+mech. Cada fabricante deveria ter DNA visual próprio (proporção, arquitetura de pernas, densidade de
+blindagem), e cada chassi deveria responder a uma frase de engenharia antes de existir ("esta máquina
+existe para ______"). Isso já orientou os dois chassis que entraram em código nesta sessão (ver abaixo).
+
+**Fabricantes** (fictícios; o jogo já tem "empresas" no sentido dos consórcios do §3 — estes são
+fabricantes de *hardware*, quem constrói o chassi, não quem treinou a IA rebelde):
+
+| Fabricante | Origem | Filosofia | DNA visual |
+|---|---|---|---|
+| **Arara Foundry** | Manaus, Amazônia | bioinspiração, adaptação ao terreno difícil | pernas digitígradas, plaqueamento orgânico, nomes de fauna brasileira |
+| **Forge Systems** | Minas Gerais (corredor industrial) | "hardware resolve": robustez antes de sofisticação | blocos largos, blindagem grossa, pouca curva |
+| **Vanta Works** | (a decidir — litoral? São José dos Campos?) | reconhecimento e guerra eletrônica antes do confronto direto | perfil baixo, sensores grandes, quadrúpede/pernas invertidas |
+| **SERAFIM (linha própria)** | interna | o que a SERAFIM já opera hoje — Vector-09, o andróide-piloto | os chassis atuais do Hangar, sem mudar nome nem número |
+
+A âncora brasileira da **Arara Foundry** conversa direto com a decisão já aprovada do §2 (Brasil no centro
+do mapa) — dá uma origem concreta para os primeiros chassis novos, sem precisar fechar ainda a geopolítica
+mais ampla (§7, itens ainda em aberto).
+
+**Classes de escala** (o que já orienta os chassis no código, `entities/chassis.ts`):
+
+| Escala | Exemplo no jogo | Altura | Papel |
+|---|---|---|---|
+| 1 · leve | **Arara-B1** (novo, 29/09) | 4,5 m | batedor: rápido, frágil, vence pela mobilidade |
+| 2 · médio | Vector-09 (já existia) | 5,3 m | equilíbrio — o "chassi de fábrica" que todo piloto começa usando |
+| 2 · pesado | **Onça-B2** (novo, 29/09) | 6,5 m | resistente e lento, segura posição |
+| 3 · cerco | Colossus-01 (já existia, agora também pilotável) | 14 m | máquina de cerco; hoje solo, o Mech de tripulação é a próxima etapa |
+
+Arara-B1 e Onça-B2 nasceram na Arara Foundry (o par batedor/pesado da mesma linha, como as fichas de
+referência mostram) e já usam blueprints visuais próprios (`LIGHT_MECH_BLUEPRINT` e `HEAVY_MECH_BLUEPRINT`,
+que já existiam em `mechBlueprint.ts` sem nunca terem sido ligados a um chassi pilotável).
+
+**O que fica para depois:**
+- Fechar a origem da Vanta Works e decidir se ela e a Forge Systems entram como chassis jogáveis ou só
+  como lore (bots inimigos, por exemplo — encaixaria com o §3, "IAs rebeldes" pilotando hardware de outro
+  fabricante).
+- Armas novas por fabricante: hoje toda arma é genérica (plasma/foguetes/blaster/motosserra); dar uma
+  arma de assinatura por fabricante é o próximo corte natural (ex.: Vanta com guerra eletrônica, Forge com
+  algo de impacto/área).
+- A arte de referência não está versionada. Se algum dia for usada em captura ou material público, uma
+  imagem por vez em `.decepticons/arte/`, nunca a pasta pessoal do dono.

@@ -33,6 +33,9 @@ const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string; detai
   android: { title: 'ANDRÓIDE A-1', className: 'LEVE · PILOTO', detail: 'Pequeno e ágil; vence no combate próximo.' },
   // Chassi solo do boss (29/09): mesmos números do encontro, sem balancear contra os bots de propósito.
   colossus01: { title: 'COLOSSUS-01', className: 'ESCALA 3 · CERCO', detail: 'Lento e blindado; devastador de perto.' },
+  // Arara Foundry (29/09): primeiros dois modelos de escala 1 e 2, ver .decepticons/VISAO.md § fabricantes.
+  arara: { title: 'ARARA-B1', className: 'ESCALA 1 · BATEDOR', detail: 'Rápido e frágil; vence pela mobilidade.' },
+  onca: { title: 'ONÇA-B2', className: 'ESCALA 2 · PESADO', detail: 'Lento e blindado; segura posição.' },
 };
 const SLOT_LABEL: Record<ArmSlot, string> = { right: 'BRAÇO DIREITO', left: 'BRAÇO ESQUERDO' };
 const SLOT_NUM: Record<ArmSlot, string> = { right: '01', left: '02' };
@@ -60,6 +63,12 @@ const CHASSIS_ICON: Record<ChassisId, string> = {
   // Base bem mais larga e pernas grossas (escala 3): a planta lê "pesado e lento" ao lado das outras duas.
   colossus01:
     '<rect x="22" y="2" width="16" height="10" /><rect x="10" y="14" width="40" height="26" /><rect x="1" y="16" width="10" height="24" /><rect x="49" y="16" width="10" height="24" /><rect x="12" y="42" width="14" height="28" /><rect x="34" y="42" width="14" height="28" /><path d="M8 74h18M34 74h18" /><path d="M0 44h2M58 44h2" />',
+  // Pernas longas e afiladas: a planta lê "leve e rápido" (escala 1).
+  arara:
+    '<rect x="26" y="2" width="8" height="8" /><rect x="20" y="12" width="20" height="20" /><rect x="12" y="14" width="6" height="18" /><rect x="42" y="14" width="6" height="18" /><path d="M22 34l-4 16l4 20M38 34l4 16l-4 20" /><path d="M14 70h12M34 70h12" />',
+  // Torso largo, pernas curtas e grossas: escala 2, sem chegar no exagero do Colossus.
+  onca:
+    '<rect x="22" y="6" width="16" height="8" /><rect x="12" y="16" width="36" height="30" /><rect x="2" y="18" width="12" height="26" /><rect x="46" y="18" width="12" height="26" /><rect x="16" y="48" width="12" height="22" /><rect x="32" y="48" width="12" height="22" /><path d="M10 72h20M30 72h20" />',
 };
 
 /** Leituras de cada arma, como barras: o máximo é o maior valor do arsenal no MK III. */
@@ -642,7 +651,7 @@ export class HangarMenu {
 }
 
 /** Sigla curta de cada chassi, para caber no atalho do preset. */
-const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-1', colossus01: 'C01' };
+const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-1', colossus01: 'C01', arara: 'B1', onca: 'B2' };
 
 /** Rótulo curto de um atalho: chassi e nível de cada braço (ex.: "V09 · III / I"). */
 function presetLabel(p: LoadoutSpec): string {

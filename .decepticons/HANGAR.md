@@ -52,9 +52,10 @@ Estado em 25/09 (fim do dia): **o que já está no código** está marcado ✅; 
 
 | Chassi | Classe | Carga | Blindagem | Velocidade | Dissipador | Estado |
 |---|---|---|---|---|---|---|
-| Ferret-X | leve | 12 t | 70% | 14 m/s | rápido | ausente |
-| **Vector-09** | médio | 18 t | 100% (torso 300) | 9 m/s | 0,7/s | **no jogo** (armas de fábrica: 7 t) |
-| Colossus-01 | pesado | 26 t | 140% | 9 m/s | lento | ausente (ou vira a escala 3: decisão do dono) |
+| **Arara-B1** (era "Ferret-X" nesta proposta) | leve · escala 1 | 8 t | torso 200 | 13 m/s | padrão | **no jogo** (29/09, Arara Foundry) |
+| **Vector-09** | médio · escala 2 | 18 t | 100% (torso 300) | 9 m/s | 0,7/s | **no jogo** (armas de fábrica: 7 t) |
+| **Onça-B2** | pesado · escala 2 | 16 t | torso 450 | 6 m/s | padrão | **no jogo** (29/09, Arara Foundry) |
+| **Colossus-01** | cerco · escala 3 (decidido: não é o "pesado" desta linha) | 24 t | torso 1200 | 5 m/s | padrão | **no jogo** (29/09), não balanceado contra bots de propósito |
 
 **Blindagem extra:** a carga que sobra das armas vira blindagem (proposta: 1 t = +30 de vida, distribuída pelo
 jogador entre as partes, com teto por parte). É isso que fecha a conta: MK III nos dois braços deixa o Mech

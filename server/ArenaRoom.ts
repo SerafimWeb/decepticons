@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import type { WeaponStats } from '../client/src/combat/weapons';
 import { DEFAULT_SETTINGS } from '../client/src/core/Settings';
 import { Android } from '../client/src/entities/Android';
-import { PILOT_ANDROID_STATS } from '../client/src/entities/chassis';
+import { CHASSIS, PILOT_ANDROID_STATS } from '../client/src/entities/chassis';
 import type { MechBase } from '../client/src/entities/MechBase';
 import { Vector09 } from '../client/src/entities/Vector09';
 import type { ParticleSystem } from '../client/src/fx/ParticleSystem';
@@ -180,10 +180,13 @@ export class ArenaRoom {
     const spec = parseLoadoutKey(m.build);
     const check = spec && validateLoadout(spec);
     if (!spec || !check || !check.ok) return this.reject(peer, 'montagem');
+    // Servidor não desenha nada (sem blueprint, só física/simulação): qualquer chassi de CHASSIS
+    // funciona aqui com os stats certos. Sem isso, um chassi novo (ex.: colossus01) jogava online
+    // com os números do Vector-09 por padrão — achado em 29/09 junto com a rejeição de montagem.
     const mech =
       spec.chassis === 'android'
         ? new Android({ stats: PILOT_ANDROID_STATS, tool: 'pilot', loadout: check.loadout })
-        : new Vector09({ loadout: check.loadout });
+        : new Vector09({ stats: CHASSIS[spec.chassis], loadout: check.loadout });
     this.match.addPlayer(mech, m.name);
     const pilot = new NetPilot(mech, this.match);
     this.match.pilots.push(pilot);

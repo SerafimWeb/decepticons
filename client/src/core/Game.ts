@@ -46,7 +46,7 @@ import { AudioSystem } from '../audio/AudioSystem';
 import { BrandSplash } from '../brand/BrandSplash';
 import { Hangar } from '../hangar/Hangar';
 import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
-import { COLOSSUS_01_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
+import { COLOSSUS_01_BLUEPRINT, HEAVY_MECH_BLUEPRINT, LIGHT_MECH_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { PALETTE } from './palette';
@@ -81,7 +81,11 @@ const MAX_STEPS_PER_FRAME = 4;
 /** Até esta distância (m) o passo de um Mech gigante treme a câmera de quem é pequeno. */
 const GIANT_STEP_RANGE = 25;
 /** Blueprint visual de cada chassi pilotável pelo `Vector09` (o andróide tem classe própria). */
-const BLUEPRINT_BY_CHASSIS: Partial<Record<ChassisId, MechBlueprint>> = { colossus01: COLOSSUS_01_BLUEPRINT };
+const BLUEPRINT_BY_CHASSIS: Partial<Record<ChassisId, MechBlueprint>> = {
+  colossus01: COLOSSUS_01_BLUEPRINT,
+  arara: LIGHT_MECH_BLUEPRINT,
+  onca: HEAVY_MECH_BLUEPRINT,
+};
 /** Resolução máxima do render: acima de 1,5 o custo de GPU sobe muito para pouco ganho visível. */
 const maxPixelRatio = () => Math.min(window.devicePixelRatio, 1.5);
 const THRUSTER_COLOR = new THREE.Color(3.0, 1.0, 0.2);
