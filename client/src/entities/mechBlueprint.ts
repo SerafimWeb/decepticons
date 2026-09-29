@@ -9,13 +9,30 @@ export interface MechBlueprint {
   readonly label: string;
   readonly referenceHeight: number;
   readonly torso: { readonly width: number; readonly height: number; readonly depth: number };
-  readonly head: { readonly width: number; readonly height: number; readonly depth: number; readonly antenna: number };
+  readonly head: {
+    readonly width: number; readonly height: number; readonly depth: number; readonly antenna: number;
+    /**
+     * Canhão giratório no lugar da cabeça (pedido do dono, 29/09), em vez do rosto de sempre. Mesmo
+     * espaço, mesma posição — a zona de acerto da cabeça (`combat/damage.ts`, fração da altura total)
+     * não muda; só a forma muda. Gira devagar sozinho (ver `MechBase.animate`), decorativo, sem ligar
+     * com a mira real do jogador — a "arma" de verdade continua nos braços, como qualquer outro Mech.
+     */
+    readonly turret?: boolean;
+  };
   readonly shoulders: { readonly width: number; readonly height: number; readonly depth: number };
   readonly hips: { readonly width: number; readonly depth: number };
   readonly legs: { readonly hipWidth: number; readonly thighWidth: number; readonly shinWidth: number; readonly upperLength: number; readonly lowerLength: number; readonly footLength: number; readonly digitigrade: number };
   readonly arms: { readonly mountX: number; readonly upperWidth: number; readonly upperLength: number; readonly forearmWidth: number; readonly forearmDepth: number };
   readonly vents: { readonly count: number; readonly width: number; readonly height: number };
   readonly backPack: { readonly width: number; readonly height: number; readonly depth: number };
+  /**
+   * Cauda decorativa (opcional): 2–3 segmentos afunilando, presos na pelve, sem junta nem animação.
+   * Puramente visual — não move, não é uma parte de dano (`MechPart` continua com as 6 de sempre) e não
+   * participa da mira nem do meshKit é reaproveitado, então custa 0 alocação por quadro (G4/G5). Existe
+   * porque braço e cabeça já estão ligados à mira e à zona de acerto (ver achado de 29/09 no histórico);
+   * a cauda é o jeito seguro de dar identidade animal sem mexer nisso.
+   */
+  readonly tail?: { readonly segments: number; readonly baseRadius: number; readonly length: number; readonly droop: number };
 }
 
 /**
@@ -52,6 +69,9 @@ export const MEDIUM_MECH_BLUEPRINT: MechBlueprint = {
  * pernas curtas e grossas com pés grandes (estabilidade, centro de massa baixo), cabeça pequena e sem
  * antena (lê mais "animal predador" que "robô sensor"). A largura do torso passa a da altura: silhueta
  * de urso/felino agachado, não de humanoide P/M/G. Ver nota do Arara-B1 sobre o achado do dono (29/09).
+ * **Cauda (29/09, mesmo achado):** braço e cabeça já estão presos à mira e à zona de acerto — mexer nos
+ * dois vira retrabalho de mira/dano, então a identidade animal extra entra por um apêndice puramente
+ * decorativo (`tail`), sem tocar nenhum dos dois.
  */
 export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
   id: 'heavy', label: 'PESADO', referenceHeight: 6.5,
@@ -61,6 +81,7 @@ export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
   legs: { hipWidth: 0.95, thighWidth: 0.95, shinWidth: 0.85, upperLength: 1.05, lowerLength: 0.95, footLength: 1.65, digitigrade: 0 },
   arms: { mountX: 2.3, upperWidth: 0.76, upperLength: 0.85, forearmWidth: 1.0, forearmDepth: 1.75 },
   vents: { count: 5, width: 0.2, height: 0.42 }, backPack: { width: 1.6, height: 0.85, depth: 0.9 },
+  tail: { segments: 3, baseRadius: 0.34, length: 2.1, droop: 0.6 },
 };
 
 /**
@@ -115,6 +136,30 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   pelvis.name = 'pelvis';
   box(pelvis, blueprint.hips.width, 0.5 * scale, blueprint.hips.depth, M.frame);
 
+  // Cauda decorativa (opcional, G4/G5: construída uma vez, sem junta animada, sem custo por quadro).
+  // Presa direto na pelve — nunca toca braço, cabeça ou pernas (ver nota no blueprint da Onça-B2).
+  // A raiz fica atrás do ponto mais traseiro de verdade (torso + mochila, a mesma referência do exaustor
+  // de calor logo abaixo): nascer só na borda do quadril a deixava por baixo do torso, escondida.
+  if (blueprint.tail) {
+    const { segments, baseRadius, length, droop } = blueprint.tail;
+    const segLen = (length / segments) * scale;
+    const rootZ = torsoD * 0.78 + blueprint.backPack.depth * 0.5 + 0.12 * scale;
+    // A raiz carrega o ângulo inicial uma vez só; cada segmento gira só o INCREMENTO (`step`) em relação
+    // ao pai — como cada segmento é filho do anterior (já girado), ângulos absolutos se somariam sozinhos
+    // a cada elo e a cauda dobraria sobre si mesma (achado real, 29/09: media a posição no mundo de cada
+    // segmento e via a curva ziguezaguear em vez de continuar). Incremento relativo é a conta certa.
+    let node: THREE.Object3D = group(pelvis, 0, 0.1 * scale, rootZ);
+    node.rotation.x = 1.42; // quase na horizontal, saindo pra trás — não pra cima, senão desaparece no corpo
+    const step = (droop * 1.6) / segments;
+    for (let i = 0; i < segments; i++) {
+      const seg = group(node, 0, 0, 0);
+      seg.rotation.x = step;
+      const r = baseRadius * scale * (1 - (i / segments) * 0.75);
+      cyl(seg, Math.max(0.015 * scale, r), segLen, M.frame, 0, segLen * 0.5, 0);
+      node = group(seg, 0, segLen, 0);
+    }
+  }
+
   const leg = (side: number): LegRig => {
     const hip = group(pelvis, side * blueprint.legs.hipWidth * 0.5, -0.1 * scale, 0);
     hip.name = side < 0 ? 'leftLeg' : 'rightLeg';
@@ -156,8 +201,18 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
 
   const head = group(torso, 0, torsoH * 1.25, -torsoD * 0.08);
   head.name = 'head';
-  beveledBox(head, blueprint.head.width, blueprint.head.height, blueprint.head.depth, Math.min(blueprint.head.width, blueprint.head.height, blueprint.head.depth) * 0.11, M.armor, 0, blueprint.head.height * 0.5, 0);
-  box(head, blueprint.head.width * 0.78, 0.11 * scale, 0.06 * scale, M.visor, 0, blueprint.head.height * 0.56, -blueprint.head.depth * 0.52);
+  if (blueprint.head.turret) {
+    // Torre + cano no lugar do rosto: mesmo espaço e posição da cabeça de sempre (a zona de acerto,
+    // fração da altura total em combat/damage.ts, não olha pra malha — continua igual).
+    cyl(head, blueprint.head.width * 0.58, blueprint.head.height * 0.85, M.armor, 0, blueprint.head.height * 0.55, 0);
+    const barrel = blueprint.head.depth * 2.1 * scale;
+    cyl(head, blueprint.head.width * 0.13, barrel, M.frame, 0, blueprint.head.height * 0.55, -blueprint.head.depth * 0.4 * scale - barrel * 0.5, Math.PI / 2);
+    box(head, blueprint.head.width * 0.2, blueprint.head.width * 0.2, 0.05 * scale, M.visor, 0, blueprint.head.height * 0.55, -blueprint.head.depth * 0.42 * scale);
+    head.userData.turret = true; // MechBase.animate() usa isso pra girar devagar sozinho
+  } else {
+    beveledBox(head, blueprint.head.width, blueprint.head.height, blueprint.head.depth, Math.min(blueprint.head.width, blueprint.head.height, blueprint.head.depth) * 0.11, M.armor, 0, blueprint.head.height * 0.5, 0);
+    box(head, blueprint.head.width * 0.78, 0.11 * scale, 0.06 * scale, M.visor, 0, blueprint.head.height * 0.56, -blueprint.head.depth * 0.52);
+  }
   if (blueprint.head.antenna > 0) cyl(head, 0.035 * scale, blueprint.head.antenna, M.frame, blueprint.head.width * 0.28, blueprint.head.height + blueprint.head.antenna * 0.45, 0.08 * scale);
 
   const arm = (side: number, isLeft: boolean): THREE.Group => {

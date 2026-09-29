@@ -13,7 +13,11 @@ describe('blueprints visuais dos Mechs', () => {
       return { rig, boxes, draws };
     });
 
-    expect(rigs.map(({ draws }) => draws)).toEqual([10, 10, 10, 10]);
+    // A Onça-B2 (índice 2, HEAVY) soma 3 draws a mais: a cauda decorativa (29/09, pedido do dono —
+    // "quero robôs com identidade, não o mesmo boneco escalado"). É orçamento novo, de propósito, não
+    // acidente — G4/G5 pede teto explícito, não teto congelado: cada apêndice futuro paga o preço dele
+    // aqui, igual a este.
+    expect(rigs.map(({ draws }) => draws)).toEqual([10, 10, 13, 10]);
     expect(rigs[0]!.boxes.getSize(new THREE.Vector3()).x).toBeLessThan(rigs[1]!.boxes.getSize(new THREE.Vector3()).x);
     expect(rigs[1]!.boxes.getSize(new THREE.Vector3()).x).toBeLessThan(rigs[2]!.boxes.getSize(new THREE.Vector3()).x);
     expect(rigs.map(({ rig }) => [rig.head.name, rig.torso.name, rig.leftArm.name, rig.rightArm.name, rig.leftLeg.hip.name, rig.rightLeg.hip.name]))
