@@ -18,6 +18,13 @@
 
 ---
 
+- **A ficha do CTF confere com o código: 12 dos 15 testes estão travados (Qwen, 28/09).** Auditoria item por item da
+  `fichas/ctf.md` § 4 contra `client/src/sim/CaptureTheFlag.test.ts` (11 testes) e o teste de integração do CTF no
+  `Match` — o mapa item → teste está na § 5 da ficha. **O item 1 é o único offline em aberto** (contrato: partida de
+  CTF sem time, ou com time sem bandeira na base, tem de falhar em vez de começar torta) e é barato de fechar, na
+  frente do Codex/Claude (`sim/` é território deles). Os itens 13 e 15 dependem do contrato de rede; a simetria
+  cronometrada do item 12 depende dos dois chassis existirem como gameplay. Além dos 15 itens, há um teste a mais que
+  trava os callbacks do HUD (`onFlagPickup`/`onCapture`/`onMatchEnd`). Nenhuma linha de código mudou.
 - **A tese da diversão, da competição e da viralidade — e a peça que falta em cada uma (Qwen, 28/09).** Pedido do
   dono: *"quero que você pense como vamos tornar o jogo mais divertido… mais competitivo… quais os diferenciais que
   devemos explorar pra tornar o jogo mais viral"*, com três hipóteses na mesa (outros Mechs, missões na fase, novas
