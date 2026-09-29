@@ -32,7 +32,7 @@
 |---|---|---|---|
 | `vector-09.md` | robô médio (jogador) | o Mech de hoje | ✅ exemplo preenchido |
 | [`leve.md`](leve.md) | robô leve (batedor) | prancha do dono, figuras 3 e 4 (`.tmp/arte/`) | proposta Codex; stats de gameplay aguardam Claude e dono |
-| [`pesado.md`](pesado.md) | robô pesado | prancha do dono, figuras 5 e 6 | proposta Codex; stats de gameplay aguardam Claude e dono |
+| [`pesado.md`](pesado.md) | máquina de cerco, escala 3 | Colossus-01, 14 m | visual Codex implementado; encontro, stats e som aguardam próximos PRs |
 | [`androide.md`](androide.md) | escala 1: rebelde, técnico e pilotado | rig de `Android.ts` | proposta Codex; números copiados do código |
 | [`plasma.md`](plasma.md), [`foguetes.md`](foguetes.md), [`blaster.md`](blaster.md), [`motosserra.md`](motosserra.md) | armas de hoje | `combat/weapons.ts` | propostas Codex; números copiados do código |
 | [`drone.md`](drone.md) | escala 1, três classes por função: reconhecimento, ataque e conserto | decisão do dono de 27/09 (`METAGAME.md` § 8 e § 8.2) | proposta Qwen; **silhueta (Codex) e números (Claude) aguardam**; 6 perguntas abertas para o dono |
@@ -40,4 +40,4 @@
 | [`ctf.md`](ctf.md) | **modo** CTF Vermelho × Azul: regras e **a especificação dos 15 testes** | decisão do dono no `ROADMAP.md` (Fase 5: 2v2, 3 capturas ou mais em 8 min) | proposta Qwen; **os `it()` nascem no PR da regra (Claude)**; 7 perguntas abertas para o dono |
 
 As fichas marcadas como **proposta** não aprovam mudanças de gameplay. O Ferret-X e o Colossus-01 ainda não têm
-stats/slots no código; `?` indica decisões pendentes, nunca um valor para implementar sem teste e aprovação.
+stats/slots no código; decisões abertas nunca viram número implementado sem teste e aprovação.
