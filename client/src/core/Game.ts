@@ -164,7 +164,7 @@ export class Game {
   /** Configurações do jogador (salvas no navegador). A tela de configurações chama `settings.update()`. */
   readonly settings = new Settings(browserStorage());
   /** Montagem do Mech (Hangar): salva no aparelho ou vinda de um link `?build=`. A tela do Hangar usa isto. */
-  readonly hangar = new Hangar();
+  readonly hangar: Hangar;
   /** Potências (painel do dono): as salvas no aparelho ou as de um link `?potencias=`. */
   readonly power = new PowerStore(browserStorage(), location.search);
   private appliedQuality: QualityPreset | null = null;
@@ -188,13 +188,22 @@ export class Game {
 
   static async create(container: HTMLElement): Promise<Game> {
     const physics = await PhysicsWorld.create();
-    return new Game(container, physics);
+    const hangar = new Hangar();
+    const chassisId = hangar.current.chassis;
+    const importedUrl = IMPORTED_CHASSIS[chassisId];
+    if (importedUrl) {
+      const { whenMechAssetReady } = await import('../entities/importedMechAssets');
+      await whenMechAssetReady(importedUrl, CHASSIS[chassisId].height);
+    }
+    return new Game(container, physics, hangar);
   }
 
   private constructor(
     container: HTMLElement,
     physics: PhysicsWorld,
+    hangar: Hangar,
   ) {
+    this.hangar = hangar;
     // Carrega chassis de malha importada (assíncrono, dispara cedo — CHASSIS[id].height é a mesma
     // stat usada na hora de montar o Mech de verdade, então o cache bate certo).
     for (const [chassisId, url] of Object.entries(IMPORTED_CHASSIS)) {
@@ -616,7 +625,8 @@ export class Game {
       b.onFootstep = (w) => {
         const near = this.nearness(b);
         if (near <= 0) return;
-        this.audio.playStep(near * w);
+        // Aliados e inimigos andam o tempo todo; reduz o volume para não soar como um eco estrondoso.
+        this.audio.playStep(near * w * 0.4);
         const giant = THREE.MathUtils.clamp(b.stats.height / this.mech.stats.height - 1, 0, 1);
         const close = Math.max(0, 1 - b.position.distanceTo(this.mech.position) / GIANT_STEP_RANGE);
         if (giant > 0 && close > 0) rig.addShake(0.4 * giant * close * close * w);
