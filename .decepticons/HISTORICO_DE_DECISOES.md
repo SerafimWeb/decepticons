@@ -1,5 +1,26 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-30] GÊNESIS-01: o Mech de malha importada vira chassi de verdade, escolhível e jogável (Claude)
+**Pedido do dono, direto:** "primeiro vamos transformar no chassi. depois, partimos pra aliados." Entrada anterior deixou o rig funcionando isolado (dev harness apagado); esta entrada é ele entrar no jogo de verdade — `chassis.ts`, Hangar, partida.
+
+**O problema novo: instanciar é caro, e o jogo precisa de um Mech por vez, na hora.** `buildMechBlueprintRig` (procedural) é síncrono; `loadImportedMechRig` não é — carrega um arquivo pela rede. Resolvido separando as duas metades do trabalho:
+- `preloadImportedMechAsset` (novo, em `importedMechRig.ts`): busca e prepara o `.glb` **uma vez** — caro, assíncrono.
+- `instantiateImportedMechRig` (novo): clona o protótipo já pronto (`SkeletonUtils.clone`, do próprio Three.js) e monta um `MechRig` — **síncrono, rápido**, um por Mech.
+- `importedMechAssets.ts` (novo): cacheia o preload por chassi+altura e expõe `preloadMechAsset` (dispara, não espera), `tryInstantiateMechRig` (na hora, `null` se não estiver pronto) e `whenMechAssetReady` (espera, pra quem pode). `Game.ts` dispara o preload no boot (mesmo padrão dos samples de áudio: assíncrono, sem bloquear nada); pelo tempo de o dono navegar o Hangar, já está pronto.
+- **Achado real, cedo:** clone não clona material — `SkeletonUtils.clone` é feito pra instância compartilhar aparência, não pra Mechs com vida independente. Sem clonar o material por instância, o flash de dano de um Mech acenderia todos os clones do mesmo chassi ao mesmo tempo. Corrigido: cada `instantiateImportedMechRig` clona o material da própria malha.
+
+**GÊNESIS-01 entra em `chassis.ts`/`CHASSIS`/`ARM_SLOTS`** com os números do Vector-09 emprestados (mesma classe visual: bípede médio) — ficha e nome provisórios, registrado como tal na própria descrição em `HangarMenu.ts` pro dono ver. `HangarScene.ts` e `Game.ts` ganham o mesmo branch: se o chassi está em `IMPORTED_CHASSIS`, usa o rig importado; senão, o de sempre. Zero chance de travar por um asset não estar pronto — cai de volta pro Vector-09 procedural com aviso no console em vez de quebrar a partida.
+
+**Achado real, tarde (não veio do meu código, veio do `site --check` de verdade):** a Content Security Policy do site publicado bloqueava `blob:` no `connect-src` — o `GLTFLoader` decodifica textura de dentro do `.glb` criando um object URL local e buscando nele, e sem essa liberação a malha carregava **sem nenhuma textura**. `npm run check` no dev não pega isso (sem CSP); só o `site --check`, que testa o build de verdade. Corrigido em `scripts/site.mjs`.
+
+**Prova real, de ponta a ponta, não só teste:**
+1. Hangar: GÊNESIS-01 aparece na lista, seleciona, pedestal mostra a malha de verdade, texturizada, do tamanho certo, ao lado dos outros 4 chassis.
+2. Partida de verdade (`?build=v1.genesis01.plasma-1.rockets-1`, física real, câmera 3ª pessoa): HUD mostra "GÊNESIS-01" como piloto, os 6 módulos com vida cheia, o Mech anda, a malha renderiza corretamente ao lado de um bot inimigo (CLAWD) na arena de verdade.
+
+**Ainda em aberto, registrado, não decidido aqui:** nome/ficha definitivos (hoje empresta 100% do Vector-09), orçamento de download (o `.glb` sozinho é 3,3 MB — dentro do budget de 500 KB de JS/900 KB de Wasm hoje porque não conta nesse orçamento, mas é peso real que o jogador baixa na hora de jogar com ele), e a mesma lacuna já registrada (parte destruída não some numa malha única).
+
+**Prova:** `npm run check` verde (384 testes), incluindo o `site --check` com a CSP corrigida.
+
 ## [2026-09-30] Primeiro Mech de malha importada (glTF/Tripo) andando, mirando e tomando dano dentro do MechBase de verdade (Claude)
 **Depois da decisão de virar híbrido (entrada abaixo, mesmo dia):** o dono foi ao Tripo3D, gerou um walker de esteira e um bípede, e pediu pra eu conferir se dava pra usar. O walker rigado saiu **genuinamente quebrado** — não julgamento de gosto: a caixa que envolve o modelo tinha coordenada da ordem de 10³⁷ (matriz de bind corrompida) num arquivo, e o outro literalmente se estilhaçava ao aplicar o esqueleto. Diagnóstico: o auto-rig "biped" do Tripo tentou encaixar um esqueleto humano (coxa, joelho, pé, dedo) numa malha que não tem perna separada — é um corpo de esteira só. O bípede (`mech-robot-3`), sendo uma forma humanoide de verdade, rigou limpo: 65 ossos Mixamo, todos alinhados dentro da malha (conferido visualmente com `THREE.SkeletonHelper`).
 

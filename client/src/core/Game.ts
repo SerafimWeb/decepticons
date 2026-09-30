@@ -47,6 +47,8 @@ import { BrandSplash } from '../brand/BrandSplash';
 import { Hangar } from '../hangar/Hangar';
 import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
 import { COLOSSUS_01_BLUEPRINT, HEAVY_MECH_BLUEPRINT, LIGHT_MECH_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
+import { ImportedMech } from '../entities/ImportedMech';
+import { IMPORTED_CHASSIS, preloadMechAsset, tryInstantiateMechRig } from '../entities/importedMechAssets';
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { PALETTE } from './palette';
@@ -193,6 +195,12 @@ export class Game {
     container: HTMLElement,
     physics: PhysicsWorld,
   ) {
+    // Carrega chassis de malha importada (assíncrono, dispara cedo — CHASSIS[id].height é a mesma
+    // stat usada na hora de montar o Mech de verdade, então o cache bate certo).
+    for (const [chassisId, url] of Object.entries(IMPORTED_CHASSIS)) {
+      preloadMechAsset(url, CHASSIS[chassisId as ChassisId].height);
+    }
+
     // Carrega samples de áudio (assíncrono)
     const base = import.meta.env.BASE_URL;
     this.audio.loadSample('logo_serafim', base + 'audio/logo_serafim.mp3');
@@ -267,13 +275,23 @@ export class Game {
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     this.ctfObjectives = this.match.ctf ? new CtfObjectives(this.scene) : null;
     // O piloto escolhe o chassi (Hangar): qualquer um em CHASSIS, sempre nas cores do jogador. O andróide
-    // tem classe própria (ferramenta, sem blueprint); os outros passam pelo Vector09 com o blueprint certo
-    // (`BLUEPRINT_BY_CHASSIS`) — sem isso, um chassi novo nasce com a silhueta do Vector-09 esticada (era o
-    // bug do Colossus como boss, achado e corrigido em 29/09).
+    // tem classe própria (ferramenta, sem blueprint); os de malha importada (`IMPORTED_CHASSIS`) usam o
+    // rig pré-carregado no boot (síncrono a essa altura — deu tempo de sobra); os outros passam pelo
+    // Vector09 com o blueprint certo (`BLUEPRINT_BY_CHASSIS`) — sem isso, um chassi novo nasce com a
+    // silhueta do Vector-09 esticada (era o bug do Colossus como boss, achado e corrigido em 29/09).
     const chassisId: ChassisId = this.hangar.current.chassis;
+    const importedUrl = IMPORTED_CHASSIS[chassisId];
+    const importedRig = importedUrl ? tryInstantiateMechRig(importedUrl, CHASSIS[chassisId].height) : null;
+    if (importedUrl && !importedRig) {
+      // Não devia acontecer (preload disparou no boot) — mas nunca trava a partida por causa de um
+      // asset externo; entra com a silhueta procedural padrão em vez de quebrar.
+      console.warn(`rig importado de "${chassisId}" ainda não estava pronto; entrando com o Vector-09 padrão`);
+    }
     this.mech =
       chassisId === 'android'
         ? new Android({ stats: poweredStats(PILOT_ANDROID_STATS, power, 'player'), paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout: poweredLoadout(this.hangar.equipped, power, 'player') })
+        : importedRig
+        ? new ImportedMech(poweredStats(CHASSIS[chassisId], power, 'player'), importedRig, poweredLoadout(this.hangar.equipped, power, 'player'))
         : new Vector09({
             stats: poweredStats(CHASSIS[chassisId], power, 'player'),
             loadout: poweredLoadout(this.hangar.equipped, power, 'player'),

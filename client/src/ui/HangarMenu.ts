@@ -36,6 +36,8 @@ const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string; detai
   // Arara Foundry (29/09): primeiros dois modelos de escala 1 e 2, ver .decepticons/VISAO.md § fabricantes.
   arara: { title: 'ARARA-B1', className: 'ESCALA 1 · BATEDOR', detail: 'Rápido e frágil; vence pela mobilidade.' },
   onca: { title: 'ONÇA-B2', className: 'ESCALA 2 · PESADO', detail: 'Lento e blindado; segura posição.' },
+  // Primeiro chassi de malha importada (30/09, pipeline híbrido) — ficha provisória, números do Vector-09.
+  genesis01: { title: 'GÊNESIS-01', className: 'MÉDIO · ASSALTO', detail: 'Primeiro chassi de malha importada — ficha provisória.' },
 };
 const SLOT_LABEL: Record<ArmSlot, string> = { right: 'BRAÇO DIREITO', left: 'BRAÇO ESQUERDO' };
 const SLOT_NUM: Record<ArmSlot, string> = { right: '01', left: '02' };
@@ -69,6 +71,9 @@ const CHASSIS_ICON: Record<ChassisId, string> = {
   // Torso largo, pernas curtas e grossas: escala 2, sem chegar no exagero do Colossus.
   onca:
     '<rect x="22" y="6" width="16" height="8" /><rect x="12" y="16" width="36" height="30" /><rect x="2" y="18" width="12" height="26" /><rect x="46" y="18" width="12" height="26" /><rect x="16" y="48" width="12" height="22" /><rect x="32" y="48" width="12" height="22" /><path d="M10 72h20M30 72h20" />',
+  // Provisório (30/09): silhueta genérica de bípede médio até o chassi ganhar planta própria.
+  genesis01:
+    '<path d="M22 4l8-3l8 3l-2 10h-12z" /><rect x="16" y="16" width="28" height="24" /><rect x="6" y="18" width="9" height="22" /><rect x="45" y="18" width="9" height="22" /><rect x="18" y="42" width="10" height="26" /><rect x="32" y="42" width="10" height="26" /><path d="M14 72h16M30 72h16" />',
 };
 
 /** Leituras de cada arma, como barras: o máximo é o maior valor do arsenal no MK III. */
@@ -651,7 +656,7 @@ export class HangarMenu {
 }
 
 /** Sigla curta de cada chassi, para caber no atalho do preset. */
-const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-1', colossus01: 'C01', arara: 'B1', onca: 'B2' };
+const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-1', colossus01: 'C01', arara: 'B1', onca: 'B2', genesis01: 'G01' };
 
 /** Rótulo curto de um atalho: chassi e nível de cada braço (ex.: "V09 · III / I"). */
 function presetLabel(p: LoadoutSpec): string {
