@@ -92,7 +92,9 @@ export class ArenaRoom {
     readonly code: string,
     private readonly physics: PhysicsWorld,
   ) {
-    this.match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: DEFAULT_SETTINGS, debris: false });
+    // allies: false — o roster de rede ainda não sabe descrever um aliado pros outros jogadores
+    // (AUSENTE no multiplayer, ver Match.ts e STATUS_REAL.md); a Arena offline já tem aliado.
+    this.match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: DEFAULT_SETTINGS, debris: false, allies: false });
     // Eventos para os clientes desenharem o que o servidor decidiu: cada tiro (o cliente faz o projétil visual)
     // e cada abate (lista de abates).
     this.match.projectiles.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);

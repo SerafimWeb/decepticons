@@ -8,7 +8,7 @@ import { PILOT_ANDROID_STATS } from '../entities/chassis';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
-import { Match } from './Match';
+import { ALLY_COUNT, Match } from './Match';
 import { CTF_BASES, CTF_CARRIER_SPEED } from './CaptureTheFlag';
 import { WAVE_BRIEFING_S, WAVE_CLEAR_S } from './SurvivalWaves';
 
@@ -37,7 +37,10 @@ async function play(seconds: number, debris: boolean, breakAll = false) {
   for (let i = 0; i < ticks; i++) match.step(FIXED_DT);
   const msPerTick = (performance.now() - t0) / ticks;
   const where = match.bots.mechs.map((m) => `${m.simPosition.x.toFixed(2)},${m.simPosition.z.toFixed(2)},${m.modules.torso}`).join(' ');
-  return { match, player, hitsOnPlayer, where, deaths: match.round.scoreOf(player)?.deaths ?? 0, msPerTick, units: 1 + match.bots.mechs.length };
+  return {
+    match, player, hitsOnPlayer, where, deaths: match.round.scoreOf(player)?.deaths ?? 0, msPerTick,
+    units: 1 + match.bots.mechs.length + (match.allies?.mechs.length ?? 0),
+  };
 }
 
 describe('partida sem tela (M1 do multiplayer: o que o servidor vai rodar)', () => {
@@ -47,7 +50,11 @@ describe('partida sem tela (M1 do multiplayer: o que o servidor vai rodar)', () 
 
   it('a partida inteira roda no Node: os bots caçam, atiram e o placar conta', async () => {
     const r = await play(40, false);
-    expect(r.units).toBe(1 + DEFAULT_SETTINGS.enemyMechs + DEFAULT_SETTINGS.enemyAndroids + (DEFAULT_SETTINGS.technician ? 1 : 0));
+    // Arena normal soma 2 aliados (30/09) e tira a mesma conta do pool de Mechs inimigos, pra não
+    // estourar o teto de 8 personagens da sala (G11) — ver ALLY_COUNT em Match.ts.
+    const enemyMechs = Math.max(0, DEFAULT_SETTINGS.enemyMechs - ALLY_COUNT);
+    expect(r.units).toBe(1 + enemyMechs + DEFAULT_SETTINGS.enemyAndroids + (DEFAULT_SETTINGS.technician ? 1 : 0) + ALLY_COUNT);
+    expect(r.units).toBeLessThanOrEqual(8);
     expect(r.hitsOnPlayer).toBeGreaterThan(0);
     expect(r.match.round.standings().length).toBe(r.units);
   });
@@ -86,7 +93,9 @@ describe('jogar de andróide (a partida)', () => {
 
   it('a motosserra do jogador corta o inimigo encostado mais perto; longe de todos, não corta ninguém', async () => {
     const physics = await PhysicsWorld.create();
-    const match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: { ...DEFAULT_SETTINGS, enemyMechs: 1, enemyAndroids: 0, technician: false }, debris: false });
+    // enemyMechs pede ALLY_COUNT + 1: a Arena normal tira ALLY_COUNT do pool pros aliados (30/09),
+    // e este teste quer exatamente 1 Mech inimigo de verdade pra cortar.
+    const match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: { ...DEFAULT_SETTINGS, enemyMechs: ALLY_COUNT + 1, enemyAndroids: 0, technician: false }, debris: false });
     const pilot = new Android({ stats: PILOT_ANDROID_STATS, tool: 'pilot' });
     match.addPlayer(pilot, 'VOCÊ');
     const saw = pilot.loadout.secondary!;
@@ -172,5 +181,53 @@ describe('Capture The Flag integrado à partida', () => {
     match.step(FIXED_DT);
     expect(match.ctf?.scores.blue.captures).toBe(1);
     expect(match.ctf?.flag('red').phase).toBe('home');
+  });
+});
+
+describe('aliados na Arena normal (30/09, "sozinho tá muito intenso")', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('existem, nunca atiram no jogador, e o inimigo também os caça (não só o jogador)', async () => {
+    const physics = await PhysicsWorld.create();
+    const match = new Match({
+      physics,
+      scene: new THREE.Scene(),
+      particles: NO_FX,
+      foes: { ...DEFAULT_SETTINGS, enemyMechs: 3, enemyAndroids: 0, technician: false },
+    });
+    const player = new Vector09();
+    match.addPlayer(player, 'VOCÊ');
+    match.pilots.push({ fixedUpdate: (dt) => player.fixedUpdate(IDLE, dt) });
+
+    expect(match.allies?.mechs).toHaveLength(2);
+    // O inimigo tira 2 vagas pros aliados (ALLY_COUNT do pool de enemyMechs=3): sobra 1 Mech inimigo de verdade.
+    expect(match.bots.mechs).toHaveLength(1);
+
+    let friendlyFireOnPlayer = 0;
+    let alliesGotHit = 0;
+    let enemyGotHit = 0;
+    match.onMechHit = (e) => {
+      if (e.mech === player && e.shooter && match.allies!.mechs.includes(e.shooter)) friendlyFireOnPlayer++;
+      if (match.allies!.mechs.includes(e.mech)) alliesGotHit++;
+      if (match.bots.mechs.includes(e.mech)) enemyGotHit++;
+    };
+
+    const ticks = Math.round(30 / FIXED_DT);
+    for (let i = 0; i < ticks; i++) match.step(FIXED_DT);
+
+    expect(friendlyFireOnPlayer).toBe(0);
+    // Prova que o combate de 3 lados de verdade rolou: aliado brigando com inimigo, os dois se acertando.
+    expect(enemyGotHit).toBeGreaterThan(0);
+    expect(alliesGotHit).toBeGreaterThan(0);
+  });
+
+  it('Sobrevivência e CTF não ganham aliado (pool e time próprios)', async () => {
+    const physics = await PhysicsWorld.create();
+    const survival = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: DEFAULT_SETTINGS, mode: 'survival' });
+    expect(survival.allies).toBeNull();
+    const ctf = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: DEFAULT_SETTINGS, mode: 'ctf' });
+    expect(ctf.allies).toBeNull();
   });
 });

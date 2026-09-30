@@ -15,6 +15,7 @@ const H = 32;
 const FONT = '"Share Tech Mono", Consolas, "Courier New", monospace';
 const ENEMY = '#ff4a55';
 const TECH = '#ffe14d';
+const ALLY = '#39ff6a';
 
 /** Textura do nome: o nome na cor do lado e a personalidade (depois do "·") em branco, com contorno escuro. */
 function nameTexture(label: string, color: string): THREE.CanvasTexture {
@@ -59,16 +60,21 @@ function nameTexture(label: string, color: string): THREE.CanvasTexture {
 export class Nameplates {
   private readonly plates: { mech: MechBase; sprite: THREE.Sprite }[] = [];
 
-  constructor(scene: THREE.Scene, bots: BotSystem) {
-    for (const mech of bots.mechs) {
-      const map = nameTexture(bots.nameOf(mech), bots.technicianOf(mech) ? TECH : ENEMY);
-      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map, sizeAttenuation: false, depthWrite: false, toneMapped: false, transparent: true }));
-      sprite.scale.set((HEIGHT * W) / H, HEIGHT, 1);
-      sprite.renderOrder = 10;
-      sprite.visible = false;
-      scene.add(sprite);
-      this.plates.push({ mech, sprite });
-    }
+  /** `allies` (30/09): segundo grupo opcional, nome em verde — o mesmo Mech nunca está nos dois. */
+  constructor(scene: THREE.Scene, bots: BotSystem, allies?: BotSystem) {
+    const add = (system: BotSystem, color: string) => {
+      for (const mech of system.mechs) {
+        const map = nameTexture(system.nameOf(mech), system.technicianOf(mech) ? TECH : color);
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map, sizeAttenuation: false, depthWrite: false, toneMapped: false, transparent: true }));
+        sprite.scale.set((HEIGHT * W) / H, HEIGHT, 1);
+        sprite.renderOrder = 10;
+        sprite.visible = false;
+        scene.add(sprite);
+        this.plates.push({ mech, sprite });
+      }
+    };
+    add(bots, ENEMY);
+    if (allies) add(allies, ALLY);
   }
 
   /** Por quadro: acompanha a cabeça de cada bot (posição de render). */

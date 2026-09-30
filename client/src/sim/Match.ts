@@ -8,6 +8,7 @@ import { Respawner } from '../combat/Respawner';
 import { Round } from '../combat/Round';
 import type { WeaponStats } from '../combat/weapons';
 import { ZoneSystem } from '../combat/Zone';
+import { PALETTE } from '../core/palette';
 import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
@@ -39,6 +40,13 @@ import {
 export const BOT_SPAWNS = [SPAWN_POINTS[2]!, SPAWN_POINTS[4]!, SPAWN_POINTS[8]!];
 export const ANDROID_SPAWNS = [SPAWN_POINTS[5]!, SPAWN_POINTS[6]!, SPAWN_POINTS[9]!];
 export const TECHNICIAN_SPAWNS = [SPAWN_POINTS[10]!];
+/**
+ * Aliados do jogador na Arena normal (30/09, pedido do dono: "sozinho tá muito intenso"). Tiram vaga
+ * dos inimigos pra não estourar o teto de 8 (G11) — ver `enemyMechCount`. Só na Arena por enquanto:
+ * Sobrevivência e CTF já têm lógica própria de pool/time (`SurvivalWaves`, `CaptureTheFlag`).
+ */
+export const ALLY_SPAWNS = [SPAWN_POINTS[1]!, SPAWN_POINTS[3]!];
+export const ALLY_COUNT = ALLY_SPAWNS.length;
 /** O Colossus (escala 3) nasce longe do jogador e de frente para ele: 14 m de cápsula pedem espaço. */
 export const COLOSSUS_SPAWN = [SPAWN_POINTS[7]!] as const;
 /** Dois defensores offline do CTF, perto da base vermelha e sem sobrepor a bandeira. */
@@ -78,6 +86,13 @@ export interface MatchOptions {
   mode?: GameMode;
   /** Onda em que a missão começa (1 a 6). É o atalho de bancada `?onda=`; fora do intervalo, começa na 1. */
   startWave?: number;
+  /**
+   * Aliados na Arena normal (30/09). Padrão ligado offline; o servidor (`ArenaRoom.ts`) passa `false`
+   * de propósito — o roster de rede (`shared/net`) ainda não sabe descrever um aliado pros outros
+   * jogadores, então isso ficaria invisível e fora de sincronia no multiplayer. AUSENTE lá até isso
+   * ser resolvido (`STATUS_REAL.md`); a Arena offline (single-player) já funciona hoje.
+   */
+  allies?: boolean;
 }
 
 /**
@@ -95,6 +110,8 @@ export class Match {
   readonly combat: CombatSystem;
   readonly respawner: Respawner;
   readonly bots: BotSystem;
+  /** Aliados do jogador (30/09), só na Arena normal — `null` em Sobrevivência/CTF. */
+  readonly allies: BotSystem | null;
   readonly round: Round;
   /** Máquina da missão, presente apenas no modo Sobrevivência. */
   readonly waves: SurvivalWaves | null;
@@ -154,6 +171,11 @@ export class Match {
     this.combat.damageEnabled = o.damage !== false;
     this.respawner = new Respawner(SPAWN_POINTS);
     this.crush = new CrushRule(this.combat);
+    // Aliados (30/09, "sozinho tá muito intenso"): só na Arena normal, tiram vaga do pool de Mechs
+    // inimigos pra não estourar o teto de 8 personagens da sala (G11).
+    const arenaMode = !survival && !ctf;
+    const allyCount = arenaMode && o.allies !== false ? ALLY_COUNT : 0;
+    const enemyMechCount = survival ? SURVIVAL_MAX_MECHS : Math.max(0, o.foes.enemyMechs - allyCount);
     this.bots = new BotSystem({
       scene: o.scene,
       physics: o.physics,
@@ -161,7 +183,7 @@ export class Match {
       projectiles: this.projectiles,
       particles: o.particles,
       respawner: this.respawner,
-      spawns: ctf ? CTF_DEFENDER_SPAWNS : BOT_SPAWNS.slice(0, survival ? SURVIVAL_MAX_MECHS : o.foes.enemyMechs),
+      spawns: ctf ? CTF_DEFENDER_SPAWNS : BOT_SPAWNS.slice(0, enemyMechCount),
       androidSpawns: ctf ? [] : ANDROID_SPAWNS.slice(0, survival ? SURVIVAL_MAX_ANDROIDS : o.foes.enemyAndroids),
       technicianSpawns: !survival && !ctf && o.foes.technician ? TECHNICIAN_SPAWNS : [],
       bossSpawn: survival ? COLOSSUS_SPAWN[0] : undefined,
@@ -171,8 +193,27 @@ export class Match {
       waypoints: SPAWN_POINTS,
       power: o.power,
     });
-    this.bots.targets = this.players;
+    this.allies =
+      allyCount > 0
+        ? new BotSystem({
+            scene: o.scene,
+            physics: o.physics,
+            combat: this.combat,
+            projectiles: this.projectiles,
+            particles: o.particles,
+            respawner: this.respawner,
+            paint: PALETTE.playerPaint,
+            visor: PALETTE.green,
+            spawns: ALLY_SPAWNS.slice(0, allyCount),
+            waypoints: SPAWN_POINTS,
+            power: o.power,
+          })
+        : null;
+    // O inimigo caça jogador E aliado; o aliado só caça o inimigo (nunca o próprio jogador).
+    this.refreshEnemyTargets();
+    if (this.allies) this.allies.targets = this.bots.mechs;
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
+    if (this.allies) for (const b of this.allies.mechs) this.round.register(b, this.allies.nameOf(b));
     this.waves = survival
       ? new SurvivalWaves({
           onRoster: (plan) => this.applyWaveRoster(plan),
@@ -202,7 +243,8 @@ export class Match {
       this.onExplosion?.(at);
     };
     this.combat.onMechHit = (e) => {
-      if (!this.players.includes(e.mech)) this.bots.onDamaged(e.mech, e.shooter);
+      if (this.allies?.mechs.includes(e.mech)) this.allies.onDamaged(e.mech, e.shooter);
+      else if (!this.players.includes(e.mech)) this.bots.onDamaged(e.mech, e.shooter);
       if (this.waves && e.shooter && this.players.includes(e.shooter) && this.bots.mechs.includes(e.mech)) {
         this.waves.recordDamage(e.result.applied);
       }
@@ -244,6 +286,7 @@ export class Match {
     this.round.register(mech, name);
     this.players.push(mech);
     this.ctf?.register(mech, team);
+    this.refreshEnemyTargets();
   }
 
   /**
@@ -261,6 +304,12 @@ export class Match {
     this.ctf?.unregister(mech);
     this.scene.remove(mech.root);
     mech.despawn(this.physics);
+    this.refreshEnemyTargets();
+  }
+
+  /** O inimigo caça todo jogador de gente E todo aliado — a lista muda só quando alguém entra/sai (raro; não é por tick). */
+  private refreshEnemyTargets(): void {
+    this.bots.targets = this.allies ? [...this.players, ...this.allies.mechs] : this.players;
   }
 
   /**
@@ -293,12 +342,19 @@ export class Match {
       if (this.waves?.ended) return false;
       for (const p of this.pilots) p.fixedUpdate(dt);
       this.bots.fixedUpdate(dt);
+      this.allies?.fixedUpdate(dt);
       // Pisão nos dois sentidos: Mech do jogador em andróide rebelde, e Mech rebelde num jogador pequeno.
+      // Aliado conta como o próprio jogador aqui (mesmo lado) — pisa e é pisado só pelo inimigo.
       this.crush.tick(dt);
       this.crush.check(this.players, this.bots.mechs);
       this.crush.check(this.bots.mechs, this.players);
+      if (this.allies) {
+        this.crush.check(this.allies.mechs, this.bots.mechs);
+        this.crush.check(this.bots.mechs, this.allies.mechs);
+      }
       this.zones.fixedUpdate(dt, this.players);
       this.zones.fixedUpdate(dt, this.bots.mechs);
+      if (this.allies) this.zones.fixedUpdate(dt, this.allies.mechs);
       this.respawner.fixedUpdate(dt);
       this.projectiles.fixedUpdate(dt);
       this.rockets.fixedUpdate(dt);
@@ -348,6 +404,7 @@ export class Match {
       m.respawn(this._spawn.set(x, 0, z));
     });
     this.bots.respawnAll();
+    this.allies?.respawnAll();
     this.projectiles.clear();
     this.rockets.clear();
     this.debris.clear();
