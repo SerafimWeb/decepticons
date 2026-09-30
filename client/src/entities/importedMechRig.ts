@@ -93,6 +93,8 @@ export interface ImportedMechAsset {
   readonly scene: THREE.Object3D;
   readonly boneNames: Record<keyof typeof DEFAULT_BONES, string>;
   readonly hipHeight: number;
+  readonly naturalHeight: number;
+  readonly naturalMinY: number;
 }
 
 /**
@@ -112,20 +114,20 @@ export async function preloadImportedMechAsset(url: string, options: ImportedRig
     if (!found.has(names[key])) throw new Error(`rig importado: osso "${names[key]}" não encontrado (chave ${key})`);
   }
 
-  // Altura de repouso (pé ao topo da caixa): escala pra bater com a stat do chassi e apoia em y=0,
-  // mesma convenção do procedural (mechBlueprint.test.ts cobra boxes.min.y ≈ 0).
-  const box = new THREE.Box3().setFromObject(scene);
+  const box = new THREE.Box3();
+  scene.traverse((o) => {
+    if ((o as THREE.Mesh).isMesh) box.expandByObject(o);
+  });
+  if (box.isEmpty()) throw new Error(`rig importado: nenhuma malha encontrada no modelo`);
   const size = box.getSize(new THREE.Vector3());
-  const scale = options.targetHeight / size.y;
-  scene.scale.setScalar(scale);
-  scene.position.y -= box.min.y * scale;
+  
   if (options.rotationY) scene.rotation.y = options.rotationY;
   scene.updateMatrixWorld(true);
 
   let hipHeight = 0;
   scene.traverse((o) => { if (o.name === names.hips) hipHeight = o.position.y; });
 
-  return { scene, boneNames: names, hipHeight };
+  return { scene, boneNames: names, hipHeight, naturalHeight: size.y, naturalMinY: box.min.y };
 }
 
 /**
@@ -135,8 +137,16 @@ export async function preloadImportedMechAsset(url: string, options: ImportedRig
  * material — comportamento normal do Three.js, pensado pra instância compartilhar aparência, não
  * pra Mechs com vida própria).
  */
-export function instantiateImportedMechRig(asset: ImportedMechAsset): MechRig {
-  const model = cloneSkeleton(asset.scene);
+export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeight: number): MechRig {
+  const clonedScene = cloneSkeleton(asset.scene);
+  
+  // Envolve o clone num grupo e escala o grupo. Evita bugs de skinning do SkeletonUtils
+  // quando se clona uma cena já escalada (comum em rigs do Tripo3D).
+  const model = new THREE.Group();
+  model.add(clonedScene);
+  const scale = targetHeight / asset.naturalHeight;
+  model.scale.setScalar(scale);
+  clonedScene.position.y -= asset.naturalMinY;
   model.updateMatrixWorld(true);
 
   const names = asset.boneNames;
@@ -171,20 +181,33 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset): MechRig {
     for (const m of mats) if (m instanceof THREE.MeshStandardMaterial) hullMaterials.push(m);
   });
 
+  const useAxisCorrection = !asset.boneNames.hips.includes('Hip'); // Mixamo uses 'mixamorigHips', Tripo uses 'Hip'
+  
+  const createJoint = (b: THREE.Object3D): RigJoint => {
+    if (useAxisCorrection) return new AxisCorrectedJoint(b);
+    return {
+      name: b.name,
+      rotation: b.rotation as unknown as { x: number; y: number },
+      position: b.position,
+      get visible() { return b.visible; },
+      set visible(v) { b.visible = v; },
+      getWorldPosition: (t) => b.getWorldPosition(t),
+      localToWorld: (t) => b.localToWorld(t),
+    };
+  };
+
   return {
     model,
     pelvis: hips,
-    torso: new AxisCorrectedJoint(find('torso')),
+    torso: createJoint(find('torso')),
     head: headBone,
-    leftArm: new AxisCorrectedJoint(find('leftArm')),
-    rightArm: new AxisCorrectedJoint(find('rightArm')),
-    leftLeg: { hip: new AxisCorrectedJoint(find('leftUpLeg')), knee: new AxisCorrectedJoint(find('leftLowerLeg')) },
-    rightLeg: { hip: new AxisCorrectedJoint(find('rightUpLeg')), knee: new AxisCorrectedJoint(find('rightLowerLeg')) },
+    leftArm: createJoint(find('leftArm')),
+    rightArm: createJoint(find('rightArm')),
+    leftLeg: { hip: createJoint(find('leftUpLeg')), knee: createJoint(find('leftLowerLeg')) },
+    rightLeg: { hip: createJoint(find('rightUpLeg')), knee: createJoint(find('rightLowerLeg')) },
     muzzle,
     leftMuzzle,
     thrusters: [],
-    // Sem apêndice do casco (mochila/propulsor) na malha importada ainda; array vazio é um chassi sem
-    // efeito de exaustão, não um erro.
     thrusterMaterial: hullMaterials[0] ?? new THREE.MeshStandardMaterial(),
     hullMaterials,
     hipHeight: asset.hipHeight,
@@ -193,5 +216,5 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset): MechRig {
 
 /** Atalho pra quem só precisa de um rig de uma vez (scripts de depuração, teste manual). */
 export async function loadImportedMechRig(url: string, options: ImportedRigOptions): Promise<MechRig> {
-  return instantiateImportedMechRig(await preloadImportedMechAsset(url, options));
+  return instantiateImportedMechRig(await preloadImportedMechAsset(url, options), options.targetHeight);
 }

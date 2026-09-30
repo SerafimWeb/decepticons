@@ -77,7 +77,7 @@ export function preloadMechAsset(url: string, targetHeight: number, rotationY?: 
 /** Rig pronto na hora, se o preload já terminou; `null` se ainda não (chame `preloadMechAsset` e tente de novo). */
 export function tryInstantiateMechRig(url: string, targetHeight: number): MechRig | null {
   const asset = cache.get(key(url, targetHeight));
-  return asset ? instantiateImportedMechRig(asset) : null;
+  return asset ? instantiateImportedMechRig(asset, targetHeight) : null;
 }
 
 /** Espera o preload terminar (dispara se ainda não tiver disparado) — só onde dá pra esperar (abrir o Hangar). */
