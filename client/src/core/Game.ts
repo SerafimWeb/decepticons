@@ -190,10 +190,10 @@ export class Game {
     const physics = await PhysicsWorld.create();
     const hangar = new Hangar();
     const chassisId = hangar.current.chassis;
-    const importedUrl = IMPORTED_CHASSIS[chassisId];
-    if (importedUrl) {
+    const importedAsset = IMPORTED_CHASSIS[chassisId];
+    if (importedAsset) {
       const { whenMechAssetReady } = await import('../entities/importedMechAssets');
-      await whenMechAssetReady(importedUrl, CHASSIS[chassisId].height);
+      await whenMechAssetReady(importedAsset.url, CHASSIS[chassisId].height, importedAsset.rotationY);
     }
     return new Game(container, physics, hangar);
   }
@@ -206,8 +206,8 @@ export class Game {
     this.hangar = hangar;
     // Carrega chassis de malha importada (assíncrono, dispara cedo — CHASSIS[id].height é a mesma
     // stat usada na hora de montar o Mech de verdade, então o cache bate certo).
-    for (const [chassisId, url] of Object.entries(IMPORTED_CHASSIS)) {
-      preloadMechAsset(url, CHASSIS[chassisId as ChassisId].height);
+    for (const [chassisId, asset] of Object.entries(IMPORTED_CHASSIS)) {
+      preloadMechAsset(asset.url, CHASSIS[chassisId as ChassisId].height, asset.rotationY);
     }
 
     // Carrega samples de áudio (assíncrono)
@@ -291,9 +291,9 @@ export class Game {
     // Vector09 com o blueprint certo (`BLUEPRINT_BY_CHASSIS`) — sem isso, um chassi novo nasce com a
     // silhueta do Vector-09 esticada (era o bug do Colossus como boss, achado e corrigido em 29/09).
     const chassisId: ChassisId = this.hangar.current.chassis;
-    const importedUrl = IMPORTED_CHASSIS[chassisId];
-    const importedRig = importedUrl ? tryInstantiateMechRig(importedUrl, CHASSIS[chassisId].height) : null;
-    if (importedUrl && !importedRig) {
+    const importedAsset = IMPORTED_CHASSIS[chassisId];
+    const importedRig = importedAsset ? tryInstantiateMechRig(importedAsset.url, CHASSIS[chassisId].height) : null;
+    if (importedAsset && !importedRig) {
       // Não devia acontecer (preload disparou no boot) — mas nunca trava a partida por causa de um
       // asset externo; entra com a silhueta procedural padrão em vez de quebrar.
       console.warn(`rig importado de "${chassisId}" ainda não estava pronto; entrando com o Vector-09 padrão`);
