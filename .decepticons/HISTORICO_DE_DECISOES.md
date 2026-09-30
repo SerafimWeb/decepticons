@@ -1,5 +1,22 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-30] Aliados na Arena: "sozinho tá muito intenso" vira 2 bots no seu time (Claude)
+**Pedido do dono, pela segunda vez na sessão:** jogar com aliados, não só contra inimigos. Escolha dele quando perguntado sobre escopo: **2 aliados, só na Arena normal**, tirando vaga de inimigo pra caber no teto de 8 personagens da sala (G11) — as outras opções eram manter os inimigos e subir o teto, ou decidir a quantidade depois de ver funcionando.
+
+**Achado investigando antes de escrever código:** `BotSystem.fixedUpdate` já lê `brain.think(dt, this.targets)` — uma lista de alvos **compartilhada por todos os bots daquele sistema**. Não dava pra ter "alguns bots miram no jogador, outros miram no inimigo" dentro do mesmo `BotSystem`. Solução: um **segundo `BotSystem`**, só para os aliados, com a lista de alvos dele apontando pros inimigos (e vice-versa) — `Match.ts` ganha `this.allies: BotSystem | null`, cria os dois sistemas com listas de alvo cruzadas (`this.allies.targets = this.bots.mechs`; `this.bots.targets` passa a incluir jogadores **e** aliados via `refreshEnemyTargets()`).
+
+**BotSystem ganhou `paint`/`visor` opcionais** (antes hardcoded pra roxo/violeta "IA rebelde") — os aliados nascem com a cor do próprio jogador (dourado/verde), senão não daria pra distinguir quem atira em você de quem luta ao seu lado.
+
+**O que isso tocou em `Match.ts`, além de criar o segundo grupo** (nenhum destes é opcional, todos achados testando):
+- Dano: "quem não é jogador, é inimigo" quebrava com aliado — agora checa de qual `BotSystem` a peça atingida é, antes de alertar o cérebro certo.
+- Pisão (crush): aliado e inimigo entram nos dois sentidos; aliado não pisa nem é pisado pelo jogador (mesmo lado).
+- Zonas de cura/resfriamento: aliado conta como o jogador.
+- `Nameplates.ts`: nome do aliado em verde (`ALLY`), do inimigo continua vermelho.
+
+**Achado tarde, rodando `npm run check` completo — o mais sério da sessão:** o servidor (`ArenaRoom.ts`) usa a **mesma classe `Match`** (G14) — sem eu pensar nisso, o servidor também passou a criar 2 aliados por partida, só que o roster de rede (`shared/net`, quem descreve as unidades pros clientes) só lê `match.bots.mechs`, nunca soube de `match.allies`. Resultado: aliados existiam e lutavam de verdade no servidor, mas **invisíveis e fora de sincronia** pra qualquer jogador conectado — um bug de verdade, não só um teste desatualizado (`server/room.test.ts` acusou a contagem errada; a suspeita inicial de travamento no `online.test.ts` era ruído de carga do CI rodando tudo em paralelo, não algo que eu tivesse quebrado — confirmado rodando os arquivos isolados). **Corrigido pela raiz, não remendado:** `MatchOptions` ganha `allies?: boolean` (padrão ligado na Arena); `ArenaRoom.ts` e o `Game.ts` em modo online passam `allies: false` explicitamente, comentado o motivo. A Arena offline (single-player, o pedido real do dono) continua com os 2 aliados; o multiplayer fica **AUSENTE** nisso até o roster de rede aprender a descrever um aliado — registrado em `STATUS_REAL.md`, não escondido.
+
+**Prova:** teste de simulação novo (`Match.test.ts`, "aliados na Arena normal") — 30 s de partida real, zero tiro amigo no jogador, aliado e inimigo se acertando de verdade (combate de 3 lados). Visual: capturado com o jogo rodando de verdade, indicador fora-de-quadro do aliado em amarelo/dourado, do inimigo em vermelho — cores diferentes, dá pra distinguir à distância. `npm run check` verde, 386 testes.
+
 ## [2026-09-30] GÊNESIS-01: o Mech de malha importada vira chassi de verdade, escolhível e jogável (Claude)
 **Pedido do dono, direto:** "primeiro vamos transformar no chassi. depois, partimos pra aliados." Entrada anterior deixou o rig funcionando isolado (dev harness apagado); esta entrada é ele entrar no jogo de verdade — `chassis.ts`, Hangar, partida.
 

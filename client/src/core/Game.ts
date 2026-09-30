@@ -269,7 +269,9 @@ export class Game {
       power,
       mode: this.gameMode,
       startWave: waveFromSearch(location.search, SURVIVAL_WAVE_PLANS.length),
-      ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY } : {}),
+      // allies: false online — os inimigos locais já vão a 0 (o servidor manda o estado de verdade);
+      // um aliado sem ninguém pra lutar, fora de sincronia com o servidor, não serve pra nada aqui.
+      ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY, allies: false } : {}),
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
@@ -300,7 +302,7 @@ export class Game {
     this.match.addPlayer(this.mech, 'VOCÊ', 0, () => this.equipPending());
     // Online, quem faz renascer é o servidor.
     if (online) this.match.respawner.untrack(this.mech);
-    this.nameplates = new Nameplates(this.scene, this.bots);
+    this.nameplates = new Nameplates(this.scene, this.bots, this.match.allies ?? undefined);
     // Sons dos andróides (Gemini): tiro e pouso, mais baixos quanto mais longe do jogador.
     for (const b of this.bots.mechs) {
       if (!(b instanceof Android)) continue;

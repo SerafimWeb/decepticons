@@ -52,6 +52,13 @@ export interface BotSystemOptions {
   respawn?: boolean;
   /** No CTF, cada defensor renasce na própria base em vez do ponto global mais distante. */
   respawnAtHome?: boolean;
+  /**
+   * Cor do casco e do visor (padrão: as de sempre, roxo/violeta — "IA rebelde"). Um segundo `BotSystem`
+   * pode passar as cores do jogador aqui pra virar um time de aliados, visualmente diferente do inimigo
+   * (senão o jogador não teria como distinguir quem atira nele de quem luta ao lado dele).
+   */
+  paint?: number;
+  visor?: number;
   /** Onde cada Mech rebelde (escala 2) nasce (x, z): um por ponto. */
   spawns: readonly (readonly [number, number])[];
   /** Onde cada andróide rebelde (escala 1) nasce (x, z): um por ponto. */
@@ -146,7 +153,9 @@ export class BotSystem {
     const mechStats = poweredStats(VECTOR09_STATS, power, 'mechs');
     const androidStats = poweredStats(ANDROID_STATS, power, 'androids');
     this.repairScale = power.clans.technician.damage;
-    o.spawns.forEach((p, i) => fighter(new Vector09({ paint: BOT_PAINT, visor: PALETTE.signal, stats: mechStats }), p, mechName(i), i, false));
+    const paint = o.paint ?? BOT_PAINT;
+    const visor = o.visor ?? PALETTE.signal;
+    o.spawns.forEach((p, i) => fighter(new Vector09({ paint, visor, stats: mechStats }), p, mechName(i), i, false));
 
     // Andróides: sementes depois das dos Mechs.
     (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true));
