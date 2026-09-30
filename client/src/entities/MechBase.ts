@@ -59,19 +59,34 @@ export interface MechInput {
   dash: boolean;
 }
 
+/**
+ * O bastante de um nó pra animação procedural mexer (mira, passada): um `THREE.Object3D` de verdade
+ * já serve (é o caso de todo blueprint em `mechBlueprint.ts`). Só existe pra permitir um rig importado
+ * (`importedMechRig.ts`) corrigir por baixo dos panos o eixo de giro real de um osso Mixamo — cujo eixo
+ * local de bind não é garantido bater com o "gira pra frente" que `rotation.x` aqui sempre assumiu.
+ */
+export interface RigJoint {
+  name: string;
+  readonly rotation: { x: number; y: number };
+  readonly position: THREE.Vector3;
+  visible: boolean;
+  getWorldPosition(target: THREE.Vector3): THREE.Vector3;
+  localToWorld(target: THREE.Vector3): THREE.Vector3;
+}
+
 export interface LegRig {
-  hip: THREE.Object3D;
-  knee: THREE.Object3D;
+  hip: RigJoint;
+  knee: RigJoint;
 }
 
 /** Pontos articulados do modelo que a animação procedural controla. */
 export interface MechRig {
   model: THREE.Object3D;
   pelvis: THREE.Object3D;
-  torso: THREE.Object3D;
+  torso: RigJoint;
   head: THREE.Object3D;
-  leftArm: THREE.Object3D;
-  rightArm: THREE.Object3D;
+  leftArm: RigJoint;
+  rightArm: RigJoint;
   leftLeg: LegRig;
   rightLeg: LegRig;
   muzzle: THREE.Object3D;
