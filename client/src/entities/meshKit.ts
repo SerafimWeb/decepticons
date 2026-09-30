@@ -60,6 +60,61 @@ export function beveledBox(
   return mesh;
 }
 
+/**
+ * Caixa que afunila ao longo de Y: base (y = -h/2) sempre em w×d; topo (y = +h/2) escalado por `topScale`.
+ * `topScale > 1` alarga o topo (ombro, quadril); `< 1` estreita (cotovelo, joelho, tornozelo). Sem bisel —
+ * é o formato que muda, não o canto. Sempre geometria própria (não dá pra afunilar com escala uniforme).
+ */
+export function taperedBox(
+  parent: THREE.Object3D,
+  w: number,
+  h: number,
+  d: number,
+  topScale: number,
+  mat: THREE.Material,
+  x = 0,
+  y = 0,
+  z = 0,
+): THREE.Mesh {
+  const hw0 = w / 2, hd0 = d / 2;
+  const hw1 = (w * topScale) / 2, hd1 = (d * topScale) / 2;
+  const y0 = -h / 2, y1 = h / 2;
+  const corners: readonly (readonly [number, number, number])[] = [
+    [-hw0, y0, -hd0], [hw0, y0, -hd0], [hw0, y0, hd0], [-hw0, y0, hd0],
+    [-hw1, y1, -hd1], [hw1, y1, -hd1], [hw1, y1, hd1], [-hw1, y1, hd1],
+  ];
+  // Cada face lista seus 4 cantos em ordem que dá normal pra fora (checado por produto vetorial):
+  // base, topo, trás, direita, frente, esquerda.
+  const faces: readonly (readonly [number, number, number, number])[] = [
+    [0, 1, 2, 3], [4, 7, 6, 5], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0],
+  ];
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+  const faceUv: readonly (readonly [number, number])[] = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  for (const quad of faces) {
+    const base = positions.length / 3;
+    for (let i = 0; i < quad.length; i++) {
+      positions.push(...corners[quad[i]!]!);
+      uvs.push(...faceUv[i]!);
+    }
+    indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+  // batchRigMeshes funde geometrias de todas as peças articuladas num draw call só; o merge exige que
+  // todas tenham os mesmos atributos (achado real, 29/09: box/cyl/beveledBox já vêm com uv do Three.js,
+  // e sem essa linha aqui o merge falhava com "All geometries must have compatible attributes").
+  geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.userData.mechOwnedGeometry = true;
+  const mesh = new THREE.Mesh(geometry, mat);
+  mesh.position.set(x, y, z);
+  parent.add(mesh);
+  return mesh;
+}
+
 /** Cilindro ao longo de Y; `rotX = Math.PI / 2` deita no eixo Z. */
 export function cyl(
   parent: THREE.Object3D,

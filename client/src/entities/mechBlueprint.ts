@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PALETTE } from '../core/palette';
 import type { LegRig, MechRig } from './MechBase';
-import { batchRigMeshes, beveledBox, box, cyl, group, heatVapor } from './meshKit';
+import { batchRigMeshes, beveledBox, box, cyl, group, heatVapor, taperedBox } from './meshKit';
 
 /** Parâmetros visuais apenas; não altera colisão, massa, vida, calor ou armas da simulação. */
 export interface MechBlueprint {
@@ -69,9 +69,9 @@ export const MEDIUM_MECH_BLUEPRINT: MechBlueprint = {
  * pernas curtas e grossas com pés grandes (estabilidade, centro de massa baixo), cabeça pequena e sem
  * antena (lê mais "animal predador" que "robô sensor"). A largura do torso passa a da altura: silhueta
  * de urso/felino agachado, não de humanoide P/M/G. Ver nota do Arara-B1 sobre o achado do dono (29/09).
- * **Cauda (29/09, mesmo achado):** braço e cabeça já estão presos à mira e à zona de acerto — mexer nos
- * dois vira retrabalho de mira/dano, então a identidade animal extra entra por um apêndice puramente
- * decorativo (`tail`), sem tocar nenhum dos dois.
+ * **Sem cauda (29/09→29/09):** chegou a ganhar uma cauda decorativa (`tail`) no mesmo dia; o dono viu ao
+ * vivo, achou fraca ("bosta") e não resolvia a queixa real (silhueta de blocos) — removida da mesma
+ * sessão. A capacidade `tail` continua disponível no tipo e no builder pra quem precisar depois.
  */
 export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
   id: 'heavy', label: 'PESADO', referenceHeight: 6.5,
@@ -81,7 +81,6 @@ export const HEAVY_MECH_BLUEPRINT: MechBlueprint = {
   legs: { hipWidth: 0.95, thighWidth: 0.95, shinWidth: 0.85, upperLength: 1.05, lowerLength: 0.95, footLength: 1.65, digitigrade: 0 },
   arms: { mountX: 2.3, upperWidth: 0.76, upperLength: 0.85, forearmWidth: 1.0, forearmDepth: 1.75 },
   vents: { count: 5, width: 0.2, height: 0.42 }, backPack: { width: 1.6, height: 0.85, depth: 0.9 },
-  tail: { segments: 3, baseRadius: 0.34, length: 2.1, droop: 0.6 },
 };
 
 /**
@@ -163,11 +162,14 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const leg = (side: number): LegRig => {
     const hip = group(pelvis, side * blueprint.legs.hipWidth * 0.5, -0.1 * scale, 0);
     hip.name = side < 0 ? 'leftLeg' : 'rightLeg';
-    beveledBox(hip, blueprint.legs.thighWidth, blueprint.legs.upperLength * 0.76, blueprint.legs.thighWidth * 1.08, 0.08 * scale, M.armor, 0, -blueprint.legs.upperLength * 0.35, 0);
+    taperedBox(hip, blueprint.legs.thighWidth, blueprint.legs.upperLength * 0.76, blueprint.legs.thighWidth * 1.08, 1.4, M.armor, 0, -blueprint.legs.upperLength * 0.35, 0);
     cyl(hip, blueprint.legs.thighWidth * 0.38, blueprint.legs.upperLength * 0.9, M.frame, 0, -blueprint.legs.upperLength * 0.48, 0);
     const knee = group(hip, 0, -blueprint.legs.upperLength, 0);
     knee.name = side < 0 ? 'leftLegLower' : 'rightLegLower';
-    beveledBox(knee, blueprint.legs.shinWidth * 0.92, blueprint.legs.lowerLength * 0.94, blueprint.legs.shinWidth, 0.06 * scale, M.paint, 0, -blueprint.legs.lowerLength * 0.42, 0);
+    // Pino do joelho: quebra a coxa e a canela em duas peças de verdade, não uma coluna contínua.
+    const kneePin = cyl(knee, blueprint.legs.thighWidth * 0.3, blueprint.legs.thighWidth * 1.15, M.frame, 0, 0, 0);
+    kneePin.rotation.z = Math.PI / 2;
+    taperedBox(knee, blueprint.legs.shinWidth * 0.92, blueprint.legs.lowerLength * 0.94, blueprint.legs.shinWidth, 1.25, M.paint, 0, -blueprint.legs.lowerLength * 0.42, 0);
     box(knee, blueprint.legs.shinWidth * 1.2, 0.2 * scale, blueprint.legs.footLength, M.frame, 0, -blueprint.legs.lowerLength - 0.1 * scale, -blueprint.legs.footLength * 0.12);
     // Tornozelo avançado cria a perna digitígrada sem adicionar junta nem draw call.
     if (blueprint.legs.digitigrade > 0) knee.position.z = -blueprint.legs.digitigrade * scale;
@@ -179,7 +181,13 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const torso = group(pelvis, 0, 0.3 * scale, 0);
   torso.name = 'torso';
   const updateVapor = heatVapor(torso, blueprint.backPack.width * 0.32, torsoD * 0.78 + blueprint.backPack.depth * 0.5 + 0.08 * scale);
-  beveledBox(torso, torsoW, torsoH, torsoD, Math.min(torsoW, torsoH, torsoD) * 0.055, M.armor, 0, torsoH * 0.68, 0);
+  // Torso em duas placas, não uma só: cintura estreita (perto do quadril) alargando pro peito/ombro —
+  // silhueta em V, não um bloco reto. Referência War Robots (pedido do dono, 29/09): a leitura de "mech
+  // de verdade" vem de placas que afunilam e quebram no meio, não de um retângulo grande e único.
+  taperedBox(torso, torsoW * 0.62, torsoH * 0.4, torsoD * 0.6, 1.42, M.armor, 0, torsoH * 0.36, 0);
+  taperedBox(torso, torsoW * 0.88, torsoH * 0.7, torsoD * 0.92, 1.2, M.armor, 0, torsoH * 0.82, 0);
+  // Cinto na emenda cintura→peito: aro mais escuro que quebra a leitura de "um bloco só".
+  box(torso, torsoW * 0.7, torsoH * 0.045, torsoD * 0.66, M.frame, 0, torsoH * 0.56, 0);
   beveledBox(torso, torsoW * 1.04, 0.2 * scale, torsoD * 1.04, 0.07 * scale, M.paint, 0, torsoH * 1.18, 0);
   box(torso, torsoW * 0.62, 0.12 * scale, 0.06 * scale, M.visor, 0, torsoH * 0.78, -torsoD * 0.53);
   box(torso, torsoW * 0.56, torsoH * 0.62, blueprint.backPack.depth, M.frame, 0, torsoH * 0.66, torsoD * 0.78);
@@ -218,8 +226,15 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const arm = (side: number, isLeft: boolean): THREE.Group => {
     const g = group(torso, side * blueprint.arms.mountX, torsoH * 0.84, 0);
     g.name = isLeft ? 'leftArm' : 'rightArm';
-    beveledBox(g, blueprint.shoulders.width, blueprint.shoulders.height, blueprint.shoulders.depth, Math.min(blueprint.shoulders.width, blueprint.shoulders.height) * 0.1, M.paint, 0, 0, 0);
-    box(g, blueprint.arms.upperWidth, blueprint.arms.upperLength, blueprint.arms.upperWidth, M.frame, 0, -blueprint.arms.upperLength * 0.72, 0);
+    const pad = beveledBox(g, blueprint.shoulders.width, blueprint.shoulders.height, blueprint.shoulders.depth, Math.min(blueprint.shoulders.width, blueprint.shoulders.height) * 0.1, M.paint, 0, 0, 0);
+    // Ombreira angulada pra fora (pauldron), não um bloco plano alinhado ao corpo — referência War Robots.
+    pad.rotation.z = -side * 0.16;
+    // Pino da junta do ombro: quebra a leitura de "peça única" entre torso e braço.
+    const shoulderPin = cyl(g, blueprint.shoulders.height * 0.24, blueprint.shoulders.width * 1.08, M.frame, 0, -blueprint.shoulders.height * 0.05, 0);
+    shoulderPin.rotation.z = Math.PI / 2;
+    taperedBox(g, blueprint.arms.upperWidth, blueprint.arms.upperLength, blueprint.arms.upperWidth, 1.3, M.frame, 0, -blueprint.arms.upperLength * 0.72, 0);
+    const elbowPin = cyl(g, blueprint.arms.upperWidth * 0.3, blueprint.arms.upperWidth * 1.3, M.frame, 0, -blueprint.arms.upperLength * 1.42, 0);
+    elbowPin.rotation.z = Math.PI / 2;
     box(g, blueprint.arms.forearmWidth, blueprint.arms.forearmWidth, blueprint.arms.forearmDepth, M.armor, 0, -blueprint.arms.upperLength * 1.5, -blueprint.arms.forearmDepth * 0.2);
     if (isLeft) {
       const rows = blueprint.id === 'heavy' || blueprint.id === 'colossus01' ? 3 : 2;
