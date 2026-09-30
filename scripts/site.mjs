@@ -55,7 +55,9 @@ const HEADERS = {
     "img-src 'self' data:",
     // Multiplayer (M4): o servidor no próprio PC (ws://localhost) ou por túnel/hospedagem (wss://).
     // O `http://localhost` e a origem do túnel são o `GET /status` que a página usa para dizer se há gente jogando.
-    `connect-src 'self' ws://localhost:* ws://127.0.0.1:* http://localhost:* http://127.0.0.1:* wss:${GAME_ORIGIN}`,
+    // `blob:` (30/09): o GLTFLoader decodifica textura de um .glb criando um object URL local e buscando
+    // nele — sem isso no connect-src, o chassi de malha importada carrega sem nenhuma textura.
+    `connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:* http://localhost:* http://127.0.0.1:* wss:${GAME_ORIGIN}`,
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'none'",

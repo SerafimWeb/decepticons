@@ -198,6 +198,17 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
 };
 
 /**
+ * Gênesis-01: primeiro chassi de malha importada (pipeline híbrido, 30/09 — ver `HISTORICO_DE_DECISOES.md`),
+ * não mais primitiva em código. Números emprestados do Vector-09 (mesma classe visual: bípede médio de
+ * assalto) — ainda não passou por uma rodada de equilíbrio própria; nome e ficha são provisórios até o dono
+ * decidir a identidade de verdade dele.
+ */
+export const GENESIS01_STATS: MechStats = {
+  ...VECTOR09_STATS,
+  name: 'GÊNESIS-01',
+};
+
+/**
  * Chassis que o jogador pode pilotar (o andróide rebelde e o técnico são só das IAs).
  * **Colossus-01 (dono, 29/09: "quero poder escolher o colossus pra ver como é jogar com ele"):** entrou como
  * chassi solo, pilotado por 1 jogador só, com todas as armas — a mesma máquina que já existe como boss
@@ -212,6 +223,7 @@ export const CHASSIS = {
   colossus01: COLOSSUS_BOSS_STATS,
   arara: ARARA_B1_STATS,
   onca: ONCA_B2_STATS,
+  genesis01: GENESIS01_STATS,
 } as const satisfies Record<string, MechStats>;
 export type ChassisId = keyof typeof CHASSIS;
 
@@ -224,4 +236,5 @@ export const ARM_SLOTS: Record<ChassisId, { right: readonly WeaponId[]; left: re
   // Escolha entre dois tipos por braço: o leve ganha opção de arma mais leve (blaster) sem perder o plasma.
   arara: { right: ['plasma', 'blaster'], left: ['rockets', 'blaster'] },
   onca: { right: ['plasma', 'rockets'], left: ['plasma', 'rockets'] },
+  genesis01: { right: ['plasma'], left: ['rockets'] },
 };

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import type { MechRig, RigJoint } from './MechBase';
 
 /**
@@ -85,23 +86,62 @@ const DEFAULT_BONES = {
   rightHand: 'mixamorigRightHand',
 } as const;
 
+/** Malha já carregada, escalada e apoiada em y=0 — pronta pra clonar sem custo de rede/parse de novo. */
+export interface ImportedMechAsset {
+  readonly scene: THREE.Object3D;
+  readonly boneNames: Record<keyof typeof DEFAULT_BONES, string>;
+  readonly hipHeight: number;
+}
+
 /**
- * Carrega um `.glb` com esqueleto (skin) e devolve um `MechRig` no mesmo contrato de
- * `buildMechBlueprintRig` — `MechBase` não sabe (nem precisa saber) que a malha veio de fora.
- * G4/G5: só roda na montagem do rig, nunca no quadro/tick; o custo de carregar o arquivo é do
- * `loadAsync`, não deste código.
+ * Busca e prepara o arquivo uma vez só (fetch, `GLTFLoader`, escala pra bater com a stat, apoio em
+ * y=0) — a parte cara e assíncrona. G4/G5: nunca chame isto no quadro/tick; chame uma vez por chassi
+ * (`importedMechAssets.ts` cacheia) e depois use `instantiateImportedMechRig` pra cada Mech novo.
  */
-export async function loadImportedMechRig(url: string, options: ImportedRigOptions): Promise<MechRig> {
+export async function preloadImportedMechAsset(url: string, options: ImportedRigOptions): Promise<ImportedMechAsset> {
   const gltf = await new GLTFLoader().loadAsync(url);
-  const model = gltf.scene;
-  model.updateMatrixWorld(true);
+  const scene = gltf.scene;
+  scene.updateMatrixWorld(true);
 
   const names = { ...DEFAULT_BONES, ...options.boneNames };
+  const found = new Set<string>();
+  scene.traverse((o) => { if ((o as THREE.Bone).isBone) found.add(o.name); });
+  for (const key of Object.keys(names) as (keyof typeof DEFAULT_BONES)[]) {
+    if (!found.has(names[key])) throw new Error(`rig importado: osso "${names[key]}" não encontrado (chave ${key})`);
+  }
+
+  // Altura de repouso (pé ao topo da caixa): escala pra bater com a stat do chassi e apoia em y=0,
+  // mesma convenção do procedural (mechBlueprint.test.ts cobra boxes.min.y ≈ 0).
+  const box = new THREE.Box3().setFromObject(scene);
+  const size = box.getSize(new THREE.Vector3());
+  const scale = options.targetHeight / size.y;
+  scene.scale.setScalar(scale);
+  scene.position.y -= box.min.y * scale;
+  scene.updateMatrixWorld(true);
+
+  let hipHeight = 0;
+  scene.traverse((o) => { if (o.name === names.hips) hipHeight = o.position.y; });
+
+  return { scene, boneNames: names, hipHeight };
+}
+
+/**
+ * Clona o protótipo (síncrono, rápido — `SkeletonUtils.clone` duplica ossos e peso de pele) e monta
+ * um `MechRig` novo. Cada chamada é um Mech independente: material clonado por instância, senão o
+ * flash de dano de um clone acenderia todos os outros juntos (`SkeletonUtils.clone` não clona
+ * material — comportamento normal do Three.js, pensado pra instância compartilhar aparência, não
+ * pra Mechs com vida própria).
+ */
+export function instantiateImportedMechRig(asset: ImportedMechAsset): MechRig {
+  const model = cloneSkeleton(asset.scene);
+  model.updateMatrixWorld(true);
+
+  const names = asset.boneNames;
   const bones = new Map<string, THREE.Object3D>();
   model.traverse((o) => { if ((o as THREE.Bone).isBone) bones.set(o.name, o); });
   const find = (key: keyof typeof DEFAULT_BONES): THREE.Object3D => {
     const bone = bones.get(names[key]);
-    if (!bone) throw new Error(`rig importado: osso "${names[key]}" não encontrado (chave ${key})`);
+    if (!bone) throw new Error(`rig importado: osso "${names[key]}" sumiu no clone (chave ${key})`);
     return bone;
   };
 
@@ -109,15 +149,6 @@ export async function loadImportedMechRig(url: string, options: ImportedRigOptio
   const headBone = find('head');
   const rightHand = find('rightHand');
   const leftHand = find('leftHand');
-
-  // Altura de repouso (pé ao topo da caixa): escala pra bater com a stat do chassi e apoia em y=0,
-  // mesma convenção do procedural (mechBlueprint.test.ts cobra boxes.min.y ≈ 0).
-  const box = new THREE.Box3().setFromObject(model);
-  const size = box.getSize(new THREE.Vector3());
-  const scale = options.targetHeight / size.y;
-  model.scale.setScalar(scale);
-  model.position.y -= box.min.y * scale;
-  model.updateMatrixWorld(true);
 
   const muzzle = new THREE.Object3D();
   rightHand.add(muzzle);
@@ -129,7 +160,11 @@ export async function loadImportedMechRig(url: string, options: ImportedRigOptio
   const hullMaterials: THREE.MeshStandardMaterial[] = [];
   model.traverse((o) => {
     if (!(o as THREE.Mesh).isMesh) return;
-    const mats = Array.isArray((o as THREE.Mesh).material) ? (o as THREE.Mesh).material as THREE.Material[] : [(o as THREE.Mesh).material as THREE.Material];
+    const mesh = o as THREE.Mesh;
+    const wasArray = Array.isArray(mesh.material);
+    const mats = (wasArray ? mesh.material as THREE.Material[] : [mesh.material as THREE.Material])
+      .map((m) => (m instanceof THREE.MeshStandardMaterial ? m.clone() : m));
+    mesh.material = wasArray ? mats : mats[0]!;
     for (const m of mats) if (m instanceof THREE.MeshStandardMaterial) hullMaterials.push(m);
   });
 
@@ -149,6 +184,11 @@ export async function loadImportedMechRig(url: string, options: ImportedRigOptio
     // efeito de exaustão, não um erro.
     thrusterMaterial: hullMaterials[0] ?? new THREE.MeshStandardMaterial(),
     hullMaterials,
-    hipHeight: hips.position.y,
+    hipHeight: asset.hipHeight,
   };
+}
+
+/** Atalho pra quem só precisa de um rig de uma vez (scripts de depuração, teste manual). */
+export async function loadImportedMechRig(url: string, options: ImportedRigOptions): Promise<MechRig> {
+  return instantiateImportedMechRig(await preloadImportedMechAsset(url, options));
 }

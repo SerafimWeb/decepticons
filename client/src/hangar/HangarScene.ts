@@ -7,6 +7,8 @@ import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassi
 import type { MechBase } from '../entities/MechBase';
 import { COLOSSUS_01_BLUEPRINT, HEAVY_MECH_BLUEPRINT, LIGHT_MECH_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
 import { Vector09 } from '../entities/Vector09';
+import { ImportedMech } from '../entities/ImportedMech';
+import { IMPORTED_CHASSIS, tryInstantiateMechRig, whenMechAssetReady } from '../entities/importedMechAssets';
 import { AIM_TARGET_SPEED, aimTargetDirectionAt, aimTargetXAt } from './aimPractice';
 
 const CYAN = 0x5ce1ff;
@@ -604,10 +606,22 @@ export class HangarScene {
   show(chassis: ChassisId, loadout: Loadout): void {
     let m = this.displays.get(chassis);
     if (!m) {
-      m =
-        chassis === 'android'
-          ? new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout })
-          : new Vector09({ stats: CHASSIS[chassis], loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassis] });
+      const importedUrl = IMPORTED_CHASSIS[chassis];
+      if (importedUrl) {
+        const rig = tryInstantiateMechRig(importedUrl, CHASSIS[chassis].height);
+        if (!rig) {
+          // Ainda carregando (raro — o preload dispara no boot do jogo): tenta de novo assim que
+          // terminar, sem travar o pedestal agora nem mostrar nada quebrado.
+          whenMechAssetReady(importedUrl, CHASSIS[chassis].height).then(() => this.show(chassis, loadout));
+          return;
+        }
+        m = new ImportedMech(CHASSIS[chassis], rig, loadout);
+      } else {
+        m =
+          chassis === 'android'
+            ? new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.green, tool: 'pilot', loadout })
+            : new Vector09({ stats: CHASSIS[chassis], loadout, blueprint: BLUEPRINT_BY_CHASSIS[chassis] });
+      }
       this.displays.set(chassis, m);
     }
     m.equip(loadout);
