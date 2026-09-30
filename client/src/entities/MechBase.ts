@@ -660,7 +660,10 @@ export abstract class MechBase {
     const side = sw >= 0 ? 1 : -1;
     if (side !== this.stepSide) {
       this.stepSide = side;
-      if (amt > 0.25) this.onFootstep?.(amt);
+      // Evita o passo extra ao final do movimento quando a velocidade decai e o jogador já soltou o teclado.
+      if (amt > 0.25 && (this.moveIntent.lengthSq() > 0 || hSpeed > this.stats.moveSpeed * 0.5)) {
+        this.onFootstep?.(amt);
+      }
     }
 
     const lHip = sw * 0.7 * amt + air * 0.55;
