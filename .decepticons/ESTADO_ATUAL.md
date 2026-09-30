@@ -1,8 +1,8 @@
 # ESTADO ATUAL — CYBERMECH
 
-**Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots, no ar em https://www.selvamkt.com.br/cybermech/
-**Última atualização:** 2026-09-29
-**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo, câmera de abate offline e o painel do alvo (legibilidade do dano) no cliente; servidor no ar 24 h.
+**Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots (com aliados na Arena), no ar em https://www.selvamkt.com.br/cybermech/
+**Última atualização:** 2026-09-30
+**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo, câmera de abate offline, o painel do alvo (legibilidade do dano), GÊNESIS-01 (primeiro chassi de malha importada) e 2 aliados na Arena offline; servidor no ar 24 h.
 
 ---
 
@@ -17,6 +17,8 @@
 | — | **Nada fora da `main` (28/09).** O login e a gravação entraram (#115, #117); o #110 virou obsoleto (só um retalho do `ESTADO_ATUAL.md`) e foi fechado; e os três branches órfãos do Gemini de 25/09 — `primeira-partida`, `setas-inimigos`, `sons-androides`, sem PR e com o conteúdo refeito na `main` — foram declarados mortos e apagados (regra 15). | — | 28/09 |
 
 ---
+
+- **Correção dos passos, bots ecoando e Gênesis-01 offline (Gemini, 30/09, PR #136).** O som do passo finalizava mesmo após soltar o W (pois a fricção ainda mantinha velocidade mínima); cortado esse passo residual. Passos de bots e aliados reduzidos em volume (eco de "manada" anulado). No `Game.create()`, a instanciação agora aguarda a malha importada, impedindo o modelo de desaparecer no modo offline. O erro online da montagem (servidor) requereu que o dono reiniciasse o terminal manualmente, pois não tínhamos acesso para derrubar o processo.
 
 - **Esqueleto de contas: criar, entrar, sair (Claude, 28/09, PR `claude/login-esqueleto`).** Pedido do dono,
   depois de decidir junto: **SQLite no próprio PC do servidor**, **e-mail + senha**, e **só o esqueleto**
@@ -459,7 +461,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Sem crédito nesta rodada; o modo Sobrevivência solo foi assumido pelo Codex por autorização do dono. A sincronização online dos modos continua na frente de rede quando o contrato existir. |
-| **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Branch `gemini/modo-hud-audio` consolidado (MissionHUD ligado, Seletor de Modo, Efeitos Sonoros Táticos de Onda, UI Online, textContent seguro). |
+| **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Feito: Som dos passos, volume de bots ecoando e Gênesis-01 não aparecendo offline/online. Branch consolidado e mergeado (PR #136). |
 | **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, câmeras, desempenho e revisão cruzada; por autorização explícita do dono, também assume os modos enquanto Claude está sem crédito | Feito: draw calls 34 → 9 (#43), explosões (#44), blueprints, Hangar/treino, calor visual, Sobrevivência, CTF offline e câmera de abate offline. Próximo: playtest da câmera/modos; depois retoma os cosméticos MK II/MK III. |
 | **Qwen** | transversal — documentação (`.decepticons/`), testes de simulação (novos `*.test.ts`), relatórios do processo (`scripts/painel.mjs`, `scripts/site/`, o site) e auditoria de arquitetura (segunda opinião na revisão cruzada). Não mexe em `client/src/{sim,combat,entities,physics,player,net}`, `server/` nem `shared/` sem combinar com o dono do território | Entrou no time em 26/09 (oficialização no painel e na etiqueta). Próximo: relatório de saúde técnica (cobertura, débito da seção 9, budget, tick) para a divulgação |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
@@ -480,7 +482,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Mech de tripulação (piloto + 1–2 artilheiros nas armas direcionais do Colossus) | Pedido do dono (29/09), priorizado por ele: **"Colossus jogável (solo) primeiro"** — feito (ver ÚLTIMA SESSÃO FEZ). Este item é a etapa 2: vários jogadores num corpo só. Ainda não tem contrato de rede nem decisão de arquitetura (G6 diz que Mech remoto não roda o character controller — precisa decidir quem simula o quê). Não iniciado. |
 | Framework modular de chassis/peças além do Hangar de armas | Pedido do dono (29/09): "criar, editar, evoluir (ou estragar)" os robôs à gosto do jogador — hoje o Hangar só cobre armas por braço (`loadout.ts`); trocar/editar chassi, peças e evolução persistente é maior. **Progresso parcial:** o catálogo de chassis cresceu (Arara-B1, Onça-B2, Colossus-01, além de Vector-09/Andróide), então já dá para *escolher* entre mais modelos — mas ainda não dá para o jogador *criar/editar* um chassi próprio nem evoluí-lo com o tempo. Não iniciado; precisa de escopo antes de construir (afeta rede, persistência de conta, balanceamento). |
 | **Modelagem dos chassis: pipeline híbrido, primeiro chassi de verdade no ar (GÊNESIS-01, 30/09)** | Decisão (ver `HISTORICO_DE_DECISOES.md`, 29/09): sai do 100% procedural depois do teto real provado (protótipo tanque/barril, "pilha de moeda"); entra malha gerada por IA (Tripo3D). **Feito:** `GLTFLoader` + `SkeletonUtils.clone` no ponto de montagem do rig (`importedMechRig.ts`, `importedMechAssets.ts`), GÊNESIS-01 escolhível no Hangar e jogável numa partida de verdade — ver ÚLTIMA SESSÃO FEZ. Ainda em aberto: nome/ficha definitivos (hoje empresta 100% do Vector-09), fluxo pra gerar/receber mais chassis assim (hoje é manual: dono gera no Tripo, manda o arquivo, eu rigo o código em volta), orçamento de download por chassi (cada `.glb` ~3 MB). |
-| Jogar com aliados (bots no seu time), não só contra | Pedido do dono (30/09), duas vezes seguidas: "sozinho tá muito intenso". **Achado ao investigar:** `BotController.think(dt, targets)` já recebe a lista de alvos de fora — não é hardcoded pro jogador; hoje `Match.ts` só passa `this.bots.targets = this.players` pra todo bot igual. O CTF já tem um sistema de time de verdade (`CtfTeam`, registro de unidade por time, abate do próprio time não conta) que dá pra reaproveitar. **Escopo real:** um segundo grupo de bots com `targets` = bots inimigos (não o jogador), bots inimigos ganhando os aliados como alvo extra, cor de tinta distinta, HUD/killfeed cientes de time. Não é reescrita — é fiação nova sobre um gancho que já existe. Não iniciado. |
+| Aliados na Arena online (rede) | **Feito offline** (30/09, ver ÚLTIMA SESSÃO FEZ). Falta só o servidor: `ArenaRoom.ts` desliga `allies` de propósito porque o roster de rede não sabe descrever um aliado pros outros jogadores ainda (ficariam invisíveis, fora de sincronia). `STATUS_REAL.md` marca AUSENTE no online até o roster aprender. |
 | Vídeo promocional por prompt/botões no `/mesa` | **Feito (29/09):** a mesa já tinha o formulário; ganhou "gerar por IA" (escreve o roteiro a partir de uma frase, ancorado nos fatos do projeto) e a cena `clipe` (mistura gameplay real gravado no F9 com as cenas desenhadas, cortado por `ffmpeg`). Ver `.decepticons/FERRAMENTAS.md`. |
 | Gerenciar as imagens do site sem código (deletar, reordenar, trocar) | Pedido do dono (29/09), depois de achar 3 fotos idênticas na landing (causa real: `capture()` falhando em silêncio — corrigido no mesmo PR, agora falha alto e nunca mais publica foto errada) e pedir um carrossel: **o carrossel entrou** (`scripts/landing.mjs`, gira sozinho entre as capturas que existirem). O que falta é maior — um jeito de escolher/ordenar/remover imagens sem editar `SHOTS` no código. Hoje as capturas são 100% automáticas (o robô entra no jogo e fotografa a cada deploy); um painel de curadoria manual é uma ferramenta nova, não uma correção. Não iniciado; precisa de decisão (onde mora a lista — arquivo versionado editável por formulário local, ou algo mais) antes de construir. |
 
@@ -511,16 +513,14 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
   funcionando; XP/créditos continuam em `localStorage` por enquanto.
 - **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
 - **Codex:** concluir PR visual do Colossus-01 e, depois do merge, iniciar o encontro offline determinístico com IA própria, pontos fracos e câmera de escala 3. A arma, números e modo assimétrico seguem decisões abertas.
-- **Claude (atualizado 30/09, o que ficou desta sessão):** duas frentes grandes, novas e sem começar —
-  (1) **pipeline híbrido de malha gerada por IA** (decisão do dono, 30/09, ver `HISTORICO_DE_DECISOES.md`
-  topo): construir o `GLTFLoader` no ponto de montagem do rig, mesmo contrato de `MechRig`; falta o dono
-  escolher a ferramenta de geração e o fluxo de arquivo antes de eu montar o resto; (2) **jogar com aliados
-  (bots no seu time)** — pedido duas vezes, "sozinho tá muito intenso"; achado: `BotController.think()` já
-  aceita lista de alvos externa, é fiação nova em `Match.ts`/`BotSystem.ts`, não reescrita; não iniciado.
-  Mais antigo, ainda válido: (3) **Mech parado afunda no chão** (achado, não corrigido; ver "DECISÕES EM
-  ABERTO", precisa de tempo dedicado ao character controller do Rapier); (4) **arma de assinatura por
+- **Claude (atualizado 30/09):** as duas frentes que estavam "sem começar" na sessão anterior **saíram e já
+  estão na `main`** — pipeline híbrido de malha importada (GÊNESIS-01, chassi de verdade e jogável) e aliados
+  na Arena offline (2 bots no time do jogador). Ver ÚLTIMA SESSÃO FEZ para os dois. O que ficou: (1) **aliados
+  no online** — servidor desliga de propósito (`MatchOptions.allies: false`), falta o roster de rede aprender
+  a descrever um aliado; (2) **Mech parado afunda no chão** (achado, não corrigido; ver "DECISÕES EM
+  ABERTO", precisa de tempo dedicado ao character controller do Rapier); (3) **arma de assinatura por
   fabricante** (ofereci propor 2-3 conceitos concretos — Vanta/guerra eletrônica, Forge/impacto — dono
-  ainda não respondeu); (5) **Mech de tripulação do Colossus** (piloto + artilheiros, priorizado pelo dono
+  ainda não respondeu); (4) **Mech de tripulação do Colossus** (piloto + artilheiros, priorizado pelo dono
   para depois do solo, que já está no ar). Mais antigo ainda: definir e implementar o contrato autoritativo
   para escolher o modo da sala e transportar as transições de onda/objetivo; completar o online; sincronizar
   máquina de estados de Ondas da simulação.
