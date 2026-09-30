@@ -1,5 +1,20 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-09-30] Decisão revertida: sai do 100% procedural, entra pipeline híbrido com malha gerada por IA (Claude)
+**Como chegamos aqui, na mesma sessão:** o dono pediu pra "se inspirar no War Robots"; testei o afunilamento de pernas/braços, torso em duas placas, ombro angulado (entrou, ver entrada anterior) — aprovado, mas insuficiente. Pediu um arquétipo genuinamente diferente pra testar o teto do procedural; escolheu tanque/barril. Construí: `lathe()` novo em `meshKit.ts` (perfil girado, primeira forma redonda de verdade do motor), torso em barril no Colossus-01, esteira no lugar da perna, torre-canhão ligada (capacidade já existia). Rodei três vezes até o `npm run check` fechar verde (achados reais: `LatheGeometry` sem `uv` quebra o merge de draw calls — mesmo erro da `taperedBox`, `computeVertexNormals()` obrigatório num perfil não-monótono, raio de roda tem que ficar dentro do próprio comprimento da esteira ou fura o teste de "sola no chão"). **Resultado visual, mesmo depois de tudo isso:** esteira lê como pilha de moeda, torso em barril continua escuro sob a luz do Hangar (metalness alto sem mapa de ambiente some numa superfície curva grande — placa reta cabe inteira no ponto de luz, curva não).
+
+**No meio desse teste, o dono mandou 3 referências no mesmo nível** (`LR-7L Bastion` da Cybermech, `Quadra-V2` da Vanta Works, `Lancer-L1` da Forge Systems — as mesmas fichas de fabricante de `UNIVERSO.md` §9): malha esculpida à mão, dedo articulado, mangueira, parafuso, chapa amassada, textura de desgaste pintada. Fiz a pergunta direta — o teto real do procedural (a captura do tanque) contra essas referências — e perguntei como seguir: híbrido com IA 3D, artista humano, ou continuar 100% procedural aceitando o teto estilizado. **Escolheu híbrido com IA 3D.**
+
+**O que isso muda e o que não muda:** o rig/esqueleto (`buildMechBlueprintRig`, os 6 `MechPart` com zona de acerto por fração de altura, a animação em `MechBase.ts`, a física/colisão) fica exatamente como está — nenhuma dessas partes sabe ou se importa se a malha visual veio de `box()` ou de um arquivo importado. O que muda é só o PASSO de gerar a malha visível: de primitivas em código pra um arquivo (glTF/GLB) carregado e encaixado nos mesmos pontos (torso/cabeça/braço-E/braço-D/perna-E/perna-D). Confirma a resposta que já tinha dado ao dono («não vai precisar refazer o jogo») — o motor de jogo inteiro sobrevive à troca.
+
+**Ainda em aberto, não decidido nesta conversa:**
+- Qual ferramenta/serviço de geração de 3D por IA usar (nenhum decidido ainda).
+- Fluxo de trabalho: como o arquivo gerado chega no projeto (pasta versionada? asset pipeline com build step?).
+- Orçamento de download: hoje ~1 MB total (G11-G13, meta de 8 KB/s por jogador é rede, não isso, mas a landing anuncia o download pequeno como diferencial) — malha com textura real pesa mais, precisa de teto novo e decisão de compressão (Draco/meshopt).
+- Se o procedural morre de vez ou vira fallback pra chassis sem asset ainda (recomendo fallback: nenhum chassi fica quebrado enquanto a malha dele não existir).
+
+**Próximo passo técnico (não iniciado):** um `GLTFLoader` no ponto de montagem do rig, com o mesmo contrato de hoje (recebe um `MechBlueprint`-like, devolve `MechRig` com os 6 nomes de parte) — pra `MechBase.ts`/`combat/damage.ts`/animação nem perceberem a troca.
+
 ## [2026-09-29] Cauda da Onça-B2 removida: o dono viu ao vivo, achou fraca, e o "quadrado" continua sem resposta até este diagnóstico (Claude)
 **Reação do dono, vendo a cauda no ar:** *"ACHEI QUE A ONÇA SERIA UM BOT DE 4 PERNAS.. FICOU BEM BOSTA ESSE RABO Q VC INVENTOU ALI! NAO FAZ NADA, nao é uma arma, apenas cosmetico? sera que nossa modelagem dos mechs está inadequada? ou estou pedindo algo muito dificil? pois os robôs continuam quadrados, nao mudou praticamente nada em relacao ao que eu esperava"*.
 
