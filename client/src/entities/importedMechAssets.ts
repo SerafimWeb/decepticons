@@ -1,6 +1,6 @@
 import type { MechRig } from './MechBase';
 import type { ChassisId } from './chassis';
-import { instantiateImportedMechRig, preloadImportedMechAsset, type ImportedMechAsset } from './importedMechRig';
+import { instantiateImportedMechRig, preloadImportedMechAsset, type ImportedMechAsset, type ImportedRigOptions } from './importedMechRig';
 
 /**
  * Quais chassis usam malha importada em vez de blueprint procedural, e de onde. O carregamento é
@@ -12,11 +12,50 @@ import { instantiateImportedMechRig, preloadImportedMechAsset, type ImportedMech
 export interface ImportedChassisConfig {
   url: string;
   rotationY?: number;
+  boneNames?: ImportedRigOptions['boneNames'];
 }
 
 export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>> = {
   genesis01: {
     url: `${import.meta.env.BASE_URL}models/mech-robot-01.glb`,
+    rotationY: Math.PI,
+  },
+  lancerL1: {
+    url: `${import.meta.env.BASE_URL}models/lancer-l1.glb`,
+    rotationY: Math.PI,
+    boneNames: {
+      hips: 'Hip',
+      head: 'Head',
+      torso: 'Spine01',
+      leftArm: 'L_Upperarm',
+      rightArm: 'R_Upperarm',
+      leftUpLeg: 'L_Thigh',
+      leftLowerLeg: 'L_Calf',
+      rightUpLeg: 'R_Thigh',
+      rightLowerLeg: 'R_Calf',
+      leftHand: 'L_Hand',
+      rightHand: 'R_Hand',
+    },
+  },
+  lr7lBastion: {
+    url: `${import.meta.env.BASE_URL}models/lr-7l-bastion.glb`,
+    rotationY: Math.PI,
+    boneNames: {
+      hips: 'Hip',
+      head: 'Head',
+      torso: 'Spine01',
+      leftArm: 'L_Upperarm',
+      rightArm: 'R_Upperarm',
+      leftUpLeg: 'L_Thigh',
+      leftLowerLeg: 'L_Calf',
+      rightUpLeg: 'R_Thigh',
+      rightLowerLeg: 'R_Calf',
+      leftHand: 'L_Hand',
+      rightHand: 'R_Hand',
+    },
+  },
+  quadraV2: {
+    url: `${import.meta.env.BASE_URL}models/quadra-v2.glb`,
     rotationY: Math.PI,
   },
 };
@@ -26,10 +65,10 @@ const pending = new Map<string, Promise<ImportedMechAsset>>();
 const key = (url: string, targetHeight: number) => `${url}@${targetHeight}`;
 
 /** Dispara o carregamento sem esperar (chame cedo — boot do jogo — pra já estar pronto quando alguém pedir). */
-export function preloadMechAsset(url: string, targetHeight: number, rotationY?: number): void {
+export function preloadMechAsset(url: string, targetHeight: number, rotationY?: number, boneNames?: ImportedRigOptions['boneNames']): void {
   const k = key(url, targetHeight);
   if (cache.has(k) || pending.has(k)) return;
-  const p = preloadImportedMechAsset(url, { targetHeight, rotationY });
+  const p = preloadImportedMechAsset(url, { targetHeight, rotationY, boneNames });
   pending.set(k, p);
   p.then((asset) => { cache.set(k, asset); pending.delete(k); })
     .catch((err) => { pending.delete(k); console.error(`falha ao carregar rig importado (${url}):`, err); });
@@ -42,9 +81,9 @@ export function tryInstantiateMechRig(url: string, targetHeight: number): MechRi
 }
 
 /** Espera o preload terminar (dispara se ainda não tiver disparado) — só onde dá pra esperar (abrir o Hangar). */
-export async function whenMechAssetReady(url: string, targetHeight: number, rotationY?: number): Promise<void> {
+export async function whenMechAssetReady(url: string, targetHeight: number, rotationY?: number, boneNames?: ImportedRigOptions['boneNames']): Promise<void> {
   const k = key(url, targetHeight);
   if (cache.has(k)) return;
-  preloadMechAsset(url, targetHeight, rotationY);
+  preloadMechAsset(url, targetHeight, rotationY, boneNames);
   await pending.get(k);
 }
