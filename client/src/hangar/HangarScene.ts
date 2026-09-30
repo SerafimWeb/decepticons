@@ -606,13 +606,13 @@ export class HangarScene {
   show(chassis: ChassisId, loadout: Loadout): void {
     let m = this.displays.get(chassis);
     if (!m) {
-      const importedUrl = IMPORTED_CHASSIS[chassis];
-      if (importedUrl) {
-        const rig = tryInstantiateMechRig(importedUrl, CHASSIS[chassis].height);
+      const importedAsset = IMPORTED_CHASSIS[chassis];
+      if (importedAsset) {
+        const rig = tryInstantiateMechRig(importedAsset.url, CHASSIS[chassis].height);
         if (!rig) {
           // Ainda carregando (raro — o preload dispara no boot do jogo): tenta de novo assim que
           // terminar, sem travar o pedestal agora nem mostrar nada quebrado.
-          whenMechAssetReady(importedUrl, CHASSIS[chassis].height).then(() => this.show(chassis, loadout));
+          whenMechAssetReady(importedAsset.url, CHASSIS[chassis].height, importedAsset.rotationY).then(() => this.show(chassis, loadout));
           return;
         }
         m = new ImportedMech(CHASSIS[chassis], rig, loadout);

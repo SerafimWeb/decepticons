@@ -62,6 +62,8 @@ export class AxisCorrectedJoint implements RigJoint {
 export interface ImportedRigOptions {
   /** Altura alvo (m); a malha (no bind pose) é escalada e apoiada em y=0. */
   targetHeight: number;
+  /** Rotação extra em radianos no eixo Y da malha inteira, para alinhar a frente (padrão: 0). */
+  rotationY?: number;
   /** Nomes alternativos de osso, pra malhas que não seguem a convenção `mixamorig:`. */
   boneNames?: Partial<Record<keyof typeof DEFAULT_BONES, string>>;
 }
@@ -117,6 +119,7 @@ export async function preloadImportedMechAsset(url: string, options: ImportedRig
   const scale = options.targetHeight / size.y;
   scene.scale.setScalar(scale);
   scene.position.y -= box.min.y * scale;
+  if (options.rotationY) scene.rotation.y = options.rotationY;
   scene.updateMatrixWorld(true);
 
   let hipHeight = 0;
