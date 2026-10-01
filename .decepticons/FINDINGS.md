@@ -178,6 +178,34 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 ---
 
+## 🔵 Em Aberto — M5 (Tiros Autoritativos)
+
+### Raycast de Acerto no Servidor
+
+**Descoberto:** 2026-10-01 | **Status:** 🔵 Em progresso | **Impacto:** Bloqueador de multiplayer (M5)
+
+**Descrição:** O servidor valida cadência e dispara projétil, mas **não calcula acerto** — o cliente faz tudo. M5 move essa responsabilidade para o servidor.
+
+**O que falta:**
+1. **Raycast com compensação de latência:** reposicionar cápsulas dos Mechs ao timestamp do comando do atirador (até 150 ms atrás)
+2. **Hit detection:** raycast do tiro com cápsulas compensadas → qual Mech/parte foi atingida
+3. **Evento HIT:** criar `EVENT.HIT` com shooter, target, part, damage
+4. **Cliente:** receber evento, aplicar dano e efeitos
+
+**Estrutura (servidor):**
+- `NetPilot.fireWithValidation()` → chama `Match.fireWithHitDetection(origin, dir, shooter, weapon)`
+- `Match.fireWithHitDetection()` → raycast, encontra target+part, cria evento HIT
+- `ArenaRoom` → broadcast evento aos clientes
+
+**Estrutura (cliente):**
+- `applyNetEvent(EVENT.HIT)` → lookup de shooter e target pela roster, aplica `combat.onProjectileHit()`
+
+**Workaround atual:** Cliente dispara e calcula; servidor só cria visual (sem validação de verdade).
+
+**Próximos passos:** Implementar raycast (v1: sem compensação), depois v2 com compensação de latência.
+
+---
+
 ## Template: Como Registrar um Achado
 
 ```markdown
