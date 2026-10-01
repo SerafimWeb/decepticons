@@ -218,18 +218,21 @@ export const LANCER_L1_STATS: MechStats = {
 export const LR7L_BASTION_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'LR-7L BASTION',
+  status: 'oficina',
 };
 
 /** Quadra-V2: chassi importado, Vanta Works. */
 export const QUADRA_V2_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'QUADRA-V2',
+  status: 'oficina',
 };
 
 /** MARAUDER: novo chassi importado do Tripo3D. */
 export const MARAUDER_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'MARAUDER',
+  status: 'oficina',
 };
 
 /**

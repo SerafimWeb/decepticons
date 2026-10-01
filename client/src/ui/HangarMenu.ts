@@ -582,7 +582,9 @@ export class HangarMenu {
     this.setText('hangar-cooling', `${Math.round(chassis.heatCooling * 100)}% / s`);
 
     const chassisList = this.root.querySelector<HTMLElement>('#hangar-chassis-list')!;
+    const isOficina = new URLSearchParams(location.search).has('oficina');
     chassisList.innerHTML = (Object.keys(CHASSIS) as ChassisId[])
+      .filter((id) => CHASSIS[id].status !== 'oficina' || isOficina || id === spec.chassis)
       .map((id) => {
         const c = CHASSIS[id];
         const l = CHASSIS_LABEL[id];

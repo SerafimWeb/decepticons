@@ -44,6 +44,8 @@ export interface MechStats extends ChassisHeat {
   /** Carga máxima das armas nos braços (t): o orçamento do Hangar. */
   weaponCapacity: number;
   maxModuleHealth: MechModules;
+  /** Status do chassi: 'hangar' (público) ou 'oficina' (escondido para jogadores comuns). */
+  status?: 'oficina' | 'hangar';
 }
 
 /**
