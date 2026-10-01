@@ -190,9 +190,18 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
   leftHand.add(leftMuzzle);
   leftMuzzle.position.set(0, 0.1, 0.06);
 
+  let hasSkinnedMesh = false;
+  model.traverse((o) => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) hasSkinnedMesh = true; });
+
   const hullMaterials: THREE.MeshStandardMaterial[] = [];
   model.traverse((o) => {
     if (!(o as THREE.Mesh).isMesh) return;
+    
+    // Hide static meshes if the model has skinned meshes (e.g., duplicate T-pose in Marauder)
+    if (hasSkinnedMesh && !(o as THREE.SkinnedMesh).isSkinnedMesh) {
+      o.visible = false;
+    }
+
     const mesh = o as THREE.Mesh;
     const wasArray = Array.isArray(mesh.material);
     const mats = (wasArray ? mesh.material as THREE.Material[] : [mesh.material as THREE.Material])
