@@ -14,6 +14,7 @@ export class RoundOverlay {
   private readonly countdownEl: HTMLDivElement | null = null;
   private readonly summaryEl: HTMLDivElement | null = null;
   private timer: number | null = null;
+  private roundNumber = 1;
   public lastStats: RoundStatsSummary | null = null;
 
   constructor(parent?: HTMLElement) {
@@ -27,6 +28,7 @@ export class RoundOverlay {
       el.style.display = 'none';
 
       el.innerHTML = `
+        <div class="ro-round-label">// RODADA <span id="ro-round-num">1</span> //</div>
         <div class="ro-countdown"></div>
         <div class="ro-summary" hidden>
           <div class="ro-title">// FIM DA RODADA //</div>
@@ -45,22 +47,31 @@ export class RoundOverlay {
     this.summaryEl = el.querySelector('.ro-summary');
   }
 
-  /** Inicia a contagem regressiva de início de rodada (3... 2... 1... COMBATE!). */
-  startCountdown(seconds = 3, onComplete?: () => void): void {
+  /** Inicia a contagem regressiva de início de rodada (RODADA N · 3... 2... 1... COMBATE!). */
+  startCountdown(seconds = 3, onComplete?: () => void, roundNum?: number): void {
     if (this.timer !== null) clearInterval(this.timer);
+    if (roundNum !== undefined) this.roundNumber = roundNum;
+
     if (this.summaryEl) this.summaryEl.hidden = true;
     if (this.countdownEl) this.countdownEl.hidden = false;
-    if (this.el) this.el.style.display = 'flex';
+    if (this.el) {
+      this.el.style.display = 'flex';
+      const roundLabel = this.el.querySelector('#ro-round-num');
+      if (roundLabel) roundLabel.textContent = `${this.roundNumber}`;
+    }
 
     let count = seconds;
     if (this.countdownEl) this.countdownEl.textContent = count > 0 ? `${count}` : 'COMBATE!';
+    this.playCountdownAudio(count);
 
     this.timer = setInterval(() => {
       count--;
       if (count > 0) {
         if (this.countdownEl) this.countdownEl.textContent = `${count}`;
+        this.playCountdownAudio(count);
       } else if (count === 0) {
         if (this.countdownEl) this.countdownEl.textContent = 'COMBATE!';
+        this.playCombatAudio();
       } else {
         if (this.timer !== null) clearInterval(this.timer);
         this.timer = null;
@@ -68,6 +79,34 @@ export class RoundOverlay {
         onComplete?.();
       }
     }, 900) as unknown as number;
+  }
+
+  private playCountdownAudio(num: number): void {
+    if (typeof window === 'undefined' || !window.AudioContext) return;
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 1200 + num * 100;
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.15);
+  }
+
+  private playCombatAudio(): void {
+    if (typeof window === 'undefined' || !window.AudioContext) return;
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
   }
 
   /** Exibe o painel de fim de rodada com as estatísticas do jogador. */
