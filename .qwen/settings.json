@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rmdir *)",
+      "Bash(git worktree *)",
+      "Bash(git fetch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(dir *)",
+      "Bash(@find *)",
+      "Bash(get-content *)",
+      "Bash(.count)",
+      "Bash(mklink *)",
+      "Bash(npm run *)",
+      "Bash(timeout *)"
+    ]
+  },
+  "$version": 4
+}

@@ -18,6 +18,8 @@
 
 ---
 
+- **UX/Site:** Remoção do botão de jogar offline da landing page (agora focado 100% no servidor online) e injeção do código de rastreamento do Google Analytics no `client/index.html` e no `scripts/site/tema.mjs` usando a tag `G-2CCHDCEC7X` fornecida pelo dono.
+
 - **Correção dos passos, bots ecoando e Gênesis-01 offline/costas (Gemini, 30/09, PRs #136 e o próximo).** O som do passo finalizava mesmo após soltar o W (pois a fricção ainda mantinha velocidade mínima); cortado esse passo residual. Passos de bots e aliados reduzidos em volume (eco de "manada" anulado). No `Game.create()`, a instanciação agora aguarda a malha importada, impedindo o modelo de desaparecer no modo offline. O erro online da montagem (servidor) requereu que o dono reiniciasse o terminal manualmente. O Gênesis-01 importado também estava entrando invertido de costas; a configuração do chassi importado ganhou um campo `rotationY` opcional, usado para girar o Gênesis 180 graus no carregamento.
 
 - **Correção dos Mechs Importados (Lancer, Bastion, Quadra)**

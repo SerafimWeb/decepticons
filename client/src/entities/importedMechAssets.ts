@@ -21,7 +21,7 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
     rotationY: Math.PI,
   },
   lancerL1: {
-    url: `${import.meta.env.BASE_URL}models/lancer-l1.glb`,
+    url: `${import.meta.env.BASE_URL}models/TZLA1.glb`,
     rotationY: Math.PI,
     boneNames: {
       hips: 'Hip',
@@ -38,7 +38,7 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
     },
   },
   lr7lBastion: {
-    url: `${import.meta.env.BASE_URL}models/lr-7l-bastion.glb`,
+    url: `${import.meta.env.BASE_URL}models/LR7L.glb`,
     rotationY: Math.PI,
     boneNames: {
       hips: 'Hip',
@@ -55,8 +55,32 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
     },
   },
   quadraV2: {
-    url: `${import.meta.env.BASE_URL}models/quadra-v2.glb`,
+    url: `${import.meta.env.BASE_URL}models/ZEROCIRCUIT.glb`,
     rotationY: Math.PI,
+    boneNames: {
+      hips: 'mixamorigHips',
+      leftUpLeg: 'mixamorigLeftUpLeg',
+      leftLowerLeg: 'mixamorigLeftLeg',
+      rightUpLeg: 'mixamorigRightUpLeg',
+      rightLowerLeg: 'mixamorigRightLeg',
+      torso: 'mixamorigSpine1',
+      leftArm: 'mixamorigLeftArm',
+      rightArm: 'mixamorigRightArm',
+    },
+  },
+  marauder: {
+    url: `${import.meta.env.BASE_URL}models/marauder.glb`,
+    rotationY: Math.PI,
+    boneNames: {
+      hips: 'mixamorigHips',
+      leftUpLeg: 'mixamorigLeftUpLeg',
+      leftLowerLeg: 'mixamorigLeftLeg',
+      rightUpLeg: 'mixamorigRightUpLeg',
+      rightLowerLeg: 'mixamorigRightLeg',
+      torso: 'mixamorigSpine1',
+      leftArm: 'mixamorigLeftArm',
+      rightArm: 'mixamorigRightArm',
+    },
   },
 };
 

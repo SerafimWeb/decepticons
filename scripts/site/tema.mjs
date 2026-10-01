@@ -191,6 +191,15 @@ export function pagina({ title, description, css, body, script = '', og = null }
 <link rel="icon" href="data:,">
 ${FONTS}
 <style>${BASE_CSS}${css}</style>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2CCHDCEC7X"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-2CCHDCEC7X');
+</script>
 </head>
 <body>
 <div class="wrap">

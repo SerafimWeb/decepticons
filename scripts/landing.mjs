@@ -198,8 +198,7 @@ const heroHtml = `<header class="hero${cover ? ' with-shot' : ''}">
       <h1 class="title">CYBER<span>MECH</span></h1>
       <p class="pitch">Pilote um Mech de combate numa arena industrial e desmonte o inimigo peça por peça. Abriu o link, está jogando: sem instalar, sem conta e sem pay-to-win.</p>
       <div class="cta">
-        <a class="play-btn" href="./jogar/" data-evento="click_cockpit">[ ENTRAR NO COCKPIT ]</a>
-        ${ONLINE ? `<p class="cta-online"><a class="play-btn online" href="./jogar/?sala=ARENA" data-evento="click_online">[ jogar online ]</a>${statusHtml}</p>` : statusHtml}
+        ${ONLINE ? `<a class="play-btn" href="./jogar/?sala=ARENA" data-evento="click_online">[ JOGAR ONLINE ]</a><div class="cta-online">${statusHtml}</div>` : `<a class="play-btn" href="./jogar/" data-evento="click_cockpit">[ ENTRAR NO COCKPIT ]</a>${statusHtml}`}
         <a class="link-btn cta-more" href="./sala-de-controle/" data-evento="click_como_e_feito">como este jogo é feito →</a>
       </div>
       <ul class="facts">${facts.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>
@@ -518,7 +517,7 @@ const buildHtml = `<section aria-labelledby="montagem">
 const endHtml = `<section class="final frame" aria-labelledby="final">
     <h2 id="final">Cockpit liberado</h2>
     <p class="lede">A rodada dura cinco minutos. Três pilotos já estão na arena esperando você.</p>
-    <a class="play-btn" href="./jogar/" data-evento="click_cockpit">[ ENTRAR NO COCKPIT ]</a>
+    <a class="play-btn" href="./jogar/?sala=ARENA" data-evento="click_online">[ JOGAR ONLINE ]</a>
   </section>`;
 
 // ---------- página ----------

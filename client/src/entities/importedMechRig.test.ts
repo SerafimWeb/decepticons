@@ -22,7 +22,8 @@ function boneWithWeirdRest(): THREE.Bone {
 describe('importedMechRig: correção de eixo num osso importado', () => {
   it('rotation.x gira no eixo X do MUNDO, não no eixo local torto do bind pose', () => {
     const bone = boneWithWeirdRest();
-    const joint = new AxisCorrectedJoint(bone);
+    const model = new THREE.Object3D();
+    const joint = new AxisCorrectedJoint(bone, model);
 
     const beforeWorld = bone.getWorldQuaternion(new THREE.Quaternion());
     joint.rotation.x = 0.6;
@@ -42,7 +43,8 @@ describe('importedMechRig: correção de eixo num osso importado', () => {
 
   it('rotation.y gira no eixo Y do MUNDO, independente do rotation.x já aplicado', () => {
     const bone = boneWithWeirdRest();
-    const joint = new AxisCorrectedJoint(bone);
+    const model = new THREE.Object3D();
+    const joint = new AxisCorrectedJoint(bone, model);
     joint.rotation.x = 0.3;
     bone.parent!.updateMatrixWorld(true);
     const beforeWorld = bone.getWorldQuaternion(new THREE.Quaternion());
@@ -64,7 +66,8 @@ describe('importedMechRig: correção de eixo num osso importado', () => {
   it('volta pro bind pose exato quando os dois ângulos voltam a zero', () => {
     const bone = boneWithWeirdRest();
     const restQuat = bone.quaternion.clone();
-    const joint = new AxisCorrectedJoint(bone);
+    const model = new THREE.Object3D();
+    const joint = new AxisCorrectedJoint(bone, model);
     joint.rotation.x = 0.9;
     joint.rotation.y = -0.4;
     joint.rotation.x = 0;
@@ -75,7 +78,8 @@ describe('importedMechRig: correção de eixo num osso importado', () => {
   it('não mexe na posição do osso, só na rotação (position.z de recuo continua funcionando)', () => {
     const bone = boneWithWeirdRest();
     bone.position.set(0.1, 0.2, 0.3);
-    const joint = new AxisCorrectedJoint(bone);
+    const model = new THREE.Object3D();
+    const joint = new AxisCorrectedJoint(bone, model);
     joint.position.z = 0.5;
     expect(bone.position.z).toBeCloseTo(0.5, 6);
   });

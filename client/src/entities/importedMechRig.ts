@@ -21,13 +21,22 @@ export class AxisCorrectedJoint implements RigJoint {
   private angleY = 0;
   readonly rotation: { x: number; y: number };
 
-  constructor(private readonly bone: THREE.Object3D) {
+  constructor(private readonly bone: THREE.Object3D, model: THREE.Object3D) {
     bone.updateWorldMatrix(true, false);
+    model.updateWorldMatrix(true, false);
+    
     const worldQuat = bone.getWorldQuaternion(new THREE.Quaternion());
     const inv = worldQuat.clone().invert();
     this.restQuat = bone.quaternion.clone();
-    this.localXAxis = new THREE.Vector3(1, 0, 0).applyQuaternion(inv).normalize();
-    this.localYAxis = new THREE.Vector3(0, 1, 0).applyQuaternion(inv).normalize();
+    
+    // Calcula o eixo X e Y globais *relativos ao modelo*, não absolutos do mundo.
+    // Assim, se o modelo estiver virado 180 graus (rotationY: Math.PI), os joelhos continuam dobrando pra frente.
+    const modelQuat = model.getWorldQuaternion(new THREE.Quaternion());
+    const modelX = new THREE.Vector3(1, 0, 0).applyQuaternion(modelQuat);
+    const modelY = new THREE.Vector3(0, 1, 0).applyQuaternion(modelQuat);
+    
+    this.localXAxis = modelX.applyQuaternion(inv).normalize();
+    this.localYAxis = modelY.applyQuaternion(inv).normalize();
     this.position = bone.position;
     const self = this;
     this.rotation = {
@@ -153,8 +162,19 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
   const bones = new Map<string, THREE.Object3D>();
   model.traverse((o) => { if ((o as THREE.Bone).isBone) bones.set(o.name, o); });
   const find = (key: keyof typeof DEFAULT_BONES): THREE.Object3D => {
-    const bone = bones.get(names[key]);
-    if (!bone) throw new Error(`rig importado: osso "${names[key]}" sumiu no clone (chave ${key})`);
+    let bone = bones.get(names[key]);
+    if (!bone) {
+      // Fallback inteligente: procura por substring e pega a mais curta (para evitar Twist bones)
+      const search = names[key].replace('mixamorig:', '').replace('mixamorig', '');
+      const matches = Array.from(bones.keys()).filter(k => k.includes(search));
+      matches.sort((a, b) => a.length - b.length);
+      const foundName = matches[0];
+      if (foundName) bone = bones.get(foundName);
+    }
+    if (!bone) {
+      console.error(`Bones disponíveis:`, Array.from(bones.keys()));
+      throw new Error(`rig importado: osso "${names[key]}" sumiu (chave ${key}). Fallback falhou.`);
+    }
     return bone;
   };
 
@@ -181,19 +201,11 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
     for (const m of mats) if (m instanceof THREE.MeshStandardMaterial) hullMaterials.push(m);
   });
 
-  const useAxisCorrection = !asset.boneNames.hips.includes('Hip'); // Mixamo uses 'mixamorigHips', Tripo uses 'Hip'
+
   
   const createJoint = (b: THREE.Object3D): RigJoint => {
-    if (useAxisCorrection) return new AxisCorrectedJoint(b);
-    return {
-      name: b.name,
-      rotation: b.rotation as unknown as { x: number; y: number },
-      position: b.position,
-      get visible() { return b.visible; },
-      set visible(v) { b.visible = v; },
-      getWorldPosition: (t) => b.getWorldPosition(t),
-      localToWorld: (t) => b.localToWorld(t),
-    };
+    // Agora o model é passado para garantir que a rotação global do mech (ex: Math.PI) não inverta os joelhos
+    return new AxisCorrectedJoint(b, model);
   };
 
   return {

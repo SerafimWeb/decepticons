@@ -226,6 +226,12 @@ export const QUADRA_V2_STATS: MechStats = {
   name: 'QUADRA-V2',
 };
 
+/** MARAUDER: novo chassi importado do Tripo3D. */
+export const MARAUDER_STATS: MechStats = {
+  ...VECTOR09_STATS,
+  name: 'MARAUDER',
+};
+
 /**
  * Chassis que o jogador pode pilotar (o andróide rebelde e o técnico são só das IAs).
  * **Colossus-01 (dono, 29/09: "quero poder escolher o colossus pra ver como é jogar com ele"):** entrou como
@@ -245,6 +251,7 @@ export const CHASSIS = {
   lancerL1: LANCER_L1_STATS,
   lr7lBastion: LR7L_BASTION_STATS,
   quadraV2: QUADRA_V2_STATS,
+  marauder: MARAUDER_STATS,
 } as const satisfies Record<string, MechStats>;
 export type ChassisId = keyof typeof CHASSIS;
 
@@ -261,4 +268,5 @@ export const ARM_SLOTS: Record<ChassisId, { right: readonly WeaponId[]; left: re
   lancerL1: { right: ['plasma'], left: ['rockets'] },
   lr7lBastion: { right: ['plasma'], left: ['rockets'] },
   quadraV2: { right: ['plasma'], left: ['rockets'] },
+  marauder: { right: ['plasma'], left: ['rockets'] },
 };
