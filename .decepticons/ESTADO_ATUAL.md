@@ -24,7 +24,8 @@
 
 - **Correção dos Mechs Importados (Lancer, Bastion, Quadra)**
   - O Quadra-V2 e o Lancer-L1 estavam com a Box3 computando tamanho infinito devido a bugs de exportação nas armaduras (invisíveis), resultando em uma malha com escala 10^-37 invisível. Resolvido filtrando `isMesh` no cálculo da Box3 em `importedMechRig.ts`.
-  - O LR-7L Bastion estava severamente deformado ("amassado") em consequência de problemas de skinning após redimensionar a cena raiz e usar `SkeletonUtils.clone()`. Resolvido empacotando o clone em um `THREE.Group` e aplicando a escala nesse grupo superior, e também desativando o `AxisCorrectedJoint` para Mechs gerados pelo Tripo3D (como os que não utilizam a nomenclatura padrão do Mixamo para a pélvis).
+  - O LR-7L Bastion estava severamente deformado ("amassado") em consequência de problemas de skinning após redimensionar a cena raiz e usar `SkeletonUtils.clone()`. Resolvido empacotando o clone em um `THREE.Group` e aplicando a escala nesse grupo superior.
+  - Correção de animação corrompida ("braços levantados, dobrando pé nas costas") nos modelos Tripo3D (Genesis, Lancer, LR7L): restaurada a lógica `useAxisCorrection` condicional em `importedMechRig.ts`, pois esses modelos já vêm com orientação padrão, diferentemente dos esqueletos do Mixamo.
 
 - **Esqueleto de contas: criar, entrar, sair (Claude, 28/09, PR `claude/login-esqueleto`).** Pedido do dono,
   depois de decidir junto: **SQLite no próprio PC do servidor**, **e-mail + senha**, e **só o esqueleto**
