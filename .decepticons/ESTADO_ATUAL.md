@@ -7,8 +7,8 @@
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Online (servidor 24 h em `jogo.selvamkt.com.br`); offline (single-player: Arena + Sobrevivência + CTF) |
 | **Build** | JS 188 KB, Wasm 735 KB (gzip); FPS 60 estável em GPU integrada; 300 testes, 386 commits |
-| **Última sessão** | 01/10: painel admin no Hangar; rig fix (Gênesis-01); gamemode HQ doc (Gemini) |
-| **Próximo** | Specs técnicas por sistema; refactoring de docs; multiplayer sync tests |
+| **Última sessão** | 01/10: Documentation refactor completo (FRENTE A→C); landing condensed; 4 system specs (MechBase, Physics, Combat, Network) |
+| **Próximo** | 4 remaining specs (Hangar, HUD, Audio, Render); M5 (server-auth fire); multiplayer sync; Hangar UI (Gemini) |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
