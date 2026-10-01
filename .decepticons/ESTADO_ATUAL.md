@@ -1,8 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
-**Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots (com aliados na Arena), no ar em https://www.selvamkt.com.br/cybermech/
-**Última atualização:** 2026-09-30
-**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo, câmera de abate offline, o painel do alvo (legibilidade do dano), GÊNESIS-01 (primeiro chassi de malha importada) e 2 aliados na Arena offline; servidor no ar 24 h.
+## Resumo Executivo
+
+| Aspecto | Status |
+|---|---|
+| **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
+| **Jogo** | Online (servidor 24 h em `jogo.selvamkt.com.br`); offline (single-player: Arena + Sobrevivência + CTF) |
+| **Build** | JS 188 KB, Wasm 735 KB (gzip); FPS 60 estável em GPU integrada; 300 testes, 386 commits |
+| **Última sessão** | 01/10: painel admin no Hangar; rig fix (Gênesis-01); gamemode HQ doc (Gemini) |
+| **Próximo** | Specs técnicas por sistema; refactoring de docs; multiplayer sync tests |
+| **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
+
+---
+
+**Última atualização:** 2026-10-01 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
 
 ---
 
