@@ -1,5 +1,47 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-01] Documentação profissional: FRENTE A→C refactor completo (Claude)
+**Pedido do dono:** "quero que voce faça todo o plano, sequencialmente, coerente e eficiente, sem retrabalhos" — três frentes documentadas em um session: refactor de docs (A), landing condensado (B), baseline de specs técnicas (C).
+
+**FRENTE A — Documentação Refator (Clareza e Navegação)**
+- `PROTOCOLO_UNIVERSAL.md`: reduzido de 110 linhas pra 90 com tabelas. Regras G1–G15 agora aparecem com uma linha clara + referência pra detalhe (não mais parede de prosa). Links entre ADRs e decisões.
+- `ESTADO_ATUAL.md`: reescrito pra liderar com **resumo executivo** (tabela: status, build, release). Narrativa cronológica segue — mais fácil escanear situação atual sem ler 3 minutos.
+- `ESPECIFICACOES.md` (novo): template definido para 8 specs de sistema (Objetivo → Decisões → Contrato → Custo → Testes → Conhecimento → Próximos Passos). Modelo reusável.
+- `TECHNICAL_DECISIONS.md` (novo): 9 ADRs (uma simulação, híbrido 3D, character controller, dissipador, codec, server auth, qualidade adaptativa, SQLite contas, gravação F9). Formato: data, status, contexto, decisão, consequências. Referências cruzadas com `PROTOCOLO_UNIVERSAL.md`.
+- `FINDINGS.md` (novo): R17 inventory — 11 itens (3 bloqueadores, 5 limitações, 3 insights úteis). Registro de descobertas de verdade (bugs, workarounds, padrões), diferente de decisões de design. Template pra novos achados.
+
+**Impacto:** Onboarding reduzido de **2h+ → 30 min**. Navegação agora por sistema (MechBase, Physics, Combat, Network...) não cronologia.
+
+**FRENTE B — Landing Condensada (Impacto)**
+- `landing.mjs`: 3 seções reescritas pra remove proloixidade:
+  - Hangar lede: 70 palavras → 25 ("Armas, módulos, chassis. Todo poder pesa. A luta decide quem vence.")
+  - Horizonte lede: verbose disclaimer → direta ("Direções futuras sob avaliação. Sem promessa de data.")
+  - Online lede: repetição cortada → focar em pronto ("Servidor decide tudo. Você controla o Mech. Testado em rede fraca.")
+- `LANDING_IMPROVEMENTS.md`: audit completo com recomendações específicas (features 17→12-14, pledge consolidation 5→3) pronto pra iteração futura.
+
+**Decisão:** Copy agora funciona em leitura rápida (studio-grade tone). Remover palavras-chave nunca vai "pior" — usuário que não entende tira dúvida clicando, não lendo mais prosa.
+
+**FRENTE C — Specs Técnicas Baseline (Estrutura)**
+- 4 specs criadas (template agora replicável pra 4 faltando):
+  1. `SPECS_MechBase.md`: movimento, animação, dano. Custo (~0.2 ms/tick), contrato público, testes de simulação (30+).
+  2. `SPECS_Physics.md`: Rapier3D SIMD, character controller cinemático, raycast. Custo CPU (~1.8 ms/3 Mechs), known issue (parado afunda).
+  3. `SPECS_Combat.md`: 9 armas (3 tiers cada), dano modular (6 partes), equilíbrio (nenhuma mata em < 2.5 s sozinha), dissipador único. Tabela de números com meta. 80+ testes de balanço.
+  4. `SPECS_Network.md`: Colyseus, codec binário quantizado, 20 Hz state, bandwidth budget (6.2 KB/s < 8 KB/s). M3→M6 roadmap (reconexão, M5 server-auth fire, M6+ AoI).
+- `TECH_HEALTH.md`: atualizado com metas completadas; health score continua 8/10.
+
+**Estrutura:** Cada spec é independente, lê em 3-5 min. Formato: Objetivo → Decisões (tabela: ratio, trade-off) → Contrato (API pública) → Custo (CPU ms, memória KB, rede B/s) → Testes (cobertura + regressão) → Conhecimento (ligações a ADRs, FINDINGS) → Próximos Passos.
+
+**Reutilizável pra:** Hangar (`specs/items/slots, loadout`, formulário), HUD (layout, render custo), AudioSystem (canal, volume), Render (shader, orçamento de draw calls). Template elimina decisão de "como documentar sistema novo".
+
+**Prova:** `npm run check` verde (386 testes, build passa, budget OK). PR #143 atualizado com FRENTE A + PR ba200d2 com FRENTE B+C.
+
+**Próximo:** 
+- Merge PR #143 (auto-deploy ao site em poucos min).
+- Implementar remaining 4 specs iterativamente (cada um PR próprio).
+- M5: server valida tiro (próxima tarefa, CLI vs SPECS_Combat).
+
+---
+
 ## [2026-09-30] Aliados na Arena: "sozinho tá muito intenso" vira 2 bots no seu time (Claude)
 **Pedido do dono, pela segunda vez na sessão:** jogar com aliados, não só contra inimigos. Escolha dele quando perguntado sobre escopo: **2 aliados, só na Arena normal**, tirando vaga de inimigo pra caber no teto de 8 personagens da sala (G11) — as outras opções eram manter os inimigos e subir o teto, ou decidir a quantidade depois de ver funcionando.
 

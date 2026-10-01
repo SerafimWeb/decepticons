@@ -1,8 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
-**Status:** 🟡 EM DESENVOLVIMENTO: single-player jogável contra bots (com aliados na Arena), no ar em https://www.selvamkt.com.br/cybermech/
-**Última atualização:** 2026-09-30
-**Iteração atual:** Fase 5 tem Sobrevivência, CTF solo, câmera de abate offline, o painel do alvo (legibilidade do dano), GÊNESIS-01 (primeiro chassi de malha importada) e 2 aliados na Arena offline; servidor no ar 24 h.
+## Resumo Executivo
+
+| Aspecto | Status |
+|---|---|
+| **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
+| **Jogo** | Online (servidor 24 h em `jogo.selvamkt.com.br`); offline (single-player: Arena + Sobrevivência + CTF) |
+| **Build** | JS 188 KB, Wasm 735 KB (gzip); FPS 60 estável em GPU integrada; 300 testes, 386 commits |
+| **Última sessão** | 01/10: Documentation refactor completo (FRENTE A→C); landing condensed; 4 system specs (MechBase, Physics, Combat, Network) |
+| **Próximo** | 4 remaining specs (Hangar, HUD, Audio, Render); M5 (server-auth fire); multiplayer sync; Hangar UI (Gemini) |
+| **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
+
+---
+
+**Última atualização:** 2026-10-01 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
 
 ---
 
@@ -14,6 +25,7 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
+| `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |
 | — | **Nada fora da `main` (28/09).** O login e a gravação entraram (#115, #117); o #110 virou obsoleto (só um retalho do `ESTADO_ATUAL.md`) e foi fechado; e os três branches órfãos do Gemini de 25/09 — `primeira-partida`, `setas-inimigos`, `sons-androides`, sem PR e com o conteúdo refeito na `main` — foram declarados mortos e apagados (regra 15). | — | 28/09 |
 
