@@ -203,10 +203,10 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
 
 
   
-  const useAxisCorrection = !asset.boneNames.hips.includes('Hip'); // Mixamo uses 'mixamorigHips', Tripo uses 'Hip'
+  const useAxisCorrection = true; // Habilita para todos: Mixamo e Tripo precisam normalizar o eixo X/Y local.
   
   const createJoint = (b: THREE.Object3D): RigJoint => {
-    if (useAxisCorrection) return new AxisCorrectedJoint(b, model);
+    if (useAxisCorrection) return new AxisCorrectedJoint(b, clonedScene);
     return {
       name: b.name,
       rotation: b.rotation as unknown as { x: number; y: number },
