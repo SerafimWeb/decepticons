@@ -203,9 +203,19 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
 
 
   
+  const useAxisCorrection = !asset.boneNames.hips.includes('Hip'); // Mixamo uses 'mixamorigHips', Tripo uses 'Hip'
+  
   const createJoint = (b: THREE.Object3D): RigJoint => {
-    // Agora o model é passado para garantir que a rotação global do mech (ex: Math.PI) não inverta os joelhos
-    return new AxisCorrectedJoint(b, model);
+    if (useAxisCorrection) return new AxisCorrectedJoint(b, model);
+    return {
+      name: b.name,
+      rotation: b.rotation as unknown as { x: number; y: number },
+      position: b.position,
+      get visible() { return b.visible; },
+      set visible(v) { b.visible = v; },
+      getWorldPosition: (t) => b.getWorldPosition(t),
+      localToWorld: (t) => b.localToWorld(t),
+    };
   };
 
   return {
