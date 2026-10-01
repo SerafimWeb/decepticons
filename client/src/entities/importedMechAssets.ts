@@ -73,6 +73,7 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
     rotationY: Math.PI,
     boneNames: {
       hips: 'mixamorigHips',
+      head: 'mixamorigNeck',
       leftUpLeg: 'mixamorigLeftUpLeg',
       leftLowerLeg: 'mixamorigLeftLeg',
       rightUpLeg: 'mixamorigRightUpLeg',

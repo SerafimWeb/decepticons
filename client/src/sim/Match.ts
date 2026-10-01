@@ -411,6 +411,78 @@ export class Match {
     this.destructibles.restoreAll();
     this.onRoundStart?.();
   }
+
+  /**
+   * M5: Fire with server-side hit detection and validation.
+   * Calls onHit(target, part, damage) if hit, returns hit info or null.
+   */
+  fireWithHitDetection(
+    origin: THREE.Vector3,
+    direction: THREE.Vector3,
+    shooter: MechBase,
+    weapon: Readonly<typeof shooter.loadout.primary>,
+    onHit?: (target: MechBase, part: number, damage: number) => void,
+  ): { target: MechBase; part: number; damage: number } | null {
+    const maxDist = 200; // raycast limit
+    const rayDir = direction.clone().normalize();
+
+    // Simple raycast: check all Mechs for line-of-sight hit
+    let closestDist = maxDist;
+    let hitTarget: MechBase | null = null;
+    let hitPart = 0;
+    let damage = 0;
+
+    for (const mech of this.bots.mechs) {
+      if (mech === shooter || !mech.alive) continue;
+
+      // Quick AABB check first
+      const pos = mech.simPosition;
+      const dx = pos.x - origin.x;
+      const dy = pos.y - origin.y;
+      const dz = pos.z - origin.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      if (dist > closestDist) continue;
+
+      // Raycast to each part (simplified: center of capsule per part)
+      const partIndex = this.findHitPart(mech, origin, rayDir, dist);
+      if (partIndex >= 0 && dist < closestDist) {
+        hitTarget = mech;
+        hitPart = partIndex;
+        closestDist = dist;
+        damage = weapon.damage;
+      }
+    }
+
+    if (!hitTarget) return null;
+
+    // Apply hit through combat system (same as client-side)
+    this.combat.onProjectileHit(hitTarget.collider, rayDir, damage, shooter);
+    onHit?.(hitTarget, hitPart, damage);
+    return { target: hitTarget, part: hitPart, damage };
+  }
+
+  private findHitPart(mech: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, maxDist: number): number {
+    // Simplified: raycast along direction, check if intersects Mech capsule
+    // Returns part index (0-5) or -1 if no hit
+    // For M5-v1: check center mass; future: per-part raycasts
+    const pos = mech.simPosition;
+    const t = Math.max(0, origin.clone().sub(pos).dot(dir.negate().negate()) / (1 + 1e-6));
+    if (t > maxDist) return -1;
+
+    const closest = origin.clone().addScaledVector(dir, t);
+    const dist = closest.distanceTo(pos);
+
+    // Mech capsule radius ~1.5m; hit if within
+    if (dist < 1.5) {
+      // Determine part by height (y-offset)
+      const height = closest.y - pos.y;
+      if (height > 0.5) return 1; // head
+      if (height < -1.0) return height > -1.5 ? 4 : 5; // legs
+      return height > -0.5 ? 2 : 3; // arms/torso (simplified)
+    }
+    return -1;
+  }
 }
 
 /** Destroços desligados (servidor): as regras chamam, nada acontece. */

@@ -190,7 +190,7 @@ export class ArenaRoom {
         ? new Android({ stats: PILOT_ANDROID_STATS, tool: 'pilot', loadout: check.loadout })
         : new Vector09({ stats: CHASSIS[spec.chassis], loadout: check.loadout });
     this.match.addPlayer(mech, m.name);
-    const pilot = new NetPilot(mech, this.match);
+    const pilot = new NetPilot(mech, this.match, this);
     this.match.pilots.push(pilot);
     const human: Human = { id: this.freeId(), mech, kind: 'human', name: m.name, build: loadoutKey(spec), peer, pilot };
     this.units.push(human);
@@ -239,6 +239,18 @@ export class ArenaRoom {
     const e = b.list[b.count++]!;
     e.kind = EVENT.PROP_BROKEN;
     e.amount = id;
+  }
+
+  /** M5: Register a hit event (server-validated). */
+  hit(shooter: MechBase, target: MechBase, part: number, damage: number): void {
+    const b = this.events;
+    if (b.count >= MAX_EVENTS) return;
+    const e = b.list[b.count++]!;
+    e.kind = EVENT.HIT;
+    e.unit = this.idOf(target);
+    e.other = this.idOf(shooter);
+    e.index = part;
+    e.amount = damage;
   }
 
   /** Rodada nova: o cliente restaura as barricadas e limpa destroços; o snapshot seguinte já traz todos vivos. */

@@ -43,6 +43,7 @@ export class NetPilot implements Pilot {
   constructor(
     readonly mech: MechBase,
     private readonly match: Match,
+    private readonly room?: any, // ArenaRoom, avoid circular dep
   ) {
     this.launcher = new RocketLauncher(mech.loadout.secondary ?? weapon('rockets'));
   }
@@ -117,8 +118,11 @@ export class NetPilot implements Pilot {
   /** Fire with server-side validation and hit detection (M5). */
   private fireWithValidation(origin: THREE.Vector3, dir: THREE.Vector3, w: typeof this.mech.loadout.primary): void {
     this.match.projectiles.fire(origin, dir, this.mech.collider, false, w);
-    // M5 TODO: raycast para acerto, criar evento HIT, enviar ao cliente
-    // TODO: compensação de latência (volta cápsulas ao tempo do comando)
+
+    // M5: Hit detection with server validation
+    this.match.fireWithHitDetection(origin, dir, this.mech, w, (target, part, damage) => {
+      if (this.room?.hit) this.room.hit(this.mech, target, part, damage);
+    });
   }
 
   /** Boca da arma pela simulação e direção de yaw e pitch do comando (em _origin e _dir). */
