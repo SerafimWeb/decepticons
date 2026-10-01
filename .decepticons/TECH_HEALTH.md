@@ -67,11 +67,11 @@ Saúde técnica do projeto. Atualizado a cada merge na `main`.
 
 ## 🎯 Metas para Próxima Iteração
 
+- [x] Landing: condensar features, remover prolixidade (FRENTE B ✅)
+- [x] Specs: 4 sistemas documentados (MechBase, Physics, Combat, Network — FRENTE C ✅)
 - [ ] Afundar no chão: diagnóstico isolado + proposta de correção (Rapier)
 - [ ] Roster de rede: adicionar unidade "aliado" para online co-op
-- [ ] Landing: condensar features, remover prolixidade
 - [ ] M5: autoridade de tiro no servidor
-- [ ] Specs: 3+ sistemas documentados (Physics, Combat, Network)
 
 ---
 
