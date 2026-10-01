@@ -364,7 +364,7 @@ export function entregas() {
       const agents = labels.filter((l) => l.startsWith('agente:')).map((l) => l.slice(7));
       return {
         n: p.number,
-        title: p.title,
+        title: p.title.replace(/decepticons/ig, '[PROJETO]'),
         date: brDate(p.mergedAt),
         agents: agents.length ? agents : [agentOf(p.headRefName)].filter(Boolean),
         fronts: labels.filter((l) => l.startsWith('frente:')).map((l) => l.slice(7)),
@@ -383,8 +383,8 @@ export function entregas() {
       const [date, subject = '', body = ''] = rec.trim().split('\x1f');
       const ours = /PR #(\d+):\s*(.+)$/.exec(subject);
       const gh = /pull request #(\d+) from [^/]+\/(\S+)/.exec(subject);
-      if (ours) prs.push({ n: Number(ours[1]), title: ours[2], date, agents: [], fronts: [] });
-      else if (gh) prs.push({ n: Number(gh[1]), title: body.split('\n')[0] || gh[2], date, agents: [agentOf(gh[2])].filter(Boolean), fronts: [] });
+      if (ours) prs.push({ n: Number(ours[1]), title: ours[2].replace(/decepticons/ig, '[PROJETO]'), date, agents: [], fronts: [] });
+      else if (gh) prs.push({ n: Number(gh[1]), title: (body.split('\n')[0] || gh[2]).replace(/decepticons/ig, '[PROJETO]'), date, agents: [agentOf(gh[2])].filter(Boolean), fronts: [] });
     }
     return { prs, fromGithub: false };
   }
@@ -407,7 +407,7 @@ export function atividade(prs) {
     .filter(Boolean)
     .map((r) => {
       const [sha, parents, ct, subject, co] = r.split('\x1f');
-      return { sha, parents: parents ? parents.split(' ') : [], t: Number(ct) * 1000, subject, co: co ?? '' };
+      return { sha, parents: parents ? parents.split(' ') : [], t: Number(ct) * 1000, subject: subject.replace(/decepticons/ig, '[PROJETO]'), co: co ?? '' };
     });
   const bySha = new Map(list.map((c) => [c.sha, c]));
   const prAgents = new Map(prs.map((p) => [p.n, p.agents]));
