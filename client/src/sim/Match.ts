@@ -15,7 +15,7 @@ import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
-import type { PhysicsWorld } from '../physics/PhysicsWorld';
+import type { PhysicsWorld, PhysicsHit } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
 import {
   CTF_BASES,
@@ -435,29 +435,30 @@ export class Match {
     for (const mech of this.bots.mechs) {
       if (mech === shooter || !mech.alive) continue;
 
-      // Quick AABB check first
+      // Raycast: check if ray intersects Mech capsule
       const pos = mech.simPosition;
-      const dx = pos.x - origin.x;
-      const dy = pos.y - origin.y;
-      const dz = pos.z - origin.z;
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      const part = this.findHitPart(mech, origin, rayDir, maxDist);
+      if (part >= 0) {
+        const dx = pos.x - origin.x;
+        const dy = pos.y - origin.y;
+        const dz = pos.z - origin.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-      if (dist > closestDist) continue;
-
-      // Raycast to each part (simplified: center of capsule per part)
-      const partIndex = this.findHitPart(mech, origin, rayDir, dist);
-      if (partIndex >= 0 && dist < closestDist) {
-        hitTarget = mech;
-        hitPart = partIndex;
-        closestDist = dist;
-        damage = weapon.damage;
+        if (dist < closestDist) {
+          hitTarget = mech;
+          hitPart = part;
+          closestDist = dist;
+          damage = weapon.damage;
+        }
       }
     }
 
     if (!hitTarget) return null;
 
     // Apply hit through combat system (same as client-side)
-    this.combat.onProjectileHit(hitTarget.collider, rayDir, damage, shooter);
+    const hitPos = hitTarget.simPosition.clone();
+    const hit: PhysicsHit = { point: hitPos, normal: rayDir.clone().negate(), distance: closestDist, collider: hitTarget.collider };
+    this.combat.onProjectileHit(hit, rayDir, damage, shooter.collider);
     onHit?.(hitTarget, hitPart, damage);
     return { target: hitTarget, part: hitPart, damage };
   }
