@@ -38,6 +38,7 @@ export interface ContaResposta {
   /** Token de sessão: o cliente guarda e manda no cabeçalho `x-cybermech-sessao` dali em diante. */
   token: string;
   email: string;
+  is_admin?: boolean;
 }
 
 /** Normaliza o e-mail (minúsculas, sem espaço nas pontas) — a mesma forma usada para comparar e gravar. */

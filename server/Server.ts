@@ -319,7 +319,8 @@ export async function startServer(
       return;
     }
     if (path === CONFIG_PATH && req.method === 'GET') {
-      const configValor = contas.getConfig('chassis_status');
+      const urlParams = new URL(req.url ?? '/', 'http://localhost').searchParams;
+      const configValor = contas.getConfig(urlParams.get('chave') || 'chassis_status');
       res.writeHead(200, {
         'content-type': 'application/json; charset=utf-8',
         'access-control-allow-origin': '*',

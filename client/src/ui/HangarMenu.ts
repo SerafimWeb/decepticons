@@ -5,6 +5,7 @@ import type { Hangar } from '../hangar/Hangar';
 import { armOptions, factorySpec, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { PRESET_COUNT } from '../hangar/Hangar';
 import { testAt, testFire, type TestFire } from '../hangar/testFire';
+import { AdminPanel } from './AdminPanel';
 
 /** O que a tela pede ao jogo: abrir e fechar o galpão 3D, mostrar a montagem, girar e aplicar na hora. */
 export interface HangarPreview {
@@ -136,6 +137,8 @@ export class HangarMenu {
   /** Teste de disparo em andamento (os números da tela saem dele). */
   private testing: TestFire | null = null;
   private aimTraining = false;
+  private readonly adminPanel: AdminPanel;
+  private unlockedMechs: Set<ChassisId> = new Set();
 
   get isAimTraining(): boolean {
     return this.aimTraining;
@@ -146,6 +149,14 @@ export class HangarMenu {
     private readonly preview: HangarPreview,
     button = document.getElementById('btn-hangar'),
   ) {
+    this.adminPanel = new AdminPanel((unlocked) => {
+      this.unlockedMechs = unlocked;
+      this.render();
+    });
+    this.adminPanel.loadConfig().then((unlocked) => {
+      this.unlockedMechs = unlocked;
+      if (this.isOpen) this.render();
+    });
     this.draft = copySpec(hangar.current);
     this.root = document.createElement('div');
     this.root.id = 'hangar-modal';
@@ -179,6 +190,7 @@ export class HangarMenu {
           <span class="hg-chip"><i>PILOTO</i><b id="hg-top-pilot"></b></span>
           <span class="hg-chip hg-mode"><em></em><b id="hg-top-mode"></b></span>
         </div>
+        <button class="hg-btn hg-ghost" type="button" data-action="admin" style="padding: 0 12px; margin-right: 12px; border: 1px solid #444;" title="Painel Admin">⚙️</button>
         <button class="hg-close" type="button" data-action="close" aria-label="Voltar à pausa">×</button>
       </header>
       <aside class="hg-panel hg-chassis" data-tab="chassi">
@@ -456,6 +468,11 @@ export class HangarMenu {
     }
     const chassisAttr = target?.closest<HTMLButtonElement>('[data-chassis]')?.dataset.chassis;
     const chassis = chassisAttr && chassisAttr in CHASSIS ? (chassisAttr as ChassisId) : null;
+    const isLocked = target?.closest<HTMLButtonElement>('[data-locked]')?.dataset.locked;
+    if (isLocked) {
+      this.adminPanel.open();
+      return;
+    }
     if (chassis) {
       if (chassis !== this.draft.chassis) {
         this.draft = chassis === this.hangar.current.chassis ? copySpec(this.hangar.current) : factorySpec(chassis);
@@ -501,6 +518,11 @@ export class HangarMenu {
       event.stopPropagation();
       if (this.aimTraining) this.endAimPractice(true);
       else this.endTest(true);
+      return;
+    }
+    if (action === 'admin') {
+      event.stopPropagation();
+      this.adminPanel.open();
       return;
     }
     if (action === 'close') {
@@ -584,13 +606,14 @@ export class HangarMenu {
     const chassisList = this.root.querySelector<HTMLElement>('#hangar-chassis-list')!;
     const isOficina = new URLSearchParams(location.search).has('oficina');
     chassisList.innerHTML = (Object.keys(CHASSIS) as ChassisId[])
-      .filter((id) => CHASSIS[id].status !== 'oficina' || isOficina || id === spec.chassis)
+      .filter((id) => CHASSIS[id].status !== 'oficina' || isOficina || this.unlockedMechs.has(id) || true)
       .map((id) => {
         const c = CHASSIS[id];
         const l = CHASSIS_LABEL[id];
+        const locked = c.status === 'oficina' && !isOficina && !this.unlockedMechs.has(id);
         const selected = id === spec.chassis;
         const inUse = id === current.chassis;
-        return `<button class="hg-chassis-card${selected ? ' selected' : ''}" type="button" data-chassis="${id}" aria-pressed="${selected}"><svg viewBox="0 0 60 84" aria-hidden="true">${CHASSIS_ICON[id]}</svg><span><small>${l.className}</small><b>${l.title}</b><em>${num(c.weaponCapacity, 0)} t de carga · ${num(c.height, 1)} m${inUse ? ' · EM USO' : ''}</em></span></button>`;
+        return `<button class="hg-chassis-card${selected ? ' selected' : ''}${locked ? ' locked' : ''}" type="button" data-chassis="${id}" aria-pressed="${selected}" ${locked ? 'data-locked="true"' : ''}><svg viewBox="0 0 60 84" aria-hidden="true">${CHASSIS_ICON[id]}</svg><span><small>${l.className}</small><b>${l.title}</b><em>${locked ? '🔒 OFICINA (clique p/ admin)' : `${num(c.weaponCapacity, 0)} t de carga · ${num(c.height, 1)} m${inUse ? ' · EM USO' : ''}`}</em></span></button>`;
       })
       .join('');
 
