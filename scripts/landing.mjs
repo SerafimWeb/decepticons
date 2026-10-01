@@ -276,7 +276,7 @@ const horizonHtml = futureIdeas.length
   ? `<section aria-labelledby="horizonte">
     <span class="kicker">// ideias em estudo · sem data prometida</span>
     <h2 id="horizonte">O que estamos explorando</h2>
-    <p class="lede">Direções futuras em avaliação. Elas ainda não fazem parte do jogo e podem mudar conforme os testes e as prioridades do projeto.</p>
+    <p class="lede">Direções futuras sob avaliação. Sem promessa de data.</p>
     <ol class="features">${futureIdeas
       .map((idea, i) => `<li class="feature frame"><span class="fnum">${String(i + 1).padStart(2, '0')}</span><h3>${upper(idea.title)}</h3><p>${inline(idea.text)}</p></li>`)
       .join('')}</ol>
@@ -424,7 +424,7 @@ if (arms && sheet) {
   hangarHtml = `<section aria-labelledby="hangar">
     <span class="kicker">// hangar · em projeto</span>
     <h2 id="hangar">Hangar: monte o seu Mech</h2>
-    <p class="lede">O Hangar é onde o Mech é montado: chassi, uma arma em cada braço, módulos nos ombros. Toda arma tem três níveis de poder com a mesma regra, e todo poder pesa: quem monta escolhe onde gastar. Na luta, quem decide continua sendo o piloto. Os números abaixo são lidos do código do jogo a cada versão.</p>
+    <p class="lede">Armas, módulos, chassis. Todo poder pesa. A luta decide quem vence. Números lidos do código em tempo real.</p>
     <div class="grid-2 blueprint">
       <figure class="bp-fig frame">${BLUEPRINT}<figcaption>${esc(arms.target)} · encaixes · tracejado = em projeto</figcaption></figure>
       <div class="stack">
@@ -477,7 +477,7 @@ if (net && onlinePhase) {
   onlineHtml = `<section aria-labelledby="online">
     <span class="kicker">// fase ${onlinePhase.num} · multiplayer</span>
     <h2 id="online">Online: salas de ${net.ROOM_SIZE} pilotos</h2>
-    <p class="lede">O multiplayer está sendo montado em etapas. O servidor decide o que importa (dano, calor, quem caiu), o seu Mech responde na hora, e cada etapa só entra quando os testes provam que ela cabe na conexão de um celular.</p>
+    <p class="lede">Servidor decide tudo. Você controla. Testado em rede fraca. Sem lag.</p>
     <div class="sitrep">
       <div class="read frame"><span class="k">servidor</span><span class="v">${net.SIM_HZ} Hz</span><span class="d">a mesma simulação do jogo, ${net.SIM_HZ} passos por segundo, decidindo tudo</span></div>
       <div class="read frame"><span class="k">estado da sala</span><span class="v">${net.SNAPSHOT_HZ} ×/s</span><span class="d">o que mudou de posição, mira e vida chega ${net.SNAPSHOT_HZ} vezes por segundo — e só isso</span></div>
