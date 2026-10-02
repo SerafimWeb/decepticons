@@ -1,5 +1,13 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-02] O punho sem dedos: engate universal e armas como módulos (Claude, proposta do dono)
+**Relato do dono, vendo o Marauder no Hangar:** o braço "totalmente pra baixo", "MOLE e RETO", "não tá como se segurasse a arma"; e: *"os robôs não têm que ter DEDOS, temos que pensar um formato pras mãos deles e outros suportes de armas, pra mudarmos de armas de forma mais facilitada e prática"*; *"o próximo robô temos que fazer com mais inteligência, pra não ficarmos nessa luta pra corrigir eles"*.
+**Achado:** a arma nunca aparecia no desenho (`MechBase.equip` só trocava números); o Marauder importado não tinha arma, só uma mão de humano.
+**Decisão:** (1) **o punho é um engate universal** (colar + flange + travas), não uma mão; (2) **a arma é um módulo à parte** (uma malha, desenhada em unidades de antebraço) que se encaixa num **ponto de encaixe** no pulso; (3) o robô importado só precisa ter antebraço e pulso: as mãos e os dedos do modelo somem por encolhimento do osso; (4) a pose de arma em punho (antebraço na horizontal) vem de `armRest.elbow`. Contrato do arquivo, do encaixe e roteiro do próximo robô em `MECHS_IMPORTADOS.md`.
+**Alternativas que ficaram de fora:** garra de 2 a 3 dedos grossos (pede animação de pegada e arma com cabo) e punho fechado com trilho (arma só encaixa de um jeito). O engate é o que melhor serve a "trocar de arma fácil".
+**Em aberto, para o dono:** a forma do engate e das armas é gosto (primeira versão em `arte/marauder-armas-hangar.png` e `arte/armas-modulos.png`); se os procedurais também passam a usar o encaixe; o inspetor automático de `.glb` (próximo PR).
+**Achado de quebra (R17):** o ponto de tiro da simulação vem do desenho e o servidor desenha todo Mech como Vector-09: ~1 m de diferença no Marauder (`FINDINGS.md`).
+
 ## [2026-10-01] Rigs importados: eixos no referencial do Mech, e braços do Marauder em repouso (Claude)
 **Relato do dono, jogando o Marauder:** "agora tá se movendo! porém continua de braços abertos! e a movimentação das pernas parece que estão andando pra trás".
 **Causa 1 (os quatro chassis importados):** `AxisCorrectedJoint` medindo os eixos no referencial do arquivo (a cena já girada 180° por `rotationY`) em vez do referencial do Mech. Todo ângulo da animação saía com o sinal trocado. Medido nos `.glb` reais antes e depois (tabela em `FINDINGS.md`).

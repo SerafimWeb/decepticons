@@ -35,6 +35,7 @@ Estado em 25/09 (fim do dia): **o que já está no código** está marcado ✅; 
 
 **Encaixes:** braço direito = arma de **energia** (tiro principal, limitado pelo calor); braço esquerdo = arma de
 **munição** (carregador que recarrega sozinho). Ombros e torso = **módulos**. Perna não leva nada: é mobilidade.
+O desenho do encaixe e da arma (o "punho" sem dedos, o módulo de arma, o roteiro do próximo robô): `MECHS_IMPORTADOS.md`.
 
 **API para a tela (Gemini):** `game.hangar` (`hangar/Hangar.ts`):
 - `current`: a montagem atual (salva no aparelho em `cybermech.hangar.v1`, ou a de um link `?build=`, ou a de fábrica);

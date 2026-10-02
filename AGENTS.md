@@ -21,8 +21,9 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 4. `.decepticons/VISAO.md`: o norte de longo prazo (editável só pelo dono). Depois: `GAME_DESIGN.md`, o jogo, as decisões de design e o plano de viralização (Hangar: `HANGAR.md`; multiplayer: `MULTIPLAYER.md`)
 5. `.decepticons/PROTOCOLO_UNIVERSAL.md`: regras e specs de engenharia (G1–G15)
 6. Build, CI, hospedagem ou deploy? Leia `.decepticons/DEPLOY.md` antes. Site: `www.selvamkt.com.br/cybermech/`, publicado a cada merge na `main`. **Nunca publique fora de `/cybermech/`** (a raiz é o site real da Selva MKT) e não invente host, caminho ou secret.
-7. Gravação de gameplay (F9), a mesa de vídeo (`/mesa`, em `.tmp/video/`) ou outra ferramenta acessória do dono? Leia `.decepticons/FERRAMENTAS.md` antes de mexer — evita redescobrir achados já registrados (ex.: o Mech parado que afunda no chão).
-7. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
+7. Vai trazer ou mexer em um Mech de malha importada (`.glb`), no encaixe de arma ou no punho? Leia `.decepticons/MECHS_IMPORTADOS.md` antes: é o contrato do arquivo e o roteiro; cada robô já custou uma sessão de correção por falta dele.
+8. Gravação de gameplay (F9), a mesa de vídeo (`/mesa`, em `.tmp/video/`) ou outra ferramenta acessória do dono? Leia `.decepticons/FERRAMENTAS.md` antes de mexer — evita redescobrir achados já registrados (ex.: o Mech parado que afunda no chão).
+9. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
 
 ## O QUE É
 

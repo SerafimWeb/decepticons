@@ -15,10 +15,12 @@ export interface ImportedChassisConfig {
   boneNames?: ImportedRigOptions['boneNames'];
   /** Só para malha em T-pose (ver `ImportedRigOptions.armRest`). */
   armRest?: ImportedRigOptions['armRest'];
+  /** Mão e dedos somem e as armas da montagem se encaixam nos pulsos (ver `ImportedRigOptions.weaponMounts`). */
+  weaponMounts?: boolean;
 }
 
 /** O que o carregamento precisa além do arquivo e da altura: o próprio `ImportedChassisConfig` serve. */
-type PreloadOptions = Pick<ImportedChassisConfig, 'rotationY' | 'boneNames' | 'armRest'>;
+type PreloadOptions = Pick<ImportedChassisConfig, 'rotationY' | 'boneNames' | 'armRest' | 'weaponMounts'>;
 
 export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>> = {
   genesis01: {
@@ -76,8 +78,11 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
   marauder: {
     url: `${import.meta.env.BASE_URL}models/marauder.glb`,
     rotationY: Math.PI,
-    // O .glb vem em T-pose (braços abertos a 90°): sem isto a mira só rolaria o braço sobre si mesmo.
-    armRest: { lower: 1.3, forward: 0.5 },
+    // O .glb vem em T-pose (braços abertos a 90°): sem isto a mira só rolaria o braço sobre si mesmo. Ombro baixa e
+    // adianta o braço, o cotovelo leva o antebraço à horizontal: pose de arma em punho.
+    armRest: { lower: 1.42, forward: 0.4, elbow: 1.17 },
+    // Sem arma no modelo: as mãos somem e a arma da montagem se encaixa no pulso (weaponMount.ts).
+    weaponMounts: true,
     boneNames: {
       hips: 'mixamorigHips',
       head: 'mixamorigNeck',
@@ -100,7 +105,7 @@ const key = (url: string, targetHeight: number) => `${url}@${targetHeight}`;
 export function preloadMechAsset(url: string, targetHeight: number, options: PreloadOptions = {}): void {
   const k = key(url, targetHeight);
   if (cache.has(k) || pending.has(k)) return;
-  const p = preloadImportedMechAsset(url, { targetHeight, rotationY: options.rotationY, boneNames: options.boneNames, armRest: options.armRest });
+  const p = preloadImportedMechAsset(url, { targetHeight, rotationY: options.rotationY, boneNames: options.boneNames, armRest: options.armRest, weaponMounts: options.weaponMounts });
   pending.set(k, p);
   p.then((asset) => { cache.set(k, asset); pending.delete(k); })
     .catch((err) => { pending.delete(k); console.error(`falha ao carregar rig importado (${url}):`, err); });
