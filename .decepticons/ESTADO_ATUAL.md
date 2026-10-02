@@ -8,7 +8,7 @@
 | **Jogo** | Online (servidor 24 h em `jogo.selvamkt.com.br`); offline (single-player: Arena + Sobrevivência + CTF) |
 | **Build** | JS 188 KB, Wasm 735 KB (gzip); FPS 60 estável em GPU integrada; 300 testes, 386 commits |
 | **Última sessão** | 01/10 (continuação): M5-stub (server fire validation); FASE 3B (3 UIs: abertura, abate, carregamento); FRENTE C (4 specs: Hangar, HUD, Audio, Render) — 100% sequencial |
-| **Próximo** | M5 completo (raycast + compensação de latência); Gemini integra UIs ao Game.ts; testes M4 online |
+| **Próximo** | M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
@@ -25,6 +25,7 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
+| `claude/m5-fire-authority` | M5 corrigido: raycast paralelo removido (só acertava a menos de 1,5 m e dobraria o dano), `EVENT.HIT` emitido do dano que o servidor já aplica, 2 testes novos; fichas `SPECS_*` com aviso de estimativas; landing sem a frase "Testado em rede fraca. Sem lag." Ver `FINDINGS.md` (M5) | #146 | 01/10 |
 | `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |
 | — | **Nada fora da `main` (28/09).** O login e a gravação entraram (#115, #117); o #110 virou obsoleto (só um retalho do `ESTADO_ATUAL.md`) e foi fechado; e os três branches órfãos do Gemini de 25/09 — `primeira-partida`, `setas-inimigos`, `sons-androides`, sem PR e com o conteúdo refeito na `main` — foram declarados mortos e apagados (regra 15). | — | 28/09 |

@@ -1,6 +1,7 @@
 # SPECS: Combat — CYBERMECH
 
 Sistema de armas, dano modular, calor e morte. Regras de equilíbrio e arbitragem de servidor.
+> **Aviso (01/10):** os números de CPU, rede e memória desta ficha são estimativas de redação, sem medição no repositório que os sustente. Valem como ordem de grandeza até alguém medir; a verdade medida mora em `STATUS_REAL.md`, nos testes e em `ArenaRoom.tickMs`. Auditoria pendente.
 
 ## Objetivo
 
@@ -12,8 +13,8 @@ Sistema de armas, dano modular, calor e morte. Regras de equilíbrio e arbitrage
 |---|---|---|
 | Dissipador único | Previne combo tesourada | Build de plasma+foguete caro (força especialização) |
 | 3 níveis de arma | Escolha simples no Hangar | Limite visual em customização |
-| Disparos 100% server-auth | Evita cheating | M5 só valida, cliente prediz; ajuste de latência necessário |
-| Dano por parte | Mecânica profunda | 6 raycasts = ~0,6 ms overhead |
+| Acerto decidido no servidor (projétil: raycast do segmento por tick; dano pela mesma `Match`) | Evita cheating | O cliente só vê o resultado (evento HIT); compensação de latência ainda ausente (`FINDINGS.md`) |
+| Dano por parte | Mecânica profunda | A parte sai da altura e do lado do impacto na cápsula (`damage.ts`), sem raycast extra |
 | Knockback simples (vel. fixa) | Previsível | Sem variação dramática entre armas |
 
 ## Contrato
@@ -31,10 +32,9 @@ heat.tick(dt)  // dissipação passiva
 
 ## Custo
 
-- **CPU:** ~0,8 ms/tick com 8 Mechs disparando (fire + raycast + dano)
-  - `fire()` bitmask: ~0,1 ms
-  - Raycast de dano: ~0,4 ms (6 raios por alvo)
-  - Aplicar dano: ~0,3 ms (atualizar HP, efeitos)
+- **CPU (estimativa de redação, não medida):** ~0,8 ms/tick com 8 Mechs disparando (fire + raycast de projétil + dano)
+  - Não há raycast por parte: o dano resolve a parte pela altura e pelo lado do impacto
+  - Medição real do servidor: `ArenaRoom.tickMs` (média móvel; meta G14/MULTIPLAYER.md ≤ 2 ms por tick)
 - **Memória:** ~12 KB por Mech (parte HP, cooldowns, heat)
 - **Rede:** 2 bytes evento "disparou + slot"; 1 byte dano aplicado (serializado)
 - **Render:** +1 draw call por projétil (particulas, flash)
@@ -82,21 +82,21 @@ heat.tick(dt)  // dissipação passiva
 - ADR-006: Server autoridade
 
 **Achados (R17):**
-- ✅ Combo plasma+foguete rendeu em 2,5 s (ajuste de calor resolveu)
-- ⚠️ Knockback não funciona em remoto (M5; cliente prediz, servidor corrige)
+- Combo plasma+foguete em 2,5 s (ajuste de calor): sem teste ou medição que o sustente no repositório
+- Knockback em Mech remoto: não verificado
 
 ---
 
 ## Próximos Passos
 
 **Aberto:**
-- M5: validação de tiro no servidor
+- M5: o cliente consumir `EVENT.HIT` (marcador e indicador de dano no online) e a compensação de latência
 - Dano crítico (bonus acertou cabeça)
 - Armas especiais (sniper, EMP, suporte)
-- Modo bossagro (dano progressivo contra IA)
+- Jogadas de Mech: combos e ataques especiais por chassi (ideia do dono, 01/10; ver `ROADMAP.md` IDEIAS)
 
 **Bloqueador:**
-- Servidor não valida tiro; M5 pendente
+- Compensação de latência: precisa de decisão de projeto (`FINDINGS.md`, seção M5)
 
 ---
 

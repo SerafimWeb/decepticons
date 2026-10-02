@@ -4,7 +4,7 @@ import type { WeaponStats } from '../client/src/combat/weapons';
 import { DEFAULT_SETTINGS } from '../client/src/core/Settings';
 import { Android } from '../client/src/entities/Android';
 import { CHASSIS, PILOT_ANDROID_STATS } from '../client/src/entities/chassis';
-import type { MechBase } from '../client/src/entities/MechBase';
+import type { MechBase, MechPart } from '../client/src/entities/MechBase';
 import { Vector09 } from '../client/src/entities/Vector09';
 import type { ParticleSystem } from '../client/src/fx/ParticleSystem';
 import { factorySpec, loadoutKey, parseLoadoutKey, validateLoadout } from '../client/src/hangar/loadout';
@@ -14,6 +14,7 @@ import { Match } from '../client/src/sim/Match';
 import { Writer } from '../shared/net/codec';
 import { MAX_EVENTS, MAX_UNITS, NO_UNIT, PROTOCOL_VERSION, ROOM_SIZE, SIM_HZ, SNAPSHOT_HZ } from '../shared/net/constants';
 import { EVENT } from '../shared/net/events';
+import { NET_PARTS } from '../shared/net/state';
 import {
   decodeInputs,
   decodeJoin,
@@ -99,6 +100,7 @@ export class ArenaRoom {
     // e cada abate (lista de abates).
     this.match.projectiles.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
     this.match.rockets.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
+    this.match.onMechHit = (e) => this.hit(e.mech, e.shooter, e.result.part, e.result.applied);
     this.match.onMechKilled = (dead, _at, killer) => this.kill(dead, killer);
     this.match.onPropBroken = (id) => this.propBroken(id);
     this.match.onRoundStart = () => this.arenaReset();
@@ -155,7 +157,6 @@ export class ArenaRoom {
     const t0 = performance.now();
     this.match.step(FIXED_DT);
     this.tick++;
-    this.match.recordPositionHistory(this.tick); // M5-v2: record for latency compensation
     if (!this.humans.size) this.events.count = 0;
     else if (this.tick % SNAPSHOT_EVERY === 0) this.broadcastSnapshot();
     this.tickMs += (performance.now() - t0 - this.tickMs) * 0.02;
@@ -191,7 +192,7 @@ export class ArenaRoom {
         ? new Android({ stats: PILOT_ANDROID_STATS, tool: 'pilot', loadout: check.loadout })
         : new Vector09({ stats: CHASSIS[spec.chassis], loadout: check.loadout });
     this.match.addPlayer(mech, m.name);
-    const pilot = new NetPilot(mech, this.match, this);
+    const pilot = new NetPilot(mech, this.match);
     this.match.pilots.push(pilot);
     const human: Human = { id: this.freeId(), mech, kind: 'human', name: m.name, build: loadoutKey(spec), peer, pilot };
     this.units.push(human);
@@ -233,6 +234,21 @@ export class ArenaRoom {
     e.other = killer ? this.idOf(killer) : NO_UNIT;
   }
 
+  /**
+   * Acerto em Mech: o dano já foi aplicado pela simulação (projétil, foguete, serra ou pisão); o evento só conta
+   * aos clientes quem levou, de quem, em qual parte e quanto. Não existe segunda via de dano.
+   */
+  private hit(target: MechBase, shooter: MechBase | undefined, part: MechPart, damage: number): void {
+    const b = this.events;
+    if (b.count >= MAX_EVENTS) return;
+    const e = b.list[b.count++]!;
+    e.kind = EVENT.HIT;
+    e.unit = this.idOf(target);
+    e.other = this.idOf(shooter);
+    e.index = NET_PARTS.indexOf(part);
+    e.amount = Math.min(65535, Math.round(damage));
+  }
+
   /** Barricada quebrou: o cliente aplica pelo `id`, sem calcular dano. */
   private propBroken(id: number): void {
     const b = this.events;
@@ -240,18 +256,6 @@ export class ArenaRoom {
     const e = b.list[b.count++]!;
     e.kind = EVENT.PROP_BROKEN;
     e.amount = id;
-  }
-
-  /** M5: Register a hit event (server-validated). */
-  hit(shooter: MechBase, target: MechBase, part: number, damage: number): void {
-    const b = this.events;
-    if (b.count >= MAX_EVENTS) return;
-    const e = b.list[b.count++]!;
-    e.kind = EVENT.HIT;
-    e.unit = this.idOf(target);
-    e.other = this.idOf(shooter);
-    e.index = part;
-    e.amount = damage;
   }
 
   /** Rodada nova: o cliente restaura as barricadas e limpa destroços; o snapshot seguinte já traz todos vivos. */

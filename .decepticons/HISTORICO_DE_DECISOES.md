@@ -1,5 +1,11 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-01] M5: raycast paralelo removido; o evento HIT sai do dano que o servidor já aplica (Claude)
+**Contexto:** ao concluir o M5-v2 (compensação de latência) e rodar o código a sério, o raycast do M5-v1 (já na `main`) se mostrou errado. Detalhes e números em `FINDINGS.md` (seção M5).
+**Decisão:** remover `Match.fireWithHitDetection`, `findHitPart`, o histórico de posições e o parâmetro `room` do `NetPilot`; ligar `Match.onMechHit` ao `EVENT.HIT` no `ArenaRoom`. O servidor já era autoritativo no acerto (projétil por raycast de segmento + dano por parte); faltava só avisar os clientes. Compensação de latência passa a **AUSENTE** (`STATUS_REAL.md`) até haver decisão de projeto (projétil físico × hitscan, mapa de tick, histórico em pool, teto de rebobinada).
+**Correções de honestidade na mesma entrega:** o corpo do PR #146 citava "manual testing" que não houve (corrigido); a landing dizia "Testado em rede fraca. Sem lag." sem teste algum (trocado por texto verificável); as fichas `SPECS_*.md` ganharam aviso de que seus números são estimativas, e foram corrigidas as afirmações comprovadamente falsas (6 raycasts por alvo, "servidor não valida tiro", Colyseus em uso, "M5 resolve o roster do aliado"). A frase "onboarding de 2h+ para 30 min", da entrada abaixo, também não foi medida.
+**Ideias novas do dono registradas (não aprovadas):** jogadas/combos por Mech e facção escolhida pelo jogador, em `ROADMAP.md` (IDEIAS).
+
 ## [2026-10-01] Documentação profissional: FRENTE A→C refactor completo (Claude)
 **Pedido do dono:** "quero que voce faça todo o plano, sequencialmente, coerente e eficiente, sem retrabalhos" — três frentes documentadas em um session: refactor de docs (A), landing condensado (B), baseline de specs técnicas (C).
 

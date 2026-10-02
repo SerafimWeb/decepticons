@@ -178,31 +178,21 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 ---
 
-## 🔵 Em Aberto — M5 (Tiros Autoritativos)
+## 🟡 M5 (Tiros Autoritativos) — evento HIT entregue; compensação de latência ausente
 
-### Raycast de Acerto no Servidor
+### O servidor já decidia o acerto; o raycast paralelo do M5-v1 estava errado e foi removido
 
-**Descoberto:** 2026-10-01 | **Status:** 🔵 Em progresso | **Impacto:** Bloqueador de multiplayer (M5)
+**Descoberto:** 2026-10-01 | **Status:** 🟡 Parcial | **Impacto:** o evento HIT existe no servidor; o cliente ainda não o consome e não há compensação de latência
 
-**Descrição:** O servidor valida cadência e dispara projétil, mas **não calcula acerto** — o cliente faz tudo. M5 move essa responsabilidade para o servidor.
+**O que o código realmente faz:** o `Match` do servidor (mesma simulação, G14) já decide todo acerto: o plasma é um raycast do segmento por tick contra a física (`ProjectileSystem`), o dano sai por parte (`damage.ts`) e o cliente online só recebe a vida no estado. O M5 não precisava de um segundo raycast.
 
-**O que falta:**
-1. **Raycast com compensação de latência:** reposicionar cápsulas dos Mechs ao timestamp do comando do atirador (até 150 ms atrás)
-2. **Hit detection:** raycast do tiro com cápsulas compensadas → qual Mech/parte foi atingida
-3. **Evento HIT:** criar `EVENT.HIT` com shooter, target, part, damage
-4. **Cliente:** receber evento, aplicar dano e efeitos
+**O que o M5-v1 (PR anterior, já na `main`) fez de errado:** `Match.fireWithHitDetection`/`findHitPart` rodavam **além** do projétil. A projeção usava `origin - pos` (sinal invertido), então o "acerto" só valia a menos de 1,5 m da boca da arma; e, se valesse, o dano seria aplicado **duas vezes** (projétil e raycast). Além disso alocava `Map`, `clone()` e `new` por tick (viola G4) e não tinha teste de simulação (viola G14). O M5-v2 (histórico de posições) usava o tick do cliente como se fosse o do servidor e só entrava no cálculo da distância, nunca na decisão de acerto: a "compensação" não compensava nada.
 
-**Estrutura (servidor):**
-- `NetPilot.fireWithValidation()` → chama `Match.fireWithHitDetection(origin, dir, shooter, weapon)`
-- `Match.fireWithHitDetection()` → raycast, encontra target+part, cria evento HIT
-- `ArenaRoom` → broadcast evento aos clientes
+**Correção (01/10):** `fireWithHitDetection`, `findHitPart`, o histórico de posições e o parâmetro `room` do `NetPilot` foram removidos. O `ArenaRoom` agora liga `Match.onMechHit` (que só dispara **depois** que a regra de dano aplicou) ao `EVENT.HIT`: quem levou, de quem, a parte (`NET_PARTS`) e o dano realmente aplicado. Uma única via de dano. Dois testes em `server/room.test.ts`: o evento leva os campos certos, e um tiro real acerta uma vez só com o evento igual à vida perdida pelo alvo.
 
-**Estrutura (cliente):**
-- `applyNetEvent(EVENT.HIT)` → lookup de shooter e target pela roster, aplica `combat.onProjectileHit()`
-
-**Workaround atual:** Cliente dispara e calcula; servidor só cria visual (sem validação de verdade).
-
-**Próximos passos:** Implementar raycast (v1: sem compensação), depois v2 com compensação de latência.
+**Ainda ausente (R13):**
+1. **Cliente consumir `EVENT.HIT`:** marcador de acerto e indicador de dano no online (hoje o evento viaja, ninguém o lê). Território do Gemini (`ui/`), contrato já pronto.
+2. **Compensação de latência:** exige decisão de projeto antes do código. Os projéteis são físicos (140 m/s), não hitscan; voltar a posição dos alvos só faz sentido com mapa de tick cliente↔servidor, histórico em pool pré-alocado (G4), teto de rebobinada (≤ 150 ms) e a escolha de se o plasma vira hitscan. Proposta a escrever em `MULTIPLAYER.md` e aprovar com o dono.
 
 ---
 

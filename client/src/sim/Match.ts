@@ -15,7 +15,7 @@ import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
-import type { PhysicsWorld, PhysicsHit } from '../physics/PhysicsWorld';
+import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
 import {
   CTF_BASES,
@@ -32,11 +32,6 @@ import {
   type MissionStats,
   type WavePlan,
 } from './SurvivalWaves';
-
-interface PositionHistory {
-  tick: number;
-  positions: Map<MechBase, THREE.Vector3>;
-}
 
 /**
  * IAs rebeldes na arena: até 3 Mechs, 3 andróides de combate e 1 técnico (ou, na missão, o Colossus de
@@ -130,8 +125,6 @@ export class Match {
   readonly pilots: Pilot[] = [];
   /** Mechs de gente (os bots caçam estes). */
   readonly players: MechBase[] = [];
-  /** M5-v2: Position history for latency compensation (last ~12 frames, 200ms buffer). */
-  private positionHistory: PositionHistory[] = [];
 
   /** Acerto em Mech (depois da regra): HUD, som, indicador de dano. */
   onMechHit?: (e: MechHitEvent) => void;
@@ -417,99 +410,6 @@ export class Match {
     this.debris.clear();
     this.destructibles.restoreAll();
     this.onRoundStart?.();
-  }
-
-  /**
-   * M5: Fire with server-side hit detection and validation.
-   * Calls onHit(target, part, damage) if hit, returns hit info or null.
-   */
-  fireWithHitDetection(
-    origin: THREE.Vector3,
-    direction: THREE.Vector3,
-    shooter: MechBase,
-    weapon: Readonly<typeof shooter.loadout.primary>,
-    onHit?: (target: MechBase, part: number, damage: number) => void,
-    shooterTickWhenFired?: number,
-  ): { target: MechBase; part: number; damage: number } | null {
-    const maxDist = 200;
-    const rayDir = direction.clone().normalize();
-    let closestDist = maxDist;
-    let hitTarget: MechBase | null = null;
-    let hitPart = 0;
-    let damage = 0;
-
-    for (const mech of this.bots.mechs) {
-      if (mech === shooter || !mech.alive) continue;
-
-      // M5-v2: Use historical position for latency compensation
-      const pos = shooterTickWhenFired ? this.getHistoricalPosition(mech, shooterTickWhenFired) : mech.simPosition;
-      const part = this.findHitPart(mech, origin, rayDir, maxDist);
-      if (part >= 0) {
-        const dx = pos.x - origin.x;
-        const dy = pos.y - origin.y;
-        const dz = pos.z - origin.z;
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-        if (dist < closestDist) {
-          hitTarget = mech;
-          hitPart = part;
-          closestDist = dist;
-          damage = weapon.damage;
-        }
-      }
-    }
-
-    if (!hitTarget) return null;
-
-    // Apply hit through combat system (same as client-side)
-    const hitPos = hitTarget.simPosition.clone();
-    const hit: PhysicsHit = { point: hitPos, normal: rayDir.clone().negate(), distance: closestDist, collider: hitTarget.collider };
-    this.combat.onProjectileHit(hit, rayDir, damage, shooter.collider);
-    onHit?.(hitTarget, hitPart, damage);
-    return { target: hitTarget, part: hitPart, damage };
-  }
-
-  private findHitPart(mech: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, maxDist: number): number {
-    // Simplified: raycast along direction, check if intersects Mech capsule
-    // Returns part index (0-5) or -1 if no hit
-    // For M5-v1: check center mass; future: per-part raycasts
-    const pos = mech.simPosition;
-    const t = Math.max(0, origin.clone().sub(pos).dot(dir.negate().negate()) / (1 + 1e-6));
-    if (t > maxDist) return -1;
-
-    const closest = origin.clone().addScaledVector(dir, t);
-    const dist = closest.distanceTo(pos);
-
-    // Mech capsule radius ~1.5m; hit if within
-    if (dist < 1.5) {
-      // Determine part by height (y-offset)
-      const height = closest.y - pos.y;
-      if (height > 0.5) return 1; // head
-      if (height < -1.0) return height > -1.5 ? 4 : 5; // legs
-      return height > -0.5 ? 2 : 3; // arms/torso (simplified)
-    }
-    return -1;
-  }
-
-  recordPositionHistory(tick: number): void {
-    if (this.positionHistory.length > 12) this.positionHistory.shift();
-    const positions = new Map<MechBase, THREE.Vector3>();
-    for (const mech of this.bots.mechs) positions.set(mech, mech.simPosition.clone());
-    this.positionHistory.push({ tick, positions });
-  }
-
-  getHistoricalPosition(mech: MechBase, targetTick: number): THREE.Vector3 {
-    let closest: PositionHistory | null = null;
-    let minDiff = Infinity;
-    for (const entry of this.positionHistory) {
-      const diff = Math.abs(entry.tick - targetTick);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = entry;
-      }
-    }
-    if (closest && closest.positions.has(mech)) return closest.positions.get(mech)!.clone();
-    return mech.simPosition.clone();
   }
 }
 
