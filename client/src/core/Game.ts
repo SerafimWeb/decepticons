@@ -28,6 +28,8 @@ import { PlayerController } from '../player/PlayerController';
 import { DamageIndicator } from '../ui/DamageIndicator';
 import { TargetPanel } from '../ui/TargetPanel';
 import { HUD } from '../ui/HUD';
+import { LoadingScreen } from '../ui/LoadingScreen';
+import { RoundOverlay } from '../ui/RoundOverlay';
 import { KillFeed } from '../ui/KillFeed';
 import { MouseCalibration } from '../ui/MouseCalibration';
 import { Onboarding } from '../ui/Onboarding';
@@ -137,6 +139,8 @@ export class Game {
   private readonly assist: AimAssist;
   private readonly player: PlayerController;
   private readonly hud = new HUD();
+  private readonly loading = new LoadingScreen();
+  private roundNum = 1;
   private readonly modeSelector = new ModeSelector();
   private readonly missionHud = new MissionHUD();
   readonly ctfHud = new CtfHud();
@@ -204,6 +208,8 @@ export class Game {
     hangar: Hangar,
   ) {
     this.hangar = hangar;
+    this.loading.show(); // Mostrar tela de carregamento no boot
+
     // Carrega chassis de malha importada (assíncrono, dispara cedo — CHASSIS[id].height é a mesma
     // stat usada na hora de montar o Mech de verdade, então o cache bate certo).
     for (const [chassisId, asset] of Object.entries(IMPORTED_CHASSIS)) {
@@ -690,7 +696,8 @@ export class Game {
     };
     this.match.onRoundStart = () => {
       this.telemetry.enviar('partida_iniciada');
-      this.startRound();
+      this.hud.roundOverlay.startCountdown(3, () => this.startRound(), this.roundNum++);
+      this.loading.hide();
     };
     this.match.onWaveStart = (wave, total, _mechs, _androids, title, waves) => {
       this.hud.setMissionWave(wave, total, title, waves);
