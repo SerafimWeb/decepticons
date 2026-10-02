@@ -1,6 +1,7 @@
 # SPECS: HUD — CYBERMECH
 
 Interface visual em partida: vida por parte, calor, armas, placar, indicadores de dano.
+> **Aviso (01/10):** os números de CPU, rede e memória desta ficha são estimativas de redação, sem medição no repositório que os sustente. Valem como ordem de grandeza até alguém medir; a verdade medida mora em `STATUS_REAL.md`, nos testes e em `ArenaRoom.tickMs`. Auditoria pendente.
 
 ## Objetivo
 

@@ -1,6 +1,7 @@
 # SPECS: Network — CYBERMECH
 
-Protocolo multiplayer: Colyseus, codec binário, estado quantizado, sincronização a 20 Hz.
+Protocolo multiplayer: WebSocket (`ws`) com salas próprias (Colyseus segue planejado), codec binário, estado quantizado, sincronização a 20 Hz.
+> **Aviso (01/10):** os números de CPU, rede e memória desta ficha são estimativas de redação, sem medição no repositório que os sustente. Valem como ordem de grandeza até alguém medir; a verdade medida mora em `STATUS_REAL.md`, nos testes e em `ArenaRoom.tickMs`. Auditoria pendente.
 
 ## Objetivo
 
@@ -100,7 +101,7 @@ struct HitEvent {
 
 **Achados (R17):**
 - ✅ WebSocket Node instável sob carga (trocou para `ws` package)
-- ⚠️ Roster de rede não descreve aliado (M4 problema; M5 resolve)
+- ⚠️ Roster de rede não descreve aliado: AUSENTE no online (`STATUS_REAL.md`); nenhum marco o resolve ainda
 
 ---
 
@@ -113,10 +114,13 @@ struct HitEvent {
 - Morte sincroniza
 - Spawn remoto funciona
 
-**M5 (Pendente):**
-- Tiro validado no servidor
-- Dano sincroniza
-- Reconexão funciona
+**M5 (parcial):**
+- ✅ Acerto e dano decididos no servidor; vida chega pelo estado
+- ✅ `EVENT.HIT` emitido pelo servidor (testado em `server/room.test.ts`)
+- Cliente consumir o HIT, e compensação de latência: ausentes (`FINDINGS.md`)
+
+**M6 (Pendente):**
+- Entrada por link e reconexão (`MULTIPLAYER.md`)
 
 **M6+ (Futuro):**
 - AoI (interest management) para 32+ jogadores

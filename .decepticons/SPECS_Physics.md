@@ -1,6 +1,7 @@
 # SPECS: Physics — CYBERMECH
 
 Sistema determinístico de movimento, colisão e gravidade. Roda a 60 Hz fixo no cliente e servidor.
+> **Aviso (01/10):** os números de CPU, rede e memória desta ficha são estimativas de redação, sem medição no repositório que os sustente. Valem como ordem de grandeza até alguém medir; a verdade medida mora em `STATUS_REAL.md`, nos testes e em `ArenaRoom.tickMs`. Auditoria pendente.
 
 ## Objetivo
 

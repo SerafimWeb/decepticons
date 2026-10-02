@@ -477,7 +477,7 @@ if (net && onlinePhase) {
   onlineHtml = `<section aria-labelledby="online">
     <span class="kicker">// fase ${onlinePhase.num} · multiplayer</span>
     <h2 id="online">Online: salas de ${net.ROOM_SIZE} pilotos</h2>
-    <p class="lede">Servidor decide tudo. Você controla. Testado em rede fraca. Sem lag.</p>
+    <p class="lede">O servidor decide tudo: movimento, tiro, dano e abate. Você controla o seu Mech.</p>
     <div class="sitrep">
       <div class="read frame"><span class="k">servidor</span><span class="v">${net.SIM_HZ} Hz</span><span class="d">a mesma simulação do jogo, ${net.SIM_HZ} passos por segundo, decidindo tudo</span></div>
       <div class="read frame"><span class="k">estado da sala</span><span class="v">${net.SNAPSHOT_HZ} ×/s</span><span class="d">o que mudou de posição, mira e vida chega ${net.SNAPSHOT_HZ} vezes por segundo — e só isso</span></div>

@@ -1,10 +1,15 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
+import * as THREE from 'three';
+import type { MechBase } from '../client/src/entities/MechBase';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/constants';
+import { EVENT } from '../shared/net/events';
 import { newNetInput, type NetInput } from '../shared/net/input';
+import { NET_PARTS } from '../shared/net/state';
 import {
+  decodeEvents,
   decodeReject,
   decodeRoster,
   decodeSnapshot,
@@ -16,6 +21,7 @@ import {
   decodePong,
   messageType,
   MSG,
+  newEventBatch,
   newSnapshot,
   type Snapshot,
 } from '../shared/net/messages';
@@ -167,6 +173,74 @@ describe('M3: a sala do servidor', () => {
     expect(roomCode('/?sala=k7q2')).toBe('K7Q2');
     expect(roomCode('/')).toBe('ARENA');
     expect(roomCode('/?sala=<script>')).toBeNull();
+  });
+});
+
+interface TestUnit {
+  id: number;
+  kind: string;
+  mech: MechBase;
+}
+
+/** Os acertos (HIT) que chegaram a este jogador, na ordem. */
+function hitsSeen(peer: FakePeer): { unit: number; other: number; index: number; amount: number }[] {
+  const out: { unit: number; other: number; index: number; amount: number }[] = [];
+  const batch = newEventBatch();
+  for (const bytes of peer.of(MSG.EVENTS)) {
+    expect(decodeEvents(bytes, batch)).toBe(true);
+    for (let i = 0; i < batch.count; i++) {
+      const e = batch.list[i]!;
+      if (e.kind === EVENT.HIT) out.push({ unit: e.unit, other: e.other, index: e.index, amount: e.amount });
+    }
+  }
+  return out;
+}
+
+const lifeOf = (m: MechBase) => Object.values(m.modules).reduce((a, b) => a + b, 0);
+
+describe('M5: o acerto é decidido pelo servidor e vira evento HIT', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('o evento HIT leva quem levou, de quem, a parte e o dano', async () => {
+    const room = await ArenaRoom.create('HITEVT');
+    const dan = new FakePeer();
+    room.receive(dan, join('Dan'));
+    const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
+    const units = room['units'] as TestUnit[];
+    const bot = units.find((u) => u.kind === 'mech')!;
+    const mine = units.find((u) => u.id === me)!;
+    room['match'].onMechHit?.({ mech: bot.mech, shooter: mine.mech, result: { part: 'leftArm', applied: 37, partDestroyed: false, killed: false } });
+    for (let i = 0; i < 3; i++) room.step();
+    expect(hitsSeen(dan)).toContainEqual({ unit: bot.id, other: me, index: NET_PARTS.indexOf('leftArm'), amount: 37 });
+    room.dispose();
+  });
+
+  it('um tiro real acerta o alvo uma vez só, e o evento HIT conta exatamente a vida que o alvo perdeu', async () => {
+    const room = await ArenaRoom.create('UMTIRO');
+    const dan = new FakePeer();
+    room.receive(dan, join('Dan'));
+    const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
+    room.step();
+    const units = room['units'] as TestUnit[];
+    const bot = units.find((u) => u.kind === 'mech')!;
+    const feet = room.positionOf(me)!;
+    const mine = units.find((u) => u.id === me)!;
+    const muzzle = new THREE.Vector3();
+    mine.mech.simMuzzle(muzzle);
+    // Yaw 0: a frente é -Z. O alvo fica na linha do cano (que é deslocado do eixo do Mech), a 3 m da boca.
+    bot.mech.respawn(new THREE.Vector3(muzzle.x, feet.y, muzzle.z - 3));
+    const before = lifeOf(bot.mech);
+    room.receive(dan, inputs(1, 1, { fire: true }));
+    room.receive(dan, inputs(2, 17));
+    for (let i = 0; i < 24; i++) room.step();
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    const lost = before - lifeOf(bot.mech);
+    expect(hits.length).toBe(1);
+    expect(lost).toBeGreaterThan(0);
+    expect(Math.abs(lost - hits[0]!.amount)).toBeLessThanOrEqual(0.5);
+    room.dispose();
   });
 });
 
