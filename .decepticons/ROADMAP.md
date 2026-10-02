@@ -132,7 +132,7 @@
 - [x] Sinais visuais de calor no rig: emissivo progressivo e vapor no superaquecimento, sem alocação por frame e até 10 draw calls (Codex; check verde) #mechs
 - [x] **Encaixe de arma no pulso (o punho sem dedos):** as mãos somem e a arma da montagem se encaixa como módulo desenhado (plasma, foguetes, blaster, motosserra × MK I–III), que troca com o nível e a arma no Hangar; hoje só no Marauder; contrato em `MECHS_IMPORTADOS.md` #mechs
 - [ ] **Levar o encaixe de arma aos Mechs procedurais** (hoje cano e casulo fixos no antebraço) e **fixar o ponto de tiro por chassi** no `MechStats`, igual no servidor e no cliente (G14; `FINDINGS.md`) #mechs
-- [ ] **Inspetor de robô importado (`npm run mech:inspecionar`):** lê o `.glb`, confere o contrato de `MECHS_IMPORTADOS.md` (skin, ossos, frente, T-pose, mão com dedos, tamanho), sugere a entrada do `IMPORTED_CHASSIS` e fotografa o Hangar e a passada #mechs
+- [x] **Inspetor de robô importado (`npm run mech:inspecionar`):** lê o `.glb`, confere o contrato de `MECHS_IMPORTADOS.md` (skin, ossos, frente, T-pose, mão com dedos, tamanho), sugere a entrada do `IMPORTED_CHASSIS` e fotografa o Hangar e a passada #mechs
 - [x] FX: explosões, impactos, fumaça e destroços com escala animada; pool explícito de 3000 partículas sem alocação por frame #desempenho
 
 ## 🟠 FASE 4 — Multiplayer autoritativo

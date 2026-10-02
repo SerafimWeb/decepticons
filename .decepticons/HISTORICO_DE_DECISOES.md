@@ -1,5 +1,11 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-02] Inspetor de robô importado: o contrato vira comando (Claude)
+**Pedido do dono:** o próximo robô "com mais inteligência, pra não ficarmos nessa luta pra corrigir eles". O contrato escrito (`MECHS_IMPORTADOS.md`) já estava na `main`; faltava poder **conferir** um arquivo sem ler código.
+**Decisão:** `npm run mech:inspecionar -- arquivo.glb` carrega o `.glb` com o carregador do jogo, confere o contrato, checa a convenção da animação (sondas presas nos ossos: vale para qualquer pose de repouso), sugere a entrada do `IMPORTED_CHASSIS` e fotografa o robô. A análise é pura (`entities/inspecaoMech.ts`, testada com esqueletos sintéticos) e o jogo não a importa, então não pesa no bundle.
+**Calibragem nos 4 `.glb` reais:** sem erros; esqueleto, pose e sugestão do Marauder batem com a configuração dele. A frente, medida pelo pé, deu +Z nos quatro (+0,005 a +0,42 da altura); no Marauder a garra simétrica deixa a medida fraca, então o inspetor assume +Z (padrão glTF e Mixamo) quando não decide e manda conferir a foto.
+**Não coberto:** nenhum `.glb` real que olhe para -Z foi visto; só os testes sintéticos cobrem esse caso. Limites de triângulos e de download seguem sem orçamento decidido (o inspetor só informa os números).
+
 ## [2026-10-02] O punho sem dedos: engate universal e armas como módulos (Claude, proposta do dono)
 **Relato do dono, vendo o Marauder no Hangar:** o braço "totalmente pra baixo", "MOLE e RETO", "não tá como se segurasse a arma"; e: *"os robôs não têm que ter DEDOS, temos que pensar um formato pras mãos deles e outros suportes de armas, pra mudarmos de armas de forma mais facilitada e prática"*; *"o próximo robô temos que fazer com mais inteligência, pra não ficarmos nessa luta pra corrigir eles"*.
 **Achado:** a arma nunca aparecia no desenho (`MechBase.equip` só trocava números); o Marauder importado não tinha arma, só uma mão de humano.
