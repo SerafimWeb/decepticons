@@ -155,6 +155,7 @@ export class ArenaRoom {
     const t0 = performance.now();
     this.match.step(FIXED_DT);
     this.tick++;
+    this.match.recordPositionHistory(this.tick); // M5-v2: record for latency compensation
     if (!this.humans.size) this.events.count = 0;
     else if (this.tick % SNAPSHOT_EVERY === 0) this.broadcastSnapshot();
     this.tickMs += (performance.now() - t0 - this.tickMs) * 0.02;

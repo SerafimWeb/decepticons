@@ -115,14 +115,14 @@ export class NetPilot implements Pilot {
     }
   }
 
-  /** Fire with server-side validation and hit detection (M5). */
+  /** Fire with server-side validation and hit detection (M5-v2). */
   private fireWithValidation(origin: THREE.Vector3, dir: THREE.Vector3, w: typeof this.mech.loadout.primary): void {
     this.match.projectiles.fire(origin, dir, this.mech.collider, false, w);
 
-    // M5: Hit detection with server validation
+    // M5-v2: Hit detection with latency compensation (current.tick is when client sent fire)
     this.match.fireWithHitDetection(origin, dir, this.mech, w, (target, part, damage) => {
       if (this.room?.hit) this.room.hit(this.mech, target, part, damage);
-    });
+    }, this.current.tick);
   }
 
   /** Boca da arma pela simulação e direção de yaw e pitch do comando (em _origin e _dir). */
