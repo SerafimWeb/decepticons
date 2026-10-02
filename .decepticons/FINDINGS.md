@@ -178,6 +178,30 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 ---
 
+### Fix: Os Quatro Chassis Importados Andavam e Miravam no Sentido Invertido
+
+**Descoberto:** 2026-10-01 (relato do dono: "continua de braços abertos" e "as pernas parecem andar pra trás") | **Status:** ✅ Corrigido | **Impacto:** passada de costas, joelho dobrando para o lado errado e braço abaixando ao olhar para cima, em Gênesis-01, Lancer-L1, LR-7L Bastion e Marauder
+
+**Causa raiz:** `AxisCorrectedJoint` media os eixos X/Y "relativos ao modelo" (`clonedScene`), que o `preload` já gira 180° por `rotationY: Math.PI`. Esse é o referencial do **arquivo** (frente em +Z); a animação de `MechBase.animate`/`applyFacing` assume o do **Mech** (frente em -Z: `hip.rotation.x` positivo leva o pé para a frente). Com os eixos medidos no referencial errado, todo ângulo saía com o sinal trocado. A mudança que introduziu isto tinha o comentário "os joelhos continuam dobrando pra frente", que é exatamente o contrário do que ela fazia. Os testes existentes usavam `model` sem rotação e nunca pegariam o caso.
+
+**Medição nos quatro `.glb` reais (deslocamento no eixo Z do mundo, frente = -Z):**
+
+| Chassi | `hip +0.5` → joelho (certo < 0) | `joelho -0.8` → pé (certo > 0) | `pitch +0.5` → mão (certo < 0) |
+|---|---|---|---|
+| antes, todos | +0,29 a +0,78 | −0,36 a −1,27 | +0,61 a +1,56 (Marauder: ≈ 0, braço em T) |
+| depois: Gênesis-01 | −0,44 | +1,07 | −0,51 |
+| depois: Lancer-L1 | −0,65 | +0,37 / +0,45 | −0,73 |
+| depois: LR-7L Bastion | −0,85 / −0,60 | +0,48 / +0,72 | −2,19 |
+| depois: Marauder | −0,75 | +1,16 | −0,64 |
+
+**Segunda causa, só do Marauder:** o `.glb` vem em **T-pose** (braços a 90° dos lados, direção ombro→mão `±0,996, −0,07, 0,06`). Girar um braço horizontal em X só o rola sobre si mesmo: a mão se movia 0,06 m com a mira. Saída: `armRest` no `ImportedChassisConfig` (baixa e adianta o braço no referencial do Mech antes de congelar o repouso; o lado vem da geometria, não do nome do osso). Marauder em repouso: `±0,20, −0,89, −0,41`.
+
+**Correção:** `createJoint` passa `model` (o grupo que o jogo gira pelo yaw) como referencial, nunca `clonedScene`. Oito testes novos em `importedMechRig.test.ts` usam um esqueleto sintético girado 180° pelo mesmo caminho do `preload` (`instantiateImportedMechRig`); com o erro reintroduzido, seis deles falham.
+
+**Lição:** teste de eixo e sinal precisa de um modelo **girado**, como o de produção. Um teste com `new THREE.Object3D()` identidade aprova o erro.
+
+---
+
 ## 🟡 M5 (Tiros Autoritativos) — evento HIT entregue; compensação de latência ausente
 
 ### O servidor já decidia o acerto; o raycast paralelo do M5-v1 estava errado e foi removido

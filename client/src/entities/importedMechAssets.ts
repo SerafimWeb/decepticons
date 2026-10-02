@@ -13,7 +13,12 @@ export interface ImportedChassisConfig {
   url: string;
   rotationY?: number;
   boneNames?: ImportedRigOptions['boneNames'];
+  /** Só para malha em T-pose (ver `ImportedRigOptions.armRest`). */
+  armRest?: ImportedRigOptions['armRest'];
 }
+
+/** O que o carregamento precisa além do arquivo e da altura: o próprio `ImportedChassisConfig` serve. */
+type PreloadOptions = Pick<ImportedChassisConfig, 'rotationY' | 'boneNames' | 'armRest'>;
 
 export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>> = {
   genesis01: {
@@ -71,6 +76,8 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
   marauder: {
     url: `${import.meta.env.BASE_URL}models/marauder.glb`,
     rotationY: Math.PI,
+    // O .glb vem em T-pose (braços abertos a 90°): sem isto a mira só rolaria o braço sobre si mesmo.
+    armRest: { lower: 1.3, forward: 0.5 },
     boneNames: {
       hips: 'mixamorigHips',
       head: 'mixamorigNeck',
@@ -90,10 +97,10 @@ const pending = new Map<string, Promise<ImportedMechAsset>>();
 const key = (url: string, targetHeight: number) => `${url}@${targetHeight}`;
 
 /** Dispara o carregamento sem esperar (chame cedo — boot do jogo — pra já estar pronto quando alguém pedir). */
-export function preloadMechAsset(url: string, targetHeight: number, rotationY?: number, boneNames?: ImportedRigOptions['boneNames']): void {
+export function preloadMechAsset(url: string, targetHeight: number, options: PreloadOptions = {}): void {
   const k = key(url, targetHeight);
   if (cache.has(k) || pending.has(k)) return;
-  const p = preloadImportedMechAsset(url, { targetHeight, rotationY, boneNames });
+  const p = preloadImportedMechAsset(url, { targetHeight, rotationY: options.rotationY, boneNames: options.boneNames, armRest: options.armRest });
   pending.set(k, p);
   p.then((asset) => { cache.set(k, asset); pending.delete(k); })
     .catch((err) => { pending.delete(k); console.error(`falha ao carregar rig importado (${url}):`, err); });
@@ -106,9 +113,9 @@ export function tryInstantiateMechRig(url: string, targetHeight: number): MechRi
 }
 
 /** Espera o preload terminar (dispara se ainda não tiver disparado) — só onde dá pra esperar (abrir o Hangar). */
-export async function whenMechAssetReady(url: string, targetHeight: number, rotationY?: number, boneNames?: ImportedRigOptions['boneNames']): Promise<void> {
+export async function whenMechAssetReady(url: string, targetHeight: number, options: PreloadOptions = {}): Promise<void> {
   const k = key(url, targetHeight);
   if (cache.has(k)) return;
-  preloadMechAsset(url, targetHeight, rotationY, boneNames);
+  preloadMechAsset(url, targetHeight, options);
   await pending.get(k);
 }
