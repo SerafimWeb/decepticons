@@ -25,7 +25,8 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `claude/m5-fire-authority` | M5 corrigido: raycast paralelo removido (só acertava a menos de 1,5 m e dobraria o dano), `EVENT.HIT` emitido do dano que o servidor já aplica, 2 testes novos; fichas `SPECS_*` com aviso de estimativas; landing sem a frase "Testado em rede fraca. Sem lag." Ver `FINDINGS.md` (M5) | #146 | 01/10 |
+| `claude/marauder-rig` | Conclui o Marauder que o Gemini deixou na metade (crédito acabou): leva o GLB final com a armadura ligada ao esqueleto (commit 22f8836 do `gemini/marauder-rig-fix`, que fica obsoleto: o resto dele já está na `main`). Capturas do Hangar em `arte/marauder-*.png`; **animação em partida real ainda não verificada**, o dono testa: Hangar → MARAUDER | a abrir | 01/10 |
+| `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
 | `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |
 | — | **Nada fora da `main` (28/09).** O login e a gravação entraram (#115, #117); o #110 virou obsoleto (só um retalho do `ESTADO_ATUAL.md`) e foi fechado; e os três branches órfãos do Gemini de 25/09 — `primeira-partida`, `setas-inimigos`, `sons-androides`, sem PR e com o conteúdo refeito na `main` — foram declarados mortos e apagados (regra 15). | — | 28/09 |
@@ -283,6 +284,11 @@
   - **Consolidação de Ramos UI (`NetHud`, `KillBanner`, `RoundOverlay`)**: Interfaces do multiplayer online (M6-UI) unificadas no branch `gemini/modo-hud-audio`.
   - **Limpeza no Harness (`scripts/test.mjs`)**: Removida redundância `VITEST_MAX_WORKERS` do env (mantendo a flag `--maxWorkers=1`).
 ---
+
+## ÚLTIMA SESSÃO FEZ (01/10, PR #146 na `main`)
+- **M5 corrigido: o servidor já decidia o acerto; o raycast paralelo estava errado e saiu (Claude):** o M5-v1 (já na `main`) só acertava a menos de 1,5 m (projeção com sinal invertido) e dobraria o dano (o projétil já causa dano); o M5-v2 nunca usava o histórico na decisão de acerto. Removidos; o `ArenaRoom` agora emite `EVENT.HIT` a partir de `Match.onMechHit` (uma via de dano), com 2 testes de simulação. **Compensação de latência: AUSENTE** (precisa de decisão de projeto, `FINDINGS.md`). **Pendente (Gemini, `ui/`):** o cliente online ler o `EVENT.HIT`. Onde ver: nada no site ainda (PARCIAL em `STATUS_REAL.md`).
+- **Honestidade (R13/R17):** a landing perdeu a frase "Testado em rede fraca. Sem lag." (não existe teste de rede fraca); as fichas `SPECS_*.md` ganharam aviso de que seus números são estimativas, com as afirmações falsas corrigidas; o corpo do PR #146 deixou de citar teste manual que não houve. Detalhes em `HISTORICO_DE_DECISOES.md`.
+- **Ideias novas do dono, registradas e não aprovadas (`ROADMAP.md`, IDEIAS):** jogadas/combos por Mech (como as peças do xadrez; exemplo: 2 saltos + dash para as costas e tiro de "rabo") e facção escolhida pelo jogador (começar com 2 ou 3). A mensagem sobre as jogadas veio cortada em "(alguns…"; faltam os outros exemplos.
 
 ## ÚLTIMA SESSÃO FEZ (30/09)
 - **Integração de três novos Mechs de malha importada (Gemini):** pedido do dono, Lancer-L1, LR-7L Bastion e Quadra-V2 foram inseridos no Hangar. `importedMechAssets.ts` ganhou o objeto genérico `ImportedChassisConfig` para aceitar `boneNames`, permitindo mapear o rig customizado da Tripo3D pros ossos padrão Mixamo (Lancer-L1 e LR-7L Bastion). `Game.ts` e `HangarScene.ts` agora repassam as informações de ossos no carregamento assíncrono e síncrono. `chassis.ts` e o Hangar UI ganharam definições das especificações: Lancer-L1 (médio), LR-7L Bastion (pesado) e Quadra-V2 (médio). Validação de assets e `npm run check` verde (budget de build respeitado). Onde ver: Hangar → LANCER-L1, LR-7L BASTION ou QUADRA-V2.
