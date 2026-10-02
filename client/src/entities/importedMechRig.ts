@@ -3,12 +3,26 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import type { MechRig, RigJoint } from './MechBase';
 
+const _axisX = new THREE.Vector3(1, 0, 0);
+const _axisY = new THREE.Vector3(0, 1, 0);
+const _axisZ = new THREE.Vector3(0, 0, 1);
+
 /**
  * Nó de rig sobre um osso importado (glTF/Mixamo): guarda a rotação de repouso e, na primeira leitura,
- * calcula em que eixo LOCAL desse osso caem os eixos X/Y do MUNDO. Sem isso, `rotation.x = valor` (o que
+ * calcula em que eixo LOCAL desse osso caem os eixos X/Y do MECH. Sem isso, `rotation.x = valor` (o que
  * toda animação em `MechBase.ts` sempre assumiu) giraria o osso no eixo que o exportador escolheu pra ele —
  * quase nunca o mesmo "pra frente" que o resto do jogo usa. Achado construindo o protótipo: girar direto
  * o osso Mixamo por um ângulo "absoluto" chutado fazia a perna sumir de quadro (girava pro lado errado).
+ *
+ * `frame` é o referencial do Mech: o grupo que o jogo gira pelo yaw (`MechRig.model`), com a frente em -Z.
+ * **Nunca** passe a cena importada já girada por `rotationY`: ela é o referencial do ARQUIVO (frente em
+ * +Z), e medir os eixos nela inverte o sentido de toda a animação (a perna balança para trás, o joelho
+ * dobra para a frente e a mira abaixa o braço quando o jogador olha para cima). Foi o "anda de costas" do
+ * Marauder, e valia para os quatro chassis importados.
+ *
+ * `restOffset` (opcional) re-posa o osso, no referencial do Mech, ANTES de congelar o repouso: serve para
+ * malhas exportadas em T-pose, cujos braços abertos nunca sairiam do lugar com a mira (girar um braço
+ * horizontal em X é só rolar o braço sobre si mesmo).
  */
 export class AxisCorrectedJoint implements RigJoint {
   readonly position: THREE.Vector3;
@@ -21,22 +35,28 @@ export class AxisCorrectedJoint implements RigJoint {
   private angleY = 0;
   readonly rotation: { x: number; y: number };
 
-  constructor(private readonly bone: THREE.Object3D, model: THREE.Object3D) {
+  constructor(private readonly bone: THREE.Object3D, frame: THREE.Object3D, restOffset?: THREE.Quaternion) {
+    frame.updateWorldMatrix(true, false);
+    const frameQuat = frame.getWorldQuaternion(new THREE.Quaternion());
+
+    if (restOffset) {
+      // local' = P⁻¹ · (F · offset · F⁻¹) · P · local: o offset vale no referencial do Mech, não no do osso.
+      bone.updateWorldMatrix(true, false);
+      const parentQuat = bone.parent ? bone.parent.getWorldQuaternion(new THREE.Quaternion()) : new THREE.Quaternion();
+      const world = frameQuat.clone().multiply(restOffset).multiply(frameQuat.clone().invert());
+      bone.quaternion.premultiply(parentQuat.clone().invert().multiply(world).multiply(parentQuat));
+    }
+
     bone.updateWorldMatrix(true, false);
-    model.updateWorldMatrix(true, false);
-    
     const worldQuat = bone.getWorldQuaternion(new THREE.Quaternion());
     const inv = worldQuat.clone().invert();
     this.restQuat = bone.quaternion.clone();
-    
-    // Calcula o eixo X e Y globais *relativos ao modelo*, não absolutos do mundo.
-    // Assim, se o modelo estiver virado 180 graus (rotationY: Math.PI), os joelhos continuam dobrando pra frente.
-    const modelQuat = model.getWorldQuaternion(new THREE.Quaternion());
-    const modelX = new THREE.Vector3(1, 0, 0).applyQuaternion(modelQuat);
-    const modelY = new THREE.Vector3(0, 1, 0).applyQuaternion(modelQuat);
-    
-    this.localXAxis = modelX.applyQuaternion(inv).normalize();
-    this.localYAxis = modelY.applyQuaternion(inv).normalize();
+
+    const frameX = _axisX.clone().applyQuaternion(frameQuat);
+    const frameY = _axisY.clone().applyQuaternion(frameQuat);
+
+    this.localXAxis = frameX.applyQuaternion(inv).normalize();
+    this.localYAxis = frameY.applyQuaternion(inv).normalize();
     this.position = bone.position;
     const self = this;
     this.rotation = {
@@ -75,6 +95,12 @@ export interface ImportedRigOptions {
   rotationY?: number;
   /** Nomes alternativos de osso, pra malhas que não seguem a convenção `mixamorig:`. */
   boneNames?: Partial<Record<keyof typeof DEFAULT_BONES, string>>;
+  /**
+   * Só para malha exportada em T-pose (braços abertos): baixa os braços `lower` radianos (90° = pendurados) e
+   * os leva `forward` radianos para a frente. O lado de cada braço sai da geometria (de que lado do Mech a
+   * mão está), não do nome do osso.
+   */
+  armRest?: { lower: number; forward: number };
 }
 
 /**
@@ -104,6 +130,7 @@ export interface ImportedMechAsset {
   readonly hipHeight: number;
   readonly naturalHeight: number;
   readonly naturalMinY: number;
+  readonly armRest?: ImportedRigOptions['armRest'];
 }
 
 /**
@@ -136,7 +163,22 @@ export async function preloadImportedMechAsset(url: string, options: ImportedRig
   let hipHeight = 0;
   scene.traverse((o) => { if (o.name === names.hips) hipHeight = o.position.y; });
 
-  return { scene, boneNames: names, hipHeight, naturalHeight: size.y, naturalMinY: box.min.y };
+  return { scene, boneNames: names, hipHeight, naturalHeight: size.y, naturalMinY: box.min.y, armRest: options.armRest };
+}
+
+/**
+ * Rotação de repouso (no referencial do Mech) que baixa e adianta um braço de malha em T-pose. `undefined` se não
+ * há `armRest` ou se o braço não está aberto para o lado (o osso já vem pendurado: não se mexe).
+ */
+function armRestOffset(arm: THREE.Object3D, hand: THREE.Object3D, frame: THREE.Object3D, rest: ImportedRigOptions['armRest']): THREE.Quaternion | undefined {
+  if (!rest) return undefined;
+  frame.updateMatrixWorld(true);
+  const d = hand.getWorldPosition(new THREE.Vector3()).sub(arm.getWorldPosition(new THREE.Vector3()));
+  d.applyQuaternion(frame.getWorldQuaternion(new THREE.Quaternion()).invert());
+  if (Math.abs(d.x) < 0.8 * d.length()) return undefined;
+  const lower = new THREE.Quaternion().setFromAxisAngle(_axisZ, -Math.sign(d.x) * rest.lower);
+  const forward = new THREE.Quaternion().setFromAxisAngle(_axisX, rest.forward);
+  return forward.multiply(lower);
 }
 
 /**
@@ -214,8 +256,9 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
   
   const useAxisCorrection = true; // Habilita para todos: Mixamo e Tripo precisam normalizar o eixo X/Y local.
   
-  const createJoint = (b: THREE.Object3D): RigJoint => {
-    if (useAxisCorrection) return new AxisCorrectedJoint(b, clonedScene);
+  // O referencial dos eixos é o do Mech (`model`, que o jogo gira pelo yaw), nunca `clonedScene` (girada por rotationY).
+  const createJoint = (b: THREE.Object3D, restOffset?: THREE.Quaternion): RigJoint => {
+    if (useAxisCorrection) return new AxisCorrectedJoint(b, model, restOffset);
     return {
       name: b.name,
       rotation: b.rotation as unknown as { x: number; y: number },
@@ -232,8 +275,8 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
     pelvis: hips,
     torso: createJoint(find('torso')),
     head: headBone,
-    leftArm: createJoint(find('leftArm')),
-    rightArm: createJoint(find('rightArm')),
+    leftArm: createJoint(find('leftArm'), armRestOffset(find('leftArm'), leftHand, model, asset.armRest)),
+    rightArm: createJoint(find('rightArm'), armRestOffset(find('rightArm'), rightHand, model, asset.armRest)),
     leftLeg: { hip: createJoint(find('leftUpLeg')), knee: createJoint(find('leftLowerLeg')) },
     rightLeg: { hip: createJoint(find('rightUpLeg')), knee: createJoint(find('rightLowerLeg')) },
     muzzle,

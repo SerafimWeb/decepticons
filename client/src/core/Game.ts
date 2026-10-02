@@ -193,7 +193,7 @@ export class Game {
     const importedAsset = IMPORTED_CHASSIS[chassisId];
     if (importedAsset) {
       const { whenMechAssetReady } = await import('../entities/importedMechAssets');
-      await whenMechAssetReady(importedAsset.url, CHASSIS[chassisId].height, importedAsset.rotationY, importedAsset.boneNames);
+      await whenMechAssetReady(importedAsset.url, CHASSIS[chassisId].height, importedAsset);
     }
     return new Game(container, physics, hangar);
   }
@@ -207,7 +207,7 @@ export class Game {
     // Carrega chassis de malha importada (assíncrono, dispara cedo — CHASSIS[id].height é a mesma
     // stat usada na hora de montar o Mech de verdade, então o cache bate certo).
     for (const [chassisId, asset] of Object.entries(IMPORTED_CHASSIS)) {
-      preloadMechAsset(asset.url, CHASSIS[chassisId as ChassisId].height, asset.rotationY, asset.boneNames);
+      preloadMechAsset(asset.url, CHASSIS[chassisId as ChassisId].height, asset);
     }
 
     // Carrega samples de áudio (assíncrono)

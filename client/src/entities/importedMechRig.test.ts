@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { AxisCorrectedJoint } from './importedMechRig';
+import type { MechRig } from './MechBase';
+import { AxisCorrectedJoint, instantiateImportedMechRig, type ImportedMechAsset } from './importedMechRig';
 
 /**
  * `GLTFLoader` precisa de `self` (só existe em navegador/worker) e decodifica textura via `Image`,
@@ -82,5 +83,159 @@ describe('importedMechRig: correção de eixo num osso importado', () => {
     const joint = new AxisCorrectedJoint(bone, model);
     joint.position.z = 0.5;
     expect(bone.position.z).toBeCloseTo(0.5, 6);
+  });
+});
+
+function boneAt(name: string, x: number, y: number, z: number): THREE.Bone {
+  const bone = new THREE.Bone();
+  bone.name = name;
+  bone.position.set(x, y, z);
+  return bone;
+}
+
+/**
+ * Esqueleto mínimo no referencial do ARQUIVO (personagem olhando para +Z, então a esquerda dele é +X), girado 180°
+ * exatamente como `preloadImportedMechAsset` faz com `rotationY: Math.PI`. É o caso dos quatro chassis importados.
+ * `tpose`: braços abertos para os lados (como o Marauder); senão, pendurados.
+ */
+function syntheticAsset(o: { tpose: boolean; armRest?: ImportedMechAsset['armRest'] }): ImportedMechAsset {
+  const scene = new THREE.Group();
+  const hips = boneAt('Hips', 0, 1, 0);
+  const spine = boneAt('Spine', 0, 0.3, 0);
+  const head = boneAt('Head', 0, 0.5, 0);
+  const lArm = boneAt('LArm', 0.3, 0.3, 0);
+  const rArm = boneAt('RArm', -0.3, 0.3, 0);
+  const lHand = o.tpose ? boneAt('LHand', 0.8, 0, 0) : boneAt('LHand', 0, -0.8, 0);
+  const rHand = o.tpose ? boneAt('RHand', -0.8, 0, 0) : boneAt('RHand', 0, -0.8, 0);
+  const lUp = boneAt('LUpLeg', 0.2, 0, 0);
+  const lLow = boneAt('LLeg', 0, -0.5, 0);
+  const lFoot = boneAt('LFoot', 0, -0.5, 0);
+  const rUp = boneAt('RUpLeg', -0.2, 0, 0);
+  const rLow = boneAt('RLeg', 0, -0.5, 0);
+  const rFoot = boneAt('RFoot', 0, -0.5, 0);
+  hips.add(spine, lUp, rUp);
+  spine.add(head, lArm, rArm);
+  lArm.add(lHand);
+  rArm.add(rHand);
+  lUp.add(lLow);
+  lLow.add(lFoot);
+  rUp.add(rLow);
+  rLow.add(rFoot);
+  scene.add(hips);
+  scene.rotation.y = Math.PI;
+  scene.updateMatrixWorld(true);
+  return {
+    scene,
+    boneNames: {
+      hips: 'Hips',
+      head: 'Head',
+      torso: 'Spine',
+      leftArm: 'LArm',
+      rightArm: 'RArm',
+      leftUpLeg: 'LUpLeg',
+      leftLowerLeg: 'LLeg',
+      rightUpLeg: 'RUpLeg',
+      rightLowerLeg: 'RLeg',
+      leftHand: 'LHand',
+      rightHand: 'RHand',
+    },
+    hipHeight: 1,
+    naturalHeight: 2,
+    naturalMinY: 0,
+    armRest: o.armRest,
+  };
+}
+
+const at = (rig: MechRig, name: string): THREE.Vector3 => {
+  let found: THREE.Object3D | undefined;
+  rig.model.traverse((n) => {
+    if (n.name === name) found = n;
+  });
+  return found!.getWorldPosition(new THREE.Vector3());
+};
+
+/** Do ombro à mão, no referencial do Mech (frente em -Z), normalizado. */
+const armDir = (rig: MechRig, arm: string, hand: string): THREE.Vector3 => at(rig, hand).sub(at(rig, arm)).normalize();
+
+describe('importedMechRig: a animação do jogo vale para malha importada virada 180° (a mesma convenção do rig procedural)', () => {
+  it('hip positivo leva o joelho para a FRENTE (-Z); o balanço não pode sair invertido', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: false }), 2);
+    const before = at(rig, 'LLeg');
+    rig.leftLeg.hip.rotation.x = 0.5;
+    const after = at(rig, 'LLeg');
+    expect(after.z - before.z).toBeLessThan(-0.1);
+    expect(Math.abs(after.x - before.x)).toBeLessThan(1e-6);
+  });
+
+  it('joelho negativo dobra o pé para TRÁS (+Z), como um joelho de verdade', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: false }), 2);
+    const before = at(rig, 'LFoot');
+    rig.leftLeg.knee.rotation.x = -0.8;
+    expect(at(rig, 'LFoot').z - before.z).toBeGreaterThan(0.1);
+  });
+
+  it('pitch positivo (olhar para cima) leva a mão do braço pendurado para a frente e para cima', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: false }), 2);
+    const before = at(rig, 'LHand');
+    rig.leftArm.rotation.x = 0.5;
+    const after = at(rig, 'LHand');
+    expect(after.z - before.z).toBeLessThan(-0.1);
+    expect(after.y - before.y).toBeGreaterThan(0.05);
+  });
+
+  it('o sentido também vale depois de o Mech girar o yaw (os eixos são do Mech, não do mundo)', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: false }), 2);
+    const root = new THREE.Group();
+    root.add(rig.model);
+    root.rotation.y = Math.PI / 2; // frente do Mech passa a ser -X
+    root.updateMatrixWorld(true);
+    const before = at(rig, 'LLeg');
+    rig.leftLeg.hip.rotation.x = 0.5;
+    root.updateMatrixWorld(true);
+    const after = at(rig, 'LLeg');
+    expect(after.x - before.x).toBeLessThan(-0.1);
+    expect(Math.abs(after.z - before.z)).toBeLessThan(1e-6);
+  });
+});
+
+describe('importedMechRig: malha em T-pose (Marauder) com armRest', () => {
+  it('sem armRest o braço fica aberto e a mira não o move: é o defeito que o armRest resolve', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true }), 2);
+    expect(Math.abs(armDir(rig, 'LArm', 'LHand').x)).toBeGreaterThan(0.99);
+    const before = at(rig, 'LHand');
+    rig.leftArm.rotation.x = 0.5;
+    expect(at(rig, 'LHand').distanceTo(before)).toBeLessThan(1e-6);
+  });
+
+  it('com armRest os dois braços ficam pendurados e adiantados, simétricos, e a mira volta a mexê-los', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: { lower: 1.3, forward: 0.5 } }), 2);
+    const left = armDir(rig, 'LArm', 'LHand');
+    const right = armDir(rig, 'RArm', 'RHand');
+    for (const d of [left, right]) {
+      expect(d.y).toBeLessThan(-0.7); // para baixo
+      expect(d.z).toBeLessThan(-0.2); // e para a frente (-Z)
+    }
+    expect(left.x).toBeLessThan(0); // o braço esquerdo do personagem fica do lado -X depois da rotação de 180°
+    expect(right.x).toBeGreaterThan(0);
+    expect(left.x).toBeCloseTo(-right.x, 6);
+
+    const before = at(rig, 'LHand');
+    rig.leftArm.rotation.x = 0.5;
+    const after = at(rig, 'LHand');
+    expect(after.y - before.y).toBeGreaterThan(0.05);
+    expect(after.z - before.z).toBeLessThan(-0.05);
+  });
+
+  it('armRest não mexe em braço que já vem pendurado', () => {
+    const plain = instantiateImportedMechRig(syntheticAsset({ tpose: false }), 2);
+    const rest = instantiateImportedMechRig(syntheticAsset({ tpose: false, armRest: { lower: 1.3, forward: 0.5 } }), 2);
+    expect(at(rest, 'LHand').distanceTo(at(plain, 'LHand'))).toBeLessThan(1e-6);
+  });
+
+  it('as pernas seguem a mesma convenção com armRest ligado', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: { lower: 1.3, forward: 0.5 } }), 2);
+    const before = at(rig, 'RLeg');
+    rig.rightLeg.hip.rotation.x = 0.5;
+    expect(at(rig, 'RLeg').z - before.z).toBeLessThan(-0.1);
   });
 });

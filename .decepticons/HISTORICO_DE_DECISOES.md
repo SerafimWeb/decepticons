@@ -1,5 +1,12 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-01] Rigs importados: eixos no referencial do Mech, e braços do Marauder em repouso (Claude)
+**Relato do dono, jogando o Marauder:** "agora tá se movendo! porém continua de braços abertos! e a movimentação das pernas parece que estão andando pra trás".
+**Causa 1 (os quatro chassis importados):** `AxisCorrectedJoint` medindo os eixos no referencial do arquivo (a cena já girada 180° por `rotationY`) em vez do referencial do Mech. Todo ângulo da animação saía com o sinal trocado. Medido nos `.glb` reais antes e depois (tabela em `FINDINGS.md`).
+**Causa 2 (só o Marauder):** o `.glb` vem em T-pose; girar um braço horizontal em X só o rola. Novo `armRest` por chassi baixa e adianta o braço no referencial do Mech, com o lado vindo da geometria.
+**Decisão:** o referencial dos eixos é sempre o `model` do rig (o que o jogo gira pelo yaw). Teste de eixo e sinal só vale com modelo **girado**, como o de produção. Os valores de `armRest` (1,3 rad para baixo, 0,5 rad para a frente) são gosto: braços pendurados e levemente adiantados, como os outros chassis importados. Alternativa a decidir pelo dono: braços apontados para a frente, como o Vector-09 (`forward` perto de 1,4).
+**Ideias do dono na mesma mensagem:** combos com rolar lateralmente e voar para atacar de cima para baixo, registrados em `ROADMAP.md` (IDEIAS).
+
 ## [2026-10-01] M5: raycast paralelo removido; o evento HIT sai do dano que o servidor já aplica (Claude)
 **Contexto:** ao concluir o M5-v2 (compensação de latência) e rodar o código a sério, o raycast do M5-v1 (já na `main`) se mostrou errado. Detalhes e números em `FINDINGS.md` (seção M5).
 **Decisão:** remover `Match.fireWithHitDetection`, `findHitPart`, o histórico de posições e o parâmetro `room` do `NetPilot`; ligar `Match.onMechHit` ao `EVENT.HIT` no `ArenaRoom`. O servidor já era autoritativo no acerto (projétil por raycast de segmento + dano por parte); faltava só avisar os clientes. Compensação de latência passa a **AUSENTE** (`STATUS_REAL.md`) até haver decisão de projeto (projétil físico × hitscan, mapa de tick, histórico em pool, teto de rebobinada).
