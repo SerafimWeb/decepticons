@@ -33,6 +33,11 @@ import {
   type WavePlan,
 } from './SurvivalWaves';
 
+interface PositionHistory {
+  tick: number;
+  positions: Map<MechBase, THREE.Vector3>;
+}
+
 /**
  * IAs rebeldes na arena: até 3 Mechs, 3 andróides de combate e 1 técnico (ou, na missão, o Colossus de
  * escala 3 no lugar do técnico). Teto: 7 bots + o jogador = 8 character controllers, o tamanho de sala do jogo (G11).
@@ -125,6 +130,8 @@ export class Match {
   readonly pilots: Pilot[] = [];
   /** Mechs de gente (os bots caçam estes). */
   readonly players: MechBase[] = [];
+  /** M5-v2: Position history for latency compensation (last ~12 frames, 200ms buffer). */
+  private positionHistory: PositionHistory[] = [];
 
   /** Acerto em Mech (depois da regra): HUD, som, indicador de dano. */
   onMechHit?: (e: MechHitEvent) => void;
@@ -422,11 +429,10 @@ export class Match {
     shooter: MechBase,
     weapon: Readonly<typeof shooter.loadout.primary>,
     onHit?: (target: MechBase, part: number, damage: number) => void,
+    shooterTickWhenFired?: number,
   ): { target: MechBase; part: number; damage: number } | null {
-    const maxDist = 200; // raycast limit
+    const maxDist = 200;
     const rayDir = direction.clone().normalize();
-
-    // Simple raycast: check all Mechs for line-of-sight hit
     let closestDist = maxDist;
     let hitTarget: MechBase | null = null;
     let hitPart = 0;
@@ -435,8 +441,8 @@ export class Match {
     for (const mech of this.bots.mechs) {
       if (mech === shooter || !mech.alive) continue;
 
-      // Raycast: check if ray intersects Mech capsule
-      const pos = mech.simPosition;
+      // M5-v2: Use historical position for latency compensation
+      const pos = shooterTickWhenFired ? this.getHistoricalPosition(mech, shooterTickWhenFired) : mech.simPosition;
       const part = this.findHitPart(mech, origin, rayDir, maxDist);
       if (part >= 0) {
         const dx = pos.x - origin.x;
@@ -483,6 +489,27 @@ export class Match {
       return height > -0.5 ? 2 : 3; // arms/torso (simplified)
     }
     return -1;
+  }
+
+  recordPositionHistory(tick: number): void {
+    if (this.positionHistory.length > 12) this.positionHistory.shift();
+    const positions = new Map<MechBase, THREE.Vector3>();
+    for (const mech of this.bots.mechs) positions.set(mech, mech.simPosition.clone());
+    this.positionHistory.push({ tick, positions });
+  }
+
+  getHistoricalPosition(mech: MechBase, targetTick: number): THREE.Vector3 {
+    let closest: PositionHistory | null = null;
+    let minDiff = Infinity;
+    for (const entry of this.positionHistory) {
+      const diff = Math.abs(entry.tick - targetTick);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = entry;
+      }
+    }
+    if (closest && closest.positions.has(mech)) return closest.positions.get(mech)!.clone();
+    return mech.simPosition.clone();
   }
 }
 
