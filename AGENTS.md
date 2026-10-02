@@ -106,6 +106,7 @@ npm run dev        # http://localhost:5173
 npm test           # testes de simulação (Vitest, no Node)
 npm run check      # typecheck + testes + build + budget + boot headless (obrigatório antes de push)
 npm run smoke:dev  # boot headless contra o dev server
+npm run mech:inspecionar -- arquivo.glb   # confere um robô importado (contrato, convenção da animação, foto) e sugere o IMPORTED_CHASSIS
 npm run painel     # sala de controle (novidades, equipe, mesa do Dan, fluxo, fichas, evolução, rota, frentes, decisões) em .tmp/painel/painel.html
 npm run server     # servidor de jogo do multiplayer em ws://localhost:2567/?sala=ARENA (DEPLOY.md)
 npm run site       # monta o site em .tmp/site/ (landing, oficina/, sala-de-controle/, jogar/); `-- --capturas` fotografa o jogo; `-- --check` testa em /cybermech/

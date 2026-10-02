@@ -123,7 +123,7 @@ export interface ImportedRigOptions {
  * de expor `.name`. O arquivo exportado ainda tem "mixamorig:Hips" no JSON cru; só depois de carregado
  * no Three.js é que vira "mixamorigHips". Achado depurando o primeiro carregamento real no dev server.
  */
-const DEFAULT_BONES = {
+export const DEFAULT_BONES = {
   hips: 'mixamorigHips',
   head: 'mixamorigHead',
   torso: 'mixamorigSpine1',

@@ -18,6 +18,7 @@
     "test": "node scripts/test.mjs",
     "painel": "node scripts/painel.mjs",
     "site": "node scripts/site.mjs",
+    "mech:inspecionar": "node scripts/inspecionar-mech.mjs",
     "server": "node scripts/server.mjs"
   },
   "dependencies": {

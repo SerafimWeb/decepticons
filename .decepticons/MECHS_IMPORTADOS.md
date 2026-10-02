@@ -15,7 +15,7 @@
 | Passada de costas, joelho e mira invertidos (nos quatro chassis) | os eixos eram medidos no referencial do arquivo, não no do Mech | referencial = `model` do rig (`FINDINGS.md`, 01/10) |
 | Robô invisível, escala 10⁻³⁷ | malhas ocultas da armadura com limites absurdos na `Box3` | `Box3` só de `isMesh` (registro do Gemini, 30/09) |
 | Malha "amassada" | skin quebrado ao clonar uma cena já escalada | cena dentro de um `Group`, escala no grupo (idem) |
-| Armadura parada no ar | malha **sem skin** (`skinned: 0` no `.glb` antigo do Marauder) | arquivo refeito |
+| Armadura parada no ar | malha **sem skin** (`skinned: 0` no `.glb` antigo do Marauder) | arquivo refeito; o inspetor (§5) acusa `sem-skin` |
 | Braços abertos | o Mixamo exporta em T-pose | `armRest` |
 | Mão com dedos que não segura nada; arma que não troca | o modelo não tem arma (ou traz uma fixa) | encaixe de arma (§4) |
 
@@ -99,10 +99,21 @@ lista de `weaponModels.test.ts`.
 1. **Gerar** com o pedido da §6.
 2. **Rigar** (Mixamo): em A-pose se o serviço aceitar; senão T-pose, e o `armRest` resolve.
 3. **Registrar:** `CHASSIS` e `ARM_SLOTS` (`entities/chassis.ts`), `IMPORTED_CHASSIS` (§3) e o Hangar (`ui/HangarMenu.ts`: título, classe, sigla).
-4. **Conferir antes do PR:** o Hangar de frente e de três quartos, e o robô andando e mirando para cima e para baixo; guardar as
-   capturas em `arte/` (regra 16 do `AGENTS.md`). Um inspetor automático (`npm run mech:inspecionar`) é o próximo passo
-   (`ROADMAP.md`); até lá a conferência é manual.
-5. **Teste:** o robô novo passa pelo mesmo caminho de `importedMechRig.test.ts`. Regra nova de eixo ou de pose se testa com
+4. **Inspecionar o arquivo, antes de escrever código:**
+   ```
+   npm run mech:inspecionar -- client/public/models/novo.glb --id novo
+   ```
+   Carrega o `.glb` com o mesmo carregador do jogo e imprime: tamanho do arquivo, triângulos, malhas e skin; o esqueleto (Mixamo, Tripo
+   ou desconhecido) e os ossos que faltam; antebraço e dedos; a pose de repouso (T-pose, A-pose ou pendurado); para onde o robô olha
+   (com a certeza da medida); os **achados** (ERRO, AVISO, info); a **checagem da convenção da animação** com a sugestão aplicada; e a
+   **entrada pronta do `IMPORTED_CHASSIS`**. Fotografa o robô em `.tmp/inspecao/<id>/inspecao.png` (frente, três quartos, lado, costas,
+   dois passos e mira para cima e para baixo, com as armas encaixadas). Sai com código 1 se achar erro. Exemplo em `arte/inspecao-marauder.png`.
+   Limites: a frente vem de uma medida do pé, que no Marauder (garra simétrica) fica fraca; quando a certeza não é "medida", o inspetor
+   assume +Z (padrão glTF e Mixamo) e manda conferir o painel "frente" da foto, que deve mostrar a frente do robô.
+   A convenção usa sondas presas nos ossos, então vale para qualquer pose de repouso.
+5. **Conferir antes do PR:** o Hangar de frente e de três quartos, e o robô andando e mirando para cima e para baixo; guardar as
+   capturas em `arte/` (regra 16 do `AGENTS.md`).
+6. **Teste:** o robô novo passa pelo mesmo caminho de `importedMechRig.test.ts`. Regra nova de eixo ou de pose se testa com
    modelo **girado**: o teste com modelo sem rotação aprovou o erro dos quatro chassis.
 
 ## 6. Pedido para o gerador (modelo de texto)
