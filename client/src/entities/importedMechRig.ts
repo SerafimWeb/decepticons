@@ -2,10 +2,23 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import type { MechRig, RigJoint } from './MechBase';
+import { createWeaponMounts } from './weaponMount';
 
 const _axisX = new THREE.Vector3(1, 0, 0);
 const _axisY = new THREE.Vector3(0, 1, 0);
 const _axisZ = new THREE.Vector3(0, 0, 1);
+
+/**
+ * Gira `bone` em torno do pivô dele por `offset`, dado no referencial do Mech (`frameQuat`), e não no do osso;
+ * os filhos acompanham. É a conta de re-posar um osso exportado em outra pose (T-pose) antes de ele virar o repouso.
+ * local' = P⁻¹ · (F · offset · F⁻¹) · P · local.
+ */
+function poseInFrame(bone: THREE.Object3D, frameQuat: THREE.Quaternion, offset: THREE.Quaternion): void {
+  bone.updateWorldMatrix(true, false);
+  const parentQuat = bone.parent ? bone.parent.getWorldQuaternion(new THREE.Quaternion()) : new THREE.Quaternion();
+  const world = frameQuat.clone().multiply(offset).multiply(frameQuat.clone().invert());
+  bone.quaternion.premultiply(parentQuat.clone().invert().multiply(world).multiply(parentQuat));
+}
 
 /**
  * Nó de rig sobre um osso importado (glTF/Mixamo): guarda a rotação de repouso e, na primeira leitura,
@@ -39,13 +52,7 @@ export class AxisCorrectedJoint implements RigJoint {
     frame.updateWorldMatrix(true, false);
     const frameQuat = frame.getWorldQuaternion(new THREE.Quaternion());
 
-    if (restOffset) {
-      // local' = P⁻¹ · (F · offset · F⁻¹) · P · local: o offset vale no referencial do Mech, não no do osso.
-      bone.updateWorldMatrix(true, false);
-      const parentQuat = bone.parent ? bone.parent.getWorldQuaternion(new THREE.Quaternion()) : new THREE.Quaternion();
-      const world = frameQuat.clone().multiply(restOffset).multiply(frameQuat.clone().invert());
-      bone.quaternion.premultiply(parentQuat.clone().invert().multiply(world).multiply(parentQuat));
-    }
+    if (restOffset) poseInFrame(bone, frameQuat, restOffset);
 
     bone.updateWorldMatrix(true, false);
     const worldQuat = bone.getWorldQuaternion(new THREE.Quaternion());
@@ -97,10 +104,17 @@ export interface ImportedRigOptions {
   boneNames?: Partial<Record<keyof typeof DEFAULT_BONES, string>>;
   /**
    * Só para malha exportada em T-pose (braços abertos): baixa os braços `lower` radianos (90° = pendurados) e
-   * os leva `forward` radianos para a frente. O lado de cada braço sai da geometria (de que lado do Mech a
-   * mão está), não do nome do osso.
+   * os leva `forward` radianos para a frente. `elbow` (opcional) dobra o antebraço para a frente por mais
+   * tantos radianos: com ~90° menos o `forward` o antebraço fica na horizontal, na pose de arma em punho. O
+   * lado de cada braço sai da geometria (de que lado do Mech a mão está), não do nome do osso.
    */
-  armRest?: { lower: number; forward: number };
+  armRest?: { lower: number; forward: number; elbow?: number };
+  /**
+   * Encaixes de arma nos pulsos (`weaponMount.ts`): esconde as mãos e os dedos e monta, em cada braço, o módulo
+   * da arma da montagem (`MechRig.mountWeapons`). Para malha SEM arma desenhada; quem já traz a arma no modelo
+   * (Gênesis, Bastion) não liga isto.
+   */
+  weaponMounts?: boolean;
 }
 
 /**
@@ -131,6 +145,7 @@ export interface ImportedMechAsset {
   readonly naturalHeight: number;
   readonly naturalMinY: number;
   readonly armRest?: ImportedRigOptions['armRest'];
+  readonly weaponMounts?: boolean;
 }
 
 /**
@@ -163,7 +178,7 @@ export async function preloadImportedMechAsset(url: string, options: ImportedRig
   let hipHeight = 0;
   scene.traverse((o) => { if (o.name === names.hips) hipHeight = o.position.y; });
 
-  return { scene, boneNames: names, hipHeight, naturalHeight: size.y, naturalMinY: box.min.y, armRest: options.armRest };
+  return { scene, boneNames: names, hipHeight, naturalHeight: size.y, naturalMinY: box.min.y, armRest: options.armRest, weaponMounts: options.weaponMounts };
 }
 
 /**
@@ -270,13 +285,37 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
     };
   };
 
+  const torso = createJoint(find('torso'));
+  const leftArmBone = find('leftArm');
+  const rightArmBone = find('rightArm');
+  const leftRest = armRestOffset(leftArmBone, leftHand, model, asset.armRest);
+  const rightRest = armRestOffset(rightArmBone, rightHand, model, asset.armRest);
+  const leftArm = createJoint(leftArmBone, leftRest);
+  const rightArm = createJoint(rightArmBone, rightRest);
+  // Pose de arma em punho: o antebraço (pai da mão) dobra para a frente depois de o ombro baixar o braço.
+  const elbow = asset.armRest?.elbow;
+  if (elbow) {
+    const frameQuat = model.getWorldQuaternion(new THREE.Quaternion());
+    const bend = new THREE.Quaternion().setFromAxisAngle(_axisX, elbow);
+    for (const [arm, hand, rest] of [[leftArmBone, leftHand, leftRest], [rightArmBone, rightHand, rightRest]] as const) {
+      if (rest && hand.parent && hand.parent !== arm) poseInFrame(hand.parent, frameQuat, bend);
+    }
+  }
+  const mountWeapons = asset.weaponMounts
+    ? createWeaponMounts(
+        model,
+        { forearm: rightHand.parent!, hand: rightHand, muzzle },
+        { forearm: leftHand.parent!, hand: leftHand, muzzle: leftMuzzle },
+      )
+    : undefined;
+
   return {
     model,
     pelvis: hips,
-    torso: createJoint(find('torso')),
+    torso,
     head: headBone,
-    leftArm: createJoint(find('leftArm'), armRestOffset(find('leftArm'), leftHand, model, asset.armRest)),
-    rightArm: createJoint(find('rightArm'), armRestOffset(find('rightArm'), rightHand, model, asset.armRest)),
+    leftArm,
+    rightArm,
     leftLeg: { hip: createJoint(find('leftUpLeg')), knee: createJoint(find('leftLowerLeg')) },
     rightLeg: { hip: createJoint(find('rightUpLeg')), knee: createJoint(find('rightLowerLeg')) },
     muzzle,
@@ -285,6 +324,7 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
     thrusterMaterial: hullMaterials[0] ?? new THREE.MeshStandardMaterial(),
     hullMaterials,
     hipHeight: asset.hipHeight,
+    mountWeapons,
   };
 }
 

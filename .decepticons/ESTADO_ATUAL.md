@@ -6,14 +6,14 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Online (servidor 24 h em `jogo.selvamkt.com.br`); offline (single-player: Arena + Sobrevivência + CTF) |
-| **Build** | JS 188 KB, Wasm 735 KB (gzip); FPS 60 estável em GPU integrada; 300 testes, 386 commits |
-| **Última sessão** | 01/10 (continuação): M5-stub (server fire validation); FASE 3B (3 UIs: abertura, abate, carregamento); FRENTE C (4 specs: Hangar, HUD, Audio, Render) — 100% sequencial |
-| **Próximo** | M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono testa o Marauder em partida; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
+| **Build** | JS 294 KB e Wasm 719 KB no budget do `npm run check` (teto 500 e 900); 406 testes |
+| **Última sessão** | 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
+| **Próximo** | M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; inspetor de `.glb` (`mech:inspecionar`); ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
 
-**Última atualização:** 2026-10-01 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
+**Última atualização:** 2026-10-02 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
 
 ---
 
@@ -283,6 +283,9 @@
   - **Consolidação de Ramos UI (`NetHud`, `KillBanner`, `RoundOverlay`)**: Interfaces do multiplayer online (M6-UI) unificadas no branch `gemini/modo-hud-audio`.
   - **Limpeza no Harness (`scripts/test.mjs`)**: Removida redundância `VITEST_MAX_WORKERS` do env (mantendo a flag `--maxWorkers=1`).
 ---
+
+## ÚLTIMA SESSÃO FEZ (02/10, PR do encaixe de arma na `main`)
+- **O Marauder segura armas: o punho sem dedos e o contrato do robô importado (Claude, relato do dono com captura):** *"o braço está totalmente pra baixo, MOLE e RETO, não parece que segura arma"* e *"os robôs não têm que ter DEDOS, temos que pensar um formato pras mãos e suportes de armas"*. (1) **Pose:** `armRest.elbow` dobra o antebraço para a frente (arma em punho). (2) **Punho:** as mãos e os dedos do modelo somem (osso encolhido) e o braço termina num **engate universal** (colar, flange, travas); (3) **Armas como módulos:** `weaponModels.ts` desenha plasma, casulo de foguetes, blaster e motosserra em MK I–III (uma malha por arma, em unidades de antebraço) e `weaponMount.ts` as encaixa no pulso; `MechBase` remonta no `equip`, então trocar o nível ou a arma no Hangar troca o desenho. (4) **Contrato:** `MECHS_IMPORTADOS.md` (o que o `.glb` precisa trazer, o que o código resolve, o padrão do encaixe e o roteiro do próximo robô). 10 testes novos (406 no total); com o erro reintroduzido, os de orientação e de mão falham. Provas: `arte/marauder-armas-hangar.png`, `arte/marauder-armas-poses.png`, `arte/armas-modulos.png`. **Não verificado por mim:** partida real (Pointer Lock indisponível no headless). **Gosto do dono:** a forma do engate e das armas é a primeira versão. **Só o Marauder** usa o encaixe. **Achado (R17):** o ponto de tiro da simulação vem do desenho e o servidor desenha todo Mech como Vector-09: ~1 m de diferença no Marauder (`FINDINGS.md`, sem correção).
 
 ## ÚLTIMA SESSÃO FEZ (01/10, PRs #146, #147 e o do rig na `main`)
 - **M5 corrigido: o servidor já decidia o acerto; o raycast paralelo estava errado e saiu (Claude):** o M5-v1 (já na `main`) só acertava a menos de 1,5 m (projeção com sinal invertido) e dobraria o dano (o projétil já causa dano); o M5-v2 nunca usava o histórico na decisão de acerto. Removidos; o `ArenaRoom` agora emite `EVENT.HIT` a partir de `Match.onMechHit` (uma via de dano), com 2 testes de simulação. **Compensação de latência: AUSENTE** (precisa de decisão de projeto, `FINDINGS.md`). **Pendente (Gemini, `ui/`):** o cliente online ler o `EVENT.HIT`. Onde ver: nada no site ainda (PARCIAL em `STATUS_REAL.md`).

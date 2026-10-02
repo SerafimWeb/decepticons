@@ -178,6 +178,30 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 ---
 
+### Achado: a Arma Não Aparecia no Modelo; Trocar de Arma Só Trocava Números
+
+**Descoberto:** 2026-10-02 (relato do dono: o Marauder com "braço mole e reto", sem parecer que segura arma) | **Status:** ✅ Corrigido no Marauder, 🟡 aberto nos demais | **Impacto:** a montagem do Hangar não se via no robô
+
+**Causa:** `MechBase.equip` só guardava o `Loadout` e zerava o calor; nenhum desenho mudava com a arma. Os Mechs procedurais têm o cano (direito) e o casulo (esquerdo) fixos no antebraço, para qualquer arma e nível; o Marauder importado não tinha nada, só uma mão de humano com dedos.
+
+**Correção:** o encaixe de arma no pulso (`weaponMount.ts`) e os módulos de arma (`weaponModels.ts`); a mão e os dedos somem e o desenho muda com a arma e o nível. Contrato e roteiro em `MECHS_IMPORTADOS.md`.
+
+**Ainda aberto:** só o Marauder usa o encaixe; os procedurais continuam com arma fixa no antebraço, e Gênesis, Lancer e Bastion trazem a arma no modelo.
+
+---
+
+### Limitação: o Ponto de Tiro da Simulação Vem do Desenho, e o Servidor Desenha Todo Mech como Vector-09
+
+**Descoberto:** 2026-10-02 (ao ligar a arma no Marauder) | **Status:** 🟡 Medido, não corrigido | **Impacto:** online, o tiro do Marauder nasce num ponto diferente do cano que o jogador vê
+
+**Causa:** `MechBase.muzzleLocal` é medido no desenho do rig (`rig.muzzle`, no construtor). O servidor cria o Mech de qualquer chassi como `new Vector09({ stats, loadout })` (`server/ArenaRoom.ts`), com o desenho padrão do Vector-09 escalado à altura, enquanto o cliente do jogador usa o rig do chassi (`Game.ts`). Dois desenhos, dois pontos de tiro: quebra o G14 (uma simulação só).
+
+**Medição (pés, yaw 0, Marauder, plasma MK I):** cliente (1,12; 3,49; −2,20) m, servidor (1,50; 2,73; −1,62) m: diferença de cerca de 1 m.
+
+**Correção proposta (não feita):** o ponto de tiro vira dado do chassi (`MechStats`, o mesmo no servidor e no cliente) e o desenho se alinha a ele, não o contrário. Mexe em regra de rede e em todos os chassis: precisa de decisão e de teste de simulação.
+
+---
+
 ### Fix: Os Quatro Chassis Importados Andavam e Miravam no Sentido Invertido
 
 **Descoberto:** 2026-10-01 (relato do dono: "continua de braços abertos" e "as pernas parecem andar pra trás") | **Status:** ✅ Corrigido | **Impacto:** passada de costas, joelho dobrando para o lado errado e braço abaixando ao olhar para cima, em Gênesis-01, Lancer-L1, LR-7L Bastion e Marauder

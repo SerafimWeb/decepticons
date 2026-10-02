@@ -100,6 +100,11 @@ export interface MechRig {
   /** Materiais do casco (por instância): piscam quando o Mech toma dano. */
   hullMaterials: THREE.MeshStandardMaterial[];
   hipHeight: number;
+  /**
+   * Só nos rigs com encaixe de arma nos pulsos (`weaponMount.ts`): monta no desenho as armas da montagem.
+   * Idempotente e barata; o `MechBase` a chama ao nascer e a cada `equip`. Sem ela, a arma é parte do modelo.
+   */
+  mountWeapons?: (loadout: Loadout) => void;
 }
 
 /** Onde fica o "miolo" de cada parte, a partir do grupo dela no rig (para efeitos). */
@@ -181,6 +186,7 @@ export abstract class MechBase {
     this.rightArmBaseZ = rig.rightArm.position.z;
     this.heatSink = new HeatSink(stats);
     this.armed = loadout;
+    rig.mountWeapons?.(loadout);
     this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
     this.root.updateMatrixWorld(true);
@@ -353,6 +359,7 @@ export abstract class MechBase {
    */
   equip(loadout: Loadout, keepHeat = false): void {
     this.armed = loadout;
+    this.rig.mountWeapons?.(loadout);
     if (!keepHeat) this.heatSink.reset();
   }
 
