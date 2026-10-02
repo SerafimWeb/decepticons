@@ -45,7 +45,28 @@ export class KillBanner {
       if (streak >= 2) this.el.classList.add('streak');
     }
 
+    this.playKillSound(streak);
     this.resetTimer();
+  }
+
+  private playKillSound(streak: number): void {
+    if (typeof window === 'undefined' || !window.AudioContext) return;
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    // Frequência sobe com streak (mais épico)
+    const baseFreq = 800 + streak * 150;
+    osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, ctx.currentTime + 0.2);
+
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.2);
   }
 
   private resetTimer(): void {
