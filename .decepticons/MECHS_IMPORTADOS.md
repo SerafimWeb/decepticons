@@ -16,7 +16,9 @@
 | Robô invisível, escala 10⁻³⁷ | malhas ocultas da armadura com limites absurdos na `Box3` | `Box3` só de `isMesh` (registro do Gemini, 30/09) |
 | Malha "amassada" | skin quebrado ao clonar uma cena já escalada | cena dentro de um `Group`, escala no grupo (idem) |
 | Armadura parada no ar | malha **sem skin** (`skinned: 0` no `.glb` antigo do Marauder) | arquivo refeito; o inspetor (§5) acusa `sem-skin` |
-| Braços abertos | o Mixamo exporta em T-pose | `armRest` |
+| Braços abertos | o Mixamo exporta em T-pose | `armRest` (pose por direção) |
+| Ombro "quebrado" depois de baixar o braço a 81° | a ombreira está presa ao osso do braço e gira junto; a pele suave amassa a junta (e a pele rígida, testada, vira estilhaços) | braço no máximo ~50° abaixo da horizontal, antebraço dobrado para a frente |
+| O braço saltava de 1,9 a 4,8 m ao atirar (Gênesis: 1,9 m para baixo no direito e 2,7 m para cima no esquerdo) | o coice escrevia `position.z` do osso, que tem o eixo e a unidade do arquivo | `MechRig.setRecoil`, em metros para trás |
 | Mão com dedos que não segura nada; arma que não troca | o modelo não tem arma (ou traz uma fixa) | encaixe de arma (§4) |
 
 ## 2. O contrato do arquivo
@@ -30,7 +32,7 @@
 3. **Frente em +Z, pés em Y = 0.** A escala não importa: o jogo escala pela altura do chassi em `entities/chassis.ts`.
 
 **Desejável (corta trabalho depois)**
-4. **A-pose** (braços pendurados, um pouco à frente) em vez de T-pose. T-pose funciona (`armRest`), mas deforma o ombro.
+4. **A-pose** (braços pendurados, um pouco à frente) em vez de T-pose. T-pose funciona (`armRest`), mas a ombreira costuma estar presa ao osso do braço: quanto mais o braço baixa da horizontal, mais ela gira e amassa. No Marauder, 81° ficou quebrado e 50° ficou limpo (`arte/marauder-ombro-antes-depois.png`). Peça o gerador com a ombreira separada do braço, ou presa ao tronco.
 5. **Antebraço terminando num punho liso, sem mão nem dedos e sem arma desenhada.** Mão com dedos funciona (some por
    encolhimento do osso), mas pode deixar a ponta do antebraço esticada.
 6. **Tamanho na ordem do Marauder:** ~20 mil triângulos (medido, robô com as duas armas) e 611 KB. O orçamento de download
@@ -45,12 +47,17 @@
 | `url` | o arquivo | sempre |
 | `rotationY` | `Math.PI` se o arquivo olha para +Z | quase sempre |
 | `boneNames` | nomes de osso fora do padrão Mixamo | só se não for Mixamo |
-| `armRest` | `{ lower, forward, elbow? }`: baixa e adianta os braços; com `elbow` o antebraço fica na horizontal (arma em punho) | só se o arquivo vem em T-pose |
+| `armRest` | `{ upper, fore? }`: a pose do braço **por direção** no referencial do Mech (frente -Z, cima +Y, lado direito em +X; o esquerdo é o espelho). `upper` é para onde aponta o braço (ombro até o cotovelo); `fore`, o antebraço (cotovelo até o pulso). Marauder: `upper [0.62, -0.77, -0.15]` e `fore [0.1, 0, -1]` (arma em punho) | se o arquivo não vem na pose de combate (T-pose) |
 | `weaponMounts` | as mãos somem e a arma da montagem se encaixa no pulso | só se o modelo não traz arma |
 
 **Convenção da animação** (o código a garante; `importedMechRig.test.ts` a trava com modelo **girado**): quadril positivo
 leva o pé para a frente (-Z); joelho negativo dobra o pé para trás; pitch positivo no ombro sobe a mão para a frente.
 Os eixos são sempre os do Mech (`MechRig.model`), nunca os da cena importada.
+
+**Coice dos braços** (`MechRig.setRecoil(direito, esquerdo)`): em **metros para trás** (+Z do Mech), qualquer que seja o eixo e a unidade do osso (o
+deslocamento é escrito no referencial do pai e dividido pela escala acumulada dele). O `MechBase` chama com 0,35 m (direito) e 0,5 m
+(esquerdo) vezes o recuo; rig sem `setRecoil` (os procedurais) segue escrevendo `position.z` do braço. Medido nos quatro `.glb` reais:
+todos recuam 0,35 e 0,5 m para trás, como o Vector-09 (`arte/coice-antes-depois.png`).
 
 ## 4. O punho: nenhum robô tem dedos
 

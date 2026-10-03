@@ -102,7 +102,7 @@ function boneAt(name: string, x: number, y: number, z: number): THREE.Bone {
  * exatamente como `preloadImportedMechAsset` faz com `rotationY: Math.PI`. É o caso dos quatro chassis importados.
  * `tpose`: braços abertos para os lados (como o Marauder); senão, pendurados.
  */
-function syntheticAsset(o: { tpose: boolean; armRest?: ImportedMechAsset['armRest']; weaponMounts?: boolean }): ImportedMechAsset {
+function syntheticAsset(o: { tpose: boolean; armRest?: ImportedMechAsset['armRest']; weaponMounts?: boolean; unidade?: number; torsoTorto?: boolean }): ImportedMechAsset {
   const scene = new THREE.Group();
   const hips = boneAt('Hips', 0, 1, 0);
   const spine = boneAt('Spine', 0, 0.3, 0);
@@ -132,6 +132,9 @@ function syntheticAsset(o: { tpose: boolean; armRest?: ImportedMechAsset['armRes
   rLow.add(rFoot);
   scene.add(hips);
   scene.rotation.y = Math.PI;
+  // Unidade do arquivo (o Mixamo exporta em centímetros) e um osso de torso girado: o eixo e a escala do osso não são os do Mech.
+  if (o.unidade) scene.scale.setScalar(o.unidade);
+  if (o.torsoTorto) spine.quaternion.setFromEuler(new THREE.Euler(1.2, 0.5, -0.8));
   scene.updateMatrixWorld(true);
   return {
     scene,
@@ -217,40 +220,48 @@ describe('importedMechRig: malha em T-pose (Marauder) com armRest', () => {
     expect(at(rig, 'LHand').distanceTo(before)).toBeLessThan(1e-6);
   });
 
-  it('com armRest os dois braços ficam pendurados e adiantados, simétricos, e a mira volta a mexê-los', () => {
-    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: { lower: 1.3, forward: 0.5 } }), 2);
-    const left = armDir(rig, 'LArm', 'LHand');
-    const right = armDir(rig, 'RArm', 'RHand');
-    for (const d of [left, right]) {
-      expect(d.y).toBeLessThan(-0.7); // para baixo
-      expect(d.z).toBeLessThan(-0.2); // e para a frente (-Z)
-    }
-    expect(left.x).toBeLessThan(0); // o braço esquerdo do personagem fica do lado -X depois da rotação de 180°
-    expect(right.x).toBeGreaterThan(0);
-    expect(left.x).toBeCloseTo(-right.x, 6);
+  it('com armRest o braço aponta para a direção pedida, espelhada nos dois lados, e a mira volta a mexê-lo', () => {
+    const upper = [0.62, -0.77, -0.15] as const;
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: { upper } }), 2);
+    const alvo = new THREE.Vector3(...upper).normalize();
+    const direito = armDir(rig, 'RArm', 'RForeArm');
+    const esquerdo = armDir(rig, 'LArm', 'LForeArm');
+    expect(direito.dot(alvo)).toBeGreaterThan(0.9999);
+    expect(esquerdo.dot(new THREE.Vector3(-alvo.x, alvo.y, alvo.z))).toBeGreaterThan(0.9999); // o espelho em X
+    // Sem `fore`, o antebraço segue o braço, reto.
+    expect(armDir(rig, 'RForeArm', 'RHand').dot(alvo)).toBeGreaterThan(0.9999);
 
     const before = at(rig, 'LHand');
     rig.leftArm.rotation.x = 0.5;
-    const after = at(rig, 'LHand');
-    expect(after.y - before.y).toBeGreaterThan(0.05);
-    expect(after.z - before.z).toBeLessThan(-0.05);
+    expect(at(rig, 'LHand').distanceTo(before)).toBeGreaterThan(0.1); // antes do armRest a mão não saía do lugar
   });
 
-  it('armRest não mexe em braço que já vem pendurado', () => {
-    const plain = instantiateImportedMechRig(syntheticAsset({ tpose: false }), 2);
-    const rest = instantiateImportedMechRig(syntheticAsset({ tpose: false, armRest: { lower: 1.3, forward: 0.5 } }), 2);
-    expect(at(rest, 'LHand').distanceTo(at(plain, 'LHand'))).toBeLessThan(1e-6);
+  it('com fore o antebraço aponta para a frente, dobrado no cotovelo, nos dois lados', () => {
+    const upper = [0.62, -0.77, -0.15] as const;
+    const fore = [0.1, 0, -1] as const;
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: { upper, fore } }), 2);
+    const alvo = new THREE.Vector3(...fore).normalize();
+    expect(armDir(rig, 'RForeArm', 'RHand').dot(alvo)).toBeGreaterThan(0.9999);
+    expect(armDir(rig, 'LForeArm', 'LHand').dot(new THREE.Vector3(-alvo.x, alvo.y, alvo.z))).toBeGreaterThan(0.9999);
+    // O braço continua onde estava: o cotovelo não anda quando só o antebraço gira.
+    expect(armDir(rig, 'RArm', 'RForeArm').dot(new THREE.Vector3(...upper).normalize())).toBeGreaterThan(0.9999);
+  });
+
+  it('armRest leva ao alvo também um braço que já vem pendurado (a pose é dita por direção, não por ângulo)', () => {
+    const upper = [0.62, -0.77, -0.15] as const;
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: false, armRest: { upper } }), 2);
+    expect(armDir(rig, 'RArm', 'RForeArm').dot(new THREE.Vector3(...upper).normalize())).toBeGreaterThan(0.9999);
   });
 
   it('as pernas seguem a mesma convenção com armRest ligado', () => {
-    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: { lower: 1.3, forward: 0.5 } }), 2);
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: { upper: [0.62, -0.77, -0.15] } }), 2);
     const before = at(rig, 'RLeg');
     rig.rightLeg.hip.rotation.x = 0.5;
     expect(at(rig, 'RLeg').z - before.z).toBeLessThan(-0.1);
   });
 });
 
-const ARM = { lower: 1.42, forward: 0.4, elbow: 1.17 };
+const ARM = { upper: [0.62, -0.77, -0.15], fore: [0.1, 0, -1] } as const;
 const READY = { primary: weapon('plasma'), secondary: weapon('rockets') };
 
 const bone = (rig: MechRig, name: string): THREE.Object3D => {
@@ -335,5 +346,40 @@ describe('importedMechRig: encaixes de arma nos pulsos (o robô não tem mão ne
     expect(before).toBeDefined();
     mech.equip({ primary: weapon('plasma', 2), secondary: weapon('rockets', 2) });
     expect(mounted(rig, 'RForeArm')).not.toBe(before);
+  });
+});
+
+describe('importedMechRig: coice dos braços em metros para trás', () => {
+  it('o coice desloca o braço exatamente N metros para trás (+Z do Mech), com osso torto e arquivo em centímetros', () => {
+    for (const o of [{}, { unidade: 100 }, { unidade: 0.01, torsoTorto: true }]) {
+      const rig = instantiateImportedMechRig(syntheticAsset({ tpose: false, ...o }), 2);
+      const direitoAntes = at(rig, 'RArm');
+      const esquerdoAntes = at(rig, 'LArm');
+      rig.setRecoil!(0.35, 0.5);
+      const direito = at(rig, 'RArm').sub(direitoAntes);
+      const esquerdo = at(rig, 'LArm').sub(esquerdoAntes);
+      expect(direito.toArray().map((v) => Math.round(v * 1e6) / 1e6 + 0), JSON.stringify(o)).toEqual([0, 0, 0.35]);
+      expect(esquerdo.toArray().map((v) => Math.round(v * 1e6) / 1e6 + 0), JSON.stringify(o)).toEqual([0, 0, 0.5]);
+    }
+  });
+
+  it('coice zero devolve o braço ao repouso, sem acumular', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: false, unidade: 100, torsoTorto: true }), 2);
+    const antes = at(rig, 'RArm');
+    for (let i = 0; i < 5; i++) rig.setRecoil!(0.35, 0.5);
+    rig.setRecoil!(0, 0);
+    expect(at(rig, 'RArm').distanceTo(antes)).toBeLessThan(1e-6);
+  });
+
+  it('o MechBase usa o coice do rig: tiro dado, o braço recua 0,35 m e volta', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: false, unidade: 100, torsoTorto: true }), 2);
+    const mech = new ImportedMech(CHASSIS.marauder, rig, { primary: weapon('plasma'), secondary: weapon('rockets') });
+    mech.render(1 / 60, 0);
+    const repouso = at(rig, 'RArm');
+    mech.onFire();
+    mech.render(0.0001, 0); // quase nenhum tempo passou: o coice está no máximo
+    expect(at(rig, 'RArm').sub(repouso).length()).toBeCloseTo(0.35, 2);
+    for (let i = 0; i < 20; i++) mech.render(1 / 60, 0); // 0,33 s depois: voltou
+    expect(at(rig, 'RArm').distanceTo(repouso)).toBeLessThan(1e-4);
   });
 });

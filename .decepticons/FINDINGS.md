@@ -178,6 +178,42 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 ---
 
+### Fix: o Coice dos Braços Saltava Metros nos Robôs Importados
+
+**Descoberto:** 2026-10-03 (relato do dono sobre o Gênesis: o braço "dá um salto muito grande, ficou meio feio e elástico demais para um robô de metal") | **Status:** ✅ Corrigido | **Impacto:** a cada tiro o braço, com a arma, saía do corpo; no Marauder, que ganhou arma no braço no #150, estava assim desde então
+
+**Causa:** `MechBase.animate` escrevia o coice em `rig.<braço>.position.z` (0,35 e 0,5). Num rig procedural isso é metro para trás (o grupo do braço está no referencial do torso). Num rig importado é o `position` do osso: no referencial do pai (eixos do exportador), na unidade do arquivo e multiplicado pela escala do modelo. O mesmo número virava metros na direção errada.
+
+**Medição (deslocamento do braço com o coice no máximo, em metros no mundo):**
+
+| Chassi | direito, antes | esquerdo, antes | depois |
+|---|---|---|---|
+| Gênesis-01 | 1,86 (35% da altura), para baixo | 2,66, para cima | 0,35 e 0,50 para trás |
+| Lancer-L1 | 1,86, para cima | 2,65, para cima | idem |
+| LR-7L Bastion | 3,37 (64%), para trás e de lado | 4,82 (91%), para cima | idem |
+| Marauder | 2,49, para trás e para baixo | 3,56, para cima | idem |
+| Vector-09 (procedural) | 0,35 para trás | 0,50 para trás | igual |
+
+**Correção:** `MechRig.setRecoil(direito, esquerdo)` opcional, em metros para trás (+Z do Mech). O rig importado escreve o deslocamento do osso no referencial do pai, dividido pela escala acumulada dele; rig sem `setRecoil` mantém o caminho antigo. Três testes novos (osso torto, arquivo em centímetros e em metros, integração com o `MechBase`); sem a compensação de escala dois falham. Captura: `arte/coice-antes-depois.png`.
+
+**Ainda aberto (gosto):** o recuo ficou igual ao do Vector-09 (0,35 m, volta linear em 111 ms). Se ainda parecer elástico, são dois números em `MechBase.animate` (0,35 e 0,5; `dt * 9` e `dt * 5`) e valem para todos os chassis. O Hangar não aciona o coice, então só a partida mostra.
+
+---
+
+### Achado: o Ombro "Quebrado" do Marauder era o Ângulo do Braço, não a Pele
+
+**Descoberto:** 2026-10-03 (relato do dono: "braço mole, muito pra baixo, parece que o ombro está quebrado") | **Status:** ✅ Corrigido no Marauder | **Impacto:** a junta do ombro parecia amassada
+
+**Causa:** a ombreira (a "coroa" hexagonal) está presa ao osso do braço. Com o braço baixado a 81° da T-pose ela gira junto e a pele suave a amassa contra o tronco.
+
+**Testado e descartado:** pele rígida (cada vértice seguindo só o osso de maior peso). Em vez de limpar, a ombreira vira estilhaços pontudos: a malha depende da mistura de pesos nas juntas.
+
+**Correção:** o braço fica ~50° abaixo da horizontal e o antebraço dobra para a frente (arma em punho). Para dizer isso sem encadear ângulos, `armRest` passou a ser por **direção** (`{ upper, fore? }`, no referencial do Mech, espelhado por lado). Comparação: `arte/marauder-ombro-antes-depois.png`.
+
+**Lição:** com pele suave de auto-rig, o ângulo útil a partir da T-pose é pequeno (~50°); passar disso pede a ombreira presa ao tronco no arquivo, ou outro desenho.
+
+---
+
 ### Achado: a Arma Não Aparecia no Modelo; Trocar de Arma Só Trocava Números
 
 **Descoberto:** 2026-10-02 (relato do dono: o Marauder com "braço mole e reto", sem parecer que segura arma) | **Status:** ✅ Corrigido no Marauder, 🟡 aberto nos demais | **Impacto:** a montagem do Hangar não se via no robô

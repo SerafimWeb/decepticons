@@ -6,14 +6,14 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Online (servidor 24 h em `jogo.selvamkt.com.br`); offline (single-player: Arena + Sobrevivência + CTF) |
-| **Build** | JS 294 KB e Wasm 719 KB no budget do `npm run check` (teto 500 e 900); 418 testes |
-| **Última sessão** | 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
+| **Build** | JS 296 KB e Wasm 719 KB no budget do `npm run check` (teto 500 e 900); 422 testes |
+| **Última sessão** | 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
 | **Próximo** | M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
 
-**Última atualização:** 2026-10-02 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
+**Última atualização:** 2026-10-03 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
 
 ---
 
@@ -283,6 +283,9 @@
   - **Consolidação de Ramos UI (`NetHud`, `KillBanner`, `RoundOverlay`)**: Interfaces do multiplayer online (M6-UI) unificadas no branch `gemini/modo-hud-audio`.
   - **Limpeza no Harness (`scripts/test.mjs`)**: Removida redundância `VITEST_MAX_WORKERS` do env (mantendo a flag `--maxWorkers=1`).
 ---
+
+## ÚLTIMA SESSÃO FEZ (03/10, PR do ombro e do coice na `main`)
+- **Ombro do Marauder e coice dos braços (Claude, relato do dono com captura):** *"braço mole, muito pra baixo, parece que o ombro está quebrado"* e, sobre o Gênesis, *"o braço dá um salto muito grande, elástico demais para um robô de metal"*. (1) **Ombro:** a ombreira está presa ao osso do braço; a 81° ela amassava. A pose agora é por **direção** (`armRest { upper, fore }`): braço ~50° abaixo da horizontal, antebraço para a frente; pele rígida foi testada e descartada (estilhaços). (2) **Coice:** o `MechBase` escrevia `position.z` do osso, que tem o eixo e a unidade do arquivo; nos quatro robôs importados o braço saltava de 1,9 a 4,8 m ao atirar (medido). Agora `MechRig.setRecoil`, em metros para trás: 0,35 m e 0,5 m em todos, como o Vector-09. Provas: `arte/marauder-ombro-antes-depois.png`, `arte/coice-antes-depois.png`, `arte/marauder-pose-pronta.png`, `arte/marauder-hangar-pose-pronta.png`. Testes novos; as mutações (sem espelhar, sem compensar a escala) falham. **Não verificado por mim:** partida real; o Hangar não aciona o coice. **Gosto do dono:** o recuo ficou igual ao do Vector-09 (dois números em `MechBase.animate` se ainda parecer elástico). **A pergunta maior do dono** (repensar a criação dos robôs, corpos e encaixes; androides como na foto) está em `ROADMAP.md` (IDEIAS), sem escopo aprovado.
 
 ## ÚLTIMA SESSÃO FEZ (02/10, PR do encaixe de arma na `main`)
 - **Inspetor de robô importado (Claude, PR seguinte):** `npm run mech:inspecionar -- arquivo.glb` confere o `.glb` contra o contrato, checa a convenção da animação, sugere o `IMPORTED_CHASSIS` e fotografa o robô (`arte/inspecao-marauder.png`); 12 testes novos (418 no total). Rodado nos 4 robôs reais: sem erros, e a sugestão do Marauder bate com a config dele. A frente vem de uma medida do pé (fraca no Marauder): quando não decide, assume +Z e manda conferir a foto. Detalhes em `MECHS_IMPORTADOS.md` §5.

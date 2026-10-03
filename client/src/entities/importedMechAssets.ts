@@ -78,9 +78,10 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
   marauder: {
     url: `${import.meta.env.BASE_URL}models/marauder.glb`,
     rotationY: Math.PI,
-    // O .glb vem em T-pose (braços abertos a 90°): sem isto a mira só rolaria o braço sobre si mesmo. Ombro baixa e
-    // adianta o braço, o cotovelo leva o antebraço à horizontal: pose de arma em punho.
-    armRest: { lower: 1.42, forward: 0.4, elbow: 1.17 },
+    // O .glb vem em T-pose (braços abertos a 90°). Pose de arma em punho por direção: braço 50° abaixo da horizontal e um
+    // pouco à frente, antebraço na horizontal para a frente. Mais baixo que isso a ombreira, presa ao osso do braço, gira junto
+    // e a junta parece quebrada (FINDINGS.md).
+    armRest: { upper: [0.62, -0.77, -0.15], fore: [0.1, 0, -1] },
     // Sem arma no modelo: as mãos somem e a arma da montagem se encaixa no pulso (weaponMount.ts).
     weaponMounts: true,
     boneNames: {

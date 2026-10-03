@@ -6,7 +6,6 @@ import { createWeaponMounts } from './weaponMount';
 
 const _axisX = new THREE.Vector3(1, 0, 0);
 const _axisY = new THREE.Vector3(0, 1, 0);
-const _axisZ = new THREE.Vector3(0, 0, 1);
 
 /**
  * Gira `bone` em torno do pivô dele por `offset`, dado no referencial do Mech (`frameQuat`), e não no do osso;
@@ -95,6 +94,9 @@ export class AxisCorrectedJoint implements RigJoint {
   localToWorld(target: THREE.Vector3): THREE.Vector3 { return this.bone.localToWorld(target); }
 }
 
+/** Direção ou posição em três números: x (direita), y (cima), z (trás). */
+export type Vec3 = readonly [number, number, number];
+
 export interface ImportedRigOptions {
   /** Altura alvo (m); a malha (no bind pose) é escalada e apoiada em y=0. */
   targetHeight: number;
@@ -103,12 +105,13 @@ export interface ImportedRigOptions {
   /** Nomes alternativos de osso, pra malhas que não seguem a convenção `mixamorig:`. */
   boneNames?: Partial<Record<keyof typeof DEFAULT_BONES, string>>;
   /**
-   * Só para malha exportada em T-pose (braços abertos): baixa os braços `lower` radianos (90° = pendurados) e
-   * os leva `forward` radianos para a frente. `elbow` (opcional) dobra o antebraço para a frente por mais
-   * tantos radianos: com ~90° menos o `forward` o antebraço fica na horizontal, na pose de arma em punho. O
-   * lado de cada braço sai da geometria (de que lado do Mech a mão está), não do nome do osso.
+   * Pose de repouso do braço, dita por **direção** (referencial do Mech: frente -Z, cima +Y, o lado DIREITO em +X; o
+   * esquerdo é o espelho). `upper` é para onde aponta o braço (ombro até o cotovelo); `fore`, para onde aponta o
+   * antebraço (cotovelo até o pulso); sem `fore` o antebraço segue o braço, reto. Existe porque a malha chega em
+   * T-pose (braços abertos) e girar o braço em X só o rola sobre si mesmo. A ombreira costuma estar presa ao osso do
+   * braço: quanto mais o braço baixa da horizontal, mais ela gira junto e a junta parece quebrada (Marauder).
    */
-  armRest?: { lower: number; forward: number; elbow?: number };
+  armRest?: { upper: Vec3; fore?: Vec3 };
   /**
    * Encaixes de arma nos pulsos (`weaponMount.ts`): esconde as mãos e os dedos e monta, em cada braço, o módulo
    * da arma da montagem (`MechRig.mountWeapons`). Para malha SEM arma desenhada; quem já traz a arma no modelo
@@ -181,19 +184,28 @@ export async function preloadImportedMechAsset(url: string, options: ImportedRig
   return { scene, boneNames: names, hipHeight, naturalHeight: size.y, naturalMinY: box.min.y, armRest: options.armRest, weaponMounts: options.weaponMounts };
 }
 
+/** Direção de `from` para `to` no referencial do Mech (unitária). */
+function directionIn(frameQuat: THREE.Quaternion, from: THREE.Object3D, to: THREE.Object3D): THREE.Vector3 {
+  const d = to.getWorldPosition(new THREE.Vector3()).sub(from.getWorldPosition(new THREE.Vector3()));
+  return d.applyQuaternion(frameQuat.clone().invert()).normalize();
+}
+
+/** O vetor da pose para este lado do Mech: `side` +1 é o direito (+X), -1 o esquerdo (espelho em X). */
+const mirrored = (v: Vec3, side: number): THREE.Vector3 => new THREE.Vector3(v[0] * side, v[1], v[2]).normalize();
+
+/** Lado do Mech de um osso, pela posição dele em relação ao quadril: +1 direito (+X), -1 esquerdo. */
+const sideOf = (bone: THREE.Object3D, hips: THREE.Object3D, frameQuat: THREE.Quaternion): number => Math.sign(directionIn(frameQuat, hips, bone).x) || 1;
+
 /**
- * Rotação de repouso (no referencial do Mech) que baixa e adianta um braço de malha em T-pose. `undefined` se não
- * há `armRest` ou se o braço não está aberto para o lado (o osso já vem pendurado: não se mexe).
+ * Rotação (no referencial do Mech) que leva o braço, do ombro ao cotovelo, para a direção `rest.upper`. `undefined`
+ * sem `armRest`. O cotovelo é o filho que leva à mão (o antebraço); sem antebraço, a própria mão.
  */
-function armRestOffset(arm: THREE.Object3D, hand: THREE.Object3D, frame: THREE.Object3D, rest: ImportedRigOptions['armRest']): THREE.Quaternion | undefined {
+function armRestOffset(arm: THREE.Object3D, hand: THREE.Object3D, hips: THREE.Object3D, frame: THREE.Object3D, rest: ImportedRigOptions['armRest']): THREE.Quaternion | undefined {
   if (!rest) return undefined;
   frame.updateMatrixWorld(true);
-  const d = hand.getWorldPosition(new THREE.Vector3()).sub(arm.getWorldPosition(new THREE.Vector3()));
-  d.applyQuaternion(frame.getWorldQuaternion(new THREE.Quaternion()).invert());
-  if (Math.abs(d.x) < 0.8 * d.length()) return undefined;
-  const lower = new THREE.Quaternion().setFromAxisAngle(_axisZ, -Math.sign(d.x) * rest.lower);
-  const forward = new THREE.Quaternion().setFromAxisAngle(_axisX, rest.forward);
-  return forward.multiply(lower);
+  const frameQuat = frame.getWorldQuaternion(new THREE.Quaternion());
+  const elbow = hand.parent && hand.parent !== arm ? hand.parent : hand;
+  return new THREE.Quaternion().setFromUnitVectors(directionIn(frameQuat, arm, elbow), mirrored(rest.upper, sideOf(arm, hips, frameQuat)));
 }
 
 /**
@@ -288,19 +300,38 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
   const torso = createJoint(find('torso'));
   const leftArmBone = find('leftArm');
   const rightArmBone = find('rightArm');
-  const leftRest = armRestOffset(leftArmBone, leftHand, model, asset.armRest);
-  const rightRest = armRestOffset(rightArmBone, rightHand, model, asset.armRest);
+  const leftRest = armRestOffset(leftArmBone, leftHand, hips, model, asset.armRest);
+  const rightRest = armRestOffset(rightArmBone, rightHand, hips, model, asset.armRest);
   const leftArm = createJoint(leftArmBone, leftRest);
   const rightArm = createJoint(rightArmBone, rightRest);
-  // Pose de arma em punho: o antebraço (pai da mão) dobra para a frente depois de o ombro baixar o braço.
-  const elbow = asset.armRest?.elbow;
-  if (elbow) {
+  // O antebraço (pai da mão) aponta para `fore`, depois de o ombro levar o braço para `upper`.
+  const fore = asset.armRest?.fore;
+  if (fore) {
+    model.updateMatrixWorld(true);
     const frameQuat = model.getWorldQuaternion(new THREE.Quaternion());
-    const bend = new THREE.Quaternion().setFromAxisAngle(_axisX, elbow);
-    for (const [arm, hand, rest] of [[leftArmBone, leftHand, leftRest], [rightArmBone, rightHand, rightRest]] as const) {
-      if (rest && hand.parent && hand.parent !== arm) poseInFrame(hand.parent, frameQuat, bend);
+    for (const [arm, hand] of [[leftArmBone, leftHand], [rightArmBone, rightHand]] as const) {
+      const forearm = hand.parent;
+      if (!forearm || forearm === arm) continue;
+      const aim = new THREE.Quaternion().setFromUnitVectors(directionIn(frameQuat, forearm, hand), mirrored(fore, sideOf(arm, hips, frameQuat)));
+      poseInFrame(forearm, frameQuat, aim);
     }
   }
+  // Coice em metros para trás (+Z do Mech), qualquer que seja o eixo e a unidade do osso: o deslocamento do osso é
+  // escrito no referencial do pai e dividido pela escala acumulada dele.
+  model.updateMatrixWorld(true);
+  const backwardIn = (parent: THREE.Object3D): THREE.Vector3 =>
+    new THREE.Vector3(0, 0, 1)
+      .applyQuaternion(model.getWorldQuaternion(new THREE.Quaternion()))
+      .applyQuaternion(parent.getWorldQuaternion(new THREE.Quaternion()).invert())
+      .divideScalar(parent.getWorldScale(new THREE.Vector3()).x);
+  const rightArmAt = rightArmBone.position.clone();
+  const rightBack = backwardIn(rightArmBone.parent!);
+  const leftArmAt = leftArmBone.position.clone();
+  const leftBack = backwardIn(leftArmBone.parent!);
+  const setRecoil = (right: number, left: number): void => {
+    rightArmBone.position.copy(rightArmAt).addScaledVector(rightBack, right);
+    leftArmBone.position.copy(leftArmAt).addScaledVector(leftBack, left);
+  };
   const mountWeapons = asset.weaponMounts
     ? createWeaponMounts(
         model,
@@ -325,6 +356,7 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
     hullMaterials,
     hipHeight: asset.hipHeight,
     mountWeapons,
+    setRecoil,
   };
 }
 

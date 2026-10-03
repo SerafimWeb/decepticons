@@ -118,12 +118,12 @@ describe('inspecionarMech: o contrato do arquivo, lido de uma cena', () => {
     const t = inspecionarMech(robo({ pose: 'T' }));
     expect(t.pose.tipo).toBe('T-pose');
     expect(codigos(t, 'aviso')).toContain('tpose');
-    expect(t.sugestao.armRest).toEqual({ lower: 1.42, forward: 0.4, elbow: 1.17 });
+    expect(t.sugestao.armRest).toEqual({ upper: [0.62, -0.77, -0.15], fore: [0.1, 0, -1] });
 
     const sem = inspecionarMech(robo({ pose: 'T', antebraco: false }));
     expect(sem.antebraco).toBe(false);
     expect(codigos(sem, 'aviso')).toContain('sem-antebraco');
-    expect(sem.sugestao.armRest).toEqual({ lower: 1.42, forward: 0.4 });
+    expect(sem.sugestao.armRest).toEqual({ upper: [0.62, -0.77, -0.15] });
     expect(sem.sugestao.weaponMounts).toBe(false);
   });
 
@@ -174,7 +174,7 @@ describe('inspecionarMech: o contrato do arquivo, lido de uma cena', () => {
     expect(texto).toContain('novo: {');
     expect(texto).toContain('models/novo.glb');
     expect(texto).toContain('rotationY: Math.PI,');
-    expect(texto).toContain('armRest: { lower: 1.42, forward: 0.4, elbow: 1.17 },');
+    expect(texto).toContain('armRest: { upper: [0.62, -0.77, -0.15], fore: [0.1, 0, -1] },');
     expect(texto).toContain('weaponMounts: true');
     expect(texto).toContain("head: 'mixamorigNeck',");
   });
