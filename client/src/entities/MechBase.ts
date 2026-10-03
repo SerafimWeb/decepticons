@@ -105,6 +105,12 @@ export interface MechRig {
    * Idempotente e barata; o `MechBase` a chama ao nascer e a cada `equip`. Sem ela, a arma é parte do modelo.
    */
   mountWeapons?: (loadout: Loadout) => void;
+  /**
+   * Coice dos braços em **metros para trás** (+Z do Mech), direito e esquerdo. Só nos rigs cujos ossos não deixam
+   * `position.z` do braço valer isso: num osso importado o eixo e a unidade são do arquivo, e o mesmo `position.z` dava
+   * um salto de 1,9 m (direito, para baixo) e 2,7 m (esquerdo, para cima) no Gênesis. Sem ela, o `MechBase` escreve em `position.z` do braço.
+   */
+  setRecoil?: (right: number, left: number) => void;
 }
 
 /** Onde fica o "miolo" de cada parte, a partir do grupo dela no rig (para efeitos). */
@@ -687,9 +693,14 @@ export abstract class MechBase {
     r.torso.rotation.y = sw * 0.06 * amt;
 
     this.recoil = Math.max(0, this.recoil - dt * 9);
-    r.rightArm.position.z = this.rightArmBaseZ + this.recoil * 0.35;
     this.leftRecoil = Math.max(0, this.leftRecoil - dt * 5);
-    r.leftArm.position.z = this.leftArmBaseZ + this.leftRecoil * 0.5;
+    const kickRight = this.recoil * 0.35;
+    const kickLeft = this.leftRecoil * 0.5;
+    if (r.setRecoil) r.setRecoil(kickRight, kickLeft);
+    else {
+      r.rightArm.position.z = this.rightArmBaseZ + kickRight;
+      r.leftArm.position.z = this.leftArmBaseZ + kickLeft;
+    }
 
     // Canhão-torre (Colossus e afins): gira devagar sozinho, decorativo — a mira de verdade continua
     // nos braços. G4: um if e uma soma, sem alocação; só roda quando o blueprint marcou `head.turret`.

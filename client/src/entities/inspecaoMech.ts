@@ -61,8 +61,8 @@ const ALTERNATIVAS: Partial<Record<BoneKey, string[]>> = {
   torso: ['mixamorigSpine1', 'mixamorigSpine2', 'mixamorigSpine', 'Spine01', 'Spine02', 'Spine'],
 };
 
-/** Pose de arma em punho usada no Marauder: o ponto de partida para qualquer malha em T-pose. */
-const ARM_REST_PADRAO = { lower: 1.42, forward: 0.4, elbow: 1.17 } as const;
+/** Pose de arma em punho do Marauder (ver `ImportedRigOptions.armRest`): o ponto de partida para qualquer malha em T-pose. */
+const ARM_REST_PADRAO = { upper: [0.62, -0.77, -0.15], fore: [0.1, 0, -1] } as const;
 
 /** Fração da altura abaixo da qual os vértices contam como pé, para achar para onde o pé aponta. */
 const FRACAO_PE = 0.08;
@@ -199,7 +199,7 @@ export function inspecionarMech(scene: THREE.Object3D, bytes: number | null = nu
     sugestao.boneNames = {};
     for (const k of tipo === 'mixamo' ? diferentes : KEYS) if (nomes[k]) sugestao.boneNames[k] = nomes[k]!;
   }
-  if (pose.tipo === 'T-pose') sugestao.armRest = antebraco ? { ...ARM_REST_PADRAO } : { lower: ARM_REST_PADRAO.lower, forward: ARM_REST_PADRAO.forward };
+  if (pose.tipo === 'T-pose') sugestao.armRest = antebraco ? { upper: ARM_REST_PADRAO.upper, fore: ARM_REST_PADRAO.fore } : { upper: ARM_REST_PADRAO.upper };
 
   if (bytes !== null) add('info', 'tamanho-arquivo', `${(bytes / 1024).toFixed(0)} KB`);
   add('info', 'triangulos', `${Math.round(triangulos)} triângulos (o Marauder, com as duas armas, tem ~20 mil)`);
@@ -223,8 +223,8 @@ export function formatarSugestao(id: string, arquivo: string, s: Sugestao): stri
   const linhas = [`  ${id}: {`, `    url: \`\${import.meta.env.BASE_URL}models/${arquivo}\`,`];
   if (s.rotationY !== undefined) linhas.push('    rotationY: Math.PI,');
   if (s.armRest) {
-    const { lower, forward, elbow } = s.armRest;
-    linhas.push(`    armRest: { lower: ${lower}, forward: ${forward}${elbow !== undefined ? `, elbow: ${elbow}` : ''} },`);
+    const { upper, fore } = s.armRest;
+    linhas.push(`    armRest: { upper: [${upper.join(', ')}]${fore ? `, fore: [${fore.join(', ')}]` : ''} },`);
   }
   if (s.weaponMounts) linhas.push('    weaponMounts: true, // tire se o modelo já traz a arma desenhada');
   if (s.boneNames) {
