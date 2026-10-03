@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { FireTimer, RocketLauncher } from '../client/src/combat/trigger';
-import { weapon } from '../client/src/combat/weapons';
+import { AIM_RANGE, Armament, type ShotSink } from '../client/src/combat/Armament';
+import type { MountId } from '../client/src/combat/mounts';
 import type { MechBase, MechInput } from '../client/src/entities/MechBase';
 import { mechInputFromNet } from '../client/src/net/adapters';
 import type { Match, Pilot } from '../client/src/sim/Match';
@@ -16,15 +16,18 @@ const STARVED_TICKS = 10;
 
 const _origin = new THREE.Vector3();
 const _dir = new THREE.Vector3();
+const _ref = new THREE.Vector3();
+const _refDir = new THREE.Vector3();
+const _point = new THREE.Vector3();
 
 /**
  * O piloto de um jogador remoto, no servidor (M3). A cada tick aplica um comando, na ordem em que chegaram; sem
  * comando novo, repete o último movimento sem repetir pulo e dash. O estado mandado ao cliente leva o tick do
  * último comando aplicado (\`ack\`): é o que a reconciliação da M4 usa.
  *
- * As regras de tiro são as do jogador local (\`PlayerController\`): cadência, calor e carregador. O tiro sai da
- * simulação (\`simMuzzle\`), na direção de yaw e pitch do comando, nunca de um modelo desenhado
- * (MULTIPLAYER.md, seção 9, item 3). Nada alocado por tick (G4).
+ * As regras de tiro são as do jogador local, e são a mesma (`Armament`): cadência, calor, carregador e quais
+ * encaixes atiram em cada botão. O tiro sai da simulação (`simMuzzle` de cada encaixe), na direção de yaw e pitch do
+ * comando, nunca de um modelo desenhado (MULTIPLAYER.md, seção 9, item 3). Nada alocado por tick (G4).
  */
 export class NetPilot implements Pilot {
   /** Tick do último comando aplicado. */
@@ -36,15 +39,25 @@ export class NetPilot implements Pilot {
   private starved = 0;
   private readonly current = newNetInput();
   private readonly cmd: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
-  private readonly trigger = new FireTimer();
-  private readonly saw = new FireTimer();
-  private launcher: RocketLauncher;
+  private readonly armament: Armament;
+  private readonly sink: ShotSink = {
+    projectile: (mount, w) => {
+      this.aim(mount);
+      this.match.projectiles.fire(_origin, _dir, this.mech.collider, false, w);
+      // M5 TODO: compensação de latência (volta cápsulas ao tempo do comando)
+    },
+    rocket: (mount, w) => {
+      this.aim(mount);
+      this.match.rockets.fire(_origin, _dir, this.mech.collider, w);
+    },
+    melee: (w) => this.match.meleeNearest(this.mech, w),
+  };
 
   constructor(
     readonly mech: MechBase,
     private readonly match: Match,
   ) {
-    this.launcher = new RocketLauncher(mech.loadout.secondary ?? weapon('rockets'));
+    this.armament = new Armament(mech);
   }
 
   /**
@@ -89,41 +102,29 @@ export class NetPilot implements Pilot {
     m.applyFacing(c.yaw, c.pitch);
     m.fixedUpdate(mechInputFromNet(c, this.cmd), dt);
 
-    this.trigger.fixedUpdate(dt);
-    if (c.fire && this.trigger.ready && m.canFirePrimary) {
-      this.aim(c);
-      this.fireWithValidation(_origin, _dir, m.loadout.primary);
-      m.onFire();
-      this.trigger.shot(m.loadout.primary.fireInterval);
-    }
-
-    if (!m.alive) this.launcher.refill();
-    else this.launcher.fixedUpdate(dt);
-    const secondary = m.loadout.secondary;
-    if (secondary?.kind === 'melee') {
-      this.saw.fixedUpdate(dt);
-      if (c.secondary && this.saw.ready && m.canFireSecondary) {
-        this.match.meleeNearest(m, secondary);
-        m.onFireSecondary();
-        this.saw.shot(secondary.fireInterval);
-      }
-    } else if (c.secondary && m.canFireSecondary && this.launcher.tryFire()) {
-      this.aim(c);
-      this.match.rockets.fire(_origin, _dir, m.collider, this.launcher.weapon);
-      m.onFireSecondary();
-    }
+    this.armament.fixedUpdate(dt, c.fire, c.secondary, this.sink);
   }
 
-  /** Fire with server-side validation and hit detection (M5). */
-  private fireWithValidation(origin: THREE.Vector3, dir: THREE.Vector3, w: typeof this.mech.loadout.primary): void {
-    this.match.projectiles.fire(origin, dir, this.mech.collider, false, w);
-    // M5 TODO: raycast para acerto, criar evento HIT, enviar ao cliente
-    // TODO: compensação de latência (volta cápsulas ao tempo do comando)
-  }
-
-  /** Boca da arma pela simulação e direção de yaw e pitch do comando (em _origin e _dir). */
-  private aim(c: NetInput): void {
-    this.mech.simMuzzle(_origin);
-    _dir.set(-Math.sin(c.yaw) * Math.cos(c.pitch), Math.sin(c.pitch), -Math.cos(c.yaw) * Math.cos(c.pitch));
+  /**
+   * Boca do encaixe pela simulação e a direção do tiro (em _origin e _dir). O yaw e o pitch do comando saem da boca da
+   * mão direita (é dela que o cliente mira); a mão esquerda e os ombros ficam a metros de lado, e tiro paralelo errava o
+   * alvo. Então o servidor acha onde o raio da mão direita bate (a mira, de novo) e faz cada boca apontar para lá, como
+   * o jogador local faz. Um raio por tiro, nunca por tick; o chão, a parede e o outro Mech contam, o próprio Mech não.
+   */
+  private aim(mount: MountId): void {
+    const c = this.current;
+    _refDir.set(-Math.sin(c.yaw) * Math.cos(c.pitch), Math.sin(c.pitch), -Math.cos(c.yaw) * Math.cos(c.pitch));
+    this.mech.simMuzzle(_origin, mount);
+    if (mount === 'rightHand') {
+      _dir.copy(_refDir);
+      return;
+    }
+    this.mech.simMuzzle(_ref, 'rightHand');
+    const hit = this.match.physics.raycast(_ref, _refDir, AIM_RANGE, this.mech.collider);
+    _point.copy(_ref).addScaledVector(_refDir, hit ? hit.distance : AIM_RANGE);
+    _dir.subVectors(_point, _origin);
+    // Alvo "atrás" da boca (a mira no chão, colado no pé): atira reto, como o jogador local.
+    if (_dir.dot(_refDir) < 3) _dir.copy(_refDir);
+    else _dir.normalize();
   }
 }

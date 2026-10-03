@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { Loadout, WeaponStats } from '../combat/weapons';
-import { weaponModel } from './weaponModels';
+import { podModel, weaponModel } from './weaponModels';
 
 /** Um lado do Mech: o antebraço, a mão (o pulso) e o nó de boca que o jogo já usa (Hangar, efeitos). */
 export interface MountSide {
@@ -16,6 +16,18 @@ export interface MountSide {
  */
 const HAND_SCALE = 0.001;
 
+/** Um ombro do Mech: onde o lançador assenta e a boca de onde o foguete sai (ver `createWeaponMounts`). */
+export interface PodSide {
+  /** O osso do tronco a que o lançador fica preso: ele acompanha a inclinação do torso. */
+  parent: THREE.Object3D;
+  /** Nó de boca, filho do lançador (o jogo lê a posição dele). */
+  muzzle: THREE.Object3D;
+  /** A traseira do lançador no referencial do Mech em repouso (m, a partir dos pés; x positivo = a direita dele). */
+  at: readonly [number, number, number];
+  /** Metros por unidade do módulo (1 = o comprimento do antebraço dos módulos do pulso). */
+  size: number;
+}
+
 const _from = new THREE.Vector3();
 const _to = new THREE.Vector3();
 
@@ -29,12 +41,24 @@ const _to = new THREE.Vector3();
  * Chame uma vez ao montar o rig, DEPOIS de o braço estar na pose final (a orientação sai dessa pose). A função
  * devolvida é barata e idempotente: remontar a mesma arma não faz nada; trocar de arma troca só o módulo.
  */
-export function createWeaponMounts(frame: THREE.Object3D, right: MountSide, left: MountSide): (loadout: Loadout) => void {
+export function createWeaponMounts(
+  frame: THREE.Object3D,
+  right: MountSide,
+  left: MountSide,
+  pods?: { right: PodSide; left: PodSide },
+): (loadout: Loadout) => void {
   const mountRight = prepare(frame, right);
   const mountLeft = prepare(frame, left);
+  const podRight = pods && preparePod(frame, pods.right);
+  const podLeft = pods && preparePod(frame, pods.left);
   return (loadout) => {
     mountRight(loadout.primary);
-    mountLeft(loadout.secondary);
+    if (podRight && podLeft) {
+      // Com lançadores nos ombros, a mão esquerda leva a segunda arma do botão principal e o secundário é dos ombros.
+      mountLeft(loadout.offhand ?? null);
+      podRight(loadout.secondary);
+      podLeft(loadout.secondary);
+    } else mountLeft(loadout.secondary);
   };
 }
 
@@ -77,6 +101,36 @@ function prepare(frame: THREE.Object3D, { forearm, hand, muzzle }: MountSide): (
     key = next;
     if (current) point.remove(current);
     const model = weaponModel(weapon);
+    current = model.object;
+    point.add(current);
+    muzzle.position.copy(model.muzzle);
+  };
+}
+
+/**
+ * Um lançador de ombro: o encaixe é um nó preso ao osso do tronco, na posição `at` (referencial do Mech em repouso),
+ * com a frente (-Z) para a frente do Mech e o cima (+Y) para cima, na escala `size`. Idempotente como o do pulso.
+ */
+function preparePod(frame: THREE.Object3D, { parent, muzzle, at, size }: PodSide): (weapon: WeaponStats | null) => void {
+  frame.updateMatrixWorld(true);
+  const point = new THREE.Object3D();
+  point.name = 'hardpoint-ombro';
+  // A posição vem do mundo com o Mech em repouso (o quadro ainda sem pai: o mundo é o referencial dos pés).
+  point.position.copy(parent.worldToLocal(new THREE.Vector3(at[0], at[1], at[2])));
+  point.quaternion.copy(parent.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(frame.getWorldQuaternion(new THREE.Quaternion()));
+  point.scale.setScalar(size / parent.getWorldScale(new THREE.Vector3()).x);
+  parent.add(point);
+  point.add(muzzle);
+  muzzle.position.set(0, 0, 0);
+
+  let key = '';
+  let current: THREE.Object3D | null = null;
+  return (weapon) => {
+    const next = weapon ? `${weapon.id}:${weapon.tier}` : 'vazio';
+    if (next === key) return;
+    key = next;
+    if (current) point.remove(current);
+    const model = podModel(weapon);
     current = model.object;
     point.add(current);
     muzzle.position.copy(model.muzzle);

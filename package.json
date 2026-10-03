@@ -13,12 +13,13 @@
     "typecheck": "tsc",
     "smoke": "node scripts/smoke.mjs",
     "smoke:dev": "node scripts/smoke.mjs --dev",
-    "check": "npm run typecheck && npm test && node scripts/painel.mjs --check && vite build && npm run smoke && node scripts/site.mjs --check",
+    "check": "npm run typecheck && npm test && node scripts/painel.mjs --check && vite build && npm run smoke && npm run mech:bocas && node scripts/site.mjs --check",
     "prepare": "node scripts/install-hooks.mjs",
     "test": "node scripts/test.mjs",
     "painel": "node scripts/painel.mjs",
     "site": "node scripts/site.mjs",
     "mech:inspecionar": "node scripts/inspecionar-mech.mjs",
+    "mech:bocas": "node scripts/medir-bocas.mjs",
     "server": "node scripts/server.mjs"
   },
   "dependencies": {

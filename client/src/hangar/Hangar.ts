@@ -1,7 +1,7 @@
 import { drill, timeToKill } from '../combat/balance';
-import { weapon, type Loadout } from '../combat/weapons';
+import type { Loadout } from '../combat/weapons';
 import { CHASSIS } from '../entities/chassis';
-import { FACTORY_LOADOUT, loadoutKey, parseLoadoutKey, validateLoadout, type LoadoutCheck, type LoadoutSpec } from './loadout';
+import { FACTORY_LOADOUT, loadoutKey, parseLoadoutKey, specWeapons, validateLoadout, type LoadoutCheck, type LoadoutSpec } from './loadout';
 
 /** Onde a montagem fica salva no aparelho (sem conta: o progresso é do aparelho). */
 export const HANGAR_STORAGE_KEY = 'cybermech.hangar.v1';
@@ -70,7 +70,7 @@ export class Hangar {
   report(spec: LoadoutSpec): LoadoutReport {
     const check = validateLoadout(spec);
     const chassis = CHASSIS[spec.chassis] ?? CHASSIS.vector09;
-    const arms = [weapon(spec.right.id, spec.right.tier), ...(spec.left ? [weapon(spec.left.id, spec.left.tier)] : [])];
+    const arms = specWeapons(spec);
     const run = drill(chassis, { speed: 1, fire: arms }, 20);
     return {
       check,

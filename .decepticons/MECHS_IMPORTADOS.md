@@ -89,23 +89,38 @@ no nascimento do Mech e na troca de arma.
 **Arma nova:** (1) os dados em `combat/weapons.ts`; (2) uma função de desenho em `weaponModels.ts` no padrão acima; (3) o id na
 lista de `weaponModels.test.ts`.
 
-**Outros encaixes (reservados, não existem ainda):** ombros e costas (`HANGAR.md`: "ombros e torso = módulos"): o mesmo contrato
-(nó + escala + módulo), acrescentando uma classe de tamanho (P, M, G) que a arma declara e o encaixe confere.
+**Ombros (03/10, só o Marauder):** `IMPORTED_CHASSIS.<id>.shoulderPods = { x, y, z, size }` (com `weaponMounts`) põe um lançador de foguetes
+em cada ombro: o nó nasce preso ao **osso do torso** (acompanha a inclinação da mira), na posição `x, y, z` do ombro direito no
+referencial do Mech em repouso (metros a partir dos pés, `z` = a traseira do lançador; o esquerdo é o espelho em x) e escala `size`
+metros por unidade do módulo. O desenho é `weaponModels.podModel` (o casulo de tubos sem o engate do pulso, uma malha só). Medir os
+ossos com a pose de repouso: o ombro do Marauder está em x 0,79, y 4,55 e a ombreira chega a y 4,8; o lançador assenta em cima.
+
+**Bocas por encaixe (obrigatório se o robô tem encaixe de arma):** o servidor não tem o desenho importado (usa o corpo procedural do
+Vector-09), então o ponto de onde cada tiro nasce é **dado do chassi**: `MechStats.muzzles` em `entities/chassis.ts` (quatro bocas, em metros
+a partir dos pés, virado para -Z). Depois de mexer no rig, na pose (`armRest`), em `shoulderPods` ou no módulo de uma arma:
+```
+npm run mech:bocas -- marauder
+```
+carrega o `.glb`, mede as quatro bocas com a montagem de fábrica, imprime medido × dado e sai com código 1 se alguma passar de 15 cm
+(roda dentro do `npm run check`). Sem `muzzles` no chassi, imprime o bloco pronto para colar.
+
+**Outros encaixes (reservados, não existem ainda):** peito, cabeça e costas (`HANGAR.md`): o mesmo contrato (nó + escala + módulo),
+acrescentando uma classe de tamanho (P, M, G) que a arma declara e o encaixe confere.
 
 **Limites conhecidos (R13)**
 - **Só o Marauder usa.** Os procedurais (Vector-09, Arara, Onça, Colossus, andróide) têm cano e casulo fixos no antebraço;
   Gênesis, Lancer e Bastion trazem a arma no próprio modelo. A arma só muda de desenho onde há `weaponMounts`.
-- No Marauder cada braço aceita uma arma só (`ARM_SLOTS`): hoje o que se vê trocar é o **nível** (MK I a III). Ver outras armas
-  depende do catálogo por encaixe (`ROADMAP.md`, IDEIAS).
+- No Marauder cada mão aceita blaster ou plasma e os ombros, foguetes (`ARM_SLOTS`); a mão esquerda é a segunda arma do botão
+  principal (`Loadout.offhand`) e o secundário é dos ombros (`MechStats.triggers`).
 - Braço destruído some com o módulo, mas a malha do braço fica (malha única; `FINDINGS.md`).
-- O ponto de tiro da simulação sai do desenho (`MechBase.muzzleLocal`) e o servidor desenha todo Mech como Vector-09: no Marauder
-  os dois diferem cerca de 1 m (`FINDINGS.md`).
+- O servidor desenha todo Mech como Vector-09: a boca de cada encaixe do robô importado é dado do chassi (`muzzles`, acima). O
+  jogador remoto também é desenhado como Vector-09 no cliente (`FINDINGS.md`).
 
 ## 5. Trazendo o próximo robô: roteiro
 
 1. **Gerar** com o pedido da §6.
 2. **Rigar** (Mixamo): em A-pose se o serviço aceitar; senão T-pose, e o `armRest` resolve.
-3. **Registrar:** `CHASSIS` e `ARM_SLOTS` (`entities/chassis.ts`), `IMPORTED_CHASSIS` (§3) e o Hangar (`ui/HangarMenu.ts`: título, classe, sigla).
+3. **Registrar:** `CHASSIS` e `ARM_SLOTS` (`entities/chassis.ts`), `IMPORTED_CHASSIS` (§3) e o Hangar (`ui/HangarMenu.ts`: título, classe, sigla). Com encaixe de arma: `npm run mech:bocas -- <id>` e colar o `muzzles` no chassi.
 4. **Inspecionar o arquivo, antes de escrever código:**
    ```
    npm run mech:inspecionar -- client/public/models/novo.glb --id novo

@@ -81,6 +81,7 @@ client/src/
   camera/      CameraRig.ts + modos (3ª, 1ª, tática)
   environment/ Arena.ts, Destructibles.ts, DebrisSystem.ts
   combat/      weapons.ts (arsenal: armas em 3 níveis), balance.ts (metas de equilíbrio), trigger.ts (cadência, carregador), heat.ts (calor do Mech),
+               mounts.ts (encaixes de arma e quais atiram em cada botão), Armament.ts (a regra de tiro: jogador e servidor usam a mesma),
                ProjectileSystem.ts, RocketSystem.ts, CombatSystem.ts, damage.ts (dano por parte), BotController.ts (IA), BotSystem.ts, Respawner.ts
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde)
@@ -107,6 +108,7 @@ npm test           # testes de simulação (Vitest, no Node)
 npm run check      # typecheck + testes + build + budget + boot headless (obrigatório antes de push)
 npm run smoke:dev  # boot headless contra o dev server
 npm run mech:inspecionar -- arquivo.glb   # confere um robô importado (contrato, convenção da animação, foto) e sugere o IMPORTED_CHASSIS
+npm run mech:bocas -- marauder            # mede a boca de cada encaixe de arma do robô importado e confere com o dado do chassi (roda no check)
 npm run painel     # sala de controle (novidades, equipe, mesa do Dan, fluxo, fichas, evolução, rota, frentes, decisões) em .tmp/painel/painel.html
 npm run server     # servidor de jogo do multiplayer em ws://localhost:2567/?sala=ARENA (DEPLOY.md)
 npm run site       # monta o site em .tmp/site/ (landing, oficina/, sala-de-controle/, jogar/); `-- --capturas` fotografa o jogo; `-- --check` testa em /cybermech/

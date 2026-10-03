@@ -4,7 +4,8 @@ import { weapon } from '../combat/weapons';
 import { CHASSIS } from './chassis';
 import { ImportedMech } from './ImportedMech';
 import type { MechRig } from './MechBase';
-import { weaponModel } from './weaponModels';
+import { IMPORTED_CHASSIS } from './importedMechAssets';
+import { podModel, weaponModel } from './weaponModels';
 import { AxisCorrectedJoint, instantiateImportedMechRig, type ImportedMechAsset } from './importedMechRig';
 
 /**
@@ -102,7 +103,7 @@ function boneAt(name: string, x: number, y: number, z: number): THREE.Bone {
  * exatamente como `preloadImportedMechAsset` faz com `rotationY: Math.PI`. É o caso dos quatro chassis importados.
  * `tpose`: braços abertos para os lados (como o Marauder); senão, pendurados.
  */
-function syntheticAsset(o: { tpose: boolean; armRest?: ImportedMechAsset['armRest']; weaponMounts?: boolean; unidade?: number; torsoTorto?: boolean }): ImportedMechAsset {
+function syntheticAsset(o: { tpose: boolean; armRest?: ImportedMechAsset['armRest']; weaponMounts?: boolean; shoulderPods?: ImportedMechAsset['shoulderPods']; unidade?: number; torsoTorto?: boolean }): ImportedMechAsset {
   const scene = new THREE.Group();
   const hips = boneAt('Hips', 0, 1, 0);
   const spine = boneAt('Spine', 0, 0.3, 0);
@@ -156,6 +157,7 @@ function syntheticAsset(o: { tpose: boolean; armRest?: ImportedMechAsset['armRes
     naturalMinY: 0,
     armRest: o.armRest,
     weaponMounts: o.weaponMounts,
+    shoulderPods: o.shoulderPods,
   };
 }
 
@@ -381,5 +383,81 @@ describe('importedMechRig: coice dos braços em metros para trás', () => {
     expect(at(rig, 'RArm').sub(repouso).length()).toBeCloseTo(0.35, 2);
     for (let i = 0; i < 20; i++) mech.render(1 / 60, 0); // 0,33 s depois: voltou
     expect(at(rig, 'RArm').distanceTo(repouso)).toBeLessThan(1e-4);
+  });
+});
+
+describe('importedMechRig: lançadores nos ombros (Marauder)', () => {
+  const PODS = { x: 0.5, y: 1.7, z: 0.1, size: 0.3 } as const;
+  const MARAUDER_LOADOUT = { primary: weapon('blaster'), offhand: weapon('blaster'), secondary: weapon('rockets') };
+  const podMuzzleZ = podModel(weapon('rockets')).muzzle.z;
+
+  it('sem shoulderPods não há ombros e a mão esquerda leva o secundário, como sempre', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: ARM, weaponMounts: true }), 2);
+    expect(rig.shoulderMuzzles).toBeUndefined();
+    rig.mountWeapons!({ primary: weapon('plasma'), secondary: weapon('rockets') });
+    expect(rig.leftMuzzle!.position.z).toBeCloseTo(weaponModel(weapon('rockets')).muzzle.z, 6);
+  });
+
+  it('a traseira do lançador fica onde o dado manda e a boca à frente (-Z), espelhada, com osso torto e arquivo em centímetros', () => {
+    for (const o of [{}, { unidade: 100 }, { unidade: 0.01, torsoTorto: true }]) {
+      const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: ARM, weaponMounts: true, shoulderPods: PODS, ...o }), 2);
+      rig.mountWeapons!(MARAUDER_LOADOUT);
+      rig.model.updateMatrixWorld(true);
+      const right = rig.shoulderMuzzles!.right.getWorldPosition(new THREE.Vector3());
+      const left = rig.shoulderMuzzles!.left.getWorldPosition(new THREE.Vector3());
+      const zBoca = PODS.z + podMuzzleZ * PODS.size;
+      expect(right.toArray().map((v) => Math.round(v * 1e5) / 1e5), JSON.stringify(o)).toEqual([PODS.x, PODS.y, Math.round(zBoca * 1e5) / 1e5]);
+      expect(left.x, JSON.stringify(o)).toBeCloseTo(-PODS.x, 5);
+      expect(left.y).toBeCloseTo(PODS.y, 5);
+      expect(left.z).toBeCloseTo(zBoca, 5);
+      expect(zBoca).toBeLessThan(PODS.z); // a boca está à frente da traseira
+    }
+  });
+
+  it('o lançador de ombro acompanha o tronco: inclinar o torso (a mira) leva os dois junto', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: ARM, weaponMounts: true, shoulderPods: PODS }), 2);
+    rig.mountWeapons!(MARAUDER_LOADOUT);
+    rig.model.updateMatrixWorld(true);
+    const antes = rig.shoulderMuzzles!.right.getWorldPosition(new THREE.Vector3());
+    rig.torso.rotation.x = 0.6;
+    rig.model.updateMatrixWorld(true);
+    expect(rig.shoulderMuzzles!.right.getWorldPosition(new THREE.Vector3()).distanceTo(antes)).toBeGreaterThan(0.05);
+  });
+
+  it('com ombros, a mão esquerda leva a segunda arma do botão principal (ou o engate fechado) e os foguetes vão para os ombros', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: ARM, weaponMounts: true, shoulderPods: PODS }), 2);
+    rig.mountWeapons!(MARAUDER_LOADOUT);
+    expect(rig.leftMuzzle!.position.z).toBeCloseTo(weaponModel(weapon('blaster')).muzzle.z, 6);
+    expect(rig.shoulderMuzzles!.right.position.z).toBeCloseTo(podMuzzleZ, 6);
+    expect(rig.shoulderMuzzles!.left.position.z).toBeCloseTo(podMuzzleZ, 6);
+
+    rig.mountWeapons!({ primary: weapon('blaster'), offhand: null, secondary: null });
+    expect(rig.leftMuzzle!.position.z).toBeCloseTo(weaponModel(null).muzzle.z, 6); // mão esquerda vazia: engate fechado
+    expect(rig.shoulderMuzzles!.right.position.z).toBe(0); // ombro vazio: sem módulo
+    const hardpoint = (side: THREE.Object3D) => side.parent!;
+    expect(hardpoint(rig.shoulderMuzzles!.right).children.filter((c) => c !== rig.shoulderMuzzles!.right)).toHaveLength(1); // o grupo vazio
+  });
+
+  it('remontar a mesma montagem não troca o módulo; trocar de nível ou tirar a arma troca só o do ombro', () => {
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: ARM, weaponMounts: true, shoulderPods: PODS }), 2);
+    rig.mountWeapons!(MARAUDER_LOADOUT);
+    const modules = (side: THREE.Object3D) => side.parent!.children.filter((c) => c !== side);
+    const antes = modules(rig.shoulderMuzzles!.right)[0];
+    rig.mountWeapons!(MARAUDER_LOADOUT);
+    expect(modules(rig.shoulderMuzzles!.right)[0]).toBe(antes);
+    rig.mountWeapons!({ ...MARAUDER_LOADOUT, secondary: weapon('rockets', 1) });
+    expect(modules(rig.shoulderMuzzles!.right)[0]).not.toBe(antes);
+    expect(antes!.parent).toBeNull();
+  });
+
+  it('o dado de boca do Marauder bate com a posição configurada do lançador e o comprimento do módulo (a conta não depende do arquivo)', () => {
+    const cfg = IMPORTED_CHASSIS.marauder!.shoulderPods!;
+    const dado = CHASSIS.marauder.muzzles!;
+    const z = cfg.z + podMuzzleZ * cfg.size;
+    for (const [mount, lado] of [['rightShoulder', 1], ['leftShoulder', -1]] as const) {
+      expect(dado[mount]![0], mount).toBeCloseTo(lado * cfg.x, 1);
+      expect(dado[mount]![1], mount).toBeCloseTo(cfg.y, 1);
+      expect(dado[mount]![2], mount).toBeCloseTo(z, 1);
+    }
   });
 });

@@ -77,7 +77,7 @@ import { CtfHud } from '../ui/CtfHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
-const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : l.secondary.kind === 'melee' ? 'MOTOSSERRA' : 'FOGUETES');
+const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : l.secondary.kind === 'melee' ? 'MOTOSSERRA' : l.secondary.kind === 'ammo' ? 'FOGUETES' : l.secondary.name.toUpperCase());
 
 /** Onde os braços do Mech do Hangar estão na tela (reaproveitados por quadro). */
 const _hotRight = { x: 0, y: 0 };
@@ -636,10 +636,8 @@ export class Game {
         if (giant > 0 && close > 0) rig.addShake(0.4 * giant * close * close * w);
       };
     }
-    // Som de disparo: wrap do onFire do jogador (não toca para bots — só mech do jogador).
-    // O método onFire original anima o recuo; o wrap mantém esse comportamento e adiciona o som.
-    const _origFire = mech.onFire.bind(mech);
-    mech.onFire = () => { _origFire(); this.audio.playShot(); };
+    // Som de disparo: o controle do jogador avisa a cada tiro de energia (bots têm o som deles, acima).
+    this.player.onShot = () => this.audio.playShot();
     this.player.onRocket = () => {
       this.audio.playRocketLaunch();
       this.onboarding.trigger('rockets');
@@ -1043,8 +1041,9 @@ export class Game {
     this.killFeed.update(dt);
     this.onboarding.update(dt);
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
-    const saw = this.mech.loadout.secondary?.kind === 'melee';
-    this.hud.setRockets(saw ? 4 : this.player.launcher.ammo, saw ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);
+    // Só o gatilho de carregador (foguetes) tem pips para esvaziar; serra e arma de energia ficam cheios.
+    const noMagazine = this.mech.loadout.secondary?.kind !== 'ammo';
+    this.hud.setRockets(noMagazine ? 4 : this.player.launcher.ammo, noMagazine ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);
     this.hud.setHeat(this.mech.heat, this.mech.overheated, this.mech.coolingBoost);
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);

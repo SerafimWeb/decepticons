@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { MountId } from '../combat/mounts';
 import type { Loadout } from '../combat/weapons';
 import type { TestFire } from './testFire';
 import { PALETTE } from '../core/palette';
@@ -261,7 +262,7 @@ export class HangarScene {
   private practiceAccuracy = 0;
   private readonly shotsPool: Shot[] = [];
   private readonly flashes: Flash[] = [];
-  private test: { data: TestFire; arm: 'right' | 'left'; t: number; next: number; aimFrom: number; aimTo: number } | null = null;
+  private test: { data: TestFire; mounts: readonly MountId[]; t: number; next: number; aimFrom: number; aimTo: number } | null = null;
   /** 0 = câmera do Hangar, 1 = câmera aberta do teste (mistura suave entre as duas). */
   private testCam = 0;
   private readonly camHome = new THREE.Vector3();
@@ -402,9 +403,9 @@ export class HangarScene {
    * Teste de disparo: o Mech vira para o alvo e dispara a arma do braço escolhido no ritmo do teste (`testFire`, as
    * regras do jogo). A câmera abre para mostrar o Mech e o alvo. Chame `testProgress` a cada quadro.
    */
-  startTest(data: TestFire, arm: 'right' | 'left'): void {
+  startTest(data: TestFire, mounts: readonly MountId[]): void {
     const aimTo = Math.atan2(-(TARGET.x - 0), -(TARGET.z - 0));
-    this.test = { data, arm, t: 0, next: 0, aimFrom: this.turntable.rotation.y, aimTo };
+    this.test = { data, mounts, t: 0, next: 0, aimFrom: this.turntable.rotation.y, aimTo };
   }
 
   /** O teste em andamento: segundo atual e duração (null = sem teste). */
@@ -693,13 +694,13 @@ export class HangarScene {
   }
 
   /** Um tiro do teste: da boca da arma até um ponto do alvo (motosserra só solta faísca na lâmina). */
-  private fire(test: { data: TestFire; arm: 'right' | 'left' }): void {
+  private fire(test: { data: TestFire; mounts: readonly MountId[]; next: number }): void {
     const m = this.shown;
     if (!m) return;
     const w = test.data.weapon;
     const from = _v;
-    if (test.arm === 'left') m.leftMuzzleWorldPosition(from);
-    else m.muzzleWorldPosition(from);
+    // Vários encaixes atiram juntos (os dois ombros): cada tiro da lista sai do encaixe seguinte, em rodízio.
+    m.mountWorldPosition(test.mounts[test.next % test.mounts.length]!, from);
     if (w.kind === 'melee') {
       this.flash(from, 0.7);
       return;
