@@ -6,6 +6,8 @@ import type { MechBase } from '../client/src/entities/MechBase';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/constants';
 import { EVENT } from '../shared/net/events';
+import { hitDamage, weapon } from '../client/src/combat/weapons';
+import { netWeaponIndex } from '../client/src/net/adapters';
 import { newNetInput, type NetInput } from '../shared/net/input';
 import { NET_PARTS } from '../shared/net/state';
 import {
@@ -240,6 +242,46 @@ describe('M5: o acerto é decidido pelo servidor e vira evento HIT', () => {
     expect(hits.length).toBe(1);
     expect(lost).toBeGreaterThan(0);
     expect(Math.abs(lost - hits[0]!.amount)).toBeLessThanOrEqual(0.5);
+    room.dispose();
+  });
+});
+
+describe('Lancer-L1 online: a escopeta no servidor', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com o texto da montagem (id com maiúscula) e o tiro sai como escopeta, com o dano de perto', async () => {
+    const room = await ArenaRoom.create('LANCER');
+    const dan = new FakePeer();
+    room.receive(dan, join('Dan', 'v1.lancerL1.shotgun-0.-'));
+    expect(dan.of(MSG.WELCOME)).toHaveLength(1); // não foi recusado como 'montagem'
+    const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
+    expect(decodeRoster(dan.of(MSG.ROSTER).at(-1)!)!.find((e) => e.id === me)).toMatchObject({ build: 'v1.lancerL1.shotgun-0.-' });
+    room.step();
+    const units = room['units'] as TestUnit[];
+    const bot = units.find((u) => u.kind === 'mech')!;
+    const mine = units.find((u) => u.id === me)!;
+    expect(mine.mech.loadout.primary.id).toBe('shotgun');
+    expect(mine.mech.loadout.secondary).toBeNull();
+    const muzzle = new THREE.Vector3();
+    mine.mech.simMuzzle(muzzle);
+    bot.mech.respawn(new THREE.Vector3(muzzle.x, room.positionOf(me)!.y, muzzle.z - 3));
+    room.receive(dan, inputs(1, 1, { fire: true }));
+    room.receive(dan, inputs(2, 17));
+    for (let i = 0; i < 24; i++) room.step();
+
+    const batch = newEventBatch();
+    const shots: number[] = [];
+    for (const bytes of dan.of(MSG.EVENTS)) {
+      decodeEvents(bytes, batch);
+      for (let i = 0; i < batch.count; i++) if (batch.list[i]!.kind === EVENT.SHOT && batch.list[i]!.unit === me) shots.push(batch.list[i]!.index);
+    }
+    expect(shots).toEqual([netWeaponIndex('shotgun')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.amount).toBe(hitDamage(weapon('shotgun'), 3));
+    expect(hits[0]!.amount).toBeGreaterThan(weapon('plasma').damage * 2);
     room.dispose();
   });
 });

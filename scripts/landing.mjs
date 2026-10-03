@@ -413,6 +413,10 @@ if (arms && sheet) {
   const perTon = energy.tiers.map((t) => t.dps / t.mass);
   const load = arms.weapons.reduce((sum, w) => sum + w.tiers[0].mass, 0);
   const [a0, a1] = arms.weapons;
+  // A regra "uma arma sozinha" vale para o plasma e os foguetes. A escopeta de outro chassi é a exceção de propósito:
+  // passa disso, mas só de perto (dano cheio até `optimal` m, 8% ao fim do alcance).
+  const near = arms.others[0];
+  const nearTtk = near ? Math.min(...near.tiers.map((t) => t.ttk)) : null;
   const legend = [
     ['BRAÇO D · ENERGIA', `${a0.name} MK I · ${tons(a0.tiers[0].mass)}`],
     ['BRAÇO E · MUNIÇÃO', `${a1.name} MK I · ${tons(a1.tiers[0].mass)}`],
@@ -434,6 +438,8 @@ if (arms && sheet) {
     </div>
     <h3 class="sub-h">Arsenal · três níveis de poder</h3>
     <div class="arsenal">${arms.weapons.map(wpnCard).join('')}</div>
+    ${arms.others.length ? `<h3 class="sub-h">Em outros chassis</h3>
+    <div class="arsenal">${arms.others.map((w, i) => wpnCard(w, arms.weapons.length + i)).join('')}</div>` : ''}
     <p class="wpn-legend">MK II: +20% de dano, +15% de calor e +50% de carga. MK III: +40%, +30% e o dobro. DANO/S = gatilho apertado por 30 s, contando as travas por calor e as recargas. DERRUBA EM = tempo para derrubar o torso de um ${esc(arms.target)} (${arms.torso} de vida) com todos os tiros no alvo.</p>
     <h3 class="sub-h">Monte dentro da carga</h3>
     <p class="lede">O ${esc(arms.target)} carrega até ${tons(arms.capacity)} de armas. Das nove combinações de plasma e foguetes, cabem ${arms.builds.flat().filter((b) => b.fits).length}: um braço no MK III obriga o outro a ficar leve. O tempo é o dos dois braços juntos derrubando o torso, com todos os tiros no alvo.</p>
@@ -456,7 +462,7 @@ if (arms && sheet) {
     ${arms.pilot ? `<p><a class="link-btn" href="./jogar/?build=${esc(arms.pilot.key)}">ou jogue a pé: andróide de ${num(arms.pilot.height, 1)} m, blaster e motosserra, contra Mechs de ${num(arms.pilot.mechHeight, 1)} m →</a></p>` : ''}
     <h3 class="sub-h">Regras de equilíbrio</h3>
     <div class="sitrep">
-      <div class="read frame"><span class="k">uma arma sozinha</span><span class="v">≥ ${num(single, 1)} s</span><span class="d">para derrubar um Mech, mesmo no MK III</span></div>
+      <div class="read frame"><span class="k">uma arma sozinha</span><span class="v">≥ ${num(single, 1)} s</span><span class="d">para derrubar um Mech, mesmo no MK III${near && nearTtk < single ? `. Só a ${esc(near.name.toLowerCase())} do ${esc(near.chassis)} faz menos (${num(nearTtk, 1)} s), e só a menos de ${near.optimal} m` : ''}</span></div>
       <div class="read frame"><span class="k">os dois braços juntos</span><span class="v">≥ ${num(combo, 1)} s</span><span class="d">o calor do Mech trava antes de terminar o serviço</span></div>
       <div class="read frame"><span class="k">MK III contra MK I</span><span class="v">−${gain}%</span><span class="d">de tempo no plasma: dá para sentir, mas não decide a luta</span></div>
       <div class="read frame"><span class="k">dano por tonelada</span><span class="v">${num(perTon[0] / perTon[2], 1)}×</span><span class="d">o MK I rende mais por tonelada que o MK III: poder custa carga</span></div>

@@ -1,6 +1,6 @@
 import { TIERS, weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { reloadWithout } from '../core/url';
-import { CHASSIS, type ChassisId } from '../entities/chassis';
+import { CHASSIS, SHIELD_ARM, type ChassisId } from '../entities/chassis';
 import type { Hangar } from '../hangar/Hangar';
 import { armOptions, factorySpec, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { PRESET_COUNT } from '../hangar/Hangar';
@@ -49,6 +49,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   plasma: 'Energia · dano cheio até 60 m · calor por disparo',
   rockets: 'Munição · explosão em área · recarga automática',
   blaster: 'Energia · leve · alcance curto',
+  shotgun: 'Energia · dano alto de perto, some aos 45 m · um projétil só',
   chainsaw: 'Corpo a corpo · só corta encostado',
 };
 
@@ -57,6 +58,7 @@ const WEAPON_ICON: Record<WeaponId, string> = {
   plasma: '<path d="M3 13h11l2-3h5v6h-5l-2-3" /><circle cx="7" cy="13" r="2.5" /><path d="M16 10v6" />',
   rockets: '<rect x="4" y="6" width="14" height="12" rx="1" /><circle cx="8" cy="10" r="1.6" /><circle cx="14" cy="10" r="1.6" /><circle cx="8" cy="14" r="1.6" /><circle cx="14" cy="14" r="1.6" /><path d="M18 9h3v6h-3" />',
   blaster: '<path d="M4 9h13l2 2v2H9l-1 5H5l1-5H4z" /><path d="M17 11h4" />',
+  shotgun: '<path d="M3 10h15M3 14h15" /><path d="M18 8l3 1v6l-3 1z" /><path d="M6 14v4h5v-4" />',
   chainsaw: '<rect x="3" y="9" width="7" height="7" rx="1" /><path d="M10 10h9a2.5 2.5 0 0 1 0 5h-9" /><path d="M12 10l1-2M15 10l1-2M18 10l1-2M12 15l1 2M15 15l1 2M18 15l1 2" />',
 };
 
@@ -593,12 +595,13 @@ export class HangarMenu {
       .join('');
 
     const slotList = this.root.querySelector<HTMLElement>('#hangar-slot-list')!;
+    const shield = SHIELD_ARM.includes(spec.chassis);
     slotList.innerHTML = (['right', 'left'] as const)
       .map((slot) => {
         const arm = spec[slot];
         const w = arm ? weapon(arm.id, arm.tier) : null;
         const selected = slot === this.selectedSlot;
-        return `<button class="hg-slot${selected ? ' selected' : ''}${w ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${w ? WEAPON_ICON[w.id] : '<path d="M6 12h12" />'}</svg><span><small>${SLOT_LABEL[slot]}</small><b>${w?.name ?? 'VAZIO'}</b></span><em>${w ? TIERS[w.tier]!.label : '—'}</em></button>`;
+        return `<button class="hg-slot${selected ? ' selected' : ''}${w ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${w ? WEAPON_ICON[w.id] : '<path d="M6 12h12" />'}</svg><span><small>${SLOT_LABEL[slot]}</small><b>${w?.name ?? (slot === 'left' && shield ? 'ESCUDO' : 'VAZIO')}</b></span><em>${w ? TIERS[w.tier]!.label : '—'}</em></button>`;
       })
       .join('');
 
@@ -609,11 +612,12 @@ export class HangarMenu {
     const options = armOptions(this.selectedSlot, spec.chassis)
       .map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name}</option>`)
       .join('');
+    const shieldArm = this.selectedSlot === 'left' && shield;
     const editor = this.root.querySelector<HTMLElement>('#hangar-weapon-editor')!;
     editor.innerHTML = `
       <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ARMAMENTO</label>
-      <select id="hangar-weapon-select">${this.selectedSlot === 'left' ? `<option value=""${arm ? '' : ' selected'}>VAZIO (menos carga)</option>` : ''}${options}</select>
-      <p class="hg-hint">${w ? WEAPON_HINT[w.id] : 'Encaixe vazio: sobra carga para o outro braço.'}</p>
+      <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot === 'left' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}</select>
+      <p class="hg-hint">${w ? WEAPON_HINT[w.id] : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o outro braço.'}</p>
       <div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : `+${Math.round((t.damage - 1) * 100)}% dano`}</small></button>`).join('')}</div>
       <button class="hg-test-btn" type="button" data-action="test"${arm ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>
@@ -638,7 +642,7 @@ export class HangarMenu {
       apply.disabled = !report.check.ok;
       apply.title = report.check.ok ? 'Salvar e aplicar a montagem' : report.check.detail;
     }
-    this.hotLeft.querySelector('span')!.innerHTML = `<b>02</b> ${spec.left ? 'BRAÇO E' : 'BRAÇO E · VAZIO'}`;
+    this.hotLeft.querySelector('span')!.innerHTML = `<b>02</b> ${spec.left ? 'BRAÇO E' : shield ? 'BRAÇO E · ESCUDO' : 'BRAÇO E · VAZIO'}`;
     // Atalhos 1 a 4: vazio salva a montagem da tela; cheio carrega (e o SALVAR pequeno sobrescreve).
     const draftKey = loadoutKey(spec);
     this.root.querySelector<HTMLElement>('#hg-presets')!.innerHTML = this.hangar

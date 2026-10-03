@@ -37,7 +37,7 @@ const reader = new Reader();
 
 /** Bytes de UTF-8 reservados para o apelido (acentos ocupam 2). */
 const NAME_BYTES = NAME_MAX * 2;
-const BUILD_RE = /^[a-z0-9.-]{1,48}$/;
+const BUILD_RE = /^[A-Za-z0-9.-]{1,48}$/;
 const ROOM_RE = /^[A-Z0-9-]{1,12}$/;
 
 /** Apelido: só letras, números, espaço, ponto, hífen, sublinhado e o ponto do meio (CLAWD·BRABO); até 16; vazio vira PILOTO. */

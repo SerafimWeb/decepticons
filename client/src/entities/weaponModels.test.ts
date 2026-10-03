@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { weapon, type Tier, type WeaponId } from '../combat/weapons';
 import { weaponModel } from './weaponModels';
 
-const IDS: WeaponId[] = ['plasma', 'rockets', 'blaster', 'chainsaw'];
+const IDS: WeaponId[] = ['plasma', 'rockets', 'blaster', 'shotgun', 'chainsaw'];
 const TIERS: Tier[] = [0, 1, 2];
 
 function meshesOf(o: THREE.Object3D): THREE.Mesh[] {

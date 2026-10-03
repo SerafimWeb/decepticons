@@ -179,7 +179,7 @@ export async function jogo() {
     const balance = await load('client/src/combat/balance.ts');
     const heat = await load('client/src/combat/heat.ts');
     // Os números dos chassis ficam num arquivo sem 3D: o site não carrega o Three.js.
-    const { VECTOR09_STATS, ANDROID_STATS, PILOT_ANDROID_STATS } = await load('client/src/entities/chassis.ts');
+    const { VECTOR09_STATS, ANDROID_STATS, PILOT_ANDROID_STATS, ARM_SLOTS, CHASSIS } = await load('client/src/entities/chassis.ts');
     const hangar = await load('client/src/hangar/loadout.ts');
     const count = (file) => (read(file).match(/^\s+it\(/gm) ?? []).length;
     // Rede (multiplayer): ritmos, tetos e a conta da banda, do mesmo código que os testes travam.
@@ -205,7 +205,7 @@ export async function jogo() {
     const tests = count('client/src/combat/weapons.test.ts');
     // Testes que travam as regras da bancada: armas, calor e o Mech de verdade contra a bancada.
     const benchTests = tests + count('client/src/combat/heat.test.ts') + count('client/src/entities/MechHeat.test.ts');
-    return { weapons, balance, heat, hangar, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, tests, benchTests, net };
+    return { weapons, balance, heat, hangar, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, slots: ARM_SLOTS, chassis: CHASSIS, tests, benchTests, net };
   } catch (err) {
     console.warn(`::warning::site sem os dados do jogo: ${err instanceof Error ? err.message : err}`);
     return null;
@@ -241,47 +241,58 @@ export function recordSheet(game) {
 /**
  * Arsenal do Hangar: cada arma de Mech nos três níveis, com o dano sustentado e o tempo para derrubar o
  * torso do Vector-09 calculados pela mesma simulação do jogo (`combat/balance.ts`: teto teórico, todos
- * os tiros no alvo). O blaster fica de fora: é a arma dos andróides.
+ * os tiros no alvo). O blaster fica de fora: é a arma dos andróides. `weapons` é o que cabe nos braços do
+ * Vector-09 (as contas da página sobre o Hangar são dele); `others` é o resto dos Mechs, como a escopeta do
+ * Lancer-L1, com o nome do chassi que a carrega. O alvo das contas é sempre o torso do Vector-09.
  */
 export function arsenal(game) {
   if (!game) return null;
-  const { weapons: W, balance: B, vector: v } = game;
+  const { weapons: W, balance: B, vector: v, slots: S, chassis: C } = game;
   const torso = v.maxModuleHealth.torso;
   // Só as armas dos braços do Mech (energia e munição); blaster e motosserra são dos andróides.
   const ids = W.WEAPON_IDS.filter((id) => id !== 'blaster' && W.weapon(id).kind !== 'melee');
   const levels = [0, 1, 2];
+  const card = (id, slot) => {
+    const base = W.weapon(id, 0);
+    return {
+      id,
+      name: base.name,
+      kind: base.kind,
+      speed: base.speed,
+      optimal: base.optimalRange,
+      max: base.maxRange,
+      minFactor: base.minFactor,
+      blast: base.blastRadius,
+      magazine: base.magazine,
+      slot,
+      tiers: levels.map((t) => {
+        const w = W.weapon(id, t);
+        return {
+          label: W.TIERS[t].label,
+          damage: w.damage,
+          rate: 1 / w.fireInterval,
+          heat: w.heatPerShot,
+          reload: w.reload,
+          mass: w.mass,
+          dps: B.sustainedDps(w, v),
+          ttk: B.timeToKill([w], v, torso),
+        };
+      }),
+    };
+  };
+  const onVector = (id) => S.vector09.right.includes(id) || S.vector09.left.includes(id);
+  // Onde a arma da `others` mora: o primeiro chassi que a aceita (e em qual braço).
+  const carrier = (id) => {
+    const chassisId = Object.keys(S).find((c) => S[c].right.includes(id) || S[c].left.includes(id));
+    const chassis = C[chassisId].name;
+    return { chassis, slot: `${chassis.toLowerCase()} · braço ${S[chassisId].right.includes(id) ? 'direito' : 'esquerdo'}` };
+  };
   return {
     target: v.name,
     torso,
     tests: game.tests,
-    weapons: ids.map((id) => {
-      const base = W.weapon(id, 0);
-      return {
-        id,
-        name: base.name,
-        kind: base.kind,
-        speed: base.speed,
-        optimal: base.optimalRange,
-        max: base.maxRange,
-        minFactor: base.minFactor,
-        blast: base.blastRadius,
-        magazine: base.magazine,
-        slot: id === v.loadout.primary.id ? 'braço direito' : 'braço esquerdo',
-        tiers: levels.map((t) => {
-          const w = W.weapon(id, t);
-          return {
-            label: W.TIERS[t].label,
-            damage: w.damage,
-            rate: 1 / w.fireInterval,
-            heat: w.heatPerShot,
-            reload: w.reload,
-            mass: w.mass,
-            dps: B.sustainedDps(w, v),
-            ttk: B.timeToKill([w], v, torso),
-          };
-        }),
-      };
-    }),
+    weapons: ids.filter(onVector).map((id) => card(id, S.vector09.right.includes(id) ? 'braço direito' : 'braço esquerdo')),
+    others: ids.filter((id) => !onVector(id)).map((id) => ({ ...card(id, carrier(id).slot), chassis: carrier(id).chassis })),
     combo: levels.map((t) => ({ label: W.TIERS[t].label, ttk: B.timeToKill([W.weapon('plasma', t), W.weapon('rockets', t)], v, torso) })),
     tier: W.TIERS,
     capacity: v.weaponCapacity,

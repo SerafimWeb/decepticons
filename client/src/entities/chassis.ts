@@ -208,10 +208,15 @@ export const GENESIS01_STATS: MechStats = {
   name: 'GÊNESIS-01',
 };
 
-/** Lancer-L1: bípede médio importado, malha da Forge Systems. */
+/**
+ * Lancer-L1: bípede médio importado, malha da Forge Systems. Dono, 03/10: o braço esquerdo leva um **escudo**, então
+ * não tem lança-mísseis; a arma dele é a **escopeta** (alcance curto, dano alto de perto). O escudo ainda é só
+ * desenho: não bloqueia dano (a aba "blindagem" do Hangar está em breve).
+ */
 export const LANCER_L1_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'LANCER-L1',
+  loadout: { primary: weapon('shotgun'), secondary: null },
 };
 
 /** LR-7L Bastion: chassi importado, Cybermech Industries. */
@@ -265,8 +270,12 @@ export const ARM_SLOTS: Record<ChassisId, { right: readonly WeaponId[]; left: re
   arara: { right: ['plasma', 'blaster'], left: ['rockets', 'blaster'] },
   onca: { right: ['plasma', 'rockets'], left: ['plasma', 'rockets'] },
   genesis01: { right: ['plasma'], left: ['rockets'] },
-  lancerL1: { right: ['plasma'], left: ['rockets'] },
+  // O braço esquerdo leva o escudo: nenhuma arma cabe nele.
+  lancerL1: { right: ['shotgun'], left: [] },
   lr7lBastion: { right: ['plasma'], left: ['rockets'] },
   quadraV2: { right: ['plasma'], left: ['rockets'] },
   marauder: { right: ['plasma'], left: ['rockets'] },
 };
+
+/** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */
+export const SHIELD_ARM: readonly ChassisId[] = ['lancerL1'];

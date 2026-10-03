@@ -49,6 +49,7 @@ import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassi
 import { COLOSSUS_01_BLUEPRINT, HEAVY_MECH_BLUEPRINT, LIGHT_MECH_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
 import { ImportedMech } from '../entities/ImportedMech';
 import { IMPORTED_CHASSIS, preloadMechAsset, tryInstantiateMechRig } from '../entities/importedMechAssets';
+import type { Loadout } from '../combat/weapons';
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { PALETTE } from './palette';
@@ -74,6 +75,9 @@ import { ModeSelector } from '../ui/ModeSelector';
 import { MissionHUD } from '../ui/MissionHUD';
 import { CtfHud } from '../ui/CtfHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
+
+/** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
+const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : l.secondary.kind === 'melee' ? 'MOTOSSERRA' : 'FOGUETES');
 
 /** Onde os braços do Mech do Hangar estão na tela (reaproveitados por quadro). */
 const _hotRight = { x: 0, y: 0 };
@@ -382,7 +386,7 @@ export class Game {
         document.body.append(this.netStatus);
       }
     }
-    this.hud.setSecondaryLabel(this.mech.loadout.secondary?.kind === 'melee' ? 'MOTOSSERRA' : 'FOGUETES');
+    this.hud.setSecondaryLabel(secondaryLabel(this.mech.loadout));
     this.assist = new AimAssist(physics, this.mech, this.bots.mechs);
 
     this.wireEvents();
@@ -534,7 +538,7 @@ export class Game {
     if (!loadout) return;
     this.mech.equip(poweredLoadout(loadout, this.power.current, 'player'), keepHeat);
     this.player.rearm();
-    this.hud.setSecondaryLabel(this.mech.loadout.secondary?.kind === 'melee' ? 'MOTOSSERRA' : 'FOGUETES');
+    this.hud.setSecondaryLabel(secondaryLabel(this.mech.loadout));
   }
 
   /**

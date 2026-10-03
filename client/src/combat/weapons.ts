@@ -37,7 +37,7 @@ export const TIERS: readonly TierRule[] = [
   { label: 'MK III', damage: 1.4, heat: 1.3, mass: 2 },
 ];
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'chainsaw';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw';
 
 /** Arma pronta para o combate, já no nível escolhido. Tudo em unidades do jogo (m, s, t). */
 export interface WeaponStats {
@@ -124,6 +124,29 @@ const BASE: Record<WeaponId, WeaponBase> = {
     minFactor: 0.5,
     blastRadius: 0,
     mass: 0.5,
+  },
+  /**
+   * Escopeta (dono, 03/10, para o Lancer: "o alcance do tiro é mais curto que o blaster e tira mais vida se estiver
+   * pertinho do inimigo"). Um projétil só, sem balins: o custo é o de um tiro de plasma. A queima-roupa (até 8 m)
+   * bate 52; cai em linha reta até 8% aos 45 m, onde o blaster ainda alcança 120 m. Sozinha derruba o torso de um
+   * Mech em ~4 s de perto (o plasma leva ~5,7 s), mas só de perto. Números de partida: o dono ajusta em
+   * Configurações > Potências.
+   */
+  shotgun: {
+    id: 'shotgun',
+    name: 'Escopeta',
+    kind: 'energy',
+    damage: 52,
+    fireInterval: 0.8,
+    heatPerShot: 0.18,
+    magazine: 0,
+    reload: 0,
+    speed: 120,
+    optimalRange: 8,
+    maxRange: 45,
+    minFactor: 0.08,
+    blastRadius: 0,
+    mass: 2,
   },
   /**
    * Motosserra dos andróides (dono, 25/09: "ele tem que ficar perto de nós pra usar"): corta o que está

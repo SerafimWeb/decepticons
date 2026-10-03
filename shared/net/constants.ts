@@ -3,8 +3,11 @@
  * testes de tamanho e o site. Sem nenhuma dependência: o servidor importa direto.
  */
 
-/** Versão do protocolo: cliente e servidor de versões diferentes não conversam (o servidor recusa). */
-export const PROTOCOL_VERSION = 1;
+/**
+ * Versão do protocolo: cliente e servidor de versões diferentes não conversam (o servidor recusa).
+ * 2 (03/10): a escopeta entra em `NET_WEAPONS`; um cliente da versão 1 recusaria o tiro dela como evento ruim.
+ */
+export const PROTOCOL_VERSION = 2;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

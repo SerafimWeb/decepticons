@@ -5,6 +5,7 @@ import { weapon, type Tier } from '../combat/weapons';
 import { VECTOR09_STATS, Vector09 } from '../entities/Vector09';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Hangar, HANGAR_STORAGE_KEY } from './Hangar';
+import { CHASSIS, type ChassisId } from '../entities/chassis';
 import { armOptions, FACTORY_LOADOUT, factorySpec, loadoutKey, parseLoadoutKey, validateLoadout, type LoadoutSpec } from './loadout';
 
 const LEVELS: Tier[] = [0, 1, 2];
@@ -168,5 +169,34 @@ describe('Mech com a montagem do Hangar', () => {
     m.equip(heavy.loadout, true);
     expect(m.loadout.primary).toBe(weapon('plasma', 2));
     expect(m.heat).toBeCloseTo(hot, 6);
+  });
+});
+
+describe('o texto da montagem vale para todos os chassis (link e rede)', () => {
+  it('a montagem de fábrica de cada chassi volta idêntica do texto, inclusive os que têm maiúscula no id', () => {
+    for (const id of Object.keys(CHASSIS) as ChassisId[]) {
+      const spec = factorySpec(id);
+      expect(validateLoadout(spec).ok, id).toBe(true);
+      expect(parseLoadoutKey(loadoutKey(spec)), id).toEqual(spec);
+    }
+  });
+});
+
+describe('Lancer-L1: escopeta no braço direito e escudo no esquerdo (sem lança-mísseis)', () => {
+  it('a fábrica é a escopeta sozinha, e o braço esquerdo não aceita arma nenhuma', () => {
+    expect(factorySpec('lancerL1')).toEqual({ v: 1, chassis: 'lancerL1', right: { id: 'shotgun', tier: 0 }, left: null });
+    expect(armOptions('right', 'lancerL1')).toEqual(['shotgun']);
+    expect(armOptions('left', 'lancerL1')).toEqual([]);
+  });
+
+  it('foguete no braço do escudo e plasma no braço da escopeta são recusados; a escopeta em MK III cabe na carga', () => {
+    const lancer = factorySpec('lancerL1');
+    expect(validateLoadout({ ...lancer, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(validateLoadout({ ...lancer, right: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(validateLoadout({ ...lancer, right: { id: 'shotgun', tier: 2 } })).toMatchObject({ ok: true });
+  });
+
+  it('a escopeta não vai no Vector-09 (cada chassi diz o que aceita)', () => {
+    expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'shotgun', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
   });
 });
