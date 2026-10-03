@@ -217,10 +217,15 @@ export function splashDamage(w: WeaponStats, dist: number): number {
   return Math.round(w.damage * (1 - Math.max(0, dist) / w.blastRadius));
 }
 
-/** O que um Mech leva nos braços. O Hangar vai trocar isto; hoje cada chassi vem com o de fábrica. */
+/**
+ * O que um Mech leva. Cada campo é um **gatilho**, não um lado do corpo: onde a arma está (mão, ombro) vem do chassi
+ * (`MechStats.triggers`, `combat/mounts.ts`). No padrão, `primary` é da mão direita e `secondary` da esquerda.
+ */
 export interface Loadout {
-  /** Braço direito: arma de energia (tiro principal). */
+  /** Gatilho principal (mouse esquerdo): a arma da mão direita. */
   primary: WeaponStats;
-  /** Braço esquerdo: arma de munição (secundária), se houver. */
+  /** Gatilho secundário (mouse direito, Q): a arma da mão esquerda; nos chassis com lançadores, a dos ombros. */
   secondary: WeaponStats | null;
+  /** Só nos chassis com duas mãos no gatilho principal (Marauder): a arma da mão esquerda, que atira junto com a `primary`. */
+  offhand?: WeaponStats | null;
 }

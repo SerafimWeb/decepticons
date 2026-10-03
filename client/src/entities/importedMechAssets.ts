@@ -17,10 +17,12 @@ export interface ImportedChassisConfig {
   armRest?: ImportedRigOptions['armRest'];
   /** Mão e dedos somem e as armas da montagem se encaixam nos pulsos (ver `ImportedRigOptions.weaponMounts`). */
   weaponMounts?: boolean;
+  /** Lançadores nos ombros (ver `ImportedRigOptions.shoulderPods`). */
+  shoulderPods?: ImportedRigOptions['shoulderPods'];
 }
 
 /** O que o carregamento precisa além do arquivo e da altura: o próprio `ImportedChassisConfig` serve. */
-type PreloadOptions = Pick<ImportedChassisConfig, 'rotationY' | 'boneNames' | 'armRest' | 'weaponMounts'>;
+type PreloadOptions = Pick<ImportedChassisConfig, 'rotationY' | 'boneNames' | 'armRest' | 'weaponMounts' | 'shoulderPods'>;
 
 export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>> = {
   genesis01: {
@@ -84,6 +86,8 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
     armRest: { upper: [0.62, -0.77, -0.15], fore: [0.1, 0, -1] },
     // Sem arma no modelo: as mãos somem e a arma da montagem se encaixa no pulso (weaponMount.ts).
     weaponMounts: true,
+    // Os dois lançadores nos ombros (dono, 03/10). Medido na pose de repouso: o ombro direito fica em x 0,79, y 4,55, z 0,51.
+    shoulderPods: { x: 1.08, y: 4.82, z: 0.72, size: 0.64 },
     boneNames: {
       hips: 'mixamorigHips',
       head: 'mixamorigNeck',
@@ -106,7 +110,7 @@ const key = (url: string, targetHeight: number) => `${url}@${targetHeight}`;
 export function preloadMechAsset(url: string, targetHeight: number, options: PreloadOptions = {}): void {
   const k = key(url, targetHeight);
   if (cache.has(k) || pending.has(k)) return;
-  const p = preloadImportedMechAsset(url, { targetHeight, rotationY: options.rotationY, boneNames: options.boneNames, armRest: options.armRest, weaponMounts: options.weaponMounts });
+  const p = preloadImportedMechAsset(url, { targetHeight, rotationY: options.rotationY, boneNames: options.boneNames, armRest: options.armRest, weaponMounts: options.weaponMounts, shoulderPods: options.shoulderPods });
   pending.set(k, p);
   p.then((asset) => { cache.set(k, asset); pending.delete(k); })
     .catch((err) => { pending.delete(k); console.error(`falha ao carregar rig importado (${url}):`, err); });

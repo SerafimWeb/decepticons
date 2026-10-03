@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { HeatSink, OVERHEAT_SPEED, type ChassisHeat, type HeatState } from '../combat/heat';
 import { repairModules } from '../combat/repair';
 import { applyDamage, partAt, type DamageResult } from '../combat/damage';
-import type { Loadout } from '../combat/weapons';
+import { DEFAULT_TRIGGERS, MOUNT_PART, MOUNTS, type MountId, type TriggerLayout, type Vec3 } from '../combat/mounts';
+import type { Loadout, WeaponStats } from '../combat/weapons';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
 /** Gravidade dos Mechs (mais alta que a do mundo: queda "pesada" e rápida, estilo arena shooter). */
@@ -44,6 +45,14 @@ export interface MechStats extends ChassisHeat {
   /** Carga máxima das armas nos braços (t): o orçamento do Hangar. */
   weaponCapacity: number;
   maxModuleHealth: MechModules;
+  /** Quais encaixes atiram em cada botão (`combat/mounts.ts`). Sem isto: principal na mão direita, secundário na esquerda. */
+  triggers?: TriggerLayout;
+  /**
+   * Boca de cada encaixe, em metros a partir dos pés, com o Mech virado para -Z. Os chassis de malha importada trazem a
+   * medida do desenho aqui: o servidor não tem o desenho (usa o corpo procedural), e sem este dado a boca dele seria outra
+   * (G14: o tiro tem que sair do mesmo lugar no cliente e no servidor). Sem isto, vale a medida do rig.
+   */
+  muzzles?: Partial<Record<MountId, Vec3>>;
 }
 
 /**
@@ -92,6 +101,8 @@ export interface MechRig {
   muzzle: THREE.Object3D;
   /** Boca do lançador do braço esquerdo (sem ela, os foguetes saem do meio do braço). */
   leftMuzzle?: THREE.Object3D;
+  /** Boca de cada lançador de ombro (só nos rigs com ombros). Sem elas, o tiro sai do torso. */
+  shoulderMuzzles?: { right: THREE.Object3D; left: THREE.Object3D };
   thrusters: THREE.Object3D[];
   thrusterMaterial: THREE.MeshStandardMaterial;
   setDashVisual?: (active: boolean) => void;
@@ -122,6 +133,25 @@ const PART_CENTER: Record<MechPart, [number, number, number]> = {
   leftLeg: [0, -0.55, 0],
   rightLeg: [0, -0.55, 0],
 };
+
+/** Qualquer coisa que diga onde está no mundo: um nó do desenho ou uma junta do rig. */
+interface Located {
+  getWorldPosition(target: THREE.Vector3): THREE.Vector3;
+}
+
+/** O nó do rig de onde o tiro de um encaixe nasce. Faltando a boca, o ponto de apoio mais perto: a junta do braço ou o torso. */
+function mountNode(rig: MechRig, mount: MountId): Located {
+  switch (mount) {
+    case 'rightHand':
+      return rig.muzzle;
+    case 'leftHand':
+      return rig.leftMuzzle ?? rig.leftArm;
+    case 'rightShoulder':
+      return rig.shoulderMuzzles?.right ?? rig.torso;
+    case 'leftShoulder':
+      return rig.shoulderMuzzles?.left ?? rig.torso;
+  }
+}
 
 const _wish = new THREE.Vector3();
 const _desired = { x: 0, y: 0, z: 0 };
@@ -176,8 +206,13 @@ export abstract class MechBase {
   private readonly leftArmBaseZ: number;
   private hitFlash = 0;
   private shownFlash = 0;
-  /** Boca do canhão em relação aos pés, com o Mech em repouso e virado para -Z (medida no rig). */
-  private readonly muzzleLocal = new THREE.Vector3();
+  /** Boca de cada encaixe em relação aos pés, com o Mech em repouso e virado para -Z (dado do chassi ou medida no rig). */
+  private readonly muzzlesLocal: Record<MountId, THREE.Vector3> = {
+    rightHand: new THREE.Vector3(),
+    leftHand: new THREE.Vector3(),
+    rightShoulder: new THREE.Vector3(),
+    leftShoulder: new THREE.Vector3(),
+  };
   /** A 1ª pessoa esconde a cabeça do próprio Mech; parte destruída também some. */
   private headVisibleByCamera = true;
 
@@ -196,7 +231,11 @@ export abstract class MechBase {
     this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
     this.root.updateMatrixWorld(true);
-    rig.muzzle.getWorldPosition(this.muzzleLocal);
+    for (const mount of MOUNTS) {
+      const fixed = stats.muzzles?.[mount];
+      if (fixed) this.muzzlesLocal[mount].set(fixed[0], fixed[1], fixed[2]);
+      else mountNode(rig, mount).getWorldPosition(this.muzzlesLocal[mount]);
+    }
   }
 
   /** Cria cápsula cinemática + character controller no mundo físico. */
@@ -299,9 +338,9 @@ export abstract class MechBase {
     return this.simPos;
   }
 
-  /** Boca do canhão calculada da simulação (posição + yaw), sem depender do render. */
-  simMuzzle(target: THREE.Vector3): THREE.Vector3 {
-    const { x, y, z } = this.muzzleLocal;
+  /** Boca de um encaixe (padrão: a mão direita) calculada da simulação (posição + yaw), sem depender do render. */
+  simMuzzle(target: THREE.Vector3, mount: MountId = 'rightHand'): THREE.Vector3 {
+    const { x, y, z } = this.muzzlesLocal[mount];
     const sin = Math.sin(this.yaw);
     const cos = Math.cos(this.yaw);
     return target.set(this.simPos.x + x * cos + z * sin, this.simPos.y + y, this.simPos.z - x * sin + z * cos);
@@ -379,17 +418,36 @@ export abstract class MechBase {
     return this.heatSink.coolingBoost;
   }
 
-  /** Lançador secundário fica no braço esquerdo; também trava com o Mech superaquecido. */
+  /** Como os botões se ligam aos encaixes deste chassi. */
+  get triggers(): TriggerLayout {
+    return this.stats.triggers ?? DEFAULT_TRIGGERS;
+  }
+
+  /** O encaixe pode atirar agora: vivo, a parte do corpo dele de pé e as armas frias. Não olha se há arma nele. */
+  canFireMount(mount: MountId): boolean {
+    return this.alive && this.modules[MOUNT_PART[mount]] > 0 && !this.heatSink.overheated;
+  }
+
+  /**
+   * O gatilho secundário pode atirar: há arma nele, ao menos um dos encaixes dele de pé (a mão esquerda, ou o torso, no
+   * caso dos ombros) e as armas frias.
+   */
   get canFireSecondary(): boolean {
-    return this.alive && this.modules.leftArm > 0 && this.loadout.secondary !== null && !this.heatSink.overheated;
+    if (!this.alive || this.loadout.secondary === null || this.heatSink.overheated) return false;
+    return this.triggers.secondary.some((m) => this.modules[MOUNT_PART[m]] > 0);
+  }
+
+  /** Onde o encaixe está no mundo, pelo desenho (render). Para efeitos e para o tiro do jogador local. */
+  mountWorldPosition(mount: MountId, target: THREE.Vector3): THREE.Vector3 {
+    return mountNode(this.rig, mount).getWorldPosition(target);
   }
 
   muzzleWorldPosition(target: THREE.Vector3): THREE.Vector3 {
-    return this.rig.muzzle.getWorldPosition(target);
+    return this.mountWorldPosition('rightHand', target);
   }
 
   leftMuzzleWorldPosition(target: THREE.Vector3): THREE.Vector3 {
-    return (this.rig.leftMuzzle ?? this.rig.leftArm).getWorldPosition(target);
+    return this.mountWorldPosition('leftHand', target);
   }
 
   headWorldPosition(target: THREE.Vector3): THREE.Vector3 {
@@ -503,14 +561,23 @@ export abstract class MechBase {
 
   /** Um tiro do canhão principal (no tick fixo): recuo na animação e calor no Mech. */
   onFire(): void {
-    this.recoil = 1;
-    this.heatSink.add(this.loadout.primary.heatPerShot);
+    this.onFireMount('rightHand', this.loadout.primary);
   }
 
-  /** Um disparo do braço esquerdo: recuo e o calor do lançamento. */
+  /** Um disparo do gatilho secundário: recuo do braço esquerdo (se for dele) e o calor do lançamento. */
   onFireSecondary(): void {
-    this.leftRecoil = 1;
+    if (this.triggers.secondary.includes('leftHand')) this.leftRecoil = 1;
     if (this.loadout.secondary) this.heatSink.add(this.loadout.secondary.heatPerShot);
+  }
+
+  /**
+   * Um tiro que saiu de `mount` com `w` (no tick fixo): o calor entra no dissipador do Mech e a mão que atirou recua.
+   * Ombro não recua (o lançador é preso ao torso).
+   */
+  onFireMount(mount: MountId, w: WeaponStats): void {
+    if (mount === 'rightHand') this.recoil = 1;
+    else if (mount === 'leftHand') this.leftRecoil = w.kind === 'ammo' ? 1 : 0.7;
+    this.heatSink.add(w.heatPerShot);
   }
 
   /**

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import type { MechRig, RigJoint } from './MechBase';
-import { createWeaponMounts } from './weaponMount';
+import { createWeaponMounts, type PodSide } from './weaponMount';
 
 const _axisX = new THREE.Vector3(1, 0, 0);
 const _axisY = new THREE.Vector3(0, 1, 0);
@@ -118,6 +118,12 @@ export interface ImportedRigOptions {
    * (Gênesis, Bastion) não liga isto.
    */
   weaponMounts?: boolean;
+  /**
+   * Lançadores nos ombros (só com `weaponMounts`): onde assenta o lançador do ombro DIREITO no referencial do Mech em
+   * repouso, em metros a partir dos pés (o esquerdo é o espelho em x), e o tamanho do módulo em metros por unidade. O
+   * lançador fica preso ao osso do tronco. Meça com `npm run mech:inspecionar` e confira na foto.
+   */
+  shoulderPods?: { x: number; y: number; z: number; size: number };
 }
 
 /**
@@ -149,6 +155,7 @@ export interface ImportedMechAsset {
   readonly naturalMinY: number;
   readonly armRest?: ImportedRigOptions['armRest'];
   readonly weaponMounts?: boolean;
+  readonly shoulderPods?: ImportedRigOptions['shoulderPods'];
 }
 
 /**
@@ -181,7 +188,7 @@ export async function preloadImportedMechAsset(url: string, options: ImportedRig
   let hipHeight = 0;
   scene.traverse((o) => { if (o.name === names.hips) hipHeight = o.position.y; });
 
-  return { scene, boneNames: names, hipHeight, naturalHeight: size.y, naturalMinY: box.min.y, armRest: options.armRest, weaponMounts: options.weaponMounts };
+  return { scene, boneNames: names, hipHeight, naturalHeight: size.y, naturalMinY: box.min.y, armRest: options.armRest, weaponMounts: options.weaponMounts, shoulderPods: options.shoulderPods };
 }
 
 /** Direção de `from` para `to` no referencial do Mech (unitária). */
@@ -332,11 +339,22 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
     rightArmBone.position.copy(rightArmAt).addScaledVector(rightBack, right);
     leftArmBone.position.copy(leftArmAt).addScaledVector(leftBack, left);
   };
+  // Lançadores de ombro: presos ao osso do tronco, um de cada lado, com a boca própria (o jogo lê a posição dela).
+  const podCfg = asset.weaponMounts ? asset.shoulderPods : undefined;
+  const shoulderMuzzles = podCfg ? { right: new THREE.Object3D(), left: new THREE.Object3D() } : undefined;
+  const pods =
+    podCfg && shoulderMuzzles
+      ? {
+          right: { parent: find('torso'), muzzle: shoulderMuzzles.right, at: [podCfg.x, podCfg.y, podCfg.z], size: podCfg.size } satisfies PodSide,
+          left: { parent: find('torso'), muzzle: shoulderMuzzles.left, at: [-podCfg.x, podCfg.y, podCfg.z], size: podCfg.size } satisfies PodSide,
+        }
+      : undefined;
   const mountWeapons = asset.weaponMounts
     ? createWeaponMounts(
         model,
         { forearm: rightHand.parent!, hand: rightHand, muzzle },
         { forearm: leftHand.parent!, hand: leftHand, muzzle: leftMuzzle },
+        pods,
       )
     : undefined;
 
@@ -351,6 +369,7 @@ export function instantiateImportedMechRig(asset: ImportedMechAsset, targetHeigh
     rightLeg: { hip: createJoint(find('rightUpLeg')), knee: createJoint(find('rightLowerLeg')) },
     muzzle,
     leftMuzzle,
+    shoulderMuzzles,
     thrusters: [],
     thrusterMaterial: hullMaterials[0] ?? new THREE.MeshStandardMaterial(),
     hullMaterials,

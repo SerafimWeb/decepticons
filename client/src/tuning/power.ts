@@ -141,7 +141,9 @@ export function poweredWeapon(w: WeaponStats, spec: PowerSpec, clan: Clan): Weap
 export function poweredLoadout(l: Loadout, spec: PowerSpec, clan: Clan): Loadout {
   const primary = poweredWeapon(l.primary, spec, clan);
   const secondary = l.secondary && poweredWeapon(l.secondary, spec, clan);
-  return primary === l.primary && secondary === l.secondary ? l : { primary, secondary };
+  const offhand = l.offhand && poweredWeapon(l.offhand, spec, clan);
+  if (primary === l.primary && secondary === l.secondary && offhand === l.offhand) return l;
+  return l.offhand === undefined ? { primary, secondary } : { primary, secondary, offhand };
 }
 
 /**

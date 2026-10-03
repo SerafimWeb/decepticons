@@ -25,10 +25,13 @@ export interface TestFire {
  * Teste de disparo do Hangar (camada 3): o Mech parado, gatilho apertado por 4 s, pelas mesmas regras do jogo
  * (cadência, carregador, calor e trava por superaquecimento). É a bancada da oficina (\`drill\`), com a hora de cada
  * tiro para a cena desenhar e a tela contar. Nada de número inventado para o efeito.
+ *
+ * \`count\` = quantos encaixes atiram essa arma juntos (2 nos ombros do Marauder): cada um é um tiro da lista, e o calor e
+ * o dano somam os dois.
  */
-export function testFire(chassis: ChassisHeat, w: WeaponStats, seconds = TEST_FIRE_S): TestFire {
+export function testFire(chassis: ChassisHeat, w: WeaponStats, seconds = TEST_FIRE_S, count = 1): TestFire {
   const shots: number[] = [];
-  const r = drill(chassis, { speed: 0, fire: [w], onShot: (t) => shots.push(t) }, seconds, Infinity, SAMPLE_S);
+  const r = drill(chassis, { speed: 0, fire: Array.from({ length: count }, () => w), onShot: (t) => shots.push(t) }, seconds, Infinity, SAMPLE_S);
   return { weapon: w, seconds, shots, heat: r.heat, sample: SAMPLE_S, overheatAt: r.overheatAt, damage: r.damage };
 }
 

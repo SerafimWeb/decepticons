@@ -1,10 +1,11 @@
+import type { MountId } from '../combat/mounts';
 import { TIERS, weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { reloadWithout } from '../core/url';
 import { CHASSIS, SHIELD_ARM, type ChassisId } from '../entities/chassis';
 import type { Hangar } from '../hangar/Hangar';
-import { armOptions, factorySpec, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
+import { armOptions, factorySpec, hasShoulderSlot, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { PRESET_COUNT } from '../hangar/Hangar';
-import { testAt, testFire, type TestFire } from '../hangar/testFire';
+import { testAt, testFire, TEST_FIRE_S, type TestFire } from '../hangar/testFire';
 
 /** O que a tela pede ao jogo: abrir e fechar o galpão 3D, mostrar a montagem, girar e aplicar na hora. */
 export interface HangarPreview {
@@ -17,7 +18,7 @@ export interface HangarPreview {
   /** Linha de estado do topo: "OFFLINE" ou a sala online. */
   status?(): string;
   /** Teste de disparo: o galpão mostra o Mech atirando no alvo, no ritmo do teste. */
-  test?(data: TestFire, arm: ArmSlot): void;
+  test?(data: TestFire, mounts: readonly MountId[]): void;
   stopTest?(): void;
   /** Treino manual no galpão: recebe a arma selecionada, sem simular dano no jogo. */
   aimPractice?(weapon: WeaponStats): void;
@@ -41,10 +42,16 @@ const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string; detai
   lancerL1: { title: 'LANCER-L1', className: 'MÉDIO · IMPORTADO', detail: 'Malha de Forge Systems.' },
   lr7lBastion: { title: 'LR-7L BASTION', className: 'PESADO · IMPORTADO', detail: 'Malha de Cybermech Industries.' },
   quadraV2: { title: 'QUADRA-V2', className: 'MÉDIO · IMPORTADO', detail: 'Malha de Vanta Works.' },
-  marauder: { title: 'MARAUDER', className: 'MÉDIO · IMPORTADO', detail: 'Novo chassi experimental.' },
+  marauder: { title: 'MARAUDER', className: 'MÉDIO · IMPORTADO', detail: 'Duas mãos armadas e lançadores nos ombros.' },
 };
-const SLOT_LABEL: Record<ArmSlot, string> = { right: 'BRAÇO DIREITO', left: 'BRAÇO ESQUERDO' };
-const SLOT_NUM: Record<ArmSlot, string> = { right: '01', left: '02' };
+const SLOT_LABEL: Record<ArmSlot, string> = { right: 'BRAÇO DIREITO', left: 'BRAÇO ESQUERDO', shoulders: 'OMBROS' };
+const SLOT_NUM: Record<ArmSlot, string> = { right: '01', left: '02', shoulders: '03' };
+/** De onde o encaixe da tela atira (a tela de teste usa para desenhar o tiro). Nos ombros, os dois lançadores. */
+function slotMounts(chassis: ChassisId, slot: ArmSlot): readonly MountId[] {
+  if (slot === 'right') return ['rightHand'];
+  if (slot === 'left') return ['leftHand'];
+  return CHASSIS[chassis].triggers?.secondary ?? [];
+}
 const WEAPON_HINT: Record<WeaponId, string> = {
   plasma: 'Energia · dano cheio até 60 m · calor por disparo',
   rockets: 'Munição · explosão em área · recarga automática',
@@ -326,7 +333,8 @@ export class HangarMenu {
     const arm = this.draft[this.selectedSlot];
     if (!arm) return;
     const w = weapon(arm.id, arm.tier);
-    const data = testFire(CHASSIS[this.draft.chassis], w);
+    const mounts = slotMounts(this.draft.chassis, this.selectedSlot);
+    const data = testFire(CHASSIS[this.draft.chassis], w, TEST_FIRE_S, mounts.length);
     this.testing = data;
     // Sem a animação de entrada: ela seguraria os painéis visíveis (o fim da animação vale mais que o estilo).
     this.root.classList.remove('hg-enter');
@@ -334,7 +342,7 @@ export class HangarMenu {
     this.root.querySelector<HTMLElement>('#hg-test')!.hidden = false;
     this.setText('hg-test-weapon', `${w.name.toUpperCase()} ${TIERS[w.tier]!.label}`);
     this.testFrame({ t: 0, seconds: data.seconds });
-    this.preview.test?.(data, this.selectedSlot);
+    this.preview.test?.(data, mounts);
   }
 
   private startAimPractice(): void {
@@ -358,7 +366,7 @@ export class HangarMenu {
     this.root.classList.add('hg-testing', 'hg-aim-training');
     this.root.querySelector<HTMLElement>('#hg-test')!.hidden = false;
     this.setText('hg-test-title', 'TREINO DE MIRA');
-    this.setText('hg-test-weapon', `ALVO MÓVEL · ${this.selectedSlot === 'right' ? 'BRAÇO D' : 'BRAÇO E'}`);
+    this.setText('hg-test-weapon', `ALVO MÓVEL · ${this.selectedSlot === 'right' ? 'BRAÇO D' : this.selectedSlot === 'left' ? 'BRAÇO E' : 'OMBROS'}`);
     this.setText('hg-test-shots-label', 'DISPAROS');
     this.setText('hg-test-dmg-label', 'ACERTOS');
     this.setText('hg-test-heat-label', 'PRECISÃO');
@@ -449,7 +457,7 @@ export class HangarMenu {
       return;
     }
     const slot = target?.closest<HTMLButtonElement>('[data-slot]')?.dataset.slot;
-    if (slot === 'right' || slot === 'left') {
+    if (slot === 'right' || slot === 'left' || slot === 'shoulders') {
       this.selectedSlot = slot;
       this.tab = 'armas';
       this.message = '';
@@ -596,18 +604,21 @@ export class HangarMenu {
 
     const slotList = this.root.querySelector<HTMLElement>('#hangar-slot-list')!;
     const shield = SHIELD_ARM.includes(spec.chassis);
-    slotList.innerHTML = (['right', 'left'] as const)
+    const slots: readonly ArmSlot[] = hasShoulderSlot(spec.chassis) ? ['right', 'left', 'shoulders'] : ['right', 'left'];
+    // Trocou de chassi para um sem ombros com os ombros escolhidos: volta ao braço direito.
+    if (!slots.includes(this.selectedSlot)) this.selectedSlot = 'right';
+    slotList.innerHTML = slots
       .map((slot) => {
-        const arm = spec[slot];
+        const arm = spec[slot] ?? null;
         const w = arm ? weapon(arm.id, arm.tier) : null;
         const selected = slot === this.selectedSlot;
         return `<button class="hg-slot${selected ? ' selected' : ''}${w ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${w ? WEAPON_ICON[w.id] : '<path d="M6 12h12" />'}</svg><span><small>${SLOT_LABEL[slot]}</small><b>${w?.name ?? (slot === 'left' && shield ? 'ESCUDO' : 'VAZIO')}</b></span><em>${w ? TIERS[w.tier]!.label : '—'}</em></button>`;
       })
       .join('');
 
-    const arm = spec[this.selectedSlot];
+    const arm = spec[this.selectedSlot] ?? null;
     const w = arm ? weapon(arm.id, arm.tier) : null;
-    const nowArm = current.chassis === spec.chassis ? current[this.selectedSlot] : null;
+    const nowArm = current.chassis === spec.chassis ? (current[this.selectedSlot] ?? null) : null;
     const was = nowArm ? weapon(nowArm.id, nowArm.tier) : null;
     const options = armOptions(this.selectedSlot, spec.chassis)
       .map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name}</option>`)
@@ -616,8 +627,8 @@ export class HangarMenu {
     const editor = this.root.querySelector<HTMLElement>('#hangar-weapon-editor')!;
     editor.innerHTML = `
       <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ARMAMENTO</label>
-      <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot === 'left' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}</select>
-      <p class="hg-hint">${w ? WEAPON_HINT[w.id] : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o outro braço.'}</p>
+      <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}</select>
+      <p class="hg-hint">${w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
       <div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : `+${Math.round((t.damage - 1) * 100)}% dano`}</small></button>`).join('')}</div>
       <button class="hg-test-btn" type="button" data-action="test"${arm ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>
@@ -677,7 +688,7 @@ const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-
 /** Rótulo curto de um atalho: chassi e nível de cada braço (ex.: "V09 · III / I"). */
 function presetLabel(p: LoadoutSpec): string {
   const tier = (a: LoadoutSpec[ArmSlot]) => (a ? ['I', 'II', 'III'][a.tier] : '—');
-  return `${CHASSIS_SIGLA[p.chassis]} · ${tier(p.right)} / ${tier(p.left)}`;
+  return `${CHASSIS_SIGLA[p.chassis]} · ${tier(p.right)} / ${tier(p.left)}${p.shoulders !== undefined ? ` / ${tier(p.shoulders)}` : ''}`;
 }
 
 /** Uma barra de leitura: o valor da arma escolhida e, por baixo, o da que está no Mech (se for outra). */
@@ -692,7 +703,9 @@ function bar(s: StatRow, w: WeaponStats, was: WeaponStats | null): string {
 }
 
 function copySpec(spec: LoadoutSpec): LoadoutSpec {
-  return { v: spec.v, chassis: spec.chassis, right: { ...spec.right }, left: spec.left ? { ...spec.left } : null };
+  const copy: LoadoutSpec = { v: spec.v, chassis: spec.chassis, right: { ...spec.right }, left: spec.left ? { ...spec.left } : null };
+  if (spec.shoulders !== undefined) copy.shoulders = spec.shoulders ? { ...spec.shoulders } : null;
+  return copy;
 }
 
 function withArm(spec: LoadoutSpec, slot: ArmSlot, update: (arm: LoadoutSpec[ArmSlot]) => LoadoutSpec[ArmSlot]): LoadoutSpec {

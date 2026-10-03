@@ -1,12 +1,13 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { weapon, type Tier } from '../combat/weapons';
+import { timeToKill } from '../combat/balance';
+import { weapon, type Tier, type WeaponId } from '../combat/weapons';
 import { VECTOR09_STATS, Vector09 } from '../entities/Vector09';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Hangar, HANGAR_STORAGE_KEY } from './Hangar';
 import { CHASSIS, type ChassisId } from '../entities/chassis';
-import { armOptions, FACTORY_LOADOUT, factorySpec, loadoutKey, parseLoadoutKey, validateLoadout, type LoadoutSpec } from './loadout';
+import { armOptions, FACTORY_LOADOUT, factorySpec, loadoutKey, parseLoadoutKey, specWeapons, validateLoadout, type LoadoutSpec } from './loadout';
 
 const LEVELS: Tier[] = [0, 1, 2];
 const build = (p: Tier, r: Tier | null): LoadoutSpec => ({ v: 1, chassis: 'vector09', right: { id: 'plasma', tier: p }, left: r === null ? null : { id: 'rockets', tier: r } });
@@ -198,5 +199,96 @@ describe('Lancer-L1: escopeta no braço direito e escudo no esquerdo (sem lança
 
   it('a escopeta não vai no Vector-09 (cada chassi diz o que aceita)', () => {
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'shotgun', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+  });
+});
+
+describe('Marauder: duas mãos no botão principal e os lançadores dos ombros', () => {
+  const factory = factorySpec('marauder');
+
+  it('a fábrica é blaster nas duas mãos e foguetes nos ombros; a montagem vira o Loadout com a segunda arma na mão esquerda', () => {
+    expect(factory).toEqual({ v: 1, chassis: 'marauder', right: { id: 'blaster', tier: 0 }, left: { id: 'blaster', tier: 0 }, shoulders: { id: 'rockets', tier: 0 } });
+    const c = validateLoadout(factory);
+    expect(c.ok).toBe(true);
+    if (!c.ok) return;
+    expect(c.loadout.primary).toBe(weapon('blaster'));
+    expect(c.loadout.offhand).toBe(weapon('blaster'));
+    expect(c.loadout.secondary).toBe(weapon('rockets'));
+    // O Loadout validado é o de fábrica do chassi: a fábrica não pode mentir sobre o que o Mech leva.
+    expect(c.loadout).toEqual(CHASSIS.marauder.loadout);
+  });
+
+  it('os dois lançadores contam na carga: 0,5 + 0,5 + 4 + 4 = 9 t de 11', () => {
+    const c = validateLoadout(factory);
+    expect(c.ok && c.mass).toBe(9);
+    expect(c.capacity).toBe(11);
+  });
+
+  it('poder custa carga duas vezes nos ombros: foguetes MK II (6 t × 2) não cabem; blasters MK III com foguetes MK I cabem', () => {
+    expect(validateLoadout({ ...factory, shoulders: { id: 'rockets', tier: 1 } })).toMatchObject({ ok: false, error: 'carga', mass: 13 });
+    expect(validateLoadout({ ...factory, right: { id: 'blaster', tier: 2 }, left: { id: 'blaster', tier: 2 } })).toMatchObject({ ok: true, mass: 10 });
+  });
+
+  it('as mãos aceitam blaster ou plasma; foguete na mão e blaster no ombro são recusados; plasma duplo só sem os ombros', () => {
+    expect(armOptions('right', 'marauder')).toEqual(['blaster', 'plasma']);
+    expect(armOptions('left', 'marauder')).toEqual(['blaster', 'plasma']);
+    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets']);
+    expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(validateLoadout({ ...factory, shoulders: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    const twoPlasma = { ...factory, right: { id: 'plasma', tier: 0 }, left: { id: 'plasma', tier: 0 } } as LoadoutSpec;
+    expect(validateLoadout(twoPlasma)).toMatchObject({ ok: false, error: 'carga' }); // 3 + 3 + 8
+    expect(validateLoadout({ ...twoPlasma, shoulders: null })).toMatchObject({ ok: true, mass: 6 });
+  });
+
+  it('os ombros vazios deixam o gatilho secundário sem arma; a mão esquerda vazia deixa só a direita no principal', () => {
+    const noPods = validateLoadout({ ...factory, shoulders: null });
+    expect(noPods.ok && noPods.loadout.secondary).toBeNull();
+    const oneHand = validateLoadout({ ...factory, left: null });
+    expect(oneHand.ok && oneHand.loadout.offhand).toBeNull();
+  });
+
+  it('só quem tem o encaixe aceita ombros: no Vector-09 a recusa diz por quê', () => {
+    expect(validateLoadout({ ...FACTORY_LOADOUT, shoulders: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(armOptions('shoulders', 'vector09')).toEqual([]);
+  });
+
+  it('o texto do build leva um terceiro grupo só no Marauder: ida e volta, vazios com "-" e o texto antigo de duas armas', () => {
+    expect(loadoutKey(factory)).toBe('v1.marauder.blaster-0.blaster-0.rockets-0');
+    expect(parseLoadoutKey('v1.marauder.blaster-0.blaster-0.rockets-0')).toEqual(factory);
+    expect(parseLoadoutKey('v1.marauder.blaster-2.-.-')).toEqual({ v: 1, chassis: 'marauder', right: { id: 'blaster', tier: 2 }, left: null, shoulders: null });
+    // Sem o terceiro grupo (texto de duas armas): ombros vazios, e o mesmo Mech sai com a chave completa.
+    const old = parseLoadoutKey('v1.marauder.blaster-0.blaster-0');
+    expect(old).toMatchObject({ chassis: 'marauder', right: { id: 'blaster' } });
+    expect(old && loadoutKey(old)).toBe('v1.marauder.blaster-0.blaster-0.-');
+    // Os outros chassis continuam com duas armas só, e um terceiro grupo neles é recusado.
+    expect(loadoutKey(FACTORY_LOADOUT)).toBe('v1.vector09.plasma-0.rockets-0');
+    expect(parseLoadoutKey('v1.vector09.plasma-0.rockets-0.rockets-0')).toBeNull();
+    // O texto antigo do Marauder (plasma e foguetes nos braços) não vale mais: foguete não vai na mão.
+    expect(parseLoadoutKey('v1.marauder.plasma-0.rockets-0')).toBeNull();
+  });
+
+  it('equilíbrio: nenhuma das montagens válidas do Marauder derruba o torso de um Mech em menos de 2,5 s (a meta dos dois braços juntos)', () => {
+    const hands: WeaponId[] = ['blaster', 'plasma'];
+    let validas = 0;
+    for (const r of hands) for (const l of [...hands, null]) for (const rt of LEVELS) for (const lt of LEVELS) for (const s of [null, 0, 1, 2] as const) {
+      const spec: LoadoutSpec = { v: 1, chassis: 'marauder', right: { id: r, tier: rt }, left: l ? { id: l, tier: lt } : null, shoulders: s === null ? null : { id: 'rockets', tier: s as Tier } };
+      if (validateLoadout(spec).ok !== true) continue;
+      validas++;
+      expect(timeToKill(specWeapons(spec), CHASSIS.marauder, VECTOR09_STATS.maxModuleHealth.torso), loadoutKey(spec)).toBeGreaterThan(2.5);
+    }
+    expect(validas).toBeGreaterThan(20); // a trava vale para um conjunto grande, não para um exemplo
+  });
+
+  it('em todo chassi: os ombros existem na montagem se e só se o chassi tem lançadores nos ombros; a carga da fábrica bate com o Loadout', () => {
+    for (const id of Object.keys(CHASSIS) as ChassisId[]) {
+      const stats = CHASSIS[id];
+      const shouldersWired = (stats.triggers?.secondary ?? []).some((m) => m === 'rightShoulder' || m === 'leftShoulder');
+      expect(armOptions('shoulders', id).length > 0, id).toBe(shouldersWired);
+      const spec = factorySpec(id);
+      const c = validateLoadout(spec);
+      expect(c.ok, id).toBe(true);
+      if (!c.ok) continue;
+      expect(c.loadout, id).toEqual(stats.loadout);
+      expect(specWeapons(spec).reduce((s, w) => s + w.mass, 0), id).toBe(c.mass);
+    }
   });
 });

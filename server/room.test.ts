@@ -8,6 +8,7 @@ import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/
 import { EVENT } from '../shared/net/events';
 import { hitDamage, weapon } from '../client/src/combat/weapons';
 import { netWeaponIndex } from '../client/src/net/adapters';
+import { factorySpec, loadoutKey } from '../client/src/hangar/loadout';
 import { newNetInput, type NetInput } from '../shared/net/input';
 import { NET_PARTS } from '../shared/net/state';
 import {
@@ -282,6 +283,105 @@ describe('Lancer-L1 online: a escopeta no servidor', () => {
     expect(hits).toHaveLength(1);
     expect(hits[0]!.amount).toBe(hitDamage(weapon('shotgun'), 3));
     expect(hits[0]!.amount).toBeGreaterThan(weapon('plasma').damage * 2);
+    room.dispose();
+  });
+});
+
+describe('Marauder online: duas mãos no botão principal e dois lançadores nos ombros, pelo servidor', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  /** Uma sala com o jogador de Marauder, o alvo 15 m à frente (parado) e o comando que o cliente mandaria: da boca direita ao centro do alvo. */
+  async function palco() {
+    const room = await ArenaRoom.create('MARAUDER');
+    const dan = new FakePeer();
+    const build = loadoutKey(factorySpec('marauder'));
+    room.receive(dan, join('Dan', build));
+    expect(dan.of(MSG.WELCOME)).toHaveLength(1); // o texto de três grupos não foi recusado
+    const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
+    expect(decodeRoster(dan.of(MSG.ROSTER).at(-1)!)!.find((e) => e.id === me)).toMatchObject({ build });
+    room.step();
+    const units = room['units'] as TestUnit[];
+    const bot = units.find((u) => u.kind === 'mech')!;
+    const mine = units.find((u) => u.id === me)!;
+    const feet = room.positionOf(me)!.clone();
+    bot.mech.respawn(new THREE.Vector3(feet.x, feet.y, feet.z - 15));
+    bot.mech.moveSpeedScale = 0; // parado: o teste mede o tiro, não a esquiva
+    room.step(); // o colisor do alvo só muda de lugar no passo da física: sem isto a mira ainda o veria onde estava
+    room.step();
+    // A boca anda quando o Mech gira: refaz a conta com o yaw já aplicado até assentar (o cliente mira do yaw de agora).
+    const muzzle = new THREE.Vector3();
+    const to = new THREE.Vector3();
+    let yaw = 0;
+    let pitch = 0;
+    for (let i = 0; i < 6; i++) {
+      mine.mech.applyFacing(yaw, pitch);
+      mine.mech.simMuzzle(muzzle, 'rightHand');
+      to.set(feet.x, feet.y + 2.5, feet.z - 15).sub(muzzle);
+      yaw = Math.atan2(-to.x, -to.z);
+      pitch = Math.asin(to.y / to.length());
+    }
+    return { room, dan, me, mine, bot, yaw, pitch };
+  }
+
+  /** Um comando por tick, como o cliente manda (o pacote aceita no máximo 8 comandos; mais que isso o servidor descarta o pacote inteiro). */
+  function drive(room: ArenaRoom, peer: FakePeer, first: number, ticks: number, o: Partial<NetInput>): void {
+    for (let i = 0; i < ticks; i++) {
+      room.receive(peer, inputs(first + i, 1, o));
+      room.step();
+    }
+  }
+
+  function shotsOf(peer: FakePeer, me: number): number[] {
+    const batch = newEventBatch();
+    const out: number[] = [];
+    for (const bytes of peer.of(MSG.EVENTS)) {
+      decodeEvents(bytes, batch);
+      for (let i = 0; i < batch.count; i++) if (batch.list[i]!.kind === EVENT.SHOT && batch.list[i]!.unit === me) out.push(batch.list[i]!.index);
+    }
+    return out;
+  }
+
+  it('entra com a montagem de fábrica: blaster nas duas mãos e foguetes nos ombros, com as bocas do dado do chassi', async () => {
+    const { room, mine } = await palco();
+    const { loadout } = mine.mech;
+    expect(loadout.primary.id).toBe('blaster');
+    expect(loadout.offhand?.id).toBe('blaster');
+    expect(loadout.secondary?.id).toBe('rockets');
+    // O corpo do servidor é o procedural, mas a boca de cada encaixe é a do desenho (dado do chassi): G14.
+    const rightShoulder = mine.mech.simMuzzle(new THREE.Vector3(), 'rightShoulder');
+    const pos = room.positionOf(mine.id)!;
+    expect(rightShoulder.x - pos.x).toBeCloseTo(1.08, 1);
+    expect(rightShoulder.y - pos.y).toBeCloseTo(4.82, 1);
+    room.dispose();
+  });
+
+  it('segurar o botão principal atira as DUAS mãos (um tiro de cada, a esquerda meio intervalo depois) e as duas acertam o alvo', async () => {
+    const { room, dan, me, bot, yaw, pitch } = await palco();
+    drive(room, dan, 1, 15, { fire: true, yaw, pitch }); // 0,25 s segurando
+    drive(room, dan, 16, 35, { yaw, pitch }); // solta e deixa os projéteis chegarem
+
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('blaster'), netWeaponIndex('blaster')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits).toHaveLength(2); // a mão esquerda também acerta: a mira converge no alvo
+    expect(hits.every((h) => h.amount === hitDamage(weapon('blaster'), 15))).toBe(true);
+    room.dispose();
+  });
+
+  it('o botão secundário solta os DOIS foguetes de ombro de uma vez, gasta um tiro do carregador, e os dois acertam', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco();
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch }); // um aperto
+    expect(mine.mech.heat).toBeCloseTo(2 * weapon('rockets').heatPerShot, 2); // dois lançamentos esquentam o mesmo dissipador
+    drive(room, dan, 2, 50, { yaw, pitch }); // os foguetes levam ~0,2 s para chegar
+
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('rockets'), netWeaponIndex('rockets')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits.length).toBeGreaterThanOrEqual(2); // um foguete de cada ombro
+    const total = hits.reduce((s, h) => s + h.amount, 0);
+    expect(total).toBeGreaterThan(weapon('rockets').damage); // mais que um foguete só
+    expect(before - lifeOf(bot.mech)).toBe(total); // o evento é a vida que saiu, sem segunda via de dano
     room.dispose();
   });
 });

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { weapon, type Tier, type WeaponId } from '../combat/weapons';
-import { weaponModel } from './weaponModels';
+import { podModel, weaponModel } from './weaponModels';
 
 const IDS: WeaponId[] = ['plasma', 'rockets', 'blaster', 'shotgun', 'chainsaw'];
 const TIERS: Tier[] = [0, 1, 2];
@@ -61,5 +61,39 @@ describe('weaponModels: o módulo de cada arma, no padrão do encaixe', () => {
     expect(meshesOf(object)).toHaveLength(1);
     expect(muzzle.z).toBeLessThan(0);
     expect(muzzle.z).toBeGreaterThan(weaponModel(weapon('blaster', 0)).muzzle.z);
+  });
+});
+
+describe('weaponModels: o lançador de ombro (podModel)', () => {
+  it('em todo nível é UMA malha, com a traseira na origem e a boca à frente (-Z), sem o engate do pulso', () => {
+    for (const tier of TIERS) {
+      const { object, muzzle } = podModel(weapon('rockets', tier));
+      expect(meshesOf(object)).toHaveLength(1);
+      const box = new THREE.Box3().setFromObject(object);
+      expect(box.max.z).toBeLessThan(0.05); // traseira fechada na origem, nada atrás
+      expect(muzzle.z).toBeLessThan(-0.8);
+      expect(muzzle.x).toBe(0);
+      expect(muzzle.y).toBe(0);
+      expect(Math.abs(box.min.z - muzzle.z)).toBeLessThan(0.3); // a boca está na ponta do módulo
+      // Sem o colar do pulso (que sobra para os lados da traseira): o lançador não passa da largura do casulo mais a folga.
+      expect(box.max.x - box.min.x).toBeLessThan(1.6);
+    }
+  });
+
+  it('o nível aumenta a grade de tubos (mais triângulos) e as instâncias compartilham geometria e material', () => {
+    expect(triangles(podModel(weapon('rockets', 2)).object)).toBeGreaterThan(triangles(podModel(weapon('rockets', 0)).object));
+    const a = podModel(weapon('rockets', 1));
+    const b = podModel(weapon('rockets', 1));
+    expect(a.object).not.toBe(b.object);
+    expect(meshesOf(a.object)[0]!.geometry).toBe(meshesOf(b.object)[0]!.geometry);
+    expect(meshesOf(a.object)[0]!.material).toBe(meshesOf(b.object)[0]!.material);
+  });
+
+  it('só os foguetes têm desenho de ombro: sem arma, ou com outra, o ombro fica limpo (grupo vazio, boca na origem)', () => {
+    for (const w of [null, weapon('blaster'), weapon('plasma')]) {
+      const { object, muzzle } = podModel(w);
+      expect(meshesOf(object)).toHaveLength(0);
+      expect(muzzle.length()).toBe(0);
+    }
   });
 });

@@ -86,6 +86,22 @@ function rockets(root: THREE.Object3D, tier: number, M: Mats): number {
   return 0.92 * LONG;
 }
 
+/**
+ * Lançador de ombro: o mesmo casulo de tubos do braço, sem o engate do pulso, com a traseira fechada e um suporte
+ * embaixo para assentar na ombreira. Origem = o centro da traseira; frente = -Z.
+ */
+function pod(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const cols = [2, 2, 3][tier]!;
+  const rows = [2, 3, 3][tier]!;
+  const muzzleZ = rockets(root, tier, M);
+  const w = cols * 0.22 + 0.12;
+  const h = rows * 0.22 + 0.12;
+  d.box(w, h, 0.08, M.frame, 0, 0, -0.04);
+  d.box(w * 0.7, 0.14, 0.5, M.frame, 0, -(h / 2 + 0.07), -0.4);
+  return muzzleZ;
+}
+
 /** Blaster leve (energia): corpo curto e dois canos paralelos. O nível alonga os canos e põe a mira. */
 function blaster(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -139,10 +155,17 @@ function mats(accent: number): Mats {
   };
 }
 
-function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null): WeaponModel {
+function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
   const accent = weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
   const M = mats(accent);
+  if (shoulder) {
+    // Lançador de ombro: só o casulo de foguetes tem esse desenho. Sem arma (ou outra), o ombro fica limpo.
+    if (weapon?.id !== 'rockets') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
+    const muzzleZ = pod(root, weapon.tier, M);
+    batchRigMeshes(root, []);
+    return { object: root, muzzle: new THREE.Vector3(0, 0, -muzzleZ) };
+  }
   coupling(root, M);
   let muzzleZ: number;
   if (!weapon) muzzleZ = cap(root, M);
@@ -170,6 +193,7 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null): WeaponModel {
 }
 
 const prototypes = new Map<string, WeaponModel>();
+const podPrototypes = new Map<string, WeaponModel>();
 
 /**
  * O módulo desta arma (ou o engate fechado, se `null`). Cada chamada devolve uma instância nova que compartilha
@@ -181,6 +205,21 @@ export function weaponModel(weapon: Pick<WeaponStats, 'id' | 'tier'> | null): We
   if (!proto) {
     proto = build(weapon);
     prototypes.set(key, proto);
+  }
+  return { object: proto.object.clone(), muzzle: proto.muzzle };
+}
+
+/**
+ * O lançador de ombro desta arma. Mesmo padrão do módulo do pulso (unidade = o tamanho que o encaixe der, origem na
+ * traseira, frente = -Z, uma malha só, instâncias que compartilham geometria e material), mas sem o engate. Só os
+ * foguetes têm desenho de ombro; sem arma (ou outra), devolve um grupo vazio e a boca na origem.
+ */
+export function podModel(weapon: Pick<WeaponStats, 'id' | 'tier'> | null): WeaponModel {
+  const key = weapon ? `${weapon.id}:${weapon.tier}` : 'vazio';
+  let proto = podPrototypes.get(key);
+  if (!proto) {
+    proto = build(weapon, true);
+    podPrototypes.set(key, proto);
   }
   return { object: proto.object.clone(), muzzle: proto.muzzle };
 }

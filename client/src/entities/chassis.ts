@@ -1,3 +1,4 @@
+import { SHOULDER_TRIGGERS } from '../combat/mounts';
 import { weapon, type WeaponId } from '../combat/weapons';
 import type { MechStats } from './MechBase';
 
@@ -231,10 +232,24 @@ export const QUADRA_V2_STATS: MechStats = {
   name: 'QUADRA-V2',
 };
 
-/** MARAUDER: novo chassi importado do Tripo3D. */
+/**
+ * MARAUDER: chassi importado do Tripo3D. Dono, 03/10: "duas armas iguais nas mãos (o blaster) e dois lança-mísseis nos
+ * ombros". As duas mãos atiram no botão principal e os dois ombros lançam juntos no secundário (`SHOULDER_TRIGGERS`);
+ * os dois lançadores contam na carga (`firingWeapons`).
+ */
 export const MARAUDER_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'MARAUDER',
+  loadout: { primary: weapon('blaster'), offhand: weapon('blaster'), secondary: weapon('rockets') },
+  triggers: SHOULDER_TRIGGERS,
+  // Bocas medidas no desenho (`npm run mech:bocas -- marauder`), em metros a partir dos pés, virado para -Z: o servidor atira
+  // daqui, e o corpo dele é outro (G14). Mudou o rig, a pose ou o módulo de uma arma? Meça de novo.
+  muzzles: {
+    rightHand: [1.57, 3.82, -1.54],
+    leftHand: [-1.59, 3.84, -1.55],
+    rightShoulder: [1.08, 4.82, 0.04],
+    leftShoulder: [-1.08, 4.82, 0.04],
+  },
 };
 
 /**
@@ -260,8 +275,17 @@ export const CHASSIS = {
 } as const satisfies Record<string, MechStats>;
 export type ChassisId = keyof typeof CHASSIS;
 
-/** O que cada braço aceita em cada chassi: o Hangar só oferece e só valida estas armas. */
-export const ARM_SLOTS: Record<ChassisId, { right: readonly WeaponId[]; left: readonly WeaponId[] }> = {
+/**
+ * O que cada encaixe aceita em cada chassi: o Hangar só oferece e só valida estas armas. `shoulders` só existe nos
+ * chassis com lançadores nos ombros (`SHOULDER_TRIGGERS`); nesses, o braço esquerdo leva uma segunda arma do botão
+ * principal e o secundário sai dos ombros.
+ */
+export interface ArmSlots {
+  right: readonly WeaponId[];
+  left: readonly WeaponId[];
+  shoulders?: readonly WeaponId[];
+}
+export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
   vector09: { right: ['plasma'], left: ['rockets'] },
   android: { right: ['blaster'], left: ['chainsaw'] },
   // Sem arma exclusiva (decisão de 29/09 no combate justo): o mesmo plasma/foguetes de qualquer Mech.
@@ -274,7 +298,8 @@ export const ARM_SLOTS: Record<ChassisId, { right: readonly WeaponId[]; left: re
   lancerL1: { right: ['shotgun'], left: [] },
   lr7lBastion: { right: ['plasma'], left: ['rockets'] },
   quadraV2: { right: ['plasma'], left: ['rockets'] },
-  marauder: { right: ['plasma'], left: ['rockets'] },
+  // Duas mãos no botão principal (blaster ou plasma em cada) e os lançadores dos ombros (opcionais) no secundário.
+  marauder: { right: ['blaster', 'plasma'], left: ['blaster', 'plasma'], shoulders: ['rockets'] },
 };
 
 /** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */

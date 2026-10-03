@@ -228,13 +228,13 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 ### Limitação: o Ponto de Tiro da Simulação Vem do Desenho, e o Servidor Desenha Todo Mech como Vector-09
 
-**Descoberto:** 2026-10-02 (ao ligar a arma no Marauder) | **Status:** 🟡 Medido, não corrigido | **Impacto:** online, o tiro do Marauder nasce num ponto diferente do cano que o jogador vê
+**Descoberto:** 2026-10-02 (ao ligar a arma no Marauder) | **Status:** ✅ Corrigido para o Marauder (03/10); os demais chassis usam a medida do próprio rig, igual nos dois lados | **Impacto:** online, o tiro do Marauder nasce num ponto diferente do cano que o jogador vê
 
 **Causa:** `MechBase.muzzleLocal` é medido no desenho do rig (`rig.muzzle`, no construtor). O servidor cria o Mech de qualquer chassi como `new Vector09({ stats, loadout })` (`server/ArenaRoom.ts`), com o desenho padrão do Vector-09 escalado à altura, enquanto o cliente do jogador usa o rig do chassi (`Game.ts`). Dois desenhos, dois pontos de tiro: quebra o G14 (uma simulação só).
 
 **Medição (pés, yaw 0, Marauder, plasma MK I):** cliente (1,12; 3,49; −2,20) m, servidor (1,50; 2,73; −1,62) m: diferença de cerca de 1 m.
 
-**Correção proposta (não feita):** o ponto de tiro vira dado do chassi (`MechStats`, o mesmo no servidor e no cliente) e o desenho se alinha a ele, não o contrário. Mexe em regra de rede e em todos os chassis: precisa de decisão e de teste de simulação.
+**Correção feita (03/10, PR do Marauder com duas armas):** a boca de cada encaixe é dado do chassi (`MechStats.muzzles`, `entities/chassis.ts`), igual no cliente e no servidor; o desenho é que se confere contra o dado, não o contrário: `npm run mech:bocas` carrega o `.glb`, mede as quatro bocas e sai com código 1 se alguma passar de 15 cm do dado (entra no `npm run check`). Os chassis procedurais não precisam: cliente e servidor têm o mesmo corpo e a mesma medida. Os foguetes do Vector-09 também passaram a sair da boca esquerda no servidor, como no cliente (antes saíam da direita).
 
 ---
 
@@ -292,15 +292,43 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 ### Arma que não é foguete no braço esquerdo nunca dispara (Arara e Onça)
 
-**Descoberto:** 2026-10-03 (lendo o caminho do gatilho para a escopeta) | **Status:** 🟡 Aberto (entra no PR do Marauder com duas armas) | **Impacto:** o Hangar oferece blaster no braço esquerdo da Arara-B1 e plasma no esquerdo da Onça-B2, mas apertar o botão do braço esquerdo não faz nada
+**Descoberto:** 2026-10-03 (lendo o caminho do gatilho para a escopeta) | **Status:** ✅ Corrigido (03/10, PR do Marauder com duas armas) | **Impacto:** o Hangar oferece blaster no braço esquerdo da Arara-B1 e plasma no esquerdo da Onça-B2, mas apertar o botão do braço esquerdo não faz nada
 
 **Descrição:** o gatilho do braço esquerdo é sempre um `RocketLauncher` (`combat/trigger.ts`), que vive de carregador e recarga. Blaster e plasma têm `magazine: 0`: o carregador nasce com 0 e `tryFire()` nega para sempre. O servidor (`NetPilot`) tem o mesmo caminho. A escolha existe em `ARM_SLOTS` (`arara`: esquerdo `['rockets','blaster']`; `onca`: esquerdo `['plasma','rockets']`). O inverso (foguete no braço direito da Onça) sai pelo caminho do projétil comum do braço direito; não conferi se explode.
 
 **Diagnóstico:** leitura de `PlayerController.fixedUpdate`, `NetPilot.fixedUpdate` e `trigger.ts`. Não rodei uma partida com essas montagens; a conta é direta (`ammo = weapon.magazine = 0`).
 
-**Correção/Workaround:** pendente. O PR do Marauder com dois blasters nas mãos precisa do mesmo caminho (arma de energia no braço esquerdo), então o disparo passa a seguir a arma do encaixe, não o braço.
+**Correção/Workaround:** o gatilho segue o tipo da arma, não o lado do corpo (`combat/Armament.ts`, a regra única do jogador e do servidor): energia atira no ritmo dela, foguete usa o carregador, motosserra corta. Teste de regra (blaster no gatilho esquerdo atira) com mutação conferida.
 
 **Lição:** o lado do corpo não diz que tipo de arma vai ali. O gatilho devia sair do tipo da arma (energia, munição, corpo a corpo), e o `ARM_SLOTS` só decide o que o Hangar oferece.
+
+### Tiro paralelo de mãos afastadas errava o alvo no servidor
+
+**Descoberto:** 2026-10-03 (teste de sala do Marauder) | **Status:** ✅ Corrigido | **Impacto:** online, a mão esquerda e os lançadores de ombro do Marauder errariam quase todo alvo
+
+**Descrição:** o comando de rede traz só yaw e pitch, calculados pelo cliente a partir da boca da mão **direita** até a mira. O servidor usava essa mesma direção para toda boca. Com as mãos a ~3 m uma da outra, o tiro da esquerda saía paralelo e passava a 3 m do centro do alvo (a cápsula de um Mech tem 1,3 m de raio).
+
+**Diagnóstico:** o teste de sala acertava o blaster direito e errava o esquerdo; a mutação "sem convergência" derruba dois testes.
+
+**Correção:** `NetPilot.aim` acha onde o raio da mão direita bate (um raio por tiro, não por tick) e aponta as outras bocas para esse ponto, como o jogador local já fazia com a câmera.
+
+**Lição:** direção de tiro não é uma só quando há mais de uma boca; o que viaja é a mira, e cada boca se aponta para ela.
+
+### O servidor descarta o pacote inteiro de comandos se vier com mais de 8
+
+**Descoberto:** 2026-10-03 (teste mandava 15 comandos de uma vez) | **Status:** 🟢 Info | **Impacto:** nenhum no jogo; pegadinha de teste
+
+**Descrição:** `MAX_INPUTS_PER_PACKET` é 8 e `decodeInputs` recusa o pacote inteiro acima disso, sem aviso: o piloto fica sem comando (`ack` 0), o Mech parado e o teste "não atira" sem mensagem. O cliente de verdade manda poucos por pacote.
+
+**Lição:** teste de sala manda um comando por tick (`drive` em `server/room.test.ts`).
+
+### Online, o outro jogador é desenhado como Vector-09, e o tiro dele nasce da boca direita
+
+**Descoberto:** 2026-10-03 | **Status:** 🟡 Aberto | **Impacto:** visual: o Marauder (e qualquer chassi importado) aparece para os outros como um Vector-09; os tiros da mão esquerda e dos ombros dele aparecem saindo da mão direita
+
+**Descrição:** `Game.makeRemote` só distingue andróide de Mech e desenha o resto como Vector-09; `OnlineSession.remoteShot` solta o projétil visual da boca direita. O evento de tiro (`SHOT`) carrega a arma e a direção, não o encaixe. O servidor atira certo dos quatro encaixes; só o desenho no cliente remoto é aproximado.
+
+**Correção proposta (não feita):** desenhar o jogador remoto com o chassi da montagem dele (o roster já traz a montagem) e pôr o encaixe no evento `SHOT` (2 bits no byte do índice, `PROTOCOL_VERSION` 3). Mexe em rede e em carregamento de malha: precisa de decisão do dono.
 
 ---
 

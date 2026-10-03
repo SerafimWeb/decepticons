@@ -37,6 +37,19 @@ describe('Hangar: teste de disparo', () => {
     expect(early.locked).toBe(false);
   });
 
+  it('dois encaixes com a mesma arma (os ombros do Marauder): cada tiro conta duas vezes no mesmo ritmo, e o calor soma e trava mais cedo', () => {
+    const w = weapon('rockets');
+    const um = testFire(VECTOR09_STATS, w);
+    const dois = testFire(VECTOR09_STATS, w, 4, 2);
+    // Antes de o calor travar alguma coisa (4 lançamentos = 72%), são os mesmos tiros, em dobro.
+    expect(dois.shots.filter((s) => s < 0.4)).toHaveLength(2 * um.shots.filter((s) => s < 0.4).length);
+    expect(dois.damage).toBeGreaterThan(um.damage);
+    expect(dois.heat[2]!).toBeGreaterThan(um.heat[2]!);
+    expect(dois.overheatAt).not.toBeNull();
+    expect(um.overheatAt ?? Infinity).toBeGreaterThan(dois.overheatAt!);
+    expect(testAt(dois, 4).damage).toBe(dois.shots.length * w.damage); // a tela conta o dano de cada um
+  });
+
   it('foguetes: o carregador de 4 sai e depois vem a recarga (o teste mostra o ritmo real)', () => {
     const t = testFire(VECTOR09_STATS, weapon('rockets'));
     expect(t.shots.filter((s) => s < 1.2).length).toBe(4);
