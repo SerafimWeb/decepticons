@@ -6,9 +6,9 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Online (servidor 24 h em `jogo.selvamkt.com.br`); offline (single-player: Arena + Sobrevivência + CTF) |
-| **Build** | JS 296 KB e Wasm 719 KB no budget do `npm run check` (teto 500 e 900); 422 testes |
-| **Última sessão** | 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
-| **Próximo** | M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
+| **Build** | JS 296 KB e Wasm 719 KB no budget do `npm run check` (teto 500 e 900); 431 testes |
+| **Última sessão** | 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
+| **Próximo** | Marauder com dois blasters nas mãos e dois lançadores de foguete nos ombros (pedido do dono, PR seguinte); M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
@@ -284,6 +284,13 @@
   - **Limpeza no Harness (`scripts/test.mjs`)**: Removida redundância `VITEST_MAX_WORKERS` do env (mantendo a flag `--maxWorkers=1`).
 ---
 
+## ÚLTIMA SESSÃO FEZ (03/10, PR da escopeta do Lancer na `main`)
+- **Escopeta do Lancer-L1 e o braço do escudo (Claude, pedido do dono):** *"o Lancer não tem o lança-míssil no braço esquerdo, pois tem um escudo! mas a arma dele é uma escopeta: o alcance é mais curto que o blaster, e tira mais vida se estiver pertinho do inimigo"*. (1) **Arma nova `shotgun`** (`combat/weapons.ts`): energia, 52 de dano, 0,8 s entre tiros, 18% de calor, 2 t, dano cheio até 8 m e 8% aos 45 m (o blaster alcança 120 m). Calibrada com a bancada (`balance.ts`): de perto derruba o torso do Vector-09 em 4,0 s (MK I) e 3,2 s (MK II e III, os mesmos 5 tiros), contra 5,7 s do plasma. Um projétil só, sem cone de balins. (2) **Lancer-L1:** escopeta no braço direito e nada no esquerdo (`ARM_SLOTS`, `SHIELD_ARM`); o Hangar escreve ESCUDO e o HUD esconde o bloco de foguetes. (3) **Online:** `shotgun` entra no fim de `NET_WEAPONS` e o `PROTOCOL_VERSION` vai a 2. (4) **Site:** a landing não lista mais a escopeta como "braço esquerdo" do Vector-09 nem soma o peso dela na carga de fábrica (o arsenal dele é o que cabe nos braços dele; ela aparece em "Em outros chassis"), e a Oficina ganhou a escopeta no gráfico de dano × distância e na tabela de tempo para destruir. 9 testes novos (431 no total), um deles de sala no servidor. Capturas do Hangar: `arte/lancer-escopeta-hangar.png` (arma e números) e `arte/lancer-escudo-hangar.png` (o braço do escudo).
+- **Achados (R17), em `FINDINGS.md`:** (a) **corrigido:** `lancerL1`, `lr7lBastion` e `quadraV2` têm maiúscula no id, e o texto da montagem e o `BUILD_RE` só aceitavam minúsculas: entrar online com esses chassis era recusado e o link `?build=` era ignorado; (b) **aberto, entra no PR do Marauder:** blaster no braço esquerdo da Arara e plasma no esquerdo da Onça nunca disparam (o gatilho esquerdo é um lançador de foguetes de carregador, e essas armas têm carregador 0).
+- **O escudo é só desenho** (`STATUS_REAL.md`: DEMO), não bloqueia dano. Bloquear tiro de frente é um sistema novo; ideia no `ROADMAP.md`, aguardando o dono.
+- **Ao subir:** com `PROTOCOL_VERSION` 2, entre o deploy do site (imediato) e a atualização automática do servidor (até 10 min) o online responde 'versão'; quem estiver com uma aba velha aberta precisa recarregar.
+- **Pasta compartilhada (regra 12):** às 14:17 uma sessão que usa o branch `gemini/marauder-rig-fix` (o mesmo nome que a tabela de cima dá como obsoleto) rodou `stash` e `switch` na pasta principal enquanto eu tinha trabalho sem commit, e o trabalho foi parar na árvore dela. Conferi byte a byte, copiei para o worktree `.tmp/wt-claude` e tirei meus arquivos de lá; nada se perdeu, mas um `git add -A` do outro lado teria levado meu trabalho para o PR dele. Quem chegar depois cria o próprio worktree (`git worktree add .tmp/wt-<agente>`).
+
 ## ÚLTIMA SESSÃO FEZ (03/10, PR do ombro e do coice na `main`)
 - **Ombro do Marauder e coice dos braços (Claude, relato do dono com captura):** *"braço mole, muito pra baixo, parece que o ombro está quebrado"* e, sobre o Gênesis, *"o braço dá um salto muito grande, elástico demais para um robô de metal"*. (1) **Ombro:** a ombreira está presa ao osso do braço; a 81° ela amassava. A pose agora é por **direção** (`armRest { upper, fore }`): braço ~50° abaixo da horizontal, antebraço para a frente; pele rígida foi testada e descartada (estilhaços). (2) **Coice:** o `MechBase` escrevia `position.z` do osso, que tem o eixo e a unidade do arquivo; nos quatro robôs importados o braço saltava de 1,9 a 4,8 m ao atirar (medido). Agora `MechRig.setRecoil`, em metros para trás: 0,35 m e 0,5 m em todos, como o Vector-09. Provas: `arte/marauder-ombro-antes-depois.png`, `arte/coice-antes-depois.png`, `arte/marauder-pose-pronta.png`, `arte/marauder-hangar-pose-pronta.png`. Testes novos; as mutações (sem espelhar, sem compensar a escala) falham. **Não verificado por mim:** partida real; o Hangar não aciona o coice. **Gosto do dono:** o recuo ficou igual ao do Vector-09 (dois números em `MechBase.animate` se ainda parecer elástico). **A pergunta maior do dono** (repensar a criação dos robôs, corpos e encaixes; androides como na foto) está em `ROADMAP.md` (IDEIAS), sem escopo aprovado.
 
@@ -480,6 +487,7 @@
 - [ ] **Dono:** jogar com as zonas de cura (canto sudeste) e resfriamento (canto noroeste) contra 3 Mechs + 3 andróides; dizer se +20 vida/s e 0,35 calor/s deixam a luta justa, ou se ainda precisa baixar `enemyMechs`/`enemyAndroids` nas configurações enquanto isso
 - [ ] **Dono:** abrir `/cybermech/jogar/?modo=survival`, completar ou perder uma tentativa e dizer se o salto 2→6 inimigos, os intervalos e a ausência de respawn ficaram justos
 - [ ] **Dono:** na Arena offline, deixar um bot abater o jogador e avaliar a câmera de abate; `V` deve sair na hora e o respawn deve voltar sem corte brusco
+- [ ] **Dono:** abrir o Lancer-L1 (Hangar, ou `?build=v1.lancerL1.shotgun-0.-`), atirar de perto e de longe e dizer se a escopeta tem o peso que você descreveu (alcance menor que o blaster, dano alto colado no inimigo); decidir se o escudo passa a bloquear dano
 
 ## RASCUNHO ANTIGO DE BOTS (superado)
 O rascunho do GPT-OSS continua no stash local (`git stash list`: "rascunho GPT-OSS/Gemini 23-09…"). Foi superado pelos bots v1 e pode ser descartado pelo dono (`git stash drop`). Não reaproveitar: andava na direção errada e lia a posição de render (ver histórico).
@@ -526,6 +534,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
+- **Claude (03/10):** o **Marauder com dois blasters nas mãos e dois lançadores de foguete nos ombros** (pedido do dono, logo depois da escopeta). Precisa: o disparo seguir a arma do encaixe e não o braço (hoje o esquerdo só sabe lançar foguete; `FINDINGS.md`), o encaixe de ombro no rig, o ponto de tiro de cada encaixe como dado do chassi (igual no cliente e no servidor, G14), bits do encaixe no evento SHOT (protocolo 3) e o Hangar com a terceira fila.
 - **Gemini:** **limpar a tela de pausa** (o dono marcou na captura: informação demais, coisas redundantes) e
   **telas de carregamento melhores**. Dois defeitos já diagnosticados pelo Claude em 28/09, para começar por eles:
   1. **`mission-summary` é um id disputado por dois módulos.** `client/index.html:51` tem um `<p id="mission-summary">`

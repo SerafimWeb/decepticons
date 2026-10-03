@@ -106,7 +106,8 @@ export function loadoutKey(spec: LoadoutSpec): string {
 }
 
 export function parseLoadoutKey(key: string): LoadoutSpec | null {
-  const m = /^v(\d+)\.([a-z0-9]+)\.([a-z]+)-(\d)\.(?:([a-z]+)-(\d)|-)$/.exec(key.trim());
+  // O id do chassi leva maiúscula (`lancerL1`, `lr7lBastion`): com [a-z0-9] esses chassis não voltavam do texto do link nem da rede.
+  const m = /^v(\d+)\.([a-zA-Z0-9]+)\.([a-z]+)-(\d)\.(?:([a-z]+)-(\d)|-)$/.exec(key.trim());
   if (!m) return null;
   const spec = {
     v: Number(m[1]),

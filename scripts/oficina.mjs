@@ -115,7 +115,7 @@ function build() {
     { label: 'PERNA', hp: mh.leftLeg },
     { label: 'TORSO', hp: mh.torso },
   ];
-  const rowsW = ['plasma', 'rockets'].flatMap((id) => [0, 1, 2].map((t) => W.weapon(id, t)));
+  const rowsW = ['plasma', 'rockets', 'shotgun'].flatMap((id) => [0, 1, 2].map((t) => W.weapon(id, t)));
   const cells = rowsW.map((w) =>
     parts.map((p) => {
       const t = B.timeToKill([w], V, p.hp);
@@ -134,7 +134,7 @@ function build() {
 
   // ---------- 5. dano × distância (uma arma por gráfico, mesma escala) ----------
   const XMAX = 240;
-  const ranges = ['plasma', 'rockets', 'blaster']
+  const ranges = ['plasma', 'rockets', 'blaster', 'shotgun']
     .map((id) => {
       const w = W.weapon(id);
       const dx = Array.from({ length: 49 }, (_, i) => i * 5).filter((d) => d <= w.maxRange);
@@ -144,7 +144,7 @@ function build() {
           : `não perde força; some a <b>${w.maxRange} m</b> · lento (${w.speed} m/s): de longe, dá para desviar`;
       return lineChart({
         title: w.name,
-        caption: `${note}${id === 'blaster' ? ' · arma dos andróides' : ''}`,
+        caption: `${note}${id === 'blaster' ? ' · arma dos andróides' : id === 'shotgun' ? ' · arma do Lancer-L1: curta, mas pesada de perto' : ''}`,
         xs: dx,
         ys: dx.map((d) => W.rangeFactor(w, d)),
         xMax: XMAX,

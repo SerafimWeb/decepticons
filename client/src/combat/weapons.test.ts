@@ -141,3 +141,33 @@ describe('cadência no tick fixo', () => {
     expect(ticks).toBeGreaterThanOrEqual(12);
   });
 });
+
+describe('escopeta (Lancer): dano alto de perto, alcance menor que o do blaster', () => {
+  const S = weapon('shotgun');
+  const P = weapon('plasma');
+  const B = weapon('blaster');
+
+  it('o alcance é mais curto que o do blaster, no ótimo e no máximo', () => {
+    expect(S.optimalRange).toBeLessThan(B.optimalRange);
+    expect(S.maxRange).toBeLessThan(B.maxRange);
+  });
+
+  it('de perto bate mais que o plasma e que o blaster; longe, quase nada', () => {
+    expect(hitDamage(S, 3)).toBeGreaterThan(hitDamage(P, 3) * 2);
+    expect(hitDamage(S, 3)).toBeGreaterThan(hitDamage(B, 3) * 10);
+    expect(hitDamage(S, S.maxRange)).toBeLessThanOrEqual(Math.round(S.damage * 0.1));
+    expect(hitDamage(S, 60)).toBe(hitDamage(S, S.maxRange)); // passou do alcance: não piora nem melhora
+    expect(hitDamage(S, 40)).toBeLessThan(hitDamage(P, 40));
+  });
+
+  it('sozinha, de perto, derruba o torso de um Mech mais rápido que o plasma, sem passar de 2,5 s no MK III', () => {
+    expect(timeToKill([S], V, TORSO)).toBeLessThan(timeToKill([P], V, TORSO));
+    expect(timeToKill([S], V, TORSO)).toBeGreaterThan(3.5);
+    expect(timeToKill([weapon('shotgun', 2)], V, TORSO)).toBeGreaterThan(2.5);
+  });
+
+  it('é de energia: sem carregador, só o calor segura', () => {
+    expect(S.kind).toBe('energy');
+    expect(S.magazine).toBe(0);
+  });
+});

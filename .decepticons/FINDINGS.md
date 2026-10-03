@@ -278,6 +278,30 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 1. **Cliente consumir `EVENT.HIT`:** marcador de acerto e indicador de dano no online (hoje o evento viaja, ninguém o lê). Território do Gemini (`ui/`), contrato já pronto.
 2. **Compensação de latência:** exige decisão de projeto antes do código. Os projéteis são físicos (140 m/s), não hitscan; voltar a posição dos alvos só faz sentido com mapa de tick cliente↔servidor, histórico em pool pré-alocado (G4), teto de rebobinada (≤ 150 ms) e a escolha de se o plasma vira hitscan. Proposta a escrever em `MULTIPLAYER.md` e aprovar com o dono.
 
+### Chassi com letra maiúscula no id era recusado online e ignorado no link
+
+**Descoberto:** 2026-10-03 (escrevendo o teste de sala do Lancer) | **Status:** ✅ Corrigido | **Impacto:** entrar online com Lancer-L1, LR-7L Bastion ou Quadra-V2 era recusado como 'montagem'; o link `?build=` desses chassis era ignorado (o jogo abria com a montagem de fábrica)
+
+**Descrição:** o texto da montagem (`v1.chassi.arma-nível.arma-nível`) e a regra do servidor (`BUILD_RE`) só aceitavam minúsculas e números, e os ids `lancerL1`, `lr7lBastion` e `quadraV2` têm maiúscula.
+
+**Diagnóstico:** o teste de sala entrando com `v1.lancerL1.shotgun-0.-` foi recusado. Nenhum teste passava o texto de montagem por todos os chassis, só por exemplos.
+
+**Correção/Workaround:** `parseLoadoutKey` e `BUILD_RE` aceitam letras dos dois tamanhos e números. Teste de ida e volta (`loadoutKey` → `parseLoadoutKey`) para **todos** os chassis, e o teste de sala. Conferi que o teste tem dentes: estraguei a regra e ele falhou.
+
+**Lição:** regra de formato que valida um id de dado precisa de um teste que passe por todos os ids reais, não por um exemplo.
+
+### Arma que não é foguete no braço esquerdo nunca dispara (Arara e Onça)
+
+**Descoberto:** 2026-10-03 (lendo o caminho do gatilho para a escopeta) | **Status:** 🟡 Aberto (entra no PR do Marauder com duas armas) | **Impacto:** o Hangar oferece blaster no braço esquerdo da Arara-B1 e plasma no esquerdo da Onça-B2, mas apertar o botão do braço esquerdo não faz nada
+
+**Descrição:** o gatilho do braço esquerdo é sempre um `RocketLauncher` (`combat/trigger.ts`), que vive de carregador e recarga. Blaster e plasma têm `magazine: 0`: o carregador nasce com 0 e `tryFire()` nega para sempre. O servidor (`NetPilot`) tem o mesmo caminho. A escolha existe em `ARM_SLOTS` (`arara`: esquerdo `['rockets','blaster']`; `onca`: esquerdo `['plasma','rockets']`). O inverso (foguete no braço direito da Onça) sai pelo caminho do projétil comum do braço direito; não conferi se explode.
+
+**Diagnóstico:** leitura de `PlayerController.fixedUpdate`, `NetPilot.fixedUpdate` e `trigger.ts`. Não rodei uma partida com essas montagens; a conta é direta (`ammo = weapon.magazine = 0`).
+
+**Correção/Workaround:** pendente. O PR do Marauder com dois blasters nas mãos precisa do mesmo caminho (arma de energia no braço esquerdo), então o disparo passa a seguir a arma do encaixe, não o braço.
+
+**Lição:** o lado do corpo não diz que tipo de arma vai ali. O gatilho devia sair do tipo da arma (energia, munição, corpo a corpo), e o `ARM_SLOTS` só decide o que o Hangar oferece.
+
 ---
 
 ## Template: Como Registrar um Achado

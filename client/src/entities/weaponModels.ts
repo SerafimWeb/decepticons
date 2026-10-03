@@ -99,6 +99,21 @@ function blaster(root: THREE.Object3D, tier: number, M: Mats): number {
   return (0.6 + len) * LONG;
 }
 
+/** Escopeta (energia, dano de perto): corpo grosso e dois canos curtos lado a lado. O nível põe mira, depois um protetor de calor. */
+function shotgun(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  d.box(0.42, 0.4, 0.5, M.armor, 0, 0, -0.3);
+  for (const side of [-1, 1]) {
+    d.cylZ(0.095, 0.75, M.frame, side * 0.115, 0.02, -0.55 - 0.375);
+    d.cylZ(0.12, 0.06, M.armor, side * 0.115, 0.02, -1.22);
+    d.cylZ(0.07, 0.04, M.glow, side * 0.115, 0.02, -1.3);
+  }
+  d.box(0.3, 0.12, 0.4, M.frame, 0, -0.22, -0.7);
+  if (tier >= 1) d.box(0.05, 0.1, 0.3, M.frame, 0, 0.24, -0.45);
+  if (tier >= 2) d.box(0.46, 0.08, 0.55, M.armor, 0, 0.17, -0.85);
+  return 1.36 * LONG;
+}
+
 /** Motosserra (corpo a corpo): motor e uma barra alta com dentes luminosos. O nível alonga a barra. */
 function chainsaw(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -126,15 +141,30 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'plasma' || weapon?.id === 'blaster' ? PALETTE.green : PALETTE.sodium;
+  const accent = weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
   const M = mats(accent);
   coupling(root, M);
   let muzzleZ: number;
   if (!weapon) muzzleZ = cap(root, M);
-  else if (weapon.id === 'plasma') muzzleZ = plasma(root, weapon.tier, M);
-  else if (weapon.id === 'rockets') muzzleZ = rockets(root, weapon.tier, M);
-  else if (weapon.id === 'blaster') muzzleZ = blaster(root, weapon.tier, M);
-  else muzzleZ = chainsaw(root, weapon.tier, M);
+  else {
+    switch (weapon.id) {
+      case 'plasma':
+        muzzleZ = plasma(root, weapon.tier, M);
+        break;
+      case 'rockets':
+        muzzleZ = rockets(root, weapon.tier, M);
+        break;
+      case 'blaster':
+        muzzleZ = blaster(root, weapon.tier, M);
+        break;
+      case 'shotgun':
+        muzzleZ = shotgun(root, weapon.tier, M);
+        break;
+      case 'chainsaw':
+        muzzleZ = chainsaw(root, weapon.tier, M);
+        break;
+    }
+  }
   batchRigMeshes(root, []);
   return { object: root, muzzle: new THREE.Vector3(0, 0, -muzzleZ) };
 }

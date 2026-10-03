@@ -173,9 +173,11 @@ export class HUD {
 
   /** Carregador do braço esquerdo: pips cheios, o próximo enchendo; apagado sem o braço. Só escreve no DOM quando muda. */
   /** Nome da arma do braço esquerdo no HUD (FOGUETES no Mech, MOTOSSERRA no andróide). */
-  setSecondaryLabel(text: string): void {
+  setSecondaryLabel(text: string | null): void {
+    // Sem arma no braço esquerdo (o escudo do Lancer): o bloco some em vez de escrever FOGUETES apagado.
+    this.rockets.hidden = text === null;
     const label = this.rockets.querySelector('.label');
-    if (label) label.textContent = text;
+    if (label && text !== null) label.textContent = text;
   }
 
   setRockets(ammo: number, reload: number, available: boolean): void {
