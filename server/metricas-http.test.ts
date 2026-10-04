@@ -191,11 +191,16 @@ describe('os números sobrevivem ao reinício do servidor', () => {
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
   it('grava ao fechar e volta igual; o token fica no arquivo e continua o mesmo', async () => {
-    const a = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: WIDE, dirDados: dir, salvarCadaMs: 20 });
+    const linhas: string[] = [];
+    const a = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: WIDE, dirDados: dir, salvarCadaMs: 20, log: (l) => linhas.push(l) });
     await postEvento(a.port, 'boot_ok', 'BR');
     await postEvento(a.port, 'partida_iniciada', 'BR');
     const token = readFileSync(join(dir, TOKEN_ARQUIVO), 'utf8').trim();
     expect(token.length).toBeGreaterThanOrEqual(40);
+    // O log diz onde está o arquivo do token (o dono precisa achá-lo) e nunca escreve o token.
+    const aviso = linhas.find((l) => l.includes('métricas privadas'));
+    expect(aviso).toContain(join(dir, TOKEN_ARQUIVO));
+    expect(linhas.join(' | ')).not.toContain(token);
     await a.close();
     expect(existsSync(join(dir, DADOS_ARQUIVO))).toBe(true);
     expect(readFileSync(join(dir, DADOS_ARQUIVO), 'utf8')).not.toContain('127.0.0.1'); // o arquivo não tem IP

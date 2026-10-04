@@ -177,7 +177,7 @@ Copy-Item D:\DECEPTICONS\.tmp\servidor\contas.db .tmp\servidor\contas.db   # o b
 .\scripts\servidor-atualizar.ps1                           # registra a atualização automática (a cada 10 min)
 cd D:\DECEPTICONS; npm ci                                   # conserta a node_modules do projeto (as outras worktrees usam)
 ```
-Conferir: `Invoke-RestMethod https://jogo.selvamkt.com.br/status` deve mostrar `protocol: 2`; e `Get-ScheduledTask | ? TaskName -like 'CYBERMECH*'`
+Conferir: `Invoke-RestMethod https://jogo.selvamkt.com.br/status` deve mostrar `protocol: 3` (ou o que `PROTOCOL_VERSION` de `shared/net/constants.ts` disser); e `Get-ScheduledTask | ? TaskName -like 'CYBERMECH*'`
 deve listar as duas tarefas.
 
 ### Contas de piloto (login, Claude 28/09 — só o esqueleto: criar conta, entrar, sair)
@@ -229,20 +229,20 @@ Cliente e servidor moram na mesma zona; as proteções abaixo garantem que um n�
   vem do cabeçalho `CF-IPCountry` que a Cloudflare põe no túnel — **só vale quando o soquete direto é o localhost**
   (`clientCountry` em `server/guard.ts`), então um cabeçalho inventado por outra máquina não enche a tabela de países
   falsos. Sem túnel (rodando local) tudo cai em `??` (Desconhecido). Só o **país** (nunca IP, nunca cidade) e só
-  **contagens por dia (fuso de Brasília), evento e país**: o arquivo `.tmp/servidor/metricas.json` não tem nada que
+  **contagens por dia (fuso de Brasília), evento e país**: o arquivo `.tmp/servidor/telemetria.json` não tem nada que
   identifique ninguém e guarda até 120 dias; o servidor grava a cada 60 s se mudou e ao fechar, então os números
   sobrevivem ao reinício e à atualização automática. Além dos 9 eventos do navegador, o servidor conta sozinho
   `conexao_online`, `entrou_na_sala` e as recusas (`recusa_versao`, `recusa_cheia`, `recusa_montagem`,
   `recusa_mensagem`, `recusa_limite`), mais o **pico de jogadores** do dia: é daí que vem o "o servidor precisa
   atualizar" quando `recusa_versao` sobe. O `GET /eventos/resumo` público continua **sem país nenhum**.
   - **Token do dono:** o detalhe só sai com o cabeçalho `x-cybermech-metricas`. O servidor gera um token forte na
-    primeira subida e guarda em `.tmp/servidor/metricas-token.txt` (ou use a variável `CYBERMECH_METRICAS_TOKEN`,
+    primeira subida e guarda em `.tmp/servidor/metricas-token.txt` (dentro da pasta do código do servidor; ou use a variável `CYBERMECH_METRICAS_TOKEN`,
     com 16+ caracteres). Sem token e sem pasta de dados a rota nem existe (404). Compara em tempo constante e corta a
     força bruta: 30 tentativas por 10 min por IP (429, até para o token certo).
   - **A página:** `https://www.selvamkt.com.br/cybermech/metricas/` (sem link em menu nenhum, `noindex`, sem Google
     Analytics). Cole o token uma vez; ele fica só naquele navegador e **só para aquele servidor** (um link com
     `?servidor=` apontando para outro lugar nunca recebe o token guardado). Mostra hoje/7 dias, o funil, 14 dias e a
-    tabela de países dos últimos 30 dias. Leia o token com `Get-Content .tmp\servidor\metricas-token.txt` no PC do servidor.
+    tabela de países dos últimos 30 dias. **O arquivo fica na pasta de onde o código do servidor roda** (o servidor grava em `<pasta do código>\.tmp\servidor\`, junto do `contas.db`): com o servidor na worktree dedicada é `D:\DECEPTICONS\.tmp\wt-servidor-prod\.tmp\servidor\metricas-token.txt`, e não o da pasta principal. O log (`servidor.log`) diz o caminho exato na subida ("métricas privadas ligadas: o token está em …"), sem escrever o token. Só existe depois que o servidor **novo** subir pela primeira vez.
   - **Cidade, aparelho, tempo no site e de onde veio o clique** não são contados pelo nosso servidor (decisão de
     privacidade): estão no Google Analytics, que já está nas páginas (`analytics.google.com` → Relatórios → Público).
   - **Suposição a conferir no dia:** o `CF-IPCountry` só chega se a Cloudflare estiver à frente do túnel (é o caso do

@@ -13,7 +13,7 @@ import { ArenaRoom, type Peer } from './ArenaRoom';
 import { Contas } from './contas';
 import { clientCountry, clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
 import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
-import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, tokenConfere } from './metricas';
+import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
 import { Telemetria } from './telemetria';
 
 /** Maior mensagem aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
@@ -186,6 +186,8 @@ export async function startServer(
   if (arquivoDados) telemetria.carregar(lerJson(arquivoDados));
   /** Token do dono para `GET /metricas` (origem das conexões, por país e por dia). `null` = porta desligada. */
   const metricasToken = opts.metricasToken ?? (dirDados ? carregarToken(dirDados) : null);
+  // Diz ONDE está o token (nunca o token): a pasta é a de onde o código do servidor roda, e o dono precisa achar o arquivo.
+  if (metricasToken && dirDados) log(`métricas privadas ligadas: o token está em ${join(dirDados, TOKEN_ARQUIVO)} (ou na variável CYBERMECH_METRICAS_TOKEN)`);
   const limiteMetricas = new LimiteLogin({ teto: 30, janelaMs: 10 * 60 * 1000 });
   const gravarDados = (): void => {
     if (!arquivoDados || !telemetria.sujo) return;
