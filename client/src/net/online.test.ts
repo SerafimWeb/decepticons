@@ -162,15 +162,16 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     const b = await player('Bravo', 'M4D');
     await join([a, b], 7);
     expect(b.match.barrage.active).toBe(0);
+    // Segura o gatilho até o outro ver a chuva: com a máquina cheia (suíte em paralelo) um aperto curto de relógio real
+    // pode não virar nem um tick, e o teste ficava esperando um lançamento que nunca saiu.
     a.commander.secondaryHeld = true;
-    await play([a, b], 120); // um aperto de ~7 ticks: o carregador solta um lançamento
-    a.commander.secondaryHeld = false;
     const t0 = performance.now();
     let visto = false;
     while (!visto && performance.now() - t0 < 8000) {
-      await play([a, b], 100);
+      await play([a, b], 50);
       visto = b.match.barrage.active > 0;
     }
+    a.commander.secondaryHeld = false;
     expect(visto).toBe(true);
     a.session.dispose();
     b.session.dispose();

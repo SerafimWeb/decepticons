@@ -40,6 +40,8 @@ import { NetPilot } from './NetPilot';
 export interface Peer {
   send(bytes: Uint8Array): void;
   close(): void;
+  /** País de quem conectou (código de 2 letras, ou `??`): só para a contagem de origem, nunca para a regra do jogo. */
+  readonly pais?: string;
 }
 
 /** No servidor ninguém vê faísca: as regras chamam o efeito, e ele não faz nada. */
@@ -82,6 +84,10 @@ export class ArenaRoom {
   private readonly packet = newInputPacket();
   /** Eventos juntados entre dois estados (tiros e abates), mandados logo depois do estado. */
   private readonly events = newEventBatch();
+  /** Alguém entrou na partida (montagem aceita). O servidor conta a origem; a sala não sabe para quê. */
+  onEntrou?: (peer: Peer) => void;
+  /** Alguém foi recusado, e por quê. */
+  onRecusou?: (peer: Peer, motivo: RejectReason) => void;
   /** Sala fechada: o mundo físico foi liberado; mensagens e saídas que ainda chegarem são ignoradas. */
   private disposed = false;
 
@@ -200,9 +206,11 @@ export class ArenaRoom {
     this.humans.set(peer, human);
     peer.send(encodeWelcome(this.w, { protocol: PROTOCOL_VERSION, id: human.id, tick: this.tick, simHz: SIM_HZ, snapshotHz: SNAPSHOT_HZ, room: this.code }));
     this.broadcastRoster();
+    this.onEntrou?.(peer);
   }
 
   private reject(peer: Peer, reason: RejectReason): void {
+    this.onRecusou?.(peer, reason);
     peer.send(encodeReject(this.w, reason));
     peer.close();
   }

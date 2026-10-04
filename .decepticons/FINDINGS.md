@@ -82,6 +82,26 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 ## 🟢 Achados Úteis (Insights Reaproveitáveis)
 
+### Cabeçalho de proxy só vale de quem é o proxy (`CF-IPCountry`, `CF-Connecting-IP`)
+
+**Descoberto:** 2026-10-04 | **Aplicação:** `server/guard.ts` (`clientIp`, `clientCountry`), `server/Server.ts`
+
+**Descrição:** o país (e o IP real) que a Cloudflare informa chega num cabeçalho comum; quem estiver na porta do servidor sem passar pelo túnel pode mandar o mesmo cabeçalho. Por isso os dois só são lidos quando o soquete direto é o localhost (o `cloudflared` roda na mesma máquina). Qualquer outra origem cai em `??`. Sem essa regra, um script na LAN (se o `HOST` for aberto num playtest) encheria a tabela de países com o que quiser. Coberto por `clientCountry` em `guard.test.ts` e por uma mutação que afrouxa a validação do código do país (os testes pegam).
+
+**Padrão:** dado de proxy = confiar só quando o par da conexão é o proxy. Valide o formato mesmo assim (2 letras, `XX` e lixo viram `??`), porque o que entra num contador ou num mapa nunca pode ser texto livre (limite de 80 países por evento e dia, o resto vira `??`).
+
+### Armadilha: `append()` do DOM não devolve nada
+
+**Descoberto:** 2026-10-04 | **Aplicação:** `scripts/metricas.mjs`
+
+`tabela.append(el('thead')).firstChild.append(x)` quebra com "Cannot read properties of undefined": `Node.append` devolve `undefined`, não o nó. Quem pegou foi o `site --check` (que abre a página de verdade); o `tsc` e os testes do servidor não veem JavaScript de página. Regra: página com script próprio ganha teste no navegador no `site.mjs`.
+
+### Pendência: `site --check` com `VITE_GAME_SERVER` definida falha em "Entrar no cockpit abre jogar/"
+
+**Descoberto:** 2026-10-04 | **Status:** 🟡 não investigado | **Impacto:** só quem roda o check local com a variável de produção
+
+Com `VITE_GAME_SERVER=wss://…` no ambiente, o `--check` morre em `waitForURL(jogar/)` depois do clique em `a.play-btn` (30 s). Sem a variável passa. A landing de produção muda quando há servidor (botão de jogar online no lugar do offline, 29–30/09), e o teste pode estar clicando no botão errado ou esperando a URL antiga. Não conferi se o deploy do CI roda o check com a variável (o `check` do PR roda sem ela e passa); falta alinhar o teste ou o botão. Não é desta tarefa.
+
 ### Técnica: Apêndice Decorativo (Zero Custo de CPU)
 
 **Descoberto:** 2026-09-29 | **Aplicação:** Cauda (Onça-B2), cabeça-torre (futuro), esteiras

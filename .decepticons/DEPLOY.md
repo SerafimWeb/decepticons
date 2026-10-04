@@ -20,7 +20,7 @@
 `npm run site -- --capturas` (monta `.tmp/site/` e fotografa o jogo) → rsync por SSH para a Hostinger → `node scripts/site.mjs --verify <SITE_URL>`.
 - Mesmo padrão do deploy do CAPTIA nesta conta Hostinger: SSH na **porta 65002**, **5 tentativas** com espera crescente (a proteção anti-abuso da Hostinger às vezes derruba a conexão do runner).
 - **Trava de segurança:** o `rsync --delete` apaga no servidor o que não existe localmente. O job se recusa a rodar se `DEPLOY_PATH` não terminar em `/public_html/cybermech/`, para nunca apagar o site real.
-- **Verificação:** landing, `/oficina/`, `/sala-de-controle/` (e `/bastidores/` levando para ela) e `/jogar/` com o conteúdo certo (o servidor responde 200 até para arquivo inexistente), doctype e `<meta charset>` no início, a CSP aplicada e o `.wasm` servido como `application/wasm` e comprimido; capa ausente só avisa. Se a Cloudflare desafiar o IP do runner, o job avisa e não falha (conferir no navegador).
+- **Verificação:** landing, `/oficina/`, `/sala-de-controle/` (e `/bastidores/` levando para ela), `/metricas/` (privada, com `noindex`) e `/jogar/` com o conteúdo certo (o servidor responde 200 até para arquivo inexistente), doctype e `<meta charset>` no início, a CSP aplicada e o `.wasm` servido como `application/wasm` e comprimido; capa ausente só avisa. Se a Cloudflare desafiar o IP do runner, o job avisa e não falha (conferir no navegador).
 
 **Configuração no GitHub (dono), sem valor nenhum no repositório (R2/R10) nem no chat (R11):**
 
@@ -225,6 +225,29 @@ Cliente e servidor moram na mesma zona; as proteções abaixo garantem que um n�
   Cada IP tem um balde de 30 eventos, recarregando 0,5/s — próprio, separado do `Guard` do WebSocket. A
   resposta do resumo é só números agregados por evento (últimas 24h e desde que o servidor subiu): nenhum
   evento cru, nenhum IP, nenhuma sala. Sem cookie e sem id persistente entre sessões.
+- **Origem das conexões e métricas privadas (04/10; `GET /metricas`, `/cybermech/metricas/`):** o país de quem chega
+  vem do cabeçalho `CF-IPCountry` que a Cloudflare põe no túnel — **só vale quando o soquete direto é o localhost**
+  (`clientCountry` em `server/guard.ts`), então um cabeçalho inventado por outra máquina não enche a tabela de países
+  falsos. Sem túnel (rodando local) tudo cai em `??` (Desconhecido). Só o **país** (nunca IP, nunca cidade) e só
+  **contagens por dia (fuso de Brasília), evento e país**: o arquivo `.tmp/servidor/metricas.json` não tem nada que
+  identifique ninguém e guarda até 120 dias; o servidor grava a cada 60 s se mudou e ao fechar, então os números
+  sobrevivem ao reinício e à atualização automática. Além dos 9 eventos do navegador, o servidor conta sozinho
+  `conexao_online`, `entrou_na_sala` e as recusas (`recusa_versao`, `recusa_cheia`, `recusa_montagem`,
+  `recusa_mensagem`, `recusa_limite`), mais o **pico de jogadores** do dia: é daí que vem o "o servidor precisa
+  atualizar" quando `recusa_versao` sobe. O `GET /eventos/resumo` público continua **sem país nenhum**.
+  - **Token do dono:** o detalhe só sai com o cabeçalho `x-cybermech-metricas`. O servidor gera um token forte na
+    primeira subida e guarda em `.tmp/servidor/metricas-token.txt` (ou use a variável `CYBERMECH_METRICAS_TOKEN`,
+    com 16+ caracteres). Sem token e sem pasta de dados a rota nem existe (404). Compara em tempo constante e corta a
+    força bruta: 30 tentativas por 10 min por IP (429, até para o token certo).
+  - **A página:** `https://www.selvamkt.com.br/cybermech/metricas/` (sem link em menu nenhum, `noindex`, sem Google
+    Analytics). Cole o token uma vez; ele fica só naquele navegador e **só para aquele servidor** (um link com
+    `?servidor=` apontando para outro lugar nunca recebe o token guardado). Mostra hoje/7 dias, o funil, 14 dias e a
+    tabela de países dos últimos 30 dias. Leia o token com `Get-Content .tmp\servidor\metricas-token.txt` no PC do servidor.
+  - **Cidade, aparelho, tempo no site e de onde veio o clique** não são contados pelo nosso servidor (decisão de
+    privacidade): estão no Google Analytics, que já está nas páginas (`analytics.google.com` → Relatórios → Público).
+  - **Suposição a conferir no dia:** o `CF-IPCountry` só chega se a Cloudflare estiver à frente do túnel (é o caso do
+    `jogo.selvamkt.com.br`); confira que `IP Geolocation` está ligada. Se a coluna "Desconhecido"
+    ficar com quase tudo, é aqui que se olha (Cloudflare → Network → IP Geolocation).
 - **Segredos:** o token do túnel fica no serviço do Windows, não no repositório. O `GAME_SERVER_URL` é variável
   pública do GitHub, não segredo.
 

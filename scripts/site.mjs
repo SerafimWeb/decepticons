@@ -3,6 +3,7 @@
  *   /cybermech/             landing do jogo (scripts/landing.mjs)
  *   /cybermech/sala-de-controle/  o case do desenvolvimento (scripts/painel.mjs --site)
  *   /cybermech/bastidores/  o endereço antigo: página que leva para a sala de controle
+ *   /cybermech/metricas/    métricas privadas do dono (scripts/metricas.mjs): só abre com o token do servidor
  *   /cybermech/jogar/       o jogo (vite build)
  *   /cybermech/capturas/    imagens do jogo, feitas jogando o build (só com --capturas)
  *
@@ -166,6 +167,8 @@ async function build() {
   writeFileSync(join(OUT, 'bastidores', 'index.html'), MOVED);
   run('node', ['scripts/landing.mjs', '--out', join(OUT, 'index.html')]);
   run('node', ['scripts/oficina.mjs', '--out', join(OUT, 'oficina', 'index.html')]);
+  // Privada: sem link em nenhum menu, fora da busca, e só mostra algo com o token do servidor (DEPLOY.md).
+  run('node', ['scripts/metricas.mjs', '--out', join(OUT, 'metricas', 'index.html')]);
   writeFileSync(join(OUT, '.htaccess'), htaccess());
   writeFileSync(join(GAME, 'assets', '.htaccess'), ASSETS_HTACCESS);
   const wasm = readdirSync(join(GAME, 'assets')).filter((f) => f.endsWith('.wasm'));
@@ -173,7 +176,7 @@ async function build() {
     const file = join(GAME, 'assets', w);
     writeFileSync(`${file}.gz`, gzipSync(readFileSync(file), { level: 9 }));
   }
-  console.log(`site    ${OUT}  (landing na raiz, sala-de-controle/, jogo em jogar/, ${wasm.length} .wasm)`);
+  console.log(`site    ${OUT}  (landing na raiz, sala-de-controle/, metricas/ privada, jogo em jogar/, ${wasm.length} .wasm)`);
 }
 
 /** Servidor estático em /cybermech/ com os cabeçalhos do .htaccess, só para o teste local. */
@@ -278,6 +281,84 @@ async function antiCopy(page, name, failures) {
   if (r.select !== 'none') failures.push(`anti-cópia (${name}): o texto público é selecionável (user-select: ${r.select})`);
   if (r.chars > 0) failures.push(`anti-cópia (${name}): o "selecionar tudo" ainda pegou ${r.chars} caracteres`);
   if (!r.bloqueado) failures.push(`anti-cópia (${name}): o evento de cópia não foi bloqueado`);
+}
+
+/**
+ * Métricas (privada): contra um servidor de mentira que responde no formato REAL do contrato (os números vêm do `Telemetria`
+ * de verdade). Prova: sem token nada aparece; token errado é recusado; token certo mostra cartões, funil, dias e países;
+ * o token fica guardado só para aquele servidor; nome de país hostil vira texto, nunca HTML; a página não entra em busca
+ * e não carrega o Google Analytics.
+ */
+async function metricasPage(browser, base, failures) {
+  const { runnerImport } = await import('vite');
+  const load = async (p) => (await runnerImport(resolve(p), { configFile: false, logLevel: 'silent' })).module;
+  const { Telemetria } = await load('server/telemetria.ts');
+  const tel = await load('shared/net/telemetry.ts');
+  const TOKEN = 'token-de-teste-do-check-0123456789';
+  const agora = Date.now();
+  const t = new Telemetria(agora);
+  for (const [nome, pais, n] of [['boot_ok', 'BR', 5], ['boot_ok', 'US', 2], ['partida_iniciada', 'BR', 4], ['landing_view', 'PT', 3]]) {
+    for (let i = 0; i < n; i++) t.registrar(nome, `10.0.${pais.charCodeAt(0)}.${i}`, agora, pais);
+  }
+  for (let i = 0; i < 3; i++) t.contar('conexao_online', 'BR', agora);
+  t.contar('entrou_na_sala', 'BR', agora);
+  t.contar('recusa_versao', 'US', agora);
+  t.pico(2, agora);
+  const corpo = t.metricas(agora);
+  corpo.dias.at(-1).eventos.boot_ok['<img src=x onerror=window.__xss=1>'] = 1; // um servidor comprometido não vira HTML na tela
+  const servidor = createServer((req, res) => {
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': tel.METRICAS_HEADER };
+    if (req.method === 'OPTIONS') return void res.writeHead(204, cors).end();
+    if (req.url?.split('?')[0] !== tel.METRICAS_PATH) return void res.writeHead(404, cors).end();
+    if (req.headers[tel.METRICAS_HEADER] !== TOKEN) return void res.writeHead(401, cors).end();
+    res.writeHead(200, { ...cors, 'content-type': 'application/json' }).end(JSON.stringify(corpo));
+  });
+  await new Promise((ok) => servidor.listen(0, '127.0.0.1', ok));
+  const ctx = await browser.newContext();
+  try {
+    const page = await ctx.newPage();
+    page.on('pageerror', (e) => failures.push(`métricas: ${e.message}`));
+    const url = `${base}metricas/?servidor=${encodeURIComponent(`http://127.0.0.1:${servidor.address().port}`)}`;
+    await page.goto(url);
+    if ((await page.title()) !== 'Métricas · CYBERMECH') failures.push(`título das métricas: "${await page.title()}"`);
+    await pageSane(page, 'métricas', failures);
+    const html = await page.evaluate(() => document.documentElement.outerHTML);
+    if (/decepticons/i.test(html)) failures.push('métricas: o codinome interno aparece na página');
+    if (!/<meta name="robots" content="noindex/.test(html)) failures.push('métricas: a página privada não pede para ficar fora da busca');
+    if (/googletagmanager/.test(html)) failures.push('métricas: a página privada carrega o Google Analytics');
+    if (!(await page.locator('#painel').isHidden())) failures.push('métricas: mostrou números sem token');
+    await page.fill('#token', 'errado-errado-errado');
+    await page.click('#acesso button[type=submit]');
+    await page.waitForFunction(() => /recusado/i.test(document.getElementById('estado')?.textContent ?? ''), null, { timeout: 5000 }).catch(() => failures.push('métricas: token errado não foi recusado na tela'));
+    if (!(await page.locator('#painel').isHidden())) failures.push('métricas: mostrou números com o token errado');
+    await page.fill('#token', TOKEN);
+    await page.click('#acesso button[type=submit]');
+    await page.waitForSelector('#painel:not([hidden])', { timeout: 5000 }).catch(() => failures.push('métricas: o token certo não abriu o painel'));
+    if ((await page.locator('#cards .card').count()) !== 5) failures.push('métricas: faltam os cartões de hoje');
+    if ((await page.locator('#funil .barra').count()) !== 7) failures.push('métricas: faltam os passos do funil');
+    if ((await page.locator('#dias rect').count()) < 3) failures.push('métricas: o gráfico por dia saiu vazio');
+    const paises = await page.locator('#paises tbody tr').allTextContents();
+    if (paises.length < 3) failures.push(`métricas: a tabela de países saiu com ${paises.length} linhas`);
+    if (!/Brasil/.test(paises[0] ?? '')) failures.push(`métricas: o país que mais joga devia ser o Brasil, veio "${paises[0]}"`);
+    if ((await page.locator('#paises img').count()) || (await page.evaluate(() => window.__xss))) failures.push('métricas: um nome de país com HTML virou HTML na tela');
+    const guardados = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('cybermech.metricas.token')));
+    if (guardados.length !== 1 || !guardados[0].includes('127.0.0.1')) failures.push(`métricas: o token devia ficar guardado para aquele servidor só: ${JSON.stringify(guardados)}`);
+    // Volta sozinha com o token guardado; um link para outro servidor não recebe o token guardado; "esquecer" apaga.
+    const chaves = () => page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('cybermech.metricas.token')).length);
+    await page.reload();
+    await page.waitForSelector('#painel:not([hidden])', { timeout: 5000 }).catch(() => failures.push('métricas: não reabriu com o token guardado'));
+    await page.click('#esquecer');
+    if ((await chaves()) !== 0 || !(await page.locator('#painel').isHidden())) failures.push('métricas: "esquecer o token" não apagou nem escondeu o painel');
+    await page.fill('#token', TOKEN);
+    await page.click('#acesso button[type=submit]');
+    await page.waitForSelector('#painel:not([hidden])', { timeout: 5000 }).catch(() => failures.push('métricas: não voltou a abrir depois de esquecer'));
+    await page.goto(`${base}metricas/?servidor=${encodeURIComponent('http://localhost:9')}`);
+    await page.waitForTimeout(300);
+    if (!(await page.locator('#painel').isHidden())) failures.push('métricas: o token guardado foi usado em outro servidor');
+  } finally {
+    await ctx.close();
+    servidor.close();
+  }
 }
 
 /** Chrome/Edge do sistema (headless, WebGL por software). Temporários do browser em .tmp/ (G15). */
@@ -462,6 +543,7 @@ async function check() {
     // Uma página por vez: a de trás não desenha, e o jogo do celular ficaria parado.
     await page.close();
     await mobile(browser, `${base}jogar/`, failures);
+    await metricasPage(browser, base, failures);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {
@@ -475,7 +557,7 @@ async function check() {
   }
   // Só depois de saber que não houve falha: antes, esta linha saía junto do "❌ SITE FALHOU" e dizia
   // "ok" para um check vermelho (visto em 27/09/2026, no log do CI da `main`).
-  console.log(`site    ok: landing em ${prefix} com a abertura da marca, o Hangar e o online, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, texto não selecionável e sem cópia nas três páginas, celular joga pelo toque`);
+  console.log(`site    ok: landing em ${prefix} com a abertura da marca, o Hangar e o online, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, texto não selecionável e sem cópia nas três páginas, celular joga pelo toque, metricas/ privada (sem token nada aparece, token errado é recusado, país hostil vira texto)`);
 }
 
 /** Confere o site publicado: páginas no ar, .wasm com o tipo certo, CSP aplicada. */
@@ -507,6 +589,10 @@ async function verify(url) {
   if (!(await shop.text()).includes('Oficina · CYBERMECH')) failures.push(`${root}oficina/: não é a oficina`);
   const control = await get(`${root}sala-de-controle/`);
   if (!(await control.text()).includes('SALA DE CONTROLE')) failures.push(`${root}sala-de-controle/: não é a sala de controle`);
+  const metricas = await get(`${root}metricas/`);
+  const metricasHtml = await metricas.text();
+  if (!metricasHtml.includes('Métricas · CYBERMECH')) failures.push(`${root}metricas/: não é a página de métricas`);
+  if (!/<meta name="robots" content="noindex/.test(metricasHtml)) failures.push(`${root}metricas/: a página privada saiu sem noindex`);
   const old = await get(`${root}bastidores/`);
   if (!(await old.text()).includes('sala-de-controle/')) failures.push(`${root}bastidores/: não leva para a sala de controle`);
   const cover = await get(`${root}capturas/capa.jpg`, 'HEAD');
