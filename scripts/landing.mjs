@@ -411,7 +411,8 @@ if (arms && sheet) {
   const energy = arms.weapons.find((w) => w.kind === 'energy');
   const gain = Math.round((1 - energy.tiers[2].ttk / energy.tiers[0].ttk) * 100);
   const perTon = energy.tiers.map((t) => t.dps / t.mass);
-  const load = arms.weapons.reduce((sum, w) => sum + w.tiers[0].mass, 0);
+  // A carga de fábrica do Vector-09 é a do plasma e a dos foguetes (as duas primeiras armas), não a soma de tudo o que ele aceita.
+  const load = arms.weapons[0].tiers[0].mass + arms.weapons[1].tiers[0].mass;
   const [a0, a1] = arms.weapons;
   // A regra "uma arma sozinha" vale para o plasma e os foguetes. A escopeta de outro chassi é a exceção de propósito:
   // passa disso, mas só de perto (dano cheio até `optimal` m, 8% ao fim do alcance).

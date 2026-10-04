@@ -23,7 +23,8 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 6. Build, CI, hospedagem ou deploy? Leia `.decepticons/DEPLOY.md` antes. Site: `www.selvamkt.com.br/cybermech/`, publicado a cada merge na `main`. **Nunca publique fora de `/cybermech/`** (a raiz é o site real da Selva MKT) e não invente host, caminho ou secret.
 7. Vai trazer ou mexer em um Mech de malha importada (`.glb`), no encaixe de arma ou no punho? Leia `.decepticons/MECHS_IMPORTADOS.md` antes: é o contrato do arquivo e o roteiro; cada robô já custou uma sessão de correção por falta dele.
 8. Gravação de gameplay (F9), a mesa de vídeo (`/mesa`, em `.tmp/video/`) ou outra ferramenta acessória do dono? Leia `.decepticons/FERRAMENTAS.md` antes de mexer — evita redescobrir achados já registrados (ex.: o Mech parado que afunda no chão).
-9. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
+9. Vai criar uma arma ou um robô novo? Leia `.decepticons/ARSENAL.md` (a lista do que tocar) antes.
+10. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
 
 ## O QUE É
 
@@ -81,7 +82,7 @@ client/src/
   camera/      CameraRig.ts + modos (3ª, 1ª, tática)
   environment/ Arena.ts, Destructibles.ts, DebrisSystem.ts
   combat/      weapons.ts (arsenal: armas em 3 níveis), balance.ts (metas de equilíbrio), trigger.ts (cadência, carregador), heat.ts (calor do Mech),
-               mounts.ts (encaixes de arma e quais atiram em cada botão), Armament.ts (a regra de tiro: jogador e servidor usam a mesma),
+               mounts.ts (encaixes de arma e quais atiram em cada botão), Armament.ts (a regra de tiro: jogador e servidor usam a mesma), BarrageSystem.ts (chuva de mísseis),
                ProjectileSystem.ts, RocketSystem.ts, CombatSystem.ts, damage.ts (dano por parte), BotController.ts (IA), BotSystem.ts, Respawner.ts
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde)

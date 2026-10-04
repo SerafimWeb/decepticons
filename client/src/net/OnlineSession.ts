@@ -91,6 +91,7 @@ interface Stored {
 const _o = new THREE.Vector3();
 const _d = new THREE.Vector3();
 const _fwd = new THREE.Vector3();
+const _aimPoint = new THREE.Vector3();
 const HIDDEN = new THREE.Vector3(0, -200, 0);
 
 /**
@@ -362,9 +363,15 @@ export class OnlineSession implements Pilot {
     const r = this.remotes.get(e.unit);
     const id = weaponFromNet(e.index);
     if (!r || !r.placed || !r.mech.alive || !id || id === 'chainsaw') return;
-    r.mech.simMuzzle(_o);
+    r.mech.simMuzzle(_o, id === 'barrage' ? r.mech.triggers.secondary[0] : 'rightHand');
     _d.set(-Math.sin(e.yaw) * Math.cos(e.pitch), Math.sin(e.pitch), -Math.cos(e.yaw) * Math.cos(e.pitch));
-    if (id === 'rockets') {
+    if (id === 'barrage') {
+      // O evento traz a direção, não o ponto: acha onde o raio bate (o servidor fez o mesmo) e joga a chuva ali. Só desenho (dano é do servidor).
+      const hit = this.o.match.physics.raycast(_o, _d, 400, r.mech.collider);
+      _aimPoint.copy(_o).addScaledVector(_d, hit ? hit.distance : 400);
+      this.o.match.barrage.fire(_o, _d, _aimPoint, r.mech.collider, weapon('barrage'));
+      r.mech.onFireSecondary();
+    } else if (id === 'rockets') {
       this.o.match.rockets.fire(_o, _d, r.mech.collider, weapon('rockets'));
       r.mech.onFireSecondary();
     } else {

@@ -81,7 +81,8 @@ export function drill(chassis: ChassisHeat, d: Drill, seconds: number, hp = Infi
         if (fired) g.timer.shot(g.w.fireInterval);
       }
       if (!fired) return;
-      out.damage += g.w.damage;
+      // A chuva de mísseis conta as bombas que pegam um alvo parado no meio dela (`Barrage.onTarget`); as outras armas, o tiro inteiro.
+      out.damage += g.w.damage * (g.w.barrage?.onTarget ?? 1);
       heat.add(g.w.heatPerShot);
       d.onShot?.(t, g.w);
       if (k === 0 && d.burst && ++inBurst >= d.burst.shots) {

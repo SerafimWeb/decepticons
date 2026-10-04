@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { weapon, type Tier, type WeaponId } from '../combat/weapons';
 import { podModel, weaponModel } from './weaponModels';
 
-const IDS: WeaponId[] = ['plasma', 'rockets', 'blaster', 'shotgun', 'chainsaw'];
+const IDS: WeaponId[] = ['plasma', 'rockets', 'blaster', 'shotgun', 'chainsaw', 'barrage'];
 const TIERS: Tier[] = [0, 1, 2];
 
 function meshesOf(o: THREE.Object3D): THREE.Mesh[] {
@@ -89,7 +89,15 @@ describe('weaponModels: o lançador de ombro (podModel)', () => {
     expect(meshesOf(a.object)[0]!.material).toBe(meshesOf(b.object)[0]!.material);
   });
 
-  it('só os foguetes têm desenho de ombro: sem arma, ou com outra, o ombro fica limpo (grupo vazio, boca na origem)', () => {
+  it('o morteiro da chuva também tem desenho de ombro, em todo nível, uma malha só', () => {
+    for (const tier of TIERS) {
+      const { object, muzzle } = podModel(weapon('barrage', tier));
+      expect(meshesOf(object)).toHaveLength(1);
+      expect(muzzle.z).toBeLessThan(-0.8);
+    }
+  });
+
+  it('só os foguetes e a chuva têm desenho de ombro: sem arma, ou com outra, o ombro fica limpo (grupo vazio, boca na origem)', () => {
     for (const w of [null, weapon('blaster'), weapon('plasma')]) {
       const { object, muzzle } = podModel(w);
       expect(meshesOf(object)).toHaveLength(0);

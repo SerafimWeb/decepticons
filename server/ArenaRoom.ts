@@ -100,6 +100,7 @@ export class ArenaRoom {
     // e cada abate (lista de abates).
     this.match.projectiles.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
     this.match.rockets.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
+    this.match.barrage.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
     this.match.onMechHit = (e) => this.hit(e.mech, e.shooter, e.result.part, e.result.applied);
     this.match.onMechKilled = (dead, _at, killer) => this.kill(dead, killer);
     this.match.onPropBroken = (id) => this.propBroken(id);
