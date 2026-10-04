@@ -102,6 +102,14 @@ function pod(root: THREE.Object3D, tier: number, M: Mats): number {
   return muzzleZ;
 }
 
+/** Morteiro de ombro (chuva de mísseis): a mesma grade de tubos inclinados do braço, com um suporte embaixo para assentar na ombreira. */
+function mortarPod(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const muzzleZ = barrage(root, tier, M);
+  d.box(0.34, 0.16, 0.5, M.frame, 0, -0.2, -0.4);
+  return muzzleZ;
+}
+
 /** Blaster leve (energia): corpo curto e dois canos paralelos. O nível alonga os canos e põe a mira. */
 function blaster(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -128,6 +136,25 @@ function shotgun(root: THREE.Object3D, tier: number, M: Mats): number {
   if (tier >= 1) d.box(0.05, 0.1, 0.3, M.frame, 0, 0.24, -0.45);
   if (tier >= 2) d.box(0.46, 0.08, 0.55, M.armor, 0, 0.17, -0.85);
   return 1.36 * LONG;
+}
+
+/**
+ * Chuva de mísseis (munição, área): uma base com tubos de morteiro inclinados para cima e para a frente, em duas colunas.
+ * O nível soma fileiras de tubos (2, 3, 4). A boca do módulo é a da frente da base: o lançamento sobe dali.
+ */
+function barrage(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const rows = [2, 3, 4][tier]!;
+  d.box(0.5, 0.26, 0.5 + rows * 0.2, M.armor, 0, -0.02, -0.3 - rows * 0.1);
+  d.box(0.56, 0.06, 0.12, M.frame, 0, 0.14, -0.2);
+  for (let r = 0; r < rows; r++) {
+    const z = -0.42 - r * 0.2;
+    for (const side of [-1, 1]) {
+      cyl(root, 0.085 * THICK, 0.6, M.frame, side * 0.14 * THICK, 0.3, z * LONG, -Math.PI / 6);
+      cyl(root, 0.06 * THICK, 0.05, M.glow, side * 0.14 * THICK, 0.3 + 0.26, (z - 0.15) * LONG, -Math.PI / 6);
+    }
+  }
+  return (0.42 + rows * 0.2 + 0.3) * LONG;
 }
 
 /** Motosserra (corpo a corpo): motor e uma barra alta com dentes luminosos. O nível alonga a barra. */
@@ -160,9 +187,9 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
   const accent = weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
-    // Lançador de ombro: só o casulo de foguetes tem esse desenho. Sem arma (ou outra), o ombro fica limpo.
-    if (weapon?.id !== 'rockets') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
-    const muzzleZ = pod(root, weapon.tier, M);
+    // Lançador de ombro: o casulo de foguetes e o morteiro da chuva têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
+    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
+    const muzzleZ = weapon.id === 'barrage' ? mortarPod(root, weapon.tier, M) : pod(root, weapon.tier, M);
     batchRigMeshes(root, []);
     return { object: root, muzzle: new THREE.Vector3(0, 0, -muzzleZ) };
   }
@@ -182,6 +209,9 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'shotgun':
         muzzleZ = shotgun(root, weapon.tier, M);
+        break;
+      case 'barrage':
+        muzzleZ = barrage(root, weapon.tier, M);
         break;
       case 'chainsaw':
         muzzleZ = chainsaw(root, weapon.tier, M);
@@ -212,7 +242,7 @@ export function weaponModel(weapon: Pick<WeaponStats, 'id' | 'tier'> | null): We
 /**
  * O lançador de ombro desta arma. Mesmo padrão do módulo do pulso (unidade = o tamanho que o encaixe der, origem na
  * traseira, frente = -Z, uma malha só, instâncias que compartilham geometria e material), mas sem o engate. Só os
- * foguetes têm desenho de ombro; sem arma (ou outra), devolve um grupo vazio e a boca na origem.
+ * foguetes e a chuva de mísseis têm desenho de ombro; sem arma (ou outra), devolve um grupo vazio e a boca na origem.
  */
 export function podModel(weapon: Pick<WeaponStats, 'id' | 'tier'> | null): WeaponModel {
   const key = weapon ? `${weapon.id}:${weapon.tier}` : 'vazio';

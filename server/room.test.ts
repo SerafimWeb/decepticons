@@ -287,61 +287,61 @@ describe('Lancer-L1 online: a escopeta no servidor', () => {
   });
 });
 
+/** Uma sala com o jogador de `build`, um alvo parado a `dist` m à frente e o comando que o cliente mandaria: da boca direita ao centro do alvo. */
+async function palco(build = loadoutKey(factorySpec('marauder')), dist = 15) {
+  const room = await ArenaRoom.create('PALCO');
+  const dan = new FakePeer();
+  room.receive(dan, join('Dan', build));
+  expect(dan.of(MSG.WELCOME)).toHaveLength(1); // a montagem não foi recusada
+  const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
+  expect(decodeRoster(dan.of(MSG.ROSTER).at(-1)!)!.find((e) => e.id === me)).toMatchObject({ build });
+  room.step();
+  const units = room['units'] as TestUnit[];
+  const bot = units.find((u) => u.kind === 'mech')!;
+  const mine = units.find((u) => u.id === me)!;
+  const feet = room.positionOf(me)!.clone();
+  bot.mech.respawn(new THREE.Vector3(feet.x, feet.y, feet.z - dist));
+  bot.mech.moveSpeedScale = 0; // parado: o teste mede o tiro, não a esquiva
+  room.step(); // o colisor do alvo só muda de lugar no passo da física: sem isto a mira ainda o veria onde estava
+  room.step();
+  // A boca anda quando o Mech gira: refaz a conta com o yaw já aplicado até assentar (o cliente mira do yaw de agora).
+  const muzzle = new THREE.Vector3();
+  const to = new THREE.Vector3();
+  let yaw = 0;
+  let pitch = 0;
+  for (let i = 0; i < 6; i++) {
+    mine.mech.applyFacing(yaw, pitch);
+    mine.mech.simMuzzle(muzzle, 'rightHand');
+    to.set(feet.x, feet.y + 2.5, feet.z - dist).sub(muzzle);
+    yaw = Math.atan2(-to.x, -to.z);
+    pitch = Math.asin(to.y / to.length());
+  }
+  return { room, dan, me, mine, bot, yaw, pitch };
+}
+
+/** Um comando por tick, como o cliente manda (o pacote aceita no máximo 8 comandos; mais que isso o servidor descarta o pacote inteiro). */
+function drive(room: ArenaRoom, peer: FakePeer, first: number, ticks: number, o: Partial<NetInput>): void {
+  for (let i = 0; i < ticks; i++) {
+    room.receive(peer, inputs(first + i, 1, o));
+    room.step();
+  }
+}
+
+function shotsOf(peer: FakePeer, me: number): number[] {
+  const batch = newEventBatch();
+  const out: number[] = [];
+  for (const bytes of peer.of(MSG.EVENTS)) {
+    decodeEvents(bytes, batch);
+    for (let i = 0; i < batch.count; i++) if (batch.list[i]!.kind === EVENT.SHOT && batch.list[i]!.unit === me) out.push(batch.list[i]!.index);
+  }
+  return out;
+}
+
+
 describe('Marauder online: duas mãos no botão principal e dois lançadores nos ombros, pelo servidor', () => {
   beforeAll(async () => {
     await RAPIER.init();
   });
-
-  /** Uma sala com o jogador de Marauder, o alvo 15 m à frente (parado) e o comando que o cliente mandaria: da boca direita ao centro do alvo. */
-  async function palco() {
-    const room = await ArenaRoom.create('MARAUDER');
-    const dan = new FakePeer();
-    const build = loadoutKey(factorySpec('marauder'));
-    room.receive(dan, join('Dan', build));
-    expect(dan.of(MSG.WELCOME)).toHaveLength(1); // o texto de três grupos não foi recusado
-    const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
-    expect(decodeRoster(dan.of(MSG.ROSTER).at(-1)!)!.find((e) => e.id === me)).toMatchObject({ build });
-    room.step();
-    const units = room['units'] as TestUnit[];
-    const bot = units.find((u) => u.kind === 'mech')!;
-    const mine = units.find((u) => u.id === me)!;
-    const feet = room.positionOf(me)!.clone();
-    bot.mech.respawn(new THREE.Vector3(feet.x, feet.y, feet.z - 15));
-    bot.mech.moveSpeedScale = 0; // parado: o teste mede o tiro, não a esquiva
-    room.step(); // o colisor do alvo só muda de lugar no passo da física: sem isto a mira ainda o veria onde estava
-    room.step();
-    // A boca anda quando o Mech gira: refaz a conta com o yaw já aplicado até assentar (o cliente mira do yaw de agora).
-    const muzzle = new THREE.Vector3();
-    const to = new THREE.Vector3();
-    let yaw = 0;
-    let pitch = 0;
-    for (let i = 0; i < 6; i++) {
-      mine.mech.applyFacing(yaw, pitch);
-      mine.mech.simMuzzle(muzzle, 'rightHand');
-      to.set(feet.x, feet.y + 2.5, feet.z - 15).sub(muzzle);
-      yaw = Math.atan2(-to.x, -to.z);
-      pitch = Math.asin(to.y / to.length());
-    }
-    return { room, dan, me, mine, bot, yaw, pitch };
-  }
-
-  /** Um comando por tick, como o cliente manda (o pacote aceita no máximo 8 comandos; mais que isso o servidor descarta o pacote inteiro). */
-  function drive(room: ArenaRoom, peer: FakePeer, first: number, ticks: number, o: Partial<NetInput>): void {
-    for (let i = 0; i < ticks; i++) {
-      room.receive(peer, inputs(first + i, 1, o));
-      room.step();
-    }
-  }
-
-  function shotsOf(peer: FakePeer, me: number): number[] {
-    const batch = newEventBatch();
-    const out: number[] = [];
-    for (const bytes of peer.of(MSG.EVENTS)) {
-      decodeEvents(bytes, batch);
-      for (let i = 0; i < batch.count; i++) if (batch.list[i]!.kind === EVENT.SHOT && batch.list[i]!.unit === me) out.push(batch.list[i]!.index);
-    }
-    return out;
-  }
 
   it('entra com a montagem de fábrica: blaster nas duas mãos e foguetes nos ombros, com as bocas do dado do chassi', async () => {
     const { room, mine } = await palco();
@@ -526,5 +526,43 @@ describe('M3: defesas do servidor (mesmo domínio da Selva MKT, DEPLOY.md)', () 
     } finally {
       await s.close();
     }
+  });
+});
+
+describe('Chuva de mísseis online: o servidor decide onde cada bomba cai', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('um aperto no botão secundário sobe, avisa com UM evento de tiro e, ~2 s depois, as bombas caem em volta do alvo e tiram vida dele', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco('v1.vector09.plasma-0.barrage-0', 40);
+    expect(mine.mech.loadout.secondary?.id).toBe('barrage');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch });
+    expect(mine.mech.heat).toBeCloseTo(weapon('barrage').heatPerShot, 2);
+    drive(room, dan, 2, 1, { yaw, pitch });
+    // Antes de a primeira bomba cair (subida + queda = 2,1 s), ninguém levou nada.
+    drive(room, dan, 3, 90, { yaw, pitch });
+    expect(lifeOf(bot.mech)).toBe(before);
+    drive(room, dan, 93, 120, { yaw, pitch });
+
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('barrage')]); // o lançamento é um tiro só para a rede
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits.length).toBeGreaterThanOrEqual(2); // as bombas mais perto do centro pegam o Mech parado
+    const total = hits.reduce((s, h) => s + h.amount, 0);
+    expect(total).toBeGreaterThan(0);
+    expect(total).toBeLessThanOrEqual(weapon('barrage').barrage!.bombs * weapon('barrage').damage);
+    expect(before - lifeOf(bot.mech)).toBe(total); // o evento é a vida que saiu
+    // O dono não se fere com a própria chuva.
+    expect(lifeOf(mine.mech)).toBe(Object.values(mine.mech.stats.maxModuleHealth).reduce((a, b) => a + b, 0));
+    room.dispose();
+  });
+
+  it('a montagem com a chuva entra pelo texto do link e a sala não a recusa', async () => {
+    const room = await ArenaRoom.create('CHUVA');
+    const dan = new FakePeer();
+    room.receive(dan, join('Dan', 'v1.vector09.plasma-0.barrage-1'));
+    expect(dan.of(MSG.WELCOME)).toHaveLength(1);
+    room.dispose();
   });
 });

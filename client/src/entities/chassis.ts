@@ -286,20 +286,21 @@ export interface ArmSlots {
   shoulders?: readonly WeaponId[];
 }
 export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
-  vector09: { right: ['plasma'], left: ['rockets'] },
+  // A chuva de mísseis (04/10) vai no braço esquerdo, o gatilho de carregador: ela é arma de área, não de ponto.
+  vector09: { right: ['plasma'], left: ['rockets', 'barrage'] },
   android: { right: ['blaster'], left: ['chainsaw'] },
   // Sem arma exclusiva (decisão de 29/09 no combate justo): o mesmo plasma/foguetes de qualquer Mech.
-  colossus01: { right: ['plasma'], left: ['rockets'] },
+  colossus01: { right: ['plasma'], left: ['rockets', 'barrage'] },
   // Escolha entre dois tipos por braço: o leve ganha opção de arma mais leve (blaster) sem perder o plasma.
   arara: { right: ['plasma', 'blaster'], left: ['rockets', 'blaster'] },
-  onca: { right: ['plasma', 'rockets'], left: ['plasma', 'rockets'] },
+  onca: { right: ['plasma', 'rockets'], left: ['plasma', 'rockets', 'barrage'] },
   genesis01: { right: ['plasma'], left: ['rockets'] },
   // O braço esquerdo leva o escudo: nenhuma arma cabe nele.
   lancerL1: { right: ['shotgun'], left: [] },
   lr7lBastion: { right: ['plasma'], left: ['rockets'] },
   quadraV2: { right: ['plasma'], left: ['rockets'] },
   // Duas mãos no botão principal (blaster ou plasma em cada) e os lançadores dos ombros (opcionais) no secundário.
-  marauder: { right: ['blaster', 'plasma'], left: ['blaster', 'plasma'], shoulders: ['rockets'] },
+  marauder: { right: ['blaster', 'plasma'], left: ['blaster', 'plasma'], shoulders: ['rockets', 'barrage'] },
 };
 
 /** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */

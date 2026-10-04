@@ -1,4 +1,6 @@
+import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import { BarrageSystem } from '../combat/BarrageSystem';
 import { BotSystem } from '../combat/BotSystem';
 import { CombatSystem, type MechHitEvent } from '../combat/CombatSystem';
 import { CrushRule } from '../combat/crush';
@@ -107,6 +109,8 @@ export class Match {
   readonly arena: Arena;
   readonly projectiles: ProjectileSystem;
   readonly rockets: RocketSystem;
+  /** Chuva de mísseis (armas com `barrage`): sobe, e as bombas caem em volta da mira. */
+  readonly barrage: BarrageSystem;
   readonly combat: CombatSystem;
   readonly respawner: Respawner;
   readonly bots: BotSystem;
@@ -167,6 +171,7 @@ export class Match {
     this.arena = new Arena(o.scene, o.physics, this.destructibles);
     this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles);
     this.rockets = new RocketSystem(o.scene, o.physics, o.particles);
+    this.barrage = new BarrageSystem(o.scene, o.physics);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.combat.damageEnabled = o.damage !== false;
     this.respawner = new Respawner(SPAWN_POINTS);
@@ -238,10 +243,12 @@ export class Match {
 
     // As regras ficam aqui; a tela e o som só ouvem os eventos.
     this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
-    this.rockets.onExplode = (at, dir, owner, w) => {
+    const explode = (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): void => {
       this.combat.explode(at, dir, owner, w);
       this.onExplosion?.(at);
     };
+    this.rockets.onExplode = explode;
+    this.barrage.onExplode = explode;
     this.combat.onMechHit = (e) => {
       if (this.allies?.mechs.includes(e.mech)) this.allies.onDamaged(e.mech, e.shooter);
       else if (!this.players.includes(e.mech)) this.bots.onDamaged(e.mech, e.shooter);
@@ -256,6 +263,7 @@ export class Match {
       if (this.waves && this.bots.mechs.includes(dead) && this.waves.recordEnemyKilled()) {
         this.projectiles.clear();
         this.rockets.clear();
+        this.barrage.clear();
       }
       if (this.waves && this.players.includes(dead) && this.players.every((player) => !player.alive)) this.waves.fail();
       this.onMechKilled?.(dead, at, killer);
@@ -358,6 +366,7 @@ export class Match {
       this.respawner.fixedUpdate(dt);
       this.projectiles.fixedUpdate(dt);
       this.rockets.fixedUpdate(dt);
+      this.barrage.fixedUpdate(dt);
       this.physics.step();
       this.ctf?.fixedUpdate(dt);
     }
@@ -378,6 +387,7 @@ export class Match {
     if (this.ctf) this.bots.respawnAll();
     this.projectiles.clear();
     this.rockets.clear();
+    this.barrage.clear();
     this.debris.clear();
     this.destructibles.restoreAll();
     this.round.resetScores();
@@ -407,6 +417,7 @@ export class Match {
     this.allies?.respawnAll();
     this.projectiles.clear();
     this.rockets.clear();
+    this.barrage.clear();
     this.debris.clear();
     this.destructibles.restoreAll();
     this.onRoundStart?.();

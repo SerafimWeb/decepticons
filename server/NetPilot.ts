@@ -46,9 +46,10 @@ export class NetPilot implements Pilot {
       this.match.projectiles.fire(_origin, _dir, this.mech.collider, false, w);
       // M5 TODO: compensação de latência (volta cápsulas ao tempo do comando)
     },
-    rocket: (mount, w) => {
-      this.aim(mount);
-      this.match.rockets.fire(_origin, _dir, this.mech.collider, w);
+    rocket: (mount, w, volley) => {
+      this.aim(mount, w.barrage !== undefined);
+      if (w.barrage) this.match.barrage.fire(_origin, _dir, _point, this.mech.collider, w, volley);
+      else this.match.rockets.fire(_origin, _dir, this.mech.collider, w);
     },
     melee: (w) => this.match.meleeNearest(this.mech, w),
   };
@@ -110,12 +111,13 @@ export class NetPilot implements Pilot {
    * mão direita (é dela que o cliente mira); a mão esquerda e os ombros ficam a metros de lado, e tiro paralelo errava o
    * alvo. Então o servidor acha onde o raio da mão direita bate (a mira, de novo) e faz cada boca apontar para lá, como
    * o jogador local faz. Um raio por tiro, nunca por tick; o chão, a parede e o outro Mech contam, o próprio Mech não.
+   * `needPoint`: a chuva de mísseis também precisa desse ponto (é o centro dela), mesmo saindo da mão direita.
    */
-  private aim(mount: MountId): void {
+  private aim(mount: MountId, needPoint = false): void {
     const c = this.current;
     _refDir.set(-Math.sin(c.yaw) * Math.cos(c.pitch), Math.sin(c.pitch), -Math.cos(c.yaw) * Math.cos(c.pitch));
     this.mech.simMuzzle(_origin, mount);
-    if (mount === 'rightHand') {
+    if (mount === 'rightHand' && !needPoint) {
       _dir.copy(_refDir);
       return;
     }

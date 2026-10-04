@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLOW } from '../core/palette';
 import type { CameraRig } from '../camera/CameraRig';
 import { AIM_RANGE, Armament, type ShotSink } from '../combat/Armament';
+import type { BarrageSystem } from '../combat/BarrageSystem';
 import type { MountId } from '../combat/mounts';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import type { RocketSystem } from '../combat/RocketSystem';
@@ -59,6 +60,7 @@ export class PlayerController {
     private readonly projectiles: ProjectileSystem,
     private readonly particles: ParticleSystem,
     private readonly rockets: RocketSystem,
+    private readonly barrage: BarrageSystem,
   ) {
     this.armament = new Armament(mech);
   }
@@ -140,7 +142,9 @@ export class PlayerController {
   private launch(mount: MountId, w: WeaponStats, volley: number): void {
     this.mech.mountWorldPosition(mount, _muzzle);
     this.aimFrom(_muzzle);
-    this.rockets.fire(_muzzle, _dir, this.mech.collider, w);
+    // Chuva de mísseis: sobe e cai em volta do ponto sob a mira, em vez de ir reto até ele.
+    if (w.barrage) this.barrage.fire(_muzzle, _dir, this.rig.aim.point, this.mech.collider, w, volley);
+    else this.rockets.fire(_muzzle, _dir, this.mech.collider, w);
     this.particles.burst(_muzzle, _dir, { count: 14, color: ROCKET_FLASH, speed: 8, life: 0.25, spread: 0.6, gravity: 0 });
     if (volley === 0) this.onRocket?.();
   }

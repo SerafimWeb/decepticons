@@ -11,6 +11,7 @@ import { KillCam } from '../camera/KillCam';
 import type { CameraModeId } from '../camera/CameraMode';
 import type { CombatSystem } from '../combat/CombatSystem';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
+import type { BarrageSystem } from '../combat/BarrageSystem';
 import type { RocketSystem } from '../combat/RocketSystem';
 import { BOT_SKILLS } from '../combat/BotController';
 import type { BotSystem } from '../combat/BotSystem';
@@ -77,7 +78,7 @@ import { CtfHud } from '../ui/CtfHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
-const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : l.secondary.kind === 'melee' ? 'MOTOSSERRA' : l.secondary.kind === 'ammo' ? 'FOGUETES' : l.secondary.name.toUpperCase());
+const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : l.secondary.kind === 'melee' ? 'MOTOSSERRA' : l.secondary.kind === 'ammo' ? (l.secondary.barrage ? 'CHUVA' : 'FOGUETES') : l.secondary.name.toUpperCase());
 
 /** Onde os braços do Mech do Hangar estão na tela (reaproveitados por quadro). */
 const _hotRight = { x: 0, y: 0 };
@@ -126,6 +127,7 @@ export class Game {
   private readonly debris: DebrisSystem;
   private readonly projectiles: ProjectileSystem;
   private readonly rockets: RocketSystem;
+  private readonly barrage: BarrageSystem;
   private readonly combat: CombatSystem;
   private readonly bots: BotSystem;
   private readonly respawner: Respawner;
@@ -286,7 +288,7 @@ export class Game {
       // um aliado sem ninguém pra lutar, fora de sincronia com o servidor, não serve pra nada aqui.
       ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY, allies: false } : {}),
     });
-    ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets } = this.match);
+    ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets, barrage: this.barrage } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     this.ctfObjectives = this.match.ctf ? new CtfObjectives(this.scene) : null;
     // O piloto escolhe o chassi (Hangar): qualquer um em CHASSIS, sempre nas cores do jogador. O andróide
@@ -352,7 +354,7 @@ export class Game {
       occluders: this.match.arena.occluders,
     });
     this.killCam = new KillCam(this.camera, physics, this.match.arena.occluders);
-    this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets);
+    this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets, this.barrage);
     this.match.pilots.push(this.player);
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
     this.netStatus.className = 'net-status';
@@ -1013,6 +1015,7 @@ export class Game {
     this.updateAim(dt);
     this.projectiles.render(alpha);
     this.rockets.render(alpha);
+    this.barrage.render(alpha);
     this.debris.sync();
 
     const nowDashing = this.mech.isDashing;

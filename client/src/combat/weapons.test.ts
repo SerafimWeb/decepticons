@@ -171,3 +171,44 @@ describe('escopeta (Lancer): dano alto de perto, alcance menor que o do blaster'
     expect(S.magazine).toBe(0);
   });
 });
+
+describe('chuva de mísseis: arma de área que cobre terreno, não derruba sozinha', () => {
+  const R = weapon('barrage');
+  const P = weapon('plasma');
+
+  it('é munição com carregador e desenho de chuva; todo nível tem o mesmo desenho e o dano por bomba cresce', () => {
+    expect(R.kind).toBe('ammo');
+    expect(R.magazine).toBeGreaterThan(0);
+    expect(R.barrage).toBeDefined();
+    const b = R.barrage!;
+    expect(b.bombs).toBeGreaterThanOrEqual(4);
+    expect(b.onTarget).toBeGreaterThan(0);
+    expect(b.onTarget).toBeLessThanOrEqual(b.bombs);
+    expect(b.ascent).toBeGreaterThan(0);
+    expect(b.fall).toBeGreaterThan(0);
+    // O aviso no chão dura do lançamento até a primeira bomba: tempo de sair da frente.
+    expect(b.ascent + b.fall).toBeGreaterThanOrEqual(1.5);
+    for (const t of LEVELS) expect(weapon('barrage', t).barrage).toEqual(b);
+    expect(weapon('barrage', 2).damage).toBeGreaterThan(R.damage);
+  });
+
+  it('sozinha leva muito mais de 10 s para derrubar um torso (é apoio): em nenhum nível passa a meta de 4,5 s dos outros', () => {
+    for (const t of LEVELS) expect(timeToKill([weapon('barrage', t)], V, TORSO)).toBeGreaterThan(10);
+  });
+
+  it('rende menos dano sustentado que o plasma e esquenta muito por disparo', () => {
+    for (const t of LEVELS) expect(sustainedDps(weapon('barrage', t), V)).toBeLessThan(sustainedDps(P, V));
+    expect(R.heatPerShot).toBeGreaterThanOrEqual(weapon('rockets').heatPerShot);
+  });
+
+  it('com o plasma, nenhum nível dos dois derruba o torso em menos de 2,5 s (a meta dos dois braços juntos)', () => {
+    for (const p of LEVELS) for (const r of LEVELS) expect(timeToKill([weapon('plasma', p), weapon('barrage', r)], V, TORSO), `plasma ${p} + chuva ${r}`).toBeGreaterThan(2.5);
+  });
+
+  it('a bancada conta só as bombas que pegam um alvo parado (onTarget): contar todas faria a arma derrubar um torso em ~1 s', () => {
+    const com = (onTarget: number) => timeToKill([{ ...R, barrage: { ...R.barrage!, onTarget } }], V, TORSO);
+    expect(com(R.barrage!.onTarget)).toBeGreaterThan(10);
+    expect(com(1)).toBeGreaterThan(com(R.barrage!.onTarget));
+    expect(com(R.barrage!.bombs)).toBeLessThan(2.5);
+  });
+});

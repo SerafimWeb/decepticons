@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import type { CameraRig } from '../camera/CameraRig';
 import { SHOULDER_TRIGGERS } from '../combat/mounts';
+import type { BarrageSystem } from '../combat/BarrageSystem';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import type { RocketSystem } from '../combat/RocketSystem';
 import { weapon, type Loadout, type WeaponStats } from '../combat/weapons';
@@ -63,6 +64,8 @@ async function jogador(loadout: Loadout, triggers = VECTOR09_STATS.triggers) {
   const bolts: Shot[] = [];
   const rockets: Shot[] = [];
   const projectiles = { fire: (origin: THREE.Vector3, dir: THREE.Vector3, _o: unknown, _h: boolean, w: WeaponStats) => bolts.push({ origin: origin.clone(), dir: dir.clone(), w }) };
+  const rains: { origin: THREE.Vector3; dir: THREE.Vector3; target: THREE.Vector3; w: WeaponStats; volley: number }[] = [];
+  const barrageSys = { fire: (origin: THREE.Vector3, dir: THREE.Vector3, target: THREE.Vector3, _o: unknown, w: WeaponStats, volley: number) => rains.push({ origin: origin.clone(), dir: dir.clone(), target: target.clone(), w, volley }) };
   const rocketSys = { fire: (origin: THREE.Vector3, dir: THREE.Vector3, _o: unknown, w: WeaponStats) => rockets.push({ origin: origin.clone(), dir: dir.clone(), w }) };
   const particles = { burst: () => {} };
   const player = new PlayerController(
@@ -72,6 +75,7 @@ async function jogador(loadout: Loadout, triggers = VECTOR09_STATS.triggers) {
     projectiles as unknown as ProjectileSystem,
     particles as unknown as ParticleSystem,
     rocketSys as unknown as RocketSystem,
+    barrageSys as unknown as BarrageSystem,
   );
   player.active = true;
   let sounds = 0;
@@ -84,7 +88,7 @@ async function jogador(loadout: Loadout, triggers = VECTOR09_STATS.triggers) {
       physics.step();
     }
   };
-  return { mech, input, aim, bolts, rockets, run, sounds: () => sounds, rocketSounds: () => rocketSounds };
+  return { mech, input, aim, bolts, rockets, rains, run, sounds: () => sounds, rocketSounds: () => rocketSounds };
 }
 
 /** O tiro sai apontando para a mira? */
@@ -135,5 +139,32 @@ describe('PlayerController: o tiro do jogador local, ligado à regra de Armament
     expect(rockets.every((r) => aimedAt(r, aim.point) > 0.9999)).toBe(true);
     expect(rocketSounds()).toBe(1); // a salva faz um estrondo, não dois por cima um do outro
     expect(bolts).toHaveLength(0);
+  });
+});
+
+describe('PlayerController: a chuva de mísseis', () => {
+  it('no Marauder os dois ombros soltam a chuva juntos, cada um com a sua ordem (volley) para as bombas não caírem nos mesmos lugares', async () => {
+    const loadout: Loadout = { primary: weapon('blaster'), offhand: weapon('blaster'), secondary: weapon('barrage') };
+    const { input, rains, rockets, run, rocketSounds } = await jogador(loadout, SHOULDER_TRIGGERS);
+    input.mouseDown2 = true;
+    run(0.05);
+    expect(rockets).toHaveLength(0);
+    expect(rains.map((r) => r.volley)).toEqual([0, 1]);
+    expect(Math.sign(rains[0]!.origin.x)).not.toBe(Math.sign(rains[1]!.origin.x));
+    expect(rocketSounds()).toBe(1);
+  });
+
+  it('o botão secundário com a chuva sobe do braço esquerdo e manda o ponto sob a mira como centro, sem soltar foguete reto', async () => {
+    const { input, aim, rockets, rains, run, rocketSounds } = await jogador({ primary: weapon('plasma'), secondary: weapon('barrage') });
+    input.mouseDown2 = true;
+    run(0.05);
+    input.mouseDown2 = false;
+    expect(rockets).toHaveLength(0);
+    expect(rains).toHaveLength(1);
+    expect(rains[0]!.target.toArray()).toEqual(aim.point.toArray());
+    expect(rains[0]!.origin.x).toBeLessThan(0); // a esquerda
+    expect(rains[0]!.w.id).toBe('barrage');
+    expect(rains[0]!.volley).toBe(0);
+    expect(rocketSounds()).toBe(1);
   });
 });

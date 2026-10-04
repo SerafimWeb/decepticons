@@ -57,6 +57,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   rockets: 'Munição · explosão em área · recarga automática',
   blaster: 'Energia · leve · alcance curto',
   shotgun: 'Energia · dano alto de perto, some aos 45 m · um projétil só',
+  barrage: 'Munição · sobe e cai em chuva de 8 bombas num círculo de 9 m · aviso no chão',
   chainsaw: 'Corpo a corpo · só corta encostado',
 };
 
@@ -65,6 +66,7 @@ const WEAPON_ICON: Record<WeaponId, string> = {
   plasma: '<path d="M3 13h11l2-3h5v6h-5l-2-3" /><circle cx="7" cy="13" r="2.5" /><path d="M16 10v6" />',
   rockets: '<rect x="4" y="6" width="14" height="12" rx="1" /><circle cx="8" cy="10" r="1.6" /><circle cx="14" cy="10" r="1.6" /><circle cx="8" cy="14" r="1.6" /><circle cx="14" cy="14" r="1.6" /><path d="M18 9h3v6h-3" />',
   blaster: '<path d="M4 9h13l2 2v2H9l-1 5H5l1-5H4z" /><path d="M17 11h4" />',
+  barrage: '<rect x="3" y="15" width="15" height="4" rx="1" /><path d="M6 15l2-9M10 15l2-9M14 15l2-9" /><circle cx="8" cy="5" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="16" cy="5" r="1" />',
   shotgun: '<path d="M3 10h15M3 14h15" /><path d="M18 8l3 1v6l-3 1z" /><path d="M6 14v4h5v-4" />',
   chainsaw: '<rect x="3" y="9" width="7" height="7" rx="1" /><path d="M10 10h9a2.5 2.5 0 0 1 0 5h-9" /><path d="M12 10l1-2M15 10l1-2M18 10l1-2M12 15l1 2M15 15l1 2M18 15l1 2" />',
 };

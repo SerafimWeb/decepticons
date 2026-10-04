@@ -6,8 +6,8 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Online (servidor 24 h em `jogo.selvamkt.com.br`); offline (single-player: Arena + Sobrevivência + CTF) |
-| **Build** | JS 296 KB e Wasm 719 KB no budget do `npm run check` (teto 500 e 900); 481 testes |
-| **Última sessão** | 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
+| **Build** | JS 296 KB e Wasm 719 KB no budget do `npm run check` (teto 500 e 900); 517 testes |
+| **Última sessão** | 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
 | **Próximo** | dono julga o Marauder (Hangar e partida) e a calibragem do blaster numa mão de Mech; M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
@@ -283,6 +283,11 @@
   - **Consolidação de Ramos UI (`NetHud`, `KillBanner`, `RoundOverlay`)**: Interfaces do multiplayer online (M6-UI) unificadas no branch `gemini/modo-hud-audio`.
   - **Limpeza no Harness (`scripts/test.mjs`)**: Removida redundância `VITEST_MAX_WORKERS` do env (mantendo a flag `--maxWorkers=1`).
 ---
+
+## ÚLTIMA SESSÃO FEZ (04/10, PR da chuva de mísseis na `main`)
+- **Chuva de mísseis (Claude, pedido do dono):** *"míssil que vai lançado pra cima e cai tipo uma chuva"*. Arma de área nova (`barrage`): sobe 1,2 s e 8 bombas caem num círculo de 9 m em volta da mira, com aviso no chão; carregador de 2, recarga de 6 s, 25% de calor, 5 t. Módulo `combat/BarrageSystem.ts` (pool fixo, sem sorteio, dano pelo `CombatSystem`), ligado ao `Match`; vai no braço esquerdo do Vector-09, Colossus e Onça e nos ombros do Marauder; o servidor decide as bombas e o outro jogador vê a chuva (protocolo **3**). Sozinha leva 15 a 20 s para derrubar um torso (apoio); com o plasma, 3,4 s ou mais. 26 testes novos (incl. servidor real e dois jogadores). **Guia `ARSENAL.md`:** o que tocar para criar arma ou robô. Também: a landing para de somar o peso da chuva na "carga de fábrica" do Vector-09 (7 t).
+- **Achados (R17):** (a) o aviso no chão pousava na cabeça de qualquer Mech (corrigido: `PhysicsWorld.terrainY` ignora Mech); (b) `Match.test.ts` ("aliados na Arena normal... nunca atiram no jogador") falhou uma vez em 5 rodadas completas, com `friendlyFireOnPlayer` = 1, e passou nas outras: **intermitente, não investigado**; (c) o foguete no braço DIREITO da Onça sai pelo caminho do projétil comum (visto no código, não rodado).
+- **Ao subir:** o protocolo vai a 3; o servidor precisa estar atualizado (recuperação em `DEPLOY.md`, seção 04/10) ou o online recusa.
 
 ## ÚLTIMA SESSÃO FEZ (04/10, PR da segurança do servidor na `main`)
 - **Servidor online desatualizado e node_modules apagada (Claude, achado ao procurar o analytics):** o `/status` dizia `protocol: 1` e o site já estava no 2, então o online recusava todo mundo. A tarefa "CYBERMECH atualizar" nunca existiu; a do servidor rodava da pasta principal; o dono rodou a atualização à mão e o `npm ci` passou pela junção e apagou a `node_modules` que todas as worktrees compartilham (sobraram 8 pastas vazias). Código corrigido (atualizador testado, registro conferido, recusas de atalho e de pasta principal; 10 testes) e recuperação passo a passo em `DEPLOY.md` (seção 04/10). **Falta o dono rodar a recuperação como administrador.** Detalhes: `HISTORICO_DE_DECISOES.md`, `FINDINGS.md`.

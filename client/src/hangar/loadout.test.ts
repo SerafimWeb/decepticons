@@ -43,7 +43,7 @@ describe('Hangar: contrato da montagem', () => {
 
   it('cada braço aceita o seu tipo: energia no direito, munição no esquerdo; o blaster é só dos andróides', () => {
     expect(armOptions('right')).toEqual(['plasma']);
-    expect(armOptions('left')).toEqual(['rockets']);
+    expect(armOptions('left')).toEqual(['rockets', 'barrage']); // a chuva de mísseis também é arma de munição, do braço esquerdo
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, left: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
@@ -231,7 +231,7 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   it('as mãos aceitam blaster ou plasma; foguete na mão e blaster no ombro são recusados; plasma duplo só sem os ombros', () => {
     expect(armOptions('right', 'marauder')).toEqual(['blaster', 'plasma']);
     expect(armOptions('left', 'marauder')).toEqual(['blaster', 'plasma']);
-    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets']);
+    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage']);
     expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...factory, shoulders: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     const twoPlasma = { ...factory, right: { id: 'plasma', tier: 0 }, left: { id: 'plasma', tier: 0 } } as LoadoutSpec;
@@ -269,8 +269,8 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   it('equilíbrio: nenhuma das montagens válidas do Marauder derruba o torso de um Mech em menos de 2,5 s (a meta dos dois braços juntos)', () => {
     const hands: WeaponId[] = ['blaster', 'plasma'];
     let validas = 0;
-    for (const r of hands) for (const l of [...hands, null]) for (const rt of LEVELS) for (const lt of LEVELS) for (const s of [null, 0, 1, 2] as const) {
-      const spec: LoadoutSpec = { v: 1, chassis: 'marauder', right: { id: r, tier: rt }, left: l ? { id: l, tier: lt } : null, shoulders: s === null ? null : { id: 'rockets', tier: s as Tier } };
+    for (const r of hands) for (const l of [...hands, null]) for (const rt of LEVELS) for (const lt of LEVELS) for (const pod of ['rockets', 'barrage'] as const) for (const s of [null, 0, 1, 2] as const) {
+      const spec: LoadoutSpec = { v: 1, chassis: 'marauder', right: { id: r, tier: rt }, left: l ? { id: l, tier: lt } : null, shoulders: s === null ? null : { id: pod, tier: s as Tier } };
       if (validateLoadout(spec).ok !== true) continue;
       validas++;
       expect(timeToKill(specWeapons(spec), CHASSIS.marauder, VECTOR09_STATS.maxModuleHealth.torso), loadoutKey(spec)).toBeGreaterThan(2.5);
@@ -290,5 +290,34 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
       expect(c.loadout, id).toEqual(stats.loadout);
       expect(specWeapons(spec).reduce((s, w) => s + w.mass, 0), id).toBe(c.mass);
     }
+  });
+});
+
+describe('chuva de mísseis no Hangar', () => {
+  const chuva = (tier: Tier): LoadoutSpec => ({ v: 1, chassis: 'vector09', right: { id: 'plasma', tier: 0 }, left: { id: 'barrage', tier } });
+
+  it('vai no braço esquerdo do Vector-09, do Colossus e da Onça e nos ombros do Marauder; em braço direito, não', () => {
+    expect(validateLoadout(chuva(0))).toMatchObject({ ok: true, mass: 8 });
+    expect(armOptions('left', 'colossus01')).toContain('barrage');
+    expect(armOptions('left', 'onca')).toContain('barrage');
+    expect(armOptions('right', 'onca')).not.toContain('barrage');
+    expect(validateLoadout({ ...chuva(0), right: { id: 'barrage', tier: 0 }, left: null })).toMatchObject({ ok: false, error: 'encaixe' });
+    // No Marauder a chuva vai nos ombros: os dois morteiros contam na carga (2 × 5 t) e jogam 16 bombas por aperto.
+    expect(armOptions('shoulders', 'marauder')).toContain('barrage');
+    expect(validateLoadout({ ...factorySpec('marauder'), shoulders: { id: 'barrage', tier: 0 } })).toMatchObject({ ok: true, mass: 11 });
+    expect(validateLoadout({ ...factorySpec('marauder'), shoulders: { id: 'barrage', tier: 1 } })).toMatchObject({ ok: false, error: 'carga' });
+  });
+
+  it('poder custa carga: MK II ainda cabe no Vector-09 (10,5 de 11 t) e MK III não (13 t)', () => {
+    expect(validateLoadout(chuva(1))).toMatchObject({ ok: true, mass: 10.5 });
+    expect(validateLoadout(chuva(2))).toMatchObject({ ok: false, error: 'carga' });
+  });
+
+  it('o texto do link vai e volta, e o Loadout traz a chuva como arma do gatilho secundário', () => {
+    const spec = chuva(0);
+    expect(loadoutKey(spec)).toBe('v1.vector09.plasma-0.barrage-0');
+    expect(parseLoadoutKey('v1.vector09.plasma-0.barrage-0')).toEqual(spec);
+    const c = validateLoadout(spec);
+    expect(c.ok && c.loadout.secondary).toBe(weapon('barrage'));
   });
 });

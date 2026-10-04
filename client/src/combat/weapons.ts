@@ -37,7 +37,30 @@ export const TIERS: readonly TierRule[] = [
   { label: 'MK III', damage: 1.4, heat: 1.3, mass: 2 },
 ];
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage';
+
+/**
+ * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
+ * Tudo no tick fixo e sem sorteio: o lugar de cada bomba é função só do ponto da mira e da direção de quem atirou, então
+ * o servidor e o cliente chegam ao mesmo desenho (o jogador remoto vê as bombas onde o servidor as joga).
+ */
+export interface Barrage {
+  /** Bombas por lançamento. */
+  bombs: number;
+  /** Raio do círculo onde elas caem (m), centrado no ponto da mira. */
+  spread: number;
+  /** Segundos subindo antes de a primeira bomba começar a cair. */
+  ascent: number;
+  /** Segundos entre uma bomba e a seguinte começarem a cair. */
+  stagger: number;
+  /** Segundos que cada bomba leva caindo, do alto até o chão. */
+  fall: number;
+  /**
+   * Quantas bombas contam em cheio num alvo parado no centro da chuva, na bancada de equilíbrio (`balance.ts`, o teto
+   * teórico). As outras caem em volta e pegam só a borda da explosão.
+   */
+  onTarget: number;
+}
 
 /** Arma pronta para o combate, já no nível escolhido. Tudo em unidades do jogo (m, s, t). */
 export interface WeaponStats {
@@ -72,6 +95,8 @@ export interface WeaponStats {
   blastRadius: number;
   /** Carga ocupada no Hangar (t). */
   mass: number;
+  /** Só na chuva de mísseis: o desenho da chuva. `damage` e `blastRadius` são os de CADA bomba. */
+  barrage?: Barrage;
 }
 
 type WeaponBase = Omit<WeaponStats, 'tier'>;
@@ -147,6 +172,31 @@ const BASE: Record<WeaponId, WeaponBase> = {
     minFactor: 0.08,
     blastRadius: 0,
     mass: 2,
+  },
+  /**
+   * Chuva de mísseis (dono, 04/10: "míssil que vai lançado pra cima e cai tipo uma chuva"). É arma de área, não de ponto:
+   * o lançamento sobe 1,2 s e 8 bombas caem em volta do ponto da mira, num círculo de 9 m, uma a cada 0,1 s. De 120 m ela
+   * ainda alcança, mas o aviso no chão deixa quem está embaixo sair. Cada bomba bate 30 no centro e cai a zero a 5 m;
+   * num Mech parado no meio pegam umas quatro, ~60 de dano no total, e quem se mexe leva pouco. Carregador de 2, recarga de
+   * 6 s e muito calor (25%): serve para cobrir terreno e tirar o inimigo de trás de cobertura, não para derrubar. Números
+   * de partida: o dono ajusta em Configurações > Potências.
+   */
+  barrage: {
+    id: 'barrage',
+    name: 'Chuva de mísseis',
+    kind: 'ammo',
+    damage: 30,
+    fireInterval: 1,
+    heatPerShot: 0.25,
+    magazine: 2,
+    reload: 6,
+    speed: 40,
+    optimalRange: 120,
+    maxRange: 120,
+    minFactor: 1,
+    blastRadius: 5,
+    mass: 5,
+    barrage: { bombs: 8, spread: 9, ascent: 1.2, stagger: 0.1, fall: 0.9, onTarget: 2 },
   },
   /**
    * Motosserra dos andróides (dono, 25/09: "ele tem que ficar perto de nós pra usar"): corta o que está
