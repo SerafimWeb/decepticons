@@ -115,6 +115,7 @@
 - [x] Sala de controle (antigos bastidores): novidades, mesa do Dan e o processo criativo das fichas, lidos dos documentos #base
 - [x] Atualização automática do servidor de jogo: puxa a `main` a cada 10 min, só troca o código depois de passar por typecheck e testes, reverte sozinho se falhar; nunca toca o servidor no ar sem verificar antes (Claude, 28/09) #base
 - [x] Métricas de produto: funil de cliques da landing, boot, início/fim de partida e troca de modo, contados no servidor de jogo sem IP nem identificação pessoal (Claude, 28/09) #negocio
+- [x] Dados do servidor (banco de contas, métricas, token, log) numa pasta fixa fora da worktree do código, por `CYBERMECH_DADOS` (Claude, 04/10) #rede
 - [x] Origem das conexões: país de cada jogador (Cloudflare, só país), por dia, com recusas por motivo e pico de jogadores, gravado em disco e visto na página privada `/metricas/` com token (Claude, 04/10) #negocio
 - [x] Fichas propostas do Mech leve e pesado, andróide e 4 armas; stats não existentes seguem pendentes #mechs
 - [x] Calor com fôlego: ~15 tiros segurando, trava de ~2 s, superaquecido anda a 75% #combate

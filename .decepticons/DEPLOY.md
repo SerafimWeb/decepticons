@@ -99,10 +99,13 @@ Passo a passo, uma vez só:
    npm ci                      # node_modules PRÓPRIO. Nunca um atalho (junção) para o do projeto: veja "04/10" abaixo
    .\scripts\servidor-windows.ps1
    ```
-   O `servidor-windows.ps1` **recusa** rodar na pasta principal ou com `node_modules` em atalho. O banco de contas fica em
-   `.tmp\servidor\contas.db` **da pasta de onde o servidor roda**: ao mudar de pasta, copie o arquivo antes de ligar.
-   PowerShell como administrador. O servidor sobe com o Windows, reinicia se cair e grava o log em
-   `.tmp\servidor\` (dentro da worktree). Para o PC não dormir: `powercfg /change standby-timeout-ac 0`.
+   O `servidor-windows.ps1` **recusa** rodar na pasta principal ou com `node_modules` em atalho. **Os dados ficam fora da
+   worktree (desde 04/10):** a tarefa define `CYBERMECH_DADOS` apontando para `<pasta principal>\.tmp\servidor`
+   (`D:\DECEPTICONS\.tmp\servidor`) e é lá que ficam o banco de contas (`contas.db`), os números das métricas
+   (`telemetria.json`), o token (`metricas-token.txt`) e o `servidor.log`. A worktree é só código: trocá-la, resetá-la ou
+   apagá-la nunca leva o banco. Outra pasta (dentro do projeto, G15): `.\scripts\servidor-windows.ps1 -Dados D:\caminho`.
+   PowerShell como administrador. O servidor sobe com o Windows e reinicia se cair. Para o PC não dormir:
+   `powercfg /change standby-timeout-ac 0`.
    Sem mexer em nada, o processo escuta só em `127.0.0.1:2567` (o túnel fala daqui): não aparece na rede de
    casa nem em nenhum outro lugar da internet.
    **Reiniciar manualmente** (PowerShell como administrador — `Restart-ScheduledTask` **não existe** no
@@ -171,12 +174,12 @@ cd D:\DECEPTICONS\.tmp\wt-servidor-prod
 cmd /c rmdir node_modules                                   # remove só o atalho (a junção), não o conteúdo de lá
 git fetch origin; git reset --hard origin/main              # a worktree do servidor é descartável
 npm ci                                                      # node_modules próprio do servidor
-New-Item -ItemType Directory -Force .tmp\servidor | Out-Null
-Copy-Item D:\DECEPTICONS\.tmp\servidor\contas.db .tmp\servidor\contas.db   # o banco de contas vai junto
-.\scripts\servidor-windows.ps1                             # re-registra o servidor apontando PARA ESTA pasta e liga
+.\scripts\servidor-windows.ps1                             # re-registra o servidor apontando PARA ESTA pasta (código) e para D:\DECEPTICONS\.tmp\servidor (dados) e liga
 .\scripts\servidor-atualizar.ps1                           # registra a atualização automática (a cada 10 min)
 cd D:\DECEPTICONS; npm ci                                   # conserta a node_modules do projeto (as outras worktrees usam)
 ```
+O `contas.db` **não precisa ser copiado**: já está em `D:\DECEPTICONS\.tmp\servidor\`, que é a pasta de dados. O token das métricas aparece
+em `D:\DECEPTICONS\.tmp\servidor\metricas-token.txt` quando o servidor novo sobe (o `servidor.log` da mesma pasta diz o caminho).
 Conferir: `Invoke-RestMethod https://jogo.selvamkt.com.br/status` deve mostrar `protocol: 3` (ou o que `PROTOCOL_VERSION` de `shared/net/constants.ts` disser); e `Get-ScheduledTask | ? TaskName -like 'CYBERMECH*'`
 deve listar as duas tarefas.
 
@@ -184,8 +187,10 @@ deve listar as duas tarefas.
 
 **Banco:** SQLite embutido do Node (`node:sqlite`, sem dependência nova — depois da dor do dia com o binário
 nativo do `@rolldown`, evitar mais um binário nativo como `better-sqlite3` foi a decisão certa). Arquivo em
-`.tmp/servidor/contas.db`, ao lado do log de sempre: **gitignored, sobrevive à atualização automática** (que
-só mexe em arquivos versionados) e ao `git reset --hard` de um rollback.
+`contas.db` na pasta de dados (`CYBERMECH_DADOS`; padrão `.tmp/servidor/` ao lado do código, e em produção
+`D:\DECEPTICONS\.tmp\servidor\`, fora da worktree do servidor desde 04/10), ao lado do log de sempre: **gitignored,
+sobrevive à atualização automática** (que só mexe em arquivos versionados), ao `git reset --hard` de um rollback e a
+trocar ou apagar a worktree.
 **Requisito:** Node **22.12 ou mais novo** (`node:sqlite` não existe no Node 20) — o `package.json` só aceita
 essa faixa agora; quem tinha Node 20 no PC do servidor precisa atualizar.
 **Senha:** nunca em texto — `scrypt` com sal por conta (`node:crypto`, também sem dependência nova).
@@ -236,13 +241,13 @@ Cliente e servidor moram na mesma zona; as proteções abaixo garantem que um n�
   `recusa_mensagem`, `recusa_limite`), mais o **pico de jogadores** do dia: é daí que vem o "o servidor precisa
   atualizar" quando `recusa_versao` sobe. O `GET /eventos/resumo` público continua **sem país nenhum**.
   - **Token do dono:** o detalhe só sai com o cabeçalho `x-cybermech-metricas`. O servidor gera um token forte na
-    primeira subida e guarda em `.tmp/servidor/metricas-token.txt` (dentro da pasta do código do servidor; ou use a variável `CYBERMECH_METRICAS_TOKEN`,
+    primeira subida e guarda em `metricas-token.txt` na pasta de dados (`CYBERMECH_DADOS`; em produção `D:\DECEPTICONS\.tmp\servidor\`; ou use a variável `CYBERMECH_METRICAS_TOKEN`,
     com 16+ caracteres). Sem token e sem pasta de dados a rota nem existe (404). Compara em tempo constante e corta a
     força bruta: 30 tentativas por 10 min por IP (429, até para o token certo).
   - **A página:** `https://www.selvamkt.com.br/cybermech/metricas/` (sem link em menu nenhum, `noindex`, sem Google
     Analytics). Cole o token uma vez; ele fica só naquele navegador e **só para aquele servidor** (um link com
     `?servidor=` apontando para outro lugar nunca recebe o token guardado). Mostra hoje/7 dias, o funil, 14 dias e a
-    tabela de países dos últimos 30 dias. **O arquivo fica na pasta de onde o código do servidor roda** (o servidor grava em `<pasta do código>\.tmp\servidor\`, junto do `contas.db`): com o servidor na worktree dedicada é `D:\DECEPTICONS\.tmp\wt-servidor-prod\.tmp\servidor\metricas-token.txt`, e não o da pasta principal. O log (`servidor.log`) diz o caminho exato na subida ("métricas privadas ligadas: o token está em …"), sem escrever o token. Só existe depois que o servidor **novo** subir pela primeira vez.
+    tabela de países dos últimos 30 dias. **O arquivo fica na pasta de dados** (`CYBERMECH_DADOS`), junto do `contas.db`: em produção, `D:\DECEPTICONS\.tmp\servidor\metricas-token.txt` (até 04/10 ele ficava na pasta de onde o código roda; a pasta de dados foi separada do código). O log (`servidor.log`) diz o caminho exato na subida ("métricas privadas ligadas: o token está em …"), sem escrever o token. Só existe depois que o servidor **novo** subir pela primeira vez.
   - **Cidade, aparelho, tempo no site e de onde veio o clique** não são contados pelo nosso servidor (decisão de
     privacidade): estão no Google Analytics, que já está nas páginas (`analytics.google.com` → Relatórios → Público).
   - **Suposição a conferir no dia:** o `CF-IPCountry` só chega se a Cloudflare estiver à frente do túnel (é o caso do
