@@ -330,6 +330,18 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 **Correção proposta (não feita):** desenhar o jogador remoto com o chassi da montagem dele (o roster já traz a montagem) e pôr o encaixe no evento `SHOT` (2 bits no byte do índice, `PROTOCOL_VERSION` 3). Mexe em rede e em carregamento de malha: precisa de decisão do dono.
 
+### `npm ci` por uma junção apaga a node_modules de todas as worktrees (e não consegue com o servidor ligado)
+
+**Descoberto:** 2026-10-04 (dono rodou a atualização do servidor à mão) | **Status:** ✅ Corrigido no código; 🔴 recuperação do PC do servidor com o dono | **Impacto:** a `node_modules` compartilhada ficou com 8 pastas vazias por dentro; o servidor no ar sobreviveu na memória, mas não reiniciaria
+
+**Descrição:** o roteiro de `DEPLOY.md` mandava ligar `wt-servidor-prod\node_modules` à do projeto por uma junção (o mesmo que o `AGENTS.md` ensina para worktrees de desenvolvimento). O atualizador roda `npm ci` quando o `package-lock.json` muda; o `npm ci` apaga a pasta inteira antes de reinstalar, e por uma junção apaga a pasta da OUTRA worktree. Parou em EPERM no `rolldown-binding.win32-x64-msvc.node`, que o servidor (`scripts/server.mjs` roda pelo Vite) mantém aberto: o servidor trava o `npm ci` sempre que ele roda.
+
+**Causas encadeadas:** (1) a tarefa de atualização nunca existiu (gatilho `P99999999DT23H59M59S` recusado e erro do `Register-ScheduledTask` que não interrompe o script); (2) a tarefa do servidor apontava para a pasta principal, cujo branch muda a cada `git switch` de qualquer agente; (3) `npm ci` com o servidor ligado.
+
+**Correção:** `atualizador.mjs` (testado) recusa `node_modules` em atalho e para o servidor antes do `npm ci`; os `.ps1` conferem o registro, recusam a pasta principal e o atalho; recuperação passo a passo em `DEPLOY.md`.
+
+**Lição:** script que apaga e reinstala dependências nunca roda por um atalho e nunca com o processo que usa os arquivos ligado; e "registrar tarefa" só é verdade depois de ler a tarefa de volta. Em desenvolvimento a junção da `node_modules` entre worktrees continua válida, mas nunca rode `npm ci` por ela: use `npm install`, ou dê à worktree uma `node_modules` própria.
+
 ---
 
 ## Template: Como Registrar um Achado

@@ -1,7 +1,8 @@
 /**
  * O que a tarefa "CYBERMECH atualizar" roda a cada 10 min (registrada por `servidor-atualizar.ps1`).
- * Puxa o `origin/main`, só avança se a verificação passar, e some fora sem reiniciar nada se falhar —
- * o processo que já está no ar nunca é tocado até o novo código provar que funciona.
+ * Puxa o `origin/main`, só avança se a verificação passar, e volta atrás sem deixar rastro se falhar. A ordem das
+ * coisas (e as regras de segurança do `node_modules`) está em `atualizador.mjs`, que tem teste; aqui só se liga ao git,
+ * ao npm e ao Agendador de Tarefas do Windows.
  *
  * **Puxar, nunca receber:** não existe nenhum endpoint novo escutando a internet — o PC de casa só faz
  * `git fetch` para fora. Zero superfície nova de ataque (comparado a um webhook que o CI chamaria).
@@ -10,85 +11,50 @@
  * onde você edita o projeto. Se o atualizador desse `git reset --hard` ali, um dia com edição sua
  * não-commitada em andamento seria apagado por um script automático — inaceitável. Este script assume que
  * roda dentro de `.tmp/wt-servidor-prod/` (uma `git worktree`, convenção já usada pelos agentes: AGENTS.md
- * regra 12), separada da pasta que você usa. Se não for uma worktree, ou se houver qualquer mudança não
- * commitada nela (não deveria haver nunca, mas confere), o script recusa mexer e só avisa.
+ * regra 12), com `node_modules` PRÓPRIO (não um atalho para o do projeto).
  *
- * Saída: 0 = atualizou e verificou, quem chamou deve reiniciar o servidor. 1 = nada novo, não fez nada.
- * 2 = havia código novo mas a verificação falhou; o worktree volta pro commit anterior, e o servidor que
- * já está rodando continua exatamente como estava (nunca reinicia com código que não passou no gate).
+ * Saída: 0 = atualizou e verificou, quem chamou deve (re)ligar o servidor. 1 = nada novo, não fez nada.
+ * 2 = recusou ou havia código novo mas falhou; o código voltou ao anterior.
+ *
+ * `CYBERMECH_TAREFA` (nome da tarefa do servidor no Agendador) liga o para-e-religa do servidor quando o
+ * `package-lock.json` muda; sem ela (fora do Windows) o servidor não é tocado.
  */
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
+import { appendFileSync, lstatSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { atualizar } from './atualizador.mjs';
 
 const RAIZ = resolve(import.meta.dirname, '..');
 const LOG = resolve(RAIZ, '.tmp', 'servidor', 'atualizacao.log');
 mkdirSync(resolve(RAIZ, '.tmp', 'servidor'), { recursive: true });
+const TAREFA = process.env.CYBERMECH_TAREFA;
 
-function log(linha) {
-  const carimbo = new Date().toISOString();
-  const texto = `[${carimbo}] ${linha}`;
-  console.log(texto);
-  appendFileSync(LOG, texto + '\n');
+function tarefa(acao) {
+  if (!TAREFA) return;
+  spawnSync('powershell.exe', ['-NoProfile', '-Command', `${acao}-ScheduledTask -TaskName '${TAREFA}' -ErrorAction SilentlyContinue`], { stdio: 'inherit' });
 }
 
-function git(...args) {
-  return spawnSync('git', args, { cwd: RAIZ, encoding: 'utf8' });
-}
-
-// Confere que é mesmo uma worktree separada, não a pasta que o dono usa para editar.
-const commonDir = git('rev-parse', '--git-common-dir').stdout.trim();
-const gitDir = git('rev-parse', '--git-dir').stdout.trim();
-if (commonDir === gitDir) {
-  log('RECUSADO: esta pasta não é uma worktree separada (git-dir == git-common-dir). Rode a partir de .tmp/wt-servidor-prod/.');
-  process.exit(2);
-}
-
-const sujo = git('status', '--porcelain').stdout.trim();
-if (sujo) {
-  log(`RECUSADO: a worktree do servidor tem mudanças não commitadas — não deveria ter nenhuma; verifique manualmente:\n${sujo}`);
-  process.exit(2);
-}
-
-const antes = git('rev-parse', 'HEAD').stdout.trim();
-const fetch = git('fetch', 'origin', 'main', '--quiet');
-if (fetch.status !== 0) {
-  log(`RECUSADO: git fetch falhou (sem internet, ou o túnel caiu de vez):\n${fetch.stderr}`);
-  process.exit(2);
-}
-const remoto = git('rev-parse', 'origin/main').stdout.trim();
-
-if (antes === remoto) {
-  process.exit(1); // nada novo — não polui o log toda vez que roda
-}
-
-log(`código novo: ${antes.slice(0, 7)} → ${remoto.slice(0, 7)}`);
-const antesLock = git('show', `${antes}:package-lock.json`).stdout;
-const merge = git('merge', '--ff-only', remoto);
-if (merge.status !== 0) {
-  log(`RECUSADO: merge --ff-only falhou (a worktree divergiu de origin/main, o que não deveria acontecer aqui):\n${merge.stderr}`);
-  process.exit(2);
-}
-const depoisLock = git('show', `${remoto}:package-lock.json`).stdout;
-
-function rollback(motivo) {
-  log(`FALHOU (${motivo}) — voltando para ${antes.slice(0, 7)}, o servidor no ar não é tocado`);
-  git('reset', '--hard', antes);
-  process.exit(2);
-}
-
-if (antesLock !== depoisLock) {
-  log('package-lock.json mudou: npm ci');
-  const ci = spawnSync('npm', ['ci'], { cwd: RAIZ, stdio: 'inherit', shell: true });
-  if (ci.status !== 0) rollback('npm ci');
-}
-
-log('verificando: typecheck + testes do servidor');
-const tsc = spawnSync('npm', ['run', 'typecheck'], { cwd: RAIZ, stdio: 'inherit', shell: true });
-if (tsc.status !== 0) rollback('typecheck');
-
-const testes = spawnSync('node', ['scripts/test.mjs', 'run', '--no-isolate', 'server', 'shared'], { cwd: RAIZ, stdio: 'inherit', shell: true });
-if (testes.status !== 0) rollback('testes de server/ e shared/');
-
-log(`OK: ${remoto.slice(0, 7)} verificado, pedindo reinício`);
-process.exit(0);
+const codigo = atualizar({
+  git: (...args) => spawnSync('git', args, { cwd: RAIZ, encoding: 'utf8' }),
+  executar: (comando, args) => spawnSync(comando, args, { cwd: RAIZ, stdio: 'inherit', shell: true }).status,
+  log(linha) {
+    const texto = `[${new Date().toISOString()}] ${linha}`;
+    console.log(texto);
+    appendFileSync(LOG, texto + '\n');
+  },
+  nodeModulesEhAtalho() {
+    try {
+      return lstatSync(resolve(RAIZ, 'node_modules')).isSymbolicLink(); // no Windows, a junção também aparece como link
+    } catch {
+      return false; // ainda não existe: o npm ci cria
+    }
+  },
+  pararServidor() {
+    tarefa('Stop');
+    spawnSync(process.execPath, ['-e', 'setTimeout(()=>{}, 4000)']); // dá tempo de o processo soltar os arquivos
+  },
+  ligarServidor() {
+    tarefa('Start');
+  },
+});
+process.exit(codigo);

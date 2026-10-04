@@ -1,9 +1,12 @@
-# Rodado pela tarefa "CYBERMECH atualizar" a cada 10 min (registrada por servidor-atualizar.ps1).
+﻿# Rodado pela tarefa "CYBERMECH atualizar" a cada 10 min (registrada por servidor-atualizar.ps1).
 # Chama o verificador (atualizar-servidor.mjs); só reinicia o servidor se ele disser que passou no gate.
 # Autônomo por design: sem intervenção do dono, e sem nunca reiniciar para um código que não foi verificado.
 $ErrorActionPreference = 'Stop'
 $raiz = Split-Path -Parent $PSScriptRoot
 $node = (Get-Command node.exe).Source
+
+# Diz ao atualizador qual tarefa parar e religar quando o package-lock.json mudar (o npm ci precisa do servidor parado).
+$env:CYBERMECH_TAREFA = 'CYBERMECH servidor'
 
 Push-Location $raiz
 try {

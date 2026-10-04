@@ -1,4 +1,4 @@
-# Servidor de jogo do CYBERMECH ligado 24 horas no PC com Windows (DEPLOY.md, "Servidor de jogo").
+﻿# Servidor de jogo do CYBERMECH ligado 24 horas no PC com Windows (DEPLOY.md, "Servidor de jogo").
 #
 # Registra uma tarefa no Agendador de Tarefas: o servidor sobe junto com o Windows (mesmo sem ninguém logado),
 # reinicia sozinho se cair e grava o log em .tmp\servidor\ (G15: nada fora da pasta do projeto).
@@ -21,6 +21,20 @@ if ($Remover) {
 }
 
 $raiz = Split-Path -Parent $PSScriptRoot
+# O servidor roda do CÓDIGO desta pasta. Na pasta onde se edita, o branch muda a cada `git switch` de qualquer agente (04/10:
+# a outra conversa trocou o branch e o servidor foi reiniciado com código velho). Por isso: worktree própria, com node_modules próprio.
+$gitDir = git -C $raiz rev-parse --git-dir
+$commonDir = git -C $raiz rev-parse --git-common-dir
+if ($gitDir -eq $commonDir) {
+  Write-Host "FALHOU: esta é a pasta principal do projeto, onde se edita. O servidor deve rodar de uma worktree própria:"
+  Write-Host "  git worktree add .tmpwt-servidor-prod origin/main   e rode este script de DENTRO dela (veja o cabeçalho de servidor-atualizar.ps1)."
+  exit 1
+}
+$nm = Get-Item (Join-Path $raiz 'node_modules') -Force -ErrorAction SilentlyContinue
+if ($nm -and $nm.LinkType) {
+  Write-Host "FALHOU: node_modules desta pasta é um atalho ($($nm.LinkType)) para $($nm.Target). O servidor precisa de node_modules PRÓPRIO: cmd /c rmdir node_modules; npm ci"
+  exit 1
+}
 $node = (Get-Command node.exe).Source
 New-Item -ItemType Directory -Force -Path (Join-Path $raiz '.tmp\servidor') | Out-Null
 

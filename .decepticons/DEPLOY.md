@@ -95,10 +95,12 @@ Passo a passo, uma vez só:
    automática" abaixo do motivo):**
    ```powershell
    git worktree add .tmp\wt-servidor-prod origin/main
-   New-Item -ItemType Junction -Path .tmp\wt-servidor-prod\node_modules -Target node_modules
    cd .tmp\wt-servidor-prod
+   npm ci                      # node_modules PRÓPRIO. Nunca um atalho (junção) para o do projeto: veja "04/10" abaixo
    .\scripts\servidor-windows.ps1
    ```
+   O `servidor-windows.ps1` **recusa** rodar na pasta principal ou com `node_modules` em atalho. O banco de contas fica em
+   `.tmp\servidor\contas.db` **da pasta de onde o servidor roda**: ao mudar de pasta, copie o arquivo antes de ligar.
    PowerShell como administrador. O servidor sobe com o Windows, reinicia se cair e grava o log em
    `.tmp\servidor\` (dentro da worktree). Para o PC não dormir: `powercfg /change standby-timeout-ac 0`.
    Sem mexer em nada, o processo escuta só em `127.0.0.1:2567` (o túnel fala daqui): não aparece na rede de
@@ -131,11 +133,14 @@ O que a tarefa "CYBERMECH atualizar" faz a cada 10 min (`scripts\atualizar-e-rei
 1. `git fetch origin main`; se não avançou, não faz nada (nem escreve no log).
 2. Se avançou: `git merge --ff-only`, e **só então** roda o mesmo portão que o CI roda — `npm run typecheck`
    e os testes de `server/` e `shared/` (não a suíte inteira: são os que importam para o processo do
-   servidor, e rodam em segundos). `npm ci` só quando o `package-lock.json` mudou.
-3. **Passou:** reinicia o "CYBERMECH servidor" — agora com o código novo.
-4. **Falhou:** `git reset --hard` para o commit anterior. **O servidor que já está no ar nunca é tocado** —
-   continua rodando o último código bom, do início ao fim; ninguém percebe que uma atualização quebrada
-   existiu, exceto no log.
+   servidor, e rodam em segundos).
+   **`package-lock.json` mudou?** O atualizador **para o servidor antes do `npm ci`** (o processo mantém aberto o binário
+   nativo do rolldown, e no Windows o `npm ci` não apaga arquivo em uso) e só depois reinstala e verifica.
+3. **Passou:** (re)liga o "CYBERMECH servidor" — agora com o código novo.
+4. **Falhou:** `git reset --hard` para o commit anterior. Sem mudança nas dependências, **o servidor que já está no
+   ar nunca é tocado**. Com mudança, o atualizador também refaz as dependências do código antigo e **religa** o servidor
+   que ele mesmo parou. Ninguém percebe que uma atualização quebrada existiu, exceto no log.
+   Ele **recusa** rodar se `node_modules` for um atalho para outra pasta (teste: `server/atualizador.test.ts`).
 
 **Por que uma worktree separada, e não a pasta onde você mexe no código (G15 + segurança):** um `git reset
 --hard` automático rodando na sua pasta de trabalho apagaria qualquer edição sua não commitada, um dia
@@ -147,6 +152,33 @@ tentada, cada rollback e o motivo. `main.ts` já imprime salas/jogadores/tick a 
 
 **Para desligar** (voltar a atualizar só manualmente): `.\scripts\servidor-atualizar.ps1 -Remover`, de
 dentro da worktree.
+
+### 04/10: o servidor estava desatualizado, e o atualizador apagou a node_modules de todo mundo (Claude)
+
+**O que aconteceu:** a tarefa "CYBERMECH atualizar" **nunca foi registrada** (o `Register-ScheduledTask` falhava com
+`P99999999DT23H59M59S` fora do intervalo e o script dizia "Pronto" mesmo assim), e a tarefa "CYBERMECH servidor" rodava da
+**pasta principal** do projeto, não da worktree dedicada: o servidor ficou no protocolo 1 enquanto o site passou ao 2 (online
+recusado com "versão diferente"). Ao rodar a atualização à mão, o `npm ci` passou pela **junção** `wt-servidor-prod\node_modules`
+→ `node_modules` do projeto, que todas as worktrees compartilham, apagou quase tudo e parou em EPERM no binário do rolldown que o
+próprio servidor mantém aberto. O servidor no ar sobreviveu (tudo já estava na memória), mas não reiniciaria.
+**O que mudou no código:** o gatilho da tarefa usa 10 anos em vez de `TimeSpan.MaxValue`, e o registro confere se a tarefa existe;
+o atualizador recusa `node_modules` em atalho e para o servidor antes do `npm ci`; `servidor-windows.ps1` recusa a pasta principal e
+o atalho; os `.ps1` ganharam BOM (acentos saíam quebrados no Windows PowerShell 5.1).
+**Recuperar o PC do servidor (PowerShell como administrador):**
+```powershell
+Stop-ScheduledTask -TaskName "CYBERMECH servidor"           # solta o binário travado
+cd D:\DECEPTICONS\.tmp\wt-servidor-prod
+cmd /c rmdir node_modules                                   # remove só o atalho (a junção), não o conteúdo de lá
+git fetch origin; git reset --hard origin/main              # a worktree do servidor é descartável
+npm ci                                                      # node_modules próprio do servidor
+New-Item -ItemType Directory -Force .tmp\servidor | Out-Null
+Copy-Item D:\DECEPTICONS\.tmp\servidor\contas.db .tmp\servidor\contas.db   # o banco de contas vai junto
+.\scripts\servidor-windows.ps1                             # re-registra o servidor apontando PARA ESTA pasta e liga
+.\scripts\servidor-atualizar.ps1                           # registra a atualização automática (a cada 10 min)
+cd D:\DECEPTICONS; npm ci                                   # conserta a node_modules do projeto (as outras worktrees usam)
+```
+Conferir: `Invoke-RestMethod https://jogo.selvamkt.com.br/status` deve mostrar `protocol: 2`; e `Get-ScheduledTask | ? TaskName -like 'CYBERMECH*'`
+deve listar as duas tarefas.
 
 ### Contas de piloto (login, Claude 28/09 — só o esqueleto: criar conta, entrar, sair)
 
