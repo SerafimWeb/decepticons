@@ -355,6 +355,24 @@ async function metricasPage(browser, base, failures) {
     await page.goto(`${base}metricas/?servidor=${encodeURIComponent('http://localhost:9')}`);
     await page.waitForTimeout(300);
     if (!(await page.locator('#painel').isHidden())) failures.push('métricas: o token guardado foi usado em outro servidor');
+    // Servidor de antes da porta de métricas (o de produção em 04/10, medido): /metricas devolve 200 com o texto de boas-vindas
+    // e SEM cabeçalho de CORS (o navegador bloqueia), enquanto o /status público responde com CORS. A tela tem de dizer que ele é antigo,
+    // não "fora do ar".
+    const antigo = createServer((req, res) => {
+      const texto = { 'content-type': 'text/plain; charset=utf-8' };
+      if (req.url?.split('?')[0] === '/status') return void res.writeHead(200, { 'access-control-allow-origin': '*', 'content-type': 'application/json' }).end('{"protocol":1,"players":0,"rooms":0,"roomSize":8,"uptimeS":64714}');
+      res.writeHead(200, texto).end('CYBERMECH · servidor de jogo · 0 sala(s)\n');
+    });
+    await new Promise((ok) => antigo.listen(0, '127.0.0.1', ok));
+    try {
+      await page.goto(`${base}metricas/?servidor=${encodeURIComponent(`http://127.0.0.1:${antigo.address().port}`)}`);
+      await page.fill('#token', TOKEN);
+      await page.click('#acesso button[type=submit]');
+      await page.waitForFunction(() => /vers[ãa]o antiga/i.test(document.getElementById('estado')?.textContent ?? ''), null, { timeout: 5000 }).catch(() => failures.push('métricas: servidor antigo (200 com texto) não foi explicado na tela'));
+      if (!(await page.locator('#painel').isHidden())) failures.push('métricas: mostrou o painel com a resposta de um servidor antigo');
+    } finally {
+      antigo.close();
+    }
   } finally {
     await ctx.close();
     servidor.close();
