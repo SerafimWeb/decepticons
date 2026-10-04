@@ -17,6 +17,7 @@ const MUZZLE_COLOR = GLOW.playerMuzzle;
 const ROCKET_FLASH = new THREE.Color(3.0, 1.2, 0.3);
 
 const _muzzle = new THREE.Vector3();
+const _mouth = new THREE.Vector3();
 const _fwd = new THREE.Vector3();
 const _to = new THREE.Vector3();
 const _dir = new THREE.Vector3();
@@ -143,7 +144,8 @@ export class PlayerController {
     this.mech.mountWorldPosition(mount, _muzzle);
     this.aimFrom(_muzzle);
     // Chuva de mísseis: sobe e cai em volta do ponto sob a mira, em vez de ir reto até ele.
-    if (w.barrage) this.barrage.fire(_muzzle, _dir, this.rig.aim.point, this.mech.collider, w, volley);
+    // O desenho do lançamento sobe do morteiro das costas, se o Mech tem um (a conta da chuva usa a boca do tiro).
+    if (w.barrage) this.barrage.fire(_muzzle, _dir, this.rig.aim.point, this.mech.collider, w, volley, this.mech.barrageMouth(_mouth));
     else this.rockets.fire(_muzzle, _dir, this.mech.collider, w);
     this.particles.burst(_muzzle, _dir, { count: 14, color: ROCKET_FLASH, speed: 8, life: 0.25, spread: 0.6, gravity: 0 });
     if (volley === 0) this.onRocket?.();

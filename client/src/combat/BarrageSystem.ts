@@ -40,6 +40,8 @@ interface Salvo {
   weapon: WeaponStats;
   owner?: RAPIER.Collider;
   origin: THREE.Vector3;
+  /** De onde o lançamento desenhado sobe (a boca do morteiro): só desenho, nada da simulação lê isto. */
+  visual: THREE.Vector3;
   /** Por bomba: onde cai (x, z), o terreno que o aviso achou (y), de que altura estava no tick anterior e se já explodiu. */
   x: Float32Array;
   z: Float32Array;
@@ -82,6 +84,7 @@ export class BarrageSystem {
         t: 0,
         weapon: null as unknown as WeaponStats,
         origin: new THREE.Vector3(),
+        visual: new THREE.Vector3(),
         x: new Float32Array(MAX_BOMBS),
         z: new Float32Array(MAX_BOMBS),
         ground: new Float32Array(MAX_BOMBS),
@@ -111,9 +114,10 @@ export class BarrageSystem {
   /**
    * Lança a chuva de `origin`, com o centro em `target` (o ponto da mira). `dir` é a direção do tiro (o evento de rede) e dá o
    * giro do desenho; `volley` é a ordem do lançador no mesmo aperto (0 = o primeiro). Mira além do alcance da arma: a chuva cai
-   * no limite do alcance, na mesma direção.
+   * no limite do alcance, na mesma direção. `visual` (opcional) é de onde o lançamento DESENHADO sobe, a boca do morteiro do Mech:
+   * é só desenho, a conta (alcance, onde caem as bombas) usa `origin`, que o servidor também tem. Sem ele, sobe de `origin`.
    */
-  fire(origin: THREE.Vector3, dir: THREE.Vector3, target: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats, volley = 0): void {
+  fire(origin: THREE.Vector3, dir: THREE.Vector3, target: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats, volley = 0, visual?: THREE.Vector3): void {
     const b = w.barrage;
     if (!b) return;
     this.onFired?.(origin, dir, owner, w);
@@ -123,6 +127,7 @@ export class BarrageSystem {
     s.weapon = w;
     s.owner = owner;
     s.origin.copy(origin);
+    s.visual.copy(visual ?? origin);
     s.bombs = Math.min(MAX_BOMBS, b.bombs);
     // Além do alcance: recolhe o centro ao longo da linha de quem atira até ele (só no plano do chão).
     let cx = target.x;
@@ -185,7 +190,7 @@ export class BarrageSystem {
       const t = s.t + alpha / 60;
       // O lançamento sobe na vertical, à velocidade da arma, e some no alto.
       shell.visible = t < b.ascent;
-      if (shell.visible) shell.position.set(s.origin.x, s.origin.y + s.weapon.speed * t, s.origin.z);
+      if (shell.visible) shell.position.set(s.visual.x, s.visual.y + s.weapon.speed * t, s.visual.z);
       for (let i = 0; i < s.bombs; i++) {
         if (s.done[i]) continue;
         const since = t - (b.ascent + i * b.stagger);

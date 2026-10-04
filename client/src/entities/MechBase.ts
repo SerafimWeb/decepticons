@@ -117,6 +117,11 @@ export interface MechRig {
    */
   mountWeapons?: (loadout: Loadout) => void;
   /**
+   * Só nos rigs com morteiro de chuva de mísseis nas costas (`mechBlueprint.ts`): o nó da boca dele. Serve só ao desenho do
+   * lançamento subindo (`MechBase.barrageMouth`); a boca de simulação do tiro continua a do dado/medida de sempre (G14).
+   */
+  barrageMouth?: THREE.Object3D;
+  /**
    * Coice dos braços em **metros para trás** (+Z do Mech), direito e esquerdo. Só nos rigs cujos ossos não deixam
    * `position.z` do braço valer isso: num osso importado o eixo e a unidade são do arquivo, e o mesmo `position.z` dava
    * um salto de 1,9 m (direito, para baixo) e 2,7 m (esquerdo, para cima) no Gênesis. Sem ela, o `MechBase` escreve em `position.z` do braço.
@@ -344,6 +349,17 @@ export abstract class MechBase {
     const sin = Math.sin(this.yaw);
     const cos = Math.cos(this.yaw);
     return target.set(this.simPos.x + x * cos + z * sin, this.simPos.y + y, this.simPos.z - x * sin + z * cos);
+  }
+
+  /**
+   * De onde a chuva de mísseis desse Mech sobe NO DESENHO: a boca do morteiro das costas, no mundo. `undefined` quando a arma
+   * do botão secundário não é a chuva ou o desenho não tem o morteiro (aí vale a boca do tiro). É só visual: o servidor e a
+   * simulação continuam com `simMuzzle`.
+   */
+  barrageMouth(target: THREE.Vector3): THREE.Vector3 | undefined {
+    const mouth = this.rig.barrageMouth;
+    if (!mouth || this.armed.secondary?.id !== 'barrage') return undefined;
+    return mouth.getWorldPosition(target);
   }
 
   get isDashing(): boolean {
