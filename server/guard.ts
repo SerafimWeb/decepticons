@@ -12,6 +12,7 @@
  * A alocação é toda por conexão (uma vez na entrada, uma vez na saída). Nada por mensagem: o `allow()` só mexe em
  * contadores da própria conexão.
  */
+import { PAIS_DESCONHECIDO, parsePais } from '../shared/net/telemetry';
 
 export interface GuardConfig {
   /** Conexões abertas ao mesmo tempo do mesmo IP. */
@@ -91,6 +92,15 @@ export function clientIp(remote: string | undefined, header: string | string[] |
   const raw = (Array.isArray(header) ? header[0] : header)?.trim();
   if (raw && isLoopback(remote)) return normalizeIp(raw);
   return normalizeIp(remote ?? '');
+}
+
+/**
+ * O país de quem chegou, do cabeçalho `cf-ipcountry` da Cloudflare, com a mesma regra de confiança do `clientIp`: só vale se o
+ * outro lado da conexão for local (o túnel). De qualquer outra máquina o cabeçalho é ignorado, e o país fica `??`: ninguém
+ * inventa país para encher a sua tabela. Só o país; o IP não é guardado em lugar nenhum.
+ */
+export function clientCountry(remote: string | undefined, header: string | string[] | undefined): string {
+  return isLoopback(remote) ? parsePais(header) : PAIS_DESCONHECIDO;
 }
 
 /** IPv6 mapeado (`::ffff:1.2.3.4`) vira `1.2.3.4`; o resto passa igual. */

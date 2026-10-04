@@ -79,3 +79,97 @@ export function parseResumo(raw: unknown): ResumoEventos | null {
   if (!janela24h || !total) return null;
   return { desde: r.desde, janela24h, total };
 }
+
+// ---------- origem das conexões e métricas detalhadas (dono, 04/10) ----------
+
+/**
+ * Eventos que SÓ o servidor conta (o cliente não pode mandá-los por `POST /evento`: a lista fechada de cima é a do que ele
+ * pode mandar). Servem para saber quem chegou ao jogo online, de onde, e por que alguém foi recusado.
+ */
+export const EVENTOS_SERVIDOR = [
+  /** Uma conexão de WebSocket foi aceita (ainda não escolheu a montagem). */
+  'conexao_online',
+  /** Entrou numa sala: montagem aceita, partida em curso. */
+  'entrou_na_sala',
+  /** Recusada na sala: protocolo diferente (cliente e servidor em versões diferentes). */
+  'recusa_versao',
+  'recusa_cheia',
+  'recusa_montagem',
+  'recusa_mensagem',
+  /** Recusada na porta, pelas defesas (teto de conexões por IP ou total). */
+  'recusa_limite',
+] as const;
+export type EventoServidor = (typeof EVENTOS_SERVIDOR)[number];
+export type EventoQualquer = EventoNome | EventoServidor;
+export const TODOS_EVENTOS: readonly EventoQualquer[] = [...EVENTOS, ...EVENTOS_SERVIDOR];
+
+/** Detalhe privado das métricas (por dia e por país): exige o token do dono. */
+export const METRICAS_PATH = '/metricas';
+/** Cabeçalho com o token; o servidor gera um na primeira subida (`.tmp/servidor/metricas-token.txt`). */
+export const METRICAS_HEADER = 'x-cybermech-metricas';
+/** País que não deu para saber (conexão direta, cabeçalho ausente ou "XX" da Cloudflare). */
+export const PAIS_DESCONHECIDO = '??';
+
+/**
+ * O país de quem chegou, a partir do cabeçalho `CF-IPCountry` da Cloudflare (código ISO de 2 letras; `XX` = sem informação;
+ * `T1` = rede Tor). Qualquer outra coisa vira `??`. **Só o país: nunca o IP, nem cidade.**
+ */
+export function parsePais(raw: unknown): string {
+  const v = (Array.isArray(raw) ? raw[0] : raw) as unknown;
+  if (typeof v !== 'string') return PAIS_DESCONHECIDO;
+  const s = v.trim().toUpperCase();
+  return /^[A-Z][A-Z0-9]$/.test(s) && s !== 'XX' ? s : PAIS_DESCONHECIDO;
+}
+
+export interface DiaMetricas {
+  /** Dia no horário de Brasília (`2026-10-04`). */
+  dia: string;
+  /** Por evento, quantos vieram de cada país. */
+  eventos: Record<string, Record<string, number>>;
+  /** Maior número de jogadores ao mesmo tempo nesse dia (todas as salas). */
+  pico: number;
+}
+
+export interface Metricas {
+  /** Desde quando há dados (a primeira subida do servidor com esta contagem). */
+  desde: string;
+  geradoEm: string;
+  /** Os dias são no fuso do dono. */
+  fuso: string;
+  /** Total desde o começo, por evento (cliente e servidor). */
+  total: Record<string, number>;
+  /** Do dia mais antigo guardado ao de hoje. */
+  dias: DiaMetricas[];
+}
+
+/** Confere o JSON recebido do servidor (o painel não confia no que lê). */
+export function parseMetricas(raw: unknown): Metricas | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.desde !== 'string' || typeof r.geradoEm !== 'string' || typeof r.fuso !== 'string') return null;
+  const contagens = (v: unknown): Record<string, number> | null => {
+    if (typeof v !== 'object' || v === null) return null;
+    const out: Record<string, number> = {};
+    for (const [k, n] of Object.entries(v)) {
+      if (typeof n !== 'number' || !Number.isFinite(n) || n < 0) return null;
+      out[k] = Math.trunc(n);
+    }
+    return out;
+  };
+  const total = contagens(r.total);
+  if (!total || !Array.isArray(r.dias)) return null;
+  const dias: DiaMetricas[] = [];
+  for (const d of r.dias as unknown[]) {
+    if (typeof d !== 'object' || d === null) return null;
+    const x = d as Record<string, unknown>;
+    if (typeof x.dia !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(x.dia) || typeof x.pico !== 'number' || typeof x.eventos !== 'object' || x.eventos === null) return null;
+    const eventos: Record<string, Record<string, number>> = {};
+    for (const [nome, porPais] of Object.entries(x.eventos)) {
+      const c = contagens(porPais);
+      if (!c) return null;
+      eventos[nome] = c;
+    }
+    dias.push({ dia: x.dia, eventos, pico: Math.max(0, Math.trunc(x.pico)) });
+  }
+  return { desde: r.desde, geradoEm: r.geradoEm, fuso: r.fuso, total, dias };
+}

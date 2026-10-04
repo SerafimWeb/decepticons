@@ -6,14 +6,14 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Online (servidor 24 h em `jogo.selvamkt.com.br`); offline (single-player: Arena + Sobrevivência + CTF) |
-| **Build** | JS 296 KB e Wasm 719 KB no budget do `npm run check` (teto 500 e 900); 517 testes |
-| **Última sessão** | 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
+| **Build** | JS 300 KB e Wasm 719 KB no budget do `npm run check` (teto 500 e 900); 549 testes |
+| **Última sessão** | 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
 | **Próximo** | dono julga o Marauder (Hangar e partida) e a calibragem do blaster numa mão de Mech; M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
 
-**Última atualização:** 2026-10-03 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
+**Última atualização:** 2026-10-04 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
 
 ---
 
@@ -284,6 +284,11 @@
   - **Limpeza no Harness (`scripts/test.mjs`)**: Removida redundância `VITEST_MAX_WORKERS` do env (mantendo a flag `--maxWorkers=1`).
 ---
 
+## ÚLTIMA SESSÃO FEZ (04/10, PR das métricas de origem na `main`)
+- **De onde vêm as conexões (Claude, pedido do dono: "quero saber DE ONDE vem as conexões dos outros jogadores"):** o servidor passa a contar por **dia, evento e país** (`CF-IPCountry` da Cloudflare, só do túnel; só país, nunca IP nem cidade), inclusive o que o navegador não sabe: conexões online, entradas em sala, **recusas por motivo** (a por versão é o aviso de "servidor atrás do site") e o **pico de jogadores**. Os números ficam em `.tmp/servidor/metricas.json` (120 dias) e **sobrevivem ao reinício**. Detalhe privado em `GET /metricas` com token (`.tmp/servidor/metricas-token.txt`), visto na página **`/cybermech/metricas/`** (cartões de hoje, funil de 7 dias, 14 dias, países de 30; sem menu, `noindex`, sem Google Analytics). Foto com dados de exemplo: `.decepticons/arte/metricas-exemplo.png`. Contrato em `shared/net/telemetry.ts`; testes de agregador, regra do país, rota, servidor real e página no navegador (`site --check`).
+- **Onde o dono clica:** abrir `https://www.selvamkt.com.br/cybermech/metricas/` e colar o token (no PC do servidor: `Get-Content .tmp\servidor\metricas-token.txt`). **Só terá números depois que o servidor for atualizado e reiniciado** (a recuperação de `DEPLOY.md`, seção 04/10): o servidor antigo não tem a rota. Cidade e aparelho: Google Analytics.
+- **Achados (R17):** (a) o `append()` do DOM não devolve nó, quebrou a tabela da página, pego pelo `site --check`; (b) **pendência**: o `site --check` com `VITE_GAME_SERVER` definida falha no clique de "Entrar no cockpit" (não investigado; `FINDINGS.md`); (c) a regra do país só vale vindo do túnel (`FINDINGS.md`); (d) o teste online da chuva (`online.test.ts`) falhou uma vez com a suíte inteira em paralelo (apertava o gatilho por 120 ms de relógio real, que sob carga não virava um tick): agora segura o gatilho até o outro jogador ver a chuva.
+
 ## ÚLTIMA SESSÃO FEZ (04/10, PR da chuva de mísseis na `main`)
 - **Chuva de mísseis (Claude, pedido do dono):** *"míssil que vai lançado pra cima e cai tipo uma chuva"*. Arma de área nova (`barrage`): sobe 1,2 s e 8 bombas caem num círculo de 9 m em volta da mira, com aviso no chão; carregador de 2, recarga de 6 s, 25% de calor, 5 t. Módulo `combat/BarrageSystem.ts` (pool fixo, sem sorteio, dano pelo `CombatSystem`), ligado ao `Match`; vai no braço esquerdo do Vector-09, Colossus e Onça e nos ombros do Marauder; o servidor decide as bombas e o outro jogador vê a chuva (protocolo **3**). Sozinha leva 15 a 20 s para derrubar um torso (apoio); com o plasma, 3,4 s ou mais. 26 testes novos (incl. servidor real e dois jogadores). **Guia `ARSENAL.md`:** o que tocar para criar arma ou robô. Também: a landing para de somar o peso da chuva na "carga de fábrica" do Vector-09 (7 t).
 - **Achados (R17):** (a) o aviso no chão pousava na cabeça de qualquer Mech (corrigido: `PhysicsWorld.terrainY` ignora Mech); (b) `Match.test.ts` ("aliados na Arena normal... nunca atiram no jogador") falhou uma vez em 5 rodadas completas, com `friendlyFireOnPlayer` = 1, e passou nas outras: **intermitente, não investigado**; (c) o foguete no braço DIREITO da Onça sai pelo caminho do projétil comum (visto no código, não rodado).
@@ -483,7 +488,7 @@
 - **Som dos foguetes e Volume (Gemini):** som sintetizado adicionado para lançamento de foguetes; controle de volume mestre adicionado às configurações.
 
 ## PENDENTE
-- [ ] **Dono (URGENTE, 04/10):** rodar a recuperação do servidor como administrador (`DEPLOY.md`, seção "04/10"). Enquanto isso, o online recusa todo mundo (servidor no protocolo 1, site no 2) e a `node_modules` do projeto está vazia por dentro: o servidor não reiniciaria se o PC religasse
+- [ ] **Dono (URGENTE, 04/10):** rodar a recuperação do servidor como administrador (`DEPLOY.md`, seção "04/10"). Enquanto isso, o online recusa todo mundo (servidor no protocolo 1, site no 3) e a `node_modules` do projeto está vazia por dentro: o servidor não reiniciaria se o PC religasse
 - [ ] **Dono:** jogar no celular (deitado) e dizer se a mira e o tiro ficaram bons (forte ou fraca demais?); no PC, testar configurações, calibração e som
 - [ ] **Dono:** conferir no jogo as novas formas e proporções do Vector-09; dizer se a leitura de leve/médio/pesado bate com as imagens de referência
 - [ ] **Dono:** testar o Hangar em desktop e celular: MK III deve atualizar a carga, aplicar armas no respawn, trocar piloto e copiar um link que abre a mesma montagem
