@@ -3,13 +3,18 @@
 # Registra uma tarefa no Agendador de Tarefas: o servidor sobe junto com o Windows (mesmo sem ninguém logado),
 # reinicia sozinho se cair e grava o log em .tmp\servidor\ (G15: nada fora da pasta do projeto).
 #
-# Uso, no PowerShell como administrador, na pasta do projeto:
-#   .\scripts\servidor-windows.ps1            registra e já liga
-#   .\scripts\servidor-windows.ps1 -Remover   desliga e tira do Windows
+# Os DADOS (contas.db, números das métricas, token, log) ficam numa pasta FIXA da pasta principal do projeto
+# (<principal>\.tmp\servidor), definida na tarefa por CYBERMECH_DADOS: o código roda numa worktree descartável
+# (.tmp\wt-servidor-prod) e trocar ou apagar a worktree nunca leva o banco de contas junto.
+#
+# Uso, no PowerShell como administrador, de dentro da worktree do servidor:
+#   .\scripts\servidor-windows.ps1                     registra e já liga
+#   .\scripts\servidor-windows.ps1 -Dados D:\x\dados   usa outra pasta de dados (dentro do projeto: G15)
+#   .\scripts\servidor-windows.ps1 -Remover            desliga e tira do Windows
 #
 # O túnel da Cloudflare (o endereço público) é um serviço à parte, instalado pelo próprio cloudflared.
 
-param([switch]$Remover)
+param([switch]$Remover, [string]$Dados)
 $ErrorActionPreference = 'Stop'
 $nome = 'CYBERMECH servidor'
 
@@ -36,10 +41,16 @@ if ($nm -and $nm.LinkType) {
   exit 1
 }
 $node = (Get-Command node.exe).Source
-New-Item -ItemType Directory -Force -Path (Join-Path $raiz '.tmp\servidor') | Out-Null
+# Pasta de dados: a da pasta PRINCIPAL do projeto (o pai do .git comum), que não muda quando a worktree é trocada.
+if (-not $Dados) {
+  $comum = git -C $raiz rev-parse --path-format=absolute --git-common-dir
+  $Dados = Join-Path (Split-Path -Parent $comum) '.tmp\servidor'
+}
+$Dados = [System.IO.Path]::GetFullPath($Dados)
+New-Item -ItemType Directory -Force -Path $Dados | Out-Null
 
-# cmd.exe só para redirecionar a saída para o log (o Agendador não guarda o que o programa escreve).
-$comando = "/c cd /d `"$raiz`" && `"$node`" scripts\server.mjs >> .tmp\servidor\servidor.log 2>&1"
+# cmd.exe só para definir CYBERMECH_DADOS e redirecionar a saída para o log (o Agendador não guarda o que o programa escreve).
+$comando = "/c cd /d `"$raiz`" && set `"CYBERMECH_DADOS=$Dados`" && `"$node`" scripts\server.mjs >> `"$Dados\servidor.log`" 2>&1"
 $acao = New-ScheduledTaskAction -Execute 'cmd.exe' -Argument $comando
 $gatilho = New-ScheduledTaskTrigger -AtStartup
 $ajustes = New-ScheduledTaskSettingsSet -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) `
@@ -64,5 +75,7 @@ if (-not (Get-ScheduledTask -TaskName $nome -ErrorAction SilentlyContinue)) {
 Start-ScheduledTask -TaskName $nome
 Write-Host "Pronto: o servidor sobe com o Windows e reinicia se cair."
 Write-Host "Pasta de onde ele roda: $raiz"
-Write-Host "Log: $raiz\.tmp\servidor\servidor.log"
+Write-Host "Pasta de dados (contas.db, números, token): $Dados"
+Write-Host "Log: $Dados\servidor.log"
+Write-Host "Token das métricas: $Dados\metricas-token.txt (criado quando o servidor sobe pela primeira vez)"
 Write-Host "Para o PC não dormir na tomada: powercfg /change standby-timeout-ac 0"

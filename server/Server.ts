@@ -13,6 +13,7 @@ import { ArenaRoom, type Peer } from './ArenaRoom';
 import { Contas } from './contas';
 import { clientCountry, clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
 import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
+import { bancoDeContas, pastaDados } from './dados';
 import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
 import { Telemetria } from './telemetria';
 
@@ -94,14 +95,15 @@ export async function startServer(
     host?: string;
     log?: (line: string) => void;
     guard?: Partial<GuardConfig>;
-    /** Caminho do banco de contas. Padrão: `.tmp/servidor/contas.db` (gitignored, sobrevive à atualização
-     * automática). Testes passam `:memory:`. */
+    /** Caminho do banco de contas. Padrão: `contas.db` na pasta de dados (`CYBERMECH_DADOS`, ou `.tmp/servidor/` ao lado do código;
+     * gitignored, sobrevive à atualização automática). Testes passam `:memory:`. */
     dbContas?: string;
     /** Régua de tentativas de `/conta/entrar` e `/conta/criar` (padrão: 8 a cada 10 min por IP). Testes
      * que fazem muitas chamadas do mesmo IP alargam para não confundir rate limit com o que estão testando. */
     limiteLogin?: Partial<typeof LIMITE_LOGIN_DEFAULTS>;
     /**
-     * Pasta dos números que sobrevivem ao reinício (`telemetria.json`) e do token das métricas. Padrão: `.tmp/servidor/` (gitignored).
+     * Pasta dos números que sobrevivem ao reinício (`telemetria.json`) e do token das métricas. Padrão: `CYBERMECH_DADOS`, ou
+     * `.tmp/servidor/` ao lado do código (gitignored; `server/dados.ts`).
      * Testes que passam `dbContas: ':memory:'` ficam sem pasta (nada em disco) a menos que passem esta.
      */
     dirDados?: string;
@@ -181,7 +183,9 @@ export async function startServer(
    * porta HTTP: corpo pequeno, decodifica ou descarta, nunca lança.
    */
   const telemetria = new Telemetria();
-  const dirDados = opts.dirDados ?? (opts.dbContas === ':memory:' ? null : resolve(import.meta.dirname, '..', '.tmp', 'servidor'));
+  const codigo = resolve(import.meta.dirname, '..');
+  const dirDados = opts.dirDados ?? (opts.dbContas === ':memory:' ? null : pastaDados(codigo));
+  if (dirDados) log(`pasta de dados (contas.db, números, token): ${dirDados}`);
   const arquivoDados = dirDados ? join(dirDados, DADOS_ARQUIVO) : null;
   if (arquivoDados) telemetria.carregar(lerJson(arquivoDados));
   /** Token do dono para `GET /metricas` (origem das conexões, por país e por dia). `null` = porta desligada. */
@@ -207,7 +211,7 @@ export async function startServer(
    * progressão migrada do `localStorage` ainda. `LimiteLogin` é a régua de tentativas, separada do `Guard`
    * do WebSocket e do balde da `Telemetria`: o risco aqui (alguém testando senha) pede um teto mais apertado.
    */
-  const dbCaminho = opts.dbContas ?? resolve(import.meta.dirname, '..', '.tmp', 'servidor', 'contas.db');
+  const dbCaminho = opts.dbContas ?? bancoDeContas(pastaDados(codigo));
   if (dbCaminho !== ':memory:') mkdirSync(dirname(dbCaminho), { recursive: true });
   const contas = new Contas(dbCaminho);
   const limiteLogin = new LimiteLogin(opts.limiteLogin);
