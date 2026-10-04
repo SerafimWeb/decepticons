@@ -92,6 +92,7 @@ const _o = new THREE.Vector3();
 const _d = new THREE.Vector3();
 const _fwd = new THREE.Vector3();
 const _aimPoint = new THREE.Vector3();
+const _mouth = new THREE.Vector3();
 const HIDDEN = new THREE.Vector3(0, -200, 0);
 
 /**
@@ -369,7 +370,7 @@ export class OnlineSession implements Pilot {
       // O evento traz a direção, não o ponto: acha onde o raio bate (o servidor fez o mesmo) e joga a chuva ali. Só desenho (dano é do servidor).
       const hit = this.o.match.physics.raycast(_o, _d, 400, r.mech.collider);
       _aimPoint.copy(_o).addScaledVector(_d, hit ? hit.distance : 400);
-      this.o.match.barrage.fire(_o, _d, _aimPoint, r.mech.collider, weapon('barrage'));
+      this.o.match.barrage.fire(_o, _d, _aimPoint, r.mech.collider, weapon('barrage'), 0, r.mech.barrageMouth(_mouth));
       r.mech.onFireSecondary();
     } else if (id === 'rockets') {
       this.o.match.rockets.fire(_o, _d, r.mech.collider, weapon('rockets'));

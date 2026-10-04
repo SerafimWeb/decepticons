@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { Loadout } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
 import type { LegRig, MechRig } from './MechBase';
 import { batchRigMeshes, beveledBox, box, cyl, group, heatVapor, taperedBox } from './meshKit';
@@ -223,9 +224,11 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   }
   if (blueprint.head.antenna > 0) cyl(head, 0.035 * scale, blueprint.head.antenna, M.frame, blueprint.head.width * 0.28, blueprint.head.height + blueprint.head.antenna * 0.45, 0.08 * scale);
 
-  const arm = (side: number, isLeft: boolean): THREE.Group => {
-    const g = group(torso, side * blueprint.arms.mountX, torsoH * 0.84, 0);
-    g.name = isLeft ? 'leftArm' : 'rightArm';
+  /**
+   * As peças do braço. `semCasulo` (só no esquerdo) é o antebraço liso, para quando a arma do braço é a chuva de mísseis (o morteiro
+   * fica nas costas): o rig guarda as duas geometrias do braço e `mountWeapons` troca uma pela outra, sem desenho a mais.
+   */
+  const armParts = (g: THREE.Object3D, side: number, isLeft: boolean, semCasulo: boolean): void => {
     const pad = beveledBox(g, blueprint.shoulders.width, blueprint.shoulders.height, blueprint.shoulders.depth, Math.min(blueprint.shoulders.width, blueprint.shoulders.height) * 0.1, M.paint, 0, 0, 0);
     // Ombreira angulada pra fora (pauldron), não um bloco plano alinhado ao corpo — referência War Robots.
     pad.rotation.z = -side * 0.16;
@@ -236,7 +239,9 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     const elbowPin = cyl(g, blueprint.arms.upperWidth * 0.3, blueprint.arms.upperWidth * 1.3, M.frame, 0, -blueprint.arms.upperLength * 1.42, 0);
     elbowPin.rotation.z = Math.PI / 2;
     box(g, blueprint.arms.forearmWidth, blueprint.arms.forearmWidth, blueprint.arms.forearmDepth, M.armor, 0, -blueprint.arms.upperLength * 1.5, -blueprint.arms.forearmDepth * 0.2);
-    if (isLeft) {
+    if (isLeft && semCasulo) {
+      // antebraço liso: nada a somar
+    } else if (isLeft) {
       const rows = blueprint.id === 'heavy' || blueprint.id === 'colossus01' ? 3 : 2;
       const cols = 2;
       for (let row = 0; row < rows; row++) for (let col = 0; col < cols; col++) {
@@ -248,6 +253,11 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
       cyl(g, blueprint.arms.forearmWidth * 0.2, blueprint.arms.forearmDepth * 1.1, M.frame, 0, -blueprint.arms.upperLength * 1.5, -blueprint.arms.forearmDepth * 0.64, Math.PI / 2);
       cyl(g, blueprint.arms.forearmWidth * 0.24, 0.12 * scale, M.visor, 0, -blueprint.arms.upperLength * 1.5, -blueprint.arms.forearmDepth * 1.16, Math.PI / 2);
     }
+  };
+  const arm = (side: number, isLeft: boolean): THREE.Group => {
+    const g = group(torso, side * blueprint.arms.mountX, torsoH * 0.84, 0);
+    g.name = isLeft ? 'leftArm' : 'rightArm';
+    armParts(g, side, isLeft, false);
     return g;
   };
   const rightArm = arm(1, false);
@@ -255,7 +265,30 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   const muzzle = group(rightArm, 0, -blueprint.arms.upperLength * 1.5, -blueprint.arms.forearmDepth * 1.35);
   const leftMuzzle = group(leftArm, 0, -blueprint.arms.upperLength * 1.5, -blueprint.arms.forearmDepth * 0.8);
 
+  // Morteiro da chuva de mísseis nas costas (pedido do dono, 04/10: "acoplando nos ombros, apontando pra cima, ou nas costas").
+  // Fica oculto até a chuva ser a arma do braço esquerdo; oculto, não é desenhado (o Mech só paga o desenho a mais quando usa).
+  const rack = group(torso, 0, 0, 0);
+  rack.name = 'morteiro-costas';
+  rack.visible = false;
+  const barrageMouth = buildBackMortar(rack, blueprint, M);
+
   const batchedMaterial = batchRigMeshes(model, [M.armor, M.paint]);
+  // O braço esquerdo mostra o casulo de foguetes, ou fica liso quando a arma é a chuva (o morteiro está nas costas). A variante lisa
+  // é montada à parte e fundida do mesmo jeito (mesmas peças, mesmo casco); só a geometria vai e volta. **A boca (`leftMuzzle`) NÃO se
+  // move:** o `MechBase` mede a boca de simulação do rig uma vez, no construtor, e o `equip` não a mede de novo; mexer nela aqui daria
+  // tiros de origem diferente entre o cliente (que troca de arma depois) e o servidor (que já nasce com ela): G14. Só o desenho do
+  // lançamento subindo usa a boca do morteiro (`barrageMouth`).
+  const casuloArm = leftArm.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh);
+  const variantParent = new THREE.Group();
+  armParts(variantParent, -1, true, true);
+  batchRigMeshes(variantParent, [M.armor, M.paint]);
+  const lisoArm = variantParent.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh);
+  const casuloGeometry = casuloArm?.geometry;
+  const mountWeapons = (loadout: Loadout): void => {
+    const chuva = loadout.secondary?.id === 'barrage';
+    rack.visible = chuva;
+    if (casuloArm && casuloGeometry && lisoArm) casuloArm.geometry = chuva ? lisoArm.geometry : casuloGeometry;
+  };
   const setHeatVisual = (dt: number, heat: number, overheated: boolean, coolingBoost: boolean): void => {
     const setHeat = batchedMaterial.userData.setHeat;
     if (typeof setHeat === 'function') setHeat(Math.max(0, (heat - 0.65) / 0.35) * (overheated ? 0.62 : 0.52));
@@ -266,6 +299,39 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   return {
     model, pelvis, torso, head, leftArm, rightArm, leftLeg, rightLeg, muzzle, leftMuzzle,
     thrusters, thrusterMaterial: batchedMaterial, setDashVisual: batchedMaterial.userData.setDash,
-    hullMaterials: [batchedMaterial], hipHeight, setHeatVisual,
+    hullMaterials: [batchedMaterial], hipHeight, setHeatVisual, mountWeapons, barrageMouth,
   };
+}
+
+/**
+ * O morteiro da chuva de mísseis nas costas: uma placa sobre a mochila e quatro tubos verticais, apontando para cima, com a boca
+ * luminosa e uma escora atrás. Sobe só até a altura da cabeça, em todo chassi (não tapa a mira de quem joga por trás). Muda a silhueta (o casulo é
+ * uma grade rasa na ponta do braço): a arma nova não parece o casulo. As medidas vêm do torso e da mochila do blueprint, então
+ * valem para todo chassi. Devolve o nó da boca (no referencial do torso): de onde o lançamento desenhado sobe.
+ */
+function buildBackMortar(
+  root: THREE.Object3D,
+  bp: MechBlueprint,
+  M: { armor: THREE.Material; frame: THREE.Material; rocket: THREE.Material },
+): THREE.Object3D {
+  const { width: tw, height: th, depth: td } = bp.torso;
+  const depth = bp.backPack.depth;
+  const baseY = th * 0.97; // o topo da mochila
+  const zc = td * 0.78; // o centro da mochila (+Z = costas)
+  const plate = th * 0.08;
+  const radius = tw * 0.08;
+  const length = th * 0.4;
+  const y0 = baseY + plate;
+  box(root, tw * 0.5, plate, depth * 1.1, M.frame, 0, baseY + plate / 2, zc);
+  box(root, tw * 0.46, length * 0.8, depth * 0.1, M.frame, 0, y0 + length * 0.4, zc + depth * 0.6);
+  for (const x of [-tw * 0.11, tw * 0.11]) {
+    for (const z of [zc - depth * 0.28, zc + depth * 0.28]) {
+      cyl(root, radius, length, M.armor, x, y0 + length / 2, z); // o tubo, claro: contra a mochila escura ele se lê
+      cyl(root, radius * 1.3, th * 0.05, M.frame, x, y0 + length, z); // aro escuro na boca
+      cyl(root, radius * 0.85, th * 0.05, M.rocket, x, y0 + length + th * 0.035, z); // brilho da carga
+    }
+  }
+  const mouth = group(root, 0, y0 + length + th * 0.08, zc);
+  mouth.name = 'boca-chuva';
+  return mouth;
 }

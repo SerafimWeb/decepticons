@@ -45,6 +45,8 @@ const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string; detai
   marauder: { title: 'MARAUDER', className: 'MÉDIO · IMPORTADO', detail: 'Duas mãos armadas e lançadores nos ombros.' },
 };
 const SLOT_LABEL: Record<ArmSlot, string> = { right: 'BRAÇO DIREITO', left: 'BRAÇO ESQUERDO', shoulders: 'OMBROS' };
+/** A chuva de mísseis, num Mech sem ombros, é um morteiro nas costas (o desenho do braço esquerdo troca o casulo por ele). */
+const nasCostas = (id: string, slot: ArmSlot): boolean => id === 'barrage' && slot !== 'shoulders';
 const SLOT_NUM: Record<ArmSlot, string> = { right: '01', left: '02', shoulders: '03' };
 /** De onde o encaixe da tela atira (a tela de teste usa para desenhar o tiro). Nos ombros, os dois lançadores. */
 function slotMounts(chassis: ChassisId, slot: ArmSlot): readonly MountId[] {
@@ -623,14 +625,14 @@ export class HangarMenu {
     const nowArm = current.chassis === spec.chassis ? (current[this.selectedSlot] ?? null) : null;
     const was = nowArm ? weapon(nowArm.id, nowArm.tier) : null;
     const options = armOptions(this.selectedSlot, spec.chassis)
-      .map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name}</option>`)
+      .map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name}${nasCostas(id, this.selectedSlot) ? ' · morteiro nas costas' : ''}</option>`)
       .join('');
     const shieldArm = this.selectedSlot === 'left' && shield;
     const editor = this.root.querySelector<HTMLElement>('#hangar-weapon-editor')!;
     editor.innerHTML = `
       <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ARMAMENTO</label>
       <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}</select>
-      <p class="hg-hint">${w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
+      <p class="hg-hint">${w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
       <div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : `+${Math.round((t.damage - 1) * 100)}% dano`}</small></button>`).join('')}</div>
       <button class="hg-test-btn" type="button" data-action="test"${arm ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>

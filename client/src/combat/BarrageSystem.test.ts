@@ -30,7 +30,7 @@ async function mundo() {
       physics.step();
     }
   };
-  return { physics, barrage, pousos, run, now: () => t };
+  return { physics, barrage, pousos, run, scene, now: () => t };
 }
 
 describe('bombOffset: o desenho da chuva é uma conta, sem sorteio', () => {
@@ -196,5 +196,23 @@ describe('BarrageSystem: a chuva no tempo', () => {
     run(2);
     barrage.render(0);
     expect(marks.count + bombs.count).toBe(0); // tudo explodiu: sem aviso nem bomba
+  });
+
+  it('o lançamento desenhado sobe da boca do morteiro (só visual); as bombas caem nos mesmos lugares, na mesma hora', async () => {
+    const a = await mundo();
+    const b = await mundo();
+    const boca = new THREE.Vector3(-3, 6, 4);
+    a.barrage.fire(ORIGEM, FRENTE, ALVO, undefined, W, 0, boca);
+    b.barrage.fire(ORIGEM, FRENTE, ALVO, undefined, W);
+    const casca = (m: Awaited<ReturnType<typeof mundo>>) => {
+      m.barrage.render(0);
+      return m.scene.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh && !(c instanceof THREE.InstancedMesh) && c.visible)!;
+    };
+    expect(casca(a).position.toArray()).toEqual(boca.toArray());
+    expect(casca(b).position.toArray()).toEqual(ORIGEM.toArray()); // sem a boca visual, sobe da origem do tiro
+    a.run(4);
+    b.run(4);
+    expect(a.pousos.map((p) => p.at.toArray())).toEqual(b.pousos.map((p) => p.at.toArray()));
+    expect(a.pousos.map((p) => +p.t.toFixed(4))).toEqual(b.pousos.map((p) => +p.t.toFixed(4)));
   });
 });

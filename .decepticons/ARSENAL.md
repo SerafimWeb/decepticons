@@ -30,8 +30,12 @@ comporta de um jeito novo** (a escopeta não precisou; a chuva de mísseis sim) 
    derruba um Mech leva mais de 4,5 s; com outra, mais de 2,5 s; arma de apoio, bem mais (a chuva, mais de 10 s).
 5. **Hangar:** `ui/HangarMenu.ts` (`WEAPON_HINT`, `WEAPON_ICON`) e **em quais chassis e em qual encaixe ela vai** (`ARM_SLOTS` em
    `entities/chassis.ts`; a carga conta pelo peso e por encaixe: dois ombros pesam o dobro).
-6. **Desenho:** `entities/weaponModels.ts` (o `switch` do `build`). Só aparece nos robôs com encaixe de arma desenhado (hoje o
-   Marauder); os procedurais (Vector-09, Onça, Colossus, Arara) mostram o cano ou o casulo fixo, e o Lancer, a arma do `.glb` dele.
+6. **Desenho:** `entities/weaponModels.ts` (o `switch` do `build`) vale para os robôs com encaixe de arma desenhado (hoje o
+   Marauder). Os procedurais (Vector-09, Onça, Colossus, Arara) desenham a arma no próprio rig, em `entities/mechBlueprint.ts`: o
+   braço direito é um cano fixo; o esquerdo, o casulo de foguetes, ou liso quando a arma é a chuva de mísseis, que vira um morteiro
+   nas costas (`buildBackMortar`, oculto até ser equipado; o gancho é o `mountWeapons`). **Arma nova num procedural = um grupo
+   oculto no rig + um ramo em `mountWeapons`**; nunca mova a boca de simulação por arma (G14, ver o comentário no rig). O Lancer
+   usa a arma do `.glb` dele.
 7. **Rede** (se a arma atira): `NET_WEAPONS` em `shared/net/events.ts` (**só no fim**) e `PROTOCOL_VERSION` + 1 em
    `shared/net/constants.ts`; `server/ArenaRoom.ts` (o `onFired` do sistema vira o evento de tiro) e
    `net/OnlineSession.ts` `remoteShot` (o desenho do tiro do outro jogador). **Subir o protocolo recusa quem está com a versão
