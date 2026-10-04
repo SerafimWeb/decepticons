@@ -19,6 +19,7 @@ const { runnerImport } = await import('vite');
 const load = async (p) => (await runnerImport(resolve(p), { configFile: false, logLevel: 'silent' })).module;
 const { serverHttpUrl } = await load('shared/net/serverUrl.ts');
 const tel = await load('shared/net/telemetry.ts');
+const status = await load('shared/net/status.ts');
 const URL_METRICAS = serverHttpUrl(process.env.VITE_GAME_SERVER, tel.METRICAS_PATH);
 
 const css = `
@@ -263,12 +264,24 @@ const js = `(() => {
     estado('Buscando…');
     let res;
     try { res = await fetch(servidor, { headers: { [HEADER]: token }, cache: 'no-store', credentials: 'omit' }); }
-    catch { $('painel').hidden = true; return estado('Servidor fora do ar, ou o endereço não responde.', true); }
+    catch {
+      $('painel').hidden = true;
+      // O servidor de antes desta porta não manda CORS em /metricas, então o navegador bloqueia e parece "fora do ar".
+      // O /status é público e tem CORS: se ele responde, o servidor está no ar e o que falta é atualizá-lo.
+      try {
+        const u = new URL(servidor); u.pathname = ${JSON.stringify(status.STATUS_PATH)};
+        const st = await (await fetch(u, { cache: 'no-store', credentials: 'omit' })).json();
+        if (st && typeof st.protocol === 'number') return estado('O servidor está no ar (protocolo ' + st.protocol + '), mas não tem a porta de métricas: é uma versão antiga. Atualize e reinicie o servidor (DEPLOY.md, seção 04/10).', true);
+      } catch { /* nem o /status responde */ }
+      return estado('Servidor fora do ar, ou o endereço não responde.', true);
+    }
     if (res.status === 401) { $('painel').hidden = true; return estado('Token recusado.', true); }
     if (res.status === 404) { $('painel').hidden = true; return estado('Este servidor não tem a porta de métricas (versão antiga ou sem token configurado).', true); }
     if (res.status === 429) { $('painel').hidden = true; return estado('Tentativas demais: espere alguns minutos.', true); }
     if (!res.ok) { $('painel').hidden = true; return estado('O servidor respondeu ' + res.status + '.', true); }
     let m; try { m = await res.json(); } catch { m = null; }
+    // Servidor de antes desta porta: responde 200 com o texto de boas-vindas em qualquer caminho, não com JSON.
+    if (m === null) { $('painel').hidden = true; return estado('O servidor respondeu, mas não com métricas: é provavelmente uma versão antiga. Atualize e reinicie o servidor (DEPLOY.md, seção 04/10).', true); }
     if (!valido(m)) { $('painel').hidden = true; return estado('Resposta do servidor em formato inesperado.', true); }
     guardar(token); $('token').value = '';
     cartoes(m); funil(m); porDia(m); porPais(m);
