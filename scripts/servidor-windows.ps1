@@ -27,7 +27,7 @@ $gitDir = git -C $raiz rev-parse --git-dir
 $commonDir = git -C $raiz rev-parse --git-common-dir
 if ($gitDir -eq $commonDir) {
   Write-Host "FALHOU: esta é a pasta principal do projeto, onde se edita. O servidor deve rodar de uma worktree própria:"
-  Write-Host "  git worktree add .tmpwt-servidor-prod origin/main   e rode este script de DENTRO dela (veja o cabeçalho de servidor-atualizar.ps1)."
+  Write-Host "  git worktree add .tmp\wt-servidor-prod origin/main   e rode este script de DENTRO dela (veja o cabeçalho de servidor-atualizar.ps1)."
   exit 1
 }
 $nm = Get-Item (Join-Path $raiz 'node_modules') -Force -ErrorAction SilentlyContinue
