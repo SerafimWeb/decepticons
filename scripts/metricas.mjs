@@ -2,7 +2,7 @@
  * Métricas (/cybermech/metricas/): a página privada do dono. Mostra de onde vêm as conexões, quantas entram, quantas são
  * recusadas e por quê, a partir de `GET /metricas` do servidor de jogo (contrato em `shared/net/telemetry.ts`).
  *
- * **Privada de verdade:** o servidor só responde com o token do dono (`.tmp/servidor/metricas-token.txt` no PC do servidor);
+ * **Privada de verdade:** o servidor só responde com o token do dono (`metricas-token.txt`, na pasta `.tmp/servidor/` do código do servidor, no PC dele);
  * a página guarda o token só neste navegador (`localStorage`), não entra em busca (`noindex`) e não tem link no menu. Só
  * contagens: nenhum IP, nenhuma pessoa, nenhuma cidade. Cidade e tempo de sessão ficam no Google Analytics (já nas páginas).
  *
@@ -104,7 +104,7 @@ const body = `
     <ul>
       <li><b>Jogo aberto</b> é o jogo carregando num navegador (offline ou online). <b>Conexões online</b> são as que chegaram ao servidor; <b>entradas</b>, as que escolheram uma montagem e entraram numa sala.</li>
       <li><b>Recusada por versão</b> = a pessoa abriu o jogo numa versão que o servidor não conhece (o servidor atrasou em relação ao site). Se esse número sobe, o servidor precisa atualizar.</li>
-      <li>O token está no arquivo <code>.tmp/servidor/metricas-token.txt</code> do PC do servidor (gerado na primeira subida) ou na variável <code>CYBERMECH_METRICAS_TOKEN</code>. Ele fica só neste navegador.</li>
+      <li>O token está no arquivo <code>metricas-token.txt</code> da pasta <code>.tmp/servidor/</code> do código do servidor, no PC dele (gerado na primeira subida; o log do servidor diz o caminho) ou na variável <code>CYBERMECH_METRICAS_TOKEN</code>. Ele fica só neste navegador.</li>
       <li><b>Cidade, aparelho, tempo no site e de onde veio o clique</b>: Google Analytics (a tag já está nas páginas): <code>analytics.google.com</code> → Relatórios → Público → Detalhes demográficos.</li>
     </ul>
   </section>
@@ -260,7 +260,7 @@ const js = `(() => {
   async function ver() {
     const token = $('token').value.trim() || guardado();
     if (!servidor) return estado('Este build não tem servidor configurado. Abra a página com ?servidor=https://seu-servidor.', true);
-    if (!token) return estado('Cole o token do servidor (arquivo .tmp/servidor/metricas-token.txt).', true);
+    if (!token) return estado('Cole o token do servidor (arquivo metricas-token.txt, na pasta .tmp/servidor do código do servidor).', true);
     estado('Buscando…');
     let res;
     try { res = await fetch(servidor, { headers: { [HEADER]: token }, cache: 'no-store', credentials: 'omit' }); }
