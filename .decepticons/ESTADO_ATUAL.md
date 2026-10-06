@@ -6,8 +6,8 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Online (servidor 24 h em `jogo.selvamkt.com.br`); offline (single-player: Arena + Sobrevivência + CTF) |
-| **Build** | JS 300 KB e Wasm 719 KB no budget do `npm run check` (teto 500 e 900); 564 testes |
-| **Última sessão** | 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
+| **Build** | Último check (06/10): JS 301,1 KB e Wasm 719,4 KB gzip (tetos 500/900); 569 testes, typecheck, smoke, bocas e site verdes |
+| **Última sessão** | 06/10: sinais de avaria no modelo e planejamento reconciliado (#164); 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
 | **Próximo** | dono julga o Marauder (Hangar e partida) e a calibragem do blaster numa mão de Mech; M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
@@ -25,13 +25,14 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `codex/dano-visivel` | Sinais de avaria: fumaça/faíscas, passada assimétrica e vapor nos rigs sem ventilação; cinco testes e captura de bancada. Reconciliação do planejamento. | #164 | 06/10 |
 | `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
 | `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |
 | — | **Nada fora da `main` (28/09).** O login e a gravação entraram (#115, #117); o #110 virou obsoleto (só um retalho do `ESTADO_ATUAL.md`) e foi fechado; e os três branches órfãos do Gemini de 25/09 — `primeira-partida`, `setas-inimigos`, `sons-androides`, sem PR e com o conteúdo refeito na `main` — foram declarados mortos e apagados (regra 15). | — | 28/09 |
 
 ---
+
+- **Sinais de avaria no próprio Mech (Codex, 06/10, PR #164 mergeado).** Fumaça/faíscas nas juntas de partes ainda presentes com até metade da vida; passada assimétrica conforme a avaria das pernas, preservando a orientação de repouso dos quadris; vapor nos rigs sem ventilação própria. Reparar interrompe os sinais. Módulo render a 10 Hz, até 12 unidades/pulso, 720 partículas/s no pool de 3000, sem desenho ou byte de rede novo. Cinco testes novos; check e CI verdes (569 testes). Captura de bancada em `arte/dano-visivel-codex.png`; playtest real offline/online/importados continua pendente. O roadmap passa a indicar a Fase 5 atual e reconhece que Colossus visual/boss/solo, morteiro procedural e níveis visuais dos módulos importados já foram entregues.
 
 - **UX/Site:** Remoção do botão de jogar offline da landing page (agora focado 100% no servidor online) e injeção do código de rastreamento do Google Analytics no `client/index.html` e no `scripts/site/tema.mjs` usando a tag `G-2CCHDCEC7X` fornecida pelo dono.
 
@@ -542,7 +543,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 |---|---|---|
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Sem crédito nesta rodada; o modo Sobrevivência solo foi assumido pelo Codex por autorização do dono. A sincronização online dos modos continua na frente de rede quando o contrato existir. |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Feito: Som dos passos, volume de bots ecoando e Gênesis-01 não aparecendo offline/online. Branch consolidado e mergeado (PR #136). |
-| **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, câmeras, desempenho e revisão cruzada; por autorização explícita do dono, também assume os modos enquanto Claude está sem crédito | Feito: draw calls 34 → 9 (#43), explosões (#44), blueprints, Hangar/treino, calor visual, Sobrevivência, CTF offline e câmera de abate offline. Próximo: fechar sinais de avaria e playtest; depois completar encontro offline do Colossus e retomar cosméticos/silhuetas. |
+| **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, câmeras, desempenho e revisão cruzada; por autorização explícita do dono, também assume os modos enquanto Claude está sem crédito | Feito: draw calls 34 → 9 (#43), explosões (#44), blueprints, Hangar/treino, calor visual, Sobrevivência, CTF offline e câmera de abate offline. Próximo: playtest dos sinais de avaria entregues (#164); depois completar encontro offline do Colossus e retomar cosméticos/silhuetas. |
 | **Qwen** | transversal — documentação (`.decepticons/`), testes de simulação (novos `*.test.ts`), relatórios do processo (`scripts/painel.mjs`, `scripts/site/`, o site) e auditoria de arquitetura (segunda opinião na revisão cruzada). Não mexe em `client/src/{sim,combat,entities,physics,player,net}`, `server/` nem `shared/` sem combinar com o dono do território | Entrou no time em 26/09 (oficialização no painel e na etiqueta). Próximo: relatório de saúde técnica (cobertura, débito da seção 9, budget, tick) para a divulgação |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
 
@@ -593,7 +594,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
   sua de UX. **Sem progressão migrada ainda** (decisão do dono): a tela só precisa provar entrar/sair
   funcionando; XP/créditos continuam em `localStorage` por enquanto.
 - **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
-- **Codex (06/10):** fechar a entrega dos sinais de avaria (`codex/dano-visivel`) com CI/PR e playtest. O visual do Colossus, o boss da onda 6 e o chassi solo já foram entregues; não refazê-los. Próximo corte de implementação: fases/pontos fracos/câmera do encontro offline, respeitando as decisões de arma e modo assimétrico ainda abertas; depois cosméticos e silhuetas. MK I/II/III dos módulos de arma importados já têm diferenças visuais (`MECHS_IMPORTADOS.md` § 4).
+- **Codex (06/10):** sinais de avaria entregues na `main` pelo PR #164, CI verde. Começar pelo playtest offline/online/importados (a captura é de bancada), depois seguir o próximo corte abaixo. O visual do Colossus, o boss da onda 6 e o chassi solo já foram entregues; não refazê-los. Próximo corte de implementação: fases/pontos fracos/câmera do encontro offline, respeitando as decisões de arma e modo assimétrico ainda abertas; depois cosméticos e silhuetas. MK I/II/III dos módulos de arma importados já têm diferenças visuais (`MECHS_IMPORTADOS.md` § 4).
 - **Claude (atualizado 30/09):** as duas frentes que estavam "sem começar" na sessão anterior **saíram e já
   estão na `main`** — pipeline híbrido de malha importada (GÊNESIS-01, chassi de verdade e jogável) e aliados
   na Arena offline (2 bots no time do jogador). Ver ÚLTIMA SESSÃO FEZ para os dois. O que ficou: (1) **aliados

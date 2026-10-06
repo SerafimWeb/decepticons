@@ -1,5 +1,7 @@
 # TECH HEALTH — CYBERMECH
 
+> **Verificação de 06/10 (Codex, #164):** 569 testes; JS 301,1 KB gzip e Wasm 719,4 KB; typecheck, build, smoke, bocas e site verdes. As medições antigas abaixo são históricas; FPS em GPU integrada real continua pendente. Ao restaurar as dependências ausentes, `npm audit` apontou `source-map-js` transitivo de desenvolvimento (<1.2.2), GHSA-68fv-2mgg-jv7q (DoS ao ler source maps malformados). `npm audit --omit=dev` não apontou vulnerabilidade de produção. Atualizar essa dependência num PR específico, com check, permanece pendente; nenhuma versão foi alterada nesta entrega.
+
 Saúde técnica do projeto. Atualizado a cada merge na `main`.
 
 ---
