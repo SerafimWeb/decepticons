@@ -1,3 +1,4 @@
+import { ChargeVisuals } from '../fx/ChargeVisuals';
 import * as THREE from 'three';
 import { GLOW } from './palette';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -123,7 +124,11 @@ export class Game {
   private readonly input: InputManager;
   private readonly particles = new ParticleSystem();
   private readonly damageVisuals = new DamageVisuals(this.particles);
-  private readonly updateRemoteDamage = (remote: { mech: MechBase }): void => this.damageVisuals.update(remote.mech);
+  private readonly chargeVisuals = new ChargeVisuals(this.particles);
+  private readonly updateRemoteDamage = (remote: { mech: MechBase }): void => {
+    this.damageVisuals.update(remote.mech);
+    this.chargeVisuals.update(remote.mech);
+  };
   /** A partida (sem tela): arena, bots, tiros, dano, rodadas. As partes abaixo são atalhos para ela. */
   private readonly match: Match;
   private readonly gameMode: GameMode;
@@ -1041,12 +1046,14 @@ export class Game {
       this.blindGain = null;
     }
 
+    this.chargeVisuals.beginFrame(dt, this.playing && !this.hangarView);
+    this.chargeVisuals.update(this.mech, false);
     this.damageVisuals.beginFrame(dt, this.playing && !this.hangarView);
     this.damageVisuals.update(this.mech);
     if (this.online?.joined) {
       this.online.remotes.forEach(this.updateRemoteDamage);
     } else {
-      for (const bot of this.bots.mechs) this.damageVisuals.update(bot);
+      for (const bot of this.bots.mechs) { this.damageVisuals.update(bot); this.chargeVisuals.update(bot); }
       if (this.match.allies) for (const ally of this.match.allies.mechs) this.damageVisuals.update(ally);
     }
     this.particles.update(dt);
@@ -1062,7 +1069,7 @@ export class Game {
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);
-    this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.player.firing, this.player.secondaryHeld);
+    this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.player.firing, this.player.secondaryHeld, this.player.secondaryHeld && !this.player.firing ? this.player.secondaryCharge : this.player.primaryCharge);
     this.renderer.info.reset();
     this.composer.render(dt);
     this.recorder.capturarQuadro();

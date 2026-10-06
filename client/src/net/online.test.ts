@@ -196,4 +196,23 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     a.session.dispose();
     b.session.dispose();
   });
+  it('trilho e EMP são aceitos e o outro jogador recebe carga e tiros distintos', async () => {
+    const a=await player('Trilho','M4E','v1.vector09.railgun-0.emp-0',{primary:weapon('railgun'),secondary:weapon('emp')});
+    const b=await player('Observador','M4E');
+    try {
+      await join([a,b],7);
+      a.commander.firing=true;
+      let chargeSeen=false;const start=performance.now();
+      while(performance.now()-start<8000&&!chargeSeen){await play([a,b],50);chargeSeen=!!b.session.remotes.get(a.session.myId)?.mech.weaponCharging;}
+      expect(chargeSeen).toBe(true);
+      const before=b.session.shotsSeen;const deadline=performance.now();
+      while(b.session.shotsSeen===before&&performance.now()-deadline<8000) await play([a,b],100);
+      expect(b.session.shotsSeen).toBeGreaterThan(before);
+      a.commander.firing=false;a.commander.secondaryHeld=true;
+      const secondaryBefore=b.session.shotsSeen;const secondaryStart=performance.now();
+      while(b.session.shotsSeen===secondaryBefore&&performance.now()-secondaryStart<8000) await play([a,b],100);
+      expect(b.session.shotsSeen).toBeGreaterThan(secondaryBefore);
+    } finally {a.session.dispose();b.session.dispose();}
+  });
+
 });

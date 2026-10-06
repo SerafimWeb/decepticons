@@ -2082,3 +2082,7 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 
 
 
+
+/* Carga abaixo da mira: não preenche o centro nem encobre o alvo. */
+.reticle-charge { position: absolute; left: 0; top: 54px; width: 48px; height: 2px; background: currentColor; transform-origin: left; }
+.reticle-charge[hidden] { display: none; }

@@ -67,6 +67,9 @@ export class PlayerController {
   }
 
   /** Carregador do gatilho secundário (regra no tick fixo; o HUD lê daqui). Refeito ao trocar de armas. */
+  get primaryCharge(): number { return this.armament.primaryCharge; }
+  get secondaryCharge(): number { return this.armament.secondaryCharge; }
+
   get launcher(): RocketLauncher {
     return this.armament.launcher;
   }

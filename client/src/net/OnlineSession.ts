@@ -220,6 +220,7 @@ export class OnlineSession implements Pilot {
       const secs = span > 0 ? span / SIM_HZ : 1;
       m.setNetPose(x, y, z, lerpAngle(ua.yaw, ub.yaw, t), ua.pitch + (ub.pitch - ua.pitch) * t, (ub.x - ua.x) / secs, (ub.z - ua.z) / secs, ub.grounded);
       m.applyNetVitals(ub.parts, null, ub.alive);
+      m.weaponCharging = ub.charging ?? false;
       r.placed = true;
       m.render(dt, 1);
     }
@@ -429,6 +430,7 @@ function copySnapshot(from: Snapshot, to: Snapshot): void {
     b.grounded = a.grounded;
     b.dashing = a.dashing;
     b.overheated = a.overheated;
+    b.charging = a.charging;
   }
 }
 

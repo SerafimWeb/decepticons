@@ -1,5 +1,9 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## 2026-10-06 — Trilho e EMP autorizados; Banco VORCARIS na sequência (Codex)
+
+O dono autorizou criar as duas armas. Trilho: carga contínua 0,85 s, alto dano/calor, soltar ou perder braço cancela; EMP: pulso lento e dano baixo, acrescenta calor conforme distância sem segurar resfriamento. Reserva energética/escudos ainda ausentes: nenhum dreno fictício. MK I–III, massa e encaixes limitam montagem. Aviso de carga usa bit livre, mantendo 19 B por unidade; ids no fim da rede e protocolo 4. O dono informou que o servidor fica offline hoje e pediu não mexer nem depender dele: validação online usa servidor local de teste; produção online fica pendente. Ao religar, atualizar para protocolo 4 antes de jogar com o cliente novo. O pedido seguinte do dono é Banco VORCARIS com letreiro azul superior, terminal na porta, catálogo de códigos configurável, créditos e boosts offline/online; no online os efeitos de combate devem ser aplicados pelo servidor.
+
 ## 2026-10-06 — Módulo defensivo independente e miras por arma (Codex)
 
 O dono solicitou campo frontal orientado pela mira e esfera completa em módulo extra, mantendo armas nos braços; escudo metálico removível depende de suporte do chassi e ocupa uma mão, substituindo sua arma (confirmado pelo dono nesta sessão). Contrato e equilíbrio estão planejados em HANGAR.md, sem alegar mecânica existente. Também autorizou a alteração do HUD: traços periféricos finos por arma, sem ponto central nem expansão sobre o alvo. O secundário acionado usa sua própria mira; disparo conjunto mantém a referência principal.

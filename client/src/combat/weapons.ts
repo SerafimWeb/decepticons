@@ -37,7 +37,7 @@ export const TIERS: readonly TierRule[] = [
   { label: 'MK III', damage: 1.4, heat: 1.3, mass: 2 },
 ];
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp';
 
 /**
  * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
@@ -97,11 +97,31 @@ export interface WeaponStats {
   mass: number;
   /** Só na chuva de mísseis: o desenho da chuva. `damage` e `blastRadius` são os de CADA bomba. */
   barrage?: Barrage;
+  /** Carga contínua antes do tiro; soltar, perder braço ou superaquecer cancela. */
+  chargeTime?: number;
+  /** Sobrecarga térmica adicional no impacto, sem atrasar o resfriamento. */
+  empHeat?: number;
+  /** Silhueta visual do tiro, sem alterar colisão. */
+  tracer?: 'rail' | 'pulse';
 }
 
 type WeaponBase = Omit<WeaponStats, 'tier'>;
 
 const BASE: Record<WeaponId, WeaponBase> = {
+  railgun: {
+    id: 'railgun', name: 'Canhão de trilho', kind: 'energy',
+    damage: 72, fireInterval: 1.4, heatPerShot: 0.32,
+    magazine: 0, reload: 0, speed: 1200,
+    optimalRange: 140, maxRange: 320, minFactor: 0.65,
+    blastRadius: 0, mass: 5, chargeTime: 0.85, tracer: 'rail',
+  },
+  emp: {
+    id: 'emp', name: 'Lançador EMP', kind: 'energy',
+    damage: 9, fireInterval: 1.3, heatPerShot: 0.09,
+    magazine: 0, reload: 0, speed: 65,
+    optimalRange: 45, maxRange: 110, minFactor: 0.5,
+    blastRadius: 0, mass: 2.5, empHeat: 0.2, tracer: 'pulse',
+  },
   plasma: {
     id: 'plasma',
     name: 'Canhão de plasma',

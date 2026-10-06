@@ -62,6 +62,7 @@ function fullSnapshot(n: number) {
     u.grounded = i % 2 === 0;
     u.dashing = i % 4 === 0;
     u.overheated = i % 5 === 0;
+    u.charging = i % 3 === 0;
   }
   return s;
 }
@@ -150,7 +151,7 @@ describe('rede: estado do servidor (UnitState)', () => {
         expect(b.parts[p] > 0).toBe(a.parts[p] > 0); // arrancada continua arrancada; viva continua viva
       }
       expect(Math.abs(b.heat - a.heat)).toBeLessThanOrEqual(1 / 510 + 1e-9);
-      expect([b.alive, b.grounded, b.dashing, b.overheated]).toEqual([a.alive, a.grounded, a.dashing, a.overheated]);
+      expect([b.alive, b.grounded, b.dashing, b.overheated, b.charging]).toEqual([a.alive, a.grounded, a.dashing, a.overheated, a.charging]);
     }
   });
 

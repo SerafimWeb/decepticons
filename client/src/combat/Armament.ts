@@ -1,3 +1,4 @@
+import { ChargeTimer } from './ChargeTimer';
 import type { MechBase } from '../entities/MechBase';
 import { DEFAULT_TRIGGERS, type MountId } from './mounts';
 import { FireTimer, RocketLauncher } from './trigger';
@@ -38,6 +39,9 @@ export class Armament {
   private readonly hands = [new FireTimer(), new FireTimer()];
   /** Cadência do gatilho secundário quando ele não é de carregador (serra, arma de energia). */
   private readonly side = new FireTimer();
+  private readonly charge = [new ChargeTimer(), new ChargeTimer(), new ChargeTimer()];
+  get primaryCharge(): number { return Math.max(this.charge[0]!.progress, this.charge[1]!.progress); }
+  get secondaryCharge(): number { return this.charge[2]!.progress; }
 
   constructor(private readonly mech: MechBase) {
     this.launcher = this.newLauncher();
@@ -48,6 +52,8 @@ export class Armament {
     this.launcher = this.newLauncher();
     for (const t of this.hands) t.reset();
     this.side.reset();
+    for (const c of this.charge) c.reset();
+    this.mech.weaponCharging = false;
   }
 
   /** Um tick: `fire` e `secondary` dizem quais botões estão apertados; o que sair vai para `sink`. */
@@ -60,13 +66,14 @@ export class Armament {
     const left = this.hands[1]!;
     right.fixedUpdate(dt);
     left.fixedUpdate(dt);
-    if (fire) {
+    if (!fire) { this.charge[0]!.reset(); this.charge[1]!.reset(); }
+    {
       let fired = false;
       for (let i = 0; i < triggers.primary.length; i++) {
         const w = i === 0 ? l.primary : l.offhand;
         const mount = triggers.primary[i]!;
         const timer = this.hands[i]!;
-        if (!w || !timer.ready || !m.canFireMount(mount)) continue;
+        if (!w || !this.charge[i]!.step(dt, fire, timer.ready && m.canFireMount(mount), w.chargeTime)) continue;
         if (fired) {
           timer.shot(w.fireInterval / 2);
           continue;
@@ -83,7 +90,12 @@ export class Armament {
     else this.launcher.fixedUpdate(dt);
     this.side.fixedUpdate(dt);
     const s = l.secondary;
-    if (!s || !secondary || !m.canFireSecondary) return;
+    if (!s || !secondary || !m.canFireSecondary) {
+      this.charge[2]!.reset();
+      m.weaponCharging = this.primaryCharge > 0;
+      return;
+    }
+    m.weaponCharging = this.primaryCharge > 0;
     if (s.kind === 'ammo') {
       if (!this.launcher.tryFire()) return;
       let volley = 0;
@@ -92,7 +104,7 @@ export class Armament {
         sink.rocket(mount, s, volley++);
         m.onFireMount(mount, s);
       }
-    } else if (this.side.ready) {
+    } else if (this.charge[2]!.step(dt, secondary, this.side.ready, s.chargeTime)) {
       if (s.kind === 'melee') {
         sink.melee(s);
         m.onFireSecondary();
@@ -105,6 +117,7 @@ export class Armament {
       }
       this.side.shot(s.fireInterval);
     }
+    m.weaponCharging = this.primaryCharge > 0 || this.secondaryCharge > 0;
   }
 
   private newLauncher(): RocketLauncher {

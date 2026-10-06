@@ -205,6 +205,8 @@ export abstract class MechBase {
   readonly moveIntent = new THREE.Vector3();
   /** Calor do Mech: um dissipador para todas as armas (regra no tick fixo). */
   private readonly heatSink: HeatSink;
+  /** Aviso de carga: simulação local ou bit recebido do servidor. */
+  weaponCharging = false;
   /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
   private armed: Loadout;
   private leftRecoil = 0;
@@ -532,9 +534,15 @@ export abstract class MechBase {
   }
 
   /** Volta inteiro em `feet`: módulos cheios, colisão ligada, peças visíveis. */
+  /** EMP: não segura o resfriamento e não tira mobilidade diretamente. */
+  absorbEmp(amount: number): void {
+    if (this.alive) this.heatSink.add(Math.max(0, amount), false);
+  }
+
   respawn(feet: THREE.Vector3): void {
     Object.assign(this.modules, this.stats.maxModuleHealth);
     this.heatSink.reset();
+    this.weaponCharging = false;
     this.velocity.set(0, 0, 0);
     this.dashTimeLeft = 0;
     this.dashCooldownLeft = 0;

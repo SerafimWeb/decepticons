@@ -41,9 +41,9 @@ describe('Hangar: contrato da montagem', () => {
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: null })).toMatchObject({ ok: false, error: 'formato' });
   });
 
-  it('cada braço aceita o seu tipo: energia no direito, munição no esquerdo; o blaster é só dos andróides', () => {
-    expect(armOptions('right')).toEqual(['plasma']);
-    expect(armOptions('left')).toEqual(['rockets', 'barrage']); // a chuva de mísseis também é arma de munição, do braço esquerdo
+  it('cada encaixe aceita seu catálogo: trilho à direita e EMP à esquerda, blaster não cabe no Vector', () => {
+    expect(armOptions('right')).toEqual(['plasma', 'railgun']);
+    expect(armOptions('left')).toEqual(['rockets', 'barrage', 'emp']); // a chuva de mísseis também é arma de munição, do braço esquerdo
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, left: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
@@ -229,8 +229,8 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   });
 
   it('as mãos aceitam blaster ou plasma; foguete na mão e blaster no ombro são recusados; plasma duplo só sem os ombros', () => {
-    expect(armOptions('right', 'marauder')).toEqual(['blaster', 'plasma']);
-    expect(armOptions('left', 'marauder')).toEqual(['blaster', 'plasma']);
+    expect(armOptions('right', 'marauder')).toEqual(['blaster', 'plasma', 'railgun', 'emp']);
+    expect(armOptions('left', 'marauder')).toEqual(['blaster', 'plasma', 'emp']);
     expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage']);
     expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...factory, shoulders: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
@@ -319,5 +319,14 @@ describe('chuva de mísseis no Hangar', () => {
     expect(parseLoadoutKey('v1.vector09.plasma-0.barrage-0')).toEqual(spec);
     const c = validateLoadout(spec);
     expect(c.ok && c.loadout.secondary).toBe(weapon('barrage'));
+  });
+});
+
+describe('montagem de trilho e EMP',()=>{
+  it('aceita o combo MK I, preserva carga, compartilha o link e recusa sobrepeso',()=>{
+    const spec={...FACTORY_LOADOUT,right:{id:'railgun',tier:0},left:{id:'emp',tier:0}};
+    expect(validateLoadout(spec)).toMatchObject({ok:true,mass:7.5});
+    expect(validateLoadout({...spec,right:{id:'railgun',tier:2},left:{id:'emp',tier:2}})).toMatchObject({ok:false,error:'carga'});
+    expect(validateLoadout({...spec,chassis:'android'})).toMatchObject({ok:false,error:'encaixe'});
   });
 });

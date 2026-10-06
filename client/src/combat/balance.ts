@@ -1,3 +1,4 @@
+import { ChargeTimer } from './ChargeTimer';
 import { HeatSink, OVERHEAT_SPEED, type ChassisHeat } from './heat';
 import { FireTimer, RocketLauncher } from './trigger';
 import type { WeaponStats } from './weapons';
@@ -46,7 +47,7 @@ export interface DrillResult {
 
 export function drill(chassis: ChassisHeat, d: Drill, seconds: number, hp = Infinity, sampleEvery = 0.1): DrillResult {
   const heat = new HeatSink(chassis);
-  const guns = d.fire.map((w) => ({ w, feed: w.kind === 'ammo' ? new RocketLauncher(w) : null, timer: new FireTimer() }));
+  const guns = d.fire.map((w) => ({ w, charge: new ChargeTimer(), feed: w.kind === 'ammo' ? new RocketLauncher(w) : null, timer: new FireTimer() }));
   const every = Math.max(1, Math.round(sampleEvery / DT));
   const ticks = Math.round(seconds / DT);
   const out: DrillResult = { time: ticks * DT, damage: 0, heat: [], locked: [], overheatAt: null, lockedShare: 0 };
@@ -77,7 +78,7 @@ export function drill(chassis: ChassisHeat, d: Drill, seconds: number, hp = Infi
         fired = pause <= 0 && !heat.overheated && g.feed.tryFire();
       } else {
         g.timer.fixedUpdate(DT);
-        fired = pause <= 0 && g.timer.ready && !heat.overheated;
+        fired = g.charge.step(DT, pause <= 0, g.timer.ready && !heat.overheated, g.w.chargeTime);
         if (fired) g.timer.shot(g.w.fireInterval);
       }
       if (!fired) return;

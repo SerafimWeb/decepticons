@@ -167,6 +167,33 @@ function chainsaw(root: THREE.Object3D, tier: number, M: Mats): number {
   return (0.56 + len) * LONG;
 }
 
+/** Dois trilhos expostos, capacitores e aletas: silhueta longa de precisão. */
+function railgun(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = 1.4 + tier * 0.15;
+  d.box(0.4, 0.32, 0.55, M.armor, 0, 0, -0.32);
+  for (const side of [-1, 1]) {
+    d.box(0.08, 0.15, len, M.frame, side * 0.16, 0, -0.58 - len / 2);
+    d.box(0.035, 0.055, len, M.glow, side * 0.105, 0, -0.58 - len / 2);
+    for (let i = 0; i < 2 + tier; i++) d.cylZ(0.07, 0.22, M.armor, side * 0.25, 0.08, -0.3 - i * 0.22);
+  }
+  return (0.6 + len) * LONG;
+}
+
+/** Bobina curta: anéis emissivos, sem parecer outro canhão de plasma. */
+function emp(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  d.box(0.4, 0.4, 0.48, M.armor, 0, 0, -0.3);
+  const len = 0.7 + tier * 0.1;
+  d.cylZ(0.11, len, M.frame, 0, 0, -0.5 - len / 2);
+  for (let i = 0; i < 3 + tier; i++) {
+    d.cylZ(0.22, 0.045, M.armor, 0, 0, -0.6 - i * 0.14);
+    d.cylZ(0.19, 0.03, M.glow, 0, 0, -0.63 - i * 0.14);
+  }
+  d.cylZ(0.2, 0.04, M.glow, 0, 0, -0.54 - len);
+  return (0.6 + len) * LONG;
+}
+
 /** Sem arma: o engate fechado com uma tampa, para o braço não terminar num buraco. */
 function cap(root: THREE.Object3D, M: Mats): number {
   cyl(root, 0.21, 0.06, M.frame, 0, 0, -0.17, Math.PI / 2);
@@ -184,7 +211,7 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
+  const accent = weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
     // Lançador de ombro: o casulo de foguetes e o morteiro da chuva têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
@@ -198,6 +225,8 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
   if (!weapon) muzzleZ = cap(root, M);
   else {
     switch (weapon.id) {
+      case 'railgun': muzzleZ = railgun(root, weapon.tier, M); break;
+      case 'emp': muzzleZ = emp(root, weapon.tier, M); break;
       case 'plasma':
         muzzleZ = plasma(root, weapon.tier, M);
         break;

@@ -98,3 +98,6 @@
 | Miras por arma | PARCIAL | Integradas ao HUD e aos gatilhos, seis desenhos finos com centro livre; bancada de navegador em arte/miras-por-arma-codex.png. Publicado pelo PR #166; falta julgamento do dono em partida. |
 | Barreira frontal e esfera em módulo extra | AUSENTE | Planejamento em HANGAR.md; energia e bloqueio ainda não implementados. |
 | Escudo metálico removível | AUSENTE | Compatibilidade por chassi planejada; o escudo visual do Lancer permanece DEMO. |
+
+| Canhão de trilho e EMP | PARCIAL | Integrados ao tick compartilhado, Hangar, peso, modelos e miras; trilho carrega 0,85 s e EMP aquece circuitos (não drena escudo inexistente). Teste com servidor local e dois clientes recebe aviso de carga e disparos. Captura de bancada arte/trilho-emp-codex.png. Servidor público indisponível (1033) durante a sessão; aguarda publicação e avaliação do dono. |
+| Banco VORCARIS | AUSENTE | Pedido autorizado: letreiro azul superior, terminal na porta, créditos e boosts offline/online; próxima entrega separada. |

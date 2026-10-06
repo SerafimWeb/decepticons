@@ -8,7 +8,8 @@
  * 2 (03/10): a escopeta entra em `NET_WEAPONS`; um cliente da versão 1 recusaria o tiro dela como evento ruim.
  * 3 (04/10): a chuva de mísseis entra em `NET_WEAPONS`, pelo mesmo motivo.
  */
-export const PROTOCOL_VERSION = 3;
+// 4 (06/10): canhão de trilho, EMP e aviso de carga no bit livre das flags.
+export const PROTOCOL_VERSION = 4;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

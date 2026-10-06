@@ -29,6 +29,7 @@ export function unitFromMech(mech: MechBase, id: number, out: UnitState): UnitSt
   out.grounded = mech.grounded;
   out.dashing = mech.isDashing;
   out.overheated = mech.overheated;
+  out.charging = mech.weaponCharging;
   return out;
 }
 

@@ -242,7 +242,7 @@ export class Match {
     if (this.ctf) for (const bot of this.bots.mechs) this.ctf.register(bot, 'red');
 
     // As regras ficam aqui; a tela e o som só ouvem os eventos.
-    this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
+    this.projectiles.onHit = (hit, dir, damage, owner, w, distance) => this.combat.onProjectileHit(hit, dir, damage, owner, w, distance);
     const explode = (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): void => {
       this.combat.explode(at, dir, owner, w);
       this.onExplosion?.(at);

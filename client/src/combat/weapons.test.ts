@@ -212,3 +212,17 @@ describe('chuva de mísseis: arma de área que cobre terreno, não derruba sozin
     expect(com(R.barrage!.bombs)).toBeLessThan(2.5);
   });
 });
+
+describe('trilho e EMP: papéis diferentes sem morte instantânea', () => {
+  it('todo nível do trilho leva mais de 4,5 s sozinho, e com EMP mais de 2,5 s', () => {
+    for(const t of LEVELS){
+      expect(timeToKill([weapon('railgun',t)],V,TORSO)).toBeGreaterThan(4.5);
+      for(const e of LEVELS) expect(timeToKill([weapon('railgun',t),weapon('emp',e)],V,TORSO)).toBeGreaterThan(2.5);
+    }
+  });
+  it('EMP é apoio: lento, pouco dano e mais de 20 s para derrubar sozinho', () => {
+    expect(weapon('emp').speed).toBeLessThan(weapon('plasma').speed);
+    for(const t of LEVELS) expect(timeToKill([weapon('emp',t)],V,TORSO)).toBeGreaterThan(20);
+    expect(weapon('railgun').speed).toBeGreaterThan(weapon('plasma').speed*5);
+  });
+});
