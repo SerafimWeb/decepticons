@@ -1,3 +1,5 @@
+import { decodeBankReply, encodeBankCode } from '../../../shared/net/bank';
+import type { BankReply } from '../../../shared/bank/codes';
 import { Writer } from '../../../shared/net/codec';
 import { PROTOCOL_VERSION } from '../../../shared/net/constants';
 import type { NetInput } from '../../../shared/net/input';
@@ -26,6 +28,7 @@ import {
 /** O que o cliente ouve do servidor. O estado e os eventos chegam em objetos reutilizados: leia na hora. */
 export interface NetClientEvents {
   open(): void;
+  bank(reply: BankReply): void;
   welcome(m: WelcomeMsg): void;
   roster(entries: RosterEntry[]): void;
   snapshot(s: Snapshot): void;
@@ -77,6 +80,11 @@ export class NetClient {
     if (this.isOpen) this.send(encodeInputs(this.w, inputs, count));
   }
 
+  redeemBank(code: string): boolean {
+    if (!this.isOpen) return false;
+    this.send(encodeBankCode(this.w, code)); return true;
+  }
+
   ping(): void {
     if (this.isOpen) this.send(encodePing(this.w, performance.now()));
   }
@@ -94,6 +102,9 @@ export class NetClient {
 
   private receive(bytes: Uint8Array): void {
     switch (messageType(bytes)) {
+      case MSG.BANK_REPLY: {
+        const reply = decodeBankReply(bytes); if (reply) this.on.bank?.(reply); return;
+      }
       case MSG.WELCOME: {
         const m = decodeWelcome(bytes);
         if (m) this.on.welcome?.(m);

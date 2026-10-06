@@ -1,5 +1,11 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## 06/10 — Codex: BANCO VORCARIS e direção de evolução
+
+O dono autorizou banco físico na arena com letreiro azul superior e terminal automático na porta; recompensas de créditos e reforços em ambos os modos. Implementação separada das armas (#168). Reutilizar DailyChallenges; créditos continuam no aparelho, sem inventar loja ou migração para contas. Códigos em tabela compartilhada: 134 MILHÕES, OFICINA, TURBO. Bônus de dano 25%/30 s, sem empilhar, reset no respawn, aplicado pela mesma simulação; validação online por posição real da sala.
+
+Direção aceita pelo dono: priorizar o ciclo montar → testar → combater → entender → melhorar. Próximo corte após armas/banco: clareza de carga/encaixes e leitura de custo, efeitos e recarga; depois contrato de energia/módulo extra e escudos. Novo cenário vem depois para exercitar essas escolhas. Usar raciocínio crítico para procurar estratégias dominantes, divergência cliente/servidor e itens declarados prontos sem prova; não prometer efeitos neuroquímicos. Servidor público offline hoje: não tocar nem depender dele; testes de rede apenas locais.
+
 ## 2026-10-06 — Trilho e EMP autorizados; Banco VORCARIS na sequência (Codex)
 
 O dono autorizou criar as duas armas. Trilho: carga contínua 0,85 s, alto dano/calor, soltar ou perder braço cancela; EMP: pulso lento e dano baixo, acrescenta calor conforme distância sem segurar resfriamento. Reserva energética/escudos ainda ausentes: nenhum dreno fictício. MK I–III, massa e encaixes limitam montagem. Aviso de carga usa bit livre, mantendo 19 B por unidade; ids no fim da rede e protocolo 4. O dono informou que o servidor fica offline hoje e pediu não mexer nem depender dele: validação online usa servidor local de teste; produção online fica pendente. Ao religar, atualizar para protocolo 4 antes de jogar com o cliente novo. O pedido seguinte do dono é Banco VORCARIS com letreiro azul superior, terminal na porta, catálogo de códigos configurável, créditos e boosts offline/online; no online os efeitos de combate devem ser aplicados pelo servidor.

@@ -1,3 +1,5 @@
+import { BankAccount } from '../client/src/bank/BankAccount';
+import { decodeBankCode, encodeBankReply } from '../shared/net/bank';
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import type { WeaponStats } from '../client/src/combat/weapons';
@@ -60,6 +62,7 @@ interface Unit {
 interface Human extends Unit {
   peer: Peer;
   pilot: NetPilot;
+  bank: BankAccount;
 }
 
 /**
@@ -135,6 +138,11 @@ export class ArenaRoom {
         for (let i = 0; i < this.packet.count; i++) h.pilot.push(this.packet.inputs[i]!);
         return;
       }
+      case MSG.BANK: {
+        const h = this.humans.get(peer), code = decodeBankCode(bytes);
+        if (h && code !== null) peer.send(encodeBankReply(this.w, h.bank.redeem(code, h.mech, this.tick)));
+        return;
+      }
       case MSG.PING: {
         const t = decodePing(bytes);
         if (t !== null) peer.send(encodePong(this.w, t, this.tick));
@@ -201,7 +209,7 @@ export class ArenaRoom {
     this.match.addPlayer(mech, m.name);
     const pilot = new NetPilot(mech, this.match);
     this.match.pilots.push(pilot);
-    const human: Human = { id: this.freeId(), mech, kind: 'human', name: m.name, build: loadoutKey(spec), peer, pilot };
+    const human: Human = { id: this.freeId(), mech, kind: 'human', name: m.name, build: loadoutKey(spec), peer, pilot, bank: new BankAccount() };
     this.units.push(human);
     this.humans.set(peer, human);
     peer.send(encodeWelcome(this.w, { protocol: PROTOCOL_VERSION, id: human.id, tick: this.tick, simHz: SIM_HZ, snapshotHz: SNAPSHOT_HZ, room: this.code }));
