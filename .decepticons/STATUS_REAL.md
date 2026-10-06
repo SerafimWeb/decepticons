@@ -3,7 +3,7 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
-Última revisão: 2026-10-04
+Última revisão: 2026-10-06
 
 | Feature | Estado | Observação |
 |---|---|---|
@@ -95,6 +95,6 @@
 
 | Feature | Estado | Evidência / limite |
 |---|---|---|
-| Miras por arma | PARCIAL | Integradas ao HUD e aos gatilhos, seis desenhos finos com centro livre; bancada de navegador em arte/miras-por-arma-codex.png. Aguarda publicação e julgamento do dono em partida. |
+| Miras por arma | PARCIAL | Integradas ao HUD e aos gatilhos, seis desenhos finos com centro livre; bancada de navegador em arte/miras-por-arma-codex.png. Publicado pelo PR #166; falta julgamento do dono em partida. |
 | Barreira frontal e esfera em módulo extra | AUSENTE | Planejamento em HANGAR.md; energia e bloqueio ainda não implementados. |
 | Escudo metálico removível | AUSENTE | Compatibilidade por chassi planejada; o escudo visual do Lancer permanece DEMO. |

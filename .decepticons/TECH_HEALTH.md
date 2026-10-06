@@ -78,3 +78,7 @@ Saúde técnica do projeto. Atualizado a cada merge na `main`.
 ---
 
 *Atualizado: 2026-10-01 | Próxima atualização: 2026-10-08*
+
+### 06/10 — testes temporais no Windows (Codex)
+
+Durante a entrega #166, execuções completas oscilaram em server/evento.test.ts (32 requisições aceitas em vez de até 30), Match.test.ts (12,5 ms por tick vs teto 8) e online.test.ts (barrage não observado em 8 s). Uma execução coincidiu com o teste do site. Os três arquivos passaram isolados (20 testes), e o check completo voltou a passar sem alterar critérios ou código da simulação. Investigar se voltar a ocorrer; não reduzir workers do CI nem aumentar limites sem medir a causa.
