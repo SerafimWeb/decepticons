@@ -7,6 +7,7 @@ import { CrushRule } from '../combat/crush';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
 import { RocketSystem } from '../combat/RocketSystem';
 import { Respawner } from '../combat/Respawner';
+import { DroneSystem } from '../combat/DroneSystem';
 import { Round } from '../combat/Round';
 import type { WeaponStats } from '../combat/weapons';
 import { ZoneSystem } from '../combat/Zone';
@@ -95,6 +96,8 @@ export interface MatchOptions {
    * ser resolvido (`STATUS_REAL.md`); a Arena offline (single-player) já funciona hoje.
    */
   allies?: boolean;
+  /** Drones da base Serafim (06/10). Seguem os aliados: ligados na Arena offline, desligados no servidor por ora. */
+  drones?: boolean;
 }
 
 /**
@@ -116,6 +119,8 @@ export class Match {
   readonly bots: BotSystem;
   /** Aliados do jogador (30/09), só na Arena normal — `null` em Sobrevivência/CTF. */
   readonly allies: BotSystem | null;
+  /** Drones da base Serafim, do lado do jogador (`combat/DroneSystem.ts`); `null` fora da Arena offline. */
+  readonly drones: DroneSystem | null;
   readonly round: Round;
   /** Máquina da missão, presente apenas no modo Sobrevivência. */
   readonly waves: SurvivalWaves | null;
@@ -243,11 +248,27 @@ export class Match {
     if (this.ctf) for (const bot of this.bots.mechs) this.ctf.register(bot, 'red');
 
     // As regras ficam aqui; a tela e o som só ouvem os eventos.
-    this.projectiles.onHit = (hit, dir, damage, owner, w, distance) => this.combat.onProjectileHit(hit, dir, damage, owner, w, distance);
+    this.projectiles.onHit = (hit, dir, damage, owner, w, distance) => {
+      if (this.drones?.hit(hit.collider, damage)) return;
+      this.combat.onProjectileHit(hit, dir, damage, owner, w, distance);
+    };
     const explode = (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): void => {
       this.combat.explode(at, dir, owner, w);
+      this.drones?.explosion(at, w);
       this.onExplosion?.(at);
     };
+    // Drones (06/10): só onde os aliados existem; o kamikaze explode pela mesma regra dos foguetes.
+    this.drones =
+      allyCount > 0 && o.drones !== false
+        ? new DroneSystem({
+            physics: o.physics,
+            projectiles: this.projectiles,
+            particles: o.particles,
+            friends: () => this.friendly,
+            enemies: () => this.bots.mechs,
+            explode: (at, dir, w) => explode(at, dir, undefined, w),
+          })
+        : null;
     this.rockets.onExplode = explode;
     this.barrage.onExplode = explode;
     this.combat.onMechHit = (e) => {
@@ -318,6 +339,11 @@ export class Match {
   }
 
   /** O inimigo caça todo jogador de gente E todo aliado — a lista muda só quando alguém entra/sai (raro; não é por tick). */
+  /** O lado do jogador (jogadores + aliados): a mesma lista que os inimigos caçam, sem montar outra. */
+  private get friendly(): readonly MechBase[] {
+    return this.bots.targets;
+  }
+
   private refreshEnemyTargets(): void {
     this.bots.targets = this.allies ? [...this.players, ...this.allies.mechs] : this.players;
   }
@@ -353,6 +379,7 @@ export class Match {
       for (const p of this.pilots) p.fixedUpdate(dt);
       this.bots.fixedUpdate(dt);
       this.allies?.fixedUpdate(dt);
+      this.drones?.fixedUpdate(dt);
       // Pisão nos dois sentidos: Mech do jogador em andróide rebelde, e Mech rebelde num jogador pequeno.
       // Aliado conta como o próprio jogador aqui (mesmo lado) — pisa e é pisado só pelo inimigo.
       this.crush.tick(dt);
@@ -417,6 +444,7 @@ export class Match {
     });
     this.bots.respawnAll();
     this.allies?.respawnAll();
+    this.drones?.resetAll();
     this.projectiles.clear();
     this.rockets.clear();
     this.barrage.clear();

@@ -6,9 +6,9 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Servidor público offline hoje por informação do dono (06/10); offline disponível (Arena + Sobrevivência + CTF) |
-| **Build** | Último check (06/10, #171): JS 312,4 KB e Wasm 719,4 KB gzip (tetos 500/900); 607 testes, typecheck, smoke, bocas e site verdes |
-| **Última sessão** | 06/10: Oficina em sincronia com o jogo (mapa clicável, guia lido do código, gráficos corrigidos); 06/10: barreira frontal, observabilidade e capacidade local (#171 mergeado); 06/10: clareza do Hangar/treino/modos (#170); 06/10: Banco VORCARIS (#169); 06/10: trilho e EMP (#168); 06/10: miras finas por arma (#166); 06/10: sinais de avaria no modelo e planejamento reconciliado (#164); 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
-| **Próximo** | prioridade do dono (06/10): playtest da barreira e montagens; depois esfera e escudo metálico que substitui uma arma; clareza do Hangar/modos entregue no #170; armas e Banco já mergeados; instrumentação, métricas, energia/barreira e expansão orientada por playtest autorizadas em 06/10; dono julga o Marauder (Hangar e partida) e a calibragem do blaster numa mão de Mech; M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
+| **Build** | Último check local (06/10, Claude, PR `claude/drones-serafim`): JS 322,7 KB e Wasm 719,4 KB gzip (tetos 500/900); 638 testes, typecheck, smoke, bocas e site verdes |
+| **Última sessão** | 06/10 (Claude): drones da base Serafim (patrulha/kamikaze/conserto/recarga); Prédio Serafim (monólito + LED de estado + base de drones); escudo físico na mão esquerda (4 modelos, botão 2); esfera/Ctrl/aliados concluídos (#173); Oficina em sincronia com o jogo (mapa clicável, texto e gráficos do código); 06/10: barreira frontal, observabilidade e capacidade local (#171); 06/10: clareza do Hangar/treino/modos (#170); 06/10: Banco VORCARIS (#169); 06/10: trilho e EMP (#168); 06/10: miras finas por arma (#166); 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 02/10: o contrato do robô importado (`MECHS_IMPORTADOS.md`) |
+| **Próximo** | drones e escudo físico completos no servidor online (o roster de rede ainda não descreve nenhum dos dois); playtest do dono: esfera, aliados, escudo físico, Prédio Serafim e drones, tudo ainda só validado em bancada; dono julga o Marauder (Hangar e partida); M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); ideias do dono em `ROADMAP.md` (jogadas de Mech, facções, estilos de jogo) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
@@ -34,7 +34,9 @@
 - **Prédio Serafim (PR `claude/predio-serafim`):** monólito preto de 56 m em (80, 40), oposto ao Banco VORCARIS; LED verde, vermelho quando inimigo chega a 40 m, `?serafim=festa` gira as cores; base de drones no topo (sem drones ainda).
 - **Dono autorizou (06/10) merge direto em produção sem esperar revisão:** CI verde → merge. Ele testa só no site.
 
-**Próxima sessão começa com:** drones da base Serafim (decolar do topo; o desenho do que fazem ainda é do dono); escudo físico online completo (integridade e chapa no snapshot).
+- **Drones da base Serafim (PR `claude/drones-serafim`):** esquadrilha de 6 — 2 patrulha (laser fraco em inimigo perto da base/aliado), 2 kamikaze (mergulho explosivo, um voo por vida), 1 conserto, 1 recarga (vida/calor/energia do aliado mais precisado). Modelo procedural, sem GLB. Só offline por ora.
+
+**Próxima sessão começa com:** drones no servidor online (o roster de rede ainda não descreve um drone); escudo físico online completo (integridade e chapa no snapshot).
 
 ## SESSÃO ANTERIOR (06/10, PR #171 na main)
 

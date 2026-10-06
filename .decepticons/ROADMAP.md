@@ -219,7 +219,8 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [x] Equipamentos por encaixe e carga: frontal e esfera em módulo extra, Ctrl por toque; escudo físico na mão esquerda com 4 modelos e botão 2 (Claude, 06/10) #combate
 - [ ] Escudo físico online completo: integridade e chapa levantada no snapshot (HUD e Mechs remotos) #rede
 - [x] Prédio Serafim: monólito brutalista com LED de estado e base de drones no topo, oposto ao Banco VORCARIS (Claude, 06/10) #cenarios
-- [ ] Drones da base Serafim decolando do topo (a base já existe) #cenarios
+- [x] Drones da base Serafim: patrulha, kamikaze, conserto e recarga, saindo do topo (Claude, 06/10) #ia
+- [ ] Drones no servidor online (roster de rede ainda não descreve um drone) #rede
 - [x] Instrumentação local de boot/erros/WebGL, quadros lentos e resumos de partida por versão/montagem/cheats, com exportação e testes HTTP/persistência #base
 - [~] Observabilidade central no Serafim13 integrada no cliente; confirmar recebimento, alertas e operação real quando os serviços estiverem disponíveis #base
 - [x] Benchmark reproduzível localhost para 10/50/100 jogadores ativos em salas de até 8; evidências e limites em CAPACIDADE.md #desempenho
