@@ -90,7 +90,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
     jump: 'Space',
     dash: 'Shift',
     secondary: 'KeyQ',
-    shield: 'KeyE',
+    shield: 'Control',
     camera: 'KeyV',
   }),
 });
@@ -105,7 +105,7 @@ export const KEY_ACTIONS: readonly { action: KeyAction; label: string }[] = [
   { action: 'dash', label: 'Dash' },
   { action: 'secondary', label: 'Foguetes' },
   { action: 'camera', label: 'Trocar câmera' },
-  { action: 'shield', label: 'Barreira de energia' },
+  { action: 'shield', label: 'Escudo: ligar/desligar' },
 ];
 
 export const QUALITY_LABELS: Record<QualityPreset, string> = {
@@ -245,6 +245,13 @@ export class Settings {
       saved = null;
     }
     this.current = sanitizeSettings(saved);
+    // Migra apenas o antigo padrão, uma vez. Reatribuições futuras para E continuam válidas.
+    const revision = saved && typeof saved === 'object' ? (saved as { controlsRevision?: unknown }).controlsRevision : 0;
+    if (revision !== 2 && this.current.keys.shield === 'KeyE' &&
+        !KEY_ACTIONS.some(({ action }) => action !== 'shield' && this.current.keys[action] === 'Control')) {
+      this.current.keys.shield = 'Control';
+    }
+    this.save();
   }
 
   get value(): Readonly<GameSettings> {
@@ -271,7 +278,7 @@ export class Settings {
 
   private save(): void {
     try {
-      this.storage?.setItem(this.storageKey, JSON.stringify(this.current));
+      this.storage?.setItem(this.storageKey, JSON.stringify({ ...this.current, controlsRevision: 2 }));
     } catch {
       // Armazenamento cheio ou bloqueado: continua valendo nesta sessão.
     }

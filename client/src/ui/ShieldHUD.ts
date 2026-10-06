@@ -8,20 +8,12 @@ export class ShieldHUD {
     this.root.id = "energy-shield";
     this.root.type = "button";
     this.root.hidden = true;
-    this.root.setAttribute("aria-label", "Segurar barreira frontal");
+    this.root.setAttribute("aria-label", "Ligar ou desligar escudo de energia");
     document.getElementById("hud")!.append(this.root);
-    this.root.addEventListener("pointerdown", (e) => {
+    this.root.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       this.input.virtualShield = true;
-      this.root.setPointerCapture(e.pointerId);
-    });
-    for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
-      this.root.addEventListener(type, () => {
-        this.input.virtualShield = false;
-      });
-    window.addEventListener("blur", () => {
-      this.input.virtualShield = false;
     });
   }
   update(dt: number, m: MechBase, playing: boolean, key: string): void {
@@ -35,11 +27,11 @@ export class ShieldHUD {
     this.wait = 0.1;
     const s = m.energyShield;
     this.root.textContent =
-      (this.input.touchMode ? "SEGURE" : "SEGURE " + keyLabel(key)) +
-      " · BARREIRA " +
+      (this.input.touchMode ? "TOQUE" : keyLabel(key)) +
+      (s.kind === "sphere" ? " · ESFERA " : " · BARREIRA ") +
       Math.round(s.fraction * 100) +
       "%" +
-      (s.active ? " · ATIVA" : "");
+      (s.active ? " · DESLIGAR" : s.energy < s.stats.minStart ? " · RECARGA" : " · LIGAR");
     this.root.setAttribute("aria-pressed", String(s.active));
     this.root.style.setProperty("--energy", s.fraction * 100 + "%");
   }

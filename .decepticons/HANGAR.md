@@ -215,10 +215,17 @@ Peso por encaixe e nível inclui as cópias dos ombros. Excesso bloqueia aplicar
 
 ## Barreira frontal implementada — 06/10
 
-MÓDULO EXTRA no Hangar: gerador frontal de 2 t, disponível nos Mechs, indisponível no andróide. Preserva arma em cada braço e entra na carga total. Segure E (remapeável em Controles) ou o botão BARREIRA no toque. 100 de energia; consumo 20/s, até 5 s sem impactos; cada ponto de dano absorvido gasta 1 de energia. Soltar permite regenerar 12/s após 2 s. Colapso exige soltar antes de religar, com mínimo 15 de energia.
+MÓDULO EXTRA no Hangar: gerador frontal de 2 t, disponível nos Mechs, indisponível no andróide. Preserva arma em cada braço e entra na carga total. Toque Ctrl para ligar/desligar (remapeável em Controles), ou use o botão na tela. 100 de energia; consumo 20/s, até 5 s sem impactos; cada ponto de dano absorvido gasta 1 de energia. Desligar permite regenerar 12/s após 2 s. Colapso exige um novo toque para religar, com mínimo 15 de energia.
 
 Cone frontal de 120 graus acompanha yaw/pitch da mira; projéteis e explosões têm fonte direcional. Flancos/costas, serra e esmagamento passam. EMP continua afetando calor conforme regra existente; a barreira absorve sua componente de dano. Visual hexagonal transparente mantém o centro da mira legível. Não é nova geometria de colisão.
 
-Montagem v1 segue válida; v2 explicita braços, ombros e módulo (frontal ou vazio). Presets e link preservam o módulo. No online a montagem salva vale na próxima entrada; regras de defesa são do servidor. Protocolo 5: 19 bytes/unidade e energia do dono em 1 byte adicional por snapshot. Servidor público offline não atualizado nesta tarefa.
+Montagem v1 segue válida; v2 explicita braços, ombros e módulo (frontal, esfera ou vazio). Presets e link preservam o módulo. No online a montagem salva vale na próxima entrada; regras de defesa são do servidor. Protocolo 6 (mesmo pacote do 5): 19 bytes/unidade e energia do dono em 1 byte adicional por snapshot. Servidor público offline não atualizado nesta tarefa.
 
-Esfera completa e escudo físico removível são próximos incrementos, ainda ausentes; físico ocupa mão e substitui arma, só em chassis compatíveis.
+Esfera implementada neste incremento: 4 t, 150 energia, 40/s ligada (até 3,75 s), regenera 15/s após 3 s, mínimo 30 para ligar. Cobertura completa de projéteis/explosões; serra e esmagamento continuam atravessando. Escudo físico removível ainda ausente; ocupa mão e substitui arma, só em chassis compatíveis.
+
+
+## Catálogo compartilhado e controle — 06/10, Codex
+
+Engates de energia dos Mechs aceitam plasma, blaster, escopeta, trilho e EMP; braços secundários comuns também aceitam lançadores. Peso por nível continua decidindo quais combinações cabem. Andróide conserva blaster/serra; Lancer conserva o braço do escudo; Marauder conserva lançadores nos ombros. Armas de fábrica e links v1 continuam válidos. Procedurais e Marauder trocam o modelo da arma; GLBs de arma integrada conservam a aparência, com aviso no Hangar.
+
+Configurações antigas com escudo E migram uma vez para Ctrl, exceto quando Ctrl já está em outra ação. Teclas personalizadas são preservadas; atribuir E depois continua válido. Energia esgotada não religa automaticamente; morte, pausa e perda de foco cancelam a intenção.

@@ -56,6 +56,8 @@ async function jogador(loadout: Loadout, triggers = VECTOR09_STATS.triggers) {
     virtualMoveZ: 0,
     virtualJump: false,
     virtualDash: false,
+    virtualShield: false,
+    resetVersion: 0,
     isDown: () => false,
     axis: () => 0,
     wasPressed: () => false,
@@ -88,7 +90,7 @@ async function jogador(loadout: Loadout, triggers = VECTOR09_STATS.triggers) {
       physics.step();
     }
   };
-  return { mech, input, aim, bolts, rockets, rains, run, sounds: () => sounds, rocketSounds: () => rocketSounds };
+  return { player, physics, mech, input, aim, bolts, rockets, rains, run, sounds: () => sounds, rocketSounds: () => rocketSounds };
 }
 
 /** O tiro sai apontando para a mira? */
@@ -166,5 +168,36 @@ describe('PlayerController: a chuva de mísseis', () => {
     expect(rains[0]!.w.id).toBe('barrage');
     expect(rains[0]!.volley).toBe(0);
     expect(rocketSounds()).toBe(1);
+  });
+});
+
+
+describe('escudo por toque', () => {
+  it('um toque mantém ligado após soltar; o segundo desliga sem interferir nas armas', async () => {
+    const s = await jogador({ primary: weapon('plasma'), secondary: weapon('rockets'), module: 'sphere' });
+    const press = () => { s.input.virtualShield = true; s.player.collect(); s.run(1 / 60); };
+    press();
+    s.run(0.5);
+    expect(s.mech.energyShield.active).toBe(true);
+    expect(s.mech.energyShield.energy).toBeLessThan(150);
+    s.input.mouseDown = true; s.input.mouseDown2 = true; s.run(0.1);
+    expect(s.bolts.length).toBeGreaterThan(0);
+    expect(s.rockets.length).toBeGreaterThan(0);
+    press();
+    expect(s.mech.energyShield.active).toBe(false);
+    s.physics.world.free();
+  });
+  it('colapso não religa sozinho, um novo toque religa; pausa e perda de foco cancelam', async () => {
+    const s = await jogador({ primary: weapon('plasma'), secondary: null, module: 'frontal' });
+    const press = () => { s.input.virtualShield = true; s.player.collect(); s.run(1 / 60); };
+    press(); s.run(9);
+    expect(s.mech.energyShield.active).toBe(false);
+    expect(s.mech.energyShield.energy).toBeGreaterThan(15);
+    press(); expect(s.mech.energyShield.active).toBe(true);
+    s.input.resetVersion++; s.player.collect(); s.run(1 / 60);
+    expect(s.mech.energyShield.active).toBe(false);
+    press(); s.player.active = false; s.player.collect(); s.player.active = true; s.run(1 / 60);
+    expect(s.mech.energyShield.active).toBe(false);
+    s.physics.world.free();
   });
 });

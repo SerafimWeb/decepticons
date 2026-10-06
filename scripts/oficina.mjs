@@ -12,6 +12,7 @@ import { GRAFO_CSS, grafoOficina } from './site/grafo.mjs';
 import { CHART_CSS, divergingBars, heatTable, lineChart, nf, pct, rankBars } from './site/graficos.mjs';
 import { saudeOficina } from './site/saude.mjs';
 import { esc, pagina, topo } from './site/tema.mjs';
+import { COMBAT_GUIDE_CSS, WORKSHOP_SCRIPT, workshopGuide } from './site/combat-guide.mjs';
 
 const argv = process.argv.slice(2);
 const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : '.tmp/site/oficina/index.html');
@@ -115,7 +116,7 @@ function build() {
     { label: 'PERNA', hp: mh.leftLeg },
     { label: 'TORSO', hp: mh.torso },
   ];
-  const rowsW = ['plasma', 'rockets', 'shotgun'].flatMap((id) => [0, 1, 2].map((t) => W.weapon(id, t)));
+  const rowsW = ['plasma', 'rockets', 'shotgun', 'railgun', 'emp'].flatMap((id) => [0, 1, 2].map((t) => W.weapon(id, t)));
   const cells = rowsW.map((w) =>
     parts.map((p) => {
       const t = B.timeToKill([w], V, p.hp);
@@ -134,7 +135,7 @@ function build() {
 
   // ---------- 5. dano × distância (uma arma por gráfico, mesma escala) ----------
   const XMAX = 240;
-  const ranges = ['plasma', 'rockets', 'blaster', 'shotgun']
+  const ranges = ['plasma', 'rockets', 'blaster', 'shotgun', 'railgun', 'emp']
     .map((id) => {
       const w = W.weapon(id);
       const dx = Array.from({ length: 49 }, (_, i) => i * 5).filter((d) => d <= w.maxRange);
@@ -179,7 +180,8 @@ function build() {
     <p class="pitch">Aqui cada Mech, arma e defesa passa pela bancada antes de ir para a arena. Os gráficos saem da mesma simulação que roda no jogo, refeita a cada versão: nada é desenhado à mão. É assim que o equilíbrio vira número, e a estratégia, uma escolha que dá para medir.</p>
   </header>
 
-  ${grafo.html}
+  ${workshopGuide(game)}
+  <details><summary>Explorar arquitetura e módulos do jogo</summary>${grafo.html}</details>
 
   <section aria-labelledby="calor">
     <span class="kicker">// termodinâmica · ${esc(V.name)}</span>
@@ -231,12 +233,13 @@ function build() {
       <li>O mesmo código do jogo: calor, cadência e carregador rodam no tick fixo de 60 Hz, sem sorteio.</li>
       <li>Teto teórico: todos os tiros acertam, no alcance ótimo. No jogo, errar e se mexer deixam tudo mais lento.</li>
       <li>Um teste compara a bancada com o Mech de verdade, com física, correndo e atirando: a diferença de calor fica abaixo de 8 pontos.</li>
-      <li><b>${game.benchTests} testes de simulação</b> travam estas regras a cada entrega. Se uma mudança criar apelação, a versão não sai.</li>
+      <li>Testes de simulação verificam cadência, calor, carga e dano a cada entrega. Equilíbrio e diversão também precisam de partidas reais.</li>
     </ul>
   </section>`;
 }
 
 const css = `
+  ${COMBAT_GUIDE_CSS}
   ${CHART_CSS}
   ${GRAFO_CSS}
   .o-hero { display: grid; gap: 16px; padding-top: 30px; }
@@ -263,7 +266,7 @@ const html = pagina({
   description: 'A bancada de testes do CYBERMECH: calor, armas e defesas dos Mechs medidos pela simulação do jogo a cada versão.',
   css,
   body,
-  script: grafo.script,
+  script: grafo.script + '\n' + WORKSHOP_SCRIPT,
 });
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, html);

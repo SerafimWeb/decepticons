@@ -285,22 +285,20 @@ export interface ArmSlots {
   left: readonly WeaponId[];
   shoulders?: readonly WeaponId[];
 }
+/** Engate de energia compartilhado; massa/nível ainda limitam cada montagem. */
+const ENERGY_ARMS: readonly WeaponId[] = ['plasma', 'blaster', 'shotgun', 'railgun', 'emp'];
+const SUPPORT_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rockets', 'barrage'];
 export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
-  // A chuva de mísseis (04/10) vai no braço esquerdo, o gatilho de carregador: ela é arma de área, não de ponto.
-  vector09: { right: ['plasma', 'railgun'], left: ['rockets', 'barrage', 'emp'] },
+  vector09: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
   android: { right: ['blaster'], left: ['chainsaw'] },
-  // Sem arma exclusiva (decisão de 29/09 no combate justo): o mesmo plasma/foguetes de qualquer Mech.
-  colossus01: { right: ['plasma', 'railgun'], left: ['rockets', 'barrage', 'emp'] },
-  // Escolha entre dois tipos por braço: o leve ganha opção de arma mais leve (blaster) sem perder o plasma.
-  arara: { right: ['plasma', 'blaster', 'emp'], left: ['rockets', 'blaster', 'emp'] },
-  onca: { right: ['plasma', 'rockets', 'railgun'], left: ['plasma', 'rockets', 'barrage', 'emp'] },
-  genesis01: { right: ['plasma'], left: ['rockets'] },
-  // O braço esquerdo leva o escudo: nenhuma arma cabe nele.
-  lancerL1: { right: ['shotgun'], left: [] },
-  lr7lBastion: { right: ['plasma'], left: ['rockets'] },
-  quadraV2: { right: ['plasma'], left: ['rockets'] },
-  // Duas mãos no botão principal (blaster ou plasma em cada) e os lançadores dos ombros (opcionais) no secundário.
-  marauder: { right: ['blaster', 'plasma', 'railgun', 'emp'], left: ['blaster', 'plasma', 'emp'], shoulders: ['rockets', 'barrage'] },
+  colossus01: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
+  arara: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
+  onca: { right: [...ENERGY_ARMS, 'rockets'], left: SUPPORT_ARMS },
+  genesis01: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
+  lancerL1: { right: ENERGY_ARMS, left: [] },
+  lr7lBastion: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
+  quadraV2: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
+  marauder: { right: ENERGY_ARMS, left: ENERGY_ARMS, shoulders: ['rockets', 'barrage'] },
 };
 
 /** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */

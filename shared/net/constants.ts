@@ -9,7 +9,8 @@
  * 3 (04/10): a chuva de mísseis entra em `NET_WEAPONS`, pelo mesmo motivo.
  */
 // 5 (06/10): módulo de energia, comando de escudo e energia do destinatário em 1 byte adicional por snapshot.
-export const PROTOCOL_VERSION = 5;
+// 6 (06/10): catálogo inclui esfera; servidores antigos não validam esse módulo. Pacote mantém o tamanho.
+export const PROTOCOL_VERSION = 6;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

@@ -1,5 +1,15 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-06] Comando de equipe, esfera e liberdade de montagem (Codex)
+
+Pedido do dono: Ctrl liga/desliga com um toque, preservando pulo/dash. Esfera no gerador extra, 4 t/150 energia/40 por segundo, protege todas as direções; barreira frontal continua mais leve e econômica. Trocar gerador preservando combate não cria energia. Protocolo 6 por catálogo incompatível com servidor antigo; mesmo tamanho dos pacotes. Servidor público offline não acessado.
+
+Causa do aliado aparentemente parado: faltava `allies.render` no Game, apesar de a física andar. Correção acompanhada de escolta com plasma, supressor EMP, formação, desvio local, flanco conforme orientação do oponente, cobertura para esfriar/recuar e teste de obstrução da boca. Ordens 1 acompanhar, 2 foco, 3 defender são enfileiradas e aplicadas no tick; nesta etapa só Arena offline. Não chamar a IA de equivalente a humanos: navegação global e playtest prolongado continuam pendentes.
+
+Engates compartilham armas de energia, conservando carga, Andróide leve, mão do escudo do Lancer e ombros do Marauder. Modelos procedurais trocam armas sem mover a boca física. Foguete no braço principal da Onça passa pelo lançador e carregador corretos. Rigs importados de arma integrada conservam a aparência do GLB, limitação registrada.
+
+Oficina prioriza catálogo/defesas/comandos antes da arquitetura; Sala de Controle prioriza como validar a experiência. Feixe térmico e arpão magnético são propostas, não conteúdo pronto. Teste antigo de destroços exigia divergência acidental de trajetórias; substituído pelo contrato observável (cliente com corpos cosméticos, servidor sem eles).
+
 ## [2026-10-06] Encerramento confirmado da entrega #171 (Codex)
 
 CI verde e merge 444bb09 confirmados. Memória passa a registrar a implementação na main, removendo a indicação antiga de branch ainda a publicar. Capacidade local continua distinta de homologação online; servidor público offline preservado. Nenhuma mudança de gameplay neste fechamento.

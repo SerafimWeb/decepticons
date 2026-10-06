@@ -181,6 +181,7 @@ export async function jogo() {
     // Os números dos chassis ficam num arquivo sem 3D: o site não carrega o Three.js.
     const { VECTOR09_STATS, ANDROID_STATS, PILOT_ANDROID_STATS, ARM_SLOTS, CHASSIS } = await load('client/src/entities/chassis.ts');
     const hangar = await load('client/src/hangar/loadout.ts');
+    const shields = await load('client/src/combat/EnergyShield.ts');
     const count = (file) => (read(file).match(/^\s+it\(/gm) ?? []).length;
     // Rede (multiplayer): ritmos, tetos e a conta da banda, do mesmo código que os testes travam.
     const netConst = await load('shared/net/constants.ts');
@@ -205,7 +206,7 @@ export async function jogo() {
     const tests = count('client/src/combat/weapons.test.ts');
     // Testes que travam as regras da bancada: armas, calor e o Mech de verdade contra a bancada.
     const benchTests = tests + count('client/src/combat/heat.test.ts') + count('client/src/entities/MechHeat.test.ts');
-    return { weapons, balance, heat, hangar, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, slots: ARM_SLOTS, chassis: CHASSIS, tests, benchTests, net };
+    return { weapons, balance, heat, hangar, shields, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, slots: ARM_SLOTS, chassis: CHASSIS, tests, benchTests, net };
   } catch (err) {
     console.warn(`::warning::site sem os dados do jogo: ${err instanceof Error ? err.message : err}`);
     return null;

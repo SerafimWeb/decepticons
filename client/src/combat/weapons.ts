@@ -292,7 +292,7 @@ export function splashDamage(w: WeaponStats, dist: number): number {
  * (`MechStats.triggers`, `combat/mounts.ts`). No padrão, `primary` é da mão direita e `secondary` da esquerda.
  */
 export interface Loadout {
-  module?: 'frontal' | null;
+  module?: import('./EnergyShield').ShieldId | null;
   /** Gatilho principal (mouse esquerdo): a arma da mão direita. */
   primary: WeaponStats;
   /** Gatilho secundário (mouse direito, Q): a arma da mão esquerda; nos chassis com lançadores, a dos ombros. */
