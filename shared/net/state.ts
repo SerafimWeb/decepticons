@@ -26,6 +26,7 @@ export interface UnitState {
   overheated: boolean;
   /** Aviso de carga (bit livre, mantém 19 bytes). Ausente em fixtures antigas = falso. */
   charging?: boolean;
+  shield?: boolean;
 }
 
 /** Bytes de uma unidade: id, posição, 2 ângulos, 6 partes, calor e as flags. */
@@ -36,6 +37,7 @@ const GROUNDED = 2;
 const DASHING = 4;
 const OVERHEATED = 8;
 const CHARGING = 16;
+const SHIELD = 32;
 
 export function newUnitState(): UnitState {
   return {
@@ -58,7 +60,7 @@ export function newUnitState(): UnitState {
 export function writeUnit(w: Writer, s: UnitState): void {
   w.u8(s.id).i16(toCm(s.x)).i16(toCm(s.y)).i16(toCm(s.z)).u16(toAngle(s.yaw)).i16(toPitch(s.pitch));
   for (const p of NET_PARTS) w.u8(toFrac(s.parts[p]));
-  w.u8(toFrac(s.heat)).u8((s.alive ? ALIVE : 0) | (s.grounded ? GROUNDED : 0) | (s.dashing ? DASHING : 0) | (s.overheated ? OVERHEATED : 0) | (s.charging ? CHARGING : 0));
+  w.u8(toFrac(s.heat)).u8((s.alive ? ALIVE : 0) | (s.grounded ? GROUNDED : 0) | (s.dashing ? DASHING : 0) | (s.overheated ? OVERHEATED : 0) | (s.charging ? CHARGING : 0) | (s.shield ? SHIELD : 0));
 }
 
 export function readUnit(r: Reader, out: UnitState): void {
@@ -71,10 +73,11 @@ export function readUnit(r: Reader, out: UnitState): void {
   for (const p of NET_PARTS) out.parts[p] = fromFrac(r.u8());
   out.heat = fromFrac(r.u8());
   const f = r.u8();
-  if (f & ~(ALIVE | GROUNDED | DASHING | OVERHEATED | CHARGING)) r.bad = true;
+  if (f & ~(ALIVE | GROUNDED | DASHING | OVERHEATED | CHARGING | SHIELD)) r.bad = true;
   out.alive = (f & ALIVE) !== 0;
   out.grounded = (f & GROUNDED) !== 0;
   out.dashing = (f & DASHING) !== 0;
   out.overheated = (f & OVERHEATED) !== 0;
   out.charging = (f & CHARGING) !== 0;
+  out.shield = (f & SHIELD) !== 0;
 }

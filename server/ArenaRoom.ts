@@ -291,7 +291,8 @@ export class ArenaRoom {
   }
 
   private broadcastRoster(): void {
-    const entries: RosterEntry[] = this.units.map(({ id, kind, name, build }) => ({ id, kind, name, build }));
+    this.match.bots.setMechCapacity(ROOM_SIZE - this.humans.size);
+    const entries: RosterEntry[] = this.units.filter(u => !this.match.bots.isReserved(u.mech)).map(({ id, kind, name, build }) => ({ id, kind, name, build }));
     const bytes = encodeRoster(this.w, entries);
     for (const h of this.humans.values()) h.peer.send(bytes);
   }
@@ -300,10 +301,13 @@ export class ArenaRoom {
   private broadcastSnapshot(): void {
     const s = this.snapshot;
     s.tick = this.tick;
-    s.count = this.units.length;
-    for (let i = 0; i < this.units.length; i++) unitFromMech(this.units[i]!.mech, this.units[i]!.id, s.units[i]!);
+    s.count = 0;
+    for (const u of this.units) {
+      if (!this.match.bots.isReserved(u.mech)) unitFromMech(u.mech, u.id, s.units[s.count++]!);
+    }
     for (const h of this.humans.values()) {
       s.ack = h.pilot.ack;
+      s.energy = h.mech.energyShield.fraction;
       h.peer.send(encodeSnapshot(this.w, s));
     }
     if (this.events.count) {

@@ -64,6 +64,8 @@ export interface OnlineSessionOptions {
   scene: THREE.Scene;
   onStatus?: (s: OnlineStatus) => void;
   onBank?: (reply: BankReply) => void;
+  onDamage?: (amount: number) => void;
+  onRoundEnd?: () => void;
   onKill?: (killer: string | null, dead: string, meInvolved: boolean) => void;
   /** Placar do jogador local (o servidor não conta a rodada offline; a gente conta pelos eventos KILL). */
   onScore?: (kills: number, deaths: number) => void;
@@ -226,6 +228,7 @@ export class OnlineSession implements Pilot {
       m.setNetPose(x, y, z, lerpAngle(ua.yaw, ub.yaw, t), ua.pitch + (ub.pitch - ua.pitch) * t, (ub.x - ua.x) / secs, (ub.z - ua.z) / secs, ub.grounded);
       m.applyNetVitals(ub.parts, null, ub.alive);
       m.weaponCharging = ub.charging ?? false;
+      m.energyShield.active = ub.shield ?? false;
       r.placed = true;
       m.render(dt, 1);
     }
@@ -278,11 +281,11 @@ export class OnlineSession implements Pilot {
     this.clockOffset = Number.isNaN(this.clockOffset) ? sample : this.clockOffset + (sample - this.clockOffset) * 0.1;
 
     const u = findUnit(s, this.myId);
-    if (u) this.reconcile(u, s.ack);
+    if (u) this.reconcile(u, s.ack, s.energy ?? 0);
   }
 
   /** O seu Mech: vida e morte do servidor; posição corrigida pelo que foi previsto no tick do \`ack\`. */
-  private reconcile(u: UnitState, ack: number): void {
+  private reconcile(u: UnitState, ack: number, energy: number): void {
     const me = this.o.me;
     if (u.alive && !me.alive) {
       // Renasceu no servidor: começa de novo onde ele diz.
@@ -291,6 +294,7 @@ export class OnlineSession implements Pilot {
       this.histTick.fill(-1);
     }
     me.applyNetVitals(u.parts, Math.abs(u.heat - me.heat) > HEAT_TOLERANCE ? u.heat : null, u.alive);
+    me.energyShield.applyNet(energy, u.shield ?? false);
     if (!u.alive) return;
     const i = ack % HISTORY;
     if (this.histTick[i] !== ack) return;
@@ -316,6 +320,7 @@ export class OnlineSession implements Pilot {
     for (let i = 0; i < b.count; i++) {
       const e = b.list[i]!;
       if (e.kind === EVENT.SHOT) this.remoteShot(e);
+      else if (e.kind === EVENT.HIT && e.other === this.myId && e.unit !== this.myId) this.o.onDamage?.(e.amount);
       else if (e.kind === EVENT.KILL) {
         const dead = e.unit === this.myId ? 'VOCÊ' : (this.names.get(e.unit) ?? 'INIMIGO');
         const killer = e.other === NO_UNIT ? null : e.other === this.myId ? 'VOCÊ' : (this.names.get(e.other) ?? null);
@@ -325,6 +330,7 @@ export class OnlineSession implements Pilot {
         this.o.match.destructibles.breakById(e.amount);
       } else if (e.kind === EVENT.ARENA_RESET) {
         // O servidor iniciou uma rodada nova: as barricadas voltam e o placar zera.
+        this.o.onRoundEnd?.();
         this.o.match.destructibles.restoreAll();
         this.o.match.debris.clear();
         this.scores.clear();
@@ -419,6 +425,7 @@ function findUnit(s: Snapshot, id: number): UnitState | null {
 function copySnapshot(from: Snapshot, to: Snapshot): void {
   to.tick = from.tick;
   to.ack = from.ack;
+  to.energy = from.energy;
   to.count = from.count;
   for (let i = 0; i < from.count; i++) {
     const a = from.units[i]!;
@@ -436,6 +443,7 @@ function copySnapshot(from: Snapshot, to: Snapshot): void {
     b.dashing = a.dashing;
     b.overheated = a.overheated;
     b.charging = a.charging;
+    b.shield = a.shield;
   }
 }
 

@@ -47,7 +47,7 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
 ## SERVIDOR DE JOGO (Node + `ws`, M3 em 26/09)
 
 - Precisa de host com WebSocket persistente e processo Node longo. Hospedagem só estática ou FTP não serve.
-- Node `^20.19.0 || >=22.12.0`.
+- Node `>=22.12.0` (node:sqlite).
 
 **No PC de casa (hoje):**
 1. Na pasta do projeto: `npm install` (uma vez) e `npm run server`. Aparece
@@ -286,3 +286,10 @@ A hospedagem compartilhada da Hostinger **não serve** para o servidor: não man
 
 - **2026-09-23, 1º deploy:** o site subiu certo, mas o `.wasm` saía sem compressão (2,2 MB), porque o LiteSpeed não comprime `application/wasm`. Corrigido com o `.wasm.gz` pré-comprimido (ver acima).
 - **2026-09-23, configuração:** o dono rodou os comandos `gh secret set` no PowerShell, onde `<` não existe; o bloco inteiro falhou antes de rodar (nada ficou pela metade). Os comandos de secret deste arquivo são para o **Git Bash**.
+
+
+## Observabilidade e protocolo 5 — 06/10
+
+Erros do cliente publicado usam o endpoint já existente do Serafim13 (sinal-erro), identificado em core/Diagnostics.ts. A CSP permite somente a origem Supabase correspondente; não há credencial no cliente. Aceitação/persistência no serviço central ainda requer verificação operacional. Resumos de partida usam /partida-metricas no servidor do jogo, com fila local limitada e leitura privada em /metricas. Ver OBSERVABILIDADE.md.
+
+O cliente desta entrega usa protocolo 5; servidor anterior será recusado por incompatibilidade. O servidor público está offline por orientação do dono e não deve ser consultado, iniciado ou atualizado nesta tarefa. Publicação do site não comprova funcionamento online.

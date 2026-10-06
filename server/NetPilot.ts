@@ -97,6 +97,7 @@ export class NetPilot implements Pilot {
         c.moveZ = 0;
         c.fire = false;
         c.secondary = false;
+        c.shield = false;
       }
     }
     const m = this.mech;

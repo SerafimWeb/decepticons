@@ -211,3 +211,14 @@ As duas armas sugeridas em conversa são um canhão de trilho carregável (preci
 ## Clareza da montagem e treino (06/10, em branch)
 
 Peso por encaixe e nível inclui as cópias dos ombros. Excesso bloqueia aplicar/testar e oculta leituras de combate inválidas; a prévia mantém a última montagem válida. O treino manual usa ChargeTimer, inclusive cancelamento ao soltar e indicador de carga. Ainda não simula calor/dispersão/dano: sua finalidade continua sendo a mira.
+
+
+## Barreira frontal implementada — 06/10
+
+MÓDULO EXTRA no Hangar: gerador frontal de 2 t, disponível nos Mechs, indisponível no andróide. Preserva arma em cada braço e entra na carga total. Segure E (remapeável em Controles) ou o botão BARREIRA no toque. 100 de energia; consumo 20/s, até 5 s sem impactos; cada ponto de dano absorvido gasta 1 de energia. Soltar permite regenerar 12/s após 2 s. Colapso exige soltar antes de religar, com mínimo 15 de energia.
+
+Cone frontal de 120 graus acompanha yaw/pitch da mira; projéteis e explosões têm fonte direcional. Flancos/costas, serra e esmagamento passam. EMP continua afetando calor conforme regra existente; a barreira absorve sua componente de dano. Visual hexagonal transparente mantém o centro da mira legível. Não é nova geometria de colisão.
+
+Montagem v1 segue válida; v2 explicita braços, ombros e módulo (frontal ou vazio). Presets e link preservam o módulo. No online a montagem salva vale na próxima entrada; regras de defesa são do servidor. Protocolo 5: 19 bytes/unidade e energia do dono em 1 byte adicional por snapshot. Servidor público offline não atualizado nesta tarefa.
+
+Esfera completa e escudo físico removível são próximos incrementos, ainda ausentes; físico ocupa mão e substitui arma, só em chassis compatíveis.

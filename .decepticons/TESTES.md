@@ -15,3 +15,8 @@ Execução durante edição: selecionar os arquivos afetados. Entrega: check com
 ModeSelector agora usa o contrato GameMode e gameModeFromSearch da simulação. Os quatro casos existentes foram atualizados, mantendo 594 casos; não houve aumento de contagem para parecer mais seguro. No navegador, escolher CTF navega e o Game confirma ctf ativo. O treino usa ChargeTimer já testado e a prova verifica clique curto, cancelamento, nova carga e um disparo só depois de 51 ticks. Peso, excesso, ações bloqueadas e menu acessível em tela pequena também são verificações reais.
 
 Gate local: a navegação do medidor de bocas tinha timeout padrão de 30 s, antes da espera explícita de 120 s pelo GLB. Uma execução fria abortou antes de medir. Navegação passa a aguardar DOMContentLoaded com o mesmo prazo de 120 s; a prova continua exigindo window.pronto e tolerância de 15 cm, sem remover verificações.
+
+
+## Entrega energia/observabilidade — 06/10
+
+607 casos em 86 arquivos, após 13 verificações novas de defesa direcional, integração com impacto real, reserva/retorno dos bots, energia autoritativa por destinatário, montagem v2/compatibilidade v1, limites de diagnóstico, validação/deduplicação de resumos e persistência HTTP. Check completo verde. O benchmark de capacidade é separado e só deve repetir quando houver motivo; não roda a cada push. Prova visual local adicional em arte/modulo-energia-codex.png e arte/barreira-frontal-codex.png, com requisições remotas bloqueadas.

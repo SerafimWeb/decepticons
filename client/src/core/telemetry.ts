@@ -17,6 +17,7 @@ import { EVENTO_PATH, type EventoNome } from '../../../shared/net/telemetry';
 export class Telemetry {
   private readonly url: string | null;
   private readonly aba: string;
+  private sequence = 0;
 
   constructor(gameServer: string | undefined | null) {
     this.url = serverHttpUrl(gameServer, EVENTO_PATH);
@@ -27,7 +28,7 @@ export class Telemetry {
 
   enviar(nome: EventoNome): void {
     if (!this.url) return;
-    const corpo = JSON.stringify({ nome, aba: this.aba });
+    const corpo = JSON.stringify({ nome, aba: this.aba, seq: this.sequence++ });
     try {
       if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
         // Blob sem "application/json" explícito: fica como envio "simples" do CORS, sem preflight.

@@ -30,6 +30,7 @@ export function unitFromMech(mech: MechBase, id: number, out: UnitState): UnitSt
   out.dashing = mech.isDashing;
   out.overheated = mech.overheated;
   out.charging = mech.weaponCharging;
+  out.shield = mech.energyShield.active;
   return out;
 }
 
@@ -41,6 +42,7 @@ export function mechInputFromNet(n: NetInput, out: MechInput): MechInput {
   out.yaw = n.yaw;
   out.jump = n.jump;
   out.dash = n.dash;
+  out.shield = n.shield ?? false;
   return out;
 }
 
@@ -54,6 +56,7 @@ export function netInputFromMech(tick: number, cmd: MechInput, pitch: number, fi
   out.pitch = pitch;
   out.jump = cmd.jump;
   out.dash = cmd.dash;
+  out.shield = cmd.shield ?? false;
   out.fire = fire;
   out.secondary = secondary;
   return out;

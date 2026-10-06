@@ -47,6 +47,7 @@ export class SettingsMenu {
       dash: $('key-dash') as HTMLButtonElement,
       secondary: $('key-secondary') as HTMLButtonElement,
       camera: $('key-camera') as HTMLButtonElement,
+      shield: $('key-shield') as HTMLButtonElement,
     };
 
     this.initDOM();

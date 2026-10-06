@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { defineConfig } from 'vite';
 import wasm from 'vite-plugin-wasm';
 
@@ -9,7 +10,9 @@ import wasm from 'vite-plugin-wasm';
  */
 const RAPIER_BROWSER = { find: /^@dimforge\/rapier3d-simd-compat$/, replacement: '@dimforge/rapier3d-simd' };
 
+const revision = (() => {try{return execFileSync('git',['rev-parse','--short=12','HEAD'],{encoding:'utf8'}).trim();}catch{return 'local';}})();
 export default defineConfig({
+  define: { __CYBERMECH_REVISION__: JSON.stringify(revision) },
   root: 'client',
   // Caminhos relativos: o mesmo build roda na raiz (smoke) e em subpasta (selvamkt.com.br/cybermech/jogar/).
   base: './',

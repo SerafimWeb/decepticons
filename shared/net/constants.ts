@@ -8,8 +8,8 @@
  * 2 (03/10): a escopeta entra em `NET_WEAPONS`; um cliente da versão 1 recusaria o tiro dela como evento ruim.
  * 3 (04/10): a chuva de mísseis entra em `NET_WEAPONS`, pelo mesmo motivo.
  */
-// 4 (06/10): canhão de trilho, EMP e aviso de carga no bit livre das flags.
-export const PROTOCOL_VERSION = 4;
+// 5 (06/10): módulo de energia, comando de escudo e energia do destinatário em 1 byte adicional por snapshot.
+export const PROTOCOL_VERSION = 5;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;
@@ -23,7 +23,7 @@ export const MAX_INPUTS_PER_PACKET = 8;
 
 /** Mechs numa sala (humanos + bots completando). */
 export const ROOM_SIZE = 8;
-/** Unidades numa sala cheia: os 8 Mechs, até 3 andróides e o técnico (os limites das configurações). */
+/** Unidades numa sala cheia: 8 Mechs (humanos + bots), até 3 andróides e o técnico. */
 export const ROOM_UNITS = ROOM_SIZE + 3 + 1;
 /** Teto de unidades num estado (Mechs, andróides, técnico): o id cabe em 1 byte e o buffer é fixo. */
 export const MAX_UNITS = 32;
@@ -35,10 +35,10 @@ export const NO_UNIT = 255;
 /** Metas de banda por jogador (G11), em bytes por segundo. */
 export const DOWNLOAD_BUDGET = 8 * 1024;
 export const UPLOAD_BUDGET = 2 * 1024;
-/** Moldura do WebSocket e do Colyseus sobre cada mensagem (~20%). */
+/** Moldura do WebSocket, TCP e TLS sobre cada mensagem (~20%). */
 export const WIRE_OVERHEAD = 1.2;
 
-/** Apelido: até 16 caracteres. Montagem (`loadoutKey`): até 48. Código da sala: até 12. */
+/** Apelido: até 16 caracteres. Montagem (`loadoutKey`): até 80. Código da sala: até 12. */
 export const NAME_MAX = 16;
-export const BUILD_MAX = 48;
+export const BUILD_MAX = 80;
 export const ROOM_MAX = 12;

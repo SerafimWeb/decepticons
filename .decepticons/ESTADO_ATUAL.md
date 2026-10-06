@@ -7,8 +7,8 @@
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Servidor público offline hoje por informação do dono (06/10); offline disponível (Arena + Sobrevivência + CTF) |
 | **Build** | Último check (06/10): JS 307,0 KB e Wasm 719,4 KB gzip (tetos 500/900); 594 testes, typecheck, smoke, bocas e site verdes |
-| **Última sessão** | 06/10: Banco VORCARIS (#169); 06/10: trilho e EMP (#168); 06/10: miras finas por arma (#166); 06/10: sinais de avaria no modelo e planejamento reconciliado (#164); 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
-| **Próximo** | prioridade do dono (06/10): contrato de encaixes/carga/módulo extra, energia e barreira frontal, depois esfera e escudo metálico que substitui uma arma; concluir clareza do Hangar/modos; armas e Banco já mergeados; instrumentação, métricas, energia/barreira e expansão orientada por playtest autorizadas em 06/10; dono julga o Marauder (Hangar e partida) e a calibragem do blaster numa mão de Mech; M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
+| **Última sessão** | 06/10: clareza do Hangar/treino/modos (#170); 06/10: Banco VORCARIS (#169); 06/10: trilho e EMP (#168); 06/10: miras finas por arma (#166); 06/10: sinais de avaria no modelo e planejamento reconciliado (#164); 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
+| **Próximo** | prioridade do dono (06/10): contrato de encaixes/carga/módulo extra, energia e barreira frontal, depois esfera e escudo metálico que substitui uma arma; clareza do Hangar/modos entregue no #170; armas e Banco já mergeados; instrumentação, métricas, energia/barreira e expansão orientada por playtest autorizadas em 06/10; dono julga o Marauder (Hangar e partida) e a calibragem do blaster numa mão de Mech; M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
@@ -31,7 +31,7 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `codex/ux-montagem-modos` | Peso por módulo/nível, treino respeitando carga e modos ligados à partida; revisão amostral da suíte a pedido do dono; navegação do medidor alinhada ao prazo de carregamento do modelo. | a abrir | 06/10 |
+| `codex/energia-observabilidade` | Barreira frontal em módulo extra, observabilidade/exportação, resumos segregados e benchmark 10/50/100. Check verde (607 testes; JS 312,4 KB/Wasm 719,4 KB), prova de navegador; aguardando publicação. | a abrir | 06/10 |
 | `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
 | `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |
@@ -578,6 +578,9 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 - Nenhum.
 
 ## PRÓXIMA SESSÃO COMEÇA COM
+
+- **Codex (06/10):** conferir merge da entrega energia/observabilidade e seu deploy; evidências em CAPACIDADE.md e OBSERVABILIDADE.md. Não consultar ou iniciar o servidor público enquanto a orientação de offline persistir. Próximo passo de produto: PLAYTEST.md, antes de escolher arena nova; esfera e escudo metálico removível (ocupa mão) seguem pendentes. Validação central do Serafim13/alertas, online público e carga prolongada seguem pendentes; não declarar escala homologada.
+
 - **Claude (03/10):** o Marauder está feito (ver ÚLTIMA SESSÃO FEZ). O que sobra dele: **jogador remoto desenhado com o chassi dele** e o encaixe no evento de tiro (`ROADMAP.md`, `FINDINGS.md`); o **escudo do Lancer** que bloqueia tiro, se o dono quiser; e, com a regra de tiro única e a boca como dado, trazer o encaixe de arma aos Mechs procedurais.
 - **Gemini:** **limpar a tela de pausa** (o dono marcou na captura: informação demais, coisas redundantes) e
   **telas de carregamento melhores**. Dois defeitos já diagnosticados pelo Claude em 28/09, para começar por eles:

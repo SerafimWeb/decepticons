@@ -99,6 +99,8 @@ export class BotSystem {
   targets: readonly MechBase[] = [];
   readonly mechs: readonly MechBase[];
   private readonly bots: Bot[] = [];
+  /** Reservas retiradas da sala quando entram humanos; não renascem durante a reserva. */
+  private readonly reserves = new Set<MechBase>();
   /** O Colossus (escala 3), quando a missão tem boss: guardado à parte para o recorte de onda contá-lo. */
   private bossMech: MechBase | null = null;
   /**
@@ -117,7 +119,7 @@ export class BotSystem {
   /** Ritmo do conserto do técnico (potência do clã; 1 = padrão). */
   private readonly repairScale: number;
 
-  constructor(o: BotSystemOptions) {
+  constructor(private readonly o: BotSystemOptions) {
     this.projectiles = o.projectiles;
     this.combat = o.combat;
     this.particles = o.particles;
@@ -190,6 +192,35 @@ export class BotSystem {
     for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0 });
   }
 
+  /** Só muda os bots que cruzam o limite; mantém a vida dos demais e os técnicos. */
+  setMechCapacity(count: number): void {
+    let index = 0;
+    for (const { mech, brain, home } of this.bots) {
+      if (!(brain instanceof BotController) || mech instanceof Android || mech === this.bossMech) continue;
+      const enabled = index++ < Math.max(0, count);
+      if (enabled === !this.reserves.has(mech)) continue;
+      if (!enabled) {
+        this.reserves.add(mech);
+        this.o.respawner.untrack(mech);
+        mech.deactivate();
+      } else {
+        this.reserves.delete(mech);
+        mech.respawn(home);
+        mech.applyFacing(Math.atan2(home.x, home.z), 0);
+        brain.reset();
+        if (this.o.respawn !== false) this.o.respawner.track(mech, BOT_RESPAWN_S, () => {
+          if (this.o.respawnAtHome) mech.respawn(home);
+          brain.reset();
+        });
+      }
+    }
+    this.directorTimer = 0;
+  }
+
+  isReserved(mech: MechBase): boolean {
+    return this.reserves.has(mech);
+  }
+
   nameOf(mech: MechBase): string {
     return this.bots.find((b) => b.mech === mech)?.name ?? 'BOT';
   }
@@ -197,6 +228,7 @@ export class BotSystem {
   /** Rodada nova: todos inteiros de volta ao ponto de nascimento, olhando o centro, cérebro zerado. */
   respawnAll(): void {
     for (const { mech, brain, home } of this.bots) {
+      if (this.reserves.has(mech)) continue;
       mech.respawn(home);
       mech.applyFacing(Math.atan2(home.x, home.z), 0);
       brain.reset();
