@@ -65,4 +65,11 @@ visual que cria arma e robô sem mexer em código **não existe**; as POTÊNCIAS
 
 `chargeTime` usa `ChargeTimer` em Armament e na bancada: só dispara após a carga inteira, cancelada por soltar o gatilho, perder o braço, trocar montagem ou superaquecer. `empHeat` passa por `EmpEffect` e aquece o alvo conforme a distância; o bloqueio ocorre pela regra existente de superaquecimento, sem impedir caminhar. `tracer` escolhe o desenho no pool de projéteis. Procedurais e Marauder usam os mesmos modelos; a boca física continua a do chassi. Cada nova arma também ganha uma mira em `WeaponReticle`.
 
-O protocolo é 4. O dono pediu que o servidor público offline não fosse tocado hoje: validação online somente com servidor local efêmero. Quando o servidor público voltar, deve usar este código/protocolo; não houve tentativa de atualização dele nesta entrega.
+O protocolo atual é 6 (catálogo inclui geradores frontal/esférico; formato de pacote do 5). O dono pediu que o servidor público offline não fosse tocado hoje: validação online somente com servidor local efêmero. Quando o servidor público voltar, deve usar este código/protocolo; não houve tentativa de atualização dele nesta entrega.
+
+
+## Compatibilidade ampliada — 06/10, Codex
+
+ARM_SLOTS compartilha engates de energia entre Mechs; não duplicar listas na UI ou no site. validateLoadout continua árbitro de massa e encaixe. Armament mantém lançadores por mão quando o principal é munição (Onça); rearm renova os carregadores. Procedurais usam weaponModel nas variantes fora do canhão/casulo de fábrica, mantendo a boca física fixa. GLBs integrados ainda não trocam aparência.
+
+Próximas propostas (não equipáveis): feixe térmico contínuo com exigência de mira/calor e arpão magnético com contrajogo/massa/rompimento do cabo. Não são novos IDs do catálogo ainda.

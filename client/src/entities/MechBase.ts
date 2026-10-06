@@ -242,7 +242,7 @@ export abstract class MechBase {
     this.rightArmBaseZ = rig.rightArm.position.z;
     this.heatSink = new HeatSink(stats);
     this.armed = loadout;
-    this.energyShield.equip(loadout.module === 'frontal');
+    this.energyShield.equip(loadout.module);
     rig.mountWeapons?.(loadout);
     this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
@@ -430,7 +430,7 @@ export abstract class MechBase {
    * fica: a pausa não vira um jeito de esfriar.
    */
   equip(loadout: Loadout, keepHeat = false): void {
-    this.energyShield.equip(loadout.module === 'frontal', keepHeat);
+    this.energyShield.equip(loadout.module, keepHeat);
     this.armed = loadout;
     this.rig.mountWeapons?.(loadout);
     if (!keepHeat) this.heatSink.reset();

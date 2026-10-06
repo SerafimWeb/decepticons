@@ -35,6 +35,7 @@ Barreira frontal em módulo extra de 2 t, mantendo as duas armas; E remapeável/
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
+| `claude/escudo-esferico-aliados` | Trabalho da Codex (concluído e validado pelo Claude): Ctrl alterna escudo; esfera; render dos aliados, escolta/EMP/cobertura e ordens 1–3 offline; catálogo ampliado; Oficina e Sala de Controle. `npm run check` verde (622 testes). O teste da chuva de mísseis passou a conferir só o dano do dono em si mesmo: com a vaga pedida já na perseguição, os bots da sala atacam mais cedo. Servidor público não acessado. | aberto 06/10 | 06/10 |
 | `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
 | `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |

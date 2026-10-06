@@ -553,8 +553,8 @@ describe('Chuva de mísseis online: o servidor decide onde cada bomba cai', () =
     expect(total).toBeGreaterThan(0);
     expect(total).toBeLessThanOrEqual(weapon('barrage').barrage!.bombs * weapon('barrage').damage);
     expect(before - lifeOf(bot.mech)).toBe(total); // o evento é a vida que saiu
-    // O dono não se fere com a própria chuva.
-    expect(lifeOf(mine.mech)).toBe(Object.values(mine.mech.stats.maxModuleHealth).reduce((a, b) => a + b, 0));
+    // O dono não se fere com a própria chuva (os bots da sala podem acertá-lo: aqui só conta o fogo dele mesmo).
+    expect(hitsSeen(dan).filter((h) => h.unit === me && h.other === me)).toEqual([]);
     room.dispose();
   });
 
@@ -587,17 +587,17 @@ describe('capacidade e energia da sala', () => {
       expect(roster().filter(u => u.kind === 'technician')).toHaveLength(1);
     } finally { room.dispose(); }
   });
-  it('escudo mantém as duas armas, consome energia no servidor e só envia a energia ao dono', async () => {
+  it.each([['frontal', .9], ['sphere', 130/150]] as const)('%s mantém as duas armas, consome energia no servidor e só envia a energia ao dono', async (module, remaining) => {
     const room = await ArenaRoom.create('ENERGIA');
     try {
       const a = new FakePeer(), b = new FakePeer();
-      room.receive(a, join('A', 'v2.vector09.plasma-0.rockets-0.-.frontal'));
+      room.receive(a, join('A', `v2.vector09.plasma-0.rockets-0.-.${module}`));
       room.receive(b, join('B'));
       expect(a.of(MSG.WELCOME)).toHaveLength(1);
       const id = decodeWelcome(a.of(MSG.WELCOME)[0]!)!.id;
       drive(room, a, 1, 30, { shield: true, fire: true, secondary: true });
       const sa = a.lastSnapshot(), sb = b.lastSnapshot();
-      expect(sa.energy).toBeCloseTo(.9, 2);
+      expect(sa.energy).toBeCloseTo(remaining, 2);
       expect(sb.energy).toBe(0);
       expect(sb.units.slice(0,sb.count).find(u => u.id === id)?.shield).toBe(true);
       expect(shotsOf(a,id)).toContain(netWeaponIndex('plasma'));

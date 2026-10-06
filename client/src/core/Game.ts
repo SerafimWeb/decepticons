@@ -1,3 +1,4 @@
+import { SquadHUD } from '../ui/SquadHUD';
 import { ShieldVisuals } from '../fx/ShieldVisuals';
 import { ShieldHUD } from '../ui/ShieldHUD';
 import { runtimeDiagnostics } from './runtimeDiagnostics';
@@ -209,6 +210,7 @@ export class Game {
   private readonly playTelemetry: PlayTelemetry;
   private activeBuild = '';
   private readonly shieldHUD: ShieldHUD;
+  private readonly squadHUD: SquadHUD;
   private readonly shieldVisuals = new ShieldVisuals(this.scene);
   private readonly drawShield = (r: {mech: MechBase}): void => this.shieldVisuals.update(r.mech);
   /** Gravação nativa de gameplay (dono, 28/09): tecla escondida, só para uso interno. */
@@ -438,6 +440,14 @@ export class Game {
     this.telemetry = new Telemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
     this.telemetry.enviar('boot_ok');
     this.shieldHUD = new ShieldHUD(this.input);
+    this.squadHUD = new SquadHUD();
+    this.squadHUD.onOrder = order => {
+      const allies = this.match.allies;
+      if (!allies || !this.playing || !this.mech.alive) return false;
+      const aimed = this.rig.aim.target;
+      const target = aimed ? this.bots.mechs.find(m => m.collider?.handle === aimed.handle) ?? null : null;
+      return allies.queueOrder(order, this.mech.simPosition, target);
+    };
     this.activeBuild = this.hangar.key;
     this.playTelemetry = new PlayTelemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, () => ({mode:this.gameMode,online:!!this.online,build:this.activeBuild,release:runtimeDiagnostics.release,assisted:(!this.online && this.power.changes>0)||this.mech.combatBoost.damageMultiplier>1||this.bankOnlineBoost>0}));
     this.recorder = new GameRecorder(this.renderer.domElement, this.audio);
@@ -841,6 +851,11 @@ export class Game {
         return;
       }
       if (!this.playing) return;
+      if (!Object.values(this.settings.value.keys).includes(code)) {
+        if (code === 'Digit1') this.squadHUD.command('follow');
+        if (code === 'Digit2') this.squadHUD.command('focus');
+        if (code === 'Digit3') this.squadHUD.command('hold');
+      }
       if (code === this.settings.value.keys.camera) this.switchCamera();
       else if (code === 'Escape' && !rig.mode.pointerLock) this.setPlaying(false);
     };
@@ -1060,6 +1075,7 @@ export class Game {
     // --- Render ---
     this.mech.render(dt, alpha);
     this.bots.render(dt, alpha);
+    this.match.allies?.render(dt, alpha);
     if (this.match.ctf && this.ctfObjectives) this.ctfObjectives.update(dt, this.match.ctf);
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);
@@ -1104,6 +1120,10 @@ export class Game {
       this.blindGain = null;
     }
 
+    const squad = this.match.allies;
+    let alliesAlive = 0;
+    if (squad) for (const m of squad.mechs) if (m.alive) alliesAlive++;
+    this.squadHUD.update(dt, !!squad && this.playing && this.mech.alive && !this.hangarView, squad?.order ?? 'follow', alliesAlive);
     this.shieldVisuals.begin();
     if (!this.hangarView) { this.shieldVisuals.update(this.mech); if(this.online?.joined)this.online.remotes.forEach(this.drawShield);else for(const bot of this.bots.mechs)this.shieldVisuals.update(bot); }
     this.shieldVisuals.end();

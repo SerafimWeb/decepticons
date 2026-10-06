@@ -42,3 +42,27 @@ describe("barreira frontal e energia", () => {
     expect(s.energy).toBe(0);
   });
 });
+
+
+describe('esfera', () => {
+  it('protege todas as direções e impactos no centro, custa energia e deixa passar o excesso', () => {
+    const s = new EnergyShield(); s.equip('sphere'); s.step(1 / 60, true);
+    for (const [x,y,z] of [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1],[0,0,0]]) {
+      expect(s.absorb(10,x!,y!,z!,0,0)).toBe(0);
+    }
+    expect(s.energy).toBeCloseTo(150 - 40 / 60 - 70);
+    s.energy = 5;
+    expect(s.absorb(20,0,0,1,0,0)).toBe(15);
+    expect(s.active).toBe(false);
+  });
+  it('dura 3,75 segundos e trocar entre geradores não cria energia', () => {
+    const s = new EnergyShield(); s.equip('sphere');
+    for (let i=0;i<225;i++) s.step(1/60,true);
+    expect(s.active).toBe(false); expect(s.energy).toBe(0);
+    s.equip('frontal',true); s.equip('sphere',true);
+    expect(s.energy).toBe(0);
+    s.reset(); s.equip('frontal',true);
+    expect(s.energy).toBe(100);
+    s.equip('sphere',true); expect(s.energy).toBe(100);
+  });
+});

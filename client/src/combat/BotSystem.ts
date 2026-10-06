@@ -8,9 +8,10 @@ import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { PERSONA_LABELS, type Persona } from '../core/Settings';
-import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BotController, type BotSkill, MECH_PROFILE, PERSONAS } from './BotController';
+import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BotController, type BotSkill, type SquadOrder, MECH_PROFILE, PERSONAS } from './BotController';
 import type { CombatSystem } from './CombatSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
+import { weapon } from './weapons';
 import { REPAIR_RATE } from './repair';
 import { TechnicianController } from './TechnicianController';
 import type { Respawner } from './Respawner';
@@ -52,6 +53,8 @@ export interface BotSystemOptions {
   respawn?: boolean;
   /** No CTF, cada defensor renasce na própria base em vez do ponto global mais distante. */
   respawnAtHome?: boolean;
+  /** Jogadores que a equipe acompanha (lista viva, sem cópia por tick). */
+  escort?: readonly MechBase[];
   /**
    * Cor do casco e do visor (padrão: as de sempre, roxo/violeta — "IA rebelde"). Um segundo `BotSystem`
    * pode passar as cores do jogador aqui pra virar um time de aliados, visualmente diferente do inimigo
@@ -109,6 +112,18 @@ export class BotSystem {
    * juntam"). Técnica clássica de jogos de tiro: pressão constante, sem todo mundo de uma vez.
    */
   maxAttackers = Infinity;
+  order: SquadOrder = 'follow';
+  private pendingOrder: SquadOrder | null = null;
+  private orderTarget: MechBase | null = null;
+  private readonly orderPoint = new THREE.Vector3();
+  /** UI apenas enfileira; ordens são aplicadas dentro do tick. */
+  queueOrder(order: SquadOrder, point: Readonly<THREE.Vector3>, target: MechBase | null = null): boolean {
+    if (!this.o.escort || (order === 'focus' && (!target?.alive || !this.targets.includes(target)))) return false;
+    this.pendingOrder = order;
+    this.orderPoint.copy(point);
+    this.orderTarget = target;
+    return true;
+  }
   private directorTimer = 0;
   /** Cérebros de combate (o diretor só olha para eles) e a fila ordenada, reaproveitados: sem alocar. */
   private readonly fighters: { bot: Bot; brain: BotController; key: number }[] = [];
@@ -136,6 +151,7 @@ export class BotSystem {
       const home = place(mech, p);
       const persona = PERSONAS[(!android && o.personas?.[i]) || 'soldado'];
       const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, o.skill ?? BOT_SKILL_NORMAL, android ? ANDROID_PROFILE : MECH_PROFILE, persona);
+      brain.escortSide = i % 2 ? 1 : -1;
       if (o.respawn !== false) {
         o.respawner.track(mech, BOT_RESPAWN_S, () => {
           if (o.respawnAtHome) mech.respawn(home);
@@ -147,7 +163,7 @@ export class BotSystem {
     // No placar e no nome sobre a cabeça, o nome e a personalidade (CLAUDE·BRABO): o jogador aprende quem é quem.
     const mechName = (i: number) => {
       const persona = o.personas?.[i];
-      const name = pick(BOT_NAMES.mechs, i, 'M');
+      const name = o.escort ? (i % 2 ? 'SUPRESSOR·EMP' : 'ESCOLTA·PLASMA') : pick(BOT_NAMES.mechs, i, 'M');
       return persona && persona !== 'soldado' ? `${name}·${PERSONA_LABELS[persona].label.toUpperCase()}` : name;
     };
     // Potências: os números de cada clã são montados uma vez aqui (nada muda no tick).
@@ -157,7 +173,10 @@ export class BotSystem {
     this.repairScale = power.clans.technician.damage;
     const paint = o.paint ?? BOT_PAINT;
     const visor = o.visor ?? PALETTE.signal;
-    o.spawns.forEach((p, i) => fighter(new Vector09({ paint, visor, stats: mechStats }), p, mechName(i), i, false));
+    const suppressionStats = o.escort ? poweredStats({ ...VECTOR09_STATS,
+      loadout: { primary: weapon('emp'), secondary: null } }, power, 'mechs') : mechStats;
+    o.spawns.forEach((p, i) => fighter(new Vector09({ paint, visor,
+      stats: o.escort && i % 2 ? suppressionStats : mechStats }), p, mechName(i), i, false));
 
     // Andróides: sementes depois das dos Mechs.
     (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true));
@@ -297,6 +316,14 @@ export class BotSystem {
     this.brainOf(mech)?.alert(shooter);
   }
 
+  /** Um companheiro pede ajuda: informação de impacto, sem conceder visão através de paredes. */
+  defend(player: MechBase, shooter: MechBase | undefined): void {
+    if (!shooter || !this.targets.includes(shooter)) return;
+    for (const { bot, brain } of this.fighters) {
+      if (bot.mech.alive && bot.mech.simPosition.distanceToSquared(player.simPosition) < 60 * 60) brain.alert(shooter);
+    }
+  }
+
   /**
    * Diretor de ataque: dá as vagas a quem quer atacar, nesta ordem: quem já tem a vaga e está no turno,
    * a prioridade da personalidade (o brabo primeiro), quem espera há mais tempo, e o mais perto do alvo.
@@ -351,9 +378,29 @@ export class BotSystem {
   }
 
   fixedUpdate(dt: number): void {
+    if (this.pendingOrder) {
+      this.order = this.pendingOrder;
+      this.pendingOrder = null;
+      for (const { brain } of this.fighters) brain.receiveOrder(this.order, this.orderPoint, this.orderTarget);
+    }
+    let focusing = false;
+    if (this.order === 'focus') for (const { brain } of this.fighters) if (brain.order === 'focus') focusing = true;
+    if (this.order === 'focus' && (!this.orderTarget?.alive || !focusing)) {
+      this.order = 'follow';
+      for (const { brain } of this.fighters) brain.receiveOrder('follow', this.orderPoint, null);
+    }
     this.direct(dt);
     for (const { mech, brain } of this.bots) {
       if (!mech.alive) continue;
+      if (brain instanceof BotController && this.o.escort) {
+        let leader: MechBase | null = null;
+        let distance = Infinity;
+        for (const player of this.o.escort) {
+          const d = player.simPosition.distanceToSquared(mech.simPosition);
+          if (player.alive && d < distance) { leader = player; distance = d; }
+        }
+        brain.leader = leader;
+      }
       mech.fixedUpdate(brain.think(dt, this.targets), dt);
       // Técnico no alcance: o conserto é regra do tick (quem escolhe o Mech é o cérebro).
       if (brain instanceof TechnicianController && brain.repairTarget) brain.repairTarget.repair(REPAIR_RATE * this.repairScale * dt);

@@ -133,3 +133,14 @@ describe('calibração do mouse (contas físicas)', () => {
     expect(calibrateFromCounts(MIN_CALIBRATION_COUNTS)).toEqual({ ok: true, sensitivity: LIMITS.sensitivity.max });
   });
 });
+
+
+it('migra o antigo E uma vez, preserva tecla personalizada e permite voltar a E', () => {
+  const storage = memoryStorage(JSON.stringify({ keys: { shield: 'KeyE' } }));
+  const s = new Settings(storage);
+  expect(s.value.keys.shield).toBe('Control');
+  s.update({ keys: { ...s.value.keys, shield: 'KeyE' } });
+  expect(new Settings(storage).value.keys.shield).toBe('KeyE');
+  expect(new Settings(memoryStorage(JSON.stringify({ keys: { shield: 'KeyF' } }))).value.keys.shield).toBe('KeyF');
+  expect(new Settings(memoryStorage(JSON.stringify({ keys: { shield: 'KeyE', jump: 'Control' } }))).value.keys.shield).toBe('KeyE');
+});

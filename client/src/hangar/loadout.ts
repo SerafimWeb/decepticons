@@ -1,4 +1,4 @@
-import { FRONTAL_SHIELD } from '../combat/EnergyShield';
+import { SHIELDS, type ShieldId } from '../combat/EnergyShield';
 import { weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { ARM_SLOTS, CHASSIS, type ChassisId } from '../entities/chassis';
 
@@ -27,7 +27,7 @@ export interface ArmSpec {
 
 export interface LoadoutSpec {
   v: 1 | 2;
-  module?: 'frontal' | null;
+  module?: ShieldId | null;
   chassis: ChassisId;
   /** Braço direito (Vector-09: energia; andróide: blaster). */
   right: ArmSpec;
@@ -116,9 +116,9 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   const spec2 = { v: LOADOUT_VERSION, chassis: s.chassis, right: s.right, left: s.left ?? null, shoulders } satisfies LoadoutSpec;
   // Carga: cada arma conta uma vez por encaixe em que atira (o lançador dos ombros vale dois).
   const module = s.module ?? null;
-  if (module !== null && (s.v !== 2 || module !== 'frontal')) return fail('formato', 'módulo inválido ou versão incompatível', 0, capacity);
+  if (module !== null && (s.v !== 2 || !Object.hasOwn(SHIELDS, module))) return fail('formato', 'módulo inválido ou versão incompatível', 0, capacity);
   if (module && s.chassis === 'android') return fail('encaixe', 'Andróide não possui encaixe de gerador', 0, capacity);
-  const mass = specWeapons(spec2).reduce((sum, w) => sum + w.mass, 0) + (module ? FRONTAL_SHIELD.mass : 0);
+  const mass = specWeapons(spec2).reduce((sum, w) => sum + w.mass, 0) + (module ? SHIELDS[module].mass : 0);
   if (mass > capacity + 1e-9) return fail('carga', `${mass} t de armas numa carga de ${capacity} t`, mass, capacity);
   // Com ombros, o gatilho secundário é deles e a mão esquerda leva a segunda arma do principal.
   const loadout: Loadout = hasShoulderSlot(s.chassis)

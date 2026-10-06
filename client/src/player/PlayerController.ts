@@ -44,6 +44,8 @@ export class PlayerController {
   firing = false;
   secondaryHeld = false;
 
+  private shieldRequested = false;
+  private inputResetVersion = 0;
   private jumpQueued = false;
   private dashQueued = false;
   private readonly armament: Armament;
@@ -77,6 +79,7 @@ export class PlayerController {
   /** O Mech trocou de armas (Hangar): carregador novo, cheio, com o lançador montado. */
   rearm(): void {
     this.armament.rearm();
+    this.shieldRequested = false;
   }
 
   /** O comando do último tick (o multiplayer manda para o servidor). */
@@ -86,7 +89,15 @@ export class PlayerController {
 
   /** Taxa do render: captura eventos de borda. */
   collect(): void {
-    if (!this.active) return;
+    if (!this.active || !this.mech.alive || this.inputResetVersion !== this.input.resetVersion) {
+      this.shieldRequested = false;
+      this.jumpQueued = this.dashQueued = false;
+      this.inputResetVersion = this.input.resetVersion;
+      this.input.virtualShield = false;
+      if (!this.active || !this.mech.alive) return;
+    }
+    if (this.input.wasPressed(this.keys.shield) || this.input.virtualShield) this.shieldRequested = !this.shieldRequested;
+    this.input.virtualShield = false;
     if (this.input.wasPressed(this.keys.jump) || this.input.virtualJump) this.jumpQueued = true;
     if (this.input.wasPressed(this.keys.dash) || this.input.virtualDash) this.dashQueued = true;
     // Reseta flags virtuais após ler
@@ -113,10 +124,12 @@ export class PlayerController {
     cmd.yaw = aim.yaw;
     cmd.jump = this.jumpQueued;
     cmd.dash = this.dashQueued;
-    cmd.shield = a && (this.input.isDown(k.shield) || this.input.virtualShield);
+    cmd.shield = a && this.mech.alive && this.shieldRequested;
     this.jumpQueued = this.dashQueued = false;
 
     this.mech.fixedUpdate(cmd, dt);
+    // Colapso, morte ou energia insuficiente exigem um novo toque, nunca religam sozinhos.
+    if (!this.mech.energyShield.active) this.shieldRequested = false;
 
     const wantsToFire = this.input.mouseDown || this.input.virtualFire || this.input.autoFire;
     this.firing = a && wantsToFire;

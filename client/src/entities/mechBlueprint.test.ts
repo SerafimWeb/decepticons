@@ -138,4 +138,20 @@ describe('a chuva de mísseis tem um morteiro próprio nas costas, apontando par
     rig.mountWeapons!(comChuva);
     expect(direito.geometry).toBe(antes);
   });
+
+  it('armas intercambiáveis trocam os dois desenhos preservando as bocas físicas', () => {
+    const rig = buildMechBlueprintRig(MEDIUM_MECH_BLUEPRINT);
+    const right = rig.rightArm as unknown as THREE.Object3D;
+    const left = rig.leftArm as unknown as THREE.Object3D;
+    const muzzle = rig.muzzle.position.clone(), side = rig.leftMuzzle!.position.clone();
+    rig.mountWeapons!({primary:weapon('shotgun'),secondary:weapon('plasma')});
+    expect(right.getObjectByName('weapon-shotgun')).toBeDefined();
+    expect(left.getObjectByName('weapon-plasma')).toBeDefined();
+    rig.mountWeapons!({primary:weapon('blaster'),secondary:weapon('railgun')});
+    expect(right.getObjectByName('weapon-shotgun')).toBeUndefined();
+    expect(right.getObjectByName('weapon-blaster')).toBeDefined();
+    expect(left.getObjectByName('weapon-railgun')).toBeDefined();
+    expect(rig.muzzle.position.toArray()).toEqual(muzzle.toArray());
+    expect(rig.leftMuzzle!.position.toArray()).toEqual(side.toArray());
+  });
 });

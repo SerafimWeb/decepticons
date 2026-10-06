@@ -1,10 +1,13 @@
 import * as THREE from 'three';
+import { CoverSeeking } from './CoverSeeking';
+import { ObstacleSteering } from './ObstacleSteering';
 import { mulberry32 } from '../core/rng';
 import type { Difficulty, Persona } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { setLocalMove, turnToward, wrapAngle, yawOf } from './steer';
 
+export type SquadOrder = 'follow' | 'focus' | 'hold';
 export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat' | 'cool' | 'stalk';
 
 /** Como o bot pilota: tempo de reação, mira e ritmo de tiro. Um conjunto por nível de dificuldade. */
@@ -169,6 +172,27 @@ export class BotController {
   /** Há quanto tempo espera a vaga (fila justa: quem espera há mais tempo vai primeiro). */
   tokenWait = 0;
 
+  /** Escolta acompanha o líder; a lista do time determina quem pode ser líder. */
+  leader: MechBase | null = null;
+  escortSide = 1;
+  order: SquadOrder = 'follow';
+  private focusTarget: MechBase | null = null;
+  private readonly guardPoint = new THREE.Vector3();
+  receiveOrder(order: SquadOrder, point: Readonly<THREE.Vector3>, target: MechBase | null): void {
+    this.order = order;
+    this.guardPoint.set(point.x + this.escortSide * 6, point.y, point.z);
+    this.focusTarget = order === 'focus' ? target : null;
+    this.target = this.focusTarget;
+    this.targetVisible = false;
+    this.visibleFor = 0;
+    this.losTimer = 0;
+    this.state = this.focusTarget ? 'chase' : 'patrol';
+    if (this.focusTarget) { this.lastSeen.copy(this.focusTarget.simPosition); this.sinceSeen = 0; }
+    this.obstacles.reset();
+    this.cover.reset();
+  }
+  private readonly obstacles: ObstacleSteering;
+  private readonly cover: CoverSeeking;
   private readonly rand: () => number;
   private target: MechBase | null = null;
   private targetVisible = false;
@@ -204,6 +228,8 @@ export class BotController {
     public persona: BotPersona = PERSONAS.soldado,
   ) {
     this.rand = mulberry32(seed);
+    this.cover = new CoverSeeking(physics, mech);
+    this.obstacles = new ObstacleSteering(physics, mech, seed % 2 ? -1 : 1);
     this.yaw = mech.yaw;
     this.burstLeft = this.burstSize();
     this.waypoint = Math.floor(this.rand() * waypoints.length);
@@ -220,7 +246,7 @@ export class BotController {
    * perto (de longe, quem ganha a vaga persegue até o alcance; sem isso, largava a vaga no caminho).
    */
   get wantsToken(): boolean {
-    return this.targetVisible && (this.state === 'attack' || this.state === 'retreat' || (this.state === 'chase' && this.hasToken));
+    return this.targetVisible && (this.state === 'attack' || this.state === 'retreat' || this.state === 'chase');
   }
 
   /** O alvo que está caçando (diretor: distância até ele). */
@@ -240,6 +266,8 @@ export class BotController {
   /** Volta ao estado inicial (ex.: depois de renascer). */
   reset(): void {
     this.state = 'patrol';
+    this.obstacles.reset();
+    this.losTimer = this.losMisses = 0;
     this.target = null;
     this.targetVisible = false;
     this.visibleFor = 0;
@@ -282,8 +310,10 @@ export class BotController {
     if (this.losTimer <= 0) {
       this.losTimer = LOS_INTERVAL_S;
       let best: MechBase | null = null;
+      if (this.focusTarget?.alive && this.visibleDistance(this.focusTarget) !== null) best = this.focusTarget;
       let bestDist = Infinity;
       for (const t of targets) {
+        if (best === this.focusTarget && best !== null) break;
         if (t === this.mech || !t.alive) continue;
         const d = this.visibleDistance(t);
         if (d === null) continue;
@@ -414,26 +444,21 @@ export class BotController {
 
   /** Para onde andar (direção no mundo) e para onde olhar; depois converte em `MechInput`. */
   private steer(dt: number): void {
-    const me = this.mech.simPosition;
     let faceYaw = this.yaw;
     _move.set(0, 0, 0);
 
-    const towards = (p: Readonly<THREE.Vector3>, sign = 1): void => {
-      _move.set(p.x - me.x, 0, p.z - me.z);
-      if (_move.lengthSq() > 1e-6) _move.normalize().multiplyScalar(sign);
-    };
-
     switch (this.state) {
       case 'patrol': {
+        if (!this.waypoints.length) break;
         const wp = this.waypoints[this.waypoint]!;
         if (this.flatDistance(wp) < WAYPOINT_REACHED) this.nextWaypoint();
-        towards(this.waypoints[this.waypoint]!);
+        this.towards(this.waypoints[this.waypoint]!);
         if (_move.lengthSq() > 1e-6) faceYaw = yawOf(_move.x, _move.z);
         break;
       }
       case 'chase': {
         const goal = this.targetVisible && this.target ? this.target.simPosition : this.lastSeen;
-        towards(goal);
+        this.towards(goal);
         faceYaw = this.targetVisible && this.target ? this.yawTo(this.target.simPosition) : yawOf(_move.x, _move.z);
         break;
       }
@@ -444,7 +469,9 @@ export class BotController {
         this.strafeTimer -= dt;
         if (this.strafeTimer <= 0) {
           const p = this.profile;
-          this.strafeSign = this.rand() < 0.5 ? -1 : 1;
+          // Busca o flanco do alvo: o lado depende da orientação dele, não de um passeio aleatório.
+          const off = wrapAngle(this.yawTo(t) - this.target.yaw);
+          this.strafeSign = Math.sin(off) >= 0 ? -1 : 1;
           this.strafeTimer = p.strafeMinS + this.rand() * (p.strafeMaxS - p.strafeMinS);
           // Desvio com dash para o lado novo. Só quem tem a chance sorteia (o RNG dos Mechs não muda).
           if (p.dodgeChance > 0 && this.rand() < p.dodgeChance && this.mech.mobility > 0) this.input.dash = true;
@@ -452,7 +479,7 @@ export class BotController {
         // Corpo a corpo, com a vaga: vai colado no alvo e circula devagar em volta dele.
         if (this.profile.melee && this.hasToken) {
           const gap = this.flatDistance(t) - this.mech.stats.radius - this.target.stats.radius;
-          towards(t);
+          this.towards(t);
           const side = gap < this.mech.loadout.primary.maxRange * 0.6 ? 1 : 0.35;
           if (gap < this.mech.loadout.primary.maxRange * 0.6) _move.set(0, 0, 0);
           _move.x += Math.cos(faceYaw) * this.strafeSign * side;
@@ -476,23 +503,61 @@ export class BotController {
         if (!this.target) break;
         const t = this.target.simPosition;
         _goal.set(t.x + Math.sin(this.target.yaw) * STALK_DIST, 0, t.z + Math.cos(this.target.yaw) * STALK_DIST);
-        towards(_goal);
+        this.towards(_goal);
         faceYaw = this.targetVisible ? this.yawTo(t) : yawOf(_move.x, _move.z);
         break;
       }
       case 'retreat': {
         const from = this.target ? this.target.simPosition : this.lastSeen;
-        towards(from, -1);
+        this.towards(from, -1);
         faceYaw = this.targetVisible && this.target ? this.yawTo(from) : yawOf(_move.x, _move.z);
         break;
       }
     }
 
+    if (this.order === 'focus' && (!this.focusTarget?.alive || this.sinceSeen > 5)) {
+      this.order = 'follow';
+      this.focusTarget = null;
+    }
+    const leader = this.leader;
+    if (this.order === 'follow' && leader?.alive && this.state !== 'retreat' &&
+        (this.state === 'patrol' || !this.targetVisible || this.flatDistance(leader.simPosition) > 36)) {
+      const p = leader.simPosition;
+      const side = this.escortSide * 7;
+      _goal.set(p.x + Math.sin(leader.yaw) * 9 + Math.cos(leader.yaw) * side, p.y,
+        p.z + Math.cos(leader.yaw) * 9 - Math.sin(leader.yaw) * side);
+      if (this.flatDistance(_goal) > 3) this.towards(_goal);
+      else _move.set(0, 0, 0);
+      faceYaw = this.targetVisible && this.target ? this.yawTo(this.target.simPosition) :
+        _move.lengthSq() > 0 ? yawOf(_move.x, _move.z) : leader.yaw;
+    }
+    if (this.order === 'hold' && this.state !== 'retreat') {
+      const distance = this.flatDistance(this.guardPoint);
+      // Pode trocar tiros em torno do posto; não abandona a área perseguindo um alvo distante.
+      if (distance > 10 || !this.targetVisible || this.state === 'chase' || this.state === 'patrol') {
+        if (distance > 3) this.towards(this.guardPoint);
+        else _move.set(0, 0, 0);
+        if (this.targetVisible && this.target) faceYaw = this.yawTo(this.target.simPosition);
+      }
+    }
+    if ((this.state === 'cool' || this.state === 'retreat') && this.target &&
+        this.cover.find(dt, this.target, this.targetVisible ? this.target.simPosition : this.lastSeen)) {
+      if (this.flatDistance(this.cover.goal) > 2.5) this.towards(this.cover.goal);
+      else _move.set(0, 0, 0);
+    }
     this.unstick(dt, faceYaw);
+    this.obstacles.steer(_move, dt);
+    if (!this.targetVisible && _move.lengthSq() > 0.01) faceYaw = yawOf(_move.x, _move.z);
 
     this.yaw = turnToward(this.yaw, faceYaw, this.skill.turnRate * dt);
 
     setLocalMove(this.input, _move.x, _move.z, this.yaw);
+  }
+
+  private towards(p: Readonly<THREE.Vector3>, sign = 1): void {
+    const me = this.mech.simPosition;
+    _move.set(p.x - me.x, 0, p.z - me.z);
+    if (_move.lengthSq() > 1e-6) _move.normalize().multiplyScalar(sign);
   }
 
   /** Encalhou (andando e quase parado)? Na patrulha troca de destino; em combate dá um passo de lado e pula. */
@@ -557,6 +622,9 @@ export class BotController {
 
     // Erro de mira: gira a direção um pouco em yaw e em pitch.
     _dir.normalize();
+    // Ver a cabeça do alvo não garante que a boca da arma esteja livre (cobertura/companheiro).
+    const obstruction = this.physics.firstColliderOnRay(_muzzle, _dir, _muzzle.distanceTo(_aim), m.collider);
+    if (obstruction && obstruction.handle !== t.collider?.handle) return;
     const err = this.skill.aimErrorRad * this.profile.aimErrorScale;
     const e = (this.rand() * 2 - 1) * err;
     const ce = Math.cos(e);

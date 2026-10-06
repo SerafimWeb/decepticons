@@ -41,12 +41,12 @@ describe('Hangar: contrato da montagem', () => {
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: null })).toMatchObject({ ok: false, error: 'formato' });
   });
 
-  it('cada encaixe aceita seu catálogo: trilho à direita e EMP à esquerda, blaster não cabe no Vector', () => {
-    expect(armOptions('right')).toEqual(['plasma', 'railgun']);
-    expect(armOptions('left')).toEqual(['rockets', 'barrage', 'emp']); // a chuva de mísseis também é arma de munição, do braço esquerdo
+  it('engates de energia compartilham armas; lançadores ainda exigem o encaixe correto', () => {
+    expect(armOptions('right')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp']);
+    expect(armOptions('left')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'rockets', 'barrage']);
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
-    expect(validateLoadout({ ...FACTORY_LOADOUT, left: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
-    expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(validateLoadout({ ...FACTORY_LOADOUT, left: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: true });
+    expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: true });
     expect(validateLoadout(build(0, null)).ok).toBe(true); // braço esquerdo vazio é permitido
   });
 
@@ -186,19 +186,19 @@ describe('o texto da montagem vale para todos os chassis (link e rede)', () => {
 describe('Lancer-L1: escopeta no braço direito e escudo no esquerdo (sem lança-mísseis)', () => {
   it('a fábrica é a escopeta sozinha, e o braço esquerdo não aceita arma nenhuma', () => {
     expect(factorySpec('lancerL1')).toEqual({ v: 1, chassis: 'lancerL1', right: { id: 'shotgun', tier: 0 }, left: null });
-    expect(armOptions('right', 'lancerL1')).toEqual(['shotgun']);
+    expect(armOptions('right', 'lancerL1')).toContain('shotgun');
     expect(armOptions('left', 'lancerL1')).toEqual([]);
   });
 
   it('foguete no braço do escudo e plasma no braço da escopeta são recusados; a escopeta em MK III cabe na carga', () => {
     const lancer = factorySpec('lancerL1');
     expect(validateLoadout({ ...lancer, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
-    expect(validateLoadout({ ...lancer, right: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(validateLoadout({ ...lancer, right: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: true });
     expect(validateLoadout({ ...lancer, right: { id: 'shotgun', tier: 2 } })).toMatchObject({ ok: true });
   });
 
   it('a escopeta não vai no Vector-09 (cada chassi diz o que aceita)', () => {
-    expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'shotgun', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'shotgun', tier: 0 } })).toMatchObject({ ok: true });
   });
 });
 
@@ -229,8 +229,8 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   });
 
   it('as mãos aceitam blaster ou plasma; foguete na mão e blaster no ombro são recusados; plasma duplo só sem os ombros', () => {
-    expect(armOptions('right', 'marauder')).toEqual(['blaster', 'plasma', 'railgun', 'emp']);
-    expect(armOptions('left', 'marauder')).toEqual(['blaster', 'plasma', 'emp']);
+    expect(armOptions('right', 'marauder')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp']);
+    expect(armOptions('left', 'marauder')).toEqual(armOptions('right', 'marauder'));
     expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage']);
     expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...factory, shoulders: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
@@ -342,9 +342,19 @@ describe('módulo extra versionado', () => {
     expect(result).toMatchObject({ok:true,mass:validateLoadout(old).mass+2});
     expect(result.ok && result.loadout).toMatchObject({module:'frontal',primary:{id:'plasma'},secondary:{id:'rockets'}});
     expect(validateLoadout({...factorySpec('android'),v:2,module:'frontal'}).ok).toBe(false);
-    expect(validateLoadout({...spec,module:'sphere'}).ok).toBe(false);
+    expect(validateLoadout({...spec,module:'inexistente'}).ok).toBe(false);
     expect(validateLoadout({...old,module:'frontal'}).ok).toBe(false);
     expect(validateLoadout({...spec,left:{id:'barrage',tier:1}})).toMatchObject({ok:false,error:'carga'});
     expect(parseLoadoutKey('v2.vector09.plasma-0.rockets-0.broken.frontal')).toBeNull();
   });
+});
+
+
+it('esfera mantém duas armas, conta 4 t e viaja no link sem aceitar sobrecarga', () => {
+  const spec: LoadoutSpec = { ...factorySpec('vector09'), v:2, module:'sphere' };
+  const c = validateLoadout(spec);
+  expect(c).toMatchObject({ok:true, mass:validateLoadout(factorySpec('vector09')).mass+4});
+  expect(c.ok && c.loadout).toMatchObject({module:'sphere', primary:{id:'plasma'}, secondary:{id:'rockets'}});
+  expect(parseLoadoutKey(loadoutKey(spec))).toEqual({...spec, shoulders:null});
+  expect(validateLoadout({...spec,right:{id:'railgun',tier:2}})).toMatchObject({ok:false,error:'carga'});
 });

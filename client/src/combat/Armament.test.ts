@@ -34,6 +34,16 @@ function bench(loadout: Loadout, triggers: TriggerLayout = DEFAULT_TRIGGERS) {
   return { mech, armament, shots, hold, from };
 }
 
+it('foguete no braço principal usa munição e recarga, sem virar projétil de energia', () => {
+  const w = { ...weapon('rockets'), heatPerShot: 0 };
+  const s = bench({primary:w,secondary:null});
+  s.hold(0.1,true);
+  expect(s.shots[0]).toMatchObject({kind:'rocket',mount:'rightHand',w:{id:'rockets'}});
+  expect(s.shots.some(s=>s.kind==='bolt')).toBe(false);
+  s.armament.rearm();s.hold(0.1,true);
+  expect(s.shots).toHaveLength(2);
+});
+
 /** O foguete do Hangar, mas que quase não esquenta: deixa o teste olhar o carregador sem o calor travar o Mech antes. */
 const COOL_ROCKETS: WeaponStats = Object.freeze({ ...weapon('rockets'), heatPerShot: 0.001 });
 

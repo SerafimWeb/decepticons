@@ -296,8 +296,10 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   let shownRight: Loadout['primary'] | undefined;
   let shownLeft: Loadout['secondary'] | undefined;
   const attachModule = (w: Loadout['secondary'], arm: THREE.Object3D, mouth: THREE.Object3D): THREE.Object3D | undefined => {
-    if (w?.id !== 'railgun' && w?.id !== 'emp') return undefined;
+    if (!w || w.id === 'barrage' || (w.tier === 0 &&
+        ((arm === rightArm && w.id === 'plasma') || (arm === leftArm && w.id === 'rockets')))) return undefined;
     const m = weaponModel(w);
+    m.object.name = `weapon-${w.id}`;
     const size = blueprint.arms.forearmWidth * 0.75;
     m.object.scale.setScalar(size);
     m.object.position.copy(mouth.position).addScaledVector(m.muzzle, -size);
@@ -318,7 +320,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     if (rightOriginal && rightGeometry && rightPlain) rightOriginal.geometry = rightModule ? rightPlain.geometry : rightGeometry;
     const chuva = loadout.secondary?.id === 'barrage';
     rack.visible = chuva;
-    if (casuloArm && casuloGeometry && lisoArm) casuloArm.geometry = chuva || leftModule ? lisoArm.geometry : casuloGeometry;
+    if (casuloArm && casuloGeometry && lisoArm) casuloArm.geometry = chuva || leftModule || !loadout.secondary ? lisoArm.geometry : casuloGeometry;
   };
   const setHeatVisual = (dt: number, heat: number, overheated: boolean, coolingBoost: boolean): void => {
     const setHeat = batchedMaterial.userData.setHeat;

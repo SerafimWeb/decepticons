@@ -207,6 +207,7 @@ export class Match {
             projectiles: this.projectiles,
             particles: o.particles,
             respawner: this.respawner,
+            escort: this.players,
             paint: PALETTE.playerPaint,
             visor: PALETTE.green,
             spawns: ALLY_SPAWNS.slice(0, allyCount),
@@ -250,6 +251,7 @@ export class Match {
     this.rockets.onExplode = explode;
     this.barrage.onExplode = explode;
     this.combat.onMechHit = (e) => {
+      if (this.players.includes(e.mech)) this.allies?.defend(e.mech, e.shooter);
       if (this.allies?.mechs.includes(e.mech)) this.allies.onDamaged(e.mech, e.shooter);
       else if (!this.players.includes(e.mech)) this.bots.onDamaged(e.mech, e.shooter);
       if (this.waves && e.shooter && this.players.includes(e.shooter) && this.bots.mechs.includes(e.mech)) {

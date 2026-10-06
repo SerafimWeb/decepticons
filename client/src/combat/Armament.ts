@@ -36,6 +36,7 @@ export class Armament {
   /** Carregador do gatilho secundário (o HUD lê daqui). Refeito ao trocar de armas. */
   launcher: RocketLauncher;
   /** Cadência de cada mão do gatilho principal. */
+  private primaryLaunchers: RocketLauncher[];
   private readonly hands = [new FireTimer(), new FireTimer()];
   /** Cadência do gatilho secundário quando ele não é de carregador (serra, arma de energia). */
   private readonly side = new FireTimer();
@@ -45,11 +46,13 @@ export class Armament {
 
   constructor(private readonly mech: MechBase) {
     this.launcher = this.newLauncher();
+    this.primaryLaunchers = [new RocketLauncher(mech.loadout.primary), new RocketLauncher(mech.loadout.offhand ?? mech.loadout.primary)];
   }
 
   /** O Mech trocou de armas (Hangar): carregador novo, cheio, com o lançador montado. */
   rearm(): void {
     this.launcher = this.newLauncher();
+    this.primaryLaunchers = [new RocketLauncher(this.mech.loadout.primary), new RocketLauncher(this.mech.loadout.offhand ?? this.mech.loadout.primary)];
     for (const t of this.hands) t.reset();
     this.side.reset();
     for (const c of this.charge) c.reset();
@@ -64,6 +67,9 @@ export class Armament {
 
     const right = this.hands[0]!;
     const left = this.hands[1]!;
+    for (const launcher of this.primaryLaunchers) {
+      if (!m.alive) launcher.refill(); else launcher.fixedUpdate(dt);
+    }
     right.fixedUpdate(dt);
     left.fixedUpdate(dt);
     if (!fire) { this.charge[0]!.reset(); this.charge[1]!.reset(); }
@@ -78,7 +84,10 @@ export class Armament {
           timer.shot(w.fireInterval / 2);
           continue;
         }
-        sink.projectile(mount, w);
+        if (w.kind === 'ammo') {
+          if (!this.primaryLaunchers[i]!.tryFire()) continue;
+          sink.rocket(mount, w, i);
+        } else sink.projectile(mount, w);
         m.onFireMount(mount, w);
         timer.shot(w.fireInterval);
         fired = true;

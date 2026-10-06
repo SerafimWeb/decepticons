@@ -5,6 +5,16 @@
 
 Última revisão: 2026-10-06
 
+## Incremento em validação — branch `codex/escudo-esferico-aliados`
+
+Ainda não publicado. Ctrl por toque (migração do antigo E), esfera em módulo extra (4 t, 150 energia, 40/s, até 3,75 s sem impactos), armas preservadas. Regras compartilhadas com servidor, protocolo 6 sem bytes adicionais. Online público depende de servidor atualizado quando o dono o reativar; nenhuma tentativa de acesso nesta sessão.
+
+Aliados agora têm render no loop do Game (a simulação já movia os corpos, mas o desenho ficava no spawn). Escolta com plasma, supressor EMP, formação/leash, desvio local a 5 Hz, busca de cobertura ao recuar/esfriar e checagem de boca de tiro obstruída. Ordens na Arena offline: 1 acompanhar, 2 foco no alvo da mira, 3 defender posição; botões também no toque. Não há navegação global por malha nem garantia de comportamento humano em toda rota. Combate e comandos precisam de playtest prolongado.
+
+Catálogo ampliado nos engates dos Mechs, respeitando massa e slots especiais; Andróide conserva equipamentos leves, Lancer mantém a mão do escudo, Marauder preserva ombros. Procedurais e Marauder trocam os modelos; Gênesis/Lancer/Bastion/Quadra continuam com aparência de arma integrada do GLB (PARCIAL visual). Escudo metálico removível continua AUSENTE.
+
+Oficina ganha compatibilidade por chassi, massa, escudos e ordens; Sala de Controle ganha roteiro de playtest e propostas de feixe térmico/arpão, explicitamente não equipáveis. Contagem de testes não certifica diversão ou escala.
+
 | Feature | Estado | Observação |
 |---|---|---|
 | Barreira frontal / energia | PARCIAL — online público pendente | PR #171 mergeado; implementada offline e na simulação autoritativa local: módulo extra, 2 t, duas armas preservadas, E remapeável/toque. Protocolo 5; ver HANGAR.md. Check/CI e prova de navegador verdes; falta playtest público online. |

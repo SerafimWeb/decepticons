@@ -2119,8 +2119,16 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 :root { --shield: #29a9ff; --shield-fill: #123b52; --shield-empty: #09121a; --shield-panel: #07191f; --shield-text: #e6f9ff; --shield-edge: #2c7086; }
 #energy-shield {position:fixed;left:20px;bottom:22px;z-index:12;color:var(--text);border:1px solid var(--shield);background:linear-gradient(90deg,var(--shield-fill) var(--energy),var(--shield-empty) var(--energy));padding:9px 13px;font:11px Consolas,monospace;touch-action:none;pointer-events:auto;}
 #energy-shield[hidden]{display:none;}
-@media (max-width:600px) { #energy-shield {left:12px;top:150px;bottom:auto;font-size:9px;padding:8px;} }
+@media (max-width:600px) { #energy-shield {left:12px;top:265px;bottom:auto;font-size:9px;padding:8px;} }
 .hg-module{display:grid;gap:6px;font-size:10px;margin:8px 0;color:var(--text);}
 .hg-module select{padding:8px;background:var(--shield-panel);color:var(--shield-text);border:1px solid var(--shield-edge);}
 #debug-panel:not(.detailed) .diagnostics-export{display:none;}
 .diagnostics-export{pointer-events:auto;font:10px Consolas,monospace;background:var(--shield-panel);color:var(--shield-text);border:1px solid var(--shield-edge);padding:5px;margin-top:6px;}
+
+/* Ordens de equipe ficam acima da energia, fora do centro da mira. */
+#squad-orders { position:fixed; left:20px; bottom:76px; display:grid; grid-template-columns:repeat(3,1fr); gap:5px; pointer-events:auto; max-width:360px; padding:8px; background:var(--panel-bg, #101820dd); border:1px solid var(--line, #456); border-radius:6px; font:11px monospace; }
+#squad-orders[hidden] { display:none; }
+#squad-orders button { padding:9px 7px; background:#17262c; color:#c4e3e8; border:1px solid #49636a; border-radius:3px; cursor:pointer; font:inherit; }
+#squad-orders button[aria-pressed=true] { border-color:#55bfff; color:#8ed7ff; }
+#squad-orders span { grid-column:1/-1; color:#c4e3e8; }
+@media(max-width:700px) { #squad-orders { left:12px; bottom:auto; top:195px; max-width:calc(100vw - 24px); font-size:9px; } }

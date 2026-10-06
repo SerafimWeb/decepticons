@@ -221,7 +221,7 @@ export class HangarMenu {
           <button type="button" class="hg-path soon" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /></svg><b>BLINDAGEM</b><small>em breve</small></button>
           <button type="button" class="hg-path" data-action="module"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" /><path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" /></svg><b>MÓDULOS</b><small>gerador abaixo</small></button>
         </div>
-        <label class="hg-module">MÓDULO EXTRA · preserva as duas armas<select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t</option></select><small>Segure a tecla de barreira (padrão E) · até 5 s · protege a frente · recarrega desligado</small></label><div id="hangar-slot-list" class="hg-slots"></div>
+        <label class="hg-module">MÓDULO EXTRA · preserva as duas armas<select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t</option><option value="sphere">Esfera de energia · 4,0 t</option></select><small>Ctrl: ligar/desligar · frontal: 5 s / 120° · esfera: 3,75 s / 360° · impactos gastam energia</small></label><div id="hangar-slot-list" class="hg-slots"></div>
         <div id="hangar-weapon-editor" class="hg-editor"></div>
         <div class="hg-actions">
           <span id="hangar-message" role="status"></span>
@@ -543,7 +543,7 @@ export class HangarMenu {
   private onChange(event: Event): void {
     const target = event.target;
     if (!(target instanceof HTMLSelectElement)) return;
-    if (target.id === 'hangar-module-select') { this.draft = { ...this.draft, v: 2, module: target.value === 'frontal' ? 'frontal' : null }; this.render(); return; }
+    if (target.id === 'hangar-module-select') { this.draft = { ...this.draft, v: 2, module: target.value === 'frontal' || target.value === 'sphere' ? target.value : null }; this.render(); return; }
     if (target.id !== 'hangar-weapon-select') return;
     const selected = target.value as WeaponId | '';
     this.draft = withArm(this.draft, this.selectedSlot, () => (selected ? { id: selected, tier: this.draft[this.selectedSlot]?.tier ?? 0 } : null));
@@ -652,7 +652,7 @@ export class HangarMenu {
       <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}</select>
       <p class="hg-hint">${w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
 ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou testar. A prévia mantém a última montagem válida.</p>' : ''}
-      <div class="hg-label">NÍVEL DE POTÊNCIA</div>
+      ${["genesis01", "lancerL1", "lr7lBastion", "quadraV2"].includes(spec.chassis) ? '<p class="hg-hint">Arma integrada ao casco: a aparência deste robô ainda não muda com a seleção.</p>' : ''}<div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => { const copies = mountCopies(this.selectedSlot, spec.chassis); const mass = arm ? weapon(arm.id, i as Tier).mass * copies : 0; const total = report.mass - (w?.mass ?? 0) * copies + mass; const excess = Math.max(0, total - report.capacity); const hint = excess > 1e-9 ? `EXCEDE ${num(excess, 1)} t` : `${num(report.capacity - total, 1)} t livres`; return `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}${excess > 1e-9 ? ' over' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}" title="${hint}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : `+${Math.round((t.damage - 1) * 100)}% dano`} · ${num(mass, 1)} t</small><small>${hint}</small></button>`; }).join('')}</div>
       <button class="hg-test-btn" type="button" data-action="test"${arm && report.check.ok ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>
       <button class="hg-practice-btn" type="button" data-action="aim-practice"${arm && report.check.ok ? '' : ' disabled'}>◎ TREINO DE MIRA · ALVO MÓVEL</button>
