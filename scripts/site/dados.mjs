@@ -138,6 +138,25 @@ export function readEstado() {
   };
 }
 
+// ---------- STATUS_REAL ----------
+
+/**
+ * O quadro do que existe de verdade (`STATUS_REAL.md`, R13): uma linha por recurso, com o estado em REAL, PARCIAL, DEMO ou
+ * AUSENTE. A oficina conta como cada coisa funciona pelo código do jogo e mostra, ao lado, o selo deste quadro: o quão pronta
+ * ela está. Linha que mudou de nome ou de formato → sem selo, nunca selo errado (R14).
+ */
+export function statusReal() {
+  try {
+    return read('.decepticons/STATUS_REAL.md')
+      .split('\n')
+      .map((l) => /^\|\s*([^|]+?)\s*\|\s*(REAL|PARCIAL|DEMO|AUSENTE)\b([^|]*)\|/.exec(l))
+      .filter(Boolean)
+      .map((m) => ({ feature: m[1], tag: m[2], note: m[3].replace(/^\s*[—–-]\s*/, '').trim() }));
+  } catch {
+    return [];
+  }
+}
+
 // ---------- GAME_DESIGN ----------
 
 function designSection(title) {
@@ -182,6 +201,9 @@ export async function jogo() {
     const { VECTOR09_STATS, ANDROID_STATS, PILOT_ANDROID_STATS, ARM_SLOTS, CHASSIS } = await load('client/src/entities/chassis.ts');
     const hangar = await load('client/src/hangar/loadout.ts');
     const shields = await load('client/src/combat/EnergyShield.ts');
+    // O escudo físico (4 modelos, resistência por natureza de dano) e as zonas da arena: a oficina descreve os dois pelos números do jogo.
+    const metal = await load('client/src/combat/MetalShield.ts');
+    const zones = await load('client/src/combat/Zone.ts');
     const count = (file) => (read(file).match(/^\s+it\(/gm) ?? []).length;
     // Rede (multiplayer): ritmos, tetos e a conta da banda, do mesmo código que os testes travam.
     const netConst = await load('shared/net/constants.ts');
@@ -206,7 +228,7 @@ export async function jogo() {
     const tests = count('client/src/combat/weapons.test.ts');
     // Testes que travam as regras da bancada: armas, calor e o Mech de verdade contra a bancada.
     const benchTests = tests + count('client/src/combat/heat.test.ts') + count('client/src/entities/MechHeat.test.ts');
-    return { weapons, balance, heat, hangar, shields, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, slots: ARM_SLOTS, chassis: CHASSIS, tests, benchTests, net };
+    return { weapons, balance, heat, hangar, shields, metal, zones, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, slots: ARM_SLOTS, chassis: CHASSIS, tests, benchTests, net };
   } catch (err) {
     console.warn(`::warning::site sem os dados do jogo: ${err instanceof Error ? err.message : err}`);
     return null;

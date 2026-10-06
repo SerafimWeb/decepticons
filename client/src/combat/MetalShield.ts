@@ -63,10 +63,10 @@ export function metalShieldMass(id: MetalShieldId, tier: Tier): number {
 }
 
 /** Levantado: cone de 150° à frente da mira. Abaixado: cone de 100° centrado 60° à esquerda, com metade da força. */
-const RAISED_CONE_COS = Math.cos((75 * Math.PI) / 180);
+export const RAISED_CONE_COS = Math.cos((75 * Math.PI) / 180);
 const LOWERED_CENTER = Math.PI / 3;
-const LOWERED_CONE_COS = Math.cos((50 * Math.PI) / 180);
-const LOWERED_FACTOR = 0.5;
+export const LOWERED_CONE_COS = Math.cos((50 * Math.PI) / 180);
+export const LOWERED_FACTOR = 0.5;
 const MAX_RESIST = 0.95;
 /** Velocidade do Mech com a chapa levantada. */
 export const RAISED_SPEED = 0.75;
