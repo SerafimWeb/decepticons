@@ -118,12 +118,14 @@ interface StatRow {
 }
 const STATS: StatRow[] = [
   { key: 'dmg', label: 'DANO', unit: '', get: (w) => w.damage, digits: 0 },
-  { key: 'rate', label: 'CADÊNCIA', unit: '/s', get: (w) => 1 / w.fireInterval, digits: 1 },
-  { key: 'heat', label: 'CALOR', unit: '%/s', get: (w) => (w.heatPerShot / w.fireInterval) * 100, digits: 0, lowerIsBetter: true },
+  { key: 'rate', label: 'CADÊNCIA', unit: '/s', get: (w) => 1 / (w.fireInterval + (w.chargeTime ?? 0)), digits: 1 },
+  { key: 'heat', label: 'CALOR', unit: '%/s', get: (w) => (w.heatPerShot / (w.fireInterval + (w.chargeTime ?? 0))) * 100, digits: 0, lowerIsBetter: true },
   { key: 'range', label: 'ALCANCE', unit: ' m', get: (w) => w.maxRange, digits: 0 },
   { key: 'mass', label: 'CARGA', unit: ' t', get: (w) => w.mass, digits: 1, lowerIsBetter: true },
 ];
 const STAT_MAX: Record<string, number> = Object.fromEntries(STATS.map((s) => [s.key, Math.max(...WEAPON_IDS.map((id) => s.get(weapon(id, 2))))]));
+
+const mountCopies = (slot: ArmSlot, chassis: ChassisId): number => slot === 'shoulders' ? (CHASSIS[chassis].triggers?.secondary.length ?? 0) : 1;
 
 const num = (x: number, digits: number) => x.toFixed(digits).replace('.', ',');
 
@@ -154,6 +156,7 @@ export class HangarMenu {
   /** Teste de disparo em andamento (os números da tela saem dele). */
   private testing: TestFire | null = null;
   private aimTraining = false;
+  private previewChassis: ChassisId | null = null;
 
   get isAimTraining(): boolean {
     return this.aimTraining;
@@ -330,18 +333,19 @@ export class HangarMenu {
   }
 
   /** Atualiza a leitura do treino manual sem re-renderizar a tela a cada quadro. */
-  aimPracticeFrame(seconds: number, shots: number, hits: number, accuracy: number): void {
+  aimPracticeFrame(seconds: number, shots: number, hits: number, accuracy: number, charge: number): void {
     if (!this.aimTraining) return;
     this.setText('hg-test-time', `${num(seconds, 1)} s`);
     this.setText('hg-test-shots', String(shots));
     this.setText('hg-test-dmg', String(hits));
     this.root.querySelector<HTMLElement>('#hg-test-heatbar')!.style.width = `${accuracy}%`;
     this.setText('hg-test-state', `${accuracy}%`);
+    this.setText('hg-practice-help', charge > 0 ? `CARREGANDO · ${Math.round(charge * 100)}% · SEGURE O BOTÃO ESQUERDO` : 'MOVA A MIRA E SEGURE O BOTÃO ESQUERDO · ESC PARA SAIR');
   }
 
   private startTest(): void {
     const arm = this.draft[this.selectedSlot];
-    if (!arm) return;
+    if (!arm || !this.hangar.check(this.draft).ok) return;
     const w = weapon(arm.id, arm.tier);
     const mounts = slotMounts(this.draft.chassis, this.selectedSlot);
     const data = testFire(CHASSIS[this.draft.chassis], w, TEST_FIRE_S, mounts.length);
@@ -357,7 +361,7 @@ export class HangarMenu {
 
   private startAimPractice(): void {
     const arm = this.draft[this.selectedSlot];
-    if (!arm || !this.preview.aimPractice) return;
+    if (!arm || !this.preview.aimPractice || !this.hangar.check(this.draft).ok) return;
     const selectedWeapon = weapon(arm.id, arm.tier);
     if (selectedWeapon.kind === 'melee') {
       this.message = 'O alvo móvel treina armas de tiro. Use TESTAR DISPARO para conferir a motosserra.';
@@ -589,7 +593,9 @@ export class HangarMenu {
     for (const b of this.root.querySelectorAll<HTMLButtonElement>('[data-tab-btn]')) b.classList.toggle('selected', b.dataset.tabBtn === this.tab);
 
     // O galpão 3D mostra a montagem do rascunho (a válida; fora da carga, as armas de fábrica do chassi).
-    this.preview.show?.(spec.chassis, report.check.ok ? report.check.loadout : chassis.loadout);
+    if (report.check.ok) this.preview.show?.(spec.chassis, report.check.loadout);
+    else if (this.previewChassis !== spec.chassis) this.preview.show?.(spec.chassis, chassis.loadout);
+    this.previewChassis = spec.chassis;
 
     this.setText('hg-top-load', `${num(report.mass, 1)} / ${num(report.capacity, 0)} t`);
     this.setText('hg-top-pilot', label.title);
@@ -623,7 +629,7 @@ export class HangarMenu {
         const arm = spec[slot] ?? null;
         const w = arm ? weapon(arm.id, arm.tier) : null;
         const selected = slot === this.selectedSlot;
-        return `<button class="hg-slot${selected ? ' selected' : ''}${w ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${w ? WEAPON_ICON[w.id] : '<path d="M6 12h12" />'}</svg><span><small>${SLOT_LABEL[slot]}</small><b>${w?.name ?? (slot === 'left' && shield ? 'ESCUDO' : 'VAZIO')}</b></span><em>${w ? TIERS[w.tier]!.label : '—'}</em></button>`;
+        return `<button class="hg-slot${selected ? ' selected' : ''}${w ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${w ? WEAPON_ICON[w.id] : '<path d="M6 12h12" />'}</svg><span><small>${SLOT_LABEL[slot]}</small><b>${w?.name ?? (slot === 'left' && shield ? 'ESCUDO' : 'VAZIO')}</b></span><em>${w ? TIERS[w.tier]!.label + " · " + num(w.mass * mountCopies(slot, spec.chassis), 1) + " t" : "—"}</em></button>`;
       })
       .join('');
 
@@ -632,7 +638,7 @@ export class HangarMenu {
     const nowArm = current.chassis === spec.chassis ? (current[this.selectedSlot] ?? null) : null;
     const was = nowArm ? weapon(nowArm.id, nowArm.tier) : null;
     const options = armOptions(this.selectedSlot, spec.chassis)
-      .map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name}${nasCostas(id, this.selectedSlot) ? ' · morteiro nas costas' : ''}</option>`)
+      .map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name} · ${num(weapon(id, arm?.tier ?? 0).mass * mountCopies(this.selectedSlot, spec.chassis), 1)} t${nasCostas(id, this.selectedSlot) ? ' · morteiro nas costas' : ''}</option>`)
       .join('');
     const shieldArm = this.selectedSlot === 'left' && shield;
     const editor = this.root.querySelector<HTMLElement>('#hangar-weapon-editor')!;
@@ -640,10 +646,11 @@ export class HangarMenu {
       <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ARMAMENTO</label>
       <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}</select>
       <p class="hg-hint">${w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
+${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou testar. A prévia mantém a última montagem válida.</p>' : ''}
       <div class="hg-label">NÍVEL DE POTÊNCIA</div>
-      <div class="hg-tiers">${TIERS.map((t, i) => `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : `+${Math.round((t.damage - 1) * 100)}% dano`}</small></button>`).join('')}</div>
-      <button class="hg-test-btn" type="button" data-action="test"${arm ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>
-      <button class="hg-practice-btn" type="button" data-action="aim-practice"${arm ? '' : ' disabled'}>◎ TREINO DE MIRA · ALVO MÓVEL</button>
+      <div class="hg-tiers">${TIERS.map((t, i) => { const copies = mountCopies(this.selectedSlot, spec.chassis); const mass = arm ? weapon(arm.id, i as Tier).mass * copies : 0; const total = report.mass - (w?.mass ?? 0) * copies + mass; const excess = Math.max(0, total - report.capacity); const hint = excess > 1e-9 ? `EXCEDE ${num(excess, 1)} t` : `${num(report.capacity - total, 1)} t livres`; return `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}${excess > 1e-9 ? ' over' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}" title="${hint}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : `+${Math.round((t.damage - 1) * 100)}% dano`} · ${num(mass, 1)} t</small><small>${hint}</small></button>`; }).join('')}</div>
+      <button class="hg-test-btn" type="button" data-action="test"${arm && report.check.ok ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>
+      <button class="hg-practice-btn" type="button" data-action="aim-practice"${arm && report.check.ok ? '' : ' disabled'}>◎ TREINO DE MIRA · ALVO MÓVEL</button>
       ${w ? `<div class="hg-bars">${STATS.map((s) => bar(s, w, was)).join('')}</div><p class="hg-legend"><i class="now"></i> esta montagem <i class="was"></i> a que está no Mech</p>` : ''}`;
 
     const capPct = Math.min(100, (report.mass / report.capacity) * 100);
@@ -652,10 +659,10 @@ export class HangarMenu {
     const over = !report.check.ok && report.check.error === 'carga';
     fill.classList.toggle('over', over);
     this.setText('hangar-mass-value', `${num(report.mass, 1)} / ${num(report.capacity, 0)} t`);
-    this.setText('hangar-mass-caption', over ? 'PASSOU DA CARGA: alivie um braço' : `${num(Math.max(0, report.capacity - report.mass), 1)} t livres`);
-    this.setText('hangar-heat-value', report.overheatAt === null ? 'NÃO FERVE' : `${num(report.overheatAt, 1)} s`);
-    this.setText('hangar-ttk-value', Number.isFinite(report.ttkTorso) ? `${num(report.ttkTorso, 1)} s` : '—');
-    this.setText('hangar-damage-value', `${Math.round(report.damage20)} HP`);
+    this.setText('hangar-mass-caption', over ? `EXCEDE ${num(report.mass - report.capacity, 1)} t · reduza o nível ou esvazie um encaixe` : `${num(Math.max(0, report.capacity - report.mass), 1)} t livres`);
+    this.setText('hangar-heat-value', !report.check.ok ? '—' : report.overheatAt === null ? 'NÃO FERVE' : `${num(report.overheatAt, 1)} s`);
+    this.setText('hangar-ttk-value', report.check.ok && Number.isFinite(report.ttkTorso) ? `${num(report.ttkTorso, 1)} s` : '—');
+    this.setText('hangar-damage-value', report.check.ok ? `${Math.round(report.damage20)} HP` : '—');
     const shareUrl = new URL(location.href);
     shareUrl.searchParams.set('build', loadoutKey(spec));
     shareUrl.searchParams.delete('sala');

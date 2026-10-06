@@ -1,5 +1,15 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-06] Inicialização previsível da medição de bocas (Codex)
+
+O gate passou e sua repetição falhou no timeout padrão de navegação, antes do prazo explícito de 120 s para carregar o modelo. Alinhados os prazos; Edge é a primeira opção no Windows e cada tentativa de abrir navegador tem teto de 20 s. A prova continua carregando o rig e comparando as quatro bocas com tolerância de 15 cm. Nova execução isolada: todas com diferença 0,00 m.
+
+## 06/10 — Codex: UX da montagem e revisão amostral dos testes
+
+Dono perguntou se 594 testes significam valor/cobertura e se há verificações obsoletas. Inventário de 81 arquivos e leitura amostral: contagem não mede cobertura; custo recente da suíte ~22 s, contra build/navegador/site adicionais. Dois módulos sem imports no runtime (inspeção de Mechs e budget de rede) são usados por ferramentas/site e não devem ser removidos. Achado concreto: ModeSelector.test travava 2 modos e callbacks, mas Game tinha 3 modos e o painel só abria briefing de exemplo. Corrigir contrato/navegação real e substituir asserções fracas, sem inflar a suíte. TESTES.md registra escopo e limites da revisão.
+
+Direção de UX autorizada: peso por módulo e MK, indicação do excesso e ações possíveis, impedir teste/aplicação de montagem inválida e manter última prévia válida. Cadência/calor nominal incluem a carga. Treino de mira reutiliza ChargeTimer em vez de novo módulo/testes duplicados; clique curto cancela e o disparo só acontece após a carga. Provar integração no navegador. Seletor lê o modo da mesma URL/contrato do Match, oferece CTF e navega para a partida escolhida; MissionHUD separado passa a DEMO em STATUS_REAL (dados de exemplo no Game). Nenhuma mudança nos gates de CI/hook, nenhuma operação do servidor público offline.
+
 ## 06/10 — Codex: BANCO VORCARIS e direção de evolução
 
 O dono autorizou banco físico na arena com letreiro azul superior e terminal automático na porta; recompensas de créditos e reforços em ambos os modos. Implementação separada das armas (#168). Reutilizar DailyChallenges; créditos continuam no aparelho, sem inventar loja ou migração para contas. Códigos em tabela compartilhada: 134 MILHÕES, OFICINA, TURBO. Bônus de dano 25%/30 s, sem empilhar, reset no respawn, aplicado pela mesma simulação; validação online por posição real da sala.

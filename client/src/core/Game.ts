@@ -56,7 +56,7 @@ import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassi
 import { COLOSSUS_01_BLUEPRINT, HEAVY_MECH_BLUEPRINT, LIGHT_MECH_BLUEPRINT, type MechBlueprint } from '../entities/mechBlueprint';
 import { ImportedMech } from '../entities/ImportedMech';
 import { IMPORTED_CHASSIS, preloadMechAsset, tryInstantiateMechRig } from '../entities/importedMechAssets';
-import type { Loadout } from '../combat/weapons';
+import type { Loadout, WeaponStats } from '../combat/weapons';
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { PALETTE } from './palette';
@@ -205,7 +205,7 @@ export class Game {
   /** Gravação nativa de gameplay (dono, 28/09): tecla escondida, só para uso interno. */
   private readonly recorder: GameRecorder;
   private readonly lobby = new OnlineLobby();
-  private aimPracticeInterval = 0.18;
+  private aimPracticeWeapon: WeaponStats | null = null;
   private savedPracticeLook: { yaw: number; pitch: number; mode: CameraModeId } | null = null;
   private readonly renderPass: RenderPass;
   private accumulator = 0;
@@ -462,7 +462,7 @@ export class Game {
       stopTest: () => this.hangarScene?.stopTest(),
       aimPractice: (w) => {
         this.savedPracticeLook = { yaw: this.rig.look.yaw, pitch: this.rig.look.pitch, mode: this.rig.mode.id };
-        this.aimPracticeInterval = w.fireInterval;
+        this.aimPracticeWeapon = w;
         if (!this.rig.mode.pointerLock) {
           this.rig.setMode('tps');
           this.hud.setMode(this.rig.mode);
@@ -499,9 +499,10 @@ export class Game {
 
     this.modeSelector.attachTo(document.getElementById('overlay'));
     this.modeSelector.onModeChange((mode) => {
-      if (mode === 'survival') {
-        this.triggerMissionBriefing();
-      }
+      const url = new URL(location.href);
+      if (mode === 'deathmatch') url.searchParams.delete('modo');
+      else { url.searchParams.set('modo', mode); url.searchParams.delete('sala'); url.searchParams.delete('servidor'); }
+      location.assign(url);
     });
 
     this.missionHud.onRetry = () => {
@@ -1043,8 +1044,8 @@ export class Game {
       const hs = this.hangarScene!;
       hs.update(dt);
       if (this.hangarMenu.isAimTraining) {
-        hs.updateAimPractice(dt, this.rig.look.yaw, this.rig.look.pitch, this.input.mouseDown, this.aimPracticeInterval);
-        this.hangarMenu.aimPracticeFrame(hs.aimPracticeTime, hs.aimPracticeShots, hs.aimPracticeHits, hs.aimPracticeAccuracy);
+        hs.updateAimPractice(dt, this.rig.look.yaw, this.rig.look.pitch, this.input.mouseDown, this.aimPracticeWeapon!);
+        this.hangarMenu.aimPracticeFrame(hs.aimPracticeTime, hs.aimPracticeShots, hs.aimPracticeHits, hs.aimPracticeAccuracy, hs.aimPracticeCharge);
       }
       const w = window.innerWidth;
       const h = window.innerHeight;

@@ -55,22 +55,24 @@ const server = await createServer({ logLevel: 'silent', server: { host: '127.0.0
 let browser;
 let falhou = false;
 try {
+  console.log('bocas  iniciando servidor local');
   await server.listen();
   const { chromium: pw } = await import('playwright-core');
   const args = ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'];
-  for (const channel of ['chrome', 'msedge', undefined]) {
+  for (const channel of process.platform === 'win32' ? ['msedge', 'chrome', undefined] : ['chrome', undefined]) {
     try {
-      browser = await pw.launch({ channel, args });
+      browser = await pw.launch({ channel, args, timeout: 20_000 });
       break;
     } catch {
       /* próximo */
     }
   }
   if (!browser) throw new Error('nenhum Chrome/Edge encontrado');
+  console.log('bocas  navegador pronto, carregando rig');
   const page = await browser.newPage();
   const erros = [];
   page.on('pageerror', (e) => erros.push(e.message));
-  await page.goto(`${server.resolvedUrls.local[0]}.tmp-medir-bocas.html`);
+  await page.goto(`${server.resolvedUrls.local[0]}.tmp-medir-bocas.html`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
   await page.waitForFunction(() => window.pronto === true, null, { timeout: 120_000 });
   const medicao = await page.evaluate(() => window.medicao);
   if (erros.length) console.error('erros na página:', erros.join(' | '));

@@ -205,4 +205,9 @@ Planejamento, ainda sem mecânica implementada. O campo de força ocupa um **slo
 
 O escudo atual do Lancer é visual; não comprova bloqueio de dano. Próxima implementação: contrato versionado de equipamentos por encaixe, capacidade de carga somando armas e módulos, compatibilidade explícita por chassi e migração das montagens antigas. Depois, energia e barreira frontal na simulação compartilhada, com testes direcionais; só então esfera e escudo físico. Números de duração, absorção, recarga e tecla permanecem em aberto.
 
-As duas armas sugeridas em conversa são um canhão de trilho carregável (precisão, aviso visual e calor) e um lançador EMP (controle de energia/escudos, sem paralisar completamente na primeira versão). Autorizadas pelo dono em 06/10; implementação em andamento. O EMP inicial aquece circuitos até existir a reserva energética dos escudos. Novos comportamentos devem ter módulos testados; variantes numéricas permanecem no catálogo central.
+As duas armas sugeridas em conversa são um canhão de trilho carregável (precisão, aviso visual e calor) e um lançador EMP (controle de energia/escudos, sem paralisar completamente na primeira versão). Entregues no PR #168 em 06/10. O EMP inicial aquece circuitos até existir a reserva energética dos escudos. Novos comportamentos devem ter módulos testados; variantes numéricas permanecem no catálogo central.
+
+
+## Clareza da montagem e treino (06/10, em branch)
+
+Peso por encaixe e nível inclui as cópias dos ombros. Excesso bloqueia aplicar/testar e oculta leituras de combate inválidas; a prévia mantém a última montagem válida. O treino manual usa ChargeTimer, inclusive cancelamento ao soltar e indicador de carga. Ainda não simula calor/dispersão/dano: sua finalidade continua sendo a mira.

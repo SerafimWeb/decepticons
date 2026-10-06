@@ -1,3 +1,5 @@
+import { ChargeTimer } from '../combat/ChargeTimer';
+import type { WeaponStats } from '../combat/weapons';
 import * as THREE from 'three';
 import type { MountId } from '../combat/mounts';
 import type { Loadout } from '../combat/weapons';
@@ -257,6 +259,7 @@ export class HangarScene {
   private practiceActive = false;
   private practiceTime = 0;
   private practiceCooldown = 0;
+  private readonly practiceCharge = new ChargeTimer();
   private practiceShots = 0;
   private practiceHits = 0;
   private practiceAccuracy = 0;
@@ -422,6 +425,7 @@ export class HangarScene {
     this.practiceActive = true;
     this.practiceTime = 0;
     this.practiceCooldown = 0;
+    this.practiceCharge.reset();
     this.practiceShots = 0;
     this.practiceHits = 0;
     this.practiceAccuracy = 0;
@@ -435,6 +439,7 @@ export class HangarScene {
 
   stopAimPractice(): void {
     this.practiceActive = false;
+    this.practiceCharge.reset();
     this.aimTarget.root.visible = false;
     this.aimTargetRing.visible = false;
     this.camera.fov = 38;
@@ -454,19 +459,21 @@ export class HangarScene {
     return this.practiceTime;
   }
 
+  get aimPracticeCharge(): number { return this.practiceCharge.progress; }
+
   get aimPracticeAccuracy(): number {
     return this.practiceAccuracy;
   }
 
   /** Aim pelo mesmo input/sensibilidade do jogador; tiro e acerto só afetam o placar do treino. */
-  updateAimPractice(dt: number, yaw: number, pitch: number, firing: boolean, fireInterval: number): void {
+  updateAimPractice(dt: number, yaw: number, pitch: number, firing: boolean, weapon: WeaponStats): void {
     if (!this.practiceActive) return;
     this.camera.position.set(0, 2.35, 17);
     this.camera.quaternion.setFromEuler(this.practiceEuler.set(pitch, yaw, 0, 'YXZ'));
     this.camera.updateMatrixWorld();
     this.practiceCooldown = Math.max(0, this.practiceCooldown - dt);
-    if (firing && this.practiceCooldown <= 0) {
-      this.practiceCooldown = Math.max(0.08, fireInterval);
+    if (this.practiceCharge.step(dt, firing, this.practiceCooldown <= 0, weapon.chargeTime)) {
+      this.practiceCooldown = Math.max(0.08, weapon.fireInterval);
       this.fireAimPracticeShot();
     }
   }

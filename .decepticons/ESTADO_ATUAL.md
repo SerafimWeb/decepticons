@@ -6,9 +6,9 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Servidor público offline hoje por informação do dono (06/10); offline disponível (Arena + Sobrevivência + CTF) |
-| **Build** | Último check (06/10): JS 306,6 KB e Wasm 719,4 KB gzip (tetos 500/900); 594 testes, typecheck, smoke, bocas e site verdes |
-| **Última sessão** | 06/10: trilho e EMP (#168); 06/10: miras finas por arma (#166); 06/10: sinais de avaria no modelo e planejamento reconciliado (#164); 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
-| **Próximo** | prioridade do dono (06/10): contrato de encaixes/carga/módulo extra, energia e barreira frontal, depois esfera e escudo metálico que substitui uma arma; concluir canhão de trilho/EMP e BANCO VORCARIS já autorizados (HANGAR.md); dono julga o Marauder (Hangar e partida) e a calibragem do blaster numa mão de Mech; M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
+| **Build** | Último check (06/10): JS 307,0 KB e Wasm 719,4 KB gzip (tetos 500/900); 594 testes, typecheck, smoke, bocas e site verdes |
+| **Última sessão** | 06/10: Banco VORCARIS (#169); 06/10: trilho e EMP (#168); 06/10: miras finas por arma (#166); 06/10: sinais de avaria no modelo e planejamento reconciliado (#164); 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
+| **Próximo** | prioridade do dono (06/10): contrato de encaixes/carga/módulo extra, energia e barreira frontal, depois esfera e escudo metálico que substitui uma arma; concluir clareza do Hangar/modos; armas e Banco já mergeados; instrumentação, métricas, energia/barreira e expansão orientada por playtest autorizadas em 06/10; dono julga o Marauder (Hangar e partida) e a calibragem do blaster numa mão de Mech; M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
@@ -21,6 +21,8 @@
 
 - **Trilho e EMP (Codex, 06/10, PR #168 mergeado).** Duas armas montáveis por chassi/carga, três níveis visuais, miras próprias; carga de 0,85 s no trilho e calor por distância no EMP. Regras comuns no cliente/servidor e telegráfo de carga. Check/CI verdes, 585 testes. Screenshot em arte/trilho-emp-codex.png. Protocolo 4; servidor público está offline e não foi tocado a pedido do dono. Playtest público online aguarda seu retorno.
 
+- **BANCO VORCARIS (Codex, 06/10, PR #169 mergeado).** Letreiro azul superior e terminal automático na porta; códigos configuráveis em shared/bank/codes.ts. 134 MILHÕES concede créditos existentes, OFICINA repara/resfria, TURBO dá +25% de dano por 30 s, sem empilhar e termina na morte/respawn. 594 testes/check/CI verdes, prova com teclado e terminal em 390×844, saldo no Hangar e WebSocket local. Capturas em arte/banco-vorcaris-*-codex.png. Créditos continuam no aparelho, sem loja/migração para conta. Servidor público offline não foi tocado; online público aguarda código atualizado ao voltar.
+
 ## EM BRANCH — NÃO ESTÁ NO AR (nem no site, nem no jogo)
 
 > **Regra deste documento a partir de 27/09:** só entra em "ÚLTIMA SESSÃO FEZ" o que está na **`main`**. O que ainda está
@@ -29,7 +31,7 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `codex/banco-vorcaris` | Letreiro azul na arena e terminal por proximidade; códigos configuráveis, créditos existentes e reforços compartilhados offline/online. Servidor público permanece intocado. | a abrir | 06/10 |
+| `codex/ux-montagem-modos` | Peso por módulo/nível, treino respeitando carga e modos ligados à partida; revisão amostral da suíte a pedido do dono; navegação do medidor alinhada ao prazo de carregamento do modelo. | a abrir | 06/10 |
 | `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
 | `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |

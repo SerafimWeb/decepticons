@@ -1,15 +1,17 @@
 /**
- * ModeSelector — Seletor de Modo de Jogo (Deathmatch vs Sobrevivência).
+ * ModeSelector — Modos reais da simulação (Arena, Sobrevivência e CTF).
  *
  * Permite selecionar entre:
  *  - 'deathmatch': Todos contra todos em rodadas de 5 min.
  *  - 'survival': Modo Sobrevivência em fases/ondas contra hordas rebeldes.
+ *  - 'ctf': Captura de bandeiras no treino solo.
  *
- * Persiste a escolha em localStorage ('cybermech_game_mode') ou via parâmetro URL '?modo='.
+ * A URL é a fonte do modo ativo, a mesma que o Game/Match leem. Escolher solicita a troca real da partida.
  * Custo de CPU: zero no loop de gameplay (opera apenas por interação no menu).
  */
 
-export type GameModeId = 'deathmatch' | 'survival';
+import { gameModeFromSearch, type GameMode } from '../sim/gameMode';
+export type GameModeId = GameMode;
 
 export interface GameModeInfo {
   id: GameModeId;
@@ -18,30 +20,32 @@ export interface GameModeInfo {
   description: string;
 }
 
-export const GAME_MODES: GameModeInfo[] = [
+const MODE_INFO: Record<GameMode, GameModeInfo> = {
+  deathmatch:
   {
     id: 'deathmatch',
     label: 'DEATHMATCH',
     badge: 'COMBATE LIVRE',
     description: 'Partida livre contra bots ou outros pilotos em rodadas de 5 min.',
   },
-  {
+  survival: {
     id: 'survival',
     label: 'SOBREVIVÊNCIA',
     badge: 'MISSÃO EM ONDAS',
     description: 'Enfrente hordas progressivas de andróides e mechs rebeldes.',
   },
-];
+  ctf: { id: 'ctf', label: 'CAPTURE A BANDEIRA', badge: 'TREINO SOLO', description: 'Roube a bandeira vermelha e retorne à base azul. Vitória com 3 capturas.' },
+};
+export const GAME_MODES: GameModeInfo[] = Object.values(MODE_INFO);
 
-const STORAGE_KEY = 'cybermech_game_mode';
 
 export class ModeSelector {
   private activeMode: GameModeId = 'deathmatch';
   private containerEl: HTMLElement | null = null;
   private onChangeCallbacks: ((mode: GameModeId) => void)[] = [];
 
-  constructor() {
-    this.activeMode = this._readInitialMode();
+  constructor(search = typeof window === 'undefined' ? '' : window.location.search) {
+    this.activeMode = gameModeFromSearch(search);
   }
 
   /** Retorna o modo de jogo atualmente selecionado. */
@@ -58,7 +62,6 @@ export class ModeSelector {
   setMode(mode: GameModeId): void {
     if (this.activeMode === mode) return;
     this.activeMode = mode;
-    this._persist(mode);
     this._updateUiState();
     for (const fn of this.onChangeCallbacks) {
       fn(mode);
@@ -81,27 +84,6 @@ export class ModeSelector {
   }
 
   // ─── Internos ──────────────────────────────────────────────────────────────
-
-  private _readInitialMode(): GameModeId {
-    if (typeof window !== 'undefined' && window.location) {
-      const param = new URLSearchParams(window.location.search).get('modo');
-      if (param === 'survival' || param === 'sobrevivencia') return 'survival';
-      if (param === 'deathmatch') return 'deathmatch';
-    }
-    if (typeof localStorage !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === 'survival' || stored === 'deathmatch') return stored;
-    }
-    return 'deathmatch';
-  }
-
-  private _persist(mode: GameModeId): void {
-    if (typeof localStorage !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY, mode);
-      } catch { /* ignora se falhar */ }
-    }
-  }
 
   private _renderHtml(): void {
     if (!this.containerEl) return;
