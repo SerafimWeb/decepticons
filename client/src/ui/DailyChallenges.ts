@@ -103,8 +103,8 @@ export class DailyChallenges {
 
   /** Adiciona créditos à conta do piloto. */
   addCredits(amount: number): void {
-    if (amount <= 0) return;
-    this.data.credits += amount;
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    this.data.credits = Math.min(Number.MAX_SAFE_INTEGER, this.data.credits + Math.floor(amount));
     this._saveData();
     this._updateUi();
   }

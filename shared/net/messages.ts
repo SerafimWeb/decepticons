@@ -17,12 +17,14 @@ export const MSG = {
   INPUT: 2,
   PING: 3,
   LEAVE: 4,
+  BANK: 5,
   WELCOME: 10,
   ROSTER: 11,
   SNAPSHOT: 12,
   EVENTS: 13,
   PONG: 14,
   REJECT: 15,
+  BANK_REPLY: 16,
 } as const;
 
 /** Tipo da mensagem (primeiro byte); 0 se vazia. */

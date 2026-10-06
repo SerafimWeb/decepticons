@@ -1,3 +1,7 @@
+import { BankAccount } from '../bank/BankAccount';
+import { addBankSign } from '../environment/BankSign';
+import { BankTerminal } from '../ui/BankTerminal';
+import { bankReward, nearBank, type BankReply } from '../../../shared/bank/codes';
 import { ChargeVisuals } from '../fx/ChargeVisuals';
 import * as THREE from 'three';
 import { GLOW } from './palette';
@@ -183,6 +187,13 @@ export class Game {
   readonly power = new PowerStore(browserStorage(), location.search);
   private appliedQuality: QualityPreset | null = null;
 
+  private readonly bankAccount = new BankAccount();
+  private readonly bankTerminal: BankTerminal;
+  private bankTick = 0;
+  private bankNear = false;
+  /** Contador visual online; a regra de dano fica exclusivamente no servidor. */
+  private bankOnlineBoost = 0;
+  private bankOnlineMultiplier = 1;
   private playing = false;
   private missionEnded = false;
   /** O galpão 3D do Hangar (feito na primeira vez que abre) e se ele está na tela no lugar da arena. */
@@ -298,6 +309,12 @@ export class Game {
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets, barrage: this.barrage } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
+    addBankSign(this.scene);
+    this.bankTerminal = new BankTerminal((code) => {
+      if (this.online) {
+        if (!this.online.redeemBank(code)) this.bankTerminal.showMessage("Sem conexão com a sala. Nenhuma recompensa concedida.");
+      } else this.acceptBank(this.bankAccount.redeem(code, this.mech, this.bankTick));
+    }, () => { this.hud.setPaused(true); this.resume(); });
     this.ctfObjectives = this.match.ctf ? new CtfObjectives(this.scene) : null;
     // O piloto escolhe o chassi (Hangar): qualquer um em CHASSIS, sempre nas cores do jogador. O andróide
     // tem classe própria (ferramenta, sem blueprint); os de malha importada (`IMPORTED_CHASSIS`) usam o
@@ -380,6 +397,7 @@ export class Game {
         makeUnit: (e) => this.makeRemote(e),
         scene: this.scene,
         onStatus: (s) => this.showNet(s),
+        onBank: (reply) => this.acceptBank(reply),
         onKill: (killer, dead, mine) => this.killFeed.push(killer, dead, mine),
         onScore: (kills, deaths) => this.hud.setScore(kills, deaths),
       });
@@ -438,6 +456,7 @@ export class Game {
       show: (chassis, loadout) => this.hangarScene?.show(chassis, loadout),
       rotate: (dx) => this.hangarScene?.rotate(dx),
       applied: () => this.applyHangarNow(),
+      credits: () => this.dailyChallenges.credits,
       status: () => (online ? `ONLINE · SALA ${online.room}` : 'OFFLINE'),
       test: (data, arm) => this.hangarScene?.startTest(data, arm),
       stopTest: () => this.hangarScene?.stopTest(),
@@ -765,6 +784,7 @@ export class Game {
     };
     input.onWheel = (dy) => this.playing && rig.onWheel(dy);
     input.onKey = (code) => {
+      if (this.bankTerminal.isOpen) return;
       // ' abre o painel de desempenho detalhado. O jogo lê a posição física da tecla (e.code,
       // com nomes do teclado americano): no ABNT2 o ' fica em 'Backquote'; no US e no
       // US-Internacional, em 'Quote'. Aceitar as duas cobre os dois teclados.
@@ -824,6 +844,15 @@ export class Game {
         this.missionHud.showWaveHud(1, 10);
       }
     );
+  }
+
+  private acceptBank(reply: BankReply): void {
+    const reward = reply.status === "ok" ? bankReward(reply.code) : undefined;
+    if (reward) {
+      if (reward.credits) this.dailyChallenges.addCredits(reward.credits);
+      if (this.online && reward.seconds) { this.bankOnlineBoost = reward.seconds; this.bankOnlineMultiplier = reward.damage; }
+    }
+    this.bankTerminal.reply(reply);
   }
 
   private resume(): void {
@@ -959,7 +988,7 @@ export class Game {
   private setPlaying(playing: boolean): void {
     this.playing = playing;
     this.player.active = playing;
-    this.hud.setPaused(!playing);
+    this.hud.setPaused(!playing && !this.bankTerminal?.isOpen);
     this.touch.setVisible(playing && this.input.touchMode);
     this.updateCursor();
   }
@@ -983,6 +1012,7 @@ export class Game {
       // Puxar a mira para longe do alvo solta a ajuda por um instante (não briga com o dedo).
       this.assist.noteLook(this.rig.look.yaw - yaw0, this.rig.look.pitch - pitch0);
     }
+    if (this.online) this.bankOnlineBoost = this.mech.alive ? Math.max(0, this.bankOnlineBoost - dt) : 0;
     this.player.collect();
 
     // --- Simulação em passo fixo (pausado = mundo congelado: os bots não atacam no menu) ---
@@ -992,6 +1022,7 @@ export class Game {
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
       // A partida roda o controle do jogador, os bots, os tiros e a física; entre rodadas, só o relógio.
       this.match.step(FIXED_DT);
+      this.bankTick++;
       this.accumulator -= FIXED_DT;
       steps++;
     }
@@ -1058,6 +1089,14 @@ export class Game {
     }
     this.particles.update(dt);
 
+    const near = this.mech.alive && nearBank(this.mech.simPosition);
+    if (!near) this.bankNear = false;
+    else if (this.playing && !this.hangarView && !this.bankNear && !this.killCam.overridesRig) {
+      this.bankNear = true; this.pause(); this.input.exitLock();
+      this.bankTerminal.open(this.dailyChallenges.credits, this.online !== null);
+      this.hud.setPaused(false);
+    }
+    this.bankTerminal.updateBoost(this.mech.alive ? (this.online ? this.bankOnlineBoost : this.mech.combatBoost.secondsLeft) : 0, this.playing && !this.hangarView, this.online ? this.bankOnlineMultiplier : this.mech.combatBoost.damageMultiplier);
     this.hud.setRespawn(this.respawner.timeLeft(this.mech), this.killCam.active);
     this.killFeed.update(dt);
     this.onboarding.update(dt);

@@ -10,8 +10,8 @@
 > - Item: `- [x]` feito, `- [~]` em andamento, `- [ ]` a fazer, terminando com **uma** etiqueta da tabela de frentes.
 > - Ideias sem fase ficam em `## 💡 IDEIAS
 
-- [~] Canhão de trilho carregável e lançador EMP, com MK I–III, carga, montagem e miras próprias (Codex, pedido 06/10) #combate
-- [ ] Banco VORCARIS: letreiro azul no andar superior, terminal na porta e catálogo de códigos para créditos/boosts offline e online (pedido 06/10) #jogabilidade
+- [x] Canhão de trilho carregável e lançador EMP, com MK I–III, carga, montagem e miras próprias (Codex, pedido 06/10) #combate
+- [~] Banco VORCARIS: letreiro azul no andar superior, terminal na porta e catálogo de códigos para créditos/boosts offline e online (pedido 06/10) #jogabilidade
 
 - [x] Miras finas por arma, centro livre e indicação de alvo sem aumento de tamanho (Codex, pedido de 06/10) #ux
 - [ ] Equipamentos por encaixe e carga: módulo extra para barreira frontal/esfera; escudo metálico removível só em chassis compatíveis (HANGAR.md, pedido de 06/10) #combate`, com o mesmo formato.

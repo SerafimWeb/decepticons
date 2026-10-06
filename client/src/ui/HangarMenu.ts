@@ -17,6 +17,7 @@ export interface HangarPreview {
   applied?(): string;
   /** Linha de estado do topo: "OFFLINE" ou a sala online. */
   status?(): string;
+  credits?(): number;
   /** Teste de disparo: o galpão mostra o Mech atirando no alvo, no ritmo do teste. */
   test?(data: TestFire, mounts: readonly MountId[]): void;
   stopTest?(): void;
@@ -193,6 +194,7 @@ export class HangarMenu {
         <div class="hg-brand"><svg class="hg-emblem" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 29 9v14l-13 7L3 23V9z" /><path d="M16 8 23 12v8l-7 4-7-4v-8z" /></svg><span><b>CYBERMECH</b><small>HANGAR · CENTRO DE MONTAGEM</small></span></div>
         <div class="hg-chips">
           <span class="hg-chip"><i>CARGA</i><b id="hg-top-load"></b></span>
+          <span class="hg-chip"><i>CRÉDITOS</i><b id="hg-top-credits"></b></span>
           <span class="hg-chip"><i>PILOTO</i><b id="hg-top-pilot"></b></span>
           <span class="hg-chip hg-mode"><em></em><b id="hg-top-mode"></b></span>
         </div>
@@ -591,6 +593,7 @@ export class HangarMenu {
 
     this.setText('hg-top-load', `${num(report.mass, 1)} / ${num(report.capacity, 0)} t`);
     this.setText('hg-top-pilot', label.title);
+    this.setText('hg-top-credits', (this.preview.credits?.() ?? 0).toLocaleString('pt-BR') + ' ₵');
     this.setText('hg-top-mode', this.preview.status?.() ?? 'OFFLINE');
     this.setText('hangar-mech-title', label.title);
     this.setText('hangar-mech-detail', `${label.className} · ${label.detail}`);

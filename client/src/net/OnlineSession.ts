@@ -1,3 +1,4 @@
+import type { BankReply } from '../../../shared/bank/codes';
 import * as THREE from 'three';
 import { INPUTS_PER_PACKET, NO_UNIT, SIM_HZ } from '../../../shared/net/constants';
 import { EVENT, type NetEvent } from '../../../shared/net/events';
@@ -62,6 +63,7 @@ export interface OnlineSessionOptions {
   makeUnit: (entry: RosterEntry) => MechBase;
   scene: THREE.Scene;
   onStatus?: (s: OnlineStatus) => void;
+  onBank?: (reply: BankReply) => void;
   onKill?: (killer: string | null, dead: string, meInvolved: boolean) => void;
   /** Placar do jogador local (o servidor não conta a rodada offline; a gente conta pelos eventos KILL). */
   onScore?: (kills: number, deaths: number) => void;
@@ -130,8 +132,11 @@ export class OnlineSession implements Pilot {
   /** Relógio do servidor visto daqui: ms do servidor ≈ agora + offset. */
   private clockOffset = Number.NaN;
 
+  redeemBank(code: string): boolean { return this.joined && this.client.redeemBank(code); }
+
   constructor(private readonly o: OnlineSessionOptions) {
     this.client = new NetClient(o.url, {
+      bank: (reply) => o.onBank?.(reply),
       welcome: (m) => {
         this.myId = m.id;
         this.state = 'na sala';

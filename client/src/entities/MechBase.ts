@@ -1,3 +1,4 @@
+import { CombatBoost } from '../combat/CombatBoost';
 import { legDamageLean } from '../fx/DamageVisuals';
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
@@ -207,6 +208,7 @@ export abstract class MechBase {
   private readonly heatSink: HeatSink;
   /** Aviso de carga: simulação local ou bit recebido do servidor. */
   weaponCharging = false;
+  readonly combatBoost = new CombatBoost();
   /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
   private armed: Loadout;
   private leftRecoil = 0;
@@ -543,6 +545,7 @@ export abstract class MechBase {
     Object.assign(this.modules, this.stats.maxModuleHealth);
     this.heatSink.reset();
     this.weaponCharging = false;
+    this.combatBoost.reset();
     this.velocity.set(0, 0, 0);
     this.dashTimeLeft = 0;
     this.dashCooldownLeft = 0;
@@ -571,6 +574,7 @@ export abstract class MechBase {
   }
 
   private die(): void {
+    this.combatBoost.reset();
     this.collider.setEnabled(false);
     this.root.visible = false;
     this.velocity.set(0, 0, 0);
@@ -626,6 +630,7 @@ export abstract class MechBase {
   /** Um tick de simulação (60 Hz). Determinístico dado o input. */
   fixedUpdate(input: MechInput, dt: number): void {
     if (!this.alive) return;
+    this.combatBoost.fixedUpdate(dt);
     const s = this.stats;
     const vel = this.velocity;
     // Correr esquenta na proporção da velocidade no chão (a do tick anterior; no ar não conta).

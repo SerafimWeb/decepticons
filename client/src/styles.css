@@ -2086,3 +2086,22 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 /* Carga abaixo da mira: não preenche o centro nem encobre o alvo. */
 .reticle-charge { position: absolute; left: 0; top: 54px; width: 48px; height: 2px; background: currentColor; transform-origin: left; }
 .reticle-charge[hidden] { display: none; }
+
+/* Banco VORCARIS: terminal sobre a arena, com foco e contraste para digitar. */
+#bank-terminal { color: #eaf2ff; background: linear-gradient(145deg,#0a1428,#060b14); border: 1px solid #408cff; border-radius: 4px; box-shadow: 0 0 38px #287bff44; width: min(520px,calc(100vw - 32px)); padding: 30px; font-family: inherit; }
+#bank-terminal::backdrop { background: #020712cc; }
+#bank-terminal h2 { color: #69a8ff; letter-spacing: .12em; font-size: clamp(20px,4vw,30px); margin: 14px 0; }
+#bank-terminal p { line-height: 1.6; font-size: 14px; }
+.bank-terminal-kicker { color: #69a8ff; font-size: 10px; letter-spacing: .18em; }
+#bank-terminal form { display: grid; gap: 12px; margin-top: 22px; }
+#bank-terminal label { font-size: 10px; letter-spacing: .13em; color: #99b9e6; }
+#bank-terminal input { box-sizing: border-box; width: 100%; padding: 14px; color: #fff; background: #040915; border: 1px solid #426a9b; border-radius: 2px; font: inherit; font-size: 18px; }
+#bank-terminal input:focus-visible,#bank-terminal button:focus-visible { outline: 2px solid #9ecaff; outline-offset: 3px; }
+#bank-terminal button { cursor: pointer; border: 1px solid #5698ef; padding: 12px; color: #eaf2ff; background: #14336a; font: inherit; letter-spacing: .07em; }
+#bank-terminal button:disabled { opacity: .45; cursor: wait; }
+#bank-terminal .bank-terminal-close { width: 100%; background: transparent; border-color: #315276; }
+.bank-terminal-result { min-height: 64px; color: #a5bddc; }
+.bank-terminal-result.accepted { color: #76ffaa; }
+#bank-boost-status { position: fixed; bottom: 145px; left: 50%; transform: translateX(-50%); padding: 8px 14px; border: 1px solid #438cff; background: #071327da; color: #b8d8ff; font: 11px monospace; pointer-events: none; z-index: 30; white-space: nowrap; }
+#bank-boost-status[hidden] { display: none; }
+@media (max-width: 600px) { #bank-terminal { padding: 20px; } #bank-boost-status { bottom: 105px; } }

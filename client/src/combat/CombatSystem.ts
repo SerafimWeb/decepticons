@@ -95,7 +95,7 @@ export class CombatSystem {
       const flat = Math.hypot(dx, dz);
       const k = flat > radius ? radius / flat : 1;
       _near.set(p.x + dx * k, y, p.z + dz * k);
-      const damage = splashDamage(w, Math.hypot(Math.max(0, flat - radius), at.y - y));
+      const damage = splashDamage(w, Math.hypot(Math.max(0, flat - radius), at.y - y)) * (shooter?.combatBoost.damageMultiplier ?? 1);
       if (damage <= 0) continue;
       const result = mech.takeHit(_near, damage);
       if (result.applied <= 0) continue;
@@ -103,7 +103,7 @@ export class CombatSystem {
       else if (result.partDestroyed) this.tearOff(mech, result.part, dir);
       this.onMechHit?.({ mech, result, shooter });
     }
-    this.destructibles.damageInRadius(at, w.blastRadius, w.damage, dir);
+    this.destructibles.damageInRadius(at, w.blastRadius, w.damage * (shooter?.combatBoost.damageMultiplier ?? 1), dir);
   }
 
   /**
@@ -122,7 +122,7 @@ export class CombatSystem {
     if (d - attacker.stats.radius - target.stats.radius > w.maxRange) return;
     const y = Math.min(t.y + target.stats.height, Math.max(t.y, a.y + attacker.stats.height * 0.5));
     _near.set(t.x + (dx / d) * target.stats.radius, y, t.z + (dz / d) * target.stats.radius);
-    const result = target.takeHit(_near, w.damage);
+    const result = target.takeHit(_near, w.damage * attacker.combatBoost.damageMultiplier);
     if (result.applied <= 0) return;
     // Faíscas saem para cima; destroço e carcaça são empurrados para longe de quem cortou.
     this.particles.burst(_near, UP, { count: 10, color: SPARK, speed: 12, life: 0.3, size: 0.8, spread: 0.9 });
@@ -153,6 +153,7 @@ export class CombatSystem {
 
   onProjectileHit(hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider, w?: WeaponStats, distance = 0): void {
     if (!this.damageEnabled) return;
+    damage *= owner ? (this.byCollider.get(owner.handle)?.combatBoost.damageMultiplier ?? 1) : 1;
     const mech = this.byCollider.get(hit.collider.handle);
     if (!mech) {
       this.destructibles.damage(hit.collider, damage, dir);
