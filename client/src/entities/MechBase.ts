@@ -1,3 +1,4 @@
+import { legDamageLean } from '../fx/DamageVisuals';
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { HeatSink, OVERHEAT_SPEED, type ChassisHeat, type HeatState } from '../combat/heat';
@@ -207,6 +208,7 @@ export abstract class MechBase {
   /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
   private armed: Loadout;
   private leftRecoil = 0;
+  private readonly pelvisBaseRoll: number;
   private readonly rightArmBaseZ: number;
   private readonly leftArmBaseZ: number;
   private hitFlash = 0;
@@ -229,6 +231,7 @@ export abstract class MechBase {
     this.root.add(rig.model);
     this.modules = { ...stats.maxModuleHealth };
     this.jumpsLeft = stats.maxJumps;
+    this.pelvisBaseRoll = rig.pelvis.rotation.z;
     this.rightArmBaseZ = rig.rightArm.position.z;
     this.heatSink = new HeatSink(stats);
     this.armed = loadout;
@@ -475,8 +478,8 @@ export abstract class MechBase {
     this.refreshParts();
   }
 
-  /** Centro de uma parte no mundo (para destroços e faíscas). Só em eventos, não por frame. */
-  partWorldPosition(part: MechPart, target: THREE.Vector3): THREE.Vector3 {
+  /** Centro de uma parte no mundo; center=false usa a junta (unidade/eixo de osso importado independentes). Efeitos a 10 Hz. */
+  partWorldPosition(part: MechPart, target: THREE.Vector3, center = true): THREE.Vector3 {
     const r = this.rig;
     const node =
       part === 'head' ? r.head
@@ -486,6 +489,8 @@ export abstract class MechBase {
       : part === 'rightLeg' ? r.rightLeg.knee
       : r.torso;
     this.root.updateMatrixWorld(true);
+    // A junta não depende da unidade/eixo local do osso importado.
+    if (!center) return node.getWorldPosition(target);
     const [x, y, z] = PART_CENTER[part];
     return node.localToWorld(target.set(x, y, z));
   }
@@ -735,6 +740,10 @@ export abstract class MechBase {
   }
 
   /** Interpola a posição entre ticks e anima. `alpha` = fração do próximo tick. */
+  /** O rig já desenha a ventilação; evita duplicar vapor no pool do mundo. */
+  get hasHeatVisual(): boolean { return this.rig.setHeatVisual !== undefined; }
+
+  /** Interpola a posição entre ticks e anima. `alpha` = fração do próximo tick. */
   render(dt: number, alpha: number): void {
     if (!this.alive) return;
     this.root.position.lerpVectors(this.prevPos, this.simPos, alpha);
@@ -762,8 +771,11 @@ export abstract class MechBase {
       }
     }
 
-    const lHip = sw * 0.7 * amt + air * 0.55;
-    const rHip = -sw * 0.7 * amt - air * 0.25;
+    const lean = legDamageLean(this.modules, this.stats.maxModuleHealth);
+    const leftStride = 1 - Math.max(0, lean) * 0.65;
+    const rightStride = 1 - Math.max(0, -lean) * 0.65;
+    const lHip = sw * 0.7 * amt * leftStride + air * 0.55;
+    const rHip = -sw * 0.7 * amt * rightStride - air * 0.25;
     const lKnee = -Math.max(0, cw) * 1.1 * amt - air * 1.0;
     const rKnee = -Math.max(0, -cw) * 1.1 * amt - air * 0.4;
 
@@ -772,7 +784,8 @@ export abstract class MechBase {
     r.leftLeg.knee.rotation.x = lerp(r.leftLeg.knee.rotation.x, lKnee, k);
     r.rightLeg.knee.rotation.x = lerp(r.rightLeg.knee.rotation.x, rKnee, k);
 
-    r.pelvis.position.y = r.hipHeight - Math.abs(sw) * 0.12 * amt;
+    r.pelvis.position.y = r.hipHeight - Math.abs(sw) * (0.12 + Math.abs(lean) * 0.12) * amt;
+    r.pelvis.rotation.z = this.pelvisBaseRoll + lean * (0.06 + Math.abs(sw) * 0.08) * amt;
     r.torso.rotation.y = sw * 0.06 * amt;
 
     this.recoil = Math.max(0, this.recoil - dt * 9);

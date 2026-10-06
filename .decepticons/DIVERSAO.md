@@ -198,7 +198,7 @@ Os três primeiros são conserto pequeno e destravam a retenção que já deveri
 
 | # | Item | O que destrava | Custo | Dono |
 |---|---|---|---|---|
-| 1 | ✅ **em execução — a leitura em painel está no jogo** (`ui/TargetPanel.ts`, 8 testes, captura em `arte/alvo-legivel.png`); faltam os sinais no próprio modelo | melhora o jogo que já existe, valoriza o técnico e a "visão de jogo" | FX (visual) | Codex |
+| 1 | ✅ **em execução — a leitura em painel está no jogo** (`ui/TargetPanel.ts`, 8 testes, captura em `arte/alvo-legivel.png`); sinais no modelo implementados pelo Codex em 06/10 (fumaça/faíscas, passada assimétrica, vapor nos importados); aguardam playtest | melhora o jogo que já existe, valoriza o técnico e a "visão de jogo" | FX (visual) | Codex |
 | 2 | **Consertar a progressão** (XP por jogar, onda contada, gancho com chamador) | retenção que já deveria funcionar | pequeno | Gemini |
 | 3 | **Ficha própria dos 3 Mechs rebeldes** (longo / pesado / rápido) | reconhecimento + contra-jogo: a estratégia mais barata que existe | números + silhueta | Claude + Codex + Qwen |
 | 4 | **Recibo da partida + cartão compartilhável** | "quero melhorar" + o motivo de mandar o link | telas, local | Gemini + Claude |

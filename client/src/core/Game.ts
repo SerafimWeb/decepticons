@@ -22,6 +22,7 @@ import { Android } from '../entities/Android';
 import type { MechBase } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
 import { CtfObjectives } from '../environment/CtfObjectives';
+import { DamageVisuals } from '../fx/DamageVisuals';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
@@ -121,6 +122,8 @@ export class Game {
   private readonly quality: Quality;
   private readonly input: InputManager;
   private readonly particles = new ParticleSystem();
+  private readonly damageVisuals = new DamageVisuals(this.particles);
+  private readonly updateRemoteDamage = (remote: { mech: MechBase }): void => this.damageVisuals.update(remote.mech);
   /** A partida (sem tela): arena, bots, tiros, dano, rodadas. As partes abaixo são atalhos para ela. */
   private readonly match: Match;
   private readonly gameMode: GameMode;
@@ -1038,6 +1041,14 @@ export class Game {
       this.blindGain = null;
     }
 
+    this.damageVisuals.beginFrame(dt, this.playing && !this.hangarView);
+    this.damageVisuals.update(this.mech);
+    if (this.online?.joined) {
+      this.online.remotes.forEach(this.updateRemoteDamage);
+    } else {
+      for (const bot of this.bots.mechs) this.damageVisuals.update(bot);
+      if (this.match.allies) for (const ally of this.match.allies.mechs) this.damageVisuals.update(ally);
+    }
     this.particles.update(dt);
 
     this.hud.setRespawn(this.respawner.timeLeft(this.mech), this.killCam.active);
