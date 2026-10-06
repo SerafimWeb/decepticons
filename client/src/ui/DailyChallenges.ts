@@ -230,7 +230,7 @@ export class DailyChallenges {
     if (lvlEl) lvlEl.textContent = String(this.data.level);
 
     const credEl = document.getElementById('pilot-credits-val');
-    if (credEl) credEl.textContent = String(this.data.credits);
+    if (credEl) credEl.textContent = this.data.credits.toLocaleString('pt-BR');
 
     const xpFill = document.getElementById('pilot-xp-fill');
     if (xpFill) {

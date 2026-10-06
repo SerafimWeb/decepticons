@@ -8,13 +8,7 @@
 > **Este arquivo alimenta o painel de missão** (`npm run painel`), e o `npm run check` reprova se ele sair do formato:
 > - Fase: `## <emoji> FASE N — Título`; a fase em foco leva `(atual)` no título (só uma).
 > - Item: `- [x]` feito, `- [~]` em andamento, `- [ ]` a fazer, terminando com **uma** etiqueta da tabela de frentes.
-> - Ideias sem fase ficam em `## 💡 IDEIAS
-
-- [x] Canhão de trilho carregável e lançador EMP, com MK I–III, carga, montagem e miras próprias (Codex, pedido 06/10) #combate
-- [~] Banco VORCARIS: letreiro azul no andar superior, terminal na porta e catálogo de códigos para créditos/boosts offline e online (pedido 06/10) #jogabilidade
-
-- [x] Miras finas por arma, centro livre e indicação de alvo sem aumento de tamanho (Codex, pedido de 06/10) #ux
-- [ ] Equipamentos por encaixe e carga: módulo extra para barreira frontal/esfera; escudo metálico removível só em chassis compatíveis (HANGAR.md, pedido de 06/10) #combate`, com o mesmo formato.
+> - Ideias sem fase ficam em `## 💡 IDEIAS`, com o mesmo formato.
 
 ---
 
@@ -216,6 +210,13 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] **WebTransport (quando o Firefox terminar):** UDP no navegador, corta jitter em rede ruim #rede
 
 ## 💡 IDEIAS
+
+- [~] Clareza da montagem (peso por encaixe e nível), treino coerente com a carga e seletor sincronizado com os modos da simulação (Codex, direção autorizada 06/10) #ux
+- [ ] Revisar utilidade/cobertura dos testes por frente; execução por impacto durante edição e gate completo nas entregas, sem usar contagem como garantia (Codex, pergunta do dono 06/10) #base
+- [x] Canhão de trilho carregável e lançador EMP, com MK I–III, carga, montagem e miras próprias (Codex, pedido 06/10) #combate
+- [x] Banco VORCARIS: letreiro azul no andar superior, terminal na porta e catálogo de códigos para créditos/boosts offline e online (pedido 06/10) #jogabilidade
+- [x] Miras finas por arma, centro livre e indicação de alvo sem aumento de tamanho (Codex, pedido de 06/10) #ux
+- [ ] Equipamentos por encaixe e carga: módulo extra para barreira frontal/esfera; escudo metálico removível só em chassis compatíveis (HANGAR.md, pedido de 06/10) #combate
 - [~] **Legibilidade do alvo:** painel de partes/calor já no jogo; Codex (06/10) implementou fumaça/faíscas nas partes presentes com até 50% de vida, passada assimétrica conforme a avaria das pernas e vapor nos rigs sem ventilação própria. Zero bytes de rede e nenhum desenho extra; falta playtest real da sensação e do online. Partes destruídas continuam arrancadas: não pendurar uma arma que já caiu. Prova de bancada em `arte/dano-visivel-codex.png`; `DIVERSAO.md` § 10 #combate
 - [ ] **Recibo da partida e cartão compartilhável:** precisão, partes destruídas, dano por calor, travamentos por superaquecimento, onda alcançada — no fim da rodada, com uma imagem local para mandar no link. Proposta em `DIVERSAO.md` § 7 e § 8 #ux
 - [ ] **Marcador de alvo (ping):** uma tecla marca o alvo para o time; viaja como evento, sem estado novo. Proposta em `DIVERSAO.md` § 6 #modos

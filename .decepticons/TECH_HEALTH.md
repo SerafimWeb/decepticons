@@ -6,27 +6,19 @@ Saúde técnica do projeto. Atualizado a cada merge na `main`.
 
 ---
 
-## 🟢 Health Score: 8/10
+## Indicadores atuais (06/10, Codex)
 
-| Aspecto | Score | Nota |
-|---|---|---|
-| **Tests** | 10/10 | 300+ testes, 386 commits, zero regressão medida |
-| **Coverage** | 8/10 | Simulação testada; render/UI coberto via `site --check` |
-| **Performance** | 8/10 | 60 FPS estável em GPU integrada; LCP não medido |
-| **Rede** | 7/10 | M4 pronto; M5 (autoridade de tiro) e M6 planejados |
-| **Code Reuse** | 8/10 | Uma simulação (G14); modular (G3); sem duplicação |
-| **Debt** | 6/10 | 3 bloqueadores conhecidos; 5+ itens em aberto |
+| Aspecto | Evidência / limite |
+|---|---|
+| Testes | 594 casos em 81 arquivos; última suíte ~22 s. Quantidade não prova cobertura, sincronização nem ausência de regressão. |
+| Cobertura | Não foi medido percentual de linhas/branches. Simulação e contratos têm casos; render/UI recebe provas no navegador. Não atribuir nota 8/10 ou 10/10 sem métrica. |
+| Revisão de utilidade | Amostral, registrada em TESTES.md. ModeSelector tinha testes verdes com fluxo de partida desconectado; correção em branch de UX. Inspeção de Mechs e budget continuam usados por ferramentas/site. |
+| Mutação | Regras novas de carga/EMP e proximidade/duração do banco foram quebradas e os testes falharam. Não é um score da suíte inteira. |
+| Performance | Budget após UX: JS 307,0 KB / 500 KB e Wasm 719,4 KB / 900 KB gzip. FPS em GPU integrada real permanece pendente; headless/SwiftShader não comprova 60 FPS nessa GPU. |
+| CI e entrega | Check/hook e CI completos obrigatórios. Durante edição, executar arquivos afetados; build/smoke/site são fases adicionais, não estão incluídos no número de testes Vitest. |
+| Servidor público | Offline em 06/10 por informação do dono; não tocar nem depender dele hoje. Provas de rede somente locais. |
 
----
-
-## 🟢 Passing Checks
-
-✅ Budget: JS 188 KB gzip (limite 500), Wasm 735 KB (limite 900)  
-✅ CI: 100% dos testes passam; PRs requerem CI verde  
-✅ Build: Sem warnings; typecheck estrict  
-✅ Deploy: Auto-publicado na `main`; CSP aplicada; Pointer Lock verificado  
-✅ Determinismo: Simulação idêntica cliente-servidor (G2)  
-✅ Alocação: Sem `new` no caminho quente (verificado com Vitest)  
+As medições mais antigas neste documento são histórico, não leitura da versão atual.
 
 ---
 
