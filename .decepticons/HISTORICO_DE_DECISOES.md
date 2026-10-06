@@ -1,5 +1,10 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-06] Encerramento confirmado da entrega #171 (Codex)
+
+CI verde e merge 444bb09 confirmados. Memória passa a registrar a implementação na main, removendo a indicação antiga de branch ainda a publicar. Capacidade local continua distinta de homologação online; servidor público offline preservado. Nenhuma mudança de gameplay neste fechamento.
+
+
 ## [2026-10-06] Energia, observabilidade e escala com evidência (Codex)
 
 Pedido do dono: concluir melhorias abertas, instrumentar experiência, medir equilíbrio, implementar energia/barreira e orientar expansão por playtest; perguntou pelo Serafim UM e por 10/50/100 jogadores. AGENTS e IDENTITY corrigem stack obsoleta (Colyseus planejado → Node/ws real, SQLite e Node 22.12+); PROTOCOLO_UNIVERSAL adapta regras a simulação, carga, privacidade, cheats e critérios de capacidade. Referência PROTOCOLO_SERAFIM_UM preservada.

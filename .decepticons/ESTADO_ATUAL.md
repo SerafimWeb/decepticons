@@ -6,9 +6,9 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Servidor público offline hoje por informação do dono (06/10); offline disponível (Arena + Sobrevivência + CTF) |
-| **Build** | Último check (06/10): JS 307,0 KB e Wasm 719,4 KB gzip (tetos 500/900); 594 testes, typecheck, smoke, bocas e site verdes |
-| **Última sessão** | 06/10: clareza do Hangar/treino/modos (#170); 06/10: Banco VORCARIS (#169); 06/10: trilho e EMP (#168); 06/10: miras finas por arma (#166); 06/10: sinais de avaria no modelo e planejamento reconciliado (#164); 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
-| **Próximo** | prioridade do dono (06/10): contrato de encaixes/carga/módulo extra, energia e barreira frontal, depois esfera e escudo metálico que substitui uma arma; clareza do Hangar/modos entregue no #170; armas e Banco já mergeados; instrumentação, métricas, energia/barreira e expansão orientada por playtest autorizadas em 06/10; dono julga o Marauder (Hangar e partida) e a calibragem do blaster numa mão de Mech; M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
+| **Build** | Último check (06/10, #171): JS 312,4 KB e Wasm 719,4 KB gzip (tetos 500/900); 607 testes, typecheck, smoke, bocas e site verdes |
+| **Última sessão** | 06/10: barreira frontal, observabilidade e capacidade local (#171 mergeado); 06/10: clareza do Hangar/treino/modos (#170); 06/10: Banco VORCARIS (#169); 06/10: trilho e EMP (#168); 06/10: miras finas por arma (#166); 06/10: sinais de avaria no modelo e planejamento reconciliado (#164); 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 03/10: escopeta do Lancer-L1 e o braço do escudo; 03/10: ombro do Marauder (pose por direção) e coice dos braços nos robôs importados (saltava de 1,9 a 4,8 m); 02/10: o Marauder segura armas (encaixe de arma no pulso, o punho sem dedos) e o contrato do robô importado (`MECHS_IMPORTADOS.md`); 01/10: M5 corrigido, passada e mira dos 4 chassis importados |
+| **Próximo** | prioridade do dono (06/10): playtest da barreira e montagens; depois esfera e escudo metálico que substitui uma arma; clareza do Hangar/modos entregue no #170; armas e Banco já mergeados; instrumentação, métricas, energia/barreira e expansão orientada por playtest autorizadas em 06/10; dono julga o Marauder (Hangar e partida) e a calibragem do blaster numa mão de Mech; M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); dono julga a forma do engate e das armas no Marauder; ideias do dono em `ROADMAP.md` (jogadas de Mech, facções) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
@@ -17,11 +17,15 @@
 
 ---
 
-- **Miras por arma (Codex, 06/10, PR #166 mergeado).** Seis SVGs finos com centro vazio; secundário acionado muda o desenho; indicação de alvo muda cor sem expandir. Check completo: 571 testes, desktop/celular emulado, JS 301,5 KB. Captura de bancada em arte/miras-por-arma-codex.png; falta julgamento do dono em partida. Pedido de escudos registrado em HANGAR.md: energia em módulo extra preserva braços; metálico ocupa uma mão. Mecânicas ainda AUSENTES.
+- **Miras por arma (Codex, 06/10, PR #166 mergeado).** Seis SVGs finos com centro vazio; secundário acionado muda o desenho; indicação de alvo muda cor sem expandir. Check completo: 571 testes, desktop/celular emulado, JS 301,5 KB. Captura de bancada em arte/miras-por-arma-codex.png; falta julgamento do dono em partida. Pedido de escudos registrado em HANGAR.md: energia em módulo extra preserva braços; metálico ocupa uma mão. Barreira frontal implementada no #171; esfera e metálico continuam AUSENTES.
 
 - **Trilho e EMP (Codex, 06/10, PR #168 mergeado).** Duas armas montáveis por chassi/carga, três níveis visuais, miras próprias; carga de 0,85 s no trilho e calor por distância no EMP. Regras comuns no cliente/servidor e telegráfo de carga. Check/CI verdes, 585 testes. Screenshot em arte/trilho-emp-codex.png. Protocolo 4; servidor público está offline e não foi tocado a pedido do dono. Playtest público online aguarda seu retorno.
 
 - **BANCO VORCARIS (Codex, 06/10, PR #169 mergeado).** Letreiro azul superior e terminal automático na porta; códigos configuráveis em shared/bank/codes.ts. 134 MILHÕES concede créditos existentes, OFICINA repara/resfria, TURBO dá +25% de dano por 30 s, sem empilhar e termina na morte/respawn. 594 testes/check/CI verdes, prova com teclado e terminal em 390×844, saldo no Hangar e WebSocket local. Capturas em arte/banco-vorcaris-*-codex.png. Créditos continuam no aparelho, sem loja/migração para conta. Servidor público offline não foi tocado; online público aguarda código atualizado ao voltar.
+
+## ÚLTIMA SESSÃO FEZ (06/10, PR #171 na main)
+
+Barreira frontal em módulo extra de 2 t, mantendo as duas armas; E remapeável/toque, energia/regeneração e defesa direcional na mesma simulação offline/servidor. Protocolo 5, unidade permanece 19 B; bots cedem vagas a humanos. Diagnóstico/exportação e resumos de partidas por versão/montagem/assistência; contrato de erros ligado ao Serafim13, ainda sem homologação central. AGENTS/IDENTITY corrigidos e adaptação do Serafim UM atualizada; referência canônica preservada. Check local e CI verdes (607 casos/86 arquivos, JS 312,4 KB, Wasm 719,4 KB). Teclado, botão e exportação verificados no navegador, capturas em arte/modulo-energia-codex.png e arte/barreira-frontal-codex.png. Benchmark 10/50/100 clientes localhost, 60/20 Hz, sem quedas em 30 s por estágio: caracterização, não certificação de produção. Servidor público offline não tocado. Detalhes em CAPACIDADE.md, OBSERVABILIDADE.md e PLAYTEST.md.
 
 ## EM BRANCH — NÃO ESTÁ NO AR (nem no site, nem no jogo)
 
@@ -31,7 +35,6 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `codex/energia-observabilidade` | Barreira frontal em módulo extra, observabilidade/exportação, resumos segregados e benchmark 10/50/100. Check verde (607 testes; JS 312,4 KB/Wasm 719,4 KB), prova de navegador; aguardando publicação. | a abrir | 06/10 |
 | `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
 | `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |
@@ -579,7 +582,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 ## PRÓXIMA SESSÃO COMEÇA COM
 
-- **Codex (06/10):** conferir merge da entrega energia/observabilidade e seu deploy; evidências em CAPACIDADE.md e OBSERVABILIDADE.md. Não consultar ou iniciar o servidor público enquanto a orientação de offline persistir. Próximo passo de produto: PLAYTEST.md, antes de escolher arena nova; esfera e escudo metálico removível (ocupa mão) seguem pendentes. Validação central do Serafim13/alertas, online público e carga prolongada seguem pendentes; não declarar escala homologada.
+- **Codex (06/10):** entrega energia/observabilidade mergeada no #171; conferir deploy estático; evidências em CAPACIDADE.md e OBSERVABILIDADE.md. Não consultar ou iniciar o servidor público enquanto a orientação de offline persistir. Próximo passo de produto: PLAYTEST.md, antes de escolher arena nova; esfera e escudo metálico removível (ocupa mão) seguem pendentes. Validação central do Serafim13/alertas, online público e carga prolongada seguem pendentes; não declarar escala homologada.
 
 - **Claude (03/10):** o Marauder está feito (ver ÚLTIMA SESSÃO FEZ). O que sobra dele: **jogador remoto desenhado com o chassi dele** e o encaixe no evento de tiro (`ROADMAP.md`, `FINDINGS.md`); o **escudo do Lancer** que bloqueia tiro, se o dono quiser; e, com a regra de tiro única e a boca como dado, trazer o encaixe de arma aos Mechs procedurais.
 - **Gemini:** **limpar a tela de pausa** (o dono marcou na captura: informação demais, coisas redundantes) e
