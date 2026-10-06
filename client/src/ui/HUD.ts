@@ -4,6 +4,7 @@ import type { MechBase, MechPart } from '../entities/MechBase';
 import { KillBanner } from './KillBanner';
 import { NetHud } from './NetHud';
 import { RoundOverlay } from './RoundOverlay';
+import { WeaponReticle, reticleWeapon } from './WeaponReticle';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -45,6 +46,7 @@ export class HUD {
   private readonly overlay = $('overlay');
   private readonly cta = $('cta');
   private readonly crosshair = $('crosshair');
+  private readonly reticle = new WeaponReticle(this.crosshair);
   private readonly dash = $('dash');
   private readonly dashFill = $('dash-fill');
   private readonly stats = $('stats');
@@ -276,7 +278,8 @@ export class HUD {
     }
   }
 
-  update(dt: number, mech: MechBase, cursorX: number, cursorY: number): void {
+  update(dt: number, mech: MechBase, cursorX: number, cursorY: number, primaryHeld = false, secondaryHeld = false): void {
+    this.reticle.setWeapon(reticleWeapon(mech.loadout, primaryHeld, secondaryHeld));
     const isBlind = mech.isBlind;
     this.root.classList.toggle('blind', isBlind);
 
