@@ -6,6 +6,7 @@ import { PlayTelemetry } from './PlayTelemetry';
 import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
 import { addSerafimPlaque, SERAFIM_TOWER } from '../environment/SerafimTower';
+import { DroneVisuals } from '../fx/DroneVisuals';
 import { BankTerminal } from '../ui/BankTerminal';
 import { bankReward, nearBank, type BankReply } from '../../../shared/bank/codes';
 import { ChargeVisuals } from '../fx/ChargeVisuals';
@@ -213,6 +214,8 @@ export class Game {
   private readonly shieldHUD: ShieldHUD;
   /** `?serafim=festa`: o LED do Prédio Serafim gira as cores. */
   private serafimParty = false;
+  /** Desenho dos drones da base Serafim (só quando a partida tem drones). */
+  private droneVisuals: DroneVisuals | null = null;
   private serafimCheck = 0;
   private readonly squadHUD: SquadHUD;
   private readonly shieldVisuals = new ShieldVisuals(this.scene);
@@ -326,6 +329,7 @@ export class Game {
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     addBankSign(this.scene);
     addSerafimPlaque(this.scene);
+    this.droneVisuals = this.match.drones ? new DroneVisuals(this.scene, this.match.drones) : null;
     // ?serafim=festa: o LED do prédio gira as cores (o dono quer poder variar a luz).
     this.serafimParty = new URLSearchParams(location.search).get('serafim') === 'festa';
     this.bankTerminal = new BankTerminal((code) => {
@@ -1104,6 +1108,7 @@ export class Game {
     this.mech.render(dt, alpha);
     this.bots.render(dt, alpha);
     this.match.allies?.render(dt, alpha);
+    this.droneVisuals?.render(dt, alpha);
     if (this.match.ctf && this.ctfObjectives) this.ctfObjectives.update(dt, this.match.ctf);
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);

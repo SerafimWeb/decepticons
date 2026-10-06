@@ -30,7 +30,9 @@
 - **Prédio Serafim (PR `claude/predio-serafim`):** monólito preto de 56 m em (80, 40), oposto ao Banco VORCARIS; LED verde, vermelho quando inimigo chega a 40 m, `?serafim=festa` gira as cores; base de drones no topo (sem drones ainda).
 - **Dono autorizou (06/10) merge direto em produção sem esperar revisão:** CI verde → merge. Ele testa só no site.
 
-**Próxima sessão começa com:** drones da base Serafim (decolar do topo; o desenho do que fazem ainda é do dono); escudo físico online completo (integridade e chapa no snapshot).
+- **Drones da base Serafim (PR `claude/drones-serafim`):** esquadrilha de 6 — 2 patrulha (laser fraco em inimigo perto da base/aliado), 2 kamikaze (mergulho explosivo, um voo por vida), 1 conserto, 1 recarga (vida/calor/energia do aliado mais precisado). Modelo procedural, sem GLB. Só offline por ora.
+
+**Próxima sessão começa com:** drones no servidor online (o roster de rede ainda não descreve um drone); escudo físico online completo (integridade e chapa no snapshot).
 
 ## SESSÃO ANTERIOR (06/10, PR #171 na main)
 

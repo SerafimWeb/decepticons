@@ -1,5 +1,16 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-06] Drones da base Serafim: 4 papéis (Claude)
+
+Pedido do dono: "os drones podem atacar, patrulhar, consertar, reabastecer, kamikazes, etc. pode prosseguir com eles." Perguntou também se precisava de um modelo do Tripo3D; respondi que não — modelo procedural, como os Mechs, é melhor aqui: muitas unidades pequenas custam 4 draw calls no total contra uma por drone de um GLB, sem rig. Um modelo do Tripo pode substituir só o desenho depois, se quiser mais detalhe.
+- Esquadrilha fixa de 6: 2 patrulha, 2 kamikaze, 1 conserto, 1 recarga (`DRONE_ROSTER`). Decidem a 4 Hz, voam em cruzeiro a 46 m (acima dos prédios, abaixo do topo do prédio de 56 m) e só descem perto do alvo — não é navegação, é altura que evita parede.
+- **Patrulha**: inimigo a 55 m da base ou a 40 m de um aliado vira alvo; paira a 16 m dele e atira um blaster fraco (6 de dano) com raio limpo conferido.
+- **Kamikaze**: mergulha no peito do alvo e explode (foguete forte, raio 6); um voo por vida, volta em 25 s.
+- **Conserto/recarga**: pairam sobre quem mais precisa (vida, incluindo chapa do escudo físico; ou calor/energia) e aplicam a 9 m de distância.
+- Corpo cinemático pequeno (raio 1,1): tiro e explosão o derrubam (`DroneSystem.hit/explosion`); volta pela base em 20 s (25 s o kamikaze).
+- Só na Arena offline por ora (onde os aliados existem); o roster de rede ainda não descreve um drone para os outros jogadores.
+- Visual: casco hexagonal + 4 braços + 4 hélices instanciadas, luz na cor do papel, feixe até quem está sendo atendido. `fx/DroneVisuals.ts`, sem Three.js na regra (G14).
+
 ## [2026-10-06] Prédio Serafim, a base do time (Claude)
 
 Pedido do dono com referência (`arte/predio-serafim-referencia.png`): prédio preto, imponente, brutalista, com faixa de LED verde (vermelha em emergência, ou variando as cores), base de drones no topo, longe do Banco VORCARIS ("somos times opostos"). Decisões:
