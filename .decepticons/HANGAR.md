@@ -201,7 +201,7 @@ Planejamento, ainda sem mecânica implementada. O campo de força ocupa um **slo
 |---|---|---|
 | Barreira frontal | Acompanha a mira e o movimento do robô; proteção direcional temporária | Consumo enquanto ligada e ao absorver impacto; flancos e costas vulneráveis |
 | Esfera de energia | Cobertura completa, versão mais poderosa | Maior massa, consumo e recuperação; impedir que substitua automaticamente o frontal |
-| Escudo metálico removível | Instalação apenas em chassis com suporte compatível, incluindo a evolução do Lancer | Massa e integridade próprias; definir se o suporte de antebraço permite arma simultânea |
+| Escudo metálico removível | Instalação apenas em chassis com suporte compatível, incluindo a evolução do Lancer | Ocupa uma mão e substitui a arma desse braço (confirmado pelo dono); massa e integridade próprias |
 
 O escudo atual do Lancer é visual; não comprova bloqueio de dano. Próxima implementação: contrato versionado de equipamentos por encaixe, capacidade de carga somando armas e módulos, compatibilidade explícita por chassi e migração das montagens antigas. Depois, energia e barreira frontal na simulação compartilhada, com testes direcionais; só então esfera e escudo físico. Números de duração, absorção, recarga e tecla permanecem em aberto.
 

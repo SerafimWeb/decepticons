@@ -25,7 +25,7 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `codex/miras-por-arma` | Miras finas por arma; planejamento de módulo extra e três escudos em HANGAR.md. Alteração de HUD explicitamente solicitada pelo dono. | a abrir | 06/10 |
+| `codex/miras-por-arma` | Miras finas por arma; planejamento de módulo extra e três escudos em HANGAR.md; metálico substitui uma arma. Alteração de HUD explicitamente solicitada pelo dono. | a abrir | 06/10 |
 | `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
 | `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |
