@@ -306,7 +306,54 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     arm.add(m.object);
     return m.object;
   };
+  /**
+   * Chapa do escudo físico (`MetalShield.ts`): montada só quando a montagem leva uma, três peças fora do lote fundido. Abaixada,
+   * fica na face de fora do antebraço; levantada, desliza para a frente do braço e cobre o flanco do torso. A faixa colorida
+   * diz o modelo (cinza muralha, laranja refratário, vermelho reativo, ciano amortecedor). Só desenho: a regra é da simulação.
+   */
+  let plate: THREE.Group | undefined;
+  let plateStripe: THREE.MeshStandardMaterial | undefined;
+  let plateUp = 0;
+  const plateY = -blueprint.arms.upperLength * 1.45;
+  const buildPlate = (): THREE.Group => {
+    const g = group(leftArm, 0, 0, 0);
+    g.name = 'escudo-fisico';
+    const h = blueprint.arms.upperLength * 1.9;
+    const w = blueprint.shoulders.width * 1.25;
+    beveledBox(g, w, h, 0.14 * scale, 0.04 * scale, M.armor, 0, 0, 0);
+    box(g, w * 0.82, h * 0.86, 0.06 * scale, M.frame, 0, 0, -0.08 * scale);
+    plateStripe = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x9aa4ad, emissiveIntensity: 2.2 });
+    box(g, w * 0.12, h * 0.7, 0.05 * scale, plateStripe, 0, 0, -0.12 * scale);
+    return g;
+  };
+  const PLATE_COLOR = { muralha: 0x9aa4ad, refratario: 0xff7a1a, reativo: 0xd8342c, amortecedor: 0x22d3ee } as const;
+  const placePlate = (up: number): void => {
+    if (!plate) return;
+    // Abaixada: de lado, por fora do antebraço. Levantada: de frente, adiante do braço e puxada para o centro.
+    plate.position.set(
+      -blueprint.arms.forearmWidth * 0.75 + up * blueprint.arms.forearmWidth * 1.4,
+      plateY + up * blueprint.arms.upperLength * 0.25,
+      -blueprint.arms.forearmDepth * (0.1 + up * 1.25),
+    );
+    plate.rotation.y = (1 - up) * (Math.PI / 2);
+  };
+  const setGuardVisual = (dt: number, shown: boolean, raised: boolean): void => {
+    if (!plate) return;
+    plate.visible = shown;
+    if (!shown) return;
+    const goal = raised ? 1 : 0;
+    if (plateUp === goal) return;
+    plateUp = goal > plateUp ? Math.min(1, plateUp + dt * 7) : Math.max(0, plateUp - dt * 5);
+    placePlate(plateUp);
+  };
   const mountWeapons = (loadout: Loadout): void => {
+    if (loadout.metalShield) {
+      plate ??= buildPlate();
+      plate.visible = true;
+      plateStripe!.emissive.setHex(PLATE_COLOR[loadout.metalShield.id]);
+      plateUp = 0;
+      placePlate(0);
+    } else if (plate) plate.visible = false;
     if (shownRight !== loadout.primary) {
       if (rightModule) rightArm.remove(rightModule);
       rightModule = attachModule(loadout.primary, rightArm, muzzle);
@@ -332,7 +379,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   return {
     model, pelvis, torso, head, leftArm, rightArm, leftLeg, rightLeg, muzzle, leftMuzzle,
     thrusters, thrusterMaterial: batchedMaterial, setDashVisual: batchedMaterial.userData.setDash,
-    hullMaterials: [batchedMaterial], hipHeight, setHeatVisual, mountWeapons, barrageMouth,
+    hullMaterials: [batchedMaterial], hipHeight, setHeatVisual, setGuardVisual, mountWeapons, barrageMouth,
   };
 }
 

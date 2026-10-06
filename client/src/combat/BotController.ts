@@ -245,6 +245,14 @@ export class BotController {
    * Quer a vaga de ataque: está lutando com um alvo à vista, ou acabou de ganhar a vaga e está chegando
    * perto (de longe, quem ganha a vaga persegue até o alcance; sem isso, largava a vaga no caminho).
    */
+  /**
+   * Levanta a chapa do escudo físico: alvo à vista enquanto avança, recua ou esfria. No ataque abaixa, para andar de
+   * lado na velocidade cheia (a chapa levantada pesa).
+   */
+  get wantsGuard(): boolean {
+    return this.targetVisible && (this.state === 'chase' || this.state === 'retreat' || this.state === 'cool');
+  }
+
   get wantsToken(): boolean {
     return this.targetVisible && (this.state === 'attack' || this.state === 'retreat' || this.state === 'chase');
   }

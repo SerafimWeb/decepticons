@@ -1,4 +1,5 @@
 import { EnergyShield } from '../combat/EnergyShield';
+import { MetalShield, RAISED_SPEED } from '../combat/MetalShield';
 import { CombatBoost } from '../combat/CombatBoost';
 import { legDamageLean } from '../fx/DamageVisuals';
 import RAPIER from '@dimforge/rapier3d-simd-compat';
@@ -7,7 +8,7 @@ import { HeatSink, OVERHEAT_SPEED, type ChassisHeat, type HeatState } from '../c
 import { repairModules } from '../combat/repair';
 import { applyDamage, partAt, type DamageResult } from '../combat/damage';
 import { DEFAULT_TRIGGERS, MOUNT_PART, MOUNTS, type MountId, type TriggerLayout, type Vec3 } from '../combat/mounts';
-import type { Loadout, WeaponStats } from '../combat/weapons';
+import type { DamageType, Loadout, WeaponStats } from '../combat/weapons';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
 /** Gravidade dos Mechs (mais alta que a do mundo: queda "pesada" e rápida, estilo arena shooter). */
@@ -110,6 +111,8 @@ export interface MechRig {
   thrusters: THREE.Object3D[];
   thrusterMaterial: THREE.MeshStandardMaterial;
   setDashVisual?: (active: boolean) => void;
+  /** Chapa do escudo físico: `shown` = no braço e inteira; `raised` = botão 2. Só desenho (`mechBlueprint.ts`). */
+  setGuardVisual?: (dt: number, shown: boolean, raised: boolean) => void;
   /** Atualiza sinais visuais de calor sem tocar na simulação. */
   setHeatVisual?: (dt: number, heat: number, overheated: boolean, coolingBoost: boolean) => void;
   /** Materiais do casco (por instância): piscam quando o Mech toma dano. */
@@ -212,6 +215,8 @@ export abstract class MechBase {
   weaponCharging = false;
   readonly combatBoost = new CombatBoost();
   readonly energyShield = new EnergyShield();
+  /** Escudo físico da mão esquerda (`MetalShield.ts`): o botão 2 levanta a chapa. */
+  readonly metalShield = new MetalShield();
   /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
   private armed: Loadout;
   private leftRecoil = 0;
@@ -243,6 +248,7 @@ export abstract class MechBase {
     this.heatSink = new HeatSink(stats);
     this.armed = loadout;
     this.energyShield.equip(loadout.module);
+    this.metalShield.equip(loadout.metalShield, stats.maxModuleHealth.leftArm);
     rig.mountWeapons?.(loadout);
     this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
@@ -431,6 +437,7 @@ export abstract class MechBase {
    */
   equip(loadout: Loadout, keepHeat = false): void {
     this.energyShield.equip(loadout.module, keepHeat);
+    this.metalShield.equip(loadout.metalShield, this.stats.maxModuleHealth.leftArm, keepHeat);
     this.armed = loadout;
     this.rig.mountWeapons?.(loadout);
     if (!keepHeat) this.heatSink.reset();
@@ -519,7 +526,23 @@ export abstract class MechBase {
   /** Conserto (técnico ou zona de cura): devolve vida à parte mais avariada que ainda existe. Devolve quanto consertou. */
   repair(amount: number): number {
     if (!this.alive) return 0;
-    return repairModules(this.modules, this.stats.maxModuleHealth, amount);
+    const used = repairModules(this.modules, this.stats.maxModuleHealth, amount);
+    // O que sobra do conserto vai para a chapa do escudo físico (o braço vem antes: sem braço, sem escudo).
+    return used + this.metalShield.restore(amount - used);
+  }
+
+  /** Botão 2 com o escudo físico na mão esquerda: levanta a chapa neste tick (sem escudo, nada acontece). */
+  guard(held: boolean): void {
+    this.metalShield.step(held && this.alive, this.modules.leftArm > 0);
+  }
+
+  /**
+   * Defesas antes do dano: o campo de energia na frente, depois a chapa do escudo físico (só com o braço esquerdo
+   * inteiro). (x, y, z): do centro do robô para a fonte do impacto, em mundo. Devolve o dano que chega ao corpo.
+   */
+  defend(damage: number, type: DamageType, x: number, y: number, z: number): number {
+    const left = this.energyShield.absorb(damage, x, y, z, this.yaw, this.pitch);
+    return this.modules.leftArm > 0 ? this.metalShield.absorb(left, type, x, z, this.yaw) : left;
   }
 
   /** Ventilação externa (zona de resfriamento): tira calor direto, sem exigir estar parado nem sem tiro recente. */
@@ -548,6 +571,7 @@ export abstract class MechBase {
 
   respawn(feet: THREE.Vector3): void {
     this.energyShield.reset();
+    this.metalShield.reset();
     Object.assign(this.modules, this.stats.maxModuleHealth);
     this.heatSink.reset();
     this.weaponCharging = false;
@@ -583,6 +607,7 @@ export abstract class MechBase {
   private die(): void {
     this.combatBoost.reset();
     this.energyShield.stop();
+    this.metalShield.raised = false;
     this.collider.setEnabled(false);
     this.root.visible = false;
     this.velocity.set(0, 0, 0);
@@ -654,7 +679,8 @@ export abstract class MechBase {
     this.moveIntent.copy(_wish);
 
     // Superaquecido: 3/4 da velocidade (dá para fugir), sem pulo nem dash (os sistemas entram em emergência).
-    const mobility = this.mobility * (overheated ? OVERHEAT_SPEED : 1);
+    // Chapa do escudo levantada: anda mais devagar (o dash continua, para sair da linha de tiro).
+    const mobility = this.mobility * (overheated ? OVERHEAT_SPEED : 1) * (this.metalShield.raised ? RAISED_SPEED : 1);
 
     if (input.dash && this.dashCooldownLeft <= 0 && mobility > 0 && !overheated) {
       this.heatSink.add(s.heatDash);
@@ -828,6 +854,7 @@ export abstract class MechBase {
     else r.thrusterMaterial.emissiveIntensity = this.isDashing ? 14 : 2;
 
     r.setHeatVisual?.(dt, this.heat, this.overheated, this.coolingBoost);
+    r.setGuardVisual?.(dt, this.metalShield.intact && this.modules.leftArm > 0, this.metalShield.raised);
 
     // Flash de dano no casco: só escreve no material quando o valor muda.
     this.hitFlash = Math.max(0, this.hitFlash - dt * 6);

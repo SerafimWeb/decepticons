@@ -229,3 +229,16 @@ Esfera implementada neste incremento: 4 t, 150 energia, 40/s ligada (até 3,75 s
 Engates de energia dos Mechs aceitam plasma, blaster, escopeta, trilho e EMP; braços secundários comuns também aceitam lançadores. Peso por nível continua decidindo quais combinações cabem. Andróide conserva blaster/serra; Lancer conserva o braço do escudo; Marauder conserva lançadores nos ombros. Armas de fábrica e links v1 continuam válidos. Procedurais e Marauder trocam o modelo da arma; GLBs de arma integrada conservam a aparência, com aviso no Hangar.
 
 Configurações antigas com escudo E migram uma vez para Ctrl, exceto quando Ctrl já está em outra ação. Teclas personalizadas são preservadas; atribuir E depois continua válido. Energia esgotada não religa automaticamente; morte, pausa e perda de foco cancelam a intenção.
+
+## Escudo físico — 06/10, Claude
+
+Mão esquerda dos compatíveis (Vector-09, Onça, Colossus, Lancer) aceita um escudo no lugar da arma; o Lancer sai de fábrica com a Muralha. **Segure o botão 2** (mouse direito; no toque, FOGUETE) para levantar: cobre 150° à frente com a resistência cheia e o Mech anda a 75%. Abaixado, cobre o flanco esquerdo com metade. Sem energia: a chapa tem integridade (1,2–1,6× a vida do braço no MK I) que só volta com conserto e renascimento; perder o braço esquerdo é perder o escudo. A chapa segura a serra (o campo de energia não).
+
+| Modelo | MK I | Bom contra | Fraco contra |
+|---|---|---|---|
+| Muralha | 2 t | um pouco de tudo (balístico 70%) | pulso/sônico 40% |
+| Refratário | 1,75 t | térmico 90%, laser 85% | balístico 35%, explosivo 40% |
+| Reativo | 2,5 t | balístico 90%, explosivo 85% | térmico 35%, laser 30% |
+| Amortecedor | 2 t | pulso 90%, sônico 90% | corte 35% |
+
+MK II/III: +0,5/+1 t, chapa +30/+60%, resistência +5/+10 pontos (teto 95%). Natureza de cada arma em `DAMAGE_TYPE` (`weapons.ts`). Online, a regra vale no servidor; HUD de integridade e chapa levantada dos outros ainda não viajam na rede.

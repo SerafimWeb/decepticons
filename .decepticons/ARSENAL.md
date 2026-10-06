@@ -73,3 +73,7 @@ O protocolo atual é 6 (catálogo inclui geradores frontal/esférico; formato de
 ARM_SLOTS compartilha engates de energia entre Mechs; não duplicar listas na UI ou no site. validateLoadout continua árbitro de massa e encaixe. Armament mantém lançadores por mão quando o principal é munição (Onça); rearm renova os carregadores. Procedurais usam weaponModel nas variantes fora do canhão/casulo de fábrica, mantendo a boca física fixa. GLBs integrados ainda não trocam aparência.
 
 Próximas propostas (não equipáveis): feixe térmico contínuo com exigência de mira/calor e arpão magnético com contrajogo/massa/rompimento do cabo. Não são novos IDs do catálogo ainda.
+
+## Natureza do dano — 06/10, Claude
+
+Toda arma declara a natureza do dano em `DAMAGE_TYPE` (`client/src/combat/weapons.ts`): o `Record` quebra o typecheck se faltar. Os escudos físicos (`MetalShield.ts`) resistem por natureza. Arma sônica futura usa `sonico` (o Amortecedor já está pronto para ela).

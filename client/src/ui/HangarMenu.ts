@@ -2,8 +2,10 @@ import type { MountId } from '../combat/mounts';
 import { TIERS, weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { reloadWithout } from '../core/url';
 import { CHASSIS, SHIELD_ARM, type ChassisId } from '../entities/chassis';
+import { METAL_SHIELD_IDS, METAL_SHIELDS, METAL_SHIELD_TIERS, metalShieldMass, type MetalShieldId } from '../combat/MetalShield';
+import type { DamageType } from '../combat/weapons';
 import type { Hangar } from '../hangar/Hangar';
-import { armOptions, factorySpec, hasShoulderSlot, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
+import { acceptsMetalShield, armOptions, factorySpec, hasShoulderSlot, isMetalShield, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { PRESET_COUNT } from '../hangar/Hangar';
 import { testAt, testFire, TEST_FIRE_S, type TestFire } from '../hangar/testFire';
 
@@ -345,8 +347,8 @@ export class HangarMenu {
 
   private startTest(): void {
     const arm = this.draft[this.selectedSlot];
-    if (!arm || !this.hangar.check(this.draft).ok) return;
-    const w = weapon(arm.id, arm.tier);
+    if (!arm || isMetalShield(arm) || !this.hangar.check(this.draft).ok) return;
+    const w = weapon(arm.id as WeaponId, arm.tier);
     const mounts = slotMounts(this.draft.chassis, this.selectedSlot);
     const data = testFire(CHASSIS[this.draft.chassis], w, TEST_FIRE_S, mounts.length);
     this.testing = data;
@@ -361,8 +363,8 @@ export class HangarMenu {
 
   private startAimPractice(): void {
     const arm = this.draft[this.selectedSlot];
-    if (!arm || !this.preview.aimPractice || !this.hangar.check(this.draft).ok) return;
-    const selectedWeapon = weapon(arm.id, arm.tier);
+    if (!arm || isMetalShield(arm) || !this.preview.aimPractice || !this.hangar.check(this.draft).ok) return;
+    const selectedWeapon = weapon(arm.id as WeaponId, arm.tier);
     if (selectedWeapon.kind === 'melee') {
       this.message = 'O alvo móvel treina armas de tiro. Use TESTAR DISPARO para conferir a motosserra.';
       this.messageKind = 'info';
@@ -545,7 +547,7 @@ export class HangarMenu {
     if (!(target instanceof HTMLSelectElement)) return;
     if (target.id === 'hangar-module-select') { this.draft = { ...this.draft, v: 2, module: target.value === 'frontal' || target.value === 'sphere' ? target.value : null }; this.render(); return; }
     if (target.id !== 'hangar-weapon-select') return;
-    const selected = target.value as WeaponId | '';
+    const selected = target.value as WeaponId | MetalShieldId | '';
     this.draft = withArm(this.draft, this.selectedSlot, () => (selected ? { id: selected, tier: this.draft[this.selectedSlot]?.tier ?? 0 } : null));
     this.message = '';
     this.render();
@@ -632,31 +634,39 @@ export class HangarMenu {
     slotList.innerHTML = slots
       .map((slot) => {
         const arm = spec[slot] ?? null;
-        const w = arm ? weapon(arm.id, arm.tier) : null;
+        const slotPlate = isMetalShield(arm) ? arm : null;
+        const w = arm && !slotPlate ? weapon(arm.id as WeaponId, arm.tier) : null;
         const selected = slot === this.selectedSlot;
-        return `<button class="hg-slot${selected ? ' selected' : ''}${w ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${w ? WEAPON_ICON[w.id] : '<path d="M6 12h12" />'}</svg><span><small>${SLOT_LABEL[slot]}</small><b>${w?.name ?? (slot === 'left' && shield ? 'ESCUDO' : 'VAZIO')}</b></span><em>${w ? TIERS[w.tier]!.label + " · " + num(w.mass * mountCopies(slot, spec.chassis), 1) + " t" : "—"}</em></button>`;
+        const icon = w ? WEAPON_ICON[w.id] : slotPlate ? PLATE_ICON : '<path d="M6 12h12" />';
+        const name = w?.name ?? (slotPlate ? METAL_SHIELDS[slotPlate.id].name : slot === 'left' && shield ? 'ESCUDO' : 'VAZIO');
+        const info = w ? TIERS[w.tier]!.label + ' · ' + num(w.mass * mountCopies(slot, spec.chassis), 1) + ' t' : slotPlate ? METAL_SHIELD_TIERS[slotPlate.tier].label + ' · ' + num(metalShieldMass(slotPlate.id, slotPlate.tier), 1) + ' t' : '—';
+        return `<button class="hg-slot${selected ? ' selected' : ''}${w || slotPlate ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg><span><small>${SLOT_LABEL[slot]}</small><b>${name}</b></span><em>${info}</em></button>`;
       })
       .join('');
 
     const arm = spec[this.selectedSlot] ?? null;
-    const w = arm ? weapon(arm.id, arm.tier) : null;
+    const plate = isMetalShield(arm) ? arm : null;
+    const w = arm && !plate ? weapon(arm.id as WeaponId, arm.tier) : null;
     const nowArm = current.chassis === spec.chassis ? (current[this.selectedSlot] ?? null) : null;
-    const was = nowArm ? weapon(nowArm.id, nowArm.tier) : null;
+    const was = nowArm && !isMetalShield(nowArm) ? weapon(nowArm.id as WeaponId, nowArm.tier) : null;
+    const plateOptions = this.selectedSlot === 'left' && acceptsMetalShield(spec.chassis)
+      ? `<optgroup label="ESCUDO FÍSICO · botão 2 levanta">${METAL_SHIELD_IDS.map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${METAL_SHIELDS[id].name} · ${num(metalShieldMass(id, arm?.tier ?? 0), 1)} t</option>`).join('')}</optgroup>`
+      : '';
     const options = armOptions(this.selectedSlot, spec.chassis)
       .map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name} · ${num(weapon(id, arm?.tier ?? 0).mass * mountCopies(this.selectedSlot, spec.chassis), 1)} t${nasCostas(id, this.selectedSlot) ? ' · morteiro nas costas' : ''}</option>`)
       .join('');
-    const shieldArm = this.selectedSlot === 'left' && shield;
+    const shieldArm = this.selectedSlot === 'left' && shield && !acceptsMetalShield(spec.chassis);
     const editor = this.root.querySelector<HTMLElement>('#hangar-weapon-editor')!;
     editor.innerHTML = `
       <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ARMAMENTO</label>
-      <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}</select>
-      <p class="hg-hint">${w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
+      <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}${plateOptions}</select>
+      <p class="hg-hint">${plate ? `${METAL_SHIELDS[plate.id].hint}. Segure o botão 2 (mouse direito) para levantar a chapa: cobre a frente e anda mais devagar; abaixada, protege só o flanco esquerdo com metade da força. Sem energia: a chapa se desgasta e volta no conserto.` : w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
 ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou testar. A prévia mantém a última montagem válida.</p>' : ''}
       ${["genesis01", "lancerL1", "lr7lBastion", "quadraV2"].includes(spec.chassis) ? '<p class="hg-hint">Arma integrada ao casco: a aparência deste robô ainda não muda com a seleção.</p>' : ''}<div class="hg-label">NÍVEL DE POTÊNCIA</div>
-      <div class="hg-tiers">${TIERS.map((t, i) => { const copies = mountCopies(this.selectedSlot, spec.chassis); const mass = arm ? weapon(arm.id, i as Tier).mass * copies : 0; const total = report.mass - (w?.mass ?? 0) * copies + mass; const excess = Math.max(0, total - report.capacity); const hint = excess > 1e-9 ? `EXCEDE ${num(excess, 1)} t` : `${num(report.capacity - total, 1)} t livres`; return `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}${excess > 1e-9 ? ' over' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}" title="${hint}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : `+${Math.round((t.damage - 1) * 100)}% dano`} · ${num(mass, 1)} t</small><small>${hint}</small></button>`; }).join('')}</div>
-      <button class="hg-test-btn" type="button" data-action="test"${arm && report.check.ok ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>
-      <button class="hg-practice-btn" type="button" data-action="aim-practice"${arm && report.check.ok ? '' : ' disabled'}>◎ TREINO DE MIRA · ALVO MÓVEL</button>
-      ${w ? `<div class="hg-bars">${STATS.map((s) => bar(s, w, was)).join('')}</div><p class="hg-legend"><i class="now"></i> esta montagem <i class="was"></i> a que está no Mech</p>` : ''}`;
+      <div class="hg-tiers">${TIERS.map((t, i) => { const copies = mountCopies(this.selectedSlot, spec.chassis); const mass = plate ? metalShieldMass(plate.id, i as Tier) : arm ? weapon(arm.id as WeaponId, i as Tier).mass * copies : 0; const total = report.mass - (plate ? metalShieldMass(plate.id, plate.tier) : (w?.mass ?? 0) * copies) + mass; const excess = Math.max(0, total - report.capacity); const hint = excess > 1e-9 ? `EXCEDE ${num(excess, 1)} t` : `${num(report.capacity - total, 1)} t livres`; return `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}${excess > 1e-9 ? ' over' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}" title="${hint}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : plate ? `+${Math.round((METAL_SHIELD_TIERS[i]!.integrity - 1) * 100)}% chapa` : `+${Math.round((t.damage - 1) * 100)}% dano`} · ${num(mass, 1)} t</small><small>${hint}</small></button>`; }).join('')}</div>
+      <button class="hg-test-btn" type="button" data-action="test"${w && report.check.ok ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>
+      <button class="hg-practice-btn" type="button" data-action="aim-practice"${w && report.check.ok ? '' : ' disabled'}>◎ TREINO DE MIRA · ALVO MÓVEL</button>
+      ${w ? `<div class="hg-bars">${STATS.map((s) => bar(s, w, was)).join('')}</div><p class="hg-legend"><i class="now"></i> esta montagem <i class="was"></i> a que está no Mech</p>` : plate ? plateBars(plate.id, plate.tier) : ''}`;
 
     const capPct = Math.min(100, (report.mass / report.capacity) * 100);
     const fill = this.root.querySelector<HTMLElement>('#hangar-mass-fill')!;
@@ -676,7 +686,7 @@ ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou 
       apply.disabled = !report.check.ok;
       apply.title = report.check.ok ? 'Salvar e aplicar a montagem' : report.check.detail;
     }
-    this.hotLeft.querySelector('span')!.innerHTML = `<b>02</b> ${spec.left ? 'BRAÇO E' : shield ? 'BRAÇO E · ESCUDO' : 'BRAÇO E · VAZIO'}`;
+    this.hotLeft.querySelector('span')!.innerHTML = `<b>02</b> ${isMetalShield(spec.left) || (!spec.left && shield) ? 'BRAÇO E · ESCUDO' : spec.left ? 'BRAÇO E' : 'BRAÇO E · VAZIO'}`;
     // Atalhos 1 a 4: vazio salva a montagem da tela; cheio carrega (e o SALVAR pequeno sobrescreve).
     const draftKey = loadoutKey(spec);
     this.root.querySelector<HTMLElement>('#hg-presets')!.innerHTML = this.hangar
@@ -707,6 +717,23 @@ ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou 
 
 /** Sigla curta de cada chassi, para caber no atalho do preset. */
 const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-1', colossus01: 'C01', arara: 'B1', onca: 'B2', genesis01: 'G01', lancerL1: 'L01', lr7lBastion: 'LR7', quadraV2: 'QV2', marauder: 'MRD' };
+
+/** Ícone da chapa do escudo físico no encaixe. */
+const PLATE_ICON = '<path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z" />';
+
+const DAMAGE_LABEL: Record<DamageType, string> = {
+  termico: 'TÉRMICO', laser: 'LASER', balistico: 'BALÍSTICO', explosivo: 'EXPLOSIVO', pulso: 'PULSO', sonico: 'SÔNICO', corte: 'CORTE',
+};
+
+/** Quanto a chapa levantada segura de cada natureza de dano (com o bônus do nível). */
+function plateBars(id: MetalShieldId, tier: Tier): string {
+  const m = METAL_SHIELDS[id];
+  const rows = (Object.keys(DAMAGE_LABEL) as DamageType[]).map((type) => {
+    const v = Math.round(Math.min(0.95, m.resist[type] + METAL_SHIELD_TIERS[tier].resist) * 100);
+    return `<div class="hg-bar"><span>${DAMAGE_LABEL[type]}</span><div class="hg-track"><i class="now" style="width:${v}%"></i></div><b>${v}%</b></div>`;
+  });
+  return `<div class="hg-bars">${rows.join('')}</div><p class="hg-legend">dano seguro com a chapa levantada · chapa de ${num(m.integrity * METAL_SHIELD_TIERS[tier].integrity, 1)}× a vida do braço</p>`;
+}
 
 /** Rótulo curto de um atalho: chassi e nível de cada braço (ex.: "V09 · III / I"). */
 function presetLabel(p: LoadoutSpec): string {

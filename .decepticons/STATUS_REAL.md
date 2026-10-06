@@ -109,8 +109,8 @@ Oficina ganha compatibilidade por chassi, massa, escudos e ordens; Sala de Contr
 | Feature | Estado | Evidência / limite |
 |---|---|---|
 | Miras por arma | PARCIAL | Integradas ao HUD e aos gatilhos, seis desenhos finos com centro livre; bancada de navegador em arte/miras-por-arma-codex.png. Publicado pelo PR #166; falta julgamento do dono em partida. |
-| Barreira frontal e esfera em módulo extra | AUSENTE | Planejamento em HANGAR.md; energia e bloqueio ainda não implementados. |
-| Escudo metálico removível | AUSENTE | Compatibilidade por chassi planejada; o escudo visual do Lancer permanece DEMO. |
+| Barreira frontal e esfera em módulo extra | PARCIAL | Implementadas (#171, #173) na simulação comum; falta playtest do dono. |
+| Escudo físico removível (4 modelos, botão 2) | PARCIAL | Claude 06/10: regra na simulação comum (cliente e servidor), Hangar, chapa procedural que levanta, HUD de integridade, bots levantam ao avançar/recuar. Testes em `MetalShield.test.ts`. Limites: online, a integridade do HUD não desce (o servidor não envia a chapa) e os Mechs remotos não mostram a chapa levantada; o Lancer usa a chapa da própria malha, que não se move. |
 
 | Canhão de trilho e EMP | PARCIAL | PR #168 mergeado; tick compartilhado, Hangar, carga, modelos e miras. Trilho carrega 0,85 s; EMP aquece circuitos. 585 testes e CI verdes, dois clientes locais recebem carga/disparos. Captura arte/trilho-emp-codex.png. Playtest público pendente: servidor offline hoje, intocado a pedido do dono. |
 | Banco VORCARIS | PARCIAL | Letreiro azul a 24 m na fachada, terminal automático no térreo, saldo existente no Hangar; 134 MILHÕES / OFICINA / TURBO configuráveis. Regras de vida/proximidade/intervalo e bônus compartilhadas; WebSocket local e navegador real verificados (créditos, reforço, retorno, tela pequena). PR #169 mergeado, check/CI verdes; playtest público online pendente, servidor offline intocado. Créditos continuam no aparelho, sem loja/migração para conta. |

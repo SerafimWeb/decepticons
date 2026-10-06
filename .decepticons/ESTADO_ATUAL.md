@@ -23,7 +23,15 @@
 
 - **BANCO VORCARIS (Codex, 06/10, PR #169 mergeado).** Letreiro azul superior e terminal automático na porta; códigos configuráveis em shared/bank/codes.ts. 134 MILHÕES concede créditos existentes, OFICINA repara/resfria, TURBO dá +25% de dano por 30 s, sem empilhar e termina na morte/respawn. 594 testes/check/CI verdes, prova com teclado e terminal em 390×844, saldo no Hangar e WebSocket local. Capturas em arte/banco-vorcaris-*-codex.png. Créditos continuam no aparelho, sem loja/migração para conta. Servidor público offline não foi tocado; online público aguarda código atualizado ao voltar.
 
-## ÚLTIMA SESSÃO FEZ (06/10, PR #171 na main)
+## ÚLTIMA SESSÃO FEZ (06/10, Claude: PR #173 e o escudo físico, mergeados direto pela autorização do dono)
+
+- **Escudo esférico, Ctrl e aliados (#173, trabalho da Codex concluído pelo Claude):** esfera, Ctrl liga/desliga, aliados offline com ordens 1–3, catálogo ampliado. Teste da chuva de mísseis corrigido (os bots agora atacam mais cedo).
+- **Escudo físico na mão esquerda (PR `claude/escudo-metalico`):** 4 modelos (Muralha, Refratário, Reativo, Amortecedor) com resistência por natureza de dano; **segure o botão 2** para levantar a chapa. Vector-09, Onça, Colossus e Lancer (de fábrica). Detalhes em HANGAR.md; limites online em STATUS_REAL.md.
+- **Dono autorizou (06/10) merge direto em produção sem esperar revisão:** CI verde → merge. Ele testa só no site.
+
+**Próxima sessão começa com:** Prédio Serafim (referência em `.tmp/prediolimpo`): prédio preto brutalista, faixa de LED verde (vermelha em emergência), base de drones no topo, longe do Banco VORCARIS (times opostos). Depois: escudo físico online completo (integridade e chapa no snapshot).
+
+## SESSÃO ANTERIOR (06/10, PR #171 na main)
 
 Barreira frontal em módulo extra de 2 t, mantendo as duas armas; E remapeável/toque, energia/regeneração e defesa direcional na mesma simulação offline/servidor. Protocolo 5, unidade permanece 19 B; bots cedem vagas a humanos. Diagnóstico/exportação e resumos de partidas por versão/montagem/assistência; contrato de erros ligado ao Serafim13, ainda sem homologação central. AGENTS/IDENTITY corrigidos e adaptação do Serafim UM atualizada; referência canônica preservada. Check local e CI verdes (607 casos/86 arquivos, JS 312,4 KB, Wasm 719,4 KB). Teclado, botão e exportação verificados no navegador, capturas em arte/modulo-energia-codex.png e arte/barreira-frontal-codex.png. Benchmark 10/50/100 clientes localhost, 60/20 Hz, sem quedas em 30 s por estágio: caracterização, não certificação de produção. Servidor público offline não tocado. Detalhes em CAPACIDADE.md, OBSERVABILIDADE.md e PLAYTEST.md.
 
@@ -35,7 +43,6 @@ Barreira frontal em módulo extra de 2 t, mantendo as duas armas; E remapeável/
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
-| `claude/escudo-esferico-aliados` | Trabalho da Codex (concluído e validado pelo Claude): Ctrl alterna escudo; esfera; render dos aliados, escolta/EMP/cobertura e ordens 1–3 offline; catálogo ampliado; Oficina e Sala de Controle. `npm run check` verde (622 testes). O teste da chuva de mísseis passou a conferir só o dano do dono em si mesmo: com a vaga pedida já na perseguição, os bots da sala atacam mais cedo. Servidor público não acessado. | aberto 06/10 | 06/10 |
 | `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
 | `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |

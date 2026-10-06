@@ -64,6 +64,8 @@ export class Armament {
     const m = this.mech;
     const l = m.loadout;
     const triggers = m.stats.triggers ?? DEFAULT_TRIGGERS;
+    // Escudo físico na mão esquerda: o botão 2 levanta a chapa em vez de atirar (não há arma secundária).
+    m.guard(secondary && !l.secondary);
 
     const right = this.hands[0]!;
     const left = this.hands[1]!;
