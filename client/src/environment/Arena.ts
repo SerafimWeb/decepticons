@@ -4,6 +4,7 @@ import { CITY_NEON, PALETTE } from '../core/palette';
 import { mulberry32 } from '../core/rng';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { DestructibleDef, Destructibles } from './Destructibles';
+import { SerafimTower } from './SerafimTower';
 
 interface BlockDef {
   x: number;
@@ -66,6 +67,8 @@ export const SPAWN_POINTS: readonly (readonly [number, number])[] = [
 export class Arena {
   readonly halfSize = 100;
   readonly occluders: Occluder[] = [];
+  /** Prédio Serafim: a base do time, no canto oposto ao Banco VORCARIS. */
+  readonly serafim: SerafimTower;
 
   private readonly boxGeo = new THREE.BoxGeometry(1, 1, 1);
   private readonly solidMat = new THREE.MeshStandardMaterial({ color: PALETTE.steel, metalness: 0.3, roughness: 0.8 });
@@ -88,6 +91,8 @@ export class Arena {
 
     this.buildFloorAndBounds();
     for (const b of BUILDINGS) this.addBuilding(b);
+    this.serafim = new SerafimTower(scene, physics);
+    this.occluders.push({ box: this.serafim.bounds, material: this.serafim.material });
     for (const b of BARRICADES) destructibles.add(b);
     this.buildPlatform();
     this.buildSkyline();

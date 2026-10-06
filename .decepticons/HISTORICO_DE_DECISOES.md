@@ -1,5 +1,14 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-06] Prédio Serafim, a base do time (Claude)
+
+Pedido do dono com referência (`arte/predio-serafim-referencia.png`): prédio preto, imponente, brutalista, com faixa de LED verde (vermelha em emergência, ou variando as cores), base de drones no topo, longe do Banco VORCARIS ("somos times opostos"). Decisões:
+- Em (80, 40), canto oposto ao banco (−28, −35), a ~131 m; fora das rotas de patrulha, dos nascimentos e das zonas.
+- 56 m em quatro blocos desalinhados (face oeste alinhada para o LED correr reto), juntas recuadas e aletas. Colisão por bloco e no topo: entra na simulação comum (o servidor monta a mesma arena).
+- LED segmentado (64 peças instanciadas) na face voltada para a arena. Verde normal; **vermelho pulsando quando um Mech inimigo chega a 40 m** (base sob ataque); `?serafim=festa` gira as cores. Só desenho, conferido a 4 Hz.
+- Topo: laje, parapeito, cabine, antena e marcações de pouso (anel central + 3 docas). Os drones em si ainda não existem: a base está pronta para eles.
+- 4 draw calls, tudo estático; a placa SERAFIM no térreo é só do navegador.
+
 ## [2026-10-06] Escudo físico na mão esquerda, botão 2 e resistência por natureza de dano (Claude)
 
 Pedido do dono: escudo removível que ocupa a mão esquerda no lugar da arma, só em chassis compatíveis (incluindo o Lancer); depois, no mesmo dia: "ao clicar com o botão 2 do mouse, vai ativar o poder do escudo (cada escudo poderá ter diferentes características, ser contra fogo, contra armas sônicas, contra blaster...)". Decisões:
