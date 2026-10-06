@@ -1,3 +1,4 @@
+import { applyEmp } from './EmpEffect';
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { GLOW } from '../core/palette';
@@ -150,7 +151,7 @@ export class CombatSystem {
     return collider ? this.byCollider.get(collider.handle) : undefined;
   }
 
-  onProjectileHit(hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider): void {
+  onProjectileHit(hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider, w?: WeaponStats, distance = 0): void {
     if (!this.damageEnabled) return;
     const mech = this.byCollider.get(hit.collider.handle);
     if (!mech) {
@@ -158,6 +159,7 @@ export class CombatSystem {
       return;
     }
     const shooter = owner ? this.byCollider.get(owner.handle) : undefined;
+    if (w) applyEmp(mech, w, distance);
     const result = mech.takeHit(hit.point, damage);
     if (result.applied <= 0) return;
     if (result.killed) this.wreck(mech, dir, shooter);

@@ -2,6 +2,8 @@ import type { Loadout, WeaponId } from '../combat/weapons';
 
 /** Traços periféricos: todos preservam um centro livre de pelo menos 12 px. */
 const SHAPES: Record<WeaponId, string> = {
+  railgun: 'M7 19H16 M7 29H16 M32 19H41 M32 29H41 M24 5V13 M24 35V43',
+  emp: 'M17 8L8 17 M31 8L40 17 M40 31L31 40 M17 40L8 31 M5 22V26 M43 22V26',
   plasma: 'M16 9H9V16 M32 9H39V16 M9 32V39H16 M39 32V39H32',
   blaster: 'M24 7V15 M7 24H15 M33 24H41 M24 33V41',
   shotgun: 'M15 8L7 16V32L15 40 M33 8L41 16V32L33 40',
@@ -18,6 +20,8 @@ export function reticleWeapon(loadout: Loadout, primaryHeld: boolean, secondaryH
 export class WeaponReticle {
   private readonly path: SVGPathElement;
   private shown: WeaponId | undefined;
+  private chargeStep = -1;
+  private readonly chargeBar: HTMLElement;
 
   constructor(root: HTMLElement) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -27,6 +31,18 @@ export class WeaponReticle {
     this.path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     svg.append(this.path);
     root.prepend(svg);
+    this.chargeBar = document.createElement('div');
+    this.chargeBar.className = 'reticle-charge';
+    this.chargeBar.hidden = true;
+    root.append(this.chargeBar);
+  }
+
+  setCharge(progress: number): void {
+    const step = Math.floor(Math.max(0, Math.min(1, progress)) * 20);
+    if (step === this.chargeStep) return;
+    this.chargeStep = step;
+    this.chargeBar.hidden = step === 0;
+    this.chargeBar.style.transform = 'scaleX(' + step / 20 + ')';
   }
 
   setWeapon(id: WeaponId): void {

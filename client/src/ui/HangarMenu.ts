@@ -55,6 +55,8 @@ function slotMounts(chassis: ChassisId, slot: ArmSlot): readonly MountId[] {
   return CHASSIS[chassis].triggers?.secondary ?? [];
 }
 const WEAPON_HINT: Record<WeaponId, string> = {
+  railgun: 'Energia · segure 0,85 s para disparar · longo alcance · muito calor',
+  emp: 'Energia · pulso lento · pouco dano e +20% de calor no alvo próximo · sem paralisia',
   plasma: 'Energia · dano cheio até 60 m · calor por disparo',
   rockets: 'Munição · explosão em área · recarga automática',
   blaster: 'Energia · leve · alcance curto',
@@ -65,6 +67,8 @@ const WEAPON_HINT: Record<WeaponId, string> = {
 
 /** Ícones de traço (24×24) de cada arma. */
 const WEAPON_ICON: Record<WeaponId, string> = {
+  railgun: '<path d="M3 8h17M3 16h17M5 8v8M10 10h11M10 14h11M21 8v8" />',
+  emp: '<circle cx="10" cy="12" r="5" /><path d="M10 6v12M4 12h12M17 7l4 5-4 5" />',
   plasma: '<path d="M3 13h11l2-3h5v6h-5l-2-3" /><circle cx="7" cy="13" r="2.5" /><path d="M16 10v6" />',
   rockets: '<rect x="4" y="6" width="14" height="12" rx="1" /><circle cx="8" cy="10" r="1.6" /><circle cx="14" cy="10" r="1.6" /><circle cx="8" cy="14" r="1.6" /><circle cx="14" cy="14" r="1.6" /><path d="M18 9h3v6h-3" />',
   blaster: '<path d="M4 9h13l2 2v2H9l-1 5H5l1-5H4z" /><path d="M17 11h4" />',

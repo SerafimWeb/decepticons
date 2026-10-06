@@ -278,8 +278,9 @@ export class HUD {
     }
   }
 
-  update(dt: number, mech: MechBase, cursorX: number, cursorY: number, primaryHeld = false, secondaryHeld = false): void {
+  update(dt: number, mech: MechBase, cursorX: number, cursorY: number, primaryHeld = false, secondaryHeld = false, charge = 0): void {
     this.reticle.setWeapon(reticleWeapon(mech.loadout, primaryHeld, secondaryHeld));
+    this.reticle.setCharge(charge);
     const isBlind = mech.isBlind;
     this.root.classList.toggle('blind', isBlind);
 

@@ -197,3 +197,26 @@ describe('Armament: o Marauder (duas mãos no botão principal, dois lançadores
     expect(from('leftHand')).toHaveLength(0);
   });
 });
+
+describe('canhão de trilho: carga e interrupção nos encaixes reais', () => {
+  const build = () => bench({primary: weapon('railgun'),secondary: weapon('emp')});
+  it('não dispara imediatamente; interromper exige recarga completa', () => {
+    const b=build();b.hold(0.5,true);expect(b.shots).toHaveLength(0);expect(b.mech.weaponCharging).toBe(true);
+    b.hold(0.1,false);expect(b.mech.weaponCharging).toBe(false);
+    b.hold(0.5,true);expect(b.shots).toHaveLength(0);
+    b.hold(0.35,true);expect(b.shots).toHaveLength(1);
+    expect(b.mech.heat).toBeCloseTo(weapon('railgun').heatPerShot);
+    b.hold(1.4,true);expect(b.shots).toHaveLength(1);
+  });
+  it('perder o braço e trocar a montagem cancela a carga', () => {
+    const b=build();b.hold(0.5,true);b.mech.damagePart('rightArm',999);b.hold(1,true);
+    expect(b.shots).toHaveLength(0);expect(b.armament.primaryCharge).toBe(0);
+    const c=build();c.hold(0.5,true);c.armament.rearm();expect(c.armament.primaryCharge).toBe(0);
+    c.hold(0.5,true);expect(c.shots).toHaveLength(0);
+  });
+  it('EMP no secundário sai da mão esquerda, enquanto o trilho carrega à direita', () => {
+    const b=build();b.hold(0.5,true,true);
+    expect(b.shots).toHaveLength(1);expect(b.shots[0]).toMatchObject({mount:'leftHand',w:{id:'emp'}});
+    expect(b.mech.weaponCharging).toBe(true);
+  });
+});

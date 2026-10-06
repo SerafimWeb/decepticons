@@ -60,3 +60,9 @@ Teste de mutação nas regras novas (estrague a regra e veja o teste cair) é o 
 Comportamentos de arma são código. O caminho para uma arma nova ser **só dado** é uma lista de padrões de disparo (reto, em arco,
 chuva, rajada, feixe) escolhidos por um campo da arma, cada um com seu sistema testado. Hoje há dois (reto e chuva). Um editor
 visual que cria arma e robô sem mexer em código **não existe**; as POTÊNCIAS são o mais perto disso.
+
+## Trilho e EMP (06/10, Codex)
+
+`chargeTime` usa `ChargeTimer` em Armament e na bancada: só dispara após a carga inteira, cancelada por soltar o gatilho, perder o braço, trocar montagem ou superaquecer. `empHeat` passa por `EmpEffect` e aquece o alvo conforme a distância; o bloqueio ocorre pela regra existente de superaquecimento, sem impedir caminhar. `tracer` escolhe o desenho no pool de projéteis. Procedurais e Marauder usam os mesmos modelos; a boca física continua a do chassi. Cada nova arma também ganha uma mira em `WeaponReticle`.
+
+O protocolo é 4. O dono pediu que o servidor público offline não fosse tocado hoje: validação online somente com servidor local efêmero. Quando o servidor público voltar, deve usar este código/protocolo; não houve tentativa de atualização dele nesta entrega.

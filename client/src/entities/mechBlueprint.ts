@@ -1,3 +1,4 @@
+import { weaponModel } from './weaponModels';
 import * as THREE from 'three';
 import type { Loadout } from '../combat/weapons';
 import { PALETTE } from '../core/palette';
@@ -239,7 +240,7 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
     const elbowPin = cyl(g, blueprint.arms.upperWidth * 0.3, blueprint.arms.upperWidth * 1.3, M.frame, 0, -blueprint.arms.upperLength * 1.42, 0);
     elbowPin.rotation.z = Math.PI / 2;
     box(g, blueprint.arms.forearmWidth, blueprint.arms.forearmWidth, blueprint.arms.forearmDepth, M.armor, 0, -blueprint.arms.upperLength * 1.5, -blueprint.arms.forearmDepth * 0.2);
-    if (isLeft && semCasulo) {
+    if (semCasulo) {
       // antebraço liso: nada a somar
     } else if (isLeft) {
       const rows = blueprint.id === 'heavy' || blueprint.id === 'colossus01' ? 3 : 2;
@@ -284,10 +285,40 @@ export function buildMechBlueprintRig(blueprint: MechBlueprint, options: Bluepri
   batchRigMeshes(variantParent, [M.armor, M.paint]);
   const lisoArm = variantParent.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh);
   const casuloGeometry = casuloArm?.geometry;
+  const rightOriginal = rightArm.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh);
+  const rightGeometry = rightOriginal?.geometry;
+  const rightPlainParent = new THREE.Group();
+  armParts(rightPlainParent, 1, false, true);
+  batchRigMeshes(rightPlainParent, [M.armor, M.paint]);
+  const rightPlain = rightPlainParent.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh);
+  let rightModule: THREE.Object3D | undefined;
+  let leftModule: THREE.Object3D | undefined;
+  let shownRight: Loadout['primary'] | undefined;
+  let shownLeft: Loadout['secondary'] | undefined;
+  const attachModule = (w: Loadout['secondary'], arm: THREE.Object3D, mouth: THREE.Object3D): THREE.Object3D | undefined => {
+    if (w?.id !== 'railgun' && w?.id !== 'emp') return undefined;
+    const m = weaponModel(w);
+    const size = blueprint.arms.forearmWidth * 0.75;
+    m.object.scale.setScalar(size);
+    m.object.position.copy(mouth.position).addScaledVector(m.muzzle, -size);
+    arm.add(m.object);
+    return m.object;
+  };
   const mountWeapons = (loadout: Loadout): void => {
+    if (shownRight !== loadout.primary) {
+      if (rightModule) rightArm.remove(rightModule);
+      rightModule = attachModule(loadout.primary, rightArm, muzzle);
+      shownRight = loadout.primary;
+    }
+    if (shownLeft !== loadout.secondary) {
+      if (leftModule) leftArm.remove(leftModule);
+      leftModule = attachModule(loadout.secondary, leftArm, leftMuzzle);
+      shownLeft = loadout.secondary;
+    }
+    if (rightOriginal && rightGeometry && rightPlain) rightOriginal.geometry = rightModule ? rightPlain.geometry : rightGeometry;
     const chuva = loadout.secondary?.id === 'barrage';
     rack.visible = chuva;
-    if (casuloArm && casuloGeometry && lisoArm) casuloArm.geometry = chuva ? lisoArm.geometry : casuloGeometry;
+    if (casuloArm && casuloGeometry && lisoArm) casuloArm.geometry = chuva || leftModule ? lisoArm.geometry : casuloGeometry;
   };
   const setHeatVisual = (dt: number, heat: number, overheated: boolean, coolingBoost: boolean): void => {
     const setHeat = batchedMaterial.userData.setHeat;
