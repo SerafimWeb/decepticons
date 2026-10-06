@@ -97,7 +97,8 @@ export class CombatSystem {
       _near.set(p.x + dx * k, y, p.z + dz * k);
       const damage = splashDamage(w, Math.hypot(Math.max(0, flat - radius), at.y - y)) * (shooter?.combatBoost.damageMultiplier ?? 1);
       if (damage <= 0) continue;
-      const result = mech.takeHit(_near, damage);
+      const remaining = mech.energyShield.absorb(damage, at.x-p.x, at.y-p.y-height*.5, at.z-p.z, mech.yaw, mech.pitch);
+      const result = mech.takeHit(_near, remaining);
       if (result.applied <= 0) continue;
       if (result.killed) this.wreck(mech, dir, shooter);
       else if (result.partDestroyed) this.tearOff(mech, result.part, dir);
@@ -161,7 +162,8 @@ export class CombatSystem {
     }
     const shooter = owner ? this.byCollider.get(owner.handle) : undefined;
     if (w) applyEmp(mech, w, distance);
-    const result = mech.takeHit(hit.point, damage);
+    const remaining = mech.energyShield.absorb(damage, -dir.x, -dir.y, -dir.z, mech.yaw, mech.pitch);
+    const result = mech.takeHit(hit.point, remaining);
     if (result.applied <= 0) return;
     if (result.killed) this.wreck(mech, dir, shooter);
     else if (result.partDestroyed) this.tearOff(mech, result.part, dir);

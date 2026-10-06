@@ -62,6 +62,7 @@ export class Telemetria {
   private horaIdx = 0;
   private horaEpoch: number;
   private readonly baldes = new Map<string, Balde>();
+  private readonly seen = new Map<string, number>();
   private startedAtIso: string;
   private readonly dias = new Map<string, Dia>();
   private readonly picos = new Map<string, number>();
@@ -79,9 +80,15 @@ export class Telemetria {
    * Um evento do cliente chegou de um IP, do país `pais`. `'ok'` conta; `'taxa'` significa que esse IP já mandou demais na
    * última hora (e nada é contado).
    */
-  registrar(nome: EventoNome, ip: string, now = Date.now(), pais = PAIS_DESCONHECIDO): 'ok' | 'taxa' {
+  registrar(nome: EventoNome, ip: string, now = Date.now(), pais = PAIS_DESCONHECIDO, eventId?: string): 'ok' | 'taxa' {
     this.girarHoras(now);
     if (!this.consumirFicha(ip, now)) return 'taxa';
+    if (eventId) {
+      for (const [id,at] of this.seen) if (now-at>600000) this.seen.delete(id);
+      if (this.seen.has(eventId)) return 'ok';
+      if (this.seen.size >= 4096) this.seen.delete(this.seen.keys().next().value!);
+      this.seen.set(eventId,now);
+    }
     this.total[nome]++;
     this.porHora[nome][this.horaIdx]!++;
     this.noDia(nome, pais, now);

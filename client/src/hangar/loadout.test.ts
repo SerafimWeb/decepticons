@@ -330,3 +330,21 @@ describe('montagem de trilho e EMP',()=>{
     expect(validateLoadout({...spec,chassis:'android'})).toMatchObject({ok:false,error:'encaixe'});
   });
 });
+
+
+describe('módulo extra versionado', () => {
+  it('preserva v1 e as duas armas, pesa no total e valida o módulo antes de salvar ou transmitir', () => {
+    const old = factorySpec('vector09');
+    expect(parseLoadoutKey(loadoutKey(old))).toEqual(old);
+    const spec:LoadoutSpec={...old,v:2,module:'frontal'};
+    expect(parseLoadoutKey(loadoutKey(spec))).toEqual({...spec,shoulders:null});
+    const result=validateLoadout(spec);
+    expect(result).toMatchObject({ok:true,mass:validateLoadout(old).mass+2});
+    expect(result.ok && result.loadout).toMatchObject({module:'frontal',primary:{id:'plasma'},secondary:{id:'rockets'}});
+    expect(validateLoadout({...factorySpec('android'),v:2,module:'frontal'}).ok).toBe(false);
+    expect(validateLoadout({...spec,module:'sphere'}).ok).toBe(false);
+    expect(validateLoadout({...old,module:'frontal'}).ok).toBe(false);
+    expect(validateLoadout({...spec,left:{id:'barrage',tier:1}})).toMatchObject({ok:false,error:'carga'});
+    expect(parseLoadoutKey('v2.vector09.plasma-0.rockets-0.broken.frontal')).toBeNull();
+  });
+});

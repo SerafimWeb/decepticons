@@ -566,3 +566,44 @@ describe('Chuva de mísseis online: o servidor decide onde cada bomba cai', () =
     room.dispose();
   });
 });
+
+
+describe('capacidade e energia da sala', () => {
+  it('bots cedem vagas, não renascem na reserva e voltam após a saída de humano', async () => {
+    const room = await ArenaRoom.create('LOTADA');
+    try {
+      const peers = Array.from({ length: ROOM_SIZE }, () => new FakePeer());
+      peers.forEach((p, i) => room.receive(p, join('P' + i)));
+      const roster = () => decodeRoster(peers[0]!.of(MSG.ROSTER).at(-1)!)!;
+      expect(roster().filter(u => u.kind === 'mech')).toHaveLength(0);
+      expect(roster()).toHaveLength(11);
+      for (let t = 0; t < 301; t++) room.step();
+      room['match'].bots.respawnAll();
+      expect(room['units'].filter(u => u.kind === 'mech').every(u => !u.mech.alive)).toBe(true);
+      expect(peers[0]!.lastSnapshot().count).toBe(11);
+      room.leave(peers[7]!);
+      expect(roster().filter(u => u.kind === 'mech')).toHaveLength(1);
+      expect(room['units'].filter(u => u.kind === 'mech' && u.mech.alive)).toHaveLength(1);
+      expect(roster().filter(u => u.kind === 'technician')).toHaveLength(1);
+    } finally { room.dispose(); }
+  });
+  it('escudo mantém as duas armas, consome energia no servidor e só envia a energia ao dono', async () => {
+    const room = await ArenaRoom.create('ENERGIA');
+    try {
+      const a = new FakePeer(), b = new FakePeer();
+      room.receive(a, join('A', 'v2.vector09.plasma-0.rockets-0.-.frontal'));
+      room.receive(b, join('B'));
+      expect(a.of(MSG.WELCOME)).toHaveLength(1);
+      const id = decodeWelcome(a.of(MSG.WELCOME)[0]!)!.id;
+      drive(room, a, 1, 30, { shield: true, fire: true, secondary: true });
+      const sa = a.lastSnapshot(), sb = b.lastSnapshot();
+      expect(sa.energy).toBeCloseTo(.9, 2);
+      expect(sb.energy).toBe(0);
+      expect(sb.units.slice(0,sb.count).find(u => u.id === id)?.shield).toBe(true);
+      expect(shotsOf(a,id)).toContain(netWeaponIndex('plasma'));
+      expect(shotsOf(a,id)).toContain(netWeaponIndex('rockets'));
+      for(let t=0;t<30;t++) room.step();
+      expect(a.lastSnapshot().units.find(u => u.id === id)?.shield).toBe(false);
+    } finally { room.dispose(); }
+  });
+});

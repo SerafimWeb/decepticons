@@ -113,6 +113,7 @@ export class PlayerController {
     cmd.yaw = aim.yaw;
     cmd.jump = this.jumpQueued;
     cmd.dash = this.dashQueued;
+    cmd.shield = a && (this.input.isDown(k.shield) || this.input.virtualShield);
     this.jumpQueued = this.dashQueued = false;
 
     this.mech.fixedUpdate(cmd, dt);

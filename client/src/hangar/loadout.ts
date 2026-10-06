@@ -1,3 +1,4 @@
+import { FRONTAL_SHIELD } from '../combat/EnergyShield';
 import { weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { ARM_SLOTS, CHASSIS, type ChassisId } from '../entities/chassis';
 
@@ -25,7 +26,8 @@ export interface ArmSpec {
 }
 
 export interface LoadoutSpec {
-  v: typeof LOADOUT_VERSION;
+  v: 1 | 2;
+  module?: 'frontal' | null;
   chassis: ChassisId;
   /** Braço direito (Vector-09: energia; andróide: blaster). */
   right: ArmSpec;
@@ -92,7 +94,7 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   const fail = (error: LoadoutError, detail: string, mass = 0, capacity = 0): LoadoutCheck => ({ ok: false, error, detail, mass, capacity });
   if (typeof spec !== 'object' || spec === null) return fail('formato', 'montagem vazia');
   const s = spec as Partial<LoadoutSpec>;
-  if (s.v !== LOADOUT_VERSION) return fail('formato', `versão ${String(s.v)} desconhecida`);
+  if (s.v !== 1 && (s.v !== 2 || s.module === undefined)) return fail('formato', `versão ${String(s.v)} desconhecida`);
   if (typeof s.chassis !== 'string' || !Object.hasOwn(CHASSIS, s.chassis)) return fail('chassi', `chassi ${String(s.chassis)} não existe`);
   const chassis = CHASSIS[s.chassis];
   const capacity = chassis.weaponCapacity;
@@ -113,12 +115,16 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   }
   const spec2 = { v: LOADOUT_VERSION, chassis: s.chassis, right: s.right, left: s.left ?? null, shoulders } satisfies LoadoutSpec;
   // Carga: cada arma conta uma vez por encaixe em que atira (o lançador dos ombros vale dois).
-  const mass = specWeapons(spec2).reduce((sum, w) => sum + w.mass, 0);
+  const module = s.module ?? null;
+  if (module !== null && (s.v !== 2 || module !== 'frontal')) return fail('formato', 'módulo inválido ou versão incompatível', 0, capacity);
+  if (module && s.chassis === 'android') return fail('encaixe', 'Andróide não possui encaixe de gerador', 0, capacity);
+  const mass = specWeapons(spec2).reduce((sum, w) => sum + w.mass, 0) + (module ? FRONTAL_SHIELD.mass : 0);
   if (mass > capacity + 1e-9) return fail('carga', `${mass} t de armas numa carga de ${capacity} t`, mass, capacity);
   // Com ombros, o gatilho secundário é deles e a mão esquerda leva a segunda arma do principal.
   const loadout: Loadout = hasShoulderSlot(s.chassis)
     ? { primary: weapon(s.right.id, s.right.tier), offhand: s.left ? weapon(s.left.id, s.left.tier) : null, secondary: shoulders ? weapon(shoulders.id, shoulders.tier) : null }
     : { primary: weapon(s.right.id, s.right.tier), secondary: s.left ? weapon(s.left.id, s.left.tier) : null };
+  if (s.v === 2) loadout.module = module;
   return { ok: true, loadout, mass, capacity };
 }
 
@@ -130,10 +136,19 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
 export function loadoutKey(spec: LoadoutSpec): string {
   const arm = (a: ArmSpec | null | undefined) => (a ? `${a.id}-${a.tier}` : '-');
   const base = `v${spec.v}.${spec.chassis}.${arm(spec.right)}.${arm(spec.left)}`;
+  if (spec.v === 2) return `${base}.${arm(spec.shoulders)}.${spec.module ?? '-'}`;
   return hasShoulderSlot(spec.chassis) ? `${base}.${arm(spec.shoulders)}` : base;
 }
 
 export function parseLoadoutKey(key: string): LoadoutSpec | null {
+  if (key.trim().startsWith('v2.')) {
+    const parts = key.trim().split('.');
+    if(parts.length !== 6) return null;
+    const a=(x:string|undefined):unknown => x==='-'?null:(/^([a-z]+)-([0-2])$/.test(x??'')?{id:x!.slice(0,-2),tier:Number(x!.at(-1))}:undefined);
+    if (a(parts[2]) === undefined || a(parts[3]) === undefined || a(parts[4]) === undefined) return null;
+    const spec={v:2,chassis:parts[1],right:a(parts[2]),left:a(parts[3]),shoulders:a(parts[4]),module:parts[5]==='-'?null:parts[5]};
+    return validateLoadout(spec).ok ? spec as LoadoutSpec : null;
+  }
   // O id do chassi leva maiúscula (`lancerL1`, `lr7lBastion`): com [a-z0-9] esses chassis não voltavam do texto do link nem da rede.
   const m = /^v(\d+)\.([a-zA-Z0-9]+)\.([a-z]+)-(\d)\.(?:([a-z]+)-(\d)|-)(\.(?:([a-z]+)-(\d)|-))?$/.exec(key.trim());
   if (!m) return null;

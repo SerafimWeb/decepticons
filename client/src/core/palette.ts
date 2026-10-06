@@ -19,6 +19,7 @@ export const PALETTE = {
   steelDark: 0x0e1112,
   // Neon da cidade
   cyan: 0x00e5ff,
+  shieldBlue: 0x55bfff,
   bankBlue: 0x287bff, // Banco VORCARIS: azul luminoso pedido pelo dono.
   pink: 0xff2bd6,
   fluo: 0xe8ff1a,

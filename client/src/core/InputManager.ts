@@ -33,6 +33,7 @@ export class InputManager {
   /** Toque: FOGUETE e PLACAR pressionados. */
   virtualRocket = false;
   virtualBoard = false;
+  virtualShield = false;
 
   onLockChange?: (locked: boolean) => void;
   /** Tecla pressionada (sem auto-repeat). Útil para ações que exigem gesto do usuário. */
@@ -162,6 +163,7 @@ export class InputManager {
     this.keys.clear();
     this.pressed.clear();
     this.mouseDown = this.mouseDown2 = false;
+    this.virtualShield = false;
     this.mouseDX = this.mouseDY = 0;
   }
 }

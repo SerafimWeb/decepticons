@@ -24,6 +24,7 @@ export const EVENTOS = [
   'partida_terminada',
   'modo_trocado',
   'hangar_aberto',
+  'partida_resumo',
 ] as const;
 export type EventoNome = (typeof EVENTOS)[number];
 const EVENTOS_SET = new Set<string>(EVENTOS);
@@ -36,6 +37,7 @@ export const RESUMO_PATH = '/eventos/resumo';
 export const EVENTO_MAX_BYTES = 256;
 
 export interface EventoEnviado {
+  seq?: number;
   nome: EventoNome;
   /** Id efêmero da aba (sorteado no cliente a cada carregamento, nunca persistido). Serve só para o
    * servidor não contar o mesmo evento duas vezes se o navegador reenviar (`sendBeacon` às vezes duplica). */
@@ -48,7 +50,8 @@ export function parseEvento(raw: unknown): EventoEnviado | null {
   const r = raw as Record<string, unknown>;
   if (typeof r.nome !== 'string' || !EVENTOS_SET.has(r.nome)) return null;
   if (typeof r.aba !== 'string' || r.aba.length < 4 || r.aba.length > 40 || !/^[a-z0-9]+$/i.test(r.aba)) return null;
-  return { nome: r.nome as EventoNome, aba: r.aba };
+  if (r.seq !== undefined && (typeof r.seq !== 'number' || !Number.isInteger(r.seq) || r.seq < 0 || r.seq > 2147483647)) return null;
+  return { nome: r.nome as EventoNome, aba: r.aba, ...(r.seq === undefined ? {} : { seq: r.seq as number }) };
 }
 
 /** Resumo público: contagem por evento nas últimas 24h e desde que o servidor subiu. Só números — o que

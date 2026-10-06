@@ -1,3 +1,6 @@
+import { PlayMetrics } from './PlayMetrics';
+import { PLAY_PATH, parsePlayReport } from '../shared/net/playMetrics';
+import { parseLoadoutKey } from '../client/src/hangar/loadout';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { mkdirSync } from 'node:fs';
@@ -183,21 +186,26 @@ export async function startServer(
    * porta HTTP: corpo pequeno, decodifica ou descarta, nunca lança.
    */
   const telemetria = new Telemetria();
+  const playMetrics = new PlayMetrics();
   const codigo = resolve(import.meta.dirname, '..');
   const dirDados = opts.dirDados ?? (opts.dbContas === ':memory:' ? null : pastaDados(codigo));
   if (dirDados) log(`pasta de dados (contas.db, números, token): ${dirDados}`);
   const arquivoDados = dirDados ? join(dirDados, DADOS_ARQUIVO) : null;
   if (arquivoDados) telemetria.carregar(lerJson(arquivoDados));
+  const playFile = dirDados ? join(dirDados,'partidas.json') : null;
+  if (playFile) playMetrics.load(lerJson(playFile));
   /** Token do dono para `GET /metricas` (origem das conexões, por país e por dia). `null` = porta desligada. */
   const metricasToken = opts.metricasToken ?? (dirDados ? carregarToken(dirDados) : null);
   // Diz ONDE está o token (nunca o token): a pasta é a de onde o código do servidor roda, e o dono precisa achar o arquivo.
   if (metricasToken && dirDados) log(`métricas privadas ligadas: o token está em ${join(dirDados, TOKEN_ARQUIVO)} (ou na variável CYBERMECH_METRICAS_TOKEN)`);
   const limiteMetricas = new LimiteLogin({ teto: 30, janelaMs: 10 * 60 * 1000 });
   const gravarDados = (): void => {
-    if (!arquivoDados || !telemetria.sujo) return;
+    if (!arquivoDados || (!telemetria.sujo && !playMetrics.dirty)) return;
     try {
       gravarJson(arquivoDados, telemetria.exportar());
+      if (playFile && playMetrics.dirty) { gravarJson(playFile,playMetrics.snapshot());playMetrics.dirty=false; }
     } catch (err) {
+      telemetria.sujo = true;
       log(`não consegui gravar ${arquivoDados}: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
@@ -218,6 +226,19 @@ export async function startServer(
 
   const http = createServer(async (req, res) => {
     const path = (req.url ?? '/').split('?')[0];
+    if (path === PLAY_PATH) {
+      res.setHeader('access-control-allow-origin','*');
+      res.setHeader('cache-control','no-store');
+      if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-methods':'POST, OPTIONS','access-control-allow-headers':'content-type'});res.end();return;}
+      if(req.method!=='POST'){res.writeHead(405);res.end();return;}
+      const body=await lerCorpoLimitado(req,1024);
+      if(body==='grande'){res.writeHead(413);res.end();return;}
+      let report;try{report=parsePlayReport(JSON.parse(body.toString('utf8')));}catch{report=null;}
+      if(!report||!parseLoadoutKey(report.build)){res.writeHead(400);res.end();return;}
+      const ip=clientIp(req.socket.remoteAddress,req.headers['cf-connecting-ip']);
+      if(telemetria.registrar('partida_resumo',ip,Date.now(),clientCountry(req.socket.remoteAddress,req.headers['cf-ipcountry']),'play:'+report.id)==='taxa'){res.writeHead(429);res.end();return;}
+      playMetrics.record(report);res.writeHead(204);res.end();return;
+    }
     if (path === STATUS_PATH) {
       const body = status();
       res.writeHead(200, {
@@ -266,7 +287,7 @@ export async function startServer(
         res.end();
         return;
       }
-      const body = JSON.stringify(telemetria.metricas());
+      const body = JSON.stringify({...telemetria.metricas(),play:playMetrics.snapshot(),runtime:{rssMB:process.memoryUsage().rss/1048576,rooms:rooms.size,players:jogadoresAgora()}});
       res.writeHead(200, {
         'content-type': 'application/json; charset=utf-8',
         'cache-control': 'no-store',
@@ -294,7 +315,7 @@ export async function startServer(
         res.end();
         return;
       }
-      const ok = telemetria.registrar(evento.nome, ip, Date.now(), clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry'])) === 'ok';
+      const ok = telemetria.registrar(evento.nome, ip, Date.now(), clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']), evento.seq === undefined ? undefined : `${evento.aba}:${evento.seq}`) === 'ok';
       res.writeHead(ok ? 204 : 429, { 'access-control-allow-origin': '*' });
       res.end();
       return;

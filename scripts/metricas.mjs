@@ -77,6 +77,7 @@ const body = `
   </header>
 
   <div id="painel" hidden>
+    <section><h2>Experiência por montagem</h2><p>Resumos declarados pelo cliente, separados por versão, modo, online/offline e assistência (Banco ou potências alteradas). Não representam jogadores únicos nem placar competitivo. Agregados desde o início desta coleta.</p><div class="rolavel"><table class="paises" id="partidas"></table></div><p id="partidas-limite"></p></section>
     <section aria-labelledby="h-agora">
       <h2 id="h-agora">Agora</h2>
       <div class="cards" id="cards"></div>
@@ -285,6 +286,11 @@ const js = `(() => {
     if (!valido(m)) { $('painel').hidden = true; return estado('Resposta do servidor em formato inesperado.', true); }
     guardar(token); $('token').value = '';
     cartoes(m); funil(m); porDia(m); porPais(m);
+    const table=$('partidas');table.replaceChildren();const header=el('tr');for(const text of ['Versão / modo / montagem','Origem','Assistência','Rodadas','Concluídas','Quadros lentos','Abates / mortes'])header.append(el('th',null,text));table.append(header);
+    const groups=Array.isArray(m.play?.groups)?m.play.groups.slice(0,128):[];
+    for(const g of groups){const row=el('tr');const values=[String(g.release)+' / '+String(g.mode)+' / '+String(g.build),g.online?'Online':'Offline',g.assisted?'Assistida':'Normal',N(g.reports),N(g.completed),g.frames>0?(100*g.slowFrames/g.frames).toFixed(1)+'%':'—',N(g.kills)+' / '+N(g.deaths)];for(const value of values)row.append(el('td',null,value));table.append(row);}
+    if(!groups.length){const row=el('tr');row.append(el('td',{colspan:'7'},'Ainda sem resumos de partidas.'));table.append(row);}
+    $('partidas-limite').textContent=m.play?.droppedGroups?'Combinações além do teto: '+N(m.play.droppedGroups):'Teto de 128 combinações; relatórios têm fila local de até 24 horas.';
     $('painel').hidden = false;
     estado('Atualizado às ' + new Date().toLocaleTimeString('pt-BR') + ' · dados desde ' + new Date(m.desde).toLocaleDateString('pt-BR') + ' · dias no fuso ' + m.fuso);
   }

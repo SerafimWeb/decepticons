@@ -1,3 +1,7 @@
+import { ShieldVisuals } from '../fx/ShieldVisuals';
+import { ShieldHUD } from '../ui/ShieldHUD';
+import { runtimeDiagnostics } from './runtimeDiagnostics';
+import { PlayTelemetry } from './PlayTelemetry';
 import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
 import { BankTerminal } from '../ui/BankTerminal';
@@ -202,6 +206,11 @@ export class Game {
   private readonly hangarMenu: HangarMenu;
   /** Métricas de produto (dono, 28/09): poucos eventos de funil, nunca por quadro. */
   private readonly telemetry: Telemetry;
+  private readonly playTelemetry: PlayTelemetry;
+  private activeBuild = '';
+  private readonly shieldHUD: ShieldHUD;
+  private readonly shieldVisuals = new ShieldVisuals(this.scene);
+  private readonly drawShield = (r: {mech: MechBase}): void => this.shieldVisuals.update(r.mech);
   /** Gravação nativa de gameplay (dono, 28/09): tecla escondida, só para uso interno. */
   private readonly recorder: GameRecorder;
   private readonly lobby = new OnlineLobby();
@@ -398,7 +407,9 @@ export class Game {
         scene: this.scene,
         onStatus: (s) => this.showNet(s),
         onBank: (reply) => this.acceptBank(reply),
-        onKill: (killer, dead, mine) => this.killFeed.push(killer, dead, mine),
+        onDamage: (amount) => this.playTelemetry.hit(amount),
+        onRoundEnd: () => this.playTelemetry.finish('completed'),
+        onKill: (killer, dead, mine) => { this.killFeed.push(killer, dead, mine); if (dead === 'VOCÊ') this.playTelemetry.death(); else if (killer === 'VOCÊ') this.playTelemetry.kill(); },
         onScore: (kills, deaths) => this.hud.setScore(kills, deaths),
       });
       this.match.pilots.push(this.online);
@@ -426,6 +437,9 @@ export class Game {
     this.hud.setReady(this.input.touchMode);
     this.telemetry = new Telemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
     this.telemetry.enviar('boot_ok');
+    this.shieldHUD = new ShieldHUD(this.input);
+    this.activeBuild = this.hangar.key;
+    this.playTelemetry = new PlayTelemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, () => ({mode:this.gameMode,online:!!this.online,build:this.activeBuild,release:runtimeDiagnostics.release,assisted:(!this.online && this.power.changes>0)||this.mech.combatBoost.damageMultiplier>1||this.bankOnlineBoost>0}));
     this.recorder = new GameRecorder(this.renderer.domElement, this.audio);
     if (this.gameMode === 'survival') this.hud.setMissionMode(true);
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
@@ -566,6 +580,8 @@ export class Game {
   private equipPending(keepHeat = false): void {
     const loadout = this.hangar.takePending();
     if (!loadout) return;
+    this.playTelemetry.finish('abandoned');
+    this.activeBuild = this.hangar.key;
     this.mech.equip(poweredLoadout(loadout, this.power.current, 'player'), keepHeat);
     this.player.rearm();
     this.hud.setSecondaryLabel(secondaryLabel(this.mech.loadout));
@@ -676,6 +692,7 @@ export class Game {
       if (e.shooter === mech) {
         this.hud.showHit(e.result);
         this.dailyChallenges.trackDamage(e.result.applied);
+        this.playTelemetry.hit(e.result.applied);
         // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar)
         this.audio.playHit();
       }
@@ -703,8 +720,10 @@ export class Game {
 
       if (killer === mech && dead !== mech) {
         this.dailyChallenges.trackKill(dead instanceof Android ? 'android' : 'mech');
+        this.playTelemetry.kill();
       }
 
+      if (dead === mech) this.playTelemetry.death();
       const deadName = dead === mech ? 'VOCÊ' : this.round.scoreOf(dead)?.name ?? 'INIMIGO';
       const killerName = killer ? (killer === mech ? 'VOCÊ' : this.round.scoreOf(killer)?.name ?? null) : null;
       const isPlayerInvolved = dead === mech || killer === mech;
@@ -732,6 +751,7 @@ export class Game {
     this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
     this.match.onMissionEnd = (survived, waveReached, stats) => {
       this.telemetry.enviar('partida_terminada');
+      this.playTelemetry.finish('completed');
       this.missionEnded = true;
       this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds);
       this.setPlaying(false);
@@ -749,6 +769,7 @@ export class Game {
     this.match.onCtfProgress = (timeLeft, blue, red) => this.hud.setCtfProgress(timeLeft, blue.captures, red.captures);
     this.match.onCtfEnd = (winner, blue, red) => {
       this.telemetry.enviar('partida_terminada');
+      this.playTelemetry.finish('completed');
       this.missionEnded = true;
       this.hud.setCtfEnd(winner, blue.captures, red.captures, blue.kills, red.kills);
       this.setPlaying(false);
@@ -840,7 +861,7 @@ export class Game {
         autoStartSecs: 10,
       },
       () => {
-        this.telemetry.enviar('partida_iniciada');
+        // Briefing demonstrativo não conta como partida real.
         this.hud.setPaused(false);
         this.missionHud.showWaveHud(1, 10);
       }
@@ -850,6 +871,7 @@ export class Game {
   private acceptBank(reply: BankReply): void {
     const reward = reply.status === "ok" ? bankReward(reply.code) : undefined;
     if (reward) {
+      this.playTelemetry.cheat();
       if (reward.credits) this.dailyChallenges.addCredits(reward.credits);
       if (this.online && reward.seconds) { this.bankOnlineBoost = reward.seconds; this.bankOnlineMultiplier = reward.damage; }
     }
@@ -1001,6 +1023,9 @@ export class Game {
   private frame(now: number): void {
     // O timestamp do rAF pode ser anterior ao fim do setup; clamp evita dt negativo.
     const dt = this.last < 0 ? 0 : THREE.MathUtils.clamp((now - this.last) / 1000, 0, 0.1);
+    const rawFrameMs = this.last < 0 ? 0 : now - this.last;
+    if (this.playing && !this.hangarView && !document.hidden && this.round.playing) {runtimeDiagnostics.frame(rawFrameMs);this.playTelemetry.frame(rawFrameMs);}
+    const wasRoundPlaying = this.round.playing;
     this.last = now;
 
     if (this.input.locked) {
@@ -1028,6 +1053,7 @@ export class Game {
       steps++;
     }
     const tickMs = performance.now() - t0;
+    if (wasRoundPlaying && !this.round.playing && !this.online) this.playTelemetry.finish('completed');
     if (steps === MAX_STEPS_PER_FRAME) this.accumulator = 0;
     const alpha = this.accumulator / FIXED_DT;
 
@@ -1078,6 +1104,10 @@ export class Game {
       this.blindGain = null;
     }
 
+    this.shieldVisuals.begin();
+    if (!this.hangarView) { this.shieldVisuals.update(this.mech); if(this.online?.joined)this.online.remotes.forEach(this.drawShield);else for(const bot of this.bots.mechs)this.shieldVisuals.update(bot); }
+    this.shieldVisuals.end();
+    this.shieldHUD.update(dt, this.mech, this.playing && !this.hangarView, this.settings.value.keys.shield);
     this.chargeVisuals.beginFrame(dt, this.playing && !this.hangarView);
     this.chargeVisuals.update(this.mech, false);
     this.damageVisuals.beginFrame(dt, this.playing && !this.hangarView);

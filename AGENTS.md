@@ -28,7 +28,7 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 
 ## O QUE É
 
-Shooter de Mechs multiplayer para o navegador: Vite 8 + TypeScript 7 strict + Three.js + Rapier3D (Wasm SIMD). Hoje é um protótipo single-player; o servidor Colyseus está planejado.
+Shooter de Mechs multiplayer para o navegador: Vite 8 + TypeScript 7 strict + Three.js + Rapier3D (Wasm SIMD). Modos offline e servidor autoritativo Node + ws usam a mesma simulação. Contas usam SQLite; capacidade de produção depende de homologação (CAPACIDADE.md).
 
 ## REGRAS QUE MAIS PESAM AQUI
 

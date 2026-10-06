@@ -58,7 +58,7 @@ const HEADERS = {
     // O `http://localhost` e a origem do túnel são o `GET /status` que a página usa para dizer se há gente jogando.
     // `blob:` (30/09): o GLTFLoader decodifica textura de um .glb criando um object URL local e buscando
     // nele — sem isso no connect-src, o chassi de malha importada carrega sem nenhuma textura.
-    `connect-src 'self' blob: ws://localhost:* ws://127.0.0.1:* http://localhost:* http://127.0.0.1:* wss:${GAME_ORIGIN} https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com`,
+    `connect-src 'self' https://ihebiuxobusmbflliiwn.supabase.co blob: ws://localhost:* ws://127.0.0.1:* http://localhost:* http://127.0.0.1:* wss:${GAME_ORIGIN} https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com`,
     "frame-ancestors 'self'",
     "base-uri 'self'",
     "form-action 'none'",
@@ -305,6 +305,11 @@ async function metricasPage(browser, base, failures) {
   t.contar('recusa_versao', 'US', agora);
   t.pico(2, agora);
   const corpo = t.metricas(agora);
+  const { PlayMetrics } = await load('server/PlayMetrics.ts');
+  const play = new PlayMetrics();
+  const report = {v:1,id:'site-check-normal',release:'site-check',mode:'deathmatch',online:false,build:'v2.vector09.plasma-0.rockets-0.-.frontal',assisted:false,outcome:'completed',seconds:60,frames:3600,slowFrames:36,kills:2,deaths:1,damage:100,firstKillS:12};
+  play.record(report); play.record({...report,id:'site-check-assisted',assisted:true});
+  corpo.play = play.snapshot();
   corpo.dias.at(-1).eventos.boot_ok['<img src=x onerror=window.__xss=1>'] = 1; // um servidor comprometido não vira HTML na tela
   const servidor = createServer((req, res) => {
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': tel.METRICAS_HEADER };
@@ -337,6 +342,8 @@ async function metricasPage(browser, base, failures) {
     if ((await page.locator('#cards .card').count()) !== 5) failures.push('métricas: faltam os cartões de hoje');
     if ((await page.locator('#funil .barra').count()) !== 7) failures.push('métricas: faltam os passos do funil');
     if ((await page.locator('#dias rect').count()) < 3) failures.push('métricas: o gráfico por dia saiu vazio');
+    const partidas = await page.locator('#partidas').textContent();
+    if (!partidas.includes('site-check') || !partidas.includes('Normal') || !partidas.includes('Assistida') || !partidas.includes('1.0%')) failures.push('métricas: resumos por versão/assistência não chegaram à tabela');
     const paises = await page.locator('#paises tbody tr').allTextContents();
     if (paises.length < 3) failures.push(`métricas: a tabela de países saiu com ${paises.length} linhas`);
     if (!/Brasil/.test(paises[0] ?? '')) failures.push(`métricas: o país que mais joga devia ser o Brasil, veio "${paises[0]}"`);

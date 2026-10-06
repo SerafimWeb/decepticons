@@ -1,3 +1,4 @@
+import { EnergyShield } from '../combat/EnergyShield';
 import { CombatBoost } from '../combat/CombatBoost';
 import { legDamageLean } from '../fx/DamageVisuals';
 import RAPIER from '@dimforge/rapier3d-simd-compat';
@@ -62,6 +63,7 @@ export interface MechStats extends ChassisHeat {
  * será enviado ao servidor e reaplicado na client-side prediction.
  */
 export interface MechInput {
+  shield?: boolean;
   moveX: number; // -1..1, direita positiva
   moveZ: number; // -1..1, frente positiva
   moveYaw: number; // referencial do WASD (câmera); na visão tática é fixo
@@ -209,6 +211,7 @@ export abstract class MechBase {
   /** Aviso de carga: simulação local ou bit recebido do servidor. */
   weaponCharging = false;
   readonly combatBoost = new CombatBoost();
+  readonly energyShield = new EnergyShield();
   /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
   private armed: Loadout;
   private leftRecoil = 0;
@@ -239,6 +242,7 @@ export abstract class MechBase {
     this.rightArmBaseZ = rig.rightArm.position.z;
     this.heatSink = new HeatSink(stats);
     this.armed = loadout;
+    this.energyShield.equip(loadout.module === 'frontal');
     rig.mountWeapons?.(loadout);
     this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
@@ -426,6 +430,7 @@ export abstract class MechBase {
    * fica: a pausa não vira um jeito de esfriar.
    */
   equip(loadout: Loadout, keepHeat = false): void {
+    this.energyShield.equip(loadout.module === 'frontal', keepHeat);
     this.armed = loadout;
     this.rig.mountWeapons?.(loadout);
     if (!keepHeat) this.heatSink.reset();
@@ -542,10 +547,12 @@ export abstract class MechBase {
   }
 
   respawn(feet: THREE.Vector3): void {
+    this.energyShield.reset();
     Object.assign(this.modules, this.stats.maxModuleHealth);
     this.heatSink.reset();
     this.weaponCharging = false;
     this.combatBoost.reset();
+    this.energyShield.stop();
     this.velocity.set(0, 0, 0);
     this.dashTimeLeft = 0;
     this.dashCooldownLeft = 0;
@@ -575,6 +582,7 @@ export abstract class MechBase {
 
   private die(): void {
     this.combatBoost.reset();
+    this.energyShield.stop();
     this.collider.setEnabled(false);
     this.root.visible = false;
     this.velocity.set(0, 0, 0);
@@ -631,6 +639,7 @@ export abstract class MechBase {
   fixedUpdate(input: MechInput, dt: number): void {
     if (!this.alive) return;
     this.combatBoost.fixedUpdate(dt);
+    this.energyShield.step(dt, input.shield === true);
     const s = this.stats;
     const vel = this.velocity;
     // Correr esquenta na proporção da velocidade no chão (a do tick anterior; no ar não conta).

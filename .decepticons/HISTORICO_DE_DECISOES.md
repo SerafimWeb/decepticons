@@ -1,5 +1,14 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-06] Energia, observabilidade e escala com evidência (Codex)
+
+Pedido do dono: concluir melhorias abertas, instrumentar experiência, medir equilíbrio, implementar energia/barreira e orientar expansão por playtest; perguntou pelo Serafim UM e por 10/50/100 jogadores. AGENTS e IDENTITY corrigem stack obsoleta (Colyseus planejado → Node/ws real, SQLite e Node 22.12+); PROTOCOLO_UNIVERSAL adapta regras a simulação, carga, privacidade, cheats e critérios de capacidade. Referência PROTOCOLO_SERAFIM_UM preservada.
+
+Barreira frontal é módulo extra de 2 t: mantém armas, 100 de energia, 20/s enquanto ligada, absorção 1:1 de dano frontal, regeneração 12/s após 2 s. E remapeável e botão de toque. Esfera e escudo físico continuam pendentes. Montagens v1 continuam válidas; v2 explicita módulo. Protocolo 5 usa bit livre para escudo e 1 byte de energia por destinatário/snapshot; unidade permanece 19 B. Testes expuseram que bots somavam às 8 vagas humanas; agora cedem vagas, ficam fora do roster/snapshot e não renascem na reserva. Orçamento de rede manteve a margem anterior.
+
+Instrumentação sem SDK por quadro: erro de boot/JS/WebGL com versão → Serafim13; resumo local/servidor por versão, modo, montagem, online e uso de cheats/potências. Limites, persistência, dados autodeclarados e lacunas em OBSERVABILIDADE.md. Benchmark reproduzível só em localhost; baseline e medição após ajuste em CAPACIDADE.md. Não foi tocado o servidor público offline.
+
+
 ## [2026-10-06] Inicialização previsível da medição de bocas (Codex)
 
 O gate passou e sua repetição falhou no timeout padrão de navegação, antes do prazo explícito de 120 s para carregar o modelo. Alinhados os prazos; Edge é a primeira opção no Windows e cada tentativa de abrir navegador tem teto de 20 s. A prova continua carregando o rig e comparando as quatro bocas com tolerância de 15 cm. Nova execução isolada: todas com diferença 0,00 m.

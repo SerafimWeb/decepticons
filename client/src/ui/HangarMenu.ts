@@ -219,9 +219,9 @@ export class HangarMenu {
         <div class="hg-paths" aria-label="Caminhos de montagem">
           <button type="button" class="hg-path selected"><svg viewBox="0 0 24 24" aria-hidden="true">${WEAPON_ICON.plasma}</svg><b>ARMAS</b><small>braços D e E</small></button>
           <button type="button" class="hg-path soon" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /></svg><b>BLINDAGEM</b><small>em breve</small></button>
-          <button type="button" class="hg-path soon" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" /><path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" /></svg><b>MÓDULOS</b><small>em breve</small></button>
+          <button type="button" class="hg-path" data-action="module"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" /><path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" /></svg><b>MÓDULOS</b><small>gerador abaixo</small></button>
         </div>
-        <div id="hangar-slot-list" class="hg-slots"></div>
+        <label class="hg-module">MÓDULO EXTRA · preserva as duas armas<select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t</option></select><small>Segure a tecla de barreira (padrão E) · até 5 s · protege a frente · recarrega desligado</small></label><div id="hangar-slot-list" class="hg-slots"></div>
         <div id="hangar-weapon-editor" class="hg-editor"></div>
         <div class="hg-actions">
           <span id="hangar-message" role="status"></span>
@@ -511,6 +511,7 @@ export class HangarMenu {
       return;
     }
     const action = target?.closest<HTMLButtonElement>('[data-action]')?.dataset.action;
+    if (action === 'module') { const select = this.root.querySelector<HTMLSelectElement>('#hangar-module-select')!; select.scrollIntoView({block:'nearest'}); select.focus(); return; }
     if (action === 'test') {
       event.stopPropagation();
       this.startTest();
@@ -541,7 +542,9 @@ export class HangarMenu {
 
   private onChange(event: Event): void {
     const target = event.target;
-    if (!(target instanceof HTMLSelectElement) || target.id !== 'hangar-weapon-select') return;
+    if (!(target instanceof HTMLSelectElement)) return;
+    if (target.id === 'hangar-module-select') { this.draft = { ...this.draft, v: 2, module: target.value === 'frontal' ? 'frontal' : null }; this.render(); return; }
+    if (target.id !== 'hangar-weapon-select') return;
     const selected = target.value as WeaponId | '';
     this.draft = withArm(this.draft, this.selectedSlot, () => (selected ? { id: selected, tier: this.draft[this.selectedSlot]?.tier ?? 0 } : null));
     this.message = '';
@@ -587,6 +590,8 @@ export class HangarMenu {
     const spec = this.draft;
     const chassis = CHASSIS[spec.chassis];
     const label = CHASSIS_LABEL[spec.chassis];
+    const moduleSelect = this.root.querySelector<HTMLSelectElement>('#hangar-module-select')!;
+    moduleSelect.value = spec.module ?? ''; moduleSelect.disabled = spec.chassis === 'android';
     const report = this.hangar.report(spec);
     const current = this.hangar.current;
     this.root.dataset.tab = this.tab;
@@ -722,6 +727,7 @@ function bar(s: StatRow, w: WeaponStats, was: WeaponStats | null): string {
 
 function copySpec(spec: LoadoutSpec): LoadoutSpec {
   const copy: LoadoutSpec = { v: spec.v, chassis: spec.chassis, right: { ...spec.right }, left: spec.left ? { ...spec.left } : null };
+  if (spec.module !== undefined) copy.module = spec.module;
   if (spec.shoulders !== undefined) copy.shoulders = spec.shoulders ? { ...spec.shoulders } : null;
   return copy;
 }

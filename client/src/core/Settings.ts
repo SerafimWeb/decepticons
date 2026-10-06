@@ -5,7 +5,7 @@
  */
 
 /** Ações do teclado que o jogador pode trocar. O valor é `KeyboardEvent.code` (posição física). */
-export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera';
+export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera' | 'shield';
 export type QualityPreset = 'auto' | 'alta' | 'media' | 'baixa';
 export type Difficulty = 'facil' | 'normal' | 'dificil';
 /** Personalidade de um Mech inimigo (os números ficam em `combat/BotController.ts`, `PERSONAS`). */
@@ -90,6 +90,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
     jump: 'Space',
     dash: 'Shift',
     secondary: 'KeyQ',
+    shield: 'KeyE',
     camera: 'KeyV',
   }),
 });
@@ -104,6 +105,7 @@ export const KEY_ACTIONS: readonly { action: KeyAction; label: string }[] = [
   { action: 'dash', label: 'Dash' },
   { action: 'secondary', label: 'Foguetes' },
   { action: 'camera', label: 'Trocar câmera' },
+  { action: 'shield', label: 'Barreira de energia' },
 ];
 
 export const QUALITY_LABELS: Record<QualityPreset, string> = {

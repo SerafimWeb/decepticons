@@ -57,6 +57,15 @@ describe('POST /evento e GET /eventos/resumo: telemetria de produto pela porta H
     expect(r.headers.get('access-control-allow-methods')).toContain('POST');
   });
 
+  it('reenvio com mesmo identificador não duplica, mas outro evento da aba conta', async () => {
+    const before = (await resumo(server.port)).total.boot_ok;
+    const event = {nome:'boot_ok',aba:'1234abcd',seq:1};
+    expect((await post(server.port,event)).status).toBe(204);
+    expect((await post(server.port,event)).status).toBe(204);
+    expect((await post(server.port,{...event,seq:2})).status).toBe(204);
+    expect((await resumo(server.port)).total.boot_ok-before).toBe(2);
+  });
+
   it('mesmo IP em rajada esbarra na taxa e devolve 429, sem contar mais', async () => {
     let aceitos = 0;
     let recusados = 0;
