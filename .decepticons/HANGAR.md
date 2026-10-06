@@ -192,3 +192,17 @@ com o jogo pausado.
 
 
 O treino móvel aceita somente armas de tiro; a motosserra continua coberta pelo teste de disparo existente.
+
+## Equipamentos defensivos — decisão do dono em 06/10/2026
+
+Planejamento, ainda sem mecânica implementada. O campo de força ocupa um **slot de módulo extra**, preservando uma arma em cada braço. Não confundir com calor: será necessário um reservatório de energia separado, validado no cliente e servidor.
+
+| Equipamento | Comportamento solicitado | Proposta de equilíbrio a validar |
+|---|---|---|
+| Barreira frontal | Acompanha a mira e o movimento do robô; proteção direcional temporária | Consumo enquanto ligada e ao absorver impacto; flancos e costas vulneráveis |
+| Esfera de energia | Cobertura completa, versão mais poderosa | Maior massa, consumo e recuperação; impedir que substitua automaticamente o frontal |
+| Escudo metálico removível | Instalação apenas em chassis com suporte compatível, incluindo a evolução do Lancer | Ocupa uma mão e substitui a arma desse braço (confirmado pelo dono); massa e integridade próprias |
+
+O escudo atual do Lancer é visual; não comprova bloqueio de dano. Próxima implementação: contrato versionado de equipamentos por encaixe, capacidade de carga somando armas e módulos, compatibilidade explícita por chassi e migração das montagens antigas. Depois, energia e barreira frontal na simulação compartilhada, com testes direcionais; só então esfera e escudo físico. Números de duração, absorção, recarga e tecla permanecem em aberto.
+
+As duas armas sugeridas em conversa são um canhão de trilho carregável (precisão, aviso visual e calor) e um lançador EMP (controle de energia/escudos, sem paralisar completamente na primeira versão). São propostas, não escolhas já aprovadas. Novos comportamentos devem ter módulos testados; variantes numéricas permanecem no catálogo central.

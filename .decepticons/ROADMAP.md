@@ -8,7 +8,10 @@
 > **Este arquivo alimenta o painel de missão** (`npm run painel`), e o `npm run check` reprova se ele sair do formato:
 > - Fase: `## <emoji> FASE N — Título`; a fase em foco leva `(atual)` no título (só uma).
 > - Item: `- [x]` feito, `- [~]` em andamento, `- [ ]` a fazer, terminando com **uma** etiqueta da tabela de frentes.
-> - Ideias sem fase ficam em `## 💡 IDEIAS`, com o mesmo formato.
+> - Ideias sem fase ficam em `## 💡 IDEIAS
+
+- [~] Miras finas por arma, centro livre e indicação de alvo sem aumento de tamanho (Codex, pedido de 06/10) #ux
+- [ ] Equipamentos por encaixe e carga: módulo extra para barreira frontal/esfera; escudo metálico removível só em chassis compatíveis (HANGAR.md, pedido de 06/10) #combate`, com o mesmo formato.
 
 ---
 

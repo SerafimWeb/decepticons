@@ -1,5 +1,9 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## 2026-10-06 — Módulo defensivo independente e miras por arma (Codex)
+
+O dono solicitou campo frontal orientado pela mira e esfera completa em módulo extra, mantendo armas nos braços; escudo metálico removível depende de suporte do chassi e ocupa uma mão, substituindo sua arma (confirmado pelo dono nesta sessão). Contrato e equilíbrio estão planejados em HANGAR.md, sem alegar mecânica existente. Também autorizou a alteração do HUD: traços periféricos finos por arma, sem ponto central nem expansão sobre o alvo. O secundário acionado usa sua própria mira; disparo conjunto mantém a referência principal.
+
 ## [2026-10-06] Legibilidade de avaria no próprio Mech e reconciliação da fila (Codex, dono: "sim, PROSSIGA!")
 **Decisão:** completar o item 1 do `DIVERSAO.md` § 10 antes de conteúdo novo. Fumaça e faíscas nas juntas das partes ainda presentes com até 50% de vida; passada assimétrica proporcional à diferença de avaria das pernas; vapor nos rigs sem `setHeatVisual` a partir de 70% de calor. Reparar apaga os sinais. A junta é medida em coordenadas do mundo, sem assumir unidade/eixo local de um osso importado.
 **Custo:** `DamageVisuals` só no cliente, 10 Hz, até 12 unidades por pulso e uma parte por unidade, 720 partículas/s no pior caso (inclui vapor), usando o pool de 3000 e a mesma draw call; sem catch-up após engasgo. A animação só lê vida: não altera colisão, velocidade, dano nem a boca de simulação. Nenhum campo/byte de rede novo.

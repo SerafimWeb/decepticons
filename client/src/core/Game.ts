@@ -1062,7 +1062,7 @@ export class Game {
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);
-    this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY);
+    this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.player.firing, this.player.secondaryHeld);
     this.renderer.info.reset();
     this.composer.render(dt);
     this.recorder.capturarQuadro();
