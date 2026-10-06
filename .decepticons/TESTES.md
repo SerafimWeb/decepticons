@@ -13,3 +13,5 @@ Execução durante edição: selecionar os arquivos afetados. Entrega: check com
 ## Atualização das verificações de UX
 
 ModeSelector agora usa o contrato GameMode e gameModeFromSearch da simulação. Os quatro casos existentes foram atualizados, mantendo 594 casos; não houve aumento de contagem para parecer mais seguro. No navegador, escolher CTF navega e o Game confirma ctf ativo. O treino usa ChargeTimer já testado e a prova verifica clique curto, cancelamento, nova carga e um disparo só depois de 51 ticks. Peso, excesso, ações bloqueadas e menu acessível em tela pequena também são verificações reais.
+
+Gate local: a navegação do medidor de bocas tinha timeout padrão de 30 s, antes da espera explícita de 120 s pelo GLB. Uma execução fria abortou antes de medir. Navegação passa a aguardar DOMContentLoaded com o mesmo prazo de 120 s; a prova continua exigindo window.pronto e tolerância de 15 cm, sem remover verificações.
