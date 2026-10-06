@@ -67,7 +67,7 @@
 - [x] Configurações (contrato + aplicação no jogo): sensibilidade, inverter Y, campo de visão, qualidade, dificuldade, painel de desempenho, teclas remapeáveis; salvas no navegador #ux
 - [x] Tela de configurações (Gemini, sobre o contrato `core/Settings.ts`) #ux
 
-## 🟡 FASE 3 — Vitrine e polimento (atual)
+## 🟡 FASE 3 — Vitrine e polimento
 - [x] Efeitos sonoros: tiro, impacto, passos pesados, explosão (sintetizados, sem arquivos pesados) #som
 - [x] Volume e mixagem nas configurações #som
 - [~] Controles de toque e layout para celular (Gemini no PR #17, refeito pelo Claude; o check joga num celular emulado; falta o dono confirmar num celular real) #ux
@@ -162,7 +162,7 @@
 - [ ] Telas do online: apelido, código da sala, jogadores, placar e ping (Gemini) #ux
 - [ ] Medir banda por sala e tick do servidor contra as metas do G11 e do G14 #desempenho
 
-## 🔵 FASE 5 — Modos, missões e novidades semanais (o jogo que puxa o jogador de volta amanhã)
+## 🔵 FASE 5 — Modos, missões e novidades semanais (atual) — o jogo que puxa o jogador de volta amanhã
 
 Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o que atrai gente pra testar, se desafiar e voltar.
 
@@ -210,7 +210,7 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] **WebTransport (quando o Firefox terminar):** UDP no navegador, corta jitter em rede ruim #rede
 
 ## 💡 IDEIAS
-- [~] **Legibilidade do alvo (dano por parte visível):** a **leitura em painel** está no jogo — ao mirar um inimigo aparecem as 6 partes, o calor e as bandeiras (`SUPERAQUECIDO · TRAVADO`, `EM DASH`), tudo lido do que **já vem no estado** (19 B por unidade, `shared/net/state.ts`; **0 B a mais**), em `ui/TargetPanel.ts` com captura real em `arte/alvo-legivel.png` (Qwen, 28/09). **Falta a outra metade:** fumaça e faísca na parte avariada, o Mech mancando visto de longe, a arma destruída pendurada e o vapor de quem vai travar — frente visual (Codex). Proposta e números em `DIVERSAO.md` § 7 #combate
+- [~] **Legibilidade do alvo:** painel de partes/calor já no jogo; Codex (06/10) implementou fumaça/faíscas nas partes presentes com até 50% de vida, passada assimétrica conforme a avaria das pernas e vapor nos rigs sem ventilação própria. Zero bytes de rede e nenhum desenho extra; falta playtest real da sensação e do online. Partes destruídas continuam arrancadas: não pendurar uma arma que já caiu. Prova de bancada em `arte/dano-visivel-codex.png`; `DIVERSAO.md` § 10 #combate
 - [ ] **Recibo da partida e cartão compartilhável:** precisão, partes destruídas, dano por calor, travamentos por superaquecimento, onda alcançada — no fim da rodada, com uma imagem local para mandar no link. Proposta em `DIVERSAO.md` § 7 e § 8 #ux
 - [ ] **Marcador de alvo (ping):** uma tecla marca o alvo para o time; viaja como evento, sem estado novo. Proposta em `DIVERSAO.md` § 6 #modos
 - [ ] **Catálogo por encaixe e as células vazias da grade de situações:** hoje cada braço aceita exatamente uma arma (`ARM_SLOTS`, `chassis.ts:124`); abrir 2–3 opções por braço e cobrir precisão, controle e suporte. Proposta e grade em `DIVERSAO.md` § 4 e § 5 #combate
@@ -226,7 +226,7 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] **Encaixes de arma além do pulso** (03/10, ideia, **não é escopo aprovado**; os ombros já existem no Marauder desde 03/10): peito, cabeça e costas, no mesmo contrato do pulso (nó, escala, módulo) com uma classe de tamanho. O Hangar já reserva "ombros e torso" (`HANGAR.md`). Antes, o ponto de tiro da simulação precisa virar dado do chassi (`FINDINGS.md`) #combate
 - [ ] **Escudo do Lancer que bloqueia tiro** (03/10, ideia, **não é escopo aprovado**): hoje o escudo é só desenho. Bloquear de frente pede um ângulo de cobertura, uma regra para a explosão (contorna?) e para o calor, e um teste de simulação; decidir com o dono antes #combate
 - [ ] **Jogador remoto desenhado com o chassi da montagem dele** (03/10, achado): hoje todo humano aparece para os outros como Vector-09, e o tiro dele nasce da boca direita; pede o encaixe no evento de tiro (protocolo 3) e carregar a malha importada do outro jogador (`FINDINGS.md`) #rede
-- [ ] **Desenho do morteiro da chuva nos robôs procedurais** (hoje só o Marauder mostra; Vector-09, Onça e Colossus mostram o casulo de foguetes) e som e aviso sonoro próprios da chuva #mechs
+- [ ] Som e aviso sonoro próprios da chuva de mísseis; o desenho do morteiro procedural já foi entregue em 04/10 (ver item concluído na Fase 3) #som
 - [ ] Rádio das IAs rebeldes: provocações geradas por modelo de linguagem no servidor, entre rodadas (nunca decidindo o combate) #ia
 - [ ] Derrube o C2: retransmissor na arena que coordena as IAs; destruído, elas atacam desordenadas #universo
 - [ ] Módulos com nome de defesa: firewall (escudo), honeypot (isca), sensor de caça (radar), patch (reparo) #universo
@@ -241,7 +241,7 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] Escala 1, logística: leva munição e foguetes aos Mechs #ia
 - [ ] Escala 1, piloto: andróides embarcam em máquinas vazias do hangar (matar o piloto desliga o Mech) #ia
 - [ ] Hangar: montar o próprio Mech (chassi, arma de cada braço, módulos), peças geradas por código e equilibradas, sem pay-to-win (prioridade do dono) #mechs
-- [ ] Parte avariada solta faísca e fumaça antes de cair #mechs
+- [x] Parte avariada solta faísca e fumaça antes de cair (Codex, 06/10; pool existente, 10 Hz, teto de 12 unidades por pulso) #mechs
 - [ ] Pintura e decalques por jogador (base dos cosméticos) #mechs
 - [ ] Prédios que desmoronam em partes, não só barricadas #cenarios
 - [ ] Tela inicial com apelido e escolha de Mech #ux

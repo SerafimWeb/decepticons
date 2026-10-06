@@ -13,7 +13,7 @@
 
 ---
 
-**Última atualização:** 2026-10-04 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
+**Última atualização:** 2026-10-06 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
 
 ---
 
@@ -25,6 +25,7 @@
 
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
+| `codex/dano-visivel` | Sinais de avaria: fumaça/faíscas, passada assimétrica e vapor nos rigs sem ventilação; cinco testes e captura de bancada. Reconciliação do planejamento. | em preparação | 06/10 |
 | `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
 | `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |
@@ -541,7 +542,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 |---|---|---|
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Sem crédito nesta rodada; o modo Sobrevivência solo foi assumido pelo Codex por autorização do dono. A sincronização online dos modos continua na frente de rede quando o contrato existir. |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Feito: Som dos passos, volume de bots ecoando e Gênesis-01 não aparecendo offline/online. Branch consolidado e mergeado (PR #136). |
-| **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, câmeras, desempenho e revisão cruzada; por autorização explícita do dono, também assume os modos enquanto Claude está sem crédito | Feito: draw calls 34 → 9 (#43), explosões (#44), blueprints, Hangar/treino, calor visual, Sobrevivência, CTF offline e câmera de abate offline. Próximo: playtest da câmera/modos; depois retoma os cosméticos MK II/MK III. |
+| **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, câmeras, desempenho e revisão cruzada; por autorização explícita do dono, também assume os modos enquanto Claude está sem crédito | Feito: draw calls 34 → 9 (#43), explosões (#44), blueprints, Hangar/treino, calor visual, Sobrevivência, CTF offline e câmera de abate offline. Próximo: fechar sinais de avaria e playtest; depois completar encontro offline do Colossus e retomar cosméticos/silhuetas. |
 | **Qwen** | transversal — documentação (`.decepticons/`), testes de simulação (novos `*.test.ts`), relatórios do processo (`scripts/painel.mjs`, `scripts/site/`, o site) e auditoria de arquitetura (segunda opinião na revisão cruzada). Não mexe em `client/src/{sim,combat,entities,physics,player,net}`, `server/` nem `shared/` sem combinar com o dono do território | Entrou no time em 26/09 (oficialização no painel e na etiqueta). Próximo: relatório de saúde técnica (cobertura, débito da seção 9, budget, tick) para a divulgação |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
 
@@ -592,7 +593,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
   sua de UX. **Sem progressão migrada ainda** (decisão do dono): a tela só precisa provar entrar/sair
   funcionando; XP/créditos continuam em `localStorage` por enquanto.
 - **Gemini:** depois: telas do online e calor no HUD; acompanhar o deploy do `gemini/modo-hud-audio`.
-- **Codex:** concluir PR visual do Colossus-01 e, depois do merge, iniciar o encontro offline determinístico com IA própria, pontos fracos e câmera de escala 3. A arma, números e modo assimétrico seguem decisões abertas.
+- **Codex (06/10):** fechar a entrega dos sinais de avaria (`codex/dano-visivel`) com CI/PR e playtest. O visual do Colossus, o boss da onda 6 e o chassi solo já foram entregues; não refazê-los. Próximo corte de implementação: fases/pontos fracos/câmera do encontro offline, respeitando as decisões de arma e modo assimétrico ainda abertas; depois cosméticos e silhuetas. MK I/II/III dos módulos de arma importados já têm diferenças visuais (`MECHS_IMPORTADOS.md` § 4).
 - **Claude (atualizado 30/09):** as duas frentes que estavam "sem começar" na sessão anterior **saíram e já
   estão na `main`** — pipeline híbrido de malha importada (GÊNESIS-01, chassi de verdade e jogável) e aliados
   na Arena offline (2 bots no time do jogador). Ver ÚLTIMA SESSÃO FEZ para os dois. O que ficou: (1) **aliados
