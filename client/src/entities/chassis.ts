@@ -217,7 +217,7 @@ export const GENESIS01_STATS: MechStats = {
 export const LANCER_L1_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'LANCER-L1',
-  loadout: { primary: weapon('shotgun'), secondary: null },
+  loadout: { primary: weapon('shotgun'), secondary: null, metalShield: { id: 'muralha', tier: 0 } },
 };
 
 /** LR-7L Bastion: chassi importado, Cybermech Industries. */
@@ -303,3 +303,9 @@ export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
 
 /** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */
 export const SHIELD_ARM: readonly ChassisId[] = ['lancerL1'];
+
+/**
+ * Chassis com suporte para o escudo metálico removível na mão esquerda (dono, 06/10: só chassis compatíveis, incluindo o
+ * Lancer). Os procedurais desenham a chapa no antebraço; o Lancer já traz a dele na malha. Importados sem chapa ficam fora.
+ */
+export const METAL_SHIELD_CHASSIS: readonly ChassisId[] = ['vector09', 'onca', 'colossus01', 'lancerL1'];

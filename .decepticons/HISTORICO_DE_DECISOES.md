@@ -1,5 +1,15 @@
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
+## [2026-10-06] Escudo físico na mão esquerda, botão 2 e resistência por natureza de dano (Claude)
+
+Pedido do dono: escudo removível que ocupa a mão esquerda no lugar da arma, só em chassis compatíveis (incluindo o Lancer); depois, no mesmo dia: "ao clicar com o botão 2 do mouse, vai ativar o poder do escudo (cada escudo poderá ter diferentes características, ser contra fogo, contra armas sônicas, contra blaster...)". Decisões:
+- **Botão 2 levanta a chapa** (segurar). Levantada: cone de 150° à frente, resistência cheia, Mech a 75% da velocidade (dash livre). Abaixada: cone de 100° no flanco esquerdo, metade da resistência. Interpretação de "ativar o poder" como guarda segurada; se o dono preferir toque liga/desliga (como o Ctrl do campo), é troca de uma linha.
+- **Natureza do dano por arma** (`DAMAGE_TYPE` em `weapons.ts`, obrigatório para arma nova): térmico (plasma), laser (blaster), balístico (escopeta, trilho), explosivo (foguetes, chuva), pulso (EMP), corte (serra) e sônico (sem arma ainda).
+- **Quatro modelos**: Muralha (meio-termo), Refratário (plasma/laser, racha com bala/explosão), Reativo (bala/explosão, o calor atravessa), Amortecedor (pulso/sônico, fraco contra lâmina). MK II/III somam chapa (+30/+60%), resistência (+5/+10 pontos, teto 95%) e massa (+0,5/+1 t).
+- **Chapa sem energia**: integridade = múltiplo da vida do braço esquerdo (escala sozinha no Colossus), não regenera; volta com o excedente do conserto e no renascimento. Braço esquerdo destruído leva o escudo. Ao contrário do campo de energia, a chapa segura a serra.
+- **Compatíveis**: Vector-09, Onça, Colossus (chapa procedural no antebraço) e Lancer (já desenhado na malha; sai de fábrica com a Muralha). Importados sem chapa ficam fora até terem desenho.
+- Montagem: o escudo vai no encaixe esquerdo como id próprio (`muralha-0` no link); nenhuma versão nova de formato nem de protocolo, o botão 2 já viaja no input.
+
 ## [2026-10-06] Comando de equipe, esfera e liberdade de montagem (Codex)
 
 Pedido do dono: Ctrl liga/desliga com um toque, preservando pulo/dash. Esfera no gerador extra, 4 t/150 energia/40 por segundo, protege todas as direções; barreira frontal continua mais leve e econômica. Trocar gerador preservando combate não cria energia. Protocolo 6 por catálogo incompatível com servidor antigo; mesmo tamanho dos pacotes. Servidor público offline não acessado.

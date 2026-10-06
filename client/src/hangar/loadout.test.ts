@@ -7,7 +7,8 @@ import { VECTOR09_STATS, Vector09 } from '../entities/Vector09';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Hangar, HANGAR_STORAGE_KEY } from './Hangar';
 import { CHASSIS, type ChassisId } from '../entities/chassis';
-import { armOptions, FACTORY_LOADOUT, factorySpec, loadoutKey, parseLoadoutKey, specWeapons, validateLoadout, type LoadoutSpec } from './loadout';
+import { armOptions, FACTORY_LOADOUT, factorySpec, isMetalShield, loadoutKey, parseLoadoutKey, specWeapons, validateLoadout, type LoadoutSpec } from './loadout';
+import { metalShieldMass } from '../combat/MetalShield';
 
 const LEVELS: Tier[] = [0, 1, 2];
 const build = (p: Tier, r: Tier | null): LoadoutSpec => ({ v: 1, chassis: 'vector09', right: { id: 'plasma', tier: p }, left: r === null ? null : { id: 'rockets', tier: r } });
@@ -184,8 +185,8 @@ describe('o texto da montagem vale para todos os chassis (link e rede)', () => {
 });
 
 describe('Lancer-L1: escopeta no braço direito e escudo no esquerdo (sem lança-mísseis)', () => {
-  it('a fábrica é a escopeta sozinha, e o braço esquerdo não aceita arma nenhuma', () => {
-    expect(factorySpec('lancerL1')).toEqual({ v: 1, chassis: 'lancerL1', right: { id: 'shotgun', tier: 0 }, left: null });
+  it('a fábrica é a escopeta com a chapa Muralha no braço do escudo, que não aceita arma nenhuma', () => {
+    expect(factorySpec('lancerL1')).toEqual({ v: 1, chassis: 'lancerL1', right: { id: 'shotgun', tier: 0 }, left: { id: 'muralha', tier: 0 } });
     expect(armOptions('right', 'lancerL1')).toContain('shotgun');
     expect(armOptions('left', 'lancerL1')).toEqual([]);
   });
@@ -288,7 +289,8 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
       expect(c.ok, id).toBe(true);
       if (!c.ok) continue;
       expect(c.loadout, id).toEqual(stats.loadout);
-      expect(specWeapons(spec).reduce((s, w) => s + w.mass, 0), id).toBe(c.mass);
+      const plate = isMetalShield(spec.left) ? metalShieldMass(spec.left.id, spec.left.tier) : 0;
+      expect(specWeapons(spec).reduce((s, w) => s + w.mass, 0) + plate, id).toBe(c.mass);
     }
   });
 });

@@ -255,6 +255,22 @@ function atTier(b: WeaponBase, tier: Tier): WeaponStats {
   });
 }
 
+/**
+ * Natureza do dano: escudos físicos seguram cada uma de um jeito (`MetalShield.ts`). Arma nova declara a sua aqui
+ * (o `Record` obriga). `sonico` ainda não tem arma: o escudo amortecedor já está pronto para ela.
+ */
+export type DamageType = 'termico' | 'laser' | 'balistico' | 'explosivo' | 'pulso' | 'sonico' | 'corte';
+export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
+  plasma: 'termico',
+  blaster: 'laser',
+  shotgun: 'balistico',
+  railgun: 'balistico',
+  rockets: 'explosivo',
+  barrage: 'explosivo',
+  emp: 'pulso',
+  chainsaw: 'corte',
+};
+
 /** Tabela pronta (montada uma vez ao carregar): pedir uma arma no jogo não aloca nada. */
 export const WEAPON_IDS = Object.keys(BASE) as readonly WeaponId[];
 
@@ -293,6 +309,8 @@ export function splashDamage(w: WeaponStats, dist: number): number {
  */
 export interface Loadout {
   module?: import('./EnergyShield').ShieldId | null;
+  /** Escudo físico na mão esquerda, no lugar da arma dela: `secondary` fica vazio e o botão 2 levanta a chapa. */
+  metalShield?: { id: import('./MetalShield').MetalShieldId; tier: Tier } | null;
   /** Gatilho principal (mouse esquerdo): a arma da mão direita. */
   primary: WeaponStats;
   /** Gatilho secundário (mouse direito, Q): a arma da mão esquerda; nos chassis com lançadores, a dos ombros. */

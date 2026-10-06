@@ -401,7 +401,9 @@ export class BotSystem {
         }
         brain.leader = leader;
       }
-      mech.fixedUpdate(brain.think(dt, this.targets), dt);
+      const input = brain.think(dt, this.targets);
+      mech.guard(brain instanceof BotController && brain.wantsGuard);
+      mech.fixedUpdate(input, dt);
       // Técnico no alcance: o conserto é regra do tick (quem escolhe o Mech é o cérebro).
       if (brain instanceof TechnicianController && brain.repairTarget) brain.repairTarget.repair(REPAIR_RATE * this.repairScale * dt);
       if (!brain.wantsToFire) continue;

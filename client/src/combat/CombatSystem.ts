@@ -8,7 +8,7 @@ import type { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
 import type { DamageResult } from './damage';
-import { splashDamage, weapon, type WeaponStats } from './weapons';
+import { DAMAGE_TYPE, splashDamage, weapon, type WeaponStats } from './weapons';
 
 /** Tamanho do pedaço que vira destroço quando a parte é arrancada. */
 const PART_CHUNK: Record<MechPart, THREE.Vector3> = {
@@ -97,7 +97,7 @@ export class CombatSystem {
       _near.set(p.x + dx * k, y, p.z + dz * k);
       const damage = splashDamage(w, Math.hypot(Math.max(0, flat - radius), at.y - y)) * (shooter?.combatBoost.damageMultiplier ?? 1);
       if (damage <= 0) continue;
-      const remaining = mech.energyShield.absorb(damage, at.x-p.x, at.y-p.y-height*.5, at.z-p.z, mech.yaw, mech.pitch);
+      const remaining = mech.defend(damage, DAMAGE_TYPE[w.id], at.x - p.x, at.y - p.y - height * 0.5, at.z - p.z);
       const result = mech.takeHit(_near, remaining);
       if (result.applied <= 0) continue;
       if (result.killed) this.wreck(mech, dir, shooter);
@@ -123,7 +123,10 @@ export class CombatSystem {
     if (d - attacker.stats.radius - target.stats.radius > w.maxRange) return;
     const y = Math.min(t.y + target.stats.height, Math.max(t.y, a.y + attacker.stats.height * 0.5));
     _near.set(t.x + (dx / d) * target.stats.radius, y, t.z + (dz / d) * target.stats.radius);
-    const result = target.takeHit(_near, w.damage * attacker.combatBoost.damageMultiplier);
+    // Só a chapa do escudo físico segura a lâmina; o campo de energia não (barreira e esfera deixam a serra passar).
+    const blade = w.damage * attacker.combatBoost.damageMultiplier;
+    const cut = target.modules.leftArm > 0 ? target.metalShield.absorb(blade, DAMAGE_TYPE[w.id], dx, dz, target.yaw) : blade;
+    const result = target.takeHit(_near, cut);
     if (result.applied <= 0) return;
     // Faíscas saem para cima; destroço e carcaça são empurrados para longe de quem cortou.
     this.particles.burst(_near, UP, { count: 10, color: SPARK, speed: 12, life: 0.3, size: 0.8, spread: 0.9 });
@@ -162,7 +165,7 @@ export class CombatSystem {
     }
     const shooter = owner ? this.byCollider.get(owner.handle) : undefined;
     if (w) applyEmp(mech, w, distance);
-    const remaining = mech.energyShield.absorb(damage, -dir.x, -dir.y, -dir.z, mech.yaw, mech.pitch);
+    const remaining = mech.defend(damage, w ? DAMAGE_TYPE[w.id] : 'termico', -dir.x, -dir.y, -dir.z);
     const result = mech.takeHit(hit.point, remaining);
     if (result.applied <= 0) return;
     if (result.killed) this.wreck(mech, dir, shooter);

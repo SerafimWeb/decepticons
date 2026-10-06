@@ -2119,6 +2119,11 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 :root { --shield: #29a9ff; --shield-fill: #123b52; --shield-empty: #09121a; --shield-panel: #07191f; --shield-text: #e6f9ff; --shield-edge: #2c7086; }
 #energy-shield {position:fixed;left:20px;bottom:22px;z-index:12;color:var(--text);border:1px solid var(--shield);background:linear-gradient(90deg,var(--shield-fill) var(--energy),var(--shield-empty) var(--energy));padding:9px 13px;font:11px Consolas,monospace;touch-action:none;pointer-events:auto;}
 #energy-shield[hidden]{display:none;}
+#metal-shield {position:fixed;left:20px;bottom:22px;z-index:12;color:var(--text);border:1px solid var(--shield);background:linear-gradient(90deg,var(--shield-fill) var(--plate),var(--shield-empty) var(--plate));padding:4px 11px;font:11px Consolas,monospace;pointer-events:none;}
+#energy-shield:not([hidden]) ~ #metal-shield {bottom:56px;}
+#metal-shield[hidden]{display:none;}
+#metal-shield[data-raised=true]{border-color:var(--text);}
+@media (max-width:600px) { #metal-shield {left:12px;top:300px;bottom:auto;font-size:9px;padding:6px;} }
 @media (max-width:600px) { #energy-shield {left:12px;top:265px;bottom:auto;font-size:9px;padding:8px;} }
 .hg-module{display:grid;gap:6px;font-size:10px;margin:8px 0;color:var(--text);}
 .hg-module select{padding:8px;background:var(--shield-panel);color:var(--shield-text);border:1px solid var(--shield-edge);}

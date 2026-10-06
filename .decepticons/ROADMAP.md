@@ -216,7 +216,8 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [x] Canhão de trilho carregável e lançador EMP, com MK I–III, carga, montagem e miras próprias (Codex, pedido 06/10) #combate
 - [x] Banco VORCARIS: letreiro azul no andar superior, terminal na porta e catálogo de códigos para créditos/boosts offline e online (pedido 06/10) #jogabilidade
 - [x] Miras finas por arma, centro livre e indicação de alvo sem aumento de tamanho (Codex, pedido de 06/10) #ux
-- [~] Equipamentos por encaixe e carga: frontal e esfera em módulo extra, Ctrl por toque; escudo metálico removível compatível continua pendente (HANGAR.md) #combate
+- [x] Equipamentos por encaixe e carga: frontal e esfera em módulo extra, Ctrl por toque; escudo físico na mão esquerda com 4 modelos e botão 2 (Claude, 06/10) #combate
+- [ ] Escudo físico online completo: integridade e chapa levantada no snapshot (HUD e Mechs remotos) #rede
 - [x] Instrumentação local de boot/erros/WebGL, quadros lentos e resumos de partida por versão/montagem/cheats, com exportação e testes HTTP/persistência #base
 - [~] Observabilidade central no Serafim13 integrada no cliente; confirmar recebimento, alertas e operação real quando os serviços estiverem disponíveis #base
 - [x] Benchmark reproduzível localhost para 10/50/100 jogadores ativos em salas de até 8; evidências e limites em CAPACIDADE.md #desempenho

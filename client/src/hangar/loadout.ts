@@ -1,6 +1,7 @@
 import { SHIELDS, type ShieldId } from '../combat/EnergyShield';
+import { isMetalShieldId, metalShieldMass, METAL_SHIELDS, type MetalShieldId } from '../combat/MetalShield';
 import { weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
-import { ARM_SLOTS, CHASSIS, type ChassisId } from '../entities/chassis';
+import { ARM_SLOTS, CHASSIS, METAL_SHIELD_CHASSIS, type ChassisId } from '../entities/chassis';
 
 /**
  * Contrato do Hangar (AGENTS, regra 5: o contrato entra antes da tela). Uma montagem é só ids e níveis
@@ -21,7 +22,8 @@ import { ARM_SLOTS, CHASSIS, type ChassisId } from '../entities/chassis';
 export const LOADOUT_VERSION = 1;
 
 export interface ArmSpec {
-  id: WeaponId;
+  /** Uma arma, ou um escudo físico (`METAL_SHIELD_IDS`), que só vai na mão esquerda dos chassis compatíveis. */
+  id: WeaponId | MetalShieldId;
   tier: Tier;
 }
 
@@ -58,6 +60,14 @@ export function armOptions(slot: ArmSlot, chassis: ChassisId = 'vector09'): read
   return ARM_SLOTS[chassis][slot] ?? [];
 }
 
+/** O chassi aceita o escudo metálico na mão esquerda? */
+export function acceptsMetalShield(chassis: ChassisId): boolean {
+  return METAL_SHIELD_CHASSIS.includes(chassis);
+}
+
+/** O encaixe leva o escudo metálico? */
+export const isMetalShield = (a: ArmSpec | null | undefined): a is ArmSpec & { id: MetalShieldId } => isMetalShieldId(a?.id);
+
 /** O chassi tem o encaixe dos ombros (e, com ele, as duas mãos no botão principal)? */
 export function hasShoulderSlot(chassis: ChassisId): boolean {
   return ARM_SLOTS[chassis].shoulders !== undefined;
@@ -69,6 +79,7 @@ const armOf = (w: WeaponStats | null | undefined): ArmSpec | null => (w ? { id: 
 export function factorySpec(chassis: ChassisId): LoadoutSpec {
   const l = CHASSIS[chassis].loadout;
   const right = armOf(l.primary)!;
+  if (l.metalShield != null) return { v: LOADOUT_VERSION, chassis, right, left: { ...l.metalShield } };
   // Com ombros, o gatilho secundário é dos ombros e a mão esquerda leva a segunda arma do principal.
   if (hasShoulderSlot(chassis)) return { v: LOADOUT_VERSION, chassis, right, left: armOf(l.offhand), shoulders: armOf(l.secondary) };
   return { v: LOADOUT_VERSION, chassis, right, left: armOf(l.secondary) };
@@ -79,7 +90,7 @@ export function specWeapons(spec: LoadoutSpec): WeaponStats[] {
   const chassis = CHASSIS[spec.chassis];
   const out = [spec.right, spec.left];
   if (spec.shoulders) for (let i = 0; i < chassis.triggers!.secondary.length; i++) out.push(spec.shoulders);
-  return out.filter((a): a is ArmSpec => a !== null).map((a) => weapon(a.id, a.tier));
+  return out.filter((a): a is ArmSpec => a !== null && !isMetalShield(a)).map((a) => weapon(a.id as WeaponId, a.tier));
 }
 
 const isTier = (t: unknown): t is Tier => t === 0 || t === 1 || t === 2;
@@ -108,23 +119,32 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   if (shoulders) arms.push(['shoulders', shoulders]);
   const where = { right: 'braço direito', left: 'braço esquerdo', shoulders: 'ombros' } as const;
   for (const [slot, arm] of arms) {
+    if (isMetalShield(arm)) {
+      if (slot !== 'left' || !acceptsMetalShield(s.chassis)) return fail('encaixe', `o ${chassis.name} não tem suporte para o ${METAL_SHIELDS[arm.id].name}`, 0, capacity);
+      if (!isTier(arm.tier)) return fail('nível', `nível ${String(arm.tier)} não existe`, 0, capacity);
+      continue;
+    }
     if (!(WEAPON_IDS as readonly string[]).includes(arm.id)) return fail('arma', `arma ${String(arm.id)} não existe`, 0, capacity);
     if (!isTier(arm.tier)) return fail('nível', `nível ${String(arm.tier)} não existe`, 0, capacity);
-    if (!armOptions(slot, s.chassis).includes(arm.id)) return fail('encaixe', `${weapon(arm.id).name} não vai no ${where[slot]} do ${chassis.name}`, 0, capacity);
-    if (!unlocked(arm.id, arm.tier)) return fail('bloqueado', `${weapon(arm.id, arm.tier).name} ainda bloqueado`, 0, capacity);
+    if (!armOptions(slot, s.chassis).includes(arm.id as WeaponId)) return fail('encaixe', `${weapon(arm.id as WeaponId).name} não vai no ${where[slot]} do ${chassis.name}`, 0, capacity);
+    if (!unlocked(arm.id as WeaponId, arm.tier)) return fail('bloqueado', `${weapon(arm.id as WeaponId, arm.tier).name} ainda bloqueado`, 0, capacity);
   }
   const spec2 = { v: LOADOUT_VERSION, chassis: s.chassis, right: s.right, left: s.left ?? null, shoulders } satisfies LoadoutSpec;
   // Carga: cada arma conta uma vez por encaixe em que atira (o lançador dos ombros vale dois).
   const module = s.module ?? null;
   if (module !== null && (s.v !== 2 || !Object.hasOwn(SHIELDS, module))) return fail('formato', 'módulo inválido ou versão incompatível', 0, capacity);
   if (module && s.chassis === 'android') return fail('encaixe', 'Andróide não possui encaixe de gerador', 0, capacity);
-  const mass = specWeapons(spec2).reduce((sum, w) => sum + w.mass, 0) + (module ? SHIELDS[module].mass : 0);
+  const plate = isMetalShield(s.left) ? s.left : null;
+  const mass = specWeapons(spec2).reduce((sum, w) => sum + w.mass, 0) + (module ? SHIELDS[module].mass : 0) + (plate ? metalShieldMass(plate.id, plate.tier) : 0);
   if (mass > capacity + 1e-9) return fail('carga', `${mass} t de armas numa carga de ${capacity} t`, mass, capacity);
   // Com ombros, o gatilho secundário é deles e a mão esquerda leva a segunda arma do principal.
+  const left = s.left && !plate ? weapon(s.left.id as WeaponId, s.left.tier) : null;
+  const primary = weapon(s.right.id as WeaponId, s.right.tier);
   const loadout: Loadout = hasShoulderSlot(s.chassis)
-    ? { primary: weapon(s.right.id, s.right.tier), offhand: s.left ? weapon(s.left.id, s.left.tier) : null, secondary: shoulders ? weapon(shoulders.id, shoulders.tier) : null }
-    : { primary: weapon(s.right.id, s.right.tier), secondary: s.left ? weapon(s.left.id, s.left.tier) : null };
+    ? { primary, offhand: left, secondary: shoulders ? weapon(shoulders.id as WeaponId, shoulders.tier) : null }
+    : { primary, secondary: left };
   if (s.v === 2) loadout.module = module;
+  if (plate) loadout.metalShield = { id: plate.id, tier: plate.tier };
   return { ok: true, loadout, mass, capacity };
 }
 
