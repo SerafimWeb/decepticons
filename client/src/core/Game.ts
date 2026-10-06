@@ -123,6 +123,7 @@ export class Game {
   private readonly input: InputManager;
   private readonly particles = new ParticleSystem();
   private readonly damageVisuals = new DamageVisuals(this.particles);
+  private readonly updateRemoteDamage = (remote: { mech: MechBase }): void => this.damageVisuals.update(remote.mech);
   /** A partida (sem tela): arena, bots, tiros, dano, rodadas. As partes abaixo são atalhos para ela. */
   private readonly match: Match;
   private readonly gameMode: GameMode;
@@ -1043,7 +1044,7 @@ export class Game {
     this.damageVisuals.beginFrame(dt, this.playing && !this.hangarView);
     this.damageVisuals.update(this.mech);
     if (this.online?.joined) {
-      for (const remote of this.online.remotes.values()) this.damageVisuals.update(remote.mech);
+      this.online.remotes.forEach(this.updateRemoteDamage);
     } else {
       for (const bot of this.bots.mechs) this.damageVisuals.update(bot);
       if (this.match.allies) for (const ally of this.match.allies.mechs) this.damageVisuals.update(ally);
