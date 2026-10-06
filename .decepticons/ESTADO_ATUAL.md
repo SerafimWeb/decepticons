@@ -23,7 +23,7 @@
 
 - **BANCO VORCARIS (Codex, 06/10, PR #169 mergeado).** Letreiro azul superior e terminal automático na porta; códigos configuráveis em shared/bank/codes.ts. 134 MILHÕES concede créditos existentes, OFICINA repara/resfria, TURBO dá +25% de dano por 30 s, sem empilhar e termina na morte/respawn. 594 testes/check/CI verdes, prova com teclado e terminal em 390×844, saldo no Hangar e WebSocket local. Capturas em arte/banco-vorcaris-*-codex.png. Créditos continuam no aparelho, sem loja/migração para conta. Servidor público offline não foi tocado; online público aguarda código atualizado ao voltar.
 
-## ÚLTIMA SESSÃO FEZ (06/10, Claude: PR #173, o escudo físico e a Oficina em sincronia com o jogo, mergeados direto pela autorização do dono)
+## ÚLTIMA SESSÃO FEZ (06/10, Claude: PR #173, o escudo físico, o Prédio Serafim e a Oficina em sincronia com o jogo, mergeados direto pela autorização do dono)
 
 - **Oficina em sincronia com o jogo (PR `claude/oficina-mapa-sincronia`; pedido do dono: mapa quebrado, texto desatualizado, "os gráficos estão corretos?").** Causa do mapa: `.arq-palco svg { width: 100% }` esticava os ícones da legenda, que cobriam o mapa e engoliam os cliques; a legenda foi para baixo do mapa e o mapa agora fixa no clique, no toque e no Enter, com painel de detalhes. **Texto:** a página não tem mais número de jogo digitado; robôs, armas, níveis e escudos saem do código e o selo REAL/PARCIAL de cada recurso sai do `STATUS_REAL.md` (o escudo metálico aparecia como "em desenvolvimento"; a tabela de chassis tinha 2 dos 10). **Gráficos:** corretos (mesma simulação, teste contra o Mech de verdade), mas 2 dos 6 exercícios eram idênticos; agora o par de rajadas é o do `MechHeat.test.ts` (8 tiros, pausa de 1 s: andando ferve em 6,6 s, parando nunca ferve e entrega 33% a mais), mais chave de leitura, achado calculado, escala única de alcance e blaster na tabela de tempo. `site --check` clica num módulo do mapa. Detalhes e capturas: `HISTORICO_DE_DECISOES.md` e `arte/oficina-*-claude.png`. **Onde ver:** `/cybermech/oficina/`, bloco "Explorar arquitetura e módulos do jogo".
 - **Achado de equilíbrio (não alterado):** 6 dos 10 chassis têm os mesmos números do Vector-09 (ver "decisões em aberto").
@@ -31,9 +31,10 @@
 
 - **Escudo esférico, Ctrl e aliados (#173, trabalho da Codex concluído pelo Claude):** esfera, Ctrl liga/desliga, aliados offline com ordens 1–3, catálogo ampliado. Teste da chuva de mísseis corrigido (os bots agora atacam mais cedo).
 - **Escudo físico na mão esquerda (PR `claude/escudo-metalico`):** 4 modelos (Muralha, Refratário, Reativo, Amortecedor) com resistência por natureza de dano; **segure o botão 2** para levantar a chapa. Vector-09, Onça, Colossus e Lancer (de fábrica). Detalhes em HANGAR.md; limites online em STATUS_REAL.md.
+- **Prédio Serafim (PR `claude/predio-serafim`):** monólito preto de 56 m em (80, 40), oposto ao Banco VORCARIS; LED verde, vermelho quando inimigo chega a 40 m, `?serafim=festa` gira as cores; base de drones no topo (sem drones ainda).
 - **Dono autorizou (06/10) merge direto em produção sem esperar revisão:** CI verde → merge. Ele testa só no site.
 
-**Próxima sessão começa com:** Prédio Serafim (referência em `.tmp/prediolimpo`): prédio preto brutalista, faixa de LED verde (vermelha em emergência), base de drones no topo, longe do Banco VORCARIS (times opostos). Depois: escudo físico online completo (integridade e chapa no snapshot).
+**Próxima sessão começa com:** drones da base Serafim (decolar do topo; o desenho do que fazem ainda é do dono); escudo físico online completo (integridade e chapa no snapshot).
 
 ## SESSÃO ANTERIOR (06/10, PR #171 na main)
 
