@@ -5,6 +5,7 @@ import { runtimeDiagnostics } from './runtimeDiagnostics';
 import { PlayTelemetry } from './PlayTelemetry';
 import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
+import { addSerafimPlaque, SERAFIM_TOWER } from '../environment/SerafimTower';
 import { BankTerminal } from '../ui/BankTerminal';
 import { bankReward, nearBank, type BankReply } from '../../../shared/bank/codes';
 import { ChargeVisuals } from '../fx/ChargeVisuals';
@@ -210,6 +211,9 @@ export class Game {
   private readonly playTelemetry: PlayTelemetry;
   private activeBuild = '';
   private readonly shieldHUD: ShieldHUD;
+  /** `?serafim=festa`: o LED do Prédio Serafim gira as cores. */
+  private serafimParty = false;
+  private serafimCheck = 0;
   private readonly squadHUD: SquadHUD;
   private readonly shieldVisuals = new ShieldVisuals(this.scene);
   private readonly drawShield = (r: {mech: MechBase}): void => this.shieldVisuals.update(r.mech);
@@ -321,6 +325,9 @@ export class Game {
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets, barrage: this.barrage } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     addBankSign(this.scene);
+    addSerafimPlaque(this.scene);
+    // ?serafim=festa: o LED do prédio gira as cores (o dono quer poder variar a luz).
+    this.serafimParty = new URLSearchParams(location.search).get('serafim') === 'festa';
     this.bankTerminal = new BankTerminal((code) => {
       if (this.online) {
         if (!this.online.redeemBank(code)) this.bankTerminal.showMessage("Sem conexão com a sala. Nenhuma recompensa concedida.");
@@ -553,6 +560,27 @@ export class Game {
   }
 
   /** Linha de status do online, no topo: sala, ping e pessoas; ou o motivo da recusa ou da queda. */
+  /**
+   * LED do Prédio Serafim (só desenho): vermelho pulsando quando um Mech inimigo chega a 40 m da base, verde com tudo em
+   * ordem. Confere a 4 Hz; o pulso em si é uma troca de cor por quadro.
+   */
+  private updateSerafimTower(dt: number): void {
+    const tower = this.match.arena.serafim;
+    this.serafimCheck -= dt;
+    if (this.serafimCheck <= 0) {
+      this.serafimCheck = 0.25;
+      let danger = false;
+      for (const bot of this.bots.mechs) {
+        if (!bot.alive) continue;
+        const dx = bot.simPosition.x - SERAFIM_TOWER.x;
+        const dz = bot.simPosition.z - SERAFIM_TOWER.z;
+        if (dx * dx + dz * dz < 40 * 40) { danger = true; break; }
+      }
+      tower.setMode(danger ? 'emergencia' : this.serafimParty ? 'festa' : 'ok');
+    }
+    tower.update(dt);
+  }
+
   private showNet(s: OnlineStatus): void {
     if (s.state === 'conectando') {
       this.lobby.setConnecting(true, `CONECTANDO À SALA ${s.room}…`);
@@ -1128,6 +1156,7 @@ export class Game {
     if (!this.hangarView) { this.shieldVisuals.update(this.mech); if(this.online?.joined)this.online.remotes.forEach(this.drawShield);else for(const bot of this.bots.mechs)this.shieldVisuals.update(bot); }
     this.shieldVisuals.end();
     this.shieldHUD.update(dt, this.mech, this.playing && !this.hangarView, this.settings.value.keys.shield);
+    this.updateSerafimTower(dt);
     this.chargeVisuals.beginFrame(dt, this.playing && !this.hangarView);
     this.chargeVisuals.update(this.mech, false);
     this.damageVisuals.beginFrame(dt, this.playing && !this.hangarView);

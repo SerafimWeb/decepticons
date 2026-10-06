@@ -27,9 +27,10 @@
 
 - **Escudo esférico, Ctrl e aliados (#173, trabalho da Codex concluído pelo Claude):** esfera, Ctrl liga/desliga, aliados offline com ordens 1–3, catálogo ampliado. Teste da chuva de mísseis corrigido (os bots agora atacam mais cedo).
 - **Escudo físico na mão esquerda (PR `claude/escudo-metalico`):** 4 modelos (Muralha, Refratário, Reativo, Amortecedor) com resistência por natureza de dano; **segure o botão 2** para levantar a chapa. Vector-09, Onça, Colossus e Lancer (de fábrica). Detalhes em HANGAR.md; limites online em STATUS_REAL.md.
+- **Prédio Serafim (PR `claude/predio-serafim`):** monólito preto de 56 m em (80, 40), oposto ao Banco VORCARIS; LED verde, vermelho quando inimigo chega a 40 m, `?serafim=festa` gira as cores; base de drones no topo (sem drones ainda).
 - **Dono autorizou (06/10) merge direto em produção sem esperar revisão:** CI verde → merge. Ele testa só no site.
 
-**Próxima sessão começa com:** Prédio Serafim (referência em `.tmp/prediolimpo`): prédio preto brutalista, faixa de LED verde (vermelha em emergência), base de drones no topo, longe do Banco VORCARIS (times opostos). Depois: escudo físico online completo (integridade e chapa no snapshot).
+**Próxima sessão começa com:** drones da base Serafim (decolar do topo; o desenho do que fazem ainda é do dono); escudo físico online completo (integridade e chapa no snapshot).
 
 ## SESSÃO ANTERIOR (06/10, PR #171 na main)
 
