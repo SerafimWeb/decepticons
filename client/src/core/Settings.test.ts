@@ -144,3 +144,35 @@ it('migra o antigo E uma vez, preserva tecla personalizada e permite voltar a E'
   expect(new Settings(memoryStorage(JSON.stringify({ keys: { shield: 'KeyF' } }))).value.keys.shield).toBe('KeyF');
   expect(new Settings(memoryStorage(JSON.stringify({ keys: { shield: 'KeyE', jump: 'Control' } }))).value.keys.shield).toBe('KeyE');
 });
+
+describe('nomes na tela (06/10: "quero poder mudar o nome dos inimigos, npcs, etc")', () => {
+  it('sem nada salvo, os nomes são os de sempre (botNames.ts)', () => {
+    const n = new Settings(memoryStorage()).value.names;
+    expect(n.mechs).toEqual(['CLAWD', 'GEMINAI', 'CHAD-GPT']);
+    expect(n.androids).toEqual(['KUEN', 'DIPSIK', 'MISTRAU']);
+    expect(n.technicians).toEqual(['ENTRÓPICO']);
+    expect(n.allies).toEqual(['ESCOLTA·PLASMA', 'SUPRESSOR·EMP']);
+  });
+
+  it('aceita nomes novos, corta em 16 caracteres e tira tags, aspas e quebras', () => {
+    const s = sanitizeSettings({ names: { mechs: ['  NINJA   TURBO  ', '<img src=x>', 'a'.repeat(40)] } });
+    expect(s.names.mechs[0]).toBe('NINJA TURBO');
+    expect(s.names.mechs[1]).toBe('img src=x');
+    expect(s.names.mechs[2]).toHaveLength(16);
+    expect(s.names.mechs.every((n) => !/[<>&"'`]/.test(n))).toBe(true);
+  });
+
+  it('vazio, tipo errado ou ausente volta ao nome padrão daquele slot; slots a mais são ignorados', () => {
+    const s = sanitizeSettings({ names: { mechs: ['   ', 42, 'X', 'EXTRA', 'EXTRA2'], androids: 'nope' } });
+    expect(s.names.mechs).toEqual(['CLAWD', 'GEMINAI', 'X']);
+    expect(s.names.androids).toEqual(['KUEN', 'DIPSIK', 'MISTRAU']);
+  });
+
+  it('trocar um nome pelo painel é salvo e volta na próxima visita', () => {
+    const storage = memoryStorage();
+    const st = new Settings(storage);
+    st.update({ names: { ...st.value.names, technicians: ['DOUTOR'] } });
+    expect(new Settings(storage).value.names.technicians).toEqual(['DOUTOR']);
+    expect(new Settings(storage).value.names.mechs).toEqual(['CLAWD', 'GEMINAI', 'CHAD-GPT']);
+  });
+});

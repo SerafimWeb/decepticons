@@ -32,7 +32,7 @@ export interface HangarPreview {
 /** Os tiros do teste começam depois que o Mech vira para o alvo (s). */
 const TEST_TURN_S = 0.5;
 
-const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string; detail: string }> = {
+export const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string; detail: string }> = {
   vector09: { title: 'VECTOR-09', className: 'MÉDIO · ASSALTO', detail: 'Equilíbrio entre alcance e mobilidade.' },
   android: { title: 'ANDRÓIDE A-1', className: 'LEVE · PILOTO', detail: 'Pequeno e ágil; vence no combate próximo.' },
   // Chassi solo do boss (29/09): mesmos números do encontro, sem balancear contra os bots de propósito.

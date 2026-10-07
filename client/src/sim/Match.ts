@@ -68,7 +68,7 @@ export interface Pilot {
 }
 
 /** Quantos inimigos e quem são (as configurações do jogador; no servidor, as da sala). */
-export type Foes = Pick<GameSettings, 'enemyMechs' | 'enemyAndroids' | 'technician' | 'enemyPersonas'>;
+export type Foes = Pick<GameSettings, 'enemyMechs' | 'enemyAndroids' | 'technician' | 'enemyPersonas' | 'names'>;
 
 export interface MatchOptions {
   physics: PhysicsWorld;
@@ -200,6 +200,7 @@ export class Match {
       respawn: !survival,
       respawnAtHome: ctf,
       personas: o.foes.enemyPersonas,
+      names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
       waypoints: SPAWN_POINTS,
       power: o.power,
     });
@@ -216,6 +217,7 @@ export class Match {
             paint: PALETTE.playerPaint,
             visor: PALETTE.green,
             spawns: ALLY_SPAWNS.slice(0, allyCount),
+            names: { mechs: o.foes.names.allies },
             waypoints: SPAWN_POINTS,
             power: o.power,
           })

@@ -45,7 +45,7 @@ export class SettingsMenu {
       right: $('key-right') as HTMLButtonElement,
       jump: $('key-jump') as HTMLButtonElement,
       dash: $('key-dash') as HTMLButtonElement,
-      secondary: $('key-secondary') as HTMLButtonElement,
+      secondary: $('key-secondary-bind') as HTMLButtonElement,
       camera: $('key-camera') as HTMLButtonElement,
       shield: $('key-shield') as HTMLButtonElement,
     };

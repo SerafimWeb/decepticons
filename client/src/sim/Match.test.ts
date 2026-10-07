@@ -227,3 +227,23 @@ describe('aliados na Arena normal (30/09, "sozinho tá muito intenso")', () => {
     expect(ctf.allies).toBeNull();
   });
 });
+
+describe('nomes escolhidos nas configurações', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('chegam às IAs, aos andróides, ao técnico e aos aliados', async () => {
+    const physics = await PhysicsWorld.create();
+    const names = { mechs: ['NINJA', 'ROBÔ-2', 'X'], androids: ['A1', 'A2', 'A3'], technicians: ['DOUTOR'], allies: ['ALFA', 'BRAVO'] };
+    const match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: { ...DEFAULT_SETTINGS, names }, debris: false });
+    // Personalidade padrão: brabo, soldado, fujão. O sufixo só aparece fora do soldado (como sempre).
+    // Com dois aliados, sobra um Mech inimigo (3 − 2); a personalidade padrão dele é brabo, então leva o sufixo.
+    const enemies = match.bots.mechs.map((m) => match.bots.nameOf(m));
+    expect(enemies[0]).toBe('NINJA·BRABO');
+    expect(enemies.filter((n) => n.startsWith('A'))).toEqual(['A1', 'A2']);
+    expect(match.bots.mechs.filter((m) => match.bots.technicianOf(m)).map((m) => match.bots.nameOf(m))).toEqual(['DOUTOR']);
+    expect(match.allies!.nameOf(match.allies!.mechs[0]!)).toBe('ALFA');
+    expect(match.allies!.nameOf(match.allies!.mechs[1]!)).toBe('BRAVO');
+  });
+});

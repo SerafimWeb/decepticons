@@ -16,21 +16,12 @@ import { REPAIR_RATE } from './repair';
 import { TechnicianController } from './TechnicianController';
 import type { Respawner } from './Respawner';
 import { defaultPower, poweredStats, type PowerSpec } from '../tuning/power';
+import { BOT_NAMES } from '../core/botNames';
 
 export const BOT_RESPAWN_S = 4;
 /** IA rebelde: vermelho, com visor e tiros vermelhos (o jogador é amarelo com verde neon). */
 const BOT_PAINT = PALETTE.enemyPaint;
 const MUZZLE_COLOR = GLOW.enemyMuzzle;
-/**
- * Nomes das IAs rebeldes, por tipo, na ordem em que entram na arena. Paródias das IAs de verdade (dono, 25/09:
- * "chad-gpt, geminai, kuen, dipsik: nomes meio engraçados, que as pessoas entendam a alusão"), no lugar das
- * marcas registradas. É a única lista a trocar.
- */
-export const BOT_NAMES = {
-  mechs: ['CLAWD', 'GEMINAI', 'CHAD-GPT'],
-  androids: ['KUEN', 'DIPSIK', 'MISTRAU'],
-  technicians: ['ENTRÓPICO'],
-} as const;
 
 const pick = (list: readonly string[], i: number, prefix: string) => list[i] ?? `${prefix}-${String(i + 1).padStart(2, '0')}`;
 /** O diretor redistribui as vagas de ataque a cada tanto (não a cada tick: 5 vezes por segundo basta). */
@@ -55,6 +46,8 @@ export interface BotSystemOptions {
   respawnAtHome?: boolean;
   /** Jogadores que a equipe acompanha (lista viva, sem cópia por tick). */
   escort?: readonly MechBase[];
+  /** Nomes na tela (padrão: os de `core/botNames.ts`; o time de aliados usa os nomes dos aliados). */
+  names?: { mechs?: readonly string[]; androids?: readonly string[]; technicians?: readonly string[] };
   /**
    * Cor do casco e do visor (padrão: as de sempre, roxo/violeta — "IA rebelde"). Um segundo `BotSystem`
    * pode passar as cores do jogador aqui pra virar um time de aliados, visualmente diferente do inimigo
@@ -163,7 +156,7 @@ export class BotSystem {
     // No placar e no nome sobre a cabeça, o nome e a personalidade (CLAUDE·BRABO): o jogador aprende quem é quem.
     const mechName = (i: number) => {
       const persona = o.personas?.[i];
-      const name = o.escort ? (i % 2 ? 'SUPRESSOR·EMP' : 'ESCOLTA·PLASMA') : pick(BOT_NAMES.mechs, i, 'M');
+      const name = pick(o.names?.mechs ?? (o.escort ? BOT_NAMES.allies : BOT_NAMES.mechs), i, 'M');
       return persona && persona !== 'soldado' ? `${name}·${PERSONA_LABELS[persona].label.toUpperCase()}` : name;
     };
     // Potências: os números de cada clã são montados uma vez aqui (nada muda no tick).
@@ -179,7 +172,7 @@ export class BotSystem {
       stats: o.escort && i % 2 ? suppressionStats : mechStats }), p, mechName(i), i, false));
 
     // Andróides: sementes depois das dos Mechs.
-    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true));
+    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(o.names?.androids ?? BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true));
     // O Colossus (escala 3), quando a missão tem boss: nasce no ponto dedicado, com o perfil de cerco e sem
     // personalidade de piloto (não é um rebelde, é uma máquina). Entra no pool como os outros: nada é criado no tick.
     if (o.bossSpawn) {
@@ -205,7 +198,7 @@ export class BotSystem {
       beam.visible = false;
       beam.frustumCulled = false;
       o.scene.add(beam);
-      this.bots.push({ mech, brain, name: pick(BOT_NAMES.technicians, i, 'T'), home, beam });
+      this.bots.push({ mech, brain, name: pick(o.names?.technicians ?? BOT_NAMES.technicians, i, 'T'), home, beam });
     });
     this.mechs = this.bots.map((b) => b.mech);
     for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0 });

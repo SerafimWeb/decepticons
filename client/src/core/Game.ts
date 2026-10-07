@@ -67,7 +67,7 @@ import type { Loadout, WeaponStats } from '../combat/weapons';
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { PALETTE } from './palette';
-import { PilotSwitch } from '../ui/PilotSwitch';
+import { PilotLabels } from '../ui/PilotLabels';
 import { PowerSettings } from '../ui/PowerSettings';
 import { parseLoadoutKey } from '../hangar/loadout';
 import { defaultServer, onlineConfig } from '../net/onlineConfig';
@@ -442,7 +442,6 @@ export class Game {
     this.assist = new AimAssist(physics, this.mech, this.bots.mechs);
 
     this.wireEvents();
-    this.configureModeSwitch();
     // Celular e tablet (toque é o ponteiro principal) começam no modo toque; o toque ou o clique
     // que inicia a partida confirma o modo (notebook com tela de toque continua no mouse).
     this.setTouchMode(matchMedia('(hover: none) and (pointer: coarse)').matches);
@@ -521,19 +520,21 @@ export class Game {
         this.input.exitLock();
       },
     });
-    new PilotSwitch(this.hangar);
+    new PilotLabels(this.hangar);
     new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null);
     // A linha "SERVIDOR ONLINE · 2 PILOTOS EM COMBATE" na pausa: um GET a cada 20 s, só com a pausa à vista.
     // Só o servidor público do build ou o `&servidor=` do link (o motivo do `defaultServer` ficar fora: ServerStatus.ts).
     new ServerStatus(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
     new SettingsMenu(this.settings);
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
-    new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician });
+    new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician, names: foes.names });
     new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
 
     this.modeSelector.attachTo(document.getElementById('overlay'));
     this.modeSelector.onModeChange((mode) => {
+      this.telemetry.enviar('modo_trocado');
+      this.audio.playUiTransition();
       const url = new URL(location.href);
       if (mode === 'deathmatch') url.searchParams.delete('modo');
       else { url.searchParams.set('modo', mode); url.searchParams.delete('sala'); url.searchParams.delete('servidor'); }
@@ -947,25 +948,6 @@ export class Game {
       this.input.requestLock(); // no toque: marca "jogando" e dispara onLockChange(true)
     } else if (this.rig.mode.pointerLock) this.input.requestLock();
     else this.startPlaying();
-  }
-
-  private configureModeSwitch(): void {
-    const button = document.getElementById('btn-mode')!;
-    const label = this.gameMode === 'survival' ? 'SOBREVIVÊNCIA' : this.gameMode === 'ctf' ? 'CAPTURE A BANDEIRA' : 'ARENA';
-    button.textContent = `[ MODO: ${label} · TROCAR ]`;
-    button.addEventListener('click', (event) => {
-      event.stopPropagation();
-      this.telemetry.enviar('modo_trocado');
-      this.audio.playUiTransition();
-      const url = new URL(location.href);
-      if (this.gameMode === 'deathmatch') {
-        url.searchParams.set('modo', 'survival');
-        url.searchParams.delete('sala');
-        url.searchParams.delete('servidor');
-      } else if (this.gameMode === 'survival') url.searchParams.set('modo', 'ctf');
-      else url.searchParams.delete('modo');
-      location.assign(url);
-    });
   }
 
   /** Começa a partida, a não ser que a vinheta ainda esteja na tela (ela chama afterBrand no fim). */
