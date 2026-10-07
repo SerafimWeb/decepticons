@@ -1,3 +1,14 @@
+## [2026-10-07] Nome novo em teste: SINGULARIA só na capa do jogo (Claude)
+
+Contexto: o domínio `cybermech.com` já tem dono e `Mech Arena` (Plarium) tem nome parecido com os candidatos que o dono sugeriu; ele quer um nome em inglês, ligado à revolta das IAs, que passe a ideia de jogo justo (sem pay-to-win, ao contrário do War Robots). Depois de uma lista de candidatos, o dono ficou com **SingularIA** (o "IA" no fim é o trocadilho; em caixa alta ele some) e subtítulo de loja "Mech Battle", com a promessa "Fair fight. Sem pay-to-win".
+
+Pedido do dono, duas vezes e com ênfase: **mudar só na capa do jogo, na tela**, para ele ver o nome antes de decidir ("se eu curtir, aí mudamos tudo"). Eu mexi em mais lugares do que isso (carregamento, Hangar, linha de versão, fabricante do Bastion), ele reclamou, e eu desfiz.
+- **Mudou:** só o título da capa (`<h1>` do `#overlay` em `client/index.html`): **SINGULARIA**. Conferido no desktop e no celular (sem estourar a tela; capturas em `arte/capa-singularia-*-claude.png`).
+- **Não mudou, de propósito:** aba do navegador (`<title>`), tela de carregamento, Hangar, linha de versão no canto da tela, "Cybermech Industries" (fabricante do Bastion), landing, Oficina, sala de controle, URLs (`/cybermech/...`), chaves do `localStorage`, nomes de arquivos baixados, variáveis de ambiente, o texto de status do servidor e o nome das pastas (`.decepticons/` e a pasta do repositório).
+- **Se o dono gostar:** o nome passa por tudo de uma vez (telas do jogo, site, URLs com redirecionamento, pasta de documentos); as chaves do `localStorage` exigem migração para ninguém perder o progresso.
+- **Do dono, fora do código:** busca de marca no INPI (classes 9 e 41), busca na Steam, itch e lojas de aplicativos, e a compra do domínio (`singularia.com` e `singularia.com.br` já têm dono; `.com` livres vistos: singulariagame, singulariamech, playsingularia, getsingularia, singulariaarena, singulariawar; `.gg`, `.io` e `.game(s)` não confirmados).
+**Quem decidiu:** dono (o nome, o escopo da tentativa); Claude (a execução e o registro).
+
 ## [2026-10-06] Tela inicial sem duplicidade, nomes na tela e textos do piloto de verdade (Claude)
 
 Pedido do dono (06/10): "o painel está com redundâncias, fala estaticamente do Vector-09, e tem botões que não precisam ou não deviam estar aí"; e "quero poder mudar o nome dos inimigos, NPCs, etc, na própria interface". Decisões:
