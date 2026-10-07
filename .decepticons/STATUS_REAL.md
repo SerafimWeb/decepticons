@@ -117,3 +117,7 @@ Oficina ganha compatibilidade por chassi, massa, escudos e ordens; Sala de Contr
 
 | Prédio Serafim (base do time) | PARCIAL | Claude 06/10: monólito de 56 m em (80, 40), colisão na simulação comum, LED verde/vermelho (inimigo a 40 m)/festa (`?serafim=festa`), base de drones no topo. Teste `SerafimTower.test.ts`; capturas `arte/predio-serafim-*-claude.png`. Online, o alerta só olha os bots locais (o LED fica verde). |
 | Drones da base Serafim (patrulha/kamikaze/conserto/recarga) | PARCIAL | Claude 06/10: esquadrilha de 4 (um de cada papel), decisão a 4 Hz, voo em cruzeiro, corpo cinemático atingível por tiro/explosão; modelo procedural (sem GLB). Só na Arena offline — o roster de rede não descreve drone ainda. 7 testes em `DroneSystem.test.ts`, incluindo o de dois do mesmo papel sem empilhar; captura `arte/drones-serafim-claude.png`. |
+
+| Nomes configuráveis na tela (Mechs, andróides, técnico, aliados) | REAL | Claude 06/10: Configurações > NOMES NA TELA, 16 caracteres sem tags; valem ao reiniciar. Offline: no online, os nomes vêm do servidor. Testes em `Settings.test.ts` e `Match.test.ts`. |
+| Câmeras de espectador (outros jogadores, torre, portas) | AUSENTE | Pedido do dono (06/10), ainda sem escopo definido. |
+| Painel de campanhas (oponentes, missões e tarefas salvas) | AUSENTE | Pedido do dono (06/10), ainda sem escopo definido. Hoje só existem as configurações de contagem e personalidade. |

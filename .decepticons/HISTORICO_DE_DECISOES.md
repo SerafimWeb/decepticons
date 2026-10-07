@@ -1,3 +1,13 @@
+## [2026-10-06] Tela inicial sem duplicidade, nomes na tela e textos do piloto de verdade (Claude)
+
+Pedido do dono (06/10): "o painel está com redundâncias, fala estaticamente do Vector-09, e tem botões que não precisam ou não deviam estar aí"; e "quero poder mudar o nome dos inimigos, NPCs, etc, na própria interface". Decisões:
+- **Dois controles para o mesmo modo**: o botão "MODO: ARENA · TROCAR" e os cards "MODO DE JOGO" faziam a mesma troca. Sai o botão; ficam os cards, que mostram o que cada modo é. A telemetria e o som da troca foram para o card.
+- **"[ PILOTAR ANDRÓIDE ]" duplicava a escolha de chassi do Hangar** e zerava a montagem para a de fábrica. Sai da tela inicial e da pausa; a troca de chassi fica só no Hangar.
+- **Subtítulo e dicas de tecla** vêm do chassi e das armas equipadas, para qualquer robô. Antes eram fixos no Vector-09: com um Lancer a tela dizia "VECTOR-09" e "plasma".
+- **Nomes**: `GameSettings.names` (Mechs, andróides, técnico e aliados), padrão em `core/botNames.ts`, editável na seção "NOMES NA TELA". Valem ao reiniciar, como as contagens. Até 16 caracteres, sem tags.
+- **Bug achado no caminho**: o id `key-secondary` era usado pelo texto de ajuda da pausa e pelo botão de reatribuir "Foguetes", então um sobrescrevia o outro. O botão passou a `key-secondary-bind`.
+- **Pedidos ainda não feitos** (registrados no `ROADMAP.md`): câmeras de espectador (visão de outros jogadores e de câmeras fixas, como a da torre e das portas dos prédios) e painel de campanhas com oponentes, missões e tarefas salvas com nome.
+
 # HISTÓRICO DE DECISÕES — CYBERMECH
 
 ## [2026-10-06] Drones da base Serafim: 4 papéis (Claude)

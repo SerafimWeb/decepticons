@@ -829,6 +829,14 @@ html, body {
   padding: 4px 8px;
   cursor: pointer;
 }
+.settings-box input[type="text"] {
+  background: #06080a;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: inherit;
+  padding: 4px 8px;
+  width: 170px;
+}
 
 /* Key remapping grid */
 .keys-grid {
