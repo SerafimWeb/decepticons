@@ -22,12 +22,16 @@ import { weapon, type WeaponStats } from './weapons';
  * navegação: é a altura que evita paredes. Cada drone tem um colisor pequeno: tiro e explosão o derrubam, e ele volta
  * pela base depois de `RESPAWN_S`.
  *
- * Custo: 6 drones, decisões a 4 Hz e uma linha de visada por drone de ataque a 4 Hz; o resto são contas de vetor.
+ * Custo: 4 drones, decisões a 4 Hz e uma linha de visada por drone de ataque a 4 Hz; o resto são contas de vetor.
  */
 export type DroneRole = 'patrulha' | 'kamikaze' | 'conserto' | 'recarga';
 export type DroneState = 'pouso' | 'voo' | 'abatido';
 
-export const DRONE_ROSTER: readonly DroneRole[] = ['patrulha', 'patrulha', 'kamikaze', 'kamikaze', 'conserto', 'recarga'];
+// Um de cada papel (dono, 06/10: "5 drones, é muito... não podem poluir a tela"): a esquadrilha era 6 e dois
+// pares do mesmo papel convergiam para o mesmo alvo e se sobrepunham. Um de cada já mostra os quatro
+// comportamentos sem virar enxame; o slot por índice abaixo também evita que um papel repetido no futuro
+// volte a empilhar.
+export const DRONE_ROSTER: readonly DroneRole[] = ['patrulha', 'kamikaze', 'conserto', 'recarga'];
 
 export const DRONE = Object.freeze({
   hp: 60,
@@ -95,6 +99,8 @@ export interface DroneSystemOptions {
   enemies: () => readonly MechBase[];
   /** Explosão do kamikaze: o dano é da regra de combate (Match chama `combat.explode` e avisa a tela). */
   explode: (at: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats) => void;
+  /** A esquadrilha a montar (padrão: `DRONE_ROSTER`). Só testes trocam, para provar o slot com dois do mesmo papel. */
+  roster?: readonly DroneRole[];
 }
 
 export class DroneSystem {
@@ -103,7 +109,7 @@ export class DroneSystem {
   private readonly byCollider = new Map<number, Drone>();
 
   constructor(private readonly o: DroneSystemOptions) {
-    this.drones = DRONE_ROSTER.map((role, index) => ({
+    this.drones = (o.roster ?? DRONE_ROSTER).map((role, index) => ({
       role, index, state: 'pouso' as DroneState,
       pos: new THREE.Vector3(), prev: new THREE.Vector3(), vel: new THREE.Vector3(),
       hp: DRONE.hp, timer: 0, orbit: 0, target: null, servicing: false, diving: false, yaw: 0, body: null, collider: null,
@@ -259,9 +265,10 @@ export class DroneSystem {
     d.state = 'voo';
     const tp = t.simPosition;
     // Paira a `hoverDistance` do alvo, do lado em que já está, 10 m acima da cabeça.
-    _dir.set(d.pos.x - tp.x, 0, d.pos.z - tp.z);
-    if (_dir.lengthSq() < 1e-4) _dir.set(1, 0, 0);
-    _dir.normalize();
+    // Slot fixo por drone (não pela posição de quem voa, que converge quando dois saem do mesmo lado da base):
+    // ângulo da base até o alvo, girado por um deslocamento só deste índice. Dois patrulha nunca miram o mesmo ponto.
+    const slot = Math.atan2(tp.z - SERAFIM_TOWER.z, tp.x - SERAFIM_TOWER.x) + hoverSlot(d.index);
+    _dir.set(Math.cos(slot), 0, Math.sin(slot));
     _goal.set(tp.x + _dir.x * DRONE.hoverDistance, tp.y + t.stats.height + 10, tp.z + _dir.z * DRONE.hoverDistance);
     this.fly(d, _goal, DRONE.speed, dt);
     d.yaw = Math.atan2(-(tp.x - d.pos.x), -(tp.z - d.pos.z));
@@ -291,7 +298,9 @@ export class DroneSystem {
     }
     d.state = 'voo';
     const tp = t.simPosition;
-    _chest.set(tp.x, tp.y + t.stats.height * 0.55, tp.z);
+    // Mesma ideia do slot da patrulha: se dois kamikazes mirarem o mesmo alvo, cada um mergulha de um lado.
+    const slot = hoverSlot(d.index) * 0.5;
+    _chest.set(tp.x + Math.cos(slot) * 1.5, tp.y + t.stats.height * 0.55, tp.z + Math.sin(slot) * 1.5);
     const near = flat(d.pos.x - tp.x, d.pos.z - tp.z);
     // Longe: cruzeiro alto; perto: mergulho direto no peito.
     if (near > 22) _goal.set(tp.x, DRONE.cruiseY, tp.z);
@@ -378,3 +387,5 @@ export class DroneSystem {
 
 const SPARK = new THREE.Color(1.6, 1.3, 0.6);
 const flat = (x: number, z: number): number => Math.hypot(x, z);
+/** Ângulo estável por drone (radianos): alterna de lado, abrindo um pouco mais a cada par. Sem `Math.random` (G1). */
+const hoverSlot = (index: number): number => (index % 2 === 0 ? 1 : -1) * (0.55 + 0.35 * Math.floor(index / 2));

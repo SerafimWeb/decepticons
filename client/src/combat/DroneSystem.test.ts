@@ -14,7 +14,7 @@ beforeEach(async () => {
 afterEach(() => physics.world.free());
 
 /** Esquadrilha num campo aberto: anota tiros e explosões em vez de desenhar. */
-function squad(friends: Vector09[], enemies: Vector09[]) {
+function squad(friends: Vector09[], enemies: Vector09[], roster?: readonly import('./DroneSystem').DroneRole[]) {
   const shots: WeaponStats[] = [];
   const blasts: THREE.Vector3[] = [];
   const system = new DroneSystem({
@@ -24,6 +24,7 @@ function squad(friends: Vector09[], enemies: Vector09[]) {
     friends: () => friends,
     enemies: () => enemies,
     explode: (at) => blasts.push(at.clone()),
+    roster,
   });
   const run = (seconds: number): void => {
     for (let i = 0; i < Math.round(seconds / FIXED_DT); i++) {
@@ -93,5 +94,22 @@ describe('drones da base Serafim', () => {
     const d = system.drones[0]!;
     system.explosion(d.pos.clone(), { ...KAMIKAZE_BLAST, damage: DRONE.hp });
     expect(d.state).toBe('abatido');
+  });
+
+  it('a esquadrilha padrão tem um de cada papel (dono, 06/10: "5 drones, é muito")', () => {
+    const { system } = squad([mechAt(0, 0)], []);
+    expect(system.drones.map((d) => d.role).sort()).toEqual(['conserto', 'kamikaze', 'patrulha', 'recarga']);
+  });
+
+  it('dois do mesmo papel no mesmo alvo não se empilham: cada um pousa num lado (slot fixo por drone)', () => {
+    const enemy = mechAt(SERAFIM_TOWER.x - 30, SERAFIM_TOWER.z);
+    const { system, run } = squad([mechAt(-60, -60)], [enemy], ['patrulha', 'patrulha']);
+    run(10);
+    const [a, b] = system.drones;
+    expect(a!.target).toBe(enemy);
+    expect(b!.target).toBe(enemy);
+    // Mesmo alcance do alvo (hoverDistance), mas em pontos bem separados: sem isso os dois convergiam para o
+    // mesmo ponto (a direção vinha da posição de quem voa, que se aproxima pelo mesmo lado da base).
+    expect(a!.pos.distanceTo(b!.pos)).toBeGreaterThan(6);
   });
 });
