@@ -3,6 +3,7 @@ import { ARENA_ZONES } from '../combat/Zone';
 import { CITY_NEON, PALETTE } from '../core/palette';
 import { mulberry32 } from '../core/rng';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
+import { buildFloorTexture, buildSkyTexture, FLOOR_TILE_METERS } from './Atmosphere';
 import type { DestructibleDef, Destructibles } from './Destructibles';
 import { SerafimTower } from './SerafimTower';
 
@@ -78,7 +79,7 @@ export class Arena {
     private readonly physics: PhysicsWorld,
     destructibles: Destructibles,
   ) {
-    scene.background = new THREE.Color(PALETTE.sky);
+    scene.background = buildSkyTexture();
     scene.fog = new THREE.FogExp2(PALETTE.fog, 0.0095);
 
     scene.add(new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 0.9));
@@ -126,9 +127,13 @@ export class Arena {
   }
 
   private buildFloorAndBounds(): void {
+    // 704 m = 88 ladrilhos de 8 m: a origem cai numa junta e as placas casam com as células de 4 m da grade.
+    const FLOOR_SIZE = 704;
+    const map = buildFloorTexture();
+    map.repeat.set(FLOOR_SIZE / FLOOR_TILE_METERS, FLOOR_SIZE / FLOOR_TILE_METERS);
     const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(700, 700),
-      new THREE.MeshStandardMaterial({ color: PALETTE.ground, metalness: 0.4, roughness: 0.7 }),
+      new THREE.PlaneGeometry(FLOOR_SIZE, FLOOR_SIZE),
+      new THREE.MeshStandardMaterial({ color: PALETTE.ground, map, metalness: 0.4, roughness: 0.7 }),
     );
     floor.rotation.x = -Math.PI / 2;
     this.scene.add(floor);
