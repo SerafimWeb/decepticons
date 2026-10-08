@@ -1,3 +1,15 @@
+## [2026-10-07] Atmosfera da Arena: céu em degradê, névoa colorida e chão com placas (Claude)
+
+Primeiro passo da ordem combinada em `REFERENCIA_VISUAL.md`, dentro do estilo atual (decisão do dono, mesma data). O defeito: céu `0x04050b`, névoa `0x070912` e chão `0x05070b` quase pretos, então as 80 torres do horizonte (aço escuro sob névoa quase preta) sumiam no céu e só as faixas neon flutuavam; o chão era um plano liso com a grade por cima.
+- **Céu:** `Atmosphere.buildSkyTexture()`, uma imagem equirretangular de 4×128 pixels (degradê só na vertical: nadir na linha 0, zênite na última) usada como `scene.background`. Escolhi imagem em vez de esfera com cor por vértice porque o three a desenha como fundo sem eu cuidar de plano distante nem de seguir a câmera, e `DataTexture` não precisa de DOM (a `Match` monta a `Arena` no Node). Paradas em `PALETTE.sky*`: zênite quase preto → azul-noite → brilho de horizonte teal. Abaixo do horizonte a cor é a da névoa, para o fim do chão se fundir com o horizonte.
+- **Névoa:** de `0x070912` para `0x0c2230` (a densidade `FogExp2 0.0095` ficou como estava). As torres, pintadas pela névoa à distância, passam a ser mais claras que o céu acima delas e ganham silhueta.
+- **Chão:** textura de 128² com 2×2 placas de 4 m (junta, parafusos, riscos, brilho por placa), ladrilhada a cada 8 m sobre um plano de **704 m** (era 700): 88 ladrilhos, a origem cai numa junta e as placas casam com as células de 4 m da `GridHelper`. A cor-base subiu de `0x05070b` para `0x1c2832` porque a textura multiplica a cor (média 0,5–0,95); na primeira tentativa (`0x0b1016`) as placas não apareciam, e foi preciso também aprofundar as juntas.
+- **Custo:** CPU zero por quadro (tudo gerado uma vez). GPU: +1 draw call (o fundo), textura de ~87 KB com mipmaps, anisotropia 4× no chão (o custo é preenchimento de tela). **Não medido** numa GPU integrada: o SwiftShader do Chrome headless não mede. Escolhi 4× e não 8× por prudência; se a medida mostrar folga, sobe.
+- **Não mudei:** luzes, bloom, tone mapping, qualidade adaptativa, Hangar (cena própria), colisão.
+- **Fica para os próximos passos:** sombra sob os robôs, janelas e adereços nos prédios, cauda nos tiros (ROADMAP, `#cenarios`).
+- **No processo:** o `site --check` do hook de push estourou 60 s (e acusou "vinheta da marca não apareceu") quando rodei um `tsc` em paralelo; sozinho, passou. Ao mudar de worktree, não rodar duas coisas pesadas ao mesmo tempo. A captura de comparação usa um script local em `.tmp/` (não versionado).
+**Quem decidiu:** dono (a direção); Claude (a execução e o registro).
+
 ## [2026-10-07] Referência de qualidade visual: MechArena; primeiro elevar dentro do estilo atual (Claude)
 
 Pedido do dono: gravou a tela do MechArena ("veja a qualidade incrível que eles chegaram, nos gráficos, jogabilidade, armas, cenários") e deixou os vídeos numa pasta fora do projeto. Perguntou também como um jogo tão pesado roda bem em máquina velha e com internet ruim (cita o War Robots).

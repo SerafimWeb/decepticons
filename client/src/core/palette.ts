@@ -9,10 +9,16 @@ import * as THREE from 'three';
  * espacial" (25/09). Fonte única das cores do mundo 3D; a interface usa as mesmas no styles.css.
  */
 export const PALETTE = {
-  // Ambiente: espaço escuro, chão com grade ciano (Tron).
-  sky: 0x04050b,
-  fog: 0x070912,
-  ground: 0x05070b,
+  // Ambiente: espaço escuro, chão com grade ciano (Tron). O céu é um degradê (`environment/Atmosphere.ts`) do zênite
+  // quase preto até um brilho de horizonte; a névoa é um tom acima do preto para as torres distantes se
+  // destacarem do céu em vez de sumir nele.
+  skyZenith: 0x03040a,
+  skyUpper: 0x060a1a,
+  skyMid: 0x0a1a30,
+  skyGlow: 0x143448,
+  skyHorizon: 0x1f4d60,
+  fog: 0x0c2230,
+  ground: 0x1c2832,
   gridMain: 0x00a8c0,
   gridSub: 0x0c2a36,
   steel: 0x262a2b,
