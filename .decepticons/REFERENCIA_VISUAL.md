@@ -35,7 +35,7 @@
 
 | Aspecto | O que se vê | Onde estamos (capturas em `arte/`, Chrome headless) | Dentro do estilo atual |
 |---|---|---|---|
-| **Atmosfera** | cor dominante por mapa (turquesa na cidade, cinza e laranja na lua), luz que modela os volumes, névoa colorida que afasta o fundo, céu com cidade ou planeta, sombra suave sob os robôs | a cena **já tem** luz hemisférica + 2 direcionais, névoa, tone mapping ACES, mapa de ambiente (intensidade 0,25) e bloom (`Arena.ts`, `Game.ts`). O que falta é cor e profundidade: céu `0x04050b`, névoa `0x070912` e chão `0x05070b` são quase pretos, então o mundo se dissolve em preto; sem horizonte, sem sombra, sem antialias (`antialias: false`) | **sim, primeiro:** céu em degradê com brilho no horizonte, névoa colorida (um tom por mapa), sombra suave sob os robôs, borda sem serrilhado (custo medido). Sem luz nova: ajustar as que já existem |
+| **Atmosfera** | cor dominante por mapa (turquesa na cidade, cinza e laranja na lua), luz que modela os volumes, névoa colorida que afasta o fundo, céu com cidade ou planeta, sombra suave sob os robôs | a cena **já tem** luz hemisférica + 2 direcionais, névoa, tone mapping ACES, mapa de ambiente (intensidade 0,25) e bloom (`Arena.ts`, `Game.ts`). O que falta é cor e profundidade: céu `0x04050b`, névoa `0x070912` e chão `0x05070b` são quase pretos, então o mundo se dissolve em preto, e as torres do horizonte são silhuetas pretas sobre céu preto (só as faixas neon aparecem); céu de cor única, sem brilho no horizonte; sem sombra de qualquer tipo. (Antialias já existe: o render target do composer é MSAA 4×; o `antialias: false` do renderer vale só para o framebuffer padrão.) | **sim, primeiro:** céu em degradê com brilho no horizonte (as torres viram silhuetas legíveis), névoa colorida, chão com textura; **depois:** sombra suave sob os robôs (disco instanciado, sem mapa de sombra). Sem luz nova: ajustar as que já existem |
 | **Chão e superfícies** | chão com textura, juntas, marcas de uso, faixas de pista | plano de cor única com a grade ciano por cima; prédios e torres em um tom de aço liso, sem janelas | **sim:** uma textura tileável pequena (ou gerada em canvas) e janelas emissivas nos prédios, sem draw call novo |
 | **Cenário** | contêineres, rampas, túneis, letreiros, rochas, cabos, escadas; nada é um bloco liso | prédios-caixa com linhas de neon, 6 barricadas | **sim:** adereços instanciados (um `InstancedMesh` por tipo), letreiros emissivos, mesmo vocabulário de caixas |
 | **Efeitos** | rastro de tiro com cauda, bola de fogo com faíscas, anel de choque, desfoque no dash, feixe de luz no objetivo, números de dano flutuando | partículas (pool de 3000), bloom e tremor de câmera existem; o foguete deixa fumaça; **rastro com cauda só no canhão de trilho** (`tracer: 'rail'` em `ProjectileSystem.ts`); plasma e blaster são só o ponto brilhante; no dash só o FOV abre; não achei anel de choque no código | **sim, em seguida:** cauda curta no plasma e no blaster, anel de choque na explosão (geometria fina instanciada), desfoque de dash só em qualidade alta |
@@ -70,9 +70,9 @@ Esta última não existe aqui e é a maior diferença de sensação online; o pr
 
 ## 5. Ordem de ataque combinada (dentro do estilo atual)
 
-1. **Atmosfera:** céu em degradê com horizonte, névoa colorida (um tom por mapa), sombra suave sob os robôs, antialias,
-   chão com textura. As luzes e o mapa de ambiente já existem; o ganho está em cor e profundidade. Maior efeito por
-   menor custo.
+1. **Atmosfera:** céu em degradê com brilho no horizonte, névoa colorida, chão com textura; depois, sombra suave sob os
+   robôs (disco instanciado). As luzes, o mapa de ambiente e o antialias já existem; o ganho está em cor e profundidade.
+   Maior efeito por menor custo.
 2. **Cenário:** adereços instanciados e letreiros, para o mapa deixar de ser "caixas no escuro".
 3. **Efeitos:** rastro de tiro, anel de choque, fogo com mais corpo, desfoque de dash em qualidade alta.
 4. **Leitura:** barra e distância no nome, anel de recarga das habilidades, kill feed.
