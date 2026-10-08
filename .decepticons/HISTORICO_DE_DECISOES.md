@@ -1,3 +1,12 @@
+## [2026-10-08] Capturas do site sumiram no deploy da atmosfera: corrida no passo de captura (Claude)
+
+O deploy do PR #182 publicou a landing sem as imagens do jogo (`capturas/capa.jpg não é imagem`): o passo `npm run site -- --capturas` falhou com `Cannot read properties of null (reading 'x')`, e o `rsync --delete` apagou do servidor a pasta `capturas/`. Refazer o deploy do mesmo commit restaurou as imagens.
+- **Causa (reproduzida):** em `scripts/site.mjs`, `capture()` relê o título do overlay a cada tentativa de Pointer Lock. Se o jogo sai da pausa um instante depois da janela de espera de 1,2 s, na tentativa seguinte o título não existe e `boundingBox()` devolve `null`; `title.x` derruba o passo todo. Com a janela encurtada para 100 ms, o código antigo falha com a mesma mensagem e deixa 0 capturas; o corrigido gera as 3 imagens. Já existia antes: depende de a máquina ser lenta; uma máquina mais lenta (o CI, o SwiftShader) aumenta a chance, e a atmosfera pode ter pesado um pouco (ver abaixo), mas não é a causa.
+- **Correção:** sem título, a pausa já saiu: trata como "partida começou". O teste do overlay logo depois do laço continua recusando se a partida de fato não começou.
+- **Medida de fps (Chrome headless, SwiftShader, 1280×720, 10 s, 2 rodadas alternadas):** antes 1,36 e 1,19; depois (céu + chão) 1,29 e 0,76; só céu 1,25 e 0,95; só chão 1,04 e 1,14. **Inconclusivo:** o renderizador por software roda a ~1 fps e a variação entre rodadas do mesmo braço (1,29 contra 0,76) é maior que qualquer diferença entre braços. Não mede GPU real; o custo da atmosfera continua **sem medida** numa GPU integrada, e o dono vai dizer como o jogo anda na máquina dele.
+- **Risco que continua (não corrigido):** qualquer falha futura do passo de captura, por outro motivo, volta a apagar `capturas/` do site, porque o deploy usa `rsync --delete` e a landing aceita 0 capturas. Corrigir de verdade pede guardar a última pasta boa ou barrar o deploy sem capturas; fica registrado como pendência no ESTADO_ATUAL.
+**Quem decidiu:** Claude (diagnóstico e correção, dentro da regra R17).
+
 ## [2026-10-07] Atmosfera da Arena: céu em degradê, névoa colorida e chão com placas (Claude)
 
 Primeiro passo da ordem combinada em `REFERENCIA_VISUAL.md`, dentro do estilo atual (decisão do dono, mesma data). O defeito: céu `0x04050b`, névoa `0x070912` e chão `0x05070b` quase pretos, então as 80 torres do horizonte (aço escuro sob névoa quase preta) sumiam no céu e só as faixas neon flutuavam; o chão era um plano liso com a grade por cima.
