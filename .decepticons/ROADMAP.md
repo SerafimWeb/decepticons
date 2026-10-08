@@ -277,6 +277,7 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] Issues do GitHub como rastreador de bugs, com severidade (trava > bloqueia > grave > leve) e passos para reproduzir #base
 - [ ] Teste noturno: bots jogando sozinhos no navegador headless para achar travamentos e erros #base
 - [ ] Dependências no painel: mostrar o que trava o quê entre frentes #base
+- [ ] Deploy que não apaga as imagens do site quando a captura falha (guardar a última pasta boa ou barrar o deploy sem capturas; o `rsync --delete` levou `capturas/` embora em 08/10) #base
 
 - [ ] Câmeras de espectador: trocar para a visão de outros jogadores e de câmeras fixas (topo do Prédio Serafim, portas dos prédios) (pedido do dono, 06/10) #ux
 - [ ] Painel de campanhas: escolher oponentes, missões e tarefas e salvar campanhas personalizadas com nome, como as montagens do Hangar (pedido do dono, 06/10) #modos

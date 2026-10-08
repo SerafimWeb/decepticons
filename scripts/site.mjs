@@ -435,6 +435,16 @@ async function capture() {
       if (tentativa > 0) await page.waitForTimeout(500);
       // Relê o retângulo a cada tentativa: o layout pode ter mudado (ex.: status do servidor chegou).
       const title = await page.locator('#overlay h1').boundingBox();
+      /*
+       * Achado (07/10): sem título, a pausa já saiu — o clique anterior valeu um instante depois da janela de espera
+       * (1,2 s). Antes isto era um `null.x` que derrubava o passo inteiro, e o `rsync --delete` do deploy apagava do
+       * site a pasta `capturas/` (a landing ficou sem imagens até refazer o deploy). Se a partida de fato não começou,
+       * o teste do overlay logo depois do laço recusa com a mensagem certa.
+       */
+      if (!title) {
+        travou = true;
+        break;
+      }
       await page.mouse.click(title.x + title.width / 2, title.y + title.height / 2);
       travou = await page
         .waitForFunction(() => !!document.pointerLockElement, null, { timeout: 1200 })
