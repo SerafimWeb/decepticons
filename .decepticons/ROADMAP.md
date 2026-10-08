@@ -265,6 +265,9 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [x] Parte avariada solta faísca e fumaça antes de cair (Codex, 06/10; pool existente, 10 Hz, teto de 12 unidades por pulso) #mechs
 - [ ] Pintura e decalques por jogador (base dos cosméticos) #mechs
 - [ ] Prédios que desmoronam em partes, não só barricadas #cenarios
+- [x] Referência visual do MechArena registrada (`REFERENCIA_VISUAL.md`, pranchas em `referencias/mecharena/`); decisão do dono em 07/10: elevar a qualidade dentro do estilo atual antes de evoluir #cenarios
+- [~] Atmosfera dentro do estilo atual: céu em degradê com brilho no horizonte, névoa colorida, chão com textura (branch `claude/atmosfera`); depois, sombra suave sob os robôs, com o custo de GPU medido (G12) #cenarios
+- [ ] Cenário vivo dentro do estilo atual: adereços instanciados (contêineres, letreiros, janelas emissivas) e efeitos com mais corpo (cauda no plasma, anel de choque, desfoque de dash em qualidade alta) #cenarios
 - [ ] Tela inicial com apelido e escolha de Mech #ux
 - [x] Estande de calibração do mouse: gravar uma volta de 360° com o movimento real, cm/360, entrada crua (sem aceleração do sistema) #jogabilidade
 - [ ] Suporte a controle (gamepad) #jogabilidade
