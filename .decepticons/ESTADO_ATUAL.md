@@ -13,9 +13,11 @@
 
 ---
 
-**Última atualização:** 2026-10-06 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
+**Última atualização:** 2026-10-07 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
 
 ---
+
+- **Referência visual do MechArena (Claude, 07/10, PR `claude/referencia-mecharena`).** O dono gravou o MechArena rodando (3 vídeos, 24 quadros analisados) e decidiu: **primeiro elevar a qualidade dentro do estilo atual**, evoluir depois. Documento novo `REFERENCIA_VISUAL.md` (o que se vê, o que já existe no render, o que cabe no estilo, técnicas de desempenho a testar, ordem de ataque); pranchas em `referencias/mecharena/`, vídeos em `.tmp/referencias/mecharena/` (fora do git). Achado ao conferir o código: a Arena **já tem** luz, névoa, tone mapping ACES, mapa de ambiente e bloom; o que deixa o jogo "vazio" é céu/névoa/chão quase pretos, sem sombra e sem antialias. **Próximo:** PR de atmosfera (item no `ROADMAP.md`, `#cenarios`). Só documentação, nenhum código mudou.
 
 - **Miras por arma (Codex, 06/10, PR #166 mergeado).** Seis SVGs finos com centro vazio; secundário acionado muda o desenho; indicação de alvo muda cor sem expandir. Check completo: 571 testes, desktop/celular emulado, JS 301,5 KB. Captura de bancada em arte/miras-por-arma-codex.png; falta julgamento do dono em partida. Pedido de escudos registrado em HANGAR.md: energia em módulo extra preserva braços; metálico ocupa uma mão. Barreira frontal implementada no #171; esfera e metálico continuam AUSENTES.
 

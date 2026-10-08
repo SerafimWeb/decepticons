@@ -1,3 +1,12 @@
+## [2026-10-07] Referência de qualidade visual: MechArena; primeiro elevar dentro do estilo atual (Claude)
+
+Pedido do dono: gravou a tela do MechArena ("veja a qualidade incrível que eles chegaram, nos gráficos, jogabilidade, armas, cenários") e deixou os vídeos numa pasta fora do projeto. Perguntou também como um jogo tão pesado roda bem em máquina velha e com internet ruim (cita o War Robots).
+- **Decisão do dono:** "primeiro devemos elevar a qualidade dentro do estilo atual... e se possível futuramente vamos evoluir". Não é troca de direção de arte; `ESTILO_ROBOS.md` e a `VISAO.md` ("não é AAA gráfico") continuam valendo. Mais referências: o agente pede, o dono traz.
+- **Onde fica:** `REFERENCIA_VISUAL.md` (análise, comparação com o que existe, técnicas de desempenho a testar, ordem de ataque), pranchas em `referencias/mecharena/` (6 JPEG, 8 quadros por vídeo) e os vídeos em `.tmp/referencias/mecharena/`. **Os vídeos não entram no git** (12 MB de binário que não saem mais do histórico; G15 manda temporário para `.tmp/`). `AGENTS.md` ganhou o item 11 do Passo Zero apontando para o documento.
+- **Erro corrigido no caminho:** a primeira leitura (só pelas capturas) dizia que faltava luz e névoa. Conferido no código, a Arena já tem hemisfério + 2 direcionais, `FogExp2`, ACES, `RoomEnvironment` e bloom. O que falta é cor e profundidade (céu, névoa e chão quase pretos), sombra e antialias. A ordem de ataque foi escrita sobre isso.
+- **Limite honesto:** análise de quadros comprimidos de gravações do YouTube, sem movimento nem som; a parte de desempenho do documento é prática geral da indústria, não a engenharia deles.
+**Quem decidiu:** dono (a direção); Claude (a análise e o registro).
+
 ## [2026-10-07] Nome novo em teste: SINGULARIA só na capa do jogo (Claude)
 
 Contexto: o domínio `cybermech.com` já tem dono e `Mech Arena` (Plarium) tem nome parecido com os candidatos que o dono sugeriu; ele quer um nome em inglês, ligado à revolta das IAs, que passe a ideia de jogo justo (sem pay-to-win, ao contrário do War Robots). Depois de uma lista de candidatos, o dono ficou com **SingularIA** (o "IA" no fim é o trocadilho; em caixa alta ele some) e subtítulo de loja "Mech Battle", com a promessa "Fair fight. Sem pay-to-win".
