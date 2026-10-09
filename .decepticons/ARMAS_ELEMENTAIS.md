@@ -25,7 +25,7 @@ que as outras três pedem: por isso vem primeiro.
 |---|---|---|---|---|
 | **queimando** | lança-chamas | 4 de dano/s, +calor no alvo; quem queima não resfria | 4 s, renova a cada contato | não acumula; **gelo apaga** |
 | **chocado** | arma elétrica | −35% de velocidade, 2 de dano/s | 3 s, renova | não acumula |
-| **atordoado** (variante do chocado) | **tiro bem dado** elétrico: cabeça, ou torso dentro do alcance ótimo | não anda **nem atira** | 0,8 s | **imune a novo atordoamento por 4 s** (sem encadear) |
+| **atordoado** (variante do chocado) | **tiro bem dado** elétrico (decisão do dono, 09/10): **na cabeça**, ou **3 acertos seguidos** no mesmo alvo em 1,4 s (com 0,45 s entre tiros, é acertar 3 sem errar nenhum) | não anda **nem atira** | 0,8 s | **imune a novo atordoamento por 4 s** (sem encadear) |
 | **gelado** | arma de gelo | −15% de velocidade por acúmulo | 4 s desde o último tiro | até 3 acúmulos; **fogo apaga** |
 | **congelado** | 3 acúmulos de gelado | não anda (mira e atira), **+20% de dano recebido** | 1,5 s | imune a novo congelamento por 5 s |
 
@@ -62,13 +62,14 @@ Metas de equilíbrio: as do `ARSENAL.md` (sozinha derruba um torso em mais de 4,
 | **Codex** | só depois, e só se ele quiser: efeitos visuais 3D das armas (chamas, gelo, raios), modelos | está na auditoria de desempenho (`ESTADO_ATUAL.md`); **não pedir agora**. Até lá uso os `ParticleSystem.burst` que já existem como provisório |
 | **Qwen** | sem crédito hoje; depois: testes extras, revisão cruzada do equilíbrio, documentação | — |
 
-## 6. Perguntas ao dono (padrão proposto em negrito: se nada for dito, sigo o padrão)
+## 6. Decisões do dono (09/10)
 
-1. "Tiro bem dado" = **cabeça, ou torso dentro do alcance ótimo**. Serve, ou só cabeça?
-2. Atordoamento de **0,8 s com imunidade de 4 s** (nunca encadeia). Muito ou pouco?
-3. O fogo deixa o **chão e os prédios queimando**? **Não** (só o alvo; fogo no cenário custa CPU e rede, fica para depois).
-4. **Fogo e gelo se anulam** (quem queima é apagado pelo gelo e vice-versa)?
-5. **Mech grande resiste** (Colossus ½ do tempo)? Ou todos iguais?
+1. **"Tiro bem dado" = na cabeça, ou uma boa sequência acertando certinho** (ficou como: 3 acertos seguidos no mesmo alvo em 1,4 s).
+2. Atordoamento de **0,8 s com imunidade de 4 s** (nunca encadeia): **sim**.
+3. **Fogo e gelo se anulam**: **sim**.
+4. **Mech grande resiste** (Colossus ½ do tempo): **sim**.
+5. Fogo queimando **o cenário** (chão e prédios): **não decidido pelo dono**; segue o padrão, **não** (só o alvo; custa CPU e rede). O sistema
+   não fecha essa porta: entra depois como arma ou terreno à parte.
 
 ## 7. Pedido ao Gemini (território: `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`)
 
@@ -82,23 +83,23 @@ Metas de equilíbrio: as do `ARSENAL.md` (sozinha derruba um torso em mais de 4,
 >
 > **Tipos (crie em `client/src/ui/status.ts`, é seu):**
 > ```ts
-> export type StatusKind = 'queimando' | 'chocado' | 'gelado' | 'congelado';
+> export type StatusKind = 'queimando' | 'chocado' | 'atordoado' | 'gelado' | 'congelado';
 > export interface StatusView { kind: StatusKind; left: number /* segundos restantes */; level: number /* 0..1, intensidade */ }
 > ```
 >
 > **T1 — Indicadores de estado do jogador** (`ui/StatusBadges.ts` + `styles.css`): `new StatusBadges(root)` e `update(list: readonly
 > StatusView[]): void`. Até 4 chips (ícone, nome em português, barra do tempo restante) no HUD. **Sem alocar nada por quadro**: reuse
-> os nós e só troque classe e texto quando mudar. `update` também liga classes na raiz (`fx-queimando`, `fx-chocado`, `fx-gelado`,
-> `fx-congelado`) que desenham **bordas de tela só com CSS**: geada nas bordas (gelado/congelado), faíscas finas (chocado), brilho quente
-> pulsando devagar (queimando). **Acessibilidade:** nada pisca mais de 3 vezes por segundo; `prefers-reduced-motion` e a opção de reduzir
+> os nós e só troque classe e texto quando mudar. `update` também liga classes na raiz (`fx-queimando`, `fx-chocado`, `fx-atordoado`, `fx-gelado`,
+> `fx-congelado`) que desenham **bordas de tela só com CSS**: geada nas bordas (gelado/congelado), faíscas finas (chocado), estática
+> cinza-azulada com a imagem levemente "dura", sem piscar (atordoado), brilho quente pulsando devagar (queimando). **Acessibilidade:** nada pisca mais de 3 vezes por segundo; `prefers-reduced-motion` e a opção de reduzir
 > efeitos de `core/Settings.ts` (se não houver, proponha no PR) deixam tudo estático.
 >
 > **T2 — Painel do alvo** (`ui/TargetPanel.ts`): a entrada ganha `statuses?: readonly StatusKind[]` e as bandeiras `EM CHAMAS`, `CHOCADO`,
-> `GELADO`, `CONGELADO` ao lado das que já existem (`SUPERAQUECIDO · TRAVADO`, `EM DASH`), com cores distintas. Teste no `TargetPanel.test.ts`.
+> `ATORDOADO`, `GELADO`, `CONGELADO` ao lado das que já existem (`SUPERAQUECIDO · TRAVADO`, `EM DASH`), com cores distintas. Teste no `TargetPanel.test.ts`.
 >
 > **T3 — Hangar** (`ui/weaponIconsNovas.ts`): `WEAPON_ICON_NOVAS` e `WEAPON_HINT_NOVAS`, ambos `Record<'rotary' | 'arc' | 'flamer' |
 > 'cryo', string>`. Ícone = o miolo de um SVG 24×24 de traço, no estilo dos de `WEAPON_ICON` em `HangarMenu.ts`; dica = uma linha em português
-> no tom das de `WEAPON_HINT` (o que a arma faz e o que aplica: ex.: "Chocada: −35% de velocidade; tiro na cabeça atordoa 0,8 s"). Eu ligo
+> no tom das de `WEAPON_HINT` (o que a arma faz e o que aplica: ex.: "Chocada: −35% de velocidade; tiro na cabeça, ou 3 acertos seguidos, atordoa 0,8 s"). Eu ligo
 > aos `Record<WeaponId, …>` quando os ids existirem.
 >
 > **T4 — Medidor da rotatória** (`ui/HUD.ts`): `setSpin(level: number)` (0 a 1), um arco fino em volta da mira que enche com a rotação do cano;
@@ -107,7 +108,7 @@ Metas de equilíbrio: as do `ARSENAL.md` (sozinha derruba um torso em mais de 4,
 > **T5 — Sons** (`audio/AudioSystem.ts`, síntese como as que já existem, com o fallback atual; respeite o orçamento de vozes e o `Quality`):
 > `setRotarySpin(level: number)` (0 a 1, chamado todo quadro: zumbido que sobe de tom com a rotação e cadência de tiros; 0 = silêncio),
 > `playArcShot()` (estalo elétrico curto), `setFlame(on: boolean)` (laço de sopro e chama, entra e sai com rampa), `playCryoShot()` (tiro
-> cristalino), `playStatusEnter(kind: StatusKind)` (um som por estado: faísca, estalo de gelo, chama), `setStatusLoop(kind: StatusKind |
+> cristalino), `playStatusEnter(kind: StatusKind)` (um som por estado: chama, faísca, zumbido seco do atordoamento, estalo de gelo, trinco do congelamento), `setStatusLoop(kind: StatusKind |
 > null)` (laço baixo enquanto o jogador está no estado). Teste: nenhum nó novo por chamada repetida, e silêncio quando desligado.
 >
 > **Entrega de cada tarefa:** teste de lógica quando houver (padrão de `TouchControls.test.ts`), **captura em `.decepticons/arte/`** (regra
