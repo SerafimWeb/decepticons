@@ -6,7 +6,7 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Retorno do servidor público ao protocolo 6 registrado em 09/10, com ciclos de reinício provados (PRs #189–#192); disponibilidade neste instante não consultada nesta auditoria. Offline: Arena + Sobrevivência + CTF |
-| **Build** | Último check local (09/10, Claude, PR `claude/parar-servidor-de-verdade`): JS 325 KB e Wasm 719,4 KB gzip (tetos 500/900); 704 testes, typecheck, smoke, bocas e site verdes |
+| **Build** | Última entrega validada (09/10, Codex, PR #194): JS 325,4 KB e Wasm 719,4 KB gzip (tetos 500/900); 707 testes, typecheck, smoke, bocas, site e CI verdes; deploy confirmado |
 | **Última sessão** | 09/10 (Claude): atualização da máquina, retorno de produção ao protocolo 6 e reinício automático provado (#189–#192); pré-compilação de shaders medida na Iris Xe. 08/10: sombra, janelas, recuo e cauda dos tiros. Histórico detalhado abaixo |
 | **Próximo** | pedidos do dono (06/10) ainda sem escopo: câmeras de espectador e painel de campanhas personalizadas (ver `ROADMAP.md`); drones e escudo físico completos no servidor online; playtest do dono: esfera, aliados, escudo físico, Prédio Serafim e drones, tudo ainda só validado em bancada; dono julga o Marauder (Hangar e partida); M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); ideias do dono em `ROADMAP.md` (jogadas de Mech, facções, estilos de jogo) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
@@ -27,12 +27,25 @@ Base conferida: `origin/main` @ `96711ea`, PR #192 mergeado. Os relatos datados 
 
 Correção publicada pelo PR #193. Não representa entrega de gameplay nem homologação nova.
 
-## Incremento Codex — Hangar mais leve (09/10; branch `codex/hangar-fluido`, aguardando PR/merge)
+## Incremento Codex — Hangar mais leve (09/10; PR #194 mergeado, deploy confirmado)
 
 - `HangarScene`: hologramas, cones de luz e telas aditivos em passagem única. A/B na mesma cena e enquadramento, Edge headless com GPU AMD Vega 11 (ANGLE D3D11), 1280×720: **102 →94 draw calls**, 11040 →10684 triângulos submetidos; diferença máxima de pixels 1/255. Não é homologação de FPS: sem compositor/UI, gl.finish e check concorrente; tempos brutos somente como diagnóstico. Evidência: `medicoes/hangar-render-2026-10-09.json`, `arte/hangar-passagem-unica-codex.png`.
 - Corrida de carregamento corrigida: callback de GLB atrasado não substitui o último chassi/montagem escolhido; falha de rede tratada. Três testes cobrem seleção, montagem e erro. Primeiro uso de shader no Hangar/GLB continua pendente; este corte reduz passadas e corrige seleção.
 - Coordenação, proposta para as outras sessões (não despachada automaticamente): **Claude** — física parada/reconciliação e feedback HIT/escudos online; **Gemini** — revisão de HUD/menus/áudio/controles dentro do território registrado; **Qwen/DeepSeek** — revisão independente dos resultados e documentação. **Codex** executa render/desempenho/câmeras/armas visuais; não espera essas frentes para avançar em cortes independentes. Prioridades compartilhadas são propostas, não novas tarefas assumidas por agentes ausentes.
 - Próxima sessão Codex: primeiro uso de shaders em Hangar/GLB, depois material/silhueta com comparação visual; preservar estilo e orçamento. Cada incremento fecha check, evidência, PR e merge.
+
+## Passagem de bastão Codex → Claude (09/10, a pedido do dono)
+
+Claude: o dono quer evolução gradual e progressiva do CYBERMECH, usando **War Robots e Mech Arena como inspiração técnica**, com resultados verificáveis. A intenção é aproveitar soluções de fluidez, render, pipeline de assets e combate online, preservando a identidade e a stack web do jogo. Não é uma autorização para trocar engine, aumentar salas ou adotar infraestrutura complexa sem evidência. `VISAO.md` permanece sob controle do dono.
+
+- **Referência e critério:** `EVOLUCAO_TECNICA.md` confronta as análises coladas com o código; `REFERENCIA_VISUAL.md` mantém o alvo visual e a ordem combinada. War Robots inspira orçamento de render, tiers e pipeline; Mech Arena inspira leitura de silhuetas, cenário, materiais, interface e feedback, a partir das pranchas já registradas. Não tratar inferências sobre netcode do Mech Arena como arquitetura comprovada.
+- **Codex entregue:** #193 corrigiu o diagnóstico/documentação; #194 reduziu o Hangar de 102 para 94 draw calls no ensaio isolado e protegeu a seleção contra cargas GLB atrasadas. Check com 707 testes e deploy da main confirmados. Essa medição não certifica FPS sustentado nem resolve primeiro uso de shader.
+- **Codex próximo:** aquecimento/primeiro uso de Hangar, GLB e remotos, medição de frame time e melhorias visuais pequenas com comparação. Render, materiais, rigs, câmeras e desempenho continuam a frente principal; não alterar física/rede sem contrato.
+- **Claude — proposta para sua próxima sessão:** conferir as pendências que você já registrou, priorizando consistência física/reconciliação e fechamento online (feedback HIT ao atirador, escudo físico/drones). HIT de dano recebido já é consumido; a correção atual não reexecuta inputs. Coordenar contratos antes de mudanças compartilhadas. Isto é passagem de bastão, não declaração de que você já assumiu ou iniciou essas tarefas.
+- **Gemini / Qwen:** Gemini mantém HUD, menus, controles e áudio; Qwen (ou DeepSeek, se o dono escolher) pode fazer revisão independente de evidência, testes e documentação. Divisão por território e tarefa, sem presumir superioridade de um modelo pelo nome.
+- **Método:** um incremento por branch/PR, check, evidência e merge; medir carregamento, p95/p99, travadas, banda e custo antes de ampliar escala. WASM/ofuscação não substituem autoridade do servidor; workers/instancing não eliminam custo; troca de sockets não garante 10×; infraestrutura não tem custo próximo de zero por definição.
+
+Canal: registrado no repositório compartilhado para leitura pelo ritual de sessão. A sessão externa do Claude não está acessível pelo mensageiro desta instalação; leitura/recebimento por ele ainda não confirmado. O anexo do dono contém sugestões genéricas, sem lista específica de pendências atribuídas ao Codex.
 
 ---
 

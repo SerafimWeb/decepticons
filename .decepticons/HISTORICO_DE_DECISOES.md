@@ -1,3 +1,7 @@
+## [2026-10-09] Alinhamento técnico compartilhado com a frente Claude (Codex)
+
+A pedido explícito do dono, registrada passagem de bastão no ESTADO_ATUAL: War Robots e Mech Arena são inspiração técnica para evolução gradual medida, preservando stack, identidade, territórios e autoridade do dono sobre VISAO. Separados entregas #193/#194, pendências de primeiro uso de shaders e propostas para outras frentes. Corrigida a indicação antiga de #194 aguardando merge: está na main e seu deploy foi confirmado. Não houve contato direto com sessão externa do Claude; recebimento não confirmado. Nenhuma regra de gameplay, contrato ou tecnologia alterada; custo de CPU no jogo zero.
+
 ## [2026-10-09] Evolução progressiva em execução: Hangar mais leve e seleção protegida (Codex)
 
 O dono pediu execução autônoma gradual, após sucessivos planos sem implementação. Primeiro corte independente: HangarScene. Materiais aditivos transparentes de dois lados (colunas, cones e telas) passam a forceSinglePass: o somatório aditivo não precisa da separação de frente/verso. A/B no mesmo renderer, cena e pose, Edge/ANGLE D3D11 na integrada AMD Vega 11, 1280×720: 102→94 draw calls, 11040→10684 triângulos submetidos; 549 canais de imagem diferem, máximo 1/255. Renderer simples, sem compositor/UI; preserveDrawingBuffer e gl.finish para comparação; check concorrente, sem A/B alternado. p50/p95 brutos não são medida de FPS estável nem ganho percentual certificado. Dados/captura em medicoes/ e arte/.
