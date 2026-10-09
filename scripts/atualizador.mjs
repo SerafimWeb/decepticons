@@ -23,7 +23,7 @@
  * @property {(comando: string, args: string[]) => number | null} executar  executa e devolve o código de saída
  * @property {(linha: string) => void} log
  * @property {() => boolean} nodeModulesEhAtalho
- * @property {() => void} pararServidor
+ * @property {() => boolean} pararServidor  true = o servidor parou de verdade (a porta está livre); false = não saiu
  * @property {() => void} ligarServidor
  */
 
@@ -84,7 +84,12 @@ export function atualizar(op) {
 
   if (lockMudou) {
     log('package-lock.json mudou: paro o servidor (ele mantém aberto o binário que o npm ci precisa apagar) e rodo npm ci');
-    op.pararServidor();
+    if (!op.pararServidor()) {
+      // O servidor segue no ar mantendo o binário aberto: o npm ci não pode apagá-lo (EPERM no meio deixa a pasta pela metade).
+      log('RECUSADO: não consegui parar o servidor para trocar as dependências; volto o código e tento de novo na próxima rodada. (Servidor de antes da vigia de parada: precisa de PowerShell como administrador, ver DEPLOY.md.)');
+      git('reset', '--hard', antes);
+      return 2;
+    }
     parado = true;
     if (executar('npm', ['ci']) !== 0) return voltar('npm ci');
   }

@@ -16,12 +16,32 @@ try {
   Pop-Location
 }
 
+$log = Join-Path $raiz '.tmp\servidor\atualizacao.log'
+$pendente = Join-Path $raiz '.tmp\servidor\reinicio-pendente'
+function Registrar([string]$linha) { Add-Content -Path $log -Value ('[{0}] {1}' -f (Get-Date).ToUniversalTime().ToString('o'), $linha) -Encoding utf8 }
+
+# Um reinício que não deu (o servidor antigo não saiu) deixa o código novo em disco e o servidor velho no ar: na próxima rodada
+# não há "código novo" (codigo 1), então o marcador `reinicio-pendente` é o que manda tentar de novo.
+if ($codigo -eq 1 -and (Test-Path $pendente)) { $codigo = 0 }
+
 if ($codigo -eq 0) {
-  # Verificado: código novo, typecheck e testes de server/+shared/ passaram. Reinicia o processo do jogo
-  # (não é Restart-ScheduledTask — esse cmdlet não existe no módulo ScheduledTasks; é Stop + Start).
-  Stop-ScheduledTask -TaskName 'CYBERMECH servidor' -ErrorAction SilentlyContinue
-  Start-Sleep -Seconds 2
-  Start-ScheduledTask -TaskName 'CYBERMECH servidor'
+  # Verificado: código novo, typecheck e testes de server/+shared/ passaram. Para o servidor DE VERDADE (parar-servidor.ps1: o
+  # Stop-ScheduledTask sozinho deixa o node órfão segurando a porta, e o novo não sobe) e liga de novo.
+  & "$PSScriptRoot\parar-servidor.ps1"
+  if ($LASTEXITCODE -eq 0) {
+    Start-ScheduledTask -TaskName 'CYBERMECH servidor'
+    $status = $null
+    for ($i = 0; $i -lt 24 -and -not $status; $i++) {
+      Start-Sleep -Seconds 5
+      try { $status = Invoke-RestMethod -Uri 'http://127.0.0.1:2567/status' -TimeoutSec 4 } catch { }
+    }
+    if ($status) { Registrar "servidor religou no código novo (protocolo $($status.protocol))" } else { Registrar 'ATENÇÃO: o servidor não respondeu em 2 min depois de religar; veja .tmp\servidor\servidor.log' }
+    Remove-Item $pendente -Force -ErrorAction SilentlyContinue
+  } elseif (-not (Test-Path $pendente)) {
+    # Registra só na primeira vez; as tentativas seguintes (a cada 10 min) ficam quietas até dar certo.
+    Registrar 'ATENÇÃO: o servidor antigo continua no ar: não saiu pelo pedido de parada (servidor de antes dessa vigia). O código novo já está em disco. Reiniciar uma vez exige PowerShell como administrador: Get-NetTCPConnection -LocalPort 2567 -State Listen | % { Stop-Process -Id $_.OwningProcess -Force }; Start-ScheduledTask -TaskName "CYBERMECH servidor"'
+    New-Item -ItemType File -Force -Path $pendente | Out-Null
+  }
 }
 # codigo 1 (nada novo) e 2 (falhou, já reverteu sozinho) não fazem nada aqui — o log em
 # .tmp\servidor\atualizacao.log já registrou o motivo.

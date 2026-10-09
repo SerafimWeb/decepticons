@@ -183,6 +183,12 @@ em `D:\DECEPTICONS\.tmp\servidor\metricas-token.txt` quando o servidor novo sobe
 Conferir: `Invoke-RestMethod https://jogo.selvamkt.com.br/status` deve mostrar `protocol: 3` (ou o que `PROTOCOL_VERSION` de `shared/net/constants.ts` disser); e `Get-ScheduledTask | ? TaskName -like 'CYBERMECH*'`
 deve listar as duas tarefas.
 
+### 09/10: a atualização automática nunca reiniciava o servidor de verdade (Claude)
+
+**O que acontecia:** a tarefa "CYBERMECH atualizar" buscava o código, verificava (typecheck + testes) e fazia `Stop-ScheduledTask` + `Start-ScheduledTask`. O `Stop` mata só o `cmd.exe` da tarefa: o `node` filho fica **órfão**, segurando a porta 2567, e **só PowerShell como administrador o encerra** (o processo roda numa sessão própria da tarefa e nega acesso até ao mesmo usuário). O servidor novo subia, achava a porta ocupada e a tarefa terminava com resultado 1; o velho seguia no ar. Sintoma: `/status` com `protocol` e `uptimeS` que não mudam depois de "OK: … verificado, pedindo reinício" no `atualizacao.log`. O mesmo órfão faria o `npm ci` dar EPERM no binário em uso.
+**O conserto:** o servidor se encerra sozinho. `server/parada.ts` vigia o arquivo `parar.flag` na pasta de dados (`CYBERMECH_DADOS`); ao vê-lo o servidor apaga o arquivo, salva os números e sai (código 0; saída forçada em 8 s se travar). `scripts/parar-servidor.ps1` cria o arquivo, espera a porta liberar (até 25 s) e só então devolve 0; encerrar à força é o último recurso e só funciona como administrador. A atualização usa esse script para o reinício e antes do `npm ci` (que **recusa** se o servidor não parou), confere o `/status` depois de religar e registra no `atualizacao.log`. Um reinício que não deu deixa o marcador `.tmp\wt-servidor-prod\.tmp\servidor\reinicio-pendente`: a próxima rodada (10 min) tenta de novo, e o aviso sai uma vez só.
+**Uma vez, à mão (servidor de antes da vigia):** PowerShell **como administrador**: `Get-NetTCPConnection -LocalPort 2567 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }`, depois `Start-ScheduledTask -TaskName "CYBERMECH servidor"`. Dali em diante o reinício é automático. **Parar o servidor à mão a qualquer hora:** `.\scripts\parar-servidor.ps1` (sem administrador, se o servidor tem a vigia).
+
 ### Contas de piloto (login, Claude 28/09 — só o esqueleto: criar conta, entrar, sair)
 
 **Banco:** SQLite embutido do Node (`node:sqlite`, sem dependência nova — depois da dor do dia com o binário

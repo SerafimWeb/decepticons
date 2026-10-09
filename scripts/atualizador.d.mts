@@ -10,7 +10,8 @@ export interface Operacoes {
   executar(comando: string, args: string[]): number | null;
   log(linha: string): void;
   nodeModulesEhAtalho(): boolean;
-  pararServidor(): void;
+  /** true = o servidor parou de verdade (a porta está livre); false = não saiu, e o atualizador não mexe nas dependências. */
+  pararServidor(): boolean;
   ligarServidor(): void;
 }
 
