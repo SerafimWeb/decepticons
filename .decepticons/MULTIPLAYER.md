@@ -6,6 +6,8 @@
 
 ## 1. O que o multiplayer precisa entregar
 
+**Leitura do estado implementado (Codex, 09/10, base #192):** este documento mistura plano e implementação histórica. O transporte atual é Node + `ws`, snapshots completos quantizados (sem delta), interpolação fixa de 100 ms. `OnlineSession.reconcile` corrige pelo histórico de posições e desloca entradas posteriores ao ACK, **sem replay de inputs**. HIT já alimenta dano recebido, mas o marcador de acerto do atirador e rewind permanecem pendentes. Protocolo atual: 6. Para evidência e sequência de evolução, ver `EVOLUCAO_TECNICA.md`; não interpretar o diagrama abaixo como contrato implementado de Colyseus/delta/ressimulação.
+
 - **Salas de 8** (humanos + bots completando), entra e sai a qualquer hora, sem lobby (`GAME_DESIGN.md`, Decisões).
 - **Servidor autoritativo** (G13): o cliente manda só comando; dano, morte, calor, quebra de parede e montagem do
   Hangar são decididos no servidor, com as mesmas regras do jogo.
