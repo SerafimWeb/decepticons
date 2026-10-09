@@ -6,7 +6,7 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Retorno do servidor público ao protocolo 6 registrado em 09/10, com ciclos de reinício provados (PRs #189–#192); disponibilidade neste instante não consultada nesta auditoria. Offline: Arena + Sobrevivência + CTF |
-| **Build** | Última entrega validada (09/10, Codex, PR #194): JS 325,4 KB e Wasm 719,4 KB gzip (tetos 500/900); 707 testes, typecheck, smoke, bocas, site e CI verdes; deploy confirmado |
+| **Build** | Validação Codex C1 (#198): JS 325,6 KB e Wasm 719,4 KB gzip (tetos 500/900); 709 testes, typecheck, smoke, bocas e site verdes localmente. Publicação: consultar o PR e o deploy da main; #194 já teve deploy confirmado |
 | **Última sessão** | 09/10 (Claude): atualização da máquina, retorno de produção ao protocolo 6 e reinício automático provado (#189–#192); pré-compilação de shaders medida na Iris Xe. 08/10: sombra, janelas, recuo e cauda dos tiros. Histórico detalhado abaixo |
 | **Próximo** | pedidos do dono (06/10) ainda sem escopo: câmeras de espectador e painel de campanhas personalizadas (ver `ROADMAP.md`); drones e escudo físico completos no servidor online; playtest do dono: esfera, aliados, escudo físico, Prédio Serafim e drones, tudo ainda só validado em bancada; dono julga o Marauder (Hangar e partida); M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); ideias do dono em `ROADMAP.md` (jogadas de Mech, facções, estilos de jogo) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
@@ -14,6 +14,16 @@
 ---
 
 **Última atualização:** 2026-10-09 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
+
+## Preparação gráfica C1 — Codex (09/10, PR #198)
+
+**EM BRANCH — NÃO ESTÁ NO AR enquanto #198 estiver aberto.** Depois do merge, C1 integra a main; publicação no site depende do deploy verde do workflow da main. Este registro conserva a evidência de bancada e os limites, não certifica FPS sustentado.
+
+Branch `codex/preparacao-grafica`, worktree `.tmp/wt-codex-preparacao-grafica`, base `8b899b9` (#197). Plano C1–C6 em `EVOLUCAO_TECNICA.md`: primeiro preparar Hangar/montagem atual no carregamento; depois GLB/remotos, custo estável, otimização do gargalo medido, leitura visual e efeitos elementais após contrato. PR #198: https://github.com/SerafimWeb/decepticons/pull/198. Check local e gate de push completos: 709 testes, typecheck, build, budget, smoke, bocas e site verdes; CI obrigatório para merge.
+
+C1 só altera preparação de render e fiação em `Game.ts`, não simulação, rede, armas, HUD ou áudio. Inicialização única mantém o orçamento compartilhado de espera/fallback; o driver síncrono não é interrompível. Na Vega 11, Vector-09 passou de 9 programas novos na abertura a 0; Vector desktop, Marauder atual e celular emulado tiveram 0 novos na abertura, disparo e retorno. Quadro oculto antecipa recursos visíveis: Vector desktop retém 169 geometrias no boot contra 85 na baseline, sem custo extra no loop quando Hangar está fechado. Dados completos e reprodução em `medicoes/hangar-primeiro-uso-2026-10-09.json` e `.mjs`; três capturas `arte/hangar-preparacao-*.png`. Não certifica FPS/boot: máquina sob pressão de memória, driver/cache e carga concorrente; travadas continuam.
+
+Claude está trabalhando nos efeitos de estado/armas e Gemini na UI/áudio (confirmado pelo dono nesta sessão); preservar suas worktrees e contratos. **Achado R17 para Gemini:** a captura `arte/hangar-preparacao-celular-codex.png` (390×844) mostra topo e ações do Hangar cortados à direita; o teste fechou por chamada DOM, não prova alcance do toque. Conferir overflow e acesso a fechar/aplicar no celular. Não alterado nesta frente de render. Próxima sessão Codex: C2 com tetos de memória/boot e C3 controlado para localizar as travadas restantes; variante GLB/remoto criado depois não está coberta por C1.
 
 ## Auditoria do estado e evolução técnica (09/10, Codex)
 
@@ -625,9 +635,9 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 | Agente | Território (arquivos) | Situação |
 |---|---|---|
-| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Sem crédito nesta rodada; o modo Sobrevivência solo foi assumido pelo Codex por autorização do dono. A sincronização online dos modos continua na frente de rede quando o contrato existir. |
+| **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Em atividade, confirmado pelo dono em 09/10: efeitos de estado e armas elementais (`ARMAS_ELEMENTAIS.md`). A sincronização online dos modos continua na frente de rede quando o contrato existir. O relato anterior de falta de crédito é histórico. |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Feito: Som dos passos, volume de bots ecoando e Gênesis-01 não aparecendo offline/online. Branch consolidado e mergeado (PR #136). **Pedido novo (09/10):** tela e som das armas elementais (`ARMAS_ELEMENTAIS.md`, seção 7: indicadores de estado, bordas de tela, painel do alvo, ícones do Hangar, medidor da rotatória, sons). |
-| **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, câmeras, desempenho e revisão cruzada; por autorização explícita do dono, também assume os modos enquanto Claude está sem crédito | Feito: draw calls 34 → 9 (#43), explosões (#44), blueprints, Hangar/treino, calor visual, Sobrevivência, CTF offline e câmera de abate offline. Próximo: playtest dos sinais de avaria entregues (#164); depois completar encontro offline do Colossus e retomar cosméticos/silhuetas. |
+| **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, câmeras, desempenho e revisão cruzada | Feito: render, blueprints, Hangar/treino, calor/avaria visual, Sobrevivência/CTF offline e câmera de abate; #194 reduziu passadas do Hangar e protegeu seleção. Atual: preparação gráfica C1; próximos cortes C2–C6 em `EVOLUCAO_TECNICA.md`. Preservar simulação/rede do Claude e UI/áudio do Gemini. |
 | **Qwen** | transversal — documentação (`.decepticons/`), testes de simulação (novos `*.test.ts`), relatórios do processo (`scripts/painel.mjs`, `scripts/site/`, o site) e auditoria de arquitetura (segunda opinião na revisão cruzada). Não mexe em `client/src/{sim,combat,entities,physics,player,net}`, `server/` nem `shared/` sem combinar com o dono do território | Entrou no time em 26/09 (oficialização no painel e na etiqueta). Próximo: relatório de saúde técnica (cobertura, débito da seção 9, budget, tick) para a divulgação |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
 

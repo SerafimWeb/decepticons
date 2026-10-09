@@ -5,9 +5,15 @@
 
 Última revisão: 2026-10-09 (Codex: consistência documental; sem novo playtest público)
 
-## Hangar: incremento Codex 09/10 (em branch até o merge)
+## Hangar: incremento Codex 09/10 — #194 mergeado
 
-Passagem única de hologramas, cones aditivos e telas: verificado em navegador/GPU Vega 11, 102→94 desenhos no mesmo enquadramento, diferença máxima de imagem 1/255. Sem compositor/UI na medição, não comprova FPS do jogo. Seleção assíncrona protege chassi e montagem recentes, com três testes; falha de carga tratada. Captura `arte/hangar-passagem-unica-codex.png`. **PARCIAL** até o merge e playtest no fluxo completo do Hangar. Compilação no primeiro uso de GLB/Hangar ainda não resolvida por este incremento.
+Passagem única de hologramas, cones aditivos e telas: verificado em navegador/GPU Vega 11, 102→94 desenhos no mesmo enquadramento, diferença máxima de imagem 1/255. Sem compositor/UI na medição, não comprova FPS do jogo. Seleção assíncrona protege chassi e montagem recentes, com três testes; falha de carga tratada. Captura `arte/hangar-passagem-unica-codex.png`. #194 na main com deploy confirmado; julgamento do dono continua pendente. Compilação no primeiro uso de GLB/Hangar não foi resolvida por aquele incremento.
+
+## Preparação gráfica C1 — Codex, 09/10 (publicação depende do merge deste corte)
+
+**PARCIAL:** prepara programas do Hangar e montagem atual antes de liberar o jogo; um desenho oculto no alvo HDR envia geometrias e texturas visíveis para a GPU. O renderer volta ao alvo anterior mesmo em erro, coberto por teste. Prazo de warmup compartilhado com a Arena; em timeout/erro o jogo segue e recursos restantes podem pagar primeiro uso. O driver síncrono não é interrompível: 30 s é orçamento de espera, não garantia dura de duração total do boot.
+
+Não prepara todos os GLBs/montagens escolhidos depois, nem remotos criados depois do carregamento. Não elimina toda travada nem homologa 60 FPS. Em bancada na Vega 11, a abertura de Vector-09 passou de 9 programas novos a 0; teste de disparo e retorno também sem programas novos. Geometrias visíveis do Hangar passam a residir na GPU desde o boot (169 contadas no caso Vector, contra 85 antes de abrir na baseline); contagem de recursos não mede bytes de VRAM. Plano/limites em EVOLUCAO_TECNICA; evidências desta entrega em medicoes/ e arte/.
 
 ## Incremento publicado — #173; playtest continua pendente
 
