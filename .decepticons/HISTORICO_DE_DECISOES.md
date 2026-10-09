@@ -1,3 +1,14 @@
+## [2026-10-08] Janelas acesas nos prédios, no shader e não em geometria (Claude)
+
+Terceiro passo da ordem de `REFERENCIA_VISUAL.md`, dentro do estilo atual. Defeito: os três prédios eram blocos lisos com arestas e faixas neon; o MechArena tem fachadas com vida.
+- **Por que no shader:** janela como geometria seriam centenas de quadrados por prédio (ou um `InstancedMesh` extra a manter sincronizado com o tamanho de cada caixa); como textura, o UV de uma caixa esticada deformaria as janelas (os prédios têm 16×16×30, 12×22×20 e 24×12×42). No shader a grade vive em **coordenadas do mundo**, vale em qualquer face e tamanho, e não custa draw call, geometria nem textura. O padrão é remendado no `MeshStandardMaterial` de cada prédio (`onBeforeCompile`, no estilo de `meshKit.ts`), com chave de cache própria.
+- **Medidas:** coluna de 3,2 m, janela de 1,4 × 2,1 m, andar de 5 m (a mesma constante das faixas neon da `Arena`, antes dois `5` soltos), 30% acesas, 22% delas em sódio, na cor do prédio com brilho 1,05 (passa de 1 só o bastante para o bloom). A primeira versão (1,7 × 2,5 m, 38%, brilho 1,35) ficou grande e forte demais, o rosa disputava atenção com a leitura do combate; reduzi numa iteração.
+- **Face e teto:** a normal vem das derivadas da posição no mundo (`cross(dFdx, dFdy)`); sem janela no teto. O sorteio de cada janela vem da célula no mundo, então prédios vizinhos não repetem o padrão.
+- **Câmera:** o clone do material de cada prédio continua o que a câmera tática e a de abate tornam translúcido; como a emissão sai com a opacidade do material, as janelas somem junto.
+- **Teste:** os pontos de encaixe do remendo (`#include <common>`, `<begin_vertex>`, `<emissivemap_fragment>`) são conferidos contra `ShaderLib.standard` do three instalado: se uma atualização renomear um, o teste avisa em vez de o prédio ficar sem janela em silêncio. GLSL não compila no Node; o que compila e aparece foi conferido no Chrome headless (sem erro de shader) e na captura.
+- **Fica fora:** torres do horizonte (instanciadas e quase todas dentro da névoa) e o Prédio Serafim (material próprio, 56 m); estáticas, sem piscar. Custo: zero em CPU, rede e draw calls; GPU = poucas dezenas de operações por fragmento nas faces dos 3 prédios, **não medido** em máquina real.
+**Quem decidiu:** dono (a direção, "continua melhorando os gráficos"); Claude (a execução e o registro).
+
 ## [2026-10-08] Sombra de contato sob os robôs: disco instanciado, não mapa de sombra (Claude)
 
 Segundo passo da ordem de `REFERENCIA_VISUAL.md`, dentro do estilo atual. Defeito: os robôs "flutuavam" (nenhuma sombra de qualquer tipo) e o pulo não mostrava a altura.

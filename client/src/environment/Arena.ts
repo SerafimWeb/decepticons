@@ -4,6 +4,7 @@ import { CITY_NEON, PALETTE } from '../core/palette';
 import { mulberry32 } from '../core/rng';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { buildFloorTexture, buildSkyTexture, FLOOR_TILE_METERS } from './Atmosphere';
+import { WINDOWS, windowedBuildingMaterial } from './BuildingWindows';
 import type { DestructibleDef, Destructibles } from './Destructibles';
 import { SerafimTower } from './SerafimTower';
 
@@ -169,14 +170,15 @@ export class Arena {
     }
   }
 
-  /** Prédio sólido com arestas neon e faixas emissivas a cada 5 m. */
+  /** Prédio sólido com arestas neon, faixas emissivas a cada 5 m e janelas acesas entre elas (`BuildingWindows.ts`). */
   private addBuilding(b: BlockDef): void {
-    const material = this.solidMat.clone();
+    const material = windowedBuildingMaterial(this.solidMat.clone(), b.accent);
     material.transparent = true;
     const g = this.addSolid(new THREE.Vector3(b.x, b.h / 2, b.z), new THREE.Vector3(b.w, b.h, b.d), b.accent, material);
 
     const stripMat = new THREE.MeshBasicMaterial({ color: neon(b.accent, 2) });
-    for (let y = 5; y < b.h - 1; y += 5) {
+    // O andar das janelas é o intervalo entre duas faixas: a mesma medida, para as duas não saírem de compasso.
+    for (let y = WINDOWS.floor; y < b.h - 1; y += WINDOWS.floor) {
       const strip = new THREE.Mesh(this.boxGeo, stripMat);
       strip.scale.set(b.w + 0.12, 0.18, b.d + 0.12);
       strip.position.y = y - b.h / 2;
