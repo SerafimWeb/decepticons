@@ -46,12 +46,14 @@ Metas de equilíbrio: as do `ARSENAL.md` (sozinha derruba um torso em mais de 4,
 
 ## 4. Rede (G11: até 8 KB/s por jogador; hoje 6,2 com 12 robôs)
 
-- **Segundo byte de bandeiras** por unidade (`UNIT_BYTES` 19 → 20): queimando, chocado, atordoado, gelado, congelado, lança-chamas ligado,
-  rotatória girando. Custo: **+240 B/s** com 12 unidades a 20 Hz (6,2 → ~6,45 KB/s). O Mech local precisa saber a própria lentidão para
-  a previsão não puxar para trás; os remotos só desenham.
+- **Byte `fx` por unidade, só quando há algo ligado** (feito no PR-A): queimando, chocado, atordoado, gelado (2 bits de acúmulos), congelado,
+  lança-chamas ligado, rotatória girando. Um bit livre das flags (`HAS_FX`) avisa que o byte vem a seguir, então **o caso comum não paga nada**
+  (`UNIT_BYTES` segue 19). **Pior caso** (as 12 unidades com algum estado, o que nenhuma luta real faz): +240 B/s, 6,69 KB/s de 8, ainda
+  dentro do teto. Um byte fixo por unidade estourou a folga de 80% do teste de banda (6,69 > 6,55 KB/s), por isso o byte é condicional. O Mech
+  local precisa saber a própria lentidão para a previsão não puxar para trás; os remotos só desenham.
 - **Rotatória e lança-chamas não mandam um evento por tiro** (seriam ~15 tiros/s por atirador): o servidor liga a bandeira de "atirando"
   e o cliente desenha o fluxo na cadência da arma (só visual; o dano é do servidor). As armas de projétil usam o evento de tiro de sempre.
-- `PROTOCOL_VERSION` 6 → 7 e as armas entram **só no fim** de `NET_WEAPONS`. O servidor se atualiza sozinho (`DEPLOY.md`, 09/10).
+- `PROTOCOL_VERSION` 6 → 7 (feito no PR-A, junto do byte `fx`) e as armas entram **só no fim** de `NET_WEAPONS`. O servidor se atualiza sozinho (`DEPLOY.md`, 09/10).
 
 ## 5. Divisão de trabalho (cada um no seu território; AGENTS.md, regras 2–5 e 12)
 

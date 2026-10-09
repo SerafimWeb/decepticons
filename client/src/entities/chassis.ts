@@ -62,6 +62,7 @@ export const VECTOR09_STATS: MechStats = {
  */
 export const ANDROID_STATS: MechStats = {
   name: 'ANDRÓIDE A-1',
+  statusResist: 1.5, // pequeno: fogo, choque e gelo duram uma vez e meia (`combat/StatusEffects.ts`)
   moveSpeed: 10.5,
   groundAccel: 120,
   airAccel: 40,
@@ -182,6 +183,7 @@ export const ONCA_B2_STATS: MechStats = {
 export const COLOSSUS_BOSS_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'COLOSSUS-01',
+  statusResist: 0.5, // máquina de cerco: fogo, choque e gelo duram metade (decisão do dono, 09/10)
   height: 14,
   radius: 3.6, // < height/2: a cápsula do Rapier não aceita raio maior que a metade da altura
   stepHeight: 2.4,

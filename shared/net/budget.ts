@@ -18,18 +18,22 @@ export const FIGHT_EVENTS_PER_SECOND: Partial<Record<EventKind, number>> = {
   [EVENT.SPAWN]: 1,
 };
 
-/** Bytes do estado de uma sala com `units` unidades (cada unidade tem tamanho fixo). */
-export function snapshotBytes(units: number): number {
+/**
+ * Bytes do estado de uma sala com `units` unidades. Cada unidade tem tamanho fixo (`UNIT_BYTES`), mais 1 byte (`fx`) quando tem fogo, choque ou
+ * gelo; `withFx` conta o pior caso, todas as unidades com algum estado ligado.
+ */
+export function snapshotBytes(units: number, withFx = false): number {
   const s = newSnapshot();
   s.count = units;
+  if (withFx) for (let i = 0; i < units; i++) s.units[i]!.fx = 1;
   return encodeSnapshot(new Writer(), s).length;
 }
 
 /** Download de um jogador por segundo, com a moldura: estado de `units` unidades a 20 Hz e os eventos da luta. */
-export function downloadPerSecond(units: number): number {
+export function downloadPerSecond(units: number, withFx = false): number {
   let events = 0;
   for (const [kind, n] of Object.entries(FIGHT_EVENTS_PER_SECOND)) events += EVENT_BYTES[Number(kind) as EventKind] * (n ?? 0);
-  return (snapshotBytes(units) * SNAPSHOT_HZ + EVENTS_HEADER_BYTES * SNAPSHOT_HZ + events) * WIRE_OVERHEAD;
+  return (snapshotBytes(units, withFx) * SNAPSHOT_HZ + EVENTS_HEADER_BYTES * SNAPSHOT_HZ + events) * WIRE_OVERHEAD;
 }
 
 /** Upload de um jogador por segundo, com a moldura: pacotes de 2 comandos, 30 por segundo. */

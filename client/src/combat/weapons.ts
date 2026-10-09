@@ -37,6 +37,8 @@ export const TIERS: readonly TierRule[] = [
   { label: 'MK III', damage: 1.4, heat: 1.3, mass: 2 },
 ];
 
+import type { StatusInflict } from './StatusEffects';
+
 export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp';
 
 /**
@@ -103,6 +105,8 @@ export interface WeaponStats {
   empHeat?: number;
   /** Silhueta visual do tiro, sem alterar colisão. */
   tracer?: 'rail' | 'pulse';
+  /** Estado que o acerto aplica no alvo (`combat/StatusEffects.ts`): fogo, choque ou gelo. Sem escudo na frente, o acerto vale. */
+  inflicts?: StatusInflict;
 }
 
 type WeaponBase = Omit<WeaponStats, 'tier'>;

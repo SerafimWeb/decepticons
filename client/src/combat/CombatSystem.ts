@@ -1,8 +1,9 @@
 import { applyEmp } from './EmpEffect';
+import { inflictOnHit } from './StatusEffects';
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { GLOW } from '../core/palette';
-import type { MechBase, MechPart } from '../entities/MechBase';
+import { MechBase, type MechPart } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
 import type { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
@@ -102,6 +103,7 @@ export class CombatSystem {
       if (result.applied <= 0) continue;
       if (result.killed) this.wreck(mech, dir, shooter);
       else if (result.partDestroyed) this.tearOff(mech, result.part, dir);
+      else if (w.inflicts) inflictOnHit(mech.status, w.inflicts, result.part, shooter);
       this.onMechHit?.({ mech, result, shooter });
     }
     this.destructibles.damageInRadius(at, w.blastRadius, w.damage * (shooter?.combatBoost.damageMultiplier ?? 1), dir);
@@ -169,8 +171,30 @@ export class CombatSystem {
     const result = mech.takeHit(hit.point, remaining);
     if (result.applied <= 0) return;
     if (result.killed) this.wreck(mech, dir, shooter);
-    else if (result.partDestroyed) this.tearOff(mech, result.part, dir);
+    else {
+      if (result.partDestroyed) this.tearOff(mech, result.part, dir);
+      // Fogo, choque ou gelo: só se o tiro chegou ao corpo (o escudo que absorveu tudo não deixa estado). A cabeça vale o atordoamento do choque.
+      if (w?.inflicts) inflictOnHit(mech.status, w.inflicts, result.part, shooter);
+    }
     this.onMechHit?.({ mech, result, shooter });
+  }
+
+  /**
+   * Um tick dos estados de um Mech (`combat/StatusEffects.ts`): o tempo corre e o dano por segundo (queimadura, choque) sai do torso;
+   * se mata, o abate é de quem aplicou por último. O tempo corre mesmo com o dano desligado (o cliente online): só o servidor tira vida.
+   * Sem `onMechHit` a cada tick: o marcador de acerto do HUD seria um chiado.
+   */
+  tickStatus(mech: MechBase, dt: number): void {
+    const s = mech.status;
+    const killer = s.source instanceof MechBase ? s.source : undefined;
+    const heat = s.heatPerSecond * dt;
+    const damage = s.step(dt);
+    if (!this.damageEnabled || !mech.alive) return;
+    if (heat > 0) mech.absorbBurn(heat);
+    if (damage <= 0) return;
+    const result = mech.statusDamage(damage);
+    if (result.killed) this.wreck(mech, UP, killer);
+    else if (result.partDestroyed) this.tearOff(mech, result.part, UP);
   }
 
   /** A parte some do modelo (MechBase) e o pedaço cai no chão como destroço. */
