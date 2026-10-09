@@ -1,3 +1,14 @@
+## [2026-10-08] Sombra de contato sob os robôs: disco instanciado, não mapa de sombra (Claude)
+
+Segundo passo da ordem de `REFERENCIA_VISUAL.md`, dentro do estilo atual. Defeito: os robôs "flutuavam" (nenhuma sombra de qualquer tipo) e o pulo não mostrava a altura.
+- **Por que disco e não mapa de sombra:** o mapa de sombra do three.js redesenha todos os casters numa passada de profundidade (centenas de draw calls e uma textura grande, na GPU integrada que é o piso do G12) e a regra de render do projeto já o marcava como "caro, prioridade baixa". O disco custa **1 draw call**, uma textura de 64² gerada em memória e até 32 matrizes por quadro.
+- **Como decide a altura:** `grounded` (no chão, na rampa ou na plataforma) usa os pés; no ar, `terrainY` olha de 0,5 m acima dos pés até 80 m para baixo no terreno estático (ignora Mechs e destroços) e a sombra encolhe de 100% a 35% em 14 m. Sem chão embaixo, nível 0.
+- **Aparência:** raio = 1,8× o raio da cápsula; queda linear do centro (o primeiro expoente, 1,5, deixava só um núcleo quase invisível no chão escuro); deslocada 0,2/0,15 do raio para longe da direcional principal, porque de cima o robô cobria o disco inteiro. Medido com e sem sombra na mesma cena: até 69 de 255 níveis de queda no núcleo e 19,3 mil de 66 mil pixels da região escurecidos (≥3 níveis); sutil por desenho, o dono julga.
+- **Quem tem sombra:** o jogador, os bots (Mechs, andróides, técnico), os aliados e os remotos do online. **Não tem:** drones (não são `MechBase`; ficam para depois), robôs mortos ou escondidos, e o Hangar (cena própria).
+- **Território:** o render é do Codex e a fiação em `Game.ts` é zona compartilhada; o PR é pequeno (módulo novo em `fx/` + 15 linhas) e o dono pediu esta frente. Avisar o Codex ao trocar de agente.
+- **Custo:** CPU por quadro = até 32 `setMatrixAt` + um `castRay` por robô no ar; **não medido** em máquina real. GPU = +1 draw call. Rede: zero.
+**Quem decidiu:** dono (a direção, "continua melhorando os gráficos"); Claude (a execução e o registro).
+
 ## [2026-10-08] Capturas do site sumiram no deploy da atmosfera: corrida no passo de captura (Claude)
 
 O deploy do PR #182 publicou a landing sem as imagens do jogo (`capturas/capa.jpg não é imagem`): o passo `npm run site -- --capturas` falhou com `Cannot read properties of null (reading 'x')`, e o `rsync --delete` apagou do servidor a pasta `capturas/`. Refazer o deploy do mesmo commit restaurou as imagens.

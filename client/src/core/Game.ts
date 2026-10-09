@@ -7,6 +7,7 @@ import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
 import { addSerafimPlaque, SERAFIM_TOWER } from '../environment/SerafimTower';
 import { DroneVisuals } from '../fx/DroneVisuals';
+import { ShadowBlobs, terrainGround } from '../fx/ShadowBlobs';
 import { BankTerminal } from '../ui/BankTerminal';
 import { bankReward, nearBank, type BankReply } from '../../../shared/bank/codes';
 import { ChargeVisuals } from '../fx/ChargeVisuals';
@@ -220,6 +221,9 @@ export class Game {
   private readonly squadHUD: SquadHUD;
   private readonly shieldVisuals = new ShieldVisuals(this.scene);
   private readonly drawShield = (r: {mech: MechBase}): void => this.shieldVisuals.update(r.mech);
+  /** Sombra de contato sob cada robô (1 draw call); montada junto com a partida, que tem a física. */
+  private readonly shadows: ShadowBlobs;
+  private readonly addShadow = (r: { mech: MechBase }): void => this.shadows.add(r.mech);
   /** Gravação nativa de gameplay (dono, 28/09): tecla escondida, só para uso interno. */
   private readonly recorder: GameRecorder;
   private readonly lobby = new OnlineLobby();
@@ -330,6 +334,7 @@ export class Game {
     addBankSign(this.scene);
     addSerafimPlaque(this.scene);
     this.droneVisuals = this.match.drones ? new DroneVisuals(this.scene, this.match.drones) : null;
+    this.shadows = new ShadowBlobs(this.scene, terrainGround(physics));
     // ?serafim=festa: o LED do prédio gira as cores (o dono quer poder variar a luz).
     this.serafimParty = new URLSearchParams(location.search).get('serafim') === 'festa';
     this.bankTerminal = new BankTerminal((code) => {
@@ -1154,6 +1159,16 @@ export class Game {
       for (const bot of this.bots.mechs) { this.damageVisuals.update(bot); this.chargeVisuals.update(bot); }
       if (this.match.allies) for (const ally of this.match.allies.mechs) this.damageVisuals.update(ally);
     }
+    this.shadows.begin();
+    if (!this.hangarView) {
+      this.shadows.add(this.mech);
+      if (this.online?.joined) this.online.remotes.forEach(this.addShadow);
+      else {
+        for (const bot of this.bots.mechs) this.shadows.add(bot);
+        if (this.match.allies) for (const ally of this.match.allies.mechs) this.shadows.add(ally);
+      }
+    }
+    this.shadows.end();
     this.particles.update(dt);
 
     const near = this.mech.alive && nearBank(this.mech.simPosition);
