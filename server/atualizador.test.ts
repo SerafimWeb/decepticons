@@ -13,12 +13,14 @@ interface Cenario {
   novo?: boolean;
   lockMudou?: boolean;
   mergeFalha?: boolean;
+  /** O servidor não saiu quando pedimos a parada (servidor de antes da vigia, só administrador encerra). */
+  naoPara?: boolean;
   /** Comandos que falham: 'npm ci', 'npm ci (volta)', 'typecheck' ou 'testes'. */
   falhas?: string[];
 }
 
 function palco(c: Cenario = {}) {
-  const { worktreeSeparada = true, atalho = false, sujo = false, novo = true, lockMudou = false, mergeFalha = false, falhas = [] } = c;
+  const { worktreeSeparada = true, atalho = false, sujo = false, novo = true, lockMudou = false, mergeFalha = false, naoPara = false, falhas = [] } = c;
   const chamadas: string[] = [];
   const ok = (stdout = ''): Resultado => ({ status: 0, stdout });
   let npmCi = 0;
@@ -63,7 +65,10 @@ function palco(c: Cenario = {}) {
     },
     log: (l) => chamadas.push(`log: ${l}`),
     nodeModulesEhAtalho: () => atalho,
-    pararServidor: () => chamadas.push('PARA servidor'),
+    pararServidor: () => {
+      chamadas.push('PARA servidor');
+      return !naoPara;
+    },
     ligarServidor: () => chamadas.push('LIGA servidor'),
   };
   /** As chamadas sem as linhas de log. */
@@ -122,6 +127,13 @@ describe('atualizador do servidor: package-lock mudou', () => {
     const p = palco({ lockMudou: true });
     expect(atualizar(p.op)).toBe(0);
     expect(p.sem()).toEqual(['git merge', 'PARA servidor', 'npm ci', 'typecheck', 'testes']);
+  });
+
+  it('o servidor não saiu (só administrador o encerra): NÃO roda npm ci, volta o código e não religa nada', () => {
+    const p = palco({ lockMudou: true, naoPara: true });
+    expect(atualizar(p.op)).toBe(2);
+    expect(p.sem()).toEqual(['git merge', 'PARA servidor', 'git reset --hard (volta)']); // sem npm ci: o binário em uso travaria e deixaria a pasta pela metade
+    expect(p.chamadas.join(' | ')).toContain('RECUSADO: não consegui parar o servidor');
   });
 
   it('npm ci falha: volta o código, refaz as dependências do código antigo e religa o servidor que ele mesmo parou', () => {

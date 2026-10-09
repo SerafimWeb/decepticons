@@ -50,8 +50,11 @@ const codigo = atualizar({
     }
   },
   pararServidor() {
-    tarefa('Stop');
-    spawnSync(process.execPath, ['-e', 'setTimeout(()=>{}, 4000)']); // dá tempo de o processo soltar os arquivos
+    if (!TAREFA) return true; // fora do Windows: não há tarefa nem servidor para parar
+    // O Stop-ScheduledTask sozinho deixa o node órfão (e só administrador o encerra): parar-servidor.ps1 pede a parada por
+    // arquivo, o servidor sai sozinho, e o script só devolve 0 com a porta livre.
+    const r = spawnSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', resolve(RAIZ, 'scripts', 'parar-servidor.ps1'), '-Tarefa', TAREFA], { stdio: 'inherit' });
+    return r.status === 0;
   },
   ligarServidor() {
     tarefa('Start');

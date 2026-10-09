@@ -1,3 +1,6 @@
+import { resolve } from 'node:path';
+import { pastaDados } from './dados';
+import { vigiarParada } from './parada';
 import { DEFAULT_HOST, startServer } from './Server';
 
 /**
@@ -10,6 +13,14 @@ const host = process.env.HOST ?? DEFAULT_HOST;
 const server = await startServer({ port, host, log: (line) => console.log(`[servidor] ${line}`) });
 console.log(`CYBERMECH · servidor de jogo em ws://${server.host}:${server.port}/?sala=ARENA (Ctrl+C para parar)`);
 if (server.host === '127.0.0.1') console.log('[servidor] só localhost (túnel da Cloudflare fala daqui). HOST=0.0.0.0 expõe à rede de casa.');
+
+// Reinício sem administrador (server/parada.ts): a atualização automática cria `parar.flag` na pasta de dados; o servidor salva os
+// números e sai sozinho, e a tarefa do Windows o liga de novo com o código novo.
+vigiarParada(pastaDados(resolve(import.meta.dirname, '..')), () => {
+  console.log('[servidor] pedido de parada (parar.flag): fechando e saindo');
+  setTimeout(() => process.exit(0), 8000).unref(); // se o fechamento travar, sai mesmo assim
+  void server.close().finally(() => process.exit(0));
+});
 
 // A cada 10 s: salas abertas, jogadores, tempo médio do tick (meta do G14: até 2 ms) e as defesas.
 setInterval(() => {

@@ -82,6 +82,14 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 ## 🟢 Achados Úteis (Insights Reaproveitáveis)
 
+### Windows: o processo de uma tarefa agendada (S4U) não é encerrável de fora, e `Stop-ScheduledTask` deixa o filho órfão
+
+**Descoberto:** 2026-10-09 (a mesma causa já tinha derrubado o online em 04/10) | **Aplicação:** `scripts/parar-servidor.ps1`, `server/parada.ts`, o reinício da atualização automática
+
+**Descrição:** o servidor roda numa tarefa registrada como S4U (sem senha guardada). O `Stop-ScheduledTask` mata só o `cmd.exe` que a tarefa lançou; o `node` que ele lançou continua vivo, órfão, segurando a porta e os binários nativos (o `npm ci` dá EPERM). E o processo vive na sessão de logon da tarefa: um PowerShell comum, mesmo do mesmo usuário, recebe **"Acesso negado"** ao tentar ler o `StartTime` ou encerrá-lo (medido com `Stop-Process` e `taskkill`); a atualização automática, que também é uma tarefa S4U, de outra sessão, está no mesmo caso. Por isso "parar e religar a tarefa" nunca reiniciou nada.
+
+**Padrão:** processo que não se deixa matar de fora precisa **sair sozinho**. O servidor vigia um arquivo de pedido (barato: `existsSync` a cada 2 s, fora do tick), apaga o pedido velho que achar ao subir (senão o servidor novo sai ao nascer), salva e sai com código 0. Testar com um servidor real numa porta de teste, não só com operações de mentira. E nunca declarar "reinício automático" sem ver o uptime do `/status` zerar.
+
 ### Cabeçalho de proxy só vale de quem é o proxy (`CF-IPCountry`, `CF-Connecting-IP`)
 
 **Descoberto:** 2026-10-04 | **Aplicação:** `server/guard.ts` (`clientIp`, `clientCountry`), `server/Server.ts`
