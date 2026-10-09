@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { CameraRig } from '../camera/CameraRig';
 import { SHOULDER_TRIGGERS } from '../combat/mounts';
 import type { BarrageSystem } from '../combat/BarrageSystem';
+import { fireKick } from '../combat/fireFeel';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import type { RocketSystem } from '../combat/RocketSystem';
 import { weapon, type Loadout, type WeaponStats } from '../combat/weapons';
@@ -82,15 +83,17 @@ async function jogador(loadout: Loadout, triggers = VECTOR09_STATS.triggers) {
   player.active = true;
   let sounds = 0;
   let rocketSounds = 0;
+  const kicks: number[] = [];
   player.onShot = () => sounds++;
   player.onRocket = () => rocketSounds++;
+  player.onKick = (amount) => kicks.push(amount);
   const run = (seconds: number) => {
     for (let i = 0, n = Math.round(seconds / FIXED_DT); i < n; i++) {
       player.fixedUpdate(FIXED_DT);
       physics.step();
     }
   };
-  return { player, physics, mech, input, aim, bolts, rockets, rains, run, sounds: () => sounds, rocketSounds: () => rocketSounds };
+  return { player, physics, mech, input, aim, bolts, rockets, rains, kicks, run, sounds: () => sounds, rocketSounds: () => rocketSounds };
 }
 
 /** O tiro sai apontando para a mira? */
@@ -171,6 +174,55 @@ describe('PlayerController: a chuva de mísseis', () => {
   });
 });
 
+
+describe('PlayerController: o peso do tiro na câmera', () => {
+  it('cada tiro de energia dá um tremor do peso da arma; o foguete dá um por aperto, não um por foguete', async () => {
+    const { input, bolts, rockets, kicks, run } = await jogador({ primary: weapon('plasma'), secondary: weapon('rockets') });
+    input.mouseDown = true;
+    run(0.5);
+    input.mouseDown = false;
+    expect(bolts.length).toBeGreaterThanOrEqual(2);
+    expect(kicks).toHaveLength(bolts.length); // um tremor por tiro
+    expect(kicks.every((k) => k === fireKick(weapon('plasma')))).toBe(true);
+
+    kicks.length = 0;
+    input.mouseDown2 = true;
+    run(0.1);
+    input.mouseDown2 = false;
+    expect(rockets).toHaveLength(1);
+    expect(kicks).toEqual([fireKick(weapon('rockets'))]);
+    expect(fireKick(weapon('rockets'))).toBeGreaterThan(fireKick(weapon('plasma'))); // o foguete pesa mais que o plasma
+  });
+
+  it('a salva de dois ombros do Marauder faz um estrondo só, com o peso de uma arma', async () => {
+    const loadout: Loadout = { primary: weapon('blaster'), offhand: weapon('blaster'), secondary: weapon('rockets') };
+    const { input, rockets, kicks, run } = await jogador(loadout, SHOULDER_TRIGGERS);
+    input.mouseDown2 = true;
+    run(0.05);
+    expect(rockets).toHaveLength(2);
+    expect(kicks).toEqual([fireKick(weapon('rockets'))]);
+  });
+
+  it('a chuva de mísseis também pesa uma vez por aperto, mesmo com duas ordens de lançamento', async () => {
+    const loadout: Loadout = { primary: weapon('blaster'), offhand: weapon('blaster'), secondary: weapon('barrage') };
+    const { input, rains, kicks, run } = await jogador(loadout, SHOULDER_TRIGGERS);
+    input.mouseDown2 = true;
+    run(0.05);
+    expect(rains).toHaveLength(2);
+    expect(kicks).toEqual([fireKick(weapon('barrage'))]);
+  });
+
+  it('sem tiro não há tremor, e o gancho ausente não quebra o disparo (o servidor e os bots não o usam)', async () => {
+    const { player, input, bolts, kicks, run } = await jogador({ primary: weapon('plasma'), secondary: null });
+    run(0.3);
+    expect(kicks).toHaveLength(0);
+    player.onKick = undefined;
+    input.mouseDown = true;
+    run(0.3);
+    expect(bolts.length).toBeGreaterThan(0);
+    expect(kicks).toHaveLength(0);
+  });
+});
 
 describe('escudo por toque', () => {
   it('um toque mantém ligado após soltar; o segundo desliga sem interferir nas armas', async () => {

@@ -1,3 +1,14 @@
+## [2026-10-08] Peso do tiro na câmera: tremor por arma, sem mexer na mira (Claude)
+
+Pedido do dono: "continua melhorando os gráficos e jogabilidade". A `VISAO.md` promete "sensação de peso e massa"; conferido no código, a câmera tremia com pouso, dano recebido, explosão, abate e passos de gigante, mas **atirar não fazia nada** (só o braço do desenho recuava).
+- **O que entrou:** `combat/fireFeel.ts` com `FIRE_KICK` por arma (blaster 0,015; plasma 0,05; EMP 0,09; foguetes 0,2; escopeta 0,24; chuva 0,28; trilho 0,4; serra 0) e `fireKick(w)` (+15% por nível, teto 0,6, o pouso mais forte). O `PlayerController` chama `onKick` por tiro de energia e uma vez por aperto de foguete ou chuva; o `Game` liga em `rig.addShake`.
+- **Por que tabela e não fórmula do dano:** o trilho dá 72 de dano num tiro a cada 1,4 s e o plasma 16 a 4,5 por segundo; o que a mão sente é o solavanco do tiro grande e o zumbido do pequeno, e uma fórmula só do dano achata isso. O `Record<WeaponId, …>` obriga a arma nova a declarar o dela (como `DAMAGE_TYPE`); `ARSENAL.md` ganhou a nota.
+- **Por que só tremor e não solavanco de mira:** o tremor é só render (posição e rolagem da câmera), a mira continua onde o jogador pôs. Um view kick de verdade sobe a mira e muda a pontaria: sem playtest do dono, no mouse e no toque, é o tipo de coisa que irrita. Fica no ROADMAP como a metade que falta.
+- **Conta de equilíbrio da câmera:** o trauma acumula por tiro e decai 1,6/s; em equilíbrio vale `tremor × tiros/s ÷ 1,6`. Teste: arma de energia, em qualquer nível, fica abaixo de 0,3 segurando o gatilho (o plasma MK III dá ~0,19; a escopeta MK III, ~0,24). Arma de munição se limita pelo carregador.
+- **Não verificado:** sensação. Um quadro parado não mostra tremor e não senti nada em partida. Os testes provam a regra (peso, ordem, um por salva), não que o valor seja agradável: **o dono ajusta `FIRE_KICK`**, num lugar só. Também não existe opção para reduzir o tremor; sugestão: respeitar `prefers-reduced-motion` no `CameraRig` (afetaria todo o tremor, não só este, por isso não entrei).
+- **Território:** o jogador e o combate são do Claude; `Game.ts` é zona compartilhada (uma linha); `CameraRig` não foi tocado.
+**Quem decidiu:** dono (a direção); Claude (a execução e o registro).
+
 ## [2026-10-08] Janelas acesas nos prédios, no shader e não em geometria (Claude)
 
 Terceiro passo da ordem de `REFERENCIA_VISUAL.md`, dentro do estilo atual. Defeito: os três prédios eram blocos lisos com arestas e faixas neon; o MechArena tem fachadas com vida.
