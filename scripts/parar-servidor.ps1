@@ -24,8 +24,23 @@ function EsperarLivre([int]$segundos) {
   return -not (PortaOcupada)
 }
 
+# Depois que o node sai, o cmd.exe da tarefa ainda leva um instante para terminar. Religar a tarefa nesse instante bate numa corrida do
+# Agendador: a instância nova nasce e morre na hora, com resultado 1 e sem escrever nada no log (medido em 09/10, derrubou o servidor).
+# Por isso este script só devolve 0 com a tarefa de fato parada (e uma folga), pronta para o `Start-ScheduledTask` de quem chamou.
+function TarefaRodando { $t = Get-ScheduledTask -TaskName $Tarefa -ErrorAction SilentlyContinue; return ($t -and $t.State -eq 'Running') }
+function AquietarTarefa {
+  $fim = (Get-Date).AddSeconds(15)
+  while ((TarefaRodando) -and (Get-Date) -lt $fim) { Start-Sleep -Milliseconds 500 }
+  if (TarefaRodando) {
+    Stop-ScheduledTask -TaskName $Tarefa -ErrorAction SilentlyContinue
+    $fim = (Get-Date).AddSeconds(10)
+    while ((TarefaRodando) -and (Get-Date) -lt $fim) { Start-Sleep -Milliseconds 500 }
+  }
+  Start-Sleep -Seconds 3
+}
+
 if (-not (PortaOcupada)) {
-  Stop-ScheduledTask -TaskName $Tarefa -ErrorAction SilentlyContinue # a tarefa pode estar "rodando" sem servidor: limpa
+  AquietarTarefa # a tarefa pode estar "rodando" sem servidor: limpa
   exit 0
 }
 
@@ -45,7 +60,7 @@ try {
   Write-Host "não consegui criar o pedido de parada em ${Dados}: $($_.Exception.Message)"
 }
 if (EsperarLivre 25) {
-  Stop-ScheduledTask -TaskName $Tarefa -ErrorAction SilentlyContinue # a tarefa termina sozinha quando o node sai; isto só limpa o estado
+  AquietarTarefa # a tarefa termina sozinha quando o node sai; espera isso (ou a para) antes de devolver
   exit 0
 }
 
@@ -59,6 +74,6 @@ foreach ($o in @(Get-NetTCPConnection -LocalPort $Porta -State Listen -ErrorActi
     catch { Write-Host "não consegui encerrar o node $($p.Id): $($_.Exception.Message) (precisa de PowerShell como administrador)" }
   }
 }
-if (EsperarLivre 8) { exit 0 }
+if (EsperarLivre 8) { AquietarTarefa; exit 0 }
 Write-Host "FALHOU: a porta $Porta continua ocupada."
 exit 1

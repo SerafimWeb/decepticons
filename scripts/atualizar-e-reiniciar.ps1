@@ -29,14 +29,15 @@ if ($codigo -eq 0) {
   # Stop-ScheduledTask sozinho deixa o node órfão segurando a porta, e o novo não sobe) e liga de novo.
   & "$PSScriptRoot\parar-servidor.ps1"
   if ($LASTEXITCODE -eq 0) {
-    Start-ScheduledTask -TaskName 'CYBERMECH servidor'
-    $status = $null
-    for ($i = 0; $i -lt 24 -and -not $status; $i++) {
-      Start-Sleep -Seconds 5
-      try { $status = Invoke-RestMethod -Uri 'http://127.0.0.1:2567/status' -TimeoutSec 4 } catch { }
+    # ligar-servidor.ps1 liga, confere o /status e tenta de novo (até 3 vezes) se a instância nascer e morrer.
+    $saida = (& "$PSScriptRoot\ligar-servidor.ps1" 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -eq 0) {
+      Registrar "servidor religou no código novo: $saida"
+      Remove-Item $pendente -Force -ErrorAction SilentlyContinue
+    } else {
+      Registrar "ATENÇÃO: o servidor NÃO voltou depois de parar: $saida"
+      New-Item -ItemType File -Force -Path $pendente | Out-Null # a próxima rodada tenta de novo
     }
-    if ($status) { Registrar "servidor religou no código novo (protocolo $($status.protocol))" } else { Registrar 'ATENÇÃO: o servidor não respondeu em 2 min depois de religar; veja .tmp\servidor\servidor.log' }
-    Remove-Item $pendente -Force -ErrorAction SilentlyContinue
   } elseif (-not (Test-Path $pendente)) {
     # Registra só na primeira vez; as tentativas seguintes (a cada 10 min) ficam quietas até dar certo.
     Registrar 'ATENÇÃO: o servidor antigo continua no ar: não saiu pelo pedido de parada (servidor de antes dessa vigia). O código novo já está em disco. Reiniciar uma vez exige PowerShell como administrador: Get-NetTCPConnection -LocalPort 2567 -State Listen | % { Stop-Process -Id $_.OwningProcess -Force }; Start-ScheduledTask -TaskName "CYBERMECH servidor"'
