@@ -1,3 +1,9 @@
+## [2026-10-09] Evolução progressiva em execução: Hangar mais leve e seleção protegida (Codex)
+
+O dono pediu execução autônoma gradual, após sucessivos planos sem implementação. Primeiro corte independente: HangarScene. Materiais aditivos transparentes de dois lados (colunas, cones e telas) passam a forceSinglePass: o somatório aditivo não precisa da separação de frente/verso. A/B no mesmo renderer, cena e pose, Edge/ANGLE D3D11 na integrada AMD Vega 11, 1280×720: 102→94 draw calls, 11040→10684 triângulos submetidos; 549 canais de imagem diferem, máximo 1/255. Renderer simples, sem compositor/UI; preserveDrawingBuffer e gl.finish para comparação; check concorrente, sem A/B alternado. p50/p95 brutos não são medida de FPS estável nem ganho percentual certificado. Dados/captura em medicoes/ e arte/.
+
+R17: carga GLB atrasada chamava show com chassi/montagem antigos. Versão de seleção descarta callbacks superados; rejeição é tratada. Três testes, incluindo troca de chassi e de montagem durante a carga. Não altera física, dano, protocolos ou modelos. CPU: um incremento/comparação por seleção, fora do loop; render reduz submissões; rede zero. Warmup de Hangar/GLB continua pendente. Proposta de coordenação registrada no ESTADO_ATUAL; não atribuir execução automática às outras sessões.
+
 ## [2026-10-09] Estado coerente e evolução técnica baseada no código (Codex)
 
 Pedido do dono: corrigir o estado atual e prosseguir com a evolução frente a War Robots/Mech Arena. Base conferida: main `96711ea`, #192; nenhum PR aberto no início. Corrigidos o resumo que ainda dizia servidor offline, a data de atualização e o incremento #173 ainda descrito como não publicado/AUSENTE no STATUS_REAL. Os relatos antigos foram preservados como histórico; disponibilidade de produção não foi consultada nem alterada.

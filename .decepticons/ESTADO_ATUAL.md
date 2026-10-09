@@ -25,7 +25,14 @@ Base conferida: `origin/main` @ `96711ea`, PR #192 mergeado. Os relatos datados 
 - Protocolo 6: snapshots completos quantizados, 60/20 Hz, 8 humanos por sala. `ack` confirma input aplicado; não é baseline de delta de snapshot. 100 clientes em 13 salas no ensaio de 06/10 não significam 100 jogadores numa arena.
 - Próxima sessão Codex: partir de `EVOLUCAO_TECNICA.md`, fechar medição de frame time e aquecimento de Hangar/GLB antes de ampliar efeitos. Rede/controle físico exigem contrato e coordenação com a frente responsável; nenhum novo teto de jogadores foi aprovado nesta auditoria.
 
-Esta correção está em `codex/estado-tecnico` até o merge do PR; não representa entrega de gameplay nem homologação nova.
+Correção publicada pelo PR #193. Não representa entrega de gameplay nem homologação nova.
+
+## Incremento Codex — Hangar mais leve (09/10; branch `codex/hangar-fluido`, aguardando PR/merge)
+
+- `HangarScene`: hologramas, cones de luz e telas aditivos em passagem única. A/B na mesma cena e enquadramento, Edge headless com GPU AMD Vega 11 (ANGLE D3D11), 1280×720: **102 →94 draw calls**, 11040 →10684 triângulos submetidos; diferença máxima de pixels 1/255. Não é homologação de FPS: sem compositor/UI, gl.finish e check concorrente; tempos brutos somente como diagnóstico. Evidência: `medicoes/hangar-render-2026-10-09.json`, `arte/hangar-passagem-unica-codex.png`.
+- Corrida de carregamento corrigida: callback de GLB atrasado não substitui o último chassi/montagem escolhido; falha de rede tratada. Três testes cobrem seleção, montagem e erro. Primeiro uso de shader no Hangar/GLB continua pendente; este corte reduz passadas e corrige seleção.
+- Coordenação, proposta para as outras sessões (não despachada automaticamente): **Claude** — física parada/reconciliação e feedback HIT/escudos online; **Gemini** — revisão de HUD/menus/áudio/controles dentro do território registrado; **Qwen/DeepSeek** — revisão independente dos resultados e documentação. **Codex** executa render/desempenho/câmeras/armas visuais; não espera essas frentes para avançar em cortes independentes. Prioridades compartilhadas são propostas, não novas tarefas assumidas por agentes ausentes.
+- Próxima sessão Codex: primeiro uso de shaders em Hangar/GLB, depois material/silhueta com comparação visual; preservar estilo e orçamento. Cada incremento fecha check, evidência, PR e merge.
 
 ---
 
