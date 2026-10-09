@@ -6,7 +6,7 @@
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Retorno do servidor público ao protocolo 6 registrado em 09/10, com ciclos de reinício provados (PRs #189–#192); disponibilidade neste instante não consultada nesta auditoria. Offline: Arena + Sobrevivência + CTF |
-| **Build** | Última entrega validada (09/10, Codex, PR #194): JS 325,4 KB e Wasm 719,4 KB gzip (tetos 500/900); 707 testes, typecheck, smoke, bocas, site e CI verdes; deploy confirmado |
+| **Build** | Validação Codex C1 (#198): JS 325,6 KB e Wasm 719,4 KB gzip (tetos 500/900); 709 testes, typecheck, smoke, bocas e site verdes localmente. Publicação: consultar o PR e o deploy da main; #194 já teve deploy confirmado |
 | **Última sessão** | 09/10 (Claude): atualização da máquina, retorno de produção ao protocolo 6 e reinício automático provado (#189–#192); pré-compilação de shaders medida na Iris Xe. 08/10: sombra, janelas, recuo e cauda dos tiros. Histórico detalhado abaixo |
 | **Próximo** | pedidos do dono (06/10) ainda sem escopo: câmeras de espectador e painel de campanhas personalizadas (ver `ROADMAP.md`); drones e escudo físico completos no servidor online; playtest do dono: esfera, aliados, escudo físico, Prédio Serafim e drones, tudo ainda só validado em bancada; dono julga o Marauder (Hangar e partida); M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); ideias do dono em `ROADMAP.md` (jogadas de Mech, facções, estilos de jogo) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
@@ -15,9 +15,11 @@
 
 **Última atualização:** 2026-10-09 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
 
-## EM BRANCH — NÃO ESTÁ NO AR: Codex, preparação gráfica (09/10)
+## Preparação gráfica C1 — Codex (09/10, PR #198)
 
-Branch `codex/preparacao-grafica`, worktree `.tmp/wt-codex-preparacao-grafica`, base `8b899b9` (#197). Plano C1–C6 em `EVOLUCAO_TECNICA.md`: primeiro preparar Hangar/montagem atual no carregamento; depois GLB/remotos, custo estável, otimização do gargalo medido, leitura visual e efeitos elementais após contrato. PR ainda não aberto neste registro de execução; não confundir com entrega publicada.
+**EM BRANCH — NÃO ESTÁ NO AR enquanto #198 estiver aberto.** Depois do merge, C1 integra a main; publicação no site depende do deploy verde do workflow da main. Este registro conserva a evidência de bancada e os limites, não certifica FPS sustentado.
+
+Branch `codex/preparacao-grafica`, worktree `.tmp/wt-codex-preparacao-grafica`, base `8b899b9` (#197). Plano C1–C6 em `EVOLUCAO_TECNICA.md`: primeiro preparar Hangar/montagem atual no carregamento; depois GLB/remotos, custo estável, otimização do gargalo medido, leitura visual e efeitos elementais após contrato. PR #198: https://github.com/SerafimWeb/decepticons/pull/198. Check local e gate de push completos: 709 testes, typecheck, build, budget, smoke, bocas e site verdes; CI obrigatório para merge.
 
 C1 só altera preparação de render e fiação em `Game.ts`, não simulação, rede, armas, HUD ou áudio. Inicialização única mantém o orçamento compartilhado de espera/fallback; o driver síncrono não é interrompível. Na Vega 11, Vector-09 passou de 9 programas novos na abertura a 0; Vector desktop, Marauder atual e celular emulado tiveram 0 novos na abertura, disparo e retorno. Quadro oculto antecipa recursos visíveis: Vector desktop retém 169 geometrias no boot contra 85 na baseline, sem custo extra no loop quando Hangar está fechado. Dados completos e reprodução em `medicoes/hangar-primeiro-uso-2026-10-09.json` e `.mjs`; três capturas `arte/hangar-preparacao-*.png`. Não certifica FPS/boot: máquina sob pressão de memória, driver/cache e carga concorrente; travadas continuam.
 
