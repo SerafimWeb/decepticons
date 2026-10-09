@@ -5,6 +5,10 @@
 
 Última revisão: 2026-10-09 (Codex: consistência documental; sem novo playtest público)
 
+## Hangar: incremento Codex 09/10 (em branch até o merge)
+
+Passagem única de hologramas, cones aditivos e telas: verificado em navegador/GPU Vega 11, 102→94 desenhos no mesmo enquadramento, diferença máxima de imagem 1/255. Sem compositor/UI na medição, não comprova FPS do jogo. Seleção assíncrona protege chassi e montagem recentes, com três testes; falha de carga tratada. Captura `arte/hangar-passagem-unica-codex.png`. **PARCIAL** até o merge e playtest no fluxo completo do Hangar. Compilação no primeiro uso de GLB/Hangar ainda não resolvida por este incremento.
+
 ## Incremento publicado — #173; playtest continua pendente
 
 Publicado pelo #173. Ctrl por toque (migração do antigo E), esfera em módulo extra (4 t, 150 energia, 40/s, até 3,75 s sem impactos), armas preservadas. Regras compartilhadas com servidor, protocolo 6 sem bytes adicionais. O retorno de produção ao protocolo 6 foi registrado em 09/10; isso não substitui playtest dessas mecânicas. Nenhuma consulta ou alteração de produção nesta auditoria.

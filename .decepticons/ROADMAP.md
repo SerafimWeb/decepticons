@@ -132,6 +132,7 @@
 - [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux
 - [~] Homologar FPS e frame time num notebook com GPU integrada: diagnóstico de shaders medido na Iris Xe em 09/10; custo estável dos efeitos e playtest do dono ainda pendentes (`EVOLUCAO_TECNICA.md`) #desempenho
 - [x] Travadas de 1,5 a 2 s por compilação de shader no primeiro uso: pré-compilação no carregamento, `forceSinglePass` na faixa do tiro e buffer de cor dos destroços (09/10; medido na Iris Xe: 0 programas compilados em jogo, 1 travada ≥ 300 ms contra 3 a 4) #desempenho
+- [x] Hangar: reduzir passadas dos hologramas aditivos e impedir GLB atrasado de trocar a seleção atual (Codex, 09/10: Vega 11, 102→94 draw calls no enquadramento medido; três testes de corrida) #desempenho
 - [ ] Custo estável dos efeitos visuais novos (céu, chão com textura, janelas, sombra, faixa): medir com A/B alternado na mesma sessão ou timer de GPU e fazê-los respeitar a qualidade adaptativa nas máquinas fracas #desempenho
 - [ ] Pré-compilar também a cena do Hangar, os robôs `.glb` e os robôs remotos do online (compilam no primeiro uso) #desempenho
 - [x] Render dos robôs: 9 draw calls por Vector-09 e por andróide, uma malha combinada por pivô articulado (antes ~34), com as peças ainda destacáveis (Codex, PR #43) #desempenho

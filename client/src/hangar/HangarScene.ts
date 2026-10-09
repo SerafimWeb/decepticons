@@ -228,6 +228,8 @@ function blueprintTexture(): THREE.CanvasTexture {
  * Tudo feito por código (texturas em canvas, geometria simples): nada para baixar. Custo só com o Hangar aberto.
  */
 export class HangarScene {
+  /** Uma carga atrasada não pode substituir a seleção mais recente do piloto. */
+  private showVersion = 0;
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(38, 1, 0.1, 220);
   private readonly turntable = new THREE.Group();
@@ -320,7 +322,7 @@ export class HangarScene {
     const column = (r: number, map: THREE.Texture, opacity: number) => {
       const m = new THREE.Mesh(
         new THREE.CylinderGeometry(r, r, COLUMN_H, 64, 1, true),
-        new THREE.MeshBasicMaterial({ map, color: CYAN, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+        new THREE.MeshBasicMaterial({ map, color: CYAN, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }),
       );
       m.position.y = PEDESTAL_TOP + COLUMN_H / 2;
       s.add(m);
@@ -550,7 +552,8 @@ export class HangarScene {
     // Lâmpadas penduradas: cúpula escura, bulbo quente (o brilho acende no bloom) e luz de verdade em algumas.
     const shade = new THREE.MeshStandardMaterial({ color: 0x2a2f33, roughness: 0.5, metalness: 0.6, side: THREE.DoubleSide });
     const bulb = new THREE.MeshBasicMaterial({ color: new THREE.Color(WARM).multiplyScalar(3) });
-    const cone = new THREE.MeshBasicMaterial({ color: WARM, transparent: true, opacity: 0.018, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    // Aditivo: frente e verso somam luz, sem exigir duas submissões de desenho.
+    const cone = new THREE.MeshBasicMaterial({ color: WARM, transparent: true, opacity: 0.018, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true });
     [
       [-12, -8],
       [12, -8],
@@ -597,7 +600,7 @@ export class HangarScene {
       s.add(a.root);
     }
     // Telas de holograma soltas no ar, com a planta de um Mech.
-    const screen = new THREE.MeshBasicMaterial({ map: blueprintTexture(), color: CYAN, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const screen = new THREE.MeshBasicMaterial({ map: blueprintTexture(), color: CYAN, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true });
     for (const [x, y, z, yaw] of [
       [-11, 5.5, -3, 0.55],
       [-21, 12, -18, 0.2],
@@ -612,6 +615,7 @@ export class HangarScene {
 
   /** O Mech do pedestal: o chassi e as armas da montagem (um modelo por chassi, feito na primeira vez). */
   show(chassis: ChassisId, loadout: Loadout): void {
+    const version = ++this.showVersion;
     let m = this.displays.get(chassis);
     if (!m) {
       const importedAsset = IMPORTED_CHASSIS[chassis];
@@ -619,7 +623,9 @@ export class HangarScene {
         const rig = tryInstantiateMechRig(importedAsset.url, CHASSIS[chassis].height);
         if (!rig) {
           // Ainda carregando (raro — o preload dispara no boot do jogo): tenta de novo assim que
-          whenMechAssetReady(importedAsset.url, CHASSIS[chassis].height, importedAsset).then(() => this.show(chassis, loadout));
+          whenMechAssetReady(importedAsset.url, CHASSIS[chassis].height, importedAsset)
+            .then(() => { if (version === this.showVersion) this.show(chassis, loadout); })
+            .catch((err: unknown) => console.warn('Hangar: não foi possível carregar o Mech selecionado', err));
           return;
         }
         m = new ImportedMech(CHASSIS[chassis], rig, loadout);
