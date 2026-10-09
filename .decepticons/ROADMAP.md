@@ -268,7 +268,9 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [x] Referência visual do MechArena registrada (`REFERENCIA_VISUAL.md`, pranchas em `referencias/mecharena/`); decisão do dono em 07/10: elevar a qualidade dentro do estilo atual antes de evoluir #cenarios
 - [x] Atmosfera dentro do estilo atual: céu em degradê com brilho no horizonte, névoa colorida e chão com placas de metal (`environment/Atmosphere.ts`, 07/10; custo de GPU ainda sem medida numa GPU integrada real) #cenarios
 - [x] Sombra de contato sob os robôs (`fx/ShadowBlobs.ts`, 08/10): um disco macio por unidade num único `InstancedMesh`, sem mapa de sombra; custo em GPU/CPU ainda sem medida numa máquina real (G12) #cenarios
-- [ ] Cenário vivo dentro do estilo atual: adereços instanciados (contêineres, letreiros, janelas emissivas) e efeitos com mais corpo (cauda no plasma, anel de choque, desfoque de dash em qualidade alta) #cenarios
+- [x] Janelas acesas nos três prédios da Arena (`environment/BuildingWindows.ts`, 08/10): desenhadas no shader, em coordenadas do mundo, sem geometria, textura nem draw call novo #cenarios
+- [ ] Cenário vivo dentro do estilo atual: adereços instanciados (contêineres, letreiros), janelas nas torres do horizonte e no Prédio Serafim #cenarios
+- [ ] Efeitos com mais corpo dentro do estilo atual: cauda no plasma e no blaster, anel de choque na explosão, desfoque de dash em qualidade alta #cenarios
 - [ ] Tela inicial com apelido e escolha de Mech #ux
 - [x] Estande de calibração do mouse: gravar uma volta de 360° com o movimento real, cm/360, entrada crua (sem aceleração do sistema) #jogabilidade
 - [ ] Suporte a controle (gamepad) #jogabilidade
