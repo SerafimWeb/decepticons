@@ -1,6 +1,6 @@
 import type * as THREE from 'three';
 import { describe, expect, it, vi } from 'vitest';
-import { WARMUP_TIMEOUT_MS, warmUpShaders, type WarmupRenderer } from './ShaderWarmup';
+import { WARMUP_TIMEOUT_MS, warmUpSceneResources, warmUpShaders, type WarmupRenderer } from './ShaderWarmup';
 
 const TARGET = { id: 'alvo-hdr' } as unknown as THREE.WebGLRenderTarget;
 const SCENE = {} as THREE.Object3D;
@@ -28,6 +28,21 @@ function falso(nProgramas: number, compile: () => Promise<unknown> = () => Promi
 }
 
 describe('pré-compilação dos shaders', () => {
+  it('prepara recursos num quadro oculto e devolve o alvo anterior, sem desenhar no canvas', () => {
+    const previous = { id: 'anterior' } as unknown as THREE.WebGLRenderTarget;
+    const targets: Parameters<THREE.WebGLRenderer['setRenderTarget']>[0][] = [];
+    const render = vi.fn(() => expect(targets.at(-1)).toBe(TARGET));
+    warmUpSceneResources({ getRenderTarget: () => previous, setRenderTarget: t => { targets.push(t); }, render }, TARGET, SCENE as THREE.Scene, CAMERA);
+    expect(render).toHaveBeenCalledWith(SCENE, CAMERA);
+    expect(targets).toEqual([TARGET, previous]);
+  });
+
+  it('falha no desenho oculto restaura o alvo da tela antes de propagar para o fallback', () => {
+    const targets: Parameters<THREE.WebGLRenderer['setRenderTarget']>[0][] = [];
+    expect(() => warmUpSceneResources({ getRenderTarget: () => null, setRenderTarget: t => { targets.push(t); }, render: () => { throw new Error('GPU perdida'); } }, TARGET, SCENE as THREE.Scene, CAMERA)).toThrow('GPU perdida');
+    expect(targets).toEqual([TARGET, null]);
+  });
+
   it('compila contra o alvo HDR do jogo (não contra a tela) e solta o alvo logo depois da parte síncrona', async () => {
     const f = falso(2);
     const r = await warmUpShaders(f.renderer, TARGET, SCENE, CAMERA);
