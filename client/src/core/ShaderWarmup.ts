@@ -28,6 +28,23 @@ export type WarmupResult = 'ok' | 'timeout' | 'erro';
 /** Cede a vez ao navegador (desenha o contador, atende o teclado) entre dois programas. */
 const yieldToBrowser = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
 
+/** O primeiro desenho também envia texturas/geometrias à GPU: compilar programas não prepara esses recursos. */
+export function warmUpSceneResources(
+  renderer: Pick<THREE.WebGLRenderer, 'getRenderTarget' | 'setRenderTarget' | 'render'>,
+  target: THREE.WebGLRenderTarget,
+  scene: THREE.Scene,
+  camera: THREE.Camera,
+): void {
+  const previous = renderer.getRenderTarget();
+  try {
+    renderer.setRenderTarget(target);
+    renderer.render(scene, camera);
+  } finally {
+    // Nada aparece no canvas; a Arena e o compositor continuam donos do próximo quadro.
+    renderer.setRenderTarget(previous);
+  }
+}
+
 /**
  * Compila os materiais de `scene` para `target`, o alvo em que o jogo desenha de verdade. O jogo desenha num alvo HDR do
  * compositor, sem tone mapping nem conversão de cor (o `OutputPass` faz isso no fim); compilar contra a tela geraria

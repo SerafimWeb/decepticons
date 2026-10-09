@@ -54,7 +54,7 @@ import { EnemySettings } from '../ui/EnemySettings';
 import { InputManager } from './InputManager';
 import { Quality } from './Quality';
 import { browserStorage, radiansPerCount, Settings, type GameSettings, type QualityPreset } from './Settings';
-import { warmUpShaders } from './ShaderWarmup';
+import { WARMUP_TIMEOUT_MS, warmUpSceneResources, warmUpShaders } from './ShaderWarmup';
 import { DebugPanel } from '../debug/DebugPanel';
 import { TouchControls } from '../ui/TouchControls';
 import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
@@ -709,10 +709,29 @@ export class Game {
     if (cta) cta.textContent = '[ preparando gráficos... ]';
     if (overlay) overlay.style.pointerEvents = 'none';
     try {
+      const deadline = Date.now() + WARMUP_TIMEOUT_MS;
       const result = await warmUpShaders(this.renderer, this.composer.readBuffer, this.scene, this.camera, (done, total) => {
         if (cta) cta.textContent = `[ preparando gráficos ${done}/${total} ]`;
       });
       if (result !== 'ok') console.warn(`pré-compilação dos shaders: ${result} (o jogo segue; os programas compilam no primeiro uso)`);
+      // O galpão tem outras luzes e materiais: aquecer só a Arena não prepara a primeira abertura.
+      // Reutiliza a montagem já carregada; os outros chassis continuam sob demanda, sem baixar assets novos aqui.
+      const remainingMs = deadline - Date.now();
+      if (remainingMs > 0) {
+        this.hangarScene ??= new HangarScene();
+        this.hangarScene.show(this.hangar.current.chassis, this.hangar.equipped);
+        this.resizeHangar();
+        const hangarResult = await warmUpShaders(this.renderer, this.composer.readBuffer, this.hangarScene.scene, this.hangarScene.camera, (done, total) => {
+          if (cta) cta.textContent = `[ preparando Hangar ${done}/${total} ]`;
+        }, Math.max(0, deadline - Date.now()));
+        if (hangarResult !== 'ok') console.warn(`pré-compilação do Hangar: ${hangarResult} (o jogo segue)`);
+        else warmUpSceneResources(this.renderer, this.composer.readBuffer, this.hangarScene.scene, this.hangarScene.camera);
+      } else {
+        console.warn('pré-compilação do Hangar: prazo esgotado na Arena (preparação fica para o primeiro uso)');
+      }
+    } catch (err: unknown) {
+      // Falha na preparação do galpão não impede entrar na Arena; a abertura mantém o fallback existente.
+      console.warn('pré-compilação do Hangar: erro (o jogo segue)', err);
     } finally {
       if (cta && text !== null) cta.textContent = text;
       if (overlay) overlay.style.pointerEvents = '';

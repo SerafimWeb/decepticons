@@ -1,3 +1,11 @@
+## [2026-10-09] Plano Codex C1–C6 e preparação gráfica do Hangar (Codex)
+
+O dono pediu continuidade autônoma e documentada enquanto Claude/Gemini trabalham. EVOLUCAO_TECNICA ganha cortes e critérios: preparação de Hangar/montagem atual, variantes posteriores/GLB/remotos, custo estável, otimização do gargalo, leitura visual e FX elementais após contrato. Territórios preservados; corrigido o resumo antigo de Claude sem crédito, agora em atividade segundo o dono.
+
+C1: Game.precompileShaders também monta/prepara Hangar e montagem já carregada contra o alvo HDR. Mesmas APIs de precompile, prazo de espera total compartilhado, fallback com aviso; não aguarda outro GLB. A primeira bancada mostrou shaders novos 9→0, mas buffers/texturas ainda pagavam primeiro desenho. Adicionado um quadro oculto para envio dos recursos visíveis, com restauração do alvo anterior inclusive em erro (dois testes). Não há loop novo quando Hangar está fechado; custo é de inicialização e memória antecipada. Não muda simulação, rede, estilo, HUD ou áudio.
+
+Limites: GPU Vega 11/Edge headless, Vite e máquina compartilhada sob carga; cache do driver e ordem das execuções impedem concluir ganho de FPS ou boot por comparação bruta. Travadas continuam no fluxo. 30 s não interrompem uma chamada síncrona do driver. C1 não cobre variantes criadas depois nem garante todos os recursos ocultos do treino. STATUS_REAL mantém PARCIAL; próximos cortes em EVOLUCAO_TECNICA. Evidências e validação detalhadas no PR desta entrega.
+
 ## [2026-10-09] Alinhamento técnico compartilhado com a frente Claude (Codex)
 
 A pedido explícito do dono, registrada passagem de bastão no ESTADO_ATUAL: War Robots e Mech Arena são inspiração técnica para evolução gradual medida, preservando stack, identidade, territórios e autoridade do dono sobre VISAO. Separados entregas #193/#194, pendências de primeiro uso de shaders e propostas para outras frentes. Corrigida a indicação antiga de #194 aguardando merge: está na main e seu deploy foi confirmado. Não houve contato direto com sessão externa do Claude; recebimento não confirmado. Nenhuma regra de gameplay, contrato ou tecnologia alterada; custo de CPU no jogo zero.

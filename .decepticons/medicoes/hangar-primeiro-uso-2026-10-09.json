@@ -1,0 +1,317 @@
+{
+  "date": "2026-10-09",
+  "author": "Codex",
+  "base": "8b899b9",
+  "method": "Edge headless com GPU real, Vite, Game completo e compositor/UI. Baseline desativa somente o bloco adicional de preparação do Hangar. Intercepta linkProgram e getProgramInfoLog; observa RAF. Abre Hangar, testa disparo por 4 s e retorna à Arena. Não usa gl.finish.",
+  "reproduction": "node .decepticons/medicoes/hangar-primeiro-uso.mjs (na raiz da worktree; saídas apenas em .tmp/warmup/)",
+  "sourceHashes": {
+    "game": "4e4686f77b70d66c9f41f199118a0ff706d1c1e20ea49f33e82de3490ff0877d",
+    "warmup": "c69a1188363f2a1f6a6f17c31651ef286078f5dea4fd64c77a4b8fe999410f77"
+  },
+  "limits": [
+    "Execuções sequenciais com cache do driver e carga concorrente; sem alternância A/B prolongada. Não demonstra ganho percentual de FPS ou boot.",
+    "Amostra de pressão de memória ao fim: 6092 MiB físicos totais, 196 MiB livres, 25 processos Node e 5 Edge. Não atribuir todas as travadas ao render.",
+    "Navegação do caso GLB repetida com domcontentloaded após timeout do load de 30 s da ferramenta. Ensaio final completou três casos.",
+    "Celular é emulado nesta GPU desktop; não certifica Android/iOS físico.",
+    "C1 aquece a montagem atual, sem todos os chassis/variantes posteriores/remotos. Timeout/erro mantém fallback. Orçamento de espera não interrompe chamada síncrona do driver.",
+    "Memória é contagem de recursos do renderer, não bytes de VRAM; um recurso de textura adicional ainda aparece ao abrir. Travadas continuam."
+  ],
+  "baseline": {
+    "label": "before-vector-1280",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "boot": {
+      "bootMs": 42703.10000000149,
+      "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "memory": {
+        "geometries": 85,
+        "textures": 23
+      },
+      "programs": 37,
+      "prepared": false
+    },
+    "opened": {
+      "memory": {
+        "geometries": 169,
+        "textures": 29
+      },
+      "programs": 46
+    },
+    "stats": {
+      "boot": {
+        "links": 41,
+        "programQueries": 41,
+        "slowQueries": 15,
+        "frames": 112,
+        "p50": 16.799999999999272,
+        "p95": 1500,
+        "p99": 5083.5,
+        "stalls50": 33,
+        "stalls300": 16
+      },
+      "open": {
+        "links": 9,
+        "programQueries": 9,
+        "slowQueries": 7,
+        "frames": 12,
+        "p50": 166.40000000000146,
+        "p95": 5333.4000000000015,
+        "p99": 5333.4000000000015,
+        "stalls50": 10,
+        "stalls300": 5
+      },
+      "test": {
+        "links": 0,
+        "programQueries": 0,
+        "slowQueries": 0,
+        "frames": 130,
+        "p50": 16.80000000000291,
+        "p95": 66.80000000000291,
+        "p99": 100.09999999999854,
+        "stalls50": 27,
+        "stalls300": 0
+      },
+      "return": {
+        "links": 0,
+        "programQueries": 0,
+        "slowQueries": 0,
+        "frames": 49,
+        "p50": 16.69999999999709,
+        "p95": 33.400000000001455,
+        "p99": 83.09999999999854,
+        "stalls50": 1,
+        "stalls300": 0
+      }
+    },
+    "errors": []
+  },
+  "final": [
+    {
+      "label": "after-vector-1280",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "boot": {
+        "bootMs": 15300.800000000745,
+        "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "memory": {
+          "geometries": 169,
+          "textures": 28
+        },
+        "programs": 48,
+        "prepared": true
+      },
+      "opened": {
+        "memory": {
+          "geometries": 169,
+          "textures": 29
+        },
+        "programs": 48,
+        "chassis": "vector09"
+      },
+      "stats": {
+        "boot": {
+          "links": 52,
+          "programQueries": 52,
+          "slowQueries": 6,
+          "frames": 325,
+          "p50": 16.699999999999818,
+          "p95": 83.39999999999964,
+          "p99": 467,
+          "stalls50": 20,
+          "stalls300": 7
+        },
+        "open": {
+          "links": 0,
+          "programQueries": 0,
+          "slowQueries": 0,
+          "frames": 34,
+          "p50": 50.099999999998545,
+          "p95": 483.5,
+          "p99": 1199.8999999999978,
+          "stalls50": 18,
+          "stalls300": 2
+        },
+        "test": {
+          "links": 0,
+          "programQueries": 0,
+          "slowQueries": 0,
+          "frames": 109,
+          "p50": 33.39999999999782,
+          "p95": 66.89999999999782,
+          "p99": 115.69999999999709,
+          "stalls50": 25,
+          "stalls300": 0
+        },
+        "return": {
+          "links": 0,
+          "programQueries": 0,
+          "slowQueries": 0,
+          "frames": 25,
+          "p50": 33.400000000001455,
+          "p95": 50.20000000000073,
+          "p99": 50.29999999999927,
+          "stalls50": 4,
+          "stalls300": 0
+        }
+      },
+      "errors": [],
+      "warnings": [
+        "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+      ]
+    },
+    {
+      "label": "after-marauder-1280",
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "boot": {
+        "bootMs": 47647.400000002235,
+        "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "memory": {
+          "geometries": 153,
+          "textures": 30
+        },
+        "programs": 50,
+        "prepared": true
+      },
+      "opened": {
+        "memory": {
+          "geometries": 153,
+          "textures": 31
+        },
+        "programs": 50,
+        "chassis": "marauder"
+      },
+      "stats": {
+        "boot": {
+          "links": 54,
+          "programQueries": 54,
+          "slowQueries": 10,
+          "frames": 373,
+          "p50": 16.69999999999891,
+          "p95": 200,
+          "p99": 1866.7000000000007,
+          "stalls50": 32,
+          "stalls300": 13
+        },
+        "open": {
+          "links": 0,
+          "programQueries": 0,
+          "slowQueries": 0,
+          "frames": 26,
+          "p50": 50.099999999998545,
+          "p95": 516.6999999999971,
+          "p99": 1000.0999999999985,
+          "stalls50": 13,
+          "stalls300": 2
+        },
+        "test": {
+          "links": 0,
+          "programQueries": 0,
+          "slowQueries": 0,
+          "frames": 124,
+          "p50": 33.200000000004366,
+          "p95": 50.19999999999709,
+          "p99": 66.69999999999709,
+          "stalls50": 13,
+          "stalls300": 1
+        },
+        "return": {
+          "links": 0,
+          "programQueries": 0,
+          "slowQueries": 0,
+          "frames": 30,
+          "p50": 33.099999999998545,
+          "p95": 66.69999999999709,
+          "p99": 116.5,
+          "stalls50": 5,
+          "stalls300": 0
+        }
+      },
+      "errors": [],
+      "warnings": [
+        "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+      ]
+    },
+    {
+      "label": "after-vector-390",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "boot": {
+        "bootMs": 28257.10000000149,
+        "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "memory": {
+          "geometries": 87,
+          "textures": 23
+        },
+        "programs": 48,
+        "prepared": true
+      },
+      "opened": {
+        "memory": {
+          "geometries": 87,
+          "textures": 24
+        },
+        "programs": 48,
+        "chassis": "vector09"
+      },
+      "stats": {
+        "boot": {
+          "links": 52,
+          "programQueries": 52,
+          "slowQueries": 7,
+          "frames": 657,
+          "p50": 16.69999999999891,
+          "p95": 18.700000000000728,
+          "p99": 366.59999999999854,
+          "stalls50": 23,
+          "stalls300": 8
+        },
+        "open": {
+          "links": 0,
+          "programQueries": 0,
+          "slowQueries": 0,
+          "frames": 50,
+          "p50": 49.900000000001455,
+          "p95": 83.69999999999709,
+          "p99": 233.70000000000073,
+          "stalls50": 16,
+          "stalls300": 0
+        },
+        "test": {
+          "links": 0,
+          "programQueries": 0,
+          "slowQueries": 0,
+          "frames": 140,
+          "p50": 33.299999999995634,
+          "p95": 50.39999999999782,
+          "p99": 83.19999999999709,
+          "stalls50": 15,
+          "stalls300": 0
+        },
+        "return": {
+          "links": 0,
+          "programQueries": 0,
+          "slowQueries": 0,
+          "frames": 38,
+          "p50": 17.19999999999709,
+          "p95": 50.200000000004366,
+          "p99": 66.89999999999418,
+          "stalls50": 3,
+          "stalls300": 0
+        }
+      },
+      "errors": [],
+      "warnings": [
+        "THREE.WebGLProgram: Program Info Log: (210,81-129): warning X4122: sum of 0.996094 and -2.98545e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.49272e-017 cannot be represented accurately in double precision\n(209,37-61): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision\n(210,82-106): warning X4122: sum of 1 and -1.66644e-018 cannot be represented accurately in double precision"
+      ]
+    }
+  ]
+}
