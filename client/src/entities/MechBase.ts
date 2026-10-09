@@ -1,5 +1,6 @@
 import { EnergyShield } from '../combat/EnergyShield';
 import { MetalShield, RAISED_SPEED } from '../combat/MetalShield';
+import { StatusSet } from '../combat/StatusEffects';
 import { CombatBoost } from '../combat/CombatBoost';
 import { legDamageLean } from '../fx/DamageVisuals';
 import RAPIER from '@dimforge/rapier3d-simd-compat';
@@ -57,6 +58,11 @@ export interface MechStats extends ChassisHeat {
    * (G14: o tiro tem que sair do mesmo lugar no cliente e no servidor). Sem isto, vale a medida do rig.
    */
   muzzles?: Partial<Record<MountId, Vec3>>;
+  /**
+   * Quanto dura em você cada estado (fogo, choque, gelo): 1 = normal, 0,5 = metade (Mech grande resiste), 1,5 = uma vez e meia.
+   * Sem isto, 1. Decisão do dono (09/10): o Colossus-01 resiste (`.decepticons/ARMAS_ELEMENTAIS.md`).
+   */
+  statusResist?: number;
 }
 
 /**
@@ -217,6 +223,8 @@ export abstract class MechBase {
   readonly energyShield = new EnergyShield();
   /** Escudo físico da mão esquerda (`MetalShield.ts`): o botão 2 levanta a chapa. */
   readonly metalShield = new MetalShield();
+  /** Fogo, choque e gelo em andamento (`combat/StatusEffects.ts`); o `CombatSystem` aplica e o `Match` faz o tempo correr. */
+  readonly status = new StatusSet();
   /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
   private armed: Loadout;
   private leftRecoil = 0;
@@ -246,6 +254,7 @@ export abstract class MechBase {
     this.pelvisBaseRoll = rig.pelvis.rotation.z;
     this.rightArmBaseZ = rig.rightArm.position.z;
     this.heatSink = new HeatSink(stats);
+    this.status.resist = stats.statusResist ?? 1;
     this.armed = loadout;
     this.energyShield.equip(loadout.module);
     this.metalShield.equip(loadout.metalShield, stats.maxModuleHealth.leftArm);
@@ -411,7 +420,7 @@ export abstract class MechBase {
 
   /** Canhão de plasma fica no braço direito; superaquecido, trava até esfriar. */
   get canFirePrimary(): boolean {
-    return this.alive && this.modules.rightArm > 0 && !this.heatSink.overheated;
+    return this.alive && this.modules.rightArm > 0 && !this.heatSink.overheated && this.status.canAct;
   }
 
   /** Calor do Mech (0 a 1) e se as armas estão travadas por superaquecimento (HUD, IA). */
@@ -460,7 +469,7 @@ export abstract class MechBase {
 
   /** O encaixe pode atirar agora: vivo, a parte do corpo dele de pé e as armas frias. Não olha se há arma nele. */
   canFireMount(mount: MountId): boolean {
-    return this.alive && this.modules[MOUNT_PART[mount]] > 0 && !this.heatSink.overheated;
+    return this.alive && this.modules[MOUNT_PART[mount]] > 0 && !this.heatSink.overheated && this.status.canAct;
   }
 
   /**
@@ -468,7 +477,7 @@ export abstract class MechBase {
    * caso dos ombros) e as armas frias.
    */
   get canFireSecondary(): boolean {
-    if (!this.alive || this.loadout.secondary === null || this.heatSink.overheated) return false;
+    if (!this.alive || this.loadout.secondary === null || this.heatSink.overheated || !this.status.canAct) return false;
     return this.triggers.secondary.some((m) => this.modules[MOUNT_PART[m]] > 0);
   }
 
@@ -552,7 +561,8 @@ export abstract class MechBase {
   }
 
   damagePart(part: MechPart, amount: number): DamageResult {
-    const result = applyDamage(this.modules, part, amount);
+    // O congelado leva mais dano (`StatusSet.damageTaken`).
+    const result = applyDamage(this.modules, part, amount * this.status.damageTaken);
     if (result.applied > 0) {
       this.hitFlash = 1;
       // Tomar tiro esquenta a blindagem (sem segurar o resfriamento: não é ação do Mech).
@@ -569,7 +579,23 @@ export abstract class MechBase {
     if (this.alive) this.heatSink.add(Math.max(0, amount), false);
   }
 
+  /**
+   * Dano por segundo de um estado (queimadura, choque): tira do torso, sem piscar o casco a cada tick e sem o calor de blindagem do
+   * acerto, e sem o bônus de dano do congelado. Quem decide quem matou é o `CombatSystem`.
+   */
+  statusDamage(amount: number): DamageResult {
+    const result = applyDamage(this.modules, 'torso', amount);
+    if (result.killed) this.die();
+    return result;
+  }
+
+  /** O fogo esquenta o Mech e **não o deixa resfriar** enquanto queima. */
+  absorbBurn(amount: number): void {
+    if (this.alive) this.heatSink.add(Math.max(0, amount), true);
+  }
+
   respawn(feet: THREE.Vector3): void {
+    this.status.reset();
     this.energyShield.reset();
     this.metalShield.reset();
     Object.assign(this.modules, this.stats.maxModuleHealth);
@@ -605,6 +631,7 @@ export abstract class MechBase {
   }
 
   private die(): void {
+    this.status.reset();
     this.combatBoost.reset();
     this.energyShield.stop();
     this.metalShield.raised = false;
@@ -680,7 +707,8 @@ export abstract class MechBase {
 
     // Superaquecido: 3/4 da velocidade (dá para fugir), sem pulo nem dash (os sistemas entram em emergência).
     // Chapa do escudo levantada: anda mais devagar (o dash continua, para sair da linha de tiro).
-    const mobility = this.mobility * (overheated ? OVERHEAT_SPEED : 1) * (this.metalShield.raised ? RAISED_SPEED : 1);
+    // Choque e gelo seguram a velocidade; atordoado ou congelado = 0 (nem anda, nem pula, nem dá dash: `mobility > 0` abaixo).
+    const mobility = this.mobility * (overheated ? OVERHEAT_SPEED : 1) * (this.metalShield.raised ? RAISED_SPEED : 1) * this.status.speedMultiplier;
 
     if (input.dash && this.dashCooldownLeft <= 0 && mobility > 0 && !overheated) {
       this.heatSink.add(s.heatDash);

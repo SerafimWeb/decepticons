@@ -32,7 +32,7 @@ import {
   sanitizeName,
   SNAPSHOT_HEADER_BYTES,
 } from './messages';
-import { NET_PARTS, UNIT_BYTES } from './state';
+import { NET_PARTS, UNIT_BYTES, UNIT_FX_BYTES } from './state';
 
 const angleDiff = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
 const copy = (v: Uint8Array) => new Uint8Array(v);
@@ -153,6 +153,30 @@ describe('rede: estado do servidor (UnitState)', () => {
       expect(Math.abs(b.heat - a.heat)).toBeLessThanOrEqual(1 / 510 + 1e-9);
       expect([b.alive, b.grounded, b.dashing, b.overheated, b.charging]).toEqual([a.alive, a.grounded, a.dashing, a.overheated, a.charging]);
     }
+  });
+
+  it('o byte fx (fogo, choque, gelo, lança-chamas, rotatória) só viaja quando há algo ligado: +1 byte só nessas unidades, e volta igual', () => {
+    const w = new Writer();
+    const sem = fullSnapshot(6);
+    const com = fullSnapshot(6);
+    com.units[1]!.fx = 0b10100101;
+    com.units[4]!.fx = 255;
+    const a = encodeSnapshot(w, sem).length;
+    const bytes = copy(encodeSnapshot(w, com));
+    expect(bytes.length - a).toBe(2 * UNIT_FX_BYTES);
+    const got = newSnapshot();
+    expect(decodeSnapshot(bytes, got)).toBe(true);
+    expect(got.units.slice(0, 6).map((u) => u.fx)).toEqual([0, 0b10100101, 0, 0, 255, 0]);
+    // As unidades seguintes continuam alinhadas depois de uma que carrega o byte extra.
+    expect(got.units[5]!.id).toBe(com.units[5]!.id);
+    expect(Math.abs(got.units[5]!.x - com.units[5]!.x)).toBeLessThanOrEqual(0.005 + 1e-9);
+    expect(decodeSnapshot(bytes.subarray(0, bytes.length - 1), got)).toBe(false); // cortado no meio do byte extra
+  });
+
+  it('o pior caso (todas as unidades com algum estado) ainda cabe nos 8 KB/s, mas o caso comum não paga nada', () => {
+    expect(downloadPerSecond(ROOM_UNITS, true)).toBeLessThan(DOWNLOAD_BUDGET);
+    expect(downloadPerSecond(ROOM_UNITS, true) - downloadPerSecond(ROOM_UNITS)).toBeCloseTo(ROOM_UNITS * UNIT_FX_BYTES * 20 * WIRE_OVERHEAD, 0);
+    expect(snapshotBytes(ROOM_UNITS)).toBe(SNAPSHOT_HEADER_BYTES + ROOM_UNITS * UNIT_BYTES);
   });
 
   it('sem alocação por pacote: o escritor devolve sempre uma vista do mesmo buffer', () => {

@@ -74,6 +74,14 @@ ARM_SLOTS compartilha engates de energia entre Mechs; não duplicar listas na UI
 
 Próximas propostas (não equipáveis): feixe térmico contínuo com exigência de mira/calor e arpão magnético com contrajogo/massa/rompimento do cabo. Não são novos IDs do catálogo ainda.
 
+## Estados de fogo, choque e gelo — 09/10, Claude
+
+Arma que **aplica um estado** no alvo usa o campo `inflicts` (`'burn' | 'shock' | 'chill'`) na entrada de `BASE`; o resto é do contrato de
+`combat/StatusEffects.ts` (`.decepticons/ARMAS_ELEMENTAIS.md`): o `CombatSystem` aplica no acerto que chega ao corpo, o `Match` faz o tempo
+correr antes dos pilotos, o `MechBase` lê `status` (velocidade, travas de tiro, dano recebido), e o servidor manda o byte `fx` de cada unidade.
+Números em `STATUS` (um lugar só); resistência por chassi em `MechStats.statusResist`. **Arma que não atira projétil** (lança-chamas,
+rotatória) liga `status.flaming`/`status.spinning` no dono em vez de mandar um evento por tiro.
+
 ## Natureza do dano — 06/10, Claude
 
 Toda arma declara a natureza do dano em `DAMAGE_TYPE` (`client/src/combat/weapons.ts`): o `Record` quebra o typecheck se faltar. Os escudos físicos (`MetalShield.ts`) resistem por natureza. Arma sônica futura usa `sonico` (o Amortecedor já está pronto para ela).

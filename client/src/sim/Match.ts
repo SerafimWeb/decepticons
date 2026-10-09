@@ -378,6 +378,11 @@ export class Match {
     if (this.round.playing) {
       this.waves?.fixedUpdate(dt, this.players.some((player) => player.alive));
       if (this.waves?.ended) return false;
+      // Fogo, choque e gelo: o tempo corre e o dano por segundo sai ANTES dos pilotos, para a velocidade e as travas do tick já usarem o
+      // estado atualizado. Mesma ordem no servidor e no jogo offline (G14).
+      for (const m of this.players) this.combat.tickStatus(m, dt);
+      for (const m of this.bots.mechs) this.combat.tickStatus(m, dt);
+      if (this.allies) for (const m of this.allies.mechs) this.combat.tickStatus(m, dt);
       for (const p of this.pilots) p.fixedUpdate(dt);
       this.bots.fixedUpdate(dt);
       this.allies?.fixedUpdate(dt);

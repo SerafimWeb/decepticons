@@ -229,6 +229,7 @@ export class OnlineSession implements Pilot {
       m.applyNetVitals(ub.parts, null, ub.alive);
       m.weaponCharging = ub.charging ?? false;
       m.energyShield.active = ub.shield ?? false;
+      m.status.applyNet(ub.fx ?? 0);
       r.placed = true;
       m.render(dt, 1);
     }
@@ -295,6 +296,8 @@ export class OnlineSession implements Pilot {
     }
     me.applyNetVitals(u.parts, Math.abs(u.heat - me.heat) > HEAT_TOLERANCE ? u.heat : null, u.alive);
     me.energyShield.applyNet(energy, u.shield ?? false);
+    // O servidor decide o fogo, o choque e o gelo; aqui só espelha, para a previsão do Mech do jogador usar a mesma lentidão.
+    me.status.applyNet(u.fx ?? 0);
     if (!u.alive) return;
     const i = ack % HISTORY;
     if (this.histTick[i] !== ack) return;
@@ -444,6 +447,7 @@ function copySnapshot(from: Snapshot, to: Snapshot): void {
     b.overheated = a.overheated;
     b.charging = a.charging;
     b.shield = a.shield;
+    b.fx = a.fx;
   }
 }
 

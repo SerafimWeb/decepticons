@@ -183,6 +183,12 @@ export class ArenaRoom {
     return null;
   }
 
+  /** O Mech desta unidade no servidor, para diagnóstico e teste (ver ou aplicar um estado de fogo, choque ou gelo). */
+  mechOf(id: number): MechBase | null {
+    for (const u of this.units) if (u.id === id) return u.mech;
+    return null;
+  }
+
   /** Libera o mundo físico (sala vazia fechando). */
   dispose(): void {
     if (this.disposed) return;

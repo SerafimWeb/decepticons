@@ -27,10 +27,17 @@ export interface UnitState {
   /** Aviso de carga (bit livre, mantém 19 bytes). Ausente em fixtures antigas = falso. */
   charging?: boolean;
   shield?: boolean;
+  /**
+   * Segundo byte de bandeiras: estados de fogo, choque e gelo, e se o lança-chamas está ligado ou a rotatória girando (bits e
+   * significado em `client/src/combat/StatusEffects.ts`, `FX_*`). Ausente em fixtures antigas = 0.
+   */
+  fx?: number;
 }
 
-/** Bytes de uma unidade: id, posição, 2 ângulos, 6 partes, calor e as flags. */
+/** Bytes de uma unidade: id, posição, 2 ângulos, 6 partes, calor e os dois bytes de flags. */
 export const UNIT_BYTES = 19;
+/** Byte a mais (`UnitState.fx`) que a unidade carrega **só quando tem algum estado ligado** (bit `HAS_FX` das flags): no caso comum, nada. */
+export const UNIT_FX_BYTES = 1;
 
 const ALIVE = 1;
 const GROUNDED = 2;
@@ -38,6 +45,8 @@ const DASHING = 4;
 const OVERHEATED = 8;
 const CHARGING = 16;
 const SHIELD = 32;
+/** As flags são seguidas de um byte `fx` (fogo, choque, gelo, lança-chamas, rotatória). Sem o bit, a unidade tem `UNIT_BYTES` e `fx` = 0. */
+const HAS_FX = 64;
 
 export function newUnitState(): UnitState {
   return {
@@ -60,7 +69,8 @@ export function newUnitState(): UnitState {
 export function writeUnit(w: Writer, s: UnitState): void {
   w.u8(s.id).i16(toCm(s.x)).i16(toCm(s.y)).i16(toCm(s.z)).u16(toAngle(s.yaw)).i16(toPitch(s.pitch));
   for (const p of NET_PARTS) w.u8(toFrac(s.parts[p]));
-  w.u8(toFrac(s.heat)).u8((s.alive ? ALIVE : 0) | (s.grounded ? GROUNDED : 0) | (s.dashing ? DASHING : 0) | (s.overheated ? OVERHEATED : 0) | (s.charging ? CHARGING : 0) | (s.shield ? SHIELD : 0));
+  w.u8(toFrac(s.heat)).u8((s.alive ? ALIVE : 0) | (s.grounded ? GROUNDED : 0) | (s.dashing ? DASHING : 0) | (s.overheated ? OVERHEATED : 0) | (s.charging ? CHARGING : 0) | (s.shield ? SHIELD : 0) | (s.fx ? HAS_FX : 0));
+  if (s.fx) w.u8(s.fx);
 }
 
 export function readUnit(r: Reader, out: UnitState): void {
@@ -73,11 +83,12 @@ export function readUnit(r: Reader, out: UnitState): void {
   for (const p of NET_PARTS) out.parts[p] = fromFrac(r.u8());
   out.heat = fromFrac(r.u8());
   const f = r.u8();
-  if (f & ~(ALIVE | GROUNDED | DASHING | OVERHEATED | CHARGING | SHIELD)) r.bad = true;
+  if (f & ~(ALIVE | GROUNDED | DASHING | OVERHEATED | CHARGING | SHIELD | HAS_FX)) r.bad = true;
   out.alive = (f & ALIVE) !== 0;
   out.grounded = (f & GROUNDED) !== 0;
   out.dashing = (f & DASHING) !== 0;
   out.overheated = (f & OVERHEATED) !== 0;
   out.charging = (f & CHARGING) !== 0;
   out.shield = (f & SHIELD) !== 0;
+  out.fx = f & HAS_FX ? r.u8() : 0;
 }

@@ -177,6 +177,32 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     b.session.dispose();
   });
 
+  it('o estado do servidor (choque, gelo) chega ao próprio jogador (previsão) e aos outros, e some quando acaba', async () => {
+    const a = await player('Alfa', 'M4S');
+    const b = await player('Bravo', 'M4S');
+    try {
+      await join([a, b], 7);
+      const doServidor = server.rooms.get('M4S')!.mechOf(a.session.myId)!;
+      const visto = () => b.session.remotes.get(a.session.myId)!.mech.status; // o outro jogador vê com o atraso da interpolação
+      doServidor.status.shockUp(true); // atordoado e chocado, decidido pelo servidor
+      doServidor.status.chillUp();
+      const t0 = performance.now();
+      while (!(a.me.status.stunned && visto().shocked) && performance.now() - t0 < 6000) await play([a, b], 60);
+      expect(a.me.status.stunned).toBe(true);
+      expect(visto().shocked).toBe(true);
+      expect(a.me.status.speedMultiplier).toBe(0); // o próprio Mech já para na previsão
+      expect(visto().stacks).toBe(1);
+      // Passa o tempo (o choque dura 3 s): some no servidor e nos dois clientes.
+      const t1 = performance.now();
+      while ((a.me.status.active || visto().active) && performance.now() - t1 < 12000) await play([a, b], 100);
+      expect(a.me.status.active).toBe(false);
+      expect(visto().active).toBe(false);
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
   it('dois jogadores na mesma sala: cada um vê o outro como pessoa, e o movimento de um aparece para o outro', async () => {
     const a = await player('Alfa', 'M4C');
     const b = await player('Bravo', 'M4C');

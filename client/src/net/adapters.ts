@@ -31,6 +31,7 @@ export function unitFromMech(mech: MechBase, id: number, out: UnitState): UnitSt
   out.overheated = mech.overheated;
   out.charging = mech.weaponCharging;
   out.shield = mech.energyShield.active;
+  out.fx = mech.status.bits;
   return out;
 }
 

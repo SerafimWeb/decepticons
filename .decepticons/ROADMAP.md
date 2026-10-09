@@ -179,7 +179,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio
 - [ ] **Decidir câmera de abate no PvP:** seguir o adversário revela sua posição; escolher entre liberar, atrasar/limitar ou manter ausente no competitivo #rede
 - [ ] **Nova arma toda semana** (com teste de balanço em `combat/balance.ts`; nenhuma abaixo do TTK do arsenal atual, nenhuma acima do teto de dano por segundo) #combate
-- [ ] **Armas elementais (pedido do dono, 09/10; plano, números e divisão em `ARMAS_ELEMENTAIS.md`):** efeitos de estado com tempo (queimando, chocado e atordoado, gelado e congelado) como contrato das quatro armas (PR-A, Claude) #combate
+- [x] **Armas elementais (pedido do dono, 09/10; plano, números e divisão em `ARMAS_ELEMENTAIS.md`):** efeitos de estado com tempo (queimando, chocado e atordoado, gelado e congelado) como contrato das quatro armas: simulação, servidor e rede, testado (PR-A, Claude, 09/10); nenhuma arma aplica ainda #combate
 - [ ] Metralhadora rotatória: a cadência sobe de 3 a 20 tiros/s em 1,2 s segurando o gatilho, espalhamento que abre, medidor na mira #combate
 - [ ] Arma elétrica: deixa o alvo chocado (lento, dano por segundo); o tiro bem dado atordoa 0,8 s e não encadeia #combate
 - [ ] Lança-chamas: fluxo contínuo em cone que atinge todos no cone, deixa queimando, combustível e calor de quem atira #combate
