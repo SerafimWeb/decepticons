@@ -3,10 +3,13 @@ import * as THREE from 'three';
 import { GLOW } from '../core/palette';
 import type { PhysicsHit, PhysicsWorld } from '../physics/PhysicsWorld';
 import type { ParticleSystem } from '../fx/ParticleSystem';
+import { buildStreakGeometry, buildStreakMaterial, growingLength, STREAK_HEAD_WIDTH, streakLength } from '../fx/ShotStreak';
 import { hitDamage, weapon, type WeaponStats } from './weapons';
 
 interface Projectile {
   mesh: THREE.Mesh;
+  /** Comprimento cheio da cauda (m), só no tiro de energia comum; 0 = o desenho próprio do trilho e do EMP. */
+  tail: number;
   prev: THREE.Vector3;
   pos: THREE.Vector3;
   velocity: THREE.Vector3;
@@ -41,6 +44,11 @@ export class ProjectileSystem {
   private readonly pool: Projectile[] = [];
   private readonly friendlyMat: THREE.MeshBasicMaterial;
   private readonly hostileMat: THREE.MeshBasicMaterial;
+  /** Tiro de energia comum (plasma, blaster, escopeta): faixa com cauda; o trilho e o EMP seguem com a esfera esticada. */
+  private readonly orbGeo = new THREE.SphereGeometry(0.2, 8, 6);
+  private readonly streakGeo = buildStreakGeometry();
+  private readonly friendlyStreak = buildStreakMaterial(GLOW.friendlyPlasma);
+  private readonly hostileStreak = buildStreakMaterial(GLOW.hostilePlasma);
 
   constructor(
     scene: THREE.Scene,
@@ -48,12 +56,11 @@ export class ProjectileSystem {
     private readonly particles: ParticleSystem,
     size = 64,
   ) {
-    const geo = new THREE.SphereGeometry(0.2, 8, 6);
     const mat = new THREE.MeshBasicMaterial({ color: GLOW.friendlyPlasma });
     this.hostileMat = new THREE.MeshBasicMaterial({ color: GLOW.hostilePlasma });
     this.friendlyMat = mat;
     for (let i = 0; i < size; i++) {
-      const mesh = new THREE.Mesh(geo, mat);
+      const mesh = new THREE.Mesh(this.orbGeo, mat);
       mesh.scale.set(1, 1, 6);
       mesh.visible = false;
       scene.add(mesh);
@@ -64,7 +71,7 @@ export class ProjectileSystem {
       trail.frustumCulled = false;
       scene.add(trail);
       this.pool.push({
-        mesh, trail, trailLife: 0,
+        mesh, trail, trailLife: 0, tail: 0,
         prev: new THREE.Vector3(),
         pos: new THREE.Vector3(),
         velocity: new THREE.Vector3(),
@@ -93,8 +100,12 @@ export class ProjectileSystem {
     p.traveled = 0;
     p.mesh.position.copy(origin);
     p.mesh.lookAt(_look.copy(origin).add(dir));
-    p.mesh.material = hostile ? this.hostileMat : this.friendlyMat;
-    p.trail.material = p.mesh.material;
+    // Tiro comum: faixa com cauda. Trilho e EMP (têm `tracer`): a esfera esticada de sempre, com o traço do trilho.
+    const streak = w.tracer === undefined;
+    p.tail = streak ? streakLength(w.speed) : 0;
+    p.mesh.geometry = streak ? this.streakGeo : this.orbGeo;
+    p.mesh.material = streak ? (hostile ? this.hostileStreak : this.friendlyStreak) : hostile ? this.hostileMat : this.friendlyMat;
+    p.trail.material = hostile ? this.hostileMat : this.friendlyMat;
     p.trail.visible = w.tracer === 'rail';
     p.trailLife = 0;
     const positions = p.trail.geometry.getAttribute('position');
@@ -103,7 +114,7 @@ export class ProjectileSystem {
     positions.needsUpdate = true;
     if (w.tracer === 'rail') p.mesh.scale.set(0.45, 0.45, 18);
     else if (w.tracer === 'pulse') p.mesh.scale.set(2.5, 2.5, 2.5);
-    else p.mesh.scale.set(1, 1, 6);
+    else p.mesh.scale.set(STREAK_HEAD_WIDTH, STREAK_HEAD_WIDTH, growingLength(p.tail, 0));
     p.mesh.visible = true;
   }
 
@@ -145,7 +156,10 @@ export class ProjectileSystem {
 
   render(alpha: number): void {
     for (const p of this.pool) {
-      if (p.life > 0) p.mesh.position.lerpVectors(p.prev, p.pos, alpha);
+      if (p.life <= 0) continue;
+      p.mesh.position.lerpVectors(p.prev, p.pos, alpha);
+      // A cauda cresce com o caminho já andado: nasce na boca em vez de atravessar o robô que atirou.
+      if (p.tail > 0) p.mesh.scale.z = growingLength(p.tail, p.traveled);
     }
   }
 

@@ -1,3 +1,14 @@
+## [2026-10-08] Cauda nos tiros de energia: faixa afilada no lugar da esfera esticada (Claude)
+
+Quarto passo da ordem de `REFERENCIA_VISUAL.md`, dentro do estilo atual. O projétil comum era uma esfera de 0,2 m esticada 6× em z (um elipsoide de 2,4 m, simétrico em volta do ponto do tiro): de trás, a visão normal, virava uma bolinha; o MechArena tem rastro com cauda.
+- **Desenho:** `buildStreakGeometry` — duas faixas cruzadas (uma deitada, uma em pé) ao longo de -Z, cabeça em z = 0 com largura 1 e alfa 1, fim em z = -1 com 24% da largura e alfa 0; o `Mesh` escala x/y pela largura (0,5 m na cabeça) e z pelo comprimento. Material aditivo, `depthWrite` falso, dois lados, `vertexColors` com RGBA (o alfa por vértice apaga a cauda) e a cor HDR do tiro (verde do jogador, vermelho do inimigo) para o bloom. O `lookAt` de um objeto comum aponta +Z para o alvo, então a cauda (-Z) fica atrás; **um teste confere isso em 5 direções** em vez de eu supor.
+- **Comprimento:** `0,04 s` de voo × velocidade, com piso de 2 m e teto de 9 m (plasma 5,6 m; blaster e escopeta 4,8 m). Cresce com `traveled` (começa em 0,4 m) para não atravessar o robô que atirou no primeiro quadro.
+- **Quem usa:** só o tiro de energia sem `tracer` (plasma, blaster, escopeta). Trilho (`rail`: pílula de 18 m + traço) e EMP (`pulse`: esfera) mantêm o desenho. Como o pool é reaproveitado, `fire` troca geometria, material e escala a cada disparo (um teste cobre faixa → esfera → faixa, para a escala 2,5 do EMP não vazar).
+- **Custo:** de 80 para 4 triângulos por projétil; o mesmo número de draw calls (um `Mesh` por projétil, pool de 64, como antes); a transparência aditiva soma preenchimento de tela por tiro em voo (áreas pequenas); **GPU real não medida**. CPU: uma atribuição de escala por projétil por quadro. Rede: zero.
+- **Não verificado:** o visual em jogo. Visto no Chrome headless (a ~1 fps, com a mira apontada para o alto para o tiro não bater no chão); de trás a cauda aparece encurtada (perspectiva), de lado e nos tiros inimigos aparece inteira. O ajuste fino (0,04 s, larguras) é do dono: `STREAK_*` num lugar só.
+- **Fica fora:** foguetes (`RocketSystem`, já deixam fumaça), chuva de mísseis, anel de choque na explosão e desfoque de dash (item novo no ROADMAP).
+**Quem decidiu:** dono (a direção); Claude (a execução e o registro).
+
 ## [2026-10-08] Peso do tiro na câmera: tremor por arma, sem mexer na mira (Claude)
 
 Pedido do dono: "continua melhorando os gráficos e jogabilidade". A `VISAO.md` promete "sensação de peso e massa"; conferido no código, a câmera tremia com pouso, dano recebido, explosão, abate e passos de gigante, mas **atirar não fazia nada** (só o braço do desenho recuava).
