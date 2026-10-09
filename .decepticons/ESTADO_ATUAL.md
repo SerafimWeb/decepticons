@@ -5,15 +5,27 @@
 | Aspecto | Status |
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
-| **Jogo** | Servidor público offline hoje por informação do dono (06/10); offline disponível (Arena + Sobrevivência + CTF) |
+| **Jogo** | Retorno do servidor público ao protocolo 6 registrado em 09/10, com ciclos de reinício provados (PRs #189–#192); disponibilidade neste instante não consultada nesta auditoria. Offline: Arena + Sobrevivência + CTF |
 | **Build** | Último check local (09/10, Claude, PR `claude/parar-servidor-de-verdade`): JS 325 KB e Wasm 719,4 KB gzip (tetos 500/900); 704 testes, typecheck, smoke, bocas e site verdes |
-| **Última sessão** | 07/10 (Claude): atmosfera da Arena (céu em degradê, névoa colorida, chão com placas) e referência visual do MechArena (#181); nome SINGULARIA em teste, só no título da capa do jogo; 06/10 (Claude): drones da base Serafim (patrulha/kamikaze/conserto/recarga); Prédio Serafim (monólito + LED de estado + base de drones); escudo físico na mão esquerda (4 modelos, botão 2); esfera/Ctrl/aliados concluídos (#173); Oficina em sincronia com o jogo (mapa clicável, texto e gráficos do código); 06/10: barreira frontal, observabilidade e capacidade local (#171); 06/10: clareza do Hangar/treino/modos (#170); 06/10: Banco VORCARIS (#169); 06/10: trilho e EMP (#168); 06/10: miras finas por arma (#166); 04/10: de onde vêm as conexões (país por dia, página privada de métricas); 04/10: chuva de mísseis e segurança do servidor; 03/10: Marauder com duas armas nas mãos e lançadores nos ombros; 02/10: o contrato do robô importado (`MECHS_IMPORTADOS.md`) |
+| **Última sessão** | 09/10 (Claude): atualização da máquina, retorno de produção ao protocolo 6 e reinício automático provado (#189–#192); pré-compilação de shaders medida na Iris Xe. 08/10: sombra, janelas, recuo e cauda dos tiros. Histórico detalhado abaixo |
 | **Próximo** | pedidos do dono (06/10) ainda sem escopo: câmeras de espectador e painel de campanhas personalizadas (ver `ROADMAP.md`); drones e escudo físico completos no servidor online; playtest do dono: esfera, aliados, escudo físico, Prédio Serafim e drones, tudo ainda só validado em bancada; dono julga o Marauder (Hangar e partida); M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); ideias do dono em `ROADMAP.md` (jogadas de Mech, facções, estilos de jogo) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
 
-**Última atualização:** 2026-10-07 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
+**Última atualização:** 2026-10-09 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
+
+## Auditoria do estado e evolução técnica (09/10, Codex)
+
+Base conferida: `origin/main` @ `96711ea`, PR #192 mergeado. Os relatos datados abaixo são histórico, não instruções operacionais atuais. O retorno registrado em 09/10 substitui a orientação de servidor offline de 06/10; esta tarefa não reinicia nem altera produção.
+
+- Esfera, Ctrl e aliados offline foram entregues no #173; escudo físico também está implementado, com limitações online descritas no `STATUS_REAL.md`. As referências antigas a AUSENTE não descrevem mais o catálogo atual.
+- Medição em GPU integrada já existe: Iris Xe, diagnóstico de compilação de shaders em 09/10. Ainda falta homologar FPS estável e custo dos efeitos; isso é diferente de nunca ter medido GPU real.
+- `OnlineSession.ts` confirma interpolação fixa de 100 ms e correção por deslocamento do histórico de posições, com tolerância de 3 cm. **Não há replay dos inputs pendentes**: não chamar essa versão de reconciliação por ressimulação. `EVENT.HIT` já alimenta dano recebido; retorno de acerto ao atirador continua pendente.
+- Protocolo 6: snapshots completos quantizados, 60/20 Hz, 8 humanos por sala. `ack` confirma input aplicado; não é baseline de delta de snapshot. 100 clientes em 13 salas no ensaio de 06/10 não significam 100 jogadores numa arena.
+- Próxima sessão Codex: partir de `EVOLUCAO_TECNICA.md`, fechar medição de frame time e aquecimento de Hangar/GLB antes de ampliar efeitos. Rede/controle físico exigem contrato e coordenação com a frente responsável; nenhum novo teto de jogadores foi aprovado nesta auditoria.
+
+Esta correção está em `codex/estado-tecnico` até o merge do PR; não representa entrega de gameplay nem homologação nova.
 
 ---
 
@@ -625,7 +637,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 
 ## PRÓXIMA SESSÃO COMEÇA COM
 
-- **Codex (06/10):** entrega energia/observabilidade mergeada no #171; conferir deploy estático; evidências em CAPACIDADE.md e OBSERVABILIDADE.md. Não consultar ou iniciar o servidor público enquanto a orientação de offline persistir. Próximo passo de produto: PLAYTEST.md, antes de escolher arena nova; esfera e escudo metálico removível (ocupa mão) seguem pendentes. Validação central do Serafim13/alertas, online público e carga prolongada seguem pendentes; não declarar escala homologada.
+- **Codex (09/10):** auditoria em EVOLUCAO_TECNICA.md; começar pela medição de frame time e primeiro uso de Hangar/GLB. Energia (#171), esfera/Ctrl/aliados offline (#173) e escudo físico já entregues; faltam playtest e limites online descritos no STATUS_REAL. Retorno de produção ao protocolo 6 registrado em 09/10; disponibilidade não consultada nesta tarefa. Não declarar escala homologada.
 
 - **Claude (03/10):** o Marauder está feito (ver ÚLTIMA SESSÃO FEZ). O que sobra dele: **jogador remoto desenhado com o chassi dele** e o encaixe no evento de tiro (`ROADMAP.md`, `FINDINGS.md`); o **escudo do Lancer** que bloqueia tiro, se o dono quiser; e, com a regra de tiro única e a boca como dado, trazer o encaixe de arma aos Mechs procedurais.
 - **Gemini:** **limpar a tela de pausa** (o dono marcou na captura: informação demais, coisas redundantes) e

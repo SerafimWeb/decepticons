@@ -130,7 +130,7 @@
 - [ ] Abertura da rodada ("RODADA 1 · 3·2·1 · COMBATE!") com locução sintetizada (Gemini) #ux
 - [ ] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) #ux
 - [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux
-- [ ] Medir o FPS num notebook com GPU integrada, com o painel de desempenho (pré-requisito do multiplayer; dono) #desempenho
+- [~] Homologar FPS e frame time num notebook com GPU integrada: diagnóstico de shaders medido na Iris Xe em 09/10; custo estável dos efeitos e playtest do dono ainda pendentes (`EVOLUCAO_TECNICA.md`) #desempenho
 - [x] Travadas de 1,5 a 2 s por compilação de shader no primeiro uso: pré-compilação no carregamento, `forceSinglePass` na faixa do tiro e buffer de cor dos destroços (09/10; medido na Iris Xe: 0 programas compilados em jogo, 1 travada ≥ 300 ms contra 3 a 4) #desempenho
 - [ ] Custo estável dos efeitos visuais novos (céu, chão com textura, janelas, sombra, faixa): medir com A/B alternado na mesma sessão ou timer de GPU e fazê-los respeitar a qualidade adaptativa nas máquinas fracas #desempenho
 - [ ] Pré-compilar também a cena do Hangar, os robôs `.glb` e os robôs remotos do online (compilam no primeiro uso) #desempenho
@@ -159,7 +159,7 @@
 - [x] Barricadas quebrando pelo servidor (`PROP_BROKEN`) e volta na rodada nova (`ARENA_RESET`); placar do jogador feito pelos `KILL` do servidor #rede
 - [x] Status do servidor na página: `GET /status` no servidor de jogo; a landing e a pausa mostram online/fora do ar e quantos pilotos estão em combate agora, sem abrir conexão de jogo (Claude, 28/09) #rede
 - [x] M5 (parcial): o servidor emite `EVENT.HIT` (quem levou, de quem, parte e dano aplicado), com teste de simulação #combate
-- [ ] M5: o cliente online consumir `EVENT.HIT` (marcador de acerto e indicador de dano) #ux
+- [~] M5: completar retorno de `EVENT.HIT`: dano recebido já consumido em `OnlineSession.onEvents`; marcador de acerto do atirador ainda pendente (auditoria Codex, 09/10) #ux
 - [ ] M5: compensação de latência; precisa de decisão de projeto antes do código (`FINDINGS.md`, seção M5) #combate
 - [ ] M6: entrada pelo link com código da sala + apelido; reconexão automática (G13) #rede
 - [ ] Telas do online: apelido, código da sala, jogadores, placar e ping (Gemini) #ux
@@ -279,7 +279,7 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [x] Estande de calibração do mouse: gravar uma volta de 360° com o movimento real, cm/360, entrada crua (sem aceleração do sistema) #jogabilidade
 - [ ] Suporte a controle (gamepad) #jogabilidade
 - [~] Recuo e tremor próprios de cada arma: o tremor de câmera por arma entrou (`combat/fireFeel.ts`, 08/10); falta o solavanco de mira (view kick), que mexe na pontaria e pede playtest do dono #jogabilidade
-- [ ] Medir o FPS numa GPU integrada real (meta do G12) #desempenho
+- [~] Consolidar medição em GPU integrada real (meta do G12): Iris Xe já usada no diagnóstico de shaders; falta A/B estável dos efeitos e percentis de frame time #desempenho
 - [ ] Issues do GitHub como rastreador de bugs, com severidade (trava > bloqueia > grave > leve) e passos para reproduzir #base
 - [ ] Teste noturno: bots jogando sozinhos no navegador headless para achar travamentos e erros #base
 - [ ] Dependências no painel: mostrar o que trava o quê entre frentes #base
