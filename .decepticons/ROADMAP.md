@@ -270,7 +270,8 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [x] Sombra de contato sob os robôs (`fx/ShadowBlobs.ts`, 08/10): um disco macio por unidade num único `InstancedMesh`, sem mapa de sombra; custo em GPU/CPU ainda sem medida numa máquina real (G12) #cenarios
 - [x] Janelas acesas nos três prédios da Arena (`environment/BuildingWindows.ts`, 08/10): desenhadas no shader, em coordenadas do mundo, sem geometria, textura nem draw call novo #cenarios
 - [ ] Cenário vivo dentro do estilo atual: adereços instanciados (contêineres, letreiros), janelas nas torres do horizonte e no Prédio Serafim #cenarios
-- [ ] Efeitos com mais corpo dentro do estilo atual: cauda no plasma e no blaster, anel de choque na explosão, desfoque de dash em qualidade alta #cenarios
+- [x] Cauda nos tiros de energia comuns (plasma, blaster, escopeta): faixa que afina para trás, em `fx/ShotStreak.ts` (08/10) #cenarios
+- [ ] Efeitos com mais corpo dentro do estilo atual: anel de choque na explosão e desfoque de dash em qualidade alta #cenarios
 - [ ] Tela inicial com apelido e escolha de Mech #ux
 - [x] Estande de calibração do mouse: gravar uma volta de 360° com o movimento real, cm/360, entrada crua (sem aceleração do sistema) #jogabilidade
 - [ ] Suporte a controle (gamepad) #jogabilidade
