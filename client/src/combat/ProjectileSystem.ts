@@ -59,6 +59,12 @@ export class ProjectileSystem {
     const mat = new THREE.MeshBasicMaterial({ color: GLOW.friendlyPlasma });
     this.hostileMat = new THREE.MeshBasicMaterial({ color: GLOW.hostilePlasma });
     this.friendlyMat = mat;
+    // Primer escondido da faixa: o pool nasce com a esfera e só ganha o material da faixa no primeiro tiro, então a
+    // pré-compilação (`core/ShaderWarmup.ts`) não a veria; este objeto leva o programa dela para o carregamento.
+    // Os dois lados (jogador e inimigo) usam o mesmo programa; um só basta.
+    const primer = new THREE.Mesh(this.streakGeo, this.friendlyStreak);
+    primer.visible = false;
+    scene.add(primer);
     for (let i = 0; i < size; i++) {
       const mesh = new THREE.Mesh(this.orbGeo, mat);
       mesh.scale.set(1, 1, 6);

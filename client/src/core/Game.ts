@@ -54,6 +54,7 @@ import { EnemySettings } from '../ui/EnemySettings';
 import { InputManager } from './InputManager';
 import { Quality } from './Quality';
 import { browserStorage, radiansPerCount, Settings, type GameSettings, type QualityPreset } from './Settings';
+import { warmUpShaders } from './ShaderWarmup';
 import { DebugPanel } from '../debug/DebugPanel';
 import { TouchControls } from '../ui/TouchControls';
 import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
@@ -242,7 +243,9 @@ export class Game {
       const { whenMechAssetReady } = await import('../entities/importedMechAssets');
       await whenMechAssetReady(importedAsset.url, CHASSIS[chassisId].height, importedAsset);
     }
-    return new Game(container, physics, hangar);
+    const game = new Game(container, physics, hangar);
+    await game.precompileShaders();
+    return game;
   }
 
   private constructor(
@@ -692,6 +695,28 @@ export class Game {
     this.setPixelRatio(quality === 'media' ? 1 : quality === 'baixa' ? 0.75 : maxPixelRatio());
     this.bloomPass.enabled = quality !== 'baixa';
     this.quality.setAdaptive(quality === 'auto');
+  }
+
+  /**
+   * Compila de uma vez, no carregamento, os programas de shader de tudo o que a cena já tem (`core/ShaderWarmup.ts`): sem
+   * isso cada programa novo congelava o jogo ~1,5 s no primeiro uso em partida (primeiros tiros, primeira morte).
+   * Enquanto compila, o botão avisa e o clique é ignorado; ao fim volta ao texto que o HUD tinha posto.
+   */
+  private async precompileShaders(): Promise<void> {
+    const cta = document.getElementById('cta');
+    const overlay = document.getElementById('overlay');
+    const text = cta?.textContent ?? null;
+    if (cta) cta.textContent = '[ preparando gráficos... ]';
+    if (overlay) overlay.style.pointerEvents = 'none';
+    try {
+      const result = await warmUpShaders(this.renderer, this.composer.readBuffer, this.scene, this.camera, (done, total) => {
+        if (cta) cta.textContent = `[ preparando gráficos ${done}/${total} ]`;
+      });
+      if (result !== 'ok') console.warn(`pré-compilação dos shaders: ${result} (o jogo segue; os programas compilam no primeiro uso)`);
+    } finally {
+      if (cta && text !== null) cta.textContent = text;
+      if (overlay) overlay.style.pointerEvents = '';
+    }
   }
 
   start(): void {

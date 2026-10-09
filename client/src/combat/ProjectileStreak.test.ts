@@ -8,11 +8,11 @@ import { weapon, type WeaponId } from './weapons';
 const FX = { burst: () => {} };
 const NO_HIT = { raycast: () => null };
 
-/** Um sistema de um projétil só: devolve o desenho dele (o primeiro `Mesh` da cena). */
+/** Um sistema de um projétil só: devolve o desenho dele (o `Mesh` do pool, sem contar o primer escondido da faixa). */
 function sistema() {
   const scene = new THREE.Scene();
   const system = new ProjectileSystem(scene, NO_HIT as never, FX as never, 1);
-  const mesh = scene.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh)!;
+  const mesh = scene.children.find((c): c is THREE.Mesh => c instanceof THREE.Mesh && (c.material as THREE.MeshBasicMaterial).vertexColors !== true)!;
   return { system, mesh };
 }
 
@@ -66,6 +66,17 @@ describe('cauda dos tiros de energia', () => {
       expect(along.length()).toBeCloseTo(mesh.scale.z, 4); // o comprimento é o da escala
       expect(along.normalize().dot(dir), `${raw.toArray()}`).toBeGreaterThan(0.9999); // aponta para onde o tiro vai
     }
+  });
+
+  it('um primer escondido leva o programa da faixa para a pré-compilação do carregamento (o pool só ganha o material no primeiro tiro)', () => {
+    const scene = new THREE.Scene();
+    new ProjectileSystem(scene, NO_HIT as never, FX as never, 2);
+    const meshes = scene.children.filter((c): c is THREE.Mesh => c instanceof THREE.Mesh);
+    const primers = meshes.filter((m) => (m.material as THREE.MeshBasicMaterial).vertexColors === true);
+    expect(primers).toHaveLength(1);
+    expect(primers[0]!.visible).toBe(false); // nunca aparece em jogo
+    expect(primers[0]!.geometry.getAttribute('color')?.itemSize).toBe(4);
+    expect((primers[0]!.material as THREE.MeshBasicMaterial).forceSinglePass).toBe(true);
   });
 
   it('o canhão de trilho e o EMP mantêm o desenho próprio (pílula longa e esfera), sem cauda', () => {

@@ -78,6 +78,7 @@ class Game {
 - ✅ Draw call reduzido com SkeletonUtils.clone + material compartilhado
 - ✅ Bloom com rendertarget próprio, tira apenas quando qualidade cai (não tira memória)
 - ⚠️ Importados com texture: CSP bloqueava blob: (corrigido em scripts/site.mjs)
+- ⚠️ **Shader compila no primeiro uso, e na GPU integrada cada programa congela ~1,5 s** (Iris Xe, 09/10). Medir com GPU real, nunca SwiftShader (o do CI não mostra isso). Material novo, variante nova (cor por instância, transparente de dois lados) e objeto que só aparece em jogo entram na pré-compilação do `Game.create` (`core/ShaderWarmup.ts`); ver `HISTORICO_DE_DECISOES.md` de 09/10
 
 ---
 
