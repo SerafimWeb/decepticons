@@ -90,6 +90,8 @@ causa: unstickFromGround só dispara com intenção de movimento horizontal
 
 **Padrão:** processo que não se deixa matar de fora precisa **sair sozinho**. O servidor vigia um arquivo de pedido (barato: `existsSync` a cada 2 s, fora do tick), apaga o pedido velho que achar ao subir (senão o servidor novo sai ao nascer), salva e sai com código 0. Testar com um servidor real numa porta de teste, não só com operações de mentira. E nunca declarar "reinício automático" sem ver o uptime do `/status` zerar.
 
+**Segunda armadilha (a mesma noite):** parar a tarefa e religar na hora falha: o `cmd.exe` da tarefa ainda está terminando, e o `Start-ScheduledTask` cria uma instância que nasce e morre com resultado 1, **sem escrever uma linha no log** (a redireção `>>` nem chega a rodar). Só dá para ver pelo `LastTaskResult` e pelo servidor que não volta. Padrão: esperar a tarefa ficar `Ready` (+ uma folga), ligar, **conferir o `/status`** e repetir se não respondeu.
+
 ### Cabeçalho de proxy só vale de quem é o proxy (`CF-IPCountry`, `CF-Connecting-IP`)
 
 **Descoberto:** 2026-10-04 | **Aplicação:** `server/guard.ts` (`clientIp`, `clientCountry`), `server/Server.ts`
