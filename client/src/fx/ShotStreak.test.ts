@@ -85,6 +85,12 @@ describe('geometria da faixa', () => {
 });
 
 describe('material da faixa', () => {
+  it('desenha numa passada só: o three faria duas (costas e frente, dois programas) num material transparente de dois lados', () => {
+    const m = buildStreakMaterial(new THREE.Color(1, 1, 1));
+    expect(m.transparent && m.side === THREE.DoubleSide).toBe(true); // o caso que o three desenha em duas passadas
+    expect(m.forceSinglePass).toBe(true); // uma passada: um programa a compilar e um desenho por tiro
+  });
+
   it('soma luz, não escreve profundidade, aparece dos dois lados e usa o alfa de cada vértice', () => {
     const m = buildStreakMaterial(new THREE.Color(0.9, 4, 1.5));
     expect(m.blending).toBe(THREE.AdditiveBlending);

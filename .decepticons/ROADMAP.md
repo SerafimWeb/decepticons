@@ -131,6 +131,9 @@
 - [ ] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) #ux
 - [ ] Tela de carregamento com barra de progresso e dicas (Gemini) #ux
 - [ ] Medir o FPS num notebook com GPU integrada, com o painel de desempenho (pré-requisito do multiplayer; dono) #desempenho
+- [x] Travadas de 1,5 a 2 s por compilação de shader no primeiro uso: pré-compilação no carregamento, `forceSinglePass` na faixa do tiro e buffer de cor dos destroços (09/10; medido na Iris Xe: 0 programas compilados em jogo, 1 travada ≥ 300 ms contra 3 a 4) #desempenho
+- [ ] Custo estável dos efeitos visuais novos (céu, chão com textura, janelas, sombra, faixa): medir com A/B alternado na mesma sessão ou timer de GPU e fazê-los respeitar a qualidade adaptativa nas máquinas fracas #desempenho
+- [ ] Pré-compilar também a cena do Hangar, os robôs `.glb` e os robôs remotos do online (compilam no primeiro uso) #desempenho
 - [x] Render dos robôs: 9 draw calls por Vector-09 e por andróide, uma malha combinada por pivô articulado (antes ~34), com as peças ainda destacáveis (Codex, PR #43) #desempenho
 - [x] Sinais visuais de calor no rig: emissivo progressivo e vapor no superaquecimento, sem alocação por frame e até 10 draw calls (Codex; check verde) #mechs
 - [x] **Encaixe de arma no pulso (o punho sem dedos):** as mãos somem e a arma da montagem se encaixa como módulo desenhado (plasma, foguetes, blaster, motosserra × MK I–III), que troca com o nível e a arma no Hangar; hoje só no Marauder; contrato em `MECHS_IMPORTADOS.md` #mechs

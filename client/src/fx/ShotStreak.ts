@@ -51,7 +51,14 @@ export function buildStreakGeometry(): THREE.BufferGeometry {
   return geometry;
 }
 
-/** Material da faixa: soma luz (aditivo), sem escrever profundidade, nos dois lados, com o alfa de cada vértice. */
+/**
+ * Material da faixa: soma luz (aditivo), sem escrever profundidade, nos dois lados, com o alfa de cada vértice.
+ *
+ * `forceSinglePass`: o three.js desenha material transparente de dois lados em DUAS passadas (costas e frente), cada uma com o
+ * seu programa de shader. Medido em 08/10: isso eram 2 programas a compilar (cada um congelava o jogo ~1,5 s na Iris Xe, no
+ * primeiro tiro) e 2 desenhos por tiro. Como a soma de luz não depende da ordem e nada escreve profundidade, uma passada só
+ * dá o mesmo desenho.
+ */
 export function buildStreakMaterial(color: THREE.Color): THREE.MeshBasicMaterial {
   return new THREE.MeshBasicMaterial({
     color,
@@ -60,5 +67,6 @@ export function buildStreakMaterial(color: THREE.Color): THREE.MeshBasicMaterial
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     side: THREE.DoubleSide,
+    forceSinglePass: true,
   });
 }

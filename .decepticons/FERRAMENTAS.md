@@ -90,7 +90,15 @@ o resumo permanente, o `LEIAME.md` é o manual completo e local.
 
 ---
 
-## 4. Considerações conhecidas (não são bug novo se você achar de novo)
+## 4. Medir travadas com GPU real
+
+**Quando:** o dono diz que o jogo "está lento" ou "travando", ou antes de entregar efeito visual novo. **O CI e o SwiftShader não servem:** renderizam por software, a ~1 fps, e não mostram o custo de compilar shader (na Iris Xe, ~1,5 s por programa).
+
+**Método (09/10):** Chrome do sistema com GPU de verdade (`--ignore-gpu-blocklist --use-angle=d3d11 --disable-frame-rate-limit --disable-gpu-vsync`), tela de laptop (1536×864 a 1,25× = 1920×1080; 1920×1080 a 1,5× = 2880×1620) e qualidade fixa em `alta` (a automática rebaixaria a imagem no meio da medida). Em vez de só a média de fps (que esconde congelamentos), registra **cada quadro acima de 80 ms com a fase da partida** (parado, atirando). Para achar a causa de uma travada: perfil de CPU pelo CDP (`Profiler.start`, amostragem de 1 ms) alinhado à janela de cada travada, e ganchos em `WebGL2RenderingContext` que medem `getProgramInfoLog` (onde o driver bloqueia ao terminar de compilar) e registram o código do shader. Armadilha: o aquecimento e a resolução mudam o resultado; compare só execuções com a mesma configuração, alternadas (base, nova, base, nova), porque o notebook esquenta.
+
+**Onde estão os scripts:** `.tmp/ferramentas/` desta máquina (`medir-travadas.mjs`, `medir-quadros.mjs`, `capturar-arena.mjs`), fora do git (G15). Se forem úteis a outro agente, vale promovê-los a `scripts/` com teste.
+
+## 5. Considerações conhecidas (não são bug novo se você achar de novo)
 
 - **Mech parado afunda lentamente no chão, sem limite** (achado 29/09, não corrigido). Reproduz
   com qualquer Mech parado tempo suficiente; mais visível no Colossus (grande, parado mirando)
