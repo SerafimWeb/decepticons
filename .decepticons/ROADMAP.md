@@ -274,7 +274,7 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] Tela inicial com apelido e escolha de Mech #ux
 - [x] Estande de calibração do mouse: gravar uma volta de 360° com o movimento real, cm/360, entrada crua (sem aceleração do sistema) #jogabilidade
 - [ ] Suporte a controle (gamepad) #jogabilidade
-- [ ] Recuo e tremor próprios de cada arma #jogabilidade
+- [~] Recuo e tremor próprios de cada arma: o tremor de câmera por arma entrou (`combat/fireFeel.ts`, 08/10); falta o solavanco de mira (view kick), que mexe na pontaria e pede playtest do dono #jogabilidade
 - [ ] Medir o FPS numa GPU integrada real (meta do G12) #desempenho
 - [ ] Issues do GitHub como rastreador de bugs, com severidade (trava > bloqueia > grave > leve) e passos para reproduzir #base
 - [ ] Teste noturno: bots jogando sozinhos no navegador headless para achar travamentos e erros #base

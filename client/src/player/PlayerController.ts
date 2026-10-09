@@ -3,6 +3,7 @@ import { GLOW } from '../core/palette';
 import type { CameraRig } from '../camera/CameraRig';
 import { AIM_RANGE, Armament, type ShotSink } from '../combat/Armament';
 import type { BarrageSystem } from '../combat/BarrageSystem';
+import { fireKick } from '../combat/fireFeel';
 import type { MountId } from '../combat/mounts';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import type { RocketSystem } from '../combat/RocketSystem';
@@ -35,6 +36,8 @@ export class PlayerController {
   onRocket?: () => void;
   /** Saiu um tiro de energia, de qualquer encaixe (som). */
   onShot?: () => void;
+  /** O tiro pesou na câmera: quanto tremer (trauma 0..1, `fireKick`). Só render; não mexe na mira nem na regra. */
+  onKick?: (amount: number) => void;
   /** Corte corpo a corpo (motosserra no braço esquerdo): quem aplica é a partida (`Match.meleeNearest`). */
   melee?: (w: WeaponStats) => void;
   /** Teclas de cada ação (e.code), vindas das configurações. */
@@ -155,6 +158,7 @@ export class PlayerController {
     this.projectiles.fire(_muzzle, _dir, this.mech.collider, false, w);
     this.particles.burst(_muzzle, _dir, { count: 10, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
     this.onShot?.();
+    this.onKick?.(fireKick(w));
   }
 
   private launch(mount: MountId, w: WeaponStats, volley: number): void {
@@ -165,6 +169,10 @@ export class PlayerController {
     if (w.barrage) this.barrage.fire(_muzzle, _dir, this.rig.aim.point, this.mech.collider, w, volley, this.mech.barrageMouth(_mouth));
     else this.rockets.fire(_muzzle, _dir, this.mech.collider, w);
     this.particles.burst(_muzzle, _dir, { count: 14, color: ROCKET_FLASH, speed: 8, life: 0.25, spread: 0.6, gravity: 0 });
-    if (volley === 0) this.onRocket?.();
+    // Uma vez por aperto: a salva do Marauder (dois ombros) e os dois foguetes juntos pesam como um estrondo só.
+    if (volley === 0) {
+      this.onRocket?.();
+      this.onKick?.(fireKick(w));
+    }
   }
 }

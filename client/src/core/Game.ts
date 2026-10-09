@@ -732,6 +732,8 @@ export class Game {
     }
     // Som de disparo: o controle do jogador avisa a cada tiro de energia (bots têm o som deles, acima).
     this.player.onShot = () => this.audio.playShot();
+    // Peso do tiro na câmera (`combat/fireFeel.ts`): o solavanco do trilho e do foguete, o zumbido do plasma.
+    this.player.onKick = (amount) => rig.addShake(amount);
     this.player.onRocket = () => {
       this.audio.playRocketLaunch();
       this.onboarding.trigger('rockets');
