@@ -209,6 +209,11 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
 export const GENESIS01_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'GÊNESIS-01',
+  // Papel (10/10, proposta do Claude; o dono ajusta aqui ou em Configurações → Potências): ASSALTO MÉDIO, um degrau acima do Vector-09 em vida e
+  // um passo mais lento. Só vida e mobilidade mudam: calor, carga e tamanho ficam os do Vector-09 (as metas de equilíbrio das armas dependem deles).
+  moveSpeed: 8.5,
+  groundAccel: 28,
+  maxModuleHealth: { torso: 350, head: 110, leftArm: 130, rightArm: 130, leftLeg: 160, rightLeg: 160 },
 };
 
 /**
@@ -219,6 +224,14 @@ export const GENESIS01_STATS: MechStats = {
 export const LANCER_L1_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'LANCER-L1',
+  // Papel: DUELISTA de curta distância (a escopeta só vale de perto). Ágil, com dash que volta mais cedo, menos vida no tronco, e o braço do
+  // escudo é o mais forte (a chapa protege o flanco e o braço é a primeira coisa que ele põe na frente).
+  moveSpeed: 9.8,
+  groundAccel: 34,
+  airAccel: 16,
+  dashSpeed: 36,
+  dashCooldown: 2.6,
+  maxModuleHealth: { torso: 270, head: 95, leftArm: 170, rightArm: 120, leftLeg: 140, rightLeg: 140 },
   loadout: { primary: weapon('shotgun'), secondary: null, metalShield: { id: 'muralha', tier: 0 } },
 };
 
@@ -226,12 +239,28 @@ export const LANCER_L1_STATS: MechStats = {
 export const LR7L_BASTION_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'LR-7L BASTION',
+  // Papel: TANQUE. O mais resistente dos médios, e paga com passo lento, arrancada pesada e dash curto e demorado. Segura a posição.
+  moveSpeed: 7.5,
+  groundAccel: 24,
+  airAccel: 12,
+  dashSpeed: 30,
+  dashCooldown: 3.6,
+  jumpVelocity: 11.5,
+  maxModuleHealth: { torso: 460, head: 130, leftArm: 160, rightArm: 160, leftLeg: 210, rightLeg: 210 },
 };
 
 /** Quadra-V2: chassi importado, Vanta Works. */
 export const QUADRA_V2_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'QUADRA-V2',
+  // Papel: ESCARAMUÇADOR. Corre mais que todos os médios, dash que volta cedo e pulo alto; cai rápido (pouca vida em tudo). Bate e some.
+  moveSpeed: 11.5,
+  groundAccel: 38,
+  airAccel: 18,
+  dashSpeed: 38,
+  dashCooldown: 2.2,
+  jumpVelocity: 14.5,
+  maxModuleHealth: { torso: 210, head: 80, leftArm: 90, rightArm: 90, leftLeg: 120, rightLeg: 120 },
 };
 
 /**
@@ -242,6 +271,14 @@ export const QUADRA_V2_STATS: MechStats = {
 export const MARAUDER_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'MARAUDER',
+  // Papel: PLATAFORMA DE FOGO (quatro canos: duas mãos e dois ombros). Vida alta e passo lento: é um canhão que anda, não um corredor.
+  moveSpeed: 7.8,
+  groundAccel: 26,
+  airAccel: 12,
+  dashSpeed: 31,
+  dashCooldown: 3.4,
+  jumpVelocity: 12,
+  maxModuleHealth: { torso: 380, head: 110, leftArm: 140, rightArm: 140, leftLeg: 180, rightLeg: 180 },
   loadout: { primary: weapon('blaster'), offhand: weapon('blaster'), secondary: weapon('rockets') },
   triggers: SHOULDER_TRIGGERS,
   // Bocas medidas no desenho (`npm run mech:bocas -- marauder`), em metros a partir dos pés, virado para -Z: o servidor atira
@@ -276,6 +313,23 @@ export const CHASSIS = {
   marauder: MARAUDER_STATS,
 } as const satisfies Record<string, MechStats>;
 export type ChassisId = keyof typeof CHASSIS;
+
+/**
+ * O papel de cada chassi em uma frase: o que ele faz bem e o que paga por isso. Os números moram em cada `*_STATS` acima; mexer num papel
+ * é mexer ali (e em `ChassisPapeis.test.ts`, que garante que nenhum chassi é melhor que outro em tudo).
+ */
+export const CHASSIS_PAPEL: Readonly<Record<ChassisId, string>> = {
+  vector09: 'Equilibrado: a referência. Nada excelente, nada fraco.',
+  genesis01: 'Assalto médio: mais vida que o Vector-09, um passo mais lento.',
+  lancerL1: 'Duelista de curta distância: ágil, dash que volta cedo, braço do escudo forte, menos vida no tronco.',
+  lr7lBastion: 'Tanque: o mais resistente dos médios; passo lento, arrancada pesada e dash curto e demorado.',
+  quadraV2: 'Escaramuçador: o mais rápido dos médios, dash que volta cedo e pulo alto; cai com poucos tiros.',
+  marauder: 'Plataforma de fogo: quatro canos (duas mãos e dois ombros), vida alta e passo lento.',
+  arara: 'Escoteiro leve: o mais rápido de todos e o mais frágil; carga pequena.',
+  onca: 'Pesado: muita vida e muita carga; lento, com o dash mais demorado.',
+  colossus01: 'Máquina de cerco (escala 3): vida enorme, quase não anda, sem dash.',
+  android: 'Andróide: pequeno, muito rápido e frágil; arma leve e motosserra.',
+};
 
 /**
  * O que cada encaixe aceita em cada chassi: o Hangar só oferece e só valida estas armas. `shoulders` só existe nos
