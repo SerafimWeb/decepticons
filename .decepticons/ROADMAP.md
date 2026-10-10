@@ -286,6 +286,7 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [x] Estande de calibração do mouse: gravar uma volta de 360° com o movimento real, cm/360, entrada crua (sem aceleração do sistema) #jogabilidade
 - [ ] Suporte a controle (gamepad) #jogabilidade
 - [~] Recuo e tremor próprios de cada arma: o tremor de câmera por arma entrou (`combat/fireFeel.ts`, 08/10); falta o solavanco de mira (view kick), que mexe na pontaria e pede playtest do dono #jogabilidade
+- [x] Faixas neon dos três prédios em uma malha instanciada por prédio (Codex C4, 09/10): 16→3 malhas; seis vistas com 11–13 desenhos a menos, mesmos triângulos; 1 KiB estático; `medicoes/FAIXAS_NEON.md` #cenarios
 - [~] Consolidar medição em GPU integrada real (meta do G12): Iris Xe no diagnóstico de shaders; Codex C3 (09/10) mediu nove janelas na Vega 11, percentis e memória em `medicoes/RENDER_C3.md`; caracterização sob pressão de RAM, falta homologação prolongada #desempenho
 - [ ] Issues do GitHub como rastreador de bugs, com severidade (trava > bloqueia > grave > leve) e passos para reproduzir #base
 - [ ] Teste noturno: bots jogando sozinhos no navegador headless para achar travamentos e erros #base

@@ -5,6 +5,7 @@ import { mulberry32 } from '../core/rng';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { buildFloorTexture, buildSkyTexture, FLOOR_TILE_METERS } from './Atmosphere';
 import { WINDOWS, windowedBuildingMaterial } from './BuildingWindows';
+import { buildingBands } from './BuildingBands';
 import type { DestructibleDef, Destructibles } from './Destructibles';
 import { SerafimTower } from './SerafimTower';
 
@@ -178,12 +179,8 @@ export class Arena {
 
     const stripMat = new THREE.MeshBasicMaterial({ color: neon(b.accent, 2) });
     // O andar das janelas é o intervalo entre duas faixas: a mesma medida, para as duas não saírem de compasso.
-    for (let y = WINDOWS.floor; y < b.h - 1; y += WINDOWS.floor) {
-      const strip = new THREE.Mesh(this.boxGeo, stripMat);
-      strip.scale.set(b.w + 0.12, 0.18, b.d + 0.12);
-      strip.position.y = y - b.h / 2;
-      g.add(strip);
-    }
+    const bands = buildingBands(b.w, b.h, b.d, WINDOWS.floor, this.boxGeo, stripMat);
+    if (bands) g.add(bands);
 
     this.occluders.push({
       box: new THREE.Box3(

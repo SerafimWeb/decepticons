@@ -1,8 +1,16 @@
 # ESTADO ATUAL — CYBERMECH
 
+## C4 — faixas neon instanciadas (Codex, 09/10)
+
+**EM BRANCH — NÃO ESTÁ NO AR enquanto o PR deste corte estiver aberto.** Depois do merge, C4 integra a main; publicação depende do deploy verde. Branch `codex/faixas-neon`, worktree `.tmp/wt-codex-c4`, base atual `5187152` (#204). C3 pediu investigação do render; este corte reduz submissões estáticas, sem prometer eliminar travadas.
+
+As 16 faixas dos três prédios viram 3 InstancedMesh. A/B na mesma página com GPU Vega 11: 11–13 desenhos a menos nas seis vistas, mesmos triângulos; terceira pessoa 119→106, primeira 99→86. Três vistas idênticas; diferenças pontuais nas outras (máximo 142 pixels de 921600). Mais 1 KiB de matrizes estáticas, zero atualização por frame. Cinco testes; evidência/reprodução em `medicoes/FAIXAS_NEON.md` e arte/faixas-neon-*.png. Check/CI são portões obrigatórios antes do merge.
+
+Próximo Codex: C2, medir primeiro uso dos GLBs/variantes/remotos antes de aumentar preparação; fechar C3 com timer GPU/ensaio longo sem carga concorrente. C5/C6 continuam condicionadas ao orçamento e contratos; preservar armas/simulação do Claude e UI/áudio do Gemini. Revisão cruzada pendente para outra sessão; não alegar mensagem direta a agentes externos.
+
 ## C3 — caracterização do render (Codex, 09/10)
 
-EM BRANCH — NÃO ESTÁ NO AR até o merge do PR deste corte. Base `00311f8` (#200), branch `codex/medicao-c3`, worktree `.tmp/wt-codex-c3`. Nove janelas no build de produção, Edge/Vega 11: dados em `medicoes/RENDER_C3.md` e `render-c3-2026-10-09.json`, reprodução em `render-c3.mjs`. Nenhuma mudança no jogo neste corte; coletor só na bancada.
+PR #204 mergeado; check e deploy da main verdes confirmados. Base medida `00311f8` (#200), branch `codex/medicao-c3`, worktree `.tmp/wt-codex-c3`. Nove janelas no build de produção, Edge/Vega 11: dados em `medicoes/RENDER_C3.md` e `render-c3-2026-10-09.json`, reprodução em `render-c3.mjs`. Nenhuma mudança no jogo neste corte; coletor só na bancada.
 
 C3 executada como caracterização, **não homologação**: combate p50/p95/p99 = 33,4/66,6/100 ms, duas travadas >300 ms, zero programas novos. RAM livre variou 265–893 MiB nas janelas. Bloom -13 draws, sem ganho de FPS consistente; manter visual/Quality. Próximo Codex autorizado: C4, unir faixas neon por prédio com comparação de imagem; depois C2/medição longa. Preservar arma elétrica do Claude e HUD/sons do Gemini. C1 (#198) já mergeada e deploy verde confirmado; o texto condicional abaixo conserva a evidência da etapa anterior.
 

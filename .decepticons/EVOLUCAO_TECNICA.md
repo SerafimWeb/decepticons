@@ -42,7 +42,7 @@ Pedido do dono: continuar iterando enquanto Claude e Gemini executam suas tarefa
 
 | Ordem | Incremento | Evidência de aceite | Dependência / custo |
 |---|---|---|---|
-| C1 — em execução | Preparar cena do Hangar e montagem atual no carregamento, usando o alvo HDR real | Contar programas criados na primeira abertura, treino e retorno à Arena; captura desktop/celular; medir tempo de boot e recursos retidos | Inicialização única; sem processamento extra por tick/frame com Hangar fechado. Não baixar GLBs adicionais além do preload existente. Prazo de warmup e fallback preservados |
+| C1 — publicada (#198) | Preparar cena do Hangar e montagem atual no carregamento, usando o alvo HDR real | Contar programas criados na primeira abertura, treino e retorno à Arena; captura desktop/celular; medir tempo de boot e recursos retidos | Inicialização única; sem processamento extra por tick/frame com Hangar fechado. Não baixar GLBs adicionais além do preload existente. Prazo de warmup e fallback preservados |
 | C2 — próximo | Preparar variantes de material dos GLBs/montagens carregados posteriormente e dos remotos | Seleção rápida e troca de arma sob carga, sem resultado atrasado; programas criados por variante; rede local com dois clientes | Coordenar o ponto de criação dos remotos com Claude; não prometer todos os chassis aquecidos pelo C1 |
 | C3 | Homologar custo estável do render em GPU integrada | Mesma versão, resolução e montagem; A/B alternado; p50/p95/p99, travadas >50/100/300 ms, tempo até jogar, draw calls e memória | Ensaio prolongado e ambiente identificado. Bancada/headless não certificam por si FPS de jogadores |
 | C4 | Reduzir o gargalo comprovado (submissões, transparência, preenchimento ou materiais) | Mesma imagem/experiência com custo menor, ou trade-off visual explícito | Uma otimização isolada por PR. Alterações em Quality.ts exigem contrato com Gemini |
@@ -60,3 +60,7 @@ Custos/limites: recursos do Hangar residem antes de abrir (Vector: 169 geometria
 ### C3 executada em 09/10 — próximo corte C4
 
 `medicoes/RENDER_C3.md`: nove janelas do build de produção na Vega 11. Caracterização com percentis/CPU/memória concluída; homologação longa pendente pela RAM/carga concorrente. Bloom custa 13 draws, sem ganho consistente de FPS ao desligar: manter. Seguir C4 antes de C2: faixas neon estáticas (16 malhas→3), com A/B de imagem/culling. Não alterar Quality, simulação, armas ou preload em massa. C5/C6 seguem condicionadas a orçamento e contratos.
+
+### C4 — redução comprovada de submissões estáticas
+
+`medicoes/FAIXAS_NEON.md`: 16 faixas em três InstancedMesh, 1 KiB estático; 11–13 draws a menos nas seis vistas; mesmos triângulos. Imagens inspecionadas, diferenças pontuais registradas. Não atribuir ganho de FPS sem nova medição prolongada. C3 #204 mergeada/deploy confirmado, homologação ainda PARCIAL. Próximo C2: primeiro uso de variantes/GLBs/remotos com teto de memória/boot, coordenado com Claude; C5/C6 precisam de orçamento antes de acrescentar efeitos.

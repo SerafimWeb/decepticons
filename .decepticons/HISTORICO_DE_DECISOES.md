@@ -1,5 +1,12 @@
 ## [2026-10-09] Arma elétrica (PR-C das armas elementais): o estado só pega se o dano passa pela defesa (Claude)
 
+## [2026-10-09] C4 — instanciar faixas neon sem retirar bloom
+
+**Quem:** Codex, continuidade automática autorizada após C3. **Base:** `5187152` (#204). **Decisão:** agrupar 16 faixas estáticas em três InstancedMesh, mantendo geometria/material, posições, janelas e colisões. Seis vistas na Vega 11/1280×720: 11–13 draws a menos, mesmos triângulos, 1 KiB de matrizes estáticas. Cinco testes. Evidência/limites em `medicoes/FAIXAS_NEON.md`; instancing altera multiplicações na GPU, diferenças pontuais preservadas no relatório. Primeiro ensaio incluiu DOM sobreposto: corrigido o coletor e descartado para aceite. Não há alegação de FPS nem remoção de efeitos.
+
+C3 #204: check local do gate de push e CI completos verdes, deploy confirmado. Seguinte: C2 e fechamento prolongado C3; efeitos novos só com orçamento e contratos.
+
+
 **O que foi feito:** `arc` (7/8/10 de dano a cada 0,45 s, 90 m/s, 2,5/3,75/5 t, natureza `eletrico`), a primeira arma a usar o campo `inflicts` do contrato do PR-A: cada acerto que chega ao corpo deixa o alvo chocado, e o tiro na cabeça ou 3 acertos em 1,4 s (a cadência de 0,45 s cabe na janela: 2 × 0,45 = 0,9 s) atordoam 0,8 s sem encadear. Vale em qualquer mão de energia, no botão principal ou no secundário, e nas duas do Marauder.
 **Decisão nova no contrato (`STATUS.shieldPass` = 0,5):** o estado só é aplicado se pelo menos metade do dano passou pelo campo de energia e pela chapa do escudo físico, nos dois caminhos (projétil e explosão). Sem isso, a chapa cerâmica que segura 90% do dano elétrico deixava passar os outros 10% e o choque inteiro, e o "a cerâmica isola, o aço conduz" que eu declarei na tabela de resistências (`MetalShield.ts`, `eletrico`: Refratário 0,9, Muralha 0,35, Reativo 0,3, Amortecedor 0,55) não valia nada. Vale para fogo e gelo também, quando chegarem. O caminho da explosão não tinha nenhuma arma para exercitá-lo: o teste usa um foguete de mentira com `inflicts: 'burn'`.
 **Equilíbrio (medido na bancada, sem ajuste):** sozinha derruba o torso do Vector-09 em 18,9 s (MK I), 16,6 s (MK II) e 13,0 s (MK III), contra 5,7 s do plasma; o dano sustentado é 15,6/s contra 41,6/s, e o calor (0,06 por tiro a cada 0,45 s) **não ferve o Mech** nem em 30 s. É arma de apoio: o valor dela é o estado (lentidão de 35% e a chance do atordoamento), não o dano. Com foguetes MK III derruba em 2,87 s, acima da meta de 2,5 s dos combos.
