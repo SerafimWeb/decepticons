@@ -38,7 +38,33 @@ export function integrityBar(value: number, max: number): string {
   return '█'.repeat(n) + '░'.repeat(10 - n);
 }
 
+export interface SpinGaugeState {
+  hidden: boolean;
+  level: number;
+  strokeDashoffset: number;
+  circumference: number;
+}
+
+const SPIN_CIRCUMFERENCE = 2 * Math.PI * 26;
+
+/**
+ * T4 — Lógica do medidor da rotatória (sem DOM):
+ * Um arco fino em volta da mira que enche com a rotação do cano (0 a 1); some em 0.
+ */
+export function computeSpinGauge(level: number): SpinGaugeState {
+  const l = Math.max(0, Math.min(1, Number.isFinite(level) ? level : 0));
+  const hidden = l <= 0.001;
+  const strokeDashoffset = SPIN_CIRCUMFERENCE * (1 - l);
+  return {
+    hidden,
+    level: l,
+    strokeDashoffset,
+    circumference: SPIN_CIRCUMFERENCE,
+  };
+}
+
 export class HUD {
+
   readonly net = new NetHud();
   readonly killBanner = new KillBanner();
   readonly roundOverlay = new RoundOverlay();
@@ -200,8 +226,38 @@ export class HUD {
   private shownHeat = -1;
   private shownOverheat = false;
   private shownCooling = false;
+  private spinArcEl: SVGElement | null = null;
+  private shownSpin = -1;
+
+  /** Medidor da rotatória (T4): um arco fino em volta da mira que enche com a rotação do cano (0 a 1); some em 0. */
+  setSpin(level: number): void {
+    const state = computeSpinGauge(level);
+    if (state.level === this.shownSpin) return;
+    this.shownSpin = state.level;
+
+    if (!this.spinArcEl && !state.hidden) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('id', 'rotary-spin-arc');
+      svg.setAttribute('viewBox', '0 0 60 60');
+      svg.setAttribute('class', 'rotary-spin-arc');
+      svg.innerHTML = `<circle cx="30" cy="30" r="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="${state.circumference}" transform="rotate(-90 30 30)" />`;
+      this.crosshair.appendChild(svg);
+      this.spinArcEl = svg;
+    }
+
+    if (this.spinArcEl) {
+      this.spinArcEl.style.display = state.hidden ? 'none' : 'block';
+      if (!state.hidden) {
+        const circle = this.spinArcEl.querySelector('circle');
+        if (circle) {
+          circle.style.strokeDashoffset = `${state.strokeDashoffset}`;
+        }
+      }
+    }
+  }
 
   /** Calor da arma: barra que enche, vermelha perto do limite; superaquecida, pisca. Só escreve no DOM quando muda. */
+
   setHeat(heat: number, overheated: boolean, coolingBoost: boolean): void {
     const h = Math.round(heat * 50) / 50;
     if (h === this.shownHeat && overheated === this.shownOverheat && coolingBoost === this.shownCooling) return;

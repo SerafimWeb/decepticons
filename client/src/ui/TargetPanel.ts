@@ -1,17 +1,14 @@
 import type { MechPart } from '../entities/MechBase';
 import type { HeatState } from '../combat/heat';
+import type { StatusKind } from './status';
 import { INTEGRITY_ROWS, integrityBar } from './HUD';
 
 /**
  * Painel do alvo sob a mira: o que o jogador precisa para decidir o próximo movimento — **qual parte já
- * caiu**, **quanto calor o inimigo está segurando** (travado ou prestes a travar) e se ele está em dash.
+ * caiu**, **quanto calor o inimigo está segurando** (travado ou prestes a travar), se ele está em dash e
+ * quais **estados elementais** ele está sofrendo (EM CHAMAS, CHOCADO, ATORDOADO, GELADO, CONGELADO).
  *
- * Toda essa informação **já viaja na rede**: cada unidade leva 19 bytes com as seis partes, o calor e as
- * bandeiras `dashing`/`overheated` (`shared/net/state.ts`). O painel não pede um byte novo — ele só torna
- * legível o que o combate já decidia às cegas: "mirei na perna" passa a ser uma escolha informada.
- *
- * O mesmo módulo serve ao bot offline e à unidade remota do online: os dois chegam como `MechLike`
- * (no online, `MechBase.applyNetVitals` já escreve partes e calor vindos do servidor).
+ * O mesmo módulo serve ao bot offline e à unidade remota do online.
  */
 
 const BLOCKS = 10;
@@ -24,6 +21,7 @@ export interface MechLike {
   heat: number;
   heatState: HeatState;
   isDashing: boolean;
+  statuses?: readonly StatusKind[];
 }
 
 /** A leitura crua do alvo, pronta para virar texto. */
@@ -35,6 +33,7 @@ export interface TargetView {
   heat: number;
   heatState: HeatState;
   dashing: boolean;
+  statuses?: readonly StatusKind[];
 }
 
 /** O que desenhar: título, uma linha por parte, o calor e os avisos. */
@@ -44,9 +43,10 @@ export interface TargetReadout {
   warning: string;
 }
 
+const EMPTY_STATUSES: readonly StatusKind[] = [];
+
 /**
- * Rascunho do módulo: o painel lê o alvo a cada quadro e **não aloca** (G4/G5 — a mesma regra dos vetores
- * de rascunho da simulação).
+ * Rascunho do módulo: o painel lê o alvo a cada quadro e **não aloca** (G4/G5).
  */
 const _view: TargetView = {
   name: '',
@@ -56,6 +56,7 @@ const _view: TargetView = {
   heat: 0,
   heatState: 'normal',
   dashing: false,
+  statuses: EMPTY_STATUSES,
 };
 
 /** Lê um Mech na forma do painel, escrevendo em `out` (por padrão, o rascunho do módulo). */
@@ -67,6 +68,7 @@ export function viewOf(mech: MechLike, out: TargetView = _view): TargetView {
   out.heat = mech.heat;
   out.heatState = mech.heatState;
   out.dashing = mech.isDashing;
+  out.statuses = mech.statuses ?? EMPTY_STATUSES;
   return out;
 }
 
@@ -75,9 +77,16 @@ function heatBar(heat: number): string {
   return '█'.repeat(n) + '░'.repeat(BLOCKS - n);
 }
 
+const STATUS_FLAG_TEXT: Record<StatusKind, string> = {
+  queimando: 'EM CHAMAS',
+  chocado: 'CHOCADO',
+  atordoado: 'ATORDOADO',
+  gelado: 'GELADO',
+  congelado: 'CONGELADO',
+};
+
 /**
- * Monta a leitura do alvo, ou `null` quando não há o que mostrar — alvo morto não tem painel (o lugar
- * dele na tela é do placar e da câmera de abate).
+ * Monta a leitura do alvo, ou `null` quando não há o que mostrar.
  */
 export function readoutOf(target: TargetView): TargetReadout | null {
   if (!target.alive) return null;
@@ -92,6 +101,14 @@ export function readoutOf(target: TargetView): TargetReadout | null {
   if (target.heatState === 'overheated') flags.push('SUPERAQUECIDO · TRAVADO');
   else if (target.heatState === 'hot') flags.push('QUENTE');
   if (target.dashing) flags.push('EM DASH');
+
+  if (target.statuses) {
+    for (let i = 0; i < target.statuses.length; i++) {
+      const s = target.statuses[i];
+      const text = STATUS_FLAG_TEXT[s];
+      if (text) flags.push(text);
+    }
+  }
 
   return { title: target.name, lines, warning: flags.join(' · ') };
 }

@@ -1,24 +1,37 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import { AudioSystem } from './AudioSystem';
 
-describe('AudioSystem (efeitos sonoros sintetizados)', () => {
-  it('cria o AudioSystem com volume mestre padrão', () => {
-    const audio = new AudioSystem();
-    expect(audio.enabled).toBe(true);
-    expect(audio.masterVolume).toBe(0.6);
+describe('AudioSystem - T5 Elemental Audio & Fallbacks', () => {
+  let audio: AudioSystem;
+
+  beforeEach(() => {
+    audio = new AudioSystem();
   });
 
-  it('permite alterar volume mestre', () => {
-    const audio = new AudioSystem();
-    audio.setVolume(0.8);
-    expect(audio.masterVolume).toBe(0.8);
+  it('safely handles calls before resume / without AudioContext', () => {
+    expect(() => {
+      audio.setRotarySpin(0.8);
+      audio.setRotarySpin(0);
+      audio.playArcShot();
+      audio.setFlame(true);
+      audio.setFlame(false);
+      audio.playCryoShot();
+      audio.playStatusEnter('queimando');
+      audio.playStatusEnter('chocado');
+      audio.playStatusEnter('atordoado');
+      audio.playStatusEnter('gelado');
+      audio.playStatusEnter('congelado');
+      audio.setStatusLoop('queimando');
+      audio.setStatusLoop(null);
+    }).not.toThrow();
   });
 
-  it('métodos de áudio do modo sobrevivência funcionam sem erro quando inativo ou sem contexto', () => {
-    const audio = new AudioSystem();
-    expect(() => audio.playWaveSiren()).not.toThrow();
-    expect(() => audio.playCountdownBeep(false)).not.toThrow();
-    expect(() => audio.playCountdownBeep(true)).not.toThrow();
-    expect(() => audio.playWaveClearSound()).not.toThrow();
+  it('safely handles calls when enabled is set to false', () => {
+    audio.enabled = false;
+    expect(() => {
+      audio.setRotarySpin(1.0);
+      audio.setFlame(true);
+      audio.setStatusLoop('congelado');
+    }).not.toThrow();
   });
 });

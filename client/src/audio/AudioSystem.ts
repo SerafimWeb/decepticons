@@ -14,6 +14,7 @@
  */
 
 import { playBrandSting } from '../brand/sting';
+import type { StatusKind } from '../ui/status';
 
 /** Frequência de corte do filtro passa-baixa do ruído (ms padrão). */
 const NOISE_CUTOFF = 2200;
@@ -43,6 +44,18 @@ export class AudioSystem {
   /** Samples de áudio carregados via fetch (.mp3, .wav) */
   private samples: Map<string, AudioBuffer> = new Map();
   private pendingBuffers: Map<string, ArrayBuffer> = new Map();
+
+  // Nodes para loops persistentes das novas armas e estados (T5 — zero nó novo por chamada repetida)
+  private rotaryOsc: OscillatorNode | null = null;
+  private rotaryGain: GainNode | null = null;
+
+  private flameSource: AudioBufferSourceNode | null = null;
+  private flameGain: GainNode | null = null;
+
+  private currentStatusLoopKind: StatusKind | null = null;
+  private statusLoopSource: AudioBufferSourceNode | OscillatorNode | null = null;
+  private statusLoopGain: GainNode | null = null;
+
 
   // ── Inicialização (preguiçosa, na primeira interação) ──────────────────────
 
@@ -788,5 +801,318 @@ export class AudioSystem {
       osc.onended = () => gain.disconnect();
     });
   }
+
+  // ── T5 — Novas Armas Elementais e Estados (Rotatória, Arc, Flamer, Cryo, Status) ──
+
+  /**
+   * ROTATÓRIA (metralhadora) — zumbido que sobe de tom com a rotação (0 a 1).
+   * 0 = silêncio. Nenhum nó novo por chamada repetida com a rotação ativa.
+   */
+  setRotarySpin(level: number): void {
+    const { ctx, masterGain } = this;
+    const clampedLevel = Math.max(0, Math.min(1, level));
+
+    if (!ctx || !masterGain || !this.enabled || clampedLevel <= 0.001) {
+      if (this.rotaryGain && this.rotaryOsc) {
+        const now = ctx?.currentTime ?? 0;
+        this.rotaryGain.gain.cancelScheduledValues(now);
+        this.rotaryGain.gain.setValueAtTime(this.rotaryGain.gain.value, now);
+        this.rotaryGain.gain.linearRampToValueAtTime(0, now + 0.05);
+        const osc = this.rotaryOsc;
+        const gain = this.rotaryGain;
+        setTimeout(() => {
+          try {
+            osc.stop();
+            osc.disconnect();
+            gain.disconnect();
+          } catch {
+            // áudio encerrado
+          }
+        }, 60);
+        this.rotaryOsc = null;
+        this.rotaryGain = null;
+      }
+      return;
+    }
+
+    const now = ctx.currentTime;
+    const freq = 120 + clampedLevel * 380;
+    const vol = 0.04 + clampedLevel * 0.22;
+
+    if (!this.rotaryOsc || !this.rotaryGain) {
+      this.rotaryOsc = ctx.createOscillator();
+      this.rotaryOsc.type = 'sawtooth';
+      this.rotaryGain = ctx.createGain();
+      this.rotaryGain.gain.setValueAtTime(0, now);
+
+      this.rotaryOsc.connect(this.rotaryGain);
+      this.rotaryGain.connect(masterGain);
+      this.rotaryOsc.start(now);
+    }
+
+    this.rotaryOsc.frequency.setValueAtTime(freq, now);
+    this.rotaryGain.gain.cancelScheduledValues(now);
+    this.rotaryGain.gain.setValueAtTime(vol, now);
+  }
+
+  /**
+   * ARMA ELÉTRICA (arc) — estalo elétrico curto.
+   */
+  playArcShot(): void {
+    if (this.playSample('shot_arc', 0.8, 1, 0.2)) return;
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(2200, now);
+    osc.frequency.exponentialRampToValueAtTime(350, now + 0.07);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.09);
+    osc.onended = () => gain.disconnect();
+  }
+
+  /**
+   * LANÇA-CHAMAS (flamer) — laço de sopro e chama com rampa de entrada e saída.
+   * Chamadas repetidas com `on = true` reusam o mesmo laço ativo.
+   */
+  setFlame(on: boolean): void {
+    const { ctx, masterGain } = this;
+
+    if (!on || !ctx || !masterGain || !this.enabled || !this.noiseBuffer) {
+      if (this.flameGain && this.flameSource) {
+        const now = ctx?.currentTime ?? 0;
+        this.flameGain.gain.cancelScheduledValues(now);
+        this.flameGain.gain.setValueAtTime(this.flameGain.gain.value, now);
+        this.flameGain.gain.linearRampToValueAtTime(0, now + 0.08);
+        const src = this.flameSource;
+        const gain = this.flameGain;
+        setTimeout(() => {
+          try {
+            src.stop();
+            src.disconnect();
+            gain.disconnect();
+          } catch {
+            // áudio encerrado
+          }
+        }, 90);
+        this.flameSource = null;
+        this.flameGain = null;
+      }
+      return;
+    }
+
+    if (this.flameSource && this.flameGain) {
+      // Laço já ativo: nenhum nó novo
+      return;
+    }
+
+    const now = ctx.currentTime;
+    this.flameSource = ctx.createBufferSource();
+    this.flameSource.buffer = this.noiseBuffer;
+    this.flameSource.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 850;
+    filter.Q.value = 1.2;
+
+    this.flameGain = ctx.createGain();
+    this.flameGain.gain.setValueAtTime(0, now);
+    this.flameGain.gain.linearRampToValueAtTime(0.25, now + 0.08);
+
+    this.flameSource.connect(filter);
+    filter.connect(this.flameGain);
+    this.flameGain.connect(masterGain);
+    this.flameSource.start(now);
+  }
+
+  /**
+   * ARMA DE GELO (cryo) — tiro cristalino com ressonância alta.
+   */
+  playCryoShot(): void {
+    if (this.playSample('shot_cryo', 0.8, 1, 0.2)) return;
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1400, now);
+    osc.frequency.exponentialRampToValueAtTime(2800, now + 0.04);
+    osc.frequency.exponentialRampToValueAtTime(900, now + 0.12);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.28, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.14);
+    osc.onended = () => gain.disconnect();
+  }
+
+  /**
+   * ENTRADA EM ESTADO — um som característico por efeito:
+   * chama, faíscas, zumbido seco (atordoado), estalo de gelo, trinco (congelado).
+   */
+  playStatusEnter(kind: StatusKind): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+
+    const now = ctx.currentTime;
+
+    if (kind === 'queimando') {
+      // Chama repentina
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(250, now);
+      osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 0.23);
+      osc.onended = () => gain.disconnect();
+    } else if (kind === 'chocado') {
+      // Faíscas elétricas rápidas
+      const osc = ctx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(1800, now);
+      osc.frequency.setValueAtTime(1200, now + 0.04);
+      osc.frequency.setValueAtTime(2400, now + 0.08);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 0.13);
+      osc.onended = () => gain.disconnect();
+    } else if (kind === 'atordoado') {
+      // Zumbido seco grave descendente
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(60, now + 0.3);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 0.33);
+      osc.onended = () => gain.disconnect();
+    } else if (kind === 'gelado') {
+      // Estalo de gelo
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(2100, now);
+      osc.frequency.exponentialRampToValueAtTime(3500, now + 0.05);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 0.09);
+      osc.onended = () => gain.disconnect();
+    } else if (kind === 'congelado') {
+      // Trinco do congelamento (crunch metálico/cristalino)
+      const osc = ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1600, now);
+      osc.frequency.exponentialRampToValueAtTime(400, now + 0.18);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.32, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 0.21);
+      osc.onended = () => gain.disconnect();
+    }
+  }
+
+  /**
+   * LAÇO DE ESTADO — som ambiente baixo enquanto o jogador está no estado.
+   * `kind = null` encerra o laço. NENHUM nó novo quando chamado repetidamente para o mesmo estado.
+   */
+  setStatusLoop(kind: StatusKind | null): void {
+    const { ctx, masterGain } = this;
+
+    if (!kind || !ctx || !masterGain || !this.enabled) {
+      if (this.statusLoopGain && this.statusLoopSource) {
+        const now = ctx?.currentTime ?? 0;
+        this.statusLoopGain.gain.cancelScheduledValues(now);
+        this.statusLoopGain.gain.setValueAtTime(this.statusLoopGain.gain.value, now);
+        this.statusLoopGain.gain.linearRampToValueAtTime(0, now + 0.1);
+        const src = this.statusLoopSource;
+        const gain = this.statusLoopGain;
+        setTimeout(() => {
+          try {
+            src.stop();
+            src.disconnect();
+            gain.disconnect();
+          } catch {
+            // áudio encerrado
+          }
+        }, 120);
+        this.statusLoopSource = null;
+        this.statusLoopGain = null;
+      }
+      this.currentStatusLoopKind = null;
+      return;
+    }
+
+    if (this.currentStatusLoopKind === kind && this.statusLoopSource) {
+      // Já no mesmo estado: não cria nós novos
+      return;
+    }
+
+    // Limpa o laço anterior se houver
+    this.setStatusLoop(null);
+
+    this.currentStatusLoopKind = kind;
+    const now = ctx.currentTime;
+    this.statusLoopGain = ctx.createGain();
+    this.statusLoopGain.gain.setValueAtTime(0, now);
+    this.statusLoopGain.gain.linearRampToValueAtTime(0.08, now + 0.15);
+
+    if (kind === 'queimando' || kind === 'gelado' || kind === 'congelado') {
+      if (!this.noiseBuffer) return;
+      const src = ctx.createBufferSource();
+      src.buffer = this.noiseBuffer;
+      src.loop = true;
+      const filter = ctx.createBiquadFilter();
+      filter.type = kind === 'queimando' ? 'lowpass' : 'bandpass';
+      filter.frequency.value = kind === 'queimando' ? 500 : kind === 'gelado' ? 1800 : 2500;
+      src.connect(filter);
+      filter.connect(this.statusLoopGain);
+      this.statusLoopGain.connect(masterGain);
+      src.start(now);
+      this.statusLoopSource = src;
+    } else {
+      const osc = ctx.createOscillator();
+      osc.type = kind === 'chocado' ? 'sawtooth' : 'sine';
+      osc.frequency.value = kind === 'chocado' ? 120 : 75;
+      osc.connect(this.statusLoopGain);
+      this.statusLoopGain.connect(masterGain);
+      osc.start(now);
+      this.statusLoopSource = osc;
+    }
+  }
 }
+
 
