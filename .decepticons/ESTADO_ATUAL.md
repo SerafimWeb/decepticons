@@ -2,7 +2,7 @@
 
 ## Bunker profundo — Codex, 10/10
 
-**EM BRANCH — NÃO ESTÁ NO AR:** PR #218 (`codex/bunker-vertical`), baseado na main `036b378`. O bunker de três níveis já está no ar desde o #213; este PR atualiza a mesma fase para quatro níveis e amplia suas rotas de combate. Check local verde; CI e deploy aguardam.
+**NO AR desde o PR #218 (10/10):** bunker atualizado de três para quatro níveis na main `df1ade7`. CI da main verde (893 testes/115 arquivos) e deploy/pós-verificação do site concluídos na execução `38095296905`. O botão visível [ EXPLORAR O BUNKER // 4 NÍVEIS ] abre o treino offline.
 
 O dono pediu um bunker escavado mais épico: grandes diferenças de altura, muitos níveis acessíveis, túneis escuros, galerias, rotas verticais, atalhos secretos e pontos de combate/sniper. A revisão troca três pisos (0/10/20 m) por quatro (0/14/28/42 m) num poço aberto de 58 m, com rampas largas e degraus visuais que ligam os pisos, poços de elevador com cabines/cabos, galerias em cruz, rotas de flanco, corredor secreto e quatro ninhos de atirador. As lajes abrem exatamente onde passam as rampas; a subida final é exigida pelos testes do Rapier sem pulo. A geometria e os colisores saem da mesma lista estática.
 
@@ -10,7 +10,7 @@ O mapa segue offline por `?mapa=bunker` ou pelo link na pausa/início da Arena. 
 
 Dez testes focados cobrem quatro andares, pisos/spawns, rampas em duas orientações para cada transição sem pulo, galerias, linha de tiro, passagem secreta e seleção segura. `npm run check` passou sobre a main atualizada: typecheck, 893 testes em 115 arquivos, build, smoke (12,8 s), bocas e `site --check`. Build: JavaScript gzip 334,1 KB / WASM gzip 719,4 KB. Capturas e medição GPU em `medicoes/BUNKER.md`; p95 alto variável (até 62,6 ms no poço), sem homologar 60 FPS. O mapa usa dois desenhos instanciados estáticos; há teto explícito de colisores, sem atualização por tick/frame nem luz dinâmica.
 
-Próxima sessão: aguardar CI e revisão do PR #218. Ainda falta playtest do dono, IA vertical e elevadores móveis; verificar a câmera tática no poço. Acesse na Arena offline pelo botão `[ EXPLORAR O BUNKER // 4 NÍVEIS ]` ou `?mapa=bunker` após o deploy.
+Próxima sessão: playtest do dono no mapa publicado. Ainda falta IA vertical, elevadores móveis e câmera tática adaptada ao poço. Acesse pelo botão `[ EXPLORAR O BUNKER // 4 NÍVEIS ]` na Arena offline ou em https://www.selvamkt.com.br/cybermech/jogar/?mapa=bunker.
 
 
 ## C2 — preparar chassi escolhido antes de exibir (Codex, 10/10)
