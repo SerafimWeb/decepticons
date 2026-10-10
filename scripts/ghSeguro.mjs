@@ -37,13 +37,13 @@ export function esconder(texto, token) {
 
 /**
  * Roda `gh <args>`. Devolve `{ status, stdout, stderr, viaGit }`; `viaGit` = true quando foi preciso usar a credencial do Git.
- * `executar(args, env)` e `token()` são injetáveis para teste.
+ * `executar(args, env)`, `token()` e `ambiente` (o ambiente base; no GitHub Actions, por exemplo, `GH_TOKEN` já vem definido) são injetáveis para teste.
  */
-export function gh(args, { executar = (a, env) => spawnSync('gh', a, { encoding: 'utf8', env, maxBuffer: 64 * 1024 * 1024 }), token = tokenDoGit } = {}) {
-  const primeira = executar(args, process.env);
+export function gh(args, { executar = (a, env) => spawnSync('gh', a, { encoding: 'utf8', env, maxBuffer: 64 * 1024 * 1024 }), token = tokenDoGit, ambiente = process.env } = {}) {
+  const primeira = executar(args, ambiente);
   if (!falhouPorAutenticacao(primeira)) return { status: primeira.status ?? 1, stdout: primeira.stdout ?? '', stderr: primeira.stderr ?? '', viaGit: false };
   const t = token();
   if (!t) return { status: primeira.status ?? 1, stdout: primeira.stdout ?? '', stderr: primeira.stderr ?? '', viaGit: false, semCredencial: true };
-  const segunda = executar(args, { ...process.env, GH_TOKEN: t });
+  const segunda = executar(args, { ...ambiente, GH_TOKEN: t });
   return { status: segunda.status ?? 1, stdout: esconder(segunda.stdout, t), stderr: esconder(segunda.stderr, t), viaGit: true };
 }

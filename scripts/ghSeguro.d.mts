@@ -16,5 +16,7 @@ export function gh(
   ops?: {
     executar?: (args: string[], env: NodeJS.ProcessEnv) => { status: number | null; stdout?: string; stderr?: string };
     token?: () => string | null;
+    /** O ambiente da primeira chamada (padrão: process.env). */
+    ambiente?: NodeJS.ProcessEnv;
   },
 ): RespostaGh;

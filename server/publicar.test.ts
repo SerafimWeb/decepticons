@@ -225,7 +225,7 @@ describe('ghSeguro: cai para a credencial do Git só quando o token do gh morreu
 
   it('token do gh morto (HTTP 401): repete com GH_TOKEN da credencial do Git, e a saída sai SEM o token', () => {
     const m = mortoOuVivo(false);
-    const r = gh(['pr', 'list'], { executar: m.executar, token: () => TOKEN });
+    const r = gh(['pr', 'list'], { executar: m.executar, token: () => TOKEN, ambiente: {} }); // ambiente vazio: no GitHub Actions o GH_TOKEN já existe
     expect(r.viaGit).toBe(true);
     expect(r.status).toBe(0);
     expect(r.stdout).toBe('ok ***');
