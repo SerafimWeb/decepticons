@@ -64,6 +64,10 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
     },
   },
   // quadraV2: {
+  //   (10/10: ZEROCIRCUIT.glb saiu do repositório, 78 MB e 1,9 milhão de triângulos sem esqueleto; o original está na pasta do dono.
+  //   **O Quadra-V2 está sem malha própria**: este bloco está desligado desde `gemini/rig-fix` e ele usa o corpo procedural do Vector-09.
+  //   `models/quadra-v2.glb` (14 mil triângulos, Mixamo) existe e não é carregado por ninguém; para religar, aponte a `url` para ele e rode
+  //   `npm run mech:inspecionar`. Ver `MECHS_IMPORTADOS.md` §7.)
   //   url: `${import.meta.env.BASE_URL}models/ZEROCIRCUIT.glb`,
   //   rotationY: Math.PI,
   //   boneNames: {
