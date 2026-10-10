@@ -20,7 +20,7 @@
  * `package-lock.json` muda; sem ela (fora do Windows) o servidor não é tocado.
  */
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, lstatSync, mkdirSync } from 'node:fs';
+import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { atualizar } from './atualizador.mjs';
 
@@ -28,6 +28,8 @@ const RAIZ = resolve(import.meta.dirname, '..');
 const LOG = resolve(RAIZ, '.tmp', 'servidor', 'atualizacao.log');
 mkdirSync(resolve(RAIZ, '.tmp', 'servidor'), { recursive: true });
 const TAREFA = process.env.CYBERMECH_TAREFA;
+/** A verificação que uma rodada cortada deixou pela metade (ver `atualizador.mjs`). */
+const PENDENCIA = resolve(RAIZ, '.tmp', 'servidor', 'verificacao-pendente.json');
 
 function tarefa(acao) {
   if (!TAREFA) return;
@@ -58,6 +60,21 @@ const codigo = atualizar({
   },
   ligarServidor() {
     tarefa('Start');
+  },
+  lerPendencia() {
+    try {
+      if (!existsSync(PENDENCIA)) return null;
+      const p = JSON.parse(readFileSync(PENDENCIA, 'utf8'));
+      return typeof p?.de === 'string' && typeof p?.para === 'string' && Array.isArray(p?.feito) ? p : null;
+    } catch {
+      return null; // arquivo corrompido (o corte pode ter pegado a escrita): vale como se não existisse
+    }
+  },
+  gravarPendencia(p) {
+    writeFileSync(PENDENCIA, JSON.stringify(p));
+  },
+  limparPendencia() {
+    rmSync(PENDENCIA, { force: true });
   },
 });
 process.exit(codigo);
