@@ -116,4 +116,22 @@ describe('cauda dos tiros de energia', () => {
       expect(color(hostile.mesh).equals(GLOW.hostilePlasma), id).toBe(true);
     }
   });
+
+  it('a arma elétrica usa a mesma faixa do plasma, mas em azul-branco (jogador) e violeta (inimigo): não se confunde com o plasma', () => {
+    const color = (m: THREE.Mesh) => (m.material as THREE.MeshBasicMaterial).color;
+    const amigo = sistema();
+    amigo.system.fire(new THREE.Vector3(), new THREE.Vector3(0, 0, -1), undefined, false, weapon('arc'));
+    const inimigo = sistema();
+    inimigo.system.fire(new THREE.Vector3(), new THREE.Vector3(0, 0, -1), undefined, true, weapon('arc'));
+    expect(amigo.mesh.geometry.getAttribute('color')?.itemSize).toBe(4); // é a faixa (com cauda), não a esfera
+    expect(amigo.mesh.scale.x).toBe(STREAK_HEAD_WIDTH);
+    expect(color(amigo.mesh).equals(GLOW.friendlyArc)).toBe(true);
+    expect(color(inimigo.mesh).equals(GLOW.hostileArc)).toBe(true);
+    expect(color(amigo.mesh).equals(GLOW.friendlyPlasma)).toBe(false);
+    expect(color(inimigo.mesh).equals(GLOW.hostilePlasma)).toBe(false);
+    // O projétil do pool que levou a elétrica volta ao verde ao levar o plasma.
+    amigo.system.clear();
+    amigo.system.fire(new THREE.Vector3(), new THREE.Vector3(0, 0, -1), undefined, false, weapon('plasma'));
+    expect(color(amigo.mesh).equals(GLOW.friendlyPlasma)).toBe(true);
+  });
 });

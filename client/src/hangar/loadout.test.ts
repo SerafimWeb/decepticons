@@ -43,8 +43,8 @@ describe('Hangar: contrato da montagem', () => {
   });
 
   it('engates de energia compartilham armas; lançadores ainda exigem o encaixe correto', () => {
-    expect(armOptions('right')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'rotary']);
-    expect(armOptions('left')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'rockets', 'barrage']);
+    expect(armOptions('right')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'rotary']);
+    expect(armOptions('left')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'rockets', 'barrage']);
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, left: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: true });
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: true });
@@ -230,7 +230,7 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   });
 
   it('as mãos aceitam blaster ou plasma; foguete na mão e blaster no ombro são recusados; plasma duplo só sem os ombros', () => {
-    expect(armOptions('right', 'marauder')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'rotary']);
+    expect(armOptions('right', 'marauder')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'rotary']);
     expect(armOptions('left', 'marauder')).toEqual(armOptions('right', 'marauder'));
     expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage']);
     expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
@@ -363,6 +363,37 @@ describe('metralhadora rotatória no Hangar', () => {
     expect(c.ok && c.loadout.offhand?.id).toBe('rotary');
     const key = loadoutKey(marauder);
     expect(parseLoadoutKey(key)).toEqual(marauder);
+  });
+});
+
+describe('arma elétrica no Hangar', () => {
+  const eletrica = (tier: Tier, left: LoadoutSpec['left'] = { id: 'rockets', tier: 0 }): LoadoutSpec => ({ v: 1, chassis: 'vector09', right: { id: 'arc', tier }, left });
+
+  it('o texto do link vai e volta, e o Loadout traz a elétrica na mão principal e os foguetes no secundário', () => {
+    const spec = eletrica(0);
+    expect(loadoutKey(spec)).toBe('v1.vector09.arc-0.rockets-0');
+    expect(parseLoadoutKey('v1.vector09.arc-0.rockets-0')).toEqual(spec);
+    const c = validateLoadout(spec);
+    expect(c.ok && c.loadout.primary).toBe(weapon('arc'));
+    expect(c.ok && c.loadout.secondary).toBe(weapon('rockets'));
+  });
+
+  it('é de energia: vai nas duas mãos (a esquerda atira como o plasma, no botão secundário) e nas duas do Marauder', () => {
+    const naEsquerda: LoadoutSpec = { v: 1, chassis: 'vector09', right: { id: 'plasma', tier: 0 }, left: { id: 'arc', tier: 0 } };
+    const c = validateLoadout(naEsquerda);
+    expect(c).toMatchObject({ ok: true, mass: 5.5 });
+    expect(c.ok && c.loadout.secondary).toBe(weapon('arc'));
+    const marauder: LoadoutSpec = { v: 1, chassis: 'marauder', right: { id: 'arc', tier: 1 }, left: { id: 'arc', tier: 1 }, shoulders: null };
+    const m = validateLoadout(marauder);
+    expect(m.ok && m.loadout.primary.id).toBe('arc');
+    expect(m.ok && m.loadout.offhand?.id).toBe('arc');
+    expect(parseLoadoutKey(loadoutKey(marauder))).toEqual(marauder);
+  });
+
+  it('poder custa carga: MK III (5 t) cabe com foguetes MK II (6 t) nos 11 t do Vector-09, e não com foguetes MK III (8 t)', () => {
+    expect(validateLoadout(eletrica(0))).toMatchObject({ ok: true, mass: 6.5 });
+    expect(validateLoadout(eletrica(2, { id: 'rockets', tier: 1 }))).toMatchObject({ ok: true, mass: 11 });
+    expect(validateLoadout(eletrica(2, { id: 'rockets', tier: 2 }))).toMatchObject({ ok: false, error: 'carga' });
   });
 });
 

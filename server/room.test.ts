@@ -6,7 +6,7 @@ import type { MechBase } from '../client/src/entities/MechBase';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/constants';
 import { EVENT } from '../shared/net/events';
-import { FX_SPINNING } from '../client/src/combat/StatusEffects';
+import { FX_SHOCKED, FX_SPINNING, FX_STUNNED } from '../client/src/combat/StatusEffects';
 import { hitDamage, weapon } from '../client/src/combat/weapons';
 import { netWeaponIndex } from '../client/src/net/adapters';
 import { factorySpec, loadoutKey } from '../client/src/hangar/loadout';
@@ -464,6 +464,66 @@ describe('Metralhadora rotatória online: nenhum evento por tiro, bandeira de ca
     room.receive(dan, join('Dan', 'v1.vector09.plasma-0.rotary-0'));
     expect(dan.of(MSG.WELCOME)).toHaveLength(0);
     expect(dan.of(MSG.REJECT).length).toBeGreaterThan(0);
+    room.dispose();
+  });
+});
+
+describe('Arma elétrica online: o tiro vira evento, o alvo fica chocado e o estado vai na rede', () => {
+  const ELETRICA = 'v1.vector09.arc-0.rockets-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem; o tiro sai como evento de tiro da elétrica e o acerto deixa o alvo chocado, com o dano certo', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(ELETRICA);
+    expect(mine.mech.loadout.primary.id).toBe('arc');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 12, { fire: true, yaw, pitch }); // 0,2 s: um tiro só
+    drive(room, dan, 13, 40, { yaw, pitch }); // o projétil leva ~0,17 s para chegar
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('arc')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.amount).toBe(hitDamage(weapon('arc'), 15));
+    expect(bot.mech.status.shocked).toBe(true);
+    expect(bot.mech.status.stunned).toBe(false); // um acerto no corpo só choca
+    expect(before - lifeOf(bot.mech)).toBeGreaterThanOrEqual(hits[0]!.amount); // o dano do choque soma por segundo, sem evento
+    room.dispose();
+  });
+
+  it('o estado do alvo vai no snapshot (bit de choque) e some quando acaba; três acertos seguidos atordoam, e o bit de atordoado também vai', async () => {
+    const { room, dan, bot, yaw, pitch } = await palco(ELETRICA);
+    const fxOf = (): number => {
+      const s = dan.lastSnapshot();
+      for (let i = 0; i < s.count; i++) if (s.units[i]!.id === bot.id) return s.units[i]!.fx ?? 0;
+      throw new Error('o alvo não está no estado');
+    };
+    expect(fxOf()).toBe(0);
+    let atordoou = false;
+    let bitDeAtordoado = false;
+    let tick = 1;
+    for (let i = 0; i < 80; i++, tick++) {
+      room.receive(dan, inputs(tick, 1, { fire: true, yaw, pitch }));
+      room.step();
+      if (bot.mech.status.stunned) atordoou = true;
+      if ((fxOf() & FX_STUNNED) !== 0) bitDeAtordoado = true; // o estado sai a 20 Hz: o bit aparece dentro dos 0,8 s do atordoamento
+    }
+    expect(atordoou).toBe(true); // 3 tiros a 0,45 s: o terceiro acerto cai dentro da janela de 1,4 s
+    expect(bitDeAtordoado).toBe(true);
+    expect(fxOf() & FX_SHOCKED).toBe(FX_SHOCKED);
+    drive(room, dan, tick, 360, { yaw, pitch }); // 6 s sem tiro: o choque acaba
+    expect(fxOf() & (FX_SHOCKED | FX_STUNNED)).toBe(0);
+    room.dispose();
+  });
+
+  it('o servidor recusa a montagem com uma elétrica fora de encaixe de energia (id inexistente) e aceita a do braço esquerdo', async () => {
+    const room = await ArenaRoom.create('ELETRICA');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', 'v1.vector09.plasma-0.arc-0')); // a elétrica também vai na esquerda (atira como o plasma)
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const ruim = new FakePeer();
+    room.receive(ruim, join('Ana', 'v1.vector09.arco-0.rockets-0'));
+    expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
+    expect(ruim.of(MSG.REJECT).length).toBeGreaterThan(0);
     room.dispose();
   });
 });

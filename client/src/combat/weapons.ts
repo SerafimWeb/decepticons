@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc';
 
 /**
  * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
@@ -120,7 +120,7 @@ export interface WeaponStats {
   /** Sobrecarga térmica adicional no impacto, sem atrasar o resfriamento. */
   empHeat?: number;
   /** Silhueta visual do tiro, sem alterar colisão. */
-  tracer?: 'rail' | 'pulse';
+  tracer?: 'rail' | 'pulse' | 'arc';
   /** Só na rotatória: a rotação do cano (cadência que sobe, espalhamento que abre). */
   spin?: Spin;
   /** Estado que o acerto aplica no alvo (`combat/StatusEffects.ts`): fogo, choque ou gelo. Sem escudo na frente, o acerto vale. */
@@ -143,6 +143,20 @@ const BASE: Record<WeaponId, WeaponBase> = {
     optimalRange: 35, maxRange: 95, minFactor: 0.35,
     blastRadius: 0, mass: 4,
     spin: { up: 1.2, down: 1.5, minRate: 0.15, spread: 0.06 },
+  },
+  /**
+   * Arma elétrica (dono, 09/10: "tiros elétricos, que deixam o oponente tomando choque, lento e sem funcionar temporariamente caso
+   * tome um tiro bem dado"). Dano pequeno, o estado é o ponto: cada acerto que chega ao corpo deixa o alvo **chocado** (−35% de
+   * velocidade e 2 de dano por segundo por 3 s) e o **tiro bem dado** (na cabeça, ou 3 acertos seguidos em 1,4 s) o **atordoa** por
+   * 0,8 s, sem encadear (`combat/StatusEffects.ts`). Cadência lenta e projétil rápido: é arma de apoio, derruba um torso em mais de
+   * 15 s sozinha. Natureza `eletrico`: o escudo cerâmico isola, a chapa de aço conduz.
+   */
+  arc: {
+    id: 'arc', name: 'Arma elétrica', kind: 'energy',
+    damage: 7, fireInterval: 0.45, heatPerShot: 0.06,
+    magazine: 0, reload: 0, speed: 90,
+    optimalRange: 50, maxRange: 130, minFactor: 0.5,
+    blastRadius: 0, mass: 2.5, tracer: 'arc', inflicts: 'shock',
   },
   railgun: {
     id: 'railgun', name: 'Canhão de trilho', kind: 'energy',
@@ -295,7 +309,7 @@ function atTier(b: WeaponBase, tier: Tier): WeaponStats {
  * Natureza do dano: escudos físicos seguram cada uma de um jeito (`MetalShield.ts`). Arma nova declara a sua aqui
  * (o `Record` obriga). `sonico` ainda não tem arma: o escudo amortecedor já está pronto para ela.
  */
-export type DamageType = 'termico' | 'laser' | 'balistico' | 'explosivo' | 'pulso' | 'sonico' | 'corte';
+export type DamageType = 'termico' | 'laser' | 'balistico' | 'explosivo' | 'pulso' | 'sonico' | 'corte' | 'eletrico';
 export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   plasma: 'termico',
   blaster: 'laser',
@@ -305,6 +319,7 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   barrage: 'explosivo',
   emp: 'pulso',
   rotary: 'balistico',
+  arc: 'eletrico',
   chainsaw: 'corte',
 };
 
