@@ -21,8 +21,8 @@
 | P05 | 25/09 | Calibrar o primeiro robô: rápido demais, tiro sem respiro, calor rigoroso | ✅ | `combat/balance.ts` e Potências | Jogar |
 | P06 | 03/10 | Painel de edição completa: potência, alcance, vida, calor | ✅ | Configurações → POTÊNCIAS | Abrir o painel |
 | P07 | 29/09 | **Chassis com formatos de verdade diferentes (modelo War Robots), não "quadradão"** | 🟡 | 5 chassis de malha importada; variedade estrutural em andamento (`ROADMAP`); **6 de 10 chassis têm números idênticos**. Falta o dono escolher o 1º arquétipo | Hangar: comparar silhuetas e números |
-| P08 | 29/09 | Colossus jogável, grande, que não "flutue" | 🟡 | Jogável; o "flutuar" era o bug do P09 | Jogar de Colossus |
-| P09 | 29/09 | (achado ao investigar o P08) **Mech parado afunda no chão** | ⏸ | `ESTADO_ATUAL`, Decisões em aberto: Colossus 2,16 m em 3 s; duas correções descartadas | Ficar parado 3 s |
+| P08 | 29/09 | Colossus jogável, grande, que não "flutue" | ✅ | Jogável; o "flutuar" era o afundamento do P09, já corrigido | Jogar de Colossus |
+| P09 | 29/09 | (achado ao investigar o P08) Mech parado afunda no chão | ✅ | **Corrigido em 10/10**: uma linha em `MechBase.fixedUpdate` e `MechParado.test.ts` (7 de 9 testes falham contra o código antigo) | Ficar parado 10 s: os pés não descem |
 | P10 | 29/09 | Colossus com piloto e 1–2 artilheiros nas armas direcionais | ⏸ | `ROADMAP` #combate "Mech com dois operadores"; sem contrato de rede | — |
 | P11 | 28/09 | Mechs de tamanho 4 e 5 (10× e 20× maiores) | ❓ | Só a escala 3 existe (Colossus, 14 m) | — |
 | P12 | 29/09 | Mechs de tamanho 1 e 2 novos, e outras armas | ✅ | Arara-B1, Onça-B2; escopeta, trilho, EMP, chuva, rotatória, elétrica | Hangar |
@@ -98,7 +98,7 @@ Atualize a cada fase. Se os números não mexem, o trabalho é cosmético, mesmo
 | Tempo para entrar numa sala online | 1,4 s (máquina calma) a **59 s** (estrangulada) | `.tmp/teste-wss.mjs` contra produção | < 3 s sempre |
 | Itens do `STATUS_REAL` reais / parciais / ausentes | 59 / 39 / 5 (1 demonstração) | `STATUS_REAL.md` | parciais caindo |
 | Itens "entregues mas **não vistos em partida real**" | 17 | `STATUS_REAL.md` | 0 depois de uma sessão de validação |
-| Bugs de física abertos | 1 (P09, desde 29/09) | `ESTADO_ATUAL` | 0 |
+| Bugs de física abertos | 0 (o P09 foi corrigido em 10/10) | `ESTADO_ATUAL` | 0 |
 | Chassis com números distintos | 4 de 10 (6 idênticos) | `entities/chassis.ts` | 10 de 10, com papéis |
 | Pedidos do dono sem registro (❓) | 6 (P11, P30, P31, P32, P48, P53), mais a Vanta dentro do P49 | este arquivo | 0 |
 | Pedidos do dono parados há mais de 14 dias (⏸) | 1 (P47, de 23/09); os demais são de 29/09 em diante | este arquivo | 0 sem decisão |
