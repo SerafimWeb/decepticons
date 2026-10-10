@@ -71,7 +71,7 @@ import { PowerStore } from '../tuning/PowerStore';
 import { PALETTE } from './palette';
 import { PilotLabels } from '../ui/PilotLabels';
 import { PowerSettings } from '../ui/PowerSettings';
-import { parseLoadoutKey } from '../hangar/loadout';
+import { parseLoadoutKey, validateLoadout } from '../hangar/loadout';
 import { defaultServer, onlineConfig } from '../net/onlineConfig';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
@@ -567,9 +567,11 @@ export class Game {
     if (e.kind === 'mech') return new Vector09({ paint: PALETTE.enemyPaint, visor: PALETTE.signal });
     if (e.kind === 'android') return new Android();
     if (e.kind === 'technician') return new Android({ visor: PALETTE.fluo, tool: 'repair' });
-    return parseLoadoutKey(e.build)?.chassis === 'android'
-      ? new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.cyan, tool: 'pilot' })
-      : new Vector09({ visor: PALETTE.cyan });
+    const spec = parseLoadoutKey(e.build);
+    if (spec?.chassis === 'android') return new Android({ stats: PILOT_ANDROID_STATS, paint: PALETTE.playerPaint, visor: PALETTE.cyan, tool: 'pilot' });
+    // O Vector-09 de outro jogador leva as armas da montagem dele (só desenho): sem isso toda arma nova aparecia como o plasma de fábrica.
+    const check = spec?.chassis === 'vector09' ? validateLoadout(spec) : null;
+    return new Vector09(check?.ok ? { visor: PALETTE.cyan, loadout: check.loadout } : { visor: PALETTE.cyan });
   }
 
   /** Linha de status do online, no topo: sala, ping e pessoas; ou o motivo da recusa ou da queda. */

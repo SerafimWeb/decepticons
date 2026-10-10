@@ -203,6 +203,30 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     }
   });
 
+  it('a rotatória de um jogador chega ao outro como fluxo desenhado pela bandeira do cano (sem evento por tiro) e para quando o gatilho solta', async () => {
+    const a = await player('Rotor', 'M4R', 'v1.vector09.rotary-0.rockets-0', { primary: weapon('rotary'), secondary: weapon('rockets') });
+    const b = await player('Observador', 'M4R');
+    try {
+      await join([a, b], 7);
+      const gun = b.session.remotes.get(a.session.myId)!.gun;
+      expect(gun?.w.id).toBe('rotary'); // a arma vem da montagem do roster, não do desenho do Mech
+      expect(gun?.mount).toBe('rightHand');
+      expect(b.session.remotes.get(b.session.myId)).toBeUndefined();
+      a.commander.firing = true;
+      const t0 = performance.now();
+      while (b.session.streamShots < 3 && performance.now() - t0 < 10000) await play([a, b], 100);
+      expect(b.session.streamShots).toBeGreaterThanOrEqual(3);
+      a.commander.firing = false;
+      await play([a, b], 2500); // o cano leva 1,5 s para parar, mais a interpolação do outro lado
+      const parou = b.session.streamShots;
+      await play([a, b], 700);
+      expect(b.session.streamShots).toBe(parou);
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
   it('dois jogadores na mesma sala: cada um vê o outro como pessoa, e o movimento de um aparece para o outro', async () => {
     const a = await player('Alfa', 'M4C');
     const b = await player('Bravo', 'M4C');

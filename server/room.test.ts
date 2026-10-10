@@ -6,6 +6,7 @@ import type { MechBase } from '../client/src/entities/MechBase';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/constants';
 import { EVENT } from '../shared/net/events';
+import { FX_SPINNING } from '../client/src/combat/StatusEffects';
 import { hitDamage, weapon } from '../client/src/combat/weapons';
 import { netWeaponIndex } from '../client/src/net/adapters';
 import { factorySpec, loadoutKey } from '../client/src/hangar/loadout';
@@ -382,6 +383,87 @@ describe('Marauder online: duas mãos no botão principal e dois lançadores nos
     const total = hits.reduce((s, h) => s + h.amount, 0);
     expect(total).toBeGreaterThan(weapon('rockets').damage); // mais que um foguete só
     expect(before - lifeOf(bot.mech)).toBe(total); // o evento é a vida que saiu, sem segunda via de dano
+    room.dispose();
+  });
+});
+
+describe('Metralhadora rotatória online: nenhum evento por tiro, bandeira de cano girando e dano de verdade', () => {
+  const ROTATORIA = 'v1.vector09.rotary-0.rockets-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem; 1,5 s de gatilho não manda nenhum evento de tiro, mas o alvo leva os acertos e a vida que sai é a soma deles', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(ROTATORIA);
+    expect(mine.mech.loadout.primary.id).toBe('rotary');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 90, { fire: true, yaw, pitch }); // 1,5 s: o cano sobe de 0 a quase a plena rotação
+    drive(room, dan, 91, 40, { yaw, pitch }); // solta e deixa os projéteis chegarem
+
+    expect(shotsOf(dan, me)).toEqual([]); // 20 tiros/s não viram 20 eventos/s: a bandeira do cano é que avisa os outros
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits.length).toBeGreaterThan(8); // o cone abre com a rotação, mas a 15 m a maior parte ainda acerta o corpo
+    const total = hits.reduce((s, h) => s + h.amount, 0);
+    expect(before - lifeOf(bot.mech)).toBe(total); // o evento é a vida que saiu, sem segunda via de dano
+    expect(hits.every((h) => h.amount <= weapon('rotary').damage)).toBe(true);
+    room.dispose();
+  });
+
+  it('a bandeira de rotação vai no estado do jogador enquanto o cano gira e apaga depois de solto (o outro jogador desenha o fluxo por ela)', async () => {
+    const { room, dan, me, yaw, pitch } = await palco(ROTATORIA);
+    const spinningInSnapshot = (): boolean => {
+      const s = dan.lastSnapshot();
+      for (let i = 0; i < s.count; i++) if (s.units[i]!.id === me) return ((s.units[i]!.fx ?? 0) & FX_SPINNING) !== 0;
+      throw new Error('o jogador não está no estado');
+    };
+    drive(room, dan, 1, 3, { yaw, pitch });
+    expect(spinningInSnapshot()).toBe(false); // gatilho solto: nada gira
+    drive(room, dan, 4, 90, { fire: true, yaw, pitch });
+    expect(spinningInSnapshot()).toBe(true);
+    drive(room, dan, 94, 120, { yaw, pitch }); // 2 s sem gatilho: o cano já parou
+    expect(spinningInSnapshot()).toBe(false);
+    room.dispose();
+  });
+
+  it('o servidor aplica o desvio do cano: com a rotação cheia os tiros saem espalhados dentro do cone, o primeiro vai reto na mira', async () => {
+    const { room, dan, yaw, pitch } = await palco(ROTATORIA);
+    const projectiles = room['match'].projectiles;
+    const dirs: THREE.Vector3[] = [];
+    const fire = projectiles.fire.bind(projectiles);
+    projectiles.fire = (origin, dir, owner, visual, w) => {
+      if (w?.id === 'rotary') dirs.push(dir.clone()); // os bots da sala atiram pelo mesmo sistema: só as balas da rotatória
+      return fire(origin, dir, owner, visual, w);
+    };
+    drive(room, dan, 1, 100, { fire: true, yaw, pitch });
+    expect(dirs.length).toBeGreaterThan(20);
+    const cone = weapon('rotary').spin!.spread;
+    const angles = dirs.map((d) => d.angleTo(dirs[0]!));
+    expect(Math.max(...angles)).toBeGreaterThan(cone * 0.5); // espalhou (sem o desvio todos sairiam paralelos)
+    expect(Math.max(...angles)).toBeLessThanOrEqual(cone * 2.05); // no pior caso, lados opostos do cone
+    room.dispose();
+  });
+
+  it('é determinística no servidor: duas salas iguais, mesmos comandos, a mesma vida que sai do alvo, acerto por acerto', async () => {
+    const rodar = async () => {
+      const { room, dan, me, bot, yaw, pitch } = await palco(ROTATORIA);
+      drive(room, dan, 1, 100, { fire: true, yaw, pitch });
+      drive(room, dan, 101, 40, { yaw, pitch });
+      const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me).map((h) => `${h.index}:${h.amount}`);
+      room.dispose();
+      return hits;
+    };
+    const a = await rodar();
+    const b = await rodar();
+    expect(a.length).toBeGreaterThan(5);
+    expect(b).toEqual(a);
+  });
+
+  it('o servidor recusa a rotatória no braço esquerdo do Vector-09 (só vai no gatilho principal)', async () => {
+    const room = await ArenaRoom.create('REJEITA');
+    const dan = new FakePeer();
+    room.receive(dan, join('Dan', 'v1.vector09.plasma-0.rotary-0'));
+    expect(dan.of(MSG.WELCOME)).toHaveLength(0);
+    expect(dan.of(MSG.REJECT).length).toBeGreaterThan(0);
     room.dispose();
   });
 });

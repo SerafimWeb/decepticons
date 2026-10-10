@@ -43,7 +43,7 @@ describe('Hangar: contrato da montagem', () => {
   });
 
   it('engates de energia compartilham armas; lançadores ainda exigem o encaixe correto', () => {
-    expect(armOptions('right')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp']);
+    expect(armOptions('right')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'rotary']);
     expect(armOptions('left')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'rockets', 'barrage']);
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, left: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: true });
@@ -230,7 +230,7 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   });
 
   it('as mãos aceitam blaster ou plasma; foguete na mão e blaster no ombro são recusados; plasma duplo só sem os ombros', () => {
-    expect(armOptions('right', 'marauder')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp']);
+    expect(armOptions('right', 'marauder')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'rotary']);
     expect(armOptions('left', 'marauder')).toEqual(armOptions('right', 'marauder'));
     expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage']);
     expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
@@ -303,6 +303,13 @@ describe('chuva de mísseis no Hangar', () => {
     expect(armOptions('left', 'colossus01')).toContain('barrage');
     expect(armOptions('left', 'onca')).toContain('barrage');
     expect(armOptions('right', 'onca')).not.toContain('barrage');
+    // A rotatória gira o cano no gatilho principal: só na mão direita (e na esquerda do Marauder, que também está nele), nunca no secundário.
+    for (const id of ['vector09', 'colossus01', 'onca', 'arara'] as const) {
+      expect(armOptions('right', id), id).toContain('rotary');
+      expect(armOptions('left', id), id).not.toContain('rotary');
+    }
+    expect(armOptions('left', 'marauder')).toContain('rotary');
+    expect(armOptions('right', 'lancerL1')).not.toContain('rotary'); // a arma do Lancer é a da malha dele
     expect(validateLoadout({ ...chuva(0), right: { id: 'barrage', tier: 0 }, left: null })).toMatchObject({ ok: false, error: 'encaixe' });
     // No Marauder a chuva vai nos ombros: os dois morteiros contam na carga (2 × 5 t) e jogam 16 bombas por aperto.
     expect(armOptions('shoulders', 'marauder')).toContain('barrage');
@@ -321,6 +328,41 @@ describe('chuva de mísseis no Hangar', () => {
     expect(parseLoadoutKey('v1.vector09.plasma-0.barrage-0')).toEqual(spec);
     const c = validateLoadout(spec);
     expect(c.ok && c.loadout.secondary).toBe(weapon('barrage'));
+  });
+});
+
+describe('metralhadora rotatória no Hangar', () => {
+  const rotatoria = (tier: Tier, left: LoadoutSpec['left'] = { id: 'rockets', tier: 0 }): LoadoutSpec => ({ v: 1, chassis: 'vector09', right: { id: 'rotary', tier }, left });
+
+  it('o texto do link vai e volta, e o Loadout traz a rotatória na mão principal e os foguetes no secundário', () => {
+    const spec = rotatoria(0);
+    expect(loadoutKey(spec)).toBe('v1.vector09.rotary-0.rockets-0');
+    expect(parseLoadoutKey('v1.vector09.rotary-0.rockets-0')).toEqual(spec);
+    const c = validateLoadout(spec);
+    expect(c.ok && c.loadout.primary).toBe(weapon('rotary'));
+    expect(c.ok && c.loadout.secondary).toBe(weapon('rockets'));
+  });
+
+  it('só vai na mão direita: na esquerda do Vector-09 o servidor, o link e a tela recusam', () => {
+    const naEsquerda: LoadoutSpec = { v: 1, chassis: 'vector09', right: { id: 'plasma', tier: 0 }, left: { id: 'rotary', tier: 0 } };
+    expect(validateLoadout(naEsquerda)).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(parseLoadoutKey('v1.vector09.plasma-0.rotary-0')).toBeNull();
+  });
+
+  it('poder custa carga: MK I (4 t) com foguetes cabe; MK III (8 t) com foguetes MK I (4 t) não cabe nos 11 t do Vector-09', () => {
+    expect(validateLoadout(rotatoria(0))).toMatchObject({ ok: true, mass: 8 });
+    expect(validateLoadout(rotatoria(1))).toMatchObject({ ok: true, mass: 10 });
+    expect(validateLoadout(rotatoria(2))).toMatchObject({ ok: false, error: 'carga' });
+    expect(validateLoadout(rotatoria(2, null))).toMatchObject({ ok: true, mass: 8 });
+  });
+
+  it('o Marauder leva uma rotatória em cada mão (as duas no gatilho principal) e o texto volta idêntico', () => {
+    const marauder: LoadoutSpec = { v: 1, chassis: 'marauder', right: { id: 'rotary', tier: 0 }, left: { id: 'rotary', tier: 0 }, shoulders: null };
+    const c = validateLoadout(marauder);
+    expect(c.ok && c.loadout.primary.id).toBe('rotary');
+    expect(c.ok && c.loadout.offhand?.id).toBe('rotary');
+    const key = loadoutKey(marauder);
+    expect(parseLoadoutKey(key)).toEqual(marauder);
   });
 });
 

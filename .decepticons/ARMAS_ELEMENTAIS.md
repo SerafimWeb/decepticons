@@ -37,7 +37,7 @@ simulação (G14) e mutação.
 
 | Id | Nome | Comportamento | Dano / cadência | Massa | Natureza | Onde |
 |---|---|---|---|---|---|---|
-| `rotary` | Metralhadora rotatória | a cadência **sobe de 3 a 20 tiros/s em 1,2 s segurando o gatilho** e cai ao soltar; o espalhamento abre com a cadência; carregador grande, recarga longa | 3 por tiro | 4 t | `balistico` | braço direito de Vector-09, Onça, Colossus; mãos do Marauder |
+| `rotary` ✅ | Metralhadora rotatória | a cadência **sobe de 3 a 20 tiros/s em 1,2 s segurando o gatilho** e cai em 1,5 s ao soltar; o cone de tiro (3,5°) abre junto com a rotação, o primeiro tiro vai reto; **sem carregador: o calor é o freio** (ferve em ~3 s de rajada); 170 m/s, dano cheio até 35 m e 35% aos 95 m | 5 / 6 / 7 por tiro (MK I–III) | 4 / 6 / 8 t | `balistico` | mão direita de Vector-09, Onça, Colossus, Arara e demais; as duas mãos do Marauder (nunca no esquerdo do Vector-09) |
 | `arc` | Arma elétrica | projétil rápido (90 m/s); aplica chocado; o tiro bem dado atordoa | 7 a cada 0,45 s | 2,5 t | `eletrico` | braço direito (energia) |
 | `flamer` | Lança-chamas | **fluxo contínuo**, cone de 25° e 14 m, atinge todos no cone; 6 s de combustível, recarga de 4 s; esquenta quem atira | ~30/s | 3,5 t | `termico` | braços dos Mechs pesados (Onça, Colossus) |
 | `cryo` | Arma de gelo | projétil de 70 m/s; 1 acúmulo de gelado por acerto | 5 a cada 0,6 s | 3 t | `criogenico` | braço esquerdo ou direito (energia) |
@@ -54,6 +54,10 @@ Metas de equilíbrio: as do `ARSENAL.md` (sozinha derruba um torso em mais de 4,
 - **Rotatória e lança-chamas não mandam um evento por tiro** (seriam ~15 tiros/s por atirador): o servidor liga a bandeira de "atirando"
   e o cliente desenha o fluxo na cadência da arma (só visual; o dano é do servidor). As armas de projétil usam o evento de tiro de sempre.
 - `PROTOCOL_VERSION` 6 → 7 (feito no PR-A, junto do byte `fx`) e as armas entram **só no fim** de `NET_WEAPONS`. O servidor se atualiza sozinho (`DEPLOY.md`, 09/10).
+- **Rotatória (PR-B, feito): protocolo 8.** A montagem `rotary` passa a valer no JOIN e no roster, mas ela **não entra em `NET_WEAPONS`**: nunca vira
+  evento de tiro (o servidor sai cedo em `ArenaRoom.shot` quando a arma tem `spin`). Os outros jogadores desenham o fluxo a **10 tiros/s** (o real é 20)
+  quando a bandeira `FX_SPINNING` do dono está ligada, e a arma sai **da montagem do roster** (`rotaryOf` em `OnlineSession`), não do desenho do Mech.
+  O desvio de cada tiro sai do número do tiro (ângulo áureo, `combat/spread.ts`), sem sorteio: o mesmo número de tiro dá o mesmo desvio no servidor e no cliente (o servidor decide o acerto; o tiro do cliente local é só desenho).
 
 ## 5. Divisão de trabalho (cada um no seu território; AGENTS.md, regras 2–5 e 12)
 

@@ -290,17 +290,19 @@ export interface ArmSlots {
 /** Engate de energia compartilhado; massa/nível ainda limitam cada montagem. */
 const ENERGY_ARMS: readonly WeaponId[] = ['plasma', 'blaster', 'shotgun', 'railgun', 'emp'];
 const SUPPORT_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rockets', 'barrage'];
+/** Armas do gatilho principal, mão direita (e a esquerda nos chassis de duas mãos no gatilho): a rotatória gira o cano e só existe aí. */
+const PRIMARY_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rotary'];
 export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
-  vector09: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
+  vector09: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   android: { right: ['blaster'], left: ['chainsaw'] },
-  colossus01: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
-  arara: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
-  onca: { right: [...ENERGY_ARMS, 'rockets'], left: SUPPORT_ARMS },
-  genesis01: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
+  colossus01: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  arara: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  onca: { right: [...PRIMARY_ARMS, 'rockets'], left: SUPPORT_ARMS },
+  genesis01: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   lancerL1: { right: ENERGY_ARMS, left: [] },
-  lr7lBastion: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
-  quadraV2: { right: ENERGY_ARMS, left: SUPPORT_ARMS },
-  marauder: { right: ENERGY_ARMS, left: ENERGY_ARMS, shoulders: ['rockets', 'barrage'] },
+  lr7lBastion: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  quadraV2: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  marauder: { right: PRIMARY_ARMS, left: PRIMARY_ARMS, shoulders: ['rockets', 'barrage'] },
 };
 
 /** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */

@@ -1,4 +1,4 @@
-import type { WeaponStats } from './weapons';
+import type { Spin, WeaponStats } from './weapons';
 
 /**
  * Cadência no tick fixo sem arredondar para o tick: a sobra do tick passa para o próximo tiro. Um
@@ -29,6 +29,30 @@ export class FireTimer {
 
   reset(): void {
     this.wait = 0;
+  }
+}
+
+/**
+ * A rotação do cano da metralhadora rotatória (`Spin` da arma): sobe de 0 a 1 em `up` s com o gatilho apertado e cai em `down` s ao soltar.
+ * A cadência segue a rotação: de `minRate` × o máximo (parado) até o máximo (cano em plena rotação). Regra de simulação (G1/G2): só o dt do tick.
+ */
+export class SpinUp {
+  /** 0 = parado, 1 = plena rotação. */
+  level = 0;
+
+  step(dt: number, held: boolean, spin: Spin): number {
+    this.level = held ? Math.min(1, this.level + dt / spin.up) : Math.max(0, this.level - dt / spin.down);
+    return this.level;
+  }
+
+  /** Segundos até o próximo tiro com a rotação de agora (`w.fireInterval` é o intervalo em plena rotação). */
+  interval(w: WeaponStats): number {
+    const spin = w.spin;
+    return spin ? w.fireInterval / (spin.minRate + (1 - spin.minRate) * this.level) : w.fireInterval;
+  }
+
+  reset(): void {
+    this.level = 0;
   }
 }
 

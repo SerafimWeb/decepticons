@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { AIM_RANGE, Armament, type ShotSink } from '../client/src/combat/Armament';
 import type { MountId } from '../client/src/combat/mounts';
+import { applySpread } from '../client/src/combat/spread';
 import type { MechBase, MechInput } from '../client/src/entities/MechBase';
 import { mechInputFromNet } from '../client/src/net/adapters';
 import type { Match, Pilot } from '../client/src/sim/Match';
@@ -41,8 +42,9 @@ export class NetPilot implements Pilot {
   private readonly cmd: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
   private readonly armament: Armament;
   private readonly sink: ShotSink = {
-    projectile: (mount, w) => {
+    projectile: (mount, w, spread) => {
       this.aim(mount);
+      applySpread(_dir, spread);
       this.match.projectiles.fire(_origin, _dir, this.mech.collider, false, w);
       // M5 TODO: compensação de latência (volta cápsulas ao tempo do comando)
     },

@@ -5,8 +5,11 @@ import { EVENT, type NetEvent } from '../../../shared/net/events';
 import { newNetInput } from '../../../shared/net/input';
 import { newSnapshot, type EventBatch, type RosterEntry, type Snapshot } from '../../../shared/net/messages';
 import type { UnitState } from '../../../shared/net/state';
-import { weapon } from '../combat/weapons';
+import { applySpread, spreadAt, type Spread } from '../combat/spread';
+import type { MountId } from '../combat/mounts';
+import { weapon, type WeaponStats } from '../combat/weapons';
 import type { MechBase, MechInput } from '../entities/MechBase';
+import { parseLoadoutKey } from '../hangar/loadout';
 import type { Match, Pilot } from '../sim/Match';
 import { netInputFromMech, weaponFromNet } from './adapters';
 import { NetClient } from './NetClient';
@@ -85,6 +88,24 @@ interface Remote {
   build: string;
   /** Já recebeu uma pose (antes disso fica escondido). */
   placed: boolean;
+  /** A rotatória dele (lida da montagem do roster, não do desenho do Mech), ou null. */
+  gun: StreamGun | null;
+  /** Segundos acumulados para o próximo tiro desenhado da rotatória dele. */
+  stream: number;
+}
+
+interface StreamGun {
+  w: WeaponStats;
+  mount: MountId;
+}
+
+/** A rotatória que a montagem leva (mão direita, ou a esquerda dos chassis com duas mãos no gatilho), ou null. */
+function rotaryOf(build: string): StreamGun | null {
+  const spec = parseLoadoutKey(build);
+  if (!spec) return null;
+  if (spec.right.id === 'rotary') return { w: weapon('rotary', spec.right.tier), mount: 'rightHand' };
+  if (spec.left?.id === 'rotary') return { w: weapon('rotary', spec.left.tier), mount: 'leftHand' };
+  return null;
 }
 
 interface Stored {
@@ -92,6 +113,9 @@ interface Stored {
   s: Snapshot;
 }
 
+/** Tiros desenhados por segundo de uma rotatória de outro jogador (a real atira 20; o desenho não precisa de todos). */
+const STREAM_HZ = 10;
+const _spread: Spread = { x: 0, y: 0 };
 const _o = new THREE.Vector3();
 const _d = new THREE.Vector3();
 const _fwd = new THREE.Vector3();
@@ -116,6 +140,8 @@ export class OnlineSession implements Pilot {
   rttMs = 0;
   /** Tiros de outros robôs desenhados (diagnóstico e teste). */
   shotsSeen = 0;
+  /** Tiros desenhados do fluxo da rotatória dos outros (um por vez no desvio dela; diagnóstico e teste). */
+  streamShots = 0;
   readonly remotes = new Map<number, Remote>();
   private readonly client: NetClient;
   private readonly names = new Map<number, string>();
@@ -232,7 +258,25 @@ export class OnlineSession implements Pilot {
       m.status.applyNet(ub.fx ?? 0);
       r.placed = true;
       m.render(dt, 1);
+      // Metralhadora rotatória de outro jogador: não chega um evento por tiro (seriam 20 por segundo); com o cano girando (bandeira do
+      // servidor), desenha o fluxo a STREAM_HZ. Só visual: o dano é do servidor.
+      if (r.gun && m.status.spinning && m.alive) {
+        r.stream += dt;
+        while (r.stream >= 1 / STREAM_HZ) {
+          r.stream -= 1 / STREAM_HZ;
+          this.remoteStream(m, r.gun);
+        }
+      } else r.stream = 0;
     }
+  }
+
+  /** Um tiro desenhado da rotatória de `m`, da boca dele, na direção da mira dele, com o desvio da rotação. */
+  private remoteStream(m: MechBase, gun: StreamGun): void {
+    m.simMuzzle(_o, gun.mount);
+    _d.set(-Math.sin(m.yaw) * Math.cos(m.pitch), Math.sin(m.pitch), -Math.cos(m.yaw) * Math.cos(m.pitch));
+    applySpread(_d, spreadAt(this.streamShots++, gun.w.spin!.spread, _spread));
+    this.o.match.projectiles.fire(_o, _d, m.collider, true, gun.w);
+    m.onFire();
   }
 
   /** Sai da sala e tira os robôs dos outros da cena. */
@@ -258,7 +302,7 @@ export class OnlineSession implements Pilot {
       mech.spawn(this.o.match.physics, HIDDEN);
       mech.root.visible = false;
       this.o.scene.add(mech.root);
-      this.remotes.set(e.id, { mech, kind: e.kind, build: e.build, placed: false });
+      this.remotes.set(e.id, { mech, kind: e.kind, build: e.build, placed: false, gun: rotaryOf(e.build), stream: 0 });
     }
     for (const id of [...this.remotes.keys()]) if (!present.has(id)) this.removeRemote(id);
     this.status();

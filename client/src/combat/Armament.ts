@@ -1,7 +1,8 @@
 import { ChargeTimer } from './ChargeTimer';
 import type { MechBase } from '../entities/MechBase';
 import { DEFAULT_TRIGGERS, type MountId } from './mounts';
-import { FireTimer, RocketLauncher } from './trigger';
+import { NO_SPREAD, spreadAt, type Spread } from './spread';
+import { FireTimer, RocketLauncher, SpinUp } from './trigger';
 import { weapon, type WeaponStats } from './weapons';
 
 /** Até onde a mira procura onde atirar (m): sem nada no caminho, as bocas convergem nesta distância. */
@@ -12,8 +13,8 @@ export const AIM_RANGE = 400;
  * partículas); o servidor também (boca da simulação, direção do comando de rede). A regra, não.
  */
 export interface ShotSink {
-  /** Saiu um projétil de energia de `mount`. */
-  projectile(mount: MountId, w: WeaponStats): void;
+  /** Saiu um projétil de energia de `mount`; `spread` é o desvio da rotatória (zero nas outras armas), a aplicar na direção da mira. */
+  projectile(mount: MountId, w: WeaponStats, spread: Readonly<Spread>): void;
   /** Saiu um foguete de `mount`; `volley` é a ordem dele na salva deste aperto do botão (0 = o primeiro). */
   rocket(mount: MountId, w: WeaponStats, volley: number): void;
   /** A serra cortou (corpo a corpo): quem aplica o corte é a partida. */
@@ -41,6 +42,13 @@ export class Armament {
   /** Cadência do gatilho secundário quando ele não é de carregador (serra, arma de energia). */
   private readonly side = new FireTimer();
   private readonly charge = [new ChargeTimer(), new ChargeTimer(), new ChargeTimer()];
+  /** Rotação do cano de cada mão (só a metralhadora rotatória gira; nas outras armas fica em 0). */
+  private readonly spin = [new SpinUp(), new SpinUp()];
+  /** Número do tiro da rotatória: o desvio de cada um sai dele, sem sorteio. */
+  private shots = 0;
+  private readonly spread: Spread = { x: 0, y: 0 };
+  /** Rotação do cano da arma principal, de 0 (parado) a 1 (plena): o medidor do HUD lê daqui. */
+  get spinLevel(): number { return Math.max(this.spin[0]!.level, this.spin[1]!.level); }
   get primaryCharge(): number { return Math.max(this.charge[0]!.progress, this.charge[1]!.progress); }
   get secondaryCharge(): number { return this.charge[2]!.progress; }
 
@@ -54,6 +62,8 @@ export class Armament {
     this.launcher = this.newLauncher();
     this.primaryLaunchers = [new RocketLauncher(this.mech.loadout.primary), new RocketLauncher(this.mech.loadout.offhand ?? this.mech.loadout.primary)];
     for (const t of this.hands) t.reset();
+    for (const s of this.spin) s.reset();
+    this.mech.status.spinning = false;
     this.side.reset();
     for (const c of this.charge) c.reset();
     this.mech.weaponCharging = false;
@@ -81,6 +91,10 @@ export class Armament {
         const w = i === 0 ? l.primary : l.offhand;
         const mount = triggers.primary[i]!;
         const timer = this.hands[i]!;
+        // O cano da rotatória gira enquanto o gatilho está apertado e a mão pode atirar; solto ou travado, vai parando.
+        const spin = this.spin[i]!;
+        if (w?.spin) spin.step(dt, fire && m.canFireMount(mount), w.spin);
+        else spin.reset();
         if (!w || !this.charge[i]!.step(dt, fire, timer.ready && m.canFireMount(mount), w.chargeTime)) continue;
         if (fired) {
           timer.shot(w.fireInterval / 2);
@@ -89,12 +103,15 @@ export class Armament {
         if (w.kind === 'ammo') {
           if (!this.primaryLaunchers[i]!.tryFire()) continue;
           sink.rocket(mount, w, i);
-        } else sink.projectile(mount, w);
+        } else sink.projectile(mount, w, this.spreadFor(w, spin));
         m.onFireMount(mount, w);
-        timer.shot(w.fireInterval);
+        timer.shot(spin.interval(w));
         fired = true;
       }
     }
+
+    // Cano girando na rede (os outros jogadores desenham o fluxo de tiros por esta bandeira, sem um evento por tiro).
+    m.status.spinning = fire && (this.spin[0]!.level > 0.3 || this.spin[1]!.level > 0.3);
 
     // Morto, o carregador enche (renasce pronto).
     if (!m.alive) this.launcher.refill();
@@ -122,13 +139,19 @@ export class Armament {
       } else {
         for (const mount of triggers.secondary) {
           if (!m.canFireMount(mount)) continue;
-          sink.projectile(mount, s);
+          sink.projectile(mount, s, NO_SPREAD); // a rotatória só vai no gatilho principal (ARM_SLOTS)
           m.onFireMount(mount, s);
         }
       }
       this.side.shot(s.fireInterval);
     }
     m.weaponCharging = this.primaryCharge > 0 || this.secondaryCharge > 0;
+  }
+
+  /** O desvio deste tiro: o cone da rotatória cresce com a rotação do cano; as outras armas vão retas. */
+  private spreadFor(w: WeaponStats, spin: SpinUp): Readonly<Spread> {
+    if (!w.spin) return NO_SPREAD;
+    return spreadAt(this.shots++, w.spin.spread * spin.level, this.spread);
   }
 
   private newLauncher(): RocketLauncher {

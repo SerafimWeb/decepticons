@@ -1,6 +1,6 @@
 import { ChargeTimer } from './ChargeTimer';
 import { HeatSink, OVERHEAT_SPEED, type ChassisHeat } from './heat';
-import { FireTimer, RocketLauncher } from './trigger';
+import { FireTimer, RocketLauncher, SpinUp } from './trigger';
 import type { WeaponStats } from './weapons';
 
 /** Passo do tick fixo (o mesmo do PhysicsWorld, repetido para o site ler este arquivo sem o Rapier). */
@@ -47,7 +47,7 @@ export interface DrillResult {
 
 export function drill(chassis: ChassisHeat, d: Drill, seconds: number, hp = Infinity, sampleEvery = 0.1): DrillResult {
   const heat = new HeatSink(chassis);
-  const guns = d.fire.map((w) => ({ w, charge: new ChargeTimer(), feed: w.kind === 'ammo' ? new RocketLauncher(w) : null, timer: new FireTimer() }));
+  const guns = d.fire.map((w) => ({ w, charge: new ChargeTimer(), feed: w.kind === 'ammo' ? new RocketLauncher(w) : null, timer: new FireTimer(), spin: new SpinUp() }));
   const every = Math.max(1, Math.round(sampleEvery / DT));
   const ticks = Math.round(seconds / DT);
   const out: DrillResult = { time: ticks * DT, damage: 0, heat: [], locked: [], overheatAt: null, lockedShare: 0 };
@@ -78,8 +78,10 @@ export function drill(chassis: ChassisHeat, d: Drill, seconds: number, hp = Infi
         fired = pause <= 0 && !heat.overheated && g.feed.tryFire();
       } else {
         g.timer.fixedUpdate(DT);
+        // A rotatória gira com o gatilho apertado (a cadência sobe com a rotação), como no Armament.
+        if (g.w.spin) g.spin.step(DT, pause <= 0 && !heat.overheated, g.w.spin);
         fired = g.charge.step(DT, pause <= 0, g.timer.ready && !heat.overheated, g.w.chargeTime);
-        if (fired) g.timer.shot(g.w.fireInterval);
+        if (fired) g.timer.shot(g.spin.interval(g.w));
       }
       if (!fired) return;
       // A chuva de mísseis conta as bombas que pegam um alvo parado no meio dela (`Barrage.onTarget`); as outras armas, o tiro inteiro.
