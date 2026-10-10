@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { atualizar, type Operacoes, type Resultado } from '../scripts/atualizador.mjs';
+import { atualizar, type Operacoes, type Pendencia, type Resultado } from '../scripts/atualizador.mjs';
 
 /**
  * O atualizador do servidor no PC de casa. As operações são de mentira e anotam a ordem em que foram chamadas: o que
@@ -17,11 +17,23 @@ interface Cenario {
   naoPara?: boolean;
   /** Comandos que falham: 'npm ci', 'npm ci (volta)', 'typecheck' ou 'testes'. */
   falhas?: string[];
+  /** O código que já está em disco (HEAD); a rodada cortada deixou isto para trás. */
+  head?: string;
+  /** A origin/main; o padrão é 'bbbbbbb2222' (ou o mesmo do HEAD se `novo` for falso). */
+  remoto?: string;
+  /** O registro que uma rodada anterior deixou pela metade. */
+  pendencia?: Pendencia | null;
+  /** O comando em que o Agendador mata a tarefa no meio (lança uma exceção): 'typecheck' ou 'testes'. */
+  corta?: string;
 }
 
 function palco(c: Cenario = {}) {
-  const { worktreeSeparada = true, atalho = false, sujo = false, novo = true, lockMudou = false, mergeFalha = false, naoPara = false, falhas = [] } = c;
+  const { worktreeSeparada = true, atalho = false, sujo = false, novo = true, lockMudou = false, mergeFalha = false, naoPara = false, falhas = [], head = 'aaaaaaa1111', pendencia = null, corta } = c;
+  const remoto = c.remoto ?? (novo ? 'bbbbbbb2222' : head);
   const chamadas: string[] = [];
+  /** O registro em disco (sobrevive a uma rodada cortada) e o que foi feito com ele, fora das `chamadas` para não mexer nas ordens já testadas. */
+  let armazenada: Pendencia | null = pendencia ? { ...pendencia, feito: [...pendencia.feito] } : null;
+  const registro: string[] = [];
   const ok = (stdout = ''): Resultado => ({ status: 0, stdout });
   let npmCi = 0;
   const op: Operacoes = {
@@ -30,11 +42,11 @@ function palco(c: Cenario = {}) {
       if (a.startsWith('rev-parse --git-common-dir')) return ok('/repo/.git');
       if (a.startsWith('rev-parse --git-dir')) return ok(worktreeSeparada ? '/repo/.git/worktrees/servidor' : '/repo/.git');
       if (a.startsWith('status')) return ok(sujo ? ' M arquivo.ts' : '');
-      if (a === 'rev-parse HEAD') return ok('aaaaaaa1111');
+      if (a === 'rev-parse HEAD') return ok(head);
       if (a.startsWith('fetch')) return ok();
-      if (a === 'rev-parse origin/main') return ok(novo ? 'bbbbbbb2222' : 'aaaaaaa1111');
+      if (a === 'rev-parse origin/main') return ok(remoto);
       if (a.startsWith('show aaaaaaa1111:package-lock.json')) return ok('lock-antigo');
-      if (a.startsWith('show bbbbbbb2222:package-lock.json')) return ok(lockMudou ? 'lock-novo' : 'lock-antigo');
+      if (/^show \w+:package-lock\.json/.test(a)) return ok(lockMudou ? 'lock-novo' : 'lock-antigo');
       if (a.startsWith('merge')) {
         chamadas.push('git merge');
         return mergeFalha ? { status: 1, stderr: 'not ff' } : ok();
@@ -55,10 +67,12 @@ function palco(c: Cenario = {}) {
       }
       if (a === 'npm run typecheck') {
         chamadas.push('typecheck');
+        if (corta === 'typecheck') throw new Error('tarefa cortada pelo Agendador');
         return falhas.includes('typecheck') ? 1 : 0;
       }
       if (a.startsWith('node scripts/test.mjs')) {
         chamadas.push('testes');
+        if (corta === 'testes') throw new Error('tarefa cortada pelo Agendador');
         return falhas.includes('testes') ? 1 : 0;
       }
       throw new Error(`comando inesperado: ${a}`);
@@ -70,10 +84,19 @@ function palco(c: Cenario = {}) {
       return !naoPara;
     },
     ligarServidor: () => chamadas.push('LIGA servidor'),
+    lerPendencia: () => (armazenada ? { ...armazenada, feito: [...armazenada.feito] } : null),
+    gravarPendencia: (p) => {
+      armazenada = { ...p, feito: [...p.feito] };
+      registro.push(`grava ${p.de.slice(0, 7)}→${p.para.slice(0, 7)} [${p.feito.join(',')}]`);
+    },
+    limparPendencia: () => {
+      armazenada = null;
+      registro.push('limpa');
+    },
   };
   /** As chamadas sem as linhas de log. */
   const sem = () => chamadas.filter((c) => !c.startsWith('log:'));
-  return { op, chamadas, sem };
+  return { op, chamadas, sem, registro, armazenada: () => armazenada };
 }
 
 describe('atualizador do servidor: o que nunca faz', () => {
@@ -153,5 +176,84 @@ describe('atualizador do servidor: package-lock mudou', () => {
     expect(atualizar(p.op)).toBe(2);
     expect(p.chamadas.some((c) => c.startsWith('log: ATENÇÃO'))).toBe(true);
     expect(p.sem().at(-1)).toBe('LIGA servidor');
+  });
+});
+
+describe('atualizador do servidor: rodada cortada pelo limite de tempo do Agendador (achado 09/10)', () => {
+  const PENDENTE: Pendencia = { de: 'aaaaaaa1111', para: 'bbbbbbb2222', feito: [] };
+
+  it('a verificação grava o progresso: o registro nasce ao puxar, ganha o typecheck e some quando tudo passa', () => {
+    const p = palco();
+    expect(atualizar(p.op)).toBe(0);
+    expect(p.registro).toEqual(['grava aaaaaaa→bbbbbbb []', 'grava aaaaaaa→bbbbbbb [typecheck]', 'limpa']);
+    expect(p.armazenada()).toBeNull();
+  });
+
+  it('cortada no meio, a rodada seguinte NÃO diz "nada novo": retoma, verifica e pede o reinício (antes, o servidor ficava no código velho para sempre)', () => {
+    const cortada = palco({ corta: 'typecheck' });
+    expect(() => atualizar(cortada.op)).toThrow('cortada');
+    const deixado = cortada.armazenada();
+    expect(deixado).toEqual({ de: 'aaaaaaa1111', para: 'bbbbbbb2222', feito: [] }); // o que sobrou em disco
+
+    // A rodada seguinte: o código novo já está em disco (HEAD = origin/main), então o git não vê nada novo.
+    const retoma = palco({ head: 'bbbbbbb2222', remoto: 'bbbbbbb2222', pendencia: deixado });
+    expect(atualizar(retoma.op)).toBe(0);
+    expect(retoma.sem()).toEqual(['typecheck', 'testes']); // sem novo merge: o código já está lá
+    expect(retoma.chamadas.join('\n')).toContain('retomando a verificação cortada');
+    expect(retoma.armazenada()).toBeNull();
+  });
+
+  it('sem o registro, a mesma situação (código em disco, git sem novidade) continua sendo "nada novo": o registro é o que faz a diferença', () => {
+    const p = palco({ head: 'bbbbbbb2222', remoto: 'bbbbbbb2222', pendencia: null });
+    expect(atualizar(p.op)).toBe(1);
+    expect(p.sem()).toEqual([]);
+  });
+
+  it('o typecheck que já passou não se repete: cada rodada avança, mesmo cortada (a máquina lenta precisa de mais de uma para terminar)', () => {
+    const cortada = palco({ corta: 'testes' });
+    expect(() => atualizar(cortada.op)).toThrow('cortada');
+    expect(cortada.armazenada()).toEqual({ de: 'aaaaaaa1111', para: 'bbbbbbb2222', feito: ['typecheck'] });
+
+    const retoma = palco({ head: 'bbbbbbb2222', remoto: 'bbbbbbb2222', pendencia: cortada.armazenada() });
+    expect(atualizar(retoma.op)).toBe(0);
+    expect(retoma.sem()).toEqual(['testes']); // só o que faltava
+  });
+
+  it('falha na retomada volta para o último código VERIFICADO (de), não para o que estava em disco, e apaga o registro', () => {
+    const p = palco({ head: 'bbbbbbb2222', remoto: 'bbbbbbb2222', pendencia: PENDENTE, falhas: ['testes'] });
+    expect(atualizar(p.op)).toBe(2);
+    expect(p.sem()).toEqual(['typecheck', 'testes', 'git reset --hard (volta)']);
+    expect(p.armazenada()).toBeNull();
+  });
+
+  it('um registro velho (a worktree já não está no código dele) é apagado e vale "nada novo", sem verificar nada', () => {
+    const p = palco({ head: 'ccccccc3333', remoto: 'ccccccc3333', pendencia: PENDENTE });
+    expect(atualizar(p.op)).toBe(1);
+    expect(p.sem()).toEqual([]);
+    expect(p.registro).toEqual(['limpa']);
+  });
+
+  it('chegou código mais novo com uma verificação pela metade: mescla o novo, refaz os passos (eram de outro código) e volta, se falhar, para o último verificado', () => {
+    const feito: Pendencia = { de: 'aaaaaaa1111', para: 'bbbbbbb2222', feito: ['typecheck'] };
+    const ok = palco({ head: 'bbbbbbb2222', remoto: 'ccccccc3333', pendencia: feito });
+    expect(atualizar(ok.op)).toBe(0);
+    expect(ok.sem()).toEqual(['git merge', 'typecheck', 'testes']); // o typecheck é de novo: o de antes era do código bbbbbbb
+    const falha = palco({ head: 'bbbbbbb2222', remoto: 'ccccccc3333', pendencia: feito, falhas: ['testes'] });
+    expect(atualizar(falha.op)).toBe(2);
+    expect(falha.sem()).toEqual(['git merge', 'typecheck', 'testes', 'git reset --hard (volta)']); // volta a aaaaaaa, não a bbbbbbb
+  });
+
+  it('recusas e falhas antes de puxar não deixam registro (nada em disco para retomar)', () => {
+    for (const c of [{ worktreeSeparada: false }, { sujo: true }, { atalho: true }, { mergeFalha: true }]) {
+      const p = palco(c);
+      expect(atualizar(p.op)).toBe(2);
+      expect(p.armazenada()).toBeNull();
+    }
+  });
+
+  it('com o package-lock mudado, o registro some também quando o servidor não pode ser parado (o código volta)', () => {
+    const p = palco({ lockMudou: true, naoPara: true });
+    expect(atualizar(p.op)).toBe(2);
+    expect(p.armazenada()).toBeNull();
   });
 });
