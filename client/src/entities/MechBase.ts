@@ -756,7 +756,11 @@ export abstract class MechBase {
     // os destroços no world.step().
     const controller = this.controller;
     _desired.x = vel.x * dt;
-    _desired.y = vel.y * dt;
+    // Apoiado e sem velocidade para cima, não se pede movimento vertical: a gravidade somada a cada tick (−9 mm) caía dentro da margem de
+    // 5 cm do chão, o controller a devolvia em vez de segurar a cápsula e o Mech parado descia ~0,5 m/s, até atravessar o chão. O
+    // `snapToGround` mantém o contato (rampa e degrau descem igual); sem chão embaixo, `grounded` cai e a gravidade volta no tick seguinte.
+    // Medido e provado em `MechParado.test.ts` (achado de 29/09: o Colossus parado perdia 2 m em 3 s).
+    _desired.y = this.grounded && vel.y <= 0 ? 0 : vel.y * dt;
     _desired.z = vel.z * dt;
     controller.computeColliderMovement(this.collider, _desired, IGNORE_DEBRIS);
     let m = controller.computedMovement();

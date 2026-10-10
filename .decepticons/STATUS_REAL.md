@@ -51,7 +51,7 @@ Oficina ganha compatibilidade por chassi, massa, escudos e ordens; Sala de Contr
 | Alvo móvel do estande (Hangar) | REAL | `hangar/testFire.movingTargetOffset(t)`: puro, determinístico, vaivém de ±3 m a cada 10,5 s. |
 | Treino manual de mira do Hangar | REAL | PR #95 mergeado: modo desktop independente do teste balístico, andróide visual inofensivo em movimento, mira e sensibilidade do CameraRig. |
 | Zonas de cura e resfriamento | REAL | `combat/Zone.ts`: zona de cura (+20 vida/s na parte mais avariada) e de resfriamento (ventila 0,35 calor/s direto, sem esperar o atraso do tiro), volumes fixos na arena, valem para jogadores e bots. |
-| Movimento WASD (aceleração estilo arena) | REAL | engasgo da corrida corrigido em 2026-09-23; coberto por `MechBase.test.ts` |
+| Movimento WASD (aceleração estilo arena) | REAL | engasgo da corrida corrigido em 2026-09-23; coberto por `MechBase.test.ts`. **Parado no chão não afunda (10/10):** o bug de 29/09 (o Mech parado descia ~0,5 m/s e chegava a atravessar o chão) foi corrigido e é coberto por `MechParado.test.ts` (4 chassis, plataforma, correr e parar, pulo, queda da borda). **Não visto numa partida longa no jogo real** |
 | Pulo duplo | REAL | Vector-09 `maxJumps: 2` |
 | Dash com cooldown | REAL | 2,5 s; FOV abre durante o dash |
 | Câmera 3ª pessoa (com colisão) | REAL | |
