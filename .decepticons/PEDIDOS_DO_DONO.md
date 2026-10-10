@@ -20,7 +20,7 @@
 | P04 | 25/09 | Nome das IAs nos bots e guia visual dos robôs | ✅ | `ESTILO_ROBOS.md` | Ver os bots |
 | P05 | 25/09 | Calibrar o primeiro robô: rápido demais, tiro sem respiro, calor rigoroso | ✅ | `combat/balance.ts` e Potências | Jogar |
 | P06 | 03/10 | Painel de edição completa: potência, alcance, vida, calor | ✅ | Configurações → POTÊNCIAS | Abrir o painel |
-| P07 | 29/09 | **Chassis com formatos de verdade diferentes (modelo War Robots), não "quadradão"** | 🟡 | 5 chassis de malha importada; variedade estrutural em andamento (`ROADMAP`); **6 de 10 chassis têm números idênticos**. Falta o dono escolher o 1º arquétipo | Hangar: comparar silhuetas e números |
+| P07 | 29/09 | **Chassis com formatos de verdade diferentes (modelo War Robots), não "quadradão"** | 🟡 | **Números e papéis: feito em 10/10** (os 10 chassis distintos, `CHASSIS_PAPEL`). **A forma ainda não**: 5 chassis de malha importada; quadrúpede, esteira e quatro braços esperam o dono escolher o 1º arquétipo (`ROADMAP`) | Hangar: trocar de chassi e jogar; comparar silhuetas |
 | P08 | 29/09 | Colossus jogável, grande, que não "flutue" | ✅ | Jogável; o "flutuar" era o afundamento do P09, já corrigido | Jogar de Colossus |
 | P09 | 29/09 | (achado ao investigar o P08) Mech parado afunda no chão | ✅ | **Corrigido em 10/10**: uma linha em `MechBase.fixedUpdate` e `MechParado.test.ts` (7 de 9 testes falham contra o código antigo) | Ficar parado 10 s: os pés não descem |
 | P10 | 29/09 | Colossus com piloto e 1–2 artilheiros nas armas direcionais | ⏸ | `ROADMAP` #combate "Mech com dois operadores"; sem contrato de rede | — |
@@ -36,7 +36,7 @@
 | P20 | 09/10 | Arma de gelo; fogo e gelo se anulam | ⏸ | A regra de anular já existe; falta a arma | — |
 | P21 | 09/10 | Fogo queimando o cenário (chão e prédios) | ⏸ | Pergunta registrada e **sem resposta do dono**; o padrão adotado é "não" (custa CPU e rede) | **Responder** |
 | P22 | 01/10 | Combos e jogadas por chassi (rolar de lado, voar e atacar de cima) | 🅿 | `ROADMAP`: "ideia do dono, não é escopo aprovado" | Decidir |
-| P23 | 06/10 | Estilos de jogo como eixo da evolução (tankar, rush, furtivo) | ⏸ | `ESTADO_ATUAL`, Decisões em aberto; ligado ao P07 | Decidir junto com o P07 |
+| P23 | 06/10 | Estilos de jogo como eixo da evolução (tankar, rush, furtivo) | 🟡 | Os papéis por chassi (tanque, escaramuçador, duelista, assalto, plataforma de fogo) existem desde 10/10; **a evolução do jogador** (um mesmo chassi ganhando jeitos de lutar) segue só ideia | Decidir |
 | P24 | 27/09 | CTF Vermelho × Azul 2v2 | 🟡 | Treino offline pronto (`?modo=ctf`); **online não existe** | `?modo=ctf` |
 | P25 | 28/09 | Missões em fases e ondas | ✅ | Modo Sobrevivência | `?modo=survival` |
 | P26 | 06/10 | Câmeras de espectador (outros jogadores, torre, portas) | 🔧 | `STATUS_REAL`: ausente. Há uma worktree do Gemini ativa para isso (10/10), ainda sem PR | — |
@@ -99,7 +99,7 @@ Atualize a cada fase. Se os números não mexem, o trabalho é cosmético, mesmo
 | Itens do `STATUS_REAL` reais / parciais / ausentes | 59 / 39 / 5 (1 demonstração) | `STATUS_REAL.md` | parciais caindo |
 | Itens "entregues mas **não vistos em partida real**" | 17 | `STATUS_REAL.md` | 0 depois de uma sessão de validação |
 | Bugs de física abertos | 0 (o P09 foi corrigido em 10/10) | `ESTADO_ATUAL` | 0 |
-| Chassis com números distintos | 4 de 10 (6 idênticos) | `entities/chassis.ts` | 10 de 10, com papéis |
+| Chassis com números distintos | **10 de 10** (10/10; eram 4 de 10) | `entities/chassis.ts`, `ChassisPapeis.test.ts` | 10 de 10, com papéis **sentidos em partida** |
 | Pedidos do dono sem registro (❓) | 6 (P11, P30, P31, P32, P48, P53), mais a Vanta dentro do P49 | este arquivo | 0 |
 | Pedidos do dono parados há mais de 14 dias (⏸) | 1 (P47, de 23/09); os demais são de 29/09 em diante | este arquivo | 0 sem decisão |
 | Para onde vai o esforço de código | 48% documentação e site, 22% regras, 7% rede, 4% visual do mundo | `git log --numstat` desde 23/09 | regras + rede acima de 50% |
