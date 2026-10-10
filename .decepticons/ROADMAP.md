@@ -302,4 +302,4 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] Câmeras de espectador: trocar para a visão de outros jogadores e de câmeras fixas (topo do Prédio Serafim, portas dos prédios) (pedido do dono, 06/10) #ux
 - [ ] Painel de campanhas: escolher oponentes, missões e tarefas e salvar campanhas personalizadas com nome, como as montagens do Hangar (pedido do dono, 06/10) #modos
 
-- [~] Bunker/dungeon de três andares com átrio, rampas duplas e galerias cruzadas (Codex, 10/10: no ar desde o #213; offline; IA vertical e playtest do dono pendentes) #cenarios
+- [~] Bunker profundo de quatro níveis (0/14/28/42 m), poço aberto, rampas com degraus, galerias escuras, elevadores, atalho secreto e posições de sniper (Codex, 10/10: PR #218 atualiza a fase no ar desde o #213; check local verde; CI/deploy, elevadores móveis, IA vertical e playtest pendentes) #cenarios

@@ -25,8 +25,8 @@ export function attachMapLinks(parent: HTMLElement | null, map: MapId): void {
   link.id = 'btn-map';
   link.className = 'btn-terminal';
   link.href = mapHref(location.href, map);
-  link.textContent = map === 'arena' ? '[ EXPLORAR O BUNKER ]' : '[ VOLTAR À ARENA ]';
-  link.title = map === 'arena' ? 'Mapa de 3 andares, treino offline contra bots (sai da sala online)' : 'Volta à arena';
+  link.textContent = map === 'arena' ? '[ EXPLORAR O BUNKER // 4 NÍVEIS ]' : '[ VOLTAR À ARENA ]';
+  link.title = map === 'arena' ? 'Mapa de 4 andares, treino offline contra bots (sai da sala online)' : 'Volta à arena';
   const depoisDe = parent.querySelector('#btn-hangar');
   if (depoisDe) depoisDe.after(link);
   else parent.appendChild(link);
