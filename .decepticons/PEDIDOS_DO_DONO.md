@@ -32,8 +32,8 @@
 | P16 | 04/10 | Míssil que sobe e cai como chuva, arma diferente do casulo | ✅ | Morteiro nas costas | Hangar, braço esquerdo |
 | P17 | 09/10 | Metralhadora rotatória | 🟡 | No ar; **não vista nem ouvida em partida real** | Hangar |
 | P18 | 09/10 | Tiros elétricos: choque, lento, e parado se o tiro for bem dado | 🟡 | No ar; tela e som no PR #207 | Hangar |
-| P19 | 09/10 | Lança-chamas | ⏸ | Próxima arma (`ARMAS_ELEMENTAIS.md`) | — |
-| P20 | 09/10 | Arma de gelo; fogo e gelo se anulam | ⏸ | A regra de anular já existe; falta a arma | — |
+| P19 | 09/10 | Lança-chamas | 🔧 | Dono confirmou em 10/10 ("faça o lança-chamas e o lança-gelo"); em fila no Claude, depois do gelo (`ARMAS_ELEMENTAIS.md`) | — |
+| P20 | 09/10 | Arma de gelo; fogo e gelo se anulam | 🔧 | Dono confirmou em 10/10; é a próxima arma (a regra de anular já existe) | — |
 | P21 | 09/10 | Fogo queimando o cenário (chão e prédios) | ⏸ | Pergunta registrada e **sem resposta do dono**; o padrão adotado é "não" (custa CPU e rede) | **Responder** |
 | P22 | 01/10 | Combos e jogadas por chassi (rolar de lado, voar e atacar de cima) | 🅿 | `ROADMAP`: "ideia do dono, não é escopo aprovado" | Decidir |
 | P23 | 06/10 | Estilos de jogo como eixo da evolução (tankar, rush, furtivo) | 🟡 | Os papéis por chassi (tanque, escaramuçador, duelista, assalto, plataforma de fogo) existem desde 10/10; **a evolução do jogador** (um mesmo chassi ganhando jeitos de lutar) segue só ideia | Decidir |
@@ -42,6 +42,10 @@
 | P26 | 06/10 | Câmeras de espectador (outros jogadores, torre, portas) | 🔧 | `STATUS_REAL`: ausente. Há uma worktree do Gemini ativa para isso (10/10), ainda sem PR | — |
 | P27 | 06/10 | Painel de campanhas (oponentes, missões e tarefas salvas) | ⏸ | `STATUS_REAL`: ausente | — |
 | P53 | 25/09 | Usar LLMs (Groq, Gemini, DeepSeek) por API nos bots? "ou não faz sentido?" | ❓ | A pergunta não tem resposta registrada. Os bots hoje são regras e personas, sem LLM | — |
+| P54 | 10/10 | **Painel admin completo**: gerenciar o jogo em poucas telas (campanha, bots adversários, a configuração de cada um, apelidos, pilotos, módulos, armas) | ⏸ | Plano escrito em `PAINEL_ADMIN.md` (cinco telas, contratos primeiro); **nada construído ainda**. Metade já existe espalhada (Configurações, Potências, Hangar, nomes); falta o dado novo: a ficha de cada bot e a campanha | Decidir as 5 perguntas da seção 5 do plano |
+| P55 | 10/10 | Prompt para fazer o próximo robô no Tripo3D "do jeito certo" | 🟡 | Prompt e roteiro em `MECHS_IMPORTADOS.md` §7; **falta o dono gerar o robô e mandar o `.glb`**. Ele citou um robô de 4 braços que já existe: o nome do arquivo ainda não foi confirmado | Mandar o arquivo |
+| P57 | 10/10 | (achado) O Quadra-V2 não tem malha própria: usa o corpo do Vector-09 (a entrada dele no carregador está desligada) | ⏸ | `quadra-v2.glb` existe e não é carregado; religar e inspecionar é barato (`MECHS_IMPORTADOS.md` §7). **Sem isso o papel de escaramuçador não aparece na silhueta** | — |
+| P56 | 10/10 | (achado) Dois `.glb` de 78 MB dentro do repositório | ✅ | Removidos em 10/10 (os originais seguem na pasta do dono) | — |
 
 ## 2. Rede, servidor e contas
 
@@ -52,7 +56,7 @@
 | P30 | 28 e 29/09 | **Gerenciar o servidor pelo site do jogo** (inclusive dormindo ou viajando) | ❓ | Só existe o `/metricas`, que **lê** números e não comanda nada | — |
 | P31 | 26 e 28/09 | **Fluidez "nível Roblox", mapas gigantes, 10× e 100× jogadores** | ❓ | `CAPACIDADE.md`: benchmark local de 10/50/100 clientes; não homologa a internet nem a disponibilidade | — |
 | P32 | 29/09 | Migrar de SQLite para Supabase no futuro | ❓ | Hoje as contas estão em SQLite no servidor | — |
-| P33 | 28/09 | Login e contas | 🟡 | Backend pronto e testado; **a tela de criar conta e entrar não existe** (pedida ao Gemini em 28/09) | — |
+| P33 | 28/09 | Login e contas | 🔧 | Backend pronto e testado; **a tela de criar conta e entrar não existe; pedido enviado ao Gemini em 10/10** (pedida ao Gemini em 28/09) | — |
 | P34 | 04/10 | Analytics | ✅ | `/metricas/` privada e telemetria | Token em `D:\DECEPTICONS\.tmp\servidor\metricas-token.txt` |
 
 ## 3. Interface, visual e som

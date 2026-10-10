@@ -145,3 +145,40 @@ Sem garantia: o gerador pode ignorar partes. O que protege é o contrato da §2 
 > Heavy bipedal combat mech, hard-surface industrial design, symmetrical, standing in a relaxed **A-pose** (arms hanging
 > slightly forward, elbows slightly bent), facing the camera. **No hands and no fingers**: each forearm ends in a smooth round
 > flange or coupling plate. **No weapons.** One continuous model with clean armor plates and no loose or floating parts.
+
+
+## 7. Pedido ao Tripo3D por formato, e o que a auditoria de 10/10 achou
+
+> Pedido do dono, 10/10: *"crie um prompt para eu fazer esse robô lá no Tripo3D desde o começo dele do jeito certo, para trazer ele perfeito para cá"*.
+> **Use o texto da §6 como base** e acrescente, no fim, as linhas abaixo. O que ele precisa respeitar é o contrato da §2.
+
+**Acréscimos ao texto da §6 (valem para qualquer formato):**
+
+> Perfectly symmetrical left and right. Every limb is a clearly separated clean volume: the arms never touch the torso or the hips,
+> the legs never fuse together, and there is a visible gap between each arm and the body (arms about 30 degrees away from the torso).
+> Feet flat on the ground. No cables, cloth, capes, flags, antennas or thin parts hanging loose. Chunky readable silhouette made of
+> large clean armor plates, low-poly game-ready. Plain white background, no ground, no shadow.
+
+**Formato** (cole **um** destes no meio do texto, antes de "Chunky readable silhouette"):
+
+| Formato | Acrescente | Aviso honesto |
+|---|---|---|
+| Pesado de cerco | `wide heavy torso, huge rounded shoulder armor blocks with a flat top surface, short thick legs with big knee armor, small head sunk between the shoulders` | O jogo já encaixa lançadores nos ombros: deixe o topo plano. |
+| Corredor | `tall and slim, narrow torso, long legs with reversed knees like a bird, long forearms, small pointed head` | Joelho invertido anima, mas pode ficar estranho andando: testar com o inspetor antes de afirmar. |
+| Canhão de ombro | `compact torso with one oversized armored cylinder on each shoulder, stubby arms, wide stable stance` | O que o código já suporta melhor. |
+| Quatro braços | `four arms: the upper pair is the main pair in A-pose ending in smooth flanges, the lower pair is smaller and held close against the torso` | **O segundo par fica parado, preso ao tronco**, até existir animação e tiro para quatro braços (projeto de arquitetura, `ROADMAP`). Sem isso é o "rabo da Onça" de novo: bonito e sem função. |
+
+**No Tripo:** (1) gere e **olhe de frente e de lado antes de aceitar**: braço encostado no corpo ou pernas coladas não se conserta depois, gere de novo;
+(2) contagem de faces em torno de **20 mil** (o jogo aguenta 15 a 25 mil por robô); (3) use o auto-rig humanoide e exporte `.glb` **com o esqueleto**;
+(4) se editar no Blender, **mantenha a armature**; (5) entregue o arquivo com o nome do robô e o papel que o dono imagina (tanque, rápido…), e o agente
+roda `npm run mech:inspecionar` (§5) e liga no Hangar.
+
+**O que a auditoria das pastas do dono achou (10/10, leitura só do cabeçalho dos `.glb`):**
+- As malhas **cruas** do Tripo têm 130 mil a **1,9 milhão** de triângulos e **nenhum esqueleto**: não servem no navegador. Os robôs que entraram no
+  jogo têm 14 a 20 mil triângulos, com skin (o Marauder, 0,6 MB).
+- `CICUTA2.glb` e `ZEROCIRCUIT.glb` (78 a 79 MB, 1,9 milhão de triângulos, sem esqueleto) estavam **dentro do repositório** desde 01/10 (entraram junto com um
+  commit de Google Analytics) e eram publicados no site sem ninguém usar. **Removidos em 10/10**; os originais continuam na pasta do dono
+  (`REMODELAGEM GLB FINAL`). Para trazê-los, precisam de retopologia (~20 mil faces) e rig.
+- **Rigados e ainda fora do Hangar:** `LANCER 3d model RIG.glb` (15,9 mil triângulos) e `military walker 3d model_Clone1 rig.glb` (15,1 mil, 10,8 MB, pesado).
+- **O Quadra-V2 não tem malha própria no jogo** (a entrada dele em `IMPORTED_CHASSIS` está desligada desde o `gemini/rig-fix`): ele usa o corpo do Vector-09. `quadra-v2.glb` (14 mil triângulos, Mixamo) está em `public/models` e ninguém o carrega; `lancer-l1.glb` e `lr-7l-bastion.glb` também estão sem uso (o Lancer usa `TZLA1.glb` e o Bastion, `LR7L.glb`). Religar o Quadra é barato e é o primeiro passo para o papel de escaramuçador **parecer** diferente.
+- **Nenhum esqueleto tem osso de quarto braço.** Um robô de quatro braços, se já existe, é malha sem rig ou tem o segundo par colado no tronco.

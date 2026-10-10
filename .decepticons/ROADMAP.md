@@ -176,6 +176,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **CTF 2v2 online autoritativo:** times no contrato de sala, eventos de bandeira/captura no protocolo, bots preenchendo vagas e validação de banda; o treino offline não anuncia suporte de rede #rede
 - [ ] **Missões em fases (cooperativo ou solo):** 3-5 fases com objetivos crescentes (defesa, escolta, invasão), com um evento de rede novo (`OBJECTIVE_STATE`) e um mapa por missão #modos
 - [x] Registro de pedidos do dono (`PEDIDOS_DO_DONO.md`), regra 17 e placar de resultado: nada que o dono pede fica só no chat, e dá para ver se o jogo melhora de verdade (Claude, 10/10) #base
+- [ ] **Painel admin completo** (dono, 10/10; plano em `PAINEL_ADMIN.md`): cinco telas (Oponentes, Campanha, Arsenal e chassis, Servidor, Evolução); começa pelos contratos `BotSpec` e `CampanhaSpec`, depois a simulação, depois as telas #ux
+- [x] Prompt e roteiro do Tripo3D para o próximo robô, e auditoria das pastas de modelos: dois `.glb` de 78 MB removidos do repositório (Claude, 10/10) #mechs
 - [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio
 - [ ] **Decidir câmera de abate no PvP:** seguir o adversário revela sua posição; escolher entre liberar, atrasar/limitar ou manter ausente no competitivo #rede
