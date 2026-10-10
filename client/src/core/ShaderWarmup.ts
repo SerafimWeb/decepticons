@@ -16,7 +16,7 @@ import type * as THREE from 'three';
 export interface WarmupRenderer {
   getRenderTarget(): THREE.WebGLRenderTarget | null;
   setRenderTarget(target: THREE.WebGLRenderTarget | null): void;
-  compileAsync(scene: THREE.Object3D, camera: THREE.Camera): Promise<unknown>;
+  compileAsync(scene: THREE.Object3D, camera: THREE.Camera, targetScene?: THREE.Scene): Promise<unknown>;
   /** `info.programs` lista os programas ligados; cada um termina de compilar quando se pede `getUniforms()`. */
   readonly info: { readonly programs: ReadonlyArray<{ getUniforms(): unknown }> | null };
 }
@@ -61,13 +61,14 @@ export async function warmUpShaders(
   camera: THREE.Camera,
   onProgress?: (done: number, total: number) => void,
   timeoutMs: number = WARMUP_TIMEOUT_MS,
+  targetScene?: THREE.Scene,
 ): Promise<WarmupResult> {
   const deadline = Date.now() + timeoutMs;
   let linking: Promise<unknown>;
   const previous = renderer.getRenderTarget();
   renderer.setRenderTarget(target);
   try {
-    linking = renderer.compileAsync(scene, camera);
+    linking = renderer.compileAsync(scene, camera, targetScene);
   } catch {
     return 'erro';
   } finally {

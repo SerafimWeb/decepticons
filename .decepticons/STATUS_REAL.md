@@ -5,6 +5,10 @@
 
 Última revisão: 2026-10-09 (Codex: consistência documental; sem novo playtest público)
 
+## C2 — chassi escolhido preparado antes de exibir (Codex, 10/10)
+
+**PARCIAL:** callback prepara shader com luzes/ambiente/HDR do Hangar, uma compilação ativa e última escolha pendente; fallback/espera soft de 5 s. A/B por cards na Vega 11, Gênesis/Marauder: zero programas novos após exibir, recursos finais iguais. Não cobre upload de textura/geometria, troca de arma/nível no mesmo chassi, remotos, aviso visual novo de carga ou homologação de FPS. Captura `arte/hangar-trocas-preparadas-codex.png`; aplicação pode estar fora da altura 720, achado para Gemini. Publicação deste incremento exige merge/check/deploy. #206 anterior já publicado.
+
 ## C2 — escolhas posteriores no Hangar (Codex, 09/10)
 
 **PARCIAL:** diagnóstico no build de produção/Vega 11, seleção direta de quatro GLBs: Gênesis e Marauder ligam um programa cada; retorno ao Marauder sem novo programa. Não valida UI, loadouts, remotos ou FPS. `warmUpShaders` passa a devolver o render target anterior também em falha/timeout, com quatro testes de regressão. Preparação tardia antes de exibir a montagem continua pendente; nenhum preload adicional. Publicação deste corte depende do merge/check/deploy; C1 #198, C3 #204 e C4 #205 já mergeadas/deploy confirmado. Evidência em `medicoes/HANGAR_SELECAO.md`.

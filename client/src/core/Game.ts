@@ -485,6 +485,7 @@ export class Game {
       open: () => {
         this.telemetry.enviar('hangar_aberto');
         this.hangarScene ??= new HangarScene();
+        this.configureHangarPreparation();
         this.hangarView = true;
         this.renderPass.scene = this.hangarScene.scene;
         this.renderPass.camera = this.hangarScene.camera;
@@ -742,6 +743,17 @@ export class Game {
 
   start(): void {
     this.renderer.setAnimationLoop((now: number) => this.frame(now));
+  }
+
+  /** Instala depois do boot: não antecipa downloads nem retém uma segunda cena/modelo. */
+  private configureHangarPreparation(): void {
+    const hangar = this.hangarScene;
+    if (!hangar || hangar.prepareModel) return;
+    hangar.prepareModel = async (root) => {
+      const result = await warmUpShaders(this.renderer, this.composer.readBuffer, root, hangar.camera, undefined, 5000, hangar.scene);
+      if (result !== 'ok') console.warn(`Hangar: preparação do modelo ${result} (segue no primeiro uso)`);
+      return result === 'ok';
+    };
   }
 
   private wireEvents(): void {

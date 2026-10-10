@@ -1,8 +1,20 @@
 # ESTADO ATUAL — CYBERMECH
 
+## C2 — preparar chassi escolhido antes de exibir (Codex, 10/10)
+
+**EM BRANCH — NÃO ESTÁ NO AR enquanto #209 estiver aberto:** `codex/hangar-preparar-trocas`, `.tmp/wt-codex-c2-ready`, base `44401f6` (#208). PR #209: https://github.com/SerafimWeb/decepticons/pull/209; após merge integra a main, publicação exige deploy verde. C2 #206 anterior já mergeada/deploy verde confirmado; C1 #198, C3 #204 e C4 #205 publicadas.
+
+Novo callback de render prepara o shader do chassi com luzes/ambiente/HDR reais antes de pôr no pedestal. Uma operação ativa + última pendente, seleção atrasada não substitui a atual; espera soft de 5 s, fallback em falha/timeout. Sem baixar/clonar cenas/modelos extras ou trabalho por frame/tick. C2 segue PARCIAL para upload de recursos, troca de arma/nível e remotos. Contrato `HangarScene.prepareModel` + `graphicsPreparing` documentado para Gemini; sem novo aviso visual na UI.
+
+A/B de produção/Vega 11: seis escolhas por cliques nos cards; Gênesis e Marauder passaram de um programa após exibir para um antes/zero depois. Ambos terminam com 175 geometrias/42 texturas; zero erros/perda de contexto. Evidência `medicoes/HANGAR_TROCAS_PREPARADAS.md` e `arte/hangar-trocas-preparadas-codex.png`. Não homologa FPS. **R17 para Gemini:** no Marauder em 1280×720, o rodapé de aplicar está abaixo da captura; revisar altura/overflow sem certificar todos os controles pelo ensaio.
+
+**Contagem de testes auditada a pedido do dono:** 243 em 28/09 (#102), 638 em 06/10, 819 no #206, 828 no #208 (nove novos), 833 neste corte (cinco novos). JSON de execução real: 833 passados, 109 arquivos únicos, nenhum nome de caso repetido por arquivo; config exclui temporários/worktrees. `vitest list` estático não foi usado como árbitro. Evidência `medicoes/AUDITORIA_TESTES.md`; quantidade não certifica cobertura/diversão. Check local completo verde no gate de push: 833 testes, typecheck, build, budget (JS 330,2 KB / Wasm 719,4 KB gzip), smoke, bocas e site. CI e deploy são gates de publicação.
+
+Próxima sessão começa com C3 (timer GPU/ensaio longo) e C2 (armas/níveis/remotos), sem ampliar efeitos antes do orçamento. Preservar PR #207 do Claude (`ligar-ui-armas`) e ramo de câmeras do Gemini; nenhuma alegação de mensagem recebida por sessões externas.
+
 ## C2 — diagnóstico de seleção e alvo de render (Codex, 09/10)
 
-**EM BRANCH — NÃO ESTÁ NO AR enquanto o PR #206 de `codex/preparacao-selecao` estiver aberto.** Worktree `.tmp/wt-codex-c2`, base `8f98e19` (#205). C4 #205 mergeada, check/deploy verdes confirmados; C3 #204 e C1 #198 também publicadas. Os textos condicionais abaixo conservam as evidências históricas.
+**PUBLICADO:** PR #206 mergeado, check e deploy da main verdes confirmados. Worktree `.tmp/wt-codex-c2`, base `8f98e19` (#205). C4 #205, C3 #204 e C1 #198 também publicadas. Os relatos abaixo conservam as evidências históricas.
 
 Build de produção na Vega 11: Gênesis e Marauder criam um programa cada na primeira seleção; Lancer/Bastion e retorno ao Marauder não criam outro na sequência medida. Recursos 169→176 geometrias, 29→42 texturas; não são bytes de VRAM. Coletor rejeita perda/restauração de contexto; execução válida sem eventos/erros. Dados e limites em `medicoes/HANGAR_SELECAO.md`. Seleção direta da cena, sem certificar UI, níveis/armas, remotos ou FPS.
 
@@ -12,7 +24,7 @@ Próxima sessão começa com C2 limitado (nova montagem preparada antes de exibi
 
 ## C4 — faixas neon instanciadas (Codex, 09/10, PR #205)
 
-**EM BRANCH — NÃO ESTÁ NO AR enquanto #205 estiver aberto.** Depois do merge, C4 integra a main; publicação depende do deploy verde. Branch `codex/faixas-neon`, worktree `.tmp/wt-codex-c4`, base atual `5187152` (#204). C3 pediu investigação do render; este corte reduz submissões estáticas, sem prometer eliminar travadas.
+**PUBLICADO:** #205 mergeado, check/deploy verdes confirmados. Branch `codex/faixas-neon`, worktree `.tmp/wt-codex-c4`, base medida `5187152` (#204). C3 pediu investigação do render; este corte reduz submissões estáticas, sem prometer eliminar travadas.
 
 As 16 faixas dos três prédios viram 3 InstancedMesh. A/B na mesma página com GPU Vega 11: 11–13 desenhos a menos nas seis vistas, mesmos triângulos; terceira pessoa 119→106, primeira 99→86. Três vistas idênticas; diferenças pontuais nas outras (máximo 142 pixels de 921600). Mais 1 KiB de matrizes estáticas, zero atualização por frame. Cinco testes; evidência/reprodução em `medicoes/FAIXAS_NEON.md` e arte/faixas-neon-*.png. Check local completo do gate de push verde: 815 testes, typecheck, build, budget (JS 329,9 KB / Wasm 719,4 KB gzip), smoke, bocas e site. PR #205: https://github.com/SerafimWeb/decepticons/pull/205; CI e deploy da main são portões de publicação.
 
@@ -32,7 +44,7 @@ C3 executada como caracterização, **não homologação**: combate p50/p95/p99 
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Retorno do servidor público ao protocolo 6 registrado em 09/10, com ciclos de reinício provados (PRs #189–#192); disponibilidade neste instante não consultada nesta auditoria. Offline: Arena + Sobrevivência + CTF |
-| **Build** | Último check local (09/10, Claude, atualizador do servidor, PR `claude/atualizador-retoma`): JS 329,9 KB e Wasm 719,4 KB gzip (tetos 500/900); 828 testes (9 novos do atualizador), typecheck, smoke, bocas e site verdes |
+| **Build** | Check local de 10/10, Codex C2 #209: 833 testes, JS 330,2 KB / Wasm 719,4 KB gzip (tetos 500/900), typecheck, smoke, bocas e site verdes; publicação depende do merge/deploy |
 | **Última sessão** | 09/10 (Claude): **arma elétrica** (PR-C das armas elementais, protocolo 9), antes a **metralhadora rotatória** (PR-B, #200, protocolo 8) e o contrato dos efeitos de estado (PR-A, #199); atualização da máquina, retorno de produção ao protocolo 6 e reinício automático provado (#189–#192). Histórico detalhado abaixo |
 | **Próximo** | pedidos do dono (06/10) ainda sem escopo: câmeras de espectador e painel de campanhas personalizadas (ver `ROADMAP.md`); drones e escudo físico completos no servidor online; playtest do dono: esfera, aliados, escudo físico, Prédio Serafim e drones, tudo ainda só validado em bancada; dono julga o Marauder (Hangar e partida); M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`); ideias do dono em `ROADMAP.md` (jogadas de Mech, facções, estilos de jogo) aguardando decisão |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
@@ -43,7 +55,7 @@ C3 executada como caracterização, **não homologação**: combate p50/p95/p99 
 
 ## Preparação gráfica C1 — Codex (09/10, PR #198)
 
-**EM BRANCH — NÃO ESTÁ NO AR enquanto #198 estiver aberto.** Depois do merge, C1 integra a main; publicação no site depende do deploy verde do workflow da main. Este registro conserva a evidência de bancada e os limites, não certifica FPS sustentado.
+**PUBLICADO:** #198 mergeado, check/deploy verdes confirmados. Este registro conserva a evidência de bancada e os limites, não certifica FPS sustentado.
 
 Branch `codex/preparacao-grafica`, worktree `.tmp/wt-codex-preparacao-grafica`, base `8b899b9` (#197). Plano C1–C6 em `EVOLUCAO_TECNICA.md`: primeiro preparar Hangar/montagem atual no carregamento; depois GLB/remotos, custo estável, otimização do gargalo medido, leitura visual e efeitos elementais após contrato. PR #198: https://github.com/SerafimWeb/decepticons/pull/198. Check local e gate de push completos: 709 testes, typecheck, build, budget, smoke, bocas e site verdes; CI obrigatório para merge.
 
@@ -667,7 +679,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 |---|---|---|
 | **Claude** | `client/src/combat/`, `client/src/entities/`, `client/src/physics/`, `client/src/player/`, `scripts/`, `.github/`, `vite.config.ts`; depois `shared/`, `server/`, `client/src/net/` | Em atividade, confirmado pelo dono em 09/10: efeitos de estado e armas elementais (`ARMAS_ELEMENTAIS.md`). A sincronização online dos modos continua na frente de rede quando o contrato existir. O relato anterior de falta de crédito é histórico. |
 | **Gemini** | `client/src/ui/`, `client/src/audio/`, `client/src/styles.css`, `client/index.html`, `client/src/debug/`, `client/src/core/Quality.ts` | Feito: Som dos passos, volume de bots ecoando e Gênesis-01 não aparecendo offline/online. Branch consolidado e mergeado (PR #136). **Pedido novo (09/10):** tela e som das armas elementais (`ARMAS_ELEMENTAIS.md`, seção 7: indicadores de estado, bordas de tela, painel do alvo, ícones do Hangar, medidor da rotatória, sons). |
-| **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, câmeras, desempenho e revisão cruzada | Feito: render, blueprints, Hangar/treino, calor/avaria visual, Sobrevivência/CTF offline e câmera de abate; #194 reduziu passadas do Hangar e protegeu seleção. C1 #198, C3 #204 e C4 #205 publicadas/deploy confirmado; C2 #206 em branch enquanto aberto, diagnóstico e restauração do alvo, check local verde. Próximos: C2 limitado e homologação prolongada C3; C5/C6 após orçamento/contratos em `EVOLUCAO_TECNICA.md`. Preservar simulação/rede do Claude e UI/áudio do Gemini. |
+| **Codex** | visual e render do mundo 3D (`client/src/fx/`, `environment/`, modelos e rigs), pós-processamento, câmeras, desempenho e revisão cruzada | Feito: render, blueprints, Hangar/treino, calor/avaria visual, Sobrevivência/CTF offline e câmera de abate; #194 reduziu passadas do Hangar e protegeu seleção. C1 #198, C3 #204 e C4 #205 publicadas/deploy confirmado; C2 #206 publicada; #209 prepara shader do chassi antes de exibir, fila limitada, check local verde; publicação deste corte exige merge/deploy. Próximos: C2 limitado e homologação prolongada C3; C5/C6 após orçamento/contratos em `EVOLUCAO_TECNICA.md`. Preservar simulação/rede do Claude e UI/áudio do Gemini. |
 | **Qwen** | transversal — documentação (`.decepticons/`), testes de simulação (novos `*.test.ts`), relatórios do processo (`scripts/painel.mjs`, `scripts/site/`, o site) e auditoria de arquitetura (segunda opinião na revisão cruzada). Não mexe em `client/src/{sim,combat,entities,physics,player,net}`, `server/` nem `shared/` sem combinar com o dono do território | Entrou no time em 26/09 (oficialização no painel e na etiqueta). Próximo: relatório de saúde técnica (cobertura, débito da seção 9, budget, tick) para a divulgação |
 | **Zona compartilhada** | `client/src/core/Game.ts`, `package.json`, `.decepticons/` | Só fiação e PR pequeno; quem mergear depois junta a `main` e roda `npm run check` |
 

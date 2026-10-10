@@ -6,6 +6,12 @@
 **Erro meu que piorou:** deixei um monitor consultando o `/status` a cada 8 s contra um servidor que não respondia; as consultas empilharam 9 conexões `CloseWait` e tiraram ainda mais do servidor. Para vigiar um servidor em apuros, **uma consulta por minuto, com a anterior terminada**, ou olhar o processo (CPU e falhas de página), não a porta HTTP.
 **Não resolvido (do dono, ou decisão):** (1) o limite de 5 min ainda é o do registro atual: aplicar o de 20 min exige PowerShell como administrador (`.\scripts\servidor-atualizar.ps1`); com a retomada isso deixa de ser crítico, mas ajuda. (2) A causa de fundo é a máquina: servidor de jogo, desenvolvimento de três agentes, navegadores e o Antigravity disputando 6 GB. A verificação do atualizador repete o que o CI do GitHub já fez no mesmo commit. Opções em `ESTADO_ATUAL.md`, "Decisões em aberto".
 
+## [2026-10-10] C2 — shader do chassi antes do pedestal; contagem de testes auditada (Codex)
+
+Base `44401f6`, worktree própria. Preparar só escolha solicitada, com `targetScene` real, uma operação ativa/última pendente e fallback soft 5 s. Não antecipar catálogo inteiro nem criar cena/clone extra; arma/nível e upload/remotos seguem PARCIAL. A/B Vega 11 por cards: Gênesis/Marauder passam de um programa depois de exibir para um antes/zero depois; recursos finais iguais, sem erros/contexto perdido. Evidência `HANGAR_TROCAS_PREPARADAS.md`; overflow do rodapé 1280×720 registrado para Gemini, sem mexer na sua UI.
+
+Pergunta do dono sobre 819: execução real confere, sem duplicação de arquivos/casos; #208 somou nove (828), este corte cinco regressões específicas (833). 109 arquivos únicos, nenhuma falha/pendência; 243 em 28/09 e 638 em 06/10 no histórico. `AUDITORIA_TESTES.md` distingue execução do `vitest list` estático divergente e quantidade de qualidade/cobertura. Não alterar runner só para forçar um número. Revisão semântica dos testes continua independente; nenhuma alegação de diversão/FPS baseada em contagem.
+
 ## [2026-10-09] C2 — medir seleção posterior antes de aquecer o catálogo (Codex)
 
 Base `8f98e19` (#205), worktree própria. Vega 11/build de produção: Gênesis/Marauder criam um programa cada, retorno ao Marauder zero; recursos 169→176 geometrias e 29→42 texturas. Não é medição de FPS/VRAM, não valida UI/armas/remotos. Primeira coleta com GPU ausente/queda dos recursos descartada; coletor agora rejeita perda/restauração de contexto, execução válida sem eventos. Evidência `medicoes/HANGAR_SELECAO.md`.
