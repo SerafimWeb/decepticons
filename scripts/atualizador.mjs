@@ -12,6 +12,12 @@
  *    meio, deixando a pasta pela metade. Se algo falha depois de parar, volta o código E as dependências antigas e
  *    religa o servidor. Se tudo passa, quem chamou liga o servidor com o código novo.
  *
+ * **Rodada cortada (achado 09/10):** o Agendador mata a tarefa no limite de tempo (5 min no registro atual), e numa máquina sem memória a
+ * verificação (typecheck + testes) leva mais que isso. O código novo já estava em disco, não havia marcador, e a rodada seguinte via "nada
+ * novo": o servidor ficava para sempre no código velho. Agora, logo depois de puxar o código, grava-se `verificacao-pendente.json`
+ * (`de` = o último código verificado, `para` = o puxado, `feito` = passos já concluídos); a rodada seguinte retoma de onde parou (o
+ * typecheck que passou não se repete), então cada rodada avança mesmo cortada. Se algo falha, volta para `de`, o último código verificado.
+ *
  * Retorno: 0 = atualizou e verificou (quem chamou deve (re)ligar o servidor); 1 = nada novo; 2 = recusou ou falhou,
  * e o código voltou ao anterior (o servidor foi religado se tinha sido parado).
  */
@@ -25,6 +31,13 @@
  * @property {() => boolean} nodeModulesEhAtalho
  * @property {() => boolean} pararServidor  true = o servidor parou de verdade (a porta está livre); false = não saiu
  * @property {() => void} ligarServidor
+ * @property {() => Pendencia | null} lerPendencia  a verificação que uma rodada anterior não terminou (ou null)
+ * @property {(p: Pendencia) => void} gravarPendencia
+ * @property {() => void} limparPendencia
+ */
+
+/** Uma verificação que ficou pela metade: `de` = último código verificado, `para` = o puxado, `feito` = passos concluídos.
+ * @typedef {{ de: string, para: string, feito: string[] }} Pendencia
  */
 
 /** @param {Operacoes} op */
@@ -48,22 +61,37 @@ export function atualizar(op) {
     return 2;
   }
 
-  const antes = git('rev-parse', 'HEAD').stdout?.trim() ?? '';
+  const head = git('rev-parse', 'HEAD').stdout?.trim() ?? '';
   const fetch = git('fetch', 'origin', 'main', '--quiet');
   if (fetch.status !== 0) {
     log(`RECUSADO: git fetch falhou (sem internet, ou o túnel caiu de vez):\n${fetch.stderr}`);
     return 2;
   }
   const remoto = git('rev-parse', 'origin/main').stdout?.trim() ?? '';
-  if (antes === remoto) return 1; // nada novo — não polui o log toda vez que roda
 
-  log(`código novo: ${antes.slice(0, 7)} → ${remoto.slice(0, 7)}`);
-  const antesLock = git('show', `${antes}:package-lock.json`).stdout;
-  const merge = git('merge', '--ff-only', remoto);
-  if (merge.status !== 0) {
-    log(`RECUSADO: merge --ff-only falhou (a worktree divergiu de origin/main, o que não deveria acontecer aqui):\n${merge.stderr}`);
-    return 2;
+  // Uma rodada anterior cortada deixa o código novo em disco sem verificar: retoma dela. `antes` é sempre o último código VERIFICADO
+  // (para onde voltar se falhar), não o que está em disco.
+  let pendencia = op.lerPendencia();
+  if (pendencia && pendencia.para !== head) {
+    op.limparPendencia(); // registro velho: a worktree já não está nele
+    pendencia = null;
   }
+  const antes = pendencia ? pendencia.de : head;
+  if (head === remoto && !pendencia) return 1; // nada novo — não polui o log toda vez que roda
+
+  if (pendencia) log(`retomando a verificação cortada de ${antes.slice(0, 7)} → ${pendencia.para.slice(0, 7)}${pendencia.feito.length ? ` (já feito: ${pendencia.feito.join(', ')})` : ''}`);
+  if (head !== remoto) {
+    log(`código novo: ${head.slice(0, 7)} → ${remoto.slice(0, 7)}`);
+    const merge = git('merge', '--ff-only', remoto);
+    if (merge.status !== 0) {
+      log(`RECUSADO: merge --ff-only falhou (a worktree divergiu de origin/main, o que não deveria acontecer aqui):\n${merge.stderr}`);
+      return 2;
+    }
+  }
+  // Um código mais novo que o da pendência zera o que já se verificou: os passos eram de outro código.
+  const feito = pendencia && pendencia.para === remoto ? [...pendencia.feito] : [];
+  op.gravarPendencia({ de: antes, para: remoto, feito });
+  const antesLock = git('show', `${antes}:package-lock.json`).stdout;
   const lockMudou = antesLock !== git('show', `${remoto}:package-lock.json`).stdout;
   let parado = false;
 
@@ -71,6 +99,7 @@ export function atualizar(op) {
   const voltar = (motivo) => {
     log(`FALHOU (${motivo}) — voltando para ${antes.slice(0, 7)}`);
     git('reset', '--hard', antes);
+    op.limparPendencia();
     if (lockMudou) {
       log('restaurando as dependências do código anterior: npm ci');
       if (executar('npm', ['ci']) !== 0) log('ATENÇÃO: o npm ci de volta falhou — o servidor pode não subir; rode `npm ci` aqui à mão, com o servidor parado.');
@@ -88,6 +117,7 @@ export function atualizar(op) {
       // O servidor segue no ar mantendo o binário aberto: o npm ci não pode apagá-lo (EPERM no meio deixa a pasta pela metade).
       log('RECUSADO: não consegui parar o servidor para trocar as dependências; volto o código e tento de novo na próxima rodada. (Servidor de antes da vigia de parada: precisa de PowerShell como administrador, ver DEPLOY.md.)');
       git('reset', '--hard', antes);
+      op.limparPendencia();
       return 2;
     }
     parado = true;
@@ -95,9 +125,14 @@ export function atualizar(op) {
   }
 
   log('verificando: typecheck + testes do servidor');
-  if (executar('npm', ['run', 'typecheck']) !== 0) return voltar('typecheck');
+  if (!feito.includes('typecheck')) {
+    if (executar('npm', ['run', 'typecheck']) !== 0) return voltar('typecheck');
+    feito.push('typecheck');
+    op.gravarPendencia({ de: antes, para: remoto, feito }); // se a rodada for cortada nos testes, a próxima não refaz o typecheck
+  }
   if (executar('node', ['scripts/test.mjs', 'run', '--no-isolate', 'server', 'shared']) !== 0) return voltar('testes de server/ e shared/');
 
+  op.limparPendencia();
   log(`OK: ${remoto.slice(0, 7)} verificado, pedindo ${parado ? 'religar' : 'reinício'}`);
   return 0;
 }
