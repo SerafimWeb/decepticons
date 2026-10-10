@@ -1,6 +1,6 @@
 import { EnergyShield } from '../combat/EnergyShield';
 import { MetalShield, RAISED_SPEED } from '../combat/MetalShield';
-import { StatusSet } from '../combat/StatusEffects';
+import { StatusSet, type StatusKind } from '../combat/StatusEffects';
 import { CombatBoost } from '../combat/CombatBoost';
 import { legDamageLean } from '../fx/DamageVisuals';
 import RAPIER from '@dimforge/rapier3d-simd-compat';
@@ -390,6 +390,11 @@ export abstract class MechBase {
 
   get isDashing(): boolean {
     return this.dashTimeLeft > 0;
+  }
+
+  /** Os estados que o Mech sofre agora (fogo, choque, gelo...), para o painel do alvo; lista reutilizada. */
+  get statuses(): readonly StatusKind[] {
+    return this.status.kinds();
   }
 
   /** 0 = acabou de usar, 1 = pronto. */

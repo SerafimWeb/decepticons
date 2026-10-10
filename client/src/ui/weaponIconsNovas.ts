@@ -15,7 +15,7 @@ export const WEAPON_ICON_NOVAS: Record<NewWeaponId, string> = {
 /** Dicas de uma linha em português no tom das de WEAPON_HINT. */
 export const WEAPON_HINT_NOVAS: Record<NewWeaponId, string> = {
   rotary:
-    'Munição · a cadência sobe de 3 a 20 tiros/s segurando o gatilho · espalhamento abre com a aceleração',
+    'Energia · a cadência sobe de 3 a 20 tiros/s segurando o gatilho · espalhamento abre com a aceleração · o calor é o freio',
   arc:
     'Energia · projétil elétrico rápido · aplica Chocado (−35% de velocidade); tiro na cabeça ou 3 acertos seguidos atordoa 0,8 s',
   flamer:

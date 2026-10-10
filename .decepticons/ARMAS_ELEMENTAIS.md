@@ -72,6 +72,10 @@ Metas de equilíbrio: as do `ARSENAL.md` (sozinha derruba um torso em mais de 4,
 | **Codex** | só depois, e só se ele quiser: efeitos visuais 3D das armas (chamas, gelo, raios), modelos | está na auditoria de desempenho (`ESTADO_ATUAL.md`); **não pedir agora**. Até lá uso os `ParticleSystem.burst` que já existem como provisório |
 | **Qwen** | sem crédito hoje; depois: testes extras, revisão cruzada do equilíbrio, documentação | — |
 
+### Estado da tela e do som (09/10, noite)
+
+O Gemini entregou T1–T5 no #201 (`StatusBadges`, painel do alvo com `statuses`, `weaponIconsNovas`, `HUD.setSpin`, e o sintetizador em `AudioSystem`). A ligação ao jogo é de quem tem a simulação: `core/statusHud.ts` lê o `StatusSet` do jogador, alimenta os indicadores e dispara o som de entrada (uma vez por estado) e o laço (o estado mais incapacitante manda: congelado > atordoado > queimando > chocado > gelado); `MechBase.statuses` alimenta o painel do alvo; `PlayerController.onShot(w)` escolhe o estalo elétrico; `spinLevel` alimenta o medidor e o zumbido. **Falta o Gemini**: `setFlame` (lança-chamas) e `playCryoShot` (gelo) já existem no áudio dele e esperam as armas. **Visto só numa página de teste, não numa partida real.**
+
 ## 6. Decisões do dono (09/10)
 
 1. **"Tiro bem dado" = na cabeça, ou uma boa sequência acertando certinho** (ficou como: 3 acertos seguidos no mesmo alvo em 1,4 s).

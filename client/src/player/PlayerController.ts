@@ -36,7 +36,8 @@ export class PlayerController {
   /** Um foguete saiu (som). Uma vez por aperto do botão, mesmo que a salva tenha dois. */
   onRocket?: () => void;
   /** Saiu um tiro de energia, de qualquer encaixe (som). */
-  onShot?: () => void;
+  /** Saiu um tiro de energia do jogador (a arma que atirou, para o som certo: elétrica, plasma, rotatória). */
+  onShot?: (w: WeaponStats) => void;
   /** O tiro pesou na câmera: quanto tremer (trauma 0..1, `fireKick`). Só render; não mexe na mira nem na regra. */
   onKick?: (amount: number) => void;
   /** Corte corpo a corpo (motosserra no braço esquerdo): quem aplica é a partida (`Match.meleeNearest`). */
@@ -76,6 +77,9 @@ export class PlayerController {
   /** Carregador do gatilho secundário (regra no tick fixo; o HUD lê daqui). Refeito ao trocar de armas. */
   get primaryCharge(): number { return this.armament.primaryCharge; }
   get secondaryCharge(): number { return this.armament.secondaryCharge; }
+
+  /** Rotação do cano da metralhadora rotatória, de 0 a 1 (o medidor da mira e o zumbido leem daqui). */
+  get spinLevel(): number { return this.armament.spinLevel; }
 
   get launcher(): RocketLauncher {
     return this.armament.launcher;
@@ -161,7 +165,7 @@ export class PlayerController {
     this.projectiles.fire(_muzzle, _dir, this.mech.collider, false, w);
     // A rotatória atira 20 vezes por segundo: clarão menor e som a cada quarto tiro (o zumbido contínuo é do Gemini, ARMAS_ELEMENTAIS.md T5).
     this.particles.burst(_muzzle, _dir, { count: w.spin ? 3 : 10, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
-    if (!w.spin || (this.spinShots++ & 3) === 0) this.onShot?.();
+    if (!w.spin || (this.spinShots++ & 3) === 0) this.onShot?.(w);
     this.onKick?.(fireKick(w));
   }
 

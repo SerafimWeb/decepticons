@@ -7,6 +7,7 @@ import type { DamageType } from '../combat/weapons';
 import type { Hangar } from '../hangar/Hangar';
 import { acceptsMetalShield, armOptions, factorySpec, hasShoulderSlot, isMetalShield, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { PRESET_COUNT } from '../hangar/Hangar';
+import { WEAPON_HINT_NOVAS, WEAPON_ICON_NOVAS } from './weaponIconsNovas';
 import { testAt, testFire, TEST_FIRE_S, type TestFire } from '../hangar/testFire';
 
 /** O que a tela pede ao jogo: abrir e fechar o galpão 3D, mostrar a montagem, girar e aplicar na hora. */
@@ -66,8 +67,8 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   shotgun: 'Energia · dano alto de perto, some aos 45 m · um projétil só',
   barrage: 'Munição · sobe e cai em chuva de 8 bombas num círculo de 9 m · aviso no chão',
   chainsaw: 'Corpo a corpo · só corta encostado',
-  arc: 'Energia · projétil elétrico: cada acerto deixa o alvo chocado (lento, perde vida aos poucos) · tiro na cabeça ou 3 seguidos atordoa 0,8 s · pouco dano',
-  rotary: 'Energia · o cano gira: a cadência sobe de 3 a 20 tiros/s em 1,2 s segurando o gatilho · espalha com a rotação · o calor é o freio',
+  arc: WEAPON_HINT_NOVAS.arc,
+  rotary: WEAPON_HINT_NOVAS.rotary,
 };
 
 /** Ícones de traço (24×24) de cada arma. */
@@ -79,8 +80,8 @@ const WEAPON_ICON: Record<WeaponId, string> = {
   blaster: '<path d="M4 9h13l2 2v2H9l-1 5H5l1-5H4z" /><path d="M17 11h4" />',
   barrage: '<rect x="3" y="15" width="15" height="4" rx="1" /><path d="M6 15l2-9M10 15l2-9M14 15l2-9" /><circle cx="8" cy="5" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="16" cy="5" r="1" />',
   shotgun: '<path d="M3 10h15M3 14h15" /><path d="M18 8l3 1v6l-3 1z" /><path d="M6 14v4h5v-4" />',
-  arc: '<path d="M3 12h5M16 12h5" /><circle cx="8" cy="12" r="2" /><circle cx="16" cy="12" r="2" /><path d="M10 12l1.5-3 1 6 1.5-3" />',
-  rotary: '<rect x="3" y="9" width="6" height="7" rx="1" /><path d="M9 9.5h11M9 12.5h12M9 15.5h11" /><circle cx="21" cy="12.5" r="1" /><path d="M5 16v3h3v-3" />',
+  arc: WEAPON_ICON_NOVAS.arc,
+  rotary: WEAPON_ICON_NOVAS.rotary,
   chainsaw: '<rect x="3" y="9" width="7" height="7" rx="1" /><path d="M10 10h9a2.5 2.5 0 0 1 0 5h-9" /><path d="M12 10l1-2M15 10l1-2M18 10l1-2M12 15l1 2M15 15l1 2M18 15l1 2" />',
 };
 

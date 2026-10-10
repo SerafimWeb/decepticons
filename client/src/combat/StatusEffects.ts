@@ -231,6 +231,20 @@ export class StatusSet {
     if (this.stacks > 0) fn('gelado', this.chill, this.stacks / STATUS.chillMax);
     if (this.frozen > 0) fn('congelado', this.frozen, 1);
   }
+
+  private readonly kindList: StatusKind[] = [];
+
+  /** Os estados ligados, na ordem de `forEachActive`, numa lista que é sempre a mesma (nada é alocado por quadro): o painel do alvo lê daqui. */
+  kinds(): readonly StatusKind[] {
+    const list = this.kindList;
+    list.length = 0;
+    if (this.burn > 0) list.push('queimando');
+    if (this.shock > 0) list.push('chocado');
+    if (this.stun > 0) list.push('atordoado');
+    if (this.stacks > 0) list.push('gelado');
+    if (this.frozen > 0) list.push('congelado');
+    return list;
+  }
 }
 
 /** Aplica o que a arma inflige no acerto. `part` é a parte do corpo que levou o tiro (a cabeça vale o atordoamento do choque). */

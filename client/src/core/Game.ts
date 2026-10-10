@@ -41,7 +41,9 @@ import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
 import { PlayerController } from '../player/PlayerController';
 import { DamageIndicator } from '../ui/DamageIndicator';
+import { StatusBadges } from '../ui/StatusBadges';
 import { TargetPanel } from '../ui/TargetPanel';
+import { StatusHud } from './statusHud';
 import { HUD } from '../ui/HUD';
 import { KillFeed } from '../ui/KillFeed';
 import { MouseCalibration } from '../ui/MouseCalibration';
@@ -174,6 +176,13 @@ export class Game {
   private readonly netStatus = document.createElement('div');
   private readonly damageIndicator = new DamageIndicator();
   private readonly targetPanel = new TargetPanel();
+  /** Estados do jogador (fogo, choque, gelo) na tela e no som: os indicadores e as bordas são do Gemini, a ponte é `core/statusHud.ts`. */
+  private readonly statusBadges = new StatusBadges(document.getElementById('hud')!);
+  private readonly statusHud = new StatusHud({
+    badges: (list) => this.statusBadges.update(list),
+    entered: (kind) => this.audio.playStatusEnter(kind),
+    loop: (kind) => this.audio.setStatusLoop(kind),
+  });
   private readonly debugPanel = new DebugPanel();
   private readonly audio = new AudioSystem();
   /** Vinheta da SERAFIM WEB antes da primeira partida da sessão. */
@@ -777,7 +786,7 @@ export class Game {
       };
     }
     // Som de disparo: o controle do jogador avisa a cada tiro de energia (bots têm o som deles, acima).
-    this.player.onShot = () => this.audio.playShot();
+    this.player.onShot = (w) => (w.id === 'arc' ? this.audio.playArcShot() : this.audio.playShot());
     // Peso do tiro na câmera (`combat/fireFeel.ts`): o solavanco do trilho e do foguete, o zumbido do plasma.
     this.player.onKick = (amount) => rig.addShake(amount);
     this.player.onRocket = () => {
@@ -1235,6 +1244,12 @@ export class Game {
     const noMagazine = this.mech.loadout.secondary?.kind !== 'ammo';
     this.hud.setRockets(noMagazine ? 4 : this.player.launcher.ammo, noMagazine ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);
     this.hud.setHeat(this.mech.heat, this.mech.overheated, this.mech.coolingBoost);
+    // Estados (choque, fogo, gelo) e rotação do cano: parado na pausa ou morto, o zumbido e os indicadores se calam.
+    const ativo = this.playing && this.mech.alive && !this.hangarView;
+    this.statusHud.update(this.mech.status, ativo);
+    const giro = ativo ? this.player.spinLevel : 0;
+    this.hud.setSpin(giro);
+    this.audio.setRotarySpin(giro);
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);
