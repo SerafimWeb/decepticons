@@ -141,3 +141,7 @@ Oficina ganha compatibilidade por chassi, massa, escudos e ordens; Sala de Contr
 | Nomes configuráveis na tela (Mechs, andróides, técnico, aliados) | REAL | Claude 06/10: Configurações > NOMES NA TELA, 16 caracteres sem tags; valem ao reiniciar. Offline: no online, os nomes vêm do servidor. Testes em `Settings.test.ts` e `Match.test.ts`. |
 | Câmeras de espectador (outros jogadores, torre, portas) | AUSENTE | Pedido do dono (06/10), ainda sem escopo definido. |
 | Painel de campanhas (oponentes, missões e tarefas salvas) | AUSENTE | Pedido do dono (06/10), ainda sem escopo definido. Hoje só existem as configurações de contagem e personalidade. |
+
+## Medição C3 — Codex, 09/10
+
+PARCIAL: coletor reproduzível só na bancada e nove janelas reais de Vega 11 (`medicoes/RENDER_C3.md`). Zero programas novos; travadas persistem; 60 FPS não homologados. Sem custo no cliente publicado. Timer GPU, ensaio térmico, outros GLBs e remotos ainda não cobertos.
