@@ -1,0 +1,75 @@
+{
+  "recordedTotal": 833,
+  "executedCases": 833,
+  "passed": 833,
+  "failed": 0,
+  "pending": 0,
+  "files": 109,
+  "uniqueFiles": 109,
+  "duplicateNames": [],
+  "outsideInclude": [],
+  "domains": [
+    {
+      "domain": "client/",
+      "tests": 659
+    },
+    {
+      "domain": "shared/",
+      "tests": 45
+    },
+    {
+      "domain": "server/",
+      "tests": 129
+    }
+  ],
+  "largest": [
+    {
+      "file": "client/src/hangar/loadout.test.ts",
+      "tests": 39
+    },
+    {
+      "file": "server/room.test.ts",
+      "tests": 31
+    },
+    {
+      "file": "client/src/entities/importedMechRig.test.ts",
+      "tests": 28
+    },
+    {
+      "file": "client/src/combat/weapons.test.ts",
+      "tests": 27
+    },
+    {
+      "file": "client/src/combat/rotary.test.ts",
+      "tests": 26
+    },
+    {
+      "file": "client/src/combat/Armament.test.ts",
+      "tests": 21
+    },
+    {
+      "file": "server/atualizador.test.ts",
+      "tests": 20
+    },
+    {
+      "file": "client/src/combat/StatusEffects.test.ts",
+      "tests": 18
+    },
+    {
+      "file": "client/src/core/Settings.test.ts",
+      "tests": 18
+    },
+    {
+      "file": "server/telemetria.test.ts",
+      "tests": 16
+    },
+    {
+      "file": "client/src/core/ShaderWarmup.test.ts",
+      "tests": 16
+    },
+    {
+      "file": "shared/net/codec.test.ts",
+      "tests": 15
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+[
+  {
+    "variant": "before",
+    "boot": {
+      "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "memory": {
+        "geometries": 169,
+        "textures": 29
+      },
+      "programs": 48
+    },
+    "rows": [
+      {
+        "chassis": "genesis01",
+        "beforeReveal": 0,
+        "afterReveal": 1,
+        "memory": {
+          "geometries": 170,
+          "textures": 33
+        },
+        "programs": 49
+      },
+      {
+        "chassis": "lancerL1",
+        "beforeReveal": 0,
+        "afterReveal": 0,
+        "memory": {
+          "geometries": 171,
+          "textures": 37
+        },
+        "programs": 49
+      },
+      {
+        "chassis": "lr7lBastion",
+        "beforeReveal": 0,
+        "afterReveal": 0,
+        "memory": {
+          "geometries": 172,
+          "textures": 41
+        },
+        "programs": 49
+      },
+      {
+        "chassis": "marauder",
+        "beforeReveal": 0,
+        "afterReveal": 1,
+        "memory": {
+          "geometries": 175,
+          "textures": 42
+        },
+        "programs": 50
+      },
+      {
+        "chassis": "vector09",
+        "beforeReveal": 0,
+        "afterReveal": 0,
+        "memory": {
+          "geometries": 175,
+          "textures": 42
+        },
+        "programs": 50
+      },
+      {
+        "chassis": "marauder",
+        "beforeReveal": 0,
+        "afterReveal": 0,
+        "memory": {
+          "geometries": 175,
+          "textures": 42
+        },
+        "programs": 50
+      }
+    ],
+    "contexts": [],
+    "errors": []
+  },
+  {
+    "variant": "after",
+    "boot": {
+      "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "memory": {
+        "geometries": 169,
+        "textures": 29
+      },
+      "programs": 48
+    },
+    "rows": [
+      {
+        "chassis": "genesis01",
+        "beforeReveal": 1,
+        "afterReveal": 0,
+        "memory": {
+          "geometries": 170,
+          "textures": 33
+        },
+        "programs": 49
+      },
+      {
+        "chassis": "lancerL1",
+        "beforeReveal": 0,
+        "afterReveal": 0,
+        "memory": {
+          "geometries": 171,
+          "textures": 37
+        },
+        "programs": 49
+      },
+      {
+        "chassis": "lr7lBastion",
+        "beforeReveal": 0,
+        "afterReveal": 0,
+        "memory": {
+          "geometries": 172,
+          "textures": 41
+        },
+        "programs": 49
+      },
+      {
+        "chassis": "marauder",
+        "beforeReveal": 1,
+        "afterReveal": 0,
+        "memory": {
+          "geometries": 175,
+          "textures": 42
+        },
+        "programs": 50
+      },
+      {
+        "chassis": "vector09",
+        "beforeReveal": 0,
+        "afterReveal": 0,
+        "memory": {
+          "geometries": 175,
+          "textures": 42
+        },
+        "programs": 50
+      },
+      {
+        "chassis": "marauder",
+        "beforeReveal": 0,
+        "afterReveal": 0,
+        "memory": {
+          "geometries": 175,
+          "textures": 42
+        },
+        "programs": 50
+      }
+    ],
+    "contexts": [],
+    "errors": []
+  }
+]

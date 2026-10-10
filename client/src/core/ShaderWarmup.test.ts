@@ -29,6 +29,14 @@ function falso(nProgramas: number, compile: () => Promise<unknown> = () => Promi
 }
 
 describe('pré-compilação dos shaders', () => {
+  it('prepara o modelo com as luzes/ambiente da cena onde será exibido', async () => {
+    const f = falso(0);
+    const context = {} as THREE.Scene;
+    const compile = vi.fn(async () => {});
+    f.renderer.compileAsync = compile;
+    await warmUpShaders(f.renderer, TARGET, SCENE, CAMERA, undefined, 1000, context);
+    expect(compile).toHaveBeenCalledWith(SCENE, CAMERA, context);
+  });
   it.each(['ok', 'rejeita', 'sincrono', 'timeout'] as const)('restaura o alvo anterior ao preparar uma variante: %s', async (mode) => {
     const previous = { id: 'compositor-anterior' } as unknown as THREE.WebGLRenderTarget;
     const compile = () => {

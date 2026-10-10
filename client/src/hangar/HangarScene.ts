@@ -230,6 +230,13 @@ function blueprintTexture(): THREE.CanvasTexture {
 export class HangarScene {
   /** Uma carga atrasada não pode substituir a seleção mais recente do piloto. */
   private showVersion = 0;
+  /** Contrato de render: preparar só o modelo escolhido, com as luzes reais do Hangar. */
+  prepareModel?: (root: THREE.Object3D) => Promise<boolean>;
+  private readonly prepared = new WeakSet<THREE.Object3D>();
+  private pendingPreparation: { model: MechBase; version: number } | null = null;
+  private preparing = false;
+  /** A UI pode consultar este estado; o modelo anterior fica no pedestal durante a preparação. */
+  get graphicsPreparing(): boolean { return this.preparing; }
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(38, 1, 0.1, 220);
   private readonly turntable = new THREE.Group();
@@ -616,6 +623,7 @@ export class HangarScene {
   /** O Mech do pedestal: o chassi e as armas da montagem (um modelo por chassi, feito na primeira vez). */
   show(chassis: ChassisId, loadout: Loadout): void {
     const version = ++this.showVersion;
+    this.pendingPreparation = null;
     let m = this.displays.get(chassis);
     if (!m) {
       const importedAsset = IMPORTED_CHASSIS[chassis];
@@ -638,6 +646,34 @@ export class HangarScene {
       this.displays.set(chassis, m);
     }
     m.equip(loadout);
+    if (m !== this.shown && this.prepareModel && !this.prepared.has(m.root)) {
+      // Uma operação ativa + só a última pendente: cliques rápidos não criam uma fila de compilações.
+      this.pendingPreparation = { model: m, version };
+      if (!this.preparing) void this.prepareSelection();
+      return;
+    }
+    this.display(m);
+  }
+
+  private async prepareSelection(): Promise<void> {
+    this.preparing = true;
+    try {
+      while (this.pendingPreparation) {
+        const request = this.pendingPreparation;
+        this.pendingPreparation = null;
+        try {
+          if (await this.prepareModel!(request.model.root)) this.prepared.add(request.model.root);
+        } catch (err: unknown) {
+          console.warn('Hangar: preparação gráfica falhou (segue no primeiro uso)', err);
+        }
+        if (request.version === this.showVersion) this.display(request.model);
+      }
+    } finally {
+      this.preparing = false;
+    }
+  }
+
+  private display(m: MechBase): void {
     if (m !== this.shown) {
       if (this.shown) this.turntable.remove(this.shown.root);
       this.turntable.add(m.root);
