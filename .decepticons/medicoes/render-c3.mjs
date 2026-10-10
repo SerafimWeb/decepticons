@@ -17,7 +17,7 @@ await build({ logLevel: 'error', build: { outDir: dir + '/build' }, plugins: [{
   },
 }] });
 const server = await preview({ logLevel: 'error', build: { outDir: dir + '/build' }, preview: { host: '127.0.0.1', port: 0, open: false } });
-const report = { revision, viewport: { width: 1280, height: 720 }, method: 'production build; Edge headless real GPU; fixed quality media; frozen Arena/Hangar ABBA bloom; separate active combat; no concurrent checks started by Codex', started: new Date().toISOString(), systemBefore: system(), cases: [] };
+const report = { revision, viewport: { width: 1280, height: 720 }, method: 'production build; Edge headless real GPU; fixed quality media; paused Arena, rotating Hangar; ABBA bloom; separate active combat; no concurrent checks started by Codex', started: new Date().toISOString(), systemBefore: system(), cases: [] };
 let browser;
 try {
   browser = await chromium.launch({ channel: 'msedge', headless: true, args: ['--ignore-gpu-blocklist'] });
