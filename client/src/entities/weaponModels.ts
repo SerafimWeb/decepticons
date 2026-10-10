@@ -157,6 +157,24 @@ function barrage(root: THREE.Object3D, tier: number, M: Mats): number {
   return (0.42 + rows * 0.2 + 0.3) * LONG;
 }
 
+/** Metralhadora rotatória (energia, braço direito): corpo, um feixe de seis canos em círculo e o alimentador embaixo. O nível alonga os canos e soma anéis. */
+function rotary(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = [0.9, 1.05, 1.2][tier]!;
+  d.box(0.42, 0.4, 0.5, M.armor, 0, 0, -0.3);
+  d.cylZ(0.2, 0.18, M.frame, 0, 0, -0.62);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    d.cylZ(0.04, len, M.frame, Math.cos(a) * 0.11, Math.sin(a) * 0.11, -0.7 - len / 2);
+  }
+  d.cylZ(0.17, 0.05, M.armor, 0, 0, -0.7 - len * 0.5);
+  if (tier >= 1) d.cylZ(0.17, 0.05, M.armor, 0, 0, -0.7 - len * 0.25);
+  d.cylZ(0.17, 0.06, M.frame, 0, 0, -0.7 - len);
+  d.cylZ(0.05, 0.04, M.glow, 0, 0, -0.74 - len);
+  d.box(0.2, 0.28, 0.3, M.frame, 0, -0.3, -0.25);
+  return (0.74 + len) * LONG;
+}
+
 /** Motosserra (corpo a corpo): motor e uma barra alta com dentes luminosos. O nível alonga a barra. */
 function chainsaw(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -241,6 +259,9 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'barrage':
         muzzleZ = barrage(root, weapon.tier, M);
+        break;
+      case 'rotary':
+        muzzleZ = rotary(root, weapon.tier, M);
         break;
       case 'chainsaw':
         muzzleZ = chainsaw(root, weapon.tier, M);

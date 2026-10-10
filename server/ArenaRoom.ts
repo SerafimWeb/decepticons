@@ -235,6 +235,8 @@ export class ArenaRoom {
   }
 
   private shot(owner: RAPIER.Collider | undefined, dir: THREE.Vector3, w: WeaponStats): void {
+    // A rotatória (20 tiros/s) não manda um evento por tiro: a bandeira `fx` de "cano girando" faz os outros jogadores desenharem o fluxo.
+    if (w.spin) return;
     const b = this.events;
     if (!owner || b.count >= MAX_EVENTS) return;
     let id = NO_UNIT;

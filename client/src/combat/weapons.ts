@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary';
 
 /**
  * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
@@ -65,6 +65,22 @@ export interface Barrage {
 }
 
 /** Arma pronta para o combate, já no nível escolhido. Tudo em unidades do jogo (m, s, t). */
+/**
+ * Metralhadora rotatória: o cano gira, e a cadência **sobe segurando o gatilho** (de `minRate` × a cadência máxima, parada, até a cadência
+ * máxima, com o cano em plena rotação) e cai ao soltar. O espalhamento abre junto com a rotação. Regra no tick fixo, sem sorteio
+ * (`combat/trigger.ts` `SpinUp`, `combat/spread.ts`). `fireInterval` da arma é o intervalo **com o cano em plena rotação**.
+ */
+export interface Spin {
+  /** Segundos de gatilho apertado para o cano chegar à rotação máxima, de parado. */
+  up: number;
+  /** Segundos para parar de girar depois de soltar o gatilho. */
+  down: number;
+  /** Fração da cadência máxima com o cano parado (0,15 = 3 de 20 tiros/s). */
+  minRate: number;
+  /** Abertura do cone de tiro (rad) com a rotação máxima; com o cano parado o tiro vai reto. */
+  spread: number;
+}
+
 export interface WeaponStats {
   id: WeaponId;
   /** Nome para a interface e o site. */
@@ -105,6 +121,8 @@ export interface WeaponStats {
   empHeat?: number;
   /** Silhueta visual do tiro, sem alterar colisão. */
   tracer?: 'rail' | 'pulse';
+  /** Só na rotatória: a rotação do cano (cadência que sobe, espalhamento que abre). */
+  spin?: Spin;
   /** Estado que o acerto aplica no alvo (`combat/StatusEffects.ts`): fogo, choque ou gelo. Sem escudo na frente, o acerto vale. */
   inflicts?: StatusInflict;
 }
@@ -112,6 +130,20 @@ export interface WeaponStats {
 type WeaponBase = Omit<WeaponStats, 'tier'>;
 
 const BASE: Record<WeaponId, WeaponBase> = {
+  /**
+   * Metralhadora rotatória (dono, 09/10): muita bala, pouco dano por bala, e o calor é o freio. 5 de dano por tiro; a 20 tiros/s com o
+   * cano em plena rotação são ~100 de dano/s no pico, mas a cadência só chega lá depois de 1,2 s de gatilho e o calor trava em ~3 s de
+   * rajada (medido na bancada: derruba o torso do Vector-09 em 5,9 s contra 5,7 s do plasma, dano sustentado igual). Precisão cai com a
+   * rotação (cone de 3,5°); alcance médio. Limitada pelo calor, sem carregador.
+   */
+  rotary: {
+    id: 'rotary', name: 'Metralhadora rotatória', kind: 'energy',
+    damage: 5, fireInterval: 0.05, heatPerShot: 0.02,
+    magazine: 0, reload: 0, speed: 170,
+    optimalRange: 35, maxRange: 95, minFactor: 0.35,
+    blastRadius: 0, mass: 4,
+    spin: { up: 1.2, down: 1.5, minRate: 0.15, spread: 0.06 },
+  },
   railgun: {
     id: 'railgun', name: 'Canhão de trilho', kind: 'energy',
     damage: 72, fireInterval: 1.4, heatPerShot: 0.32,
@@ -272,6 +304,7 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   rockets: 'explosivo',
   barrage: 'explosivo',
   emp: 'pulso',
+  rotary: 'balistico',
   chainsaw: 'corte',
 };
 

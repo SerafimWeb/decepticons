@@ -5,6 +5,7 @@ import { AIM_RANGE, Armament, type ShotSink } from '../combat/Armament';
 import type { BarrageSystem } from '../combat/BarrageSystem';
 import { fireKick } from '../combat/fireFeel';
 import type { MountId } from '../combat/mounts';
+import { applySpread, type Spread } from '../combat/spread';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import type { RocketSystem } from '../combat/RocketSystem';
 import type { RocketLauncher } from '../combat/trigger';
@@ -51,10 +52,11 @@ export class PlayerController {
   private inputResetVersion = 0;
   private jumpQueued = false;
   private dashQueued = false;
+  private spinShots = 0;
   private readonly armament: Armament;
   private readonly cmd: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
   private readonly sink: ShotSink = {
-    projectile: (mount, w) => this.shoot(mount, w),
+    projectile: (mount, w, spread) => this.shoot(mount, w, spread),
     rocket: (mount, w, volley) => this.launch(mount, w, volley),
     melee: (w) => this.melee?.(w),
   };
@@ -152,12 +154,14 @@ export class PlayerController {
   }
 
   /** Um projétil de energia de `mount`: sai da boca do desenho e vai até a mira. */
-  private shoot(mount: MountId, w: WeaponStats): void {
+  private shoot(mount: MountId, w: WeaponStats, spread: Readonly<Spread>): void {
     this.mech.mountWorldPosition(mount, _muzzle);
     this.aimFrom(_muzzle);
+    applySpread(_dir, spread);
     this.projectiles.fire(_muzzle, _dir, this.mech.collider, false, w);
-    this.particles.burst(_muzzle, _dir, { count: 10, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
-    this.onShot?.();
+    // A rotatória atira 20 vezes por segundo: clarão menor e som a cada quarto tiro (o zumbido contínuo é do Gemini, ARMAS_ELEMENTAIS.md T5).
+    this.particles.burst(_muzzle, _dir, { count: w.spin ? 3 : 10, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
+    if (!w.spin || (this.spinShots++ & 3) === 0) this.onShot?.();
     this.onKick?.(fireKick(w));
   }
 

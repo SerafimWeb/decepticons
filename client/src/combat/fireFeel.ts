@@ -17,6 +17,7 @@ export const FIRE_KICK: Readonly<Record<WeaponId, number>> = {
   rockets: 0.2,
   barrage: 0.28,
   railgun: 0.4,
+  rotary: 0.014, // 20 tiros/s somam: o zumbido da rajada, sem solavanco por bala
   chainsaw: 0, // corpo a corpo: a serra tem som e fagulha, e tremer a câmera o tempo todo cansaria
 };
 

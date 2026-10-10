@@ -175,6 +175,43 @@ describe('PlayerController: a chuva de mísseis', () => {
 });
 
 
+describe('PlayerController: a metralhadora rotatória do jogador local', () => {
+  const ROTARY = weapon('rotary');
+
+  it('o primeiro tiro vai na mira; com o cano girando os tiros se espalham, sempre dentro do cone dela', async () => {
+    const { input, aim, bolts, run } = await jogador({ primary: ROTARY, secondary: null });
+    input.mouseDown = true;
+    run(2.5);
+    expect(bolts.length).toBeGreaterThan(20);
+    expect(bolts.every((s) => s.w.id === 'rotary')).toBe(true);
+    expect(aimedAt(bolts[0]!, aim.point)).toBeGreaterThan(0.9999);
+    const desvios = bolts.map((s) => Math.acos(Math.min(1, aimedAt(s, aim.point))));
+    expect(Math.max(...desvios)).toBeGreaterThan(ROTARY.spin!.spread * 0.7); // o cone abriu
+    expect(Math.max(...desvios)).toBeLessThanOrEqual(ROTARY.spin!.spread * 1.05); // e não passa do que a arma diz
+    // O cone é do tiro, não da mira: o meio dele continua na mira (nenhum lado é preferido).
+    const lado = bolts.reduce((s, b) => s + b.dir.x, 0) / bolts.length - bolts[0]!.dir.x;
+    expect(Math.abs(lado)).toBeLessThan(ROTARY.spin!.spread * 0.2);
+  });
+
+  it('o tremor vem a cada tiro, mas o som só a cada quarto tiro (20 tiros por segundo não viram 20 estalos)', async () => {
+    const { input, bolts, kicks, run, sounds } = await jogador({ primary: ROTARY, secondary: null });
+    input.mouseDown = true;
+    run(2);
+    expect(bolts.length).toBeGreaterThan(20);
+    expect(kicks).toHaveLength(bolts.length);
+    expect(kicks.every((k) => k === fireKick(ROTARY))).toBe(true);
+    expect(sounds()).toBe(Math.ceil(bolts.length / 4));
+  });
+
+  it('arma sem rotação não ganha desvio nem perde som: o plasma continua um som por tiro, reto na mira', async () => {
+    const { input, aim, bolts, run, sounds } = await jogador({ primary: weapon('plasma'), secondary: null });
+    input.mouseDown = true;
+    run(2);
+    expect(bolts.every((s) => aimedAt(s, aim.point) > 0.9999)).toBe(true);
+    expect(sounds()).toBe(bolts.length);
+  });
+});
+
 describe('PlayerController: o peso do tiro na câmera', () => {
   it('cada tiro de energia dá um tremor do peso da arma; o foguete dá um por aperto, não um por foguete', async () => {
     const { input, bolts, rockets, kicks, run } = await jogador({ primary: weapon('plasma'), secondary: weapon('rockets') });

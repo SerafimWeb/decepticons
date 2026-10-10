@@ -80,7 +80,7 @@ Arma que **aplica um estado** no alvo usa o campo `inflicts` (`'burn' | 'shock' 
 `combat/StatusEffects.ts` (`.decepticons/ARMAS_ELEMENTAIS.md`): o `CombatSystem` aplica no acerto que chega ao corpo, o `Match` faz o tempo
 correr antes dos pilotos, o `MechBase` lê `status` (velocidade, travas de tiro, dano recebido), e o servidor manda o byte `fx` de cada unidade.
 Números em `STATUS` (um lugar só); resistência por chassi em `MechStats.statusResist`. **Arma que não atira projétil** (lança-chamas,
-rotatória) liga `status.flaming`/`status.spinning` no dono em vez de mandar um evento por tiro.
+rotatória) liga `status.flaming`/`status.spinning` no dono em vez de mandar um evento por tiro. A rotatória (`spin` na entrada de `BASE`) é o modelo: a regra fica em `SpinUp` (`trigger.ts`), o desvio em `spread.ts` (por número de tiro, sem sorteio), o servidor sai cedo em `ArenaRoom.shot` quando a arma tem `spin`, e o outro jogador desenha o fluxo pela bandeira, lendo a arma da montagem do roster.
 
 ## Natureza do dano — 06/10, Claude
 

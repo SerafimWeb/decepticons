@@ -11,7 +11,8 @@
 // 5 (06/10): módulo de energia, comando de escudo e energia do destinatário em 1 byte adicional por snapshot.
 // 6 (06/10): catálogo inclui esfera; servidores antigos não validam esse módulo. Pacote mantém o tamanho.
 // 7 (09/10): byte `fx` por unidade (fogo, choque, gelo; lança-chamas ligado; rotatória girando), presente só quando há algo ligado (bit das flags); +1 byte por unidade no pior caso.
-export const PROTOCOL_VERSION = 7;
+// 8 (09/10): a metralhadora rotatória entra no catálogo de armas (montagem `rotary` no JOIN e na lista de jogadores); o tiro dela não vira evento (bandeira `fx`).
+export const PROTOCOL_VERSION = 8;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;
