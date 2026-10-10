@@ -17,9 +17,10 @@ try {
   await page.waitForFunction(()=>!!window.__game,null,{timeout:180000});
   const cases=[];
   for(const [name,pos,look] of [
-    ['bunker-atrio-codex',[0,7,48],[0,12,-35]],
-    ['bunker-galeria-codex',[54,15,45],[65,14,-12]],
-    ['bunker-terceiro-andar-codex',[52,26,12],[-48,12,-30]],
+    ['bunker-poco-codex',[0,61,76],[0,8,0]],
+    ['bunker-atrio-codex',[0,8,48],[0,18,-34]],
+    ['bunker-tunel-secreto-codex',[56,32,-40],[64,32,-62]],
+    ['bunker-atirador-codex',[57,45,57],[0,42,0]],
   ]){
     const result=await page.evaluate(({pos,look})=>{
       const g=window.__game,T=window.__THREE;g.renderer.setAnimationLoop(null);
@@ -48,7 +49,7 @@ try {
       samples.sort((a,b)=>a-b);return {samples:12,p50:samples[5],p95:samples[11]};
     });
   }
-  writeFileSync('.decepticons/medicoes/bunker-2026-10-10.json',JSON.stringify({cases,errors,scope:'vistas controladas do mapa real; não certifica FPS ou IA vertical'},null,2));
+  writeFileSync('.decepticons/medicoes/bunker-2026-10-10.json',JSON.stringify({cases,errors,scope:'vistas controladas do mapa real; não certifica FPS, elevadores operacionais ou IA vertical'},null,2));
   if(errors.length)throw new Error(errors.join('\n'));
   console.log(JSON.stringify({cases,errors}));
 } finally {await browser?.close();await server.close();}
