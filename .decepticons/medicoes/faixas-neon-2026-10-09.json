@@ -1,0 +1,202 @@
+{
+  "base": "5187152814c8397248f72486c4c067f035d061c1",
+  "boot": {
+    "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "instances": [
+      5,
+      3,
+      8
+    ],
+    "bufferBytes": 1024
+  },
+  "viewport": [
+    1280,
+    720
+  ],
+  "method": "mesmo build/página/câmera; troca runtime InstancedMesh por Mesh com matrizes equivalentes; renderer sem animation loop; composer HDR/MSAA4+bloom; gl.finish só na bancada; comparação do canvas sem HUD; não mede FPS",
+  "results": [
+    {
+      "label": "terceira",
+      "position": [
+        0,
+        7,
+        37
+      ],
+      "target": [
+        0,
+        5,
+        -30
+      ],
+      "stats": {
+        "before": {
+          "calls": 119,
+          "triangles": 16004
+        },
+        "after": {
+          "calls": 106,
+          "triangles": 16004
+        }
+      },
+      "difference": {
+        "maxChannelDelta": 23,
+        "meanChannelDelta": 0.0015668402777777777,
+        "changedPixels": 142,
+        "totalPixels": 921600
+      }
+    },
+    {
+      "label": "primeira",
+      "position": [
+        0,
+        5,
+        25
+      ],
+      "target": [
+        0,
+        5,
+        -30
+      ],
+      "stats": {
+        "before": {
+          "calls": 99,
+          "triangles": 14198
+        },
+        "after": {
+          "calls": 86,
+          "triangles": 14198
+        }
+      },
+      "difference": {
+        "maxChannelDelta": 0,
+        "meanChannelDelta": 0,
+        "changedPixels": 0,
+        "totalPixels": 921600
+      }
+    },
+    {
+      "label": "tatica",
+      "position": [
+        0,
+        65,
+        65
+      ],
+      "target": [
+        0,
+        0,
+        -15
+      ],
+      "stats": {
+        "before": {
+          "calls": 141,
+          "triangles": 17324
+        },
+        "after": {
+          "calls": 128,
+          "triangles": 17324
+        }
+      },
+      "difference": {
+        "maxChannelDelta": 50,
+        "meanChannelDelta": 0.0000365306712962963,
+        "changedPixels": 1,
+        "totalPixels": 921600
+      }
+    },
+    {
+      "label": "lateral",
+      "position": [
+        70,
+        20,
+        -20
+      ],
+      "target": [
+        0,
+        15,
+        -35
+      ],
+      "stats": {
+        "before": {
+          "calls": 125,
+          "triangles": 16040
+        },
+        "after": {
+          "calls": 112,
+          "triangles": 16040
+        }
+      },
+      "difference": {
+        "maxChannelDelta": 0,
+        "meanChannelDelta": 0,
+        "changedPixels": 0,
+        "totalPixels": 921600
+      }
+    },
+    {
+      "label": "perto-banco",
+      "position": [
+        -28,
+        28,
+        -20
+      ],
+      "target": [
+        -28,
+        28,
+        -35
+      ],
+      "stats": {
+        "before": {
+          "calls": 57,
+          "triangles": 10476
+        },
+        "after": {
+          "calls": 46,
+          "triangles": 10476
+        }
+      },
+      "difference": {
+        "maxChannelDelta": 0,
+        "meanChannelDelta": 0,
+        "changedPixels": 0,
+        "totalPixels": 921600
+      }
+    },
+    {
+      "label": "translucido",
+      "position": [
+        0,
+        65,
+        65
+      ],
+      "target": [
+        0,
+        0,
+        -15
+      ],
+      "stats": {
+        "before": {
+          "calls": 141,
+          "triangles": 17324
+        },
+        "after": {
+          "calls": 128,
+          "triangles": 17324
+        }
+      },
+      "difference": {
+        "maxChannelDelta": 7,
+        "meanChannelDelta": 0.00002712673611111111,
+        "changedPixels": 5,
+        "totalPixels": 921600
+      }
+    }
+  ],
+  "errors": [],
+  "limitations": [
+    "Não é benchmark de FPS; gl.finish e captura são exclusivos da bancada.",
+    "Instancing muda a sequência de multiplicações na GPU; há diferenças pontuais de rasterização, não igualdade bit a bit.",
+    "Culling é por prédio, não por andar: outras vistas podem submeter faixas fora do enquadramento. As seis vistas medidas não aumentaram triângulos.",
+    "Sem GPU dedicada obrigatória ou alteração de simulação, colisores, janelas, bloom, Quality, armas ou rede.",
+    "Baseline runtime reconstrói as caixas originais em double; DOM sobreposto é escondido; primeiro ensaio sem esconder UI foi descartado.",
+    "Limite de comparação (até 0,1% de pixels alterados e erro médio de canal ≤0,01/255) não substitui inspeção das imagens."
+  ]
+}
