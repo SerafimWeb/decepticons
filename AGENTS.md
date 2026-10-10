@@ -26,6 +26,7 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 9. Vai criar uma arma ou um robô novo? Leia `.decepticons/ARSENAL.md` (a lista do que tocar) antes.
 10. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
 11. Vai mexer em visual, efeito, HUD, cenário ou iluminação? Leia `.decepticons/REFERENCIA_VISUAL.md` antes: o alvo de qualidade que o dono apontou (MechArena), o que já existe no render e a ordem combinada. Os vídeos de referência ficam em `.tmp/referencias/` (só nesta máquina); no git ficam as pranchas.
+12. Vai escolher o que fazer a seguir, ou o dono perguntou "o que falta?" Leia `.decepticons/PEDIDOS_DO_DONO.md`: tudo que ele pediu, o estado de cada pedido e o placar de resultado.
 
 ## O QUE É
 
@@ -67,6 +68,7 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex,
 14. **Entrega só conta quando está na `main`.** Branch não publica, PR aberto não publica — só o merge publica (o deploy é automático). No `ESTADO_ATUAL.md`, o que ainda não está na `main` mora em **"EM BRANCH — NÃO ESTÁ NO AR"**, com o número do PR; "ÚLTIMA SESSÃO FEZ" é só para o que está na `main`. (Em 27/09 o dono perguntou por que não via no jogo as novidades anunciadas: eram **7 branches fora do ar**, 5 deles sem PR.)
 15. **Branch sem PR no mesmo dia; fechado em 48 h.** Empurrou para não perder o trabalho num `git switch`? Abra o PR no mesmo dia (o `--draft` serve enquanto não estiver pronto) — branch empurrado sem PR não chega a lugar nenhum (regra 13). **Antes de começar tarefa nova, olhe os seus branches:** com mais de 48 h sem PR, ele é mergeado, fechado ou declarado morto; acumular branch é o mesmo que não ter entregue. Quem passa e encontra branch alheio sem PR pode abrir o PR e avisar o dono.
 16. **Toda entrega visível fecha com o caminho para vê-la.** Interface, visual, tela ou mecânica nova: o PR traz **captura em `.decepticons/arte/`** (o dono julga por olho) e **onde ele clica para ver funcionando** (a tela, a tecla, o link, a fase). Se ela ainda não está ligada a nada porque falta o contrato de quem ia alimentá-la, o PR **diz isso** e o `STATUS_REAL.md` marca PARCIAL/AUSENTE (R13); sem isso o dono não tem como testar, e a entrega não existe para ele.
+17. **Todo pedido do dono vira linha em `.decepticons/PEDIDOS_DO_DONO.md` no mesmo dia** (ID, data, o pedido nas palavras dele, estado, onde está, como ele confere), e cada PR que toca um pedido atualiza o estado ali. O que ficou só no chat não existe para os outros agentes: em 10/10 uma auditoria das 177 mensagens do dono achou 6 pedidos sem registro nenhum. O placar de resultado (seção 6 do arquivo) se atualiza a cada fase: **se os números não mexem, o trabalho é cosmético**, mesmo que as tarefas fechem.
 
 ## MAPA
 
