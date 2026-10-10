@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## C2 — diagnóstico de seleção e alvo de render (Codex, 09/10)
+
+**EM BRANCH — NÃO ESTÁ NO AR enquanto o PR de `codex/preparacao-selecao` estiver aberto.** Worktree `.tmp/wt-codex-c2`, base `8f98e19` (#205). C4 #205 mergeada, check/deploy verdes confirmados; C3 #204 e C1 #198 também publicadas. Os textos condicionais abaixo conservam as evidências históricas.
+
+Build de produção na Vega 11: Gênesis e Marauder criam um programa cada na primeira seleção; Lancer/Bastion e retorno ao Marauder não criam outro na sequência medida. Recursos 169→176 geometrias, 29→42 texturas; não são bytes de VRAM. Coletor rejeita perda/restauração de contexto; execução válida sem eventos/erros. Dados e limites em `medicoes/HANGAR_SELECAO.md`. Seleção direta da cena, sem certificar UI, níveis/armas, remotos ou FPS.
+
+Correção: preparação de shader devolve o alvo de render anterior, inclusive em falha/timeout; quatro regressões novas, 15 testes focados verdes. Uma leitura por preparação, nenhum custo adicional no loop. Não adiciona preload em massa nem resolve aquecimento tardio; C2 permanece PARCIAL. `npm run check`/CI são portões antes de entrega; publicação exige merge/deploy.
+
+Próxima sessão começa com C2 limitado (nova montagem preparada antes de exibir, com fallback/seleção protegida e contrato de carga com Gemini) e C3 com tempo GPU/ensaio longo. Opções, prioridade e dependências registradas em `PROXIMAS_OPCOES_CODEX.md`. Claude está no ramo `claude/ligar-ui-armas` e Gemini em `gemini/cameras-espectador` na consulta inicial; nenhum arquivo dessas frentes foi alterado nem alegada comunicação direta com suas sessões.
+
 ## C4 — faixas neon instanciadas (Codex, 09/10, PR #205)
 
 **EM BRANCH — NÃO ESTÁ NO AR enquanto #205 estiver aberto.** Depois do merge, C4 integra a main; publicação depende do deploy verde. Branch `codex/faixas-neon`, worktree `.tmp/wt-codex-c4`, base atual `5187152` (#204). C3 pediu investigação do render; este corte reduz submissões estáticas, sem prometer eliminar travadas.

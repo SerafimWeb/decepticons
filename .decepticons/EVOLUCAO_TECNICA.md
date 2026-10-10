@@ -43,7 +43,7 @@ Pedido do dono: continuar iterando enquanto Claude e Gemini executam suas tarefa
 | Ordem | Incremento | Evidência de aceite | Dependência / custo |
 |---|---|---|---|
 | C1 — publicada (#198) | Preparar cena do Hangar e montagem atual no carregamento, usando o alvo HDR real | Contar programas criados na primeira abertura, treino e retorno à Arena; captura desktop/celular; medir tempo de boot e recursos retidos | Inicialização única; sem processamento extra por tick/frame com Hangar fechado. Não baixar GLBs adicionais além do preload existente. Prazo de warmup e fallback preservados |
-| C2 — próximo | Preparar variantes de material dos GLBs/montagens carregados posteriormente e dos remotos | Seleção rápida e troca de arma sob carga, sem resultado atrasado; programas criados por variante; rede local com dois clientes | Coordenar o ponto de criação dos remotos com Claude; não prometer todos os chassis aquecidos pelo C1 |
+| C2 — PARCIAL | Medição de escolhas posteriores e restauração do alvo feitas; falta preparar variantes de material dos GLBs/montagens e remotos | Seleção rápida e troca de arma sob carga, sem resultado atrasado; programas criados por variante; rede local com dois clientes | Coordenar criação dos remotos com Claude e indicação de carga com Gemini; não prometer todos os chassis aquecidos pelo C1 |
 | C3 | Homologar custo estável do render em GPU integrada | Mesma versão, resolução e montagem; A/B alternado; p50/p95/p99, travadas >50/100/300 ms, tempo até jogar, draw calls e memória | Ensaio prolongado e ambiente identificado. Bancada/headless não certificam por si FPS de jogadores |
 | C4 | Reduzir o gargalo comprovado (submissões, transparência, preenchimento ou materiais) | Mesma imagem/experiência com custo menor, ou trade-off visual explícito | Uma otimização isolada por PR. Alterações em Quality.ts exigem contrato com Gemini |
 | C5 | Elevar leitura de cenário, materiais e silhuetas dentro do estilo atual | Prancha antes/depois, visual em movimento, custo e caminho no site | Seguir REFERENCIA_VISUAL e ESTILO_ROBOS; não acrescentar detalhe sem orçamento |
@@ -64,3 +64,7 @@ Custos/limites: recursos do Hangar residem antes de abrir (Vector: 169 geometria
 ### C4 — redução comprovada de submissões estáticas
 
 `medicoes/FAIXAS_NEON.md`: 16 faixas em três InstancedMesh, 1 KiB estático; 11–13 draws a menos nas seis vistas; mesmos triângulos. Imagens inspecionadas, diferenças pontuais registradas. Não atribuir ganho de FPS sem nova medição prolongada. C3 #204 mergeada/deploy confirmado, homologação ainda PARCIAL. Próximo C2: primeiro uso de variantes/GLBs/remotos com teto de memória/boot, coordenado com Claude; C5/C6 precisam de orçamento antes de acrescentar efeitos.
+
+### C2 — seleção posterior medida; preparação tardia ainda aberta
+
+`medicoes/HANGAR_SELECAO.md`: Gênesis/Marauder criaram um programa cada; retorno ao Marauder zero. Recursos 169→176 geometrias e 29→42 texturas. Coleta válida em produção/Vega 11, sem perda de contexto; não mede FPS nem todos os loadouts. Corrigido `warmUpShaders` para restaurar alvo anterior, com regressões de sucesso/falhas/timeout. Sem preload adicional. C4 #205 publicada/deploy confirmado. Próximas opções em `PROXIMAS_OPCOES_CODEX.md`; C2 segue PARCIAL até preparação antes da exposição, variantes/armas e remotos.
