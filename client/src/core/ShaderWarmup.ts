@@ -14,6 +14,7 @@ import type * as THREE from 'three';
 
 /** O que a pré-compilação pede do renderer (o `WebGLRenderer` serve; o teste usa um falso). */
 export interface WarmupRenderer {
+  getRenderTarget(): THREE.WebGLRenderTarget | null;
   setRenderTarget(target: THREE.WebGLRenderTarget | null): void;
   compileAsync(scene: THREE.Object3D, camera: THREE.Camera): Promise<unknown>;
   /** `info.programs` lista os programas ligados; cada um termina de compilar quando se pede `getUniforms()`. */
@@ -49,7 +50,7 @@ export function warmUpSceneResources(
  * Compila os materiais de `scene` para `target`, o alvo em que o jogo desenha de verdade. O jogo desenha num alvo HDR do
  * compositor, sem tone mapping nem conversão de cor (o `OutputPass` faz isso no fim); compilar contra a tela geraria
  * outra variante dos programas, que ninguém usaria. O alvo só precisa valer durante a chamada: a parte síncrona da
- * compilação acontece nela, e o resto não mexe mais no estado do renderer.
+ * compilação acontece nela. Restaurar o alvo anterior permite preparar outra cena sem quebrar o compositor.
  *
  * `onProgress(feitos, total)` é chamado a cada programa terminado (para o contador na tela).
  */
@@ -63,13 +64,14 @@ export async function warmUpShaders(
 ): Promise<WarmupResult> {
   const deadline = Date.now() + timeoutMs;
   let linking: Promise<unknown>;
+  const previous = renderer.getRenderTarget();
   renderer.setRenderTarget(target);
   try {
     linking = renderer.compileAsync(scene, camera);
   } catch {
     return 'erro';
   } finally {
-    renderer.setRenderTarget(null);
+    renderer.setRenderTarget(previous);
   }
   let timer: ReturnType<typeof setTimeout> | undefined;
   const expired = new Promise<'timeout'>((resolve) => {

@@ -1,0 +1,135 @@
+{
+  "source": "8f98e19",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "quality": "media",
+  "boot": {
+    "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "memory": {
+      "geometries": 169,
+      "textures": 29
+    },
+    "programs": 48
+  },
+  "rows": [
+    {
+      "chassis": "genesis01",
+      "before": {
+        "memory": {
+          "geometries": 169,
+          "textures": 29
+        },
+        "programs": 48,
+        "showMs": 6.0999999940395355
+      },
+      "after": {
+        "memory": {
+          "geometries": 170,
+          "textures": 33
+        },
+        "programs": 49,
+        "links": 1
+      }
+    },
+    {
+      "chassis": "lancerL1",
+      "before": {
+        "memory": {
+          "geometries": 170,
+          "textures": 33
+        },
+        "programs": 49,
+        "showMs": 2.600000001490116
+      },
+      "after": {
+        "memory": {
+          "geometries": 171,
+          "textures": 37
+        },
+        "programs": 49,
+        "links": 0
+      }
+    },
+    {
+      "chassis": "lr7lBastion",
+      "before": {
+        "memory": {
+          "geometries": 171,
+          "textures": 37
+        },
+        "programs": 49,
+        "showMs": 2.100000001490116
+      },
+      "after": {
+        "memory": {
+          "geometries": 172,
+          "textures": 41
+        },
+        "programs": 49,
+        "links": 0
+      }
+    },
+    {
+      "chassis": "marauder",
+      "before": {
+        "memory": {
+          "geometries": 172,
+          "textures": 41
+        },
+        "programs": 49,
+        "showMs": 13.899999998509884
+      },
+      "after": {
+        "memory": {
+          "geometries": 176,
+          "textures": 42
+        },
+        "programs": 50,
+        "links": 1
+      }
+    },
+    {
+      "chassis": "vector09",
+      "before": {
+        "memory": {
+          "geometries": 176,
+          "textures": 42
+        },
+        "programs": 50,
+        "showMs": 0.3999999985098839
+      },
+      "after": {
+        "memory": {
+          "geometries": 176,
+          "textures": 42
+        },
+        "programs": 50,
+        "links": 0
+      }
+    },
+    {
+      "chassis": "marauder",
+      "before": {
+        "memory": {
+          "geometries": 176,
+          "textures": 42
+        },
+        "programs": 50,
+        "showMs": 0.20000000298023224
+      },
+      "after": {
+        "memory": {
+          "geometries": 176,
+          "textures": 42
+        },
+        "programs": 50,
+        "links": 0
+      }
+    }
+  ],
+  "errors": [],
+  "contextEvents": [],
+  "limits": "Seleção direta da cena, não valida UI; cache de driver/GLB e carga concorrente; recursos não são bytes de VRAM; não mede FPS ou remotos."
+}

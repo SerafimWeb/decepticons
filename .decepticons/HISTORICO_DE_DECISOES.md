@@ -1,3 +1,9 @@
+## [2026-10-09] C2 — medir seleção posterior antes de aquecer o catálogo (Codex)
+
+Base `8f98e19` (#205), worktree própria. Vega 11/build de produção: Gênesis/Marauder criam um programa cada, retorno ao Marauder zero; recursos 169→176 geometrias e 29→42 texturas. Não é medição de FPS/VRAM, não valida UI/armas/remotos. Primeira coleta com GPU ausente/queda dos recursos descartada; coletor agora rejeita perda/restauração de contexto, execução válida sem eventos. Evidência `medicoes/HANGAR_SELECAO.md`.
+
+Decisão: manter preload atual, sem preparar todo catálogo no boot. Corrigir `warmUpShaders` para devolver alvo anterior em vez de sempre impor a tela; quatro regressões, nenhum trabalho novo por frame/tick. C2 segue PARCIAL: preparação antes de expor montagem exige limite e contrato de carga com Gemini; remotos exigem Claude. Próximas opções registradas em `PROXIMAS_OPCOES_CODEX.md`, sem redistribuir tarefas de sessões externas automaticamente.
+
 ## [2026-10-09] Arma elétrica (PR-C das armas elementais): o estado só pega se o dano passa pela defesa (Claude)
 
 ## [2026-10-09] C4 — instanciar faixas neon sem retirar bloom

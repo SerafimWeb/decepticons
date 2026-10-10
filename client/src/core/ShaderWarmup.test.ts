@@ -13,10 +13,11 @@ interface Fake {
 }
 
 /** Um renderer falso que anota a ordem das chamadas; `compile` decide o que `compileAsync` devolve. */
-function falso(nProgramas: number, compile: () => Promise<unknown> = () => Promise.resolve()): Fake {
+function falso(nProgramas: number, compile: () => Promise<unknown> = () => Promise.resolve(), previous: THREE.WebGLRenderTarget | null = null): Fake {
   const calls: string[] = [];
   const uniforms = Array.from({ length: nProgramas }, (_, i) => vi.fn(() => calls.push(`getUniforms#${i}`)));
   const renderer: WarmupRenderer = {
+    getRenderTarget: () => previous,
     setRenderTarget: (t) => calls.push(`setRenderTarget(${t === null ? 'null' : (t as unknown as { id: string }).id})`),
     compileAsync: () => {
       calls.push('compileAsync');
@@ -28,6 +29,19 @@ function falso(nProgramas: number, compile: () => Promise<unknown> = () => Promi
 }
 
 describe('pré-compilação dos shaders', () => {
+  it.each(['ok', 'rejeita', 'sincrono', 'timeout'] as const)('restaura o alvo anterior ao preparar uma variante: %s', async (mode) => {
+    const previous = { id: 'compositor-anterior' } as unknown as THREE.WebGLRenderTarget;
+    const compile = () => {
+      if (mode === 'sincrono') throw new Error('GPU perdida');
+      if (mode === 'rejeita') return Promise.reject(new Error('GPU perdida'));
+      if (mode === 'timeout') return new Promise(() => {});
+      return Promise.resolve();
+    };
+    const f = falso(0, compile, previous);
+    expect(await warmUpShaders(f.renderer, TARGET, SCENE, CAMERA, undefined, 20)).toBe(mode === 'ok' ? 'ok' : mode === 'timeout' ? 'timeout' : 'erro');
+    expect(f.calls.slice(0, 3)).toEqual(['setRenderTarget(alvo-hdr)', 'compileAsync', 'setRenderTarget(compositor-anterior)']);
+  });
+
   it('prepara recursos num quadro oculto e devolve o alvo anterior, sem desenhar no canvas', () => {
     const previous = { id: 'anterior' } as unknown as THREE.WebGLRenderTarget;
     const targets: Parameters<THREE.WebGLRenderer['setRenderTarget']>[0][] = [];
