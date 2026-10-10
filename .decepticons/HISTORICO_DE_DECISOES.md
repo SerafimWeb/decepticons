@@ -1,5 +1,12 @@
 ## [2026-10-09] Arma elétrica (PR-C das armas elementais): o estado só pega se o dano passa pela defesa (Claude)
 
+## [2026-10-09] C4 — instanciar faixas neon sem retirar bloom
+
+**Quem:** Codex, continuidade automática autorizada após C3. **Base:** `5187152` (#204). **Decisão:** agrupar 16 faixas estáticas em três InstancedMesh, mantendo geometria/material, posições, janelas e colisões. Seis vistas na Vega 11/1280×720: 11–13 draws a menos, mesmos triângulos, 1 KiB de matrizes estáticas. Cinco testes. Evidência/limites em `medicoes/FAIXAS_NEON.md`; instancing altera multiplicações na GPU, diferenças pontuais preservadas no relatório. Primeiro ensaio incluiu DOM sobreposto: corrigido o coletor e descartado para aceite. Não há alegação de FPS nem remoção de efeitos.
+
+C3 #204: check local do gate de push e CI completos verdes, deploy confirmado. Seguinte: C2 e fechamento prolongado C3; efeitos novos só com orçamento e contratos.
+
+
 **O que foi feito:** `arc` (7/8/10 de dano a cada 0,45 s, 90 m/s, 2,5/3,75/5 t, natureza `eletrico`), a primeira arma a usar o campo `inflicts` do contrato do PR-A: cada acerto que chega ao corpo deixa o alvo chocado, e o tiro na cabeça ou 3 acertos em 1,4 s (a cadência de 0,45 s cabe na janela: 2 × 0,45 = 0,9 s) atordoam 0,8 s sem encadear. Vale em qualquer mão de energia, no botão principal ou no secundário, e nas duas do Marauder.
 **Decisão nova no contrato (`STATUS.shieldPass` = 0,5):** o estado só é aplicado se pelo menos metade do dano passou pelo campo de energia e pela chapa do escudo físico, nos dois caminhos (projétil e explosão). Sem isso, a chapa cerâmica que segura 90% do dano elétrico deixava passar os outros 10% e o choque inteiro, e o "a cerâmica isola, o aço conduz" que eu declarei na tabela de resistências (`MetalShield.ts`, `eletrico`: Refratário 0,9, Muralha 0,35, Reativo 0,3, Amortecedor 0,55) não valia nada. Vale para fogo e gelo também, quando chegarem. O caminho da explosão não tinha nenhuma arma para exercitá-lo: o teste usa um foguete de mentira com `inflicts: 'burn'`.
 **Equilíbrio (medido na bancada, sem ajuste):** sozinha derruba o torso do Vector-09 em 18,9 s (MK I), 16,6 s (MK II) e 13,0 s (MK III), contra 5,7 s do plasma; o dano sustentado é 15,6/s contra 41,6/s, e o calor (0,06 por tiro a cada 0,45 s) **não ferve o Mech** nem em 30 s. É arma de apoio: o valor dela é o estado (lentidão de 35% e a chance do atordoamento), não o dano. Com foguetes MK III derruba em 2,87 s, acima da meta de 2,5 s dos combos.
@@ -8,6 +15,13 @@
 **Não decidido / honesto:** nada foi sentido em partida; o "tiro bem dado" depende de acertar a cabeça de um Mech que se move, e a lentidão de 35% ajuda, mas só o dono dirá se 0,8 s de atordoamento faz diferença. Os números de `STATUS` seguem de partida (um lugar só).
 
 ## [2026-10-09] Metralhadora rotatória (PR-B das armas elementais): sem evento por tiro, e o remoto passa a levar a arma da montagem (Claude)
+
+## [2026-10-09] C3 medida; preservar bloom e otimizar submissões estáticas
+
+**Quem:** Codex, pedido do dono para C3 e continuidade automática. **Base:** `00311f8` (#200). Nove janelas, build de produção, Vega 11/1280×720. Dados e limites em `medicoes/RENDER_C3.md`; coletor só na bancada. Combate 33,4/66,6/100 ms p50/p95/p99, duas travadas >300 ms, zero programas novos. RAM livre variável impede homologar 60 FPS.
+
+**Decisão:** não retirar bloom nem mexer em Quality: -13 draws não produz ganho consistente de tempo entre repetições. Próximo incremento C4 = consolidar faixas neon estáticas por prédio e provar imagem/custo. Nenhuma migração de engine, worker ou expansão de preload justificada. C3 continua PARCIAL para homologação prolongada e remotos.
+
 
 **O que foi feito:** `rotary` (5/6/7 de dano, 4/6/8 t) com a rotação do cano como regra de simulação (`SpinUp`, só o dt do tick): a cadência vai de 3 a 20 tiros/s em 1,2 s e cai em 1,5 s ao soltar; o cone (3,5°) abre com a rotação; sem carregador, o calor trava em ~3 s de rajada. Mão direita de todo chassi de energia e as duas mãos do Marauder; nunca o braço esquerdo do Vector-09 (o gatilho secundário não gira o cano: lá ela atiraria 20 tiros/s desde o primeiro, sem rampa nem cone). Números medidos na bancada antes de qualquer ajuste (derruba o torso em 5,9 s no MK I contra 5,7 s do plasma; 4,9 s no MK III): **não precisou de tuning**.
 **Decisão de rede (protocolo 8):** a rotatória **não vira evento de tiro** (20/s por atirador passaria da banda de G11); o servidor sai cedo em `ArenaRoom.shot` e a bandeira `FX_SPINNING` (já no byte `fx` do PR-A) diz que o cano gira. O outro jogador desenha o fluxo a 10 tiros/s (metade do real, só visual). O dano continua todo do servidor, que aplica o mesmo desvio; o desvio sai do **número do tiro** (ângulo áureo, `combat/spread.ts`), nunca de `Math.random` (G1/G2).
