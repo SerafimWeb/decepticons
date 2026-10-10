@@ -5,6 +5,10 @@
 
 Última revisão: 2026-10-09 (Codex: consistência documental; sem novo playtest público)
 
+## C2 — escolhas posteriores no Hangar (Codex, 09/10)
+
+**PARCIAL:** diagnóstico no build de produção/Vega 11, seleção direta de quatro GLBs: Gênesis e Marauder ligam um programa cada; retorno ao Marauder sem novo programa. Não valida UI, loadouts, remotos ou FPS. `warmUpShaders` passa a devolver o render target anterior também em falha/timeout, com quatro testes de regressão. Preparação tardia antes de exibir a montagem continua pendente; nenhum preload adicional. Publicação deste corte depende do merge/check/deploy; C1 #198, C3 #204 e C4 #205 já mergeadas/deploy confirmado. Evidência em `medicoes/HANGAR_SELECAO.md`.
+
 ## Hangar: incremento Codex 09/10 — #194 mergeado
 
 Passagem única de hologramas, cones aditivos e telas: verificado em navegador/GPU Vega 11, 102→94 desenhos no mesmo enquadramento, diferença máxima de imagem 1/255. Sem compositor/UI na medição, não comprova FPS do jogo. Seleção assíncrona protege chassi e montagem recentes, com três testes; falha de carga tratada. Captura `arte/hangar-passagem-unica-codex.png`. #194 na main com deploy confirmado; julgamento do dono continua pendente. Compilação no primeiro uso de GLB/Hangar não foi resolvida por aquele incremento.
