@@ -1,8 +1,20 @@
 # ESTADO ATUAL — CYBERMECH
 
+## C2 — preparar chassi escolhido antes de exibir (Codex, 10/10)
+
+**EM BRANCH — NÃO ESTÁ NO AR:** `codex/hangar-preparar-trocas`, `.tmp/wt-codex-c2-ready`, base `44401f6` (#208). PR será identificado na passagem de bastão após criação; só merge/deploy publicam. C2 #206 anterior já mergeada/deploy verde confirmado; C1 #198, C3 #204 e C4 #205 publicadas.
+
+Novo callback de render prepara o shader do chassi com luzes/ambiente/HDR reais antes de pôr no pedestal. Uma operação ativa + última pendente, seleção atrasada não substitui a atual; espera soft de 5 s, fallback em falha/timeout. Sem baixar/clonar cenas/modelos extras ou trabalho por frame/tick. C2 segue PARCIAL para upload de recursos, troca de arma/nível e remotos. Contrato `HangarScene.prepareModel` + `graphicsPreparing` documentado para Gemini; sem novo aviso visual na UI.
+
+A/B de produção/Vega 11: seis escolhas por cliques nos cards; Gênesis e Marauder passaram de um programa após exibir para um antes/zero depois. Ambos terminam com 175 geometrias/42 texturas; zero erros/perda de contexto. Evidência `medicoes/HANGAR_TROCAS_PREPARADAS.md` e `arte/hangar-trocas-preparadas-codex.png`. Não homologa FPS. **R17 para Gemini:** no Marauder em 1280×720, o rodapé de aplicar está abaixo da captura; revisar altura/overflow sem certificar todos os controles pelo ensaio.
+
+**Contagem de testes auditada a pedido do dono:** 243 em 28/09 (#102), 638 em 06/10, 819 no #206, 828 no #208 (nove novos), 833 neste corte (cinco novos). JSON de execução real: 833 passados, 109 arquivos únicos, nenhum nome de caso repetido por arquivo; config exclui temporários/worktrees. `vitest list` estático não foi usado como árbitro. Evidência `medicoes/AUDITORIA_TESTES.md`; quantidade não certifica cobertura/diversão. Testes completos e typecheck passaram; check completo/CI/deploy ainda são gates de entrega.
+
+Próxima sessão começa com C3 (timer GPU/ensaio longo) e C2 (armas/níveis/remotos), sem ampliar efeitos antes do orçamento. Preservar PR #207 do Claude (`ligar-ui-armas`) e ramo de câmeras do Gemini; nenhuma alegação de mensagem recebida por sessões externas.
+
 ## C2 — diagnóstico de seleção e alvo de render (Codex, 09/10)
 
-**EM BRANCH — NÃO ESTÁ NO AR enquanto o PR #206 de `codex/preparacao-selecao` estiver aberto.** Worktree `.tmp/wt-codex-c2`, base `8f98e19` (#205). C4 #205 mergeada, check/deploy verdes confirmados; C3 #204 e C1 #198 também publicadas. Os textos condicionais abaixo conservam as evidências históricas.
+**PUBLICADO:** PR #206 mergeado, check e deploy da main verdes confirmados. Worktree `.tmp/wt-codex-c2`, base `8f98e19` (#205). C4 #205, C3 #204 e C1 #198 também publicadas. Os relatos abaixo conservam as evidências históricas.
 
 Build de produção na Vega 11: Gênesis e Marauder criam um programa cada na primeira seleção; Lancer/Bastion e retorno ao Marauder não criam outro na sequência medida. Recursos 169→176 geometrias, 29→42 texturas; não são bytes de VRAM. Coletor rejeita perda/restauração de contexto; execução válida sem eventos/erros. Dados e limites em `medicoes/HANGAR_SELECAO.md`. Seleção direta da cena, sem certificar UI, níveis/armas, remotos ou FPS.
 
@@ -12,7 +24,7 @@ Próxima sessão começa com C2 limitado (nova montagem preparada antes de exibi
 
 ## C4 — faixas neon instanciadas (Codex, 09/10, PR #205)
 
-**EM BRANCH — NÃO ESTÁ NO AR enquanto #205 estiver aberto.** Depois do merge, C4 integra a main; publicação depende do deploy verde. Branch `codex/faixas-neon`, worktree `.tmp/wt-codex-c4`, base atual `5187152` (#204). C3 pediu investigação do render; este corte reduz submissões estáticas, sem prometer eliminar travadas.
+**PUBLICADO:** #205 mergeado, check/deploy verdes confirmados. Branch `codex/faixas-neon`, worktree `.tmp/wt-codex-c4`, base medida `5187152` (#204). C3 pediu investigação do render; este corte reduz submissões estáticas, sem prometer eliminar travadas.
 
 As 16 faixas dos três prédios viram 3 InstancedMesh. A/B na mesma página com GPU Vega 11: 11–13 desenhos a menos nas seis vistas, mesmos triângulos; terceira pessoa 119→106, primeira 99→86. Três vistas idênticas; diferenças pontuais nas outras (máximo 142 pixels de 921600). Mais 1 KiB de matrizes estáticas, zero atualização por frame. Cinco testes; evidência/reprodução em `medicoes/FAIXAS_NEON.md` e arte/faixas-neon-*.png. Check local completo do gate de push verde: 815 testes, typecheck, build, budget (JS 329,9 KB / Wasm 719,4 KB gzip), smoke, bocas e site. PR #205: https://github.com/SerafimWeb/decepticons/pull/205; CI e deploy da main são portões de publicação.
 
@@ -43,7 +55,7 @@ C3 executada como caracterização, **não homologação**: combate p50/p95/p99 
 
 ## Preparação gráfica C1 — Codex (09/10, PR #198)
 
-**EM BRANCH — NÃO ESTÁ NO AR enquanto #198 estiver aberto.** Depois do merge, C1 integra a main; publicação no site depende do deploy verde do workflow da main. Este registro conserva a evidência de bancada e os limites, não certifica FPS sustentado.
+**PUBLICADO:** #198 mergeado, check/deploy verdes confirmados. Este registro conserva a evidência de bancada e os limites, não certifica FPS sustentado.
 
 Branch `codex/preparacao-grafica`, worktree `.tmp/wt-codex-preparacao-grafica`, base `8b899b9` (#197). Plano C1–C6 em `EVOLUCAO_TECNICA.md`: primeiro preparar Hangar/montagem atual no carregamento; depois GLB/remotos, custo estável, otimização do gargalo medido, leitura visual e efeitos elementais após contrato. PR #198: https://github.com/SerafimWeb/decepticons/pull/198. Check local e gate de push completos: 709 testes, typecheck, build, budget, smoke, bocas e site verdes; CI obrigatório para merge.
 
