@@ -2310,4 +2310,210 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   filter: drop-shadow(0 0 4px var(--hot));
 }
 
+/* LoginPanel UI (P33) — Autenticação de Piloto */
+.login-panel {
+  width: 100%;
+  max-width: 400px;
+  margin: 12px auto;
+  box-sizing: border-box;
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+.login-box {
+  background: rgba(6, 8, 10, 0.94);
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 20px rgba(57, 255, 106, 0.2);
+  padding: 18px 20px;
+  border-radius: 6px;
+  color: var(--accent);
+  text-align: left;
+}
+
+.login-header-tag {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.login-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(57, 255, 106, 0.25);
+  margin-bottom: 16px;
+  gap: 4px;
+}
+
+.login-tab {
+  flex: 1;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.login-tab:hover {
+  color: var(--ink);
+}
+
+.login-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: bold;
+  text-shadow: 0 0 8px var(--accent);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-field label {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.login-input {
+  padding: 10px 12px;
+  background: #0b0f0d;
+  border: 1px solid rgba(57, 255, 106, 0.35);
+  border-radius: 4px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.login-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(57, 255, 106, 0.3);
+}
+
+.login-input.invalid {
+  border-color: var(--alert);
+  box-shadow: 0 0 8px rgba(255, 45, 61, 0.3);
+}
+
+.login-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.field-error {
+  font-size: 11px;
+  color: var(--alert);
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+.login-error-banner {
+  padding: 10px 12px;
+  background: rgba(255, 45, 61, 0.15);
+  border: 1px solid var(--alert);
+  color: var(--alert);
+  font-size: 12px;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.login-user-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(57, 255, 106, 0.06);
+  border: 1px solid rgba(57, 255, 106, 0.25);
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.login-user-icon {
+  font-size: 24px;
+}
+
+.login-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.login-user-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+
+.login-user-email {
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: bold;
+  letter-spacing: 1px;
+  word-break: break-all;
+}
+
+.login-actions-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-login-action {
+  width: 100%;
+  padding: 12px 16px;
+  background: rgba(6, 8, 10, 0.9);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 14px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(57, 255, 106, 0.2);
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.btn-login-action:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--bg);
+  box-shadow: 0 0 16px var(--accent);
+}
+
+.btn-login-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-logout {
+  border-color: var(--hot);
+  color: var(--hot);
+}
+
+.btn-logout:hover:not(:disabled) {
+  background: var(--hot);
+  color: var(--bg);
+  box-shadow: 0 0 16px var(--hot);
+}
+
+
 

@@ -50,6 +50,9 @@ const asked = pedidos();
 const last = evo.at(-1) ?? { tests: 0, loc: 0 };
 const nf = (n) => n.toLocaleString('pt-BR');
 
+// Nada de caminho interno na página pública (a pasta dos documentos tem o codinome).
+const pub = (s) => s.replace(/\.decepticons\//g, '');
+
 // ---------- equipe ----------
 
 const TEAM = [
@@ -78,7 +81,7 @@ const teamHtml = TEAM.map((t) => {
       <p class="mrole">${esc(t.role)}</p>
       <dl class="mnum">${numbers}</dl>
       ${top.length ? `<p class="mfronts">frentes: ${top.map(esc).join(' · ')}</p>` : ''}
-      ${now ? `<p class="mnow"><span>agora &gt;</span> ${inline(now)}</p>` : ''}
+      ${now ? `<p class="mnow"><span>agora &gt;</span> ${inline(pub(now))}</p>` : ''}
     </article>`;
 }).join('');
 
@@ -434,8 +437,7 @@ const prHtml = prs
 
 // ---------- novidades, mesa do Dan e fichas de design ----------
 
-// Nada de caminho interno na página pública (a pasta dos documentos tem o codinome).
-const pub = (s) => s.replace(/\.decepticons\//g, '');
+// pub() definido antes do teamHtml (acima): apenas apaga a referência duplicada aqui.
 const newsHtml = `<div class="news">
     <div class="frame"><h3>últimas decisões <a href="#diario">todas →</a></h3><ol>${log
       .slice(0, 5)

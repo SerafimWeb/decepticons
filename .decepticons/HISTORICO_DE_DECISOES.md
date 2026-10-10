@@ -1,3 +1,20 @@
+## [2026-10-10] Fix: codinome interno vazava no painel público via campo `now` da equipe (Gemini)
+
+**Sintoma:** `npm run check` falhava com "sala de controle: o codinome interno aparece na página pública". O campo `role` (situação atual) da entrada Gemini na tabela `## DIVISÃO DE TRABALHO ENTRE AGENTES` do `ESTADO_ATUAL.md` continha o caminho `.decepticons/arte/login-panel.png`. Esse texto ia para o HTML do painel pela template de `teamHtml` em `scripts/painel.mjs`, passando por `inline(now)` sem antes passar por `pub()` (que strip `.decepticons/`). Resultado: o regex `/decepticons/i` do teste `publicPage` encontrava "decepticons" no HTML público.
+
+**Conserto:** uma linha em `scripts/painel.mjs` (linha 81): `inline(now)` → `inline(pub(now))`. O `pub()` já existia e era aplicado em outros contextos (log, decisões em aberto, mesa do Dan); estava faltando neste ponto. Sem mudança nos dados nem no ESTADO_ATUAL; o `ESTADO_ATUAL.md` também foi atualizado para não ter o path na situação do Gemini (boa prática, independente do fix).
+
+**Escopo:** só `scripts/painel.mjs`. Nenhum impacto em simulação, rede, jogo ou build.
+
+## [2026-10-10] Tela de autenticação e criar conta de piloto (P33, Gemini)
+
+
+**O que foi feito:** `client/src/ui/LoginPanel.ts` (LoginPanel), `client/src/styles.css` e `client/src/ui/LoginPanel.test.ts` (8 testes unitários de validação e estado).
+- Módulo independente de UI com abas "Entrar" e "Criar conta", validação em tempo real com os limites do contrato (`validarEmail` max 254 caracteres plausível, `validarSenha` 8 a 72 caracteres), estado de "carregando" (inputs/botão desabilitados e texto atualizado), exibição legível de mensagens de erro do servidor em português e estado "logado como <email>" com o botão "SAIR DA CONTA".
+- Respeita o estilo cyberpunk do HUD/Hangar, totalmente responsivo para dispositivos móveis, NUNCA expõe senhas em logs de console e NUNCA coloca dois botões de ação primária lado a lado (layout vertical único empilhado).
+- Recebe callbacks `onEntrar`, `onCriar`, `onSair` e expõe `setEstado(...)` para ligação externa pelo `Game.ts`.
+- Captura de validação visual gerada em `.decepticons/arte/login-panel.png` e pedido P33 registrado em `PEDIDOS_DO_DONO.md`.
+
 ## [2026-10-09] O atualizador do servidor deixava uma rodada cortada para trás; agora retoma (Claude)
 
 **O que aconteceu (de noite, ao subir o protocolo 9):** duas rodadas seguidas do "CYBERMECH atualizar" foram cortadas pelo Agendador (resultado 267014, limite de 5 min no registro atual). O servidor ficou no código velho depois de o código novo já estar em disco: a verificação (typecheck + testes) levou **24 min** na primeira vez e passou de 5 min na segunda, porque a máquina de casa (6 GB de RAM, a mesma onde o dono, o Codex, o Gemini e eu trabalhamos) estava com 300–500 MB livres e a E/S de disco saturada pela paginação. A rodada seguinte via "nada novo" (o git já estava em dia) e **nunca reiniciava**: o marcador `reinicio-pendente` só nasce depois de a verificação passar.
