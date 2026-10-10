@@ -56,3 +56,7 @@ War Robots inspira disciplina de orçamento/pipeline e Mech Arena inspira leitur
 `medicoes/hangar-primeiro-uso-2026-10-09.json` guarda baseline e três casos finais; `node .decepticons/medicoes/hangar-primeiro-uso.mjs` reproduz na raiz, com saídas em `.tmp/`. Vector desktop: 9→0 programas novos na abertura. Vector desktop, Marauder e celular emulado: 0 na abertura/disparo/retorno, sem pageerror. Quadro oculto antecipa buffers/texturas visíveis; recursos ocultos ou novas variantes não são todos preparados.
 
 Custos/limites: recursos do Hangar residem antes de abrir (Vector: 169 geometrias no boot, baseline 85); não são bytes de VRAM. Execuções com cache de driver e pouca RAM livre (amostra: 196 MiB de 6092 MiB); não concluir ganho de boot/FPS. Travadas continuam, inclusive sem programas novos. C3 deve separar GPU, layout/UI, GC e pressão de memória, com A/B alternado e cenário controlado. Celular é emulação; a captura mostrou cortes horizontais de ações/topo, registrados para Gemini (R17). Não declarar interação móvel certificada pela chamada DOM do teste.
+
+### C3 executada em 09/10 — próximo corte C4
+
+`medicoes/RENDER_C3.md`: nove janelas do build de produção na Vega 11. Caracterização com percentis/CPU/memória concluída; homologação longa pendente pela RAM/carga concorrente. Bloom custa 13 draws, sem ganho consistente de FPS ao desligar: manter. Seguir C4 antes de C2: faixas neon estáticas (16 malhas→3), com A/B de imagem/culling. Não alterar Quality, simulação, armas ou preload em massa. C5/C6 seguem condicionadas a orçamento e contratos.

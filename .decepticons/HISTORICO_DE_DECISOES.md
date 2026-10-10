@@ -9,6 +9,13 @@
 
 ## [2026-10-09] Metralhadora rotatória (PR-B das armas elementais): sem evento por tiro, e o remoto passa a levar a arma da montagem (Claude)
 
+## [2026-10-09] C3 medida; preservar bloom e otimizar submissões estáticas
+
+**Quem:** Codex, pedido do dono para C3 e continuidade automática. **Base:** `00311f8` (#200). Nove janelas, build de produção, Vega 11/1280×720. Dados e limites em `medicoes/RENDER_C3.md`; coletor só na bancada. Combate 33,4/66,6/100 ms p50/p95/p99, duas travadas >300 ms, zero programas novos. RAM livre variável impede homologar 60 FPS.
+
+**Decisão:** não retirar bloom nem mexer em Quality: -13 draws não produz ganho consistente de tempo entre repetições. Próximo incremento C4 = consolidar faixas neon estáticas por prédio e provar imagem/custo. Nenhuma migração de engine, worker ou expansão de preload justificada. C3 continua PARCIAL para homologação prolongada e remotos.
+
+
 **O que foi feito:** `rotary` (5/6/7 de dano, 4/6/8 t) com a rotação do cano como regra de simulação (`SpinUp`, só o dt do tick): a cadência vai de 3 a 20 tiros/s em 1,2 s e cai em 1,5 s ao soltar; o cone (3,5°) abre com a rotação; sem carregador, o calor trava em ~3 s de rajada. Mão direita de todo chassi de energia e as duas mãos do Marauder; nunca o braço esquerdo do Vector-09 (o gatilho secundário não gira o cano: lá ela atiraria 20 tiros/s desde o primeiro, sem rampa nem cone). Números medidos na bancada antes de qualquer ajuste (derruba o torso em 5,9 s no MK I contra 5,7 s do plasma; 4,9 s no MK III): **não precisou de tuning**.
 **Decisão de rede (protocolo 8):** a rotatória **não vira evento de tiro** (20/s por atirador passaria da banda de G11); o servidor sai cedo em `ArenaRoom.shot` e a bandeira `FX_SPINNING` (já no byte `fx` do PR-A) diz que o cano gira. O outro jogador desenha o fluxo a 10 tiros/s (metade do real, só visual). O dano continua todo do servidor, que aplica o mesmo desvio; o desvio sai do **número do tiro** (ângulo áureo, `combat/spread.ts`), nunca de `Math.random` (G1/G2).
 **Achado que mudou o desenho (R17):** o fluxo do outro jogador primeiro lia a arma do Mech remoto (`m.loadout.primary`), e o teste mostrou que **todo Mech remoto humano era um Vector-09 de plasma**, qualquer que fosse a montagem dele: o `Game.makeRemote` não equipava nada. Duas mudanças: a arma do fluxo passa a vir **da montagem do roster** (`rotaryOf`, dado puro, não depende do desenho) e o Vector-09 remoto passa a ser equipado com a montagem validada (as armas novas aparecem no outro jogador). Remotos de chassi importado (`.glb`) seguem sem mostrar a arma.

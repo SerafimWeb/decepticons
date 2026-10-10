@@ -1,5 +1,13 @@
 # ESTADO ATUAL — CYBERMECH
 
+## C3 — caracterização do render (Codex, 09/10)
+
+EM BRANCH — NÃO ESTÁ NO AR até o merge do PR deste corte. Base `00311f8` (#200), branch `codex/medicao-c3`, worktree `.tmp/wt-codex-c3`. Nove janelas no build de produção, Edge/Vega 11: dados em `medicoes/RENDER_C3.md` e `render-c3-2026-10-09.json`, reprodução em `render-c3.mjs`. Nenhuma mudança no jogo neste corte; coletor só na bancada.
+
+C3 executada como caracterização, **não homologação**: combate p50/p95/p99 = 33,4/66,6/100 ms, duas travadas >300 ms, zero programas novos. RAM livre variou 265–893 MiB nas janelas. Bloom -13 draws, sem ganho de FPS consistente; manter visual/Quality. Próximo Codex autorizado: C4, unir faixas neon por prédio com comparação de imagem; depois C2/medição longa. Preservar arma elétrica do Claude e HUD/sons do Gemini. C1 (#198) já mergeada e deploy verde confirmado; o texto condicional abaixo conserva a evidência da etapa anterior.
+
+**R17 de ambiente/build:** depois da coleta, `npm run check` falhou porque `tsc` estava ausente nas dependências compartilhadas. A worktree Codex passou a usar `node_modules` própria (junção removida antes de `npm ci`); pasta dos outros agentes preservada. `npm audit` acusa `source-map-js <1.2.2`, GHSA-68fv-2mgg-jv7q, transitiva: repassar à frente de build do Claude para atualização isolada do lockfile e check, sem alterar dependências neste PR de medição. Causa da ausência de `tsc` não determinada.
+
 ## Resumo Executivo
 
 | Aspecto | Status |
