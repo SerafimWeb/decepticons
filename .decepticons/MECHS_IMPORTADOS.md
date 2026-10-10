@@ -150,6 +150,7 @@ Sem garantia: o gerador pode ignorar partes. O que protege é o contrato da §2 
 ## 7. Pedido ao Tripo3D por formato, e o que a auditoria de 10/10 achou
 
 > Pedido do dono, 10/10: *"crie um prompt para eu fazer esse robô lá no Tripo3D desde o começo dele do jeito certo, para trazer ele perfeito para cá"*.
+> **O atalho para colar no Tripo está em `PROMPT_TRIPO3D.md`** (o dono não achou este §7 no meio do contrato); aqui fica o raciocínio e a auditoria.
 > **Use o texto da §6 como base** e acrescente, no fim, as linhas abaixo. O que ele precisa respeitar é o contrato da §2.
 
 **Acréscimos ao texto da §6 (valem para qualquer formato):**
