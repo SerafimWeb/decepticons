@@ -21,7 +21,7 @@ Os outliers de p95 do poço e átrio são relevantes; 12 amostras são caracteri
 
 ## Como jogar
 
-Arena offline → `[ EXPLORAR BUNKER // 4 NÍVEIS ]` ou `?mapa=bunker`; WASD pelas galerias e rampas, V muda a câmera. O modo online, CTF e Sobrevivência continuam na Arena. Poços/cabines de elevador são cenográficos nesta etapa; rampas ligam os andares de forma jogável.
+Arena offline → `[ EXPLORAR O BUNKER // 4 NÍVEIS ]` ou `?mapa=bunker`; WASD pelas galerias e rampas, V muda a câmera. O modo online, CTF e Sobrevivência continuam na Arena. Poços/cabines de elevador são cenográficos nesta etapa; rampas ligam os andares de forma jogável.
 
 ## Ainda não validado
 
