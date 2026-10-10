@@ -178,6 +178,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] Registro de pedidos do dono (`PEDIDOS_DO_DONO.md`), regra 17 e placar de resultado: nada que o dono pede fica só no chat, e dá para ver se o jogo melhora de verdade (Claude, 10/10) #base
 - [ ] **Painel admin completo** (dono, 10/10; plano em `PAINEL_ADMIN.md`): cinco telas (Oponentes, Campanha, Arsenal e chassis, Servidor, Evolução); começa pelos contratos `BotSpec` e `CampanhaSpec`, depois a simulação, depois as telas #ux
 - [x] Prompt e roteiro do Tripo3D para o próximo robô, e auditoria das pastas de modelos: dois `.glb` de 78 MB removidos do repositório (Claude, 10/10) #mechs
+- [x] Envio automático à prova de token morto: `node scripts/gh.mjs` (fallback para a credencial do Git) e `npm run publicar` (push, PR, CI, merge e limpeza com travas), 21 testes (Claude, 10/10) #base
+- [ ] Deixar o link do Bunker visível na tela inicial (hoje é um link pequeno no fim da lista de modos; o dono não o achou), de preferência como botão ou escolha de mapa #ux
 - [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio
 - [ ] **Decidir câmera de abate no PvP:** seguir o adversário revela sua posição; escolher entre liberar, atrasar/limitar ou manter ausente no competitivo #rede
