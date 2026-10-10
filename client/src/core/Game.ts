@@ -1,3 +1,5 @@
+import { mapFromSearch } from '../environment/Bunker';
+import { attachMapLinks } from '../ui/MapLinks';
 import { SquadHUD } from '../ui/SquadHUD';
 import { ShieldVisuals } from '../fx/ShieldVisuals';
 import { ShieldHUD } from '../ui/ShieldHUD';
@@ -336,6 +338,7 @@ export class Game {
       foes,
       power,
       mode: this.gameMode,
+      map: mapFromSearch(location.search, !!online, this.gameMode),
       startWave: waveFromSearch(location.search, SURVIVAL_WAVE_PLANS.length),
       // allies: false online — os inimigos locais já vão a 0 (o servidor manda o estado de verdade);
       // um aliado sem ninguém pra lutar, fora de sincronia com o servidor, não serve pra nada aqui.
@@ -343,8 +346,10 @@ export class Game {
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets, barrage: this.barrage } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
-    addBankSign(this.scene);
-    addSerafimPlaque(this.scene);
+    if (this.match.arena.serafim) {
+      addBankSign(this.scene);
+      addSerafimPlaque(this.scene);
+    }
     this.droneVisuals = this.match.drones ? new DroneVisuals(this.scene, this.match.drones) : null;
     this.shadows = new ShadowBlobs(this.scene, terrainGround(physics));
     // ?serafim=festa: o LED do prédio gira as cores (o dono quer poder variar a luz).
@@ -550,6 +555,7 @@ export class Game {
     this.settings.onChange((s) => this.applySettings(s));
 
     this.modeSelector.attachTo(document.getElementById('overlay'));
+    attachMapLinks(document.getElementById('overlay'), mapFromSearch(location.search, !!online, this.gameMode), !online && this.gameMode === 'deathmatch');
     this.modeSelector.onModeChange((mode) => {
       this.telemetry.enviar('modo_trocado');
       this.audio.playUiTransition();
@@ -591,6 +597,7 @@ export class Game {
    */
   private updateSerafimTower(dt: number): void {
     const tower = this.match.arena.serafim;
+    if (!tower) return;
     this.serafimCheck -= dt;
     if (this.serafimCheck <= 0) {
       this.serafimCheck = 0.25;
@@ -1240,7 +1247,7 @@ export class Game {
     this.shadows.end();
     this.particles.update(dt);
 
-    const near = this.mech.alive && nearBank(this.mech.simPosition);
+    const near = !!this.match.arena.serafim && this.mech.alive && nearBank(this.mech.simPosition);
     if (!near) this.bankNear = false;
     else if (this.playing && !this.hangarView && !this.bankNear && !this.killCam.overridesRig) {
       this.bankNear = true; this.pause(); this.input.exitLock();

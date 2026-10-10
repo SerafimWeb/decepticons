@@ -8,6 +8,7 @@ import { WINDOWS, windowedBuildingMaterial } from './BuildingWindows';
 import { buildingBands } from './BuildingBands';
 import type { DestructibleDef, Destructibles } from './Destructibles';
 import { SerafimTower } from './SerafimTower';
+import { Bunker, type MapId } from './Bunker';
 
 interface BlockDef {
   x: number;
@@ -71,7 +72,7 @@ export class Arena {
   readonly halfSize = 100;
   readonly occluders: Occluder[] = [];
   /** Prédio Serafim: a base do time, no canto oposto ao Banco VORCARIS. */
-  readonly serafim: SerafimTower;
+  readonly serafim: SerafimTower | null;
 
   private readonly boxGeo = new THREE.BoxGeometry(1, 1, 1);
   private readonly solidMat = new THREE.MeshStandardMaterial({ color: PALETTE.steel, metalness: 0.3, roughness: 0.8 });
@@ -80,6 +81,7 @@ export class Arena {
     private readonly scene: THREE.Scene,
     private readonly physics: PhysicsWorld,
     destructibles: Destructibles,
+    map: MapId = 'arena',
   ) {
     scene.background = buildSkyTexture();
     scene.fog = new THREE.FogExp2(PALETTE.fog, 0.0095);
@@ -92,6 +94,11 @@ export class Arena {
     rim.position.set(-60, 40, -40);
     scene.add(rim);
 
+    if (map === 'bunker') {
+      this.serafim = null;
+      new Bunker(scene, physics);
+      return;
+    }
     this.buildFloorAndBounds();
     for (const b of BUILDINGS) this.addBuilding(b);
     this.serafim = new SerafimTower(scene, physics);

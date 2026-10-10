@@ -159,3 +159,7 @@ PARCIAL: coletor reproduzível só na bancada e nove janelas reais de Vega 11 (`
 ## Faixas neon instanciadas — Codex C4, 09/10
 
 PARCIAL para experiência/homologação: implementação e seis comparações na Vega 11 (`medicoes/FAIXAS_NEON.md`), 11–13 desenhos a menos com mesmos triângulos; cinco testes de transformações/culling. Publicação depende de merge/CI/deploy, ver ESTADO_ATUAL/PR. Sem playtest do dono ou ganho de FPS comprovado; diferenças pontuais de rasterização explicitadas. Culling por prédio pode custar mais triângulos em vistas não medidas.
+
+## Cenário Bunker — Codex, 10/10
+
+PARCIAL, em branch local e fora do site. `?mapa=bunker` na Arena offline: três pisos, átrio, rampas simétricas testadas com Rapier, corredores com passagens cruzadas e spawn/respawn próprios. Link EXPLORAR BUNKER no início/pausa. Seis testes focados verdes; check completo final verde (865 testes/113 arquivos, typecheck, build, smoke, bocas e site); capturas e timer GPU reais em `medicoes/BUNKER.md`. Sem contrato online, IA vertical planejada ou ocultação do teto para câmera tática; não certificar essas funções ou retenção.

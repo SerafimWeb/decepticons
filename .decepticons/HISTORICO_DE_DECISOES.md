@@ -1,5 +1,10 @@
 ## [2026-10-10] Cada chassi com o seu papel: seis dos dez deixam de ter os números do Vector-09 (Claude, pedido do dono)
 
+## 2026-10-10 — Codex: bunker de três níveis com cenário e física comuns
+
+Pedido do dono: dungeon/bunker vertical com vão central e túneis cruzados para caça e fuga. Escolha: mapa offline independente selecionável, instâncias estáticas, rampas em dois lados e galeria com três travessias. Cada bloco gera malha e colisor; nenhuma substituição silenciosa do mapa online ou dos objetivos CTF/sobrevivência. Sem recompensas novas para alegar retenção. Territórios de interface/rede preservados por um link modular e seleção restrita. Publicação pendente; trabalho local autorizado. Testes reais de movimento arbitram acesso aos três andares. Navegação vertical da IA e ocultação do teto na câmera tática ficam explicitamente pendentes.
+
+
 **O pedido (mais repetido do dono, 29/09 a 02/10):** os robôs "têm uma diferença muito sutil, praticamente são idênticos; espero formatos diferentes, identidade e personalidade pra cada mech". O registro de 06/10 já dizia: Vector-09, Gênesis-01, Lancer-L1, LR-7L Bastion, Quadra-V2 e Marauder tinham **exatamente** a mesma velocidade, vida, pulo, dash e calor (herdavam `...VECTOR09_STATS`).
 **O que mudou (proposta minha, ajustável num lugar só, `chassis.ts`; o dono pode mexer também em Configurações → Potências):** Gênesis-01 = **assalto médio** (350 de tronco, 8,5 m/s); Lancer-L1 = **duelista** (9,8 m/s, dash em 2,6 s, braço do escudo com 170); Bastion = **tanque** (460 de tronco, 7,5 m/s, dash curto e demorado); Quadra-V2 = **escaramuçador** (11,5 m/s, dash em 2,2 s, pulo alto, 210 de tronco); Marauder = **plataforma de fogo** (380 de tronco, 7,8 m/s). O Vector-09 segue a referência. Cada papel também está escrito em uma frase (`CHASSIS_PAPEL`) para o Hangar e a Oficina mostrarem.
 **Só vida e mobilidade mudam.** Calor, carga de armas, tamanho do corpo e bocas medidas **ficam os do Vector-09**: as metas de equilíbrio das armas (`balance.ts`, `weapons.test.ts`, as montagens do Marauder) dependem deles, e mexer em tudo de uma vez esconderia o que cada número faz.
