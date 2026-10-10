@@ -555,7 +555,7 @@ export class Game {
     this.settings.onChange((s) => this.applySettings(s));
 
     this.modeSelector.attachTo(document.getElementById('overlay'));
-    attachMapLinks(document.getElementById('overlay'), mapFromSearch(location.search, !!online, this.gameMode), !online && this.gameMode === 'deathmatch');
+    attachMapLinks(document.getElementById('overlay'), mapFromSearch(location.search, !!online, this.gameMode));
     this.modeSelector.onModeChange((mode) => {
       this.telemetry.enviar('modo_trocado');
       this.audio.playUiTransition();
