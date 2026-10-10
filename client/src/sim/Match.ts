@@ -15,6 +15,7 @@ import { PALETTE } from '../core/palette';
 import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
+import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
@@ -71,6 +72,7 @@ export interface Pilot {
 export type Foes = Pick<GameSettings, 'enemyMechs' | 'enemyAndroids' | 'technician' | 'enemyPersonas' | 'names'>;
 
 export interface MatchOptions {
+  map?: MapId;
   physics: PhysicsWorld;
   /** Onde os modelos entram. No servidor, uma cena que nunca é desenhada. */
   scene: THREE.Scene;
@@ -129,7 +131,8 @@ export class Match {
   /** Pisão: robô grande andando na direção de um pequeno encostado. */
   readonly crush: CrushRule;
   /** Zonas de cura e resfriamento (vantagem tática de posicionamento, igual para os dois lados). */
-  readonly zones = new ZoneSystem();
+  readonly zones: ZoneSystem;
+  private readonly spawnPoints: readonly (readonly [number, number])[];
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
   readonly pilots: Pilot[] = [];
   /** Mechs de gente (os bots caçam estes). */
@@ -173,13 +176,16 @@ export class Match {
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
     this.destructibles.onBreak = (id, at) => this.onPropBroken?.(id, at);
-    this.arena = new Arena(o.scene, o.physics, this.destructibles);
+    const bunker = o.map === 'bunker' && !survival && !ctf;
+    this.spawnPoints = bunker ? BUNKER_SPAWNS : SPAWN_POINTS;
+    this.zones = bunker ? new ZoneSystem([]) : new ZoneSystem();
+    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : 'arena');
     this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles);
     this.rockets = new RocketSystem(o.scene, o.physics, o.particles);
     this.barrage = new BarrageSystem(o.scene, o.physics);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.combat.damageEnabled = o.damage !== false;
-    this.respawner = new Respawner(SPAWN_POINTS);
+    this.respawner = new Respawner(this.spawnPoints);
     this.crush = new CrushRule(this.combat);
     // Aliados (30/09, "sozinho tá muito intenso"): só na Arena normal, tiram vaga do pool de Mechs
     // inimigos pra não estourar o teto de 8 personagens da sala (G11).
@@ -193,15 +199,15 @@ export class Match {
       projectiles: this.projectiles,
       particles: o.particles,
       respawner: this.respawner,
-      spawns: ctf ? CTF_DEFENDER_SPAWNS : BOT_SPAWNS.slice(0, enemyMechCount),
-      androidSpawns: ctf ? [] : ANDROID_SPAWNS.slice(0, survival ? SURVIVAL_MAX_ANDROIDS : o.foes.enemyAndroids),
-      technicianSpawns: !survival && !ctf && o.foes.technician ? TECHNICIAN_SPAWNS : [],
+      spawns: ctf ? CTF_DEFENDER_SPAWNS : (bunker ? BUNKER_SPAWNS.slice(2, 5) : BOT_SPAWNS).slice(0, enemyMechCount),
+      androidSpawns: ctf ? [] : (bunker ? BUNKER_SPAWNS.slice(5, 8) : ANDROID_SPAWNS).slice(0, survival ? SURVIVAL_MAX_ANDROIDS : o.foes.enemyAndroids),
+      technicianSpawns: !survival && !ctf && o.foes.technician ? (bunker ? [BUNKER_SPAWNS[10]!] : TECHNICIAN_SPAWNS) : [],
       bossSpawn: survival ? COLOSSUS_SPAWN[0] : undefined,
       respawn: !survival,
       respawnAtHome: ctf,
       personas: o.foes.enemyPersonas,
       names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
-      waypoints: SPAWN_POINTS,
+      waypoints: this.spawnPoints,
       power: o.power,
     });
     this.allies =
@@ -216,9 +222,9 @@ export class Match {
             escort: this.players,
             paint: PALETTE.playerPaint,
             visor: PALETTE.green,
-            spawns: ALLY_SPAWNS.slice(0, allyCount),
+            spawns: (bunker ? [BUNKER_SPAWNS[1]!, BUNKER_SPAWNS[3]!] : ALLY_SPAWNS).slice(0, allyCount),
             names: { mechs: o.foes.names.allies },
-            waypoints: SPAWN_POINTS,
+            waypoints: this.spawnPoints,
             power: o.power,
           })
         : null;
@@ -261,7 +267,7 @@ export class Match {
     };
     // Drones (06/10): só onde os aliados existem; o kamikaze explode pela mesma regra dos foguetes.
     this.drones =
-      allyCount > 0 && o.drones !== false
+      allyCount > 0 && o.drones !== false && !bunker
         ? new DroneSystem({
             physics: o.physics,
             projectiles: this.projectiles,
@@ -302,7 +308,7 @@ export class Match {
   addPlayer(mech: MechBase, name: string, spawnIndex = this.players.length, onRespawn?: () => void, team: CtfTeam = 'blue'): void {
     const [x, z] = this.ctf
       ? [CTF_BASES[team].x + (team === 'blue' ? CTF_PLAYER_OFFSET_X : -CTF_PLAYER_OFFSET_X), CTF_BASES[team].z]
-      : SPAWN_POINTS[spawnIndex % SPAWN_POINTS.length]!;
+      : this.spawnPoints[spawnIndex % this.spawnPoints.length]!;
     mech.spawn(this.physics, this._spawn.set(x, 0, z));
     this.scene.add(mech.root);
     mech.onDashImpact = (collider, dir) => this.destructibles.demolish(collider, dir);
@@ -417,7 +423,7 @@ export class Match {
     this.players.forEach((m, i) => {
       const [x, z] = this.ctf
         ? [CTF_BASES.blue.x + CTF_PLAYER_OFFSET_X, CTF_BASES.blue.z]
-        : SPAWN_POINTS[i % SPAWN_POINTS.length]!;
+        : this.spawnPoints[i % this.spawnPoints.length]!;
       m.respawn(this._spawn.set(x, 0, z));
     });
     if (this.ctf) this.bots.respawnAll();
@@ -446,7 +452,7 @@ export class Match {
    */
   private restart(): void {
     this.players.forEach((m, i) => {
-      const [x, z] = SPAWN_POINTS[i % SPAWN_POINTS.length]!;
+      const [x, z] = this.spawnPoints[i % this.spawnPoints.length]!;
       m.respawn(this._spawn.set(x, 0, z));
     });
     this.bots.respawnAll();

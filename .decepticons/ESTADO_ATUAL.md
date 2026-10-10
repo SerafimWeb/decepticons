@@ -1,5 +1,16 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Bunker vertical — Codex, 10/10
+
+**EM BRANCH — NÃO ESTÁ NO AR:** `codex/bunker-vertical`, `.tmp/wt-codex-bunker-vertical`, base local `71e4b3f`. Trabalho local autorizado enquanto a autenticação GitHub está indisponível. Pasta antiga `.tmp/wt-codex-bunker` contém escotilhas de spawn não publicadas e foi preservada. Não incorpora a entrega local de estações táticas.
+
+Novo cenário offline selecionado por `?mapa=bunker` ou pelo link EXPLORAR BUNKER na pausa/início da Arena. Três pisos (0/10/20 m), átrio com visão entre níveis, duas subidas contínuas opostas, galerias laterais com cruzamentos em -48/0/+48 m e paredes para cortar linha de visão. Geometria e colisores nascem dos mesmos dados. Spawn/respawn/patrulha usam os pontos do bunker; online, CTF e sobrevivência continuam na Arena. Banco, zonas antigas e drones de base não são ativados num cenário sem essas instalações.
+
+Seis testes focados verdes: seleção segura, pisos/vão/spawns, duas subidas reais com Mech/Rapier sem pulo e cruzamentos/oclusão do tiro. Capturas e timer GPU reais concluídos; check completo final verde (865 testes/113 arquivos, typecheck, build, smoke, bocas e site; JS 332,9 KB / Wasm 719,4 KB gzip). Evidência em `medicoes/BUNKER.md`, p95 de 13,18–13,84 ms em três vistas controladas (sem homologar FPS). Custo: duas malhas instanciadas estáticas e menos de 70 colisores, sem tick visual, luz nova, downloads de textura ou protocolo de rede.
+
+Prévia local confirmada em http://127.0.0.1:5189/?mapa=bunker. Próxima sessão: playtest de caça/fuga do dono; IA ainda usa steering local, sem navegação vertical planejada entre andares. Câmera tática acima do teto ainda não tem ocultação da casca; avaliar em câmera terceira/primeira pessoa. Claude: propor navegação vertical/contrato de mapa online; Gemini: integrar escolha de cenário na interface definitiva; Codex: acabamento/capturas e homologação gráfica. Propostas, sem afirmar despacho a agentes externos.
+
+
 ## C2 — preparar chassi escolhido antes de exibir (Codex, 10/10)
 
 **EM BRANCH — NÃO ESTÁ NO AR enquanto #209 estiver aberto:** `codex/hangar-preparar-trocas`, `.tmp/wt-codex-c2-ready`, base `44401f6` (#208). PR #209: https://github.com/SerafimWeb/decepticons/pull/209; após merge integra a main, publicação exige deploy verde. C2 #206 anterior já mergeada/deploy verde confirmado; C1 #198, C3 #204 e C4 #205 publicadas.
