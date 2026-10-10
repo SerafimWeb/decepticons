@@ -29,23 +29,23 @@ export interface MetalShieldModel {
 export const METAL_SHIELDS: Readonly<Record<MetalShieldId, MetalShieldModel>> = {
   muralha: {
     id: 'muralha', name: 'Escudo Muralha', mass: 2, integrity: 1.5,
-    hint: 'aço maciço: segura um pouco de tudo, nada muito bem',
-    resist: { termico: 0.6, laser: 0.6, balistico: 0.7, explosivo: 0.6, pulso: 0.4, sonico: 0.4, corte: 0.5 },
+    hint: 'aço maciço: segura um pouco de tudo, nada muito bem; conduz a descarga elétrica',
+    resist: { termico: 0.6, laser: 0.6, balistico: 0.7, explosivo: 0.6, pulso: 0.4, sonico: 0.4, corte: 0.5, eletrico: 0.35 },
   },
   refratario: {
     id: 'refratario', name: 'Escudo Refratário', mass: 1.75, integrity: 1.2,
-    hint: 'cerâmica: segura plasma e laser; bala e explosão a racham',
-    resist: { termico: 0.9, laser: 0.85, balistico: 0.35, explosivo: 0.4, pulso: 0.5, sonico: 0.3, corte: 0.3 },
+    hint: 'cerâmica: segura plasma, laser e descarga elétrica (isola); bala e explosão a racham',
+    resist: { termico: 0.9, laser: 0.85, balistico: 0.35, explosivo: 0.4, pulso: 0.5, sonico: 0.3, corte: 0.3, eletrico: 0.9 },
   },
   reativo: {
     id: 'reativo', name: 'Escudo Reativo', mass: 2.5, integrity: 1.6,
     hint: 'placas reativas: seguram bala, trilho e explosão; o calor atravessa',
-    resist: { termico: 0.35, laser: 0.3, balistico: 0.9, explosivo: 0.85, pulso: 0.3, sonico: 0.4, corte: 0.6 },
+    resist: { termico: 0.35, laser: 0.3, balistico: 0.9, explosivo: 0.85, pulso: 0.3, sonico: 0.4, corte: 0.6, eletrico: 0.3 },
   },
   amortecedor: {
     id: 'amortecedor', name: 'Escudo Amortecedor', mass: 2, integrity: 1.4,
     hint: 'malha amortecedora: segura pulso EMP e onda sônica; fraco contra lâmina',
-    resist: { termico: 0.45, laser: 0.45, balistico: 0.5, explosivo: 0.5, pulso: 0.9, sonico: 0.9, corte: 0.35 },
+    resist: { termico: 0.45, laser: 0.45, balistico: 0.5, explosivo: 0.5, pulso: 0.9, sonico: 0.9, corte: 0.35, eletrico: 0.55 },
   },
 };
 

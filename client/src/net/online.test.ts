@@ -203,6 +203,24 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     }
   });
 
+  it('a elétrica de um jogador aparece para o outro: o evento de tiro vira o projétil dela (e não o do plasma), só desenho', async () => {
+    const a = await player('Eletra', 'M4F', 'v1.vector09.arc-0.rockets-0', { primary: weapon('arc'), secondary: weapon('rockets') });
+    const b = await player('Observador', 'M4F');
+    try {
+      await join([a, b], 7);
+      const desenhados: string[] = []; // os bots da sala também atiram (plasma): importa que a elétrica apareça
+      b.match.projectiles.onFired = (_origin, _dir, _owner, w) => desenhados.push(w.id);
+      a.commander.firing = true;
+      const t0 = performance.now();
+      while (!desenhados.includes('arc') && performance.now() - t0 < 10000) await play([a, b], 100);
+      a.commander.firing = false;
+      expect(desenhados).toContain('arc');
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
   it('a rotatória de um jogador chega ao outro como fluxo desenhado pela bandeira do cano (sem evento por tiro) e para quando o gatilho solta', async () => {
     const a = await player('Rotor', 'M4R', 'v1.vector09.rotary-0.rockets-0', { primary: weapon('rotary'), secondary: weapon('rockets') });
     const b = await player('Observador', 'M4R');

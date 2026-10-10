@@ -49,6 +49,9 @@ export class ProjectileSystem {
   private readonly streakGeo = buildStreakGeometry();
   private readonly friendlyStreak = buildStreakMaterial(GLOW.friendlyPlasma);
   private readonly hostileStreak = buildStreakMaterial(GLOW.hostilePlasma);
+  /** A arma elétrica usa a mesma faixa, em azul-branco (jogador) e violeta (inimigo): não se confunde com o plasma. */
+  private readonly friendlyArcStreak = buildStreakMaterial(GLOW.friendlyArc);
+  private readonly hostileArcStreak = buildStreakMaterial(GLOW.hostileArc);
 
   constructor(
     scene: THREE.Scene,
@@ -107,10 +110,11 @@ export class ProjectileSystem {
     p.mesh.position.copy(origin);
     p.mesh.lookAt(_look.copy(origin).add(dir));
     // Tiro comum: faixa com cauda. Trilho e EMP (têm `tracer`): a esfera esticada de sempre, com o traço do trilho.
-    const streak = w.tracer === undefined;
+    const arc = w.tracer === 'arc';
+    const streak = w.tracer === undefined || arc;
     p.tail = streak ? streakLength(w.speed) : 0;
     p.mesh.geometry = streak ? this.streakGeo : this.orbGeo;
-    p.mesh.material = streak ? (hostile ? this.hostileStreak : this.friendlyStreak) : hostile ? this.hostileMat : this.friendlyMat;
+    p.mesh.material = streak ? (arc ? (hostile ? this.hostileArcStreak : this.friendlyArcStreak) : hostile ? this.hostileStreak : this.friendlyStreak) : hostile ? this.hostileMat : this.friendlyMat;
     p.trail.material = hostile ? this.hostileMat : this.friendlyMat;
     p.trail.visible = w.tracer === 'rail';
     p.trailLife = 0;

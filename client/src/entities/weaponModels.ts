@@ -175,6 +175,21 @@ function rotary(root: THREE.Object3D, tier: number, M: Mats): number {
   return (0.74 + len) * LONG;
 }
 
+/** Arma elétrica (energia): corpo, três anéis de bobina que crescem com o nível e dois eletrodos abertos na boca, com a faísca entre eles. */
+function arc(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = [0.8, 0.92, 1.04][tier]!;
+  d.box(0.4, 0.38, 0.5, M.armor, 0, 0, -0.3);
+  d.cylZ(0.1, len, M.frame, 0, 0, -0.5 - len / 2);
+  for (let i = 0; i < 2 + tier; i++) {
+    d.cylZ(0.2, 0.05, M.armor, 0, 0, -0.62 - i * 0.2);
+    d.cylZ(0.17, 0.035, M.glow, 0, 0, -0.65 - i * 0.2);
+  }
+  for (const side of [-1, 1]) d.box(0.045, 0.2, 0.3, M.frame, side * 0.1, 0, -0.5 - len - 0.1);
+  d.box(0.1, 0.03, 0.2, M.glow, 0, 0, -0.5 - len - 0.1);
+  return (0.5 + len + 0.25) * LONG;
+}
+
 /** Motosserra (corpo a corpo): motor e uma barra alta com dentes luminosos. O nível alonga a barra. */
 function chainsaw(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -229,7 +244,7 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
+  const accent = weapon?.id === 'arc' ? PALETTE.cyan : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
     // Lançador de ombro: o casulo de foguetes e o morteiro da chuva têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
@@ -262,6 +277,9 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'rotary':
         muzzleZ = rotary(root, weapon.tier, M);
+        break;
+      case 'arc':
+        muzzleZ = arc(root, weapon.tier, M);
         break;
       case 'chainsaw':
         muzzleZ = chainsaw(root, weapon.tier, M);

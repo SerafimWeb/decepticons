@@ -40,6 +40,8 @@ export const STATUS = {
   freezeTime: 1.5,
   freezeImmune: 5,
   frozenDamage: 1.2,
+  /** O estado só pega se pelo menos esta fração do dano passou pelas defesas (campo de energia, chapa do escudo físico): a cerâmica isola o choque, a chapa de aço não. */
+  shieldPass: 0.5,
 } as const;
 
 /**

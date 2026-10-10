@@ -181,7 +181,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Nova arma toda semana** (com teste de balanço em `combat/balance.ts`; nenhuma abaixo do TTK do arsenal atual, nenhuma acima do teto de dano por segundo) #combate
 - [x] **Armas elementais (pedido do dono, 09/10; plano, números e divisão em `ARMAS_ELEMENTAIS.md`):** efeitos de estado com tempo (queimando, chocado e atordoado, gelado e congelado) como contrato das quatro armas: simulação, servidor e rede, testado (PR-A, Claude, 09/10); nenhuma arma aplica ainda #combate
 - [x] Metralhadora rotatória: a cadência sobe de 3 a 20 tiros/s em 1,2 s segurando o gatilho, cone que abre com a rotação, sem carregador (o calor é o freio), sem evento por tiro na rede (protocolo 8); simulação, servidor, Hangar e testes prontos (PR-B, Claude, 09/10); o medidor na mira e o som são do Gemini #combate
-- [ ] Arma elétrica: deixa o alvo chocado (lento, dano por segundo); o tiro bem dado atordoa 0,8 s e não encadeia #combate
+- [x] Arma elétrica: deixa o alvo chocado (lento, dano por segundo); o tiro bem dado atordoa 0,8 s e não encadeia; a chapa cerâmica isola e a de aço conduz; simulação, servidor, Hangar e testes prontos (PR-C, Claude, 09/10, protocolo 9); ícone, indicador de estado e som são do Gemini #combate
 - [ ] Lança-chamas: fluxo contínuo em cone que atinge todos no cone, deixa queimando, combustível e calor de quem atira #combate
 - [ ] Arma de gelo: acúmulos de gelado até congelar; fogo e gelo se anulam #combate
 - [x] Tela e som das armas elementais (Gemini): indicadores de estado, bordas de tela, painel do alvo, ícones e dicas do Hangar, medidor da rotatória e sons #ux

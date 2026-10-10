@@ -1,5 +1,5 @@
 import { applyEmp } from './EmpEffect';
-import { inflictOnHit } from './StatusEffects';
+import { inflictOnHit, STATUS } from './StatusEffects';
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { GLOW } from '../core/palette';
@@ -103,7 +103,7 @@ export class CombatSystem {
       if (result.applied <= 0) continue;
       if (result.killed) this.wreck(mech, dir, shooter);
       else if (result.partDestroyed) this.tearOff(mech, result.part, dir);
-      else if (w.inflicts) inflictOnHit(mech.status, w.inflicts, result.part, shooter);
+      else if (w.inflicts && remaining >= damage * STATUS.shieldPass) inflictOnHit(mech.status, w.inflicts, result.part, shooter);
       this.onMechHit?.({ mech, result, shooter });
     }
     this.destructibles.damageInRadius(at, w.blastRadius, w.damage * (shooter?.combatBoost.damageMultiplier ?? 1), dir);
@@ -174,7 +174,7 @@ export class CombatSystem {
     else {
       if (result.partDestroyed) this.tearOff(mech, result.part, dir);
       // Fogo, choque ou gelo: só se o tiro chegou ao corpo (o escudo que absorveu tudo não deixa estado). A cabeça vale o atordoamento do choque.
-      if (w?.inflicts) inflictOnHit(mech.status, w.inflicts, result.part, shooter);
+      if (w?.inflicts && remaining >= damage * STATUS.shieldPass) inflictOnHit(mech.status, w.inflicts, result.part, shooter);
     }
     this.onMechHit?.({ mech, result, shooter });
   }

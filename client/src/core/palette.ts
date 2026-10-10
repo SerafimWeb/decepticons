@@ -58,6 +58,8 @@ export const CITY_NEON: readonly number[] = [PALETTE.cyan, PALETTE.pink, PALETTE
 export const GLOW = {
   friendlyPlasma: new THREE.Color(0.9, 4.0, 1.5),
   hostilePlasma: new THREE.Color(4.0, 0.4, 0.4),
+  friendlyArc: new THREE.Color(1.2, 3.2, 4.0),
+  hostileArc: new THREE.Color(3.6, 0.8, 4.0),
   spark: new THREE.Color(1.4, 3.2, 1.6),
   core: new THREE.Color(2.8, 3.2, 2.8),
   playerMuzzle: new THREE.Color(1.2, 3.4, 1.6),
