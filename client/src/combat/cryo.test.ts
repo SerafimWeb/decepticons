@@ -60,10 +60,17 @@ describe('arma de gelo: números e equilíbrio', () => {
     for (const t of [0, 2] as const) expect(drill(V, { speed: 0, fire: [weapon('cryo', t)] }, 30, Infinity).overheatAt).toBeNull();
   });
 
-  it('o dano cai de 5 a 45 m para a metade a 110 m (alcance máximo)', () => {
+  it('o gelo é de curto e médio alcance (dono, 11/10: "está indo muito longe"): cheio até 20 m e some aos 55 m, pela metade', () => {
+    expect(CRYO.optimalRange).toBe(20);
+    expect(CRYO.maxRange).toBe(55);
     expect(hitDamage(CRYO, 10)).toBe(5);
-    expect(hitDamage(CRYO, 45)).toBe(5);
+    expect(hitDamage(CRYO, 20)).toBe(5);
     expect(hitDamage(CRYO, CRYO.maxRange)).toBe(Math.round(5 * CRYO.minFactor));
+  });
+
+  it('alcança menos que todas as armas de projétil que não são de curto alcance (plasma, elétrica, EMP, trilho, automático): o frio é arma de perto', () => {
+    for (const id of ['plasma', 'arc', 'emp', 'railgun', 'autocannon', 'cannon'] as const) expect(CRYO.maxRange, id).toBeLessThan(weapon(id).maxRange);
+    expect(CRYO.maxRange).toBeLessThanOrEqual(60);
   });
 
   it('o projétil é mais lento que o da elétrica e o do plasma, e a cadência é a mais lenta das três', () => {

@@ -21,7 +21,7 @@ export type StatusInflict = 'burn' | 'shock' | 'chill';
 
 /** Números de partida (tudo em segundos, fração ou dano por segundo). Mexer aqui muda o jogo: os testes dizem o que quebra. */
 export const STATUS = {
-  burnDps: 4,
+  burnDps: 6,
   burnTime: 4,
   /** Calor (fração do dissipador) que o fogo põe no Mech por segundo, sem deixá-lo resfriar. */
   burnHeatPerSecond: 0.03,

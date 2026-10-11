@@ -65,9 +65,13 @@ describe('partículas do estado no corpo do inimigo', () => {
     s.burnUp();
     pulso();
     visuals.update(mech(s));
-    const [chama, fumaca] = chamadas.map((c) => c.o);
+    const [chama, brasa, fumaca] = chamadas.map((c) => c.o);
     expect(chama!.color.r).toBeGreaterThan(chama!.color.b);
     expect(chama!.gravity).toBeLessThan(0); // gravidade negativa: sobe
+    expect(chama!.size!).toBeGreaterThanOrEqual(2.4); // língua grande (dono, 11/10: "o fogo está muito fraco")
+    expect(brasa!.shape).toBe(SHAPE.dot); // brasas que sobem
+    expect(brasa!.gravity).toBeLessThan(0);
+    expect(brasa!.color.r).toBeGreaterThan(brasa!.color.b * 5);
     expect(fumaca!.color.r).toBeLessThan(0.5);
     expect(fumaca!.gravity).toBeLessThan(0);
   });
@@ -89,7 +93,7 @@ describe('partículas do estado no corpo do inimigo', () => {
     expect(estrelas.at.y).toBe(5); // a cabeça
   });
 
-  it('cada estado tem a sua forma: flocos e nuvem no gelo, língua de fogo e nuvem no fogo, raio no choque, estrela no atordoamento', () => {
+  it('cada estado tem a sua forma: flocos e nuvem no gelo, língua de fogo, brasa e nuvem no fogo, raio no choque, estrela no atordoamento', () => {
     const formas = (s: StatusSet) => {
       const { chamadas, visuals, mech, pulso } = palco();
       pulso();
@@ -102,7 +106,7 @@ describe('partículas do estado no corpo do inimigo', () => {
     expect(formas(gelado)).toEqual(new Set([SHAPE.flake]));
     const fogo = new StatusSet();
     fogo.burnUp();
-    expect(formas(fogo)).toEqual(new Set([SHAPE.flame, SHAPE.puff]));
+    expect(formas(fogo)).toEqual(new Set([SHAPE.flame, SHAPE.dot, SHAPE.puff])); // línguas, brasas que sobem e fumaça
     const choque = new StatusSet();
     choque.shockUp(false);
     expect(formas(choque)).toEqual(new Set([SHAPE.bolt]));
@@ -119,10 +123,10 @@ describe('partículas do estado no corpo do inimigo', () => {
     pulso();
     let total = 0;
     for (let i = 0; i < 40; i++) total += visuals.update(mech(s));
-    expect(chamadas.length / 4).toBeLessThanOrEqual(12); // cada unidade solta até 4 rajadas
-    expect(total).toBeLessThanOrEqual(12 * 9);
+    expect(chamadas.length / 5).toBeLessThanOrEqual(12); // cada unidade solta até 5 rajadas
+    expect(total).toBeLessThanOrEqual(12 * 11);
     // 12 unidades por pulso × 10 pulsos por segundo × o pior caso: abaixo do teto do pool de 3000 partículas (G5), com folga.
-    expect(12 * 10 * 9).toBeLessThan(3000 / 2);
+    expect(12 * 10 * 11).toBeLessThan(3000 / 2);
   });
 
   it('Mech morto ou escondido (fora da câmera) não solta nada', () => {

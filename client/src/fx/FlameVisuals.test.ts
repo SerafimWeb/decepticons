@@ -60,7 +60,7 @@ describe('o fluxo visível do lança-chamas (desenhado pela bandeira, para todos
     expect(chamadas[0]!.normal.z).toBeCloseTo(0, 5);
   });
 
-  it('é fogo (vermelho e verde acima do azul, sobe) com uma fumaça cinza atrás; o alcance visual cobre o cone de 14 m', () => {
+  it('é fogo (vermelho e verde acima do azul, sobe) com uma fumaça cinza atrás; o alcance visual cobre o cone de 20 m', () => {
     const { chamadas, visuals, mech, pulso } = palco();
     pulso();
     visuals.update(mech(true));
@@ -69,7 +69,10 @@ describe('o fluxo visível do lança-chamas (desenhado pela bandeira, para todos
     expect(chama!.gravity).toBeLessThan(0); // sobe
     expect(miolo!.color.g).toBeGreaterThan(chama!.color.g); // o miolo é mais claro
     expect(fumaca!.color.r).toBeLessThan(0.5);
-    expect(chama!.speed * chama!.life).toBeGreaterThan(11); // ~12 m de língua de fogo
+    expect(chama!.speed * chama!.life).toBeGreaterThan(19); // ~20 m de língua de fogo (o cone de dano vai a 20 m)
+    // Gorda ao longe (cresce: 1,7 x (1 + 3) = 6,8 no fim) e fina na boca, para não ofuscar a câmera (dono, 11/10: "fraco e curto" e, antes, "luz demais").
+    expect(chama!.size! * (1 + chama!.expansion!)).toBeGreaterThanOrEqual(6);
+    expect(chama!.size!).toBeLessThanOrEqual(2);
   });
 
   it('o fogo tem forma de língua de fogo (o miolo também) e a fumaça é uma nuvem', () => {
@@ -82,13 +85,24 @@ describe('o fluxo visível do lança-chamas (desenhado pela bandeira, para todos
     expect(fumaca!.shape).toBe(SHAPE.puff);
   });
 
-  it('o custo é pequeno e conhecido: 6 partículas por pulso a 30 Hz = 180 por segundo por lança-chamas aceso (o pool tem 3000)', () => {
+  it('o custo é pequeno e conhecido: 9 partículas por pulso a 30 Hz = 270 por segundo por lança-chamas aceso (o pool tem 3000)', () => {
     const { chamadas, visuals, mech, pulso } = palco();
     pulso();
     const n = visuals.update(mech(true));
-    expect(n).toBe(6);
-    expect(chamadas.reduce((a, c) => a + c.o.count, 0)).toBe(6);
-    expect(n * 30).toBeLessThanOrEqual(200);
+    expect(n).toBe(9);
+    expect(chamadas.reduce((a, c) => a + c.o.count, 0)).toBe(9);
+    expect(n * 30).toBeLessThanOrEqual(300);
+  });
+
+  it('a boca fica acesa: um clarão curto, parado e brilhante onde o fogo sai (a 4ª rajada do pulso)', () => {
+    const { chamadas, visuals, mech, pulso } = palco();
+    pulso();
+    visuals.update(mech(true));
+    const boca = chamadas[3]!.o;
+    expect(boca.speed).toBe(0);
+    expect(boca.life).toBeLessThanOrEqual(0.15);
+    expect(boca.color.r).toBeGreaterThan(boca.color.b * 3); // alaranjado
+    expect(chamadas[3]!.at.toArray()).toEqual([1, 3, 2]); // na boca da mão
   });
 
   it('Mech morto, escondido ou com a partida parada (menu, Hangar) não solta nada', () => {

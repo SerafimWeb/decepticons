@@ -1,3 +1,19 @@
+## [2026-10-11] Gelo mais curto e frio, lança-chamas mais forte (P72, Claude)
+
+**Ordem do Comandante:** "o gelo está indo muito longe, e o fogo está muito fraco e curto; o rastro do gelo soltasse frio, partículas menores".
+
+**Decisões:**
+1. **O gelo é arma de perto e de meia distância** (20 m cheio, 55 m no fim): o plasma, o trilho e o aço é que alcançam longe. O dano não mudou (5 por tiro): o gelo vale pelo estado, não pelo alcance.
+2. **O rastro do gelo trocou "um floco grande a cada 1,6 m" por "bruma a cada metro + floco pequeno a cada 3,5 m".** Os flocos grandes liam como pétalas; a bruma (pontos pequenos e vapor azulado, tudo
+   pálido) lê como frio. `TRAIL_FX` virou uma lista de camadas por tipo de tiro (`{ fx[], every }`), então o obus do canhão e o gelo usam o mesmo laço.
+3. **O lança-chamas passa a ser arma de peso médio, não de apoio**: 10 de dano por pulso, 20 m, 34°. A bancada (Vector-09, torso 300) deu 7,5 / 6,5 / 5,9 s sozinho, dois juntos > 3,7 s, e todo combo
+   com o canhão pesado e os foguetes > 2,75 s. O **calor continua o freio** (ferve em ~4,8 s de chama), por isso o dano subiu sem quebrar a meta de 2,5 s dos combos.
+4. **Queimar dói mais** (`STATUS.burnDps` 4 → 6) e o fogo no corpo do inimigo ganhou brasas e língua maior: o estado precisa ser visto para o jogador entender que o alvo está queimando.
+5. **Sem mudança de rede**: o protocolo segue em 12 (só números de arma e partículas do cliente; o servidor aplica o novo dano do cone sozinho).
+
+**Lição:** o servidor de produção ficou **fora do ar por ~15 min** depois do merge do PR das armas de aço: o atualizador parou o servidor para reiniciar justamente quando o `npm run check` do meu
+próximo push deixava a máquina sem memória, e o servidor novo não respondeu em 60 s, três vezes. Não rodo testes pesados enquanto o atualizador reinicia; o log (`atualizacao.log`) mostra o horário.
+
 ## [2026-10-11] Câmeras de Vigilância CFTV e Espectador: Prédio Serafim, Vorcaris, Drones e Mechs (Gemini)
 
 **Pedido do dono:** "quero poder ver a visao da camera no alto do predio serafim, e as outras cameras (na porta do banco vorcaris, nos drones, etc)" e "o V ja é o botao de mudar a visibilidade durante o jogo, como fazermos pra nao competir por atalhos?".
