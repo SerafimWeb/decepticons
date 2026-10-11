@@ -58,6 +58,10 @@ export class NetPilot implements Pilot {
       this.aim(mount);
       this.match.flameCone(this.mech, _origin, _dir, w);
     },
+    wave: (mount, w) => {
+      this.aim(mount);
+      this.match.waveCone(this.mech, _origin, _dir, w);
+    },
   };
 
   constructor(

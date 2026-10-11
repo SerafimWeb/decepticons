@@ -18,7 +18,8 @@
 // 12 (11/10): o canhão pesado e o canhão automático entram em `NET_WEAPONS` (o tiro deles é evento de tiro como o do plasma); um cliente da versão 11 recusaria o tiro como evento ruim.
 // 13 (11/10): o anel de fogo entra no catálogo de módulos de escudo (`fire` na montagem, no JOIN e no roster); o pulso é só do servidor e o desenho vem da bandeira de escudo ligado que já existia. Um servidor antigo recusaria a montagem.
 // 14 (11/10): o evento de tiro diz de qual encaixe o tiro saiu (os 2 bits de cima do byte da arma, que cabe em 6 bits; o evento não cresce). Antes o outro jogador desenhava todo tiro da mão direita, e o Marauder (duas mãos, dois ombros) parecia atirar só por ela. Um cliente da versão 13 leria o encaixe como arma inválida.
-export const PROTOCOL_VERSION = 14;
+// 15 (11/10): o canhão sônico entra em `NET_WEAPONS` (a onda é um evento de tiro, com o encaixe do ombro de onde saiu); um cliente da versão 14 recusaria o tiro como evento ruim.
+export const PROTOCOL_VERSION = 15;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

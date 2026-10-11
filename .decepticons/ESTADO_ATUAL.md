@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Canhão sônico de ombro e o empurrão no corpo — Claude, 11/10 (PR `claude/armas-de-ombro`, protocolo 15, ordem P77)
+
+**Ordem do Comandante (P77):** "melhor aproveitamento dos slots nos ombros; a maioria das armas é para as mãos; pensar as armas pro botão 2, nos ombros, costas, peitoral; variar as armas e tecnologias; as armas de som combinam nos ombros".
+
+- **Canhão sônico (`sonic`):** a 1ª arma **só de ombro** (só o Marauder tem ombros hoje). No botão 2 as **duas bocas** disparam juntas um **pulso em cone de 52°**, de uma vez só, em todos os inimigos à vista:
+  **20 de dano por boca** (cheio até 10 m, 35% aos 22 m), um aperto a cada 1,2 s (40 por aperto), 0,12 de calor por boca, 3 t por boca (6 t no MK I). Natureza `sonico` (a chapa **Amortecedor segura 90%**, a muralha deixa passar).
+  **Sobe de nível ganhando alcance** (22 / 27,5 / 33 m; campo `tierRange` que o lança-chamas já usava) e dano (20 / 24 / 28). Não derruba sozinha (as duas bocas levam ~9 s num torso): o ponto dela é **tirar o inimigo do lugar**.
+- **O empurrão no corpo (`MechBase.push`):** velocidade externa horizontal (`shove`) que **decai sozinha** (e^-3,5: meio segundo depois sobram 17%), **soma ao movimento sem passar pela aceleração** (o piloto não a cancela freando, anda por cima),
+  tem **teto de 12 m/s** (dois empurrões não viram arremesso), **o robô grande empurra menos** (resistência = 1,3 m ÷ raio, de 25% a 100%: o Colossus sai ~36%, o andróide voa), respeita parede e zera ao renascer. **É a base da reação do inimigo ao tiro (P69).**
+- **A regra** (`Match.waveCone`): o cone (o mesmo teste do lança-chamas, agora `coneGap`) mira o **eixo do corpo** (a pressão bate no corpo todo; o torso de um robô alto ficava fora do cone vertical), exige **linha de visão**, poupa **quem atira e os aliados**, empurra **radialmente** a partir da boca e o empurrão cai com a distância junto com o dano. O cliente online só desenha.
+- **Se vê e se ouve:** **arcos de onda lilás e um anel** (`fx/WaveVisuals.ts`, 10 partículas por boca), um estrondo grave de pressão (`playSonicShot`), mira e ícone novos, modelo 3D no ombro (funil de anéis de ressonância). Captura: `arte/canhao-sonico-claude.png`.
+- **Rede: `PROTOCOL_VERSION` 15.** A onda é um evento de tiro por boca (com o encaixe do ombro, protocolo 14); `NET_WEAPONS` ganha `sonic` no fim. O atualizador reinicia o servidor sozinho; conferir `/status` com `"protocol":15`.
+- **Custo de CPU:** a onda é um laço pelos Mechs da partida **uma vez por aperto** (e por boca), sem alocação; o empurrão custa duas multiplicações por Mech por tick; o desenho, 20 partículas por aperto. Nada no servidor além do laço.
+- **Testes:** `combat/sonic.test.ts` (39: dado, equilíbrio, regra de tiro, cone com física de verdade, empurrão no corpo, desenho), Hangar (3), servidor real (2) e ponta a ponta (1); **32 mutações, todas pegas** (duas escaparam na 1ª rodada: o dono no próprio cone e o empurrão no eixo X; ganharam teste).
+
+**O mapa do resto da ordem P77 está em `.decepticons/ARMAS_DE_BOTAO_2.md`** (11 ideias com o custo de cada uma: míssil teleguiado, arpão, drone, minas, propulsor, feixe térmico, reparo, fumaça, marcador...). **Falta:** ombros para mais robôs (só o Marauder tem), encaixes de costas e de peito
+(não existem), e o empurrão ainda não é a reação a tiros comuns. **O Comandante escolhe a ordem.**
+
 ## Gelo amigo: o gelo de um aliado esfria o aliado — Claude, 11/10 (PR `claude/gelo-amigo`, ordem P78)
 
 **Ordem do Comandante (P78):** "posso mandar meu amigo que tenha a tecnologia do anel de fogo, e eu congelo ele pra ele ficar rushando com os inimigos e soltando o anel enquanto eu mando gelo nele pra compensar".

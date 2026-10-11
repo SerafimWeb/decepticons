@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic';
 
 /**
  * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
@@ -127,6 +127,8 @@ export interface WeaponStats {
   inflicts?: StatusInflict;
   /** Só no lança-chamas: o cone e o tanque de combustível (`FuelTank` em `combat/trigger.ts`). */
   flame?: Flame;
+  /** Só nas armas sônicas: a onda (cone de uma vez só, com empurrão). */
+  wave?: Wave;
   /**
    * Quanto o **alcance** cresce a cada nível, em fração do MK I (0,3 = +30% no MK II e +60% no MK III; vale para o alcance ótimo e o máximo). Sem este
    * campo o alcance é da arma, não do nível. Quem declara: o lança-chamas (dono, 11/10: "tem que poder ser upado no MK II e ir mais longe").
@@ -137,6 +139,18 @@ export interface WeaponStats {
    * campo a cadência é da arma, não do nível. O calor por segundo cresce junto (mais tiros, e cada um esquenta mais).
    */
   tierRate?: number;
+}
+
+/**
+ * Onda sônica (dono, 11/10: "as armas de som combinam em ficar nos ombros"): **um pulso em cone, de uma vez**, que atinge todos os que estão nele e à vista (como um
+ * pulso do lança-chamas, mas de um tiro só) e **empurra** quem pega (`MechBase.push`). O dano cai com a distância como o de um tiro direto (`optimalRange` a `maxRange`);
+ * o empurrão cai junto. Sem projétil: não há o que desviar nem parar no meio, só a parede (cone sem linha de visão não acerta).
+ */
+export interface Wave {
+  /** Meio ângulo do cone (rad). */
+  halfAngle: number;
+  /** Velocidade do empurrão (m/s) a queima-roupa; cai com a distância junto com o dano e é dividida pela resistência do alvo (o grande empurra menos). */
+  shove: number;
 }
 
 /**
@@ -186,6 +200,21 @@ const BASE: Record<WeaponId, WeaponBase> = {
     blastRadius: 0, mass: 3.5, inflicts: 'burn',
     flame: { halfAngle: 0.3, fuel: 6, reload: 4 },
     tierRange: 0.3, tierRate: 0.15,
+  },
+  /**
+   * Canhão sônico (dono, 11/10: "as armas de som combinam em ficar nos ombros"; "variar as armas e tecnologias para o botão 2"). **Arma de ombro**: só no encaixe dos ombros (o
+   * Marauder), no botão 2, e **as duas bocas disparam juntas**. Um pulso em cone de 52° (`Wave`) que bate 20 a queima-roupa (cheio até 10 m, 35% aos 22 m) e **empurra** (8 m/s,
+   * menos longe e menos num robô grande). Natureza `sonico`: a chapa Amortecedor segura 90%, o reativo e a cerâmica deixam passar mais. Não tira vida suficiente para derrubar sozinha
+   * (as duas bocas somam 40 por aperto a cada 1,2 s: ~9 s para um torso) e esquenta pouco; o ponto dela é **tirar o inimigo do lugar** (da cobertura, de cima de um aliado, do alcance do
+   * lança-chamas dele). Sobe de nível ganhando alcance (+25% por nível).
+   */
+  sonic: {
+    id: 'sonic', name: 'Canhão sônico', kind: 'energy',
+    damage: 20, fireInterval: 1.2, heatPerShot: 0.12,
+    magazine: 0, reload: 0, speed: 0,
+    optimalRange: 10, maxRange: 22, minFactor: 0.35,
+    blastRadius: 0, mass: 3,
+    wave: { halfAngle: 0.45, shove: 8 }, tierRange: 0.25,
   },
   /**
    * Canhão pesado (dono, 11/10: "quero um canhão grande, um tiro só"). **Um projétil de aço, grande e lento, que bate como um caminhão**: 90 de
@@ -417,6 +446,7 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   flamer: 'termico',
   cannon: 'balistico',
   autocannon: 'balistico',
+  sonic: 'sonico',
   chainsaw: 'corte',
 };
 

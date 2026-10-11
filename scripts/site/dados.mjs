@@ -304,11 +304,12 @@ export function arsenal(game) {
     };
   };
   const onVector = (id) => S.vector09.right.includes(id) || S.vector09.left.includes(id);
-  // Onde a arma da `others` mora: o primeiro chassi que a aceita (e em qual braço).
+  // Onde a arma da `others` mora: o primeiro chassi que a aceita (e em qual encaixe: braço ou ombros).
   const carrier = (id) => {
-    const chassisId = Object.keys(S).find((c) => S[c].right.includes(id) || S[c].left.includes(id));
+    const chassisId = Object.keys(S).find((c) => S[c].right.includes(id) || S[c].left.includes(id) || (S[c].shoulders ?? []).includes(id));
     const chassis = C[chassisId].name;
-    return { chassis, slot: `${chassis.toLowerCase()} · braço ${S[chassisId].right.includes(id) ? 'direito' : 'esquerdo'}` };
+    const lugar = S[chassisId].right.includes(id) ? 'braço direito' : S[chassisId].left.includes(id) ? 'braço esquerdo' : 'ombros';
+    return { chassis, slot: `${chassis.toLowerCase()} · ${lugar}` };
   };
   return {
     target: v.name,

@@ -1,3 +1,17 @@
+## [2026-10-11] O canhão sônico é a primeira arma de ombro, e o corpo ganha empurrão (P77, Claude)
+
+**Ordem do Comandante:** "as armas de som combinam em ficar nos ombros"; "pensar as armas pro botão 2, ombros, costas, peitoral; variar as armas e tecnologias".
+
+**Decisões:**
+1. **Uma arma, para começar, e um mapa para o resto.** "Variar as armas" é uma lista longa; entreguei o **canhão sônico** (a que o Comandante nomeou) e escrevi o **catálogo com o custo de cada ideia** (`ARMAS_DE_BOTAO_2.md`) para ele escolher a ordem, em vez de inventar onze armas de uma vez sem teste.
+2. **A onda é um cone de uma vez só, não um projétil nem um fluxo.** Sem projétil não há o que desviar nem parar no meio; o que a segura é a parede (linha de visão) e a chapa Amortecedor (natureza `sonico`, que já estava pronta e sem arma). Reaproveita o teste de cone do lança-chamas (`coneGap`).
+3. **A onda mira o eixo do corpo, não o torso.** O primeiro teste com o Colossus (raio 3,6, altura 14) mostrou que o torso dele fica 22 m acima do chão e fora do cone vertical: a pressão de uma onda bate no corpo todo, então o ponto do alvo é o do eixo vertical mais perto da altura da boca.
+4. **O empurrão é uma velocidade externa que decai, não um impulso no controlador.** O `MechBase` ganha `shove` (x, z) somado ao movimento **depois** da aceleração do piloto, então o piloto não o cancela freando; decai e^-3,5, tem teto de 12 m/s, e **o robô grande empurra menos** (1,3 m ÷ raio, piso de 25%). Cabe na simulação do servidor e do jogo offline (G1/G14).
+5. **Ombro é só dos ombros.** O canhão sônico não entra em nenhuma mão (o teste varre todos os chassis); no Marauder as duas bocas disparam juntas, como os foguetes. Mais robôs com ombro é um PR por robô (mede as bocas e o desenho).
+6. **Nível = alcance** (+25%), além do dano de sempre: a onda mais longa é o "upar" que o Comandante pediu também para o lança-chamas.
+
+**Limite que fica dito:** online, quem leva o empurrão o vê pela correção suave do servidor (a previsão do cliente não conhece o empurrão), então ele desliza alguns centímetros depois do tiro, não no mesmo quadro.
+
 ## [2026-10-11] O gelo de um aliado esfria o aliado, e "mesmo lado" vira regra da partida (P78, Claude)
 
 **Ordem do Comandante:** "meu amigo tem a tecnologia do anel de fogo, eu congelo ele pra ele ficar rushando e soltando o anel enquanto eu mando gelo nele pra compensar (numa área de recuperação rápida de energia, ele fica macetando ali)".

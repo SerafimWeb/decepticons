@@ -19,6 +19,9 @@ export const MECH_GRAVITY = 32;
 const STRIDE = 0.55 * 5.3;
 const CONTROLLER_OFFSET = 0.05;
 const HARD_LANDING_SPEED = 14;
+/** Empurrão (`MechBase.push`): quanto da velocidade externa sobra por segundo (e^-3,5: meio segundo depois resta ~17%), e o teto da velocidade somada (m/s). */
+const SHOVE_DECAY = 3.5;
+const SHOVE_MAX = 12;
 const MAX_CLIMB_ANGLE = (50 * Math.PI) / 180;
 /** Normal com y abaixo disso é parede ou teto (mais íngreme que a rampa máxima). */
 const WALL_NORMAL_Y = Math.cos(MAX_CLIMB_ANGLE);
@@ -181,6 +184,11 @@ const lerp = THREE.MathUtils.lerp;
 export abstract class MechBase {
   readonly root = new THREE.Group();
   readonly velocity = new THREE.Vector3();
+  /**
+   * Empurrão: velocidade horizontal **externa** (onda sônica, tranco de impacto) somada ao movimento do Mech sem passar pela aceleração dele, e que decai sozinha
+   * (`SHOVE_DECAY`). O input não a cancela (senão o piloto anularia o empurrão na hora): ele só anda por cima. Só x e z. Regra de simulação (G1): decai no tick fixo.
+   */
+  readonly shove = new THREE.Vector3();
   /** Modificador temporário de regra (CTF: portador da bandeira corre a 85%; o dash não muda). */
   moveSpeedScale = 1;
   readonly modules: MechModules;
@@ -615,6 +623,7 @@ export abstract class MechBase {
     this.combatBoost.reset();
     this.energyShield.stop();
     this.velocity.set(0, 0, 0);
+    this.shove.set(0, 0, 0);
     this.dashTimeLeft = 0;
     this.dashCooldownLeft = 0;
     this.jumpsLeft = this.stats.maxJumps;
@@ -649,6 +658,7 @@ export abstract class MechBase {
     this.collider.setEnabled(false);
     this.root.visible = false;
     this.velocity.set(0, 0, 0);
+    this.shove.set(0, 0, 0);
     this.dashTimeLeft = 0;
   }
 
@@ -696,6 +706,22 @@ export abstract class MechBase {
     r.torso.rotation.x = pitch * 0.25;
     r.rightArm.rotation.x = pitch * 0.75;
     r.leftArm.rotation.x = pitch * 0.75;
+  }
+
+  /**
+   * Empurra o Mech na direção (`dirX`, `dirZ`) (não precisa ser unitária) com `speed` m/s, a menos do que ele resiste: **o robô grande empurra menos** (a resistência é 1,3 m
+   * de raio ÷ o raio do Mech, de 25% a 100%: o Colossus quase não sai do lugar, o andróide voa). Soma no `shove` atual com o teto de `SHOVE_MAX` m/s: dois empurrões
+   * juntos (dois ombros sônicos) não viram um arremesso. Morto não é empurrado.
+   */
+  push(dirX: number, dirZ: number, speed: number): void {
+    if (!this.alive || speed <= 0) return;
+    const len = Math.hypot(dirX, dirZ);
+    if (len < 1e-6) return;
+    const k = (speed * Math.min(1, Math.max(0.25, 1.3 / this.stats.radius))) / len;
+    this.shove.x += dirX * k;
+    this.shove.z += dirZ * k;
+    const m = Math.hypot(this.shove.x, this.shove.z);
+    if (m > SHOVE_MAX) this.shove.multiplyScalar(SHOVE_MAX / m);
   }
 
   /** Um tick de simulação (60 Hz). Determinístico dado o input. */
@@ -761,13 +787,18 @@ export abstract class MechBase {
     // então cliente e servidor calculam o mesmo trajeto. O corpo cinemático ainda empurra
     // os destroços no world.step().
     const controller = this.controller;
-    _desired.x = vel.x * dt;
+    _desired.x = (vel.x + this.shove.x) * dt;
     // Apoiado e sem velocidade para cima, não se pede movimento vertical: a gravidade somada a cada tick (−9 mm) caía dentro da margem de
     // 5 cm do chão, o controller a devolvia em vez de segurar a cápsula e o Mech parado descia ~0,5 m/s, até atravessar o chão. O
     // `snapToGround` mantém o contato (rampa e degrau descem igual); sem chão embaixo, `grounded` cai e a gravidade volta no tick seguinte.
     // Medido e provado em `MechParado.test.ts` (achado de 29/09: o Colossus parado perdia 2 m em 3 s).
     _desired.y = this.grounded && vel.y <= 0 ? 0 : vel.y * dt;
-    _desired.z = vel.z * dt;
+    _desired.z = (vel.z + this.shove.z) * dt;
+    // O empurrão decai (e depois de um bom tempo vira zero de vez, para não deixar um resto de 1e-30 vivo).
+    const keep = Math.exp(-SHOVE_DECAY * dt);
+    this.shove.x *= keep;
+    this.shove.z *= keep;
+    if (Math.abs(this.shove.x) + Math.abs(this.shove.z) < 0.02) this.shove.set(0, 0, 0);
     controller.computeColliderMovement(this.collider, _desired, IGNORE_DEBRIS);
     let m = controller.computedMovement();
     if (this.grounded && this.unstickFromGround(m)) {

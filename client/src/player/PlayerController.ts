@@ -43,6 +43,8 @@ export class PlayerController {
   onKick?: (amount: number) => void;
   /** Corte corpo a corpo (motosserra no braço esquerdo): quem aplica é a partida (`Match.meleeNearest`). */
   melee?: (w: WeaponStats) => void;
+  /** Uma onda sônica saiu: a partida aplica o cone com empurrão e desenha (`Match.waveCone`). */
+  wave?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
   /** O lança-chamas pulsou: a partida aplica o cone de dano a partir de `origin` na direção `dir` (`Match.flameCone`). */
   flame?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
   /** Teclas de cada ação (e.code), vindas das configurações. */
@@ -57,6 +59,8 @@ export class PlayerController {
   private jumpQueued = false;
   private dashQueued = false;
   private spinShots = 0;
+  /** A onda sônica deste aperto já fez o som e o tranco (as duas bocas dos ombros saem no mesmo tick). */
+  private waveHeard = false;
   private readonly armament: Armament;
   private readonly cmd: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
   private readonly sink: ShotSink = {
@@ -64,6 +68,7 @@ export class PlayerController {
     rocket: (mount, w, volley) => this.launch(mount, w, volley),
     melee: (w) => this.melee?.(w),
     flame: (mount, w) => this.flameFrom(mount, w),
+    wave: (mount, w) => this.waveFrom(mount, w),
   };
 
   constructor(
@@ -151,6 +156,7 @@ export class PlayerController {
     this.firing = a && wantsToFire;
     const wantsRocket = this.input.mouseDown2 || this.input.isDown(k.secondary) || this.input.virtualRocket;
     this.secondaryHeld = a && wantsRocket;
+    this.waveHeard = false;
     this.armament.fixedUpdate(dt, this.firing, this.secondaryHeld, this.sink);
   }
 
@@ -174,6 +180,17 @@ export class PlayerController {
     // O tiro de metal tem o clarão dele, solto pelo `ProjectileSystem.fire` (vale para todos os atiradores); as outras armas, este.
     if (!MUZZLE_FX[w.id]) this.particles.burst(_muzzle, _dir, { count: w.spin ? 2 : 5, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
     if (!w.spin || (this.spinShots++ & 3) === 0) this.onShot?.(w);
+    this.onKick?.(fireKick(w));
+  }
+
+  /** Uma onda sônica de `mount`: sai da boca do ombro e vai até a mira; a partida aplica o cone e desenha. O som e o tranco da câmera saem **uma vez por aperto** (as duas bocas juntas pesam como um baque só). */
+  private waveFrom(mount: MountId, w: WeaponStats): void {
+    this.mech.mountWorldPosition(mount, _muzzle);
+    this.aimFrom(_muzzle);
+    this.wave?.(w, _muzzle, _dir);
+    if (this.waveHeard) return;
+    this.waveHeard = true;
+    this.onShot?.(w);
     this.onKick?.(fireKick(w));
   }
 

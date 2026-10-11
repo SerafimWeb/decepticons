@@ -41,6 +41,7 @@ export const MUZZLE_FX: Readonly<Record<WeaponId, MuzzleFx | null>> = {
     ],
     casing: { count: 1, color: BRASS, speed: 4.5, life: 0.8, size: 1.5, spread: 0.4, gravity: 16, spin: 18, shape: SHAPE.casing },
   },
+  sonic: null, // a onda se desenha sozinha (`fx/WaveVisuals.ts`)
   plasma: null,
   blaster: null,
   shotgun: null,
