@@ -12,6 +12,24 @@ apenas as nossas IAS."; e "eu tenho creditos no elevenlabs pra usar nas vozes se
   cliente (R2). Em `PILOTOS_LLM_E_INTELIGENCIA.md` §3-B e §10 (decisão 6).
 **Custo de CPU:** zero no tick (documento).
 **Quem decidiu:** Comandante (11/10); Qwen (aplicou ao plano e aos documentos companheiros).
+## [2026-10-11] O tiro do Marauder saía "só pela mão direita": o evento de tiro agora diz o encaixe (P76, Claude)
+
+**Ordem do Comandante:** "aconteceu algum bug: eu tava usando o Marauder, e os tiros estavam saindo só pela mão direita". E o lança-chamas "continua muito fraco, muito curto, deveria ser upado no MK II".
+
+**O achado:** a **regra** (`Armament`) sempre atirou as duas mãos do Marauder (testada desde o PR do Marauder); o que estava errado era o que **se via**: o fogo e o aviso da carga eram desenhados só da
+mão direita, o outro jogador desenhava todo tiro da direita (o evento `SHOT` não trazia o encaixe) e só a 1ª rotatória era desenhada. Os testes de regra passavam e o jogo parecia quebrado.
+
+**Decisões:**
+1. **O encaixe viaja nos 2 bits de cima do byte da arma** do evento de tiro (as armas cabem em 6 bits, até 64), em vez de um byte novo: o evento continua com 7 bytes e o catálogo tem folga. Custo:
+   o limite de 64 armas passa a ser de fato um limite (o teste confere). `PROTOCOL_VERSION` 14.
+2. **O servidor calcula o encaixe pela boca mais próxima da origem do tiro** (a mesma conta do `simMuzzle`), sem mudar a interface do `ShotSink`/do `ProjectileSystem.onFired` (que já entrega a origem).
+   O encaixe certo dá distância ~0; os outros, metros.
+3. **Alcance e cadência por nível são campos da arma** (`tierRange`, `tierRate`), não um `if (id === 'flamer')`: o lança-chamas os declara (+30% e +15% por nível); as demais armas não, e o teste do arsenal
+   confere. O calor por segundo sobe junto (mais pulsos), e é o freio: o MK III ferve em 2,9 s.
+4. **O fogo é desenhado por mão que leva lança-chamas** (do dado da montagem, não do desenho do Mech), e cada mão leva o nível da arma dela.
+
+**Lição:** quando o dono diz "só sai pela mão direita", o teste de regra verde **não** responde: é preciso um teste do que o outro jogador vê. Adicionei o de ponta a ponta (cliente + servidor real).
+
 ## [2026-10-11] O anel de fogo é um módulo de escudo (P73, Claude)
 
 **Ordem do Comandante:** "o fogo também pode ser um tipo de escudo, que solta um círculo de fogo ao redor do Mech, queimando tudo ao redor durante alguns segundos, e aumentando o calor geral de tudo
