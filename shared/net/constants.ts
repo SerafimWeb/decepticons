@@ -15,7 +15,8 @@
 // 9 (09/10): a arma elétrica entra em `NET_WEAPONS` (o tiro dela é evento de tiro como o do plasma); um cliente da versão 8 recusaria o tiro como evento ruim.
 // 10 (11/10): a arma de gelo entra em `NET_WEAPONS` (o tiro dela é evento de tiro como o do plasma); um cliente da versão 9 recusaria o tiro como evento ruim.
 // 11 (11/10): o lança-chamas entra no catálogo de montagens (`flamer` no JOIN e no roster); o fluxo dele não vira evento (bandeira `flaming` do byte `fx`, que já existia) e o dano do cone é só do servidor. Um servidor antigo recusaria a montagem.
-export const PROTOCOL_VERSION = 11;
+// 12 (11/10): o canhão pesado e o canhão automático entram em `NET_WEAPONS` (o tiro deles é evento de tiro como o do plasma); um cliente da versão 11 recusaria o tiro como evento ruim.
+export const PROTOCOL_VERSION = 12;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

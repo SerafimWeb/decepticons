@@ -16,6 +16,8 @@ describe('AudioSystem - T5 Elemental Audio & Fallbacks', () => {
       audio.setFlame(true);
       audio.setFlame(false);
       audio.playCryoShot();
+      audio.playCannonShot();
+      audio.playAutocannonShot();
       audio.playStatusEnter('queimando');
       audio.playStatusEnter('chocado');
       audio.playStatusEnter('atordoado');

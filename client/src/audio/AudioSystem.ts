@@ -962,6 +962,101 @@ export class AudioSystem {
   }
 
   /**
+   * CANHÃO PESADO — o estouro de um obus de aço: um baque grave que despenca (130→36 Hz) com o ruído da explosão da pólvora, escuro e longo.
+   * Nada de bipe de energia: é o som mais grave do arsenal (dono, 11/10: tiro de aço, não de luz).
+   */
+  playCannonShot(): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(130, now);
+    osc.frequency.exponentialRampToValueAtTime(36, now + 0.32);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.5, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.4);
+    osc.onended = () => gain.disconnect();
+
+    if (!this.noiseBuffer) return;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1400, now);
+    filter.frequency.exponentialRampToValueAtTime(220, now + 0.45);
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.55, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+    src.connect(filter);
+    filter.connect(ng);
+    ng.connect(masterGain);
+    src.start(now);
+    src.stop(now + 0.52);
+    src.onended = () => { ng.disconnect(); filter.disconnect(); };
+  }
+
+  /**
+   * CANHÃO AUTOMÁTICO — uma pancada seca de aço, cinco por segundo: um tom de triângulo curto (230→95 Hz) com um estalo de ruído médio, e o
+   * tilintar do estojo vazio caindo logo depois.
+   */
+  playAutocannonShot(): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(230, now);
+    osc.frequency.exponentialRampToValueAtTime(95, now + 0.07);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    osc.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.1);
+    osc.onended = () => gain.disconnect();
+
+    if (this.noiseBuffer) {
+      const src = ctx.createBufferSource();
+      src.buffer = this.noiseBuffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1700;
+      filter.Q.value = 0.9;
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.32, now);
+      ng.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      src.connect(filter);
+      filter.connect(ng);
+      ng.connect(masterGain);
+      src.start(now);
+      src.stop(now + 0.07);
+      src.onended = () => { ng.disconnect(); filter.disconnect(); };
+    }
+
+    // O estojo vazio tilinta no chão um instante depois.
+    const tink = ctx.createOscillator();
+    tink.type = 'sine';
+    tink.frequency.setValueAtTime(3300, now + 0.13);
+    const tg = ctx.createGain();
+    tg.gain.setValueAtTime(0.0001, now);
+    tg.gain.setValueAtTime(0.06, now + 0.13);
+    tg.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+    tink.connect(tg);
+    tg.connect(masterGain);
+    tink.start(now + 0.13);
+    tink.stop(now + 0.19);
+    tink.onended = () => tg.disconnect();
+  }
+
+  /**
    * ENTRADA EM ESTADO — um som característico por efeito:
    * chama, faíscas, zumbido seco (atordoado), estalo de gelo, trinco (congelado).
    */
