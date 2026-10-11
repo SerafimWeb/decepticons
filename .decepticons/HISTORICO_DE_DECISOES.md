@@ -1,3 +1,24 @@
+## [2026-10-11] Inteligência dos bots: rádio, caça, leitura de mira, cerco e revide, com percepção honesta (Claude, P74)
+
+**Ordem do Comandante:** "prossiga com a melhoria da inteligência dos bots".
+
+**Diagnóstico:** cada bot lutava sozinho. Não avisava os outros, ia até o último ponto em que viu o jogador e desistia, não lia para
+onde o jogador mirava, e quem esperava a vaga de ataque ficava na mesma linha de quem atacava.
+
+**Decisões:** (1) **Percepção honesta:** o bot só sabe o que um piloto saberia: linha de visão em amostras de 10 Hz (a memória de
+onde o alvo estava e para onde ia vem só da amostra que viu, nunca da posição real), a orientação do torso do adversário (está à vista)
+e o rádio dos companheiros. Isso mantém o jogo justo e é a condição para o que se aprende aqui servir a robôs (P71, `DADOS_E_ROBOTICA.md`).
+(2) **Rádio do clã** dentro do `BotSystem` (um time = um canal; alcance 80 m; aviso a cada 1,5 s por bot; o primeiro contato vira linha
+no feed, no máximo uma a cada 8 s por time). (3) **Cerco relativo à frente do alvo**, não a quem ataca: quem ataca anda de lado em volta
+do alvo e arrastava o flanco junto (medido: o flanco ficava a 23° dele). (4) **Leitura da mira entra na dificuldade** (`readAim`,
+`jukeDash`): fácil 0, normal 0,6/0,25, difícil 1/0,6; o Colossus (`steady`) não lê nem cerca, para manter a fraqueza prometida na ficha.
+Isso muda o normal aprovado em 24/09; o Comandante julga jogando. (5) **Raio sem acerto = alvo visto:** o raio de visão termina dentro
+da cápsula do alvo; se não bate em nada, nada bloqueia, e o Rapier só deixou o raio passar pela cápsula (acontecia com os dois
+alinhados; a amostra alternava "visto/não visto" e o bot trocava de alvo). (6) **Rota de um ponto só:** o bot fica no ponto, em vez de
+girar em volta dele (achado nos testes, R17). Custo de CPU medido na sala do servidor: sem regressão. (7) R17 no merge: o
+título da entrada do renome (logo abaixo) tinha virado só "; o jogo vai servir de treino..." por uma substituição de texto de outra
+sessão; restaurado. A ordem dos bots é a **P74** (a P72 e a P73 já eram do fogo e do gelo).
+
 ## [2026-10-11] Armas de aço: o canhão pesado e o canhão automático, e o tiro que se vê como metal (Claude)
 
 **Ordem do Comandante (P70):** "quero um canhão grande de um tiro só, e também armas de tiros menores e sequenciais de metal" (porque "todas as armas parecem de luz").
@@ -21,7 +42,7 @@
 **Lição:** um `sed` que troca `damage: N, fireInterval: 0.2, heatPerShot` pegou **o lança-chamas** (mesmo intervalo) junto com o automático; achei no `git diff` e desfiz. Ao calibrar por
 `sed`, ancore no nome da arma, nunca nos números.
 
-; o jogo vai servir de treino para robôs e IAs (Claude)
+## [2026-10-11] "Pedidos do dono" vira ORDENS DO COMANDO; o jogo vai servir de treino para robôs e IAs (Claude)
 
 **Ordem do Comandante (dono):** "esse 'pedidos do dono' achei uma bosta esse termo, deveria ser algo mais militarizado, formato de clãs
 se comunicando". E, sobre a proposta P71: "quero sim que nosso game sirva pra treinamentos de humanoides, IAs, etc."

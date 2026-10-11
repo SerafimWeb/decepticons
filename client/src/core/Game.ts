@@ -866,6 +866,12 @@ export class Game {
       if (!this.online && dead === mech && killer && killer !== mech) this.killCam.start(killer, at);
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
     };
+    // Rádio do clã: o primeiro contato de um bot (inimigo ou aliado) aparece no feed, sem mudar a regra.
+    this.match.onRadio = (from, target) => {
+      if (this.online) return;
+      const name = target === mech ? 'VOCÊ' : this.round.scoreOf(target)?.name ?? 'ALVO';
+      this.killFeed.push(`◈ ${from}: CONTATO`, name, false);
+    };
     // Foguete: o dano em área já foi aplicado pela partida; aqui, fogo, fumaça, tremor e som.
     this.match.onExplosion = (at) => {
       this.particles.burst(at, UP, { count: 70, color: BLAST_COLOR, speed: 18, life: 0.75, size: 2.2, expansion: 0.9, spread: 2.4, gravity: 2 });

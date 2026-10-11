@@ -148,6 +148,11 @@ export class Match {
   onMechHit?: (e: MechHitEvent) => void;
   /** Mech destruído (o placar já contou): explosão, tremor, kill feed. */
   onMechKilled?: (dead: MechBase, at: THREE.Vector3, killer?: MechBase) => void;
+  /**
+   * Rádio do clã (11/10): um bot avistou `target` e avisou os companheiros (primeiro contato, no máximo um aviso a cada
+   * 8 s por time). `allied`: foi um aliado do jogador. Só tela; a regra já aconteceu dentro do `BotSystem`.
+   */
+  onRadio?: (from: string, target: MechBase, allied: boolean) => void;
   /** Foguete explodiu em `at` (o dano já foi aplicado): fogo, fumaça, tremor, som. */
   onExplosion?: (at: THREE.Vector3) => void;
   /** Barricada quebrou (o servidor manda `PROP_BROKEN` com o `id`; o cliente aplica a mesma no visual). */
@@ -237,6 +242,8 @@ export class Match {
     // O inimigo caça jogador E aliado; o aliado só caça o inimigo (nunca o próprio jogador).
     this.refreshEnemyTargets();
     if (this.allies) this.allies.targets = this.bots.mechs;
+    this.bots.onRadio = (from, target) => this.onRadio?.(from, target, false);
+    if (this.allies) this.allies.onRadio = (from, target) => this.onRadio?.(from, target, true);
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
     if (this.allies) for (const b of this.allies.mechs) this.round.register(b, this.allies.nameOf(b));
     this.waves = survival
