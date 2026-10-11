@@ -1,3 +1,18 @@
+## [2026-10-11] Escopo do dado (só as nossas IAs) e vozes por ElevenLabs (Qwen, P75)
+
+**Decisão do Comandante:** "nao vamos armazenar nem capturar nenhum dado que possa dar problema lgpd. queremos treinar
+apenas as nossas IAS."; e "eu tenho creditos no elevenlabs pra usar nas vozes se for o caso".
+**Decisões (Qwen, aplicadas ao plano `PILOTOS_LLM_E_INTELIGENCIA.md`):**
+- **Só as nossas IAs:** o gravador de voo e o treino capturam **apenas os bots**; o conjunto de treino sai de `bot × bot`.
+  Nenhum dado de jogador. Isso **remove o portão de consentimento/LGPD da etapa D0** do P71 (não há dado pessoal a
+  consentir). Atualizados `PILOTOS_LLM_E_INTELIGENCIA.md` (§5, §6, §7, §9, §10) e `DADOS_E_ROBOTICA.md` (nota no topo, §1,
+  a linha da D0 e §7).
+- **Vozes por ElevenLabs:** o rádio (papel B) passa a ter **texto por LLM e voz por ElevenLabs** (créditos do Comandante),
+  com as falas repetidas **pré-geradas e cacheadas** e cada IA com a sua voz. O áudio é gerado **no servidor**, nunca no
+  cliente (R2). Em `PILOTOS_LLM_E_INTELIGENCIA.md` §3-B e §10 (decisão 6).
+**Custo de CPU:** zero no tick (documento).
+**Quem decidiu:** Comandante (11/10); Qwen (aplicou ao plano e aos documentos companheiros).
+
 ## [2026-10-11] Pilotos por LLM e a inteligência dos bots como ativo — plano (Qwen, ordem P75)
 
 **Ordem do Comandante:** "tornar nossas IAs mais inteligentes, para poder plugar uma API de LLMs diferentes como pilotos

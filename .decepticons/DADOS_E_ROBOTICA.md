@@ -6,11 +6,16 @@
 > **Estado: direção aprovada pelo Comandante em 11/10** ("quero sim que nosso game sirva pra treinamentos de humanoides, IAs, etc.").
 > Nada construído ainda; a etapa D0 (seção 6) é a próxima. O "JEV" ele vai mandar.
 
+> **Decisão do Comandante (11/10) que estreita o escopo deste plano:** só as **nossas IAs**. Nada de armazenar ou capturar
+> dado de jogador que possa gerar problema de **LGPD**; o gravador e o treino usam **apenas os bots**. Com isso o portão de
+> consentimento da **D0** deixa de existir (não há dado pessoal). Detalhe no companheiro `PILOTOS_LLM_E_INTELIGENCIA.md` (P75), §5.
+
 ## 1. O diagnóstico, sem enfeite
 
 - **Os bots de hoje não aprendem.** `BotController` é uma máquina de estados (patrulha, caça, ataque, recuo, resfriar, espreita)
   com números calibrados à mão (`BOT_SKILLS`). Não há aprendizado deles para extrair. **O valor está no que os humanos fazem**
-  contra eles e entre si.
+  contra eles e entre si. **Atualização (Comandante, 11/10):** o dado que vamos usar é **só o dos bots** (bot × bot), sem
+  capturar o lado humano — ver a decisão no topo e `PILOTOS_LLM_E_INTELIGENCIA.md` §5.
 - **O corpo não transfere.** O Mech é um controlador de personagem (cápsula do Rapier) com animação desenhada por cima. Um humanoide
   real se equilibra com torque em dezenas de juntas, contato, atrito e atraso de motor. Andar, equilibrar e pegar objetos se treinam
   em simulador de física articulada (Isaac Lab, MuJoCo) e com teleoperação, e quem faz isso é o fabricante. Dado do jogo não ajuda aí.
@@ -45,7 +50,7 @@ para os de robótica (observação, ação, recompensa, fim de episódio).
 
 ## 4. Os modelos, em ordem de realismo
 
-1. **Bot fantasma (clonagem de comportamento):** bots que jogam como os melhores humanos. Treino fora do servidor; no servidor, uma rede
+1. **Bot fantasma (clonagem de comportamento):** bots que jogam como os nossos melhores bots (bot × bot). Treino fora do servidor; no servidor, uma rede
    pequena a 10 Hz por bot custa microssegundos. Primeiro produto, e prova o pipeline sem robô nenhum.
 2. **Modelo de mundo:** prevê o próximo estado dado a ação, e deixa o bot "imaginar" antes de agir. É aqui que entra o JEPA (seção 5).
 3. **Política tática hierárquica:** alto nível (decidir) aprendido no jogo; baixo nível (andar) do fabricante do robô.
@@ -62,7 +67,7 @@ mandar o link do que ouviu, esta seção é corrigida.
 
 | Etapa | O que | Gatilho |
 |---|---|---|
-| D0 | Termos de uso e consentimento (LGPD; menores de idade pedem cuidado a mais: ECA Digital, 2025); gravador de voo no servidor | O dono aprovar |
+| D0 | Gravador de voo no servidor, **só das nossas IAs** (os bots) — sem dado de jogador, então **sem portão de consentimento/LGPD** (decisão do Comandante, 11/10) | O dono aprovar |
 | D1 | Bot fantasma treinado com partidas reais | Milhares de horas de partida gravadas (estimativa) |
 | D2 | Arena aberta para cérebros de fora: um agente externo joga pelo mesmo protocolo de comando, com ranking | D1 provar o pipeline |
 | D3 | Robô real: gêmeo digital do ambiente (escaneado) vira mapa; política de alto nível do jogo + locomoção do fabricante; teleoperação pelo jogo | O dono ter o robô |
@@ -72,5 +77,6 @@ mandar o link do que ouviu, esta seção é corrigida.
 - **Nada de comportamento de tiro num robô físico que decide sozinho usar força.** Isso é arma, é produto controlado e é a linha
   vermelha do debate sobre autonomia letal. Defesa, aqui, quer dizer: simulação e treino de operadores, apoio à decisão, adversário
   imprevisível para testar autonomia, reconhecimento, desarme de explosivos, logística. Humano no comando.
-- **Nada de dado de jogador sem consentimento,** nem vendido com identificação.
+- **Nada de dado de jogador** (decisão do Comandante, 11/10): o gravador e o treino usam **só as nossas IAs**; nenhum dado
+  pessoal é capturado nem vendido.
 - **Trapaça envenena o dado:** partida com mira automática ou exploração de falha sai do conjunto.
