@@ -696,6 +696,10 @@ export class Game {
     this.input.rawInput = s.rawInput;
     this.rig.invertY = s.invertY;
     this.rig.fovOffset = s.fovOffset;
+    const mira = document.getElementById('crosshair');
+    mira?.style.setProperty('--reticle-scale', String(s.reticleSize));
+    mira?.style.setProperty('--reticle-opacity', String(s.reticleOpacity));
+    this.bloomPass.strength = s.glow;
     this.player.keys = s.keys;
     this.bots.setSkill(BOT_SKILLS[s.difficulty]);
     this.bots.setPersonas(s.enemyPersonas);

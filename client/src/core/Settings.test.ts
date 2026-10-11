@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   BASE_SENSITIVITY,
@@ -174,5 +175,34 @@ describe('nomes na tela (06/10: "quero poder mudar o nome dos inimigos, npcs, et
     st.update({ names: { ...st.value.names, technicians: ['DOUTOR'] } });
     expect(new Settings(storage).value.names.technicians).toEqual(['DOUTOR']);
     expect(new Settings(storage).value.names.mechs).toEqual(['CLAWD', 'GEMINAI', 'CHAD-GPT']);
+  });
+});
+
+describe('mira e brilho (dono, 11/10: "a mira está grossa e os tiros geram muita luz")', () => {
+  it('o padrão é discreto: mira menor que o desenho original, translúcida, e bloom abaixo dos 0,85 de antes', () => {
+    expect(DEFAULT_SETTINGS.reticleSize).toBeLessThan(1);
+    expect(DEFAULT_SETTINGS.reticleOpacity).toBeLessThan(1);
+    expect(DEFAULT_SETTINGS.glow).toBeLessThan(0.85);
+  });
+
+  it('valor fora do limite ou do tipo errado vira o limite ou o padrão, campo a campo', () => {
+    const s = new Settings(memoryStorage('{"reticleSize": 9, "reticleOpacity": 0, "glow": "x"}'));
+    expect(s.value.reticleSize).toBe(LIMITS.reticleSize.max);
+    expect(s.value.reticleOpacity).toBe(LIMITS.reticleOpacity.min); // a mira nunca some de vez
+    expect(s.value.glow).toBe(DEFAULT_SETTINGS.glow);
+  });
+
+  it('o jogador consegue ficar com a mira mínima e o brilho mínimo, e isso é salvo', () => {
+    const storage = memoryStorage();
+    const st = new Settings(storage);
+    st.update({ reticleSize: LIMITS.reticleSize.min, reticleOpacity: LIMITS.reticleOpacity.min, glow: LIMITS.glow.min });
+    const volta = new Settings(storage).value;
+    expect([volta.reticleSize, volta.reticleOpacity, volta.glow]).toEqual([LIMITS.reticleSize.min, LIMITS.reticleOpacity.min, LIMITS.glow.min]);
+  });
+
+  it('o CSS nasce com os mesmos números do padrão (antes de as configurações chegarem, a mira já é a discreta)', () => {
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+    expect(css).toContain(`--reticle-scale: ${DEFAULT_SETTINGS.reticleSize};`);
+    expect(css).toContain(`--reticle-opacity: ${DEFAULT_SETTINGS.reticleOpacity};`);
   });
 });

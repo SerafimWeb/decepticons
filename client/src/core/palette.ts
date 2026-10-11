@@ -56,15 +56,16 @@ export const CITY_NEON: readonly number[] = [PALETTE.cyan, PALETTE.pink, PALETTE
  * inimigo, para o jogador distinguir de onde vem cada tiro.
  */
 export const GLOW = {
-  friendlyPlasma: new THREE.Color(0.9, 4.0, 1.5),
+  // Os tiros do jogador acendem menos que os do inimigo (que são o aviso): o dono achava que a luz do próprio tiro atrapalhava a visão (11/10).
+  friendlyPlasma: new THREE.Color(0.6, 2.6, 1.0),
   hostilePlasma: new THREE.Color(4.0, 0.4, 0.4),
-  friendlyArc: new THREE.Color(1.2, 3.2, 4.0),
+  friendlyArc: new THREE.Color(0.8, 2.1, 2.6),
   hostileArc: new THREE.Color(3.6, 0.8, 4.0),
-  friendlyIce: new THREE.Color(2.6, 3.9, 4.2),
+  friendlyIce: new THREE.Color(1.7, 2.5, 2.7),
   hostileIce: new THREE.Color(3.4, 2.6, 4.2),
-  spark: new THREE.Color(1.4, 3.2, 1.6),
+  spark: new THREE.Color(1.0, 2.3, 1.2),
   core: new THREE.Color(2.8, 3.2, 2.8),
-  playerMuzzle: new THREE.Color(1.2, 3.4, 1.6),
+  playerMuzzle: new THREE.Color(0.9, 2.4, 1.2),
   enemyMuzzle: new THREE.Color(3.4, 0.5, 0.45),
   dust: new THREE.Color(0.42, 0.44, 0.43),
   smoke: new THREE.Color(0.32, 0.34, 0.34),
