@@ -9,7 +9,7 @@ import { weapon, type Loadout, type WeaponStats } from './weapons';
 interface Shot {
   /** Segundo do tick em que saiu. */
   t: number;
-  kind: 'bolt' | 'rocket' | 'cut' | 'flame';
+  kind: 'bolt' | 'rocket' | 'cut' | 'flame' | 'wave';
   mount?: MountId;
   w: WeaponStats;
   volley?: number;
@@ -26,6 +26,7 @@ function bench(loadout: Loadout, triggers: TriggerLayout = DEFAULT_TRIGGERS) {
     rocket: (mount, w, volley) => shots.push({ t, kind: 'rocket', mount, w, volley }),
     melee: (w) => shots.push({ t, kind: 'cut', w }),
     flame: (mount, w) => shots.push({ t, kind: 'flame', mount, w }),
+    wave: (mount, w) => shots.push({ t, kind: 'wave', mount, w }),
   };
   /** Segura os botões por `seconds` (em ticks de 60 Hz). */
   const hold = (seconds: number, fire: boolean, secondary = false): void => {

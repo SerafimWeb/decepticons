@@ -34,6 +34,66 @@ e no `Quality` adaptativo (que mede o quadro) e o smoke confere os draws, então
 **Codex:** o console é opaco; se for mexer no `frame()` para estrangular o desenho com o console à vista, o `DebugPanel` e o smoke dependem dos `draws`.
 
 **Próxima sessão começa com:** o playtest do Comandante no site (GPU real) e as respostas: **os lugares das missões**, o que entra no monitor COMANDO primeiro. Depois, uma tarefa por PR: `claude/bot-spec` (etapas A e B do `PAINEL_ADMIN.md`: a ficha de cada bot) ou `claude/observar-sala` (contrato das câmeras ao vivo), na ordem que o Comandante escolher.
+## Classes de arma (leve, média, pesada) e tamanho de robô — Claude, 11/10 (PR `claude/classes-de-arma`, ordem P82)
+
+**Ordem do Comandante (P82):** "organizar melhor nosso arsenal: as armas devem ter 3 tamanhos (leve, média, pesada); robôs gigantes usam armas pesadas como leves (pra eles), mas é a arma pesada normal dos outros robôs (tamanho 2, padrão do jogo); futuramente, versões das armas para o tamanho 3 e 4".
+
+- **Cada arma tem classe e tamanho** (`combat/weaponClass.ts`, tabela `WEAPON_FIT`, um `Record`: arma nova que não declara não compila). **Leves:** blaster, motosserra, escopeta, arco, EMP. **Médias:** plasma, gelo, sônico, automático, rotatória, foguetes. **Pesadas:** canhão pesado, lança-chamas, trilho, chuva de mísseis. Todas do **tamanho 2**.
+- **Cada chassi tem tamanho** (`CHASSIS_SIZE`): andróide 1, **Mechs 2**, Colossus 3. A **Arara-B1 era chamada de "escala 1"** no Hangar, no `HANGAR.md` e no `UNIVERSO.md` (que é o andróide): corrigida para tamanho 2.
+- **A regra, uma conta (`classFor`):** cada passo de tamanho sobe duas classes, então **a pesada do tamanho N é a leve do N+1**. Para o Colossus, canhão pesado, lança-chamas, trilho e chuva de mísseis são **leves**; plasma, foguetes, automático e rotatória são pequenos demais para ele.
+- **O Hangar agrupa por classe** (LEVES / MÉDIAS / PESADAS, pela classe que o chassi enxerga; o andróide fica numa lista só). **O Colossus passou a oferecer só as pesadas dos Mechs** (`ARM_SLOTS` filtrado por `fitsSize`), com a nota "tamanho 3: o que é pesado nos Mechs comuns é leve para ele". **Os Mechs não perderam nada.**
+- **O Colossus do jogador sai com canhão pesado + chuva de mísseis** (`COLOSSUS_PLAYER_STATS`). **O chefe da missão não mudou** (plasma e foguetes): trocar a arma do encontro mexe no equilíbrio, fica como decisão do Comandante (`ROADMAP.md`).
+- **Montagens antigas do Colossus** (link `?build=` ou salva) com arma média ou leve passam a ser recusadas; o servidor cai na de fábrica. Sem mudança de protocolo (`PROTOCOL_VERSION` continua 15).
+- **Site:** a ficha de cada arma na landing diz a classe, e a "casa" de uma arma é o chassi de menor tamanho que a aceita (o canhão pesado e o lança-chamas moram na Onça, não no Colossus). Isto também corrigiu um erro de build que o canhão sônico (só de ombro) causava no gerador da landing.
+- **Custo de CPU:** nenhum no jogo (uma tabela e uma conta de índice, usadas só ao montar o Hangar e validar a montagem).
+- **Testes:** `combat/weaponClass.test.ts` (20: tabela, regra nos tamanhos 1 a 4, tamanho de cada chassi, todo encaixe cabe no tamanho do chassi, Colossus, agrupamento do Hangar), seis testes do Hangar atualizados para o novo contrato do Colossus; **23 mutações, todas pegas**.
+- **Como ver:** Hangar → Vector-09 (três grupos) e → Colossus-01 (só LEVES, a nota do tamanho 3). Capturas: `arte/classes-de-arma-vector-claude.png` e `arte/classes-de-arma-colossus-claude.png` (a lista aberta à força para a foto; no jogo é o menu de sempre).
+
+**A classificação é a proposta do Claude** (leve até ~2,5 t, média de 3 a 4 t, pesada o que já era só dos pesados mais trilho e chuva): **o Comandante ajusta mudando uma linha** de `WEAPON_FIT`. **Falta:** as versões de tamanho 3 e 4 (futuro, do Comandante), o armamento do chefe, e o gigante hoje só tem as 4 pesadas (sem leve de verdade).
+
+## Canhão sônico de ombro e o empurrão no corpo — Claude, 11/10 (PR `claude/armas-de-ombro`, protocolo 15, ordem P77)
+
+**Ordem do Comandante (P77):** "melhor aproveitamento dos slots nos ombros; a maioria das armas é para as mãos; pensar as armas pro botão 2, nos ombros, costas, peitoral; variar as armas e tecnologias; as armas de som combinam nos ombros".
+
+- **Canhão sônico (`sonic`):** a 1ª arma **só de ombro** (só o Marauder tem ombros hoje). No botão 2 as **duas bocas** disparam juntas um **pulso em cone de 52°**, de uma vez só, em todos os inimigos à vista:
+  **20 de dano por boca** (cheio até 10 m, 35% aos 22 m), um aperto a cada 1,2 s (40 por aperto), 0,12 de calor por boca, 3 t por boca (6 t no MK I). Natureza `sonico` (a chapa **Amortecedor segura 90%**, a muralha deixa passar).
+  **Sobe de nível ganhando alcance** (22 / 27,5 / 33 m; campo `tierRange` que o lança-chamas já usava) e dano (20 / 24 / 28). Não derruba sozinha (as duas bocas levam ~9 s num torso): o ponto dela é **tirar o inimigo do lugar**.
+- **O empurrão no corpo (`MechBase.push`):** velocidade externa horizontal (`shove`) que **decai sozinha** (e^-3,5: meio segundo depois sobram 17%), **soma ao movimento sem passar pela aceleração** (o piloto não a cancela freando, anda por cima),
+  tem **teto de 12 m/s** (dois empurrões não viram arremesso), **o robô grande empurra menos** (resistência = 1,3 m ÷ raio, de 25% a 100%: o Colossus sai ~36%, o andróide voa), respeita parede e zera ao renascer. **É a base da reação do inimigo ao tiro (P69).**
+- **A regra** (`Match.waveCone`): o cone (o mesmo teste do lança-chamas, agora `coneGap`) mira o **eixo do corpo** (a pressão bate no corpo todo; o torso de um robô alto ficava fora do cone vertical), exige **linha de visão**, poupa **quem atira e os aliados**, empurra **radialmente** a partir da boca e o empurrão cai com a distância junto com o dano. O cliente online só desenha.
+- **Se vê e se ouve:** **arcos de onda lilás e um anel** (`fx/WaveVisuals.ts`, 10 partículas por boca), um estrondo grave de pressão (`playSonicShot`), mira e ícone novos, modelo 3D no ombro (funil de anéis de ressonância). Captura: `arte/canhao-sonico-claude.png`.
+- **Rede: `PROTOCOL_VERSION` 15.** A onda é um evento de tiro por boca (com o encaixe do ombro, protocolo 14); `NET_WEAPONS` ganha `sonic` no fim. O atualizador reinicia o servidor sozinho; conferir `/status` com `"protocol":15`.
+- **Custo de CPU:** a onda é um laço pelos Mechs da partida **uma vez por aperto** (e por boca), sem alocação; o empurrão custa duas multiplicações por Mech por tick; o desenho, 20 partículas por aperto. Nada no servidor além do laço.
+- **Testes:** `combat/sonic.test.ts` (39: dado, equilíbrio, regra de tiro, cone com física de verdade, empurrão no corpo, desenho), Hangar (3), servidor real (2) e ponta a ponta (1); **32 mutações, todas pegas** (duas escaparam na 1ª rodada: o dono no próprio cone e o empurrão no eixo X; ganharam teste).
+
+**O mapa do resto da ordem P77 está em `.decepticons/ARMAS_DE_BOTAO_2.md`** (11 ideias com o custo de cada uma: míssil teleguiado, arpão, drone, minas, propulsor, feixe térmico, reparo, fumaça, marcador...). **Falta:** ombros para mais robôs (só o Marauder tem), encaixes de costas e de peito
+(não existem), e o empurrão ainda não é a reação a tiros comuns. **O Comandante escolhe a ordem.**
+
+## Gelo amigo: o gelo de um aliado esfria o aliado — Claude, 11/10 (PR `claude/gelo-amigo`, ordem P78)
+
+**Ordem do Comandante (P78):** "posso mandar meu amigo que tenha a tecnologia do anel de fogo, e eu congelo ele pra ele ficar rushando com os inimigos e soltando o anel enquanto eu mando gelo nele pra compensar".
+
+- **O que faz:** o tiro de gelo num **aliado** não congela nem machuca: **esfria** (tira `STATUS.friendlyVentPerDamage` = 0,02 de calor por ponto de dano: 0,10 por tiro no MK I, 0,12 no MK II, 0,14 no MK III) e **apaga o fogo**. Um gelo por segundo (0,17 de resfriamento) compensa o anel de fogo (0,16 de aquecimento);
+  dois amigos mandando gelo vão além; na zona de resfriamento (0,35 por segundo) o amigo fica "macetando" com o anel sem ferver. O gelo no inimigo segue igual (dano, gelado, congela).
+- **Regra de mesmo lado:** `Match.sameSide(a, b)`, na ordem: (1) **times da sala** (`Match.setTeam`), (2) times do **CTF**, (3) na **Arena offline**, o jogador e os aliados dele. **Dois humanos na mesma partida sem time NUNCA são aliados** (o servidor de hoje é todos contra todos).
+  O `CombatSystem` recebe a regra por `sameSide` e só o gelo a lê: o fogo amigo das outras armas continua como era (não mexi).
+- **Custo de CPU:** nenhum a mais por tick; um teste de lado só quando um tiro de gelo acerta um Mech (≤ 1,7 por segundo por atirador), mais um sopro de 5 partículas no aliado esfriado.
+- **Rede:** nenhuma mudança (o protocolo segue 14; o calor já viajava).
+- **Testes:** 20 em `combat/friendlyIce.test.ts` (regra de lado: offline, dois humanos, times, CTF; o gelo: calor, fogo, sem dano, sem congelar, por nível, morto, cliente online; o combo do anel com o gelo do amigo); mutações no PR.
+
+**O que ainda falta para o SEU caso (você e um amigo humano, online):** o servidor é **todos contra todos**, então hoje o gelo do seu amigo o congela e machuca. Falta **time na sala** (P81, registrada, aguardando ordem): time no JOIN e no roster, escolha de time, HUD e fogo amigo. O gancho (`setTeam`) está pronto.
+
+**Próximas:** P77 (armas do botão 2 nos ombros, costas e peito; as sônicas nos ombros) em `claude/armas-de-ombro`.
+
+## O jogo passa a se chamar AVARIA na capa — Claude, 11/10 (PR `claude/nome-avaria`, ordem P79)
+
+**Ordem do Comandante (P79):** "onde estiver SINGULARIA, pode mudar para AVARIA, que é o nome que vamos usar por enquanto. Avaria tem mais a ver e nome mais bacana de ler. Singularia não ficou bom!"
+
+- **Mudou:** o título da capa (`<h1>` do `#overlay` em `client/index.html`): **AVARIA**. Era o único lugar do código com o nome (conferido por busca em `.ts`, `.mjs`, `.html`, `.css`, `.md`).
+  O resto segue **CYBERMECH** (aba do navegador, carregamento, Hangar, linha de versão, site, URLs, chaves do `localStorage`, pasta de documentos), como na decisão de 07/10: o nome é um teste de capa.
+- **Não mudou, de propósito:** as entradas antigas do `HISTORICO_DE_DECISOES.md` (07/10) e os nomes das capturas `arte/capa-singularia-*` (são história).
+- **Custo de CPU:** nenhum. **Captura:** `arte/capa-avaria-claude.png`.
+- **Do Comandante, fora do código:** a busca de marca (INPI, Steam, itch, lojas) e o domínio valem de novo para **AVARIA**: o nome é uma palavra comum do português ("dano", "falha"), então a busca de marca e o domínio mais provavelmente já têm dono; vale conferir antes de gastar com ele.
 
 ## Lança-chamas que sobe de nível e o tiro certo do Marauder — Claude, 11/10 (PR `claude/fogo-longo-e-maos`, protocolo 14)
 
@@ -895,7 +955,7 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 |---|---|
 | **O PC de casa sem memória hospeda o servidor de jogo (09/10, medido)** | A máquina tem 6 GB e vive com 300–500 MB livres (navegadores, ChatGPT, Antigravity, Defender, três agentes de código); o servidor chegou a 9 MB residentes e uma entrada demorou **59 s** (12 s minutos depois; 1,4 s quando a máquina estava calma). O SSD é um SATA de entrada que desacelera sob paginação. Um jogador de verdade desistiria. **Decidir:** (a) tirar o servidor desta máquina (VPS pequena; o código e o túnel já estão prontos, `DEPLOY.md`); (b) manter aqui e dar folga (mais RAM, ou fechar o ChatGPT e abas do navegador enquanto o servidor estiver aberto ao público); (c) manter como está só para testes do dono. Enquanto isso o servidor só serve para teste com poucos amigos. |
 | **Armas elementais (pedido do dono, 09/10)** | Metralhadora rotatória, elétrica (choque, lentidão, atordoamento no tiro bem dado), lança-chamas e gelo. Plano, números de partida, custo de rede e divisão de trabalho em `ARMAS_ELEMENTAIS.md`; **o dono respondeu em 09/10** ("tiro bem dado" = cabeça ou 3 acertos seguidos em 1,4 s; atordoamento de 0,8 s com imunidade de 4 s; fogo e gelo se anulam; Mech grande resiste): sim a todas. **Só fogo no cenário segue sem resposta** (padrão: não; a porta fica aberta). Ordem: contrato dos efeitos de estado (#199, feito) → rotatória (#200, feito) → **elétrica (PR-C, feito)** → lança-chamas → gelo; tela e som com o Gemini em paralelo (o dono cola o pedido da seção 7 no chat dele). Codex só depois, para os efeitos 3D (hoje na auditoria de desempenho). |
-| **Nome do jogo: SINGULARIA (07/10)** | Em teste **só no título da capa** do jogo, a pedido do dono. O resto segue CYBERMECH (aba do navegador, carregamento, Hangar, linha de versão, site, URLs, chaves do `localStorage`, nome da pasta de documentos). **O dono decide** se gosta; se sim, a troca geral vira um passo à parte (com migração do `localStorage` e redirecionamento das URLs). **Do dono, fora do código:** busca de marca no INPI (classes 9 e 41), busca em Steam/itch/lojas e compra do domínio. Detalhe em `HISTORICO_DE_DECISOES.md`, 07/10. |
+| **Nome do jogo: AVARIA (11/10; era SINGULARIA desde 07/10)** | Em teste **só no título da capa** do jogo, a pedido do Comandante ("Singularia não ficou bom; Avaria tem mais a ver e é mais bacana de ler"). O resto segue CYBERMECH (aba do navegador, carregamento, Hangar, linha de versão, site, URLs, chaves do `localStorage`, nome da pasta de documentos). **O dono decide** se gosta; se sim, a troca geral vira um passo à parte (com migração do `localStorage` e redirecionamento das URLs). **Do dono, fora do código:** busca de marca no INPI (classes 9 e 41), busca em Steam/itch/lojas e compra do domínio. Detalhe em `HISTORICO_DE_DECISOES.md`, 07/10. |
 | Drones e torres na partida | A banda aperta antes do formato: a sala cheia de hoje (12 robôs) já usa 6,2 KB/s dos 8,0 KB/s disponíveis por jogador. **Decidir:** drone por jogador (não cabe hoje), um drone por esquadrão, ou habilidade com recarga; e se vale o pacote que barateia (registro curto de unidade leve + estado a 5 Hz + **trilha pré-calculada**, com a conta no `METAGAME.md`, § 8.1). **Zonas de cura/resfriamento já implementadas** (Claude, 27/09, `combat/Zone.ts`): custam 0 B, valem também no online. Torres seguem pendentes: precisam de vida/calor num estado curto e disparo por evento (§ 9). |
 | Hospedagem do servidor | Dono (26/09): começar com o PC de casa 24 h. Falta decidir o **domínio do endereço fixo**: um domínio só do jogo na Cloudflare (recomendado, ~R$ 40/ano) ou levar o DNS do `selvamkt.com.br` para a Cloudflare (grátis, mas mexe no site da Selva MKT). Oracle ou VPS depois, com o mesmo código. Seguem abertas: mira assistida no PvP e bots nas salas (`MULTIPLAYER.md`, seção 10). |
 | Mira assistida no multiplayer | Hoje é só do toque e só contra bots. Com gente de verdade, toque x mouse na mesma sala precisa de regra: manter (padrão dos jogos de tiro no celular), reduzir contra humanos ou separar salas por tipo de controle. Decidir na Fase 4. |

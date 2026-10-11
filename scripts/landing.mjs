@@ -393,7 +393,7 @@ function wpnCard(w, i) {
       ? `dano cheio até ${w.optimal} m, cai até ${pct(w.minFactor)} a ${w.max} m, onde o projétil se desfaz · ${w.speed} m/s`
       : `${w.magazine} no carregador · explosão de ${num(w.blast)} m, o dano cai até zero na borda · ${w.speed} m/s: de longe, dá para desviar`;
   return `<article class="wpn frame">
-        <header class="wpn-bar"><span class="wpn-id">WPN-0${i + 1}</span><h3>${upper(w.name)}</h3><span class="wpn-kind">${w.kind === 'energy' ? 'energia' : 'munição'} · ${esc(w.slot)}</span></header>
+        <header class="wpn-bar"><span class="wpn-id">WPN-0${i + 1}</span><h3>${upper(w.name)}</h3><span class="wpn-kind">${w.kind === 'energy' ? 'energia' : 'munição'} · ${esc(w.class)} · ${esc(w.slot)}</span></header>
         <div class="wpn-scroll"><table class="wpn-table">
           <thead><tr><th scope="col"><span class="sr">atributo</span></th>${w.tiers.map((t, k) => `<th scope="col">${t.label}${k === 0 ? '<small>no jogo</small>' : ''}</th>`).join('')}</tr></thead>
           <tbody>${wpnRows(w)

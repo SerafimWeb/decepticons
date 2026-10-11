@@ -742,9 +742,9 @@ describe('Armas de aço online: o tiro de cada uma vira evento de tiro e o dano 
     room.dispose();
   });
 
-  it('o catálogo de tiros da rede termina nas duas armas novas (só se acrescenta no fim) e o protocolo é o 12 ou mais', () => {
+  it('o catálogo de tiros da rede só se acrescenta no fim (canhão, automático e sônico seguem a ordem) e o protocolo é o 12 ou mais', () => {
     expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(12);
-    expect(NET_WEAPONS.slice(-2)).toEqual(['cannon', 'autocannon']);
+    expect(NET_WEAPONS.slice(-3)).toEqual(['cannon', 'autocannon', 'sonic']);
     expect(NET_WEAPONS.slice(0, 10)).toEqual(['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage', 'railgun', 'emp', 'arc', 'cryo']);
   });
 });
@@ -808,6 +808,45 @@ describe('Anel de fogo online: o servidor aplica o anel, o calor vai para todos 
     const ruim = new FakePeer();
     room.receive(ruim, join('Bia', 'v2.android.blaster-0.chainsaw-0.-.fire')); // o Andróide não tem encaixe de gerador
     expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
+    room.dispose();
+  });
+});
+
+describe('Canhão sônico online: uma onda de cada ombro, com o encaixe no evento, o dano das duas e o empurrão', () => {
+  const SONICO = 'v1.marauder.blaster-0.blaster-0.sonic-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem; o botão 2 solta duas ondas (evento de tiro do sônico, encaixes 2 e 3), o alvo a 15 m leva o dano das duas bocas e é empurrado para longe', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(SONICO);
+    expect(mine.mech.loadout.secondary?.id).toBe('sonic');
+    const antes = lifeOf(bot.mech);
+    const z0 = bot.mech.simPosition.z;
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch });
+    drive(room, dan, 2, 40, { yaw, pitch });
+    const tiros = shotMountsOf(dan, me);
+    expect(tiros.map((t) => t.index)).toEqual([netWeaponIndex('sonic'), netWeaponIndex('sonic')]);
+    expect(tiros.map((t) => t.mount).sort()).toEqual([2, 3]); // ombro direito e esquerdo
+    expect(antes - lifeOf(bot.mech)).toBeGreaterThanOrEqual(2 * hitDamage(weapon('sonic'), 15)); // as duas bocas, o alvo a ~13,7 m da boca
+    expect(antes - lifeOf(bot.mech)).toBeLessThanOrEqual(2 * hitDamage(weapon('sonic'), 10));
+    expect(z0 - bot.mech.simPosition.z).toBeGreaterThan(1); // empurrado para longe do atirador (para -Z)
+    expect(mine.mech.shove.length()).toBe(0); // quem atira não se empurra
+    room.dispose();
+  });
+
+  it('o servidor recusa o canhão sônico nas mãos e fora do Marauder (a montagem é validada)', async () => {
+    const room = await ArenaRoom.create('SONICO');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', SONICO));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const naMao = new FakePeer();
+    room.receive(naMao, join('Ana', 'v1.marauder.sonic-0.blaster-0.rockets-0'));
+    expect(naMao.of(MSG.WELCOME)).toHaveLength(0);
+    const vector = new FakePeer();
+    room.receive(vector, join('Bia', 'v1.vector09.plasma-0.sonic-0'));
+    expect(vector.of(MSG.WELCOME)).toHaveLength(0);
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(15);
     room.dispose();
   });
 });

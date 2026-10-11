@@ -232,6 +232,28 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     expect(rotariesOf('isto não é uma montagem')).toEqual([]);
   });
 
+  it('o canhão sônico de um Marauder aparece para o outro: uma onda desenhada de CADA ombro (dois eventos de tiro com o encaixe), só desenho', async () => {
+    const a = await player('Sonico', 'M4W', 'v1.marauder.blaster-0.blaster-0.sonic-0', { primary: weapon('blaster'), offhand: weapon('blaster'), secondary: weapon('sonic') });
+    const b = await player('Observador', 'M4W');
+    try {
+      await join([a, b], 7);
+      const remoto = b.session.remotes.get(a.session.myId)!;
+      const bocas = new Set<string>();
+      b.match.drawWave = (origem, _dir, w) => {
+        if (w.id !== 'sonic') return;
+        for (const m of ['rightShoulder', 'leftShoulder'] as const) if (origem.distanceTo(remoto.mech.simMuzzle(new THREE.Vector3(), m)) < 0.05) bocas.add(m);
+      };
+      a.commander.secondaryHeld = true;
+      const t0 = performance.now();
+      while (bocas.size < 2 && performance.now() - t0 < 12000) await play([a, b], 100);
+      a.commander.secondaryHeld = false;
+      expect([...bocas].sort()).toEqual(['leftShoulder', 'rightShoulder']);
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
   it('um Marauder com duas rotatórias: o outro jogador vê o fluxo sair das DUAS mãos (antes só da direita)', async () => {
     const a = await player('Marauder', 'M4D', 'v1.marauder.rotary-0.rotary-0.-', { primary: weapon('rotary'), offhand: weapon('rotary'), secondary: null });
     const b = await player('Observador', 'M4D');

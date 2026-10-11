@@ -15,6 +15,55 @@ quem vê: "os dois"; "um mapa do mundo, pra mostrar onde são as missões (cená
 - **Não mexi no laço de desenho** (o console é opaco e o jogo ainda desenha a arena por trás): estrangulá-lo mexe no `Quality` adaptativo, que mede o quadro, e o smoke confere os `draws`; fica como tarefa própria no `ROADMAP`.
 **Alternativas descartadas:** usar as imagens do Comandante como fundo (conteúdo parado, 1 a 2 MB, números falsos); um monitor de câmeras com N cenas 3D (G12: GPU integrada; o desenho é mural de radares 2D e uma câmera 3D por vez); um `fetch` que sonda a mesa local (um erro de rede no console reprova o smoke e o `site --check`).
 **Custo de CPU:** zero no laço de 60 Hz; radar a 1 Hz e animações de compositor com o console à vista. **Quem decidiu:** Comandante (o pedido e as respostas); Claude (o desenho e as travas).
+## [2026-10-11] O arsenal ganha classes (leve, média, pesada) e cada robô, um tamanho (P82, Claude)
+
+**Ordem do Comandante:** "organizar melhor nosso arsenal; 3 tamanhos de arma (leve, média, pesada); robôs gigantes usam armas pesadas como leves (pra eles), mas é a arma pesada normal dos outros robôs (tamanho 2, padrão do jogo); futuramente, versões das armas para o tamanho 3 e 4".
+
+**Decisões:**
+1. **Classe e tamanho são dois dados separados.** A classe é o porte da arma e **não é o peso** (o peso sobe com o nível MK: um arco MK III pesa o que um trilho MK I e nem por isso é pesado); o tamanho é o do robô para o qual a arma foi feita (todas, hoje, o 2). Moram numa tabela só (`WEAPON_FIT`), um `Record` como as outras: arma nova que não declara não compila.
+2. **Uma conta só para a regra do Comandante:** cada passo de tamanho sobe duas classes, então **a pesada do tamanho N é a leve do N+1** (`classFor`). Ela vale nos dois sentidos (o andróide vê a leve dos Mechs como a pesada dele) e dá, de graça, o que o Comandante descreveu para o tamanho 4. **Consequência travada por teste:** as versões futuras de tamanho 3 e 4 só precisam ser médias e pesadas, porque a leve do N+1 já existe.
+3. **A classificação de hoje é proposta, não ordem.** Leves (até ~2,5 t): blaster, motosserra, escopeta, arco, EMP. Médias (3 a 4 t): plasma, gelo, sônico, automático, rotatória, foguetes. Pesadas: canhão pesado e lança-chamas (que o Comandante já reservou aos chassis pesados) mais trilho e chuva de mísseis (5 t, as duas mais pesadas depois do canhão). O lança-chamas pesa 3,5 t e é pesado enquanto os foguetes (4 t) são médios: por isso classe ≠ peso. **Mudar uma arma de classe é uma linha.**
+4. **O gigante só carrega o que cabe nele.** O Colossus (tamanho 3) passa a oferecer só as pesadas dos Mechs; o filtro é a mesma conta (`fitsSize`) e um teste confere **todo encaixe de todo chassi** contra o tamanho dele, então um chassi ou arma novos não furam a regra. **Os Mechs (tamanho 2) não perdem nada.** O custo é que montagens antigas do Colossus com arma média são recusadas (o servidor cai na de fábrica).
+5. **O chefe da missão não mudou.** O Colossus do jogador ganhou armamento de fábrica próprio (canhão pesado + chuva de mísseis, `COLOSSUS_PLAYER_STATS`); o chefe segue com plasma e foguetes porque trocar a arma do encontro mexe no equilíbrio dele e ninguém pediu. Registrado como decisão do Comandante.
+6. **A Arara-B1 é tamanho 2.** Três lugares a chamavam de "escala 1" (o Hangar, o `HANGAR.md`, o `UNIVERSO.md`), o que colide com o andróide e com a ordem de hoje; corrigidos. (O `VISAO.md`, que só o Comandante edita, já dizia Mech = 2 e andróide = 1.)
+7. **O Hangar agrupa por classe pela visão do chassi.** No Colossus, as pesadas aparecem como LEVES, com a nota do tamanho 3. O andróide não agrupa (o "pesadas" dele seria o blaster).
+
+## [2026-10-11] O canhão sônico é a primeira arma de ombro, e o corpo ganha empurrão (P77, Claude)
+
+**Ordem do Comandante:** "as armas de som combinam em ficar nos ombros"; "pensar as armas pro botão 2, ombros, costas, peitoral; variar as armas e tecnologias".
+
+**Decisões:**
+1. **Uma arma, para começar, e um mapa para o resto.** "Variar as armas" é uma lista longa; entreguei o **canhão sônico** (a que o Comandante nomeou) e escrevi o **catálogo com o custo de cada ideia** (`ARMAS_DE_BOTAO_2.md`) para ele escolher a ordem, em vez de inventar onze armas de uma vez sem teste.
+2. **A onda é um cone de uma vez só, não um projétil nem um fluxo.** Sem projétil não há o que desviar nem parar no meio; o que a segura é a parede (linha de visão) e a chapa Amortecedor (natureza `sonico`, que já estava pronta e sem arma). Reaproveita o teste de cone do lança-chamas (`coneGap`).
+3. **A onda mira o eixo do corpo, não o torso.** O primeiro teste com o Colossus (raio 3,6, altura 14) mostrou que o torso dele fica 22 m acima do chão e fora do cone vertical: a pressão de uma onda bate no corpo todo, então o ponto do alvo é o do eixo vertical mais perto da altura da boca.
+4. **O empurrão é uma velocidade externa que decai, não um impulso no controlador.** O `MechBase` ganha `shove` (x, z) somado ao movimento **depois** da aceleração do piloto, então o piloto não o cancela freando; decai e^-3,5, tem teto de 12 m/s, e **o robô grande empurra menos** (1,3 m ÷ raio, piso de 25%). Cabe na simulação do servidor e do jogo offline (G1/G14).
+5. **Ombro é só dos ombros.** O canhão sônico não entra em nenhuma mão (o teste varre todos os chassis); no Marauder as duas bocas disparam juntas, como os foguetes. Mais robôs com ombro é um PR por robô (mede as bocas e o desenho).
+6. **Nível = alcance** (+25%), além do dano de sempre: a onda mais longa é o "upar" que o Comandante pediu também para o lança-chamas.
+
+**Limite que fica dito:** online, quem leva o empurrão o vê pela correção suave do servidor (a previsão do cliente não conhece o empurrão), então ele desliza alguns centímetros depois do tiro, não no mesmo quadro.
+
+## [2026-10-11] O gelo de um aliado esfria o aliado, e "mesmo lado" vira regra da partida (P78, Claude)
+
+**Ordem do Comandante:** "meu amigo tem a tecnologia do anel de fogo, eu congelo ele pra ele ficar rushando e soltando o anel enquanto eu mando gelo nele pra compensar (numa área de recuperação rápida de energia, ele fica macetando ali)".
+
+**Decisões:**
+1. **Eu tinha lido o combo ao contrário** (gelo no inimigo dentro do anel). O Comandante quis dizer: o gelo **de um amigo no amigo do anel** compensa o calor que o anel dá nele. O derretimento do inimigo congelado (+40) fica como extra, não é o combo.
+2. **O gelo no aliado esfria em vez de congelar** (calor para baixo, fogo apagado, nenhum dano nem estado). O número sai da conta do próprio anel: 0,02 de calor por ponto de dano dá 0,17 por segundo com a arma de gelo, contra 0,16 do anel: **um gelo compensa um anel, sem sobrar** (dois amigos com gelo ou a zona de resfriamento vão além).
+3. **"Mesmo lado" é uma regra da partida, não do combate** (`Match.sameSide`), e o combate a recebe por um gancho opcional. Sem a regra (o servidor de hoje), nenhum comportamento muda. Ordem: times da sala, times do CTF, aliados da Arena offline. **Dois humanos sem time nunca são aliados**: se fossem, o gelo online esfriaria todo adversário.
+4. **Só o gelo lê o lado.** O fogo amigo das outras armas continua como era (um tiro de plasma do jogador ainda pode acertar um aliado; o lança-chamas e o anel já poupam os aliados). Decidir fogo amigo é parte dos times online (P81), não deste PR.
+5. **O que o Comandante quer (jogar com um amigo online) não funciona hoje** e eu não escondi: o servidor é todos contra todos. Registrei a P81 (times na sala) em vez de fingir que o combo está entregue.
+
+**Lição:** quando uma ordem descreve um combo entre dois jogadores, perguntar (ou conferir) **quem faz o quê com quem** antes de implementar: a mesma frase servia para dois combos opostos.
+
+## [2026-10-11] O nome da capa passa de SINGULARIA a AVARIA (P79, Claude)
+
+**Ordem do Comandante:** "onde estiver SINGULARIA, pode mudar para AVARIA, que é o nome que vamos usar por enquanto. Avaria tem mais a ver e nome mais bacana de ler. Singularia não ficou bom!"
+
+- **Mudou:** só o `<h1>` da capa (`client/index.html`). Era o único uso no código. O escopo continua o da decisão de 07/10: **só o título da capa**; o resto é CYBERMECH até o Comandante decidir a troca geral
+  (que pede migração do `localStorage` e redirecionamento das URLs).
+- **Aviso honesto (não é recusa):** AVARIA é uma palavra comum do português, então a marca é mais difícil de registrar (INPI) e de achar como domínio e nas lojas do que um nome inventado; "avaria" também aparece no
+  jogo como palavra de dano (reparo, estados). Não bloqueia o teste de capa; fica para a busca de marca do Comandante.
+- **Quem decidiu:** o Comandante; Claude executou.
 
 ## [2026-10-11] Escopo do dado (só as nossas IAs) e vozes por ElevenLabs (Qwen, P75)
 

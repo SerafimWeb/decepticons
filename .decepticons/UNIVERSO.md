@@ -174,7 +174,7 @@ alusão fictícia (no mesmo espírito dos consórcios do §3 e dos nomes dos bot
 
 | Escala | Exemplo no jogo | Altura | Papel |
 |---|---|---|---|
-| 1 · leve | **Arara-B1** (novo, 29/09) | 4,5 m | batedor: rápido, frágil, vence pela mobilidade |
+| 2 · leve | **Arara-B1** (novo, 29/09) | 4,5 m | batedor: rápido, frágil, vence pela mobilidade |
 | 2 · médio | Vector-09 (já existia) | 5,3 m | equilíbrio — o "chassi de fábrica" que todo piloto começa usando |
 | 2 · pesado | **Onça-B2** (novo, 29/09) | 6,5 m | resistente e lento, segura posição |
 | 3 · cerco | Colossus-01 (já existia, agora também pilotável) | 14 m | máquina de cerco; hoje solo, o Mech de tripulação é a próxima etapa |

@@ -10,7 +10,7 @@ import { Respawner } from '../combat/Respawner';
 import { DroneSystem } from '../combat/DroneSystem';
 import { FireRing, type RingSides } from '../combat/FireRing';
 import { Round } from '../combat/Round';
-import { hitDamage, type Flame, type WeaponStats } from '../combat/weapons';
+import { hitDamage, rangeFactor, type Flame, type WeaponStats } from '../combat/weapons';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
 import { ZoneSystem } from '../combat/Zone';
 import { PALETTE } from '../core/palette';
@@ -21,6 +21,7 @@ import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
+import { drawWave } from '../fx/WaveVisuals';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
 import {
@@ -124,6 +125,10 @@ export class Match {
   /** Chuva de mísseis (armas com `barrage`): sobe, e as bombas caem em volta da mira. */
   readonly barrage: BarrageSystem;
   readonly combat: CombatSystem;
+  /** As partículas da partida (vazias no servidor): a onda sônica se desenha por aqui. */
+  private readonly fx: ParticleSystem;
+  /** Saiu uma onda sônica (o servidor a transforma em evento de tiro para os outros jogadores desenharem). */
+  onWave?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
   /** O anel de fogo (módulo de escudo `fire`): o que cada pulso faz em volta do dono (`combat/FireRing.ts`). */
   readonly fireRing: FireRing;
   /** Quem o anel de cada lado queima e quem só esquenta; montado uma vez (G4). */
@@ -198,11 +203,13 @@ export class Match {
     this.spawnPoints = bunker ? BUNKER_SPAWNS : SPAWN_POINTS;
     this.zones = bunker ? new ZoneSystem([]) : new ZoneSystem();
     this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : 'arena');
+    this.fx = o.particles;
     this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles);
     this.rockets = new RocketSystem(o.scene, o.physics, o.particles);
     this.barrage = new BarrageSystem(o.scene, o.physics);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.combat.damageEnabled = o.damage !== false;
+    this.combat.sameSide = (a, b) => this.sameSide(a, b);
     this.respawner = new Respawner(this.spawnPoints);
     this.crush = new CrushRule(this.combat);
     // Aliados (30/09, "sozinho tá muito intenso"): só na Arena normal, tiram vaga do pool de Mechs
@@ -371,6 +378,33 @@ export class Match {
     this.refreshEnemyTargets();
   }
 
+  /** O time de cada Mech, quando a sala tem times (`setTeam`); fora dele valem o CTF e os aliados da Arena. */
+  private readonly teams = new Map<MechBase, number>();
+
+  /** Põe `mech` num time (salas com times). Dois Mechs do mesmo time são aliados: o gelo de um esfria o outro. Sem time, o Mech não é aliado de ninguém por este caminho. */
+  setTeam(mech: MechBase, team: number | null): void {
+    if (team === null) this.teams.delete(mech);
+    else this.teams.set(mech, team);
+  }
+
+  /**
+   * Dois Mechs diferentes estão do mesmo lado? Na ordem: (1) times da sala (`setTeam`); (2) times do CTF; (3) na Arena offline, o jogador e os aliados dele. **Jogadores
+   * contra jogadores (o servidor de hoje, todos contra todos) nunca são do mesmo lado**: dois humanos na mesma partida só são aliados se estiverem no mesmo time.
+   */
+  sameSide(a: MechBase, b: MechBase): boolean {
+    if (a === b) return false;
+    const ta = this.teams.get(a);
+    const tb = this.teams.get(b);
+    if (ta !== undefined && tb !== undefined) return ta === tb;
+    if (this.ctf) {
+      const ca = this.ctf.teamOf(a);
+      return ca !== undefined && ca === this.ctf.teamOf(b);
+    }
+    const aliado = (m: MechBase): boolean => this.allies?.mechs.includes(m) ?? false;
+    if (aliado(a)) return aliado(b) || this.players.includes(b);
+    return aliado(b) && this.players.includes(a);
+  }
+
   /** O inimigo caça todo jogador de gente E todo aliado — a lista muda só quando alguém entra/sai (raro; não é por tick). */
   /** O lado do jogador (jogadores + aliados): a mesma lista que os inimigos caçam, sem montar outra. */
   private get friendly(): readonly MechBase[] {
@@ -404,22 +438,64 @@ export class Match {
     }
   }
 
-  private flameAt(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, f: Flame, target: MechBase): void {
-    if (target === attacker || !target.alive) return;
-    target.partWorldPosition('torso', _flameAt, true);
+  /**
+   * Uma onda sônica (`Armament` a pede a cada aperto do botão 2, uma por boca dos ombros): um cone **de uma vez só** (alcance e meio ângulo da arma, com a folga do raio do
+   * corpo), à vista, em **todos** os inimigos vivos. Cada alvo leva o dano da distância e as defesas pelo caminho do projétil (`combat.onProjectileHit`, natureza `sonico`) e é
+   * **empurrado** para longe da boca (`MechBase.push`), com o empurrão caindo com a distância como o dano. Quem a solta nunca se empurra; aliado nunca é pego. O cliente online (dano
+   * desligado) só desenha. Regra da partida (G14): o mesmo código offline e no servidor; sem alocação (G4).
+   */
+  waveCone(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
+    const wave = w.wave;
+    if (!wave) return;
+    this.onWave?.(origin, dir, attacker.collider, w);
+    this.drawWave(origin, dir, w);
+    if (!this.combat.damageEnabled) return;
+    const sides = this.players.includes(attacker) ? this.ringOfPlayers : this.allies?.mechs.includes(attacker) ? this.ringOfAllies : this.ringOfRebels;
+    for (const group of sides.foes) for (const m of group) this.waveAt(attacker, origin, dir, w, m);
+  }
+
+  /** Só o desenho da onda (o outro jogador a vê pelo evento de tiro, sem regra). */
+  drawWave(origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
+    drawWave(this.fx, origin, dir, w);
+  }
+
+  private waveAt(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, target: MechBase): void {
+    const gap = this.coneGap(attacker, origin, dir, w, w.wave!.halfAngle, target, true);
+    if (gap < 0) return;
+    this.combat.onProjectileHit(_flameHit, dir, hitDamage(w, gap), attacker.collider, w, gap);
+    // O empurrão sai radial da boca (_flameTo, o vetor unitário da boca ao alvo, deixado por `coneGap`), cai com a distância e vai pela resistência do alvo.
+    target.push(_flameTo.x, _flameTo.z, w.wave!.shove * rangeFactor(w, gap));
+  }
+
+  /**
+   * O alvo está dentro do cone de `halfAngle` e à vista de `origin`? Devolve a distância da boca à superfície do alvo (m), ou -1 se não. Deixa o acerto pronto em `_flameHit` e o vetor unitário
+   * da boca ao alvo em `_flameTo`. O lança-chamas e a onda sônica usam a mesma conta; `axis` escolhe o ponto do alvo: o **torso** (o lança-chamas) ou o **ponto do eixo
+   * vertical do corpo mais perto da altura da boca** (a onda: uma pressão que bate no corpo inteiro; sem isto o torso de um robô alto, como o Colossus, ficava fora do cone vertical).
+   */
+  private coneGap(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, halfAngle: number, target: MechBase, axis = false): number {
+    if (target === attacker || !target.alive) return -1;
+    if (axis) {
+      const p = target.simPosition;
+      _flameAt.set(p.x, Math.min(p.y + target.stats.height, Math.max(p.y, origin.y)), p.z);
+    } else target.partWorldPosition('torso', _flameAt, true);
     _flameTo.subVectors(_flameAt, origin);
     const dist = _flameTo.length();
     const r = target.stats.radius;
-    if (dist < 1e-3 || dist > w.maxRange + r) return;
+    if (dist < 1e-3 || dist > w.maxRange + r) return -1;
     // O cone com a folga do corpo: um alvo largo e perto entra mesmo com o centro um pouco fora do eixo.
-    if (_flameTo.dot(dir) / dist < Math.cos(f.halfAngle + Math.atan2(r, dist))) return;
+    if (_flameTo.dot(dir) / dist < Math.cos(halfAngle + Math.atan2(r, dist))) return -1;
     _flameTo.multiplyScalar(1 / dist);
     const wall = this.physics.raycast(origin, _flameTo, dist, attacker.collider);
-    if (wall && wall.collider !== target.collider && !this.combat.mechOf(wall.collider) && wall.distance < dist - r) return;
+    if (wall && wall.collider !== target.collider && !this.combat.mechOf(wall.collider) && wall.distance < dist - r) return -1;
     _flameHit.point.copy(_flameAt);
     _flameHit.distance = dist;
     _flameHit.collider = target.collider;
-    const gap = Math.max(0, dist - r);
+    return Math.max(0, dist - r);
+  }
+
+  private flameAt(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, f: Flame, target: MechBase): void {
+    const gap = this.coneGap(attacker, origin, dir, w, f.halfAngle, target);
+    if (gap < 0) return;
     this.combat.onProjectileHit(_flameHit, dir, hitDamage(w, gap), attacker.collider, w, gap);
   }
 

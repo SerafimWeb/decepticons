@@ -1002,6 +1002,72 @@ export class AudioSystem {
   }
 
   /**
+   * CANHÃO SÔNICO — um baque de pressão: um tom grave que sobe e cai (60→150→45 Hz, onda quadrada filtrada) com um sopro de ruído passa-baixa e um "uuuum" de onda
+   * (senoide de 90 Hz com vibrato) por cima, longo e sem o estalo de energia nem o estampido de pólvora: o som de um pulso de ar, não de um tiro.
+   */
+  playSonicShot(): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+    const now = ctx.currentTime;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(60, now);
+    osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(45, now + 0.5);
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 420;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.4, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    osc.connect(lp);
+    lp.connect(gain);
+    gain.connect(masterGain);
+    osc.start(now);
+    osc.stop(now + 0.57);
+    osc.onended = () => { gain.disconnect(); lp.disconnect(); };
+
+    const hum = ctx.createOscillator();
+    hum.type = 'sine';
+    hum.frequency.setValueAtTime(90, now);
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 22;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = 14;
+    lfo.connect(lfoGain);
+    lfoGain.connect(hum.frequency);
+    const hg = ctx.createGain();
+    hg.gain.setValueAtTime(0.0001, now);
+    hg.gain.exponentialRampToValueAtTime(0.22, now + 0.06);
+    hg.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+    hum.connect(hg);
+    hg.connect(masterGain);
+    hum.start(now);
+    lfo.start(now);
+    hum.stop(now + 0.72);
+    lfo.stop(now + 0.72);
+    hum.onended = () => { hg.disconnect(); lfoGain.disconnect(); };
+
+    if (!this.noiseBuffer) return;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const nf = ctx.createBiquadFilter();
+    nf.type = 'lowpass';
+    nf.frequency.setValueAtTime(900, now);
+    nf.frequency.exponentialRampToValueAtTime(180, now + 0.45);
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.3, now);
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+    src.connect(nf);
+    nf.connect(ng);
+    ng.connect(masterGain);
+    src.start(now);
+    src.stop(now + 0.5);
+    src.onended = () => { ng.disconnect(); nf.disconnect(); };
+  }
+
+  /**
    * CANHÃO AUTOMÁTICO — uma pancada seca de aço, cinco por segundo: um tom de triângulo curto (230→95 Hz) com um estalo de ruído médio, e o
    * tilintar do estojo vazio caindo logo depois.
    */

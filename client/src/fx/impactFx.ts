@@ -83,7 +83,8 @@ export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
   rotary: CINETICA,
   autocannon: AUTOMATICO,
   cannon: CANHAO,
-  // Foguetes, chuva de mísseis, serra e lança-chamas não batem por aqui: têm a explosão ou o contato deles.
+  // Foguetes, chuva de mísseis, serra, lança-chamas e a onda sônica não batem por aqui: têm a explosão, o contato ou o cone deles.
+  sonic: [],
   rockets: [],
   barrage: [],
   chainsaw: [],

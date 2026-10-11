@@ -21,6 +21,8 @@ export interface ShotSink {
   melee(w: WeaponStats): void;
   /** Um pulso do lança-chamas de `mount` (a cada `fireInterval`): quem aplica o cone de dano é a partida (`Match.flameCone`). */
   flame(mount: MountId, w: WeaponStats): void;
+  /** Saiu uma onda sônica de `mount` (um cone de uma vez só, com empurrão): quem aplica é a partida (`Match.waveCone`). */
+  wave(mount: MountId, w: WeaponStats): void;
 }
 
 /**
@@ -176,7 +178,9 @@ export class Armament {
       } else {
         for (const mount of triggers.secondary) {
           if (!m.canFireMount(mount)) continue;
-          sink.projectile(mount, s, NO_SPREAD); // a rotatória só vai no gatilho principal (ARM_SLOTS)
+          // A onda sônica sai das duas bocas dos ombros ao mesmo tempo (como os foguetes); a rotatória só vai no gatilho principal (ARM_SLOTS).
+          if (s.wave) sink.wave(mount, s);
+          else sink.projectile(mount, s, NO_SPREAD);
           m.onFireMount(mount, s);
         }
       }
