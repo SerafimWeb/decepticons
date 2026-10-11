@@ -4,22 +4,19 @@ import type { BurstOptions, ParticleSystem } from './ParticleSystem';
 import { SHAPE } from './particleShapes';
 
 /**
- * A onda sônica desenhada (dono, 11/10: "os tiros de som devem ser visivelmente diferentes dos cinéticos e metálicos"): **arcos concêntricos** que se abrem da boca do ombro
- * (a forma `wave` do atlas, que gira para a direção em que anda, então cada arco fica de través ao avanço), mais um **anel** que cresce na própria boca. Nada de faísca nem de
- * faixa de luz: o som é um pulso de pressão. Cor lilás-pálida (nem o verde do plasma, nem o laranja do aço, nem o azul do gelo).
+ * A onda sônica desenhada, parte das partículas (dono, 11/10: "uma onda do som, **invisível, mas que dá pra ver quebrando as moléculas do ar**").
+ * A onda em si são os **anéis que distorcem a imagem** (`fx/WaveRings.ts`); aqui ficam só as **moléculas**: pontinhos pálidos que o cone empurra
+ * à frente e que somem rápido, para o ar mexido aparecer também onde o chão é liso. Nada de arco colorido nem faixa de luz: o som não tem cor.
  *
- * Quem chama é a partida (`Match.waveCone`, no jogo offline, no servidor e no cliente que atira) e o outro jogador (`OnlineSession.remoteShot`, que só desenha). 10 partículas por
- * boca por tiro, um tiro a cada 1,2 s (as duas bocas dos ombros: 20 por aperto); no servidor as partículas são vazias. Zero draw call novo.
+ * Quem chama é a partida (`Match.drawWave`, no jogo offline, no servidor e no cliente que atira) e o outro jogador (`OnlineSession.remoteShot`, que só
+ * desenha). 6 partículas por boca por tiro, um tiro a cada 1,2 s (as duas bocas dos ombros: 12 por aperto); no servidor as partículas são vazias.
  */
-const PALE = new THREE.Color(1.15, 1.0, 1.8);
-const RING = new THREE.Color(0.9, 0.8, 1.5);
+const MOTE = new THREE.Color(0.7, 0.85, 1.1);
 
-/** Cada camada vai até uma fração do alcance da arma, mais devagar e mais larga a de dentro (as de fora correm à frente). */
-const LAYERS = [
-  { reach: 0.55, life: 0.62, size: 3.4, count: 3, spread: 0.9 },
-  { reach: 0.8, life: 0.5, size: 2.7, count: 3, spread: 1.05 },
-  { reach: 1.0, life: 0.4, size: 2.1, count: 3, spread: 1.2 },
-] as const;
+/** Quanto das moléculas anda (segundos) e que fração do alcance elas cobrem. */
+const MOTE_LIFE_S = 0.5;
+const MOTE_REACH = 0.95;
+export const MOTES_PER_WAVE = 6;
 
 /** Criadas uma vez por arma e nível (G4): o alcance muda com o nível, então há um conjunto por `maxRange`. */
 const CACHE = new Map<number, readonly BurstOptions[]>();
@@ -28,19 +25,25 @@ function optionsFor(w: WeaponStats): readonly BurstOptions[] {
   const key = w.maxRange * 100 + w.wave!.halfAngle;
   let o = CACHE.get(key);
   if (!o) {
-    const half = w.wave!.halfAngle;
     o = [
-      ...LAYERS.map((l): BurstOptions => ({
-        count: l.count, color: PALE, speed: (w.maxRange * l.reach) / l.life, life: l.life, size: l.size, expansion: 3, spread: half * l.spread, gravity: 0, shape: SHAPE.wave,
-      })),
-      { count: 1, color: RING, speed: 0, life: 0.3, size: 2.2, expansion: 7, gravity: 0, shape: SHAPE.ring },
+      {
+        count: MOTES_PER_WAVE,
+        color: MOTE,
+        speed: (w.maxRange * MOTE_REACH) / MOTE_LIFE_S,
+        life: MOTE_LIFE_S,
+        size: 0.7,
+        expansion: -0.4,
+        spread: w.wave!.halfAngle * 1.1,
+        gravity: 0,
+        shape: SHAPE.dot,
+      },
     ];
     CACHE.set(key, o);
   }
   return o;
 }
 
-/** Solta a onda de `w` em `origin`, na direção `dir`. Quantas partículas saíram (para o teste e o orçamento). */
+/** Solta as moléculas da onda de `w` em `origin`, na direção `dir`. Quantas partículas saíram (para o teste e o orçamento). */
 export function drawWave(particles: Pick<ParticleSystem, 'burst'>, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): number {
   if (!w.wave) return 0;
   let n = 0;

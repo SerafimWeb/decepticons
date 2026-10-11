@@ -1,3 +1,14 @@
+## [2026-10-11] A onda sônica é ar distorcido, não luz colorida (P83, Claude)
+
+**Ordem do Comandante:** "o tiro dele, espero que seja um belo efeito de uma onda do som, invisível, mas que dá pra ver quebrando as moléculas do ar, como uma onda em anéis transparentes".
+
+**Decisões:**
+1. **Refração de verdade, não "uma cor de som".** Os arcos lilás da primeira versão (P77) eram luz colorida, o contrário de "invisível". O anel agora **lê a imagem atrás de si e a desloca** (franja de cor nas bordas, traço de brilho mínimo para aparecer até em chão liso): só o ar quebrado se vê. Custo: uma passada de cópia de tela (`FrameCopyPass`) **só enquanto há anel vivo**; desligada, zero.
+2. **O anel é um objeto da cena, não uma passada de tela cheia.** Assim ele **respeita a profundidade** (parede e robô na frente escondem o anel) e custa um draw call. Preço aceito: ele lê o **quadro anterior** (um quadro de atraso).
+3. **Qualidade baixa usa um brilho fraco, não a refração** (a mesma chave do bloom): a cópia de tela é o único custo novo e é o que a GPU integrada (G12) mais sentiria.
+4. **O "TESTAR" do Hangar desenha a onda de verdade.** Ele desenhava toda arma de energia como o mesmo projétil ciano; para uma arma de onda, solta os anéis em direção ao alvo (`HangarScene.fire`). Foi isto, mais o fato de só o Marauder ter ombros, que fez o Comandante não ver o canhão sônico.
+5. **Achado de vocabulário:** o canhão sônico "não aparecia" porque o encaixe de ombros é do Marauder e de mais ninguém; o cartão do chassi com ombros ganha o selo OMBROS. A solução de fundo (ombros, costas, peito e cabeça como **tipos de encaixe** de qualquer robô) é o P84.
+
 ## [2026-10-11] O arsenal ganha classes (leve, média, pesada) e cada robô, um tamanho (P82, Claude)
 
 **Ordem do Comandante:** "organizar melhor nosso arsenal; 3 tamanhos de arma (leve, média, pesada); robôs gigantes usam armas pesadas como leves (pra eles), mas é a arma pesada normal dos outros robôs (tamanho 2, padrão do jogo); futuramente, versões das armas para o tamanho 3 e 4".
