@@ -132,6 +132,10 @@ export function atualizar(op) {
   }
   if (executar('node', ['scripts/test.mjs', 'run', '--no-isolate', 'server', 'shared']) !== 0) return voltar('testes de server/ e shared/');
 
+  // Verificado: o reinício passa a ser uma dívida em disco ANTES de o registro da verificação sumir. Sem isto, uma rodada cortada entre aqui
+  // e o marcador que o PowerShell criava depois (11/10: a máquina sem memória levou 7 min na verificação) deixava o código novo em disco,
+  // nenhuma pendência e nenhum marcador: a rodada seguinte via "nada novo" e o servidor ficava no protocolo velho para sempre.
+  op.marcarReinicio();
   op.limparPendencia();
   log(`OK: ${remoto.slice(0, 7)} verificado, pedindo ${parado ? 'religar' : 'reinício'}`);
   return 0;
