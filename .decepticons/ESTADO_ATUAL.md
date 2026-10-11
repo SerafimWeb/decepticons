@@ -1,5 +1,35 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Armas de aço: canhão pesado e canhão automático — Claude, 11/10 (PR `claude/armas-de-aco`, protocolo 12)
+
+**Ordem do Comandante (P70):** "quero um canhão grande de um tiro só, e também armas de tiros menores e sequenciais de metal", porque "todas as armas parecem de luz".
+**Entrou com este PR** (sobe para a `main` e o servidor de produção se atualiza sozinho em até 10 min; confira `/status` com `"protocol":12`):
+
+- **Canhão pesado (`cannon`)**: um obus de aço, grande e lento (150 m/s), **90 de dano a cada 2,6 s** (MK II 108, MK III 126), 0,6 de calor, cheio até 90 m e 60% aos 260 m,
+  6/9/12 t. **Só nos pesados** (Colossus, Onça, Bastion, Marauder), nas duas mãos (na esquerda atira no botão 2). Derruba um torso de 300 com **4 acertos no MK I e 3
+  no MK II e III**; dois acertos nunca bastam. Maior solavanco de câmera do arsenal.
+- **Canhão automático (`autocannon`)**: **5 tiros por segundo, 10 de dano** (12/14), cadência fixa, sem espalhamento, 190 m/s, cheio até 50 m, 3,5/5,25/7 t,
+  em todo engate de energia (menos o Andróide). Esquenta 0,20 por segundo (o plasma, 0,32).
+- **O tiro agora é de metal** (`fx/kineticShot.ts`): corpo sólido de aço (frio o do jogador, avermelhado o do inimigo; sem luz, não acende o bloom) com a cauda quente atrás;
+  **clarão da pólvora na boca** por arma (`fx/muzzleFx.ts`: língua de fogo, fumaça, anel; e o **estojo** que salta e cai no automático); **fumaça no rastro do obus** (a cada
+  3 m); **impacto próprio** (faíscas de aço, brasas, poeira; o canhão ainda tem a onda de choque e o clarão); **som próprio** (`playCannonShot`: baque grave que despenca;
+  `playAutocannonShot`: pancada seca e o estojo tilintando); mira, ícone, dica e modelo 3D novos no Hangar.
+- **Equilíbrio medido na bancada** (Vector-09, torso de 300): canhão pesado sozinho 7,8 s (MK I) e 5,2 s (MK II e III); automático 7,5 / 6,5 / 5,9 s; nenhum combo de
+  dois braços derruba em menos de 2,5 s (a primeira conta, 100 de dano a cada 2,4 s, dava 2,25 s com os foguetes MK III: por isso 90 e 2,6 s).
+- **Custo de CPU:** um corpo opaco de 80 triângulos por tiro de metal em voo (64 corpos criados uma vez no pool; um tiro de luz não os usa); partículas: 6 por tiro do
+  automático (30 por segundo) e 16 por tiro do canhão, mais 1 fiapo de fumaça a cada 3 m do obus; **no servidor, nenhuma** (partículas vazias).
+- **Rede:** `NET_WEAPONS` ganha `cannon` e `autocannon` no fim; **`PROTOCOL_VERSION` 12**. Cliente velho (11) é recusado até o servidor atualizar.
+- **Testes:** 33 em `combat/steelWeapons.test.ts` (números, equilíbrio, regra de tiro, corpo de aço, clarão, rastro, impacto), Hangar (quem leva o quê), servidor real (evento de tiro,
+  dano, recusa no chassi leve); **17 mutações, todas pegas**. Captura: `arte/armas-aco-voo-claude.png` (o plasma, o gelo, o canhão e o automático lado a lado, em voo).
+
+**Falta (honesto):** o **impacto** só foi visto em teste (a captura de impacto não ficou legível; fica para o playtest); a rotatória, a escopeta e o trilho ainda voam como
+faixa de luz (o corpo de aço e o clarão já existem, é ligar); o **empurrão no alvo atingido** (P69) não existe; o canhão pesado ainda não foi jogado numa partida longa; o
+`PlayerController` pula o clarão genérico para as armas de aço sem teste direto (o jogo de verdade é a prova).
+
+**Próxima sessão começa com as ordens P72 e P73 do Comandante** (`ORDENS_DO_COMANDO.md`): o gelo vai longe demais e o fogo está fraco e curto; o rastro do gelo deve soltar frio em
+partículas menores; e o **anel de fogo** (escudo de fogo ao redor do Mech que queima tudo e esquenta todos, inclusive quem o solta) para combos com o gelo. Branch
+`claude/fogo-e-gelo`.
+
 ## Ordens do Comando e direção de treino para robôs — Claude, 11/10 (só documento)
 
 `PEDIDOS_DO_DONO.md` virou **`ORDENS_DO_COMANDO.md`** (o dono é o Comandante, cada pedido é uma ordem, o estado é o da missão), a pedido

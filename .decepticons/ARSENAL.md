@@ -82,6 +82,15 @@ correr antes dos pilotos, o `MechBase` lê `status` (velocidade, travas de tiro,
 Números em `STATUS` (um lugar só); resistência por chassi em `MechStats.statusResist`. **Arma que não atira projétil** (lança-chamas,
 rotatória) liga `status.flaming`/`status.spinning` no dono em vez de mandar um evento por tiro. A rotatória (`spin` na entrada de `BASE`) é o modelo: a regra fica em `SpinUp` (`trigger.ts`), o desvio em `spread.ts` (por número de tiro, sem sorteio), o servidor sai cedo em `ArenaRoom.shot` quando a arma tem `spin`, e o outro jogador desenha o fluxo pela bandeira, lendo a arma da montagem do roster. A elétrica (`inflicts: 'shock'`, `tracer: 'arc'`) é o modelo das armas de projétil que aplicam estado: o `CombatSystem` só aplica quando pelo menos `STATUS.shieldPass` do dano passou pelas defesas, e a cor da faixa vem do `tracer` (`ProjectileSystem`).
 
+## Armas de aço (tiro de metal) — 11/10, Claude
+
+O canhão pesado (`cannon`) e o canhão automático (`autocannon`) são o modelo de **arma de projétil que se vê como metal**, não como luz: `tracer: 'shell'` (obus) ou `'slug'` (projétil fino) na entrada
+de `BASE`. O `ProjectileSystem` troca a faixa de luz por um **corpo de aço sólido** (`fx/kineticShot.ts`: `KINETIC` tem as medidas, `buildSlugGeometry` a bala) com a cauda quente atrás (mais
+fina que o corpo, senão ela o lava). Três tabelas `Record<WeaponId, …>` a mais pedem uma decisão por arma nova: `MUZZLE_FX` (`fx/muzzleFx.ts`: o clarão da boca; `null` = o genérico do jogador; `casing`
+solta o estojo), `IMPACT_FX` (o impacto) e, para o rastro de partículas no voo, `TRAIL_FX` (`fx/impactFx.ts`: gelo e obus). Quem fecha a conta de equilíbrio é a bancada: **arma nova confira o combo
+com os foguetes MK III e com ela mesma nas duas mãos** (`steelWeapons.test.ts` é o modelo): a 1ª conta do canhão (100 de dano a cada 2,4 s) violava a meta de 2,5 s. Ao calibrar por `sed`, ancore
+no nome da arma (um `sed` por números pegou o lança-chamas junto).
+
 ## Natureza do dano — 06/10, Claude
 
 Toda arma declara a natureza do dano em `DAMAGE_TYPE` (`client/src/combat/weapons.ts`): o `Record` quebra o typecheck se faltar. Os escudos físicos (`MetalShield.ts`) resistem por natureza. Arma sônica futura usa `sonico` (o Amortecedor já está pronto para ela).

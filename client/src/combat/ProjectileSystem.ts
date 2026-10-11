@@ -3,12 +3,16 @@ import * as THREE from 'three';
 import { GLOW } from '../core/palette';
 import type { PhysicsHit, PhysicsWorld } from '../physics/PhysicsWorld';
 import type { ParticleSystem } from '../fx/ParticleSystem';
-import { ICE_TRAIL, ICE_TRAIL_EVERY, IMPACT_FX } from '../fx/impactFx';
+import { IMPACT_FX, TRAIL_FX } from '../fx/impactFx';
+import { buildSlugGeometry, buildSteelMaterial, KINETIC, SLUG_TAIL, STEEL } from '../fx/kineticShot';
+import { MUZZLE_FX } from '../fx/muzzleFx';
 import { buildStreakGeometry, buildStreakMaterial, growingLength, STREAK_HEAD_WIDTH, streakLength } from '../fx/ShotStreak';
 import { hitDamage, weapon, type WeaponStats } from './weapons';
 
 interface Projectile {
   mesh: THREE.Mesh;
+  /** O corpo de aço do tiro de metal (canhão pesado e automático); escondido nos tiros de luz. */
+  body: THREE.Mesh;
   /** Comprimento cheio da cauda (m), só no tiro de energia comum; 0 = o desenho próprio do trilho e do EMP. */
   tail: number;
   prev: THREE.Vector3;
@@ -28,6 +32,9 @@ const _dir = new THREE.Vector3();
 const _hitAt = new THREE.Vector3();
 const _hitNormal = new THREE.Vector3();
 const _look = new THREE.Vector3();
+const _side = new THREE.Vector3();
+const _eject = new THREE.Vector3();
+const UP = new THREE.Vector3(0, 1, 0);
 
 /**
  * Projéteis de plasma com pool fixo. Simulados no tick fixo com raycast do
@@ -53,6 +60,12 @@ export class ProjectileSystem {
   /** A arma de gelo usa a mesma faixa, em branco-gelo (jogador) e lilás pálido (inimigo): não se confunde com o plasma nem com a elétrica. */
   private readonly friendlyIceStreak = buildStreakMaterial(GLOW.friendlyIce);
   private readonly hostileIceStreak = buildStreakMaterial(GLOW.hostileIce);
+  /** O tiro de metal: corpo de aço sólido (a geometria é uma só para o pool) e uma cauda quente de luz atrás dele. */
+  private readonly slugGeo = buildSlugGeometry();
+  private readonly friendlySteel = buildSteelMaterial(STEEL.friendly);
+  private readonly hostileSteel = buildSteelMaterial(STEEL.hostile);
+  private readonly friendlySlugTail = buildStreakMaterial(SLUG_TAIL.friendly);
+  private readonly hostileSlugTail = buildStreakMaterial(SLUG_TAIL.hostile);
 
   constructor(
     scene: THREE.Scene,
@@ -74,6 +87,9 @@ export class ProjectileSystem {
       mesh.scale.set(1, 1, 6);
       mesh.visible = false;
       scene.add(mesh);
+      const body = new THREE.Mesh(this.slugGeo, this.friendlySteel);
+      body.visible = false;
+      scene.add(body);
       const trailGeo = new THREE.BufferGeometry();
       trailGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
       const trail = new THREE.Line(trailGeo, mat);
@@ -81,7 +97,7 @@ export class ProjectileSystem {
       trail.frustumCulled = false;
       scene.add(trail);
       this.pool.push({
-        mesh, trail, trailLife: 0, tail: 0,
+        mesh, body, trail, trailLife: 0, tail: 0,
         prev: new THREE.Vector3(),
         pos: new THREE.Vector3(),
         velocity: new THREE.Vector3(),
@@ -113,11 +129,13 @@ export class ProjectileSystem {
     // Tiro comum: faixa com cauda. Trilho e EMP (têm `tracer`): a esfera esticada de sempre, com o traço do trilho.
     const arc = w.tracer === 'arc';
     const ice = w.tracer === 'ice';
-    const streak = w.tracer === undefined || arc || ice;
-    p.tail = streak ? streakLength(w.speed) : 0;
+    const metal = w.tracer === 'shell' || w.tracer === 'slug' ? KINETIC[w.tracer] : undefined;
+    const streak = w.tracer === undefined || arc || ice || metal !== undefined;
+    p.tail = metal ? metal.tail : streak ? streakLength(w.speed) : 0;
     p.mesh.geometry = streak ? this.streakGeo : this.orbGeo;
     p.mesh.material = streak
-      ? arc ? (hostile ? this.hostileArcStreak : this.friendlyArcStreak)
+      ? metal ? (hostile ? this.hostileSlugTail : this.friendlySlugTail)
+        : arc ? (hostile ? this.hostileArcStreak : this.friendlyArcStreak)
         : ice ? (hostile ? this.hostileIceStreak : this.friendlyIceStreak)
         : hostile ? this.hostileStreak : this.friendlyStreak
       : hostile ? this.hostileMat : this.friendlyMat;
@@ -130,8 +148,18 @@ export class ProjectileSystem {
     positions.needsUpdate = true;
     if (w.tracer === 'rail') p.mesh.scale.set(0.45, 0.45, 18);
     else if (w.tracer === 'pulse') p.mesh.scale.set(2.5, 2.5, 2.5);
+    else if (metal) p.mesh.scale.set(metal.tailWidth, metal.tailWidth, growingLength(p.tail, 0));
     else p.mesh.scale.set(STREAK_HEAD_WIDTH, STREAK_HEAD_WIDTH, growingLength(p.tail, 0));
     p.mesh.visible = true;
+    // O corpo de aço só existe nos tiros de metal: na mesma posição e direção da cabeça da cauda.
+    p.body.visible = metal !== undefined;
+    if (metal) {
+      p.body.material = hostile ? this.hostileSteel : this.friendlySteel;
+      p.body.scale.set(metal.radius, metal.radius, metal.length);
+      p.body.position.copy(origin);
+      p.body.quaternion.copy(p.mesh.quaternion);
+    }
+    this.muzzle(origin, dir, w);
   }
 
   fixedUpdate(dt: number): void {
@@ -164,10 +192,9 @@ export class ProjectileSystem {
       p.prev.copy(p.pos);
       p.pos.addScaledVector(_dir, step);
       this.trailEnd(p, p.pos);
-      // O tiro de gelo deixa um floco girando a cada 1,6 m do caminho.
-      if (p.weapon.tracer === 'ice' && Math.floor((p.traveled + step) / ICE_TRAIL_EVERY) !== Math.floor(p.traveled / ICE_TRAIL_EVERY)) {
-        this.particles.burst(p.pos, _dir, ICE_TRAIL);
-      }
+      // Alguns tiros deixam um rastro de partículas no caminho (`fx/impactFx.ts`): o gelo, um floco girando a cada 1,6 m; o obus, um fiapo de fumaça a cada 3 m.
+      const trail = p.weapon.tracer === 'ice' || p.weapon.tracer === 'shell' ? TRAIL_FX[p.weapon.tracer] : undefined;
+      if (trail && Math.floor((p.traveled + step) / trail.every) !== Math.floor(p.traveled / trail.every)) this.particles.burst(p.pos, _dir, trail.fx);
       p.traveled += step;
       p.life -= dt;
       if (p.life <= 0) this.kill(p);
@@ -178,6 +205,7 @@ export class ProjectileSystem {
     for (const p of this.pool) {
       if (p.life <= 0) continue;
       p.mesh.position.lerpVectors(p.prev, p.pos, alpha);
+      if (p.body.visible) p.body.position.copy(p.mesh.position);
       // A cauda cresce com o caminho já andado: nasce na boca em vez de atravessar o robô que atirou.
       if (p.tail > 0) p.mesh.scale.z = growingLength(p.tail, p.traveled);
     }
@@ -187,8 +215,23 @@ export class ProjectileSystem {
   clear(): void {
     for (const p of this.pool) {
       p.life = p.trailLife = 0;
-      p.mesh.visible = p.trail.visible = false;
+      p.mesh.visible = p.trail.visible = p.body.visible = false;
     }
+  }
+
+  /**
+   * O clarão da boca do tiro de metal (`fx/muzzleFx.ts`): a língua de fogo, a fumaça e, no automático, o estojo vazio, que salta para o lado
+   * e para cima do cano. As outras armas seguem com o clarão genérico de quem atira.
+   */
+  private muzzle(origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
+    const fx = MUZZLE_FX[w.id];
+    if (!fx) return;
+    for (const o of fx.flash) this.particles.burst(origin, dir, o);
+    if (!fx.casing) return;
+    _side.crossVectors(dir, UP);
+    if (_side.lengthSq() < 1e-6) _side.set(1, 0, 0); // atirando reto para cima ou para baixo
+    _side.normalize();
+    this.particles.burst(origin, _eject.copy(_side).multiplyScalar(0.9).addScaledVector(UP, 0.5), fx.casing);
   }
 
   private trailEnd(p: Projectile, end: THREE.Vector3): void {
@@ -202,5 +245,6 @@ export class ProjectileSystem {
     p.trailLife = p.weapon.tracer === 'rail' ? 0.12 : 0;
     p.life = 0;
     p.mesh.visible = false;
+    p.body.visible = false;
   }
 }

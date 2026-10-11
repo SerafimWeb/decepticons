@@ -1,4 +1,27 @@
-## [2026-10-11] "Pedidos do dono" vira ORDENS DO COMANDO; o jogo vai servir de treino para robôs e IAs (Claude)
+## [2026-10-11] Armas de aço: o canhão pesado e o canhão automático, e o tiro que se vê como metal (Claude)
+
+**Ordem do Comandante (P70):** "quero um canhão grande de um tiro só, e também armas de tiros menores e sequenciais de metal" (porque "todas as armas parecem de luz").
+
+**Decisões:**
+1. **As duas são `kind: 'energy'` (só o calor limita)**, mesmo sendo de aço: reaproveita o caminho do projétil de energia, o `Armament`, a bancada de equilíbrio e a rede
+   sem um segundo modelo de munição. A natureza do dano é `balistico` (os escudos físicos já resistem por ela) e o desenho é de metal. O custo: o site e a landing, que leem `kind`,
+   as rotulam "energia". Registrado, não consertado agora (o mesmo vale para a escopeta e a rotatória, que já eram assim).
+2. **Os números saíram da bancada, não do papel.** A 1ª conta (canhão de 100 de dano a cada 2,4 s) derrubava um torso em **2,25 s** junto com os foguetes MK III, abaixo da meta de 2,5 s
+   de todo combo; o calor não ajudou (a trava depois do tiro é a mesma). **90 de dano e 2,6 s** passam em todos os combos (o menor é 2,53 s) e **criam um degrau de nível**: o MK I
+   precisa de 4 acertos num torso e o MK II e III de 3. O automático foi de 12 para **10 de dano e 0,04 de calor**, porque dois automáticos MK III derrubavam o torso em 2,18 s
+   (o plasma duplo leva 3,27 s). Os testes travam os dois (nenhum combo abaixo de 2,5 s, dois automáticos acima de 3,5 s).
+3. **O desenho de metal é um campo da arma (`tracer: 'shell' | 'slug'`), não um `if (id === …)`.** O `ProjectileSystem` ganha um corpo de aço por projétil do pool (geometria única, 80
+   triângulos) e a cauda de luz fica mais fina que o corpo, senão ela lava o aço e o obus vira um borrão branco (visto na 1ª captura). A rotatória, a escopeta e o trilho podem ganhar o
+   mesmo desenho trocando uma linha cada, mas ficaram de fora: este PR é das duas armas novas.
+4. **O clarão da boca é solto pelo `ProjectileSystem.fire`**, não pelo `PlayerController`: assim vale para o jogador, os bots e os outros jogadores do online, e no servidor é uma chamada
+   vazia. `MUZZLE_FX` é um `Record<WeaponId, …|null>`: `null` mantém o clarão genérico do jogador, e arma nova é obrigada a decidir. O `PlayerController` só pula o genérico quando há clarão próprio.
+5. **O catálogo de rede só cresce no fim** (`cannon`, `autocannon`) e o **protocolo sobe para 12**; o atualizador automático reinicia o servidor (verificar `/status`).
+6. **O canhão pesado vai também no braço esquerdo dos pesados** (botão 2), mas o lança-chamas não (o fluxo é do gatilho principal). O canhão não vai nos leves (6 t, e a carga do Vector-09 é 11).
+
+**Lição:** um `sed` que troca `damage: N, fireInterval: 0.2, heatPerShot` pegou **o lança-chamas** (mesmo intervalo) junto com o automático; achei no `git diff` e desfiz. Ao calibrar por
+`sed`, ancore no nome da arma, nunca nos números.
+
+; o jogo vai servir de treino para robôs e IAs (Claude)
 
 **Ordem do Comandante (dono):** "esse 'pedidos do dono' achei uma bosta esse termo, deveria ser algo mais militarizado, formato de clãs
 se comunicando". E, sobre a proposta P71: "quero sim que nosso game sirva pra treinamentos de humanoides, IAs, etc."

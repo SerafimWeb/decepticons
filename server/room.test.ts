@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import type { MechBase } from '../client/src/entities/MechBase';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/constants';
-import { EVENT } from '../shared/net/events';
+import { EVENT, NET_WEAPONS } from '../shared/net/events';
 import { FX_CHILL_MASK, FX_FLAMING, FX_FROZEN, FX_SHOCKED, FX_SPINNING, FX_STUNNED } from '../client/src/combat/StatusEffects';
 import { hitDamage, weapon } from '../client/src/combat/weapons';
 import { netWeaponIndex } from '../client/src/net/adapters';
@@ -636,6 +636,65 @@ describe('Lança-chamas online: o servidor aplica o cone, a bandeira vai na rede
     expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
     expect(ruim.of(MSG.REJECT).length).toBeGreaterThan(0);
     room.dispose();
+  });
+});
+
+describe('Armas de aço online: o tiro de cada uma vira evento de tiro e o dano é o da arma', () => {
+  const CANHAO = 'v1.onca.cannon-0.rockets-0';
+  const AUTOMATICO = 'v1.vector09.autocannon-0.rockets-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('o canhão pesado: um tiro só por aperto, evento de tiro do canhão, 90 de dano no alvo a 15 m', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(CANHAO);
+    expect(mine.mech.loadout.primary.id).toBe('cannon');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 30, { fire: true, yaw, pitch }); // 0,5 s apertado: a cadência é 2,6 s, então sai um só
+    drive(room, dan, 31, 40, { yaw, pitch }); // o obus leva ~0,1 s para chegar
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('cannon')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.amount).toBe(hitDamage(weapon('cannon'), 15));
+    expect(hits[0]!.amount).toBe(90);
+    expect(before - lifeOf(bot.mech)).toBe(hits[0]!.amount);
+    room.dispose();
+  });
+
+  it('o canhão automático: segurando o gatilho saem tiros em sequência firme (5 por segundo), todos como evento do automático, cada um com 10 de dano', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(AUTOMATICO);
+    expect(mine.mech.loadout.primary.id).toBe('autocannon');
+    drive(room, dan, 1, 60, { fire: true, yaw, pitch }); // 1 s
+    drive(room, dan, 61, 30, { yaw, pitch });
+    const tiros = shotsOf(dan, me);
+    expect(tiros.length).toBeGreaterThanOrEqual(4);
+    expect(tiros.length).toBeLessThanOrEqual(6);
+    expect(tiros.every((i) => i === netWeaponIndex('autocannon'))).toBe(true);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits.length).toBeGreaterThanOrEqual(3);
+    for (const h of hits) expect(h.amount).toBe(hitDamage(weapon('autocannon'), 15));
+    room.dispose();
+  });
+
+  it('o servidor recusa o canhão pesado num chassi leve (Vector-09) e aceita nos pesados; o automático vai em ambos', async () => {
+    const room = await ArenaRoom.create('ACO');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', CANHAO));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const leve = new FakePeer();
+    room.receive(leve, join('Ana', 'v1.vector09.cannon-0.rockets-0'));
+    expect(leve.of(MSG.WELCOME)).toHaveLength(0);
+    expect(leve.of(MSG.REJECT).length).toBeGreaterThan(0);
+    const auto = new FakePeer();
+    room.receive(auto, join('Bia', AUTOMATICO));
+    expect(auto.of(MSG.WELCOME)).toHaveLength(1);
+    room.dispose();
+  });
+
+  it('o protocolo subiu para 12 e o catálogo de tiros da rede termina nas duas armas novas (só se acrescenta no fim)', () => {
+    expect(PROTOCOL_VERSION).toBe(12);
+    expect(NET_WEAPONS.slice(-2)).toEqual(['cannon', 'autocannon']);
+    expect(NET_WEAPONS.slice(0, 10)).toEqual(['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage', 'railgun', 'emp', 'arc', 'cryo']);
   });
 });
 

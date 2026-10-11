@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon';
 
 /**
  * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
@@ -120,7 +120,7 @@ export interface WeaponStats {
   /** Sobrecarga térmica adicional no impacto, sem atrasar o resfriamento. */
   empHeat?: number;
   /** Silhueta visual do tiro, sem alterar colisão. */
-  tracer?: 'rail' | 'pulse' | 'arc' | 'ice';
+  tracer?: 'rail' | 'pulse' | 'arc' | 'ice' | 'shell' | 'slug';
   /** Só na rotatória: a rotação do cano (cadência que sobe, espalhamento que abre). */
   spin?: Spin;
   /** Estado que o acerto aplica no alvo (`combat/StatusEffects.ts`): fogo, choque ou gelo. Sem escudo na frente, o acerto vale. */
@@ -174,6 +174,36 @@ const BASE: Record<WeaponId, WeaponBase> = {
     optimalRange: 6, maxRange: 14, minFactor: 0.5,
     blastRadius: 0, mass: 3.5, inflicts: 'burn',
     flame: { halfAngle: 0.218, fuel: 6, reload: 4 },
+  },
+  /**
+   * Canhão pesado (dono, 11/10: "quero um canhão grande, um tiro só"). **Um projétil de aço, grande e lento, que bate como um caminhão**: 90 de
+   * dano num tiro, um a cada 2,6 s, com 0,6 de calor. Derruba um torso de 300 com **quatro acertos no MK I e três no MK II e no MK III** (dois acertos
+   * nunca bastam, nem no MK III: 252), então não decide uma luta sozinho. Vai a 150 m/s (quem está longe vê o tiro chegar e desvia), cheio até 90 m e
+   * cai a 60% aos 260 m. Os 90 de dano e os 2,6 s vêm da bancada: com 100 e 2,4 s, o MK III com os foguetes MK III derrubava um torso em 2,25 s.
+   * Peso de 6 t: só os chassis pesados o carregam. Natureza `balistico`. O desenho é de metal (casco de aço com cauda quente e fumaça), não de luz
+   * (`tracer: 'shell'`).
+   */
+  cannon: {
+    id: 'cannon', name: 'Canhão pesado', kind: 'energy',
+    damage: 90, fireInterval: 2.6, heatPerShot: 0.6,
+    magazine: 0, reload: 0, speed: 150,
+    optimalRange: 90, maxRange: 260, minFactor: 0.6,
+    blastRadius: 0, mass: 6, tracer: 'shell',
+  },
+  /**
+   * Canhão automático (dono, 11/10: "armas de tiros menores e sequenciais de metal"). **Projéteis de aço em sequência firme, sem esperar o cano
+   * girar**: 10 de dano a 5 tiros/s (50/s), cadência fixa, tiro reto e preciso, rápido (190 m/s) e de bom alcance (cheio até 50 m, some aos 140 m).
+   * Esquenta menos que o plasma por segundo (0,20 contra 0,32), então sustenta a rajada por mais tempo; em compensação bate menos por tiro que o
+   * canhão pesado e não tem o espalhamento nem a rotação da rotatória. Sozinho derruba um torso em 7,5 s no MK I e 5,9 s no MK III; dois automáticos
+   * juntos, em mais de 3,7 s (o calor do Mech segura). Natureza `balistico`. O desenho é de metal (projétil de aço com cauda curta), e cada tiro
+   * solta um estojo (`tracer: 'slug'`).
+   */
+  autocannon: {
+    id: 'autocannon', name: 'Canhão automático', kind: 'energy',
+    damage: 10, fireInterval: 0.2, heatPerShot: 0.04,
+    magazine: 0, reload: 0, speed: 190,
+    optimalRange: 50, maxRange: 140, minFactor: 0.45,
+    blastRadius: 0, mass: 3.5, tracer: 'slug',
   },
   /**
    * Arma elétrica (dono, 09/10: "tiros elétricos, que deixam o oponente tomando choque, lento e sem funcionar temporariamente caso
@@ -367,6 +397,8 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   arc: 'eletrico',
   cryo: 'criogenico',
   flamer: 'termico',
+  cannon: 'balistico',
+  autocannon: 'balistico',
   chainsaw: 'corte',
 };
 

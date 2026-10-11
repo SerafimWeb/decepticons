@@ -13,9 +13,12 @@ import { SHAPE } from './particleShapes';
  * - **elétrica**: raios em zigue-zague azuis e uma estrela de brilho;
  * - **gelo**: flocos de seis braços e cacos de cristal que se espalham e caem devagar;
  * - **EMP**: dois anéis que crescem e um hexágono (o campo que apaga os sistemas);
- * - **cinéticas** (trilho, escopeta, rotatória): faíscas de metal alaranjadas e rápidas, fagulhas e uma nuvem cinza de poeira (nada de brilho verde).
+ * - **cinéticas** (trilho, escopeta, rotatória): faíscas de metal alaranjadas e rápidas, fagulhas e uma nuvem cinza de poeira (nada de brilho verde);
+ * - **canhão automático**: a mesma família em menor (uma pancada seca por tiro, cinco por segundo);
+ * - **canhão pesado**: o maior impacto do arsenal (um tiro a cada 2,6 s): chuva de faíscas de aço, brasas, uma onda de choque que se abre, o clarão e a poeira grossa.
  *
- * São objetos criados uma vez (G4/G5): o impacto só os entrega ao `ParticleSystem.burst`. No máximo 20 partículas por impacto.
+ * São objetos criados uma vez (G4/G5): o impacto só os entrega ao `ParticleSystem.burst`. No máximo 20 partículas por impacto (o canhão pesado, que bate
+ * a cada 2,6 s, tem teto de 24).
  * O `Record` obriga uma entrada por arma nova.
  */
 const c = (r: number, g: number, b: number): THREE.Color => new THREE.Color(r, g, b);
@@ -27,6 +30,8 @@ const ARC = c(0.8, 2.1, 2.6);
 const ICE = c(1.1, 1.7, 2.0);
 const ICE_DEEP = c(0.7, 1.4, 1.9);
 const EMP = c(0.6, 1.5, 2.2);
+const FLASH = c(2.4, 1.5, 0.6);
+const SHOCK = c(1.4, 1.3, 1.1);
 
 const PLASMA: readonly BurstOptions[] = [
   { count: 9, color: GLOW.spark, speed: 26, life: 0.3, size: 2.2, spread: 0.9, gravity: 14, shape: SHAPE.streak },
@@ -54,6 +59,19 @@ const CINETICA: readonly BurstOptions[] = [
   { count: 2, color: DUST, speed: 4, life: 0.8, size: 3.6, expansion: 1.6, spread: 0.7, gravity: -1, shape: SHAPE.puff },
 ];
 
+const AUTOMATICO: readonly BurstOptions[] = [
+  { count: 6, color: STEEL_SPARK, speed: 26, life: 0.3, size: 1.9, spread: 0.8, gravity: 18, shape: SHAPE.streak },
+  { count: 2, color: EMBER, speed: 7, life: 0.4, size: 1.1, spread: 1.2, gravity: 10, shape: SHAPE.dot },
+  { count: 1, color: DUST, speed: 3, life: 0.5, size: 2.4, expansion: 1.2, spread: 0.7, gravity: -1, shape: SHAPE.puff },
+];
+const CANHAO: readonly BurstOptions[] = [
+  { count: 12, color: STEEL_SPARK, speed: 40, life: 0.5, size: 3, spread: 0.95, gravity: 22, shape: SHAPE.streak },
+  { count: 4, color: EMBER, speed: 12, life: 0.7, size: 1.6, spread: 1.3, gravity: 12, shape: SHAPE.dot },
+  { count: 4, color: DUST, speed: 6, life: 1.3, size: 6, expansion: 3, spread: 0.9, gravity: -1, shape: SHAPE.puff },
+  { count: 1, color: SHOCK, speed: 0, life: 0.32, size: 3, expansion: 10, gravity: 0, shape: SHAPE.ring },
+  { count: 1, color: FLASH, speed: 0, life: 0.14, size: 6, expansion: 2.5, gravity: 0 },
+];
+
 export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
   plasma: PLASMA,
   blaster: PLASMA,
@@ -63,6 +81,8 @@ export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
   railgun: CINETICA,
   shotgun: CINETICA,
   rotary: CINETICA,
+  autocannon: AUTOMATICO,
+  cannon: CANHAO,
   // Foguetes, chuva de mísseis, serra e lança-chamas não batem por aqui: têm a explosão ou o contato deles.
   rockets: [],
   barrage: [],
@@ -74,3 +94,14 @@ export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
 export const ICE_TRAIL: BurstOptions = { count: 1, color: ICE, speed: 0.6, life: 0.7, size: 3.2, spread: 0.6, gravity: 2.5, spin: 4, shape: SHAPE.flake };
 /** Distância entre dois flocos do rastro (m). */
 export const ICE_TRAIL_EVERY = 1.6;
+
+/** A fumaça que o obus do canhão pesado deixa no caminho: um fiapo cinza que cresce e sobe devagar. */
+export const SHELL_TRAIL: BurstOptions = { count: 1, color: c(0.34, 0.34, 0.34), speed: 0.4, life: 1.2, size: 3.4, expansion: 2.2, spread: 0.5, gravity: -0.4, shape: SHAPE.puff };
+/** Distância entre dois fiapos de fumaça (m). */
+export const SHELL_TRAIL_EVERY = 3;
+
+/** O rastro de partículas que cada tipo de tiro deixa no caminho (os outros não deixam nenhum): o gelo, flocos; o obus, fumaça. */
+export const TRAIL_FX: Readonly<Partial<Record<'ice' | 'shell', { fx: BurstOptions; every: number }>>> = {
+  ice: { fx: ICE_TRAIL, every: ICE_TRAIL_EVERY },
+  shell: { fx: SHELL_TRAIL, every: SHELL_TRAIL_EVERY },
+};

@@ -13,6 +13,7 @@ import type { WeaponStats } from '../combat/weapons';
 import type { InputManager } from '../core/InputManager';
 import { DEFAULT_SETTINGS, type KeyAction } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
+import { MUZZLE_FX } from '../fx/muzzleFx';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 
 const MUZZLE_COLOR = GLOW.playerMuzzle;
@@ -170,7 +171,8 @@ export class PlayerController {
     applySpread(_dir, spread);
     this.projectiles.fire(_muzzle, _dir, this.mech.collider, false, w);
     // A rotatória atira 20 vezes por segundo: clarão menor e som a cada quarto tiro (o zumbido contínuo é do Gemini, ARMAS_ELEMENTAIS.md T5).
-    this.particles.burst(_muzzle, _dir, { count: w.spin ? 2 : 5, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
+    // O tiro de metal tem o clarão dele, solto pelo `ProjectileSystem.fire` (vale para todos os atiradores); as outras armas, este.
+    if (!MUZZLE_FX[w.id]) this.particles.burst(_muzzle, _dir, { count: w.spin ? 2 : 5, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
     if (!w.spin || (this.spinShots++ & 3) === 0) this.onShot?.(w);
     this.onKick?.(fireKick(w));
   }
