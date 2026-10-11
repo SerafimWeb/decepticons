@@ -279,6 +279,8 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] **Jogador remoto desenhado com o chassi da montagem dele** (03/10, achado): hoje todo humano aparece para os outros como Vector-09, e o tiro dele nasce da boca direita; pede o encaixe no evento de tiro (protocolo 3) e carregar a malha importada do outro jogador (`FINDINGS.md`) #rede
 - [ ] Som e aviso sonoro próprios da chuva de mísseis; o desenho do morteiro procedural já foi entregue em 04/10 (ver item concluído na Fase 3) #som
 - [ ] Rádio das IAs rebeldes: provocações geradas por modelo de linguagem no servidor, entre rodadas (nunca decidindo o combate) #ia
+- [ ] **Comandante e pilotos por LLM (fora do tick)** (ordem P53/P75; plano em `PILOTOS_LLM_E_INTELIGENCIA.md`): comandante que escolhe estratégia entre rodadas (devolve `BotSpec[]`), rádio gerado por modelo e a arena aberta a "cérebros de fora" jogarem pelo comando de 9 bytes; a infra de vários provedores já existe no Protocolo (SKILL 16/17) #ia
+- [ ] **A inteligência dos bots como ativo vendável** (ordem P71/P75): o gravador de voo passa a registrar também as decisões dos bots (mesmo `MechInput`), com curadoria e ficha; liga ao produto de `DADOS_E_ROBOTICA.md` (D0→D3) #negocio
 - [ ] Derrube o C2: retransmissor na arena que coordena as IAs; destruído, elas atacam desordenadas #universo
 - [ ] Módulos com nome de defesa: firewall (escudo), honeypot (isca), sensor de caça (radar), patch (reparo) #universo
 - [ ] Arenas dos recursos disputados: estação de cabos submarinos, barragem, fábrica de chips #universo

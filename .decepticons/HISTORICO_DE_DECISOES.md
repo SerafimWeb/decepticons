@@ -1,3 +1,25 @@
+## [2026-10-11] Pilotos por LLM e a inteligência dos bots como ativo — plano (Qwen, ordem P75)
+
+**Ordem do Comandante:** "tornar nossas IAs mais inteligentes, para poder plugar uma API de LLMs diferentes como pilotos
+dos Mechs e dos andróides"; e "produzir, cultivar e organizar a inteligência gerada nos nossos bots em situações de
+combate, para transformar isso num produto vendável".
+**Decisão/documento (Qwen):** plano em `.decepticons/PILOTOS_LLM_E_INTELIGENCIA.md`, que costura P53 (o LLM nos bots) e P71
+(o produto de dados) sem substituir nenhum dos dois.
+- **O limite:** o LLM nunca decide no tick (16 ms) — quebraria o determinismo (G1/G2/G14), custaria por chamada e exporia a
+  chave no navegador (R2). O reflexo continua nas regras rápidas do `BotController` (P74, no ar pelo #235).
+- **Três papéis, fora do tick:** (A) comandante entre rodadas, que devolve um `BotSpec[]` (o "C2 das IAs" da ficção); (B)
+  rádio de texto; (C) professor offline (destilação → bot fantasma).
+- **A "API de pilotos":** a arena aberta a "cérebros de fora" (D2 do P71) — qualquer agente joga pelo mesmo comando de 9
+  bytes (`shared/net/input.ts`), com ranking; a cadeia de provedores já existe no Protocolo (SKILL 16/17).
+- **Cultivar/organizar:** o gravador deve registrar também as decisões dos bots (mesmo `MechInput`), com curadoria por
+  persona/dificuldade/semente e observação honesta.
+- **Ordem gradual:** rádio → comandante → gravador (D0) → bot fantasma (D1) → arena (D2). Cada passo é um PR com check,
+  evidência e linha nas `ORDENS_DO_COMANDO.md`.
+- **Território:** o cérebro (`combat/`) e o gravador (`server/`) são do Claude; Qwen faz o plano, o contrato em documento e
+  a revisão independente.
+**Custo de CPU:** zero no tick (doc; os passos A/B são zero no tick, e o gravador copia bytes já codificados).
+**Quem decidiu:** Comandante (direção, 11/10); Qwen (plano e ordem sugerida).
+
 ## [2026-10-11] Câmeras de Vigilância CFTV e Espectador: Prédio Serafim, Vorcaris, Drones e Mechs (Gemini)
 
 **Pedido do dono:** "quero poder ver a visao da camera no alto do predio serafim, e as outras cameras (na porta do banco vorcaris, nos drones, etc)" e "o V ja é o botao de mudar a visibilidade durante o jogo, como fazermos pra nao competir por atalhos?".
