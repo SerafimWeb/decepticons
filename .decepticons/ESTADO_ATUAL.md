@@ -1,5 +1,27 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Anel de fogo — Claude, 11/10 (PR `claude/anel-de-fogo`, protocolo 13)
+
+**Ordem do Comandante (P73):** "o fogo também pode ser um tipo de escudo, que solta um círculo de fogo ao redor do Mech, queimando tudo ao redor durante alguns segundos, e aumentando o
+calor geral de tudo (inclusive do próprio robô); assim podemos fazer combos: congelar [o inimigo] e soltar esse poder no meio de uma rushada ou tankada".
+
+- **O que é:** o **terceiro módulo de escudo** (`ShieldId` `fire`, "Anel de fogo" no Hangar, **3 t**). Usa a tecla (**Ctrl**), a energia e o HUD do escudo, mas **não segura tiro**: solta um
+  círculo de fogo de **7 m** de raio em volta do Mech. 100 de energia a 20 por segundo = **5 s ligado**; só liga com 40; recarrega 8 por segundo depois de 4 s desligado.
+- **A cada pulso (0,25 s):** todo **inimigo** a até 7 m (da superfície do corpo, e a até 4 m de altura) leva 3 de dano (12 por segundo) e fica **queimando** (6 por segundo), pelo mesmo caminho do
+  lança-chamas (escudos de chapa e de energia valem, abate com crédito); **todo Mech dentro do anel esquenta 0,04 (0,16 por segundo), inclusive o dono e os aliados**, e não esfria nesse tick;
+  o **inimigo congelado** que o anel pega **derrete**: +40 de dano de uma vez (com o +20% do gelo) e o gelo some (o combo gelo + fogo).
+- **Se vê:** um aro e um disco de brasa no chão, do tamanho do alcance do dano (`ShieldVisuals`), e **línguas de fogo que sobem do aro**, brasas e fumaça (`fx/FireRingVisuals.ts`, 20 Hz,
+  220 partículas por segundo por anel); os outros jogadores veem pela bandeira de escudo ligado que já existia na rede. O HUD diz "ANEL DE FOGO".
+- **Regra:** `combat/FireRing.ts` (o que o pulso faz) + `EnergyShield` (o gerador pulsa; `consumePulse`) + `Match.ringTick` (depois do passo dos Mechs; o cliente online não aplica nada).
+- **Custo de CPU:** um laço pelos Mechs da partida a 4 Hz por anel ligado (sem alocação); 220 partículas por segundo por anel; 2 instâncias (aro e disco) por anel, teto de 16 (G5). Nada novo na rede
+  (o escudo ligado e a energia já viajavam).
+- **Rede:** `PROTOCOL_VERSION` **13** (a montagem com `fire` entra no JOIN e no roster; servidor antigo a recusaria).
+- **Testes:** 24 em `combat/fireRing.test.ts` (números, gerador, pulso com física de verdade: raio, altura, calor para todos, queimando, abate, chapa cerâmica, combo do gelo, cliente online), 11 em
+  `fx/FireRingVisuals.test.ts`, 3 do Hangar e 4 do servidor real; **mutações no PR**. Captura: `arte/anel-de-fogo-claude.png`.
+
+**Falta (honesto):** só foi visto em captura (falta o playtest do Comandante); os bots não usam o módulo; o anel não tem tecla própria (usa a do escudo) e não há como ter o escudo e o anel ao mesmo tempo
+(é um módulo só). **Decisões minhas, em aberto para o Comandante:** tecla, recarga, e o aliado só esquentar (não queimar).
+
 ## Gelo mais curto e frio, fogo mais forte — Claude, 11/10 (PR `claude/fogo-e-gelo`)
 
 **Ordem do Comandante (P72):** "o gelo está indo muito longe, e o fogo está muito fraco e curto; o rastro do gelo soltasse frio, partículas menores, pra dar mais a sensação de gelo frio".

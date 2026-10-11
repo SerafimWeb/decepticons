@@ -691,10 +691,73 @@ describe('Armas de aço online: o tiro de cada uma vira evento de tiro e o dano 
     room.dispose();
   });
 
-  it('o protocolo subiu para 12 e o catálogo de tiros da rede termina nas duas armas novas (só se acrescenta no fim)', () => {
-    expect(PROTOCOL_VERSION).toBe(12);
+  it('o catálogo de tiros da rede termina nas duas armas novas (só se acrescenta no fim) e o protocolo é o 12 ou mais', () => {
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(12);
     expect(NET_WEAPONS.slice(-2)).toEqual(['cannon', 'autocannon']);
     expect(NET_WEAPONS.slice(0, 10)).toEqual(['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage', 'railgun', 'emp', 'arc', 'cryo']);
+  });
+});
+
+describe('Anel de fogo online: o servidor aplica o anel, o calor vai para todos e o escudo ligado vai na rede', () => {
+  const ANEL = 'v2.vector09.plasma-0.rockets-0.-.fire';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem (módulo fire); segurando a tecla do escudo, o alvo a 5 m queima, perde vida e esquenta, e o dono esquenta sem se queimar', async () => {
+    const { room, dan, mine, bot, yaw, pitch } = await palco(ANEL, 5);
+    expect(mine.mech.loadout.module).toBe('fire');
+    const antes = lifeOf(bot.mech);
+    drive(room, dan, 1, 60, { shield: true, yaw, pitch }); // 1 s de anel
+    expect(mine.mech.energyShield.active).toBe(true);
+    expect(bot.mech.status.burning).toBe(true);
+    expect(antes - lifeOf(bot.mech)).toBeGreaterThan(12);
+    expect(bot.mech.heat).toBeGreaterThan(0.1);
+    expect(mine.mech.heat).toBeGreaterThan(0.1);
+    expect(mine.mech.status.burning).toBe(false);
+    room.dispose();
+  });
+
+  it('o alvo longe (15 m) não é pego; e o anel não impede o dono de levar tiro (não segura dano)', async () => {
+    const { room, dan, mine, bot, yaw, pitch } = await palco(ANEL, 15);
+    drive(room, dan, 1, 60, { shield: true, yaw, pitch });
+    expect(bot.mech.status.burning).toBe(false);
+    const vida = mine.mech.modules.torso;
+    const sobrou = mine.mech.defend(50, 'termico', 0, 0, -1);
+    expect(sobrou).toBe(50);
+    expect(mine.mech.modules.torso).toBe(vida);
+    room.dispose();
+  });
+
+  it('o escudo ligado e a energia que cai vão no snapshot (é por ele que os outros jogadores desenham o aro e as chamas); depois de soltar, desliga', async () => {
+    const { room, dan, me, yaw, pitch } = await palco(ANEL, 5);
+    const meu = () => {
+      const s = dan.lastSnapshot();
+      for (let i = 0; i < s.count; i++) if (s.units[i]!.id === me) return s.units[i]!;
+      throw new Error('o dono não está no estado');
+    };
+    drive(room, dan, 1, 60, { shield: true, yaw, pitch });
+    expect(meu().shield).toBe(true);
+    expect(dan.lastSnapshot().energy).toBeLessThan(0.85); // 1 s de 20 por segundo: ~80%
+    drive(room, dan, 61, 30, { yaw, pitch });
+    expect(meu().shield).toBe(false);
+    room.dispose();
+  });
+
+  it('o servidor aceita o anel num chassi comum e o protocolo do módulo novo é o 13 (cliente do 12 é recusado)', async () => {
+    expect(PROTOCOL_VERSION).toBe(13);
+    const room = await ArenaRoom.create('ANEL');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', ANEL));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const velho = new FakePeer();
+    room.receive(velho, join('Ana', ANEL, PROTOCOL_VERSION - 1));
+    expect(velho.of(MSG.WELCOME)).toHaveLength(0);
+    expect(velho.of(MSG.REJECT).length).toBeGreaterThan(0);
+    const ruim = new FakePeer();
+    room.receive(ruim, join('Bia', 'v2.android.blaster-0.chainsaw-0.-.fire')); // o Andróide não tem encaixe de gerador
+    expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
+    room.dispose();
   });
 });
 
