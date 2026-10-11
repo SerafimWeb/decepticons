@@ -71,9 +71,9 @@ describe('lança-chamas: números e equilíbrio', () => {
     expect(calor[2]!).toBeGreaterThan(calor[0]! * 1.6);
   });
 
-  it('só o lança-chamas muda de alcance e de cadência com o nível: todas as outras armas mantêm os do MK I', () => {
+  it('só quem declara tierRange/tierRate muda de alcance e de cadência com o nível (o lança-chamas e o canhão sônico, o alcance): as outras armas mantêm os do MK I', () => {
     for (const id of WEAPON_IDS) {
-      if (id === 'flamer') continue;
+      if (id === 'flamer' || id === 'sonic') continue;
       const a = weapon(id, 0);
       for (const t of [1, 2] as const) {
         expect(weapon(id, t).maxRange, id).toBe(a.maxRange);
@@ -190,7 +190,7 @@ describe('o lança-chamas no Armament (a regra de tiro de cada Mech)', () => {
     const armament = new Armament(mech);
     const pulsos: Array<{ t: number; mount: string }> = [];
     let t = 0;
-    const sink: ShotSink = { projectile: () => {}, rocket: () => {}, melee: () => {}, flame: (mount) => pulsos.push({ t, mount }) };
+    const sink: ShotSink = { projectile: () => {}, rocket: () => {}, melee: () => {}, flame: (mount) => pulsos.push({ t, mount }), wave: () => {} };
     const run = (seconds: number, fire: boolean, ventilar = true): void => {
       for (let i = 0, n = Math.round(seconds / FIXED_DT); i < n; i++, t += FIXED_DT) {
         if (ventilar) mech.vent(10);
@@ -216,7 +216,7 @@ describe('o lança-chamas no Armament (a regra de tiro de cada Mech)', () => {
     const mech = new Vector09({ loadout: { primary: FLAMER, offhand: FLAMER, secondary: null }, stats: { ...VECTOR09_STATS, triggers: SHOULDER_TRIGGERS } });
     const armament = new Armament(mech);
     const pulsos: string[] = [];
-    const sink: ShotSink = { projectile: () => {}, rocket: () => {}, melee: () => {}, flame: (mount) => pulsos.push(mount) };
+    const sink: ShotSink = { projectile: () => {}, rocket: () => {}, melee: () => {}, flame: (mount) => pulsos.push(mount), wave: () => {} };
     for (let i = 0; i < 60; i++) {
       mech.vent(10);
       armament.fixedUpdate(FIXED_DT, true, false, sink);

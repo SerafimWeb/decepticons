@@ -438,6 +438,10 @@ export class OnlineSession implements Pilot {
       _aimPoint.copy(_o).addScaledVector(_d, hit ? hit.distance : 400);
       this.o.match.barrage.fire(_o, _d, _aimPoint, r.mech.collider, weapon('barrage'), 0, r.mech.barrageMouth(_mouth));
       r.mech.onFireSecondary();
+    } else if (id === 'sonic') {
+      // A onda sônica de outro jogador: só o desenho (o cone, o dano e o empurrão são do servidor). Cada ombro manda o seu evento.
+      this.o.match.drawWave(_o, _d, weapon('sonic'));
+      r.mech.onFireSecondary();
     } else if (id === 'rockets') {
       this.o.match.rockets.fire(_o, _d, r.mech.collider, weapon('rockets'));
       r.mech.onFireSecondary();

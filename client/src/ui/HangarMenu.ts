@@ -71,6 +71,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   cryo: WEAPON_HINT_NOVAS.cryo,
   flamer: WEAPON_HINT_NOVAS.flamer,
   rotary: WEAPON_HINT_NOVAS.rotary,
+  sonic: 'Som · só nos ombros (botão 2), as duas bocas juntas · onda em cone de 22 m que EMPURRA · 20 de dano por boca, cheio até 10 m · a chapa Amortecedor segura 90% · cada nível +25% de alcance',
   cannon: 'Aço · um obus só, grande e lento (150 m/s) · 90 de dano, um a cada 2,6 s · 4 acertos (MK I) ou 3 (MK II e III) para um torso · só os pesados o carregam',
   autocannon: 'Aço · projéteis em sequência firme, 5 por segundo · 10 de dano, preciso e rápido · esquenta menos que o plasma · sem espalhamento',
 };
@@ -88,6 +89,7 @@ const WEAPON_ICON: Record<WeaponId, string> = {
   cryo: WEAPON_ICON_NOVAS.cryo,
   flamer: WEAPON_ICON_NOVAS.flamer,
   rotary: WEAPON_ICON_NOVAS.rotary,
+  sonic: '<rect x="2" y="9" width="5" height="6" rx="1" /><path d="M10 8a5 5 0 0 1 0 8M14 5a9 9 0 0 1 0 14M18 2a13 13 0 0 1 0 20" />',
   cannon: '<path d="M2 11h12v6H2z" /><path d="M14 12h6v4h-6z" /><path d="M20 11h2v6h-2" /><path d="M5 17v3h5v-3" /><circle cx="8" cy="14" r="1.2" />',
   autocannon: '<path d="M3 12h13v5H3z" /><path d="M16 13h5v3h-5z" /><path d="M6 12V8h6v4" /><path d="M7 17v3h4v-3" /><path d="M21 14h2" /><circle cx="20" cy="6" r="0.8" /><circle cx="17" cy="8" r="0.8" />',
   chainsaw: '<rect x="3" y="9" width="7" height="7" rx="1" /><path d="M10 10h9a2.5 2.5 0 0 1 0 5h-9" /><path d="M12 10l1-2M15 10l1-2M18 10l1-2M12 15l1 2M15 15l1 2M18 15l1 2" />',

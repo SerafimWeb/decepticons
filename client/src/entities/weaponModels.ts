@@ -261,6 +261,26 @@ function autocannon(root: THREE.Object3D, tier: number, M: Mats): number {
   return (0.74 + len) * LONG;
 }
 
+/**
+ * Canhão sônico (ombro): um corpo curto e um **funil de anéis de ressonância** que abre para a frente (cada anel, uma lâmina de metal e um aro luminoso lilás), com uma haste no
+ * eixo. O nível soma um anel. No ombro leva uma braçadeira embaixo (como os lançadores); na mão (não é onde ele vai, mas o `switch` é completo) leva o engate.
+ */
+function sonic(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const rings = 3 + tier;
+  d.box(0.36, 0.34, 0.5, M.armor, 0, 0, -0.3);
+  d.box(0.26, 0.12, 0.42, M.frame, 0, -0.23, -0.3);
+  const end = 0.58 + rings * 0.17;
+  d.cylZ(0.07, end - 0.4, M.frame, 0, 0, -0.4 - (end - 0.4) / 2);
+  for (let i = 0; i < rings; i++) {
+    const rad = 0.1 + i * 0.055;
+    const z = -0.58 - i * 0.17;
+    d.cylZ(rad + 0.04, 0.05, M.armor, 0, 0, z);
+    d.cylZ(rad, 0.035, M.glow, 0, 0, z - 0.03);
+  }
+  return (end + 0.1) * LONG;
+}
+
 /** Motosserra (corpo a corpo): motor e uma barra alta com dentes luminosos. O nível alonga a barra. */
 function chainsaw(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -315,12 +335,12 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
+  const accent = weapon?.id === 'sonic' ? PALETTE.pink : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
     // Lançador de ombro: o casulo de foguetes e o morteiro da chuva têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
-    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
-    const muzzleZ = weapon.id === 'barrage' ? mortarPod(root, weapon.tier, M) : pod(root, weapon.tier, M);
+    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
+    const muzzleZ = weapon.id === 'sonic' ? sonic(root, weapon.tier, M) : weapon.id === 'barrage' ? mortarPod(root, weapon.tier, M) : pod(root, weapon.tier, M);
     batchRigMeshes(root, []);
     return { object: root, muzzle: new THREE.Vector3(0, 0, -muzzleZ) };
   }
@@ -363,6 +383,9 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'autocannon':
         muzzleZ = autocannon(root, weapon.tier, M);
+        break;
+      case 'sonic':
+        muzzleZ = sonic(root, weapon.tier, M);
         break;
       case 'chainsaw':
         muzzleZ = chainsaw(root, weapon.tier, M);

@@ -232,7 +232,7 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   it('as mãos aceitam blaster ou plasma; foguete na mão e blaster no ombro são recusados; plasma duplo só sem os ombros', () => {
     expect(armOptions('right', 'marauder')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo', 'autocannon', 'rotary', 'flamer', 'cannon']);
     expect(armOptions('left', 'marauder')).toEqual(armOptions('right', 'marauder'));
-    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage']);
+    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic']);
     expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...factory, shoulders: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     const twoPlasma = { ...factory, right: { id: 'plasma', tier: 0 }, left: { id: 'plasma', tier: 0 } } as LoadoutSpec;
@@ -270,7 +270,7 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   it('equilíbrio: nenhuma das montagens válidas do Marauder derruba o torso de um Mech em menos de 2,5 s (a meta dos dois braços juntos)', () => {
     const hands: WeaponId[] = ['blaster', 'plasma'];
     let validas = 0;
-    for (const r of hands) for (const l of [...hands, null]) for (const rt of LEVELS) for (const lt of LEVELS) for (const pod of ['rockets', 'barrage'] as const) for (const s of [null, 0, 1, 2] as const) {
+    for (const r of hands) for (const l of [...hands, null]) for (const rt of LEVELS) for (const lt of LEVELS) for (const pod of ['rockets', 'barrage', 'sonic'] as const) for (const s of [null, 0, 1, 2] as const) {
       const spec: LoadoutSpec = { v: 1, chassis: 'marauder', right: { id: r, tier: rt }, left: l ? { id: l, tier: lt } : null, shoulders: s === null ? null : { id: pod, tier: s as Tier } };
       if (validateLoadout(spec).ok !== true) continue;
       validas++;
@@ -443,6 +443,31 @@ describe('armas de aço no Hangar (canhão pesado e canhão automático)', () =>
     expect(c.ok && c.loadout.offhand?.id).toBe('autocannon');
     expect(parseLoadoutKey(loadoutKey(m))).toEqual(m);
     expect(validateLoadout({ ...m, left: { id: 'cannon', tier: 0 } })).toMatchObject({ ok: false, error: 'carga', mass: 12 });
+  });
+});
+
+describe('canhão sônico no Hangar (arma de ombro)', () => {
+  const sonico = (tier: Tier, right: LoadoutSpec['right'] = { id: 'blaster', tier: 0 }): LoadoutSpec => ({ v: 1, chassis: 'marauder', right, left: { id: 'blaster', tier: 0 }, shoulders: { id: 'sonic', tier } });
+
+  it('vai nos ombros do Marauder, o link vai e volta, e o Loadout traz o canhão sônico no gatilho secundário', () => {
+    const spec = sonico(0);
+    expect(loadoutKey(spec)).toBe('v1.marauder.blaster-0.blaster-0.sonic-0');
+    expect(parseLoadoutKey('v1.marauder.blaster-0.blaster-0.sonic-0')).toEqual(spec);
+    const c = validateLoadout(spec);
+    expect(c.ok && c.loadout.secondary).toBe(weapon('sonic', 0));
+    expect(c.ok && c.loadout.primary.id).toBe('blaster');
+  });
+
+  it('conta nos dois ombros: 6 t no MK I (3 t x 2), 9 t no MK II e estoura a carga de 11 t no MK III com as mãos de plasma', () => {
+    expect(validateLoadout(sonico(0))).toMatchObject({ ok: true, mass: 0.5 + 0.5 + 6 });
+    expect(validateLoadout(sonico(1))).toMatchObject({ ok: true, mass: 0.5 + 0.5 + 9 });
+    expect(validateLoadout({ ...sonico(2), right: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: false, error: 'carga' });
+  });
+
+  it('não vai nas mãos nem fora do Marauder: o encaixe recusa', () => {
+    expect(validateLoadout({ ...sonico(0), right: { id: 'sonic', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(validateLoadout({ ...sonico(0), left: { id: 'sonic', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
+    expect(validateLoadout({ v: 1, chassis: 'vector09', right: { id: 'plasma', tier: 0 }, left: { id: 'sonic', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
   });
 });
 

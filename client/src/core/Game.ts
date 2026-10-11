@@ -485,6 +485,7 @@ export class Game {
     this.match.pilots.push(this.player);
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
     this.player.flame = (w, origin, dir) => this.match.flameCone(this.mech, origin, dir, w);
+    this.player.wave = (w, origin, dir) => this.match.waveCone(this.mech, origin, dir, w);
     this.netStatus.className = 'net-status';
     
     const shouldConnect = online && online.explicitName;
@@ -868,7 +869,7 @@ export class Game {
       };
     }
     // Som de disparo: o controle do jogador avisa a cada tiro de energia (bots têm o som deles, acima).
-    this.player.onShot = (w) => (w.id === 'arc' ? this.audio.playArcShot() : w.id === 'cryo' ? this.audio.playCryoShot() : w.id === 'cannon' ? this.audio.playCannonShot() : w.id === 'autocannon' ? this.audio.playAutocannonShot() : this.audio.playShot());
+    this.player.onShot = (w) => (w.id === 'arc' ? this.audio.playArcShot() : w.id === 'cryo' ? this.audio.playCryoShot() : w.id === 'cannon' ? this.audio.playCannonShot() : w.id === 'autocannon' ? this.audio.playAutocannonShot() : w.id === 'sonic' ? this.audio.playSonicShot() : this.audio.playShot());
     // Peso do tiro na câmera (`combat/fireFeel.ts`): o solavanco do trilho e do foguete, o zumbido do plasma.
     this.player.onKick = (amount) => rig.addShake(amount);
     this.player.onRocket = () => {

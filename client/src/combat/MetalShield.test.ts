@@ -114,7 +114,7 @@ describe('escudo físico no combate', () => {
   it('o botão 2 levanta a chapa pelo Armament; o tiro de frente perde a parte da chapa', () => {
     const { combat, target, hit } = rig();
     const armament = new Armament(target);
-    const sink = { projectile: () => {}, rocket: () => {}, melee: () => {}, flame: () => {} };
+    const sink = { projectile: () => {}, rocket: () => {}, melee: () => {}, flame: () => {}, wave: () => {} };
     armament.fixedUpdate(FIXED_DT, false, true, sink);
     expect(target.metalShield.raised).toBe(true);
     const hp = target.modules.torso;

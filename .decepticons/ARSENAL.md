@@ -82,6 +82,11 @@ correr antes dos pilotos, o `MechBase` lê `status` (velocidade, travas de tiro,
 Números em `STATUS` (um lugar só); resistência por chassi em `MechStats.statusResist`. **Arma que não atira projétil** (lança-chamas,
 rotatória) liga `status.flaming`/`status.spinning` no dono em vez de mandar um evento por tiro. A rotatória (`spin` na entrada de `BASE`) é o modelo: a regra fica em `SpinUp` (`trigger.ts`), o desvio em `spread.ts` (por número de tiro, sem sorteio), o servidor sai cedo em `ArenaRoom.shot` quando a arma tem `spin`, e o outro jogador desenha o fluxo pela bandeira, lendo a arma da montagem do roster. A elétrica (`inflicts: 'shock'`, `tracer: 'arc'`) é o modelo das armas de projétil que aplicam estado: o `CombatSystem` só aplica quando pelo menos `STATUS.shieldPass` do dano passou pelas defesas, e a cor da faixa vem do `tracer` (`ProjectileSystem`).
 
+## Armas do botão 2 (ombros, costas, peito) — 11/10, Claude
+
+O mapa de ideias com o custo de cada uma, o que existe hoje por lugar do corpo e o contrato de uma arma de botão 2 estão em **`.decepticons/ARMAS_DE_BOTAO_2.md`**. O canhão sônico (`sonic`) é o modelo de **arma de ombro com efeito de área e empurrão**: campo `wave` na arma (`Wave`: meio ângulo e velocidade do empurrão), `ShotSink.wave`,
+`Match.waveCone` (a regra) e `MechBase.push` (o empurrão). Arma nova de ombro = **uma entrada em `ARM_SLOTS[chassi].shoulders`** (e a carga conta por boca); os registros `IMPACT_FX`, `MUZZLE_FX`, `FIRE_KICK`, mira e Hangar quebram o typecheck se faltarem.
+
 ## Anel de fogo (módulo de escudo `fire`) — 11/10, Claude
 
 O anel de fogo não é arma: é o terceiro `ShieldId` do gerador de energia (`combat/EnergyShield.ts`, números em `FIRE_RING`). Módulo novo de escudo = uma entrada em `SHIELDS` (o Hangar, a carga e a rede leem dali) +

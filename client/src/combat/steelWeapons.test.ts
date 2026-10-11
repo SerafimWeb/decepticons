@@ -177,6 +177,7 @@ function bench(loadout: Loadout) {
     rocket: () => {},
     melee: () => {},
     flame: () => {},
+    wave: () => {},
   };
   /** O dissipador do Mech (privado): o jogo o roda a cada tick, antes do tiro; sem ele o calor só sobe. */
   const heatSink = (mech as unknown as { heatSink: HeatSink }).heatSink;
