@@ -101,6 +101,7 @@
 | P47 | 23/09 | Modelo de negócio, viralizar, lives | ⏸ | `ROADMAP` #negocio (7 itens abertos) | — |
 | P48 | 26/09 | **Referência DEFILADE** ("conseguiremos chegar nesse nível de detalhe?") | ❓ | Nenhum documento cita o jogo; `REFERENCIA_VISUAL.md` tem MechArena e War Robots | — |
 | P49 | 26 e 29/09 | Universo: Brasil no centro, BRICS, big techs, termos de CTI; fábricas (Arara Foundry, **Vanta, da Faria Lima**, outras) | 🟡 | `UNIVERSO.md`; a Arara Foundry está nos documentos, **a Vanta não** | — |
+| P71 | 11/10 | "como aproveitar os aprendizados, reações e interpretação dos bots para treinar robôs humanoides de verdade? gerar valor real, civil ou militar? embutir no meu robô humanoide? e o JEV? qual o formato para os dados que o jogo vai gerar?" | ⏸ | Respondido no chat; proposta em **`DADOS_E_ROBOTICA.md`** (gravador de voo, bot fantasma, arena aberta, robô real; "JEV" lido como V-JEPA, a confirmar). **Nada construído; não é escopo aprovado** | Ler o documento e decidir a etapa D0 |
 
 ## 5. Processo
 
