@@ -1,5 +1,12 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Dados da arena para robôs de verdade — Claude, 11/10 (só documento)
+
+Pergunta do dono (P71): como transformar o que acontece na arena em treino de robôs humanoides reais, com valor civil ou de defesa.
+Resposta registrada em `.decepticons/DADOS_E_ROBOTICA.md`: o corpo não transfere, a decisão transfere; o formato é um gravador de voo
+no servidor (comando de 9 bytes por tick + estado a 20 Hz, ~2 MB/h por jogador); primeiro produto é o bot fantasma. **Proposta, nada
+construído, sem custo no jogo.** Próximo passo é do dono: aprovar ou não a etapa D0 (consentimento + gravador).
+
 ## Bunker profundo — Codex, 10/10
 
 **NO AR desde o PR #218 (10/10):** bunker atualizado de três para quatro níveis na main `df1ade7`. CI da main verde (893 testes/115 arquivos) e deploy/pós-verificação do site concluídos na execução `38095296905`. O botão visível [ EXPLORAR O BUNKER // 4 NÍVEIS ] abre o treino offline.
