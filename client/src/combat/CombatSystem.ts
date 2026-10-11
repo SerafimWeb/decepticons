@@ -3,10 +3,11 @@ import { inflictOnHit, STATUS } from './StatusEffects';
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { GLOW } from '../core/palette';
+import { SHAPE } from '../fx/particleShapes';
 import { MechBase, type MechPart } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
 import type { Destructibles } from '../environment/Destructibles';
-import type { ParticleSystem } from '../fx/ParticleSystem';
+import type { BurstOptions, ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
 import type { DamageResult } from './damage';
 import { DAMAGE_TYPE, splashDamage, weapon, type WeaponStats } from './weapons';
@@ -28,6 +29,9 @@ const UP = new THREE.Vector3(0, 1, 0);
 const SPARK = new THREE.Color(3.0, 1.3, 0.3);
 const FIRE = new THREE.Color(3.5, 1.1, 0.15);
 const SMOKE = GLOW.smoke;
+
+/** O sopro de frio no aliado que o gelo amigo esfria: vapor azulado que sobe devagar (sem flocos: ele não congela). */
+const COOLED: BurstOptions = { count: 5, color: new THREE.Color(0.5, 0.85, 1.1), speed: 2.4, life: 0.8, size: 1.7, expansion: 1.2, spread: 1.1, gravity: -0.8, shape: SHAPE.puff };
 
 const _at = new THREE.Vector3();
 const _near = new THREE.Vector3();
@@ -66,6 +70,12 @@ export class CombatSystem {
    * continuam parando nos robôs e soltando faísca.
    */
   damageEnabled = true;
+
+  /**
+   * Os dois estão do mesmo lado? (`Match.sameSide`: aliados da Arena offline e times). Sem esta regra (o servidor de hoje, todos contra todos) ninguém é aliado
+   * de ninguém e o gelo congela quem for. Só o gelo a lê (`friendlyChill`); o resto do dano ainda não distingue o lado (fogo amigo continua como era).
+   */
+  sameSide?: (a: MechBase, b: MechBase) => boolean;
 
   register(mech: MechBase): void {
     this.byCollider.set(mech.collider.handle, mech);
@@ -166,6 +176,10 @@ export class CombatSystem {
       return;
     }
     const shooter = owner ? this.byCollider.get(owner.handle) : undefined;
+    if (shooter && shooter !== mech && w?.inflicts === 'chill' && this.sameSide?.(shooter, mech)) {
+      this.friendlyChill(mech, hit.point, w);
+      return;
+    }
     if (w) applyEmp(mech, w, distance);
     const remaining = mech.defend(damage, w ? DAMAGE_TYPE[w.id] : 'termico', -dir.x, -dir.y, -dir.z);
     const result = mech.takeHit(hit.point, remaining);
@@ -177,6 +191,17 @@ export class CombatSystem {
       if (w?.inflicts && remaining >= damage * STATUS.shieldPass) inflictOnHit(mech.status, w.inflicts, result.part, shooter);
     }
     this.onMechHit?.({ mech, result, shooter });
+  }
+
+  /**
+   * O gelo de um aliado esfria em vez de congelar: tira calor (`STATUS.friendlyVentPerDamage` por ponto de dano da arma, no nível dela) e apaga o fogo, sem dano e sem
+   * estado de gelo. O escudo e a chapa não entram (é ajuda, não ataque). Sem `onMechHit`: o marcador de acerto do HUD é de dano.
+   */
+  private friendlyChill(mech: MechBase, at: THREE.Vector3, w: WeaponStats): void {
+    if (!mech.alive) return;
+    mech.vent(w.damage * STATUS.friendlyVentPerDamage);
+    mech.status.douse();
+    this.particles.burst(at, UP, COOLED);
   }
 
   /**

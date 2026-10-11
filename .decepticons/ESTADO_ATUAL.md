@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Gelo amigo: o gelo de um aliado esfria o aliado — Claude, 11/10 (PR `claude/gelo-amigo`, ordem P78)
+
+**Ordem do Comandante (P78):** "posso mandar meu amigo que tenha a tecnologia do anel de fogo, e eu congelo ele pra ele ficar rushando com os inimigos e soltando o anel enquanto eu mando gelo nele pra compensar".
+
+- **O que faz:** o tiro de gelo num **aliado** não congela nem machuca: **esfria** (tira `STATUS.friendlyVentPerDamage` = 0,02 de calor por ponto de dano: 0,10 por tiro no MK I, 0,12 no MK II, 0,14 no MK III) e **apaga o fogo**. Um gelo por segundo (0,17 de resfriamento) compensa o anel de fogo (0,16 de aquecimento);
+  dois amigos mandando gelo vão além; na zona de resfriamento (0,35 por segundo) o amigo fica "macetando" com o anel sem ferver. O gelo no inimigo segue igual (dano, gelado, congela).
+- **Regra de mesmo lado:** `Match.sameSide(a, b)`, na ordem: (1) **times da sala** (`Match.setTeam`), (2) times do **CTF**, (3) na **Arena offline**, o jogador e os aliados dele. **Dois humanos na mesma partida sem time NUNCA são aliados** (o servidor de hoje é todos contra todos).
+  O `CombatSystem` recebe a regra por `sameSide` e só o gelo a lê: o fogo amigo das outras armas continua como era (não mexi).
+- **Custo de CPU:** nenhum a mais por tick; um teste de lado só quando um tiro de gelo acerta um Mech (≤ 1,7 por segundo por atirador), mais um sopro de 5 partículas no aliado esfriado.
+- **Rede:** nenhuma mudança (o protocolo segue 14; o calor já viajava).
+- **Testes:** 20 em `combat/friendlyIce.test.ts` (regra de lado: offline, dois humanos, times, CTF; o gelo: calor, fogo, sem dano, sem congelar, por nível, morto, cliente online; o combo do anel com o gelo do amigo); mutações no PR.
+
+**O que ainda falta para o SEU caso (você e um amigo humano, online):** o servidor é **todos contra todos**, então hoje o gelo do seu amigo o congela e machuca. Falta **time na sala** (P81, registrada, aguardando ordem): time no JOIN e no roster, escolha de time, HUD e fogo amigo. O gancho (`setTeam`) está pronto.
+
+**Próximas:** P77 (armas do botão 2 nos ombros, costas e peito; as sônicas nos ombros) em `claude/armas-de-ombro`.
+
 ## O jogo passa a se chamar AVARIA na capa — Claude, 11/10 (PR `claude/nome-avaria`, ordem P79)
 
 **Ordem do Comandante (P79):** "onde estiver SINGULARIA, pode mudar para AVARIA, que é o nome que vamos usar por enquanto. Avaria tem mais a ver e nome mais bacana de ler. Singularia não ficou bom!"

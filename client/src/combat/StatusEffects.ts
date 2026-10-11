@@ -40,6 +40,12 @@ export const STATUS = {
   freezeTime: 1.5,
   freezeImmune: 5,
   frozenDamage: 1.2,
+  /**
+   * Gelo de um **aliado** (dono, 11/10: "meu amigo solta o anel de fogo e eu mando gelo nele pra compensar"): em vez de congelar, **esfria** — tira calor do Mech atingido
+   * (esta fração do dissipador por ponto de dano do tiro: a arma de gelo, com 5 de dano, tira 0,10 por tiro, 0,17 por segundo, o que cobre o 0,16 por segundo do anel de
+   * fogo) e apaga o fogo, sem dano e sem estado. Só entre quem está do mesmo lado (`Match.sameSide`).
+   */
+  friendlyVentPerDamage: 0.02,
   /** O estado só pega se pelo menos esta fração do dano passou pelas defesas (campo de energia, chapa do escudo físico): a cerâmica isola o choque, a chapa de aço não. */
   shieldPass: 0.5,
 } as const;
@@ -148,6 +154,11 @@ export class StatusSet {
       return true;
     }
     return false;
+  }
+
+  /** Gelo de um aliado: só apaga o fogo (não soma acúmulo, não congela). */
+  douse(): void {
+    this.burn = 0;
   }
 
   /** Gelo: apaga o fogo, soma um acúmulo (até o máximo) e, no último, congela (a menos que tenha congelado há pouco). */

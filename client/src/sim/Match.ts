@@ -203,6 +203,7 @@ export class Match {
     this.barrage = new BarrageSystem(o.scene, o.physics);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.combat.damageEnabled = o.damage !== false;
+    this.combat.sameSide = (a, b) => this.sameSide(a, b);
     this.respawner = new Respawner(this.spawnPoints);
     this.crush = new CrushRule(this.combat);
     // Aliados (30/09, "sozinho tá muito intenso"): só na Arena normal, tiram vaga do pool de Mechs
@@ -369,6 +370,33 @@ export class Match {
     this.scene.remove(mech.root);
     mech.despawn(this.physics);
     this.refreshEnemyTargets();
+  }
+
+  /** O time de cada Mech, quando a sala tem times (`setTeam`); fora dele valem o CTF e os aliados da Arena. */
+  private readonly teams = new Map<MechBase, number>();
+
+  /** Põe `mech` num time (salas com times). Dois Mechs do mesmo time são aliados: o gelo de um esfria o outro. Sem time, o Mech não é aliado de ninguém por este caminho. */
+  setTeam(mech: MechBase, team: number | null): void {
+    if (team === null) this.teams.delete(mech);
+    else this.teams.set(mech, team);
+  }
+
+  /**
+   * Dois Mechs diferentes estão do mesmo lado? Na ordem: (1) times da sala (`setTeam`); (2) times do CTF; (3) na Arena offline, o jogador e os aliados dele. **Jogadores
+   * contra jogadores (o servidor de hoje, todos contra todos) nunca são do mesmo lado**: dois humanos na mesma partida só são aliados se estiverem no mesmo time.
+   */
+  sameSide(a: MechBase, b: MechBase): boolean {
+    if (a === b) return false;
+    const ta = this.teams.get(a);
+    const tb = this.teams.get(b);
+    if (ta !== undefined && tb !== undefined) return ta === tb;
+    if (this.ctf) {
+      const ca = this.ctf.teamOf(a);
+      return ca !== undefined && ca === this.ctf.teamOf(b);
+    }
+    const aliado = (m: MechBase): boolean => this.allies?.mechs.includes(m) ?? false;
+    if (aliado(a)) return aliado(b) || this.players.includes(b);
+    return aliado(b) && this.players.includes(a);
   }
 
   /** O inimigo caça todo jogador de gente E todo aliado — a lista muda só quando alguém entra/sai (raro; não é por tick). */
