@@ -32,6 +32,9 @@ a "API de pilotos" é a **arena aberta a cérebros de fora** (D2 do P71) pelo co
 o gravador de voo passa a capturar **também as decisões dos bots** (mesmo `MechInput` que o jogador). Ordem sugerida:
 rádio → comandante → gravador → bot fantasma → arena. A infra de vários provedores já existe no Protocolo (SKILL 16/17).
 **Proposta; nada construído; sem custo no tick.** Próximo passo é do Comandante: decidir a ordem (seção 10 do plano).
+**Decisões do Comandante (11/10):** só as **nossas IAs** — nada de dado de jogador (sem LGPD), o gravador captura só os
+bots (bot × bot) e a D0 do P71 perde o portão de consentimento; e **vozes por ElevenLabs** (rádio = texto por LLM + voz).
+`DADOS_E_ROBOTICA.md` atualizado para refletir as duas decisões (PR `qwen/ia-so-nossas-e-vozes`).
 ## Gelo mais curto e frio, fogo mais forte — Claude, 11/10 (PR `claude/fogo-e-gelo`)
 
 **Ordem do Comandante (P72):** "o gelo está indo muito longe, e o fogo está muito fraco e curto; o rastro do gelo soltasse frio, partículas menores, pra dar mais a sensação de gelo frio".
