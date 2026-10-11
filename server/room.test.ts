@@ -6,7 +6,7 @@ import type { MechBase } from '../client/src/entities/MechBase';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/constants';
 import { EVENT } from '../shared/net/events';
-import { FX_SHOCKED, FX_SPINNING, FX_STUNNED } from '../client/src/combat/StatusEffects';
+import { FX_CHILL_MASK, FX_FROZEN, FX_SHOCKED, FX_SPINNING, FX_STUNNED } from '../client/src/combat/StatusEffects';
 import { hitDamage, weapon } from '../client/src/combat/weapons';
 import { netWeaponIndex } from '../client/src/net/adapters';
 import { factorySpec, loadoutKey } from '../client/src/hangar/loadout';
@@ -524,6 +524,65 @@ describe('Arma elétrica online: o tiro vira evento, o alvo fica chocado e o est
     room.receive(ruim, join('Ana', 'v1.vector09.arco-0.rockets-0'));
     expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
     expect(ruim.of(MSG.REJECT).length).toBeGreaterThan(0);
+    room.dispose();
+  });
+});
+
+describe('Arma de gelo online: o tiro vira evento, o alvo fica gelado, congela com três acertos e o estado vai na rede', () => {
+  const GELO = 'v1.vector09.cryo-0.rockets-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem; o tiro sai como evento de tiro do gelo e o acerto deixa o alvo gelado com um acúmulo, com o dano certo', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(GELO);
+    expect(mine.mech.loadout.primary.id).toBe('cryo');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 12, { fire: true, yaw, pitch }); // 0,2 s: um tiro só (a cadência é 0,6 s)
+    drive(room, dan, 13, 50, { yaw, pitch }); // o projétil leva ~0,21 s para chegar
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('cryo')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.amount).toBe(hitDamage(weapon('cryo'), 15));
+    expect(bot.mech.status.stacks).toBe(1);
+    expect(bot.mech.status.isFrozen).toBe(false); // um acerto só gela
+    expect(before - lifeOf(bot.mech)).toBe(hits[0]!.amount); // o gelo não tira vida por segundo: só o tiro
+    room.dispose();
+  });
+
+  it('o estado do alvo vai no snapshot (bits de gelado e de congelado) e some quando acaba; três acertos seguidos congelam', async () => {
+    const { room, dan, bot, yaw, pitch } = await palco(GELO);
+    const fxOf = (): number => {
+      const s = dan.lastSnapshot();
+      for (let i = 0; i < s.count; i++) if (s.units[i]!.id === bot.id) return s.units[i]!.fx ?? 0;
+      throw new Error('o alvo não está no estado');
+    };
+    expect(fxOf()).toBe(0);
+    let congelou = false;
+    let bitDeCongelado = false;
+    let bitDeGelado = false;
+    let tick = 1;
+    for (let i = 0; i < 150; i++, tick++) {
+      bot.mech.status.stun = 1; // o bot não pula nem se esquiva (ele pulava depois do 2º acerto e o 3º projétil passava por baixo): o teste mede o gelo, não a esquiva
+      room.receive(dan, inputs(tick, 1, { fire: true, yaw, pitch }));
+      room.step();
+      if (bot.mech.status.isFrozen) congelou = true;
+      if ((fxOf() & FX_FROZEN) !== 0) bitDeCongelado = true; // o estado sai a 20 Hz: o bit aparece dentro dos 1,5 s do congelamento
+      if ((fxOf() & FX_CHILL_MASK) !== 0) bitDeGelado = true;
+    }
+    expect(congelou).toBe(true); // 3 tiros a 0,6 s: o terceiro acerto cai dentro dos 4 s do gelado
+    expect(bitDeCongelado).toBe(true);
+    expect(bitDeGelado).toBe(true);
+    drive(room, dan, tick, 420, { yaw, pitch }); // 7 s sem tiro: o gelo e o congelamento acabam
+    expect(fxOf() & (FX_FROZEN | FX_CHILL_MASK)).toBe(0);
+    room.dispose();
+  });
+
+  it('o servidor aceita a de gelo na mão esquerda (atira como o plasma)', async () => {
+    const room = await ArenaRoom.create('GELO');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', 'v1.vector09.plasma-0.cryo-0'));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
     room.dispose();
   });
 });

@@ -13,7 +13,8 @@
 // 7 (09/10): byte `fx` por unidade (fogo, choque, gelo; lança-chamas ligado; rotatória girando), presente só quando há algo ligado (bit das flags); +1 byte por unidade no pior caso.
 // 8 (09/10): a metralhadora rotatória entra no catálogo de armas (montagem `rotary` no JOIN e na lista de jogadores); o tiro dela não vira evento (bandeira `fx`).
 // 9 (09/10): a arma elétrica entra em `NET_WEAPONS` (o tiro dela é evento de tiro como o do plasma); um cliente da versão 8 recusaria o tiro como evento ruim.
-export const PROTOCOL_VERSION = 9;
+// 10 (11/10): a arma de gelo entra em `NET_WEAPONS` (o tiro dela é evento de tiro como o do plasma); um cliente da versão 9 recusaria o tiro como evento ruim.
+export const PROTOCOL_VERSION = 10;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

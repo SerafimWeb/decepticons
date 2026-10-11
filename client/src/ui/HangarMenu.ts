@@ -68,6 +68,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   barrage: 'Munição · sobe e cai em chuva de 8 bombas num círculo de 9 m · aviso no chão',
   chainsaw: 'Corpo a corpo · só corta encostado',
   arc: WEAPON_HINT_NOVAS.arc,
+  cryo: WEAPON_HINT_NOVAS.cryo,
   rotary: WEAPON_HINT_NOVAS.rotary,
 };
 
@@ -81,6 +82,7 @@ const WEAPON_ICON: Record<WeaponId, string> = {
   barrage: '<rect x="3" y="15" width="15" height="4" rx="1" /><path d="M6 15l2-9M10 15l2-9M14 15l2-9" /><circle cx="8" cy="5" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="16" cy="5" r="1" />',
   shotgun: '<path d="M3 10h15M3 14h15" /><path d="M18 8l3 1v6l-3 1z" /><path d="M6 14v4h5v-4" />',
   arc: WEAPON_ICON_NOVAS.arc,
+  cryo: WEAPON_ICON_NOVAS.cryo,
   rotary: WEAPON_ICON_NOVAS.rotary,
   chainsaw: '<rect x="3" y="9" width="7" height="7" rx="1" /><path d="M10 10h9a2.5 2.5 0 0 1 0 5h-9" /><path d="M12 10l1-2M15 10l1-2M18 10l1-2M12 15l1 2M15 15l1 2M18 15l1 2" />',
 };
@@ -718,7 +720,7 @@ const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-
 const PLATE_ICON = '<path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z" />';
 
 const DAMAGE_LABEL: Record<DamageType, string> = {
-  termico: 'TÉRMICO', laser: 'LASER', balistico: 'BALÍSTICO', explosivo: 'EXPLOSIVO', pulso: 'PULSO', sonico: 'SÔNICO', corte: 'CORTE', eletrico: 'ELÉTRICO',
+  termico: 'TÉRMICO', laser: 'LASER', balistico: 'BALÍSTICO', explosivo: 'EXPLOSIVO', pulso: 'PULSO', sonico: 'SÔNICO', corte: 'CORTE', eletrico: 'ELÉTRICO', criogenico: 'CRIOGÊNICO',
 };
 
 /** Quanto a chapa levantada segura de cada natureza de dano (com o bônus do nível). */

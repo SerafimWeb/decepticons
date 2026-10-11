@@ -52,6 +52,9 @@ export class ProjectileSystem {
   /** A arma elétrica usa a mesma faixa, em azul-branco (jogador) e violeta (inimigo): não se confunde com o plasma. */
   private readonly friendlyArcStreak = buildStreakMaterial(GLOW.friendlyArc);
   private readonly hostileArcStreak = buildStreakMaterial(GLOW.hostileArc);
+  /** A arma de gelo usa a mesma faixa, em branco-gelo (jogador) e lilás pálido (inimigo): não se confunde com o plasma nem com a elétrica. */
+  private readonly friendlyIceStreak = buildStreakMaterial(GLOW.friendlyIce);
+  private readonly hostileIceStreak = buildStreakMaterial(GLOW.hostileIce);
 
   constructor(
     scene: THREE.Scene,
@@ -111,10 +114,15 @@ export class ProjectileSystem {
     p.mesh.lookAt(_look.copy(origin).add(dir));
     // Tiro comum: faixa com cauda. Trilho e EMP (têm `tracer`): a esfera esticada de sempre, com o traço do trilho.
     const arc = w.tracer === 'arc';
-    const streak = w.tracer === undefined || arc;
+    const ice = w.tracer === 'ice';
+    const streak = w.tracer === undefined || arc || ice;
     p.tail = streak ? streakLength(w.speed) : 0;
     p.mesh.geometry = streak ? this.streakGeo : this.orbGeo;
-    p.mesh.material = streak ? (arc ? (hostile ? this.hostileArcStreak : this.friendlyArcStreak) : hostile ? this.hostileStreak : this.friendlyStreak) : hostile ? this.hostileMat : this.friendlyMat;
+    p.mesh.material = streak
+      ? arc ? (hostile ? this.hostileArcStreak : this.friendlyArcStreak)
+        : ice ? (hostile ? this.hostileIceStreak : this.friendlyIceStreak)
+        : hostile ? this.hostileStreak : this.friendlyStreak
+      : hostile ? this.hostileMat : this.friendlyMat;
     p.trail.material = hostile ? this.hostileMat : this.friendlyMat;
     p.trail.visible = w.tracer === 'rail';
     p.trailLife = 0;

@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo';
 
 /**
  * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
@@ -120,7 +120,7 @@ export interface WeaponStats {
   /** Sobrecarga térmica adicional no impacto, sem atrasar o resfriamento. */
   empHeat?: number;
   /** Silhueta visual do tiro, sem alterar colisão. */
-  tracer?: 'rail' | 'pulse' | 'arc';
+  tracer?: 'rail' | 'pulse' | 'arc' | 'ice';
   /** Só na rotatória: a rotação do cano (cadência que sobe, espalhamento que abre). */
   spin?: Spin;
   /** Estado que o acerto aplica no alvo (`combat/StatusEffects.ts`): fogo, choque ou gelo. Sem escudo na frente, o acerto vale. */
@@ -157,6 +157,20 @@ const BASE: Record<WeaponId, WeaponBase> = {
     magazine: 0, reload: 0, speed: 90,
     optimalRange: 50, maxRange: 130, minFactor: 0.5,
     blastRadius: 0, mass: 2.5, tracer: 'arc', inflicts: 'shock',
+  },
+  /**
+   * Arma de gelo (dono, 09/10: "lança-chamas e arma de gelo"). Dano pequeno, o estado é o ponto: cada acerto que chega ao corpo soma um
+   * acúmulo de **gelado** (−15% de velocidade por acúmulo, até 3, por 4 s desde o último tiro); o **terceiro acúmulo congela** o alvo por
+   * 1,5 s (parado, sem atirar, levando +20% de dano), com 5 s de imunidade para não encadear (`combat/StatusEffects.ts`). Projétil mais lento
+   * que o da elétrica (70 contra 90 m/s) e cadência de 0,6 s: três acertos levam 1,2 s, dentro dos 4 s do gelado. Natureza `criogenico`:
+   * a cerâmica isola o frio, o aço e a malha seguram menos, o reativo deixa passar. Fogo e gelo se anulam (`StatusSet`).
+   */
+  cryo: {
+    id: 'cryo', name: 'Arma de gelo', kind: 'energy',
+    damage: 5, fireInterval: 0.6, heatPerShot: 0.05,
+    magazine: 0, reload: 0, speed: 70,
+    optimalRange: 45, maxRange: 110, minFactor: 0.5,
+    blastRadius: 0, mass: 3, tracer: 'ice', inflicts: 'chill',
   },
   railgun: {
     id: 'railgun', name: 'Canhão de trilho', kind: 'energy',
@@ -309,7 +323,7 @@ function atTier(b: WeaponBase, tier: Tier): WeaponStats {
  * Natureza do dano: escudos físicos seguram cada uma de um jeito (`MetalShield.ts`). Arma nova declara a sua aqui
  * (o `Record` obriga). `sonico` ainda não tem arma: o escudo amortecedor já está pronto para ela.
  */
-export type DamageType = 'termico' | 'laser' | 'balistico' | 'explosivo' | 'pulso' | 'sonico' | 'corte' | 'eletrico';
+export type DamageType = 'termico' | 'laser' | 'balistico' | 'explosivo' | 'pulso' | 'sonico' | 'corte' | 'eletrico' | 'criogenico';
 export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   plasma: 'termico',
   blaster: 'laser',
@@ -320,6 +334,7 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   emp: 'pulso',
   rotary: 'balistico',
   arc: 'eletrico',
+  cryo: 'criogenico',
   chainsaw: 'corte',
 };
 

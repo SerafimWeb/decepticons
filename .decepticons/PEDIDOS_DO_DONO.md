@@ -37,8 +37,8 @@
 | P16 | 04/10 | Míssil que sobe e cai como chuva, arma diferente do casulo | ✅ | Morteiro nas costas | Hangar, braço esquerdo |
 | P17 | 09/10 | Metralhadora rotatória | 🟡 | No ar; **não vista nem ouvida em partida real** | Hangar |
 | P18 | 09/10 | Tiros elétricos: choque, lento, e parado se o tiro for bem dado | 🟡 | No ar; tela e som no PR #207 | Hangar |
-| P19 | 09/10 | Lança-chamas | 🔧 | Dono confirmou em 10/10 ("faça o lança-chamas e o lança-gelo"); em fila no Claude, depois do gelo (`ARMAS_ELEMENTAIS.md`) | — |
-| P20 | 09/10 | Arma de gelo; fogo e gelo se anulam | 🔧 | Dono confirmou em 10/10; é a próxima arma (a regra de anular já existe) | — |
+| P19 | 09/10 | Lança-chamas | 🔧 | Dono confirmou em 10/10 ("faça o lança-chamas e o lança-gelo"); em fila no Claude: **é a próxima arma**, depois do gelo (`ARMAS_ELEMENTAIS.md`) | — |
+| P20 | 09/10 | Arma de gelo; fogo e gelo se anulam | ✅ | Dono confirmou em 10/10. Feita no PR-E (11/10, protocolo 10): `cryo` equipável no Hangar (as duas mãos), 3 acertos congelam, fogo e gelo se anulam. **Falta ver em partida de verdade** (STATUS_REAL: PARCIAL) | Hangar > braço > Arma de gelo, depois de o servidor atualizar |
 | P21 | 09/10 | Fogo queimando o cenário (chão e prédios) | ⏸ | Pergunta registrada e **sem resposta do dono**; o padrão adotado é "não" (custa CPU e rede) | **Responder** |
 | P22 | 01/10 | Combos e jogadas por chassi (rolar de lado, voar e atacar de cima) | 🅿 | `ROADMAP`: "ideia do dono, não é escopo aprovado" | Decidir |
 | P23 | 06/10 | Estilos de jogo como eixo da evolução (tankar, rush, furtivo) | 🟡 | Os papéis por chassi (tanque, escaramuçador, duelista, assalto, plataforma de fogo) existem desde 10/10; **a evolução do jogador** (um mesmo chassi ganhando jeitos de lutar) segue só ideia | Decidir |

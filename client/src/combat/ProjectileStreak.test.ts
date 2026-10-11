@@ -117,6 +117,23 @@ describe('cauda dos tiros de energia', () => {
     }
   });
 
+  it('a arma de gelo usa a mesma faixa, em branco-gelo (jogador) e lilás pálido (inimigo): não se confunde com o plasma nem com a elétrica', () => {
+    const color = (m: THREE.Mesh) => (m.material as THREE.MeshBasicMaterial).color;
+    const amigo = sistema();
+    amigo.system.fire(new THREE.Vector3(), new THREE.Vector3(0, 0, -1), undefined, false, weapon('cryo'));
+    const inimigo = sistema();
+    inimigo.system.fire(new THREE.Vector3(), new THREE.Vector3(0, 0, -1), undefined, true, weapon('cryo'));
+    expect(amigo.mesh.geometry.getAttribute('color')?.itemSize).toBe(4); // é a faixa (com cauda), não a esfera
+    expect(color(amigo.mesh).equals(GLOW.friendlyIce)).toBe(true);
+    expect(color(inimigo.mesh).equals(GLOW.hostileIce)).toBe(true);
+    for (const outra of [GLOW.friendlyPlasma, GLOW.friendlyArc]) expect(color(amigo.mesh).equals(outra)).toBe(false);
+    for (const outra of [GLOW.hostilePlasma, GLOW.hostileArc]) expect(color(inimigo.mesh).equals(outra)).toBe(false);
+    // O projétil do pool que levou o gelo volta ao verde ao levar o plasma.
+    amigo.system.clear();
+    amigo.system.fire(new THREE.Vector3(), new THREE.Vector3(0, 0, -1), undefined, false, weapon('plasma'));
+    expect(color(amigo.mesh).equals(GLOW.friendlyPlasma)).toBe(true);
+  });
+
   it('a arma elétrica usa a mesma faixa do plasma, mas em azul-branco (jogador) e violeta (inimigo): não se confunde com o plasma', () => {
     const color = (m: THREE.Mesh) => (m.material as THREE.MeshBasicMaterial).color;
     const amigo = sistema();

@@ -14,6 +14,7 @@ export const FIRE_KICK: Readonly<Record<WeaponId, number>> = {
   plasma: 0.05,
   emp: 0.09,
   arc: 0.06, // um estalo por tiro, a cada 0,45 s: pesa como o plasma, um pouco mais
+  cryo: 0.04, // um estalo seco a cada 0,6 s: o mais leve das armas de energia de apoio
   shotgun: 0.24,
   rockets: 0.2,
   barrage: 0.28,

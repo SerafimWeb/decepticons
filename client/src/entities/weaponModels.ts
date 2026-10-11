@@ -190,6 +190,24 @@ function arc(root: THREE.Object3D, tier: number, M: Mats): number {
   return (0.5 + len + 0.25) * LONG;
 }
 
+/** Arma de gelo (energia): corpo, dois cilindros de refrigerante nas laterais, aletas de resfriamento e uma boca em cristal (três prismas) que cresce com o nível. */
+function cryo(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = [0.7, 0.82, 0.94][tier]!;
+  d.box(0.42, 0.4, 0.52, M.armor, 0, 0, -0.3);
+  d.cylZ(0.11, len, M.frame, 0, 0, -0.5 - len / 2);
+  for (const side of [-1, 1]) {
+    d.cylZ(0.085, 0.5 + tier * 0.08, M.armor, side * 0.19, 0.02, -0.33);
+    d.cylZ(0.05, 0.42 + tier * 0.08, M.glow, side * 0.19, 0.02, -0.33);
+  }
+  for (let i = 0; i < 3 + tier; i++) d.box(0.3, 0.035, 0.05, M.frame, 0, 0.19, -0.18 - i * 0.12);
+  const tip = 0.5 + len;
+  d.box(0.07, 0.24, 0.24 + tier * 0.04, M.glow, 0, 0, -tip - 0.12);
+  d.box(0.07, 0.24, 0.24 + tier * 0.04, M.glow, 0, 0, -tip - 0.12).rotation.z = Math.PI / 3;
+  d.box(0.07, 0.24, 0.24 + tier * 0.04, M.glow, 0, 0, -tip - 0.12).rotation.z = -Math.PI / 3;
+  return (tip + 0.3) * LONG;
+}
+
 /** Motosserra (corpo a corpo): motor e uma barra alta com dentes luminosos. O nível alonga a barra. */
 function chainsaw(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -244,7 +262,7 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'arc' ? PALETTE.cyan : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
+  const accent = weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
     // Lançador de ombro: o casulo de foguetes e o morteiro da chuva têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
@@ -280,6 +298,9 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'arc':
         muzzleZ = arc(root, weapon.tier, M);
+        break;
+      case 'cryo':
+        muzzleZ = cryo(root, weapon.tier, M);
         break;
       case 'chainsaw':
         muzzleZ = chainsaw(root, weapon.tier, M);
