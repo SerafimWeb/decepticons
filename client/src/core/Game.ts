@@ -38,6 +38,7 @@ import type { MechBase } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
 import { CtfObjectives } from '../environment/CtfObjectives';
 import { DamageVisuals } from '../fx/DamageVisuals';
+import { FlameVisuals } from '../fx/FlameVisuals';
 import { StatusVisuals } from '../fx/StatusVisuals';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
@@ -143,10 +144,12 @@ export class Game {
   private readonly particles = new ParticleSystem();
   private readonly damageVisuals = new DamageVisuals(this.particles);
   private readonly statusVisuals = new StatusVisuals(this.particles);
+  private readonly flameVisuals = new FlameVisuals(this.particles);
   private readonly chargeVisuals = new ChargeVisuals(this.particles);
   private readonly updateRemoteDamage = (remote: { mech: MechBase }): void => {
     this.damageVisuals.update(remote.mech);
     this.statusVisuals.update(remote.mech);
+    this.flameVisuals.update(remote.mech);
     this.chargeVisuals.update(remote.mech);
   };
   /** A partida (sem tela): arena, bots, tiros, dano, rodadas. As partes abaixo são atalhos para ela. */
@@ -429,6 +432,7 @@ export class Game {
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets, this.barrage);
     this.match.pilots.push(this.player);
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
+    this.player.flame = (w, origin, dir) => this.match.flameCone(this.mech, origin, dir, w);
     this.netStatus.className = 'net-status';
     
     const shouldConnect = online && online.explicitName;
@@ -1236,11 +1240,13 @@ export class Game {
     this.chargeVisuals.update(this.mech, false);
     this.damageVisuals.beginFrame(dt, this.playing && !this.hangarView);
     this.statusVisuals.beginFrame(dt, this.playing && !this.hangarView);
+    this.flameVisuals.beginFrame(dt, this.playing && !this.hangarView);
+    this.flameVisuals.update(this.mech);
     this.damageVisuals.update(this.mech);
     if (this.online?.joined) {
       this.online.remotes.forEach(this.updateRemoteDamage);
     } else {
-      for (const bot of this.bots.mechs) { this.damageVisuals.update(bot); this.statusVisuals.update(bot); this.chargeVisuals.update(bot); }
+      for (const bot of this.bots.mechs) { this.damageVisuals.update(bot); this.statusVisuals.update(bot); this.flameVisuals.update(bot); this.chargeVisuals.update(bot); }
       if (this.match.allies) for (const ally of this.match.allies.mechs) { this.damageVisuals.update(ally); this.statusVisuals.update(ally); }
     }
     this.shadows.begin();
@@ -1275,8 +1281,10 @@ export class Game {
     const ativo = this.playing && this.mech.alive && !this.hangarView;
     this.statusHud.update(this.mech.status, ativo);
     const giro = ativo ? this.player.spinLevel : 0;
-    this.hud.setSpin(giro);
+    // O medidor em volta da mira serve às duas armas de fluxo: a rotação do cano da rotatória e o combustível do lança-chamas.
+    this.hud.setSpin(Math.max(giro, ativo ? this.player.fuelLevel : 0));
     this.audio.setRotarySpin(giro);
+    this.audio.setFlame(ativo && this.mech.status.flaming);
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);

@@ -2,7 +2,7 @@ import { ChargeTimer } from './ChargeTimer';
 import type { MechBase } from '../entities/MechBase';
 import { DEFAULT_TRIGGERS, type MountId } from './mounts';
 import { NO_SPREAD, spreadAt, type Spread } from './spread';
-import { FireTimer, RocketLauncher, SpinUp } from './trigger';
+import { FireTimer, FuelTank, RocketLauncher, SpinUp } from './trigger';
 import { weapon, type WeaponStats } from './weapons';
 
 /** Até onde a mira procura onde atirar (m): sem nada no caminho, as bocas convergem nesta distância. */
@@ -19,6 +19,8 @@ export interface ShotSink {
   rocket(mount: MountId, w: WeaponStats, volley: number): void;
   /** A serra cortou (corpo a corpo): quem aplica o corte é a partida. */
   melee(w: WeaponStats): void;
+  /** Um pulso do lança-chamas de `mount` (a cada `fireInterval`): quem aplica o cone de dano é a partida (`Match.flameCone`). */
+  flame(mount: MountId, w: WeaponStats): void;
 }
 
 /**
@@ -44,17 +46,36 @@ export class Armament {
   private readonly charge = [new ChargeTimer(), new ChargeTimer(), new ChargeTimer()];
   /** Rotação do cano de cada mão (só a metralhadora rotatória gira; nas outras armas fica em 0). */
   private readonly spin = [new SpinUp(), new SpinUp()];
+  /** Tanque de combustível de cada mão (só o lança-chamas tem; `null` nas outras armas). */
+  private tanks: (FuelTank | null)[] = [null, null];
+  /** A chama de cada mão está acesa neste tick. */
+  private readonly burning = [false, false];
   /** Número do tiro da rotatória: o desvio de cada um sai dele, sem sorteio. */
   private shots = 0;
   private readonly spread: Spread = { x: 0, y: 0 };
   /** Rotação do cano da arma principal, de 0 (parado) a 1 (plena): o medidor do HUD lê daqui. */
   get spinLevel(): number { return Math.max(this.spin[0]!.level, this.spin[1]!.level); }
+  /** O medidor de combustível do HUD: 0 com o tanque cheio e parado (nada a mostrar); senão, de 0 a 1 (na trava, o quanto da recarga passou). */
+  get fuelLevel(): number {
+    let level = 0;
+    for (const t of this.tanks) if (t && (t.locked || t.fuel < t.capacity)) level = Math.max(level, Math.max(0.02, t.level));
+    return level;
+  }
   get primaryCharge(): number { return Math.max(this.charge[0]!.progress, this.charge[1]!.progress); }
   get secondaryCharge(): number { return this.charge[2]!.progress; }
 
   constructor(private readonly mech: MechBase) {
     this.launcher = this.newLauncher();
     this.primaryLaunchers = [new RocketLauncher(mech.loadout.primary), new RocketLauncher(mech.loadout.offhand ?? mech.loadout.primary)];
+    this.refuel();
+  }
+
+  /** Um tanque novo para cada mão que leva lança-chamas. */
+  private refuel(): void {
+    const l = this.mech.loadout;
+    this.tanks = [l.primary, l.offhand ?? null].map((w) => (w?.flame ? new FuelTank(w.flame.fuel, w.flame.reload) : null));
+    this.burning[0] = this.burning[1] = false;
+    this.mech.status.flaming = false;
   }
 
   /** O Mech trocou de armas (Hangar): carregador novo, cheio, com o lançador montado. */
@@ -63,6 +84,7 @@ export class Armament {
     this.primaryLaunchers = [new RocketLauncher(this.mech.loadout.primary), new RocketLauncher(this.mech.loadout.offhand ?? this.mech.loadout.primary)];
     for (const t of this.hands) t.reset();
     for (const s of this.spin) s.reset();
+    this.refuel();
     this.mech.status.spinning = false;
     this.side.reset();
     for (const c of this.charge) c.reset();
@@ -95,6 +117,19 @@ export class Armament {
         const spin = this.spin[i]!;
         if (w?.spin) spin.step(dt, fire && m.canFireMount(mount), w.spin);
         else spin.reset();
+        // Lança-chamas: a chama acende enquanto o gatilho está apertado, a mão pode atirar e há combustível; um pulso a cada `fireInterval`.
+        const tank = this.tanks[i];
+        if (w?.flame && tank) {
+          const lit = tank.step(dt, fire && m.canFireMount(mount));
+          this.burning[i] = lit;
+          if (lit && timer.ready) {
+            sink.flame(mount, w);
+            m.onFireMount(mount, w);
+            timer.shot(w.fireInterval);
+          }
+          continue;
+        }
+        this.burning[i] = false;
         if (!w || !this.charge[i]!.step(dt, fire, timer.ready && m.canFireMount(mount), w.chargeTime)) continue;
         if (fired) {
           timer.shot(w.fireInterval / 2);
@@ -110,8 +145,10 @@ export class Armament {
       }
     }
 
-    // Cano girando na rede (os outros jogadores desenham o fluxo de tiros por esta bandeira, sem um evento por tiro).
+    // Cano girando e chama acesa na rede (os outros jogadores desenham o fluxo por estas bandeiras, sem um evento por tiro).
     m.status.spinning = fire && (this.spin[0]!.level > 0.3 || this.spin[1]!.level > 0.3);
+    m.status.flaming = m.alive && (this.burning[0]! || this.burning[1]!);
+    if (!m.alive) for (const t of this.tanks) t?.refill(); // renasce com o tanque cheio
 
     // Morto, o carregador enche (renasce pronto).
     if (!m.alive) this.launcher.refill();

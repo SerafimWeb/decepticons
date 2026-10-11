@@ -9,7 +9,8 @@ import { RocketSystem } from '../combat/RocketSystem';
 import { Respawner } from '../combat/Respawner';
 import { DroneSystem } from '../combat/DroneSystem';
 import { Round } from '../combat/Round';
-import type { WeaponStats } from '../combat/weapons';
+import { hitDamage, type Flame, type WeaponStats } from '../combat/weapons';
+import type { PhysicsHit } from '../physics/PhysicsWorld';
 import { ZoneSystem } from '../combat/Zone';
 import { PALETTE } from '../core/palette';
 import type { GameSettings } from '../core/Settings';
@@ -108,6 +109,11 @@ export interface MatchOptions {
  * desenha por cima (`core/Game.ts`); o servidor do multiplayer vai rodar esta mesma classe, sem
  * WebGL nem DOM (`MULTIPLAYER.md`, etapa M1). Quem quiser mostrar ou tocar algo ouve os eventos.
  */
+const _flameAt = new THREE.Vector3();
+const _flameTo = new THREE.Vector3();
+/** O "acerto" que o cone entrega ao CombatSystem: um objeto só, reescrito a cada alvo (nada alocado por pulso). */
+const _flameHit: PhysicsHit = { point: new THREE.Vector3(), normal: new THREE.Vector3(0, 1, 0), distance: 0, collider: undefined as unknown as RAPIER.Collider };
+
 export class Match {
   readonly debris: DebrisSystem;
   readonly destructibles: Destructibles;
@@ -360,6 +366,44 @@ export class Match {
    * Corte corpo a corpo de um jogador (motosserra do andróide pilotado): pega o inimigo vivo mais perto
    * dentro do alcance da arma. Regra da partida (o controle só pede); sem ninguém perto, nada acontece.
    */
+  /**
+   * Um pulso do lança-chamas (`Armament` o pede a cada `fireInterval` com o gatilho apertado): dano em **todos** os Mechs vivos dentro do
+   * cone (alcance e meio ângulo da arma, com a folga do raio do corpo) e **à vista** (sem parede no meio; outro Mech não tapa a chama).
+   * Cada alvo leva o dano da distância dele e as defesas, a parte, o abate e o estado de queimando seguem o caminho do projétil
+   * (`combat.onProjectileHit`). O jogador acerta os bots e os outros jogadores, nunca os aliados; o bot acerta os jogadores e os aliados.
+   * Regra da partida (G14): o mesmo código no jogo offline e no servidor; sem alocação (G4).
+   */
+  flameCone(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
+    const f = w.flame;
+    if (!f) return;
+    if (this.players.includes(attacker)) {
+      for (const m of this.bots.mechs) this.flameAt(attacker, origin, dir, w, f, m);
+      for (const m of this.players) this.flameAt(attacker, origin, dir, w, f, m);
+    } else {
+      for (const m of this.players) this.flameAt(attacker, origin, dir, w, f, m);
+      if (this.allies) for (const m of this.allies.mechs) this.flameAt(attacker, origin, dir, w, f, m);
+    }
+  }
+
+  private flameAt(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, f: Flame, target: MechBase): void {
+    if (target === attacker || !target.alive) return;
+    target.partWorldPosition('torso', _flameAt, true);
+    _flameTo.subVectors(_flameAt, origin);
+    const dist = _flameTo.length();
+    const r = target.stats.radius;
+    if (dist < 1e-3 || dist > w.maxRange + r) return;
+    // O cone com a folga do corpo: um alvo largo e perto entra mesmo com o centro um pouco fora do eixo.
+    if (_flameTo.dot(dir) / dist < Math.cos(f.halfAngle + Math.atan2(r, dist))) return;
+    _flameTo.multiplyScalar(1 / dist);
+    const wall = this.physics.raycast(origin, _flameTo, dist, attacker.collider);
+    if (wall && wall.collider !== target.collider && !this.combat.mechOf(wall.collider) && wall.distance < dist - r) return;
+    _flameHit.point.copy(_flameAt);
+    _flameHit.distance = dist;
+    _flameHit.collider = target.collider;
+    const gap = Math.max(0, dist - r);
+    this.combat.onProjectileHit(_flameHit, dir, hitDamage(w, gap), attacker.collider, w, gap);
+  }
+
   meleeNearest(attacker: MechBase, w: WeaponStats): void {
     const foes = this.players.includes(attacker) ? this.bots.mechs : this.players;
     const a = attacker.simPosition;

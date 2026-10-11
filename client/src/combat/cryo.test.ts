@@ -250,7 +250,7 @@ describe('arma de gelo: o estado no combate de verdade (física, projétil e dan
     const mech = new Vector09({ loadout: { primary: weapon('plasma'), secondary: CRYO } });
     const armament = new Armament(mech);
     const shots: Array<{ mount: string; w: WeaponStats }> = [];
-    const sink: ShotSink = { projectile: (mount, w) => shots.push({ mount, w }), rocket: () => {}, melee: () => {} };
+    const sink: ShotSink = { projectile: (mount, w) => shots.push({ mount, w }), rocket: () => {}, melee: () => {}, flame: () => {} };
     for (let i = 0; i < 60; i++) armament.fixedUpdate(FIXED_DT, false, true, sink);
     expect(shots.length).toBeGreaterThanOrEqual(2);
     expect(shots.every((x) => x.mount === 'leftHand' && x.w.id === 'cryo' && x.w.inflicts === 'chill')).toBe(true);
