@@ -7,6 +7,12 @@
 > `PAINEL_ADMIN.md` (P54, a ficha de cada bot). Não substitui nenhum dos dois: costura as duas pontas — **o piloto** (o
 > cérebro que joga) e **o dado** (a inteligência que ele gera).
 
+> **Decisões do Comandante (11/10/2026), logo depois deste plano:**
+> 1. **Só as nossas IAs.** Nada de armazenar ou capturar dado de jogador que possa gerar problema de **LGPD**. O gravador
+>    e o treino usam **apenas os bots** (o nosso código, a nossa IA). Isso **remove o portão de consentimento** da etapa
+>    D0 do P71: não há dado pessoal a consentir (ver §5, §6 e §7).
+> 2. **Vozes.** O Comandante tem **créditos no ElevenLabs** para as vozes do rádio, se for o caso (ver §3-B).
+
 ## 1. O que já existe (não se começa do zero)
 
 - **P53 — "Dá para plugar LLMs (Groq, Gemini, DeepSeek) por API nos bots?"** Registrada em 25/09; respondida pelo Claude
@@ -50,7 +56,7 @@ Tudo neste plano obedece a uma restrição dura, e vale escrevê-la antes das op
 | Papel | Onde roda | Cadência | Pode chegar atrasado? | Custo | O que entrega |
 |---|---|---|---|---|---|
 | **A · Comandante (o "C2")** | Servidor | 1 chamada por rodada | Não (decide antes da rodada começar) | Baixo | Estratégia, personalidades, quem ataca com quem, agressividade → um `BotSpec[]` |
-| **B · Rádio / voz** | Servidor | Assíncrona | **Sim** (é texto; se atrasa, só aparece depois) | Baixo | As falas das IAs ("◈ CLAWD: CONTATO ▸ VOCÊ"), provocações, boletins |
+| **B · Rádio / voz** | Servidor | Assíncrona | **Sim** (é texto; se atrasa, só aparece depois) | Baixo | As falas das IAs ("◈ CLAWD: CONTATO ▸ VOCÊ"), provocações, boletins — **texto por LLM e voz por ElevenLabs** |
 | **C · Professor (destilação)** | Fora do jogo (offline) | Em lote | — | Computação de treino | Uma política pequena que joga a 10 Hz **dentro** do jogo (o "bot fantasma") |
 
 ### A · Comandante LLM (o "C2 das IAs") — entre rodadas
@@ -64,13 +70,18 @@ Protocolo.
 - **Custo de CPU no jogo:** zero por tick (a chamada acontece entre rodadas, no servidor).
 - **Encaixe de produto:** "clãs de IAs" configuráveis; o painel admin ganha um seletor de provedor por clã.
 
-### B · Rádio das IAs por LLM — texto assíncrono
+### B · Rádio das IAs por LLM — texto e voz, assíncronos
 
 As falas do rádio (o template já existe desde o P74). O LLM gera o **texto**; chegar atrasado não quebra nada, porque é
 conteúdo, não regra. É o "pior caso" mais barato e o de resultado mais visível rápido. Já existe como ideia no
 `ROADMAP` ("Rádio das IAs rebeldes: provocações geradas por modelo de linguagem no servidor, entre rodadas — nunca
 decidindo o combate").
 
+- **Voz (ElevenLabs — decisão do Comandante, 11/10):** ele tem **créditos no ElevenLabs** para as vozes. O texto do LLM
+  vira áudio **no servidor** (nunca no cliente, R2) e o jogo toca. Cada IA rebelde pode ter a **sua voz própria**, que faz
+  parte da "ficha de ameaça" (`UNIVERSO.md`). Para o custo não crescer a cada rodada, o normal é **pré-gerar e cachear**
+  as falas repetidas (saudação, contato, abate, provocação) e deixar o LLM + TTS só para o texto novo.
+  **Custo de CPU no jogo:** tocar um áudio já pronto (o mesmo caminho do `AudioSystem`), não gerar áudio.
 - **Encaixe de produto:** personalidade das IAs + os "boletins de inteligência TLP:CLEAR" (`UNIVERSO.md`) — conteúdo de
   viralização com a voz da marca.
 
@@ -99,16 +110,23 @@ O agente externo não toca a simulação: ele **manda comando**, como um jogador
 - **Anti-trapaça é pré-requisito** (`DADOS_E_ROBOTICA.md`, §7): partida com mira automática ou exploração de falha sai
   do conjunto.
 
-## 5. Cultivar e organizar a inteligência (o que o gravador precisa capturar)
+## 5. Cultivar e organizar a inteligência (só as nossas IAs — sem LGPD)
 
-O ponto que ainda não está explícito no plano do P71: **o gravador de voo precisa registrar também as decisões dos
-bots**, não só as do jogador. O bom é que isso é barato — o `BotController` **já produz o mesmo `MechInput`** que o
-jogador (mesmo formato, mesmo arquivo de gravação). O que falta é a decisão de gravá-los e a curadoria.
+**Decisão do Comandante (11/10): o gravador captura apenas as nossas IAs.** Nada de entrada, identidade ou telemetria de
+jogador — nada que possa gerar problema de **LGPD**. O objeto do treino é **o bot** (o nosso código): a decisão dele, com
+a observação dele, no combate dele. Isso é mais simples e mais seguro do que o plano original do P71, que mirava o
+comportamento humano: aqui **não há dado pessoal a consentir**, e o portão de consentimento da etapa D0 cai (ver §7).
 
-**Cultivar** = transformar partidas em conjuntos de treino:
-- rotular cada episódio por **persona, dificuldade, semente, mapa, montagem** (o laboratório controlado do P71 §2);
+O bom é que isso é quase de graça: o `BotController` **já produz o mesmo `MechInput`** que um piloto (mesmo formato,
+mesma função), e o estado que ele vê já sai codificado. O que falta é **decidir gravar** e fazer a curadoria.
+
+**Cultivar** = transformar partidas **bot a bot** em conjuntos de treino (o "laboratório controlado" do P71 §2, agora sem
+ninguém de fora):
+- rotular cada episódio por **persona, dificuldade, semente, mapa, montagem** (tudo nosso, tudo reproduzível);
 - capturar a **observação honesta** (só o que a amostra de visão/audição do bot viu — o P74 já usa isso): sem
   onisciência, o que se aprende roda num robô real;
+- **nunca** gravar o lado humano: o conjunto de treino sai de **bot × bot** (ou só do lado do bot, sem o comando do
+  jogador). Nenhum dado de pessoa entra no arquivo;
 - filtrar trapaça e pesar o dado de modos sem renascimento (morrer no jogo custa segundos; num robô, o robô).
 
 **Organizar** = dar forma ao ativo:
@@ -122,10 +140,12 @@ jogador (mesmo formato, mesmo arquivo de gravação). O que falta é a decisão 
 | Eixo | O que vende | Quem paga | Depende de |
 |---|---|---|---|
 | **Dentro do jogo** (plataforma) | A **arena aberta** a cérebros de fora (D2): qualquer LLM/agente joga pelo comando de 9 bytes, com ranking | Jogadores (diversão) e criadores (avaliar o próprio modelo) | D1 provar o pipeline |
-| **Fora do jogo** (o dado e a política) | O **dataset honesto** (estado+ação+recompensa) e a **política tática de alto nível** para robôs humanoides | Fabricantes, pesquisa, defesa **com humano no comando** | D0 (gravador) + LGPD |
+| **Fora do jogo** (o dado e a política) | O **dataset honesto** (estado+ação+recompensa) **dos nossos bots** e a **política tática de alto nível** para robôs humanoides | Fabricantes, pesquisa, defesa **com humano no comando** | D0 (gravador; **dado só das nossas IAs, sem LGPD**) |
 
 Os dois eixos são o mesmo motor: o gravador. Um entrega diversão, o outro entrega ativo. `DADOS_E_ROBOTICA.md` §7 fixa
-as linhas que não se cruzam (nada de tiro autônomo em robô físico, nada de dado sem consentimento).
+as linhas que não se cruzam (nada de tiro autônomo em robô físico, nada de dado sem consentimento). O Comandante estreitou
+o escopo em 11/10: **o dado é só das nossas IAs** (`bot × bot`), então o eixo de fora não depende de consentimento de
+jogador.
 
 ## 7. Ordem gradual (o que fazer, com o gatilho de cada passo)
 
@@ -135,9 +155,9 @@ as linhas que não se cruzam (nada de tiro autônomo em robô físico, nada de d
 | # | Passo | Papel | Gatilho para começar | Estado |
 |---|---|---|---|---|
 | 0 | Escrever este plano e registrar P75 | doc | Ordem do Comandante | **este PR** |
-| 1 | **Rádio das IAs por LLM** (texto, no servidor, entre rodadas) | B | Aprovado — mais barato e visível | a fazer |
+| 1 | **Rádio das IAs por LLM** (texto por LLM + voz por ElevenLabs, no servidor, entre rodadas) | B | Aprovado — mais barato e visível | a fazer |
 | 2 | **Comandante LLM** entre rodadas → `BotSpec[]` | A | Depois do passo 1 (reusa a cadeia de provedores) | a fazer |
-| 3 | **Gravador de voo** (D0 do P71), capturando **também** as decisões dos bots | dado | Termos/consentimento (LGPD) aprovados | a fazer |
+| 3 | **Gravador de voo** (D0 do P71), capturando **os bots** (a nossa IA) | dado | Aprovado — só as nossas IAs, sem dado de jogador (LGPD) | a fazer |
 | 4 | **Bot fantasma** treinado com as partidas reais (D1) | C | Milhares de horas gravadas | a fazer |
 | 5 | **Arena aberta a cérebros de fora** (D2), com ranking | plataforma | D1 provar o pipeline | a fazer |
 
@@ -165,7 +185,8 @@ visível**. Depois dele, o passo 2 destrava "escolher o LLM que comanda o clã".
 - **Nada de chave de API no cliente** (R2); toda chamada de LLM sai do servidor.
 - **O LLM não decide o combate** (nem dentro do tick, nem por atalho): ele decide **entre** rodadas, gera **texto** ou
   treina **offline**. O combate continua justo, determinístico e reproduzível.
-- **Nada de dado de jogador sem consentimento**, nem vendido com identificação.
+- **Nada de dado de jogador** (decisão do Comandante, 11/10): o gravador e o treino usam **só as nossas IAs**; nenhum dado
+  pessoal é capturado nem vendido. O objeto é o bot, não a pessoa.
 - **Trapaça envenena o dado:** partida com mira automática ou exploração de falha sai do conjunto.
 
 ## 10. Decisões do Comandante (têm padrão; sem resposta, sigo o padrão)
@@ -174,9 +195,11 @@ visível**. Depois dele, o passo 2 destrava "escolher o LLM que comanda o clã".
    começar pelo gravador (passo 3) se o produto de dados for prioridade agora.
 2. **Qual LLM primeiro.** Padrão: **Groq** (menor latência) para o rádio e o comandante; depois DeepSeek/Gemini como
    *fallback* (SKILL 16). Você decide a lista.
-3. **Consentimento (passo 3).** Padrão: **só partidas fora do modo competitivo** até os termos/consentimento (LGPD,
-   ECA Digital) estarem prontos. Você decide.
+3. **Dado: só as nossas IAs (resolvido em 11/10).** Nada de dado de jogador (LGPD). O gravador captura **apenas os bots**;
+   o conjunto de treino sai de `bot × bot`. Sem portão de consentimento. Alternativa: nenhuma — é decisão do Comandante.
 4. **Onde o comandante mora.** Padrão: **no servidor**, disparado entre rodadas; sem UI nova no começo (o painel admin,
    P54, mostra o `piloto` depois). Alternativa: botão no jogo para disparar/ver a escolha do comandante.
 5. **A arena aberta (passo 5).** Padrão: **primeiro um modo de teste fechado** (agentes convidados), ranking privado,
    antes de qualquer coisa pública.
+6. **Vozes (ElevenLabs).** Padrão: **voz por ElevenLabs** (créditos do Comandante), com as falas repetidas **pré-geradas e
+   cacheadas** e cada IA com a sua voz. Alternativa: manter só o texto do rádio, sem áudio.
