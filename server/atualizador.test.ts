@@ -34,6 +34,8 @@ function palco(c: Cenario = {}) {
   /** O registro em disco (sobrevive a uma rodada cortada) e o que foi feito com ele, fora das `chamadas` para não mexer nas ordens já testadas. */
   let armazenada: Pendencia | null = pendencia ? { ...pendencia, feito: [...pendencia.feito] } : null;
   const registro: string[] = [];
+  /** O marcador de reinício pendente em disco: sobrevive a uma rodada cortada, como o registro da verificação. */
+  let reinicioMarcado = false;
   const ok = (stdout = ''): Resultado => ({ status: 0, stdout });
   let npmCi = 0;
   const op: Operacoes = {
@@ -93,10 +95,15 @@ function palco(c: Cenario = {}) {
       armazenada = null;
       registro.push('limpa');
     },
+    marcarReinicio: () => {
+      reinicioMarcado = true;
+      registro.push('marca o reinício');
+      chamadas.push('log: (marcador) reinício pendente gravado'); // com prefixo de log: as ordens já testadas em `sem()` não mudam
+    },
   };
   /** As chamadas sem as linhas de log. */
   const sem = () => chamadas.filter((c) => !c.startsWith('log:'));
-  return { op, chamadas, sem, registro, armazenada: () => armazenada };
+  return { op, chamadas, sem, registro, armazenada: () => armazenada, reinicioMarcado: () => reinicioMarcado };
 }
 
 describe('atualizador do servidor: o que nunca faz', () => {
@@ -179,13 +186,54 @@ describe('atualizador do servidor: package-lock mudou', () => {
   });
 });
 
+describe('atualizador do servidor: o reinício nunca se perde entre "verificado" e o marcador (achado 11/10)', () => {
+  it('passou na verificação: o marcador de reinício pendente é gravado ANTES de o registro da verificação sumir e ANTES do log de OK', () => {
+    const p = palco();
+    expect(atualizar(p.op)).toBe(0);
+    expect(p.reinicioMarcado()).toBe(true);
+    expect(p.registro.indexOf('marca o reinício')).toBeLessThan(p.registro.indexOf('limpa'));
+    const iMarca = p.chamadas.indexOf('log: (marcador) reinício pendente gravado');
+    const iOk = p.chamadas.findIndex((c) => c.startsWith('log: OK:'));
+    expect(iMarca).toBeGreaterThan(-1);
+    expect(iMarca).toBeLessThan(iOk);
+  });
+
+  it('a rodada morre logo depois de verificar (o Agendador mata a tarefa, ou a máquina trava): o marcador já está em disco, então a rodada seguinte reinicia o servidor', () => {
+    const p = palco();
+    const original = p.op.log;
+    p.op.log = (l) => {
+      if (l.startsWith('OK:')) throw new Error('tarefa cortada pelo Agendador logo depois de verificar');
+      original(l);
+    };
+    expect(() => atualizar(p.op)).toThrow('cortada');
+    expect(p.reinicioMarcado()).toBe(true); // o que faltava em 11/10: sem marcador, sem pendência e sem "código novo", o reinício se perdia
+  });
+
+  it('falhou a verificação (typecheck, testes, npm ci ou parada): nenhum marcador, porque o código volta ao anterior e o servidor segue com ele', () => {
+    for (const falhas of [['typecheck'], ['testes']]) {
+      const p = palco({ falhas });
+      expect(atualizar(p.op)).toBe(2);
+      expect(p.reinicioMarcado()).toBe(false);
+    }
+    const naoPara = palco({ lockMudou: true, naoPara: true });
+    expect(atualizar(naoPara.op)).toBe(2);
+    expect(naoPara.reinicioMarcado()).toBe(false);
+  });
+
+  it('nada novo na main: nenhum marcador (o servidor no ar não é tocado)', () => {
+    const p = palco({ novo: false });
+    expect(atualizar(p.op)).toBe(1);
+    expect(p.reinicioMarcado()).toBe(false);
+  });
+});
+
 describe('atualizador do servidor: rodada cortada pelo limite de tempo do Agendador (achado 09/10)', () => {
   const PENDENTE: Pendencia = { de: 'aaaaaaa1111', para: 'bbbbbbb2222', feito: [] };
 
   it('a verificação grava o progresso: o registro nasce ao puxar, ganha o typecheck e some quando tudo passa', () => {
     const p = palco();
     expect(atualizar(p.op)).toBe(0);
-    expect(p.registro).toEqual(['grava aaaaaaa→bbbbbbb []', 'grava aaaaaaa→bbbbbbb [typecheck]', 'limpa']);
+    expect(p.registro).toEqual(['grava aaaaaaa→bbbbbbb []', 'grava aaaaaaa→bbbbbbb [typecheck]', 'marca o reinício', 'limpa']);
     expect(p.armazenada()).toBeNull();
   });
 
