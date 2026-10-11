@@ -17,6 +17,7 @@ import { TechnicianController } from './TechnicianController';
 import type { Respawner } from './Respawner';
 import { defaultPower, poweredStats, type PowerSpec } from '../tuning/power';
 import { BOT_NAMES } from '../core/botNames';
+import { wrapAngle } from './steer';
 
 export const BOT_RESPAWN_S = 4;
 /** IA rebelde: vermelho, com visor e tiros vermelhos (o jogador é amarelo com verde neon). */
@@ -30,6 +31,18 @@ const DIRECTOR_INTERVAL_S = 0.2;
 const TURN_S = 7;
 /** Custo de uma vaga: um Mech conta 1, um andróide conta ½ (é fraco). */
 const ANDROID_COST = 0.5;
+/**
+ * Cerco (11/10): quem espera a vaga vai para o flanco do alvo, a este ângulo (~100°) da frente dele (para onde o
+ * torso aponta); o segundo do mesmo lado vai mais para trás, de `FLANK_STEP_RAD` em `FLANK_STEP_RAD`, até as costas.
+ */
+const FLANK_RAD = 1.75;
+const FLANK_STEP_RAD = 0.8;
+/** Perto da frente do alvo (menos que isto), o lado do flanco vai para o lado com menos gente. */
+const FLANK_TIE_RAD = 0.5;
+/** Rádio do clã: alcance do aviso de contato entre companheiros (m). */
+export const RADIO_RANGE = 80;
+/** Aviso de rádio na tela: no máximo um a cada tanto por time (não vira ruído). */
+const RADIO_CALLOUT_S = 8;
 
 const _muzzle = new THREE.Vector3();
 
@@ -71,6 +84,17 @@ export interface BotSystemOptions {
   personas?: readonly Persona[];
   /** Potências do painel (por arma e por clã); sem isso, o padrão do jogo. */
   power?: PowerSpec;
+}
+
+/** Rádio do clã, para a tela: `from` avistou `target` (primeiro contato; no máximo um aviso a cada `RADIO_CALLOUT_S`). */
+export type RadioCallout = (from: string, target: MechBase) => void;
+
+/** Lugar de um cérebro de combate na fila do diretor: chave de ordem e o lado do cerco (+1/−1, 0 = sem flanco). */
+interface Fighter {
+  bot: Bot;
+  brain: BotController;
+  key: number;
+  side: number;
 }
 
 interface Bot {
@@ -119,8 +143,11 @@ export class BotSystem {
   }
   private directorTimer = 0;
   /** Cérebros de combate (o diretor só olha para eles) e a fila ordenada, reaproveitados: sem alocar. */
-  private readonly fighters: { bot: Bot; brain: BotController; key: number }[] = [];
-  private readonly cand: { bot: Bot; brain: BotController; key: number }[] = [];
+  private readonly fighters: Fighter[] = [];
+  private readonly cand: Fighter[] = [];
+  /** Aviso de rádio na tela (o `Game` liga; o servidor não). */
+  onRadio?: RadioCallout;
+  private radioQuiet = 0;
   private readonly projectiles: ProjectileSystem;
   private readonly combat: CombatSystem;
   private readonly particles: ParticleSystem;
@@ -201,7 +228,7 @@ export class BotSystem {
       this.bots.push({ mech, brain, name: pick(o.names?.technicians ?? BOT_NAMES.technicians, i, 'T'), home, beam });
     });
     this.mechs = this.bots.map((b) => b.mech);
-    for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0 });
+    for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0, side: 0 });
   }
 
   /** Só muda os bots que cruzam o limite; mantém a vida dos demais e os técnicos. */
@@ -332,6 +359,8 @@ export class BotSystem {
     for (const q of this.fighters) {
       const { brain } = q;
       const target = brain.currentTarget;
+      q.side = 0;
+      brain.hasFlank = false;
       if (!q.bot.mech.alive || !brain.wantsToken || !target) {
         brain.hasToken = false;
         brain.tokenHeld = 0;
@@ -368,6 +397,60 @@ export class BotSystem {
         q.brain.tokenWait += DIRECTOR_INTERVAL_S;
       }
     }
+    this.surround();
+  }
+
+  /**
+   * Cerco: cada um que espera a vaga ganha um flanco do alvo dele, a `FLANK_RAD` da frente do alvo (para onde o torso
+   * dele aponta, o que qualquer piloto vê), do lado em que já está (perto da frente, do lado com menos gente); o
+   * segundo do mesmo lado vai mais para trás. Quando a vaga passar, ele ataca de onde o alvo não está olhando.
+   * A referência é a frente do alvo, não quem ataca: quem ataca anda de lado em volta dele e arrastaria o flanco junto.
+   * Determinístico (ordem da fila); custo: ≤ 8 × 8 contas, 5 vezes por segundo.
+   */
+  private surround(): void {
+    const cand = this.cand;
+    for (const q of cand) {
+      const brain = q.brain;
+      if (brain.hasToken || brain.profile.steady || brain.profile.melee) continue;
+      const target = brain.currentTarget;
+      if (!target) continue;
+      const tp = target.simPosition;
+      // A frente do alvo é (-sen yaw, -cos yaw); a direção dela, na convenção do cerco (0 = +Z).
+      const anchor = Math.atan2(-Math.sin(target.yaw), -Math.cos(target.yaw));
+      const me = q.bot.mech.simPosition;
+      const off = wrapAngle(Math.atan2(me.x - tp.x, me.z - tp.z) - anchor);
+      let left = 0;
+      let right = 0;
+      for (const o of cand) {
+        if (o === q) break;
+        if (o.side !== 0 && o.brain.currentTarget === target) o.side > 0 ? left++ : right++;
+      }
+      q.side = Math.abs(off) < FLANK_TIE_RAD ? (left <= right ? 1 : -1) : Math.sign(off);
+      const rank = q.side > 0 ? left : right;
+      brain.flankBearing = anchor + q.side * Math.min(Math.PI, FLANK_RAD + rank * FLANK_STEP_RAD);
+      brain.hasFlank = true;
+    }
+  }
+
+  /**
+   * Rádio do clã: quem está vendo o alvo passa a posição aos companheiros a até `RADIO_RANGE` (quem não vê ninguém vai
+   * lá). O primeiro contato vira aviso na tela. Custo: ≤ 8 contas, no máximo a cada 1,5 s por bot.
+   */
+  private radio(from: Bot, brain: BotController): void {
+    const target = brain.radioReport;
+    brain.radioReport = null;
+    if (!target?.alive) return;
+    const p = from.mech.simPosition;
+    for (const { bot, brain: mate } of this.fighters) {
+      if (mate === brain || !bot.mech.alive || this.reserves.has(bot.mech)) continue;
+      if (bot.mech.simPosition.distanceToSquared(p) > RADIO_RANGE * RADIO_RANGE) continue;
+      mate.hear(target, target.simPosition);
+    }
+    if (!brain.radioContact) return;
+    brain.radioContact = false;
+    if (this.radioQuiet > 0) return;
+    this.radioQuiet = RADIO_CALLOUT_S;
+    this.onRadio?.(from.name, target);
   }
 
   fixedUpdate(dt: number): void {
@@ -383,7 +466,9 @@ export class BotSystem {
       for (const { brain } of this.fighters) brain.receiveOrder('follow', this.orderPoint, null);
     }
     this.direct(dt);
-    for (const { mech, brain } of this.bots) {
+    this.radioQuiet -= dt;
+    for (const bot of this.bots) {
+      const { mech, brain } = bot;
       if (!mech.alive) continue;
       if (brain instanceof BotController && this.o.escort) {
         let leader: MechBase | null = null;
@@ -395,6 +480,7 @@ export class BotSystem {
         brain.leader = leader;
       }
       const input = brain.think(dt, this.targets);
+      if (brain instanceof BotController && brain.radioReport) this.radio(bot, brain);
       mech.guard(brain instanceof BotController && brain.wantsGuard);
       mech.fixedUpdate(input, dt);
       // Técnico no alcance: o conserto é regra do tick (quem escolhe o Mech é o cérebro).

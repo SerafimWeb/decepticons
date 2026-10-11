@@ -118,7 +118,7 @@ try {
           return want ? open : !p?.classList.contains('detailed');
         },
         want,
-        { timeout: 10_000 },
+        { timeout: BOOT_TIMEOUT_MS },
       )
       .then(() => true, () => false);
   for (const code of ['Backquote', 'Quote']) {
