@@ -23,6 +23,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { CameraRig } from '../camera/CameraRig';
 import { KillCam } from '../camera/KillCam';
+import { SpectatorCam } from '../camera/SpectatorCam';
+import { SpectatorHUD } from '../ui/SpectatorHUD';
 import type { CameraModeId } from '../camera/CameraMode';
 import type { CombatSystem } from '../combat/CombatSystem';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
@@ -170,6 +172,10 @@ export class Game {
   private readonly rig: CameraRig;
   /** Câmera de abate local: render puro; o multiplayer não a aciona até a decisão de PvP. */
   private readonly killCam: KillCam;
+  /** Câmeras de vigilância e espectador (visão de drones, prédios da arena e outros Mechs). */
+  private readonly spectatorCam: SpectatorCam;
+  private readonly spectatorHud: SpectatorHUD;
+  private readonly btnCftv: HTMLButtonElement | null;
   private readonly touch: TouchControls;
   private readonly assist: AimAssist;
   private readonly player: PlayerController;
@@ -429,6 +435,49 @@ export class Game {
       occluders: this.match.arena.occluders,
     });
     this.killCam = new KillCam(this.camera, physics, this.match.arena.occluders);
+    this.spectatorHud = new SpectatorHUD();
+    this.btnCftv = document.getElementById('btn-cftv') as HTMLButtonElement | null;
+    this.btnCftv?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleSpectatorCam();
+    });
+    this.spectatorCam = new SpectatorCam(this.camera, physics, this.match.arena.occluders, {
+      getDrones: () => this.match.drones?.drones ?? [],
+      getDynamicMechs: () => {
+        const list: MechBase[] = [];
+        if (this.online?.joined) {
+          for (const r of this.online.remotes.values()) {
+            if (r.mech.alive) list.push(r.mech);
+          }
+        } else {
+          for (const b of this.bots.mechs) {
+            if (b.alive) list.push(b);
+          }
+          if (this.match.allies) {
+            for (const a of this.match.allies.mechs) {
+              if (a.alive && a !== this.mech) list.push(a);
+            }
+          }
+        }
+        return list;
+      },
+      getMechName: (m) => {
+        if (this.online?.joined) {
+          for (const [id, r] of this.online.remotes.entries()) {
+            if (r.mech === m) return r.kind === 'human' ? `JOGADOR #${id}` : `BOT #${id}`;
+          }
+        }
+        const sc = this.round.scoreOf(m);
+        return sc?.name ?? (m instanceof Android ? 'ANDRÓIDE REBELDE' : 'MECH DE COMBATE');
+      },
+    });
+    this.spectatorHud.onPrev = () => this.spectatorCam.prevTarget();
+    this.spectatorHud.onNext = () => this.spectatorCam.nextTarget();
+    this.spectatorHud.onExit = () => {
+      this.spectatorCam.release();
+      this.spectatorHud.setVisible(false);
+      this.btnCftv?.classList.remove('active');
+    };
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets, this.barrage);
     this.match.pilots.push(this.player);
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
@@ -981,6 +1030,26 @@ export class Game {
         this.triggerMissionBriefing();
         return;
       }
+      if (this.spectatorCam.isSpectating) {
+        if (code === 'ArrowLeft' || code === 'KeyQ') {
+          this.spectatorCam.prevTarget();
+          return;
+        }
+        if (code === 'ArrowRight' || code === 'KeyE') {
+          this.spectatorCam.nextTarget();
+          return;
+        }
+        if (code === 'KeyC' || code === 'KeyV' || code === 'Space' || code === 'Escape') {
+          this.spectatorCam.release();
+          this.spectatorHud.setVisible(false);
+          this.btnCftv?.classList.remove('active');
+          return;
+        }
+      }
+      if (code === 'KeyC') {
+        this.toggleSpectatorCam();
+        return;
+      }
       if (!this.playing) return;
       if (!Object.values(this.settings.value.keys).includes(code)) {
         if (code === 'Digit1') this.squadHUD.command('follow');
@@ -1068,9 +1137,13 @@ export class Game {
     const touch = this.input.touchMode && this.playing;
     const engaged = this.input.virtualMoveX !== 0 || this.input.virtualMoveZ !== 0 || this.touch.aiming || this.input.virtualFire;
     let aimed: MechBase | undefined;
-    if (!this.playing) this.assist.reset();
-    else {
-      const target = this.combat.mechOf(this.rig.aim.target);
+    if (!this.playing || this.spectatorCam.isSpectating) {
+      this.assist.reset();
+      this.targetPanel.update(dt, null);
+      this.hud.setOnTarget(false);
+      return;
+    }
+    const target = this.combat.mechOf(this.rig.aim.target);
       aimed = target;
       const pull = this.assist.update(dt, this.camera, this.rig.look, target, touch && s.touchAimAssist, engaged);
       this.rig.nudge(pull.yaw, pull.pitch);
@@ -1079,7 +1152,6 @@ export class Game {
         this.camera.getWorldDirection(_aimDir);
         this.rig.aim.point.copy(this.camera.getWorldPosition(_aimFrom)).addScaledVector(_aimDir, this.assist.aimDist);
       }
-    }
     // O painel do alvo mostra o que já vem no estado — partes, calor e bandeiras — sem custo de rede.
     this.targetPanel.update(dt, this.playing && this.mech.alive ? (aimed ?? null) : null);
     this.input.autoFire = touch && s.touchAutoFire && this.assist.fireReady;
@@ -1123,6 +1195,12 @@ export class Game {
 
   /** Chamado dentro do keydown ou do toque em CAM (gesto do usuário), exigência do Pointer Lock. */
   private switchCamera(): void {
+    if (this.spectatorCam.active) {
+      this.spectatorCam.release();
+      this.spectatorHud.setVisible(false);
+      this.btnCftv?.classList.remove('active');
+      return;
+    }
     if (this.killCam.active) {
       this.killCam.cancel();
       return;
@@ -1133,6 +1211,21 @@ export class Game {
     this.hud.setMode(mode);
     this.touch.setCameraLabel(mode.id === 'fps' ? 'CAM 1ª' : 'CAM 3ª');
     this.updateCursor();
+  }
+
+  /** Alterna entre visão do jogador e o modo de câmeras de vigilância/espectador. */
+  private toggleSpectatorCam(): void {
+    if (this.spectatorCam.isSpectating) {
+      this.spectatorCam.release();
+      this.spectatorHud.setVisible(false);
+      this.btnCftv?.classList.remove('active');
+    } else {
+      if (this.killCam.active) this.killCam.cancel();
+      this.spectatorCam.start(0);
+      this.spectatorHud.setVisible(true);
+      this.spectatorHud.setLabel(this.spectatorCam.currentTargetLabel);
+      this.btnCftv?.classList.add('active');
+    }
   }
 
   private setPlaying(playing: boolean): void {
@@ -1193,7 +1286,17 @@ export class Game {
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);
     if (this.mech.alive && this.killCam.overridesRig) this.killCam.release();
-    if (!this.killCam.overridesRig) this.rig.update(dt);
+    if (this.spectatorCam.overridesRig) {
+      this.spectatorCam.update(dt);
+      this.spectatorHud.setVisible(true);
+      this.spectatorHud.setLabel(this.spectatorCam.currentTargetLabel);
+      this.btnCftv?.classList.add('active');
+    } else {
+      if (this.spectatorCam.active) this.spectatorCam.update(dt);
+      this.spectatorHud.setVisible(false);
+      this.btnCftv?.classList.remove('active');
+      if (!this.killCam.overridesRig) this.rig.update(dt);
+    }
     this.killCam.update(dt);
     if (this.hangarView) {
       const hs = this.hangarScene!;

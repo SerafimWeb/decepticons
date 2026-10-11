@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Câmeras de Vigilância CFTV & Modo Espectador — Gemini, 11/10
+
+**EM BRANCH — NÃO ESTÁ NO AR até merge do PR:** branch `gemini/cameras-espectador`.
+
+Atende ao pedido do dono de ver a visão do topo do Prédio Serafim, porta do Banco Vorcaris, drones de apoio e mechs de combate em tempo real, sem competir por atalhos com a tecla `V` (exclusiva de combate 1ª/3ª pessoa).
+- Módulo `SpectatorCam.ts` com câmeras fixas (`DEFAULT_FIXED_CAMERAS`), drones da Base Serafim em voo/pouso (`DroneSystem.drones` com papéis de patrulha, kamikaze, conserto, recarga) e mechs de combate vivos.
+- Controle pelo atalho dedicado `C` e pelo botão táctil `[ 📹 CFTV ]` adicionado ao HUD durante a partida.
+- Banner `SpectatorHUD.ts` com botões `◄` e `►`, nome do alvo e botão `[ VOLTAR AO MECH ]`.
+- Proteção de parede via raycast do Rapier (`PhysicsWorld`), oclusores de prédios translúcidos (`occluders`) e release suave de 0,35s de volta à visão do jogador.
+- Zero alocações por frame (G1/G4). 12 testes unitários (9 em `SpectatorCam.test.ts` e 3 em `SpectatorHUD.test.ts`).
 ## Inteligência dos bots — Claude, 11/10 (ordem P74)
 
 O Comandante mandou "prossiga com a melhoria da inteligência dos bots". Feito em `combat/BotController.ts` e `combat/BotSystem.ts`
@@ -106,14 +116,14 @@ C3 executada como caracterização, **não homologação**: combate p50/p95/p99 
 |---|---|
 | **Projeto** | 🟡 Fase 5 em andamento — multiplayer sob verificação (M4 pronto, M5–M6 planejados) |
 | **Jogo** | Retorno do servidor público ao protocolo 6 registrado em 09/10, com ciclos de reinício provados (PRs #189–#192); disponibilidade neste instante não consultada nesta auditoria. Offline: Arena + Sobrevivência + CTF |
-| **Build** | Último check local (09/10, Claude, atualizador do servidor, PR `claude/atualizador-retoma`): JS 329,9 KB e Wasm 719,4 KB gzip (tetos 500/900); 828 testes (9 novos do atualizador), typecheck, smoke, bocas e site verdes |
-| **Última sessão** | 10/10 (Gemini, branch `gemini/tela-login`): LoginPanel (P33 — tela de auth/criar conta, 8 testes), CSS e fix do codinome no painel público (`painel.mjs`). 09/10 (Claude): arma elétrica (PR-C, protocolo 9). |
-| **Próximo** | pedidos do dono (06/10) ainda sem escopo: câmeras de espectador e painel de campanhas personalizadas (ver `ROADMAP.md`); drones e escudo físico completos no servidor online; playtest do dono: esfera, aliados, escudo físico, Prédio Serafim e drones; dono julga o Marauder (Hangar e partida); M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`) |
+| **Build** | Último check local (11/10, Gemini): 969 testes verdes em 124 arquivos, typecheck, build, budget, smoke e site verdes |
+| **Última sessão** | 11/10 (Gemini, branch `gemini/cameras-espectador`): Câmeras de vigilância CFTV e espectador (Prédio Serafim, Vorcaris, Drones, Mechs, tecla C e botão no HUD). 10/10 (Gemini): LoginPanel (P33). |
+| **Próximo** | painel de campanhas personalizadas (ver `ROADMAP.md`); drones e escudo físico completos no servidor online; playtest do dono: esfera, aliados, escudo físico, Prédio Serafim e drones; dono julga o Marauder (Hangar e partida); M5: cliente online ler `EVENT.HIT`; projeto da compensação de latência (`FINDINGS.md`) |
 | **Release** | URL: https://www.selvamkt.com.br/cybermech/ — publicado a cada merge na `main` |
 
 ---
 
-**Última atualização:** 2026-10-10 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
+**Última atualização:** 2026-10-11 | **Versão:** v0.5.0-beta | **Status:** 🟡 EM DESENVOLVIMENTO
 
 ## Preparação gráfica C1 — Codex (09/10, PR #198)
 

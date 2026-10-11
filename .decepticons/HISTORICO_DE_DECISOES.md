@@ -1,3 +1,20 @@
+## [2026-10-11] Câmeras de Vigilância CFTV e Espectador: Prédio Serafim, Vorcaris, Drones e Mechs (Gemini)
+
+**Pedido do dono:** "quero poder ver a visao da camera no alto do predio serafim, e as outras cameras (na porta do banco vorcaris, nos drones, etc)" e "o V ja é o botao de mudar a visibilidade durante o jogo, como fazermos pra nao competir por atalhos?".
+**Decisões e Arquitetura:**
+1. **Sem conflito com `V`:** A tecla `V` é estritamente mantida para a visão de combate do jogador (3ª pessoa / 1ª pessoa / tática) via `CameraRig`. As câmeras de vigilância e espectador usam o atalho dedicado **`C`** (C de Câmera/CFTV) e contam também com um botão táctil **`[ 📹 CFTV ]`** no HUD (acessível no desktop e em telas touch).
+2. **Câmeras Fixas & Drones:**
+   - Topo do Prédio Serafim (`76, 58.5, 38`, olhando para o centro da Arena `0, 4, 0`)
+   - Porta do Banco Vorcaris (`-28, 4.5, -23`, olhando para a entrada frontal)
+   - Esquina Rosa, Mirante Norte (Prédio Fluo) e Plataforma Elevada
+   - **Drones em tempo real:** Câmera de perseguição dinâmica para cada drone da esquadrilha da Base Serafim (`patrulha`, `kamikaze`, `conserto`, `recarga`), com leitura de estado (`[EM VOO]` / `[POUSADO]`), posição e yaw.
+   - **Mechs de combate:** Visão em 3ª pessoa dos mechs vivos da partida.
+3. **Robustez & Performance (G1/G4):**
+   - Proteção de parede por raycast físico contra colisores da arena (`PhysicsWorld.raycast`), impedindo que a câmera entre dentro de prédios ou estruturas.
+   - Oclusores de prédios tornam-se translúcidos quando obstruem o alvo.
+   - Desativação suave (`release`) de 0,35s até o ponto do jogador ao sair com `C`, `Esc`, `Space` ou ao clicar em `[ VOLTAR AO MECH ]`.
+   - Zero alocações por frame no loop de renderização (todos os vetores, quatérnions e raios são buffers pré-alocados).
+4. **Testes:** 8 testes unitários cobrem troca de alvos, foco, oclusão, proteção contra colisão, drones abatidos e mechs destruídos (`client/src/camera/SpectatorCam.test.ts`), mais 3 testes de interface (`client/src/ui/SpectatorHUD.test.ts`).
 ## [2026-10-11] Inteligência dos bots: rádio, caça, leitura de mira, cerco e revide, com percepção honesta (Claude, P74)
 
 **Ordem do Comandante:** "prossiga com a melhoria da inteligência dos bots".
