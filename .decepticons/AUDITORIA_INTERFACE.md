@@ -61,9 +61,14 @@ O Hangar é a tela mais rica e já tem identidade forte; o que faltava era **tir
 | D5 | O bloco do canto esquerdo (nome, velocidade, abates, vida por parte) brigava com as linhas de neon do cenário, sem fundo | Feito: fundo translúcido e filete verde |
 | D6 | O nome de um inimigo (placa no mundo) aparecia por cima do painel do alvo | Feito: o painel do alvo ficou quase opaco (82%) |
 
-### Outras telas — a revisar (PR UI-5)
+### Celular e outras telas — UI-5, **parcial** (PR `claude/ui-celular-ordens`)
 
-Lobby online (simples e correto; o apelido já existe no Hangar: avaliar se pede o nome duas vezes), fim de rodada, placar (bom), carregamento, controles de toque, terminal do banco, calibração de mouse.
+| # | Achado | Estado |
+|---|---|---|
+| E1 | **No celular deitado, o painel de ordens aos aliados ficava em cima do analógico esquerdo.** A metade esquerda da tela inteira é a zona de movimento (`.tc-move`, 45% da largura), e o painel (que captura o toque) ocupava o canto inferior esquerdo; a regra que o movia para cima só valia abaixo de 700 px, e telefones deitados têm 800 a 930. Quem tocava ali apertava um botão de ordem em vez de andar | Feito: no toque o painel sobe para logo abaixo do bloco de status. Medido em 844×390, 667×375 e 932×430: o painel termina em y=223 e o analógico começa em y=251, 261 e 289 |
+| E2 | Lobby online: simples e correto (apelido e código da sala). Não pede o nome duas vezes | Sem mudança |
+| E3 | Fim de rodada (`RoundOverlay`), carregamento e terminal do banco | **Não conferidos em captura** (o fim de rodada só aparece depois de 5 minutos de partida e não há atalho de teste). Ficam como pendência declarada; o código do fim de rodada é só contagem e quatro números |
+| E4 | O bloco de status do canto esquerdo ocupa 144 px de altura no celular (10 linhas) | Sem mudança: avaliar com o dono se as barras por parte são necessárias no toque |
 
 ## 2. Princípios (valem para qualquer agente que mexa em tela)
 
@@ -83,6 +88,6 @@ Lobby online (simples e correto; o apelido já existe no Hangar: avaliar se pede
 | UI-2 | Configurações em abas | **feito** (`claude/ui-configuracoes-abas`) |
 | UI-3 | Hangar: tirar repetição e corte | **feito** (`claude/ui-hangar`) |
 | UI-4 | HUD da partida: legibilidade e alinhamento (o painel de vida duplicado era um achado errado; ver a retratação) | **feito** (`claude/ui-hud-partida`) |
-| UI-5 | Lobby, fim de rodada, celular, banco | próximo |
+| UI-5 | Celular, lobby, fim de rodada, carregamento, banco | **parcial** (celular feito; fim de rodada, carregamento e banco sem captura) |
 
 Território: `client/src/ui/`, `styles.css` e `index.html` são do Gemini (`ESTADO_ATUAL`, divisão de trabalho). O dono pediu esta revisão ao Claude diretamente em 10/10; o Gemini tem a tela de login (`gemini/tela-login`) em andamento, com CSS próprio no fim do `styles.css`: os dois PRs mexem em trechos diferentes. Quem chegar depois junta a `main` e roda o `npm run check`.

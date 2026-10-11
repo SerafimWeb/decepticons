@@ -2186,6 +2186,8 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 #squad-orders { position:fixed; left:20px; bottom:76px; display:grid; grid-template-columns:repeat(3,1fr); gap:5px; pointer-events:auto; max-width:360px; padding:8px; background:var(--panel-bg, #101820dd); border:1px solid var(--line, #456); border-radius:6px; font:11px monospace; }
 #squad-orders[hidden] { display:none; }
 html:not(.touch) #squad-orders { opacity: 0.6; }
+/* No toque a metade esquerda da tela inteira é a zona do analógico (.tc-move): a legenda das ordens sobe para baixo do bloco de status, longe do polegar. A regra por largura (700 px) não pegava telefones deitados de 800 a 930 px. */
+.touch #squad-orders { left: 12px; bottom: auto; top: 160px; max-width: min(360px, calc(100vw - 24px)); font-size: 9px; }
 #squad-orders button { padding:9px 7px; background:#17262c; color:#c4e3e8; border:1px solid #49636a; border-radius:3px; cursor:pointer; font:inherit; }
 #squad-orders button[aria-pressed=true] { border-color:#55bfff; color:#8ed7ff; }
 #squad-orders span { grid-column:1/-1; color:#c4e3e8; }
