@@ -70,7 +70,9 @@ describe('o fluxo visível do lança-chamas (desenhado pela bandeira, para todos
     expect(miolo!.color.g).toBeGreaterThan(chama!.color.g); // o miolo é mais claro
     expect(fumaca!.color.r).toBeLessThan(0.5);
     expect(chama!.speed * chama!.life).toBeGreaterThan(19); // ~20 m de língua de fogo (o cone de dano vai a 20 m)
-    expect(chama!.size!).toBeGreaterThanOrEqual(2.5); // gorda: a de 1,7 era fina demais (dono, 11/10: "fraco e curto")
+    // Gorda ao longe (cresce: 1,7 x (1 + 3) = 6,8 no fim) e fina na boca, para não ofuscar a câmera (dono, 11/10: "fraco e curto" e, antes, "luz demais").
+    expect(chama!.size! * (1 + chama!.expansion!)).toBeGreaterThanOrEqual(6);
+    expect(chama!.size!).toBeLessThanOrEqual(2);
   });
 
   it('o fogo tem forma de língua de fogo (o miolo também) e a fumaça é uma nuvem', () => {

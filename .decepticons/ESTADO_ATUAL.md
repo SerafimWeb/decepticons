@@ -14,7 +14,9 @@
 - **Equilíbrio na bancada** (Vector-09): dois lança-chamas juntos, mais de 3,7 s; com o canhão pesado ou os foguetes, mais de 2,75 s (a meta é 2,5 s); o calor continua o freio (ferve em ~4,8 s).
 - **Custo de CPU**: o fluxo do lança-chamas passa de 180 para **270 partículas por segundo** por lança-chamas aceso; o rastro do gelo é de ~180 partículas por tiro (um tiro a cada 0,6 s) e o
   fogo no corpo, de 12 × 11 × 10 Hz = 1320 por segundo no pior caso (abaixo da metade do pool de 3000). Nada no servidor (partículas vazias).
-- **Testes** atualizados (números do gelo e do lança-chamas, rastro, fluxo, fogo no corpo); mutações no fim deste arquivo se couberem.
+- **Testes** atualizados (números do gelo e do lança-chamas, rastro, fluxo, fogo no corpo) e **16 mutações, todas pegas**. Captura: `arte/fogo-gelo-claude.png` (os dois tiros de gelo com a bruma de frio atrás e um bot queimando).
+- **Achado na captura:** o fluxo do fogo com partículas grandes na boca virava um clarão enorme na frente da câmera (o ofuscamento que o Comandante já reclamou). Agora a chama **nasce fina e cresce com a distância** (1,7 → 6,8) e a boca acesa é pequena.
+- **Falta:** o fluxo do lança-chamas só foi visto em quadro congelado; falta o playtest de verdade para o Comandante julgar o fogo em movimento.
 
 **Próxima sessão começa com a P73 (anel de fogo)** em `claude/anel-de-fogo`: módulo de escudo que solta um círculo de fogo ao redor do Mech por alguns segundos, queimando tudo em volta e
 esquentando todos (inclusive quem o solta), com o combo "congelar e depois soltar o anel" (o gelo derrete e dá um estouro de vapor). Entra no sistema do escudo de energia (tecla, energia, HUD,
