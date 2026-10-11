@@ -1,11 +1,11 @@
 # ESTADO ATUAL — CYBERMECH
 
-## Dados da arena para robôs de verdade — Claude, 11/10 (só documento)
+## Ordens do Comando e direção de treino para robôs — Claude, 11/10 (só documento)
 
-Pergunta do dono (P71): como transformar o que acontece na arena em treino de robôs humanoides reais, com valor civil ou de defesa.
-Resposta registrada em `.decepticons/DADOS_E_ROBOTICA.md`: o corpo não transfere, a decisão transfere; o formato é um gravador de voo
-no servidor (comando de 9 bytes por tick + estado a 20 Hz, ~2 MB/h por jogador); primeiro produto é o bot fantasma. **Proposta, nada
-construído, sem custo no jogo.** Próximo passo é do dono: aprovar ou não a etapa D0 (consentimento + gravador).
+`PEDIDOS_DO_DONO.md` virou **`ORDENS_DO_COMANDO.md`** (o dono é o Comandante, cada pedido é uma ordem, o estado é o da missão), a pedido
+dele; os números P01–P71 continuam. O Comandante **aprovou a direção do P71**: o jogo vai servir de treino para robôs humanoides e IAs
+(`DADOS_E_ROBOTICA.md`). Nada construído ainda; a etapa D0 (consentimento + gravador de voo) é a próxima. A próxima frente do Claude é a
+inteligência dos bots (`claude/bots-inteligencia`).
 
 ## Bunker profundo — Codex, 10/10
 
