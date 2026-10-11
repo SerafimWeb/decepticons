@@ -48,14 +48,18 @@ O Hangar é a tela mais rica e já tem identidade forte; o que faltava era **tir
 **Feito no UI-3:** o chip de CARGA do topo saiu (o quadro "CARGA DO CHASSI" já mostra), o de PILOTO também (repetia o nome do robô no centro); o VOLTAR saiu (o × e o Esc já voltam); o campo do link ficou invisível e sobrou só o botão COPIAR LINK (o campo continua no DOM para o plano B "selecione e Ctrl+C"); os slots dizem "+ SALVAR" e cabem; a lista de chassis ficou compacta (6 a 7 de 10 à vista em 1280×720 e 1366×768, os 10 em 1920×1080); o painel de montagem abre **no topo** (um bug antigo: o foco automático no APLICAR rolava o painel até o fim) e o **MÓDULO EXTRA desceu para depois dos braços**, com as durações dentro das opções do seletor; TESTAR e TREINO DE MIRA ficaram lado a lado; o APLICAR MONTAGEM ficou **preso no fundo do painel** e nunca mais sai da tela.
 **Achados extras do UI-3:** três "caminhos de montagem" sem função (ARMAS, já selecionado e sem ação; BLINDAGEM "em breve", que **já existe** como chapa de metal na mão esquerda; MÓDULOS, que só rolava até o seletor logo abaixo); códigos de enfeite ("HGR-01", "CFG-02") e uma frase de enchimento ("Números lidos do chassi e do arsenal do jogo"). Tudo removido.
 
-### HUD da partida — pendente (PR UI-4)
+### HUD da partida — **ajustado no PR `claude/ui-hud-partida` (UI-4)**
 
-| # | Achado |
-|---|---|
-| D1 | **Os sinais vitais do próprio Mech (canto superior esquerdo) repetem o painel do alvo (direita)**: as mesmas seis partes, em dois estilos |
-| D2 | "ABATES" e "MORTES" ficam por baixo das barras de vida; a palavra **"CALOR" some atrás do Mech** no centro de baixo |
-| D3 | O FPS/TICK/DRAWS fica sempre à mostra (resolvido pelo A3) |
-| D4 | O painel de ordens aos aliados ("1 · Acompanhar 2 · Foco 3 · Defender") ocupa o canto inferior esquerdo o tempo todo; só importa quando há aliados e na hora de dar ordem |
+> **Retratação (11/10):** a primeira versão desta auditoria dizia que os sinais vitais do canto esquerdo "repetiam o painel do alvo" da direita. **Estava errado.** O da esquerda é do **seu** Mech; o da direita (`TargetPanel`) só aparece com a mira num inimigo e mostra o **alvo** (nome, partes, calor, estados elementais). São informações diferentes, e o painel do alvo é o que deixa o jogador decidir onde atirar. Os dois ficam. O HUD da partida já estava bom; os problemas reais eram de **legibilidade e alinhamento**, não de excesso.
+
+| # | Achado | Estado |
+|---|---|---|
+| D1 | (retratado: não havia repetição) | — |
+| D2 | **Os rótulos "CALOR" e "DASH" eram cinzas (#999 e #777) e sumiam sobre o cenário** (e sobre o próprio Mech); sem sombra. As três barras do centro de baixo tinham larguras de rótulo diferentes e, centradas uma a uma, **ficavam desalinhadas** (o carregador de foguetes era 4 quadradinhos soltos) | Feito: cores mais claras, sombra, coluna de rótulo fixa; as barras ficam alinhadas e o carregador de foguetes virou uma barra segmentada da mesma largura |
+| D3 | O FPS/TICK/DRAWS à mostra para todo jogador | Feito no UI-1 (desligado por padrão) |
+| D4 | O painel de ordens aos aliados ("1 · Acompanhar 2 · Foco 3 · Defender") pesava o tempo todo no canto inferior esquerdo; é uma legenda das teclas 1, 2 e 3 | Feito: discreto no mouse (60% de opacidade); no toque seguem botões inteiros |
+| D5 | O bloco do canto esquerdo (nome, velocidade, abates, vida por parte) brigava com as linhas de neon do cenário, sem fundo | Feito: fundo translúcido e filete verde |
+| D6 | O nome de um inimigo (placa no mundo) aparecia por cima do painel do alvo | Feito: o painel do alvo ficou quase opaco (82%) |
 
 ### Outras telas — a revisar (PR UI-5)
 
@@ -78,7 +82,7 @@ Lobby online (simples e correto; o apelido já existe no Hangar: avaliar se pede
 | UI-1 | Início / pausa | **feito** (`claude/ui-inicio-pausa`) |
 | UI-2 | Configurações em abas | **feito** (`claude/ui-configuracoes-abas`) |
 | UI-3 | Hangar: tirar repetição e corte | **feito** (`claude/ui-hangar`) |
-| UI-4 | HUD da partida: um só painel de vida, calor visível, ordens sob demanda | próximo |
-| UI-5 | Lobby, fim de rodada, celular, banco | por último |
+| UI-4 | HUD da partida: legibilidade e alinhamento (o painel de vida duplicado era um achado errado; ver a retratação) | **feito** (`claude/ui-hud-partida`) |
+| UI-5 | Lobby, fim de rodada, celular, banco | próximo |
 
 Território: `client/src/ui/`, `styles.css` e `index.html` são do Gemini (`ESTADO_ATUAL`, divisão de trabalho). O dono pediu esta revisão ao Claude diretamente em 10/10; o Gemini tem a tela de login (`gemini/tela-login`) em andamento, com CSS próprio no fim do `styles.css`: os dois PRs mexem em trechos diferentes. Quem chegar depois junta a `main` e roda o `npm run check`.

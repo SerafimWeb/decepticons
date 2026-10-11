@@ -183,7 +183,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] Auditoria de interface (`AUDITORIA_INTERFACE.md`) e UI-1: painel de início/pausa limpo, cabe em 1280×720, sem HUD por trás (Claude, 10/10) #ux
 - [x] **UI-2:** Configurações em abas (Jogo, Controles, Gráficos e som, Avançado), altura fixa, rodapé sempre visível (Claude, 10/10) #ux
 - [x] **UI-3:** Hangar sem repetição nem corte (carga duas vezes, X e VOLTAR, link cortado, slots truncados, lista de chassis, módulo antes dos braços, painel aberto rolado) (Claude, 10/10) #ux
-- [ ] **UI-4:** HUD da partida: um só painel de vida, "CALOR" visível, ordens aos aliados só sob demanda #ux
+- [x] **UI-4:** HUD da partida: rótulos legíveis, barras alinhadas, ordens aos aliados discretas (a "vida duplicada" do achado D1 estava errada e foi retratada) (Claude, 11/10) #ux
 - [ ] **UI-5:** lobby, fim de rodada, carregamento, toque e banco: revisar com os mesmos princípios #ux
 - [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio

@@ -110,15 +110,17 @@ html, body {
   letter-spacing: 2px;
   color: var(--hot);
 }
-#rockets .pips { display: flex; gap: 4px; }
+#rockets .pips { display: flex; gap: 4px; width: 180px; }
 #rockets .pips i {
   --fill: 1;
-  width: 16px;
+  flex: 1;
   height: 8px;
   border: 1px solid var(--hot);
   background: linear-gradient(90deg, var(--hot) calc(var(--fill) * 100%), transparent 0);
 }
 #rockets.off { opacity: 0.3; }
+/* Os três medidores do centro de baixo (foguetes, calor, dash) têm a coluna do rótulo fixa: as barras ficam alinhadas e o rótulo lê sobre qualquer cenário. */
+#dash .label, #heat .label, #rockets .label { flex: 0 0 98px; text-align: right; text-shadow: 0 1px 3px #000, 0 0 2px #000; }
 
 /* Calor da arma (ui/HUD.setHeat): enche a cada tiro; vermelho perto do limite; superaquecida, pisca. */
 #heat {
@@ -131,9 +133,9 @@ html, body {
   gap: 10px;
   font-size: 12px;
   letter-spacing: 2px;
-  color: #999;
+  color: #b9c4bc;
 }
-#heat .bar { width: 180px; height: 6px; border: 1px solid #444; }
+#heat .bar { width: 180px; height: 6px; border: 1px solid #5a6560; background: rgba(0, 0, 0, 0.5); }
 #heat .fill { height: 100%; background: var(--hot); transform-origin: left; transform: scaleX(0); }
 #heat.high { color: var(--alert); }
 #heat.high .fill { background: var(--alert); box-shadow: 0 0 8px var(--alert); }
@@ -368,9 +370,12 @@ html, body {
   position: absolute;
   top: 12px;
   left: 14px;
+  padding: 6px 10px;
+  border-left: 2px solid rgba(57, 255, 106, 0.55);
+  background: rgba(6, 8, 10, 0.5);
   font-size: 13px;
   letter-spacing: 1px;
-  text-shadow: 0 0 6px var(--accent);
+  text-shadow: 0 0 6px var(--accent), 0 1px 2px #000;
   white-space: pre;
 }
 
@@ -382,7 +387,7 @@ html, body {
   transform: translateY(-50%);
   padding: 8px 10px;
   border: 1px solid rgba(255, 45, 61, 0.45);
-  background: rgba(6, 8, 10, 0.6);
+  background: rgba(6, 8, 10, 0.82);
   color: var(--hot);
   font-size: 12px;
   line-height: 1.35;
@@ -615,12 +620,12 @@ html, body {
   gap: 10px;
   font-size: 13px;
   letter-spacing: 2px;
-  color: #777;
+  color: #a2ada5;
 }
 #dash .bar {
   width: 180px;
   height: 8px;
-  border: 1px solid #444;
+  border: 1px solid #5a6560;
   background: rgba(0, 0, 0, 0.5);
 }
 #dash .fill {
@@ -1453,6 +1458,7 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   #heat { bottom: 46px; font-size: 10px; }
   #heat .bar { width: 110px; }
   #dash .bar { width: 110px; }
+  #rockets .pips { width: 110px; }
 }
 /* --- Kill Feed --- */
 /* Abaixo do rótulo da câmera (#mode); no toque, à esquerda do botão de pausa. */
@@ -2179,6 +2185,7 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 /* Ordens de equipe ficam acima da energia, fora do centro da mira. */
 #squad-orders { position:fixed; left:20px; bottom:76px; display:grid; grid-template-columns:repeat(3,1fr); gap:5px; pointer-events:auto; max-width:360px; padding:8px; background:var(--panel-bg, #101820dd); border:1px solid var(--line, #456); border-radius:6px; font:11px monospace; }
 #squad-orders[hidden] { display:none; }
+html:not(.touch) #squad-orders { opacity: 0.6; }
 #squad-orders button { padding:9px 7px; background:#17262c; color:#c4e3e8; border:1px solid #49636a; border-radius:3px; cursor:pointer; font:inherit; }
 #squad-orders button[aria-pressed=true] { border-color:#55bfff; color:#8ed7ff; }
 #squad-orders span { grid-column:1/-1; color:#c4e3e8; }
