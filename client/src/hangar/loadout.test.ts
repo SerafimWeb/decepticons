@@ -230,7 +230,7 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   });
 
   it('as mãos aceitam blaster ou plasma; foguete na mão e blaster no ombro são recusados; plasma duplo só sem os ombros', () => {
-    expect(armOptions('right', 'marauder')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo', 'rotary']);
+    expect(armOptions('right', 'marauder')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo', 'rotary', 'flamer']);
     expect(armOptions('left', 'marauder')).toEqual(armOptions('right', 'marauder'));
     expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage']);
     expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
@@ -363,6 +363,32 @@ describe('metralhadora rotatória no Hangar', () => {
     expect(c.ok && c.loadout.offhand?.id).toBe('rotary');
     const key = loadoutKey(marauder);
     expect(parseLoadoutKey(key)).toEqual(marauder);
+  });
+});
+
+describe('lança-chamas no Hangar', () => {
+  const pesados = ['colossus01', 'onca', 'lr7lBastion', 'marauder'] as const;
+  const leves = ['vector09', 'arara', 'genesis01', 'quadraV2', 'android', 'lancerL1'] as const;
+
+  it('só os pesados oferecem: Colossus, Onça, Bastion e Marauder (os outros não)', () => {
+    for (const c of pesados) expect(armOptions('right', c), c).toContain('flamer');
+    for (const c of leves) expect(armOptions('right', c), c).not.toContain('flamer');
+    for (const c of ['vector09', 'colossus01', 'onca']) expect(armOptions('left', c as never), c).not.toContain('flamer'); // o fluxo vai no gatilho principal
+    expect(armOptions('left', 'marauder')).toContain('flamer'); // exceto no Marauder, que tem duas mãos no gatilho principal
+  });
+
+  it('o texto do link vai e volta, e o Loadout traz o lança-chamas na mão principal; no Vector-09 a montagem é recusada', () => {
+    const spec: LoadoutSpec = { v: 1, chassis: 'colossus01', right: { id: 'flamer', tier: 0 }, left: { id: 'rockets', tier: 0 } };
+    expect(parseLoadoutKey(loadoutKey(spec))).toEqual(spec);
+    const c = validateLoadout(spec);
+    expect(c.ok && c.loadout.primary.id).toBe('flamer');
+    expect(validateLoadout({ v: 1, chassis: 'vector09', right: { id: 'flamer', tier: 0 }, left: { id: 'rockets', tier: 0 } }).ok).toBe(false);
+  });
+
+  it('pesa 3,5 t no nível I e entra na conta da carga do chassi', () => {
+    const c = validateLoadout({ v: 1, chassis: 'colossus01', right: { id: 'flamer', tier: 0 }, left: { id: 'rockets', tier: 0 } });
+    expect(c.ok).toBe(true);
+    expect(c.ok && c.mass).toBe(weapon('flamer').mass + weapon('rockets').mass);
   });
 });
 

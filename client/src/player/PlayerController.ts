@@ -42,6 +42,8 @@ export class PlayerController {
   onKick?: (amount: number) => void;
   /** Corte corpo a corpo (motosserra no braço esquerdo): quem aplica é a partida (`Match.meleeNearest`). */
   melee?: (w: WeaponStats) => void;
+  /** O lança-chamas pulsou: a partida aplica o cone de dano a partir de `origin` na direção `dir` (`Match.flameCone`). */
+  flame?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
   /** Teclas de cada ação (e.code), vindas das configurações. */
   keys: Readonly<Record<KeyAction, string>> = DEFAULT_SETTINGS.keys;
 
@@ -60,6 +62,7 @@ export class PlayerController {
     projectile: (mount, w, spread) => this.shoot(mount, w, spread),
     rocket: (mount, w, volley) => this.launch(mount, w, volley),
     melee: (w) => this.melee?.(w),
+    flame: (mount, w) => this.flameFrom(mount, w),
   };
 
   constructor(
@@ -80,6 +83,9 @@ export class PlayerController {
 
   /** Rotação do cano da metralhadora rotatória, de 0 a 1 (o medidor da mira e o zumbido leem daqui). */
   get spinLevel(): number { return this.armament.spinLevel; }
+
+  /** Combustível do lança-chamas, de 0 a 1 (0 = tanque cheio e parado: nada a mostrar; na trava, o quanto da recarga passou). */
+  get fuelLevel(): number { return this.armament.fuelLevel; }
 
   get launcher(): RocketLauncher {
     return this.armament.launcher;
@@ -166,6 +172,14 @@ export class PlayerController {
     // A rotatória atira 20 vezes por segundo: clarão menor e som a cada quarto tiro (o zumbido contínuo é do Gemini, ARMAS_ELEMENTAIS.md T5).
     this.particles.burst(_muzzle, _dir, { count: w.spin ? 2 : 5, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
     if (!w.spin || (this.spinShots++ & 3) === 0) this.onShot?.(w);
+    this.onKick?.(fireKick(w));
+  }
+
+  /** Um pulso do lança-chamas de `mount`: sai da boca e vai até a mira; a partida aplica o cone (o fluxo visível é `fx/FlameVisuals`). */
+  private flameFrom(mount: MountId, w: WeaponStats): void {
+    this.mech.mountWorldPosition(mount, _muzzle);
+    this.aimFrom(_muzzle);
+    this.flame?.(w, _muzzle, _dir);
     this.onKick?.(fireKick(w));
   }
 

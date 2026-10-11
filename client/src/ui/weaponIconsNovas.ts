@@ -19,7 +19,7 @@ export const WEAPON_HINT_NOVAS: Record<NewWeaponId, string> = {
   arc:
     'Energia · projétil elétrico rápido · aplica Chocado (−35% de velocidade); tiro na cabeça ou 3 acertos seguidos atordoa 0,8 s',
   flamer:
-    'Munição · fluxo contínuo em cone · atinge todos na área e aplica Queimando (dano contínuo + calor); apagado por gelo',
+    'Combustível · fluxo contínuo em cone de 14 m · atinge todos os que estão nele e os deixa Queimando (dano contínuo + calor) · 6 s de chama, 4 s de recarga · esquenta quem atira · apagado por gelo',
   cryo:
     'Energia · projétil criogênico · aplica Gelado (−15% de velocidade/acúmulo até 3x); 3 acúmulos congelam por 1,5 s (+20% dano); apagado por fogo',
 };

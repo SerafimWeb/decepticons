@@ -69,6 +69,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   chainsaw: 'Corpo a corpo · só corta encostado',
   arc: WEAPON_HINT_NOVAS.arc,
   cryo: WEAPON_HINT_NOVAS.cryo,
+  flamer: WEAPON_HINT_NOVAS.flamer,
   rotary: WEAPON_HINT_NOVAS.rotary,
 };
 
@@ -83,6 +84,7 @@ const WEAPON_ICON: Record<WeaponId, string> = {
   shotgun: '<path d="M3 10h15M3 14h15" /><path d="M18 8l3 1v6l-3 1z" /><path d="M6 14v4h5v-4" />',
   arc: WEAPON_ICON_NOVAS.arc,
   cryo: WEAPON_ICON_NOVAS.cryo,
+  flamer: WEAPON_ICON_NOVAS.flamer,
   rotary: WEAPON_ICON_NOVAS.rotary,
   chainsaw: '<rect x="3" y="9" width="7" height="7" rx="1" /><path d="M10 10h9a2.5 2.5 0 0 1 0 5h-9" /><path d="M12 10l1-2M15 10l1-2M18 10l1-2M12 15l1 2M15 15l1 2M18 15l1 2" />',
 };

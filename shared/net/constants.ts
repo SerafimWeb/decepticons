@@ -14,7 +14,8 @@
 // 8 (09/10): a metralhadora rotatória entra no catálogo de armas (montagem `rotary` no JOIN e na lista de jogadores); o tiro dela não vira evento (bandeira `fx`).
 // 9 (09/10): a arma elétrica entra em `NET_WEAPONS` (o tiro dela é evento de tiro como o do plasma); um cliente da versão 8 recusaria o tiro como evento ruim.
 // 10 (11/10): a arma de gelo entra em `NET_WEAPONS` (o tiro dela é evento de tiro como o do plasma); um cliente da versão 9 recusaria o tiro como evento ruim.
-export const PROTOCOL_VERSION = 10;
+// 11 (11/10): o lança-chamas entra no catálogo de montagens (`flamer` no JOIN e no roster); o fluxo dele não vira evento (bandeira `flaming` do byte `fx`, que já existia) e o dano do cone é só do servidor. Um servidor antigo recusaria a montagem.
+export const PROTOCOL_VERSION = 11;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

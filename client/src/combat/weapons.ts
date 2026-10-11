@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer';
 
 /**
  * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
@@ -125,6 +125,22 @@ export interface WeaponStats {
   spin?: Spin;
   /** Estado que o acerto aplica no alvo (`combat/StatusEffects.ts`): fogo, choque ou gelo. Sem escudo na frente, o acerto vale. */
   inflicts?: StatusInflict;
+  /** Só no lança-chamas: o cone e o tanque de combustível (`FuelTank` em `combat/trigger.ts`). */
+  flame?: Flame;
+}
+
+/**
+ * O lança-chamas não solta projétil: a cada `fireInterval` do gatilho apertado, um pulso de dano em **todos** os que estão no cone
+ * (até `maxRange` da arma, com meio ângulo `halfAngle`) e à vista, sem parede no meio. O combustível dura `fuel` s de gatilho; seco, trava
+ * por `reload` s e volta cheio; solto, enche no mesmo ritmo.
+ */
+export interface Flame {
+  /** Meio ângulo do cone (rad). */
+  halfAngle: number;
+  /** Segundos de chama por tanque cheio. */
+  fuel: number;
+  /** Segundos para recarregar o tanque seco (e, solto, o ritmo em que enche). */
+  reload: number;
 }
 
 type WeaponBase = Omit<WeaponStats, 'tier'>;
@@ -143,6 +159,21 @@ const BASE: Record<WeaponId, WeaponBase> = {
     optimalRange: 35, maxRange: 95, minFactor: 0.35,
     blastRadius: 0, mass: 4,
     spin: { up: 1.2, down: 1.5, minRate: 0.15, spread: 0.06 },
+  },
+  /**
+   * Lança-chamas (dono, 09/10 e 11/10: "faça o lança-chamas"). **Fluxo contínuo em cone de 14 m e 25° que atinge todos os que estão nele**,
+   * 6 s de combustível e 4 s de recarga. Um pulso a cada 0,2 s: 6 de dano (30/s) a 6 m ou menos, caindo à metade aos 14 m, e cada pulso
+   * deixa o alvo **queimando** (4 de dano/s e calor no alvo, renova a cada contato; o gelo apaga). Esquenta quem atira (0,2 de calor por
+   * segundo: ferve em ~5 s de chama contínua). Natureza `termico`. Sem projétil e sem evento de rede por pulso: o servidor aplica o cone e o
+   * dono liga a bandeira `flaming`, que os outros jogadores leem para desenhar o fluxo.
+   */
+  flamer: {
+    id: 'flamer', name: 'Lança-chamas', kind: 'energy',
+    damage: 6, fireInterval: 0.2, heatPerShot: 0.04,
+    magazine: 0, reload: 0, speed: 0,
+    optimalRange: 6, maxRange: 14, minFactor: 0.5,
+    blastRadius: 0, mass: 3.5, inflicts: 'burn',
+    flame: { halfAngle: 0.218, fuel: 6, reload: 4 },
   },
   /**
    * Arma elétrica (dono, 09/10: "tiros elétricos, que deixam o oponente tomando choque, lento e sem funcionar temporariamente caso
@@ -335,6 +366,7 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   rotary: 'balistico',
   arc: 'eletrico',
   cryo: 'criogenico',
+  flamer: 'termico',
   chainsaw: 'corte',
 };
 

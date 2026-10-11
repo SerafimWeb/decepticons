@@ -6,7 +6,7 @@ import type { MechBase } from '../client/src/entities/MechBase';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/constants';
 import { EVENT } from '../shared/net/events';
-import { FX_CHILL_MASK, FX_FROZEN, FX_SHOCKED, FX_SPINNING, FX_STUNNED } from '../client/src/combat/StatusEffects';
+import { FX_CHILL_MASK, FX_FLAMING, FX_FROZEN, FX_SHOCKED, FX_SPINNING, FX_STUNNED } from '../client/src/combat/StatusEffects';
 import { hitDamage, weapon } from '../client/src/combat/weapons';
 import { netWeaponIndex } from '../client/src/net/adapters';
 import { factorySpec, loadoutKey } from '../client/src/hangar/loadout';
@@ -583,6 +583,58 @@ describe('Arma de gelo online: o tiro vira evento, o alvo fica gelado, congela c
     const ok = new FakePeer();
     room.receive(ok, join('Dan', 'v1.vector09.plasma-0.cryo-0'));
     expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    room.dispose();
+  });
+});
+
+describe('Lança-chamas online: o servidor aplica o cone, a bandeira vai na rede, e o fluxo não vira evento de tiro', () => {
+  const CHAMA = 'v1.onca.flamer-0.rockets-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem; segurando o gatilho o alvo à frente pega fogo e perde vida; nenhum evento de tiro sai (o fluxo é só a bandeira)', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(CHAMA, 8);
+    expect(mine.mech.loadout.primary.id).toBe('flamer');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 60, { fire: true, yaw, pitch }); // 1 s de chama: 5 pulsos
+    expect(bot.mech.status.burning).toBe(true);
+    expect(before - lifeOf(bot.mech)).toBeGreaterThan(10);
+    expect(shotsOf(dan, me)).toEqual([]); // nenhum evento de tiro: seriam 5 por segundo por atirador
+    room.dispose();
+  });
+
+  it('a bandeira de chama acesa vai no snapshot do atirador enquanto ele queima e some quando ele solta; o alvo leva a de queimando', async () => {
+    const { room, dan, me, bot, yaw, pitch } = await palco(CHAMA, 8);
+    const fxDe = (id: number): number => {
+      const s = dan.lastSnapshot();
+      for (let i = 0; i < s.count; i++) if (s.units[i]!.id === id) return s.units[i]!.fx ?? 0;
+      throw new Error('a unidade não está no estado');
+    };
+    expect(fxDe(me) & FX_FLAMING).toBe(0);
+    let tick = 1;
+    let acendeu = false;
+    for (let i = 0; i < 60; i++, tick++) {
+      room.receive(dan, inputs(tick, 1, { fire: true, yaw, pitch }));
+      room.step();
+      if ((fxDe(me) & FX_FLAMING) !== 0) acendeu = true;
+    }
+    expect(acendeu).toBe(true);
+    expect(fxDe(bot.id) & 1).toBe(1); // FX_BURNING: o alvo está queimando
+    drive(room, dan, tick, 30, { yaw, pitch }); // 0,5 s sem apertar
+    expect(fxDe(me) & FX_FLAMING).toBe(0);
+    room.dispose();
+  });
+
+  it('o servidor recusa o lança-chamas num chassi leve (Vector-09) e aceita nos pesados', async () => {
+    const room = await ArenaRoom.create('CHAMA');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', CHAMA));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const ruim = new FakePeer();
+    room.receive(ruim, join('Ana', 'v1.vector09.flamer-0.rockets-0'));
+    expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
+    expect(ruim.of(MSG.REJECT).length).toBeGreaterThan(0);
     room.dispose();
   });
 });

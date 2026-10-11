@@ -1,6 +1,6 @@
 import { ChargeTimer } from './ChargeTimer';
 import { HeatSink, OVERHEAT_SPEED, type ChassisHeat } from './heat';
-import { FireTimer, RocketLauncher, SpinUp } from './trigger';
+import { FireTimer, FuelTank, RocketLauncher, SpinUp } from './trigger';
 import type { WeaponStats } from './weapons';
 
 /** Passo do tick fixo (o mesmo do PhysicsWorld, repetido para o site ler este arquivo sem o Rapier). */
@@ -47,7 +47,14 @@ export interface DrillResult {
 
 export function drill(chassis: ChassisHeat, d: Drill, seconds: number, hp = Infinity, sampleEvery = 0.1): DrillResult {
   const heat = new HeatSink(chassis);
-  const guns = d.fire.map((w) => ({ w, charge: new ChargeTimer(), feed: w.kind === 'ammo' ? new RocketLauncher(w) : null, timer: new FireTimer(), spin: new SpinUp() }));
+  const guns = d.fire.map((w) => ({
+    w,
+    charge: new ChargeTimer(),
+    feed: w.kind === 'ammo' ? new RocketLauncher(w) : null,
+    tank: w.flame ? new FuelTank(w.flame.fuel, w.flame.reload) : null,
+    timer: new FireTimer(),
+    spin: new SpinUp(),
+  }));
   const every = Math.max(1, Math.round(sampleEvery / DT));
   const ticks = Math.round(seconds / DT);
   const out: DrillResult = { time: ticks * DT, damage: 0, heat: [], locked: [], overheatAt: null, lockedShare: 0 };
@@ -76,6 +83,12 @@ export function drill(chassis: ChassisHeat, d: Drill, seconds: number, hp = Infi
       if (g.feed) {
         g.feed.fixedUpdate(DT);
         fired = pause <= 0 && !heat.overheated && g.feed.tryFire();
+      } else if (g.tank) {
+        // Lança-chamas: a chama acende com o gatilho apertado e há combustível; um pulso a cada `fireInterval`, como no Armament.
+        g.timer.fixedUpdate(DT);
+        const lit = g.tank.step(DT, pause <= 0 && !heat.overheated);
+        fired = lit && g.timer.ready;
+        if (fired) g.timer.shot(g.w.fireInterval);
       } else {
         g.timer.fixedUpdate(DT);
         // A rotatória gira com o gatilho apertado (a cadência sobe com a rotação), como no Armament.

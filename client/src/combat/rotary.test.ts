@@ -33,6 +33,7 @@ function bench(loadout: Loadout, triggers?: TriggerLayout) {
     projectile: (mount, w, spread) => shots.push({ t, mount, w, spread: { x: spread.x, y: spread.y } }),
     rocket: () => {},
     melee: () => {},
+    flame: () => {},
   };
   const hold = (seconds: number, fire: boolean): void => {
     for (let i = 0, n = Math.round(seconds / FIXED_DT); i < n; i++, t += FIXED_DT) armament.fixedUpdate(FIXED_DT, fire, false, sink);

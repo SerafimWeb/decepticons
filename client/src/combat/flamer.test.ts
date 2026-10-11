@@ -1,0 +1,355 @@
+import RAPIER from '@dimforge/rapier3d-simd-compat';
+import * as THREE from 'three';
+import { beforeAll, describe, expect, it } from 'vitest';
+import { DEFAULT_SETTINGS } from '../core/Settings';
+import { VECTOR09_STATS } from '../entities/chassis';
+import { Vector09 } from '../entities/Vector09';
+import type { ParticleSystem } from '../fx/ParticleSystem';
+import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
+import { Match } from '../sim/Match';
+import { Armament, type ShotSink } from './Armament';
+import { drill, sustainedDps, timeToKill } from './balance';
+import { FuelTank } from './trigger';
+import { DAMAGE_TYPE, hitDamage, weapon, type WeaponStats } from './weapons';
+
+const V = VECTOR09_STATS;
+const TORSO = V.maxModuleHealth.torso;
+const FLAMER = weapon('flamer');
+const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
+
+describe('lança-chamas: números e equilíbrio', () => {
+  it('é de energia, sem projétil, aplica queimando e tem natureza térmica; pesa 3,5 / 5,25 / 7 t e bate 6 / 7 / 8 por pulso', () => {
+    expect(FLAMER.kind).toBe('energy');
+    expect(FLAMER.speed).toBe(0); // não solta projétil: o dano é do cone
+    expect(FLAMER.inflicts).toBe('burn');
+    expect(DAMAGE_TYPE.flamer).toBe('termico');
+    expect(FLAMER.fireInterval).toBe(0.2);
+    expect(([0, 1, 2] as const).map((t) => weapon('flamer', t).mass)).toEqual([3.5, 5.25, 7]);
+    expect(([0, 1, 2] as const).map((t) => weapon('flamer', t).damage)).toEqual([6, 7, 8]);
+  });
+
+  it('o cone e o tanque são os do pedido: 14 m, 25° de abertura, 6 s de combustível e 4 s de recarga (e não mudam com o nível)', () => {
+    expect(FLAMER.maxRange).toBe(14);
+    expect((FLAMER.flame!.halfAngle * 2 * 180) / Math.PI).toBeCloseTo(25, 0);
+    expect(FLAMER.flame!.fuel).toBe(6);
+    expect(FLAMER.flame!.reload).toBe(4);
+    for (const t of [1, 2] as const) expect(weapon('flamer', t).flame).toEqual(FLAMER.flame);
+  });
+
+  it('dá 30 de dano por segundo de perto (6 por pulso a 5 pulsos/s) e cai à metade no alcance máximo', () => {
+    expect(FLAMER.damage / FLAMER.fireInterval).toBe(30);
+    expect(hitDamage(FLAMER, 3)).toBe(6);
+    expect(hitDamage(FLAMER, FLAMER.optimalRange)).toBe(6);
+    expect(hitDamage(FLAMER, FLAMER.maxRange)).toBe(Math.round(6 * FLAMER.minFactor));
+    expect(hitDamage(FLAMER, 10)).toBeLessThan(6);
+    expect(hitDamage(FLAMER, 10)).toBeGreaterThan(3);
+  });
+
+  it('em um alvo só é arma lenta: sozinha, em nenhum nível derruba um torso em menos de 10 s (o plasma leva 5,7 s); o valor dela é o cone', () => {
+    for (const t of [0, 1, 2] as const) expect(timeToKill([weapon('flamer', t)], V, TORSO)).toBeGreaterThan(10);
+    expect(timeToKill([FLAMER], V, TORSO)).toBeGreaterThan(timeToKill([weapon('plasma')], V, TORSO) * 2);
+    expect(sustainedDps(FLAMER, V)).toBeLessThan(sustainedDps(weapon('plasma'), V) * 0.6);
+  });
+
+  it('esquenta quem atira: parado, com a chama contínua, o Mech ferve entre 4 e 6 s (antes de o tanque de 6 s acabar)', () => {
+    const r = drill(V, { speed: 0, fire: [FLAMER] }, 30, Infinity);
+    expect(r.overheatAt).not.toBeNull();
+    expect(r.overheatAt!).toBeGreaterThan(4);
+    expect(r.overheatAt!).toBeLessThan(6);
+  });
+
+  it('com a outra mão, nenhum combo derruba em menos de 2,5 s', () => {
+    for (const a of [0, 1, 2] as const) for (const r of [0, 1, 2] as const) {
+      expect(timeToKill([weapon('flamer', a), weapon('plasma', r)], V, TORSO)).toBeGreaterThan(2.5);
+    }
+  });
+});
+
+describe('tanque de combustível', () => {
+  /** Segura o gatilho por `seconds` e conta quantos ticks a chama acendeu. */
+  const queimar = (tank: FuelTank, seconds: number, held = true): number => {
+    let lit = 0;
+    for (let i = 0, n = Math.round(seconds / FIXED_DT); i < n; i++) if (tank.step(FIXED_DT, held)) lit++;
+    return lit * FIXED_DT;
+  };
+
+  it('queima 6 s e seca: depois disso a chama não acende, mesmo com o gatilho apertado', () => {
+    const t = new FuelTank(6, 4);
+    expect(queimar(t, 6.5)).toBeCloseTo(6, 1);
+    expect(t.locked).toBe(true);
+    expect(queimar(t, 3)).toBe(0);
+  });
+
+  it('seco, trava por 4 s e volta cheio, pronto para queimar de novo', () => {
+    const t = new FuelTank(6, 4);
+    queimar(t, 6.2); // seca aos 6 s: sobram ~3,8 s de trava
+    queimar(t, 3.5); // ainda travado
+    expect(t.locked).toBe(true);
+    queimar(t, 0.5);
+    expect(t.locked).toBe(false);
+    expect(t.fuel).toBeGreaterThan(5.5); // voltou cheio (e já gastou o pedaço do meio segundo em que ficou apertado)
+    expect(queimar(t, 1)).toBeCloseTo(1, 1);
+  });
+
+  it('o medidor mostra o tanque e, na trava, o quanto da recarga já passou (sobe de 0 a 1)', () => {
+    const t = new FuelTank(6, 4);
+    queimar(t, 3);
+    expect(t.level).toBeCloseTo(0.5, 1);
+    queimar(t, 3.5);
+    expect(t.locked).toBe(true);
+    const comeco = t.level;
+    queimar(t, 2);
+    expect(t.level).toBeGreaterThan(comeco);
+    expect(t.level).toBeLessThan(1);
+  });
+
+  it('solto, o tanque enche no ritmo da recarga (cheio em 4 s) e nunca passa da capacidade', () => {
+    const t = new FuelTank(6, 4);
+    queimar(t, 4); // sobram 2 s
+    queimar(t, 1, false);
+    expect(t.fuel).toBeGreaterThan(3);
+    queimar(t, 10, false);
+    expect(t.fuel).toBe(6);
+  });
+
+  it('rodada nova ou renascimento: tanque cheio e destravado', () => {
+    const t = new FuelTank(6, 4);
+    queimar(t, 6.2);
+    t.refill();
+    expect([t.fuel, t.locked]).toEqual([6, false]);
+  });
+});
+
+describe('o lança-chamas no Armament (a regra de tiro de cada Mech)', () => {
+  /** Um Mech com a arma na mão direita, o calor sempre ventilado (esta parte do teste é do tanque, não do calor) e o gatilho principal. */
+  function palco(loadout: { primary: WeaponStats; offhand?: WeaponStats }) {
+    const mech = new Vector09({ loadout: { primary: loadout.primary, offhand: loadout.offhand, secondary: null } });
+    const armament = new Armament(mech);
+    const pulsos: Array<{ t: number; mount: string }> = [];
+    let t = 0;
+    const sink: ShotSink = { projectile: () => {}, rocket: () => {}, melee: () => {}, flame: (mount) => pulsos.push({ t, mount }) };
+    const run = (seconds: number, fire: boolean, ventilar = true): void => {
+      for (let i = 0, n = Math.round(seconds / FIXED_DT); i < n; i++, t += FIXED_DT) {
+        if (ventilar) mech.vent(10);
+        armament.fixedUpdate(FIXED_DT, fire, false, sink);
+      }
+    };
+    return { mech, armament, pulsos, run };
+  }
+  const entre = (p: Array<{ t: number }>, a: number, b: number) => p.filter((x) => x.t >= a && x.t < b).length;
+
+  it('segurando o gatilho, solta um pulso a cada 0,2 s (5 por segundo) pela boca da mão direita, e a bandeira da rede liga', () => {
+    const { mech, armament, pulsos, run } = palco({ primary: FLAMER });
+    run(2, true);
+    expect(pulsos.length).toBeGreaterThanOrEqual(9);
+    expect(pulsos.length).toBeLessThanOrEqual(11);
+    expect(pulsos.every((p) => p.mount === 'rightHand')).toBe(true);
+    expect(mech.status.flaming).toBe(true);
+    expect(armament.fuelLevel).toBeGreaterThan(0);
+  });
+
+  it('soltando o gatilho, para na hora: sem pulsos e a bandeira desliga', () => {
+    const { mech, pulsos, run } = palco({ primary: FLAMER });
+    run(1, true);
+    const antes = pulsos.length;
+    run(1, false);
+    expect(pulsos.length).toBe(antes);
+    expect(mech.status.flaming).toBe(false);
+  });
+
+  it('com o tanque de 6 s: 30 pulsos, depois 4 s sem chama (trava), depois volta a queimar', () => {
+    const { mech, pulsos, run } = palco({ primary: FLAMER });
+    run(10.5, true);
+    expect(entre(pulsos, 0, 6.05)).toBeGreaterThanOrEqual(29);
+    expect(entre(pulsos, 0, 6.05)).toBeLessThanOrEqual(31);
+    expect(entre(pulsos, 6.3, 9.9)).toBe(0); // travado, mesmo com o gatilho apertado
+    expect(mech.status.flaming).toBe(true); // já destravou e está queimando de novo no fim
+    expect(entre(pulsos, 10.1, 10.6)).toBeGreaterThan(0);
+  });
+
+  it('Mech superaquecido não acende a chama (o calor trava todas as armas)', () => {
+    const { mech, pulsos, run } = palco({ primary: FLAMER });
+    run(8, true, false); // sem ventilar: ferve em ~4,8 s
+    expect(mech.overheated).toBe(true);
+    const ate = pulsos.at(-1)!.t;
+    expect(ate).toBeLessThan(5.2);
+    expect(mech.status.flaming).toBe(false);
+  });
+
+  it('cada pulso soma calor no Mech que atira (esquenta quem atira)', () => {
+    const { mech, run } = palco({ primary: FLAMER });
+    run(2, true, false);
+    expect(mech.heat).toBeGreaterThan(0.3);
+  });
+
+  it('as outras armas não têm tanque: medidor zerado e bandeira desligada', () => {
+    const { mech, armament, run } = palco({ primary: weapon('plasma') });
+    run(1, true);
+    expect(armament.fuelLevel).toBe(0);
+    expect(mech.status.flaming).toBe(false);
+  });
+
+  it('trocar de armas no Hangar enche um tanque novo', () => {
+    const { mech, armament, run } = palco({ primary: FLAMER });
+    run(5, true);
+    expect(armament.fuelLevel).toBeGreaterThan(0); // gastou: o tanque não está cheio
+    expect(armament.fuelLevel).toBeLessThan(0.5);
+    armament.rearm();
+    expect(armament.fuelLevel).toBe(0);
+    expect(mech.status.flaming).toBe(false);
+  });
+
+  it('com lança-chamas nas duas mãos (Marauder), cada mão tem o seu tanque e pulsa pela sua boca', () => {
+    const { pulsos, run } = palco({ primary: FLAMER, offhand: FLAMER });
+    run(1, true);
+    const bocas = new Set(pulsos.map((p) => p.mount));
+    expect(bocas.has('rightHand')).toBe(true);
+  });
+});
+
+describe('o cone de dano (Match.flameCone), com física de verdade', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  /** Uma partida sem bots, só com os Mechs que o teste põe. O atirador fica em (0, 0, 25) olhando para -Z; os alvos entram pela frente. */
+  async function palco() {
+    const physics = await PhysicsWorld.create();
+    const foes = { ...DEFAULT_SETTINGS, enemyMechs: 0, enemyAndroids: 0, technician: false };
+    const match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes, debris: false });
+    const atirador = new Vector09();
+    match.addPlayer(atirador, 'Atirador');
+    atirador.respawn(new THREE.Vector3(0, 0, 25));
+    const alvos: Vector09[] = [];
+    const alvo = (x: number, z: number): Vector09 => {
+      const m = new Vector09();
+      match.addPlayer(m, `Alvo${alvos.length}`);
+      m.respawn(new THREE.Vector3(x, 0, z));
+      alvos.push(m);
+      return m;
+    };
+    const origem = new THREE.Vector3(0, 3.3, 24.5);
+    const frente = new THREE.Vector3(0, 0, -1);
+    const pulso = (w: WeaponStats = FLAMER, dir: THREE.Vector3 = frente) => {
+      physics.step();
+      physics.step();
+      match.flameCone(atirador, origem, dir, w);
+    };
+    return { match, physics, atirador, alvo, origem, frente, pulso };
+  }
+
+  it('um alvo no cone, de perto, leva o dano cheio, pega fogo, e o atirador não se queima', async () => {
+    const { atirador, alvo, pulso } = await palco();
+    const a = alvo(0, 20); // ~4 m da boca
+    const vidaA = a.modules.torso + a.modules.head;
+    const vidaAtirador = atirador.modules.torso;
+    pulso();
+    expect(a.status.burning).toBe(true);
+    expect(vidaA - (a.modules.torso + a.modules.head)).toBe(hitDamage(FLAMER, 0.5 + 4 - a.stats.radius)); // 6, no alcance ótimo
+    expect(atirador.modules.torso).toBe(vidaAtirador);
+    expect(atirador.status.active).toBe(false);
+  });
+
+  it('o atirador nunca se queima, nem com ele mesmo dentro do cone (a boca atrás do corpo)', async () => {
+    const { atirador, physics, match, frente } = await palco();
+    physics.step();
+    physics.step();
+    const atras = new THREE.Vector3(0, 3.3, 29); // atrás do atirador (que está em z=25): o corpo dele fica no meio do cone
+    const vida = atirador.modules.torso;
+    match.flameCone(atirador, atras, frente, FLAMER);
+    expect(atirador.modules.torso).toBe(vida);
+    expect(atirador.status.burning).toBe(false);
+  });
+
+  it('o mais longe leva menos (o dano cai com a distância) e o que está além dos 14 m não leva nada', async () => {
+    const { alvo, pulso } = await palco();
+    const perto = alvo(0, 20);
+    const longe = alvo(2.2, 12.5); // ~12 m, a ~10° do eixo: dentro do cone
+    const fora = alvo(0, 5); // ~20 m
+    const tira = (m: Vector09) => m.stats.maxModuleHealth.torso + m.stats.maxModuleHealth.head - (m.modules.torso + m.modules.head);
+    pulso();
+    expect(tira(perto)).toBeGreaterThan(tira(longe));
+    expect(tira(longe)).toBeGreaterThan(0);
+    expect(tira(fora)).toBe(0);
+    expect(fora.status.burning).toBe(false);
+  });
+
+  it('o que está fora da abertura do cone não é atingido; dentro dela, sim', async () => {
+    const { alvo, pulso } = await palco();
+    const lado = alvo(9, 19); // ~54° para o lado: bem fora
+    const dentro = alvo(-1.5, 17); // ~12° no limite do cone, mas o corpo largo entra
+    pulso();
+    expect(lado.status.burning).toBe(false);
+    expect(dentro.status.burning).toBe(true);
+  });
+
+  it('atinge TODOS no cone: o de trás não fica protegido pelo da frente', async () => {
+    const { alvo, pulso } = await palco();
+    const frente = alvo(0, 20);
+    const tras = alvo(0, 14);
+    pulso();
+    expect(frente.status.burning).toBe(true);
+    expect(tras.status.burning).toBe(true);
+  });
+
+  it('uma parede no meio segura a chama', async () => {
+    const { alvo, physics, pulso } = await palco();
+    physics.addStaticBox(new THREE.Vector3(0, 4, 20), new THREE.Vector3(8, 8, 0.5));
+    const atras = alvo(0, 15);
+    pulso();
+    expect(atras.status.burning).toBe(false);
+    expect(atras.modules.torso).toBe(atras.stats.maxModuleHealth.torso);
+  });
+
+  it('Mech morto é ignorado', async () => {
+    const { alvo, pulso } = await palco();
+    const a = alvo(0, 20);
+    a.damagePart('torso', 1e6);
+    expect(a.alive).toBe(false);
+    pulso();
+    expect(a.status.burning).toBe(false);
+  });
+
+  it('a chapa cerâmica levantada isola o fogo (térmico): quase não passa dano e o alvo não pega fogo; a reativa deixa passar', async () => {
+    const arm = VECTOR09_STATS.maxModuleHealth.leftArm;
+    const ceramica = await palco();
+    const a = ceramica.alvo(0, 20);
+    a.applyFacing(0, 0); // olha para -Z: de frente para o atirador, que fica atrás dele em z=25... a chapa cobre o lado de quem olha
+    a.applyFacing(Math.PI, 0); // vira para +Z, de frente para o atirador
+    a.metalShield.equip({ id: 'refratario', tier: 0 }, arm);
+    a.guard(true);
+    expect(a.metalShield.raised).toBe(true);
+    ceramica.pulso();
+    expect(a.status.burning).toBe(false);
+
+    const reativa = await palco();
+    const b = reativa.alvo(0, 20);
+    b.applyFacing(Math.PI, 0);
+    b.metalShield.equip({ id: 'reativo', tier: 0 }, arm);
+    b.guard(true);
+    reativa.pulso();
+    expect(b.status.burning).toBe(true);
+  });
+
+  it('só quem leva fogo pelos próprios méritos queima: o fogo apaga o gelo que o alvo já tinha', async () => {
+    const { alvo, pulso } = await palco();
+    const a = alvo(0, 20);
+    for (let i = 0; i < 2; i++) a.status.chillUp();
+    expect(a.status.stacks).toBe(2);
+    pulso();
+    expect(a.status.stacks).toBe(0);
+    expect(a.status.burning).toBe(true);
+  });
+
+  it('o abate por chama é do atirador (o crédito do estado vai para quem acendeu)', async () => {
+    const { match, atirador, alvo, pulso } = await palco();
+    const a = alvo(0, 20);
+    const abates: Array<{ mech: unknown; killer: unknown }> = [];
+    match.combat.onMechKilled = (mech, _at, killer) => abates.push({ mech, killer });
+    a.damagePart('torso', a.modules.torso - 2); // sobra quase nada
+    pulso();
+    expect(a.alive).toBe(false);
+    expect(abates).toHaveLength(1);
+    expect(abates[0]!.killer).toBe(atirador);
+  });
+});

@@ -208,6 +208,22 @@ function cryo(root: THREE.Object3D, tier: number, M: Mats): number {
   return (tip + 0.3) * LONG;
 }
 
+/** Lança-chamas (combustível): corpo, dois tanques cilíndricos de combustível por cima, um bico longo com a chama-piloto acesa na ponta. O nível alonga o bico e soma um tanque. */
+function flamer(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = [0.8, 0.95, 1.1][tier]!;
+  d.box(0.44, 0.38, 0.56, M.armor, 0, 0, -0.3);
+  d.cylZ(0.13, len, M.frame, 0, 0, -0.52 - len / 2);
+  d.cylZ(0.17, 0.12, M.armor, 0, 0, -0.62 - len * 0.55); // o anel do bico
+  for (let i = 0; i <= tier; i++) {
+    d.cylZ(0.11, 0.62, M.armor, (i - tier / 2) * 0.26, 0.28, -0.3);
+    d.cylZ(0.07, 0.5, M.glow, (i - tier / 2) * 0.26, 0.28, -0.3);
+  }
+  const tip = 0.52 + len;
+  d.box(0.07, 0.07, 0.12, M.glow, 0, 0, -tip - 0.05); // a chama-piloto
+  return (tip + 0.14) * LONG;
+}
+
 /** Motosserra (corpo a corpo): motor e uma barra alta com dentes luminosos. O nível alonga a barra. */
 function chainsaw(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -262,7 +278,7 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
+  const accent = weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
     // Lançador de ombro: o casulo de foguetes e o morteiro da chuva têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
@@ -301,6 +317,9 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'cryo':
         muzzleZ = cryo(root, weapon.tier, M);
+        break;
+      case 'flamer':
+        muzzleZ = flamer(root, weapon.tier, M);
         break;
       case 'chainsaw':
         muzzleZ = chainsaw(root, weapon.tier, M);

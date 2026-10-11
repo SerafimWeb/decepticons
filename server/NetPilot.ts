@@ -54,6 +54,10 @@ export class NetPilot implements Pilot {
       else this.match.rockets.fire(_origin, _dir, this.mech.collider, w);
     },
     melee: (w) => this.match.meleeNearest(this.mech, w),
+    flame: (mount, w) => {
+      this.aim(mount);
+      this.match.flameCone(this.mech, _origin, _dir, w);
+    },
   };
 
   constructor(

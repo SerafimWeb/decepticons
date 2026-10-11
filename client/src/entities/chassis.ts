@@ -346,17 +346,19 @@ const ENERGY_ARMS: readonly WeaponId[] = ['plasma', 'blaster', 'shotgun', 'railg
 const SUPPORT_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rockets', 'barrage'];
 /** Armas do gatilho principal, mão direita (e a esquerda nos chassis de duas mãos no gatilho): a rotatória gira o cano e só existe aí. */
 const PRIMARY_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rotary'];
+/** O lança-chamas só nos pesados (dono, 09/10; `ARMAS_ELEMENTAIS.md`): Colossus, Onça, Bastion e Marauder. */
+const HEAVY_PRIMARY_ARMS: readonly WeaponId[] = [...PRIMARY_ARMS, 'flamer'];
 export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
   vector09: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   android: { right: ['blaster'], left: ['chainsaw'] },
-  colossus01: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  colossus01: { right: HEAVY_PRIMARY_ARMS, left: SUPPORT_ARMS },
   arara: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
-  onca: { right: [...PRIMARY_ARMS, 'rockets'], left: SUPPORT_ARMS },
+  onca: { right: [...HEAVY_PRIMARY_ARMS, 'rockets'], left: SUPPORT_ARMS },
   genesis01: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   lancerL1: { right: ENERGY_ARMS, left: [] },
-  lr7lBastion: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  lr7lBastion: { right: HEAVY_PRIMARY_ARMS, left: SUPPORT_ARMS },
   quadraV2: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
-  marauder: { right: PRIMARY_ARMS, left: PRIMARY_ARMS, shoulders: ['rockets', 'barrage'] },
+  marauder: { right: HEAVY_PRIMARY_ARMS, left: HEAVY_PRIMARY_ARMS, shoulders: ['rockets', 'barrage'] },
 };
 
 /** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */
