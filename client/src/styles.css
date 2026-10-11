@@ -1176,14 +1176,14 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
 
 /* Chassi (esquerda). */
 .hg-chassis { grid-area: chassis; align-self: start; max-height: 100%; overflow: auto; }
-.hg-chassis-list { display: grid; gap: 10px; padding: 12px; }
+.hg-chassis-list { display: grid; gap: 6px; padding: 10px; }
 .hg-chassis-card {
-  display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: center; padding: 10px; text-align: left; cursor: pointer;
+  display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; padding: 6px 10px; text-align: left; cursor: pointer;
   border: 1px solid rgba(106, 232, 255, 0.18); background: rgba(3, 14, 21, 0.55);
 }
-.hg-chassis-card svg { width: 44px; height: 62px; fill: none; stroke: var(--hg-c2); stroke-width: 1.4; }
+.hg-chassis-card svg { width: 34px; height: 48px; fill: none; stroke: var(--hg-c2); stroke-width: 1.4; }
 .hg-chassis-card small { display: block; font-size: 9px; letter-spacing: 0.18em; color: var(--hg-dim); }
-.hg-chassis-card b { display: block; margin: 3px 0; font-size: 15px; letter-spacing: 0.1em; color: #eafcff; }
+.hg-chassis-card b { display: block; margin: 2px 0; font-size: 14px; letter-spacing: 0.1em; color: #eafcff; }
 .hg-chassis-card em { font-style: normal; font-size: 9px; color: var(--hg-dim); }
 .hg-chassis-card:hover { border-color: var(--hg-edge); }
 .hg-chassis-card.selected { border-color: var(--hg-c); background: rgba(24, 104, 128, 0.32); box-shadow: inset 3px 0 var(--hg-c), 0 0 18px rgba(106, 232, 255, 0.15); }
@@ -1246,8 +1246,10 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
 .hg-legend i { display: inline-block; width: 12px; height: 4px; }
 .hg-legend i.now { background: var(--hg-c); }
 .hg-legend i.was { background: var(--hg-warm); margin-left: 8px; }
-.hg-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 14px 12px 12px; }
+/* A ação primária fica presa no fundo do painel: o conteúdo rola por baixo e o APLICAR nunca sai da tela. */
+.hg-actions { position: sticky; bottom: 0; z-index: 2; margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px 12px; background: linear-gradient(180deg, rgba(4, 18, 28, 0), rgba(4, 18, 28, 0.97) 22%); }
 #hangar-message { flex: 1 1 100%; min-height: 14px; font-size: 10px; color: #74f5b2; }
+#hangar-message:empty { display: none; }
 #hangar-message[data-kind='error'] { color: var(--hg-bad); }
 .hg-btn { padding: 11px 14px; cursor: pointer; font-size: 11px; letter-spacing: 0.16em; border: 1px solid var(--hg-edge); background: rgba(3, 14, 21, 0.6); }
 .hg-ghost { flex: 0 0 auto; }
@@ -1265,8 +1267,8 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
 .hg-meter i { display: block; height: 100%; background: var(--hg-c); box-shadow: 0 0 10px var(--hg-c); transition: width 0.25s ease; }
 .hg-meter i.over { background: var(--hg-bad); box-shadow: 0 0 10px var(--hg-bad); }
 .hg-share { display: flex; align-items: center; gap: 6px; padding: 12px 14px; }
-.hg-share input { flex: 1; min-width: 0; padding: 8px; font-size: 10px; color: var(--hg-dim); border: 1px solid rgba(106, 232, 255, 0.2); background: rgba(2, 12, 18, 0.8); }
-.hg-share button { padding: 8px 10px; font-size: 9px; letter-spacing: 0.14em; cursor: pointer; border: 1px solid var(--hg-edge); background: rgba(3, 14, 21, 0.6); }
+.hg-share input { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; opacity: 0; overflow: hidden; pointer-events: none; }
+.hg-share button { flex: 1; padding: 8px 10px; font-size: 9px; letter-spacing: 0.14em; cursor: pointer; border: 1px solid var(--hg-edge); background: rgba(3, 14, 21, 0.6); }
 
 /* Abas: só no celular. */
 .hg-tabs { display: none; }
@@ -1287,6 +1289,9 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
   cursor: pointer; border: 1px solid var(--hg-edge); background: rgba(4, 20, 30, 0.9); opacity: 0; transition: opacity 0.15s;
 }
 .hg-preset:hover .hg-preset-save, .hg-preset-save:focus-visible { opacity: 1; }
+
+.hg-try { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.hg-try .hg-test-btn, .hg-try .hg-practice-btn { margin-top: 0; letter-spacing: 0.1em; }
 
 /* Botão de teste e o painel do teste. */
 .hg-test-btn {
@@ -1358,7 +1363,6 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
   .hg-brand b { font-size: 14px; }
   .hg-chips { gap: 6px; flex-wrap: nowrap; overflow: hidden; }
   .hg-chip { padding: 4px 8px; }
-  .hg-chip:nth-child(2) { display: none; }
   .hg-chip i { display: none; }
   .hg-chip b { white-space: nowrap; }
   .hg-chip b { font-size: 11px; }
@@ -2165,7 +2169,9 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 #metal-shield[data-raised=true]{border-color:var(--text);}
 @media (max-width:600px) { #metal-shield {left:12px;top:300px;bottom:auto;font-size:9px;padding:6px;} }
 @media (max-width:600px) { #energy-shield {left:12px;top:265px;bottom:auto;font-size:9px;padding:8px;} }
-.hg-module{display:grid;gap:6px;font-size:10px;margin:8px 0;color:var(--text);}
+.hg-module{display:grid;gap:6px;font-size:10px;margin:10px 12px 0;color:var(--text);}
+.hg-module i{font-style:normal;color:var(--hg-dim);}
+.hg-module small{font-size:10px;line-height:1.5;color:var(--hg-dim);}
 .hg-module select{padding:8px;background:var(--shield-panel);color:var(--shield-text);border:1px solid var(--shield-edge);}
 #debug-panel:not(.detailed) .diagnostics-export{display:none;}
 .diagnostics-export{pointer-events:auto;font:10px Consolas,monospace;background:var(--shield-panel);color:var(--shield-text);border:1px solid var(--shield-edge);padding:5px;margin-top:6px;}

@@ -31,9 +31,9 @@
 
 **Feito:** abas **JOGO** (dificuldade, inimigos, nomes na tela), **CONTROLES** (mouse, câmera, toque, teclas), **GRÁFICOS E SOM** (qualidade, volume) e **AVANÇADO** (potências por arma e o painel de desempenho, que é de quem testa o jogo). A janela tem altura fixa (não pula ao trocar de aba) e o rodapé "Restaurar padrão" fica sempre à vista. Medido em 1280×720: Controles e Gráficos e som cabem **sem rolagem**; Jogo mostra 53% e Avançado 39% do conteúdo de uma vez (eram 22% do total numa rolagem só). O contrato HTML↔módulo está em `settingsTabs.test.ts` (seção sem aba válida, aba sem botão ou o painel de desempenho fora do Avançado reprovam o `check`).
 
-### Hangar — pendente (PR UI-3)
+### Hangar — **refeito no PR `claude/ui-hangar` (UI-3)**
 
-O Hangar é a tela mais rica e já tem identidade forte; o que falta é **tirar repetição e corte**.
+O Hangar é a tela mais rica e já tem identidade forte; o que faltava era **tirar repetição e corte**.
 
 | # | Achado |
 |---|---|
@@ -44,6 +44,9 @@ O Hangar é a tela mais rica e já tem identidade forte; o que falta é **tirar 
 | C5 | A lista de chassis tem 1.153 px de conteúdo em 566 visíveis: o Gênesis-01 e os outros ficam escondidos atrás de rolagem |
 | C6 | O painel direito abre rolado: "MÓDULO EXTRA" (e uma linha técnica em fonte minúscula: "Ctrl: ligar/desligar · frontal: 5 s / 120° · esfera…") vem **antes** dos braços, que são o que o jogador veio mexer |
 | C7 | O braço aparece três vezes: cartão do encaixe, rótulo "BRAÇO DIREITO · ARMAMENTO" e o seletor; os níveis MK, o "TESTAR DISPARO" e o "TREINO DE MIRA" empilhados pedem hierarquia (um primário, o resto secundário) |
+
+**Feito no UI-3:** o chip de CARGA do topo saiu (o quadro "CARGA DO CHASSI" já mostra), o de PILOTO também (repetia o nome do robô no centro); o VOLTAR saiu (o × e o Esc já voltam); o campo do link ficou invisível e sobrou só o botão COPIAR LINK (o campo continua no DOM para o plano B "selecione e Ctrl+C"); os slots dizem "+ SALVAR" e cabem; a lista de chassis ficou compacta (6 a 7 de 10 à vista em 1280×720 e 1366×768, os 10 em 1920×1080); o painel de montagem abre **no topo** (um bug antigo: o foco automático no APLICAR rolava o painel até o fim) e o **MÓDULO EXTRA desceu para depois dos braços**, com as durações dentro das opções do seletor; TESTAR e TREINO DE MIRA ficaram lado a lado; o APLICAR MONTAGEM ficou **preso no fundo do painel** e nunca mais sai da tela.
+**Achados extras do UI-3:** três "caminhos de montagem" sem função (ARMAS, já selecionado e sem ação; BLINDAGEM "em breve", que **já existe** como chapa de metal na mão esquerda; MÓDULOS, que só rolava até o seletor logo abaixo); códigos de enfeite ("HGR-01", "CFG-02") e uma frase de enchimento ("Números lidos do chassi e do arsenal do jogo"). Tudo removido.
 
 ### HUD da partida — pendente (PR UI-4)
 
@@ -74,8 +77,8 @@ Lobby online (simples e correto; o apelido já existe no Hangar: avaliar se pede
 |---|---|---|
 | UI-1 | Início / pausa | **feito** (`claude/ui-inicio-pausa`) |
 | UI-2 | Configurações em abas | **feito** (`claude/ui-configuracoes-abas`) |
-| UI-3 | Hangar: tirar repetição e corte | próximo |
-| UI-4 | HUD da partida: um só painel de vida, calor visível, ordens sob demanda | depois |
+| UI-3 | Hangar: tirar repetição e corte | **feito** (`claude/ui-hangar`) |
+| UI-4 | HUD da partida: um só painel de vida, calor visível, ordens sob demanda | próximo |
 | UI-5 | Lobby, fim de rodada, celular, banco | por último |
 
 Território: `client/src/ui/`, `styles.css` e `index.html` são do Gemini (`ESTADO_ATUAL`, divisão de trabalho). O dono pediu esta revisão ao Claude diretamente em 10/10; o Gemini tem a tela de login (`gemini/tela-login`) em andamento, com CSS próprio no fim do `styles.css`: os dois PRs mexem em trechos diferentes. Quem chegar depois junta a `main` e roda o `npm run check`.
