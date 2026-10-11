@@ -16,6 +16,8 @@
     "check": "npm run typecheck && npm test && node scripts/painel.mjs --check && vite build && npm run smoke && npm run mech:bocas && node scripts/site.mjs --check",
     "prepare": "node scripts/install-hooks.mjs",
     "test": "node scripts/test.mjs",
+    "publicar": "node scripts/publicar.mjs",
+    "gh": "node scripts/gh.mjs",
     "painel": "node scripts/painel.mjs",
     "site": "node scripts/site.mjs",
     "mech:inspecionar": "node scripts/inspecionar-mech.mjs",

@@ -1,0 +1,50 @@
+{
+  "cases": [
+    {
+      "name": "bunker-poco-codex",
+      "calls": 67,
+      "triangles": 14482,
+      "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "gpuMs": {
+        "samples": 12,
+        "p50": 16.1328,
+        "p95": 62.62892
+      }
+    },
+    {
+      "name": "bunker-atrio-codex",
+      "calls": 36,
+      "triangles": 11468,
+      "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "gpuMs": {
+        "samples": 12,
+        "p50": 13.88624,
+        "p95": 51.28204
+      }
+    },
+    {
+      "name": "bunker-tunel-secreto-codex",
+      "calls": 18,
+      "triangles": 9964,
+      "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "gpuMs": {
+        "samples": 12,
+        "p50": 14.11744,
+        "p95": 15.49168
+      }
+    },
+    {
+      "name": "bunker-atirador-codex",
+      "calls": 47,
+      "triangles": 12748,
+      "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "gpuMs": {
+        "samples": 12,
+        "p50": 11.31984,
+        "p95": 16.35152
+      }
+    }
+  ],
+  "errors": [],
+  "scope": "vistas controladas do mapa real; não certifica FPS, elevadores operacionais ou IA vertical"
+}

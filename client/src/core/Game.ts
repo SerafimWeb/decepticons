@@ -1,3 +1,5 @@
+import { mapFromSearch } from '../environment/Bunker';
+import { attachMapLinks } from '../ui/MapLinks';
 import { SquadHUD } from '../ui/SquadHUD';
 import { ShieldVisuals } from '../fx/ShieldVisuals';
 import { ShieldHUD } from '../ui/ShieldHUD';
@@ -41,7 +43,9 @@ import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
 import { PlayerController } from '../player/PlayerController';
 import { DamageIndicator } from '../ui/DamageIndicator';
+import { StatusBadges } from '../ui/StatusBadges';
 import { TargetPanel } from '../ui/TargetPanel';
+import { StatusHud } from './statusHud';
 import { HUD } from '../ui/HUD';
 import { KillFeed } from '../ui/KillFeed';
 import { MouseCalibration } from '../ui/MouseCalibration';
@@ -174,6 +178,13 @@ export class Game {
   private readonly netStatus = document.createElement('div');
   private readonly damageIndicator = new DamageIndicator();
   private readonly targetPanel = new TargetPanel();
+  /** Estados do jogador (fogo, choque, gelo) na tela e no som: os indicadores e as bordas são do Gemini, a ponte é `core/statusHud.ts`. */
+  private readonly statusBadges = new StatusBadges(document.getElementById('hud')!);
+  private readonly statusHud = new StatusHud({
+    badges: (list) => this.statusBadges.update(list),
+    entered: (kind) => this.audio.playStatusEnter(kind),
+    loop: (kind) => this.audio.setStatusLoop(kind),
+  });
   private readonly debugPanel = new DebugPanel();
   private readonly audio = new AudioSystem();
   /** Vinheta da SERAFIM WEB antes da primeira partida da sessão. */
@@ -327,6 +338,7 @@ export class Game {
       foes,
       power,
       mode: this.gameMode,
+      map: mapFromSearch(location.search, !!online, this.gameMode),
       startWave: waveFromSearch(location.search, SURVIVAL_WAVE_PLANS.length),
       // allies: false online — os inimigos locais já vão a 0 (o servidor manda o estado de verdade);
       // um aliado sem ninguém pra lutar, fora de sincronia com o servidor, não serve pra nada aqui.
@@ -334,8 +346,10 @@ export class Game {
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets, barrage: this.barrage } = this.match);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
-    addBankSign(this.scene);
-    addSerafimPlaque(this.scene);
+    if (this.match.arena.serafim) {
+      addBankSign(this.scene);
+      addSerafimPlaque(this.scene);
+    }
     this.droneVisuals = this.match.drones ? new DroneVisuals(this.scene, this.match.drones) : null;
     this.shadows = new ShadowBlobs(this.scene, terrainGround(physics));
     // ?serafim=festa: o LED do prédio gira as cores (o dono quer poder variar a luz).
@@ -485,6 +499,7 @@ export class Game {
       open: () => {
         this.telemetry.enviar('hangar_aberto');
         this.hangarScene ??= new HangarScene();
+        this.configureHangarPreparation();
         this.hangarView = true;
         this.renderPass.scene = this.hangarScene.scene;
         this.renderPass.camera = this.hangarScene.camera;
@@ -540,6 +555,7 @@ export class Game {
     this.settings.onChange((s) => this.applySettings(s));
 
     this.modeSelector.attachTo(document.getElementById('overlay'));
+    attachMapLinks(document.getElementById('overlay'), mapFromSearch(location.search, !!online, this.gameMode));
     this.modeSelector.onModeChange((mode) => {
       this.telemetry.enviar('modo_trocado');
       this.audio.playUiTransition();
@@ -581,6 +597,7 @@ export class Game {
    */
   private updateSerafimTower(dt: number): void {
     const tower = this.match.arena.serafim;
+    if (!tower) return;
     this.serafimCheck -= dt;
     if (this.serafimCheck <= 0) {
       this.serafimCheck = 0.25;
@@ -744,6 +761,17 @@ export class Game {
     this.renderer.setAnimationLoop((now: number) => this.frame(now));
   }
 
+  /** Instala depois do boot: não antecipa downloads nem retém uma segunda cena/modelo. */
+  private configureHangarPreparation(): void {
+    const hangar = this.hangarScene;
+    if (!hangar || hangar.prepareModel) return;
+    hangar.prepareModel = async (root) => {
+      const result = await warmUpShaders(this.renderer, this.composer.readBuffer, root, hangar.camera, undefined, 5000, hangar.scene);
+      if (result !== 'ok') console.warn(`Hangar: preparação do modelo ${result} (segue no primeiro uso)`);
+      return result === 'ok';
+    };
+  }
+
   private wireEvents(): void {
     const { input, rig, mech } = this;
 
@@ -777,7 +805,7 @@ export class Game {
       };
     }
     // Som de disparo: o controle do jogador avisa a cada tiro de energia (bots têm o som deles, acima).
-    this.player.onShot = () => this.audio.playShot();
+    this.player.onShot = (w) => (w.id === 'arc' ? this.audio.playArcShot() : this.audio.playShot());
     // Peso do tiro na câmera (`combat/fireFeel.ts`): o solavanco do trilho e do foguete, o zumbido do plasma.
     this.player.onKick = (amount) => rig.addShake(amount);
     this.player.onRocket = () => {
@@ -1219,7 +1247,7 @@ export class Game {
     this.shadows.end();
     this.particles.update(dt);
 
-    const near = this.mech.alive && nearBank(this.mech.simPosition);
+    const near = !!this.match.arena.serafim && this.mech.alive && nearBank(this.mech.simPosition);
     if (!near) this.bankNear = false;
     else if (this.playing && !this.hangarView && !this.bankNear && !this.killCam.overridesRig) {
       this.bankNear = true; this.pause(); this.input.exitLock();
@@ -1235,6 +1263,12 @@ export class Game {
     const noMagazine = this.mech.loadout.secondary?.kind !== 'ammo';
     this.hud.setRockets(noMagazine ? 4 : this.player.launcher.ammo, noMagazine ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);
     this.hud.setHeat(this.mech.heat, this.mech.overheated, this.mech.coolingBoost);
+    // Estados (choque, fogo, gelo) e rotação do cano: parado na pausa ou morto, o zumbido e os indicadores se calam.
+    const ativo = this.playing && this.mech.alive && !this.hangarView;
+    this.statusHud.update(this.mech.status, ativo);
+    const giro = ativo ? this.player.spinLevel : 0;
+    this.hud.setSpin(giro);
+    this.audio.setRotarySpin(giro);
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);

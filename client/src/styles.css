@@ -685,6 +685,7 @@ html, body {
   box-shadow: 0 0 10px rgba(57, 255, 106, 0.2);
   transition: all 0.15s ease;
 }
+a.btn-terminal { display: inline-block; text-decoration: none; }
 .btn-terminal:hover {
   background: var(--accent);
   color: var(--bg);

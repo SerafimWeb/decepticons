@@ -4,7 +4,7 @@ Plano de trabalho proposto pelo Codex, sem alterar VISAO ou atribuir tarefas aut
 
 | Prioridade | Opção e resultado esperado | Frente / dependência |
 |---|---|---|
-| 1 | C2: preparar a nova montagem antes de exibi-la, com limite de espera/memória, cancelamento lógico da seleção anterior e fallback | Codex; contrato de indicação de carga com Gemini antes de alterar UI |
+| 1 | C2: shader do chassi antes de exibir implementado em 10/10; completar upload e variantes de armas/níveis, medir custo e ligar indicação de preparação | Codex; contrato `graphicsPreparing` disponível para Gemini, sem alterar sua UI |
 | 2 | C3: tempo de GPU, ensaio longo e cenários GLB/combate, com percentis e identificação de carga concorrente | Codex; janela de máquina disponível e playtest em hardware alvo |
 | 3 | C2: variantes de armas/níveis e primeiro aparecimento de remoto com dois clientes | Codex + contrato de criação do Claude; não aquecer todo catálogo no boot |
 | 4 | C6: efeito 3D de choque/atordoamento com pool e teto, ligado ao estado autoritativo já entregue | Codex; contrato elétrico #199/#203 existente, custo medido; Gemini mantém som/HUD |

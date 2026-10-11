@@ -175,6 +175,11 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] **CTF Vermelho × Azul — treino offline jogável:** uma bandeira em cada base, dois defensores, captura só com a própria bandeira em casa, queda/retorno, portador 15% mais lento, três capturas ou desempate em 8 min; regra pura no `Match`, HUD, bases/bandeiras holográficas em cinco draw calls e seletor na pausa #modos
 - [ ] **CTF 2v2 online autoritativo:** times no contrato de sala, eventos de bandeira/captura no protocolo, bots preenchendo vagas e validação de banda; o treino offline não anuncia suporte de rede #rede
 - [ ] **Missões em fases (cooperativo ou solo):** 3-5 fases com objetivos crescentes (defesa, escolta, invasão), com um evento de rede novo (`OBJECTIVE_STATE`) e um mapa por missão #modos
+- [x] Registro de pedidos do dono (`PEDIDOS_DO_DONO.md`), regra 17 e placar de resultado: nada que o dono pede fica só no chat, e dá para ver se o jogo melhora de verdade (Claude, 10/10) #base
+- [ ] **Painel admin completo** (dono, 10/10; plano em `PAINEL_ADMIN.md`): cinco telas (Oponentes, Campanha, Arsenal e chassis, Servidor, Evolução); começa pelos contratos `BotSpec` e `CampanhaSpec`, depois a simulação, depois as telas #ux
+- [x] Prompt e roteiro do Tripo3D para o próximo robô, e auditoria das pastas de modelos: dois `.glb` de 78 MB removidos do repositório (Claude, 10/10) #mechs
+- [x] Envio automático à prova de token morto: `node scripts/gh.mjs` (fallback para a credencial do Git) e `npm run publicar` (push, PR, CI, merge e limpeza com travas), 21 testes (Claude, 10/10) #base
+- [x] Deixar o link do Bunker visível na tela inicial: botão [ EXPLORAR O BUNKER ] abaixo de ABRIR HANGAR (Claude, 10/10) #ux
 - [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio
 - [ ] **Decidir câmera de abate no PvP:** seguir o adversário revela sua posição; escolher entre liberar, atrasar/limitar ou manter ausente no competitivo #rede
@@ -287,7 +292,7 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 - [ ] Suporte a controle (gamepad) #jogabilidade
 - [~] Recuo e tremor próprios de cada arma: o tremor de câmera por arma entrou (`combat/fireFeel.ts`, 08/10); falta o solavanco de mira (view kick), que mexe na pontaria e pede playtest do dono #jogabilidade
 - [x] Faixas neon dos três prédios em uma malha instanciada por prédio (Codex C4, 09/10): 16→3 malhas; seis vistas com 11–13 desenhos a menos, mesmos triângulos; 1 KiB estático; `medicoes/FAIXAS_NEON.md` #cenarios
-- [~] Preparar escolhas posteriores de GLB/montagem e remotos (Codex C2, 09/10): medida seleção na Vega 11, restauração do alvo corrigida; faltam aquecimento tardio limitado, variantes de armas e dois clientes; `medicoes/HANGAR_SELECAO.md` #desempenho
+- [~] Preparar escolhas posteriores de GLB/montagem e remotos (Codex C2, 10/10): shader do chassi antes de exibir, fila limitada e seleção protegida; A/B Vega 11, zero programas após trocar; faltam upload, variantes de armas e dois clientes; `medicoes/HANGAR_TROCAS_PREPARADAS.md` #desempenho
 - [~] Consolidar medição em GPU integrada real (meta do G12): Iris Xe no diagnóstico de shaders; Codex C3 (09/10) mediu nove janelas na Vega 11, percentis e memória em `medicoes/RENDER_C3.md`; caracterização sob pressão de RAM, falta homologação prolongada #desempenho
 - [ ] Issues do GitHub como rastreador de bugs, com severidade (trava > bloqueia > grave > leve) e passos para reproduzir #base
 - [ ] Teste noturno: bots jogando sozinhos no navegador headless para achar travamentos e erros #base
@@ -296,3 +301,5 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 
 - [ ] Câmeras de espectador: trocar para a visão de outros jogadores e de câmeras fixas (topo do Prédio Serafim, portas dos prédios) (pedido do dono, 06/10) #ux
 - [ ] Painel de campanhas: escolher oponentes, missões e tarefas e salvar campanhas personalizadas com nome, como as montagens do Hangar (pedido do dono, 06/10) #modos
+
+- [~] Bunker profundo de quatro níveis (0/14/28/42 m), poço aberto, rampas com degraus, galerias escuras, elevadores, atalho secreto e posições de sniper (Codex, 10/10: no ar desde o PR #218; IA vertical, elevadores móveis, câmera tática e playtest pendentes) #cenarios

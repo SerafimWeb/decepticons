@@ -203,6 +203,31 @@ describe('PlayerController: a metralhadora rotatória do jogador local', () => {
     expect(sounds()).toBe(Math.ceil(bolts.length / 4));
   });
 
+  it('o som recebe a arma que atirou (para tocar o estalo elétrico, não o do plasma) e o nível de rotação sobe com o gatilho e cai ao soltar', async () => {
+    const eletrica = await jogador({ primary: weapon('arc'), secondary: null });
+    const armas: string[] = [];
+    eletrica.player.onShot = (w) => armas.push(w.id);
+    eletrica.input.mouseDown = true;
+    eletrica.run(1);
+    expect(armas.length).toBeGreaterThanOrEqual(2);
+    expect(armas.every((id) => id === 'arc')).toBe(true);
+    expect(eletrica.player.spinLevel).toBe(0); // arma sem cano: o medidor nunca acende
+
+    const rotatoria = await jogador({ primary: ROTARY, secondary: null });
+    expect(rotatoria.player.spinLevel).toBe(0);
+    rotatoria.input.mouseDown = true;
+    rotatoria.run(0.6);
+    const subindo = rotatoria.player.spinLevel;
+    expect(subindo).toBeGreaterThan(0.3);
+    expect(subindo).toBeLessThan(1);
+    rotatoria.run(1);
+    expect(rotatoria.player.spinLevel).toBe(1);
+    rotatoria.input.mouseDown = false;
+    rotatoria.run(0.5);
+    expect(rotatoria.player.spinLevel).toBeLessThan(1);
+    expect(rotatoria.player.spinLevel).toBeGreaterThan(0.5);
+  });
+
   it('arma sem rotação não ganha desvio nem perde som: o plasma continua um som por tiro, reto na mira', async () => {
     const { input, aim, bolts, run, sounds } = await jogador({ primary: weapon('plasma'), secondary: null });
     input.mouseDown = true;

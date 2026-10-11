@@ -56,6 +56,11 @@ O desenho do encaixe e da arma (o "punho" sem dedos, o módulo de arma, o roteir
 | **Arara-B1** (era "Ferret-X" nesta proposta) | leve · escala 1 | 8 t | torso 200 | 13 m/s | padrão | **no jogo** (29/09, Arara Foundry) |
 | **Vector-09** | médio · escala 2 | 18 t | 100% (torso 300) | 9 m/s | 0,7/s | **no jogo** (armas de fábrica: 7 t) |
 | **Onça-B2** | pesado · escala 2 | 16 t | torso 450 | 6 m/s | padrão | **no jogo** (29/09, Arara Foundry) |
+| **Gênesis-01** | assalto médio (importado) | 11 t | torso 350 | 8,5 m/s | padrão | **no jogo** (10/10): um degrau acima do Vector-09 em vida, um passo mais lento |
+| **Lancer-L1** | duelista de curta distância (importado) | 11 t | torso 270, braço do escudo 170 | 9,8 m/s | padrão | **no jogo** (10/10): ágil, dash volta em 2,6 s; a escopeta só vale de perto |
+| **LR-7L Bastion** | tanque (importado) | 11 t | torso 460 | 7,5 m/s | padrão | **no jogo** (10/10): o mais resistente dos médios, dash curto e demorado (3,6 s) |
+| **Quadra-V2** | escaramuçador (importado) | 11 t | torso 210 | 11,5 m/s | padrão | **no jogo** (10/10): o mais rápido dos médios, dash em 2,2 s, pulo alto, cai com poucos tiros |
+| **Marauder** | plataforma de fogo (importado, 4 canos) | 11 t | torso 380 | 7,8 m/s | padrão | **no jogo** (10/10): quatro canos, vida alta e passo lento |
 | **Colossus-01** | cerco · escala 3 (decidido: não é o "pesado" desta linha) | 24 t | torso 1200 | 5 m/s | padrão | **no jogo** (29/09), não balanceado contra bots de propósito |
 
 **Blindagem extra:** a carga que sobra das armas vira blindagem (proposta: 1 t = +30 de vida, distribuída pelo

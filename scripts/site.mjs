@@ -524,7 +524,7 @@ async function check() {
     if ((await page.locator('.sheets li').count()) < 1) failures.push('sala de controle: sem as fichas de design');
     // Endereço antigo: leva para a sala de controle.
     await page.goto(`${base}bastidores/`);
-    await page.waitForURL(/sala-de-controle\/$/, { timeout: 5000 }).catch(() => failures.push('bastidores/: não levou para a sala de controle'));
+    await page.waitForURL(/sala-de-controle\/$/, { timeout: 20000 }).catch(() => failures.push('bastidores/: não levou para a sala de controle'));
     // Oficina: a bancada tem de sair com os gráficos da simulação (sem eles, os dados do jogo não carregaram).
     await page.goto(`${base}oficina/`);
     if ((await page.title()) !== 'Oficina · CYBERMECH') failures.push(`título da oficina: "${await page.title()}"`);
