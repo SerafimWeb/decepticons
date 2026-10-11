@@ -184,7 +184,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] **UI-2:** Configurações em abas (Jogo, Controles, Gráficos e som, Avançado), altura fixa, rodapé sempre visível (Claude, 10/10) #ux
 - [x] **UI-3:** Hangar sem repetição nem corte (carga duas vezes, X e VOLTAR, link cortado, slots truncados, lista de chassis, módulo antes dos braços, painel aberto rolado) (Claude, 10/10) #ux
 - [x] **UI-4:** HUD da partida: rótulos legíveis, barras alinhadas, ordens aos aliados discretas (a "vida duplicada" do achado D1 estava errada e foi retratada) (Claude, 11/10) #ux
-- [ ] **UI-5:** lobby, fim de rodada, carregamento, toque e banco: revisar com os mesmos princípios #ux
+- [x] **UI-5 (celular):** o painel de ordens aos aliados saiu de cima do analógico no celular deitado (Claude, 11/10) #ux
+- [ ] **UI-5 (resto):** conferir em captura o fim de rodada, o carregamento e o terminal do banco (não há atalho de teste para o fim de rodada) #ux
 - [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
 - [ ] **Modo streamer:** sala de código fixo, câmera de espectador, sobreposição para OBS #negocio
 - [ ] **Decidir câmera de abate no PvP:** seguir o adversário revela sua posição; escolher entre liberar, atrasar/limitar ou manter ausente no competitivo #rede
