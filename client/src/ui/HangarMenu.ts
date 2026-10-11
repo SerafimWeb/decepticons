@@ -203,15 +203,13 @@ export class HangarMenu {
       <header class="hg-top">
         <div class="hg-brand"><svg class="hg-emblem" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 29 9v14l-13 7L3 23V9z" /><path d="M16 8 23 12v8l-7 4-7-4v-8z" /></svg><span><b>CYBERMECH</b><small>HANGAR · CENTRO DE MONTAGEM</small></span></div>
         <div class="hg-chips">
-          <span class="hg-chip"><i>CARGA</i><b id="hg-top-load"></b></span>
           <span class="hg-chip"><i>CRÉDITOS</i><b id="hg-top-credits"></b></span>
-          <span class="hg-chip"><i>PILOTO</i><b id="hg-top-pilot"></b></span>
           <span class="hg-chip hg-mode"><em></em><b id="hg-top-mode"></b></span>
         </div>
         <button class="hg-close" type="button" data-action="close" aria-label="Voltar à pausa">×</button>
       </header>
       <aside class="hg-panel hg-chassis" data-tab="chassi">
-        <div class="hg-head"><span>01</span> CHASSI <em>HGR-01</em></div>
+        <div class="hg-head"><span>01</span> CHASSI</div>
         <div id="hangar-chassis-list" class="hg-chassis-list"></div>
         <dl class="hg-specs">
           <div><dt>ALTURA</dt><dd id="hangar-height"></dd></div>
@@ -219,20 +217,14 @@ export class HangarMenu {
           <div><dt>BLINDAGEM · TORSO</dt><dd id="hangar-armor"></dd></div>
           <div><dt>DISSIPADOR</dt><dd id="hangar-cooling"></dd></div>
         </dl>
-        <p class="hg-note">Números lidos do chassi e do arsenal do jogo.</p>
       </aside>
       <section class="hg-panel hg-console" data-tab="armas">
-        <div class="hg-head"><span>02</span> CAMINHOS DE MONTAGEM <em>CFG-02</em></div>
-        <div class="hg-paths" aria-label="Caminhos de montagem">
-          <button type="button" class="hg-path selected"><svg viewBox="0 0 24 24" aria-hidden="true">${WEAPON_ICON.plasma}</svg><b>ARMAS</b><small>braços D e E</small></button>
-          <button type="button" class="hg-path soon" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /></svg><b>BLINDAGEM</b><small>em breve</small></button>
-          <button type="button" class="hg-path" data-action="module"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="5" width="14" height="14" /><path d="M9 1v4M15 1v4M9 19v4M15 19v4M1 9h4M1 15h4M19 9h4M19 15h4" /></svg><b>MÓDULOS</b><small>gerador abaixo</small></button>
-        </div>
-        <label class="hg-module">MÓDULO EXTRA · preserva as duas armas<select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t</option><option value="sphere">Esfera de energia · 4,0 t</option></select><small>Ctrl: ligar/desligar · frontal: 5 s / 120° · esfera: 3,75 s / 360° · impactos gastam energia</small></label><div id="hangar-slot-list" class="hg-slots"></div>
+        <div class="hg-head"><span>02</span> MONTAGEM</div>
+        <div id="hangar-slot-list" class="hg-slots"></div>
         <div id="hangar-weapon-editor" class="hg-editor"></div>
+        <label class="hg-module"><span>MÓDULO EXTRA <i>(não ocupa os braços)</i></span><select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t · 5 s, 120°</option><option value="sphere">Esfera de energia · 4,0 t · 3,75 s, 360°</option></select><small>Ctrl liga e desliga. Os impactos gastam a energia.</small></label>
         <div class="hg-actions">
           <span id="hangar-message" role="status"></span>
-          <button class="hg-btn hg-ghost" type="button" data-action="close">VOLTAR</button>
           <button class="hg-btn hangar-apply" type="button" data-action="apply">APLICAR MONTAGEM ›</button>
         </div>
       </section>
@@ -457,7 +449,7 @@ export class HangarMenu {
     document.documentElement.classList.add('hangar-open');
     this.preview.open();
     this.render();
-    this.root.querySelector<HTMLButtonElement>('.hangar-apply')?.focus();
+    this.root.querySelector<HTMLButtonElement>('.hangar-apply')?.focus({ preventScroll: true }); // sem isto o navegador rolava o painel até o botão, e o topo (os braços) abria cortado
   }
 
   private close(): void {
@@ -518,7 +510,6 @@ export class HangarMenu {
       return;
     }
     const action = target?.closest<HTMLButtonElement>('[data-action]')?.dataset.action;
-    if (action === 'module') { const select = this.root.querySelector<HTMLSelectElement>('#hangar-module-select')!; select.scrollIntoView({block:'nearest'}); select.focus(); return; }
     if (action === 'test') {
       event.stopPropagation();
       this.startTest();
@@ -609,8 +600,6 @@ export class HangarMenu {
     else if (this.previewChassis !== spec.chassis) this.preview.show?.(spec.chassis, chassis.loadout);
     this.previewChassis = spec.chassis;
 
-    this.setText('hg-top-load', `${num(report.mass, 1)} / ${num(report.capacity, 0)} t`);
-    this.setText('hg-top-pilot', label.title);
     this.setText('hg-top-credits', (this.preview.credits?.() ?? 0).toLocaleString('pt-BR') + ' ₵');
     this.setText('hg-top-mode', this.preview.status?.() ?? 'OFFLINE');
     this.setText('hangar-mech-title', label.title);
@@ -669,8 +658,10 @@ export class HangarMenu {
 ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou testar. A prévia mantém a última montagem válida.</p>' : ''}
       ${["genesis01", "lancerL1", "lr7lBastion", "quadraV2"].includes(spec.chassis) ? '<p class="hg-hint">Arma integrada ao casco: a aparência deste robô ainda não muda com a seleção.</p>' : ''}<div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => { const copies = mountCopies(this.selectedSlot, spec.chassis); const mass = plate ? metalShieldMass(plate.id, i as Tier) : arm ? weapon(arm.id as WeaponId, i as Tier).mass * copies : 0; const total = report.mass - (plate ? metalShieldMass(plate.id, plate.tier) : (w?.mass ?? 0) * copies) + mass; const excess = Math.max(0, total - report.capacity); const hint = excess > 1e-9 ? `EXCEDE ${num(excess, 1)} t` : `${num(report.capacity - total, 1)} t livres`; return `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}${excess > 1e-9 ? ' over' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}" title="${hint}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : plate ? `+${Math.round((METAL_SHIELD_TIERS[i]!.integrity - 1) * 100)}% chapa` : `+${Math.round((t.damage - 1) * 100)}% dano`} · ${num(mass, 1)} t</small><small>${hint}</small></button>`; }).join('')}</div>
-      <button class="hg-test-btn" type="button" data-action="test"${w && report.check.ok ? '' : ' disabled'}>▶ TESTAR DISPARO · 4 S</button>
-      <button class="hg-practice-btn" type="button" data-action="aim-practice"${w && report.check.ok ? '' : ' disabled'}>◎ TREINO DE MIRA · ALVO MÓVEL</button>
+      <div class="hg-try">
+      <button class="hg-test-btn" type="button" data-action="test"${w && report.check.ok ? '' : ' disabled'}>▶ TESTAR · 4 S</button>
+      <button class="hg-practice-btn" type="button" data-action="aim-practice"${w && report.check.ok ? '' : ' disabled'}>◎ TREINO DE MIRA</button>
+      </div>
       ${w ? `<div class="hg-bars">${STATS.map((s) => bar(s, w, was)).join('')}</div><p class="hg-legend"><i class="now"></i> esta montagem <i class="was"></i> a que está no Mech</p>` : plate ? plateBars(plate.id, plate.tier) : ''}`;
 
     const capPct = Math.min(100, (report.mass / report.capacity) * 100);
@@ -698,7 +689,7 @@ ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou 
       .presets()
       .map((p, i) => {
         const active = p !== null && loadoutKey(p) === draftKey;
-        const label = p ? presetLabel(p) : 'VAZIO · salvar';
+        const label = p ? presetLabel(p) : '+ SALVAR';
         return `<div class="hg-preset${p ? '' : ' empty'}${active ? ' active' : ''}"><button type="button" data-preset-load="${i}" title="${p ? `Carregar o atalho ${i + 1} (tecla ${i + 1})` : 'Salvar esta montagem aqui'}"><b>${i + 1}</b><small>${label}</small></button>${p ? `<button class="hg-preset-save" type="button" data-preset-save="${i}" title="Salvar a montagem da tela neste atalho">SALVAR</button>` : ''}</div>`;
       })
       .join('');
