@@ -8,6 +8,7 @@ import { ProjectileSystem } from '../combat/ProjectileSystem';
 import { RocketSystem } from '../combat/RocketSystem';
 import { Respawner } from '../combat/Respawner';
 import { DroneSystem } from '../combat/DroneSystem';
+import { FireRing, type RingSides } from '../combat/FireRing';
 import { Round } from '../combat/Round';
 import { hitDamage, type Flame, type WeaponStats } from '../combat/weapons';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
@@ -123,6 +124,12 @@ export class Match {
   /** Chuva de mísseis (armas com `barrage`): sobe, e as bombas caem em volta da mira. */
   readonly barrage: BarrageSystem;
   readonly combat: CombatSystem;
+  /** O anel de fogo (módulo de escudo `fire`): o que cada pulso faz em volta do dono (`combat/FireRing.ts`). */
+  readonly fireRing: FireRing;
+  /** Quem o anel de cada lado queima e quem só esquenta; montado uma vez (G4). */
+  private readonly ringOfPlayers: RingSides;
+  private readonly ringOfAllies: RingSides;
+  private readonly ringOfRebels: RingSides;
   readonly respawner: Respawner;
   readonly bots: BotSystem;
   /** Aliados do jogador (30/09), só na Arena normal — `null` em Sobrevivência/CTF. */
@@ -242,6 +249,11 @@ export class Match {
     // O inimigo caça jogador E aliado; o aliado só caça o inimigo (nunca o próprio jogador).
     this.refreshEnemyTargets();
     if (this.allies) this.allies.targets = this.bots.mechs;
+    // O anel de fogo: o jogador queima os rebeldes (e os outros jogadores, como o lança-chamas) e só esquenta os aliados; o aliado queima os rebeldes; o rebelde queima o jogador e os aliados.
+    this.fireRing = new FireRing(this.combat);
+    this.ringOfPlayers = { foes: [this.bots.mechs, this.players], friends: this.allies ? [this.allies.mechs] : [] };
+    this.ringOfAllies = { foes: [this.bots.mechs], friends: this.allies ? [this.players, this.allies.mechs] : [this.players] };
+    this.ringOfRebels = { foes: this.allies ? [this.players, this.allies.mechs] : [this.players], friends: [this.bots.mechs] };
     this.bots.onRadio = (from, target) => this.onRadio?.(from, target, false);
     if (this.allies) this.allies.onRadio = (from, target) => this.onRadio?.(from, target, true);
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
@@ -427,6 +439,17 @@ export class Match {
     if (best) this.combat.melee(attacker, best, w);
   }
 
+  /** O anel de fogo de cada Mech que o tem ligado: o passo do Mech (`EnergyShield.step`) já marcou o pulso; aqui ele sai (`combat/FireRing.ts`). */
+  private ringTick(): void {
+    for (const m of this.players) this.ringOf(m, this.ringOfPlayers);
+    for (const m of this.bots.mechs) this.ringOf(m, this.ringOfRebels);
+    if (this.allies) for (const m of this.allies.mechs) this.ringOf(m, this.ringOfAllies);
+  }
+
+  private ringOf(m: MechBase, sides: RingSides): void {
+    if (m.energyShield.kind === 'fire' && m.energyShield.consumePulse()) this.fireRing.pulse(m, sides);
+  }
+
   /**
    * Um tick fixo. Entre rodadas (placar na tela) o mundo fica congelado e só o relógio anda. Devolve
    * true no tick em que uma rodada nova começa.
@@ -444,6 +467,7 @@ export class Match {
       this.bots.fixedUpdate(dt);
       this.allies?.fixedUpdate(dt);
       this.drones?.fixedUpdate(dt);
+      this.ringTick();
       // Pisão nos dois sentidos: Mech do jogador em andróide rebelde, e Mech rebelde num jogador pequeno.
       // Aliado conta como o próprio jogador aqui (mesmo lado) — pisa e é pisado só pelo inimigo.
       this.crush.tick(dt);

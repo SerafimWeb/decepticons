@@ -41,6 +41,7 @@ import type { DebrisSystem } from '../environment/DebrisSystem';
 import { CtfObjectives } from '../environment/CtfObjectives';
 import { DamageVisuals } from '../fx/DamageVisuals';
 import { FlameVisuals } from '../fx/FlameVisuals';
+import { FireRingVisuals } from '../fx/FireRingVisuals';
 import { StatusVisuals } from '../fx/StatusVisuals';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
@@ -147,11 +148,13 @@ export class Game {
   private readonly damageVisuals = new DamageVisuals(this.particles);
   private readonly statusVisuals = new StatusVisuals(this.particles);
   private readonly flameVisuals = new FlameVisuals(this.particles);
+  private readonly fireRingVisuals = new FireRingVisuals(this.particles);
   private readonly chargeVisuals = new ChargeVisuals(this.particles);
   private readonly updateRemoteDamage = (remote: { mech: MechBase }): void => {
     this.damageVisuals.update(remote.mech);
     this.statusVisuals.update(remote.mech);
     this.flameVisuals.update(remote.mech);
+    this.fireRingVisuals.update(remote.mech);
     this.chargeVisuals.update(remote.mech);
   };
   /** A partida (sem tela): arena, bots, tiros, dano, rodadas. As partes abaixo são atalhos para ela. */
@@ -1351,11 +1354,13 @@ export class Game {
     this.statusVisuals.beginFrame(dt, this.playing && !this.hangarView);
     this.flameVisuals.beginFrame(dt, this.playing && !this.hangarView);
     this.flameVisuals.update(this.mech);
+    this.fireRingVisuals.beginFrame(dt, this.playing && !this.hangarView);
+    this.fireRingVisuals.update(this.mech);
     this.damageVisuals.update(this.mech);
     if (this.online?.joined) {
       this.online.remotes.forEach(this.updateRemoteDamage);
     } else {
-      for (const bot of this.bots.mechs) { this.damageVisuals.update(bot); this.statusVisuals.update(bot); this.flameVisuals.update(bot); this.chargeVisuals.update(bot); }
+      for (const bot of this.bots.mechs) { this.damageVisuals.update(bot); this.statusVisuals.update(bot); this.flameVisuals.update(bot); this.fireRingVisuals.update(bot); this.chargeVisuals.update(bot); }
       if (this.match.allies) for (const ally of this.match.allies.mechs) { this.damageVisuals.update(ally); this.statusVisuals.update(ally); }
     }
     this.shadows.begin();

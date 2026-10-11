@@ -82,6 +82,12 @@ correr antes dos pilotos, o `MechBase` lê `status` (velocidade, travas de tiro,
 Números em `STATUS` (um lugar só); resistência por chassi em `MechStats.statusResist`. **Arma que não atira projétil** (lança-chamas,
 rotatória) liga `status.flaming`/`status.spinning` no dono em vez de mandar um evento por tiro. A rotatória (`spin` na entrada de `BASE`) é o modelo: a regra fica em `SpinUp` (`trigger.ts`), o desvio em `spread.ts` (por número de tiro, sem sorteio), o servidor sai cedo em `ArenaRoom.shot` quando a arma tem `spin`, e o outro jogador desenha o fluxo pela bandeira, lendo a arma da montagem do roster. A elétrica (`inflicts: 'shock'`, `tracer: 'arc'`) é o modelo das armas de projétil que aplicam estado: o `CombatSystem` só aplica quando pelo menos `STATUS.shieldPass` do dano passou pelas defesas, e a cor da faixa vem do `tracer` (`ProjectileSystem`).
 
+## Anel de fogo (módulo de escudo `fire`) — 11/10, Claude
+
+O anel de fogo não é arma: é o terceiro `ShieldId` do gerador de energia (`combat/EnergyShield.ts`, números em `FIRE_RING`). Módulo novo de escudo = uma entrada em `SHIELDS` (o Hangar, a carga e a rede leem dali) +
+o que ele **faz**: aqui `combat/FireRing.ts`, chamado pela partida (`Match.ringTick`) quando o gerador marca um pulso (`consumePulse`). O desenho: `ShieldVisuals` (o que fica no chão) e um `fx/…Visuals.ts` próprio
+(as partículas), os dois pela bandeira de escudo ligado que já viaja na rede. Falta fazer: o texto do Hangar (`hangar-module-select`) e o rótulo do HUD (`ShieldHUD`) são strings soltas, não leem `SHIELDS`.
+
 ## Armas de aço (tiro de metal) — 11/10, Claude
 
 O canhão pesado (`cannon`) e o canhão automático (`autocannon`) são o modelo de **arma de projétil que se vê como metal**, não como luz: `tracer: 'shell'` (obus) ou `'slug'` (projétil fino) na entrada

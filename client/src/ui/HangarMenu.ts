@@ -230,7 +230,7 @@ export class HangarMenu {
         <div class="hg-head"><span>02</span> MONTAGEM</div>
         <div id="hangar-slot-list" class="hg-slots"></div>
         <div id="hangar-weapon-editor" class="hg-editor"></div>
-        <label class="hg-module"><span>MÓDULO EXTRA <i>(não ocupa os braços)</i></span><select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t · 5 s, 120°</option><option value="sphere">Esfera de energia · 4,0 t · 3,75 s, 360°</option></select><small>Ctrl liga e desliga. Os impactos gastam a energia.</small></label>
+        <label class="hg-module"><span>MÓDULO EXTRA <i>(não ocupa os braços)</i></span><select id="hangar-module-select" aria-label="Módulo de energia"><option value="">Sem módulo</option><option value="frontal">Barreira frontal · 2,0 t · 5 s, 120°</option><option value="sphere">Esfera de energia · 4,0 t · 3,75 s, 360°</option><option value="fire">Anel de fogo · 3,0 t · 5 s, raio de 7 m</option></select><small>Ctrl liga e desliga. Os impactos gastam a energia. <b>Anel de fogo:</b> não segura tiro; queima os inimigos num raio de 7 m e esquenta todos ali, inclusive você; derrete o inimigo congelado.</small></label>
         <div class="hg-actions">
           <span id="hangar-message" role="status"></span>
           <button class="hg-btn hangar-apply" type="button" data-action="apply">APLICAR MONTAGEM ›</button>
@@ -549,7 +549,7 @@ export class HangarMenu {
   private onChange(event: Event): void {
     const target = event.target;
     if (!(target instanceof HTMLSelectElement)) return;
-    if (target.id === 'hangar-module-select') { this.draft = { ...this.draft, v: 2, module: target.value === 'frontal' || target.value === 'sphere' ? target.value : null }; this.render(); return; }
+    if (target.id === 'hangar-module-select') { this.draft = { ...this.draft, v: 2, module: target.value === 'frontal' || target.value === 'sphere' || target.value === 'fire' ? target.value : null }; this.render(); return; }
     if (target.id !== 'hangar-weapon-select') return;
     const selected = target.value as WeaponId | MetalShieldId | '';
     this.draft = withArm(this.draft, this.selectedSlot, () => (selected ? { id: selected, tier: this.draft[this.selectedSlot]?.tier ?? 0 } : null));

@@ -101,7 +101,7 @@ function inventario(game) {
   return `<div class="sitrep" aria-label="O que há no jogo nesta versão">
     ${leitura('robôs pilotáveis', Object.keys(chassis).length, `${familias.length} conjuntos de números: ${iguais} deles repetem os do ${esc(V.name)}`)}
     ${leitura('armas', W.WEAPON_IDS.length, `em ${t.length} níveis (${t[0].label} a ${t.at(-1).label}): ${W.WEAPON_IDS.length * t.length} versões`)}
-    ${leitura('escudos', Object.keys(shields.SHIELDS).length + metal.METAL_SHIELD_IDS.length, `${Object.keys(shields.SHIELDS).length} geradores de energia e ${metal.METAL_SHIELD_IDS.length} modelos de escudo metálico`)}
+    ${leitura('escudos', Object.keys(shields.SHIELDS).length + metal.METAL_SHIELD_IDS.length, `${Object.keys(shields.SHIELDS).length} módulos de energia (barreira, esfera e anel de fogo) e ${metal.METAL_SHIELD_IDS.length} modelos de escudo metálico`)}
     ${leitura('cada nível acima', `+${pc(t[1].damage - 1)}`, `de dano, com +${pc(t[1].heat - 1)} de calor e +${pc(t[1].mass - 1)} de massa (${esc(t[1].label)}); o ${esc(t[2].label)} sobe em dobro`)}
   </div>`;
 }
@@ -177,14 +177,21 @@ function arsenal(game) {
   </section>`;
 }
 
-/** Os escudos: dois geradores de energia (módulo extra) e o escudo metálico (mão esquerda), tudo lido do código. */
+/** Os escudos: os módulos de energia (barreira, esfera e anel de fogo) e o escudo metálico (mão esquerda), tudo lido do código. */
 function defesas(game, status) {
   const { shields, metal, weapons: W, chassis, hangar, vector: V } = game;
   const estadoEnergia = selo(acharStatus(status, /^Barreira frontal [/] energia/, /^Barreira frontal e esfera/));
   const estadoMetal = selo(acharStatus(status, /^Escudo físico removível/));
-  const nomeEnergia = { frontal: 'Barreira frontal', sphere: 'Esfera de energia' };
+  const nomeEnergia = { frontal: 'Barreira frontal', sphere: 'Esfera de energia', fire: 'Anel de fogo' };
   const energia = Object.entries(shields.SHIELDS)
     .map(([id, s]) => {
+      if (id === 'fire') {
+        // O anel de fogo não segura tiro: solta um círculo de fogo em volta do Mech (números lidos de FIRE_RING).
+        return `<article class="combat-card frame"><h3>${esc(nomeEnergia[id])} ${estadoEnergia}</h3>
+        <p class="meta">módulo de ${un(s.mass, 't')} · ${num(s.capacity)} de energia · gasta ${num(s.drain)}/s ligado</p>
+        <p><b>Não segura tiro.</b> Solta um círculo de fogo de <b>${un(s.radius, 'm')}</b> de raio em volta do Mech por <b>${un(s.capacity / s.drain, 's')}</b>: a cada ${un(s.pulse, 's')}, todo inimigo dentro leva ${num(s.damage)} de dano e fica queimando, e <b>todo Mech dentro esquenta ${num(s.heat * 100)}% do calor, inclusive quem o solta e os aliados</b>. O inimigo congelado que o anel pega derrete e leva ${num(s.melt)} de dano extra: congelar e depois soltar o anel é um combo.</p>
+        <p>Só liga com ${num(s.minStart)} de energia ou mais. Depois de ${un(s.recovery, 's')} desligado, recarrega ${num(s.regen)}/s. <b>Ctrl</b> liga e desliga. É um módulo extra: as armas ficam nas mãos.</p></article>`;
+      }
       const cobertura = id === 'sphere' ? 'Protege em todas as direções (360°).' : `Cobre ${arco(s.coneCos)}° à frente e acompanha a mira.`;
       return `<article class="combat-card frame"><h3>${esc(nomeEnergia[id] ?? id)} ${estadoEnergia}</h3>
         <p class="meta">módulo de ${un(s.mass, 't')} · ${num(s.capacity)} de energia · gasta ${num(s.drain)}/s ligado</p>
@@ -270,7 +277,7 @@ function robos(game) {
       const modulos = id === 'android'
         ? ''
         : Object.entries(shields.SHIELDS)
-            .map(([sid, s]) => `<tr class="sub"><th scope="row">${sid === 'sphere' ? 'Esfera de energia' : 'Barreira frontal'}</th><td>módulo</td><td>${un(s.mass, 't')}</td></tr>`)
+            .map(([sid, s]) => `<tr class="sub"><th scope="row">${sid === 'sphere' ? 'Esfera de energia' : sid === 'fire' ? 'Anel de fogo' : 'Barreira frontal'}</th><td>módulo</td><td>${un(s.mass, 't')}</td></tr>`)
             .join('');
       const movimento = [
         c.maxJumps ? `${c.maxJumps} ${c.maxJumps === 1 ? 'pulo' : 'pulos'}` : 'sem pulo',
