@@ -15,6 +15,62 @@
    - Desativação suave (`release`) de 0,35s até o ponto do jogador ao sair com `C`, `Esc`, `Space` ou ao clicar em `[ VOLTAR AO MECH ]`.
    - Zero alocações por frame no loop de renderização (todos os vetores, quatérnions e raios são buffers pré-alocados).
 4. **Testes:** 8 testes unitários cobrem troca de alvos, foco, oclusão, proteção contra colisão, drones abatidos e mechs destruídos (`client/src/camera/SpectatorCam.test.ts`), mais 3 testes de interface (`client/src/ui/SpectatorHUD.test.ts`).
+## [2026-10-11] Inteligência dos bots: rádio, caça, leitura de mira, cerco e revide, com percepção honesta (Claude, P74)
+
+**Ordem do Comandante:** "prossiga com a melhoria da inteligência dos bots".
+
+**Diagnóstico:** cada bot lutava sozinho. Não avisava os outros, ia até o último ponto em que viu o jogador e desistia, não lia para
+onde o jogador mirava, e quem esperava a vaga de ataque ficava na mesma linha de quem atacava.
+
+**Decisões:** (1) **Percepção honesta:** o bot só sabe o que um piloto saberia: linha de visão em amostras de 10 Hz (a memória de
+onde o alvo estava e para onde ia vem só da amostra que viu, nunca da posição real), a orientação do torso do adversário (está à vista)
+e o rádio dos companheiros. Isso mantém o jogo justo e é a condição para o que se aprende aqui servir a robôs (P71, `DADOS_E_ROBOTICA.md`).
+(2) **Rádio do clã** dentro do `BotSystem` (um time = um canal; alcance 80 m; aviso a cada 1,5 s por bot; o primeiro contato vira linha
+no feed, no máximo uma a cada 8 s por time). (3) **Cerco relativo à frente do alvo**, não a quem ataca: quem ataca anda de lado em volta
+do alvo e arrastava o flanco junto (medido: o flanco ficava a 23° dele). (4) **Leitura da mira entra na dificuldade** (`readAim`,
+`jukeDash`): fácil 0, normal 0,6/0,25, difícil 1/0,6; o Colossus (`steady`) não lê nem cerca, para manter a fraqueza prometida na ficha.
+Isso muda o normal aprovado em 24/09; o Comandante julga jogando. (5) **Raio sem acerto = alvo visto:** o raio de visão termina dentro
+da cápsula do alvo; se não bate em nada, nada bloqueia, e o Rapier só deixou o raio passar pela cápsula (acontecia com os dois
+alinhados; a amostra alternava "visto/não visto" e o bot trocava de alvo). (6) **Rota de um ponto só:** o bot fica no ponto, em vez de
+girar em volta dele (achado nos testes, R17). Custo de CPU medido na sala do servidor: sem regressão. (7) R17 no merge: o
+título da entrada do renome (logo abaixo) tinha virado só "; o jogo vai servir de treino..." por uma substituição de texto de outra
+sessão; restaurado. A ordem dos bots é a **P74** (a P72 e a P73 já eram do fogo e do gelo).
+
+## [2026-10-11] Armas de aço: o canhão pesado e o canhão automático, e o tiro que se vê como metal (Claude)
+
+**Ordem do Comandante (P70):** "quero um canhão grande de um tiro só, e também armas de tiros menores e sequenciais de metal" (porque "todas as armas parecem de luz").
+
+**Decisões:**
+1. **As duas são `kind: 'energy'` (só o calor limita)**, mesmo sendo de aço: reaproveita o caminho do projétil de energia, o `Armament`, a bancada de equilíbrio e a rede
+   sem um segundo modelo de munição. A natureza do dano é `balistico` (os escudos físicos já resistem por ela) e o desenho é de metal. O custo: o site e a landing, que leem `kind`,
+   as rotulam "energia". Registrado, não consertado agora (o mesmo vale para a escopeta e a rotatória, que já eram assim).
+2. **Os números saíram da bancada, não do papel.** A 1ª conta (canhão de 100 de dano a cada 2,4 s) derrubava um torso em **2,25 s** junto com os foguetes MK III, abaixo da meta de 2,5 s
+   de todo combo; o calor não ajudou (a trava depois do tiro é a mesma). **90 de dano e 2,6 s** passam em todos os combos (o menor é 2,53 s) e **criam um degrau de nível**: o MK I
+   precisa de 4 acertos num torso e o MK II e III de 3. O automático foi de 12 para **10 de dano e 0,04 de calor**, porque dois automáticos MK III derrubavam o torso em 2,18 s
+   (o plasma duplo leva 3,27 s). Os testes travam os dois (nenhum combo abaixo de 2,5 s, dois automáticos acima de 3,5 s).
+3. **O desenho de metal é um campo da arma (`tracer: 'shell' | 'slug'`), não um `if (id === …)`.** O `ProjectileSystem` ganha um corpo de aço por projétil do pool (geometria única, 80
+   triângulos) e a cauda de luz fica mais fina que o corpo, senão ela lava o aço e o obus vira um borrão branco (visto na 1ª captura). A rotatória, a escopeta e o trilho podem ganhar o
+   mesmo desenho trocando uma linha cada, mas ficaram de fora: este PR é das duas armas novas.
+4. **O clarão da boca é solto pelo `ProjectileSystem.fire`**, não pelo `PlayerController`: assim vale para o jogador, os bots e os outros jogadores do online, e no servidor é uma chamada
+   vazia. `MUZZLE_FX` é um `Record<WeaponId, …|null>`: `null` mantém o clarão genérico do jogador, e arma nova é obrigada a decidir. O `PlayerController` só pula o genérico quando há clarão próprio.
+5. **O catálogo de rede só cresce no fim** (`cannon`, `autocannon`) e o **protocolo sobe para 12**; o atualizador automático reinicia o servidor (verificar `/status`).
+6. **O canhão pesado vai também no braço esquerdo dos pesados** (botão 2), mas o lança-chamas não (o fluxo é do gatilho principal). O canhão não vai nos leves (6 t, e a carga do Vector-09 é 11).
+
+**Lição:** um `sed` que troca `damage: N, fireInterval: 0.2, heatPerShot` pegou **o lança-chamas** (mesmo intervalo) junto com o automático; achei no `git diff` e desfiz. Ao calibrar por
+`sed`, ancore no nome da arma, nunca nos números.
+
+## [2026-10-11] "Pedidos do dono" vira ORDENS DO COMANDO; o jogo vai servir de treino para robôs e IAs (Claude)
+
+**Ordem do Comandante (dono):** "esse 'pedidos do dono' achei uma bosta esse termo, deveria ser algo mais militarizado, formato de clãs
+se comunicando". E, sobre a proposta P71: "quero sim que nosso game sirva pra treinamentos de humanoides, IAs, etc."
+
+**Decisões e feito:** (1) `PEDIDOS_DO_DONO.md` vira **`ORDENS_DO_COMANDO.md`**: o dono é o **Comandante**, cada agente é uma **equipe**,
+cada pedido é uma **ordem** e o estado é o **estado da missão** (cumprida, em campo, em operação, aguardando ordem, em reserva). Os
+números P01–P71 ficam (o histórico os cita); `AGENTS.md` (Passo Zero 12 e regra 17), `ROADMAP.md` e `PAINEL_ADMIN.md` apontam para o
+nome novo; nenhum script lia o arquivo. Entradas antigas deste histórico não foram reescritas. (2) Um bloco solto do Gemini no topo do
+arquivo (P33, tela de login feita) foi juntado à linha P33 da seção 2, que ainda dizia "a tela não existe" (R17). (3) **P71 aprovado como
+direção**: o CYBERMECH passa a ser pensado também como campo de treino para robôs e IAs (`DADOS_E_ROBOTICA.md`). Nada construído;
+a etapa D0 (consentimento + gravador de voo) é a próxima, e o Comandante vai mandar o que é o "JEV". Custo no jogo: zero (documentos).
 
 ## [2026-10-10] Fix: codinome interno vazava no painel público via campo `now` da equipe (Gemini)
 
@@ -35,6 +91,10 @@
 ## [2026-10-10] Bunker profundo com quatro níveis e rotas de combate (Codex)
 
 **Pedido do dono (P60):** a primeira versão do bunker era sem graça; ele pediu mais distância e níveis, sensação de buraco escavado, túneis escuros, galerias, rampas/escadas/elevadores, passagens secretas e posições de combate/sniper. **Decisão:** aprofundar o cenário offline em quatro cotas (0/14/28/42 m) dentro de um poço aberto de 58 m; garantir subida contínua por rampas em duas direções, com colisores e degraus visuais; definir átrio central, galerias laterais, atalho escondido no terceiro patamar e ninhos de sniper no superior. Dois InstancedMesh estáticos mantêm o custo visual em duas submissões; sem luz nova ou atualização por frame. As cabines de elevador ficam cenográficas nesta fase, enquanto as rampas são as rotas funcionais entre pisos. `npm run check` passou na main atualizada (893 testes/115 arquivos, typecheck, build, smoke, bocas e site); capturas e medição GPU registradas. A medição p95 chega a 62,6 ms no poço em equipamento integrado, então não é homologação de 60 FPS. Visão tática, IA vertical e playtest do dono ainda pendem. A seleção continua offline; o mapa online e os modos de missão não mudam.
+
+## [2026-10-11] Partículas com forma e impacto por família (Claude, pedido do dono: "todos os tiros parecem luz")
+
+**O diagnóstico do dono estava certo:** toda partícula era o mesmo ponto redondo (`PointsMaterial` com um sprite radial só) e o impacto era **um bloco de código para todas as armas** (36, depois 14, faíscas verdes e 3 clarões). Por isso o gelo, a elétrica, o EMP e uma bala de metal pareciam a mesma coisa; e o gelo "com flocos" nem podia existir. **Decisões:** (1) **um atlas de formas, não vários sistemas**: uma textura 4×4 desenhada uma vez no canvas, escolhida por partícula num atributo (`particleShape`) e girada por outro (`particleAngle`), no mesmo `THREE.Points` (um draw call; +2 floats por partícula na GPU); a faísca alongada e a onda sonora **apontam para a direção em que andam, calculada na GPU** com a velocidade (outro atributo), sem custo de CPU; (2) **sem forma declarada, a partícula é o brilho de antes** (célula 0): nenhum efeito antigo mudou de aparência por acidente; (3) **o impacto é dado por arma** (`IMPACT_FX`, um `Record<WeaponId>`): arma nova sem impacto não compila; as famílias foram escolhidas pela cor e pela forma, não só pela cor (o dono pediu "formatos"); (4) o **teto de 20 partículas por impacto** e o clarão central menos brilhante (3,2 para 2,4) seguem o pedido anterior de menos luz; (5) a língua de fogo nasce **com a ponta para cima** e as outras formas em qualquer ângulo; (6) o gelo ganha um **rastro de flocos** a cada 1,6 m, porque o tiro é rápido demais para o floco da cabeça ser visto girando. **Dois erros meus no caminho:** o gradiente da chama e da faísca foi criado **antes** de `translate`/`scale` e caiu fora da forma (a chama saiu vazia; a prancha de captura mostrou), e a primeira versão dos flocos tinha 12 px a 16 m (pequena demais para ler); as formas dobraram de tamanho. **Limite honesto:** o **voo** do projétil ainda é a faixa de luz de sempre para toda arma; o dono também pediu o tiro de aço e o desenho cinético, que vêm no próximo PR junto com as armas `cannon` (um tiro, grande) e `autocannon` (rajada de metal).
 
 ## [2026-10-11] Lança-chamas, PR-D das armas elementais, protocolo 11 (Claude, pedido do dono)
 
@@ -78,6 +138,10 @@
 **Decisões:** (1) **Um botão primário por tela** e as secundárias em fileira; o "clique para jogar" virou botão (antes, clicar no meio da tela abria as Configurações por acaso). (2) **O mapa faz parte do seletor** (MODO e MAPA lado a lado), não é mais um botão avulso; só aparece no Deathmatch, como já era a regra do Bunker. (3) **O HUD da partida e o painel de desempenho ficam escondidos atrás da pausa** (classe `is-paused` no `body`, ligada em `HUD.setPaused`). (4) **O painel de desempenho (FPS/TICK/DRAWS) vem desligado por padrão** (`Settings.showPerf`): é informação de desenvolvedor; quem já tinha configuração salva mantém a dele, e o dono liga em Configurações quando quiser medir. (5) A "Ajuda e controles" da pausa saiu: o remapeamento de teclas das Configurações já mostra as teclas, e o rodapé da pausa tem uma linha delas.
 **Território:** a interface é do Gemini (`ESTADO_ATUAL`); o dono pediu direto ao Claude. O Gemini tem a tela de login em branch próprio, com CSS no fim do `styles.css`; os PRs mexem em trechos diferentes e quem entrar depois junta a `main`.
 **Limite:** o visual foi conferido por captura e emulação de toque; falta o dono olhar no site e dizer se o caminho é esse antes de eu refazer as outras telas com o mesmo estilo.
+
+## [2026-10-11] O reinício do servidor se perdia entre "verificado" e o marcador (Claude)
+
+**O achado:** ao confirmar o protocolo 11 em produção depois do lança-chamas, o servidor respondia **protocolo 10, com 1h40 de uptime**, enquanto a worktree de produção já estava no `12d50b2`. O `atualizacao.log` mostrava `OK: 12d50b2 verificado, pedindo reinício` e **nenhuma linha "servidor religou"**; no disco, nem registro de verificação nem `reinicio-pendente`. **Causa:** o marcador era criado pelo PowerShell **depois** de o `atualizar-servidor.mjs` sair, e o registro da verificação era apagado **antes**. Entre os dois há uma janela em que, se a rodada morrer (a verificação levou 7 min com a máquina sem memória), o código novo fica em disco **sem nenhuma dívida registrada**: a rodada seguinte vê `HEAD = origin/main`, "nada novo", e não reinicia. Já tinha acontecido com o `f7b6a39` (o commit seguinte reiniciou por acaso e escondeu). **Decisões:** (1) a **dívida de reinício é gravada antes de o registro da verificação sumir** (`marcarReinicio()`, na mesma função que decide que a verificação passou), então em qualquer ponto há ao menos um dos dois em disco; (2) falha de verificação nunca grava o marcador; (3) o remédio de hoje foi criar o marcador à mão pela mesma via de produção, não reiniciar o servidor por fora, e só com 0 jogadores. **Lição (de novo):** "o deploy fechou verde" e "o merge saiu" não provam que o servidor reiniciou; só o `/status` com o protocolo novo prova, e eu só descobri porque me obriguei a conferir. **No mesmo PR:** o `publicar` falhou no #231 ("o merge NÃO aconteceu (estado: OPEN)") porque a mergeabilidade estava UNKNOWN no GitHub; o segundo `gh pr merge` passou. Agora ele tenta até 4 vezes, esperando 10 s entre elas, e continua sem apagar o branch remoto enquanto o estado não for MERGED.
 
 ## [2026-10-10] Envio automático que não depende do token do gh: `npm run publicar` e `scripts/gh.mjs` (Claude, pedido do dono)
 

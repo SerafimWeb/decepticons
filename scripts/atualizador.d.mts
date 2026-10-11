@@ -17,6 +17,8 @@ export interface Operacoes {
   lerPendencia(): Pendencia | null;
   gravarPendencia(p: Pendencia): void;
   limparPendencia(): void;
+  /** Grava o marcador de reinício pendente (o que o `atualizar-e-reiniciar.ps1` apaga quando o servidor responde). Chamado ao passar na verificação, antes de qualquer outra coisa. */
+  marcarReinicio(): void;
 }
 
 /** `de` = o último código verificado (para onde voltar se falhar), `para` = o puxado, `feito` = passos já concluídos ('typecheck'). */

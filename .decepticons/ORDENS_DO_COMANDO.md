@@ -1,23 +1,22 @@
-# PEDIDOS DO DONO — Registro de Atendimento
+# ORDENS DO COMANDO — canal entre o Comandante e as equipes
 
-| Id | Pedido | Quem | Status | Entrega / Detalhes |
-|---|---|---|---|---|
-| **P33** | Tela de criar conta e entrar (LoginPanel em `client/src/ui/LoginPanel.ts`, abas Entrar/Criar, validação em tempo real, estado de carregando/erro/logado, sem botões lado a lado, captura em `.decepticons/arte/login-panel.png`) | **Gemini** | ✅ **CONCLUÍDO** | `client/src/ui/LoginPanel.ts`, `client/src/styles.css`, `client/src/ui/LoginPanel.test.ts` (8 testes verdes). Captura: `.decepticons/arte/login-panel.png`. |
-# PEDIDOS DO DONO — o registro de tudo que foi pedido, e em que pé está
+> **Toda ordem do Comandante (o dono do projeto) é transmitida aqui, com número, e cada equipe (Claude, Codex, Gemini, Qwen)
+> reporta o estado da missão no mesmo canal.** É a lista que o Comandante lê para saber se alguma ordem se perdeu.
+> Regra para toda equipe (AGENTS.md, regra 17): ordem nova entra aqui **no mesmo dia**, com número, e o estado é atualizado a cada
+> PR que a toca. Ordem que ficou só no chat não chegou às outras equipes.
+>
+> Aberto em 10/10/2026 (Claude) como "Pedidos do dono", depois de uma auditoria das 177 mensagens em 10 conversas (23/09 a 10/10)
+> cruzadas com `ROADMAP.md`, `ESTADO_ATUAL.md`, `STATUS_REAL.md` e `HISTORICO_DE_DECISOES.md`. Renomeado em 11/10 a pedido do
+> Comandante ("algo mais militarizado, formato de clãs se comunicando"). Os números P01–P71 continuam os mesmos: o histórico os cita.
 
-> Criado em 10/10/2026 (Claude), depois de uma auditoria das 177 mensagens do dono em 10 conversas (23/09 a 10/10) cruzadas com
-> `ROADMAP.md`, `ESTADO_ATUAL.md`, `STATUS_REAL.md` e `HISTORICO_DE_DECISOES.md`. **É a lista que o dono lê para saber se algo foi
-> esquecido.** Regra para todo agente (AGENTS.md, regra 17): pedido novo do dono entra aqui **no mesmo dia**, com ID, e o estado é
-> atualizado a cada PR que o toca. O que ficou só no chat não existe para os outros agentes.
+**Estado da missão:** ✅ cumprida · 🟡 em campo (cumprida em parte; o que falta está dito) · 🔧 em operação · ⏸ aguardando ordem
+(registrada, sem data) · 🅿 em reserva (parada de propósito) · ❓ **sem registro até 10/10** (ordem que só estava no chat).
 
-**Legenda:** ✅ feito · 🟡 parcial (o que falta está dito) · 🔧 em andamento · ⏸ parado (registrado, sem data) · 🅿 estacionado de propósito ·
-❓ **sem registro até 10/10** (pedido que só estava no chat).
-
-**Só CYBERMECH.** Pedidos de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) moram nos repositórios deles.
+**Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
 ## 1. Jogo e combate
 
-| ID | Data | Pedido (nas palavras do dono, resumido) | Estado | Onde está / o que falta | Como o dono confere |
+| ID | Data | Ordem (nas palavras do Comandante, resumida) | Estado | Onde está / o que falta | Como o Comandante confere |
 |---|---|---|---|---|---|
 | P01 | 23/09 | Mais capricho nas físicas, sempre com CPU baixa | 🟡 | Regra permanente (G1–G5); destroços e barricadas prontos. "Física caprichada" nunca foi medida | Jogar, painel de desempenho (`'`) |
 | P02 | 23/09 | IA nos inimigos | ✅ | `BotController`; `STATUS_REAL` "Bots inimigos (IA)" | Modo Arena |
@@ -46,7 +45,8 @@
 | P25 | 28/09 | Missões em fases e ondas | ✅ | Modo Sobrevivência | `?modo=survival` |
 | P26 | 06/10 | Câmeras de espectador (outros jogadores, torre, portas) | 🔧 | `STATUS_REAL`: ausente. Há uma worktree do Gemini ativa para isso (10/10), ainda sem PR | — |
 | P27 | 06/10 | Painel de campanhas (oponentes, missões e tarefas salvas) | ⏸ | `STATUS_REAL`: ausente | — |
-| P53 | 25/09 | Usar LLMs (Groq, Gemini, DeepSeek) por API nos bots? "ou não faz sentido?" | ❓ | A pergunta não tem resposta registrada. Os bots hoje são regras e personas, sem LLM | — |
+| P53 | 25/09 | Usar LLMs (Groq, Gemini, DeepSeek) por API nos bots? "ou não faz sentido?" | ⏸ | **Resposta do Claude (11/10):** dentro do tick, não: uma chamada leva centenas de ms a segundos (o tick tem 16 ms), custa por chamada, e a resposta não se repete (quebra o determinismo do G2 e a simulação única do servidor). Onde faz sentido: **fora do tick**, um "comandante" que escolhe estratégia e personalidades entre rodadas, ou o texto do rádio. A inteligência de combate segue em regras rápidas (P74). Aguarda o Comandante decidir se quer o comandante por LLM | Decidir |
+| P74 | 11/10 | "prossiga com a melhoria da inteligência dos bots" | 🟡 | Feito (`claude/bots-inteligencia`): **rádio do clã** (quem vê avisa; os outros vêm investigar; "◈ CLAWD: CONTATO ▸ VOCÊ" no feed), **caça** pelo caminho projetado e varredura antes de desistir, **lê a sua mira** (troca de lado; difícil sempre, normal 60%, fácil nunca), **cerco** pelos seus flancos enquanto esperam a vez, **revida** em quem atira. 8 testes; CPU sem regressão. **Falta o Comandante jogar** e dizer se a dificuldade normal continua boa | Arena offline: deixar um bot ver você e olhar o feed; ficar parado mirando num bot e ver ele trocar de lado |
 | P54 | 10/10 | **Painel admin completo**: gerenciar o jogo em poucas telas (campanha, bots adversários, a configuração de cada um, apelidos, pilotos, módulos, armas) | ⏸ | Plano escrito em `PAINEL_ADMIN.md` (cinco telas, contratos primeiro); **nada construído ainda**. Metade já existe espalhada (Configurações, Potências, Hangar, nomes); falta o dado novo: a ficha de cada bot e a campanha | Decidir as 5 perguntas da seção 5 do plano |
 | P55 | 10/10 | Prompt para fazer o próximo robô no Tripo3D "do jeito certo" | 🟡 | Prompt pronto para colar em **`.decepticons/PROMPT_TRIPO3D.md`** (texto-base, 4 formatos e o passo a passo no Tripo; o roteiro longo está em `MECHS_IMPORTADOS.md` §7); **falta o dono gerar o robô e mandar o `.glb`**. Ele citou um robô de 4 braços que já existe: o nome do arquivo ainda não foi confirmado | Mandar o arquivo |
 | P57 | 10/10 | (achado) O Quadra-V2 não tem malha própria: usa o corpo do Vector-09 (a entrada dele no carregador está desligada) | ⏸ | `quadra-v2.glb` existe e não é carregado; religar e inspecionar é barato (`MECHS_IMPORTADOS.md` §7). **Sem isso o papel de escaramuçador não aparece na silhueta** | — |
@@ -56,8 +56,10 @@
 | P56 | 10/10 | (achado) Dois `.glb` de 78 MB dentro do repositório | ✅ | Removidos em 10/10 (os originais seguem na pasta do dono) | — |
 | P67 | 11/10 | "tamanho e opacidade [da mira] eu não vi no Configurações... será que já está implementado?" | ✅ | Está (PR #226, na `main`): **Configurações > aba CONTROLES**, logo abaixo de "Campo de visão": "Tamanho da mira" e "Opacidade da mira"; e "Brilho dos efeitos" em **Gráficos e som**. Se não aparecem, o navegador está com a versão antiga: o rodapé da pausa mostra a versão do jogo (`v0.2.0-NNN-g…`); comparar com o commit da `main` | Configurações > Controles |
 | P68 | 11/10 | Hangar: "a lista das armas pra adicionar nos braços não está muito boa e a lista pro braço direito e esquerdo são diferentes, seria bom padronizar, exceto quando o próprio braço não permita certos tipos de armas" (respondendo à pergunta do P65: "os dois", a lista **e** o desenho no corpo) | 🔧 | Registrado; é o próximo PR depois do lança-chamas | Hangar |
-| P69 | 11/10 | "melhorar os shapes, formatos, cores, presença dos tiros (centelhas, rastros, caudas do tiro, tudo), impactos, local onde eles batem, reação nos inimigos"; **gelo = flocos de gelo** (mandou imagens de flocos de seis braços); "o fogo tem seu formato e comportamento" | 🔧 | Registrado; PR de efeitos (precisa de partículas com **formas**: hoje todas são o mesmo ponto redondo) | Em partida, atirando |
-| P70 | 11/10 | "os tiros de som, ultrassônicos, EMP devem ser visivelmente diferentes dos tiros cinéticos e metálicos; também sinto falta do **tiro de aço**, pois aparentemente todas as armas são de luz por enquanto" | 🔧 | Registrado: é verdade (plasma, blaster, elétrica, gelo e EMP são faixas de luz; a rotatória, a escopeta e o trilho têm natureza balística mas o desenho é o mesmo de luz). Plano: dar a eles um desenho cinético e **criar uma arma de aço** (autocanhão) | Em partida |
+| P69 | 11/10 | "melhorar os shapes, formatos, cores, presença dos tiros (centelhas, rastros, caudas do tiro, tudo), impactos, local onde eles batem, reação nos inimigos"; **gelo = flocos de gelo** (mandou imagens de flocos de seis braços); "o fogo tem seu formato e comportamento" | 🔧 | **1ª parte feita** (`claude/particulas-com-forma`): as partículas agora têm **forma** (atlas de 13: floco de seis braços, caco, língua de fogo, faísca alongada, anel, nuvem, estrela, raio, cartucho, ponto, hexágono, onda) e **cada arma bate do seu jeito** (plasma: faíscas verdes e anel; elétrica: raios azuis; gelo: **flocos de gelo** e cacos, mais um **rastro de flocos** no voo; EMP: anéis e hexágono; bala de metal: faíscas alaranjadas, fagulhas e poeira); fogo (lança-chamas e "queimando") com língua de fogo e fumaça; choque com raios; atordoamento com estrelas. **Faltam:** rastros e caudas por família, o clarão do cano, a reação do inimigo ao ser atingido (empurrão, tranco), e o fogo no corpo do inimigo com mais presença | Atirar num bot com gelo, plasma, EMP e rotatória |
+| P70 | 11/10 | "os tiros de som, ultrassônicos, EMP devem ser visivelmente diferentes dos tiros cinéticos e metálicos; também sinto falta do **tiro de aço**, pois aparentemente todas as armas são de luz por enquanto". **Resposta do Comandante (11/10):** "quero um **canhão grande de um tiro só**, e também **armas de tiros menores e sequenciais de metal**" | 🟡 | **Feito (PR `claude/armas-de-aco`, protocolo 12):** o **canhão pesado** (`cannon`: um obus de aço, 90 de dano a cada 2,6 s, 4 acertos num torso no MK I e 3 no MK II e III, só nos pesados Colossus, Onça, Bastion e Marauder, nas duas mãos) e o **canhão automático** (`autocannon`: 5 tiros/s de aço, 10 de dano, em todo engate de energia). **O tiro de aço agora se vê como metal:** corpo sólido de aço (frio o do jogador, avermelhado o do inimigo) com a cauda quente atrás, clarão da pólvora na boca, fumaça no rastro do obus, estojo que salta e cai no automático, impacto de faíscas, brasas e poeira (e, no canhão, onda de choque), som grave de estouro e pancada seca. **Falta:** a rotatória, a escopeta e o trilho ainda voam como faixa de luz; o empurrão no alvo atingido; o EMP/sônico com voo próprio | Hangar (Colossus ou Onça, canhão pesado; qualquer chassi menos o Andróide, canhão automático) e atirar |
+| P72 | 11/10 | "o **gelo está indo muito longe**, e o **fogo está muito fraco e curto**, precisa melhorar o fogo. O gelo, seria bacana se o **rastro dele soltasse frio, partículas menores**, pra dar mais a sensação de gelo frio; e o fogo também precisa melhorar" | 🔧 | Registrada; é o PR seguinte (`claude/fogo-e-gelo`): gelo com alcance menor e rastro de frio (partículas pequenas e pálidas), lança-chamas mais longo, mais grosso e mais vivo | Atirar com o gelo e o lança-chamas |
+| P73 | 11/10 | "o fogo também pode ser um tipo de **escudo, que solta um círculo de fogo ao redor do Mech**, queimando tudo ao redor durante alguns segundos, e **aumentando o calor geral de tudo (inclusive do próprio robô que o soltou)**; assim podemos fazer **combos**: congelar um amigo que vai soltar esse poder do fogo circular no meio de uma rushada ou tankada contra inimigos" | 🔧 | Registrada; entra no mesmo PR do P72: habilidade "anel de fogo" (escudo de fogo) com duração, raio, calor em todos os que estão dentro (o dono do anel também) e a interação com o gelo (o gelo apaga o fogo; o aliado congelado vira o gatilho do combo). **Decisões em aberto para o Comandante no PR** (em qual botão, recarga, se o aliado congelado é regra de jogo ou só combo de equipe) | Em partida (a definir) |
 | P62 | 11/10 | Gelo funcionou, "mas não percebi que o robô inimigo ficou congelado": **melhorar o efeito visual do estado nos inimigos, e das outras armas** | ✅ | Feito (`claude/estado-no-corpo`): o **casco** ganha a cor do estado (congelado: azul-gelo firme; gelado: azul que cresce a cada acúmulo; queimando: laranja que tremula; chocado: azul elétrico que pisca; atordoado: amarelo) e o corpo solta **partículas** (vapor e cacos de gelo, chama e fumaça, faíscas azuis, estrelas). Vale para as quatro armas elementais, para bot, aliado e jogador remoto. **Falta ver em partida de verdade** (STATUS_REAL) | Acertar um bot com gelo (3 acertos), com a elétrica ou, depois do PR do lança-chamas, com fogo |
 | P63 | 11/10 | "os tiros normais geram muita luz na tela e acabam prejudicando a visibilidade. Temos que melhorar a visibilidade em geral" | 🔧 | **1ª parte feita** (`claude/mira-e-brilho`): as faíscas de impacto caíram de 36 para 14 e os clarões de 10 para 3; o clarão do cano, de 10 para 5; os tiros do jogador acendem ~35% menos (os do inimigo não mudam, são o aviso); bloom de 0,85 para 0,6, **ajustável** em Configurações > Gráficos e som > "Brilho dos efeitos". Medido: o brilho que o tiro soma à tela caiu **46%**. Faltam explosões de foguete e o neon, se ainda pesar | Configurações > Gráficos e som |
 | P64 | 11/10 | "O pointer de mira está com a linha muito grossa, fica na frente do inimigo e atrapalha a visão; melhorar em todas as armas" | ✅ | Mira de 48 para 38 px por padrão, traço de 1 px que não engrossa ao redimensionar, 85% de opacidade; **tamanho e opacidade ajustáveis** em Configurações > Controles. Vale para as 11 armas | Configurações > Controles > Tamanho e Opacidade da mira |
@@ -67,19 +69,19 @@
 
 ## 2. Rede, servidor e contas
 
-| ID | Data | Pedido | Estado | Onde está / o que falta | Como o dono confere |
+| ID | Data | Ordem | Estado | Onde está / o que falta | Como o Comandante confere |
 |---|---|---|---|---|---|
 | P28 | 26/09 | Qualquer pessoa clica em online e entra na mesma sala, de qualquer país | 🟡 | Funciona (`Jogo online M4`), mas o servidor é o PC de casa: a entrada levou 59 s com a máquina sem memória (1,4 s quando calma) | Duas abas ou dois aparelhos |
 | P29 | 28/09 | Servidor que reinicia e se atualiza sozinho, com inteligência | ✅ | Parada por arquivo, religar, retomada da verificação cortada (#189–#192, #208) | Log `atualizacao.log` |
 | P30 | 28 e 29/09 | **Gerenciar o servidor pelo site do jogo** (inclusive dormindo ou viajando) | ❓ | Só existe o `/metricas`, que **lê** números e não comanda nada | — |
 | P31 | 26 e 28/09 | **Fluidez "nível Roblox", mapas gigantes, 10× e 100× jogadores** | ❓ | `CAPACIDADE.md`: benchmark local de 10/50/100 clientes; não homologa a internet nem a disponibilidade | — |
 | P32 | 29/09 | Migrar de SQLite para Supabase no futuro | ❓ | Hoje as contas estão em SQLite no servidor | — |
-| P33 | 28/09 | Login e contas | 🔧 | Backend pronto e testado; **a tela de criar conta e entrar não existe; pedido enviado ao Gemini em 10/10** (pedida ao Gemini em 28/09) | — |
+| P33 | 28/09 | Login e contas | ✅ | Backend pronto e testado; a tela de criar conta e entrar foi feita pelo Gemini (`client/src/ui/LoginPanel.ts`: abas Entrar/Criar, validação em tempo real, carregando/erro/logado; 8 testes; captura `arte/login-panel.png`). Ele tinha registrado isso num bloco solto no topo deste arquivo, que veio para cá em 11/10 | Tela de entrar |
 | P34 | 04/10 | Analytics | ✅ | `/metricas/` privada e telemetria | Token em `D:\DECEPTICONS\.tmp\servidor\metricas-token.txt` |
 
 ## 3. Interface, visual e som
 
-| ID | Data | Pedido | Estado | Onde está / o que falta | Como o dono confere |
+| ID | Data | Ordem | Estado | Onde está / o que falta | Como o Comandante confere |
 |---|---|---|---|---|---|
 | P35 | 24/09 | HUD sci-fi, militar, hacker, cyberpunk "das antigas" | ✅ | `STATUS_REAL` HUD | Jogar |
 | P36 | 24/09 | Tela para calibrar o mouse com precisão | 🟡 | Pronta; **"a tela ainda não foi usada no navegador"** | `[ CALIBRAR MOUSE ]` |
@@ -91,7 +93,7 @@
 
 ## 4. Site, vídeo, negócio e universo
 
-| ID | Data | Pedido | Estado | Onde está / o que falta | Como o dono confere |
+| ID | Data | Ordem | Estado | Onde está / o que falta | Como o Comandante confere |
 |---|---|---|---|---|---|
 | P42 | 24 a 29/09 | Landing profissional, nunca dois botões de ação juntos, carrossel de fotos | ✅ | Landing | `/cybermech/` |
 | P43 | 29/09 | Trocar, apagar e reordenar as imagens do site sem código | ⏸ | `ESTADO_ATUAL`, Decisões em aberto | — |
@@ -101,10 +103,11 @@
 | P47 | 23/09 | Modelo de negócio, viralizar, lives | ⏸ | `ROADMAP` #negocio (7 itens abertos) | — |
 | P48 | 26/09 | **Referência DEFILADE** ("conseguiremos chegar nesse nível de detalhe?") | ❓ | Nenhum documento cita o jogo; `REFERENCIA_VISUAL.md` tem MechArena e War Robots | — |
 | P49 | 26 e 29/09 | Universo: Brasil no centro, BRICS, big techs, termos de CTI; fábricas (Arara Foundry, **Vanta, da Faria Lima**, outras) | 🟡 | `UNIVERSO.md`; a Arara Foundry está nos documentos, **a Vanta não** | — |
+| P71 | 11/10 | "como aproveitar os aprendizados, reações e interpretação dos bots para treinar robôs humanoides de verdade? gerar valor real, civil ou militar? embutir no meu robô humanoide? e o JEV? qual o formato para os dados que o jogo vai gerar?" | ⏸ | Respondido no chat; proposta em **`DADOS_E_ROBOTICA.md`** (gravador de voo, bot fantasma, arena aberta, robô real; "JEV" lido como V-JEPA; o Comandante vai mandar o que é). **Direção aprovada em 11/10:** "quero sim que nosso game sirva pra treinamentos de humanoides, IAs, etc." Nada construído ainda; a etapa D0 (consentimento + gravador de voo) é a próxima | Ler o documento |
 
 ## 5. Processo
 
-| ID | Data | Pedido | Estado | Onde está | 
+| ID | Data | Ordem | Estado | Onde está | 
 |---|---|---|---|---|
 | P50 | 30/09 | Testar direto no site, sem ficar preso em branch | ✅ | AGENTS.md, regras 13 e 14 |
 | P51 | 03/10 | Um agente nunca mexe em outro projeto, pasta ou chat | ✅ | AGENTS.md, regra 12 |
@@ -126,12 +129,12 @@ Atualize a cada fase. Se os números não mexem, o trabalho é cosmético, mesmo
 | Itens "entregues mas **não vistos em partida real**" | 17 | `STATUS_REAL.md` | 0 depois de uma sessão de validação |
 | Bugs de física abertos | 0 (o P09 foi corrigido em 10/10) | `ESTADO_ATUAL` | 0 |
 | Chassis com números distintos | **10 de 10** (10/10; eram 4 de 10) | `entities/chassis.ts`, `ChassisPapeis.test.ts` | 10 de 10, com papéis **sentidos em partida** |
-| Pedidos do dono sem registro (❓) | 6 (P11, P30, P31, P32, P48, P53), mais a Vanta dentro do P49 | este arquivo | 0 |
-| Pedidos do dono parados há mais de 14 dias (⏸) | 1 (P47, de 23/09); os demais são de 29/09 em diante | este arquivo | 0 sem decisão |
+| Ordens sem registro (❓) | 6 (P11, P30, P31, P32, P48, P53), mais a Vanta dentro do P49 | este arquivo | 0 |
+| Ordens aguardando há mais de 14 dias (⏸) | 1 (P47, de 23/09); os demais são de 29/09 em diante | este arquivo | 0 sem decisão |
 | Para onde vai o esforço de código | 48% documentação e site, 22% regras, 7% rede, 4% visual do mundo | `git log --numstat` desde 23/09 | regras + rede acima de 50% |
 | Jogadores simultâneos já vistos sem problema | benchmark local de 10/50/100; na internet, **nenhum teste com gente** | `CAPACIDADE.md` | uma sessão com 5 pessoas |
 
-## 7. Como pedir uma melhoria substancial
+## 7. Como transmitir uma ordem de melhoria substancial
 
 > **Hoje:** o que você vê ou sente. **Quero:** um resultado que eu consiga conferir. **Limite:** CPU, rede ou prazo.
 

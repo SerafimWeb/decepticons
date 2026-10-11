@@ -30,6 +30,8 @@ mkdirSync(resolve(RAIZ, '.tmp', 'servidor'), { recursive: true });
 const TAREFA = process.env.CYBERMECH_TAREFA;
 /** A verificação que uma rodada cortada deixou pela metade (ver `atualizador.mjs`). */
 const PENDENCIA = resolve(RAIZ, '.tmp', 'servidor', 'verificacao-pendente.json');
+/** O reinício que a verificação deixa por fazer: o mesmo arquivo que o `atualizar-e-reiniciar.ps1` usa, e só some quando o servidor responde. */
+const REINICIO = resolve(RAIZ, '.tmp', 'servidor', 'reinicio-pendente');
 
 function tarefa(acao) {
   if (!TAREFA) return;
@@ -60,6 +62,9 @@ const codigo = atualizar({
   },
   ligarServidor() {
     tarefa('Start');
+  },
+  marcarReinicio() {
+    writeFileSync(REINICIO, '');
   },
   lerPendencia() {
     try {

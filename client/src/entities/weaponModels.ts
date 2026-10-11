@@ -224,6 +224,43 @@ function flamer(root: THREE.Object3D, tier: number, M: Mats): number {
   return (tip + 0.14) * LONG;
 }
 
+/**
+ * Canhão pesado (aço, um tiro só): culatra grossa, cano curto e largo com freio de boca de duas fendas e dois amortecedores de recuo nas laterais.
+ * Nada de brilho além da brasa do cano. O nível alonga o cano e soma anéis de reforço.
+ */
+function cannon(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = [1.25, 1.4, 1.55][tier]!;
+  d.box(0.56, 0.5, 0.78, M.armor, 0, 0, -0.4); // a culatra
+  d.cylZ(0.17, len, M.frame, 0, 0, -0.78 - len / 2); // o cano
+  for (let i = 0; i <= tier; i++) d.cylZ(0.22, 0.09, M.armor, 0, 0, -0.95 - i * 0.34); // anéis de reforço
+  const end = 0.78 + len;
+  d.cylZ(0.25, 0.3, M.armor, 0, 0, -end - 0.08); // o freio de boca
+  for (const side of [-1, 1]) d.box(0.05, 0.36, 0.08, M.frame, side * 0.2, 0, -end - 0.1); // as fendas
+  d.cylZ(0.12, 0.04, M.glow, 0, 0, -end - 0.24); // a brasa na boca
+  for (const side of [-1, 1]) d.cylZ(0.075, 0.9, M.frame, side * 0.33, 0, -0.62); // amortecedores de recuo
+  return (end + 0.28) * LONG;
+}
+
+/**
+ * Canhão automático (aço, tiros em sequência): receptor, caixa de munição em cima com a fita, cano curto com a camisa perfurada e freio de boca.
+ * O nível alonga o cano, soma uma segunda caixa e aletas.
+ */
+function autocannon(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = [0.95, 1.1, 1.25][tier]!;
+  d.box(0.42, 0.4, 0.62, M.armor, 0, 0, -0.34);
+  d.box(0.3, 0.26, 0.4, M.frame, 0, 0.3, -0.3); // a caixa de munição
+  d.box(0.1, 0.14, 0.22, M.armor, 0, 0.14, -0.55); // a fita descendo para a câmara
+  if (tier >= 1) d.box(0.3, 0.26, 0.4, M.frame, 0, -0.3, -0.3);
+  d.cylZ(0.09, len, M.frame, 0, 0, -0.65 - len / 2);
+  d.cylZ(0.15, len * 0.6, M.armor, 0, 0, -0.75 - len * 0.3); // a camisa
+  for (let i = 0; i < 3 + tier; i++) d.cylZ(0.165, 0.035, M.frame, 0, 0, -0.78 - i * 0.14);
+  d.cylZ(0.13, 0.12, M.armor, 0, 0, -0.68 - len);
+  d.box(0.07, 0.07, 0.1, M.glow, 0.2, 0.06, -0.42); // a janela de ejeção
+  return (0.74 + len) * LONG;
+}
+
 /** Motosserra (corpo a corpo): motor e uma barra alta com dentes luminosos. O nível alonga a barra. */
 function chainsaw(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -320,6 +357,12 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'flamer':
         muzzleZ = flamer(root, weapon.tier, M);
+        break;
+      case 'cannon':
+        muzzleZ = cannon(root, weapon.tier, M);
+        break;
+      case 'autocannon':
+        muzzleZ = autocannon(root, weapon.tier, M);
         break;
       case 'chainsaw':
         muzzleZ = chainsaw(root, weapon.tier, M);

@@ -12,10 +12,11 @@ describe('brilho dos tiros', () => {
     expect(maximo(GLOW.friendlyPlasma)).toBeLessThan(maximo(GLOW.hostilePlasma));
     expect(maximo(GLOW.friendlyArc)).toBeLessThan(maximo(GLOW.hostileArc));
     expect(maximo(GLOW.friendlyIce)).toBeLessThan(maximo(GLOW.hostileIce));
+    expect(maximo(GLOW.friendlySlug)).toBeLessThan(maximo(GLOW.hostileSlug));
   });
 
   it('o tiro do jogador ainda passa do limiar do bloom (0,9): some a luz que cega, não o rastro que mostra para onde foi', () => {
-    for (const c of [GLOW.friendlyPlasma, GLOW.friendlyArc, GLOW.friendlyIce]) expect(maximo(c)).toBeGreaterThan(0.9);
+    for (const c of [GLOW.friendlyPlasma, GLOW.friendlyArc, GLOW.friendlyIce, GLOW.friendlySlug]) expect(maximo(c)).toBeGreaterThan(0.9);
   });
 
   it('o clarão do cano e as faíscas do impacto ficam abaixo dos 3,0 de antes', () => {

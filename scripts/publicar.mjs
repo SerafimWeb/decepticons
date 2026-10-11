@@ -15,6 +15,7 @@ import { gh as ghReal } from './ghSeguro.mjs';
 
 const TENTATIVAS_CHECK = 40; // × 6 s: o CI leva até alguns segundos para criar a linha `check`
 const TENTATIVAS_ESTADO = 10;
+const TENTATIVAS_MERGE = 4; // o GitHub às vezes ainda não calculou a mergeabilidade quando o CI acaba: o 1º merge falha e o 2º passa (11/10, #231)
 
 /** @returns {Promise<{ ok: boolean, motivo?: string, pr?: number, merge?: string }>} */
 export async function publicar(ops, opcoes) {
@@ -88,8 +89,16 @@ export async function publicar(ops, opcoes) {
   }
 
   log('mergeando…');
-  gh(['pr', 'merge', String(n), '--merge']);
-  const depois = json(gh(['pr', 'view', String(n), '--json', 'state,mergeCommit']));
+  let depois = null;
+  for (let i = 0; i < TENTATIVAS_MERGE; i++) {
+    if (i > 0) {
+      log(`o merge ainda não saiu (o GitHub calcula a mergeabilidade com atraso); tentando de novo (${i + 1}/${TENTATIVAS_MERGE})`);
+      await dormir(10_000);
+    }
+    gh(['pr', 'merge', String(n), '--merge']);
+    depois = json(gh(['pr', 'view', String(n), '--json', 'state,mergeCommit']));
+    if (depois?.state !== 'OPEN') break; // MERGED, ou fechado de outro jeito: não insiste
+  }
   if (depois?.state !== 'MERGED') return falha(`o merge do PR #${n} NÃO aconteceu (estado: ${depois?.state ?? 'ilegível'}); branch preservado`);
   const oid = depois.mergeCommit?.oid ?? '';
   log(`✓ PR #${n} mergeado (${oid.slice(0, 7)})`);

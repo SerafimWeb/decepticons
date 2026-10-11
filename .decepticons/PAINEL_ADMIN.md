@@ -1,6 +1,6 @@
 # PAINEL ADMIN — gerenciar o jogo inteiro em poucas telas
 
-> Pedido do dono, 10/10/2026 (P54 de `PEDIDOS_DO_DONO.md`): *"sinto falta de um painel admin completo, onde eu possa gerenciar tudo do
+> Pedido do dono, 10/10/2026 (P54 de `ORDENS_DO_COMANDO.md`): *"sinto falta de um painel admin completo, onde eu possa gerenciar tudo do
 > jogo em poucas telas, de forma inteligente e estratégica, para configurar desde uma campanha, como os bots adversários,
 > configuração de cada um, apelidos, pilotos, módulos, armas etc."* Este documento é o **plano**, escrito antes de qualquer tela, para
 > os agentes trabalharem em paralelo contra contratos (AGENTS.md, regra 5). **Estado: só plano; nada deste painel existe ainda.**
@@ -19,7 +19,7 @@
 | **Chassi e armas de cada bot, piloto de cada bot** | ❌ **não existe**: todo bot é um Vector-09 de plasma | `combat/BotSystem.ts` |
 | Campanha (sequência de missões salvas e nomeadas) | ❌ ausente (`STATUS_REAL`, "Painel de campanhas") | — |
 | Servidor: ver, reiniciar, jogadores, métricas | ⚠️ só leitura (`/metricas`), e reinício por script no PC | `server/`, `scripts/*.ps1` |
-| O que foi pedido e se o jogo melhora | ✅ em Markdown, **sem tela** | `PEDIDOS_DO_DONO.md` |
+| O que foi pedido e se o jogo melhora | ✅ em Markdown, **sem tela** | `ORDENS_DO_COMANDO.md` |
 
 **Conclusão:** metade do painel é **reunir telas que já existem** num lugar só. A outra metade pede **dado novo**: a ficha de cada bot e a
 campanha. Por isso o plano começa nos contratos, não nas telas.
@@ -32,7 +32,7 @@ campanha. Por isso o plano começa nos contratos, não nas telas.
    Começa com a Sobrevivência de hoje como campanha padrão (um teste garante que ela dá o mesmo jogo de antes).
 3. **Arsenal e chassis:** as Potências de hoje mais a tabela de chassis (papel, vida, velocidade). **Só leitura no começo**, edição depois.
 4. **Servidor:** jogadores, salas, métricas, reinício e atualização, **só com o token do dono**. Pedido separado de 28 e 29/09 (P30).
-5. **Evolução:** o registro de pedidos e o placar de resultado, para ver se o jogo melhora ou se é cosmético (`PEDIDOS_DO_DONO.md`, seção 6).
+5. **Evolução:** o registro de pedidos e o placar de resultado, para ver se o jogo melhora ou se é cosmético (`ORDENS_DO_COMANDO.md`, seção 6).
 
 ## 3. Contratos primeiro (G14: uma simulação, com teste)
 
@@ -68,7 +68,7 @@ o desvio de cada bot sai de dados, **sem `Math.random`** (G1/G2); campanha padr�
 | **F** | Tela **Evolução**: lê o registro de pedidos e o placar | Qwen ou Claude (`scripts/site`) | — |
 | **G** | Tela **Arsenal e chassis** (leitura, depois edição) | Gemini | A |
 
-Cada etapa: um PR, `npm run check` verde, captura em `arte/`, linha em `PEDIDOS_DO_DONO.md`. **Nenhuma tela entra antes do contrato dela.**
+Cada etapa: um PR, `npm run check` verde, captura em `arte/`, linha em `ORDENS_DO_COMANDO.md`. **Nenhuma tela entra antes do contrato dela.**
 
 ## 5. Decisões do dono (têm padrão; se não disser nada, sigo o padrão)
 

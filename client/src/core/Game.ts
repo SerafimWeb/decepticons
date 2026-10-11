@@ -865,7 +865,7 @@ export class Game {
       };
     }
     // Som de disparo: o controle do jogador avisa a cada tiro de energia (bots têm o som deles, acima).
-    this.player.onShot = (w) => (w.id === 'arc' ? this.audio.playArcShot() : w.id === 'cryo' ? this.audio.playCryoShot() : this.audio.playShot());
+    this.player.onShot = (w) => (w.id === 'arc' ? this.audio.playArcShot() : w.id === 'cryo' ? this.audio.playCryoShot() : w.id === 'cannon' ? this.audio.playCannonShot() : w.id === 'autocannon' ? this.audio.playAutocannonShot() : this.audio.playShot());
     // Peso do tiro na câmera (`combat/fireFeel.ts`): o solavanco do trilho e do foguete, o zumbido do plasma.
     this.player.onKick = (amount) => rig.addShake(amount);
     this.player.onRocket = () => {
@@ -914,6 +914,12 @@ export class Game {
       this.killFeed.push(killerName, deadName, isPlayerInvolved);
       if (!this.online && dead === mech && killer && killer !== mech) this.killCam.start(killer, at);
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
+    };
+    // Rádio do clã: o primeiro contato de um bot (inimigo ou aliado) aparece no feed, sem mudar a regra.
+    this.match.onRadio = (from, target) => {
+      if (this.online) return;
+      const name = target === mech ? 'VOCÊ' : this.round.scoreOf(target)?.name ?? 'ALVO';
+      this.killFeed.push(`◈ ${from}: CONTATO`, name, false);
     };
     // Foguete: o dano em área já foi aplicado pela partida; aqui, fogo, fumaça, tremor e som.
     this.match.onExplosion = (at) => {

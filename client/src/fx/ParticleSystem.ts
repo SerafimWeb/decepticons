@@ -1,4 +1,7 @@
 import * as THREE from 'three';
+import { ATLAS_GRID, CELL, drawAtlas, SHAPE, type ParticleShape } from './particleShapes';
+
+export { SHAPE, type ParticleShape };
 
 export interface BurstOptions {
   count: number;
@@ -9,6 +12,10 @@ export interface BurstOptions {
   expansion?: number; // variação de tamanho até o fim da vida: positivo cresce, negativo encolhe
   spread?: number; // 0 = cone fechado na normal, 1+ = quase esférico
   gravity?: number;
+  /** A forma da partícula (`fx/particleShapes.ts`). Sem ela, é o brilho redondo de sempre. */
+  shape?: ParticleShape;
+  /** Giro máximo em rad/s (cada partícula sorteia entre -spin e +spin). Sem ela, não gira. A faísca alongada gira sozinha para onde anda. */
+  spin?: number;
 }
 
 /** Teto G5: o cursor circular sempre mantém, no máximo, esta quantidade de partículas vivas. */
@@ -16,17 +23,16 @@ export const MAX_PARTICLES = 3000;
 
 const _v = new THREE.Vector3();
 
-function makeSprite(): THREE.Texture {
+/** O atlas de formas (`particleShapes.ts`): uma textura de 4 × 4 células, desenhada uma vez. */
+function makeAtlas(): THREE.Texture {
   const c = document.createElement('canvas');
-  c.width = c.height = 64;
-  const ctx = c.getContext('2d')!;
-  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-  g.addColorStop(0, 'rgba(255,255,255,1)');
-  g.addColorStop(0.3, 'rgba(255,255,255,0.6)');
-  g.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 64, 64);
-  return new THREE.CanvasTexture(c);
+  c.width = c.height = ATLAS_GRID * CELL;
+  drawAtlas(c.getContext('2d')!);
+  const t = new THREE.CanvasTexture(c);
+  t.generateMipmaps = false;
+  t.minFilter = THREE.LinearFilter;
+  t.magFilter = THREE.LinearFilter;
+  return t;
 }
 
 /**
@@ -47,9 +53,15 @@ export class ParticleSystem {
   private readonly baseSize: Float32Array;
   private readonly size: Float32Array;
   private readonly expansion: Float32Array;
+  private readonly shape: Float32Array;
+  private readonly angle: Float32Array;
+  private readonly spin: Float32Array;
   private readonly posAttr: THREE.BufferAttribute;
   private readonly colAttr: THREE.BufferAttribute;
   private readonly sizeAttr: THREE.BufferAttribute;
+  private readonly velAttr: THREE.BufferAttribute;
+  private readonly angleAttr: THREE.BufferAttribute;
+  private readonly shapeAttr: THREE.BufferAttribute;
   private cursor = 0;
 
   constructor(max = MAX_PARTICLES) {
@@ -67,6 +79,9 @@ export class ParticleSystem {
     this.baseSize = new Float32Array(max);
     this.size = new Float32Array(max);
     this.expansion = new Float32Array(max);
+    this.shape = new Float32Array(max);
+    this.angle = new Float32Array(max);
+    this.spin = new Float32Array(max);
 
     const geo = new THREE.BufferGeometry();
     this.posAttr = new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage);
@@ -75,10 +90,17 @@ export class ParticleSystem {
     geo.setAttribute('color', this.colAttr);
     this.sizeAttr = new THREE.BufferAttribute(this.size, 1).setUsage(THREE.DynamicDrawUsage);
     geo.setAttribute('particleScale', this.sizeAttr);
+    // A forma, o giro e a velocidade (a faísca alongada aponta para onde anda, e isso se calcula na GPU).
+    this.angleAttr = new THREE.BufferAttribute(this.angle, 1).setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('particleAngle', this.angleAttr);
+    this.shapeAttr = new THREE.BufferAttribute(this.shape, 1).setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('particleShape', this.shapeAttr);
+    this.velAttr = new THREE.BufferAttribute(this.vel, 3).setUsage(THREE.DynamicDrawUsage);
+    geo.setAttribute('particleVel', this.velAttr);
 
     const material = new THREE.PointsMaterial({
       size: 0.45,
-      map: makeSprite(),
+      map: makeAtlas(),
       vertexColors: true,
       transparent: true,
       depthWrite: false,
@@ -86,10 +108,42 @@ export class ParticleSystem {
     });
     material.onBeforeCompile = (shader) => {
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nattribute float particleScale;')
-        .replace('gl_PointSize = size;', 'gl_PointSize = size * particleScale;');
+        .replace(
+          '#include <common>',
+          '#include <common>\nattribute float particleScale;\nattribute float particleShape;\nattribute float particleAngle;\nattribute vec3 particleVel;\nvarying float vShape;\nvarying float vAngle;',
+        )
+        .replace(
+          'gl_PointSize = size;',
+          [
+            'gl_PointSize = size * particleScale;',
+            'vShape = particleShape;',
+            '// Faísca alongada (4) e onda sonora (12): o ângulo é a direção em que andam na tela. As outras giram pelo ângulo que vem da CPU.',
+            'vec4 cp0 = projectionMatrix * mvPosition;',
+            'vec4 cp1 = projectionMatrix * modelViewMatrix * vec4( transformed + particleVel * 0.05, 1.0 );',
+            'vec2 sd = cp1.xy / cp1.w - cp0.xy / cp0.w;',
+            'sd.x *= projectionMatrix[1][1] / projectionMatrix[0][0];',
+            'bool oriented = ( particleShape > 3.5 && particleShape < 4.5 ) || ( particleShape > 11.5 && particleShape < 12.5 );',
+            'vAngle = oriented ? atan( sd.y, sd.x ) : particleAngle;',
+          ].join('\n'),
+        );
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying float vShape;\nvarying float vAngle;')
+        .replace(
+          '#include <map_particle_fragment>',
+          [
+            '// A célula do atlas (4 x 4), com a amostragem girada por vAngle em volta do centro do sprite.',
+            'vec2 pc = gl_PointCoord - 0.5;',
+            'float ca = cos( vAngle );',
+            'float sa = sin( vAngle );',
+            'pc = vec2( ca * pc.x - sa * pc.y, sa * pc.x + ca * pc.y ) + 0.5;',
+            'if ( pc.x < 0.0 || pc.x > 1.0 || pc.y < 0.0 || pc.y > 1.0 ) discard;',
+            'vec2 cell = vec2( mod( vShape, 4.0 ), floor( vShape / 4.0 ) );',
+            'vec2 uv = vec2( ( cell.x + pc.x ) / 4.0, 1.0 - ( cell.y + pc.y ) / 4.0 );',
+            'diffuseColor *= texture2D( map, uv );',
+          ].join('\n'),
+        );
     };
-    material.customProgramCacheKey = () => 'cybermech-particle-size-v1';
+    material.customProgramCacheKey = () => 'cybermech-particle-shapes-v2';
     this.points = new THREE.Points(geo, material);
     this.points.frustumCulled = false;
   }
@@ -121,7 +175,12 @@ export class ParticleSystem {
       this.baseSize[i] = (o.size ?? 1) * (0.75 + Math.random() * 0.5);
       this.size[i] = this.baseSize[i];
       this.expansion[i] = o.expansion ?? 0;
+      this.shape[i] = o.shape ?? SHAPE.glow;
+      // A língua de fogo fica com a ponta para cima (só balança um pouco); as outras formas nascem em qualquer ângulo.
+      this.angle[i] = o.shape === SHAPE.flame ? (Math.random() - 0.5) * 0.5 : Math.random() * Math.PI * 2;
+      this.spin[i] = (o.spin ?? 0) * (Math.random() * 2 - 1);
     }
+    this.shapeAttr.needsUpdate = true;
   }
 
   update(dt: number): void {
@@ -135,6 +194,7 @@ export class ParticleSystem {
         this.size[i] = 0;
         continue;
       }
+      this.angle[i] += this.spin[i] * dt;
       this.vel[i3 + 1] -= this.gravity[i] * dt;
       this.vel[i3] *= drag;
       this.vel[i3 + 1] *= drag;
@@ -155,5 +215,7 @@ export class ParticleSystem {
     this.posAttr.needsUpdate = true;
     this.colAttr.needsUpdate = true;
     this.sizeAttr.needsUpdate = true;
+    this.angleAttr.needsUpdate = true;
+    this.velAttr.needsUpdate = true;
   }
 }
