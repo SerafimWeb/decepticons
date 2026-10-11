@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Pilotos por LLM e a inteligência dos bots como ativo — Qwen, 11/10 (ordem P75, só documento)
+
+O Comandante pediu tornar as IAs mais inteligentes, plugar APIs de LLMs diferentes como pilotos dos Mechs e dos andróides,
+e produzir/cultivar/organizar a inteligência gerada nos bots em combate como produto vendável. **Plano em
+`.decepticons/PILOTOS_LLM_E_INTELIGENCIA.md`** (companheiro de `DADOS_E_ROBOTICA.md`/P71 e `PAINEL_ADMIN.md`/P54):
+o LLM entra **fora do tick** em três papéis (comandante entre rodadas → `BotSpec[]`; rádio de texto; professor offline),
+a "API de pilotos" é a **arena aberta a cérebros de fora** (D2 do P71) pelo comando de 9 bytes (`shared/net/input.ts`), e
+o gravador de voo passa a capturar **também as decisões dos bots** (mesmo `MechInput` que o jogador). Ordem sugerida:
+rádio → comandante → gravador → bot fantasma → arena. A infra de vários provedores já existe no Protocolo (SKILL 16/17).
+**Proposta; nada construído; sem custo no tick.** Próximo passo é do Comandante: decidir a ordem (seção 10 do plano).
 ## Gelo mais curto e frio, fogo mais forte — Claude, 11/10 (PR `claude/fogo-e-gelo`)
 
 **Ordem do Comandante (P72):** "o gelo está indo muito longe, e o fogo está muito fraco e curto; o rastro do gelo soltasse frio, partículas menores, pra dar mais a sensação de gelo frio".
@@ -21,7 +31,6 @@
 **Próxima sessão começa com a P73 (anel de fogo)** em `claude/anel-de-fogo`: módulo de escudo que solta um círculo de fogo ao redor do Mech por alguns segundos, queimando tudo em volta e
 esquentando todos (inclusive quem o solta), com o combo "congelar e depois soltar o anel" (o gelo derrete e dá um estouro de vapor). Entra no sistema do escudo de energia (tecla, energia, HUD,
 Hangar e rede já existem); **sobe o protocolo para 13**.
-
 ## Câmeras de Vigilância CFTV & Modo Espectador — Gemini, 11/10
 
 **EM BRANCH — NÃO ESTÁ NO AR até merge do PR:** branch `gemini/cameras-espectador`.
