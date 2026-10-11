@@ -3,6 +3,7 @@ import { MetalShield, RAISED_SPEED } from '../combat/MetalShield';
 import { StatusSet, type StatusKind } from '../combat/StatusEffects';
 import { CombatBoost } from '../combat/CombatBoost';
 import { legDamageLean } from '../fx/DamageVisuals';
+import { statusTint, type Tint } from './statusTint';
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { HeatSink, OVERHEAT_SPEED, type ChassisHeat, type HeatState } from '../combat/heat';
@@ -171,6 +172,7 @@ function mountNode(rig: MechRig, mount: MountId): Located {
   }
 }
 
+const _tint: Tint = { r: 0, g: 0, b: 0 };
 const _wish = new THREE.Vector3();
 const _desired = { x: 0, y: 0, z: 0 };
 const _hit = new RAPIER.CharacterCollision();
@@ -232,7 +234,11 @@ export abstract class MechBase {
   private readonly rightArmBaseZ: number;
   private readonly leftArmBaseZ: number;
   private hitFlash = 0;
-  private shownFlash = 0;
+  /** A cor que o casco mostra agora (flash de dano + estado): só se escreve no material quando muda. */
+  private shownR = 0;
+  private shownG = 0;
+  private shownB = 0;
+  private visualTime = 0;
   /** Boca de cada encaixe em relação aos pés, com o Mech em repouso e virado para -Z (dado do chassi ou medida no rig). */
   private readonly muzzlesLocal: Record<MountId, THREE.Vector3> = {
     rightHand: new THREE.Vector3(),
@@ -893,14 +899,22 @@ export abstract class MechBase {
     r.setHeatVisual?.(dt, this.heat, this.overheated, this.coolingBoost);
     r.setGuardVisual?.(dt, this.metalShield.intact && this.modules.leftArm > 0, this.metalShield.raised);
 
-    // Flash de dano no casco: só escreve no material quando o valor muda.
+    // Cor do casco: o flash de dano (vermelho, ~0,17 s) e a cor do estado (gelo, chamas, choque) somam na luz própria do casco.
+    // Só escreve no material quando a cor muda (parado e sem estado, nunca).
     this.hitFlash = Math.max(0, this.hitFlash - dt * 6);
-    if (this.hitFlash !== this.shownFlash) {
-      this.shownFlash = this.hitFlash;
+    this.visualTime += dt;
+    statusTint(this.status, this.visualTime, _tint);
+    const fr = this.hitFlash * 1.4 + _tint.r;
+    const fg = this.hitFlash * 0.35 + _tint.g;
+    const fb = this.hitFlash * 0.2 + _tint.b;
+    if (fr !== this.shownR || fg !== this.shownG || fb !== this.shownB) {
+      this.shownR = fr;
+      this.shownG = fg;
+      this.shownB = fb;
       for (const m of r.hullMaterials) {
-        const setHitFlash = m.userData.setHitFlash;
-        if (typeof setHitFlash === 'function') setHitFlash(this.hitFlash);
-        else m.emissive.setRGB(this.hitFlash * 1.4, this.hitFlash * 0.35, this.hitFlash * 0.2);
+        const setTint = m.userData.setTint;
+        if (typeof setTint === 'function') setTint(fr, fg, fb);
+        else m.emissive.setRGB(fr, fg, fb);
       }
     }
   }

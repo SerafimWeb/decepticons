@@ -186,7 +186,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] **UI-4:** HUD da partida: rótulos legíveis, barras alinhadas, ordens aos aliados discretas (a "vida duplicada" do achado D1 estava errada e foi retratada) (Claude, 11/10) #ux
 - [x] **UI-5 (celular):** o painel de ordens aos aliados saiu de cima do analógico no celular deitado (Claude, 11/10) #ux
 - [x] Mira fina (1 px, 38 px, translúcida, ajustável) e menos luz nos tiros (faíscas, clarões, bloom ajustável): medido −46% de brilho somado pelo tiro (Claude, 11/10) #ux
-- [ ] **Efeito visual do estado no corpo do inimigo** (gelo cobre o robô, chamas, faíscas do choque): o dono não percebeu o congelamento (P62) #combate
+- [x] **Efeito visual do estado no corpo do inimigo:** o casco ganha a cor do estado (azul-gelo, laranja que tremula, azul elétrico, amarelo) e o corpo solta vapor, chama, faíscas e estrelas; o dono não percebeu o congelamento (P62; Claude, 11/10) #combate
 - [ ] **Disposição das armas no Hangar e nos braços** (P65; falta o dono dizer se é a lista, o desenho no corpo, ou os dois) #ux
 - [ ] **UI-5 (resto):** conferir em captura o fim de rodada, o carregamento e o terminal do banco (não há atalho de teste para o fim de rodada) #ux
 - [ ] **Deathmatch por equipes 4v4 e 8v8:** escala do online atual, com equilíbrio de composição (o servidor evita "todos os pesados de um lado") #modos
