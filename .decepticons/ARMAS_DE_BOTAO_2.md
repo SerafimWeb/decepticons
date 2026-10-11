@@ -69,3 +69,30 @@ Legenda de custo: **P** = pequeno (só dado + regra + desenho, como o sônico), 
 - O **empurrão** vale na simulação do servidor e do jogo offline; o **jogador que leva o empurrão online** o vê pela correção suave do servidor (a previsão do cliente não conhece o empurrão), então ele "desliza" alguns centímetros
   depois do tiro, não no mesmo quadro.
 - O **empurrão ainda não é a reação a tiros comuns** (ordem P69): só a onda sônica empurra.
+
+## 7. Tipos de encaixe: braço, ombro, costas, peito e cabeça (resposta à ordem P84, 11/10)
+
+> *"E como fica a diferença, se temos que diferenciar: armas para braços / armas para ombros / armas para costas (tipo lança-mísseis podem ficar nas costas ou ombros) / armas de peitoral? Os slots padrão nos mechs é geralmente isso: as armas ficam ou nos braços, ombros, cabeça do robô, etc."*
+
+São **três perguntas separadas**. O jogo já responde uma e meia; esta seção diz como as três se combinam e o que falta.
+
+1. **Onde a arma fica no corpo: o tipo de encaixe** (braço, ombro, costas, peito, cabeça). Cada **chassi** diz que encaixes tem; cada **arma** diz em quais tipos cabe (um lança-mísseis cabe em ombro e em costas; um canhão de trilho, só em braço).
+2. **De que tamanho ela pode ser: a classe** (leve, média, pesada, `ARSENAL.md` § "Classes de arma"). Cada encaixe aceita **até** uma classe: a cabeça, só leve; o peito, até média; ombro, costas e braço, até pesada. Um robô gigante enxerga as pesadas dos Mechs como leves, então o mesmo encaixe dele aceita o que para um Mech seria pesado.
+3. **Em que botão ela atira: o gatilho.** Hoje há **dois botões** (1 principal, 2 apoio), e é o que decide a leitura do jogo: o **botão 1** é a arma de mão; o **botão 2** é o **apoio**, que pode estar no **ombro ou nas costas** (o mesmo trabalho em dois lugares: um robô tem um ou o outro, ou os dois atirando juntos a mesma arma). **Peito e cabeça são "sistemas"** (feixe, marcador, sensor): não cabem em dois botões sem apertar o jogador, e pedem um **terceiro gatilho**.
+
+| Tipo | Quem tem hoje | Aceita até | Atira no | Armas que cabem hoje | Ideias (§ 4) |
+|---|---|---|---|---|---|
+| **Braço** (mão) | todos (o Lancer só tem a direita, a esquerda é escudo) | pesada | botão 1 na direita, botão 2 na esquerda (no Marauder as duas mãos são botão 1) | plasma, blaster, escopeta, trilho, EMP, arco, gelo, automático, rotatória, lança-chamas, canhão pesado, foguetes e chuva (os dois só na esquerda), motosserra | — |
+| **Ombro** | só o **Marauder** | pesada | botão 2 (as duas bocas juntas) | foguetes, chuva de mísseis, **canhão sônico** | míssil teleguiado, arpão, drone |
+| **Costas** | ninguém (a chuva de mísseis é *desenhada* nas costas, mas atira da mão esquerda) | pesada | botão 2, alternativa ao ombro | — | minas, propulsor, gerador de reparo, fumaça |
+| **Peito** | ninguém | média | terceiro gatilho (a decidir) | — | feixe térmico, projetor de escudo |
+| **Cabeça** | ninguém | leve | terceiro gatilho (a decidir) | — | marcador de alvo, laser de ponto, sensor |
+
+**Como um robô novo se declara** (o que o Comandante traz do Tripo3D vira dado assim): os encaixes que tem, a classe máxima de cada um, de onde cada tiro nasce (`muzzles`) e qual botão atira em cada grupo (`triggers`, `combat/mounts.ts`). Hoje isso está espalhado entre `ARM_SLOTS` (listas escritas à mão), `MOUNTS` (quatro bocas fixas: duas mãos e dois ombros) e o rig importado (`shoulderPods`). **O contrato que junta tudo (cada arma declara os tipos de encaixe onde cabe; cada chassi declara os seus encaixes e a classe máxima; um teste confere que as listas de hoje obedecem) é o próximo PR (`claude/tipos-de-encaixe`), sem mudar o jogo.**
+
+**O que existe e o que não:** braço e ombro **existem** (e o ombro só no Marauder). **Costas, peito e cabeça não existem como encaixe**: criar um pede (a) um tipo novo em `MOUNTS` com a parte do corpo de que depende (`MOUNT_PART`), (b) a boca de cada robô, (c) o desenho no rig, (d) o **evento de tiro da rede** (hoje o encaixe cabe em 2 bits: 4 encaixes, e já estão usados; passar a 3 bits exige subir o protocolo), e (e) o terceiro gatilho para peito e cabeça (tecla e botão de toque, a decidir).
+
+**Decisões que são do Comandante (nada disto trava o resto):**
+- **Peito e cabeça num terceiro botão?** Proposta: uma tecla de "sistema" (ex.: F) e um botão de toque, para o que não é arma de combate direto (feixe, marcador).
+- **Ombro e costas são o mesmo botão 2** (um ou outro, ou os dois juntos) ou duas armas diferentes? Proposta: o mesmo botão e a mesma arma, para não pedir mais um botão.
+- **Quais robôs ganham ombros primeiro?** Proposta: a **Onça** (pesada, procedural) e, depois, os importados que o Comandante trouxer.

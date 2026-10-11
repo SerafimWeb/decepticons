@@ -627,7 +627,7 @@ export class HangarMenu {
         const l = CHASSIS_LABEL[id];
         const selected = id === spec.chassis;
         const inUse = id === current.chassis;
-        return `<button class="hg-chassis-card${selected ? ' selected' : ''}" type="button" data-chassis="${id}" aria-pressed="${selected}"><svg viewBox="0 0 60 84" aria-hidden="true">${CHASSIS_ICON[id]}</svg><span><small>${l.className}</small><b>${l.title}</b><em>${num(c.weaponCapacity, 0)} t de carga · ${num(c.height, 1)} m${inUse ? ' · EM USO' : ''}</em></span></button>`;
+        return `<button class="hg-chassis-card${selected ? ' selected' : ''}" type="button" data-chassis="${id}" aria-pressed="${selected}"><svg viewBox="0 0 60 84" aria-hidden="true">${CHASSIS_ICON[id]}</svg><span><small>${l.className}</small><b>${l.title}</b><em>${num(c.weaponCapacity, 0)} t de carga · ${num(c.height, 1)} m${hasShoulderSlot(id) ? ' · OMBROS' : ''}${inUse ? ' · EM USO' : ''}</em></span></button>`;
       })
       .join('');
 

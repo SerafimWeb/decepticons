@@ -1,4 +1,5 @@
 import { ChargeTimer } from '../combat/ChargeTimer';
+import { WaveRings } from '../fx/WaveRings';
 import type { WeaponStats } from '../combat/weapons';
 import * as THREE from 'three';
 import type { MountId } from '../combat/mounts';
@@ -37,6 +38,7 @@ const BLUEPRINT_BY_CHASSIS: Partial<Record<ChassisId, MechBlueprint>> = {
 
 const _arm = new THREE.Vector3();
 const _v = new THREE.Vector3();
+const _d = new THREE.Vector3();
 /** Alvo do teste de disparo: à direita e atrás do pedestal. */
 const TARGET = new THREE.Vector3(15, 0, -9);
 const TARGET_H = 6;
@@ -273,6 +275,8 @@ export class HangarScene {
   private practiceHits = 0;
   private practiceAccuracy = 0;
   private readonly shotsPool: Shot[] = [];
+  /** A onda sônica do teste de disparo: os mesmos anéis do jogo, na cena do galpão. */
+  readonly waveRings = new WaveRings();
   private readonly flashes: Flash[] = [];
   private test: { data: TestFire; mounts: readonly MountId[]; t: number; next: number; aimFrom: number; aimTo: number } | null = null;
   /** 0 = câmera do Hangar, 1 = câmera aberta do teste (mistura suave entre as duas). */
@@ -384,6 +388,7 @@ export class HangarScene {
       p.position.y = (TARGET_H + 2.2) / 2;
       s.add(p);
     }
+    s.add(this.waveRings.mesh);
     const shotMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xbff6ff).multiplyScalar(3) });
     for (let i = 0; i < SHOTS_POOL; i++) {
       const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.6, 6), shotMat.clone());
@@ -754,6 +759,13 @@ export class HangarScene {
       this.flash(from, 0.7);
       return;
     }
+    // A onda sônica não é projétil: os anéis saem da boca em direção ao alvo e se abrem no cone (o mesmo desenho do jogo).
+    if (w.wave) {
+      _d.set(TARGET.x, TARGET_H, TARGET.z).sub(from);
+      this.waveRings.spawn(from, _d, w);
+      this.flash(from, 0.5);
+      return;
+    }
     const shot = this.shotsPool.find((s) => s.t >= s.dur);
     if (!shot) return;
     shot.from.copy(from);
@@ -806,6 +818,7 @@ export class HangarScene {
   /** Por quadro, com o Hangar aberto. */
   update(dt: number): void {
     this.time += dt;
+    this.waveRings.update(dt);
     this.sinceDrag += dt;
     const test = this.test;
     if (this.practiceActive) {

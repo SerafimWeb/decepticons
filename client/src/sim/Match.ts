@@ -129,6 +129,8 @@ export class Match {
   private readonly fx: ParticleSystem;
   /** Saiu uma onda sônica (o servidor a transforma em evento de tiro para os outros jogadores desenharem). */
   onWave?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
+  /** Só o cliente liga: solta os anéis que distorcem o ar (`fx/WaveRings`). O servidor não desenha nada. */
+  onWaveFx?: (origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats) => void;
   /** O anel de fogo (módulo de escudo `fire`): o que cada pulso faz em volta do dono (`combat/FireRing.ts`). */
   readonly fireRing: FireRing;
   /** Quem o anel de cada lado queima e quem só esquenta; montado uma vez (G4). */
@@ -457,6 +459,7 @@ export class Match {
   /** Só o desenho da onda (o outro jogador a vê pelo evento de tiro, sem regra). */
   drawWave(origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
     drawWave(this.fx, origin, dir, w);
+    this.onWaveFx?.(origin, dir, w);
   }
 
   private waveAt(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, target: MechBase): void {
