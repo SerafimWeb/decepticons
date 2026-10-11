@@ -304,10 +304,12 @@ describe('chuva de mísseis no Hangar', () => {
     expect(armOptions('left', 'onca')).toContain('barrage');
     expect(armOptions('right', 'onca')).not.toContain('barrage');
     // A rotatória gira o cano no gatilho principal: só na mão direita (e na esquerda do Marauder, que também está nele), nunca no secundário.
-    for (const id of ['vector09', 'colossus01', 'onca', 'arara'] as const) {
+    // O Colossus (tamanho 3) não a leva: é uma arma média, e o gigante só carrega as pesadas dos Mechs (`weaponClass.test.ts`).
+    for (const id of ['vector09', 'onca', 'arara'] as const) {
       expect(armOptions('right', id), id).toContain('rotary');
       expect(armOptions('left', id), id).not.toContain('rotary');
     }
+    expect(armOptions('right', 'colossus01')).not.toContain('rotary');
     expect(armOptions('left', 'marauder')).toContain('rotary');
     expect(armOptions('right', 'lancerL1')).not.toContain('rotary'); // a arma do Lancer é a da malha dele
     expect(validateLoadout({ ...chuva(0), right: { id: 'barrage', tier: 0 }, left: null })).toMatchObject({ ok: false, error: 'encaixe' });
@@ -378,7 +380,7 @@ describe('lança-chamas no Hangar', () => {
   });
 
   it('o texto do link vai e volta, e o Loadout traz o lança-chamas na mão principal; no Vector-09 a montagem é recusada', () => {
-    const spec: LoadoutSpec = { v: 1, chassis: 'colossus01', right: { id: 'flamer', tier: 0 }, left: { id: 'rockets', tier: 0 } };
+    const spec: LoadoutSpec = { v: 1, chassis: 'colossus01', right: { id: 'flamer', tier: 0 }, left: { id: 'barrage', tier: 0 } };
     expect(parseLoadoutKey(loadoutKey(spec))).toEqual(spec);
     const c = validateLoadout(spec);
     expect(c.ok && c.loadout.primary.id).toBe('flamer');
@@ -386,9 +388,9 @@ describe('lança-chamas no Hangar', () => {
   });
 
   it('pesa 3,5 t no nível I e entra na conta da carga do chassi', () => {
-    const c = validateLoadout({ v: 1, chassis: 'colossus01', right: { id: 'flamer', tier: 0 }, left: { id: 'rockets', tier: 0 } });
+    const c = validateLoadout({ v: 1, chassis: 'colossus01', right: { id: 'flamer', tier: 0 }, left: { id: 'barrage', tier: 0 } });
     expect(c.ok).toBe(true);
-    expect(c.ok && c.mass).toBe(weapon('flamer').mass + weapon('rockets').mass);
+    expect(c.ok && c.mass).toBe(weapon('flamer').mass + weapon('barrage').mass);
   });
 });
 
@@ -403,14 +405,15 @@ describe('armas de aço no Hangar (canhão pesado e canhão automático)', () =>
     for (const c of ['vector09', 'arara', 'genesis01', 'quadraV2'] as const) expect(armOptions('left', c), c).not.toContain('cannon');
   });
 
-  it('o canhão automático (3,5 t) vai em todo engate de energia, nas duas mãos (o Andróide, só com blaster e serra, não)', () => {
-    for (const c of ['vector09', 'arara', 'colossus01', 'onca', 'genesis01', 'lancerL1', 'lr7lBastion', 'quadraV2', 'marauder'] as const) {
+  it('o canhão automático (3,5 t) vai em todo engate de energia dos Mechs, nas duas mãos (o Andróide, só com blaster e serra, não; o Colossus, gigante, só leva as pesadas)', () => {
+    for (const c of ['vector09', 'arara', 'onca', 'genesis01', 'lancerL1', 'lr7lBastion', 'quadraV2', 'marauder'] as const) {
       expect(armOptions('right', c), c).toContain('autocannon');
     }
-    for (const c of ['vector09', 'arara', 'colossus01', 'onca', 'genesis01', 'lr7lBastion', 'quadraV2', 'marauder'] as const) {
+    for (const c of ['vector09', 'arara', 'onca', 'genesis01', 'lr7lBastion', 'quadraV2', 'marauder'] as const) {
       expect(armOptions('left', c), c).toContain('autocannon');
     }
     expect(armOptions('right', 'android')).not.toContain('autocannon');
+    for (const slot of ['right', 'left'] as const) expect(armOptions(slot, 'colossus01')).not.toContain('autocannon');
   });
 
   it('a esquerda dos pesados ganha o canhão, mas o lança-chamas continua só no gatilho principal', () => {
@@ -421,9 +424,9 @@ describe('armas de aço no Hangar (canhão pesado e canhão automático)', () =>
   });
 
   it('o texto do link vai e volta e o Loadout traz o canhão pesado na mão principal e o automático na secundária', () => {
-    const spec: LoadoutSpec = { v: 1, chassis: 'colossus01', right: { id: 'cannon', tier: 1 }, left: { id: 'autocannon', tier: 0 } };
-    expect(loadoutKey(spec)).toBe('v1.colossus01.cannon-1.autocannon-0');
-    expect(parseLoadoutKey('v1.colossus01.cannon-1.autocannon-0')).toEqual(spec);
+    const spec: LoadoutSpec = { v: 1, chassis: 'onca', right: { id: 'cannon', tier: 1 }, left: { id: 'autocannon', tier: 0 } };
+    expect(loadoutKey(spec)).toBe('v1.onca.cannon-1.autocannon-0');
+    expect(parseLoadoutKey('v1.onca.cannon-1.autocannon-0')).toEqual(spec);
     const c = validateLoadout(spec);
     expect(c.ok && c.loadout.primary).toBe(weapon('cannon', 1));
     expect(c.ok && c.loadout.secondary).toBe(weapon('autocannon', 0));
@@ -582,7 +585,7 @@ describe('anel de fogo no Hangar (módulo `fire`)', () => {
   });
 
   it('o anel convive com o canhão pesado e o escudo físico num pesado (a carga do Colossus é 24 t)', () => {
-    const colossus: LoadoutSpec = { v: 2, chassis: 'colossus01', right: { id: 'cannon', tier: 0 }, left: { id: 'autocannon', tier: 0 }, shoulders: null, module: 'fire' };
-    expect(validateLoadout(colossus)).toMatchObject({ ok: true, mass: 6 + 3.5 + 3 });
+    const colossus: LoadoutSpec = { v: 2, chassis: 'colossus01', right: { id: 'cannon', tier: 0 }, left: { id: 'barrage', tier: 0 }, shoulders: null, module: 'fire' };
+    expect(validateLoadout(colossus)).toMatchObject({ ok: true, mass: 6 + 5 + 3 });
   });
 });

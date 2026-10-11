@@ -1,4 +1,5 @@
 import { SHOULDER_TRIGGERS } from '../combat/mounts';
+import { fitsSize, type RobotSize } from '../combat/weaponClass';
 import { weapon, type WeaponId } from '../combat/weapons';
 import type { MechStats } from './MechBase';
 
@@ -119,7 +120,7 @@ export const PILOT_ANDROID_STATS: MechStats = {
 };
 
 /**
- * Arara-B1: chassi leve e ágil de escala 1, batedor — primeiro modelo da **Arara Foundry** (Manaus, ver
+ * Arara-B1: chassi leve e ágil, batedor (um Mech de tamanho 2, o mais leve deles; "escala 1" é o andróide) — primeiro modelo da **Arara Foundry** (Manaus, ver
  * `.decepticons/VISAO.md` § fabricantes). Pernas longas, pouca blindagem, dash curto e rápido: sente-se
  * frágil de propósito — vence pela mobilidade, cai fácil se ficar parado. Usa o blueprint visual próprio
  * (`LIGHT_MECH_BLUEPRINT`, já existia, nunca tinha sido ligado a um chassi pilotável).
@@ -198,6 +199,17 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
   demolishOnDash: false,
   weaponCapacity: 24,
   maxModuleHealth: { torso: 1200, head: 260, leftArm: 380, rightArm: 380, leftLeg: 450, rightLeg: 450 },
+};
+
+/**
+ * O Colossus que o jogador escolhe no Hangar (P82, 11/10): o corpo do chefe, com o armamento de fábrica do tamanho dele.
+ * Num gigante (tamanho 3) as armas pesadas dos Mechs comuns são as leves (`combat/weaponClass.ts`), e só elas cabem nos encaixes
+ * dele (`ARM_SLOTS`): canhão pesado na mão principal e chuva de mísseis na outra. **O chefe da missão segue com plasma e foguetes**
+ * (`COLOSSUS_BOSS_STATS` intacto): trocar a arma do encontro mexe no equilíbrio dele, e isso fica para quando o dono pedir.
+ */
+const COLOSSUS_PLAYER_STATS: MechStats = {
+  ...COLOSSUS_BOSS_STATS,
+  loadout: { primary: weapon('cannon'), secondary: weapon('barrage') },
 };
 
 /**
@@ -295,7 +307,7 @@ export const MARAUDER_STATS: MechStats = {
  * Chassis que o jogador pode pilotar (o andróide rebelde e o técnico são só das IAs).
  * **Colossus-01 (dono, 29/09: "quero poder escolher o colossus pra ver como é jogar com ele"):** entrou como
  * chassi solo, pilotado por 1 jogador só, com todas as armas — a mesma máquina que já existe como boss
- * (`COLOSSUS_BOSS_STATS`), sem números novos. **Não balanceado contra os bots**: 1200 de torso e 24 t de
+ * (`COLOSSUS_BOSS_STATS`), sem números novos (só o armamento de fábrica, `COLOSSUS_PLAYER_STATS`). **Não balanceado contra os bots**: 1200 de torso e 24 t de
  * carga são os do encontro; jogar com ele contra Mechs normais é claramente mais forte, de propósito, para o
  * dono sentir a escala antes de qualquer ajuste. O Mech de tripulação (piloto + artilheiros nas armas
  * direcionais, pedido na mesma mensagem) é a próxima etapa — este PR entrega só o solo.
@@ -303,7 +315,7 @@ export const MARAUDER_STATS: MechStats = {
 export const CHASSIS = {
   vector09: VECTOR09_STATS,
   android: PILOT_ANDROID_STATS,
-  colossus01: COLOSSUS_BOSS_STATS,
+  colossus01: COLOSSUS_PLAYER_STATS,
   arara: ARARA_B1_STATS,
   onca: ONCA_B2_STATS,
   genesis01: GENESIS01_STATS,
@@ -332,6 +344,24 @@ export const CHASSIS_PAPEL: Readonly<Record<ChassisId, string>> = {
 };
 
 /**
+ * O tamanho de cada robô (`RobotSize`, a "escala" do `GAME_DESIGN.md`): 1 andróide, **2 Mechs (o padrão do jogo)**, 3 e 4 gigantes.
+ * É o que decide como o chassi vê as classes de arma (`combat/weaponClass.ts`): num gigante as pesadas dos Mechs são as leves.
+ * `Record` de propósito: chassi novo que não declara o tamanho não compila. Ninguém é de tamanho 4 ainda.
+ */
+export const CHASSIS_SIZE: Readonly<Record<ChassisId, RobotSize>> = {
+  android: 1,
+  vector09: 2,
+  arara: 2,
+  onca: 2,
+  genesis01: 2,
+  lancerL1: 2,
+  lr7lBastion: 2,
+  quadraV2: 2,
+  marauder: 2,
+  colossus01: 3,
+};
+
+/**
  * O que cada encaixe aceita em cada chassi: o Hangar só oferece e só valida estas armas. `shoulders` só existe nos
  * chassis com lançadores nos ombros (`SHOULDER_TRIGGERS`); nesses, o braço esquerdo leva uma segunda arma do botão
  * principal e o secundário sai dos ombros.
@@ -350,10 +380,12 @@ const PRIMARY_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rotary'];
 const HEAVY_PRIMARY_ARMS: readonly WeaponId[] = [...PRIMARY_ARMS, 'flamer', 'cannon'];
 /** O canhão pesado também vai no braço esquerdo dos pesados (atira no botão 2, como qualquer arma de energia); o lança-chamas não (o fluxo é do gatilho principal). */
 const HEAVY_SUPPORT_ARMS: readonly WeaponId[] = [...SUPPORT_ARMS, 'cannon'];
+/** Só as armas que o tamanho do robô sabe carregar (`fitsSize`): num gigante, as pesadas dos Mechs; no tamanho 2, tudo. */
+const fitSize = (list: readonly WeaponId[], size: RobotSize): readonly WeaponId[] => list.filter((id) => fitsSize(id, size));
 export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
   vector09: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   android: { right: ['blaster'], left: ['chainsaw'] },
-  colossus01: { right: HEAVY_PRIMARY_ARMS, left: HEAVY_SUPPORT_ARMS },
+  colossus01: { right: fitSize(HEAVY_PRIMARY_ARMS, CHASSIS_SIZE.colossus01), left: fitSize(HEAVY_SUPPORT_ARMS, CHASSIS_SIZE.colossus01) },
   arara: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   onca: { right: [...HEAVY_PRIMARY_ARMS, 'rockets'], left: HEAVY_SUPPORT_ARMS },
   genesis01: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },

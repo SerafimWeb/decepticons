@@ -27,7 +27,7 @@ Só há **dois botões** (1 e 2): uma arma por botão por lado. Variar as armas 
 
 ## 3. O contrato de uma arma de botão 2 (o que tocar)
 
-1. **Dado:** `WeaponId` e entrada em `BASE` (`combat/weapons.ts`); comportamento novo = campo opcional e tipado (`wave`, `flame`, `barrage`), nunca `if (id === …)`.
+1. **Dado:** `WeaponId`, entrada em `BASE` (`combat/weapons.ts`) e em `WEAPON_FIT` (`combat/weaponClass.ts`: classe leve/média/pesada e o tamanho de robô, P82); comportamento novo = campo opcional e tipado (`wave`, `flame`, `barrage`), nunca `if (id === …)`.
 2. **Regra de tiro:** `combat/Armament.ts` (ramo do gatilho secundário) chama um método do `ShotSink`; o jogador (`PlayerController`) e o servidor (`NetPilot`) implementam, e **quem aplica a regra é a partida**
    (`Match.waveCone`, `flameCone`): mesma regra offline e no servidor (G14).
 3. **Encaixe:** a arma entra em `ARM_SLOTS[chassi].shoulders` (ou `left`); a carga conta por encaixe (dois ombros pesam o dobro).
