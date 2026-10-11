@@ -4,6 +4,7 @@ import { StatusSet } from '../combat/StatusEffects';
 import type { MechBase } from '../entities/MechBase';
 import type { BurstOptions } from './ParticleSystem';
 import { StatusVisuals } from './StatusVisuals';
+import { SHAPE } from './particleShapes';
 
 interface Chamada {
   at: THREE.Vector3;
@@ -86,6 +87,28 @@ describe('partículas do estado no corpo do inimigo', () => {
     const estrelas = chamadas.at(-1)!;
     expect(estrelas.o.color.r).toBeGreaterThan(estrelas.o.color.b);
     expect(estrelas.at.y).toBe(5); // a cabeça
+  });
+
+  it('cada estado tem a sua forma: flocos e nuvem no gelo, língua de fogo e nuvem no fogo, raio no choque, estrela no atordoamento', () => {
+    const formas = (s: StatusSet) => {
+      const { chamadas, visuals, mech, pulso } = palco();
+      pulso();
+      visuals.update(mech(s));
+      return new Set(chamadas.map((c) => c.o.shape));
+    };
+    expect(formas(congelado())).toEqual(new Set([SHAPE.puff, SHAPE.flake]));
+    const gelado = new StatusSet();
+    gelado.stacks = 2;
+    expect(formas(gelado)).toEqual(new Set([SHAPE.flake]));
+    const fogo = new StatusSet();
+    fogo.burnUp();
+    expect(formas(fogo)).toEqual(new Set([SHAPE.flame, SHAPE.puff]));
+    const choque = new StatusSet();
+    choque.shockUp(false);
+    expect(formas(choque)).toEqual(new Set([SHAPE.bolt]));
+    const atordoado = new StatusSet();
+    atordoado.shockUp(true);
+    expect(formas(atordoado).has(SHAPE.star)).toBe(true);
   });
 
   it('o orçamento é por pulso: no máximo 12 unidades, e no pior caso 5 partículas cada', () => {
