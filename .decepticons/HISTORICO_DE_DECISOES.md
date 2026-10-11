@@ -1,3 +1,13 @@
+## [2026-10-11] O nome da capa passa de SINGULARIA a AVARIA (P79, Claude)
+
+**Ordem do Comandante:** "onde estiver SINGULARIA, pode mudar para AVARIA, que é o nome que vamos usar por enquanto. Avaria tem mais a ver e nome mais bacana de ler. Singularia não ficou bom!"
+
+- **Mudou:** só o `<h1>` da capa (`client/index.html`). Era o único uso no código. O escopo continua o da decisão de 07/10: **só o título da capa**; o resto é CYBERMECH até o Comandante decidir a troca geral
+  (que pede migração do `localStorage` e redirecionamento das URLs).
+- **Aviso honesto (não é recusa):** AVARIA é uma palavra comum do português, então a marca é mais difícil de registrar (INPI) e de achar como domínio e nas lojas do que um nome inventado; "avaria" também aparece no
+  jogo como palavra de dano (reparo, estados). Não bloqueia o teste de capa; fica para a busca de marca do Comandante.
+- **Quem decidiu:** o Comandante; Claude executou.
+
 ## [2026-10-11] Escopo do dado (só as nossas IAs) e vozes por ElevenLabs (Qwen, P75)
 
 **Decisão do Comandante:** "nao vamos armazenar nem capturar nenhum dado que possa dar problema lgpd. queremos treinar
