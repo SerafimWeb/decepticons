@@ -210,6 +210,8 @@ export function batchRigMeshes(root: THREE.Object3D, hullMaterials: readonly THR
   };
   material.customProgramCacheKey = () => 'cybermech-articulated-batch-v2';
   material.userData.setHitFlash = (value: number) => flash.value.setRGB(value * 1.4, value * 0.35, value * 0.2);
+  /** Cor inteira somada à luz própria do casco: o flash de dano e a cor do estado (gelo, chamas, choque; `entities/statusTint.ts`). */
+  material.userData.setTint = (r: number, g: number, b: number) => flash.value.setRGB(r, g, b);
   material.userData.setDash = (active: boolean) => { dash.value = active ? 7 : 1; };
   material.userData.setHeat = (value: number) => { heat.value = value; };
 
