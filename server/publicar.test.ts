@@ -20,6 +20,8 @@ interface Cenario {
   ci?: string;
   estado?: string;
   mergeou?: boolean;
+  /** Em qual chamada de `gh pr merge` o merge de fato sai (o GitHub às vezes só aceita na 2ª). */
+  mergeNaTentativa?: number;
   apagarFalha?: boolean;
 }
 
@@ -28,6 +30,7 @@ function palco(c: Cenario = {}) {
   const chamadas: string[] = [];
   const log: string[] = [];
   let mergeChamado = false;
+  let mergesChamados = 0;
   const git = (args: string[]): RespostaComando => {
     const a = args.join(' ');
     chamadas.push(`git ${a}`);
@@ -49,9 +52,10 @@ function palco(c: Cenario = {}) {
     if (a.startsWith('pr view') && a.includes('state,mergeStateStatus')) return ok(JSON.stringify({ state: 'OPEN', mergeStateStatus: estado }));
     if (a.startsWith('pr merge')) {
       mergeChamado = true;
+      mergesChamados++;
       return ok();
     }
-    if (a.startsWith('pr view') && a.includes('state,mergeCommit')) return ok(JSON.stringify({ state: mergeChamado && mergeou ? 'MERGED' : 'OPEN', mergeCommit: { oid: 'abcdef1234567' } }));
+    if (a.startsWith('pr view') && a.includes('state,mergeCommit')) return ok(JSON.stringify({ state: mergeChamado && mergeou && mergesChamados >= (c.mergeNaTentativa ?? 1) ? 'MERGED' : 'OPEN', mergeCommit: { oid: 'abcdef1234567' } }));
     if (a.startsWith('repo view')) return ok('SerafimWeb/decepticons\n');
     if (a.startsWith('api -X DELETE')) return apagarFalha ? erro('403') : ok();
     if (a.startsWith('run list')) return ok(JSON.stringify([{ status: 'in_progress', conclusion: '', workflowName: 'CI' }]));
@@ -170,6 +174,24 @@ describe('publicar: o que ele recusa', () => {
     expect(r.ok).toBe(false);
     expect(r.motivo).toContain('DIRTY');
     expect(p.sem().some((c) => c.startsWith('gh pr merge') || c.startsWith('gh api -X'))).toBe(false);
+  });
+
+  it('o GitHub aceita o merge só na 2ª tentativa (11/10, #231): tenta de novo, espera entre as tentativas e só então apaga o branch', async () => {
+    const p = palco({ mergeNaTentativa: 2 });
+    const r = await publicar(p.ops, OPC);
+    expect(r.ok).toBe(true);
+    expect(p.sem().filter((c) => c.startsWith('gh pr merge'))).toHaveLength(2);
+    expect(p.chamadas.filter((c) => c === 'dormir').length).toBeGreaterThanOrEqual(1);
+    expect(p.log.some((l) => l.includes('tentando de novo'))).toBe(true);
+    expect(p.sem().some((c) => c.startsWith('gh api -X DELETE'))).toBe(true);
+  });
+
+  it('merge que NUNCA sai: tenta 4 vezes, falha, preserva o branch e não apaga nada', async () => {
+    const p = palco({ mergeou: false });
+    const r = await publicar(p.ops, OPC);
+    expect(r.ok).toBe(false);
+    expect(p.sem().filter((c) => c.startsWith('gh pr merge'))).toHaveLength(4);
+    expect(p.sem().some((c) => c.startsWith('gh api -X DELETE'))).toBe(false);
   });
 
   it('merge que NÃO aconteceu (o erro de 10/10): não apaga o branch remoto', async () => {
