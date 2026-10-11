@@ -60,6 +60,8 @@ export const GLOW = {
   hostilePlasma: new THREE.Color(4.0, 0.4, 0.4),
   friendlyArc: new THREE.Color(1.2, 3.2, 4.0),
   hostileArc: new THREE.Color(3.6, 0.8, 4.0),
+  friendlyIce: new THREE.Color(2.6, 3.9, 4.2),
+  hostileIce: new THREE.Color(3.4, 2.6, 4.2),
   spark: new THREE.Color(1.4, 3.2, 1.6),
   core: new THREE.Color(2.8, 3.2, 2.8),
   playerMuzzle: new THREE.Color(1.2, 3.4, 1.6),

@@ -43,8 +43,8 @@ describe('Hangar: contrato da montagem', () => {
   });
 
   it('engates de energia compartilham armas; lançadores ainda exigem o encaixe correto', () => {
-    expect(armOptions('right')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'rotary']);
-    expect(armOptions('left')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'rockets', 'barrage']);
+    expect(armOptions('right')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo', 'rotary']);
+    expect(armOptions('left')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo', 'rockets', 'barrage']);
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, left: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: true });
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: true });
@@ -230,7 +230,7 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   });
 
   it('as mãos aceitam blaster ou plasma; foguete na mão e blaster no ombro são recusados; plasma duplo só sem os ombros', () => {
-    expect(armOptions('right', 'marauder')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'rotary']);
+    expect(armOptions('right', 'marauder')).toEqual(['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo', 'rotary']);
     expect(armOptions('left', 'marauder')).toEqual(armOptions('right', 'marauder'));
     expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage']);
     expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
@@ -363,6 +363,31 @@ describe('metralhadora rotatória no Hangar', () => {
     expect(c.ok && c.loadout.offhand?.id).toBe('rotary');
     const key = loadoutKey(marauder);
     expect(parseLoadoutKey(key)).toEqual(marauder);
+  });
+});
+
+describe('arma de gelo no Hangar', () => {
+  const gelo = (tier: Tier, left: LoadoutSpec['left'] = { id: 'rockets', tier: 0 }): LoadoutSpec => ({ v: 1, chassis: 'vector09', right: { id: 'cryo', tier }, left });
+
+  it('o texto do link vai e volta, e o Loadout traz o gelo na mão principal e os foguetes no secundário', () => {
+    const spec = gelo(0);
+    expect(loadoutKey(spec)).toBe('v1.vector09.cryo-0.rockets-0');
+    expect(parseLoadoutKey('v1.vector09.cryo-0.rockets-0')).toEqual(spec);
+    const c = validateLoadout(spec);
+    expect(c.ok && c.loadout.primary).toBe(weapon('cryo'));
+    expect(c.ok && c.loadout.secondary).toBe(weapon('rockets'));
+  });
+
+  it('é de energia: vai nas duas mãos (a esquerda atira como o plasma, no botão secundário) e nas duas do Marauder; a massa é a do nível', () => {
+    const naEsquerda: LoadoutSpec = { v: 1, chassis: 'vector09', right: { id: 'plasma', tier: 0 }, left: { id: 'cryo', tier: 0 } };
+    const c = validateLoadout(naEsquerda);
+    expect(c).toMatchObject({ ok: true, mass: 6 }); // 3 do plasma + 3 do gelo
+    expect(c.ok && c.loadout.secondary).toBe(weapon('cryo'));
+    const marauder: LoadoutSpec = { v: 1, chassis: 'marauder', right: { id: 'cryo', tier: 1 }, left: { id: 'cryo', tier: 1 }, shoulders: null };
+    const m = validateLoadout(marauder);
+    expect(m.ok && m.loadout.primary.id).toBe('cryo');
+    expect(m.ok && m.loadout.offhand?.id).toBe('cryo');
+    expect(parseLoadoutKey(loadoutKey(marauder))).toEqual(marauder);
   });
 });
 
