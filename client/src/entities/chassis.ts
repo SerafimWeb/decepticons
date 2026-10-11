@@ -342,21 +342,23 @@ export interface ArmSlots {
   shoulders?: readonly WeaponId[];
 }
 /** Engate de energia compartilhado; massa/nível ainda limitam cada montagem. */
-const ENERGY_ARMS: readonly WeaponId[] = ['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo'];
+const ENERGY_ARMS: readonly WeaponId[] = ['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo', 'autocannon'];
 const SUPPORT_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rockets', 'barrage'];
 /** Armas do gatilho principal, mão direita (e a esquerda nos chassis de duas mãos no gatilho): a rotatória gira o cano e só existe aí. */
 const PRIMARY_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rotary'];
-/** O lança-chamas só nos pesados (dono, 09/10; `ARMAS_ELEMENTAIS.md`): Colossus, Onça, Bastion e Marauder. */
-const HEAVY_PRIMARY_ARMS: readonly WeaponId[] = [...PRIMARY_ARMS, 'flamer'];
+/** O lança-chamas e o canhão pesado (6 t) só nos pesados (dono, 09/10 e 11/10; `ARMAS_ELEMENTAIS.md`): Colossus, Onça, Bastion e Marauder. */
+const HEAVY_PRIMARY_ARMS: readonly WeaponId[] = [...PRIMARY_ARMS, 'flamer', 'cannon'];
+/** O canhão pesado também vai no braço esquerdo dos pesados (atira no botão 2, como qualquer arma de energia); o lança-chamas não (o fluxo é do gatilho principal). */
+const HEAVY_SUPPORT_ARMS: readonly WeaponId[] = [...SUPPORT_ARMS, 'cannon'];
 export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
   vector09: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   android: { right: ['blaster'], left: ['chainsaw'] },
-  colossus01: { right: HEAVY_PRIMARY_ARMS, left: SUPPORT_ARMS },
+  colossus01: { right: HEAVY_PRIMARY_ARMS, left: HEAVY_SUPPORT_ARMS },
   arara: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
-  onca: { right: [...HEAVY_PRIMARY_ARMS, 'rockets'], left: SUPPORT_ARMS },
+  onca: { right: [...HEAVY_PRIMARY_ARMS, 'rockets'], left: HEAVY_SUPPORT_ARMS },
   genesis01: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   lancerL1: { right: ENERGY_ARMS, left: [] },
-  lr7lBastion: { right: HEAVY_PRIMARY_ARMS, left: SUPPORT_ARMS },
+  lr7lBastion: { right: HEAVY_PRIMARY_ARMS, left: HEAVY_SUPPORT_ARMS },
   quadraV2: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   marauder: { right: HEAVY_PRIMARY_ARMS, left: HEAVY_PRIMARY_ARMS, shoulders: ['rockets', 'barrage'] },
 };
