@@ -1,3 +1,8 @@
+# PEDIDOS DO DONO — Registro de Atendimento
+
+| Id | Pedido | Quem | Status | Entrega / Detalhes |
+|---|---|---|---|---|
+| **P33** | Tela de criar conta e entrar (LoginPanel em `client/src/ui/LoginPanel.ts`, abas Entrar/Criar, validação em tempo real, estado de carregando/erro/logado, sem botões lado a lado, captura em `.decepticons/arte/login-panel.png`) | **Gemini** | ✅ **CONCLUÍDO** | `client/src/ui/LoginPanel.ts`, `client/src/styles.css`, `client/src/ui/LoginPanel.test.ts` (8 testes verdes). Captura: `.decepticons/arte/login-panel.png`. |
 # PEDIDOS DO DONO — o registro de tudo que foi pedido, e em que pé está
 
 > Criado em 10/10/2026 (Claude), depois de uma auditoria das 177 mensagens do dono em 10 conversas (23/09 a 10/10) cruzadas com
