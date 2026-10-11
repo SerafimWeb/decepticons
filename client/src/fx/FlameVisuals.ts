@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { MechBase } from '../entities/MechBase';
 import type { BurstOptions, ParticleSystem } from './ParticleSystem';
+import { SHAPE } from './particleShapes';
 
 /**
  * O fluxo do lança-chamas, desenhado a partir da bandeira `status.flaming` do dono: o mesmo código serve ao jogador local, ao bot e ao
@@ -8,9 +9,10 @@ import type { BurstOptions, ParticleSystem } from './ParticleSystem';
  * sobe, com uma fumaça escura atrás. **30 Hz**, ~150 partículas por segundo por lança-chamas aceso, no pool que já existe (G5): o alcance
  * visual é o do cone de dano (14 m). Zero draw call novo.
  */
-const FLAME: BurstOptions = { count: 4, color: new THREE.Color(1.9, 0.78, 0.12), speed: 20, life: 0.62, size: 1.2, expansion: 1.1, spread: 0.16, gravity: -1.5 };
-const CORE: BurstOptions = { count: 1, color: new THREE.Color(1.8, 1.5, 0.7), speed: 17, life: 0.3, size: 0.8, expansion: 0.4, spread: 0.06, gravity: -0.5 };
-const SMOKE: BurstOptions = { count: 1, color: new THREE.Color(0.24, 0.25, 0.25), speed: 9, life: 1.1, size: 1.8, expansion: 1.4, spread: 0.3, gravity: -2 };
+// Línguas de fogo (a ponta para cima, crescendo), um miolo claro, brasas que saem na frente e uma fumaça escura atrás.
+const FLAME: BurstOptions = { count: 4, color: new THREE.Color(1.9, 0.78, 0.12), speed: 20, life: 0.62, size: 1.7, expansion: 1.3, spread: 0.16, gravity: -1.5, shape: SHAPE.flame };
+const CORE: BurstOptions = { count: 1, color: new THREE.Color(1.8, 1.5, 0.7), speed: 17, life: 0.3, size: 1.1, expansion: 0.4, spread: 0.06, gravity: -0.5, shape: SHAPE.flame };
+const SMOKE: BurstOptions = { count: 1, color: new THREE.Color(0.24, 0.25, 0.25), speed: 9, life: 1.1, size: 2, expansion: 1.4, spread: 0.3, gravity: -2, shape: SHAPE.puff };
 
 const _origin = new THREE.Vector3();
 const _dir = new THREE.Vector3();

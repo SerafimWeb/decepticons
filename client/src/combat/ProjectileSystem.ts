@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLOW } from '../core/palette';
 import type { PhysicsHit, PhysicsWorld } from '../physics/PhysicsWorld';
 import type { ParticleSystem } from '../fx/ParticleSystem';
+import { ICE_TRAIL, ICE_TRAIL_EVERY, IMPACT_FX } from '../fx/impactFx';
 import { buildStreakGeometry, buildStreakMaterial, growingLength, STREAK_HEAD_WIDTH, streakLength } from '../fx/ShotStreak';
 import { hitDamage, weapon, type WeaponStats } from './weapons';
 
@@ -22,9 +23,6 @@ interface Projectile {
   traveled: number;
   owner?: RAPIER.Collider;
 }
-
-const SPARK_COLOR = GLOW.spark;
-const CORE_COLOR = GLOW.core;
 
 const _dir = new THREE.Vector3();
 const _hitAt = new THREE.Vector3();
@@ -156,9 +154,8 @@ export class ProjectileSystem {
         _hitAt.copy(hit.point).addScaledVector(_hitNormal, 0.05);
         this.onHit?.(hit, _dir, hitDamage(p.weapon, p.traveled + hit.distance), p.owner, p.weapon, p.traveled + hit.distance);
 
-        // Dono, 11/10: os tiros geram luz demais e atrapalham a visão. Eram 36 faíscas de 1,4 e 10 clarões de 2,2: uma nuvem verde em cima do alvo.
-        this.particles.burst(_hitAt, _hitNormal, { count: 14, color: SPARK_COLOR, speed: 24, life: 0.35, size: 0.9, expansion: -0.35, spread: 0.9 });
-        this.particles.burst(_hitAt, _hitNormal, { count: 3, color: CORE_COLOR, speed: 5, life: 0.18, size: 1.5, expansion: 0.5, gravity: 0 });
+        // O impacto é da arma (`fx/impactFx.ts`): faíscas verdes, raios azuis, flocos de gelo, anéis de EMP ou faíscas de metal.
+        for (const o of IMPACT_FX[p.weapon.id]) this.particles.burst(_hitAt, _hitNormal, o);
         this.trailEnd(p, _hitAt);
         this.kill(p);
         continue;
@@ -167,6 +164,10 @@ export class ProjectileSystem {
       p.prev.copy(p.pos);
       p.pos.addScaledVector(_dir, step);
       this.trailEnd(p, p.pos);
+      // O tiro de gelo deixa um floco girando a cada 1,6 m do caminho.
+      if (p.weapon.tracer === 'ice' && Math.floor((p.traveled + step) / ICE_TRAIL_EVERY) !== Math.floor(p.traveled / ICE_TRAIL_EVERY)) {
+        this.particles.burst(p.pos, _dir, ICE_TRAIL);
+      }
       p.traveled += step;
       p.life -= dt;
       if (p.life <= 0) this.kill(p);
