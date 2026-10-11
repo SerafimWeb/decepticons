@@ -1,5 +1,25 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Gelo mais curto e frio, fogo mais forte — Claude, 11/10 (PR `claude/fogo-e-gelo`)
+
+**Ordem do Comandante (P72):** "o gelo está indo muito longe, e o fogo está muito fraco e curto; o rastro do gelo soltasse frio, partículas menores, pra dar mais a sensação de gelo frio".
+**Entrou com este PR** (só número e desenho, sem mudança de rede: o protocolo continua 12):
+
+- **Gelo (`cryo`)**: alcance **cheio até 20 m e fim aos 55 m** (eram 45 e 110 m). O rastro agora é uma **bruma de frio**: fagulhas de gelo minúsculas e pálidas que caem e um vapor
+  azulado que sobe, a cada metro do caminho, e só um floco **pequeno** a cada 3,5 m (antes era um floco grande a cada 1,6 m, que parecia pétala). Tudo abaixo de 1,2 de brilho.
+- **Lança-chamas (`flamer`)**: **10 de dano por pulso (eram 6)**, **20 m (eram 14)**, cone de **34° (eram 25°)**, dano cheio até 9 m. Sozinho derruba um torso em **7,5 / 6,5 / 5,9 s**
+  (eram 13,3 / 11,9 / 10,9 s; o plasma, 5,7 s). `STATUS.burnDps` de 4 para **6** (queimar dói mais).
+- **Fogo que se vê**: o fluxo do lança-chamas chega aos 20 m, mais largo e gordo, com miolo claro mais longo e a **boca acesa**; o fogo **no corpo do inimigo** tem línguas maiores, **brasas
+  que sobem** e fumaça mais gorda.
+- **Equilíbrio na bancada** (Vector-09): dois lança-chamas juntos, mais de 3,7 s; com o canhão pesado ou os foguetes, mais de 2,75 s (a meta é 2,5 s); o calor continua o freio (ferve em ~4,8 s).
+- **Custo de CPU**: o fluxo do lança-chamas passa de 180 para **270 partículas por segundo** por lança-chamas aceso; o rastro do gelo é de ~180 partículas por tiro (um tiro a cada 0,6 s) e o
+  fogo no corpo, de 12 × 11 × 10 Hz = 1320 por segundo no pior caso (abaixo da metade do pool de 3000). Nada no servidor (partículas vazias).
+- **Testes** atualizados (números do gelo e do lança-chamas, rastro, fluxo, fogo no corpo); mutações no fim deste arquivo se couberem.
+
+**Próxima sessão começa com a P73 (anel de fogo)** em `claude/anel-de-fogo`: módulo de escudo que solta um círculo de fogo ao redor do Mech por alguns segundos, queimando tudo em volta e
+esquentando todos (inclusive quem o solta), com o combo "congelar e depois soltar o anel" (o gelo derrete e dá um estouro de vapor). Entra no sistema do escudo de energia (tecla, energia, HUD,
+Hangar e rede já existem); **sobe o protocolo para 13**.
+
 ## Armas de aço: canhão pesado e canhão automático — Claude, 11/10 (PR `claude/armas-de-aco`, protocolo 12)
 
 **Ordem do Comandante (P70):** "quero um canhão grande de um tiro só, e também armas de tiros menores e sequenciais de metal", porque "todas as armas parecem de luz".

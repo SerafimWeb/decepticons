@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { ICE_TRAIL_EVERY, IMPACT_FX } from '../fx/impactFx';
+import { ICE_MIST_EVERY, ICE_TRAIL_EVERY, IMPACT_FX } from '../fx/impactFx';
 import type { BurstOptions } from '../fx/ParticleSystem';
 import { SHAPE } from '../fx/particleShapes';
 import { ProjectileSystem } from './ProjectileSystem';
@@ -45,22 +45,33 @@ describe('o que cada tiro faz onde bate (impacto por família, dentro do Project
   });
 });
 
-describe('o rastro de flocos do tiro de gelo', () => {
-  it('voando sem bater, o gelo deixa um floco a cada 1,6 m (e o plasma, nenhum)', () => {
+describe('o rastro de frio do tiro de gelo', () => {
+  it('voando sem bater, o gelo deixa uma bruma a cada metro e um floco pequeno a cada 3,5 m, até o alcance de 55 m (e o plasma, nenhum)', () => {
     const gelo = palco(false);
-    voa(gelo.system, 'cryo', 60); // 1 s a 70 m/s = 70 m
+    voa(gelo.system, 'cryo', 60); // 1 s: o gelo some aos 55 m (alcance máximo)
+    const alcance = weapon('cryo').maxRange;
     const flocos = gelo.rajadas.filter((o) => o.shape === SHAPE.flake);
-    expect(flocos.length).toBe(Math.floor(70 / ICE_TRAIL_EVERY));
-    expect(gelo.rajadas.length).toBe(flocos.length); // só o rastro: sem impacto nenhum
+    const fagulhas = gelo.rajadas.filter((o) => o.shape === SHAPE.dot);
+    const vapor = gelo.rajadas.filter((o) => o.shape === SHAPE.puff);
+    expect(flocos.length).toBe(Math.floor(alcance / ICE_TRAIL_EVERY));
+    // O tiro anda 1,17 m por tick (70 m/s a 60 Hz): uma lufada por tick que cruza um metro, então uma por tick de voo (48), nunca mais que uma por metro.
+    const ticksDeVoo = Math.ceil(alcance / (weapon('cryo').speed / 60));
+    expect(fagulhas.length).toBe(ticksDeVoo);
+    expect(fagulhas.length).toBeLessThanOrEqual(Math.floor(alcance / ICE_MIST_EVERY));
+    expect(vapor.length).toBe(fagulhas.length);
+    expect(gelo.rajadas.length).toBe(flocos.length + fagulhas.length + vapor.length); // só o rastro: sem impacto nenhum
 
     const plasma = palco(false);
     voa(plasma.system, 'plasma', 60);
     expect(plasma.rajadas).toHaveLength(0);
   });
 
-  it('o rastro gira (os flocos giram, para não parecerem pontos de neve parados)', () => {
+  it('os flocos do rastro giram (para não parecerem pontos de neve parados) e o resto da bruma é miúdo', () => {
     const gelo = palco(false);
     voa(gelo.system, 'cryo', 20);
-    expect(gelo.rajadas.every((o) => (o.spin ?? 0) > 0)).toBe(true);
+    const flocos = gelo.rajadas.filter((o) => o.shape === SHAPE.flake);
+    expect(flocos.length).toBeGreaterThan(0);
+    expect(flocos.every((o) => (o.spin ?? 0) > 0)).toBe(true);
+    for (const o of gelo.rajadas.filter((x) => x.shape !== SHAPE.flake)) expect(o.size!).toBeLessThanOrEqual(1.6);
   });
 });
