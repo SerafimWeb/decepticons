@@ -3,7 +3,36 @@
 > Pedido do dono, 10/10/2026 (P54 de `ORDENS_DO_COMANDO.md`): *"sinto falta de um painel admin completo, onde eu possa gerenciar tudo do
 > jogo em poucas telas, de forma inteligente e estratégica, para configurar desde uma campanha, como os bots adversários,
 > configuração de cada um, apelidos, pilotos, módulos, armas etc."* Este documento é o **plano**, escrito antes de qualquer tela, para
-> os agentes trabalharem em paralelo contra contratos (AGENTS.md, regra 5). **Estado: só plano; nada deste painel existe ainda.**
+> os agentes trabalharem em paralelo contra contratos (AGENTS.md, regra 5). **Estado (11/10): o console de comando (seção 0) existe e é a casa
+> do painel; as telas que pedem dado novo (ficha de cada bot, campanha, servidor, câmeras) continuam só no plano.**
+
+## 0. O console de comando: a casa do painel (11/10, P83 a P86)
+
+Pedido do Comandante (11/10): "criar nosso painel admin usando essas referências [duas imagens de uma sala de comando com monitores], pra servir
+com todos os botões e configurações em um só espaço"; "use minhas imagens apenas como ideia de referência, faça a sua melhorada"; "o painel de
+controle vai ser avançado ao ponto de eu, pelo servidor, poder assistir as câmeras em diferentes partidas simultaneamente… chamar a /mesa
+além do hangar, cenários, missões, pilotos… tudo reunido nesse painel". As **respostas do Comandante às perguntas da seção 5** saíram dessa conversa
+(ver lá). **O que existe, no PR `claude/console-comando`:**
+
+| Monitor | O que mostra | O que abre / faz | Estado |
+|---|---|---|---|
+| **TEATRO DE OPERAÇÕES** | mapa-múndi tático (Brasil no centro), as missões, rotas da sede, ficha com coordenadas, modos e ameaça | **IMPLANTAR** leva ao mapa (Arena ou Bunker); zoom BRASIL/MUNDO (Z) | REAL (2 de 5 missões jogáveis; locais a confirmar) |
+| **RADAR TÁTICO** | planta do mapa aberto, você (com cone de visão), aliados e IAs, zonas de cura e resfriamento | só leitura, 1 Hz | REAL offline; **online só mostra você** |
+| **SEU MECH** | esquema das 6 partes com a vida de cada uma, vida, velocidade, carga, armas e módulo | **HANGAR** (tecla H) | REAL |
+| **PILOTOS** | quem está na partida (Mechs com personalidade, andróides, técnico, chefe, aliados) e a ameaça de 1 a 5 | **AJUSTAR** abre Configurações > Jogo (contagem, personalidade, nomes) | REAL (ficha de cada bot: AUSENTE) |
+| **CARREIRA** | nível, créditos e missões diárias | resgatar recompensa | REAL |
+| **REDE** | estado do servidor e dos pilotos online | **JOGAR ONLINE** (tecla O) | REAL |
+| **CONFIGURAÇÕES** | atalhos para Controles e Gráficos e som | abre a aba certa | REAL |
+| **COMANDO** (só no modo Comandante) | Potências, Mesa de vídeo, Sala de controle, Oficina | abre cada uma; Câmeras ao vivo, Ficha de cada bot, Campanha e Servidor aparecem **"em construção"** (R13) | PARCIAL |
+| **A mesa de operação** | o modo (Deathmatch, Sobrevivência, Bandeira) e o **botão verde** | **Enter** põe em combate | REAL |
+
+**Modo Comandante:** `?comandante=1` (ou `?admin=1`) liga e o navegador lembra; `=0`, ou o selo "MODO COMANDANTE ✕", desliga. **Não é segurança:** só
+mostra monitores que apontam para telas que já existiam (nenhum muda servidor ou dado de ninguém). O que pedir proteção de verdade (servidor, câmeras) entra com **token no
+servidor**, nunca por este interruptor.
+
+**Custo:** zero no laço do jogo (60 Hz). Com o console à vista: o radar redesenha a 1 Hz, o mapa só ao mudar de tamanho ou de zoom (um caminho e um `fill`
+por camada, < 1 ms), animações só de `transform` e `opacity` (compositor), exceto o tracejado das rotas (4 caminhos SVG). Escondido o console, nada roda.
+**Limite conhecido:** o desenho 3D da arena continua rodando por trás do console (opaco); estrangulá-lo é tarefa própria, por causa do `Quality` adaptativo (`ESTADO_ATUAL`).
 
 ## 1. O que já existe (não se refaz, se reúne)
 
@@ -24,7 +53,7 @@
 **Conclusão:** metade do painel é **reunir telas que já existem** num lugar só. A outra metade pede **dado novo**: a ficha de cada bot e a
 campanha. Por isso o plano começa nos contratos, não nas telas.
 
-## 2. As cinco telas ("poucas telas")
+## 2. As cinco telas ("poucas telas"): agora, monitores e gavetas do console
 
 1. **Oponentes** (a mais pedida): a lista de bots; cada um com **apelido, piloto, chassi, montagem (a mesma do Hangar), personalidade e dificuldade**.
    Hoje só dá para mudar nome e personalidade.
@@ -67,10 +96,16 @@ o desvio de cada bot sai de dados, **sem `Math.random`** (G1/G2); campanha padr�
 | **E** | Tela **Servidor**: rotas com token (`/admin/*`) e a tela | Claude (rotas), Gemini (tela) | token e decisão do servidor (`ESTADO_ATUAL`) |
 | **F** | Tela **Evolução**: lê o registro de pedidos e o placar | Qwen ou Claude (`scripts/site`) | — |
 | **G** | Tela **Arsenal e chassis** (leitura, depois edição) | Gemini | A |
+| **H** | **Câmeras ao vivo** de várias partidas, pelo servidor (seção 7) | Claude (contrato e servidor), Gemini (mural) | token (E) |
+| **I** | **Mesa de vídeo** dentro do console (hoje, só um link local; seção 7) | Qwen ou Claude | — |
 
 Cada etapa: um PR, `npm run check` verde, captura em `arte/`, linha em `ORDENS_DO_COMANDO.md`. **Nenhuma tela entra antes do contrato dela.**
 
 ## 5. Decisões do dono (têm padrão; se não disser nada, sigo o padrão)
+
+> **Respondidas em 11/10 (P83):** (1) **onde mora:** o console de comando é a **tela de início e de pausa**, não um botão escondido nem uma página à parte; o que é de
+> administração fica no monitor COMANDO, só no modo Comandante ("os dois"). (2) **quem usa:** continua só o dono, no navegador dele, sem conta; o servidor (E e H) pede token.
+> As perguntas 3 a 5 seguem com o padrão.
 
 1. **Onde mora.** Padrão: **dentro do jogo**, num botão "ADMIN" na pausa (abre as abas), sem página separada; só a aba Servidor pede o token. Alternativa: página `/cybermech/admin/` à parte.
 2. **Quem usa.** Padrão: **só o dono**, salvo no navegador dele e compartilhável por link (como `?build=`); sem conta. Alternativa: campanhas salvas na conta (depende do login, P33).
@@ -84,3 +119,23 @@ Cada etapa: um PR, `npm run check` verde, captura em `arte/`, linha em `ORDENS_D
 - **Bots com armas e chassis diferentes** mudam o equilíbrio das ondas (hoje medido com plasma): ondas novas precisam de uma rodada de balanceamento (`combat/balance.ts`).
 - **Servidor com token** é superfície de ataque nova: só leitura e reinício no começo, nada que apague dado; rate limit como as contas.
 - **A máquina é compartilhada**: telas pesadas de editar listas grandes precisam de limite (máx. de bots e de etapas) desde o contrato.
+
+## 7. Câmeras ao vivo e mesa de vídeo (pedido de 11/10, P85) — só plano
+
+**O que o Comandante quer:** pelo console, **assistir às câmeras de várias partidas ao mesmo tempo**, direto do servidor, e chamar a mesa de vídeo para editar.
+
+**Peças que já existem:** o servidor autoritativo com salas (`server/Server.ts`, `ArenaRoom`); o estado a 20 Hz (`shared/net/state.ts`); `GET /status` com a contagem de pilotos por sala; o
+token do dono (`/metricas`); a câmera de espectador do Gemini (`SpectatorCam`: câmeras fixas e seguir um Mech); o `TacticalRadar` do console (2D, barato).
+
+**Desenho (contrato antes de tela, AGENTS.md regra 5):**
+1. **Contrato `OBSERVAR(sala)`** em `shared/net/messages.ts`: o observador entra numa sala **sem ocupar vaga**, **sem aparecer no roster nem no placar** e **sem enviar input**; só com o token de
+   administração. Recebe o mesmo estado que um jogador. Sobe o `PROTOCOL_VERSION`. Teste de servidor real: não ocupa vaga, não move ninguém, recebe o estado, token errado é recusado.
+2. **Mural de radares:** uma grade de N salas, cada uma um `TacticalRadar` pequeno alimentado pelo estado da sala (2D). **Nunca N cenas 3D** (G12: GPU integrada).
+3. **Câmera principal 3D:** a `SpectatorCam`, **só da sala escolhida**; as outras ficam no mural.
+4. **Lista de salas** vinda do `/status` (já conta jogadores), com o selo de quem está jogando agora.
+
+**Custo e limites:** o mesmo download de um jogador por sala observada (≤ 8 KB/s, meta G11); 5 salas ≈ 40 KB/s só para o Comandante. **Zero custo para os jogadores** (o servidor serializa o que já serializa).
+Teto de observadores por token e por sala, e limite de taxa como nas contas, para não virar vetor de carga. **Observar não é gravar:** nada disto guarda dado de jogador (P75: só as nossas IAs).
+
+**Mesa de vídeo (etapa I):** hoje o monitor COMANDO tem um link para `http://127.0.0.1:4199/.tmp/video/editor.html`, a mesa local (`node .tmp/video/servir.mjs`; `FERRAMENTAS.md` §3, G15: ela **não sobe para o
+site**). Próximo passo: o console mostrar se a mesa está no ar (sem `fetch` com erro no console do navegador: o `ServerStatus` já explica por que isso reprova o smoke) e atalhos para as gravações (F9) e a pasta de clipes.

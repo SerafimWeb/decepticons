@@ -127,6 +127,21 @@ try {
     await page.keyboard.press(code);
     if (!(await panelDetailed(false))) fail(`tecla ${code} não fechou o painel de desempenho detalhado`);
   }
+  // Console de comando (P83): o CSS de pé (a grade dos monitores), o mapa do teatro com as missões e um clique no vazio de um
+  // monitor sem começar a partida (a pausa inteira é o botão de jogar; os monitores barram o clique).
+  const cc = await page.evaluate(() => ({
+    grade: getComputedStyle(document.getElementById('overlay')).display,
+    pins: document.querySelectorAll('#mon-teatro .pin').length,
+    classes: document.getElementById('overlay').className,
+  }));
+  if (cc.grade !== 'grid') fail(`console de comando sem estilo (display=${cc.grade}): CSS quebrado em styles.css`);
+  if (cc.pins < 5) fail(`mapa do teatro com ${cc.pins} missões (esperado 5)`);
+  if (/cc-espera/.test(cc.classes)) fail('o console de comando não montou: o #overlay ficou "sem sinal" (cc-espera) com o jogo pronto');
+  if (/cc-carregando/.test(cc.classes)) fail('o botão de jogar ficou apagado (cc-carregando) com o jogo pronto');
+  const monitor = await page.locator('#mon-piloto .mon-screen').boundingBox();
+  if (monitor) await page.mouse.click(monitor.x + monitor.width / 2, monitor.y + monitor.height - 6);
+  await page.waitForTimeout(300);
+  if (!(await page.locator('#overlay').isVisible())) fail('clicar num monitor do console começou a partida (o monitor devia barrar o clique)');
   const hasCanvas = await page.evaluate(() => !!document.querySelector('#app canvas'));
   console.log(`boot    ${bootMs} ms até "clique para jogar" (${DEV ? 'dev server' : 'build'}, headless/SwiftShader)`);
   if (!hasCanvas) fail('canvas WebGL não foi criado');

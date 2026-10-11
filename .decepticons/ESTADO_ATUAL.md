@@ -1,5 +1,40 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Console de comando: a tela de início virou a sala de comando do painel admin — Claude, 11/10 (PR `claude/console-comando`, ordens P83 a P86)
+
+**Ordens do Comandante:** (P83) "criar nosso painel admin usando essas referências, pra servir com todos os botões e configurações em um só espaço", "use minhas imagens apenas como ideia de referência, faça a sua
+melhorada", e **"os dois"**: é a tela de início de todos e o que é de administração aparece só no modo Comandante; (P84) "um mapa do mundo, pra mostrar onde são as missões (cenários) de forma tática e
+gamificada"; (P85) assistir às câmeras de várias partidas pelo servidor, chamar a `/mesa` e reunir hangar, cenários, missões e pilotos num painel só; (P86) "mais qualidade, UX, UI, melhoria gráfica, moderno, vanguardista, elite".
+
+**Como o Comandante vê (depois do merge, o deploy sai sozinho):** `www.selvamkt.com.br/cybermech/jogar/`; com os monitores de administração: `.../jogar/?comandante=1` (o navegador lembra; `?comandante=0` desliga).
+**Teclas:** `Enter` põe em combate, `H` abre o Hangar, `O` entra ou sai do online, `Z` troca o zoom do mapa. Capturas: `.decepticons/arte/console-*-claude.jpg`.
+
+- **O que entrou:** a tela de início e de pausa (o `#overlay`) é uma **sala de comando**: monitores de **teatro de operações** (mapa-múndi tático com as missões, zoom BRASIL e MUNDO, contorno do Brasil, graus nas bordas, rotas da sede,
+  ficha com coordenadas, modos e ameaça, botão IMPLANTAR), **radar tático** (planta do mapa aberto, você com cone de visão, aliados e IAs), **seu Mech** (esquema das 6 partes com a vida de cada uma, barras e armas),
+  **pilotos** (a escalação da partida e a ameaça de 1 a 5), **carreira**, **rede** e **configurações**; embaixo, a **mesa de operação**: o modo (Deathmatch, Sobrevivência, Bandeira) e o **botão verde** (placa listrada, tecla Enter).
+  Cada monitor **abre a tela que já existia** (Hangar, Configurações na aba certa, sala online); nada foi refeito. O **modo Comandante** acende o monitor COMANDO: Potências, **Mesa de vídeo** (link para a mesa local), Sala de controle e Oficina; câmeras
+  ao vivo, ficha de cada bot, campanha e servidor aparecem **"em construção"** (R13).
+- **Acabamento (P86):** as telas acendem em cascata; "sem sinal" até o jogo montar o console; o botão verde fica apagado enquanto carrega e acende pronto; teclas de atalho desenhadas nos botões; transição ao implantar
+  (fade e o som que já existia); radar com rosa dos ventos e cone de visão; **escala tipográfica** (`--k`: laptop 1,0, 1080p 1,2, 1440p 1,5, celular 1,15, lida também pelos textos em canvas); chanfros, cantoneiras e trama nas telas; anel de foco visível; "menos movimento" desliga as animações.
+- **Dados e arquivos:** `ui/CommandConsole.ts` (a montagem, as teclas, os estados), `ui/consoleData.ts` (ficha do Mech, escalação, ameaça, modo Comandante, teclas: sem DOM), `ui/theater.ts` (missões, projeção, coordenadas: sem DOM),
+  `ui/WorldMap.ts` e `ui/TacticalRadar.ts` (canvas), `ui/escala.ts`, `ui/worldMask.ts` e `ui/brasilContorno.ts` (**gerados** por `scripts/mapa-mundi.mjs` do Natural Earth, domínio público; ~11 KB no código; o arquivo de origem de 3 MB fica em `.tmp/mapa-mundi/`).
+  `core/Game.ts` só liga o console por callbacks (G3). O `MapLinks.ts` perdeu a fileira ARENA/BUNKER (a escolha do mapa mora no teatro); `SettingsMenu.open(aba)` abre direto numa aba.
+- **Decisões (Claude, em `HISTORICO_DE_DECISOES.md`):** o console **substitui** o UI-1; os monitores e a mesa **barram o clique** (a pausa inteira era o botão de jogar); o foco que sobrou de um clique do mouse não engole o Enter (só o foco de teclado e os campos de texto
+  seguram as teclas); os atalhos não usam M, B, C, V, Q, E (o jogo os usa com a pausa à vista); **o modo Comandante não é segurança**; **não mexi no laço de desenho** (ver "Falta").
+- **Custo de CPU/GPU:** zero no laço de 60 Hz. Com o console à vista: radar a 1 Hz, mapa só ao mudar de tamanho ou de zoom (< 1 ms), animações de `transform` e `opacity` (o brilho do botão verde é um `opacity`, não uma sombra animada) e o tracejado de 4 rotas SVG; escondido, nada roda. JS do build: 360 KB de 500.
+- **Testes:** 48 novos (`theater.test.ts`, `consoleData.test.ts`, `CommandConsole.test.ts`: o contrato do HTML com os módulos que moram nele); **21 mutações pegas** nas regras puras e 1 no smoke; **o smoke ganhou travas** (CSS de pé, 5 missões no mapa, clique num monitor não começa a partida, console montado e botão aceso com o jogo pronto).
+  Interação conferida em Chrome de verdade: abrir Configurações na aba certa, marcador e IMPLANTAR, zoom, selo do Comandante, Z, H, Enter, Ctrl+Z não age, janela por cima segura as teclas. `npm run check` verde (138 arquivos, 1.213 testes).
+- **Achados enquanto construía (R17):** o `clip-path` dos chanfros cortava o anel de foco (corrigido: anel por dentro); botão com foco do mouse engolia o Enter (corrigido); rótulos de longitude do mapa MUNDO além de 180° (corrigido, com teste); o nome do marcador passava da borda (corrigido, com teste).
+
+**Falta (honesto):** (1) **só foi visto em capturas** de Chrome headless (SwiftShader): fluidez das animações e beleza em GPU real são do Comandante julgar; (2) **o desenho 3D da arena continua rodando por trás do console** (agora opaco): estrangular exige mexer no `frame()`
+e no `Quality` adaptativo (que mede o quadro) e o smoke confere os draws, então é tarefa própria; (3) o **radar online só mostra você**; (4) **quatro dos cinco lugares das missões são propostas** ("local a confirmar"; só Fortaleza vem do `UNIVERSO.md`) e três missões ainda nem existem;
+(5) as etapas A a E do `PAINEL_ADMIN.md` (**ficha de cada bot, campanha, servidor**) e a **H (câmeras ao vivo de várias partidas)** e a **I (mesa dentro do console)** seguem só no plano (§7, com o desenho do contrato `OBSERVAR(sala)`); (6) a Sala de controle e a Oficina só têm link no site (no `npm run dev` somem).
+
+**Para as outras equipes:** **Gemini** (território: `ui/`, `styles.css`, `index.html`): o Comandante pediu isto direto ao Claude, como o UI-1 a UI-5; o seu `LoginPanel` (branch `gemini/tela-login`) precisa de um lugar no console: o monitor **CARREIRA** (`#menu-profile`) ou um selo no topo (`.cc-flags`); juntar a `main` antes. A **P79** (SINGULARIA → AVARIA) agora é o `<h1>` de `.cc-brand` e o `<title>` em `client/index.html`.
+**Codex:** o console é opaco; se for mexer no `frame()` para estrangular o desenho com o console à vista, o `DebugPanel` e o smoke dependem dos `draws`.
+
+**Próxima sessão começa com:** o playtest do Comandante no site (GPU real) e as respostas: **os lugares das missões**, o que entra no monitor COMANDO primeiro. Depois, uma tarefa por PR: `claude/bot-spec` (etapas A e B do `PAINEL_ADMIN.md`: a ficha de cada bot) ou `claude/observar-sala` (contrato das câmeras ao vivo), na ordem que o Comandante escolher.
+
 ## Lança-chamas que sobe de nível e o tiro certo do Marauder — Claude, 11/10 (PR `claude/fogo-longo-e-maos`, protocolo 14)
 
 **Ordem do Comandante (P76):** "o lança-chamas continua muito fraco, muito curto o alcance, deveria ir bem mais longe e poder ser upado no MK II e ir mais longe e com mais pressão"; e "no Marauder

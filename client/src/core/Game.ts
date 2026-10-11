@@ -1,5 +1,7 @@
 import { mapFromSearch } from '../environment/Bunker';
-import { attachMapLinks } from '../ui/MapLinks';
+import { CommandConsole } from '../ui/CommandConsole';
+import { escalacaoDaPartida, fracoesDasPartes } from '../ui/consoleData';
+import { fonteDoRadar } from '../ui/TacticalRadar';
 import { SquadHUD } from '../ui/SquadHUD';
 import { ShieldVisuals } from '../fx/ShieldVisuals';
 import { ShieldHUD } from '../ui/ShieldHUD';
@@ -603,7 +605,7 @@ export class Game {
       },
     });
     new PilotLabels(this.hangar);
-    new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null);
+    new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null, document.getElementById('cc-online-slot'));
     // A linha "SERVIDOR ONLINE · 2 PILOTOS EM COMBATE" na pausa: um GET a cada 20 s, só com a pausa à vista.
     // Só o servidor público do build ou o `&servidor=` do link (o motivo do `defaultServer` ficar fora: ServerStatus.ts).
     new ServerStatus(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, document.getElementById('menu-status'));
@@ -613,8 +615,8 @@ export class Game {
     new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
 
+    // O mapa (Arena ou Bunker) se escolhe no mapa-múndi do console; aqui fica só o modo.
     this.modeSelector.attachTo(document.getElementById('menu-mode'));
-    attachMapLinks(document.getElementById('menu-mode'), mapFromSearch(location.search, !!online, this.gameMode), this.gameMode === 'deathmatch');
     this.modeSelector.onModeChange((mode) => {
       this.telemetry.enviar('modo_trocado');
       this.audio.playUiTransition();
@@ -632,6 +634,23 @@ export class Game {
     };
 
     this.dailyChallenges.attachTo(document.getElementById('menu-profile'));
+
+    // Console de comando (P83): a pausa vira a sala de comando. Os monitores só leem o jogo por estes callbacks (G3).
+    const mapa = mapFromSearch(location.search, !!online, this.gameMode);
+    const allies = (): readonly MechBase[] => this.match.allies?.mechs ?? [];
+    const cmd = new CommandConsole({
+      mapa,
+      modo: this.gameMode,
+      online: !!online,
+      montagem: () => this.hangar.current,
+      partes: () => fracoesDasPartes(this.mech),
+      escalacao: () => escalacaoDaPartida(this.bots, this.match.allies),
+      dificuldade: () => this.settings.value.difficulty,
+      potencias: () => this.power.changes,
+      som: () => this.audio.playUiTransition(),
+      radar: fonteDoRadar(mapa, this.match.arena.halfSize, this.match.arena.occluders, () => this.mech, () => this.bots.mechs, allies),
+    });
+    this.settings.onChange(() => cmd.atualizar());
   }
 
   /**
