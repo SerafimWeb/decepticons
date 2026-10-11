@@ -538,3 +538,26 @@ it('esfera mantém duas armas, conta 4 t e viaja no link sem aceitar sobrecarga'
   expect(parseLoadoutKey(loadoutKey(spec))).toEqual({...spec, shoulders:null});
   expect(validateLoadout({...spec,right:{id:'railgun',tier:2}})).toMatchObject({ok:false,error:'carga'});
 });
+
+describe('anel de fogo no Hangar (módulo `fire`)', () => {
+  it('é um módulo válido: conta 3 t, mantém as duas armas e viaja no link; no Andróide, recusado', () => {
+    const spec: LoadoutSpec = { ...factorySpec('vector09'), v: 2, module: 'fire' };
+    const c = validateLoadout(spec);
+    expect(c).toMatchObject({ ok: true, mass: validateLoadout(factorySpec('vector09')).mass + 3 });
+    expect(c.ok && c.loadout).toMatchObject({ module: 'fire', primary: { id: 'plasma' }, secondary: { id: 'rockets' } });
+    expect(loadoutKey(spec)).toBe('v2.vector09.plasma-0.rockets-0.-.fire');
+    expect(parseLoadoutKey('v2.vector09.plasma-0.rockets-0.-.fire')).toEqual({ ...spec, shoulders: null });
+    expect(validateLoadout({ ...factorySpec('android'), v: 2, module: 'fire' }).ok).toBe(false);
+  });
+
+  it('pesa na carga: o Vector-09 (11 t) com plasma MK III (6 t) e foguetes (4 t) já não leva os 3 t do anel', () => {
+    const cheio: LoadoutSpec = { ...factorySpec('vector09'), v: 2, right: { id: 'plasma', tier: 2 }, left: { id: 'rockets', tier: 0 }, module: 'fire' };
+    expect(validateLoadout(cheio)).toMatchObject({ ok: false, error: 'carga', mass: 13 });
+    expect(validateLoadout({ ...cheio, module: null }).ok).toBe(true); // sem o anel, 10 t cabem
+  });
+
+  it('o anel convive com o canhão pesado e o escudo físico num pesado (a carga do Colossus é 24 t)', () => {
+    const colossus: LoadoutSpec = { v: 2, chassis: 'colossus01', right: { id: 'cannon', tier: 0 }, left: { id: 'autocannon', tier: 0 }, shoulders: null, module: 'fire' };
+    expect(validateLoadout(colossus)).toMatchObject({ ok: true, mass: 6 + 3.5 + 3 });
+  });
+});

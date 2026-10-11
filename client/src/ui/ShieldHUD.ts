@@ -34,7 +34,7 @@ export class ShieldHUD {
     const s = m.energyShield;
     this.root.textContent =
       (this.input.touchMode ? "TOQUE" : keyLabel(key)) +
-      (s.kind === "sphere" ? " · ESFERA " : " · BARREIRA ") +
+      (s.kind === "sphere" ? " · ESFERA " : s.kind === "fire" ? " · ANEL DE FOGO " : " · BARREIRA ") +
       Math.round(s.fraction * 100) +
       "%" +
       (s.active ? " · DESLIGAR" : s.energy < s.stats.minStart ? " · RECARGA" : " · LIGAR");

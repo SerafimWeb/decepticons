@@ -12,7 +12,23 @@ apenas as nossas IAS."; e "eu tenho creditos no elevenlabs pra usar nas vozes se
   cliente (R2). Em `PILOTOS_LLM_E_INTELIGENCIA.md` §3-B e §10 (decisão 6).
 **Custo de CPU:** zero no tick (documento).
 **Quem decidiu:** Comandante (11/10); Qwen (aplicou ao plano e aos documentos companheiros).
+## [2026-10-11] O anel de fogo é um módulo de escudo (P73, Claude)
 
+**Ordem do Comandante:** "o fogo também pode ser um tipo de escudo, que solta um círculo de fogo ao redor do Mech, queimando tudo ao redor durante alguns segundos, e aumentando o calor geral de tudo
+(inclusive do próprio robô); assim podemos fazer combos: congelar [o inimigo] e soltar o anel no meio de uma rushada ou tankada".
+
+**Decisões:**
+1. **É o terceiro `ShieldId` (`fire`), não uma arma nem uma habilidade nova.** O "tipo de escudo" do pedido casou com o gerador que já existe: tecla, energia, HUD, Hangar (módulo extra), rede (a
+   bandeira de escudo ligado e a energia) e peso na carga. Custo: o anel e a barreira/esfera não convivem (é um módulo só); ganho: nenhuma tecla, mensagem de rede ou tela nova.
+2. **Não segura tiro**: o `absorb` devolve o dano inteiro. Quem quer defesa leva a barreira; o anel é ataque de área e de calor.
+3. **O combo foi lido assim: o gelo prende o inimigo dentro do anel; fogo e gelo se anulam, então o anel o derrete, e o derretimento paga** (+40 de dano de uma vez, com o +20% do congelado). Se o Comandante
+   quis dizer outro combo, é só trocar o que o pulso faz com o congelado (`FireRing.burn`).
+4. **O calor vai para todos, inclusive o dono e os aliados** (0,16 por segundo): em 5 s o dono chega a ~0,8 e não ferve sozinho (ferveria aos 6,2 s), mas quem já vinha quente de tiro ferve. O inimigo dentro
+   do anel ferve em ~5,2 s (o anel mais o queimando de 0,03 por segundo): é o que trava o inimigo na rushada. O aliado **só esquenta**, não queima (decisão minha; em aberto).
+5. **A regra é uma só no servidor e no jogo offline** (`Match.ringTick` depois do passo dos Mechs, G14); o cliente online não aplica nada (`damageEnabled` desligado) e só desenha.
+6. **Protocolo 13**: a montagem com o módulo novo entra no JOIN e no roster; sem evento novo (o pulso é só do servidor e o desenho vem do escudo ligado).
+
+**Lição:** o primeiro cálculo de dano (3 por pulso mais o queimando) deu ~90 de dano em 5 s, não "bem mais de 100" como eu escrevi no teste. O teste achou o meu erro de conta, não o código.
 ## [2026-10-11] Pilotos por LLM e a inteligência dos bots como ativo — plano (Qwen, ordem P75)
 
 **Ordem do Comandante:** "tornar nossas IAs mais inteligentes, para poder plugar uma API de LLMs diferentes como pilotos
