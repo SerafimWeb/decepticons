@@ -1,3 +1,16 @@
+## [2026-10-11] "Pedidos do dono" vira ORDENS DO COMANDO; o jogo vai servir de treino para robôs e IAs (Claude)
+
+**Ordem do Comandante (dono):** "esse 'pedidos do dono' achei uma bosta esse termo, deveria ser algo mais militarizado, formato de clãs
+se comunicando". E, sobre a proposta P71: "quero sim que nosso game sirva pra treinamentos de humanoides, IAs, etc."
+
+**Decisões e feito:** (1) `PEDIDOS_DO_DONO.md` vira **`ORDENS_DO_COMANDO.md`**: o dono é o **Comandante**, cada agente é uma **equipe**,
+cada pedido é uma **ordem** e o estado é o **estado da missão** (cumprida, em campo, em operação, aguardando ordem, em reserva). Os
+números P01–P71 ficam (o histórico os cita); `AGENTS.md` (Passo Zero 12 e regra 17), `ROADMAP.md` e `PAINEL_ADMIN.md` apontam para o
+nome novo; nenhum script lia o arquivo. Entradas antigas deste histórico não foram reescritas. (2) Um bloco solto do Gemini no topo do
+arquivo (P33, tela de login feita) foi juntado à linha P33 da seção 2, que ainda dizia "a tela não existe" (R17). (3) **P71 aprovado como
+direção**: o CYBERMECH passa a ser pensado também como campo de treino para robôs e IAs (`DADOS_E_ROBOTICA.md`). Nada construído;
+a etapa D0 (consentimento + gravador de voo) é a próxima, e o Comandante vai mandar o que é o "JEV". Custo no jogo: zero (documentos).
+
 ## [2026-10-10] Fix: codinome interno vazava no painel público via campo `now` da equipe (Gemini)
 
 **Sintoma:** `npm run check` falhava com "sala de controle: o codinome interno aparece na página pública". O campo `role` (situação atual) da entrada Gemini na tabela `## DIVISÃO DE TRABALHO ENTRE AGENTES` do `ESTADO_ATUAL.md` continha o caminho `.decepticons/arte/login-panel.png`. Esse texto ia para o HTML do painel pela template de `teamHtml` em `scripts/painel.mjs`, passando por `inline(now)` sem antes passar por `pub()` (que strip `.decepticons/`). Resultado: o regex `/decepticons/i` do teste `publicPage` encontrava "decepticons" no HTML público.

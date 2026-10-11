@@ -3,7 +3,8 @@
 > Criado em 11/10/2026 (Claude), a partir de uma pergunta do dono: como aproveitar o que acontece na arena para treinar
 > robôs humanoides de verdade, gerar valor (civil ou de defesa) e embutir esse conhecimento no humanoide que ele pretende comprar,
 > e o que é "o JEV".
-> **Estado: proposta. Não é escopo aprovado e nada foi construído.** O dono decide se e quando começa (seção 6).
+> **Estado: direção aprovada pelo Comandante em 11/10** ("quero sim que nosso game sirva pra treinamentos de humanoides, IAs, etc.").
+> Nada construído ainda; a etapa D0 (seção 6) é a próxima. O "JEV" ele vai mandar.
 
 ## 1. O diagnóstico, sem enfeite
 

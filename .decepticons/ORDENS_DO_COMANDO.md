@@ -1,23 +1,22 @@
-# PEDIDOS DO DONO — Registro de Atendimento
+# ORDENS DO COMANDO — canal entre o Comandante e as equipes
 
-| Id | Pedido | Quem | Status | Entrega / Detalhes |
-|---|---|---|---|---|
-| **P33** | Tela de criar conta e entrar (LoginPanel em `client/src/ui/LoginPanel.ts`, abas Entrar/Criar, validação em tempo real, estado de carregando/erro/logado, sem botões lado a lado, captura em `.decepticons/arte/login-panel.png`) | **Gemini** | ✅ **CONCLUÍDO** | `client/src/ui/LoginPanel.ts`, `client/src/styles.css`, `client/src/ui/LoginPanel.test.ts` (8 testes verdes). Captura: `.decepticons/arte/login-panel.png`. |
-# PEDIDOS DO DONO — o registro de tudo que foi pedido, e em que pé está
+> **Toda ordem do Comandante (o dono do projeto) é transmitida aqui, com número, e cada equipe (Claude, Codex, Gemini, Qwen)
+> reporta o estado da missão no mesmo canal.** É a lista que o Comandante lê para saber se alguma ordem se perdeu.
+> Regra para toda equipe (AGENTS.md, regra 17): ordem nova entra aqui **no mesmo dia**, com número, e o estado é atualizado a cada
+> PR que a toca. Ordem que ficou só no chat não chegou às outras equipes.
+>
+> Aberto em 10/10/2026 (Claude) como "Pedidos do dono", depois de uma auditoria das 177 mensagens em 10 conversas (23/09 a 10/10)
+> cruzadas com `ROADMAP.md`, `ESTADO_ATUAL.md`, `STATUS_REAL.md` e `HISTORICO_DE_DECISOES.md`. Renomeado em 11/10 a pedido do
+> Comandante ("algo mais militarizado, formato de clãs se comunicando"). Os números P01–P71 continuam os mesmos: o histórico os cita.
 
-> Criado em 10/10/2026 (Claude), depois de uma auditoria das 177 mensagens do dono em 10 conversas (23/09 a 10/10) cruzadas com
-> `ROADMAP.md`, `ESTADO_ATUAL.md`, `STATUS_REAL.md` e `HISTORICO_DE_DECISOES.md`. **É a lista que o dono lê para saber se algo foi
-> esquecido.** Regra para todo agente (AGENTS.md, regra 17): pedido novo do dono entra aqui **no mesmo dia**, com ID, e o estado é
-> atualizado a cada PR que o toca. O que ficou só no chat não existe para os outros agentes.
+**Estado da missão:** ✅ cumprida · 🟡 em campo (cumprida em parte; o que falta está dito) · 🔧 em operação · ⏸ aguardando ordem
+(registrada, sem data) · 🅿 em reserva (parada de propósito) · ❓ **sem registro até 10/10** (ordem que só estava no chat).
 
-**Legenda:** ✅ feito · 🟡 parcial (o que falta está dito) · 🔧 em andamento · ⏸ parado (registrado, sem data) · 🅿 estacionado de propósito ·
-❓ **sem registro até 10/10** (pedido que só estava no chat).
-
-**Só CYBERMECH.** Pedidos de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) moram nos repositórios deles.
+**Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
 ## 1. Jogo e combate
 
-| ID | Data | Pedido (nas palavras do dono, resumido) | Estado | Onde está / o que falta | Como o dono confere |
+| ID | Data | Ordem (nas palavras do Comandante, resumida) | Estado | Onde está / o que falta | Como o Comandante confere |
 |---|---|---|---|---|---|
 | P01 | 23/09 | Mais capricho nas físicas, sempre com CPU baixa | 🟡 | Regra permanente (G1–G5); destroços e barricadas prontos. "Física caprichada" nunca foi medida | Jogar, painel de desempenho (`'`) |
 | P02 | 23/09 | IA nos inimigos | ✅ | `BotController`; `STATUS_REAL` "Bots inimigos (IA)" | Modo Arena |
@@ -67,19 +66,19 @@
 
 ## 2. Rede, servidor e contas
 
-| ID | Data | Pedido | Estado | Onde está / o que falta | Como o dono confere |
+| ID | Data | Ordem | Estado | Onde está / o que falta | Como o Comandante confere |
 |---|---|---|---|---|---|
 | P28 | 26/09 | Qualquer pessoa clica em online e entra na mesma sala, de qualquer país | 🟡 | Funciona (`Jogo online M4`), mas o servidor é o PC de casa: a entrada levou 59 s com a máquina sem memória (1,4 s quando calma) | Duas abas ou dois aparelhos |
 | P29 | 28/09 | Servidor que reinicia e se atualiza sozinho, com inteligência | ✅ | Parada por arquivo, religar, retomada da verificação cortada (#189–#192, #208) | Log `atualizacao.log` |
 | P30 | 28 e 29/09 | **Gerenciar o servidor pelo site do jogo** (inclusive dormindo ou viajando) | ❓ | Só existe o `/metricas`, que **lê** números e não comanda nada | — |
 | P31 | 26 e 28/09 | **Fluidez "nível Roblox", mapas gigantes, 10× e 100× jogadores** | ❓ | `CAPACIDADE.md`: benchmark local de 10/50/100 clientes; não homologa a internet nem a disponibilidade | — |
 | P32 | 29/09 | Migrar de SQLite para Supabase no futuro | ❓ | Hoje as contas estão em SQLite no servidor | — |
-| P33 | 28/09 | Login e contas | 🔧 | Backend pronto e testado; **a tela de criar conta e entrar não existe; pedido enviado ao Gemini em 10/10** (pedida ao Gemini em 28/09) | — |
+| P33 | 28/09 | Login e contas | ✅ | Backend pronto e testado; a tela de criar conta e entrar foi feita pelo Gemini (`client/src/ui/LoginPanel.ts`: abas Entrar/Criar, validação em tempo real, carregando/erro/logado; 8 testes; captura `arte/login-panel.png`). Ele tinha registrado isso num bloco solto no topo deste arquivo, que veio para cá em 11/10 | Tela de entrar |
 | P34 | 04/10 | Analytics | ✅ | `/metricas/` privada e telemetria | Token em `D:\DECEPTICONS\.tmp\servidor\metricas-token.txt` |
 
 ## 3. Interface, visual e som
 
-| ID | Data | Pedido | Estado | Onde está / o que falta | Como o dono confere |
+| ID | Data | Ordem | Estado | Onde está / o que falta | Como o Comandante confere |
 |---|---|---|---|---|---|
 | P35 | 24/09 | HUD sci-fi, militar, hacker, cyberpunk "das antigas" | ✅ | `STATUS_REAL` HUD | Jogar |
 | P36 | 24/09 | Tela para calibrar o mouse com precisão | 🟡 | Pronta; **"a tela ainda não foi usada no navegador"** | `[ CALIBRAR MOUSE ]` |
@@ -91,7 +90,7 @@
 
 ## 4. Site, vídeo, negócio e universo
 
-| ID | Data | Pedido | Estado | Onde está / o que falta | Como o dono confere |
+| ID | Data | Ordem | Estado | Onde está / o que falta | Como o Comandante confere |
 |---|---|---|---|---|---|
 | P42 | 24 a 29/09 | Landing profissional, nunca dois botões de ação juntos, carrossel de fotos | ✅ | Landing | `/cybermech/` |
 | P43 | 29/09 | Trocar, apagar e reordenar as imagens do site sem código | ⏸ | `ESTADO_ATUAL`, Decisões em aberto | — |
@@ -101,11 +100,11 @@
 | P47 | 23/09 | Modelo de negócio, viralizar, lives | ⏸ | `ROADMAP` #negocio (7 itens abertos) | — |
 | P48 | 26/09 | **Referência DEFILADE** ("conseguiremos chegar nesse nível de detalhe?") | ❓ | Nenhum documento cita o jogo; `REFERENCIA_VISUAL.md` tem MechArena e War Robots | — |
 | P49 | 26 e 29/09 | Universo: Brasil no centro, BRICS, big techs, termos de CTI; fábricas (Arara Foundry, **Vanta, da Faria Lima**, outras) | 🟡 | `UNIVERSO.md`; a Arara Foundry está nos documentos, **a Vanta não** | — |
-| P71 | 11/10 | "como aproveitar os aprendizados, reações e interpretação dos bots para treinar robôs humanoides de verdade? gerar valor real, civil ou militar? embutir no meu robô humanoide? e o JEV? qual o formato para os dados que o jogo vai gerar?" | ⏸ | Respondido no chat; proposta em **`DADOS_E_ROBOTICA.md`** (gravador de voo, bot fantasma, arena aberta, robô real; "JEV" lido como V-JEPA, a confirmar). **Nada construído; não é escopo aprovado** | Ler o documento e decidir a etapa D0 |
+| P71 | 11/10 | "como aproveitar os aprendizados, reações e interpretação dos bots para treinar robôs humanoides de verdade? gerar valor real, civil ou militar? embutir no meu robô humanoide? e o JEV? qual o formato para os dados que o jogo vai gerar?" | ⏸ | Respondido no chat; proposta em **`DADOS_E_ROBOTICA.md`** (gravador de voo, bot fantasma, arena aberta, robô real; "JEV" lido como V-JEPA; o Comandante vai mandar o que é). **Direção aprovada em 11/10:** "quero sim que nosso game sirva pra treinamentos de humanoides, IAs, etc." Nada construído ainda; a etapa D0 (consentimento + gravador de voo) é a próxima | Ler o documento |
 
 ## 5. Processo
 
-| ID | Data | Pedido | Estado | Onde está | 
+| ID | Data | Ordem | Estado | Onde está | 
 |---|---|---|---|---|
 | P50 | 30/09 | Testar direto no site, sem ficar preso em branch | ✅ | AGENTS.md, regras 13 e 14 |
 | P51 | 03/10 | Um agente nunca mexe em outro projeto, pasta ou chat | ✅ | AGENTS.md, regra 12 |
@@ -127,12 +126,12 @@ Atualize a cada fase. Se os números não mexem, o trabalho é cosmético, mesmo
 | Itens "entregues mas **não vistos em partida real**" | 17 | `STATUS_REAL.md` | 0 depois de uma sessão de validação |
 | Bugs de física abertos | 0 (o P09 foi corrigido em 10/10) | `ESTADO_ATUAL` | 0 |
 | Chassis com números distintos | **10 de 10** (10/10; eram 4 de 10) | `entities/chassis.ts`, `ChassisPapeis.test.ts` | 10 de 10, com papéis **sentidos em partida** |
-| Pedidos do dono sem registro (❓) | 6 (P11, P30, P31, P32, P48, P53), mais a Vanta dentro do P49 | este arquivo | 0 |
-| Pedidos do dono parados há mais de 14 dias (⏸) | 1 (P47, de 23/09); os demais são de 29/09 em diante | este arquivo | 0 sem decisão |
+| Ordens sem registro (❓) | 6 (P11, P30, P31, P32, P48, P53), mais a Vanta dentro do P49 | este arquivo | 0 |
+| Ordens aguardando há mais de 14 dias (⏸) | 1 (P47, de 23/09); os demais são de 29/09 em diante | este arquivo | 0 sem decisão |
 | Para onde vai o esforço de código | 48% documentação e site, 22% regras, 7% rede, 4% visual do mundo | `git log --numstat` desde 23/09 | regras + rede acima de 50% |
 | Jogadores simultâneos já vistos sem problema | benchmark local de 10/50/100; na internet, **nenhum teste com gente** | `CAPACIDADE.md` | uma sessão com 5 pessoas |
 
-## 7. Como pedir uma melhoria substancial
+## 7. Como transmitir uma ordem de melhoria substancial
 
 > **Hoje:** o que você vê ou sente. **Quero:** um resultado que eu consiga conferir. **Limite:** CPU, rede ou prazo.
 
