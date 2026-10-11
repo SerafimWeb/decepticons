@@ -1,3 +1,16 @@
+## [2026-10-11] O gelo de um aliado esfria o aliado, e "mesmo lado" vira regra da partida (P78, Claude)
+
+**Ordem do Comandante:** "meu amigo tem a tecnologia do anel de fogo, eu congelo ele pra ele ficar rushando e soltando o anel enquanto eu mando gelo nele pra compensar (numa área de recuperação rápida de energia, ele fica macetando ali)".
+
+**Decisões:**
+1. **Eu tinha lido o combo ao contrário** (gelo no inimigo dentro do anel). O Comandante quis dizer: o gelo **de um amigo no amigo do anel** compensa o calor que o anel dá nele. O derretimento do inimigo congelado (+40) fica como extra, não é o combo.
+2. **O gelo no aliado esfria em vez de congelar** (calor para baixo, fogo apagado, nenhum dano nem estado). O número sai da conta do próprio anel: 0,02 de calor por ponto de dano dá 0,17 por segundo com a arma de gelo, contra 0,16 do anel: **um gelo compensa um anel, sem sobrar** (dois amigos com gelo ou a zona de resfriamento vão além).
+3. **"Mesmo lado" é uma regra da partida, não do combate** (`Match.sameSide`), e o combate a recebe por um gancho opcional. Sem a regra (o servidor de hoje), nenhum comportamento muda. Ordem: times da sala, times do CTF, aliados da Arena offline. **Dois humanos sem time nunca são aliados**: se fossem, o gelo online esfriaria todo adversário.
+4. **Só o gelo lê o lado.** O fogo amigo das outras armas continua como era (um tiro de plasma do jogador ainda pode acertar um aliado; o lança-chamas e o anel já poupam os aliados). Decidir fogo amigo é parte dos times online (P81), não deste PR.
+5. **O que o Comandante quer (jogar com um amigo online) não funciona hoje** e eu não escondi: o servidor é todos contra todos. Registrei a P81 (times na sala) em vez de fingir que o combo está entregue.
+
+**Lição:** quando uma ordem descreve um combo entre dois jogadores, perguntar (ou conferir) **quem faz o quê com quem** antes de implementar: a mesma frase servia para dois combos opostos.
+
 ## [2026-10-11] O nome da capa passa de SINGULARIA a AVARIA (P79, Claude)
 
 **Ordem do Comandante:** "onde estiver SINGULARIA, pode mudar para AVARIA, que é o nome que vamos usar por enquanto. Avaria tem mais a ver e nome mais bacana de ler. Singularia não ficou bom!"

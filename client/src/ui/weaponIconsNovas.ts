@@ -21,5 +21,5 @@ export const WEAPON_HINT_NOVAS: Record<NewWeaponId, string> = {
   flamer:
     'Combustível · fluxo contínuo em cone de 30 m (MK II 39 m, MK III 48 m) · 10 de dano por pulso (50/s) em todos os que estão nele, que ficam Queimando (6/s + calor) · cada nível dá mais alcance, mais pulsos por segundo e mais dano · 6 s de chama, 4 s de recarga · esquenta quem atira · apagado por gelo',
   cryo:
-    'Energia · projétil criogênico de alcance curto (55 m) · aplica Gelado (−15% de velocidade/acúmulo até 3x); 3 acúmulos congelam por 1,5 s (+20% dano); apagado por fogo',
+    'Energia · projétil criogênico de alcance curto (55 m) · aplica Gelado (−15% de velocidade/acúmulo até 3x); 3 acúmulos congelam por 1,5 s (+20% dano); apagado por fogo · num aliado, esfria (tira calor e apaga o fogo, sem dano)',
 };
