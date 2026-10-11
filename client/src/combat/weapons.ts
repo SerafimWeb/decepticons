@@ -127,6 +127,16 @@ export interface WeaponStats {
   inflicts?: StatusInflict;
   /** Só no lança-chamas: o cone e o tanque de combustível (`FuelTank` em `combat/trigger.ts`). */
   flame?: Flame;
+  /**
+   * Quanto o **alcance** cresce a cada nível, em fração do MK I (0,3 = +30% no MK II e +60% no MK III; vale para o alcance ótimo e o máximo). Sem este
+   * campo o alcance é da arma, não do nível. Quem declara: o lança-chamas (dono, 11/10: "tem que poder ser upado no MK II e ir mais longe").
+   */
+  tierRange?: number;
+  /**
+   * Quanto a **cadência** cresce a cada nível, em fração do MK I (0,15 = +15% de tiros por segundo no MK II e +30% no MK III): mais pressão. Sem este
+   * campo a cadência é da arma, não do nível. O calor por segundo cresce junto (mais tiros, e cada um esquenta mais).
+   */
+  tierRate?: number;
 }
 
 /**
@@ -172,9 +182,10 @@ const BASE: Record<WeaponId, WeaponBase> = {
     id: 'flamer', name: 'Lança-chamas', kind: 'energy',
     damage: 10, fireInterval: 0.2, heatPerShot: 0.04,
     magazine: 0, reload: 0, speed: 0,
-    optimalRange: 9, maxRange: 20, minFactor: 0.5,
+    optimalRange: 14, maxRange: 30, minFactor: 0.5,
     blastRadius: 0, mass: 3.5, inflicts: 'burn',
     flame: { halfAngle: 0.3, fuel: 6, reload: 4 },
+    tierRange: 0.3, tierRate: 0.15,
   },
   /**
    * Canhão pesado (dono, 11/10: "quero um canhão grande, um tiro só"). **Um projétil de aço, grande e lento, que bate como um caminhão**: 90 de
@@ -372,9 +383,14 @@ const round = (x: number, step: number) => Math.round(x / step) * step;
 
 function atTier(b: WeaponBase, tier: Tier): WeaponStats {
   const t = TIERS[tier]!;
+  // Arma que declara `tierRange` / `tierRate` ganha alcance e cadência a cada nível; as outras mantêm os do MK I (o teste de arsenal confere).
+  const reach = 1 + (b.tierRange ?? 0) * tier;
+  const rate = 1 + (b.tierRate ?? 0) * tier;
   return Object.freeze({
     ...b,
     tier,
+    ...(b.tierRange ? { optimalRange: round(b.optimalRange * reach, 0.5), maxRange: round(b.maxRange * reach, 0.5) } : {}),
+    ...(b.tierRate ? { fireInterval: round(b.fireInterval / rate, 0.001) } : {}),
     damage: Math.round(b.damage * t.damage),
     heatPerShot: round(b.heatPerShot * t.heat, 0.001),
     reload: round(b.reload * t.heat, 0.01),

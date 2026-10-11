@@ -2,6 +2,7 @@ import { BankAccount } from '../client/src/bank/BankAccount';
 import { decodeBankCode, encodeBankReply } from '../shared/net/bank';
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import { MOUNTS, type MountId } from '../client/src/combat/mounts';
 import type { WeaponStats } from '../client/src/combat/weapons';
 import { DEFAULT_SETTINGS } from '../client/src/core/Settings';
 import { Android } from '../client/src/entities/Android';
@@ -46,6 +47,8 @@ export interface Peer {
   readonly pais?: string;
 }
 
+/** Rascunho da boca de um encaixe (`mountOf`): nada é criado por tiro (G4). */
+const _mount = new THREE.Vector3();
 /** No servidor ninguém vê faísca: as regras chamam o efeito, e ele não faz nada. */
 const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
 /** Ticks entre dois estados mandados (60 Hz / 20 Hz = 3). */
@@ -107,9 +110,9 @@ export class ArenaRoom {
     this.match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: DEFAULT_SETTINGS, debris: false, allies: false });
     // Eventos para os clientes desenharem o que o servidor decidiu: cada tiro (o cliente faz o projétil visual)
     // e cada abate (lista de abates).
-    this.match.projectiles.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
-    this.match.rockets.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
-    this.match.barrage.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
+    this.match.projectiles.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
+    this.match.rockets.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
+    this.match.barrage.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
     this.match.onMechHit = (e) => this.hit(e.mech, e.shooter, e.result.part, e.result.applied);
     this.match.onMechKilled = (dead, _at, killer) => this.kill(dead, killer);
     this.match.onPropBroken = (id) => this.propBroken(id);
@@ -234,18 +237,40 @@ export class ArenaRoom {
     return NO_UNIT;
   }
 
-  private shot(owner: RAPIER.Collider | undefined, dir: THREE.Vector3, w: WeaponStats): void {
+  /**
+   * De qual encaixe do corpo saiu um tiro: o mais perto da origem entre os que o chassi usa nos dois botões. O tiro nasce na boca do encaixe (a mesma conta do
+   * simMuzzle), então a distância é ~0 no encaixe certo e de metros nos outros. O outro jogador desenha o tiro dali (antes: sempre da mão direita).
+   */
+  private mountOf(mech: MechBase, origin: THREE.Vector3): number {
+    const t = mech.triggers;
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < MOUNTS.length; i++) {
+      const m: MountId = MOUNTS[i]!;
+      if (!t.primary.includes(m) && !t.secondary.includes(m)) continue;
+      const d = mech.simMuzzle(_mount, m).distanceToSquared(origin);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  private shot(owner: RAPIER.Collider | undefined, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
     // A rotatória (20 tiros/s) não manda um evento por tiro: a bandeira `fx` de "cano girando" faz os outros jogadores desenharem o fluxo.
     if (w.spin) return;
     const b = this.events;
     if (!owner || b.count >= MAX_EVENTS) return;
     let id = NO_UNIT;
-    for (const u of this.units) if (u.mech.collider === owner) id = u.id;
-    if (id === NO_UNIT) return;
+    let shooter: MechBase | undefined;
+    for (const u of this.units) if (u.mech.collider === owner) { id = u.id; shooter = u.mech; }
+    if (id === NO_UNIT || !shooter) return;
     const e = b.list[b.count++]!;
     e.kind = EVENT.SHOT;
     e.unit = id;
     e.index = netWeaponIndex(w.id);
+    e.other = this.mountOf(shooter, origin);
     e.yaw = Math.atan2(-dir.x, -dir.z);
     e.pitch = Math.asin(Math.max(-1, Math.min(1, dir.y)));
   }

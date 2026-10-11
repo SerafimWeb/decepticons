@@ -10,7 +10,8 @@ import { Match } from '../sim/Match';
 import { Armament, type ShotSink } from './Armament';
 import { drill, timeToKill } from './balance';
 import { FuelTank } from './trigger';
-import { DAMAGE_TYPE, hitDamage, weapon, type WeaponStats } from './weapons';
+import { SHOULDER_TRIGGERS } from './mounts';
+import { DAMAGE_TYPE, hitDamage, weapon, WEAPON_IDS, type WeaponStats } from './weapons';
 import { STATUS } from './StatusEffects';
 
 const V = VECTOR09_STATS;
@@ -29,22 +30,57 @@ describe('lança-chamas: números e equilíbrio', () => {
     expect(([0, 1, 2] as const).map((t) => weapon('flamer', t).damage)).toEqual([10, 12, 14]);
   });
 
-  it('o cone e o tanque são os do pedido (dono, 11/10: "muito fraco e curto"): 20 m, 34° de abertura, 6 s de combustível e 4 s de recarga (e não mudam com o nível)', () => {
-    expect(FLAMER.maxRange).toBe(20);
+  it('o cone e o tanque são os do pedido (dono, 11/10: "muito fraco e curto", e depois "bem mais longe"): 30 m no MK I, 34° de abertura, 6 s de combustível e 4 s de recarga (o tanque e o cone não mudam com o nível)', () => {
+    expect(FLAMER.maxRange).toBe(30);
     expect((FLAMER.flame!.halfAngle * 2 * 180) / Math.PI).toBeCloseTo(34, 0);
     expect(FLAMER.flame!.fuel).toBe(6);
     expect(FLAMER.flame!.reload).toBe(4);
     for (const t of [1, 2] as const) expect(weapon('flamer', t).flame).toEqual(FLAMER.flame);
   });
 
-  it('dá 50 de dano por segundo até 9 m (10 por pulso a 5 pulsos/s) e cai à metade no alcance máximo de 20 m', () => {
+  it('dá 50 de dano por segundo até 14 m (10 por pulso a 5 pulsos/s) e cai à metade no alcance máximo de 30 m', () => {
     expect(FLAMER.damage / FLAMER.fireInterval).toBe(50);
-    expect(FLAMER.optimalRange).toBe(9);
+    expect(FLAMER.optimalRange).toBe(14);
     expect(hitDamage(FLAMER, 3)).toBe(10);
     expect(hitDamage(FLAMER, FLAMER.optimalRange)).toBe(10);
     expect(hitDamage(FLAMER, FLAMER.maxRange)).toBe(Math.round(10 * FLAMER.minFactor));
-    expect(hitDamage(FLAMER, 14)).toBeLessThan(10);
-    expect(hitDamage(FLAMER, 14)).toBeGreaterThan(5);
+    expect(hitDamage(FLAMER, 22)).toBeLessThan(10);
+    expect(hitDamage(FLAMER, 22)).toBeGreaterThan(5);
+  });
+
+  /**
+   * Dono, 11/10: "o lança-chamas continua muito fraco, muito curto o alcance, deveria ir bem mais longe e ainda poder ser upado no MK II e ir mais longe e
+   * com mais pressão". O nível sobe o alcance (+30% por nível) e a cadência (+15% por nível), além do dano (+20% por nível).
+   */
+  it('o nível dá mais alcance e mais pressão: 30 / 39 / 48 m, 5 / 5,75 / 6,5 pulsos por segundo e 10 / 12 / 14 de dano por pulso', () => {
+    const [a, b, c] = ([0, 1, 2] as const).map((t) => weapon('flamer', t));
+    expect([a!.maxRange, b!.maxRange, c!.maxRange]).toEqual([30, 39, 48]);
+    expect([a!.optimalRange, b!.optimalRange, c!.optimalRange]).toEqual([14, 18, 22.5]);
+    const porSegundo = [a!, b!, c!].map((w) => 1 / w.fireInterval);
+    expect(porSegundo[0]).toBeCloseTo(5, 5);
+    expect(porSegundo[1]).toBeCloseTo(5.75, 1);
+    expect(porSegundo[2]).toBeCloseTo(6.5, 1);
+    expect([a!.damage, b!.damage, c!.damage]).toEqual([10, 12, 14]);
+    // Pressão por segundo (dano x pulsos): +38% no MK II e +82% no MK III.
+    const dps = [a!, b!, c!].map((w) => w.damage / w.fireInterval);
+    expect(dps[2]! / dps[0]!).toBeGreaterThan(1.75);
+    // O tanque, o cone e o resto não mudam: o calor por segundo é que sobe junto (mais pulsos, e cada um esquenta mais).
+    expect(b!.flame).toEqual(a!.flame);
+    expect(c!.flame).toEqual(a!.flame);
+    const calor = [a!, b!, c!].map((w) => w.heatPerShot / w.fireInterval);
+    expect(calor[2]!).toBeGreaterThan(calor[0]! * 1.6);
+  });
+
+  it('só o lança-chamas muda de alcance e de cadência com o nível: todas as outras armas mantêm os do MK I', () => {
+    for (const id of WEAPON_IDS) {
+      if (id === 'flamer') continue;
+      const a = weapon(id, 0);
+      for (const t of [1, 2] as const) {
+        expect(weapon(id, t).maxRange, id).toBe(a.maxRange);
+        expect(weapon(id, t).optimalRange, id).toBe(a.optimalRange);
+        expect(weapon(id, t).fireInterval, id).toBe(a.fireInterval);
+      }
+    }
   });
 
   it('o fogo ficou mais forte, mais longo e mais grosso que o primeiro desenho (6 de dano, 14 m, 25°): +67% de dano, +43% de alcance, cone 36% mais aberto', () => {
@@ -54,7 +90,10 @@ describe('lança-chamas: números e equilíbrio', () => {
     expect(STATUS.burnDps).toBeGreaterThanOrEqual(6); // queimar também dói mais (eram 4 por segundo)
   });
 
-  it('em um alvo só é arma de peso médio: sozinha, em nenhum nível derruba um torso em menos de 4,5 s (a meta de todas) nem em mais de 8 s; o valor extra dela é o cone', () => {
+  it('em um alvo só é arma de peso médio: sozinha, em nenhum nível derruba um torso em menos de 4,5 s (a meta de todas) nem em mais de 8 s; o valor extra dela é o cone, e o nível a faz derrubar mais rápido (7,5 / 6,0 / 5,0 s)', () => {
+    const tempos = ([0, 1, 2] as const).map((t) => timeToKill([weapon('flamer', t)], V, TORSO));
+    expect(tempos[1]!).toBeLessThan(tempos[0]!);
+    expect(tempos[2]!).toBeLessThan(tempos[1]!);
     for (const t of [0, 1, 2] as const) {
       const tempo = timeToKill([weapon('flamer', t)], V, TORSO);
       expect(tempo, `MK ${t + 1}`).toBeGreaterThan(4.5);
@@ -65,10 +104,10 @@ describe('lança-chamas: números e equilíbrio', () => {
     expect(timeToKill([FLAMER], V, TORSO)).toBeGreaterThan(timeToKill([weapon('plasma')], V, TORSO));
   });
 
-  it('dois lança-chamas juntos (Marauder) levam mais de 3,5 s, e com o canhão pesado ou os foguetes MK III, mais de 2,5 s: o calor do Mech segura', () => {
+  it('dois lança-chamas juntos (Marauder) levam mais de 3,3 s, e com o canhão pesado ou os foguetes MK III, mais de 2,5 s: o calor do Mech segura', () => {
     for (const a of [0, 1, 2] as const) {
       for (const b of [0, 1, 2] as const) {
-        expect(timeToKill([weapon('flamer', a), weapon('flamer', b)], V, TORSO), `${a}+${b}`).toBeGreaterThan(3.5);
+        expect(timeToKill([weapon('flamer', a), weapon('flamer', b)], V, TORSO), `${a}+${b}`).toBeGreaterThan(3.3);
         expect(timeToKill([weapon('flamer', a), weapon('cannon', b)], V, TORSO), `canhão ${a}+${b}`).toBeGreaterThan(2.5);
         expect(timeToKill([weapon('flamer', a), weapon('rockets', b)], V, TORSO), `foguetes ${a}+${b}`).toBeGreaterThan(2.5);
       }
@@ -172,6 +211,21 @@ describe('o lança-chamas no Armament (a regra de tiro de cada Mech)', () => {
     expect(armament.fuelLevel).toBeGreaterThan(0);
   });
 
+  /** Dono, 11/10: no Marauder "os tiros saíam só pela mão direita". A regra de tiro sempre atirou as duas; o que faltava era desenhar. */
+  it('com lança-chamas nas duas mãos (Marauder), solta pulsos pelas DUAS bocas: a direita e a esquerda', () => {
+    const mech = new Vector09({ loadout: { primary: FLAMER, offhand: FLAMER, secondary: null }, stats: { ...VECTOR09_STATS, triggers: SHOULDER_TRIGGERS } });
+    const armament = new Armament(mech);
+    const pulsos: string[] = [];
+    const sink: ShotSink = { projectile: () => {}, rocket: () => {}, melee: () => {}, flame: (mount) => pulsos.push(mount) };
+    for (let i = 0; i < 60; i++) {
+      mech.vent(10);
+      armament.fixedUpdate(FIXED_DT, true, false, sink);
+    }
+    expect(pulsos.filter((m) => m === 'rightHand').length).toBeGreaterThanOrEqual(4);
+    expect(pulsos.filter((m) => m === 'leftHand').length).toBeGreaterThanOrEqual(4);
+    expect(new Set(pulsos)).toEqual(new Set(['rightHand', 'leftHand']));
+  });
+
   it('soltando o gatilho, para na hora: sem pulsos e a bandeira desliga', () => {
     const { mech, pulsos, run } = palco({ primary: FLAMER });
     run(1, true);
@@ -231,6 +285,44 @@ describe('o lança-chamas no Armament (a regra de tiro de cada Mech)', () => {
   });
 });
 
+describe('o alcance do cone cresce com o nível (Match.flameCone, com física de verdade)', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  async function ate(tier: 0 | 1 | 2, z: number): Promise<boolean> {
+    const physics = await PhysicsWorld.create();
+    const foes = { ...DEFAULT_SETTINGS, enemyMechs: 0, enemyAndroids: 0, technician: false };
+    const match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes, debris: false });
+    const atirador = new Vector09();
+    match.addPlayer(atirador, 'Atirador');
+    atirador.respawn(new THREE.Vector3(0, 0, 60));
+    const alvo = new Vector09();
+    match.addPlayer(alvo, 'Alvo');
+    alvo.respawn(new THREE.Vector3(0, 0, z));
+    physics.step();
+    physics.step();
+    match.flameCone(atirador, new THREE.Vector3(0, 3.3, 59.5), new THREE.Vector3(0, 0, -1), weapon('flamer', tier));
+    return alvo.status.burning;
+  }
+
+  it('um alvo a ~40 m (z = 20) só é pego pelo MK II (39 m) e pelo MK III (48 m), não pelo MK I (30 m)', async () => {
+    expect(await ate(0, 20)).toBe(false);
+    expect(await ate(1, 20)).toBe(true);
+    expect(await ate(2, 20)).toBe(true);
+  });
+
+  it('um alvo a ~47 m (z = 12) só o MK III alcança (48 m); e um a ~55 m (z = 5) nenhum nível alcança', async () => {
+    expect(await ate(1, 12)).toBe(false);
+    expect(await ate(2, 12)).toBe(true);
+    expect(await ate(2, 5)).toBe(false);
+  });
+
+  it('um alvo a ~25 m (z = 35) é pego por todos os níveis', async () => {
+    for (const t of [0, 1, 2] as const) expect(await ate(t, 35), `MK ${t + 1}`).toBe(true);
+  });
+});
+
 describe('o cone de dano (Match.flameCone), com física de verdade', () => {
   beforeAll(async () => {
     await RAPIER.init();
@@ -285,11 +377,11 @@ describe('o cone de dano (Match.flameCone), com física de verdade', () => {
     expect(atirador.status.burning).toBe(false);
   });
 
-  it('o mais longe leva menos (o dano cai com a distância) e o que está além dos 20 m não leva nada', async () => {
+  it('o mais longe leva menos (o dano cai com a distância) e o que está além dos 30 m não leva nada', async () => {
     const { alvo, pulso } = await palco();
     const perto = alvo(0, 20);
-    const longe = alvo(2.2, 12.5); // ~12 m, a ~10° do eixo: dentro do cone
-    const fora = alvo(0, 2); // ~22,5 m da boca: passa dos 20 m de alcance mais o raio do corpo
+    const longe = alvo(1.5, 3); // ~21,5 m da boca, a ~4° do eixo: dentro do cone e do alcance, com o dano já caindo
+    const fora = alvo(0, -8); // ~32,5 m da boca: passa dos 30 m de alcance mais o raio do corpo
     const tira = (m: Vector09) => m.stats.maxModuleHealth.torso + m.stats.maxModuleHealth.head - (m.modules.torso + m.modules.head);
     pulso();
     expect(tira(perto)).toBeGreaterThan(tira(longe));

@@ -6,7 +6,7 @@ import { newNetInput } from '../../../shared/net/input';
 import { newSnapshot, type EventBatch, type RosterEntry, type Snapshot } from '../../../shared/net/messages';
 import type { UnitState } from '../../../shared/net/state';
 import { applySpread, spreadAt, type Spread } from '../combat/spread';
-import type { MountId } from '../combat/mounts';
+import { MOUNTS, type MountId } from '../combat/mounts';
 import { weapon, type WeaponStats } from '../combat/weapons';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import { parseLoadoutKey } from '../hangar/loadout';
@@ -88,24 +88,30 @@ interface Remote {
   build: string;
   /** Já recebeu uma pose (antes disso fica escondido). */
   placed: boolean;
-  /** A rotatória dele (lida da montagem do roster, não do desenho do Mech), ou null. */
-  gun: StreamGun | null;
+  /** As rotatórias dele (lidas da montagem do roster, não do desenho do Mech): uma por mão que leva uma; vazio se não tem. */
+  guns: readonly StreamGun[];
   /** Segundos acumulados para o próximo tiro desenhado da rotatória dele. */
   stream: number;
 }
 
-interface StreamGun {
+export interface StreamGun {
   w: WeaponStats;
   mount: MountId;
 }
 
-/** A rotatória que a montagem leva (mão direita, ou a esquerda dos chassis com duas mãos no gatilho), ou null. */
-function rotaryOf(build: string): StreamGun | null {
+const NO_GUNS: readonly StreamGun[] = [];
+
+/**
+ * As rotatórias que a montagem leva: a da mão direita e a da esquerda **dos chassis com duas mãos no gatilho** (o Marauder pode levar uma em cada: antes só a
+ * primeira era desenhada e o outro jogador via o fluxo sair de uma mão só). Nos outros chassis a rotatória só vai na direita (`ARM_SLOTS`).
+ */
+export function rotariesOf(build: string): readonly StreamGun[] {
   const spec = parseLoadoutKey(build);
-  if (!spec) return null;
-  if (spec.right.id === 'rotary') return { w: weapon('rotary', spec.right.tier), mount: 'rightHand' };
-  if (spec.left?.id === 'rotary') return { w: weapon('rotary', spec.left.tier), mount: 'leftHand' };
-  return null;
+  if (!spec) return NO_GUNS;
+  const guns: StreamGun[] = [];
+  if (spec.right.id === 'rotary') guns.push({ w: weapon('rotary', spec.right.tier), mount: 'rightHand' });
+  if (spec.left?.id === 'rotary') guns.push({ w: weapon('rotary', spec.left.tier), mount: 'leftHand' });
+  return guns.length > 0 ? guns : NO_GUNS;
 }
 
 interface Stored {
@@ -260,11 +266,11 @@ export class OnlineSession implements Pilot {
       m.render(dt, 1);
       // Metralhadora rotatória de outro jogador: não chega um evento por tiro (seriam 20 por segundo); com o cano girando (bandeira do
       // servidor), desenha o fluxo a STREAM_HZ. Só visual: o dano é do servidor.
-      if (r.gun && m.status.spinning && m.alive) {
+      if (r.guns.length > 0 && m.status.spinning && m.alive) {
         r.stream += dt;
         while (r.stream >= 1 / STREAM_HZ) {
           r.stream -= 1 / STREAM_HZ;
-          this.remoteStream(m, r.gun);
+          for (const gun of r.guns) this.remoteStream(m, gun);
         }
       } else r.stream = 0;
     }
@@ -302,7 +308,7 @@ export class OnlineSession implements Pilot {
       mech.spawn(this.o.match.physics, HIDDEN);
       mech.root.visible = false;
       this.o.scene.add(mech.root);
-      this.remotes.set(e.id, { mech, kind: e.kind, build: e.build, placed: false, gun: rotaryOf(e.build), stream: 0 });
+      this.remotes.set(e.id, { mech, kind: e.kind, build: e.build, placed: false, guns: rotariesOf(e.build), stream: 0 });
     }
     for (const id of [...this.remotes.keys()]) if (!present.has(id)) this.removeRemote(id);
     this.status();
@@ -423,7 +429,8 @@ export class OnlineSession implements Pilot {
     const r = this.remotes.get(e.unit);
     const id = weaponFromNet(e.index);
     if (!r || !r.placed || !r.mech.alive || !id || id === 'chainsaw') return;
-    r.mech.simMuzzle(_o, id === 'barrage' ? r.mech.triggers.secondary[0] : 'rightHand');
+    // O servidor diz de qual encaixe o tiro saiu (protocolo 14): a mão esquerda e os ombros do Marauder atiram do lugar deles, não da mão direita.
+    r.mech.simMuzzle(_o, MOUNTS[e.other] ?? 'rightHand');
     _d.set(-Math.sin(e.yaw) * Math.cos(e.pitch), Math.sin(e.pitch), -Math.cos(e.yaw) * Math.cos(e.pitch));
     if (id === 'barrage') {
       // O evento traz a direção, não o ponto: acha onde o raio bate (o servidor fez o mesmo) e joga a chuva ali. Só desenho (dano é do servidor).

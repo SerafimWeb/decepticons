@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import type { MechBase } from '../client/src/entities/MechBase';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/constants';
-import { EVENT, NET_WEAPONS } from '../shared/net/events';
+import { EVENT, EVENT_BYTES, NET_WEAPONS } from '../shared/net/events';
 import { FX_CHILL_MASK, FX_FLAMING, FX_FROZEN, FX_SHOCKED, FX_SPINNING, FX_STUNNED } from '../client/src/combat/StatusEffects';
 import { hitDamage, weapon } from '../client/src/combat/weapons';
 import { netWeaponIndex } from '../client/src/net/adapters';
@@ -328,6 +328,17 @@ function drive(room: ArenaRoom, peer: FakePeer, first: number, ticks: number, o:
   }
 }
 
+/** Os tiros de `me` com o encaixe de onde cada um saiu (posição em `MOUNTS`: 0 mão direita, 1 mão esquerda, 2 ombro direito, 3 ombro esquerdo). */
+function shotMountsOf(peer: FakePeer, me: number): Array<{ index: number; mount: number }> {
+  const batch = newEventBatch();
+  const out: Array<{ index: number; mount: number }> = [];
+  for (const bytes of peer.of(MSG.EVENTS)) {
+    decodeEvents(bytes, batch);
+    for (let i = 0; i < batch.count; i++) if (batch.list[i]!.kind === EVENT.SHOT && batch.list[i]!.unit === me) out.push({ index: batch.list[i]!.index, mount: batch.list[i]!.other });
+  }
+  return out;
+}
+
 function shotsOf(peer: FakePeer, me: number): number[] {
   const batch = newEventBatch();
   const out: number[] = [];
@@ -368,6 +379,46 @@ describe('Marauder online: duas mãos no botão principal e dois lançadores nos
     expect(hits).toHaveLength(2); // a mão esquerda também acerta: a mira converge no alvo
     expect(hits.every((h) => h.amount === hitDamage(weapon('blaster'), 15))).toBe(true);
     room.dispose();
+  });
+
+  it('o evento de tiro diz de qual encaixe saiu: as duas mãos do Marauder atiram da direita (0) e da esquerda (1), e os dois ombros, do direito (2) e do esquerdo (3)', async () => {
+    // Dono, 11/10: "tava usando o marauder e os tiros estavam saindo só pela mão direita": o outro jogador desenhava todo tiro da mão direita.
+    const { room, dan, me, yaw, pitch } = await palco();
+    drive(room, dan, 1, 15, { fire: true, yaw, pitch }); // as duas mãos
+    drive(room, dan, 16, 20, { yaw, pitch });
+    const maos = shotMountsOf(dan, me);
+    expect(maos.map((t) => t.index)).toEqual([netWeaponIndex('blaster'), netWeaponIndex('blaster')]);
+    expect(maos.map((t) => t.mount).sort()).toEqual([0, 1]);
+
+    const ombros = await palco();
+    drive(ombros.room, ombros.dan, 1, 1, { secondary: true, yaw: ombros.yaw, pitch: ombros.pitch });
+    drive(ombros.room, ombros.dan, 2, 20, { yaw: ombros.yaw, pitch: ombros.pitch }); // o estado (e os eventos) saem a 20 Hz
+    const foguetes = shotMountsOf(ombros.dan, ombros.me);
+    expect(foguetes.map((t) => t.index)).toEqual([netWeaponIndex('rockets'), netWeaponIndex('rockets')]);
+    expect(foguetes.map((t) => t.mount).sort()).toEqual([2, 3]);
+    room.dispose();
+    ombros.room.dispose();
+  });
+
+  it('num chassi de uma mão a arma do braço esquerdo (botão 2) também diz o encaixe: o outro jogador a desenha da mão esquerda, não da direita', async () => {
+    const { room, dan, me, yaw, pitch } = await palco('v1.vector09.plasma-0.cryo-0');
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch });
+    drive(room, dan, 2, 20, { yaw, pitch });
+    const tiros = shotMountsOf(dan, me);
+    expect(tiros).toEqual([{ index: netWeaponIndex('cryo'), mount: 1 }]);
+    const direita = await palco('v1.vector09.plasma-0.cryo-0');
+    drive(direita.room, direita.dan, 1, 1, { fire: true, yaw: direita.yaw, pitch: direita.pitch });
+    drive(direita.room, direita.dan, 2, 20, { yaw: direita.yaw, pitch: direita.pitch });
+    expect(shotMountsOf(direita.dan, direita.me)).toEqual([{ index: netWeaponIndex('plasma'), mount: 0 }]);
+    room.dispose();
+    direita.room.dispose();
+  });
+
+  it('o evento de tiro não cresceu: o encaixe cabe nos 2 bits de cima do byte da arma (o catálogo tem folga até 64 armas)', async () => {
+    const { NET_WEAPONS } = await import('../shared/net/events');
+    expect(NET_WEAPONS.length).toBeLessThanOrEqual(64);
+    expect(EVENT_BYTES[EVENT.SHOT]).toBe(7);
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(14); // o cliente do 13 leria o encaixe (bits de cima) como arma inválida
   });
 
   it('o botão secundário solta os DOIS foguetes de ombro de uma vez, gasta um tiro do carregador, e os dois acertam', async () => {
@@ -745,7 +796,7 @@ describe('Anel de fogo online: o servidor aplica o anel, o calor vai para todos 
   });
 
   it('o servidor aceita o anel num chassi comum e o protocolo do módulo novo é o 13 (cliente do 12 é recusado)', async () => {
-    expect(PROTOCOL_VERSION).toBe(13);
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(13);
     const room = await ArenaRoom.create('ANEL');
     const ok = new FakePeer();
     room.receive(ok, join('Dan', ANEL));

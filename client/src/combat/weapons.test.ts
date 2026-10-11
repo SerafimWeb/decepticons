@@ -21,9 +21,11 @@ describe('arsenal: três níveis com a mesma regra', () => {
       expect(c!.heatPerShot).toBeGreaterThan(a!.heatPerShot);
       expect(c!.mass).toBeGreaterThan(b!.mass);
       expect(b!.mass).toBeGreaterThan(a!.mass);
-      // A cadência e o alcance são da arma, não do nível.
-      expect(c!.fireInterval).toBe(a!.fireInterval);
-      expect(c!.maxRange).toBe(a!.maxRange);
+      // A cadência e o alcance são da arma, não do nível: salvo a que declara `tierRange` / `tierRate` (o lança-chamas: mais longe e mais pressão a cada nível).
+      if (!a!.tierRate) expect(c!.fireInterval).toBe(a!.fireInterval);
+      else expect(c!.fireInterval).toBeLessThan(a!.fireInterval);
+      if (!a!.tierRange) expect(c!.maxRange).toBe(a!.maxRange);
+      else expect(c!.maxRange).toBeGreaterThan(a!.maxRange);
     }
   });
 
