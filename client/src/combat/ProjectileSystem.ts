@@ -156,8 +156,9 @@ export class ProjectileSystem {
         _hitAt.copy(hit.point).addScaledVector(_hitNormal, 0.05);
         this.onHit?.(hit, _dir, hitDamage(p.weapon, p.traveled + hit.distance), p.owner, p.weapon, p.traveled + hit.distance);
 
-        this.particles.burst(_hitAt, _hitNormal, { count: 36, color: SPARK_COLOR, speed: 27, life: 0.55, size: 1.4, expansion: -0.35, spread: 0.9 });
-        this.particles.burst(_hitAt, _hitNormal, { count: 10, color: CORE_COLOR, speed: 6, life: 0.25, size: 2.2, expansion: 0.6, gravity: 0 });
+        // Dono, 11/10: os tiros geram luz demais e atrapalham a visão. Eram 36 faíscas de 1,4 e 10 clarões de 2,2: uma nuvem verde em cima do alvo.
+        this.particles.burst(_hitAt, _hitNormal, { count: 14, color: SPARK_COLOR, speed: 24, life: 0.35, size: 0.9, expansion: -0.35, spread: 0.9 });
+        this.particles.burst(_hitAt, _hitNormal, { count: 3, color: CORE_COLOR, speed: 5, life: 0.18, size: 1.5, expansion: 0.5, gravity: 0 });
         this.trailEnd(p, _hitAt);
         this.kill(p);
         continue;

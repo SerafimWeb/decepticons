@@ -43,6 +43,12 @@ export interface GameSettings {
   invertY: boolean;
   /** Graus somados ao campo de visão da 1ª e da 3ª pessoa (a tática não muda). */
   fovOffset: number;
+  /** Tamanho da mira (1 = o desenho de 48 px). Dono, 11/10: a mira estava grossa e na frente do inimigo. */
+  reticleSize: number;
+  /** Opacidade da mira (1 = opaca). */
+  reticleOpacity: number;
+  /** Força do bloom, os halos de luz dos tiros e do neon (dono, 11/10: "os tiros geram muita luz e atrapalham a visibilidade"). */
+  glow: number;
   /** 'auto' = qualidade adaptativa (G12); os outros fixam a qualidade. */
   quality: QualityPreset;
   difficulty: Difficulty;
@@ -69,6 +75,9 @@ export const LIMITS = {
   sensitivity: { min: 0.1, max: 5, step: 0.01 },
   mouseDpi: { min: 100, max: 32000, step: 50 },
   fovOffset: { min: -10, max: 20, step: 1 },
+  reticleSize: { min: 0.5, max: 1.5, step: 0.05 },
+  reticleOpacity: { min: 0.3, max: 1, step: 0.05 },
+  glow: { min: 0.2, max: 1.2, step: 0.05 },
   volume: { min: 0, max: 1, step: 0.05 },
   enemyMechs: { min: 0, max: 3, step: 1 },
   enemyAndroids: { min: 0, max: 3, step: 1 },
@@ -83,6 +92,10 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   touchAutoFire: true,
   invertY: false,
   fovOffset: 0,
+  // Mira fina e discreta por padrão (era de 48 px, opaca, 1,25 px de traço); o brilho do bloom baixou de 0,85 para 0,6.
+  reticleSize: 0.8,
+  reticleOpacity: 0.85,
+  glow: 0.6,
   quality: 'auto',
   // A dificuldade de hoje foi aprovada pelo dono como a "normal" (2026-09-24).
   difficulty: 'normal',
@@ -213,6 +226,9 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     touchAutoFire: typeof r.touchAutoFire === 'boolean' ? r.touchAutoFire : d.touchAutoFire,
     invertY: typeof r.invertY === 'boolean' ? r.invertY : d.invertY,
     fovOffset: Math.round(num(r.fovOffset, d.fovOffset, LIMITS.fovOffset.min, LIMITS.fovOffset.max)),
+    reticleSize: num(r.reticleSize, d.reticleSize, LIMITS.reticleSize.min, LIMITS.reticleSize.max),
+    reticleOpacity: num(r.reticleOpacity, d.reticleOpacity, LIMITS.reticleOpacity.min, LIMITS.reticleOpacity.max),
+    glow: num(r.glow, d.glow, LIMITS.glow.min, LIMITS.glow.max),
     quality: QUALITIES.includes(r.quality as QualityPreset) ? (r.quality as QualityPreset) : d.quality,
     difficulty: DIFFICULTIES.includes(r.difficulty as Difficulty) ? (r.difficulty as Difficulty) : d.difficulty,
     enemyMechs: Math.round(num(r.enemyMechs, d.enemyMechs, LIMITS.enemyMechs.min, LIMITS.enemyMechs.max)),
