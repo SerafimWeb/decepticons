@@ -1,3 +1,16 @@
+## [2026-10-11] O arsenal ganha classes (leve, média, pesada) e cada robô, um tamanho (P82, Claude)
+
+**Ordem do Comandante:** "organizar melhor nosso arsenal; 3 tamanhos de arma (leve, média, pesada); robôs gigantes usam armas pesadas como leves (pra eles), mas é a arma pesada normal dos outros robôs (tamanho 2, padrão do jogo); futuramente, versões das armas para o tamanho 3 e 4".
+
+**Decisões:**
+1. **Classe e tamanho são dois dados separados.** A classe é o porte da arma e **não é o peso** (o peso sobe com o nível MK: um arco MK III pesa o que um trilho MK I e nem por isso é pesado); o tamanho é o do robô para o qual a arma foi feita (todas, hoje, o 2). Moram numa tabela só (`WEAPON_FIT`), um `Record` como as outras: arma nova que não declara não compila.
+2. **Uma conta só para a regra do Comandante:** cada passo de tamanho sobe duas classes, então **a pesada do tamanho N é a leve do N+1** (`classFor`). Ela vale nos dois sentidos (o andróide vê a leve dos Mechs como a pesada dele) e dá, de graça, o que o Comandante descreveu para o tamanho 4. **Consequência travada por teste:** as versões futuras de tamanho 3 e 4 só precisam ser médias e pesadas, porque a leve do N+1 já existe.
+3. **A classificação de hoje é proposta, não ordem.** Leves (até ~2,5 t): blaster, motosserra, escopeta, arco, EMP. Médias (3 a 4 t): plasma, gelo, sônico, automático, rotatória, foguetes. Pesadas: canhão pesado e lança-chamas (que o Comandante já reservou aos chassis pesados) mais trilho e chuva de mísseis (5 t, as duas mais pesadas depois do canhão). O lança-chamas pesa 3,5 t e é pesado enquanto os foguetes (4 t) são médios: por isso classe ≠ peso. **Mudar uma arma de classe é uma linha.**
+4. **O gigante só carrega o que cabe nele.** O Colossus (tamanho 3) passa a oferecer só as pesadas dos Mechs; o filtro é a mesma conta (`fitsSize`) e um teste confere **todo encaixe de todo chassi** contra o tamanho dele, então um chassi ou arma novos não furam a regra. **Os Mechs (tamanho 2) não perdem nada.** O custo é que montagens antigas do Colossus com arma média são recusadas (o servidor cai na de fábrica).
+5. **O chefe da missão não mudou.** O Colossus do jogador ganhou armamento de fábrica próprio (canhão pesado + chuva de mísseis, `COLOSSUS_PLAYER_STATS`); o chefe segue com plasma e foguetes porque trocar a arma do encontro mexe no equilíbrio dele e ninguém pediu. Registrado como decisão do Comandante.
+6. **A Arara-B1 é tamanho 2.** Três lugares a chamavam de "escala 1" (o Hangar, o `HANGAR.md`, o `UNIVERSO.md`), o que colide com o andróide e com a ordem de hoje; corrigidos. (O `VISAO.md`, que só o Comandante edita, já dizia Mech = 2 e andróide = 1.)
+7. **O Hangar agrupa por classe pela visão do chassi.** No Colossus, as pesadas aparecem como LEVES, com a nota do tamanho 3. O andróide não agrupa (o "pesadas" dele seria o blaster).
+
 ## [2026-10-11] O canhão sônico é a primeira arma de ombro, e o corpo ganha empurrão (P77, Claude)
 
 **Ordem do Comandante:** "as armas de som combinam em ficar nos ombros"; "pensar as armas pro botão 2, ombros, costas, peitoral; variar as armas e tecnologias".

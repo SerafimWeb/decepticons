@@ -1,7 +1,8 @@
 import { SHIELDS, type ShieldId } from '../combat/EnergyShield';
 import { isMetalShieldId, metalShieldMass, METAL_SHIELDS, type MetalShieldId } from '../combat/MetalShield';
 import { weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
-import { ARM_SLOTS, CHASSIS, METAL_SHIELD_CHASSIS, type ChassisId } from '../entities/chassis';
+import { ARM_SLOTS, CHASSIS, CHASSIS_SIZE, METAL_SHIELD_CHASSIS, type ChassisId } from '../entities/chassis';
+import { classFor, WEAPON_CLASSES, type WeaponClass } from '../combat/weaponClass';
 
 /**
  * Contrato do Hangar (AGENTS, regra 5: o contrato entra antes da tela). Uma montagem é só ids e níveis
@@ -58,6 +59,16 @@ export type ArmSlot = 'right' | 'left' | 'shoulders';
 /** Armas que cabem num encaixe do chassi (padrão: Vector-09), na ordem do catálogo. Sem o encaixe, nenhuma. */
 export function armOptions(slot: ArmSlot, chassis: ChassisId = 'vector09'): readonly WeaponId[] {
   return ARM_SLOTS[chassis][slot] ?? [];
+}
+
+/**
+ * As armas do encaixe agrupadas pela classe que o **chassi** enxerga (leves, médias, pesadas; grupo vazio não existe), cada grupo na
+ * ordem do catálogo (`armOptions`). Num gigante as pesadas dos Mechs vêm como leves (`combat/weaponClass.ts`). É a ordem da lista do Hangar.
+ */
+export function armGroups(slot: ArmSlot, chassis: ChassisId = 'vector09'): ReadonlyArray<{ cls: WeaponClass; ids: readonly WeaponId[] }> {
+  const size = CHASSIS_SIZE[chassis];
+  const options = armOptions(slot, chassis);
+  return WEAPON_CLASSES.map((cls) => ({ cls, ids: options.filter((id) => classFor(id, size) === cls) })).filter((g) => g.ids.length > 0);
 }
 
 /** O chassi aceita o escudo metálico na mão esquerda? */

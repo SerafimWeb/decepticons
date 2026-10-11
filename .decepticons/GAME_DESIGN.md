@@ -27,8 +27,10 @@ com Mechs; a camada de inteligência fala a língua de CTI (incidente, TTPs, IOC
 |---|---|---|---|
 | **1** | Robôs autônomos do tamanho dos humanoides e quadrúpedes de hoje (~1,6 m) | **Andróide de combate** (KUEN, DIPSIK, MISTRAU): casco branco, visor vermelho, blaster no antebraço. **Técnico** (ENTRÓPICO): visor amarelo, conserta os Mechs | **Mais chato do que perigoso:** cai com 2 tiros de plasma ou **2 pisões** de Mech; ataca com **motosserra**, que só corta encostado e pega as pernas do Mech; muito ágil (arranca na hora, pula duas vezes, desvia com dash) |
 | **2** | Mechs de combate (~5 m) | **Vector-09** (o jogador) e Mechs rebeldes (CLAWD, GEMINAI, CHAD-GPT) | Blindado, dano por parte, calor na arma, foguetes |
-| **3** | Máquinas de cerco (futuro) | ainda não | a definir (Colossus-01) |
+| **3** | Gigantes: máquinas de cerco (14 m) | **Colossus-01** (chefe da missão e chassi solo pilotável) | Lento e blindado; **leva as armas pesadas dos Mechs como armas leves** (P82); as médias e pesadas dele são versões futuras de tamanho 3 |
+| **4** | Gigantes maiores (futuro) | ainda não | a definir; as leves dele serão as pesadas do tamanho 3 |
 
+- **Armas por tamanho (dono, 11/10, P82):** toda arma é **leve, média ou pesada**, e a classe é relativa a quem carrega: a pesada do tamanho 2 (o padrão do jogo) é a leve do tamanho 3 (`ARSENAL.md`, `combat/weaponClass.ts`). Versões de arma para os tamanhos 3 e 4 são futuras.
 - **Nomes (dono, 25/09: "pra ficar mais engraçado"):** as IAs rebeldes levam nomes de IAs de verdade (`BOT_NAMES` em `combat/BotSystem.ts`), com o nome e a personalidade sobre a cabeça. São marcas registradas: antes do lançamento, decidir se viram paródias.
 - **Guia visual e briefing para IA de imagem:** `ESTILO_ROBOS.md`.
 - O visual segue a regra da produção: tudo gerado por código. Nada de marca real: os robôs lembram os de hoje sem copiar nenhum.

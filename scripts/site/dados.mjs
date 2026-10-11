@@ -198,8 +198,10 @@ export async function jogo() {
     const balance = await load('client/src/combat/balance.ts');
     const heat = await load('client/src/combat/heat.ts');
     // Os números dos chassis ficam num arquivo sem 3D: o site não carrega o Three.js.
-    const { VECTOR09_STATS, ANDROID_STATS, PILOT_ANDROID_STATS, ARM_SLOTS, CHASSIS } = await load('client/src/entities/chassis.ts');
+    const { VECTOR09_STATS, ANDROID_STATS, PILOT_ANDROID_STATS, ARM_SLOTS, CHASSIS, CHASSIS_SIZE } = await load('client/src/entities/chassis.ts');
     const hangar = await load('client/src/hangar/loadout.ts');
+    // As classes de arma (leve, média, pesada): a ficha de cada arma na landing diz a dela.
+    const weaponClass = await load('client/src/combat/weaponClass.ts');
     const shields = await load('client/src/combat/EnergyShield.ts');
     // O escudo físico (4 modelos, resistência por natureza de dano) e as zonas da arena: a oficina descreve os dois pelos números do jogo.
     const metal = await load('client/src/combat/MetalShield.ts');
@@ -228,7 +230,7 @@ export async function jogo() {
     const tests = count('client/src/combat/weapons.test.ts');
     // Testes que travam as regras da bancada: armas, calor e o Mech de verdade contra a bancada.
     const benchTests = tests + count('client/src/combat/heat.test.ts') + count('client/src/entities/MechHeat.test.ts');
-    return { weapons, balance, heat, hangar, shields, metal, zones, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, slots: ARM_SLOTS, chassis: CHASSIS, tests, benchTests, net };
+    return { weapons, balance, heat, hangar, weaponClass, shields, metal, zones, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, slots: ARM_SLOTS, chassis: CHASSIS, sizes: CHASSIS_SIZE, tests, benchTests, net };
   } catch (err) {
     console.warn(`::warning::site sem os dados do jogo: ${err instanceof Error ? err.message : err}`);
     return null;
@@ -270,7 +272,7 @@ export function recordSheet(game) {
  */
 export function arsenal(game) {
   if (!game) return null;
-  const { weapons: W, balance: B, vector: v, slots: S, chassis: C } = game;
+  const { weapons: W, balance: B, vector: v, slots: S, chassis: C, sizes: Z } = game;
   const torso = v.maxModuleHealth.torso;
   // Só as armas dos braços do Mech (energia e munição); blaster e motosserra são dos andróides.
   const ids = W.WEAPON_IDS.filter((id) => id !== 'blaster' && W.weapon(id).kind !== 'melee');
@@ -281,6 +283,8 @@ export function arsenal(game) {
       id,
       name: base.name,
       kind: base.kind,
+      // Leve, média ou pesada (a do tamanho de robô para o qual a arma foi feita, o 2 dos Mechs).
+      class: game.weaponClass.CLASS_LABEL[game.weaponClass.WEAPON_FIT[id].class].toLowerCase(),
       speed: base.speed,
       optimal: base.optimalRange,
       max: base.maxRange,
@@ -304,9 +308,11 @@ export function arsenal(game) {
     };
   };
   const onVector = (id) => S.vector09.right.includes(id) || S.vector09.left.includes(id);
-  // Onde a arma da `others` mora: o primeiro chassi que a aceita (e em qual encaixe: braço ou ombros).
+  // Onde a arma da `others` mora: o chassi de menor tamanho que a aceita (os Mechs antes do gigante), na ordem do catálogo, e em qual encaixe (braço ou ombros).
   const carrier = (id) => {
-    const chassisId = Object.keys(S).find((c) => S[c].right.includes(id) || S[c].left.includes(id) || (S[c].shoulders ?? []).includes(id));
+    const chassisId = Object.keys(S)
+      .filter((c) => S[c].right.includes(id) || S[c].left.includes(id) || (S[c].shoulders ?? []).includes(id))
+      .sort((a, b) => Z[a] - Z[b])[0];
     const chassis = C[chassisId].name;
     const lugar = S[chassisId].right.includes(id) ? 'braço direito' : S[chassisId].left.includes(id) ? 'braço esquerdo' : 'ombros';
     return { chassis, slot: `${chassis.toLowerCase()} · ${lugar}` };

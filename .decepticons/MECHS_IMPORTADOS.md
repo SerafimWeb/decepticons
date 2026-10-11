@@ -105,7 +105,7 @@ carrega o `.glb`, mede as quatro bocas com a montagem de fábrica, imprime medid
 (roda dentro do `npm run check`). Sem `muzzles` no chassi, imprime o bloco pronto para colar.
 
 **Outros encaixes (reservados, não existem ainda):** peito, cabeça e costas (`HANGAR.md`): o mesmo contrato (nó + escala + módulo),
-acrescentando uma classe de tamanho (P, M, G) que a arma declara e o encaixe confere.
+acrescentando a classe de arma (leve, média, pesada: `combat/weaponClass.ts`, P82) que a arma declara e o encaixe confere.
 
 **Limites conhecidos (R13)**
 - **Só o Marauder usa.** Os procedurais (Vector-09, Arara, Onça, Colossus, andróide) têm cano e casulo fixos no antebraço;

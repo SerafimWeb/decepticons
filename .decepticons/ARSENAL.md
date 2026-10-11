@@ -3,6 +3,41 @@
 > Escrito em 04/10 depois de criar a escopeta (PR #154) e a chuva de mísseis, para ninguém redescobrir a lista. Robô importado:
 > `MECHS_IMPORTADOS.md`. Encaixes e gatilhos: `combat/mounts.ts`. O que cada coisa é de verdade hoje: `STATUS_REAL.md`.
 
+## Classes de arma e tamanhos de robô (11/10, ordem P82 do Comandante)
+
+> *"As armas devem ter 3 diferentes tamanhos (leve, média, pesada), e robôs gigantes usam armas pesadas como leves (pra eles), mas é a arma pesada normal dos outros robôs (os do tamanho 2, padrão principal do jogo). Futuramente faremos versões das armas para o tamanho 3 e 4."*
+
+Duas coisas separadas: a **classe** da arma (o porte dela: leve, média ou pesada; **não é o peso**, que sobe com o nível MK) e o **tamanho** do robô
+(`CHASSIS_SIZE` em `entities/chassis.ts`: 1 andróide, **2 Mechs, o padrão do jogo**, 3 e 4 gigantes; é a "escala" do `GAME_DESIGN.md`). Tudo mora em `combat/weaponClass.ts` (a tabela `WEAPON_FIT` e a conta `classFor`).
+
+| Classe (no tamanho 2) | Armas |
+|---|---|
+| **Leve** | blaster, motosserra, escopeta, arma elétrica (arco), lançador EMP |
+| **Média** | canhão de plasma, arma de gelo, canhão sônico, canhão automático, metralhadora rotatória, casulo de foguetes |
+| **Pesada** | canhão pesado, lança-chamas, canhão de trilho, chuva de mísseis |
+
+**A regra, uma conta só:** a classe é relativa a quem carrega, e cada passo de tamanho sobe duas classes, então **a pesada do tamanho N é a leve do tamanho N+1**.
+
+| Quem carrega | Leves dele | Médias dele | Pesadas dele |
+|---|---|---|---|
+| Mech (**tamanho 2**) | as leves da tabela | as médias | as pesadas |
+| Gigante (**tamanho 3**, o Colossus) | **as pesadas dos Mechs** (canhão pesado, lança-chamas, trilho, chuva) | *versões de tamanho 3: futuro* | *versões de tamanho 3: futuro* |
+| Gigante maior (**tamanho 4**) | as pesadas do tamanho 3 (futuras) | *futuro* | *futuro* |
+| Andróide (tamanho 1) | (a conta desce: a leve dos Mechs é a pesada dele) | — | — |
+
+**O que mudou no jogo (P82):**
+- O **Hangar agrupa as armas por classe** (LEVES, MÉDIAS, PESADAS) pela classe que o **chassi** enxerga; o andróide fica numa lista só. No Colossus tudo cai em **LEVES**, com a nota "tamanho 3: o que é pesado nos Mechs comuns é leve para ele".
+- O **Colossus só oferece as pesadas dos Mechs** (canhão pesado, trilho, lança-chamas na mão principal; canhão, trilho e chuva na outra); plasma, foguetes, automático e rotatória saíram dele: para um gigante são pequenos demais. Os Mechs (tamanho 2) **não perderam nada**.
+- O **Colossus do jogador** sai da fábrica com **canhão pesado + chuva de mísseis** (`COLOSSUS_PLAYER_STATS`). **O chefe da missão segue com plasma e foguetes** (`COLOSSUS_BOSS_STATS` intacto): trocar a arma do encontro mexe no equilíbrio dele, decisão em aberto.
+- Link `?build=` ou montagem salva do Colossus com arma média ou leve passa a ser recusada (`encaixe`); o servidor cai na montagem de fábrica. A **Arara-B1 é tamanho 2** (o Hangar, o `HANGAR.md` e o `UNIVERSO.md` a chamavam de "escala 1", que é o andróide).
+- A ficha de cada arma na landing do site diz a classe.
+
+**Mudar uma arma de classe** é uma linha em `WEAPON_FIT` (e a lista da tabela em `weaponClass.test.ts`); ela troca de grupo no Hangar e, se virar pesada, passa a caber no Colossus sozinha. A classificação de hoje é a proposta do Claude: **leve até ~2,5 t, média 3 a 4 t**, e **pesada**
+o que já era só dos chassis pesados por decisão do Comandante (canhão pesado, lança-chamas) mais as duas que mais pesam depois do canhão (trilho e chuva, 5 t). O Comandante ajusta.
+
+**Como criar a versão de tamanho 3 (futuro):** é uma **arma nova** (um `WeaponId` próprio, por exemplo um canhão do tamanho do gigante) com `WEAPON_FIT` `{ class: 'heavy', size: 3 }` e os números em `BASE`; entra na lista do gigante em `ARM_SLOTS` e **não** nas dos Mechs
+(o teste `nenhum encaixe oferece arma que o tamanho do chassi não carrega` trava isso). Só precisa existir como **média** e **pesada**: a leve do tamanho 3 já existe, é a pesada do 2 (outro teste proíbe declará-la). Nada na regra muda.
+
 ## O que já é só ajustar número (sem código)
 
 **Configurações → POTÊNCIAS** (`tuning/power.ts`): por arma, multiplica dano, cadência, calor e alcance; por clã (jogador, Mechs
@@ -18,7 +53,7 @@ Uma arma que **só usa campos que já existem** (dano, cadência, alcance, explo
 comporta de um jeito novo** (a escopeta não precisou; a chuva de mísseis sim) pede todos.
 
 1. **Dados:** `WeaponId` e uma entrada em `BASE` (`combat/weapons.ts`). Comportamento novo vira um campo opcional e tipado da
-   arma (a chuva tem `barrage`), nunca um `if (id === ...)` espalhado. Duas tabelas `Record<WeaponId, …>` também exigem a arma nova (o typecheck quebra se faltar): `DAMAGE_TYPE` (natureza do dano) e `FIRE_KICK` em `combat/fireFeel.ts` (quanto o tiro faz a câmera tremer; 0 para corpo a corpo).
+   arma (a chuva tem `barrage`), nunca um `if (id === ...)` espalhado. Três tabelas `Record<WeaponId, …>` também exigem a arma nova (o typecheck quebra se faltar): `DAMAGE_TYPE` (natureza do dano), `WEAPON_FIT` (classe e tamanho, `combat/weaponClass.ts`, P82) e `FIRE_KICK` em `combat/fireFeel.ts` (quanto o tiro faz a câmera tremer; 0 para corpo a corpo).
 2. **Regra no tick fixo:** projétil comum não precisa de nada. Comportamento novo é um módulo próprio (`combat/XSystem.ts`, como o
    `BarrageSystem`): pool fixo, `fixedUpdate`, `clear`, `render`, callbacks `onFired` e `onExplode`. Liga no `sim/Match.ts` (criar,
    passo, três `clear`, explosão) e no `core/Game.ts` (desenho). Sem `Math.random`, `Date.now` nem DOM (G1/G2): o desenho de
@@ -50,7 +85,7 @@ Teste de mutação nas regras novas (estrague a regra e veja o teste cair) é o 
 
 - **Malha importada** (a via de hoje): `MECHS_IMPORTADOS.md` do pedido ao gerador ao PR. Comandos: `npm run mech:inspecionar -- arquivo.glb`
   (confere o arquivo) e `npm run mech:bocas -- <id>` (mede de onde cada arma atira e confere com o dado do chassi).
-- **Dados:** `CHASSIS` e `ARM_SLOTS` em `entities/chassis.ts` (vida, velocidade, calor, carga, o que cada encaixe aceita) e, se o
+- **Dados:** `CHASSIS`, `CHASSIS_SIZE` (o tamanho: 1 andróide, 2 Mechs, 3 e 4 gigantes) e `ARM_SLOTS` em `entities/chassis.ts` (vida, velocidade, calor, carga, o que cada encaixe aceita) e, se o
   robô atira por mais de uma mão ou tem ombros, `triggers` e `muzzles` (`combat/mounts.ts`).
 - **Mais de um gatilho por lado, ombros:** já existe (Marauder). Peito, cabeça e costas são ideia (`ROADMAP.md`).
 - **Corpo que não é bípede** (cão-robô, esteira, drone): ideia, ainda sem plano de corpo no código (`ROADMAP.md`).

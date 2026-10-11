@@ -1,5 +1,22 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Classes de arma (leve, média, pesada) e tamanho de robô — Claude, 11/10 (PR `claude/classes-de-arma`, ordem P82)
+
+**Ordem do Comandante (P82):** "organizar melhor nosso arsenal: as armas devem ter 3 tamanhos (leve, média, pesada); robôs gigantes usam armas pesadas como leves (pra eles), mas é a arma pesada normal dos outros robôs (tamanho 2, padrão do jogo); futuramente, versões das armas para o tamanho 3 e 4".
+
+- **Cada arma tem classe e tamanho** (`combat/weaponClass.ts`, tabela `WEAPON_FIT`, um `Record`: arma nova que não declara não compila). **Leves:** blaster, motosserra, escopeta, arco, EMP. **Médias:** plasma, gelo, sônico, automático, rotatória, foguetes. **Pesadas:** canhão pesado, lança-chamas, trilho, chuva de mísseis. Todas do **tamanho 2**.
+- **Cada chassi tem tamanho** (`CHASSIS_SIZE`): andróide 1, **Mechs 2**, Colossus 3. A **Arara-B1 era chamada de "escala 1"** no Hangar, no `HANGAR.md` e no `UNIVERSO.md` (que é o andróide): corrigida para tamanho 2.
+- **A regra, uma conta (`classFor`):** cada passo de tamanho sobe duas classes, então **a pesada do tamanho N é a leve do N+1**. Para o Colossus, canhão pesado, lança-chamas, trilho e chuva de mísseis são **leves**; plasma, foguetes, automático e rotatória são pequenos demais para ele.
+- **O Hangar agrupa por classe** (LEVES / MÉDIAS / PESADAS, pela classe que o chassi enxerga; o andróide fica numa lista só). **O Colossus passou a oferecer só as pesadas dos Mechs** (`ARM_SLOTS` filtrado por `fitsSize`), com a nota "tamanho 3: o que é pesado nos Mechs comuns é leve para ele". **Os Mechs não perderam nada.**
+- **O Colossus do jogador sai com canhão pesado + chuva de mísseis** (`COLOSSUS_PLAYER_STATS`). **O chefe da missão não mudou** (plasma e foguetes): trocar a arma do encontro mexe no equilíbrio, fica como decisão do Comandante (`ROADMAP.md`).
+- **Montagens antigas do Colossus** (link `?build=` ou salva) com arma média ou leve passam a ser recusadas; o servidor cai na de fábrica. Sem mudança de protocolo (`PROTOCOL_VERSION` continua 15).
+- **Site:** a ficha de cada arma na landing diz a classe, e a "casa" de uma arma é o chassi de menor tamanho que a aceita (o canhão pesado e o lança-chamas moram na Onça, não no Colossus). Isto também corrigiu um erro de build que o canhão sônico (só de ombro) causava no gerador da landing.
+- **Custo de CPU:** nenhum no jogo (uma tabela e uma conta de índice, usadas só ao montar o Hangar e validar a montagem).
+- **Testes:** `combat/weaponClass.test.ts` (20: tabela, regra nos tamanhos 1 a 4, tamanho de cada chassi, todo encaixe cabe no tamanho do chassi, Colossus, agrupamento do Hangar), seis testes do Hangar atualizados para o novo contrato do Colossus; **23 mutações, todas pegas**.
+- **Como ver:** Hangar → Vector-09 (três grupos) e → Colossus-01 (só LEVES, a nota do tamanho 3). Capturas: `arte/classes-de-arma-vector-claude.png` e `arte/classes-de-arma-colossus-claude.png` (a lista aberta à força para a foto; no jogo é o menu de sempre).
+
+**A classificação é a proposta do Claude** (leve até ~2,5 t, média de 3 a 4 t, pesada o que já era só dos pesados mais trilho e chuva): **o Comandante ajusta mudando uma linha** de `WEAPON_FIT`. **Falta:** as versões de tamanho 3 e 4 (futuro, do Comandante), o armamento do chefe, e o gigante hoje só tem as 4 pesadas (sem leve de verdade).
+
 ## Canhão sônico de ombro e o empurrão no corpo — Claude, 11/10 (PR `claude/armas-de-ombro`, protocolo 15, ordem P77)
 
 **Ordem do Comandante (P77):** "melhor aproveitamento dos slots nos ombros; a maioria das armas é para as mãos; pensar as armas pro botão 2, nos ombros, costas, peitoral; variar as armas e tecnologias; as armas de som combinam nos ombros".

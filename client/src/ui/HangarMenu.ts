@@ -1,11 +1,12 @@
 import type { MountId } from '../combat/mounts';
+import { CLASS_LABEL_PLURAL } from '../combat/weaponClass';
 import { TIERS, weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { reloadWithout } from '../core/url';
-import { CHASSIS, SHIELD_ARM, type ChassisId } from '../entities/chassis';
+import { CHASSIS, CHASSIS_SIZE, SHIELD_ARM, type ChassisId } from '../entities/chassis';
 import { METAL_SHIELD_IDS, METAL_SHIELDS, METAL_SHIELD_TIERS, metalShieldMass, type MetalShieldId } from '../combat/MetalShield';
 import type { DamageType } from '../combat/weapons';
 import type { Hangar } from '../hangar/Hangar';
-import { acceptsMetalShield, armOptions, factorySpec, hasShoulderSlot, isMetalShield, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
+import { acceptsMetalShield, armGroups, armOptions, factorySpec, hasShoulderSlot, isMetalShield, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { PRESET_COUNT } from '../hangar/Hangar';
 import { WEAPON_HINT_NOVAS, WEAPON_ICON_NOVAS } from './weaponIconsNovas';
 import { testAt, testFire, TEST_FIRE_S, type TestFire } from '../hangar/testFire';
@@ -38,8 +39,8 @@ export const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string
   android: { title: 'ANDRÓIDE A-1', className: 'LEVE · PILOTO', detail: 'Pequeno e ágil; vence no combate próximo.' },
   // Chassi solo do boss (29/09): mesmos números do encontro, sem balancear contra os bots de propósito.
   colossus01: { title: 'COLOSSUS-01', className: 'ESCALA 3 · CERCO', detail: 'Lento e blindado; devastador de perto.' },
-  // Arara Foundry (29/09): primeiros dois modelos de escala 1 e 2, ver .decepticons/VISAO.md § fabricantes.
-  arara: { title: 'ARARA-B1', className: 'ESCALA 1 · BATEDOR', detail: 'Rápido e frágil; vence pela mobilidade.' },
+  // Arara Foundry (29/09): o par batedor/pesado da linha, ver .decepticons/VISAO.md § fabricantes. Os dois são Mechs (tamanho 2); "escala 1" é o andróide.
+  arara: { title: 'ARARA-B1', className: 'ESCALA 2 · LEVE', detail: 'Rápido e frágil; vence pela mobilidade.' },
   onca: { title: 'ONÇA-B2', className: 'ESCALA 2 · PESADO', detail: 'Lento e blindado; segura posição.' },
   // Primeiro chassi de malha importada (30/09, pipeline híbrido) — ficha provisória, números do Vector-09.
   genesis01: { title: 'GÊNESIS-01', className: 'MÉDIO · ASSALTO', detail: 'Primeiro chassi de malha importada — ficha provisória.' },
@@ -104,7 +105,7 @@ const CHASSIS_ICON: Record<ChassisId, string> = {
   // Base bem mais larga e pernas grossas (escala 3): a planta lê "pesado e lento" ao lado das outras duas.
   colossus01:
     '<rect x="22" y="2" width="16" height="10" /><rect x="10" y="14" width="40" height="26" /><rect x="1" y="16" width="10" height="24" /><rect x="49" y="16" width="10" height="24" /><rect x="12" y="42" width="14" height="28" /><rect x="34" y="42" width="14" height="28" /><path d="M8 74h18M34 74h18" /><path d="M0 44h2M58 44h2" />',
-  // Pernas longas e afiladas: a planta lê "leve e rápido" (escala 1).
+  // Pernas longas e afiladas: a planta lê "leve e rápido".
   arara:
     '<rect x="26" y="2" width="8" height="8" /><rect x="20" y="12" width="20" height="20" /><rect x="12" y="14" width="6" height="18" /><rect x="42" y="14" width="6" height="18" /><path d="M22 34l-4 16l4 20M38 34l4 16l-4 20" /><path d="M14 70h12M34 70h12" />',
   // Torso largo, pernas curtas e grossas: escala 2, sem chegar no exagero do Colossus.
@@ -656,15 +657,19 @@ export class HangarMenu {
     const plateOptions = this.selectedSlot === 'left' && acceptsMetalShield(spec.chassis)
       ? `<optgroup label="ESCUDO FÍSICO · botão 2 levanta">${METAL_SHIELD_IDS.map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${METAL_SHIELDS[id].name} · ${num(metalShieldMass(id, arm?.tier ?? 0), 1)} t</option>`).join('')}</optgroup>`
       : '';
-    const options = armOptions(this.selectedSlot, spec.chassis)
-      .map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name} · ${num(weapon(id, arm?.tier ?? 0).mass * mountCopies(this.selectedSlot, spec.chassis), 1)} t${nasCostas(id, this.selectedSlot) ? ' · morteiro nas costas' : ''}</option>`)
-      .join('');
+    const option = (id: WeaponId): string => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name} · ${num(weapon(id, arm?.tier ?? 0).mass * mountCopies(this.selectedSlot, spec.chassis), 1)} t${nasCostas(id, this.selectedSlot) ? ' · morteiro nas costas' : ''}</option>`;
+    // Leves, médias e pesadas (P82); no gigante tudo cai em LEVES, porque a pesada dos Mechs é a leve dele. O andróide (tamanho 1) não agrupa:
+    // o grupo "pesadas" dele seria o blaster.
+    const grupos = armGroups(this.selectedSlot, spec.chassis);
+    const options = CHASSIS_SIZE[spec.chassis] < 2
+      ? armOptions(this.selectedSlot, spec.chassis).map(option).join('')
+      : grupos.map((g) => `<optgroup label="${CLASS_LABEL_PLURAL[g.cls]}">${g.ids.map(option).join('')}</optgroup>`).join('');
     const shieldArm = this.selectedSlot === 'left' && shield && !acceptsMetalShield(spec.chassis);
     const editor = this.root.querySelector<HTMLElement>('#hangar-weapon-editor')!;
     editor.innerHTML = `
       <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ARMAMENTO</label>
       <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}${plateOptions}</select>
-      <p class="hg-hint">${plate ? `${METAL_SHIELDS[plate.id].hint}. Segure o botão 2 (mouse direito) para levantar a chapa: cobre a frente e anda mais devagar; abaixada, protege só o flanco esquerdo com metade da força. Sem energia: a chapa se desgasta e volta no conserto.` : w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
+      <p class="hg-hint">${plate ? `${METAL_SHIELDS[plate.id].hint}. Segure o botão 2 (mouse direito) para levantar a chapa: cobre a frente e anda mais devagar; abaixada, protege só o flanco esquerdo com metade da força. Sem energia: a chapa se desgasta e volta no conserto.` : w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') + (CHASSIS_SIZE[spec.chassis] >= 3 ? ' · tamanho 3: o que é pesado nos Mechs comuns é leve para ele' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
 ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou testar. A prévia mantém a última montagem válida.</p>' : ''}
       ${["genesis01", "lancerL1", "lr7lBastion", "quadraV2"].includes(spec.chassis) ? '<p class="hg-hint">Arma integrada ao casco: a aparência deste robô ainda não muda com a seleção.</p>' : ''}<div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => { const copies = mountCopies(this.selectedSlot, spec.chassis); const mass = plate ? metalShieldMass(plate.id, i as Tier) : arm ? weapon(arm.id as WeaponId, i as Tier).mass * copies : 0; const total = report.mass - (plate ? metalShieldMass(plate.id, plate.tier) : (w?.mass ?? 0) * copies) + mass; const excess = Math.max(0, total - report.capacity); const hint = excess > 1e-9 ? `EXCEDE ${num(excess, 1)} t` : `${num(report.capacity - total, 1)} t livres`; return `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}${excess > 1e-9 ? ' over' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}" title="${hint}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : plate ? `+${Math.round((METAL_SHIELD_TIERS[i]!.integrity - 1) * 100)}% chapa` : `+${Math.round((t.damage - 1) * 100)}% dano`} · ${num(mass, 1)} t</small><small>${hint}</small></button>`; }).join('')}</div>
