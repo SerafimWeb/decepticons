@@ -47,6 +47,7 @@
 | P57 | 10/10 | (achado) O Quadra-V2 não tem malha própria: usa o corpo do Vector-09 (a entrada dele no carregador está desligada) | ⏸ | `quadra-v2.glb` existe e não é carregado; religar e inspecionar é barato (`MECHS_IMPORTADOS.md` §7). **Sem isso o papel de escaramuçador não aparece na silhueta** | — |
 | P58 | 10/10 | Enviar direto para o GitHub, sem travar, "do jeito que funcionava até ontem" (o dono, Claude e Codex) | ✅ | `npm run publicar` e `scripts/gh.mjs` (21 testes; fallback provado com token inválido). **Rodou de ponta a ponta no #215** (recusou o merge com CI vermelho, mergeou sozinho depois da correção). A causa de o token do `gh` morrer não foi provada | Ver os PRs saírem sozinhos |
 | P59 | 10/10 | **Abrir o Bunker** (fase nova do Codex, já no ar) | ✅ | No ar desde o #213. O link era pequeno e ficava no fim (o dono não o achou); agora é o botão **[ EXPLORAR O BUNKER ]** abaixo de ABRIR HANGAR | `www.selvamkt.com.br/cybermech/jogar/?mapa=bunker` |
+| P61 | 10/10 | "olhe ele na ÍNTEGRA. O painel de pausa tem botões repetidos, redundantes e desnecessários… muita informação… mais clean, objetivo e sem nada errado nem repetido. Precisa organizar TODOS os painéis. O HANGAR também merece uma melhoria" | 🔧 | Auditoria em `AUDITORIA_INTERFACE.md`; **início/pausa refeito (UI-1)**; faltam Configurações (UI-2), Hangar (UI-3), HUD (UI-4), outras telas (UI-5) | `www.selvamkt.com.br/cybermech/jogar/` |
 | P56 | 10/10 | (achado) Dois `.glb` de 78 MB dentro do repositório | ✅ | Removidos em 10/10 (os originais seguem na pasta do dono) | — |
 | P60 | 10/10 | "vc começou a mexre no bunker, mas to achando esse bunker muito sem graça. tem que ter mais distancia entre as alturas, mais alturas, como se fosse um bunker cavado num buraco, temos que poder ir em todos os andares e sentir que caimos nesse buraco do bunker, tem qu ter tuneis escuros escavados, alem das galerias, precisa de mais rampas, escadas, elevadores, passagens secretas, pontos de combate bem definidos, local de sniper, etc! uma fase bem desenhada pra combates epicos" | 🟡 | Bunker profundo no ar desde o PR #218; check da main e deploy verdes. Falta playtest do dono; elevadores ainda cenográficos, IA vertical e câmera tática ainda AUSENTES | Arena offline → `[ EXPLORAR O BUNKER // 4 NÍVEIS ]` ou `/cybermech/jogar/?mapa=bunker` |
 
@@ -103,6 +104,9 @@ Atualize a cada fase. Se os números não mexem, o trabalho é cosmético, mesmo
 | Medida | Valor em 10/10 | Fonte | Meta |
 |---|---|---|---|
 | Tempo para entrar numa sala online | 1,4 s (máquina calma) a **59 s** (estrangulada) | `.tmp/teste-wss.mjs` contra produção | < 3 s sempre |
+| Altura do painel de início/pausa (rolagem em 1280×720) | **720 px, sem rolagem** (era 1.107 px) | `arte/ui-antes-*` e `ui-depois-*` | sem rolagem em 1280×720 |
+| Botões de mesmo peso no centro da pausa | **3** em fileira + 1 primário (eram 5 iguais e o "jogar" era texto) | idem | 1 primário + até 3 |
+| Altura das Configurações em rolagem única | 2.245 px, 10 seções (UI-2 ainda não feita) | `AUDITORIA_INTERFACE.md` | abas, sem rolagem longa |
 | Itens do `STATUS_REAL` reais / parciais / ausentes | 59 / 39 / 5 (1 demonstração) | `STATUS_REAL.md` | parciais caindo |
 | Itens "entregues mas **não vistos em partida real**" | 17 | `STATUS_REAL.md` | 0 depois de uma sessão de validação |
 | Bugs de física abertos | 0 (o P09 foi corrigido em 10/10) | `ESTADO_ATUAL` | 0 |

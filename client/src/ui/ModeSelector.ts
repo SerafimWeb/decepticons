@@ -16,6 +16,8 @@ export type GameModeId = GameMode;
 export interface GameModeInfo {
   id: GameModeId;
   label: string;
+  /** Nome curto do botão do seletor (a pausa mostra os três lado a lado). */
+  short: string;
   badge: string;
   description: string;
 }
@@ -25,16 +27,18 @@ const MODE_INFO: Record<GameMode, GameModeInfo> = {
   {
     id: 'deathmatch',
     label: 'DEATHMATCH',
+    short: 'DEATHMATCH',
     badge: 'COMBATE LIVRE',
     description: 'Partida livre contra bots ou outros pilotos em rodadas de 5 min.',
   },
   survival: {
     id: 'survival',
     label: 'SOBREVIVÊNCIA',
+    short: 'SOBREVIVÊNCIA',
     badge: 'MISSÃO EM ONDAS',
     description: 'Enfrente hordas progressivas de andróides e mechs rebeldes.',
   },
-  ctf: { id: 'ctf', label: 'CAPTURE A BANDEIRA', badge: 'TREINO SOLO', description: 'Roube a bandeira vermelha e retorne à base azul. Vitória com 3 capturas.' },
+  ctf: { id: 'ctf', label: 'CAPTURE A BANDEIRA', short: 'BANDEIRA', badge: 'TREINO SOLO', description: 'Roube a bandeira vermelha e retorne à base azul. Vitória com 3 capturas.' },
 };
 export const GAME_MODES: GameModeInfo[] = Object.values(MODE_INFO);
 
@@ -89,21 +93,18 @@ export class ModeSelector {
     if (!this.containerEl) return;
 
     this.containerEl.innerHTML = `
-      <div class="mode-selector-label">// MODO DE JOGO</div>
-      <div class="mode-selector-buttons">
-        ${GAME_MODES.map(
-          (m) => `
-          <button type="button" class="btn-mode ${m.id === this.activeMode ? 'active' : ''}" data-mode="${m.id}">
-            <div class="mode-btn-header">
-              <span class="mode-title">${m.label}</span>
-              <span class="mode-badge">${m.badge}</span>
-            </div>
-            <div class="mode-desc">${m.description}</div>
-          </button>
-        `
-        ).join('')}
+      <div class="menu-row">
+        <span class="menu-row-label">MODO</span>
+        <div class="mode-selector-buttons" role="group" aria-label="Modo de jogo">
+          ${GAME_MODES.map(
+            (m) => `<button type="button" class="btn-mode ${m.id === this.activeMode ? 'active' : ''}" data-mode="${m.id}" aria-pressed="${m.id === this.activeMode}" title="${m.label}">${m.short}</button>`
+          ).join('')}
+        </div>
       </div>
+      <div id="map-slot"></div>
+      <p class="mode-desc" id="mode-desc"></p>
     `;
+    this._paintDescription();
 
     const buttons = this.containerEl.querySelectorAll<HTMLButtonElement>('.btn-mode');
     buttons.forEach((btn) => {
@@ -121,6 +122,16 @@ export class ModeSelector {
     buttons.forEach((btn) => {
       const mode = btn.getAttribute('data-mode');
       btn.classList.toggle('active', mode === this.activeMode);
+      btn.setAttribute('aria-pressed', String(mode === this.activeMode));
     });
+    this._paintDescription();
+  }
+
+  /** Uma linha só: o selo e a frase do modo ativo (os outros dois não precisam ser lidos). */
+  private _paintDescription(): void {
+    const line = this.containerEl?.querySelector<HTMLElement>('#mode-desc');
+    if (!line) return;
+    const info = MODE_INFO[this.activeMode];
+    line.textContent = `${info.badge} · ${info.description}`;
   }
 }
