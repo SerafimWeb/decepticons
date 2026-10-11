@@ -8,7 +8,7 @@ import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { setLocalMove, turnToward, wrapAngle, yawOf } from './steer';
 
 export type SquadOrder = 'follow' | 'focus' | 'hold';
-export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat' | 'cool' | 'stalk';
+export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat' | 'cool' | 'stalk' | 'search';
 
 /** Como o bot pilota: tempo de reação, mira e ritmo de tiro. Um conjunto por nível de dificuldade. */
 export interface BotSkill {
@@ -22,6 +22,13 @@ export interface BotSkill {
   turnRate: number;
   burstShots: number;
   burstPauseS: number;
+  /**
+   * Lê a mira: com o torso do alvo apontado para ele por um tempo de reação, chance de trocar o lado do zigue-zague
+   * (0 = não lê). É percepção honesta: o torso do adversário está à vista de qualquer piloto.
+   */
+  readAim: number;
+  /** Quando lê a mira, chance de a troca de lado vir com dash. */
+  jukeDash: number;
 }
 
 /** Aprovado pelo dono jogando ("grau de dificuldade considerável, está bom assim", 2026-09-24). */
@@ -32,12 +39,14 @@ export const BOT_SKILL_NORMAL: BotSkill = {
   turnRate: 3.0,
   burstShots: 4,
   burstPauseS: 0.9,
+  readAim: 0.6,
+  jukeDash: 0.25,
 };
 
 export const BOT_SKILLS: Record<Difficulty, BotSkill> = {
-  facil: { reactionS: 0.9, aimErrorRad: 0.085, leadFactor: 0.15, turnRate: 2.2, burstShots: 3, burstPauseS: 1.4 },
+  facil: { reactionS: 0.9, aimErrorRad: 0.085, leadFactor: 0.15, turnRate: 2.2, burstShots: 3, burstPauseS: 1.4, readAim: 0, jukeDash: 0 },
   normal: BOT_SKILL_NORMAL,
-  dificil: { reactionS: 0.3, aimErrorRad: 0.028, leadFactor: 0.85, turnRate: 4.0, burstShots: 5, burstPauseS: 0.7 },
+  dificil: { reactionS: 0.3, aimErrorRad: 0.028, leadFactor: 0.85, turnRate: 4.0, burstShots: 5, burstPauseS: 0.7, readAim: 1, jukeDash: 0.6 },
 };
 
 const VISION_RANGE = 90;
@@ -60,6 +69,8 @@ export interface BotProfile {
   aimErrorScale: number;
   /** Arma corpo a corpo: vai colado no alvo e circula em volta dele, cortando. */
   melee?: boolean;
+  /** Não lê a mira nem cerca: a máquina de cerco segura a posição (o giro lento é a fraqueza dela). */
+  steady?: boolean;
 }
 
 /** Mech (escala 2): ataca de longe, anda de lado devagar, não desvia com dash. */
@@ -79,7 +90,7 @@ export const ANDROID_PROFILE: BotProfile = { attackRange: 18, keepMinRange: 0, s
  * espalhados. O dano por tiro continua sendo o do plasma de qualquer rebelde — o que o Colossus tem de
  * diferente não é peso de fogo, é vida e espaço. Quem se expõe muito tempo morre; quem circula, vence.
  */
-export const BOSS_PROFILE: BotProfile = { attackRange: 46, keepMinRange: 24, strafeMinS: 2.6, strafeMaxS: 4.2, dodgeChance: 0, aimErrorScale: 1.8 };
+export const BOSS_PROFILE: BotProfile = { attackRange: 46, keepMinRange: 24, strafeMinS: 2.6, strafeMaxS: 4.2, dodgeChance: 0, aimErrorScale: 1.8, steady: true };
 /**
  * Personalidade do piloto (dono, 25/09: "um mais brabo, outro mais manso, outro fujão que ataca na
  * covardia"). Por cima do tipo de robô (`BotProfile`) e da dificuldade (`BotSkill`): muda quão perto
@@ -140,6 +151,25 @@ const SIDESTEP_S = 0.8;
 /** Olhos na cabeça; mira no meio do torso (zonas de dano em combat/damage.ts). */
 const EYE_HEIGHT = 0.85;
 const AIM_HEIGHT = 0.62;
+/**
+ * Caça (11/10): ao perder o alvo de vista, projeta o caminho dele por até isto (s) e no máximo esta distância (m):
+ * vai aonde ele deve estar, não aonde estava. Chegando lá sem achar, vasculha em volta por `SEARCH_S`.
+ */
+const SEARCH_LEAD_S = 1.2;
+const SEARCH_LEAD_MAX = 14;
+const SEARCH_S = 3;
+/** Caçando às cegas há mais disto, desiste do caminho e vasculha onde está (rota bloqueada, alvo escondido). */
+const CHASE_BLIND_S = 10;
+/** Leitura da mira: o alvo "aponta para o bot" com o torso dentro disto (~7°) e ao alcance de tiro. */
+const AIM_READ_RAD = 0.12;
+/** Depois de ler a mira (reagindo ou não), espera isto antes de ler de novo. */
+const JUKE_COOLDOWN_S = 1.6;
+/** Quem acertou o bot há menos disto vira o alvo, se estiver à vista: revida em quem atira, não no mais perto. */
+const THREAT_MEMORY_S = 4;
+/** Rádio do clã: com o alvo à vista, passa a posição dele aos companheiros a cada tanto (quem ouve é o `BotSystem`). */
+const RADIO_INTERVAL_S = 1.5;
+/** Cerco: dentro deste ângulo do flanco (rad) o bot já chegou e só corrige devagar. */
+const FLANK_SETTLED_RAD = 0.2;
 
 const _eye = new THREE.Vector3();
 const _aim = new THREE.Vector3();
@@ -147,6 +177,7 @@ const _dir = new THREE.Vector3();
 const _move = new THREE.Vector3();
 const _muzzle = new THREE.Vector3();
 const _goal = new THREE.Vector3();
+const _probe = new THREE.Vector3();
 
 
 /**
@@ -171,6 +202,18 @@ export class BotController {
   tokenHeld = 0;
   /** Há quanto tempo espera a vaga (fila justa: quem espera há mais tempo vai primeiro). */
   tokenWait = 0;
+  /**
+   * Cerco (o diretor do `BotSystem` dá): sem a vaga, espera no flanco do alvo, nesta direção vista do alvo
+   * (rad; 0 = +Z), em vez de ficar na mesma linha de quem está atacando.
+   */
+  hasFlank = false;
+  flankBearing = 0;
+  /** Rádio do clã: o alvo que este bot está vendo, para passar aos companheiros (o `BotSystem` lê e limpa). */
+  radioReport: MechBase | null = null;
+  /** Primeiro contato visual (saiu da patrulha ou da varredura por ter visto): vira aviso na tela. */
+  radioContact = false;
+  /** Quantas vezes leu a mira do alvo e trocou de lado (testes e telemetria). */
+  jukes = 0;
 
   /** Escolta acompanha o líder; a lista do time determina quem pode ser líder. */
   leader: MechBase | null = null;
@@ -187,7 +230,7 @@ export class BotController {
     this.visibleFor = 0;
     this.losTimer = 0;
     this.state = this.focusTarget ? 'chase' : 'patrol';
-    if (this.focusTarget) { this.lastSeen.copy(this.focusTarget.simPosition); this.sinceSeen = 0; }
+    if (this.focusTarget) { this.lastSeen.copy(this.focusTarget.simPosition); this.searchPoint.copy(this.lastSeen); this.sinceSeen = 0; }
     this.obstacles.reset();
     this.cover.reset();
   }
@@ -201,6 +244,19 @@ export class BotController {
   private visibleFor = 0;
   private sinceSeen = Infinity;
   private readonly lastSeen = new THREE.Vector3();
+  /** Velocidade do alvo na última vez que foi visto (para projetar a fuga dele). */
+  private readonly lastSeenVel = new THREE.Vector3();
+  /** Para onde a caça vai quando o alvo não está à vista: onde ele deve estar. */
+  private readonly searchPoint = new THREE.Vector3();
+  private searchTimer = 0;
+  private searchSweep = 1;
+  /** Há quanto tempo o alvo aponta o torso para este bot. */
+  private aimedAtFor = 0;
+  private jukeCooldown = 0;
+  /** Quem acertou o bot por último, e há quanto tempo. */
+  private threat: MechBase | null = null;
+  private threatAge = Infinity;
+  private radioTimer = 0;
   private losTimer = 0;
   private waypoint = 0;
   private yaw: number;
@@ -262,11 +318,42 @@ export class BotController {
     return this.target;
   }
 
-  /** Levou tiro de alguém que não estava vendo: vira e vai atrás. */
+  /** Está com o alvo à vista agora (linha de visão das últimas amostras). */
+  get seesTarget(): boolean {
+    return this.targetVisible;
+  }
+
+  /** Para onde a caça vai sem o alvo à vista: onde ele deve estar (testes e painel de depuração). */
+  get searchGoal(): Readonly<THREE.Vector3> {
+    return this.searchPoint;
+  }
+
+  /**
+   * Levou tiro: lembra quem atirou (vira o alvo assim que estiver à vista). Se estava só patrulhando ou
+   * vasculhando, vira e vai atrás.
+   */
   alert(from: MechBase): void {
-    if (this.state !== 'patrol') return;
+    this.threat = from;
+    this.threatAge = 0;
+    if (this.state !== 'patrol' && this.state !== 'search') return;
     this.target = from;
     this.lastSeen.copy(from.simPosition);
+    this.searchPoint.copy(this.lastSeen);
+    this.sinceSeen = 0;
+    this.state = 'chase';
+  }
+
+  /**
+   * Rádio do clã: um companheiro viu `target` em `at`. Quem não está vendo ninguém (patrulha, varredura,
+   * caça às cegas) vai lá; quem já luta com alguém à vista continua no que está.
+   */
+  hear(target: MechBase, at: Readonly<THREE.Vector3>): void {
+    if (!target.alive || target === this.mech || !this.mech.alive || this.targetVisible) return;
+    if (this.state !== 'patrol' && this.state !== 'search' && this.state !== 'chase') return;
+    this.target = target;
+    this.lastSeen.copy(at);
+    this.searchPoint.copy(at);
+    this.lastSeenVel.set(0, 0, 0);
     this.sinceSeen = 0;
     this.state = 'chase';
   }
@@ -286,6 +373,15 @@ export class BotController {
     this.tokenHeld = 0;
     this.tokenWait = 0;
     this.sidestepTimer = 0;
+    this.searchTimer = 0;
+    this.aimedAtFor = 0;
+    this.jukeCooldown = 0;
+    this.threat = null;
+    this.threatAge = Infinity;
+    this.radioTimer = 0;
+    this.radioReport = null;
+    this.radioContact = false;
+    this.hasFlank = false;
     this.yaw = this.mech.yaw;
     this.stuckFrom.copy(this.mech.simPosition);
     this.stuckTimer = STUCK_CHECK_S;
@@ -304,6 +400,7 @@ export class BotController {
 
     this.perceive(dt, targets);
     this.decide(dt);
+    this.report(dt);
     this.steer(dt);
     this.aimAndFire(dt);
     return cmd;
@@ -314,41 +411,89 @@ export class BotController {
       this.target = null;
       this.targetVisible = false;
     }
+    this.threatAge += dt;
+    this.jukeCooldown -= dt;
     this.losTimer -= dt;
     if (this.losTimer <= 0) {
       this.losTimer = LOS_INTERVAL_S;
       let best: MechBase | null = null;
+      // Prioridade: a ordem de foco; depois quem acabou de acertar o bot; depois o alvo atual; depois o mais perto.
       if (this.focusTarget?.alive && this.visibleDistance(this.focusTarget) !== null) best = this.focusTarget;
+      const threat = this.threat;
+      if (!best && threat?.alive && this.threatAge < THREAT_MEMORY_S && threat !== this.mech &&
+          targets.includes(threat) && this.visibleDistance(threat) !== null) best = threat;
+      // Mantém o alvo atual enquanto ele estiver visível (1 raio).
+      const current = this.target;
+      if (!best && current?.alive && targets.includes(current) && this.visibleDistance(current) !== null) best = current;
+      // Um raio perdido só não basta para largar o alvo: o Rapier às vezes deixa um raio passar direto por uma
+      // cápsula (erro numérico, 1 amostra). Na primeira falha segue com ele, sem trocar pelo mais perto; larga
+      // (ou troca) depois de 2 falhas seguidas (0,2 s).
+      const grace = !best && this.targetVisible && this.losMisses < 1 && !!current?.alive;
       let bestDist = Infinity;
-      for (const t of targets) {
-        if (best === this.focusTarget && best !== null) break;
-        if (t === this.mech || !t.alive) continue;
+      if (!best && !grace) for (const t of targets) {
+        if (t === this.mech || !t.alive || t === current) continue;
         const d = this.visibleDistance(t);
-        if (d === null) continue;
-        // Mantém o alvo atual enquanto ele estiver visível, senão pega o mais perto.
-        if (t === this.target) {
-          best = t;
-          break;
-        }
-        if (d < bestDist) {
+        if (d !== null && d < bestDist) {
           bestDist = d;
           best = t;
         }
       }
       if (best) this.target = best;
-      // Um raio perdido só não basta para esquecer o alvo: o Rapier às vezes deixa um raio passar
-      // direto por uma cápsula (erro numérico, 1 amostra). Esquece depois de 2 falhas seguidas (0,2 s).
       this.losMisses = best ? 0 : this.losMisses + 1;
       this.targetVisible = best !== null || (this.targetVisible && this.losMisses < 2 && !!this.target?.alive);
+      // A memória do bot é só o que a amostra viu (10 Hz): onde estava e para onde ia. Na tolerância, não atualiza.
+      if (best) {
+        this.lastSeen.copy(best.simPosition);
+        this.lastSeenVel.set(best.velocity.x, 0, best.velocity.z);
+        this.searchPoint.copy(this.lastSeen);
+      }
     }
     if (this.targetVisible && this.target) {
+      const t = this.target;
       this.visibleFor += dt;
       this.sinceSeen = 0;
-      this.lastSeen.copy(this.target.simPosition);
+      this.aimedAtFor = this.aimedBy(t) ? this.aimedAtFor + dt : 0;
     } else {
+      if (this.visibleFor > 0) this.predictEscape();
       this.visibleFor = 0;
       this.sinceSeen += dt;
+      this.aimedAtFor = 0;
     }
+  }
+
+  /**
+   * Acabou de perder o alvo de vista: projeta para onde ele ia (velocidade × `SEARCH_LEAD_S`, até `SEARCH_LEAD_MAX`),
+   * sem atravessar parede (1 raio, só no instante da perda).
+   */
+  private predictEscape(): void {
+    const v = this.lastSeenVel;
+    const speed = Math.hypot(v.x, v.z);
+    if (speed < 0.5 || !this.target) return;
+    let reach = Math.min(speed * SEARCH_LEAD_S, SEARCH_LEAD_MAX);
+    _dir.set(v.x / speed, 0, v.z / speed);
+    _probe.set(this.lastSeen.x, this.lastSeen.y + this.mech.stats.height * 0.35, this.lastSeen.z);
+    const hit = this.physics.raycast(_probe, _dir, reach, this.target.collider);
+    if (hit) reach = Math.max(0, hit.distance - this.mech.stats.radius - 1);
+    this.searchPoint.copy(this.lastSeen).addScaledVector(_dir, reach);
+  }
+
+  /** O alvo aponta o torso para este bot (ao alcance de tiro): é o que um piloto vê de fora. */
+  private aimedBy(t: MechBase): boolean {
+    const me = this.mech.simPosition;
+    const tp = t.simPosition;
+    const dx = me.x - tp.x;
+    const dz = me.z - tp.z;
+    if (dx * dx + dz * dz > FIRE_RANGE * FIRE_RANGE) return false;
+    return Math.abs(wrapAngle(yawOf(dx, dz) - t.yaw)) < AIM_READ_RAD;
+  }
+
+  /** Rádio do clã: com o alvo à vista (já reagiu), passa a posição dele aos companheiros a cada `RADIO_INTERVAL_S`. */
+  private report(dt: number): void {
+    this.radioTimer -= dt;
+    if (this.radioContact) this.radioTimer = 0;
+    if (this.radioTimer > 0 || !this.target || !this.targetVisible || this.visibleFor < this.skill.reactionS) return;
+    this.radioTimer = RADIO_INTERVAL_S;
+    this.radioReport = this.target;
   }
 
   /** Distância até `t` se houver linha de visão (e ele estiver no campo de visão), senão null. */
@@ -361,13 +506,15 @@ export class BotController {
     _dir.subVectors(_aim, _eye);
     const dist = _dir.length();
     if (dist > VISION_RANGE) return null;
-    if (this.state === 'patrol' && dist > HEARING_RADIUS) {
+    if ((this.state === 'patrol' || this.state === 'search') && dist > HEARING_RADIUS) {
       const off = Math.abs(wrapAngle(yawOf(_dir.x, _dir.z) - this.yaw));
       if (off > VISION_HALF_ANGLE) return null;
     }
     _dir.divideScalar(dist);
     const first = this.physics.firstColliderOnRay(_eye, _dir, dist + 1, this.mech.collider);
-    return first?.handle === t.collider.handle ? dist : null;
+    // O raio termina 1 m depois do peito do alvo, dentro da cápsula dele: se não bateu em nada, nada está no caminho
+    // e o Rapier só deixou o raio passar pela cápsula (acontece com os dois alinhados, ex. x igual). Conta como visto.
+    return first === null || first.handle === t.collider.handle ? dist : null;
   }
 
   private decide(dt: number): void {
@@ -422,15 +569,30 @@ export class BotController {
         if (!m.overheated && m.heat <= COOLED_AT) this.state = this.target ? 'chase' : 'patrol';
         break;
       case 'patrol':
-        if (reacted) this.state = 'chase';
+        if (reacted) {
+          this.state = 'chase';
+          this.radioContact = true;
+        }
+        break;
+      case 'search':
+        if (reacted) {
+          this.state = 'chase';
+          this.radioContact = true;
+        } else {
+          this.searchTimer -= dt;
+          if (this.searchTimer <= 0) {
+            this.target = null;
+            this.state = 'patrol';
+          }
+        }
         break;
       case 'chase':
         if (!this.target) this.state = 'patrol';
         else if (reacted && dist <= this.attackRange) this.state = 'attack';
-        else if (this.sinceSeen > LOSE_TARGET_S && this.flatDistance(this.lastSeen) < WAYPOINT_REACHED) {
-          // Chegou onde viu o alvo pela última vez e ele não está lá: desiste.
-          this.target = null;
-          this.state = 'patrol';
+        else if (!this.targetVisible && this.sinceSeen > 0.5 &&
+                 (this.flatDistance(this.searchPoint) < WAYPOINT_REACHED || this.sinceSeen > CHASE_BLIND_S)) {
+          // Chegou aonde o alvo devia estar e ele não está (ou a rota não leva lá): vasculha antes de desistir.
+          this.beginSearch();
         }
         break;
       case 'attack':
@@ -438,16 +600,22 @@ export class BotController {
         if (!this.targetVisible || dist > this.attackRange * (this.hasToken ? 1 : HOLD_SCALE) + 8) this.state = 'chase';
         break;
       case 'stalk':
-        if (!this.target || (!this.targetVisible && this.sinceSeen > LOSE_TARGET_S)) {
-          this.target = null;
-          this.state = 'patrol';
-        }
+        if (!this.target) this.state = 'patrol';
+        else if (!this.targetVisible && this.sinceSeen > LOSE_TARGET_S) this.beginSearch();
         break;
       case 'retreat':
         this.retreatTimer -= dt;
         if (this.retreatTimer <= 0) this.state = this.target ? 'chase' : 'patrol';
         break;
     }
+  }
+
+  /** Vasculha: gira olhando em volta, para o lado em que o alvo ia (sem sorteio), por `SEARCH_S`. */
+  private beginSearch(): void {
+    this.state = 'search';
+    this.searchTimer = SEARCH_S;
+    const v = this.lastSeenVel;
+    this.searchSweep = v.lengthSq() > 0.25 && wrapAngle(yawOf(v.x, v.z) - this.yaw) < 0 ? -1 : 1;
   }
 
   /** Para onde andar (direção no mundo) e para onde olhar; depois converte em `MechInput`. */
@@ -460,12 +628,21 @@ export class BotController {
         if (!this.waypoints.length) break;
         const wp = this.waypoints[this.waypoint]!;
         if (this.flatDistance(wp) < WAYPOINT_REACHED) this.nextWaypoint();
-        this.towards(this.waypoints[this.waypoint]!);
+        const next = this.waypoints[this.waypoint]!;
+        // Rota de um ponto só (ou já em cima dele): fica, em vez de girar em volta do ponto.
+        if (this.flatDistance(next) < WAYPOINT_REACHED) break;
+        this.towards(next);
         if (_move.lengthSq() > 1e-6) faceYaw = yawOf(_move.x, _move.z);
         break;
       }
       case 'chase': {
-        const goal = this.targetVisible && this.target ? this.target.simPosition : this.lastSeen;
+        // Esperando a vaga com o alvo à vista: já vai pelo flanco que o diretor deu, em vez de ir reto até ele.
+        if (this.targetVisible && this.target && !this.hasToken && this.hasFlank && !this.profile.melee) {
+          this.orbit(this.target.simPosition, this.attackRange * HOLD_SCALE);
+          faceYaw = this.yawTo(this.target.simPosition);
+          break;
+        }
+        const goal = this.targetVisible && this.target ? this.target.simPosition : this.searchPoint;
         this.towards(goal);
         faceYaw = this.targetVisible && this.target ? this.yawTo(this.target.simPosition) : yawOf(_move.x, _move.z);
         break;
@@ -483,6 +660,12 @@ export class BotController {
           this.strafeTimer = p.strafeMinS + this.rand() * (p.strafeMaxS - p.strafeMinS);
           // Desvio com dash para o lado novo. Só quem tem a chance sorteia (o RNG dos Mechs não muda).
           if (p.dodgeChance > 0 && this.rand() < p.dodgeChance && this.mech.mobility > 0) this.input.dash = true;
+        }
+        this.dodgeAim();
+        // Sem a vaga, com flanco dado pelo diretor: anda em volta do alvo até o flanco e espera lá, sem atirar.
+        if (!this.hasToken && this.hasFlank && !this.profile.melee) {
+          this.orbit(t, this.attackRange * HOLD_SCALE);
+          break;
         }
         // Corpo a corpo, com a vaga: vai colado no alvo e circula devagar em volta dele.
         if (this.profile.melee && this.hasToken) {
@@ -502,6 +685,10 @@ export class BotController {
         }
         break;
       }
+      case 'search':
+        // Parado, girando para o lado em que o alvo ia: o cone de visão da patrulha vale aqui.
+        faceYaw = this.yaw + this.searchSweep * this.skill.turnRate * 0.5 * dt;
+        break;
       case 'cool':
         // Parado, de frente para o alvo (se houver): esfria em dobro e não atira.
         if (this.targetVisible && this.target) faceYaw = this.yawTo(this.target.simPosition);
@@ -560,6 +747,39 @@ export class BotController {
     this.yaw = turnToward(this.yaw, faceYaw, this.skill.turnRate * dt);
 
     setLocalMove(this.input, _move.x, _move.z, this.yaw);
+  }
+
+  /**
+   * Leu a mira: o alvo aponta o torso para o bot há um tempo de reação. Com a chance da dificuldade, troca o lado
+   * do zigue-zague (e às vezes dá dash); reagindo ou não, só volta a ler depois de `JUKE_COOLDOWN_S`.
+   */
+  private dodgeAim(): void {
+    if (this.profile.steady || this.skill.readAim <= 0 || this.jukeCooldown > 0 || this.aimedAtFor < this.skill.reactionS) return;
+    this.jukeCooldown = JUKE_COOLDOWN_S;
+    if (this.rand() >= this.skill.readAim) return;
+    const p = this.profile;
+    this.strafeSign = -this.strafeSign;
+    this.strafeTimer = p.strafeMinS + this.rand() * (p.strafeMaxS - p.strafeMinS);
+    if (this.rand() < this.skill.jukeDash && this.mech.mobility > 0) this.input.dash = true;
+    this.jukes++;
+  }
+
+  /**
+   * Cerco: anda em volta do alvo (tangente ao círculo, sem cortar pela frente dele) até a direção `flankBearing`,
+   * corrigindo para ficar a `radius` dele.
+   */
+  private orbit(t: Readonly<THREE.Vector3>, radius: number): void {
+    const me = this.mech.simPosition;
+    const dx = me.x - t.x;
+    const dz = me.z - t.z;
+    const r = Math.hypot(dx, dz) || 1;
+    const bearing = Math.atan2(dx, dz);
+    const diff = wrapAngle(this.flankBearing - bearing);
+    const radial = Math.max(-1, Math.min(1, (radius - r) / 6));
+    const tangential = Math.abs(diff) > FLANK_SETTLED_RAD ? Math.sign(diff) : diff / FLANK_SETTLED_RAD;
+    // Posição = alvo + r·(sen b, cos b): girar b para mais anda em (cos b, −sen b).
+    _move.set((dx / r) * radial + Math.cos(bearing) * tangential, 0, (dz / r) * radial - Math.sin(bearing) * tangential);
+    if (_move.lengthSq() > 1) _move.normalize();
   }
 
   private towards(p: Readonly<THREE.Vector3>, sign = 1): void {

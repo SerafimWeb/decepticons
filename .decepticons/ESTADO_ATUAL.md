@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Inteligência dos bots — Claude, 11/10 (ordem P72)
+
+O Comandante mandou "prossiga com a melhoria da inteligência dos bots". Feito em `combat/BotController.ts` e `combat/BotSystem.ts`
+(com uma linha em `sim/Match.ts` e o aviso no feed em `core/Game.ts`): **rádio do clã**, **caça pelo caminho projetado + varredura**,
+**leitura da mira**, **cerco pelos flancos** e **revide em quem atira**. Percepção honesta: o bot só guarda o que a amostra de visão viu,
+o que serve também ao P71 (o que se aprende num bot que usa só sensor de verdade roda num robô). Corrigidos dois defeitos antigos de
+visão (troca de alvo com uma amostra perdida; raio que atravessa a cápsula alinhada contava como "não visto"). Testes: 8 novos em
+`BotInteligencia.test.ts`; suíte inteira 1038 verdes (129 arquivos). CPU: medido na `ArenaRoom` (60 s, antes e depois, alternado): sem regressão.
+**Mudança na dificuldade normal** (aprovada pelo Comandante em 24/09): agora lê a mira em 60% das vezes (dash em 25%); para desfazer,
+`readAim: 0` em `BOT_SKILL_NORMAL`. **Próxima sessão começa com:** o playtest do Comandante; depois navegação global (várias paredes,
+bunker vertical) e foguetes nos bots. Online: a regra vale no servidor (mesma simulação); o aviso de rádio na tela é só offline.
+
 ## Ordens do Comando e direção de treino para robôs — Claude, 11/10 (só documento)
 
 `PEDIDOS_DO_DONO.md` virou **`ORDENS_DO_COMANDO.md`** (o dono é o Comandante, cada pedido é uma ordem, o estado é o da missão), a pedido
