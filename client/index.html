@@ -91,8 +91,15 @@
           <button id="btn-settings-close" class="btn-close">[X]</button>
         </div>
 
+        <div class="settings-tabs" role="tablist" aria-label="Seções das configurações">
+          <button type="button" class="settings-tab active" role="tab" data-tab="jogo" aria-selected="true">JOGO</button>
+          <button type="button" class="settings-tab" role="tab" data-tab="controles" aria-selected="false">CONTROLES</button>
+          <button type="button" class="settings-tab" role="tab" data-tab="graficos" aria-selected="false">GRÁFICOS E SOM</button>
+          <button type="button" class="settings-tab" role="tab" data-tab="avancado" aria-selected="false">AVANÇADO</button>
+        </div>
+
         <div class="settings-body">
-          <div class="settings-section">
+          <div class="settings-section" data-tab="controles">
             <h3>CONTROLES & CÂMERA</h3>
             <div class="setting-row">
               <label for="setting-sens"><span class="mouse-only">Sensibilidade do mouse</span><span class="touch-only">Sensibilidade da mira</span></label>
@@ -116,7 +123,7 @@
             </div>
           </div>
 
-          <div class="settings-section touch-only">
+          <div class="settings-section touch-only" data-tab="controles">
             <h3>TOQUE (CELULAR)</h3>
             <div class="setting-row">
               <label for="setting-assist">Mira assistida (freia e puxa de leve perto do inimigo)</label>
@@ -132,23 +139,17 @@
             </div>
           </div>
 
-          <div class="settings-section">
-            <h3>GRÁFICOS & DESEMPENHO</h3>
+          <div class="settings-section" data-tab="graficos">
+            <h3>GRÁFICOS</h3>
             <div class="setting-row">
               <label for="setting-quality">Qualidade gráfica</label>
               <div class="setting-ctrl">
                 <select id="setting-quality"></select>
               </div>
             </div>
-            <div class="setting-row">
-              <label for="setting-showperf">Painel de desempenho no canto</label>
-              <div class="setting-ctrl">
-                <input type="checkbox" id="setting-showperf" />
-              </div>
-            </div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="jogo">
             <h3>JOGABILIDADE</h3>
             <div class="setting-row">
               <label for="setting-diff">Dificuldade dos bots</label>
@@ -158,22 +159,33 @@
             </div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="jogo">
             <h3>INIMIGOS</h3>
             <div id="settings-enemies"></div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="jogo">
             <h3>NOMES NA TELA</h3>
             <div id="settings-names"></div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="avancado">
             <h3>POTÊNCIAS</h3>
             <div id="settings-power"></div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="avancado">
+            <h3>DESEMPENHO</h3>
+            <p class="setting-hint">Para quem testa o jogo: mostra FPS, tempo do tick e chamadas de desenho no canto da tela (a tecla ' abre o detalhado).</p>
+            <div class="setting-row">
+              <label for="setting-showperf">Painel de desempenho no canto</label>
+              <div class="setting-ctrl">
+                <input type="checkbox" id="setting-showperf" />
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section" data-tab="graficos">
             <h3>ÁUDIO</h3>
             <div class="setting-row">
               <label for="setting-volume">Volume mestre</label>
@@ -184,7 +196,7 @@
             </div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="controles">
             <h3>REMAPEAMENTO DE TECLAS</h3>
             <div class="keys-grid">
               <div class="key-row"><span>Frente</span><button id="key-forward" class="btn-key">[ W ]</button></div>

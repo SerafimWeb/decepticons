@@ -20,7 +20,7 @@
 | A7 | Faixa "SERVIDOR FORA DO AR · MODO OFFLINE" colada no canto, por cima do HUD; assinatura de versão por cima do painel de desempenho | Feito: a linha do servidor desce para a coluna de jogar; a assinatura vai para o rodapé |
 | A8 | No celular, o título se sobrepunha ao subtítulo e o painel cortava | Feito: duas colunas no celular deitado, uma coluna no celular em pé |
 
-### Configurações — pendente (PR UI-2)
+### Configurações — **refeitas no PR `claude/ui-configuracoes-abas` (UI-2)**
 
 | # | Achado |
 |---|---|
@@ -29,7 +29,7 @@
 | B3 | O seletor "Mechs rebeldes" aparece cortado pelo rodapé do modal |
 | B4 | "Painel de desempenho no canto" é de desenvolvedor e fica entre opções de jogo |
 
-Proposta: abas **JOGO** (dificuldade, inimigos, nomes), **CONTROLES** (mouse, câmera, teclas, toque), **GRÁFICOS E SOM**, **AVANÇADO** (potências, desempenho). Altura fixa, o rodapé "Restaurar padrão" sempre visível.
+**Feito:** abas **JOGO** (dificuldade, inimigos, nomes na tela), **CONTROLES** (mouse, câmera, toque, teclas), **GRÁFICOS E SOM** (qualidade, volume) e **AVANÇADO** (potências por arma e o painel de desempenho, que é de quem testa o jogo). A janela tem altura fixa (não pula ao trocar de aba) e o rodapé "Restaurar padrão" fica sempre à vista. Medido em 1280×720: Controles e Gráficos e som cabem **sem rolagem**; Jogo mostra 53% e Avançado 39% do conteúdo de uma vez (eram 22% do total numa rolagem só). O contrato HTML↔módulo está em `settingsTabs.test.ts` (seção sem aba válida, aba sem botão ou o painel de desempenho fora do Avançado reprovam o `check`).
 
 ### Hangar — pendente (PR UI-3)
 
@@ -73,8 +73,8 @@ Lobby online (simples e correto; o apelido já existe no Hangar: avaliar se pede
 | PR | Tela | Estado |
 |---|---|---|
 | UI-1 | Início / pausa | **feito** (`claude/ui-inicio-pausa`) |
-| UI-2 | Configurações em abas | próximo |
-| UI-3 | Hangar: tirar repetição e corte | depois |
+| UI-2 | Configurações em abas | **feito** (`claude/ui-configuracoes-abas`) |
+| UI-3 | Hangar: tirar repetição e corte | próximo |
 | UI-4 | HUD da partida: um só painel de vida, calor visível, ordens sob demanda | depois |
 | UI-5 | Lobby, fim de rodada, celular, banco | por último |
 

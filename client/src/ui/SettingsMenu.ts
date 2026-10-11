@@ -13,6 +13,8 @@ import {
   type Settings,
 } from '../core/Settings';
 
+import { attachSettingsTabs } from './settingsTabs';
+
 const $ = (id: string) => document.getElementById(id)!;
 
 export class SettingsMenu {
@@ -50,6 +52,7 @@ export class SettingsMenu {
       shield: $('key-shield') as HTMLButtonElement,
     };
 
+    attachSettingsTabs(this.modal);
     this.initDOM();
     this.wireEvents();
     this.settings.onChange((s) => this.render(s));

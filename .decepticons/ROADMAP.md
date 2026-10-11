@@ -181,7 +181,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] Envio automático à prova de token morto: `node scripts/gh.mjs` (fallback para a credencial do Git) e `npm run publicar` (push, PR, CI, merge e limpeza com travas), 21 testes (Claude, 10/10) #base
 - [x] Deixar o link do Bunker visível na tela inicial: virou o seletor MAPA (Arena/Bunker) da pausa (Claude, 10/10) #ux
 - [x] Auditoria de interface (`AUDITORIA_INTERFACE.md`) e UI-1: painel de início/pausa limpo, cabe em 1280×720, sem HUD por trás (Claude, 10/10) #ux
-- [ ] **UI-2:** Configurações em abas (Jogo, Controles, Gráficos e som, Avançado), altura fixa, rodapé sempre visível #ux
+- [x] **UI-2:** Configurações em abas (Jogo, Controles, Gráficos e som, Avançado), altura fixa, rodapé sempre visível (Claude, 10/10) #ux
 - [ ] **UI-3:** Hangar sem repetição nem corte (carga duas vezes, X e VOLTAR, link cortado, slots truncados, lista de chassis, braço em três lugares) #ux
 - [ ] **UI-4:** HUD da partida: um só painel de vida, "CALOR" visível, ordens aos aliados só sob demanda #ux
 - [ ] **UI-5:** lobby, fim de rodada, carregamento, toque e banco: revisar com os mesmos princípios #ux

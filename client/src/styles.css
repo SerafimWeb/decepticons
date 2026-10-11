@@ -783,13 +783,34 @@ a.btn-terminal { display: inline-block; text-decoration: none; }
   color: var(--hot);
 }
 
+/* O modal de Configurações tem altura fixa: trocar de aba não faz a janela pular de tamanho (o do lobby segue com a altura do conteúdo). */
+#settings-modal .settings-box { height: min(560px, 85vh); }
+.settings-tabs { display: flex; border-bottom: 1px solid rgba(57, 255, 106, 0.2); }
+.settings-tab {
+  flex: 1 1 0;
+  padding: 11px 6px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #8a9a8f;
+  font: 700 11px/1 'Consolas', 'Courier New', monospace;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.settings-tab:hover { color: #fff; }
+.settings-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(57, 255, 106, 0.07); }
 .settings-body {
   padding: 18px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
+.settings-section[hidden] { display: none; }
+.setting-hint { margin: 0; font-size: 11px; line-height: 1.5; color: #8a9a8f; }
 .settings-section {
   display: flex;
   flex-direction: column;
@@ -1408,6 +1429,10 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
 
 /* Telas baixas (celular deitado): tudo menor para caber sem cortar o título. */
 @media (max-height: 500px) {
+  #settings-modal .settings-box { height: 94vh; max-height: none; }
+  .settings-header, .settings-footer { padding: 6px 14px; }
+  .settings-tab { padding: 8px 4px; font-size: 10px; letter-spacing: 1px; }
+  .settings-body { padding: 12px 14px; gap: 14px; }
   #overlay { justify-content: flex-start; padding: 10px 16px; overflow-y: auto; }
   #overlay h1 { font-size: clamp(20px, 5vw, 30px); letter-spacing: 4px; }
   #overlay .sub { margin: 2px 0 8px; font-size: 11px; }
