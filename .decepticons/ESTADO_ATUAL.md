@@ -1,5 +1,30 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Lança-chamas que sobe de nível e o tiro certo do Marauder — Claude, 11/10 (PR `claude/fogo-longo-e-maos`, protocolo 14)
+
+**Ordem do Comandante (P76):** "o lança-chamas continua muito fraco, muito curto o alcance, deveria ir bem mais longe e poder ser upado no MK II e ir mais longe e com mais pressão"; e "no Marauder
+os tiros estavam saindo só pela mão direita".
+
+- **Lança-chamas:** alcance **30 m no MK I, 39 no MK II e 48 no MK III** (era 20 m); cada nível soma **+30% de alcance** e **+15% de pulsos por segundo** (5 / 5,75 / 6,5), além do +20% de dano
+  (10 / 12 / 14 por pulso). Derruba um torso (Vector-09) em **7,5 / 6,0 / 5,0 s**; dois lança-chamas juntos, mais de 3,3 s; com o canhão pesado ou os foguetes, mais de 2,5 s. O calor segue o freio
+  (ferve em 4,8 / 3,7 / 2,9 s de chama contínua). Dois campos novos e opcionais na arma, `tierRange` e `tierRate`, dizem quanto cada nível soma: **só o lança-chamas os declara** (o teste de
+  arsenal confere que as outras armas mantêm o alcance e a cadência do MK I).
+- **O bug do Marauder era real, de desenho, em quatro lugares** (a regra de tiro sempre atirou as duas mãos): (1) o fluxo do fogo era desenhado só da mão direita; (2) o aviso da carga do trilho,
+  idem; (3) **o evento de tiro da rede não dizia de qual encaixe o tiro saiu**, então o outro jogador desenhava todo tiro da mão direita (a esquerda e os ombros pareciam mudos); (4) só a
+  1ª rotatória do outro jogador era desenhada. Agora o fogo e o aviso saem de **cada mão que leva a arma**, o evento de tiro leva o encaixe nos 2 bits de cima do byte da arma (**o evento não cresce**
+  e o catálogo cabe 64 armas) e o servidor o calcula pela boca mais próxima da origem do tiro; as duas rotatórias do Marauder são desenhadas.
+- **Rede: `PROTOCOL_VERSION` 14** (cliente do 13 leria o encaixe como arma inválida). O atualizador reinicia o servidor sozinho; conferir `/status` com `"protocol":14`.
+- **Custo de CPU:** o fogo custa por mão (9 a 11 partículas por pulso, 270 a 330 por segundo, a 30 Hz) e o MK III solta 1 língua a mais; no servidor, uma busca da boca mais próxima entre ≤ 4 encaixes
+  por tiro (sem alocação: um vetor reaproveitado).
+- **Testes:** os do lança-chamas (nível, alcance com física de verdade, duas mãos), do fogo e do aviso de carga por mão, do codec do evento, do servidor real (as duas mãos e os dois ombros dizem
+  o encaixe) e de ponta a ponta (Marauder com duas rotatórias: o outro jogador vê o fluxo das duas mãos); **mutações todas pegas** (duas escaparam na 1ª rodada, por falta de teste da 2ª rotatória e
+  do protocolo; ganharam teste).
+
+**Ordens novas registradas (`ORDENS_DO_COMANDO.md`):** P77 (armas do botão 2 nos ombros, costas e peito; as sônicas nos ombros), P78 (o combo do anel de fogo explicado de novo: **o gelo de um
+amigo esfria o aliado**; eu tinha lido "congelar o inimigo"), P79 (SINGULARIA vira AVARIA), P80 (robôs CICUTA2 e ZEROCIRCUIT: **sem esqueleto e com 1,9 milhão de triângulos, não entram como estão**).
+
+**Próximas sessões (uma tarefa por PR):** `claude/nome-avaria` (P79), depois `claude/gelo-amigo` (P78: regra de mesmo lado no combate) e `claude/armas-de-ombro` (P77: sônica nos ombros).
+
 ## Anel de fogo — Claude, 11/10 (PR `claude/anel-de-fogo`, protocolo 13)
 
 **Ordem do Comandante (P73):** "o fogo também pode ser um tipo de escudo, que solta um círculo de fogo ao redor do Mech, queimando tudo ao redor durante alguns segundos, e aumentando o
