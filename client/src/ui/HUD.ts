@@ -101,7 +101,7 @@ export class HUD {
     const el = document.createElement('p');
     el.className = 'build-tag';
     el.textContent = text;
-    this.overlay.append(el);
+    (this.overlay.querySelector('.menu-foot') ?? this.overlay).append(el);
   }
 
   setReady(touch = false): void {
@@ -286,6 +286,8 @@ export class HUD {
 
   setPaused(paused: boolean): void {
     this.overlay.classList.toggle('hidden', !paused);
+    // O HUD da partida e o painel de desempenho ficam atrás da pausa só como ruído: o CSS os esconde com esta classe.
+    document.body.classList.toggle('is-paused', paused);
   }
 
   toggleVisibility(): void {

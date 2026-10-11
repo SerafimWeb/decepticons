@@ -93,7 +93,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   enemyPersonas: Object.freeze(['brabo', 'soldado', 'fujao']) as Persona[],
   names: { mechs: [...BOT_NAMES.mechs], androids: [...BOT_NAMES.androids], technicians: [...BOT_NAMES.technicians], allies: [...BOT_NAMES.allies] },
   maxAttackers: 2,
-  showPerf: true,
+  showPerf: false,
   volume: 0.8,
   keys: Object.freeze({
     forward: 'KeyW',

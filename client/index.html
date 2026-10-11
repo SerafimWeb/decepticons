@@ -16,7 +16,7 @@
       gtag('config', 'G-2CCHDCEC7X');
     </script>
   </head>
-  <body>
+  <body class="is-paused">
     <div id="app"></div>
     <div id="debug-panel"></div>
 
@@ -57,43 +57,30 @@
     </div>
 
     <div id="overlay">
-      <h1>SINGULARIA</h1>
-      <p class="sub" id="pilot-sub">VECTOR-09 // protótipo de combate</p>
-      <p class="studio">um jogo <b>SERAFIM WEB</b></p>
-      <p class="cta" id="cta">[ carregando física... ]</p>
-      <p id="round-summary" hidden></p>
-      <button id="btn-hangar" class="btn-terminal">[ ABRIR HANGAR ]</button>
-      <button id="btn-settings" class="btn-terminal">[ CONFIGURAÇÕES ]</button>
-      <button id="btn-touch-layout" class="btn-terminal touch-only">[ AJUSTAR CONTROLES ]</button>
-      <details class="help-details">
-        <summary class="btn-terminal">[ AJUDA E CONTROLES ]</summary>
-        <ul class="keys-help">
-          <li><b>WASD</b> mover</li>
-          <li><b>Mouse</b> mirar</li>
-          <li><b>Clique esq.</b> <span id="key-primary">plasma</span></li>
-          <li><b>Clique dir. / Q</b> <span id="key-secondary">foguetes</span></li>
-          <li><b>Shift</b> dash</li>
-          <li><b>Espaço</b> pulo (duplo)</li>
-          <li><b>V</b> câmera (3ª / 1ª / tática)</li>
-          <li><b>Scroll</b> zoom</li>
-          <li><b>Esc</b> pausar</li>
-          <li><b>F1</b> esconder HUD</li>
-          <li><b>'</b> painel de desempenho</li>
-        </ul>
-        <ul class="touch-help">
-        <li><b>Polegar esquerdo</b> andar</li>
-        <li><b>Arraste à direita</b> mirar</li>
-        <li><b>Mira laranja</b> atira sozinha</li>
-        <li><b>FOGO</b> segure (arraste para mirar junto)</li>
-        <li><b>PULO</b> duas vezes: pulo duplo</li>
-        <li><b>DASH</b> arrancada</li>
-        <li><b>FOGUETE</b> dano em área</li>
-        <li><b>PLACAR</b> segure</li>
-        <li><b>CAM</b> 3ª / 1ª pessoa</li>
-        <li><b>❚❚</b> pausa</li>
-        </ul>
-      </details>
-      <p class="rotate-hint">Gire o celular: o jogo é na horizontal</p>
+      <header class="menu-brand">
+        <h1>SINGULARIA</h1>
+        <p class="sub" id="pilot-sub">VECTOR-09 // protótipo de combate</p>
+        <p class="studio">um jogo <b>SERAFIM WEB</b></p>
+      </header>
+      <div class="menu-main">
+        <section class="menu-play">
+          <button type="button" class="cta" id="cta">[ carregando física... ]</button>
+          <p id="round-summary" hidden></p>
+          <div id="menu-mode"></div>
+          <div class="menu-actions">
+            <button id="btn-hangar" class="btn-terminal">[ HANGAR ]</button>
+            <button id="btn-settings" class="btn-terminal">[ CONFIGURAÇÕES ]</button>
+            <button id="btn-touch-layout" class="btn-terminal touch-only">[ AJUSTAR CONTROLES ]</button>
+          </div>
+          <div id="menu-status"></div>
+        </section>
+        <aside class="menu-profile" id="menu-profile"></aside>
+      </div>
+      <footer class="menu-foot">
+        <p class="menu-keys mouse-only"><b>WASD</b> mover · <b>mouse</b> mirar · <b>clique</b> <span id="key-primary">plasma</span> · <b>clique dir. / Q</b> <span id="key-secondary">foguetes</span> · <b>Shift</b> dash · <b>espaço</b> pulo · <b>V</b> câmera · <b>Esc</b> pausa</p>
+        <p class="menu-keys touch-only"><b>polegar esquerdo</b> anda · <b>arraste à direita</b> mira · <b>FOGO, PULO, DASH, FOGUETE</b> nos botões · <b>❚❚</b> pausa</p>
+        <p class="rotate-hint">Gire o celular: o jogo é na horizontal</p>
+      </footer>
     </div>
 
     <!-- Modal de Configurações -->

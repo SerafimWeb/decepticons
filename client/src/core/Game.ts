@@ -547,15 +547,15 @@ export class Game {
     new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null);
     // A linha "SERVIDOR ONLINE · 2 PILOTOS EM COMBATE" na pausa: um GET a cada 20 s, só com a pausa à vista.
     // Só o servidor público do build ou o `&servidor=` do link (o motivo do `defaultServer` ficar fora: ServerStatus.ts).
-    new ServerStatus(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
+    new ServerStatus(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, document.getElementById('menu-status'));
     new SettingsMenu(this.settings);
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician, names: foes.names });
     new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
 
-    this.modeSelector.attachTo(document.getElementById('overlay'));
-    attachMapLinks(document.getElementById('overlay'), mapFromSearch(location.search, !!online, this.gameMode));
+    this.modeSelector.attachTo(document.getElementById('menu-mode'));
+    attachMapLinks(document.getElementById('menu-mode'), mapFromSearch(location.search, !!online, this.gameMode), this.gameMode === 'deathmatch');
     this.modeSelector.onModeChange((mode) => {
       this.telemetry.enviar('modo_trocado');
       this.audio.playUiTransition();
@@ -572,7 +572,7 @@ export class Game {
       this.missionHud.hide();
     };
 
-    this.dailyChallenges.attachTo(document.getElementById('overlay'));
+    this.dailyChallenges.attachTo(document.getElementById('menu-profile'));
   }
 
   /**

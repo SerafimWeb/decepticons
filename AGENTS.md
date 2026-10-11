@@ -25,7 +25,7 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 8. Gravação de gameplay (F9), a mesa de vídeo (`/mesa`, em `.tmp/video/`) ou outra ferramenta acessória do dono? Leia `.decepticons/FERRAMENTAS.md` antes de mexer — evita redescobrir achados já registrados (ex.: o Mech parado que afunda no chão).
 9. Vai criar uma arma ou um robô novo? Leia `.decepticons/ARSENAL.md` (a lista do que tocar) antes.
 10. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
-11. Vai mexer em visual, efeito, HUD, cenário ou iluminação? Leia `.decepticons/REFERENCIA_VISUAL.md` antes: o alvo de qualidade que o dono apontou (MechArena), o que já existe no render e a ordem combinada. Os vídeos de referência ficam em `.tmp/referencias/` (só nesta máquina); no git ficam as pranchas.
+11. Vai mexer em visual, efeito, HUD, cenário ou iluminação? Leia `.decepticons/REFERENCIA_VISUAL.md` antes: o alvo de qualidade que o dono apontou (MechArena), o que já existe no render e a ordem combinada. Os vídeos de referência ficam em `.tmp/referencias/` (só nesta máquina); no git ficam as pranchas. **Tela, menu ou HUD:** leia também `.decepticons/AUDITORIA_INTERFACE.md` (os achados e os sete princípios: uma ação primária por tela, nada repetido, nada de informação de desenvolvedor para o jogador, menu sem rolagem em 1280×720).
 12. Vai escolher o que fazer a seguir, ou o dono perguntou "o que falta?" Leia `.decepticons/PEDIDOS_DO_DONO.md`: tudo que ele pediu, o estado de cada pedido e o placar de resultado.
 
 ## O QUE É
