@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { StatusSet } from '../combat/StatusEffects';
 import type { MechBase } from '../entities/MechBase';
 import { FlameVisuals } from './FlameVisuals';
+import { SHAPE } from './particleShapes';
 import type { BurstOptions } from './ParticleSystem';
 
 interface Chamada {
@@ -69,6 +70,16 @@ describe('o fluxo visível do lança-chamas (desenhado pela bandeira, para todos
     expect(miolo!.color.g).toBeGreaterThan(chama!.color.g); // o miolo é mais claro
     expect(fumaca!.color.r).toBeLessThan(0.5);
     expect(chama!.speed * chama!.life).toBeGreaterThan(11); // ~12 m de língua de fogo
+  });
+
+  it('o fogo tem forma de língua de fogo (o miolo também) e a fumaça é uma nuvem', () => {
+    const { chamadas, visuals, mech, pulso } = palco();
+    pulso();
+    visuals.update(mech(true));
+    const [chama, miolo, fumaca] = chamadas.map((c) => c.o);
+    expect(chama!.shape).toBe(SHAPE.flame);
+    expect(miolo!.shape).toBe(SHAPE.flame);
+    expect(fumaca!.shape).toBe(SHAPE.puff);
   });
 
   it('o custo é pequeno e conhecido: 6 partículas por pulso a 30 Hz = 180 por segundo por lança-chamas aceso (o pool tem 3000)', () => {
