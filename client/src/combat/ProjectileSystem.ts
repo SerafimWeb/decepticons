@@ -192,9 +192,14 @@ export class ProjectileSystem {
       p.prev.copy(p.pos);
       p.pos.addScaledVector(_dir, step);
       this.trailEnd(p, p.pos);
-      // Alguns tiros deixam um rastro de partículas no caminho (`fx/impactFx.ts`): o gelo, um floco girando a cada 1,6 m; o obus, um fiapo de fumaça a cada 3 m.
+      // Alguns tiros deixam um rastro de partículas no caminho (`fx/impactFx.ts`): o gelo, uma bruma de frio a cada metro e um floco pequeno a cada 3,5 m; o obus, um fiapo de fumaça a cada 3 m.
       const trail = p.weapon.tracer === 'ice' || p.weapon.tracer === 'shell' ? TRAIL_FX[p.weapon.tracer] : undefined;
-      if (trail && Math.floor((p.traveled + step) / trail.every) !== Math.floor(p.traveled / trail.every)) this.particles.burst(p.pos, _dir, trail.fx);
+      if (trail) {
+        for (const t of trail) {
+          if (Math.floor((p.traveled + step) / t.every) === Math.floor(p.traveled / t.every)) continue;
+          for (const o of t.fx) this.particles.burst(p.pos, _dir, o);
+        }
+      }
       p.traveled += step;
       p.life -= dt;
       if (p.life <= 0) this.kill(p);

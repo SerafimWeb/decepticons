@@ -161,19 +161,20 @@ const BASE: Record<WeaponId, WeaponBase> = {
     spin: { up: 1.2, down: 1.5, minRate: 0.15, spread: 0.06 },
   },
   /**
-   * Lança-chamas (dono, 09/10 e 11/10: "faça o lança-chamas"). **Fluxo contínuo em cone de 14 m e 25° que atinge todos os que estão nele**,
-   * 6 s de combustível e 4 s de recarga. Um pulso a cada 0,2 s: 6 de dano (30/s) a 6 m ou menos, caindo à metade aos 14 m, e cada pulso
-   * deixa o alvo **queimando** (4 de dano/s e calor no alvo, renova a cada contato; o gelo apaga). Esquenta quem atira (0,2 de calor por
-   * segundo: ferve em ~5 s de chama contínua). Natureza `termico`. Sem projétil e sem evento de rede por pulso: o servidor aplica o cone e o
-   * dono liga a bandeira `flaming`, que os outros jogadores leem para desenhar o fluxo.
+   * Lança-chamas (dono, 09/10 e 11/10: "faça o lança-chamas"; e 11/10, depois de jogar: "o fogo está muito fraco e curto"). **Fluxo contínuo em cone
+   * de 20 m e 34° que atinge todos os que estão nele**, 6 s de combustível e 4 s de recarga. Um pulso a cada 0,2 s: **10 de dano (50/s)** a 9 m ou
+   * menos, caindo à metade aos 20 m, e cada pulso deixa o alvo **queimando** (6 de dano/s e calor no alvo, renova a cada contato; o gelo apaga).
+   * Esquenta quem atira (0,2 de calor por segundo: ferve em ~4,8 s de chama contínua, que é o freio). Sozinho derruba um torso em 7,5 s (MK I) a
+   * 5,9 s (MK III); eram 13,3 e 10,9 s com 6 de dano e 14 m. Natureza `termico`. Sem projétil e sem evento de rede por pulso: o servidor aplica o
+   * cone e o dono liga a bandeira `flaming`, que os outros jogadores leem para desenhar o fluxo.
    */
   flamer: {
     id: 'flamer', name: 'Lança-chamas', kind: 'energy',
-    damage: 6, fireInterval: 0.2, heatPerShot: 0.04,
+    damage: 10, fireInterval: 0.2, heatPerShot: 0.04,
     magazine: 0, reload: 0, speed: 0,
-    optimalRange: 6, maxRange: 14, minFactor: 0.5,
+    optimalRange: 9, maxRange: 20, minFactor: 0.5,
     blastRadius: 0, mass: 3.5, inflicts: 'burn',
-    flame: { halfAngle: 0.218, fuel: 6, reload: 4 },
+    flame: { halfAngle: 0.3, fuel: 6, reload: 4 },
   },
   /**
    * Canhão pesado (dono, 11/10: "quero um canhão grande, um tiro só"). **Um projétil de aço, grande e lento, que bate como um caminhão**: 90 de
@@ -223,14 +224,15 @@ const BASE: Record<WeaponId, WeaponBase> = {
    * Arma de gelo (dono, 09/10: "lança-chamas e arma de gelo"). Dano pequeno, o estado é o ponto: cada acerto que chega ao corpo soma um
    * acúmulo de **gelado** (−15% de velocidade por acúmulo, até 3, por 4 s desde o último tiro); o **terceiro acúmulo congela** o alvo por
    * 1,5 s (parado, sem atirar, levando +20% de dano), com 5 s de imunidade para não encadear (`combat/StatusEffects.ts`). Projétil mais lento
-   * que o da elétrica (70 contra 90 m/s) e cadência de 0,6 s: três acertos levam 1,2 s, dentro dos 4 s do gelado. Natureza `criogenico`:
+   * que o da elétrica (70 contra 90 m/s) e cadência de 0,6 s: três acertos levam 1,2 s, dentro dos 4 s do gelado. **Alcance curto** (dono, 11/10: "o gelo
+   * está indo muito longe"): cheio até 20 m e some aos 55 m (eram 45 e 110 m); o frio é arma de perto e de meia distância, o plasma e o aço é que alcançam longe. Natureza `criogenico`:
    * a cerâmica isola o frio, o aço e a malha seguram menos, o reativo deixa passar. Fogo e gelo se anulam (`StatusSet`).
    */
   cryo: {
     id: 'cryo', name: 'Arma de gelo', kind: 'energy',
     damage: 5, fireInterval: 0.6, heatPerShot: 0.05,
     magazine: 0, reload: 0, speed: 70,
-    optimalRange: 45, maxRange: 110, minFactor: 0.5,
+    optimalRange: 20, maxRange: 55, minFactor: 0.5,
     blastRadius: 0, mass: 3, tracer: 'ice', inflicts: 'chill',
   },
   railgun: {

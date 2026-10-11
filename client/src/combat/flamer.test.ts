@@ -8,9 +8,10 @@ import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { Match } from '../sim/Match';
 import { Armament, type ShotSink } from './Armament';
-import { drill, sustainedDps, timeToKill } from './balance';
+import { drill, timeToKill } from './balance';
 import { FuelTank } from './trigger';
 import { DAMAGE_TYPE, hitDamage, weapon, type WeaponStats } from './weapons';
+import { STATUS } from './StatusEffects';
 
 const V = VECTOR09_STATS;
 const TORSO = V.maxModuleHealth.torso;
@@ -18,37 +19,60 @@ const FLAMER = weapon('flamer');
 const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
 
 describe('lança-chamas: números e equilíbrio', () => {
-  it('é de energia, sem projétil, aplica queimando e tem natureza térmica; pesa 3,5 / 5,25 / 7 t e bate 6 / 7 / 8 por pulso', () => {
+  it('é de energia, sem projétil, aplica queimando e tem natureza térmica; pesa 3,5 / 5,25 / 7 t e bate 10 / 12 / 14 por pulso', () => {
     expect(FLAMER.kind).toBe('energy');
     expect(FLAMER.speed).toBe(0); // não solta projétil: o dano é do cone
     expect(FLAMER.inflicts).toBe('burn');
     expect(DAMAGE_TYPE.flamer).toBe('termico');
     expect(FLAMER.fireInterval).toBe(0.2);
     expect(([0, 1, 2] as const).map((t) => weapon('flamer', t).mass)).toEqual([3.5, 5.25, 7]);
-    expect(([0, 1, 2] as const).map((t) => weapon('flamer', t).damage)).toEqual([6, 7, 8]);
+    expect(([0, 1, 2] as const).map((t) => weapon('flamer', t).damage)).toEqual([10, 12, 14]);
   });
 
-  it('o cone e o tanque são os do pedido: 14 m, 25° de abertura, 6 s de combustível e 4 s de recarga (e não mudam com o nível)', () => {
-    expect(FLAMER.maxRange).toBe(14);
-    expect((FLAMER.flame!.halfAngle * 2 * 180) / Math.PI).toBeCloseTo(25, 0);
+  it('o cone e o tanque são os do pedido (dono, 11/10: "muito fraco e curto"): 20 m, 34° de abertura, 6 s de combustível e 4 s de recarga (e não mudam com o nível)', () => {
+    expect(FLAMER.maxRange).toBe(20);
+    expect((FLAMER.flame!.halfAngle * 2 * 180) / Math.PI).toBeCloseTo(34, 0);
     expect(FLAMER.flame!.fuel).toBe(6);
     expect(FLAMER.flame!.reload).toBe(4);
     for (const t of [1, 2] as const) expect(weapon('flamer', t).flame).toEqual(FLAMER.flame);
   });
 
-  it('dá 30 de dano por segundo de perto (6 por pulso a 5 pulsos/s) e cai à metade no alcance máximo', () => {
-    expect(FLAMER.damage / FLAMER.fireInterval).toBe(30);
-    expect(hitDamage(FLAMER, 3)).toBe(6);
-    expect(hitDamage(FLAMER, FLAMER.optimalRange)).toBe(6);
-    expect(hitDamage(FLAMER, FLAMER.maxRange)).toBe(Math.round(6 * FLAMER.minFactor));
-    expect(hitDamage(FLAMER, 10)).toBeLessThan(6);
-    expect(hitDamage(FLAMER, 10)).toBeGreaterThan(3);
+  it('dá 50 de dano por segundo até 9 m (10 por pulso a 5 pulsos/s) e cai à metade no alcance máximo de 20 m', () => {
+    expect(FLAMER.damage / FLAMER.fireInterval).toBe(50);
+    expect(FLAMER.optimalRange).toBe(9);
+    expect(hitDamage(FLAMER, 3)).toBe(10);
+    expect(hitDamage(FLAMER, FLAMER.optimalRange)).toBe(10);
+    expect(hitDamage(FLAMER, FLAMER.maxRange)).toBe(Math.round(10 * FLAMER.minFactor));
+    expect(hitDamage(FLAMER, 14)).toBeLessThan(10);
+    expect(hitDamage(FLAMER, 14)).toBeGreaterThan(5);
   });
 
-  it('em um alvo só é arma lenta: sozinha, em nenhum nível derruba um torso em menos de 10 s (o plasma leva 5,7 s); o valor dela é o cone', () => {
-    for (const t of [0, 1, 2] as const) expect(timeToKill([weapon('flamer', t)], V, TORSO)).toBeGreaterThan(10);
-    expect(timeToKill([FLAMER], V, TORSO)).toBeGreaterThan(timeToKill([weapon('plasma')], V, TORSO) * 2);
-    expect(sustainedDps(FLAMER, V)).toBeLessThan(sustainedDps(weapon('plasma'), V) * 0.6);
+  it('o fogo ficou mais forte, mais longo e mais grosso que o primeiro desenho (6 de dano, 14 m, 25°): +67% de dano, +43% de alcance, cone 36% mais aberto', () => {
+    expect(FLAMER.damage).toBeGreaterThanOrEqual(6 * 1.5);
+    expect(FLAMER.maxRange).toBeGreaterThanOrEqual(14 * 1.4);
+    expect(FLAMER.flame!.halfAngle).toBeGreaterThan(0.218 * 1.3);
+    expect(STATUS.burnDps).toBeGreaterThanOrEqual(6); // queimar também dói mais (eram 4 por segundo)
+  });
+
+  it('em um alvo só é arma de peso médio: sozinha, em nenhum nível derruba um torso em menos de 4,5 s (a meta de todas) nem em mais de 8 s; o valor extra dela é o cone', () => {
+    for (const t of [0, 1, 2] as const) {
+      const tempo = timeToKill([weapon('flamer', t)], V, TORSO);
+      expect(tempo, `MK ${t + 1}`).toBeGreaterThan(4.5);
+      expect(tempo, `MK ${t + 1}`).toBeLessThan(8);
+    }
+    // Era arma lenta (13,3 s no MK I, o dobro do plasma): agora fica perto do plasma (5,7 s), com a vantagem de acertar todos no cone.
+    expect(timeToKill([FLAMER], V, TORSO)).toBeLessThan(timeToKill([weapon('plasma')], V, TORSO) * 1.5);
+    expect(timeToKill([FLAMER], V, TORSO)).toBeGreaterThan(timeToKill([weapon('plasma')], V, TORSO));
+  });
+
+  it('dois lança-chamas juntos (Marauder) levam mais de 3,5 s, e com o canhão pesado ou os foguetes MK III, mais de 2,5 s: o calor do Mech segura', () => {
+    for (const a of [0, 1, 2] as const) {
+      for (const b of [0, 1, 2] as const) {
+        expect(timeToKill([weapon('flamer', a), weapon('flamer', b)], V, TORSO), `${a}+${b}`).toBeGreaterThan(3.5);
+        expect(timeToKill([weapon('flamer', a), weapon('cannon', b)], V, TORSO), `canhão ${a}+${b}`).toBeGreaterThan(2.5);
+        expect(timeToKill([weapon('flamer', a), weapon('rockets', b)], V, TORSO), `foguetes ${a}+${b}`).toBeGreaterThan(2.5);
+      }
+    }
   });
 
   it('esquenta quem atira: parado, com a chama contínua, o Mech ferve entre 4 e 6 s (antes de o tanque de 6 s acabar)', () => {
@@ -261,11 +285,11 @@ describe('o cone de dano (Match.flameCone), com física de verdade', () => {
     expect(atirador.status.burning).toBe(false);
   });
 
-  it('o mais longe leva menos (o dano cai com a distância) e o que está além dos 14 m não leva nada', async () => {
+  it('o mais longe leva menos (o dano cai com a distância) e o que está além dos 20 m não leva nada', async () => {
     const { alvo, pulso } = await palco();
     const perto = alvo(0, 20);
     const longe = alvo(2.2, 12.5); // ~12 m, a ~10° do eixo: dentro do cone
-    const fora = alvo(0, 5); // ~20 m
+    const fora = alvo(0, 2); // ~22,5 m da boca: passa dos 20 m de alcance mais o raio do corpo
     const tira = (m: Vector09) => m.stats.maxModuleHealth.torso + m.stats.maxModuleHealth.head - (m.modules.torso + m.modules.head);
     pulso();
     expect(tira(perto)).toBeGreaterThan(tira(longe));

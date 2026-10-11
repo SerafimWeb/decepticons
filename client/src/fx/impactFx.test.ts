@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { weapon, type WeaponId } from '../combat/weapons';
 import type { BurstOptions } from './ParticleSystem';
 import { SHAPE } from './particleShapes';
-import { ICE_TRAIL, ICE_TRAIL_EVERY, IMPACT_FX } from './impactFx';
+import { ICE_MIST, ICE_MIST_EVERY, ICE_TRAIL, ICE_TRAIL_EVERY, IMPACT_FX } from './impactFx';
 
 const shapesDe = (id: WeaponId): Set<number> => new Set(IMPACT_FX[id].map((o) => o.shape ?? SHAPE.glow));
 const total = (lista: readonly BurstOptions[]) => lista.reduce((a, o) => a + o.count, 0);
@@ -60,12 +60,28 @@ describe('o impacto de cada arma (onde o tiro bate)', () => {
     for (const id of comProjetil) for (const o of IMPACT_FX[id]) expect(Math.max(o.color.r, o.color.g, o.color.b), id).toBeLessThanOrEqual(3);
   });
 
-  it('o tiro de gelo deixa um floco que gira a cada 1,6 m do caminho', () => {
+  it('o rastro do gelo é uma bruma de frio (dono, 11/10: "partículas menores, pra dar mais a sensação de gelo frio") e só de vez em quando um floco pequeno', () => {
+    // A bruma: fagulhas de gelo minúsculas e um vapor azulado, a cada metro; tudo bem menor que o floco grande de antes (3,2).
+    expect(ICE_MIST_EVERY).toBe(1);
+    expect(ICE_MIST.map((o) => o.shape)).toEqual([SHAPE.dot, SHAPE.puff]);
+    for (const o of ICE_MIST) expect(o.size!, String(o.shape)).toBeLessThanOrEqual(1.6);
+    // Pálida e fria: o azul manda e nada passa de 1,2 de brilho (o frio nunca ofusca).
+    for (const o of [...ICE_MIST, ICE_TRAIL]) {
+      expect(dominante(o)).toBe('b');
+      expect(Math.max(o.color.r, o.color.g, o.color.b)).toBeLessThan(1.2);
+    }
+    // O floco que sobra é pequeno, gira e é raro (a cada 3,5 m).
     expect(ICE_TRAIL.shape).toBe(SHAPE.flake);
     expect(ICE_TRAIL.spin).toBeGreaterThan(0);
-    expect(ICE_TRAIL_EVERY).toBeCloseTo(1.6, 5);
-    // O gelo voa a 70 m/s: o rastro de 1,6 m é de ~44 flocos por segundo de voo, de um tiro a cada 0,6 s.
-    const voo = weapon('cryo').maxRange / weapon('cryo').speed;
-    expect((weapon('cryo').speed * voo) / ICE_TRAIL_EVERY).toBeLessThan(80);
+    expect(ICE_TRAIL.size!).toBeLessThan(2);
+    expect(ICE_TRAIL_EVERY).toBeCloseTo(3.5, 5);
+  });
+
+  it('o custo do rastro do gelo é conhecido: ~180 partículas por tiro, de um tiro a cada 0,6 s (o pool tem 3000)', () => {
+    const w = weapon('cryo');
+    const bruma = Math.floor(w.maxRange / ICE_MIST_EVERY) * ICE_MIST.reduce((a, o) => a + o.count, 0);
+    const flocos = Math.floor(w.maxRange / ICE_TRAIL_EVERY) * ICE_TRAIL.count;
+    expect(bruma + flocos).toBeLessThanOrEqual(200);
+    expect(((bruma + flocos) / w.fireInterval)).toBeLessThan(400); // por segundo de gatilho apertado
   });
 });

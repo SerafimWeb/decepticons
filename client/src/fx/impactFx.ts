@@ -90,18 +90,42 @@ export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
   flamer: [],
 };
 
-/** Um floco que o tiro de gelo deixa no caminho a cada 1,6 m (um rastro de cristais girando e caindo). */
-export const ICE_TRAIL: BurstOptions = { count: 1, color: ICE, speed: 0.6, life: 0.7, size: 3.2, spread: 0.6, gravity: 2.5, spin: 4, shape: SHAPE.flake };
+/**
+ * O rastro do tiro de gelo (dono, 11/10: "o rastro dele soltasse frio, partículas menores, pra dar mais a sensação de gelo frio"): uma **bruma de frio**
+ * (fagulhas de gelo minúsculas, pálidas e que caem, mais um vapor azulado que sobe devagar) a cada metro do caminho, e só de vez em quando um floco
+ * pequeno girando (a cada 3,5 m; antes era um floco grande a cada 1,6 m, que parecia pétala, não frio). Tudo abaixo de 1,2 de brilho: o frio é
+ * pálido, nunca ofusca.
+ */
+const FROST_DUST = c(0.5, 0.78, 0.95);
+const FROST_VAPOR = c(0.32, 0.5, 0.64);
+const FROST_FLAKE = c(0.7, 0.95, 1.1);
+export const ICE_MIST: readonly BurstOptions[] = [
+  { count: 2, color: FROST_DUST, speed: 0.8, life: 0.5, size: 0.8, spread: 1, gravity: 1.4, shape: SHAPE.dot },
+  { count: 1, color: FROST_VAPOR, speed: 0.4, life: 0.8, size: 1.5, expansion: 1, spread: 0.6, gravity: -0.3, shape: SHAPE.puff },
+];
+/** Distância entre duas lufadas da bruma (m). */
+export const ICE_MIST_EVERY = 1;
+/** O floco pequeno que o tiro de gelo ainda deixa de vez em quando. */
+export const ICE_TRAIL: BurstOptions = { count: 1, color: FROST_FLAKE, speed: 0.5, life: 0.7, size: 1.4, spread: 0.6, gravity: 2, spin: 4, shape: SHAPE.flake };
 /** Distância entre dois flocos do rastro (m). */
-export const ICE_TRAIL_EVERY = 1.6;
+export const ICE_TRAIL_EVERY = 3.5;
 
 /** A fumaça que o obus do canhão pesado deixa no caminho: um fiapo cinza que cresce e sobe devagar. */
 export const SHELL_TRAIL: BurstOptions = { count: 1, color: c(0.34, 0.34, 0.34), speed: 0.4, life: 1.2, size: 3.4, expansion: 2.2, spread: 0.5, gravity: -0.4, shape: SHAPE.puff };
 /** Distância entre dois fiapos de fumaça (m). */
 export const SHELL_TRAIL_EVERY = 3;
 
-/** O rastro de partículas que cada tipo de tiro deixa no caminho (os outros não deixam nenhum): o gelo, flocos; o obus, fumaça. */
-export const TRAIL_FX: Readonly<Partial<Record<'ice' | 'shell', { fx: BurstOptions; every: number }>>> = {
-  ice: { fx: ICE_TRAIL, every: ICE_TRAIL_EVERY },
-  shell: { fx: SHELL_TRAIL, every: SHELL_TRAIL_EVERY },
+/** Uma camada do rastro: o que soltar e a cada quantos metros do caminho. */
+export interface TrailStep {
+  fx: readonly BurstOptions[];
+  every: number;
+}
+
+/** O rastro de partículas que cada tipo de tiro deixa no caminho (os outros não deixam nenhum): o gelo, bruma e flocos; o obus, fumaça. */
+export const TRAIL_FX: Readonly<Partial<Record<'ice' | 'shell', readonly TrailStep[]>>> = {
+  ice: [
+    { fx: ICE_MIST, every: ICE_MIST_EVERY },
+    { fx: [ICE_TRAIL], every: ICE_TRAIL_EVERY },
+  ],
+  shell: [{ fx: [SHELL_TRAIL], every: SHELL_TRAIL_EVERY }],
 };
