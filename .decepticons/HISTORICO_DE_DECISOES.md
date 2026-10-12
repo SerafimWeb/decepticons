@@ -10,6 +10,140 @@
 5. **Dois resets redundantes saíram:** o `ChargeTimer.step` já zera a carga quando o botão está solto; o reset explícito era código morto (as mutações o provaram), e uma regra nova de botão por mão não é lugar para carregá-lo.
 6. **Fica de fora, de propósito:** costas e peito (precisam do evento de tiro com mais bits), e a pergunta "o Ataque 2 com ombro + costas + peito dispara tudo junto ou alterna?", que é do Comandante.
 
+## [2026-10-12] A ficha do cenário com rota: ESTAÇÃO DE CABOS, o maior mapa sem streaming (P99, Qwen)
+
+**Ordem do Comandante (P99):** *"fases com cenários maiores… pra dar mais realismo e jogadas mais interessantes"*.
+
+**Decisões:**
+1. **A ficha do cenário vem antes da geometria — e o Bunker é a razão:** ele foi construído, o dono jogou e pediu outra coisa (mais profundidade, P60), e a segunda rodada custou um PR inteiro. Fixar **o que o cenário faz** antes de desenhá-lo é o contrato (regra 5). Documento novo: `fichas/cenario-cabos.md` (proposta).
+2. **O cenário escolhido já existe no produto como promessa:** o console (`ui/theater.ts`) lista **ESTAÇÃO DE CABOS (Fortaleza · CE)**, e é a **única das cinco missões com o lugar confirmado** — Fortaleza é a chegada dos cabos submarinos no `UNIVERSO.md`, e o `theater.test.ts` trava isso. A ficha **não inventa geografia** (o `UNIVERSO.md` proíbe os agentes de escrever geopolítica nova).
+3. **O tamanho é a decisão técnica da ficha:** ~500 m por ~140 m (2,5× a Arena) e **residente** — é o **maior cenário que ainda cabe sem streaming**; o mundo com `interest management` é a **Fase 7**, e pedir mais hoje seria pedir a fase inteira.
+4. **Um cenário, duas missões:** a **extração** da escolta é a **base** do contraataque (o mesmo ponto visto ao contrário), e **duas vias por trecho** realizam as "jogadas mais interessantes" que o dono pediu — corredor único não tem decisão.
+5. **Os números de aceitação são os do Bunker, e a evidência é obrigatória:** colisores **< 310**, 18 a 67 desenhos por vista, GPU p50/p95 pelo método do `medicoes/BUNKER.md`, bancada em `medicoes/` e capturas em `arte/`. **O julgamento visual é do dono** — eu não leio imagem.
+6. **A ordem fica dita:** a missão #1 **não depende** deste cenário (Arena e Bunker bastam ao primeiro corte); este mapa é para a versão longa da escolta e para o contraataque.
+
+**Custo de CPU:** nenhum (documentação). O cenário, quando construído, é **estático**: 0 CPU por tick e nenhum byte de rede. **Quem decidiu:** Qwen, dentro da ordem P99.
+
+## [2026-10-12] A ficha da missão #1 — escoltar o técnico, com 13 testes especificados (P99, Qwen)
+
+**Ordem do Comandante (P99):** *"fases com cenários maiores, missões de proteção de escoltas, ataque, defesa de base, contraataques… e com mais robôs por partida"*.
+
+**Decisões:**
+1. **A ficha vem antes da regra** (regra 5 do `AGENTS.md` + G14 — o `it()` nasce no PR que cria a regra): o que ela entrega é a **especificação de cada teste** (13) para o Claude implementar regra e teste no mesmo PR, e para o Gemini ligar briefing e HUD contra os mesmos nomes de objetivo. Documento novo: **`fichas/escolta.md`** (proposta).
+2. **A primeira missão é barata porque o jogo já tem o essencial:** o técnico **ENTRÓPICO** existe (`TechnicianController`, 5 testes), **já é alvo prioritário** da IA (`GAME_DESIGN.md` § 3) e a **P91** já aceita técnico aliado. Logo: **zero arte nova, zero rede nova, zero CPU por tick a mais** — a tensão da escolta já está no jogo, e a ficha só a organiza em três fases (uma avaria → duas → extração).
+3. **Offline primeiro**, como o CTF e a Sobrevivência: o **`OBJECTIVE_STATE`** (o evento de rede que o `ROADMAP` pede) fica para o PR do online. Dizer isso evita que a ficha cobre rede de um corte que não tem rede.
+4. **A ficha é honesta sobre o que é DEMO:** o `MissionHUD` está marcado **DEMO** (R13) — testado isolado, com dado de exemplo. É esta missão que o tira da demonstração, e é o trabalho do Gemini.
+5. **Sete perguntas ficam com o dono**, e a primeira é de ficção (quem é "nosso" técnico, se o ENTRÓPICO é rebelde hoje); as outras decidem respawn, número de fases, a extração, e a ordem desta missão frente ao CTF online (P81).
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, dentro da ordem P99.
+
+## [2026-10-12] O pacote de publicação do vídeo #1, e o que a mesa deixa o dono mexer (P47, Qwen)
+
+**Ordem do Comandante (P47):** *"com a MESA, eu consigo editar, melhorar e corrigir alguns detalhes nessa criação de vídeos"*.
+
+**Decisões:**
+1. **Confirmado — e virou manual.** A mesa edita o **roteiro**, não o vídeo: texto, número, `segundos`, ordem, `pular`, imagens e `formato`; **corrigir um detalhe = exportar de novo** (~1 min a 720p30). Está no `FERRAMENTAS.md` § 3.2, junto do que ela **não** faz: editar um **clipe gravado** (a cena `clipe` só tem `início`, sem prévia nem `fim` — é a **P97**) e o fato de o vídeo gravado em tempo real não ser editado quadro a quadro.
+2. **As duas cenas desligadas ficam ditas:** no roteiro "o-processo" há um **`clipe`** e um **`veredito`** prontos com `pular: true` — tirar a linha é suficiente quando houver take (P97) ou citação de fora.
+3. **O pacote de publicação é do dono, e é sugestão.** Título (número ou pergunta), descrição com o link nas duas primeiras linhas, hashtags/tags, miniatura (**um Mech grande e três palavras**) e a lista do que não dizer — em `PUBLICACAO_E_MONETIZACAO.md` **§ 4.2**. Quem publica é ele; a miniatura é justamente o que eu **não** consigo julgar (não leio imagem).
+4. **As travas valem no texto do YouTube também:** nada fora da `main` (regra 14), nada PARCIAL/AUSENTE anunciado como pronto (R13), nenhum byte/KB/s (política de 27/09) e **nenhuma data prometida** para o CTF online, o multiplayer com times ou as missões (P99).
+
+**Custo de CPU:** nenhum. **Quem decidiu:** Qwen, dentro da ordem P47.
+
+## [2026-10-12] O primeiro vídeo do canal: "o processo", 52 s, aprovado no portão da própria mesa (P47, Qwen)
+
+**Ordem do Comandante (P47):** *"primeiro vamos publicar no youtube"* e, depois, *"prossiga com sua fila"*.
+
+**Decisões:**
+1. **O vídeo #1 é "o processo", e é curto de propósito (≈52 s, 11 cenas):** é o único do lançamento que pode ir ao ar **hoje** — não depende do take do `F9` (P97) nem de narração. O **episódio longo de 6 a 10 min** fica dito como o próximo passo, e depende de **narração** (voz) e dos takes; prometer esse formato agora seria prometer o que não existe.
+2. **Quem julga o roteiro é o portão da mesa (`validar.mjs`), não eu** — ele confere cada número contra o código e contra o `STATUS_REAL` (R13). Resultado: **sem travas**. Foi ele que corrigiu um erro meu de memória: a peça antiga dizia 272 testes e 102 PRs; hoje são **1455** e **245**. Número no vídeo é o número do jogo.
+3. **Sem bytes nem KB/s.** A peça de 15 s tem a cena da banda; esta **não**. A decisão de 27/09 (não republicar a engenharia em material público) vale para o vídeo, que é público: mostra-se o **ritmo** (60 Hz, 20 Hz) e a **contagem de testes**, não o tamanho das coisas. É escolha minha dentro da política e é reversível (a cena existe, é uma linha).
+4. **A peça de 15 s do dono foi preservada antes de tudo** (salva como roteiro nomeado `cybermech-15s`, que agora aparece no menu da mesa), e o roteiro ativo foi **restaurado ao original** no fim da gravação.
+5. **Gravou-se, não se renderizou:** medido — o `render.mjs` (quadro a quadro) em modo software produz ~1 quadro a cada vários minutos nesta máquina (headless compõe pela CPU, o mesmo achado do `FERRAMENTAS.md` § 4); o `record.mjs` grava **em tempo real numa janela com GPU** e levou ~1 min a 720p30. O 1080p60 continua possível: apontar o `RENDER_BROWSER` para um Chrome com GPU.
+6. **A cópia versionada é `.decepticons/video/o-processo.js`** (a mesa lê a de `.tmp/video/roteiros/`); os quadros do vídeo ficaram em `arte/video-o-processo-*.png`. **Eu não leio imagem: o julgamento visual é do dono.**
+
+**Custo de CPU:** nenhum no jogo (é vídeo). **Quem decidiu:** Qwen, dentro da ordem P47.
+
+## [2026-10-12] Missões com cenários maiores: escolta, ataque, defesa de base e contraataque (P99, Qwen)
+
+**Ordem do Comandante:** *"precisamos de fases com cenários maiores, missões de proteção de escoltas, ataque, defesa de base, contraataques, etc, pra dar mais realismo e jogadas mais interessantes, e com mais robôs por partida"*.
+
+**Decisões:**
+1. **Registrada como P99 sobre o plano que já existe**, sem abrir um concorrente: o das missões em fases é o **`ROADMAP` Fase 5** + **`DIVERSAO.md` § 10 #7** (a primeira missão é a escolta/defesa do técnico ENTRÓPICO — regra + HUD, sem arte nova). Duas ordens concorrentes seria o mesmo que nenhuma.
+2. **"Mais robôs por partida" já está feito offline** — a P91 (no ar) monta **32 corpos** a 1,9 ms por tick. O que falta é o **esquadrão por sala no servidor** (fase 3 do `PAINEL_ADMIN.md`). Dizer isso evita que alguém refaça o que já existe.
+3. **O que o pedido acrescenta de novo:** os quatro tipos nomeados, dos quais o **contraataque** (defender e depois retomar) não estava na lista, e os **cenários maiores** — escolta e contraataque pedem um **caminho longo** e a Arena tem 200 m. Entrou um item de `#cenarios`: um **mapa de missão com rota**, antes do mundo com streaming do `VISAO.md` (Fase 7).
+4. **Territórios:** a regra de objetivo no `Match` e o `OBJECTIVE_STATE` na rede são do **Claude**; o briefing, o HUD de objetivo e o resumo, do **Gemini**; a arte do cenário, do **Codex**.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, dentro da ordem do Comandante.
+
+## [2026-10-12] O kit do YouTube: o que abrir e o que publicar primeiro, já que a casa é o YouTube (P47, Qwen)
+
+**Ordem do Comandante (P47):** *"primeiro vamos publicar no youtube, depois verei com calma"*.
+
+**Decisões:**
+1. **O kit é documento, não ferramenta.** A seção **§ 4.1 do `PUBLICACAO_E_MONETIZACAO.md`** traz o operacional (o canal com **o mesmo nome do site** — senão o vídeo não acha o jogo —, os quatro primeiros vídeos, a regra dos Shorts, a miniatura de um Mech e três palavras, o título com número ou pergunta, e a cadência de **um vídeo longo por semana**). Nada disso é código, e nada disso é promessa de entrega.
+2. **O primeiro vídeo não depende do jogo nem do `F9`: é "o processo"** — um estúdio construindo um jogo com quatro IAs. É a viralidade mais exclusiva do projeto (`DIVERSAO.md` § 8.3), o material já existe (a sala de controle, os números do git) e é o único que pode ir ao ar **antes** de a fábrica do vídeo (P97) ficar pronta.
+3. **Mede-se partida, não visualização.** O funil de cliques da landing e a origem por país já existem no servidor (`ROADMAP` `#negocio`); no YouTube eles dizem se o vídeo virou jogador — a visualização sozinha não paga nada nem prova nada.
+4. **As travas valem no vídeo também:** não prometer o que não está na `main` (regra 14), não mostrar como pronto o que a `STATUS_REAL.md` marca PARCIAL/AUSENTE (R13) e não usar música de terceiros sem licença.
+
+**Custo de CPU:** nenhum. **Quem decidiu:** Qwen, dentro da ordem P47.
+
+## [2026-10-12] As decisões do Comandante sobre publicação: CYBERMECH, YouTube primeiro, contas e pagamento autorizados (P47, Qwen)
+
+**Ordem do Comandante (resposta às cinco perguntas do `PUBLICACAO_E_MONETIZACAO.md` § 7, no mesmo dia).**
+
+**Decisões:**
+1. **O nome é CYBERMECH.** AVARIA era o melhor encontrado, mas `avaria.com` **e** `avaria.com.br` estão tomados, e é palavra comum (marca difícil): ele volta para CYBERMECH — *"parece o que melhor transmite o que é o game"*. `cybermech.com.br` aparece **livre** (DNS; confirmar no registro.br), `cybermech.com` é tomado. **A capa volta a dizer CYBERMECH** (era o único lugar do código com AVARIA, P79) e a busca de marca no INPI (classes 9 e 41) fica de pé. Ele aceita sugestões que remetam ao combate contra as forças do mal nas IAs e nos Mechs: candidatos e disponibilidade por DNS no § 7.1 do documento (livres: PANE, FERROVEU, MECHREBELDE e GLÁDIO no `.com.br`); a alternativa mais barata é manter o nome e pôr a guerra no **subtítulo** da campanha.
+2. **YouTube primeiro.** itch.io e os portais de jogos web ficam para depois, com calma — **decisão de sequência do dono**, sobre a recomendação do documento (que punha o portal à frente por trazer jogador).
+3. **Netflix entra como interesse declarado** (*"nosso game é nível netflix!"*). Registrado com franqueza: o modelo dela (sem anúncio, sem compra dentro do jogo, jogo dentro da assinatura) é o único grande compatível com o nosso "nunca pay-to-win", **mas não há porta de entrada aberta** — ela licencia de estúdio, e o que se leva é jogo com número. Alvo de longo prazo, não de agora.
+4. **Contas + pagamento AUTORIZADOS** — é o que liga o cosmético e o passe (`METAGAME.md` § 6); traz **LGPD e tributo** junto, e era pré-requisito declarado desde 23/09.
+5. **Killcam no PvP: sim** — ordem **P98**.
+6. **O vídeo é do dono:** ele grava os takes no `F9` e quer que eles **estejam dentro da mesa** para finalizar e **editar na mão**, em ultrahd e com som — ordem **P97**, plano em `FERRAMENTAS.md` § 3.1. **Achado ao escrever o plano (R17):** o `F9` **já grava com som** (não é preciso construir isso); o que falta é o take chegar sozinho na mesa (hoje o dono copia o arquivo na mão para `.tmp/video/clipes/`) e a edição manual de verdade (a mesa desenha só um marcador na cena de clipe; quem corta é o `render.mjs`).
+
+**Custo de CPU:** nenhum (a capa é uma palavra; o resto é registro). **Quem decidiu:** o Comandante; registrado pelo Qwen.
+
+## [2026-10-12] Publicação e monetização: onde o jogo mora, como o dinheiro entra e em que ordem (P47, Qwen)
+
+**Ordem do Comandante (P47, de 23/09, retomada em 12/10):** *"como fazer para publicarmos esse jogo no YouTube, ou Steam, ou quais plataformas gratuitas podemos publicar, e como monetizar e ganhar grana com o game?"*
+
+**Decisões:**
+1. **YouTube não é plataforma de publicação; é canal.** Ele não hospeda o jogo — ele traz jogador. Quem hospeda de verdade: o **site próprio** (já no ar), os **portais de jogos web** (CrazyGames, Poki, GameDistribution, Y8, Newgrounds) e o **itch.io**, os três gratuitos. Steam e lojas de celular entram **depois** (o binário de desktop e o pacote de app são custo e trabalho que não se justificam sem base instalada). O documento novo `PUBLICACAO_E_MONETIZACAO.md` faz o comparativo com o que cada casa exige e paga.
+2. **A casa certa para começar é o portal, e o itch.io vem de graça junto.** O portal resolve o problema que mata jogo multiplayer novo — **não ter com quem jogar** — e é o único item aberto do `ROADMAP` `#negocio` que ataca isso. Um detalhe que confirma a ordem: portal exige jogo que se joga **sem servidor**, e nós temos os bots (`P91`); a porta já está aberta.
+3. **O dinheiro do começo é volume, não preço.** Anúncio rende centavos a poucos reais por mil visualizações (conferir os termos do portal, nunca tratar projeção como número fechado); o dinheiro grande de free-to-play é **cosmético**, e cosmético **só liga com contas** (LGPD e tributo vêm juntos). Reafirmado o que já era regra: **nada de pay-to-win, nada de cobrar para entrar, nada de anúncio no meio do combate, nada de loja antes de contas, nada de Steam antes de gente.**
+4. **O gargalo é gente, não dinheiro — e o placar já mede isso.** Nenhuma frente de dinheiro liga antes de encher a sala; o trabalho que faz dinheiro hoje é o mesmo que traz o jogador de volta amanhã (retenção D1), o que casa com os quatro achados de `QUIMICA_DO_JOGO.md` § 5.
+5. **Nada aqui é escopo aprovado.** As escolhas são do Comandante: **cinco decisões** ficaram abertas no § 7 do documento (nome definitivo/AVARIA, primeiro destino externo, contas + pagamento, killcam no PvP, quem monta os cortes de 9:16). O `ROADMAP` `#negocio` segue sendo a fila técnica; o documento é o *quando*.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, com as escolhas em aberto para o Comandante.
+
+## [2026-10-12] O esquadrão: a partida monta robô por robô, e o padrão é provado igual ao jogo de hoje (P91, Claude)
+
+**Ordem do Comandante (P91):** "quero poder adicionar mais bots e aliados, além dos 3 do padrão".
+
+**Decisões:**
+1. **O esquadrão é o contrato; as configurações antigas viram um jeito de escrevê-lo.** `esquadraoDeFoes` traduz `enemyMechs`, `enemyAndroids`, `technician` e as personalidades (e as vagas dos aliados: o pool de Mechs menos 2, regra de 30/09 para o teto de 8 da sala, G11) no esquadrão equivalente, e o `Match` **sempre** monta pelo esquadrão. Um caminho só: o servidor (que passa `foes` e `allies: false`) e o jogo offline usam o mesmo código, e Sobrevivência e CTF seguem com o pool e os times deles. O que o Comandante personaliza fica à parte (`core/EsquadraoStore.ts`, como as potências) e **não** vai para `GameSettings`: o servidor lê as configurações e não deve ver um esquadrão que ele não sabe hospedar.
+2. **Fotos antes de mexer, não testes depois.** Quatro cenários (Arena offline com aliados e drones, Arena do servidor, Bunker, Arena sem inimigos) foram fotografados com o código **antigo**, num commit separado, e o esquadrão padrão tem de reproduzi-los tick a tick (posição ao centímetro, vida do torso, vivo ou morto, placar, em 1, 5, 10 e 20 s). Se uma mudar, o jogo padrão mudou: é decisão do Comandante, nunca efeito colateral. Foi o que me deixou trocar a construção dos bots sem medo.
+3. **O teto é medido.** Com o jogador parado e todos caçando, no Node: 0,55 ms por tick no jogo de hoje, 1,9 ms com 33 corpos (p95 abaixo de 4 ms), animação do desenho abaixo de 0,3 ms. A simulação sobra: o teto de **24 inimigos, 12 aliados e 32 no total** é a leitura da partida (32 robôs numa arena de 200 m é tiroteio o tempo todo) e a GPU (uns 10 desenhos por Mech), não a CPU. `LIMITES_DO_ESQUADRAO` está num lugar só; o editor mostra o peso (`nivelDeCarga`: leve até 8, média 16, alta 24, extrema acima) e a qualidade adaptativa cuida do resto. Não medi GPU real, e digo isso.
+4. **A arma decide a distância de tiro do bot.** A distância de ataque do tipo de robô (38 m) vale até 1,25 vez o alcance ótimo da arma; a escopeta (8 m) puxa o bot para 10 m, o gelo para 25 m, e plasma, EMP e o resto não mudam (por isso as fotos do jogo padrão não mexeram). Sem isso, escolher a escopeta para um bot seria uma pegadinha: ele ficaria a 38 m sem fazer cócegas. O corpo a corpo (a motosserra) tem o jeito dele e fica de fora.
+5. **O bot só usa a arma que sabe usar:** energia sem rotação de cano, chama, onda, carga nem míssil guiado (`armaServeAoBot`); as outras precisam de regras de gatilho que só o jogador usa (`Armament.ts`). Um teste põe cada arma permitida num bot e exige que ela acerte o jogador em 30 s.
+6. **Os chassis importados entram com o corpo procedural.** O servidor não carrega `.glb` (`MECHS_IMPORTADOS.md`), então um Lancer-L1 de bot tem a vida, o passo e o escudo de metal do Lancer, mas a silhueta de um Mech médio (o Arara e a Onça têm a deles, `blueprintByChassis.ts`, que saiu do `Game`). O Colossus e o andróide ficam de fora: um é o chefe da Sobrevivência, o outro é um papel.
+7. **Os pontos extras são validados pela física.** 36 de inimigos (anel de 55 a 100 m do nascimento do jogador) e 16 de aliados (10 a 48 m), a 14 e a 8 m uns dos outros, ordenados por espalhamento (qualquer quantidade fica bem distribuída), fora das zonas de cura e resfriamento; o teste consulta a arena de verdade (cilindro de 5 m de raio, 5,3 m de altura) e **falha se um prédio for movido** sem refazer a lista. No Bunker, que tem 12 pontos e um é do jogador, ninguém empilha: cada ponto serve a um corpo.
+8. **Tudo que crescia com o número de robôs foi revisto:** o pool de tiros (64 + 4 por Mech a partir do quarto: sem isso o tiro some em silêncio, G5), as sombras de bolha (32 para 48), o orçamento de fumaça/fogo/gelo por pulso (que só alcançava os 12 primeiros robôs; agora só gasta com quem emite, só perto e girando o começo), o placar, as setas da borda, o monitor PILOTOS. O que não revisei, e está dito em `STATUS_REAL.md`: o áudio não tem teto de vozes.
+
+**Custo de CPU:** medido acima. Pool de tiros: 3 objetos de cena por tiro (192 para 64, 540 para 180). **Quem decidiu:** Claude, com o teto e o padrão para o Comandante confirmar ou mudar (`LIMITES_DO_ESQUADRAO`).
+## [2026-10-12] A química do jogo: as cinco sensações viram um plano, e a ordem do `DIVERSAO.md` não muda (P96, Qwen)
+
+**Ordem do Comandante (P96):** "melhorar a jogabilidade, a dopamina, a serotonina, a adrenalina, a oxitocina e a sensação de bem-estar de cumprir missão, com dificuldade que instigue a tentar de novo, mudar configurações e customizar os robôs", aproveitando os aprendizados de Minecraft, Fortnite, COD, Valorant, Battlefield, War Robots, Mech Arena e Doom.
+
+**Decisões:**
+1. **O documento novo é `QUIMICA_DO_JOGO.md`, e ele é companheiro, não substituto, do `DIVERSAO.md`.** A **ordem de prioridade** continua sendo a do `DIVERSAO.md` § 10; este documento explica *por que* ela funciona emocionalmente (as cinco químicas), diz o que **não** copiar de cada jogo e acrescenta quatro itens novos que caem **dentro** daquela fila (recorde de onda, sequência de abates, maestria por arma, autonomia visível). Duas ordens concorrentes seria o mesmo que nenhuma.
+2. **As cinco químicas foram separadas, e nenhuma vira feature por si.** Dopamina = progresso visível; serotonina = prova durável (recorde, maestria); adrenalina = risco com saída (o eixo **mais bem servido** hoje); oxitocina = vínculo (depende de **times online**, P81); bem-estar = objetivo com início-meio-fim (depende de **missão**). Cada proposta passa pelo filtro de três perguntas do `DIVERSAO.md` § 3.
+3. **A química não se mede; mede-se o proxy.** Nenhuma métrica lê dopamina (`PLAYTEST.md` já diz); o plano mede rodadas por sessão, volta D1, **variedade de build** e recorde de onda. Sem isso, "ficou mais divertido" é opinião.
+4. **A agência (configurações + customização) é recompensa, não só ajuste.** O pedido literal do dono ("mudar configurações, customizar robôs") entra como eixo próprio: perfil de configurações com nome, **código de build** e a dica "teste isto" — tudo **local, nunca vantagem** (a mesma regra do não-pay-to-win, agora para a autonomia).
+5. **As quatro propostas que mexem em regra só entram se provarem.** A agressão recompensada (pisão/serra que devolve energia) é a única que toca combate e passa pelo `combat/balance.ts`; as outras três (recorde, maestria, perfis) são locais e não viajam pelo fio.
+
+**Achados revalidados no código da `main` (R17 — registrados, não corrigidos aqui: `ui/` e `hangar/` são território do Gemini):** o nível do piloto **não sobe jogando** (`ui/DailyChallenges.ts:138`); o `trackWaveOrRound` **não tem chamador**; o `validateLoadout` idem; e o `waveReached` chega ao HUD (`core/Game.ts:977`) mas **nenhum recorde é salvo**.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen.
+
 ## [2026-10-12] "Ataque 1" e "Ataque 2" são os nomes dos dois gatilhos (P95, Claude)
 
 **Ordem do Comandante:** "os robôs têm ataque 1 e ataque 2; arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral nos maiores; nos pequenos, cada braço com um botão do mouse".

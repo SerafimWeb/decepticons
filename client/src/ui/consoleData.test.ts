@@ -12,7 +12,9 @@ import {
   lerModoComandante,
   MESA_COMANDO,
   MESA_URL,
+  LINHAS_DE_PILOTOS,
   nivelDeAmeaca,
+  pilotosVisiveis,
   sondarMesa,
   type BotsLidos,
   type MechLido,
@@ -127,6 +129,19 @@ describe('escalação da partida', () => {
     ];
     expect(contagemInimigos(l)).toBe('1 MECH · 2 ANDRÓIDES');
     expect(contagemInimigos([])).toBe('NENHUM INIMIGO');
+  });
+
+  it('a lista de pilotos do monitor cabe sem rolagem: com esquadrão grande, as primeiras linhas e o resto resumido', () => {
+    const cabe = Array.from({ length: LINHAS_DE_PILOTOS }, (_, i) => i);
+    expect(pilotosVisiveis(cabe)).toEqual({ mostrados: cabe, ocultos: 0 });
+    expect(pilotosVisiveis([])).toEqual({ mostrados: [], ocultos: 0 });
+    const trinta = Array.from({ length: 30 }, (_, i) => i);
+    const r = pilotosVisiveis(trinta);
+    // Uma linha a menos que o máximo: a última é o aviso "+ N pilotos".
+    expect(r.mostrados).toEqual(trinta.slice(0, LINHAS_DE_PILOTOS - 1));
+    expect(r.ocultos).toBe(30 - (LINHAS_DE_PILOTOS - 1));
+    expect(r.mostrados.length + 1).toBe(LINHAS_DE_PILOTOS);
+    expect(pilotosVisiveis(Array.from({ length: LINHAS_DE_PILOTOS + 1 }, (_, i) => i)).ocultos).toBe(2);
   });
 
   it('a ameaça fica entre 1 e 5 e sobe com mais inimigos e mais dificuldade', () => {

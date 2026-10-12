@@ -2932,6 +2932,8 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .op-lista b { overflow: hidden; color: #fff; font-size: calc(10.5px * var(--k)); letter-spacing: 1px; text-overflow: ellipsis; white-space: nowrap; }
 .op-lista span { color: #9aa5ad; font-size: calc(9px * var(--k)); letter-spacing: 1px; }
 .op-lista .op-aliado b { color: var(--cyan); }
+.op-lista .op-mais { padding-left: 0; align-self: center; color: #9aa5ad; font: 700 calc(9px * var(--k))/1.25 'Consolas', 'Courier New', monospace; letter-spacing: 1.5px; }
+.op-lista .op-mais::before { content: none; }
 .mon-oponentes .mon-acao { align-self: flex-start; }
 .mon-piloto { --mon-cor: var(--warn); }
 .mon-piloto .mon-screen { overflow-y: auto; scrollbar-width: thin; }

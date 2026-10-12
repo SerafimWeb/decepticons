@@ -1,7 +1,7 @@
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { BarrageSystem } from '../combat/BarrageSystem';
-import { BotSystem } from '../combat/BotSystem';
+import { BotSystem, type BotKit } from '../combat/BotSystem';
 import { CombatSystem, type MechHitEvent } from '../combat/CombatSystem';
 import { CrushRule } from '../combat/crush';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
@@ -30,7 +30,9 @@ import {
   type CtfScore,
   type CtfTeam,
 } from './CaptureTheFlag';
+import { esquadraoDeFoes, planejarEsquadrao, sanearEsquadrao, type EsquadraoSpec, type SlotDoPlano } from './esquadrao';
 import type { GameMode } from './gameMode';
+import { ALLY_COUNT, ANDROID_SPAWNS, BOT_SPAWNS, COLOSSUS_SPAWN } from './nascimentos';
 import {
   SURVIVAL_MAX_ANDROIDS,
   SURVIVAL_MAX_MECHS,
@@ -41,21 +43,12 @@ import {
 } from './SurvivalWaves';
 
 /**
- * IAs rebeldes na arena: até 3 Mechs, 3 andróides de combate e 1 técnico (ou, na missão, o Colossus de
- * escala 3 no lugar do técnico). Teto: 7 bots + o jogador = 8 character controllers, o tamanho de sala do jogo (G11).
+ * Os pontos de nascimento ficam em `nascimentos.ts` (o esquadrão e a partida leem os mesmos). IAs rebeldes da Arena sem esquadrão pedido:
+ * as das configurações, até 3 Mechs, 3 andróides de combate e 1 técnico (ou, na missão, o Colossus de escala 3 no lugar do técnico), com
+ * 2 aliados que tiram vaga dos Mechs; teto de 8 character controllers no servidor, o tamanho de sala do jogo (G11). Com esquadrão
+ * (`MatchOptions.squad`), o teto é o de `LIMITES_DO_ESQUADRAO`.
  */
-export const BOT_SPAWNS = [SPAWN_POINTS[2]!, SPAWN_POINTS[4]!, SPAWN_POINTS[8]!];
-export const ANDROID_SPAWNS = [SPAWN_POINTS[5]!, SPAWN_POINTS[6]!, SPAWN_POINTS[9]!];
-export const TECHNICIAN_SPAWNS = [SPAWN_POINTS[10]!];
-/**
- * Aliados do jogador na Arena normal (30/09, pedido do dono: "sozinho tá muito intenso"). Tiram vaga
- * dos inimigos pra não estourar o teto de 8 (G11) — ver `enemyMechCount`. Só na Arena por enquanto:
- * Sobrevivência e CTF já têm lógica própria de pool/time (`SurvivalWaves`, `CaptureTheFlag`).
- */
-export const ALLY_SPAWNS = [SPAWN_POINTS[1]!, SPAWN_POINTS[3]!];
-export const ALLY_COUNT = ALLY_SPAWNS.length;
-/** O Colossus (escala 3) nasce longe do jogador e de frente para ele: 14 m de cápsula pedem espaço. */
-export const COLOSSUS_SPAWN = [SPAWN_POINTS[7]!] as const;
+export { ALLY_COUNT, ALLY_SPAWNS, ANDROID_SPAWNS, BOT_SPAWNS, COLOSSUS_SPAWN, TECHNICIAN_SPAWNS } from './nascimentos';
 /** Dois defensores offline do CTF, perto da base vermelha e sem sobrepor a bandeira. */
 export const CTF_DEFENDER_SPAWNS: readonly (readonly [number, number])[] = [
   [68, -72],
@@ -63,6 +56,10 @@ export const CTF_DEFENDER_SPAWNS: readonly (readonly [number, number])[] = [
 ];
 /** Piloto nasce ao lado do mastro: área segura legível, sem sobrepor a bandeira. */
 const CTF_PLAYER_OFFSET_X = 5;
+/** Tiros no ar de uma vez: 64 no jogo de sempre (3 Mechs de IA) e mais 4 por Mech de IA a partir do quarto (esquadrão, P91). */
+const PROJETEIS_BASE = 64;
+const PROJETEIS_POR_MECH = 4;
+const MECHS_DO_JOGO_BASE = 3;
 /** Segundos até o jogador renascer (os bots: `BOT_RESPAWN_S`). */
 export const PLAYER_RESPAWN_S = 3;
 
@@ -103,6 +100,12 @@ export interface MatchOptions {
   allies?: boolean;
   /** Drones da base Serafim (06/10). Seguem os aliados: ligados na Arena offline, desligados no servidor por ora. */
   drones?: boolean;
+  /**
+   * Quem nasce na Arena e no Bunker, um por um (12/10, P91: "mais bots e aliados, além dos 3 do padrão"). Sem isto, sai das configurações
+   * (`foes`): o jogo de sempre, que `esquadraoPadrao.test.ts` fotografa. Passa por `sanearEsquadrao`, que corta o que não cabe no mapa;
+   * com `allies: false` (o servidor, o online) os aliados do esquadrão ficam de fora. Sobrevivência e CTF têm o pool e os times deles.
+   */
+  squad?: EsquadraoSpec;
 }
 
 /**
@@ -206,7 +209,17 @@ export class Match {
     this.zones = bunker ? new ZoneSystem([]) : new ZoneSystem();
     this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : 'arena');
     this.fx = o.particles;
-    this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles);
+    // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
+    // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
+    // estourar o teto de 8 personagens da sala (G11). Sobrevivência e CTF não usam esquadrão (pool e times próprios).
+    const arenaMode = !survival && !ctf;
+    const mapa: MapId = bunker ? 'bunker' : 'arena';
+    const semAliados = o.allies === false;
+    const pedido = o.squad ?? esquadraoDeFoes(o.foes, semAliados ? 0 : ALLY_COUNT);
+    const plano = arenaMode ? planejarEsquadrao(sanearEsquadrao(semAliados ? { ...pedido, aliados: [] } : pedido, mapa), mapa, o.foes.names) : null;
+    // O pool de tiros cresce com os Mechs que atiram (cada um solta uma rajada por vez): sem isso, num esquadrão grande o tiro some (G5).
+    const atiradores = plano ? plano.inimigos.mechs.length + plano.aliados.mechs.length : 0;
+    this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles, PROJETEIS_BASE + PROJETEIS_POR_MECH * Math.max(0, atiradores - MECHS_DO_JOGO_BASE));
     this.rockets = new RocketSystem(o.scene, o.physics, o.particles);
     this.barrage = new BarrageSystem(o.scene, o.physics);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
@@ -214,11 +227,10 @@ export class Match {
     this.combat.sameSide = (a, b) => this.sameSide(a, b);
     this.respawner = new Respawner(this.spawnPoints);
     this.crush = new CrushRule(this.combat);
-    // Aliados (30/09, "sozinho tá muito intenso"): só na Arena normal, tiram vaga do pool de Mechs
-    // inimigos pra não estourar o teto de 8 personagens da sala (G11).
-    const arenaMode = !survival && !ctf;
-    const allyCount = arenaMode && o.allies !== false ? ALLY_COUNT : 0;
-    const enemyMechCount = survival ? SURVIVAL_MAX_MECHS : Math.max(0, o.foes.enemyMechs - allyCount);
+    const kitDe = (s: SlotDoPlano): BotKit => ({ chassi: s.chassi, arma: s.arma, dificuldade: s.dificuldade });
+    const pontos = (l: readonly SlotDoPlano[]) => l.map((s) => s.ponto);
+    const nomes = (l: readonly SlotDoPlano[]) => l.map((s) => s.nome);
+    const rebeldes = plano?.inimigos;
     this.bots = new BotSystem({
       scene: o.scene,
       physics: o.physics,
@@ -226,19 +238,32 @@ export class Match {
       projectiles: this.projectiles,
       particles: o.particles,
       respawner: this.respawner,
-      spawns: ctf ? CTF_DEFENDER_SPAWNS : (bunker ? BUNKER_SPAWNS.slice(2, 5) : BOT_SPAWNS).slice(0, enemyMechCount),
-      androidSpawns: ctf ? [] : (bunker ? BUNKER_SPAWNS.slice(5, 8) : ANDROID_SPAWNS).slice(0, survival ? SURVIVAL_MAX_ANDROIDS : o.foes.enemyAndroids),
-      technicianSpawns: !survival && !ctf && o.foes.technician ? (bunker ? [BUNKER_SPAWNS[10]!] : TECHNICIAN_SPAWNS) : [],
+      ...(rebeldes
+        ? {
+            spawns: pontos(rebeldes.mechs),
+            androidSpawns: pontos(rebeldes.androids),
+            technicianSpawns: pontos(rebeldes.tecnicos),
+            personas: rebeldes.mechs.map((s) => s.persona),
+            names: { mechs: nomes(rebeldes.mechs), androids: nomes(rebeldes.androids), technicians: nomes(rebeldes.tecnicos) },
+            kits: rebeldes.mechs.map(kitDe),
+            androidKits: rebeldes.androids.map(kitDe),
+          }
+        : {
+            spawns: ctf ? CTF_DEFENDER_SPAWNS : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
+            androidSpawns: ctf ? [] : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
+            technicianSpawns: [],
+            personas: o.foes.enemyPersonas,
+            names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
+          }),
       bossSpawn: survival ? COLOSSUS_SPAWN[0] : undefined,
       respawn: !survival,
       respawnAtHome: ctf,
-      personas: o.foes.enemyPersonas,
-      names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
       waypoints: this.spawnPoints,
       power: o.power,
     });
+    const escolta = plano?.aliados;
     this.allies =
-      allyCount > 0
+      escolta && escolta.mechs.length + escolta.androids.length > 0
         ? new BotSystem({
             scene: o.scene,
             physics: o.physics,
@@ -249,8 +274,12 @@ export class Match {
             escort: this.players,
             paint: PALETTE.playerPaint,
             visor: PALETTE.green,
-            spawns: (bunker ? [BUNKER_SPAWNS[1]!, BUNKER_SPAWNS[3]!] : ALLY_SPAWNS).slice(0, allyCount),
-            names: { mechs: o.foes.names.allies },
+            spawns: pontos(escolta.mechs),
+            androidSpawns: pontos(escolta.androids),
+            personas: escolta.mechs.map((s) => s.persona),
+            names: { mechs: nomes(escolta.mechs), androids: nomes(escolta.androids) },
+            kits: escolta.mechs.map(kitDe),
+            androidKits: escolta.androids.map(kitDe),
             waypoints: this.spawnPoints,
             power: o.power,
           })
@@ -301,7 +330,7 @@ export class Match {
     };
     // Drones (06/10): só onde os aliados existem; o kamikaze explode pela mesma regra dos foguetes.
     this.drones =
-      allyCount > 0 && o.drones !== false && !bunker
+      this.allies !== null && o.drones !== false && !bunker
         ? new DroneSystem({
             physics: o.physics,
             projectiles: this.projectiles,

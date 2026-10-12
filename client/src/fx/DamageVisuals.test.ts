@@ -49,6 +49,17 @@ describe('sinais de avaria, só no render', () => {
     expect(burst).toHaveBeenCalledTimes(2);
   });
 
+  it('o orçamento do pulso é de quem emite: 20 robôs saudáveis na frente não tiram a fumaça do avariado (esquadrão grande)', () => {
+    const { fx, burst } = bench();
+    const saudaveis = Array.from({ length: 20 }, () => new Vector09());
+    const ferido = new Vector09();
+    ferido.modules.leftArm = 1;
+    fx.beginFrame(0.1, true);
+    for (const m of saudaveis) fx.update(m);
+    fx.update(ferido);
+    expect(burst).toHaveBeenCalledTimes(2);
+  });
+
   it('alterna partes avariadas e limita emissões mesmo após engasgo', () => {
     const { fx, burst } = bench();
     const m = new Vector09();

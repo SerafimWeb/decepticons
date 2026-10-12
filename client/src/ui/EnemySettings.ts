@@ -13,6 +13,14 @@ export interface EnemyLineup {
   names: EnemyNames;
 }
 
+/** O esquadrão personalizado (P91), quando há um: a contagem, as personalidades e os nomes dele valem no lugar dos desta seção. */
+export interface EsquadraoAtivo {
+  /** "16 inimigos e 8 aliados". */
+  resumo: string;
+  /** Apaga o esquadrão salvo e recarrega a partida (a das configurações volta). */
+  voltarAoPadrao: () => void;
+}
+
 /** Um campo de nome: como ler o valor salvo e como gravar um novo no lugar certo da lista. */
 interface NameField {
   input: HTMLInputElement;
@@ -33,6 +41,7 @@ export class EnemySettings {
     private readonly running: EnemyLineup,
     host: HTMLElement | null = document.getElementById('settings-enemies'),
     namesHost: HTMLElement | null = document.getElementById('settings-names'),
+    squad: EsquadraoAtivo | null = null,
   ) {
     if (!host) return;
     const s = settings.value;
@@ -54,6 +63,15 @@ export class EnemySettings {
     tech.checked = s.technician;
     tech.addEventListener('change', () => settings.update({ technician: tech.checked }));
 
+    if (squad) {
+      const reset = document.createElement('button');
+      reset.type = 'button';
+      reset.className = 'btn-terminal';
+      reset.id = 'setting-squad-reset';
+      reset.textContent = '[ VOLTAR AO PADRÃO ]';
+      reset.addEventListener('click', squad.voltarAoPadrao);
+      host.append(this.row('Esquadrão personalizado', reset, `${squad.resumo}. A contagem e as personalidades abaixo só valem sem ele; um nome que ele não dá vem de Nomes na tela.`));
+    }
     host.append(
       this.row('Mechs rebeldes', count('setting-foe-mechs', 'enemyMechs', LIMITS.enemyMechs.max)),
       this.row('Andróides de combate', count('setting-foe-androids', 'enemyAndroids', LIMITS.enemyAndroids.max)),

@@ -19,7 +19,7 @@ export interface ShadowCaster {
 export type GroundHeight = (x: number, z: number, fromY: number) => number | null;
 
 /** Quantas unidades têm sombra ao mesmo tempo (a partida tem no máximo uma dúzia; sobra folga). */
-export const SHADOW_CAPACITY = 32;
+export const SHADOW_CAPACITY = 48;
 /** Raio do disco em múltiplos do raio da cápsula do robô: um pouco maior que o pé, para sobrar uma borda macia. */
 export const SHADOW_SPREAD = 1.8;
 /**

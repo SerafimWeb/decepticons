@@ -91,6 +91,85 @@ arquivo não vai para o git** (mora em `.tmp/`, G15), só existe nesta máquina.
 mesa de outra máquina, comece lendo-o de novo por lá; o que está aqui neste `FERRAMENTAS.md` é
 o resumo permanente, o `LEIAME.md` é o manual completo e local.
 
+### 3.1 O que falta: o take do F9 nascer dentro da mesa (ordem P97, 12/10)
+
+**Pedido do Comandante:** *"gravamos os takes de jogos usando a tecla F9 e quero que esses takes estejam disponíveis na
+mesa pra eu finalizar e fazer manualmente as edições pra publicarmos algo de alta qualidade, gráficos ultrahd, som"*.
+
+**O que já existe:** o `F9` **já grava com som** (o áudio do próprio `AudioSystem` é misturado num
+`MediaStreamAudioDestinationNode`; VP9 a 16 Mbps, `client/src/core/GameRecorder.ts`) e trava a qualidade no máximo
+enquanto grava. A mesa **já tem** a cena `clipe`, com seletor de arquivo e o campo "início" (onde cortar).
+
+**Os dois atritos que a ordem manda tirar:**
+
+1. **O passo manual de copiar o arquivo.** Hoje o `.webm` baixa na pasta de downloads e o dono copia na mão para
+   `.tmp/video/clipes/` (jeito 3, passo 2, acima). **Proposta:** ao parar a gravação, o `GameRecorder` **entrega o take
+   à mesa** por um `POST` para o servidor local dela (`http://127.0.0.1:4199`), que grava o arquivo em
+   `.tmp/video/clipes/` — e o take já aparece na lista do seletor. **Com a mesa desligada, o comportamento de hoje
+   continua** (baixa o arquivo): uma gravação não pode se perder por a mesa estar fechada.
+2. **A edição manual de verdade.** Hoje o canvas só desenha um **marcador** na cena de clipe, e quem corta e costura é
+   o `render.mjs`/`ffmpeg`, por fora, na exportação. Para "finalizar na mão" falta pelo menos: **prévia do take**
+   (um `<video>` no lugar do marcador), o campo **fim** (hoje só existe o início) e o **UHD** (a saída é 1080p60; um
+   `--altura 2160` no `render.mjs`, com o custo de tempo medido).
+
+**Ordem de trabalho sugerida (do mais barato ao mais caro):** **(a)** o `POST` do take para a mesa; **(b)** o campo
+*fim* e a prévia do clipe; **(c)** o preset UHD na exportação; **(d)** a resolução de captura no "modo captura"
+(1×/1,5×/2×) — **com cuidado:** em 29/09 forçar a resolução acima do teto travou e perdeu quadro
+(`HISTORICO_DE_DECISOES.md`, "F9 travava e perdia quadro"), então medir antes de fixar o padrão.
+
+**Quem toca:** o gravador é do **Claude** (dono do `GameRecorder`, P44); a mesa é **local** (`.tmp/video/`, fora do
+git), então a ponta que recebe o arquivo é feita nesta máquina, e o `.tmp/video/LEIAME.md` é o manual dela.
+
+**Como o Comandante confere:** gravar um take (`F9`), parar, e ver o arquivo **já na lista da mesa** — sem copiar
+nada na mão.
+
+### 3.2 O primeiro vídeo do canal: "o processo" (Qwen, 12/10 · ordem P47)
+
+**O que é:** o roteiro do **vídeo #1 do canal** — *como este jogo é feito* — com **11 cenas e ~52 s**, pronto para
+exportar. É o único vídeo de lançamento que **não depende de take gravado (`F9`)** nem de código novo: dá para
+publicar antes de a ordem **P97** (os takes dentro da mesa) ficar pronta.
+
+**Onde está:** a mesa lê `.tmp/video/roteiros/` (local, G15). A **cópia versionada** — a fonte da verdade do texto — é
+`.decepticons/video/o-processo.js`; são o mesmo arquivo (mudou um, copie para o outro). Os quadros do vídeo estão em
+`arte/video-o-processo-*.png`.
+
+**Como ver/exportar:** `npm run mesa` → **escolher "o-processo" no menu do topo** → **validar** → exportar. O roteiro
+de 15 s do dono foi preservado como roteiro nomeado **`cybermech-15s`** (também no menu): alternar não perde nada.
+
+**O portão deu verde:** `node .tmp/video/validar.mjs o-processo` → **11 cenas · 51 s · sem travas**. Todo número é o
+número do jogo, lido pelo `fatos.mjs` (1455 testes, 245 PRs, 20 módulos / 89 dependências, 60 Hz, 0,74 ms por tick).
+
+**Três regras que este roteiro segue de propósito:**
+- **Nenhum byte e nenhum KB/s** (a peça de 15 s tem a cena da banda; esta não). O vídeo é material público e a decisão
+  de 27/09 vale aqui: mostra-se o **ritmo** (60 Hz, 20 Hz) e a **contagem de testes**, não o tamanho das coisas.
+- **Nenhuma feature que o `STATUS_REAL.md` marque PARCIAL, DEMO ou AUSENTE** (R13) — é trava do validador.
+- **Nada do codinome interno** em texto de tela (o site reprova, e o validador também).
+
+**Como foi gravado — e a medição que importa:** `node .tmp/video/record.mjs 720 30` grava **em tempo real numa janela
+com GPU** (52 s → 56 MB, `.tmp/video/o-processo.webm`). **O `render.mjs` (quadro a quadro, 1080p60) é impraticável em
+software nesta máquina:** em 10 minutos de tentativa saiu ~1 quadro, porque o headless compõe pela CPU — o mesmo motivo
+do § 4. Para 1080p60, aponte o `RENDER_BROWSER` para um Chrome **com GPU** e deixe rodando.
+
+**O que falta para o episódio longo (6 a 10 min):** **narração** (voz; a decisão das vozes por ElevenLabs é a da P75) e
+os **takes de gameplay** (P97). **O julgamento visual é do dono:** eu não leio imagem.
+
+**O que o dono pode mexer — e o que a mesa não faz.** A mesa edita o **roteiro**, não o vídeo: corrigir um detalhe é
+mexer no campo e **exportar de novo** (~1 min a 720p30). O que muda de graça:
+
+| O dono quer | Onde |
+|---|---|
+| Trocar a frase | o campo de texto da cena (`titulo`, `sub`, `citacao`, `rodape`, `legenda`) |
+| Mudar um número | `leituras`, `contadores`, `usado`, `meta` — mas o **validador confere contra o código**, e é isso que impede número velho de ir ao ar |
+| Cena mais longa ou mais curta | `segundos` da cena (a peça inteira se re-cronometra sozinha) |
+| Trocar a ordem | mover o bloco da cena para cima ou para baixo |
+| Tirar uma cena **sem apagar** | `pular: true` — no "o-processo" há **duas prontas e desligadas**: o `clipe` e o `veredito` |
+| Trocar as imagens | a lista `imagens` (o seletor mostra o que existe em `/arte`, `/brand`, `/loading`, `/capturas`, `/rascunho`) |
+| O enquadramento | `formato` no topo (`paisagem`, `retrato`, `quadrado`) — o mesmo texto serve aos três |
+
+**O que ela ainda NÃO faz (é a ordem P97):** editar um **clipe gravado** — a cena `clipe` só tem o campo `início` (sem
+prévia e sem `fim`), e quem corta é o `render.mjs`/`ffmpeg` na exportação. E o vídeo gravado em tempo real **não é
+editado quadro a quadro**: corrigir é roteiro → exportar de novo.
+
 ---
 
 ## 4. Medir travadas com GPU real

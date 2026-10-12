@@ -2,16 +2,17 @@ import * as THREE from 'three';
 import { GLOW, PALETTE } from '../core/palette';
 import type { MechBase } from '../entities/MechBase';
 import { Android } from '../entities/Android';
-import { ANDROID_STATS, COLOSSUS_BOSS_STATS, VECTOR09_STATS } from '../entities/chassis';
+import { ANDROID_STATS, CHASSIS, COLOSSUS_BOSS_STATS, VECTOR09_STATS, type ChassisId } from '../entities/chassis';
+import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
 import { COLOSSUS_01_BLUEPRINT } from '../entities/mechBlueprint';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
-import { PERSONA_LABELS, type Persona } from '../core/Settings';
-import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BotController, type BotSkill, type SquadOrder, MECH_PROFILE, PERSONAS } from './BotController';
+import { PERSONA_LABELS, type Difficulty, type Persona } from '../core/Settings';
+import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BOT_SKILLS, BotController, type BotSkill, type SquadOrder, MECH_PROFILE, PERSONAS } from './BotController';
 import type { CombatSystem } from './CombatSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
-import { weapon } from './weapons';
+import { weapon, type Tier, type WeaponId } from './weapons';
 import { REPAIR_RATE } from './repair';
 import { TechnicianController } from './TechnicianController';
 import type { Respawner } from './Respawner';
@@ -45,6 +46,17 @@ export const RADIO_RANGE = 80;
 const RADIO_CALLOUT_S = 8;
 
 const _muzzle = new THREE.Vector3();
+
+/**
+ * O que um robô do esquadrão tem de próprio (P91, `sim/esquadrao.ts`): o corpo (os números do chassi e a silhueta), a arma principal e a
+ * dificuldade. Ausente = o padrão do clã. Quem monta é a partida; o que a IA faz com a arma (a distância de tiro) está em `BotController`.
+ */
+export interface BotKit {
+  chassi?: ChassisId;
+  /** Troca a arma principal (a secundária sai: o bot só atira a principal). */
+  arma?: { id: WeaponId; tier: Tier } | null;
+  dificuldade?: Difficulty | null;
+}
 
 export interface BotSystemOptions {
   scene: THREE.Scene;
@@ -82,6 +94,13 @@ export interface BotSystemOptions {
   skill?: BotSkill;
   /** Personalidade de cada Mech rebelde, na ordem dos `spawns` (padrão: soldado). */
   personas?: readonly Persona[];
+  /**
+   * O kit de cada Mech, na ordem dos `spawns` (esquadrão, P91). Quando existe, o esquadrão diz a arma de cada um e o supressor
+   * automático dos aliados (o de índice ímpar leva o EMP) deixa de valer: o aliado de EMP é uma escolha do esquadrão, não uma regra.
+   */
+  kits?: readonly (BotKit | undefined)[];
+  /** O kit de cada andróide, na ordem dos `androidSpawns` (só a dificuldade vale). */
+  androidKits?: readonly (BotKit | undefined)[];
   /** Potências do painel (por arma e por clã); sem isso, o padrão do jogo. */
   power?: PowerSpec;
 }
@@ -102,6 +121,8 @@ interface Bot {
   brain: BotController | TechnicianController;
   name: string;
   home: THREE.Vector3;
+  /** A dificuldade é do robô (esquadrão): a das configurações não a troca. */
+  ownSkill?: boolean;
   /** Feixe de conserto (só técnicos): 2 pontos atualizados no render, sem alocar. */
   beam?: THREE.Line;
 }
@@ -167,10 +188,12 @@ export class BotSystem {
       o.combat.register(mech);
       return new THREE.Vector3(x, 0, z);
     };
-    const fighter = (mech: MechBase, p: readonly [number, number], name: string, i: number, android: boolean) => {
+    const fighter = (mech: MechBase, p: readonly [number, number], name: string, i: number, android: boolean, kit?: BotKit) => {
       const home = place(mech, p);
       const persona = PERSONAS[(!android && o.personas?.[i]) || 'soldado'];
-      const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, o.skill ?? BOT_SKILL_NORMAL, android ? ANDROID_PROFILE : MECH_PROFILE, persona);
+      const ownSkill = !!kit?.dificuldade;
+      const skill = kit?.dificuldade ? BOT_SKILLS[kit.dificuldade] : o.skill ?? BOT_SKILL_NORMAL;
+      const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, skill, android ? ANDROID_PROFILE : MECH_PROFILE, persona);
       brain.escortSide = i % 2 ? 1 : -1;
       if (o.respawn !== false) {
         o.respawner.track(mech, BOT_RESPAWN_S, () => {
@@ -178,7 +201,7 @@ export class BotSystem {
           brain.reset();
         });
       }
-      this.bots.push({ mech, brain, name, home });
+      this.bots.push({ mech, brain, name, home, ...(ownSkill ? { ownSkill } : {}) });
     };
     // No placar e no nome sobre a cabeça, o nome e a personalidade (CLAUDE·BRABO): o jogador aprende quem é quem.
     const mechName = (i: number) => {
@@ -195,11 +218,23 @@ export class BotSystem {
     const visor = o.visor ?? PALETTE.signal;
     const suppressionStats = o.escort ? poweredStats({ ...VECTOR09_STATS,
       loadout: { primary: weapon('emp'), secondary: null } }, power, 'mechs') : mechStats;
-    o.spawns.forEach((p, i) => fighter(new Vector09({ paint, visor,
-      stats: o.escort && i % 2 ? suppressionStats : mechStats }), p, mechName(i), i, false));
+    // O corpo de cada Mech: sem kits, o de sempre (e o supressor nos aliados de índice ímpar); com kits, o que o esquadrão pediu.
+    const statsDoMech = (i: number, kit: BotKit | undefined) => {
+      if (!o.kits) return o.escort && i % 2 ? suppressionStats : mechStats;
+      const base = kit?.chassi ? CHASSIS[kit.chassi] : VECTOR09_STATS;
+      if (kit?.arma) {
+        const { metalShield } = base.loadout;
+        return poweredStats({ ...base, loadout: { ...(metalShield ? { metalShield } : {}), primary: weapon(kit.arma.id, kit.arma.tier), secondary: null } }, power, 'mechs');
+      }
+      return kit?.chassi ? poweredStats(base, power, 'mechs') : mechStats;
+    };
+    o.spawns.forEach((p, i) => {
+      const kit = o.kits?.[i];
+      fighter(new Vector09({ paint, visor, stats: statsDoMech(i, kit), blueprint: kit?.chassi ? BLUEPRINT_BY_CHASSIS[kit.chassi] : undefined }), p, mechName(i), i, false, kit);
+    });
 
     // Andróides: sementes depois das dos Mechs.
-    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(o.names?.androids ?? BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true));
+    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(o.names?.androids ?? BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true, o.androidKits?.[i]));
     // O Colossus (escala 3), quando a missão tem boss: nasce no ponto dedicado, com o perfil de cerco e sem
     // personalidade de piloto (não é um rebelde, é uma máquina). Entra no pool como os outros: nada é criado no tick.
     if (o.bossSpawn) {
@@ -315,7 +350,7 @@ export class BotSystem {
 
   /** Troca a dificuldade de todos os bots (vale a partir do próximo tick). */
   setSkill(skill: BotSkill): void {
-    for (const b of this.bots) if (b.brain instanceof BotController) b.brain.skill = skill;
+    for (const b of this.bots) if (b.brain instanceof BotController && !b.ownSkill) b.brain.skill = skill;
   }
 
   /** Cérebro de combate de um bot (HUD de debug e testes); undefined para técnicos. */

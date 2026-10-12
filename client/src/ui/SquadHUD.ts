@@ -26,12 +26,12 @@ export class SquadHUD {
     this.messageTime = 3;
     this.status.textContent = ok ? ({follow:'Equipe: acompanhando você',focus:'Equipe: concentrar fogo',hold:'Equipe: defender esta posição'}[order]) : 'Mire em um inimigo visível para marcar o alvo';
   }
-  update(dt: number, visible: boolean, order: SquadOrder, alive: number): void {
+  update(dt: number, visible: boolean, order: SquadOrder, alive: number, total = 2): void {
     this.root.hidden = !visible;
     if (!visible) return;
     this.messageTime -= dt;
     this.wait -= dt; if (this.wait > 0) return; this.wait = 0.1;
-    if (this.messageTime <= 0) this.status.textContent = alive + '/2 aliados · ' + ({follow:'Escolta',focus:'Fogo concentrado',hold:'Defesa de posição'}[order]);
+    if (this.messageTime <= 0) this.status.textContent = `${alive}/${total} aliados · ` + ({follow:'Escolta',focus:'Fogo concentrado',hold:'Defesa de posição'}[order]);
     for (const b of this.buttons) b.setAttribute('aria-pressed',String(b.dataset.order === order));
   }
 }

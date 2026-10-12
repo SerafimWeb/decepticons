@@ -12,6 +12,126 @@
 - **Testes:** `combat/layoutAtaques.test.ts` (20: os dois layouts, o Ataque 2 com mão e ombros no mesmo tick, cada arma no ritmo dela, os dois botões juntos, braço e torso destruídos, superaquecimento, lança-chamas, rotatória e trilho na mão esquerda), `hangar/layouts.test.ts` (11: validação, chave de texto, ataque por ranhura), 4 do servidor real (o Ataque 1 atira o encaixe 0; o Ataque 2, os encaixes 1, 2 e 3), os do fluxo e da carga no layout dividido. **28 mutações, todas pegas** (duas redundantes, um reset que o `ChargeTimer` já faz, foram removidas).
 - **Limites honestos:** só o **Marauder** tem mais de um layout (os robôs pequenos têm o deles fixo: direito no 1, esquerdo no 2); **costas e peito ainda não existem** como encaixes; no layout dividido o **HUD** só mostra o carregador dos ombros (a mão esquerda não tem carregador: as armas de mão do Marauder são todas de energia).
 
+## A ficha do cenário com rota: ESTAÇÃO DE CABOS — Qwen, 12/10 (P99, só documentação)
+
+**Por quê:** a **P99** pediu "cenários maiores" e o item `#cenarios` do `ROADMAP` tinha **uma linha só**. A escolta (na versão longa) e o contraataque precisam de um **caminho** — e a Arena tem 200 m. A ficha está em **`.decepticons/fichas/cenario-cabos.md`** (proposta).
+
+**Por que ESTAÇÃO DE CABOS, e não outro:** o console já promete cinco missões (`ui/theater.ts`) e três estão "EM BREVE" — e **a ESTAÇÃO DE CABOS é a única cujo lugar está confirmado**: Fortaleza é a chegada dos cabos submarinos no `UNIVERSO.md`, e o próprio `theater.test.ts` trava isso. O cenário **já existe no produto como promessa**; a ficha diz o que construir.
+
+**O que ela entrega:** a **rota** (partida → duas estações de conserto → o **choke** → a extração), a **base que serve ao contraataque** (a extração vista ao contrário — **um cenário, duas missões**), **duas vias por trecho** (corredor único não tem jogada — é o que o dono pediu), altura para emboscada, cobertura quebrável no choke e uma zona de cura por estação. O **tamanho**: ~500 m por ~140 m (2,5× a Arena), com a trava que importa — **é o maior cenário que ainda cabe SEM streaming** (a Fase 7 é a do `interest management`). Os **números de aceitação são os do Bunker**, medidos do mesmo jeito: colisores **< 310**, 18 a 67 desenhos por vista, GPU p50/p95 pelo método do `medicoes/BUNKER.md`. Mais **10 testes** e **sete perguntas para o Comandante**.
+
+**A lição que justifica a ficha:** o Bunker foi construído e só depois o dono pediu outra coisa (mais profundidade — P60), e a segunda rodada custou um PR inteiro. A ficha fixa **o que o cenário FAZ** antes da geometria.
+
+**Nada construído.** O cenário e a bancada são do **Codex**; os pontos validados e a fiação, do **Claude**; o julgamento visual, do **Comandante** (eu não leio imagem).
+
+## A ficha da missão #1: escoltar e defender o técnico — Qwen, 12/10 (P99, só documentação)
+
+**Por quê:** a ordem **P99** (12/10) pediu as missões e nomeou os quatro tipos; a regra 5 do `AGENTS.md` (**contrato antes de paralelizar**) diz que a ficha vem antes de o Claude escrever a regra e o Gemini a tela. A ficha da primeira missão está em **`.decepticons/fichas/escolta.md`** (proposta).
+
+**A escolha que faz a missão ser barata:** o **técnico ENTRÓPICO já existe** (`combat/TechnicianController.ts`, 5 testes), **já é "alvo prioritário"** da IA (`GAME_DESIGN.md` § 3) e a **P91 já aceita técnico do nosso lado**. Ou seja: a tensão da escolta — *proteger quem conserta, e quem os inimigos preferem atacar* — **já está no jogo**. A ficha não pede **arte nova, nem rede nova, nem CPU por tick a mais**; e é **offline primeiro**, como o CTF e a Sobrevivência.
+
+**O que a ficha entrega:** três fases (uma avaria → duas → **extração**), as regras de vitória e derrota (**o técnico cai = derrota**; o jogador cai = a missão continua), o custo (**zero byte de rede, zero CPU por tick a mais**), **13 testes especificados** linha por linha (nascem no PR da regra, do Claude) e **sete perguntas para o Comandante** — a primeira é de ficção: quem é "nosso" técnico, se o ENTRÓPICO é rebelde hoje.
+
+**O que ela destrava:** com a ficha aprovada, o **Claude** faz a regra no `Match` + os testes e o **Gemini** liga o briefing e o HUD de objetivo — o `MissionHUD` está marcado **DEMO** hoje (R13), e é esta missão que o tira da demonstração.
+
+## O pacote de publicação do vídeo #1, e o que a mesa deixa o dono mexer — Qwen, 12/10 (P47, só documentação)
+
+**Por quê:** o Comandante confirmou que **edita, melhora e corrige os detalhes na mesa**. Então o que faltava não era o vídeo — era o que fica em volta dele, e a resposta de "onde eu mexo". Duas coisas fechadas neste PR:
+
+- **`FERRAMENTAS.md` § 3.2 ganhou "o que o dono pode mexer"**: a mesa edita o **roteiro**, não o vídeo — texto, número, `segundos`, ordem, `pular`, imagens e `formato` — e **corrigir um detalhe é exportar de novo** (~1 min a 720p30). Está dito também o que ela **ainda não faz**: editar um **clipe gravado** (a cena só tem `início`, sem prévia nem `fim` — é a ordem **P97**), e o vídeo gravado em tempo real não ser editado quadro a quadro. As **duas cenas prontas e desligadas** do roteiro (`clipe` e `veredito`) estão apontadas: é só tirar o `pular`.
+- **`PUBLICACAO_E_MONETIZACAO.md` § 4.2 — o pacote de publicação do vídeo #1:** dois títulos propostos (número ou pergunta, a regra do § 4.1), a **descrição pronta para colar** (com o link nas duas primeiras linhas, que são as que aparecem na busca), hashtags e tags, o pedido de **miniatura** (um Mech grande e três palavras, com os quadros do vídeo como base) e **o que não dizer** (regra 14, R13, sem byte/KB/s, sem prometer data).
+
+**Nada construído no jogo.** O julgamento da miniatura é do Comandante — **eu não leio imagem**.
+
+## O primeiro vídeo do canal, pronto para publicar — Qwen, 12/10 (P47, roteiro + gravação)
+
+**O que foi feito:** o **roteiro do vídeo #1 do YouTube** — *"como este jogo é feito"* — com **11 cenas e ~52 s**, e ele **gravado**: `.tmp/video/o-processo.webm` (720p30, 56 MB). É o único vídeo de lançamento que **não depende** do take do `F9` nem de código novo — **dá para publicar hoje**.
+
+**Quem aprovou o roteiro foi o portão da própria mesa:** `node .tmp/video/validar.mjs o-processo` → *11 cenas · 51 s · sem travas*. Todos os números são lidos do código (`fatos.mjs`): **1455 testes**, **245 PRs**, **20 módulos / 89 dependências**, 60 Hz, 0,74 ms por tick. *(O roteiro antigo, de 15 s, dizia 272 testes e 102 PRs — é assim que número velho aparece; o portão pega.)*
+
+**Três decisões de conteúdo:** nenhum **byte/KB/s** (política de 27/09 — mostra-se o **ritmo** e a **contagem de testes**); nada que a `STATUS_REAL.md` marque PARCIAL/DEMO/AUSENTE (R13); nada do codinome interno em texto de tela.
+
+**Onde está e como ver:** a mesa lê `.tmp/video/roteiros/o-processo.js`; a **cópia versionada** é `.decepticons/video/o-processo.js`; o manual é o `FERRAMENTAS.md` § 3.2; os quadros do vídeo estão em `arte/video-o-processo-*.png`. Para ver: **`npm run mesa` → menu do topo → "o-processo"**. O roteiro de 15 s do dono foi **preservado** como roteiro nomeado **`cybermech-15s`** (e o ativo foi restaurado no fim).
+
+**Medido:** o `render.mjs` (quadro a quadro, 1080p60) é **impraticável em software** aqui — ~1 quadro em 10 minutos de tentativa; a gravação em tempo real (`record.mjs`, janela com GPU) saiu em **~1 min**.
+
+**O que falta:** **narração** (voz) e os **takes do `F9`** (P97) para o episódio longo de 6 a 10 min. **O julgamento visual é do dono** — eu não leio imagem.
+
+## Missões com cenários maiores: escolta, ataque, defesa de base e contraataque — Qwen, 12/10 (ordem P99, só documentação)
+
+**Ordem do Comandante (12/10):** *"precisamos de fases com cenários maiores, missões de proteção de escoltas, ataque, defesa de base, contraataques, etc, pra dar mais realismo e jogadas mais interessantes, e com mais robôs por partida"*.
+
+**O pedido encosta em coisa pronta e em coisa já planejada — registrei sobre o que existe, sem abrir um plano paralelo:**
+
+- **"Mais robôs por partida": já está feito offline.** A **P91** (no ar) monta **até 24 inimigos e 12 aliados (32 corpos)**, medido em **1,9 ms por tick**. O que falta é o **esquadrão por sala no servidor** (fase 3 do `PAINEL_ADMIN.md`).
+- **Missão com objetivo: dois modos já têm** — Sobrevivência (6 ondas, o Colossus na sexta) e CTF (3 capturas), em `?modo=survival` e `?modo=ctf`. **O deathmatch não tem objetivo** (só placar), e é o que a `QUIMICA_DO_JOGO.md` aponta como falta de "dever cumprido".
+- **O plano das missões em fases já existe:** `ROADMAP` Fase 5 + `DIVERSAO.md` § 10 **#7** — **a primeira missão é a escolta/defesa do técnico ENTRÓPICO**, escolhida de propósito por reusar o que já está no jogo (regra + HUD, sem arte nova).
+
+**O que o pedido acrescenta:** os **quatro tipos nomeados** — **contraataque** (defender e depois retomar) é o que ainda não estava na lista — e, principalmente, **cenários maiores**: escolta e contraataque pedem um **caminho longo**, e a Arena tem 200 m. Isso é **escala**, e o passo certo é um **mapa de missão com rota**, antes do mundo com streaming do `VISAO.md` (Fase 7). Ficou registrado em dois itens do `ROADMAP` (`#modos` e `#cenarios`).
+
+**Nada construído.** É registro: a regra de objetivo no `Match` e o `OBJECTIVE_STATE` na rede são do **Claude**; o briefing, o HUD de objetivo e o resumo, do **Gemini**; o cenário, do **Codex**.
+
+## O kit do YouTube (o primeiro mês) — Qwen, 12/10 (P47, só documentação)
+
+**Por que:** o Comandante decidiu **começar pelo YouTube** (§ 7 do `PUBLICACAO_E_MONETIZACAO.md`). O que existe, o que abrir e o que publicar primeiro virou a seção **§ 4.1** do mesmo documento — o **kit operacional** (canal, os quatro primeiros vídeos, a regra dos Shorts, miniatura e título, a cadência de um vídeo longo por semana, e o que medir: **o funil de cliques que a landing já conta**, não a visualização).
+
+**O primeiro vídeo recomendado não precisa de gameplay:** **"o processo"** (um estúdio construindo um jogo com quatro IAs) é a viralidade mais exclusiva do projeto (`DIVERSAO.md` § 8.3) e não depende do `F9` nem da mesa — é o único que dá para publicar antes de a fábrica do vídeo (P97) ficar pronta.
+
+**Nada construído.** É documentação sobre a doc que já existe.
+
+## As decisões do Comandante sobre publicação — nome, YouTube, contas, killcam e os takes na mesa — Qwen, 12/10 (P47/P97/P98)
+
+**O Comandante respondeu as cinco perguntas do `PUBLICACAO_E_MONETIZACAO.md` § 7, no mesmo dia (12/10):**
+
+1. **Nome:** AVARIA era o melhor encontrado, **mas `avaria.com` e `avaria.com.br` estão tomados** — ele volta para **CYBERMECH** (*"parece o que melhor transmite o que é o game"*; **`cybermech.com.br` aparece LIVRE no DNS**, `cybermech.com` é tomado) e aceita sugestões que remetam ao combate contra as forças do mal nas IAs e nos Mechs (§ 7.1 do documento, com os candidatos e o DNS de cada um). **A capa do jogo voltou a dizer CYBERMECH neste PR** (era AVARIA, o único lugar do código com o nome — P79).
+2. **Publicação:** **YouTube primeiro**; itch.io e portal **depois, com calma**. Interesse novo: **enviar à Netflix** ("nosso game é nível netflix!") — o modelo dela (sem anúncio e sem compra dentro do jogo) é o único grande que combina com o nosso "nunca pay-to-win", mas não há porta de entrada aberta: ela licencia de estúdio, com número na mão.
+3. **Contas + pagamento: AUTORIZADOS.** É o "sim" que liga o cosmético e o passe (§ 2 do documento) — e traz **LGPD e tributo** junto.
+4. **Killcam no PvP: sim** (ordem **P98**).
+5. **Vídeo:** os takes do **F9** têm de **estar disponíveis na mesa** para ele finalizar e **editar na mão**, em **ultrahd e com som** (ordem **P97**; o plano está em `FERRAMENTAS.md` § 3.1). **Achado ao escrever o plano:** o F9 **já grava com som** (VP9, 16 Mbps, o `AudioSystem` misturado) — o que atrapalha é o **passo manual de copiar o arquivo** para `.tmp/video/clipes/` e a falta de prévia/edição do clipe na mesa (o canvas desenha só um marcador; quem corta é o `render.mjs`).
+
+**Nada construído além da capa.** **Próximo item da fila desta frente:** o `POST` do take para a mesa (P97, item **(a)** — o mais barato dos quatro).
+
+## Publicação e monetização: onde o jogo mora e como o dinheiro entra — Qwen, 12/10 (ordem P47, só documentação)
+
+**Ordem do Comandante (P47, de 23/09, retomada em 12/10):** *"como fazer para publicarmos esse jogo no YouTube, ou Steam, ou quais plataformas gratuitas podemos publicar, e como monetizar e ganhar grana com o game? oferecendo o game freemium, fazendo mídias pra divulgar, tornar ele viral e ganharmos grana com nosso excelente game?"*
+
+**O que é:** o documento novo **`PUBLICACAO_E_MONETIZACAO.md`** — o **comparativo das casas** onde o jogo pode morar (site próprio ✅, portais de jogos web, itch.io, Steam, lojas de celular; **YouTube é canal, não casa**), as **seis frentes de dinheiro** com o que cada uma precisa para ligar, a **matemática honesta** (anúncio rende centavos por mil; o dinheiro grande é cosmético, que só liga com contas) e a **sequência em etapas com o gatilho de cada uma**. Companheiro de `IDENTITY.md` § 5, `GAME_DESIGN.md`, `METAGAME.md` § 6–7 e `DIVERSAO.md` § 8 — não substitui nenhum deles. **Nada construído neste PR.**
+
+**A resposta em uma linha:** **o gargalo não é dinheiro, é gente** (o placar do `ORDENS_DO_COMANDO.md` § 6 registra "nenhum teste com gente na internet"); a ordem é **encher a sala → retenção (D1) → contas → cosmético → Steam**, e cada etapa só entra quando a anterior provar tração (regra de 23/09).
+
+**O que ele não faz:** **não decide nada no lugar do Comandante** — o documento fecha com **cinco decisões dele** (§ 7: o nome definitivo, o primeiro destino externo, autorizar contas + pagamento, a killcam no PvP e quem monta os cortes de vídeo).
+
+**Registro em:** `ORDENS_DO_COMANDO.md` (**P47 saiu do ⏸**; o placar de ordens paradas foi de 1 para 0), `HISTORICO_DE_DECISOES.md` e o documento novo.
+
+**Próximos passos desta frente (o mais barato primeiro):** publicar no **itch.io** (questão de horas, sem código novo) e o **recibo da partida com o código curto de build** (o motivo de mandar o link, `METAGAME.md` § 4) — os dois primeiros passos da etapa 0/1 do documento.
+
+## O esquadrão: bots e aliados à vontade, com teto medido — Claude, 12/10 (PR `claude/esquadrao-contrato`, ordem P91)
+
+**Ordem do Comandante (P91):** "quero poder adicionar mais bots e aliados, além dos 3 do padrão".
+
+**O que está no ar (fase 1A e 1B):** a partida agora monta **um esquadrão**, robô por robô, no lugar das contagens fixas. Cada robô tem papel (Mech, andróide, técnico), apelido, personalidade, **chassi** (os 8 Mechs do jogo), **arma principal** (as 7 a 8 que o bot sabe usar) e dificuldade própria, nos dois lados (inimigos e aliados; o aliado pode ser Mech ou andróide). O padrão é **o jogo de hoje**: `esquadraoPadrao.test.ts` guarda quatro fotos da partida, tiradas **antes** da mudança, e elas continuam idênticas tick a tick (Arena offline, Arena do servidor, Bunker, Arena sem inimigos).
+- **Contrato:** `client/src/sim/esquadrao.ts` (`BotSpec`, `EsquadraoSpec`, validação, peso, link `q1.…`, plano) e `client/src/sim/nascimentos.ts` (os pontos de sempre mais **36 extras dos inimigos e 16 dos aliados**, cada um conferido contra a arena de verdade, pela física, com folga de 3,4 m para o maior Mech). O `Match` aceita `squad`; sem ele, deriva do `foes` (o servidor segue assim).
+- **Como ver (sem o editor, que é a fase 1C):** abra o jogo com `?esquadrao=` e um link `q1.<inimigos>.<aliados>`, cada robô `m` Mech, `a` andróide, `t` técnico, com `:pb` personalidade (b brabo, m manso, f fujão), `:cmarauder` chassi, `:wcannon-1` arma e nível, `:df` dificuldade (f fácil, d difícil), `:n…` nome. Exemplos na descrição do PR. `?esquadrao=padrao` volta ao padrão; o esquadrão do link fica salvo no aparelho (`cybermech.esquadrao.v1`) como as potências.
+- **Teto (medido, não chutado):** 24 inimigos, 12 aliados, 2 técnicos, **32 no total**; o Bunker, 11 (são os pontos livres do mapa). No Node, sem GPU, com o jogador parado e todos caçando: o tick vai de **0,55 ms** (jogo de hoje, 7 corpos) a **1,9 ms** (33 corpos), p95 abaixo de 4 ms; a animação do desenho custa menos de 0,3 ms por quadro. O que pesa é a GPU (uns 10 desenhos e 1.900 triângulos por Mech); a qualidade adaptativa abaixa a resolução. `esquadrao.test.ts` e `Match.esquadrao.test.ts` guardam o orçamento (8 ms por tick, 4 vezes a medida) e o determinismo.
+- **O que mudou no jogo junto:** a arma decide a distância de tiro do bot (escopeta chega a 10 m, gelo a 25 m, plasma e o resto seguem em 38 m); o pool de tiros cresce com os Mechs que atiram (senão o tiro some; 64 até 3 Mechs, +4 por Mech); o placar (Tab) mostra 10 linhas, a última a de quem joga; as setas da borda são as 8 dos inimigos mais perto; o monitor PILOTOS mostra 8 linhas e "+ N pilotos"; fumaça, fogo e gelo por robô só dos que estão a menos de 120 m, começando de um robô diferente a cada quadro (o orçamento de 12 por pulso alcançava só os 12 primeiros); a sombra de bolha vale para 48 corpos; o "N/2 aliados" do HUD vira N/total; Configurações > Inimigos avisa que há um esquadrão personalizado e tem o botão VOLTAR AO PADRÃO.
+- **O que NÃO está pronto (R13):** o **editor** (fase 1C: PILOTOS → AJUSTAR) só entra no próximo PR, então hoje o esquadrão se monta por link; **o servidor e o online seguem com as configurações** (3 Mechs, 3 andróides, técnico, sem aliados): esquadrão por sala é a fase 3; **os chassis importados entram com o corpo procedural do Vector-09** (o servidor não carrega `.glb`), com os números do chassi; um esquadrão personalizado conta como **ajuda** na telemetria; **áudio sem teto de vozes** (com 32 robôs são ~16 passos simultâneos; não medido em máquina fraca); **GPU real não medida** (só SwiftShader no CI).
+- **Achado corrigido (R17):** no Bunker, o ponto 3 era disputado pelo 2º aliado e pelo 3º Mech (os dois nasceriam empilhados se a conta deixasse); agora cada ponto serve a um corpo só.
+
+**Próxima sessão começa com:** a fase 1C, o editor do esquadrão no monitor PILOTOS (`claude/esquadrao-editor`): modelo puro testado (`EsquadraoEditor`: adicionar, remover, duplicar, editar, predefinidos, peso e excessos) e a gaveta com as duas listas, a ficha do robô selecionado, a barra de carga, SALVAR E REINICIAR, COPIAR LINK e VOLTAR AO PADRÃO.
+## A química do jogo: o que faz o piloto voltar — Qwen, 12/10 (ordem P96, só documentação)
+
+**Ordem do Comandante (12/10, P96):** *"melhorar a jogabilidade, a dopamina, a serotonina, a adrenalina, a oxitocina e a sensação de bem-estar, de cumprir missão, tarefas, com dificuldade suficiente pra instigar o jogador a tentar de novo, mudar configurações, customizar seus robôs, aproveitando aprendizados de Minecraft, Fortnite, COD, Valorant, Battlefield, War Robots, Mech Arena, Doom, pra que o nosso jogo se torne maior que os anteriores."*
+
+**O que é:** o documento **`QUIMICA_DO_JOGO.md`** (novo) — a leitura emocional do que o jogo já entrega e onde dói, com as cinco químicas (dopamina, serotonina, adrenalina, oxitocina, dever cumprido) mapeadas a mecânicas existentes, os jogos de referência (e o que **não** copiar de cada um), duas propostas novas por eixo, o **eixo da agência** (configurações + customização = recompensa), e a fila de propostas com custo de CPU/rede, dono e como conferir. **Não substitui a ordem do `DIVERSAO.md` § 10:** só explica *por que* ela funciona emocionalmente e acrescenta quatro itens que caem dentro dela. **Nada construído neste PR** — é documentação e registro, como o P96 pediu.
+
+**Os quatro achados que ele revalida no código da `main` hoje (R17):** o **nível do piloto não sobe jogando** (`ui/DailyChallenges.ts:138`: `addXp` só é chamado dentro de `claimReward`); o **`trackWaveOrRound` não tem chamador** (a missão "sobreviver 3 ondas" nunca progride); o gancho de "conquistado jogando" (`validateLoadout`) está sem chamador; e o `waveReached` chega ao HUD (`core/Game.ts:977`) mas **nenhum recorde é salvo**. Os três primeiros são conserto pequeno na frente do Gemini e destravam a retenção que já deveria estar no ar.
+
+**A tese (uma frase):** a química do CYBERMECH não vem de mais um botão e sim de **fechar os ciclos que já existem** (o nível que não sobe, o recorde que não é salvo, o objetivo que falta) e de **mostrar o que o jogador fez** (o recibo, o selo, a build dele) — quem vê a própria marca quer voltar para melhorá-la.
+
+**Registro em:** `ORDENS_DO_COMANDO.md` (P96), `ROADMAP.md` (seis itens na Fase 5), `HISTORICO_DE_DECISOES.md` (decisões deste PR) e o documento novo `QUIMICA_DO_JOGO.md`. **A landing não muda de texto** (nada virou REAL): a seção "O que está sendo construído" se atualiza sozinha com o `ROADMAP` no próximo deploy (política das páginas públicas).
+
+**Próxima sessão começa com:** o **PR do esquadrão (fase 1A)** do Claude (esta pasta está no branch dele, `claude/esquadrao-contrato`) e, na frente do Gemini, os consertos da progressão (`QUIMICA_DO_JOGO.md` § 5, itens 1 a 3) — que destravam dopamina e serotonina sem tocar no caminho crítico.
+
 ## Ataque 1 e Ataque 2 — Claude, 12/10 (PR `claude/ataque-1-e-2`, ordem P95)
 
 **Ordem do Comandante (P95):** "os robôs têm ataque 1 e ataque 2: arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral (podendo ser configurado assim) nos robôs maiores; nos pequenos de entrada, o braço direito e o esquerdo, cada um com um botão do mouse".

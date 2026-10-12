@@ -1,4 +1,4 @@
-import type { Round } from '../combat/Round';
+import type { Round, Standing } from '../combat/Round';
 import type { MechBase } from '../entities/MechBase';
 
 const REFRESH_S = 0.2;
@@ -9,6 +9,20 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, pa
   e.className = className;
   parent.append(e);
   return e;
+}
+
+/** Quantas linhas o placar mostra: com um esquadrão grande, 30 linhas não cabem em 720 p de altura. */
+export const PLACAR_LINHAS = 10;
+
+/**
+ * As linhas do placar: se cabem, todas; senão os primeiros e, na última linha, quem joga (com a posição de verdade dele), para o jogador
+ * sempre se achar. O resto vira "+N pilotos" no subtítulo.
+ */
+export function linhasDoPlacar(standings: readonly Readonly<Standing>[], me: MechBase, max = PLACAR_LINHAS): { rank: number; row: Readonly<Standing> }[] {
+  const todas = standings.map((row, i) => ({ rank: i + 1, row }));
+  if (todas.length <= max) return todas;
+  const minha = todas.find((l) => l.row.mech === me);
+  return !minha || minha.rank <= max - 1 ? todas.slice(0, max) : [...todas.slice(0, max - 1), minha];
 }
 
 function clock(seconds: number): string {
@@ -69,18 +83,21 @@ export class RoundHud {
 
     const standings = round.standings();
     const leader = standings[0];
+    const linhas = linhasDoPlacar(standings, this.me);
+    const ocultos = standings.length - linhas.length;
+    const resto = ocultos > 0 ? ` · +${ocultos} pilotos` : '';
     if (round.playing) {
       this.title.textContent = `PLACAR · RODADA ${round.number}`;
-      this.sub.textContent = `faltam ${clock(round.timeLeft)} · solte Tab para voltar`;
+      this.sub.textContent = `faltam ${clock(round.timeLeft)} · solte Tab para voltar${resto}`;
     } else {
       this.title.textContent = leader && leader.kills > 0 ? `VENCEDOR: ${leader.name}` : 'RODADA SEM VENCEDOR';
-      this.sub.textContent = `próxima rodada em ${Math.max(0, Math.ceil(round.timeLeft))} s`;
+      this.sub.textContent = `próxima rodada em ${Math.max(0, Math.ceil(round.timeLeft))} s${resto}`;
     }
     this.rows.replaceChildren(
-      ...standings.map((s, i) => {
+      ...linhas.map(({ rank, row: s }) => {
         const li = document.createElement('li');
         li.className = s.mech === this.me ? 'rb-row me' : 'rb-row';
-        for (const t of [String(i + 1), s.name, String(s.kills), String(s.deaths)]) {
+        for (const t of [String(rank), s.name, String(s.kills), String(s.deaths)]) {
           const span = document.createElement('span');
           span.textContent = t;
           li.append(span);
