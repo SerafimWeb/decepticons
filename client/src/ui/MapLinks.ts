@@ -3,7 +3,7 @@ import type { MapId } from '../environment/Bunker';
 /** Os mapas que o seletor oferece, na ordem em que aparecem. */
 export const MAPS: readonly { id: MapId; label: string; hint: string }[] = [
   { id: 'arena', label: 'ARENA', hint: 'A cidade neon' },
-  { id: 'bunker', label: 'BUNKER', hint: 'Mapa de 3 andares, treino offline contra bots (sai da sala online)' },
+  { id: 'bunker', label: 'BUNKER', hint: 'Mapa de quatro andares, treino offline contra bots (sai da sala online)' },
 ];
 
 /**

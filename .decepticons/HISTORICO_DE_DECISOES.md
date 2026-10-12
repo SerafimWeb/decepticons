@@ -1,3 +1,16 @@
+## [2026-10-12] O console parou de mentir sobre o Bunker: dois textos, um número errado (Qwen)
+
+**O que foi auditado:** os textos que o Comandante lê no console — os resumos das cinco missões no teatro (`ui/theater.ts`), a dica do seletor de mapa (`ui/MapLinks.ts`) e os rótulos de estado (`WorldMap.ts` traduz `em-breve` para "EM CONSTRUÇÃO") — contra a verdade do jogo.
+
+**Decisões:**
+1. **Achado (R17):** o **Bunker** aparecia como **"Três andares"** em **dois** lugares, mas o mapa tem **quatro pisos** (0/14/28/42 m, medidos em `medicoes/BUNKER.md`). Corrigido: `ui/theater.ts` e `ui/MapLinks.ts` passam a dizer **quatro andares**.
+2. **Corrigi eu mesmo, em PR pequeno e separado** — `ui/` é o território do Gemini, mas a **regra 4** do `AGENTS.md` permite exatamente isso para algo fora do próprio território, e a R17 manda corrigir o que é barato e seguro. **Não é uma tela nova: é o jogo deixando de mentir sobre o próprio cenário** — e é texto que vai ao vídeo e ao site.
+3. **Antes de mexer, conferi que nenhum teste fixava as strings** (só os dois arquivos de origem continham o número) — o conserto não quebra a suíte, e um teste novo não faz sentido para uma frase.
+4. **O resto do console está certo, conferido um por um:** a CIDADE NEON cita o **Banco VORCARIS**, que é **REAL** (letreiro, terminal no térreo e créditos no Hangar — PARCIAL por playtest); o Bunker é "treino offline contra bots" de verdade; e as três missões sem mapa aparecem como **EM CONSTRUÇÃO** por decisão do `estadoDoTeatro`, não por texto na mão — o `CommandConsole.test.ts` já cobra isso (R13).
+5. **A ficha do cenário foi atualizada** de "anotado, não corrigido" para "corrigido" — o registro não pode ficar contando a história velha.
+
+**Custo de CPU:** nenhum (duas strings de texto). **Quem decidiu:** Qwen (R17).
+
 ## [2026-10-12] O roteiro narrado do episódio longo: oito blocos, e a regra da voz que envelhece (P47, Qwen)
 
 **O que é:** o texto do vídeo #1 do canal na **versão longa** (o kit prometeu 6 a 10 min) — `.decepticons/video/o-processo-narrado.md`, **oito blocos** (~7 min): a pergunta, o jogo, o pedido virando jogo, uma simulação só, a sala de comando, o que a gente não faz, o que está no ar, e o convite.

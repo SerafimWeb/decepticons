@@ -1,5 +1,20 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O console parou de mentir sobre o Bunker: dois textos, um número errado — Qwen, 12/10 (o que o dono lê)
+
+**O que foi auditado:** os **textos que o Comandante lê no console** — os resumos das cinco missões no teatro (`ui/theater.ts`), a dica do seletor de mapa (`ui/MapLinks.ts`) e os rótulos de estado (`WorldMap.ts` traduz `em-breve` para **EM CONSTRUÇÃO**) —, contra a verdade do jogo, um por um.
+
+**O achado (R17):** o **Bunker** aparecia como **"Três andares"** em **dois** lugares — o resumo do teatro e a dica do seletor (*"Mapa de 3 andares"*) — mas o mapa tem **quatro pisos** (0/14/28/42 m, medidos em `medicoes/BUNKER.md`). **Corrigido:** os dois passam a dizer **quatro andares**; são duas strings, nada de regra, e **nenhum teste as fixava** (conferido antes de mexer).
+
+**Por que corrigi eu mesmo, e não registrei para o Gemini:** `ui/` é o território dele, mas a **regra 4** do `AGENTS.md` permite **um PR pequeno e separado** para mudar algo fora do próprio território — e a R17 manda corrigir o que é barato e seguro. Não é tela nova: é o jogo deixando de mentir sobre o próprio cenário, no que aparece no vídeo e no site.
+
+**O que foi conferido e está certo:**
+- **CIDADE NEON** ("A sede da SERAFIM e o Banco VORCARIS sob ataque"): o **Banco VORCARIS é REAL** (letreiro de 24 m na fachada, terminal no térreo, créditos no Hangar — **PARCIAL** por playtest) ✔
+- **BUNKER**: "treino offline contra bots" ✔ (o mapa só existe offline e no Deathmatch)
+- **EM CONSTRUÇÃO** para **ESTAÇÃO DE CABOS, BARRAGEM e FÁBRICA DE CHIPS** ✔ — nenhuma tem mapa, e quem decide é o `estadoDoTeatro`, não texto na mão. O `CommandConsole.test.ts` já cobra isso (R13).
+
+**Nada mais mudou:** é texto — zero CPU, zero rede.
+
 ## O roteiro narrado do episódio longo — Qwen, 12/10 (P47, só documentação)
 
 **O que é:** o texto do **vídeo #1 do canal na versão longa** (6 a 10 min, o que o kit prometeu) — **`.decepticons/video/o-processo-narrado.md`**: **oito blocos** (~7 min) com a narração escrita, o que aparece em cada bloco (os modelos da mesa) e os **capítulos do YouTube**. O teaser de 52 s (`.decepticons/video/o-processo.js`) continua sendo outra peça.
