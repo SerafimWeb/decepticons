@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { HeatSink, OVERHEAT_SPEED, type ChassisHeat, type HeatState } from '../combat/heat';
 import { repairModules } from '../combat/repair';
 import { applyDamage, partAt, type DamageResult } from '../combat/damage';
+import { FLINCH_DECAY, FLINCH_MAX } from '../combat/reaction';
 import { DEFAULT_TRIGGERS, MOUNT_PART, MOUNTS, type MountId, type TriggerLayout, type Vec3 } from '../combat/mounts';
 import type { DamageType, Loadout, WeaponStats } from '../combat/weapons';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
@@ -242,6 +243,9 @@ export abstract class MechBase {
   private readonly rightArmBaseZ: number;
   private readonly leftArmBaseZ: number;
   private hitFlash = 0;
+  /** O tranco do torso ao levar tiro (rad: inclina para trás/para a frente e torce de lado): só desenho, decai sozinho (`combat/reaction.ts`). Só x e y, os dois eixos que todo rig expõe (`RigJoint`). */
+  private flinchPitch = 0;
+  private flinchYaw = 0;
   /** A cor que o casco mostra agora (flash de dano + estado): só se escreve no material quando muda. */
   private shownR = 0;
   private shownG = 0;
@@ -703,7 +707,7 @@ export abstract class MechBase {
     this.pitch = pitch;
     const r = this.rig;
     this.root.rotation.y = yaw;
-    r.torso.rotation.x = pitch * 0.25;
+    r.torso.rotation.x = pitch * 0.25 + this.flinchPitch;
     r.rightArm.rotation.x = pitch * 0.75;
     r.leftArm.rotation.x = pitch * 0.75;
   }
@@ -722,6 +726,30 @@ export abstract class MechBase {
     this.shove.z += dirZ * k;
     const m = Math.hypot(this.shove.x, this.shove.z);
     if (m > SHOVE_MAX) this.shove.multiplyScalar(SHOVE_MAX / m);
+  }
+
+  /**
+   * Um tranco no torso (só desenho): joga o torso para onde o tiro andava (`dirX`, `dirZ`, no mundo, não precisa ser unitária), `amount` rad, até `FLINCH_MAX`. Tiro de frente
+   * inclina o torso para trás; de lado, torce o torso para o lado. Decai sozinho em `animate`. Morto não treme.
+   */
+  flinch(dirX: number, dirZ: number, amount: number): void {
+    if (!this.alive || amount <= 0) return;
+    const len = Math.hypot(dirX, dirZ);
+    if (len < 1e-6) return;
+    const x = dirX / len;
+    const z = dirZ / len;
+    const s = Math.sin(this.yaw);
+    const co = Math.cos(this.yaw);
+    // Atrás do Mech = (sen yaw, 0, cos yaw); a direita dele = (cos yaw, 0, -sen yaw).
+    const back = x * s + z * co;
+    const right = x * co - z * s;
+    this.flinchPitch = Math.min(FLINCH_MAX, Math.max(-FLINCH_MAX, this.flinchPitch + amount * back));
+    this.flinchYaw = Math.min(FLINCH_MAX, Math.max(-FLINCH_MAX, this.flinchYaw - amount * right));
+  }
+
+  /** O tranco que o torso mostra agora (rad, o maior dos dois eixos): para o teste e para quem quiser reagir (a câmera). */
+  get flinchAmount(): number {
+    return Math.max(Math.abs(this.flinchPitch), Math.abs(this.flinchYaw));
   }
 
   /** Um tick de simulação (60 Hz). Determinístico dado o input. */
@@ -908,7 +936,12 @@ export abstract class MechBase {
 
     r.pelvis.position.y = r.hipHeight - Math.abs(sw) * (0.12 + Math.abs(lean) * 0.12) * amt;
     r.pelvis.rotation.z = this.pelvisBaseRoll + lean * (0.06 + Math.abs(sw) * 0.08) * amt;
-    r.torso.rotation.y = sw * 0.06 * amt;
+    // O tranco do tiro: o torso volta sozinho (decai a e^-9 por segundo) e soma por cima da mira e do balanço da passada.
+    const back = Math.exp(-dt * FLINCH_DECAY);
+    this.flinchPitch = Math.abs(this.flinchPitch) < 1e-4 ? 0 : this.flinchPitch * back;
+    this.flinchYaw = Math.abs(this.flinchYaw) < 1e-4 ? 0 : this.flinchYaw * back;
+    r.torso.rotation.x = this.pitch * 0.25 + this.flinchPitch;
+    r.torso.rotation.y = sw * 0.06 * amt + this.flinchYaw;
 
     this.recoil = Math.max(0, this.recoil - dt * 9);
     this.leftRecoil = Math.max(0, this.leftRecoil - dt * 5);

@@ -7,6 +7,7 @@ import { newSnapshot, type EventBatch, type RosterEntry, type Snapshot } from '.
 import type { UnitState } from '../../../shared/net/state';
 import { applySpread, spreadAt, type Spread } from '../combat/spread';
 import { MOUNTS, type MountId } from '../combat/mounts';
+import { hitFlinch } from '../combat/reaction';
 import { weapon, type WeaponStats } from '../combat/weapons';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import { parseLoadoutKey } from '../hangar/loadout';
@@ -369,9 +370,23 @@ export class OnlineSession implements Pilot {
     }
   }
 
+  /**
+   * O tranco do torso de quem levou o tiro, para longe de quem atirou (só desenho: o empurrão vem do servidor pelo estado, e o dano e a vida também). O evento de acerto
+   * traz quem levou, quem atirou e o dano; a direção sai das duas posições.
+   */
+  private flinchFrom(e: NetEvent): void {
+    const hit = e.unit === this.myId ? this.o.me : this.remotes.get(e.unit)?.mech;
+    const shooter = e.other === NO_UNIT ? undefined : e.other === this.myId ? this.o.me : this.remotes.get(e.other)?.mech;
+    if (!hit || !shooter || hit === shooter) return;
+    const a = hit.simPosition;
+    const b = shooter.simPosition;
+    hit.flinch(a.x - b.x, a.z - b.z, hitFlinch(e.amount));
+  }
+
   private onEvents(b: EventBatch): void {
     for (let i = 0; i < b.count; i++) {
       const e = b.list[i]!;
+      if (e.kind === EVENT.HIT) this.flinchFrom(e);
       if (e.kind === EVENT.SHOT) this.remoteShot(e);
       else if (e.kind === EVENT.HIT && e.other === this.myId && e.unit !== this.myId) this.o.onDamage?.(e.amount);
       else if (e.kind === EVENT.KILL) {

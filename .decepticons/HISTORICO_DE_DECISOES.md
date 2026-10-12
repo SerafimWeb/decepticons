@@ -1,3 +1,15 @@
+## [2026-10-12] Todo acerto empurra e dá um tranco, na medida do dano que passou (P69, Claude)
+
+**Ordem do Comandante (P69):** "reação nos inimigos" ao tiro.
+
+**Decisões:**
+1. **A reação é do dano que passou, não do tiro.** O escudo que absorveu tudo não empurra; uma perna que só tinha 10 de vida só empurra por 10. Um teste com a perna quase destruída trava isso.
+2. **A tabela é por natureza do dano, não por arma.** Arma nova herda sem declarar nada (o contrário de um `Record<WeaponId>`): balístico 0,05, explosivo 0,04, laser 0,02, térmico 0,015, gelo 0,01 m/s por ponto de dano; pulso, som, corte e choque, zero. O canhão pesado, o único acima de 4,5, fica no teto.
+3. **O empurrão é regra de simulação; o tranco é só desenho.** O empurrão reaproveita o `MechBase.push` do canhão sônico (decai sozinho, o grande resiste, o teto é 12 m/s), então o servidor e o jogo offline aplicam igual; o tranco (inclinação do torso) só existe onde há um rig.
+4. **O lança-chamas e a onda sônica ficam de fora:** um é fluxo (cinco pulsos por segundo empurrariam sem parar), a outra tem o empurrão dela.
+5. **O tranco usa só x e y do torso.** O contrato do rig (`RigJoint`) expõe só esses dois eixos (os rigs importados corrigem o eixo de cada osso por baixo); a rolagem teria de ser mapeada osso a osso. De lado, o torso **torce** em vez de rolar.
+6. **O jogador também é empurrado** (simetria deliberada: o que vale para o inimigo vale para ele). Se incomodar, o ponto de ajuste é uma linha em `PUSH_PER_DAMAGE`; um valor por clã em Configurações → Potências é o passo seguinte.
+
 ## [2026-10-12] O míssil teleguiado trava no mais centrado e curva, não persegue para sempre (P77, Claude)
 
 **Ordem do Comandante (P77):** "variar as armas e tecnologias nos ombros".
