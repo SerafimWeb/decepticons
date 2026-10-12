@@ -42,6 +42,8 @@ o que já era só dos chassis pesados por decisão do Comandante (canhão pesado
 **Como criar a versão de tamanho 3 (futuro):** é uma **arma nova** (um `WeaponId` próprio, por exemplo um canhão do tamanho do gigante) com `WEAPON_FIT` `{ class: 'heavy', size: 3 }` e os números em `BASE`; entra na lista do gigante em `ARM_SLOTS` e **não** nas dos Mechs
 (o teste `nenhum encaixe oferece arma que o tamanho do chassi não carrega` trava isso). Só precisa existir como **média** e **pesada**: a leve do tamanho 3 já existe, é a pesada do 2 (outro teste proíbe declará-la). Nada na regra muda.
 
+**O projeto dessas armas — os nomes, o papel e os números — está na `fichas/armas-de-tamanho-3-e-4.md`** (proposta Qwen, 12/10): a regra de escala (dano ×1,8, calor ×1,5, **peso ×2**, alcance ×1,3, cadência ×0,75), as quatro primeiras armas e as perguntas ao Comandante. O passo a passo abaixo continua sendo o **como**; a ficha é o **quê**.
+
 ## O que já é só ajustar número (sem código)
 
 **Configurações → POTÊNCIAS** (`tuning/power.ts`): por arma, multiplica dano, cadência, calor e alcance; por clã (jogador, Mechs

@@ -1,3 +1,17 @@
+## [2026-10-12] As armas dos gigantes ganham projeto: o portão do robô de tamanho 4 (P82/P100, Qwen)
+
+**Por quê:** a **P100** trouxe o Colossus v4 (tamanho 4) e o portão apareceu — **nenhuma arma cabe num robô de tamanho 4** (todas são `size: 2`) —, e a **P82** tinha deixado as versões de tamanho 3 e 4 como "futuramente". O contrato de *como* criá-las já existia (`ARSENAL.md`); faltava o **projeto**: quais armas e com que números.
+
+**Decisões:**
+1. **Uma regra de escala com cinco fatores e um porquê em cada:** dano **×1,8**, calor **×1,5**, **peso ×2**, **alcance ×1,3 (teto)**, cadência **×0,75**. O teto de alcance existe porque **o robô dobra e a Arena não** (200 m): sem ele, a arma do gigante vira um sniper de fora da briga.
+2. **O peso ×2 é a decisão de design da ficha:** a pesada de tamanho 3 fica em **~10 t** — e o Colossus tem **24 t** de carga, então **duas pesadas = 20 t**, ou uma pesada e duas médias. **O gigante escolhe pelo peso**, sem trava nova.
+3. **Quatro armas, duas por tamanho:** no 3, o **CANHÃO DE CERCO** (pesada, 160 de dano, 2,6 s entre tiros) e a **ROTATÓRIA PESADA** (média, supressão, com o calor como limite); no 4, a **LANÇA DE CERCO** (290, um tiro por carregador, 6 s de recarga) e o **CASULO PESADO DE MÍSSEIS**.
+4. **O que a ficha recusa propor, com o motivo:** nada de **leve de tamanho 3** (ela é a pesada do 2, e um teste proíbe declará-la); nada de **arma de precisão de gigante** (com o alcance preso, seria um canhão pior); e nada de escudo/drone de tamanho 3 antes de o arsenal existir.
+5. **A ficha não decide pelo dono:** as sete perguntas estão no fim, e as duas que definem tudo são a **regra de escala** (que depois é uma linha por arma) e a **tensão de peso** (duas pesadas ou uma).
+6. **A ficha aponta em vez de repetir:** o contrato da classe mora em `combat/weaponClass.ts` e o passo a passo, no `ARSENAL.md` — ela só acrescenta o **quê** (nomes, papéis, números), porque duas fontes sobre a mesma regra é como se perde uma.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, dentro das ordens P82 e P100.
+
 ## [2026-10-12] O Colossus v4 não entra no Hangar: o arquivo tem 11 ossos e o jogo anima outros 11 (P100, Qwen)
 
 **Ordem do Comandante (P100):** *"adicionei um novo modelo na pasta /blender/colossusv4, leve ele para o hangar, veja se está correto a armadura, ossos, etc, ou se devo melhorar ele no blender. ele é do tamanho 4, bem maior que o colossus v3"*.
