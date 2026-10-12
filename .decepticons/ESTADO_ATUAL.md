@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## As armas dos gigantes têm projeto: o portão do robô de tamanho 4 — Qwen, 12/10 (P82/P100, só documentação)
+
+**Por quê:** a **P100** trouxe o Colossus v4 (tamanho 4) e o **portão** apareceu: **hoje nenhuma arma cabe nele** (todas são `size: 2`). A **P82** tinha deixado as "versões de tamanho 3 e 4" como *futuramente*, e o **contrato de como criá-las já existia** (`ARSENAL.md` §"Como criar a versão de tamanho 3"). O que faltava era o **projeto**: **quais** armas e com **que números**.
+
+**O que foi escrito (`fichas/armas-de-tamanho-3-e-4.md`, proposta):** a **regra de escala** — dano **×1,8**, calor **×1,5**, **peso ×2**, alcance **×1,3 (teto)**, cadência **×0,75** — com o *porquê* de cada fator; e **quatro armas**, duas por tamanho: no **3**, o **CANHÃO DE CERCO** (pesada, um tiro de 160) e a **ROTATÓRIA PESADA** (média, supressão); no **4**, a **LANÇA DE CERCO** (pesada, 290, um tiro por carregador) e o **CASULO PESADO DE MÍSSEIS**. Mais **9 testes** (dois **já existem** e travam o contrato; sete nascem com as armas), **sete perguntas** ao Comandante e a lista do que **não** propor.
+
+**A decisão que faz o gigante ser gigante sai do peso, não de uma trava:** com peso ×2, a pesada de tamanho 3 fica em **~10 t** — e o Colossus tem **24 t** de carga: **duas pesadas = 20 t**, ou uma pesada e duas médias. **É a escolha que o peso cria.**
+
+**A armadilha que a ficha evita:** o robô dobra, mas **a Arena continua com 200 m** — sem o teto de 1,3× no alcance, o Colossus vira um atirador de fora da briga.
+
+**A ficha aponta em vez de repetir:** o contrato da classe é do `combat/weaponClass.ts` e o passo a passo, do `ARSENAL.md` — duas fontes sobre a mesma regra é como se perde uma.
+
+**Nada construído:** os números são do **Claude** (medidos na Oficina contra as metas do `balance.ts`) e a arte, do **Codex**.
+
 ## O Colossus v4 chegou e não entrou: o rig é que está errado — Qwen, 12/10 (P100, só documentação)
 
 **Ordem do Comandante (P100):** *"adicionei um novo modelo na pasta /blender/colossusv4, leve ele para o hangar, veja se está correto a armadura, ossos, etc, ou se devo melhorar ele no blender. ele é do tamanho 4, bem maior que o colossus v3"*.
