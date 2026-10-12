@@ -1,5 +1,16 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Míssil teleguiado de ombro — Claude, 12/10 (PR `claude/missil-teleguiado`, protocolo 16, ordem P77)
+
+**Ordem do Comandante (P77):** "melhor aproveitamento dos slots nos ombros... VARIAR as armas e tecnologias" (a 2ª arma de ombro, depois do canhão sônico).
+
+- **O que é (`seeker`):** a primeira arma de ombro que **não é só mais foguete**. **Trava no inimigo mais centrado à frente** da boca (cone de 29°, até 90 m, à vista: a mesma conta de cone e parede do lança-chamas e da onda, `Match.coneGap`) e **curva até ele** a 2,2 rad/s; sem alvo à frente, voa reto. 55 de dano e explosão de 4,5 m (a dos foguetes é de 6), 2 no carregador, recarga de 3,2 s, 48 m/s até 140 m, 0,2 de calor por lançador (o dos foguetes é 0,18), 4 t. Os dois ombros do Marauder soltam um cada (um aperto gasta uma unidade do carregador).
+- **Como curva:** `RocketSystem.steer` gira a velocidade do míssil para o centro do corpo do alvo, no máximo `turnRate × dt` por tick, sem mudar a velocidade; alvo que morre = o míssil solta e segue reto. Só geometria da simulação (posição de simulação e altura do alvo, **sem rig nem 3D**): roda igual no servidor. Quem trava: `Match.seekTarget` (o mais perto do eixo; aliado e o próprio dono nunca).
+- **O raio de curva é de ~22 m** (48 ÷ 2,2): quem corre em linha reta é perseguido; quem usa o dash, uma quina de parede ou muda de rumo na hora ainda desvia. **Se vê:** corpo e rastro **frios** (branco-azulado) e o corpo acompanha a curva; os foguetes comuns seguem laranja. Mira própria (cantos fechados e quatro pontas), ícone e dica no Hangar, lançador de ombro azul. Capturas: `arte/missil-teleguiado-claude.png` (a trilha fria curvando dos ombros até um inimigo fora da mira) e `arte/missil-teleguiado-hangar-claude.png`.
+- **Rede: `PROTOCOL_VERSION` 16** (`NET_WEAPONS` ganha `seeker` no fim). **Limite honesto:** o míssil de **outro jogador** voa reto no desenho do seu cliente (os inimigos remotos não estão na lista da partida local); a explosão e o dano vêm do servidor, e lá ele curva de verdade.
+- **Custo de CPU:** por míssil em voo, uma conta de ângulo por tick (um `acos` e uma rotação, sem alocação); a trava roda uma vez por míssil, no disparo (um laço pelos Mechs inimigos e um raycast por candidato no cone).
+- **Testes:** `combat/seeker.test.ts` (25: dado, regra de tiro e carregador, guiagem com alvo falso, trava com física real: fora do eixo, fora do cone, alcance da trava, parede, dois alvos, aliado, o próprio dono), 3 testes do servidor real (o míssil curva até um alvo fora da linha do tiro; o foguete comum, no mesmo cenário, erra), o filtro de balanço do Marauder (agora com o teleguiado: plasma + dois teleguiados derrubam um torso em 2,67 s) e o catálogo da rede. **25 mutações, todas pegas.**
+
 ## Console de comando no ar, e o que o CI vermelho ensinou — Claude, 12/10 (PR `claude/ferramentas-ci`, só documentação)
 
 **O console de comando (PR #245, ordens P86 a P89) está na `main` desde `c8fa219` e no ar:** o CI e o deploy passaram (o passo "Conferir o site publicado" roda nos servidores do GitHub e confirmou o site) e o atualizador religou o servidor de jogo no mesmo commit (`servidor no ar: protocolo 15`, em cerca de 1 minuto; o protocolo não mudou).

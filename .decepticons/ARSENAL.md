@@ -13,7 +13,7 @@ Duas coisas separadas: a **classe** da arma (o porte dela: leve, média ou pesad
 | Classe (no tamanho 2) | Armas |
 |---|---|
 | **Leve** | blaster, motosserra, escopeta, arma elétrica (arco), lançador EMP |
-| **Média** | canhão de plasma, arma de gelo, canhão sônico, canhão automático, metralhadora rotatória, casulo de foguetes |
+| **Média** | canhão de plasma, arma de gelo, canhão sônico, canhão automático, metralhadora rotatória, casulo de foguetes, míssil teleguiado |
 | **Pesada** | canhão pesado, lança-chamas, canhão de trilho, chuva de mísseis |
 
 **A regra, uma conta só:** a classe é relativa a quem carrega, e cada passo de tamanho sobe duas classes, então **a pesada do tamanho N é a leve do tamanho N+1**.

@@ -51,6 +51,7 @@ export const MUZZLE_FX: Readonly<Record<WeaponId, MuzzleFx | null>> = {
   cryo: null,
   emp: null,
   rockets: null,
+  seeker: null,
   barrage: null,
   flamer: null,
   chainsaw: null,

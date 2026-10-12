@@ -17,7 +17,7 @@ describe('classes de arma: leve, média e pesada (ordem P82 do Comandante)', () 
 
   it('a tabela: leves, médias e pesadas (mudar uma arma de grupo é mudar uma linha e esta lista)', () => {
     expect(ids('light').sort()).toEqual(['arc', 'blaster', 'chainsaw', 'emp', 'shotgun']);
-    expect(ids('medium').sort()).toEqual(['autocannon', 'cryo', 'plasma', 'rockets', 'rotary', 'sonic']);
+    expect(ids('medium').sort()).toEqual(['autocannon', 'cryo', 'plasma', 'rockets', 'rotary', 'seeker', 'sonic']);
     expect(ids('heavy').sort()).toEqual(['barrage', 'cannon', 'flamer', 'railgun']);
   });
 
@@ -105,7 +105,7 @@ describe('o tamanho de cada chassi e o que cada encaixe oferece', () => {
     expect(armOptions('right', 'vector09')).toEqual(expect.arrayContaining(['plasma', 'rotary', 'railgun', 'blaster']));
     expect(armOptions('left', 'vector09')).toEqual(expect.arrayContaining(['rockets', 'barrage', 'plasma']));
     expect(armOptions('right', 'onca')).toEqual(expect.arrayContaining(['flamer', 'cannon', 'rockets', 'plasma']));
-    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic']);
+    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic', 'seeker']);
   });
 
   it('o Colossus do jogador sai da fábrica com as armas do tamanho dele (canhão pesado e chuva) e a montagem vale; o chefe segue com plasma e foguetes', () => {
@@ -148,9 +148,9 @@ describe('o Hangar agrupa as armas pela classe que o chassi enxerga', () => {
     expect(armGroups('shoulders', 'vector09')).toEqual([]); // sem ombros, sem grupo
   });
 
-  it('o Marauder agrupa os ombros: o sônico e os foguetes são médios, a chuva de mísseis é pesada', () => {
+  it('o Marauder agrupa os ombros: o sônico, os foguetes e o míssil teleguiado são médios, a chuva de mísseis é pesada', () => {
     expect(armGroups('shoulders', 'marauder')).toEqual([
-      { cls: 'medium', ids: ['rockets', 'sonic'] },
+      { cls: 'medium', ids: ['rockets', 'sonic', 'seeker'] },
       { cls: 'heavy', ids: ['barrage'] },
     ]);
   });

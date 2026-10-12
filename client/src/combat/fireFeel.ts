@@ -18,6 +18,7 @@ export const FIRE_KICK: Readonly<Record<WeaponId, number>> = {
   cryo: 0.04, // um estalo seco a cada 0,6 s: o mais leve das armas de energia de apoio
   shotgun: 0.24,
   rockets: 0.2,
+  seeker: 0.2,
   barrage: 0.28,
   railgun: 0.4,
   cannon: 0.46, // um tiro a cada 2,6 s: o maior solavanco do arsenal (o MK III chega a 0,6, o teto da câmera)
