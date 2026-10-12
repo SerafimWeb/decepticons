@@ -1,3 +1,17 @@
+## [2026-10-12] O primeiro vídeo do canal: "o processo", 52 s, aprovado no portão da própria mesa (P47, Qwen)
+
+**Ordem do Comandante (P47):** *"primeiro vamos publicar no youtube"* e, depois, *"prossiga com sua fila"*.
+
+**Decisões:**
+1. **O vídeo #1 é "o processo", e é curto de propósito (≈52 s, 11 cenas):** é o único do lançamento que pode ir ao ar **hoje** — não depende do take do `F9` (P97) nem de narração. O **episódio longo de 6 a 10 min** fica dito como o próximo passo, e depende de **narração** (voz) e dos takes; prometer esse formato agora seria prometer o que não existe.
+2. **Quem julga o roteiro é o portão da mesa (`validar.mjs`), não eu** — ele confere cada número contra o código e contra o `STATUS_REAL` (R13). Resultado: **sem travas**. Foi ele que corrigiu um erro meu de memória: a peça antiga dizia 272 testes e 102 PRs; hoje são **1455** e **245**. Número no vídeo é o número do jogo.
+3. **Sem bytes nem KB/s.** A peça de 15 s tem a cena da banda; esta **não**. A decisão de 27/09 (não republicar a engenharia em material público) vale para o vídeo, que é público: mostra-se o **ritmo** (60 Hz, 20 Hz) e a **contagem de testes**, não o tamanho das coisas. É escolha minha dentro da política e é reversível (a cena existe, é uma linha).
+4. **A peça de 15 s do dono foi preservada antes de tudo** (salva como roteiro nomeado `cybermech-15s`, que agora aparece no menu da mesa), e o roteiro ativo foi **restaurado ao original** no fim da gravação.
+5. **Gravou-se, não se renderizou:** medido — o `render.mjs` (quadro a quadro) em modo software produz ~1 quadro a cada vários minutos nesta máquina (headless compõe pela CPU, o mesmo achado do `FERRAMENTAS.md` § 4); o `record.mjs` grava **em tempo real numa janela com GPU** e levou ~1 min a 720p30. O 1080p60 continua possível: apontar o `RENDER_BROWSER` para um Chrome com GPU.
+6. **A cópia versionada é `.decepticons/video/o-processo.js`** (a mesa lê a de `.tmp/video/roteiros/`); os quadros do vídeo ficaram em `arte/video-o-processo-*.png`. **Eu não leio imagem: o julgamento visual é do dono.**
+
+**Custo de CPU:** nenhum no jogo (é vídeo). **Quem decidiu:** Qwen, dentro da ordem P47.
+
 ## [2026-10-12] Missões com cenários maiores: escolta, ataque, defesa de base e contraataque (P99, Qwen)
 
 **Ordem do Comandante:** *"precisamos de fases com cenários maiores, missões de proteção de escoltas, ataque, defesa de base, contraataques, etc, pra dar mais realismo e jogadas mais interessantes, e com mais robôs por partida"*.

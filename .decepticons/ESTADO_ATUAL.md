@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O primeiro vídeo do canal, pronto para publicar — Qwen, 12/10 (P47, roteiro + gravação)
+
+**O que foi feito:** o **roteiro do vídeo #1 do YouTube** — *"como este jogo é feito"* — com **11 cenas e ~52 s**, e ele **gravado**: `.tmp/video/o-processo.webm` (720p30, 56 MB). É o único vídeo de lançamento que **não depende** do take do `F9` nem de código novo — **dá para publicar hoje**.
+
+**Quem aprovou o roteiro foi o portão da própria mesa:** `node .tmp/video/validar.mjs o-processo` → *11 cenas · 51 s · sem travas*. Todos os números são lidos do código (`fatos.mjs`): **1455 testes**, **245 PRs**, **20 módulos / 89 dependências**, 60 Hz, 0,74 ms por tick. *(O roteiro antigo, de 15 s, dizia 272 testes e 102 PRs — é assim que número velho aparece; o portão pega.)*
+
+**Três decisões de conteúdo:** nenhum **byte/KB/s** (política de 27/09 — mostra-se o **ritmo** e a **contagem de testes**); nada que a `STATUS_REAL.md` marque PARCIAL/DEMO/AUSENTE (R13); nada do codinome interno em texto de tela.
+
+**Onde está e como ver:** a mesa lê `.tmp/video/roteiros/o-processo.js`; a **cópia versionada** é `.decepticons/video/o-processo.js`; o manual é o `FERRAMENTAS.md` § 3.2; os quadros do vídeo estão em `arte/video-o-processo-*.png`. Para ver: **`npm run mesa` → menu do topo → "o-processo"**. O roteiro de 15 s do dono foi **preservado** como roteiro nomeado **`cybermech-15s`** (e o ativo foi restaurado no fim).
+
+**Medido:** o `render.mjs` (quadro a quadro, 1080p60) é **impraticável em software** aqui — ~1 quadro em 10 minutos de tentativa; a gravação em tempo real (`record.mjs`, janela com GPU) saiu em **~1 min**.
+
+**O que falta:** **narração** (voz) e os **takes do `F9`** (P97) para o episódio longo de 6 a 10 min. **O julgamento visual é do dono** — eu não leio imagem.
+
 ## Missões com cenários maiores: escolta, ataque, defesa de base e contraataque — Qwen, 12/10 (ordem P99, só documentação)
 
 **Ordem do Comandante (12/10):** *"precisamos de fases com cenários maiores, missões de proteção de escoltas, ataque, defesa de base, contraataques, etc, pra dar mais realismo e jogadas mais interessantes, e com mais robôs por partida"*.

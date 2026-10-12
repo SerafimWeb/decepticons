@@ -123,6 +123,36 @@ git), então a ponta que recebe o arquivo é feita nesta máquina, e o `.tmp/vid
 **Como o Comandante confere:** gravar um take (`F9`), parar, e ver o arquivo **já na lista da mesa** — sem copiar
 nada na mão.
 
+### 3.2 O primeiro vídeo do canal: "o processo" (Qwen, 12/10 · ordem P47)
+
+**O que é:** o roteiro do **vídeo #1 do canal** — *como este jogo é feito* — com **11 cenas e ~52 s**, pronto para
+exportar. É o único vídeo de lançamento que **não depende de take gravado (`F9`)** nem de código novo: dá para
+publicar antes de a ordem **P97** (os takes dentro da mesa) ficar pronta.
+
+**Onde está:** a mesa lê `.tmp/video/roteiros/` (local, G15). A **cópia versionada** — a fonte da verdade do texto — é
+`.decepticons/video/o-processo.js`; são o mesmo arquivo (mudou um, copie para o outro). Os quadros do vídeo estão em
+`arte/video-o-processo-*.png`.
+
+**Como ver/exportar:** `npm run mesa` → **escolher "o-processo" no menu do topo** → **validar** → exportar. O roteiro
+de 15 s do dono foi preservado como roteiro nomeado **`cybermech-15s`** (também no menu): alternar não perde nada.
+
+**O portão deu verde:** `node .tmp/video/validar.mjs o-processo` → **11 cenas · 51 s · sem travas**. Todo número é o
+número do jogo, lido pelo `fatos.mjs` (1455 testes, 245 PRs, 20 módulos / 89 dependências, 60 Hz, 0,74 ms por tick).
+
+**Três regras que este roteiro segue de propósito:**
+- **Nenhum byte e nenhum KB/s** (a peça de 15 s tem a cena da banda; esta não). O vídeo é material público e a decisão
+  de 27/09 vale aqui: mostra-se o **ritmo** (60 Hz, 20 Hz) e a **contagem de testes**, não o tamanho das coisas.
+- **Nenhuma feature que o `STATUS_REAL.md` marque PARCIAL, DEMO ou AUSENTE** (R13) — é trava do validador.
+- **Nada do codinome interno** em texto de tela (o site reprova, e o validador também).
+
+**Como foi gravado — e a medição que importa:** `node .tmp/video/record.mjs 720 30` grava **em tempo real numa janela
+com GPU** (52 s → 56 MB, `.tmp/video/o-processo.webm`). **O `render.mjs` (quadro a quadro, 1080p60) é impraticável em
+software nesta máquina:** em 10 minutos de tentativa saiu ~1 quadro, porque o headless compõe pela CPU — o mesmo motivo
+do § 4. Para 1080p60, aponte o `RENDER_BROWSER` para um Chrome **com GPU** e deixe rodando.
+
+**O que falta para o episódio longo (6 a 10 min):** **narração** (voz; a decisão das vozes por ElevenLabs é a da P75) e
+os **takes de gameplay** (P97). **O julgamento visual é do dono:** eu não leio imagem.
+
 ---
 
 ## 4. Medir travadas com GPU real
