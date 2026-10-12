@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Publicação e monetização: onde o jogo mora e como o dinheiro entra — Qwen, 12/10 (ordem P47, só documentação)
+
+**Ordem do Comandante (P47, de 23/09, retomada em 12/10):** *"como fazer para publicarmos esse jogo no YouTube, ou Steam, ou quais plataformas gratuitas podemos publicar, e como monetizar e ganhar grana com o game? oferecendo o game freemium, fazendo mídias pra divulgar, tornar ele viral e ganharmos grana com nosso excelente game?"*
+
+**O que é:** o documento novo **`PUBLICACAO_E_MONETIZACAO.md`** — o **comparativo das casas** onde o jogo pode morar (site próprio ✅, portais de jogos web, itch.io, Steam, lojas de celular; **YouTube é canal, não casa**), as **seis frentes de dinheiro** com o que cada uma precisa para ligar, a **matemática honesta** (anúncio rende centavos por mil; o dinheiro grande é cosmético, que só liga com contas) e a **sequência em etapas com o gatilho de cada uma**. Companheiro de `IDENTITY.md` § 5, `GAME_DESIGN.md`, `METAGAME.md` § 6–7 e `DIVERSAO.md` § 8 — não substitui nenhum deles. **Nada construído neste PR.**
+
+**A resposta em uma linha:** **o gargalo não é dinheiro, é gente** (o placar do `ORDENS_DO_COMANDO.md` § 6 registra "nenhum teste com gente na internet"); a ordem é **encher a sala → retenção (D1) → contas → cosmético → Steam**, e cada etapa só entra quando a anterior provar tração (regra de 23/09).
+
+**O que ele não faz:** **não decide nada no lugar do Comandante** — o documento fecha com **cinco decisões dele** (§ 7: o nome definitivo, o primeiro destino externo, autorizar contas + pagamento, a killcam no PvP e quem monta os cortes de vídeo).
+
+**Registro em:** `ORDENS_DO_COMANDO.md` (**P47 saiu do ⏸**; o placar de ordens paradas foi de 1 para 0), `HISTORICO_DE_DECISOES.md` e o documento novo.
+
+**Próximos passos desta frente (o mais barato primeiro):** publicar no **itch.io** (questão de horas, sem código novo) e o **recibo da partida com o código curto de build** (o motivo de mandar o link, `METAGAME.md` § 4) — os dois primeiros passos da etapa 0/1 do documento.
+
 ## O esquadrão: bots e aliados à vontade, com teto medido — Claude, 12/10 (PR `claude/esquadrao-contrato`, ordem P91)
 
 **Ordem do Comandante (P91):** "quero poder adicionar mais bots e aliados, além dos 3 do padrão".

@@ -1,3 +1,16 @@
+## [2026-10-12] Publicação e monetização: onde o jogo mora, como o dinheiro entra e em que ordem (P47, Qwen)
+
+**Ordem do Comandante (P47, de 23/09, retomada em 12/10):** *"como fazer para publicarmos esse jogo no YouTube, ou Steam, ou quais plataformas gratuitas podemos publicar, e como monetizar e ganhar grana com o game?"*
+
+**Decisões:**
+1. **YouTube não é plataforma de publicação; é canal.** Ele não hospeda o jogo — ele traz jogador. Quem hospeda de verdade: o **site próprio** (já no ar), os **portais de jogos web** (CrazyGames, Poki, GameDistribution, Y8, Newgrounds) e o **itch.io**, os três gratuitos. Steam e lojas de celular entram **depois** (o binário de desktop e o pacote de app são custo e trabalho que não se justificam sem base instalada). O documento novo `PUBLICACAO_E_MONETIZACAO.md` faz o comparativo com o que cada casa exige e paga.
+2. **A casa certa para começar é o portal, e o itch.io vem de graça junto.** O portal resolve o problema que mata jogo multiplayer novo — **não ter com quem jogar** — e é o único item aberto do `ROADMAP` `#negocio` que ataca isso. Um detalhe que confirma a ordem: portal exige jogo que se joga **sem servidor**, e nós temos os bots (`P91`); a porta já está aberta.
+3. **O dinheiro do começo é volume, não preço.** Anúncio rende centavos a poucos reais por mil visualizações (conferir os termos do portal, nunca tratar projeção como número fechado); o dinheiro grande de free-to-play é **cosmético**, e cosmético **só liga com contas** (LGPD e tributo vêm juntos). Reafirmado o que já era regra: **nada de pay-to-win, nada de cobrar para entrar, nada de anúncio no meio do combate, nada de loja antes de contas, nada de Steam antes de gente.**
+4. **O gargalo é gente, não dinheiro — e o placar já mede isso.** Nenhuma frente de dinheiro liga antes de encher a sala; o trabalho que faz dinheiro hoje é o mesmo que traz o jogador de volta amanhã (retenção D1), o que casa com os quatro achados de `QUIMICA_DO_JOGO.md` § 5.
+5. **Nada aqui é escopo aprovado.** As escolhas são do Comandante: **cinco decisões** ficaram abertas no § 7 do documento (nome definitivo/AVARIA, primeiro destino externo, contas + pagamento, killcam no PvP, quem monta os cortes de 9:16). O `ROADMAP` `#negocio` segue sendo a fila técnica; o documento é o *quando*.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, com as escolhas em aberto para o Comandante.
+
 ## [2026-10-12] O esquadrão: a partida monta robô por robô, e o padrão é provado igual ao jogo de hoje (P91, Claude)
 
 **Ordem do Comandante (P91):** "quero poder adicionar mais bots e aliados, além dos 3 do padrão".

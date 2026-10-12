@@ -120,7 +120,7 @@
 | P44 | 28/09 | Gravar a gameplay nativa, em alta qualidade | ✅ | `F9` (`GameRecorder`) | `F9` no jogo |
 | P45 | 28 e 29/09 | Criador de vídeo (`/mesa`) com Remotion e GSAP; "o vídeo trava, pula frames" | 🟡 | `FERRAMENTAS.md`; a qualidade do vídeo final não foi confirmada pelo dono | `/mesa` |
 | P46 | 01/10 | Relatórios técnicos mais profissionais, landing menos prolixa | 🟡 | Refatoração de documentos feita em 01 e 02/10; o julgamento é do dono | Ler `ESTADO_ATUAL` |
-| P47 | 23/09 | Modelo de negócio, viralizar, lives | ⏸ | `ROADMAP` #negocio (7 itens abertos) | — |
+| P47 | 23/09 · **12/10** | Modelo de negócio, viralizar, lives. **Retomada em 12/10:** "como fazer para publicarmos esse jogo no YouTube, ou Steam, ou quais plataformas gratuitas podemos publicar, e como monetizar e ganhar grana com o game?" | 🔧 | Pauta em **`PUBLICACAO_E_MONETIZACAO.md`** (Qwen, 12/10): o comparativo das casas (site, portal de jogos web, itch.io, Steam, celular; **YouTube é canal, não casa**), as seis frentes de dinheiro, a matemática honesta (anúncio rende centavos por mil; o gargalo **não é dinheiro, é gente**) e a sequência com o gatilho de cada etapa. **Cinco decisões do Comandante em aberto** (§ 7: nome definitivo, primeiro destino externo, contas+pagamento, killcam no PvP, quem monta o vídeo). Nada construído | Ler o documento; `ROADMAP` #negocio |
 | P48 | 26/09 | **Referência DEFILADE** ("conseguiremos chegar nesse nível de detalhe?") | ❓ | Nenhum documento cita o jogo; `REFERENCIA_VISUAL.md` tem MechArena e War Robots | — |
 | P49 | 26 e 29/09 | Universo: Brasil no centro, BRICS, big techs, termos de CTI; fábricas (Arara Foundry, **Vanta, da Faria Lima**, outras) | 🟡 | `UNIVERSO.md`; a Arara Foundry está nos documentos, **a Vanta não** | — |
 | P71 | 11/10 | "como aproveitar os aprendizados, reações e interpretação dos bots para treinar robôs humanoides de verdade? gerar valor real, civil ou militar? embutir no meu robô humanoide? e o JEV? qual o formato para os dados que o jogo vai gerar?" | ⏸ | Respondido no chat; proposta em **`DADOS_E_ROBOTICA.md`** (gravador de voo, bot fantasma, arena aberta, robô real; "JEV" lido como V-JEPA; o Comandante vai mandar o que é). **Direção aprovada em 11/10:** "quero sim que nosso game sirva pra treinamentos de humanoides, IAs, etc." Nada construído ainda; a etapa D0 (consentimento + gravador de voo) é a próxima | Ler o documento |
@@ -152,7 +152,7 @@ Atualize a cada fase. Se os números não mexem, o trabalho é cosmético, mesmo
 | Bugs de física abertos | 0 (o P09 foi corrigido em 10/10) | `ESTADO_ATUAL` | 0 |
 | Chassis com números distintos | **10 de 10** (10/10; eram 4 de 10) | `entities/chassis.ts`, `ChassisPapeis.test.ts` | 10 de 10, com papéis **sentidos em partida** |
 | Ordens sem registro (❓) | 6 (P11, P30, P31, P32, P48, P53), mais a Vanta dentro do P49 | este arquivo | 0 |
-| Ordens aguardando há mais de 14 dias (⏸) | 1 (P47, de 23/09); os demais são de 29/09 em diante | este arquivo | 0 sem decisão |
+| Ordens aguardando há mais de 14 dias (⏸) | **0** (o P47, de 23/09, saiu do ⏸ em 12/10: virou o `PUBLICACAO_E_MONETIZACAO.md`) | este arquivo | 0 sem decisão |
 | Para onde vai o esforço de código | 48% documentação e site, 22% regras, 7% rede, 4% visual do mundo | `git log --numstat` desde 23/09 | regras + rede acima de 50% |
 | Jogadores simultâneos já vistos sem problema | benchmark local de 10/50/100; na internet, **nenhum teste com gente** | `CAPACIDADE.md` | uma sessão com 5 pessoas |
 
