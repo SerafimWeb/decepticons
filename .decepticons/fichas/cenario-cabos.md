@@ -91,10 +91,10 @@ capturas em `.decepticons/arte/`. **O julgamento visual é do dono** — eu não
 nasce com ele"* — com `:83`, onde a capacidade do mapa sai dessa conta, e `:118`, *"**nenhum ponto serve a dois
 corpos**"*, que é exatamente o que o teste 1 desta ficha exige do mapa novo. **Tudo confere.**
 
-**Uma inconsistência achada de passagem (R17 — registrada, não corrigida: `ui/` é do Gemini):** o resumo do **Bunker**
-no teatro do console diz **"Três andares de concreto e aço"**, mas o mapa tem **quatro pisos** (0/14/28/42 m —
-`medicoes/BUNKER.md`) e o próprio seletor do jogo diz **"4 NÍVEIS"**. É uma palavra em `ui/theater.ts`; fica anotada
-para quem tem o território — ou para a lista da **P94**, já que o Gemini está sem créditos.
+**Uma inconsistência achada de passagem (R17 — e já corrigida):** o **Bunker** aparecia como **"Três andares"** em
+**dois** lugares — `ui/theater.ts` (o resumo do teatro) e `ui/MapLinks.ts` (a dica do seletor de mapa) — mas o mapa
+tem **quatro pisos** (0/14/28/42 m, medidos em `medicoes/BUNKER.md`). Como são **duas strings de texto**, sem nada de
+regra, a correção saiu num **PR pequeno e separado** (regra 4 do `AGENTS.md`), em vez de virar pendência.
 
 ## 7. Perguntas para o dono
 
