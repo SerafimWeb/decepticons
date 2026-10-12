@@ -282,6 +282,7 @@ export const LANCER_L1_STATS: MechStats = {
 export const LR7L_BASTION_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'LR-7L BASTION',
+  status: 'oficina',
   // Papel: TANQUE. O mais resistente dos médios, e paga com passo lento, arrancada pesada e dash curto e demorado. Segura a posição.
   moveSpeed: 7.5,
   groundAccel: 24,
@@ -296,6 +297,7 @@ export const LR7L_BASTION_STATS: MechStats = {
 export const QUADRA_V2_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'QUADRA-V2',
+  status: 'oficina',
   // Papel: ESCARAMUÇADOR. Corre mais que todos os médios, dash que volta cedo e pulo alto; cai rápido (pouca vida em tudo). Bate e some.
   moveSpeed: 11.5,
   groundAccel: 38,
@@ -314,6 +316,7 @@ export const QUADRA_V2_STATS: MechStats = {
 export const MARAUDER_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'MARAUDER',
+  status: 'oficina',
   // Papel: PLATAFORMA DE FOGO (quatro canos: duas mãos e dois ombros). Vida alta e passo lento: é um canhão que anda, não um corredor.
   moveSpeed: 7.8,
   groundAccel: 26,

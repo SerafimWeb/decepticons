@@ -63,6 +63,8 @@ export interface MechStats extends ChassisHeat {
   /** Carga máxima das armas nos braços (t): o orçamento do Hangar. */
   weaponCapacity: number;
   maxModuleHealth: MechModules;
+  /** Status do chassi: 'hangar' (público) ou 'oficina' (escondido para jogadores comuns). */
+  status?: 'oficina' | 'hangar';
   /** Quais encaixes atiram em cada botão (`combat/mounts.ts`). Sem isto: principal na mão direita, secundário na esquerda. */
   triggers?: TriggerLayout;
   /** Layouts de gatilho que o jogador escolhe no Hangar (o primeiro é o padrão e é o `triggers`). Sem a lista, o chassi tem um só. */

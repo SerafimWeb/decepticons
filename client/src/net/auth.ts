@@ -4,6 +4,8 @@ import {
   CONTA_ENTRAR_PATH,
   CONTA_EU_PATH,
   CONTA_SAIR_PATH,
+  CONFIG_PATH,
+  ADMIN_CONFIG_PATH,
   type ContaResposta,
   SESSAO_HEADER,
 } from '../../../shared/net/auth';
@@ -44,17 +46,46 @@ export class ContaCliente {
     }
   }
 
-  /** Confere se o token ainda vale, e devolve o e-mail se sim. `null` = sem sessão (token ruim, expirado, ou
+  /** Confere se o token ainda vale, e devolve o e-mail (e se é admin) se sim. `null` = sem sessão (token ruim, expirado, ou
    * sem servidor) — nunca lança. */
-  async eu(token: string): Promise<{ email: string } | null> {
+  async eu(token: string): Promise<{ email: string; is_admin: boolean } | null> {
     if (!this.base || !token) return null;
     try {
       const res = await fetch(this.base + CONTA_EU_PATH, { headers: { [SESSAO_HEADER]: token }, mode: 'cors', cache: 'no-store' });
       if (!res.ok) return null;
       const dados = await res.json();
-      return typeof dados?.email === 'string' ? { email: dados.email } : null;
+      return typeof dados?.email === 'string' ? { email: dados.email, is_admin: dados.is_admin === true } : null;
     } catch {
       return null;
+    }
+  }
+
+  async lerConfig(chave: string): Promise<string | null> {
+    if (!this.base) return null;
+    try {
+      const res = await fetch(`${this.base}${CONFIG_PATH}?chave=${encodeURIComponent(chave)}`, { mode: 'cors', cache: 'no-store' });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
+  }
+
+  async salvarConfig(token: string, chave: string, valor: string): Promise<boolean> {
+    if (!this.base || !token) return false;
+    try {
+      const res = await fetch(this.base + ADMIN_CONFIG_PATH, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          [SESSAO_HEADER]: token,
+        },
+        body: JSON.stringify({ chave, valor }),
+        mode: 'cors',
+      });
+      return res.ok;
+    } catch {
+      return false;
     }
   }
 
@@ -69,7 +100,7 @@ export class ContaCliente {
       });
       const dados = await res.json().catch(() => null);
       if (!res.ok) return { erro: (dados && typeof dados.erro === 'string' && dados.erro) || 'não deu para completar' };
-      if (dados && typeof dados.token === 'string' && typeof dados.email === 'string') return { token: dados.token, email: dados.email };
+      if (dados && typeof dados.token === 'string' && typeof dados.email === 'string') return { token: dados.token, email: dados.email, is_admin: dados.is_admin === true };
       return { erro: 'resposta inesperada do servidor' };
     } catch {
       return { erro: 'servidor fora do ar' };
