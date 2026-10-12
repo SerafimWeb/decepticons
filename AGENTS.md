@@ -88,12 +88,13 @@ client/src/
                mounts.ts (encaixes de arma e quais atiram em cada botão), Armament.ts (a regra de tiro: jogador e servidor usam a mesma), BarrageSystem.ts (chuva de mísseis),
                ProjectileSystem.ts, RocketSystem.ts, CombatSystem.ts, damage.ts (dano por parte), BotController.ts (IA), BotSystem.ts, Respawner.ts
   fx/          ParticleSystem.ts
-  ui/          HUD.ts (F1 esconde)
+  ui/          HUD.ts (F1 esconde), CommandConsole.ts (a tela de início e de pausa: o console de comando; dados em consoleData.ts e theater.ts, mapa em WorldMap.ts)
   debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)
 server/        servidor de jogo (M3): Server.ts (ws, salas, laço de 60 Hz), ArenaRoom.ts (a partida de uma sala), NetPilot.ts (piloto remoto), main.ts
 shared/net/    contratos do multiplayer, sem dependência do cliente: constants.ts, codec.ts, input.ts, state.ts, events.ts, messages.ts
 scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), landing.mjs (landing do jogo), oficina.mjs (bancada de testes), painel.mjs (sala de controle: o case),
-               site/dados.mjs + site/tema.mjs + site/graficos.mjs (dados, visual e gráficos das páginas), site.mjs (site + .htaccess + capturas + teste), install-hooks.mjs
+               site/dados.mjs + site/tema.mjs + site/graficos.mjs (dados, visual e gráficos das páginas), site.mjs (site + .htaccess + capturas + teste), install-hooks.mjs,
+               mapa-mundi.mjs (gera a grade e o contorno do mapa do console, do Natural Earth)
 .githooks/     pre-commit (M5 + secrets), pre-push (npm run check)
 .github/       workflows/ci.yml (npm run check a cada push/PR; deploy do site a cada merge na main),
                workflows/etiquetas.yml + labeler.yml (etiqueta de frente e de agente em cada PR),

@@ -244,6 +244,8 @@ export class DailyChallenges {
       this.data.challenges.forEach((ch) => {
         const item = document.createElement('div');
         item.className = `challenge-card ${ch.claimed ? 'claimed' : ch.progress >= ch.target ? 'ready' : ''}`;
+        // No console compacto a descrição some (monitor CARREIRA): fica como dica ao passar o mouse.
+        item.title = ch.description;
 
         const header = document.createElement('div');
         header.className = 'challenge-card-header';

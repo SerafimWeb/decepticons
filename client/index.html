@@ -57,30 +57,140 @@
       <div id="onboarding"></div>
     </div>
 
-    <div id="overlay">
-      <header class="menu-brand">
-        <h1>AVARIA</h1>
-        <p class="sub" id="pilot-sub">VECTOR-09 // protótipo de combate</p>
-        <p class="studio">um jogo <b>SERAFIM WEB</b></p>
+    <!-- Console de comando (P86): a tela de início e de pausa. Cada monitor mostra um assunto e abre a tela dele; a mesa embaixo
+         escolhe a operação e põe em combate. Os monitores barram o clique (CommandConsole.ts); o resto da sala continua sendo "jogar". -->
+    <div id="overlay" class="console cc-espera cc-carregando">
+      <header class="cc-top menu-brand">
+        <div class="cc-brand">
+          <h1>AVARIA</h1>
+          <p class="studio">um jogo <b>SERAFIM WEB</b></p>
+        </div>
+        <p class="cc-sala">SALA DE COMANDO <b>SERAFIM</b><span class="cc-relogio" id="cc-relogio"></span></p>
+        <div class="cc-flags">
+          <button type="button" class="cc-chip" id="cc-chip-comandante" hidden title="Sair do modo Comandante (os monitores de ajuste somem)">MODO COMANDANTE ✕</button>
+        </div>
       </header>
-      <div class="menu-main">
-        <section class="menu-play">
-          <button type="button" class="cta" id="cta">[ carregando física... ]</button>
-          <p id="round-summary" hidden></p>
-          <div id="menu-mode"></div>
-          <div class="menu-actions">
-            <button id="btn-hangar" class="btn-terminal">[ HANGAR ]</button>
-            <button id="btn-settings" class="btn-terminal">[ CONFIGURAÇÕES ]</button>
-            <button id="btn-touch-layout" class="btn-terminal touch-only">[ AJUSTAR CONTROLES ]</button>
+
+      <section class="mon mon-teatro" id="mon-teatro" aria-label="Teatro de operações">
+        <header class="mon-head">
+          <i class="mon-led"></i><h2>TEATRO DE OPERAÇÕES</h2>
+          <div class="mon-tabs" role="group" aria-label="Zoom do mapa" data-tecla="Z">
+            <button type="button" class="active" data-zoom="brasil" aria-pressed="true">BRASIL</button>
+            <button type="button" data-zoom="mundo" aria-pressed="false">MUNDO</button>
           </div>
-          <div id="menu-status"></div>
+        </header>
+        <div class="mon-screen teatro-screen" id="teatro-screen">
+          <p id="round-summary" hidden></p>
+          <div class="teatro-mapa">
+            <canvas id="teatro-canvas" aria-hidden="true"></canvas>
+            <svg class="teatro-rotas" id="teatro-rotas" aria-hidden="true"></svg>
+            <div class="teatro-pins" id="teatro-pins"></div>
+            <ul class="teatro-legenda" aria-hidden="true"><li class="lg-voce">VOCÊ</li><li class="lg-ia">IAs ATACANDO</li><li class="lg-breve">EM CONSTRUÇÃO</li></ul>
+          </div>
+          <div class="teatro-ficha" id="teatro-ficha" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="mon mon-radar" id="mon-radar" aria-label="Radar tático">
+        <header class="mon-head"><i class="mon-led"></i><h2>RADAR TÁTICO</h2><span class="mon-meta" id="radar-mapa"></span></header>
+        <div class="mon-screen radar-screen">
+          <canvas id="radar-canvas" aria-hidden="true"></canvas>
+          <i class="radar-sweep" aria-hidden="true"></i>
+          <ul class="radar-legenda"><li class="voce">VOCÊ</li><li class="aliado">ALIADOS</li><li class="inimigo">IAs</li></ul>
+        </div>
+      </section>
+
+      <section class="mon mon-mech" id="mon-mech" aria-label="Seu Mech">
+        <header class="mon-head"><i class="mon-led"></i><h2>SEU MECH</h2><span class="mon-meta" id="mech-integridade"></span></header>
+        <div class="mon-screen mech-screen">
+          <svg class="mech-esquema" id="mech-esquema" viewBox="-20 0 140 130" aria-hidden="true">
+            <g class="mp" data-part="head"><polygon points="40,6 60,6 63,18 37,18" /><line x1="43" y1="12" x2="57" y2="12" /></g>
+            <g class="mp" data-part="torso"><polygon points="30,21 70,21 66,58 34,58" /><polygon points="39,60 61,60 59,68 41,68" /><line x1="38" y1="30" x2="62" y2="30" /><circle cx="50" cy="42" r="5" /></g>
+            <g class="mp" data-part="rightArm"><polygon points="14,22 28,22 28,34 12,34" /><polygon points="13,36 25,36 24,72 14,72" /><line x1="18.5" y1="72" x2="18.5" y2="84" /></g>
+            <g class="mp" data-part="leftArm"><polygon points="72,22 86,22 88,34 72,34" /><polygon points="75,36 87,36 86,72 76,72" /><line x1="81.5" y1="72" x2="81.5" y2="84" /></g>
+            <g class="mp" data-part="rightLeg"><polygon points="36,70 48,70 47,96 37,96" /><polygon points="35,98 47,98 48,120 33,120" /><line x1="30" y1="124" x2="50" y2="124" /></g>
+            <g class="mp" data-part="leftLeg"><polygon points="52,70 64,70 63,96 53,96" /><polygon points="53,98 65,98 67,120 52,120" /><line x1="50" y1="124" x2="70" y2="124" /></g>
+            <text class="mp-pct" data-pct="head" x="66" y="15">100%</text>
+            <text class="mp-pct" data-pct="torso" x="50" y="56.5" text-anchor="middle">100%</text>
+            <text class="mp-pct" data-pct="rightArm" x="10" y="58" text-anchor="end">100%</text>
+            <text class="mp-pct" data-pct="leftArm" x="90" y="58">100%</text>
+            <text class="mp-pct" data-pct="rightLeg" x="31" y="112" text-anchor="end">100%</text>
+            <text class="mp-pct" data-pct="leftLeg" x="69" y="112">100%</text>
+          </svg>
+          <div class="mech-dados">
+            <p class="sub" id="pilot-sub">VECTOR-09 // protótipo de combate</p>
+            <dl class="mech-barras" id="mech-barras"></dl>
+            <ul class="mech-armas" id="mech-armas"></ul>
+            <button type="button" id="btn-hangar" class="btn-terminal mon-acao" data-tecla="H">[ HANGAR ]</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="cc-row">
+        <section class="mon mon-oponentes" id="mon-oponentes" aria-label="Pilotos da partida">
+          <header class="mon-head"><i class="mon-led"></i><h2>PILOTOS</h2><span class="mon-meta" id="op-ameaca"></span></header>
+          <div class="mon-screen">
+            <p class="op-contagem" id="op-contagem"></p>
+            <ul class="op-lista" id="op-lista"></ul>
+            <button type="button" id="btn-settings" class="btn-terminal mon-acao" data-settings-open="jogo" title="Dificuldade, quantos inimigos, personalidade e nomes">[ AJUSTAR ]</button>
+          </div>
         </section>
-        <aside class="menu-profile" id="menu-profile"></aside>
+
+        <section class="mon mon-piloto" id="mon-piloto" aria-label="Carreira">
+          <header class="mon-head"><i class="mon-led"></i><h2>CARREIRA</h2></header>
+          <div class="mon-screen"><div id="menu-profile"></div></div>
+        </section>
+
+        <div class="cc-pilha">
+        <section class="mon mon-rede" id="mon-rede" aria-label="Rede">
+          <header class="mon-head"><i class="mon-led"></i><h2>REDE</h2></header>
+          <div class="mon-screen">
+            <div id="menu-status"></div>
+            <p class="mon-nota" id="rede-offline">OFFLINE · contra os bots</p>
+            <div class="mon-acoes"><span id="cc-online-slot"></span></div>
+          </div>
+        </section>
+
+        <section class="mon mon-config" id="mon-config" aria-label="Configurações">
+          <header class="mon-head"><i class="mon-led"></i><h2>CONFIGURAÇÕES</h2></header>
+          <div class="mon-screen cfg-lista">
+            <button type="button" class="cfg-item" data-settings-open="controles"><b>CONTROLES</b><small class="mouse-only">mouse e teclas</small><small class="touch-only">mira e câmera</small></button>
+            <button type="button" class="cfg-item" data-settings-open="graficos"><b>GRÁFICOS E SOM</b><small>imagem e volume</small></button>
+            <button type="button" id="btn-touch-layout" class="cfg-item touch-only"><b>AJUSTAR BOTÕES</b><small>onde ficam na tela</small></button>
+          </div>
+        </section>
+        </div>
+
+        <section class="mon mon-comando" id="mon-comando" aria-label="Comando" hidden>
+          <header class="mon-head"><i class="mon-led"></i><h2>COMANDO</h2></header>
+          <div class="mon-screen">
+            <ul class="cmd-lista">
+              <li><button type="button" data-settings-open="avancado"><b>POTÊNCIAS</b><span id="cmd-potencias">armas e clãs</span></button></li>
+              <li id="cmd-sala"><a href="../sala-de-controle/" target="_blank" rel="noopener"><b>SALA DE CONTROLE</b><span>ordens, placar, evolução</span></a></li>
+              <li id="cmd-oficina"><a href="../oficina/" target="_blank" rel="noopener"><b>OFICINA</b><span>números, testes, arquitetura</span></a></li>
+              <li><a href="http://127.0.0.1:4199/.tmp/video/editor.html" target="_blank" rel="noopener" title="Só nesta máquina: ligue antes com  node .tmp/video/servir.mjs"><b>MESA DE VÍDEO</b><span>nesta máquina · servir.mjs</span></a></li>
+              <li class="breve" title="Assistir às câmeras de várias partidas ao mesmo tempo, pelo servidor (PAINEL_ADMIN.md, etapa H)"><b>CÂMERAS AO VIVO</b><span>em construção</span></li>
+              <li class="breve" title="Chassi, armas, piloto e personalidade de cada bot (PAINEL_ADMIN.md, etapas A a C)"><b>FICHA DE CADA BOT</b><span>em construção</span></li>
+              <li class="breve" title="Missões em sequência, salvas e compartilháveis (PAINEL_ADMIN.md, etapa D)"><b>CAMPANHA</b><span>em construção</span></li>
+              <li class="breve" title="Jogadores, salas, reinício e métricas, com o token do dono (PAINEL_ADMIN.md, etapa E)"><b>SERVIDOR</b><span>em construção</span></li>
+            </ul>
+          </div>
+        </section>
       </div>
-      <footer class="menu-foot">
-        <p class="menu-keys mouse-only"><b>WASD</b> mover · <b>mouse</b> mirar · <b>clique</b> <span id="key-primary">plasma</span> · <b>clique dir. / Q</b> <span id="key-secondary">foguetes</span> · <b>Shift</b> dash · <b>espaço</b> pulo · <b>V</b> visão 1ª/3ª · <b>C</b> CFTV/espectador · <b>Esc</b> pausa</p>
-        <p class="menu-keys touch-only"><b>polegar esquerdo</b> anda · <b>arraste à direita</b> mira · <b>FOGO, PULO, DASH, FOGUETE</b> nos botões · <b>❚❚</b> pausa</p>
-        <p class="rotate-hint">Gire o celular: o jogo é na horizontal</p>
+
+      <footer class="cc-deck">
+        <div class="cc-ops">
+          <span class="cc-plaqueta">OPERAÇÃO</span>
+          <div id="menu-mode"></div>
+        </div>
+        <div class="cc-launch">
+          <button type="button" class="cta" id="cta" data-tecla="↵ ENTER">[ carregando física... ]</button>
+        </div>
+        <div class="cc-info menu-foot">
+          <p class="menu-keys mouse-only"><b>WASD</b> mover · <b>mouse</b> mirar · <b>clique</b> <span id="key-primary">plasma</span> · <b>clique dir. / Q</b> <span id="key-secondary">foguetes</span> · <b>Shift</b> dash · <b>espaço</b> pulo · <b>V</b> visão 1ª/3ª · <b>C</b> CFTV · <b>Esc</b> pausa</p>
+          <p class="menu-keys touch-only"><b>polegar esquerdo</b> anda · <b>arraste à direita</b> mira · <b>FOGO, PULO, DASH, FOGUETE</b> nos botões · <b>❚❚</b> pausa</p>
+          <p class="rotate-hint">Gire o celular: o jogo é na horizontal</p>
+        </div>
       </footer>
     </div>
 

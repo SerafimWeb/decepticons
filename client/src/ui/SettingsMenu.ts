@@ -13,7 +13,7 @@ import {
   type Settings,
 } from '../core/Settings';
 
-import { attachSettingsTabs } from './settingsTabs';
+import { attachSettingsTabs, isSettingsTab, type SettingsTab } from './settingsTabs';
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -42,6 +42,7 @@ export class SettingsMenu {
   private readonly sliderVolume = $('setting-volume') as HTMLInputElement;
   private readonly valVolume = $('val-volume');
 
+  private readonly tabs: { select(tab: SettingsTab): void };
   private remappingAction: KeyAction | null = null;
   private keyButtons: Record<KeyAction, HTMLButtonElement>;
 
@@ -58,7 +59,7 @@ export class SettingsMenu {
       shield: $('key-shield') as HTMLButtonElement,
     };
 
-    attachSettingsTabs(this.modal);
+    this.tabs = attachSettingsTabs(this.modal);
     this.initDOM();
     this.wireEvents();
     this.settings.onChange((s) => this.render(s));
@@ -99,10 +100,15 @@ export class SettingsMenu {
   }
 
   private wireEvents(): void {
-    this.btnOpen.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.open();
-    });
+    // Os botões do console de comando abrem direto numa aba (`data-settings-open`); o `btn-settings` é um deles.
+    const entries = new Set<HTMLElement>([this.btnOpen, ...document.querySelectorAll<HTMLElement>('[data-settings-open]')]);
+    for (const el of entries) {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tab = el.dataset.settingsOpen;
+        this.open(isSettingsTab(tab) ? tab : undefined);
+      });
+    }
 
     this.btnClose.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -243,7 +249,9 @@ export class SettingsMenu {
     setTimeout(() => btn.classList.remove('error'), 400);
   }
 
-  open(): void {
+  /** Abre o modal; com `tab`, já na aba pedida (senão, na última que estava aberta). */
+  open(tab?: SettingsTab): void {
+    if (tab) this.tabs.select(tab);
     this.modal.classList.remove('hidden');
     this.render(this.settings.value);
   }
