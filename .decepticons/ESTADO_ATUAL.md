@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O roteiro de playtest de dez minutos — Qwen, 12/10 (o que olhar hoje, em ordem)
+
+**Por quê:** o Comandante testa **jogando**, e já cobrou no passado não achar no jogo o que os agentes anunciavam (o episódio dos "7 branches fora do ar", 27/09). Hoje entraram coisas em sequência — o **editor do esquadrão** (#267), o **layout de ataques** (#265), o **conserto dos textos do Bunker** (#270) —, e o `PLAYTEST.md` é o lugar combinado para isso.
+
+**O que foi escrito (nova seção no `PLAYTEST.md`):** um **roteiro de seis passos**, em ordem, de ~10 minutos: a entrada; **o Bunker de quatro andares** (o conserto de hoje, com o número a conferir **nos dois lugares** — a dica do MAPA e o resumo do TEATRO); **montar o esquadrão** (chassi, arma, personalidade, dificuldade, carga, link); **Ataque 1 e Ataque 2** (o rótulo e o botão que atira nele); as **cinco missões do teatro** (duas jogáveis e três EM CONSTRUÇÃO — de propósito); e **o que ainda não existe** (as missões da P99 em ficha, os takes do `P97`) — para ninguém caçar o que não tem.
+
+**A regra do roteiro:** se algo estiver diferente do que ele diz, **é achado** — com a tela e a hora. Texto, eu corrijo; regra, vai para quem tem o território.
+
+**Nada construído no jogo** — é o papel que faltava para o que já está lá ser **encontrado**.
+
 ## O #259 (`game-hq`) tem diagnóstico e brief — Qwen, 12/10 (é o único trabalho fora da `main`)
 
 **O que é:** o PR **#259** carrega o **painel admin do Gemini** — o backend em SQLite e API, o painel no Hangar com cadeados e a flag que esconde Mechs em desenvolvimento. Está **aberto e conflitando** (então o CI não roda: ver a memória do "PR conflitante"). A linha dele na tabela **EM BRANCH — NÃO ESTÁ NO AR** foi corrigida neste PR: ela dizia `HQ.md`, que **já está na `main`**, e "sem PR".
