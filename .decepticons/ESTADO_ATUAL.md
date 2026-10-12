@@ -1,5 +1,18 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Auditoria da ficha da missão #1: duas afirmações erradas, corrigidas com endereço — Qwen, 12/10 (P99, só documentação)
+
+**O que aconteceu:** antes de o **Claude** (regra) e o **Gemini** (tela) construírem a missão contra a ficha, conferi **no código** cada afirmação que ela faz — contrato em cima de areia custa caro aos dois. **Duas estavam erradas** (R17: achou desalinhamento durante a tarefa, corrige se for barato e seguro).
+
+1. **"A P91 já aceita técnico aliado" — falso.** O papel `technician` existe, mas **só nos inimigos**: `sim/esquadrao.ts:99` (`PAPEIS_DO_LADO`) e a lista dos aliados é `tecnicos: []`. **Consequência:** pôr o técnico no nosso lado é **código, não configuração** — pequeno e localizado (uma linha em `PAPEIS_DO_LADO`, mais o limite e a fiação no `BotSystem`), mas é trabalho do **Claude** (`sim/` é o território dele). **Sem isso a missão não tem quem escoltar.**
+2. **"Escolher o alvo pelo lado" — impreciso.** O `TechnicianController` **já recebe a lista de quem ele conserta** (`new TechnicianController(mech, allies)`, `BotSystem.ts:257`) e é o `BotSystem` que aplica o conserto (`BotSystem.ts:522`). O que falta é **alimentar a lista com os aliados do jogador** — não uma regra de seleção nova.
+
+**O achado bom:** o quanto o técnico conserta é `REPAIR_RATE × power.clans.technician.damage` — ou seja, **o painel de Potências já ajusta o conserto do técnico**. É uma alavanca de balanceamento da missão que o Comandante já tem na mão.
+
+**O que foi conferido e está certo:** `FLEE_RADIUS` 16, `SAFE_RADIUS` 24, `ESCORT_RANGE` 9, reavaliação a cada 0,5 s, `wantsToFire = false`, `Match.sameSide` (`Match.ts:426`) e o `MissionHUD` ser **DEMO** — com o detalhe novo de que o contrato dele é **por onda** (`onWaveStart`…), então a missão precisa de **nomes próprios**.
+
+**Registrado na ficha:** a § 2 e a tabela da § 5 foram corrigidas **com o endereço de cada uma**, e a ficha ganhou um parágrafo "**conferido no código em 12/10**" — o contrato agora cita a própria verificação.
+
 ## A ficha do cenário com rota: ESTAÇÃO DE CABOS — Qwen, 12/10 (P99, só documentação)
 
 **Por quê:** a **P99** pediu "cenários maiores" e o item `#cenarios` do `ROADMAP` tinha **uma linha só**. A escolta (na versão longa) e o contraataque precisam de um **caminho** — e a Arena tem 200 m. A ficha está em **`.decepticons/fichas/cenario-cabos.md`** (proposta).
