@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## As decisões do Comandante sobre publicação — nome, YouTube, contas, killcam e os takes na mesa — Qwen, 12/10 (P47/P97/P98)
+
+**O Comandante respondeu as cinco perguntas do `PUBLICACAO_E_MONETIZACAO.md` § 7, no mesmo dia (12/10):**
+
+1. **Nome:** AVARIA era o melhor encontrado, **mas `avaria.com` e `avaria.com.br` estão tomados** — ele volta para **CYBERMECH** (*"parece o que melhor transmite o que é o game"*; **`cybermech.com.br` aparece LIVRE no DNS**, `cybermech.com` é tomado) e aceita sugestões que remetam ao combate contra as forças do mal nas IAs e nos Mechs (§ 7.1 do documento, com os candidatos e o DNS de cada um). **A capa do jogo voltou a dizer CYBERMECH neste PR** (era AVARIA, o único lugar do código com o nome — P79).
+2. **Publicação:** **YouTube primeiro**; itch.io e portal **depois, com calma**. Interesse novo: **enviar à Netflix** ("nosso game é nível netflix!") — o modelo dela (sem anúncio e sem compra dentro do jogo) é o único grande que combina com o nosso "nunca pay-to-win", mas não há porta de entrada aberta: ela licencia de estúdio, com número na mão.
+3. **Contas + pagamento: AUTORIZADOS.** É o "sim" que liga o cosmético e o passe (§ 2 do documento) — e traz **LGPD e tributo** junto.
+4. **Killcam no PvP: sim** (ordem **P98**).
+5. **Vídeo:** os takes do **F9** têm de **estar disponíveis na mesa** para ele finalizar e **editar na mão**, em **ultrahd e com som** (ordem **P97**; o plano está em `FERRAMENTAS.md` § 3.1). **Achado ao escrever o plano:** o F9 **já grava com som** (VP9, 16 Mbps, o `AudioSystem` misturado) — o que atrapalha é o **passo manual de copiar o arquivo** para `.tmp/video/clipes/` e a falta de prévia/edição do clipe na mesa (o canvas desenha só um marcador; quem corta é o `render.mjs`).
+
+**Nada construído além da capa.** **Próximo item da fila desta frente:** o `POST` do take para a mesa (P97, item **(a)** — o mais barato dos quatro).
+
 ## Publicação e monetização: onde o jogo mora e como o dinheiro entra — Qwen, 12/10 (ordem P47, só documentação)
 
 **Ordem do Comandante (P47, de 23/09, retomada em 12/10):** *"como fazer para publicarmos esse jogo no YouTube, ou Steam, ou quais plataformas gratuitas podemos publicar, e como monetizar e ganhar grana com o game? oferecendo o game freemium, fazendo mídias pra divulgar, tornar ele viral e ganharmos grana com nosso excelente game?"*
