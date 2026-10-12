@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## As duas missões que faltavam — ataque e defesa — e o contraataque de graça — Qwen, 12/10 (P99, só documentação)
+
+**Por quê:** a **P99** nomeou **quatro** tipos de missão. A escolta já tem ficha (`fichas/escolta.md`, com o contrato de tela) e o cenário tem a sua (`fichas/cenario-cabos.md`); faltavam **ataque** e **defesa de base**. A ficha nova — **`.decepticons/fichas/ataque-e-defesa.md`** — fecha o conjunto.
+
+**A descoberta que economiza uma missão inteira:** o **contraataque não precisa de missão própria** — ele é o **fim da defesa**. Se o núcleo cai, a missão **não termina**: ela vira "retomar o raio", com a **mesma regra de posse do ataque**, enquanto as ondas continuam. Os quatro tipos do pedido viram **três fichas e duas máquinas** (a de ondas, que já existe, e a de posse, que nasce no ataque).
+
+**O que a ficha entrega:** o **núcleo** (a peça nova: uma estrutura estática com vida, raio e relógio de posse), o **ataque** em três fases, a **defesa** em quatro estágios (15 s de preparação, ondas com o núcleo como alvo preferido, o contraataque e o **Colossus** na última onda), **15 testes especificados** e o **contrato de tela** com três campos a mais — a barra do núcleo, **`SEGURANDO 12/20 s`** e **`NÚCLEO CAIU — RETOME`** (o número aparece porque é um **relógio**, não enfeite).
+
+**O custo:** **zero byte de rede** (offline primeiro, como as outras três), **zero CPU por tick** (o núcleo é estático e o objetivo roda no pulso lento) e **zero arte nova** — reusa o diretor de ondas, os destrutíveis, as zonas de cura e o **esquadrão (P91)**, onde o **técnico** ganha função de verdade.
+
+**Duas decisões de contrato que a ficha fixa:** a posse **pausa, não reinicia** (inimigo no raio para o relógio; sair o retoma), e **aliado conta como posse** (com o jogador morto, a missão segue viva).
+
+**Nada construído.** A regra é do **Claude**, o desenho é do **Gemini**, o cenário é do **Codex**. **Sete perguntas** esperam o Comandante — e as duas que decidem mais são *o núcleo tem vida própria ou partes* e *o técnico conserta o núcleo*.
+
 ## O roteiro de playtest de dez minutos — Qwen, 12/10 (o que olhar hoje, em ordem)
 
 **Por quê:** o Comandante testa **jogando**, e já cobrou no passado não achar no jogo o que os agentes anunciavam (o episódio dos "7 branches fora do ar", 27/09). Hoje entraram coisas em sequência — o **editor do esquadrão** (#267), o **layout de ataques** (#265), o **conserto dos textos do Bunker** (#270) —, e o `PLAYTEST.md` é o lugar combinado para isso.

@@ -1,3 +1,17 @@
+## [2026-10-12] As duas missões que faltavam — ataque e defesa — e o contraataque sai de graça (P99, Qwen)
+
+**Ordem do Comandante (P99):** *"missões de proteção de escoltas, ataque, defesa de base, contraataques"*.
+
+**Decisões:**
+1. **O contraataque não precisa de missão própria: ele é o fim da defesa.** Se o núcleo cai, a missão **não acaba** — ela vira "retomar o raio", com a **mesma regra de posse do ataque**, enquanto as ondas continuam. Os quatro tipos do pedido viram **três fichas e duas máquinas** (a de ondas, que já existe, e a de posse, que nasce no ataque): menos código para o mesmo pedido.
+2. **A peça nova é uma só: o núcleo** — estrutura estática com vida, raio e tempo de posse. Todo o resto reusa o diretor de ondas (`SurvivalWaves`, com a fila justa e o Colossus na última onda), os destrutíveis, as zonas de cura e o esquadrão da P91: **zero arte nova, zero byte de rede, zero CPU por tick**.
+3. **A posse pausa, não reinicia:** inimigo dentro do raio **para** o relógio e ele **retoma** quando o inimigo sai. Reiniciar 20 s por 2 s de invasão seria punição em vez de desafio — e isso é decisão de **contrato**, não de tela.
+4. **Aliado conta como posse:** com o jogador morto e um aliado no raio, a missão continua viva — é o que faz o **esquadrão (P91)** e o **técnico** valerem nas missões, a mesma lógica da escolta.
+5. **O contrato de tela segue o da escolta**, com três campos a mais: a barra do **núcleo**, **`SEGURANDO 12/20 s`** (parado, e não sumindo, quando pausa) e **`NÚCLEO CAIU — RETOME`**. O número aparece porque é um **relógio**.
+6. **Sete perguntas ficam com o dono**; as duas que decidem mais: **o núcleo tem vida própria ou partes** (a vida própria não colide com o dano por parte) e **o técnico conserta o núcleo** (o que junta a defesa à escolta numa tríade: núcleo, técnico e o problema).
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, dentro da ordem P99.
+
 ## [2026-10-12] O roteiro de playtest de dez minutos: o que olhar hoje, em ordem (Qwen)
 
 **Por quê:** o Comandante testa **jogando** e já cobrou não achar no jogo o que os agentes anunciavam (o episódio dos "7 branches fora do ar", 27/09). Hoje entraram coisas em sequência — o **editor do esquadrão** (#267), o **layout de ataques** (#265) e o **conserto dos textos do Bunker** (#270) —, e o `PLAYTEST.md` é o lugar combinado para isso.
