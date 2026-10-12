@@ -183,3 +183,7 @@ roda `npm run mech:inspecionar` (§5) e liga no Hangar.
 - **Rigados e ainda fora do Hangar:** `LANCER 3d model RIG.glb` (15,9 mil triângulos) e `military walker 3d model_Clone1 rig.glb` (15,1 mil, 10,8 MB, pesado).
 - **O Quadra-V2 não tem malha própria no jogo** (a entrada dele em `IMPORTED_CHASSIS` está desligada desde o `gemini/rig-fix`): ele usa o corpo do Vector-09. `quadra-v2.glb` (14 mil triângulos, Mixamo) está em `public/models` e ninguém o carrega; `lancer-l1.glb` e `lr-7l-bastion.glb` também estão sem uso (o Lancer usa `TZLA1.glb` e o Bastion, `LR7L.glb`). Religar o Quadra é barato e é o primeiro passo para o papel de escaramuçador **parecer** diferente.
 - **Nenhum esqueleto tem osso de quarto braço.** Um robô de quatro braços, se já existe, é malha sem rig ou tem o segundo par colado no tronco.
+
+## Bot com chassi importado (P91, 12/10, Claude)
+
+Um bot do esquadrão pode ter o chassi de um robô importado (`CHASSIS_DOS_BOTS`), mas **nunca a malha**: o servidor não carrega `.glb`, e o bot vive na simulação. Ele leva os **números do chassi** (vida, passo, dash, escudo de metal) e o corpo procedural do Vector-09 (o Arara e a Onça têm o deles, `entities/blueprintByChassis.ts`). Robô importado novo entra sozinho na lista de chassis dos bots; para ele ganhar a silhueta própria no bot, o caminho é um blueprint procedural, não o `.glb`.

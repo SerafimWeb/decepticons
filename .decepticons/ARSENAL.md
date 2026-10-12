@@ -141,6 +141,10 @@ no nome da arma (um `sed` por números pegou o lança-chamas junto).
 
 Todo acerto que passa pela defesa **empurra** o alvo (`MechBase.push`) e dá um **tranco no torso** dele (`MechBase.flinch`, só desenho): a conta e a tabela estão em `combat/reaction.ts` e a ligação, em `CombatSystem.react` (acerto direto: para onde o tiro andava; explosão: para longe do centro). **Arma nova não declara nada:** ela herda pela **natureza do dano** (`PUSH_PER_DAMAGE`: balístico 0,05 m/s por ponto, explosivo 0,04, laser 0,02, térmico 0,015, gelo 0,01; pulso, som, corte e choque, zero) até `HIT_PUSH_MAX` (4,5 m/s). Arma que **não** deve empurrar (um fluxo, um cone com o empurrão dela) é a que tem `flame` ou `wave`.
 
+## Armas dos bots do esquadrão (P91, 12/10, Claude)
+
+O bot de um esquadrão (`sim/esquadrao.ts`) pode levar qualquer arma da mão principal do chassi **que ele sabe usar**: energia sem rotação de cano, chama, onda, carga nem míssil guiado (`armaServeAoBot`; hoje plasma, blaster, escopeta, EMP, arco, gelo, canhão automático e, nos pesados, o canhão pesado). **Arma nova de energia simples entra sozinha**; uma com mecânica própria (`spin`, `flame`, `wave`, `guide`, `barrage`, `chargeTime`) só entra quando a IA aprender o gatilho dela (`BotSystem` solta o projétil comum da arma principal). `Match.esquadrao.test.ts` põe **cada** arma permitida num bot e exige que ela acerte o jogador em 30 s: arma nova que o bot "usa" e não machuca falha lá. A distância de tiro vem da arma (`BotController.baseRange`: 1,25 vez o alcance ótimo, no máximo os 38 m do tipo de robô, no mínimo 10 m): uma arma curta nova puxa o bot para perto sem tocar em mais nada.
+
 ## Natureza do dano — 06/10, Claude
 
 Toda arma declara a natureza do dano em `DAMAGE_TYPE` (`client/src/combat/weapons.ts`): o `Record` quebra o typecheck se faltar. Os escudos físicos (`MetalShield.ts`) resistem por natureza. Arma sônica futura usa `sonico` (o Amortecedor já está pronto para ela).

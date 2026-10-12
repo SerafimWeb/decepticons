@@ -200,7 +200,9 @@ describe('o corpo, a arma e a dificuldade de cada robô', () => {
     const distancia = async (bot: BotSpec) => {
       const p = await partida(esq([bot], []), {}, true);
       p.run(20);
-      return { atacou: p.primeiroAtaque(), alcance: p.match.bots.brainOf(p.match.bots.mechs[0]!)!.attackRange };
+      const cerebro = p.match.bots.brainOf(p.match.bots.mechs[0]!)!;
+      // O "perto demais" também encolhe, na mesma proporção, senão o bot de escopeta recuaria dos 10 m onde ele quer estar.
+      return { atacou: p.primeiroAtaque(), alcance: cerebro.attackRange, recua: (cerebro as unknown as { keepMinRange: number }).keepMinRange };
     };
     const plasma = await distancia(mech());
     const escopeta = await distancia(mech({ chassi: 'lancerL1', arma: { id: 'shotgun', tier: 0 } }));
@@ -209,6 +211,9 @@ describe('o corpo, a arma e a dificuldade de cada robô', () => {
     expect(plasma.alcance).toBe(38);
     expect(escopeta.alcance).toBe(10);
     expect(gelo.alcance).toBe(25);
+    expect(plasma.recua).toBe(14);
+    expect(escopeta.recua).toBeLessThan(escopeta.alcance / 2);
+    expect(gelo.recua).toBeLessThan(plasma.recua);
     for (const id of ['emp', 'arc', 'autocannon'] as const) {
       const outra = await distancia(mech({ arma: { id, tier: 0 } }));
       expect(outra.alcance, id).toBe(38);

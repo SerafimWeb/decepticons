@@ -13,6 +13,7 @@ import {
   MESA_COMANDO,
   MESA_URL,
   nivelDeAmeaca,
+  pilotosVisiveis,
   sondarMesa,
   type PilotoNaPartida,
 } from './consoleData';
@@ -378,8 +379,12 @@ export class CommandConsole {
     }
     const ul = this.root.querySelector('#op-lista');
     if (!ul) return;
+    const { mostrados, ocultos } = pilotosVisiveis(lista);
+    const mais = document.createElement('li');
+    mais.className = 'op-mais';
+    mais.textContent = `+ ${ocultos} PILOTOS`;
     ul.replaceChildren(
-      ...lista.map((p) => {
+      ...mostrados.map((p) => {
         const li = document.createElement('li');
         li.className = `op-${p.tipo}`;
         const nome = document.createElement('b');
@@ -390,6 +395,7 @@ export class CommandConsole {
         li.append(nome, tipo);
         return li;
       }),
+      ...(ocultos > 0 ? [mais] : []),
     );
   }
 }

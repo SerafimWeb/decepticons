@@ -81,6 +81,8 @@ import { IMPORTED_CHASSIS, preloadMechAsset, tryInstantiateMechRig } from '../en
 import type { Loadout, WeaponStats } from '../combat/weapons';
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
+import { EsquadraoStore } from './EsquadraoStore';
+import { PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
 import { PALETTE } from './palette';
 import { PilotLabels } from '../ui/PilotLabels';
 import { PowerSettings } from '../ui/PowerSettings';
@@ -115,6 +117,8 @@ const _hotLeft = { x: 0, y: 0 };
 const MAX_STEPS_PER_FRAME = 4;
 /** Até esta distância (m) o passo de um Mech gigante treme a câmera de quem é pequeno. */
 const GIANT_STEP_RANGE = 25;
+/** Até esta distância (m) do jogador, o robô ganha fumaça, fogo e gelo no corpo (o resto do orçamento por pulso é para quem se vê). */
+const FX_RANGE = 120;
 /** Resolução máxima do render: acima de 1,5 o custo de GPU sobe muito para pouco ganho visível. */
 const maxPixelRatio = () => Math.min(window.devicePixelRatio, 1.5);
 const THRUSTER_COLOR = new THREE.Color(3.0, 1.0, 0.2);
@@ -223,7 +227,12 @@ export class Game {
   readonly hangar: Hangar;
   /** Potências (painel do dono): as salvas no aparelho ou as de um link `?potencias=`. */
   readonly power = new PowerStore(browserStorage(), location.search);
+  /** O esquadrão do Comandante (P91): quantos bots e aliados, cada um com o seu corpo, arma e personalidade. Sem um salvo, valem as configurações. */
+  readonly squad = new EsquadraoStore(browserStorage(), location.search);
   private appliedQuality: QualityPreset | null = null;
+  /** Por onde começa a volta dos efeitos por robô a cada quadro (inimigos e aliados), para o orçamento por pulso alcançar todos. */
+  private fxStart = 0;
+  private fxStartAllies = 0;
 
   private readonly bankAccount = new BankAccount();
   private readonly bankTerminal: BankTerminal;
@@ -357,6 +366,7 @@ export class Game {
       particles: this.particles,
       foes,
       power,
+      ...(online || !this.squad.current ? {} : { squad: this.squad.current }),
       mode: this.gameMode,
       map: mapFromSearch(location.search, !!online, this.gameMode),
       startWave: waveFromSearch(location.search, SURVIVAL_WAVE_PLANS.length),
@@ -407,8 +417,8 @@ export class Game {
     // Online, quem faz renascer é o servidor.
     if (online) this.match.respawner.untrack(this.mech);
     this.nameplates = new Nameplates(this.scene, this.bots, this.match.allies ?? undefined);
-    // Sons dos andróides (Gemini): tiro e pouso, mais baixos quanto mais longe do jogador.
-    for (const b of this.bots.mechs) {
+    // Sons dos andróides (Gemini): tiro e pouso, mais baixos quanto mais longe do jogador. Os do esquadrão aliado também (P91).
+    for (const b of [...this.bots.mechs, ...(this.match.allies?.mechs ?? [])]) {
       if (!(b instanceof Android)) continue;
       const fire = b.onFire.bind(b);
       b.onFire = () => {
@@ -547,7 +557,7 @@ export class Game {
       return allies.queueOrder(order, this.mech.simPosition, target);
     };
     this.activeBuild = this.hangar.key;
-    this.playTelemetry = new PlayTelemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, () => ({mode:this.gameMode,online:!!this.online,build:this.activeBuild,release:runtimeDiagnostics.release,assisted:(!this.online && this.power.changes>0)||this.mech.combatBoost.damageMultiplier>1||this.bankOnlineBoost>0}));
+    this.playTelemetry = new PlayTelemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, () => ({mode:this.gameMode,online:!!this.online,build:this.activeBuild,release:runtimeDiagnostics.release,assisted:(!this.online && (this.power.changes>0||this.squad.custom))||this.mech.combatBoost.damageMultiplier>1||this.bankOnlineBoost>0}));
     this.recorder = new GameRecorder(this.renderer.domElement, this.audio);
     if (this.gameMode === 'survival') this.hud.setMissionMode(true);
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
@@ -617,7 +627,17 @@ export class Game {
     new ServerStatus(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, document.getElementById('menu-status'));
     new SettingsMenu(this.settings);
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
-    new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician, names: foes.names });
+    const esquadrao = this.squad.current && !online ? resumoDoEsquadrao(this.squad.current) : null;
+    new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician, names: foes.names }, undefined, undefined,
+      esquadrao
+        ? {
+            resumo: `${esquadrao.inimigos} inimigo${esquadrao.inimigos === 1 ? '' : 's'} e ${esquadrao.aliados} aliado${esquadrao.aliados === 1 ? '' : 's'}`,
+            voltarAoPadrao: () => {
+              this.squad.save(null);
+              reloadWithout(PARAM_DO_ESQUADRAO);
+            },
+          }
+        : null);
     new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
 
@@ -786,7 +806,8 @@ export class Game {
     this.bloomPass.strength = s.glow;
     this.player.keys = s.keys;
     this.bots.setSkill(BOT_SKILLS[s.difficulty]);
-    this.bots.setPersonas(s.enemyPersonas);
+    // A personalidade de cada Mech vem do esquadrão quando há um personalizado; senão, das configurações.
+    if (!this.squad.custom) this.bots.setPersonas(s.enemyPersonas);
     if (!this.match.waves || this.match.waves.phase !== 'active') this.bots.maxAttackers = s.maxAttackers;
     this.debugPanel.setVisible(s.showPerf);
     this.audio.setVolume(s.volume);
@@ -1368,7 +1389,7 @@ export class Game {
     const squad = this.match.allies;
     let alliesAlive = 0;
     if (squad) for (const m of squad.mechs) if (m.alive) alliesAlive++;
-    this.squadHUD.update(dt, !!squad && this.playing && this.mech.alive && !this.hangarView, squad?.order ?? 'follow', alliesAlive);
+    this.squadHUD.update(dt, !!squad && this.playing && this.mech.alive && !this.hangarView, squad?.order ?? 'follow', alliesAlive, squad?.mechs.length ?? 0);
     this.shieldVisuals.begin();
     if (!this.hangarView) { this.shieldVisuals.update(this.mech); if(this.online?.joined)this.online.remotes.forEach(this.drawShield);else for(const bot of this.bots.mechs)this.shieldVisuals.update(bot); }
     this.shieldVisuals.end();
@@ -1386,8 +1407,24 @@ export class Game {
     if (this.online?.joined) {
       this.online.remotes.forEach(this.updateRemoteDamage);
     } else {
-      for (const bot of this.bots.mechs) { this.damageVisuals.update(bot); this.statusVisuals.update(bot); this.flameVisuals.update(bot); this.fireRingVisuals.update(bot); this.chargeVisuals.update(bot); }
-      if (this.match.allies) for (const ally of this.match.allies.mechs) { this.damageVisuals.update(ally); this.statusVisuals.update(ally); }
+      // Fumaça, fogo e gelo por robô têm orçamento por pulso (G5): só dos que estão perto e, num esquadrão grande (P91), começando de um
+      // robô diferente a cada quadro, para o orçamento alcançar todos com o tempo.
+      const bots = this.bots.mechs;
+      this.fxStart = bots.length > 0 ? (this.fxStart + 1) % bots.length : 0;
+      for (let k = 0; k < bots.length; k++) {
+        const bot = bots[(k + this.fxStart) % bots.length]!;
+        if (bot.position.distanceToSquared(this.mech.position) > FX_RANGE * FX_RANGE) continue;
+        this.damageVisuals.update(bot); this.statusVisuals.update(bot); this.flameVisuals.update(bot); this.fireRingVisuals.update(bot); this.chargeVisuals.update(bot);
+      }
+      const escolta = this.match.allies?.mechs;
+      if (escolta && escolta.length > 0) {
+        this.fxStartAllies = (this.fxStartAllies + 1) % escolta.length;
+        for (let k = 0; k < escolta.length; k++) {
+          const ally = escolta[(k + this.fxStartAllies) % escolta.length]!;
+          if (ally.position.distanceToSquared(this.mech.position) > FX_RANGE * FX_RANGE) continue;
+          this.damageVisuals.update(ally); this.statusVisuals.update(ally);
+        }
+      }
     }
     this.shadows.begin();
     if (!this.hangarView) {
