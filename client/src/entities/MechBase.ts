@@ -1,17 +1,30 @@
+import { EnergyShield } from '../combat/EnergyShield';
+import { MetalShield, RAISED_SPEED } from '../combat/MetalShield';
+import { StatusSet, type StatusKind } from '../combat/StatusEffects';
+import { CombatBoost } from '../combat/CombatBoost';
+import { legDamageLean } from '../fx/DamageVisuals';
+import { statusTint, type Tint } from './statusTint';
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { HeatSink, OVERHEAT_SPEED, type ChassisHeat, type HeatState } from '../combat/heat';
 import { repairModules } from '../combat/repair';
 import { applyDamage, partAt, type DamageResult } from '../combat/damage';
-import type { Loadout } from '../combat/weapons';
+import { FLINCH_DECAY, FLINCH_MAX } from '../combat/reaction';
+import { DEFAULT_TRIGGERS, MOUNT_PART, MOUNTS, type MountId, type NamedLayout, type TriggerLayout, type Vec3 } from '../combat/mounts';
+import type { DamageType, Loadout, WeaponStats } from '../combat/weapons';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
 /** Gravidade dos Mechs (mais alta que a do mundo: queda "pesada" e rápida, estilo arena shooter). */
 export const MECH_GRAVITY = 32;
 /** Fase da passada por metro andado × altura do robô (0,55 rad/m no Vector-09 de 5,3 m). */
 const STRIDE = 0.55 * 5.3;
+/** A passada de quem não declara a sua (MechStats.gait): a mesma para todo Mech desde 25/09. */
+const DEFAULT_GAIT = { hip: 0.7, knee: 1.1 };
 const CONTROLLER_OFFSET = 0.05;
 const HARD_LANDING_SPEED = 14;
+/** Empurrão (`MechBase.push`): quanto da velocidade externa sobra por segundo (e^-3,5: meio segundo depois resta ~17%), e o teto da velocidade somada (m/s). */
+const SHOVE_DECAY = 3.5;
+const SHOVE_MAX = 12;
 const MAX_CLIMB_ANGLE = (50 * Math.PI) / 180;
 /** Normal com y abaixo disso é parede ou teto (mais íngreme que a rampa máxima). */
 const WALL_NORMAL_Y = Math.cos(MAX_CLIMB_ANGLE);
@@ -25,6 +38,12 @@ const PARTS: readonly MechPart[] = ['torso', 'head', 'leftArm', 'rightArm', 'lef
 export type MechModules = Record<MechPart, number>;
 
 export interface MechStats extends ChassisHeat {
+  /**
+   * Passada e joelho DO CHASSI (radianos): quanto o quadril abre no passo e quanto o joelho dobra no apoio. Sem isto,
+   * todo Mech anda com a mesma passada — um titã de 20 m dava o passo do Vector-09. Robô pesado abre menos (passo curto,
+   * planta firme) e dobra mais o joelho (o pé sobe raspando, como um peso que se arrasta). Dono, 12/10.
+   */
+  gait?: { hip: number; knee: number };
   name: string;
   moveSpeed: number; // m/s no chão
   groundAccel: number; // m/s² — alto = resposta "Quake", quase sem inércia
@@ -46,6 +65,21 @@ export interface MechStats extends ChassisHeat {
   maxModuleHealth: MechModules;
   /** Status do chassi: 'hangar' (público) ou 'oficina' (escondido para jogadores comuns). */
   status?: 'oficina' | 'hangar';
+  /** Quais encaixes atiram em cada botão (`combat/mounts.ts`). Sem isto: principal na mão direita, secundário na esquerda. */
+  triggers?: TriggerLayout;
+  /** Layouts de gatilho que o jogador escolhe no Hangar (o primeiro é o padrão e é o `triggers`). Sem a lista, o chassi tem um só. */
+  layouts?: readonly NamedLayout[];
+  /**
+   * Boca de cada encaixe, em metros a partir dos pés, com o Mech virado para -Z. Os chassis de malha importada trazem a
+   * medida do desenho aqui: o servidor não tem o desenho (usa o corpo procedural), e sem este dado a boca dele seria outra
+   * (G14: o tiro tem que sair do mesmo lugar no cliente e no servidor). Sem isto, vale a medida do rig.
+   */
+  muzzles?: Partial<Record<MountId, Vec3>>;
+  /**
+   * Quanto dura em você cada estado (fogo, choque, gelo): 1 = normal, 0,5 = metade (Mech grande resiste), 1,5 = uma vez e meia.
+   * Sem isto, 1. Decisão do dono (09/10): o Colossus-01 resiste (`.decepticons/ARMAS_ELEMENTAIS.md`).
+   */
+  statusResist?: number;
 }
 
 /**
@@ -53,6 +87,7 @@ export interface MechStats extends ChassisHeat {
  * será enviado ao servidor e reaplicado na client-side prediction.
  */
 export interface MechInput {
+  shield?: boolean;
   moveX: number; // -1..1, direita positiva
   moveZ: number; // -1..1, frente positiva
   moveYaw: number; // referencial do WASD (câmera); na visão tática é fixo
@@ -81,6 +116,11 @@ export interface LegRig {
   knee: RigJoint;
 }
 
+/** Os gatilhos de um chassi no layout `layout` (índice em `MechStats.layouts`; fora da lista ou ausente = o padrão do chassi). */
+export function triggersOf(stats: Pick<MechStats, 'triggers' | 'layouts'>, layout?: number): TriggerLayout {
+  return stats.layouts?.[layout ?? 0]?.triggers ?? stats.triggers ?? DEFAULT_TRIGGERS;
+}
+
 /** Pontos articulados do modelo que a animação procedural controla. */
 export interface MechRig {
   model: THREE.Object3D;
@@ -94,14 +134,34 @@ export interface MechRig {
   muzzle: THREE.Object3D;
   /** Boca do lançador do braço esquerdo (sem ela, os foguetes saem do meio do braço). */
   leftMuzzle?: THREE.Object3D;
+  /** Boca de cada lançador de ombro (só nos rigs com ombros). Sem elas, o tiro sai do torso. */
+  shoulderMuzzles?: { right: THREE.Object3D; left: THREE.Object3D };
   thrusters: THREE.Object3D[];
   thrusterMaterial: THREE.MeshStandardMaterial;
   setDashVisual?: (active: boolean) => void;
+  /** Chapa do escudo físico: `shown` = no braço e inteira; `raised` = botão 2. Só desenho (`mechBlueprint.ts`). */
+  setGuardVisual?: (dt: number, shown: boolean, raised: boolean) => void;
   /** Atualiza sinais visuais de calor sem tocar na simulação. */
   setHeatVisual?: (dt: number, heat: number, overheated: boolean, coolingBoost: boolean) => void;
   /** Materiais do casco (por instância): piscam quando o Mech toma dano. */
   hullMaterials: THREE.MeshStandardMaterial[];
   hipHeight: number;
+  /**
+   * Só nos rigs com encaixe de arma nos pulsos (`weaponMount.ts`): monta no desenho as armas da montagem.
+   * Idempotente e barata; o `MechBase` a chama ao nascer e a cada `equip`. Sem ela, a arma é parte do modelo.
+   */
+  mountWeapons?: (loadout: Loadout) => void;
+  /**
+   * Só nos rigs com morteiro de chuva de mísseis nas costas (`mechBlueprint.ts`): o nó da boca dele. Serve só ao desenho do
+   * lançamento subindo (`MechBase.barrageMouth`); a boca de simulação do tiro continua a do dado/medida de sempre (G14).
+   */
+  barrageMouth?: THREE.Object3D;
+  /**
+   * Coice dos braços em **metros para trás** (+Z do Mech), direito e esquerdo. Só nos rigs cujos ossos não deixam
+   * `position.z` do braço valer isso: num osso importado o eixo e a unidade são do arquivo, e o mesmo `position.z` dava
+   * um salto de 1,9 m (direito, para baixo) e 2,7 m (esquerdo, para cima) no Gênesis. Sem ela, o `MechBase` escreve em `position.z` do braço.
+   */
+  setRecoil?: (right: number, left: number) => void;
 }
 
 /** Onde fica o "miolo" de cada parte, a partir do grupo dela no rig (para efeitos). */
@@ -114,6 +174,26 @@ const PART_CENTER: Record<MechPart, [number, number, number]> = {
   rightLeg: [0, -0.55, 0],
 };
 
+/** Qualquer coisa que diga onde está no mundo: um nó do desenho ou uma junta do rig. */
+interface Located {
+  getWorldPosition(target: THREE.Vector3): THREE.Vector3;
+}
+
+/** O nó do rig de onde o tiro de um encaixe nasce. Faltando a boca, o ponto de apoio mais perto: a junta do braço ou o torso. */
+function mountNode(rig: MechRig, mount: MountId): Located {
+  switch (mount) {
+    case 'rightHand':
+      return rig.muzzle;
+    case 'leftHand':
+      return rig.leftMuzzle ?? rig.leftArm;
+    case 'rightShoulder':
+      return rig.shoulderMuzzles?.right ?? rig.torso;
+    case 'leftShoulder':
+      return rig.shoulderMuzzles?.left ?? rig.torso;
+  }
+}
+
+const _tint: Tint = { r: 0, g: 0, b: 0 };
 const _wish = new THREE.Vector3();
 const _desired = { x: 0, y: 0, z: 0 };
 const _hit = new RAPIER.CharacterCollision();
@@ -122,6 +202,11 @@ const lerp = THREE.MathUtils.lerp;
 export abstract class MechBase {
   readonly root = new THREE.Group();
   readonly velocity = new THREE.Vector3();
+  /**
+   * Empurrão: velocidade horizontal **externa** (onda sônica, tranco de impacto) somada ao movimento do Mech sem passar pela aceleração dele, e que decai sozinha
+   * (`SHOVE_DECAY`). O input não a cancela (senão o piloto anularia o empurrão na hora): ele só anda por cima. Só x e z. Regra de simulação (G1): decai no tick fixo.
+   */
+  readonly shove = new THREE.Vector3();
   /** Modificador temporário de regra (CTF: portador da bandeira corre a 85%; o dash não muda). */
   moveSpeedScale = 1;
   readonly modules: MechModules;
@@ -160,15 +245,36 @@ export abstract class MechBase {
   readonly moveIntent = new THREE.Vector3();
   /** Calor do Mech: um dissipador para todas as armas (regra no tick fixo). */
   private readonly heatSink: HeatSink;
+  /** Aviso de carga: simulação local ou bit recebido do servidor. */
+  weaponCharging = false;
+  readonly combatBoost = new CombatBoost();
+  readonly energyShield = new EnergyShield();
+  /** Escudo físico da mão esquerda (`MetalShield.ts`): o botão 2 levanta a chapa. */
+  readonly metalShield = new MetalShield();
+  /** Fogo, choque e gelo em andamento (`combat/StatusEffects.ts`); o `CombatSystem` aplica e o `Match` faz o tempo correr. */
+  readonly status = new StatusSet();
   /** Armas nos braços: as de fábrica do chassi ou as montadas no Hangar (`equip`). */
   private armed: Loadout;
   private leftRecoil = 0;
+  private readonly pelvisBaseRoll: number;
   private readonly rightArmBaseZ: number;
   private readonly leftArmBaseZ: number;
   private hitFlash = 0;
-  private shownFlash = 0;
-  /** Boca do canhão em relação aos pés, com o Mech em repouso e virado para -Z (medida no rig). */
-  private readonly muzzleLocal = new THREE.Vector3();
+  /** O tranco do torso ao levar tiro (rad: inclina para trás/para a frente e torce de lado): só desenho, decai sozinho (`combat/reaction.ts`). Só x e y, os dois eixos que todo rig expõe (`RigJoint`). */
+  private flinchPitch = 0;
+  private flinchYaw = 0;
+  /** A cor que o casco mostra agora (flash de dano + estado): só se escreve no material quando muda. */
+  private shownR = 0;
+  private shownG = 0;
+  private shownB = 0;
+  private visualTime = 0;
+  /** Boca de cada encaixe em relação aos pés, com o Mech em repouso e virado para -Z (dado do chassi ou medida no rig). */
+  private readonly muzzlesLocal: Record<MountId, THREE.Vector3> = {
+    rightHand: new THREE.Vector3(),
+    leftHand: new THREE.Vector3(),
+    rightShoulder: new THREE.Vector3(),
+    leftShoulder: new THREE.Vector3(),
+  };
   /** A 1ª pessoa esconde a cabeça do próprio Mech; parte destruída também some. */
   private headVisibleByCamera = true;
 
@@ -180,13 +286,22 @@ export abstract class MechBase {
     this.root.add(rig.model);
     this.modules = { ...stats.maxModuleHealth };
     this.jumpsLeft = stats.maxJumps;
+    this.pelvisBaseRoll = rig.pelvis.rotation.z;
     this.rightArmBaseZ = rig.rightArm.position.z;
     this.heatSink = new HeatSink(stats);
+    this.status.resist = stats.statusResist ?? 1;
     this.armed = loadout;
+    this.energyShield.equip(loadout.module);
+    this.metalShield.equip(loadout.metalShield, stats.maxModuleHealth.leftArm);
+    rig.mountWeapons?.(loadout);
     this.leftArmBaseZ = rig.leftArm.position.z;
     this.feetOffset = stats.height / 2 + CONTROLLER_OFFSET;
     this.root.updateMatrixWorld(true);
-    rig.muzzle.getWorldPosition(this.muzzleLocal);
+    for (const mount of MOUNTS) {
+      const fixed = stats.muzzles?.[mount];
+      if (fixed) this.muzzlesLocal[mount].set(fixed[0], fixed[1], fixed[2]);
+      else mountNode(rig, mount).getWorldPosition(this.muzzlesLocal[mount]);
+    }
   }
 
   /** Cria cápsula cinemática + character controller no mundo físico. */
@@ -289,16 +404,32 @@ export abstract class MechBase {
     return this.simPos;
   }
 
-  /** Boca do canhão calculada da simulação (posição + yaw), sem depender do render. */
-  simMuzzle(target: THREE.Vector3): THREE.Vector3 {
-    const { x, y, z } = this.muzzleLocal;
+  /** Boca de um encaixe (padrão: a mão direita) calculada da simulação (posição + yaw), sem depender do render. */
+  simMuzzle(target: THREE.Vector3, mount: MountId = 'rightHand'): THREE.Vector3 {
+    const { x, y, z } = this.muzzlesLocal[mount];
     const sin = Math.sin(this.yaw);
     const cos = Math.cos(this.yaw);
     return target.set(this.simPos.x + x * cos + z * sin, this.simPos.y + y, this.simPos.z - x * sin + z * cos);
   }
 
+  /**
+   * De onde a chuva de mísseis desse Mech sobe NO DESENHO: a boca do morteiro das costas, no mundo. `undefined` quando a arma
+   * do botão secundário não é a chuva ou o desenho não tem o morteiro (aí vale a boca do tiro). É só visual: o servidor e a
+   * simulação continuam com `simMuzzle`.
+   */
+  barrageMouth(target: THREE.Vector3): THREE.Vector3 | undefined {
+    const mouth = this.rig.barrageMouth;
+    if (!mouth || this.armed.secondary?.id !== 'barrage') return undefined;
+    return mouth.getWorldPosition(target);
+  }
+
   get isDashing(): boolean {
     return this.dashTimeLeft > 0;
+  }
+
+  /** Os estados que o Mech sofre agora (fogo, choque, gelo...), para o painel do alvo; lista reutilizada. */
+  get statuses(): readonly StatusKind[] {
+    return this.status.kinds();
   }
 
   /** 0 = acabou de usar, 1 = pronto. */
@@ -329,7 +460,7 @@ export abstract class MechBase {
 
   /** Canhão de plasma fica no braço direito; superaquecido, trava até esfriar. */
   get canFirePrimary(): boolean {
-    return this.alive && this.modules.rightArm > 0 && !this.heatSink.overheated;
+    return this.alive && this.modules.rightArm > 0 && !this.heatSink.overheated && this.status.canAct;
   }
 
   /** Calor do Mech (0 a 1) e se as armas estão travadas por superaquecimento (HUD, IA). */
@@ -354,7 +485,10 @@ export abstract class MechBase {
    * fica: a pausa não vira um jeito de esfriar.
    */
   equip(loadout: Loadout, keepHeat = false): void {
+    this.energyShield.equip(loadout.module, keepHeat);
+    this.metalShield.equip(loadout.metalShield, this.stats.maxModuleHealth.leftArm, keepHeat);
     this.armed = loadout;
+    this.rig.mountWeapons?.(loadout);
     if (!keepHeat) this.heatSink.reset();
   }
 
@@ -368,17 +502,36 @@ export abstract class MechBase {
     return this.heatSink.coolingBoost;
   }
 
-  /** Lançador secundário fica no braço esquerdo; também trava com o Mech superaquecido. */
+  /** Como os botões se ligam aos encaixes deste chassi, no layout que a montagem escolheu (`Loadout.layout`). */
+  get triggers(): TriggerLayout {
+    return triggersOf(this.stats, this.armed.layout);
+  }
+
+  /** O encaixe pode atirar agora: vivo, a parte do corpo dele de pé e as armas frias. Não olha se há arma nele. */
+  canFireMount(mount: MountId): boolean {
+    return this.alive && this.modules[MOUNT_PART[mount]] > 0 && !this.heatSink.overheated && this.status.canAct;
+  }
+
+  /**
+   * O gatilho secundário pode atirar: há arma nele, ao menos um dos encaixes dele de pé (a mão esquerda, ou o torso, no
+   * caso dos ombros) e as armas frias.
+   */
   get canFireSecondary(): boolean {
-    return this.alive && this.modules.leftArm > 0 && this.loadout.secondary !== null && !this.heatSink.overheated;
+    if (!this.alive || this.loadout.secondary === null || this.heatSink.overheated || !this.status.canAct) return false;
+    return this.triggers.secondary.some((m) => this.modules[MOUNT_PART[m]] > 0);
+  }
+
+  /** Onde o encaixe está no mundo, pelo desenho (render). Para efeitos e para o tiro do jogador local. */
+  mountWorldPosition(mount: MountId, target: THREE.Vector3): THREE.Vector3 {
+    return mountNode(this.rig, mount).getWorldPosition(target);
   }
 
   muzzleWorldPosition(target: THREE.Vector3): THREE.Vector3 {
-    return this.rig.muzzle.getWorldPosition(target);
+    return this.mountWorldPosition('rightHand', target);
   }
 
   leftMuzzleWorldPosition(target: THREE.Vector3): THREE.Vector3 {
-    return (this.rig.leftMuzzle ?? this.rig.leftArm).getWorldPosition(target);
+    return this.mountWorldPosition('leftHand', target);
   }
 
   headWorldPosition(target: THREE.Vector3): THREE.Vector3 {
@@ -390,8 +543,8 @@ export abstract class MechBase {
     this.refreshParts();
   }
 
-  /** Centro de uma parte no mundo (para destroços e faíscas). Só em eventos, não por frame. */
-  partWorldPosition(part: MechPart, target: THREE.Vector3): THREE.Vector3 {
+  /** Centro de uma parte no mundo; center=false usa a junta (unidade/eixo de osso importado independentes). Efeitos a 10 Hz. */
+  partWorldPosition(part: MechPart, target: THREE.Vector3, center = true): THREE.Vector3 {
     const r = this.rig;
     const node =
       part === 'head' ? r.head
@@ -401,6 +554,8 @@ export abstract class MechBase {
       : part === 'rightLeg' ? r.rightLeg.knee
       : r.torso;
     this.root.updateMatrixWorld(true);
+    // A junta não depende da unidade/eixo local do osso importado.
+    if (!center) return node.getWorldPosition(target);
     const [x, y, z] = PART_CENTER[part];
     return node.localToWorld(target.set(x, y, z));
   }
@@ -420,7 +575,23 @@ export abstract class MechBase {
   /** Conserto (técnico ou zona de cura): devolve vida à parte mais avariada que ainda existe. Devolve quanto consertou. */
   repair(amount: number): number {
     if (!this.alive) return 0;
-    return repairModules(this.modules, this.stats.maxModuleHealth, amount);
+    const used = repairModules(this.modules, this.stats.maxModuleHealth, amount);
+    // O que sobra do conserto vai para a chapa do escudo físico (o braço vem antes: sem braço, sem escudo).
+    return used + this.metalShield.restore(amount - used);
+  }
+
+  /** Botão 2 com o escudo físico na mão esquerda: levanta a chapa neste tick (sem escudo, nada acontece). */
+  guard(held: boolean): void {
+    this.metalShield.step(held && this.alive, this.modules.leftArm > 0);
+  }
+
+  /**
+   * Defesas antes do dano: o campo de energia na frente, depois a chapa do escudo físico (só com o braço esquerdo
+   * inteiro). (x, y, z): do centro do robô para a fonte do impacto, em mundo. Devolve o dano que chega ao corpo.
+   */
+  defend(damage: number, type: DamageType, x: number, y: number, z: number): number {
+    const left = this.energyShield.absorb(damage, x, y, z, this.yaw, this.pitch);
+    return this.modules.leftArm > 0 ? this.metalShield.absorb(left, type, x, z, this.yaw) : left;
   }
 
   /** Ventilação externa (zona de resfriamento): tira calor direto, sem exigir estar parado nem sem tiro recente. */
@@ -430,7 +601,8 @@ export abstract class MechBase {
   }
 
   damagePart(part: MechPart, amount: number): DamageResult {
-    const result = applyDamage(this.modules, part, amount);
+    // O congelado leva mais dano (`StatusSet.damageTaken`).
+    const result = applyDamage(this.modules, part, amount * this.status.damageTaken);
     if (result.applied > 0) {
       this.hitFlash = 1;
       // Tomar tiro esquenta a blindagem (sem segurar o resfriamento: não é ação do Mech).
@@ -442,10 +614,37 @@ export abstract class MechBase {
   }
 
   /** Volta inteiro em `feet`: módulos cheios, colisão ligada, peças visíveis. */
+  /** EMP: não segura o resfriamento e não tira mobilidade diretamente. */
+  absorbEmp(amount: number): void {
+    if (this.alive) this.heatSink.add(Math.max(0, amount), false);
+  }
+
+  /**
+   * Dano por segundo de um estado (queimadura, choque): tira do torso, sem piscar o casco a cada tick e sem o calor de blindagem do
+   * acerto, e sem o bônus de dano do congelado. Quem decide quem matou é o `CombatSystem`.
+   */
+  statusDamage(amount: number): DamageResult {
+    const result = applyDamage(this.modules, 'torso', amount);
+    if (result.killed) this.die();
+    return result;
+  }
+
+  /** O fogo esquenta o Mech e **não o deixa resfriar** enquanto queima. */
+  absorbBurn(amount: number): void {
+    if (this.alive) this.heatSink.add(Math.max(0, amount), true);
+  }
+
   respawn(feet: THREE.Vector3): void {
+    this.status.reset();
+    this.energyShield.reset();
+    this.metalShield.reset();
     Object.assign(this.modules, this.stats.maxModuleHealth);
     this.heatSink.reset();
+    this.weaponCharging = false;
+    this.combatBoost.reset();
+    this.energyShield.stop();
     this.velocity.set(0, 0, 0);
+    this.shove.set(0, 0, 0);
     this.dashTimeLeft = 0;
     this.dashCooldownLeft = 0;
     this.jumpsLeft = this.stats.maxJumps;
@@ -473,9 +672,14 @@ export abstract class MechBase {
   }
 
   private die(): void {
+    this.status.reset();
+    this.combatBoost.reset();
+    this.energyShield.stop();
+    this.metalShield.raised = false;
     this.collider.setEnabled(false);
     this.root.visible = false;
     this.velocity.set(0, 0, 0);
+    this.shove.set(0, 0, 0);
     this.dashTimeLeft = 0;
   }
 
@@ -492,14 +696,23 @@ export abstract class MechBase {
 
   /** Um tiro do canhão principal (no tick fixo): recuo na animação e calor no Mech. */
   onFire(): void {
-    this.recoil = 1;
-    this.heatSink.add(this.loadout.primary.heatPerShot);
+    this.onFireMount('rightHand', this.loadout.primary);
   }
 
-  /** Um disparo do braço esquerdo: recuo e o calor do lançamento. */
+  /** Um disparo do gatilho secundário: recuo do braço esquerdo (se for dele) e o calor do lançamento. */
   onFireSecondary(): void {
-    this.leftRecoil = 1;
+    if (this.triggers.secondary.includes('leftHand')) this.leftRecoil = 1;
     if (this.loadout.secondary) this.heatSink.add(this.loadout.secondary.heatPerShot);
+  }
+
+  /**
+   * Um tiro que saiu de `mount` com `w` (no tick fixo): o calor entra no dissipador do Mech e a mão que atirou recua.
+   * Ombro não recua (o lançador é preso ao torso).
+   */
+  onFireMount(mount: MountId, w: WeaponStats): void {
+    if (mount === 'rightHand') this.recoil = 1;
+    else if (mount === 'leftHand') this.leftRecoil = w.kind === 'ammo' ? 1 : 0.7;
+    this.heatSink.add(w.heatPerShot);
   }
 
   /**
@@ -511,14 +724,56 @@ export abstract class MechBase {
     this.pitch = pitch;
     const r = this.rig;
     this.root.rotation.y = yaw;
-    r.torso.rotation.x = pitch * 0.25;
+    r.torso.rotation.x = pitch * 0.25 + this.flinchPitch;
     r.rightArm.rotation.x = pitch * 0.75;
     r.leftArm.rotation.x = pitch * 0.75;
+  }
+
+  /**
+   * Empurra o Mech na direção (`dirX`, `dirZ`) (não precisa ser unitária) com `speed` m/s, a menos do que ele resiste: **o robô grande empurra menos** (a resistência é 1,3 m
+   * de raio ÷ o raio do Mech, de 25% a 100%: o Colossus quase não sai do lugar, o andróide voa). Soma no `shove` atual com o teto de `SHOVE_MAX` m/s: dois empurrões
+   * juntos (dois ombros sônicos) não viram um arremesso. Morto não é empurrado.
+   */
+  push(dirX: number, dirZ: number, speed: number): void {
+    if (!this.alive || speed <= 0) return;
+    const len = Math.hypot(dirX, dirZ);
+    if (len < 1e-6) return;
+    const k = (speed * Math.min(1, Math.max(0.25, 1.3 / this.stats.radius))) / len;
+    this.shove.x += dirX * k;
+    this.shove.z += dirZ * k;
+    const m = Math.hypot(this.shove.x, this.shove.z);
+    if (m > SHOVE_MAX) this.shove.multiplyScalar(SHOVE_MAX / m);
+  }
+
+  /**
+   * Um tranco no torso (só desenho): joga o torso para onde o tiro andava (`dirX`, `dirZ`, no mundo, não precisa ser unitária), `amount` rad, até `FLINCH_MAX`. Tiro de frente
+   * inclina o torso para trás; de lado, torce o torso para o lado. Decai sozinho em `animate`. Morto não treme.
+   */
+  flinch(dirX: number, dirZ: number, amount: number): void {
+    if (!this.alive || amount <= 0) return;
+    const len = Math.hypot(dirX, dirZ);
+    if (len < 1e-6) return;
+    const x = dirX / len;
+    const z = dirZ / len;
+    const s = Math.sin(this.yaw);
+    const co = Math.cos(this.yaw);
+    // Atrás do Mech = (sen yaw, 0, cos yaw); a direita dele = (cos yaw, 0, -sen yaw).
+    const back = x * s + z * co;
+    const right = x * co - z * s;
+    this.flinchPitch = Math.min(FLINCH_MAX, Math.max(-FLINCH_MAX, this.flinchPitch + amount * back));
+    this.flinchYaw = Math.min(FLINCH_MAX, Math.max(-FLINCH_MAX, this.flinchYaw - amount * right));
+  }
+
+  /** O tranco que o torso mostra agora (rad, o maior dos dois eixos): para o teste e para quem quiser reagir (a câmera). */
+  get flinchAmount(): number {
+    return Math.max(Math.abs(this.flinchPitch), Math.abs(this.flinchYaw));
   }
 
   /** Um tick de simulação (60 Hz). Determinístico dado o input. */
   fixedUpdate(input: MechInput, dt: number): void {
     if (!this.alive) return;
+    this.combatBoost.fixedUpdate(dt);
+    this.energyShield.step(dt, input.shield === true);
     const s = this.stats;
     const vel = this.velocity;
     // Correr esquenta na proporção da velocidade no chão (a do tick anterior; no ar não conta).
@@ -533,7 +788,9 @@ export abstract class MechBase {
     this.moveIntent.copy(_wish);
 
     // Superaquecido: 3/4 da velocidade (dá para fugir), sem pulo nem dash (os sistemas entram em emergência).
-    const mobility = this.mobility * (overheated ? OVERHEAT_SPEED : 1);
+    // Chapa do escudo levantada: anda mais devagar (o dash continua, para sair da linha de tiro).
+    // Choque e gelo seguram a velocidade; atordoado ou congelado = 0 (nem anda, nem pula, nem dá dash: `mobility > 0` abaixo).
+    const mobility = this.mobility * (overheated ? OVERHEAT_SPEED : 1) * (this.metalShield.raised ? RAISED_SPEED : 1) * this.status.speedMultiplier;
 
     if (input.dash && this.dashCooldownLeft <= 0 && mobility > 0 && !overheated) {
       this.heatSink.add(s.heatDash);
@@ -575,9 +832,18 @@ export abstract class MechBase {
     // então cliente e servidor calculam o mesmo trajeto. O corpo cinemático ainda empurra
     // os destroços no world.step().
     const controller = this.controller;
-    _desired.x = vel.x * dt;
-    _desired.y = vel.y * dt;
-    _desired.z = vel.z * dt;
+    _desired.x = (vel.x + this.shove.x) * dt;
+    // Apoiado e sem velocidade para cima, não se pede movimento vertical: a gravidade somada a cada tick (−9 mm) caía dentro da margem de
+    // 5 cm do chão, o controller a devolvia em vez de segurar a cápsula e o Mech parado descia ~0,5 m/s, até atravessar o chão. O
+    // `snapToGround` mantém o contato (rampa e degrau descem igual); sem chão embaixo, `grounded` cai e a gravidade volta no tick seguinte.
+    // Medido e provado em `MechParado.test.ts` (achado de 29/09: o Colossus parado perdia 2 m em 3 s).
+    _desired.y = this.grounded && vel.y <= 0 ? 0 : vel.y * dt;
+    _desired.z = (vel.z + this.shove.z) * dt;
+    // O empurrão decai (e depois de um bom tempo vira zero de vez, para não deixar um resto de 1e-30 vivo).
+    const keep = Math.exp(-SHOVE_DECAY * dt);
+    this.shove.x *= keep;
+    this.shove.z *= keep;
+    if (Math.abs(this.shove.x) + Math.abs(this.shove.z) < 0.02) this.shove.set(0, 0, 0);
     controller.computeColliderMovement(this.collider, _desired, IGNORE_DEBRIS);
     let m = controller.computedMovement();
     if (this.grounded && this.unstickFromGround(m)) {
@@ -641,6 +907,10 @@ export abstract class MechBase {
   }
 
   /** Interpola a posição entre ticks e anima. `alpha` = fração do próximo tick. */
+  /** O rig já desenha a ventilação; evita duplicar vapor no pool do mundo. */
+  get hasHeatVisual(): boolean { return this.rig.setHeatVisual !== undefined; }
+
+  /** Interpola a posição entre ticks e anima. `alpha` = fração do próximo tick. */
   render(dt: number, alpha: number): void {
     if (!this.alive) return;
     this.root.position.lerpVectors(this.prevPos, this.simPos, alpha);
@@ -668,23 +938,39 @@ export abstract class MechBase {
       }
     }
 
-    const lHip = sw * 0.7 * amt + air * 0.55;
-    const rHip = -sw * 0.7 * amt - air * 0.25;
-    const lKnee = -Math.max(0, cw) * 1.1 * amt - air * 1.0;
-    const rKnee = -Math.max(0, -cw) * 1.1 * amt - air * 0.4;
+    const lean = legDamageLean(this.modules, this.stats.maxModuleHealth);
+    const leftStride = 1 - Math.max(0, lean) * 0.65;
+    const rightStride = 1 - Math.max(0, -lean) * 0.65;
+    // A passada e o joelho são do chassi (stats.gait): o titã anda curto e com o joelho bem dobrado.
+    const gait = this.stats.gait ?? DEFAULT_GAIT;
+    const lHip = sw * gait.hip * amt * leftStride + air * 0.55;
+    const rHip = -sw * gait.hip * amt * rightStride - air * 0.25;
+    const lKnee = -Math.max(0, cw) * gait.knee * amt - air * 1.0;
+    const rKnee = -Math.max(0, -cw) * gait.knee * amt - air * 0.4;
 
     r.leftLeg.hip.rotation.x = lerp(r.leftLeg.hip.rotation.x, lHip, k);
     r.rightLeg.hip.rotation.x = lerp(r.rightLeg.hip.rotation.x, rHip, k);
     r.leftLeg.knee.rotation.x = lerp(r.leftLeg.knee.rotation.x, lKnee, k);
     r.rightLeg.knee.rotation.x = lerp(r.rightLeg.knee.rotation.x, rKnee, k);
 
-    r.pelvis.position.y = r.hipHeight - Math.abs(sw) * 0.12 * amt;
-    r.torso.rotation.y = sw * 0.06 * amt;
+    r.pelvis.position.y = r.hipHeight - Math.abs(sw) * (0.12 + Math.abs(lean) * 0.12) * amt;
+    r.pelvis.rotation.z = this.pelvisBaseRoll + lean * (0.06 + Math.abs(sw) * 0.08) * amt;
+    // O tranco do tiro: o torso volta sozinho (decai a e^-9 por segundo) e soma por cima da mira e do balanço da passada.
+    const back = Math.exp(-dt * FLINCH_DECAY);
+    this.flinchPitch = Math.abs(this.flinchPitch) < 1e-4 ? 0 : this.flinchPitch * back;
+    this.flinchYaw = Math.abs(this.flinchYaw) < 1e-4 ? 0 : this.flinchYaw * back;
+    r.torso.rotation.x = this.pitch * 0.25 + this.flinchPitch;
+    r.torso.rotation.y = sw * 0.06 * amt + this.flinchYaw;
 
     this.recoil = Math.max(0, this.recoil - dt * 9);
-    r.rightArm.position.z = this.rightArmBaseZ + this.recoil * 0.35;
     this.leftRecoil = Math.max(0, this.leftRecoil - dt * 5);
-    r.leftArm.position.z = this.leftArmBaseZ + this.leftRecoil * 0.5;
+    const kickRight = this.recoil * 0.35;
+    const kickLeft = this.leftRecoil * 0.5;
+    if (r.setRecoil) r.setRecoil(kickRight, kickLeft);
+    else {
+      r.rightArm.position.z = this.rightArmBaseZ + kickRight;
+      r.leftArm.position.z = this.leftArmBaseZ + kickLeft;
+    }
 
     // Canhão-torre (Colossus e afins): gira devagar sozinho, decorativo — a mira de verdade continua
     // nos braços. G4: um if e uma soma, sem alocação; só roda quando o blueprint marcou `head.turret`.
@@ -694,15 +980,24 @@ export abstract class MechBase {
     else r.thrusterMaterial.emissiveIntensity = this.isDashing ? 14 : 2;
 
     r.setHeatVisual?.(dt, this.heat, this.overheated, this.coolingBoost);
+    r.setGuardVisual?.(dt, this.metalShield.intact && this.modules.leftArm > 0, this.metalShield.raised);
 
-    // Flash de dano no casco: só escreve no material quando o valor muda.
+    // Cor do casco: o flash de dano (vermelho, ~0,17 s) e a cor do estado (gelo, chamas, choque) somam na luz própria do casco.
+    // Só escreve no material quando a cor muda (parado e sem estado, nunca).
     this.hitFlash = Math.max(0, this.hitFlash - dt * 6);
-    if (this.hitFlash !== this.shownFlash) {
-      this.shownFlash = this.hitFlash;
+    this.visualTime += dt;
+    statusTint(this.status, this.visualTime, _tint);
+    const fr = this.hitFlash * 1.4 + _tint.r;
+    const fg = this.hitFlash * 0.35 + _tint.g;
+    const fb = this.hitFlash * 0.2 + _tint.b;
+    if (fr !== this.shownR || fg !== this.shownG || fb !== this.shownB) {
+      this.shownR = fr;
+      this.shownG = fg;
+      this.shownB = fb;
       for (const m of r.hullMaterials) {
-        const setHitFlash = m.userData.setHitFlash;
-        if (typeof setHitFlash === 'function') setHitFlash(this.hitFlash);
-        else m.emissive.setRGB(this.hitFlash * 1.4, this.hitFlash * 0.35, this.hitFlash * 0.2);
+        const setTint = m.userData.setTint;
+        if (typeof setTint === 'function') setTint(fr, fg, fb);
+        else m.emissive.setRGB(fr, fg, fb);
       }
     }
   }

@@ -1,109 +1,79 @@
 # PROTOCOLO UNIVERSAL — CYBERMECH
 
-> O **como** deste projeto. As regras gerais vivem no Protocolo Serafim UM v4.2
-> (canônico: `D:\SERAFIMHUB\serafim13\protocolo-serafim-um\PROTOCOLO_SERAFIM_UM.md`; cópia de referência
-> no repositório: `.decepticons/PROTOCOLO_SERAFIM_UM.md`, para agentes que só enxergam o repo).
-> Este arquivo diz como elas se aplicam aqui e define as specs de engenharia do jogo.
-> Mudou uma regra? Registre no `HISTORICO_DE_DECISOES.md`.
+**Referência de regras técnicas e specs de engenharia.** Versão condensada; detalhe completo em seções específicas (links abaixo).
 
----
+## Protocolo Serafim UM: Regras R1–R17
 
-## PARTE I — APLICAÇÃO DAS 17 REGRAS NESTE PROJETO
+Canônico: `D:\SERAFIMHUB\serafim13\protocolo-serafim-um/`. Cópia: `.decepticons/PROTOCOLO_SERAFIM_UM.md`.
 
-| Regra | Status | Como se aplica aqui |
+| Regra | Status | Aplicação aqui |
 |---|---|---|
-| R1 SSOT | ✅ | Estado do projeto só em `.decepticons/`. |
-| R2 Zero secrets | ✅ | `.gitignore` + hook `pre-commit` bloqueiam `.env*`, chaves e formatos de token. Hoje não há variável de ambiente; crie `.env.example` junto com a primeira. |
-| R3 Unicidade | ✅ | Nada de `_v2`, `_old`, `_bkp`. |
-| R4 TS strict + validação na borda | ⚙️ adaptado | `strict` ligado. Borda de rede (servidor): validador manual sem alocação no caminho quente (ver G7); Zod só em caminho frio. `noUncheckedIndexedAccess` recusado (ver histórico). |
-| R5 RLS | — N/A | Sem banco. Reavaliar quando houver contas ou persistência. |
-| R6 Migration com DOWN | — N/A | Sem banco. |
-| R7 Performance budget | ✅ automatizado | JS ≤ 500 KB gzip, Wasm ≤ 900 KB gzip: `scripts/smoke.mjs` reprova acima disso. LCP ainda não medido. |
-| R8 DEPLOY.md | ✅ | Site em `selvamkt.com.br/cybermech/` (rsync/SSH a cada merge na `main`, com trava de caminho). Leia antes de qualquer mudança de build, CI ou hospedagem. |
-| R9 Isolamento | ✅ | Nada compartilhado com outros projetos. |
-| R10 Secret por nome | ✅ | O `ci.yml` não usa secret hoje. Deploy futuro: só `${{ secrets.NOME }}`, nunca valor no arquivo. |
-| R11 Tokens fora do chat | ✅ | Sempre. |
-| R12 Automação | ✅ | `npm install` ativa os hooks; `pre-push` e o GitHub Actions (`ci.yml`) rodam o check. O Actions só passa a valer depois do primeiro push. |
-| R13 Sem mentira | ✅ | `STATUS_REAL.md` separa o que é REAL, DEMO e AUSENTE. |
-| R14 SSOT por dado | ✅ | Stats de Mech: `entities/<Mech>.ts`. Cores de UI: `styles.css`. Constantes de física: `physics/PhysicsWorld.ts`. |
-| R15 Smoke antes do push | ✅ automatizado | Hook `pre-push` → `npm run check`. |
-| R16 Prove do ângulo de quem usa | ⚙️ adaptado | Jogo: provar no browser real, jogando (pointer lock, as 3 câmeras). Multiplayer: provar com 2+ clientes reais e latência simulada. Smoke headless não substitui isso. |
-| R17 Correção proativa | ✅ | Sempre. |
+| R1–R3 | ✅ | SSOT em `.decepticons/`, sem secrets, sem duplicata (`_v2`, etc). |
+| R4 | ⚙️ | TypeScript `strict`. Validação manual (sem alocação) na borda de rede; Zod frio. |
+| R5–R6 | — | SQLite de contas existente: migrações, backup e restauração precisam de evidência; progresso ainda local. |
+| R7 | ✅ | JS ≤ 500 KB gzip, Wasm ≤ 900 KB gzip (verificado em `npm run check`). |
+| R8–R15 | ✅ | Deploy (DEPLOY.md), isolamento, secrets por nome (GitHub), automação (hooks + CI), sem mentira (STATUS_REAL.md), SSOT por dado, verificação pré-push. |
+| R16 | ⚙️ | Prova no browser real (multiplayer: 2+ clientes com latência simulada). |
+| R17 | ✅ | Achados registrados, bugs corrigidos (ver FINDINGS.md). |
 
-**Skill 23 (Watchdog):** não instalada, porque o componente é React e o projeto não usa React (ver histórico). **Skill 12 (SEO/llms.txt):** só quando houver deploy público.
+**Omitidas:** Skill 23 (requer React; não usado). SEO já se aplica à landing pública; não comprova acessibilidade nem desempenho de combate.
 
 ---
 
-## PARTE II — SPECS DE ENGENHARIA DO JOGO
+## Specs de Engenharia: G1–G15
 
-**[G1] Loop.** Simulação em passo fixo de 60 Hz (`FIXED_DT`), no máximo 4 ticks por frame: a máquina lenta desacelera em vez de travar. Render, câmera, animação e partículas rodam na taxa do monitor, interpolados por `alpha`. Regra de gameplay nunca roda em código de taxa de render.
+Detalhes técnicos em documentos específicos: [`SPECS_*.md`](../ESPECIFICACOES.md).
 
-**[G2] Simulação determinística.** `fixedUpdate` depende só de `MechInput` + estado. No caminho da simulação são proibidos `Math.random`, `Date.now`, DOM e objetos de cena. Aleatoriedade na simulação (ex.: IA dos bots) só com `core/rng.ts` (semente). Regra de jogo lê `simPosition`, nunca `position` (que é a de render, interpolada). Efeito visual (partículas, shake, animação) fica fora da simulação.
-
-**[G3] Módulos.** Cada sistema é uma classe independente, instanciada e ligada em `core/Game.ts`. Sistemas conversam por callbacks (`onHit`, `onBreak`, `onLand`, `onDashImpact`), nunca importando `Game`. Feature nova = módulo novo + fiação no `Game`.
-
-**[G4] Zero alocação no caminho quente.** Nada de `new` por frame ou por tick: vetores de rascunho no escopo do módulo (`const _tmp = new THREE.Vector3()`), pools fixos, typed arrays.
-
-**[G5] Draw calls e tetos.** Coisas repetidas usam `InstancedMesh` ou `Points` (1 draw call). Tetos atuais: partículas 3000, destroços 240 (24 por quebra), projéteis 64. Teto novo exige justificativa de custo.
-
-**[G6] Física.** Estático = colisor sem rigid body. Corpo dinâmico precisa dormir ao parar. Mech = cápsula cinemática + `KinematicCharacterController`, que ignora corpos dinâmicos (`EXCLUDE_DYNAMIC`): destroços são só cosméticos e nunca alteram o movimento. Mech remoto **nunca** roda o controller: só interpola snapshots.
-
-**[G7] Rede (planejado).** Servidor autoritativo. O cliente envia só `MechInput`. O servidor valida cada input com função manual sem alocação (`Number.isFinite`, clamp de `moveX`/`moveZ` em -1..1, yaw normalizado, booleanos estritos) e descarta o inválido. O código de `shared/` não pode tocar em DOM nem em WebGL.
-
-**[G8] Budget.** JS ≤ 500 KB gzip, Wasm ≤ 900 KB gzip, checados por `npm run smoke`. Alvo de runtime: 60 FPS estáveis em hardware médio, **sem medição automatizada ainda**.
-
-**[G9] Import do Rapier.** O código sempre importa `@dimforge/rapier3d-simd-compat`, que roda no Node sem flags. O `vite.config.ts` troca por `@dimforge/rapier3d-simd` (`.wasm` separado) no browser. As duas versões ficam **fixadas iguais** no `package.json`: atualize as duas juntas e rode `npm run check`.
-
-**[G10] Estilo.** Identificadores em inglês; comentários e UI em pt-BR. Densidade de comentário igual à do código existente: o porquê, não o óbvio.
-
-### Princípios pedidos pelo dono (2026-09-23): cada um com meta mensurável
-
-**[G11] Economia de dados.** Metas por jogador, sala de 8: **download ≤ 8 KB/s, upload ≤ 2 KB/s**.
-- Servidor simula a 60 Hz e envia estado a **20 Hz**; o cliente interpola (buffer ~100 ms).
-- Estado binário com delta (só o que mudou), no schema do Colyseus. Posição quantizada (cm), ângulos em 16 bits.
-- Input do cliente: bitmask de teclas + yaw/pitch quantizados, poucos bytes por tick.
-- Evento pontual (parede quebrou, tiro acertou) vai como mensagem com id, não como estado contínuo. **Destroços e partículas nunca vão pela rede.**
-- Download inicial ≤ 1 MB gzip (hoje ~900 KB). Geometria procedural, sem texturas baixadas.
-- Medir banda por sala na Fase 1; estourou a meta, é bug.
-
-**[G12] Requisitos mínimos.** Alvo: notebook com GPU integrada, WebGL2, sem WebGPU obrigatório.
-- Qualidade adaptativa: FPS abaixo de 50 por alguns segundos → reduz `pixelRatio`, depois desliga o bloom. Nunca o contrário no meio da partida.
-- Tetos de pool fixos (G5) valem igual para o pior hardware.
-
-**[G13] Resiliência.**
-- Servidor autoritativo: o cliente nunca decide dano, morte ou quebra de parede.
-- Todo input validado (G7) + limite de mensagens por cliente (excesso descartado).
-- Reconexão automática na mesma sessão (janela de ~15 s) e aviso claro "reconectando…"; o jogo nunca congela.
-- Falha de uma sala não derruba o processo nem as outras salas.
-- Pacote perdido: interpolação absorve; extrapolação curta e limitada.
-
-**[G14] Código estratégico.**
-- Uma simulação só (`shared/`) roda no cliente e no servidor. Nunca duas implementações da mesma regra.
-- Toda regra de gameplay tem teste de simulação no Node (padrão: `client/src/entities/MechBase.test.ts`).
-- Custo explícito: dependência nova só com o custo em bundle ou CPU justificado; tick do servidor medido (meta: ≤ 2 ms para 8 Mechs).
-- Contorno de bug de biblioteca fica isolado, comentado com o diagnóstico e coberto por teste (ex.: `MechBase.unstickFromGround`).
-
-**[G15] Projeto autocontido (regra do dono).** Nada do projeto é salvo fora da pasta dele: nem em outra pasta, nem em outro drive, nem no temp do sistema.
-- Temporários (experimentos, snapshots, capturas, repositórios de teste, scripts descartáveis) vão só para `.tmp/` na raiz, que o git ignora.
-- Ferramenta que escreve no temp do sistema por padrão é apontada para `.tmp/` (ex.: `scripts/smoke.mjs` com o Playwright e o Chrome; `scripts/test.mjs` com o Vitest).
-- O `pre-commit` barra arquivos de `.tmp/`, `dist/` e `node_modules/` no stage, mesmo com o `.gitignore` desatualizado.
-- Conhecimento do projeto vai para `.decepticons/` ou `AGENTS.md`, nunca só para a memória de um agente.
-- Fora do nosso controle, e conhecido: caches globais de ferramentas (cache do npm, `~/.claude` do Claude Code, configuração do git/gh). Não são arquivos do projeto.
+| Spec | Meta | Implementação |
+|---|---|---|
+| **G1: Loop** | 60 Hz fixo, ≤4 ticks/frame | `FIXED_DT`, render interpolado, sem gameplay em taxa de render |
+| **G2: Determinismo** | `fixedUpdate` = `MechInput` + estado | Sem `Math.random`, `Date.now` em simulação; RNG com semente (`core/rng.ts`) |
+| **G3: Modular** | Sistema independente → callback | Todos em `core/Game.ts`; conversa via `onHit`, `onBreak`, etc. |
+| **G4: Zero aloc** | Sem `new` por frame/tick | Pools fixos, `_tmp` em escopo, typed arrays |
+| **G5: Draw calls** | InstancedMesh 1 call/tipo | Tetos: partículas 3000, destroços 240, projéteis 64 |
+| **G6: Física** | Mech = cápsula cinemática | Destroços cosmético; remoto só interpola. Ver `PhysicsWorld.ts` |
+| **G7: Rede** | Servidor autoritativo Node + ws | Validação na borda; regras compartilhadas de cliente/servidor |
+| **G8: Budget** | 60 FPS em GPU integrada | JS/Wasm dentro dos tetos; LCP não medido |
+| **G9: Rapier** | Versões iguais | `rapier3d-simd-compat` Node; `rapier3d-simd` browser; atualizar ambas |
+| **G10: Estilo** | IDs inglês, comentários pt-BR | Densidade = código existente (porquê, não óbvio) |
+| **G11: Dados** | ≤8 KB/s ↓, ≤2 KB/s ↑ | Snapshots completos binários a 20 Hz, quantizados; delta/interest management ainda futuros |
+| **G12: Hardware** | GPU integrada, WebGL2 | Qualidade adaptativa (pixelRatio → bloom) |
+| **G13: Resiliência** | Reconexão auto, falha isolada | Validação + rate limit; reconexão ~15 s |
+| **G14: Estratégia** | Uma simulação, teste por regra | `shared/` roda cliente+servidor; teste Node (padrão `MechBase.test.ts`) |
+| **G15: Autocontido** | Nada fora da pasta | `.tmp/` só, sem sistema temp; conhecimento em `.decepticons/` |
 
 ---
 
-## PARTE III — COMANDOS
+## Comandos Essenciais
 
 ```bash
-npm install          # instala deps e ativa os hooks (.githooks/)
-npm run dev          # http://localhost:5173
-npm test             # testes de simulação no Node (Vitest; config própria em vitest.config.ts)
-npm run check        # typecheck + testes + build + budget + boot no browser headless (pre-push e CI rodam este)
-npm run smoke:dev    # boot headless contra o dev server
+npm install              # Hooks em .githooks/
+npm run dev              # Dev server http://localhost:5173
+npm test                 # Vitest (simulação no Node)
+npm run check            # typecheck + testes + build + budget (obrigatório pré-push)
+npm run smoke:dev        # Boot headless contra dev server
+npm run server           # Servidor de jogo ws://localhost:2567
+npm run site             # Site em .tmp/site/ (landing, oficina, sala-de-controle, jogar)
+npm run painel           # Painel de controle em .tmp/painel/
 ```
-
-O smoke usa Chrome ou Edge instalados. Em outra máquina: `SMOKE_BROWSER=<caminho>` ou `npx playwright install chromium`.
 
 ---
 
-*PROTOCOLO_UNIVERSAL.md v1.0 | derivado do Protocolo Serafim UM v4.2 | 2026-09-23*
+**Ligado:** `AGENTS.md` (multi-agente), `GAME_DESIGN.md` (visão), `DEPLOY.md` (infraestrutura).  
+**Mudou uma regra?** Registre em `HISTORICO_DE_DECISOES.md`.
+
+*Versão 2.0 | refatorada 2026-10-01 | referência rápida*
+
+
+## Adaptação operacional do jogo — 06/10/2026
+
+A cópia PROTOCOLO_SERAFIM_UM.md é referência e não é editada por tarefa. Este documento adapta sua aplicação ao Cybermech. Nenhum status de conformidade substitui uma evidência.
+
+- Equipamentos: IDs e versão viajam na montagem; cliente e servidor validam compatibilidade e carga total. Energia é distinta de calor. Defesa direcional é decidida pela simulação fixa; visual só representa o estado. Preservar leitura de montagens antigas e versionar mudanças de rede.
+- Observabilidade: separar dados de CI, desempenho local, experiência real e analytics. Registrar versão, ambiente e procedência. Nunca chamar pipeline verde de disponibilidade do jogo nem número de eventos de jogadores únicos.
+- Coleta: amostragem limitada, filas e retenção com teto, sem envio por quadro, sem credenciais, e-mails ou query de URL nos relatórios. Falha de coleta não impede jogar. Duplicação, rejeição e perda precisam ser visíveis; partidas com cheats são separadas das normais.
+- Escala: 8 humanos por sala é limite de produto; 400 conexões é limite de proteção. Certificar capacidade exige carga ativa (movimento/tiro), duração, máquina/versão, CPU/memória, ritmo de ticks/snapshots, desconexões e tráfego. Teste local curto é caracterização, não homologação de produção.
+- Liberação online: cliente/servidor compatíveis, teste de reconexão e sob latência/perda, playtest com hardware alvo e plano de recuperação. Enquanto o servidor público estiver offline por orientação do dono, somente testes efêmeros locais; nenhuma tentativa de subir ou atualizar produção.
+- Evolução premium: cada incremento fecha comportamento jogável, verificação funcional/visual, custo de desempenho, limitações e caminho para testar. Conteúdo novo deve responder a evidências do playtest; retenção D1 exige uma política explícita de identificação entre sessões e não pode ser deduzida dos contadores anônimos atuais.
+- IA e ordens de equipe: entrada da UI enfileira intenções; o tick decide e aplica. Usar percepção limitada, memória da última posição vista, limites de frequência/raios e testes de deslocamento/apoio com física real. Verificar também a ligação do render: simulação correta não prova desenho correto. Desvio local não equivale a navegação global nem a comportamento humano.
+- Catálogo e páginas: Oficina lê encaixes/peso/geradores do código; separar ideias de equipamento jogável, modelo visual de regra de dano e testes automatizados de playtest. Ao mudar compatibilidade, atualizar testes antigos de restrições sem relaxar limites de carga, autoridade ou segurança.

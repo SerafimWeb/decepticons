@@ -1,20 +1,27 @@
+import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
-import { BotSystem } from '../combat/BotSystem';
+import { BarrageSystem } from '../combat/BarrageSystem';
+import { BotSystem, type BotKit } from '../combat/BotSystem';
 import { CombatSystem, type MechHitEvent } from '../combat/CombatSystem';
 import { CrushRule } from '../combat/crush';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
 import { RocketSystem } from '../combat/RocketSystem';
 import { Respawner } from '../combat/Respawner';
+import { DroneSystem } from '../combat/DroneSystem';
+import { FireRing, type RingSides } from '../combat/FireRing';
 import { Round } from '../combat/Round';
-import type { WeaponStats } from '../combat/weapons';
+import { hitDamage, rangeFactor, type Flame, type WeaponStats } from '../combat/weapons';
+import type { PhysicsHit } from '../physics/PhysicsWorld';
 import { ZoneSystem } from '../combat/Zone';
 import { PALETTE } from '../core/palette';
 import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
+import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
+import { drawWave } from '../fx/WaveVisuals';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
 import {
@@ -23,7 +30,9 @@ import {
   type CtfScore,
   type CtfTeam,
 } from './CaptureTheFlag';
+import { esquadraoDeFoes, planejarEsquadrao, sanearEsquadrao, type EsquadraoSpec, type SlotDoPlano } from './esquadrao';
 import type { GameMode } from './gameMode';
+import { ALLY_COUNT, ANDROID_SPAWNS, BOT_SPAWNS, COLOSSUS_SPAWN } from './nascimentos';
 import {
   SURVIVAL_MAX_ANDROIDS,
   SURVIVAL_MAX_MECHS,
@@ -34,21 +43,12 @@ import {
 } from './SurvivalWaves';
 
 /**
- * IAs rebeldes na arena: até 3 Mechs, 3 andróides de combate e 1 técnico (ou, na missão, o Colossus de
- * escala 3 no lugar do técnico). Teto: 7 bots + o jogador = 8 character controllers, o tamanho de sala do jogo (G11).
+ * Os pontos de nascimento ficam em `nascimentos.ts` (o esquadrão e a partida leem os mesmos). IAs rebeldes da Arena sem esquadrão pedido:
+ * as das configurações, até 3 Mechs, 3 andróides de combate e 1 técnico (ou, na missão, o Colossus de escala 3 no lugar do técnico), com
+ * 2 aliados que tiram vaga dos Mechs; teto de 8 character controllers no servidor, o tamanho de sala do jogo (G11). Com esquadrão
+ * (`MatchOptions.squad`), o teto é o de `LIMITES_DO_ESQUADRAO`.
  */
-export const BOT_SPAWNS = [SPAWN_POINTS[2]!, SPAWN_POINTS[4]!, SPAWN_POINTS[8]!];
-export const ANDROID_SPAWNS = [SPAWN_POINTS[5]!, SPAWN_POINTS[6]!, SPAWN_POINTS[9]!];
-export const TECHNICIAN_SPAWNS = [SPAWN_POINTS[10]!];
-/**
- * Aliados do jogador na Arena normal (30/09, pedido do dono: "sozinho tá muito intenso"). Tiram vaga
- * dos inimigos pra não estourar o teto de 8 (G11) — ver `enemyMechCount`. Só na Arena por enquanto:
- * Sobrevivência e CTF já têm lógica própria de pool/time (`SurvivalWaves`, `CaptureTheFlag`).
- */
-export const ALLY_SPAWNS = [SPAWN_POINTS[1]!, SPAWN_POINTS[3]!];
-export const ALLY_COUNT = ALLY_SPAWNS.length;
-/** O Colossus (escala 3) nasce longe do jogador e de frente para ele: 14 m de cápsula pedem espaço. */
-export const COLOSSUS_SPAWN = [SPAWN_POINTS[7]!] as const;
+export { ALLY_COUNT, ALLY_SPAWNS, ANDROID_SPAWNS, BOT_SPAWNS, COLOSSUS_SPAWN, TECHNICIAN_SPAWNS } from './nascimentos';
 /** Dois defensores offline do CTF, perto da base vermelha e sem sobrepor a bandeira. */
 export const CTF_DEFENDER_SPAWNS: readonly (readonly [number, number])[] = [
   [68, -72],
@@ -56,6 +56,10 @@ export const CTF_DEFENDER_SPAWNS: readonly (readonly [number, number])[] = [
 ];
 /** Piloto nasce ao lado do mastro: área segura legível, sem sobrepor a bandeira. */
 const CTF_PLAYER_OFFSET_X = 5;
+/** Tiros no ar de uma vez: 64 no jogo de sempre (3 Mechs de IA) e mais 4 por Mech de IA a partir do quarto (esquadrão, P91). */
+const PROJETEIS_BASE = 64;
+const PROJETEIS_POR_MECH = 4;
+const MECHS_DO_JOGO_BASE = 3;
 /** Segundos até o jogador renascer (os bots: `BOT_RESPAWN_S`). */
 export const PLAYER_RESPAWN_S = 3;
 
@@ -65,9 +69,10 @@ export interface Pilot {
 }
 
 /** Quantos inimigos e quem são (as configurações do jogador; no servidor, as da sala). */
-export type Foes = Pick<GameSettings, 'enemyMechs' | 'enemyAndroids' | 'technician' | 'enemyPersonas'>;
+export type Foes = Pick<GameSettings, 'enemyMechs' | 'enemyAndroids' | 'technician' | 'enemyPersonas' | 'names'>;
 
 export interface MatchOptions {
+  map?: MapId;
   physics: PhysicsWorld;
   /** Onde os modelos entram. No servidor, uma cena que nunca é desenhada. */
   scene: THREE.Scene;
@@ -93,6 +98,14 @@ export interface MatchOptions {
    * ser resolvido (`STATUS_REAL.md`); a Arena offline (single-player) já funciona hoje.
    */
   allies?: boolean;
+  /** Drones da base Serafim (06/10). Seguem os aliados: ligados na Arena offline, desligados no servidor por ora. */
+  drones?: boolean;
+  /**
+   * Quem nasce na Arena e no Bunker, um por um (12/10, P91: "mais bots e aliados, além dos 3 do padrão"). Sem isto, sai das configurações
+   * (`foes`): o jogo de sempre, que `esquadraoPadrao.test.ts` fotografa. Passa por `sanearEsquadrao`, que corta o que não cabe no mapa;
+   * com `allies: false` (o servidor, o online) os aliados do esquadrão ficam de fora. Sobrevivência e CTF têm o pool e os times deles.
+   */
+  squad?: EsquadraoSpec;
 }
 
 /**
@@ -101,17 +114,38 @@ export interface MatchOptions {
  * desenha por cima (`core/Game.ts`); o servidor do multiplayer vai rodar esta mesma classe, sem
  * WebGL nem DOM (`MULTIPLAYER.md`, etapa M1). Quem quiser mostrar ou tocar algo ouve os eventos.
  */
+const _flameAt = new THREE.Vector3();
+const _flameTo = new THREE.Vector3();
+/** O "acerto" que o cone entrega ao CombatSystem: um objeto só, reescrito a cada alvo (nada alocado por pulso). */
+const _flameHit: PhysicsHit = { point: new THREE.Vector3(), normal: new THREE.Vector3(0, 1, 0), distance: 0, collider: undefined as unknown as RAPIER.Collider };
+
 export class Match {
   readonly debris: DebrisSystem;
   readonly destructibles: Destructibles;
   readonly arena: Arena;
   readonly projectiles: ProjectileSystem;
   readonly rockets: RocketSystem;
+  /** Chuva de mísseis (armas com `barrage`): sobe, e as bombas caem em volta da mira. */
+  readonly barrage: BarrageSystem;
   readonly combat: CombatSystem;
+  /** As partículas da partida (vazias no servidor): a onda sônica se desenha por aqui. */
+  private readonly fx: ParticleSystem;
+  /** Saiu uma onda sônica (o servidor a transforma em evento de tiro para os outros jogadores desenharem). */
+  onWave?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
+  /** Só o cliente liga: solta os anéis que distorcem o ar (`fx/WaveRings`). O servidor não desenha nada. */
+  onWaveFx?: (origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats) => void;
+  /** O anel de fogo (módulo de escudo `fire`): o que cada pulso faz em volta do dono (`combat/FireRing.ts`). */
+  readonly fireRing: FireRing;
+  /** Quem o anel de cada lado queima e quem só esquenta; montado uma vez (G4). */
+  private readonly ringOfPlayers: RingSides;
+  private readonly ringOfAllies: RingSides;
+  private readonly ringOfRebels: RingSides;
   readonly respawner: Respawner;
   readonly bots: BotSystem;
   /** Aliados do jogador (30/09), só na Arena normal — `null` em Sobrevivência/CTF. */
   readonly allies: BotSystem | null;
+  /** Drones da base Serafim, do lado do jogador (`combat/DroneSystem.ts`); `null` fora da Arena offline. */
+  readonly drones: DroneSystem | null;
   readonly round: Round;
   /** Máquina da missão, presente apenas no modo Sobrevivência. */
   readonly waves: SurvivalWaves | null;
@@ -120,7 +154,8 @@ export class Match {
   /** Pisão: robô grande andando na direção de um pequeno encostado. */
   readonly crush: CrushRule;
   /** Zonas de cura e resfriamento (vantagem tática de posicionamento, igual para os dois lados). */
-  readonly zones = new ZoneSystem();
+  readonly zones: ZoneSystem;
+  private readonly spawnPoints: readonly (readonly [number, number])[];
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
   readonly pilots: Pilot[] = [];
   /** Mechs de gente (os bots caçam estes). */
@@ -130,6 +165,11 @@ export class Match {
   onMechHit?: (e: MechHitEvent) => void;
   /** Mech destruído (o placar já contou): explosão, tremor, kill feed. */
   onMechKilled?: (dead: MechBase, at: THREE.Vector3, killer?: MechBase) => void;
+  /**
+   * Rádio do clã (11/10): um bot avistou `target` e avisou os companheiros (primeiro contato, no máximo um aviso a cada
+   * 8 s por time). `allied`: foi um aliado do jogador. Só tela; a regra já aconteceu dentro do `BotSystem`.
+   */
+  onRadio?: (from: string, target: MechBase, allied: boolean) => void;
   /** Foguete explodiu em `at` (o dano já foi aplicado): fogo, fumaça, tremor, som. */
   onExplosion?: (at: THREE.Vector3) => void;
   /** Barricada quebrou (o servidor manda `PROP_BROKEN` com o `id`; o cliente aplica a mesma no visual). */
@@ -164,18 +204,33 @@ export class Match {
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
     this.destructibles.onBreak = (id, at) => this.onPropBroken?.(id, at);
-    this.arena = new Arena(o.scene, o.physics, this.destructibles);
-    this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles);
+    const bunker = o.map === 'bunker' && !survival && !ctf;
+    this.spawnPoints = bunker ? BUNKER_SPAWNS : SPAWN_POINTS;
+    this.zones = bunker ? new ZoneSystem([]) : new ZoneSystem();
+    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : 'arena');
+    this.fx = o.particles;
+    // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
+    // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
+    // estourar o teto de 8 personagens da sala (G11). Sobrevivência e CTF não usam esquadrão (pool e times próprios).
+    const arenaMode = !survival && !ctf;
+    const mapa: MapId = bunker ? 'bunker' : 'arena';
+    const semAliados = o.allies === false;
+    const pedido = o.squad ?? esquadraoDeFoes(o.foes, semAliados ? 0 : ALLY_COUNT);
+    const plano = arenaMode ? planejarEsquadrao(sanearEsquadrao(semAliados ? { ...pedido, aliados: [] } : pedido, mapa), mapa, o.foes.names) : null;
+    // O pool de tiros cresce com os Mechs que atiram (cada um solta uma rajada por vez): sem isso, num esquadrão grande o tiro some (G5).
+    const atiradores = plano ? plano.inimigos.mechs.length + plano.aliados.mechs.length : 0;
+    this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles, PROJETEIS_BASE + PROJETEIS_POR_MECH * Math.max(0, atiradores - MECHS_DO_JOGO_BASE));
     this.rockets = new RocketSystem(o.scene, o.physics, o.particles);
+    this.barrage = new BarrageSystem(o.scene, o.physics);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.combat.damageEnabled = o.damage !== false;
-    this.respawner = new Respawner(SPAWN_POINTS);
+    this.combat.sameSide = (a, b) => this.sameSide(a, b);
+    this.respawner = new Respawner(this.spawnPoints);
     this.crush = new CrushRule(this.combat);
-    // Aliados (30/09, "sozinho tá muito intenso"): só na Arena normal, tiram vaga do pool de Mechs
-    // inimigos pra não estourar o teto de 8 personagens da sala (G11).
-    const arenaMode = !survival && !ctf;
-    const allyCount = arenaMode && o.allies !== false ? ALLY_COUNT : 0;
-    const enemyMechCount = survival ? SURVIVAL_MAX_MECHS : Math.max(0, o.foes.enemyMechs - allyCount);
+    const kitDe = (s: SlotDoPlano): BotKit => ({ chassi: s.chassi, arma: s.arma, dificuldade: s.dificuldade });
+    const pontos = (l: readonly SlotDoPlano[]) => l.map((s) => s.ponto);
+    const nomes = (l: readonly SlotDoPlano[]) => l.map((s) => s.nome);
+    const rebeldes = plano?.inimigos;
     this.bots = new BotSystem({
       scene: o.scene,
       physics: o.physics,
@@ -183,18 +238,32 @@ export class Match {
       projectiles: this.projectiles,
       particles: o.particles,
       respawner: this.respawner,
-      spawns: ctf ? CTF_DEFENDER_SPAWNS : BOT_SPAWNS.slice(0, enemyMechCount),
-      androidSpawns: ctf ? [] : ANDROID_SPAWNS.slice(0, survival ? SURVIVAL_MAX_ANDROIDS : o.foes.enemyAndroids),
-      technicianSpawns: !survival && !ctf && o.foes.technician ? TECHNICIAN_SPAWNS : [],
+      ...(rebeldes
+        ? {
+            spawns: pontos(rebeldes.mechs),
+            androidSpawns: pontos(rebeldes.androids),
+            technicianSpawns: pontos(rebeldes.tecnicos),
+            personas: rebeldes.mechs.map((s) => s.persona),
+            names: { mechs: nomes(rebeldes.mechs), androids: nomes(rebeldes.androids), technicians: nomes(rebeldes.tecnicos) },
+            kits: rebeldes.mechs.map(kitDe),
+            androidKits: rebeldes.androids.map(kitDe),
+          }
+        : {
+            spawns: ctf ? CTF_DEFENDER_SPAWNS : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
+            androidSpawns: ctf ? [] : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
+            technicianSpawns: [],
+            personas: o.foes.enemyPersonas,
+            names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
+          }),
       bossSpawn: survival ? COLOSSUS_SPAWN[0] : undefined,
       respawn: !survival,
       respawnAtHome: ctf,
-      personas: o.foes.enemyPersonas,
-      waypoints: SPAWN_POINTS,
+      waypoints: this.spawnPoints,
       power: o.power,
     });
+    const escolta = plano?.aliados;
     this.allies =
-      allyCount > 0
+      escolta && escolta.mechs.length + escolta.androids.length > 0
         ? new BotSystem({
             scene: o.scene,
             physics: o.physics,
@@ -202,16 +271,29 @@ export class Match {
             projectiles: this.projectiles,
             particles: o.particles,
             respawner: this.respawner,
+            escort: this.players,
             paint: PALETTE.playerPaint,
             visor: PALETTE.green,
-            spawns: ALLY_SPAWNS.slice(0, allyCount),
-            waypoints: SPAWN_POINTS,
+            spawns: pontos(escolta.mechs),
+            androidSpawns: pontos(escolta.androids),
+            personas: escolta.mechs.map((s) => s.persona),
+            names: { mechs: nomes(escolta.mechs), androids: nomes(escolta.androids) },
+            kits: escolta.mechs.map(kitDe),
+            androidKits: escolta.androids.map(kitDe),
+            waypoints: this.spawnPoints,
             power: o.power,
           })
         : null;
     // O inimigo caça jogador E aliado; o aliado só caça o inimigo (nunca o próprio jogador).
     this.refreshEnemyTargets();
     if (this.allies) this.allies.targets = this.bots.mechs;
+    // O anel de fogo: o jogador queima os rebeldes (e os outros jogadores, como o lança-chamas) e só esquenta os aliados; o aliado queima os rebeldes; o rebelde queima o jogador e os aliados.
+    this.fireRing = new FireRing(this.combat);
+    this.ringOfPlayers = { foes: [this.bots.mechs, this.players], friends: this.allies ? [this.allies.mechs] : [] };
+    this.ringOfAllies = { foes: [this.bots.mechs], friends: this.allies ? [this.players, this.allies.mechs] : [this.players] };
+    this.ringOfRebels = { foes: this.allies ? [this.players, this.allies.mechs] : [this.players], friends: [this.bots.mechs] };
+    this.bots.onRadio = (from, target) => this.onRadio?.(from, target, false);
+    if (this.allies) this.allies.onRadio = (from, target) => this.onRadio?.(from, target, true);
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
     if (this.allies) for (const b of this.allies.mechs) this.round.register(b, this.allies.nameOf(b));
     this.waves = survival
@@ -237,12 +319,32 @@ export class Match {
     if (this.ctf) for (const bot of this.bots.mechs) this.ctf.register(bot, 'red');
 
     // As regras ficam aqui; a tela e o som só ouvem os eventos.
-    this.projectiles.onHit = (hit, dir, damage, owner) => this.combat.onProjectileHit(hit, dir, damage, owner);
-    this.rockets.onExplode = (at, dir, owner, w) => {
+    this.projectiles.onHit = (hit, dir, damage, owner, w, distance) => {
+      if (this.drones?.hit(hit.collider, damage)) return;
+      this.combat.onProjectileHit(hit, dir, damage, owner, w, distance);
+    };
+    const explode = (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): void => {
       this.combat.explode(at, dir, owner, w);
+      this.drones?.explosion(at, w);
       this.onExplosion?.(at);
     };
+    // Drones (06/10): só onde os aliados existem; o kamikaze explode pela mesma regra dos foguetes.
+    this.drones =
+      this.allies !== null && o.drones !== false && !bunker
+        ? new DroneSystem({
+            physics: o.physics,
+            projectiles: this.projectiles,
+            particles: o.particles,
+            friends: () => this.friendly,
+            enemies: () => this.bots.mechs,
+            explode: (at, dir, w) => explode(at, dir, undefined, w),
+          })
+        : null;
+    this.rockets.onExplode = explode;
+    this.rockets.acquire = (origin, dir, owner, w) => this.seekTarget(origin, dir, owner, w);
+    this.barrage.onExplode = explode;
     this.combat.onMechHit = (e) => {
+      if (this.players.includes(e.mech)) this.allies?.defend(e.mech, e.shooter);
       if (this.allies?.mechs.includes(e.mech)) this.allies.onDamaged(e.mech, e.shooter);
       else if (!this.players.includes(e.mech)) this.bots.onDamaged(e.mech, e.shooter);
       if (this.waves && e.shooter && this.players.includes(e.shooter) && this.bots.mechs.includes(e.mech)) {
@@ -256,6 +358,7 @@ export class Match {
       if (this.waves && this.bots.mechs.includes(dead) && this.waves.recordEnemyKilled()) {
         this.projectiles.clear();
         this.rockets.clear();
+        this.barrage.clear();
       }
       if (this.waves && this.players.includes(dead) && this.players.every((player) => !player.alive)) this.waves.fail();
       this.onMechKilled?.(dead, at, killer);
@@ -269,7 +372,7 @@ export class Match {
   addPlayer(mech: MechBase, name: string, spawnIndex = this.players.length, onRespawn?: () => void, team: CtfTeam = 'blue'): void {
     const [x, z] = this.ctf
       ? [CTF_BASES[team].x + (team === 'blue' ? CTF_PLAYER_OFFSET_X : -CTF_PLAYER_OFFSET_X), CTF_BASES[team].z]
-      : SPAWN_POINTS[spawnIndex % SPAWN_POINTS.length]!;
+      : this.spawnPoints[spawnIndex % this.spawnPoints.length]!;
     mech.spawn(this.physics, this._spawn.set(x, 0, z));
     this.scene.add(mech.root);
     mech.onDashImpact = (collider, dir) => this.destructibles.demolish(collider, dir);
@@ -307,7 +410,39 @@ export class Match {
     this.refreshEnemyTargets();
   }
 
+  /** O time de cada Mech, quando a sala tem times (`setTeam`); fora dele valem o CTF e os aliados da Arena. */
+  private readonly teams = new Map<MechBase, number>();
+
+  /** Põe `mech` num time (salas com times). Dois Mechs do mesmo time são aliados: o gelo de um esfria o outro. Sem time, o Mech não é aliado de ninguém por este caminho. */
+  setTeam(mech: MechBase, team: number | null): void {
+    if (team === null) this.teams.delete(mech);
+    else this.teams.set(mech, team);
+  }
+
+  /**
+   * Dois Mechs diferentes estão do mesmo lado? Na ordem: (1) times da sala (`setTeam`); (2) times do CTF; (3) na Arena offline, o jogador e os aliados dele. **Jogadores
+   * contra jogadores (o servidor de hoje, todos contra todos) nunca são do mesmo lado**: dois humanos na mesma partida só são aliados se estiverem no mesmo time.
+   */
+  sameSide(a: MechBase, b: MechBase): boolean {
+    if (a === b) return false;
+    const ta = this.teams.get(a);
+    const tb = this.teams.get(b);
+    if (ta !== undefined && tb !== undefined) return ta === tb;
+    if (this.ctf) {
+      const ca = this.ctf.teamOf(a);
+      return ca !== undefined && ca === this.ctf.teamOf(b);
+    }
+    const aliado = (m: MechBase): boolean => this.allies?.mechs.includes(m) ?? false;
+    if (aliado(a)) return aliado(b) || this.players.includes(b);
+    return aliado(b) && this.players.includes(a);
+  }
+
   /** O inimigo caça todo jogador de gente E todo aliado — a lista muda só quando alguém entra/sai (raro; não é por tick). */
+  /** O lado do jogador (jogadores + aliados): a mesma lista que os inimigos caçam, sem montar outra. */
+  private get friendly(): readonly MechBase[] {
+    return this.bots.targets;
+  }
+
   private refreshEnemyTargets(): void {
     this.bots.targets = this.allies ? [...this.players, ...this.allies.mechs] : this.players;
   }
@@ -316,6 +451,115 @@ export class Match {
    * Corte corpo a corpo de um jogador (motosserra do andróide pilotado): pega o inimigo vivo mais perto
    * dentro do alcance da arma. Regra da partida (o controle só pede); sem ninguém perto, nada acontece.
    */
+  /**
+   * Um pulso do lança-chamas (`Armament` o pede a cada `fireInterval` com o gatilho apertado): dano em **todos** os Mechs vivos dentro do
+   * cone (alcance e meio ângulo da arma, com a folga do raio do corpo) e **à vista** (sem parede no meio; outro Mech não tapa a chama).
+   * Cada alvo leva o dano da distância dele e as defesas, a parte, o abate e o estado de queimando seguem o caminho do projétil
+   * (`combat.onProjectileHit`). O jogador acerta os bots e os outros jogadores, nunca os aliados; o bot acerta os jogadores e os aliados.
+   * Regra da partida (G14): o mesmo código no jogo offline e no servidor; sem alocação (G4).
+   */
+  flameCone(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
+    const f = w.flame;
+    if (!f) return;
+    if (this.players.includes(attacker)) {
+      for (const m of this.bots.mechs) this.flameAt(attacker, origin, dir, w, f, m);
+      for (const m of this.players) this.flameAt(attacker, origin, dir, w, f, m);
+    } else {
+      for (const m of this.players) this.flameAt(attacker, origin, dir, w, f, m);
+      if (this.allies) for (const m of this.allies.mechs) this.flameAt(attacker, origin, dir, w, f, m);
+    }
+  }
+
+  /**
+   * Uma onda sônica (`Armament` a pede a cada aperto do botão 2, uma por boca dos ombros): um cone **de uma vez só** (alcance e meio ângulo da arma, com a folga do raio do
+   * corpo), à vista, em **todos** os inimigos vivos. Cada alvo leva o dano da distância e as defesas pelo caminho do projétil (`combat.onProjectileHit`, natureza `sonico`) e é
+   * **empurrado** para longe da boca (`MechBase.push`), com o empurrão caindo com a distância como o dano. Quem a solta nunca se empurra; aliado nunca é pego. O cliente online (dano
+   * desligado) só desenha. Regra da partida (G14): o mesmo código offline e no servidor; sem alocação (G4).
+   */
+  waveCone(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
+    const wave = w.wave;
+    if (!wave) return;
+    this.onWave?.(origin, dir, attacker.collider, w);
+    this.drawWave(origin, dir, w);
+    if (!this.combat.damageEnabled) return;
+    for (const group of this.foesOf(attacker)) for (const m of group) this.waveAt(attacker, origin, dir, w, m);
+  }
+
+  /** Os grupos de inimigos de quem atira (jogadores, rebeldes ou aliados enxergam lados diferentes). */
+  private foesOf(attacker: MechBase): readonly (readonly MechBase[])[] {
+    return (this.players.includes(attacker) ? this.ringOfPlayers : this.allies?.mechs.includes(attacker) ? this.ringOfAllies : this.ringOfRebels).foes;
+  }
+
+  /**
+   * A trava do míssil teleguiado (`RocketSystem.acquire`): o inimigo vivo **mais centrado no cone** da arma (`Guide`: meio ângulo e alcance da trava), à vista, na hora do
+   * disparo. Quem atira nunca trava em si nem em aliado. Sem alvo, o míssil voa reto. Mesma conta do cone do lança-chamas e da onda (`coneGap`, que também testa a parede).
+   * Deterministico: a ordem das listas decide o empate (o primeiro vence). Roda também no cliente online, só para o desenho.
+   */
+  private seekTarget(origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): MechBase | null {
+    const g = w.guide;
+    const attacker = owner ? this.combat.mechOf(owner) : undefined;
+    if (!g || !attacker) return null;
+    let best: MechBase | null = null;
+    let bestCos = -2;
+    for (const group of this.foesOf(attacker)) {
+      for (const m of group) {
+        if (this.coneGap(attacker, origin, dir, w, g.lockHalfAngle, m, true, g.lockRange) < 0) continue;
+        const cos = _flameTo.dot(dir);
+        if (cos > bestCos) {
+          bestCos = cos;
+          best = m;
+        }
+      }
+    }
+    return best;
+  }
+
+  /** Só o desenho da onda (o outro jogador a vê pelo evento de tiro, sem regra). */
+  drawWave(origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
+    drawWave(this.fx, origin, dir, w);
+    this.onWaveFx?.(origin, dir, w);
+  }
+
+  private waveAt(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, target: MechBase): void {
+    const gap = this.coneGap(attacker, origin, dir, w, w.wave!.halfAngle, target, true);
+    if (gap < 0) return;
+    this.combat.onProjectileHit(_flameHit, dir, hitDamage(w, gap), attacker.collider, w, gap);
+    // O empurrão sai radial da boca (_flameTo, o vetor unitário da boca ao alvo, deixado por `coneGap`), cai com a distância e vai pela resistência do alvo.
+    target.push(_flameTo.x, _flameTo.z, w.wave!.shove * rangeFactor(w, gap));
+  }
+
+  /**
+   * O alvo está dentro do cone de `halfAngle` e à vista de `origin`? Devolve a distância da boca à superfície do alvo (m), ou -1 se não. Deixa o acerto pronto em `_flameHit` e o vetor unitário
+   * da boca ao alvo em `_flameTo`. O lança-chamas e a onda sônica usam a mesma conta; `axis` escolhe o ponto do alvo: o **torso** (o lança-chamas) ou o **ponto do eixo
+   * vertical do corpo mais perto da altura da boca** (a onda: uma pressão que bate no corpo inteiro; sem isto o torso de um robô alto, como o Colossus, ficava fora do cone vertical).
+   */
+  private coneGap(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, halfAngle: number, target: MechBase, axis = false, range = w.maxRange): number {
+    if (target === attacker || !target.alive) return -1;
+    if (axis) {
+      const p = target.simPosition;
+      _flameAt.set(p.x, Math.min(p.y + target.stats.height, Math.max(p.y, origin.y)), p.z);
+    } else target.partWorldPosition('torso', _flameAt, true);
+    _flameTo.subVectors(_flameAt, origin);
+    const dist = _flameTo.length();
+    const r = target.stats.radius;
+    if (dist < 1e-3 || dist > range + r) return -1;
+    // O cone com a folga do corpo: um alvo largo e perto entra mesmo com o centro um pouco fora do eixo.
+    if (_flameTo.dot(dir) / dist < Math.cos(halfAngle + Math.atan2(r, dist))) return -1;
+    _flameTo.multiplyScalar(1 / dist);
+    const wall = this.physics.raycast(origin, _flameTo, dist, attacker.collider);
+    if (wall && wall.collider !== target.collider && !this.combat.mechOf(wall.collider) && wall.distance < dist - r) return -1;
+    _flameHit.point.copy(_flameAt);
+    _flameHit.distance = dist;
+    _flameHit.collider = target.collider;
+    return Math.max(0, dist - r);
+  }
+
+  private flameAt(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, f: Flame, target: MechBase): void {
+    const gap = this.coneGap(attacker, origin, dir, w, f.halfAngle, target);
+    if (gap < 0) return;
+    this.combat.onProjectileHit(_flameHit, dir, hitDamage(w, gap), attacker.collider, w, gap);
+  }
+
   meleeNearest(attacker: MechBase, w: WeaponStats): void {
     const foes = this.players.includes(attacker) ? this.bots.mechs : this.players;
     const a = attacker.simPosition;
@@ -332,6 +576,17 @@ export class Match {
     if (best) this.combat.melee(attacker, best, w);
   }
 
+  /** O anel de fogo de cada Mech que o tem ligado: o passo do Mech (`EnergyShield.step`) já marcou o pulso; aqui ele sai (`combat/FireRing.ts`). */
+  private ringTick(): void {
+    for (const m of this.players) this.ringOf(m, this.ringOfPlayers);
+    for (const m of this.bots.mechs) this.ringOf(m, this.ringOfRebels);
+    if (this.allies) for (const m of this.allies.mechs) this.ringOf(m, this.ringOfAllies);
+  }
+
+  private ringOf(m: MechBase, sides: RingSides): void {
+    if (m.energyShield.kind === 'fire' && m.energyShield.consumePulse()) this.fireRing.pulse(m, sides);
+  }
+
   /**
    * Um tick fixo. Entre rodadas (placar na tela) o mundo fica congelado e só o relógio anda. Devolve
    * true no tick em que uma rodada nova começa.
@@ -340,9 +595,16 @@ export class Match {
     if (this.round.playing) {
       this.waves?.fixedUpdate(dt, this.players.some((player) => player.alive));
       if (this.waves?.ended) return false;
+      // Fogo, choque e gelo: o tempo corre e o dano por segundo sai ANTES dos pilotos, para a velocidade e as travas do tick já usarem o
+      // estado atualizado. Mesma ordem no servidor e no jogo offline (G14).
+      for (const m of this.players) this.combat.tickStatus(m, dt);
+      for (const m of this.bots.mechs) this.combat.tickStatus(m, dt);
+      if (this.allies) for (const m of this.allies.mechs) this.combat.tickStatus(m, dt);
       for (const p of this.pilots) p.fixedUpdate(dt);
       this.bots.fixedUpdate(dt);
       this.allies?.fixedUpdate(dt);
+      this.drones?.fixedUpdate(dt);
+      this.ringTick();
       // Pisão nos dois sentidos: Mech do jogador em andróide rebelde, e Mech rebelde num jogador pequeno.
       // Aliado conta como o próprio jogador aqui (mesmo lado) — pisa e é pisado só pelo inimigo.
       this.crush.tick(dt);
@@ -358,6 +620,7 @@ export class Match {
       this.respawner.fixedUpdate(dt);
       this.projectiles.fixedUpdate(dt);
       this.rockets.fixedUpdate(dt);
+      this.barrage.fixedUpdate(dt);
       this.physics.step();
       this.ctf?.fixedUpdate(dt);
     }
@@ -372,12 +635,13 @@ export class Match {
     this.players.forEach((m, i) => {
       const [x, z] = this.ctf
         ? [CTF_BASES.blue.x + CTF_PLAYER_OFFSET_X, CTF_BASES.blue.z]
-        : SPAWN_POINTS[i % SPAWN_POINTS.length]!;
+        : this.spawnPoints[i % this.spawnPoints.length]!;
       m.respawn(this._spawn.set(x, 0, z));
     });
     if (this.ctf) this.bots.respawnAll();
     this.projectiles.clear();
     this.rockets.clear();
+    this.barrage.clear();
     this.debris.clear();
     this.destructibles.restoreAll();
     this.round.resetScores();
@@ -400,13 +664,15 @@ export class Match {
    */
   private restart(): void {
     this.players.forEach((m, i) => {
-      const [x, z] = SPAWN_POINTS[i % SPAWN_POINTS.length]!;
+      const [x, z] = this.spawnPoints[i % this.spawnPoints.length]!;
       m.respawn(this._spawn.set(x, 0, z));
     });
     this.bots.respawnAll();
     this.allies?.respawnAll();
+    this.drones?.resetAll();
     this.projectiles.clear();
     this.rockets.clear();
+    this.barrage.clear();
     this.debris.clear();
     this.destructibles.restoreAll();
     this.onRoundStart?.();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clientIp, Guard, GUARD_DEFAULTS, normalizeIp } from './guard';
+import { clientCountry, clientIp, Guard, GUARD_DEFAULTS, normalizeIp } from './guard';
 
 describe('a porteira do servidor de jogo', () => {
   it('teto por IP: aceita até `perIp` conexões do mesmo endereço, recusa a seguinte, e libera quando alguém sai', () => {
@@ -48,5 +48,24 @@ describe('a porteira do servidor de jogo', () => {
     expect(normalizeIp('::ffff:1.2.3.4')).toBe('1.2.3.4');
     expect(normalizeIp('2a02::1')).toBe('2a02::1');
     expect(normalizeIp('')).toBe('?');
+  });
+});
+
+describe('clientCountry: o país de quem chegou, só se o outro lado é o túnel local', () => {
+  it('do túnel (loopback) o cabeçalho da Cloudflare vale, em maiúsculas, com XX e lixo virando ??', () => {
+    expect(clientCountry('127.0.0.1', 'br')).toBe('BR');
+    expect(clientCountry('::ffff:127.0.0.1', ['US', 'BR'])).toBe('US');
+    expect(clientCountry('::1', 'T1')).toBe('T1'); // rede Tor
+    expect(clientCountry('127.0.0.1', 'XX')).toBe('??'); // a Cloudflare não soube
+    expect(clientCountry('127.0.0.1', undefined)).toBe('??');
+    expect(clientCountry('127.0.0.1', 'BRASIL')).toBe('??');
+    expect(clientCountry('127.0.0.1', '<script>')).toBe('??');
+    expect(clientCountry('127.0.0.1', '')).toBe('??');
+  });
+
+  it('de qualquer outra máquina o cabeçalho é ignorado: ninguém inventa país para encher a tabela', () => {
+    expect(clientCountry('203.0.113.9', 'BR')).toBe('??');
+    expect(clientCountry('192.168.1.20', 'US')).toBe('??');
+    expect(clientCountry(undefined, 'BR')).toBe('??');
   });
 });

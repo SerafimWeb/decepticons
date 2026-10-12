@@ -2,34 +2,28 @@ import * as THREE from 'three';
 import { GLOW, PALETTE } from '../core/palette';
 import type { MechBase } from '../entities/MechBase';
 import { Android } from '../entities/Android';
-import { ANDROID_STATS, COLOSSUS_BOSS_STATS, VECTOR09_STATS } from '../entities/chassis';
+import { ANDROID_STATS, CHASSIS, COLOSSUS_BOSS_STATS, VECTOR09_STATS, type ChassisId } from '../entities/chassis';
+import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
 import { COLOSSUS_01_BLUEPRINT } from '../entities/mechBlueprint';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
-import { PERSONA_LABELS, type Persona } from '../core/Settings';
-import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BotController, type BotSkill, MECH_PROFILE, PERSONAS } from './BotController';
+import { PERSONA_LABELS, type Difficulty, type Persona } from '../core/Settings';
+import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BOT_SKILLS, BotController, type BotSkill, type SquadOrder, MECH_PROFILE, PERSONAS } from './BotController';
 import type { CombatSystem } from './CombatSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
+import { weapon, type Tier, type WeaponId } from './weapons';
 import { REPAIR_RATE } from './repair';
 import { TechnicianController } from './TechnicianController';
 import type { Respawner } from './Respawner';
 import { defaultPower, poweredStats, type PowerSpec } from '../tuning/power';
+import { BOT_NAMES } from '../core/botNames';
+import { wrapAngle } from './steer';
 
 export const BOT_RESPAWN_S = 4;
 /** IA rebelde: vermelho, com visor e tiros vermelhos (o jogador é amarelo com verde neon). */
 const BOT_PAINT = PALETTE.enemyPaint;
 const MUZZLE_COLOR = GLOW.enemyMuzzle;
-/**
- * Nomes das IAs rebeldes, por tipo, na ordem em que entram na arena. Paródias das IAs de verdade (dono, 25/09:
- * "chad-gpt, geminai, kuen, dipsik: nomes meio engraçados, que as pessoas entendam a alusão"), no lugar das
- * marcas registradas. É a única lista a trocar.
- */
-export const BOT_NAMES = {
-  mechs: ['CLAWD', 'GEMINAI', 'CHAD-GPT'],
-  androids: ['KUEN', 'DIPSIK', 'MISTRAU'],
-  technicians: ['ENTRÓPICO'],
-} as const;
 
 const pick = (list: readonly string[], i: number, prefix: string) => list[i] ?? `${prefix}-${String(i + 1).padStart(2, '0')}`;
 /** O diretor redistribui as vagas de ataque a cada tanto (não a cada tick: 5 vezes por segundo basta). */
@@ -38,8 +32,31 @@ const DIRECTOR_INTERVAL_S = 0.2;
 const TURN_S = 7;
 /** Custo de uma vaga: um Mech conta 1, um andróide conta ½ (é fraco). */
 const ANDROID_COST = 0.5;
+/**
+ * Cerco (11/10): quem espera a vaga vai para o flanco do alvo, a este ângulo (~100°) da frente dele (para onde o
+ * torso aponta); o segundo do mesmo lado vai mais para trás, de `FLANK_STEP_RAD` em `FLANK_STEP_RAD`, até as costas.
+ */
+const FLANK_RAD = 1.75;
+const FLANK_STEP_RAD = 0.8;
+/** Perto da frente do alvo (menos que isto), o lado do flanco vai para o lado com menos gente. */
+const FLANK_TIE_RAD = 0.5;
+/** Rádio do clã: alcance do aviso de contato entre companheiros (m). */
+export const RADIO_RANGE = 80;
+/** Aviso de rádio na tela: no máximo um a cada tanto por time (não vira ruído). */
+const RADIO_CALLOUT_S = 8;
 
 const _muzzle = new THREE.Vector3();
+
+/**
+ * O que um robô do esquadrão tem de próprio (P91, `sim/esquadrao.ts`): o corpo (os números do chassi e a silhueta), a arma principal e a
+ * dificuldade. Ausente = o padrão do clã. Quem monta é a partida; o que a IA faz com a arma (a distância de tiro) está em `BotController`.
+ */
+export interface BotKit {
+  chassi?: ChassisId;
+  /** Troca a arma principal (a secundária sai: o bot só atira a principal). */
+  arma?: { id: WeaponId; tier: Tier } | null;
+  dificuldade?: Difficulty | null;
+}
 
 export interface BotSystemOptions {
   scene: THREE.Scene;
@@ -52,6 +69,10 @@ export interface BotSystemOptions {
   respawn?: boolean;
   /** No CTF, cada defensor renasce na própria base em vez do ponto global mais distante. */
   respawnAtHome?: boolean;
+  /** Jogadores que a equipe acompanha (lista viva, sem cópia por tick). */
+  escort?: readonly MechBase[];
+  /** Nomes na tela (padrão: os de `core/botNames.ts`; o time de aliados usa os nomes dos aliados). */
+  names?: { mechs?: readonly string[]; androids?: readonly string[]; technicians?: readonly string[] };
   /**
    * Cor do casco e do visor (padrão: as de sempre, roxo/violeta — "IA rebelde"). Um segundo `BotSystem`
    * pode passar as cores do jogador aqui pra virar um time de aliados, visualmente diferente do inimigo
@@ -73,8 +94,26 @@ export interface BotSystemOptions {
   skill?: BotSkill;
   /** Personalidade de cada Mech rebelde, na ordem dos `spawns` (padrão: soldado). */
   personas?: readonly Persona[];
+  /**
+   * O kit de cada Mech, na ordem dos `spawns` (esquadrão, P91). Quando existe, o esquadrão diz a arma de cada um e o supressor
+   * automático dos aliados (o de índice ímpar leva o EMP) deixa de valer: o aliado de EMP é uma escolha do esquadrão, não uma regra.
+   */
+  kits?: readonly (BotKit | undefined)[];
+  /** O kit de cada andróide, na ordem dos `androidSpawns` (só a dificuldade vale). */
+  androidKits?: readonly (BotKit | undefined)[];
   /** Potências do painel (por arma e por clã); sem isso, o padrão do jogo. */
   power?: PowerSpec;
+}
+
+/** Rádio do clã, para a tela: `from` avistou `target` (primeiro contato; no máximo um aviso a cada `RADIO_CALLOUT_S`). */
+export type RadioCallout = (from: string, target: MechBase) => void;
+
+/** Lugar de um cérebro de combate na fila do diretor: chave de ordem e o lado do cerco (+1/−1, 0 = sem flanco). */
+interface Fighter {
+  bot: Bot;
+  brain: BotController;
+  key: number;
+  side: number;
 }
 
 interface Bot {
@@ -82,6 +121,8 @@ interface Bot {
   brain: BotController | TechnicianController;
   name: string;
   home: THREE.Vector3;
+  /** A dificuldade é do robô (esquadrão): a das configurações não a troca. */
+  ownSkill?: boolean;
   /** Feixe de conserto (só técnicos): 2 pontos atualizados no render, sem alocar. */
   beam?: THREE.Line;
 }
@@ -99,6 +140,8 @@ export class BotSystem {
   targets: readonly MechBase[] = [];
   readonly mechs: readonly MechBase[];
   private readonly bots: Bot[] = [];
+  /** Reservas retiradas da sala quando entram humanos; não renascem durante a reserva. */
+  private readonly reserves = new Set<MechBase>();
   /** O Colossus (escala 3), quando a missão tem boss: guardado à parte para o recorte de onda contá-lo. */
   private bossMech: MechBase | null = null;
   /**
@@ -107,17 +150,32 @@ export class BotSystem {
    * juntam"). Técnica clássica de jogos de tiro: pressão constante, sem todo mundo de uma vez.
    */
   maxAttackers = Infinity;
+  order: SquadOrder = 'follow';
+  private pendingOrder: SquadOrder | null = null;
+  private orderTarget: MechBase | null = null;
+  private readonly orderPoint = new THREE.Vector3();
+  /** UI apenas enfileira; ordens são aplicadas dentro do tick. */
+  queueOrder(order: SquadOrder, point: Readonly<THREE.Vector3>, target: MechBase | null = null): boolean {
+    if (!this.o.escort || (order === 'focus' && (!target?.alive || !this.targets.includes(target)))) return false;
+    this.pendingOrder = order;
+    this.orderPoint.copy(point);
+    this.orderTarget = target;
+    return true;
+  }
   private directorTimer = 0;
   /** Cérebros de combate (o diretor só olha para eles) e a fila ordenada, reaproveitados: sem alocar. */
-  private readonly fighters: { bot: Bot; brain: BotController; key: number }[] = [];
-  private readonly cand: { bot: Bot; brain: BotController; key: number }[] = [];
+  private readonly fighters: Fighter[] = [];
+  private readonly cand: Fighter[] = [];
+  /** Aviso de rádio na tela (o `Game` liga; o servidor não). */
+  onRadio?: RadioCallout;
+  private radioQuiet = 0;
   private readonly projectiles: ProjectileSystem;
   private readonly combat: CombatSystem;
   private readonly particles: ParticleSystem;
   /** Ritmo do conserto do técnico (potência do clã; 1 = padrão). */
   private readonly repairScale: number;
 
-  constructor(o: BotSystemOptions) {
+  constructor(private readonly o: BotSystemOptions) {
     this.projectiles = o.projectiles;
     this.combat = o.combat;
     this.particles = o.particles;
@@ -130,22 +188,25 @@ export class BotSystem {
       o.combat.register(mech);
       return new THREE.Vector3(x, 0, z);
     };
-    const fighter = (mech: MechBase, p: readonly [number, number], name: string, i: number, android: boolean) => {
+    const fighter = (mech: MechBase, p: readonly [number, number], name: string, i: number, android: boolean, kit?: BotKit) => {
       const home = place(mech, p);
       const persona = PERSONAS[(!android && o.personas?.[i]) || 'soldado'];
-      const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, o.skill ?? BOT_SKILL_NORMAL, android ? ANDROID_PROFILE : MECH_PROFILE, persona);
+      const ownSkill = !!kit?.dificuldade;
+      const skill = kit?.dificuldade ? BOT_SKILLS[kit.dificuldade] : o.skill ?? BOT_SKILL_NORMAL;
+      const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, skill, android ? ANDROID_PROFILE : MECH_PROFILE, persona);
+      brain.escortSide = i % 2 ? 1 : -1;
       if (o.respawn !== false) {
         o.respawner.track(mech, BOT_RESPAWN_S, () => {
           if (o.respawnAtHome) mech.respawn(home);
           brain.reset();
         });
       }
-      this.bots.push({ mech, brain, name, home });
+      this.bots.push({ mech, brain, name, home, ...(ownSkill ? { ownSkill } : {}) });
     };
     // No placar e no nome sobre a cabeça, o nome e a personalidade (CLAUDE·BRABO): o jogador aprende quem é quem.
     const mechName = (i: number) => {
       const persona = o.personas?.[i];
-      const name = pick(BOT_NAMES.mechs, i, 'M');
+      const name = pick(o.names?.mechs ?? (o.escort ? BOT_NAMES.allies : BOT_NAMES.mechs), i, 'M');
       return persona && persona !== 'soldado' ? `${name}·${PERSONA_LABELS[persona].label.toUpperCase()}` : name;
     };
     // Potências: os números de cada clã são montados uma vez aqui (nada muda no tick).
@@ -155,10 +216,25 @@ export class BotSystem {
     this.repairScale = power.clans.technician.damage;
     const paint = o.paint ?? BOT_PAINT;
     const visor = o.visor ?? PALETTE.signal;
-    o.spawns.forEach((p, i) => fighter(new Vector09({ paint, visor, stats: mechStats }), p, mechName(i), i, false));
+    const suppressionStats = o.escort ? poweredStats({ ...VECTOR09_STATS,
+      loadout: { primary: weapon('emp'), secondary: null } }, power, 'mechs') : mechStats;
+    // O corpo de cada Mech: sem kits, o de sempre (e o supressor nos aliados de índice ímpar); com kits, o que o esquadrão pediu.
+    const statsDoMech = (i: number, kit: BotKit | undefined) => {
+      if (!o.kits) return o.escort && i % 2 ? suppressionStats : mechStats;
+      const base = kit?.chassi ? CHASSIS[kit.chassi] : VECTOR09_STATS;
+      if (kit?.arma) {
+        const { metalShield } = base.loadout;
+        return poweredStats({ ...base, loadout: { ...(metalShield ? { metalShield } : {}), primary: weapon(kit.arma.id, kit.arma.tier), secondary: null } }, power, 'mechs');
+      }
+      return kit?.chassi ? poweredStats(base, power, 'mechs') : mechStats;
+    };
+    o.spawns.forEach((p, i) => {
+      const kit = o.kits?.[i];
+      fighter(new Vector09({ paint, visor, stats: statsDoMech(i, kit), blueprint: kit?.chassi ? BLUEPRINT_BY_CHASSIS[kit.chassi] : undefined }), p, mechName(i), i, false, kit);
+    });
 
     // Andróides: sementes depois das dos Mechs.
-    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true));
+    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(o.names?.androids ?? BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true, o.androidKits?.[i]));
     // O Colossus (escala 3), quando a missão tem boss: nasce no ponto dedicado, com o perfil de cerco e sem
     // personalidade de piloto (não é um rebelde, é uma máquina). Entra no pool como os outros: nada é criado no tick.
     if (o.bossSpawn) {
@@ -184,10 +260,39 @@ export class BotSystem {
       beam.visible = false;
       beam.frustumCulled = false;
       o.scene.add(beam);
-      this.bots.push({ mech, brain, name: pick(BOT_NAMES.technicians, i, 'T'), home, beam });
+      this.bots.push({ mech, brain, name: pick(o.names?.technicians ?? BOT_NAMES.technicians, i, 'T'), home, beam });
     });
     this.mechs = this.bots.map((b) => b.mech);
-    for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0 });
+    for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0, side: 0 });
+  }
+
+  /** Só muda os bots que cruzam o limite; mantém a vida dos demais e os técnicos. */
+  setMechCapacity(count: number): void {
+    let index = 0;
+    for (const { mech, brain, home } of this.bots) {
+      if (!(brain instanceof BotController) || mech instanceof Android || mech === this.bossMech) continue;
+      const enabled = index++ < Math.max(0, count);
+      if (enabled === !this.reserves.has(mech)) continue;
+      if (!enabled) {
+        this.reserves.add(mech);
+        this.o.respawner.untrack(mech);
+        mech.deactivate();
+      } else {
+        this.reserves.delete(mech);
+        mech.respawn(home);
+        mech.applyFacing(Math.atan2(home.x, home.z), 0);
+        brain.reset();
+        if (this.o.respawn !== false) this.o.respawner.track(mech, BOT_RESPAWN_S, () => {
+          if (this.o.respawnAtHome) mech.respawn(home);
+          brain.reset();
+        });
+      }
+    }
+    this.directorTimer = 0;
+  }
+
+  isReserved(mech: MechBase): boolean {
+    return this.reserves.has(mech);
   }
 
   nameOf(mech: MechBase): string {
@@ -197,6 +302,7 @@ export class BotSystem {
   /** Rodada nova: todos inteiros de volta ao ponto de nascimento, olhando o centro, cérebro zerado. */
   respawnAll(): void {
     for (const { mech, brain, home } of this.bots) {
+      if (this.reserves.has(mech)) continue;
       mech.respawn(home);
       mech.applyFacing(Math.atan2(home.x, home.z), 0);
       brain.reset();
@@ -244,7 +350,7 @@ export class BotSystem {
 
   /** Troca a dificuldade de todos os bots (vale a partir do próximo tick). */
   setSkill(skill: BotSkill): void {
-    for (const b of this.bots) if (b.brain instanceof BotController) b.brain.skill = skill;
+    for (const b of this.bots) if (b.brain instanceof BotController && !b.ownSkill) b.brain.skill = skill;
   }
 
   /** Cérebro de combate de um bot (HUD de debug e testes); undefined para técnicos. */
@@ -265,6 +371,14 @@ export class BotSystem {
     this.brainOf(mech)?.alert(shooter);
   }
 
+  /** Um companheiro pede ajuda: informação de impacto, sem conceder visão através de paredes. */
+  defend(player: MechBase, shooter: MechBase | undefined): void {
+    if (!shooter || !this.targets.includes(shooter)) return;
+    for (const { bot, brain } of this.fighters) {
+      if (bot.mech.alive && bot.mech.simPosition.distanceToSquared(player.simPosition) < 60 * 60) brain.alert(shooter);
+    }
+  }
+
   /**
    * Diretor de ataque: dá as vagas a quem quer atacar, nesta ordem: quem já tem a vaga e está no turno,
    * a prioridade da personalidade (o brabo primeiro), quem espera há mais tempo, e o mais perto do alvo.
@@ -280,6 +394,8 @@ export class BotSystem {
     for (const q of this.fighters) {
       const { brain } = q;
       const target = brain.currentTarget;
+      q.side = 0;
+      brain.hasFlank = false;
       if (!q.bot.mech.alive || !brain.wantsToken || !target) {
         brain.hasToken = false;
         brain.tokenHeld = 0;
@@ -316,13 +432,92 @@ export class BotSystem {
         q.brain.tokenWait += DIRECTOR_INTERVAL_S;
       }
     }
+    this.surround();
+  }
+
+  /**
+   * Cerco: cada um que espera a vaga ganha um flanco do alvo dele, a `FLANK_RAD` da frente do alvo (para onde o torso
+   * dele aponta, o que qualquer piloto vê), do lado em que já está (perto da frente, do lado com menos gente); o
+   * segundo do mesmo lado vai mais para trás. Quando a vaga passar, ele ataca de onde o alvo não está olhando.
+   * A referência é a frente do alvo, não quem ataca: quem ataca anda de lado em volta dele e arrastaria o flanco junto.
+   * Determinístico (ordem da fila); custo: ≤ 8 × 8 contas, 5 vezes por segundo.
+   */
+  private surround(): void {
+    const cand = this.cand;
+    for (const q of cand) {
+      const brain = q.brain;
+      if (brain.hasToken || brain.profile.steady || brain.profile.melee) continue;
+      const target = brain.currentTarget;
+      if (!target) continue;
+      const tp = target.simPosition;
+      // A frente do alvo é (-sen yaw, -cos yaw); a direção dela, na convenção do cerco (0 = +Z).
+      const anchor = Math.atan2(-Math.sin(target.yaw), -Math.cos(target.yaw));
+      const me = q.bot.mech.simPosition;
+      const off = wrapAngle(Math.atan2(me.x - tp.x, me.z - tp.z) - anchor);
+      let left = 0;
+      let right = 0;
+      for (const o of cand) {
+        if (o === q) break;
+        if (o.side !== 0 && o.brain.currentTarget === target) o.side > 0 ? left++ : right++;
+      }
+      q.side = Math.abs(off) < FLANK_TIE_RAD ? (left <= right ? 1 : -1) : Math.sign(off);
+      const rank = q.side > 0 ? left : right;
+      brain.flankBearing = anchor + q.side * Math.min(Math.PI, FLANK_RAD + rank * FLANK_STEP_RAD);
+      brain.hasFlank = true;
+    }
+  }
+
+  /**
+   * Rádio do clã: quem está vendo o alvo passa a posição aos companheiros a até `RADIO_RANGE` (quem não vê ninguém vai
+   * lá). O primeiro contato vira aviso na tela. Custo: ≤ 8 contas, no máximo a cada 1,5 s por bot.
+   */
+  private radio(from: Bot, brain: BotController): void {
+    const target = brain.radioReport;
+    brain.radioReport = null;
+    if (!target?.alive) return;
+    const p = from.mech.simPosition;
+    for (const { bot, brain: mate } of this.fighters) {
+      if (mate === brain || !bot.mech.alive || this.reserves.has(bot.mech)) continue;
+      if (bot.mech.simPosition.distanceToSquared(p) > RADIO_RANGE * RADIO_RANGE) continue;
+      mate.hear(target, target.simPosition);
+    }
+    if (!brain.radioContact) return;
+    brain.radioContact = false;
+    if (this.radioQuiet > 0) return;
+    this.radioQuiet = RADIO_CALLOUT_S;
+    this.onRadio?.(from.name, target);
   }
 
   fixedUpdate(dt: number): void {
+    if (this.pendingOrder) {
+      this.order = this.pendingOrder;
+      this.pendingOrder = null;
+      for (const { brain } of this.fighters) brain.receiveOrder(this.order, this.orderPoint, this.orderTarget);
+    }
+    let focusing = false;
+    if (this.order === 'focus') for (const { brain } of this.fighters) if (brain.order === 'focus') focusing = true;
+    if (this.order === 'focus' && (!this.orderTarget?.alive || !focusing)) {
+      this.order = 'follow';
+      for (const { brain } of this.fighters) brain.receiveOrder('follow', this.orderPoint, null);
+    }
     this.direct(dt);
-    for (const { mech, brain } of this.bots) {
+    this.radioQuiet -= dt;
+    for (const bot of this.bots) {
+      const { mech, brain } = bot;
       if (!mech.alive) continue;
-      mech.fixedUpdate(brain.think(dt, this.targets), dt);
+      if (brain instanceof BotController && this.o.escort) {
+        let leader: MechBase | null = null;
+        let distance = Infinity;
+        for (const player of this.o.escort) {
+          const d = player.simPosition.distanceToSquared(mech.simPosition);
+          if (player.alive && d < distance) { leader = player; distance = d; }
+        }
+        brain.leader = leader;
+      }
+      const input = brain.think(dt, this.targets);
+      if (brain instanceof BotController && brain.radioReport) this.radio(bot, brain);
+      mech.guard(brain instanceof BotController && brain.wantsGuard);
+      mech.fixedUpdate(input, dt);
       // Técnico no alcance: o conserto é regra do tick (quem escolhe o Mech é o cérebro).
       if (brain instanceof TechnicianController && brain.repairTarget) brain.repairTarget.repair(REPAIR_RATE * this.repairScale * dt);
       if (!brain.wantsToFire) continue;

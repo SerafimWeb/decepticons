@@ -1,13 +1,17 @@
+import { applyEmp } from './EmpEffect';
+import { inflictOnHit, STATUS } from './StatusEffects';
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { GLOW } from '../core/palette';
-import type { MechBase, MechPart } from '../entities/MechBase';
+import { SHAPE } from '../fx/particleShapes';
+import { MechBase, type MechPart } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
 import type { Destructibles } from '../environment/Destructibles';
-import type { ParticleSystem } from '../fx/ParticleSystem';
+import type { BurstOptions, ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
 import type { DamageResult } from './damage';
-import { splashDamage, weapon, type WeaponStats } from './weapons';
+import { hitFlinch, hitPush } from './reaction';
+import { DAMAGE_TYPE, splashDamage, weapon, type WeaponStats } from './weapons';
 
 /** Tamanho do pedaço que vira destroço quando a parte é arrancada. */
 const PART_CHUNK: Record<MechPart, THREE.Vector3> = {
@@ -26,6 +30,9 @@ const UP = new THREE.Vector3(0, 1, 0);
 const SPARK = new THREE.Color(3.0, 1.3, 0.3);
 const FIRE = new THREE.Color(3.5, 1.1, 0.15);
 const SMOKE = GLOW.smoke;
+
+/** O sopro de frio no aliado que o gelo amigo esfria: vapor azulado que sobe devagar (sem flocos: ele não congela). */
+const COOLED: BurstOptions = { count: 5, color: new THREE.Color(0.5, 0.85, 1.1), speed: 2.4, life: 0.8, size: 1.7, expansion: 1.2, spread: 1.1, gravity: -0.8, shape: SHAPE.puff };
 
 const _at = new THREE.Vector3();
 const _near = new THREE.Vector3();
@@ -65,6 +72,12 @@ export class CombatSystem {
    */
   damageEnabled = true;
 
+  /**
+   * Os dois estão do mesmo lado? (`Match.sameSide`: aliados da Arena offline e times). Sem esta regra (o servidor de hoje, todos contra todos) ninguém é aliado
+   * de ninguém e o gelo congela quem for. Só o gelo a lê (`friendlyChill`); o resto do dano ainda não distingue o lado (fogo amigo continua como era).
+   */
+  sameSide?: (a: MechBase, b: MechBase) => boolean;
+
   register(mech: MechBase): void {
     this.byCollider.set(mech.collider.handle, mech);
   }
@@ -94,15 +107,18 @@ export class CombatSystem {
       const flat = Math.hypot(dx, dz);
       const k = flat > radius ? radius / flat : 1;
       _near.set(p.x + dx * k, y, p.z + dz * k);
-      const damage = splashDamage(w, Math.hypot(Math.max(0, flat - radius), at.y - y));
+      const damage = splashDamage(w, Math.hypot(Math.max(0, flat - radius), at.y - y)) * (shooter?.combatBoost.damageMultiplier ?? 1);
       if (damage <= 0) continue;
-      const result = mech.takeHit(_near, damage);
+      const remaining = mech.defend(damage, DAMAGE_TYPE[w.id], at.x - p.x, at.y - p.y - height * 0.5, at.z - p.z);
+      const result = mech.takeHit(_near, remaining);
       if (result.applied <= 0) continue;
+      this.react(mech, p.x - at.x, p.z - at.z, w, result.applied);
       if (result.killed) this.wreck(mech, dir, shooter);
       else if (result.partDestroyed) this.tearOff(mech, result.part, dir);
+      else if (w.inflicts && remaining >= damage * STATUS.shieldPass) inflictOnHit(mech.status, w.inflicts, result.part, shooter);
       this.onMechHit?.({ mech, result, shooter });
     }
-    this.destructibles.damageInRadius(at, w.blastRadius, w.damage, dir);
+    this.destructibles.damageInRadius(at, w.blastRadius, w.damage * (shooter?.combatBoost.damageMultiplier ?? 1), dir);
   }
 
   /**
@@ -121,7 +137,10 @@ export class CombatSystem {
     if (d - attacker.stats.radius - target.stats.radius > w.maxRange) return;
     const y = Math.min(t.y + target.stats.height, Math.max(t.y, a.y + attacker.stats.height * 0.5));
     _near.set(t.x + (dx / d) * target.stats.radius, y, t.z + (dz / d) * target.stats.radius);
-    const result = target.takeHit(_near, w.damage);
+    // Só a chapa do escudo físico segura a lâmina; o campo de energia não (barreira e esfera deixam a serra passar).
+    const blade = w.damage * attacker.combatBoost.damageMultiplier;
+    const cut = target.modules.leftArm > 0 ? target.metalShield.absorb(blade, DAMAGE_TYPE[w.id], dx, dz, target.yaw) : blade;
+    const result = target.takeHit(_near, cut);
     if (result.applied <= 0) return;
     // Faíscas saem para cima; destroço e carcaça são empurrados para longe de quem cortou.
     this.particles.burst(_near, UP, { count: 10, color: SPARK, speed: 12, life: 0.3, size: 0.8, spread: 0.9 });
@@ -145,24 +164,74 @@ export class CombatSystem {
     this.onMechHit?.({ mech: small, result, shooter: big, kind: 'crush' });
   }
 
+  /**
+   * A reação do alvo ao acerto (`combat/reaction.ts`): o empurrão (regra de simulação) e o tranco do torso (desenho), na direção `dx, dz` (a do tiro, ou para longe da
+   * explosão), na medida do dano que passou. Sem alocação (G4).
+   */
+  private react(mech: MechBase, dx: number, dz: number, w: WeaponStats, applied: number): void {
+    mech.push(dx, dz, hitPush(w, applied));
+    mech.flinch(dx, dz, hitFlinch(applied));
+  }
+
   /** O Mech dono deste colisor (mira, tiro automático), ou undefined para cenário. */
   mechOf(collider: RAPIER.Collider | null): MechBase | undefined {
     return collider ? this.byCollider.get(collider.handle) : undefined;
   }
 
-  onProjectileHit(hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider): void {
+  onProjectileHit(hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider, w?: WeaponStats, distance = 0): void {
     if (!this.damageEnabled) return;
+    damage *= owner ? (this.byCollider.get(owner.handle)?.combatBoost.damageMultiplier ?? 1) : 1;
     const mech = this.byCollider.get(hit.collider.handle);
     if (!mech) {
       this.destructibles.damage(hit.collider, damage, dir);
       return;
     }
     const shooter = owner ? this.byCollider.get(owner.handle) : undefined;
-    const result = mech.takeHit(hit.point, damage);
+    if (shooter && shooter !== mech && w?.inflicts === 'chill' && this.sameSide?.(shooter, mech)) {
+      this.friendlyChill(mech, hit.point, w);
+      return;
+    }
+    if (w) applyEmp(mech, w, distance);
+    const remaining = mech.defend(damage, w ? DAMAGE_TYPE[w.id] : 'termico', -dir.x, -dir.y, -dir.z);
+    const result = mech.takeHit(hit.point, remaining);
     if (result.applied <= 0) return;
+    if (w) this.react(mech, dir.x, dir.z, w, result.applied);
     if (result.killed) this.wreck(mech, dir, shooter);
-    else if (result.partDestroyed) this.tearOff(mech, result.part, dir);
+    else {
+      if (result.partDestroyed) this.tearOff(mech, result.part, dir);
+      // Fogo, choque ou gelo: só se o tiro chegou ao corpo (o escudo que absorveu tudo não deixa estado). A cabeça vale o atordoamento do choque.
+      if (w?.inflicts && remaining >= damage * STATUS.shieldPass) inflictOnHit(mech.status, w.inflicts, result.part, shooter);
+    }
     this.onMechHit?.({ mech, result, shooter });
+  }
+
+  /**
+   * O gelo de um aliado esfria em vez de congelar: tira calor (`STATUS.friendlyVentPerDamage` por ponto de dano da arma, no nível dela) e apaga o fogo, sem dano e sem
+   * estado de gelo. O escudo e a chapa não entram (é ajuda, não ataque). Sem `onMechHit`: o marcador de acerto do HUD é de dano.
+   */
+  private friendlyChill(mech: MechBase, at: THREE.Vector3, w: WeaponStats): void {
+    if (!mech.alive) return;
+    mech.vent(w.damage * STATUS.friendlyVentPerDamage);
+    mech.status.douse();
+    this.particles.burst(at, UP, COOLED);
+  }
+
+  /**
+   * Um tick dos estados de um Mech (`combat/StatusEffects.ts`): o tempo corre e o dano por segundo (queimadura, choque) sai do torso;
+   * se mata, o abate é de quem aplicou por último. O tempo corre mesmo com o dano desligado (o cliente online): só o servidor tira vida.
+   * Sem `onMechHit` a cada tick: o marcador de acerto do HUD seria um chiado.
+   */
+  tickStatus(mech: MechBase, dt: number): void {
+    const s = mech.status;
+    const killer = s.source instanceof MechBase ? s.source : undefined;
+    const heat = s.heatPerSecond * dt;
+    const damage = s.step(dt);
+    if (!this.damageEnabled || !mech.alive) return;
+    if (heat > 0) mech.absorbBurn(heat);
+    if (damage <= 0) return;
+    const result = mech.statusDamage(damage);
+    if (result.killed) this.wreck(mech, UP, killer);
+    else if (result.partDestroyed) this.tearOff(mech, result.part, UP);
   }
 
   /** A parte some do modelo (MechBase) e o pedaço cai no chão como destroço. */

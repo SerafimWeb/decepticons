@@ -13,6 +13,8 @@ import {
   type Settings,
 } from '../core/Settings';
 
+import { attachSettingsTabs, isSettingsTab, type SettingsTab } from './settingsTabs';
+
 const $ = (id: string) => document.getElementById(id)!;
 
 export class SettingsMenu {
@@ -28,12 +30,19 @@ export class SettingsMenu {
   private readonly chkAutoFire = $('setting-autofire') as HTMLInputElement;
   private readonly sliderFov = $('setting-fov') as HTMLInputElement;
   private readonly valFov = $('val-fov');
+  private readonly sliderReticleSize = $('setting-reticle-size') as HTMLInputElement;
+  private readonly valReticleSize = $('val-reticle-size');
+  private readonly sliderReticleOpacity = $('setting-reticle-opacity') as HTMLInputElement;
+  private readonly valReticleOpacity = $('val-reticle-opacity');
+  private readonly sliderGlow = $('setting-glow') as HTMLInputElement;
+  private readonly valGlow = $('val-glow');
   private readonly selQuality = $('setting-quality') as HTMLSelectElement;
   private readonly selDiff = $('setting-diff') as HTMLSelectElement;
   private readonly chkShowPerf = $('setting-showperf') as HTMLInputElement;
   private readonly sliderVolume = $('setting-volume') as HTMLInputElement;
   private readonly valVolume = $('val-volume');
 
+  private readonly tabs: { select(tab: SettingsTab): void };
   private remappingAction: KeyAction | null = null;
   private keyButtons: Record<KeyAction, HTMLButtonElement>;
 
@@ -45,10 +54,12 @@ export class SettingsMenu {
       right: $('key-right') as HTMLButtonElement,
       jump: $('key-jump') as HTMLButtonElement,
       dash: $('key-dash') as HTMLButtonElement,
-      secondary: $('key-secondary') as HTMLButtonElement,
+      secondary: $('key-secondary-bind') as HTMLButtonElement,
       camera: $('key-camera') as HTMLButtonElement,
+      shield: $('key-shield') as HTMLButtonElement,
     };
 
+    this.tabs = attachSettingsTabs(this.modal);
     this.initDOM();
     this.wireEvents();
     this.settings.onChange((s) => this.render(s));
@@ -63,6 +74,16 @@ export class SettingsMenu {
     this.sliderFov.min = LIMITS.fovOffset.min.toString();
     this.sliderFov.max = LIMITS.fovOffset.max.toString();
     this.sliderFov.step = LIMITS.fovOffset.step.toString();
+
+    for (const [slider, lim] of [
+      [this.sliderReticleSize, LIMITS.reticleSize],
+      [this.sliderReticleOpacity, LIMITS.reticleOpacity],
+      [this.sliderGlow, LIMITS.glow],
+    ] as const) {
+      slider.min = lim.min.toString();
+      slider.max = lim.max.toString();
+      slider.step = lim.step.toString();
+    }
 
     this.sliderVolume.min = LIMITS.volume.min.toString();
     this.sliderVolume.max = LIMITS.volume.max.toString();
@@ -79,10 +100,15 @@ export class SettingsMenu {
   }
 
   private wireEvents(): void {
-    this.btnOpen.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.open();
-    });
+    // Os botões do console de comando abrem direto numa aba (`data-settings-open`); o `btn-settings` é um deles.
+    const entries = new Set<HTMLElement>([this.btnOpen, ...document.querySelectorAll<HTMLElement>('[data-settings-open]')]);
+    for (const el of entries) {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tab = el.dataset.settingsOpen;
+        this.open(isSettingsTab(tab) ? tab : undefined);
+      });
+    }
 
     this.btnClose.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -113,6 +139,23 @@ export class SettingsMenu {
       const val = parseInt(this.sliderFov.value, 10);
       this.valFov.textContent = `${val >= 0 ? '+' : ''}${val}°`;
       this.settings.update({ fovOffset: val });
+    });
+
+    const pct = (v: number) => `${Math.round(v * 100)}%`;
+    this.sliderReticleSize.addEventListener('input', () => {
+      const v = parseFloat(this.sliderReticleSize.value);
+      this.valReticleSize.textContent = pct(v);
+      this.settings.update({ reticleSize: v });
+    });
+    this.sliderReticleOpacity.addEventListener('input', () => {
+      const v = parseFloat(this.sliderReticleOpacity.value);
+      this.valReticleOpacity.textContent = pct(v);
+      this.settings.update({ reticleOpacity: v });
+    });
+    this.sliderGlow.addEventListener('input', () => {
+      const v = parseFloat(this.sliderGlow.value);
+      this.valGlow.textContent = pct(v);
+      this.settings.update({ glow: v });
     });
 
     this.selQuality.addEventListener('change', () => {
@@ -206,7 +249,9 @@ export class SettingsMenu {
     setTimeout(() => btn.classList.remove('error'), 400);
   }
 
-  open(): void {
+  /** Abre o modal; com `tab`, já na aba pedida (senão, na última que estava aberta). */
+  open(tab?: SettingsTab): void {
+    if (tab) this.tabs.select(tab);
     this.modal.classList.remove('hidden');
     this.render(this.settings.value);
   }
@@ -226,6 +271,13 @@ export class SettingsMenu {
 
     this.sliderFov.value = s.fovOffset.toString();
     this.valFov.textContent = `${s.fovOffset >= 0 ? '+' : ''}${s.fovOffset}°`;
+
+    this.sliderReticleSize.value = s.reticleSize.toString();
+    this.valReticleSize.textContent = `${Math.round(s.reticleSize * 100)}%`;
+    this.sliderReticleOpacity.value = s.reticleOpacity.toString();
+    this.valReticleOpacity.textContent = `${Math.round(s.reticleOpacity * 100)}%`;
+    this.sliderGlow.value = s.glow.toString();
+    this.valGlow.textContent = `${Math.round(s.glow * 100)}%`;
 
     this.selQuality.value = s.quality;
     this.selDiff.value = s.difficulty;

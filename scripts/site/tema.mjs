@@ -134,16 +134,18 @@ export const BASE_CSS = `
   footer { color: var(--faint); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; border-top: 1px solid var(--line); padding-top: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: space-between; }
   footer a { color: var(--muted); }
 
-  /* Anti-cópia (pedido do dono, 27/09/2026): o texto público não é selecionável nem arrastável.
-     É fricção contra quem tenta clonar o texto com o mouse — não é segurança: quem lê o código-fonte
-     da página continua lendo o HTML, porque HTML é texto por definição. O que some é a seleção, o
-     Ctrl+C e o Ctrl+S. Ver a checagem em scripts/site.mjs (--check e --verify). */
-  .wrap, .wrap * { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
-  .wrap img { -webkit-user-drag: none; }
-
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
   }
+`;
+
+/* Anti-cópia (pedido do dono, 27/09/2026): o texto público não é selecionável nem arrastável.
+   É fricção contra quem tenta clonar o texto com o mouse — não é segurança: quem lê o código-fonte
+   da página continua lendo o HTML, porque HTML é texto por definição. O que some é a seleção, o
+   Ctrl+C e o Ctrl+S. Ver a checagem em scripts/site.mjs (--check e --verify). */
+const ANTI_COPY_CSS = `
+  .wrap, .wrap * { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
+  .wrap img { -webkit-user-drag: none; }
 `;
 
 /**
@@ -169,8 +171,11 @@ const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
  * Documento completo. Sem o <meta charset> o navegador lê o UTF-8 como Windows-1252 e quebra todos os
  * acentos (aconteceu no site em 24/09: o servidor mandava text/html sem charset); sem doctype, modo quirks.
  * `og` = { url, image } absolutos, para a prévia do link em redes e mensageiros.
+ *
+ * `anticopia: false` e `noindex: true` são para página **privada** do dono (métricas): ela tem campo de texto (a anti-cópia
+ * impediria selecionar e colar), não entra em busca, e não carrega o Google Analytics (a visita do próprio dono não é público).
  */
-export function pagina({ title, description, css, body, script = '', og = null }) {
+export function pagina({ title, description, css, body, script = '', og = null, anticopia = true, noindex = false }) {
   const ogTags = og
     ? `
 <meta property="og:type" content="website">
@@ -187,10 +192,10 @@ export function pagina({ title, description, css, body, script = '', og = null }
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <meta name="author" content="SERAFIM WEB">
-<meta name="theme-color" content="#070604">${ogTags}
+<meta name="theme-color" content="#070604">${noindex ? '\n<meta name="robots" content="noindex, nofollow">' : ''}${ogTags}
 <link rel="icon" href="data:,">
 ${FONTS}
-<style>${BASE_CSS}${css}</style>
+<style>${BASE_CSS}${anticopia ? ANTI_COPY_CSS : ''}${css}</style>${noindex ? '' : `
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-2CCHDCEC7X"></script>
 <script>
@@ -199,14 +204,13 @@ ${FONTS}
   gtag('js', new Date());
 
   gtag('config', 'G-2CCHDCEC7X');
-</script>
+</script>`}
 </head>
 <body>
 <div class="wrap">
 ${body}
 </div>
-<script>${ANTI_COPY_JS}</script>
-${script ? `<script>${script}</script>` : ''}
+${anticopia ? `<script>${ANTI_COPY_JS}</script>\n` : ''}${script ? `<script>${script}</script>` : ''}
 </body>
 </html>
 `;

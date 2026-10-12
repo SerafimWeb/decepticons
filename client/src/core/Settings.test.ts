@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   BASE_SENSITIVITY,
@@ -131,5 +132,77 @@ describe('calibração do mouse (contas físicas)', () => {
     expect(calibrateFromCounts(Number.NaN).ok).toBe(false);
     expect(calibrateFromCounts(10_000_000)).toEqual({ ok: true, sensitivity: LIMITS.sensitivity.min });
     expect(calibrateFromCounts(MIN_CALIBRATION_COUNTS)).toEqual({ ok: true, sensitivity: LIMITS.sensitivity.max });
+  });
+});
+
+
+it('migra o antigo E uma vez, preserva tecla personalizada e permite voltar a E', () => {
+  const storage = memoryStorage(JSON.stringify({ keys: { shield: 'KeyE' } }));
+  const s = new Settings(storage);
+  expect(s.value.keys.shield).toBe('Control');
+  s.update({ keys: { ...s.value.keys, shield: 'KeyE' } });
+  expect(new Settings(storage).value.keys.shield).toBe('KeyE');
+  expect(new Settings(memoryStorage(JSON.stringify({ keys: { shield: 'KeyF' } }))).value.keys.shield).toBe('KeyF');
+  expect(new Settings(memoryStorage(JSON.stringify({ keys: { shield: 'KeyE', jump: 'Control' } }))).value.keys.shield).toBe('KeyE');
+});
+
+describe('nomes na tela (06/10: "quero poder mudar o nome dos inimigos, npcs, etc")', () => {
+  it('sem nada salvo, os nomes são os de sempre (botNames.ts)', () => {
+    const n = new Settings(memoryStorage()).value.names;
+    expect(n.mechs).toEqual(['CLAWD', 'GEMINAI', 'CHAD-GPT']);
+    expect(n.androids).toEqual(['KUEN', 'DIPSIK', 'MISTRAU']);
+    expect(n.technicians).toEqual(['ENTRÓPICO']);
+    expect(n.allies).toEqual(['ESCOLTA·PLASMA', 'SUPRESSOR·EMP']);
+  });
+
+  it('aceita nomes novos, corta em 16 caracteres e tira tags, aspas e quebras', () => {
+    const s = sanitizeSettings({ names: { mechs: ['  NINJA   TURBO  ', '<img src=x>', 'a'.repeat(40)] } });
+    expect(s.names.mechs[0]).toBe('NINJA TURBO');
+    expect(s.names.mechs[1]).toBe('img src=x');
+    expect(s.names.mechs[2]).toHaveLength(16);
+    expect(s.names.mechs.every((n) => !/[<>&"'`]/.test(n))).toBe(true);
+  });
+
+  it('vazio, tipo errado ou ausente volta ao nome padrão daquele slot; slots a mais são ignorados', () => {
+    const s = sanitizeSettings({ names: { mechs: ['   ', 42, 'X', 'EXTRA', 'EXTRA2'], androids: 'nope' } });
+    expect(s.names.mechs).toEqual(['CLAWD', 'GEMINAI', 'X']);
+    expect(s.names.androids).toEqual(['KUEN', 'DIPSIK', 'MISTRAU']);
+  });
+
+  it('trocar um nome pelo painel é salvo e volta na próxima visita', () => {
+    const storage = memoryStorage();
+    const st = new Settings(storage);
+    st.update({ names: { ...st.value.names, technicians: ['DOUTOR'] } });
+    expect(new Settings(storage).value.names.technicians).toEqual(['DOUTOR']);
+    expect(new Settings(storage).value.names.mechs).toEqual(['CLAWD', 'GEMINAI', 'CHAD-GPT']);
+  });
+});
+
+describe('mira e brilho (dono, 11/10: "a mira está grossa e os tiros geram muita luz")', () => {
+  it('o padrão é discreto: mira menor que o desenho original, translúcida, e bloom abaixo dos 0,85 de antes', () => {
+    expect(DEFAULT_SETTINGS.reticleSize).toBeLessThan(1);
+    expect(DEFAULT_SETTINGS.reticleOpacity).toBeLessThan(1);
+    expect(DEFAULT_SETTINGS.glow).toBeLessThan(0.85);
+  });
+
+  it('valor fora do limite ou do tipo errado vira o limite ou o padrão, campo a campo', () => {
+    const s = new Settings(memoryStorage('{"reticleSize": 9, "reticleOpacity": 0, "glow": "x"}'));
+    expect(s.value.reticleSize).toBe(LIMITS.reticleSize.max);
+    expect(s.value.reticleOpacity).toBe(LIMITS.reticleOpacity.min); // a mira nunca some de vez
+    expect(s.value.glow).toBe(DEFAULT_SETTINGS.glow);
+  });
+
+  it('o jogador consegue ficar com a mira mínima e o brilho mínimo, e isso é salvo', () => {
+    const storage = memoryStorage();
+    const st = new Settings(storage);
+    st.update({ reticleSize: LIMITS.reticleSize.min, reticleOpacity: LIMITS.reticleOpacity.min, glow: LIMITS.glow.min });
+    const volta = new Settings(storage).value;
+    expect([volta.reticleSize, volta.reticleOpacity, volta.glow]).toEqual([LIMITS.reticleSize.min, LIMITS.reticleOpacity.min, LIMITS.glow.min]);
+  });
+
+  it('o CSS nasce com os mesmos números do padrão (antes de as configurações chegarem, a mira já é a discreta)', () => {
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+    expect(css).toContain(`--reticle-scale: ${DEFAULT_SETTINGS.reticleSize};`);
+    expect(css).toContain(`--reticle-opacity: ${DEFAULT_SETTINGS.reticleOpacity};`);
   });
 });

@@ -1,0 +1,19 @@
+{
+  "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "materials": 4,
+  "meshes": 10,
+  "before": {
+    "calls": 102,
+    "triangles": 11040,
+    "p50": 3.399999998509884,
+    "p95": 4.800000000745058
+  },
+  "after": {
+    "calls": 94,
+    "triangles": 10684,
+    "p50": 1.8999999985098839,
+    "p95": 2.699999999254942
+  },
+  "changedChannels": 549,
+  "maxDiff": 1
+}

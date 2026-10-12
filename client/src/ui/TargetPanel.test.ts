@@ -52,12 +52,20 @@ describe('painel do alvo (o que já vem no estado da rede)', () => {
     expect(readoutOf(view({ dashing: true }))!.warning).toBe('EM DASH');
   });
 
+  it('exibe bandeiras de estado elemental (EM CHAMAS, CHOCADO, ATORDOADO, GELADO, CONGELADO)', () => {
+    expect(readoutOf(view({ statuses: ['queimando'] }))!.warning).toBe('EM CHAMAS');
+    expect(readoutOf(view({ statuses: ['chocado', 'atordoado'] }))!.warning).toBe('CHOCADO · ATORDOADO');
+    expect(
+      readoutOf(view({ heatState: 'overheated', dashing: true, statuses: ['gelado', 'congelado'] }))!.warning
+    ).toBe('SUPERAQUECIDO · TRAVADO · EM DASH · GELADO · CONGELADO');
+  });
+
   it('alvo morto não tem painel', () => {
     expect(readoutOf(view({ alive: false }))).toBeNull();
   });
 
   it('lê o Mech na forma do painel reaproveitando o mesmo rascunho (zero alocação por quadro)', () => {
-    const m = mech({ heat: 0.5, heatState: 'hot', isDashing: true });
+    const m = mech({ heat: 0.5, heatState: 'hot', isDashing: true, statuses: ['queimando'] });
     const first = viewOf(m);
     expect(first.name).toBe('VECTOR-09');
     expect(first.parts).toBe(m.modules);
@@ -65,6 +73,8 @@ describe('painel do alvo (o que já vem no estado da rede)', () => {
     expect(first.heat).toBe(0.5);
     expect(first.heatState).toBe('hot');
     expect(first.dashing).toBe(true);
+    expect(first.statuses).toEqual(['queimando']);
     expect(viewOf(mech())).toBe(first);
   });
 });
+

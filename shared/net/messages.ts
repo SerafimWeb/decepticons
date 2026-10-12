@@ -1,4 +1,4 @@
-import { Reader, type Writer } from './codec';
+import { Reader, fromFrac, toFrac, type Writer } from './codec';
 import { BUILD_MAX, MAX_EVENTS, MAX_INPUTS_PER_PACKET, MAX_UNITS, NAME_MAX, ROOM_MAX } from './constants';
 import { newNetEvent, readEvent, writeEvent, type NetEvent } from './events';
 import { newNetInput, readInput, writeInput, type NetInput } from './input';
@@ -17,12 +17,14 @@ export const MSG = {
   INPUT: 2,
   PING: 3,
   LEAVE: 4,
+  BANK: 5,
   WELCOME: 10,
   ROSTER: 11,
   SNAPSHOT: 12,
   EVENTS: 13,
   PONG: 14,
   REJECT: 15,
+  BANK_REPLY: 16,
 } as const;
 
 /** Tipo da mensagem (primeiro byte); 0 se vazia. */
@@ -37,7 +39,7 @@ const reader = new Reader();
 
 /** Bytes de UTF-8 reservados para o apelido (acentos ocupam 2). */
 const NAME_BYTES = NAME_MAX * 2;
-const BUILD_RE = /^[a-z0-9.-]{1,48}$/;
+const BUILD_RE = /^[A-Za-z0-9.-]{1,80}$/;
 const ROOM_RE = /^[A-Z0-9-]{1,12}$/;
 
 /** Apelido: só letras, números, espaço, ponto, hífen, sublinhado e o ponto do meio (CLAWD·BRABO); até 16; vazio vira PILOTO. */
@@ -183,6 +185,8 @@ export function decodeRoster(bytes: Uint8Array): RosterEntry[] | null {
 export interface Snapshot {
   tick: number;
   ack: number;
+  /** Energia do destinatário; os outros precisam apenas da flag visual. */
+  energy?: number;
   count: number;
   units: UnitState[];
 }
@@ -191,11 +195,11 @@ export function newSnapshot(): Snapshot {
   return { tick: 0, ack: 0, count: 0, units: Array.from({ length: MAX_UNITS }, newUnitState) };
 }
 
-/** Bytes do cabeçalho do estado: tipo, tick, ack, quantidade. */
-export const SNAPSHOT_HEADER_BYTES = 10;
+/** Bytes do cabeçalho do estado: tipo, tick, ack, quantidade e energia do destinatário. */
+export const SNAPSHOT_HEADER_BYTES = 11;
 
 export function encodeSnapshot(w: Writer, s: Snapshot): Uint8Array {
-  w.reset().u8(MSG.SNAPSHOT).u32(s.tick).u32(s.ack).u8(s.count);
+  w.reset().u8(MSG.SNAPSHOT).u32(s.tick).u32(s.ack).u8(s.count).u8(toFrac(s.energy ?? 0));
   for (let i = 0; i < s.count; i++) writeUnit(w, s.units[i]!);
   return w.done();
 }
@@ -206,6 +210,7 @@ export function decodeSnapshot(bytes: Uint8Array, out: Snapshot): boolean {
   out.tick = r.u32();
   out.ack = r.u32();
   const n = r.u8();
+  out.energy = fromFrac(r.u8());
   if (n > MAX_UNITS) return false;
   for (let i = 0; i < n; i++) readUnit(r, out.units[i]!);
   out.count = n;

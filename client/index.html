@@ -16,7 +16,7 @@
       gtag('config', 'G-2CCHDCEC7X');
     </script>
   </head>
-  <body>
+  <body class="is-paused">
     <div id="app"></div>
     <div id="debug-panel"></div>
 
@@ -50,52 +50,166 @@
         <div class="bar"><div class="fill" id="heat-fill"></div></div>
       </div>
       <div id="rockets">
-        <span class="label">FOGUETES</span>
+        <span class="label">ATQ 2</span>
         <span class="pips"><i></i><i></i><i></i><i></i></span>
       </div>
+      <button id="btn-cftv" class="btn-cftv" type="button" title="Alternar Câmeras de Vigilância / CFTV">[ 📹 CFTV ]</button>
       <div id="onboarding"></div>
     </div>
 
-    <div id="overlay">
-      <h1>CYBERMECH</h1>
-      <p class="sub" id="pilot-sub">VECTOR-09 // protótipo de combate</p>
-      <p class="studio">um jogo <b>SERAFIM WEB</b></p>
-      <p class="cta" id="cta">[ carregando física... ]</p>
-      <p id="round-summary" hidden></p>
-      <button id="btn-mode" class="btn-terminal">[ MODO: ARENA · TROCAR ]</button>
-      <button id="btn-hangar" class="btn-terminal">[ ABRIR HANGAR ]</button>
-      <button id="btn-settings" class="btn-terminal">[ CONFIGURAÇÕES ]</button>
-      <button id="btn-touch-layout" class="btn-terminal touch-only">[ AJUSTAR CONTROLES ]</button>
-      <details class="help-details">
-        <summary class="btn-terminal">[ AJUDA E CONTROLES ]</summary>
-        <ul class="keys-help">
-          <li><b>WASD</b> mover</li>
-          <li><b>Mouse</b> mirar</li>
-          <li><b>Clique esq.</b> <span id="key-primary">plasma</span></li>
-          <li><b>Clique dir. / Q</b> <span id="key-secondary">foguetes</span></li>
-          <li><b>Shift</b> dash</li>
-          <li><b>Espaço</b> pulo (duplo)</li>
-          <li><b>V</b> câmera (3ª / 1ª / tática)</li>
-          <li><b>Scroll</b> zoom</li>
-          <li><b>Esc</b> pausar</li>
-          <li><b>F1</b> esconder HUD</li>
-          <li><b>'</b> painel de desempenho</li>
-        </ul>
-        <ul class="touch-help">
-        <li><b>Polegar esquerdo</b> andar</li>
-        <li><b>Arraste à direita</b> mirar</li>
-        <li><b>Mira laranja</b> atira sozinha</li>
-        <li><b>FOGO</b> segure (arraste para mirar junto)</li>
-        <li><b>PULO</b> duas vezes: pulo duplo</li>
-        <li><b>DASH</b> arrancada</li>
-        <li><b>FOGUETE</b> dano em área</li>
-        <li><b>PLACAR</b> segure</li>
-        <li><b>CAM</b> 3ª / 1ª pessoa</li>
-        <li><b>❚❚</b> pausa</li>
-        </ul>
-      </details>
-      <p class="rotate-hint">Gire o celular: o jogo é na horizontal</p>
+    <!-- Console de comando (P86): a tela de início e de pausa. Cada monitor mostra um assunto e abre a tela dele; a mesa embaixo
+         escolhe a operação e põe em combate. Os monitores barram o clique (CommandConsole.ts); o resto da sala continua sendo "jogar". -->
+    <div id="overlay" class="console cc-espera cc-carregando">
+      <header class="cc-top menu-brand">
+        <div class="cc-brand">
+          <h1>CYBERMECH</h1>
+          <p class="studio">um jogo <b>SERAFIM WEB</b></p>
+        </div>
+        <p class="cc-sala">SALA DE COMANDO <b>SERAFIM</b><span class="cc-relogio" id="cc-relogio"></span></p>
+        <div class="cc-flags">
+          <button type="button" class="cc-chip" id="cc-chip-comandante" hidden title="Sair do modo Comandante (os monitores de ajuste somem)">MODO COMANDANTE ✕</button>
+        </div>
+      </header>
+
+      <section class="mon mon-teatro" id="mon-teatro" aria-label="Teatro de operações">
+        <header class="mon-head">
+          <i class="mon-led"></i><h2>TEATRO DE OPERAÇÕES</h2>
+          <div class="mon-tabs" role="group" aria-label="Zoom do mapa" data-tecla="Z">
+            <button type="button" class="active" data-zoom="brasil" aria-pressed="true">BRASIL</button>
+            <button type="button" data-zoom="mundo" aria-pressed="false">MUNDO</button>
+          </div>
+        </header>
+        <div class="mon-screen teatro-screen" id="teatro-screen">
+          <p id="round-summary" hidden></p>
+          <div class="teatro-mapa">
+            <canvas id="teatro-canvas" aria-hidden="true"></canvas>
+            <svg class="teatro-rotas" id="teatro-rotas" aria-hidden="true"></svg>
+            <div class="teatro-pins" id="teatro-pins"></div>
+            <ul class="teatro-legenda" aria-hidden="true"><li class="lg-voce">VOCÊ</li><li class="lg-ia">IAs ATACANDO</li><li class="lg-breve">EM CONSTRUÇÃO</li></ul>
+          </div>
+          <div class="teatro-ficha" id="teatro-ficha" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section class="mon mon-radar" id="mon-radar" aria-label="Radar tático">
+        <header class="mon-head"><i class="mon-led"></i><h2>RADAR TÁTICO</h2><span class="mon-meta" id="radar-mapa"></span></header>
+        <div class="mon-screen radar-screen">
+          <canvas id="radar-canvas" aria-hidden="true"></canvas>
+          <i class="radar-sweep" aria-hidden="true"></i>
+          <ul class="radar-legenda"><li class="voce">VOCÊ</li><li class="aliado">ALIADOS</li><li class="inimigo">IAs</li></ul>
+        </div>
+      </section>
+
+      <section class="mon mon-mech" id="mon-mech" aria-label="Seu Mech">
+        <header class="mon-head"><i class="mon-led"></i><h2>SEU MECH</h2><span class="mon-meta" id="mech-integridade"></span></header>
+        <div class="mon-screen mech-screen">
+          <svg class="mech-esquema" id="mech-esquema" viewBox="-20 0 140 130" aria-hidden="true">
+            <g class="mp" data-part="head"><polygon points="40,6 60,6 63,18 37,18" /><line x1="43" y1="12" x2="57" y2="12" /></g>
+            <g class="mp" data-part="torso"><polygon points="30,21 70,21 66,58 34,58" /><polygon points="39,60 61,60 59,68 41,68" /><line x1="38" y1="30" x2="62" y2="30" /><circle cx="50" cy="42" r="5" /></g>
+            <g class="mp" data-part="rightArm"><polygon points="14,22 28,22 28,34 12,34" /><polygon points="13,36 25,36 24,72 14,72" /><line x1="18.5" y1="72" x2="18.5" y2="84" /></g>
+            <g class="mp" data-part="leftArm"><polygon points="72,22 86,22 88,34 72,34" /><polygon points="75,36 87,36 86,72 76,72" /><line x1="81.5" y1="72" x2="81.5" y2="84" /></g>
+            <g class="mp" data-part="rightLeg"><polygon points="36,70 48,70 47,96 37,96" /><polygon points="35,98 47,98 48,120 33,120" /><line x1="30" y1="124" x2="50" y2="124" /></g>
+            <g class="mp" data-part="leftLeg"><polygon points="52,70 64,70 63,96 53,96" /><polygon points="53,98 65,98 67,120 52,120" /><line x1="50" y1="124" x2="70" y2="124" /></g>
+            <text class="mp-pct" data-pct="head" x="66" y="15">100%</text>
+            <text class="mp-pct" data-pct="torso" x="50" y="56.5" text-anchor="middle">100%</text>
+            <text class="mp-pct" data-pct="rightArm" x="10" y="58" text-anchor="end">100%</text>
+            <text class="mp-pct" data-pct="leftArm" x="90" y="58">100%</text>
+            <text class="mp-pct" data-pct="rightLeg" x="31" y="112" text-anchor="end">100%</text>
+            <text class="mp-pct" data-pct="leftLeg" x="69" y="112">100%</text>
+          </svg>
+          <div class="mech-dados">
+            <p class="sub" id="pilot-sub">VECTOR-09 // protótipo de combate</p>
+            <dl class="mech-barras" id="mech-barras"></dl>
+            <ul class="mech-armas" id="mech-armas"></ul>
+            <button type="button" id="btn-hangar" class="btn-terminal mon-acao" data-tecla="H">[ HANGAR ]</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="cc-row">
+        <section class="mon mon-oponentes" id="mon-oponentes" aria-label="Pilotos da partida">
+          <header class="mon-head"><i class="mon-led"></i><h2>PILOTOS</h2><span class="mon-meta" id="op-ameaca"></span></header>
+          <div class="mon-screen">
+            <p class="op-contagem" id="op-contagem"></p>
+            <ul class="op-lista" id="op-lista"></ul>
+            <div class="mon-acoes">
+              <button type="button" id="btn-esquadrao" class="btn-terminal mon-acao" data-esquadrao-open title="Quantos bots e aliados, e o chassi, a arma e o jeito de cada um">[ ESQUADRÃO ]</button>
+              <button type="button" id="btn-settings" class="btn-terminal mon-acao" data-settings-open="jogo" title="Dificuldade, quantos atacam ao mesmo tempo e nomes">[ AJUSTAR ]</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="mon mon-piloto" id="mon-piloto" aria-label="Carreira">
+          <header class="mon-head"><i class="mon-led"></i><h2>CARREIRA</h2></header>
+          <div class="mon-screen"><div id="menu-profile"></div></div>
+        </section>
+
+        <div class="cc-pilha">
+        <section class="mon mon-rede" id="mon-rede" aria-label="Rede">
+          <header class="mon-head"><i class="mon-led"></i><h2>REDE</h2></header>
+          <div class="mon-screen">
+            <div id="menu-status"></div>
+            <p class="mon-nota" id="rede-offline">OFFLINE · contra os bots</p>
+            <div class="mon-acoes"><span id="cc-online-slot"></span></div>
+          </div>
+        </section>
+
+        <section class="mon mon-config" id="mon-config" aria-label="Configurações">
+          <header class="mon-head"><i class="mon-led"></i><h2>CONFIGURAÇÕES</h2></header>
+          <div class="mon-screen cfg-lista">
+            <button type="button" class="cfg-item" data-settings-open="controles"><b>CONTROLES</b><small class="mouse-only">mouse e teclas</small><small class="touch-only">mira e câmera</small></button>
+            <button type="button" class="cfg-item" data-settings-open="graficos"><b>GRÁFICOS E SOM</b><small>imagem e volume</small></button>
+            <button type="button" id="btn-touch-layout" class="cfg-item touch-only"><b>AJUSTAR BOTÕES</b><small>onde ficam na tela</small></button>
+          </div>
+        </section>
+        </div>
+
+        <section class="mon mon-comando" id="mon-comando" aria-label="Comando" hidden>
+          <header class="mon-head"><i class="mon-led"></i><h2>COMANDO</h2></header>
+          <div class="mon-screen">
+            <ul class="cmd-lista">
+              <li><button type="button" data-settings-open="avancado"><b>POTÊNCIAS</b><span id="cmd-potencias">armas e clãs</span></button></li>
+              <li id="cmd-sala"><a href="../sala-de-controle/" target="_blank" rel="noopener"><b>SALA DE CONTROLE</b><span>ordens, placar, evolução</span></a></li>
+              <li id="cmd-oficina"><a href="../oficina/" target="_blank" rel="noopener"><b>OFICINA</b><span>números, testes, arquitetura</span></a></li>
+              <li id="cmd-mesa"><a href="http://127.0.0.1:4199/.tmp/video/editor.html" target="_blank" rel="noopener" title="A mesa é local: só liga nesta máquina, com npm run mesa"><b>MESA DE VÍDEO</b><span>local · npm run mesa</span></a></li>
+              <li class="breve" title="Assistir às câmeras de várias partidas ao mesmo tempo, pelo servidor (PAINEL_ADMIN.md, etapa H)"><b>CÂMERAS AO VIVO</b><span>em construção</span></li>
+              <li id="cmd-ficha"><button type="button" data-esquadrao-open title="Chassi, arma, personalidade, dificuldade e apelido de cada bot, e quantos há"><b>FICHA DE CADA BOT</b><span>chassi, arma, jeito</span></button></li>
+              <li class="breve" title="Missões em sequência, salvas e compartilháveis (PAINEL_ADMIN.md, etapa D)"><b>CAMPANHA</b><span>em construção</span></li>
+              <li class="breve" title="Jogadores, salas, reinício e métricas, com o token do dono (PAINEL_ADMIN.md, etapa E)"><b>SERVIDOR</b><span>em construção</span></li>
+            </ul>
+            <div class="cmd-ajuda" id="cmd-mesa-ajuda" role="dialog" aria-label="Mesa de vídeo" hidden>
+              <p class="ajuda-estado" id="cmd-mesa-estado"></p>
+              <p class="ajuda-passos">Na pasta do projeto, rode:</p>
+              <code class="ajuda-cmd" id="cmd-mesa-cmd">npm run mesa</code>
+              <p class="ajuda-nota">ou dê dois cliques em <b>scripts\ligar-mesa.cmd</b>. A mesa é local: só liga nesta máquina e abre sozinha no navegador.</p>
+              <div class="ajuda-acoes">
+                <button type="button" class="btn-terminal" data-acao="copiar">[ COPIAR COMANDO ]</button>
+                <button type="button" class="btn-terminal" data-acao="abrir">[ ABRIR MESMO ASSIM ]</button>
+                <button type="button" class="btn-terminal" data-acao="fechar">[ FECHAR ]</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="cc-deck">
+        <div class="cc-ops">
+          <span class="cc-plaqueta">OPERAÇÃO</span>
+          <div id="menu-mode"></div>
+        </div>
+        <div class="cc-launch">
+          <button type="button" class="cta" id="cta" data-tecla="↵ ENTER">[ carregando física... ]</button>
+        </div>
+        <div class="cc-info menu-foot">
+          <p class="menu-keys mouse-only"><b>WASD</b> mover · <b>mouse</b> mirar · <b>clique</b> ATAQUE 1: <span id="key-primary">plasma</span> · <b>clique dir. / Q</b> ATAQUE 2: <span id="key-secondary">foguetes</span> · <b>Shift</b> dash · <b>espaço</b> pulo · <b>V</b> visão 1ª/3ª · <b>C</b> CFTV · <b>Esc</b> pausa</p>
+          <p class="menu-keys touch-only"><b>polegar esquerdo</b> anda · <b>arraste à direita</b> mira · <b>ATQ 1, PULO, DASH, ATQ 2</b> nos botões · <b>❚❚</b> pausa</p>
+          <p class="rotate-hint">Gire o celular: o jogo é na horizontal</p>
+        </div>
+      </footer>
     </div>
+
+    <!-- Janela do esquadrão (ui/SquadPanel.ts): o Comandante monta quem luta contra e ao lado do jogador -->
+    <div id="squad-modal" class="hidden"></div>
 
     <!-- Modal de Configurações -->
     <div id="settings-modal" class="hidden">
@@ -105,8 +219,15 @@
           <button id="btn-settings-close" class="btn-close">[X]</button>
         </div>
 
+        <div class="settings-tabs" role="tablist" aria-label="Seções das configurações">
+          <button type="button" class="settings-tab active" role="tab" data-tab="jogo" aria-selected="true">JOGO</button>
+          <button type="button" class="settings-tab" role="tab" data-tab="controles" aria-selected="false">CONTROLES</button>
+          <button type="button" class="settings-tab" role="tab" data-tab="graficos" aria-selected="false">GRÁFICOS E SOM</button>
+          <button type="button" class="settings-tab" role="tab" data-tab="avancado" aria-selected="false">AVANÇADO</button>
+        </div>
+
         <div class="settings-body">
-          <div class="settings-section">
+          <div class="settings-section" data-tab="controles">
             <h3>CONTROLES & CÂMERA</h3>
             <div class="setting-row">
               <label for="setting-sens"><span class="mouse-only">Sensibilidade do mouse</span><span class="touch-only">Sensibilidade da mira</span></label>
@@ -128,9 +249,23 @@
                 <span id="val-fov" class="setting-val">+0°</span>
               </div>
             </div>
+            <div class="setting-row">
+              <label for="setting-reticle-size">Tamanho da mira</label>
+              <div class="setting-ctrl">
+                <input type="range" id="setting-reticle-size" />
+                <span id="val-reticle-size" class="setting-val">80%</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label for="setting-reticle-opacity">Opacidade da mira</label>
+              <div class="setting-ctrl">
+                <input type="range" id="setting-reticle-opacity" />
+                <span id="val-reticle-opacity" class="setting-val">85%</span>
+              </div>
+            </div>
           </div>
 
-          <div class="settings-section touch-only">
+          <div class="settings-section touch-only" data-tab="controles">
             <h3>TOQUE (CELULAR)</h3>
             <div class="setting-row">
               <label for="setting-assist">Mira assistida (freia e puxa de leve perto do inimigo)</label>
@@ -146,8 +281,8 @@
             </div>
           </div>
 
-          <div class="settings-section">
-            <h3>GRÁFICOS & DESEMPENHO</h3>
+          <div class="settings-section" data-tab="graficos">
+            <h3>GRÁFICOS</h3>
             <div class="setting-row">
               <label for="setting-quality">Qualidade gráfica</label>
               <div class="setting-ctrl">
@@ -155,14 +290,15 @@
               </div>
             </div>
             <div class="setting-row">
-              <label for="setting-showperf">Painel de desempenho no canto</label>
+              <label for="setting-glow">Brilho dos efeitos (halos de luz)</label>
               <div class="setting-ctrl">
-                <input type="checkbox" id="setting-showperf" />
+                <input type="range" id="setting-glow" />
+                <span id="val-glow" class="setting-val">60%</span>
               </div>
             </div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="jogo">
             <h3>JOGABILIDADE</h3>
             <div class="setting-row">
               <label for="setting-diff">Dificuldade dos bots</label>
@@ -172,17 +308,33 @@
             </div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="jogo">
             <h3>INIMIGOS</h3>
             <div id="settings-enemies"></div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="jogo">
+            <h3>NOMES NA TELA</h3>
+            <div id="settings-names"></div>
+          </div>
+
+          <div class="settings-section" data-tab="avancado">
             <h3>POTÊNCIAS</h3>
             <div id="settings-power"></div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="avancado">
+            <h3>DESEMPENHO</h3>
+            <p class="setting-hint">Para quem testa o jogo: mostra FPS, tempo do tick e chamadas de desenho no canto da tela (a tecla ' abre o detalhado).</p>
+            <div class="setting-row">
+              <label for="setting-showperf">Painel de desempenho no canto</label>
+              <div class="setting-ctrl">
+                <input type="checkbox" id="setting-showperf" />
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section" data-tab="graficos">
             <h3>ÁUDIO</h3>
             <div class="setting-row">
               <label for="setting-volume">Volume mestre</label>
@@ -193,7 +345,7 @@
             </div>
           </div>
 
-          <div class="settings-section">
+          <div class="settings-section" data-tab="controles">
             <h3>REMAPEAMENTO DE TECLAS</h3>
             <div class="keys-grid">
               <div class="key-row"><span>Frente</span><button id="key-forward" class="btn-key">[ W ]</button></div>
@@ -202,8 +354,9 @@
               <div class="key-row"><span>Direita</span><button id="key-right" class="btn-key">[ D ]</button></div>
               <div class="key-row"><span>Pulo</span><button id="key-jump" class="btn-key">[ Espaço ]</button></div>
               <div class="key-row"><span>Dash</span><button id="key-dash" class="btn-key">[ Shift ]</button></div>
-              <div class="key-row"><span>Foguetes</span><button id="key-secondary" class="btn-key">[ Q ]</button></div>
+              <div class="key-row"><span>Ataque 2 (além do clique dir.)</span><button id="key-secondary-bind" class="btn-key">[ Q ]</button></div>
               <div class="key-row"><span>Trocar câmera</span><button id="key-camera" class="btn-key">[ V ]</button></div>
+              <div class="key-row"><span>Escudo: ligar/desligar</span><button id="key-shield" class="btn-key">[ Ctrl ]</button></div>
             </div>
           </div>
         </div>

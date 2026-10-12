@@ -3,7 +3,12 @@ import { ARENA_ZONES } from '../combat/Zone';
 import { CITY_NEON, PALETTE } from '../core/palette';
 import { mulberry32 } from '../core/rng';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
+import { buildFloorTexture, buildSkyTexture, FLOOR_TILE_METERS } from './Atmosphere';
+import { WINDOWS, windowedBuildingMaterial } from './BuildingWindows';
+import { buildingBands } from './BuildingBands';
 import type { DestructibleDef, Destructibles } from './Destructibles';
+import { SerafimTower } from './SerafimTower';
+import { Bunker, type MapId } from './Bunker';
 
 interface BlockDef {
   x: number;
@@ -66,6 +71,8 @@ export const SPAWN_POINTS: readonly (readonly [number, number])[] = [
 export class Arena {
   readonly halfSize = 100;
   readonly occluders: Occluder[] = [];
+  /** Prédio Serafim: a base do time, no canto oposto ao Banco VORCARIS. */
+  readonly serafim: SerafimTower | null;
 
   private readonly boxGeo = new THREE.BoxGeometry(1, 1, 1);
   private readonly solidMat = new THREE.MeshStandardMaterial({ color: PALETTE.steel, metalness: 0.3, roughness: 0.8 });
@@ -74,8 +81,9 @@ export class Arena {
     private readonly scene: THREE.Scene,
     private readonly physics: PhysicsWorld,
     destructibles: Destructibles,
+    map: MapId = 'arena',
   ) {
-    scene.background = new THREE.Color(PALETTE.sky);
+    scene.background = buildSkyTexture();
     scene.fog = new THREE.FogExp2(PALETTE.fog, 0.0095);
 
     scene.add(new THREE.HemisphereLight(PALETTE.skyLight, PALETTE.groundLight, 0.9));
@@ -86,8 +94,15 @@ export class Arena {
     rim.position.set(-60, 40, -40);
     scene.add(rim);
 
+    if (map === 'bunker') {
+      this.serafim = null;
+      new Bunker(scene, physics);
+      return;
+    }
     this.buildFloorAndBounds();
     for (const b of BUILDINGS) this.addBuilding(b);
+    this.serafim = new SerafimTower(scene, physics);
+    this.occluders.push({ box: this.serafim.bounds, material: this.serafim.material });
     for (const b of BARRICADES) destructibles.add(b);
     this.buildPlatform();
     this.buildSkyline();
@@ -121,9 +136,13 @@ export class Arena {
   }
 
   private buildFloorAndBounds(): void {
+    // 704 m = 88 ladrilhos de 8 m: a origem cai numa junta e as placas casam com as células de 4 m da grade.
+    const FLOOR_SIZE = 704;
+    const map = buildFloorTexture();
+    map.repeat.set(FLOOR_SIZE / FLOOR_TILE_METERS, FLOOR_SIZE / FLOOR_TILE_METERS);
     const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(700, 700),
-      new THREE.MeshStandardMaterial({ color: PALETTE.ground, metalness: 0.4, roughness: 0.7 }),
+      new THREE.PlaneGeometry(FLOOR_SIZE, FLOOR_SIZE),
+      new THREE.MeshStandardMaterial({ color: PALETTE.ground, map, metalness: 0.4, roughness: 0.7 }),
     );
     floor.rotation.x = -Math.PI / 2;
     this.scene.add(floor);
@@ -159,19 +178,16 @@ export class Arena {
     }
   }
 
-  /** Prédio sólido com arestas neon e faixas emissivas a cada 5 m. */
+  /** Prédio sólido com arestas neon, faixas emissivas a cada 5 m e janelas acesas entre elas (`BuildingWindows.ts`). */
   private addBuilding(b: BlockDef): void {
-    const material = this.solidMat.clone();
+    const material = windowedBuildingMaterial(this.solidMat.clone(), b.accent);
     material.transparent = true;
     const g = this.addSolid(new THREE.Vector3(b.x, b.h / 2, b.z), new THREE.Vector3(b.w, b.h, b.d), b.accent, material);
 
     const stripMat = new THREE.MeshBasicMaterial({ color: neon(b.accent, 2) });
-    for (let y = 5; y < b.h - 1; y += 5) {
-      const strip = new THREE.Mesh(this.boxGeo, stripMat);
-      strip.scale.set(b.w + 0.12, 0.18, b.d + 0.12);
-      strip.position.y = y - b.h / 2;
-      g.add(strip);
-    }
+    // O andar das janelas é o intervalo entre duas faixas: a mesma medida, para as duas não saírem de compasso.
+    const bands = buildingBands(b.w, b.h, b.d, WINDOWS.floor, this.boxGeo, stripMat);
+    if (bands) g.add(bands);
 
     this.occluders.push({
       box: new THREE.Box3(

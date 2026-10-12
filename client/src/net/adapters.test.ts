@@ -75,6 +75,6 @@ describe('rede: a partida de verdade passa pelo codec', () => {
   });
 
   it('as armas do jogo têm lugar na lista da rede', () => {
-    for (const id of ['plasma', 'rockets', 'blaster', 'chainsaw'] as const) expect(weaponFromNet(netWeaponIndex(id))).toBe(id);
+    for (const id of ['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage'] as const) expect(weaponFromNet(netWeaponIndex(id))).toBe(id);
   });
 });

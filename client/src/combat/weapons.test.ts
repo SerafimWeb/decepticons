@@ -21,9 +21,11 @@ describe('arsenal: três níveis com a mesma regra', () => {
       expect(c!.heatPerShot).toBeGreaterThan(a!.heatPerShot);
       expect(c!.mass).toBeGreaterThan(b!.mass);
       expect(b!.mass).toBeGreaterThan(a!.mass);
-      // A cadência e o alcance são da arma, não do nível.
-      expect(c!.fireInterval).toBe(a!.fireInterval);
-      expect(c!.maxRange).toBe(a!.maxRange);
+      // A cadência e o alcance são da arma, não do nível: salvo a que declara `tierRange` / `tierRate` (o lança-chamas: mais longe e mais pressão a cada nível).
+      if (!a!.tierRate) expect(c!.fireInterval).toBe(a!.fireInterval);
+      else expect(c!.fireInterval).toBeLessThan(a!.fireInterval);
+      if (!a!.tierRange) expect(c!.maxRange).toBe(a!.maxRange);
+      else expect(c!.maxRange).toBeGreaterThan(a!.maxRange);
     }
   });
 
@@ -139,5 +141,90 @@ describe('cadência no tick fixo', () => {
       ticks++;
     } while (!timer.ready);
     expect(ticks).toBeGreaterThanOrEqual(12);
+  });
+});
+
+describe('escopeta (Lancer): dano alto de perto, alcance menor que o do blaster', () => {
+  const S = weapon('shotgun');
+  const P = weapon('plasma');
+  const B = weapon('blaster');
+
+  it('o alcance é mais curto que o do blaster, no ótimo e no máximo', () => {
+    expect(S.optimalRange).toBeLessThan(B.optimalRange);
+    expect(S.maxRange).toBeLessThan(B.maxRange);
+  });
+
+  it('de perto bate mais que o plasma e que o blaster; longe, quase nada', () => {
+    expect(hitDamage(S, 3)).toBeGreaterThan(hitDamage(P, 3) * 2);
+    expect(hitDamage(S, 3)).toBeGreaterThan(hitDamage(B, 3) * 10);
+    expect(hitDamage(S, S.maxRange)).toBeLessThanOrEqual(Math.round(S.damage * 0.1));
+    expect(hitDamage(S, 60)).toBe(hitDamage(S, S.maxRange)); // passou do alcance: não piora nem melhora
+    expect(hitDamage(S, 40)).toBeLessThan(hitDamage(P, 40));
+  });
+
+  it('sozinha, de perto, derruba o torso de um Mech mais rápido que o plasma, sem passar de 2,5 s no MK III', () => {
+    expect(timeToKill([S], V, TORSO)).toBeLessThan(timeToKill([P], V, TORSO));
+    expect(timeToKill([S], V, TORSO)).toBeGreaterThan(3.5);
+    expect(timeToKill([weapon('shotgun', 2)], V, TORSO)).toBeGreaterThan(2.5);
+  });
+
+  it('é de energia: sem carregador, só o calor segura', () => {
+    expect(S.kind).toBe('energy');
+    expect(S.magazine).toBe(0);
+  });
+});
+
+describe('chuva de mísseis: arma de área que cobre terreno, não derruba sozinha', () => {
+  const R = weapon('barrage');
+  const P = weapon('plasma');
+
+  it('é munição com carregador e desenho de chuva; todo nível tem o mesmo desenho e o dano por bomba cresce', () => {
+    expect(R.kind).toBe('ammo');
+    expect(R.magazine).toBeGreaterThan(0);
+    expect(R.barrage).toBeDefined();
+    const b = R.barrage!;
+    expect(b.bombs).toBeGreaterThanOrEqual(4);
+    expect(b.onTarget).toBeGreaterThan(0);
+    expect(b.onTarget).toBeLessThanOrEqual(b.bombs);
+    expect(b.ascent).toBeGreaterThan(0);
+    expect(b.fall).toBeGreaterThan(0);
+    // O aviso no chão dura do lançamento até a primeira bomba: tempo de sair da frente.
+    expect(b.ascent + b.fall).toBeGreaterThanOrEqual(1.5);
+    for (const t of LEVELS) expect(weapon('barrage', t).barrage).toEqual(b);
+    expect(weapon('barrage', 2).damage).toBeGreaterThan(R.damage);
+  });
+
+  it('sozinha leva muito mais de 10 s para derrubar um torso (é apoio): em nenhum nível passa a meta de 4,5 s dos outros', () => {
+    for (const t of LEVELS) expect(timeToKill([weapon('barrage', t)], V, TORSO)).toBeGreaterThan(10);
+  });
+
+  it('rende menos dano sustentado que o plasma e esquenta muito por disparo', () => {
+    for (const t of LEVELS) expect(sustainedDps(weapon('barrage', t), V)).toBeLessThan(sustainedDps(P, V));
+    expect(R.heatPerShot).toBeGreaterThanOrEqual(weapon('rockets').heatPerShot);
+  });
+
+  it('com o plasma, nenhum nível dos dois derruba o torso em menos de 2,5 s (a meta dos dois braços juntos)', () => {
+    for (const p of LEVELS) for (const r of LEVELS) expect(timeToKill([weapon('plasma', p), weapon('barrage', r)], V, TORSO), `plasma ${p} + chuva ${r}`).toBeGreaterThan(2.5);
+  });
+
+  it('a bancada conta só as bombas que pegam um alvo parado (onTarget): contar todas faria a arma derrubar um torso em ~1 s', () => {
+    const com = (onTarget: number) => timeToKill([{ ...R, barrage: { ...R.barrage!, onTarget } }], V, TORSO);
+    expect(com(R.barrage!.onTarget)).toBeGreaterThan(10);
+    expect(com(1)).toBeGreaterThan(com(R.barrage!.onTarget));
+    expect(com(R.barrage!.bombs)).toBeLessThan(2.5);
+  });
+});
+
+describe('trilho e EMP: papéis diferentes sem morte instantânea', () => {
+  it('todo nível do trilho leva mais de 4,5 s sozinho, e com EMP mais de 2,5 s', () => {
+    for(const t of LEVELS){
+      expect(timeToKill([weapon('railgun',t)],V,TORSO)).toBeGreaterThan(4.5);
+      for(const e of LEVELS) expect(timeToKill([weapon('railgun',t),weapon('emp',e)],V,TORSO)).toBeGreaterThan(2.5);
+    }
+  });
+  it('EMP é apoio: lento, pouco dano e mais de 20 s para derrubar sozinho', () => {
+    expect(weapon('emp').speed).toBeLessThan(weapon('plasma').speed);
+    for(const t of LEVELS) expect(timeToKill([weapon('emp',t)],V,TORSO)).toBeGreaterThan(20);
+    expect(weapon('railgun').speed).toBeGreaterThan(weapon('plasma').speed*5);
   });
 });

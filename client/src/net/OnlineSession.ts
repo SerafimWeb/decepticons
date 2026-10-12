@@ -1,11 +1,16 @@
+import type { BankReply } from '../../../shared/bank/codes';
 import * as THREE from 'three';
 import { INPUTS_PER_PACKET, NO_UNIT, SIM_HZ } from '../../../shared/net/constants';
 import { EVENT, type NetEvent } from '../../../shared/net/events';
 import { newNetInput } from '../../../shared/net/input';
 import { newSnapshot, type EventBatch, type RosterEntry, type Snapshot } from '../../../shared/net/messages';
 import type { UnitState } from '../../../shared/net/state';
-import { weapon } from '../combat/weapons';
+import { applySpread, spreadAt, type Spread } from '../combat/spread';
+import { MOUNTS, type MountId } from '../combat/mounts';
+import { hitFlinch } from '../combat/reaction';
+import { weapon, type WeaponStats } from '../combat/weapons';
 import type { MechBase, MechInput } from '../entities/MechBase';
+import { parseLoadoutKey } from '../hangar/loadout';
 import type { Match, Pilot } from '../sim/Match';
 import { netInputFromMech, weaponFromNet } from './adapters';
 import { NetClient } from './NetClient';
@@ -62,6 +67,9 @@ export interface OnlineSessionOptions {
   makeUnit: (entry: RosterEntry) => MechBase;
   scene: THREE.Scene;
   onStatus?: (s: OnlineStatus) => void;
+  onBank?: (reply: BankReply) => void;
+  onDamage?: (amount: number) => void;
+  onRoundEnd?: () => void;
   onKill?: (killer: string | null, dead: string, meInvolved: boolean) => void;
   /** Placar do jogador local (o servidor não conta a rodada offline; a gente conta pelos eventos KILL). */
   onScore?: (kills: number, deaths: number) => void;
@@ -81,6 +89,30 @@ interface Remote {
   build: string;
   /** Já recebeu uma pose (antes disso fica escondido). */
   placed: boolean;
+  /** As rotatórias dele (lidas da montagem do roster, não do desenho do Mech): uma por mão que leva uma; vazio se não tem. */
+  guns: readonly StreamGun[];
+  /** Segundos acumulados para o próximo tiro desenhado da rotatória dele. */
+  stream: number;
+}
+
+export interface StreamGun {
+  w: WeaponStats;
+  mount: MountId;
+}
+
+const NO_GUNS: readonly StreamGun[] = [];
+
+/**
+ * As rotatórias que a montagem leva: a da mão direita e a da esquerda **dos chassis com duas mãos no gatilho** (o Marauder pode levar uma em cada: antes só a
+ * primeira era desenhada e o outro jogador via o fluxo sair de uma mão só). Nos outros chassis a rotatória só vai na direita (`ARM_SLOTS`).
+ */
+export function rotariesOf(build: string): readonly StreamGun[] {
+  const spec = parseLoadoutKey(build);
+  if (!spec) return NO_GUNS;
+  const guns: StreamGun[] = [];
+  if (spec.right.id === 'rotary') guns.push({ w: weapon('rotary', spec.right.tier), mount: 'rightHand' });
+  if (spec.left?.id === 'rotary') guns.push({ w: weapon('rotary', spec.left.tier), mount: 'leftHand' });
+  return guns.length > 0 ? guns : NO_GUNS;
 }
 
 interface Stored {
@@ -88,9 +120,14 @@ interface Stored {
   s: Snapshot;
 }
 
+/** Tiros desenhados por segundo de uma rotatória de outro jogador (a real atira 20; o desenho não precisa de todos). */
+const STREAM_HZ = 10;
+const _spread: Spread = { x: 0, y: 0 };
 const _o = new THREE.Vector3();
 const _d = new THREE.Vector3();
 const _fwd = new THREE.Vector3();
+const _aimPoint = new THREE.Vector3();
+const _mouth = new THREE.Vector3();
 const HIDDEN = new THREE.Vector3(0, -200, 0);
 
 /**
@@ -110,6 +147,8 @@ export class OnlineSession implements Pilot {
   rttMs = 0;
   /** Tiros de outros robôs desenhados (diagnóstico e teste). */
   shotsSeen = 0;
+  /** Tiros desenhados do fluxo da rotatória dos outros (um por vez no desvio dela; diagnóstico e teste). */
+  streamShots = 0;
   readonly remotes = new Map<number, Remote>();
   private readonly client: NetClient;
   private readonly names = new Map<number, string>();
@@ -128,8 +167,11 @@ export class OnlineSession implements Pilot {
   /** Relógio do servidor visto daqui: ms do servidor ≈ agora + offset. */
   private clockOffset = Number.NaN;
 
+  redeemBank(code: string): boolean { return this.joined && this.client.redeemBank(code); }
+
   constructor(private readonly o: OnlineSessionOptions) {
     this.client = new NetClient(o.url, {
+      bank: (reply) => o.onBank?.(reply),
       welcome: (m) => {
         this.myId = m.id;
         this.state = 'na sala';
@@ -218,9 +260,30 @@ export class OnlineSession implements Pilot {
       const secs = span > 0 ? span / SIM_HZ : 1;
       m.setNetPose(x, y, z, lerpAngle(ua.yaw, ub.yaw, t), ua.pitch + (ub.pitch - ua.pitch) * t, (ub.x - ua.x) / secs, (ub.z - ua.z) / secs, ub.grounded);
       m.applyNetVitals(ub.parts, null, ub.alive);
+      m.weaponCharging = ub.charging ?? false;
+      m.energyShield.active = ub.shield ?? false;
+      m.status.applyNet(ub.fx ?? 0);
       r.placed = true;
       m.render(dt, 1);
+      // Metralhadora rotatória de outro jogador: não chega um evento por tiro (seriam 20 por segundo); com o cano girando (bandeira do
+      // servidor), desenha o fluxo a STREAM_HZ. Só visual: o dano é do servidor.
+      if (r.guns.length > 0 && m.status.spinning && m.alive) {
+        r.stream += dt;
+        while (r.stream >= 1 / STREAM_HZ) {
+          r.stream -= 1 / STREAM_HZ;
+          for (const gun of r.guns) this.remoteStream(m, gun);
+        }
+      } else r.stream = 0;
     }
+  }
+
+  /** Um tiro desenhado da rotatória de `m`, da boca dele, na direção da mira dele, com o desvio da rotação. */
+  private remoteStream(m: MechBase, gun: StreamGun): void {
+    m.simMuzzle(_o, gun.mount);
+    _d.set(-Math.sin(m.yaw) * Math.cos(m.pitch), Math.sin(m.pitch), -Math.cos(m.yaw) * Math.cos(m.pitch));
+    applySpread(_d, spreadAt(this.streamShots++, gun.w.spin!.spread, _spread));
+    this.o.match.projectiles.fire(_o, _d, m.collider, true, gun.w);
+    m.onFire();
   }
 
   /** Sai da sala e tira os robôs dos outros da cena. */
@@ -246,7 +309,7 @@ export class OnlineSession implements Pilot {
       mech.spawn(this.o.match.physics, HIDDEN);
       mech.root.visible = false;
       this.o.scene.add(mech.root);
-      this.remotes.set(e.id, { mech, kind: e.kind, build: e.build, placed: false });
+      this.remotes.set(e.id, { mech, kind: e.kind, build: e.build, placed: false, guns: rotariesOf(e.build), stream: 0 });
     }
     for (const id of [...this.remotes.keys()]) if (!present.has(id)) this.removeRemote(id);
     this.status();
@@ -270,11 +333,11 @@ export class OnlineSession implements Pilot {
     this.clockOffset = Number.isNaN(this.clockOffset) ? sample : this.clockOffset + (sample - this.clockOffset) * 0.1;
 
     const u = findUnit(s, this.myId);
-    if (u) this.reconcile(u, s.ack);
+    if (u) this.reconcile(u, s.ack, s.energy ?? 0);
   }
 
   /** O seu Mech: vida e morte do servidor; posição corrigida pelo que foi previsto no tick do \`ack\`. */
-  private reconcile(u: UnitState, ack: number): void {
+  private reconcile(u: UnitState, ack: number, energy: number): void {
     const me = this.o.me;
     if (u.alive && !me.alive) {
       // Renasceu no servidor: começa de novo onde ele diz.
@@ -283,6 +346,9 @@ export class OnlineSession implements Pilot {
       this.histTick.fill(-1);
     }
     me.applyNetVitals(u.parts, Math.abs(u.heat - me.heat) > HEAT_TOLERANCE ? u.heat : null, u.alive);
+    me.energyShield.applyNet(energy, u.shield ?? false);
+    // O servidor decide o fogo, o choque e o gelo; aqui só espelha, para a previsão do Mech do jogador usar a mesma lentidão.
+    me.status.applyNet(u.fx ?? 0);
     if (!u.alive) return;
     const i = ack % HISTORY;
     if (this.histTick[i] !== ack) return;
@@ -304,10 +370,25 @@ export class OnlineSession implements Pilot {
     }
   }
 
+  /**
+   * O tranco do torso de quem levou o tiro, para longe de quem atirou (só desenho: o empurrão vem do servidor pelo estado, e o dano e a vida também). O evento de acerto
+   * traz quem levou, quem atirou e o dano; a direção sai das duas posições.
+   */
+  private flinchFrom(e: NetEvent): void {
+    const hit = e.unit === this.myId ? this.o.me : this.remotes.get(e.unit)?.mech;
+    const shooter = e.other === NO_UNIT ? undefined : e.other === this.myId ? this.o.me : this.remotes.get(e.other)?.mech;
+    if (!hit || !shooter || hit === shooter) return;
+    const a = hit.simPosition;
+    const b = shooter.simPosition;
+    hit.flinch(a.x - b.x, a.z - b.z, hitFlinch(e.amount));
+  }
+
   private onEvents(b: EventBatch): void {
     for (let i = 0; i < b.count; i++) {
       const e = b.list[i]!;
+      if (e.kind === EVENT.HIT) this.flinchFrom(e);
       if (e.kind === EVENT.SHOT) this.remoteShot(e);
+      else if (e.kind === EVENT.HIT && e.other === this.myId && e.unit !== this.myId) this.o.onDamage?.(e.amount);
       else if (e.kind === EVENT.KILL) {
         const dead = e.unit === this.myId ? 'VOCÊ' : (this.names.get(e.unit) ?? 'INIMIGO');
         const killer = e.other === NO_UNIT ? null : e.other === this.myId ? 'VOCÊ' : (this.names.get(e.other) ?? null);
@@ -317,6 +398,7 @@ export class OnlineSession implements Pilot {
         this.o.match.destructibles.breakById(e.amount);
       } else if (e.kind === EVENT.ARENA_RESET) {
         // O servidor iniciou uma rodada nova: as barricadas voltam e o placar zera.
+        this.o.onRoundEnd?.();
         this.o.match.destructibles.restoreAll();
         this.o.match.debris.clear();
         this.scores.clear();
@@ -362,10 +444,22 @@ export class OnlineSession implements Pilot {
     const r = this.remotes.get(e.unit);
     const id = weaponFromNet(e.index);
     if (!r || !r.placed || !r.mech.alive || !id || id === 'chainsaw') return;
-    r.mech.simMuzzle(_o);
+    // O servidor diz de qual encaixe o tiro saiu (protocolo 14): a mão esquerda e os ombros do Marauder atiram do lugar deles, não da mão direita.
+    r.mech.simMuzzle(_o, MOUNTS[e.other] ?? 'rightHand');
     _d.set(-Math.sin(e.yaw) * Math.cos(e.pitch), Math.sin(e.pitch), -Math.cos(e.yaw) * Math.cos(e.pitch));
-    if (id === 'rockets') {
-      this.o.match.rockets.fire(_o, _d, r.mech.collider, weapon('rockets'));
+    if (id === 'barrage') {
+      // O evento traz a direção, não o ponto: acha onde o raio bate (o servidor fez o mesmo) e joga a chuva ali. Só desenho (dano é do servidor).
+      const hit = this.o.match.physics.raycast(_o, _d, 400, r.mech.collider);
+      _aimPoint.copy(_o).addScaledVector(_d, hit ? hit.distance : 400);
+      this.o.match.barrage.fire(_o, _d, _aimPoint, r.mech.collider, weapon('barrage'), 0, r.mech.barrageMouth(_mouth));
+      r.mech.onFireSecondary();
+    } else if (id === 'sonic') {
+      // A onda sônica de outro jogador: só o desenho (o cone, o dano e o empurrão são do servidor). Cada ombro manda o seu evento.
+      this.o.match.drawWave(_o, _d, weapon('sonic'));
+      r.mech.onFireSecondary();
+    } else if (id === 'rockets' || id === 'seeker') {
+      // O teleguiado de outro jogador voa reto no desenho (os inimigos remotos não estão na lista da partida local); a explosão de verdade vem do servidor.
+      this.o.match.rockets.fire(_o, _d, r.mech.collider, weapon(id));
       r.mech.onFireSecondary();
     } else {
       this.o.match.projectiles.fire(_o, _d, r.mech.collider, true, weapon(id));
@@ -405,6 +499,7 @@ function findUnit(s: Snapshot, id: number): UnitState | null {
 function copySnapshot(from: Snapshot, to: Snapshot): void {
   to.tick = from.tick;
   to.ack = from.ack;
+  to.energy = from.energy;
   to.count = from.count;
   for (let i = 0; i < from.count; i++) {
     const a = from.units[i]!;
@@ -421,6 +516,9 @@ function copySnapshot(from: Snapshot, to: Snapshot): void {
     b.grounded = a.grounded;
     b.dashing = a.dashing;
     b.overheated = a.overheated;
+    b.charging = a.charging;
+    b.shield = a.shield;
+    b.fx = a.fx;
   }
 }
 

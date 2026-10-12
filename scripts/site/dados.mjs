@@ -138,6 +138,25 @@ export function readEstado() {
   };
 }
 
+// ---------- STATUS_REAL ----------
+
+/**
+ * O quadro do que existe de verdade (`STATUS_REAL.md`, R13): uma linha por recurso, com o estado em REAL, PARCIAL, DEMO ou
+ * AUSENTE. A oficina conta como cada coisa funciona pelo código do jogo e mostra, ao lado, o selo deste quadro: o quão pronta
+ * ela está. Linha que mudou de nome ou de formato → sem selo, nunca selo errado (R14).
+ */
+export function statusReal() {
+  try {
+    return read('.decepticons/STATUS_REAL.md')
+      .split('\n')
+      .map((l) => /^\|\s*([^|]+?)\s*\|\s*(REAL|PARCIAL|DEMO|AUSENTE)\b([^|]*)\|/.exec(l))
+      .filter(Boolean)
+      .map((m) => ({ feature: m[1], tag: m[2], note: m[3].replace(/^\s*[—–-]\s*/, '').trim() }));
+  } catch {
+    return [];
+  }
+}
+
 // ---------- GAME_DESIGN ----------
 
 function designSection(title) {
@@ -179,8 +198,14 @@ export async function jogo() {
     const balance = await load('client/src/combat/balance.ts');
     const heat = await load('client/src/combat/heat.ts');
     // Os números dos chassis ficam num arquivo sem 3D: o site não carrega o Three.js.
-    const { VECTOR09_STATS, ANDROID_STATS, PILOT_ANDROID_STATS } = await load('client/src/entities/chassis.ts');
+    const { VECTOR09_STATS, ANDROID_STATS, PILOT_ANDROID_STATS, ARM_SLOTS, CHASSIS, CHASSIS_SIZE } = await load('client/src/entities/chassis.ts');
     const hangar = await load('client/src/hangar/loadout.ts');
+    // As classes de arma (leve, média, pesada): a ficha de cada arma na landing diz a dela.
+    const weaponClass = await load('client/src/combat/weaponClass.ts');
+    const shields = await load('client/src/combat/EnergyShield.ts');
+    // O escudo físico (4 modelos, resistência por natureza de dano) e as zonas da arena: a oficina descreve os dois pelos números do jogo.
+    const metal = await load('client/src/combat/MetalShield.ts');
+    const zones = await load('client/src/combat/Zone.ts');
     const count = (file) => (read(file).match(/^\s+it\(/gm) ?? []).length;
     // Rede (multiplayer): ritmos, tetos e a conta da banda, do mesmo código que os testes travam.
     const netConst = await load('shared/net/constants.ts');
@@ -205,7 +230,7 @@ export async function jogo() {
     const tests = count('client/src/combat/weapons.test.ts');
     // Testes que travam as regras da bancada: armas, calor e o Mech de verdade contra a bancada.
     const benchTests = tests + count('client/src/combat/heat.test.ts') + count('client/src/entities/MechHeat.test.ts');
-    return { weapons, balance, heat, hangar, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, tests, benchTests, net };
+    return { weapons, balance, heat, hangar, weaponClass, shields, metal, zones, vector: VECTOR09_STATS, android: ANDROID_STATS, pilot: PILOT_ANDROID_STATS, slots: ARM_SLOTS, chassis: CHASSIS, sizes: CHASSIS_SIZE, tests, benchTests, net };
   } catch (err) {
     console.warn(`::warning::site sem os dados do jogo: ${err instanceof Error ? err.message : err}`);
     return null;
@@ -241,47 +266,63 @@ export function recordSheet(game) {
 /**
  * Arsenal do Hangar: cada arma de Mech nos três níveis, com o dano sustentado e o tempo para derrubar o
  * torso do Vector-09 calculados pela mesma simulação do jogo (`combat/balance.ts`: teto teórico, todos
- * os tiros no alvo). O blaster fica de fora: é a arma dos andróides.
+ * os tiros no alvo). O blaster fica de fora: é a arma dos andróides. `weapons` é o que cabe nos braços do
+ * Vector-09 (as contas da página sobre o Hangar são dele); `others` é o resto dos Mechs, como a escopeta do
+ * Lancer-L1, com o nome do chassi que a carrega. O alvo das contas é sempre o torso do Vector-09.
  */
 export function arsenal(game) {
   if (!game) return null;
-  const { weapons: W, balance: B, vector: v } = game;
+  const { weapons: W, balance: B, vector: v, slots: S, chassis: C, sizes: Z } = game;
   const torso = v.maxModuleHealth.torso;
   // Só as armas dos braços do Mech (energia e munição); blaster e motosserra são dos andróides.
   const ids = W.WEAPON_IDS.filter((id) => id !== 'blaster' && W.weapon(id).kind !== 'melee');
   const levels = [0, 1, 2];
+  const card = (id, slot) => {
+    const base = W.weapon(id, 0);
+    return {
+      id,
+      name: base.name,
+      kind: base.kind,
+      // Leve, média ou pesada (a do tamanho de robô para o qual a arma foi feita, o 2 dos Mechs).
+      class: game.weaponClass.CLASS_LABEL[game.weaponClass.WEAPON_FIT[id].class].toLowerCase(),
+      speed: base.speed,
+      optimal: base.optimalRange,
+      max: base.maxRange,
+      minFactor: base.minFactor,
+      blast: base.blastRadius,
+      magazine: base.magazine,
+      slot,
+      tiers: levels.map((t) => {
+        const w = W.weapon(id, t);
+        return {
+          label: W.TIERS[t].label,
+          damage: w.damage,
+          rate: 1 / w.fireInterval,
+          heat: w.heatPerShot,
+          reload: w.reload,
+          mass: w.mass,
+          dps: B.sustainedDps(w, v),
+          ttk: B.timeToKill([w], v, torso),
+        };
+      }),
+    };
+  };
+  const onVector = (id) => S.vector09.right.includes(id) || S.vector09.left.includes(id);
+  // Onde a arma da `others` mora: o chassi de menor tamanho que a aceita (os Mechs antes do gigante), na ordem do catálogo, e em qual encaixe (braço ou ombros).
+  const carrier = (id) => {
+    const chassisId = Object.keys(S)
+      .filter((c) => S[c].right.includes(id) || S[c].left.includes(id) || (S[c].shoulders ?? []).includes(id))
+      .sort((a, b) => Z[a] - Z[b])[0];
+    const chassis = C[chassisId].name;
+    const lugar = S[chassisId].right.includes(id) ? 'braço direito' : S[chassisId].left.includes(id) ? 'braço esquerdo' : 'ombros';
+    return { chassis, slot: `${chassis.toLowerCase()} · ${lugar}` };
+  };
   return {
     target: v.name,
     torso,
     tests: game.tests,
-    weapons: ids.map((id) => {
-      const base = W.weapon(id, 0);
-      return {
-        id,
-        name: base.name,
-        kind: base.kind,
-        speed: base.speed,
-        optimal: base.optimalRange,
-        max: base.maxRange,
-        minFactor: base.minFactor,
-        blast: base.blastRadius,
-        magazine: base.magazine,
-        slot: id === v.loadout.primary.id ? 'braço direito' : 'braço esquerdo',
-        tiers: levels.map((t) => {
-          const w = W.weapon(id, t);
-          return {
-            label: W.TIERS[t].label,
-            damage: w.damage,
-            rate: 1 / w.fireInterval,
-            heat: w.heatPerShot,
-            reload: w.reload,
-            mass: w.mass,
-            dps: B.sustainedDps(w, v),
-            ttk: B.timeToKill([w], v, torso),
-          };
-        }),
-      };
-    }),
+    weapons: ids.filter(onVector).map((id) => card(id, S.vector09.right.includes(id) ? 'braço direito' : 'braço esquerdo')),
+    others: ids.filter((id) => !onVector(id)).map((id) => ({ ...card(id, carrier(id).slot), chassis: carrier(id).chassis })),
     combo: levels.map((t) => ({ label: W.TIERS[t].label, ttk: B.timeToKill([W.weapon('plasma', t), W.weapon('rockets', t)], v, torso) })),
     tier: W.TIERS,
     capacity: v.weaponCapacity,
@@ -364,7 +405,7 @@ export function entregas() {
       const agents = labels.filter((l) => l.startsWith('agente:')).map((l) => l.slice(7));
       return {
         n: p.number,
-        title: p.title,
+        title: p.title.replace(/decepticons/ig, '[PROJETO]'),
         date: brDate(p.mergedAt),
         agents: agents.length ? agents : [agentOf(p.headRefName)].filter(Boolean),
         fronts: labels.filter((l) => l.startsWith('frente:')).map((l) => l.slice(7)),
@@ -383,8 +424,8 @@ export function entregas() {
       const [date, subject = '', body = ''] = rec.trim().split('\x1f');
       const ours = /PR #(\d+):\s*(.+)$/.exec(subject);
       const gh = /pull request #(\d+) from [^/]+\/(\S+)/.exec(subject);
-      if (ours) prs.push({ n: Number(ours[1]), title: ours[2], date, agents: [], fronts: [] });
-      else if (gh) prs.push({ n: Number(gh[1]), title: body.split('\n')[0] || gh[2], date, agents: [agentOf(gh[2])].filter(Boolean), fronts: [] });
+      if (ours) prs.push({ n: Number(ours[1]), title: ours[2].replace(/decepticons/ig, '[PROJETO]'), date, agents: [], fronts: [] });
+      else if (gh) prs.push({ n: Number(gh[1]), title: (body.split('\n')[0] || gh[2]).replace(/decepticons/ig, '[PROJETO]'), date, agents: [agentOf(gh[2])].filter(Boolean), fronts: [] });
     }
     return { prs, fromGithub: false };
   }
@@ -407,7 +448,7 @@ export function atividade(prs) {
     .filter(Boolean)
     .map((r) => {
       const [sha, parents, ct, subject, co] = r.split('\x1f');
-      return { sha, parents: parents ? parents.split(' ') : [], t: Number(ct) * 1000, subject, co: co ?? '' };
+      return { sha, parents: parents ? parents.split(' ') : [], t: Number(ct) * 1000, subject: subject.replace(/decepticons/ig, '[PROJETO]'), co: co ?? '' };
     });
   const bySha = new Map(list.map((c) => [c.sha, c]));
   const prAgents = new Map(prs.map((p) => [p.n, p.agents]));

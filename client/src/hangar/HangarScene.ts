@@ -1,4 +1,8 @@
+import { ChargeTimer } from '../combat/ChargeTimer';
+import { WaveRings } from '../fx/WaveRings';
+import type { WeaponStats } from '../combat/weapons';
 import * as THREE from 'three';
+import type { MountId } from '../combat/mounts';
 import type { Loadout } from '../combat/weapons';
 import type { TestFire } from './testFire';
 import { PALETTE } from '../core/palette';
@@ -34,6 +38,7 @@ const BLUEPRINT_BY_CHASSIS: Partial<Record<ChassisId, MechBlueprint>> = {
 
 const _arm = new THREE.Vector3();
 const _v = new THREE.Vector3();
+const _d = new THREE.Vector3();
 /** Alvo do teste de disparo: à direita e atrás do pedestal. */
 const TARGET = new THREE.Vector3(15, 0, -9);
 const TARGET_H = 6;
@@ -225,6 +230,15 @@ function blueprintTexture(): THREE.CanvasTexture {
  * Tudo feito por código (texturas em canvas, geometria simples): nada para baixar. Custo só com o Hangar aberto.
  */
 export class HangarScene {
+  /** Uma carga atrasada não pode substituir a seleção mais recente do piloto. */
+  private showVersion = 0;
+  /** Contrato de render: preparar só o modelo escolhido, com as luzes reais do Hangar. */
+  prepareModel?: (root: THREE.Object3D) => Promise<boolean>;
+  private readonly prepared = new WeakSet<THREE.Object3D>();
+  private pendingPreparation: { model: MechBase; version: number } | null = null;
+  private preparing = false;
+  /** A UI pode consultar este estado; o modelo anterior fica no pedestal durante a preparação. */
+  get graphicsPreparing(): boolean { return this.preparing; }
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(38, 1, 0.1, 220);
   private readonly turntable = new THREE.Group();
@@ -256,12 +270,15 @@ export class HangarScene {
   private practiceActive = false;
   private practiceTime = 0;
   private practiceCooldown = 0;
+  private readonly practiceCharge = new ChargeTimer();
   private practiceShots = 0;
   private practiceHits = 0;
   private practiceAccuracy = 0;
   private readonly shotsPool: Shot[] = [];
+  /** A onda sônica do teste de disparo: os mesmos anéis do jogo, na cena do galpão. */
+  readonly waveRings = new WaveRings();
   private readonly flashes: Flash[] = [];
-  private test: { data: TestFire; arm: 'right' | 'left'; t: number; next: number; aimFrom: number; aimTo: number } | null = null;
+  private test: { data: TestFire; mounts: readonly MountId[]; t: number; next: number; aimFrom: number; aimTo: number } | null = null;
   /** 0 = câmera do Hangar, 1 = câmera aberta do teste (mistura suave entre as duas). */
   private testCam = 0;
   private readonly camHome = new THREE.Vector3();
@@ -316,7 +333,7 @@ export class HangarScene {
     const column = (r: number, map: THREE.Texture, opacity: number) => {
       const m = new THREE.Mesh(
         new THREE.CylinderGeometry(r, r, COLUMN_H, 64, 1, true),
-        new THREE.MeshBasicMaterial({ map, color: CYAN, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }),
+        new THREE.MeshBasicMaterial({ map, color: CYAN, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true }),
       );
       m.position.y = PEDESTAL_TOP + COLUMN_H / 2;
       s.add(m);
@@ -371,6 +388,7 @@ export class HangarScene {
       p.position.y = (TARGET_H + 2.2) / 2;
       s.add(p);
     }
+    s.add(this.waveRings.mesh);
     const shotMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xbff6ff).multiplyScalar(3) });
     for (let i = 0; i < SHOTS_POOL; i++) {
       const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.6, 6), shotMat.clone());
@@ -402,9 +420,9 @@ export class HangarScene {
    * Teste de disparo: o Mech vira para o alvo e dispara a arma do braço escolhido no ritmo do teste (`testFire`, as
    * regras do jogo). A câmera abre para mostrar o Mech e o alvo. Chame `testProgress` a cada quadro.
    */
-  startTest(data: TestFire, arm: 'right' | 'left'): void {
+  startTest(data: TestFire, mounts: readonly MountId[]): void {
     const aimTo = Math.atan2(-(TARGET.x - 0), -(TARGET.z - 0));
-    this.test = { data, arm, t: 0, next: 0, aimFrom: this.turntable.rotation.y, aimTo };
+    this.test = { data, mounts, t: 0, next: 0, aimFrom: this.turntable.rotation.y, aimTo };
   }
 
   /** O teste em andamento: segundo atual e duração (null = sem teste). */
@@ -421,6 +439,7 @@ export class HangarScene {
     this.practiceActive = true;
     this.practiceTime = 0;
     this.practiceCooldown = 0;
+    this.practiceCharge.reset();
     this.practiceShots = 0;
     this.practiceHits = 0;
     this.practiceAccuracy = 0;
@@ -434,6 +453,7 @@ export class HangarScene {
 
   stopAimPractice(): void {
     this.practiceActive = false;
+    this.practiceCharge.reset();
     this.aimTarget.root.visible = false;
     this.aimTargetRing.visible = false;
     this.camera.fov = 38;
@@ -453,19 +473,21 @@ export class HangarScene {
     return this.practiceTime;
   }
 
+  get aimPracticeCharge(): number { return this.practiceCharge.progress; }
+
   get aimPracticeAccuracy(): number {
     return this.practiceAccuracy;
   }
 
   /** Aim pelo mesmo input/sensibilidade do jogador; tiro e acerto só afetam o placar do treino. */
-  updateAimPractice(dt: number, yaw: number, pitch: number, firing: boolean, fireInterval: number): void {
+  updateAimPractice(dt: number, yaw: number, pitch: number, firing: boolean, weapon: WeaponStats): void {
     if (!this.practiceActive) return;
     this.camera.position.set(0, 2.35, 17);
     this.camera.quaternion.setFromEuler(this.practiceEuler.set(pitch, yaw, 0, 'YXZ'));
     this.camera.updateMatrixWorld();
     this.practiceCooldown = Math.max(0, this.practiceCooldown - dt);
-    if (firing && this.practiceCooldown <= 0) {
-      this.practiceCooldown = Math.max(0.08, fireInterval);
+    if (this.practiceCharge.step(dt, firing, this.practiceCooldown <= 0, weapon.chargeTime)) {
+      this.practiceCooldown = Math.max(0.08, weapon.fireInterval);
       this.fireAimPracticeShot();
     }
   }
@@ -542,7 +564,8 @@ export class HangarScene {
     // Lâmpadas penduradas: cúpula escura, bulbo quente (o brilho acende no bloom) e luz de verdade em algumas.
     const shade = new THREE.MeshStandardMaterial({ color: 0x2a2f33, roughness: 0.5, metalness: 0.6, side: THREE.DoubleSide });
     const bulb = new THREE.MeshBasicMaterial({ color: new THREE.Color(WARM).multiplyScalar(3) });
-    const cone = new THREE.MeshBasicMaterial({ color: WARM, transparent: true, opacity: 0.018, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    // Aditivo: frente e verso somam luz, sem exigir duas submissões de desenho.
+    const cone = new THREE.MeshBasicMaterial({ color: WARM, transparent: true, opacity: 0.018, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true });
     [
       [-12, -8],
       [12, -8],
@@ -589,7 +612,7 @@ export class HangarScene {
       s.add(a.root);
     }
     // Telas de holograma soltas no ar, com a planta de um Mech.
-    const screen = new THREE.MeshBasicMaterial({ map: blueprintTexture(), color: CYAN, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const screen = new THREE.MeshBasicMaterial({ map: blueprintTexture(), color: CYAN, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, forceSinglePass: true });
     for (const [x, y, z, yaw] of [
       [-11, 5.5, -3, 0.55],
       [-21, 12, -18, 0.2],
@@ -604,6 +627,8 @@ export class HangarScene {
 
   /** O Mech do pedestal: o chassi e as armas da montagem (um modelo por chassi, feito na primeira vez). */
   show(chassis: ChassisId, loadout: Loadout): void {
+    const version = ++this.showVersion;
+    this.pendingPreparation = null;
     let m = this.displays.get(chassis);
     if (!m) {
       const importedAsset = IMPORTED_CHASSIS[chassis];
@@ -611,7 +636,9 @@ export class HangarScene {
         const rig = tryInstantiateMechRig(importedAsset.url, CHASSIS[chassis].height);
         if (!rig) {
           // Ainda carregando (raro — o preload dispara no boot do jogo): tenta de novo assim que
-          whenMechAssetReady(importedAsset.url, CHASSIS[chassis].height, importedAsset.rotationY, importedAsset.boneNames).then(() => this.show(chassis, loadout));
+          whenMechAssetReady(importedAsset.url, CHASSIS[chassis].height, importedAsset)
+            .then(() => { if (version === this.showVersion) this.show(chassis, loadout); })
+            .catch((err: unknown) => console.warn('Hangar: não foi possível carregar o Mech selecionado', err));
           return;
         }
         m = new ImportedMech(CHASSIS[chassis], rig, loadout);
@@ -624,6 +651,34 @@ export class HangarScene {
       this.displays.set(chassis, m);
     }
     m.equip(loadout);
+    if (m !== this.shown && this.prepareModel && !this.prepared.has(m.root)) {
+      // Uma operação ativa + só a última pendente: cliques rápidos não criam uma fila de compilações.
+      this.pendingPreparation = { model: m, version };
+      if (!this.preparing) void this.prepareSelection();
+      return;
+    }
+    this.display(m);
+  }
+
+  private async prepareSelection(): Promise<void> {
+    this.preparing = true;
+    try {
+      while (this.pendingPreparation) {
+        const request = this.pendingPreparation;
+        this.pendingPreparation = null;
+        try {
+          if (await this.prepareModel!(request.model.root)) this.prepared.add(request.model.root);
+        } catch (err: unknown) {
+          console.warn('Hangar: preparação gráfica falhou (segue no primeiro uso)', err);
+        }
+        if (request.version === this.showVersion) this.display(request.model);
+      }
+    } finally {
+      this.preparing = false;
+    }
+  }
+
+  private display(m: MechBase): void {
     if (m !== this.shown) {
       if (this.shown) this.turntable.remove(this.shown.root);
       this.turntable.add(m.root);
@@ -693,15 +748,22 @@ export class HangarScene {
   }
 
   /** Um tiro do teste: da boca da arma até um ponto do alvo (motosserra só solta faísca na lâmina). */
-  private fire(test: { data: TestFire; arm: 'right' | 'left' }): void {
+  private fire(test: { data: TestFire; mounts: readonly MountId[]; next: number }): void {
     const m = this.shown;
     if (!m) return;
     const w = test.data.weapon;
     const from = _v;
-    if (test.arm === 'left') m.leftMuzzleWorldPosition(from);
-    else m.muzzleWorldPosition(from);
+    // Vários encaixes atiram juntos (os dois ombros): cada tiro da lista sai do encaixe seguinte, em rodízio.
+    m.mountWorldPosition(test.mounts[test.next % test.mounts.length]!, from);
     if (w.kind === 'melee') {
       this.flash(from, 0.7);
+      return;
+    }
+    // A onda sônica não é projétil: os anéis saem da boca em direção ao alvo e se abrem no cone (o mesmo desenho do jogo).
+    if (w.wave) {
+      _d.set(TARGET.x, TARGET_H, TARGET.z).sub(from);
+      this.waveRings.spawn(from, _d, w);
+      this.flash(from, 0.5);
       return;
     }
     const shot = this.shotsPool.find((s) => s.t >= s.dur);
@@ -756,6 +818,7 @@ export class HangarScene {
   /** Por quadro, com o Hangar aberto. */
   update(dt: number): void {
     this.time += dt;
+    this.waveRings.update(dt);
     this.sinceDrag += dt;
     const test = this.test;
     if (this.practiceActive) {

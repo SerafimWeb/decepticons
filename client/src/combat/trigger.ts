@@ -1,4 +1,4 @@
-import type { WeaponStats } from './weapons';
+import type { Spin, WeaponStats } from './weapons';
 
 /**
  * Cadência no tick fixo sem arredondar para o tick: a sobra do tick passa para o próximo tiro. Um
@@ -29,6 +29,86 @@ export class FireTimer {
 
   reset(): void {
     this.wait = 0;
+  }
+}
+
+/**
+ * A rotação do cano da metralhadora rotatória (`Spin` da arma): sobe de 0 a 1 em `up` s com o gatilho apertado e cai em `down` s ao soltar.
+ * A cadência segue a rotação: de `minRate` × o máximo (parado) até o máximo (cano em plena rotação). Regra de simulação (G1/G2): só o dt do tick.
+ */
+export class SpinUp {
+  /** 0 = parado, 1 = plena rotação. */
+  level = 0;
+
+  step(dt: number, held: boolean, spin: Spin): number {
+    this.level = held ? Math.min(1, this.level + dt / spin.up) : Math.max(0, this.level - dt / spin.down);
+    return this.level;
+  }
+
+  /** Segundos até o próximo tiro com a rotação de agora (`w.fireInterval` é o intervalo em plena rotação). */
+  interval(w: WeaponStats): number {
+    const spin = w.spin;
+    return spin ? w.fireInterval / (spin.minRate + (1 - spin.minRate) * this.level) : w.fireInterval;
+  }
+
+  reset(): void {
+    this.level = 0;
+  }
+}
+
+/**
+ * O tanque do lança-chamas (`Flame` da arma): gasta `fuel` segundos enquanto o gatilho queima; seco, **trava por `reload` s** e volta cheio;
+ * com o gatilho solto, enche no ritmo `fuel / reload` (cheio em `reload` s). Regra de simulação (G1/G2): só o dt do tick.
+ */
+export class FuelTank {
+  /** Segundos de chama que restam. */
+  fuel: number;
+  /** Segundos que faltam para sair da trava de tanque seco (0 = destravado). */
+  private lock = 0;
+
+  constructor(
+    readonly capacity: number,
+    readonly reload: number,
+  ) {
+    this.fuel = capacity;
+  }
+
+  /** Um tick. `held`: o gatilho está apertado e a arma pode atirar. Devolve se a chama acende neste tick. */
+  step(dt: number, held: boolean): boolean {
+    if (this.lock > 0) {
+      this.lock -= dt;
+      if (this.lock <= 1e-9) {
+        this.lock = 0;
+        this.fuel = this.capacity;
+      }
+      return false;
+    }
+    if (held && this.fuel > 0) {
+      this.fuel = Math.max(0, this.fuel - dt);
+      if (this.fuel <= 1e-9) {
+        this.fuel = 0;
+        this.lock = this.reload;
+      }
+      return true;
+    }
+    if (!held) this.fuel = Math.min(this.capacity, this.fuel + (dt * this.capacity) / this.reload);
+    return false;
+  }
+
+  /** Seco e esperando a recarga. */
+  get locked(): boolean {
+    return this.lock > 0;
+  }
+
+  /** 0..1 para o medidor: o tanque, ou o quanto da recarga já passou enquanto está seco. */
+  get level(): number {
+    return this.lock > 0 ? 1 - this.lock / this.reload : this.fuel / this.capacity;
+  }
+
+  /** Rodada nova, renascimento ou troca de armas: tanque cheio e destravado. */
+  refill(): void {
+    this.fuel = this.capacity;
+    this.lock = 0;
   }
 }
 

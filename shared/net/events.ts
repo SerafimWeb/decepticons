@@ -4,7 +4,7 @@ import { fromAngle, fromCm, fromPitch, toAngle, toCm, toPitch, type Reader, type
  * Eventos do servidor (acerto, parte arrancada, abate, explosão, barricada, tiro, renascimento): o que o cliente
  * transforma em efeito, som e placar (MULTIPLAYER.md, seção 9, item 2). Cada evento tem um formato fixo.
  */
-export const NET_WEAPONS = ['plasma', 'rockets', 'blaster', 'chainsaw'] as const;
+export const NET_WEAPONS = ['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage', 'railgun', 'emp', 'arc', 'cryo', 'cannon', 'autocannon', 'sonic', 'seeker'] as const;
 export type NetWeapon = (typeof NET_WEAPONS)[number];
 
 export const EVENT = {
@@ -28,7 +28,7 @@ export interface NetEvent {
   kind: EventKind;
   /** HIT e PART_LOST: quem levou. KILL: quem caiu. SHOT: quem atirou. SPAWN: quem nasceu. */
   unit: number;
-  /** HIT: quem atirou. KILL: quem derrubou (`NO_UNIT` = ninguém). */
+  /** HIT: quem atirou. KILL: quem derrubou (`NO_UNIT` = ninguém). SHOT: de qual encaixe o tiro saiu (posição em `MOUNTS`, de 0 a 3). */
   other: number;
   /** HIT e PART_LOST: posição em `NET_PARTS`. SHOT: posição em `NET_WEAPONS`. */
   index: number;
@@ -66,7 +66,8 @@ export function writeEvent(w: Writer, e: NetEvent): void {
       w.u16(e.amount);
       break;
     case EVENT.SHOT:
-      w.u8(e.unit).u8(e.index).u16(toAngle(e.yaw)).i16(toPitch(e.pitch));
+      // O encaixe vai nos 2 bits de cima do byte da arma (as armas cabem em 6 bits: até 64): o evento não cresce.
+      w.u8(e.unit).u8((e.index & 63) | ((e.other & 3) << 6)).u16(toAngle(e.yaw)).i16(toPitch(e.pitch));
       break;
     case EVENT.SPAWN:
       w.u8(e.unit);
@@ -108,7 +109,11 @@ export function readEvent(r: Reader, out: NetEvent, parts: number): void {
       break;
     case EVENT.SHOT:
       out.unit = r.u8();
-      out.index = r.u8();
+      {
+        const b = r.u8();
+        out.index = b & 63;
+        out.other = b >> 6;
+      }
       out.yaw = fromAngle(r.u16());
       out.pitch = fromPitch(r.i16());
       if (out.index >= NET_WEAPONS.length) r.bad = true;

@@ -32,7 +32,8 @@ export const CHART_CSS = `
   .g .band-edge { stroke: var(--amber); stroke-width: 1; stroke-dasharray: 3 3; opacity: .55; }
   .g .ceil { stroke: var(--red); stroke-width: 1; opacity: .7; }
   .g .lock { fill: var(--red); }
-  .g .lbl { fill: var(--muted); font: 400 10px var(--fb); letter-spacing: .12em; text-transform: uppercase; }
+  /* O halo (contorno na cor do fundo) impede que a linha do gráfico risque o rótulo que passa por baixo dela. */
+  .g .lbl { fill: var(--muted); font: 400 10px var(--fb); letter-spacing: .12em; text-transform: uppercase; paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
   .g .lbl-hot { fill: var(--red); }
   .g .val { fill: var(--text); font: 400 11.5px var(--fb); font-variant-numeric: tabular-nums; }
   .g .mark { fill: var(--amber); stroke: var(--panel); stroke-width: 2; }
@@ -56,6 +57,25 @@ export const CHART_CSS = `
     .bars .bl { grid-column: 1 / -1; font-size: 12.5px; color: var(--muted); }
   }
   .minis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+  /* Duas linhas de legenda reservadas: com uma legenda que quebra e outra não, os gráficos da mesma fileira ficavam em alturas diferentes. */
+  .minis .g figcaption p { min-height: 2.9em; }
+  /* A chave de leitura: o que cada traço dos gráficos quer dizer, uma vez só, antes da grade. */
+  .chave { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 12.5px; color: var(--muted); }
+  .chave li { display: flex; align-items: center; gap: 8px; }
+  .chave i { display: inline-block; flex: none; width: 24px; }
+  .chave .k-line { height: 0; border-top: 2px solid var(--amber); }
+  .chave .k-band { height: 12px; background: rgba(255,176,0,.14); border-top: 1px dashed rgba(255,176,0,.6); }
+  .chave .k-ceil { height: 0; border-top: 1px solid var(--red); }
+  .chave .k-lock { height: 5px; background: var(--red); }
+  .chave .k-mark { width: 10px; height: 10px; border-radius: 50%; background: var(--amber); }
+  /* Um achado tirado dos números do próprio build (muda sozinho quando o equilíbrio muda). */
+  .achado { margin: 0; padding: 10px 14px; border-left: 3px solid var(--amber); background: rgba(255,176,0,.06); color: var(--text); font-size: 14px; line-height: 1.55; max-width: 92ch; }
+  .achado b { color: var(--amber); }
+  .how { padding: 14px 16px; display: grid; gap: 8px; align-content: start; grid-column: span 2; min-width: 0; }
+  .how h3 { font-size: 1.2rem; }
+  .how p, .how li { color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+  .how ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+  @media (max-width: 660px) { .how { grid-column: auto; } }
   .heatmap { width: 100%; border-collapse: separate; border-spacing: 3px; font-variant-numeric: tabular-nums; }
   .heatmap th { font-weight: 400; font-size: 11px; letter-spacing: .14em; color: var(--muted); text-align: left; padding: 4px 6px; }
   .heatmap thead th { text-align: center; }
@@ -66,6 +86,8 @@ export const CHART_CSS = `
   .hm-legend i { display: inline-block; width: 90px; height: 10px; background: linear-gradient(90deg, rgba(255,176,0,.9), rgba(255,176,0,.08)); border: 1px solid var(--line); }
   .scroll-x { overflow-x: auto; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  /* Item de grid não encolhe abaixo do conteúdo: sem isto, a tabela larga alargava a seção inteira no celular. */
+  .table-view { min-width: 0; max-width: 100%; }
   .table-view summary { cursor: pointer; color: var(--muted); font-size: 12.5px; letter-spacing: .12em; text-transform: uppercase; }
   .table-view table { margin-top: 10px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
   .table-view th, .table-view td { padding: 4px 14px 4px 0; text-align: left; border-bottom: 1px solid var(--line); }
@@ -76,10 +98,10 @@ export const CHART_CSS = `
  * Linha no tempo (uma série), com faixa de alerta opcional e tiras de "travado" no pé do gráfico.
  * `xs`/`ys`: pontos; `band`: [y0, y1, rótulo]; `ceiling`: y da linha vermelha; `locks`: 0/1 por ponto.
  */
-export function lineChart({ title, caption, xs, ys, xMax, yMax, xTicks, yTicks, xFmt, yFmt, band, ceiling, locks, marks = [], ariaLabel }) {
+export function lineChart({ title, caption, xs, ys, xMax, yMax, xTicks, yTicks, xFmt, yFmt, band, ceiling, locks, marks = [], yTitle, cut, ariaLabel }) {
   const W = 320;
   const H = 150;
-  const pad = { l: 34, r: 10, t: 10, b: locks ? 30 : 22 };
+  const pad = { l: 34, r: 10, t: 18, b: locks ? 30 : 22 };
   const x = (v) => pad.l + (v / xMax) * (W - pad.l - pad.r);
   const y = (v) => pad.t + (1 - v / yMax) * (H - pad.t - pad.b - (locks ? 8 : 0));
   const y0 = y(0);
@@ -110,6 +132,9 @@ export function lineChart({ title, caption, xs, ys, xMax, yMax, xTicks, yTicks, 
     if (lockSvg) lockSvg = `<text class="lbl lbl-hot" x="${pad.l}" y="${(stripY + 16).toFixed(1)}">▮ travado</text>${lockSvg}`;
   }
   const markSvg = marks.map((mk) => `<circle class="mark" cx="${x(mk.x).toFixed(1)}" cy="${y(mk.y).toFixed(1)}" r="4"><title>${esc(mk.title)}</title></circle>`).join('');
+  // O nome da grandeza do eixo vertical (os números sozinhos, "50%", não dizem de quê) e o corte do alcance máximo.
+  const titleSvg = yTitle ? `<text class="lbl" x="${pad.l + 3}" y="${pad.t - 7}">${esc(yTitle)}</text>` : '';
+  const cutSvg = cut ? `<text class="lbl" x="${(x(cut.x) - 5).toFixed(1)}" y="${(y0 - 6).toFixed(1)}" text-anchor="end">${esc(cut.label)}</text>` : '';
   return `<figure class="g frame">
       <figcaption><h3>${esc(title)}</h3>${caption ? `<p>${caption}</p>` : ''}</figcaption>
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(ariaLabel ?? title)}">
@@ -117,7 +142,7 @@ export function lineChart({ title, caption, xs, ys, xMax, yMax, xTicks, yTicks, 
         <line class="axis" x1="${pad.l}" x2="${W - pad.r}" y1="${y0.toFixed(1)}" y2="${y0.toFixed(1)}"/>
         <path class="area" d="${d}L${x(xs.at(-1)).toFixed(1)},${y0.toFixed(1)}L${x(xs[0]).toFixed(1)},${y0.toFixed(1)}Z"/>
         <path class="line" d="${d}"/>
-        ${markSvg}${lockSvg}${xt}
+        ${markSvg}${lockSvg}${titleSvg}${cutSvg}${xt}
       </svg>
     </figure>`;
 }

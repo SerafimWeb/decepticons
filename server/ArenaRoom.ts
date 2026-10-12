@@ -1,10 +1,13 @@
+import { BankAccount } from '../client/src/bank/BankAccount';
+import { decodeBankCode, encodeBankReply } from '../shared/net/bank';
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import { MOUNTS, type MountId } from '../client/src/combat/mounts';
 import type { WeaponStats } from '../client/src/combat/weapons';
 import { DEFAULT_SETTINGS } from '../client/src/core/Settings';
 import { Android } from '../client/src/entities/Android';
 import { CHASSIS, PILOT_ANDROID_STATS } from '../client/src/entities/chassis';
-import type { MechBase } from '../client/src/entities/MechBase';
+import type { MechBase, MechPart } from '../client/src/entities/MechBase';
 import { Vector09 } from '../client/src/entities/Vector09';
 import type { ParticleSystem } from '../client/src/fx/ParticleSystem';
 import { factorySpec, loadoutKey, parseLoadoutKey, validateLoadout } from '../client/src/hangar/loadout';
@@ -14,6 +17,7 @@ import { Match } from '../client/src/sim/Match';
 import { Writer } from '../shared/net/codec';
 import { MAX_EVENTS, MAX_UNITS, NO_UNIT, PROTOCOL_VERSION, ROOM_SIZE, SIM_HZ, SNAPSHOT_HZ } from '../shared/net/constants';
 import { EVENT } from '../shared/net/events';
+import { NET_PARTS } from '../shared/net/state';
 import {
   decodeInputs,
   decodeJoin,
@@ -39,8 +43,12 @@ import { NetPilot } from './NetPilot';
 export interface Peer {
   send(bytes: Uint8Array): void;
   close(): void;
+  /** País de quem conectou (código de 2 letras, ou `??`): só para a contagem de origem, nunca para a regra do jogo. */
+  readonly pais?: string;
 }
 
+/** Rascunho da boca de um encaixe (`mountOf`): nada é criado por tiro (G4). */
+const _mount = new THREE.Vector3();
 /** No servidor ninguém vê faísca: as regras chamam o efeito, e ele não faz nada. */
 const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
 /** Ticks entre dois estados mandados (60 Hz / 20 Hz = 3). */
@@ -57,6 +65,7 @@ interface Unit {
 interface Human extends Unit {
   peer: Peer;
   pilot: NetPilot;
+  bank: BankAccount;
 }
 
 /**
@@ -81,6 +90,10 @@ export class ArenaRoom {
   private readonly packet = newInputPacket();
   /** Eventos juntados entre dois estados (tiros e abates), mandados logo depois do estado. */
   private readonly events = newEventBatch();
+  /** Alguém entrou na partida (montagem aceita). O servidor conta a origem; a sala não sabe para quê. */
+  onEntrou?: (peer: Peer) => void;
+  /** Alguém foi recusado, e por quê. */
+  onRecusou?: (peer: Peer, motivo: RejectReason) => void;
   /** Sala fechada: o mundo físico foi liberado; mensagens e saídas que ainda chegarem são ignoradas. */
   private disposed = false;
 
@@ -97,8 +110,11 @@ export class ArenaRoom {
     this.match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: DEFAULT_SETTINGS, debris: false, allies: false });
     // Eventos para os clientes desenharem o que o servidor decidiu: cada tiro (o cliente faz o projétil visual)
     // e cada abate (lista de abates).
-    this.match.projectiles.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
-    this.match.rockets.onFired = (_origin, dir, owner, w) => this.shot(owner, dir, w);
+    this.match.projectiles.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
+    this.match.rockets.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
+    this.match.barrage.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
+    this.match.onWave = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
+    this.match.onMechHit = (e) => this.hit(e.mech, e.shooter, e.result.part, e.result.applied);
     this.match.onMechKilled = (dead, _at, killer) => this.kill(dead, killer);
     this.match.onPropBroken = (id) => this.propBroken(id);
     this.match.onRoundStart = () => this.arenaReset();
@@ -124,6 +140,11 @@ export class ArenaRoom {
         const h = this.humans.get(peer);
         if (!h || !decodeInputs(bytes, this.packet)) return;
         for (let i = 0; i < this.packet.count; i++) h.pilot.push(this.packet.inputs[i]!);
+        return;
+      }
+      case MSG.BANK: {
+        const h = this.humans.get(peer), code = decodeBankCode(bytes);
+        if (h && code !== null) peer.send(encodeBankReply(this.w, h.bank.redeem(code, h.mech, this.tick)));
         return;
       }
       case MSG.PING: {
@@ -166,6 +187,12 @@ export class ArenaRoom {
     return null;
   }
 
+  /** O Mech desta unidade no servidor, para diagnóstico e teste (ver ou aplicar um estado de fogo, choque ou gelo). */
+  mechOf(id: number): MechBase | null {
+    for (const u of this.units) if (u.id === id) return u.mech;
+    return null;
+  }
+
   /** Libera o mundo físico (sala vazia fechando). */
   dispose(): void {
     if (this.disposed) return;
@@ -192,14 +219,16 @@ export class ArenaRoom {
     this.match.addPlayer(mech, m.name);
     const pilot = new NetPilot(mech, this.match);
     this.match.pilots.push(pilot);
-    const human: Human = { id: this.freeId(), mech, kind: 'human', name: m.name, build: loadoutKey(spec), peer, pilot };
+    const human: Human = { id: this.freeId(), mech, kind: 'human', name: m.name, build: loadoutKey(spec), peer, pilot, bank: new BankAccount() };
     this.units.push(human);
     this.humans.set(peer, human);
     peer.send(encodeWelcome(this.w, { protocol: PROTOCOL_VERSION, id: human.id, tick: this.tick, simHz: SIM_HZ, snapshotHz: SNAPSHOT_HZ, room: this.code }));
     this.broadcastRoster();
+    this.onEntrou?.(peer);
   }
 
   private reject(peer: Peer, reason: RejectReason): void {
+    this.onRecusou?.(peer, reason);
     peer.send(encodeReject(this.w, reason));
     peer.close();
   }
@@ -209,16 +238,40 @@ export class ArenaRoom {
     return NO_UNIT;
   }
 
-  private shot(owner: RAPIER.Collider | undefined, dir: THREE.Vector3, w: WeaponStats): void {
+  /**
+   * De qual encaixe do corpo saiu um tiro: o mais perto da origem entre os que o chassi usa nos dois botões. O tiro nasce na boca do encaixe (a mesma conta do
+   * simMuzzle), então a distância é ~0 no encaixe certo e de metros nos outros. O outro jogador desenha o tiro dali (antes: sempre da mão direita).
+   */
+  private mountOf(mech: MechBase, origin: THREE.Vector3): number {
+    const t = mech.triggers;
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < MOUNTS.length; i++) {
+      const m: MountId = MOUNTS[i]!;
+      if (!t.primary.includes(m) && !t.secondary.includes(m)) continue;
+      const d = mech.simMuzzle(_mount, m).distanceToSquared(origin);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  private shot(owner: RAPIER.Collider | undefined, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
+    // A rotatória (20 tiros/s) não manda um evento por tiro: a bandeira `fx` de "cano girando" faz os outros jogadores desenharem o fluxo.
+    if (w.spin) return;
     const b = this.events;
     if (!owner || b.count >= MAX_EVENTS) return;
     let id = NO_UNIT;
-    for (const u of this.units) if (u.mech.collider === owner) id = u.id;
-    if (id === NO_UNIT) return;
+    let shooter: MechBase | undefined;
+    for (const u of this.units) if (u.mech.collider === owner) { id = u.id; shooter = u.mech; }
+    if (id === NO_UNIT || !shooter) return;
     const e = b.list[b.count++]!;
     e.kind = EVENT.SHOT;
     e.unit = id;
     e.index = netWeaponIndex(w.id);
+    e.other = this.mountOf(shooter, origin);
     e.yaw = Math.atan2(-dir.x, -dir.z);
     e.pitch = Math.asin(Math.max(-1, Math.min(1, dir.y)));
   }
@@ -230,6 +283,21 @@ export class ArenaRoom {
     e.kind = EVENT.KILL;
     e.unit = this.idOf(dead);
     e.other = killer ? this.idOf(killer) : NO_UNIT;
+  }
+
+  /**
+   * Acerto em Mech: o dano já foi aplicado pela simulação (projétil, foguete, serra ou pisão); o evento só conta
+   * aos clientes quem levou, de quem, em qual parte e quanto. Não existe segunda via de dano.
+   */
+  private hit(target: MechBase, shooter: MechBase | undefined, part: MechPart, damage: number): void {
+    const b = this.events;
+    if (b.count >= MAX_EVENTS) return;
+    const e = b.list[b.count++]!;
+    e.kind = EVENT.HIT;
+    e.unit = this.idOf(target);
+    e.other = this.idOf(shooter);
+    e.index = NET_PARTS.indexOf(part);
+    e.amount = Math.min(65535, Math.round(damage));
   }
 
   /** Barricada quebrou: o cliente aplica pelo `id`, sem calcular dano. */
@@ -257,7 +325,8 @@ export class ArenaRoom {
   }
 
   private broadcastRoster(): void {
-    const entries: RosterEntry[] = this.units.map(({ id, kind, name, build }) => ({ id, kind, name, build }));
+    this.match.bots.setMechCapacity(ROOM_SIZE - this.humans.size);
+    const entries: RosterEntry[] = this.units.filter(u => !this.match.bots.isReserved(u.mech)).map(({ id, kind, name, build }) => ({ id, kind, name, build }));
     const bytes = encodeRoster(this.w, entries);
     for (const h of this.humans.values()) h.peer.send(bytes);
   }
@@ -266,10 +335,13 @@ export class ArenaRoom {
   private broadcastSnapshot(): void {
     const s = this.snapshot;
     s.tick = this.tick;
-    s.count = this.units.length;
-    for (let i = 0; i < this.units.length; i++) unitFromMech(this.units[i]!.mech, this.units[i]!.id, s.units[i]!);
+    s.count = 0;
+    for (const u of this.units) {
+      if (!this.match.bots.isReserved(u.mech)) unitFromMech(u.mech, u.id, s.units[s.count++]!);
+    }
     for (const h of this.humans.values()) {
       s.ack = h.pilot.ack;
+      s.energy = h.mech.energyShield.fraction;
       h.peer.send(encodeSnapshot(this.w, s));
     }
     if (this.events.count) {

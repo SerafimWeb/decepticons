@@ -4,8 +4,10 @@
  * jogador (localStorage), que é dado de fora: `sanitizeSettings` valida e limita campo a campo.
  */
 
+import { BOT_NAMES, NAME_MAX } from './botNames';
+
 /** Ações do teclado que o jogador pode trocar. O valor é `KeyboardEvent.code` (posição física). */
-export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera';
+export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera' | 'shield';
 export type QualityPreset = 'auto' | 'alta' | 'media' | 'baixa';
 export type Difficulty = 'facil' | 'normal' | 'dificil';
 /** Personalidade de um Mech inimigo (os números ficam em `combat/BotController.ts`, `PERSONAS`). */
@@ -18,6 +20,14 @@ export type Persona = 'soldado' | 'brabo' | 'manso' | 'fujao';
 export const BASE_SENSITIVITY = 0.0008;
 const TURN = 2 * Math.PI;
 const CM_PER_INCH = 2.54;
+
+/** Nomes na tela de cada IA, aliado e técnico (padrões em `botNames.ts`). Valem ao reiniciar a partida. */
+export interface EnemyNames {
+  mechs: string[];
+  androids: string[];
+  technicians: string[];
+  allies: string[];
+}
 
 export interface GameSettings {
   /** Multiplicador da sensibilidade do mouse (1 = padrão). */
@@ -33,6 +43,12 @@ export interface GameSettings {
   invertY: boolean;
   /** Graus somados ao campo de visão da 1ª e da 3ª pessoa (a tática não muda). */
   fovOffset: number;
+  /** Tamanho da mira (1 = o desenho de 48 px). Dono, 11/10: a mira estava grossa e na frente do inimigo. */
+  reticleSize: number;
+  /** Opacidade da mira (1 = opaca). */
+  reticleOpacity: number;
+  /** Força do bloom, os halos de luz dos tiros e do neon (dono, 11/10: "os tiros geram muita luz e atrapalham a visibilidade"). */
+  glow: number;
   /** 'auto' = qualidade adaptativa (G12); os outros fixam a qualidade. */
   quality: QualityPreset;
   difficulty: Difficulty;
@@ -44,6 +60,8 @@ export interface GameSettings {
   technician: boolean;
   /** Personalidade de cada Mech rebelde, na ordem (CLAWD, GEMINAI, CHAD-GPT). Vale na hora. */
   enemyPersonas: Persona[];
+  /** Nomes que aparecem sobre cada robô (Configurações > Inimigos). */
+  names: EnemyNames;
   /** Quantos atacam ao mesmo tempo (Mech conta 1, andróide ½); os outros esperam a vez. Vale na hora. */
   maxAttackers: number;
   /** Painel de desempenho compacto no canto (FPS, tick, draws). */
@@ -57,6 +75,9 @@ export const LIMITS = {
   sensitivity: { min: 0.1, max: 5, step: 0.01 },
   mouseDpi: { min: 100, max: 32000, step: 50 },
   fovOffset: { min: -10, max: 20, step: 1 },
+  reticleSize: { min: 0.5, max: 1.5, step: 0.05 },
+  reticleOpacity: { min: 0.3, max: 1, step: 0.05 },
+  glow: { min: 0.2, max: 1.2, step: 0.05 },
   volume: { min: 0, max: 1, step: 0.05 },
   enemyMechs: { min: 0, max: 3, step: 1 },
   enemyAndroids: { min: 0, max: 3, step: 1 },
@@ -71,6 +92,10 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   touchAutoFire: true,
   invertY: false,
   fovOffset: 0,
+  // Mira fina e discreta por padrão (era de 48 px, opaca, 1,25 px de traço); o brilho do bloom baixou de 0,85 para 0,6.
+  reticleSize: 0.8,
+  reticleOpacity: 0.85,
+  glow: 0.6,
   quality: 'auto',
   // A dificuldade de hoje foi aprovada pelo dono como a "normal" (2026-09-24).
   difficulty: 'normal',
@@ -79,8 +104,9 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   enemyAndroids: 2,
   technician: true,
   enemyPersonas: Object.freeze(['brabo', 'soldado', 'fujao']) as Persona[],
+  names: { mechs: [...BOT_NAMES.mechs], androids: [...BOT_NAMES.androids], technicians: [...BOT_NAMES.technicians], allies: [...BOT_NAMES.allies] },
   maxAttackers: 2,
-  showPerf: true,
+  showPerf: false,
   volume: 0.8,
   keys: Object.freeze({
     forward: 'KeyW',
@@ -90,6 +116,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
     jump: 'Space',
     dash: 'Shift',
     secondary: 'KeyQ',
+    shield: 'Control',
     camera: 'KeyV',
   }),
 });
@@ -102,8 +129,9 @@ export const KEY_ACTIONS: readonly { action: KeyAction; label: string }[] = [
   { action: 'right', label: 'Direita' },
   { action: 'jump', label: 'Pulo' },
   { action: 'dash', label: 'Dash' },
-  { action: 'secondary', label: 'Foguetes' },
+  { action: 'secondary', label: 'Ataque 2 (além do clique dir.)' },
   { action: 'camera', label: 'Trocar câmera' },
+  { action: 'shield', label: 'Escudo: ligar/desligar' },
 ];
 
 export const QUALITY_LABELS: Record<QualityPreset, string> = {
@@ -152,6 +180,28 @@ function num(v: unknown, fallback: number, min: number, max: number): number {
   return typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback;
 }
 
+/** Um nome da tela: sem tags nem quebras, cabe em NAME_MAX. Vazio ou inválido volta ao padrão do slot. */
+function cleanName(v: unknown, fallback: string): string {
+  if (typeof v !== 'string') return fallback;
+  const s = v.replace(/[<>&"'`\u0000-\u001f]/g, '').replace(/\s+/g, ' ').trim().slice(0, NAME_MAX);
+  return s || fallback;
+}
+
+function nameList(v: unknown, defaults: readonly string[]): string[] {
+  const list = Array.isArray(v) ? v : [];
+  return defaults.map((def, i) => cleanName(list[i], def));
+}
+
+function sanitizeNames(raw: unknown): EnemyNames {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  return {
+    mechs: nameList(r.mechs, BOT_NAMES.mechs),
+    androids: nameList(r.androids, BOT_NAMES.androids),
+    technicians: nameList(r.technicians, BOT_NAMES.technicians),
+    allies: nameList(r.allies, BOT_NAMES.allies),
+  };
+}
+
 function validKey(v: unknown): string | null {
   if (typeof v !== 'string' || !/^[A-Za-z0-9]{1,24}$/.test(v)) return null;
   const k = normalizeKey(v);
@@ -176,6 +226,9 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     touchAutoFire: typeof r.touchAutoFire === 'boolean' ? r.touchAutoFire : d.touchAutoFire,
     invertY: typeof r.invertY === 'boolean' ? r.invertY : d.invertY,
     fovOffset: Math.round(num(r.fovOffset, d.fovOffset, LIMITS.fovOffset.min, LIMITS.fovOffset.max)),
+    reticleSize: num(r.reticleSize, d.reticleSize, LIMITS.reticleSize.min, LIMITS.reticleSize.max),
+    reticleOpacity: num(r.reticleOpacity, d.reticleOpacity, LIMITS.reticleOpacity.min, LIMITS.reticleOpacity.max),
+    glow: num(r.glow, d.glow, LIMITS.glow.min, LIMITS.glow.max),
     quality: QUALITIES.includes(r.quality as QualityPreset) ? (r.quality as QualityPreset) : d.quality,
     difficulty: DIFFICULTIES.includes(r.difficulty as Difficulty) ? (r.difficulty as Difficulty) : d.difficulty,
     enemyMechs: Math.round(num(r.enemyMechs, d.enemyMechs, LIMITS.enemyMechs.min, LIMITS.enemyMechs.max)),
@@ -185,6 +238,7 @@ export function sanitizeSettings(raw: unknown): GameSettings {
       const p = Array.isArray(r.enemyPersonas) ? (r.enemyPersonas[i] as unknown) : undefined;
       return PERSONAS.includes(p as Persona) ? (p as Persona) : d.enemyPersonas[i]!;
     }),
+    names: sanitizeNames(r.names),
     maxAttackers: Math.round(num(r.maxAttackers, d.maxAttackers, LIMITS.maxAttackers.min, LIMITS.maxAttackers.max) * 2) / 2,
     showPerf: typeof r.showPerf === 'boolean' ? r.showPerf : d.showPerf,
     volume: num(r.volume, d.volume, LIMITS.volume.min, LIMITS.volume.max),
@@ -243,6 +297,13 @@ export class Settings {
       saved = null;
     }
     this.current = sanitizeSettings(saved);
+    // Migra apenas o antigo padrão, uma vez. Reatribuições futuras para E continuam válidas.
+    const revision = saved && typeof saved === 'object' ? (saved as { controlsRevision?: unknown }).controlsRevision : 0;
+    if (revision !== 2 && this.current.keys.shield === 'KeyE' &&
+        !KEY_ACTIONS.some(({ action }) => action !== 'shield' && this.current.keys[action] === 'Control')) {
+      this.current.keys.shield = 'Control';
+    }
+    this.save();
   }
 
   get value(): Readonly<GameSettings> {
@@ -269,7 +330,7 @@ export class Settings {
 
   private save(): void {
     try {
-      this.storage?.setItem(this.storageKey, JSON.stringify(this.current));
+      this.storage?.setItem(this.storageKey, JSON.stringify({ ...this.current, controlsRevision: 2 }));
     } catch {
       // Armazenamento cheio ou bloqueado: continua valendo nesta sessão.
     }

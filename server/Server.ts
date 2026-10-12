@@ -1,17 +1,23 @@
+import { PlayMetrics } from './PlayMetrics';
+import { PLAY_PATH, parsePlayReport } from '../shared/net/playMetrics';
+import { parseLoadoutKey } from '../client/src/hangar/loadout';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { mkdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
 import { CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, parseCredenciais, SESSAO_HEADER } from '../shared/net/auth';
 import { ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
-import { type EventoEnviado, EVENTO_MAX_BYTES, EVENTO_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
+import { type EventoEnviado, type EventoServidor, EVENTO_MAX_BYTES, EVENTO_PATH, METRICAS_HEADER, METRICAS_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
+import type { RejectReason } from '../shared/net/messages';
 import { ArenaRoom, type Peer } from './ArenaRoom';
 import { Contas } from './contas';
-import { clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
+import { clientCountry, clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
 import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
+import { bancoDeContas, pastaDados } from './dados';
+import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
 import { Telemetria } from './telemetria';
 
 /** Maior mensagem aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
@@ -92,12 +98,22 @@ export async function startServer(
     host?: string;
     log?: (line: string) => void;
     guard?: Partial<GuardConfig>;
-    /** Caminho do banco de contas. Padrão: `.tmp/servidor/contas.db` (gitignored, sobrevive à atualização
-     * automática). Testes passam `:memory:`. */
+    /** Caminho do banco de contas. Padrão: `contas.db` na pasta de dados (`CYBERMECH_DADOS`, ou `.tmp/servidor/` ao lado do código;
+     * gitignored, sobrevive à atualização automática). Testes passam `:memory:`. */
     dbContas?: string;
     /** Régua de tentativas de `/conta/entrar` e `/conta/criar` (padrão: 8 a cada 10 min por IP). Testes
      * que fazem muitas chamadas do mesmo IP alargam para não confundir rate limit com o que estão testando. */
     limiteLogin?: Partial<typeof LIMITE_LOGIN_DEFAULTS>;
+    /**
+     * Pasta dos números que sobrevivem ao reinício (`telemetria.json`) e do token das métricas. Padrão: `CYBERMECH_DADOS`, ou
+     * `.tmp/servidor/` ao lado do código (gitignored; `server/dados.ts`).
+     * Testes que passam `dbContas: ':memory:'` ficam sem pasta (nada em disco) a menos que passem esta.
+     */
+    dirDados?: string;
+    /** Token da porta privada `GET /metricas`. Sem ele e sem pasta de dados, a porta fica desligada (404). */
+    metricasToken?: string;
+    /** De quanto em quanto tempo grava os números em disco, se mudaram (padrão 60 s). */
+    salvarCadaMs?: number;
   } = {},
 ): Promise<GameServer> {
   const log = opts.log ?? (() => {});
@@ -123,6 +139,11 @@ export async function startServer(
     let p = creating.get(code);
     if (!p) {
       p = ArenaRoom.create(code).then((room) => {
+        room.onEntrou = (peer) => {
+          contar('entrou_na_sala', peer.pais);
+          telemetria.pico(jogadoresAgora());
+        };
+        room.onRecusou = (peer, motivo: RejectReason) => contar(`recusa_${motivo}` as EventoServidor, peer.pais);
         rooms.set(code, room);
         creating.delete(code);
         log(`sala ${code} aberta`);
@@ -140,6 +161,11 @@ export async function startServer(
    * perguntas no mesmo segundo custam uma soma sobre as salas, e nada disso toca o laço de 60 Hz.
    */
   const startedAt = Date.now();
+  const jogadoresAgora = (): number => {
+    let n = 0;
+    for (const r of rooms.values()) n += r.humanCount;
+    return n;
+  };
   let statusBody = '';
   let statusAt = 0;
   const status = (): string => {
@@ -160,6 +186,32 @@ export async function startServer(
    * porta HTTP: corpo pequeno, decodifica ou descarta, nunca lança.
    */
   const telemetria = new Telemetria();
+  const playMetrics = new PlayMetrics();
+  const codigo = resolve(import.meta.dirname, '..');
+  const dirDados = opts.dirDados ?? (opts.dbContas === ':memory:' ? null : pastaDados(codigo));
+  if (dirDados) log(`pasta de dados (contas.db, números, token): ${dirDados}`);
+  const arquivoDados = dirDados ? join(dirDados, DADOS_ARQUIVO) : null;
+  if (arquivoDados) telemetria.carregar(lerJson(arquivoDados));
+  const playFile = dirDados ? join(dirDados,'partidas.json') : null;
+  if (playFile) playMetrics.load(lerJson(playFile));
+  /** Token do dono para `GET /metricas` (origem das conexões, por país e por dia). `null` = porta desligada. */
+  const metricasToken = opts.metricasToken ?? (dirDados ? carregarToken(dirDados) : null);
+  // Diz ONDE está o token (nunca o token): a pasta é a de onde o código do servidor roda, e o dono precisa achar o arquivo.
+  if (metricasToken && dirDados) log(`métricas privadas ligadas: o token está em ${join(dirDados, TOKEN_ARQUIVO)} (ou na variável CYBERMECH_METRICAS_TOKEN)`);
+  const limiteMetricas = new LimiteLogin({ teto: 30, janelaMs: 10 * 60 * 1000 });
+  const gravarDados = (): void => {
+    if (!arquivoDados || (!telemetria.sujo && !playMetrics.dirty)) return;
+    try {
+      gravarJson(arquivoDados, telemetria.exportar());
+      if (playFile && playMetrics.dirty) { gravarJson(playFile,playMetrics.snapshot());playMetrics.dirty=false; }
+    } catch (err) {
+      telemetria.sujo = true;
+      log(`não consegui gravar ${arquivoDados}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  const salvarTimer = arquivoDados ? setInterval(gravarDados, opts.salvarCadaMs ?? 60_000) : null;
+  /** Conta um evento do servidor com o país de quem causou. */
+  const contar = (nome: EventoServidor, pais: string | undefined): void => telemetria.contar(nome, pais);
 
   /**
    * Contas de piloto (dono, 28/09: "partir para login?"): SQLite no próprio PC (`server/contas.ts`, contrato
@@ -167,13 +219,26 @@ export async function startServer(
    * progressão migrada do `localStorage` ainda. `LimiteLogin` é a régua de tentativas, separada do `Guard`
    * do WebSocket e do balde da `Telemetria`: o risco aqui (alguém testando senha) pede um teto mais apertado.
    */
-  const dbCaminho = opts.dbContas ?? resolve(import.meta.dirname, '..', '.tmp', 'servidor', 'contas.db');
+  const dbCaminho = opts.dbContas ?? bancoDeContas(pastaDados(codigo));
   if (dbCaminho !== ':memory:') mkdirSync(dirname(dbCaminho), { recursive: true });
   const contas = new Contas(dbCaminho);
   const limiteLogin = new LimiteLogin(opts.limiteLogin);
 
   const http = createServer(async (req, res) => {
     const path = (req.url ?? '/').split('?')[0];
+    if (path === PLAY_PATH) {
+      res.setHeader('access-control-allow-origin','*');
+      res.setHeader('cache-control','no-store');
+      if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-methods':'POST, OPTIONS','access-control-allow-headers':'content-type'});res.end();return;}
+      if(req.method!=='POST'){res.writeHead(405);res.end();return;}
+      const body=await lerCorpoLimitado(req,1024);
+      if(body==='grande'){res.writeHead(413);res.end();return;}
+      let report;try{report=parsePlayReport(JSON.parse(body.toString('utf8')));}catch{report=null;}
+      if(!report||!parseLoadoutKey(report.build)){res.writeHead(400);res.end();return;}
+      const ip=clientIp(req.socket.remoteAddress,req.headers['cf-connecting-ip']);
+      if(telemetria.registrar('partida_resumo',ip,Date.now(),clientCountry(req.socket.remoteAddress,req.headers['cf-ipcountry']),'play:'+report.id)==='taxa'){res.writeHead(429);res.end();return;}
+      playMetrics.record(report);res.writeHead(204);res.end();return;
+    }
     if (path === STATUS_PATH) {
       const body = status();
       res.writeHead(200, {
@@ -187,6 +252,42 @@ export async function startServer(
     }
     if (path === RESUMO_PATH && req.method === 'GET') {
       const body = JSON.stringify(telemetria.resumo());
+      res.writeHead(200, {
+        'content-type': 'application/json; charset=utf-8',
+        'cache-control': 'no-store',
+        'access-control-allow-origin': '*',
+      });
+      res.end(body);
+      return;
+    }
+    if (path === METRICAS_PATH) {
+      // Porta privada do dono: origem das conexões por país e por dia. Sem token configurado, ela nem existe.
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'access-control-allow-origin': '*',
+          'access-control-allow-methods': 'GET, OPTIONS',
+          'access-control-allow-headers': METRICAS_HEADER,
+        });
+        res.end();
+        return;
+      }
+      if (!metricasToken || req.method !== 'GET') {
+        res.writeHead(404, { 'access-control-allow-origin': '*' });
+        res.end();
+        return;
+      }
+      const ip = clientIp(req.socket.remoteAddress, req.headers['cf-connecting-ip']);
+      if (!limiteMetricas.permitir(ip)) {
+        res.writeHead(429, { 'access-control-allow-origin': '*' });
+        res.end();
+        return;
+      }
+      if (!tokenConfere(req.headers[METRICAS_HEADER], metricasToken)) {
+        res.writeHead(401, { 'access-control-allow-origin': '*', 'cache-control': 'no-store' });
+        res.end();
+        return;
+      }
+      const body = JSON.stringify({...telemetria.metricas(),play:playMetrics.snapshot(),runtime:{rssMB:process.memoryUsage().rss/1048576,rooms:rooms.size,players:jogadoresAgora()}});
       res.writeHead(200, {
         'content-type': 'application/json; charset=utf-8',
         'cache-control': 'no-store',
@@ -214,7 +315,7 @@ export async function startServer(
         res.end();
         return;
       }
-      const ok = telemetria.registrar(evento.nome, ip) === 'ok';
+      const ok = telemetria.registrar(evento.nome, ip, Date.now(), clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']), evento.seq === undefined ? undefined : `${evento.aba}:${evento.seq}`) === 'ok';
       res.writeHead(ok ? 204 : 429, { 'access-control-allow-origin': '*' });
       res.end();
       return;
@@ -377,6 +478,7 @@ export async function startServer(
 
   wss.on('connection', (ws: WebSocket, req) => {
     const ip = clientIp(req.socket.remoteAddress, req.headers['cf-connecting-ip']);
+    const pais = clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']);
     const asked = roomCode(req.url);
     if (!asked) {
       ws.close(1008, 'sala');
@@ -387,10 +489,12 @@ export async function startServer(
       if (admit === 'total') rejected.total++;
       else rejected.ip++;
       log(`recusa de ${ip}: ${admit}`);
+      contar('recusa_limite', pais);
       // 4013 = "tente mais tarde" (código de aplicação, aceito no navegador e no `ws` do Node).
       ws.close(4013, admit);
       return;
     }
+    contar('conexao_online', pais);
     const code = pickRoom(asked);
     occupancy.set(code, (occupancy.get(code) ?? 0) + 1);
     const bucket = guard.peer(ip, performance.now());
@@ -406,6 +510,7 @@ export async function startServer(
         if (ws.readyState === ws.OPEN) ws.send(Buffer.from(bytes));
       },
       close: () => ws.close(1000),
+      pais,
     };
     // As mensagens esperam a sala ficar pronta, na ordem em que chegaram.
     const room = roomFor(code);
@@ -481,6 +586,8 @@ export async function startServer(
     close: () =>
       new Promise<void>((resolve) => {
         clearInterval(loop);
+        if (salvarTimer) clearInterval(salvarTimer);
+        gravarDados();
         for (const c of wss.clients) c.terminate();
         wss.close(() => http.close(() => resolve()));
         for (const r of rooms.values()) r.dispose();

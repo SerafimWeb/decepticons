@@ -33,6 +33,9 @@ export class InputManager {
   /** Toque: FOGUETE e PLACAR pressionados. */
   virtualRocket = false;
   virtualBoard = false;
+  /** Pulso de ativação do escudo, consumido pelo PlayerController. */
+  virtualShield = false;
+  resetVersion = 0;
 
   onLockChange?: (locked: boolean) => void;
   /** Tecla pressionada (sem auto-repeat). Útil para ações que exigem gesto do usuário. */
@@ -159,9 +162,11 @@ export class InputManager {
   }
 
   private reset(): void {
+    this.resetVersion++;
     this.keys.clear();
     this.pressed.clear();
     this.mouseDown = this.mouseDown2 = false;
+    this.virtualShield = false;
     this.mouseDX = this.mouseDY = 0;
   }
 }

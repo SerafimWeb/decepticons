@@ -20,7 +20,7 @@
 `npm run site -- --capturas` (monta `.tmp/site/` e fotografa o jogo) → rsync por SSH para a Hostinger → `node scripts/site.mjs --verify <SITE_URL>`.
 - Mesmo padrão do deploy do CAPTIA nesta conta Hostinger: SSH na **porta 65002**, **5 tentativas** com espera crescente (a proteção anti-abuso da Hostinger às vezes derruba a conexão do runner).
 - **Trava de segurança:** o `rsync --delete` apaga no servidor o que não existe localmente. O job se recusa a rodar se `DEPLOY_PATH` não terminar em `/public_html/cybermech/`, para nunca apagar o site real.
-- **Verificação:** landing, `/oficina/`, `/sala-de-controle/` (e `/bastidores/` levando para ela) e `/jogar/` com o conteúdo certo (o servidor responde 200 até para arquivo inexistente), doctype e `<meta charset>` no início, a CSP aplicada e o `.wasm` servido como `application/wasm` e comprimido; capa ausente só avisa. Se a Cloudflare desafiar o IP do runner, o job avisa e não falha (conferir no navegador).
+- **Verificação:** landing, `/oficina/`, `/sala-de-controle/` (e `/bastidores/` levando para ela), `/metricas/` (privada, com `noindex`) e `/jogar/` com o conteúdo certo (o servidor responde 200 até para arquivo inexistente), doctype e `<meta charset>` no início, a CSP aplicada e o `.wasm` servido como `application/wasm` e comprimido; capa ausente só avisa. Se a Cloudflare desafiar o IP do runner, o job avisa e não falha (conferir no navegador).
 
 **Configuração no GitHub (dono), sem valor nenhum no repositório (R2/R10) nem no chat (R11):**
 
@@ -47,7 +47,7 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
 ## SERVIDOR DE JOGO (Node + `ws`, M3 em 26/09)
 
 - Precisa de host com WebSocket persistente e processo Node longo. Hospedagem só estática ou FTP não serve.
-- Node `^20.19.0 || >=22.12.0`.
+- Node `>=22.12.0` (node:sqlite).
 
 **No PC de casa (hoje):**
 1. Na pasta do projeto: `npm install` (uma vez) e `npm run server`. Aparece
@@ -95,12 +95,17 @@ Passo a passo, uma vez só:
    automática" abaixo do motivo):**
    ```powershell
    git worktree add .tmp\wt-servidor-prod origin/main
-   New-Item -ItemType Junction -Path .tmp\wt-servidor-prod\node_modules -Target node_modules
    cd .tmp\wt-servidor-prod
+   npm ci                      # node_modules PRÓPRIO. Nunca um atalho (junção) para o do projeto: veja "04/10" abaixo
    .\scripts\servidor-windows.ps1
    ```
-   PowerShell como administrador. O servidor sobe com o Windows, reinicia se cair e grava o log em
-   `.tmp\servidor\` (dentro da worktree). Para o PC não dormir: `powercfg /change standby-timeout-ac 0`.
+   O `servidor-windows.ps1` **recusa** rodar na pasta principal ou com `node_modules` em atalho. **Os dados ficam fora da
+   worktree (desde 04/10):** a tarefa define `CYBERMECH_DADOS` apontando para `<pasta principal>\.tmp\servidor`
+   (`D:\DECEPTICONS\.tmp\servidor`) e é lá que ficam o banco de contas (`contas.db`), os números das métricas
+   (`telemetria.json`), o token (`metricas-token.txt`) e o `servidor.log`. A worktree é só código: trocá-la, resetá-la ou
+   apagá-la nunca leva o banco. Outra pasta (dentro do projeto, G15): `.\scripts\servidor-windows.ps1 -Dados D:\caminho`.
+   PowerShell como administrador. O servidor sobe com o Windows e reinicia se cair. Para o PC não dormir:
+   `powercfg /change standby-timeout-ac 0`.
    Sem mexer em nada, o processo escuta só em `127.0.0.1:2567` (o túnel fala daqui): não aparece na rede de
    casa nem em nenhum outro lugar da internet.
    **Reiniciar manualmente** (PowerShell como administrador — `Restart-ScheduledTask` **não existe** no
@@ -131,11 +136,14 @@ O que a tarefa "CYBERMECH atualizar" faz a cada 10 min (`scripts\atualizar-e-rei
 1. `git fetch origin main`; se não avançou, não faz nada (nem escreve no log).
 2. Se avançou: `git merge --ff-only`, e **só então** roda o mesmo portão que o CI roda — `npm run typecheck`
    e os testes de `server/` e `shared/` (não a suíte inteira: são os que importam para o processo do
-   servidor, e rodam em segundos). `npm ci` só quando o `package-lock.json` mudou.
-3. **Passou:** reinicia o "CYBERMECH servidor" — agora com o código novo.
-4. **Falhou:** `git reset --hard` para o commit anterior. **O servidor que já está no ar nunca é tocado** —
-   continua rodando o último código bom, do início ao fim; ninguém percebe que uma atualização quebrada
-   existiu, exceto no log.
+   servidor, e rodam em segundos).
+   **`package-lock.json` mudou?** O atualizador **para o servidor antes do `npm ci`** (o processo mantém aberto o binário
+   nativo do rolldown, e no Windows o `npm ci` não apaga arquivo em uso) e só depois reinstala e verifica.
+3. **Passou:** (re)liga o "CYBERMECH servidor" — agora com o código novo.
+4. **Falhou:** `git reset --hard` para o commit anterior. Sem mudança nas dependências, **o servidor que já está no
+   ar nunca é tocado**. Com mudança, o atualizador também refaz as dependências do código antigo e **religa** o servidor
+   que ele mesmo parou. Ninguém percebe que uma atualização quebrada existiu, exceto no log.
+   Ele **recusa** rodar se `node_modules` for um atalho para outra pasta (teste: `server/atualizador.test.ts`).
 
 **Por que uma worktree separada, e não a pasta onde você mexe no código (G15 + segurança):** um `git reset
 --hard` automático rodando na sua pasta de trabalho apagaria qualquer edição sua não commitada, um dia
@@ -148,12 +156,52 @@ tentada, cada rollback e o motivo. `main.ts` já imprime salas/jogadores/tick a 
 **Para desligar** (voltar a atualizar só manualmente): `.\scripts\servidor-atualizar.ps1 -Remover`, de
 dentro da worktree.
 
+### 04/10: o servidor estava desatualizado, e o atualizador apagou a node_modules de todo mundo (Claude)
+
+**O que aconteceu:** a tarefa "CYBERMECH atualizar" **nunca foi registrada** (o `Register-ScheduledTask` falhava com
+`P99999999DT23H59M59S` fora do intervalo e o script dizia "Pronto" mesmo assim), e a tarefa "CYBERMECH servidor" rodava da
+**pasta principal** do projeto, não da worktree dedicada: o servidor ficou no protocolo 1 enquanto o site passou ao 2 (online
+recusado com "versão diferente"). Ao rodar a atualização à mão, o `npm ci` passou pela **junção** `wt-servidor-prod\node_modules`
+→ `node_modules` do projeto, que todas as worktrees compartilham, apagou quase tudo e parou em EPERM no binário do rolldown que o
+próprio servidor mantém aberto. O servidor no ar sobreviveu (tudo já estava na memória), mas não reiniciaria.
+**O que mudou no código:** o gatilho da tarefa usa 10 anos em vez de `TimeSpan.MaxValue`, e o registro confere se a tarefa existe;
+o atualizador recusa `node_modules` em atalho e para o servidor antes do `npm ci`; `servidor-windows.ps1` recusa a pasta principal e
+o atalho; os `.ps1` ganharam BOM (acentos saíam quebrados no Windows PowerShell 5.1).
+**Recuperar o PC do servidor (PowerShell como administrador):**
+```powershell
+Stop-ScheduledTask -TaskName "CYBERMECH servidor"           # solta o binário travado
+cd D:\DECEPTICONS\.tmp\wt-servidor-prod
+cmd /c rmdir node_modules                                   # remove só o atalho (a junção), não o conteúdo de lá
+git fetch origin; git reset --hard origin/main              # a worktree do servidor é descartável
+npm ci                                                      # node_modules próprio do servidor
+.\scripts\servidor-windows.ps1                             # re-registra o servidor apontando PARA ESTA pasta (código) e para D:\DECEPTICONS\.tmp\servidor (dados) e liga
+.\scripts\servidor-atualizar.ps1                           # registra a atualização automática (a cada 10 min)
+cd D:\DECEPTICONS; npm ci                                   # conserta a node_modules do projeto (as outras worktrees usam)
+```
+O `contas.db` **não precisa ser copiado**: já está em `D:\DECEPTICONS\.tmp\servidor\`, que é a pasta de dados. O token das métricas aparece
+em `D:\DECEPTICONS\.tmp\servidor\metricas-token.txt` quando o servidor novo sobe (o `servidor.log` da mesma pasta diz o caminho).
+Conferir: `Invoke-RestMethod https://jogo.selvamkt.com.br/status` deve mostrar `protocol: 3` (ou o que `PROTOCOL_VERSION` de `shared/net/constants.ts` disser); e `Get-ScheduledTask | ? TaskName -like 'CYBERMECH*'`
+deve listar as duas tarefas.
+
+### 09/10: a atualização automática nunca reiniciava o servidor de verdade (Claude)
+
+**O que acontecia:** a tarefa "CYBERMECH atualizar" buscava o código, verificava (typecheck + testes) e fazia `Stop-ScheduledTask` + `Start-ScheduledTask`. O `Stop` mata só o `cmd.exe` da tarefa: o `node` filho fica **órfão**, segurando a porta 2567, e **só PowerShell como administrador o encerra** (o processo roda numa sessão própria da tarefa e nega acesso até ao mesmo usuário). O servidor novo subia, achava a porta ocupada e a tarefa terminava com resultado 1; o velho seguia no ar. Sintoma: `/status` com `protocol` e `uptimeS` que não mudam depois de "OK: … verificado, pedindo reinício" no `atualizacao.log`. O mesmo órfão faria o `npm ci` dar EPERM no binário em uso.
+**O conserto:** o servidor se encerra sozinho. `server/parada.ts` vigia o arquivo `parar.flag` na pasta de dados (`CYBERMECH_DADOS`); ao vê-lo o servidor apaga o arquivo, salva os números e sai (código 0; saída forçada em 8 s se travar). `scripts/parar-servidor.ps1` cria o arquivo, espera a porta liberar (até 25 s) e só então devolve 0; encerrar à força é o último recurso e só funciona como administrador. A atualização usa esse script para o reinício e antes do `npm ci` (que **recusa** se o servidor não parou), confere o `/status` depois de religar e registra no `atualizacao.log`. Um reinício que não deu deixa o marcador `.tmp\wt-servidor-prod\.tmp\servidor\reinicio-pendente`: a próxima rodada (10 min) tenta de novo, e o aviso sai uma vez só.
+**Religar logo depois de parar falha (medido em 09/10, derrubou a produção por uns 4 min):** o `cmd.exe` da tarefa ainda leva um instante para terminar; o `Start-ScheduledTask` nesse instante cria uma instância que morre na hora, com resultado 1 e **sem escrever nada no log**. Por isso `parar-servidor.ps1` só devolve com a tarefa de fato parada (+ folga de 3 s) e `scripts/ligar-servidor.ps1` liga, **confere o `/status`** e tenta de novo (até 3 vezes). Provado em produção, sem administrador: 3 ciclos de parar + ligar, 16–19 s fora do ar cada, `uptimeS` zerando. **Reinício à mão a qualquer hora (sem administrador):** `.\scripts\parar-servidor.ps1; .\scripts\ligar-servidor.ps1`.
+**Uma vez, à mão (só para um servidor de antes da vigia; já feito em 09/10):** PowerShell **como administrador**: `Get-NetTCPConnection -LocalPort 2567 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }`, depois `Start-ScheduledTask -TaskName "CYBERMECH servidor"`. Dali em diante o reinício é automático. **Parar o servidor à mão a qualquer hora:** `.\scripts\parar-servidor.ps1` (sem administrador, se o servidor tem a vigia).
+
+**Rodada cortada e servidor caído (09/10, depois de ver um ciclo completo levar 4 min 17 s com a máquina ocupada):** o limite de execução da tarefa "CYBERMECH atualizar" no registro atual é de **5 min**; se o Agendador a cortasse depois de parar o servidor e antes de religar, o servidor ficaria parado sem ninguém tentar de novo. Agora o marcador `reinicio-pendente` nasce **antes** de parar (some só quando o `/status` responde) e a rodada de 10 min, quando não há nada novo e nada pendente, **liga o servidor se ele não responder** (vigia; não toca em servidor que responde). Testado em produção nos três caminhos (saudável intocado; caído religado; pendente parado e religado). `servidor-atualizar.ps1` passa a registrar o limite em **20 min**: para aplicar no PC, uma vez, PowerShell como administrador: `.\scripts\servidor-atualizar.ps1` (opcional; o marcador e a vigia já cobrem o corte).
+
+**Rodada cortada no meio da verificação (09/10, noite): o código ficava em disco e o servidor no velho.** O marcador `reinicio-pendente` só nasce depois da verificação, então uma rodada cortada antes dela deixava a seguinte ver "nada novo". Agora o atualizador grava `.tmp\wt-servidor-prod\.tmp\servidor\verificacao-pendente.json` (`de`, `para`, `feito`) assim que puxa o código e **retoma de onde parou** na rodada seguinte (o typecheck que passou não se repete); falhou, volta para `de`. Para saber se há verificação pela metade: esse arquivo existe, e o `atualizacao.log` mostra "retomando a verificação cortada". Reinício à mão (0 jogadores): `.\scripts\parar-servidor.ps1`; se disser "a porta continua ocupada", **confira a porta de novo antes de concluir** (sob falta de memória o servidor leva mais de 100 s para sair) e só então `.\scripts\ligar-servidor.ps1`. Vigiar o servidor: uma consulta ao `/status` por minuto, nunca a cada poucos segundos.
+
 ### Contas de piloto (login, Claude 28/09 — só o esqueleto: criar conta, entrar, sair)
 
 **Banco:** SQLite embutido do Node (`node:sqlite`, sem dependência nova — depois da dor do dia com o binário
 nativo do `@rolldown`, evitar mais um binário nativo como `better-sqlite3` foi a decisão certa). Arquivo em
-`.tmp/servidor/contas.db`, ao lado do log de sempre: **gitignored, sobrevive à atualização automática** (que
-só mexe em arquivos versionados) e ao `git reset --hard` de um rollback.
+`contas.db` na pasta de dados (`CYBERMECH_DADOS`; padrão `.tmp/servidor/` ao lado do código, e em produção
+`D:\DECEPTICONS\.tmp\servidor\`, fora da worktree do servidor desde 04/10), ao lado do log de sempre: **gitignored,
+sobrevive à atualização automática** (que só mexe em arquivos versionados), ao `git reset --hard` de um rollback e a
+trocar ou apagar a worktree.
 **Requisito:** Node **22.12 ou mais novo** (`node:sqlite` não existe no Node 20) — o `package.json` só aceita
 essa faixa agora; quem tinha Node 20 no PC do servidor precisa atualizar.
 **Senha:** nunca em texto — `scrypt` com sal por conta (`node:crypto`, também sem dependência nova).
@@ -193,6 +241,29 @@ Cliente e servidor moram na mesma zona; as proteções abaixo garantem que um n�
   Cada IP tem um balde de 30 eventos, recarregando 0,5/s — próprio, separado do `Guard` do WebSocket. A
   resposta do resumo é só números agregados por evento (últimas 24h e desde que o servidor subiu): nenhum
   evento cru, nenhum IP, nenhuma sala. Sem cookie e sem id persistente entre sessões.
+- **Origem das conexões e métricas privadas (04/10; `GET /metricas`, `/cybermech/metricas/`):** o país de quem chega
+  vem do cabeçalho `CF-IPCountry` que a Cloudflare põe no túnel — **só vale quando o soquete direto é o localhost**
+  (`clientCountry` em `server/guard.ts`), então um cabeçalho inventado por outra máquina não enche a tabela de países
+  falsos. Sem túnel (rodando local) tudo cai em `??` (Desconhecido). Só o **país** (nunca IP, nunca cidade) e só
+  **contagens por dia (fuso de Brasília), evento e país**: o arquivo `.tmp/servidor/telemetria.json` não tem nada que
+  identifique ninguém e guarda até 120 dias; o servidor grava a cada 60 s se mudou e ao fechar, então os números
+  sobrevivem ao reinício e à atualização automática. Além dos 9 eventos do navegador, o servidor conta sozinho
+  `conexao_online`, `entrou_na_sala` e as recusas (`recusa_versao`, `recusa_cheia`, `recusa_montagem`,
+  `recusa_mensagem`, `recusa_limite`), mais o **pico de jogadores** do dia: é daí que vem o "o servidor precisa
+  atualizar" quando `recusa_versao` sobe. O `GET /eventos/resumo` público continua **sem país nenhum**.
+  - **Token do dono:** o detalhe só sai com o cabeçalho `x-cybermech-metricas`. O servidor gera um token forte na
+    primeira subida e guarda em `metricas-token.txt` na pasta de dados (`CYBERMECH_DADOS`; em produção `D:\DECEPTICONS\.tmp\servidor\`; ou use a variável `CYBERMECH_METRICAS_TOKEN`,
+    com 16+ caracteres). Sem token e sem pasta de dados a rota nem existe (404). Compara em tempo constante e corta a
+    força bruta: 30 tentativas por 10 min por IP (429, até para o token certo).
+  - **A página:** `https://www.selvamkt.com.br/cybermech/metricas/` (sem link em menu nenhum, `noindex`, sem Google
+    Analytics). Cole o token uma vez; ele fica só naquele navegador e **só para aquele servidor** (um link com
+    `?servidor=` apontando para outro lugar nunca recebe o token guardado). Mostra hoje/7 dias, o funil, 14 dias e a
+    tabela de países dos últimos 30 dias. **O arquivo fica na pasta de dados** (`CYBERMECH_DADOS`), junto do `contas.db`: em produção, `D:\DECEPTICONS\.tmp\servidor\metricas-token.txt` (até 04/10 ele ficava na pasta de onde o código roda; a pasta de dados foi separada do código). O log (`servidor.log`) diz o caminho exato na subida ("métricas privadas ligadas: o token está em …"), sem escrever o token. Só existe depois que o servidor **novo** subir pela primeira vez.
+  - **Cidade, aparelho, tempo no site e de onde veio o clique** não são contados pelo nosso servidor (decisão de
+    privacidade): estão no Google Analytics, que já está nas páginas (`analytics.google.com` → Relatórios → Público).
+  - **Suposição a conferir no dia:** o `CF-IPCountry` só chega se a Cloudflare estiver à frente do túnel (é o caso do
+    `jogo.selvamkt.com.br`); confira que `IP Geolocation` está ligada. Se a coluna "Desconhecido"
+    ficar com quase tudo, é aqui que se olha (Cloudflare → Network → IP Geolocation).
 - **Segredos:** o token do túnel fica no serviço do Windows, não no repositório. O `GAME_SERVER_URL` é variável
   pública do GitHub, não segredo.
 
@@ -226,3 +297,10 @@ A hospedagem compartilhada da Hostinger **não serve** para o servidor: não man
 
 - **2026-09-23, 1º deploy:** o site subiu certo, mas o `.wasm` saía sem compressão (2,2 MB), porque o LiteSpeed não comprime `application/wasm`. Corrigido com o `.wasm.gz` pré-comprimido (ver acima).
 - **2026-09-23, configuração:** o dono rodou os comandos `gh secret set` no PowerShell, onde `<` não existe; o bloco inteiro falhou antes de rodar (nada ficou pela metade). Os comandos de secret deste arquivo são para o **Git Bash**.
+
+
+## Observabilidade e protocolo 5 — 06/10
+
+Erros do cliente publicado usam o endpoint já existente do Serafim13 (sinal-erro), identificado em core/Diagnostics.ts. A CSP permite somente a origem Supabase correspondente; não há credencial no cliente. Aceitação/persistência no serviço central ainda requer verificação operacional. Resumos de partida usam /partida-metricas no servidor do jogo, com fila local limitada e leitura privada em /metricas. Ver OBSERVABILIDADE.md.
+
+O cliente desta entrega usa protocolo 5; servidor anterior será recusado por incompatibilidade. O servidor público está offline por orientação do dono e não deve ser consultado, iniciado ou atualizado nesta tarefa. Publicação do site não comprova funcionamento online.

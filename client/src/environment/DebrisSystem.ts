@@ -43,6 +43,10 @@ export class DebrisSystem {
       MAX_PIECES,
     );
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    // Cria já o buffer de cor por instância: o three.js só o cria no primeiro `setColorAt`, e ter ou não `instanceColor` muda
+    // a variante do shader (`USE_INSTANCING_COLOR`). Sem isto o primeiro destroço do jogo compilava um programa novo e
+    // congelava a partida ~1,5 s na GPU integrada (a pré-compilação do carregamento só via a variante sem cor).
+    this.mesh.setColorAt(0, METAL_COLOR);
     this.mesh.count = 0;
     this.mesh.frustumCulled = false;
     scene.add(this.mesh);

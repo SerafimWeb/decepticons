@@ -6,6 +6,7 @@ import { fromAngle, fromAxis, fromPitch, toAngle, toAxis, toPitch, type Reader, 
  * O tick não viaja em cada comando: o pacote leva o primeiro, e os seguintes são consecutivos.
  */
 export interface NetInput {
+  shield?: boolean;
   /** Tick da simulação a que este comando se aplica. */
   tick: number;
   /** -1 a 1, direita positiva. */
@@ -33,6 +34,7 @@ const JUMP = 1;
 const DASH = 2;
 const FIRE = 4;
 const SECONDARY = 8;
+const SHIELD = 16;
 
 export function newNetInput(): NetInput {
   return { tick: 0, moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, pitch: 0, jump: false, dash: false, fire: false, secondary: false };
@@ -44,7 +46,7 @@ export function writeInput(w: Writer, i: NetInput): void {
     .u16(toAngle(i.moveYaw))
     .u16(toAngle(i.yaw))
     .i16(toPitch(i.pitch))
-    .u8((i.jump ? JUMP : 0) | (i.dash ? DASH : 0) | (i.fire ? FIRE : 0) | (i.secondary ? SECONDARY : 0));
+    .u8((i.jump ? JUMP : 0) | (i.dash ? DASH : 0) | (i.fire ? FIRE : 0) | (i.secondary ? SECONDARY : 0) | (i.shield ? SHIELD : 0));
 }
 
 /** Lê um comando para dentro de `out` (sem alocar). Bits desconhecidos nos botões: comando ruim. */
@@ -56,9 +58,10 @@ export function readInput(r: Reader, tick: number, out: NetInput): void {
   out.yaw = fromAngle(r.u16());
   out.pitch = fromPitch(r.i16());
   const b = r.u8();
-  if (b & ~(JUMP | DASH | FIRE | SECONDARY)) r.bad = true;
+  if (b & ~(JUMP | DASH | FIRE | SECONDARY | SHIELD)) r.bad = true;
   out.jump = (b & JUMP) !== 0;
   out.dash = (b & DASH) !== 0;
   out.fire = (b & FIRE) !== 0;
   out.secondary = (b & SECONDARY) !== 0;
+  out.shield = (b & SHIELD) !== 0;
 }

@@ -3,11 +3,11 @@ import * as THREE from 'three';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { weapon } from '../combat/weapons';
 import { DEFAULT_SETTINGS } from '../core/Settings';
-import { ANDROID_STATS, VECTOR09_STATS } from '../entities/chassis';
+import { ANDROID_STATS, MARAUDER_STATS, VECTOR09_STATS } from '../entities/chassis';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Match } from '../sim/Match';
-import { defaultPower, parsePowerKey, POWER_GOALS, powerChanges, poweredStats, poweredWeapon, powerKey, powerReport, sanitizePower } from './power';
+import { defaultPower, parsePowerKey, poweredLoadout, POWER_GOALS, powerChanges, poweredStats, poweredWeapon, powerKey, powerReport, sanitizePower } from './power';
 import { withoutParam } from '../core/url';
 import { POWER_STORAGE_KEY, PowerStore } from './PowerStore';
 
@@ -39,6 +39,18 @@ describe('potências: o contrato', () => {
     expect(Object.isFrozen(w)).toBe(true);
     // O clã dos rebeldes não ganha o dano do jogador.
     expect(poweredWeapon(weapon('plasma'), p, 'mechs').damage).toBe(weapon('plasma').damage * 1.5);
+  });
+
+  it('a segunda arma do botão principal (mão esquerda do Marauder) leva a potência da arma dela, igual à da direita; em 100% é o mesmo objeto', () => {
+    const p = defaultPower();
+    expect(poweredLoadout(MARAUDER_STATS.loadout, p, 'player')).toBe(MARAUDER_STATS.loadout);
+    p.weapons.blaster.damage = 2;
+    const l = poweredLoadout(MARAUDER_STATS.loadout, p, 'player');
+    expect(l.primary.damage).toBe(weapon('blaster').damage * 2);
+    expect(l.offhand!.damage).toBe(weapon('blaster').damage * 2);
+    expect(l.secondary).toBe(weapon('rockets')); // outra arma, outro botão: não muda
+    // Quem não tem segunda arma continua sem a chave (o formato do Loadout antigo não muda).
+    expect('offhand' in poweredLoadout(VECTOR09_STATS.loadout, p, 'player')).toBe(false);
   });
 
   it('clã: vida de cada parte, velocidade (o tempo de arrancada não muda) e calor', () => {

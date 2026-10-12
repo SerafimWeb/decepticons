@@ -11,6 +11,7 @@ import { dirname, resolve } from 'node:path';
 import { atividade, diario, entregas, evolucao, fichas, historicoRoadmap, marcos, pedidos, pipeline, readEstado, readRoadmap, roadmapStats, vitrine } from './site/dados.mjs';
 import { burnup, CHART_CSS, gantt, heatTable, pct, PM_CSS, rankBars } from './site/graficos.mjs';
 import { brDate, esc, HEXGRID, inline, pagina, topo, upper } from './site/tema.mjs';
+import { COMBAT_GUIDE_CSS, operationGuide } from './site/combat-guide.mjs';
 
 const argv = process.argv.slice(2);
 const CHECK = argv.includes('--check');
@@ -49,6 +50,9 @@ const asked = pedidos();
 const last = evo.at(-1) ?? { tests: 0, loc: 0 };
 const nf = (n) => n.toLocaleString('pt-BR');
 
+// Nada de caminho interno na página pública (a pasta dos documentos tem o codinome).
+const pub = (s) => s.replace(/\.decepticons\//g, '');
+
 // ---------- equipe ----------
 
 const TEAM = [
@@ -77,7 +81,7 @@ const teamHtml = TEAM.map((t) => {
       <p class="mrole">${esc(t.role)}</p>
       <dl class="mnum">${numbers}</dl>
       ${top.length ? `<p class="mfronts">frentes: ${top.map(esc).join(' · ')}</p>` : ''}
-      ${now ? `<p class="mnow"><span>agora &gt;</span> ${inline(now)}</p>` : ''}
+      ${now ? `<p class="mnow"><span>agora &gt;</span> ${inline(pub(now))}</p>` : ''}
     </article>`;
 }).join('');
 
@@ -433,8 +437,7 @@ const prHtml = prs
 
 // ---------- novidades, mesa do Dan e fichas de design ----------
 
-// Nada de caminho interno na página pública (a pasta dos documentos tem o codinome).
-const pub = (s) => s.replace(/\.decepticons\//g, '');
+// pub() definido antes do teamHtml (acima): apenas apaga a referência duplicada aqui.
 const newsHtml = `<div class="news">
     <div class="frame"><h3>últimas decisões <a href="#diario">todas →</a></h3><ol>${log
       .slice(0, 5)
@@ -738,17 +741,19 @@ const body = `
   <header class="hero">
     <p class="boot">&gt; sala de controle · como o jogo é feito${m.day ? ` · dia ${m.day} do projeto` : ''}<span class="cursor" aria-hidden="true">█</span></p>
     <h1 class="title">SALA DE CONTROLE<span>DA OPERAÇÃO</span></h1>
-    <p class="pitch">Dan, três IAs e um protocolo. No CYBERMECH, cada decisão fica registrada, cada entrega passa por testes automáticos e vai para o ar sozinha. Esta página é gerada do próprio repositório a cada entrega; nenhum número aqui é digitado à mão.</p>
+    <p class="pitch">Dan e uma equipe de IAs construindo um combate que responde às suas decisões. Acompanhe o que mudou, teste a versão e confira o que ainda precisa evoluir. O histórico e os indicadores desta página vêm do repositório.</p>
     <div class="sitrep">
       ${m.day ? `<div class="read frame"><span class="k">Dia de projeto</span><span class="v">${m.day} <small>desde ${brDate(m.first)}</small></span></div>` : ''}
       <div class="read frame"><span class="k">Commits</span><span class="v">${act.total}</span></div>
       <div class="read frame"><span class="k">Entregas</span><span class="v">${prs.length} <small>PRs no ar</small></span></div>
-      <div class="read frame"><span class="k">Testes</span><span class="v">${nf(last.tests)} <small>automáticos</small></span></div>
+      <div class="read frame"><span class="k">Testes</span><span class="v">${nf(last.tests)} <small>definições no código</small></span></div>
       <div class="read frame"><span class="k">Linhas de código</span><span class="v">${nf(last.loc)} <small>TypeScript</small></span></div>
       <div class="read frame"><span class="k">Roadmap</span><span class="v">${stats.pct}% <small>${stats.done}/${stats.total}</small></span></div>
       ${m.version ? `<div class="read frame"><span class="k">Versão</span><span class="v">${esc(m.version)}</span></div>` : ''}
     </div>
   </header>
+
+  ${operationGuide(BASE)}
 
   <section aria-labelledby="novidades">
     <span class="kicker">// transmissão</span>
@@ -847,7 +852,7 @@ const body = `
 const html = pagina({
   title: SITE ? 'Sala de controle · CYBERMECH' : 'Painel de Missão CYBERMECH',
   description: 'Como o CYBERMECH é feito: Dan e uma equipe de IAs sob o Protocolo Serafim UM, com cada decisão, teste e entrega à vista.',
-  css,
+  css: css + COMBAT_GUIDE_CSS,
   body,
   script,
 });

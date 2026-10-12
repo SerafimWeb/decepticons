@@ -6,6 +6,10 @@
  * **frente**; os selos são a **equipe** que entregou a frente (das etiquetas dos PRs). Tudo lido dos arquivos,
  * do git e das etiquetas — nada digitado à mão (R14).
  *
+ * Como se usa: passar o mouse mostra o módulo e isola as ligações dele; **clicar (ou tocar, ou Enter) fixa**; Esc ou
+ * clique no fundo solta. O detalhe fica num painel sob o mapa, não numa dica flutuante: funciona igual no mouse, no
+ * toque e no teclado, e nada cobre o mapa. A legenda também fica fora dele.
+ *
  * O tema é o neon do jogo, não o âmbar do site: o grafo é uma peça da bancada, e ali vale a paleta do jogo.
  *
  * Uso: const { html, css, script } = grafoOficina(arquitetura(), porModulo(prs));
@@ -83,73 +87,161 @@ const icone = (id, cor, x = 0, y = 0, tam = 14, traco = 1.8) => {
 };
 
 export const GRAFO_CSS = `
+  /* min-width: 0 nos dois: item de grid não encolhe abaixo do conteúdo, e o mapa (940 px no mínimo) alargava a página inteira no celular. */
+  .mapa, .arq { min-width: 0; max-width: 100%; }
   .arq { margin: 0; padding: 0; border: 1px solid var(--line); background: #050704; overflow: hidden; }
   .arq figcaption { padding: 16px 18px 6px; display: grid; gap: 4px; }
   .arq figcaption h2 { font: 400 clamp(1.7rem, 3vw, 2.4rem)/1 var(--fd); letter-spacing: .04em; color: var(--amber); text-shadow: var(--glow); text-transform: uppercase; }
   .arq figcaption .lede { color: var(--muted); font-size: 13.5px; max-width: 86ch; }
   .arq figcaption .lede b { color: var(--text); }
-  .arq-palco { position: relative; overflow: hidden;
+  /* No celular o mapa rola de lado em vez de encolher até o texto sumir. */
+  .arq-palco { position: relative; overflow-x: auto; overflow-y: hidden;
     background: radial-gradient(ellipse 62% 62% at 50% 50%, #0b100a 0%, #050704 74%); }
-  .arq-palco svg { display: block; width: 100%; height: auto; }
-  .arq-palco .mod { cursor: pointer; }
-  .arq-palco .mod .chip { transition: fill .12s, filter .12s; }
+  /* O ">" é de propósito: sem ele a regra pegava também os ícones da legenda (SVGs de 14 px), que passavam a ocupar a
+     largura toda, cobriam o mapa e engoliam os cliques (bug visto no site em 06/10). */
+  .arq-palco > svg { display: block; width: 100%; min-width: 940px; height: auto; }
+  .arq-palco .edge { transition: opacity .12s, stroke-width .12s; pointer-events: none; }
+  .arq-palco .mod { cursor: pointer; outline: none; }
+  .arq-palco .mod .chip { transition: filter .12s; }
   .arq-palco .mod:hover .chip { filter: brightness(1.4); }
-  .arq-palco .edge { transition: opacity .12s, stroke-width .12s; }
+  .arq-palco .mod:focus-visible .chip, .arq-palco .mod.pin .chip { stroke: var(--bone); stroke-opacity: 1; stroke-width: 2; }
   .arq-palco.foco .edge { opacity: .05 !important; }
   .arq-palco.foco .edge.hot { opacity: .95 !important; stroke-width: 2 !important; }
   .arq-palco.foco .mod { opacity: .28; }
   .arq-palco.foco .mod.hot { opacity: 1; }
-  .arq-tip { position: absolute; pointer-events: none; z-index: 3; padding: 9px 12px; border: 1px solid var(--line2);
-    background: rgba(4,5,3,.96); color: var(--text); font: 400 12px/1.5 var(--fb); max-width: 320px;
-    opacity: 0; transition: opacity .1s; }
-  .arq-tip.on { opacity: 1; }
-  .arq-tip b { color: var(--bone); font-weight: 400; font-size: 13px; }
-  .arq-tip small { color: var(--muted); }
-  .arq-legenda, .arq-equipe { position: absolute; z-index: 3; margin: 0; padding: 10px 12px; list-style: none;
-    display: grid; gap: 5px; background: rgba(4,5,3,.82); border: 1px solid var(--line); }
-  .arq-legenda { left: 14px; bottom: 14px; }
-  .arq-equipe { right: 14px; bottom: 14px; }
-  .arq-legenda li, .arq-equipe li { display: flex; align-items: center; gap: 8px; font: 400 10px/1 var(--fb);
+  .arq-detalhe { padding: 12px 18px 14px; border-top: 1px solid var(--line); display: grid; gap: 6px; align-content: start;
+    min-height: 6.6rem; font-size: 13px; line-height: 1.5; color: var(--muted); }
+  .arq-detalhe p { margin: 0; }
+  .arq-detalhe .nome { font: 400 1.5rem/1 var(--fd); letter-spacing: .05em; color: var(--amber); margin-right: 10px; }
+  .arq-detalhe .k { color: var(--faint); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; margin-right: 8px; }
+  .arq-detalhe .mods { display: inline-flex; flex-wrap: wrap; gap: 5px 6px; vertical-align: middle; }
+  .arq-detalhe .mod-chip { font: 400 12px/1.4 var(--fb); color: var(--text); background: transparent; border: 1px solid var(--line2);
+    border-left-width: 3px; padding: 1px 8px; cursor: pointer; }
+  .arq-detalhe .mod-chip:hover { background: rgba(255,176,0,.1); }
+  .arq-chaves { display: flex; flex-wrap: wrap; gap: 10px 32px; align-items: center; justify-content: space-between;
+    padding: 12px 18px; border-top: 1px solid var(--line); }
+  .arq-legenda, .arq-equipe { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .arq-legenda li, .arq-equipe li { display: flex; align-items: center; gap: 7px; font: 400 10.5px/1 var(--fb);
     letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-  .arq-legenda i { width: 8px; height: 8px; border-radius: 50%; }
+  .arq-legenda svg { width: 14px; height: 14px; flex: none; }
   .arq-equipe b { display: inline-grid; place-items: center; width: 15px; height: 15px; border-radius: 50%;
     font: 400 9px/1 var(--fb); color: #050704; }
-  .arq-aviso { position: absolute; right: 14px; top: 14px; z-index: 3; margin: 0; color: var(--faint);
-    font: 400 10px/1.5 var(--fb); letter-spacing: .1em; text-transform: uppercase; text-align: right; }
-  @media (max-width: 760px) { .arq-legenda, .arq-equipe { display: none; } }
+  .arq-chaves .t { color: var(--faint); letter-spacing: .2em; }
 `;
 
-/** O script (pequeno) do cliente: destaca as ligações de um módulo e mostra a dica. Escrito como função. */
-function grafoScript() {
-  var palco = document.getElementById('arq-palco');
-  var tip = document.getElementById('arq-tip');
-  var mods = Array.prototype.slice.call(palco.querySelectorAll('.mod'));
-  var arestas = Array.prototype.slice.call(palco.querySelectorAll('.edge'));
+/**
+ * O script (pequeno) do cliente, escrito como função para o build embutir o texto dela. `dados` chega pronto do build
+ * (um objeto por módulo). Mouse = prévia; clique, toque ou Enter = fixa; Esc ou clique no fundo = solta. O painel é
+ * montado com `textContent`, nunca com HTML vindo de dado.
+ */
+function grafoScript(dados) {
+  const palco = document.getElementById('arq-palco');
+  const painel = document.getElementById('arq-detalhe');
+  if (!palco || !painel) return;
+  const mods = Array.prototype.slice.call(palco.querySelectorAll('.mod'));
+  const arestas = Array.prototype.slice.call(palco.querySelectorAll('.edge'));
+  const repouso = painel.innerHTML;
+  let previa = null;
+  let fixo = null;
+
+  function botao(id) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mod-chip';
+    b.setAttribute('data-id', id);
+    b.textContent = dados[id] ? dados[id].nome : id;
+    if (dados[id]) b.style.borderLeftColor = dados[id].cor;
+    return b;
+  }
+  function linha(rotulo, ids) {
+    const p = document.createElement('p');
+    const k = document.createElement('span');
+    k.className = 'k';
+    k.textContent = rotulo;
+    p.appendChild(k);
+    if (!ids.length) {
+      p.appendChild(document.createTextNode('nenhum'));
+      return p;
+    }
+    const g = document.createElement('span');
+    g.className = 'mods';
+    ids.forEach(function (i) { g.appendChild(botao(i)); });
+    p.appendChild(g);
+    return p;
+  }
+  function plural(n, um, varios) {
+    return n + ' ' + (n === 1 ? um : varios);
+  }
+  function monta(id) {
+    const d = dados[id];
+    const titulo = document.createElement('p');
+    const nome = document.createElement('span');
+    nome.className = 'nome';
+    nome.textContent = d.nome;
+    titulo.appendChild(nome);
+    titulo.appendChild(document.createTextNode(plural(d.arq, 'arquivo', 'arquivos') + ' · ' + d.lin.toLocaleString('pt-BR') + ' linhas · ' + plural(d.testes, 'teste', 'testes')));
+    const frente = document.createElement('p');
+    const k = document.createElement('span');
+    k.className = 'k';
+    k.textContent = 'frente';
+    frente.appendChild(k);
+    frente.appendChild(document.createTextNode(d.frente + ' · equipe: ' + (d.equipe.length ? d.equipe.join(', ') : 'sem selo')));
+    [titulo, frente, linha('usa', d.usa), linha('usado por', d.usadoPor)].forEach(function (el) { painel.appendChild(el); });
+  }
+  function mostra() {
+    const id = previa || fixo;
+    palco.classList.toggle('foco', !!id);
+    const vizinhos = {};
+    arestas.forEach(function (e) {
+      const s = e.getAttribute('data-s');
+      const t = e.getAttribute('data-t');
+      const liga = !!id && (s === id || t === id);
+      e.classList.toggle('hot', liga);
+      if (liga) vizinhos[s === id ? t : s] = true;
+    });
+    mods.forEach(function (m) {
+      const mid = m.getAttribute('data-id');
+      m.classList.toggle('hot', !!id && (mid === id || !!vizinhos[mid]));
+      m.classList.toggle('pin', mid === fixo);
+      m.setAttribute('aria-pressed', mid === fixo ? 'true' : 'false');
+    });
+    painel.textContent = '';
+    if (id && dados[id]) monta(id);
+    else painel.innerHTML = repouso;
+  }
+  function alterna(id) {
+    fixo = fixo === id ? null : id;
+    mostra();
+  }
+
   mods.forEach(function (m) {
-    var id = m.getAttribute('data-id');
-    m.addEventListener('mouseenter', function () {
-      palco.classList.add('foco');
-      m.classList.add('hot');
-      arestas.forEach(function (e) {
-        var s = e.getAttribute('data-s'), t = e.getAttribute('data-t');
-        if (s === id || t === id) {
-          e.classList.add('hot');
-          var el = palco.querySelector('.mod[data-id="' + (s === id ? t : s) + '"]');
-          if (el) el.classList.add('hot');
-        }
-      });
-      tip.innerHTML = m.getAttribute('data-dica') || '';
-      var r = m.getBoundingClientRect(), p = palco.getBoundingClientRect();
-      tip.classList.add('on');
-      tip.style.left = Math.max(6, Math.min(r.left - p.left + 12, p.width - 336)) + 'px';
-      tip.style.top = Math.max(6, r.top - p.top - 6) + 'px';
+    const id = m.getAttribute('data-id');
+    m.addEventListener('pointerenter', function (e) {
+      if (e.pointerType === 'mouse') { previa = id; mostra(); }
     });
-    m.addEventListener('mouseleave', function () {
-      palco.classList.remove('foco');
-      mods.forEach(function (x) { x.classList.remove('hot'); });
-      arestas.forEach(function (e) { e.classList.remove('hot'); });
-      tip.classList.remove('on');
+    m.addEventListener('pointerleave', function (e) {
+      if (e.pointerType === 'mouse' && previa === id) { previa = null; mostra(); }
     });
+    m.addEventListener('focus', function () { previa = id; mostra(); });
+    m.addEventListener('blur', function () { if (previa === id) { previa = null; mostra(); } });
+    m.addEventListener('click', function (e) { e.stopPropagation(); alterna(id); });
+    m.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); alterna(id); }
+    });
+  });
+  // Clicar no fundo do mapa solta o módulo fixo; os botões do painel levam a outro módulo.
+  palco.addEventListener('click', function () { if (fixo) { fixo = null; mostra(); } });
+  painel.addEventListener('click', function (e) {
+    const b = e.target.closest ? e.target.closest('button[data-id]') : null;
+    if (!b) return;
+    previa = null;
+    fixo = b.getAttribute('data-id');
+    mostra();
+    const alvo = palco.querySelector('.mod[data-id="' + fixo + '"]');
+    if (alvo && alvo.scrollIntoView) alvo.scrollIntoView({ block: 'nearest', inline: 'center' });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && (fixo || previa)) { fixo = null; previa = null; mostra(); }
   });
 }
 
@@ -161,7 +253,7 @@ export function grafoOficina(arq, equipe) {
   const cy = H / 2;
   const Rx = 452;
   const Ry = 344;
-  const LW = 190;
+  const LW = 226;
 
   // Agrupa os módulos por frente; a frente com mais módulos fica no topo.
   const mods = [...arq.nodes].sort((a, b) => b.loc - a.loc);
@@ -203,23 +295,23 @@ export function grafoOficina(arq, equipe) {
     return `<path class="edge" data-s="${esc(l.source)}" data-t="${esc(l.target)}" d="M ${a.cxi.toFixed(1)} ${a.cyi.toFixed(1)} Q ${mx.toFixed(1)} ${my.toFixed(1)} ${b.cxi.toFixed(1)} ${b.cyi.toFixed(1)}" fill="none" stroke="${cor}" stroke-width="${w.toFixed(2)}" stroke-opacity="${op.toFixed(2)}"/>`;
   }).join('');
 
+  const nome = (id) => MOD_NOME[id] ?? id;
   const chip = (m) => {
     const p = pos.get(m.id);
-    const f = MOD_FRENTE[m.id] ?? 'base';
     const cor = frenteOf(m.id).cor;
     const eq = (equipe[m.id] ?? []).slice(0, 4);
+    // Os selos ficam na linha do nome; a das métricas fica inteira para o texto (antes os dois se cobriam).
     const selos = eq
-      .map((ag, i) => AGENTES[ag] && `<circle cx="${p.x + p.w - 14 - i * 17}" cy="${p.y + 19}" r="7" fill="${AGENTES[ag].cor}"/><text x="${p.x + p.w - 14 - i * 17}" y="${p.y + 22.5}" text-anchor="middle" font-size="9" fill="#050704" font-family="var(--fb)">${AGENTES[ag].letra}</text>`)
+      .map((ag, i) => AGENTES[ag] && `<circle cx="${p.x + p.w - 13 - i * 16}" cy="${p.y + 11}" r="6.5" fill="${AGENTES[ag].cor}"/><text x="${p.x + p.w - 13 - i * 16}" y="${p.y + 14.2}" text-anchor="middle" font-size="9" fill="#050704" font-family="var(--fb)">${AGENTES[ag].letra}</text>`)
       .filter(Boolean)
       .join('');
     const metrica = `${m.files} arq · ${nf(m.loc)} lin${m.tests ? ` · ${m.tests} testes` : ''}`;
-    const dica = `<b>${esc(MOD_NOME[m.id] ?? m.id)}</b><br>${esc(metrica)}<br><small>frente: ${esc(frenteOf(m.id).rotulo)}${eq.length ? ` · equipe: ${esc(eq.join(', '))}` : ''}<br>usa: ${esc(m.imports.join(', ') || 'nada')}</small>`;
-    return `<g class="mod" data-id="${esc(m.id)}" data-dica="${esc(dica)}">
+    return `<g class="mod" data-id="${esc(m.id)}" tabindex="0" role="button" aria-pressed="false" aria-label="${esc(`${nome(m.id)}: ${metrica}`)}">
       <rect class="chip" x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h - 5}" rx="6" fill="#0a0d08" stroke="${cor}" stroke-opacity=".6"/>
       <rect x="${p.x}" y="${p.y}" width="3" height="${p.h - 5}" rx="1.5" fill="${cor}"/>
-      ${icone(m.id, cor, p.x + 9, p.y + 6)}
-      <text x="${p.x + 26}" y="${p.y + 16}" font-family="var(--fb)" font-size="13" fill="#eef2e8">${esc(MOD_NOME[m.id] ?? m.id)}</text>
-      <text x="${p.x + 12}" y="${p.y + 28}" font-family="var(--fb)" font-size="10" fill="#8b9a8f">${esc(metrica)}</text>
+      ${icone(m.id, cor, p.x + 9, p.y + 5)}
+      <text x="${p.x + 27}" y="${p.y + 16}" font-family="var(--fb)" font-size="13.5" fill="#eef2e8">${esc(nome(m.id))}</text>
+      <text x="${p.x + 12}" y="${p.y + 28}" font-family="var(--fb)" font-size="10.5" fill="#8b9a8f">${esc(metrica)}</text>
       ${selos}
     </g>`;
   };
@@ -259,14 +351,33 @@ export function grafoOficina(arq, equipe) {
   const usados = [...new Set(Object.values(equipe).flat())].filter((a) => AGENTES[a]);
   const equipeHtml = usados.map((a) => `<li><b style="background:${AGENTES[a].cor}">${AGENTES[a].letra}</b>${esc(a)}</li>`).join('');
 
+  // O que o painel de detalhes mostra de cada módulo: pronto aqui, para o cliente só montar texto.
+  const dados = Object.fromEntries(
+    mods.map((m) => [
+      m.id,
+      {
+        nome: nome(m.id),
+        arq: m.files,
+        lin: m.loc,
+        testes: m.tests,
+        frente: frenteOf(m.id).rotulo,
+        cor: frenteOf(m.id).cor,
+        equipe: equipe[m.id] ?? [],
+        usa: m.imports,
+        usadoPor: m.importedBy ?? [],
+      },
+    ]),
+  );
+
   const svg = `<div class="arq-palco" id="arq-palco">
-    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Mapa da arquitetura do CYBERMECH: módulos agrupados por frente">
+    <svg viewBox="0 0 ${W} ${H}" role="group" aria-label="Mapa da arquitetura do CYBERMECH: módulos agrupados por frente. Cada módulo é um botão.">
       ${aneis}${raios}${arestas}${hub}${setores.map(painel).join('')}
     </svg>
-    <div class="arq-tip" id="arq-tip"></div>
-    <ul class="arq-legenda">${legenda}</ul>
-    <ul class="arq-equipe">${equipeHtml}</ul>
-    <p class="arq-aviso">passe o mouse num módulo<br>para isolar as ligações dele</p>
+  </div>
+  <div class="arq-detalhe" id="arq-detalhe" role="status" aria-live="polite"><p>Passe o mouse, toque ou use Tab num módulo: o mapa isola o que ele usa e quem o usa. <b>Clique para fixar</b>; Esc ou um clique no fundo solta.</p></div>
+  <div class="arq-chaves">
+    <ul class="arq-legenda" aria-label="Frentes: cor e ícone"><li class="t">frente</li>${legenda}</ul>
+    <ul class="arq-equipe" aria-label="Selos da equipe que entregou"><li class="t">equipe</li>${equipeHtml}</ul>
   </div>`;
 
   const html = `<figure class="arq">
@@ -288,5 +399,7 @@ export function grafoOficina(arq, equipe) {
     </details>
   </figure>`;
 
-  return { html, script: `(${grafoScript.toString()})();` };
+  // `<` vira < dentro do JSON: nada do dado fecha o <script> por engano.
+  const json = JSON.stringify(dados).replace(/</g, '\\u003c');
+  return { html, script: `(${grafoScript.toString()})(${json});` };
 }

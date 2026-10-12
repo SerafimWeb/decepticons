@@ -1,10 +1,19 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
+import * as THREE from 'three';
+import type { MechBase } from '../client/src/entities/MechBase';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE, SNAPSHOT_HZ, SIM_HZ } from '../shared/net/constants';
+import { EVENT, EVENT_BYTES, NET_WEAPONS } from '../shared/net/events';
+import { FX_CHILL_MASK, FX_FLAMING, FX_FROZEN, FX_SHOCKED, FX_SPINNING, FX_STUNNED } from '../client/src/combat/StatusEffects';
+import { hitDamage, weapon } from '../client/src/combat/weapons';
+import { netWeaponIndex } from '../client/src/net/adapters';
+import { factorySpec, loadoutKey } from '../client/src/hangar/loadout';
 import { newNetInput, type NetInput } from '../shared/net/input';
+import { NET_PARTS } from '../shared/net/state';
 import {
+  decodeEvents,
   decodeReject,
   decodeRoster,
   decodeSnapshot,
@@ -16,6 +25,7 @@ import {
   decodePong,
   messageType,
   MSG,
+  newEventBatch,
   newSnapshot,
   type Snapshot,
 } from '../shared/net/messages';
@@ -170,6 +180,781 @@ describe('M3: a sala do servidor', () => {
   });
 });
 
+interface TestUnit {
+  id: number;
+  kind: string;
+  mech: MechBase;
+}
+
+/** Os acertos (HIT) que chegaram a este jogador, na ordem. */
+function hitsSeen(peer: FakePeer): { unit: number; other: number; index: number; amount: number }[] {
+  const out: { unit: number; other: number; index: number; amount: number }[] = [];
+  const batch = newEventBatch();
+  for (const bytes of peer.of(MSG.EVENTS)) {
+    expect(decodeEvents(bytes, batch)).toBe(true);
+    for (let i = 0; i < batch.count; i++) {
+      const e = batch.list[i]!;
+      if (e.kind === EVENT.HIT) out.push({ unit: e.unit, other: e.other, index: e.index, amount: e.amount });
+    }
+  }
+  return out;
+}
+
+const lifeOf = (m: MechBase) => Object.values(m.modules).reduce((a, b) => a + b, 0);
+
+describe('M5: o acerto é decidido pelo servidor e vira evento HIT', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('o evento HIT leva quem levou, de quem, a parte e o dano', async () => {
+    const room = await ArenaRoom.create('HITEVT');
+    const dan = new FakePeer();
+    room.receive(dan, join('Dan'));
+    const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
+    const units = room['units'] as TestUnit[];
+    const bot = units.find((u) => u.kind === 'mech')!;
+    const mine = units.find((u) => u.id === me)!;
+    room['match'].onMechHit?.({ mech: bot.mech, shooter: mine.mech, result: { part: 'leftArm', applied: 37, partDestroyed: false, killed: false } });
+    for (let i = 0; i < 3; i++) room.step();
+    expect(hitsSeen(dan)).toContainEqual({ unit: bot.id, other: me, index: NET_PARTS.indexOf('leftArm'), amount: 37 });
+    room.dispose();
+  });
+
+  it('um tiro real acerta o alvo uma vez só, e o evento HIT conta exatamente a vida que o alvo perdeu', async () => {
+    const room = await ArenaRoom.create('UMTIRO');
+    const dan = new FakePeer();
+    room.receive(dan, join('Dan'));
+    const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
+    room.step();
+    const units = room['units'] as TestUnit[];
+    const bot = units.find((u) => u.kind === 'mech')!;
+    const feet = room.positionOf(me)!;
+    const mine = units.find((u) => u.id === me)!;
+    const muzzle = new THREE.Vector3();
+    mine.mech.simMuzzle(muzzle);
+    // Yaw 0: a frente é -Z. O alvo fica na linha do cano (que é deslocado do eixo do Mech), a 3 m da boca.
+    bot.mech.respawn(new THREE.Vector3(muzzle.x, feet.y, muzzle.z - 3));
+    const before = lifeOf(bot.mech);
+    room.receive(dan, inputs(1, 1, { fire: true }));
+    room.receive(dan, inputs(2, 17));
+    for (let i = 0; i < 24; i++) room.step();
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    const lost = before - lifeOf(bot.mech);
+    expect(hits.length).toBe(1);
+    expect(lost).toBeGreaterThan(0);
+    expect(Math.abs(lost - hits[0]!.amount)).toBeLessThanOrEqual(0.5);
+    room.dispose();
+  });
+});
+
+describe('Lancer-L1 online: a escopeta no servidor', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com o texto da montagem (id com maiúscula) e o tiro sai como escopeta, com o dano de perto', async () => {
+    const room = await ArenaRoom.create('LANCER');
+    const dan = new FakePeer();
+    room.receive(dan, join('Dan', 'v1.lancerL1.shotgun-0.-'));
+    expect(dan.of(MSG.WELCOME)).toHaveLength(1); // não foi recusado como 'montagem'
+    const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
+    expect(decodeRoster(dan.of(MSG.ROSTER).at(-1)!)!.find((e) => e.id === me)).toMatchObject({ build: 'v1.lancerL1.shotgun-0.-' });
+    room.step();
+    const units = room['units'] as TestUnit[];
+    const bot = units.find((u) => u.kind === 'mech')!;
+    const mine = units.find((u) => u.id === me)!;
+    expect(mine.mech.loadout.primary.id).toBe('shotgun');
+    expect(mine.mech.loadout.secondary).toBeNull();
+    const muzzle = new THREE.Vector3();
+    mine.mech.simMuzzle(muzzle);
+    bot.mech.respawn(new THREE.Vector3(muzzle.x, room.positionOf(me)!.y, muzzle.z - 3));
+    room.receive(dan, inputs(1, 1, { fire: true }));
+    room.receive(dan, inputs(2, 17));
+    for (let i = 0; i < 24; i++) room.step();
+
+    const batch = newEventBatch();
+    const shots: number[] = [];
+    for (const bytes of dan.of(MSG.EVENTS)) {
+      decodeEvents(bytes, batch);
+      for (let i = 0; i < batch.count; i++) if (batch.list[i]!.kind === EVENT.SHOT && batch.list[i]!.unit === me) shots.push(batch.list[i]!.index);
+    }
+    expect(shots).toEqual([netWeaponIndex('shotgun')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.amount).toBe(hitDamage(weapon('shotgun'), 3));
+    expect(hits[0]!.amount).toBeGreaterThan(weapon('plasma').damage * 2);
+    room.dispose();
+  });
+});
+
+/** Uma sala com o jogador de `build`, um alvo parado a `dist` m à frente e o comando que o cliente mandaria: da boca direita ao centro do alvo. */
+async function palco(build = loadoutKey(factorySpec('marauder')), dist = 15) {
+  const room = await ArenaRoom.create('PALCO');
+  const dan = new FakePeer();
+  room.receive(dan, join('Dan', build));
+  expect(dan.of(MSG.WELCOME)).toHaveLength(1); // a montagem não foi recusada
+  const me = decodeWelcome(dan.of(MSG.WELCOME)[0]!)!.id;
+  expect(decodeRoster(dan.of(MSG.ROSTER).at(-1)!)!.find((e) => e.id === me)).toMatchObject({ build });
+  room.step();
+  const units = room['units'] as TestUnit[];
+  const bot = units.find((u) => u.kind === 'mech')!;
+  const mine = units.find((u) => u.id === me)!;
+  const feet = room.positionOf(me)!.clone();
+  bot.mech.respawn(new THREE.Vector3(feet.x, feet.y, feet.z - dist));
+  bot.mech.moveSpeedScale = 0; // parado: o teste mede o tiro, não a esquiva
+  room.step(); // o colisor do alvo só muda de lugar no passo da física: sem isto a mira ainda o veria onde estava
+  room.step();
+  // A boca anda quando o Mech gira: refaz a conta com o yaw já aplicado até assentar (o cliente mira do yaw de agora).
+  const muzzle = new THREE.Vector3();
+  const to = new THREE.Vector3();
+  let yaw = 0;
+  let pitch = 0;
+  for (let i = 0; i < 6; i++) {
+    mine.mech.applyFacing(yaw, pitch);
+    mine.mech.simMuzzle(muzzle, 'rightHand');
+    to.set(feet.x, feet.y + 2.5, feet.z - dist).sub(muzzle);
+    yaw = Math.atan2(-to.x, -to.z);
+    pitch = Math.asin(to.y / to.length());
+  }
+  return { room, dan, me, mine, bot, yaw, pitch };
+}
+
+/** Um comando por tick, como o cliente manda (o pacote aceita no máximo 8 comandos; mais que isso o servidor descarta o pacote inteiro). */
+function drive(room: ArenaRoom, peer: FakePeer, first: number, ticks: number, o: Partial<NetInput>): void {
+  for (let i = 0; i < ticks; i++) {
+    room.receive(peer, inputs(first + i, 1, o));
+    room.step();
+  }
+}
+
+/** Os tiros de `me` com o encaixe de onde cada um saiu (posição em `MOUNTS`: 0 mão direita, 1 mão esquerda, 2 ombro direito, 3 ombro esquerdo). */
+function shotMountsOf(peer: FakePeer, me: number): Array<{ index: number; mount: number }> {
+  const batch = newEventBatch();
+  const out: Array<{ index: number; mount: number }> = [];
+  for (const bytes of peer.of(MSG.EVENTS)) {
+    decodeEvents(bytes, batch);
+    for (let i = 0; i < batch.count; i++) if (batch.list[i]!.kind === EVENT.SHOT && batch.list[i]!.unit === me) out.push({ index: batch.list[i]!.index, mount: batch.list[i]!.other });
+  }
+  return out;
+}
+
+function shotsOf(peer: FakePeer, me: number): number[] {
+  const batch = newEventBatch();
+  const out: number[] = [];
+  for (const bytes of peer.of(MSG.EVENTS)) {
+    decodeEvents(bytes, batch);
+    for (let i = 0; i < batch.count; i++) if (batch.list[i]!.kind === EVENT.SHOT && batch.list[i]!.unit === me) out.push(batch.list[i]!.index);
+  }
+  return out;
+}
+
+
+describe('Marauder online: duas mãos no botão principal e dois lançadores nos ombros, pelo servidor', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem de fábrica: blaster nas duas mãos e foguetes nos ombros, com as bocas do dado do chassi', async () => {
+    const { room, mine } = await palco();
+    const { loadout } = mine.mech;
+    expect(loadout.primary.id).toBe('blaster');
+    expect(loadout.offhand?.id).toBe('blaster');
+    expect(loadout.secondary?.id).toBe('rockets');
+    // O corpo do servidor é o procedural, mas a boca de cada encaixe é a do desenho (dado do chassi): G14.
+    const rightShoulder = mine.mech.simMuzzle(new THREE.Vector3(), 'rightShoulder');
+    const pos = room.positionOf(mine.id)!;
+    expect(rightShoulder.x - pos.x).toBeCloseTo(1.08, 1);
+    expect(rightShoulder.y - pos.y).toBeCloseTo(4.82, 1);
+    room.dispose();
+  });
+
+  it('segurar o botão principal atira as DUAS mãos (um tiro de cada, a esquerda meio intervalo depois) e as duas acertam o alvo', async () => {
+    const { room, dan, me, bot, yaw, pitch } = await palco();
+    drive(room, dan, 1, 15, { fire: true, yaw, pitch }); // 0,25 s segurando
+    drive(room, dan, 16, 35, { yaw, pitch }); // solta e deixa os projéteis chegarem
+
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('blaster'), netWeaponIndex('blaster')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits).toHaveLength(2); // a mão esquerda também acerta: a mira converge no alvo
+    expect(hits.every((h) => h.amount === hitDamage(weapon('blaster'), 15))).toBe(true);
+    room.dispose();
+  });
+
+  it('o evento de tiro diz de qual encaixe saiu: as duas mãos do Marauder atiram da direita (0) e da esquerda (1), e os dois ombros, do direito (2) e do esquerdo (3)', async () => {
+    // Dono, 11/10: "tava usando o marauder e os tiros estavam saindo só pela mão direita": o outro jogador desenhava todo tiro da mão direita.
+    const { room, dan, me, yaw, pitch } = await palco();
+    drive(room, dan, 1, 15, { fire: true, yaw, pitch }); // as duas mãos
+    drive(room, dan, 16, 20, { yaw, pitch });
+    const maos = shotMountsOf(dan, me);
+    expect(maos.map((t) => t.index)).toEqual([netWeaponIndex('blaster'), netWeaponIndex('blaster')]);
+    expect(maos.map((t) => t.mount).sort()).toEqual([0, 1]);
+
+    const ombros = await palco();
+    drive(ombros.room, ombros.dan, 1, 1, { secondary: true, yaw: ombros.yaw, pitch: ombros.pitch });
+    drive(ombros.room, ombros.dan, 2, 20, { yaw: ombros.yaw, pitch: ombros.pitch }); // o estado (e os eventos) saem a 20 Hz
+    const foguetes = shotMountsOf(ombros.dan, ombros.me);
+    expect(foguetes.map((t) => t.index)).toEqual([netWeaponIndex('rockets'), netWeaponIndex('rockets')]);
+    expect(foguetes.map((t) => t.mount).sort()).toEqual([2, 3]);
+    room.dispose();
+    ombros.room.dispose();
+  });
+
+  it('num chassi de uma mão a arma do braço esquerdo (botão 2) também diz o encaixe: o outro jogador a desenha da mão esquerda, não da direita', async () => {
+    const { room, dan, me, yaw, pitch } = await palco('v1.vector09.plasma-0.cryo-0');
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch });
+    drive(room, dan, 2, 20, { yaw, pitch });
+    const tiros = shotMountsOf(dan, me);
+    expect(tiros).toEqual([{ index: netWeaponIndex('cryo'), mount: 1 }]);
+    const direita = await palco('v1.vector09.plasma-0.cryo-0');
+    drive(direita.room, direita.dan, 1, 1, { fire: true, yaw: direita.yaw, pitch: direita.pitch });
+    drive(direita.room, direita.dan, 2, 20, { yaw: direita.yaw, pitch: direita.pitch });
+    expect(shotMountsOf(direita.dan, direita.me)).toEqual([{ index: netWeaponIndex('plasma'), mount: 0 }]);
+    room.dispose();
+    direita.room.dispose();
+  });
+
+  it('o evento de tiro não cresceu: o encaixe cabe nos 2 bits de cima do byte da arma (o catálogo tem folga até 64 armas)', async () => {
+    const { NET_WEAPONS } = await import('../shared/net/events');
+    expect(NET_WEAPONS.length).toBeLessThanOrEqual(64);
+    expect(EVENT_BYTES[EVENT.SHOT]).toBe(7);
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(14); // o cliente do 13 leria o encaixe (bits de cima) como arma inválida
+  });
+
+  it('o botão secundário solta os DOIS foguetes de ombro de uma vez, gasta um tiro do carregador, e os dois acertam', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco();
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch }); // um aperto
+    expect(mine.mech.heat).toBeCloseTo(2 * weapon('rockets').heatPerShot, 2); // dois lançamentos esquentam o mesmo dissipador
+    drive(room, dan, 2, 50, { yaw, pitch }); // os foguetes levam ~0,2 s para chegar
+
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('rockets'), netWeaponIndex('rockets')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits.length).toBeGreaterThanOrEqual(2); // um foguete de cada ombro
+    const total = hits.reduce((s, h) => s + h.amount, 0);
+    expect(total).toBeGreaterThan(weapon('rockets').damage); // mais que um foguete só
+    expect(before - lifeOf(bot.mech)).toBe(total); // o evento é a vida que saiu, sem segunda via de dano
+    room.dispose();
+  });
+});
+
+describe('Metralhadora rotatória online: nenhum evento por tiro, bandeira de cano girando e dano de verdade', () => {
+  const ROTATORIA = 'v1.vector09.rotary-0.rockets-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem; 1,5 s de gatilho não manda nenhum evento de tiro, mas o alvo leva os acertos e a vida que sai é a soma deles', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(ROTATORIA);
+    expect(mine.mech.loadout.primary.id).toBe('rotary');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 90, { fire: true, yaw, pitch }); // 1,5 s: o cano sobe de 0 a quase a plena rotação
+    drive(room, dan, 91, 40, { yaw, pitch }); // solta e deixa os projéteis chegarem
+
+    expect(shotsOf(dan, me)).toEqual([]); // 20 tiros/s não viram 20 eventos/s: a bandeira do cano é que avisa os outros
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits.length).toBeGreaterThan(8); // o cone abre com a rotação, mas a 15 m a maior parte ainda acerta o corpo
+    const total = hits.reduce((s, h) => s + h.amount, 0);
+    expect(before - lifeOf(bot.mech)).toBe(total); // o evento é a vida que saiu, sem segunda via de dano
+    expect(hits.every((h) => h.amount <= weapon('rotary').damage)).toBe(true);
+    room.dispose();
+  });
+
+  it('a bandeira de rotação vai no estado do jogador enquanto o cano gira e apaga depois de solto (o outro jogador desenha o fluxo por ela)', async () => {
+    const { room, dan, me, yaw, pitch } = await palco(ROTATORIA);
+    const spinningInSnapshot = (): boolean => {
+      const s = dan.lastSnapshot();
+      for (let i = 0; i < s.count; i++) if (s.units[i]!.id === me) return ((s.units[i]!.fx ?? 0) & FX_SPINNING) !== 0;
+      throw new Error('o jogador não está no estado');
+    };
+    drive(room, dan, 1, 3, { yaw, pitch });
+    expect(spinningInSnapshot()).toBe(false); // gatilho solto: nada gira
+    drive(room, dan, 4, 90, { fire: true, yaw, pitch });
+    expect(spinningInSnapshot()).toBe(true);
+    drive(room, dan, 94, 120, { yaw, pitch }); // 2 s sem gatilho: o cano já parou
+    expect(spinningInSnapshot()).toBe(false);
+    room.dispose();
+  });
+
+  it('o servidor aplica o desvio do cano: com a rotação cheia os tiros saem espalhados dentro do cone, o primeiro vai reto na mira', async () => {
+    const { room, dan, yaw, pitch } = await palco(ROTATORIA);
+    const projectiles = room['match'].projectiles;
+    const dirs: THREE.Vector3[] = [];
+    const fire = projectiles.fire.bind(projectiles);
+    projectiles.fire = (origin, dir, owner, visual, w) => {
+      if (w?.id === 'rotary') dirs.push(dir.clone()); // os bots da sala atiram pelo mesmo sistema: só as balas da rotatória
+      return fire(origin, dir, owner, visual, w);
+    };
+    drive(room, dan, 1, 100, { fire: true, yaw, pitch });
+    expect(dirs.length).toBeGreaterThan(20);
+    const cone = weapon('rotary').spin!.spread;
+    const angles = dirs.map((d) => d.angleTo(dirs[0]!));
+    expect(Math.max(...angles)).toBeGreaterThan(cone * 0.5); // espalhou (sem o desvio todos sairiam paralelos)
+    expect(Math.max(...angles)).toBeLessThanOrEqual(cone * 2.05); // no pior caso, lados opostos do cone
+    room.dispose();
+  });
+
+  it('é determinística no servidor: duas salas iguais, mesmos comandos, a mesma vida que sai do alvo, acerto por acerto', async () => {
+    const rodar = async () => {
+      const { room, dan, me, bot, yaw, pitch } = await palco(ROTATORIA);
+      drive(room, dan, 1, 100, { fire: true, yaw, pitch });
+      drive(room, dan, 101, 40, { yaw, pitch });
+      const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me).map((h) => `${h.index}:${h.amount}`);
+      room.dispose();
+      return hits;
+    };
+    const a = await rodar();
+    const b = await rodar();
+    expect(a.length).toBeGreaterThan(5);
+    expect(b).toEqual(a);
+  });
+
+  it('o servidor recusa a rotatória no braço esquerdo do Vector-09 (só vai no gatilho principal)', async () => {
+    const room = await ArenaRoom.create('REJEITA');
+    const dan = new FakePeer();
+    room.receive(dan, join('Dan', 'v1.vector09.plasma-0.rotary-0'));
+    expect(dan.of(MSG.WELCOME)).toHaveLength(0);
+    expect(dan.of(MSG.REJECT).length).toBeGreaterThan(0);
+    room.dispose();
+  });
+});
+
+describe('Arma elétrica online: o tiro vira evento, o alvo fica chocado e o estado vai na rede', () => {
+  const ELETRICA = 'v1.vector09.arc-0.rockets-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem; o tiro sai como evento de tiro da elétrica e o acerto deixa o alvo chocado, com o dano certo', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(ELETRICA);
+    expect(mine.mech.loadout.primary.id).toBe('arc');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 12, { fire: true, yaw, pitch }); // 0,2 s: um tiro só
+    drive(room, dan, 13, 40, { yaw, pitch }); // o projétil leva ~0,17 s para chegar
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('arc')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.amount).toBe(hitDamage(weapon('arc'), 15));
+    expect(bot.mech.status.shocked).toBe(true);
+    expect(bot.mech.status.stunned).toBe(false); // um acerto no corpo só choca
+    expect(before - lifeOf(bot.mech)).toBeGreaterThanOrEqual(hits[0]!.amount); // o dano do choque soma por segundo, sem evento
+    room.dispose();
+  });
+
+  it('o estado do alvo vai no snapshot (bit de choque) e some quando acaba; três acertos seguidos atordoam, e o bit de atordoado também vai', async () => {
+    const { room, dan, bot, yaw, pitch } = await palco(ELETRICA);
+    const fxOf = (): number => {
+      const s = dan.lastSnapshot();
+      for (let i = 0; i < s.count; i++) if (s.units[i]!.id === bot.id) return s.units[i]!.fx ?? 0;
+      throw new Error('o alvo não está no estado');
+    };
+    expect(fxOf()).toBe(0);
+    let atordoou = false;
+    let bitDeAtordoado = false;
+    let tick = 1;
+    for (let i = 0; i < 80; i++, tick++) {
+      room.receive(dan, inputs(tick, 1, { fire: true, yaw, pitch }));
+      room.step();
+      if (bot.mech.status.stunned) atordoou = true;
+      if ((fxOf() & FX_STUNNED) !== 0) bitDeAtordoado = true; // o estado sai a 20 Hz: o bit aparece dentro dos 0,8 s do atordoamento
+    }
+    expect(atordoou).toBe(true); // 3 tiros a 0,45 s: o terceiro acerto cai dentro da janela de 1,4 s
+    expect(bitDeAtordoado).toBe(true);
+    expect(fxOf() & FX_SHOCKED).toBe(FX_SHOCKED);
+    drive(room, dan, tick, 360, { yaw, pitch }); // 6 s sem tiro: o choque acaba
+    expect(fxOf() & (FX_SHOCKED | FX_STUNNED)).toBe(0);
+    room.dispose();
+  });
+
+  it('o servidor recusa a montagem com uma elétrica fora de encaixe de energia (id inexistente) e aceita a do braço esquerdo', async () => {
+    const room = await ArenaRoom.create('ELETRICA');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', 'v1.vector09.plasma-0.arc-0')); // a elétrica também vai na esquerda (atira como o plasma)
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const ruim = new FakePeer();
+    room.receive(ruim, join('Ana', 'v1.vector09.arco-0.rockets-0'));
+    expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
+    expect(ruim.of(MSG.REJECT).length).toBeGreaterThan(0);
+    room.dispose();
+  });
+});
+
+describe('Arma de gelo online: o tiro vira evento, o alvo fica gelado, congela com três acertos e o estado vai na rede', () => {
+  const GELO = 'v1.vector09.cryo-0.rockets-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem; o tiro sai como evento de tiro do gelo e o acerto deixa o alvo gelado com um acúmulo, com o dano certo', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(GELO);
+    expect(mine.mech.loadout.primary.id).toBe('cryo');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 12, { fire: true, yaw, pitch }); // 0,2 s: um tiro só (a cadência é 0,6 s)
+    drive(room, dan, 13, 50, { yaw, pitch }); // o projétil leva ~0,21 s para chegar
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('cryo')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.amount).toBe(hitDamage(weapon('cryo'), 15));
+    expect(bot.mech.status.stacks).toBe(1);
+    expect(bot.mech.status.isFrozen).toBe(false); // um acerto só gela
+    expect(before - lifeOf(bot.mech)).toBe(hits[0]!.amount); // o gelo não tira vida por segundo: só o tiro
+    room.dispose();
+  });
+
+  it('o estado do alvo vai no snapshot (bits de gelado e de congelado) e some quando acaba; três acertos seguidos congelam', async () => {
+    const { room, dan, bot, yaw, pitch } = await palco(GELO);
+    const fxOf = (): number => {
+      const s = dan.lastSnapshot();
+      for (let i = 0; i < s.count; i++) if (s.units[i]!.id === bot.id) return s.units[i]!.fx ?? 0;
+      throw new Error('o alvo não está no estado');
+    };
+    expect(fxOf()).toBe(0);
+    let congelou = false;
+    let bitDeCongelado = false;
+    let bitDeGelado = false;
+    let tick = 1;
+    for (let i = 0; i < 150; i++, tick++) {
+      bot.mech.status.stun = 1; // o bot não pula nem se esquiva (ele pulava depois do 2º acerto e o 3º projétil passava por baixo): o teste mede o gelo, não a esquiva
+      room.receive(dan, inputs(tick, 1, { fire: true, yaw, pitch }));
+      room.step();
+      if (bot.mech.status.isFrozen) congelou = true;
+      if ((fxOf() & FX_FROZEN) !== 0) bitDeCongelado = true; // o estado sai a 20 Hz: o bit aparece dentro dos 1,5 s do congelamento
+      if ((fxOf() & FX_CHILL_MASK) !== 0) bitDeGelado = true;
+    }
+    expect(congelou).toBe(true); // 3 tiros a 0,6 s: o terceiro acerto cai dentro dos 4 s do gelado
+    expect(bitDeCongelado).toBe(true);
+    expect(bitDeGelado).toBe(true);
+    drive(room, dan, tick, 420, { yaw, pitch }); // 7 s sem tiro: o gelo e o congelamento acabam
+    expect(fxOf() & (FX_FROZEN | FX_CHILL_MASK)).toBe(0);
+    room.dispose();
+  });
+
+  it('o servidor aceita a de gelo na mão esquerda (atira como o plasma)', async () => {
+    const room = await ArenaRoom.create('GELO');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', 'v1.vector09.plasma-0.cryo-0'));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    room.dispose();
+  });
+});
+
+describe('Lança-chamas online: o servidor aplica o cone, a bandeira vai na rede, e o fluxo não vira evento de tiro', () => {
+  const CHAMA = 'v1.onca.flamer-0.rockets-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem; segurando o gatilho o alvo à frente pega fogo e perde vida; nenhum evento de tiro sai (o fluxo é só a bandeira)', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(CHAMA, 8);
+    expect(mine.mech.loadout.primary.id).toBe('flamer');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 60, { fire: true, yaw, pitch }); // 1 s de chama: 5 pulsos
+    expect(bot.mech.status.burning).toBe(true);
+    expect(before - lifeOf(bot.mech)).toBeGreaterThan(10);
+    expect(shotsOf(dan, me)).toEqual([]); // nenhum evento de tiro: seriam 5 por segundo por atirador
+    room.dispose();
+  });
+
+  it('a bandeira de chama acesa vai no snapshot do atirador enquanto ele queima e some quando ele solta; o alvo leva a de queimando', async () => {
+    const { room, dan, me, bot, yaw, pitch } = await palco(CHAMA, 8);
+    const fxDe = (id: number): number => {
+      const s = dan.lastSnapshot();
+      for (let i = 0; i < s.count; i++) if (s.units[i]!.id === id) return s.units[i]!.fx ?? 0;
+      throw new Error('a unidade não está no estado');
+    };
+    expect(fxDe(me) & FX_FLAMING).toBe(0);
+    let tick = 1;
+    let acendeu = false;
+    for (let i = 0; i < 60; i++, tick++) {
+      room.receive(dan, inputs(tick, 1, { fire: true, yaw, pitch }));
+      room.step();
+      if ((fxDe(me) & FX_FLAMING) !== 0) acendeu = true;
+    }
+    expect(acendeu).toBe(true);
+    expect(fxDe(bot.id) & 1).toBe(1); // FX_BURNING: o alvo está queimando
+    drive(room, dan, tick, 30, { yaw, pitch }); // 0,5 s sem apertar
+    expect(fxDe(me) & FX_FLAMING).toBe(0);
+    room.dispose();
+  });
+
+  it('o servidor recusa o lança-chamas num chassi leve (Vector-09) e aceita nos pesados', async () => {
+    const room = await ArenaRoom.create('CHAMA');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', CHAMA));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const ruim = new FakePeer();
+    room.receive(ruim, join('Ana', 'v1.vector09.flamer-0.rockets-0'));
+    expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
+    expect(ruim.of(MSG.REJECT).length).toBeGreaterThan(0);
+    room.dispose();
+  });
+});
+
+describe('Armas de aço online: o tiro de cada uma vira evento de tiro e o dano é o da arma', () => {
+  const CANHAO = 'v1.onca.cannon-0.rockets-0';
+  const AUTOMATICO = 'v1.vector09.autocannon-0.rockets-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('o canhão pesado: um tiro só por aperto, evento de tiro do canhão, 90 de dano no alvo a 15 m', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(CANHAO);
+    expect(mine.mech.loadout.primary.id).toBe('cannon');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 30, { fire: true, yaw, pitch }); // 0,5 s apertado: a cadência é 2,6 s, então sai um só
+    drive(room, dan, 31, 40, { yaw, pitch }); // o obus leva ~0,1 s para chegar
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('cannon')]);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.amount).toBe(hitDamage(weapon('cannon'), 15));
+    expect(hits[0]!.amount).toBe(90);
+    expect(before - lifeOf(bot.mech)).toBe(hits[0]!.amount);
+    room.dispose();
+  });
+
+  it('o canhão automático: segurando o gatilho saem tiros em sequência firme (5 por segundo), todos como evento do automático, cada um com 10 de dano', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(AUTOMATICO);
+    expect(mine.mech.loadout.primary.id).toBe('autocannon');
+    drive(room, dan, 1, 60, { fire: true, yaw, pitch }); // 1 s
+    drive(room, dan, 61, 30, { yaw, pitch });
+    const tiros = shotsOf(dan, me);
+    expect(tiros.length).toBeGreaterThanOrEqual(4);
+    expect(tiros.length).toBeLessThanOrEqual(6);
+    expect(tiros.every((i) => i === netWeaponIndex('autocannon'))).toBe(true);
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits.length).toBeGreaterThanOrEqual(3);
+    for (const h of hits) expect(h.amount).toBe(hitDamage(weapon('autocannon'), 15));
+    room.dispose();
+  });
+
+  it('o servidor recusa o canhão pesado num chassi leve (Vector-09) e aceita nos pesados; o automático vai em ambos', async () => {
+    const room = await ArenaRoom.create('ACO');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', CANHAO));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const leve = new FakePeer();
+    room.receive(leve, join('Ana', 'v1.vector09.cannon-0.rockets-0'));
+    expect(leve.of(MSG.WELCOME)).toHaveLength(0);
+    expect(leve.of(MSG.REJECT).length).toBeGreaterThan(0);
+    const auto = new FakePeer();
+    room.receive(auto, join('Bia', AUTOMATICO));
+    expect(auto.of(MSG.WELCOME)).toHaveLength(1);
+    room.dispose();
+  });
+
+  it('o catálogo de tiros da rede só se acrescenta no fim (canhão, automático, sônico e teleguiado seguem a ordem) e o protocolo é o 12 ou mais', () => {
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(12);
+    expect(NET_WEAPONS.slice(-4)).toEqual(['cannon', 'autocannon', 'sonic', 'seeker']);
+    expect(NET_WEAPONS.slice(0, 10)).toEqual(['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage', 'railgun', 'emp', 'arc', 'cryo']);
+  });
+});
+
+describe('Anel de fogo online: o servidor aplica o anel, o calor vai para todos e o escudo ligado vai na rede', () => {
+  const ANEL = 'v2.vector09.plasma-0.rockets-0.-.fire';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem (módulo fire); segurando a tecla do escudo, o alvo a 5 m queima, perde vida e esquenta, e o dono esquenta sem se queimar', async () => {
+    const { room, dan, mine, bot, yaw, pitch } = await palco(ANEL, 5);
+    expect(mine.mech.loadout.module).toBe('fire');
+    const antes = lifeOf(bot.mech);
+    drive(room, dan, 1, 60, { shield: true, yaw, pitch }); // 1 s de anel
+    expect(mine.mech.energyShield.active).toBe(true);
+    expect(bot.mech.status.burning).toBe(true);
+    expect(antes - lifeOf(bot.mech)).toBeGreaterThan(12);
+    expect(bot.mech.heat).toBeGreaterThan(0.1);
+    expect(mine.mech.heat).toBeGreaterThan(0.1);
+    expect(mine.mech.status.burning).toBe(false);
+    room.dispose();
+  });
+
+  it('o alvo longe (15 m) não é pego; e o anel não impede o dono de levar tiro (não segura dano)', async () => {
+    const { room, dan, mine, bot, yaw, pitch } = await palco(ANEL, 15);
+    drive(room, dan, 1, 60, { shield: true, yaw, pitch });
+    expect(bot.mech.status.burning).toBe(false);
+    const vida = mine.mech.modules.torso;
+    const sobrou = mine.mech.defend(50, 'termico', 0, 0, -1);
+    expect(sobrou).toBe(50);
+    expect(mine.mech.modules.torso).toBe(vida);
+    room.dispose();
+  });
+
+  it('o escudo ligado e a energia que cai vão no snapshot (é por ele que os outros jogadores desenham o aro e as chamas); depois de soltar, desliga', async () => {
+    const { room, dan, me, yaw, pitch } = await palco(ANEL, 5);
+    const meu = () => {
+      const s = dan.lastSnapshot();
+      for (let i = 0; i < s.count; i++) if (s.units[i]!.id === me) return s.units[i]!;
+      throw new Error('o dono não está no estado');
+    };
+    drive(room, dan, 1, 60, { shield: true, yaw, pitch });
+    expect(meu().shield).toBe(true);
+    expect(dan.lastSnapshot().energy).toBeLessThan(0.85); // 1 s de 20 por segundo: ~80%
+    drive(room, dan, 61, 30, { yaw, pitch });
+    expect(meu().shield).toBe(false);
+    room.dispose();
+  });
+
+  it('o servidor aceita o anel num chassi comum e o protocolo do módulo novo é o 13 (cliente do 12 é recusado)', async () => {
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(13);
+    const room = await ArenaRoom.create('ANEL');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', ANEL));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const velho = new FakePeer();
+    room.receive(velho, join('Ana', ANEL, PROTOCOL_VERSION - 1));
+    expect(velho.of(MSG.WELCOME)).toHaveLength(0);
+    expect(velho.of(MSG.REJECT).length).toBeGreaterThan(0);
+    const ruim = new FakePeer();
+    room.receive(ruim, join('Bia', 'v2.android.blaster-0.chainsaw-0.-.fire')); // o Andróide não tem encaixe de gerador
+    expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
+    room.dispose();
+  });
+});
+
+describe('Canhão sônico online: uma onda de cada ombro, com o encaixe no evento, o dano das duas e o empurrão', () => {
+  const SONICO = 'v1.marauder.blaster-0.blaster-0.sonic-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com a montagem; o botão 2 solta duas ondas (evento de tiro do sônico, encaixes 2 e 3), o alvo a 15 m leva o dano das duas bocas e é empurrado para longe', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(SONICO);
+    expect(mine.mech.loadout.secondary?.id).toBe('sonic');
+    const antes = lifeOf(bot.mech);
+    const z0 = bot.mech.simPosition.z;
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch });
+    drive(room, dan, 2, 40, { yaw, pitch });
+    const tiros = shotMountsOf(dan, me);
+    expect(tiros.map((t) => t.index)).toEqual([netWeaponIndex('sonic'), netWeaponIndex('sonic')]);
+    expect(tiros.map((t) => t.mount).sort()).toEqual([2, 3]); // ombro direito e esquerdo
+    expect(antes - lifeOf(bot.mech)).toBeGreaterThanOrEqual(2 * hitDamage(weapon('sonic'), 15)); // as duas bocas, o alvo a ~13,7 m da boca
+    expect(antes - lifeOf(bot.mech)).toBeLessThanOrEqual(2 * hitDamage(weapon('sonic'), 10));
+    expect(z0 - bot.mech.simPosition.z).toBeGreaterThan(1); // empurrado para longe do atirador (para -Z)
+    // Quem atira não se empurra com a própria onda (8 m/s no alvo). O bot do palco revida e os tiros dele empurram um pouco (reação ao tiro, P69): só isso sobra.
+    expect(mine.mech.shove.length()).toBeLessThan(1);
+    room.dispose();
+  });
+
+  it('o servidor recusa o canhão sônico nas mãos e fora do Marauder (a montagem é validada)', async () => {
+    const room = await ArenaRoom.create('SONICO');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', SONICO));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const naMao = new FakePeer();
+    room.receive(naMao, join('Ana', 'v1.marauder.sonic-0.blaster-0.rockets-0'));
+    expect(naMao.of(MSG.WELCOME)).toHaveLength(0);
+    const vector = new FakePeer();
+    room.receive(vector, join('Bia', 'v1.vector09.plasma-0.sonic-0'));
+    expect(vector.of(MSG.WELCOME)).toHaveLength(0);
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(15);
+    room.dispose();
+  });
+});
+
+describe('Layout dividido online (P95): a mão esquerda no Ataque 2 junto dos ombros, pelo servidor', () => {
+  const DIVIDIDO = 'v2.marauder.blaster-0.plasma-0.sonic-0.-.L1';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com o layout na montagem: o Mech do servidor usa os gatilhos divididos (só a direita no Ataque 1)', async () => {
+    const { room, mine } = await palco(DIVIDIDO);
+    expect(mine.mech.loadout.layout).toBe(1);
+    expect(mine.mech.triggers.primary).toEqual(['rightHand']);
+    expect(mine.mech.triggers.secondary).toEqual(['leftHand', 'rightShoulder', 'leftShoulder']);
+    room.dispose();
+  });
+
+  it('o Ataque 1 atira só a mão direita (encaixe 0) e o Ataque 2 atira a mão esquerda (encaixe 1, plasma) e os dois ombros (encaixes 2 e 3, onda sônica)', async () => {
+    const a = await palco(DIVIDIDO);
+    drive(a.room, a.dan, 1, 20, { fire: true, yaw: a.yaw, pitch: a.pitch });
+    const um = shotMountsOf(a.dan, a.me);
+    expect(um.length).toBeGreaterThan(0);
+    expect(um.every((t) => t.mount === 0 && t.index === netWeaponIndex('blaster'))).toBe(true);
+    a.room.dispose();
+
+    const b = await palco(DIVIDIDO);
+    drive(b.room, b.dan, 1, 1, { secondary: true, yaw: b.yaw, pitch: b.pitch });
+    drive(b.room, b.dan, 2, 40, { yaw: b.yaw, pitch: b.pitch });
+    const dois = shotMountsOf(b.dan, b.me);
+    expect(dois.map((t) => `${t.mount}:${t.index}`).sort()).toEqual([
+      `1:${netWeaponIndex('plasma')}`,
+      `2:${netWeaponIndex('sonic')}`,
+      `3:${netWeaponIndex('sonic')}`,
+    ]);
+    b.room.dispose();
+  });
+
+  it('o alvo leva o dano do plasma da mão esquerda e das duas ondas no mesmo aperto (armas diferentes, o mesmo botão)', async () => {
+    const { room, dan, bot, yaw, pitch } = await palco(DIVIDIDO);
+    const antes = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch });
+    drive(room, dan, 2, 60, { yaw, pitch });
+    expect(antes - lifeOf(bot.mech)).toBeGreaterThanOrEqual(2 * hitDamage(weapon('sonic'), 15) + 1);
+    room.dispose();
+  });
+
+  it('o servidor valida o layout: o 2 não existe, e um robô de um layout só (Vector-09) recusa o L1; o protocolo é o 17 ou mais', async () => {
+    const room = await ArenaRoom.create('LAYOUT');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', DIVIDIDO));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const dois = new FakePeer();
+    room.receive(dois, join('Ana', 'v2.marauder.blaster-0.plasma-0.sonic-0.-.L2'));
+    expect(dois.of(MSG.WELCOME)).toHaveLength(0);
+    const vector = new FakePeer();
+    room.receive(vector, join('Bia', 'v2.vector09.plasma-0.rockets-0.-.-.L1'));
+    expect(vector.of(MSG.WELCOME)).toHaveLength(0);
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(17); // o servidor do 16 não reconhece o último grupo da chave
+    room.dispose();
+  });
+});
+
+describe('Míssil teleguiado online: um míssil de cada ombro, que curva até o alvo fora da linha do tiro', () => {
+  const TELE = 'v1.marauder.blaster-0.blaster-0.seeker-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('o botão 2 solta dois mísseis (evento de tiro do teleguiado, encaixes 2 e 3) e o alvo a 30 m, 20° fora da mira mas dentro do cone de trava, leva dano: o míssil curvou', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(TELE, 30);
+    expect(mine.mech.loadout.secondary?.id).toBe('seeker');
+    const antes = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw: yaw + 0.35, pitch });
+    drive(room, dan, 2, 150, { yaw: yaw + 0.35, pitch });
+    const tiros = shotMountsOf(dan, me);
+    expect(tiros.map((t) => t.index)).toEqual([netWeaponIndex('seeker'), netWeaponIndex('seeker')]);
+    expect(tiros.map((t) => t.mount).sort()).toEqual([2, 3]);
+    expect(antes - lifeOf(bot.mech)).toBeGreaterThan(40); // pelo menos um míssil inteiro (55 no centro, menos a queda da explosão)
+    room.dispose();
+  });
+
+  it('o mesmo cenário com foguetes comuns erra: o tiro reto passa a ~11 m do alvo (mais que a explosão de 6 m)', async () => {
+    const { room, dan, bot, yaw, pitch } = await palco('v1.marauder.blaster-0.blaster-0.rockets-0', 30);
+    const antes = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw: yaw + 0.35, pitch });
+    drive(room, dan, 2, 150, { yaw: yaw + 0.35, pitch });
+    expect(lifeOf(bot.mech)).toBe(antes);
+    room.dispose();
+  });
+
+  it('o servidor recusa o míssil teleguiado nas mãos e fora do Marauder (a montagem é validada) e o protocolo é o 16 ou mais', async () => {
+    const room = await ArenaRoom.create('TELEGUIADO');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', TELE));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const naMao = new FakePeer();
+    room.receive(naMao, join('Ana', 'v1.marauder.seeker-0.blaster-0.rockets-0'));
+    expect(naMao.of(MSG.WELCOME)).toHaveLength(0);
+    const vector = new FakePeer();
+    room.receive(vector, join('Bia', 'v1.vector09.plasma-0.seeker-0'));
+    expect(vector.of(MSG.WELCOME)).toHaveLength(0);
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(16); // o cliente do 15 não conhece a arma nova
+    room.dispose();
+  });
+});
+
 describe('M3: o servidor de verdade, pela rede', () => {
   let server: GameServer;
   beforeAll(async () => {
@@ -310,5 +1095,84 @@ describe('M3: defesas do servidor (mesmo domínio da Selva MKT, DEPLOY.md)', () 
     } finally {
       await s.close();
     }
+  });
+});
+
+describe('Chuva de mísseis online: o servidor decide onde cada bomba cai', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('um aperto no botão secundário sobe, avisa com UM evento de tiro e, ~2 s depois, as bombas caem em volta do alvo e tiram vida dele', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco('v1.vector09.plasma-0.barrage-0', 40);
+    expect(mine.mech.loadout.secondary?.id).toBe('barrage');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch });
+    expect(mine.mech.heat).toBeCloseTo(weapon('barrage').heatPerShot, 2);
+    drive(room, dan, 2, 1, { yaw, pitch });
+    // Antes de a primeira bomba cair (subida + queda = 2,1 s), ninguém levou nada.
+    drive(room, dan, 3, 90, { yaw, pitch });
+    expect(lifeOf(bot.mech)).toBe(before);
+    drive(room, dan, 93, 120, { yaw, pitch });
+
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('barrage')]); // o lançamento é um tiro só para a rede
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits.length).toBeGreaterThanOrEqual(2); // as bombas mais perto do centro pegam o Mech parado
+    const total = hits.reduce((s, h) => s + h.amount, 0);
+    expect(total).toBeGreaterThan(0);
+    expect(total).toBeLessThanOrEqual(weapon('barrage').barrage!.bombs * weapon('barrage').damage);
+    expect(before - lifeOf(bot.mech)).toBe(total); // o evento é a vida que saiu
+    // O dono não se fere com a própria chuva (os bots da sala podem acertá-lo: aqui só conta o fogo dele mesmo).
+    expect(hitsSeen(dan).filter((h) => h.unit === me && h.other === me)).toEqual([]);
+    room.dispose();
+  });
+
+  it('a montagem com a chuva entra pelo texto do link e a sala não a recusa', async () => {
+    const room = await ArenaRoom.create('CHUVA');
+    const dan = new FakePeer();
+    room.receive(dan, join('Dan', 'v1.vector09.plasma-0.barrage-1'));
+    expect(dan.of(MSG.WELCOME)).toHaveLength(1);
+    room.dispose();
+  });
+});
+
+
+describe('capacidade e energia da sala', () => {
+  it('bots cedem vagas, não renascem na reserva e voltam após a saída de humano', async () => {
+    const room = await ArenaRoom.create('LOTADA');
+    try {
+      const peers = Array.from({ length: ROOM_SIZE }, () => new FakePeer());
+      peers.forEach((p, i) => room.receive(p, join('P' + i)));
+      const roster = () => decodeRoster(peers[0]!.of(MSG.ROSTER).at(-1)!)!;
+      expect(roster().filter(u => u.kind === 'mech')).toHaveLength(0);
+      expect(roster()).toHaveLength(11);
+      for (let t = 0; t < 301; t++) room.step();
+      room['match'].bots.respawnAll();
+      expect(room['units'].filter(u => u.kind === 'mech').every(u => !u.mech.alive)).toBe(true);
+      expect(peers[0]!.lastSnapshot().count).toBe(11);
+      room.leave(peers[7]!);
+      expect(roster().filter(u => u.kind === 'mech')).toHaveLength(1);
+      expect(room['units'].filter(u => u.kind === 'mech' && u.mech.alive)).toHaveLength(1);
+      expect(roster().filter(u => u.kind === 'technician')).toHaveLength(1);
+    } finally { room.dispose(); }
+  });
+  it.each([['frontal', .9], ['sphere', 130/150]] as const)('%s mantém as duas armas, consome energia no servidor e só envia a energia ao dono', async (module, remaining) => {
+    const room = await ArenaRoom.create('ENERGIA');
+    try {
+      const a = new FakePeer(), b = new FakePeer();
+      room.receive(a, join('A', `v2.vector09.plasma-0.rockets-0.-.${module}`));
+      room.receive(b, join('B'));
+      expect(a.of(MSG.WELCOME)).toHaveLength(1);
+      const id = decodeWelcome(a.of(MSG.WELCOME)[0]!)!.id;
+      drive(room, a, 1, 30, { shield: true, fire: true, secondary: true });
+      const sa = a.lastSnapshot(), sb = b.lastSnapshot();
+      expect(sa.energy).toBeCloseTo(remaining, 2);
+      expect(sb.energy).toBe(0);
+      expect(sb.units.slice(0,sb.count).find(u => u.id === id)?.shield).toBe(true);
+      expect(shotsOf(a,id)).toContain(netWeaponIndex('plasma'));
+      expect(shotsOf(a,id)).toContain(netWeaponIndex('rockets'));
+      for(let t=0;t<30;t++) room.step();
+      expect(a.lastSnapshot().units.find(u => u.id === id)?.shield).toBe(false);
+    } finally { room.dispose(); }
   });
 });

@@ -103,8 +103,8 @@ export class DailyChallenges {
 
   /** Adiciona créditos à conta do piloto. */
   addCredits(amount: number): void {
-    if (amount <= 0) return;
-    this.data.credits += amount;
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    this.data.credits = Math.min(Number.MAX_SAFE_INTEGER, this.data.credits + Math.floor(amount));
     this._saveData();
     this._updateUi();
   }
@@ -230,7 +230,7 @@ export class DailyChallenges {
     if (lvlEl) lvlEl.textContent = String(this.data.level);
 
     const credEl = document.getElementById('pilot-credits-val');
-    if (credEl) credEl.textContent = String(this.data.credits);
+    if (credEl) credEl.textContent = this.data.credits.toLocaleString('pt-BR');
 
     const xpFill = document.getElementById('pilot-xp-fill');
     if (xpFill) {
@@ -244,6 +244,8 @@ export class DailyChallenges {
       this.data.challenges.forEach((ch) => {
         const item = document.createElement('div');
         item.className = `challenge-card ${ch.claimed ? 'claimed' : ch.progress >= ch.target ? 'ready' : ''}`;
+        // No console compacto a descrição some (monitor CARREIRA): fica como dica ao passar o mouse.
+        item.title = ch.description;
 
         const header = document.createElement('div');
         header.className = 'challenge-card-header';

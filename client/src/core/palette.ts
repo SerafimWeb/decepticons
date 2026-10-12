@@ -9,16 +9,24 @@ import * as THREE from 'three';
  * espacial" (25/09). Fonte única das cores do mundo 3D; a interface usa as mesmas no styles.css.
  */
 export const PALETTE = {
-  // Ambiente: espaço escuro, chão com grade ciano (Tron).
-  sky: 0x04050b,
-  fog: 0x070912,
-  ground: 0x05070b,
+  // Ambiente: espaço escuro, chão com grade ciano (Tron). O céu é um degradê (`environment/Atmosphere.ts`) do zênite
+  // quase preto até um brilho de horizonte; a névoa é um tom acima do preto para as torres distantes se
+  // destacarem do céu em vez de sumir nele.
+  skyZenith: 0x03040a,
+  skyUpper: 0x060a1a,
+  skyMid: 0x0a1a30,
+  skyGlow: 0x143448,
+  skyHorizon: 0x1f4d60,
+  fog: 0x0c2230,
+  ground: 0x1c2832,
   gridMain: 0x00a8c0,
   gridSub: 0x0c2a36,
   steel: 0x262a2b,
   steelDark: 0x0e1112,
   // Neon da cidade
   cyan: 0x00e5ff,
+  shieldBlue: 0x55bfff,
+  bankBlue: 0x287bff, // Banco VORCARIS: azul luminoso pedido pelo dono.
   pink: 0xff2bd6,
   fluo: 0xe8ff1a,
   // Destaques
@@ -48,11 +56,19 @@ export const CITY_NEON: readonly number[] = [PALETTE.cyan, PALETTE.pink, PALETTE
  * inimigo, para o jogador distinguir de onde vem cada tiro.
  */
 export const GLOW = {
-  friendlyPlasma: new THREE.Color(0.9, 4.0, 1.5),
+  // Os tiros do jogador acendem menos que os do inimigo (que são o aviso): o dono achava que a luz do próprio tiro atrapalhava a visão (11/10).
+  friendlyPlasma: new THREE.Color(0.6, 2.6, 1.0),
   hostilePlasma: new THREE.Color(4.0, 0.4, 0.4),
-  spark: new THREE.Color(1.4, 3.2, 1.6),
-  core: new THREE.Color(2.8, 3.2, 2.8),
-  playerMuzzle: new THREE.Color(1.2, 3.4, 1.6),
+  friendlyArc: new THREE.Color(0.8, 2.1, 2.6),
+  hostileArc: new THREE.Color(3.6, 0.8, 4.0),
+  friendlyIce: new THREE.Color(1.7, 2.5, 2.7),
+  hostileIce: new THREE.Color(3.4, 2.6, 4.2),
+  // O tiro de metal (canhão pesado e automático): o corpo é de aço (`fx/kineticShot.ts`), só a cauda quente acende.
+  friendlySlug: new THREE.Color(2.4, 1.6, 0.5),
+  hostileSlug: new THREE.Color(3.4, 0.7, 0.3),
+  spark: new THREE.Color(1.0, 2.3, 1.2),
+  core: new THREE.Color(2.0, 2.4, 2.0),
+  playerMuzzle: new THREE.Color(0.9, 2.4, 1.2),
   enemyMuzzle: new THREE.Color(3.4, 0.5, 0.45),
   dust: new THREE.Color(0.42, 0.44, 0.43),
   smoke: new THREE.Color(0.32, 0.34, 0.34),

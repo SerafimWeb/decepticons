@@ -88,6 +88,22 @@ export class PhysicsWorld {
   }
 
   /**
+   * Altura do terreno (chão, parede, telhado) em (x, z), olhando de `fromY` para baixo até `maxDist`; `null` se não há nada.
+   * Mech (corpo cinemático) e destroço não contam: o terreno é o que fica parado quando o Mech sai de cima. Serve ao aviso no
+   * chão da chuva de mísseis.
+   */
+  terrainY(x: number, z: number, fromY: number, maxDist: number): number | null {
+    this.rayOrigin.x = x;
+    this.rayOrigin.y = fromY;
+    this.rayOrigin.z = z;
+    this.rayDir.x = 0;
+    this.rayDir.y = -1;
+    this.rayDir.z = 0;
+    const hit = this.world.castRay(this.ray, maxDist, true, RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC | RAPIER.QueryFilterFlags.EXCLUDE_KINEMATIC);
+    return hit ? fromY - hit.timeOfImpact : null;
+  }
+
+  /**
    * Primeiro colisor no caminho do raio (linha de visão da IA). Mais barato que `raycast`:
    * sem normal e sem alocar resultado. Ignora destroços, como o `raycast`.
    */

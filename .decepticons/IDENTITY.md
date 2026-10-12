@@ -47,7 +47,7 @@ Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 **Leitura de combate acima de tudo:** verde é sempre do jogador e vermelho sempre das IAs; a cidade pode usar todas as cores. **Nunca só azul e roxo.** Nova cor entra primeiro no `palette.ts` / `:root`, nunca solta no código.
 
 **Fonte:** monoespaçada do sistema (`Consolas`, `Courier New`), sem webfont para não pesar o carregamento.
-**Render:** brilho via bloom HDR (cores > 1.0 passam do limiar); geometria procedural com primitivas, sem assets externos por enquanto.
+**Render:** brilho via bloom HDR (cores > 1.0 passam do limiar); geometria procedural e Mechs GLB importados, conforme MECHS_IMPORTADOS.md.
 
 ---
 
@@ -59,10 +59,11 @@ Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 | Linguagem | TypeScript 7 (`strict`) |
 | Render | Three.js 0.186 (WebGL2, EffectComposer + UnrealBloom) |
 | Física | Rapier3D 0.20 SIMD (Wasm): character controller cinemático |
-| Servidor (planejado) | Colyseus em Node, rodando a mesma simulação a 60 Hz |
+| Servidor | Node + ws, simulação autoritativa compartilhada a 60 Hz; snapshots a 20 Hz |
+| Persistência | Contas em node:sqlite; métricas agregadas em JSON; progressão ainda no navegador |
 | Deploy | site estático na Hostinger (`selvamkt.com.br/cybermech/`) por rsync/SSH a cada merge na `main` |
 | CI | hooks git locais (`.githooks/`) + GitHub Actions (`ci.yml`, ubuntu-24.04) em `SerafimWeb/decepticons` (privado) |
-| Node | `^20.19.0 \|\| >=22.12.0` (máquina de dev: 22.14) |
+| Node | `>=22.12.0` (requisito de node:sqlite) |
 
 ---
 
@@ -80,7 +81,7 @@ Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 | Apoio (Ko-fi, Patreon) | pouco | complemento, não modelo |
 
 **Métrica de sucesso candidata:** o jogador volta no dia seguinte (retenção D1) e joga 3+ partidas na primeira sessão.
-**Usuários e papéis:** hoje só o jogador local. Contas, papéis e persistência não existem.
+**Usuários e papéis:** jogador offline/online; cadastro e sessão por e-mail/senha no SQLite. Créditos/XP ainda no aparelho; sem papéis administrativos no jogo.
 **O que o projeto NÃO deve fazer:** exigir instalação, GPU dedicada ou download pesado antes de jogar. **Nunca ser pay-to-win** (princípio do dono; ver `GAME_DESIGN.md`).
 
 ---

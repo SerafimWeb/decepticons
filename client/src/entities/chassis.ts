@@ -1,3 +1,6 @@
+import type { MountKind } from '../combat/mountKinds';
+import { SHOULDER_TRIGGERS, SPLIT_SHOULDER_TRIGGERS } from '../combat/mounts';
+import { fitsSize, type RobotSize } from '../combat/weaponClass';
 import { weapon, type WeaponId } from '../combat/weapons';
 import type { MechStats } from './MechBase';
 
@@ -61,6 +64,7 @@ export const VECTOR09_STATS: MechStats = {
  */
 export const ANDROID_STATS: MechStats = {
   name: 'ANDRÓIDE A-1',
+  statusResist: 1.5, // pequeno: fogo, choque e gelo duram uma vez e meia (`combat/StatusEffects.ts`)
   moveSpeed: 10.5,
   groundAccel: 120,
   airAccel: 40,
@@ -117,7 +121,7 @@ export const PILOT_ANDROID_STATS: MechStats = {
 };
 
 /**
- * Arara-B1: chassi leve e ágil de escala 1, batedor — primeiro modelo da **Arara Foundry** (Manaus, ver
+ * Arara-B1: chassi leve e ágil, batedor (um Mech de tamanho 2, o mais leve deles; "escala 1" é o andróide) — primeiro modelo da **Arara Foundry** (Manaus, ver
  * `.decepticons/VISAO.md` § fabricantes). Pernas longas, pouca blindagem, dash curto e rápido: sente-se
  * frágil de propósito — vence pela mobilidade, cai fácil se ficar parado. Usa o blueprint visual próprio
  * (`LIGHT_MECH_BLUEPRINT`, já existia, nunca tinha sido ligado a um chassi pilotável).
@@ -181,6 +185,7 @@ export const ONCA_B2_STATS: MechStats = {
 export const COLOSSUS_BOSS_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'COLOSSUS-01',
+  statusResist: 0.5, // máquina de cerco: fogo, choque e gelo duram metade (decisão do dono, 09/10)
   height: 14,
   radius: 3.6, // < height/2: a cápsula do Rapier não aceita raio maior que a metade da altura
   stepHeight: 2.4,
@@ -198,6 +203,47 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
 };
 
 /**
+ * O Colossus que o jogador escolhe no Hangar (P82, 11/10): o corpo do chefe, com o armamento de fábrica do tamanho dele.
+ * Num gigante (tamanho 3) as armas pesadas dos Mechs comuns são as leves (`combat/weaponClass.ts`), e só elas cabem nos encaixes
+ * dele (`ARM_SLOTS`): canhão pesado na mão principal e chuva de mísseis na outra. **O chefe da missão segue com plasma e foguetes**
+ * (`COLOSSUS_BOSS_STATS` intacto): trocar a arma do encontro mexe no equilíbrio dele, e isso fica para quando o dono pedir.
+ */
+const COLOSSUS_PLAYER_STATS: MechStats = {
+  ...COLOSSUS_BOSS_STATS,
+  loadout: { primary: weapon('cannon'), secondary: weapon('barrage') },
+};
+
+/**
+ * Colossus-V4: **o titã de escala 4** (dono, 12/10: "ele é do tamanho 4, bem maior que o colossus v3"). É a primeira máquina de
+ * tamanho 4 do jogo e a primeira deste chassi com malha importada (o .glb do dono, re-rigado com o esqueleto Mixamo; ver
+ * MECHS_IMPORTADOS.md §8). **Anda como o peso que é**: passo curto e joelho bem dobrado (MechStats.gait), 4 m/s (o Colossus-01
+ * anda a 5), sem dash e sem salto. O armamento é o **canhão de cerco** (a primeira arma de tamanho 3, em combat/weapons.ts),
+ * que num titã é a arma **leve** dele. **A altura de 20 m é proposta minha** — a P11 falava em "10× e 20× maiores" e o
+ * Comandante ajusta nesta linha; o equilíbrio fino das armas fica com combat/balance.ts.
+ */
+export const COLOSSUS_V4_STATS: MechStats = {
+  ...COLOSSUS_BOSS_STATS,
+  name: 'COLOSSUS-V4',
+  height: 20,
+  radius: 5, // < height/2: a cápsula do Rapier não aceita raio maior que a metade da altura
+  stepHeight: 3.2,
+  moveSpeed: 4,
+  groundAccel: 8,
+  airAccel: 2.5,
+  gait: { hip: 0.42, knee: 1.5 },
+  weaponCapacity: 30,
+  maxModuleHealth: { torso: 1900, head: 380, leftArm: 520, rightArm: 520, leftLeg: 700, rightLeg: 700 },
+  loadout: { primary: weapon('siege'), secondary: weapon('siege') },
+  // Bocas medidas no desenho (npm run mech:bocas -- colossusv4), em metros a partir dos pés, virado para -Z: o servidor
+  // atira daqui e o corpo dele é outro (G14). Só as mãos — o titã não tem encaixe de ombro. Mudou o rig, a pose (armRest)
+  // ou o módulo da arma? Meça de novo.
+  muzzles: {
+    rightHand: [8.55, 13.51, -9.18],
+    leftHand: [-8.55, 13.51, -9.18],
+  },
+};
+
+/**
  * Gênesis-01: primeiro chassi de malha importada (pipeline híbrido, 30/09 — ver `HISTORICO_DE_DECISOES.md`),
  * não mais primitiva em código. Números emprestados do Vector-09 (mesma classe visual: bípede médio de
  * assalto) — ainda não passou por uma rodada de equilíbrio própria; nome e ficha são provisórios até o dono
@@ -206,12 +252,30 @@ export const COLOSSUS_BOSS_STATS: MechStats = {
 export const GENESIS01_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'GÊNESIS-01',
+  // Papel (10/10, proposta do Claude; o dono ajusta aqui ou em Configurações → Potências): ASSALTO MÉDIO, um degrau acima do Vector-09 em vida e
+  // um passo mais lento. Só vida e mobilidade mudam: calor, carga e tamanho ficam os do Vector-09 (as metas de equilíbrio das armas dependem deles).
+  moveSpeed: 8.5,
+  groundAccel: 28,
+  maxModuleHealth: { torso: 350, head: 110, leftArm: 130, rightArm: 130, leftLeg: 160, rightLeg: 160 },
 };
 
-/** Lancer-L1: bípede médio importado, malha da Forge Systems. */
+/**
+ * Lancer-L1: bípede médio importado, malha da Forge Systems. Dono, 03/10: o braço esquerdo leva um **escudo**, então
+ * não tem lança-mísseis; a arma dele é a **escopeta** (alcance curto, dano alto de perto). O escudo ainda é só
+ * desenho: não bloqueia dano (a aba "blindagem" do Hangar está em breve).
+ */
 export const LANCER_L1_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'LANCER-L1',
+  // Papel: DUELISTA de curta distância (a escopeta só vale de perto). Ágil, com dash que volta mais cedo, menos vida no tronco, e o braço do
+  // escudo é o mais forte (a chapa protege o flanco e o braço é a primeira coisa que ele põe na frente).
+  moveSpeed: 9.8,
+  groundAccel: 34,
+  airAccel: 16,
+  dashSpeed: 36,
+  dashCooldown: 2.6,
+  maxModuleHealth: { torso: 270, head: 95, leftArm: 170, rightArm: 120, leftLeg: 140, rightLeg: 140 },
+  loadout: { primary: weapon('shotgun'), secondary: null, metalShield: { id: 'muralha', tier: 0 } },
 };
 
 /** LR-7L Bastion: chassi importado, Cybermech Industries. */
@@ -219,6 +283,14 @@ export const LR7L_BASTION_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'LR-7L BASTION',
   status: 'oficina',
+  // Papel: TANQUE. O mais resistente dos médios, e paga com passo lento, arrancada pesada e dash curto e demorado. Segura a posição.
+  moveSpeed: 7.5,
+  groundAccel: 24,
+  airAccel: 12,
+  dashSpeed: 30,
+  dashCooldown: 3.6,
+  jumpVelocity: 11.5,
+  maxModuleHealth: { torso: 460, head: 130, leftArm: 160, rightArm: 160, leftLeg: 210, rightLeg: 210 },
 };
 
 /** Quadra-V2: chassi importado, Vanta Works. */
@@ -226,20 +298,55 @@ export const QUADRA_V2_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'QUADRA-V2',
   status: 'oficina',
+  // Papel: ESCARAMUÇADOR. Corre mais que todos os médios, dash que volta cedo e pulo alto; cai rápido (pouca vida em tudo). Bate e some.
+  moveSpeed: 11.5,
+  groundAccel: 38,
+  airAccel: 18,
+  dashSpeed: 38,
+  dashCooldown: 2.2,
+  jumpVelocity: 14.5,
+  maxModuleHealth: { torso: 210, head: 80, leftArm: 90, rightArm: 90, leftLeg: 120, rightLeg: 120 },
 };
 
-/** MARAUDER: novo chassi importado do Tripo3D. */
+/**
+ * MARAUDER: chassi importado do Tripo3D. Dono, 03/10: "duas armas iguais nas mãos (o blaster) e dois lança-mísseis nos
+ * ombros". As duas mãos atiram no botão principal e os dois ombros lançam juntos no secundário (`SHOULDER_TRIGGERS`);
+ * os dois lançadores contam na carga (`firingWeapons`).
+ */
 export const MARAUDER_STATS: MechStats = {
   ...VECTOR09_STATS,
   name: 'MARAUDER',
   status: 'oficina',
+  // Papel: PLATAFORMA DE FOGO (quatro canos: duas mãos e dois ombros). Vida alta e passo lento: é um canhão que anda, não um corredor.
+  moveSpeed: 7.8,
+  groundAccel: 26,
+  airAccel: 12,
+  dashSpeed: 31,
+  dashCooldown: 3.4,
+  jumpVelocity: 12,
+  maxModuleHealth: { torso: 380, head: 110, leftArm: 140, rightArm: 140, leftLeg: 180, rightLeg: 180 },
+  loadout: { primary: weapon('blaster'), offhand: weapon('blaster'), secondary: weapon('rockets') },
+  triggers: SHOULDER_TRIGGERS,
+  // Dois jeitos de dividir os encaixes entre o Ataque 1 e o Ataque 2 (dono, 12/10, P95: "podendo ser configurado assim"); o Hangar oferece a escolha e o primeiro é o padrão.
+  layouts: [
+    { name: 'BRAÇOS NO ATAQUE 1 · OMBROS NO ATAQUE 2', short: 'BRAÇOS 1 · OMBROS 2', triggers: SHOULDER_TRIGGERS },
+    { name: 'DIREITO NO ATAQUE 1 · ESQUERDO E OMBROS NO ATAQUE 2', short: 'DIREITO 1 · ESQ. + OMBROS 2', triggers: SPLIT_SHOULDER_TRIGGERS },
+  ],
+  // Bocas medidas no desenho (`npm run mech:bocas -- marauder`), em metros a partir dos pés, virado para -Z: o servidor atira
+  // daqui, e o corpo dele é outro (G14). Mudou o rig, a pose ou o módulo de uma arma? Meça de novo.
+  muzzles: {
+    rightHand: [1.57, 3.82, -1.54],
+    leftHand: [-1.59, 3.84, -1.55],
+    rightShoulder: [1.08, 4.82, 0.04],
+    leftShoulder: [-1.08, 4.82, 0.04],
+  },
 };
 
 /**
  * Chassis que o jogador pode pilotar (o andróide rebelde e o técnico são só das IAs).
  * **Colossus-01 (dono, 29/09: "quero poder escolher o colossus pra ver como é jogar com ele"):** entrou como
  * chassi solo, pilotado por 1 jogador só, com todas as armas — a mesma máquina que já existe como boss
- * (`COLOSSUS_BOSS_STATS`), sem números novos. **Não balanceado contra os bots**: 1200 de torso e 24 t de
+ * (`COLOSSUS_BOSS_STATS`), sem números novos (só o armamento de fábrica, `COLOSSUS_PLAYER_STATS`). **Não balanceado contra os bots**: 1200 de torso e 24 t de
  * carga são os do encontro; jogar com ele contra Mechs normais é claramente mais forte, de propósito, para o
  * dono sentir a escala antes de qualquer ajuste. O Mech de tripulação (piloto + artilheiros nas armas
  * direcionais, pedido na mesma mensagem) é a próxima etapa — este PR entrega só o solo.
@@ -247,7 +354,8 @@ export const MARAUDER_STATS: MechStats = {
 export const CHASSIS = {
   vector09: VECTOR09_STATS,
   android: PILOT_ANDROID_STATS,
-  colossus01: COLOSSUS_BOSS_STATS,
+  colossus01: COLOSSUS_PLAYER_STATS,
+  colossusv4: COLOSSUS_V4_STATS,
   arara: ARARA_B1_STATS,
   onca: ONCA_B2_STATS,
   genesis01: GENESIS01_STATS,
@@ -258,18 +366,86 @@ export const CHASSIS = {
 } as const satisfies Record<string, MechStats>;
 export type ChassisId = keyof typeof CHASSIS;
 
-/** O que cada braço aceita em cada chassi: o Hangar só oferece e só valida estas armas. */
-export const ARM_SLOTS: Record<ChassisId, { right: readonly WeaponId[]; left: readonly WeaponId[] }> = {
-  vector09: { right: ['plasma'], left: ['rockets'] },
-  android: { right: ['blaster'], left: ['chainsaw'] },
-  // Sem arma exclusiva (decisão de 29/09 no combate justo): o mesmo plasma/foguetes de qualquer Mech.
-  colossus01: { right: ['plasma'], left: ['rockets'] },
-  // Escolha entre dois tipos por braço: o leve ganha opção de arma mais leve (blaster) sem perder o plasma.
-  arara: { right: ['plasma', 'blaster'], left: ['rockets', 'blaster'] },
-  onca: { right: ['plasma', 'rockets'], left: ['plasma', 'rockets'] },
-  genesis01: { right: ['plasma'], left: ['rockets'] },
-  lancerL1: { right: ['plasma'], left: ['rockets'] },
-  lr7lBastion: { right: ['plasma'], left: ['rockets'] },
-  quadraV2: { right: ['plasma'], left: ['rockets'] },
-  marauder: { right: ['plasma'], left: ['rockets'] },
+/**
+ * O papel de cada chassi em uma frase: o que ele faz bem e o que paga por isso. Os números moram em cada `*_STATS` acima; mexer num papel
+ * é mexer ali (e em `ChassisPapeis.test.ts`, que garante que nenhum chassi é melhor que outro em tudo).
+ */
+export const CHASSIS_PAPEL: Readonly<Record<ChassisId, string>> = {
+  vector09: 'Equilibrado: a referência. Nada excelente, nada fraco.',
+  genesis01: 'Assalto médio: mais vida que o Vector-09, um passo mais lento.',
+  lancerL1: 'Duelista de curta distância: ágil, dash que volta cedo, braço do escudo forte, menos vida no tronco.',
+  lr7lBastion: 'Tanque: o mais resistente dos médios; passo lento, arrancada pesada e dash curto e demorado.',
+  quadraV2: 'Escaramuçador: o mais rápido dos médios, dash que volta cedo e pulo alto; cai com poucos tiros.',
+  marauder: 'Plataforma de fogo: quatro canos (duas mãos e dois ombros), vida alta e passo lento.',
+  arara: 'Escoteiro leve: o mais rápido de todos e o mais frágil; carga pequena.',
+  onca: 'Pesado: muita vida e muita carga; lento, com o dash mais demorado.',
+  colossus01: 'Máquina de cerco (escala 3): vida enorme, quase não anda, sem dash.',
+  colossusv4: 'Titã (escala 4): o maior do jogo; passo curto, joelho bem dobrado e o canhão de cerco.',
+  android: 'Andróide: pequeno, muito rápido e frágil; arma leve e motosserra.',
 };
+
+/**
+ * O tamanho de cada robô (`RobotSize`, a "escala" do `GAME_DESIGN.md`): 1 andróide, **2 Mechs (o padrão do jogo)**, 3 e 4 gigantes.
+ * É o que decide como o chassi vê as classes de arma (`combat/weaponClass.ts`): num gigante as pesadas dos Mechs são as leves.
+ * `Record` de propósito: chassi novo que não declara o tamanho não compila. Ninguém é de tamanho 4 ainda.
+ */
+export const CHASSIS_SIZE: Readonly<Record<ChassisId, RobotSize>> = {
+  android: 1,
+  vector09: 2,
+  arara: 2,
+  onca: 2,
+  genesis01: 2,
+  lancerL1: 2,
+  lr7lBastion: 2,
+  quadraV2: 2,
+  marauder: 2,
+  colossus01: 3,
+  colossusv4: 4,
+};
+
+/**
+ * O que cada encaixe aceita em cada chassi: o Hangar só oferece e só valida estas armas. `shoulders` só existe nos
+ * chassis com lançadores nos ombros (`SHOULDER_TRIGGERS`); nesses, o braço esquerdo leva uma segunda arma do botão
+ * principal e o secundário sai dos ombros.
+ */
+export interface ArmSlots {
+  right: readonly WeaponId[];
+  left: readonly WeaponId[];
+  shoulders?: readonly WeaponId[];
+}
+/** O tipo de encaixe de cada ranhura do Hangar (`combat/mountKinds.ts`): as duas mãos são braço, os dois lançadores são ombro. */
+export const SLOT_KIND: Readonly<Record<keyof ArmSlots, MountKind>> = { right: 'arm', left: 'arm', shoulders: 'shoulder' };
+/** Engate de energia compartilhado; massa/nível ainda limitam cada montagem. */
+const ENERGY_ARMS: readonly WeaponId[] = ['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo', 'autocannon'];
+const SUPPORT_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rockets', 'barrage'];
+/** Armas do gatilho principal, mão direita (e a esquerda nos chassis de duas mãos no gatilho): a rotatória gira o cano e só existe aí. */
+const PRIMARY_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rotary'];
+/** O lança-chamas e o canhão pesado (6 t) só nos pesados (dono, 09/10 e 11/10; `ARMAS_ELEMENTAIS.md`): Colossus, Onça, Bastion e Marauder. */
+const HEAVY_PRIMARY_ARMS: readonly WeaponId[] = [...PRIMARY_ARMS, 'flamer', 'cannon'];
+/** O canhão pesado também vai no braço esquerdo dos pesados (atira no botão 2, como qualquer arma de energia); o lança-chamas não (o fluxo é do gatilho principal). */
+const HEAVY_SUPPORT_ARMS: readonly WeaponId[] = [...SUPPORT_ARMS, 'cannon'];
+/** Só as armas que o tamanho do robô sabe carregar (`fitsSize`): num gigante, as pesadas dos Mechs; no tamanho 2, tudo. */
+const fitSize = (list: readonly WeaponId[], size: RobotSize): readonly WeaponId[] => list.filter((id) => fitsSize(id, size));
+export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
+  vector09: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  android: { right: ['blaster'], left: ['chainsaw'] },
+  colossus01: { right: fitSize(HEAVY_PRIMARY_ARMS, CHASSIS_SIZE.colossus01), left: fitSize(HEAVY_SUPPORT_ARMS, CHASSIS_SIZE.colossus01) },
+  // O titã só tem as armas de tamanho 3 (o canhão de cerco, nas duas mãos): as dos Mechs não cabem nele.
+  colossusv4: { right: ['siege'], left: ['siege'] },
+  arara: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  onca: { right: [...HEAVY_PRIMARY_ARMS, 'rockets'], left: HEAVY_SUPPORT_ARMS },
+  genesis01: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  lancerL1: { right: ENERGY_ARMS, left: [] },
+  lr7lBastion: { right: HEAVY_PRIMARY_ARMS, left: HEAVY_SUPPORT_ARMS },
+  quadraV2: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  marauder: { right: HEAVY_PRIMARY_ARMS, left: HEAVY_PRIMARY_ARMS, shoulders: ['rockets', 'barrage', 'sonic', 'seeker'] },
+};
+
+/** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */
+export const SHIELD_ARM: readonly ChassisId[] = ['lancerL1'];
+
+/**
+ * Chassis com suporte para o escudo metálico removível na mão esquerda (dono, 06/10: só chassis compatíveis, incluindo o
+ * Lancer). Os procedurais desenham a chapa no antebraço; o Lancer já traz a dele na malha. Importados sem chapa ficam fora.
+ */
+export const METAL_SHIELD_CHASSIS: readonly ChassisId[] = ['vector09', 'onca', 'colossus01', 'lancerL1'];

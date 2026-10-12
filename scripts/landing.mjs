@@ -276,7 +276,7 @@ const horizonHtml = futureIdeas.length
   ? `<section aria-labelledby="horizonte">
     <span class="kicker">// ideias em estudo · sem data prometida</span>
     <h2 id="horizonte">O que estamos explorando</h2>
-    <p class="lede">Direções futuras em avaliação. Elas ainda não fazem parte do jogo e podem mudar conforme os testes e as prioridades do projeto.</p>
+    <p class="lede">Direções futuras sob avaliação. Sem promessa de data.</p>
     <ol class="features">${futureIdeas
       .map((idea, i) => `<li class="feature frame"><span class="fnum">${String(i + 1).padStart(2, '0')}</span><h3>${upper(idea.title)}</h3><p>${inline(idea.text)}</p></li>`)
       .join('')}</ol>
@@ -393,7 +393,7 @@ function wpnCard(w, i) {
       ? `dano cheio até ${w.optimal} m, cai até ${pct(w.minFactor)} a ${w.max} m, onde o projétil se desfaz · ${w.speed} m/s`
       : `${w.magazine} no carregador · explosão de ${num(w.blast)} m, o dano cai até zero na borda · ${w.speed} m/s: de longe, dá para desviar`;
   return `<article class="wpn frame">
-        <header class="wpn-bar"><span class="wpn-id">WPN-0${i + 1}</span><h3>${upper(w.name)}</h3><span class="wpn-kind">${w.kind === 'energy' ? 'energia' : 'munição'} · ${esc(w.slot)}</span></header>
+        <header class="wpn-bar"><span class="wpn-id">WPN-0${i + 1}</span><h3>${upper(w.name)}</h3><span class="wpn-kind">${w.kind === 'energy' ? 'energia' : 'munição'} · ${esc(w.class)} · ${esc(w.slot)}</span></header>
         <div class="wpn-scroll"><table class="wpn-table">
           <thead><tr><th scope="col"><span class="sr">atributo</span></th>${w.tiers.map((t, k) => `<th scope="col">${t.label}${k === 0 ? '<small>no jogo</small>' : ''}</th>`).join('')}</tr></thead>
           <tbody>${wpnRows(w)
@@ -411,8 +411,13 @@ if (arms && sheet) {
   const energy = arms.weapons.find((w) => w.kind === 'energy');
   const gain = Math.round((1 - energy.tiers[2].ttk / energy.tiers[0].ttk) * 100);
   const perTon = energy.tiers.map((t) => t.dps / t.mass);
-  const load = arms.weapons.reduce((sum, w) => sum + w.tiers[0].mass, 0);
+  // A carga de fábrica do Vector-09 é a do plasma e a dos foguetes (as duas primeiras armas), não a soma de tudo o que ele aceita.
+  const load = arms.weapons[0].tiers[0].mass + arms.weapons[1].tiers[0].mass;
   const [a0, a1] = arms.weapons;
+  // A regra "uma arma sozinha" vale para o plasma e os foguetes. A escopeta de outro chassi é a exceção de propósito:
+  // passa disso, mas só de perto (dano cheio até `optimal` m, 8% ao fim do alcance).
+  const near = arms.others[0];
+  const nearTtk = near ? Math.min(...near.tiers.map((t) => t.ttk)) : null;
   const legend = [
     ['BRAÇO D · ENERGIA', `${a0.name} MK I · ${tons(a0.tiers[0].mass)}`],
     ['BRAÇO E · MUNIÇÃO', `${a1.name} MK I · ${tons(a1.tiers[0].mass)}`],
@@ -424,7 +429,7 @@ if (arms && sheet) {
   hangarHtml = `<section aria-labelledby="hangar">
     <span class="kicker">// hangar · em projeto</span>
     <h2 id="hangar">Hangar: monte o seu Mech</h2>
-    <p class="lede">O Hangar é onde o Mech é montado: chassi, uma arma em cada braço, módulos nos ombros. Toda arma tem três níveis de poder com a mesma regra, e todo poder pesa: quem monta escolhe onde gastar. Na luta, quem decide continua sendo o piloto. Os números abaixo são lidos do código do jogo a cada versão.</p>
+    <p class="lede">Armas, módulos, chassis. Todo poder pesa. A luta decide quem vence. Números lidos do código em tempo real.</p>
     <div class="grid-2 blueprint">
       <figure class="bp-fig frame">${BLUEPRINT}<figcaption>${esc(arms.target)} · encaixes · tracejado = em projeto</figcaption></figure>
       <div class="stack">
@@ -434,6 +439,8 @@ if (arms && sheet) {
     </div>
     <h3 class="sub-h">Arsenal · três níveis de poder</h3>
     <div class="arsenal">${arms.weapons.map(wpnCard).join('')}</div>
+    ${arms.others.length ? `<h3 class="sub-h">Em outros chassis</h3>
+    <div class="arsenal">${arms.others.map((w, i) => wpnCard(w, arms.weapons.length + i)).join('')}</div>` : ''}
     <p class="wpn-legend">MK II: +20% de dano, +15% de calor e +50% de carga. MK III: +40%, +30% e o dobro. DANO/S = gatilho apertado por 30 s, contando as travas por calor e as recargas. DERRUBA EM = tempo para derrubar o torso de um ${esc(arms.target)} (${arms.torso} de vida) com todos os tiros no alvo.</p>
     <h3 class="sub-h">Monte dentro da carga</h3>
     <p class="lede">O ${esc(arms.target)} carrega até ${tons(arms.capacity)} de armas. Das nove combinações de plasma e foguetes, cabem ${arms.builds.flat().filter((b) => b.fits).length}: um braço no MK III obriga o outro a ficar leve. O tempo é o dos dois braços juntos derrubando o torso, com todos os tiros no alvo.</p>
@@ -456,7 +463,7 @@ if (arms && sheet) {
     ${arms.pilot ? `<p><a class="link-btn" href="./jogar/?build=${esc(arms.pilot.key)}">ou jogue a pé: andróide de ${num(arms.pilot.height, 1)} m, blaster e motosserra, contra Mechs de ${num(arms.pilot.mechHeight, 1)} m →</a></p>` : ''}
     <h3 class="sub-h">Regras de equilíbrio</h3>
     <div class="sitrep">
-      <div class="read frame"><span class="k">uma arma sozinha</span><span class="v">≥ ${num(single, 1)} s</span><span class="d">para derrubar um Mech, mesmo no MK III</span></div>
+      <div class="read frame"><span class="k">uma arma sozinha</span><span class="v">≥ ${num(single, 1)} s</span><span class="d">para derrubar um Mech, mesmo no MK III${near && nearTtk < single ? `. Só a ${esc(near.name.toLowerCase())} do ${esc(near.chassis)} faz menos (${num(nearTtk, 1)} s), e só a menos de ${near.optimal} m` : ''}</span></div>
       <div class="read frame"><span class="k">os dois braços juntos</span><span class="v">≥ ${num(combo, 1)} s</span><span class="d">o calor do Mech trava antes de terminar o serviço</span></div>
       <div class="read frame"><span class="k">MK III contra MK I</span><span class="v">−${gain}%</span><span class="d">de tempo no plasma: dá para sentir, mas não decide a luta</span></div>
       <div class="read frame"><span class="k">dano por tonelada</span><span class="v">${num(perTon[0] / perTon[2], 1)}×</span><span class="d">o MK I rende mais por tonelada que o MK III: poder custa carga</span></div>
@@ -477,7 +484,7 @@ if (net && onlinePhase) {
   onlineHtml = `<section aria-labelledby="online">
     <span class="kicker">// fase ${onlinePhase.num} · multiplayer</span>
     <h2 id="online">Online: salas de ${net.ROOM_SIZE} pilotos</h2>
-    <p class="lede">O multiplayer está sendo montado em etapas. O servidor decide o que importa (dano, calor, quem caiu), o seu Mech responde na hora, e cada etapa só entra quando os testes provam que ela cabe na conexão de um celular.</p>
+    <p class="lede">O servidor decide tudo: movimento, tiro, dano e abate. Você controla o seu Mech.</p>
     <div class="sitrep">
       <div class="read frame"><span class="k">servidor</span><span class="v">${net.SIM_HZ} Hz</span><span class="d">a mesma simulação do jogo, ${net.SIM_HZ} passos por segundo, decidindo tudo</span></div>
       <div class="read frame"><span class="k">estado da sala</span><span class="v">${net.SNAPSHOT_HZ} ×/s</span><span class="d">o que mudou de posição, mira e vida chega ${net.SNAPSHOT_HZ} vezes por segundo — e só isso</span></div>

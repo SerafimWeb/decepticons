@@ -13,7 +13,16 @@ export interface ImportedChassisConfig {
   url: string;
   rotationY?: number;
   boneNames?: ImportedRigOptions['boneNames'];
+  /** Só para malha em T-pose (ver `ImportedRigOptions.armRest`). */
+  armRest?: ImportedRigOptions['armRest'];
+  /** Mão e dedos somem e as armas da montagem se encaixam nos pulsos (ver `ImportedRigOptions.weaponMounts`). */
+  weaponMounts?: boolean;
+  /** Lançadores nos ombros (ver `ImportedRigOptions.shoulderPods`). */
+  shoulderPods?: ImportedRigOptions['shoulderPods'];
 }
+
+/** O que o carregamento precisa além do arquivo e da altura: o próprio `ImportedChassisConfig` serve. */
+type PreloadOptions = Pick<ImportedChassisConfig, 'rotationY' | 'boneNames' | 'armRest' | 'weaponMounts' | 'shoulderPods'>;
 
 export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>> = {
   genesis01: {
@@ -55,6 +64,10 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
     },
   },
   // quadraV2: {
+  //   (10/10: ZEROCIRCUIT.glb saiu do repositório, 78 MB e 1,9 milhão de triângulos sem esqueleto; o original está na pasta do dono.
+  //   **O Quadra-V2 está sem malha própria**: este bloco está desligado desde `gemini/rig-fix` e ele usa o corpo procedural do Vector-09.
+  //   `models/quadra-v2.glb` (14 mil triângulos, Mixamo) existe e não é carregado por ninguém; para religar, aponte a `url` para ele e rode
+  //   `npm run mech:inspecionar`. Ver `MECHS_IMPORTADOS.md` §7.)
   //   url: `${import.meta.env.BASE_URL}models/ZEROCIRCUIT.glb`,
   //   rotationY: Math.PI,
   //   boneNames: {
@@ -71,8 +84,17 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
   marauder: {
     url: `${import.meta.env.BASE_URL}models/marauder.glb`,
     rotationY: Math.PI,
+    // O .glb vem em T-pose (braços abertos a 90°). Pose de arma em punho por direção: braço 50° abaixo da horizontal e um
+    // pouco à frente, antebraço na horizontal para a frente. Mais baixo que isso a ombreira, presa ao osso do braço, gira junto
+    // e a junta parece quebrada (FINDINGS.md).
+    armRest: { upper: [0.62, -0.77, -0.15], fore: [0.1, 0, -1] },
+    // Sem arma no modelo: as mãos somem e a arma da montagem se encaixa no pulso (weaponMount.ts).
+    weaponMounts: true,
+    // Os dois lançadores nos ombros (dono, 03/10). Medido na pose de repouso: o ombro direito fica em x 0,79, y 4,55, z 0,51.
+    shoulderPods: { x: 1.08, y: 4.82, z: 0.72, size: 0.64 },
     boneNames: {
       hips: 'mixamorigHips',
+      head: 'mixamorigNeck',
       leftUpLeg: 'mixamorigLeftUpLeg',
       leftLowerLeg: 'mixamorigLeftLeg',
       rightUpLeg: 'mixamorigRightUpLeg',
@@ -82,6 +104,16 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
       rightArm: 'mixamorigRightArm',
     },
   },
+  // O titã do dono (12/10): a primeira malha importada de escala 4. Sem arma desenhada (as mãos somem e o canhão de
+  // cerco da montagem se encaixa nos pulsos) e **sem rotationY**: o inspetor mediu a frente no pé (-Z), não é preciso girar.
+  colossusv4: {
+    url: `${import.meta.env.BASE_URL}models/colossusv4.glb`,
+    weaponMounts: true,
+    // O arquivo do dono veio com os braços PENDURADOS (A-pose, 39° da vertical): o módulo da arma aponta para onde o
+    // antebraço aponta, então sem esta pose o canhão de cerco apontava para o chão (as bocas medidas caíram a 3,83 m de
+    // altura num titã de 20 m). É a mesma pose do Marauder (braço ~50° abaixo da horizontal, antebraço para a frente).
+    armRest: { upper: [0.62, -0.77, -0.15], fore: [0.1, 0, -1] },
+  },
 };
 
 const cache = new Map<string, ImportedMechAsset>();
@@ -89,10 +121,10 @@ const pending = new Map<string, Promise<ImportedMechAsset>>();
 const key = (url: string, targetHeight: number) => `${url}@${targetHeight}`;
 
 /** Dispara o carregamento sem esperar (chame cedo — boot do jogo — pra já estar pronto quando alguém pedir). */
-export function preloadMechAsset(url: string, targetHeight: number, rotationY?: number, boneNames?: ImportedRigOptions['boneNames']): void {
+export function preloadMechAsset(url: string, targetHeight: number, options: PreloadOptions = {}): void {
   const k = key(url, targetHeight);
   if (cache.has(k) || pending.has(k)) return;
-  const p = preloadImportedMechAsset(url, { targetHeight, rotationY, boneNames });
+  const p = preloadImportedMechAsset(url, { targetHeight, rotationY: options.rotationY, boneNames: options.boneNames, armRest: options.armRest, weaponMounts: options.weaponMounts, shoulderPods: options.shoulderPods });
   pending.set(k, p);
   p.then((asset) => { cache.set(k, asset); pending.delete(k); })
     .catch((err) => { pending.delete(k); console.error(`falha ao carregar rig importado (${url}):`, err); });
@@ -105,9 +137,9 @@ export function tryInstantiateMechRig(url: string, targetHeight: number): MechRi
 }
 
 /** Espera o preload terminar (dispara se ainda não tiver disparado) — só onde dá pra esperar (abrir o Hangar). */
-export async function whenMechAssetReady(url: string, targetHeight: number, rotationY?: number, boneNames?: ImportedRigOptions['boneNames']): Promise<void> {
+export async function whenMechAssetReady(url: string, targetHeight: number, options: PreloadOptions = {}): Promise<void> {
   const k = key(url, targetHeight);
   if (cache.has(k)) return;
-  preloadMechAsset(url, targetHeight, rotationY, boneNames);
+  preloadMechAsset(url, targetHeight, options);
   await pending.get(k);
 }

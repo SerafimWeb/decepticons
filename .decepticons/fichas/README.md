@@ -1,7 +1,7 @@
 # FICHAS DE DESIGN — CYBERMECH
 
-> Uma ficha por robô, por arma **e por modo de jogo**: o que ele é, como se joga com ele e contra ele, a silhueta
-> (ou o ritmo) e os números.
+> Uma ficha por robô, por arma, **por modo de jogo e por cenário de missão**: o que ele é, como se joga com ele e
+> contra ele, a silhueta (ou o ritmo), **o que o cenário faz** e os números.
 > É o documento que o dono aprova antes de qualquer coisa entrar no jogo. Modelos: `MODELO_ROBO.md` e `MODELO_ARMA.md`.
 > Exemplo preenchido: `vector-09.md`.
 
@@ -38,6 +38,11 @@
 | [`drone.md`](drone.md) | escala 1, três classes por função: reconhecimento, ataque e conserto | decisão do dono de 27/09 (`METAGAME.md` § 8 e § 8.2) | proposta Qwen; **silhueta (Codex) e números (Claude) aguardam**; 6 perguntas abertas para o dono |
 | [`ondas.md`](ondas.md) | **modo** sobrevivência: o balanço das ondas (quantidade, tipo e vida por onda) | declaração do dono de 27/09 (`ROADMAP.md`, Fase 5) | proposta Qwen; **a máquina de estados é do Claude** e o HUD, do Gemini; 7 perguntas abertas para o dono |
 | [`ctf.md`](ctf.md) | **modo** CTF Vermelho × Azul: regras e **a especificação dos 15 testes** | decisão do dono no `ROADMAP.md` (Fase 5: 2v2, 3 capturas ou mais em 8 min) | proposta Qwen; **os `it()` nascem no PR da regra (Claude)**; 7 perguntas abertas para o dono |
+| [`escolta.md`](escolta.md) | **modo** missão em fases #1: **escolta e defesa do técnico** — três fases, **0 arte nova** | ordem do dono **P99** (12/10) e `DIVERSAO.md` § 10 #7 (a "espinha da retenção") | proposta Qwen; **a regra no `Match` e os 13 `it()` são do Claude**, o briefing/HUD (hoje `MissionHUD` **DEMO**) é do Gemini; 7 perguntas abertas para o dono |
+| [`cenario-cabos.md`](cenario-cabos.md) | **cenário** ESTAÇÃO DE CABOS (Fortaleza · CE): a rota de ~500 m que serve à escolta longa e ao contraataque, **residente (sem streaming)** | ordem do dono **P99** (12/10, "cenários maiores") + o lugar confirmado no `UNIVERSO.md` e já prometido no console (`ui/theater.ts`) | proposta Qwen; **o cenário e a bancada são do Codex**, os pontos validados e a fiação são do Claude; 7 perguntas abertas para o dono |
+| [`ataque-e-defesa.md`](ataque-e-defesa.md) | **modo** missões #2 e #3: **ataque** (derrubar e segurar o núcleo inimigo) e **defesa de base** — com o **contraataque sendo o fim da própria defesa** | ordem do dono **P99** (12/10: os quatro tipos) | proposta Qwen; **a regra e os 15 `it()` são do Claude**, o briefing/HUD é do Gemini (**`MissionHUD` segue DEMO**); 7 perguntas abertas para o dono |
+| [`armas-de-tamanho-3-e-4.md`](armas-de-tamanho-3-e-4.md) | **armas** dos gigantes: **canhão de cerco** e **rotatória pesada** (tamanho 3), **lança de cerco** e **casulo pesado de mísseis** (tamanho 4), com a regra de escala | ordens **P82** (o "futuramente" das versões 3 e 4) e **P100**/**P11** (o robô de tamanho 4 **não tem arma nenhuma**) | proposta Qwen; **os números são do Claude** (medidos na Oficina contra o `balance.ts`) e a arte, do Codex; 7 perguntas abertas para o dono |
+| [`tamanho-4.md`](tamanho-4.md) | **chassi** de tamanho 4 (o titã): altura (**~22 m** ou **~36 m**), carga de **40 t**, 3,5 m/s e **sem dash** — os números que o arquivo da P100 não traz | ordem **P100** (o `.glb` do dono) e **P11** (a altura em aberto) | proposta Qwen; **o re-rig é do dono** (`MECHS_IMPORTADOS.md` §8), os números o Claude mede, a arte o Codex faz; 7 perguntas abertas para o dono |
 
 As fichas marcadas como **proposta** não aprovam mudanças de gameplay. O Ferret-X e o Colossus-01 ainda não têm
 stats/slots no código; decisões abertas nunca viram número implementado sem teste e aprovação.

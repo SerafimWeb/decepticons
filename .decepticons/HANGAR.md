@@ -35,6 +35,7 @@ Estado em 25/09 (fim do dia): **o que já está no código** está marcado ✅; 
 
 **Encaixes:** braço direito = arma de **energia** (tiro principal, limitado pelo calor); braço esquerdo = arma de
 **munição** (carregador que recarrega sozinho). Ombros e torso = **módulos**. Perna não leva nada: é mobilidade.
+O desenho do encaixe e da arma (o "punho" sem dedos, o módulo de arma, o roteiro do próximo robô): `MECHS_IMPORTADOS.md`.
 
 **API para a tela (Gemini):** `game.hangar` (`hangar/Hangar.ts`):
 - `current`: a montagem atual (salva no aparelho em `cybermech.hangar.v1`, ou a de um link `?build=`, ou a de fábrica);
@@ -52,10 +53,15 @@ Estado em 25/09 (fim do dia): **o que já está no código** está marcado ✅; 
 
 | Chassi | Classe | Carga | Blindagem | Velocidade | Dissipador | Estado |
 |---|---|---|---|---|---|---|
-| **Arara-B1** (era "Ferret-X" nesta proposta) | leve · escala 1 | 8 t | torso 200 | 13 m/s | padrão | **no jogo** (29/09, Arara Foundry) |
+| **Arara-B1** (era "Ferret-X" nesta proposta) | leve · escala 2 | 8 t | torso 200 | 13 m/s | padrão | **no jogo** (29/09, Arara Foundry) |
 | **Vector-09** | médio · escala 2 | 18 t | 100% (torso 300) | 9 m/s | 0,7/s | **no jogo** (armas de fábrica: 7 t) |
 | **Onça-B2** | pesado · escala 2 | 16 t | torso 450 | 6 m/s | padrão | **no jogo** (29/09, Arara Foundry) |
-| **Colossus-01** | cerco · escala 3 (decidido: não é o "pesado" desta linha) | 24 t | torso 1200 | 5 m/s | padrão | **no jogo** (29/09), não balanceado contra bots de propósito |
+| **Gênesis-01** | assalto médio (importado) | 11 t | torso 350 | 8,5 m/s | padrão | **no jogo** (10/10): um degrau acima do Vector-09 em vida, um passo mais lento |
+| **Lancer-L1** | duelista de curta distância (importado) | 11 t | torso 270, braço do escudo 170 | 9,8 m/s | padrão | **no jogo** (10/10): ágil, dash volta em 2,6 s; a escopeta só vale de perto |
+| **LR-7L Bastion** | tanque (importado) | 11 t | torso 460 | 7,5 m/s | padrão | **no jogo** (10/10): o mais resistente dos médios, dash curto e demorado (3,6 s) |
+| **Quadra-V2** | escaramuçador (importado) | 11 t | torso 210 | 11,5 m/s | padrão | **no jogo** (10/10): o mais rápido dos médios, dash em 2,2 s, pulo alto, cai com poucos tiros |
+| **Marauder** | plataforma de fogo (importado, 4 canos) | 11 t | torso 380 | 7,8 m/s | padrão | **no jogo** (10/10): quatro canos, vida alta e passo lento |
+| **Colossus-01** | cerco · escala 3 (decidido: não é o "pesado" desta linha) | 24 t | torso 1200 | 5 m/s | padrão | **no jogo** (29/09), não balanceado contra bots de propósito; **só leva as armas pesadas dos Mechs, que para ele são as leves** (P82, 11/10) |
 
 **Blindagem extra:** a carga que sobra das armas vira blindagem (proposta: 1 t = +30 de vida, distribuída pelo
 jogador entre as partes, com teto por parte). É isso que fecha a conta: MK III nos dois braços deixa o Mech
@@ -191,3 +197,53 @@ com o jogo pausado.
 
 
 O treino móvel aceita somente armas de tiro; a motosserra continua coberta pelo teste de disparo existente.
+
+## Equipamentos defensivos — decisão do dono em 06/10/2026
+
+Planejamento, ainda sem mecânica implementada. O campo de força ocupa um **slot de módulo extra**, preservando uma arma em cada braço. Não confundir com calor: será necessário um reservatório de energia separado, validado no cliente e servidor.
+
+| Equipamento | Comportamento solicitado | Proposta de equilíbrio a validar |
+|---|---|---|
+| Barreira frontal | Acompanha a mira e o movimento do robô; proteção direcional temporária | Consumo enquanto ligada e ao absorver impacto; flancos e costas vulneráveis |
+| Esfera de energia | Cobertura completa, versão mais poderosa | Maior massa, consumo e recuperação; impedir que substitua automaticamente o frontal |
+| Escudo metálico removível | Instalação apenas em chassis com suporte compatível, incluindo a evolução do Lancer | Ocupa uma mão e substitui a arma desse braço (confirmado pelo dono); massa e integridade próprias |
+
+O escudo atual do Lancer é visual; não comprova bloqueio de dano. Próxima implementação: contrato versionado de equipamentos por encaixe, capacidade de carga somando armas e módulos, compatibilidade explícita por chassi e migração das montagens antigas. Depois, energia e barreira frontal na simulação compartilhada, com testes direcionais; só então esfera e escudo físico. Números de duração, absorção, recarga e tecla permanecem em aberto.
+
+As duas armas sugeridas em conversa são um canhão de trilho carregável (precisão, aviso visual e calor) e um lançador EMP (controle de energia/escudos, sem paralisar completamente na primeira versão). Entregues no PR #168 em 06/10. O EMP inicial aquece circuitos até existir a reserva energética dos escudos. Novos comportamentos devem ter módulos testados; variantes numéricas permanecem no catálogo central.
+
+
+## Clareza da montagem e treino (06/10, em branch)
+
+Peso por encaixe e nível inclui as cópias dos ombros. Excesso bloqueia aplicar/testar e oculta leituras de combate inválidas; a prévia mantém a última montagem válida. O treino manual usa ChargeTimer, inclusive cancelamento ao soltar e indicador de carga. Ainda não simula calor/dispersão/dano: sua finalidade continua sendo a mira.
+
+
+## Barreira frontal implementada — 06/10
+
+MÓDULO EXTRA no Hangar: gerador frontal de 2 t, disponível nos Mechs, indisponível no andróide. Preserva arma em cada braço e entra na carga total. Toque Ctrl para ligar/desligar (remapeável em Controles), ou use o botão na tela. 100 de energia; consumo 20/s, até 5 s sem impactos; cada ponto de dano absorvido gasta 1 de energia. Desligar permite regenerar 12/s após 2 s. Colapso exige um novo toque para religar, com mínimo 15 de energia.
+
+Cone frontal de 120 graus acompanha yaw/pitch da mira; projéteis e explosões têm fonte direcional. Flancos/costas, serra e esmagamento passam. EMP continua afetando calor conforme regra existente; a barreira absorve sua componente de dano. Visual hexagonal transparente mantém o centro da mira legível. Não é nova geometria de colisão.
+
+Montagem v1 segue válida; v2 explicita braços, ombros e módulo (frontal, esfera ou vazio). Presets e link preservam o módulo. No online a montagem salva vale na próxima entrada; regras de defesa são do servidor. Protocolo 6 (mesmo pacote do 5): 19 bytes/unidade e energia do dono em 1 byte adicional por snapshot. Servidor público offline não atualizado nesta tarefa.
+
+Esfera implementada neste incremento: 4 t, 150 energia, 40/s ligada (até 3,75 s), regenera 15/s após 3 s, mínimo 30 para ligar. Cobertura completa de projéteis/explosões; serra e esmagamento continuam atravessando. Escudo físico removível ainda ausente; ocupa mão e substitui arma, só em chassis compatíveis.
+
+
+## Catálogo compartilhado e controle — 06/10, Codex
+
+Engates de energia dos Mechs aceitam plasma, blaster, escopeta, trilho e EMP; braços secundários comuns também aceitam lançadores. Peso por nível continua decidindo quais combinações cabem. Andróide conserva blaster/serra; Lancer conserva o braço do escudo; Marauder conserva lançadores nos ombros. Armas de fábrica e links v1 continuam válidos. Procedurais e Marauder trocam o modelo da arma; GLBs de arma integrada conservam a aparência, com aviso no Hangar.
+
+Configurações antigas com escudo E migram uma vez para Ctrl, exceto quando Ctrl já está em outra ação. Teclas personalizadas são preservadas; atribuir E depois continua válido. Energia esgotada não religa automaticamente; morte, pausa e perda de foco cancelam a intenção.
+
+## Escudo físico — 06/10, Claude
+
+Mão esquerda dos compatíveis (Vector-09, Onça, Colossus, Lancer) aceita um escudo no lugar da arma; o Lancer sai de fábrica com a Muralha. **Segure o botão 2** (mouse direito; no toque, FOGUETE) para levantar: cobre 150° à frente com a resistência cheia e o Mech anda a 75%. Abaixado, cobre o flanco esquerdo com metade. Sem energia: a chapa tem integridade (1,2–1,6× a vida do braço no MK I) que só volta com conserto e renascimento; perder o braço esquerdo é perder o escudo. A chapa segura a serra (o campo de energia não).
+
+| Modelo | MK I | Bom contra | Fraco contra |
+|---|---|---|---|
+| Muralha | 2 t | um pouco de tudo (balístico 70%) | pulso/sônico 40% |
+| Refratário | 1,75 t | térmico 90%, laser 85% | balístico 35%, explosivo 40% |
+| Reativo | 2,5 t | balístico 90%, explosivo 85% | térmico 35%, laser 30% |
+| Amortecedor | 2 t | pulso 90%, sônico 90% | corte 35% |
+
+MK II/III: +0,5/+1 t, chapa +30/+60%, resistência +5/+10 pontos (teto 95%). Natureza de cada arma em `DAMAGE_TYPE` (`weapons.ts`). Online, a regra vale no servidor; HUD de integridade e chapa levantada dos outros ainda não viajam na rede.

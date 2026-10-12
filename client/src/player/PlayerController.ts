@@ -1,20 +1,26 @@
 import * as THREE from 'three';
 import { GLOW } from '../core/palette';
 import type { CameraRig } from '../camera/CameraRig';
+import { AIM_RANGE, Armament, type ShotSink } from '../combat/Armament';
+import type { BarrageSystem } from '../combat/BarrageSystem';
+import { fireKick } from '../combat/fireFeel';
+import type { MountId } from '../combat/mounts';
+import { applySpread, type Spread } from '../combat/spread';
 import type { ProjectileSystem } from '../combat/ProjectileSystem';
 import type { RocketSystem } from '../combat/RocketSystem';
-import { FireTimer, RocketLauncher } from '../combat/trigger';
-import { weapon, type WeaponStats } from '../combat/weapons';
+import type { RocketLauncher } from '../combat/trigger';
+import type { WeaponStats } from '../combat/weapons';
 import type { InputManager } from '../core/InputManager';
 import { DEFAULT_SETTINGS, type KeyAction } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
+import { MUZZLE_FX } from '../fx/muzzleFx';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 
 const MUZZLE_COLOR = GLOW.playerMuzzle;
 const ROCKET_FLASH = new THREE.Color(3.0, 1.2, 0.3);
-const AIM_RANGE = 400;
 
 const _muzzle = new THREE.Vector3();
+const _mouth = new THREE.Vector3();
 const _fwd = new THREE.Vector3();
 const _to = new THREE.Vector3();
 const _dir = new THREE.Vector3();
@@ -22,17 +28,25 @@ const _dir = new THREE.Vector3();
 /**
  * Liga teclado/câmera ao Mech local. Eventos de borda (pulo, dash) ficam
  * "travados" até o próximo tick fixo, para não se perderem em monitores >60 Hz.
+ *
+ * A regra de tiro (cadência, carregador, calor, quais encaixes atiram) é do `Armament`, a mesma do servidor; aqui só o
+ * que é do jogador: de onde o tiro sai no desenho, para onde a câmera mira, som e partículas.
  */
 export class PlayerController {
   active = false;
-  /** Carregador do braço esquerdo (regra no tick fixo; o HUD lê daqui). Refeito ao trocar de armas. */
-  launcher: RocketLauncher;
-  /** Um foguete saiu (som). */
+  /** Um foguete saiu (som). Uma vez por aperto do botão, mesmo que a salva tenha dois. */
   onRocket?: () => void;
+  /** Saiu um tiro de energia, de qualquer encaixe (som). */
+  /** Saiu um tiro de energia do jogador (a arma que atirou, para o som certo: elétrica, plasma, rotatória). */
+  onShot?: (w: WeaponStats) => void;
+  /** O tiro pesou na câmera: quanto tremer (trauma 0..1, `fireKick`). Só render; não mexe na mira nem na regra. */
+  onKick?: (amount: number) => void;
   /** Corte corpo a corpo (motosserra no braço esquerdo): quem aplica é a partida (`Match.meleeNearest`). */
   melee?: (w: WeaponStats) => void;
-  /** Cadência da arma do braço esquerdo quando ela é corpo a corpo. */
-  private readonly sawTrigger = new FireTimer();
+  /** Uma onda sônica saiu: a partida aplica o cone com empurrão e desenha (`Match.waveCone`). */
+  wave?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
+  /** O lança-chamas pulsou: a partida aplica o cone de dano a partir de `origin` na direção `dir` (`Match.flameCone`). */
+  flame?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
   /** Teclas de cada ação (e.code), vindas das configurações. */
   keys: Readonly<Record<KeyAction, string>> = DEFAULT_SETTINGS.keys;
 
@@ -40,11 +54,22 @@ export class PlayerController {
   firing = false;
   secondaryHeld = false;
 
+  private shieldRequested = false;
+  private inputResetVersion = 0;
   private jumpQueued = false;
   private dashQueued = false;
-  /** Cadência do canhão principal, sem arredondar para o tick. */
-  private readonly trigger = new FireTimer();
+  private spinShots = 0;
+  /** A onda sônica deste aperto já fez o som e o tranco (as duas bocas dos ombros saem no mesmo tick). */
+  private waveHeard = false;
+  private readonly armament: Armament;
   private readonly cmd: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
+  private readonly sink: ShotSink = {
+    projectile: (mount, w, spread) => this.shoot(mount, w, spread),
+    rocket: (mount, w, volley) => this.launch(mount, w, volley),
+    melee: (w) => this.melee?.(w),
+    flame: (mount, w) => this.flameFrom(mount, w),
+    wave: (mount, w) => this.waveFrom(mount, w),
+  };
 
   constructor(
     private readonly mech: MechBase,
@@ -53,14 +78,29 @@ export class PlayerController {
     private readonly projectiles: ProjectileSystem,
     private readonly particles: ParticleSystem,
     private readonly rockets: RocketSystem,
+    private readonly barrage: BarrageSystem,
   ) {
-    this.launcher = new RocketLauncher(mech.loadout.secondary ?? weapon('rockets'));
+    this.armament = new Armament(mech);
+  }
+
+  /** Carregador do gatilho secundário (regra no tick fixo; o HUD lê daqui). Refeito ao trocar de armas. */
+  get primaryCharge(): number { return this.armament.primaryCharge; }
+  get secondaryCharge(): number { return this.armament.secondaryCharge; }
+
+  /** Rotação do cano da metralhadora rotatória, de 0 a 1 (o medidor da mira e o zumbido leem daqui). */
+  get spinLevel(): number { return this.armament.spinLevel; }
+
+  /** Combustível do lança-chamas, de 0 a 1 (0 = tanque cheio e parado: nada a mostrar; na trava, o quanto da recarga passou). */
+  get fuelLevel(): number { return this.armament.fuelLevel; }
+
+  get launcher(): RocketLauncher {
+    return this.armament.launcher;
   }
 
   /** O Mech trocou de armas (Hangar): carregador novo, cheio, com o lançador montado. */
   rearm(): void {
-    this.launcher = new RocketLauncher(this.mech.loadout.secondary ?? weapon('rockets'));
-    this.trigger.reset();
+    this.armament.rearm();
+    this.shieldRequested = false;
   }
 
   /** O comando do último tick (o multiplayer manda para o servidor). */
@@ -70,7 +110,15 @@ export class PlayerController {
 
   /** Taxa do render: captura eventos de borda. */
   collect(): void {
-    if (!this.active) return;
+    if (!this.active || !this.mech.alive || this.inputResetVersion !== this.input.resetVersion) {
+      this.shieldRequested = false;
+      this.jumpQueued = this.dashQueued = false;
+      this.inputResetVersion = this.input.resetVersion;
+      this.input.virtualShield = false;
+      if (!this.active || !this.mech.alive) return;
+    }
+    if (this.input.wasPressed(this.keys.shield) || this.input.virtualShield) this.shieldRequested = !this.shieldRequested;
+    this.input.virtualShield = false;
     if (this.input.wasPressed(this.keys.jump) || this.input.virtualJump) this.jumpQueued = true;
     if (this.input.wasPressed(this.keys.dash) || this.input.virtualDash) this.dashQueued = true;
     // Reseta flags virtuais após ler
@@ -84,57 +132,32 @@ export class PlayerController {
     const aim = this.rig.aim;
     const cmd = this.cmd;
     const k = this.keys;
-    
+
     // Mescla o direcional (teclado) com o joystick analógico (mobile)
     let mx = a ? this.input.axis(k.right, k.left) : 0;
     let mz = a ? this.input.axis(k.forward, k.back) : 0;
     if (a && this.input.virtualMoveX !== 0) mx = this.input.virtualMoveX;
     if (a && this.input.virtualMoveZ !== 0) mz = this.input.virtualMoveZ;
-    
+
     cmd.moveX = mx;
     cmd.moveZ = mz;
     cmd.moveYaw = aim.moveYaw;
     cmd.yaw = aim.yaw;
     cmd.jump = this.jumpQueued;
     cmd.dash = this.dashQueued;
+    cmd.shield = a && this.mech.alive && this.shieldRequested;
     this.jumpQueued = this.dashQueued = false;
 
     this.mech.fixedUpdate(cmd, dt);
+    // Colapso, morte ou energia insuficiente exigem um novo toque, nunca religam sozinhos.
+    if (!this.mech.energyShield.active) this.shieldRequested = false;
 
-    this.trigger.fixedUpdate(dt);
     const wantsToFire = this.input.mouseDown || this.input.virtualFire || this.input.autoFire;
     this.firing = a && wantsToFire;
-    if (a && wantsToFire && this.trigger.ready && this.mech.canFirePrimary) {
-      this.fire();
-      this.trigger.shot(this.mech.loadout.primary.fireInterval);
-    }
-
-    // Foguetes: segurar dispara o carregador no ritmo do intervalo. Morto, o carregador enche
-    // (renasce pronto). Braço esquerdo destruído = sem foguetes.
-    if (!this.mech.alive) this.launcher.refill();
-    else this.launcher.fixedUpdate(dt);
     const wantsRocket = this.input.mouseDown2 || this.input.isDown(k.secondary) || this.input.virtualRocket;
     this.secondaryHeld = a && wantsRocket;
-    const secondary = this.mech.loadout.secondary;
-    if (secondary?.kind === 'melee') {
-      // Motosserra: segurar o botão corta o inimigo encostado mais perto, no ritmo da arma.
-      this.sawTrigger.fixedUpdate(dt);
-      if (a && wantsRocket && this.sawTrigger.ready && this.mech.canFireSecondary) {
-        this.melee?.(secondary);
-        this.mech.onFireSecondary();
-        this.sawTrigger.shot(secondary.fireInterval);
-      }
-    } else if (a && wantsRocket && this.mech.canFireSecondary && this.launcher.tryFire()) this.fireRocket();
-  }
-
-  private fireRocket(): void {
-    const { mech } = this;
-    mech.leftMuzzleWorldPosition(_muzzle);
-    this.aimFrom(_muzzle);
-    this.rockets.fire(_muzzle, _dir, mech.collider, this.launcher.weapon);
-    this.particles.burst(_muzzle, _dir, { count: 14, color: ROCKET_FLASH, speed: 8, life: 0.25, spread: 0.6, gravity: 0 });
-    mech.onFireSecondary();
-    this.onRocket?.();
+    this.waveHeard = false;
+    this.armament.fixedUpdate(dt, this.firing, this.secondaryHeld, this.sink);
   }
 
   /** Direção do tiro saindo de `from` até o ponto sob a mira (em _dir). */
@@ -147,19 +170,50 @@ export class PlayerController {
     _dir.subVectors(_to, from).normalize();
   }
 
-  private fire(): void {
-    const { mech, rig } = this;
-    const { yaw, pitch, point } = rig.aim;
-    mech.muzzleWorldPosition(_muzzle);
-    _fwd.set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch));
+  /** Um projétil de energia de `mount`: sai da boca do desenho e vai até a mira. */
+  private shoot(mount: MountId, w: WeaponStats, spread: Readonly<Spread>): void {
+    this.mech.mountWorldPosition(mount, _muzzle);
+    this.aimFrom(_muzzle);
+    applySpread(_dir, spread);
+    this.projectiles.fire(_muzzle, _dir, this.mech.collider, false, w);
+    // A rotatória atira 20 vezes por segundo: clarão menor e som a cada quarto tiro (o zumbido contínuo é do Gemini, ARMAS_ELEMENTAIS.md T5).
+    // O tiro de metal tem o clarão dele, solto pelo `ProjectileSystem.fire` (vale para todos os atiradores); as outras armas, este.
+    if (!MUZZLE_FX[w.id]) this.particles.burst(_muzzle, _dir, { count: w.spin ? 2 : 5, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
+    if (!w.spin || (this.spinShots++ & 3) === 0) this.onShot?.(w);
+    this.onKick?.(fireKick(w));
+  }
 
-    // Se o alvo estiver "atrás" do canhão (ex.: mirando o chão perto do pé), atira reto.
-    _to.copy(point);
-    if (_dir.subVectors(_to, _muzzle).dot(_fwd) < 3) _to.copy(_muzzle).addScaledVector(_fwd, AIM_RANGE);
-    _dir.subVectors(_to, _muzzle).normalize();
+  /** Uma onda sônica de `mount`: sai da boca do ombro e vai até a mira; a partida aplica o cone e desenha. O som e o tranco da câmera saem **uma vez por aperto** (as duas bocas juntas pesam como um baque só). */
+  private waveFrom(mount: MountId, w: WeaponStats): void {
+    this.mech.mountWorldPosition(mount, _muzzle);
+    this.aimFrom(_muzzle);
+    this.wave?.(w, _muzzle, _dir);
+    if (this.waveHeard) return;
+    this.waveHeard = true;
+    this.onShot?.(w);
+    this.onKick?.(fireKick(w));
+  }
 
-    this.projectiles.fire(_muzzle, _dir, mech.collider, false, mech.loadout.primary);
-    this.particles.burst(_muzzle, _dir, { count: 10, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
-    mech.onFire();
+  /** Um pulso do lança-chamas de `mount`: sai da boca e vai até a mira; a partida aplica o cone (o fluxo visível é `fx/FlameVisuals`). */
+  private flameFrom(mount: MountId, w: WeaponStats): void {
+    this.mech.mountWorldPosition(mount, _muzzle);
+    this.aimFrom(_muzzle);
+    this.flame?.(w, _muzzle, _dir);
+    this.onKick?.(fireKick(w));
+  }
+
+  private launch(mount: MountId, w: WeaponStats, volley: number): void {
+    this.mech.mountWorldPosition(mount, _muzzle);
+    this.aimFrom(_muzzle);
+    // Chuva de mísseis: sobe e cai em volta do ponto sob a mira, em vez de ir reto até ele.
+    // O desenho do lançamento sobe do morteiro das costas, se o Mech tem um (a conta da chuva usa a boca do tiro).
+    if (w.barrage) this.barrage.fire(_muzzle, _dir, this.rig.aim.point, this.mech.collider, w, volley, this.mech.barrageMouth(_mouth));
+    else this.rockets.fire(_muzzle, _dir, this.mech.collider, w);
+    this.particles.burst(_muzzle, _dir, { count: 14, color: ROCKET_FLASH, speed: 8, life: 0.25, spread: 0.6, gravity: 0 });
+    // Uma vez por aperto: a salva do Marauder (dois ombros) e os dois foguetes juntos pesam como um estrondo só.
+    if (volley === 0) {
+      this.onRocket?.();
+      this.onKick?.(fireKick(w));
+    }
   }
 }

@@ -2,6 +2,7 @@ import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startServer, type GameServer } from '../../../server/Server';
+import { weapon, type Loadout } from '../combat/weapons';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import { Android } from '../entities/Android';
 import type { MechInput } from '../entities/MechBase';
@@ -10,7 +11,7 @@ import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { Match } from '../sim/Match';
 import { onlineConfig } from './onlineConfig';
-import { OnlineSession } from './OnlineSession';
+import { OnlineSession, rotariesOf } from './OnlineSession';
 
 const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
 const MECH_BUILD = 'v1.vector09.plasma-0.rockets-0';
@@ -39,7 +40,7 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
   });
 
   /** A partida local de um jogador online, como o Game monta: sem bots, sem dano, sem rodada própria. */
-  async function player(name: string, room: string) {
+  async function player(name: string, room: string, build = MECH_BUILD, loadout?: Loadout) {
     const physics = await PhysicsWorld.create();
     const match = new Match({
       physics,
@@ -50,7 +51,7 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
       damage: false,
       roundS: Number.POSITIVE_INFINITY,
     });
-    const me = new Vector09();
+    const me = new Vector09(loadout ? { loadout } : {});
     match.addPlayer(me, 'VOCÊ');
     match.respawner.untrack(me);
     const commander = { command: { ...IDLE }, firing: false, secondaryHeld: false };
@@ -59,7 +60,7 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
       url: `ws://127.0.0.1:${server.port}/?sala=${room}`,
       room,
       name,
-      build: MECH_BUILD,
+      build,
       match,
       me,
       commander,
@@ -156,6 +157,178 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     dan.session.dispose();
   });
 
+  it('a chuva de mísseis de um jogador aparece para o outro: o evento de tiro vira o lançamento no mundo dele, só desenho', async () => {
+    const a = await player('Alfa', 'M4D', 'v1.vector09.plasma-0.barrage-0', { primary: weapon('plasma'), secondary: weapon('barrage') });
+    const b = await player('Bravo', 'M4D');
+    await join([a, b], 7);
+    expect(b.match.barrage.active).toBe(0);
+    // Segura o gatilho até o outro ver a chuva: com a máquina cheia (suíte em paralelo) um aperto curto de relógio real
+    // pode não virar nem um tick, e o teste ficava esperando um lançamento que nunca saiu.
+    a.commander.secondaryHeld = true;
+    const t0 = performance.now();
+    let visto = false;
+    while (!visto && performance.now() - t0 < 8000) {
+      await play([a, b], 50);
+      visto = b.match.barrage.active > 0;
+    }
+    a.commander.secondaryHeld = false;
+    expect(visto).toBe(true);
+    a.session.dispose();
+    b.session.dispose();
+  });
+
+  it('o estado do servidor (choque, gelo) chega ao próprio jogador (previsão) e aos outros, e some quando acaba', async () => {
+    const a = await player('Alfa', 'M4S');
+    const b = await player('Bravo', 'M4S');
+    try {
+      await join([a, b], 7);
+      const doServidor = server.rooms.get('M4S')!.mechOf(a.session.myId)!;
+      const visto = () => b.session.remotes.get(a.session.myId)!.mech.status; // o outro jogador vê com o atraso da interpolação
+      doServidor.status.shockUp(true); // atordoado e chocado, decidido pelo servidor
+      doServidor.status.chillUp();
+      const t0 = performance.now();
+      while (!(a.me.status.stunned && visto().shocked) && performance.now() - t0 < 6000) await play([a, b], 60);
+      expect(a.me.status.stunned).toBe(true);
+      expect(visto().shocked).toBe(true);
+      expect(a.me.status.speedMultiplier).toBe(0); // o próprio Mech já para na previsão
+      expect(visto().stacks).toBe(1);
+      // Passa o tempo (o choque dura 3 s): some no servidor e nos dois clientes.
+      const t1 = performance.now();
+      while ((a.me.status.active || visto().active) && performance.now() - t1 < 12000) await play([a, b], 100);
+      expect(a.me.status.active).toBe(false);
+      expect(visto().active).toBe(false);
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
+  it('a elétrica de um jogador aparece para o outro: o evento de tiro vira o projétil dela (e não o do plasma), só desenho', async () => {
+    const a = await player('Eletra', 'M4F', 'v1.vector09.arc-0.rockets-0', { primary: weapon('arc'), secondary: weapon('rockets') });
+    const b = await player('Observador', 'M4F');
+    try {
+      await join([a, b], 7);
+      const desenhados: string[] = []; // os bots da sala também atiram (plasma): importa que a elétrica apareça
+      b.match.projectiles.onFired = (_origin, _dir, _owner, w) => desenhados.push(w.id);
+      a.commander.firing = true;
+      const t0 = performance.now();
+      while (!desenhados.includes('arc') && performance.now() - t0 < 10000) await play([a, b], 100);
+      a.commander.firing = false;
+      expect(desenhados).toContain('arc');
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
+  it('as rotatórias que a montagem leva: uma na direita, duas no Marauder (as duas mãos), nenhuma sem rotatória (o outro jogador desenha uma língua por mão)', () => {
+    expect(rotariesOf('v1.vector09.rotary-0.rockets-0').map((g) => g.mount)).toEqual(['rightHand']);
+    expect(rotariesOf('v1.vector09.plasma-0.rockets-0')).toEqual([]);
+    const duas = rotariesOf('v1.marauder.rotary-1.rotary-0.-');
+    expect(duas.map((g) => g.mount)).toEqual(['rightHand', 'leftHand']);
+    expect(duas.map((g) => g.w.tier)).toEqual([1, 0]); // cada mão leva o nível da arma dela
+    expect(rotariesOf('v1.marauder.rotary-0.blaster-0.-').map((g) => g.mount)).toEqual(['rightHand']);
+    expect(rotariesOf('v1.marauder.blaster-0.rotary-0.-').map((g) => g.mount)).toEqual(['leftHand']);
+    expect(rotariesOf('isto não é uma montagem')).toEqual([]);
+  });
+
+  it('o canhão sônico de um Marauder aparece para o outro: uma onda desenhada de CADA ombro (dois eventos de tiro com o encaixe), só desenho', async () => {
+    const a = await player('Sonico', 'M4W', 'v1.marauder.blaster-0.blaster-0.sonic-0', { primary: weapon('blaster'), offhand: weapon('blaster'), secondary: weapon('sonic') });
+    const b = await player('Observador', 'M4W');
+    try {
+      await join([a, b], 7);
+      const remoto = b.session.remotes.get(a.session.myId)!;
+      const bocas = new Set<string>();
+      b.match.drawWave = (origem, _dir, w) => {
+        if (w.id !== 'sonic') return;
+        for (const m of ['rightShoulder', 'leftShoulder'] as const) if (origem.distanceTo(remoto.mech.simMuzzle(new THREE.Vector3(), m)) < 0.05) bocas.add(m);
+      };
+      a.commander.secondaryHeld = true;
+      const t0 = performance.now();
+      while (bocas.size < 2 && performance.now() - t0 < 12000) await play([a, b], 100);
+      a.commander.secondaryHeld = false;
+      expect([...bocas].sort()).toEqual(['leftShoulder', 'rightShoulder']);
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
+  it('um Marauder com duas rotatórias: o outro jogador vê o fluxo sair das DUAS mãos (antes só da direita)', async () => {
+    const a = await player('Marauder', 'M4D', 'v1.marauder.rotary-0.rotary-0.-', { primary: weapon('rotary'), offhand: weapon('rotary'), secondary: null });
+    const b = await player('Observador', 'M4D');
+    try {
+      await join([a, b], 7);
+      const remoto = b.session.remotes.get(a.session.myId)!;
+      expect(remoto.guns.map((g) => g.mount)).toEqual(['rightHand', 'leftHand']);
+      const bocas = new Set<string>();
+      b.match.projectiles.onFired = (origem, _dir, _dono, w) => {
+        if (w.id !== 'rotary') return;
+        for (const m of ['rightHand', 'leftHand'] as const) if (origem.distanceTo(remoto.mech.simMuzzle(new THREE.Vector3(), m)) < 0.05) bocas.add(m);
+      };
+      a.commander.firing = true;
+      const t0 = performance.now();
+      while (bocas.size < 2 && performance.now() - t0 < 12000) await play([a, b], 100);
+      a.commander.firing = false;
+      expect([...bocas].sort()).toEqual(['leftHand', 'rightHand']);
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
+  it('o tiro da mão esquerda de um jogador aparece para o outro saindo da mão esquerda dele, não da direita (protocolo 14: o evento diz o encaixe)', async () => {
+    // Dono, 11/10: "tava usando o marauder e os tiros estavam saindo só pela mão direita".
+    const a = await player('Canhoto', 'M4L', 'v1.vector09.plasma-0.cryo-0', { primary: weapon('plasma'), secondary: weapon('cryo') });
+    const b = await player('Observador', 'M4L');
+    try {
+      await join([a, b], 7);
+      const remoto = b.session.remotes.get(a.session.myId)!;
+      const medidos: Array<{ esquerda: number; direita: number }> = [];
+      b.match.projectiles.onFired = (origem, _dir, _dono, w) => {
+        if (w.id !== 'cryo') return; // os bots da sala também atiram (plasma)
+        const esq = remoto.mech.simMuzzle(new THREE.Vector3(), 'leftHand');
+        const dir = remoto.mech.simMuzzle(new THREE.Vector3(), 'rightHand');
+        medidos.push({ esquerda: origem.distanceTo(esq), direita: origem.distanceTo(dir) });
+      };
+      a.commander.secondaryHeld = true;
+      const t0 = performance.now();
+      while (medidos.length < 1 && performance.now() - t0 < 10000) await play([a, b], 100);
+      a.commander.secondaryHeld = false;
+      expect(medidos.length).toBeGreaterThanOrEqual(1);
+      expect(medidos[0]!.esquerda).toBeLessThan(0.05); // saiu da boca esquerda
+      expect(medidos[0]!.direita).toBeGreaterThan(1); // e não da direita (a ~2,3 m de distância)
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
+  it('a rotatória de um jogador chega ao outro como fluxo desenhado pela bandeira do cano (sem evento por tiro) e para quando o gatilho solta', async () => {
+    const a = await player('Rotor', 'M4R', 'v1.vector09.rotary-0.rockets-0', { primary: weapon('rotary'), secondary: weapon('rockets') });
+    const b = await player('Observador', 'M4R');
+    try {
+      await join([a, b], 7);
+      const guns = b.session.remotes.get(a.session.myId)!.guns;
+      expect(guns).toHaveLength(1);
+      expect(guns[0]?.w.id).toBe('rotary'); // a arma vem da montagem do roster, não do desenho do Mech
+      expect(guns[0]?.mount).toBe('rightHand');
+      expect(b.session.remotes.get(b.session.myId)).toBeUndefined();
+      a.commander.firing = true;
+      const t0 = performance.now();
+      while (b.session.streamShots < 3 && performance.now() - t0 < 10000) await play([a, b], 100);
+      expect(b.session.streamShots).toBeGreaterThanOrEqual(3);
+      a.commander.firing = false;
+      await play([a, b], 2500); // o cano leva 1,5 s para parar, mais a interpolação do outro lado
+      const parou = b.session.streamShots;
+      await play([a, b], 700);
+      expect(b.session.streamShots).toBe(parou);
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
   it('dois jogadores na mesma sala: cada um vê o outro como pessoa, e o movimento de um aparece para o outro', async () => {
     const a = await player('Alfa', 'M4C');
     const b = await player('Bravo', 'M4C');
@@ -175,4 +348,23 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     a.session.dispose();
     b.session.dispose();
   });
+  it('trilho e EMP são aceitos e o outro jogador recebe carga e tiros distintos', async () => {
+    const a=await player('Trilho','M4E','v1.vector09.railgun-0.emp-0',{primary:weapon('railgun'),secondary:weapon('emp')});
+    const b=await player('Observador','M4E');
+    try {
+      await join([a,b],7);
+      a.commander.firing=true;
+      let chargeSeen=false;const start=performance.now();
+      while(performance.now()-start<8000&&!chargeSeen){await play([a,b],50);chargeSeen=!!b.session.remotes.get(a.session.myId)?.mech.weaponCharging;}
+      expect(chargeSeen).toBe(true);
+      const before=b.session.shotsSeen;const deadline=performance.now();
+      while(b.session.shotsSeen===before&&performance.now()-deadline<8000) await play([a,b],100);
+      expect(b.session.shotsSeen).toBeGreaterThan(before);
+      a.commander.firing=false;a.commander.secondaryHeld=true;
+      const secondaryBefore=b.session.shotsSeen;const secondaryStart=performance.now();
+      while(b.session.shotsSeen===secondaryBefore&&performance.now()-secondaryStart<8000) await play([a,b],100);
+      expect(b.session.shotsSeen).toBeGreaterThan(secondaryBefore);
+    } finally {a.session.dispose();b.session.dispose();}
+  });
+
 });
