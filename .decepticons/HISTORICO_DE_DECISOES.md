@@ -1,3 +1,9 @@
+## [2026-10-12] Merge sem o CI do GitHub, porque o Actions parou por cobrança (Comandante)
+
+**Situação:** desde ~19:30 todo job do Actions falha em 2 s sem executar passo, com a anotação "recent account payments have failed or your spending limit needs to be increased" (`check`, `etiquetas` e `deploy`, em todos os branches e na `main`). O `npm run publicar` espera o CI verde e recusa; o deploy do site não roda.
+**Decisão do Comandante (resposta a uma pergunta direta):** mergear com o **`npm run check` local verde** (o hook do push o roda; push barrado se falhar), com o merge à mão, até o Actions voltar. O site **não** republica nesse intervalo; o servidor de casa atualiza normalmente (o atualizador verifica antes de reiniciar). **Por que não foi unilateral:** a regra 13 do `AGENTS.md` põe o CI verde antes do merge; um CI que não roda não é um CI verde, e pular a trava é do dono. **Quando o Actions voltar a regra acaba**, e o deploy da `main` precisa ser reexecutado uma vez.
+**Quem decidiu:** o Comandante; Claude executou.
+
 ## [2026-10-12] O painel do servidor: o token das métricas, o reinício por código de saída e o teste que não toca no jogo (P93, Claude)
 
 **Ordem do Comandante (P93):** "os controles do servidor na interface, faça também pra eu poder resetar, testar, avaliar e analisar o servidor e as infos dele".
