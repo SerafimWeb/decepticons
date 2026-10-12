@@ -208,7 +208,7 @@ function defesas(game, status) {
     .filter(([, c]) => c.loadout.metalShield)
     .map(([, c]) => `${c.name} (de fábrica, o ${metal.METAL_SHIELDS[c.loadout.metalShield.id].name.replace(/^Escudo /, '')})`);
   const mecanica = `<article class="combat-card frame"><h3>Escudo metálico ${estadoMetal}</h3>
-      <p>Ocupa a <b>mão esquerda</b>, no lugar da arma. <b>Segure o botão 2</b> (o direito do mouse) para levantar a chapa.</p>
+      <p>Ocupa a <b>mão esquerda</b>, no lugar da arma. <b>Segure o Ataque 2</b> (o clique direito) para levantar a chapa.</p>
       <p><b>Levantada:</b> cobre ${arco(metal.RAISED_CONE_COS)}° à frente com a resistência cheia do modelo, e o Mech anda a ${pc(metal.RAISED_SPEED)} da velocidade. <b>Abaixada:</b> protege só o flanco esquerdo (${arco(metal.LOWERED_CONE_COS)}°), com ${pc(metal.LOWERED_FACTOR)} da força.</p>
       <p>Não usa energia: a chapa tem <b>integridade</b> (de ${num(Math.min(...integ))}× a ${num(Math.max(...integ))}× a vida do braço esquerdo; ${num(Math.round(Math.min(...integ) * braco))} a ${num(Math.round(Math.max(...integ) * braco))} num ${esc(V.name)}) e não regenera sozinha: volta com conserto e ao renascer. Braço esquerdo destruído, sem escudo.</p>
       <p>Cabe em: ${esc(lista(cabe))}. ${deFabrica.length ? `Já vem montado: ${esc(lista(deFabrica))}.` : ''}</p></article>`;
