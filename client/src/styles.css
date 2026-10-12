@@ -3327,3 +3327,14 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   color: #3c4a42;
   pointer-events: none;
 }
+
+/* Balão de ajuda dentro de um monitor (hoje: ligar a mesa de vídeo): cobre a tela do monitor enquanto está aberto. */
+.cmd-ajuda { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; overflow: auto; background: #05080b; border: 1px solid var(--hot); }
+.cmd-ajuda[hidden] { display: none; }
+.cmd-ajuda p { margin: 0; font-size: calc(10.5px * var(--k)); line-height: 1.4; color: #c6d0d6; }
+.cmd-ajuda .ajuda-estado { font-weight: 700; letter-spacing: 2px; color: var(--hot); }
+.cmd-ajuda[data-estado='verificando'] .ajuda-estado { color: var(--cyan); }
+.cmd-ajuda[data-estado='verificando'] .ajuda-passos, .cmd-ajuda[data-estado='verificando'] .ajuda-cmd, .cmd-ajuda[data-estado='verificando'] .ajuda-nota, .cmd-ajuda[data-estado='verificando'] .ajuda-acoes { visibility: hidden; }
+.cmd-ajuda .ajuda-cmd { display: block; padding: 6px 9px; background: #000; border: 1px solid rgba(255, 138, 31, 0.5); color: var(--accent); font: 700 calc(12px * var(--k)) 'Consolas', 'Courier New', monospace; letter-spacing: 1px; user-select: all; }
+.cmd-ajuda .ajuda-nota b { color: var(--ink); }
+.cmd-ajuda .ajuda-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }

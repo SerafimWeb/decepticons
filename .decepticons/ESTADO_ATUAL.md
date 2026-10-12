@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A mesa de vídeo liga com um comando, e o plano em cinco fases — Claude, 12/10 (PR `claude/mesa-e-plano`, ordens P90 a P94)
+
+**Ordens do Comandante (12/10):** (P90) "continuar preenchendo as lacunas que ainda não existem, as próximas fases devem ser maiores que as atuais"; (P91) "adicionar mais bots e aliados, além dos 3 do padrão"; (P92) "como faço pra usar (ligar) a mesa?"; (P93) "os controles do servidor na interface… resetar, testar, avaliar e analisar o servidor e as infos dele"; (P94) "o Gemini e o Codex tão sem créditos hoje, conclua as tarefas deles".
+
+**P92, a mesa (feito neste PR):** na pasta do projeto, **`npm run mesa`** liga a mesa de vídeo e abre no navegador (`http://127.0.0.1:4199/.tmp/video/editor.html`); se ela já estiver ligada, só abre; **Ctrl+C** na janela desliga. Sem terminal: dois cliques em **`scripts\ligar-mesa.cmd`**. No console (modo Comandante, monitor COMANDO), o item **MESA DE VÍDEO** verifica se ela está ligada: se estiver, abre numa nova aba; se não, mostra o comando com o botão **COPIAR COMANDO**
+(a sondagem só roda quando você clica, porque um erro de rede no console do navegador reprova o smoke). **A mesa é local** (`.tmp/video/`, G15, fora do git): só liga nesta máquina, e nem o site nem o servidor de jogo conseguem ligá-la. O `ffmpeg` está instalado aqui (a exportação do MP4 usa). Testado: `server/mesa.test.ts` (a decisão e a porta, com servidor de verdade), a sondagem em `consoleData.test.ts` (6 mutações pegas) e, no navegador, desligada (mostra a ajuda e o botão copia) e ligada (abre a mesa). Captura: `arte/console-mesa-claude.jpg`.
+
+**O plano (P90):** `PAINEL_ADMIN.md` §8: **1 Esquadrão** (P91: bots e aliados à vontade, com chassi, armas, personalidade e dificuldade por bot), **2 Servidor na interface** (P93: rotas `/admin/*` com token e o monitor SERVIDOR), **3 Câmeras ao vivo**, **4 Campanha, arsenal e evolução**, **5 Pendências do Gemini e do Codex** (P94). Cada fase é de 2 a 4 PRs, contrato antes da tela.
+**Próxima sessão começa com:** a fase 1A, o contrato do esquadrão (`claude/esquadrao-contrato`).
+
 ## A reação do robô ao tiro — Claude, 12/10 (PR `claude/reacao-ao-tiro`, ordem P69)
 
 **Ordem do Comandante (P69):** "melhorar impactos, local onde eles batem, **reação nos inimigos**" (a parte da reação, que ficou pendente).

@@ -23,7 +23,7 @@ além do hangar, cenários, missões, pilotos… tudo reunido nesse painel". As 
 | **CARREIRA** | nível, créditos e missões diárias | resgatar recompensa | REAL |
 | **REDE** | estado do servidor e dos pilotos online | **JOGAR ONLINE** (tecla O) | REAL |
 | **CONFIGURAÇÕES** | atalhos para Controles e Gráficos e som | abre a aba certa | REAL |
-| **COMANDO** (só no modo Comandante) | Potências, Mesa de vídeo, Sala de controle, Oficina | abre cada uma; Câmeras ao vivo, Ficha de cada bot, Campanha e Servidor aparecem **"em construção"** (R13) | PARCIAL |
+| **COMANDO** (só no modo Comandante) | Potências, Mesa de vídeo, Sala de controle, Oficina | abre cada uma; a **Mesa de vídeo verifica se está ligada** e mostra `npm run mesa` quando não está (12/10); Câmeras ao vivo, Ficha de cada bot, Campanha e Servidor aparecem **"em construção"** (R13), e o plano de cada um está na §8 | PARCIAL |
 | **A mesa de operação** | o modo (Deathmatch, Sobrevivência, Bandeira) e o **botão verde** | **Enter** põe em combate | REAL |
 
 **Modo Comandante:** `?comandante=1` (ou `?admin=1`) liga e o navegador lembra; `=0`, ou o selo "MODO COMANDANTE ✕", desliga. **Não é segurança:** só
@@ -139,3 +139,17 @@ Teto de observadores por token e por sala, e limite de taxa como nas contas, par
 
 **Mesa de vídeo (etapa I):** hoje o monitor COMANDO tem um link para `http://127.0.0.1:4199/.tmp/video/editor.html`, a mesa local (`node .tmp/video/servir.mjs`; `FERRAMENTAS.md` §3, G15: ela **não sobe para o
 site**). Próximo passo: o console mostrar se a mesa está no ar (sem `fetch` com erro no console do navegador: o `ServerStatus` já explica por que isso reprova o smoke) e atalhos para as gravações (F9) e a pasta de clipes.
+
+## 8. Fases do painel (12/10, P90): maiores que as anteriores, contrato antes da tela
+
+O Comandante pediu fases maiores ("as próximas fases devem ser maiores que as atuais"). Cada fase é de 2 a 4 PRs, **sempre nesta ordem: contrato e teste, depois simulação ou servidor, depois a tela**, e fecha com captura e o caminho para ver (regra 16 do `AGENTS.md`).
+
+| Fase | Ordem | O que entrega | Pronto quando |
+|---|---|---|---|
+| **1 · Esquadrão** | P91 | O Comandante monta a partida: **quantos bots e aliados quiser** (nos tetos medidos), cada um com apelido, chassi, armas, personalidade e dificuldade; salvo no navegador e compartilhável por link. **1A** contrato `BotSpec` e `EsquadraoSpec` (validação, custo, link, o padrão de hoje, migração das configurações antigas) e pontos de nascimento sem teto fixo; **1B** `Match` e `BotSystem` constroem o esquadrão (o esquadrão padrão dá **o mesmo jogo de hoje**, teste dourado; custo medido no Node e teto explicado); **1C** o editor no monitor PILOTOS | o esquadrão padrão reproduz a partida de hoje tick a tick; 20 bots a mais cabem no orçamento de tick medido; a tela cabe em 1280×720 |
+| **2 · Servidor na interface** | P93 | **Resetar, testar, avaliar e analisar o servidor**, pelo console. **2A** rotas `/admin/*` com token do dono (`GET /admin/estado`, `/admin/historico`, `/admin/log`; `POST /admin/reiniciar`, `/admin/testar`, `/admin/avaliar`) e o contrato em `shared/net/admin.ts`; **2B** o monitor SERVIDOR: estado ao vivo, gráficos de tick e de jogadores, log, e os botões REINICIAR, TESTAR e AVALIAR com confirmação | token errado é recusado; reiniciar só com a sala vazia (ou com confirmação) e sem perder dado; testar e avaliar recusam com jogadores na sala; testes de servidor real |
+| **3 · Câmeras ao vivo** | P88 | Assistir a várias partidas ao mesmo tempo, pelo servidor (§7): **3A** contrato `OBSERVAR(sala)` (observador sem vaga, só com token); **3B** mural de radares; **3C** câmera 3D de uma sala por vez | observador não ocupa vaga nem aparece no placar; 5 salas ≈ 40 KB/s só para o Comandante |
+| **4 · Campanha, arsenal e evolução** | P27, P54 | **4A** `CampanhaSpec` (etapas com modo, esquadrão e objetivo; a Sobrevivência de hoje como campanha padrão); **4B** a tela Campanha e "jogar campanha"; **4C** as telas Arsenal e chassis (potências por chassi) e Evolução (o registro de ordens e o placar de resultado) | a campanha padrão dá o mesmo jogo de hoje; link compartilhável como o do Hangar |
+| **5 · Pendências do Gemini e do Codex** | P94 | O que os dois deixaram e estão sem crédito para fechar: a branch `gemini/game-hq` (bloqueio de chassis pelo Comandante, ligado à API da fase 2), os itens `(Gemini)` do `ROADMAP` (carregamento com barra e dicas, abertura da rodada, aviso de abate, telas do online) e o que for de código das frentes C2 a C5 do Codex; **o que depende de GPU real (a homologação do C3) fica dito com franqueza** | cada item na `main`, com teste e captura, ou marcado com o motivo de não ter sido feito |
+
+**Regras que valem para todas:** (1) cada PR traz o custo de CPU e de rede com número; (2) nada de `Math.random`, `Date.now` ou DOM na simulação (G1/G2); (3) o que o Comandante pode mexer tem teto (G4/G5) e o teto é explicado; (4) o que não funciona de ponta a ponta aparece como "em construção" (R13); (5) o servidor só ganha rota nova com token, taxa limitada e teste de servidor real.
