@@ -1,3 +1,15 @@
+## [2026-10-12] Missões com cenários maiores: escolta, ataque, defesa de base e contraataque (P99, Qwen)
+
+**Ordem do Comandante:** *"precisamos de fases com cenários maiores, missões de proteção de escoltas, ataque, defesa de base, contraataques, etc, pra dar mais realismo e jogadas mais interessantes, e com mais robôs por partida"*.
+
+**Decisões:**
+1. **Registrada como P99 sobre o plano que já existe**, sem abrir um concorrente: o das missões em fases é o **`ROADMAP` Fase 5** + **`DIVERSAO.md` § 10 #7** (a primeira missão é a escolta/defesa do técnico ENTRÓPICO — regra + HUD, sem arte nova). Duas ordens concorrentes seria o mesmo que nenhuma.
+2. **"Mais robôs por partida" já está feito offline** — a P91 (no ar) monta **32 corpos** a 1,9 ms por tick. O que falta é o **esquadrão por sala no servidor** (fase 3 do `PAINEL_ADMIN.md`). Dizer isso evita que alguém refaça o que já existe.
+3. **O que o pedido acrescenta de novo:** os quatro tipos nomeados, dos quais o **contraataque** (defender e depois retomar) não estava na lista, e os **cenários maiores** — escolta e contraataque pedem um **caminho longo** e a Arena tem 200 m. Entrou um item de `#cenarios`: um **mapa de missão com rota**, antes do mundo com streaming do `VISAO.md` (Fase 7).
+4. **Territórios:** a regra de objetivo no `Match` e o `OBJECTIVE_STATE` na rede são do **Claude**; o briefing, o HUD de objetivo e o resumo, do **Gemini**; a arte do cenário, do **Codex**.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, dentro da ordem do Comandante.
+
 ## [2026-10-12] O kit do YouTube: o que abrir e o que publicar primeiro, já que a casa é o YouTube (P47, Qwen)
 
 **Ordem do Comandante (P47):** *"primeiro vamos publicar no youtube, depois verei com calma"*.
