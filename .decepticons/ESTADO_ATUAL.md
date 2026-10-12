@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A ficha do chassi de tamanho 4: os números que faltavam (e a P11 revisada) — Qwen, 12/10 (P100/P11, só documentação)
+
+**Por quê:** o robô de tamanho 4 (o arquivo da **P100**) tem **silhueta e não tem números** — altura, velocidade, carga e vida não existem em lugar nenhum —, e a **P11** ("tamanhos 4 e 5, **10× e 20× maiores**") pediria **53 m e 106 m**, que não caibam em nada do jogo.
+
+**O que a ficha traz (`fichas/tamanho-4.md`, proposta):** a identidade e a fantasia (**a fortaleza que anda**), a tabela de números ancorada nas referências **reais do código** — andróide **1,6 m** · Vector-09 **5,3 m / 9 m/s / 11 t** · Colossus **14 m / 5 m/s / 24 t** — e **sete perguntas** ao Comandante.
+
+**As propostas que importam:**
+- **Altura:** **~22 m** (passo suave) ou **~36 m** (repete os 2,6× do passo 2→3) — e a **P11 fica para revisão**: 53 m é **um quarto da Arena** (200 m) e daria uma cápsula de **26 m** de raio no Rapier.
+- **Carga: 40 t** — a **lança de cerco** (ficha das armas) pesa **20 t**: duas lanças = 40 t, uma lança + um casulo (12 t) deixa um módulo. A escolha continua existindo no titã.
+- **Velocidade 3,5 m/s** e **sem dash**: o dash de um titã seria um **teleporte de 22 m**; a graça dele é **chegar andando**.
+- **As duas travas ditas:** raio ≤ altura/2 (a regra do Rapier) e o **pé-de-escada** tem de vencer as rampas que o jogo já tem.
+
+**A correção que veio junto (R17):** a ficha das armas dizia que um passo de tamanho **dobra** o robô — o código diz **2,6×** (1,6 → 5,3 → 14 m). Corrigido no documento, e o número certo **reforça** o teto de alcance: o robô cresce 2,6× e **a Arena continua a mesma**.
+
+**Nada construído:** o re-rig é do **dono** (`MECHS_IMPORTADOS.md` §8), os números o **Claude** mede e a arte é do **Codex**.
+
 ## As armas dos gigantes têm projeto: o portão do robô de tamanho 4 — Qwen, 12/10 (P82/P100, só documentação)
 
 **Por quê:** a **P100** trouxe o Colossus v4 (tamanho 4) e o **portão** apareceu: **hoje nenhuma arma cabe nele** (todas são `size: 2`). A **P82** tinha deixado as "versões de tamanho 3 e 4" como *futuramente*, e o **contrato de como criá-las já existia** (`ARSENAL.md` §"Como criar a versão de tamanho 3"). O que faltava era o **projeto**: **quais** armas e com **que números**.

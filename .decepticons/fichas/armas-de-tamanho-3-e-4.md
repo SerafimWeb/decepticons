@@ -22,9 +22,10 @@ sniper que ninguém alcança. A ficha existe para dizer **o que escala e o que n
 
 ## 2. A regra de escala que eu proponho (o que cresce, e por quê)
 
-Um passo de tamanho **dobra** o robô (o Colossus, tamanho 3, tem 14 m). A arma dele, então, é a arma do tamanho de um
-robô 2× maior — mas o **jogo** continua com inimigos que correm 9 m/s numa arena de 200 m. A escala certa é a que muda
-**peso e impacto**, não a que muda **alcance**:
+Um passo de tamanho **multiplica o robô por ~2,6** (o andróide tem **1,6 m**, o Mech **5,3 m**, o Colossus **14 m** —
+`entities/chassis.ts`). A arma dele, então, é a arma de um robô **duas vezes e meia maior** — mas o **jogo** continua
+com inimigos que correm 9 m/s numa **Arena de 200 m**. A escala certa é a que muda **peso e impacto**, não a que muda
+**alcance**:
 
 | O que | Fator por passo de tamanho | Por quê |
 |---|---|---|
