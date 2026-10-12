@@ -10,6 +10,8 @@ import { FLINCH_DECAY, FLINCH_MAX, FLINCH_PER_DAMAGE, HIT_PUSH_MAX, hitFlinch, h
 import { DAMAGE_TYPE, weapon, WEAPON_IDS, type DamageType, type WeaponStats } from './weapons';
 
 const NO_FX = { burst: () => {} } as never;
+/** O torso do rig (protegido no `MechBase`): o teste lê o que o desenho mostra. */
+const torso = (m: Vector09) => (m as unknown as { rig: { torso: { rotation: { x: number; y: number } } } }).rig.torso;
 const TIPOS: DamageType[] = ['termico', 'laser', 'balistico', 'explosivo', 'pulso', 'sonico', 'corte', 'eletrico', 'criogenico'];
 
 /**
@@ -194,22 +196,22 @@ describe('a reação com física de verdade (CombatSystem): o acerto empurra e d
     const { alvo, acerta } = await palco();
     const a = alvo(0, 5);
     a.applyFacing(0, 0); // olhando para -Z
-    const base = a.rig.torso.rotation.x;
+    const base = torso(a).rotation.x;
     acerta(a, 90, weapon('cannon'), new THREE.Vector3(0, 0, 1)); // o tiro anda para +Z: bate no peito do Mech que olha para -Z
     a.render(1 / 60, 1);
-    expect(a.rig.torso.rotation.x).toBeGreaterThan(base + 0.05); // para trás
+    expect(torso(a).rotation.x).toBeGreaterThan(base + 0.05); // para trás
     expect(a.flinchAmount).toBeGreaterThan(0.05);
     for (let i = 0; i < 40; i++) a.render(1 / 60, 1); // 0,67 s
     expect(a.flinchAmount).toBeLessThan(0.01);
-    expect(a.rig.torso.rotation.x).toBeCloseTo(base, 1);
+    expect(torso(a).rotation.x).toBeCloseTo(base, 1);
 
     const b = alvo(10, 5);
     b.applyFacing(0, 0);
     acerta(b, 90, weapon('cannon'), new THREE.Vector3(-1, 0, 0)); // o tiro anda para a esquerda do Mech (-X): pega na direita dele
     b.render(1 / 60, 1);
-    expect(b.rig.torso.rotation.y).toBeGreaterThan(0.05); // o tiro vindo da esquerda do Mech torce o torso para o lado de cá (y positivo)
+    expect(torso(b).rotation.y).toBeGreaterThan(0.05); // o tiro vindo da esquerda do Mech torce o torso para o lado de cá (y positivo)
     for (let i = 0; i < 40; i++) b.render(1 / 60, 1);
-    expect(Math.abs(b.rig.torso.rotation.y)).toBeLessThan(0.01); // e a torção também volta sozinha
+    expect(Math.abs(torso(b).rotation.y)).toBeLessThan(0.01); // e a torção também volta sozinha
   });
 
   it('o tranco nunca passa de FLINCH_MAX, nem com várias pancadas seguidas, e o aplicado na mira (applyFacing) soma por cima', async () => {
@@ -218,7 +220,7 @@ describe('a reação com física de verdade (CombatSystem): o acerto empurra e d
     a.applyFacing(0, 0);
     for (let i = 0; i < 20; i++) a.flinch(0, 1, 0.1);
     a.applyFacing(0, 0.4); // a mira roda no render: o tranco não pode sumir quando ela escreve o torso
-    expect(a.rig.torso.rotation.x).toBeCloseTo(0.4 * 0.25 + FLINCH_MAX, 6);
+    expect(torso(a).rotation.x).toBeCloseTo(0.4 * 0.25 + FLINCH_MAX, 6);
     expect(a.flinchAmount).toBeLessThanOrEqual(FLINCH_MAX + 1e-12);
   });
 
