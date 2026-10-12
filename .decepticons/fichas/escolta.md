@@ -22,10 +22,13 @@ Gemini ligar o briefing e o HUD **contra os mesmos nomes de objetivo**.
 
 - **O objetivo:** manter o **técnico de pé** enquanto ele **conserta três avarias** (três Mechs aliados avariados), e
   depois **levá-lo à extração**.
-- **Quem é o técnico:** o **ENTRÓPICO** já existe no jogo (`combat/TechnicianController.ts`, 5 testes): vai até o Mech
-  mais avariado, **conserta 8 de vida/s** com um feixe amarelo (parte arrancada não volta), **não atira**, e **sem
-  avaria, escolta**. Hoje ele é do lado rebelde; na missão ele é **nosso** — e a **P91 já aceita técnico aliado** (o
-  esquadrão tem o papel `t` nos dois lados).
+- **Quem é o técnico:** o **ENTRÓPICO** já existe no jogo (`combat/TechnicianController.ts`): vai até o Mech
+  mais avariado, **conserta ~8 de vida/s** com um feixe amarelo (parte arrancada não volta), **não atira**
+  (`wantsToFire = false`) e, **sem avaria, escolta**. **Conferido no código em 12/10:** o controlador **já recebe a
+  lista de quem ele conserta** (`new TechnicianController(mech, allies)`, `BotSystem.ts:257`) e é o `BotSystem` que
+  aplica o conserto (`BotSystem.ts:522`). Hoje essa lista são **os Mechs rebeldes** — e o papel `t` existe **só do
+  lado inimigo** (`sim/esquadrao.ts:99`, `PAPEIS_DO_LADO`; a lista de técnicos dos **aliados é `[]`**). Ou seja: a
+  missão precisa de **um ajuste pequeno e localizado**, não de uma regra nova.
 - **A tensão sai de graça:** o técnico **já é "alvo prioritário"** (`GAME_DESIGN.md` § 3 — os inimigos o caçam) e é
   **escala 1** (fraco: é um andróide). Escoltar é proteger exatamente o alvo que a IA prefere.
 - **As três fases (a escada crescente):**
@@ -52,8 +55,9 @@ Gemini ligar o briefing e o HUD **contra os mesmos nomes de objetivo**.
 ## 4. Os testes (cada linha é um `it()`)
 
 1. **"A missão não começa sem um técnico do lado do jogador"** (contrato).
-2. **"O técnico conserta o aliado mais avariado, e nunca o inimigo"** — ele passa a escolher o alvo pela mesma regra
-   de lado (`Match.sameSide`) que a P78 já usa no gelo e no anel de fogo.
+2. **"O técnico conserta o aliado mais avariado, e nunca o inimigo"** — o alvo sai da **lista que ele recebe**
+   (`allies`): o teste alimenta as duas listas e prova que ele só toca a do mesmo lado. A regra de lado
+   (`Match.sameSide`, `Match.ts:426`) é a que a P78 já usa no gelo e no anel de fogo.
 3. **"Cada avaria completa conta uma, e só uma"** — nem duas pelo mesmo alvo, nem uma por pulso de conserto.
 4. **"Com as três avarias consertadas a missão não termina"** — ela passa para a **extração** (o objetivo é a saída).
 5. **"O técnico chegando à extração com o objetivo cumprido encerra a missão em vitória"**, e o fim diz
@@ -71,15 +75,23 @@ Gemini ligar o briefing e o HUD **contra os mesmos nomes de objetivo**.
 
 | Peça da missão | O que já está no jogo | O que falta |
 |---|---|---|
-| O técnico e o feixe | `combat/TechnicianController.ts` — 5 testes: anda até o mais avariado, 8 de vida/s, foge a 16 m, volta a 24 m, escolta sem avaria | escolher o alvo **pelo lado** (aliado) |
-| Técnico do nosso lado | **P91**: o esquadrão aceita o papel `t` nos dois lados | nada (é configuração) |
+| O técnico e o feixe | `combat/TechnicianController.ts`: anda até o mais avariado, foge a **16 m** (`FLEE_RADIUS`), volta a **24 m** (`SAFE_RADIUS`), escolta a **9 m** (`ESCORT_RANGE`), reavalia a cada **0,5 s**; **o conserto é aplicado pelo `BotSystem`** (`BotSystem.ts:522`) e o quanto conserta é `REPAIR_RATE × power.clans.technician.damage` — **dá para ajustar no painel de Potências** | **alimentar a lista com os aliados do jogador** (o controlador já conserta quem está na lista que recebe) |
+| Técnico do nosso lado | o papel `t` existe, mas **só nos inimigos**: `sim/esquadrao.ts` — `PAPEIS_DO_LADO:99`, `tecnicos: []` nos aliados, teto de 2 técnicos no total | **é código, não configuração:** aceitar `t` nos aliados (uma linha em `PAPEIS_DO_LADO`, mais o limite e a fiação no `BotSystem`) — **do Claude**, porque `sim/` é o território dele |
 | Prioridade de alvo | `GAME_DESIGN.md` § 3: "Técnico: **alvo prioritário**" | travar por teste dentro da missão |
 | Aliados e times | `Match.sameSide` (P78) e os aliados da Arena offline | — |
 | Zonas de cura e resfriamento | `combat/Zone.ts` (testado) | — |
-| Briefing e HUD de objetivo | `ui/MissionHUD.ts` — **DEMO** (R13): testado isolado, com **dado de exemplo** | **ligar o HUD à missão de verdade** (Gemini) |
+| Briefing e HUD de objetivo | `ui/MissionHUD.ts` — **DEMO** (R13): testado isolado, com **dado de exemplo**. O contrato dele é **por onda** (`onWaveStart` / `onWaveProgress` / `onWaveClear` / `onMissionEnd`) | **o HUD da missão precisa de nomes próprios** (objetivo, fase, vida do técnico) e de ligação de verdade — **Gemini**, contra os nomes que esta ficha fixa |
 | Cenário | Arena (200 m) e **Bunker** (4 níveis, 11 pontos de nascimento) | o mapa com rota (item `#cenarios` da P99) — **não é pré-requisito** |
 | Rede | — | `OBJECTIVE_STATE` fica para o PR do online |
 | Diretor de ataque | os inimigos já revezam em fila justa (máx. 2 atacando juntos) | a composição por fase (dados) |
+
+**Conferido no código em 12/10/2026 (auditoria desta ficha, R17):** `combat/TechnicianController.ts` (as constantes
+acima, os estados `escort | repair | flee` e `wantsToFire = false`); `combat/BotSystem.ts:257` (o controlador nasce com
+a lista de quem conserta) e `:522` (o conserto é aplicado ao `repairTarget`); `sim/esquadrao.ts:99`
+(`PAPEIS_DO_LADO`) e `:471` (os técnicos dos aliados são `[]`); `sim/Match.ts:426` (`sameSide`); `ui/MissionHUD.ts`
+(contrato por onda). **Duas afirmações da primeira versão desta ficha estavam erradas** — *"a P91 já aceita técnico
+aliado"* (não aceita: só inimigo) e *"escolher o alvo pelo lado"* (o alvo já vem de uma lista; o que falta é
+alimentá-la do lado certo). Corrigidas acima, com o endereço de cada uma.
 
 ## 6. Perguntas para o dono
 

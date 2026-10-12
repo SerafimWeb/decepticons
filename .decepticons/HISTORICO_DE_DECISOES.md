@@ -10,6 +10,19 @@
 5. **Dois resets redundantes saíram:** o `ChargeTimer.step` já zera a carga quando o botão está solto; o reset explícito era código morto (as mutações o provaram), e uma regra nova de botão por mão não é lugar para carregá-lo.
 6. **Fica de fora, de propósito:** costas e peito (precisam do evento de tiro com mais bits), e a pergunta "o Ataque 2 com ombro + costas + peito dispara tudo junto ou alterna?", que é do Comandante.
 
+## [2026-10-12] A auditoria da ficha da missão #1: duas afirmações erradas, corrigidas com endereço (P99, Qwen)
+
+**O que aconteceu:** antes de o **Claude** (regra) e o **Gemini** (tela) construírem contra a ficha da missão #1, conferi **no código** cada afirmação dela. Contrato em cima de areia custa caro aos dois — e duas afirmações estavam erradas.
+
+**Decisões:**
+1. **Erro 1, corrigido: "a P91 já aceita técnico aliado" é falso.** O papel `technician` existe **só nos inimigos** (`sim/esquadrao.ts:99` — `PAPEIS_DO_LADO`; a lista dos aliados é `tecnicos: []`). Pôr o técnico no lado do jogador é **código** (uma linha em `PAPEIS_DO_LADO`, mais limite e fiação no `BotSystem`), do **Claude** — não é configuração. **Sem isso a missão não tem quem escoltar.**
+2. **Erro 2, corrigido: "escolher o alvo pelo lado" era impreciso.** O `TechnicianController` **já recebe a lista de quem conserta** (`BotSystem.ts:257`) e o `BotSystem` aplica o conserto (`:522`); o que falta é **alimentá-la com os aliados do jogador** — o trabalho é menor do que a primeira versão da ficha dizia.
+3. **Achado bom:** o quanto o técnico conserta é `REPAIR_RATE × power.clans.technician.damage` — **o painel de Potências já ajusta o conserto do técnico**, uma alavanca de balanceamento que o Comandante já tem na mão.
+4. **A ficha ganhou "conferido no código em 12/10"**, com `arquivo:linha` para cada item conferido, e as duas correções ficaram escritas **com o motivo** — para ninguém reconstruir a versão errada.
+5. **O `MissionHUD` ficou mais preciso:** é **DEMO** (R13) e o contrato dele é **por onda** (`onWaveStart` / `onWaveProgress` / `onWaveClear` / `onMissionEnd`) — a missão precisa de **nomes próprios** (objetivo, fase, vida do técnico).
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, dentro da ordem P99 (R17).
+
 ## [2026-10-12] A ficha do cenário com rota: ESTAÇÃO DE CABOS, o maior mapa sem streaming (P99, Qwen)
 
 **Ordem do Comandante (P99):** *"fases com cenários maiores… pra dar mais realismo e jogadas mais interessantes"*.
