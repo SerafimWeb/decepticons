@@ -42,21 +42,25 @@ export class DamageVisuals {
     this.remaining = 12;
   }
 
+  /** O orçamento do pulso (12 robôs) só gasta com quem emite: num esquadrão grande, os saudáveis não podem esgotá-lo antes dos avariados. */
   update(mech: MechBase): void {
     if (!mech.alive || !mech.root.visible || this.remaining === 0) return;
-    this.remaining--;
+    let emitted = false;
     for (let i = 0; i < PARTS.length; i++) {
       const part = PARTS[(this.cursor + i) % PARTS.length]!;
       if (!damagedPart(mech.modules[part], mech.stats.maxModuleHealth[part])) continue;
       mech.partWorldPosition(part, this.origin, false);
       this.particles.burst(this.origin, UP, SMOKE);
       this.particles.burst(this.origin, UP, SPARK);
+      emitted = true;
       break;
     }
     // Os blueprints já ventilam; nos importados o sinal faltava por completo.
     if (!mech.hasHeatVisual && (mech.heat >= 0.7 || mech.overheated)) {
       mech.partWorldPosition('torso', this.origin, false);
       this.particles.burst(this.origin, UP, STEAM);
+      emitted = true;
     }
+    if (emitted) this.remaining--;
   }
 }

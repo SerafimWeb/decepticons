@@ -95,6 +95,15 @@ const TIPO_NOME: Readonly<Record<TipoPiloto, [string, string]>> = {
   aliado: ['ALIADO', 'ALIADOS'],
 };
 
+/** Quantas linhas da lista de pilotos cabem no monitor sem rolagem (1280×720); com um esquadrão grande (P91) o resto vira "+N pilotos". */
+export const LINHAS_DE_PILOTOS = 8;
+
+/** A lista do monitor: se cabe, toda; senão as primeiras (uma linha a menos, para o aviso) e quantos ficaram de fora. */
+export function pilotosVisiveis<T>(lista: readonly T[], max = LINHAS_DE_PILOTOS): { mostrados: T[]; ocultos: number } {
+  if (lista.length <= max) return { mostrados: [...lista], ocultos: 0 };
+  return { mostrados: lista.slice(0, max - 1), ocultos: lista.length - (max - 1) };
+}
+
 /** "1 MECH · 2 ANDRÓIDES · 1 TÉCNICO" (só os inimigos; os aliados têm a linha deles). Vazio: "NENHUM INIMIGO". */
 export function contagemInimigos(lista: readonly PilotoNaPartida[]): string {
   const partes: string[] = [];
