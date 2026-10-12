@@ -1,3 +1,16 @@
+## [2026-10-12] A folha de decisões do Comandante: 28 perguntas viram sete escolhas com recomendação (Qwen)
+
+**O que aconteceu:** as fichas de missão (escolta, cenário, ataque e defesa) deixaram **28 perguntas** para o dono — e o trabalho **parou nelas**: sem a decisão da ficção o Claude não põe o técnico aliado; sem o tamanho, o Codex não constrói o cenário; e o #259 não sai do limbo sem escolha.
+
+**Decisões:**
+1. **A folha vai no canal que o Comandante lê** (`ORDENS_DO_COMANDO.md`, logo depois do cabeçalho), e não num arquivo novo: quem procura as ordens encontra as decisões que as travam.
+2. **Cada linha tem três colunas — a decisão, a recomendação e o que ela destrava.** A recomendação existe porque "decida" sem proposta é devolver o problema; e o "o que destrava" é o que dá peso à escolha.
+3. **A frase que organiza a folha:** *"responder 'sim, como recomendado' já destrava a fila inteira"* — sete respostas cabem numa mensagem.
+4. **As sete recomendações, ditas:** o técnico é **a mesma máquina reprogramada, com o nome ENTRÓPICO**; o núcleo tem **vida própria**; o técnico **conserta** o núcleo; **~500 m** bastam (é o teto sem streaming); a **escolta vem antes** do CTF online; **três fases com respawn**; e o **#259 fecha por triagem** (guardando a flag de `status` e os cadeados do Hangar).
+5. **Uma linha separa decisão de ação:** os dez minutos do `PLAYTEST.md` não são escolha, são o que o dono faz para conferir — e estão ditos ali para não se perderem entre as sete.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, com as sete decisões no Comandante.
+
 ## [2026-10-12] As duas missões que faltavam — ataque e defesa — e o contraataque sai de graça (P99, Qwen)
 
 **Ordem do Comandante (P99):** *"missões de proteção de escoltas, ataque, defesa de base, contraataques"*.

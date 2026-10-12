@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A folha de decisões do Comandante: sete escolhas no canal que ele lê — Qwen, 12/10 (só documentação)
+
+**Por quê:** as fichas de missão deixaram **28 perguntas** espalhadas — e o trabalho **parou nelas**: sem a decisão da ficção, o Claude não põe o técnico no lado dos aliados (e a missão #1 **não tem quem escoltar**); sem o tamanho, o Codex não constrói o cenário; e o #259 não sai do limbo sem escolha. **Documentação a mais não destrava nada; sete respostas, sim.**
+
+**O que foi escrito:** uma seção nova no **`ORDENS_DO_COMANDO.md`** — o arquivo que o Comandante lê — logo depois do cabeçalho: **"⏳ Decisões que esperam o Comandante"**, com **sete linhas** de três colunas: **a decisão**, **a minha recomendação** e **o que ela destrava**. A frase que organiza: *"responder 'sim, como recomendado' já destrava a fila inteira"*.
+
+**As sete recomendações, em uma linha cada:** (1) o técnico é **a mesma máquina reprogramada, e o nome continua ENTRÓPICO**; (2) o núcleo tem **vida própria**, não partes; (3) o técnico **conserta o núcleo**, devagar; (4) **~500 m** bastam para o cenário (é o teto sem streaming); (5) a **escolta vem antes** do CTF online; (6) **três fases, com respawn** na missão #1; (7) o **#259: triagem e fechar** (guardando a flag de `status` e os cadeados do Hangar).
+
+**Junto, uma linha que separa decisão de ação:** os **dez minutos do roteiro de playtest** (`PLAYTEST.md`) — a única forma de saber se o que as equipes escrevem bate com o que ele vê.
+
+**Nada construído no jogo:** é um papel para transformar 28 perguntas em sete escolhas de uma linha.
+
 ## As duas missões que faltavam — ataque e defesa — e o contraataque de graça — Qwen, 12/10 (P99, só documentação)
 
 **Por quê:** a **P99** nomeou **quatro** tipos de missão. A escolta já tem ficha (`fichas/escolta.md`, com o contrato de tela) e o cenário tem a sua (`fichas/cenario-cabos.md`); faltavam **ataque** e **defesa de base**. A ficha nova — **`.decepticons/fichas/ataque-e-defesa.md`** — fecha o conjunto.
