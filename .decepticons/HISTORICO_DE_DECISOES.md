@@ -1,3 +1,16 @@
+## [2026-10-12] O Colossus v4 não entra no Hangar: o arquivo tem 11 ossos e o jogo anima outros 11 (P100, Qwen)
+
+**Ordem do Comandante (P100):** *"adicionei um novo modelo na pasta /blender/colossusv4, leve ele para o hangar, veja se está correto a armadura, ossos, etc, ou se devo melhorar ele no blender. ele é do tamanho 4, bem maior que o colossus v3"*.
+
+**Decisões:**
+1. **Nada foi ligado, de propósito.** O arquivo tem **1 malha com skin** (é o contrato), mas o esqueleto é um rig feito à mão com **11 ossos** — e **faltam quatro dos que o jogo anima** (`torso`, `head`, `leftHand`, `rightHand`); os braços são **um osso só** e nascem no **mesmo nó das pernas**. O carregador (`importedMechRig.ts`) lança erro e o `Game` cai no **corpo procedural do Vector-09** com os números do chassi: ligar assim faria o dono ver o Vector-09 achando que via o robô novo. O laudo ficou em `MECHS_IMPORTADOS.md` §8.
+2. **O dono re-riga** (Tripo3D/Mixamo) e manda de novo — a resposta dele à pergunta "ou devo melhorar no blender". **Usar os nomes do Mixamo** é o que dispensa `boneNames`: o jogo lê os nomes de fábrica. O **antebraço** entra no pedido porque é nele que nasce o encaixe de arma.
+3. **A escala é 4 — e isso acorda a P11** ("Mechs de tamanho 4 e 5", 28/09, que estava sem registro). O portão: **nenhuma arma cabe num robô de tamanho 4** hoje (todas as armas são `size: 2`; a regra `classAt` só deixa o 4 usar `size: 3`), então as versões de arma de tamanho 3/4 — o "futuramente" da **P82** — passam a ser pré-requisito da P100. A **altura** (a P11 dizia "10× e 20× maiores"; o Colossus, escala 3, tem 14 m) fica com o dono.
+4. **O arquivo também é pesado para o padrão:** 98.304 triângulos e 8,6 MB, contra 15–25 mil e ~1 MB dos que já entraram. O pedido ao Blender inclui o **decimate** e as texturas 2048 → 1024.
+5. **A foto do laudo** (`arte/colossusv4-malha-qwen.png`, 6 vistas da malha crua) existe para o dono julgar a armadura — eu não leio imagem, e a foto não substitui o rig.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, com as duas decisões do Comandante (re-rigar; escala 4).
+
 ## [2026-10-12] As duas missões que faltavam — ataque e defesa — e o contraataque sai de graça (P99, Qwen)
 
 **Ordem do Comandante (P99):** *"missões de proteção de escoltas, ataque, defesa de base, contraataques"*.
