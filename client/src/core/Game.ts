@@ -44,6 +44,8 @@ import { CtfObjectives } from '../environment/CtfObjectives';
 import { DamageVisuals } from '../fx/DamageVisuals';
 import { FlameVisuals } from '../fx/FlameVisuals';
 import { FireRingVisuals } from '../fx/FireRingVisuals';
+import { FrameCopyPass } from '../fx/FrameCopyPass';
+import { WaveRings } from '../fx/WaveRings';
 import { StatusVisuals } from '../fx/StatusVisuals';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
@@ -152,6 +154,11 @@ export class Game {
   private readonly flameVisuals = new FlameVisuals(this.particles);
   private readonly fireRingVisuals = new FireRingVisuals(this.particles);
   private readonly chargeVisuals = new ChargeVisuals(this.particles);
+  /** Os anéis da onda sônica e a cópia do quadro que eles distorcem (`fx/WaveRings`): um conjunto na arena e outro no Hangar. */
+  private readonly waveRings = new WaveRings();
+  private readonly frameCopy = new FrameCopyPass();
+  /** A refração do ar da onda liga junto com o bloom: em qualidade baixa os anéis viram um brilho fraco, sem distorção nem cópia de tela. */
+  private refractWaves = true;
   private readonly updateRemoteDamage = (remote: { mech: MechBase }): void => {
     this.damageVisuals.update(remote.mech);
     this.statusVisuals.update(remote.mech);
@@ -328,6 +335,7 @@ export class Game {
     this.composer.setSize(window.innerWidth, window.innerHeight);
     this.renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(this.renderPass);
+    this.composer.addPass(this.frameCopy); // desligada até haver onda no ar (custo zero)
     this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.85, 0.5, 0.9);
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
@@ -335,6 +343,7 @@ export class Game {
 
     // --- A partida (a simulação única; quantos inimigos vêm das configurações e mudam ao reiniciar) ---
     this.scene.add(this.particles.points);
+    this.scene.add(this.waveRings.mesh);
     // Online (M4): /jogar/?sala=CODIGO[&servidor=wss://…][&nome=Dan]. A partida local fica sem bots, sem dano e sem
     // rodada própria (quem decide é o servidor); o jogo prevê o seu Mech e desenha os outros.
     const publicServer = import.meta.env.VITE_GAME_SERVER;
@@ -488,6 +497,7 @@ export class Game {
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
     this.player.flame = (w, origin, dir) => this.match.flameCone(this.mech, origin, dir, w);
     this.player.wave = (w, origin, dir) => this.match.waveCone(this.mech, origin, dir, w);
+    this.match.onWaveFx = (origin, dir, w) => this.waveRings.spawn(origin, dir, w);
     this.netStatus.className = 'net-status';
     
     const shouldConnect = online && online.explicitName;
@@ -554,6 +564,7 @@ export class Game {
       (ratio) => this.setPixelRatio(ratio),
       (enabled) => {
         this.bloomPass.enabled = enabled;
+        this.refractWaves = enabled;
       },
     );
     // Hangar: enquanto está aberto, o desenho troca a arena pelo galpão (o jogo está pausado).
@@ -796,6 +807,7 @@ export class Game {
   private aplicarQualidade(quality: GameSettings['quality']): void {
     this.setPixelRatio(quality === 'media' ? 1 : quality === 'baixa' ? 0.75 : maxPixelRatio());
     this.bloomPass.enabled = quality !== 'baixa';
+    this.refractWaves = quality !== 'baixa';
     this.quality.setAdaptive(quality === 'auto');
   }
 
@@ -1423,6 +1435,13 @@ export class Game {
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.player.firing, this.player.secondaryHeld, this.player.secondaryHeld && !this.player.firing ? this.player.secondaryCharge : this.player.primaryCharge);
+    // A onda sônica: os anéis andam e leem a cópia do quadro (a cópia só roda enquanto há anel vivo, na arena ou no Hangar).
+    this.waveRings.update(dt);
+    const hangarRings = this.hangarScene?.waveRings;
+    this.frameCopy.setActive(this.refractWaves && (this.waveRings.active || (this.hangarView && !!hangarRings?.active)));
+    const waveFrame = this.refractWaves ? this.frameCopy : null;
+    this.waveRings.setFrame(waveFrame);
+    hangarRings?.setFrame(waveFrame);
     this.renderer.info.reset();
     this.composer.render(dt);
     this.recorder.capturarQuadro();

@@ -37,6 +37,27 @@ e no `Quality` adaptativo (que mede o quadro) e o smoke confere os draws, então
 **Codex:** o console é opaco; se for mexer no `frame()` para estrangular o desenho com o console à vista, o `DebugPanel` e o smoke dependem dos `draws`.
 
 **Próxima sessão começa com:** o playtest do Comandante no site (GPU real) e as respostas: **os lugares das missões**, o que entra no monitor COMANDO primeiro. Depois, uma tarefa por PR: `claude/bot-spec` (etapas A e B do `PAINEL_ADMIN.md`: a ficha de cada bot) ou `claude/observar-sala` (contrato das câmeras ao vivo), na ordem que o Comandante escolher.
+## Tipos de encaixe (braço, ombro, costas, peito, cabeça) — Claude, 11/10 (PR `claude/tipos-de-encaixe`, ordem P84)
+
+**Ordem do Comandante (P84):** "como fica a diferença entre armas para braços / ombros / costas (lança-mísseis nas costas ou ombros) / peitoral? Os slots padrão nos mechs é geralmente isso: braços, ombros, cabeça".
+
+- **A resposta é um modelo de três eixos** (`ARMAS_DE_BOTAO_2.md` § 7): **o tipo de encaixe** (onde no corpo), **a classe** que ele aceita (leve, média, pesada, a do P82) e **o botão** que atira (quem decide é o chassi). Foguetes e chuva de mísseis cabem em ombro e em costas; o canhão sônico, só em ombro; o resto é arma de mão.
+- **O contrato em código** (sem mudar o jogo): `combat/mountKinds.ts` (`WEAPON_MOUNTS`: cada arma declara onde cabe, um `Record` como as outras tabelas; `KIND_MAX_CLASS`: braço, ombro e costas até pesada, peito até média, cabeça só leve; `LIVE_KINDS`: só braço e ombro existem) e `SLOT_KIND` em `entities/chassis.ts` (o tipo de cada ranhura do Hangar).
+- **Um teste confere o que está escrito à mão:** `combat/mountKinds.test.ts` (11) varre toda lista de todo chassi e exige que a arma caiba no tipo da ranhura e que a classe dela, na visão do chassi, não passe do que o tipo aceita. Arma só de ombro não aparece em mão nenhuma; o Marauder oferece nos ombros tudo o que cabe em ombro. **19 mutações, todas pegas.**
+- **Custo de CPU:** nenhum (tabelas e uma função de consulta). Sem mudança de protocolo.
+- **O que NÃO existe ainda:** costas, peito e cabeça como encaixe de verdade. Criar um pede um tipo novo em `MOUNTS`, a boca de cada robô, o desenho, o **evento de tiro com mais bits** (hoje o encaixe cabe em 2 bits e os 4 estão usados: sobe o protocolo) e o **terceiro gatilho**. **Três decisões do Comandante** (em `ARMAS_DE_BOTAO_2.md` § 7): terceiro botão para peito e cabeça; ombro e costas como o mesmo botão 2; e quais robôs ganham ombros primeiro (proposta: a Onça).
+
+## A onda sônica vira ar distorcido — Claude, 11/10 (PR `claude/ondas-de-ar`, ordem P83)
+
+**Ordem do Comandante (P83):** "ainda não vi o canhão sônico no Hangar; o tiro dele, espero que seja uma onda do som, invisível, mas que dá pra ver quebrando as moléculas do ar, como uma onda em anéis transparentes".
+
+- **Por que ele não aparecia:** o canhão sônico é **só de ombro** e **só o Marauder tem ombros**. No Hangar ele está em **Marauder → encaixe 03 OMBROS**; nos outros robôs não existe. O cartão dos chassis com ombros ganhou o selo **OMBROS**. **E o "TESTAR" do Hangar mostrava um projétil ciano genérico** para o sônico (o teste desenhava toda arma de energia igual): corrigido.
+- **A onda agora são anéis finos que distorcem o ar** (`fx/WaveRings.ts`): cada boca solta 6 anéis, um logo atrás do outro, que correm pelo cone até o alcance da arma e se abrem junto com ele (raio = distância × tangente do meio ângulo). O anel **não tem cor própria**: ele **desloca a imagem que está atrás** (refração, com franja de cor nas bordas e um traço de brilho mínimo), então **só se vê o ar quebrado**. Os arcos lilás saíram; ficaram **6 "moléculas" de ar** por boca (`fx/WaveVisuals.ts`).
+- **Como a refração funciona sem custo fixo:** uma passada do compositor (`fx/FrameCopyPass.ts`) copia a imagem já desenhada (HDR, antes do bloom) **só enquanto há anel vivo**; o anel lê o quadro anterior. Desligada, não custa nada. **Qualidade baixa** (a mesma chave do bloom) **usa um brilho fraco em vez da distorção**. Funciona também na cena do Hangar (o "TESTAR" solta a mesma onda do alvo).
+- **Custo de CPU/GPU:** 1 draw call (48 anéis no máximo, 96 triângulos cada), sem alocação por quadro; enquanto há onda, uma cópia de tela cheia por quadro (~0,5 s por aperto); o servidor não monta nada (o gancho `Match.onWaveFx` só o cliente liga). Sem `Math.random` (G1/G2).
+- **Testes:** `fx/WaveRings.test.ts` (15: fila de anéis, trajeto e eixo, abertura do cone, força, vida, teto de 48, determinismo, tiro vertical, os dois modos de desenho, cópia do quadro) e o bloco do desenho em `sonic.test.ts` (agora 5: moléculas, alcance, cor, gancho dos anéis). **26 mutações, todas pegas.** A refração em si só se confere a olho: `arte/onda-sonica-claude.png` e `arte/onda-sonica-hangar-claude.png`.
+- **Limite honesto:** o anel lê o quadro **anterior** (um quadro de atraso, imperceptível) e **inclui os anéis do quadro anterior** (a distorção se acumula um pouco onde dois anéis se cruzam). Só o Marauder tem ombros: **o P84 (tipos de encaixe) e ombros em mais robôs é o próximo.**
+
 ## Classes de arma (leve, média, pesada) e tamanho de robô — Claude, 11/10 (PR `claude/classes-de-arma`, ordem P82)
 
 **Ordem do Comandante (P82):** "organizar melhor nosso arsenal: as armas devem ter 3 tamanhos (leve, média, pesada); robôs gigantes usam armas pesadas como leves (pra eles), mas é a arma pesada normal dos outros robôs (tamanho 2, padrão do jogo); futuramente, versões das armas para o tamanho 3 e 4".

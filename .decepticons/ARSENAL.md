@@ -53,7 +53,7 @@ Uma arma que **só usa campos que já existem** (dano, cadência, alcance, explo
 comporta de um jeito novo** (a escopeta não precisou; a chuva de mísseis sim) pede todos.
 
 1. **Dados:** `WeaponId` e uma entrada em `BASE` (`combat/weapons.ts`). Comportamento novo vira um campo opcional e tipado da
-   arma (a chuva tem `barrage`), nunca um `if (id === ...)` espalhado. Três tabelas `Record<WeaponId, …>` também exigem a arma nova (o typecheck quebra se faltar): `DAMAGE_TYPE` (natureza do dano), `WEAPON_FIT` (classe e tamanho, `combat/weaponClass.ts`, P82) e `FIRE_KICK` em `combat/fireFeel.ts` (quanto o tiro faz a câmera tremer; 0 para corpo a corpo).
+   arma (a chuva tem `barrage`), nunca um `if (id === ...)` espalhado. Quatro tabelas `Record<WeaponId, …>` também exigem a arma nova (o typecheck quebra se faltar): `DAMAGE_TYPE` (natureza do dano), `WEAPON_FIT` (classe e tamanho, `combat/weaponClass.ts`, P82), `WEAPON_MOUNTS` (em quais tipos de encaixe cabe: braço, ombro, costas, peito, cabeça, `combat/mountKinds.ts`, P84) e `FIRE_KICK` em `combat/fireFeel.ts` (quanto o tiro faz a câmera tremer; 0 para corpo a corpo).
 2. **Regra no tick fixo:** projétil comum não precisa de nada. Comportamento novo é um módulo próprio (`combat/XSystem.ts`, como o
    `BarrageSystem`): pool fixo, `fixedUpdate`, `clear`, `render`, callbacks `onFired` e `onExplode`. Liga no `sim/Match.ts` (criar,
    passo, três `clear`, explosão) e no `core/Game.ts` (desenho). Sem `Math.random`, `Date.now` nem DOM (G1/G2): o desenho de

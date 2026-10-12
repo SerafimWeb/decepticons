@@ -19,6 +19,28 @@ quem vê: "os dois"; "um mapa do mundo, pra mostrar onde são as missões (cená
   deixava o console completo visível durante o aquecimento (as primeiras medidas do "modo econômico" mediam isso), então o botão precisa ficar "jogar" por 250 ms; (2) o título e o botão têm que estar no mesmo lugar na tela de carregamento e na final, senão um clique (ou o teste do celular) pode cair num monitor na hora da troca. O smoke espera o console ligar; dois testes guardam o CSS.
 **Alternativas descartadas:** usar as imagens do Comandante como fundo (conteúdo parado, 1 a 2 MB, números falsos); um monitor de câmeras com N cenas 3D (G12: GPU integrada; o desenho é mural de radares 2D e uma câmera 3D por vez); um `fetch` que sonda a mesa local (um erro de rede no console reprova o smoke e o `site --check`).
 **Custo de CPU:** zero no laço de 60 Hz; radar a 1 Hz e animações de compositor com o console à vista. **Quem decidiu:** Comandante (o pedido e as respostas); Claude (o desenho e as travas).
+## [2026-10-11] Tipo de encaixe, classe e botão são três coisas separadas (P84, Claude)
+
+**Ordem do Comandante:** "como fica a diferença: armas para braços / ombros / costas (lança-mísseis nas costas ou ombros) / peitoral? Os slots padrão nos mechs é geralmente isso".
+
+**Decisões:**
+1. **Três eixos independentes, não uma lista de "slots".** **Onde no corpo** (tipo de encaixe: braço, ombro, costas, peito, cabeça), **que tamanho de arma cabe ali** (a classe do P82) e **qual botão atira** (`TriggerLayout`, do chassi). Misturar os três é o que fazia cada robô novo virar uma lista escrita à mão em `ARM_SLOTS`.
+2. **O contrato primeiro, o mundo depois.** Este PR escreve o que cada arma e cada ranhura **dizem de si** e um teste que confere as listas de hoje contra isso, **sem mudar o jogo**. Criar de verdade costas, peito e cabeça mexe na rede (o evento de tiro guarda o encaixe em 2 bits, os 4 estão usados) e no gatilho (só há dois botões): isso é **protocolo novo e decisão de controle**, não se faz de passagem.
+3. **Lança-mísseis nas costas ou nos ombros é o mesmo trabalho em dois lugares.** Proposta registrada: ombro e costas são o mesmo botão 2, e um robô tem um ou o outro (ou os dois atirando a mesma arma); peito e cabeça são "sistemas" (feixe, marcador, sensor) e pedem um terceiro gatilho. **Isto é do Comandante decidir.**
+4. **A classe máxima é do tipo, não do chassi:** braço, ombro e costas até pesada; peito até média; cabeça só leve. Na visão do chassi, então um gigante usa o mesmo encaixe para o que para um Mech seria pesado.
+5. **Reservar é registrar:** costas, peito e cabeça existem como tipo (a arma já pode dizer que cabe), mas ficam fora de `LIVE_KINDS` e um teste trava essa lista, para quem criar o primeiro encaixe novo ter de passar por aqui.
+
+## [2026-10-11] A onda sônica é ar distorcido, não luz colorida (P83, Claude)
+
+**Ordem do Comandante:** "o tiro dele, espero que seja um belo efeito de uma onda do som, invisível, mas que dá pra ver quebrando as moléculas do ar, como uma onda em anéis transparentes".
+
+**Decisões:**
+1. **Refração de verdade, não "uma cor de som".** Os arcos lilás da primeira versão (P77) eram luz colorida, o contrário de "invisível". O anel agora **lê a imagem atrás de si e a desloca** (franja de cor nas bordas, traço de brilho mínimo para aparecer até em chão liso): só o ar quebrado se vê. Custo: uma passada de cópia de tela (`FrameCopyPass`) **só enquanto há anel vivo**; desligada, zero.
+2. **O anel é um objeto da cena, não uma passada de tela cheia.** Assim ele **respeita a profundidade** (parede e robô na frente escondem o anel) e custa um draw call. Preço aceito: ele lê o **quadro anterior** (um quadro de atraso).
+3. **Qualidade baixa usa um brilho fraco, não a refração** (a mesma chave do bloom): a cópia de tela é o único custo novo e é o que a GPU integrada (G12) mais sentiria.
+4. **O "TESTAR" do Hangar desenha a onda de verdade.** Ele desenhava toda arma de energia como o mesmo projétil ciano; para uma arma de onda, solta os anéis em direção ao alvo (`HangarScene.fire`). Foi isto, mais o fato de só o Marauder ter ombros, que fez o Comandante não ver o canhão sônico.
+5. **Achado de vocabulário:** o canhão sônico "não aparecia" porque o encaixe de ombros é do Marauder e de mais ninguém; o cartão do chassi com ombros ganha o selo OMBROS. A solução de fundo (ombros, costas, peito e cabeça como **tipos de encaixe** de qualquer robô) é o P84.
+
 ## [2026-10-11] O arsenal ganha classes (leve, média, pesada) e cada robô, um tamanho (P82, Claude)
 
 **Ordem do Comandante:** "organizar melhor nosso arsenal; 3 tamanhos de arma (leve, média, pesada); robôs gigantes usam armas pesadas como leves (pra eles), mas é a arma pesada normal dos outros robôs (tamanho 2, padrão do jogo); futuramente, versões das armas para o tamanho 3 e 4".

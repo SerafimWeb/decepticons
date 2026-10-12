@@ -493,41 +493,36 @@ describe('o empurrão no corpo (MechBase.push): velocidade externa que decai e a
   });
 });
 
-describe('a onda desenhada (fx/WaveVisuals)', () => {
+describe('a onda desenhada, parte das partículas (fx/WaveVisuals): só as moléculas; a onda são os anéis (WaveRings.test.ts)', () => {
   const coleta = (w: WeaponStats) => {
     const out: Array<{ at: THREE.Vector3; o: BurstOptions }> = [];
     const n = drawWave({ burst: (at: THREE.Vector3, _n: THREE.Vector3, o: BurstOptions) => out.push({ at: at.clone(), o }) }, new THREE.Vector3(1, 4, 2), new THREE.Vector3(0, 0, -1), w);
     return { out, n };
   };
 
-  it('são arcos de onda e um anel na boca (nada de faísca nem faixa de luz): 3 camadas de 3 arcos e 1 anel = 10 partículas por boca', () => {
+  it('são pontinhos de ar (nada de arco colorido, anel de partícula nem faixa de luz): 6 moléculas por boca, todas saindo da boca', () => {
     const { out, n } = coleta(SONIC);
-    expect(n).toBe(10);
-    expect(out.map((x) => x.o.shape)).toEqual([SHAPE.wave, SHAPE.wave, SHAPE.wave, SHAPE.ring]);
-    expect(out.reduce((a, x) => a + x.o.count, 0)).toBe(10);
-    for (const x of out) expect(x.at.toArray()).toEqual([1, 4, 2]); // todas na boca
+    expect(n).toBe(6);
+    expect(out.map((x) => x.o.shape)).toEqual([SHAPE.dot]);
+    expect(out.reduce((a, x) => a + x.o.count, 0)).toBe(6);
+    for (const x of out) expect(x.at.toArray()).toEqual([1, 4, 2]);
   });
 
-  it('cada camada vai até uma fração do alcance (55%, 80% e 100% dos 22 m) e o alcance cresce com o nível', () => {
-    const alcance = (w: WeaponStats) => coleta(w).out.slice(0, 3).map((x) => x.o.speed * x.o.life);
-    const mk1 = alcance(SONIC);
-    expect(mk1[0]!).toBeCloseTo(22 * 0.55, 3);
-    expect(mk1[1]!).toBeCloseTo(22 * 0.8, 3);
-    expect(mk1[2]!).toBeCloseTo(22, 3);
-    expect(alcance(weapon('sonic', 2))[2]!).toBeCloseTo(33, 3);
+  it('as moléculas cobrem 95% do alcance da arma (22 m no nível I) e o alcance cresce com o nível', () => {
+    const alcance = (w: WeaponStats) => coleta(w).out.map((x) => x.o.speed * x.o.life)[0]!;
+    expect(alcance(SONIC)).toBeCloseTo(22 * 0.95, 3);
+    expect(alcance(weapon('sonic', 2))).toBeCloseTo(33 * 0.95, 3);
   });
 
-  it('o cone do desenho acompanha o da arma (mais largo nas camadas de fora) e é lilás: o azul manda e não há laranja nem verde', () => {
+  it('o cone das moléculas acompanha o da arma e a cor é fria e pálida: o azul manda, não há laranja nem verde e o bloom não acende', () => {
     const { out } = coleta(SONIC);
     const half = SONIC.wave!.halfAngle;
-    const spreads = out.slice(0, 3).map((x) => x.o.spread!);
-    expect(spreads[0]!).toBeLessThan(spreads[2]!);
-    for (const s of spreads) expect(s).toBeLessThanOrEqual(half * 1.3);
     for (const x of out) {
+      expect(x.o.spread!).toBeLessThanOrEqual(half * 1.2);
       const { r, g, b } = x.o.color;
-      expect(b, String(x.o.shape)).toBeGreaterThan(r);
-      expect(r).toBeGreaterThanOrEqual(g * 0.85);
-      expect(Math.max(r, g, b)).toBeLessThanOrEqual(2.3); // não ofusca
+      expect(b).toBeGreaterThan(g);
+      expect(g).toBeGreaterThan(r);
+      expect(Math.max(r, g, b)).toBeLessThanOrEqual(1.2);
     }
   });
 
@@ -536,5 +531,15 @@ describe('a onda desenhada (fx/WaveVisuals)', () => {
     const a = coleta(SONIC).out.map((x) => x.o);
     const b = coleta(SONIC).out.map((x) => x.o);
     for (let i = 0; i < a.length; i++) expect(b[i]).toBe(a[i]);
+  });
+
+  it('a partida avisa o desenho dos anéis a cada onda (o cliente liga o gancho; o servidor não tem)', async () => {
+    const calls: Array<{ origin: number[]; dir: number[]; id: string }> = [];
+    const m = (await import('../sim/Match')).Match.prototype;
+    const fake = { fx: { burst: () => undefined }, onWaveFx: (o: THREE.Vector3, d: THREE.Vector3, w: WeaponStats) => calls.push({ origin: o.toArray(), dir: d.toArray(), id: w.id }) };
+    m.drawWave.call(fake as never, new THREE.Vector3(1, 2, 3), new THREE.Vector3(0, 0, -1), SONIC);
+    expect(calls).toEqual([{ origin: [1, 2, 3], dir: [0, 0, -1], id: 'sonic' }]);
+    // Sem o gancho (servidor), desenha as partículas e segue.
+    expect(() => m.drawWave.call({ fx: { burst: () => undefined } } as never, new THREE.Vector3(), new THREE.Vector3(0, 0, -1), SONIC)).not.toThrow();
   });
 });
