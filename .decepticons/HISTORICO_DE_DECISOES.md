@@ -13,6 +13,16 @@
 
 **Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen.
 
+## [2026-10-12] "Ataque 1" e "Ataque 2" são os nomes dos dois gatilhos (P95, Claude)
+
+**Ordem do Comandante:** "os robôs têm ataque 1 e ataque 2; arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral nos maiores; nos pequenos, cada braço com um botão do mouse".
+
+**Decisões:**
+1. **O modelo já existia; o que faltava era o nome.** O `TriggerLayout` já põe a mão direita no clique e a esquerda no clique direito nos pequenos, e as mãos no clique e os ombros no clique direito no Marauder. Mudar a regra seria desfazer o que o Comandante pediu; o PR só **diz** assim (Hangar, HUD, menu, configurações, toque), com um teste que varre todos os chassis.
+2. **"Botão 1/2", "principal/secundário" e "foguetes" saem do que o jogador lê.** O HUD escrevia "FOGUETES" para qualquer arma de munição (o míssil teleguiado aparecia como foguete): agora o nome vem de uma tabela curta por arma e cai no nome da arma.
+3. **No toque, ATQ 1 e ATQ 2** (a mesma palavra, abreviada para caber no botão em arco).
+4. **O "configurável" é um segundo PR, porque pede mudar a regra de tiro.** Hoje o Ataque 2 leva uma arma só, a mesma em todos os encaixes dele; escolher que o braço esquerdo e os ombros disparem juntos no clique direito pede **armas diferentes no mesmo ataque**. Isso mexe na `Armament` (cadência, carregador e calor por arma) e é o terreno onde um erro quebra o tiro de todo mundo, então vai separado e com os testes de hoje como rede de segurança.
+
 ## [2026-10-12] Todo acerto empurra e dá um tranco, na medida do dano que passou (P69, Claude)
 
 **Ordem do Comandante (P69):** "reação nos inimigos" ao tiro.
