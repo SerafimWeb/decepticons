@@ -1,3 +1,14 @@
+## [2026-10-11] Tipo de encaixe, classe e botão são três coisas separadas (P84, Claude)
+
+**Ordem do Comandante:** "como fica a diferença: armas para braços / ombros / costas (lança-mísseis nas costas ou ombros) / peitoral? Os slots padrão nos mechs é geralmente isso".
+
+**Decisões:**
+1. **Três eixos independentes, não uma lista de "slots".** **Onde no corpo** (tipo de encaixe: braço, ombro, costas, peito, cabeça), **que tamanho de arma cabe ali** (a classe do P82) e **qual botão atira** (`TriggerLayout`, do chassi). Misturar os três é o que fazia cada robô novo virar uma lista escrita à mão em `ARM_SLOTS`.
+2. **O contrato primeiro, o mundo depois.** Este PR escreve o que cada arma e cada ranhura **dizem de si** e um teste que confere as listas de hoje contra isso, **sem mudar o jogo**. Criar de verdade costas, peito e cabeça mexe na rede (o evento de tiro guarda o encaixe em 2 bits, os 4 estão usados) e no gatilho (só há dois botões): isso é **protocolo novo e decisão de controle**, não se faz de passagem.
+3. **Lança-mísseis nas costas ou nos ombros é o mesmo trabalho em dois lugares.** Proposta registrada: ombro e costas são o mesmo botão 2, e um robô tem um ou o outro (ou os dois atirando a mesma arma); peito e cabeça são "sistemas" (feixe, marcador, sensor) e pedem um terceiro gatilho. **Isto é do Comandante decidir.**
+4. **A classe máxima é do tipo, não do chassi:** braço, ombro e costas até pesada; peito até média; cabeça só leve. Na visão do chassi, então um gigante usa o mesmo encaixe para o que para um Mech seria pesado.
+5. **Reservar é registrar:** costas, peito e cabeça existem como tipo (a arma já pode dizer que cabe), mas ficam fora de `LIVE_KINDS` e um teste trava essa lista, para quem criar o primeiro encaixe novo ter de passar por aqui.
+
 ## [2026-10-11] A onda sônica é ar distorcido, não luz colorida (P83, Claude)
 
 **Ordem do Comandante:** "o tiro dele, espero que seja um belo efeito de uma onda do som, invisível, mas que dá pra ver quebrando as moléculas do ar, como uma onda em anéis transparentes".

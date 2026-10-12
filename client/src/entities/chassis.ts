@@ -1,3 +1,4 @@
+import type { MountKind } from '../combat/mountKinds';
 import { SHOULDER_TRIGGERS } from '../combat/mounts';
 import { fitsSize, type RobotSize } from '../combat/weaponClass';
 import { weapon, type WeaponId } from '../combat/weapons';
@@ -371,6 +372,8 @@ export interface ArmSlots {
   left: readonly WeaponId[];
   shoulders?: readonly WeaponId[];
 }
+/** O tipo de encaixe de cada ranhura do Hangar (`combat/mountKinds.ts`): as duas mãos são braço, os dois lançadores são ombro. */
+export const SLOT_KIND: Readonly<Record<keyof ArmSlots, MountKind>> = { right: 'arm', left: 'arm', shoulders: 'shoulder' };
 /** Engate de energia compartilhado; massa/nível ainda limitam cada montagem. */
 const ENERGY_ARMS: readonly WeaponId[] = ['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo', 'autocannon'];
 const SUPPORT_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rockets', 'barrage'];
