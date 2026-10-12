@@ -120,6 +120,10 @@ do vídeo, em `FERRAMENTAS.md` § 1 (o `F9`) e § 3 (a mesa).
    assiste), mostrar como pronto o que a `STATUS_REAL.md` marca PARCIAL/AUSENTE (R13), e usar **música de terceiros
    sem licença**.
 
+**O episódio longo tem roteiro:** `.decepticons/video/o-processo-narrado.md` — o texto para **narrar** (oito blocos,
+~7 min), com os capítulos do YouTube e a regra que faz a voz envelhecer bem: **o áudio diz o arredondado** ("mais de
+mil testes") **e a tela diz o número exato** (que o `validar.mjs` confere na hora de exportar).
+
 ### 4.2 O pacote de publicação do vídeo #1 (para colar no YouTube)
 
 O vídeo existe (`.tmp/video/o-processo.webm`, 52 s) e o roteiro está em `FERRAMENTAS.md` § 3.2. O que fica **em volta** dele:

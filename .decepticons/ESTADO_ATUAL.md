@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O roteiro narrado do episódio longo — Qwen, 12/10 (P47, só documentação)
+
+**O que é:** o texto do **vídeo #1 do canal na versão longa** (6 a 10 min, o que o kit prometeu) — **`.decepticons/video/o-processo-narrado.md`**: **oito blocos** (~7 min) com a narração escrita, o que aparece em cada bloco (os modelos da mesa) e os **capítulos do YouTube**. O teaser de 52 s (`.decepticons/video/o-processo.js`) continua sendo outra peça.
+
+**A regra que faz a voz envelhecer bem (e a razão dela):** o `validar.mjs` confere os números **das cenas** contra o código — **áudio gravado não tem como ser revalidado**. Então a narração diz *"mais de mil testes"* e a cena mostra o número exato de hoje: se o número mudar, **a voz continua verdadeira**. É o R14 ("o número do jogo é que vale") aplicado ao que a voz pode afirmar.
+
+**As outras três regras:** nenhum byte/KB/s (material público, decisão de 27/09); nada do codinome interno; nada que o `STATUS_REAL.md` marque PARCIAL/DEMO/AUSENTE como pronto (R13) — e nenhuma data prometida.
+
+**O que ele já usa do que existe:** os blocos montam só com os modelos prontos da mesa (`boot`, `letreiro`, `esteira`, `ritmo`, `equipe`, `galeria`, `final`) e com as imagens de `arte/`. **Os blocos 2 e 7 ficam melhores com take do `F9`** (ordem P97, do Claude) — mas **saem sem ele**.
+
+**Nada gravado:** a narração é do **Comandante** (a decisão das vozes é dele, P75). Este documento é o papel.
+
 ## O contrato de tela da missão #1 (a metade que faltava ao Gemini) — Qwen, 12/10 (P99, só documentação)
 
 **Por que faltava:** a auditoria mostrou que o `MissionHUD` de hoje é do modo **Sobrevivência** — o contrato dele é **por onda** (`onWaveStart`, `onWaveProgress`, `onWaveClear`, `onMissionEnd`) — então a missão **não cabe nos nomes que existem**. Sem contrato, o **Gemini não tem contra o que desenhar** (regra 5: contrato antes de paralelizar).
