@@ -1,5 +1,22 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O #259 (`game-hq`) tem diagnóstico e brief — Qwen, 12/10 (é o único trabalho fora da `main`)
+
+**O que é:** o PR **#259** carrega o **painel admin do Gemini** — o backend em SQLite e API, o painel no Hangar com cadeados e a flag que esconde Mechs em desenvolvimento. Está **aberto e conflitando** (então o CI não roda: ver a memória do "PR conflitante"). A linha dele na tabela **EM BRANCH — NÃO ESTÁ NO AR** foi corrigida neste PR: ela dizia `HQ.md`, que **já está na `main`**, e "sem PR".
+
+**O diagnóstico (medido, não estimado):**
+- **327 commits atrás** da `main` (o branch é de 11/10);
+- **4 arquivos conflitam:** `.decepticons/ESTADO_ATUAL.md`, `entities/MechBase.ts` (**2 linhas**), `entities/chassis.ts` (**3 linhas**) e `ui/HangarMenu.ts` (**27 linhas**) — **os três de código são do território do Claude**;
+- **Entram limpos:** `server/Server.ts` (+56), `server/contas.ts` (+43), `net/auth.ts` (+39), `shared/net/auth.ts` (+3) e **`ui/AdminPanel.ts` (arquivo novo, 144 linhas)**.
+
+**O brief (a recomendação):** **não é rebase cego.** O backend que o branch traz é **o que o Claude está escrevendo agora** (a fase 2 da P54, `claude/servidor-admin` — os controles do servidor na interface, com token). O caminho honesto é **triagem**:
+
+1. **Guardar as duas ideias de jogo** que podem não estar no plano do Claude: a **flag de `status`** (esconder Mechs em desenvolvimento na oficina — ~5 linhas) e os **cadeados do Hangar** (~27 linhas). São o que o jogador veria;
+2. **Não trazer o backend duplicado:** o painel admin segue o plano da `PAINEL_ADMIN.md`/P54 (contratos primeiro, rotas com token no servidor), que é o que está em execução;
+3. **Fechar o #259 depois disso** — a regra 15 dá o prazo (branch parado é mergeado, fechado ou declarado morto), e a linha da tabela passa a dizer **o que foi aproveitado e o que ficou**.
+
+**Quem decide:** o **Comandante** (fechar, ou mandar o Claude rebasar) e o **Claude** (a triagem). **Eu não toquei no branch de outro agente:** o `git merge-tree` foi leitura, e o brief ficou aqui.
+
 ## O console parou de mentir sobre o Bunker: dois textos, um número errado — Qwen, 12/10 (o que o dono lê)
 
 **O que foi auditado:** os **textos que o Comandante lê no console** — os resumos das cinco missões no teatro (`ui/theater.ts`), a dica do seletor de mapa (`ui/MapLinks.ts`) e os rótulos de estado (`WorldMap.ts` traduz `em-breve` para **EM CONSTRUÇÃO**) —, contra a verdade do jogo, um por um.
@@ -709,7 +726,7 @@ Barreira frontal em módulo extra de 2 t, mantendo as duas armas; E remapeável/
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
 | `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
-| `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
+| `gemini/game-hq` | **O painel admin do Gemini** (11/10): o **backend** em SQLite e API (`server/Server.ts`, `server/contas.ts`, `net/auth.ts`, `shared/net/auth.ts`), o **painel no frontend** (`ui/AdminPanel.ts` — arquivo novo, 144 linhas, integrado ao Hangar com **cadeados** e modal) e a **flag de `status`** para esconder Mechs em desenvolvimento na oficina (`entities/chassis.ts`, `entities/MechBase.ts`, `ui/HangarMenu.ts`). *(A linha antiga aqui dizia "Estruturação oficial do Game HQ (`HQ.md`)" — o `HQ.md` **já está na `main`**; o que o branch carrega agora é o painel.)* **Diagnóstico (Qwen, 12/10): 327 commits atrás; 4 conflitos** (`.decepticons/ESTADO_ATUAL.md`, `entities/MechBase.ts`, `entities/chassis.ts`, `ui/HangarMenu.ts` — os três de código são do Claude) e o resto entra limpo. Brief no topo deste arquivo | **#259** (aberto, `CONFLICTING`) | 11/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |
 | — | **Nada fora da `main` (28/09).** O login e a gravação entraram (#115, #117); o #110 virou obsoleto (só um retalho do `ESTADO_ATUAL.md`) e foi fechado; e os três branches órfãos do Gemini de 25/09 — `primeira-partida`, `setas-inimigos`, `sons-androides`, sem PR e com o conteúdo refeito na `main` — foram declarados mortos e apagados (regra 15). | — | 28/09 |
 
