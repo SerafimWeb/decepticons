@@ -1,3 +1,17 @@
+## [2026-10-12] A ficha do chassi de tamanho 4: os números que faltavam, e a P11 revisada (P100/P11, Qwen)
+
+**Por quê:** o robô de tamanho 4 tem silhueta (o `.glb` da P100) e **não tem números** — altura, velocidade, carga e vida não existem em lugar nenhum. E a **P11** ("tamanhos 4 e 5, **10× e 20× maiores**") pediria **53 m e 106 m**, incompatíveis com a Arena de 200 m e com o Rapier.
+
+**Decisões:**
+1. **A ficha ancora nas referências reais, não em proporção inventada:** andróide **1,6 m** · Vector-09 **5,3 m / 9 m/s / 11 t** · Colossus **14 m / 5 m/s / 24 t** (lidos de `entities/chassis.ts`) — o passo de tamanho medido é **×2,6**, não "dobra".
+2. **A altura proposta é 22 m (passo suave) ou 36 m (o mesmo passo)**, e a **P11 fica para revisão**: 53 m ocuparia um quarto da Arena e daria cápsula de 26 m no Rapier; a 3ª pessoa e a garagem também foram feitas para até 14 m.
+3. **A carga de 40 t nasce da arma, não do gosto:** a **lança de cerco** pesa 20 t, então **duas = 40** e ainda sobra um módulo de 3 t; duas lanças **mais** o módulo não cabem. A escolha continua existindo no titã.
+4. **Sem dash e lento de propósito (3,5 m/s):** o dash de um titã seria um **teleporte de 22 m**; a fantasia dele é **chegar andando** e ocupar espaço.
+5. **As duas travas ficam escritas:** raio ≤ altura/2 (o `chassis.ts` já documenta) e o **pé-de-escada** tem de vencer as rampas do jogo — as duas viram teste.
+6. **A ficha corrige a irmã (R17):** a das armas dizia que o passo **dobra** o robô; o código diz **2,6×**. Corrigido — e o número certo **reforça** o teto de 1,3× no alcance: o robô cresce 2,6× e a Arena não cresce nada.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, dentro das ordens P100 e P11 (a altura, o papel e o nome ficam com o dono).
+
 ## [2026-10-12] As armas dos gigantes ganham projeto: o portão do robô de tamanho 4 (P82/P100, Qwen)
 
 **Por quê:** a **P100** trouxe o Colossus v4 (tamanho 4) e o portão apareceu — **nenhuma arma cabe num robô de tamanho 4** (todas são `size: 2`) —, e a **P82** tinha deixado as versões de tamanho 3 e 4 como "futuramente". O contrato de *como* criá-las já existia (`ARSENAL.md`); faltava o **projeto**: quais armas e com que números.
