@@ -1,9 +1,12 @@
 import { ChargeTimer } from './ChargeTimer';
 import type { MechBase } from '../entities/MechBase';
-import { DEFAULT_TRIGGERS, type MountId } from './mounts';
+import { type MountId } from './mounts';
 import { NO_SPREAD, spreadAt, type Spread } from './spread';
 import { FireTimer, FuelTank, RocketLauncher, SpinUp } from './trigger';
 import { weapon, type WeaponStats } from './weapons';
+
+/** As duas mãos de gatilho (índice 0 e 1 das armas por mão: `primary` e `offhand`). */
+const HAND_MOUNTS = ['rightHand', 'leftHand'] as const;
 
 /** Até onde a mira procura onde atirar (m): sem nada no caminho, as bocas convergem nesta distância. */
 export const AIM_RANGE = 400;
@@ -29,12 +32,14 @@ export interface ShotSink {
  * A regra de tiro do Mech (G14: uma só, no cliente e no servidor): cadência, carregador, calor e o que cada botão
  * aciona. Roda no tick fixo, sem 3D, sem DOM, sem relógio; nada é alocado por tick (G4).
  *
- * - **Botão principal:** a mão direita atira a `primary`. Nos chassis com duas mãos no gatilho (Marauder), a esquerda
+ * - **Ataque 1 (botão principal):** a mão direita atira a `primary`. Nos chassis com duas mãos no gatilho (Marauder), a esquerda
  *   atira a `offhand` junto, entrando **meio intervalo depois** quando as duas estão prontas no mesmo tick (o ritmo fica
  *   alternado e o calor não chega todo de uma vez). Cada mão depende do braço dela de pé.
- * - **Botão secundário:** foguetes gastam **um** tiro do carregador e saem de **todos** os encaixes do botão que
+ * - **Ataque 2 (botão secundário):** foguetes gastam **um** tiro do carregador e saem de **todos** os encaixes do botão que
  *   estiverem de pé (um na mão esquerda, ou um em cada ombro: a salva dobra o dano e o calor do aperto, não o carregador).
  *   Motosserra corta no ritmo dela; uma arma de energia no braço esquerdo (Arara, Onça) atira como o plasma.
+ * - **Layout dividido (Marauder, `SPLIT_SHOULDER_TRIGGERS`):** a mão esquerda passa para o **Ataque 2** com a `offhand` dela, e os ombros seguem no Ataque 2 com a `secondary`:
+ *   armas diferentes no mesmo botão, cada uma com o seu cronômetro, o seu giro de cano, o seu tanque e o seu calor. A mão direita fica sozinha no Ataque 1.
  * - **Calor:** cada tiro soma o calor da arma no dissipador do Mech; superaquecido, nenhum encaixe atira.
  */
 export class Armament {
@@ -43,6 +48,8 @@ export class Armament {
   /** Cadência de cada mão do gatilho principal. */
   private primaryLaunchers: RocketLauncher[];
   private readonly hands = [new FireTimer(), new FireTimer()];
+  /** A mão está com o botão dela apertado neste tick (o cano gira e a chama acende só então). */
+  private readonly held = [false, false];
   /** Cadência do gatilho secundário quando ele não é de carregador (serra, arma de energia). */
   private readonly side = new FireTimer();
   private readonly charge = [new ChargeTimer(), new ChargeTimer(), new ChargeTimer()];
@@ -97,7 +104,7 @@ export class Armament {
   fixedUpdate(dt: number, fire: boolean, secondary: boolean, sink: ShotSink): void {
     const m = this.mech;
     const l = m.loadout;
-    const triggers = m.stats.triggers ?? DEFAULT_TRIGGERS;
+    const triggers = m.triggers; // o layout que a montagem escolheu (`Loadout.layout`)
     // Escudo físico na mão esquerda: o botão 2 levanta a chapa em vez de atirar (não há arma secundária).
     m.guard(secondary && !l.secondary);
 
@@ -108,21 +115,33 @@ export class Armament {
     }
     right.fixedUpdate(dt);
     left.fixedUpdate(dt);
-    if (!fire) { this.charge[0]!.reset(); this.charge[1]!.reset(); }
     {
-      let fired = false;
-      for (let i = 0; i < triggers.primary.length; i++) {
+      // Cada mão segue o botão que o layout põe nela: no padrão, as duas mãos do Marauder no Ataque 1; no layout dividido, a esquerda no Ataque 2. A segunda mão do mesmo botão
+      // entra meio intervalo depois (`fired`); mãos em botões diferentes não se atrapalham.
+      let firedOn1 = false;
+      let firedOn2 = false;
+      this.held[0] = this.held[1] = false;
+      for (let i = 0; i < 2; i++) {
+        const mount = HAND_MOUNTS[i]!;
         const w = i === 0 ? l.primary : l.offhand;
-        const mount = triggers.primary[i]!;
+        // Só o chassi de duas mãos armadas (`offhand` declarado) tem a mão esquerda como mão de gatilho; nos outros ela é a arma do Ataque 2 (mais abaixo).
+        const button = triggers.primary.includes(mount) ? 1 : i === 1 && l.offhand !== undefined && triggers.secondary.includes(mount) ? 2 : 0;
         const timer = this.hands[i]!;
+        if (button === 0) {
+          this.spin[i]!.reset();
+          this.burning[i] = false;
+          continue;
+        }
+        const held = button === 1 ? fire : secondary;
+        this.held[i] = held;
         // O cano da rotatória gira enquanto o gatilho está apertado e a mão pode atirar; solto ou travado, vai parando.
         const spin = this.spin[i]!;
-        if (w?.spin) spin.step(dt, fire && m.canFireMount(mount), w.spin);
+        if (w?.spin) spin.step(dt, held && m.canFireMount(mount), w.spin);
         else spin.reset();
         // Lança-chamas: a chama acende enquanto o gatilho está apertado, a mão pode atirar e há combustível; um pulso a cada `fireInterval`.
         const tank = this.tanks[i];
         if (w?.flame && tank) {
-          const lit = tank.step(dt, fire && m.canFireMount(mount));
+          const lit = tank.step(dt, held && m.canFireMount(mount));
           this.burning[i] = lit;
           if (lit && timer.ready) {
             sink.flame(mount, w);
@@ -132,8 +151,8 @@ export class Armament {
           continue;
         }
         this.burning[i] = false;
-        if (!w || !this.charge[i]!.step(dt, fire, timer.ready && m.canFireMount(mount), w.chargeTime)) continue;
-        if (fired) {
+        if (!w || !this.charge[i]!.step(dt, held, timer.ready && m.canFireMount(mount), w.chargeTime)) continue;
+        if (button === 1 ? firedOn1 : firedOn2) {
           timer.shot(w.fireInterval / 2);
           continue;
         }
@@ -143,12 +162,13 @@ export class Armament {
         } else sink.projectile(mount, w, this.spreadFor(w, spin));
         m.onFireMount(mount, w);
         timer.shot(spin.interval(w));
-        fired = true;
+        if (button === 1) firedOn1 = true;
+        else firedOn2 = true;
       }
     }
 
     // Cano girando e chama acesa na rede (os outros jogadores desenham o fluxo por estas bandeiras, sem um evento por tiro).
-    m.status.spinning = fire && (this.spin[0]!.level > 0.3 || this.spin[1]!.level > 0.3);
+    m.status.spinning = (this.held[0]! && this.spin[0]!.level > 0.3) || (this.held[1]! && this.spin[1]!.level > 0.3);
     m.status.flaming = m.alive && (this.burning[0]! || this.burning[1]!);
     if (!m.alive) for (const t of this.tanks) t?.refill(); // renasce com o tanque cheio
 
@@ -167,6 +187,7 @@ export class Armament {
       if (!this.launcher.tryFire()) return;
       let volley = 0;
       for (const mount of triggers.secondary) {
+        if (mount === 'leftHand' && l.offhand !== undefined) continue; // a mão armada do Marauder já atirou no laço das mãos
         if (!m.canFireMount(mount)) continue;
         sink.rocket(mount, s, volley++);
         m.onFireMount(mount, s);
@@ -177,6 +198,7 @@ export class Armament {
         m.onFireSecondary();
       } else {
         for (const mount of triggers.secondary) {
+          if (mount === 'leftHand' && l.offhand !== undefined) continue;
           if (!m.canFireMount(mount)) continue;
           // A onda sônica sai das duas bocas dos ombros ao mesmo tempo (como os foguetes); a rotatória só vai no gatilho principal (ARM_SLOTS).
           if (s.wave) sink.wave(mount, s);

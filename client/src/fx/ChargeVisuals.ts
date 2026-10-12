@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLOW } from '../core/palette';
 import type { MechBase } from '../entities/MechBase';
-import type { MountId } from '../combat/mounts';
+import { weaponAt, type MountId } from '../combat/mounts';
 import type { BurstOptions, ParticleSystem } from './ParticleSystem';
 const UP = new THREE.Vector3(0, 1, 0);
 const FRIENDLY: BurstOptions = { count: 6, color: GLOW.playerMuzzle, speed: 2, life: 0.18, size: 0.65, spread: 1.2, gravity: 0 };
@@ -27,10 +27,9 @@ export class ChargeVisuals {
     if (!mech.alive || !mech.root.visible || !mech.weaponCharging || this.remaining <= 0) return;
     const l = mech.loadout;
     const t = mech.triggers;
-    for (let i = 0; i < t.primary.length; i++) {
-      if ((i === 0 ? l.primary : l.offhand)?.chargeTime) this.emit(mech, t.primary[i]!, hostile);
-    }
-    if (l.secondary?.chargeTime) for (const m of t.secondary) this.emit(mech, m, hostile);
+    // Cada encaixe carrega a arma que a montagem põe nele (a mão esquerda do Marauder pode estar em qualquer um dos dois ataques).
+    for (const m of t.primary) if (weaponAt(l, m)?.chargeTime) this.emit(mech, m, hostile);
+    for (const m of t.secondary) if (weaponAt(l, m)?.chargeTime) this.emit(mech, m, hostile);
   }
   private emit(mech: MechBase, mount: MountId, hostile: boolean): void {
     if (this.remaining <= 0) return;

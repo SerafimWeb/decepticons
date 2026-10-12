@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TRIGGERS, SHOULDER_TRIGGERS, type MountId, type TriggerLayout } from '../combat/mounts';
+import { DEFAULT_TRIGGERS, SHOULDER_TRIGGERS, SPLIT_SHOULDER_TRIGGERS, type MountId, type TriggerLayout } from '../combat/mounts';
 import { weapon, type WeaponStats } from '../combat/weapons';
 import type { MechBase } from '../entities/MechBase';
 import { ChargeVisuals } from './ChargeVisuals';
@@ -36,6 +36,17 @@ describe('o aviso da carga acende a boca de cada mão que carrega', () => {
     pulso();
     visuals.update(mech({ primary: weapon('railgun'), offhand: weapon('railgun'), triggers: SHOULDER_TRIGGERS }));
     expect(pontos.map((p) => p.x).sort()).toEqual([-1, 1]);
+  });
+
+  it('no layout dividido a mão esquerda carrega no Ataque 2 e acende a boca dela; o trilho dos ombros acende os dois ombros; a direita com plasma não acende', () => {
+    const a = palco();
+    a.pulso();
+    a.visuals.update(a.mech({ primary: weapon('plasma'), offhand: weapon('railgun'), secondary: null, triggers: SPLIT_SHOULDER_TRIGGERS }));
+    expect(a.pontos.map((p) => p.x)).toEqual([-1]);
+    const b = palco();
+    b.pulso();
+    b.visuals.update(b.mech({ primary: weapon('railgun'), offhand: weapon('blaster'), secondary: weapon('railgun'), triggers: SPLIT_SHOULDER_TRIGGERS }));
+    expect(b.pontos.map((p) => p.x).sort((x, y) => x - y)).toEqual([-1.5, 1, 1.5]); // direita (Ataque 1) e os dois ombros; a esquerda é blaster
   });
 
   it('trilho só na esquerda (a direita com plasma): acende só a esquerda; arma sem carga não acende nada', () => {

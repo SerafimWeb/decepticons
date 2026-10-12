@@ -16,6 +16,37 @@
 - **Falta (R13):** o servidor e o online seguem com as configurações (esquadrão por sala é a fase 3); a janela não prende o foco do Tab (o console por trás continua alcançável); a ficha não tem ainda a **arma secundária**, o **módulo** nem o **piloto de LLM** (P75).
 
 **Próxima sessão começa com:** a fase 2, o servidor na interface (`claude/servidor-admin`): rotas `/admin/*` por cima das contas com `is_admin` que o PR #259 do Gemini traz (decidir primeiro o destino do #259: ver "decisões em aberto"), o contrato `shared/net/admin.ts` e o monitor SERVIDOR (estado, histórico, log, REINICIAR, TESTAR, AVALIAR).
+## Auditoria da ficha do cenário: tudo confere, e uma palavra errada no console — Qwen, 12/10 (P99, só documentação)
+
+**O que foi feito:** a mesma disciplina da ficha da missão #1, agora na ficha do cenário — cada afirmação conferida **no código**, porque o Codex vai construir contra ela. **Tudo confere**, e cada uma ganhou endereço na ficha: `environment/Bunker.ts:7` (`MapId = 'arena' | 'bunker'`) e `:9` (`mapFromSearch`); `environment/Arena.ts:72` (**`halfSize = 100`** → os **200 m** da régua); `sim/nascimentos.ts:82` (os **11** pontos do Bunker: 12 menos o do jogador) e `:118` ("nenhum ponto serve a dois corpos" — o que o teste 1 exige do mapa novo).
+
+**O achado (R17, registrado e não corrigido):** o resumo do **Bunker** no teatro do console (`ui/theater.ts`) diz **"Três andares de concreto e aço"**, mas o mapa tem **quatro pisos** (0/14/28/42 m) — e o seletor do jogo já diz **"4 NÍVEIS"**. É uma palavra, e o território é do **Gemini** (`ui/`), que está sem créditos: fica anotada aqui e na ficha, candidata à lista da **P94**.
+
+## O layout dos ataques é configurável (o Marauder tem dois) — Claude, 12/10 (PR `claude/layout-de-ataques`, protocolo 17, ordem P95)
+
+**Ordem do Comandante (P95):** "arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral (**podendo ser configurado assim**)".
+
+- **O que o jogador vê:** no **Hangar → Marauder**, uma linha nova, **"COMO OS ATAQUES SE DIVIDEM"**, com dois botões lado a lado: **"BRAÇOS 1 · OMBROS 2"** (o de sempre) e **"DIREITO 1 · ESQ. + OMBROS 2"** (o nome inteiro aparece na dica do botão). Escolhendo o segundo, os encaixes passam a dizer **BRAÇO ESQUERDO · ATAQUE 2**, e jogando, o **clique direito dispara a mão esquerda e os dois ombros juntos**, cada um com a arma dele.
+- **Captura:** `arte/layout-de-ataques-hangar-claude.png` (o Marauder com o segundo layout escolhido: BRAÇO ESQUERDO · ATAQUE 2).
+- **Armas diferentes no mesmo ataque:** a `Armament` agora liga **cada mão ao botão que o layout põe nela** (antes supunha "a segunda mão é do botão principal"). Cada mão tem o seu cronômetro, o seu giro de cano, o seu tanque de combustível, a sua carga e o seu calor; mãos em botões diferentes **não esperam meio intervalo** uma pela outra (só as do mesmo botão se alternam, como sempre). **A mão esquerda pode levar qualquer arma de mão** (plasma, trilho, lança-chamas, rotatória...) no Ataque 2, ao lado dos ombros.
+- **O contrato:** `MechStats.layouts` (lista nomeada; o primeiro é o padrão), `Loadout.layout` (qual vale), `triggersOf(stats, layout)`, `SPLIT_SHOULDER_TRIGGERS`, `weaponAt(loadout, encaixe)` (a arma de cada encaixe: quem desenha a carga e a chama pergunta isto em vez de supor índices) e `shoulderMounts` (a carga conta os ombros, não a mão). **Os chassis com um só layout não mudam em nada.**
+- **Rede (protocolo 17):** a chave de texto v2 ganha um último grupo `L1` quando o layout não é o padrão (`v2.marauder.blaster-0.plasma-0.sonic-0.-.L1`); vai no link, no JOIN e no roster, e o servidor a valida (layout fora da lista ou num robô que só tem um: recusado). **O servidor religa sozinho pelo atualizador; quem estiver com a página antiga recarrega.**
+- **Custo de CPU:** nenhum a mais por tick (as mãos já eram um laço de duas; a escolha do botão é uma comparação); **sem alocação** (o salto da mão esquerda nos ombros é um `continue`, não um filtro).
+- **Testes:** `combat/layoutAtaques.test.ts` (20: os dois layouts, o Ataque 2 com mão e ombros no mesmo tick, cada arma no ritmo dela, os dois botões juntos, braço e torso destruídos, superaquecimento, lança-chamas, rotatória e trilho na mão esquerda), `hangar/layouts.test.ts` (11: validação, chave de texto, ataque por ranhura), 4 do servidor real (o Ataque 1 atira o encaixe 0; o Ataque 2, os encaixes 1, 2 e 3), os do fluxo e da carga no layout dividido. **28 mutações, todas pegas** (duas redundantes, um reset que o `ChargeTimer` já faz, foram removidas).
+- **Limites honestos:** só o **Marauder** tem mais de um layout (os robôs pequenos têm o deles fixo: direito no 1, esquerdo no 2); **costas e peito ainda não existem** como encaixes; no layout dividido o **HUD** só mostra o carregador dos ombros (a mão esquerda não tem carregador: as armas de mão do Marauder são todas de energia).
+
+## Auditoria da ficha da missão #1: duas afirmações erradas, corrigidas com endereço — Qwen, 12/10 (P99, só documentação)
+
+**O que aconteceu:** antes de o **Claude** (regra) e o **Gemini** (tela) construírem a missão contra a ficha, conferi **no código** cada afirmação que ela faz — contrato em cima de areia custa caro aos dois. **Duas estavam erradas** (R17: achou desalinhamento durante a tarefa, corrige se for barato e seguro).
+
+1. **"A P91 já aceita técnico aliado" — falso.** O papel `technician` existe, mas **só nos inimigos**: `sim/esquadrao.ts:99` (`PAPEIS_DO_LADO`) e a lista dos aliados é `tecnicos: []`. **Consequência:** pôr o técnico no nosso lado é **código, não configuração** — pequeno e localizado (uma linha em `PAPEIS_DO_LADO`, mais o limite e a fiação no `BotSystem`), mas é trabalho do **Claude** (`sim/` é o território dele). **Sem isso a missão não tem quem escoltar.**
+2. **"Escolher o alvo pelo lado" — impreciso.** O `TechnicianController` **já recebe a lista de quem ele conserta** (`new TechnicianController(mech, allies)`, `BotSystem.ts:257`) e é o `BotSystem` que aplica o conserto (`BotSystem.ts:522`). O que falta é **alimentar a lista com os aliados do jogador** — não uma regra de seleção nova.
+
+**O achado bom:** o quanto o técnico conserta é `REPAIR_RATE × power.clans.technician.damage` — ou seja, **o painel de Potências já ajusta o conserto do técnico**. É uma alavanca de balanceamento da missão que o Comandante já tem na mão.
+
+**O que foi conferido e está certo:** `FLEE_RADIUS` 16, `SAFE_RADIUS` 24, `ESCORT_RANGE` 9, reavaliação a cada 0,5 s, `wantsToFire = false`, `Match.sameSide` (`Match.ts:426`) e o `MissionHUD` ser **DEMO** — com o detalhe novo de que o contrato dele é **por onda** (`onWaveStart`…), então a missão precisa de **nomes próprios**.
+
+**Registrado na ficha:** a § 2 e a tabela da § 5 foram corrigidas **com o endereço de cada uma**, e a ficha ganhou um parágrafo "**conferido no código em 12/10**" — o contrato agora cita a própria verificação.
 
 ## A ficha do cenário com rota: ESTAÇÃO DE CABOS — Qwen, 12/10 (P99, só documentação)
 

@@ -1174,6 +1174,12 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
   border: 1px solid var(--hg-edge); background: rgba(2, 12, 18, 0.85); color: #eafcff;
 }
 .hg-hint { margin: 6px 0 0; font-size: 10px; color: var(--hg-dim); }
+/* Como o Ataque 1 e o Ataque 2 se dividem (só nos robôs com mais de um jeito: o Marauder; P95). */
+.hg-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 6px 0 2px; }
+.hg-layout[hidden] { display: none; }
+.hg-layout-title { grid-column: 1 / -1; font-size: 9px; letter-spacing: 0.16em; color: var(--hg-dim); }
+.hg-layout-btn { padding: 5px 6px; text-align: center; font-size: 9px; letter-spacing: 0.04em; cursor: pointer; border: 1px solid rgba(106, 232, 255, 0.22); background: rgba(3, 14, 21, 0.55); color: inherit; }
+.hg-layout-btn.selected { border-color: var(--hg-c); background: rgba(24, 104, 128, 0.45); box-shadow: 0 0 12px rgba(106, 232, 255, 0.22); }
 .hg-tiers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .hg-tier { display: grid; gap: 2px; padding: 8px 4px; cursor: pointer; border: 1px solid rgba(106, 232, 255, 0.22); background: rgba(3, 14, 21, 0.55); }
 .hg-tier b { font-size: 12px; letter-spacing: 0.12em; }

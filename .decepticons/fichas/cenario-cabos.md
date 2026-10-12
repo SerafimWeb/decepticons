@@ -84,6 +84,18 @@ capturas em `.decepticons/arte/`. **O julgamento visual é do dono** — eu não
 | O console já aponta | `ui/theater.ts`: **ESTAÇÃO DE CABOS**, Fortaleza · CE, recurso `dados`, `proposta: false`, **sem `mapa`** | `mapa: 'cabos'` e os modos da missão |
 | Rede | — | **nada**: cenário estático não gasta byte por tick |
 
+**Conferido no código em 12/10/2026 (auditoria desta ficha):** `environment/Bunker.ts:7` — `export type MapId =
+'arena' | 'bunker'` (é aqui que o `cabos` entra) — e `:9`, o `mapFromSearch`; `environment/Arena.ts:72` —
+**`halfSize = 100`**, ou seja a Arena tem **200 m de ponta a ponta**, que é a régua desta ficha;
+`sim/nascimentos.ts:82` — *"o Bunker tem **12 pontos** no total e o primeiro é do jogador: os outros **11** são de quem
+nasce com ele"* — com `:83`, onde a capacidade do mapa sai dessa conta, e `:118`, *"**nenhum ponto serve a dois
+corpos**"*, que é exatamente o que o teste 1 desta ficha exige do mapa novo. **Tudo confere.**
+
+**Uma inconsistência achada de passagem (R17 — registrada, não corrigida: `ui/` é do Gemini):** o resumo do **Bunker**
+no teatro do console diz **"Três andares de concreto e aço"**, mas o mapa tem **quatro pisos** (0/14/28/42 m —
+`medicoes/BUNKER.md`) e o próprio seletor do jogo diz **"4 NÍVEIS"**. É uma palavra em `ui/theater.ts`; fica anotada
+para quem tem o território — ou para a lista da **P94**, já que o Gemini está sem créditos.
+
 ## 7. Perguntas para o dono
 
 1. **É este o primeiro cenário com rota?** (proposta: sim — é o único lugar já confirmado no `UNIVERSO.md`, e o console já o mostra no teatro.)

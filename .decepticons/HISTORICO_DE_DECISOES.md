@@ -13,6 +13,41 @@
 8. **Achado do primeiro teste no navegador (R17):** o `aria-disabled="true"` faz o Playwright (e os leitores de tela) tratarem o botão como desligado, o que é o desejado; o clique de verdade num botão "apagado" é ignorado pelo código, não pelo navegador, e isso fica testado (clique forçado nas missões).
 
 **Custo de CPU:** zero no jogo (a janela só existe com a pausa à vista; cada ação refaz no máximo 32 linhas de DOM). **Quem decidiu:** Claude.
+## [2026-10-12] A auditoria da ficha do cenário: tudo confere, e uma palavra errada no console (P99, Qwen)
+
+**O que aconteceu:** a mesma disciplina da ficha da missão #1, agora na ficha do **cenário** — cada afirmação conferida **no código**, porque o Codex vai construir contra ela.
+
+**Decisões:**
+1. **Tudo confere, com endereço:** `environment/Bunker.ts:7` (`MapId = 'arena' | 'bunker'` — é onde o `cabos` entra) e `:9` (`mapFromSearch`); `environment/Arena.ts:72` (**`halfSize = 100`** → a Arena tem **200 m** de ponta a ponta, a régua da ficha); `sim/nascimentos.ts:82` (os **11** pontos do Bunker: 12 menos o do jogador) e `:118` (*"nenhum ponto serve a dois corpos"*). A ficha ganhou o parágrafo "conferido no código em 12/10".
+2. **Achado de passagem (R17 — registrado e não corrigido):** o resumo do Bunker no teatro do console (`ui/theater.ts`) diz **"Três andares de concreto e aço"**, mas o mapa tem **quatro pisos** (0/14/28/42 m, `medicoes/BUNKER.md`) — e o seletor do jogo já diz "4 NÍVEIS". **É uma palavra**, mas o território é do **Gemini** (`ui/`), que está sem créditos: fica anotado na ficha e no `ESTADO_ATUAL` para a lista da **P94**.
+3. **Por que vale registrar uma palavra:** o console é uma das telas que o dono abre (e que vai ao vídeo e ao site) — texto errado ali é mentira visível, e o lugar de dizer quem conserta é o registro, não o silêncio.
+
+**Custo de CPU:** nenhum. **Quem decidiu:** Qwen, dentro da ordem P99.
+
+## [2026-10-12] O layout dos ataques vira escolha do jogador, e a mão segue o botão dela (P95, Claude)
+
+**Ordem do Comandante:** "arma 2 a dos ombros/costas/peitoral, **podendo ser configurado assim**" nos robôs maiores.
+
+**Decisões:**
+1. **Um layout é um dado nomeado do chassi, e a montagem diz qual vale** (`MechStats.layouts` + `Loadout.layout`), em vez de uma flag por arma. Quem lê os gatilhos (a regra de tiro, a carga, a chama, o servidor, o Hangar) passa pelo mesmo `triggersOf`, então um robô novo com três layouts é só mais uma entrada na lista.
+2. **A mão segue o botão que o layout põe nela.** A `Armament` supunha "índice 0 é a mão direita e índice 1 é a offhand, as duas no gatilho principal". Agora cada mão consulta o layout: o botão dela decide se o cano gira, se a chama acende, se a carga avança e se o cronômetro anda. O que **não** mudou: o ritmo alternado de duas mãos **no mesmo** botão. **Os 149 testes de tiro que já existiam passaram sem alteração**, que é a rede de segurança que o plano pedia.
+3. **A arma de cada encaixe vem de uma pergunta** (`weaponAt`), não de um índice. A carga do trilho e o fluxo do lança-chamas desenhavam "primary no 0, offhand no 1"; com a mão esquerda no Ataque 2 isso mentiria. As duas visuais agora perguntam o que o encaixe leva.
+4. **O layout vive na versão 2 da montagem e na chave de texto** (último grupo `L1`), validado em todo lugar (formato, chassi com mais de um layout, índice inteiro e dentro da lista). **Protocolo 17**: um servidor da versão 16 não reconheceria a chave.
+5. **Dois resets redundantes saíram:** o `ChargeTimer.step` já zera a carga quando o botão está solto; o reset explícito era código morto (as mutações o provaram), e uma regra nova de botão por mão não é lugar para carregá-lo.
+6. **Fica de fora, de propósito:** costas e peito (precisam do evento de tiro com mais bits), e a pergunta "o Ataque 2 com ombro + costas + peito dispara tudo junto ou alterna?", que é do Comandante.
+
+## [2026-10-12] A auditoria da ficha da missão #1: duas afirmações erradas, corrigidas com endereço (P99, Qwen)
+
+**O que aconteceu:** antes de o **Claude** (regra) e o **Gemini** (tela) construírem contra a ficha da missão #1, conferi **no código** cada afirmação dela. Contrato em cima de areia custa caro aos dois — e duas afirmações estavam erradas.
+
+**Decisões:**
+1. **Erro 1, corrigido: "a P91 já aceita técnico aliado" é falso.** O papel `technician` existe **só nos inimigos** (`sim/esquadrao.ts:99` — `PAPEIS_DO_LADO`; a lista dos aliados é `tecnicos: []`). Pôr o técnico no lado do jogador é **código** (uma linha em `PAPEIS_DO_LADO`, mais limite e fiação no `BotSystem`), do **Claude** — não é configuração. **Sem isso a missão não tem quem escoltar.**
+2. **Erro 2, corrigido: "escolher o alvo pelo lado" era impreciso.** O `TechnicianController` **já recebe a lista de quem conserta** (`BotSystem.ts:257`) e o `BotSystem` aplica o conserto (`:522`); o que falta é **alimentá-la com os aliados do jogador** — o trabalho é menor do que a primeira versão da ficha dizia.
+3. **Achado bom:** o quanto o técnico conserta é `REPAIR_RATE × power.clans.technician.damage` — **o painel de Potências já ajusta o conserto do técnico**, uma alavanca de balanceamento que o Comandante já tem na mão.
+4. **A ficha ganhou "conferido no código em 12/10"**, com `arquivo:linha` para cada item conferido, e as duas correções ficaram escritas **com o motivo** — para ninguém reconstruir a versão errada.
+5. **O `MissionHUD` ficou mais preciso:** é **DEMO** (R13) e o contrato dele é **por onda** (`onWaveStart` / `onWaveProgress` / `onWaveClear` / `onMissionEnd`) — a missão precisa de **nomes próprios** (objetivo, fase, vida do técnico).
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, dentro da ordem P99 (R17).
 
 ## [2026-10-12] A ficha do cenário com rota: ESTAÇÃO DE CABOS, o maior mapa sem streaming (P99, Qwen)
 

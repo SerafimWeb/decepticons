@@ -1,4 +1,5 @@
 import type { MechPart } from '../entities/MechBase';
+import type { Loadout, WeaponStats } from './weapons';
 
 /**
  * Encaixes de arma do corpo: os lugares de onde uma arma atira. Dado puro, sem 3D (G14: o servidor lê o mesmo).
@@ -38,6 +39,34 @@ export const DEFAULT_TRIGGERS: TriggerLayout = { primary: ['rightHand'], seconda
  * secundário (um lançador em cada ombro, saem juntos e gastam um tiro do carregador).
  */
 export const SHOULDER_TRIGGERS: TriggerLayout = { primary: ['rightHand', 'leftHand'], secondary: ['rightShoulder', 'leftShoulder'] };
+
+/**
+ * O Marauder no layout **dividido** (dono, 12/10, P95: "o ataque 2 podendo ser configurado"): só a mão direita fica no Ataque 1; a **mão esquerda vai para o Ataque 2**, junto dos
+ * dois ombros. A mão esquerda segue com a `offhand` dela e os ombros com a `secondary`: **armas diferentes no mesmo ataque**, cada uma no seu ritmo, carregador e calor.
+ */
+export const SPLIT_SHOULDER_TRIGGERS: TriggerLayout = { primary: ['rightHand'], secondary: ['leftHand', 'rightShoulder', 'leftShoulder'] };
+
+/** Um layout de gatilhos com nome, para o Hangar oferecer a escolha (o primeiro de cada chassi é o padrão). */
+export interface NamedLayout {
+  /** O nome inteiro (a dica do botão e os textos). */
+  readonly name: string;
+  /** O rótulo curto do botão do Hangar (cabe em meia linha). */
+  readonly short: string;
+  readonly triggers: TriggerLayout;
+}
+
+/** Os encaixes de ombro de um layout (os dois lançadores contam para a carga e atiram juntos). */
+export const shoulderMounts = (t: TriggerLayout): readonly MountId[] => [...t.primary, ...t.secondary].filter((m) => m === 'rightShoulder' || m === 'leftShoulder');
+
+/**
+ * A arma que este encaixe leva na montagem: a mão direita, a `primary`; a esquerda, a `offhand` nos chassis de duas mãos armadas (Marauder) e a `secondary` nos outros; os ombros, a `secondary`.
+ * Quem desenha o tiro (carga, chama) e quem atira perguntam isto, em vez de supor "índice 0 é a primary, índice 1 é a offhand".
+ */
+export function weaponAt(l: Loadout, mount: MountId): WeaponStats | null {
+  if (mount === 'rightHand') return l.primary;
+  if (mount === 'leftHand') return l.offhand !== undefined ? l.offhand : l.secondary;
+  return l.secondary;
+}
 
 /** Os dois ataques do jogador: o **1** (o clique) e o **2** (o clique direito, ou Q). */
 export type Attack = 1 | 2;
