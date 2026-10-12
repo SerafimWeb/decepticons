@@ -742,9 +742,9 @@ describe('Armas de aço online: o tiro de cada uma vira evento de tiro e o dano 
     room.dispose();
   });
 
-  it('o catálogo de tiros da rede só se acrescenta no fim (canhão, automático e sônico seguem a ordem) e o protocolo é o 12 ou mais', () => {
+  it('o catálogo de tiros da rede só se acrescenta no fim (canhão, automático, sônico e teleguiado seguem a ordem) e o protocolo é o 12 ou mais', () => {
     expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(12);
-    expect(NET_WEAPONS.slice(-3)).toEqual(['cannon', 'autocannon', 'sonic']);
+    expect(NET_WEAPONS.slice(-4)).toEqual(['cannon', 'autocannon', 'sonic', 'seeker']);
     expect(NET_WEAPONS.slice(0, 10)).toEqual(['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage', 'railgun', 'emp', 'arc', 'cryo']);
   });
 });
@@ -847,6 +847,50 @@ describe('Canhão sônico online: uma onda de cada ombro, com o encaixe no event
     room.receive(vector, join('Bia', 'v1.vector09.plasma-0.sonic-0'));
     expect(vector.of(MSG.WELCOME)).toHaveLength(0);
     expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(15);
+    room.dispose();
+  });
+});
+
+describe('Míssil teleguiado online: um míssil de cada ombro, que curva até o alvo fora da linha do tiro', () => {
+  const TELE = 'v1.marauder.blaster-0.blaster-0.seeker-0';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('o botão 2 solta dois mísseis (evento de tiro do teleguiado, encaixes 2 e 3) e o alvo a 30 m, 20° fora da mira mas dentro do cone de trava, leva dano: o míssil curvou', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco(TELE, 30);
+    expect(mine.mech.loadout.secondary?.id).toBe('seeker');
+    const antes = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw: yaw + 0.35, pitch });
+    drive(room, dan, 2, 150, { yaw: yaw + 0.35, pitch });
+    const tiros = shotMountsOf(dan, me);
+    expect(tiros.map((t) => t.index)).toEqual([netWeaponIndex('seeker'), netWeaponIndex('seeker')]);
+    expect(tiros.map((t) => t.mount).sort()).toEqual([2, 3]);
+    expect(antes - lifeOf(bot.mech)).toBeGreaterThan(40); // pelo menos um míssil inteiro (55 no centro, menos a queda da explosão)
+    room.dispose();
+  });
+
+  it('o mesmo cenário com foguetes comuns erra: o tiro reto passa a ~11 m do alvo (mais que a explosão de 6 m)', async () => {
+    const { room, dan, bot, yaw, pitch } = await palco('v1.marauder.blaster-0.blaster-0.rockets-0', 30);
+    const antes = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw: yaw + 0.35, pitch });
+    drive(room, dan, 2, 150, { yaw: yaw + 0.35, pitch });
+    expect(lifeOf(bot.mech)).toBe(antes);
+    room.dispose();
+  });
+
+  it('o servidor recusa o míssil teleguiado nas mãos e fora do Marauder (a montagem é validada) e o protocolo é o 16 ou mais', async () => {
+    const room = await ArenaRoom.create('TELEGUIADO');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', TELE));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const naMao = new FakePeer();
+    room.receive(naMao, join('Ana', 'v1.marauder.seeker-0.blaster-0.rockets-0'));
+    expect(naMao.of(MSG.WELCOME)).toHaveLength(0);
+    const vector = new FakePeer();
+    room.receive(vector, join('Bia', 'v1.vector09.plasma-0.seeker-0'));
+    expect(vector.of(MSG.WELCOME)).toHaveLength(0);
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(16); // o cliente do 15 não conhece a arma nova
     room.dispose();
   });
 });

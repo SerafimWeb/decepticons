@@ -312,6 +312,7 @@ export class Match {
           })
         : null;
     this.rockets.onExplode = explode;
+    this.rockets.acquire = (origin, dir, owner, w) => this.seekTarget(origin, dir, owner, w);
     this.barrage.onExplode = explode;
     this.combat.onMechHit = (e) => {
       if (this.players.includes(e.mech)) this.allies?.defend(e.mech, e.shooter);
@@ -452,8 +453,36 @@ export class Match {
     this.onWave?.(origin, dir, attacker.collider, w);
     this.drawWave(origin, dir, w);
     if (!this.combat.damageEnabled) return;
-    const sides = this.players.includes(attacker) ? this.ringOfPlayers : this.allies?.mechs.includes(attacker) ? this.ringOfAllies : this.ringOfRebels;
-    for (const group of sides.foes) for (const m of group) this.waveAt(attacker, origin, dir, w, m);
+    for (const group of this.foesOf(attacker)) for (const m of group) this.waveAt(attacker, origin, dir, w, m);
+  }
+
+  /** Os grupos de inimigos de quem atira (jogadores, rebeldes ou aliados enxergam lados diferentes). */
+  private foesOf(attacker: MechBase): readonly (readonly MechBase[])[] {
+    return (this.players.includes(attacker) ? this.ringOfPlayers : this.allies?.mechs.includes(attacker) ? this.ringOfAllies : this.ringOfRebels).foes;
+  }
+
+  /**
+   * A trava do míssil teleguiado (`RocketSystem.acquire`): o inimigo vivo **mais centrado no cone** da arma (`Guide`: meio ângulo e alcance da trava), à vista, na hora do
+   * disparo. Quem atira nunca trava em si nem em aliado. Sem alvo, o míssil voa reto. Mesma conta do cone do lança-chamas e da onda (`coneGap`, que também testa a parede).
+   * Deterministico: a ordem das listas decide o empate (o primeiro vence). Roda também no cliente online, só para o desenho.
+   */
+  private seekTarget(origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): MechBase | null {
+    const g = w.guide;
+    const attacker = owner ? this.combat.mechOf(owner) : undefined;
+    if (!g || !attacker) return null;
+    let best: MechBase | null = null;
+    let bestCos = -2;
+    for (const group of this.foesOf(attacker)) {
+      for (const m of group) {
+        if (this.coneGap(attacker, origin, dir, w, g.lockHalfAngle, m, true, g.lockRange) < 0) continue;
+        const cos = _flameTo.dot(dir);
+        if (cos > bestCos) {
+          bestCos = cos;
+          best = m;
+        }
+      }
+    }
+    return best;
   }
 
   /** Só o desenho da onda (o outro jogador a vê pelo evento de tiro, sem regra). */
@@ -475,7 +504,7 @@ export class Match {
    * da boca ao alvo em `_flameTo`. O lança-chamas e a onda sônica usam a mesma conta; `axis` escolhe o ponto do alvo: o **torso** (o lança-chamas) ou o **ponto do eixo
    * vertical do corpo mais perto da altura da boca** (a onda: uma pressão que bate no corpo inteiro; sem isto o torso de um robô alto, como o Colossus, ficava fora do cone vertical).
    */
-  private coneGap(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, halfAngle: number, target: MechBase, axis = false): number {
+  private coneGap(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, halfAngle: number, target: MechBase, axis = false, range = w.maxRange): number {
     if (target === attacker || !target.alive) return -1;
     if (axis) {
       const p = target.simPosition;
@@ -484,7 +513,7 @@ export class Match {
     _flameTo.subVectors(_flameAt, origin);
     const dist = _flameTo.length();
     const r = target.stats.radius;
-    if (dist < 1e-3 || dist > w.maxRange + r) return -1;
+    if (dist < 1e-3 || dist > range + r) return -1;
     // O cone com a folga do corpo: um alvo largo e perto entra mesmo com o centro um pouco fora do eixo.
     if (_flameTo.dot(dir) / dist < Math.cos(halfAngle + Math.atan2(r, dist))) return -1;
     _flameTo.multiplyScalar(1 / dist);

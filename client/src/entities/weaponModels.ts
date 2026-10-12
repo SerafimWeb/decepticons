@@ -335,11 +335,11 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'sonic' ? PALETTE.pink : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
+  const accent = weapon?.id === 'sonic' ? PALETTE.pink : weapon?.id === 'seeker' ? PALETTE.cyan : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
     // Lançador de ombro: o casulo de foguetes e o morteiro da chuva têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
-    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
+    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic' && weapon?.id !== 'seeker') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
     const muzzleZ = weapon.id === 'sonic' ? sonic(root, weapon.tier, M) : weapon.id === 'barrage' ? mortarPod(root, weapon.tier, M) : pod(root, weapon.tier, M);
     batchRigMeshes(root, []);
     return { object: root, muzzle: new THREE.Vector3(0, 0, -muzzleZ) };
@@ -355,6 +355,7 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         muzzleZ = plasma(root, weapon.tier, M);
         break;
       case 'rockets':
+      case 'seeker':
         muzzleZ = rockets(root, weapon.tier, M);
         break;
       case 'blaster':

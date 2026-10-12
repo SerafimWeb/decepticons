@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker';
 
 /**
  * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
@@ -129,6 +129,8 @@ export interface WeaponStats {
   flame?: Flame;
   /** Só nas armas sônicas: a onda (cone de uma vez só, com empurrão). */
   wave?: Wave;
+  /** Só no míssil teleguiado: a trava de alvo e a curva (`Guide`). */
+  guide?: Guide;
   /**
    * Quanto o **alcance** cresce a cada nível, em fração do MK I (0,3 = +30% no MK II e +60% no MK III; vale para o alcance ótimo e o máximo). Sem este
    * campo o alcance é da arma, não do nível. Quem declara: o lança-chamas (dono, 11/10: "tem que poder ser upado no MK II e ir mais longe").
@@ -146,6 +148,21 @@ export interface WeaponStats {
  * pulso do lança-chamas, mas de um tiro só) e **empurra** quem pega (`MechBase.push`). O dano cai com a distância como o de um tiro direto (`optimalRange` a `maxRange`);
  * o empurrão cai junto. Sem projétil: não há o que desviar nem parar no meio, só a parede (cone sem linha de visão não acerta).
  */
+/**
+ * Míssil teleguiado (dono, 11/10: "VARIAR as armas e tecnologias" nos ombros): um foguete que **trava no inimigo mais centrado à frente** na hora do disparo
+ * (cone de `lockHalfAngle`, até `lockRange`, à vista) e **curva em direção a ele** a cada tick, no máximo `turnRate` rad/s: quem se mexe e se abriga ainda desvia, mas
+ * quem corre em linha reta é perseguido. Sem alvo à frente, voa reto como um foguete. Tem `kind: 'ammo'`, então passa pelo mesmo `RocketSystem` (explosão em área,
+ * carregador e recarga). Só a simulação (posição e altura do alvo), sem rig: roda igual no servidor.
+ */
+export interface Guide {
+  /** O quanto o míssil pode virar por segundo (rad/s): o raio de curva é a velocidade dividida por isto. */
+  turnRate: number;
+  /** Até onde a trava enxerga um alvo (m), contado da boca. */
+  lockRange: number;
+  /** Meio ângulo do cone da trava (rad). */
+  lockHalfAngle: number;
+}
+
 export interface Wave {
   /** Meio ângulo do cone (rad). */
   halfAngle: number;
@@ -215,6 +232,19 @@ const BASE: Record<WeaponId, WeaponBase> = {
     optimalRange: 10, maxRange: 22, minFactor: 0.35,
     blastRadius: 0, mass: 3,
     wave: { halfAngle: 0.45, shove: 8 }, tierRange: 0.25,
+  },
+  /**
+   * Míssil teleguiado (dono, 11/10): o segundo tipo de arma de ombro que **não é só mais foguete**. 55 de dano e explosão de 4,5 m (menor que a dos foguetes: ele erra menos), 2 no
+   * carregador, recarga de 3,2 s; voa a 48 m/s (devagar o bastante para quem corre perceber e desviar) até 140 m. Trava no inimigo mais centrado à frente (cone de 29° até 90 m, à
+   * vista) e curva até 2,2 rad/s: o raio de curva é de ~22 m, então um dash ou uma quina de parede ainda o enganam. Os dois ombros do Marauder soltam um cada.
+   */
+  seeker: {
+    id: 'seeker', name: 'Míssil teleguiado', kind: 'ammo',
+    damage: 55, fireInterval: 0.5, heatPerShot: 0.2,
+    magazine: 2, reload: 3.2, speed: 48,
+    optimalRange: 140, maxRange: 140, minFactor: 1,
+    blastRadius: 4.5, mass: 4,
+    guide: { turnRate: 2.2, lockRange: 90, lockHalfAngle: 0.5 },
   },
   /**
    * Canhão pesado (dono, 11/10: "quero um canhão grande, um tiro só"). **Um projétil de aço, grande e lento, que bate como um caminhão**: 90 de
@@ -447,6 +477,7 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   cannon: 'balistico',
   autocannon: 'balistico',
   sonic: 'sonico',
+  seeker: 'explosivo',
   chainsaw: 'corte',
 };
 

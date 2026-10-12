@@ -10,7 +10,7 @@
 |---|---|---|---|
 | Mão direita (botão 1) | todos | arma de energia/aço/fogo | `ARM_SLOTS.right` |
 | Mão esquerda (botão 2) | todos menos o Lancer | arma de energia ou foguete/chuva | `ARM_SLOTS.left`; no Marauder vira a 2ª mão do botão 1 |
-| **Ombros** (botão 2) | **só o Marauder** | foguetes, chuva de mísseis e agora o **canhão sônico** | `ARM_SLOTS.marauder.shoulders`; as duas bocas disparam juntas |
+| **Ombros** (botão 2) | **só o Marauder** | foguetes, chuva de mísseis, o **canhão sônico** e o **míssil teleguiado** | `ARM_SLOTS.marauder.shoulders`; as duas bocas disparam juntas |
 | Costas | ninguém (a chuva de mísseis é *desenhada* nas costas, mas atira da mão) | — | `buildBackMortar` é só desenho |
 | Peito / cabeça | ninguém | — | não existe encaixe |
 
@@ -43,7 +43,7 @@ Legenda de custo: **P** = pequeno (só dado + regra + desenho, como o sônico), 
 | # | Arma / tecnologia | Onde | O que faz | Pede | Custo | Combina com |
 |---|---|---|---|---|---|---|
 | 1 | **Canhão sônico** | ombros | cone que empurra | — | ✅ feito | tirar do abrigo; empurrar para dentro do anel de fogo |
-| 2 | **Míssil teleguiado** | ombros | sobe e persegue o ponto da mira por ~1,5 s | *homing* no `RocketSystem` (determinístico) | M | mira de equipe; combinar com o sônico (empurra, o míssil acerta) |
+| 2 | **Míssil teleguiado** | ombros | ✅ **feito (12/10, protocolo 16):** trava no inimigo mais centrado à frente (29°, até 90 m, à vista) e curva até ele a 2,2 rad/s; sem alvo, voa reto | `RocketSystem.steer` + `Match.seekTarget` (determinístico, sem rig) | M | combinar com o sônico (empurra, o míssil acerta) |
 | 3 | **Emissor ultrassônico** | ombros | zona de som que dura 4 s no chão e **desacelera** quem está dentro | zona dinâmica na partida (o `ZoneSystem` já existe com 2 tipos fixos) e um estado de lentidão (**os 8 bits do byte `fx` estão cheios**: pede protocolo) | G | tankar no meio do grupo; segurar quem foge do anel |
 | 4 | **Drone de ombro** | ombros | solta um drone que ataca sozinho por 10 s | reaproveitar o `DroneSystem` (hoje só dos aliados da Serafim) | M | segurar flanco |
 | 5 | **Lançador de minas** | costas | deixa minas no chão, detonam por proximidade | encaixe novo `back`, mina como entidade fixa na partida | G | cobrir a retirada; o aliado congelado como isca |

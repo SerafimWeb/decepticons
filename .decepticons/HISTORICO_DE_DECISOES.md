@@ -1,3 +1,14 @@
+## [2026-10-12] O míssil teleguiado trava no mais centrado e curva, não persegue para sempre (P77, Claude)
+
+**Ordem do Comandante (P77):** "variar as armas e tecnologias nos ombros".
+
+**Decisões:**
+1. **Guiar é uma regra de simulação, não um efeito.** O míssil curva no tick fixo (`RocketSystem.steer`), só com a posição de simulação e a altura do alvo: o servidor o simula igual ao jogo, sem rig nem 3D (G1/G2/G14).
+2. **A curva é limitada, de propósito.** 2,2 rad/s a 48 m/s dá um raio de ~22 m: quem corre reto é perseguido, mas o dash e uma quina de parede ainda o enganam. Um míssil que nunca erra transformaria o ombro numa arma de "apertar e esquecer".
+3. **A trava é no disparo, pelo mais centrado.** Reaproveita a conta do cone com parede do lança-chamas e da onda (`coneGap`, com o alcance da trava), e escolhe o inimigo **mais perto do eixo** (não o mais perto da boca), que é o que o jogador está mirando. Sem alvo, voa reto como um foguete.
+4. **O calor é o limitador de projeto do Marauder, e o míssil segue o dos foguetes.** 0,2 por lançador (os foguetes têm 0,18) com carregador de 2: plasma + dois teleguiados derrubam um torso em **2,67 s** (foguetes: 2,55 s; a meta é mais de 2,5 s). Tentei baixar para 0,12 para o quinto míssil sair dos dois ombros e o portão de equilíbrio caiu para 0,87 s: **o calor alto é o que mantém o ombro honesto**, então ficou 0,2.
+5. **Rede:** protocolo 16. O desenho do míssil de outro jogador voa reto no cliente (os inimigos remotos não estão na lista da partida local); a explosão, que importa, vem do servidor. Trazer os remotos para a lista de trava é a mesma mudança dos times online (P81).
+
 ## [2026-10-11] Tipo de encaixe, classe e botão são três coisas separadas (P84, Claude)
 
 **Ordem do Comandante:** "como fica a diferença: armas para braços / ombros / costas (lança-mísseis nas costas ou ombros) / peitoral? Os slots padrão nos mechs é geralmente isso".

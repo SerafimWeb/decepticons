@@ -63,6 +63,7 @@ export const WEAPON_MOUNTS: Readonly<Record<WeaponId, readonly MountKind[]>> = {
   rockets: ['arm', 'shoulder', 'back'],
   barrage: ['arm', 'shoulder', 'back'],
   sonic: ['shoulder'],
+  seeker: ['shoulder', 'back'],
 };
 
 /** A arma cabe num encaixe deste tipo? */

@@ -86,6 +86,7 @@ export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
   // Foguetes, chuva de mísseis, serra, lança-chamas e a onda sônica não batem por aqui: têm a explosão, o contato ou o cone deles.
   sonic: [],
   rockets: [],
+  seeker: [],
   barrage: [],
   chainsaw: [],
   flamer: [],

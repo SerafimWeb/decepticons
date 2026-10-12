@@ -442,8 +442,9 @@ export class OnlineSession implements Pilot {
       // A onda sônica de outro jogador: só o desenho (o cone, o dano e o empurrão são do servidor). Cada ombro manda o seu evento.
       this.o.match.drawWave(_o, _d, weapon('sonic'));
       r.mech.onFireSecondary();
-    } else if (id === 'rockets') {
-      this.o.match.rockets.fire(_o, _d, r.mech.collider, weapon('rockets'));
+    } else if (id === 'rockets' || id === 'seeker') {
+      // O teleguiado de outro jogador voa reto no desenho (os inimigos remotos não estão na lista da partida local); a explosão de verdade vem do servidor.
+      this.o.match.rockets.fire(_o, _d, r.mech.collider, weapon(id));
       r.mech.onFireSecondary();
     } else {
       this.o.match.projectiles.fire(_o, _d, r.mech.collider, true, weapon(id));
