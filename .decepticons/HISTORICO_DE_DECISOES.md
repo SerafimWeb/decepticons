@@ -1,3 +1,16 @@
+## [2026-10-12] A ficha da missão #1 — escoltar o técnico, com 13 testes especificados (P99, Qwen)
+
+**Ordem do Comandante (P99):** *"fases com cenários maiores, missões de proteção de escoltas, ataque, defesa de base, contraataques… e com mais robôs por partida"*.
+
+**Decisões:**
+1. **A ficha vem antes da regra** (regra 5 do `AGENTS.md` + G14 — o `it()` nasce no PR que cria a regra): o que ela entrega é a **especificação de cada teste** (13) para o Claude implementar regra e teste no mesmo PR, e para o Gemini ligar briefing e HUD contra os mesmos nomes de objetivo. Documento novo: **`fichas/escolta.md`** (proposta).
+2. **A primeira missão é barata porque o jogo já tem o essencial:** o técnico **ENTRÓPICO** existe (`TechnicianController`, 5 testes), **já é alvo prioritário** da IA (`GAME_DESIGN.md` § 3) e a **P91** já aceita técnico aliado. Logo: **zero arte nova, zero rede nova, zero CPU por tick a mais** — a tensão da escolta já está no jogo, e a ficha só a organiza em três fases (uma avaria → duas → extração).
+3. **Offline primeiro**, como o CTF e a Sobrevivência: o **`OBJECTIVE_STATE`** (o evento de rede que o `ROADMAP` pede) fica para o PR do online. Dizer isso evita que a ficha cobre rede de um corte que não tem rede.
+4. **A ficha é honesta sobre o que é DEMO:** o `MissionHUD` está marcado **DEMO** (R13) — testado isolado, com dado de exemplo. É esta missão que o tira da demonstração, e é o trabalho do Gemini.
+5. **Sete perguntas ficam com o dono**, e a primeira é de ficção (quem é "nosso" técnico, se o ENTRÓPICO é rebelde hoje); as outras decidem respawn, número de fases, a extração, e a ordem desta missão frente ao CTF online (P81).
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, dentro da ordem P99.
+
 ## [2026-10-12] O pacote de publicação do vídeo #1, e o que a mesa deixa o dono mexer (P47, Qwen)
 
 **Ordem do Comandante (P47):** *"com a MESA, eu consigo editar, melhorar e corrigir alguns detalhes nessa criação de vídeos"*.

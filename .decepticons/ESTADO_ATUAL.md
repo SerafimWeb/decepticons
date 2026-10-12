@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A ficha da missão #1: escoltar e defender o técnico — Qwen, 12/10 (P99, só documentação)
+
+**Por quê:** a ordem **P99** (12/10) pediu as missões e nomeou os quatro tipos; a regra 5 do `AGENTS.md` (**contrato antes de paralelizar**) diz que a ficha vem antes de o Claude escrever a regra e o Gemini a tela. A ficha da primeira missão está em **`.decepticons/fichas/escolta.md`** (proposta).
+
+**A escolha que faz a missão ser barata:** o **técnico ENTRÓPICO já existe** (`combat/TechnicianController.ts`, 5 testes), **já é "alvo prioritário"** da IA (`GAME_DESIGN.md` § 3) e a **P91 já aceita técnico do nosso lado**. Ou seja: a tensão da escolta — *proteger quem conserta, e quem os inimigos preferem atacar* — **já está no jogo**. A ficha não pede **arte nova, nem rede nova, nem CPU por tick a mais**; e é **offline primeiro**, como o CTF e a Sobrevivência.
+
+**O que a ficha entrega:** três fases (uma avaria → duas → **extração**), as regras de vitória e derrota (**o técnico cai = derrota**; o jogador cai = a missão continua), o custo (**zero byte de rede, zero CPU por tick a mais**), **13 testes especificados** linha por linha (nascem no PR da regra, do Claude) e **sete perguntas para o Comandante** — a primeira é de ficção: quem é "nosso" técnico, se o ENTRÓPICO é rebelde hoje.
+
+**O que ela destrava:** com a ficha aprovada, o **Claude** faz a regra no `Match` + os testes e o **Gemini** liga o briefing e o HUD de objetivo — o `MissionHUD` está marcado **DEMO** hoje (R13), e é esta missão que o tira da demonstração.
+
 ## O pacote de publicação do vídeo #1, e o que a mesa deixa o dono mexer — Qwen, 12/10 (P47, só documentação)
 
 **Por quê:** o Comandante confirmou que **edita, melhora e corrige os detalhes na mesa**. Então o que faltava não era o vídeo — era o que fica em volta dele, e a resposta de "onde eu mexo". Duas coisas fechadas neste PR:
