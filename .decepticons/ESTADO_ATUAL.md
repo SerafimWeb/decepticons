@@ -1,10 +1,10 @@
 # ESTADO ATUAL — CYBERMECH
 
-## Console de comando: a tela de início virou a sala de comando do painel admin — Claude, 11/10 (PR `claude/console-comando`, ordens P83 a P86)
+## Console de comando: a tela de início virou a sala de comando do painel admin — Claude, 11/10 (PR `claude/console-comando`, ordens P86 a P89)
 
-**Ordens do Comandante:** (P83) "criar nosso painel admin usando essas referências, pra servir com todos os botões e configurações em um só espaço", "use minhas imagens apenas como ideia de referência, faça a sua
-melhorada", e **"os dois"**: é a tela de início de todos e o que é de administração aparece só no modo Comandante; (P84) "um mapa do mundo, pra mostrar onde são as missões (cenários) de forma tática e
-gamificada"; (P85) assistir às câmeras de várias partidas pelo servidor, chamar a `/mesa` e reunir hangar, cenários, missões e pilotos num painel só; (P86) "mais qualidade, UX, UI, melhoria gráfica, moderno, vanguardista, elite".
+**Ordens do Comandante:** (P86) "criar nosso painel admin usando essas referências, pra servir com todos os botões e configurações em um só espaço", "use minhas imagens apenas como ideia de referência, faça a sua
+melhorada", e **"os dois"**: é a tela de início de todos e o que é de administração aparece só no modo Comandante; (P87) "um mapa do mundo, pra mostrar onde são as missões (cenários) de forma tática e
+gamificada"; (P88) assistir às câmeras de várias partidas pelo servidor, chamar a `/mesa` e reunir hangar, cenários, missões e pilotos num painel só; (P89) "mais qualidade, UX, UI, melhoria gráfica, moderno, vanguardista, elite".
 
 **Como o Comandante vê (depois do merge, o deploy sai sozinho):** `www.selvamkt.com.br/cybermech/jogar/`; com os monitores de administração: `.../jogar/?comandante=1` (o navegador lembra; `?comandante=0` desliga).
 **Teclas:** `Enter` põe em combate, `H` abre o Hangar, `O` entra ou sai do online, `Z` troca o zoom do mapa. Capturas: `.decepticons/arte/console-*-claude.jpg`.
@@ -14,7 +14,7 @@ gamificada"; (P85) assistir às câmeras de várias partidas pelo servidor, cham
   **pilotos** (a escalação da partida e a ameaça de 1 a 5), **carreira**, **rede** e **configurações**; embaixo, a **mesa de operação**: o modo (Deathmatch, Sobrevivência, Bandeira) e o **botão verde** (placa listrada, tecla Enter).
   Cada monitor **abre a tela que já existia** (Hangar, Configurações na aba certa, sala online); nada foi refeito. O **modo Comandante** acende o monitor COMANDO: Potências, **Mesa de vídeo** (link para a mesa local), Sala de controle e Oficina; câmeras
   ao vivo, ficha de cada bot, campanha e servidor aparecem **"em construção"** (R13).
-- **Acabamento (P86):** as telas acendem em cascata; tela de carregamento mínima (título, rótulo e o botão apagado com o progresso) até o botão ficar pronto, e só então os monitores aparecem e acendem; teclas de atalho desenhadas nos botões; transição ao implantar
+- **Acabamento (P89):** as telas acendem em cascata; tela de carregamento mínima (título, rótulo e o botão apagado com o progresso) até o botão ficar pronto, e só então os monitores aparecem e acendem; teclas de atalho desenhadas nos botões; transição ao implantar
   (fade e o som que já existia); radar com rosa dos ventos e cone de visão; **escala tipográfica** (`--k`: laptop 1,0, 1080p 1,2, 1440p 1,5, celular 1,15, lida também pelos textos em canvas); chanfros, cantoneiras e trama nas telas; anel de foco visível; "menos movimento" desliga as animações.
 - **Dados e arquivos:** `ui/CommandConsole.ts` (a montagem, as teclas, os estados), `ui/consoleData.ts` (ficha do Mech, escalação, ameaça, modo Comandante, teclas: sem DOM), `ui/theater.ts` (missões, projeção, coordenadas: sem DOM),
   `ui/WorldMap.ts` e `ui/TacticalRadar.ts` (canvas), `ui/escala.ts`, `ui/worldMask.ts` e `ui/brasilContorno.ts` (**gerados** por `scripts/mapa-mundi.mjs` do Natural Earth, domínio público; ~11 KB no código; o arquivo de origem de 3 MB fica em `.tmp/mapa-mundi/`).

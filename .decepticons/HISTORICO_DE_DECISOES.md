@@ -1,4 +1,4 @@
-## [2026-10-11] A tela de início virou um console de comando, e ele é a casa do painel admin (Claude, P83 a P86)
+## [2026-10-11] A tela de início virou um console de comando, e ele é a casa do painel admin (Claude, P86 a P89)
 
 **Pedido do Comandante:** "criar nosso painel admin usando essas referências, pra servir com todos os botões e configurações em um só espaço" (duas imagens de uma sala de comando); "use minhas imagens apenas como ideia de referência, faça a sua melhorada";
 quem vê: "os dois"; "um mapa do mundo, pra mostrar onde são as missões (cenários) de forma tática e gamificada"; câmeras de várias partidas pelo servidor, a `/mesa`, hangar, cenários, missões e pilotos num painel só; "mais qualidade, UX, UI, melhoria gráfica, moderno, vanguardista, elite".

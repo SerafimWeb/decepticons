@@ -6,7 +6,7 @@
 > os agentes trabalharem em paralelo contra contratos (AGENTS.md, regra 5). **Estado (11/10): o console de comando (seção 0) existe e é a casa
 > do painel; as telas que pedem dado novo (ficha de cada bot, campanha, servidor, câmeras) continuam só no plano.**
 
-## 0. O console de comando: a casa do painel (11/10, P83 a P86)
+## 0. O console de comando: a casa do painel (11/10, P86 a P89)
 
 Pedido do Comandante (11/10): "criar nosso painel admin usando essas referências [duas imagens de uma sala de comando com monitores], pra servir
 com todos os botões e configurações em um só espaço"; "use minhas imagens apenas como ideia de referência, faça a sua melhorada"; "o painel de
@@ -103,7 +103,7 @@ Cada etapa: um PR, `npm run check` verde, captura em `arte/`, linha em `ORDENS_D
 
 ## 5. Decisões do dono (têm padrão; se não disser nada, sigo o padrão)
 
-> **Respondidas em 11/10 (P83):** (1) **onde mora:** o console de comando é a **tela de início e de pausa**, não um botão escondido nem uma página à parte; o que é de
+> **Respondidas em 11/10 (P86):** (1) **onde mora:** o console de comando é a **tela de início e de pausa**, não um botão escondido nem uma página à parte; o que é de
 > administração fica no monitor COMANDO, só no modo Comandante ("os dois"). (2) **quem usa:** continua só o dono, no navegador dele, sem conta; o servidor (E e H) pede token.
 > As perguntas 3 a 5 seguem com o padrão.
 
@@ -120,7 +120,7 @@ Cada etapa: um PR, `npm run check` verde, captura em `arte/`, linha em `ORDENS_D
 - **Servidor com token** é superfície de ataque nova: só leitura e reinício no começo, nada que apague dado; rate limit como as contas.
 - **A máquina é compartilhada**: telas pesadas de editar listas grandes precisam de limite (máx. de bots e de etapas) desde o contrato.
 
-## 7. Câmeras ao vivo e mesa de vídeo (pedido de 11/10, P85) — só plano
+## 7. Câmeras ao vivo e mesa de vídeo (pedido de 11/10, P88) — só plano
 
 **O que o Comandante quer:** pelo console, **assistir às câmeras de várias partidas ao mesmo tempo**, direto do servidor, e chamar a mesa de vídeo para editar.
 

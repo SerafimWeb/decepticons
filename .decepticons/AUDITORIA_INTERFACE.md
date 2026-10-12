@@ -70,7 +70,7 @@ O Hangar é a tela mais rica e já tem identidade forte; o que faltava era **tir
 | E3 | Fim de rodada (`RoundOverlay`), carregamento e terminal do banco | **Não conferidos em captura** (o fim de rodada só aparece depois de 5 minutos de partida e não há atalho de teste). Ficam como pendência declarada; o código do fim de rodada é só contagem e quatro números |
 | E4 | O bloco de status do canto esquerdo ocupa 144 px de altura no celular (10 linhas) | Sem mudança: avaliar com o dono se as barras por parte são necessárias no toque |
 
-### Console de comando — UI-6 (11/10, P83 a P86): a tela de início e de pausa virou uma sala de comando
+### Console de comando — UI-6 (11/10, P86 a P89): a tela de início e de pausa virou uma sala de comando
 
 O Comandante pediu um painel "com todos os botões e configurações em um só espaço", a partir de duas imagens de sala de comando. **Substitui a tela do UI-1** (início/pausa), mantendo os princípios da seção 2 (uma ação primária, nada repetido, nada de informação de desenvolvedor, sem rolagem em 1280×720).
 
@@ -106,6 +106,6 @@ O Comandante pediu um painel "com todos os botões e configurações em um só e
 | UI-3 | Hangar: tirar repetição e corte | **feito** (`claude/ui-hangar`) |
 | UI-4 | HUD da partida: legibilidade e alinhamento (o painel de vida duplicado era um achado errado; ver a retratação) | **feito** (`claude/ui-hud-partida`) |
 | UI-5 | Celular, lobby, fim de rodada, carregamento, banco | **parcial** (celular feito; fim de rodada, carregamento e banco sem captura) |
-| UI-6 | Console de comando (início e pausa) | **feito** (`claude/console-comando`, P83 a P86) |
+| UI-6 | Console de comando (início e pausa) | **feito** (`claude/console-comando`, P86 a P89) |
 
 Território: `client/src/ui/`, `styles.css` e `index.html` são do Gemini (`ESTADO_ATUAL`, divisão de trabalho). O dono pediu esta revisão ao Claude diretamente em 10/10; o Gemini tem a tela de login (`gemini/tela-login`) em andamento, com CSS próprio no fim do `styles.css`: os dois PRs mexem em trechos diferentes. Quem chegar depois junta a `main` e roda o `npm run check`.

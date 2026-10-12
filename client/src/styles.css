@@ -8,7 +8,7 @@
   --muted: #7f9c86;
   --bg: #06080a;
   --cyan: #00e5ff; /* ciano (PALETTE.cyan): aliados, mapa e radar do console */
-  /* Superfícies do console de comando (P83): parede, metal das molduras e vidro das telas. */
+  /* Superfícies do console de comando (P86): parede, metal das molduras e vidro das telas. */
   --cc-wall-top: #121519;
   --cc-wall: #0b0d10;
   --cc-metal-hi: #1d2226;
@@ -2641,7 +2641,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   }
 }
 
-/* ═══ Console de comando (P83): a tela de início e de pausa ═══════════════════════════════════════════════════════════════
+/* ═══ Console de comando (P86): a tela de início e de pausa ═══════════════════════════════════════════════════════════════
    Sala de comando com monitores em moldura de metal, luz vermelha de teto e a mesa de operação embaixo. Cada monitor tem uma cor
    (--mon-cor): verde é seu (Mech, rede), vermelho das IAs (pilotos inimigos), ciano do mapa e do radar, amarelo da carreira,
    laranja do Comandante. Tudo CSS: nenhuma imagem, nenhuma fonte baixada (IDENTITY). As animações (pulso dos marcadores,
@@ -3045,7 +3045,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   .teatro-ficha .ficha-estado { justify-content: flex-start; }
 }
 
-/* ─── Acabamento do console (P85): luz, textura, chanfros, o ligar das telas e os detalhes táticos ─────────────────────────
+/* ─── Acabamento do console (P88): luz, textura, chanfros, o ligar das telas e os detalhes táticos ─────────────────────────
    Tudo CSS e uma vez por estado: o que anima é transform/opacity (compositor), exceto o ligar das telas (uma vez, ao abrir) e o
    brilho da placa do botão verde. "Menos movimento" desliga as animações (bloco prefers-reduced-motion acima). */
 #overlay.console { font-variant-numeric: tabular-nums; }
@@ -3158,7 +3158,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 }
 @keyframes varre-mech { to { transform: translateY(385%); } }
 
-/* ─── Console de comando (P85, 2ª camada): teclas, estados de carga, implantação e foco ────────────────────────────────────── */
+/* ─── Console de comando (P88, 2ª camada): teclas, estados de carga, implantação e foco ────────────────────────────────────── */
 
 /* Foco do teclado: o chanfro corta o anel de fora (clip-path), então nos botões chanfrados o anel vai por dentro. */
 .mon .btn-terminal:focus-visible,

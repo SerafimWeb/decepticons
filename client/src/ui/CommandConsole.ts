@@ -61,7 +61,7 @@ export interface ConsoleHooks {
 }
 
 /**
- * Console de comando (dono, 11/10, P83): a tela de início e de pausa vira uma sala de comando, com todos os botões e ajustes num
+ * Console de comando (dono, 11/10, P86): a tela de início e de pausa vira uma sala de comando, com todos os botões e ajustes num
  * só lugar. Cada monitor mostra um assunto e abre a tela que já existia (Hangar, Configurações, Online); nada foi refeito. Com o
  * modo Comandante ligado (`?comandante=1`), acende o monitor COMANDO, com as telas de ajuste do jogo (`PAINEL_ADMIN.md`).
  *

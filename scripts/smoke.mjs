@@ -127,7 +127,7 @@ try {
     await page.keyboard.press(code);
     if (!(await panelDetailed(false))) fail(`tecla ${code} não fechou o painel de desempenho detalhado`);
   }
-  // Console de comando (P83): o CSS de pé (a grade dos monitores), o mapa do teatro com as missões e um clique no vazio de um
+  // Console de comando (P86): o CSS de pé (a grade dos monitores), o mapa do teatro com as missões e um clique no vazio de um
   // monitor sem começar a partida (a pausa inteira é o botão de jogar; os monitores barram o clique).
   // O console liga 250 ms depois do botão ficar pronto (`CommandConsole`: espera de assentamento): espera ele sair da tela de carregamento.
   const ligou = await page

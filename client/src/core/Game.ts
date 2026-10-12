@@ -636,7 +636,7 @@ export class Game {
 
     this.dailyChallenges.attachTo(document.getElementById('menu-profile'));
 
-    // Console de comando (P83): a pausa vira a sala de comando. Os monitores só leem o jogo por estes callbacks (G3).
+    // Console de comando (P86): a pausa vira a sala de comando. Os monitores só leem o jogo por estes callbacks (G3).
     const mapa = mapFromSearch(location.search, !!online, this.gameMode);
     const allies = (): readonly MechBase[] => this.match.allies?.mechs ?? [];
     const cmd = new CommandConsole({
