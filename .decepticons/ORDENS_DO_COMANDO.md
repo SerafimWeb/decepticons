@@ -14,6 +14,25 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## ⏳ DECISÕES QUE ESPERAM O COMANDANTE (12/10) — sete escolhas travam o trabalho
+
+> Cada linha é uma decisão **do Comandante**; as equipes param nela até a resposta. A recomendação está na terceira coluna e
+> o detalhe, na ficha citada. **Responder "sim, como recomendado" já destrava a fila inteira** — e as sete respostas cabem
+> numa mensagem só.
+
+| # | A decisão | A recomendação | O que ela destrava |
+|---|---|---|---|
+| **1** | **Quem é "nosso" técnico na ficção?** O ENTRÓPICO é um técnico **rebelde** hoje, e a missão #1 escolta um técnico do nosso lado | **A mesma máquina, capturada e reprogramada — o nome continua ENTRÓPICO** (o nome é o modelo, não o indivíduo): zero arte nova, e nada de regra além do lado | O **primeiro passo de código** da missão #1 — pôr o papel `t` no lado dos aliados (Claude). **Hoje a missão não tem quem escoltar** (`fichas/escolta.md` § 2) |
+| **2** | **O núcleo tem vida própria ou partes** (como um Mech)? | **Vida própria** (um número só): não colide com o dano por parte, e o "desmontar" já existe nos Mechs — a missão não precisa ensinar duas vezes | A máquina das missões de **ataque e defesa** (`fichas/ataque-e-defesa.md` § 2.1) |
+| **3** | **O técnico conserta o núcleo?** | **Sim, devagar.** Junta a defesa à escolta numa tríade (núcleo, técnico e o problema) e dá função de verdade ao técnico | O desenho da **defesa de base** e o papel do técnico nas missões |
+| **4** | **O tamanho do cenário: ~500 m de comprimento** (2,5× a Arena) basta para "cenário maior"? | **Sim** — é o **maior que ainda cabe sem streaming**; passar disso é a Fase 7 inteira (`VISAO.md`) | O **Codex** construir a ESTAÇÃO DE CABOS (`fichas/cenario-cabos.md` § 3) |
+| **5** | **A ordem:** a missão #1 (escolta) vem **antes** do CTF online (P81)? | **Sim, a escolta primeiro**: ela não precisa de rede nenhuma e é a "espinha da retenção"; o CTF online precisa do contrato de times na sala | A fila do **Claude** e do **Gemini** para as próximas semanas |
+| **6** | **A missão #1: três fases, e o jogador pode cair e voltar** (renascer na missão)? | **Três fases, e o jogador renasce** — quem decide a missão é o técnico; acabar a missão por um erro de três segundos não combina com "espinha da retenção" | A forma final da missão #1 (`fichas/escolta.md` § 2) |
+| **7** | **O #259** (`game-hq`, do Gemini): **fechar** ou **mandar o Claude rebasar**? | **Triagem e fechar:** guardar as duas ideias de **jogo** (a flag que esconde Mechs em desenvolvimento e os cadeados do Hangar) e deixar o **backend do painel** com o Claude, que já o escreve na fase 2 da P54 | Tirar do limbo **o único trabalho fora do ar** (o brief está no `ESTADO_ATUAL.md`) |
+
+**Não é decisão, é ação:** os **dez minutos do roteiro** (`PLAYTEST.md`, a última seção) — é a única forma de saber se o que
+as equipes escrevem bate com o que o Comandante vê no jogo.
+
 ## 1. Jogo e combate
 
 | ID | Data | Ordem (nas palavras do Comandante, resumida) | Estado | Onde está / o que falta | Como o Comandante confere |
