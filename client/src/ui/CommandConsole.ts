@@ -62,6 +62,11 @@ export interface ConsoleHooks {
   radar: () => RadarQuadro;
   /** O som curto de quando o console leva a outra missão (o `AudioSystem` já tem o da troca de tela). */
   som?: () => void;
+  /**
+   * A janela do esquadrão (P91, `ui/SquadPanel.ts`): `abrir` a mostra; `indisponivel` diz por que não abre (online: o servidor manda os
+   * inimigos; missões: o pool delas), ou `null`; `personalizado` marca o botão quando há um esquadrão salvo.
+   */
+  esquadrao?: { abrir: () => void; indisponivel: () => string | null; personalizado: () => boolean };
 }
 
 /**
@@ -112,6 +117,11 @@ export class CommandConsole {
       void this.mesa();
     });
     root.querySelector('#cmd-mesa-ajuda')?.addEventListener('click', (e) => this.ajudaDaMesa(e));
+    for (const botao of root.querySelectorAll<HTMLElement>('[data-esquadrao-open]')) {
+      botao.addEventListener('click', () => {
+        if (!this.hooks.esquadrao?.indisponivel()) this.hooks.esquadrao?.abrir();
+      });
+    }
     // A Sala de Controle e a Oficina só existem no site (`/cybermech/sala-de-controle/`, `/oficina/`): no `npm run dev` o link daria em nada.
     if (!location.pathname.includes('/jogar')) for (const id of ['#cmd-sala', '#cmd-oficina']) root.querySelector<HTMLElement>(id)!.hidden = true;
 
@@ -151,8 +161,22 @@ export class CommandConsole {
       const n = this.hooks.potencias();
       pot.textContent = n ? `${n} ajuste${n === 1 ? '' : 's'} fora do padrão` : 'armas e clãs no padrão';
     }
+    this.pintarEsquadrao();
     this.mundo.atualizar();
     this.radar.desenhar();
+  }
+
+  /** O botão ESQUADRÃO (e a ficha do Comandante): apagado, com o motivo, quando a partida não aceita esquadrão; com um ponto quando há um salvo. */
+  private pintarEsquadrao(): void {
+    const e = this.hooks.esquadrao;
+    const motivo = e?.indisponivel() ?? null;
+    for (const botao of this.root.querySelectorAll<HTMLElement>('[data-esquadrao-open]')) {
+      botao.classList.toggle('off', motivo !== null);
+      botao.setAttribute('aria-disabled', String(motivo !== null));
+      if (motivo !== null) botao.title = motivo;
+    }
+    const principal = this.root.querySelector<HTMLElement>('#btn-esquadrao');
+    if (principal) principal.dataset.custom = e?.personalizado() ? '1' : '0';
   }
 
   private get visivel(): boolean {
@@ -402,7 +426,7 @@ export class CommandConsole {
 
 /** Uma janela por cima do console (Configurações, sala online, calibração do mouse): o Enter é dela, não do console. */
 function algoPorCima(): boolean {
-  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden)');
+  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden)');
 }
 
 function barra(rotulo: string, valor: string, fracao: number, alerta = false): HTMLElement[] {

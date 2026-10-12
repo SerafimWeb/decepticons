@@ -12,6 +12,22 @@
 
 **Nada construído** — é o papel que faltava. O desenho é do **Gemini**; os eventos, do **Claude**.
 
+## O editor do esquadrão: o Comandante monta a partida pela tela — Claude, 12/10 (PR `claude/esquadrao-editor`, ordem P91, fase 1C)
+
+**Ordem do Comandante (P91):** "quero poder adicionar mais bots e aliados, além dos 3 do padrão" (o motor entrou no PR #254; este põe a tela).
+
+**O que está no ar:** no console, o monitor **PILOTOS** ganhou **[ ESQUADRÃO ]** (ao lado do [ AJUSTAR ], que continua), e o monitor **COMANDO** tem **FICHA DE CADA BOT** no lugar do "em construção". Os dois abrem a mesma **janela do esquadrão** (`ui/SquadPanel.ts`, modelo puro em `ui/esquadraoEditor.ts`):
+- **Duas listas** (inimigos e aliados) com `+ MECH`, `+ ANDRÓIDE` e `+ TÉCNICO` (o aliado não tem técnico); cada robô mostra o nome que terá na partida, com a personalidade, e uma linha com papel, chassi, arma e dificuldade; `×` tira; setas movem a escolha e Delete tira.
+- **Ficha do robô escolhido:** apelido (o padrão aparece apagado dentro do campo), personalidade, chassi (os 8 Mechs, com o papel e a vida do chassi), arma principal (só as que cabem no chassi e que o bot sabe usar, com nível MK e os números dela) e dificuldade própria; DUPLICAR (sem o apelido).
+- **Esquadrões prontos, um clique:** PADRÃO (o que as Configurações mandam), BATALHÃO, CERCO (o teto), PESADOS, DUELO e SÓ ALIADOS; no Bunker o corte para 11 é dito.
+- **Pé da janela:** a **carga** que a partida pesa para a máquina (LEVE, MÉDIA, ALTA, EXTREMA, com a dica), quantos robôs de quantos cabem, e o aviso do que passa do mapa; **[ SALVAR E REINICIAR ]** (o botão grande: guarda no aparelho e recarrega a partida; apagado enquanto nada mudou), **[ COPIAR LINK ]** (o link com `?esquadrao=q1.…`, legível), **[ AJUSTES DO JOGO ]** (abre Configurações na aba do jogo) e **[ DESFAZER ]** (aparece com mudança não salva).
+- **Fechar não perde o que foi montado** (o rascunho fica até a página recarregar; DESFAZER volta ao salvo). Salvar um esquadrão igual ao das Configurações **apaga** o salvo (a contagem e as personalidades de Configurações voltam a valer). O botão ESQUADRÃO ganha um ponto quando há um personalizado. **Online e nas missões o botão se apaga com o motivo** (online o servidor manda os inimigos; as missões têm o pool delas).
+- **Tamanhos:** conferido no navegador em 1024×700, 1280×720, 1366×768 e 1920×1080 (cabe, rodapé à vista) e no celular (uma coluna que rola, o botão de salvar sempre alcançável).
+- **Como ver:** o jogo → monitor PILOTOS → **[ ESQUADRÃO ]** (ou, com `?comandante=1`, COMANDO → FICHA DE CADA BOT). Capturas: `arte/esquadrao-editor-claude.jpg`, `esquadrao-editor-cerco-claude.jpg`, `esquadrao-editor-celular-claude.jpg`.
+- **Testes:** `esquadraoEditor.test.ts` (24: adicionar, remover, duplicar, editar com o contrato, limites e motivos, prontos, nomes, carga; 12 mutações manuais, todas pegas), contrato do HTML e do CSS em `CommandConsole.test.ts` e uma conferência no navegador de verdade (48 passos: abrir, montar, chassi larga a arma, link, salvar e recarregar, apagar o salvo, tamanhos, missões).
+- **Falta (R13):** o servidor e o online seguem com as configurações (esquadrão por sala é a fase 3); a janela não prende o foco do Tab (o console por trás continua alcançável); a ficha não tem ainda a **arma secundária**, o **módulo** nem o **piloto de LLM** (P75).
+
+**Próxima sessão começa com:** a fase 2, o servidor na interface (`claude/servidor-admin`): rotas `/admin/*` por cima das contas com `is_admin` que o PR #259 do Gemini traz (decidir primeiro o destino do #259: ver "decisões em aberto"), o contrato `shared/net/admin.ts` e o monitor SERVIDOR (estado, histórico, log, REINICIAR, TESTAR, AVALIAR).
 ## Auditoria da ficha do cenário: tudo confere, e uma palavra errada no console — Qwen, 12/10 (P99, só documentação)
 
 **O que foi feito:** a mesma disciplina da ficha da missão #1, agora na ficha do cenário — cada afirmação conferida **no código**, porque o Codex vai construir contra ela. **Tudo confere**, e cada uma ganhou endereço na ficha: `environment/Bunker.ts:7` (`MapId = 'arena' | 'bunker'`) e `:9` (`mapFromSearch`); `environment/Arena.ts:72` (**`halfSize = 100`** → os **200 m** da régua); `sim/nascimentos.ts:82` (os **11** pontos do Bunker: 12 menos o do jogador) e `:118` ("nenhum ponto serve a dois corpos" — o que o teste 1 exige do mapa novo).

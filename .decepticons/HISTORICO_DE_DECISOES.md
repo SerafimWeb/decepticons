@@ -12,6 +12,21 @@
 
 **Custo de CPU:** nenhum (documentação); o desenho, quando existir, é DOM ao mudar de valor, como o HUD de hoje. **Quem decidiu:** Qwen, dentro da ordem P99.
 
+## [2026-10-12] A janela do esquadrão: o rascunho fica, o padrão são as Configurações, e o modelo é puro (P91, Claude)
+
+**Ordem do Comandante (P91):** "quero poder adicionar mais bots e aliados, além dos 3 do padrão".
+
+**Decisões:**
+1. **O modelo não sabe de tela.** `EsquadraoEditor` (`ui/esquadraoEditor.ts`) é só a lista e o contrato: cada operação passa por `sanearBot`/`sanearEsquadrao`, então nenhum estado inválido chega à tela (o limite do mapa recusa o robô com o motivo em palavras, trocar o chassi larga a arma que ele não aceita). `SquadPanel` só desenha e liga os botões. Foi isso que permitiu testar as 24 regras em Node e conferir só o que é de tela no navegador.
+2. **"Padrão" é o que as Configurações mandam, não o esquadrão de fábrica.** O preset PADRÃO e o "salvar igual ao padrão apaga o salvo" comparam com `esquadraoDeFoes(configurações)`. Se fosse o de fábrica, quem mexeu em Configurações → Inimigos perderia a contagem ao salvar um esquadrão "padrão".
+3. **Fechar não perde o rascunho; recarregar perde.** Perder cinco minutos de montagem por um Esc era pior que um botão a mais (DESFAZER, que só aparece com mudança). SALVAR guarda e recarrega, porque a partida se monta uma vez (G4/G5): "vale ao reiniciar" é regra de custo, não preguiça.
+4. **O que o jogador comum vê é o botão ESQUADRÃO; a ficha do Comandante é o mesmo lugar.** Duas portas, uma janela: nada repetido (princípio 3 da auditoria). O AJUSTAR do monitor PILOTOS **ficou** (o `SettingsMenu` e o `OnlineSwitch` acham o `#btn-settings`, e dificuldade e "atacam ao mesmo tempo" moram lá); a janela tem [ AJUSTES DO JOGO ] para chegar nele.
+5. **Online e missões: o botão se apaga e diz por quê**, em vez de abrir uma janela que não vale (R13). O esquadrão personalizado conta como ajuda na telemetria (já decidido no PR do motor).
+6. **A carga é o que o Comandante vê, não o "peso".** LEVE a EXTREMA com uma dica em palavras ("o jogo vai baixar a resolução para aguentar em máquina fraca"); o número do peso e o ms do tick ficam nos documentos. Informação de desenvolvedor não vai ao jogador (princípio 4).
+7. **O link sai legível** (`?esquadrao=q1.m:pb,a,a,t.m,m:wemp-0`, sem `%3A` nem `%2C`): a chave só tem caracteres legais numa busca, e o `URLSearchParams.set` os escaparia à toa.
+8. **Achado do primeiro teste no navegador (R17):** o `aria-disabled="true"` faz o Playwright (e os leitores de tela) tratarem o botão como desligado, o que é o desejado; o clique de verdade num botão "apagado" é ignorado pelo código, não pelo navegador, e isso fica testado (clique forçado nas missões).
+
+**Custo de CPU:** zero no jogo (a janela só existe com a pausa à vista; cada ação refaz no máximo 32 linhas de DOM). **Quem decidiu:** Claude.
 ## [2026-10-12] A auditoria da ficha do cenário: tudo confere, e uma palavra errada no console (P99, Qwen)
 
 **O que aconteceu:** a mesma disciplina da ficha da missão #1, agora na ficha do **cenário** — cada afirmação conferida **no código**, porque o Codex vai construir contra ela.
