@@ -3340,3 +3340,123 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .cmd-ajuda .ajuda-cmd { display: block; padding: 6px 9px; background: #000; border: 1px solid rgba(255, 138, 31, 0.5); color: var(--accent); font: 700 calc(12px * var(--k)) 'Consolas', 'Courier New', monospace; letter-spacing: 1px; user-select: all; }
 .cmd-ajuda .ajuda-nota b { color: var(--ink); }
 .cmd-ajuda .ajuda-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; }
+
+/* ─── Janela do esquadrão (ui/SquadPanel.ts, P91): o Comandante monta quem luta contra e ao lado do jogador ─── */
+.mon-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: calc(8px * var(--k)); }
+#btn-esquadrao[data-custom="1"]::before { content: '● '; color: var(--warn); }
+#btn-esquadrao.off { opacity: 0.45; cursor: not-allowed; }
+.cmd-lista li > button.off { opacity: 0.45; cursor: not-allowed; }
+
+#squad-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 8, 10, 0.88);
+  backdrop-filter: blur(6px);
+}
+#squad-modal.hidden { display: none; }
+.squad-box {
+  width: min(1180px, 96vw);
+  height: min(690px, 94vh);
+  display: flex;
+  flex-direction: column;
+  background: #0e1210;
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 24px rgba(57, 255, 106, 0.25);
+  color: var(--accent);
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+.squad-head { display: flex; align-items: baseline; gap: 14px; padding: 10px 18px; border-bottom: 1px solid rgba(57, 255, 106, 0.2); background: rgba(57, 255, 106, 0.05); }
+.squad-head h2 { margin: 0; font-size: 18px; letter-spacing: 4px; color: var(--hot); text-shadow: 0 0 8px var(--hot); }
+.squad-sub { flex: 1; min-width: 0; overflow: hidden; font-size: 12px; letter-spacing: 1px; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.squad-presets { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 18px; border-bottom: 1px solid rgba(57, 255, 106, 0.12); }
+.squad-presets-rot { margin-right: 6px; font-size: 11px; letter-spacing: 2px; color: var(--muted); }
+.squad-preset { padding: 4px 10px; font: 700 11px/1.2 'Consolas', 'Courier New', monospace; letter-spacing: 1.5px; color: #cfe8d6; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(57, 255, 106, 0.35); cursor: pointer; }
+.squad-preset:hover, .squad-preset:focus-visible { color: var(--accent); border-color: var(--accent); outline: none; box-shadow: 0 0 8px rgba(57, 255, 106, 0.3); }
+
+.squad-corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr) minmax(0, 1.4fr); }
+.squad-lado { display: flex; flex-direction: column; min-height: 0; padding: 10px 12px; border-right: 1px solid rgba(57, 255, 106, 0.12); }
+.squad-lado-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; }
+.squad-lado h3, .squad-ficha h3 { margin: 0; font-size: 12px; letter-spacing: 3px; }
+.squad-inimigos h3 { color: var(--alert); }
+.squad-aliados h3 { color: var(--cyan); }
+.squad-lado h3 b { font-weight: 700; color: #fff; letter-spacing: 1px; }
+.squad-add { display: flex; flex-wrap: wrap; gap: 4px; }
+.squad-mais { padding: 3px 7px; font: 700 10px/1.2 'Consolas', 'Courier New', monospace; letter-spacing: 1px; color: var(--accent); background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(57, 255, 106, 0.45); cursor: pointer; }
+.squad-inimigos .squad-mais { color: #ff8e98; border-color: rgba(255, 45, 61, 0.55); }
+.squad-aliados .squad-mais { color: var(--cyan); border-color: rgba(0, 229, 255, 0.5); }
+.squad-mais:hover:not(.off), .squad-mais:focus-visible { background: rgba(255, 255, 255, 0.1); outline: none; }
+.squad-mais.off { opacity: 0.35; border-style: dashed; cursor: not-allowed; }
+
+.squad-lista { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 3px; margin: 0; padding: 0 3px 0 0; overflow-y: auto; list-style: none; scrollbar-width: thin; scrollbar-color: rgba(57, 255, 106, 0.4) transparent; }
+.squad-vazio { padding: 10px 4px; font-size: 11px; line-height: 1.5; color: var(--muted); }
+.squad-bot { display: grid; grid-template-columns: minmax(0, 1fr) 24px; gap: 2px; }
+.squad-linha { display: grid; grid-template-columns: 12px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; padding: 4px 8px; font: inherit; text-align: left; color: #dfeee3; background: rgba(255, 255, 255, 0.03); border: 1px solid transparent; border-left: 3px solid var(--alert); cursor: pointer; }
+.squad-aliados .squad-linha { border-left-color: var(--cyan); }
+.squad-linha:hover, .squad-linha:focus-visible { background: rgba(255, 255, 255, 0.08); outline: none; }
+.squad-bot.sel .squad-linha { background: rgba(57, 255, 106, 0.12); border-color: var(--accent); border-left-width: 3px; }
+.squad-linha b { overflow: hidden; font-size: 12px; letter-spacing: 1px; color: #fff; text-overflow: ellipsis; white-space: nowrap; }
+.squad-linha small { overflow: hidden; font-size: 10px; letter-spacing: 0.5px; color: #9aa5ad; text-overflow: ellipsis; white-space: nowrap; }
+.squad-ico { grid-row: 1 / span 2; align-self: center; width: 10px; height: 10px; background: var(--alert); }
+.squad-aliados .squad-ico { background: var(--cyan); }
+.squad-papel-mech .squad-ico { clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%); }
+.squad-papel-android .squad-ico { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.squad-papel-technician .squad-ico { background: var(--warn); clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%); }
+.squad-x { padding: 0; font: 700 14px/1 'Consolas', 'Courier New', monospace; color: #8a9a8f; background: rgba(255, 255, 255, 0.03); border: 1px solid transparent; cursor: pointer; }
+.squad-x:hover, .squad-x:focus-visible { color: var(--alert); border-color: var(--alert); outline: none; }
+
+.squad-ficha { display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 10px 16px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(57, 255, 106, 0.4) transparent; }
+.squad-ficha-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.squad-ficha h3 { color: var(--hot); }
+.squad-ficha-quem { font-size: 11px; letter-spacing: 2px; }
+.squad-ficha-quem.squad-inimigo { color: var(--alert); }
+.squad-ficha-quem.squad-aliado { color: var(--cyan); }
+.squad-quem { margin: 0 0 2px; font-size: 16px; letter-spacing: 2px; color: #fff; overflow-wrap: anywhere; }
+.squad-campo { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 3px 10px; font-size: 12px; color: #ccc; }
+.squad-campo > label { letter-spacing: 1px; }
+.squad-ajuda { grid-column: 2; font-size: 10.5px; line-height: 1.4; color: #8a9a8f; }
+.squad-dica { margin: 0; font-size: 11px; line-height: 1.5; color: #8a9a8f; }
+.squad-par { display: grid; grid-template-columns: minmax(0, 1fr) 84px; gap: 6px; }
+.squad-ficha select, .squad-ficha input[type='text'] { width: 100%; min-width: 0; padding: 4px 8px; font: inherit; color: var(--accent); background: #06080a; border: 1px solid var(--accent); }
+.squad-ficha select:disabled { opacity: 0.4; }
+.squad-ficha input::placeholder { color: rgba(57, 255, 106, 0.4); }
+.squad-ficha select:focus-visible, .squad-ficha input:focus-visible { outline: 1px solid var(--hot); border-color: var(--hot); }
+.squad-dup { align-self: flex-start; margin: 4px 0 0; padding: 5px 12px; font-size: 12px; }
+.squad-dup.off { opacity: 0.4; cursor: not-allowed; }
+
+.squad-pe { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 18px; align-items: center; padding: 10px 18px; border-top: 1px solid rgba(57, 255, 106, 0.2); background: rgba(57, 255, 106, 0.05); }
+.squad-carga { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-width: 0; font-size: 11px; letter-spacing: 1px; }
+.squad-carga-rot { color: var(--muted); letter-spacing: 3px; }
+.squad-carga small { color: #9aa5ad; letter-spacing: 0.5px; }
+.squad-barra { position: relative; display: inline-block; width: 200px; height: 10px; overflow: hidden; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(57, 255, 106, 0.3); }
+.squad-barra b { position: absolute; inset: 0; transform-origin: left; transition: transform 0.2s ease; }
+.squad-barra b.n-leve { background: var(--accent); }
+.squad-barra b.n-media { background: var(--warn); }
+.squad-barra b.n-alta { background: var(--hot); }
+.squad-barra b.n-extrema { background: var(--alert); }
+.squad-carga strong.n-leve { color: var(--accent); }
+.squad-carga strong.n-media { color: var(--warn); }
+.squad-carga strong.n-alta { color: var(--hot); }
+.squad-carga strong.n-extrema { color: var(--alert); }
+.squad-msg { grid-column: 1 / -1; min-height: 14px; margin: 0; font-size: 11px; line-height: 1.4; color: var(--muted); overflow-wrap: anywhere; }
+.squad-msg.aviso { color: var(--warn); }
+.squad-acoes { grid-row: 1; grid-column: 2; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.squad-pe .btn-terminal { margin: 0; padding: 7px 12px; font-size: 12px; letter-spacing: 1.5px; }
+.squad-pe .btn-terminal.off { opacity: 0.4; cursor: not-allowed; }
+.squad-pe .btn-terminal.off:hover { background: rgba(6, 8, 10, 0.9); color: var(--accent); box-shadow: 0 0 10px rgba(57, 255, 106, 0.2); }
+.squad-salvar { color: var(--bg); background: var(--accent); box-shadow: 0 0 14px rgba(57, 255, 106, 0.45); }
+.squad-pe .squad-salvar.off:hover { background: var(--accent); color: var(--bg); box-shadow: 0 0 14px rgba(57, 255, 106, 0.45); }
+
+@media (max-width: 920px) {
+  .squad-box { height: 96vh; }
+  .squad-corpo { grid-template-columns: 1fr; grid-auto-rows: max-content; overflow-y: auto; }
+  .squad-lado, .squad-ficha { min-height: auto; overflow: visible; }
+  .squad-lado { border-right: 0; border-bottom: 1px solid rgba(57, 255, 106, 0.12); }
+  .squad-lista { max-height: 150px; flex: none; }
+  .squad-pe { grid-template-columns: 1fr; }
+  .squad-acoes { grid-row: auto; grid-column: 1; justify-content: flex-start; }
+  .squad-sub { display: none; }
+}
