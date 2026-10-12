@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TRIGGERS, SHOULDER_TRIGGERS, type MountId, type TriggerLayout } from '../combat/mounts';
+import { DEFAULT_TRIGGERS, SHOULDER_TRIGGERS, SPLIT_SHOULDER_TRIGGERS, type MountId, type TriggerLayout } from '../combat/mounts';
 import { StatusSet } from '../combat/StatusEffects';
 import { weapon, type Tier, type WeaponStats } from '../combat/weapons';
 import type { MechBase } from '../entities/MechBase';
@@ -181,7 +181,19 @@ describe('uma língua por mão que leva lança-chamas (o Marauder tem duas no ga
   it('um chassi de uma mão só (o encaixe do offhand não existe) não desenha a esquerda mesmo que o offhand exista no dado', () => {
     const { chamadas, visuals, mech, pulso } = palco();
     pulso();
-    visuals.update(mech(true, { primary: weapon('flamer'), offhand: weapon('flamer'), triggers: DEFAULT_TRIGGERS }));
+    // Um layout sem a mão esquerda em gatilho nenhum (nem no Ataque 1 nem no 2): a esquerda não existe como mão armada.
+    visuals.update(mech(true, { primary: weapon('flamer'), offhand: weapon('flamer'), triggers: { primary: ['rightHand'], secondary: [] } }));
     expect(bocasDe(chamadas)).toEqual(new Set([1]));
+  });
+
+  it('no layout dividido do Marauder a mão esquerda continua soltando a língua dela (ela está no Ataque 2, mas é a mesma mão); os ombros nunca soltam fogo', () => {
+    const { chamadas, visuals, mech, pulso } = palco();
+    pulso();
+    visuals.update(mech(true, { primary: weapon('flamer'), offhand: weapon('flamer'), triggers: SPLIT_SHOULDER_TRIGGERS }));
+    expect(bocasDe(chamadas)).toEqual(new Set([1, -1]));
+    const { chamadas: c2, visuals: v2, mech: m2, pulso: p2 } = palco();
+    p2();
+    v2.update(m2(true, { primary: weapon('plasma'), offhand: weapon('flamer'), triggers: SPLIT_SHOULDER_TRIGGERS }));
+    expect(bocasDe(c2)).toEqual(new Set([-1])); // só a esquerda leva o fogo
   });
 });

@@ -19,7 +19,9 @@
 // 13 (11/10): o anel de fogo entra no catálogo de módulos de escudo (`fire` na montagem, no JOIN e no roster); o pulso é só do servidor e o desenho vem da bandeira de escudo ligado que já existia. Um servidor antigo recusaria a montagem.
 // 14 (11/10): o evento de tiro diz de qual encaixe o tiro saiu (os 2 bits de cima do byte da arma, que cabe em 6 bits; o evento não cresce). Antes o outro jogador desenhava todo tiro da mão direita, e o Marauder (duas mãos, dois ombros) parecia atirar só por ela. Um cliente da versão 13 leria o encaixe como arma inválida.
 // 15 (11/10): o canhão sônico entra em `NET_WEAPONS` (a onda é um evento de tiro, com o encaixe do ombro de onde saiu); um cliente da versão 14 recusaria o tiro como evento ruim.
-export const PROTOCOL_VERSION = 16;
+// 16 (12/10): o míssil teleguiado entra em `NET_WEAPONS` (o lançamento é um evento de tiro como o dos foguetes; a curva é só do servidor); um cliente da versão 15 recusaria o tiro como evento ruim.
+// 17 (12/10): a montagem ganha o layout de gatilhos (Ataque 1 e Ataque 2: `L1` é o último grupo da chave v2 do JOIN e do roster, `hangar/loadout.ts`); um servidor da versão 16 não reconheceria a chave e recusaria a montagem.
+export const PROTOCOL_VERSION = 17;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

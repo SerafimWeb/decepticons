@@ -527,4 +527,6 @@ export interface Loadout {
   secondary: WeaponStats | null;
   /** Só nos chassis com duas mãos no gatilho principal (Marauder): a arma da mão esquerda, que atira junto com a `primary`. */
   offhand?: WeaponStats | null;
+  /** Qual dos layouts de gatilho do chassi (`MechStats.layouts`) vale; ausente = o primeiro, o padrão. */
+  layout?: number;
 }

@@ -2,7 +2,8 @@ import { SHIELDS, type ShieldId } from '../combat/EnergyShield';
 import { isMetalShieldId, metalShieldMass, METAL_SHIELDS, type MetalShieldId } from '../combat/MetalShield';
 import { weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { ARM_SLOTS, CHASSIS, CHASSIS_SIZE, METAL_SHIELD_CHASSIS, type ChassisId } from '../entities/chassis';
-import { attackOf, DEFAULT_TRIGGERS, type Attack, type MountId } from '../combat/mounts';
+import { triggersOf } from '../entities/MechBase';
+import { attackOf, shoulderMounts, type Attack, type MountId } from '../combat/mounts';
 import { classFor, WEAPON_CLASSES, type WeaponClass } from '../combat/weaponClass';
 
 /**
@@ -39,8 +40,12 @@ export interface LoadoutSpec {
   left: ArmSpec | null;
   /** Ombros: o lançador dos dois ombros, ou nada. Só existe nos chassis que têm o encaixe (`ARM_SLOTS`); ausente = vazio. */
   shoulders?: ArmSpec | null;
+  /**
+   * Qual layout de gatilhos o chassi usa (`MechStats.layouts`, P95): como os encaixes se dividem entre o Ataque 1 e o Ataque 2. Ausente ou 0 = o padrão. **Só na versão 2** (a chave de texto
+   * leva um último grupo `L<n>` quando é diferente de 0). Só os chassis com mais de um layout aceitam um valor diferente de 0.
+   */
+  layout?: number;
 }
-
 export type LoadoutError = 'formato' | 'chassi' | 'arma' | 'nível' | 'encaixe' | 'carga' | 'bloqueado';
 
 export type LoadoutCheck =
@@ -61,9 +66,12 @@ export type ArmSlot = 'right' | 'left' | 'shoulders';
 export const SLOT_MOUNT: Readonly<Record<ArmSlot, MountId>> = { right: 'rightHand', left: 'leftHand', shoulders: 'rightShoulder' };
 
 /** O ataque (1, o clique; 2, o clique direito) que aciona a ranhura neste chassi, pelo layout de gatilhos dele (`combat/mounts.ts`). */
-export function slotAttack(slot: ArmSlot, chassis: ChassisId): Attack | null {
-  return attackOf(CHASSIS[chassis].triggers ?? DEFAULT_TRIGGERS, SLOT_MOUNT[slot]);
+export function slotAttack(slot: ArmSlot, chassis: ChassisId, layout = 0): Attack | null {
+  return attackOf(triggersOf(CHASSIS[chassis], layout), SLOT_MOUNT[slot]);
 }
+
+/** Quantos layouts de gatilho o chassi oferece (1 = não há o que escolher). */
+export const layoutCount = (chassis: ChassisId): number => CHASSIS[chassis].layouts?.length ?? 1;
 
 /** Armas que cabem num encaixe do chassi (padrão: Vector-09), na ordem do catálogo. Sem o encaixe, nenhuma. */
 export function armOptions(slot: ArmSlot, chassis: ChassisId = 'vector09'): readonly WeaponId[] {
@@ -109,7 +117,7 @@ export function factorySpec(chassis: ChassisId): LoadoutSpec {
 export function specWeapons(spec: LoadoutSpec): WeaponStats[] {
   const chassis = CHASSIS[spec.chassis];
   const out = [spec.right, spec.left];
-  if (spec.shoulders) for (let i = 0; i < chassis.triggers!.secondary.length; i++) out.push(spec.shoulders);
+  if (spec.shoulders) for (let i = 0; i < shoulderMounts(triggersOf(chassis, spec.layout)).length; i++) out.push(spec.shoulders);
   return out.filter((a): a is ArmSpec => a !== null && !isMetalShield(a)).map((a) => weapon(a.id as WeaponId, a.tier));
 }
 
@@ -131,6 +139,9 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
   const capacity = chassis.weaponCapacity;
   if (!isArm(s.right)) return fail('formato', 'braço direito vazio', 0, capacity);
   if (s.left !== null && !isArm(s.left)) return fail('formato', 'braço esquerdo inválido', 0, capacity);
+  const layout = s.layout ?? 0;
+  if (!Number.isInteger(layout) || layout < 0 || layout >= layoutCount(s.chassis)) return fail('encaixe', `o ${chassis.name} não tem o layout ${String(s.layout)}`, 0, capacity);
+  if (layout > 0 && s.v !== 2) return fail('formato', 'layout só na versão 2', 0, capacity);
   const shoulders = s.shoulders ?? null;
   if (shoulders !== null && !isArm(shoulders)) return fail('formato', 'ombros inválidos', 0, capacity);
   if (shoulders !== null && !hasShoulderSlot(s.chassis)) return fail('encaixe', `o ${chassis.name} não tem lançadores nos ombros`, 0, capacity);
@@ -149,7 +160,7 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
     if (!armOptions(slot, s.chassis).includes(arm.id as WeaponId)) return fail('encaixe', `${weapon(arm.id as WeaponId).name} não vai no ${where[slot]} do ${chassis.name}`, 0, capacity);
     if (!unlocked(arm.id as WeaponId, arm.tier)) return fail('bloqueado', `${weapon(arm.id as WeaponId, arm.tier).name} ainda bloqueado`, 0, capacity);
   }
-  const spec2 = { v: LOADOUT_VERSION, chassis: s.chassis, right: s.right, left: s.left ?? null, shoulders } satisfies LoadoutSpec;
+  const spec2 = { v: LOADOUT_VERSION, chassis: s.chassis, right: s.right, left: s.left ?? null, shoulders, ...(layout > 0 ? { layout } : {}) } satisfies LoadoutSpec;
   // Carga: cada arma conta uma vez por encaixe em que atira (o lançador dos ombros vale dois).
   const module = s.module ?? null;
   if (module !== null && (s.v !== 2 || !Object.hasOwn(SHIELDS, module))) return fail('formato', 'módulo inválido ou versão incompatível', 0, capacity);
@@ -164,6 +175,7 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
     ? { primary, offhand: left, secondary: shoulders ? weapon(shoulders.id as WeaponId, shoulders.tier) : null }
     : { primary, secondary: left };
   if (s.v === 2) loadout.module = module;
+  if (layout > 0) loadout.layout = layout;
   if (plate) loadout.metalShield = { id: plate.id, tier: plate.tier };
   return { ok: true, loadout, mass, capacity };
 }
@@ -176,17 +188,18 @@ export function validateLoadout(spec: unknown, unlocked: (id: WeaponId, tier: Ti
 export function loadoutKey(spec: LoadoutSpec): string {
   const arm = (a: ArmSpec | null | undefined) => (a ? `${a.id}-${a.tier}` : '-');
   const base = `v${spec.v}.${spec.chassis}.${arm(spec.right)}.${arm(spec.left)}`;
-  if (spec.v === 2) return `${base}.${arm(spec.shoulders)}.${spec.module ?? '-'}`;
+  if (spec.v === 2) return `${base}.${arm(spec.shoulders)}.${spec.module ?? '-'}${spec.layout ? `.L${spec.layout}` : ''}`;
   return hasShoulderSlot(spec.chassis) ? `${base}.${arm(spec.shoulders)}` : base;
 }
 
 export function parseLoadoutKey(key: string): LoadoutSpec | null {
   if (key.trim().startsWith('v2.')) {
     const parts = key.trim().split('.');
-    if(parts.length !== 6) return null;
+    // O 7º grupo (`L1`...) é o layout de gatilhos, só quando não é o padrão.
+    if (parts.length !== 6 && !(parts.length === 7 && /^L[1-9]$/.test(parts[6]!))) return null;
     const a=(x:string|undefined):unknown => x==='-'?null:(/^([a-z]+)-([0-2])$/.test(x??'')?{id:x!.slice(0,-2),tier:Number(x!.at(-1))}:undefined);
     if (a(parts[2]) === undefined || a(parts[3]) === undefined || a(parts[4]) === undefined) return null;
-    const spec={v:2,chassis:parts[1],right:a(parts[2]),left:a(parts[3]),shoulders:a(parts[4]),module:parts[5]==='-'?null:parts[5]};
+    const spec={v:2,chassis:parts[1],right:a(parts[2]),left:a(parts[3]),shoulders:a(parts[4]),module:parts[5]==='-'?null:parts[5],...(parts.length === 7 ? { layout: Number(parts[6]!.slice(1)) } : {})};
     return validateLoadout(spec).ok ? spec as LoadoutSpec : null;
   }
   // O id do chassi leva maiúscula (`lancerL1`, `lr7lBastion`): com [a-z0-9] esses chassis não voltavam do texto do link nem da rede.

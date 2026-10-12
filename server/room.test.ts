@@ -852,6 +852,65 @@ describe('Canhão sônico online: uma onda de cada ombro, com o encaixe no event
   });
 });
 
+describe('Layout dividido online (P95): a mão esquerda no Ataque 2 junto dos ombros, pelo servidor', () => {
+  const DIVIDIDO = 'v2.marauder.blaster-0.plasma-0.sonic-0.-.L1';
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('entra com o layout na montagem: o Mech do servidor usa os gatilhos divididos (só a direita no Ataque 1)', async () => {
+    const { room, mine } = await palco(DIVIDIDO);
+    expect(mine.mech.loadout.layout).toBe(1);
+    expect(mine.mech.triggers.primary).toEqual(['rightHand']);
+    expect(mine.mech.triggers.secondary).toEqual(['leftHand', 'rightShoulder', 'leftShoulder']);
+    room.dispose();
+  });
+
+  it('o Ataque 1 atira só a mão direita (encaixe 0) e o Ataque 2 atira a mão esquerda (encaixe 1, plasma) e os dois ombros (encaixes 2 e 3, onda sônica)', async () => {
+    const a = await palco(DIVIDIDO);
+    drive(a.room, a.dan, 1, 20, { fire: true, yaw: a.yaw, pitch: a.pitch });
+    const um = shotMountsOf(a.dan, a.me);
+    expect(um.length).toBeGreaterThan(0);
+    expect(um.every((t) => t.mount === 0 && t.index === netWeaponIndex('blaster'))).toBe(true);
+    a.room.dispose();
+
+    const b = await palco(DIVIDIDO);
+    drive(b.room, b.dan, 1, 1, { secondary: true, yaw: b.yaw, pitch: b.pitch });
+    drive(b.room, b.dan, 2, 40, { yaw: b.yaw, pitch: b.pitch });
+    const dois = shotMountsOf(b.dan, b.me);
+    expect(dois.map((t) => `${t.mount}:${t.index}`).sort()).toEqual([
+      `1:${netWeaponIndex('plasma')}`,
+      `2:${netWeaponIndex('sonic')}`,
+      `3:${netWeaponIndex('sonic')}`,
+    ]);
+    b.room.dispose();
+  });
+
+  it('o alvo leva o dano do plasma da mão esquerda e das duas ondas no mesmo aperto (armas diferentes, o mesmo botão)', async () => {
+    const { room, dan, bot, yaw, pitch } = await palco(DIVIDIDO);
+    const antes = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch });
+    drive(room, dan, 2, 60, { yaw, pitch });
+    expect(antes - lifeOf(bot.mech)).toBeGreaterThanOrEqual(2 * hitDamage(weapon('sonic'), 15) + 1);
+    room.dispose();
+  });
+
+  it('o servidor valida o layout: o 2 não existe, e um robô de um layout só (Vector-09) recusa o L1; o protocolo é o 17 ou mais', async () => {
+    const room = await ArenaRoom.create('LAYOUT');
+    const ok = new FakePeer();
+    room.receive(ok, join('Dan', DIVIDIDO));
+    expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const dois = new FakePeer();
+    room.receive(dois, join('Ana', 'v2.marauder.blaster-0.plasma-0.sonic-0.-.L2'));
+    expect(dois.of(MSG.WELCOME)).toHaveLength(0);
+    const vector = new FakePeer();
+    room.receive(vector, join('Bia', 'v2.vector09.plasma-0.rockets-0.-.-.L1'));
+    expect(vector.of(MSG.WELCOME)).toHaveLength(0);
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(17); // o servidor do 16 não reconhece o último grupo da chave
+    room.dispose();
+  });
+});
+
 describe('Míssil teleguiado online: um míssil de cada ombro, que curva até o alvo fora da linha do tiro', () => {
   const TELE = 'v1.marauder.blaster-0.blaster-0.seeker-0';
   beforeAll(async () => {

@@ -10,7 +10,7 @@ import { HeatSink, OVERHEAT_SPEED, type ChassisHeat, type HeatState } from '../c
 import { repairModules } from '../combat/repair';
 import { applyDamage, partAt, type DamageResult } from '../combat/damage';
 import { FLINCH_DECAY, FLINCH_MAX } from '../combat/reaction';
-import { DEFAULT_TRIGGERS, MOUNT_PART, MOUNTS, type MountId, type TriggerLayout, type Vec3 } from '../combat/mounts';
+import { DEFAULT_TRIGGERS, MOUNT_PART, MOUNTS, type MountId, type NamedLayout, type TriggerLayout, type Vec3 } from '../combat/mounts';
 import type { DamageType, Loadout, WeaponStats } from '../combat/weapons';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 
@@ -57,6 +57,8 @@ export interface MechStats extends ChassisHeat {
   maxModuleHealth: MechModules;
   /** Quais encaixes atiram em cada botão (`combat/mounts.ts`). Sem isto: principal na mão direita, secundário na esquerda. */
   triggers?: TriggerLayout;
+  /** Layouts de gatilho que o jogador escolhe no Hangar (o primeiro é o padrão e é o `triggers`). Sem a lista, o chassi tem um só. */
+  layouts?: readonly NamedLayout[];
   /**
    * Boca de cada encaixe, em metros a partir dos pés, com o Mech virado para -Z. Os chassis de malha importada trazem a
    * medida do desenho aqui: o servidor não tem o desenho (usa o corpo procedural), e sem este dado a boca dele seria outra
@@ -102,6 +104,11 @@ export interface RigJoint {
 export interface LegRig {
   hip: RigJoint;
   knee: RigJoint;
+}
+
+/** Os gatilhos de um chassi no layout `layout` (índice em `MechStats.layouts`; fora da lista ou ausente = o padrão do chassi). */
+export function triggersOf(stats: Pick<MechStats, 'triggers' | 'layouts'>, layout?: number): TriggerLayout {
+  return stats.layouts?.[layout ?? 0]?.triggers ?? stats.triggers ?? DEFAULT_TRIGGERS;
 }
 
 /** Pontos articulados do modelo que a animação procedural controla. */
@@ -485,9 +492,9 @@ export abstract class MechBase {
     return this.heatSink.coolingBoost;
   }
 
-  /** Como os botões se ligam aos encaixes deste chassi. */
+  /** Como os botões se ligam aos encaixes deste chassi, no layout que a montagem escolheu (`Loadout.layout`). */
   get triggers(): TriggerLayout {
-    return this.stats.triggers ?? DEFAULT_TRIGGERS;
+    return triggersOf(this.stats, this.armed.layout);
   }
 
   /** O encaixe pode atirar agora: vivo, a parte do corpo dele de pé e as armas frias. Não olha se há arma nele. */

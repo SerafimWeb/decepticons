@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { MechBase } from '../entities/MechBase';
+import { weaponAt } from '../combat/mounts';
 import { weapon, type Tier, type WeaponStats } from '../combat/weapons';
 import type { BurstOptions, ParticleSystem } from './ParticleSystem';
 import { SHAPE } from './particleShapes';
@@ -42,6 +43,8 @@ function setFor(w: WeaponStats): FlameSet {
 const SETS: Readonly<Record<Tier, FlameSet>> = { 0: setFor(weapon('flamer', 0)), 1: setFor(weapon('flamer', 1)), 2: setFor(weapon('flamer', 2)) };
 
 const _origin = new THREE.Vector3();
+/** As duas mãos de gatilho (o lança-chamas sai delas). */
+const HAND_MOUNTS = ['rightHand', 'leftHand'] as const;
 const _dir = new THREE.Vector3();
 
 export class FlameVisuals {
@@ -66,12 +69,14 @@ export class FlameVisuals {
   /** Quantas partículas este Mech solta neste pulso, somando as mãos que levam lança-chamas (para o teste e para o orçamento). */
   update(mech: MechBase): number {
     if (!this.pulse || !mech.status.flaming || !mech.alive || !mech.root.visible) return 0;
-    const mounts = mech.triggers.primary;
+    const t = mech.triggers;
     let n = 0;
-    for (let i = 0; i < mounts.length; i++) {
-      const w = i === 0 ? mech.loadout.primary : mech.loadout.offhand;
-      if (!w?.flame) continue;
-      n += this.emit(mech, mounts[i]!, SETS[w.tier]);
+    // O lança-chamas de cada mão sai da mão dele, qualquer que seja o ataque que a aciona.
+    for (const mount of HAND_MOUNTS) {
+      if (!t.primary.includes(mount) && !t.secondary.includes(mount)) continue;
+      const w = weaponAt(mech.loadout, mount);
+      if (!w?.flame || (mount === 'leftHand' && mech.loadout.offhand === undefined)) continue;
+      n += this.emit(mech, mount, SETS[w.tier]);
     }
     return n;
   }
