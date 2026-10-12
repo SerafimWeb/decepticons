@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O Colossus v4 chegou e não entrou: o rig é que está errado — Qwen, 12/10 (P100, só documentação)
+
+**Ordem do Comandante (P100):** *"adicionei um novo modelo na pasta /blender/colossusv4, leve ele para o hangar, veja se está correto a armadura, ossos, etc, ou se devo melhorar ele no blender. ele é do tamanho 4, bem maior que o colossus v3"*.
+
+**O que foi feito:** o laudo do arquivo com o inspetor do contrato (`npm run mech:inspecionar`) e a leitura do JSON do `.glb`; o laudo completo está em **`MECHS_IMPORTADOS.md` §8**. **Nada foi ligado no jogo — de propósito** (ver abaixo).
+- **O arquivo** (`D:\imagens cybermech\BLENDER\colossusv4.glb`): 8,6 MB, **98.304 triângulos**, 1 malha **com skin**, 1 material, 3 texturas (2048 px), 11 ossos, sem animação, braços pendurados (pose boa), frente +Z assumida.
+- **Por que não entrou:** o jogo anima 11 ossos e o arquivo **não tem quatro deles** (`torso`, `head`, `leftHand`, `rightHand`); os braços são **um osso só** (sem antebraço → sem lugar para o encaixe de arma) e nascem no **mesmo nó das pernas**. O carregador lança erro e o `Game` cai no corpo procedural do Vector-09 — um chassi ligado assim mostraria o Vector-09, não o arquivo novo.
+- **Decisões do Comandante (12/10):** ele **re-riga no Tripo/Mixamo e manda de novo**; e o robô é **escala 4**. O brief do re-rig (hierarquia dos ossos, nomes `mixamorig`, decimate, simetria, o que **não** mexer) está no §8.
+- **A escala 4 tem portão:** **nenhuma arma cabe num robô de tamanho 4** hoje (todas as armas são `size: 2`; a regra só deixa o 4 usar `size: 3`) — as versões de arma de tamanho 3/4 (o "futuramente" da P82) viram pré-requisito. A P100 **ressuscita a P11** ("Mechs de tamanho 4 e 5", 28/09, sem registro), cuja **altura** segue em aberto.
+- **Como ver:** a foto do laudo é `.decepticons/arte/colossusv4-malha-qwen.png` (6 vistas da malha crua). **O veredito da armadura é do dono — eu não leio imagem.**
+- **Testes:** nenhum (só documentação; `npm run check` igual).
+
+**Próxima sessão começa com:** o `.glb` re-rigado do Comandante; então `npm run mech:inspecionar -- <arquivo> --id colossusv4` e, com o laudo limpo, a ligação do chassi (`CHASSIS`, `ARM_SLOTS`, `CHASSIS_SIZE` 4, `CHASSIS_PAPEL`, `IMPORTED_CHASSIS`, `ui/HangarMenu.ts`) — sem esquecer que a escala 4 precisa das versões de arma de tamanho 3/4.
+
 ## A folha de decisões do Comandante: sete escolhas no canal que ele lê — Qwen, 12/10 (só documentação)
 
 **Por quê:** as fichas de missão deixaram **28 perguntas** espalhadas — e o trabalho **parou nelas**: sem a decisão da ficção, o Claude não põe o técnico no lado dos aliados (e a missão #1 **não tem quem escoltar**); sem o tamanho, o Codex não constrói o cenário; e o #259 não sai do limbo sem escolha. **Documentação a mais não destrava nada; sete respostas, sim.**
