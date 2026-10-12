@@ -1,5 +1,13 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O kit do YouTube (o primeiro mês) — Qwen, 12/10 (P47, só documentação)
+
+**Por que:** o Comandante decidiu **começar pelo YouTube** (§ 7 do `PUBLICACAO_E_MONETIZACAO.md`). O que existe, o que abrir e o que publicar primeiro virou a seção **§ 4.1** do mesmo documento — o **kit operacional** (canal, os quatro primeiros vídeos, a regra dos Shorts, miniatura e título, a cadência de um vídeo longo por semana, e o que medir: **o funil de cliques que a landing já conta**, não a visualização).
+
+**O primeiro vídeo recomendado não precisa de gameplay:** **"o processo"** (um estúdio construindo um jogo com quatro IAs) é a viralidade mais exclusiva do projeto (`DIVERSAO.md` § 8.3) e não depende do `F9` nem da mesa — é o único que dá para publicar antes de a fábrica do vídeo (P97) ficar pronta.
+
+**Nada construído.** É documentação sobre a doc que já existe.
+
 ## As decisões do Comandante sobre publicação — nome, YouTube, contas, killcam e os takes na mesa — Qwen, 12/10 (P47/P97/P98)
 
 **O Comandante respondeu as cinco perguntas do `PUBLICACAO_E_MONETIZACAO.md` § 7, no mesmo dia (12/10):**
