@@ -10,6 +10,7 @@ import type { Destructibles } from '../environment/Destructibles';
 import type { BurstOptions, ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
 import type { DamageResult } from './damage';
+import { hitFlinch, hitPush } from './reaction';
 import { DAMAGE_TYPE, splashDamage, weapon, type WeaponStats } from './weapons';
 
 /** Tamanho do pedaço que vira destroço quando a parte é arrancada. */
@@ -111,6 +112,7 @@ export class CombatSystem {
       const remaining = mech.defend(damage, DAMAGE_TYPE[w.id], at.x - p.x, at.y - p.y - height * 0.5, at.z - p.z);
       const result = mech.takeHit(_near, remaining);
       if (result.applied <= 0) continue;
+      this.react(mech, p.x - at.x, p.z - at.z, w, result.applied);
       if (result.killed) this.wreck(mech, dir, shooter);
       else if (result.partDestroyed) this.tearOff(mech, result.part, dir);
       else if (w.inflicts && remaining >= damage * STATUS.shieldPass) inflictOnHit(mech.status, w.inflicts, result.part, shooter);
@@ -162,6 +164,15 @@ export class CombatSystem {
     this.onMechHit?.({ mech: small, result, shooter: big, kind: 'crush' });
   }
 
+  /**
+   * A reação do alvo ao acerto (`combat/reaction.ts`): o empurrão (regra de simulação) e o tranco do torso (desenho), na direção `dx, dz` (a do tiro, ou para longe da
+   * explosão), na medida do dano que passou. Sem alocação (G4).
+   */
+  private react(mech: MechBase, dx: number, dz: number, w: WeaponStats, applied: number): void {
+    mech.push(dx, dz, hitPush(w, applied));
+    mech.flinch(dx, dz, hitFlinch(applied));
+  }
+
   /** O Mech dono deste colisor (mira, tiro automático), ou undefined para cenário. */
   mechOf(collider: RAPIER.Collider | null): MechBase | undefined {
     return collider ? this.byCollider.get(collider.handle) : undefined;
@@ -184,6 +195,7 @@ export class CombatSystem {
     const remaining = mech.defend(damage, w ? DAMAGE_TYPE[w.id] : 'termico', -dir.x, -dir.y, -dir.z);
     const result = mech.takeHit(hit.point, remaining);
     if (result.applied <= 0) return;
+    if (w) this.react(mech, dir.x, dir.z, w, result.applied);
     if (result.killed) this.wreck(mech, dir, shooter);
     else {
       if (result.partDestroyed) this.tearOff(mech, result.part, dir);

@@ -831,7 +831,8 @@ describe('Canhão sônico online: uma onda de cada ombro, com o encaixe no event
     expect(antes - lifeOf(bot.mech)).toBeGreaterThanOrEqual(2 * hitDamage(weapon('sonic'), 15)); // as duas bocas, o alvo a ~13,7 m da boca
     expect(antes - lifeOf(bot.mech)).toBeLessThanOrEqual(2 * hitDamage(weapon('sonic'), 10));
     expect(z0 - bot.mech.simPosition.z).toBeGreaterThan(1); // empurrado para longe do atirador (para -Z)
-    expect(mine.mech.shove.length()).toBe(0); // quem atira não se empurra
+    // Quem atira não se empurra com a própria onda (8 m/s no alvo). O bot do palco revida e os tiros dele empurram um pouco (reação ao tiro, P69): só isso sobra.
+    expect(mine.mech.shove.length()).toBeLessThan(1);
     room.dispose();
   });
 
