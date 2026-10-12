@@ -1,3 +1,18 @@
+## [2026-10-12] A química do jogo: as cinco sensações viram um plano, e a ordem do `DIVERSAO.md` não muda (P96, Qwen)
+
+**Ordem do Comandante (P96):** "melhorar a jogabilidade, a dopamina, a serotonina, a adrenalina, a oxitocina e a sensação de bem-estar de cumprir missão, com dificuldade que instigue a tentar de novo, mudar configurações e customizar os robôs", aproveitando os aprendizados de Minecraft, Fortnite, COD, Valorant, Battlefield, War Robots, Mech Arena e Doom.
+
+**Decisões:**
+1. **O documento novo é `QUIMICA_DO_JOGO.md`, e ele é companheiro, não substituto, do `DIVERSAO.md`.** A **ordem de prioridade** continua sendo a do `DIVERSAO.md` § 10; este documento explica *por que* ela funciona emocionalmente (as cinco químicas), diz o que **não** copiar de cada jogo e acrescenta quatro itens novos que caem **dentro** daquela fila (recorde de onda, sequência de abates, maestria por arma, autonomia visível). Duas ordens concorrentes seria o mesmo que nenhuma.
+2. **As cinco químicas foram separadas, e nenhuma vira feature por si.** Dopamina = progresso visível; serotonina = prova durável (recorde, maestria); adrenalina = risco com saída (o eixo **mais bem servido** hoje); oxitocina = vínculo (depende de **times online**, P81); bem-estar = objetivo com início-meio-fim (depende de **missão**). Cada proposta passa pelo filtro de três perguntas do `DIVERSAO.md` § 3.
+3. **A química não se mede; mede-se o proxy.** Nenhuma métrica lê dopamina (`PLAYTEST.md` já diz); o plano mede rodadas por sessão, volta D1, **variedade de build** e recorde de onda. Sem isso, "ficou mais divertido" é opinião.
+4. **A agência (configurações + customização) é recompensa, não só ajuste.** O pedido literal do dono ("mudar configurações, customizar robôs") entra como eixo próprio: perfil de configurações com nome, **código de build** e a dica "teste isto" — tudo **local, nunca vantagem** (a mesma regra do não-pay-to-win, agora para a autonomia).
+5. **As quatro propostas que mexem em regra só entram se provarem.** A agressão recompensada (pisão/serra que devolve energia) é a única que toca combate e passa pelo `combat/balance.ts`; as outras três (recorde, maestria, perfis) são locais e não viajam pelo fio.
+
+**Achados revalidados no código da `main` (R17 — registrados, não corrigidos aqui: `ui/` e `hangar/` são território do Gemini):** o nível do piloto **não sobe jogando** (`ui/DailyChallenges.ts:138`); o `trackWaveOrRound` **não tem chamador**; o `validateLoadout` idem; e o `waveReached` chega ao HUD (`core/Game.ts:977`) mas **nenhum recorde é salvo**.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen.
+
 ## [2026-10-12] Todo acerto empurra e dá um tranco, na medida do dano que passou (P69, Claude)
 
 **Ordem do Comandante (P69):** "reação nos inimigos" ao tiro.

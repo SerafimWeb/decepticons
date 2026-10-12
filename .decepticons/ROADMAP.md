@@ -241,6 +241,12 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Painel de balanço na sala de controle:** quantas partidas cada arma venceu, tempo médio até morte, distribuição de dano; alimenta as decisões semanais de ajuste #negocio
 - [x] **Desafios diários e progressão (DailyChallenges):** Nível de Piloto, barra XP, Créditos ₵, 3 missões diárias com recompensas ("5 abates com plasma", "causar 500 de dano", "derrotar 3 andróides"), salvas localmente e integradas no `Game.ts` #modos
 - [x] **Modo sobrevivência e MissionHUD:** interface completa (briefing tático com digitação, HUD de onda, sirenes de alarme, banner ONDA LIMPA e resumo de estatísticas/medalhas) #modos
+- [ ] **Química do jogo (P96) — consertar os ciclos de recompensa que já existem:** o nível do piloto **não sobe jogando** (`addXp` só é chamado dentro de `claimReward`), o `trackWaveOrRound` (missão "sobreviver 3 ondas") **não tem chamador** e o gancho de "conquistado jogando" (`validateLoadout`) também não; sem isso a dopamina e a serotonina ficam travadas. Plano em `QUIMICA_DO_JOGO.md` § 5 (itens 1 a 3) e `DIVERSAO.md` § 9/§ 10 #modos
+- [ ] **Recorde de onda com comemoração (P96):** o `waveReached` já existe e chega ao HUD, mas **nenhum melhor é salvo**; guardar o recorde local e celebrar a marca nova (`QUIMICA_DO_JOGO.md` § 5 #3) #ux
+- [ ] **Aviso de sequência de abates (P96):** 2/3/4 abates em poucos segundos, com som próprio (constava como item pendente do Gemini) — dopamina e adrenalina baratas (`QUIMICA_DO_JOGO.md` § 5 #4) #ux
+- [ ] **Maestria por arma e por chassi (P96):** contador de abates por arma com selo no Hangar; **local, 0 byte de rede** (`QUIMICA_DO_JOGO.md` § 5 #5) #ux
+- [ ] **Autonomia visível (P96):** perfil de configurações salvo com nome, **código de build curto** (`CM-V9-SNIPER`) e a dica "teste isto" depois de perder; tudo local, nunca vantagem (`QUIMICA_DO_JOGO.md` § 5 #10) #ux
+- [ ] **Agressão recompensada (P96):** o abate **encostado** (pisão/serra) devolve energia ou alivia calor — só se passar no `combat/balance.ts` (`QUIMICA_DO_JOGO.md` § 5 #11) #combate #modos
 
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
 - [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo
