@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Missões com cenários maiores: escolta, ataque, defesa de base e contraataque — Qwen, 12/10 (ordem P99, só documentação)
+
+**Ordem do Comandante (12/10):** *"precisamos de fases com cenários maiores, missões de proteção de escoltas, ataque, defesa de base, contraataques, etc, pra dar mais realismo e jogadas mais interessantes, e com mais robôs por partida"*.
+
+**O pedido encosta em coisa pronta e em coisa já planejada — registrei sobre o que existe, sem abrir um plano paralelo:**
+
+- **"Mais robôs por partida": já está feito offline.** A **P91** (no ar) monta **até 24 inimigos e 12 aliados (32 corpos)**, medido em **1,9 ms por tick**. O que falta é o **esquadrão por sala no servidor** (fase 3 do `PAINEL_ADMIN.md`).
+- **Missão com objetivo: dois modos já têm** — Sobrevivência (6 ondas, o Colossus na sexta) e CTF (3 capturas), em `?modo=survival` e `?modo=ctf`. **O deathmatch não tem objetivo** (só placar), e é o que a `QUIMICA_DO_JOGO.md` aponta como falta de "dever cumprido".
+- **O plano das missões em fases já existe:** `ROADMAP` Fase 5 + `DIVERSAO.md` § 10 **#7** — **a primeira missão é a escolta/defesa do técnico ENTRÓPICO**, escolhida de propósito por reusar o que já está no jogo (regra + HUD, sem arte nova).
+
+**O que o pedido acrescenta:** os **quatro tipos nomeados** — **contraataque** (defender e depois retomar) é o que ainda não estava na lista — e, principalmente, **cenários maiores**: escolta e contraataque pedem um **caminho longo**, e a Arena tem 200 m. Isso é **escala**, e o passo certo é um **mapa de missão com rota**, antes do mundo com streaming do `VISAO.md` (Fase 7). Ficou registrado em dois itens do `ROADMAP` (`#modos` e `#cenarios`).
+
+**Nada construído.** É registro: a regra de objetivo no `Match` e o `OBJECTIVE_STATE` na rede são do **Claude**; o briefing, o HUD de objetivo e o resumo, do **Gemini**; o cenário, do **Codex**.
+
 ## O kit do YouTube (o primeiro mês) — Qwen, 12/10 (P47, só documentação)
 
 **Por que:** o Comandante decidiu **começar pelo YouTube** (§ 7 do `PUBLICACAO_E_MONETIZACAO.md`). O que existe, o que abrir e o que publicar primeiro virou a seção **§ 4.1** do mesmo documento — o **kit operacional** (canal, os quatro primeiros vídeos, a regra dos Shorts, miniatura e título, a cadência de um vídeo longo por semana, e o que medir: **o funil de cliques que a landing já conta**, não a visualização).
