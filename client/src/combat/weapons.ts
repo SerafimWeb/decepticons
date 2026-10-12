@@ -262,18 +262,22 @@ const BASE: Record<WeaponId, WeaponBase> = {
     blastRadius: 0, mass: 6, tracer: 'shell',
   },
   /**
-   * Canhão de cerco (dono, 12/10: "futuramente faremos versões das armas para o tamanho 3 e 4" — a primeira delas).
-   * **A versão de tamanho 3 do canhão pesado**: a mesma ideia (um projétil de aço, um tiro só, muito dano), feita para um
-   * gigante. Para um robô de tamanho 4 ela é uma arma **leve** (a pesada do tamanho N é a leve do N+1, a conta do
-   * weaponClass.ts); para um de tamanho 3 é **pesada**; um Mech comum (tamanho 2) não a carrega. Um tiro a cada 3,2 s:
-   * mais lento e mais pesado que o canhão dos Mechs (2,6 s), como convém a um titã. Natureza balistica, o mesmo aço.
+   * Canhão de cerco (dono, 12/10: "futuramente faremos versões das armas para o tamanho 3 e 4" — a primeira delas; e
+   * no mesmo dia: "crie a arma dele, uma arma poderosa, de tiro único, que demora pra carregar, mas é um tremendo tiro").
+   * **A versão de tamanho 3 do canhão pesado, agora de CARGA**: segura o gatilho **3 s** (`chargeTime`, a mesma mecânica do
+   * trilho — soltar, perder o braço ou superaquecer cancela) e solta **um obus de 360**, com 5 m de explosão, a 240 m/s.
+   * Derruba um torso de Mech (300) **num tiro só**, e um Colossus-01 (1 200) em quatro; o ciclo é de ~7,5 s (3 s de carga
+   * + 4,5 s entre tiros) e o calor de um tiro é 0,9 do dissipador: é arma de um tiro por vez, não de pressão. Para um robô
+   * de tamanho 4 ela é uma arma **leve** (a pesada do tamanho N é a leve do N+1, a conta do weaponClass.ts); para um de
+   * tamanho 3 é **pesada**; um Mech comum (tamanho 2) não a carrega. Natureza balistica, o mesmo aço.
    */
   siege: {
     id: 'siege', name: 'Canhão de cerco', kind: 'energy',
-    damage: 150, fireInterval: 3.2, heatPerShot: 0.85,
-    magazine: 0, reload: 0, speed: 170,
-    optimalRange: 120, maxRange: 320, minFactor: 0.6,
-    blastRadius: 0, mass: 12, tracer: 'shell',
+    damage: 360, fireInterval: 4.5, heatPerShot: 0.9,
+    magazine: 0, reload: 0, speed: 240,
+    optimalRange: 140, maxRange: 400, minFactor: 0.7,
+    blastRadius: 5, mass: 12, tracer: 'shell',
+    chargeTime: 3,
   },
   /**
    * Canhão automático (dono, 11/10: "armas de tiros menores e sequenciais de metal"). **Projéteis de aço em sequência firme, sem esperar o cano

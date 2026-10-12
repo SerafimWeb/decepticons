@@ -79,7 +79,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   rotary: WEAPON_HINT_NOVAS.rotary,
   sonic: 'Som · só nos ombros (Ataque 2), as duas bocas juntas · onda em cone de 22 m que EMPURRA · 20 de dano por boca, cheio até 10 m · a chapa Amortecedor segura 90% · cada nível +25% de alcance',
   cannon: 'Aço · um obus só, grande e lento (150 m/s) · 90 de dano, um a cada 2,6 s · 4 acertos (MK I) ou 3 (MK II e III) para um torso · só os pesados o carregam',
-  siege: 'Tamanho 3 · o canhão do titã: um obus de cerco, 150 de dano, um a cada 3,2 s · para o Colossus-V4 é arma LEVE · só gigantes o carregam',
+  siege: 'Tamanho 3 · o canhão do titã: SEGURE 3 s para carregar e solte um obus de 360 com 5 m de explosão · derruba um torso de Mech num tiro só · para o Colossus-V4 é arma LEVE · só gigantes o carregam',
   autocannon: 'Aço · projéteis em sequência firme, 5 por segundo · 10 de dano, preciso e rápido · esquenta menos que o plasma · sem espalhamento',
 };
 

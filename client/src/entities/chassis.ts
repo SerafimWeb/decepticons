@@ -234,6 +234,13 @@ export const COLOSSUS_V4_STATS: MechStats = {
   weaponCapacity: 30,
   maxModuleHealth: { torso: 1900, head: 380, leftArm: 520, rightArm: 520, leftLeg: 700, rightLeg: 700 },
   loadout: { primary: weapon('siege'), secondary: weapon('siege') },
+  // Bocas medidas no desenho (npm run mech:bocas -- colossusv4), em metros a partir dos pés, virado para -Z: o servidor
+  // atira daqui e o corpo dele é outro (G14). Só as mãos — o titã não tem encaixe de ombro. Mudou o rig, a pose (armRest)
+  // ou o módulo da arma? Meça de novo.
+  muzzles: {
+    rightHand: [8.55, 13.51, -9.18],
+    leftHand: [-8.55, 13.51, -9.18],
+  },
 };
 
 /**

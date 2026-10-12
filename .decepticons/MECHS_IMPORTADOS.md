@@ -188,7 +188,20 @@ roda `npm run mech:inspecionar` (§5) e liga no Hangar.
 
 Um bot do esquadrão pode ter o chassi de um robô importado (`CHASSIS_DOS_BOTS`), mas **nunca a malha**: o servidor não carrega `.glb`, e o bot vive na simulação. Ele leva os **números do chassi** (vida, passo, dash, escudo de metal) e o corpo procedural do Vector-09 (o Arara e a Onça têm o deles, `entities/blueprintByChassis.ts`). Robô importado novo entra sozinho na lista de chassis dos bots; para ele ganhar a silhueta própria no bot, o caminho é um blueprint procedural, não o `.glb`.
 
-## 8. O Colossus v4 (P100, 12/10, Qwen): o laudo do arquivo e o que o rig precisa
+## 8. O Colossus v4 (P100, 12/10, Qwen): o laudo do arquivo, o rig consertado e a lição do armRest
+
+> **Status: RESOLVIDO no mesmo dia.** O rig foi refeito por **script no Blender headless** (`.tmp/rig-construir.py`):
+> esqueleto de **17 ossos com nomes Mixamo** (medidos a partir dos pesos bons do rig antigo), pele refeita por *bone heat*,
+> **decimate 98.304 → 24.576 triângulos** e texturas 2048 → 1024 (**8,6 MB → 2,6 MB**). O inspetor passa (mixamo, 17 ossos,
+> com antebraço, frente -Z medida) e o vazamento da pele é ≤ 2,7% da altura. O laudo abaixo fica como registro do arquivo
+> que chegou.
+>
+> **A segunda lição (custou uma rodada): o `armRest`.** O arquivo veio com os braços **pendurados** (A-pose) e o módulo da
+> arma aponta para onde o **antebraço** aponta — sem `armRest`, o canhão de cerco apontava **para o chão** (o
+> `npm run mech:bocas` mediu a mão a 3,83 m de altura num titã de 20 m). Com `armRest: { upper: [0.62,-0.77,-0.15],
+> fore: [0.1,0,-1] }` (a mesma pose do Marauder) as bocas caem certas: **mão a 13,51 m de altura e 9,18 m à frente**.
+> **Regra nova: todo robô importado que leva arma de código precisa de `armRest`**, mesmo que a pose de repouso dele seja
+> boa — a pose de repouso é do corpo, não do cano.
 
 > **Pedido do dono (12/10):** *"adicionei um novo modelo na pasta /blender/colossusv4, leve ele para o hangar, veja se está correto a armadura, ossos, etc, ou se devo melhorar ele no blender. ele é do tamanho 4, bem maior que o colossus v3"*.
 > **Em uma linha:** **não entra no Hangar ainda** — o esqueleto tem 11 ossos e **faltam quatro dos que o jogo anima** (tronco, cabeça e as duas mãos), e os braços são **um osso só**. O dono **re-riga** e manda de novo; as decisões dele estão na **P100**.
