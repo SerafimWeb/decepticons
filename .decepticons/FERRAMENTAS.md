@@ -109,3 +109,36 @@ o resumo permanente, o `LEIAME.md` é o manual completo e local.
   Rapier.
 - **Gerar por IA não entra na versão publicada da mesa** (só local) — precisaria expor a chave
   de API no navegador, de propósito não fizemos isso.
+
+---
+
+## 6. CI vermelho: ler o log e medir o boot (para os agentes)
+
+**Ler o log quando o token do `gh` morreu (12/10, PR do console).** `node scripts/gh.mjs pr checks <n>` funciona (cai para a credencial do Git), mas `gh api …` e `gh run …` **não**: sem token o GitHub responde **404** em repositório privado (ou **403 "API rate limit exceeded"**), e o fallback do `scripts/ghSeguro.mjs` só dispara em erro de autenticação (401, "Bad credentials"; de propósito: um 404 de verdade, como um PR que não existe, não deve ser repetido).
+A receita é um script em `.tmp/` que roda o `gh` com a credencial do Git **só no ambiente do processo filho**, com as funções do próprio projeto (o token nunca vai para a saída, para argumento de linha de comando nem para arquivo):
+
+```js
+// .tmp/ci/gh-com-token.mjs
+import { spawnSync } from 'node:child_process';
+import { esconder, tokenDoGit } from '../../scripts/ghSeguro.mjs';
+
+const token = tokenDoGit();
+if (!token) { console.error('sem credencial guardada no Git'); process.exit(1); }
+const r = spawnSync('gh', process.argv.slice(2), { encoding: 'utf8', env: { ...process.env, GH_TOKEN: token }, maxBuffer: 256 * 1024 * 1024 });
+process.stdout.write(esconder(r.stdout, token));
+process.stderr.write(esconder(r.stderr, token));
+process.exit(r.status ?? 1);
+```
+
+Uso: `node scripts/gh.mjs pr checks <n>` imprime a URL do job (`…/actions/runs/<run>/job/<job>`); então
+`node .tmp/ci/gh-com-token.mjs api repos/SerafimWeb/decepticons/actions/jobs/<job> --jq '[.steps[] | {n: .number, nome: .name, resultado: .conclusion}]'` mostra o passo que falhou e
+`node .tmp/ci/gh-com-token.mjs run view <run> --job <job> --log-failed` imprime o log desse passo. Para esperar uma execução (por exemplo o deploy depois do merge), consulte `api repos/SerafimWeb/decepticons/actions/runs/<run> --jq '{status, conclusion}'`
+de tempos em tempos, e o deploy só conta quando o passo "Conferir o site publicado" passa (daqui o site pode não responder: memória do 10/10).
+
+**Boot lento no CI.** O smoke (`scripts/smoke.mjs`) dá **30 s** para o botão dizer "clique para jogar"; o CI leva de **8 a 20 s** (execuções de 11/10), então a margem é de uns 10 s. Um console de comando completo visível durante o carregamento somou **+5 s** localmente (6,8 s → 12 a 13 s) e passou dos 30 s no CI:
+o custo não estava em script, layout nem estilo (as métricas do renderer quase não mudaram), e sim no compositor por software disputando a CPU com a compilação dos shaders, o requisito de GPU integrada (G12), então pesava em GPU fraca também.
+**Regra:** o que aparece enquanto o jogo carrega é mínimo (título e botão); tudo o que for pesado (monitores, canvas, animações) só depois de o botão ficar pronto. E atenção: o `HUD.setReady` roda no construtor do `Game` e o botão **já diz "clique para jogar" antes do aquecimento dos shaders**, que troca o texto por "preparando gráficos" e o restaura no fim;
+quem reage a "pronto" tem que esperar o texto assentar (o `CommandConsole` espera 250 ms).
+**Como medir:** sirva dois builds (a `main` numa worktree em `.tmp/` e o seu) com os mesmos argumentos do smoke (`--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`, Chrome headless) e **alterne as rodadas** (a máquina oscila de 6 a 9 s na mesma `main`); esconda partes do overlay por CSS injetado depois do `DOMContentLoaded`
+para achar o culpado; o CPU por processo sai do CDP (`SystemInfo.getProcessInfo`) e o tempo de layout, estilo e script de `Performance.getMetrics`. Para simular um runner lento, sature núcleos com laços ocupados (6 de 8) e compare de novo.
+**Cuidado ao apagar a worktree de teste:** o `node_modules` dela é uma **junção** para o do projeto: remova só o atalho (`[System.IO.Directory]::Delete(caminho, $false)`, não recursivo, que falha em vez de apagar se for um diretório de verdade) e só então `git worktree remove` (AGENTS.md, regra 12).

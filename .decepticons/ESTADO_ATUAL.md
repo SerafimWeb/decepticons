@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Console de comando no ar, e o que o CI vermelho ensinou — Claude, 12/10 (PR `claude/ferramentas-ci`, só documentação)
+
+**O console de comando (PR #245, ordens P86 a P89) está na `main` desde `c8fa219` e no ar:** o CI e o deploy passaram (o passo "Conferir o site publicado" roda nos servidores do GitHub e confirmou o site) e o atualizador religou o servidor de jogo no mesmo commit (`servidor no ar: protocolo 15`, em cerca de 1 minuto; o protocolo não mudou).
+**Daqui não consigo abrir o site** (a conexão é recusada, como na memória do 10/10): a conferência visual é do Comandante, em `www.selvamkt.com.br/cybermech/jogar/` e `.../jogar/?comandante=1`.
+
+**O que o primeiro push ensinou** (a história e as medidas estão na seção do console, logo abaixo): o CI ficou vermelho por **boot lento no smoke** e a correção foi uma tela de carregamento mínima; o `gh` desta máquina não lia o log do CI (o `gh api` anônimo responde 404).
+**Este PR só documenta:** a receita de ler o log de um CI vermelho com a credencial do Git e o método de medir o boot (`FERRAMENTAS.md` §6), uma linha na regra 13 do `AGENTS.md` e dois itens no `ROADMAP` (`gh.mjs` também para `gh api` e `gh run`; aviso de boot lento no smoke). Nenhum código.
+
+**Próxima sessão começa com:** o que está na seção do console logo abaixo (o playtest do Comandante, os lugares das missões e a escolha entre `claude/bot-spec` e `claude/observar-sala`).
+
 ## Console de comando: a tela de início virou a sala de comando do painel admin — Claude, 11/10 (PR `claude/console-comando`, ordens P86 a P89)
 
 **Ordens do Comandante:** (P86) "criar nosso painel admin usando essas referências, pra servir com todos os botões e configurações em um só espaço", "use minhas imagens apenas como ideia de referência, faça a sua
