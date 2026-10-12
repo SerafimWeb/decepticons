@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A química do jogo: o que faz o piloto voltar — Qwen, 12/10 (ordem P96, só documentação)
+
+**Ordem do Comandante (12/10, P96):** *"melhorar a jogabilidade, a dopamina, a serotonina, a adrenalina, a oxitocina e a sensação de bem-estar, de cumprir missão, tarefas, com dificuldade suficiente pra instigar o jogador a tentar de novo, mudar configurações, customizar seus robôs, aproveitando aprendizados de Minecraft, Fortnite, COD, Valorant, Battlefield, War Robots, Mech Arena, Doom, pra que o nosso jogo se torne maior que os anteriores."*
+
+**O que é:** o documento **`QUIMICA_DO_JOGO.md`** (novo) — a leitura emocional do que o jogo já entrega e onde dói, com as cinco químicas (dopamina, serotonina, adrenalina, oxitocina, dever cumprido) mapeadas a mecânicas existentes, os jogos de referência (e o que **não** copiar de cada um), duas propostas novas por eixo, o **eixo da agência** (configurações + customização = recompensa), e a fila de propostas com custo de CPU/rede, dono e como conferir. **Não substitui a ordem do `DIVERSAO.md` § 10:** só explica *por que* ela funciona emocionalmente e acrescenta quatro itens que caem dentro dela. **Nada construído neste PR** — é documentação e registro, como o P96 pediu.
+
+**Os quatro achados que ele revalida no código da `main` hoje (R17):** o **nível do piloto não sobe jogando** (`ui/DailyChallenges.ts:138`: `addXp` só é chamado dentro de `claimReward`); o **`trackWaveOrRound` não tem chamador** (a missão "sobreviver 3 ondas" nunca progride); o gancho de "conquistado jogando" (`validateLoadout`) está sem chamador; e o `waveReached` chega ao HUD (`core/Game.ts:977`) mas **nenhum recorde é salvo**. Os três primeiros são conserto pequeno na frente do Gemini e destravam a retenção que já deveria estar no ar.
+
+**A tese (uma frase):** a química do CYBERMECH não vem de mais um botão e sim de **fechar os ciclos que já existem** (o nível que não sobe, o recorde que não é salvo, o objetivo que falta) e de **mostrar o que o jogador fez** (o recibo, o selo, a build dele) — quem vê a própria marca quer voltar para melhorá-la.
+
+**Registro em:** `ORDENS_DO_COMANDO.md` (P96), `ROADMAP.md` (seis itens na Fase 5), `HISTORICO_DE_DECISOES.md` (decisões deste PR) e o documento novo `QUIMICA_DO_JOGO.md`. **A landing não muda de texto** (nada virou REAL): a seção "O que está sendo construído" se atualiza sozinha com o `ROADMAP` no próximo deploy (política das páginas públicas).
+
+**Próxima sessão começa com:** o **PR do esquadrão (fase 1A)** do Claude (esta pasta está no branch dele, `claude/esquadrao-contrato`) e, na frente do Gemini, os consertos da progressão (`QUIMICA_DO_JOGO.md` § 5, itens 1 a 3) — que destravam dopamina e serotonina sem tocar no caminho crítico.
+
 ## Ataque 1 e Ataque 2 — Claude, 12/10 (PR `claude/ataque-1-e-2`, ordem P95)
 
 **Ordem do Comandante (P95):** "os robôs têm ataque 1 e ataque 2: arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral (podendo ser configurado assim) nos robôs maiores; nos pequenos de entrada, o braço direito e o esquerdo, cada um com um botão do mouse".
