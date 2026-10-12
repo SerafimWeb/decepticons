@@ -91,6 +91,38 @@ arquivo não vai para o git** (mora em `.tmp/`, G15), só existe nesta máquina.
 mesa de outra máquina, comece lendo-o de novo por lá; o que está aqui neste `FERRAMENTAS.md` é
 o resumo permanente, o `LEIAME.md` é o manual completo e local.
 
+### 3.1 O que falta: o take do F9 nascer dentro da mesa (ordem P97, 12/10)
+
+**Pedido do Comandante:** *"gravamos os takes de jogos usando a tecla F9 e quero que esses takes estejam disponíveis na
+mesa pra eu finalizar e fazer manualmente as edições pra publicarmos algo de alta qualidade, gráficos ultrahd, som"*.
+
+**O que já existe:** o `F9` **já grava com som** (o áudio do próprio `AudioSystem` é misturado num
+`MediaStreamAudioDestinationNode`; VP9 a 16 Mbps, `client/src/core/GameRecorder.ts`) e trava a qualidade no máximo
+enquanto grava. A mesa **já tem** a cena `clipe`, com seletor de arquivo e o campo "início" (onde cortar).
+
+**Os dois atritos que a ordem manda tirar:**
+
+1. **O passo manual de copiar o arquivo.** Hoje o `.webm` baixa na pasta de downloads e o dono copia na mão para
+   `.tmp/video/clipes/` (jeito 3, passo 2, acima). **Proposta:** ao parar a gravação, o `GameRecorder` **entrega o take
+   à mesa** por um `POST` para o servidor local dela (`http://127.0.0.1:4199`), que grava o arquivo em
+   `.tmp/video/clipes/` — e o take já aparece na lista do seletor. **Com a mesa desligada, o comportamento de hoje
+   continua** (baixa o arquivo): uma gravação não pode se perder por a mesa estar fechada.
+2. **A edição manual de verdade.** Hoje o canvas só desenha um **marcador** na cena de clipe, e quem corta e costura é
+   o `render.mjs`/`ffmpeg`, por fora, na exportação. Para "finalizar na mão" falta pelo menos: **prévia do take**
+   (um `<video>` no lugar do marcador), o campo **fim** (hoje só existe o início) e o **UHD** (a saída é 1080p60; um
+   `--altura 2160` no `render.mjs`, com o custo de tempo medido).
+
+**Ordem de trabalho sugerida (do mais barato ao mais caro):** **(a)** o `POST` do take para a mesa; **(b)** o campo
+*fim* e a prévia do clipe; **(c)** o preset UHD na exportação; **(d)** a resolução de captura no "modo captura"
+(1×/1,5×/2×) — **com cuidado:** em 29/09 forçar a resolução acima do teto travou e perdeu quadro
+(`HISTORICO_DE_DECISOES.md`, "F9 travava e perdia quadro"), então medir antes de fixar o padrão.
+
+**Quem toca:** o gravador é do **Claude** (dono do `GameRecorder`, P44); a mesa é **local** (`.tmp/video/`, fora do
+git), então a ponta que recebe o arquivo é feita nesta máquina, e o `.tmp/video/LEIAME.md` é o manual dela.
+
+**Como o Comandante confere:** gravar um take (`F9`), parar, e ver o arquivo **já na lista da mesa** — sem copiar
+nada na mão.
+
 ---
 
 ## 4. Medir travadas com GPU real

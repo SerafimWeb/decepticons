@@ -35,6 +35,7 @@
 | **Steam** | **Binário desktop** (wrapper Electron/Tauri do nosso cliente — a Steam não roda HTML5 no navegador), **US$ 100 por app** (recuperável), 30% de taxa, página de loja, wishlist e revisão; **venda dentro do jogo tem de passar pela Steam Wallet** (não dá Stripe) | Alcance de PC, crédito de "jogo de verdade", Workshop, comunidade | **Ruim no começo** (decisão de 23/09): cobrar para entrar esvazia as salas. Volta à mesa depois do § 5 etapa 5 |
 | **Lojas de celular** (Google Play, App Store) | App empacotado (TWA/Capacitor), conta de desenvolvedor (US$ 25 uma vez / US$ 99 por ano), política de privacidade; conta nova de pessoa física ainda passa por **teste fechado com testadores** (conferir a regra vigente) | O público que joga no celular, que é onde o Brasil está | O jogo **já é jogável no toque** (`P37`, parcial). O embrulho TWA (a própria URL virada app) é o caminho barato |
 | **YouTube / Twitch / TikTok** | — | **Não publicam jogo: publicam o vídeo.** São o funil para o jogo e a monetização é de conteúdo (§ 2 e § 4) | `F9` grava gameplay (P44 ✅) e a mesa de vídeo exporta em **paisagem, retrato e quadrado** (P45/P92) |
+| **Netflix (Netflix Games)** | **Não há porta de entrada:** ela **licencia** de estúdio — jogo com número e IP próprio — e distribui no app dela, no celular | O modelo dela (**sem anúncio e sem compra dentro do jogo**, incluído na assinatura) é o único grande que **combina com o nosso "nunca pay-to-win"** — e ela paga por licença, não por microtransação | **Interesse declarado pelo Comandante em 12/10.** Alvo de longo prazo: primeiro gente jogando, depois um pitch com número na mão |
 
 **Ordem recomendada:** **site (feito) → itch.io → portais → Steam → celular.** Os dois primeiros são de graça e o
 portal é o único que resolve o problema que mata jogo multiplayer novo (não ter com quem jogar). Um detalhe que
@@ -121,15 +122,36 @@ Cada etapa **só entra quando a anterior provar tração** (regra de 23/09, `GAM
 
 ---
 
-## 7. Decisão do Comandante (o que eu preciso dele)
+## 7. Decidido pelo Comandante (12/10)
 
-1. **Nome:** AVARIA fica? Sem isso não há marca, domínio nem página de loja (e "avaria" é palavra comum: pode já
-   ter dono).
-2. **Primeiro destino externo:** **portal** (CrazyGames/Poki — traz gente) ou **itch.io** (grátis, rápido, sem
-   tráfego)? Minha recomendação: **os dois**, itch.io primeiro por ser questão de horas.
-3. **Autoriza contas + pagamento?** É o "sim" que liga o cosmético e o passe (§ 2), e traz LGPD e tributo junto.
-4. **Killcam no PvP:** revelar (com atraso) ou não? É peça de clipe e de cast.
-5. **Quem faz o vídeo:** o Comandante grava e a mesa edita, ou a equipe monta os cortes de 9:16 para ele publicar?
+| Pergunta | Decisão | Consequência |
+|---|---|---|
+| **Nome** | **CYBERMECH** — palavras dele: *"acho que voltaremos para o cybermech.com.br mesmo… parece o que melhor transmite o que é o game"*. **AVARIA caiu**: era o melhor encontrado, mas `avaria.com` **e** `avaria.com.br` estão tomados (e é palavra comum: marca difícil) | A **capa voltou a dizer CYBERMECH** (era o único lugar do código com o nome — P79). Faltam a compra do domínio e a busca de marca no INPI (classes 9 e 41). Ele aceita sugestões de nome que remetam ao combate contra as forças do mal nas IAs e nos Mechs (§ 7.1) |
+| **Primeiro destino externo** | **YouTube primeiro**; itch.io e portal **depois**, com calma | O funil começa pelo vídeo — e a fábrica do vídeo é o `F9` + a mesa (ordem **P97**) |
+| **Netflix** | **Interesse declarado:** *"fiquei interessado é em enviar pra netflix… nosso game é nível netflix!"* | Ver § 1: o modelo dela combina com o nosso (sem anúncio, sem compra no jogo), mas **não há porta de entrada aberta** — ela licencia de estúdio com número e IP próprio |
+| **Contas + pagamento** | **AUTORIZADOS** — *"autorizado"* | É o "sim" que liga as frentes 2 e 3 do § 2 (cosmético e passe). **Traz LGPD e tributo junto** |
+| **Killcam no PvP** | **Sim** | Ordem **P98** (é peça de clipe e de cast) |
+| **Como o vídeo é feito** | O Comandante **grava os takes no `F9`** e quer que eles **estejam disponíveis na mesa** para ele finalizar e fazer **as edições na mão**, em **ultrahd, com som** | Ordem **P97**; o plano e o que falta estão em `FERRAMENTAS.md` § 3.1 |
+
+### 7.1 Candidatos de nome — "algo que remeta ao combate contra as forças do mal nas IAs e nos Mechs"
+
+> Disponibilidade por **DNS** (heurística: `NXDOMAIN` = provavelmente livre; resolve = tomado). **Não é consulta ao
+> registro.br** — confirmar antes de comprar. `.com.br` conferido nos dois; `.com` só onde indicado.
+
+| Nome | O tema (a guerra das máquinas más) | `.com.br` | `.com` |
+|---|---|---|---|
+| **CYBERMECH** | O nome que a ficção, o site e o `localStorage` já usam: **custo de troca zero** | **livre** | tomado |
+| **PANE** | *A pane* — o defeito que corrompeu as IAs. Curto, português, e diz o tema em quatro letras | livre | livre |
+| **FERROVEU** | O *véu de ferro* sobre o mundo: cerco, peso, blindagem. Inédito e fácil de marcar | livre | livre |
+| **MECHREBELDE** | Diz o tema inteiro em duas palavras, sem depender de inglês | livre | livre |
+| **GLÁDIO** | A arena dos Mechs; curto e forte (o `.com` está tomado) | livre | tomado |
+| **DIA ZERO** | O dia em que as IAs se viraram contra nós | registrado (sem site) | inconclusivo |
+| **ENTROPIA** | A decadência que consome as máquinas (liga ao técnico ENTRÓPICO da ficção) | tomado | — |
+| AVARIA | (o nome anterior — fica como referência) | tomado | tomado |
+
+**A ideia mais barata de todas:** manter **CYBERMECH** (nome que o site, a ficção, a capa e o `localStorage` já usam) e
+deixar a guerra no **subtítulo da campanha** — *"CYBERMECH: a rebelião das máquinas"*, *"CYBERMECH: dia zero"*. O nome
+não muda em lugar nenhum e o tema aparece igual.
 
 ---
 

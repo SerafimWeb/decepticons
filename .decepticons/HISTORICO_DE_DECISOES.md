@@ -1,3 +1,17 @@
+## [2026-10-12] As decisões do Comandante sobre publicação: CYBERMECH, YouTube primeiro, contas e pagamento autorizados (P47, Qwen)
+
+**Ordem do Comandante (resposta às cinco perguntas do `PUBLICACAO_E_MONETIZACAO.md` § 7, no mesmo dia).**
+
+**Decisões:**
+1. **O nome é CYBERMECH.** AVARIA era o melhor encontrado, mas `avaria.com` **e** `avaria.com.br` estão tomados, e é palavra comum (marca difícil): ele volta para CYBERMECH — *"parece o que melhor transmite o que é o game"*. `cybermech.com.br` aparece **livre** (DNS; confirmar no registro.br), `cybermech.com` é tomado. **A capa volta a dizer CYBERMECH** (era o único lugar do código com AVARIA, P79) e a busca de marca no INPI (classes 9 e 41) fica de pé. Ele aceita sugestões que remetam ao combate contra as forças do mal nas IAs e nos Mechs: candidatos e disponibilidade por DNS no § 7.1 do documento (livres: PANE, FERROVEU, MECHREBELDE e GLÁDIO no `.com.br`); a alternativa mais barata é manter o nome e pôr a guerra no **subtítulo** da campanha.
+2. **YouTube primeiro.** itch.io e os portais de jogos web ficam para depois, com calma — **decisão de sequência do dono**, sobre a recomendação do documento (que punha o portal à frente por trazer jogador).
+3. **Netflix entra como interesse declarado** (*"nosso game é nível netflix!"*). Registrado com franqueza: o modelo dela (sem anúncio, sem compra dentro do jogo, jogo dentro da assinatura) é o único grande compatível com o nosso "nunca pay-to-win", **mas não há porta de entrada aberta** — ela licencia de estúdio, e o que se leva é jogo com número. Alvo de longo prazo, não de agora.
+4. **Contas + pagamento AUTORIZADOS** — é o que liga o cosmético e o passe (`METAGAME.md` § 6); traz **LGPD e tributo** junto, e era pré-requisito declarado desde 23/09.
+5. **Killcam no PvP: sim** — ordem **P98**.
+6. **O vídeo é do dono:** ele grava os takes no `F9` e quer que eles **estejam dentro da mesa** para finalizar e **editar na mão**, em ultrahd e com som — ordem **P97**, plano em `FERRAMENTAS.md` § 3.1. **Achado ao escrever o plano (R17):** o `F9` **já grava com som** (não é preciso construir isso); o que falta é o take chegar sozinho na mesa (hoje o dono copia o arquivo na mão para `.tmp/video/clipes/`) e a edição manual de verdade (a mesa desenha só um marcador na cena de clipe; quem corta é o `render.mjs`).
+
+**Custo de CPU:** nenhum (a capa é uma palavra; o resto é registro). **Quem decidiu:** o Comandante; registrado pelo Qwen.
+
 ## [2026-10-12] Publicação e monetização: onde o jogo mora, como o dinheiro entra e em que ordem (P47, Qwen)
 
 **Ordem do Comandante (P47, de 23/09, retomada em 12/10):** *"como fazer para publicarmos esse jogo no YouTube, ou Steam, ou quais plataformas gratuitas podemos publicar, e como monetizar e ganhar grana com o game?"*
