@@ -6,7 +6,7 @@ import { armOptions, hasShoulderSlot, SLOT_MOUNT, slotAttack, type ArmSlot } fro
 const CHASSIS_IDS = Object.keys(CHASSIS) as ChassisId[];
 
 /**
- * Dono, 12/10 (P90): *"os robôs têm ataque 1 e ataque 2: arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral nos robôs maiores; nos pequenos de entrada, o braço direito e o
+ * Dono, 12/10 (P95): *"os robôs têm ataque 1 e ataque 2: arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral nos robôs maiores; nos pequenos de entrada, o braço direito e o
  * esquerdo, cada um com um botão do mouse, permitem melhores combinações"*. O jogo já atirava assim; agora o Hangar, o HUD e as dicas dizem "Ataque 1" e "Ataque 2".
  */
 describe('Ataque 1 e Ataque 2: qual botão aciona cada encaixe', () => {

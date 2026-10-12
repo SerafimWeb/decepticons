@@ -43,7 +43,7 @@ export const SHOULDER_TRIGGERS: TriggerLayout = { primary: ['rightHand', 'leftHa
 export type Attack = 1 | 2;
 
 /**
- * Qual ataque aciona este encaixe neste layout de gatilhos (`null`: nenhum, o chassi não atira dali). Vocabulário do dono (12/10, P90): **Ataque 1** é o clique e **Ataque 2**, o clique direito.
+ * Qual ataque aciona este encaixe neste layout de gatilhos (`null`: nenhum, o chassi não atira dali). Vocabulário do dono (12/10, P95): **Ataque 1** é o clique e **Ataque 2**, o clique direito.
  * Nos robôs pequenos de entrada, o braço direito é o Ataque 1 e o esquerdo, o Ataque 2 (cada braço com o seu botão, para combinar). Nos grandes, os braços são o Ataque 1 e os ombros (e,
  * um dia, costas e peito), o Ataque 2. É o que o Hangar, o HUD e as dicas dizem ao jogador.
  */

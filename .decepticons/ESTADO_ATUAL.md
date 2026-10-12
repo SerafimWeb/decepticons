@@ -1,8 +1,8 @@
 # ESTADO ATUAL — CYBERMECH
 
-## Ataque 1 e Ataque 2 — Claude, 12/10 (PR `claude/ataque-1-e-2`, ordem P90)
+## Ataque 1 e Ataque 2 — Claude, 12/10 (PR `claude/ataque-1-e-2`, ordem P95)
 
-**Ordem do Comandante (P90):** "os robôs têm ataque 1 e ataque 2: arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral (podendo ser configurado assim) nos robôs maiores; nos pequenos de entrada, o braço direito e o esquerdo, cada um com um botão do mouse".
+**Ordem do Comandante (P95):** "os robôs têm ataque 1 e ataque 2: arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral (podendo ser configurado assim) nos robôs maiores; nos pequenos de entrada, o braço direito e o esquerdo, cada um com um botão do mouse".
 
 - **O jogo já atirava assim** (`TriggerLayout`: robôs pequenos, direita no clique e esquerda no clique direito; o Marauder, as duas mãos no clique e os ombros no clique direito). **Esta parte dá o nome:** **Ataque 1** = o clique; **Ataque 2** = o clique direito ou Q (no toque, ATQ 1 e ATQ 2).
 - **Onde o jogador lê agora:** o **Hangar** (cada encaixe diz o ataque: **BRAÇO DIREITO · ATAQUE 1**, **OMBROS · ATAQUE 2**, e o título do armamento também); o **HUD** (**ATQ 2 · TELEGUIADO**, **ATQ 2 · FOGUETES**, com o nome certo da arma do Ataque 2 em vez de tudo virar "foguetes"); o **menu e a pausa** ("clique ATAQUE 1: … · clique dir. / Q ATAQUE 2: …"); as **configurações** ("Ataque 2 (além do clique dir.)"); os **botões de toque** (ATQ 1 e ATQ 2); as dicas das armas de ombro e do escudo físico ("Ataque 2"). O guia de combate do site também.

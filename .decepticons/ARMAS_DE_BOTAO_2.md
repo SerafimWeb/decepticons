@@ -97,7 +97,7 @@ São **três perguntas separadas**. O jogo já responde uma e meia; esta seção
 - **Ombro e costas são o mesmo botão 2** (um ou outro, ou os dois juntos) ou duas armas diferentes? Proposta: o mesmo botão e a mesma arma, para não pedir mais um botão.
 - **Quais robôs ganham ombros primeiro?** Proposta: a **Onça** (pesada, procedural) e, depois, os importados que o Comandante trouxer.
 
-## 8. Ataque 1 e Ataque 2 (ordem P90, 12/10)
+## 8. Ataque 1 e Ataque 2 (ordem P95, 12/10)
 
 > *"Os robôs têm ataque 1 e ataque 2, sendo arma 1 as dos braços e arma 2 a dos ombros/costas/peitoral (podendo ser configurado assim) nos robôs maiores que comportem mais de uma possibilidade de combinar armas. Nos robôs pequenos de entrada, o braço direito e o esquerdo ficam cada um com um botão do mouse, permitindo melhores combinações."*
 

@@ -3,7 +3,7 @@
 > Escrito em 04/10 depois de criar a escopeta (PR #154) e a chuva de mísseis, para ninguém redescobrir a lista. Robô importado:
 > `MECHS_IMPORTADOS.md`. Encaixes e gatilhos: `combat/mounts.ts`. O que cada coisa é de verdade hoje: `STATUS_REAL.md`.
 
-## Ataque 1 e Ataque 2 (12/10, ordem P90)
+## Ataque 1 e Ataque 2 (12/10, ordem P95)
 
 O jogador fala em **Ataque 1** (o clique) e **Ataque 2** (o clique direito ou Q); no código são o gatilho `primary` e o `secondary` de `TriggerLayout`. **Robôs pequenos:** braço direito = Ataque 1, braço esquerdo = Ataque 2. **Robôs grandes:** braços = Ataque 1, ombros (e, um dia, costas e peito) = Ataque 2. Texto novo para o jogador nunca diz "botão 2" nem "principal/secundário": diz Ataque 1 e Ataque 2. O modelo e o que falta (layouts configuráveis, várias armas no mesmo ataque) estão em `ARMAS_DE_BOTAO_2.md` § 8.
 

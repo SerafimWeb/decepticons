@@ -1,4 +1,4 @@
-## [2026-10-12] "Ataque 1" e "Ataque 2" são os nomes dos dois gatilhos (P90, Claude)
+## [2026-10-12] "Ataque 1" e "Ataque 2" são os nomes dos dois gatilhos (P95, Claude)
 
 **Ordem do Comandante:** "os robôs têm ataque 1 e ataque 2; arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral nos maiores; nos pequenos, cada braço com um botão do mouse".
 
