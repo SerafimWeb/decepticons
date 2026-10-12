@@ -1,5 +1,11 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Auditoria da ficha do cenário: tudo confere, e uma palavra errada no console — Qwen, 12/10 (P99, só documentação)
+
+**O que foi feito:** a mesma disciplina da ficha da missão #1, agora na ficha do cenário — cada afirmação conferida **no código**, porque o Codex vai construir contra ela. **Tudo confere**, e cada uma ganhou endereço na ficha: `environment/Bunker.ts:7` (`MapId = 'arena' | 'bunker'`) e `:9` (`mapFromSearch`); `environment/Arena.ts:72` (**`halfSize = 100`** → os **200 m** da régua); `sim/nascimentos.ts:82` (os **11** pontos do Bunker: 12 menos o do jogador) e `:118` ("nenhum ponto serve a dois corpos" — o que o teste 1 exige do mapa novo).
+
+**O achado (R17, registrado e não corrigido):** o resumo do **Bunker** no teatro do console (`ui/theater.ts`) diz **"Três andares de concreto e aço"**, mas o mapa tem **quatro pisos** (0/14/28/42 m) — e o seletor do jogo já diz **"4 NÍVEIS"**. É uma palavra, e o território é do **Gemini** (`ui/`), que está sem créditos: fica anotada aqui e na ficha, candidata à lista da **P94**.
+
 ## O layout dos ataques é configurável (o Marauder tem dois) — Claude, 12/10 (PR `claude/layout-de-ataques`, protocolo 17, ordem P95)
 
 **Ordem do Comandante (P95):** "arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral (**podendo ser configurado assim**)".

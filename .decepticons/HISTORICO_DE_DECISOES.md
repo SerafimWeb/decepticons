@@ -1,3 +1,14 @@
+## [2026-10-12] A auditoria da ficha do cenário: tudo confere, e uma palavra errada no console (P99, Qwen)
+
+**O que aconteceu:** a mesma disciplina da ficha da missão #1, agora na ficha do **cenário** — cada afirmação conferida **no código**, porque o Codex vai construir contra ela.
+
+**Decisões:**
+1. **Tudo confere, com endereço:** `environment/Bunker.ts:7` (`MapId = 'arena' | 'bunker'` — é onde o `cabos` entra) e `:9` (`mapFromSearch`); `environment/Arena.ts:72` (**`halfSize = 100`** → a Arena tem **200 m** de ponta a ponta, a régua da ficha); `sim/nascimentos.ts:82` (os **11** pontos do Bunker: 12 menos o do jogador) e `:118` (*"nenhum ponto serve a dois corpos"*). A ficha ganhou o parágrafo "conferido no código em 12/10".
+2. **Achado de passagem (R17 — registrado e não corrigido):** o resumo do Bunker no teatro do console (`ui/theater.ts`) diz **"Três andares de concreto e aço"**, mas o mapa tem **quatro pisos** (0/14/28/42 m, `medicoes/BUNKER.md`) — e o seletor do jogo já diz "4 NÍVEIS". **É uma palavra**, mas o território é do **Gemini** (`ui/`), que está sem créditos: fica anotado na ficha e no `ESTADO_ATUAL` para a lista da **P94**.
+3. **Por que vale registrar uma palavra:** o console é uma das telas que o dono abre (e que vai ao vídeo e ao site) — texto errado ali é mentira visível, e o lugar de dizer quem conserta é o registro, não o silêncio.
+
+**Custo de CPU:** nenhum. **Quem decidiu:** Qwen, dentro da ordem P99.
+
 ## [2026-10-12] O layout dos ataques vira escolha do jogador, e a mão segue o botão dela (P95, Claude)
 
 **Ordem do Comandante:** "arma 2 a dos ombros/costas/peitoral, **podendo ser configurado assim**" nos robôs maiores.
