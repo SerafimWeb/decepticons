@@ -1,3 +1,15 @@
+## [2026-10-12] O kit do YouTube: o que abrir e o que publicar primeiro, já que a casa é o YouTube (P47, Qwen)
+
+**Ordem do Comandante (P47):** *"primeiro vamos publicar no youtube, depois verei com calma"*.
+
+**Decisões:**
+1. **O kit é documento, não ferramenta.** A seção **§ 4.1 do `PUBLICACAO_E_MONETIZACAO.md`** traz o operacional (o canal com **o mesmo nome do site** — senão o vídeo não acha o jogo —, os quatro primeiros vídeos, a regra dos Shorts, a miniatura de um Mech e três palavras, o título com número ou pergunta, e a cadência de **um vídeo longo por semana**). Nada disso é código, e nada disso é promessa de entrega.
+2. **O primeiro vídeo não depende do jogo nem do `F9`: é "o processo"** — um estúdio construindo um jogo com quatro IAs. É a viralidade mais exclusiva do projeto (`DIVERSAO.md` § 8.3), o material já existe (a sala de controle, os números do git) e é o único que pode ir ao ar **antes** de a fábrica do vídeo (P97) ficar pronta.
+3. **Mede-se partida, não visualização.** O funil de cliques da landing e a origem por país já existem no servidor (`ROADMAP` `#negocio`); no YouTube eles dizem se o vídeo virou jogador — a visualização sozinha não paga nada nem prova nada.
+4. **As travas valem no vídeo também:** não prometer o que não está na `main` (regra 14), não mostrar como pronto o que a `STATUS_REAL.md` marca PARCIAL/AUSENTE (R13) e não usar música de terceiros sem licença.
+
+**Custo de CPU:** nenhum. **Quem decidiu:** Qwen, dentro da ordem P47.
+
 ## [2026-10-12] As decisões do Comandante sobre publicação: CYBERMECH, YouTube primeiro, contas e pagamento autorizados (P47, Qwen)
 
 **Ordem do Comandante (resposta às cinco perguntas do `PUBLICACAO_E_MONETIZACAO.md` § 7, no mesmo dia).**

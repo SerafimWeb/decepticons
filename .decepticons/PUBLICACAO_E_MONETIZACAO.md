@@ -90,6 +90,36 @@ Twitch (a live do Comandante + modo streamer), itch.io (devlog) e um Discord qua
 **Número é o que vira comentário:** a escada de ondas dá "cheguei na 8" — e vale a pena o recorde ser salvo
 (`QUIMICA_DO_JOGO.md` § 5 item 2) justamente por causa disso.
 
+### 4.1 O kit do YouTube (o primeiro mês) — porque o Comandante decidiu começar por ele (§ 7)
+
+O que existe, o que abrir e o que publicar primeiro. A estratégia (os dois vírus e o processo) está acima; a fábrica
+do vídeo, em `FERRAMENTAS.md` § 1 (o `F9`) e § 3 (a mesa).
+
+1. **O canal (uma vez, ~30 minutos):** nome **CYBERMECH** — **o mesmo do site**, senão quem vê o vídeo não acha o
+   jogo; handle `@cybermech` se estiver livre; descrição de uma linha ("shooter de Mechs no navegador — joga sem
+   instalar" + o link); banner com a arte da capa. **O convite vai no primeiro comentário fixado:** o link do jogo e
+   um `?build=` de exemplo (o link de build é o convite que já existe).
+2. **Os quatro primeiros vídeos, do mais barato ao mais caro:**
+
+| # | Vídeo | Por que começa por ele | Fonte | Duração |
+|---|---|---|---|---|
+| 1 | **O processo** — "um estúdio construindo um jogo com quatro IAs" | é a viralidade **mais exclusiva** do projeto e **não depende de gameplay pronto** (`DIVERSAO.md` § 8.3) | a sala de controle e os números do git (o site já publica) | 6 a 10 min |
+| 2 | **O trailer** | é o vídeo que fica no topo do canal e na landing | cenas da mesa + 10 a 20 s de take real (`F9`) | 60 a 90 s |
+| 3 | **A destruição** (só clipes) | o formato mais assistível que o jogo dá de graça: perna voando, parede explodindo | takes do `F9` cortados na mesa | ~60 s |
+| 4 | **A escada** — "até que onda você chega?" | número é o que vira comentário, e a Sobrevivência já dá o número | take de uma partida de ondas | 3 a 6 min |
+
+3. **Shorts (o do dia a dia):** cada take do `F9` rende de dois a cinco cortes de **9:16 e até 60 s** (a mesa exporta
+   nesses formatos). Regra de ouro: **o primeiro segundo é a explosão**, nunca o menu.
+4. **Miniatura e título** — é o que mais muda o clique: miniatura com **um Mech grande e três palavras**; título com
+   **número ou pergunta** ("até que onda você chega?", "o que acontece quando a perna cai"). Logo sozinha, não.
+5. **Cadência honesta:** **um vídeo longo por semana** mais Shorts quando houver take — é o ritmo que a própria equipe
+   consegue alimentar (a "novidade toda semana" da `VISAO.md`).
+6. **Medir o que o YouTube trouxe, não a visualização:** a landing já conta o **funil de cliques** e o servidor já
+   conta a **origem por país** (`ROADMAP` `#negocio`). **Visualização não é resultado; partida é.**
+7. **O que não fazer:** prometer o que **não está na `main`** (regra 14 — o que não está no ar não existe para quem
+   assiste), mostrar como pronto o que a `STATUS_REAL.md` marca PARCIAL/AUSENTE (R13), e usar **música de terceiros
+   sem licença**.
+
 ---
 
 ## 5. A sequência recomendada (com o gatilho de cada etapa)
