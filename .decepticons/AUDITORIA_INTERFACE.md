@@ -70,6 +70,23 @@ O Hangar é a tela mais rica e já tem identidade forte; o que faltava era **tir
 | E3 | Fim de rodada (`RoundOverlay`), carregamento e terminal do banco | **Não conferidos em captura** (o fim de rodada só aparece depois de 5 minutos de partida e não há atalho de teste). Ficam como pendência declarada; o código do fim de rodada é só contagem e quatro números |
 | E4 | O bloco de status do canto esquerdo ocupa 144 px de altura no celular (10 linhas) | Sem mudança: avaliar com o dono se as barras por parte são necessárias no toque |
 
+### Console de comando — UI-6 (11/10, P86 a P89): a tela de início e de pausa virou uma sala de comando
+
+O Comandante pediu um painel "com todos os botões e configurações em um só espaço", a partir de duas imagens de sala de comando. **Substitui a tela do UI-1** (início/pausa), mantendo os princípios da seção 2 (uma ação primária, nada repetido, nada de informação de desenvolvedor, sem rolagem em 1280×720).
+
+| # | Princípio | Como o console cumpre |
+|---|---|---|
+| F1 | **Uma ação primária por tela** | o **botão verde** (placa listrada, tecla Enter) é o único grande; os monitores abrem uma tela cada, em escala menor. O clique em qualquer monitor **não** começa a partida (a pausa inteira era o botão de jogar); o título e a parede continuam sendo "jogar" |
+| F2 | **Cada informação em um lugar só** | o modo mora na mesa; o **mapa (Arena/Bunker) mora no teatro** (a fileira MAPA saiu); a vida de cada parte mora no esquema do Mech; os pilotos num monitor só |
+| F3 | **Informação de desenvolvedor fora do jogador** | Potências, Mesa, Sala de controle, Oficina e o que está em construção só no **modo Comandante** |
+| F4 | **Cabe sem rolagem** | medido em 1024×700, 1280×720, 1366×768, 1920×1080 e 2560×1440 (`rolagem 0`); **celular: uma coluna que rola**, com o botão de jogar logo depois do título |
+| F5 | **Escala tipográfica** | todo texto é "tamanho × `--k`" (1,0 no laptop, 1,2 no 1080p, 1,5 no 1440p, 1,15 no celular); os textos do mapa e do radar, em canvas, leem a mesma escala |
+| F6 | **Teclado e acessibilidade** | atalhos desenhados nos botões (Enter, H, O, Z), que **nunca roubam** uma tecla que o jogo usa com a pausa à vista (teste); anel de foco por dentro dos botões chanfrados; `aria-label` nos monitores e nos marcadores; "menos movimento" desliga as animações |
+| F7 | **Estados honestos** | **tela de carregamento mínima** (título, rótulo e o botão apagado, que mostra o progresso) até o botão ficar pronto, e só então os monitores aparecem e acendem em cascata; o que não existe diz "em construção" (R13) |
+
+**Achados enquanto construía (R17):** (a) o `clip-path` dos chanfros corta o anel de foco do teclado: nos botões chanfrados o anel vai por dentro; (b) um botão que ficou com o foco do mouse (ou escondido) engolia o Enter: só o foco de teclado (`:focus-visible`) ou um campo de texto segura as teclas; (c) `KeyM`, `KeyB` e `KeyC` já valem com a pausa à vista (briefing e CFTV): os atalhos novos não os usam; (d) o relatório do fim de rodada (`#round-summary`) agora é uma faixa acima do mapa, não por cima dele.
+**Capturas:** `arte/console-comando-claude.jpg` (o que o jogador vê), `console-comandante-claude.jpg` (modo Comandante em 1080p, com o Bunker escolhido), `console-mundo-claude.jpg` (zoom MUNDO), `console-celular-claude.jpg`, `console-carregando-claude.png` (a tela de carregamento real). **Limite:** fotografado em Chrome headless (SwiftShader); o julgamento de fluidez e de beleza em GPU real é do Comandante.
+
 ## 2. Princípios (valem para qualquer agente que mexa em tela)
 
 1. **Uma tela, um trabalho.** A pausa serve para jogar; o Hangar, para montar; as Configurações, para ajustar. O que não é do trabalho da tela vai embora ou fica um clique adiante.
@@ -84,10 +101,11 @@ O Hangar é a tela mais rica e já tem identidade forte; o que faltava era **tir
 
 | PR | Tela | Estado |
 |---|---|---|
-| UI-1 | Início / pausa | **feito** (`claude/ui-inicio-pausa`) |
+| UI-1 | Início / pausa | **feito** (`claude/ui-inicio-pausa`); **substituído em 11/10 pelo console de comando (UI-6)** |
 | UI-2 | Configurações em abas | **feito** (`claude/ui-configuracoes-abas`) |
 | UI-3 | Hangar: tirar repetição e corte | **feito** (`claude/ui-hangar`) |
 | UI-4 | HUD da partida: legibilidade e alinhamento (o painel de vida duplicado era um achado errado; ver a retratação) | **feito** (`claude/ui-hud-partida`) |
 | UI-5 | Celular, lobby, fim de rodada, carregamento, banco | **parcial** (celular feito; fim de rodada, carregamento e banco sem captura) |
+| UI-6 | Console de comando (início e pausa) | **feito** (`claude/console-comando`, P86 a P89) |
 
 Território: `client/src/ui/`, `styles.css` e `index.html` são do Gemini (`ESTADO_ATUAL`, divisão de trabalho). O dono pediu esta revisão ao Claude diretamente em 10/10; o Gemini tem a tela de login (`gemini/tela-login`) em andamento, com CSS próprio no fim do `styles.css`: os dois PRs mexem em trechos diferentes. Quem chegar depois junta a `main` e roda o `npm run check`.
