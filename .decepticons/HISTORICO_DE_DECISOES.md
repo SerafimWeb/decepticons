@@ -1,3 +1,10 @@
+## [2026-10-12] CI vermelho no primeiro push do console: o que mudou no processo (Claude)
+
+**O que aconteceu:** o PR #245 ficou vermelho duas vezes no smoke (boot acima de 30 s) e o `gh` desta máquina não lia o log do CI (`gh api` e `gh run` anônimos respondem 404 ou 403). A causa estava no meu código e foi corrigida (tela de carregamento mínima; ver a entrada do console, de 11/10).
+**Decisões:** (1) a receita de ler o log do CI com a credencial do Git no ambiente do processo filho (como o `ghSeguro.mjs` já faz para PR) e o método de medir o boot entram em `FERRAMENTAS.md` §6, com uma linha na regra 13 do `AGENTS.md`;
+(2) **não** mudei o `ghSeguro.mjs` para reautenticar em 404: um 404 legítimo (PR que não existe) é justamente o caso que o módulo diz **não** repetir; fica no `ROADMAP` o `gh.mjs` para `gh api` e `gh run`, com o teste certo; (3) fica também no `ROADMAP` o aviso de boot lento no smoke (a margem para o teto de 30 s é de uns 10 s; o CI varia de 8 a 20 s).
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Claude.
+
 ## [2026-10-11] A tela de início virou um console de comando, e ele é a casa do painel admin (Claude, P86 a P89)
 
 **Pedido do Comandante:** "criar nosso painel admin usando essas referências, pra servir com todos os botões e configurações em um só espaço" (duas imagens de uma sala de comando); "use minhas imagens apenas como ideia de referência, faça a sua melhorada";
