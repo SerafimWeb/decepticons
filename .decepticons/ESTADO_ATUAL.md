@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A ficha do cenário com rota: ESTAÇÃO DE CABOS — Qwen, 12/10 (P99, só documentação)
+
+**Por quê:** a **P99** pediu "cenários maiores" e o item `#cenarios` do `ROADMAP` tinha **uma linha só**. A escolta (na versão longa) e o contraataque precisam de um **caminho** — e a Arena tem 200 m. A ficha está em **`.decepticons/fichas/cenario-cabos.md`** (proposta).
+
+**Por que ESTAÇÃO DE CABOS, e não outro:** o console já promete cinco missões (`ui/theater.ts`) e três estão "EM BREVE" — e **a ESTAÇÃO DE CABOS é a única cujo lugar está confirmado**: Fortaleza é a chegada dos cabos submarinos no `UNIVERSO.md`, e o próprio `theater.test.ts` trava isso. O cenário **já existe no produto como promessa**; a ficha diz o que construir.
+
+**O que ela entrega:** a **rota** (partida → duas estações de conserto → o **choke** → a extração), a **base que serve ao contraataque** (a extração vista ao contrário — **um cenário, duas missões**), **duas vias por trecho** (corredor único não tem jogada — é o que o dono pediu), altura para emboscada, cobertura quebrável no choke e uma zona de cura por estação. O **tamanho**: ~500 m por ~140 m (2,5× a Arena), com a trava que importa — **é o maior cenário que ainda cabe SEM streaming** (a Fase 7 é a do `interest management`). Os **números de aceitação são os do Bunker**, medidos do mesmo jeito: colisores **< 310**, 18 a 67 desenhos por vista, GPU p50/p95 pelo método do `medicoes/BUNKER.md`. Mais **10 testes** e **sete perguntas para o Comandante**.
+
+**A lição que justifica a ficha:** o Bunker foi construído e só depois o dono pediu outra coisa (mais profundidade — P60), e a segunda rodada custou um PR inteiro. A ficha fixa **o que o cenário FAZ** antes da geometria.
+
+**Nada construído.** O cenário e a bancada são do **Codex**; os pontos validados e a fiação, do **Claude**; o julgamento visual, do **Comandante** (eu não leio imagem).
+
 ## A ficha da missão #1: escoltar e defender o técnico — Qwen, 12/10 (P99, só documentação)
 
 **Por quê:** a ordem **P99** (12/10) pediu as missões e nomeou os quatro tipos; a regra 5 do `AGENTS.md` (**contrato antes de paralelizar**) diz que a ficha vem antes de o Claude escrever a regra e o Gemini a tela. A ficha da primeira missão está em **`.decepticons/fichas/escolta.md`** (proposta).

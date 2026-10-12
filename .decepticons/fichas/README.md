@@ -1,7 +1,7 @@
 # FICHAS DE DESIGN — CYBERMECH
 
-> Uma ficha por robô, por arma **e por modo de jogo**: o que ele é, como se joga com ele e contra ele, a silhueta
-> (ou o ritmo) e os números.
+> Uma ficha por robô, por arma, **por modo de jogo e por cenário de missão**: o que ele é, como se joga com ele e
+> contra ele, a silhueta (ou o ritmo), **o que o cenário faz** e os números.
 > É o documento que o dono aprova antes de qualquer coisa entrar no jogo. Modelos: `MODELO_ROBO.md` e `MODELO_ARMA.md`.
 > Exemplo preenchido: `vector-09.md`.
 
@@ -39,6 +39,7 @@
 | [`ondas.md`](ondas.md) | **modo** sobrevivência: o balanço das ondas (quantidade, tipo e vida por onda) | declaração do dono de 27/09 (`ROADMAP.md`, Fase 5) | proposta Qwen; **a máquina de estados é do Claude** e o HUD, do Gemini; 7 perguntas abertas para o dono |
 | [`ctf.md`](ctf.md) | **modo** CTF Vermelho × Azul: regras e **a especificação dos 15 testes** | decisão do dono no `ROADMAP.md` (Fase 5: 2v2, 3 capturas ou mais em 8 min) | proposta Qwen; **os `it()` nascem no PR da regra (Claude)**; 7 perguntas abertas para o dono |
 | [`escolta.md`](escolta.md) | **modo** missão em fases #1: **escolta e defesa do técnico** — três fases, **0 arte nova** | ordem do dono **P99** (12/10) e `DIVERSAO.md` § 10 #7 (a "espinha da retenção") | proposta Qwen; **a regra no `Match` e os 13 `it()` são do Claude**, o briefing/HUD (hoje `MissionHUD` **DEMO**) é do Gemini; 7 perguntas abertas para o dono |
+| [`cenario-cabos.md`](cenario-cabos.md) | **cenário** ESTAÇÃO DE CABOS (Fortaleza · CE): a rota de ~500 m que serve à escolta longa e ao contraataque, **residente (sem streaming)** | ordem do dono **P99** (12/10, "cenários maiores") + o lugar confirmado no `UNIVERSO.md` e já prometido no console (`ui/theater.ts`) | proposta Qwen; **o cenário e a bancada são do Codex**, os pontos validados e a fiação são do Claude; 7 perguntas abertas para o dono |
 
 As fichas marcadas como **proposta** não aprovam mudanças de gameplay. O Ferret-X e o Colossus-01 ainda não têm
 stats/slots no código; decisões abertas nunca viram número implementado sem teste e aprovação.

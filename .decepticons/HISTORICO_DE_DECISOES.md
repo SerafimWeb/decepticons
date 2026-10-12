@@ -1,3 +1,17 @@
+## [2026-10-12] A ficha do cenário com rota: ESTAÇÃO DE CABOS, o maior mapa sem streaming (P99, Qwen)
+
+**Ordem do Comandante (P99):** *"fases com cenários maiores… pra dar mais realismo e jogadas mais interessantes"*.
+
+**Decisões:**
+1. **A ficha do cenário vem antes da geometria — e o Bunker é a razão:** ele foi construído, o dono jogou e pediu outra coisa (mais profundidade, P60), e a segunda rodada custou um PR inteiro. Fixar **o que o cenário faz** antes de desenhá-lo é o contrato (regra 5). Documento novo: `fichas/cenario-cabos.md` (proposta).
+2. **O cenário escolhido já existe no produto como promessa:** o console (`ui/theater.ts`) lista **ESTAÇÃO DE CABOS (Fortaleza · CE)**, e é a **única das cinco missões com o lugar confirmado** — Fortaleza é a chegada dos cabos submarinos no `UNIVERSO.md`, e o `theater.test.ts` trava isso. A ficha **não inventa geografia** (o `UNIVERSO.md` proíbe os agentes de escrever geopolítica nova).
+3. **O tamanho é a decisão técnica da ficha:** ~500 m por ~140 m (2,5× a Arena) e **residente** — é o **maior cenário que ainda cabe sem streaming**; o mundo com `interest management` é a **Fase 7**, e pedir mais hoje seria pedir a fase inteira.
+4. **Um cenário, duas missões:** a **extração** da escolta é a **base** do contraataque (o mesmo ponto visto ao contrário), e **duas vias por trecho** realizam as "jogadas mais interessantes" que o dono pediu — corredor único não tem decisão.
+5. **Os números de aceitação são os do Bunker, e a evidência é obrigatória:** colisores **< 310**, 18 a 67 desenhos por vista, GPU p50/p95 pelo método do `medicoes/BUNKER.md`, bancada em `medicoes/` e capturas em `arte/`. **O julgamento visual é do dono** — eu não leio imagem.
+6. **A ordem fica dita:** a missão #1 **não depende** deste cenário (Arena e Bunker bastam ao primeiro corte); este mapa é para a versão longa da escolta e para o contraataque.
+
+**Custo de CPU:** nenhum (documentação). O cenário, quando construído, é **estático**: 0 CPU por tick e nenhum byte de rede. **Quem decidiu:** Qwen, dentro da ordem P99.
+
 ## [2026-10-12] A ficha da missão #1 — escoltar o técnico, com 13 testes especificados (P99, Qwen)
 
 **Ordem do Comandante (P99):** *"fases com cenários maiores, missões de proteção de escoltas, ataque, defesa de base, contraataques… e com mais robôs por partida"*.
