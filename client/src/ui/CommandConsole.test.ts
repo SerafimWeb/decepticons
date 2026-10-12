@@ -51,7 +51,7 @@ describe('console de comando: o HTML', () => {
 
   it('o que ainda não existe aparece como em construção, sem link (R13)', () => {
     const breves = [...consoleHtml.matchAll(/<li class="breve"[^>]*>([\s\S]*?)<\/li>/g)].map((m) => m[1]!);
-    expect(breves.length).toBeGreaterThanOrEqual(3);
+    expect(breves.length).toBeGreaterThanOrEqual(2);
     for (const b of breves) {
       expect(b).toMatch(/em construção/);
       expect(b).not.toMatch(/<a |<button/);
@@ -123,6 +123,19 @@ it('a tela de carregamento esconde os monitores com display none (guarda do boot
     expect([...consoleHtml.matchAll(/data-esquadrao-open/g)]).toHaveLength(2);
     expect(consoleHtml).toContain('<div id="squad-modal" class="hidden"></div>');
     for (const m of monitores) expect(m.includes('id="squad-modal"'), 'a janela dentro de um monitor').toBe(false);
+  });
+
+  it('o servidor (P93): o item do monitor COMANDO abre a janela, que mora fora dos monitores e começa fechada; o painel só aparece no modo Comandante', () => {
+    const comando = monitores.find((m) => m.includes('id="mon-comando"'))!;
+    expect(comando).toMatch(/<li id="cmd-servidor"><button type="button" data-servidor-open/);
+    expect([...consoleHtml.matchAll(/data-servidor-open/g)]).toHaveLength(1);
+    expect(consoleHtml).toContain('<div id="server-modal" class="hidden"></div>');
+    for (const m of monitores) expect(m.includes('id="server-modal"'), 'a janela dentro de um monitor').toBe(false);
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/#server-modal\s*\{[^}]*position:\s*fixed/);
+    expect(css).toMatch(/#server-modal\.hidden\s*\{\s*display:\s*none/);
+    const fonte = readFileSync(new URL('./CommandConsole.ts', import.meta.url), 'utf8');
+    expect(fonte, 'algoPorCima conhece a janela do servidor').toContain('#server-modal:not(.hidden)');
   });
 
   it('o esquadrão (P91): a janela tem o estilo (cabe em 1280×720 sem rolar a página) e o console não dá Enter por trás dela', () => {

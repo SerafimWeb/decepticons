@@ -1,4 +1,6 @@
+import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { CODIGO_REINICIO } from './admin';
 import { pastaDados } from './dados';
 import { vigiarParada } from './parada';
 import { DEFAULT_HOST, startServer } from './Server';
@@ -10,7 +12,29 @@ import { DEFAULT_HOST, startServer } from './Server';
  */
 const port = Number(process.env.PORT ?? 2567);
 const host = process.env.HOST ?? DEFAULT_HOST;
-const server = await startServer({ port, host, log: (line) => console.log(`[servidor] ${line}`) });
+/** A versão do código em que o servidor roda (o hash curto do git; a pasta do servidor é uma worktree), para o painel mostrar. */
+const release = (() => {
+  try {
+    return execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: resolve(import.meta.dirname, '..'), encoding: 'utf8', timeout: 3000 }).trim() || 'desconhecida';
+  } catch {
+    return 'desconhecida';
+  }
+})();
+/** Sob a tarefa do Windows (`servidor-windows.ps1` define a pasta de dados): ela religa o servidor quando ele sai com erro. */
+const supervisionado = !!process.env.CYBERMECH_DADOS;
+const server = await startServer({
+  port,
+  host,
+  release,
+  supervisionado,
+  // Reinício pelo painel (`POST /admin/reiniciar`): salva os números e sai com um código de erro, que a tarefa trata como queda e religa.
+  aoReiniciar: (motivo) => {
+    console.log(`[servidor] reinício (${motivo}): fechando e saindo com o código ${CODIGO_REINICIO}`);
+    setTimeout(() => process.exit(CODIGO_REINICIO), 8000).unref(); // se o fechamento travar, sai mesmo assim
+    void server.close().finally(() => process.exit(CODIGO_REINICIO));
+  },
+  log: (line) => console.log(`[servidor] ${line}`),
+});
 console.log(`CYBERMECH · servidor de jogo em ws://${server.host}:${server.port}/?sala=ARENA (Ctrl+C para parar)`);
 if (server.host === '127.0.0.1') console.log('[servidor] só localhost (túnel da Cloudflare fala daqui). HOST=0.0.0.0 expõe à rede de casa.');
 

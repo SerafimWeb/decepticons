@@ -118,6 +118,11 @@ export class Contas {
     return { id: row.id, email: row.email, is_admin: row.is_admin === 1 };
   }
 
+  /** Quantas contas existem (o painel do servidor mostra; nunca quem são). */
+  total(): number {
+    return Number((this.db.prepare('SELECT COUNT(*) AS n FROM contas').get() as { n: number }).n);
+  }
+
   /** Encerra a sessão (o `POST /conta/sair`). Idempotente: token que não existe não é erro. */
   encerrarSessao(token: string): void {
     this.db.prepare('DELETE FROM sessoes WHERE token_hash = ?').run(hashToken(token));

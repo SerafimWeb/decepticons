@@ -175,7 +175,7 @@
               <li class="breve" title="Assistir às câmeras de várias partidas ao mesmo tempo, pelo servidor (PAINEL_ADMIN.md, etapa H)"><b>CÂMERAS AO VIVO</b><span>em construção</span></li>
               <li id="cmd-ficha"><button type="button" data-esquadrao-open title="Chassi, arma, personalidade, dificuldade e apelido de cada bot, e quantos há"><b>FICHA DE CADA BOT</b><span>chassi, arma, jeito</span></button></li>
               <li class="breve" title="Missões em sequência, salvas e compartilháveis (PAINEL_ADMIN.md, etapa D)"><b>CAMPANHA</b><span>em construção</span></li>
-              <li class="breve" title="Jogadores, salas, reinício e métricas, com o token do dono (PAINEL_ADMIN.md, etapa E)"><b>SERVIDOR</b><span>em construção</span></li>
+              <li id="cmd-servidor"><button type="button" data-servidor-open title="Estado do servidor de jogo, a última hora, salas e log; reiniciar, testar e avaliar (com o token do dono)"><b>SERVIDOR</b><span>estado, teste, reinício</span></button></li>
             </ul>
             <div class="cmd-ajuda" id="cmd-mesa-ajuda" role="dialog" aria-label="Mesa de vídeo" hidden>
               <p class="ajuda-estado" id="cmd-mesa-estado"></p>
@@ -210,6 +210,8 @@
 
     <!-- Janela do esquadrão (ui/SquadPanel.ts): o Comandante monta quem luta contra e ao lado do jogador -->
     <div id="squad-modal" class="hidden"></div>
+    <!-- Janela do servidor (ui/ServerPanel.ts): estado, gráficos, salas, log e as ações do dono -->
+    <div id="server-modal" class="hidden"></div>
 
     <!-- Modal de Configurações -->
     <div id="settings-modal" class="hidden">

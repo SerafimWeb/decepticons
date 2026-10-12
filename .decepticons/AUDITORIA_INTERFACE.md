@@ -102,6 +102,21 @@ Uma janela por cima do console (mesmo vocabulário das Configurações: moldura 
 
 **Capturas:** `arte/esquadrao-editor-claude.jpg`, `esquadrao-editor-cerco-claude.jpg` (o teto, carga extrema), `esquadrao-editor-celular-claude.jpg`. **Limite:** Chrome headless (SwiftShader); a janela não prende o foco do Tab.
 
+### Janela do servidor — UI-8 (12/10, P93): olhar e mexer no servidor pela tela
+
+Uma janela por cima do console, do mesmo molde da do esquadrão, aberta por **COMANDO → SERVIDOR**. Como cumpre os princípios da seção 2:
+
+| # | Princípio | Como a janela cumpre |
+|---|---|---|
+| G1 | **Uma ação primária** | a janela é de leitura: o que se vê primeiro é o selo (NO AR) e os oito cartões; as quatro ações do pé são do mesmo tamanho e **REINICIAR** (a perigosa) é a única em vermelho e pede confirmação em palavras |
+| G2 | **Cada informação em um lugar só** | o número vive no cartão, a história dele no gráfico, e os detalhes das salas e do log em suas listas; o veredito só aparece depois de AVALIAR, uma vez |
+| G3 | **Sem informação de desenvolvedor** | é a **tela do dono**, atrás do modo Comandante e de um token: aqui o milissegundo e o KB/s são o assunto, mas cada checagem traz uma frase de dica ("o Node demorou a voltar: outro programa pesado na máquina") |
+| G4 | **Cabe sem rolagem em 1280×720** | conferido de 1024×700 a 1920×1080 (a janela e o rodapé à vista; o que rola é o log) |
+| G5 | **Estados honestos** | TESTAR se apaga **com o motivo** com gente jogando; REINICIAR avisa quando o servidor roda à mão (só desliga); sem token a janela pede o token e não mostra nada; sem servidor no build o item se apaga |
+| G6 | **Teclado** | Esc fecha (ou cancela a confirmação do REINICIAR); o campo do token tem rótulo; Enter entra |
+
+**Capturas:** `arte/servidor-painel-claude.jpg` e `servidor-relatorios-claude.jpg`. **Limite:** Chrome headless (SwiftShader); a janela não prende o foco do Tab.
+
 ## 2. Princípios (valem para qualquer agente que mexa em tela)
 
 1. **Uma tela, um trabalho.** A pausa serve para jogar; o Hangar, para montar; as Configurações, para ajustar. O que não é do trabalho da tela vai embora ou fica um clique adiante.
@@ -123,5 +138,6 @@ Uma janela por cima do console (mesmo vocabulário das Configurações: moldura 
 | UI-5 | Celular, lobby, fim de rodada, carregamento, banco | **parcial** (celular feito; fim de rodada, carregamento e banco sem captura) |
 | UI-6 | Console de comando (início e pausa) | **feito** (`claude/console-comando`, P86 a P89) |
 | UI-7 | Janela do esquadrão (monitor PILOTOS → ESQUADRÃO) | **feito** (`claude/esquadrao-editor`, P91) |
+| UI-8 | Janela do servidor (monitor COMANDO → SERVIDOR) | **feito** (`claude/servidor-admin`, P93) |
 
 Território: `client/src/ui/`, `styles.css` e `index.html` são do Gemini (`ESTADO_ATUAL`, divisão de trabalho). O dono pediu esta revisão ao Claude diretamente em 10/10; o Gemini tem a tela de login (`gemini/tela-login`) em andamento, com CSS próprio no fim do `styles.css`: os dois PRs mexem em trechos diferentes. Quem chegar depois junta a `main` e roda o `npm run check`.

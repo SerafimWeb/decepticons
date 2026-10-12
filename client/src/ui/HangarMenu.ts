@@ -10,7 +10,6 @@ import type { Hangar } from '../hangar/Hangar';
 import { acceptsMetalShield, armGroups, armOptions, factorySpec, hasShoulderSlot, isMetalShield, layoutCount, loadoutKey, slotAttack, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { shoulderMounts } from '../combat/mounts';
 import { PRESET_COUNT } from '../hangar/Hangar';
-import { testAt, testFire, type TestFire } from '../hangar/testFire';
 import { AdminPanel } from './AdminPanel';
 import { WEAPON_HINT_NOVAS, WEAPON_ICON_NOVAS } from './weaponIconsNovas';
 import { testAt, testFire, TEST_FIRE_S, type TestFire } from '../hangar/testFire';
