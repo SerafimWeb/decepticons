@@ -2,6 +2,7 @@ import { SHIELDS, type ShieldId } from '../combat/EnergyShield';
 import { isMetalShieldId, metalShieldMass, METAL_SHIELDS, type MetalShieldId } from '../combat/MetalShield';
 import { weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { ARM_SLOTS, CHASSIS, CHASSIS_SIZE, METAL_SHIELD_CHASSIS, type ChassisId } from '../entities/chassis';
+import { attackOf, DEFAULT_TRIGGERS, type Attack, type MountId } from '../combat/mounts';
 import { classFor, WEAPON_CLASSES, type WeaponClass } from '../combat/weaponClass';
 
 /**
@@ -55,6 +56,14 @@ export const FACTORY_LOADOUT: LoadoutSpec = {
 };
 
 export type ArmSlot = 'right' | 'left' | 'shoulders';
+
+/** O encaixe que representa cada ranhura do Hangar (os dois ombros contam pelo direito: sempre atiram no mesmo ataque). */
+export const SLOT_MOUNT: Readonly<Record<ArmSlot, MountId>> = { right: 'rightHand', left: 'leftHand', shoulders: 'rightShoulder' };
+
+/** O ataque (1, o clique; 2, o clique direito) que aciona a ranhura neste chassi, pelo layout de gatilhos dele (`combat/mounts.ts`). */
+export function slotAttack(slot: ArmSlot, chassis: ChassisId): Attack | null {
+  return attackOf(CHASSIS[chassis].triggers ?? DEFAULT_TRIGGERS, SLOT_MOUNT[slot]);
+}
 
 /** Armas que cabem num encaixe do chassi (padrão: Vector-09), na ordem do catálogo. Sem o encaixe, nenhuma. */
 export function armOptions(slot: ArmSlot, chassis: ChassisId = 'vector09'): readonly WeaponId[] {

@@ -213,6 +213,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] **A onda sônica vira anéis transparentes que distorcem o ar (refração, só enquanto há onda no ar), no jogo e no "TESTAR" do Hangar; o cartão do chassi com ombros diz OMBROS** (o dono pediu, 11/10; P83) #combate
 - [ ] **Robô de tamanho 4: chegada do modelo, medição e as primeiras armas de tamanho 3 e 4 para ele** (o dono avisou, 11/10: "em breve trarei"; P85) #mechs
 - [x] **Tipos de encaixe (braço, ombro, costas, peito, cabeça): cada arma declara onde cabe, cada ranhura tem um tipo e uma classe máxima, e um teste confere as listas de todos os chassis** (o dono perguntou, 11/10: "como fica a diferença entre armas de braço, ombro, costas, peito"; P84) #combate
+- [x] **Ataque 1 e Ataque 2: o vocabulário do dono em todo o jogo (Hangar, HUD, menu, configurações, toque) e a regra por robô (pequenos: braço direito = 1, esquerdo = 2; grandes: braços = 1, ombros = 2), conferida por teste** (o dono pediu, 12/10; P95) #ux
+- [ ] **Layouts de gatilho configuráveis no Hangar (nos robôs com mais de uma possibilidade, escolher como os encaixes se dividem entre o Ataque 1 e o Ataque 2) e várias armas diferentes no mesmo ataque (a `Armament` resolve a arma de cada encaixe)** (P95; plano em `ARMAS_DE_BOTAO_2.md` § 8) #combate
 - [ ] **Criar de verdade os encaixes de costas, peito e cabeça (tipo em `MOUNTS`, boca por robô, desenho, evento de tiro com mais bits, terceiro gatilho) e dar ombros a mais robôs** (P84; depende das três decisões do Comandante em `ARMAS_DE_BOTAO_2.md` § 7) #combate
 - [ ] **Versões das armas para os tamanhos 3 e 4 (gigantes): médias e pesadas do tamanho 3, com desenho e números próprios** (o dono, 11/10: "futuramente"; P82; o contrato está em `ARSENAL.md`) #combate
 - [ ] **Decidir o armamento do chefe Colossus (hoje plasma e foguetes, médias) à luz das classes: trocar mexe no equilíbrio do encontro** (P82, decisão do Comandante) #combate
@@ -244,6 +246,12 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Painel de balanço na sala de controle:** quantas partidas cada arma venceu, tempo médio até morte, distribuição de dano; alimenta as decisões semanais de ajuste #negocio
 - [x] **Desafios diários e progressão (DailyChallenges):** Nível de Piloto, barra XP, Créditos ₵, 3 missões diárias com recompensas ("5 abates com plasma", "causar 500 de dano", "derrotar 3 andróides"), salvas localmente e integradas no `Game.ts` #modos
 - [x] **Modo sobrevivência e MissionHUD:** interface completa (briefing tático com digitação, HUD de onda, sirenes de alarme, banner ONDA LIMPA e resumo de estatísticas/medalhas) #modos
+- [ ] **Química do jogo (P96) — consertar os ciclos de recompensa que já existem:** o nível do piloto **não sobe jogando** (`addXp` só é chamado dentro de `claimReward`), o `trackWaveOrRound` (missão "sobreviver 3 ondas") **não tem chamador** e o gancho de "conquistado jogando" (`validateLoadout`) também não; sem isso a dopamina e a serotonina ficam travadas. Plano em `QUIMICA_DO_JOGO.md` § 5 (itens 1 a 3) e `DIVERSAO.md` § 9/§ 10 #modos
+- [ ] **Recorde de onda com comemoração (P96):** o `waveReached` já existe e chega ao HUD, mas **nenhum melhor é salvo**; guardar o recorde local e celebrar a marca nova (`QUIMICA_DO_JOGO.md` § 5 #3) #ux
+- [ ] **Aviso de sequência de abates (P96):** 2/3/4 abates em poucos segundos, com som próprio (constava como item pendente do Gemini) — dopamina e adrenalina baratas (`QUIMICA_DO_JOGO.md` § 5 #4) #ux
+- [ ] **Maestria por arma e por chassi (P96):** contador de abates por arma com selo no Hangar; **local, 0 byte de rede** (`QUIMICA_DO_JOGO.md` § 5 #5) #ux
+- [ ] **Autonomia visível (P96):** perfil de configurações salvo com nome, **código de build curto** (`CM-V9-SNIPER`) e a dica "teste isto" depois de perder; tudo local, nunca vantagem (`QUIMICA_DO_JOGO.md` § 5 #10) #ux
+- [ ] **Agressão recompensada (P96):** o abate **encostado** (pisão/serra) devolve energia ou alivia calor — só se passar no `combat/balance.ts` (`QUIMICA_DO_JOGO.md` § 5 #11) #combate #modos
 
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
 - [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo

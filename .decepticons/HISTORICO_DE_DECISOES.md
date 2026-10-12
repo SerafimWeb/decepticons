@@ -13,6 +13,30 @@
 8. **Tudo que crescia com o número de robôs foi revisto:** o pool de tiros (64 + 4 por Mech a partir do quarto: sem isso o tiro some em silêncio, G5), as sombras de bolha (32 para 48), o orçamento de fumaça/fogo/gelo por pulso (que só alcançava os 12 primeiros robôs; agora só gasta com quem emite, só perto e girando o começo), o placar, as setas da borda, o monitor PILOTOS. O que não revisei, e está dito em `STATUS_REAL.md`: o áudio não tem teto de vozes.
 
 **Custo de CPU:** medido acima. Pool de tiros: 3 objetos de cena por tiro (192 para 64, 540 para 180). **Quem decidiu:** Claude, com o teto e o padrão para o Comandante confirmar ou mudar (`LIMITES_DO_ESQUADRAO`).
+## [2026-10-12] A química do jogo: as cinco sensações viram um plano, e a ordem do `DIVERSAO.md` não muda (P96, Qwen)
+
+**Ordem do Comandante (P96):** "melhorar a jogabilidade, a dopamina, a serotonina, a adrenalina, a oxitocina e a sensação de bem-estar de cumprir missão, com dificuldade que instigue a tentar de novo, mudar configurações e customizar os robôs", aproveitando os aprendizados de Minecraft, Fortnite, COD, Valorant, Battlefield, War Robots, Mech Arena e Doom.
+
+**Decisões:**
+1. **O documento novo é `QUIMICA_DO_JOGO.md`, e ele é companheiro, não substituto, do `DIVERSAO.md`.** A **ordem de prioridade** continua sendo a do `DIVERSAO.md` § 10; este documento explica *por que* ela funciona emocionalmente (as cinco químicas), diz o que **não** copiar de cada jogo e acrescenta quatro itens novos que caem **dentro** daquela fila (recorde de onda, sequência de abates, maestria por arma, autonomia visível). Duas ordens concorrentes seria o mesmo que nenhuma.
+2. **As cinco químicas foram separadas, e nenhuma vira feature por si.** Dopamina = progresso visível; serotonina = prova durável (recorde, maestria); adrenalina = risco com saída (o eixo **mais bem servido** hoje); oxitocina = vínculo (depende de **times online**, P81); bem-estar = objetivo com início-meio-fim (depende de **missão**). Cada proposta passa pelo filtro de três perguntas do `DIVERSAO.md` § 3.
+3. **A química não se mede; mede-se o proxy.** Nenhuma métrica lê dopamina (`PLAYTEST.md` já diz); o plano mede rodadas por sessão, volta D1, **variedade de build** e recorde de onda. Sem isso, "ficou mais divertido" é opinião.
+4. **A agência (configurações + customização) é recompensa, não só ajuste.** O pedido literal do dono ("mudar configurações, customizar robôs") entra como eixo próprio: perfil de configurações com nome, **código de build** e a dica "teste isto" — tudo **local, nunca vantagem** (a mesma regra do não-pay-to-win, agora para a autonomia).
+5. **As quatro propostas que mexem em regra só entram se provarem.** A agressão recompensada (pisão/serra que devolve energia) é a única que toca combate e passa pelo `combat/balance.ts`; as outras três (recorde, maestria, perfis) são locais e não viajam pelo fio.
+
+**Achados revalidados no código da `main` (R17 — registrados, não corrigidos aqui: `ui/` e `hangar/` são território do Gemini):** o nível do piloto **não sobe jogando** (`ui/DailyChallenges.ts:138`); o `trackWaveOrRound` **não tem chamador**; o `validateLoadout` idem; e o `waveReached` chega ao HUD (`core/Game.ts:977`) mas **nenhum recorde é salvo**.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen.
+
+## [2026-10-12] "Ataque 1" e "Ataque 2" são os nomes dos dois gatilhos (P95, Claude)
+
+**Ordem do Comandante:** "os robôs têm ataque 1 e ataque 2; arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral nos maiores; nos pequenos, cada braço com um botão do mouse".
+
+**Decisões:**
+1. **O modelo já existia; o que faltava era o nome.** O `TriggerLayout` já põe a mão direita no clique e a esquerda no clique direito nos pequenos, e as mãos no clique e os ombros no clique direito no Marauder. Mudar a regra seria desfazer o que o Comandante pediu; o PR só **diz** assim (Hangar, HUD, menu, configurações, toque), com um teste que varre todos os chassis.
+2. **"Botão 1/2", "principal/secundário" e "foguetes" saem do que o jogador lê.** O HUD escrevia "FOGUETES" para qualquer arma de munição (o míssil teleguiado aparecia como foguete): agora o nome vem de uma tabela curta por arma e cai no nome da arma.
+3. **No toque, ATQ 1 e ATQ 2** (a mesma palavra, abreviada para caber no botão em arco).
+4. **O "configurável" é um segundo PR, porque pede mudar a regra de tiro.** Hoje o Ataque 2 leva uma arma só, a mesma em todos os encaixes dele; escolher que o braço esquerdo e os ombros disparem juntos no clique direito pede **armas diferentes no mesmo ataque**. Isso mexe na `Armament` (cadência, carregador e calor por arma) e é o terreno onde um erro quebra o tiro de todo mundo, então vai separado e com os testes de hoje como rede de segurança.
 
 ## [2026-10-12] Todo acerto empurra e dá um tranco, na medida do dano que passou (P69, Claude)
 

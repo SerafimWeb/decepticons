@@ -129,7 +129,7 @@ export const KEY_ACTIONS: readonly { action: KeyAction; label: string }[] = [
   { action: 'right', label: 'Direita' },
   { action: 'jump', label: 'Pulo' },
   { action: 'dash', label: 'Dash' },
-  { action: 'secondary', label: 'Foguetes' },
+  { action: 'secondary', label: 'Ataque 2 (além do clique dir.)' },
   { action: 'camera', label: 'Trocar câmera' },
   { action: 'shield', label: 'Escudo: ligar/desligar' },
 ];

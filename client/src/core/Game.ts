@@ -78,7 +78,7 @@ import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassi
 import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
 import { ImportedMech } from '../entities/ImportedMech';
 import { IMPORTED_CHASSIS, preloadMechAsset, tryInstantiateMechRig } from '../entities/importedMechAssets';
-import type { Loadout, WeaponStats } from '../combat/weapons';
+import type { Loadout, WeaponId, WeaponStats } from '../combat/weapons';
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { EsquadraoStore } from './EsquadraoStore';
@@ -108,7 +108,8 @@ import { CtfHud } from '../ui/CtfHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
-const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : l.secondary.kind === 'melee' ? 'MOTOSSERRA' : l.secondary.kind === 'ammo' ? (l.secondary.barrage ? 'CHUVA' : 'FOGUETES') : l.secondary.name.toUpperCase());
+const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', chainsaw: 'MOTOSSERRA' };
+const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : 'ATQ 2 · ' + (HUD_NAME[l.secondary.id] ?? l.secondary.name.toUpperCase()));
 
 /** Onde os braços do Mech do Hangar estão na tela (reaproveitados por quadro). */
 const _hotRight = { x: 0, y: 0 };

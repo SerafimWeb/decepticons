@@ -6,7 +6,7 @@ import { CHASSIS, CHASSIS_SIZE, SHIELD_ARM, type ChassisId } from '../entities/c
 import { METAL_SHIELD_IDS, METAL_SHIELDS, METAL_SHIELD_TIERS, metalShieldMass, type MetalShieldId } from '../combat/MetalShield';
 import type { DamageType } from '../combat/weapons';
 import type { Hangar } from '../hangar/Hangar';
-import { acceptsMetalShield, armGroups, armOptions, factorySpec, hasShoulderSlot, isMetalShield, loadoutKey, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
+import { acceptsMetalShield, armGroups, armOptions, factorySpec, hasShoulderSlot, isMetalShield, loadoutKey, slotAttack, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { PRESET_COUNT } from '../hangar/Hangar';
 import { WEAPON_HINT_NOVAS, WEAPON_ICON_NOVAS } from './weaponIconsNovas';
 import { testAt, testFire, TEST_FIRE_S, type TestFire } from '../hangar/testFire';
@@ -64,7 +64,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   emp: 'Energia · pulso lento · pouco dano e +20% de calor no alvo próximo · sem paralisia',
   plasma: 'Energia · dano cheio até 60 m · calor por disparo',
   rockets: 'Munição · explosão em área · recarga automática',
-  seeker: 'Munição · só nos ombros (botão 2), um míssil em cada · TRAVA no inimigo mais centrado à frente (29°, até 90 m, à vista) e CURVA até ele; quem corre reto é perseguido, quem se abriga ou usa o dash ainda desvia · explosão em área · recarga automática',
+  seeker: 'Munição · só nos ombros (Ataque 2), um míssil em cada · TRAVA no inimigo mais centrado à frente (29°, até 90 m, à vista) e CURVA até ele; quem corre reto é perseguido, quem se abriga ou usa o dash ainda desvia · explosão em área · recarga automática',
   blaster: 'Energia · leve · alcance curto',
   shotgun: 'Energia · dano alto de perto, some aos 45 m · um projétil só',
   barrage: 'Munição · sobe e cai em chuva de 8 bombas num círculo de 9 m · aviso no chão',
@@ -73,7 +73,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   cryo: WEAPON_HINT_NOVAS.cryo,
   flamer: WEAPON_HINT_NOVAS.flamer,
   rotary: WEAPON_HINT_NOVAS.rotary,
-  sonic: 'Som · só nos ombros (botão 2), as duas bocas juntas · onda em cone de 22 m que EMPURRA · 20 de dano por boca, cheio até 10 m · a chapa Amortecedor segura 90% · cada nível +25% de alcance',
+  sonic: 'Som · só nos ombros (Ataque 2), as duas bocas juntas · onda em cone de 22 m que EMPURRA · 20 de dano por boca, cheio até 10 m · a chapa Amortecedor segura 90% · cada nível +25% de alcance',
   cannon: 'Aço · um obus só, grande e lento (150 m/s) · 90 de dano, um a cada 2,6 s · 4 acertos (MK I) ou 3 (MK II e III) para um torso · só os pesados o carregam',
   autocannon: 'Aço · projéteis em sequência firme, 5 por segundo · 10 de dano, preciso e rápido · esquenta menos que o plasma · sem espalhamento',
 };
@@ -647,7 +647,7 @@ export class HangarMenu {
         const icon = w ? WEAPON_ICON[w.id] : slotPlate ? PLATE_ICON : '<path d="M6 12h12" />';
         const name = w?.name ?? (slotPlate ? METAL_SHIELDS[slotPlate.id].name : slot === 'left' && shield ? 'ESCUDO' : 'VAZIO');
         const info = w ? TIERS[w.tier]!.label + ' · ' + num(w.mass * mountCopies(slot, spec.chassis), 1) + ' t' : slotPlate ? METAL_SHIELD_TIERS[slotPlate.tier].label + ' · ' + num(metalShieldMass(slotPlate.id, slotPlate.tier), 1) + ' t' : '—';
-        return `<button class="hg-slot${selected ? ' selected' : ''}${w || slotPlate ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg><span><small>${SLOT_LABEL[slot]}</small><b>${name}</b></span><em>${info}</em></button>`;
+        return `<button class="hg-slot${selected ? ' selected' : ''}${w || slotPlate ? '' : ' empty'}" type="button" data-slot="${slot}" aria-pressed="${selected}"><b class="hg-slot-num">${SLOT_NUM[slot]}</b><svg viewBox="0 0 24 24" aria-hidden="true">${icon}</svg><span><small>${SLOT_LABEL[slot]} · ATAQUE ${slotAttack(slot, spec.chassis) ?? '—'}</small><b>${name}</b></span><em>${info}</em></button>`;
       })
       .join('');
 
@@ -657,7 +657,7 @@ export class HangarMenu {
     const nowArm = current.chassis === spec.chassis ? (current[this.selectedSlot] ?? null) : null;
     const was = nowArm && !isMetalShield(nowArm) ? weapon(nowArm.id as WeaponId, nowArm.tier) : null;
     const plateOptions = this.selectedSlot === 'left' && acceptsMetalShield(spec.chassis)
-      ? `<optgroup label="ESCUDO FÍSICO · botão 2 levanta">${METAL_SHIELD_IDS.map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${METAL_SHIELDS[id].name} · ${num(metalShieldMass(id, arm?.tier ?? 0), 1)} t</option>`).join('')}</optgroup>`
+      ? `<optgroup label="ESCUDO FÍSICO · Ataque 2 levanta">${METAL_SHIELD_IDS.map((id) => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${METAL_SHIELDS[id].name} · ${num(metalShieldMass(id, arm?.tier ?? 0), 1)} t</option>`).join('')}</optgroup>`
       : '';
     const option = (id: WeaponId): string => `<option value="${id}"${arm?.id === id ? ' selected' : ''}>${weapon(id).name} · ${num(weapon(id, arm?.tier ?? 0).mass * mountCopies(this.selectedSlot, spec.chassis), 1)} t${nasCostas(id, this.selectedSlot) ? ' · morteiro nas costas' : ''}</option>`;
     // Leves, médias e pesadas (P82); no gigante tudo cai em LEVES, porque a pesada dos Mechs é a leve dele. O andróide (tamanho 1) não agrupa:
@@ -669,9 +669,9 @@ export class HangarMenu {
     const shieldArm = this.selectedSlot === 'left' && shield && !acceptsMetalShield(spec.chassis);
     const editor = this.root.querySelector<HTMLElement>('#hangar-weapon-editor')!;
     editor.innerHTML = `
-      <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ARMAMENTO</label>
+      <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ATAQUE ${slotAttack(this.selectedSlot, spec.chassis) ?? '—'}</label>
       <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}${plateOptions}</select>
-      <p class="hg-hint">${plate ? `${METAL_SHIELDS[plate.id].hint}. Segure o botão 2 (mouse direito) para levantar a chapa: cobre a frente e anda mais devagar; abaixada, protege só o flanco esquerdo com metade da força. Sem energia: a chapa se desgasta e volta no conserto.` : w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') + (CHASSIS_SIZE[spec.chassis] >= 3 ? ' · tamanho 3: o que é pesado nos Mechs comuns é leve para ele' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
+      <p class="hg-hint">${plate ? `${METAL_SHIELDS[plate.id].hint}. Segure o Ataque 2 (clique direito) para levantar a chapa: cobre a frente e anda mais devagar; abaixada, protege só o flanco esquerdo com metade da força. Sem energia: a chapa se desgasta e volta no conserto.` : w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') + (CHASSIS_SIZE[spec.chassis] >= 3 ? ' · tamanho 3: o que é pesado nos Mechs comuns é leve para ele' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
 ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou testar. A prévia mantém a última montagem válida.</p>' : ''}
       ${["genesis01", "lancerL1", "lr7lBastion", "quadraV2"].includes(spec.chassis) ? '<p class="hg-hint">Arma integrada ao casco: a aparência deste robô ainda não muda com a seleção.</p>' : ''}<div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => { const copies = mountCopies(this.selectedSlot, spec.chassis); const mass = plate ? metalShieldMass(plate.id, i as Tier) : arm ? weapon(arm.id as WeaponId, i as Tier).mass * copies : 0; const total = report.mass - (plate ? metalShieldMass(plate.id, plate.tier) : (w?.mass ?? 0) * copies) + mass; const excess = Math.max(0, total - report.capacity); const hint = excess > 1e-9 ? `EXCEDE ${num(excess, 1)} t` : `${num(report.capacity - total, 1)} t livres`; return `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}${excess > 1e-9 ? ' over' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}" title="${hint}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : plate ? `+${Math.round((METAL_SHIELD_TIERS[i]!.integrity - 1) * 100)}% chapa` : `+${Math.round((t.damage - 1) * 100)}% dano`} · ${num(mass, 1)} t</small><small>${hint}</small></button>`; }).join('')}</div>
