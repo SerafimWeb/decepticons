@@ -87,6 +87,21 @@ O Comandante pediu um painel "com todos os botões e configurações em um só e
 **Achados enquanto construía (R17):** (a) o `clip-path` dos chanfros corta o anel de foco do teclado: nos botões chanfrados o anel vai por dentro; (b) um botão que ficou com o foco do mouse (ou escondido) engolia o Enter: só o foco de teclado (`:focus-visible`) ou um campo de texto segura as teclas; (c) `KeyM`, `KeyB` e `KeyC` já valem com a pausa à vista (briefing e CFTV): os atalhos novos não os usam; (d) o relatório do fim de rodada (`#round-summary`) agora é uma faixa acima do mapa, não por cima dele.
 **Capturas:** `arte/console-comando-claude.jpg` (o que o jogador vê), `console-comandante-claude.jpg` (modo Comandante em 1080p, com o Bunker escolhido), `console-mundo-claude.jpg` (zoom MUNDO), `console-celular-claude.jpg`, `console-carregando-claude.png` (a tela de carregamento real). **Limite:** fotografado em Chrome headless (SwiftShader); o julgamento de fluidez e de beleza em GPU real é do Comandante.
 
+### Janela do esquadrão — UI-7 (12/10, P91): montar a partida pela tela
+
+Uma janela por cima do console (mesmo vocabulário das Configurações: moldura verde, cabeçalho laranja, botões de terminal), aberta por **[ ESQUADRÃO ]** no monitor PILOTOS (e pela ficha do Comandante). Como cumpre os princípios da seção 2:
+
+| # | Princípio | Como a janela cumpre |
+|---|---|---|
+| G1 | **Uma ação primária** | **[ SALVAR E REINICIAR ]** é o botão cheio e brilhante; AJUSTES DO JOGO, COPIAR LINK e DESFAZER são secundários e do mesmo tamanho pequeno; fica apagado enquanto nada mudou |
+| G2 | **Cada informação em um lugar só** | o nome da lista é o que vai para a partida (com a personalidade); a carga e a contagem moram no pé, uma vez; o chassi e a arma moram na ficha, não na lista (a lista só resume) |
+| G3 | **Sem informação de desenvolvedor** | a carga é LEVE, MÉDIA, ALTA ou EXTREMA com uma dica em palavras; o peso e os milissegundos ficam nos documentos |
+| G4 | **Cabe sem rolagem em 1280×720** | a janela inteira cabe de 1024×700 a 1920×1080 (o que rola são as **listas**, com 24 linhas); no celular vira uma coluna que rola, com o botão de salvar sempre alcançável |
+| G5 | **Estados honestos** | o botão se apaga com o motivo online e nas missões; o + de cada lado se apaga com o motivo do limite (tracejado); o que não cabe no mapa é dito antes de salvar |
+| G6 | **Teclado** | Esc fecha; setas movem a escolha; Delete tira; os campos têm rótulo; o console não dá Enter por trás dela |
+
+**Capturas:** `arte/esquadrao-editor-claude.jpg`, `esquadrao-editor-cerco-claude.jpg` (o teto, carga extrema), `esquadrao-editor-celular-claude.jpg`. **Limite:** Chrome headless (SwiftShader); a janela não prende o foco do Tab.
+
 ## 2. Princípios (valem para qualquer agente que mexa em tela)
 
 1. **Uma tela, um trabalho.** A pausa serve para jogar; o Hangar, para montar; as Configurações, para ajustar. O que não é do trabalho da tela vai embora ou fica um clique adiante.
@@ -107,5 +122,6 @@ O Comandante pediu um painel "com todos os botões e configurações em um só e
 | UI-4 | HUD da partida: legibilidade e alinhamento (o painel de vida duplicado era um achado errado; ver a retratação) | **feito** (`claude/ui-hud-partida`) |
 | UI-5 | Celular, lobby, fim de rodada, carregamento, banco | **parcial** (celular feito; fim de rodada, carregamento e banco sem captura) |
 | UI-6 | Console de comando (início e pausa) | **feito** (`claude/console-comando`, P86 a P89) |
+| UI-7 | Janela do esquadrão (monitor PILOTOS → ESQUADRÃO) | **feito** (`claude/esquadrao-editor`, P91) |
 
 Território: `client/src/ui/`, `styles.css` e `index.html` são do Gemini (`ESTADO_ATUAL`, divisão de trabalho). O dono pediu esta revisão ao Claude diretamente em 10/10; o Gemini tem a tela de login (`gemini/tela-login`) em andamento, com CSS próprio no fim do `styles.css`: os dois PRs mexem em trechos diferentes. Quem chegar depois junta a `main` e roda o `npm run check`.

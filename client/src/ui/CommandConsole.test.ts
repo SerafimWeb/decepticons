@@ -51,7 +51,7 @@ describe('console de comando: o HTML', () => {
 
   it('o que ainda não existe aparece como em construção, sem link (R13)', () => {
     const breves = [...consoleHtml.matchAll(/<li class="breve"[^>]*>([\s\S]*?)<\/li>/g)].map((m) => m[1]!);
-    expect(breves.length).toBeGreaterThanOrEqual(4);
+    expect(breves.length).toBeGreaterThanOrEqual(3);
     for (const b of breves) {
       expect(b).toMatch(/em construção/);
       expect(b).not.toMatch(/<a |<button/);
@@ -111,5 +111,26 @@ it('a tela de carregamento esconde os monitores com display none (guarda do boot
     expect(comando).toMatch(/id="cmd-mesa-ajuda"[^>]*\bhidden\b/);
     expect(comando).toContain(`<code class="ajuda-cmd" id="cmd-mesa-cmd">${MESA_COMANDO}</code>`);
     for (const acao of ['copiar', 'abrir', 'fechar']) expect(comando.includes(`data-acao="${acao}"`), acao).toBe(true);
+  });
+
+  it('o esquadrão (P91): o botão do monitor PILOTOS e a ficha do Comandante abrem a mesma janela, que mora fora dos monitores e começa fechada', () => {
+    const pilotos = monitores.find((m) => m.includes('id="mon-oponentes"'))!;
+    expect(pilotos).toMatch(/id="btn-esquadrao"[^>]*data-esquadrao-open/);
+    // O AJUSTAR continua (o `SettingsMenu` e o `OnlineSwitch` acham o #btn-settings), ao lado do ESQUADRÃO.
+    expect(pilotos).toMatch(/id="btn-settings"/);
+    const comando = monitores.find((m) => m.includes('id="mon-comando"'))!;
+    expect(comando).toMatch(/<li id="cmd-ficha"><button type="button" data-esquadrao-open/);
+    expect([...consoleHtml.matchAll(/data-esquadrao-open/g)]).toHaveLength(2);
+    expect(consoleHtml).toContain('<div id="squad-modal" class="hidden"></div>');
+    for (const m of monitores) expect(m.includes('id="squad-modal"'), 'a janela dentro de um monitor').toBe(false);
+  });
+
+  it('o esquadrão (P91): a janela tem o estilo (cabe em 1280×720 sem rolar a página) e o console não dá Enter por trás dela', () => {
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/#squad-modal\s*\{[^}]*position:\s*fixed/);
+    expect(css).toMatch(/#squad-modal\.hidden\s*\{\s*display:\s*none/);
+    expect(css).toMatch(/\.squad-box\s*\{[^}]*height:\s*min\(\d+px,\s*94vh\)/);
+    const fonte = readFileSync(new URL('./CommandConsole.ts', import.meta.url), 'utf8');
+    expect(fonte, 'algoPorCima conhece a janela do esquadrão').toContain('#squad-modal:not(.hidden)');
   });
 });

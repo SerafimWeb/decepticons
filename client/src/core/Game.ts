@@ -82,7 +82,9 @@ import type { Loadout, WeaponId, WeaponStats } from '../combat/weapons';
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { EsquadraoStore } from './EsquadraoStore';
-import { PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
+import { esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
+import { ALLY_COUNT } from '../sim/nascimentos';
+import { SquadPanel } from '../ui/SquadPanel';
 import { PALETTE } from './palette';
 import { PilotLabels } from '../ui/PilotLabels';
 import { PowerSettings } from '../ui/PowerSettings';
@@ -665,6 +667,19 @@ export class Game {
     // Console de comando (P86): a pausa vira a sala de comando. Os monitores só leem o jogo por estes callbacks (G3).
     const mapa = mapFromSearch(location.search, !!online, this.gameMode);
     const allies = (): readonly MechBase[] => this.match.allies?.mechs ?? [];
+    // Janela do esquadrão (P91): offline, na Arena e no Bunker. Online o servidor manda os inimigos; as missões têm o pool delas.
+    const esquadraoIndisponivel = (): string | null =>
+      online ? 'Online, quem manda nos inimigos é o servidor.' : this.gameMode !== 'deathmatch' ? 'O esquadrão vale no combate livre (Arena e Bunker); as missões têm o pool delas.' : null;
+    const squadPanel = new SquadPanel({
+      store: this.squad,
+      padrao: () => esquadraoDeFoes(this.settings.value, ALLY_COUNT),
+      nomes: () => this.settings.value.names,
+      dificuldade: () => this.settings.value.difficulty,
+      mapa,
+      indisponivel: esquadraoIndisponivel,
+      abrirAjustes: () => document.getElementById('btn-settings')?.click(),
+      reiniciar: () => reloadWithout(PARAM_DO_ESQUADRAO),
+    });
     const cmd = new CommandConsole({
       mapa,
       modo: this.gameMode,
@@ -675,6 +690,7 @@ export class Game {
       dificuldade: () => this.settings.value.difficulty,
       potencias: () => this.power.changes,
       som: () => this.audio.playUiTransition(),
+      esquadrao: { abrir: () => void squadPanel.abrir(), indisponivel: esquadraoIndisponivel, personalizado: () => this.squad.custom },
       radar: fonteDoRadar(mapa, this.match.arena.halfSize, this.match.arena.occluders, () => this.mech, () => this.bots.mechs, allies),
     });
     this.settings.onChange(() => cmd.atualizar());

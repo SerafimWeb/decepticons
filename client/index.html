@@ -132,7 +132,10 @@
           <div class="mon-screen">
             <p class="op-contagem" id="op-contagem"></p>
             <ul class="op-lista" id="op-lista"></ul>
-            <button type="button" id="btn-settings" class="btn-terminal mon-acao" data-settings-open="jogo" title="Dificuldade, quantos inimigos, personalidade e nomes">[ AJUSTAR ]</button>
+            <div class="mon-acoes">
+              <button type="button" id="btn-esquadrao" class="btn-terminal mon-acao" data-esquadrao-open title="Quantos bots e aliados, e o chassi, a arma e o jeito de cada um">[ ESQUADRÃO ]</button>
+              <button type="button" id="btn-settings" class="btn-terminal mon-acao" data-settings-open="jogo" title="Dificuldade, quantos atacam ao mesmo tempo e nomes">[ AJUSTAR ]</button>
+            </div>
           </div>
         </section>
 
@@ -170,7 +173,7 @@
               <li id="cmd-oficina"><a href="../oficina/" target="_blank" rel="noopener"><b>OFICINA</b><span>números, testes, arquitetura</span></a></li>
               <li id="cmd-mesa"><a href="http://127.0.0.1:4199/.tmp/video/editor.html" target="_blank" rel="noopener" title="A mesa é local: só liga nesta máquina, com npm run mesa"><b>MESA DE VÍDEO</b><span>local · npm run mesa</span></a></li>
               <li class="breve" title="Assistir às câmeras de várias partidas ao mesmo tempo, pelo servidor (PAINEL_ADMIN.md, etapa H)"><b>CÂMERAS AO VIVO</b><span>em construção</span></li>
-              <li class="breve" title="Chassi, armas, piloto e personalidade de cada bot (PAINEL_ADMIN.md, etapas A a C)"><b>FICHA DE CADA BOT</b><span>em construção</span></li>
+              <li id="cmd-ficha"><button type="button" data-esquadrao-open title="Chassi, arma, personalidade, dificuldade e apelido de cada bot, e quantos há"><b>FICHA DE CADA BOT</b><span>chassi, arma, jeito</span></button></li>
               <li class="breve" title="Missões em sequência, salvas e compartilháveis (PAINEL_ADMIN.md, etapa D)"><b>CAMPANHA</b><span>em construção</span></li>
               <li class="breve" title="Jogadores, salas, reinício e métricas, com o token do dono (PAINEL_ADMIN.md, etapa E)"><b>SERVIDOR</b><span>em construção</span></li>
             </ul>
@@ -204,6 +207,9 @@
         </div>
       </footer>
     </div>
+
+    <!-- Janela do esquadrão (ui/SquadPanel.ts): o Comandante monta quem luta contra e ao lado do jogador -->
+    <div id="squad-modal" class="hidden"></div>
 
     <!-- Modal de Configurações -->
     <div id="settings-modal" class="hidden">
