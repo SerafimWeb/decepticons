@@ -38,6 +38,7 @@
 | [`drone.md`](drone.md) | escala 1, três classes por função: reconhecimento, ataque e conserto | decisão do dono de 27/09 (`METAGAME.md` § 8 e § 8.2) | proposta Qwen; **silhueta (Codex) e números (Claude) aguardam**; 6 perguntas abertas para o dono |
 | [`ondas.md`](ondas.md) | **modo** sobrevivência: o balanço das ondas (quantidade, tipo e vida por onda) | declaração do dono de 27/09 (`ROADMAP.md`, Fase 5) | proposta Qwen; **a máquina de estados é do Claude** e o HUD, do Gemini; 7 perguntas abertas para o dono |
 | [`ctf.md`](ctf.md) | **modo** CTF Vermelho × Azul: regras e **a especificação dos 15 testes** | decisão do dono no `ROADMAP.md` (Fase 5: 2v2, 3 capturas ou mais em 8 min) | proposta Qwen; **os `it()` nascem no PR da regra (Claude)**; 7 perguntas abertas para o dono |
+| [`escolta.md`](escolta.md) | **modo** missão em fases #1: **escolta e defesa do técnico** — três fases, **0 arte nova** | ordem do dono **P99** (12/10) e `DIVERSAO.md` § 10 #7 (a "espinha da retenção") | proposta Qwen; **a regra no `Match` e os 13 `it()` são do Claude**, o briefing/HUD (hoje `MissionHUD` **DEMO**) é do Gemini; 7 perguntas abertas para o dono |
 
 As fichas marcadas como **proposta** não aprovam mudanças de gameplay. O Ferret-X e o Colossus-01 ainda não têm
 stats/slots no código; decisões abertas nunca viram número implementado sem teste e aprovação.
