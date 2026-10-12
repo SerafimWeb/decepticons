@@ -50,8 +50,11 @@ controlando as armas direcionais do Colossus, em partidas com mais de um jogador
 
 ## 3. Montar vídeo promocional (`/mesa`)
 
-**Abrir:** `node .tmp/video/servir.mjs` (na raiz do projeto) — abre a "mesa de montagem" no
-navegador. (Desde 11/10 também tem atalho no console de comando: modo Comandante, monitor COMANDO, MESA DE VÍDEO; o servidor da mesa precisa estar ligado.) Só local (G15: nada fora da pasta do projeto; a mesa não sobe para o site).
+**Ligar (12/10): `npm run mesa`** na raiz do projeto — liga a mesa de montagem e abre no navegador
+(`http://127.0.0.1:4199/.tmp/video/editor.html`); se ela já estiver ligada, só abre; **Ctrl+C** na janela desliga. Sem terminal: dois cliques em
+`scripts\ligar-mesa.cmd`. Pelo console de comando (modo Comandante, monitor COMANDO), o item **MESA DE VÍDEO** verifica se está ligada e, se não estiver,
+mostra o comando com botão de copiar. (O jeito antigo, `node .tmp/video/servir.mjs`, continua valendo: é o que o `npm run mesa` chama.)
+Só local (G15: nada fora do projeto; a pasta `.tmp/video/` não vai para o git nem para o site, então a mesa só liga na máquina em que ela existe).
 
 A mesa tem três jeitos de montar um vídeo, do mais simples ao mais automático:
 

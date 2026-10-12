@@ -10,7 +10,10 @@ import {
   fichaDoMech,
   fracoesDasPartes,
   lerModoComandante,
+  MESA_COMANDO,
+  MESA_URL,
   nivelDeAmeaca,
+  sondarMesa,
   type BotsLidos,
   type MechLido,
   type PilotoNaPartida,
@@ -159,5 +162,45 @@ describe('atalhos de teclado do console', () => {
     for (const code of Object.values(DEFAULT_SETTINGS.keys)) {
       if (code.startsWith('Key')) expect(acaoDaTecla(code.slice(3)), code).toBeNull();
     }
+  });
+});
+
+describe('a mesa de vídeo: a sondagem', () => {
+  const resposta = (async () => ({}) as Response) as unknown as typeof fetch;
+  const recusada = (async () => {
+    throw new TypeError('Failed to fetch');
+  }) as unknown as typeof fetch;
+  /** Uma conexão que nunca responde, mas obedece ao aborto (como o navegador faz). */
+  const muda = ((_: unknown, init?: RequestInit) =>
+    new Promise((_ok, falha) => {
+      init?.signal?.addEventListener('abort', () => falha(new DOMException('aborted', 'AbortError')));
+    })) as unknown as typeof fetch;
+
+  it('ligada: alguém atendeu, qualquer que seja a resposta', async () => {
+    expect(await sondarMesa(resposta)).toBe(true);
+  });
+
+  it('desligada: a conexão é recusada', async () => {
+    expect(await sondarMesa(recusada)).toBe(false);
+  });
+
+  it('sem resposta dentro do prazo, conta como desligada (e não trava o clique)', async () => {
+    const t0 = Date.now();
+    expect(await sondarMesa(muda, MESA_URL, 40)).toBe(false);
+    expect(Date.now() - t0).toBeLessThan(2000);
+  });
+
+  it('sonda o endereço local da mesa, sem CORS e sem cache', async () => {
+    let visto: { url: string; init?: RequestInit } | null = null;
+    const espia = (async (url: string, init?: RequestInit) => {
+      visto = { url, init };
+      return {} as Response;
+    }) as unknown as typeof fetch;
+    await sondarMesa(espia);
+    expect(visto!.url).toBe(MESA_URL);
+    expect(MESA_URL.startsWith('http://127.0.0.1:')).toBe(true);
+    expect(visto!.init?.mode).toBe('no-cors');
+    expect(visto!.init?.cache).toBe('no-store');
+    expect(MESA_COMANDO).toBe('npm run mesa');
   });
 });

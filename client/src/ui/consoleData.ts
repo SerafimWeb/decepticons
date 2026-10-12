@@ -180,3 +180,28 @@ export function acaoDaTecla(key: string): AcaoDoConsole | null {
       return null;
   }
 }
+
+// ─── A mesa de vídeo ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+/** Onde a mesa de vídeo atende quando está ligada (`npm run mesa`, `scripts/mesa.mjs`): só nesta máquina, nunca fora dela. */
+export const MESA_URL = 'http://127.0.0.1:4199/.tmp/video/editor.html';
+/** O comando que liga a mesa, na pasta do projeto. */
+export const MESA_COMANDO = 'npm run mesa';
+
+/**
+ * A mesa está ligada? Um GET sem CORS: só diz se alguém atendeu (a resposta é opaca), e é tudo o que importa. Sob demanda (quando o Comandante clica no
+ * item), nunca por conta própria: uma sondagem que falha escreve um erro de rede no console do navegador, e o smoke e o teste do site tratam erro de console
+ * como falha. `buscar` e o tempo são injetáveis para o teste.
+ */
+export async function sondarMesa(buscar: typeof fetch = (...a) => fetch(...a), url: string = MESA_URL, ms = 1500): Promise<boolean> {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  try {
+    await buscar(url, { mode: 'no-cors', cache: 'no-store', signal: ctl.signal });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(t);
+  }
+}
