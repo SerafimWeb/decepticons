@@ -165,6 +165,8 @@
 
 **Falta (R13):** (1) **o religamento pela tarefa do Windows de produção só foi provado com um "agendador de mentira"** (`servidor-ui.mjs` e `supervisor.mjs`, locais em `.tmp/console/` e não versionados; o agendador religa quem sai com código ≠ 0, como a tarefa); a prova real é **REINICIAR no servidor de casa com 0 jogadores**, depois que o atualizador subir este PR; (2) o TESTAR mede o servidor **a partir da própria máquina** (não mede a banda de casa nem o túnel); (3) o histórico mora na memória: o reinício zera a "última hora"; (4) a janela não prende o foco do Tab.
 
+**Achado (R17, corrigido):** a `main` ficou com o **typecheck quebrado** depois do merge do #259: o `ui/HangarMenu.ts` importava `testAt` e `testFire` duas vezes (uma das linhas é da versão velha do tiro de teste). Removi a linha velha (uma linha, sem mudança de comportamento: o código só usa a versão com `TEST_FIRE_S`) para o `npm run check` deste PR passar. Quem mexer no Hangar confira que o `npm run typecheck` está verde.
+
 **Próxima sessão começa com:** a prova real do REINICIAR em produção (0 jogadores, `/status` antes e depois); depois a **fase 3, câmeras ao vivo** (`claude/cameras-ao-vivo`): o contrato `OBSERVAR(sala)` (observador sem vaga, só com o token do dono), o mural de radares e a câmera 3D de uma sala por vez.
 
 ## O editor do esquadrão: o Comandante monta a partida pela tela — Claude, 12/10 (PR `claude/esquadrao-editor`, ordem P91, fase 1C)
