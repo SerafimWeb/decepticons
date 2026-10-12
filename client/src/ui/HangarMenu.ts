@@ -654,7 +654,7 @@ export class HangarMenu {
     // Só os robôs com mais de um jeito de dividir os encaixes oferecem a escolha (Ataque 1 e Ataque 2: P95).
     layoutBox.hidden = !layouts || layouts.length < 2;
     layoutBox.innerHTML = layouts && layouts.length > 1
-      ? '<span class="hg-layout-title">COMO OS ATAQUES SE DIVIDEM</span>' + layouts.map((l, i) => `<button type="button" class="hg-layout-btn${(spec.layout ?? 0) === i ? ' selected' : ''}" data-layout="${i}" aria-pressed="${(spec.layout ?? 0) === i}">${l.name}</button>`).join('')
+      ? '<span class="hg-layout-title">COMO OS ATAQUES SE DIVIDEM</span>' + layouts.map((l, i) => `<button type="button" class="hg-layout-btn${(spec.layout ?? 0) === i ? ' selected' : ''}" data-layout="${i}" aria-pressed="${(spec.layout ?? 0) === i}" title="${l.name}">${l.short}</button>`).join('')
       : '';
     const shield = SHIELD_ARM.includes(spec.chassis);
     const slots: readonly ArmSlot[] = hasShoulderSlot(spec.chassis) ? ['right', 'left', 'shoulders'] : ['right', 'left'];

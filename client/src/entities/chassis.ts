@@ -296,8 +296,8 @@ export const MARAUDER_STATS: MechStats = {
   triggers: SHOULDER_TRIGGERS,
   // Dois jeitos de dividir os encaixes entre o Ataque 1 e o Ataque 2 (dono, 12/10, P95: "podendo ser configurado assim"); o Hangar oferece a escolha e o primeiro é o padrão.
   layouts: [
-    { name: 'BRAÇOS NO ATAQUE 1 · OMBROS NO ATAQUE 2', triggers: SHOULDER_TRIGGERS },
-    { name: 'DIREITO NO ATAQUE 1 · ESQUERDO E OMBROS NO ATAQUE 2', triggers: SPLIT_SHOULDER_TRIGGERS },
+    { name: 'BRAÇOS NO ATAQUE 1 · OMBROS NO ATAQUE 2', short: 'BRAÇOS 1 · OMBROS 2', triggers: SHOULDER_TRIGGERS },
+    { name: 'DIREITO NO ATAQUE 1 · ESQUERDO E OMBROS NO ATAQUE 2', short: 'DIREITO 1 · ESQ. + OMBROS 2', triggers: SPLIT_SHOULDER_TRIGGERS },
   ],
   // Bocas medidas no desenho (`npm run mech:bocas -- marauder`), em metros a partir dos pés, virado para -Z: o servidor atira
   // daqui, e o corpo dele é outro (G14). Mudou o rig, a pose ou o módulo de uma arma? Meça de novo.

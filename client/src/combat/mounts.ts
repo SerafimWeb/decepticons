@@ -48,7 +48,10 @@ export const SPLIT_SHOULDER_TRIGGERS: TriggerLayout = { primary: ['rightHand'], 
 
 /** Um layout de gatilhos com nome, para o Hangar oferecer a escolha (o primeiro de cada chassi é o padrão). */
 export interface NamedLayout {
+  /** O nome inteiro (a dica do botão e os textos). */
   readonly name: string;
+  /** O rótulo curto do botão do Hangar (cabe em meia linha). */
+  readonly short: string;
   readonly triggers: TriggerLayout;
 }
 
