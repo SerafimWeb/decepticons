@@ -34,6 +34,12 @@ const TIPO_ROTULO: Readonly<Record<PilotoNaPartida['tipo'], string>> = {
 };
 /** O radar redesenha a esta cadência com o console à vista (online o mundo continua andando). */
 const RADAR_MS = 1000;
+/**
+ * Quanto tempo o botão tem que ficar com "... jogar" para o console ligar. O `HUD.setReady` roda no construtor do Game e diz "clique para jogar"
+ * **antes** do aquecimento dos shaders, que logo depois troca o texto por "preparando gráficos" e só o restaura no fim: ligar no primeiro "jogar"
+ * mostraria o console completo durante o aquecimento (medido: +5 s de boot em CPU fraca ou software). Qualquer troca de texto zera a espera.
+ */
+const ASSENTA_MS = 250;
 
 /** O que o console lê do jogo. O `Game.ts` só liga (G3): nada aqui conhece a simulação. */
 export interface ConsoleHooks {
@@ -70,6 +76,10 @@ export class CommandConsole {
   private readonly mundo: WorldMap;
   private timer: ReturnType<typeof setInterval> | null = null;
   private comandante: boolean;
+  /** O jogo já ficou pronto e as telas acenderam (a tela de carregamento saiu). */
+  private ligado = false;
+  /** A espera de assentamento do botão pronto (`ASSENTA_MS`). */
+  private assenta: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly hooks: ConsoleHooks,
@@ -84,8 +94,6 @@ export class CommandConsole {
     for (const el of root.querySelectorAll<HTMLElement>('.mon, .cc-ops, .cc-flags')) {
       el.addEventListener('click', (e) => e.stopPropagation());
     }
-    this.ligar();
-    this.vigiarBotao();
     document.addEventListener('keydown', (e) => this.tecla(e));
     root.querySelector('#cc-chip-comandante')?.addEventListener('click', () => {
       gravar(COMANDANTE_KEY, null);
@@ -114,7 +122,8 @@ export class CommandConsole {
     new MutationObserver(() => this.visibilidade()).observe(root, { attributes: true, attributeFilter: ['class'] });
     document.addEventListener('visibilitychange', () => this.visibilidade());
     this.atualizar();
-    this.visibilidade();
+    // Por último: se o jogo já estiver pronto, `ligar` usa o mapa e o radar, que a esta altura já existem.
+    this.vigiarBotao();
   }
 
   /** Refaz o que muda entre uma pausa e outra: a ficha e a vida do Mech, a escalação, a rede e as potências. */
@@ -139,7 +148,7 @@ export class CommandConsole {
   }
 
   private visibilidade(): void {
-    if (this.visivel) {
+    if (this.visivel && this.ligado) {
       if (this.timer === null) {
         this.atualizar();
         this.relogio();
@@ -183,19 +192,23 @@ export class CommandConsole {
 
   /**
    * O botão verde diz quando o jogo está pronto: enquanto o texto não for "... para jogar" (carregando a física, preparando os
-   * gráficos), a placa fica apagada; ao ficar pronto, ela acende de uma vez. Só reage quando o texto muda (poucas vezes no carregamento).
+   * gráficos), a placa fica apagada e o console fica na **tela de carregamento** (só o título e o botão: os monitores em `display: none`; o
+   * compositor por software disputa a CPU com a compilação dos shaders, e o console completo somava ~5 s ao boot); quando o botão fica pronto
+   * e assim se mantém por `ASSENTA_MS`, as telas ligam (`ligar`). Só reage quando o texto muda (poucas vezes no carregamento).
    */
   private vigiarBotao(): void {
     const cta = this.root.querySelector('#cta');
     if (!cta) return;
     const sincronizar = () => {
       const pronto = /jogar/i.test(cta.textContent ?? '');
-      const estavaCarregando = this.root.classList.contains('cc-carregando');
       this.root.classList.toggle('cc-carregando', !pronto);
-      if (pronto && estavaCarregando) {
-        this.root.classList.add('cc-acende');
-        setTimeout(() => this.root.classList.remove('cc-acende'), 1100);
-      }
+      if (this.assenta !== null) clearTimeout(this.assenta);
+      this.assenta = null;
+      if (!pronto || this.ligado) return;
+      this.assenta = setTimeout(() => {
+        this.assenta = null;
+        this.ligar();
+      }, ASSENTA_MS);
     };
     new MutationObserver(sincronizar).observe(cta, { childList: true, characterData: true, subtree: true });
     sincronizar();
@@ -213,13 +226,21 @@ export class CommandConsole {
   }
 
   /**
-   * As telas acendem em cascata, como um monitor de tubo ligando, na primeira vez que o console aparece (o jogo ainda está
-   * carregando a física por trás). Só CSS; quem pediu menos movimento vê as telas já acesas.
+   * As telas acendem em cascata, como um monitor de tubo ligando, **quando o jogo fica pronto** (uma vez só). Até lá o HTML fica em
+   * "sem sinal" e em modo econômico (`cc-espera`). Só CSS; quem pediu menos movimento vê as telas já acesas.
    */
   private ligar(): void {
-    // O HTML nasce em "sem sinal" (telas apagadas) até o jogo montar o console; agora elas acendem.
+    if (this.ligado) return;
+    this.ligado = true;
     this.root.classList.remove('cc-espera');
+    // Só agora os canvas desenham e o radar passa a atualizar (durante o carregamento eles custariam a CPU dos shaders).
+    this.mundo.acender();
+    this.radar.acender();
+    this.visibilidade();
     if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // A placa do botão acende de uma vez, junto com a cascata das telas.
+    this.root.classList.add('cc-acende');
+    setTimeout(() => this.root.classList.remove('cc-acende'), 1100);
     this.root.querySelectorAll<HTMLElement>('.mon').forEach((m, i) => m.style.setProperty('--i', String(i)));
     this.root.classList.add('cc-ligando');
     setTimeout(() => this.root.classList.remove('cc-ligando'), 2600);

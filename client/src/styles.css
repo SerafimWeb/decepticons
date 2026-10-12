@@ -3291,3 +3291,39 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .mon-piloto .challenge-reward { font-size: calc(10px * var(--k)); }
 .mon-piloto .btn-claim { font-size: calc(10px * var(--k)); }
 .cc-ops .btn-mode { font-size: calc(11px * var(--k)); }
+
+/* ─── Tela de carregamento: o console enquanto o jogo carrega (`cc-espera`, do HTML até o botão ficar pronto) ────────────────────
+   Só o título, o botão apagado e um rótulo no meio; os monitores, a escolha de modo e as teclas ficam em `display: none` (sem caixa, sem camada).
+   O compositor por software (GPU integrada fraca, o SwiftShader do CI) disputa a CPU com a compilação dos shaders, e o console completo visível
+   somava 4 a 6 s ao boot (medido em 11/10, headless: 6,8 s na `main`, 12 a 13 s com o console; com o overlay escondido, 6,9 s; sem os monitores,
+   7,9 s; `visibility: hidden` não bastou). **O título e o botão ficam no mesmo lugar da tela final** (a grade é a mesma): um clique ou um teste
+   que acerte o botão na hora da troca não cai num monitor. Quando o botão fica pronto, a classe sai (`CommandConsole.ligar`) e as telas acendem.
+   `!important` de propósito: este modo precisa vencer qualquer regra de aparência do console, e só vale nesse intervalo. */
+#overlay.console.cc-espera { background: #0b0d10 !important; }
+#overlay.console.cc-espera *,
+#overlay.console.cc-espera *::before,
+#overlay.console.cc-espera *::after { animation: none !important; transition: none !important; }
+#overlay.console.cc-espera .mon,
+#overlay.console.cc-espera .cc-row,
+#overlay.console.cc-espera .cc-ops,
+#overlay.console.cc-espera .cc-info,
+#overlay.console.cc-espera .cc-sala,
+#overlay.console.cc-espera .cc-flags,
+#overlay.console.cc-espera .cc-top::before,
+#overlay.console.cc-espera .cc-launch::before { display: none !important; }
+#overlay.console.cc-espera .cc-deck { background: none !important; border: 0 !important; box-shadow: none !important; }
+#overlay.console.cc-espera .cc-launch { grid-column: 2; background: #1d211e !important; box-shadow: none !important; filter: none !important; }
+#overlay.console.cc-espera .cta { background: #2a332d !important; box-shadow: none !important; text-shadow: none !important; color: #8fa196 !important; }
+#overlay.console.cc-espera h1 { text-shadow: none !important; }
+#overlay.console.cc-espera::before {
+  content: 'INICIALIZANDO A SALA DE COMANDO';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 46%;
+  text-align: center;
+  font: 700 calc(12px * var(--k)) / 1 'Consolas', 'Courier New', monospace;
+  letter-spacing: 6px;
+  color: #3c4a42;
+  pointer-events: none;
+}

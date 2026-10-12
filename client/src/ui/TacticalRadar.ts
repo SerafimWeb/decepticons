@@ -96,6 +96,8 @@ export class TacticalRadar {
   private readonly g: CanvasRenderingContext2D | null;
   private w = 0;
   private h = 0;
+  /** O jogo ficou pronto e o radar pode desenhar (até lá, nada é desenhado). */
+  private ativo = false;
   /** A escala tipográfica do console (`--k`), lida a cada mudança de tamanho. */
   private k = 1;
 
@@ -104,11 +106,22 @@ export class TacticalRadar {
     private readonly quadro: () => RadarQuadro,
   ) {
     this.canvas = root.querySelector('canvas')!;
-    this.g = this.canvas.getContext('2d');
+    // Canvas por CPU (`willReadFrequently`): pequeno e redesenhado só uma vez por segundo; fora do processo de GPU não disputa a CPU do boot.
+    this.g = this.canvas.getContext('2d', { willReadFrequently: true });
     new ResizeObserver(() => this.medir()).observe(this.canvas.parentElement!);
   }
 
+  /** Liga o desenho (o console chama quando o jogo fica pronto). */
+  acender(): void {
+    if (this.ativo) return;
+    this.ativo = true;
+    this.w = 0;
+    this.h = 0;
+    this.medir();
+  }
+
   private medir(): void {
+    if (!this.ativo) return;
     const r = this.canvas.parentElement!.getBoundingClientRect();
     const w = Math.round(r.width);
     const h = Math.round(r.height);
@@ -126,6 +139,7 @@ export class TacticalRadar {
   }
 
   desenhar(): void {
+    if (!this.ativo) return;
     const { g, w, h } = this;
     if (!g || !w || !h) return;
     const q = this.quadro();

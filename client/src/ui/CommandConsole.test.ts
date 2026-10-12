@@ -82,4 +82,26 @@ describe('console de comando: o HTML', () => {
     for (const id of ['cmd-sala', 'cmd-oficina']) expect(comando.includes(`id="${id}"`), id).toBe(true);
     expect(consoleHtml.slice(0, consoleHtml.indexOf('id="mon-comando"')).includes('../oficina/')).toBe(false);
   });
+
+it('a tela de carregamento esconde os monitores com display none (guarda do boot: com eles visíveis o aquecimento dos shaders levou +5 s)', () => {
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+    const bloco = css.slice(css.indexOf('Tela de carregamento: o console enquanto o jogo carrega'));
+    expect(bloco.length, 'bloco da tela de carregamento no styles.css').toBeGreaterThan(200);
+    // Os monitores, a fileira de baixo, a escolha de modo e as teclas somem (sem caixa, sem camada) enquanto o overlay tem cc-espera.
+    for (const alvo of ['.mon', '.cc-row', '.cc-ops', '.cc-info']) {
+      // O seletor inteiro (termina em vírgula ou chave): `.mon` não pode ser aceito por `.monX`.
+      const seletor = new RegExp(`#overlay\.console\.cc-espera ${alvo.replace('.', '\.')}\s*[,{]`);
+      expect(seletor.test(bloco), `${alvo} escondido no carregamento`).toBe(true);
+    }
+    expect(bloco).toMatch(/display:\s*none\s*!important/);
+    // E nenhuma animação roda nesse intervalo.
+    expect(bloco).toMatch(/animation:\s*none\s*!important/);
+  });
+
+  it('o título e o botão ficam no mesmo lugar na tela de carregamento e na final (a grade é a mesma; só o botão ganha a coluna do meio)', () => {
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+    const bloco = css.slice(css.indexOf('Tela de carregamento: o console enquanto o jogo carrega'));
+    expect(bloco, 'a tela de carregamento não pode trocar o display do overlay').not.toMatch(/#overlay\.console\.cc-espera\s*\{[^}]*display:\s*flex/);
+    expect(bloco).toMatch(/\.cc-launch\s*\{[^}]*grid-column:\s*2/);
+  });
 });

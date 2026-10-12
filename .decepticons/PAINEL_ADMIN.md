@@ -32,7 +32,7 @@ servidor**, nunca por este interruptor.
 
 **Custo:** zero no laço do jogo (60 Hz). Com o console à vista: o radar redesenha a 1 Hz, o mapa só ao mudar de tamanho ou de zoom (um caminho e um `fill`
 por camada, < 1 ms), animações só de `transform` e `opacity` (compositor), exceto o tracejado das rotas (4 caminhos SVG). Escondido o console, nada roda.
-**Limite conhecido:** o desenho 3D da arena continua rodando por trás do console (opaco); estrangulá-lo é tarefa própria, por causa do `Quality` adaptativo (`ESTADO_ATUAL`).
+**Durante o carregamento o console é uma tela mínima** (título, rótulo e o botão com o progresso; os monitores em `display: none`) e só liga quando o jogo fica pronto: com o console completo visível o boot do smoke subiu de 6,8 s para 12 a 13 s em CPU de software (`ESTADO_ATUAL`). **Limite conhecido:** o desenho 3D da arena continua rodando por trás do console (opaco); estrangulá-lo é tarefa própria, por causa do `Quality` adaptativo (`ESTADO_ATUAL`).
 
 ## 1. O que já existe (não se refaz, se reúne)
 

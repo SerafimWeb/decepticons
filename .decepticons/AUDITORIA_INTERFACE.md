@@ -82,10 +82,10 @@ O Comandante pediu um painel "com todos os botões e configurações em um só e
 | F4 | **Cabe sem rolagem** | medido em 1024×700, 1280×720, 1366×768, 1920×1080 e 2560×1440 (`rolagem 0`); **celular: uma coluna que rola**, com o botão de jogar logo depois do título |
 | F5 | **Escala tipográfica** | todo texto é "tamanho × `--k`" (1,0 no laptop, 1,2 no 1080p, 1,5 no 1440p, 1,15 no celular); os textos do mapa e do radar, em canvas, leem a mesma escala |
 | F6 | **Teclado e acessibilidade** | atalhos desenhados nos botões (Enter, H, O, Z), que **nunca roubam** uma tecla que o jogo usa com a pausa à vista (teste); anel de foco por dentro dos botões chanfrados; `aria-label` nos monitores e nos marcadores; "menos movimento" desliga as animações |
-| F7 | **Estados honestos** | "sem sinal" até o jogo montar o console; o botão verde fica apagado enquanto carrega e acende pronto; o que não existe diz "em construção" (R13) |
+| F7 | **Estados honestos** | **tela de carregamento mínima** (título, rótulo e o botão apagado, que mostra o progresso) até o botão ficar pronto, e só então os monitores aparecem e acendem em cascata; o que não existe diz "em construção" (R13) |
 
 **Achados enquanto construía (R17):** (a) o `clip-path` dos chanfros corta o anel de foco do teclado: nos botões chanfrados o anel vai por dentro; (b) um botão que ficou com o foco do mouse (ou escondido) engolia o Enter: só o foco de teclado (`:focus-visible`) ou um campo de texto segura as teclas; (c) `KeyM`, `KeyB` e `KeyC` já valem com a pausa à vista (briefing e CFTV): os atalhos novos não os usam; (d) o relatório do fim de rodada (`#round-summary`) agora é uma faixa acima do mapa, não por cima dele.
-**Capturas:** `arte/console-comando-claude.jpg` (o que o jogador vê), `console-comandante-claude.jpg` (modo Comandante em 1080p, com o Bunker escolhido), `console-mundo-claude.jpg` (zoom MUNDO), `console-celular-claude.jpg`, `console-sem-sinal-claude.jpg`. **Limite:** fotografado em Chrome headless (SwiftShader); o julgamento de fluidez e de beleza em GPU real é do Comandante.
+**Capturas:** `arte/console-comando-claude.jpg` (o que o jogador vê), `console-comandante-claude.jpg` (modo Comandante em 1080p, com o Bunker escolhido), `console-mundo-claude.jpg` (zoom MUNDO), `console-celular-claude.jpg`, `console-carregando-claude.png` (a tela de carregamento real). **Limite:** fotografado em Chrome headless (SwiftShader); o julgamento de fluidez e de beleza em GPU real é do Comandante.
 
 ## 2. Princípios (valem para qualquer agente que mexa em tela)
 

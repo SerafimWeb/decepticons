@@ -77,6 +77,8 @@ export class WorldMap {
   private w = 0;
   private h = 0;
   private quadro = 0;
+  /** O jogo ficou pronto e o mapa pode desenhar (até lá, nada é desenhado: o canvas custa CPU que o carregamento precisa). */
+  private ativo = false;
   /** A escala tipográfica do console (`--k`), lida a cada mudança de tamanho. */
   private k = 1;
   private selecionado: Teatro;
@@ -87,7 +89,9 @@ export class WorldMap {
   ) {
     const screen = root.querySelector<HTMLElement>('.teatro-screen')!;
     this.canvas = screen.querySelector('canvas')!;
-    this.g = this.canvas.getContext('2d');
+    // Canvas por CPU (`willReadFrequently`): são pequenos e raramente redesenhados; no processo de GPU (software, no CI e em GPU fraca) eles
+    // disputariam a CPU com a compilação dos shaders durante o boot.
+    this.g = this.canvas.getContext('2d', { willReadFrequently: true });
     this.rotas = screen.querySelector('svg')!;
     this.ficha = screen.querySelector<HTMLElement>('.teatro-ficha')!;
     this.enquadramento = lerZoom();
@@ -167,7 +171,17 @@ export class WorldMap {
     this.quadro = requestAnimationFrame(passo);
   }
 
+  /** Liga o desenho (o console chama quando o jogo fica pronto): mede o espaço e desenha pela primeira vez. */
+  acender(): void {
+    if (this.ativo) return;
+    this.ativo = true;
+    this.w = 0;
+    this.h = 0;
+    this.medir();
+  }
+
   private medir(): void {
+    if (!this.ativo) return;
     const r = this.canvas.parentElement!.getBoundingClientRect();
     const w = Math.round(r.width);
     const h = Math.round(r.height);

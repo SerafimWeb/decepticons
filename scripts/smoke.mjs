@@ -129,6 +129,11 @@ try {
   }
   // Console de comando (P83): o CSS de pé (a grade dos monitores), o mapa do teatro com as missões e um clique no vazio de um
   // monitor sem começar a partida (a pausa inteira é o botão de jogar; os monitores barram o clique).
+  // O console liga 250 ms depois do botão ficar pronto (`CommandConsole`: espera de assentamento): espera ele sair da tela de carregamento.
+  const ligou = await page
+    .waitForFunction(() => !document.getElementById('overlay').classList.contains('cc-espera'), null, { timeout: 10_000 })
+    .then(() => true, () => false);
+  if (!ligou) fail('o console de comando não ligou: o #overlay ficou na tela de carregamento (cc-espera) com o jogo pronto');
   const cc = await page.evaluate(() => ({
     grade: getComputedStyle(document.getElementById('overlay')).display,
     pins: document.querySelectorAll('#mon-teatro .pin').length,
@@ -136,7 +141,6 @@ try {
   }));
   if (cc.grade !== 'grid') fail(`console de comando sem estilo (display=${cc.grade}): CSS quebrado em styles.css`);
   if (cc.pins < 5) fail(`mapa do teatro com ${cc.pins} missões (esperado 5)`);
-  if (/cc-espera/.test(cc.classes)) fail('o console de comando não montou: o #overlay ficou "sem sinal" (cc-espera) com o jogo pronto');
   if (/cc-carregando/.test(cc.classes)) fail('o botão de jogar ficou apagado (cc-carregando) com o jogo pronto');
   const monitor = await page.locator('#mon-piloto .mon-screen').boundingBox();
   if (monitor) await page.mouse.click(monitor.x + monitor.width / 2, monitor.y + monitor.height - 6);
