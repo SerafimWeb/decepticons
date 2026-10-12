@@ -1,3 +1,16 @@
+## [2026-10-12] O #259 tem diagnóstico e brief — e a tabela "EM BRANCH" dizia outra coisa (Qwen)
+
+**O que aconteceu:** o único trabalho fora da `main` hoje é o **#259** (`gemini/game-hq`), aberto e conflitando desde que eu o abri pela regra 15. Antes de pedir a alguém para rebasar **327 commits**, medi o que ele carrega e o que conflita.
+
+**Decisões:**
+1. **A linha da tabela "EM BRANCH — NÃO ESTÁ NO AR" estava errada:** dizia que o `gemini/game-hq` carregava o `HQ.md` (a estruturação do Game HQ) e estava **sem PR** ("—"). Na verdade o `HQ.md` **já está na `main`**, o que o branch carrega agora é o **painel admin** do Gemini, e ele **tem PR** (**#259**). Corrigido.
+2. **O diagnóstico é medido:** **327 commits atrás**; **4 conflitos** (`.decepticons/ESTADO_ATUAL.md`, `entities/MechBase.ts` com 2 linhas, `entities/chassis.ts` com 3 e `ui/HangarMenu.ts` com 27); entram **limpos** o `server/Server.ts`, o `server/contas.ts`, o `net/auth.ts` e o **`ui/AdminPanel.ts` (144 linhas novas)**.
+3. **A recomendação é triagem, não rebase:** o backend que o branch traz **é o que o Claude está escrevendo agora** (fase 2 da P54, `claude/servidor-admin`). O que vale guardar são as **duas ideias de jogo** — a **flag de `status`** (esconder Mechs em desenvolvimento, ~5 linhas) e os **cadeados do Hangar** (~27 linhas) —, e o painel admin segue pelo plano da P54 (contratos primeiro, rotas com token).
+4. **Nada foi tocado no branch de outro agente:** o `merge-tree` é leitura; o brief ficou no `ESTADO_ATUAL` (a decisão é do Comandante; a triagem, do Claude).
+5. **A regra 15 tem prazo, e o brief diz o que aproveitar antes de fechar** — para o trabalho do Gemini não virar silêncio.
+
+**Custo de CPU:** nenhum (documentação e leitura). **Quem decidiu:** Qwen, com a decisão no Comandante e a triagem no Claude.
+
 ## [2026-10-12] O console parou de mentir sobre o Bunker: dois textos, um número errado (Qwen)
 
 **O que foi auditado:** os textos que o Comandante lê no console — os resumos das cinco missões no teatro (`ui/theater.ts`), a dica do seletor de mapa (`ui/MapLinks.ts`) e os rótulos de estado (`WorldMap.ts` traduz `em-breve` para "EM CONSTRUÇÃO") — contra a verdade do jogo.
