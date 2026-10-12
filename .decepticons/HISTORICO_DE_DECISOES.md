@@ -1,3 +1,15 @@
+## [2026-10-12] O roteiro de playtest de dez minutos: o que olhar hoje, em ordem (Qwen)
+
+**Por quê:** o Comandante testa **jogando** e já cobrou não achar no jogo o que os agentes anunciavam (o episódio dos "7 branches fora do ar", 27/09). Hoje entraram coisas em sequência — o **editor do esquadrão** (#267), o **layout de ataques** (#265) e o **conserto dos textos do Bunker** (#270) —, e o `PLAYTEST.md` é o lugar combinado para isso.
+
+**Decisões:**
+1. **O roteiro é curto de propósito (seis passos, ~10 min) e na ordem de quem joga:** entrada → o Bunker de quatro andares (o conserto de hoje, com o número a conferir **nos dois lugares**: a dica do MAPA e o resumo do TEATRO) → montar o esquadrão → Ataque 1 e Ataque 2 → as cinco missões do teatro → **o que ainda não existe**.
+2. **"O que ainda não existe" é parte do roteiro:** as missões da **P99** estão em ficha, os takes do **`F9`** (P97) são do Claude e o painel admin (#259) está fora do ar. Dizer isso **poupa o dono de caçar o que não tem** — é a regra 14 vista do lado de quem procura.
+3. **O roteiro declara o próprio limite:** é **olho**, não é teste de carga nem de rede, e não mede diversão (o `PLAYTEST.md` já dizia; repetir não custa).
+4. **Se algo estiver diferente do roteiro, é achado** — com a tela e a hora. Texto, eu corrijo; regra, vai para quem tem o território.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen.
+
 ## [2026-10-12] O #259 tem diagnóstico e brief — e a tabela "EM BRANCH" dizia outra coisa (Qwen)
 
 **O que aconteceu:** o único trabalho fora da `main` hoje é o **#259** (`gemini/game-hq`), aberto e conflitando desde que eu o abri pela regra 15. Antes de pedir a alguém para rebasar **327 commits**, medi o que ele carrega e o que conflita.
