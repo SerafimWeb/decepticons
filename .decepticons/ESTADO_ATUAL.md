@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O contrato de tela da missão #1 (a metade que faltava ao Gemini) — Qwen, 12/10 (P99, só documentação)
+
+**Por que faltava:** a auditoria mostrou que o `MissionHUD` de hoje é do modo **Sobrevivência** — o contrato dele é **por onda** (`onWaveStart`, `onWaveProgress`, `onWaveClear`, `onMissionEnd`) — então a missão **não cabe nos nomes que existem**. Sem contrato, o **Gemini não tem contra o que desenhar** (regra 5: contrato antes de paralelizar).
+
+**O que foi escrito (na própria `fichas/escolta.md`, nova § 6):** a tabela do que o **Claude emite** e o que a tela **mostra** — `onMissionBriefing`, `onObjective` (avarias, fase, técnico vivo, extração), `onTechnicianHit` e `onMissionEnd` — mais o **marcador de objetivo** sobre o técnico e o da **extração**. As perguntas para o dono passaram a ser a **§ 7** (com a referência interna corrigida).
+
+**O dado que decide a partida é a vida do técnico** — por isso ele ganha evento e barra próprios: é o que faz a escolta ter sentido na tela (o jogador vê caindo exatamente o que ele tem de proteger).
+
+**Três regras que a tela herda:** **nenhum byte de rede** (offline neste corte), **nenhum DOM por quadro**, e **nada de informação de desenvolvedor na tela** (`AUDITORIA_INTERFACE.md`). **A prova é teste de contrato:** o mesmo `onObjective` duas vezes não redesenha; sem técnico vivo, o resumo diz derrota; o resumo lê o **recorde salvo**.
+
+**Nada construído** — é o papel que faltava. O desenho é do **Gemini**; os eventos, do **Claude**.
+
 ## Auditoria da ficha do cenário: tudo confere, e uma palavra errada no console — Qwen, 12/10 (P99, só documentação)
 
 **O que foi feito:** a mesma disciplina da ficha da missão #1, agora na ficha do cenário — cada afirmação conferida **no código**, porque o Codex vai construir contra ela. **Tudo confere**, e cada uma ganhou endereço na ficha: `environment/Bunker.ts:7` (`MapId = 'arena' | 'bunker'`) e `:9` (`mapFromSearch`); `environment/Arena.ts:72` (**`halfSize = 100`** → os **200 m** da régua); `sim/nascimentos.ts:82` (os **11** pontos do Bunker: 12 menos o do jogador) e `:118` ("nenhum ponto serve a dois corpos" — o que o teste 1 exige do mapa novo).

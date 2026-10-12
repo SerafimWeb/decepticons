@@ -39,7 +39,7 @@ Gemini ligar o briefing e o HUD **contra os mesmos nomes de objetivo**.
 - **Ganha:** as três avarias consertadas **e** o técnico na extração.
 - **Perde:** o **técnico cai** (ele não renasce nesta missão) ou o tempo acaba.
 - **O jogador caindo:** a missão **continua** (respawn na mesma partida) — quem decide é o técnico. Confirmação do
-  dono na § 6, pergunta 3.
+  dono na § 7, pergunta 3.
 - **Cenário:** Arena (200 m) na fase 1 e **Bunker** (4 níveis, 11 pontos) nas fases 2 e 3 — a escolta "para cima" é o
   caminho. O **mapa de missão com rota** (item `#cenarios` da P99) **não é pré-requisito** deste corte.
 
@@ -93,7 +93,34 @@ a lista de quem conserta) e `:522` (o conserto é aplicado ao `repairTarget`); `
 aliado"* (não aceita: só inimigo) e *"escolher o alvo pelo lado"* (o alvo já vem de uma lista; o que falta é
 alimentá-la do lado certo). Corrigidas acima, com o endereço de cada uma.
 
-## 6. Perguntas para o dono
+## 6. O que a tela mostra (o contrato do Gemini, na mesma ficha)
+
+O `MissionHUD` de hoje é do modo Sobrevivência e o contrato dele é **por onda** (`onWaveStart`, `onWaveProgress`,
+`onWaveClear`, `onMissionEnd`) — e está marcado **DEMO** (R13). A missão **não cabe nesses nomes**, então aqui está o
+contrato dela: o **Claude emite**, o **Gemini desenha**, os dois contra a mesma tabela (regra 5).
+
+| Quando | O dado (o Claude emite) | O que a tela mostra (o Gemini desenha) |
+|---|---|---|
+| Começa | `onMissionBriefing({ missao: 'tecnico', fases: 3, avarias: 3, tecnico: 'ENTRÓPICO', ameaca: n, extracao: [x,z] })` | O briefing (a casca já existe): o nome, o objetivo em **uma linha**, as fases, quantos inimigos vêm e a tecla de sair |
+| Muda o objetivo | `onObjective({ avarias: 1, fases: 3, fase: 1, tecnicoVivo: true })` | **`AVARIAS 1/3` · `FASE 1/3`** — e **nada além disso**: abate não é objetivo desta missão |
+| O técnico leva tiro | `onTechnicianHit({ vida: 0.4 })` | **A barra de vida do técnico** (é ela que decide a partida) e o aviso **TÉCNICO SOB ATAQUE** |
+| O técnico está fora da tela | — (o jogo já tem a seta amarela dele) | A seta continua; entra o **marcador de objetivo** sobre ele — "é este que você protege" (o desenho é do Gemini) |
+| Entra a extração | `onObjective({ fase: 3, extracao: [x,z], tecnicoVivo: true })` | O marcador da **extração**, no mundo e na borda, com a distância |
+| Termina | `onMissionEnd({ venceu, avarias, fase, tecnicoVivo, tempoS })` | O **resumo**: as três avarias, a fase alcançada, o tempo e o **recorde** (a `QUIMICA_DO_JOGO.md` § 5 pede o recorde salvo) |
+
+**Três regras que a tela da missão herda de graça:** **nenhum byte na rede** (é offline neste corte — o
+`OBJECTIVE_STATE` é do PR do online); **nenhum DOM por quadro** (só quando o número muda; o `MissionHUD` de hoje já se
+compromete com "±2 DOM writes/s"); e **nada de informação de desenvolvedor na tela** (`AUDITORIA_INTERFACE.md`: uma
+ação primária por tela, nada repetido).
+
+**A prova (é de contrato, não de olho):** o HUD da missão precisa de **teste próprio** — o mesmo `onObjective` duas
+vezes seguidas **não** redesenha nada; **sem técnico vivo o resumo diz derrota**; e o resumo lê o **recorde salvo**,
+não um número de tela.
+
+**Como o Comandante confere:** jogar a missão e ver o painel (avarias e fase), o aviso quando o técnico apanha e o
+resumo no fim — com o briefing saindo por tecla, como na Sobrevivência.
+
+## 7. Perguntas para o dono
 
 1. **Quem é "nosso" técnico na ficção?** O ENTRÓPICO é um técnico rebelde hoje. A missão defende um **técnico do nosso lado** (a mesma máquina, outro lado), ou o nome muda (um técnico SERAFIM)?
 2. **Quantas fases?** Proponho três (uma avaria → duas → extração). Ele quer mais, ou a primeira já com as três avarias de uma vez?

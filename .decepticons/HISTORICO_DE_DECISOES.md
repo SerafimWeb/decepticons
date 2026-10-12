@@ -1,3 +1,17 @@
+## [2026-10-12] O contrato de tela da missão #1: a metade do Gemini, na mesma ficha (P99, Qwen)
+
+**Por que faltava:** a auditoria mostrou que o `MissionHUD` é do modo Sobrevivência e o contrato dele é **por onda** — a missão **não cabe nos nomes que existem**, e sem contrato o **Gemini não tem contra o que desenhar** (regra 5).
+
+**Decisões:**
+1. **O contrato de tela entra na própria `fichas/escolta.md` (nova § 6)**, para não existirem duas fontes: o **Claude emite**, o **Gemini desenha**, os dois contra a mesma tabela. As perguntas para o dono passaram a ser a **§ 7**, e a referência interna foi corrigida.
+2. **Os nomes são os da missão, não os da onda:** `onMissionBriefing`, `onObjective` (avarias, fase, técnico vivo, extração) e `onMissionEnd` (venceu, avarias, fase, técnico vivo, tempo).
+3. **O dado que decide a partida é a vida do técnico** — então ela ganha `onTechnicianHit` e uma **barra própria**. É o que faz a escolta ter sentido na tela: o jogador vê caindo exatamente a coisa que ele tem de proteger.
+4. **O resumo lê o recorde salvo, não um número de tela** — é o gancho do achado do `QUIMICA_DO_JOGO.md` § 5 ("o recorde que não é salvo").
+5. **Três regras herdadas:** nenhum byte de rede (offline neste corte), nenhum DOM por quadro e nada de informação de desenvolvedor na tela (`AUDITORIA_INTERFACE.md`).
+6. **A prova é teste de contrato, não olho:** o mesmo `onObjective` duas vezes não redesenha; sem técnico vivo, o resumo diz derrota.
+
+**Custo de CPU:** nenhum (documentação); o desenho, quando existir, é DOM ao mudar de valor, como o HUD de hoje. **Quem decidiu:** Qwen, dentro da ordem P99.
+
 ## [2026-10-12] A auditoria da ficha do cenário: tudo confere, e uma palavra errada no console (P99, Qwen)
 
 **O que aconteceu:** a mesma disciplina da ficha da missão #1, agora na ficha do **cenário** — cada afirmação conferida **no código**, porque o Codex vai construir contra ela.
