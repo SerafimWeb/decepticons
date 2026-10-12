@@ -85,6 +85,8 @@ import { EsquadraoStore } from './EsquadraoStore';
 import { esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
 import { ALLY_COUNT } from '../sim/nascimentos';
 import { SquadPanel } from '../ui/SquadPanel';
+import { ServerPanel } from '../ui/ServerPanel';
+import { AdminCliente, TokenDoDono } from '../net/admin';
 import { PALETTE } from './palette';
 import { PilotLabels } from '../ui/PilotLabels';
 import { PowerSettings } from '../ui/PowerSettings';
@@ -680,6 +682,10 @@ export class Game {
       abrirAjustes: () => document.getElementById('btn-settings')?.click(),
       reiniciar: () => reloadWithout(PARAM_DO_ESQUADRAO),
     });
+    // Janela do servidor (P93): o endereço é o do jogo online (o público do build, ou o do próprio PC); sem ele, o item se apaga.
+    const enderecoDoServidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
+    const tokenDoDono = new TokenDoDono(browserStorage(), enderecoDoServidor);
+    const painelDoServidor = new ServerPanel({ cliente: new AdminCliente(enderecoDoServidor, tokenDoDono.ler), token: tokenDoDono });
     const cmd = new CommandConsole({
       mapa,
       modo: this.gameMode,
@@ -691,6 +697,7 @@ export class Game {
       potencias: () => this.power.changes,
       som: () => this.audio.playUiTransition(),
       esquadrao: { abrir: () => void squadPanel.abrir(), indisponivel: esquadraoIndisponivel, personalizado: () => this.squad.custom },
+      servidor: { abrir: () => void painelDoServidor.abrir(), indisponivel: () => (enderecoDoServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
       radar: fonteDoRadar(mapa, this.match.arena.halfSize, this.match.arena.occluders, () => this.mech, () => this.bots.mechs, allies),
     });
     this.settings.onChange(() => cmd.atualizar());

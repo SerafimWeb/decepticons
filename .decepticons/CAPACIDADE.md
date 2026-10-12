@@ -16,6 +16,13 @@ P99 de atraso do event loop: 18,9 / 21,9 / 26,1 ms. Médias de Hz não excluem j
 
 Dados completos: medicoes/capacidade-energia-2026-10-06.json. Baseline anterior: medicoes/capacidade-baseline-2026-10-06.json (15 s/estágio, protocolo 4, sem escudo). O baseline chegou a 89,8% de um núcleo com 100 clientes. A nova execução teve menos bots e condições/duração diferentes; não é um A/B isolado nem permite atribuir toda a redução de CPU a uma mudança. A ocupação do computador também varia.
 
+## O que o painel do servidor mede (12/10, P93)
+
+O monitor SERVIDOR do console (`DEPLOY.md`, "Painel do servidor") dá duas leituras que **não substituem** o ensaio de carga acima:
+- **AVALIAR:** o veredito sobre a última hora observada (tick da pior sala, atraso do laço p99, CPU, memória e o crescimento dela, download por jogador) contra as metas do projeto (G11 a G14) e a **capacidade estimada**: `floor(8,3 / p95 do tick da pior sala)` salas, isto é, quantas cabem em metade do tick de 16,7 ms. **É uma estimativa de CPU**: não conta a banda de casa, a memória nem o túnel, e o painel diz isso ao lado do número.
+- **TESTAR:** quatro clientes de mentira numa sala própria, 1 s de aquecimento e 6 s medidos, **de dentro da própria máquina** (não passa pelo túnel nem pela internet). Primeira medida (12/10, máquina de desenvolvimento ocupada): tick 1,7 ms, 20 estados por segundo, 4,1 KB/s por piloto, ping 2 ms, atraso do laço p99 20,6 ms.
+Quando o painel e o ensaio discordarem, **vale o ensaio**.
+
 ## Reprodução e critérios de escala
 
 npm run capacity -- --seconds=30

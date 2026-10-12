@@ -14,6 +14,7 @@ import { factorySpec, loadoutKey, parseLoadoutKey, validateLoadout } from '../cl
 import { netWeaponIndex, unitFromMech } from '../client/src/net/adapters';
 import { FIXED_DT, PhysicsWorld } from '../client/src/physics/PhysicsWorld';
 import { Match } from '../client/src/sim/Match';
+import type { AdminSala } from '../shared/net/admin';
 import { Writer } from '../shared/net/codec';
 import { MAX_EVENTS, MAX_UNITS, NO_UNIT, PROTOCOL_VERSION, ROOM_SIZE, SIM_HZ, SNAPSHOT_HZ } from '../shared/net/constants';
 import { EVENT } from '../shared/net/events';
@@ -127,6 +128,24 @@ export class ArenaRoom {
 
   get humanCount(): number {
     return this.humans.size;
+  }
+
+  /** O que o painel do servidor mostra desta sala (P93): números e os apelidos que os outros jogadores já veem. */
+  resumo(): AdminSala {
+    const round = this.match.round;
+    let bots = 0;
+    for (const u of this.units) if (u.kind !== 'human' && !this.match.bots.isReserved(u.mech)) bots++;
+    return {
+      codigo: this.code,
+      jogadores: this.humans.size,
+      bots,
+      tick: this.tick,
+      tickMs: Math.round(this.tickMs * 100) / 100,
+      rodada: round.number,
+      restanteS: Number.isFinite(round.timeLeft) ? Math.max(0, Math.round(round.timeLeft)) : 0,
+      jogando: round.playing,
+      nomes: [...this.humans.values()].map((h) => h.name).slice(0, ROOM_SIZE),
+    };
   }
 
   /** Uma mensagem de um jogador (bytes crus da conexão). */

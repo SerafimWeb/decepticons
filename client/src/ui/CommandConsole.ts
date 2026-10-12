@@ -67,6 +67,8 @@ export interface ConsoleHooks {
    * inimigos; missões: o pool delas), ou `null`; `personalizado` marca o botão quando há um esquadrão salvo.
    */
   esquadrao?: { abrir: () => void; indisponivel: () => string | null; personalizado: () => boolean };
+  /** A janela do servidor (P93, `ui/ServerPanel.ts`): `abrir` a mostra; `indisponivel` diz por que não abre (build sem servidor), ou `null`. */
+  servidor?: { abrir: () => void; indisponivel: () => string | null };
 }
 
 /**
@@ -117,6 +119,11 @@ export class CommandConsole {
       void this.mesa();
     });
     root.querySelector('#cmd-mesa-ajuda')?.addEventListener('click', (e) => this.ajudaDaMesa(e));
+    for (const botao of root.querySelectorAll<HTMLElement>('[data-servidor-open]')) {
+      botao.addEventListener('click', () => {
+        if (!this.hooks.servidor?.indisponivel()) this.hooks.servidor?.abrir();
+      });
+    }
     for (const botao of root.querySelectorAll<HTMLElement>('[data-esquadrao-open]')) {
       botao.addEventListener('click', () => {
         if (!this.hooks.esquadrao?.indisponivel()) this.hooks.esquadrao?.abrir();
@@ -162,8 +169,19 @@ export class CommandConsole {
       pot.textContent = n ? `${n} ajuste${n === 1 ? '' : 's'} fora do padrão` : 'armas e clãs no padrão';
     }
     this.pintarEsquadrao();
+    this.pintarServidor();
     this.mundo.atualizar();
     this.radar.desenhar();
+  }
+
+  /** O item SERVIDOR do monitor COMANDO: apagado, com o motivo, num build sem servidor de jogo. */
+  private pintarServidor(): void {
+    const motivo = this.hooks.servidor ? this.hooks.servidor.indisponivel() : 'Este build não sabe onde está o servidor de jogo.';
+    for (const botao of this.root.querySelectorAll<HTMLElement>('[data-servidor-open]')) {
+      botao.classList.toggle('off', motivo !== null);
+      botao.setAttribute('aria-disabled', String(motivo !== null));
+      if (motivo !== null) botao.title = motivo;
+    }
   }
 
   /** O botão ESQUADRÃO (e a ficha do Comandante): apagado, com o motivo, quando a partida não aceita esquadrão; com um ponto quando há um salvo. */
@@ -426,7 +444,7 @@ export class CommandConsole {
 
 /** Uma janela por cima do console (Configurações, sala online, calibração do mouse): o Enter é dela, não do console. */
 function algoPorCima(): boolean {
-  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden)');
+  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #server-modal:not(.hidden)');
 }
 
 function barra(rotulo: string, valor: string, fracao: number, alerta = false): HTMLElement[] {

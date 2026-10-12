@@ -19,6 +19,9 @@ import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
 import { bancoDeContas, pastaDados } from './dados';
 import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
 import { Telemetria } from './telemetria';
+import { Admin, Amostrador, LimiteDeFalhas, lerFimDoLog, LogEmMemoria, montarEstado, type Trafego } from './admin';
+import { ehSalaDeTeste, executarTeste } from './autoteste';
+import { ADMIN_PREFIXO } from '../shared/net/admin';
 
 /** Maior mensagem aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
 const MAX_MESSAGE = 1024;
@@ -68,6 +71,8 @@ function lerCorpoLimitado(req: import('node:http').IncomingMessage, maxBytes: nu
 export interface GameServer {
   port: number;
   host: string;
+  /** O painel do servidor (P93): as amostras de uma hora, para o teste tirar uma à mão. */
+  readonly amostrador: Amostrador;
   rooms: ReadonlyMap<string, ArenaRoom>;
   /** Contadores das defesas (para o teste e o log de 10 s). */
   readonly guard: {
@@ -114,14 +119,37 @@ export async function startServer(
     metricasToken?: string;
     /** De quanto em quanto tempo grava os números em disco, se mudaram (padrão 60 s). */
     salvarCadaMs?: number;
+    /** Pelo painel (`POST /admin/reiniciar`): o `main.ts` salva e sai com o código de reinício. Sem isto, a rota responde 501. */
+    aoReiniciar?: (motivo: string) => void;
+    /** A versão do código (hash curto do git) que o painel mostra. */
+    release?: string;
+    /** Roda sob a tarefa do Windows (que o religa se ele sair com erro)? O painel avisa quando não. */
+    supervisionado?: boolean;
+    /** De quanto em quanto tempo o painel tira uma amostra (padrão 5 s; os testes encurtam). */
+    amostraCadaMs?: number;
+    /** Em quanto tempo o servidor sai depois de `POST /admin/reiniciar` (ms; padrão 2 s) e quanto dura o TESTAR (s; padrão 6): os testes encurtam. */
+    reinicioEmMs?: number;
+    testeDuracaoS?: number;
+    /** A régua de erros de token do painel (padrão: 10 a cada 10 min por IP); os testes que erram de propósito muitas vezes alargam. */
+    limiteAdmin?: { teto: number; janelaMs?: number };
   } = {},
 ): Promise<GameServer> {
-  const log = opts.log ?? (() => {});
+  // O que o servidor escreve também fica na memória: sem arquivo de log (rodando à mão), o painel mostra isto.
+  const logMemoria = new LogEmMemoria();
+  const log = (linha: string): void => {
+    opts.log?.(linha);
+    logMemoria.registrar(linha);
+  };
   const guard = new Guard({ ...GUARD_DEFAULTS, ...opts.guard });
   const rejected = { total: 0, ip: 0, flood: 0 };
   const rooms = new Map<string, ArenaRoom>();
   const creating = new Map<string, Promise<ArenaRoom>>();
   const emptyFor = new Map<string, number>();
+  /** Os sockets de cada sala (para o painel fechar uma sala de verdade) e o tráfego que o amostrador lê. */
+  const sockets = new Map<string, Set<WebSocket>>();
+  const trafego: Trafego = { saidaBytes: 0, entradaBytes: 0 };
+  const amostrador = new Amostrador({ salas: () => rooms.values() }, trafego);
+  let admin: Admin | null = null;
   /** Conexões em cada sala (contando quem ainda não mandou o JOIN): é o que decide se a sala está cheia. */
   const occupancy = new Map<string, number>();
   /** Sala pedida cheia: a próxima (ARENA, ARENA-2, ARENA-3...). Quem clica em "Jogar online" nunca fica de fora. */
@@ -139,11 +167,14 @@ export async function startServer(
     let p = creating.get(code);
     if (!p) {
       p = ArenaRoom.create(code).then((room) => {
-        room.onEntrou = (peer) => {
-          contar('entrou_na_sala', peer.pais);
-          telemetria.pico(jogadoresAgora());
-        };
-        room.onRecusou = (peer, motivo: RejectReason) => contar(`recusa_${motivo}` as EventoServidor, peer.pais);
+        // A sala de teste do painel (`TESTE-…`) fica fora dos números de produto.
+        if (!ehSalaDeTeste(code)) {
+          room.onEntrou = (peer) => {
+            contar('entrou_na_sala', peer.pais);
+            telemetria.pico(jogadoresAgora());
+          };
+          room.onRecusou = (peer, motivo: RejectReason) => contar(`recusa_${motivo}` as EventoServidor, peer.pais);
+        }
         rooms.set(code, room);
         creating.delete(code);
         log(`sala ${code} aberta`);
@@ -163,7 +194,7 @@ export async function startServer(
   const startedAt = Date.now();
   const jogadoresAgora = (): number => {
     let n = 0;
-    for (const r of rooms.values()) n += r.humanCount;
+    for (const r of rooms.values()) if (!ehSalaDeTeste(r.code)) n += r.humanCount;
     return n;
   };
   let statusBody = '';
@@ -172,8 +203,13 @@ export async function startServer(
     const now = Date.now();
     if (statusBody && now - statusAt < 1000) return statusBody;
     let players = 0;
-    for (const r of rooms.values()) players += r.humanCount;
-    statusBody = JSON.stringify(serverStatus(players, rooms.size, (now - startedAt) / 1000));
+    let abertas = 0;
+    for (const r of rooms.values()) {
+      if (ehSalaDeTeste(r.code)) continue;
+      players += r.humanCount;
+      abertas++;
+    }
+    statusBody = JSON.stringify(serverStatus(players, abertas, (now - startedAt) / 1000));
     statusAt = now;
     return statusBody;
   };
@@ -226,6 +262,8 @@ export async function startServer(
 
   const http = createServer(async (req, res) => {
     const path = (req.url ?? '/').split('?')[0];
+    // O painel do servidor (P93): só responde com o token do dono; o que não for dele segue para as rotas abaixo.
+    if (admin && path.startsWith(ADMIN_PREFIXO) && (await admin.tratar(req, res, path))) return;
     if (path === PLAY_PATH) {
       res.setHeader('access-control-allow-origin','*');
       res.setHeader('cache-control','no-store');
@@ -442,9 +480,12 @@ export async function startServer(
       ws.close(4013, admit);
       return;
     }
-    contar('conexao_online', pais);
+    if (!ehSalaDeTeste(asked)) contar('conexao_online', pais);
     const code = pickRoom(asked);
     occupancy.set(code, (occupancy.get(code) ?? 0) + 1);
+    let doCodigo = sockets.get(code);
+    if (!doCodigo) sockets.set(code, (doCodigo = new Set()));
+    doCodigo.add(ws);
     const bucket = guard.peer(ip, performance.now());
     let released = false;
     const release = () => {
@@ -452,10 +493,15 @@ export async function startServer(
       released = true;
       guard.remove(ip);
       occupancy.set(code, Math.max(0, (occupancy.get(code) ?? 1) - 1));
+      const restantes = sockets.get(code);
+      restantes?.delete(ws);
+      if (restantes && restantes.size === 0) sockets.delete(code);
     };
     const peer: Peer = {
       send: (bytes) => {
-        if (ws.readyState === ws.OPEN) ws.send(Buffer.from(bytes));
+        if (ws.readyState !== ws.OPEN) return;
+        trafego.saidaBytes += bytes.length;
+        ws.send(Buffer.from(bytes));
       },
       close: () => ws.close(1000),
       pais,
@@ -474,6 +520,7 @@ export async function startServer(
         return;
       }
       const bytes = data instanceof Buffer ? data : Buffer.concat(Array.isArray(data) ? data : [Buffer.from(data as ArrayBuffer)]);
+      trafego.entradaBytes += bytes.length;
       void room.then((r) => r.receive(peer, bytes));
     });
     ws.on('close', () => {
@@ -489,6 +536,59 @@ export async function startServer(
   const host = opts.host ?? DEFAULT_HOST;
   await new Promise<void>((resolve) => http.listen(opts.port ?? 2567, host, resolve));
   const port = (http.address() as AddressInfo).port;
+
+  /** Fecha uma sala de verdade (a do teste do painel e a que o dono mandar): quem estava nela cai e o cliente reconecta numa nova. */
+  const fecharSala = (codigo: string): boolean => {
+    const sala = rooms.get(codigo);
+    if (!sala) return false;
+    for (const ws of sockets.get(codigo) ?? []) ws.close(1001, 'sala fechada');
+    sockets.delete(codigo);
+    rooms.delete(codigo);
+    emptyFor.delete(codigo);
+    occupancy.delete(codigo);
+    sala.dispose();
+    log(`sala ${codigo} fechada`);
+    return true;
+  };
+  const supervisionado = opts.supervisionado ?? false;
+  admin = new Admin({
+    token: metricasToken,
+    amostrador,
+    estado: () =>
+      montarEstado(
+        {
+          salas: () => rooms.values(),
+          release: opts.release ?? 'desconhecida',
+          iniciadoEm: startedAt,
+          porta: port,
+          supervisionado,
+          conexoes: () => wss.clients.size,
+          recusas: () => ({ total: rejected.total, ip: rejected.ip, taxa: rejected.flood }),
+          contas: () => {
+            try {
+              return contas.total();
+            } catch {
+              return null;
+            }
+          },
+          reiniciando: () => admin?.estaReiniciando ?? false,
+        },
+        amostrador,
+      ),
+    lerLog: () => lerFimDoLog(dirDados, logMemoria.linhas()),
+    jogadores: jogadoresAgora,
+    contexto: () => ({ uptimeS: (Date.now() - startedAt) / 1000, recusasPorTaxa: rejected.flood }),
+    fecharSala,
+    testar: () => executarTeste({ host: '127.0.0.1', porta: port, duracaoS: opts.testeDuracaoS, tickMsDaSala: (c) => rooms.get(c)?.tickMs ?? null, fecharSala }),
+    aoReiniciar: opts.aoReiniciar,
+    reinicioEmMs: opts.reinicioEmMs,
+    ...(opts.limiteAdmin ? { limite: new LimiteDeFalhas(opts.limiteAdmin.teto, opts.limiteAdmin.janelaMs) } : {}),
+    supervisionado,
+    anotar: log,
+    clientIp: (req) => clientIp(req.socket.remoteAddress, req.headers['cf-connecting-ip']),
+    lerCorpo: lerCorpoLimitado,
+  });
+  amostrador.ligar(opts.amostraCadaMs);
 
   // O laço: passos fixos de 1/60 s, todas as salas juntas; no máximo 4 passos por volta (engasgo não vira bola de neve).
   const stepMs = FIXED_DT * 1000;
@@ -524,6 +624,7 @@ export async function startServer(
   return {
     port,
     host,
+    amostrador,
     rooms,
     guard: {
       get connections() {
@@ -534,6 +635,7 @@ export async function startServer(
     close: () =>
       new Promise<void>((resolve) => {
         clearInterval(loop);
+        amostrador.parar();
         if (salvarTimer) clearInterval(salvarTimer);
         gravarDados();
         for (const c of wss.clients) c.terminate();
