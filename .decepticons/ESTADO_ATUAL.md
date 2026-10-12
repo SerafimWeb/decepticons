@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O layout dos ataques é configurável (o Marauder tem dois) — Claude, 12/10 (PR `claude/layout-de-ataques`, protocolo 17, ordem P95)
+
+**Ordem do Comandante (P95):** "arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral (**podendo ser configurado assim**)".
+
+- **O que o jogador vê:** no **Hangar → Marauder**, uma linha nova, **"COMO OS ATAQUES SE DIVIDEM"**, com dois botões: **"braços no Ataque 1 · ombros no Ataque 2"** (o de sempre) e **"direito no Ataque 1 · esquerdo e ombros no Ataque 2"**. Escolhendo o segundo, os encaixes passam a dizer **BRAÇO ESQUERDO · ATAQUE 2**, e jogando, o **clique direito dispara a mão esquerda e os dois ombros juntos**, cada um com a arma dele.
+- **Armas diferentes no mesmo ataque:** a `Armament` agora liga **cada mão ao botão que o layout põe nela** (antes supunha "a segunda mão é do botão principal"). Cada mão tem o seu cronômetro, o seu giro de cano, o seu tanque de combustível, a sua carga e o seu calor; mãos em botões diferentes **não esperam meio intervalo** uma pela outra (só as do mesmo botão se alternam, como sempre). **A mão esquerda pode levar qualquer arma de mão** (plasma, trilho, lança-chamas, rotatória...) no Ataque 2, ao lado dos ombros.
+- **O contrato:** `MechStats.layouts` (lista nomeada; o primeiro é o padrão), `Loadout.layout` (qual vale), `triggersOf(stats, layout)`, `SPLIT_SHOULDER_TRIGGERS`, `weaponAt(loadout, encaixe)` (a arma de cada encaixe: quem desenha a carga e a chama pergunta isto em vez de supor índices) e `shoulderMounts` (a carga conta os ombros, não a mão). **Os chassis com um só layout não mudam em nada.**
+- **Rede (protocolo 17):** a chave de texto v2 ganha um último grupo `L1` quando o layout não é o padrão (`v2.marauder.blaster-0.plasma-0.sonic-0.-.L1`); vai no link, no JOIN e no roster, e o servidor a valida (layout fora da lista ou num robô que só tem um: recusado). **O servidor religa sozinho pelo atualizador; quem estiver com a página antiga recarrega.**
+- **Custo de CPU:** nenhum a mais por tick (as mãos já eram um laço de duas; a escolha do botão é uma comparação); **sem alocação** (o salto da mão esquerda nos ombros é um `continue`, não um filtro).
+- **Testes:** `combat/layoutAtaques.test.ts` (20: os dois layouts, o Ataque 2 com mão e ombros no mesmo tick, cada arma no ritmo dela, os dois botões juntos, braço e torso destruídos, superaquecimento, lança-chamas, rotatória e trilho na mão esquerda), `hangar/layouts.test.ts` (11: validação, chave de texto, ataque por ranhura), 4 do servidor real (o Ataque 1 atira o encaixe 0; o Ataque 2, os encaixes 1, 2 e 3), os do fluxo e da carga no layout dividido. **28 mutações, todas pegas** (duas redundantes, um reset que o `ChargeTimer` já faz, foram removidas).
+- **Limites honestos:** só o **Marauder** tem mais de um layout (os robôs pequenos têm o deles fixo: direito no 1, esquerdo no 2); **costas e peito ainda não existem** como encaixes; no layout dividido o **HUD** só mostra o carregador dos ombros (a mão esquerda não tem carregador: as armas de mão do Marauder são todas de energia).
+
 ## Ataque 1 e Ataque 2 — Claude, 12/10 (PR `claude/ataque-1-e-2`, ordem P95)
 
 **Ordem do Comandante (P95):** "os robôs têm ataque 1 e ataque 2: arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral (podendo ser configurado assim) nos robôs maiores; nos pequenos de entrada, o braço direito e o esquerdo, cada um com um botão do mouse".

@@ -128,14 +128,12 @@ export class Armament {
         const button = triggers.primary.includes(mount) ? 1 : i === 1 && l.offhand !== undefined && triggers.secondary.includes(mount) ? 2 : 0;
         const timer = this.hands[i]!;
         if (button === 0) {
-          this.charge[i]!.reset();
           this.spin[i]!.reset();
           this.burning[i] = false;
           continue;
         }
         const held = button === 1 ? fire : secondary;
         this.held[i] = held;
-        if (!held) this.charge[i]!.reset();
         // O cano da rotatória gira enquanto o gatilho está apertado e a mão pode atirar; solto ou travado, vai parando.
         const spin = this.spin[i]!;
         if (w?.spin) spin.step(dt, held && m.canFireMount(mount), w.spin);
