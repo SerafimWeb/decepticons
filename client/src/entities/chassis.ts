@@ -214,6 +214,29 @@ const COLOSSUS_PLAYER_STATS: MechStats = {
 };
 
 /**
+ * Colossus-V4: **o titã de escala 4** (dono, 12/10: "ele é do tamanho 4, bem maior que o colossus v3"). É a primeira máquina de
+ * tamanho 4 do jogo e a primeira deste chassi com malha importada (o .glb do dono, re-rigado com o esqueleto Mixamo; ver
+ * MECHS_IMPORTADOS.md §8). **Anda como o peso que é**: passo curto e joelho bem dobrado (MechStats.gait), 4 m/s (o Colossus-01
+ * anda a 5), sem dash e sem salto. O armamento é o **canhão de cerco** (a primeira arma de tamanho 3, em combat/weapons.ts),
+ * que num titã é a arma **leve** dele. **A altura de 20 m é proposta minha** — a P11 falava em "10× e 20× maiores" e o
+ * Comandante ajusta nesta linha; o equilíbrio fino das armas fica com combat/balance.ts.
+ */
+export const COLOSSUS_V4_STATS: MechStats = {
+  ...COLOSSUS_BOSS_STATS,
+  name: 'COLOSSUS-V4',
+  height: 20,
+  radius: 5, // < height/2: a cápsula do Rapier não aceita raio maior que a metade da altura
+  stepHeight: 3.2,
+  moveSpeed: 4,
+  groundAccel: 8,
+  airAccel: 2.5,
+  gait: { hip: 0.42, knee: 1.5 },
+  weaponCapacity: 30,
+  maxModuleHealth: { torso: 1900, head: 380, leftArm: 520, rightArm: 520, leftLeg: 700, rightLeg: 700 },
+  loadout: { primary: weapon('siege'), secondary: weapon('siege') },
+};
+
+/**
  * Gênesis-01: primeiro chassi de malha importada (pipeline híbrido, 30/09 — ver `HISTORICO_DE_DECISOES.md`),
  * não mais primitiva em código. Números emprestados do Vector-09 (mesma classe visual: bípede médio de
  * assalto) — ainda não passou por uma rodada de equilíbrio própria; nome e ficha são provisórios até o dono
@@ -322,6 +345,7 @@ export const CHASSIS = {
   vector09: VECTOR09_STATS,
   android: PILOT_ANDROID_STATS,
   colossus01: COLOSSUS_PLAYER_STATS,
+  colossusv4: COLOSSUS_V4_STATS,
   arara: ARARA_B1_STATS,
   onca: ONCA_B2_STATS,
   genesis01: GENESIS01_STATS,
@@ -346,6 +370,7 @@ export const CHASSIS_PAPEL: Readonly<Record<ChassisId, string>> = {
   arara: 'Escoteiro leve: o mais rápido de todos e o mais frágil; carga pequena.',
   onca: 'Pesado: muita vida e muita carga; lento, com o dash mais demorado.',
   colossus01: 'Máquina de cerco (escala 3): vida enorme, quase não anda, sem dash.',
+  colossusv4: 'Titã (escala 4): o maior do jogo; passo curto, joelho bem dobrado e o canhão de cerco.',
   android: 'Andróide: pequeno, muito rápido e frágil; arma leve e motosserra.',
 };
 
@@ -365,6 +390,7 @@ export const CHASSIS_SIZE: Readonly<Record<ChassisId, RobotSize>> = {
   quadraV2: 2,
   marauder: 2,
   colossus01: 3,
+  colossusv4: 4,
 };
 
 /**
@@ -394,6 +420,8 @@ export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
   vector09: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   android: { right: ['blaster'], left: ['chainsaw'] },
   colossus01: { right: fitSize(HEAVY_PRIMARY_ARMS, CHASSIS_SIZE.colossus01), left: fitSize(HEAVY_SUPPORT_ARMS, CHASSIS_SIZE.colossus01) },
+  // O titã só tem as armas de tamanho 3 (o canhão de cerco, nas duas mãos): as dos Mechs não cabem nele.
+  colossusv4: { right: ['siege'], left: ['siege'] },
   arara: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
   onca: { right: [...HEAVY_PRIMARY_ARMS, 'rockets'], left: HEAVY_SUPPORT_ARMS },
   genesis01: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },

@@ -41,6 +41,14 @@ export const MUZZLE_FX: Readonly<Record<WeaponId, MuzzleFx | null>> = {
     ],
     casing: { count: 1, color: BRASS, speed: 4.5, life: 0.8, size: 1.5, spread: 0.4, gravity: 16, spin: 18, shape: SHAPE.casing },
   },
+  siege: {
+    flash: [
+      { count: 14, color: POWDER, speed: 30, life: 0.18, size: 4.6, spread: 0.45, gravity: 0, shape: SHAPE.streak },
+      { count: 1, color: POWDER, speed: 0, life: 0.12, size: 7.5, expansion: 4, gravity: 0 },
+      { count: 7, color: GAS, speed: 10, life: 1.1, size: 6, expansion: 3.5, spread: 1, gravity: -0.5, shape: SHAPE.puff },
+      { count: 1, color: SHOCK, speed: 0, life: 0.3, size: 2.6, expansion: 5, gravity: 0, shape: SHAPE.ring },
+    ],
+  },
   sonic: null, // a onda se desenha sozinha (`fx/WaveVisuals.ts`)
   plasma: null,
   blaster: null,

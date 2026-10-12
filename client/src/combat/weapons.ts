@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker' | 'siege';
 
 /**
  * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
@@ -262,6 +262,20 @@ const BASE: Record<WeaponId, WeaponBase> = {
     blastRadius: 0, mass: 6, tracer: 'shell',
   },
   /**
+   * Canhão de cerco (dono, 12/10: "futuramente faremos versões das armas para o tamanho 3 e 4" — a primeira delas).
+   * **A versão de tamanho 3 do canhão pesado**: a mesma ideia (um projétil de aço, um tiro só, muito dano), feita para um
+   * gigante. Para um robô de tamanho 4 ela é uma arma **leve** (a pesada do tamanho N é a leve do N+1, a conta do
+   * weaponClass.ts); para um de tamanho 3 é **pesada**; um Mech comum (tamanho 2) não a carrega. Um tiro a cada 3,2 s:
+   * mais lento e mais pesado que o canhão dos Mechs (2,6 s), como convém a um titã. Natureza balistica, o mesmo aço.
+   */
+  siege: {
+    id: 'siege', name: 'Canhão de cerco', kind: 'energy',
+    damage: 150, fireInterval: 3.2, heatPerShot: 0.85,
+    magazine: 0, reload: 0, speed: 170,
+    optimalRange: 120, maxRange: 320, minFactor: 0.6,
+    blastRadius: 0, mass: 12, tracer: 'shell',
+  },
+  /**
    * Canhão automático (dono, 11/10: "armas de tiros menores e sequenciais de metal"). **Projéteis de aço em sequência firme, sem esperar o cano
    * girar**: 10 de dano a 5 tiros/s (50/s), cadência fixa, tiro reto e preciso, rápido (190 m/s) e de bom alcance (cheio até 50 m, some aos 140 m).
    * Esquenta menos que o plasma por segundo (0,20 contra 0,32), então sustenta a rajada por mais tempo; em compensação bate menos por tiro que o
@@ -475,6 +489,7 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   cryo: 'criogenico',
   flamer: 'termico',
   cannon: 'balistico',
+  siege: 'balistico',
   autocannon: 'balistico',
   sonic: 'sonico',
   seeker: 'explosivo',

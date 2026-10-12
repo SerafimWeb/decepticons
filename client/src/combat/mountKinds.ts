@@ -60,6 +60,7 @@ export const WEAPON_MOUNTS: Readonly<Record<WeaponId, readonly MountKind[]>> = {
   flamer: ['arm'],
   railgun: ['arm'],
   cannon: ['arm'],
+  siege: ['arm'],
   rockets: ['arm', 'shoulder', 'back'],
   barrage: ['arm', 'shoulder', 'back'],
   sonic: ['shoulder'],

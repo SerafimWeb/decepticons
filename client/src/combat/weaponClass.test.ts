@@ -7,18 +7,18 @@ import { WEAPON_IDS, weapon, type WeaponId } from './weapons';
 const ids = (cls: WeaponClass): WeaponId[] => WEAPON_IDS.filter((id) => WEAPON_FIT[id].class === cls);
 
 describe('classes de arma: leve, média e pesada (ordem P82 do Comandante)', () => {
-  it('toda arma do catálogo declara a classe e o tamanho de robô para o qual foi feita (hoje, todas do tamanho 2)', () => {
+  it('toda arma do catálogo declara a classe e o tamanho de robô para o qual foi feita (hoje, só o canhão de cerco é do tamanho 3)', () => {
     expect(Object.keys(WEAPON_FIT).sort()).toEqual([...WEAPON_IDS].sort());
     for (const id of WEAPON_IDS) {
       expect(WEAPON_CLASSES, id).toContain(WEAPON_FIT[id].class);
-      expect(WEAPON_FIT[id].size, id).toBe(2);
+      expect(WEAPON_FIT[id].size, id).toBe(id === 'siege' ? 3 : 2);
     }
   });
 
   it('a tabela: leves, médias e pesadas (mudar uma arma de grupo é mudar uma linha e esta lista)', () => {
     expect(ids('light').sort()).toEqual(['arc', 'blaster', 'chainsaw', 'emp', 'shotgun']);
     expect(ids('medium').sort()).toEqual(['autocannon', 'cryo', 'plasma', 'rockets', 'rotary', 'seeker', 'sonic']);
-    expect(ids('heavy').sort()).toEqual(['barrage', 'cannon', 'flamer', 'railgun']);
+    expect(ids('heavy').sort()).toEqual(['barrage', 'cannon', 'flamer', 'railgun', 'siege']);
   });
 
   it('as três classes têm nome de tela, no singular e no plural', () => {
@@ -33,19 +33,23 @@ describe('classes de arma: leve, média e pesada (ordem P82 do Comandante)', () 
   });
 
   it('no tamanho 2 (o padrão do jogo) cada arma é da própria classe', () => {
-    for (const id of WEAPON_IDS) expect(classFor(id, 2), id).toBe(WEAPON_FIT[id].class);
+    for (const id of WEAPON_IDS) expect(classFor(id, 2), id).toBe(WEAPON_FIT[id].size === 2 ? WEAPON_FIT[id].class : null);
   });
 
   it('num gigante (tamanho 3) a pesada dos Mechs é a leve dele; a média e a leve dos Mechs são pequenas demais', () => {
-    for (const id of ids('heavy')) expect(classFor(id, 3), id).toBe('light');
+    for (const id of ids('heavy').filter((x) => WEAPON_FIT[x].size === 2)) expect(classFor(id, 3), id).toBe('light');
     for (const id of [...ids('medium'), ...ids('light')]) {
       expect(classFor(id, 3), id).toBeNull();
       expect(fitsSize(id, 3), id).toBe(false);
     }
   });
 
-  it('no tamanho 4 nenhuma arma de Mech serve (as versões de tamanho 3 e 4 ainda não existem)', () => {
-    for (const id of WEAPON_IDS) expect(classFor(id, 4), id).toBeNull();
+  it('no tamanho 4 só a pesada do tamanho 3 serve (e ela é a leve dele): as outras versões ainda não existem', () => {
+    for (const id of WEAPON_IDS) {
+      const fit = WEAPON_FIT[id];
+      const esperado = fit.size === 3 && fit.class === 'heavy' ? 'light' : null;
+      expect(classFor(id, 4), id).toBe(esperado);
+    }
   });
 
   it('no andróide (tamanho 1) a conta desce: a leve dos Mechs é a pesada dele; média e pesada dos Mechs são grandes demais', () => {
@@ -76,12 +80,13 @@ describe('classes de arma: leve, média e pesada (ordem P82 do Comandante)', () 
 });
 
 describe('o tamanho de cada chassi e o que cada encaixe oferece', () => {
-  it('todo chassi declara o tamanho: andróide 1, Colossus 3 e o resto dos Mechs 2', () => {
+  it('todo chassi declara o tamanho: andróide 1, Colossus 3, o titã 4 e o resto dos Mechs 2', () => {
     const chassis = Object.keys(CHASSIS) as ChassisId[];
     expect(Object.keys(CHASSIS_SIZE).sort()).toEqual([...chassis].sort());
     expect(CHASSIS_SIZE.android).toBe(1);
     expect(CHASSIS_SIZE.colossus01).toBe(3);
-    for (const c of chassis.filter((x) => x !== 'android' && x !== 'colossus01')) expect(CHASSIS_SIZE[c], c).toBe(2);
+    expect(CHASSIS_SIZE.colossusv4).toBe(4);
+    for (const c of chassis.filter((x) => x !== 'android' && x !== 'colossus01' && x !== 'colossusv4')) expect(CHASSIS_SIZE[c], c).toBe(2);
   });
 
   it('nenhum encaixe de nenhum chassi oferece uma arma que o tamanho do chassi não carrega', () => {
