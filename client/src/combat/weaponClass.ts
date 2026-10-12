@@ -66,6 +66,7 @@ export const WEAPON_FIT: Readonly<Record<WeaponId, WeaponFit>> = {
   railgun: { class: 'heavy', size: 2 },
   barrage: { class: 'heavy', size: 2 },
   cannon: { class: 'heavy', size: 2 },
+  siege: { class: 'heavy', size: 3 },
 };
 
 /**

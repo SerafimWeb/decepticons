@@ -7,7 +7,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
-import { CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_SAIR_PATH, parseCredenciais, SESSAO_HEADER } from '../shared/net/auth';
+import { CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, parseCredenciais, SESSAO_HEADER } from '../shared/net/auth';
 import { ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
 import { type EventoEnviado, type EventoServidor, EVENTO_MAX_BYTES, EVENTO_PATH, METRICAS_HEADER, METRICAS_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
@@ -454,7 +454,59 @@ export async function startServer(
         'access-control-allow-origin': '*',
         'cache-control': 'no-store',
       });
-      res.end(conta ? JSON.stringify({ email: conta.email }) : JSON.stringify({ erro: 'sem sessão' }));
+      res.end(conta ? JSON.stringify({ email: conta.email, is_admin: conta.is_admin }) : JSON.stringify({ erro: 'sem sessão' }));
+      return;
+    }
+    if (path === CONFIG_PATH && req.method === 'GET') {
+      const urlParams = new URL(req.url ?? '/', 'http://localhost').searchParams;
+      const configValor = contas.getConfig(urlParams.get('chave') || 'chassis_status');
+      res.writeHead(200, {
+        'content-type': 'application/json; charset=utf-8',
+        'access-control-allow-origin': '*',
+        'cache-control': 'no-store',
+      });
+      res.end(configValor || '{}');
+      return;
+    }
+    if (path === ADMIN_CONFIG_PATH) {
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, {
+          'access-control-allow-origin': '*',
+          'access-control-allow-methods': 'POST, OPTIONS',
+          'access-control-allow-headers': `content-type, ${SESSAO_HEADER}`,
+        });
+        res.end();
+        return;
+      }
+      if (req.method !== 'POST') {
+        res.writeHead(405, { 'access-control-allow-origin': '*' });
+        res.end();
+        return;
+      }
+      const token = req.headers[SESSAO_HEADER];
+      const conta = typeof token === 'string' ? contas.validarSessao(token) : null;
+      if (!conta || !conta.is_admin) {
+        res.writeHead(403, { 'access-control-allow-origin': '*' });
+        res.end();
+        return;
+      }
+      const corpo = await lerCorpoLimitado(req, 1024 * 10);
+      if (corpo === 'grande') {
+        res.writeHead(413, { 'access-control-allow-origin': '*' });
+        res.end();
+        return;
+      }
+      try {
+        const payload = JSON.parse(corpo.toString('utf8'));
+        if (typeof payload.chave === 'string' && typeof payload.valor === 'string') {
+          contas.setConfig(payload.chave, payload.valor);
+          res.writeHead(200, { 'access-control-allow-origin': '*' });
+          res.end('ok');
+          return;
+        }
+      } catch {}
+      res.writeHead(400, { 'access-control-allow-origin': '*' });
+      res.end();
       return;
     }
     res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });

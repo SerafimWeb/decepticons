@@ -20,6 +20,8 @@ export const CONTA_CRIAR_PATH = '/conta/criar';
 export const CONTA_ENTRAR_PATH = '/conta/entrar';
 export const CONTA_SAIR_PATH = '/conta/sair';
 export const CONTA_EU_PATH = '/conta/eu';
+export const CONFIG_PATH = '/config';
+export const ADMIN_CONFIG_PATH = '/admin/config';
 
 /** Cabeçalho que carrega o token de sessão nas chamadas autenticadas (`GET /conta/eu`, `POST /conta/sair`). */
 export const SESSAO_HEADER = 'x-cybermech-sessao';
@@ -36,6 +38,7 @@ export interface ContaResposta {
   /** Token de sessão: o cliente guarda e manda no cabeçalho `x-cybermech-sessao` dali em diante. */
   token: string;
   email: string;
+  is_admin?: boolean;
 }
 
 /** Normaliza o e-mail (minúsculas, sem espaço nas pontas) — a mesma forma usada para comparar e gravar. */

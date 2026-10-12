@@ -18,6 +18,8 @@ import type { PhysicsWorld } from '../physics/PhysicsWorld';
 export const MECH_GRAVITY = 32;
 /** Fase da passada por metro andado × altura do robô (0,55 rad/m no Vector-09 de 5,3 m). */
 const STRIDE = 0.55 * 5.3;
+/** A passada de quem não declara a sua (MechStats.gait): a mesma para todo Mech desde 25/09. */
+const DEFAULT_GAIT = { hip: 0.7, knee: 1.1 };
 const CONTROLLER_OFFSET = 0.05;
 const HARD_LANDING_SPEED = 14;
 /** Empurrão (`MechBase.push`): quanto da velocidade externa sobra por segundo (e^-3,5: meio segundo depois resta ~17%), e o teto da velocidade somada (m/s). */
@@ -36,6 +38,12 @@ const PARTS: readonly MechPart[] = ['torso', 'head', 'leftArm', 'rightArm', 'lef
 export type MechModules = Record<MechPart, number>;
 
 export interface MechStats extends ChassisHeat {
+  /**
+   * Passada e joelho DO CHASSI (radianos): quanto o quadril abre no passo e quanto o joelho dobra no apoio. Sem isto,
+   * todo Mech anda com a mesma passada — um titã de 20 m dava o passo do Vector-09. Robô pesado abre menos (passo curto,
+   * planta firme) e dobra mais o joelho (o pé sobe raspando, como um peso que se arrasta). Dono, 12/10.
+   */
+  gait?: { hip: number; knee: number };
   name: string;
   moveSpeed: number; // m/s no chão
   groundAccel: number; // m/s² — alto = resposta "Quake", quase sem inércia
@@ -55,6 +63,8 @@ export interface MechStats extends ChassisHeat {
   /** Carga máxima das armas nos braços (t): o orçamento do Hangar. */
   weaponCapacity: number;
   maxModuleHealth: MechModules;
+  /** Status do chassi: 'hangar' (público) ou 'oficina' (escondido para jogadores comuns). */
+  status?: 'oficina' | 'hangar';
   /** Quais encaixes atiram em cada botão (`combat/mounts.ts`). Sem isto: principal na mão direita, secundário na esquerda. */
   triggers?: TriggerLayout;
   /** Layouts de gatilho que o jogador escolhe no Hangar (o primeiro é o padrão e é o `triggers`). Sem a lista, o chassi tem um só. */
@@ -931,10 +941,12 @@ export abstract class MechBase {
     const lean = legDamageLean(this.modules, this.stats.maxModuleHealth);
     const leftStride = 1 - Math.max(0, lean) * 0.65;
     const rightStride = 1 - Math.max(0, -lean) * 0.65;
-    const lHip = sw * 0.7 * amt * leftStride + air * 0.55;
-    const rHip = -sw * 0.7 * amt * rightStride - air * 0.25;
-    const lKnee = -Math.max(0, cw) * 1.1 * amt - air * 1.0;
-    const rKnee = -Math.max(0, -cw) * 1.1 * amt - air * 0.4;
+    // A passada e o joelho são do chassi (stats.gait): o titã anda curto e com o joelho bem dobrado.
+    const gait = this.stats.gait ?? DEFAULT_GAIT;
+    const lHip = sw * gait.hip * amt * leftStride + air * 0.55;
+    const rHip = -sw * gait.hip * amt * rightStride - air * 0.25;
+    const lKnee = -Math.max(0, cw) * gait.knee * amt - air * 1.0;
+    const rKnee = -Math.max(0, -cw) * gait.knee * amt - air * 0.4;
 
     r.leftLeg.hip.rotation.x = lerp(r.leftLeg.hip.rotation.x, lHip, k);
     r.rightLeg.hip.rotation.x = lerp(r.rightLeg.hip.rotation.x, rHip, k);

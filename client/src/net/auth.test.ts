@@ -15,8 +15,8 @@ describe('ContaCliente', () => {
 
   it('criar conta com sucesso devolve token e e-mail', async () => {
     const c = new ContaCliente('wss://jogo.selvamkt.com.br');
-    vi.stubGlobal('fetch', respostaJson({ token: 'abc', email: 'a@b.com' }));
-    expect(await c.criar('a@b.com', 'senhasegura')).toEqual({ token: 'abc', email: 'a@b.com' });
+    vi.stubGlobal('fetch', respostaJson({ token: 'abc', email: 'a@b.com', is_admin: false }));
+    expect(await c.criar('a@b.com', 'senhasegura')).toEqual({ token: 'abc', email: 'a@b.com', is_admin: false });
     vi.unstubAllGlobals();
   });
 
@@ -36,8 +36,8 @@ describe('ContaCliente', () => {
 
   it('eu(): token válido devolve o e-mail, inválido devolve null', async () => {
     const c = new ContaCliente('wss://jogo.selvamkt.com.br');
-    vi.stubGlobal('fetch', respostaJson({ email: 'a@b.com' }));
-    expect(await c.eu('token-valido')).toEqual({ email: 'a@b.com' });
+    vi.stubGlobal('fetch', respostaJson({ email: 'a@b.com', is_admin: false }));
+    expect(await c.eu('token-valido')).toEqual({ email: 'a@b.com', is_admin: false });
     vi.stubGlobal('fetch', respostaJson({ erro: 'sem sessão' }, false, 401));
     expect(await c.eu('token-invalido')).toBeNull();
     vi.unstubAllGlobals();

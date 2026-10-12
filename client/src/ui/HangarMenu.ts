@@ -10,6 +10,8 @@ import type { Hangar } from '../hangar/Hangar';
 import { acceptsMetalShield, armGroups, armOptions, factorySpec, hasShoulderSlot, isMetalShield, layoutCount, loadoutKey, slotAttack, type ArmSlot, type LoadoutSpec } from '../hangar/loadout';
 import { shoulderMounts } from '../combat/mounts';
 import { PRESET_COUNT } from '../hangar/Hangar';
+import { testAt, testFire, type TestFire } from '../hangar/testFire';
+import { AdminPanel } from './AdminPanel';
 import { WEAPON_HINT_NOVAS, WEAPON_ICON_NOVAS } from './weaponIconsNovas';
 import { testAt, testFire, TEST_FIRE_S, type TestFire } from '../hangar/testFire';
 
@@ -41,6 +43,8 @@ export const CHASSIS_LABEL: Record<ChassisId, { title: string; className: string
   android: { title: 'ANDRÓIDE A-1', className: 'LEVE · PILOTO', detail: 'Pequeno e ágil; vence no combate próximo.' },
   // Chassi solo do boss (29/09): mesmos números do encontro, sem balancear contra os bots de propósito.
   colossus01: { title: 'COLOSSUS-01', className: 'ESCALA 3 · CERCO', detail: 'Lento e blindado; devastador de perto.' },
+  // O titã do dono (12/10): passo curto e joelho dobrado, o maior do jogo.
+  colossusv4: { title: 'COLOSSUS-V4', className: 'ESCALA 4 · TITÃ', detail: 'O maior do jogo: passo curto, joelho dobrado e o canhão de cerco.' },
   // Arara Foundry (29/09): o par batedor/pesado da linha, ver .decepticons/VISAO.md § fabricantes. Os dois são Mechs (tamanho 2); "escala 1" é o andróide.
   arara: { title: 'ARARA-B1', className: 'ESCALA 2 · LEVE', detail: 'Rápido e frágil; vence pela mobilidade.' },
   onca: { title: 'ONÇA-B2', className: 'ESCALA 2 · PESADO', detail: 'Lento e blindado; segura posição.' },
@@ -77,6 +81,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   rotary: WEAPON_HINT_NOVAS.rotary,
   sonic: 'Som · só nos ombros (Ataque 2), as duas bocas juntas · onda em cone de 22 m que EMPURRA · 20 de dano por boca, cheio até 10 m · a chapa Amortecedor segura 90% · cada nível +25% de alcance',
   cannon: 'Aço · um obus só, grande e lento (150 m/s) · 90 de dano, um a cada 2,6 s · 4 acertos (MK I) ou 3 (MK II e III) para um torso · só os pesados o carregam',
+  siege: 'Tamanho 3 · o canhão do titã: SEGURE 3 s para carregar e solte um obus de 360 com 5 m de explosão · derruba um torso de Mech num tiro só · para o Colossus-V4 é arma LEVE · só gigantes o carregam',
   autocannon: 'Aço · projéteis em sequência firme, 5 por segundo · 10 de dano, preciso e rápido · esquenta menos que o plasma · sem espalhamento',
 };
 
@@ -96,6 +101,7 @@ const WEAPON_ICON: Record<WeaponId, string> = {
   rotary: WEAPON_ICON_NOVAS.rotary,
   sonic: '<rect x="2" y="9" width="5" height="6" rx="1" /><path d="M10 8a5 5 0 0 1 0 8M14 5a9 9 0 0 1 0 14M18 2a13 13 0 0 1 0 20" />',
   cannon: '<path d="M2 11h12v6H2z" /><path d="M14 12h6v4h-6z" /><path d="M20 11h2v6h-2" /><path d="M5 17v3h5v-3" /><circle cx="8" cy="14" r="1.2" />',
+  siege: '<path d="M1 10h14v7H1z" /><path d="M15 11h7v5h-7z" /><path d="M22 10h3v7h-3" /><path d="M4 17v4h6v-4" /><circle cx="8" cy="13.5" r="1.4" />',
   autocannon: '<path d="M3 12h13v5H3z" /><path d="M16 13h5v3h-5z" /><path d="M6 12V8h6v4" /><path d="M7 17v3h4v-3" /><path d="M21 14h2" /><circle cx="20" cy="6" r="0.8" /><circle cx="17" cy="8" r="0.8" />',
   chainsaw: '<rect x="3" y="9" width="7" height="7" rx="1" /><path d="M10 10h9a2.5 2.5 0 0 1 0 5h-9" /><path d="M12 10l1-2M15 10l1-2M18 10l1-2M12 15l1 2M15 15l1 2M18 15l1 2" />',
 };
@@ -109,6 +115,9 @@ const CHASSIS_ICON: Record<ChassisId, string> = {
   // Base bem mais larga e pernas grossas (escala 3): a planta lê "pesado e lento" ao lado das outras duas.
   colossus01:
     '<rect x="22" y="2" width="16" height="10" /><rect x="10" y="14" width="40" height="26" /><rect x="1" y="16" width="10" height="24" /><rect x="49" y="16" width="10" height="24" /><rect x="12" y="42" width="14" height="28" /><rect x="34" y="42" width="14" height="28" /><path d="M8 74h18M34 74h18" /><path d="M0 44h2M58 44h2" />',
+  // Titã (escala 4): a planta mais larga do jogo, ombros maciços e pernas em coluna — peso e passo curto.
+  colossusv4:
+    '<rect x="20" y="0" width="20" height="12" /><rect x="6" y="12" width="48" height="30" /><rect x="0" y="14" width="8" height="28" /><rect x="52" y="14" width="8" height="28" /><rect x="10" y="42" width="18" height="30" /><rect x="32" y="42" width="18" height="30" /><path d="M6 76h20M34 76h20" />',
   // Pernas longas e afiladas: a planta lê "leve e rápido".
   arara:
     '<rect x="26" y="2" width="8" height="8" /><rect x="20" y="12" width="20" height="20" /><rect x="12" y="14" width="6" height="18" /><rect x="42" y="14" width="6" height="18" /><path d="M22 34l-4 16l4 20M38 34l4 16l-4 20" /><path d="M14 70h12M34 70h12" />',
@@ -178,6 +187,8 @@ export class HangarMenu {
   /** Teste de disparo em andamento (os números da tela saem dele). */
   private testing: TestFire | null = null;
   private aimTraining = false;
+  private readonly adminPanel: AdminPanel;
+  private unlockedMechs: Set<ChassisId> = new Set();
   private previewChassis: ChassisId | null = null;
 
   get isAimTraining(): boolean {
@@ -189,6 +200,14 @@ export class HangarMenu {
     private readonly preview: HangarPreview,
     button = document.getElementById('btn-hangar'),
   ) {
+    this.adminPanel = new AdminPanel((unlocked) => {
+      this.unlockedMechs = unlocked;
+      this.render();
+    });
+    this.adminPanel.loadConfig().then((unlocked) => {
+      this.unlockedMechs = unlocked;
+      if (this.isOpen) this.render();
+    });
     this.draft = copySpec(hangar.current);
     this.root = document.createElement('div');
     this.root.id = 'hangar-modal';
@@ -221,6 +240,7 @@ export class HangarMenu {
           <span class="hg-chip"><i>CRÉDITOS</i><b id="hg-top-credits"></b></span>
           <span class="hg-chip hg-mode"><em></em><b id="hg-top-mode"></b></span>
         </div>
+        <button class="hg-btn hg-ghost" type="button" data-action="admin" style="padding: 0 12px; margin-right: 12px; border: 1px solid #444;" title="Painel Admin">⚙️</button>
         <button class="hg-close" type="button" data-action="close" aria-label="Voltar à pausa">×</button>
       </header>
       <aside class="hg-panel hg-chassis" data-tab="chassi">
@@ -495,6 +515,11 @@ export class HangarMenu {
     }
     const chassisAttr = target?.closest<HTMLButtonElement>('[data-chassis]')?.dataset.chassis;
     const chassis = chassisAttr && chassisAttr in CHASSIS ? (chassisAttr as ChassisId) : null;
+    const isLocked = target?.closest<HTMLButtonElement>('[data-locked]')?.dataset.locked;
+    if (isLocked) {
+      this.adminPanel.open();
+      return;
+    }
     if (chassis) {
       if (chassis !== this.draft.chassis) {
         this.draft = chassis === this.hangar.current.chassis ? copySpec(this.hangar.current) : factorySpec(chassis);
@@ -552,6 +577,11 @@ export class HangarMenu {
       event.stopPropagation();
       if (this.aimTraining) this.endAimPractice(true);
       else this.endTest(true);
+      return;
+    }
+    if (action === 'admin') {
+      event.stopPropagation();
+      this.adminPanel.open();
       return;
     }
     if (action === 'close') {
@@ -638,12 +668,16 @@ export class HangarMenu {
     this.setText('hangar-cooling', `${Math.round(chassis.heatCooling * 100)}% / s`);
 
     const chassisList = this.root.querySelector<HTMLElement>('#hangar-chassis-list')!;
+    const isOficina = new URLSearchParams(location.search).has('oficina');
     chassisList.innerHTML = (Object.keys(CHASSIS) as ChassisId[])
+      .filter((id) => CHASSIS[id].status !== 'oficina' || isOficina || this.unlockedMechs.has(id) || true)
       .map((id) => {
         const c = CHASSIS[id];
         const l = CHASSIS_LABEL[id];
+        const locked = c.status === 'oficina' && !isOficina && !this.unlockedMechs.has(id);
         const selected = id === spec.chassis;
         const inUse = id === current.chassis;
+        return `<button class="hg-chassis-card${selected ? ' selected' : ''}${locked ? ' locked' : ''}" type="button" data-chassis="${id}" aria-pressed="${selected}" ${locked ? 'data-locked="true"' : ''}><svg viewBox="0 0 60 84" aria-hidden="true">${CHASSIS_ICON[id]}</svg><span><small>${l.className}</small><b>${l.title}</b><em>${locked ? '🔒 OFICINA (clique p/ admin)' : `${num(c.weaponCapacity, 0)} t de carga · ${num(c.height, 1)} m${inUse ? ' · EM USO' : ''}`}</em></span></button>`;
         return `<button class="hg-chassis-card${selected ? ' selected' : ''}" type="button" data-chassis="${id}" aria-pressed="${selected}"><svg viewBox="0 0 60 84" aria-hidden="true">${CHASSIS_ICON[id]}</svg><span><small>${l.className}</small><b>${l.title}</b><em>${num(c.weaponCapacity, 0)} t de carga · ${num(c.height, 1)} m${hasShoulderSlot(id) ? ' · OMBROS' : ''}${inUse ? ' · EM USO' : ''}</em></span></button>`;
       })
       .join('');
@@ -751,7 +785,7 @@ ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou 
 }
 
 /** Sigla curta de cada chassi, para caber no atalho do preset. */
-const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-1', colossus01: 'C01', arara: 'B1', onca: 'B2', genesis01: 'G01', lancerL1: 'L01', lr7lBastion: 'LR7', quadraV2: 'QV2', marauder: 'MRD' };
+const CHASSIS_SIGLA: Record<ChassisId, string> = { vector09: 'V09', android: 'A-1', colossus01: 'C01', colossusv4: 'C4', arara: 'B1', onca: 'B2', genesis01: 'G01', lancerL1: 'L01', lr7lBastion: 'LR7', quadraV2: 'QV2', marauder: 'MRD' };
 
 /** Ícone da chapa do escudo físico no encaixe. */
 const PLATE_ICON = '<path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z" />';

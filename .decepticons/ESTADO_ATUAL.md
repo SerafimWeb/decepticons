@@ -1,4 +1,150 @@
 # ESTADO ATUAL — CYBERMECH
+## O Colossus-V4 entrou no Hangar: o titã de escala 4, o canhão de cerco e a passada do chassi — Qwen, 12/10 (ordens P100/P85/P10)
+
+**Ordens do Comandante (P100, 12/10):** *"adicionei um novo modelo na pasta /blender/colossusv4, leve ele para o hangar"*, depois *"o caminhar dele está muito largo, ele é um robô extremamente pesado, então os passos dele devem ser mais curtos e melhor dobrada do joelho"* e *"crie a arma dele, uma arma poderosa, de tiro único, que demora pra carregar, mas é um tremendo tiro"*. E: *"o colossusv4 poderá ser pilotado por 1, 2 ou 3 tripulantes"* (a P10).
+
+**O que está no ar:** o **COLOSSUS-V4** é escolhível no **Hangar** (escala 4, 20 m, 1900 no torso, 4 m/s, sem dash, sem salto), com a malha do dono **re-rigada** (17 ossos Mixamo, 24.576 triângulos, 2,6 MB) e o **canhão de cerco** nas duas mãos.
+- **A arma é de carga** (o pedido dele): **segure o gatilho 3 s** e solte um **obus de 360** com 5 m de explosão, a 240 m/s — derruba um torso de Mech **num tiro só**. O ciclo é de ~7,5 s e cada tiro gasta 0,9 do dissipador de calor.
+- **A passada é do chassi**: `MechStats.gait { hip, knee }` no lugar dos 0,7/1,1 fixos que valiam para todos; o titã declara **{ hip: 0.42, knee: 1.5 }** (passo curto, joelho bem dobrado).
+- **A lição que custou uma rodada:** o arquivo veio com os braços **pendurados**, e o módulo da arma aponta para onde o **antebraço** aponta — sem `armRest` o canhão apontava **para o chão** (as bocas medidas caíram a 3,83 m de altura). Com `armRest` (a pose do Marauder) as bocas caem certas: **mão a 13,51 m, a 9,18 m à frente**. Está registrado em `MECHS_IMPORTADOS.md` §8.
+- **Como ver:** `www.selvamkt.com.br/cybermech/jogar/` → ABRIR HANGAR → chassi **COLOSSUS-V4**. Andando, repare no passo curto e no joelho dobrado; com o gatilho apertado 3 s, o obus. Capturas: `arte/colossusv4-*.png`.
+- **Falta (R13):** só existe **uma** arma de tamanho 3 (o canhão de cerco) — as versões médias e pesadas de tamanho 3 e 4 continuam sendo o "futuramente" da P82; **o servidor desenha todo Mech como Vector-09** (as bocas do titã são dado do chassi, medido); e a **tripulação de 1 a 3 operadores (P10)** não tem contrato de rede — hoje o titã é pilotado por um jogador só.
+
+## A ficha do chassi de tamanho 4: os números que faltavam (e a P11 revisada) — Qwen, 12/10 (P100/P11, só documentação)
+
+**Por quê:** o robô de tamanho 4 (o arquivo da **P100**) tem **silhueta e não tem números** — altura, velocidade, carga e vida não existem em lugar nenhum —, e a **P11** ("tamanhos 4 e 5, **10× e 20× maiores**") pediria **53 m e 106 m**, que não caibam em nada do jogo.
+
+**O que a ficha traz (`fichas/tamanho-4.md`, proposta):** a identidade e a fantasia (**a fortaleza que anda**), a tabela de números ancorada nas referências **reais do código** — andróide **1,6 m** · Vector-09 **5,3 m / 9 m/s / 11 t** · Colossus **14 m / 5 m/s / 24 t** — e **sete perguntas** ao Comandante.
+
+**As propostas que importam:**
+- **Altura:** **~22 m** (passo suave) ou **~36 m** (repete os 2,6× do passo 2→3) — e a **P11 fica para revisão**: 53 m é **um quarto da Arena** (200 m) e daria uma cápsula de **26 m** de raio no Rapier.
+- **Carga: 40 t** — a **lança de cerco** (ficha das armas) pesa **20 t**: duas lanças = 40 t, uma lança + um casulo (12 t) deixa um módulo. A escolha continua existindo no titã.
+- **Velocidade 3,5 m/s** e **sem dash**: o dash de um titã seria um **teleporte de 22 m**; a graça dele é **chegar andando**.
+- **As duas travas ditas:** raio ≤ altura/2 (a regra do Rapier) e o **pé-de-escada** tem de vencer as rampas que o jogo já tem.
+
+**A correção que veio junto (R17):** a ficha das armas dizia que um passo de tamanho **dobra** o robô — o código diz **2,6×** (1,6 → 5,3 → 14 m). Corrigido no documento, e o número certo **reforça** o teto de alcance: o robô cresce 2,6× e **a Arena continua a mesma**.
+
+**Nada construído:** o re-rig é do **dono** (`MECHS_IMPORTADOS.md` §8), os números o **Claude** mede e a arte é do **Codex**.
+
+## As armas dos gigantes têm projeto: o portão do robô de tamanho 4 — Qwen, 12/10 (P82/P100, só documentação)
+
+**Por quê:** a **P100** trouxe o Colossus v4 (tamanho 4) e o **portão** apareceu: **hoje nenhuma arma cabe nele** (todas são `size: 2`). A **P82** tinha deixado as "versões de tamanho 3 e 4" como *futuramente*, e o **contrato de como criá-las já existia** (`ARSENAL.md` §"Como criar a versão de tamanho 3"). O que faltava era o **projeto**: **quais** armas e com **que números**.
+
+**O que foi escrito (`fichas/armas-de-tamanho-3-e-4.md`, proposta):** a **regra de escala** — dano **×1,8**, calor **×1,5**, **peso ×2**, alcance **×1,3 (teto)**, cadência **×0,75** — com o *porquê* de cada fator; e **quatro armas**, duas por tamanho: no **3**, o **CANHÃO DE CERCO** (pesada, um tiro de 160) e a **ROTATÓRIA PESADA** (média, supressão); no **4**, a **LANÇA DE CERCO** (pesada, 290, um tiro por carregador) e o **CASULO PESADO DE MÍSSEIS**. Mais **9 testes** (dois **já existem** e travam o contrato; sete nascem com as armas), **sete perguntas** ao Comandante e a lista do que **não** propor.
+
+**A decisão que faz o gigante ser gigante sai do peso, não de uma trava:** com peso ×2, a pesada de tamanho 3 fica em **~10 t** — e o Colossus tem **24 t** de carga: **duas pesadas = 20 t**, ou uma pesada e duas médias. **É a escolha que o peso cria.**
+
+**A armadilha que a ficha evita:** o robô dobra, mas **a Arena continua com 200 m** — sem o teto de 1,3× no alcance, o Colossus vira um atirador de fora da briga.
+
+**A ficha aponta em vez de repetir:** o contrato da classe é do `combat/weaponClass.ts` e o passo a passo, do `ARSENAL.md` — duas fontes sobre a mesma regra é como se perde uma.
+
+**Nada construído:** os números são do **Claude** (medidos na Oficina contra as metas do `balance.ts`) e a arte, do **Codex**.
+
+## O Colossus v4 chegou e não entrou: o rig é que está errado — Qwen, 12/10 (P100, só documentação)
+
+**Ordem do Comandante (P100):** *"adicionei um novo modelo na pasta /blender/colossusv4, leve ele para o hangar, veja se está correto a armadura, ossos, etc, ou se devo melhorar ele no blender. ele é do tamanho 4, bem maior que o colossus v3"*.
+
+**O que foi feito:** o laudo do arquivo com o inspetor do contrato (`npm run mech:inspecionar`) e a leitura do JSON do `.glb`; o laudo completo está em **`MECHS_IMPORTADOS.md` §8**. **Nada foi ligado no jogo — de propósito** (ver abaixo).
+- **O arquivo** (`D:\imagens cybermech\BLENDER\colossusv4.glb`): 8,6 MB, **98.304 triângulos**, 1 malha **com skin**, 1 material, 3 texturas (2048 px), 11 ossos, sem animação, braços pendurados (pose boa), frente +Z assumida.
+- **Por que não entrou:** o jogo anima 11 ossos e o arquivo **não tem quatro deles** (`torso`, `head`, `leftHand`, `rightHand`); os braços são **um osso só** (sem antebraço → sem lugar para o encaixe de arma) e nascem no **mesmo nó das pernas**. O carregador lança erro e o `Game` cai no corpo procedural do Vector-09 — um chassi ligado assim mostraria o Vector-09, não o arquivo novo.
+- **Decisões do Comandante (12/10):** ele **re-riga no Tripo/Mixamo e manda de novo**; e o robô é **escala 4**. O brief do re-rig (hierarquia dos ossos, nomes `mixamorig`, decimate, simetria, o que **não** mexer) está no §8.
+- **A escala 4 tem portão:** **nenhuma arma cabe num robô de tamanho 4** hoje (todas as armas são `size: 2`; a regra só deixa o 4 usar `size: 3`) — as versões de arma de tamanho 3/4 (o "futuramente" da P82) viram pré-requisito. A P100 **ressuscita a P11** ("Mechs de tamanho 4 e 5", 28/09, sem registro), cuja **altura** segue em aberto.
+- **Como ver:** a foto do laudo é `.decepticons/arte/colossusv4-malha-qwen.png` (6 vistas da malha crua). **O veredito da armadura é do dono — eu não leio imagem.**
+- **Testes:** nenhum (só documentação; `npm run check` igual).
+
+**Próxima sessão começa com:** o `.glb` re-rigado do Comandante; então `npm run mech:inspecionar -- <arquivo> --id colossusv4` e, com o laudo limpo, a ligação do chassi (`CHASSIS`, `ARM_SLOTS`, `CHASSIS_SIZE` 4, `CHASSIS_PAPEL`, `IMPORTED_CHASSIS`, `ui/HangarMenu.ts`) — sem esquecer que a escala 4 precisa das versões de arma de tamanho 3/4.
+
+## A folha de decisões do Comandante: sete escolhas no canal que ele lê — Qwen, 12/10 (só documentação)
+
+**Por quê:** as fichas de missão deixaram **28 perguntas** espalhadas — e o trabalho **parou nelas**: sem a decisão da ficção, o Claude não põe o técnico no lado dos aliados (e a missão #1 **não tem quem escoltar**); sem o tamanho, o Codex não constrói o cenário; e o #259 não sai do limbo sem escolha. **Documentação a mais não destrava nada; sete respostas, sim.**
+
+**O que foi escrito:** uma seção nova no **`ORDENS_DO_COMANDO.md`** — o arquivo que o Comandante lê — logo depois do cabeçalho: **"⏳ Decisões que esperam o Comandante"**, com **sete linhas** de três colunas: **a decisão**, **a minha recomendação** e **o que ela destrava**. A frase que organiza: *"responder 'sim, como recomendado' já destrava a fila inteira"*.
+
+**As sete recomendações, em uma linha cada:** (1) o técnico é **a mesma máquina reprogramada, e o nome continua ENTRÓPICO**; (2) o núcleo tem **vida própria**, não partes; (3) o técnico **conserta o núcleo**, devagar; (4) **~500 m** bastam para o cenário (é o teto sem streaming); (5) a **escolta vem antes** do CTF online; (6) **três fases, com respawn** na missão #1; (7) o **#259: triagem e fechar** (guardando a flag de `status` e os cadeados do Hangar).
+
+**Junto, uma linha que separa decisão de ação:** os **dez minutos do roteiro de playtest** (`PLAYTEST.md`) — a única forma de saber se o que as equipes escrevem bate com o que ele vê.
+
+**Nada construído no jogo:** é um papel para transformar 28 perguntas em sete escolhas de uma linha.
+
+## As duas missões que faltavam — ataque e defesa — e o contraataque de graça — Qwen, 12/10 (P99, só documentação)
+
+**Por quê:** a **P99** nomeou **quatro** tipos de missão. A escolta já tem ficha (`fichas/escolta.md`, com o contrato de tela) e o cenário tem a sua (`fichas/cenario-cabos.md`); faltavam **ataque** e **defesa de base**. A ficha nova — **`.decepticons/fichas/ataque-e-defesa.md`** — fecha o conjunto.
+
+**A descoberta que economiza uma missão inteira:** o **contraataque não precisa de missão própria** — ele é o **fim da defesa**. Se o núcleo cai, a missão **não termina**: ela vira "retomar o raio", com a **mesma regra de posse do ataque**, enquanto as ondas continuam. Os quatro tipos do pedido viram **três fichas e duas máquinas** (a de ondas, que já existe, e a de posse, que nasce no ataque).
+
+**O que a ficha entrega:** o **núcleo** (a peça nova: uma estrutura estática com vida, raio e relógio de posse), o **ataque** em três fases, a **defesa** em quatro estágios (15 s de preparação, ondas com o núcleo como alvo preferido, o contraataque e o **Colossus** na última onda), **15 testes especificados** e o **contrato de tela** com três campos a mais — a barra do núcleo, **`SEGURANDO 12/20 s`** e **`NÚCLEO CAIU — RETOME`** (o número aparece porque é um **relógio**, não enfeite).
+
+**O custo:** **zero byte de rede** (offline primeiro, como as outras três), **zero CPU por tick** (o núcleo é estático e o objetivo roda no pulso lento) e **zero arte nova** — reusa o diretor de ondas, os destrutíveis, as zonas de cura e o **esquadrão (P91)**, onde o **técnico** ganha função de verdade.
+
+**Duas decisões de contrato que a ficha fixa:** a posse **pausa, não reinicia** (inimigo no raio para o relógio; sair o retoma), e **aliado conta como posse** (com o jogador morto, a missão segue viva).
+
+**Nada construído.** A regra é do **Claude**, o desenho é do **Gemini**, o cenário é do **Codex**. **Sete perguntas** esperam o Comandante — e as duas que decidem mais são *o núcleo tem vida própria ou partes* e *o técnico conserta o núcleo*.
+
+## O roteiro de playtest de dez minutos — Qwen, 12/10 (o que olhar hoje, em ordem)
+
+**Por quê:** o Comandante testa **jogando**, e já cobrou no passado não achar no jogo o que os agentes anunciavam (o episódio dos "7 branches fora do ar", 27/09). Hoje entraram coisas em sequência — o **editor do esquadrão** (#267), o **layout de ataques** (#265), o **conserto dos textos do Bunker** (#270) —, e o `PLAYTEST.md` é o lugar combinado para isso.
+
+**O que foi escrito (nova seção no `PLAYTEST.md`):** um **roteiro de seis passos**, em ordem, de ~10 minutos: a entrada; **o Bunker de quatro andares** (o conserto de hoje, com o número a conferir **nos dois lugares** — a dica do MAPA e o resumo do TEATRO); **montar o esquadrão** (chassi, arma, personalidade, dificuldade, carga, link); **Ataque 1 e Ataque 2** (o rótulo e o botão que atira nele); as **cinco missões do teatro** (duas jogáveis e três EM CONSTRUÇÃO — de propósito); e **o que ainda não existe** (as missões da P99 em ficha, os takes do `P97`) — para ninguém caçar o que não tem.
+
+**A regra do roteiro:** se algo estiver diferente do que ele diz, **é achado** — com a tela e a hora. Texto, eu corrijo; regra, vai para quem tem o território.
+
+**Nada construído no jogo** — é o papel que faltava para o que já está lá ser **encontrado**.
+
+## O #259 (`game-hq`) tem diagnóstico e brief — Qwen, 12/10 (é o único trabalho fora da `main`)
+
+**O que é:** o PR **#259** carrega o **painel admin do Gemini** — o backend em SQLite e API, o painel no Hangar com cadeados e a flag que esconde Mechs em desenvolvimento. Está **aberto e conflitando** (então o CI não roda: ver a memória do "PR conflitante"). A linha dele na tabela **EM BRANCH — NÃO ESTÁ NO AR** foi corrigida neste PR: ela dizia `HQ.md`, que **já está na `main`**, e "sem PR".
+
+**O diagnóstico (medido, não estimado):**
+- **327 commits atrás** da `main` (o branch é de 11/10);
+- **4 arquivos conflitam:** `.decepticons/ESTADO_ATUAL.md`, `entities/MechBase.ts` (**2 linhas**), `entities/chassis.ts` (**3 linhas**) e `ui/HangarMenu.ts` (**27 linhas**) — **os três de código são do território do Claude**;
+- **Entram limpos:** `server/Server.ts` (+56), `server/contas.ts` (+43), `net/auth.ts` (+39), `shared/net/auth.ts` (+3) e **`ui/AdminPanel.ts` (arquivo novo, 144 linhas)**.
+
+**O brief (a recomendação):** **não é rebase cego.** O backend que o branch traz é **o que o Claude está escrevendo agora** (a fase 2 da P54, `claude/servidor-admin` — os controles do servidor na interface, com token). O caminho honesto é **triagem**:
+
+1. **Guardar as duas ideias de jogo** que podem não estar no plano do Claude: a **flag de `status`** (esconder Mechs em desenvolvimento na oficina — ~5 linhas) e os **cadeados do Hangar** (~27 linhas). São o que o jogador veria;
+2. **Não trazer o backend duplicado:** o painel admin segue o plano da `PAINEL_ADMIN.md`/P54 (contratos primeiro, rotas com token no servidor), que é o que está em execução;
+3. **Fechar o #259 depois disso** — a regra 15 dá o prazo (branch parado é mergeado, fechado ou declarado morto), e a linha da tabela passa a dizer **o que foi aproveitado e o que ficou**.
+
+**Quem decide:** o **Comandante** (fechar, ou mandar o Claude rebasar) e o **Claude** (a triagem). **Eu não toquei no branch de outro agente:** o `git merge-tree` foi leitura, e o brief ficou aqui.
+
+## O console parou de mentir sobre o Bunker: dois textos, um número errado — Qwen, 12/10 (o que o dono lê)
+
+**O que foi auditado:** os **textos que o Comandante lê no console** — os resumos das cinco missões no teatro (`ui/theater.ts`), a dica do seletor de mapa (`ui/MapLinks.ts`) e os rótulos de estado (`WorldMap.ts` traduz `em-breve` para **EM CONSTRUÇÃO**) —, contra a verdade do jogo, um por um.
+
+**O achado (R17):** o **Bunker** aparecia como **"Três andares"** em **dois** lugares — o resumo do teatro e a dica do seletor (*"Mapa de 3 andares"*) — mas o mapa tem **quatro pisos** (0/14/28/42 m, medidos em `medicoes/BUNKER.md`). **Corrigido:** os dois passam a dizer **quatro andares**; são duas strings, nada de regra, e **nenhum teste as fixava** (conferido antes de mexer).
+
+**Por que corrigi eu mesmo, e não registrei para o Gemini:** `ui/` é o território dele, mas a **regra 4** do `AGENTS.md` permite **um PR pequeno e separado** para mudar algo fora do próprio território — e a R17 manda corrigir o que é barato e seguro. Não é tela nova: é o jogo deixando de mentir sobre o próprio cenário, no que aparece no vídeo e no site.
+
+**O que foi conferido e está certo:**
+- **CIDADE NEON** ("A sede da SERAFIM e o Banco VORCARIS sob ataque"): o **Banco VORCARIS é REAL** (letreiro de 24 m na fachada, terminal no térreo, créditos no Hangar — **PARCIAL** por playtest) ✔
+- **BUNKER**: "treino offline contra bots" ✔ (o mapa só existe offline e no Deathmatch)
+- **EM CONSTRUÇÃO** para **ESTAÇÃO DE CABOS, BARRAGEM e FÁBRICA DE CHIPS** ✔ — nenhuma tem mapa, e quem decide é o `estadoDoTeatro`, não texto na mão. O `CommandConsole.test.ts` já cobra isso (R13).
+
+**Nada mais mudou:** é texto — zero CPU, zero rede.
+
+## O roteiro narrado do episódio longo — Qwen, 12/10 (P47, só documentação)
+
+**O que é:** o texto do **vídeo #1 do canal na versão longa** (6 a 10 min, o que o kit prometeu) — **`.decepticons/video/o-processo-narrado.md`**: **oito blocos** (~7 min) com a narração escrita, o que aparece em cada bloco (os modelos da mesa) e os **capítulos do YouTube**. O teaser de 52 s (`.decepticons/video/o-processo.js`) continua sendo outra peça.
+
+**A regra que faz a voz envelhecer bem (e a razão dela):** o `validar.mjs` confere os números **das cenas** contra o código — **áudio gravado não tem como ser revalidado**. Então a narração diz *"mais de mil testes"* e a cena mostra o número exato de hoje: se o número mudar, **a voz continua verdadeira**. É o R14 ("o número do jogo é que vale") aplicado ao que a voz pode afirmar.
+
+**As outras três regras:** nenhum byte/KB/s (material público, decisão de 27/09); nada do codinome interno; nada que o `STATUS_REAL.md` marque PARCIAL/DEMO/AUSENTE como pronto (R13) — e nenhuma data prometida.
+
+**O que ele já usa do que existe:** os blocos montam só com os modelos prontos da mesa (`boot`, `letreiro`, `esteira`, `ritmo`, `equipe`, `galeria`, `final`) e com as imagens de `arte/`. **Os blocos 2 e 7 ficam melhores com take do `F9`** (ordem P97, do Claude) — mas **saem sem ele**.
+
+**Nada gravado:** a narração é do **Comandante** (a decisão das vozes é dele, P75). Este documento é o papel.
+
+## O contrato de tela da missão #1 (a metade que faltava ao Gemini) — Qwen, 12/10 (P99, só documentação)
+
+**Por que faltava:** a auditoria mostrou que o `MissionHUD` de hoje é do modo **Sobrevivência** — o contrato dele é **por onda** (`onWaveStart`, `onWaveProgress`, `onWaveClear`, `onMissionEnd`) — então a missão **não cabe nos nomes que existem**. Sem contrato, o **Gemini não tem contra o que desenhar** (regra 5: contrato antes de paralelizar).
+
+**O que foi escrito (na própria `fichas/escolta.md`, nova § 6):** a tabela do que o **Claude emite** e o que a tela **mostra** — `onMissionBriefing`, `onObjective` (avarias, fase, técnico vivo, extração), `onTechnicianHit` e `onMissionEnd` — mais o **marcador de objetivo** sobre o técnico e o da **extração**. As perguntas para o dono passaram a ser a **§ 7** (com a referência interna corrigida).
+
+**O dado que decide a partida é a vida do técnico** — por isso ele ganha evento e barra próprios: é o que faz a escolta ter sentido na tela (o jogador vê caindo exatamente o que ele tem de proteger).
+
+**Três regras que a tela herda:** **nenhum byte de rede** (offline neste corte), **nenhum DOM por quadro**, e **nada de informação de desenvolvedor na tela** (`AUDITORIA_INTERFACE.md`). **A prova é teste de contrato:** o mesmo `onObjective` duas vezes não redesenha; sem técnico vivo, o resumo diz derrota; o resumo lê o **recorde salvo**.
+
+**Nada construído** — é o papel que faltava. O desenho é do **Gemini**; os eventos, do **Claude**.
 
 ## O servidor na interface: estado, gráficos, log, REINICIAR, TESTAR e AVALIAR — Claude, 12/10 (PR `claude/servidor-admin`, ordem P93, fase 2)
 
@@ -691,7 +837,7 @@ Barreira frontal em módulo extra de 2 t, mantendo as duas armas; E remapeável/
 | Branch | O que carrega | PR | Desde |
 |---|---|---|---|
 | `gemini/marauder-rig-fix` (só local) | **Obsoleto**: o único conteúdo novo (o GLB) foi para `claude/marauder-rig`; o resto já está na `main`. Pode ser apagado quando o dono quiser | — | 01/10 |
-| `gemini/game-hq` | Estruturação oficial do Game HQ (`HQ.md`) documentando e ancorando toda a arquitetura GDD/PRD solicitada, reaproveitando os arquivos existentes sem quebrar o versionamento (00-Vision a 06-Decisions). Fichas passam a atuar como Mini-PRDs. | — | 01/10 |
+| `gemini/game-hq` | **O painel admin do Gemini** (11/10): o **backend** em SQLite e API (`server/Server.ts`, `server/contas.ts`, `net/auth.ts`, `shared/net/auth.ts`), o **painel no frontend** (`ui/AdminPanel.ts` — arquivo novo, 144 linhas, integrado ao Hangar com **cadeados** e modal) e a **flag de `status`** para esconder Mechs em desenvolvimento na oficina (`entities/chassis.ts`, `entities/MechBase.ts`, `ui/HangarMenu.ts`). *(A linha antiga aqui dizia "Estruturação oficial do Game HQ (`HQ.md`)" — o `HQ.md` **já está na `main`**; o que o branch carrega agora é o painel.)* **Diagnóstico (Qwen, 12/10): 327 commits atrás; 4 conflitos** (`.decepticons/ESTADO_ATUAL.md`, `entities/MechBase.ts`, `entities/chassis.ts`, `ui/HangarMenu.ts` — os três de código são do Claude) e o resto entra limpo. Brief no topo deste arquivo | **#259** (aberto, `CONFLICTING`) | 11/10 |
 | `gemini/rig-fix` | Corrige a orientação errada de modelos importados (`clonedScene` no `AxisCorrectedJoint`), que deixava Mechs Tripo e Mixamo com pés virados. Desabilita `quadraV2` temporariamente do carregador enquanto a malha ZEROCIRCUIT.glb está corrompida. | — | 01/10 |
 | — | **Nada fora da `main` (28/09).** O login e a gravação entraram (#115, #117); o #110 virou obsoleto (só um retalho do `ESTADO_ATUAL.md`) e foi fechado; e os três branches órfãos do Gemini de 25/09 — `primeira-partida`, `setas-inimigos`, `sons-androides`, sem PR e com o conteúdo refeito na `main` — foram declarados mortos e apagados (regra 15). | — | 28/09 |
 
@@ -951,6 +1097,12 @@ Barreira frontal em módulo extra de 2 t, mantendo as duas armas; E remapeável/
   - **Limpeza no Harness (`scripts/test.mjs`)**: Removida redundância `VITEST_MAX_WORKERS` do env (mantendo a flag `--maxWorkers=1`).
 ---
 
+## ÚLTIMA SESSÃO FEZ (01/10)
+- **Painel Admin Híbrido (Opção A e B combinadas) implementado no Hangar (Antigravity):** pedido do dono, foi construída uma solução completa e robusta sem quebrar a progressão atual. O estado de `is_admin` viaja junto da sessão e valida ações de backend de maneira segura. No Frontend:
+  - **Opção B (Cadeados In-loco):** Mechs marcados como "oficina" no `CHASSIS` ganham cadeados na UI para jogadores comuns (indicando indisponibilidade). Ao clicar neles, o jogador é provocado a fazer Login. Administradores podem destrancá-los diretamente.
+  - **Opção A (Botão Global):** Adicionado ícone "⚙️ ADMIN" no topo do Hangar para abrir a `AdminPanel.ts` diretamente.
+  - **AdminPanel.ts:** Um modal nativo leve (CSS isolado sem bibliotecas externas pesadas) que se acopla ao `HangarMenu.ts`. Consome o estado do `server` (chassis desbloqueados globalmente) e permite ligar/desligar instâncias simultâneas. Testes do `ContaCliente` atualizados e build 100% verde (386 testes passados).
+  - **Preparação para migração pro Supabase:** Toda a lógica de armazenamento global e de usuários está contida em `server/contas.ts` implementando o Pattern de Repositório, já desenhada com isolamento completo de persistência. A transição futura para o Supabase (Postgres) não quebrará o `Server.ts` nem o cliente, preservando totalmente a base de jogadores conforme pedido do dono.
 ## ÚLTIMA SESSÃO FEZ (04/10, PR do morteiro nas costas na `main`)
 - **A chuva de mísseis deixa de ser o casulo (Claude, dono: "eu quero que seja uma arma diferente do casulo… acoplando nos ombros, apontando pra cima, ou nas costas"):** o dono não achou a arma: no Hangar era um item do menu do braço esquerdo e o desenho era o do casulo. Agora, nos Mechs procedurais, ela é um **morteiro nas costas, com quatro tubos verticais para cima e a boca luminosa**, e o antebraço esquerdo fica liso; o lançamento desenhado sobe da boca dele; o Hangar rotula "Chuva de mísseis · morteiro nas costas". Onde clicar: Hangar → Vector-09, Colossus ou Onça → **BRAÇO ESQUERDO** → a lista → "Chuva de mísseis · morteiro nas costas" (olhe o robô de costas girando o pedestal). Capturas: `arte/chuva-morteiro-costas-{vector09,colossus,hangar}.png`. Custo: o Mech paga um desenho a mais só enquanto a chuva está equipada; o teste dos 10 desenhos continua valendo. **A boca de simulação não se move** (G14; teste que quebra se mover). 11 testes novos (rig, Mech nascendo e trocando com `equip`, origem visual do projétil); três mutações pegas.
 - **Pendência:** os dois ombros no lugar das costas (como o Marauder), se o dono preferir; som próprio da chuva; vista em partida real.

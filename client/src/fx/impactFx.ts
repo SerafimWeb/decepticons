@@ -83,6 +83,7 @@ export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
   rotary: CINETICA,
   autocannon: AUTOMATICO,
   cannon: CANHAO,
+  siege: CANHAO, // o titã bate com o mesmo aço do canhão, em dobro
   // Foguetes, chuva de mísseis, serra, lança-chamas e a onda sônica não batem por aqui: têm a explosão, o contato ou o cone deles.
   sonic: [],
   rockets: [],

@@ -187,3 +187,59 @@ roda `npm run mech:inspecionar` (§5) e liga no Hangar.
 ## Bot com chassi importado (P91, 12/10, Claude)
 
 Um bot do esquadrão pode ter o chassi de um robô importado (`CHASSIS_DOS_BOTS`), mas **nunca a malha**: o servidor não carrega `.glb`, e o bot vive na simulação. Ele leva os **números do chassi** (vida, passo, dash, escudo de metal) e o corpo procedural do Vector-09 (o Arara e a Onça têm o deles, `entities/blueprintByChassis.ts`). Robô importado novo entra sozinho na lista de chassis dos bots; para ele ganhar a silhueta própria no bot, o caminho é um blueprint procedural, não o `.glb`.
+
+## 8. O Colossus v4 (P100, 12/10, Qwen): o laudo do arquivo, o rig consertado e a lição do armRest
+
+> **Status: RESOLVIDO no mesmo dia.** O rig foi refeito por **script no Blender headless** (`.tmp/rig-construir.py`):
+> esqueleto de **17 ossos com nomes Mixamo** (medidos a partir dos pesos bons do rig antigo), pele refeita por *bone heat*,
+> **decimate 98.304 → 24.576 triângulos** e texturas 2048 → 1024 (**8,6 MB → 2,6 MB**). O inspetor passa (mixamo, 17 ossos,
+> com antebraço, frente -Z medida) e o vazamento da pele é ≤ 2,7% da altura. O laudo abaixo fica como registro do arquivo
+> que chegou.
+>
+> **A segunda lição (custou uma rodada): o `armRest`.** O arquivo veio com os braços **pendurados** (A-pose) e o módulo da
+> arma aponta para onde o **antebraço** aponta — sem `armRest`, o canhão de cerco apontava **para o chão** (o
+> `npm run mech:bocas` mediu a mão a 3,83 m de altura num titã de 20 m). Com `armRest: { upper: [0.62,-0.77,-0.15],
+> fore: [0.1,0,-1] }` (a mesma pose do Marauder) as bocas caem certas: **mão a 13,51 m de altura e 9,18 m à frente**.
+> **Regra nova: todo robô importado que leva arma de código precisa de `armRest`**, mesmo que a pose de repouso dele seja
+> boa — a pose de repouso é do corpo, não do cano.
+
+> **Pedido do dono (12/10):** *"adicionei um novo modelo na pasta /blender/colossusv4, leve ele para o hangar, veja se está correto a armadura, ossos, etc, ou se devo melhorar ele no blender. ele é do tamanho 4, bem maior que o colossus v3"*.
+> **Em uma linha:** **não entra no Hangar ainda** — o esqueleto tem 11 ossos e **faltam quatro dos que o jogo anima** (tronco, cabeça e as duas mãos), e os braços são **um osso só**. O dono **re-riga** e manda de novo; as decisões dele estão na **P100**.
+
+**O arquivo:** `D:\imagens cybermech\BLENDER\colossusv4.glb` (o `.blend` ao lado). Medido com `npm run mech:inspecionar`, 12/10.
+
+| Medida | Valor | Referência |
+|---|---|---|
+| Tamanho do arquivo | **8,6 MB** | Marauder 0,6 MB · Gênesis 3,3 MB |
+| Triângulos | **98.304** | o jogo aguenta 15 a 25 mil por robô; o Marauder, ~20 mil com as duas armas |
+| Malhas | 1, **com skin** (é o contrato) | — |
+| Materiais e texturas | 1 material · 3 texturas, a maior 2048 px | peso no download |
+| Esqueleto | 11 ossos, **sem animação** | — |
+| Pose de repouso | braços pendurados (0° da vertical) — **boa** | dispensa `armRest` |
+| Frente | +Z assumida (o pé não decidiu) | → `rotationY: Math.PI`; conferir na foto |
+| Tamanho na cena | 1,00 × 0,99 × 0,62 unidades | não importa: o jogo escala pela altura do chassi |
+
+**O esqueleto, osso por osso** (nomes do arquivo; ao carregar, o Three troca o espaço por `_`):
+
+```
+pelvis ─┬─ pelvis L ─┬─ arm L                      (um osso só: sem antebraço, sem mão)
+        │            └─ thigh L ─ shin L ─ foot L
+        └─ pelvis R ─┬─ arm R
+                     └─ tight R ─ shin R ─ foot R   ← "tight": é `thigh R`
+```
+
+**O que o jogo exige e o arquivo não tem** (`DEFAULT_BONES`, `entities/importedMechRig.ts`): `torso`, `head`, `leftHand`, `rightHand`. Os braços ainda nascem no **mesmo nó das pernas** (`pelvis L`/`pelvis R`): não há tronco entre o quadril e o ombro, então não existe mira nem torção de tronco. O carregador **lança erro** ("osso não encontrado") e o `Game` cai no corpo procedural do Vector-09 com os números do chassi — por isso **nada foi ligado**: um chassi ligado assim mostraria o Vector-09, não o arquivo novo.
+
+**O brief do re-rig** (o que pedir ao Blender/Tripo/Mixamo):
+1. **Refazer o rig** em vez de remendar: o auto-rig humanóide do **Tripo3D** (a ponte `Tripo3d_Blender_Bridge` está instalada nesta máquina) ou o **Mixamo** entrega o conjunto de uma vez. **Usar os nomes do Mixamo** (`mixamorigHips`, `mixamorigLeftArm`…) dispensa `boneNames` por completo: o jogo lê os nomes de fábrica.
+2. A hierarquia que o jogo anima: quadril → tronco → cabeça; quadril → coxa → canela → pé (nos dois lados); tronco → **braço → antebraço → mão** (nos dois lados). O **antebraço** é obrigatório quando o robô leva arma de código: é nele que o encaixe nasce (`weaponMount.ts`).
+3. Corrigir o nome `tight R` (é `thigh R`).
+4. Enxugar: **decimate de 98 mil para 15–25 mil triângulos** e texturas 2048 → 1024 (alvo ≤ 1 MB).
+5. Olhar a simetria: o eixo X vai de −0,486 a +0,510 (~2,4% de diferença entre os lados).
+6. **Manter o que já está certo:** malha única com skin, braços pendurados (não é T-pose), **sem arma desenhada**, pés no chão.
+
+**A escala 4 tem um portão antes do Hangar.** A escolha do dono (12/10) **ressuscita a P11** ("Mechs de tamanho 4 e 5", de 28/09, que estava sem registro): o `RobotSize` 4 já existe no tipo, mas **nenhuma arma cabe nele hoje** — todas as armas são `size: 2` e a regra (`combat/weaponClass.classAt`) só deixa o tamanho 4 usar arma declarada `size: 3`. Ou seja, **um robô de tamanho 4 entra sem arma nenhuma** até existirem as versões de arma de tamanho 3/4 — exatamente o "futuramente faremos versões das armas para o tamanho 3 e 4" da **P82**. A **altura** também é decisão do dono (a P11 falava em "10× e 20× maiores"; o Colossus, escala 3, tem 14 m; o Mech padrão, 5,3 m).
+
+**O que já está pronto para quando o arquivo voltar:** copiar o `.glb` para `client/public/models/`, registrar `CHASSIS`, `ARM_SLOTS`, `CHASSIS_SIZE`, `CHASSIS_PAPEL`, `IMPORTED_CHASSIS` (§3) e o Hangar (`ui/HangarMenu.ts`), rodar `npm run mech:inspecionar -- <arquivo> --id colossusv4` e, com encaixe de arma, `npm run mech:bocas`.
+
+**Foto do laudo:** `.decepticons/arte/colossusv4-malha-qwen.png` (6 vistas da malha crua — o rig não monta). **O veredito da armadura é do dono: eu não leio imagem.**

@@ -39,7 +39,7 @@ export const TEATROS: readonly Teatro[] = [
   },
   {
     id: 'bunker', nome: 'BUNKER', lugar: 'Brasília · DF', lat: -15.79, lon: -47.88, recurso: 'dados', mapa: 'bunker',
-    modos: ['deathmatch'], resumo: 'Três andares de concreto e aço. Treino offline contra os bots.', proposta: true, lado: 'direita',
+    modos: ['deathmatch'], resumo: 'Quatro andares de concreto e aço. Treino offline contra os bots.', proposta: true, lado: 'direita',
   },
   {
     id: 'cabos', nome: 'ESTAÇÃO DE CABOS', lugar: 'Fortaleza · CE', lat: -3.73, lon: -38.52, recurso: 'dados',
