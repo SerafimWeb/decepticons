@@ -1,3 +1,16 @@
+## [2026-10-12] O roteiro narrado do episódio longo: oito blocos, e a regra da voz que envelhece (P47, Qwen)
+
+**O que é:** o texto do vídeo #1 do canal na **versão longa** (o kit prometeu 6 a 10 min) — `.decepticons/video/o-processo-narrado.md`, **oito blocos** (~7 min): a pergunta, o jogo, o pedido virando jogo, uma simulação só, a sala de comando, o que a gente não faz, o que está no ar, e o convite.
+
+**Decisões:**
+1. **O áudio diz o arredondado; a tela diz o número exato.** O `validar.mjs` confere os números das **cenas** contra o código, e **áudio gravado não se revalida** — então a narração fala *"mais de mil testes"* e a cena mostra 1455. Se o número mudar amanhã, **a voz continua verdadeira**. É o R14 ("o número do jogo é que vale") aplicado ao que a voz afirma.
+2. **As três regras de sempre:** nenhum byte/KB/s (material público, 27/09), nada do codinome interno, e nada que a `STATUS_REAL.md` marque PARCIAL/DEMO/AUSENTE como pronto (R13) — com **nenhuma data prometida**.
+3. **O roteiro é montável hoje:** cada bloco diz o modelo da mesa que o desenha e só usa imagens de `arte/`. **Nenhum bloco é bloqueado pela ordem P97** — os takes do `F9` melhoram os blocos 2 e 7, mas não são pré-requisito.
+4. **Os capítulos do YouTube vêm de graça:** os tempos dos blocos são os títulos (oito capítulos, todos acima de 10 s), e a descrição do § 4.2 ganha a lista.
+5. **A narração é do Comandante** (a decisão das vozes é dele, P75) e o desenho, do Gemini: o documento entrega o papel, não o vídeo.
+
+**Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, dentro da ordem P47.
+
 ## [2026-10-12] O contrato de tela da missão #1: a metade do Gemini, na mesma ficha (P99, Qwen)
 
 **Por que faltava:** a auditoria mostrou que o `MissionHUD` é do modo Sobrevivência e o contrato dele é **por onda** — a missão **não cabe nos nomes que existem**, e sem contrato o **Gemini não tem contra o que desenhar** (regra 5).
