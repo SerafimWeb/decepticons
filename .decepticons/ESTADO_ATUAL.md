@@ -1,5 +1,16 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A reação do robô ao tiro — Claude, 12/10 (PR `claude/reacao-ao-tiro`, ordem P69)
+
+**Ordem do Comandante (P69):** "melhorar impactos, local onde eles batem, **reação nos inimigos**" (a parte da reação, que ficou pendente).
+
+- **O que muda:** todo tiro que **passa pela defesa e arranca vida** agora **empurra o alvo** e **dá um tranco no torso dele**, na medida do **dano que passou** (o escudo que absorveu tudo não empurra). O tranco é só desenho: o torso se inclina **para trás** se o tiro vem de frente, **torce** se vem de lado (até 8°) e volta sozinho em ~0,3 s.
+- **O empurrão** (`MechBase.push`, o mesmo do canhão sônico, regra de simulação: o servidor e o jogo offline aplicam igual): `combat/reaction.ts` dá os m/s por ponto de dano **por natureza** (balístico 0,05, explosivo 0,04, laser 0,02, térmico 0,015, gelo 0,01; pulso, som, corte e choque, zero) até **4,5 m/s por acerto**. **O canhão pesado (90) bate no teto**; o plasma empurra ~0,2 a 0,5; a rotatória só incomoda (~1,5 m/s em regime com o gatilho apertado). **O robô grande resiste** (a resistência de 1,3 m ÷ raio): o Colossus sai ~36% do que o Vector-09 sai. **A explosão** (foguetes, chuva) empurra **para longe do centro**. **O lança-chamas e a onda sônica ficam de fora** (têm a regra própria). Arma nova **não declara nada**: herda pela natureza do dano.
+- **Cliente online:** o servidor aplica o empurrão e ele chega pelo estado (o robô atingido recua no seu cliente, com a mesma suavização do canhão sônico); o **tranco** vem do evento de acerto (`OnlineSession.flinchFrom`: a direção sai das posições de quem atirou e de quem levou).
+- **Custo de CPU:** duas multiplicações e um raio por acerto; o tranco é um decaimento exponencial de dois números por Mech por quadro (só os que levaram tiro têm algo para fazer). Sem alocação (G4).
+- **Testes:** `combat/reaction.test.ts` (19: a tabela, o teto, o lança-chamas e a onda de fora, a rotatória em regime, o dano que passou e não o do tiro, o gigante que resiste, a explosão radial, o morto, o tranco para trás e de lado, o teto e o decaimento, direção zero) e o teste do canhão sônico online, que passou a medir com folga (o bot do palco revida e empurra um pouco). **23 mutações, todas pegas.** Captura: `arte/reacao-ao-tiro-claude.png` (o mesmo robô antes e depois de um canhão pesado).
+- **Limites honestos:** o tranco usa só os eixos x e y do torso (os que todo rig expõe; a rolagem não existe no contrato do rig importado); o tranco online depende de o outro robô estar na lista local (o evento traz só os ids); e **o jogador também é empurrado** por quem o atinge (a simetria é de propósito; se incomodar, o ponto de ajuste é `PUSH_PER_DAMAGE`).
+
 ## Míssil teleguiado de ombro — Claude, 12/10 (PR `claude/missil-teleguiado`, protocolo 16, ordem P77)
 
 **Ordem do Comandante (P77):** "melhor aproveitamento dos slots nos ombros... VARIAR as armas e tecnologias" (a 2ª arma de ombro, depois do canhão sônico).

@@ -137,6 +137,10 @@ solta o estojo), `IMPACT_FX` (o impacto) e, para o rastro de partículas no voo,
 com os foguetes MK III e com ela mesma nas duas mãos** (`steelWeapons.test.ts` é o modelo): a 1ª conta do canhão (100 de dano a cada 2,4 s) violava a meta de 2,5 s. Ao calibrar por `sed`, ancore
 no nome da arma (um `sed` por números pegou o lança-chamas junto).
 
+## Reação do alvo ao acerto (P69, 12/10, Claude)
+
+Todo acerto que passa pela defesa **empurra** o alvo (`MechBase.push`) e dá um **tranco no torso** dele (`MechBase.flinch`, só desenho): a conta e a tabela estão em `combat/reaction.ts` e a ligação, em `CombatSystem.react` (acerto direto: para onde o tiro andava; explosão: para longe do centro). **Arma nova não declara nada:** ela herda pela **natureza do dano** (`PUSH_PER_DAMAGE`: balístico 0,05 m/s por ponto, explosivo 0,04, laser 0,02, térmico 0,015, gelo 0,01; pulso, som, corte e choque, zero) até `HIT_PUSH_MAX` (4,5 m/s). Arma que **não** deve empurrar (um fluxo, um cone com o empurrão dela) é a que tem `flame` ou `wave`.
+
 ## Natureza do dano — 06/10, Claude
 
 Toda arma declara a natureza do dano em `DAMAGE_TYPE` (`client/src/combat/weapons.ts`): o `Record` quebra o typecheck se faltar. Os escudos físicos (`MetalShield.ts`) resistem por natureza. Arma sônica futura usa `sonico` (o Amortecedor já está pronto para ela).

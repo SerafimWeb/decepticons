@@ -99,8 +99,8 @@ describe('a reação com física de verdade (CombatSystem): o acerto empurra e d
     };
     physics.step();
     physics.step();
-    const acerta = (m: Vector09, dano: number, w: WeaponStats, dir = new THREE.Vector3(0, 0, -1)) => {
-      const hit: PhysicsHit = { point: new THREE.Vector3(m.simPosition.x, 3, m.simPosition.z), normal: new THREE.Vector3(0, 0, 1), distance: 5, collider: m.collider };
+    const acerta = (m: Vector09, dano: number, w: WeaponStats, dir = new THREE.Vector3(0, 0, -1), altura = 3) => {
+      const hit: PhysicsHit = { point: new THREE.Vector3(m.simPosition.x, altura, m.simPosition.z), normal: new THREE.Vector3(0, 0, 1), distance: 5, collider: m.collider };
       match.combat.onProjectileHit(hit, dir, dano, atirador.collider, w, 5);
     };
     return { match, physics, atirador, alvo, acerta };
@@ -113,6 +113,17 @@ describe('a reação com física de verdade (CombatSystem): o acerto empurra e d
     expect(a.shove.z).toBeLessThan(-3);
     expect(Math.abs(a.shove.x)).toBeLessThan(1e-9);
     expect(a.shove.length()).toBeLessThanOrEqual(HIT_PUSH_MAX + 1e-9);
+  });
+
+  it('o que conta é o dano que PASSOU: uma perna com 10 de vida só perde 10 do canhão de 90, e o empurrão é o de 10 (0,5 m/s), não o de 90',  async () => {
+    const { alvo, acerta } = await palco();
+    const a = alvo(0, 5);
+    a.modules.leftLeg = 10; // as duas pernas: o ponto do acerto é no meio do corpo e pode cair em qualquer uma
+    a.modules.rightLeg = 10;
+    acerta(a, 90, weapon('cannon'), new THREE.Vector3(0, 0, -1), 0.6);
+    expect(a.alive).toBe(true);
+    expect(Math.abs(a.shove.z)).toBeGreaterThan(0.3);
+    expect(Math.abs(a.shove.z)).toBeLessThan(1); // 10 × 0,05 = 0,5; o dano cheio daria 4,5
   });
 
   it('o gigante resiste: o mesmo canhão empurra o Colossus bem menos (a resistência de 1,3 m ÷ raio)', async () => {
@@ -196,7 +207,9 @@ describe('a reação com física de verdade (CombatSystem): o acerto empurra e d
     b.applyFacing(0, 0);
     acerta(b, 90, weapon('cannon'), new THREE.Vector3(-1, 0, 0)); // o tiro anda para a esquerda do Mech (-X): pega na direita dele
     b.render(1 / 60, 1);
-    expect(Math.abs(b.rig.torso.rotation.y)).toBeGreaterThan(0.05);
+    expect(b.rig.torso.rotation.y).toBeGreaterThan(0.05); // o tiro vindo da esquerda do Mech torce o torso para o lado de cá (y positivo)
+    for (let i = 0; i < 40; i++) b.render(1 / 60, 1);
+    expect(Math.abs(b.rig.torso.rotation.y)).toBeLessThan(0.01); // e a torção também volta sozinha
   });
 
   it('o tranco nunca passa de FLINCH_MAX, nem com várias pancadas seguidas, e o aplicado na mira (applyFacing) soma por cima', async () => {
