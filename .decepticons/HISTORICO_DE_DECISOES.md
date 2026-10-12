@@ -1,3 +1,15 @@
+## [2026-10-12] O layout dos ataques vira escolha do jogador, e a mão segue o botão dela (P95, Claude)
+
+**Ordem do Comandante:** "arma 2 a dos ombros/costas/peitoral, **podendo ser configurado assim**" nos robôs maiores.
+
+**Decisões:**
+1. **Um layout é um dado nomeado do chassi, e a montagem diz qual vale** (`MechStats.layouts` + `Loadout.layout`), em vez de uma flag por arma. Quem lê os gatilhos (a regra de tiro, a carga, a chama, o servidor, o Hangar) passa pelo mesmo `triggersOf`, então um robô novo com três layouts é só mais uma entrada na lista.
+2. **A mão segue o botão que o layout põe nela.** A `Armament` supunha "índice 0 é a mão direita e índice 1 é a offhand, as duas no gatilho principal". Agora cada mão consulta o layout: o botão dela decide se o cano gira, se a chama acende, se a carga avança e se o cronômetro anda. O que **não** mudou: o ritmo alternado de duas mãos **no mesmo** botão. **Os 149 testes de tiro que já existiam passaram sem alteração**, que é a rede de segurança que o plano pedia.
+3. **A arma de cada encaixe vem de uma pergunta** (`weaponAt`), não de um índice. A carga do trilho e o fluxo do lança-chamas desenhavam "primary no 0, offhand no 1"; com a mão esquerda no Ataque 2 isso mentiria. As duas visuais agora perguntam o que o encaixe leva.
+4. **O layout vive na versão 2 da montagem e na chave de texto** (último grupo `L1`), validado em todo lugar (formato, chassi com mais de um layout, índice inteiro e dentro da lista). **Protocolo 17**: um servidor da versão 16 não reconheceria a chave.
+5. **Dois resets redundantes saíram:** o `ChargeTimer.step` já zera a carga quando o botão está solto; o reset explícito era código morto (as mutações o provaram), e uma regra nova de botão por mão não é lugar para carregá-lo.
+6. **Fica de fora, de propósito:** costas e peito (precisam do evento de tiro com mais bits), e a pergunta "o Ataque 2 com ombro + costas + peito dispara tudo junto ou alterna?", que é do Comandante.
+
 ## [2026-10-12] A auditoria da ficha da missão #1: duas afirmações erradas, corrigidas com endereço (P99, Qwen)
 
 **O que aconteceu:** antes de o **Claude** (regra) e o **Gemini** (tela) construírem contra a ficha da missão #1, conferi **no código** cada afirmação dela. Contrato em cima de areia custa caro aos dois — e duas afirmações estavam erradas.

@@ -1,5 +1,5 @@
 import type { MountKind } from '../combat/mountKinds';
-import { SHOULDER_TRIGGERS } from '../combat/mounts';
+import { SHOULDER_TRIGGERS, SPLIT_SHOULDER_TRIGGERS } from '../combat/mounts';
 import { fitsSize, type RobotSize } from '../combat/weaponClass';
 import { weapon, type WeaponId } from '../combat/weapons';
 import type { MechStats } from './MechBase';
@@ -294,6 +294,11 @@ export const MARAUDER_STATS: MechStats = {
   maxModuleHealth: { torso: 380, head: 110, leftArm: 140, rightArm: 140, leftLeg: 180, rightLeg: 180 },
   loadout: { primary: weapon('blaster'), offhand: weapon('blaster'), secondary: weapon('rockets') },
   triggers: SHOULDER_TRIGGERS,
+  // Dois jeitos de dividir os encaixes entre o Ataque 1 e o Ataque 2 (dono, 12/10, P95: "podendo ser configurado assim"); o Hangar oferece a escolha e o primeiro é o padrão.
+  layouts: [
+    { name: 'BRAÇOS NO ATAQUE 1 · OMBROS NO ATAQUE 2', short: 'BRAÇOS 1 · OMBROS 2', triggers: SHOULDER_TRIGGERS },
+    { name: 'DIREITO NO ATAQUE 1 · ESQUERDO E OMBROS NO ATAQUE 2', short: 'DIREITO 1 · ESQ. + OMBROS 2', triggers: SPLIT_SHOULDER_TRIGGERS },
+  ],
   // Bocas medidas no desenho (`npm run mech:bocas -- marauder`), em metros a partir dos pés, virado para -Z: o servidor atira
   // daqui, e o corpo dele é outro (G14). Mudou o rig, a pose ou o módulo de uma arma? Meça de novo.
   muzzles: {
