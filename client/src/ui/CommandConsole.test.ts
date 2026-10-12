@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { acaoDaTecla } from './consoleData';
+import { acaoDaTecla, MESA_COMANDO, MESA_URL } from './consoleData';
 import { isSettingsTab } from './settingsTabs';
 
 /**
@@ -103,5 +103,13 @@ it('a tela de carregamento esconde os monitores com display none (guarda do boot
     const bloco = css.slice(css.indexOf('Tela de carregamento: o console enquanto o jogo carrega'));
     expect(bloco, 'a tela de carregamento não pode trocar o display do overlay').not.toMatch(/#overlay\.console\.cc-espera\s*\{[^}]*display:\s*flex/);
     expect(bloco).toMatch(/\.cc-launch\s*\{[^}]*grid-column:\s*2/);
+  });
+
+  it('a mesa de vídeo: o item aponta para o endereço local, o balão de ajuda mostra o comando certo e começa fechado', () => {
+    const comando = consoleHtml.slice(consoleHtml.indexOf('id="mon-comando"'));
+    expect(comando).toContain(`<li id="cmd-mesa"><a href="${MESA_URL}"`);
+    expect(comando).toMatch(/id="cmd-mesa-ajuda"[^>]*\bhidden\b/);
+    expect(comando).toContain(`<code class="ajuda-cmd" id="cmd-mesa-cmd">${MESA_COMANDO}</code>`);
+    for (const acao of ['copiar', 'abrir', 'fechar']) expect(comando.includes(`data-acao="${acao}"`), acao).toBe(true);
   });
 });

@@ -168,12 +168,23 @@
               <li><button type="button" data-settings-open="avancado"><b>POTÊNCIAS</b><span id="cmd-potencias">armas e clãs</span></button></li>
               <li id="cmd-sala"><a href="../sala-de-controle/" target="_blank" rel="noopener"><b>SALA DE CONTROLE</b><span>ordens, placar, evolução</span></a></li>
               <li id="cmd-oficina"><a href="../oficina/" target="_blank" rel="noopener"><b>OFICINA</b><span>números, testes, arquitetura</span></a></li>
-              <li><a href="http://127.0.0.1:4199/.tmp/video/editor.html" target="_blank" rel="noopener" title="Só nesta máquina: ligue antes com  node .tmp/video/servir.mjs"><b>MESA DE VÍDEO</b><span>nesta máquina · servir.mjs</span></a></li>
+              <li id="cmd-mesa"><a href="http://127.0.0.1:4199/.tmp/video/editor.html" target="_blank" rel="noopener" title="A mesa é local: só liga nesta máquina, com npm run mesa"><b>MESA DE VÍDEO</b><span>local · npm run mesa</span></a></li>
               <li class="breve" title="Assistir às câmeras de várias partidas ao mesmo tempo, pelo servidor (PAINEL_ADMIN.md, etapa H)"><b>CÂMERAS AO VIVO</b><span>em construção</span></li>
               <li class="breve" title="Chassi, armas, piloto e personalidade de cada bot (PAINEL_ADMIN.md, etapas A a C)"><b>FICHA DE CADA BOT</b><span>em construção</span></li>
               <li class="breve" title="Missões em sequência, salvas e compartilháveis (PAINEL_ADMIN.md, etapa D)"><b>CAMPANHA</b><span>em construção</span></li>
               <li class="breve" title="Jogadores, salas, reinício e métricas, com o token do dono (PAINEL_ADMIN.md, etapa E)"><b>SERVIDOR</b><span>em construção</span></li>
             </ul>
+            <div class="cmd-ajuda" id="cmd-mesa-ajuda" role="dialog" aria-label="Mesa de vídeo" hidden>
+              <p class="ajuda-estado" id="cmd-mesa-estado"></p>
+              <p class="ajuda-passos">Na pasta do projeto, rode:</p>
+              <code class="ajuda-cmd" id="cmd-mesa-cmd">npm run mesa</code>
+              <p class="ajuda-nota">ou dê dois cliques em <b>scripts\ligar-mesa.cmd</b>. A mesa é local: só liga nesta máquina e abre sozinha no navegador.</p>
+              <div class="ajuda-acoes">
+                <button type="button" class="btn-terminal" data-acao="copiar">[ COPIAR COMANDO ]</button>
+                <button type="button" class="btn-terminal" data-acao="abrir">[ ABRIR MESMO ASSIM ]</button>
+                <button type="button" class="btn-terminal" data-acao="fechar">[ FECHAR ]</button>
+              </div>
+            </div>
           </div>
         </section>
       </div>

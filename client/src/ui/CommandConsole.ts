@@ -10,7 +10,10 @@ import {
   contagemInimigos,
   fichaDoMech,
   lerModoComandante,
+  MESA_COMANDO,
+  MESA_URL,
   nivelDeAmeaca,
+  sondarMesa,
   type PilotoNaPartida,
 } from './consoleData';
 import { TacticalRadar, type RadarQuadro } from './TacticalRadar';
@@ -100,6 +103,14 @@ export class CommandConsole {
       this.comandante = false;
       this.pintarComandante();
     });
+    root.querySelector('#cmd-mesa a')?.addEventListener('click', (e) => {
+      // Sem Ctrl, Shift ou botão do meio: um clique comum verifica a mesa antes de abrir (o link continua valendo para quem abre em outra aba).
+      const me = e as MouseEvent;
+      if (me.button !== 0 || me.ctrlKey || me.metaKey || me.shiftKey || me.altKey) return;
+      e.preventDefault();
+      void this.mesa();
+    });
+    root.querySelector('#cmd-mesa-ajuda')?.addEventListener('click', (e) => this.ajudaDaMesa(e));
     // A Sala de Controle e a Oficina só existem no site (`/cybermech/sala-de-controle/`, `/oficina/`): no `npm run dev` o link daria em nada.
     if (!location.pathname.includes('/jogar')) for (const id of ['#cmd-sala', '#cmd-oficina']) root.querySelector<HTMLElement>(id)!.hidden = true;
 
@@ -212,6 +223,43 @@ export class CommandConsole {
     };
     new MutationObserver(sincronizar).observe(cta, { childList: true, characterData: true, subtree: true });
     sincronizar();
+  }
+
+  /**
+   * MESA DE VÍDEO: verifica se ela está ligada nesta máquina; se estiver, abre; se não, mostra como ligar (o comando, o botão de copiar e o atalho de
+   * duplo clique). A mesa é local (`scripts/mesa.mjs`, G15): o servidor de jogo e o site não conseguem ligá-la.
+   */
+  private async mesa(): Promise<void> {
+    const ajuda = this.root.querySelector<HTMLElement>('#cmd-mesa-ajuda');
+    const estado = this.root.querySelector<HTMLElement>('#cmd-mesa-estado');
+    if (!ajuda || !estado) return;
+    ajuda.hidden = false;
+    ajuda.dataset.estado = 'verificando';
+    estado.textContent = 'VERIFICANDO A MESA…';
+    if (await sondarMesa()) {
+      ajuda.hidden = true;
+      window.open(MESA_URL, '_blank', 'noopener');
+      return;
+    }
+    ajuda.dataset.estado = 'desligada';
+    estado.textContent = 'A MESA ESTÁ DESLIGADA';
+  }
+
+  private ajudaDaMesa(e: Event): void {
+    const botao = (e.target as HTMLElement | null)?.closest<HTMLElement>('[data-acao]');
+    const ajuda = this.root.querySelector<HTMLElement>('#cmd-mesa-ajuda');
+    if (!botao || !ajuda) return;
+    const acao = botao.dataset.acao;
+    if (acao === 'fechar') ajuda.hidden = true;
+    else if (acao === 'abrir') window.open(MESA_URL, '_blank', 'noopener');
+    else if (acao === 'copiar') {
+      const estado = this.root.querySelector<HTMLElement>('#cmd-mesa-estado');
+      const feito = (ok: boolean) => {
+        if (estado) estado.textContent = ok ? 'COMANDO COPIADO' : 'COPIE O COMANDO ABAIXO';
+      };
+      if (navigator.clipboard) navigator.clipboard.writeText(MESA_COMANDO).then(() => feito(true), () => feito(false));
+      else feito(false);
+    }
   }
 
   /** IMPLANTAR: som, a tela escurece com o brilho da missão e, no fim, o link abre (o jogo recarrega no mapa novo). */
