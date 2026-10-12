@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Ataque 1 e Ataque 2 — Claude, 12/10 (PR `claude/ataque-1-e-2`, ordem P90)
+
+**Ordem do Comandante (P90):** "os robôs têm ataque 1 e ataque 2: arma 1 as dos braços, arma 2 a dos ombros/costas/peitoral (podendo ser configurado assim) nos robôs maiores; nos pequenos de entrada, o braço direito e o esquerdo, cada um com um botão do mouse".
+
+- **O jogo já atirava assim** (`TriggerLayout`: robôs pequenos, direita no clique e esquerda no clique direito; o Marauder, as duas mãos no clique e os ombros no clique direito). **Esta parte dá o nome:** **Ataque 1** = o clique; **Ataque 2** = o clique direito ou Q (no toque, ATQ 1 e ATQ 2).
+- **Onde o jogador lê agora:** o **Hangar** (cada encaixe diz o ataque: **BRAÇO DIREITO · ATAQUE 1**, **OMBROS · ATAQUE 2**, e o título do armamento também); o **HUD** (**ATQ 2 · TELEGUIADO**, **ATQ 2 · FOGUETES**, com o nome certo da arma do Ataque 2 em vez de tudo virar "foguetes"); o **menu e a pausa** ("clique ATAQUE 1: … · clique dir. / Q ATAQUE 2: …"); as **configurações** ("Ataque 2 (além do clique dir.)"); os **botões de toque** (ATQ 1 e ATQ 2); as dicas das armas de ombro e do escudo físico ("Ataque 2"). O guia de combate do site também.
+- **O dado:** `attackOf(triggers, mount)` em `combat/mounts.ts` (qual ataque aciona o encaixe, pelo layout de gatilhos do chassi) e `slotAttack(ranhura, chassi)` em `hangar/loadout.ts` (o que o Hangar usa). **Sem mudança de regra, de rede nem de protocolo.**
+- **Testes:** `hangar/ataques.test.ts` (7: a regra por layout, as ranhuras, os pequenos, os grandes, o braço direito sempre no 1, o escudo do Lancer no 2, o Marauder). Capturas: `arte/ataques-hangar-vector-claude.png` e `arte/ataques-hangar-marauder-claude.png`.
+- **Falta (o "configurável", plano em `ARMAS_DE_BOTAO_2.md` § 8):** layouts nomeados por chassi e a escolha no Hangar; **várias armas diferentes no mesmo ataque** (a `Armament` resolve a arma de cada encaixe, com cadência, carregador e calor por arma); e costas e peito como encaixes do Ataque 2 (protocolo novo). **Pergunta ao Comandante:** quando o Ataque 2 tiver ombro + costas + peito, as armas disparam todas juntas (proposta) ou alternam?
+
 ## A reação do robô ao tiro — Claude, 12/10 (PR `claude/reacao-ao-tiro`, ordem P69)
 
 **Ordem do Comandante (P69):** "melhorar impactos, local onde eles batem, **reação nos inimigos**" (a parte da reação, que ficou pendente).

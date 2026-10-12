@@ -96,3 +96,24 @@ São **três perguntas separadas**. O jogo já responde uma e meia; esta seção
 - **Peito e cabeça num terceiro botão?** Proposta: uma tecla de "sistema" (ex.: F) e um botão de toque, para o que não é arma de combate direto (feixe, marcador).
 - **Ombro e costas são o mesmo botão 2** (um ou outro, ou os dois juntos) ou duas armas diferentes? Proposta: o mesmo botão e a mesma arma, para não pedir mais um botão.
 - **Quais robôs ganham ombros primeiro?** Proposta: a **Onça** (pesada, procedural) e, depois, os importados que o Comandante trouxer.
+
+## 8. Ataque 1 e Ataque 2 (ordem P90, 12/10)
+
+> *"Os robôs têm ataque 1 e ataque 2, sendo arma 1 as dos braços e arma 2 a dos ombros/costas/peitoral (podendo ser configurado assim) nos robôs maiores que comportem mais de uma possibilidade de combinar armas. Nos robôs pequenos de entrada, o braço direito e o esquerdo ficam cada um com um botão do mouse, permitindo melhores combinações."*
+
+**O vocabulário** (vale para o jogador, o Hangar, o HUD, as dicas e a documentação; "botão principal" e "botão 2" saem do texto que o jogador lê): **Ataque 1** = o clique do mouse (no toque, ATQ 1); **Ataque 2** = o clique direito ou Q (no toque, ATQ 2). No código, é `TriggerLayout.primary` e `.secondary` (`combat/mounts.ts`), e `attackOf` diz qual ataque aciona cada encaixe.
+
+| Robô | Ataque 1 | Ataque 2 | Combina assim |
+|---|---|---|---|
+| **Pequeno de entrada** (Vector-09, Arara, Gênesis, Quadra, Onça, Bastion, Colossus; o Lancer e o andróide têm a variante deles) | **braço direito** | **braço esquerdo** | uma arma de cada lado, cada uma no seu botão: plasma no 1 e foguetes no 2; blaster no 1 e gelo no 2; rotatória no 1 e canhão pesado no 2 |
+| **Grande** (o Marauder, hoje) | **os dois braços**, juntos (cada mão com a sua arma) | **os dois ombros** (e, um dia, costas e peito) | as mãos no 1 e uma arma de ombro no 2: duas blasters no 1 + míssil teleguiado, sônico, foguetes ou chuva no 2 |
+| **Lancer** | braço direito | o escudo da esquerda (o clique direito levanta a chapa) | arma + escudo |
+
+**O que o jogador vê agora (12/10, 1ª parte):** o Hangar rotula cada encaixe com o ataque que o aciona (**BRAÇO DIREITO · ATAQUE 1**, **OMBROS · ATAQUE 2**), o HUD escreve **ATQ 2 · TELEGUIADO**, o menu e a pausa dizem "clique ATAQUE 1: … · clique dir. / Q ATAQUE 2: …", e as configurações e os botões de toque também. **O jogo já atirava assim**; o que mudou é o nome.
+
+**O que falta: o "podendo ser configurado assim".** Hoje cada robô tem **um** layout de gatilhos, fixo. Nos robôs com mais de uma possibilidade (os que têm ombros) o jogador deve poder **escolher no Hangar como os encaixes se dividem entre os dois ataques**. Plano, em ordem:
+1. **Layouts nomeados por chassi** (`CHASSIS[<id>].layouts`, o primeiro é o padrão) e a escolha no `LoadoutSpec` (campo novo, entra no link e é validada pelo servidor). Para o Marauder: **"braços no 1, ombros no 2"** (o de hoje) e **"direito no 1; esquerdo e ombros no 2"** (como os pequenos, com os ombros de reforço).
+2. **Várias armas diferentes no mesmo ataque.** Hoje o Ataque 2 leva **uma arma só**, a mesma em todos os encaixes dele (os dois ombros). O segundo layout pede a **arma do braço esquerdo e a dos ombros** no mesmo clique direito: a `Armament` passa a resolver a arma de cada encaixe e a ter cadência, carregador e calor **por arma**, sem mudar o que já existe quando há uma só (os testes de hoje seguem valendo).
+3. **Costas e peito como encaixes do Ataque 2** (§ 7: novo tipo em `MOUNTS`, boca por robô, desenho, evento de tiro com mais bits e protocolo novo). Com 2, as armas de ombro, de costas e de peito disparam **juntas** no Ataque 2, cada uma do seu lugar.
+
+**Decisão do Comandante, se quiser:** quando o Ataque 2 tem armas diferentes (ombro + costas + peito), elas disparam **todas juntas** (proposta, a mais simples) ou o jogador **alterna** entre elas? Nada disto trava o resto.

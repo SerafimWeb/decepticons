@@ -70,7 +70,7 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, pa
   return e;
 }
 
-const LABELS: Record<PadButton, string> = { fire: 'FOGO', jump: 'PULO', dash: 'DASH', rocket: 'FOGUETE', cam: 'CAM 3ª' };
+const LABELS: Record<PadButton, string> = { fire: 'ATQ 1', jump: 'PULO', dash: 'DASH', rocket: 'ATQ 2', cam: 'CAM 3ª' };
 
 /**
  * Controles de toque (celular e tablet), visíveis só no modo toque e com o jogo rodando.
