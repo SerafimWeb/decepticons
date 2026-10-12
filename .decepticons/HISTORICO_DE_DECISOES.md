@@ -1,3 +1,15 @@
+## [2026-10-12] O pacote de publicação do vídeo #1, e o que a mesa deixa o dono mexer (P47, Qwen)
+
+**Ordem do Comandante (P47):** *"com a MESA, eu consigo editar, melhorar e corrigir alguns detalhes nessa criação de vídeos"*.
+
+**Decisões:**
+1. **Confirmado — e virou manual.** A mesa edita o **roteiro**, não o vídeo: texto, número, `segundos`, ordem, `pular`, imagens e `formato`; **corrigir um detalhe = exportar de novo** (~1 min a 720p30). Está no `FERRAMENTAS.md` § 3.2, junto do que ela **não** faz: editar um **clipe gravado** (a cena `clipe` só tem `início`, sem prévia nem `fim` — é a **P97**) e o fato de o vídeo gravado em tempo real não ser editado quadro a quadro.
+2. **As duas cenas desligadas ficam ditas:** no roteiro "o-processo" há um **`clipe`** e um **`veredito`** prontos com `pular: true` — tirar a linha é suficiente quando houver take (P97) ou citação de fora.
+3. **O pacote de publicação é do dono, e é sugestão.** Título (número ou pergunta), descrição com o link nas duas primeiras linhas, hashtags/tags, miniatura (**um Mech grande e três palavras**) e a lista do que não dizer — em `PUBLICACAO_E_MONETIZACAO.md` **§ 4.2**. Quem publica é ele; a miniatura é justamente o que eu **não** consigo julgar (não leio imagem).
+4. **As travas valem no texto do YouTube também:** nada fora da `main` (regra 14), nada PARCIAL/AUSENTE anunciado como pronto (R13), nenhum byte/KB/s (política de 27/09) e **nenhuma data prometida** para o CTF online, o multiplayer com times ou as missões (P99).
+
+**Custo de CPU:** nenhum. **Quem decidiu:** Qwen, dentro da ordem P47.
+
 ## [2026-10-12] O primeiro vídeo do canal: "o processo", 52 s, aprovado no portão da própria mesa (P47, Qwen)
 
 **Ordem do Comandante (P47):** *"primeiro vamos publicar no youtube"* e, depois, *"prossiga com sua fila"*.

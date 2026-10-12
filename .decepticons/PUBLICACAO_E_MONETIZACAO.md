@@ -120,6 +120,45 @@ do vídeo, em `FERRAMENTAS.md` § 1 (o `F9`) e § 3 (a mesa).
    assiste), mostrar como pronto o que a `STATUS_REAL.md` marca PARCIAL/AUSENTE (R13), e usar **música de terceiros
    sem licença**.
 
+### 4.2 O pacote de publicação do vídeo #1 (para colar no YouTube)
+
+O vídeo existe (`.tmp/video/o-processo.webm`, 52 s) e o roteiro está em `FERRAMENTAS.md` § 3.2. O que fica **em volta** dele:
+
+**Título** — a regra do § 4.1, item 4 (número ou pergunta):
+- recomendado: **`Como este jogo é feito: quatro IAs, um protocolo e 1455 testes`**
+- alternativa com pergunta: **`Dá para fazer um jogo de Mechs com quatro IAs? (o nosso processo)`**
+
+**Descrição** — as duas primeiras linhas são as que aparecem na busca, então o link vem nelas:
+
+```
+Um shooter de Mechs multiplayer que roda direto no navegador — feito por um estúdio e quatro agentes de IA.
+Jogue agora, sem instalar e sem criar conta: www.selvamkt.com.br/cybermech
+
+Neste vídeo, o processo: como um pedido do dono do projeto vira ordem registrada, PR, teste verde e jogo no ar
+em minutos. Quatro agentes, territórios separados, e o CI decidindo — nada entra sem o check passar.
+
+· uma simulação só, a 60 Hz, no cliente e no servidor
+· 1455 testes de simulação
+· os robôs nascem de números (nada de modelagem manual)
+· sem pay-to-win: o que se vende, um dia, é aparência — nunca dano ou vida
+
+CYBERMECH é um jogo SERAFIM WEB.
+Jogue: www.selvamkt.com.br/cybermech
+```
+
+**Hashtags e tags:** `#CYBERMECH #mech #gamedev #indiegame #webgl #typescript #brasil`; nas tags: `mech game`,
+`jogo de mech`, `indie game brasil`, `webgl`, `game dev`, `multiplayer no navegador`.
+
+**Miniatura (1280×720):** **um Mech grande e três palavras**. Base pronta para recortar: os quadros do próprio vídeo em
+`arte/video-o-processo-galeria.png` (o Mech em ação — a melhor para miniatura) e `arte/video-o-processo-letreiro.png`.
+**Eu não desenho nem julgo imagem:** se quiser, eu monto uma proposta com `ffmpeg` sobre o quadro da galeria, e ele julga.
+
+**Sem capítulos:** em 52 s eles não ajudam (o ganho é em vídeo longo); a descrição curta resolve.
+
+**O que NÃO dizer (as travas valem no texto também):** nada que **não esteja na `main`** (regra 14), nada que a
+`STATUS_REAL.md` marque PARCIAL/AUSENTE como pronto (R13), **nenhum byte/KB/s** (política de 27/09) e **nenhuma data
+prometida** para o CTF online, o multiplayer com times ou as missões (P99).
+
 ---
 
 ## 5. A sequência recomendada (com o gatilho de cada etapa)

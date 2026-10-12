@@ -1,5 +1,14 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O pacote de publicação do vídeo #1, e o que a mesa deixa o dono mexer — Qwen, 12/10 (P47, só documentação)
+
+**Por quê:** o Comandante confirmou que **edita, melhora e corrige os detalhes na mesa**. Então o que faltava não era o vídeo — era o que fica em volta dele, e a resposta de "onde eu mexo". Duas coisas fechadas neste PR:
+
+- **`FERRAMENTAS.md` § 3.2 ganhou "o que o dono pode mexer"**: a mesa edita o **roteiro**, não o vídeo — texto, número, `segundos`, ordem, `pular`, imagens e `formato` — e **corrigir um detalhe é exportar de novo** (~1 min a 720p30). Está dito também o que ela **ainda não faz**: editar um **clipe gravado** (a cena só tem `início`, sem prévia nem `fim` — é a ordem **P97**), e o vídeo gravado em tempo real não ser editado quadro a quadro. As **duas cenas prontas e desligadas** do roteiro (`clipe` e `veredito`) estão apontadas: é só tirar o `pular`.
+- **`PUBLICACAO_E_MONETIZACAO.md` § 4.2 — o pacote de publicação do vídeo #1:** dois títulos propostos (número ou pergunta, a regra do § 4.1), a **descrição pronta para colar** (com o link nas duas primeiras linhas, que são as que aparecem na busca), hashtags e tags, o pedido de **miniatura** (um Mech grande e três palavras, com os quadros do vídeo como base) e **o que não dizer** (regra 14, R13, sem byte/KB/s, sem prometer data).
+
+**Nada construído no jogo.** O julgamento da miniatura é do Comandante — **eu não leio imagem**.
+
 ## O primeiro vídeo do canal, pronto para publicar — Qwen, 12/10 (P47, roteiro + gravação)
 
 **O que foi feito:** o **roteiro do vídeo #1 do YouTube** — *"como este jogo é feito"* — com **11 cenas e ~52 s**, e ele **gravado**: `.tmp/video/o-processo.webm` (720p30, 56 MB). É o único vídeo de lançamento que **não depende** do take do `F9` nem de código novo — **dá para publicar hoje**.

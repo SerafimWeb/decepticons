@@ -153,6 +153,23 @@ do § 4. Para 1080p60, aponte o `RENDER_BROWSER` para um Chrome **com GPU** e de
 **O que falta para o episódio longo (6 a 10 min):** **narração** (voz; a decisão das vozes por ElevenLabs é a da P75) e
 os **takes de gameplay** (P97). **O julgamento visual é do dono:** eu não leio imagem.
 
+**O que o dono pode mexer — e o que a mesa não faz.** A mesa edita o **roteiro**, não o vídeo: corrigir um detalhe é
+mexer no campo e **exportar de novo** (~1 min a 720p30). O que muda de graça:
+
+| O dono quer | Onde |
+|---|---|
+| Trocar a frase | o campo de texto da cena (`titulo`, `sub`, `citacao`, `rodape`, `legenda`) |
+| Mudar um número | `leituras`, `contadores`, `usado`, `meta` — mas o **validador confere contra o código**, e é isso que impede número velho de ir ao ar |
+| Cena mais longa ou mais curta | `segundos` da cena (a peça inteira se re-cronometra sozinha) |
+| Trocar a ordem | mover o bloco da cena para cima ou para baixo |
+| Tirar uma cena **sem apagar** | `pular: true` — no "o-processo" há **duas prontas e desligadas**: o `clipe` e o `veredito` |
+| Trocar as imagens | a lista `imagens` (o seletor mostra o que existe em `/arte`, `/brand`, `/loading`, `/capturas`, `/rascunho`) |
+| O enquadramento | `formato` no topo (`paisagem`, `retrato`, `quadrado`) — o mesmo texto serve aos três |
+
+**O que ela ainda NÃO faz (é a ordem P97):** editar um **clipe gravado** — a cena `clipe` só tem o campo `início` (sem
+prévia e sem `fim`), e quem corta é o `render.mjs`/`ffmpeg` na exportação. E o vídeo gravado em tempo real **não é
+editado quadro a quadro**: corrigir é roteiro → exportar de novo.
+
 ---
 
 ## 4. Medir travadas com GPU real
