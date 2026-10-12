@@ -137,6 +137,14 @@ const STALK_DIST = 32;
 /** Depois de fugir de uma emboscada, espera isto para fugir de novo. */
 const AMBUSH_RETREAT_COOLDOWN_S = 4;
 const FIRE_RANGE = 75;
+/**
+ * Esquadrão (P91): o bot ataca de onde a arma dele rende. A distância de ataque do tipo de robô vale até `WEAPON_RANGE_FACTOR` vezes o
+ * alcance ótimo da arma principal; uma arma que só rende de perto (a escopeta: 8 m) puxa o bot para junto do alvo, nunca abaixo de
+ * `WEAPON_MIN_STAND_OFF`. Plasma, EMP e as outras de longe não mudam nada (o tipo de robô é o menor dos dois), então o jogo de sempre
+ * fica como estava. Corpo a corpo (a motosserra) tem o jeito dele e fica de fora.
+ */
+const WEAPON_RANGE_FACTOR = 1.25;
+const WEAPON_MIN_STAND_OFF = 10;
 /** Só atira com o torso apontado para o alvo dentro deste ângulo. */
 const FIRE_CONE_RAD = 0.12;
 const LOSE_TARGET_S = 2.5;
@@ -292,9 +300,21 @@ export class BotController {
     this.stuckFrom.copy(mech.simPosition);
   }
 
-  /** Distância em que ataca: a do tipo de robô, ajustada pela personalidade. */
+  /** A distância-base de ataque: a do tipo de robô, ou menos se a arma principal só rende de perto (`WEAPON_RANGE_FACTOR`). */
+  private get baseRange(): number {
+    const w = this.mech.loadout.primary;
+    if (this.profile.melee || w.kind === 'melee') return this.profile.attackRange;
+    return Math.min(this.profile.attackRange, Math.max(WEAPON_MIN_STAND_OFF, w.optimalRange * WEAPON_RANGE_FACTOR));
+  }
+
+  /** Distância em que ataca: a do tipo de robô (encurtada pela arma, se for o caso), ajustada pela personalidade. */
   get attackRange(): number {
-    return this.profile.attackRange * this.persona.rangeScale;
+    return this.baseRange * this.persona.rangeScale;
+  }
+
+  /** Perto demais para atirar: o do tipo de robô, encolhido na mesma proporção quando a arma encurta a distância de ataque. */
+  private get keepMinRange(): number {
+    return this.profile.keepMinRange * (this.baseRange / this.profile.attackRange);
   }
 
   /**
@@ -679,7 +699,7 @@ export class BotController {
         }
         // Anda de lado (direita do torso = (cos, -sin)) e recua (trás = (sin, cos)) se estiver perto demais.
         _move.set(Math.cos(faceYaw) * this.strafeSign, 0, -Math.sin(faceYaw) * this.strafeSign);
-        if (this.flatDistance(t) < (this.hasToken ? this.profile.keepMinRange : this.attackRange * HOLD_SCALE)) {
+        if (this.flatDistance(t) < (this.hasToken ? this.keepMinRange : this.attackRange * HOLD_SCALE)) {
           _move.x += Math.sin(faceYaw);
           _move.z += Math.cos(faceYaw);
         }
