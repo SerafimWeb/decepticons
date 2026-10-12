@@ -22,7 +22,7 @@ describe('tipos de encaixe: braço, ombro, costas, peito e cabeça (ordem P84 do
     expect(WEAPON_MOUNTS.rockets).toEqual(['arm', 'shoulder', 'back']);
     expect(WEAPON_MOUNTS.barrage).toEqual(['arm', 'shoulder', 'back']);
     const soBraco = WEAPON_IDS.filter((id) => WEAPON_MOUNTS[id].length === 1 && WEAPON_MOUNTS[id][0] === 'arm').sort();
-    expect(soBraco).toEqual(['arc', 'autocannon', 'blaster', 'cannon', 'chainsaw', 'cryo', 'emp', 'flamer', 'plasma', 'railgun', 'rotary', 'shotgun']);
+    expect(soBraco).toEqual(['arc', 'autocannon', 'blaster', 'cannon', 'chainsaw', 'cryo', 'emp', 'flamer', 'plasma', 'railgun', 'rotary', 'shotgun', 'siege']);
   });
 
   it('arma de corte (a motosserra) só vai no braço: não existe motosserra de ombro, de costas, de peito nem de cabeça', () => {

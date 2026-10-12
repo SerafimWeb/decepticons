@@ -1,4 +1,14 @@
 # ESTADO ATUAL — CYBERMECH
+## O Colossus-V4 entrou no Hangar: o titã de escala 4, o canhão de cerco e a passada do chassi — Qwen, 12/10 (ordens P100/P85/P10)
+
+**Ordens do Comandante (P100, 12/10):** *"adicionei um novo modelo na pasta /blender/colossusv4, leve ele para o hangar"*, depois *"o caminhar dele está muito largo, ele é um robô extremamente pesado, então os passos dele devem ser mais curtos e melhor dobrada do joelho"* e *"crie a arma dele, uma arma poderosa, de tiro único, que demora pra carregar, mas é um tremendo tiro"*. E: *"o colossusv4 poderá ser pilotado por 1, 2 ou 3 tripulantes"* (a P10).
+
+**O que está no ar:** o **COLOSSUS-V4** é escolhível no **Hangar** (escala 4, 20 m, 1900 no torso, 4 m/s, sem dash, sem salto), com a malha do dono **re-rigada** (17 ossos Mixamo, 24.576 triângulos, 2,6 MB) e o **canhão de cerco** nas duas mãos.
+- **A arma é de carga** (o pedido dele): **segure o gatilho 3 s** e solte um **obus de 360** com 5 m de explosão, a 240 m/s — derruba um torso de Mech **num tiro só**. O ciclo é de ~7,5 s e cada tiro gasta 0,9 do dissipador de calor.
+- **A passada é do chassi**: `MechStats.gait { hip, knee }` no lugar dos 0,7/1,1 fixos que valiam para todos; o titã declara **{ hip: 0.42, knee: 1.5 }** (passo curto, joelho bem dobrado).
+- **A lição que custou uma rodada:** o arquivo veio com os braços **pendurados**, e o módulo da arma aponta para onde o **antebraço** aponta — sem `armRest` o canhão apontava **para o chão** (as bocas medidas caíram a 3,83 m de altura). Com `armRest` (a pose do Marauder) as bocas caem certas: **mão a 13,51 m, a 9,18 m à frente**. Está registrado em `MECHS_IMPORTADOS.md` §8.
+- **Como ver:** `www.selvamkt.com.br/cybermech/jogar/` → ABRIR HANGAR → chassi **COLOSSUS-V4**. Andando, repare no passo curto e no joelho dobrado; com o gatilho apertado 3 s, o obus. Capturas: `arte/colossusv4-*.png`.
+- **Falta (R13):** só existe **uma** arma de tamanho 3 (o canhão de cerco) — as versões médias e pesadas de tamanho 3 e 4 continuam sendo o "futuramente" da P82; **o servidor desenha todo Mech como Vector-09** (as bocas do titã são dado do chassi, medido); e a **tripulação de 1 a 3 operadores (P10)** não tem contrato de rede — hoje o titã é pilotado por um jogador só.
 
 ## As armas dos gigantes têm projeto: o portão do robô de tamanho 4 — Qwen, 12/10 (P82/P100, só documentação)
 

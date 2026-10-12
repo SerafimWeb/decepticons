@@ -243,6 +243,26 @@ function cannon(root: THREE.Object3D, tier: number, M: Mats): number {
 }
 
 /**
+ * Canhão de cerco (o canhão pesado feito para um gigante): o mesmo desenho de aço, mais comprido e mais grosso, com um
+ * segundo bloco de culatra e mais anéis. A unidade do módulo é o antebraço do Mech, então num titã ele já nasce maior que
+ * o canhão de um Mech comum; aqui ele ganha o que o olho lê como "arma de tamanho 3". O nível alonga o cano e soma um anel.
+ */
+function siege(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = [1.9, 2.15, 2.4][tier]!;
+  d.box(0.78, 0.7, 1.0, M.armor, 0, 0, -0.5); // a culatra
+  d.box(0.6, 0.5, 0.5, M.frame, 0, 0.42, -0.42); // o segundo bloco da culatra
+  d.cylZ(0.24, len, M.frame, 0, 0, -1.0 - len / 2); // o cano
+  for (let i = 0; i <= tier + 1; i++) d.cylZ(0.3, 0.11, M.armor, 0, 0, -1.2 - i * 0.42); // os anéis de reforço
+  const end = 1.0 + len;
+  d.cylZ(0.34, 0.38, M.armor, 0, 0, -end - 0.1); // o freio de boca
+  for (const side of [-1, 1]) d.box(0.06, 0.46, 0.1, M.frame, side * 0.27, 0, -end - 0.12); // as fendas
+  d.cylZ(0.16, 0.05, M.glow, 0, 0, -end - 0.3); // a brasa na boca
+  for (const side of [-1, 1]) d.cylZ(0.1, 1.3, M.frame, side * 0.45, 0, -0.8); // amortecedores de recuo
+  return (end + 0.36) * LONG;
+}
+
+/**
  * Canhão automático (aço, tiros em sequência): receptor, caixa de munição em cima com a fita, cano curto com a camisa perfurada e freio de boca.
  * O nível alonga o cano, soma uma segunda caixa e aletas.
  */
@@ -381,6 +401,9 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'cannon':
         muzzleZ = cannon(root, weapon.tier, M);
+        break;
+      case 'siege':
+        muzzleZ = siege(root, weapon.tier, M);
         break;
       case 'autocannon':
         muzzleZ = autocannon(root, weapon.tier, M);

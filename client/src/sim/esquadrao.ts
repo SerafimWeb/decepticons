@@ -68,7 +68,7 @@ export interface EsquadraoSpec {
  * Sobrevivência, com perfil de cerco próprio). Os de malha importada entram com o **corpo procedural do Vector-09** e os números do
  * próprio chassi: o servidor não carrega `.glb` (`MECHS_IMPORTADOS.md`), então o bot tem a vida e o passo do Lancer, mas a silhueta de um Mech médio.
  */
-export const CHASSIS_DOS_BOTS: readonly ChassisId[] = (Object.keys(CHASSIS) as ChassisId[]).filter((id) => id !== 'android' && id !== 'colossus01');
+export const CHASSIS_DOS_BOTS: readonly ChassisId[] = (Object.keys(CHASSIS) as ChassisId[]).filter((id) => id !== 'android' && id !== 'colossus01' && id !== 'colossusv4');
 
 export const ehChassiDoBot = (id: unknown): id is ChassisId => typeof id === 'string' && (CHASSIS_DOS_BOTS as readonly string[]).includes(id);
 

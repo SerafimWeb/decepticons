@@ -38,6 +38,18 @@
 
 **Custo de CPU:** nenhum (documentação). **Quem decidiu:** Qwen, com as sete decisões no Comandante.
 
+## [2026-10-12] O Colossus v4: rig refeito por script, o titã de escala 4, o canhão de cerco de carga e a passada por chassi (P100/P85, Qwen)
+
+**Ordem do Comandante (P100):** levar o modelo novo ao Hangar; e, no caminho: *"o caminhar dele está muito largo... passos mais curtos e melhor dobrada do joelho"*, *"crie a arma dele... tiro único, que demora pra carregar, mas é um tremendo tiro"* e *"poderá ser pilotado por 1, 2 ou 3 tripulantes"*.
+
+**Decisões:**
+1. **O rig se conserta por script, não se remenda.** O auto-rig (Tripo) tinha deixado 50 grupos de peso `mixamorig:*` **sem os ossos** e **geometricamente errados** (o osso da perna em cima do braço). O caminho que funcionou foi **construir o esqueleto pelos pesos bons do rig antigo** (que eram coerentes) e refazer a pele por *bone heat*: 17 ossos Mixamo, inspetor do contrato sem erros, vazamento de pele ≤ 2,7% da altura. Ferramentas em `.tmp/` (`rig-construir.py`).
+2. **`armRest` é obrigatório em robô importado que leva arma**, mesmo com pose de repouso boa: o módulo aponta para onde o antebraço aponta. Braços pendurados = canhão no chão. A lição foi para o contrato (`MECHS_IMPORTADOS.md` §8).
+3. **A passada passa a ser parâmetro do chassi** (`MechStats.gait`): os 0,7/1,1 eram **um só valor para todos os Mech**, então um titã de 20 m dava o passo do Vector-09. O titã anda a `{ hip: 0.42, knee: 1.5 }`.
+4. **A arma de tamanho 3 é de carga e de um tiro só** (decisão do dono no mesmo dia): 360 de dano com 3 s de carga, 4,5 s entre tiros, 0,9 de calor — derruba um torso de Mech num tiro. Ela é **leve** para o tamanho 4 e **pesada** para o tamanho 3, pela conta que já existia (`classFor`).
+5. **A escala 4 só existe porque esta arma existe:** o validador da montagem recusa braço direito vazio e nenhuma arma de tamanho 2 cabe num robô de tamanho 4 — foi o que a P82 previu e a P100 encontrou na prática.
+
+**Custo de CPU:** nenhum por tick (uma leitura de dois números na animação); o `.glb` do titã pesa 2,6 MB e desenha em 1 malha. **Quem decidiu:** o Comandante (escala 4, a arma de carga, a tripulação) e Qwen (o rig por script, a passada por chassi, os números).
 ## [2026-10-12] As duas missões que faltavam — ataque e defesa — e o contraataque sai de graça (P99, Qwen)
 
 **Ordem do Comandante (P99):** *"missões de proteção de escoltas, ataque, defesa de base, contraataques"*.

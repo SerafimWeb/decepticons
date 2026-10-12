@@ -61,12 +61,11 @@ describe('a conta da reação (combat/reaction): quanto cada acerto empurra e tr
     expect(regime).toBeGreaterThan(0.2); // mas dá para sentir
   });
 
-  it('o canhão pesado é quem mais empurra por acerto direto (no teto), e nenhuma outra arma chega ao teto com o dano que traz', () => {
+  it('os dois obuseiros de aço empurram no teto por acerto direto (o canhão dos Mechs e o canhão de cerco do titã), e nenhuma outra arma chega lá', () => {
     const porAcerto = WEAPON_IDS.map((id) => ({ id, push: hitPush(weapon(id), weapon(id).damage) }));
-    const maior = porAcerto.reduce((a, b) => (b.push > a.push ? b : a));
-    expect(maior.id).toBe('cannon');
-    expect(maior.push).toBe(HIT_PUSH_MAX);
-    for (const x of porAcerto.filter((y) => y.id !== 'cannon')) expect(x.push, x.id).toBeLessThan(HIT_PUSH_MAX);
+    const noTeto = porAcerto.filter((x) => x.push >= HIT_PUSH_MAX).map((x) => x.id).sort();
+    expect(noTeto).toEqual(['cannon', 'siege']);
+    for (const x of porAcerto.filter((y) => y.id !== 'cannon' && y.id !== 'siege')) expect(x.push, x.id).toBeLessThan(HIT_PUSH_MAX);
   });
 
   it('o tranco do torso sobe com o dano, nunca passa de FLINCH_MAX e é zero sem dano', () => {

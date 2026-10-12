@@ -65,7 +65,7 @@ describe('ficha do seu Mech', () => {
 
   it('as barras comparam com o melhor chassi de combate (o Colossus, de escala 3, fica fora da régua)', () => {
     for (const id of Object.keys(CHASSIS) as (keyof typeof CHASSIS)[]) {
-      if (id === 'colossus01') continue;
+      if (id === 'colossus01' || id === 'colossusv4') continue;
       const f = fichaDoMech(factorySpec(id));
       expect(f.vida.valor / f.vida.ref, id).toBeLessThanOrEqual(1);
       expect(f.velocidade.valor / f.velocidade.ref, id).toBeLessThanOrEqual(1);

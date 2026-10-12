@@ -104,6 +104,16 @@ export const IMPORTED_CHASSIS: Partial<Record<ChassisId, ImportedChassisConfig>>
       rightArm: 'mixamorigRightArm',
     },
   },
+  // O titã do dono (12/10): a primeira malha importada de escala 4. Sem arma desenhada (as mãos somem e o canhão de
+  // cerco da montagem se encaixa nos pulsos) e **sem rotationY**: o inspetor mediu a frente no pé (-Z), não é preciso girar.
+  colossusv4: {
+    url: `${import.meta.env.BASE_URL}models/colossusv4.glb`,
+    weaponMounts: true,
+    // O arquivo do dono veio com os braços PENDURADOS (A-pose, 39° da vertical): o módulo da arma aponta para onde o
+    // antebraço aponta, então sem esta pose o canhão de cerco apontava para o chão (as bocas medidas caíram a 3,83 m de
+    // altura num titã de 20 m). É a mesma pose do Marauder (braço ~50° abaixo da horizontal, antebraço para a frente).
+    armRest: { upper: [0.62, -0.77, -0.15], fore: [0.1, 0, -1] },
+  },
 };
 
 const cache = new Map<string, ImportedMechAsset>();

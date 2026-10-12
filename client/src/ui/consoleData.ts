@@ -51,7 +51,7 @@ export interface FichaMech {
   armas: { encaixe: 'DIR' | 'ESQ' | 'OMB' | 'MÓD'; nome: string }[];
 }
 
-const COMBATE = (Object.keys(CHASSIS) as ChassisId[]).filter((id) => id !== 'colossus01');
+const COMBATE = (Object.keys(CHASSIS) as ChassisId[]).filter((id) => id !== 'colossus01' && id !== 'colossusv4');
 const REF_VIDA = Math.max(...COMBATE.map((id) => CHASSIS[id].maxModuleHealth.torso));
 const REF_VELOCIDADE = Math.max(...COMBATE.map((id) => CHASSIS[id].moveSpeed));
 
