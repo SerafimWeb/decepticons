@@ -7,19 +7,21 @@
 # Se o servidor não sair, ou o ligar falhar, o vigia do atualizador (a cada 10 min) liga o servidor que não responde.
 # O que ele fez fica em religar.log, na pasta de dados do servidor (CYBERMECH_DADOS).
 #
-# Uso (o servidor chama): powershell -File scripts\religar-servidor.ps1 -Porta 2567 [-Tarefa 'CYBERMECH servidor']
+# O ajudante é criado pelo WMI (server/religar.ts), e um processo do WMI NÃO herda o ambiente do servidor: a pasta de dados vem em -Dados.
+#
+# Uso (o servidor chama): powershell -File scripts\religar-servidor.ps1 -Porta 2567 -Dados <pasta de dados> [-Tarefa 'CYBERMECH servidor']
 
-param([string]$Tarefa = 'CYBERMECH servidor', [int]$Porta = 2567)
+param([string]$Tarefa = 'CYBERMECH servidor', [int]$Porta = 2567, [string]$Dados)
 $ErrorActionPreference = 'Continue'
 
-$dados = if ($env:CYBERMECH_DADOS) { $env:CYBERMECH_DADOS } else { Join-Path (Split-Path -Parent $PSScriptRoot) '.tmp\servidor' }
+$dados = if ($Dados) { $Dados } elseif ($env:CYBERMECH_DADOS) { $env:CYBERMECH_DADOS } else { Join-Path (Split-Path -Parent $PSScriptRoot) '.tmp\servidor' }
 $log = Join-Path $dados 'religar.log'
 function Registrar([string]$linha) {
   try { Add-Content -Path $log -Value ('[{0}] {1}' -f (Get-Date).ToUniversalTime().ToString('o'), $linha) -Encoding utf8 } catch { }
 }
 function PortaOcupada { @(Get-NetTCPConnection -LocalPort $Porta -State Listen -ErrorAction SilentlyContinue).Count -gt 0 }
 
-Registrar "ajudante de reinício começou (porta $Porta, tarefa '$Tarefa')"
+Registrar "ajudante de reinício começou (PID $PID, usuário $env:USERNAME, porta $Porta, tarefa '$Tarefa')"
 
 # 1. Espera o servidor sair: a porta livre (ele fecha o HTTP primeiro e sai logo depois). Até 60 s.
 $fim = (Get-Date).AddSeconds(60)
