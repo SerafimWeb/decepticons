@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { campanhasDeFabrica, linkDaEtapa } from '../sim/campanha';
 import { ESQUADRAO_VERSAO, type EsquadraoSpec, chaveDoEsquadrao, esquadraoPadrao } from '../sim/esquadrao';
 import { ESQUADRAO_STORAGE_KEY, EsquadraoStore } from './EsquadraoStore';
 
@@ -47,6 +48,18 @@ describe('esquadrão salvo no aparelho e por link', () => {
     expect(new EsquadraoStore(memory(), '?esquadrao=hack').current).toBeNull();
     // Link ruim não apaga nem troca o que já estava salvo.
     expect(new EsquadraoStore(disco, '?esquadrao=hack').current).toEqual(GRANDE);
+  });
+
+  it('uma etapa de campanha usa o esquadrão do link só nesta partida: o que o Comandante tinha salvo continua salvo', () => {
+    const disco = memory();
+    new EsquadraoStore(disco).save(GRANDE);
+    const op = campanhasDeFabrica()[1]!;
+    const etapa = new EsquadraoStore(disco, linkDaEtapa(op, 2));
+    expect(etapa.current).toEqual(op.etapas[1]!.esquadrao);
+    expect(new EsquadraoStore(disco, '').current).toEqual(GRANDE); // a próxima partida comum volta ao dele
+    // Sem a campanha no link, o comportamento é o de sempre: o link vira o salvo.
+    new EsquadraoStore(disco, `?esquadrao=${chaveDoEsquadrao(op.etapas[1]!.esquadrao)}`);
+    expect(new EsquadraoStore(disco, '').current).toEqual(op.etapas[1]!.esquadrao);
   });
 
   it('`?esquadrao=padrao` apaga o salvo (o link de "voltar ao padrão")', () => {

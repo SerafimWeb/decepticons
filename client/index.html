@@ -174,7 +174,7 @@
               <li id="cmd-mesa"><a href="http://127.0.0.1:4199/.tmp/video/editor.html" target="_blank" rel="noopener" title="A mesa é local: só liga nesta máquina, com npm run mesa"><b>MESA DE VÍDEO</b><span>local · npm run mesa</span></a></li>
               <li id="cmd-cameras"><button type="button" data-cameras-open title="Os radares de todas as partidas abertas no servidor, ao vivo (com o token do dono)"><b>CÂMERAS AO VIVO</b><span>radares das partidas</span></button></li>
               <li id="cmd-ficha"><button type="button" data-esquadrao-open title="Chassi, arma, personalidade, dificuldade e apelido de cada bot, e quantos há"><b>FICHA DE CADA BOT</b><span>chassi, arma, jeito</span></button></li>
-              <li class="breve" title="Missões em sequência, salvas e compartilháveis (PAINEL_ADMIN.md, etapa D)"><b>CAMPANHA</b><span>em construção</span></li>
+              <li id="cmd-campanha"><button type="button" data-campanha-open title="Missões em sequência: escolha uma campanha de fábrica ou monte a sua, salve com nome e copie o link"><b>CAMPANHA</b><span>etapas em sequência</span></button></li>
               <li id="cmd-servidor"><button type="button" data-servidor-open title="Estado do servidor de jogo, a última hora, salas e log; reiniciar, testar e avaliar (com o token do dono)"><b>SERVIDOR</b><span>estado, teste, reinício</span></button></li>
             </ul>
             <div class="cmd-ajuda" id="cmd-mesa-ajuda" role="dialog" aria-label="Mesa de vídeo" hidden>
@@ -210,6 +210,7 @@
 
     <!-- Janela do esquadrão (ui/SquadPanel.ts): o Comandante monta quem luta contra e ao lado do jogador -->
     <div id="squad-modal" class="hidden"></div>
+    <div id="campanha-modal" class="hidden"></div>
     <!-- Janela do servidor (ui/ServerPanel.ts): estado, gráficos, salas, log e as ações do dono -->
     <div id="server-modal" class="hidden"></div>
     <!-- Janela de câmeras ao vivo (ui/CameraWall.ts): um radar por partida aberta no servidor -->

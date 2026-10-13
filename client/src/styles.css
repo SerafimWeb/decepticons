@@ -3467,6 +3467,90 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   .squad-sub { display: none; }
 }
 
+/* ─── Janela Campanha (ui/CampaignPanel.ts, fase 4B) e a campanha dentro da partida (ui/CampaignRunHud.ts) ─── */
+#campanha-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 8, 10, 0.88);
+  backdrop-filter: blur(6px);
+}
+#campanha-modal.hidden { display: none; }
+.camp-box { width: min(1000px, 96vw); height: min(620px, 94vh); }
+.camp-corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(180px, 0.55fr) minmax(0, 1.8fr); }
+.camp-lista { display: flex; flex-direction: column; gap: 4px; min-height: 0; padding: 10px 12px; overflow-y: auto; border-right: 1px solid rgba(57, 255, 106, 0.12); scrollbar-width: thin; scrollbar-color: rgba(57, 255, 106, 0.4) transparent; }
+.camp-lista h3 { margin: 8px 0 2px; font-size: 11px; letter-spacing: 3px; color: var(--muted); }
+.camp-lista h3:first-child { margin-top: 0; }
+.camp-item { display: flex; flex-direction: column; gap: 1px; padding: 6px 10px; font: inherit; text-align: left; color: #cfe8d6; background: rgba(255, 255, 255, 0.03); border: 1px solid transparent; border-left: 2px solid var(--accent); cursor: pointer; }
+.camp-item b { overflow: hidden; font-size: 12px; letter-spacing: 1px; color: #fff; text-overflow: ellipsis; white-space: nowrap; }
+.camp-item small { font-size: 10px; color: #9aa5ad; }
+.camp-item:hover, .camp-item:focus-visible { background: rgba(255, 255, 255, 0.08); outline: none; }
+.camp-item.sel { background: rgba(57, 255, 106, 0.12); border-color: var(--accent); border-left-width: 3px; }
+.camp-nova { margin: 8px 0 0; padding: 6px 10px; font-size: 12px; letter-spacing: 1.5px; }
+.camp-nova.sel { color: var(--bg); background: var(--accent); }
+.camp-detalhe { display: flex; flex-direction: column; gap: 8px; min-height: 0; padding: 10px 16px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(57, 255, 106, 0.4) transparent; }
+.camp-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.camp-topo h3 { margin: 0; font-size: 14px; letter-spacing: 3px; color: var(--hot); }
+.camp-nome { flex: 1; min-width: 0; padding: 4px 8px; font: inherit; font-size: 14px; letter-spacing: 2px; color: var(--hot); background: #06080a; border: 1px solid var(--accent); }
+.camp-nome:focus-visible { outline: 1px solid var(--hot); }
+.camp-conta { font-size: 11px; letter-spacing: 1px; color: var(--muted); white-space: nowrap; }
+.camp-etapas { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.camp-etapa { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; padding: 6px 10px; background: rgba(255, 255, 255, 0.03); border-left: 2px solid var(--cyan); }
+.camp-num { font-size: 16px; font-weight: 700; color: var(--cyan); text-align: center; }
+.camp-info { display: flex; flex-direction: column; min-width: 0; }
+.camp-info b { overflow: hidden; font-size: 12px; letter-spacing: 1px; color: #fff; text-overflow: ellipsis; white-space: nowrap; }
+.camp-info small { overflow: hidden; font-size: 10.5px; color: #9aa5ad; text-overflow: ellipsis; white-space: nowrap; }
+.camp-ed { grid-column: 2 / -1; grid-row: 2; display: flex; flex-wrap: wrap; gap: 4px; }
+.camp-sel, .camp-meta { padding: 3px 6px; font: inherit; font-size: 11px; color: var(--accent); background: #06080a; border: 1px solid var(--accent); }
+.camp-meta { width: 52px; }
+.camp-sel:focus-visible, .camp-meta:focus-visible { outline: 1px solid var(--hot); border-color: var(--hot); }
+.camp-acoes { display: flex; gap: 3px; }
+.camp-acoes .squad-x { width: 24px; height: 24px; }
+.camp-daqui { width: 28px; height: 24px; padding: 0; font: 700 12px/1 'Consolas', 'Courier New', monospace; color: var(--bg); background: var(--accent); border: 0; cursor: pointer; }
+.camp-daqui:hover, .camp-daqui:focus-visible { background: var(--hot); outline: none; }
+.camp-mais { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-top: 6px; border-top: 1px solid rgba(57, 255, 106, 0.12); }
+@media (max-width: 920px) {
+  .camp-box { height: 96vh; }
+  .camp-corpo { grid-template-columns: 1fr; grid-auto-rows: max-content; overflow-y: auto; }
+  .camp-lista { max-height: 160px; border-right: 0; border-bottom: 1px solid rgba(57, 255, 106, 0.12); }
+  .camp-etapa { grid-template-columns: 22px minmax(0, 1fr) auto; }
+}
+
+/* A faixa da etapa na partida: pequena, no alto, sem tomar o clique do jogo. */
+#campanha-faixa {
+  position: absolute;
+  top: 62px;
+  left: 50%;
+  z-index: 790;
+  max-width: 92vw;
+  padding: 4px 12px;
+  overflow: hidden;
+  transform: translateX(-50%);
+  font: 700 11px/1.3 'Consolas', 'Courier New', monospace;
+  letter-spacing: 2px;
+  color: var(--cyan);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: rgba(6, 8, 10, 0.72);
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  pointer-events: none;
+}
+#campanha-faixa[hidden] { display: none; }
+/* O painel do fim da etapa: por cima das telas de fim de cada modo. */
+.campanha-fim { position: fixed; inset: 0; z-index: 2600; display: flex; align-items: center; justify-content: center; background: rgba(6, 8, 10, 0.78); backdrop-filter: blur(4px); }
+.campanha-fim-caixa { width: min(460px, 92vw); padding: 24px 28px; text-align: center; background: #0e1210; border: 1px solid var(--accent); box-shadow: 0 0 28px rgba(57, 255, 106, 0.3); font-family: 'Consolas', 'Courier New', monospace; }
+.campanha-fim-caixa h2 { margin: 0 0 6px; font-size: 22px; letter-spacing: 5px; color: var(--accent); text-shadow: 0 0 10px var(--accent); }
+.campanha-fim.perdida .campanha-fim-caixa { border-color: var(--alert); box-shadow: 0 0 28px rgba(255, 45, 61, 0.3); }
+.campanha-fim.perdida h2 { color: var(--alert); text-shadow: 0 0 10px var(--alert); }
+.campanha-fim.completa h2 { color: var(--hot); text-shadow: 0 0 12px var(--hot); }
+.campanha-fim-caixa p { margin: 0 0 18px; font-size: 12px; letter-spacing: 2px; color: var(--muted); }
+.campanha-fim-acoes { display: flex; flex-direction: column; gap: 8px; }
+.campanha-fim-acoes .btn-terminal { margin: 0; }
+.campanha-fim-acoes .primaria { color: var(--bg); background: var(--accent); box-shadow: 0 0 14px rgba(57, 255, 106, 0.45); }
+
 /* ─── Janela de câmeras ao vivo (ui/CameraWall.ts, P88): um radar por partida aberta no servidor ─── */
 #cameras-modal {
   position: fixed;
