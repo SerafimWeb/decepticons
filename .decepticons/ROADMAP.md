@@ -127,9 +127,9 @@
 - [x] Setas de inimigos fora da tela (Gemini; concluído pelo Claude com a revisão) #ux
 - [x] Sons dos andróides: tiro e pouso, mais baixos de longe (Gemini; integrado pelo Claude) #som
 - [x] Zonas de cura e resfriamento na arena (dono: "preciso de um lugar pra recuperar a vida, ou um resfriador pra ter mais fôlego"): vantagem de posicionamento igual para os dois lados, custo de rede zero #combate
-- [x] Abertura da rodada ("RODADA 1 · 3·2·1 · COMBATE!") com locução sintetizada (Gemini) #ux — ligada ao relógio do intervalo; locução pt-BR opcional (Claude, 13/10)
-- [x] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) #ux — `combate/killStreak.ts` + `KillBanner` ligados (Claude, 13/10)
-- [x] Tela de carregamento com barra de progresso e dicas (Gemini) #ux — a barra e a dica moram na tela de carregamento do console (Claude, 13/10)
+- [x] Abertura da rodada ("RODADA 1 · 3·2·1 · COMBATE!") com locução sintetizada (Gemini) — ligada ao relógio do intervalo; locução pt-BR opcional (Claude, 13/10) #ux
+- [x] Aviso de ABATE e de sequência de abates, com som próprio (Gemini) — `combate/killStreak.ts` + `KillBanner` ligados (Claude, 13/10) #ux
+- [x] Tela de carregamento com barra de progresso e dicas (Gemini) — a barra e a dica moram na tela de carregamento do console (Claude, 13/10) #ux
 - [~] Homologar FPS e frame time num notebook com GPU integrada: diagnóstico de shaders medido na Iris Xe em 09/10; custo estável dos efeitos e playtest do dono ainda pendentes (`EVOLUCAO_TECNICA.md`) #desempenho
 - [x] Travadas de 1,5 a 2 s por compilação de shader no primeiro uso: pré-compilação no carregamento, `forceSinglePass` na faixa do tiro e buffer de cor dos destroços (09/10; medido na Iris Xe: 0 programas compilados em jogo, 1 travada ≥ 300 ms contra 3 a 4) #desempenho
 - [x] Hangar: reduzir passadas dos hologramas aditivos e impedir GLB atrasado de trocar a seleção atual (Codex, 09/10: Vega 11, 102→94 draw calls no enquadramento medido; três testes de corrida) #desempenho
@@ -255,7 +255,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] **Modo sobrevivência e MissionHUD:** interface completa (briefing tático com digitação, HUD de onda, sirenes de alarme, banner ONDA LIMPA e resumo de estatísticas/medalhas) #modos
 - [ ] **Química do jogo (P96) — consertar os ciclos de recompensa que já existem:** o nível do piloto **não sobe jogando** (`addXp` só é chamado dentro de `claimReward`), o `trackWaveOrRound` (missão "sobreviver 3 ondas") **não tem chamador** e o gancho de "conquistado jogando" (`validateLoadout`) também não; sem isso a dopamina e a serotonina ficam travadas. Plano em `QUIMICA_DO_JOGO.md` § 5 (itens 1 a 3) e `DIVERSAO.md` § 9/§ 10 #modos
 - [ ] **Recorde de onda com comemoração (P96):** o `waveReached` já existe e chega ao HUD, mas **nenhum melhor é salvo**; guardar o recorde local e celebrar a marca nova (`QUIMICA_DO_JOGO.md` § 5 #3) #ux
-- [x] **Aviso de sequência de abates (P96):** 2/3/4 abates em poucos segundos, com som próprio (constava como item pendente do Gemini) — dopamina e adrenalina baratas (`QUIMICA_DO_JOGO.md` § 5 #4) #ux — feito em 13/10 (Claude)
+- [x] **Aviso de sequência de abates (P96):** 2/3/4 abates em poucos segundos, com som próprio (constava como item pendente do Gemini) — dopamina e adrenalina baratas (`QUIMICA_DO_JOGO.md` § 5 #4) — feito em 13/10 (Claude) #ux
 - [ ] **Maestria por arma e por chassi (P96):** contador de abates por arma com selo no Hangar; **local, 0 byte de rede** (`QUIMICA_DO_JOGO.md` § 5 #5) #ux
 - [ ] **Autonomia visível (P96):** perfil de configurações salvo com nome, **código de build curto** (`CM-V9-SNIPER`) e a dica "teste isto" depois de perder; tudo local, nunca vantagem (`QUIMICA_DO_JOGO.md` § 5 #10) #ux
 - [ ] **Agressão recompensada (P96):** o abate **encostado** (pisão/serra) devolve energia ou alivia calor — só se passar no `combat/balance.ts` (`QUIMICA_DO_JOGO.md` § 5 #11) #combate #modos
