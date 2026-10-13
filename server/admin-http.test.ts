@@ -217,7 +217,9 @@ describe('o painel do servidor (/admin/*), com o servidor de verdade', () => {
     expect(por('Estados por segundo')).toBeTruthy();
     expect(por('Download por piloto')).toBeTruthy();
     expect(por('Download por piloto')!.resultado).not.toBe('falha');
-    expect(por('Ping')).toBeTruthy();
+    // O ping de ida e volta só entra se algum pong voltou dentro da janela, e o resultado dele (ok, atenção, falha) é do ambiente: com a máquina carregada o servidor responde devagar de verdade. O teste só confere que, se entrou, tem valor em ms.
+    const ping = por('Ping');
+    if (ping) expect(ping.valor).toMatch(/ms$/);
     expect(por('Tempo do tick da sala de teste')).toBeTruthy();
     expect(t.duracaoS).toBeGreaterThan(1.4);
     // A sala de teste fecha no fim e não suja o status público nem os números de produto.

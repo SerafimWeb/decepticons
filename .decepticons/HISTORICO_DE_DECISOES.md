@@ -15,7 +15,7 @@
 **Situação:** a versão das câmeras (#283, `ec9269e`) foi reprovada pelo atualizador do servidor de casa ("FALHOU (testes de server/ e shared/)"), por tempo: os testes de servidor de verdade têm esperas de 5 a 8 s e a máquina de casa, carregada, as estourou. Reproduzido com 8 processos queimando CPU.
 **Decisões:**
 1. **Esperas de 25 s** nos testes de servidor de verdade (o `testTimeout` é 30 s): um teste que falha por esperar pouco reprova um deploy que não tem nada de errado, e o custo de esperar mais é zero quando a máquina está quieta (o `until` sai assim que a condição vale).
-2. **O `testar` do painel mede 3 s no teste** (era 1,5 s): os pings voltam uma vez por segundo, e numa janela curta com a máquina ocupada nenhum voltava.
+2. **O `testar` do painel mede 3 s no teste** (era 1,5 s) **e o ping do autoteste sai por relógio** (um por segundo, não "a cada 30 voltas do temporizador", que com o laço faminto levam vários segundos): sem isso nenhum ping voltava na janela. O resultado do ping (ok, atenção, falha) é do ambiente, então o teste só confere a estrutura.
 3. **O gate não muda:** o atualizador continua verificando antes de reiniciar (foi ele quem protegeu o servidor no ar desta vez). O erro estava nos testes, não no gate.
 4. **Registro de diagnóstico (pendente, não feito aqui):** o `atualizacao.log` diz só "FALHOU (testes de server/ e shared/)", sem dizer qual teste; o ideal seria gravar o fim da saída do Vitest. Fica como melhoria do `atualizador.mjs`.
 **Quem decidiu:** Claude.
