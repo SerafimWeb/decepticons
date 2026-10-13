@@ -1,3 +1,14 @@
+## [2026-10-13] O site congelou em 12/10 22:03 GMT e o Colossus-V4 não chegou lá: a prova é o BUILD, não o status HTTP (P100, Qwen)
+
+**Situação:** o Comandante não encontrou o **Colossus-V4** no Hangar do site (13/10). Ele **está na `main`** (PR #278), mas o **build publicado não o contém**: o bundle `.../jogar/assets/index-cVGG951p.js` → `Game-DdOsAl4B.js` (1 MB) tem o editor do esquadrão (#267) e `COLOSSUS-01`/`MARAUDER`/`ARARA-B1`, e **não** tem `COLOSSUS-V4`/`ESCALA 4`/`siege`. O `Last-Modified` do site é **12/10 22:03:13 GMT** (o último deploy). O job `deploy` do `ci.yml` é **`needs: check`**; com o Actions fora por cobrança, o `check` não roda e nada depois do #267 publica (#278–#284 ficam fora do ar).
+
+**Decisões/Registro:**
+1. **Nada de código muda:** o titã está correto na `main`; o que falta é **publicar**. A correção é do Comandante (Actions/billing) e, quando voltar, **reexecutar o deploy da `main`** pega tudo.
+2. **A prova passa a ser o BUILD, não o status HTTP.** O fallback devolve **200 com `text/html` para qualquer caminho inexistente** sob `/cybermech/` — medido: `.../models/colossusv4.glb` **e** `.../models/colossus01.glb` devolvem a **mesma página de 2.342 bytes**. Tratar "respondeu 200" como "está no ar" foi o que produziu a conclusão errada; o `DEPLOY.md` já avisa disso. Verifique **procurando a string no bundle publicado** e lendo o **`Last-Modified`**.
+3. **Registro corrigido:** o `STATUS_REAL` ganha a linha do titã (**AUSENTE no site** · REAL no código) e a **P100** e o `ESTADO_ATUAL` deixam de dizer "no ar".
+
+**Quem decidiu:** Qwen (achado e registro); a correção de infraestrutura é do Comandante.
+
 ## [2026-10-12] 2ª CORREÇÃO: o ajudante tem de nascer FORA da árvore do servidor: pelo WMI (P93, Claude)
 
 **Situação:** a 2ª prova real (21:14) falhou: o servidor lançou o ajudante com `spawn` e o ajudante nunca rodou. Reproduzido fora do Agendador: `powershell.exe` via `spawn` morre com o pai (sem `detached`) ou nem roda (com `detached`, sem console); `cmd /c start`, `Start-Process` e o WMI sobrevivem.

@@ -1,5 +1,18 @@
 # ESTADO ATUAL — CYBERMECH
 
+## ⚠ CONFIRMADO (13/10): o site está congelado em 12/10 22:03 GMT — o Colossus-V4 e o #279–#284 NÃO estão no ar — Qwen (achado, P100)
+
+**O Comandante não achou o Colossus-V4 no Hangar** (13/10). O titã **está na `main`** (PR #278), mas o build publicado é **anterior a ele** — é a causa do aviso do CI, logo abaixo, agora **medida** por dois caminhos:
+
+- **O bundle publicado:** `.../jogar/assets/index-cVGG951p.js` → `Game-DdOsAl4B.js` (1 MB) contém `ESQUADRÃO` (o editor do esquadrão, **#267**) e `COLOSSUS-01`/`MARAUDER`/`ARARA-B1`, mas **não contém `COLOSSUS-V4`, `ESCALA 4` nem `siege`** (o titã, **#278**).
+- **A data do servidor:** `Last-Modified: Mon, 12 Oct 2026 22:03:13 GMT` no `jogar/`, no bundle e no `index.html` — **o último deploy**. O #278 (merge 23:00 BRT) nunca publicou, nem o #279–#284.
+
+**Por que o deploy parou:** o job `deploy` do `.github/workflows/ci.yml` é `needs: check`; com o Actions fora (cobrança), o `check` não roda e o **`deploy` nunca roda**.
+
+**Armadilha que enganou o registro (R17):** o fallback do site devolve **200 com `text/html`** para QUALQUER caminho inexistente sob `/cybermech/`. Medido: `.../models/colossusv4.glb` **e** `.../models/colossus01.glb` devolvem a **mesma página de 2.342 bytes**. Então "*o `.glb` respondeu 200*" **nunca provou** que o modelo foi publicado (o `DEPLOY.md` já avisa: "o servidor responde 200 até para arquivo inexistente"). **Pergunte ao build, não ao status:** procure a string no bundle publicado e leia o `Last-Modified`.
+
+**O que fazer:** é a correção do CI abaixo — o Comandante resolve o Actions e, quando ele voltar, **reexecutar o deploy da `main`** publica tudo de uma vez. **Não há código a mudar:** o titã está correto na `main`; o que falta é publicar.
+
 ## ⚠ O CI do GitHub está parado por cobrança — e o site não republica (12/10, ~19:30, Claude)
 
 **O que acontece:** todo job do GitHub Actions, de qualquer branch, **falha em 2 s sem executar nenhum passo**. A anotação do GitHub diz: *"The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"*. Valem para o `check`, as `etiquetas` e o **`deploy`** (que depende do `check`): **enquanto durar, nenhum merge republica o site** em `www.selvamkt.com.br/cybermech/`. O servidor de casa não depende disso: o atualizador local busca a `main`, verifica (typecheck e testes de `server/` e `shared/`) e só então reinicia.
@@ -48,11 +61,11 @@
 
 **Ordens do Comandante (P100, 12/10):** *"adicionei um novo modelo na pasta /blender/colossusv4, leve ele para o hangar"*, depois *"o caminhar dele está muito largo, ele é um robô extremamente pesado, então os passos dele devem ser mais curtos e melhor dobrada do joelho"* e *"crie a arma dele, uma arma poderosa, de tiro único, que demora pra carregar, mas é um tremendo tiro"*. E: *"o colossusv4 poderá ser pilotado por 1, 2 ou 3 tripulantes"* (a P10).
 
-**O que está no ar:** o **COLOSSUS-V4** é escolhível no **Hangar** (escala 4, 20 m, 1900 no torso, 4 m/s, sem dash, sem salto), com a malha do dono **re-rigada** (17 ossos Mixamo, 24.576 triângulos, 2,6 MB) e o **canhão de cerco** nas duas mãos.
+**O que foi feito (está na `main` — mas NÃO no site, ver o aviso do topo):** o **COLOSSUS-V4** é escolhível no **Hangar** (escala 4, 20 m, 1900 no torso, 4 m/s, sem dash, sem salto), com a malha do dono **re-rigada** (17 ossos Mixamo, 24.576 triângulos, 2,6 MB) e o **canhão de cerco** nas duas mãos.
 - **A arma é de carga** (o pedido dele): **segure o gatilho 3 s** e solte um **obus de 360** com 5 m de explosão, a 240 m/s — derruba um torso de Mech **num tiro só**. O ciclo é de ~7,5 s e cada tiro gasta 0,9 do dissipador de calor.
 - **A passada é do chassi**: `MechStats.gait { hip, knee }` no lugar dos 0,7/1,1 fixos que valiam para todos; o titã declara **{ hip: 0.42, knee: 1.5 }** (passo curto, joelho bem dobrado).
 - **A lição que custou uma rodada:** o arquivo veio com os braços **pendurados**, e o módulo da arma aponta para onde o **antebraço** aponta — sem `armRest` o canhão apontava **para o chão** (as bocas medidas caíram a 3,83 m de altura). Com `armRest` (a pose do Marauder) as bocas caem certas: **mão a 13,51 m, a 9,18 m à frente**. Está registrado em `MECHS_IMPORTADOS.md` §8.
-- **Como ver:** `www.selvamkt.com.br/cybermech/jogar/` → ABRIR HANGAR → chassi **COLOSSUS-V4**. Andando, repare no passo curto e no joelho dobrado; com o gatilho apertado 3 s, o obus. Capturas: `arte/colossusv4-*.png`.
+- **Como ver (13/10: ainda NÃO pelo site — o deploy está parado):** rodando a `main` local (`npm run dev` → ABRIR HANGAR → chassi **COLOSSUS-V4**) ou, **depois** de o deploy voltar, em `www.selvamkt.com.br/cybermech/jogar/` → ABRIR HANGAR → chassi **COLOSSUS-V4**. Andando, repare no passo curto e no joelho dobrado; com o gatilho apertado 3 s, o obus. Capturas: `arte/colossusv4-*.png`.
 - **Falta (R13):** só existe **uma** arma de tamanho 3 (o canhão de cerco) — as versões médias e pesadas de tamanho 3 e 4 continuam sendo o "futuramente" da P82; **o servidor desenha todo Mech como Vector-09** (as bocas do titã são dado do chassi, medido); e a **tripulação de 1 a 3 operadores (P10)** não tem contrato de rede — hoje o titã é pilotado por um jogador só.
 
 ## A ficha do chassi de tamanho 4: os números que faltavam (e a P11 revisada) — Qwen, 12/10 (P100/P11, só documentação)
