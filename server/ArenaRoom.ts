@@ -15,6 +15,7 @@ import { netWeaponIndex, unitFromMech } from '../client/src/net/adapters';
 import { FIXED_DT, PhysicsWorld } from '../client/src/physics/PhysicsWorld';
 import { Match } from '../client/src/sim/Match';
 import type { AdminSala } from '../shared/net/admin';
+import type { MuralSala } from '../shared/net/mural';
 import { Writer } from '../shared/net/codec';
 import { MAX_EVENTS, MAX_UNITS, NO_UNIT, PROTOCOL_VERSION, ROOM_SIZE, SIM_HZ, SNAPSHOT_HZ } from '../shared/net/constants';
 import { EVENT } from '../shared/net/events';
@@ -146,6 +147,33 @@ export class ArenaRoom {
       jogando: round.playing,
       nomes: [...this.humans.values()].map((h) => h.name).slice(0, ROOM_SIZE),
     };
+  }
+
+  /**
+   * O que o mural de câmeras (P88) mostra desta sala: quem está onde, para onde olha e se vive. Preenche um quadro que o servidor reaproveita
+   * (G4: nada é criado aqui) e roda só enquanto alguém assiste (a 4 Hz, fora do tick). Não mostra os reservados nem diz nome nenhum.
+   */
+  muralDe(out: MuralSala): void {
+    const round = this.match.round;
+    out.codigo = this.code;
+    out.jogadores = this.humans.size;
+    out.rodada = round.number;
+    out.restanteS = Number.isFinite(round.timeLeft) ? Math.max(0, Math.round(round.timeLeft)) : 0;
+    out.jogando = round.playing;
+    let n = 0;
+    for (const u of this.units) {
+      if (n >= out.unidades.length) break;
+      if (this.match.bots.isReserved(u.mech)) continue;
+      const m = out.unidades[n++]!;
+      const p = u.mech.simPosition;
+      m.tipo = u.kind;
+      m.x = p.x;
+      m.z = p.z;
+      m.yaw = u.mech.yaw;
+      m.vida = u.mech.modules.torso / u.mech.stats.maxModuleHealth.torso;
+      m.viva = u.mech.alive;
+    }
+    out.n = n;
   }
 
   /** Uma mensagem de um jogador (bytes crus da conexão). */

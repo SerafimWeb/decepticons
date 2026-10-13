@@ -19,6 +19,7 @@ import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
 import { bancoDeContas, pastaDados } from './dados';
 import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
 import { Telemetria } from './telemetria';
+import { ehPedidoDeMural, Mural } from './mural';
 import { Admin, Amostrador, LimiteDeFalhas, lerFimDoLog, LogEmMemoria, montarEstado, type Trafego } from './admin';
 import { ehSalaDeTeste, executarTeste } from './autoteste';
 import { ADMIN_PREFIXO } from '../shared/net/admin';
@@ -73,6 +74,8 @@ export interface GameServer {
   host: string;
   /** O painel do servidor (P93): as amostras de uma hora, para o teste tirar uma à mão. */
   readonly amostrador: Amostrador;
+  /** O mural de câmeras (P88): quantos espectadores já provaram o token e quantas conexões de mural existem (para o teste). */
+  readonly mural: { readonly assistindo: number; readonly conexoes: number };
   rooms: ReadonlyMap<string, ArenaRoom>;
   /** Contadores das defesas (para o teste e o log de 10 s). */
   readonly guard: {
@@ -132,6 +135,8 @@ export async function startServer(
     testeDuracaoS?: number;
     /** A régua de erros de token do painel (padrão: 10 a cada 10 min por IP); os testes que erram de propósito muitas vezes alargam. */
     limiteAdmin?: { teto: number; janelaMs?: number };
+    /** O mural de câmeras: quantos espectadores (padrão 4), quanto têm para mandar o token (5 s) e de quanto em quanto tempo recebem um quadro (250 ms); os testes encurtam. */
+    mural?: { max?: number; esperaMs?: number; cadaMs?: number };
   } = {},
 ): Promise<GameServer> {
   // O que o servidor escreve também fica na memória: sem arquivo de log (rodando à mão), o painel mostra isto.
@@ -150,6 +155,7 @@ export async function startServer(
   const trafego: Trafego = { saidaBytes: 0, entradaBytes: 0 };
   const amostrador = new Amostrador({ salas: () => rooms.values() }, trafego);
   let admin: Admin | null = null;
+  let mural: Mural | null = null;
   /** Conexões em cada sala (contando quem ainda não mandou o JOIN): é o que decide se a sala está cheia. */
   const occupancy = new Map<string, number>();
   /** Sala pedida cheia: a próxima (ARENA, ARENA-2, ARENA-3...). Quem clica em "Jogar online" nunca fica de fora. */
@@ -517,6 +523,23 @@ export async function startServer(
   wss.on('connection', (ws: WebSocket, req) => {
     const ip = clientIp(req.socket.remoteAddress, req.headers['cf-connecting-ip']);
     const pais = clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']);
+    // O mural de câmeras do Comandante (`/?mural=1`): não é sala, não ocupa vaga e não entra na telemetria; só passa pelo teto por IP.
+    if (ehPedidoDeMural(req.url)) {
+      if (!mural || guard.admit(ip) !== 'ok') {
+        ws.close(4013, 'mural');
+        return;
+      }
+      let solto = false;
+      const soltar = () => {
+        if (solto) return;
+        solto = true;
+        guard.remove(ip);
+      };
+      ws.on('close', soltar);
+      ws.on('error', soltar);
+      mural.receber(ws, ip);
+      return;
+    }
     const asked = roomCode(req.url);
     if (!asked) {
       ws.close(1008, 'sala');
@@ -641,6 +664,15 @@ export async function startServer(
     lerCorpo: lerCorpoLimitado,
   });
   amostrador.ligar(opts.amostraCadaMs);
+  mural = new Mural({
+    salas: () => rooms.values(),
+    verificar: (ip, token) => admin?.autenticar(ip, token) ?? 'desligado',
+    aoEnviar: (n) => {
+      trafego.saidaBytes += n;
+    },
+    log,
+    ...opts.mural,
+  });
 
   // O laço: passos fixos de 1/60 s, todas as salas juntas; no máximo 4 passos por volta (engasgo não vira bola de neve).
   const stepMs = FIXED_DT * 1000;
@@ -677,6 +709,14 @@ export async function startServer(
     port,
     host,
     amostrador,
+    mural: {
+      get assistindo() {
+        return mural?.assistindo ?? 0;
+      },
+      get conexoes() {
+        return mural?.conexoes ?? 0;
+      },
+    },
     rooms,
     guard: {
       get connections() {
@@ -688,6 +728,7 @@ export async function startServer(
       new Promise<void>((resolve) => {
         clearInterval(loop);
         amostrador.parar();
+        mural?.parar();
         if (salvarTimer) clearInterval(salvarTimer);
         gravarDados();
         for (const c of wss.clients) c.terminate();

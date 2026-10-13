@@ -51,7 +51,8 @@ describe('console de comando: o HTML', () => {
 
   it('o que ainda não existe aparece como em construção, sem link (R13)', () => {
     const breves = [...consoleHtml.matchAll(/<li class="breve"[^>]*>([\s\S]*?)<\/li>/g)].map((m) => m[1]!);
-    expect(breves.length).toBeGreaterThanOrEqual(2);
+    // Hoje só a CAMPANHA ainda é promessa (a ficha do bot, o servidor e as câmeras já abrem janela). Quando ela abrir, este teste vira "nenhuma promessa sem link".
+    expect(breves.length).toBeGreaterThanOrEqual(1);
     for (const b of breves) {
       expect(b).toMatch(/em construção/);
       expect(b).not.toMatch(/<a |<button/);
@@ -136,6 +137,21 @@ it('a tela de carregamento esconde os monitores com display none (guarda do boot
     expect(css).toMatch(/#server-modal\.hidden\s*\{\s*display:\s*none/);
     const fonte = readFileSync(new URL('./CommandConsole.ts', import.meta.url), 'utf8');
     expect(fonte, 'algoPorCima conhece a janela do servidor').toContain('#server-modal:not(.hidden)');
+  });
+
+  it('as câmeras ao vivo (P88): o item do monitor COMANDO abre a janela, que mora fora dos monitores e começa fechada; o console não dá Enter por trás dela', () => {
+    const comando = monitores.find((m) => m.includes('id="mon-comando"'))!;
+    expect(comando).toMatch(/<li id="cmd-cameras"><button type="button" data-cameras-open/);
+    expect([...consoleHtml.matchAll(/data-cameras-open/g)]).toHaveLength(1);
+    expect(consoleHtml).toContain('<div id="cameras-modal" class="hidden"></div>');
+    for (const m of monitores) expect(m.includes('id="cameras-modal"'), 'a janela dentro de um monitor').toBe(false);
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/#cameras-modal\s*\{[^}]*position:\s*fixed/);
+    expect(css).toMatch(/#cameras-modal\.hidden\s*\{\s*display:\s*none/);
+    expect(css).toMatch(/\.cam-box\s*\{[^}]*height:\s*min\(\d+px,\s*94vh\)/);
+    const fonte = readFileSync(new URL('./CommandConsole.ts', import.meta.url), 'utf8');
+    expect(fonte, 'algoPorCima conhece a janela de câmeras').toContain('#cameras-modal:not(.hidden)');
+    expect(comando, 'o item não é mais "em construção"').not.toMatch(/CÂMERAS AO VIVO<\/b><span>em construção/);
   });
 
   it('o esquadrão (P91): a janela tem o estilo (cabe em 1280×720 sem rolar a página) e o console não dá Enter por trás dela', () => {

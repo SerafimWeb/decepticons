@@ -441,6 +441,20 @@ export class Admin {
     return this.reiniciando;
   }
 
+  /**
+   * A chave do dono, para quem não passa pelas rotas HTTP (o mural de câmeras, por WebSocket): a mesma comparação em tempo constante e a
+   * **mesma régua de erros** (10 erros por IP em 10 min fecham a porta, até para o token certo). `desligado` = o servidor não tem token.
+   */
+  autenticar(ip: string, token: unknown): 'ok' | 'negado' | 'bloqueado' | 'desligado' {
+    if (!this.o.token) return 'desligado';
+    if (this.limite.bloqueado(ip)) return 'bloqueado';
+    if (!tokenConfere(token, this.o.token)) {
+      this.limite.falhou(ip);
+      return 'negado';
+    }
+    return 'ok';
+  }
+
   /** `true` se a rota era do painel (e a resposta já foi escrita); `false` deixa o `Server.ts` seguir. */
   async tratar(req: IncomingMessage, res: ServerResponse, path: string): Promise<boolean> {
     const dono = ROTAS_GET.has(path) || ROTAS_POST.has(path);
@@ -470,14 +484,13 @@ export class Admin {
       res.end();
       return true;
     }
-    const ip = this.o.clientIp(req);
-    if (this.limite.bloqueado(ip)) {
+    const auth = this.autenticar(this.o.clientIp(req), req.headers[ADMIN_HEADER]);
+    if (auth === 'bloqueado') {
       res.writeHead(429, CORS);
       res.end();
       return true;
     }
-    if (!tokenConfere(req.headers[ADMIN_HEADER], this.o.token)) {
-      this.limite.falhou(ip);
+    if (auth !== 'ok') {
       res.writeHead(401, { ...CORS, 'cache-control': 'no-store' });
       res.end();
       return true;

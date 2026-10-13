@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { AMOSTRA_CADA_S, type AdminAmostra, type AdminSala } from '../shared/net/admin';
 import { ROOM_SIZE } from '../shared/net/constants';
-import { Amostrador, Anel, avaliar, capacidadeDeSalas, CODIGO_REINICIO, fimDoArquivo, LimiteDeFalhas, lerFimDoLog, LogEmMemoria, METAS, type Trafego } from './admin';
+import { Admin, Amostrador, Anel, avaliar, capacidadeDeSalas, CODIGO_REINICIO, fimDoArquivo, LimiteDeFalhas, lerFimDoLog, LogEmMemoria, METAS, type Trafego } from './admin';
 
 const amostra = (extra: Partial<AdminAmostra> = {}, i = 0): AdminAmostra => ({
   t: 1_700_000_000 + i * AMOSTRA_CADA_S,
@@ -201,6 +201,55 @@ describe('a régua de erros de token', () => {
     expect(l.bloqueado('2.2.2.2', 2002)).toBe(false);
     // Passada a janela, volta a poder tentar.
     expect(l.bloqueado('1.1.1.1', 1000 + 600_001)).toBe(false);
+  });
+});
+
+describe('Admin.autenticar: a chave do dono para quem não passa pelas rotas HTTP (o mural de câmeras)', () => {
+  const admin = (token: string | null, limite = new LimiteDeFalhas(3, 600_000)) =>
+    new Admin({
+      token,
+      amostrador: {} as never,
+      estado: () => ({}) as never,
+      lerLog: () => ({}) as never,
+      jogadores: () => 0,
+      contexto: () => ({ uptimeS: 0, recusasPorTaxa: 0 }),
+      fecharSala: () => false,
+      testar: async () => ({}) as never,
+      supervisionado: false,
+      anotar: () => {},
+      clientIp: () => '1.1.1.1',
+      lerCorpo: async () => Buffer.alloc(0),
+      limite,
+    });
+
+  it('o token certo passa; o errado, vazio ou de outro tipo é negado; sem token configurado a porta está desligada', () => {
+    const a = admin('token-comprido-do-dono-123456');
+    expect(a.autenticar('1.1.1.1', 'token-comprido-do-dono-123456')).toBe('ok');
+    expect(a.autenticar('2.2.2.2', 'token-comprido-do-dono-12345X')).toBe('negado');
+    expect(a.autenticar('2.2.2.2', 'curto')).toBe('negado');
+    expect(a.autenticar('2.2.2.2', '')).toBe('negado');
+    expect(a.autenticar('2.2.2.2', undefined)).toBe('negado');
+    expect(a.autenticar('2.2.2.2', 42)).toBe('negado');
+    expect(admin(null).autenticar('1.1.1.1', 'qualquer-coisa')).toBe('desligado');
+  });
+
+  it('cada erro gasta a régua do IP: no teto, até o token certo é barrado; acertar não gasta; outro IP não é afetado', () => {
+    const a = admin('token-comprido-do-dono-123456'); // teto de 3 erros
+    for (let i = 0; i < 20; i++) expect(a.autenticar('9.9.9.9', 'token-comprido-do-dono-123456')).toBe('ok');
+    expect(a.autenticar('1.1.1.1', 'errado-1')).toBe('negado');
+    expect(a.autenticar('1.1.1.1', 'errado-2')).toBe('negado');
+    expect(a.autenticar('1.1.1.1', 'errado-3')).toBe('negado');
+    expect(a.autenticar('1.1.1.1', 'token-comprido-do-dono-123456')).toBe('bloqueado');
+    expect(a.autenticar('1.1.1.1', 'errado-4')).toBe('bloqueado');
+    expect(a.autenticar('9.9.9.9', 'token-comprido-do-dono-123456')).toBe('ok');
+  });
+
+  it('a régua é uma só: erros dados pelo mural e pelas rotas HTTP somam, porque os dois usam o mesmo objeto', () => {
+    const limite = new LimiteDeFalhas(2, 600_000);
+    const a = admin('token-comprido-do-dono-123456', limite);
+    a.autenticar('1.1.1.1', 'errado-1');
+    limite.falhou('1.1.1.1'); // o que uma rota HTTP faria com um 401
+    expect(a.autenticar('1.1.1.1', 'token-comprido-do-dono-123456')).toBe('bloqueado');
   });
 });
 
