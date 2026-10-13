@@ -1,5 +1,9 @@
+import { mkdirSync, rmSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
+import { CONTA_CRIAR_PATH } from '../shared/net/auth';
 import { ADMIN_ESTADO_PATH, ADMIN_HEADER } from '../shared/net/admin';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE } from '../shared/net/constants';
@@ -223,15 +227,48 @@ describe('o mural de câmeras, com o servidor de verdade', () => {
     }
   });
 
-  it('sem token configurado o mural nem existe: a conexão cai (4005) e nada é mandado', async () => {
+  it('sem token do dono o mural só abre para a conta admin (P106): a chave do teste não vale, a conexão cai (4003) e nada é mandado', async () => {
     const semToken = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: GUARD, mural: { cadaMs: 50, esperaMs: 400 } });
     try {
       const e = espectar(semToken.port);
       await until(() => e.fechou !== null);
-      expect(e.fechou).toBe(MURAL_FECHOU.desligado);
+      expect(e.fechou).toBe(MURAL_FECHOU.token);
       expect(e.recebidos).toBe(0);
     } finally {
       await semToken.close();
+    }
+  });
+
+  it('P106, uma chave só: a sessão de uma conta admin abre o mural no lugar do token do dono; a de uma conta comum é recusada (4003)', async () => {
+    const pasta = resolve('.tmp', 'mural-conta-teste');
+    rmSync(pasta, { recursive: true, force: true });
+    mkdirSync(pasta, { recursive: true });
+    const banco = join(pasta, 'contas.db');
+    const s = await startServer({ port: 0, host: '127.0.0.1', dbContas: banco, dirDados: pasta, metricasToken: TOKEN, guard: GUARD, mural: { cadaMs: 50, esperaMs: 400 } });
+    try {
+      const criar = async (email: string) => {
+        const r = await fetch(`http://127.0.0.1:${s.port}${CONTA_CRIAR_PATH}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha: 'senhasegura' }) });
+        expect(r.status).toBe(201);
+        return (await r.json()).token as string;
+      };
+      const comum = await criar('comum@x.com');
+      const admin = await criar('admin@x.com');
+      const db = new DatabaseSync(banco);
+      db.prepare('UPDATE contas SET is_admin = 1 WHERE email = ?').run('admin@x.com');
+      db.close();
+
+      const recusado = espectar(s.port, comum);
+      await until(() => recusado.fechou !== null);
+      expect(recusado.fechou).toBe(MURAL_FECHOU.token);
+      expect(recusado.recebidos).toBe(0);
+
+      const aceito = espectar(s.port, admin);
+      await until(() => aceito.recebidos > 0);
+      expect(aceito.fechou).toBeNull();
+      aceito.ws.close();
+    } finally {
+      await s.close();
+      rmSync(pasta, { recursive: true, force: true });
     }
   });
 

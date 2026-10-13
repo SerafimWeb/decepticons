@@ -394,8 +394,14 @@ export class LimiteDeFalhas {
 // ─── As rotas ────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 export interface AdminOpcoes {
-  /** O token do dono; `null` = as rotas nem existem (404). */
+  /** O token do dono; `null` = as rotas nem existem (404), a menos que `contaAdmin` abra a porta. */
   token: string | null;
+  /**
+   * P106 ("unifique as contas", 13/10): a sessão de uma conta com `is_admin` vale no lugar do token do dono, no MESMO cabeçalho
+   * (`ADMIN_HEADER`) e na mesma mensagem do mural. Quem entrou no jogo como admin não precisa colar chave nenhuma. Passa pela mesma régua
+   * de erros do token. `undefined` = só o token do dono vale (como antes).
+   */
+  contaAdmin?: (sessao: string) => boolean;
   amostrador: Amostrador;
   estado: () => AdminEstado;
   lerLog: () => AdminLog;
@@ -446,13 +452,24 @@ export class Admin {
    * **mesma régua de erros** (10 erros por IP em 10 min fecham a porta, até para o token certo). `desligado` = o servidor não tem token.
    */
   autenticar(ip: string, token: unknown): 'ok' | 'negado' | 'bloqueado' | 'desligado' {
-    if (!this.o.token) return 'desligado';
+    if (!this.o.token && !this.o.contaAdmin) return 'desligado';
     if (this.limite.bloqueado(ip)) return 'bloqueado';
-    if (!tokenConfere(token, this.o.token)) {
+    const donoOk = !!this.o.token && tokenConfere(token, this.o.token);
+    if (!donoOk && !this.sessaoAdmin(token)) {
       this.limite.falhou(ip);
       return 'negado';
     }
     return 'ok';
+  }
+
+  /** A sessão de conta admin (P106). Nunca lança: banco fora do ar = não vale. */
+  private sessaoAdmin(token: unknown): boolean {
+    if (!this.o.contaAdmin || typeof token !== 'string' || token.length < 8 || token.length > 200) return false;
+    try {
+      return this.o.contaAdmin(token) === true;
+    } catch {
+      return false;
+    }
   }
 
   /** `true` se a rota era do painel (e a resposta já foi escrita); `false` deixa o `Server.ts` seguir. */
@@ -472,8 +489,8 @@ export class Admin {
       res.end();
       return true;
     }
-    // Sem token configurado a porta nem existe, como a das métricas.
-    if (!this.o.token) {
+    // Sem token configurado (e sem conta admin) a porta nem existe, como a das métricas.
+    if (!this.o.token && !this.o.contaAdmin) {
       res.writeHead(404, CORS);
       res.end();
       return true;

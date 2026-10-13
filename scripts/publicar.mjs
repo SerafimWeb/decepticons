@@ -6,6 +6,10 @@
  * terminar; **só mergeia com o CI verde e o PR `CLEAN`**; e **só apaga o branch remoto depois de confirmar `MERGED`** (em 10/10 um branch
  * apagado depois de um merge que falhou fechou um PR aberto). Usa `ghSeguro.mjs`: se o token do `gh` morrer, cai para a credencial do Git.
  *
+ * **`--sem-ci` (13/10): o CI do GitHub não roda quando o Actions fica sem cota ou sem pagamento (12/10), e o Comandante não quer pagar nem esperar.** Com a opção, o merge não espera o
+ * CI: a prova de que o código presta é o `npm run check` que o hook do push já rodou (e barraria o push se falhasse), e o PR precisa continuar mergeável (`CLEAN` ou `UNSTABLE`, que é "o CI
+ * falhou", sem conflito). **O site não depende do Actions:** o atualizador do PC o publica (`scripts/publicar-site.mjs`). Sem a opção, tudo como antes (só mergeia com o CI verde).
+ *
  * A lógica é uma função com tudo injetado (`publicar(ops, opcoes)`), testada em `server/publicar.test.ts`.
  */
 import { spawnSync } from 'node:child_process';
@@ -64,17 +68,21 @@ export async function publicar(ops, opcoes) {
   }
   if (opcoes.soPr) return { ok: true, pr: n };
 
-  // O CI: a linha `check` precisa existir antes do --watch (senão ele volta na hora e o merge sairia com o CI rodando).
-  let existe = false;
-  for (let i = 0; i < TENTATIVAS_CHECK && !existe; i++) {
-    existe = /^check\t/m.test(gh(['pr', 'checks', String(n)]).stdout);
-    if (!existe) await dormir(6000);
+  if (opcoes.semCi) {
+    log('--sem-ci: não espero o CI do GitHub; vale o npm run check que o hook do push acabou de rodar (verde, senão o push teria sido barrado)');
+  } else {
+    // O CI: a linha `check` precisa existir antes do --watch (senão ele volta na hora e o merge sairia com o CI rodando).
+    let existe = false;
+    for (let i = 0; i < TENTATIVAS_CHECK && !existe; i++) {
+      existe = /^check\t/m.test(gh(['pr', 'checks', String(n)]).stdout);
+      if (!existe) await dormir(6000);
+    }
+    if (!existe) return falha(`o CI não criou a linha "check" no PR #${n} (conflito com a main? veja o PR no GitHub; sem Actions, use --sem-ci)`);
+    log('esperando o CI terminar…');
+    gh(['pr', 'checks', String(n), '--watch']);
+    const resultado = /^check\t(\w+)/m.exec(gh(['pr', 'checks', String(n)]).stdout)?.[1];
+    if (resultado !== 'pass') return falha(`o CI não passou (check: ${resultado ?? 'sem resultado'}); PR #${n} aberto e branch preservado. Se o Actions está sem cota ou pagamento, rode de novo com --sem-ci`);
   }
-  if (!existe) return falha(`o CI não criou a linha "check" no PR #${n} (conflito com a main? veja o PR no GitHub)`);
-  log('esperando o CI terminar…');
-  gh(['pr', 'checks', String(n), '--watch']);
-  const resultado = /^check\t(\w+)/m.exec(gh(['pr', 'checks', String(n)]).stdout)?.[1];
-  if (resultado !== 'pass') return falha(`o CI não passou (check: ${resultado ?? 'sem resultado'}); PR #${n} aberto e branch preservado`);
 
   // O estado do PR: só mergeia limpo.
   let estado = null;
@@ -84,7 +92,9 @@ export async function publicar(ops, opcoes) {
     await dormir(6000);
   }
   if (!estado || estado.state !== 'OPEN') return falha(`o PR #${n} não está aberto (${estado?.state ?? 'estado ilegível'}); nada foi mergeado`);
-  if (estado.mergeStateStatus !== 'CLEAN') {
+  // Com o CI, só `CLEAN`. Sem o CI (--sem-ci) o PR nasce `UNSTABLE` (checks falhando por cobrança) e tudo bem: o que não pode é conflito ou estar fora de dia.
+  const aceitos = opcoes.semCi ? ['CLEAN', 'UNSTABLE'] : ['CLEAN'];
+  if (!aceitos.includes(estado.mergeStateStatus)) {
     return falha(`o PR #${n} está ${estado.mergeStateStatus} (conflito ou fora de dia com a main): junte a main, resolva e rode de novo; branch preservado`);
   }
 
@@ -109,8 +119,11 @@ export async function publicar(ops, opcoes) {
     const d = gh(['api', '-X', 'DELETE', `repos/${repo}/git/refs/heads/${branch}`]);
     log(d.status === 0 ? `branch remoto ${branch} apagado` : `não consegui apagar o branch remoto (${(d.stderr || d.stdout).trim()}); apague à mão`);
   }
-  const deploy = json(gh(['run', 'list', '--branch', 'main', '--limit', '1', '--json', 'status,conclusion,workflowName']))?.[0];
-  if (deploy) log(`deploy: ${deploy.workflowName} ${deploy.status}${deploy.conclusion ? ` (${deploy.conclusion})` : ''}; o site atualiza em poucos minutos`);
+  if (opcoes.semCi) log('o site: o atualizador do PC (CYBERMECH atualizar, a cada 10 min) monta e publica sozinho, de graça; ou rode: npm run publicar-site');
+  else {
+    const deploy = json(gh(['run', 'list', '--branch', 'main', '--limit', '1', '--json', 'status,conclusion,workflowName']))?.[0];
+    if (deploy) log(`deploy: ${deploy.workflowName} ${deploy.status}${deploy.conclusion ? ` (${deploy.conclusion})` : ''}; o site atualiza em poucos minutos`);
+  }
   log('lembrete: troque de branch antes do próximo commit (git switch -c <agente>/<tarefa> origin/main)');
   return { ok: true, pr: n, merge: oid };
 }
@@ -121,7 +134,7 @@ function opcoesDaLinha(argv) {
     const i = argv.indexOf(`--${nome}`);
     return i >= 0 ? argv[i + 1] : undefined;
   };
-  return { titulo: pega('titulo'), corpo: pega('corpo'), soPr: argv.includes('--so-pr') };
+  return { titulo: pega('titulo'), corpo: pega('corpo'), soPr: argv.includes('--so-pr'), semCi: argv.includes('--sem-ci') };
 }
 
 const euMesmo = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);

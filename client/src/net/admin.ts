@@ -143,6 +143,21 @@ export function chaveDoToken(gameServer: string | undefined | null): string {
   return `${ADMIN_TOKEN_KEY}|${url ? url.replace(/\/$/, '') : ''}`;
 }
 
+/**
+ * P106 ("unifique as contas"): a sessão de uma conta admin, guardada no lugar da chave do dono, ainda vale? Devolve a sessão se o servidor a
+ * confirma como `is_admin`; `null` se não há nada guardado, se é a chave do dono (não é sessão: o servidor não a reconhece em `/conta/eu`),
+ * se expirou ou se o servidor não responde. Nunca lança.
+ */
+export async function sessaoDeAdminGuardada(guarda: { ler: () => string | null }, conta: { eu: (token: string) => Promise<{ is_admin: boolean } | null> }): Promise<string | null> {
+  const guardado = guarda.ler();
+  if (!guardado) return null;
+  try {
+    return (await conta.eu(guardado))?.is_admin === true ? guardado : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Lê e grava o token do dono, deste servidor, no armazenamento do aparelho; sem armazenamento (aba anônima), vale só até recarregar. */
 export class TokenDoDono {
   private memoria: string | null = null;

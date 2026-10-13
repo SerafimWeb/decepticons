@@ -1,3 +1,16 @@
+## [2026-10-13] O site passa a ir ao ar pelo PC do Comandante (automático, grátis) e as contas se unificam (Claude, P105/P106)
+
+**Situação:** o Actions parou por cobrança (12/10) e o dono não quer pagar: *"quero que a publicação seja automática, facilitada, eficiente e gratuita… unifique as contas, pegue as informações onde elas estiverem, de forma hábil e simplificada, sempre"*. A receita manual do Qwen funcionava, mas dependia de alguém lembrar de rodá-la.
+
+**Decisões:**
+1. **O PC publica.** `scripts/publicar-site.mjs` monta, envia (`tar` | `ssh`) e **confere por checksum pelo SSH** (daqui o TLS público às vezes é resetado pela VPN; o SSH, não). O **atualizador do PC** o lança solto pelo WMI (a tarefa tem 5 min de limite; o WMI é o que sobrevive à tarefa, achado de 12/10) a cada versão nova, com `--se-mudou`. A lógica pura (validar a configuração, a **trava do destino `/public_html/cybermech`**, montar os comandos, comparar as somas) está em `scripts/publicarSite.mjs` e é testada (`server/publicarSite.test.ts`). **Rejeitado:** runner auto-hospedado do GitHub (o Actions segue cobrado e depende do GitHub), outro serviço de nuvem (custo e conta nova) e um `git push` que dispare algo no servidor (a Hostinger compartilhada não roda hooks de deploy).
+2. **A configuração fica fora do git** (`deploy-site.json` na pasta de dados, R2/R10); as frases de erro nunca repetem valor.
+3. **`npm run publicar -- --sem-ci`**: merge sem esperar o check do Actions; a prova é o `npm run check` do hook do push. Aceita `CLEAN` e `UNSTABLE`; recusa conflito e atraso; só apaga o branch depois de `MERGED`.
+4. **Uma chave só (P106):** a sessão de uma conta `is_admin` vale onde a chave do dono vale (rotas `/admin/*`, mural, `/metricas`), no mesmo cabeçalho, com a mesma régua de erros. **Fecha a decisão em aberto "Uma chave só para o servidor?"**. O token do dono continua sendo a chave de emergência (não depende do banco de contas). **A sessão guardada no cliente é presa ao servidor que a emitiu** (chave do build, não a do `?servidor=` do link).
+5. **Gate de testes por memória** (`scripts/workersPelaMemoria.mjs`): o push morreu duas vezes por falta de RAM com três agentes ativos; o Vitest agora abre 1 worker por 700 MB livres.
+
+**Provado:** a primeira publicação real (13/10, 15:50) levou 66 s e o bundle servido tinha o `COLOSSUS-V4` e a névoa de calor; as mutações do cliente e do servidor (sessão sempre válida, métricas sem a conta admin, erro de sessão que não gasta a régua) são derrubadas pelos testes.
+
 ## [2026-10-13] O CI deixa de gastar minutos onde não precisa, e o site passa a poder ir ao ar sem o GitHub (Qwen, a pedido do Comandante)
 
 **Situação:** o Actions parou por cobrança (12/10) e o site congelou. O Comandante: *"nao quero ter que pagar, e tambem quero que configuremos de forma que nao consuma o billings... quero a mais estratégica"*. **Onde está o gasto:** o repositório é **privado** → os minutos são **medidos** (~2.000/mês no plano gratuito); **cada PR** roda o `check` inteiro (com smoke/bocas/site no Chrome headless) e **cada merge na `main`** roda o `check` **mais** o `deploy`. Com quatro agentes abrindo PRs o dia todo, o volume estoura a cota — é o acumulado, não um disparo único.

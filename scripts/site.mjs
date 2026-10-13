@@ -14,7 +14,7 @@
  *      node scripts/site.mjs --verify <url> → confere o site publicado (roda no deploy)
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname, join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
@@ -160,7 +160,15 @@ async function build() {
   mkdirSync(OUT, { recursive: true });
   run('npx', ['vite', 'build', '--outDir', GAME, '--emptyOutDir', '--logLevel', 'warn'], { VITE_BUILD: buildId() });
   // As capturas vêm antes das páginas: a landing só mostra as imagens que existirem.
-  if (argv.includes('--capturas')) await capture();
+  // `CYBERMECH_CAPTURAS_CACHE` (a publicação pelo PC, `publicar-site.mjs`): as fotos feitas com --capturas ficam guardadas e voltam nas montagens sem Chrome (a landing não perde as imagens).
+  const cache = process.env.CYBERMECH_CAPTURAS_CACHE;
+  if (argv.includes('--capturas')) {
+    await capture();
+    if (cache && existsSync(join(OUT, 'capturas')) && readdirSync(join(OUT, 'capturas')).length) cpSync(join(OUT, 'capturas'), cache, { recursive: true, force: true });
+  } else if (cache && existsSync(cache) && readdirSync(cache).length) {
+    cpSync(cache, join(OUT, 'capturas'), { recursive: true, force: true });
+    console.log(`capturas guardadas reaproveitadas: ${readdirSync(cache).join(', ')}`);
+  }
   run('node', ['scripts/painel.mjs', '--site', '--out', join(OUT, 'sala-de-controle', 'index.html')]);
   // Endereço antigo (até 25/09): quem tiver o link cai na sala de controle.
   mkdirSync(join(OUT, 'bastidores'), { recursive: true });
