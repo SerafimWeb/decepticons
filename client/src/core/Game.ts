@@ -86,6 +86,9 @@ import { esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/e
 import { ALLY_COUNT } from '../sim/nascimentos';
 import { SquadPanel } from '../ui/SquadPanel';
 import { ServerPanel } from '../ui/ServerPanel';
+import { CameraWall } from '../ui/CameraWall';
+import { plantaDaArena } from '../ui/TacticalRadar';
+import { MuralCliente } from '../net/mural';
 import { AdminCliente, TokenDoDono } from '../net/admin';
 import { PALETTE } from './palette';
 import { PilotLabels } from '../ui/PilotLabels';
@@ -685,7 +688,20 @@ export class Game {
     // Janela do servidor (P93): o endereço é o do jogo online (o público do build, ou o do próprio PC); sem ele, o item se apaga.
     const enderecoDoServidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
     const tokenDoDono = new TokenDoDono(browserStorage(), enderecoDoServidor);
-    const painelDoServidor = new ServerPanel({ cliente: new AdminCliente(enderecoDoServidor, tokenDoDono.ler), token: tokenDoDono });
+    const adminCliente = new AdminCliente(enderecoDoServidor, tokenDoDono.ler);
+    const painelDoServidor = new ServerPanel({ cliente: adminCliente, token: tokenDoDono });
+    // Câmeras ao vivo (P88): o mural de radares de todas as partidas do servidor, com o mesmo token do dono. O canal só existe com a janela aberta.
+    let parede: CameraWall | null = null;
+    const mural = new MuralCliente(enderecoDoServidor, tokenDoDono.ler, { estado: (e) => parede?.estado(e), quadro: (q) => parede?.quadro(q) });
+    // As salas online são da Arena: se o jogo local está no Bunker, o mural não desenha as paredes de outro mapa por cima.
+    const plantaOnline = mapa === 'arena' ? plantaDaArena(this.match.arena.occluders) : [];
+    parede = new CameraWall({
+      mural,
+      planta: () => plantaOnline,
+      meia: mapa === 'arena' ? this.match.arena.halfSize : 100,
+      nomes: adminCliente,
+      abrirServidor: () => void painelDoServidor.abrir(),
+    });
     const cmd = new CommandConsole({
       mapa,
       modo: this.gameMode,
@@ -698,6 +714,7 @@ export class Game {
       som: () => this.audio.playUiTransition(),
       esquadrao: { abrir: () => void squadPanel.abrir(), indisponivel: esquadraoIndisponivel, personalizado: () => this.squad.custom },
       servidor: { abrir: () => void painelDoServidor.abrir(), indisponivel: () => (enderecoDoServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
+      cameras: { abrir: () => void parede?.abrir(), indisponivel: () => (mural.temServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
       radar: fonteDoRadar(mapa, this.match.arena.halfSize, this.match.arena.occluders, () => this.mech, () => this.bots.mechs, allies),
     });
     this.settings.onChange(() => cmd.atualizar());

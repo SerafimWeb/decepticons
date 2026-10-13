@@ -18,6 +18,8 @@ export const MSG = {
   PING: 3,
   LEAVE: 4,
   BANK: 5,
+  /** O Comandante pede o mural de câmeras (`shared/net/mural.ts`), com o token do dono. */
+  MURAL_PEDIR: 6,
   WELCOME: 10,
   ROSTER: 11,
   SNAPSHOT: 12,
@@ -25,6 +27,8 @@ export const MSG = {
   PONG: 14,
   REJECT: 15,
   BANK_REPLY: 16,
+  /** Um quadro do mural: todas as salas, só o que o radar precisa (`shared/net/mural.ts`). */
+  MURAL: 17,
 } as const;
 
 /** Tipo da mensagem (primeiro byte); 0 se vazia. */

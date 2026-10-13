@@ -117,6 +117,21 @@ Uma janela por cima do console, do mesmo molde da do esquadrão, aberta por **CO
 
 **Capturas:** `arte/servidor-painel-claude.jpg` e `servidor-relatorios-claude.jpg`. **Limite:** Chrome headless (SwiftShader); a janela não prende o foco do Tab.
 
+### Janela de câmeras ao vivo — UI-9 (12/10, P88): ver todas as partidas de uma vez
+
+Uma janela por cima do console, do mesmo molde das do esquadrão e do servidor, aberta por **COMANDO → CÂMERAS AO VIVO**. Como cumpre os princípios da seção 2:
+
+| # | Princípio | Como a janela cumpre |
+|---|---|---|
+| G1 | **Uma ação primária** | a janela é de leitura: o que se vê é o mural; a única ação é [ ABRIR SERVIDOR ], e só aparece quando falta o token |
+| G2 | **Cada informação em um lugar só** | o código e a contagem moram no cabeçalho do cartão; quem joga, embaixo do radar; o total de partidas e pilotos, no cabeçalho da janela; o tamanho do canal, no rodapé, uma vez |
+| G3 | **Sem informação de desenvolvedor** | é a tela do dono (modo Comandante e token); mesmo assim, nada de bytes nem de ticks nos cartões: pilotos, IAs, rodada e tempo |
+| G4 | **Cabe sem rolagem em 1280×720** | conferido de 1024×700 a 1920×1080 (a janela e o rodapé à vista; o que rola são os cartões, quando passam de duas fileiras) |
+| G5 | **Estados honestos** | sem token, token recusado, bloqueado, sem sinal e sem servidor têm frase e selo próprios; sem sinal apaga os radares em vez de mostrar partida velha como ao vivo; mural vazio diz "Nenhuma partida aberta agora" |
+| G6 | **Teclado** | Esc fecha (mesmo com o foco no corpo da página); o botão fechar tem rótulo |
+
+**Capturas:** `arte/cameras-mural-claude.jpg` e `arte/cameras-sem-token-claude.jpg`. **Limite:** Chrome headless (SwiftShader); a janela não prende o foco do Tab.
+
 ## 2. Princípios (valem para qualquer agente que mexa em tela)
 
 1. **Uma tela, um trabalho.** A pausa serve para jogar; o Hangar, para montar; as Configurações, para ajustar. O que não é do trabalho da tela vai embora ou fica um clique adiante.
@@ -139,5 +154,6 @@ Uma janela por cima do console, do mesmo molde da do esquadrão, aberta por **CO
 | UI-6 | Console de comando (início e pausa) | **feito** (`claude/console-comando`, P86 a P89) |
 | UI-7 | Janela do esquadrão (monitor PILOTOS → ESQUADRÃO) | **feito** (`claude/esquadrao-editor`, P91) |
 | UI-8 | Janela do servidor (monitor COMANDO → SERVIDOR) | **feito** (`claude/servidor-admin`, P93) |
+| UI-9 | Janela de câmeras ao vivo (monitor COMANDO → CÂMERAS AO VIVO) | **feito** (`claude/cameras-ao-vivo`, P88) |
 
 Território: `client/src/ui/`, `styles.css` e `index.html` são do Gemini (`ESTADO_ATUAL`, divisão de trabalho). O dono pediu esta revisão ao Claude diretamente em 10/10; o Gemini tem a tela de login (`gemini/tela-login`) em andamento, com CSS próprio no fim do `styles.css`: os dois PRs mexem em trechos diferentes. Quem chegar depois junta a `main` e roda o `npm run check`.

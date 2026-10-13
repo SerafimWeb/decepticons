@@ -69,6 +69,8 @@ export interface ConsoleHooks {
   esquadrao?: { abrir: () => void; indisponivel: () => string | null; personalizado: () => boolean };
   /** A janela do servidor (P93, `ui/ServerPanel.ts`): `abrir` a mostra; `indisponivel` diz por que não abre (build sem servidor), ou `null`. */
   servidor?: { abrir: () => void; indisponivel: () => string | null };
+  /** A janela de câmeras ao vivo (P88, `ui/CameraWall.ts`): `abrir` a mostra; `indisponivel` diz por que não abre (build sem servidor), ou `null`. */
+  cameras?: { abrir: () => void; indisponivel: () => string | null };
 }
 
 /**
@@ -124,6 +126,11 @@ export class CommandConsole {
         if (!this.hooks.servidor?.indisponivel()) this.hooks.servidor?.abrir();
       });
     }
+    for (const botao of root.querySelectorAll<HTMLElement>('[data-cameras-open]')) {
+      botao.addEventListener('click', () => {
+        if (!this.hooks.cameras?.indisponivel()) this.hooks.cameras?.abrir();
+      });
+    }
     for (const botao of root.querySelectorAll<HTMLElement>('[data-esquadrao-open]')) {
       botao.addEventListener('click', () => {
         if (!this.hooks.esquadrao?.indisponivel()) this.hooks.esquadrao?.abrir();
@@ -170,8 +177,19 @@ export class CommandConsole {
     }
     this.pintarEsquadrao();
     this.pintarServidor();
+    this.pintarCameras();
     this.mundo.atualizar();
     this.radar.desenhar();
+  }
+
+  /** O item CÂMERAS AO VIVO do monitor COMANDO: apagado, com o motivo, num build sem servidor de jogo. */
+  private pintarCameras(): void {
+    const motivo = this.hooks.cameras ? this.hooks.cameras.indisponivel() : 'Este build não sabe onde está o servidor de jogo.';
+    for (const botao of this.root.querySelectorAll<HTMLElement>('[data-cameras-open]')) {
+      botao.classList.toggle('off', motivo !== null);
+      botao.setAttribute('aria-disabled', String(motivo !== null));
+      if (motivo !== null) botao.title = motivo;
+    }
   }
 
   /** O item SERVIDOR do monitor COMANDO: apagado, com o motivo, num build sem servidor de jogo. */
@@ -444,7 +462,7 @@ export class CommandConsole {
 
 /** Uma janela por cima do console (Configurações, sala online, calibração do mouse): o Enter é dela, não do console. */
 function algoPorCima(): boolean {
-  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #server-modal:not(.hidden)');
+  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #server-modal:not(.hidden), #cameras-modal:not(.hidden)');
 }
 
 function barra(rotulo: string, valor: string, fracao: number, alerta = false): HTMLElement[] {

@@ -24,6 +24,8 @@ export interface RadarQuadro {
   meia: number;
   caixas: readonly RadarCaixa[];
   voce: (RadarUnidade & { yaw: number }) | null;
+  /** Vários pilotos de uma vez (o mural de câmeras, P88: uma sala vista de fora): triângulos verdes, sem o cone de visão. */
+  jogadores?: readonly (RadarUnidade & { yaw: number })[];
   aliados: readonly RadarUnidade[];
   /** `grande`: Mech ou chefe (o andróide e o técnico são pontos menores). */
   inimigos: readonly (RadarUnidade & { grande: boolean })[];
@@ -40,6 +42,11 @@ export function plantaDoBunker(): RadarCaixa[] {
   return bunkerBlocks()
     .filter((b) => b.solid && b.y < 10 && b.h >= 3)
     .map((b) => ({ x0: b.x - b.w / 2, z0: b.z - b.d / 2, x1: b.x + b.w / 2, z1: b.z + b.d / 2 }));
+}
+
+/** A planta da Arena: os prédios e a torre, vistos de cima (a mesma que o radar do console desenha; o mural de câmeras usa para todas as salas). */
+export function plantaDaArena(predios: readonly CaixaLida[]): RadarCaixa[] {
+  return predios.map((o) => ({ x0: o.box.min.x, z0: o.box.min.z, x1: o.box.max.x, z1: o.box.max.z }));
 }
 
 /** O pedaço de um Mech que o radar lê (estrutural: o `Game.ts` passa os Mechs; os testes, objetos simples). */
@@ -69,7 +76,7 @@ export function fonteDoRadar(
 ): () => RadarQuadro {
   let caixas: RadarCaixa[] | null = null;
   return () => {
-    caixas ??= mapa === 'bunker' ? plantaDoBunker() : predios.map((o) => ({ x0: o.box.min.x, z0: o.box.min.z, x1: o.box.max.x, z1: o.box.max.z }));
+    caixas ??= mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(predios);
     const eu = voce();
     return {
       mapa,
@@ -100,6 +107,7 @@ export class TacticalRadar {
   private ativo = false;
   /** A escala tipográfica do console (`--k`), lida a cada mudança de tamanho. */
   private k = 1;
+  private readonly observador: ResizeObserver;
 
   constructor(
     root: HTMLElement,
@@ -108,7 +116,14 @@ export class TacticalRadar {
     this.canvas = root.querySelector('canvas')!;
     // Canvas por CPU (`willReadFrequently`): pequeno e redesenhado só uma vez por segundo; fora do processo de GPU não disputa a CPU do boot.
     this.g = this.canvas.getContext('2d', { willReadFrequently: true });
-    new ResizeObserver(() => this.medir()).observe(this.canvas.parentElement!);
+    this.observador = new ResizeObserver(() => this.medir());
+    this.observador.observe(this.canvas.parentElement!);
+  }
+
+  /** Desliga o radar (o mural de câmeras cria um por sala e tira quando a sala fecha): para de medir e de desenhar. */
+  dispose(): void {
+    this.observador.disconnect();
+    this.ativo = false;
   }
 
   /** Liga o desenho (o console chama quando o jogo fica pronto). */
@@ -208,6 +223,7 @@ export class TacticalRadar {
 
     for (const a of q.aliados) this.ponto(X(a.x), Y(a.z), 3, '#00e5ff');
     for (const i of q.inimigos) this.ponto(X(i.x), Y(i.z), i.grande ? 3.6 : 2.4, '#ff2d3d');
+    if (q.jogadores) for (const j of q.jogadores) this.piloto(X(j.x), Y(j.z), -Math.sin(j.yaw), -Math.cos(j.yaw));
     if (q.voce) {
       // Triângulo apontando para onde o Mech olha: a frente é (-sen yaw, -cos yaw).
       const x = X(q.voce.x);
@@ -237,6 +253,21 @@ export class TacticalRadar {
       g.fill();
       g.shadowBlur = 0;
     }
+  }
+
+  /** Um piloto visto de fora: o triângulo verde apontando para onde olha (sem o cone de visão, que é só de quem joga). */
+  private piloto(x: number, y: number, fx: number, fz: number): void {
+    const g = this.g!;
+    g.fillStyle = '#39ff6a';
+    g.shadowColor = '#39ff6a';
+    g.shadowBlur = 8;
+    g.beginPath();
+    g.moveTo(x + fx * 8, y + fz * 8);
+    g.lineTo(x - fx * 4 - fz * 4.5, y - fz * 4 + fx * 4.5);
+    g.lineTo(x - fx * 4 + fz * 4.5, y - fz * 4 - fx * 4.5);
+    g.closePath();
+    g.fill();
+    g.shadowBlur = 0;
   }
 
   private ponto(x: number, y: number, r: number, cor: string): void {
