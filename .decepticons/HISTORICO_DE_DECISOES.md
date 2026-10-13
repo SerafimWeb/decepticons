@@ -1,3 +1,32 @@
+## [2026-10-12] 2ª CORREÇÃO: o ajudante tem de nascer FORA da árvore do servidor: pelo WMI (P93, Claude)
+
+**Situação:** a 2ª prova real (21:14) falhou: o servidor lançou o ajudante com `spawn` e o ajudante nunca rodou. Reproduzido fora do Agendador: `powershell.exe` via `spawn` morre com o pai (sem `detached`) ou nem roda (com `detached`, sem console); `cmd /c start`, `Start-Process` e o WMI sobrevivem.
+**Decisões:**
+1. **O WMI (`Win32_Process.Create`) lança o ajudante:** o processo nasce filho do serviço do WMI, fora da árvore e de qualquer "job" do servidor ou da tarefa; é o que menos depende do contexto do Agendador, que não dá para reproduzir sem administrador. `cmd start` e `Start-Process` funcionariam na minha máquina, mas continuam filhos do servidor.
+2. **O servidor espera o lançamento (1 a 3 s)** antes de fechar e sair: o `spawn` solto "dava certo" no log e o processo morria com o pai; esperar o WMI devolver o PID é a confirmação de que o ajudante existe.
+3. **Plano B: a tarefa do atualizador (`schtasks /Run`)**, só se o WMI falhar. Nunca os dois: dois religamentos juntos se atropelam (o `ligar-servidor.ps1` para a tarefa que o outro acabou de ligar).
+4. **A pasta de dados vai em `-Dados`:** o processo do WMI não herda o ambiente do servidor (`CYBERMECH_DADOS`).
+5. **Todo passo no `religar.log`**, escrito pelo servidor (o que lançou e como) e pelo ajudante: duas provas falharam sem deixar rastro; a terceira, se falhar, diz onde.
+6. **Simulação completa e segura antes da prova real** (servidores de mentira numa porta livre e uma tarefa inexistente), porque cada prova real custa ~4 min de servidor fora do ar. O que ela NÃO cobre é o contexto da tarefa: isso só o servidor de casa mostra.
+**Quem decidiu:** Claude.
+
+## [2026-10-12] CORREÇÃO: o Agendador não religa quem sai com código ≠ 0; o servidor solta um ajudante que o religa (P93, Claude)
+
+**Situação:** a prova real do REINICIAR em produção (0 jogadores) falhou: o servidor saiu com o 75 e ficou fora ~4,5 min, até ser ligado à mão. A decisão 3 da entrada "O painel do servidor: o token das métricas…" (abaixo) afirmava que "a tarefa do Windows religa quem cai (código ≠ 0, `RestartCount` 999)": **estava errada** (a tarefa ficou "Ready", resultado 75).
+**Decisões:**
+1. **Religar é trabalho do servidor, não do Agendador.** Antes de sair, o servidor solta um PowerShell separado (`religar-servidor.ps1`) que espera a porta livre e liga a tarefa pelo `ligar-servidor.ps1` (liga, confere, tenta de novo: o mesmo caminho do atualizador, que já provou resolver a corrida "religar logo depois de parar").
+2. **O código de saída continua 75** (≠ 0): serve ao log e ao resultado da tarefa, e distingue de `parar.flag` (0), que é parar de verdade. Ele **não** religa nada.
+3. **O vigia do atualizador fica como rede de segurança** (a cada 10 min liga o servidor que não responde): o pior caso do ajudante falhar é o de hoje, com 10 min de teto.
+4. **Plano B, se o ajudante não funcionar no servidor de casa:** a tarefa vira um laço (`cmd` religa o `node` enquanto ele sair com 75), o que exige o `servidor-windows.ps1` como administrador, e é decisão do Comandante.
+5. **Por que a falha passou:** o ensaio usava um agendador de mentira escrito por mim para religar quem sai com código ≠ 0, ou seja, provava a minha suposição. Automação só conta provada no ambiente real (e foi: o teste em produção com 0 jogadores achou o erro).
+**Quem decidiu:** Claude.
+
+## [2026-10-12] Merge sem o CI do GitHub, porque o Actions parou por cobrança (Comandante)
+
+**Situação:** desde ~19:30 todo job do Actions falha em 2 s sem executar passo, com a anotação "recent account payments have failed or your spending limit needs to be increased" (`check`, `etiquetas` e `deploy`, em todos os branches e na `main`). O `npm run publicar` espera o CI verde e recusa; o deploy do site não roda.
+**Decisão do Comandante (resposta a uma pergunta direta):** mergear com o **`npm run check` local verde** (o hook do push o roda; push barrado se falhar), com o merge à mão, até o Actions voltar. O site **não** republica nesse intervalo; o servidor de casa atualiza normalmente (o atualizador verifica antes de reiniciar). **Por que não foi unilateral:** a regra 13 do `AGENTS.md` põe o CI verde antes do merge; um CI que não roda não é um CI verde, e pular a trava é do dono. **Quando o Actions voltar a regra acaba**, e o deploy da `main` precisa ser reexecutado uma vez.
+**Quem decidiu:** o Comandante; Claude executou.
+
 ## [2026-10-12] O painel do servidor: o token das métricas, o reinício por código de saída e o teste que não toca no jogo (P93, Claude)
 
 **Ordem do Comandante (P93):** "os controles do servidor na interface, faça também pra eu poder resetar, testar, avaliar e analisar o servidor e as infos dele".
@@ -5,7 +34,7 @@
 **Decisões:**
 1. **A chave é o token das métricas (`metricas-token.txt`), não as contas `is_admin` do #259.** Já existe, já tem comparação em tempo constante e já vive na pasta de dados do servidor; o painel não pede login nem banco. O #259 (Gemini) entrou na `main` enquanto esta fase fechava e traz `/admin/config` e o bloqueio de chassis com a sessão de uma conta `is_admin`: as rotas não se cruzam e cada painel tem a sua chave. Unir as chaves (aceitar a sessão `is_admin` nas rotas do servidor) é uma linha em `server/admin.ts`, mas é do Comandante decidir ("decisões em aberto" do `ESTADO_ATUAL.md`). A régua de erros é própria e mais dura que a das métricas (10 erros em 10 min por IP, 429), porque estas rotas **mudam o servidor**.
 2. **Sem token configurado a porta nem existe (404)**, como a das métricas: um servidor sem chave não oferece rota de dono, nem para dizer "não".
-3. **O reinício sai com o código 75, não com 0.** A tarefa do Windows religa quem cai (código ≠ 0, `RestartCount` 999 a cada minuto) e **deixa quieto** quem sai com 0 (é o que o `parar.flag` usa para parar de verdade). Um REINICIAR que saísse com 0 seria um DESLIGAR. O servidor fecha as salas, grava os números e sai; se o fechamento travar, sai mesmo assim em 8 s. Fora da tarefa (rodando à mão) a janela avisa que reiniciar só desliga.
+3. **O reinício sai com o código 75, não com 0.** **[CORRIGIDO no mesmo dia, ver a entrada acima: o Agendador NÃO religa quem sai com código ≠ 0; quem religa é um ajudante que o servidor solta.]** A tarefa do Windows (supostamente) religava quem cai (código ≠ 0, `RestartCount` 999 a cada minuto) e **deixa quieto** quem sai com 0 (é o que o `parar.flag` usa para parar de verdade). Um REINICIAR que saísse com 0 seria um DESLIGAR. O servidor fecha as salas, grava os números e sai; se o fechamento travar, sai mesmo assim em 8 s. Fora da tarefa (rodando à mão) a janela avisa que reiniciar só desliga.
 4. **O teste de mentira entra pela porta do jogo, não por dentro.** Quatro clientes `ws` falsos mandam JOIN, comandos a 30 Hz e ping, numa sala `TESTE-xxxx` que **não entra na telemetria nem no `/status`** (ninguém "joga" por causa do teste). Medir por dentro (chamar a sala direto) não pegaria o que o jogador pega: o codec, o limite por IP, a fila de envio. **Só roda sem ninguém jogando** e **1 s de aquecimento** não conta (abrir a sala é um engasgo único, que inflava o tick medido para 6 ms).
 5. **O veredito é de uma hora de amostras a cada 5 s, na memória.** Nada em disco: o painel não é um banco de séries. O custo é o de um laço de contadores a cada 5 s; o reinício zera a hora, e a janela diz "o servidor subiu há pouco" em vez de dar um veredito de confiança com menos de um minuto de dados.
 6. **A capacidade é uma estimativa e se chama assim:** `floor(8,3 / p95 do tick da pior sala)` salas (metade do tick de 16,7 ms). Não conta a banda de casa (`CAPACIDADE.md` tem a medida de verdade) nem a memória. O que o painel afirma, o ensaio de carga continua sendo o árbitro.

@@ -267,7 +267,7 @@ export class ServerPanel {
     const reiniciando = this.ocupado === 'reiniciando' || !!e?.reiniciando;
     this.chip.className = `srv-chip ${fora ? 'fora' : reiniciando ? 'reiniciando' : e ? 'no-ar' : 'sem'}`;
     this.chip.textContent = fora ? 'FORA DO AR' : reiniciando ? 'REINICIANDO' : e ? 'NO AR' : 'SEM LEITURA';
-    this.sub.textContent = e ? `versão ${e.release} · há ${duracao(e.uptimeS)} · ${e.supervisionado ? 'religa sozinho se cair' : 'rodando à mão (ninguém o religa)'}` : 'o servidor de jogo do PC';
+    this.sub.textContent = e ? `versão ${e.release} · há ${duracao(e.uptimeS)} · ${e.supervisionado ? 'se religa sozinho (se cair, em até 10 min)' : 'rodando à mão (ninguém o religa)'}` : 'o servidor de jogo do PC';
   }
 
   /** O formulário do token, uma vez só: refazê-lo a cada consulta apagava o que a pessoa estava digitando. */
@@ -444,7 +444,7 @@ export class ServerPanel {
     this.acoes.replaceChildren(
       botao('[ AVALIAR ]', 'btn-terminal', 'avaliar', 'O veredito sobre a última hora e quantas salas cabem', ocupado),
       botao('[ TESTAR ]', 'btn-terminal', 'testar', n > 0 ? 'O teste espera a sala esvaziar: há gente jogando' : 'Quatro pilotos de mentira entram pela porta do jogo e medem', ocupado || n > 0),
-      botao('[ REINICIAR ]', 'btn-terminal srv-perigo', 'reiniciar', e?.supervisionado === false ? 'O servidor roda à mão: reiniciar só o desliga' : 'Salva e reinicia; a tarefa do Windows o religa', ocupado),
+      botao('[ REINICIAR ]', 'btn-terminal srv-perigo', 'reiniciar', e?.supervisionado === false ? 'O servidor roda à mão: reiniciar só o desliga' : 'Salva, sai e se religa sozinho em uns segundos', ocupado),
       botao('[ SAIR DO PAINEL ]', 'btn-terminal', 'sair', 'Esquece o token neste aparelho'),
     );
   }
@@ -569,7 +569,7 @@ export class ServerPanel {
     }
     this.confirmando = false;
     this.ocupado = 'reiniciando';
-    this.msg = `Reiniciando: o servidor sai em ${num(r.dados.emS, 0)} s${r.dados.religa === 'supervisionado' ? ' e a tarefa do Windows o religa' : '; ele roda à mão e ninguém o religa: ligue-o de novo no PC'}.`;
+    this.msg = `Reiniciando: o servidor sai em ${num(r.dados.emS, 0)} s${r.dados.religa === 'supervisionado' ? ' e se religa sozinho' : '; ele roda à mão e ninguém o religa: ligue-o de novo no PC'}.`;
     this.avaliacao = null;
     this.teste = null;
     this.desenhar();

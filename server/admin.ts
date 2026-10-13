@@ -44,7 +44,7 @@ const LOG_BYTES = 64 * 1024;
 const LOG_LINHAS = 200;
 /** Linhas que o servidor guarda na memória quando não há arquivo de log (rodando à mão). */
 const LOG_MEMORIA = 300;
-/** O código de saída do reinício pedido pelo painel: diferente de 0, para a tarefa do Windows (que religa quem cai) tratar como queda. */
+/** O código de saída do reinício pedido pelo painel: diferente de 0, para o log e o resultado da tarefa dizerem que não foi uma parada (0 é `parar.flag`). Quem religa é o ajudante (`religar.ts`). */
 export const CODIGO_REINICIO = 75;
 /** A resposta de `POST /admin/reiniciar` sai antes de o servidor fechar. */
 export const REINICIO_EM_S = 2;
