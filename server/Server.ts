@@ -264,6 +264,15 @@ export async function startServer(
   const dbCaminho = opts.dbContas ?? bancoDeContas(pastaDados(codigo));
   if (dbCaminho !== ':memory:') mkdirSync(dirname(dbCaminho), { recursive: true });
   const contas = new Contas(dbCaminho);
+  /** P106: a sessão de uma conta admin vale onde a chave do dono vale (admin, mural, métricas). Nunca lança. */
+  const sessaoDeAdmin = (token: unknown): boolean => {
+    if (typeof token !== 'string' || token.length < 8 || token.length > 200) return false;
+    try {
+      return contas.validarSessao(token)?.is_admin === true;
+    } catch {
+      return false;
+    }
+  };
   const limiteLogin = new LimiteLogin(opts.limiteLogin);
 
   const http = createServer(async (req, res) => {
@@ -326,7 +335,7 @@ export async function startServer(
         res.end();
         return;
       }
-      if (!tokenConfere(req.headers[METRICAS_HEADER], metricasToken)) {
+      if (!tokenConfere(req.headers[METRICAS_HEADER], metricasToken) && !sessaoDeAdmin(req.headers[METRICAS_HEADER])) {
         res.writeHead(401, { 'access-control-allow-origin': '*', 'cache-control': 'no-store' });
         res.end();
         return;
@@ -628,6 +637,7 @@ export async function startServer(
   const supervisionado = opts.supervisionado ?? false;
   admin = new Admin({
     token: metricasToken,
+    contaAdmin: sessaoDeAdmin,
     amostrador,
     estado: () =>
       montarEstado(

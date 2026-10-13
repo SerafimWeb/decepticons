@@ -224,6 +224,58 @@ describe('publicar: o que ele recusa', () => {
   });
 });
 
+describe('publicar --sem-ci: o Actions sem cota ou sem pagamento (12/10) não trava o trabalho', () => {
+  const SEM_CI = { ...OPC, semCi: true };
+
+  it('não espera o CI nem olha o resultado dele: com o check "fail" por cobrança e o PR UNSTABLE, mergeia (a prova é o npm run check do hook do push) e só depois apaga o branch', async () => {
+    const p = palco({ ci: 'fail', estado: 'UNSTABLE' });
+    const r = await publicar(p.ops, SEM_CI);
+    expect(r).toEqual({ ok: true, pr: 77, merge: 'abcdef1234567' });
+    expect(p.sem().some((c) => c.startsWith('gh pr checks'))).toBe(false); // nem a linha "check", nem o --watch
+    const ordem = p.sem();
+    expect(ordem.findIndex((c) => c.startsWith('push '))).toBeLessThan(ordem.findIndex((c) => c.startsWith('gh pr create')));
+    expect(ordem.findIndex((c) => c.startsWith('gh pr merge'))).toBeLessThan(ordem.findIndex((c) => c.startsWith('gh api -X DELETE')));
+    expect(p.log.join('\n')).toMatch(/--sem-ci: não espero o CI/);
+    expect(p.log.join('\n')).toMatch(/publicar-site/); // diz como o site vai ao ar sem o Actions
+    expect(p.sem().some((c) => c.startsWith('gh run list'))).toBe(false); // não pergunta pelo deploy do Actions
+  });
+
+  it('o push recusado pelo hook (check local falhou) continua barrando tudo: sem --sem-ci que valha, sem push não há PR', async () => {
+    const p = palco({ pushStatus: 1 });
+    const r = await publicar(p.ops, SEM_CI);
+    expect(r.ok).toBe(false);
+    expect(p.sem().some((c) => c.startsWith('gh pr create'))).toBe(false);
+  });
+
+  it('conflito ou fora de dia com a main (DIRTY, BEHIND) continua recusado, e o branch fica; só CLEAN e UNSTABLE passam', async () => {
+    for (const estado of ['DIRTY', 'BEHIND', 'BLOCKED_PELA_REVISAO']) {
+      const p = palco({ estado });
+      const r = await publicar(p.ops, SEM_CI);
+      expect(r.ok, estado).toBe(false);
+      expect(p.sem().some((c) => c.startsWith('gh pr merge')), estado).toBe(false);
+      expect(p.sem().some((c) => c.startsWith('gh api -X DELETE')), estado).toBe(false);
+    }
+    expect((await publicar(palco({ estado: 'CLEAN' }).ops, SEM_CI)).ok).toBe(true);
+  });
+
+  it('SEM a opção, nada muda: o CI vermelho continua barrando o merge (e a frase sugere --sem-ci quando o Actions é que está parado)', async () => {
+    const p = palco({ ci: 'fail', estado: 'UNSTABLE' });
+    const r = await publicar(p.ops, OPC);
+    expect(r.ok).toBe(false);
+    expect(r.motivo).toMatch(/--sem-ci/);
+    expect(p.sem().some((c) => c.startsWith('gh pr merge'))).toBe(false);
+    // E UNSTABLE sem a opção nunca passa, mesmo com o check "pass".
+    expect((await publicar(palco({ ci: 'pass', estado: 'UNSTABLE' }).ops, OPC)).ok).toBe(false);
+  });
+
+  it('o merge que não saiu com --sem-ci também preserva o branch', async () => {
+    const p = palco({ mergeou: false });
+    const r = await publicar(p.ops, SEM_CI);
+    expect(r.ok).toBe(false);
+    expect(p.sem().some((c) => c.startsWith('gh api -X DELETE'))).toBe(false);
+  });
+});
+
 describe('ghSeguro: cai para a credencial do Git só quando o token do gh morreu', () => {
   const TOKEN = 'gho_SEGREDO_QUE_NUNCA_PODE_APARECER';
   const mortoOuVivo = (vivo: boolean) => {

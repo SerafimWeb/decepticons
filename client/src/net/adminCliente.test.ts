@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ADMIN_HEADER, type AdminEstado } from '../../../shared/net/admin';
-import { ADMIN_TOKEN_KEY, AdminCliente, chaveDoToken, TokenDoDono } from './admin';
+import { ADMIN_TOKEN_KEY, AdminCliente, chaveDoToken, sessaoDeAdminGuardada, TokenDoDono } from './admin';
 
 const SERVIDOR = 'wss://jogo.selvamkt.com.br';
 const estado = (): AdminEstado => ({
@@ -85,6 +85,34 @@ describe('o cliente do painel do servidor', () => {
     expect(await cliente(resposta({}, 502)).statusPublico()).toBeNull();
     expect(await cliente(vi.fn(async () => { throw new Error('x'); }) as unknown as typeof fetch).statusPublico()).toBeNull();
     expect(await new AdminCliente(undefined, () => null).statusPublico()).toBeNull();
+  });
+});
+
+describe('P106: a sessão da conta admin guardada no lugar da chave do dono', () => {
+  const guarda = (v: string | null) => ({ ler: () => v });
+  const conta = (r: { is_admin: boolean } | null | 'lanca') => ({
+    eu: async (_t: string) => {
+      if (r === 'lanca') throw new Error('rede');
+      return r;
+    },
+  });
+
+  it('devolve a sessão só se o servidor a confirma como admin', async () => {
+    expect(await sessaoDeAdminGuardada(guarda('sessao-do-admin'), conta({ is_admin: true }))).toBe('sessao-do-admin');
+    expect(await sessaoDeAdminGuardada(guarda('sessao-de-jogador'), conta({ is_admin: false }))).toBeNull();
+  });
+
+  it('nada guardado, chave do dono (que não é sessão), sessão vencida ou servidor fora do ar: null, sem lançar', async () => {
+    expect(await sessaoDeAdminGuardada(guarda(null), conta({ is_admin: true }))).toBeNull();
+    expect(await sessaoDeAdminGuardada(guarda(''), conta({ is_admin: true }))).toBeNull();
+    expect(await sessaoDeAdminGuardada(guarda('chave-do-dono-comprida'), conta(null))).toBeNull();
+    expect(await sessaoDeAdminGuardada(guarda('sessao-do-admin'), conta('lanca'))).toBeNull();
+  });
+
+  it('não consulta o servidor quando não há o que conferir', async () => {
+    let chamadas = 0;
+    await sessaoDeAdminGuardada(guarda(null), { eu: async () => (chamadas++, null) });
+    expect(chamadas).toBe(0);
   });
 });
 

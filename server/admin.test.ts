@@ -253,6 +253,64 @@ describe('Admin.autenticar: a chave do dono para quem não passa pelas rotas HTT
   });
 });
 
+describe('Admin.autenticar com conta admin (P106, "unifique as contas"): a sessão do admin vale onde a chave do dono vale', () => {
+  const SESSAO_ADMIN = 'sessao-de-conta-admin-0123456789';
+  const admin = (token: string | null, contaAdmin?: (s: string) => boolean, limite = new LimiteDeFalhas(100, 600_000)) =>
+    new Admin({
+      token,
+      ...(contaAdmin ? { contaAdmin } : {}),
+      amostrador: {} as never,
+      estado: () => ({}) as never,
+      lerLog: () => ({}) as never,
+      jogadores: () => 0,
+      contexto: () => ({ uptimeS: 0, recusasPorTaxa: 0 }),
+      fecharSala: () => false,
+      testar: async () => ({}) as never,
+      supervisionado: false,
+      anotar: () => {},
+      clientIp: () => '1.1.1.1',
+      lerCorpo: async () => Buffer.alloc(0),
+      limite,
+    });
+  const soEssa = (s: string) => s === SESSAO_ADMIN;
+
+  it('a sessão de admin passa, a do dono continua passando, e qualquer outra coisa é negada', () => {
+    const a = admin('token-comprido-do-dono-123456', soEssa);
+    expect(a.autenticar('1.1.1.1', SESSAO_ADMIN)).toBe('ok');
+    expect(a.autenticar('1.1.1.1', 'token-comprido-do-dono-123456')).toBe('ok');
+    expect(a.autenticar('2.2.2.2', 'sessao-de-conta-comum-0123456789')).toBe('negado');
+    for (const ruim of ['', 'curto', undefined, 42, null, 'x'.repeat(201)]) expect(a.autenticar('3.3.3.3', ruim), String(ruim)).toBe('negado');
+  });
+
+  it('sem token do dono, a porta fica aberta só para a conta admin; sem nenhuma das duas chaves, desligada', () => {
+    const soConta = admin(null, soEssa);
+    expect(soConta.autenticar('1.1.1.1', SESSAO_ADMIN)).toBe('ok');
+    expect(soConta.autenticar('1.1.1.1', 'qualquer-coisa-comprida')).toBe('negado');
+    expect(admin(null).autenticar('1.1.1.1', SESSAO_ADMIN)).toBe('desligado');
+  });
+
+  it('sem a opção contaAdmin nada muda: a sessão de conta não vale (o servidor sem contas, ou antes da P106)', () => {
+    expect(admin('token-comprido-do-dono-123456').autenticar('1.1.1.1', SESSAO_ADMIN)).toBe('negado');
+  });
+
+  it('a sessão errada gasta a mesma régua de erros do token (10 erros por IP fecham a porta, até para a chave certa)', () => {
+    const a = admin('token-comprido-do-dono-123456', soEssa, new LimiteDeFalhas(3, 600_000));
+    expect(a.autenticar('1.1.1.1', 'sessao-errada-1')).toBe('negado');
+    expect(a.autenticar('1.1.1.1', 'sessao-errada-2')).toBe('negado');
+    expect(a.autenticar('1.1.1.1', 'sessao-errada-3')).toBe('negado');
+    expect(a.autenticar('1.1.1.1', SESSAO_ADMIN)).toBe('bloqueado');
+    expect(a.autenticar('9.9.9.9', SESSAO_ADMIN)).toBe('ok'); // outro IP segue livre
+  });
+
+  it('o banco de contas fora do ar não derruba nem libera: a verificação que lança vale como negada', () => {
+    const a = admin('token-comprido-do-dono-123456', () => {
+      throw new Error('banco fora do ar');
+    });
+    expect(a.autenticar('1.1.1.1', SESSAO_ADMIN)).toBe('negado');
+    expect(a.autenticar('1.1.1.1', 'token-comprido-do-dono-123456')).toBe('ok'); // a chave do dono não depende do banco
+  });
+});
+
 describe('o amostrador', () => {
   const sala = (jogadores: number, tickMs: number): { resumo(): AdminSala; humanCount: number } => ({
     humanCount: jogadores,

@@ -1,4 +1,5 @@
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket } from 'ws';
@@ -18,6 +19,7 @@ import {
   lerLog,
   lerTeste,
 } from '../shared/net/admin';
+import { CONTA_CRIAR_PATH } from '../shared/net/auth';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION } from '../shared/net/constants';
 import { encodeJoin, messageType, MSG } from '../shared/net/messages';
@@ -285,11 +287,46 @@ describe('o painel do servidor (/admin/*), com o servidor de verdade', () => {
     }
   });
 
-  it('sem token configurado a porta nem existe (404), e sem gancho de reinício a rota responde 501', async () => {
+  it('P106, uma chave só: a sessão de uma conta admin abre as rotas do painel e as métricas no lugar do token do dono; a conta comum não', async () => {
+    const pasta = resolve('.tmp', 'admin-conta-teste');
+    rmSync(pasta, { recursive: true, force: true });
+    mkdirSync(pasta, { recursive: true });
+    const banco = join(pasta, 'contas.db');
+    const s = await startServer({ port: 0, host: '127.0.0.1', dbContas: banco, dirDados: pasta, metricasToken: TOKEN, guard: GUARD, limiteAdmin: { teto: 10_000 } });
+    try {
+      const criar = async (email: string) => {
+        const r = await fetch(`http://127.0.0.1:${s.port}${CONTA_CRIAR_PATH}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha: 'senhasegura' }) });
+        expect(r.status).toBe(201);
+        return (await r.json()).token as string;
+      };
+      const comum = await criar('comum@x.com');
+      const admin = await criar('admin@x.com');
+      const db = new DatabaseSync(banco);
+      db.prepare('UPDATE contas SET is_admin = 1 WHERE email = ?').run('admin@x.com');
+      db.close();
+
+      expect((await chamar(s.port, ADMIN_ESTADO_PATH, { token: comum })).status).toBe(401); // conta comum não entra
+      const res = await chamar(s.port, ADMIN_ESTADO_PATH, { token: admin });
+      expect(res.status).toBe(200);
+      expect(lerEstado(await res.json())).not.toBeNull();
+      expect((await chamar(s.port, ADMIN_ESTADO_PATH, { token: TOKEN })).status).toBe(200); // a chave do dono segue valendo
+      const metricas = (token: string) => fetch(`http://127.0.0.1:${s.port}/metricas`, { headers: { 'x-cybermech-metricas': token } });
+      expect((await metricas(admin)).status).toBe(200);
+      expect((await metricas(comum)).status).toBe(401);
+      // Sessão encerrada não vale mais (o admin saiu da conta).
+      await fetch(`http://127.0.0.1:${s.port}/conta/sair`, { method: 'POST', headers: { 'x-cybermech-sessao': admin } });
+      expect((await chamar(s.port, ADMIN_ESTADO_PATH, { token: admin })).status).toBe(401);
+    } finally {
+      await s.close();
+      rmSync(pasta, { recursive: true, force: true });
+    }
+  });
+
+  it('sem token do dono, só a conta admin abre a porta: sem credencial responde 401; e sem gancho de reinício a rota responde 501', async () => {
     const semToken = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: GUARD });
     try {
-      expect((await chamar(semToken.port, ADMIN_ESTADO_PATH)).status).toBe(404);
-      expect((await chamar(semToken.port, ADMIN_REINICIAR_PATH, { metodo: 'POST', corpo: {} })).status).toBe(404);
+      expect((await chamar(semToken.port, ADMIN_ESTADO_PATH, { token: null })).status).toBe(401);
+      expect((await chamar(semToken.port, ADMIN_REINICIAR_PATH, { metodo: 'POST', token: 'sessao-que-nao-existe-1234', corpo: {} })).status).toBe(401);
     } finally {
       await semToken.close();
     }

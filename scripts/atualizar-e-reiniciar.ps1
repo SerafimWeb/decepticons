@@ -56,4 +56,16 @@ if ($codigo -eq 0) {
   }
 }
 # codigo 2 (falhou, já reverteu sozinho) não faz nada aqui — o log em .tmp\servidor\atualizacao.log já registrou o motivo.
+
+# O site (13/10, P105: "publicação automática, gratuita; não quero pagar o GitHub"): o Actions não publica mais, então o PC publica. Montar o site leva mais que o limite desta tarefa (5 min),
+# então o publicador roda SOLTO (pelo WMI, como o ajudante de reinício: fora da árvore desta tarefa) e só se o código mudou (--se-mudou) e há configuração (deploy-site.json).
+# O processo do WMI não herda o ambiente: o PATH vai na linha de comando. O que ele fez fica em .tmp\servidor\publicar-site.log.
+try {
+  $nodeExe = (Get-Command node.exe).Source
+  $linha = "cmd.exe /c set `"PATH=$env:PATH`" && `"$nodeExe`" scripts\publicar-site.mjs --se-mudou"
+  $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = $linha; CurrentDirectory = $raiz }
+  if ($r.ReturnValue -ne 0) { Registrar "o publicador do site não foi lançado (WMI devolveu $($r.ReturnValue))" }
+} catch {
+  Registrar "o publicador do site não foi lançado: $($_.Exception.Message)"
+}
 exit 0

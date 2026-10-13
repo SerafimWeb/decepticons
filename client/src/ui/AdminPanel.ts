@@ -1,14 +1,21 @@
+import { browserStorage } from '../core/Settings';
+import { sessaoDeAdminGuardada, TokenDoDono } from '../net/admin';
 import { ContaCliente } from '../net/auth';
+import { defaultServer } from '../net/onlineConfig';
 import { CHASSIS, type ChassisId } from '../entities/chassis';
 
 export class AdminPanel {
   private root: HTMLElement;
   private readonly client: ContaCliente;
   private token: string | null = null;
+  /** P106: a sessão do admin vai para o mesmo lugar da chave do dono; o painel do servidor e o mural passam a valer sem colar chave nenhuma. */
+  private readonly guarda: TokenDoDono;
   private lockedMechs: Set<ChassisId> = new Set();
   
   constructor(private readonly onChange: (locked: Set<ChassisId>) => void) {
     this.client = new ContaCliente(import.meta.env.VITE_GAME_SERVER);
+    const servidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
+    this.guarda = new TokenDoDono(browserStorage(), servidor);
     this.root = document.createElement('div');
     this.root.className = 'admin-modal hidden';
     this.root.innerHTML = `
@@ -66,6 +73,15 @@ export class AdminPanel {
   open() {
     this.root.classList.remove('hidden');
     this.render();
+    // Já entrou como admin antes (ou no painel do servidor)? A sessão guardada evita pedir e-mail e senha de novo.
+    if (!this.token) {
+      void sessaoDeAdminGuardada(this.guarda, this.client).then((sessao) => {
+        if (sessao && !this.token) {
+          this.token = sessao;
+          this.render();
+        }
+      });
+    }
   }
 
   private close() {
@@ -122,6 +138,7 @@ export class AdminPanel {
         err.textContent = 'Conta não tem permissão de Admin.';
       } else {
         this.token = res.token;
+        this.guarda.gravar(res.token);
         this.render();
       }
     } else if (action === 'toggle') {
