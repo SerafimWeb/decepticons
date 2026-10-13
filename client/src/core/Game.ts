@@ -86,6 +86,9 @@ import { EsquadraoStore } from './EsquadraoStore';
 import { esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
 import { ALLY_COUNT } from '../sim/nascimentos';
 import { SquadPanel } from '../ui/SquadPanel';
+import { SequenciaDeAbates } from '../combat/killStreak';
+import { bootProgresso } from './bootProgress';
+import { locucaoDoNavegador } from '../ui/locucao';
 import { CampaignPanel } from '../ui/CampaignPanel';
 import { CampaignRunHud } from '../ui/CampaignRunHud';
 import { CampanhaStore } from './CampanhaStore';
@@ -250,6 +253,10 @@ export class Game {
   /** A etapa de campanha que esta partida é (o link traz `?campanha=…&etapa=N` e bate com o modo e o mapa), ou `null`. */
   private campanha: EtapaEmCurso | null = null;
   private campanhaHud: CampaignRunHud | null = null;
+  /** A sequência de abates do jogador (P96): alimenta o aviso de abate. Só da tela (G1/G2). */
+  private readonly sequencia = new SequenciaDeAbates();
+  /** O "COMBATE!" da primeira rodada já apareceu (ao entrar na partida)? */
+  private aberturaFeita = false;
   private appliedQuality: QualityPreset | null = null;
   /** Por onde começa a volta dos efeitos por robô a cada quadro (inimigos e aliados), para o orçamento por pulso alcançar todos. */
   private fxStart = 0;
@@ -294,7 +301,9 @@ export class Game {
   private last = -1;
 
   static async create(container: HTMLElement): Promise<Game> {
+    bootProgresso('fisica');
     const physics = await PhysicsWorld.create();
+    bootProgresso('robos');
     const hangar = new Hangar();
     const chassisId = hangar.current.chassis;
     const importedAsset = IMPORTED_CHASSIS[chassisId];
@@ -309,8 +318,10 @@ export class Game {
       const usados = new Set([...esquadrao.inimigos, ...esquadrao.aliados].map((b) => b.chassi).filter((c): c is ChassisId => !!c && c !== chassisId));
       await Promise.all([...usados].map((c) => IMPORTED_CHASSIS[c] && whenMechAssetReady(IMPORTED_CHASSIS[c]!.url, CHASSIS[c].height, IMPORTED_CHASSIS[c]!)));
     }
+    bootProgresso('jogo');
     const game = new Game(container, physics, hangar);
     await game.precompileShaders();
+    bootProgresso('pronto');
     return game;
   }
 
@@ -554,7 +565,11 @@ export class Game {
         onBank: (reply) => this.acceptBank(reply),
         onDamage: (amount) => this.playTelemetry.hit(amount),
         onRoundEnd: () => this.playTelemetry.finish('completed'),
-        onKill: (killer, dead, mine) => { this.killFeed.push(killer, dead, mine); if (dead === 'VOCÊ') this.playTelemetry.death(); else if (killer === 'VOCÊ') this.playTelemetry.kill(); },
+        onKill: (killer, dead, mine) => {
+          this.killFeed.push(killer, dead, mine);
+          if (dead === 'VOCÊ') { this.playTelemetry.death(); this.sequencia.zerar(); }
+          else if (killer === 'VOCÊ') { this.playTelemetry.kill(); this.hud.killBanner.showKill(dead, this.sequencia.abate(performance.now() / 1000)); }
+        },
         onScore: (kills, deaths) => this.hud.setScore(kills, deaths),
       });
       this.match.pilots.push(this.online);
@@ -674,6 +689,11 @@ export class Game {
         : null);
     new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
+    // O aviso de abate (P96) e a abertura da rodada (3·2·1·COMBATE!) só avisam; o som é do AudioSystem e a voz, do navegador (um contexto de áudio só).
+    this.hud.killBanner.som = (streak) => this.audio.playKillStreak(streak);
+    const locucao = locucaoDoNavegador(() => this.audio.enabled, () => this.settings.value.volume);
+    this.hud.roundOverlay.som = { contagem: () => this.audio.playCountdownBeep(false), combate: () => this.audio.playCountdownBeep(true) };
+    this.hud.roundOverlay.falar = (texto) => void locucao.falar(texto);
 
     // O mapa (Arena ou Bunker) se escolhe no mapa-múndi do console; aqui fica só o modo.
     this.modeSelector.attachTo(document.getElementById('menu-mode'));
@@ -900,6 +920,8 @@ export class Game {
 
   /** Rodada nova: a partida já pôs todos de volta e restaurou a arena; aqui, o que é do jogador local. */
   private startRound(): void {
+    this.hud.roundOverlay.combate(this.round.number);
+    this.sequencia.zerar();
     this.equipPending();
     this.player.launcher.refill();
     this.hud.setScore(0, 0);
@@ -959,6 +981,7 @@ export class Game {
       const deadline = Date.now() + WARMUP_TIMEOUT_MS;
       const result = await warmUpShaders(this.renderer, this.composer.readBuffer, this.scene, this.camera, (done, total) => {
         if (cta) cta.textContent = `[ preparando gráficos ${done}/${total} ]`;
+        bootProgresso('graficos', done, total);
       });
       if (result !== 'ok') console.warn(`pré-compilação dos shaders: ${result} (o jogo segue; os programas compilam no primeiro uso)`);
       // O galpão tem outras luzes e materiais: aquecer só a Arena não prepara a primeira abertura.
@@ -970,6 +993,7 @@ export class Game {
         this.resizeHangar();
         const hangarResult = await warmUpShaders(this.renderer, this.composer.readBuffer, this.hangarScene.scene, this.hangarScene.camera, (done, total) => {
           if (cta) cta.textContent = `[ preparando Hangar ${done}/${total} ]`;
+          bootProgresso('hangar', done, total);
         }, Math.max(0, deadline - Date.now()));
         if (hangarResult !== 'ok') console.warn(`pré-compilação do Hangar: ${hangarResult} (o jogo segue)`);
         else warmUpSceneResources(this.renderer, this.composer.readBuffer, this.hangarScene.scene, this.hangarScene.camera);
@@ -1080,6 +1104,9 @@ export class Game {
       const killerName = killer ? (killer === mech ? 'VOCÊ' : this.round.scoreOf(killer)?.name ?? null) : null;
       const isPlayerInvolved = dead === mech || killer === mech;
       this.killFeed.push(killerName, deadName, isPlayerInvolved);
+      // Aviso de abate e de sequência (P96): abater aliado (fogo amigo) não conta; morrer zera.
+      if (dead === mech) this.sequencia.zerar();
+      else if (killer === mech && !(this.match.allies?.mechs ?? []).includes(dead)) this.hud.killBanner.showKill(deadName, this.sequencia.abate(performance.now() / 1000));
       if (!this.online && dead === mech && killer && killer !== mech) this.killCam.start(killer, at);
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
       // Abater um aliado (fogo amigo) não conta para a meta da etapa.
@@ -1407,6 +1434,12 @@ export class Game {
   }
 
   private setPlaying(playing: boolean): void {
+    // A primeira rodada abre com COMBATE! quando a partida começa de verdade (depois da vinheta); as seguintes abrem pelo `onRoundStart`.
+    if (playing && !this.aberturaFeita && this.gameMode === 'deathmatch' && !this.online && this.round.playing) {
+      this.aberturaFeita = true;
+      this.hud.roundOverlay.combate(this.round.number);
+    }
+    if (!playing) this.hud.roundOverlay.parar();
     this.playing = playing;
     this.player.active = playing;
     this.hud.setPaused(!playing && !this.bankTerminal?.isOpen);
@@ -1578,6 +1611,8 @@ export class Game {
     this.killFeed.update(dt);
     this.onboarding.update(dt);
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
+    // Nos últimos 3 s do intervalo: RODADA N · 3 · 2 · 1 (só leitura do relógio da rodada; ninguém é segurado no lugar).
+    if (this.playing && this.gameMode === 'deathmatch' && !this.round.playing) this.hud.roundOverlay.contar(this.round.timeLeft, this.round.number + 1);
     // Só o gatilho de carregador (foguetes) tem pips para esvaziar; serra e arma de energia ficam cheios.
     const noMagazine = this.mech.loadout.secondary?.kind !== 'ammo';
     this.hud.setRockets(noMagazine ? 4 : this.player.launcher.ammo, noMagazine ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);

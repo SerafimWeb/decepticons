@@ -1,6 +1,11 @@
 /**
- * RoundOverlay — Contagem regressiva (3·2·1) de início de partida e painel de estatísticas no fim.
+ * RoundOverlay — a abertura da rodada ("RODADA N · 3 · 2 · 1 · COMBATE!") e o painel de estatísticas do fim.
  * Vocabulário e textos centralizados para facilitar localização (ex: CTI/SERAFIM).
+ *
+ * **A contagem é só da tela** (G1/G2): ela lê o relógio do intervalo que a `Round` já tem (os últimos 3 s antes da rodada seguinte) e não segura ninguém no lugar.
+ * Quem toca os sons e fala é de fora (`som`, `falar`): o `Game` liga ao `AudioSystem`. Antes cada bipe criava um contexto de áudio novo, e o navegador limita quantos existem.
+ *
+ * Custo: zero por quadro além de uma comparação (`contar` só mexe no DOM quando o número muda).
  */
 export interface RoundStatsSummary {
   kills: number;
@@ -9,13 +14,39 @@ export interface RoundStatsSummary {
   survivalSeconds: number;
 }
 
+/** O que o `Game` liga para a abertura soar. */
+export interface SonsDaAbertura {
+  /** Um bipe por número (3, 2, 1). */
+  contagem(n: number): void;
+  /** O toque do COMBATE!. */
+  combate(): void;
+}
+
+/** Quanto do fim do intervalo vira contagem. */
+export const CONTAGEM_S = 3;
+/** Quanto o "COMBATE!" fica na tela. */
+export const COMBATE_NA_TELA_MS = 900;
+
+/** O número que a tela mostra para o tempo que falta do intervalo (3, 2 ou 1), ou `null` fora dos últimos `CONTAGEM_S` segundos. */
+export function numeroDaContagem(restanteS: number): 1 | 2 | 3 | null {
+  if (!(restanteS > 0) || restanteS > CONTAGEM_S) return null;
+  return Math.ceil(restanteS) as 1 | 2 | 3;
+}
+
 export class RoundOverlay {
   private readonly el: HTMLDivElement | null = null;
   private readonly countdownEl: HTMLDivElement | null = null;
   private readonly summaryEl: HTMLDivElement | null = null;
-  private timer: number | null = null;
-  private roundNumber = 1;
+  private readonly labelEl: HTMLElement | null = null;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private numeroAtual: number | null = null;
+  /** O texto que a abertura mostra agora (para quem confere sem olhar o DOM). */
+  public currentText = '';
   public lastStats: RoundStatsSummary | null = null;
+  /** Quem toca os sons da abertura; `null` = mudo. */
+  public som: SonsDaAbertura | null = null;
+  /** Quem fala ("Rodada 2", "Combate!"); `null` = sem locução. */
+  public falar: ((texto: string) => void) | null = null;
 
   constructor(parent?: HTMLElement) {
     if (typeof document === 'undefined') return;
@@ -45,77 +76,74 @@ export class RoundOverlay {
     this.el = el;
     this.countdownEl = el.querySelector('.ro-countdown');
     this.summaryEl = el.querySelector('.ro-summary');
+    this.labelEl = el.querySelector('.ro-round-label');
   }
 
-  /** Inicia a contagem regressiva de início de rodada (RODADA N · 3... 2... 1... COMBATE!). */
-  startCountdown(seconds = 3, onComplete?: () => void, roundNum?: number): void {
-    if (this.timer !== null) clearInterval(this.timer);
-    if (roundNum !== undefined) this.roundNumber = roundNum;
-
-    if (this.summaryEl) this.summaryEl.hidden = true;
-    if (this.countdownEl) this.countdownEl.hidden = false;
-    if (this.el) {
-      this.el.style.display = 'flex';
-      const roundLabel = this.el.querySelector('#ro-round-num');
-      if (roundLabel) roundLabel.textContent = `${this.roundNumber}`;
+  /**
+   * Chamado a cada quadro durante o intervalo: nos últimos 3 s mostra a rodada que vem e o número (3, 2, 1), com um bipe por número. Fora deles não faz nada
+   * (e apaga a contagem que ficou na tela, se a rodada foi mudada de outro jeito).
+   */
+  contar(restanteS: number, proximaRodada: number): void {
+    const n = numeroDaContagem(restanteS);
+    if (n === null) {
+      if (this.numeroAtual !== null) this.parar();
+      return;
     }
-
-    let count = seconds;
-    if (this.countdownEl) this.countdownEl.textContent = count > 0 ? `${count}` : 'COMBATE!';
-    this.playCountdownAudio(count);
-
-    this.timer = setInterval(() => {
-      count--;
-      if (count > 0) {
-        if (this.countdownEl) this.countdownEl.textContent = `${count}`;
-        this.playCountdownAudio(count);
-      } else if (count === 0) {
-        if (this.countdownEl) this.countdownEl.textContent = 'COMBATE!';
-        this.playCombatAudio();
-      } else {
-        if (this.timer !== null) clearInterval(this.timer);
-        this.timer = null;
-        if (this.el) this.el.style.display = 'none';
-        onComplete?.();
-      }
-    }, 900) as unknown as number;
+    if (n === this.numeroAtual) return;
+    if (this.numeroAtual === null) this.falar?.(`Rodada ${proximaRodada}`);
+    this.numeroAtual = n;
+    this.mostrar(`${n}`, proximaRodada);
+    this.som?.contagem(n);
   }
 
-  private playCountdownAudio(num: number): void {
-    if (typeof window === 'undefined' || !window.AudioContext) return;
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 1200 + num * 100;
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.15);
+  /** A rodada começou: "COMBATE!" por um instante. */
+  combate(rodada: number): void {
+    this.numeroAtual = null;
+    this.mostrar('COMBATE!', rodada);
+    this.som?.combate();
+    this.falar?.('Combate!');
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.parar(), COMBATE_NA_TELA_MS);
   }
 
-  private playCombatAudio(): void {
-    if (typeof window === 'undefined' || !window.AudioContext) return;
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.3);
+  /** Apaga a abertura (a pausa, a troca de tela, o fim do "COMBATE!"). O painel de estatísticas, se aberto, fica. */
+  parar(): void {
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = null;
+    this.numeroAtual = null;
+    this.currentText = '';
+    if (this.summaryEl?.hidden !== false && this.el) this.el.style.display = 'none';
+  }
+
+  private mostrar(texto: string, rodada: number): void {
+    this.currentText = texto;
+    if (this.summaryEl) this.summaryEl.hidden = true;
+    if (this.countdownEl) {
+      this.countdownEl.hidden = false;
+      this.countdownEl.textContent = texto;
+    }
+    if (this.labelEl) {
+      const num = this.labelEl.querySelector('#ro-round-num');
+      if (num) num.textContent = `${rodada}`;
+    }
+    if (this.el) {
+      this.el.classList.add('leve');
+      this.el.style.display = 'flex';
+    }
   }
 
   /** Exibe o painel de fim de rodada com as estatísticas do jogador. */
   showSummary(stats: RoundStatsSummary): void {
     this.lastStats = stats;
-    if (this.timer !== null) clearInterval(this.timer);
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = null;
+    this.numeroAtual = null;
     if (this.countdownEl) this.countdownEl.hidden = true;
     if (this.summaryEl) this.summaryEl.hidden = false;
-    if (this.el) this.el.style.display = 'flex';
+    if (this.el) {
+      this.el.classList.remove('leve');
+      this.el.style.display = 'flex';
+    }
 
     if (this.summaryEl) {
       this.summaryEl.querySelector('.ro-kills')!.textContent = `${stats.kills}`;
@@ -125,10 +153,13 @@ export class RoundOverlay {
     }
   }
 
-  /** Esconde o overlay. */
+  /** Esconde o overlay (inclusive o painel de estatísticas). */
   hide(): void {
-    if (this.timer !== null) clearInterval(this.timer);
+    if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
+    this.numeroAtual = null;
+    this.currentText = '';
+    if (this.summaryEl) this.summaryEl.hidden = true;
     if (this.el) this.el.style.display = 'none';
   }
 }

@@ -1,3 +1,13 @@
+## [2026-10-13] As telas do Gemini estavam prontas e desligadas: ligar, e não refazer (Claude, P107, fase 5)
+
+**Situação:** o Gemini ficou sem crédito com `KillBanner`, `RoundOverlay` e `LoadingScreen` escritos e testados, mas nenhum chamado pelo jogo; os dois primeiros criavam um `AudioContext` por bipe.
+
+**Decisões:**
+1. **Ligar o que existe** em vez de reescrever: o som passou para o `AudioSystem` (um contexto só), a abertura passou a ler o relógio do intervalo da `Round` (sem a simulação saber dela: G1/G2), e a sequência de abates é uma conta pura (`SequenciaDeAbates`).
+2. **A abertura não segura ninguém.** Um 3·2·1 que congela a partida seria regra nova na simulação compartilhada com o servidor; aqui ele é só a tela lendo o relógio do intervalo que já existia. Se o Comandante quiser o congelamento de verdade, é uma decisão à parte (muda a `Round` e o servidor).
+3. **O carregamento não ganhou tela nova:** a barra e a dica moram na tela mínima do console (a auditoria de interface pede "nada repetido"); o `LoadingScreen.ts`, sem uso e sem estilo, foi apagado.
+4. **A locução é opcional e nunca falha:** `speechSynthesis` em pt-BR, sem voz ou sem som ela fica calada.
+
 ## [2026-10-13] O Colossus ainda não entra no esquadrão, e a ficha do bot é mais rasa que o Hangar (P108, Qwen — diagnóstico)
 
 **Situação:** o Comandante tentou pôr os Colossus no esquadrão e não conseguiu, e notou que a ficha do bot não tem os campos que o Hangar dele tem. **Conferido na `main`** (não é bug de tela): (1) `CHASSIS_DOS_BOTS` exclui `colossus01`/`colossusv4` de propósito, e o `sanearBot` descarta o chassi; (2) mesmo liberado o bot não teria arma — `armasDoBot` recusa tudo o que o titã carrega (carga/chama/onda/guia/aço); (3) um titã de 20 m não cabe nos pontos de nascimento (folga medida de 3,4 m); (4) a ficha só tem apelido, personalidade, chassi, arma principal e dificuldade — falta arma secundária, módulo e layout.
