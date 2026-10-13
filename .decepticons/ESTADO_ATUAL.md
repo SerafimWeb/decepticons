@@ -10,7 +10,7 @@
 3. **Um titã de 20 m não cabe nos pontos de nascimento.** `nascimentos.ts` mediu folga de 3,4 m para o maior Mech.
 4. **A ficha é mais rasa que o Hangar.** O `BotSpec` só tem apelido, personalidade, chassi, **arma principal** (com nível) e dificuldade — falta **arma secundária** (mão esquerda/ombros), **módulo** e **layout**.
 
-**Território:** `client/src/sim/` é do **Claude**; a ficha/tela é `ui/` do **Gemini** (sem créditos hoje; a P107 põe o Claude na cobertura). **Nada construído** — a ordem foi registrada (**P108**) para o Comandante priorizar.
+**Território:** `client/src/sim/` é do **Claude**; a ficha/tela é `ui/` do **Gemini** (sem créditos hoje; a P107 põe o Claude na cobertura). **Nada construído.** **APROVADO pelo Comandante (13/10):** *"quero que os titas colossus tamanho 3 e 4 possam ser selecionados sim, pra eu colocar eles no time adversario e quero lutar contra eles como um pequeno android pra sentir a comparação do tamanho; quero possibilitar batalhas epicas de real combate e estrategia"* — o **contraste de escala** (andróide contra titã) é o que ele quer sentir.
 
 ## A campanha: etapas em sequência, a janela para montar e o fim de cada etapa — Claude, 13/10 (PR `claude/campanha`, ordem P107, fase 4A e 4B)
 
