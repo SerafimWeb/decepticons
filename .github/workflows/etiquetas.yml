@@ -15,5 +15,8 @@ jobs:
   etiquetas:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
+    concurrency:
+      group: etiquetas-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     steps:
       - uses: actions/labeler@v7

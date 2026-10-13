@@ -3,6 +3,14 @@ name: CI
 # [R15] Mesmo check do hook pre-push: typecheck + testes + roadmap + build + budget + boot headless + site.
 # O runner traz o Google Chrome; o smoke usa ele via playwright-core. Imagem fixada de propósito:
 # trocar de versão (ex.: ubuntu-26.04) é decisão nossa, não migração surpresa do ubuntu-latest.
+#
+# MINUTOS (13/10, Qwen a pedido do Comandante): o repositório é PRIVADO, então cada minuto de Actions é
+# medido — o plano gratuito dá ~2.000 min/mês e a cota estourou (12/10). Duas travas para não estourar de novo:
+#   1) PR/merge que só mexe em `*.md` NÃO roda a suíte pesada (o passo "Mudou só documentação?" decide pelo
+#      diff). O job ainda termina VERDE, para o `npm run publicar` (que espera a linha `check`) continuar valendo.
+#   2) `concurrency` cancela a execução anterior quando o mesmo PR recebe outro push (economiza as corridas
+#      repetidas que os agentes fazem). O `deploy` mantém a trava própria (nunca cancela um deploy no meio).
+# Ver DEPLOY.md § "Minutos do CI".
 on:
   push:
     branches: [main]
@@ -18,16 +26,36 @@ jobs:
   check:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
+    concurrency:
+      group: check-${{ github.workflow }}-${{ github.head_ref || github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # os bastidores medem a evolução em cada merge da main
+          fetch-depth: 0 # os bastidores medem a evolução em cada merge da main; o diff de docs precisa dos dois commits
+      # Decide se o diff é só `*.md`. Na dúvida (base ilegível, diff vazio ou erro) o padrão é RODAR a suíte:
+      # um portão a mais nunca é pior que um portão furado.
+      - name: Mudou só documentação?
+        id: docs
+        run: |
+          base='${{ github.event.pull_request.base.sha }}'
+          if [ -z "$base" ]; then base='${{ github.event.before }}'; fi
+          quais=$(git diff --name-only "$base...${{ github.sha }}" 2>/dev/null || echo ERRO)
+          if [ -z "$base" ] || [ "$quais" = "ERRO" ] || [ -z "$quais" ] || echo "$quais" | grep -qvE '\.md$'; then
+            echo "so_docs=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "so_docs=true" >> "$GITHUB_OUTPUT"
+            echo "Só documentação (*.md): a suíte pesada não se aplica."
+          fi
       - uses: actions/setup-node@v7
+        if: steps.docs.outputs.so_docs != 'true'
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+        if: steps.docs.outputs.so_docs != 'true'
       - run: npm run check
+        if: steps.docs.outputs.so_docs != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
 
