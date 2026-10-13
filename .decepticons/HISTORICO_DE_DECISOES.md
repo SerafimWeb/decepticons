@@ -35,6 +35,15 @@
 6. **Simulação completa e segura antes da prova real** (servidores de mentira numa porta livre e uma tarefa inexistente), porque cada prova real custa ~4 min de servidor fora do ar. O que ela NÃO cobre é o contexto da tarefa: isso só o servidor de casa mostra. **A 3ª prova real (21:44, 0 jogadores) passou:** o `religar.log` mostra o ajudante lançado pelo WMI (PID 16820), "começou" e "religou"; o servidor voltou em 16 s do pedido (10 s fora).
 **Quem decidiu:** Claude.
 
+## [2026-10-13] A névoa de calor, o anel de fogo sem geometria e os corpos do esquadrão (P101, P103, P104, Claude)
+
+**Decisões:**
+1. **O calor é refração, não mais fogo.** O que faz o ar sobre o asfalto "tremer" é a imagem de trás deslocada por um ruído que sobe, não cor nem partícula: reaproveitei a **cópia do quadro** que os anéis da onda sônica já usam (o efeito que o Comandante elogiou), com uma geometria instanciada (uma draw call) de plumas que olham para a câmera. Custo zero sem pluma viva; desligada na qualidade baixa.
+2. **O anel de fogo perde a geometria:** o defeito era a regularidade (oito línguas iguais, no raio exato, igualmente espaçadas). A variação é **função do pulso** (um hash puro), não sorteio: o mesmo pulso dá o mesmo desenho (testável), e dois pulsos seguidos nunca se repetem; a posição do Mech entra na conta, então dois anéis lado a lado não piscam iguais.
+3. **O lança-chamas: alcance, não dano.** O Comandante repetiu "curta" (já era a 2ª vez). O alcance subiu 20% (36 m); o dano por pulso ficou, porque a meta de equilíbrio (nenhuma arma derruba um torso sozinha em menos de 4,5 s) é uma regra de projeto. O que mais "pesa" no olho é o fluxo visível, que ficou mais longo e cheio, com faíscas além da chama.
+4. **O corpo importado dos bots vem do cliente.** O servidor e os testes não têm malha; o `Match` recebe um `rigDoChassi` opcional e só o cliente o liga. Sem ele, o bot é Vector-09 com os números do chassi (o servidor decide a simulação, o cliente decide o desenho).
+**Custo de CPU:** zero sem fogo; com fogo, a névoa é uma draw call e ≤ 96 plumas; o anel solta ≤ 15 partículas por pulso. **Quem decidiu:** Claude.
+
 ## [2026-10-12] O gate do atualizador não pode depender de a máquina estar quieta (Claude)
 
 **Situação:** a versão das câmeras (#283, `ec9269e`) foi reprovada pelo atualizador do servidor de casa ("FALHOU (testes de server/ e shared/)"), por tempo: os testes de servidor de verdade têm esperas de 5 a 8 s e a máquina de casa, carregada, as estourou. Reproduzido com 8 processos queimando CPU.

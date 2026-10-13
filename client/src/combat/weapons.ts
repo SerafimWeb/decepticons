@@ -213,7 +213,7 @@ const BASE: Record<WeaponId, WeaponBase> = {
     id: 'flamer', name: 'Lança-chamas', kind: 'energy',
     damage: 10, fireInterval: 0.2, heatPerShot: 0.04,
     magazine: 0, reload: 0, speed: 0,
-    optimalRange: 14, maxRange: 30, minFactor: 0.5,
+    optimalRange: 17, maxRange: 36, minFactor: 0.5,
     blastRadius: 0, mass: 3.5, inflicts: 'burn',
     flame: { halfAngle: 0.3, fuel: 6, reload: 4 },
     tierRange: 0.3, tierRate: 0.15,

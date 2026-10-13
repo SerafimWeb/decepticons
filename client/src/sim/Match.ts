@@ -1,7 +1,7 @@
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { BarrageSystem } from '../combat/BarrageSystem';
-import { BotSystem, type BotKit } from '../combat/BotSystem';
+import { BotSystem, type BotKit, type BotSystemOptions } from '../combat/BotSystem';
 import { CombatSystem, type MechHitEvent } from '../combat/CombatSystem';
 import { CrushRule } from '../combat/crush';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
@@ -72,6 +72,8 @@ export interface Pilot {
 export type Foes = Pick<GameSettings, 'enemyMechs' | 'enemyAndroids' | 'technician' | 'enemyPersonas' | 'names'>;
 
 export interface MatchOptions {
+  /** O corpo de malha importada de um chassi, se o cliente o tem pronto (os bots do esquadrão usam; o servidor não passa). */
+  rigDoChassi?: BotSystemOptions['rigDoChassi'];
   map?: MapId;
   physics: PhysicsWorld;
   /** Onde os modelos entram. No servidor, uma cena que nunca é desenhada. */
@@ -232,6 +234,7 @@ export class Match {
     const nomes = (l: readonly SlotDoPlano[]) => l.map((s) => s.nome);
     const rebeldes = plano?.inimigos;
     this.bots = new BotSystem({
+      rigDoChassi: o.rigDoChassi,
       scene: o.scene,
       physics: o.physics,
       combat: this.combat,
@@ -265,6 +268,7 @@ export class Match {
     this.allies =
       escolta && escolta.mechs.length + escolta.androids.length > 0
         ? new BotSystem({
+            rigDoChassi: o.rigDoChassi,
             scene: o.scene,
             physics: o.physics,
             combat: this.combat,

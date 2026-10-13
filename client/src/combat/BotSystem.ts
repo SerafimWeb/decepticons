@@ -4,6 +4,8 @@ import type { MechBase } from '../entities/MechBase';
 import { Android } from '../entities/Android';
 import { ANDROID_STATS, CHASSIS, COLOSSUS_BOSS_STATS, VECTOR09_STATS, type ChassisId } from '../entities/chassis';
 import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
+import { ImportedMech } from '../entities/ImportedMech';
+import type { MechRig } from '../entities/MechBase';
 import { COLOSSUS_01_BLUEPRINT } from '../entities/mechBlueprint';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
@@ -59,6 +61,12 @@ export interface BotKit {
 }
 
 export interface BotSystemOptions {
+  /**
+   * O corpo de malha importada de um chassi (Marauder, Lancer, Bastion...), se o cliente tem o arquivo pronto: o esquadrão (P91) escolhe o
+   * chassi, e sem isto todo bot nascia como o Vector-09 com os números do chassi certo e a silhueta errada (achado do Comandante, 13/10).
+   * O servidor não tem malha nenhuma e não passa isto: lá o corpo é só física e números.
+   */
+  rigDoChassi?: (chassi: ChassisId) => MechRig | null;
   scene: THREE.Scene;
   physics: PhysicsWorld;
   combat: CombatSystem;
@@ -230,7 +238,9 @@ export class BotSystem {
     };
     o.spawns.forEach((p, i) => {
       const kit = o.kits?.[i];
-      fighter(new Vector09({ paint, visor, stats: statsDoMech(i, kit), blueprint: kit?.chassi ? BLUEPRINT_BY_CHASSIS[kit.chassi] : undefined }), p, mechName(i), i, false, kit);
+      const stats = statsDoMech(i, kit);
+      const rig = kit?.chassi ? o.rigDoChassi?.(kit.chassi) : null;
+      fighter(rig ? new ImportedMech(stats, rig) : new Vector09({ paint, visor, stats, blueprint: kit?.chassi ? BLUEPRINT_BY_CHASSIS[kit.chassi] : undefined }), p, mechName(i), i, false, kit);
     });
 
     // Andróides: sementes depois das dos Mechs.
