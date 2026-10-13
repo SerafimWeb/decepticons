@@ -30,6 +30,10 @@
 - **Custo:** a névoa só roda com plumas vivas (até 96, uma draw call; a cópia do quadro já existia para a onda sônica e só liga com pluma ou anel de onda vivo); o anel solta no máximo 15 partículas por pulso (300/s), ~11 em média (era 11 fixas).
 - **Testes:** `HeatHaze.test.ts` (7), `FireRingVisuals.test.ts` e `FlameVisuals.test.ts` reescritos para o desenho novo, `flamer.test.ts` com os alcances novos e o de partida do esquadrão. **Visto:** o shader compila e entorta o chão em tabuleiro numa página-teste (`arte/calor-nevoa-claude.jpg`, o escuro nas bolhas é artefato da página, que mistura espaço linear e sRGB). **Falta (R13):** ver no jogo, em GPU real (o Chrome do ensaio é SwiftShader): a força (`uBend`, 0,022) e o tamanho das plumas são palpite e dependem do olho do Comandante.
 
+## O gate de testes não morre mais por falta de memória — Claude, 13/10 (no PR `claude/esquadrao-e-calor`)
+
+O `npm run check` do hook do push **morreu duas vezes seguidas por "Fatal process out of memory: Zone"** (workers do Vitest abortando): a máquina de 6 GB, com três agentes e navegadores, chegava a **~430 MB livres**, e o Vitest abria um worker por núcleo (cada um pede ~700 MB: three.js, Rapier e a cena). O `scripts/test.mjs` agora **limita os workers pela memória livre** (`scripts/workersPelaMemoria.mjs`: 1 worker por 700 MB livres, nunca menos que 2 nem mais que o padrão); com memória de sobra (o CI, uma máquina folgada) **nada muda**. Mais devagar, mas passa. Teste: `server/workersPelaMemoria.test.ts`.
+
 ## O deploy do servidor reprovou as câmeras por TEMPO, não por erro: o gate agora aguenta a máquina carregada — Claude, 12/10 (PR `claude/gate-sob-carga`)
 
 **O que aconteceu:** o atualizador do servidor de casa verificou o `ec9269e` (as câmeras, #283) às 22:22 e **reprovou: "FALHOU (testes de server/ e shared/) — voltando para be79ab9"**; o servidor no ar não foi tocado (a rede de segurança funcionou), mas a versão nova não subia (até a próxima rodada de 10 min em que a máquina estivesse quieta). O gate dele é `typecheck` + `node scripts/test.mjs run --no-isolate server shared`.

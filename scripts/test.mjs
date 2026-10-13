@@ -12,13 +12,23 @@
  */
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
+import { cpus, freemem } from 'node:os';
 import { resolve } from 'node:path';
+import { workersPelaMemoria } from './workersPelaMemoria.mjs';
 
 const TMP = resolve('.tmp', 'vitest');
 rmSync(TMP, { recursive: true, force: true });
 mkdirSync(TMP, { recursive: true });
 
 const args = process.argv.slice(2);
+// Pouca memória livre: menos workers (ver workersPelaMemoria.mjs). Com memória de sobra (o CI), o Vitest escolhe sozinho.
+if (!args.some((a) => /^--(max-?workers|pool|no-file-parallelism)/.test(a))) {
+  const w = workersPelaMemoria(freemem(), cpus().length);
+  if (w !== null) {
+    console.log(`test: pouca memória livre (${Math.round(freemem() / 1048576)} MB): limitando o Vitest a ${w} workers (mais devagar, mas sem morrer por falta de memória)`);
+    args.push(`--maxWorkers=${w}`);
+  }
+}
 const cli = resolve('node_modules', 'vitest', 'vitest.mjs');
 const result = spawnSync(process.execPath, [cli, ...(args.length ? args : ['run'])], {
   stdio: 'inherit',
