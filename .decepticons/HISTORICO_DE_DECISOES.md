@@ -7,8 +7,24 @@
 3. **Plano B: a tarefa do atualizador (`schtasks /Run`)**, só se o WMI falhar. Nunca os dois: dois religamentos juntos se atropelam (o `ligar-servidor.ps1` para a tarefa que o outro acabou de ligar).
 4. **A pasta de dados vai em `-Dados`:** o processo do WMI não herda o ambiente do servidor (`CYBERMECH_DADOS`).
 5. **Todo passo no `religar.log`**, escrito pelo servidor (o que lançou e como) e pelo ajudante: duas provas falharam sem deixar rastro; a terceira, se falhar, diz onde.
-6. **Simulação completa e segura antes da prova real** (servidores de mentira numa porta livre e uma tarefa inexistente), porque cada prova real custa ~4 min de servidor fora do ar. O que ela NÃO cobre é o contexto da tarefa: isso só o servidor de casa mostra.
+6. **Simulação completa e segura antes da prova real** (servidores de mentira numa porta livre e uma tarefa inexistente), porque cada prova real custa ~4 min de servidor fora do ar. O que ela NÃO cobre é o contexto da tarefa: isso só o servidor de casa mostra. **A 3ª prova real (21:44, 0 jogadores) passou:** o `religar.log` mostra o ajudante lançado pelo WMI (PID 16820), "começou" e "religou"; o servidor voltou em 16 s do pedido (10 s fora).
 **Quem decidiu:** Claude.
+
+## [2026-10-12] As câmeras ao vivo: um mural por um canal só, sem subir o protocolo (P88, Claude)
+
+**Ordem do Comandante (P88):** "pelo servidor, poder assistir as câmeras em diferentes partidas simultaneamente".
+
+**Decisões:**
+1. **Um canal para todas as salas, em vez de um observador por sala.** O plano do §7 do `PAINEL_ADMIN.md` (`OBSERVAR(sala)`) custaria um estado de jogo inteiro por sala (~8 KB/s, meta G11) e uma conexão por sala, contra o teto de 4 conexões por IP. O mural manda só o que um radar precisa (posição, ângulo, vida do tronco, tipo, vivo): **8 bytes por unidade, ~0,45 KB/s por sala cheia, uma conexão**. `OBSERVAR` fica para a câmera 3D de **uma** sala (3C), onde o custo de um estado inteiro vale a pena.
+2. **Sem subir o `PROTOCOL_VERSION`.** São duas mensagens novas que um cliente de jogo nunca manda nem recebe (o servidor só manda `MURAL` a quem provou o token): cliente novo com servidor velho recebe o fechamento e diz "SEM SINAL"; cliente velho com servidor novo não nota nada. Subir a versão forçaria todo mundo a recarregar por uma ferramenta que só o dono usa.
+3. **A mesma chave e a mesma régua das rotas `/admin/*`** (`Admin.autenticar`): errar o token no mural gasta as 10 tentativas do IP também para o HTTP, e vice-versa; sem token configurado a porta nem existe. O token vai **na primeira mensagem**, nunca no endereço (o endereço vai para log). A janela só o recebe do `TokenDoDono` (guardado por servidor).
+4. **O espectador não é jogador:** fica fora de `occupancy`, do roster, do placar, do `/status` e da telemetria; mas passa pelo teto por IP (4) como qualquer conexão, e o mural limita o total de espectadores (4). Quem não manda o pedido em 5 s é cortado.
+5. **O temporizador do mural nasce com o primeiro espectador e morre com o último:** sem ninguém assistindo, o custo é literalmente zero.
+6. **O radar do console foi reaproveitado** (`TacticalRadar`, com `jogadores` e `dispose` novos), em vez de um desenho novo: um cartão por sala, sem cena 3D (G12).
+7. **Os apelidos vêm do painel do servidor** (`/admin/estado`, a cada 5 s), não do mural: o mural não carrega texto, e o que é lento (nomes) não pesa nos 4 Hz.
+8. **Mural vazio diz que está vazio** ("Nenhuma partida aberta agora"), e sem sinal apaga os radares em vez de mostrar partida velha como se fosse ao vivo.
+
+**Custo de CPU:** zero sem espectador; com um, ~uma leitura de ≤ 8 salas a cada 250 ms fora do tick. **Quem decidiu:** Claude.
 
 ## [2026-10-12] CORREÇÃO: o Agendador não religa quem sai com código ≠ 0; o servidor solta um ajudante que o religa (P93, Claude)
 

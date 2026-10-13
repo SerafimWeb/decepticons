@@ -18,7 +18,7 @@ function sala(codigo: string, tipos: Array<'human' | 'mech' | 'android' | 'techn
     u.tipo = tipo;
     u.x = -40 + i * 7.5;
     u.z = 22.25 - i * 3;
-    u.yaw = i * 0.5 - 1;
+    u.yaw = i * 0.5 - 0.75;
     u.vida = 1 - i * 0.1;
     u.viva = i % 2 === 0;
   });
@@ -53,7 +53,9 @@ describe('o mural de câmeras: o contrato', () => {
     const u = lido[0]!.unidades[2]!;
     expect(u.x).toBeCloseTo(-25, 2); // centímetro: erro de até 0,5 cm
     expect(u.z).toBeCloseTo(16.25, 2);
-    expect(u.yaw).toBeCloseTo(0, 3); // -1 + 2 * 0,5, no passo de 16 bits
+    expect(u.yaw).toBeCloseTo(0.25, 3); // -0,75 + 2 * 0,5, no passo de 16 bits
+    expect(lido[0]!.unidades[0]!.yaw).toBeCloseTo(-0.75, 3);
+    expect(lido[0]!.unidades[3]!.yaw).toBeCloseTo(0.75, 3);
     expect(u.vida).toBeCloseTo(0.8, 2);
   });
 
@@ -83,6 +85,12 @@ describe('o mural de câmeras: o contrato', () => {
     expect(decodeMural(encodeMural(w, muitas, muitas.length))).toHaveLength(MURAL_SALAS_MAX);
     const forjado = new Uint8Array([MSG.MURAL, MURAL_SALAS_MAX + 1]);
     expect(decodeMural(forjado)).toBeNull();
+    // Um quadro forjado que traz TODOS os bytes de 9 salas (cada uma bem formada, sem unidades): o teto é do contrato, não dos bytes que faltam.
+    const salaVazia = [1, 65, 0, 0, 0, 0, 0, 0]; // 'A', jogadores 0, rodada 0, restanteS (2), jogando 0, n 0
+    const noveSalas = new Uint8Array([MSG.MURAL, MURAL_SALAS_MAX + 1, ...Array.from({ length: MURAL_SALAS_MAX + 1 }, () => salaVazia).flat()]);
+    expect(decodeMural(noveSalas)).toBeNull();
+    const oitoSalas = new Uint8Array([MSG.MURAL, MURAL_SALAS_MAX, ...Array.from({ length: MURAL_SALAS_MAX }, () => salaVazia).flat()]);
+    expect(decodeMural(oitoSalas)).toHaveLength(MURAL_SALAS_MAX); // o mesmo, no teto, vale
   });
 
   it('mensagem torta nunca vira quadro: cortada, com unidade demais, com tipo impossível ou com sobra', () => {
@@ -94,6 +102,12 @@ describe('o mural de câmeras: o contrato', () => {
     const demais = [...bom];
     demais[2 + 1 + 5 + 1 + 1 + 2 + 1] = MAX_UNITS + 1; // [tipo][nSalas][len=5]['ARENA'][jogadores][rodada][u16][jogando][n]
     expect(decodeMural(new Uint8Array(demais))).toBeNull();
+    // Unidades demais com todos os bytes presentes (33 unidades de 8 bytes): o teto é do contrato.
+    const unidade = [1, 0, 0, 0, 0, 0, 0, 255]; // tipo mech + viva, x, z, ângulo, vida
+    const cheio = new Uint8Array([MSG.MURAL, 1, 1, 65, 0, 0, 0, 0, 0, MAX_UNITS + 1, ...Array.from({ length: MAX_UNITS + 1 }, () => unidade).flat()]);
+    expect(decodeMural(cheio)).toBeNull();
+    const nolimite = new Uint8Array([MSG.MURAL, 1, 1, 65, 0, 0, 0, 0, 0, MAX_UNITS, ...Array.from({ length: MAX_UNITS }, () => unidade).flat()]);
+    expect(decodeMural(nolimite)![0]!.n).toBe(MAX_UNITS);
     expect(decodeMural(new Uint8Array(0))).toBeNull();
     expect(decodeMural(new Uint8Array([MSG.SNAPSHOT, 0]))).toBeNull();
   });

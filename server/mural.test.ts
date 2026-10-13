@@ -3,7 +3,7 @@ import { WebSocket } from 'ws';
 import { ADMIN_ESTADO_PATH, ADMIN_HEADER } from '../shared/net/admin';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE } from '../shared/net/constants';
-import { encodeJoin, messageType, MSG } from '../shared/net/messages';
+import { decodeRoster, encodeJoin, messageType, MSG } from '../shared/net/messages';
 import { decodeMural, encodeMuralPedido, MURAL_FECHOU, type MuralSala } from '../shared/net/mural';
 import { startServer, type GameServer } from './Server';
 
@@ -21,13 +21,15 @@ async function until(ok: () => boolean | Promise<boolean>, ms = 8000) {
   }
 }
 
-/** Um jogador de verdade: abre o socket, manda o JOIN e espera as boas-vindas. */
-async function entrar(port: number, sala: string, nome: string): Promise<WebSocket> {
-  const ws = new WebSocket(`ws://127.0.0.1:${port}/?sala=${sala}`);
+/** Um jogador de verdade: abre o socket, manda o JOIN e espera as boas-vindas. Guarda a última lista de jogadores que a sala mandou. */
+async function entrar(port: number, sala: string, nome: string): Promise<WebSocket & { roster?: number }> {
+  const ws: WebSocket & { roster?: number } = new WebSocket(`ws://127.0.0.1:${port}/?sala=${sala}`);
   ws.binaryType = 'arraybuffer';
   let bemVindo = false;
   ws.on('message', (d: ArrayBuffer) => {
-    if (messageType(new Uint8Array(d)) === MSG.WELCOME) bemVindo = true;
+    const b = new Uint8Array(d);
+    if (messageType(b) === MSG.WELCOME) bemVindo = true;
+    if (messageType(b) === MSG.ROSTER) ws.roster = decodeRoster(b)?.length;
   });
   await new Promise<void>((ok, err) => {
     ws.on('open', () => ok());
@@ -125,6 +127,11 @@ describe('o mural de câmeras, com o servidor de verdade', () => {
     abertos.push(...jogadores);
     await until(() => ultimo(e).some((s) => s.codigo === 'CHEIA' && s.jogadores === ROOM_SIZE));
     expect(ultimo(e).find((s) => s.codigo === 'CHEIA')!.unidades.filter((u) => u.tipo === 'human')).toHaveLength(ROOM_SIZE);
+    // O mural mostra exatamente quem a lista da sala mostra: os bots reservados (que a sala cheia não usa) não aparecem em nenhum dos dois.
+    await until(() => jogadores.every((j) => (j as WebSocket & { roster?: number }).roster !== undefined));
+    await new Promise((r) => setTimeout(r, 150));
+    const doRoster = Math.max(...jogadores.map((j) => (j as WebSocket & { roster?: number }).roster ?? 0));
+    expect(ultimo(e).find((s) => s.codigo === 'CHEIA')!.n).toBe(doRoster);
     // Todas no mesmo código: ninguém foi desviado para CHEIA-2 por causa do espectador.
     expect([...server.rooms.keys()]).not.toContain('CHEIA-2');
     for (const j of jogadores) j.close();
@@ -224,6 +231,21 @@ describe('o mural de câmeras, com o servidor de verdade', () => {
       expect(e.recebidos).toBe(0);
     } finally {
       await semToken.close();
+    }
+  });
+
+  it('o espectador devolve a vaga do IP ao sair: com o teto de 2 por IP, dá para abrir e fechar o mural muitas vezes', async () => {
+    const apertado = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', metricasToken: TOKEN, guard: { ...GUARD, perIp: 2 }, mural: { cadaMs: 50, esperaMs: 400 } });
+    try {
+      for (let i = 0; i < 5; i++) {
+        const e = espectar(apertado.port);
+        await until(() => apertado.mural.assistindo === 1);
+        expect(e.fechou, `vez ${i}`).toBeNull();
+        e.ws.close();
+        await until(() => apertado.mural.conexoes === 0);
+      }
+    } finally {
+      await apertado.close();
     }
   });
 

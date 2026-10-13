@@ -61,6 +61,11 @@ export class Mural {
     return n;
   }
 
+  /** O temporizador está ligado? (só com espectador: sem ninguém assistindo, o servidor não gasta nada). */
+  get ligado(): boolean {
+    return this.timer !== null;
+  }
+
   /** Quantas conexões de mural existem (inclusive as que ainda não mandaram o token). */
   get conexoes(): number {
     return this.espectadores.size;
