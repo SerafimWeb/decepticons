@@ -1,3 +1,15 @@
+## [2026-10-13] O CI deixa de gastar minutos onde não precisa, e o site passa a poder ir ao ar sem o GitHub (Qwen, a pedido do Comandante)
+
+**Situação:** o Actions parou por cobrança (12/10) e o site congelou. O Comandante: *"nao quero ter que pagar, e tambem quero que configuremos de forma que nao consuma o billings... quero a mais estratégica"*. **Onde está o gasto:** o repositório é **privado** → os minutos são **medidos** (~2.000/mês no plano gratuito); **cada PR** roda o `check` inteiro (com smoke/bocas/site no Chrome headless) e **cada merge na `main`** roda o `check` **mais** o `deploy`. Com quatro agentes abrindo PRs o dia todo, o volume estoura a cota — é o acumulado, não um disparo único.
+
+**Decisões:**
+1. **PR/merge que só mexe em `*.md` não roda a suíte pesada.** O job `check` continua existindo e termina **verde** (um passo decide pelo diff), então o `npm run publicar` — que espera a linha `check` — continua valendo. Documentação não quebra build/teste.
+2. **`concurrency` com `cancel-in-progress`** no `check` e no `etiquetas`: outro push no mesmo PR cancela a execução anterior. O `deploy` **mantém** a trava própria (`cancel-in-progress: false`) para nunca interromper um deploy no meio.
+3. **O site passa a poder ir ao ar sem o GitHub.** `DEPLOY.md` ganhou "Publicar sem o GitHub (na mão)": `npm run site -- --capturas` + cópia por `tar`+`ssh` (a máquina do dono é Windows e **não tem `rsync`**; o job usa porque roda em Linux). É o caminho que publica **durante a queda** e a base de uma **tarefa local agendada** que publique sozinha quando a `main` andar.
+4. **O que NÃO foi feito, e por quê:** **não** desliguei o `deploy` do Actions nem a regra 13 ("o merge na `main` publica") — tirar o deploy automático hoje quebraria o fluxo dos agentes, que **não têm a chave de deploy** (só o PC do dono tem). A ordem certa é: comando local (feito) → tarefa agendada no PC (depende da chave do dono) → **então** o `deploy` do Actions sai. Também **não** usei `paths-ignore` no workflow inteiro: isso deixaria PRs de doc **sem a linha `check`** e quebraria o `npm run publicar`; a trava por passo evita isso.
+
+**Quem decidiu:** Qwen (a pedido do Comandante).
+
 ## [2026-10-13] O site congelou em 12/10 22:03 GMT e o Colossus-V4 não chegou lá: a prova é o BUILD, não o status HTTP (P100, Qwen)
 
 **Situação:** o Comandante não encontrou o **Colossus-V4** no Hangar do site (13/10). Ele **está na `main`** (PR #278), mas o **build publicado não o contém**: o bundle `.../jogar/assets/index-cVGG951p.js` → `Game-DdOsAl4B.js` (1 MB) tem o editor do esquadrão (#267) e `COLOSSUS-01`/`MARAUDER`/`ARARA-B1`, e **não** tem `COLOSSUS-V4`/`ESCALA 4`/`siege`. O `Last-Modified` do site é **12/10 22:03:13 GMT** (o último deploy). O job `deploy` do `ci.yml` é **`needs: check`**; com o Actions fora por cobrança, o `check` não roda e nada depois do #267 publica (#278–#284 ficam fora do ar).

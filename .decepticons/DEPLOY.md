@@ -22,6 +22,22 @@
 - **Trava de segurança:** o `rsync --delete` apaga no servidor o que não existe localmente. O job se recusa a rodar se `DEPLOY_PATH` não terminar em `/public_html/cybermech/`, para nunca apagar o site real.
 - **Verificação:** landing, `/oficina/`, `/sala-de-controle/` (e `/bastidores/` levando para ela), `/metricas/` (privada, com `noindex`) e `/jogar/` com o conteúdo certo (o servidor responde 200 até para arquivo inexistente), doctype e `<meta charset>` no início, a CSP aplicada e o `.wasm` servido como `application/wasm` e comprimido; capa ausente só avisa. Se a Cloudflare desafiar o IP do runner, o job avisa e não falha (conferir no navegador).
 
+**Minutos do CI (13/10/2026, Qwen, a pedido do Comandante):** o repositório é **privado**, então os minutos do Actions são **medidos** — o plano gratuito dá ~**2.000 min/mês** e a cota estourou (12/10, o "job de 2 s"). O que consome: **cada PR** dispara o `check` (que termina com smoke/bocas/site no Chrome headless — vários minutos) e **cada merge na `main`** dispara o `check` de novo **mais** o `deploy`. Com quatro agentes abrindo PRs o dia todo e merges frequentes, o volume passa da cota. **Duas travas entraram no `ci.yml`:** (1) PR/merge que só mexe em `*.md` **não roda a suíte pesada** — o job ainda termina verde, para o `npm run publicar` (que espera a linha `check`) continuar valendo; (2) `concurrency` **cancela a execução anterior** quando o mesmo PR recebe outro push. O consumo real está em **GitHub → Settings → Billing → Actions** (relatório por workflow/dia).
+
+**Publicar sem o GitHub (na mão):** o `deploy` do Actions é só quem aperta o botão — o site vai ao ar localmente com o mesmo resultado. Primeiro monta:
+
+```bash
+npm run site -- --capturas     # monta .tmp/site/ (landing, painel, oficina, jogo)
+```
+
+e copia por SSH. **A máquina do dono é Windows e não tem `rsync`** (o job usa porque roda em Linux), então a cópia é por `tar`+`ssh` — **espelha o conteúdo, sem apagar** o que não existe mais:
+
+```bash
+tar -czf - -C .tmp/site . | ssh -p 65002 -i "%USERPROFILE%\.ssh\id_ed25519" <USUARIO>@<HOST> "cd /home/<USUARIO>/domains/selvamkt.com.br/public_html/cybermech && tar -xzf -"
+```
+
+`<USUARIO>`/`<HOST>` são os mesmos valores dos segredos `DEPLOY_*` (**R2/R11: nunca no repositório nem no chat**). **Trava:** o destino tem de terminar em **`/public_html/cybermech/`** — a raiz é o site real da Selva MKT, e publicar fora dela é proibido. Para **apagar** o que saiu do build, limpe o conteúdo do destino **antes** (nunca fora de `cybermech/`). Este caminho é o que permite publicar **enquanto o Actions está fora** e é a base para uma **tarefa local agendada** que publique sozinha quando a `main` andar (mesmo padrão do atualizador do servidor, logo abaixo) — aí o `deploy` do Actions pode ser desligado de vez.
+
 **Configuração no GitHub (dono), sem valor nenhum no repositório (R2/R10) nem no chat (R11):**
 
 | Nome | Tipo | Valor |
