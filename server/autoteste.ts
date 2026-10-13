@@ -133,13 +133,18 @@ export async function executarTeste(o: OpcoesDoTeste): Promise<AdminTeste> {
     const dentro = clientes.filter((c) => c.entrou);
     // Cada piloto de mentira manda comando parado a 30 Hz (2 ticks por pacote) e um ping por segundo, como o navegador.
     for (const c of dentro) {
-      let n = 0;
+      // O ping sai por relógio (um por segundo), não "a cada 30 voltas do temporizador": com o laço de eventos faminto cada volta atrasa e 30 voltas viram vários segundos.
+      let ultimoPing = 0;
       c.timer = setInterval(() => {
         const a = { ...newNetInput(), tick: c.proximoTick };
         const b = { ...newNetInput(), tick: c.proximoTick + 1 };
         c.proximoTick += 2;
         c.ws.send(new Uint8Array(encodeInputs(w, [a, b], 2)));
-        if (++n % 30 === 0) c.ws.send(new Uint8Array(encodePing(w, Date.now() >>> 0)));
+        const agora = Date.now();
+        if (agora - ultimoPing >= 1000) {
+          ultimoPing = agora;
+          c.ws.send(new Uint8Array(encodePing(w, agora >>> 0)));
+        }
       }, 1000 / 30);
     }
     // O aquecimento: a sala acabou de nascer (o mundo físico, a primeira passada do JIT). A medida começa depois dele.
