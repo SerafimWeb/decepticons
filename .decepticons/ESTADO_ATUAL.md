@@ -11,7 +11,7 @@
 
 **Armadilha que enganou o registro (R17):** o fallback do site devolve **200 com `text/html`** para QUALQUER caminho inexistente sob `/cybermech/`. Medido: `.../models/colossusv4.glb` **e** `.../models/colossus01.glb` devolvem a **mesma página de 2.342 bytes**. Então "*o `.glb` respondeu 200*" **nunca provou** que o modelo foi publicado (o `DEPLOY.md` já avisa: "o servidor responde 200 até para arquivo inexistente"). **Pergunte ao build, não ao status:** procure a string no bundle publicado e leia o `Last-Modified`.
 
-**O que fazer:** é a correção do CI abaixo — o Comandante resolve o Actions e, quando ele voltar, **reexecutar o deploy da `main`** publica tudo de uma vez. **Não há código a mudar:** o titã está correto na `main`; o que falta é publicar.
+**O que fazer:** é a correção do CI abaixo — o Comandante resolve o Actions e, quando ele voltar, **reexecutar o deploy da `main`** publica tudo de uma vez. **Não há código a mudar:** o titã está correto na `main`; o que falta é publicar. **RESOLVIDO EM PARTE (13/10, 12:23):** o site foi **publicado à mão** do PC do dono (a receita está no `DEPLOY.md` § "Publicar sem o GitHub") e **conferido à distância** — `colossusv4.glb` = 2,69 MB e o bundle servido contém `COLOSSUS-V4`: **o titã está no Hangar**. O **deploy automático segue fora**; os próximos merges só chegam ao site por publicação manual (ou quando o Actions voltar).
 
 ## ⚠ O CI do GitHub está parado por cobrança — e o site não republica (12/10, ~19:30, Claude)
 

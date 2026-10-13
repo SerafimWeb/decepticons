@@ -8,6 +8,8 @@
 3. **O site passa a poder ir ao ar sem o GitHub.** `DEPLOY.md` ganhou "Publicar sem o GitHub (na mão)": `npm run site -- --capturas` + cópia por `tar`+`ssh` (a máquina do dono é Windows e **não tem `rsync`**; o job usa porque roda em Linux). É o caminho que publica **durante a queda** e a base de uma **tarefa local agendada** que publique sozinha quando a `main` andar.
 4. **O que NÃO foi feito, e por quê:** **não** desliguei o `deploy` do Actions nem a regra 13 ("o merge na `main` publica") — tirar o deploy automático hoje quebraria o fluxo dos agentes, que **não têm a chave de deploy** (só o PC do dono tem). A ordem certa é: comando local (feito) → tarefa agendada no PC (depende da chave do dono) → **então** o `deploy` do Actions sai. Também **não** usei `paths-ignore` no workflow inteiro: isso deixaria PRs de doc **sem a linha `check`** e quebraria o `npm run publicar`; a trava por passo evita isso.
 
+**Publicado (13/10, 12:23):** o site foi ao ar **do PC do dono** (a receita no `DEPLOY.md` § "Publicar sem o GitHub") e conferido à distância (`colossusv4.glb` = 2,69 MB; o bundle servido tem `COLOSSUS-V4`) — **o titã está no Hangar**. O deploy automático do Actions segue fora.
+
 **Quem decidiu:** Qwen (a pedido do Comandante).
 
 ## [2026-10-13] O site congelou em 12/10 22:03 GMT e o Colossus-V4 não chegou lá: a prova é o BUILD, não o status HTTP (P100, Qwen)
