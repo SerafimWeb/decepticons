@@ -223,7 +223,7 @@ describe('Admin.autenticar: a chave do dono para quem não passa pelas rotas HTT
     });
 
   it('o token certo passa; o errado, vazio ou de outro tipo é negado; sem token configurado a porta está desligada', () => {
-    const a = admin('token-comprido-do-dono-123456');
+    const a = admin('token-comprido-do-dono-123456', new LimiteDeFalhas(100, 600_000)); // teto alto: aqui cada erro tem de dar 'negado', não 'bloqueado'
     expect(a.autenticar('1.1.1.1', 'token-comprido-do-dono-123456')).toBe('ok');
     expect(a.autenticar('2.2.2.2', 'token-comprido-do-dono-12345X')).toBe('negado');
     expect(a.autenticar('2.2.2.2', 'curto')).toBe('negado');
