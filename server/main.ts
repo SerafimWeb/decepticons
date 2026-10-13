@@ -28,13 +28,15 @@ const server = await startServer({
   host,
   release,
   supervisionado,
-  // Reinício pelo painel (`POST /admin/reiniciar`): solta o ajudante que religa a tarefa (o Agendador NÃO religa quem sai com código ≠ 0:
-  // provado em 12/10), salva os números e sai.
+  // Reinício pelo painel (`POST /admin/reiniciar`): lança o ajudante que religa a tarefa (o Agendador NÃO religa quem sai com código ≠ 0:
+  // provado em 12/10), espera ele ser lançado (1 a 3 s), salva os números e sai.
   aoReiniciar: (motivo) => {
-    console.log(`[servidor] reinício (${motivo}): fechando e saindo com o código ${CODIGO_REINICIO}`);
-    soltarAjudanteDeReinicio({ supervisionado, porta: server.port, scripts: resolve(import.meta.dirname, '..', 'scripts'), tarefa: process.env.CYBERMECH_TAREFA, log: (l) => console.log(`[servidor] ${l}`) });
-    setTimeout(() => process.exit(CODIGO_REINICIO), 8000).unref(); // se o fechamento travar, sai mesmo assim
-    void server.close().finally(() => process.exit(CODIGO_REINICIO));
+    console.log(`[servidor] reinício (${motivo}): lançando o ajudante, fechando e saindo com o código ${CODIGO_REINICIO}`);
+    setTimeout(() => process.exit(CODIGO_REINICIO), 30_000).unref(); // se o lançamento ou o fechamento travar, sai mesmo assim
+    const raiz = resolve(import.meta.dirname, '..');
+    void soltarAjudanteDeReinicio({ supervisionado, porta: server.port, scripts: resolve(raiz, 'scripts'), dados: pastaDados(raiz), tarefa: process.env.CYBERMECH_TAREFA, log: (l) => console.log(`[servidor] ${l}`) })
+      .then(() => server.close())
+      .finally(() => process.exit(CODIGO_REINICIO));
   },
   log: (line) => console.log(`[servidor] ${line}`),
 });

@@ -1,3 +1,15 @@
+## [2026-10-12] 2ª CORREÇÃO: o ajudante tem de nascer FORA da árvore do servidor: pelo WMI (P93, Claude)
+
+**Situação:** a 2ª prova real (21:14) falhou: o servidor lançou o ajudante com `spawn` e o ajudante nunca rodou. Reproduzido fora do Agendador: `powershell.exe` via `spawn` morre com o pai (sem `detached`) ou nem roda (com `detached`, sem console); `cmd /c start`, `Start-Process` e o WMI sobrevivem.
+**Decisões:**
+1. **O WMI (`Win32_Process.Create`) lança o ajudante:** o processo nasce filho do serviço do WMI, fora da árvore e de qualquer "job" do servidor ou da tarefa; é o que menos depende do contexto do Agendador, que não dá para reproduzir sem administrador. `cmd start` e `Start-Process` funcionariam na minha máquina, mas continuam filhos do servidor.
+2. **O servidor espera o lançamento (1 a 3 s)** antes de fechar e sair: o `spawn` solto "dava certo" no log e o processo morria com o pai; esperar o WMI devolver o PID é a confirmação de que o ajudante existe.
+3. **Plano B: a tarefa do atualizador (`schtasks /Run`)**, só se o WMI falhar. Nunca os dois: dois religamentos juntos se atropelam (o `ligar-servidor.ps1` para a tarefa que o outro acabou de ligar).
+4. **A pasta de dados vai em `-Dados`:** o processo do WMI não herda o ambiente do servidor (`CYBERMECH_DADOS`).
+5. **Todo passo no `religar.log`**, escrito pelo servidor (o que lançou e como) e pelo ajudante: duas provas falharam sem deixar rastro; a terceira, se falhar, diz onde.
+6. **Simulação completa e segura antes da prova real** (servidores de mentira numa porta livre e uma tarefa inexistente), porque cada prova real custa ~4 min de servidor fora do ar. O que ela NÃO cobre é o contexto da tarefa: isso só o servidor de casa mostra.
+**Quem decidiu:** Claude.
+
 ## [2026-10-12] CORREÇÃO: o Agendador não religa quem sai com código ≠ 0; o servidor solta um ajudante que o religa (P93, Claude)
 
 **Situação:** a prova real do REINICIAR em produção (0 jogadores) falhou: o servidor saiu com o 75 e ficou fora ~4,5 min, até ser ligado à mão. A decisão 3 da entrada "O painel do servidor: o token das métricas…" (abaixo) afirmava que "a tarefa do Windows religa quem cai (código ≠ 0, `RestartCount` 999)": **estava errada** (a tarefa ficou "Ready", resultado 75).
