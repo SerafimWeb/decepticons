@@ -19,7 +19,9 @@ const BOCAS: Record<MountId, [number, number, number]> = { rightHand: [1, 3, 2],
 function palco() {
   const chamadas: Chamada[] = [];
   const particles = { burst: (at: THREE.Vector3, normal: THREE.Vector3, o: BurstOptions) => chamadas.push({ at: at.clone(), normal: normal.clone(), o }) };
-  const visuals = new FlameVisuals(particles);
+  const plumas: Array<{ at: THREE.Vector3; size: number; life: number; power: number; rise: number }> = [];
+  const haze = { emit: (x: number, y: number, z: number, size: number, life: number, power: number, rise: number) => plumas.push({ at: new THREE.Vector3(x, y, z), size, life, power, rise }) };
+  const visuals = new FlameVisuals(particles, haze);
   /** Um Mech de mentira: só o que o módulo lê. */
   const mech = (
     flaming: boolean,
@@ -38,7 +40,7 @@ function palco() {
       mountWorldPosition: (m: MountId, t: THREE.Vector3) => t.set(...BOCAS[m]),
     } as unknown as MechBase;
   };
-  return { chamadas, visuals, mech, pulso: () => visuals.beginFrame(0.04, true) };
+  return { chamadas, plumas, visuals, mech, pulso: () => visuals.beginFrame(0.04, true) };
 }
 const duas = (tier: Tier = 0) => ({ primary: weapon('flamer', tier), offhand: weapon('flamer', tier), triggers: SHOULDER_TRIGGERS });
 
@@ -85,7 +87,7 @@ describe('o fluxo visível do lança-chamas (desenhado pela bandeira, para todos
     expect(chama!.size! * (1 + chama!.expansion!)).toBeGreaterThanOrEqual(6);
   });
 
-  it('o alcance visual é o da arma no nível dela: 30 m no MK I, 39 no MK II e 48 no MK III (o fluxo anda a 0,66 s)', () => {
+  it('o alcance visual é o da arma no nível dela: 36 m no MK I, 47 no MK II e 57,5 no MK III (o fluxo anda a 0,8 s)', () => {
     for (const tier of [0, 1, 2] as const) {
       const { chamadas, visuals, mech, pulso } = palco();
       pulso();
@@ -108,15 +110,52 @@ describe('o fluxo visível do lança-chamas (desenhado pela bandeira, para todos
     expect(conta(2)).toBeGreaterThan(conta(0));
   });
 
-  it('o custo é pequeno e conhecido por mão: 9 partículas por pulso no MK I (270 por segundo) e 11 no MK III (330), com o pool de 3000', () => {
-    for (const [tier, esperado] of [[0, 9], [1, 10], [2, 11]] as const) {
+  it('o custo é pequeno e conhecido por mão: 12 partículas por pulso no MK I (360 por segundo) e 14 no MK III (420), com o pool de 3000', () => {
+    for (const [tier, esperado] of [[0, 12], [1, 13], [2, 14]] as const) {
       const { chamadas, visuals, mech, pulso } = palco();
       pulso();
       const n = visuals.update(mech(true, { primary: weapon('flamer', tier) }));
       expect(n, `MK ${tier + 1}`).toBe(esperado);
       expect(chamadas.reduce((a, c) => a + c.o.count, 0)).toBe(esperado);
-      expect(n * 30).toBeLessThanOrEqual(330);
+      expect(n * 30).toBeLessThanOrEqual(420);
     }
+  });
+
+  it('a névoa de calor corre sobre o jato: duas plumas por pulso e por mão, ao longo do alcance (não só na boca), mais largas quanto mais longe, subindo e tremendo o cenário', () => {
+    for (const tier of [0, 2] as const) {
+      const { plumas, visuals, mech, pulso } = palco();
+      for (let k = 0; k < 20; k++) {
+        pulso();
+        visuals.update(mech(true, { primary: weapon('flamer', tier) }));
+      }
+      expect(plumas).toHaveLength(40);
+      const reach = weapon('flamer', tier).maxRange;
+      const dist = plumas.map((p) => Math.hypot(p.at.x - 1, p.at.z - 2)); // a boca está em (1, 3, 2) e o jato vai para -z
+      expect(Math.min(...dist)).toBeGreaterThanOrEqual(reach * 0.25 - 1e-6);
+      expect(Math.max(...dist)).toBeLessThanOrEqual(reach * 0.95 + 1e-6);
+      expect(Math.max(...dist) - Math.min(...dist)).toBeGreaterThan(reach * 0.3); // espalhadas pelo jato todo
+      const porTamanho = [...plumas].sort((a, b) => Math.hypot(a.at.x - 1, a.at.z - 2) - Math.hypot(b.at.x - 1, b.at.z - 2));
+      expect(porTamanho.at(-1)!.size).toBeGreaterThan(porTamanho[0]!.size * 1.5);
+      for (const p of plumas) {
+        expect(p.rise).toBeGreaterThan(1);
+        expect(p.power).toBeGreaterThan(0.5);
+      }
+    }
+    // Sem a bandeira, o fogo apagado, nada de névoa.
+    const { plumas, visuals, mech, pulso } = palco();
+    pulso();
+    visuals.update(mech(false));
+    expect(plumas).toHaveLength(0);
+  });
+
+  it('as faíscas passam do fim da chama (a última rajada do pulso)', () => {
+    const { chamadas, visuals, mech, pulso } = palco();
+    pulso();
+    visuals.update(mech(true));
+    const chama = chamadas[0]!.o;
+    const faisca = chamadas.at(-1)!.o;
+    expect(faisca.shape).toBe(SHAPE.dot);
+    expect(faisca.speed * faisca.life).toBeGreaterThan(chama.speed * chama.life);
   });
 
   it('a boca fica acesa: um clarão curto, parado e brilhante onde o fogo sai (a 4ª rajada do pulso)', () => {
@@ -150,8 +189,8 @@ describe('uma língua por mão que leva lança-chamas (o Marauder tem duas no ga
     pulso();
     const n = visuals.update(mech(true, duas()));
     expect(bocasDe(chamadas)).toEqual(new Set([1, -1]));
-    expect(n).toBe(18);
-    expect(n * 30).toBeLessThanOrEqual(660);
+    expect(n).toBe(24);
+    expect(n * 30).toBeLessThanOrEqual(840);
   });
 
   it('com o lança-chamas só na esquerda (a direita com plasma), sai só da esquerda', () => {

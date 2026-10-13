@@ -46,6 +46,7 @@ import { FlameVisuals } from '../fx/FlameVisuals';
 import { FireRingVisuals } from '../fx/FireRingVisuals';
 import { FrameCopyPass } from '../fx/FrameCopyPass';
 import { WaveRings } from '../fx/WaveRings';
+import { HeatHaze } from '../fx/HeatHaze';
 import { StatusVisuals } from '../fx/StatusVisuals';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
@@ -157,8 +158,10 @@ export class Game {
   private readonly particles = new ParticleSystem();
   private readonly damageVisuals = new DamageVisuals(this.particles);
   private readonly statusVisuals = new StatusVisuals(this.particles);
-  private readonly flameVisuals = new FlameVisuals(this.particles);
-  private readonly fireRingVisuals = new FireRingVisuals(this.particles);
+  /** A névoa de calor do lança-chamas e do anel de fogo (`fx/HeatHaze`): uma draw call, lê a cópia do quadro dos anéis da onda. */
+  private readonly heatHaze = new HeatHaze();
+  private readonly flameVisuals = new FlameVisuals(this.particles, this.heatHaze);
+  private readonly fireRingVisuals = new FireRingVisuals(this.particles, this.heatHaze);
   private readonly chargeVisuals = new ChargeVisuals(this.particles);
   /** Os anéis da onda sônica e a cópia do quadro que eles distorcem (`fx/WaveRings`): um conjunto na arena e outro no Hangar. */
   private readonly waveRings = new WaveRings();
@@ -289,6 +292,13 @@ export class Game {
       const { whenMechAssetReady } = await import('../entities/importedMechAssets');
       await whenMechAssetReady(importedAsset.url, CHASSIS[chassisId].height, importedAsset);
     }
+    // Os chassis de malha importada que o esquadrão do Comandante usa têm de estar prontos antes de a partida montar os bots (senão nascem como Vector-09).
+    const esquadrao = new EsquadraoStore(browserStorage(), location.search).current;
+    if (esquadrao) {
+      const { whenMechAssetReady } = await import('../entities/importedMechAssets');
+      const usados = new Set([...esquadrao.inimigos, ...esquadrao.aliados].map((b) => b.chassi).filter((c): c is ChassisId => !!c && c !== chassisId));
+      await Promise.all([...usados].map((c) => IMPORTED_CHASSIS[c] && whenMechAssetReady(IMPORTED_CHASSIS[c]!.url, CHASSIS[c].height, IMPORTED_CHASSIS[c]!)));
+    }
     const game = new Game(container, physics, hangar);
     await game.precompileShaders();
     return game;
@@ -355,6 +365,7 @@ export class Game {
     // --- A partida (a simulação única; quantos inimigos vêm das configurações e mudam ao reiniciar) ---
     this.scene.add(this.particles.points);
     this.scene.add(this.waveRings.mesh);
+    this.scene.add(this.heatHaze.mesh);
     // Online (M4): /jogar/?sala=CODIGO[&servidor=wss://…][&nome=Dan]. A partida local fica sem bots, sem dano e sem
     // rodada própria (quem decide é o servidor); o jogo prevê o seu Mech e desenha os outros.
     const publicServer = import.meta.env.VITE_GAME_SERVER;
@@ -375,6 +386,11 @@ export class Game {
       foes,
       power,
       ...(online || !this.squad.current ? {} : { squad: this.squad.current }),
+      // Os bots do esquadrão com chassi de malha importada (Marauder, Lancer...) nascem com o corpo certo, não como Vector-09.
+      rigDoChassi: (id) => {
+        const a = IMPORTED_CHASSIS[id];
+        return a ? tryInstantiateMechRig(a.url, CHASSIS[id].height) : null;
+      },
       mode: this.gameMode,
       map: mapFromSearch(location.search, !!online, this.gameMode),
       startWave: waveFromSearch(location.search, SURVIVAL_WAVE_PLANS.length),
@@ -1509,10 +1525,13 @@ export class Game {
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.player.firing, this.player.secondaryHeld, this.player.secondaryHeld && !this.player.firing ? this.player.secondaryCharge : this.player.primaryCharge);
     // A onda sônica: os anéis andam e leem a cópia do quadro (a cópia só roda enquanto há anel vivo, na arena ou no Hangar).
     this.waveRings.update(dt);
+    this.heatHaze.enabled = this.refractWaves;
+    this.heatHaze.update(dt);
     const hangarRings = this.hangarScene?.waveRings;
-    this.frameCopy.setActive(this.refractWaves && (this.waveRings.active || (this.hangarView && !!hangarRings?.active)));
+    this.frameCopy.setActive(this.refractWaves && (this.waveRings.active || this.heatHaze.active || (this.hangarView && !!hangarRings?.active)));
     const waveFrame = this.refractWaves ? this.frameCopy : null;
     this.waveRings.setFrame(waveFrame);
+    this.heatHaze.setFrame(waveFrame);
     hangarRings?.setFrame(waveFrame);
     this.renderer.info.reset();
     this.composer.render(dt);

@@ -6,6 +6,7 @@ import { DEFAULT_SETTINGS } from '../core/Settings';
 import { Android } from '../entities/Android';
 import { CHASSIS } from '../entities/chassis';
 import type { MechInput } from '../entities/MechBase';
+import { ImportedMech } from '../entities/ImportedMech';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
@@ -69,6 +70,27 @@ describe('a partida monta o esquadrão pedido', () => {
   });
   afterEach(() => {
     for (const p of abertas.splice(0)) p.world.free();
+  });
+
+  it('o chassi de malha importada (Marauder, Lancer) nasce com o corpo dele quando o cliente tem o arquivo; sem ele (o servidor), segue Vector-09 com os números do chassi (achado do Comandante, 13/10)', async () => {
+    const pedido = esq([mech({ chassi: 'marauder' }), mech({ chassi: 'lancerL1' }), mech({ chassi: 'arara' }), mech()], [mech({ chassi: 'marauder' })]);
+    const pedidos: string[] = [];
+    // O rig de mentira: o do Vector-09 (a prova é qual classe nasce e para quais chassis o cliente foi perguntado).
+    const rigDe = (id: string) => {
+      pedidos.push(id);
+      return id === 'marauder' || id === 'lancerL1' ? (new Vector09() as unknown as { rig: never }).rig : null;
+    };
+    const cliente = await partida(pedido, { rigDoChassi: rigDe as never });
+    const corpos = cliente.match.bots.mechs.map((m) => (m instanceof ImportedMech ? 'importado' : 'vector'));
+    expect(corpos.slice(0, 4)).toEqual(['importado', 'importado', 'vector', 'vector']); // arara é procedural; sem chassi, o padrão
+    expect(cliente.match.allies!.mechs[0]).toBeInstanceOf(ImportedMech); // o aliado Marauder também
+    expect(pedidos).toEqual(expect.arrayContaining(['marauder', 'lancerL1', 'arara']));
+    // Os números são os do chassi, com ou sem o corpo importado.
+    expect(cliente.match.bots.mechs[0]!.stats.name).toBe(CHASSIS.marauder.name);
+    // O servidor não passa `rigDoChassi`: o corpo é só física e números, e nada quebra.
+    const servidor = await partida(pedido);
+    expect(servidor.match.bots.mechs.slice(0, 4).every((m) => m instanceof Vector09)).toBe(true);
+    expect(servidor.match.bots.mechs[0]!.stats.name).toBe(CHASSIS.marauder.name);
   });
 
   it('quantos pedir, tantos nascem, cada um no seu ponto, com o nome pedido e no placar', async () => {

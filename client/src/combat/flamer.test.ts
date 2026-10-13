@@ -30,32 +30,32 @@ describe('lança-chamas: números e equilíbrio', () => {
     expect(([0, 1, 2] as const).map((t) => weapon('flamer', t).damage)).toEqual([10, 12, 14]);
   });
 
-  it('o cone e o tanque são os do pedido (dono, 11/10: "muito fraco e curto", e depois "bem mais longe"): 30 m no MK I, 34° de abertura, 6 s de combustível e 4 s de recarga (o tanque e o cone não mudam com o nível)', () => {
-    expect(FLAMER.maxRange).toBe(30);
+  it('o cone e o tanque são os do pedido (dono, 11/10: "muito fraco e curto", "bem mais longe", e 13/10 "curta" de novo): 36 m no MK I, 34° de abertura, 6 s de combustível e 4 s de recarga (o tanque e o cone não mudam com o nível)', () => {
+    expect(FLAMER.maxRange).toBe(36);
     expect((FLAMER.flame!.halfAngle * 2 * 180) / Math.PI).toBeCloseTo(34, 0);
     expect(FLAMER.flame!.fuel).toBe(6);
     expect(FLAMER.flame!.reload).toBe(4);
     for (const t of [1, 2] as const) expect(weapon('flamer', t).flame).toEqual(FLAMER.flame);
   });
 
-  it('dá 50 de dano por segundo até 14 m (10 por pulso a 5 pulsos/s) e cai à metade no alcance máximo de 30 m', () => {
+  it('dá 50 de dano por segundo até 17 m (10 por pulso a 5 pulsos/s) e cai à metade no alcance máximo de 36 m', () => {
     expect(FLAMER.damage / FLAMER.fireInterval).toBe(50);
-    expect(FLAMER.optimalRange).toBe(14);
+    expect(FLAMER.optimalRange).toBe(17);
     expect(hitDamage(FLAMER, 3)).toBe(10);
     expect(hitDamage(FLAMER, FLAMER.optimalRange)).toBe(10);
     expect(hitDamage(FLAMER, FLAMER.maxRange)).toBe(Math.round(10 * FLAMER.minFactor));
-    expect(hitDamage(FLAMER, 22)).toBeLessThan(10);
-    expect(hitDamage(FLAMER, 22)).toBeGreaterThan(5);
+    expect(hitDamage(FLAMER, 26)).toBeLessThan(10);
+    expect(hitDamage(FLAMER, 26)).toBeGreaterThan(5);
   });
 
   /**
    * Dono, 11/10: "o lança-chamas continua muito fraco, muito curto o alcance, deveria ir bem mais longe e ainda poder ser upado no MK II e ir mais longe e
    * com mais pressão". O nível sobe o alcance (+30% por nível) e a cadência (+15% por nível), além do dano (+20% por nível).
    */
-  it('o nível dá mais alcance e mais pressão: 30 / 39 / 48 m, 5 / 5,75 / 6,5 pulsos por segundo e 10 / 12 / 14 de dano por pulso', () => {
+  it('o nível dá mais alcance e mais pressão: 36 / 47 / 57,5 m, 5 / 5,75 / 6,5 pulsos por segundo e 10 / 12 / 14 de dano por pulso', () => {
     const [a, b, c] = ([0, 1, 2] as const).map((t) => weapon('flamer', t));
-    expect([a!.maxRange, b!.maxRange, c!.maxRange]).toEqual([30, 39, 48]);
-    expect([a!.optimalRange, b!.optimalRange, c!.optimalRange]).toEqual([14, 18, 22.5]);
+    expect([a!.maxRange, b!.maxRange, c!.maxRange]).toEqual([36, 47, 57.5]);
+    expect([a!.optimalRange, b!.optimalRange, c!.optimalRange]).toEqual([17, 22, 27]);
     const porSegundo = [a!, b!, c!].map((w) => 1 / w.fireInterval);
     expect(porSegundo[0]).toBeCloseTo(5, 5);
     expect(porSegundo[1]).toBeCloseTo(5.75, 1);
@@ -306,16 +306,16 @@ describe('o alcance do cone cresce com o nível (Match.flameCone, com física de
     return alvo.status.burning;
   }
 
-  it('um alvo a ~40 m (z = 20) só é pego pelo MK II (39 m) e pelo MK III (48 m), não pelo MK I (30 m)', async () => {
+  it('um alvo a ~40 m (z = 20) só é pego pelo MK II (47 m) e pelo MK III (57,5 m), não pelo MK I (36 m)', async () => {
     expect(await ate(0, 20)).toBe(false);
     expect(await ate(1, 20)).toBe(true);
     expect(await ate(2, 20)).toBe(true);
   });
 
-  it('um alvo a ~47 m (z = 12) só o MK III alcança (48 m); e um a ~55 m (z = 5) nenhum nível alcança', async () => {
-    expect(await ate(1, 12)).toBe(false);
-    expect(await ate(2, 12)).toBe(true);
-    expect(await ate(2, 5)).toBe(false);
+  it('um alvo a ~52 m (z = 8) só o MK III alcança (57,5 m); e um a ~61 m (z = -1) nenhum nível alcança', async () => {
+    expect(await ate(1, 8)).toBe(false);
+    expect(await ate(2, 8)).toBe(true);
+    expect(await ate(2, -1)).toBe(false);
   });
 
   it('um alvo a ~25 m (z = 35) é pego por todos os níveis', async () => {
@@ -377,11 +377,11 @@ describe('o cone de dano (Match.flameCone), com física de verdade', () => {
     expect(atirador.status.burning).toBe(false);
   });
 
-  it('o mais longe leva menos (o dano cai com a distância) e o que está além dos 30 m não leva nada', async () => {
+  it('o mais longe leva menos (o dano cai com a distância) e o que está além dos 36 m não leva nada', async () => {
     const { alvo, pulso } = await palco();
     const perto = alvo(0, 20);
     const longe = alvo(1.5, 3); // ~21,5 m da boca, a ~4° do eixo: dentro do cone e do alcance, com o dano já caindo
-    const fora = alvo(0, -8); // ~32,5 m da boca: passa dos 30 m de alcance mais o raio do corpo
+    const fora = alvo(0, -16); // ~40,5 m da boca: passa dos 36 m de alcance mais o raio do corpo
     const tira = (m: Vector09) => m.stats.maxModuleHealth.torso + m.stats.maxModuleHealth.head - (m.modules.torso + m.modules.head);
     pulso();
     expect(tira(perto)).toBeGreaterThan(tira(longe));
