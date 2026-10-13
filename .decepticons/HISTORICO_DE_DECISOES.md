@@ -1,3 +1,13 @@
+## [2026-10-13] As telas do Gemini estavam prontas e desligadas: ligar, e não refazer (Claude, P107, fase 5)
+
+**Situação:** o Gemini ficou sem crédito com `KillBanner`, `RoundOverlay` e `LoadingScreen` escritos e testados, mas nenhum chamado pelo jogo; os dois primeiros criavam um `AudioContext` por bipe.
+
+**Decisões:**
+1. **Ligar o que existe** em vez de reescrever: o som passou para o `AudioSystem` (um contexto só), a abertura passou a ler o relógio do intervalo da `Round` (sem a simulação saber dela: G1/G2), e a sequência de abates é uma conta pura (`SequenciaDeAbates`).
+2. **A abertura não segura ninguém.** Um 3·2·1 que congela a partida seria regra nova na simulação compartilhada com o servidor; aqui ele é só a tela lendo o relógio do intervalo que já existia. Se o Comandante quiser o congelamento de verdade, é uma decisão à parte (muda a `Round` e o servidor).
+3. **O carregamento não ganhou tela nova:** a barra e a dica moram na tela mínima do console (a auditoria de interface pede "nada repetido"); o `LoadingScreen.ts`, sem uso e sem estilo, foi apagado.
+4. **A locução é opcional e nunca falha:** `speechSynthesis` em pt-BR, sem voz ou sem som ela fica calada.
+
 ## [2026-10-13] A campanha (fase 4A e 4B): etapas que reaproveitam o fim de cada modo, e jogar é abrir o jogo com o link da etapa (Claude, P107)
 
 **Situação:** o item CAMPANHA do console dizia "em construção" desde 11/10 (P27/P54: "painel de campanhas: escolher oponentes, missões e tarefas e salvar campanhas personalizadas com nome"). O Comandante mandou fazer a fase 4.

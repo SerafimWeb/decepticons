@@ -773,6 +773,35 @@ export class AudioSystem {
   }
 
   /**
+   * ABATE e SEQUÊNCIA (P96): um toque curto no primeiro abate; a cada abate seguido da sequência sobe mais um degrau do arpejo (até quatro), com o último
+   * mais longo. Só sintetizado (zero asset); um oscilador por nota, no máximo quatro por abate.
+   */
+  playKillStreak(streak: number): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+    const degraus = [659.25, 830.61, 987.77, 1318.51]; // E5, G#5, B5, E6 (um acorde de Mi maior subindo)
+    const n = Math.min(degraus.length, Math.max(1, Math.floor(streak)));
+    const now = ctx.currentTime;
+    for (let i = 0; i < n; i++) {
+      const inicio = now + i * 0.06;
+      const ultima = i === n - 1;
+      const duracao = ultima ? 0.28 : 0.12;
+      const osc = ctx.createOscillator();
+      osc.type = ultima && n > 1 ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(degraus[i]!, inicio);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.001, inicio);
+      gain.gain.linearRampToValueAtTime(ultima ? 0.2 : 0.14, inicio + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, inicio + duracao);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(inicio);
+      osc.stop(inicio + duracao + 0.02);
+      osc.onended = () => gain.disconnect();
+    }
+  }
+
+  /**
    * ONDA LIMPA — Acorde ascendente sintetizado (C-E-G vitorioso).
    */
   playWaveClearSound(): void {

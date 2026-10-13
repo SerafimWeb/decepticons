@@ -328,6 +328,10 @@ html, body {
   background: rgba(6, 8, 10, 0.75);
   pointer-events: none;
 }
+/* A abertura (3·2·1·COMBATE!) deixa a partida à vista; o painel de estatísticas continua escurecendo o fundo. */
+.round-overlay.leve { justify-content: flex-start; padding-top: 44px; background: transparent; }
+.round-overlay.leve .ro-countdown { font-size: clamp(48px, 10vmin, 84px); line-height: 1.1; }
+.round-overlay.leve .ro-round-label { color: var(--hot); text-shadow: 0 0 10px var(--hot); }
 .ro-countdown {
   font-size: clamp(64px, 15vmin, 120px);
   letter-spacing: 8px;
@@ -3335,6 +3339,24 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   color: #3c4a42;
   pointer-events: none;
 }
+
+/* A barra e a dica da espera (core/bootProgress.ts): só aparecem com a sala ainda apagada. */
+.cc-carga { display: none; }
+#overlay.console.cc-espera .cc-carga {
+  position: absolute;
+  left: 50%;
+  top: calc(46% + 28px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(360px, 70vw);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.cc-carga i { display: block; width: 100%; height: 4px; background: #1d2520; overflow: hidden; }
+.cc-carga i::after { content: ''; display: block; width: calc(var(--p, 0) * 100%); height: 100%; background: #3f8f5f; transition: width 0.25s ease-out; }
+.cc-carga span { min-height: 14px; font: 700 calc(11px * var(--k)) / 1.4 'Consolas', 'Courier New', monospace; letter-spacing: 1px; text-align: center; color: #5d6f64; }
 
 /* Balão de ajuda dentro de um monitor (hoje: ligar a mesa de vídeo): cobre a tela do monitor enquanto está aberto. */
 .cmd-ajuda { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; overflow: auto; background: #05080b; border: 1px solid var(--hot); }

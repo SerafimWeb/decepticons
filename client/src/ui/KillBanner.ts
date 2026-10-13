@@ -1,15 +1,20 @@
 /**
  * KillBanner — Banner de confirmação de abate e sequências no topo da tela.
  * Exibe anúncios curtos em vermelho neon quando o jogador elimina uma unidade.
+ *
+ * O som não é daqui: o banner **avisa** (`som`) e o `Game` toca pelo `AudioSystem` (um contexto de áudio só; criar um por abate estourava o limite do navegador).
  */
 export class KillBanner {
   private readonly el: HTMLDivElement | null = null;
   private timer: number | null = null;
   public currentText = '';
+  /** Quem toca o som do abate (a sequência vai de 1 em diante). `null` = mudo. */
+  public som: ((streak: number) => void) | null = null;
 
   constructor(parent?: HTMLElement) {
     if (typeof document === 'undefined') return;
-    const p = parent ?? document.body;
+    // Dentro do #hud (some com a pausa e com o F1, e fica acima do mundo); fora dele a faixa nascia atrás da camada do HUD e não aparecia.
+    const p = parent ?? document.getElementById('hud') ?? document.body;
     let el = p.querySelector<HTMLDivElement>('#kill-banner');
     if (!el) {
       el = document.createElement('div');
@@ -45,28 +50,8 @@ export class KillBanner {
       if (streak >= 2) this.el.classList.add('streak');
     }
 
-    this.playKillSound(streak);
+    this.som?.(streak);
     this.resetTimer();
-  }
-
-  private playKillSound(streak: number): void {
-    if (typeof window === 'undefined' || !window.AudioContext) return;
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    // Frequência sobe com streak (mais épico)
-    const baseFreq = 800 + streak * 150;
-    osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, ctx.currentTime + 0.2);
-
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
-
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.2);
   }
 
   private resetTimer(): void {
