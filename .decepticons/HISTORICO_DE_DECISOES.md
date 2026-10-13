@@ -8,6 +8,16 @@
 3. **O carregamento não ganhou tela nova:** a barra e a dica moram na tela mínima do console (a auditoria de interface pede "nada repetido"); o `LoadingScreen.ts`, sem uso e sem estilo, foi apagado.
 4. **A locução é opcional e nunca falha:** `speechSynthesis` em pt-BR, sem voz ou sem som ela fica calada.
 
+## [2026-10-13] O Colossus ainda não entra no esquadrão, e a ficha do bot é mais rasa que o Hangar (P108, Qwen — diagnóstico)
+
+**Situação:** o Comandante tentou pôr os Colossus no esquadrão e não conseguiu, e notou que a ficha do bot não tem os campos que o Hangar dele tem. **Conferido na `main`** (não é bug de tela): (1) `CHASSIS_DOS_BOTS` exclui `colossus01`/`colossusv4` de propósito, e o `sanearBot` descarta o chassi; (2) mesmo liberado o bot não teria arma — `armasDoBot` recusa tudo o que o titã carrega (carga/chama/onda/guia/aço); (3) um titã de 20 m não cabe nos pontos de nascimento (folga medida de 3,4 m); (4) a ficha só tem apelido, personalidade, chassi, arma principal e dificuldade — falta arma secundária, módulo e layout.
+
+**Registro:** ordem **P108** em `ORDENS_DO_COMANDO.md` (⏸, aguardando o Comandante priorizar). Território: `sim/` (**Claude**) e `ui/` (**Gemini**, hoje sem créditos — a P107 põe o Claude na cobertura). **Nada construído.**
+
+**Junto:** o pedido de **automatizar deploy/commit/pull por padrão** — a base **já existe e está provada** (P105: `npm run publicar-site`, publicando sozinho pelo PC, de graça; o site foi conferido no build atual). A regra no `AGENTS.md` **não foi editada**: é arquivo de instrução **protegido**, e escrever um princípio raiz no protocolo é decisão do **Comandante** (a cópia canônica vive fora deste repositório).
+
+**Quem decidiu:** Qwen (diagnóstico e registro).
+
 ## [2026-10-13] A campanha (fase 4A e 4B): etapas que reaproveitam o fim de cada modo, e jogar é abrir o jogo com o link da etapa (Claude, P107)
 
 **Situação:** o item CAMPANHA do console dizia "em construção" desde 11/10 (P27/P54: "painel de campanhas: escolher oponentes, missões e tarefas e salvar campanhas personalizadas com nome"). O Comandante mandou fazer a fase 4.

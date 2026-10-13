@@ -13,6 +13,18 @@
 - **Visto no navegador de verdade (headless por software):** a barra anda de 0 a 1 sem recuar e a dica aparece; os três abates seguidos dão ABATE, DUPLO, TRIPLO; morrer zera; o intervalo mostra `RODADA 2 · 3 → 2 → 1 → COMBATE!` e a rodada 2 começa; o COMBATE! some sozinho. Capturas em `.decepticons/arte/carregamento-barra-claude.jpg`, `aviso-de-abate-claude.jpg`, `abertura-da-rodada-claude.jpg`.
 - **Ainda não visto (R13):** o **som** e a **voz** (o navegador de teste não toca; o Comandante confere de ouvido), e jogar uma rodada de 5 minutos inteira. **Não ligado:** o painel de estatísticas do fim da rodada (`RoundOverlay.showSummary`) segue sem uso: o placar do `RoundHud` já aparece no intervalo, e repetir seria poluir (o resumo pessoal, com dano e maior sequência, é uma decisão do Comandante).
 
+## O esquadrão ainda não aceita os Colossus, e a ficha do bot é mais rasa que o Hangar — Qwen, 13/10 (ordem P108, diagnóstico)
+
+**A queixa do Comandante (13/10):** *"nao consegui adicionar os colossus v1 ou v4… na ficha, nao consigo configurar copletamente os outros mechs igual consigo customizar o meu no hangar"*. (Ele também repetiu o pedido da **P105** — a publicação automática, que **já está feita** pela `npm run publicar-site`, do PC e de graça; o site está no build atual, conferido: `Last-Modified` **13/10 20:22 GMT**, com a campanha e a névoa de calor.)
+
+**Por que o Colossus não entra — conferido na `main`, não é bug de tela:**
+1. **O contrato exclui de propósito.** `client/src/sim/esquadrao.ts` filtra `colossus01` e `colossusv4` fora de `CHASSIS_DOS_BOTS` (o Colossus é o chefe da Sobrevivência) e o `sanearBot` descarta o chassi.
+2. **Mesmo liberado, o bot não teria arma.** `armasDoBot` só aceita energia sem giro/chama/onda/guia/chuva/carga — e o arsenal do titã é o oposto (`siege` tem carga; `cannon`, `railgun` e `flamer` também caem). Precisa de uma regra de arma para o bot.
+3. **Um titã de 20 m não cabe nos pontos de nascimento.** `nascimentos.ts` mediu folga de 3,4 m para o maior Mech.
+4. **A ficha é mais rasa que o Hangar.** O `BotSpec` só tem apelido, personalidade, chassi, **arma principal** (com nível) e dificuldade — falta **arma secundária** (mão esquerda/ombros), **módulo** e **layout**.
+
+**Território:** `client/src/sim/` é do **Claude**; a ficha/tela é `ui/` do **Gemini** (sem créditos hoje; a P107 põe o Claude na cobertura). **Nada construído** — a ordem foi registrada (**P108**) para o Comandante priorizar.
+
 ## A campanha: etapas em sequência, a janela para montar e o fim de cada etapa — Claude, 13/10 (PR `claude/campanha`, ordem P107, fase 4A e 4B)
 
 **Ordem do Comandante (13/10):** "faça a fase 3C, 4… continue melhorando e evoluindo o jogo" (e, de antes, P27/P54: "painel de campanhas: escolher oponentes, missões e tarefas e salvar campanhas personalizadas com nome").
