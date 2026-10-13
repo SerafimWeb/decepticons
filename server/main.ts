@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { CODIGO_REINICIO } from './admin';
 import { pastaDados } from './dados';
 import { vigiarParada } from './parada';
+import { soltarAjudanteDeReinicio } from './religar';
 import { DEFAULT_HOST, startServer } from './Server';
 
 /**
@@ -20,16 +21,18 @@ const release = (() => {
     return 'desconhecida';
   }
 })();
-/** Sob a tarefa do Windows (`servidor-windows.ps1` define a pasta de dados): ela religa o servidor quando ele sai com erro. */
+/** Sob a tarefa do Windows (`servidor-windows.ps1` define a pasta de dados): o painel sabe religá-lo depois de um reinício (`religar.ts`); o atualizador, se ele cair. */
 const supervisionado = !!process.env.CYBERMECH_DADOS;
 const server = await startServer({
   port,
   host,
   release,
   supervisionado,
-  // Reinício pelo painel (`POST /admin/reiniciar`): salva os números e sai com um código de erro, que a tarefa trata como queda e religa.
+  // Reinício pelo painel (`POST /admin/reiniciar`): solta o ajudante que religa a tarefa (o Agendador NÃO religa quem sai com código ≠ 0:
+  // provado em 12/10), salva os números e sai.
   aoReiniciar: (motivo) => {
     console.log(`[servidor] reinício (${motivo}): fechando e saindo com o código ${CODIGO_REINICIO}`);
+    soltarAjudanteDeReinicio({ supervisionado, porta: server.port, scripts: resolve(import.meta.dirname, '..', 'scripts'), tarefa: process.env.CYBERMECH_TAREFA, log: (l) => console.log(`[servidor] ${l}`) });
     setTimeout(() => process.exit(CODIGO_REINICIO), 8000).unref(); // se o fechamento travar, sai mesmo assim
     void server.close().finally(() => process.exit(CODIGO_REINICIO));
   },
@@ -39,7 +42,7 @@ console.log(`CYBERMECH · servidor de jogo em ws://${server.host}:${server.port}
 if (server.host === '127.0.0.1') console.log('[servidor] só localhost (túnel da Cloudflare fala daqui). HOST=0.0.0.0 expõe à rede de casa.');
 
 // Reinício sem administrador (server/parada.ts): a atualização automática cria `parar.flag` na pasta de dados; o servidor salva os
-// números e sai sozinho, e a tarefa do Windows o liga de novo com o código novo.
+// números e sai sozinho, e quem pediu (o atualizador) o liga de novo com o código novo.
 vigiarParada(pastaDados(resolve(import.meta.dirname, '..')), () => {
   console.log('[servidor] pedido de parada (parar.flag): fechando e saindo');
   setTimeout(() => process.exit(0), 8000).unref(); // se o fechamento travar, sai mesmo assim

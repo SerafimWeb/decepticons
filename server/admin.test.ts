@@ -124,7 +124,7 @@ describe('avaliar: o veredito sobre a última hora', () => {
 });
 
 describe('o reinício pelo painel', () => {
-  it('sai com um código de erro: é o que faz a tarefa do Windows religar (o código 0 é parar de verdade)', () => {
+  it('sai com um código de erro, diferente do 0 do parar.flag (que é parar de verdade); quem religa é o ajudante, não a tarefa', () => {
     expect(CODIGO_REINICIO).toBeGreaterThan(0);
     expect(CODIGO_REINICIO).toBeLessThanOrEqual(255);
     expect(CODIGO_REINICIO).toBe(75);
