@@ -53,7 +53,7 @@ export interface AdminEstado {
   node: string;
   plataforma: string;
   porta: number;
-  /** Roda sob a tarefa do Windows (que o religa se ele cair)? Sem isso, REINICIAR só desliga. */
+  /** Roda sob a tarefa do Windows (o painel sabe religá-lo depois de um reinício, e o atualizador, se ele cair)? Sem isso, REINICIAR só desliga. */
   supervisionado: boolean;
   memoria: { rssMB: number; heapMB: number };
   /** Uso de CPU do processo, em % de **um** núcleo, média da última amostra. */
@@ -132,7 +132,7 @@ export interface AdminReiniciar {
   ok: true;
   /** Em quantos segundos o servidor sai (dá tempo de a resposta chegar). */
   emS: number;
-  /** `supervisionado`: a tarefa do Windows o religa; `sozinho`: ele só desliga (rodando à mão, ninguém o religa). */
+  /** `supervisionado`: ele se religa sozinho (o ajudante de `server/religar.ts`); `sozinho`: ele só desliga (rodando à mão, ninguém o religa). */
   religa: 'supervisionado' | 'sozinho';
 }
 
