@@ -17,7 +17,8 @@ async function status(port: number) {
   return parseStatus(await res.json());
 }
 
-async function until(ok: () => Promise<boolean>, ms = 6000) {
+// 25 s: com a máquina ocupada (o atualizador do servidor de casa roda este teste junto com os outros agentes), 6 s não bastava e o deploy era reprovado por tempo, não por erro (12/10).
+async function until(ok: () => Promise<boolean>, ms = 25_000) {
   const t0 = Date.now();
   while (!(await ok())) {
     if (Date.now() - t0 > ms) throw new Error('tempo esgotado');

@@ -10,6 +10,16 @@
 6. **Simulação completa e segura antes da prova real** (servidores de mentira numa porta livre e uma tarefa inexistente), porque cada prova real custa ~4 min de servidor fora do ar. O que ela NÃO cobre é o contexto da tarefa: isso só o servidor de casa mostra. **A 3ª prova real (21:44, 0 jogadores) passou:** o `religar.log` mostra o ajudante lançado pelo WMI (PID 16820), "começou" e "religou"; o servidor voltou em 16 s do pedido (10 s fora).
 **Quem decidiu:** Claude.
 
+## [2026-10-12] O gate do atualizador não pode depender de a máquina estar quieta (Claude)
+
+**Situação:** a versão das câmeras (#283, `ec9269e`) foi reprovada pelo atualizador do servidor de casa ("FALHOU (testes de server/ e shared/)"), por tempo: os testes de servidor de verdade têm esperas de 5 a 8 s e a máquina de casa, carregada, as estourou. Reproduzido com 8 processos queimando CPU.
+**Decisões:**
+1. **Esperas de 25 s** nos testes de servidor de verdade (o `testTimeout` é 30 s): um teste que falha por esperar pouco reprova um deploy que não tem nada de errado, e o custo de esperar mais é zero quando a máquina está quieta (o `until` sai assim que a condição vale).
+2. **O `testar` do painel mede 3 s no teste** (era 1,5 s): os pings voltam uma vez por segundo, e numa janela curta com a máquina ocupada nenhum voltava.
+3. **O gate não muda:** o atualizador continua verificando antes de reiniciar (foi ele quem protegeu o servidor no ar desta vez). O erro estava nos testes, não no gate.
+4. **Registro de diagnóstico (pendente, não feito aqui):** o `atualizacao.log` diz só "FALHOU (testes de server/ e shared/)", sem dizer qual teste; o ideal seria gravar o fim da saída do Vitest. Fica como melhoria do `atualizador.mjs`.
+**Quem decidiu:** Claude.
+
 ## [2026-10-12] As câmeras ao vivo: um mural por um canal só, sem subir o protocolo (P88, Claude)
 
 **Ordem do Comandante (P88):** "pelo servidor, poder assistir as câmeras em diferentes partidas simultaneamente".

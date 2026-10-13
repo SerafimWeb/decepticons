@@ -975,7 +975,7 @@ describe('M3: o servidor de verdade, pela rede', () => {
       ws.onopen = () => resolve();
       ws.onerror = () => reject(new Error('sem conexão'));
     });
-    const until = async (ok: () => boolean, ms = 5000) => {
+    const until = async (ok: () => boolean, ms = 25_000) => {
       const t0 = Date.now();
       while (!ok()) {
         if (Date.now() - t0 > ms) throw new Error('tempo esgotado');

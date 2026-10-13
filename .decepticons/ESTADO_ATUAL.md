@@ -7,6 +7,12 @@
 **O que os agentes fazem até lá (decisão do Comandante, 12/10, respondida a esta pergunta):** o PR entra na `main` com o **`npm run check` local verde** (o hook do push o roda e barra o push se falhar) e o merge feito à mão (`node scripts/gh.mjs pr merge <n> --merge --delete-branch`), porque o `npm run publicar` espera o CI verde e recusa. **Quando o Actions voltar, esta regra acaba**: volta o `publicar` com o CI.
 **Achado de passagem (R17):** nesse intervalo a `main` ficou com o **typecheck quebrado** (o merge do #259 duplicou um import no `ui/HangarMenu.ts`; corrigido no PR #279). Sem CI, ninguém viu.
 
+## O deploy do servidor reprovou as câmeras por TEMPO, não por erro: o gate agora aguenta a máquina carregada — Claude, 12/10 (PR `claude/gate-sob-carga`)
+
+**O que aconteceu:** o atualizador do servidor de casa verificou o `ec9269e` (as câmeras, #283) às 22:22 e **reprovou: "FALHOU (testes de server/ e shared/) — voltando para be79ab9"**; o servidor no ar não foi tocado (a rede de segurança funcionou), mas a versão nova não subia (até a próxima rodada de 10 min em que a máquina estivesse quieta). O gate dele é `typecheck` + `node scripts/test.mjs run --no-isolate server shared`.
+**A causa:** reproduzi com **8 processos queimando CPU**: dois testes **que não são das câmeras** passavam do limite de espera (`server/admin-http.test.ts`: o `testar`, que esperava um ping numa janela de 1,5 s; `server/status.test.ts`: um `until` de 6 s). A máquina de casa (6 GB, três agentes, navegadores) fica carregada com frequência, então o deploy dependia de sorte.
+**O conserto:** os limites de espera dos testes de servidor de verdade (`admin-http`, `mural`, `status`, `room`) passam a 25 s (o `testTimeout` do projeto é 30 s) e o `testar` mede 3 s. **A mesma bateria, sob a mesma carga, passa (339 testes).** **Lição:** o que o atualizador roda tem de passar com a máquina ocupada; teste de servidor de verdade com espera curta é um deploy que depende de sorte.
+
 ## As câmeras ao vivo: um mural de radares de todas as partidas, por um canal só — Claude, 12/10 (PR `claude/cameras-ao-vivo`, ordem P88, fase 3A e 3B)
 
 **Ordem do Comandante (P88):** "pelo servidor, poder assistir as câmeras em diferentes partidas simultaneamente".
