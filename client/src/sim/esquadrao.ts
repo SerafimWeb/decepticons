@@ -291,14 +291,14 @@ const deLetra = <T extends string>(tabela: Readonly<Record<T, string>>, letra: s
   (Object.keys(tabela) as T[]).find((k) => tabela[k] === letra);
 
 /** O nome vai em base64 de URL (letras, números, `-` e `_`): nenhum caractere do nome atrapalha os separadores `. , :`. */
-function nomeParaTexto(nome: string): string {
+export function nomeParaTexto(nome: string): string {
   const bytes = new TextEncoder().encode(nome);
   let binario = '';
   for (const b of bytes) binario += String.fromCharCode(b);
   return btoa(binario).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function textoParaNome(texto: string): string | undefined {
+export function textoParaNome(texto: string): string | undefined {
   if (!/^[A-Za-z0-9_-]+$/.test(texto)) return undefined;
   try {
     const binario = atob(texto.replace(/-/g, '+').replace(/_/g, '/'));

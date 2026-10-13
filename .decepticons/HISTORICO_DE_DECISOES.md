@@ -1,3 +1,14 @@
+## [2026-10-13] A campanha (fase 4A e 4B): etapas que reaproveitam o fim de cada modo, e jogar é abrir o jogo com o link da etapa (Claude, P107)
+
+**Situação:** o item CAMPANHA do console dizia "em construção" desde 11/10 (P27/P54: "painel de campanhas: escolher oponentes, missões e tarefas e salvar campanhas personalizadas com nome"). O Comandante mandou fazer a fase 4.
+
+**Decisões:**
+1. **A etapa não cria regra nova.** Vence o que cada modo já tem: Sobrevivência (limpar as ondas), Bandeira (vencer a partida); o Deathmatch, que não tem fim, ganha uma **meta de abates** só na etapa. A conta é uma função só (`resultadoDaEtapa`), testada por tabela. **Rejeitado:** objetivos novos (escoltar, defender, sabotar) — dependem das missões da P99, que ainda não existem em código; entram como um tipo de etapa quando existirem.
+2. **Jogar uma etapa é recarregar o jogo com o link dela** (`?modo=&mapa=&esquadrao=&campanha=&etapa=`). Os robôs, o mapa e o modo são montados uma vez (G4/G5) e o jogo já lia esses parâmetros: trocar de etapa sem recarregar exigiria desmontar e remontar a partida inteira. O custo é um recarregamento entre etapas (a tela de carregamento de sempre).
+3. **A campanha viaja num link só e é recusada por inteiro** se algo estiver errado (como o esquadrão: nada é aplicado pela metade). O esquadrão de cada etapa é saneado contra o mapa dela (o Bunker comporta menos).
+4. **O esquadrão do link da etapa não vira o esquadrão salvo do Comandante** (achado: o `EsquadraoStore` guardava todo link). E a etapa só vale se o modo e o mapa batem com os dela: quem trocou o modo pelo menu fica numa partida comum.
+5. **A janela mora no monitor COMANDO, só offline.** Online o servidor manda os inimigos (como o esquadrão). A campanha de fábrica para o jogador comum é uma decisão do Comandante: hoje só ele a vê (`?comandante=1`).
+
 ## [2026-10-13] O site passa a ir ao ar pelo PC do Comandante (automático, grátis) e as contas se unificam (Claude, P105/P106)
 
 **Situação:** o Actions parou por cobrança (12/10) e o dono não quer pagar: *"quero que a publicação seja automática, facilitada, eficiente e gratuita… unifique as contas, pegue as informações onde elas estiverem, de forma hábil e simplificada, sempre"*. A receita manual do Qwen funcionava, mas dependia de alguém lembrar de rodá-la.

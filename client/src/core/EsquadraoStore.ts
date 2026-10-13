@@ -1,3 +1,4 @@
+import { campanhaDoLink } from '../sim/campanha';
 import { ESQUADRAO_VERSAO, esquadraoDoLink, type EsquadraoSpec, chaveDoEsquadrao, esquadraoPadrao, PARAM_DO_ESQUADRAO, sanearEsquadrao } from '../sim/esquadrao';
 
 /** Onde o esquadrão do Comandante fica salvo no aparelho. */
@@ -26,7 +27,8 @@ export class EsquadraoStore {
     }
     const doLink = esquadraoDoLink(search);
     this.current = doLink ?? this.read();
-    if (doLink) this.save(doLink);
+    // Numa etapa de campanha (`?campanha=…&etapa=N`) o esquadrão do link vale só para esta partida: guardá-lo trocaria, sem aviso, o esquadrão que o Comandante montou.
+    if (doLink && campanhaDoLink(search) === null) this.save(doLink);
   }
 
   /** Há um esquadrão personalizado? (Conta como ajuda na telemetria: dá para deixar a partida mais fácil.) */

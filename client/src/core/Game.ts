@@ -1,4 +1,4 @@
-import { mapFromSearch } from '../environment/Bunker';
+import { mapFromSearch, type MapId } from '../environment/Bunker';
 import { CommandConsole } from '../ui/CommandConsole';
 import { escalacaoDaPartida, fracoesDasPartes } from '../ui/consoleData';
 import { fonteDoRadar } from '../ui/TacticalRadar';
@@ -86,6 +86,11 @@ import { EsquadraoStore } from './EsquadraoStore';
 import { esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
 import { ALLY_COUNT } from '../sim/nascimentos';
 import { SquadPanel } from '../ui/SquadPanel';
+import { CampaignPanel } from '../ui/CampaignPanel';
+import { CampaignRunHud } from '../ui/CampaignRunHud';
+import { CampanhaStore } from './CampanhaStore';
+import { EtapaEmCurso } from './EtapaEmCurso';
+import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha';
 import { ServerPanel } from '../ui/ServerPanel';
 import { CameraWall } from '../ui/CameraWall';
 import { plantaDaArena } from '../ui/TacticalRadar';
@@ -240,6 +245,11 @@ export class Game {
   readonly power = new PowerStore(browserStorage(), location.search);
   /** O esquadrão do Comandante (P91): quantos bots e aliados, cada um com o seu corpo, arma e personalidade. Sem um salvo, valem as configurações. */
   readonly squad = new EsquadraoStore(browserStorage(), location.search);
+  /** As campanhas que o Comandante montou e guardou (fase 4B). */
+  readonly campanhas = new CampanhaStore(browserStorage());
+  /** A etapa de campanha que esta partida é (o link traz `?campanha=…&etapa=N` e bate com o modo e o mapa), ou `null`. */
+  private campanha: EtapaEmCurso | null = null;
+  private campanhaHud: CampaignRunHud | null = null;
   private appliedQuality: QualityPreset | null = null;
   /** Por onde começa a volta dos efeitos por robô a cada quadro (inimigos e aliados), para o orçamento por pulso alcançar todos. */
   private fxStart = 0;
@@ -701,6 +711,24 @@ export class Game {
       abrirAjustes: () => document.getElementById('btn-settings')?.click(),
       reiniciar: () => reloadWithout(PARAM_DO_ESQUADRAO),
     });
+    // Janela Campanha (fase 4B): offline apenas. Jogar uma etapa é abrir o jogo com o link dela; o esquadrão "meu" é o salvo no aparelho, não o do link da etapa.
+    const campanhaIndisponivel = (): string | null => (online ? 'Online, quem manda nos inimigos é o servidor.' : null);
+    const campanhaPanel = new CampaignPanel({
+      store: this.campanhas,
+      esquadraoMeu: () => new EsquadraoStore(browserStorage(), '').current,
+      indisponivel: campanhaIndisponivel,
+      jogar: (busca) => location.assign(location.pathname + busca),
+      copiar: async (texto) => {
+        try {
+          await navigator.clipboard.writeText(texto);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      base: () => location.origin + location.pathname,
+    });
+    this.ligarCampanha(mapa, !!online);
     // Janela do servidor (P93): o endereço é o do jogo online (o público do build, ou o do próprio PC); sem ele, o item se apaga.
     const enderecoDoServidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
     const tokenDoDono = new TokenDoDono(browserStorage(), enderecoDoServidor);
@@ -729,11 +757,44 @@ export class Game {
       potencias: () => this.power.changes,
       som: () => this.audio.playUiTransition(),
       esquadrao: { abrir: () => void squadPanel.abrir(), indisponivel: esquadraoIndisponivel, personalizado: () => this.squad.custom },
+      campanha: { abrir: () => void campanhaPanel.abrir(), indisponivel: campanhaIndisponivel },
       servidor: { abrir: () => void painelDoServidor.abrir(), indisponivel: () => (enderecoDoServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
       cameras: { abrir: () => void parede?.abrir(), indisponivel: () => (mural.temServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
       radar: fonteDoRadar(mapa, this.match.arena.halfSize, this.match.arena.occluders, () => this.mech, () => this.bots.mechs, allies),
     });
     this.settings.onChange(() => cmd.atualizar());
+  }
+
+  /** A faixa da etapa e o painel do fim, se esta partida é uma etapa de campanha (fase 4B). Os avisos de abate e de fim vêm dos callbacks do `Match` (abaixo). */
+  private ligarCampanha(mapa: MapId, online: boolean): void {
+    const run = EtapaEmCurso.doLink(location.search, mapa, this.gameMode, online);
+    if (!run) return;
+    this.campanha = run;
+    this.campanhaHud = new CampaignRunHud(run, {
+      ir: (acao) => location.assign(location.pathname + linkDaEtapa(run.campanha, acao === 'proxima' ? (run.proxima ?? run.n) : run.n)),
+      // Sair volta ao combate livre de sempre: some o que o link da etapa trouxe (modo, mapa, esquadrão, campanha); o esquadrão salvo do Comandante volta a valer.
+      sair: () => {
+        const url = new URL(location.href);
+        for (const p of ['modo', 'mapa', 'esquadrao', PARAM_DA_CAMPANHA, PARAM_DA_ETAPA]) url.searchParams.delete(p);
+        location.assign(url);
+      },
+    });
+  }
+
+  /** Um abate do jogador em robô inimigo conta para a meta da etapa (Deathmatch); ao bater a meta, a etapa acaba. */
+  private abateNaCampanha(): void {
+    if (!this.campanha) return;
+    const antes = this.campanha.resultado;
+    const depois = this.campanha.abate();
+    this.campanhaHud?.atualizar();
+    if (antes === 'em-curso' && depois !== 'em-curso') this.fimDaEtapa();
+  }
+
+  /** A etapa decidida: o painel do fim, e o jogo para como em qualquer fim de partida. */
+  private fimDaEtapa(): void {
+    this.campanhaHud?.fim();
+    this.setPlaying(false);
+    this.input.exitLock();
   }
 
   /**
@@ -1021,6 +1082,8 @@ export class Game {
       this.killFeed.push(killerName, deadName, isPlayerInvolved);
       if (!this.online && dead === mech && killer && killer !== mech) this.killCam.start(killer, at);
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
+      // Abater um aliado (fogo amigo) não conta para a meta da etapa.
+      if (killer === mech && dead !== mech && !(this.match.allies?.mechs ?? []).includes(dead)) this.abateNaCampanha();
     };
     // Rádio do clã: o primeiro contato de um bot (inimigo ou aliado) aparece no feed, sem mudar a regra.
     this.match.onRadio = (from, target) => {
@@ -1053,6 +1116,10 @@ export class Game {
       this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds);
       this.setPlaying(false);
       this.input.exitLock();
+      if (this.campanha) {
+        this.campanha.fimDaSobrevivencia(survived);
+        this.campanhaHud?.fim();
+      }
     };
     this.match.onCtfFlag = (event, owner) => {
       const flag = owner === 'blue' ? 'AZUL' : 'VERMELHA';
@@ -1071,6 +1138,10 @@ export class Game {
       this.hud.setCtfEnd(winner, blue.captures, red.captures, blue.kills, red.kills);
       this.setPlaying(false);
       this.input.exitLock();
+      if (this.campanha) {
+        this.campanha.fimDaBandeira(winner);
+        this.campanhaHud?.fim();
+      }
     };
     this.match.onPropBroken = (_id, center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;

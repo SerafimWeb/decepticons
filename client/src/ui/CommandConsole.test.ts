@@ -51,8 +51,7 @@ describe('console de comando: o HTML', () => {
 
   it('o que ainda não existe aparece como em construção, sem link (R13)', () => {
     const breves = [...consoleHtml.matchAll(/<li class="breve"[^>]*>([\s\S]*?)<\/li>/g)].map((m) => m[1]!);
-    // Hoje só a CAMPANHA ainda é promessa (a ficha do bot, o servidor e as câmeras já abrem janela). Quando ela abrir, este teste vira "nenhuma promessa sem link".
-    expect(breves.length).toBeGreaterThanOrEqual(1);
+    // Nenhuma promessa hoje: a ficha do bot, o servidor, as câmeras e a campanha abrem janela. Se uma nova entrar como "em construção", ela precisa vir sem link.
     for (const b of breves) {
       expect(b).toMatch(/em construção/);
       expect(b).not.toMatch(/<a |<button/);
@@ -124,6 +123,20 @@ it('a tela de carregamento esconde os monitores com display none (guarda do boot
     expect([...consoleHtml.matchAll(/data-esquadrao-open/g)]).toHaveLength(2);
     expect(consoleHtml).toContain('<div id="squad-modal" class="hidden"></div>');
     for (const m of monitores) expect(m.includes('id="squad-modal"'), 'a janela dentro de um monitor').toBe(false);
+  });
+
+  it('a campanha (fase 4B): o item do monitor COMANDO abre a janela, que mora fora dos monitores e começa fechada; o console não dá Enter por trás dela nem do painel do fim', () => {
+    const comando = monitores.find((m) => m.includes('id="mon-comando"'))!;
+    expect(comando).toMatch(/<li id="cmd-campanha"><button type="button" data-campanha-open/);
+    expect([...consoleHtml.matchAll(/data-campanha-open/g)]).toHaveLength(1);
+    expect(consoleHtml).toContain('<div id="campanha-modal" class="hidden"></div>');
+    for (const m of monitores) expect(m.includes('id="campanha-modal"'), 'a janela dentro de um monitor').toBe(false);
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/#campanha-modal\s*\{[^}]*position:\s*fixed/);
+    expect(css).toMatch(/#campanha-modal\.hidden\s*\{\s*display:\s*none/);
+    expect(css).toMatch(/\.campanha-fim\s*\{[^}]*position:\s*fixed/);
+    const fonte = readFileSync(new URL('./CommandConsole.ts', import.meta.url), 'utf8');
+    expect(fonte, 'algoPorCima conhece a janela e o painel do fim').toContain('#campanha-modal:not(.hidden), #campanha-fim');
   });
 
   it('o servidor (P93): o item do monitor COMANDO abre a janela, que mora fora dos monitores e começa fechada; o painel só aparece no modo Comandante', () => {

@@ -67,6 +67,8 @@ export interface ConsoleHooks {
    * inimigos; missões: o pool delas), ou `null`; `personalizado` marca o botão quando há um esquadrão salvo.
    */
   esquadrao?: { abrir: () => void; indisponivel: () => string | null; personalizado: () => boolean };
+  /** A janela Campanha (fase 4B, `ui/CampaignPanel.ts`): `abrir` a mostra; `indisponivel` diz por que não abre (online: o servidor manda os inimigos), ou `null`. */
+  campanha?: { abrir: () => void; indisponivel: () => string | null };
   /** A janela do servidor (P93, `ui/ServerPanel.ts`): `abrir` a mostra; `indisponivel` diz por que não abre (build sem servidor), ou `null`. */
   servidor?: { abrir: () => void; indisponivel: () => string | null };
   /** A janela de câmeras ao vivo (P88, `ui/CameraWall.ts`): `abrir` a mostra; `indisponivel` diz por que não abre (build sem servidor), ou `null`. */
@@ -131,6 +133,11 @@ export class CommandConsole {
         if (!this.hooks.cameras?.indisponivel()) this.hooks.cameras?.abrir();
       });
     }
+    for (const botao of root.querySelectorAll<HTMLElement>('[data-campanha-open]')) {
+      botao.addEventListener('click', () => {
+        if (!this.hooks.campanha?.indisponivel()) this.hooks.campanha?.abrir();
+      });
+    }
     for (const botao of root.querySelectorAll<HTMLElement>('[data-esquadrao-open]')) {
       botao.addEventListener('click', () => {
         if (!this.hooks.esquadrao?.indisponivel()) this.hooks.esquadrao?.abrir();
@@ -176,10 +183,21 @@ export class CommandConsole {
       pot.textContent = n ? `${n} ajuste${n === 1 ? '' : 's'} fora do padrão` : 'armas e clãs no padrão';
     }
     this.pintarEsquadrao();
+    this.pintarCampanha();
     this.pintarServidor();
     this.pintarCameras();
     this.mundo.atualizar();
     this.radar.desenhar();
+  }
+
+  /** O item CAMPANHA do monitor COMANDO: apagado, com o motivo, quando a partida não aceita campanha. */
+  private pintarCampanha(): void {
+    const motivo = this.hooks.campanha ? this.hooks.campanha.indisponivel() : 'Este build não tem campanhas.';
+    for (const botao of this.root.querySelectorAll<HTMLElement>('[data-campanha-open]')) {
+      botao.classList.toggle('off', motivo !== null);
+      botao.setAttribute('aria-disabled', String(motivo !== null));
+      if (motivo !== null) botao.title = motivo;
+    }
   }
 
   /** O item CÂMERAS AO VIVO do monitor COMANDO: apagado, com o motivo, num build sem servidor de jogo. */
@@ -462,7 +480,7 @@ export class CommandConsole {
 
 /** Uma janela por cima do console (Configurações, sala online, calibração do mouse): o Enter é dela, não do console. */
 function algoPorCima(): boolean {
-  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #server-modal:not(.hidden), #cameras-modal:not(.hidden)');
+  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #campanha-modal:not(.hidden), #campanha-fim, #server-modal:not(.hidden), #cameras-modal:not(.hidden)');
 }
 
 function barra(rotulo: string, valor: string, fracao: number, alerta = false): HTMLElement[] {
