@@ -1,7 +1,6 @@
 import { browserStorage } from '../core/Settings';
 import { sessaoDeAdminGuardada, TokenDoDono } from '../net/admin';
 import { ContaCliente } from '../net/auth';
-import { defaultServer } from '../net/onlineConfig';
 import { CHASSIS, type ChassisId } from '../entities/chassis';
 
 export class AdminPanel {
@@ -14,8 +13,9 @@ export class AdminPanel {
   
   constructor(private readonly onChange: (locked: Set<ChassisId>) => void) {
     this.client = new ContaCliente(import.meta.env.VITE_GAME_SERVER);
-    const servidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
-    this.guarda = new TokenDoDono(browserStorage(), servidor);
+    // A sessão é guardada na chave do servidor que a EMITIU (o mesmo do ContaCliente acima), nunca na do `?servidor=` do link: um link de terceiros
+    // apontando para outro servidor não encontra a sessão do admin e não a recebe (o painel do servidor só a envia ao servidor da própria chave).
+    this.guarda = new TokenDoDono(browserStorage(), import.meta.env.VITE_GAME_SERVER);
     this.root = document.createElement('div');
     this.root.className = 'admin-modal hidden';
     this.root.innerHTML = `
