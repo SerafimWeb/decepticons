@@ -4,7 +4,7 @@ import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { BOT_SKILLS } from '../combat/BotController';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import { Android } from '../entities/Android';
-import { CHASSIS } from '../entities/chassis';
+import { CHASSIS, ehTita } from '../entities/chassis';
 import type { MechInput } from '../entities/MechBase';
 import { ImportedMech } from '../entities/ImportedMech';
 import { Vector09 } from '../entities/Vector09';
@@ -22,7 +22,9 @@ import {
   resumoDoEsquadrao,
 } from './esquadrao';
 import { Match, type MatchOptions } from './Match';
-import { ALLY_SPAWNS, BOT_SPAWNS } from './nascimentos';
+import { ALLY_SPAWNS, BOT_SPAWNS, PONTOS_DOS_TITAS } from './nascimentos';
+import { DANO_DO_CERCO_DO_BOT, TITA_RESPAWN_S } from '../combat/titaBot';
+import { weapon } from '../combat/weapons';
 
 const IDLE: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
 const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
@@ -207,10 +209,12 @@ describe('o corpo, a arma e a dificuldade de cada robô', () => {
   });
 
   it('cada arma que o bot sabe usar machuca o jogador de verdade (a que ele escolhe, atira e acerta)', async () => {
-    const ids = [...new Set(CHASSIS_DOS_BOTS.flatMap((c) => armasDoBot(c)))];
+    // Os titãs têm o teste deles (adiante): nascem nos cantos e levam mais de 30 s para chegar ao alcance.
+    const mechs = CHASSIS_DOS_BOTS.filter((c) => !ehTita(c));
+    const ids = [...new Set(mechs.flatMap((c) => armasDoBot(c)))];
     expect(ids.length).toBeGreaterThanOrEqual(6);
     for (const id of ids) {
-      const chassi = CHASSIS_DOS_BOTS.find((c) => armasDoBot(c).includes(id))!;
+      const chassi = mechs.find((c) => armasDoBot(c).includes(id))!;
       const { match, run, acertos } = await partida(esq([mech({ chassi, arma: { id, tier: 0 } })], []), {}, true);
       run(30);
       expect(match.bots.mechs[0]!.loadout.primary.id, `${id} no ${chassi}`).toBe(id);
@@ -312,4 +316,83 @@ describe('um esquadrão grande aguenta', () => {
     expect(mediaMs).toBeLessThan(8);
     expect(match.bots.mechs.length + match.allies!.mechs.length).toBe(LIMITES_DO_ESQUADRAO.total);
   }, 60_000);
+
+  it('o tick com dois titãs na sala cheia (o teto de 32 corpos, dois deles Colossus) continua dentro do orçamento (P108)', async () => {
+    const pedido = cheio();
+    pedido.inimigos[0] = mech({ chassi: 'colossusv4' });
+    pedido.inimigos[1] = mech({ chassi: 'colossus01' });
+    const { match, run } = await partida(pedido);
+    run(2);
+    const t0 = performance.now();
+    run(10);
+    const mediaMs = (performance.now() - t0) / Math.round(10 / FIXED_DT);
+    // Medido (13/10, máquina carregada): 1,7 ms por tick a sala cheia de Mechs e 2,05 ms com dois deles trocados por titãs (+0,3 ms).
+    expect(mediaMs).toBeLessThan(8);
+    expect(match.bots.mechs.filter((m) => m.stats.height >= 14)).toHaveLength(2);
+    expect(match.bots.mechs.length + match.allies!.mechs.length).toBe(LIMITES_DO_ESQUADRAO.total);
+  }, 90_000);
+});
+
+describe('os titãs como bots inimigos (P108)', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+  afterEach(() => {
+    for (const p of abertas.splice(0)) p.world.free();
+  });
+
+  const titas = () => esq([mech({ chassi: 'colossusv4', nome: 'GOLIAS' }), mech({ chassi: 'colossus01' }), mech()], []);
+
+  it('nascem nos pontos deles, com a altura de titã, o nome pedido e o perfil de cerco (longe, sem correr)', async () => {
+    const { match } = await partida(titas());
+    const [v4, c1, comum] = match.bots.mechs;
+    expect(v4!.stats.height).toBe(20);
+    expect(c1!.stats.height).toBe(14);
+    expect(comum!.stats.height).toBeLessThan(6);
+    expect(v4!.simPosition.x).toBeCloseTo(PONTOS_DOS_TITAS[0]![0], 0);
+    expect(v4!.simPosition.z).toBeCloseTo(PONTOS_DOS_TITAS[0]![1], 0);
+    expect(c1!.simPosition.x).toBeCloseTo(PONTOS_DOS_TITAS[1]![0], 0);
+    expect(comum!.simPosition.x).toBeCloseTo(BOT_SPAWNS[0]![0], 0); // o Mech comum segue no ponto de sempre
+    expect(match.bots.nameOf(v4!)).toBe('GOLIAS');
+    expect(match.bots.nameOf(c1!)).toBe('COLOSSUS-01');
+    // O perfil de cerco: ataca de 46 m (o do chefe); o Mech comum, de 38.
+    expect(match.bots.brainOf(v4!)!.attackRange).toBe(46);
+    expect(match.bots.brainOf(c1!)!.attackRange).toBe(46);
+    expect(match.bots.brainOf(comum!)!.attackRange).toBe(38);
+  });
+
+  it('o canhão de cerco do bot sai com o dano limitado e o chefe segue com plasma', async () => {
+    const { match } = await partida(titas());
+    const [v4, c1] = match.bots.mechs;
+    expect(v4!.loadout.primary.id).toBe('siege');
+    expect(v4!.loadout.primary.damage).toBeCloseTo(weapon('siege').damage * DANO_DO_CERCO_DO_BOT);
+    expect(c1!.loadout.primary.id).toBe('plasma');
+  });
+
+  it('o titã vem para cima e acerta o jogador (o canhão sai sem a carga do jogador)', async () => {
+    const { match, acertos, run } = await partida(esq([mech({ chassi: 'colossusv4' })], []), {}, true);
+    const v4 = match.bots.mechs[0]!;
+    const antes = Math.hypot(v4.simPosition.x, v4.simPosition.z);
+    run(90);
+    expect(Math.hypot(v4.simPosition.x, v4.simPosition.z), 'o titã não se aproximou').toBeLessThan(antes - 30);
+    expect(acertos(), 'o titã não acertou o jogador em 90 s').toBeGreaterThan(0);
+  }, 120_000);
+
+  it('abatido, o titã demora para voltar (e o Mech comum volta em 4 s)', async () => {
+    const { match, run } = await partida(esq([mech({ chassi: 'colossus01' }), mech()], []));
+    const [c1, comum] = match.bots.mechs;
+    c1!.modules.torso = 0;
+    comum!.modules.torso = 0;
+    run(10);
+    expect(c1!.alive, 'o titã voltou cedo demais').toBe(false);
+    expect(comum!.alive, 'o Mech comum deveria ter voltado').toBe(true);
+    run(TITA_RESPAWN_S);
+    expect(c1!.alive, 'o titã não voltou').toBe(true);
+  }, 120_000);
+
+  it('titã do lado aliado vira Vector-09 e o excedente (mais de dois) é cortado antes de nascer', async () => {
+    const { match } = await partida(esq([mech({ chassi: 'colossusv4' }), mech({ chassi: 'colossusv4' }), mech({ chassi: 'colossus01' })], [mech({ chassi: 'colossusv4' })]));
+    expect(match.bots.mechs.filter((m) => m.stats.height >= 14)).toHaveLength(2);
+    expect(match.allies!.mechs[0]!.stats.height).toBeLessThan(6);
+  });
 });

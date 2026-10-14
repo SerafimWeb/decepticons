@@ -10,6 +10,17 @@
 5. **Plano em cinco frentes, um PR cada** (`REFERENCIA_VISUAL.md` § 6.3): HUD (feito), leitura de combate, morrer e voltar, cenário, pontos de controle. A ordem entre o modo de pontos e a escolta (P99) é do Comandante (decisão 5 da folha de decisões).
 
 **Quem decidiu:** Claude (o Comandante deu a direção e o veto ao pay-to-win; as escolhas 1 a 3 são de desenho e estão abertas a ajuste).
+## [2026-10-13] Os Colossus como bots inimigos: arma própria, dano do cerco limitado e teto de dois (Claude, P108 passo a)
+
+**Situação:** o Comandante aprovou a P108: colocar os titãs de tamanho 3 e 4 no time adversário e lutar contra eles de andróide. O contrato os excluía de propósito.
+
+**Decisões:**
+1. **Só inimigos, só Arena, até dois.** Um titã de 20 m já é a partida inteira; aliado titã na escolta (nasce a 10–48 m do jogador) não tem onde nascer e o Bunker não comporta. Se o Comandante quiser titã aliado, é outro passo (pontos próprios perto do jogador).
+2. **O bot atira a arma de fábrica como projétil comum**, sem a carga do jogador (a carga é do gatilho, `Armament.ts`), e o **canhão de cerco do bot leva 60% do dano** (360 → 216): o primeiro tiro não derruba um Vector-09 inteiro, o segundo derruba. É o "não pode ser absurdamente forte" de 29/09 traduzido em número; **proposta minha, o Comandante ajusta** (`DANO_DO_CERCO_DO_BOT`).
+3. **O Colossus-01 bot é o chefe da Sobrevivência** (plasma e foguetes), não o do Hangar (canhão e chuva): o equilíbrio do chefe é de 29/09 e não se mexe sem o dono pedir.
+4. **O titã abatido volta em 60 s.** Com os 4 s dos outros bots, o gigante morreria e renasceria sem que ninguém sentisse o evento.
+5. **Os pontos de nascimento vêm da física**, não de régua: 427 pontos livres para um cilindro de 10 m de raio e 21 m de altura, espalhados por "o mais longe de todos" (a mesma regra dos extras), e o teste repete a consulta.
+6. **Rejeitado:** mexer na regra de arma geral do bot (`armaServeAoBot`) para aceitar carga/chama/onda — o bot comum continua com a energia simples; só o titã tem a exceção declarada.
 
 ## [2026-10-13] As telas do Gemini estavam prontas e desligadas: ligar, e não refazer (Claude, P107, fase 5)
 
