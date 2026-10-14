@@ -19,6 +19,8 @@
 
 **Próxima frente da P109:** a **3 — morrer e voltar** (painel "seu algoz" + escolha do ponto de nascimento, inclui a P98). A **P119** (inteligência tática dos bots) foi registrada e é a de maior efeito percebido no combate.
 
+**Onde ver:** Arena (ou Bunker), partida offline — a **plaqueta** de cada robô agora traz a barra de vida e a distância em metros; ao **acertar**, o número sobe do corpo do inimigo. Captura em jogo: `.decepticons/arte/leitura-do-combate-qwen.jpg` (a plaqueta sobre os bots; o número aparece atirando).
+
 ## O modo Domínio: dominar os cinco pontos da Arena, offline, com bots que capturam e guardam — Claude, 14/10 (PR `claude/dominio`, ordens P112 e P111)
 
 **Ordem do Comandante (14/10):** "quero adicionar modalidade de jogo de dominar as 5 ou 6 bases do jogo" (e, do mesmo recado, o ciclo "atirar, se esconder, esquivar, combate, fuga, captura, sem ficar parado e sem morrer de primeira").
