@@ -5,6 +5,10 @@
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
 
+## A água da praia: freia e afoga — Qwen, 14/10 (P126, passo 1)
+
+**REAL no código e nos testes (ainda **sem mapa** que a use):** `combat/Agua.ts` traz o **contrato da água** — a **fundura** pelos pés, o **freio** (até 0,35× a velocidade, pelo `MechBase.moveSpeedScale` que já existe) e o **afogamento** (3 s e 8/s no casco). **7 testes**. **Falta:** a **geometria** (a praia e o fundo do mar que desce), o `MapId` `praia`, a **missão** e o playtest — e é com o mapa que a regra ganha o **teste de partida** (G14).
+
 ## Táticas do esquadrão — Qwen, 14/10 (P122, passo 1)
 
 **REAL na simulação (falta o seletor na tela e o playtest):** `combat/taticas.ts` traz o **catálogo** (PELO CENTRO, PELOS FLANCOS e PROTEGER **prontas**; RECUAR SE… e DISTRAIR **reservadas**) e o **esquadrão aliado** obedece — a tática manda na **formação** e no **leash** (`BotController.formationWidth`/`leash`). Escolhe-se por **`?tatica=`**; sem tática, o jogo é o `centro` (o teste-golden do esquadrão padrão bate). 8 testes. **Falta:** o seletor dentro da partida (SquadPanel), o gatilho "se X, recua" e o distrair (dependem das missões, P99).

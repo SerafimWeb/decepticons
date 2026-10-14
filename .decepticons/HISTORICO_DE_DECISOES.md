@@ -1,3 +1,11 @@
+## [2026-10-14] A água da praia: freia e afoga — o contrato antes do cenário (Qwen, P126 passo 1)
+
+**Situação:** o Comandante passou para o Qwen a tarefa do Codex (sem créditos) e pediu o **cenário maior da praia dos cabos** (Fortaleza), com **mar** — "que os mechs possam entrar na água e ir afundando" — e a narrativa de defender os cabos.
+
+**Decisões:** (1) **contrato antes do cenário** (regra 5 e a lição do Bunker): primeiro a **regra pura da água** (`combat/Agua.ts`), depois a geometria — assim a geometria nasce com a regra já testada, sem segunda rodada. (2) **Nenhuma física nova:** o **afundamento** é **geometria** (o fundo do mar desce) e a física de sempre leva o Mech; o **freio** usa o `MechBase.moveSpeedScale`, que já existe. (3) A água é **dado do mapa** (retângulo + superfície + o preço), como as zonas. (4) **Narrativa:** vale a trava do projeto — **alegoria sem nomes reais** e no **cooperativo/campanha**, **nunca** no PvP (P110). (5) O mapa segue a ficha `cenario-cabos.md` (~500 m); o nome e o lugar vêm dela.
+
+**Quem decidiu:** o Comandante pediu o cenário e o mar; "contrato primeiro" e reusar a física e o `moveSpeedScale` são decisões de engenharia minhas.
+
 ## [2026-10-14] Táticas do esquadrão: o jogador escolhe como o time joga (Qwen, P122 passo 1)
 
 **Situação:** o Comandante quer escolher/desenhar táticas prontas (flanco, centro, recuar com gatilho, proteger um aliado, distração) **por missão**, e citou o `combat/tatica.ts` que eu tinha acabado de criar.
