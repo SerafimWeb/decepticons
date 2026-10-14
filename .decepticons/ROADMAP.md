@@ -267,7 +267,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] Leitura de combate (P109, frente 2): números de dano flutuantes sobre o alvo, plaqueta com barra de vida e distância, "recarregando" ao lado da mira, ícone da arma no kill feed (Claude) #ux
 - [ ] Morrer e voltar (P109, frente 3; inclui a P98): painel "seu algoz" com a ficha do matador e escolha do ponto de nascimento na contagem de reaparecer (Claude) #ux
 - [ ] Cenário com cobertura e cor por zona (P109, frente 4): contêineres, rampas e muretas instanciados e cor por região da Arena, dentro do estilo neon (Codex) #cenarios
-- [ ] Modo de pontos de controle A–E (P109, frente 5): posse por proximidade, placar por tempo de posse, minimapa com as letras; regra no `Match` e `OBJECTIVE_STATE` na rede (Claude) #modos
+- [~] Modo Domínio, pontos de controle A–E (P109 frente 5 e P112, 14/10): offline pronto (`?modo=dominio`: regra pura testada, bots que capturam e guardam, bases, barra de pontos, feixes de luz, minimapa; Claude); faltam o online (`OBJECTIVE_STATE` e times na sala, P81), a campanha e o playtest #modos
 - [ ] Ficha da arma na lista do Hangar com dano, alcance ótimo e recarga (P109; nunca "potência" nem estrelas: não é pay-to-win) #ux
 
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)

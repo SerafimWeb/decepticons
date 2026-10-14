@@ -41,6 +41,7 @@ import { Android } from '../entities/Android';
 import type { MechBase } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
 import { CtfObjectives } from '../environment/CtfObjectives';
+import { DominioPontos } from '../environment/DominioPontos';
 import { DamageVisuals } from '../fx/DamageVisuals';
 import { FlameVisuals } from '../fx/FlameVisuals';
 import { FireRingVisuals } from '../fx/FireRingVisuals';
@@ -122,6 +123,7 @@ import { OnlineLobby } from '../ui/OnlineLobby';
 import { ModeSelector } from '../ui/ModeSelector';
 import { MissionHUD } from '../ui/MissionHUD';
 import { CtfHud } from '../ui/CtfHud';
+import { DominioHud, avisoDoPonto } from '../ui/DominioHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
@@ -203,6 +205,8 @@ export class Game {
   private readonly round: Round;
   /** Bandeiras, bases e zonas holográficas: cinco draw calls, somente no modo CTF. */
   private readonly ctfObjectives: CtfObjectives | null;
+  private readonly dominioPontos: DominioPontos | null;
+  private readonly dominioHud = new DominioHud();
   private readonly roundHud: RoundHud;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
@@ -448,6 +452,7 @@ export class Game {
       } else this.acceptBank(this.bankAccount.redeem(code, this.mech, this.bankTick));
     }, () => { this.hud.setPaused(true); this.resume(); });
     this.ctfObjectives = this.match.ctf ? new CtfObjectives(this.scene) : null;
+    this.dominioPontos = this.match.dominio ? new DominioPontos(this.scene, this.match.dominio) : null;
     // O piloto escolhe o chassi (Hangar): qualquer um em CHASSIS, sempre nas cores do jogador. O andróide
     // tem classe própria (ferramenta, sem blueprint); os de malha importada (`IMPORTED_CHASSIS`) usam o
     // rig pré-carregado no boot (síncrono a essa altura — deu tempo de sobra); os outros passam pelo
@@ -624,6 +629,7 @@ export class Game {
     this.recorder = new GameRecorder(this.renderer.domElement, this.audio);
     if (this.gameMode === 'survival') this.hud.setMissionMode(true);
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
+    else if (this.gameMode === 'dominio') this.dominioHud.mostrar(true);
     else this.hud.setMissionMode(false);
     this.hud.setBuild(`CYBERMECH ${import.meta.env.VITE_BUILD ?? 'dev'} · © ${new Date().getFullYear()} SERAFIM WEB`);
 
@@ -734,7 +740,7 @@ export class Game {
     const allies = (): readonly MechBase[] => this.match.allies?.mechs ?? [];
     // Janela do esquadrão (P91): offline, na Arena e no Bunker. Online o servidor manda os inimigos; as missões têm o pool delas.
     const esquadraoIndisponivel = (): string | null =>
-      online ? 'Online, quem manda nos inimigos é o servidor.' : this.gameMode !== 'deathmatch' ? 'O esquadrão vale no combate livre (Arena e Bunker); as missões têm o pool delas.' : null;
+      online ? 'Online, quem manda nos inimigos é o servidor.' : this.gameMode !== 'deathmatch' && this.gameMode !== 'dominio' ? 'O esquadrão vale no combate livre (Arena e Bunker) e no Domínio; as missões têm o pool delas.' : null;
     const squadPanel = new SquadPanel({
       store: this.squad,
       padrao: () => esquadraoDeFoes(this.settings.value, ALLY_COUNT),
@@ -774,6 +780,7 @@ export class Game {
     // As salas online são da Arena: se o jogo local está no Bunker, o mural não desenha as paredes de outro mapa por cima.
     const plantaOnline = mapa === 'arena' ? plantaDaArena(this.match.arena.occluders) : [];
     this.minimapa.setPlanta(plantaComZonas(mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(this.match.arena.occluders), mapa === 'arena'));
+    this.minimapa.setPontos(this.match.dominio?.pontos ?? null);
     parede = new CameraWall({
       mural,
       planta: () => plantaOnline,
@@ -1186,6 +1193,17 @@ export class Game {
         this.campanhaHud?.fim();
       }
     };
+    // Domínio: a barra de pontos, o aviso de cada ponto que muda de dono e o fim da partida (a regra é do `Match`; aqui só a tela).
+    this.match.onDominioProgresso = (tempo, azul, vermelho) => this.dominioHud.quadro(this.match.dominio!.pontos, tempo, azul, vermelho);
+    this.match.onDominioDono = (ponto, antes, depois) => this.dominioHud.avisar(avisoDoPonto(ponto.def.letra, antes, depois));
+    this.match.onDominioFim = (vencedor, azul, vermelho) => {
+      this.telemetry.enviar('partida_terminada');
+      this.playTelemetry.finish('completed');
+      this.missionEnded = true;
+      this.hud.setDominioEnd(vencedor, Math.floor(azul.pontos), Math.floor(vermelho.pontos));
+      this.setPlaying(false);
+      this.input.exitLock();
+    };
     this.match.onPropBroken = (_id, center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
       if (falloff > 0) rig.addShake(0.55 * falloff);
@@ -1273,9 +1291,11 @@ export class Game {
       }
       if (!this.playing) return;
       if (!Object.values(this.settings.value.keys).includes(code)) {
-        if (code === 'Digit1') this.squadHUD.command('follow');
-        if (code === 'Digit2') this.squadHUD.command('focus');
-        if (code === 'Digit3') this.squadHUD.command('hold');
+        if (this.gameMode !== 'dominio') {
+          if (code === 'Digit1') this.squadHUD.command('follow');
+          if (code === 'Digit2') this.squadHUD.command('focus');
+          if (code === 'Digit3') this.squadHUD.command('hold');
+        }
       }
       if (code === this.settings.value.keys.camera) this.switchCamera();
       else if (code === 'Escape' && !rig.mode.pointerLock) this.setPlaying(false);
@@ -1321,6 +1341,7 @@ export class Game {
       this.player.launcher.refill();
       this.hud.setScore(0, 0);
       if (this.gameMode === 'ctf') this.hud.resetCtf();
+      else if (this.gameMode === 'dominio') this.hud.resetDominio();
       else this.hud.resetMission();
     }
     // Primeira partida da sessão: vinheta da marca (o clique é o gesto que libera o som). O mouse já
@@ -1510,6 +1531,8 @@ export class Game {
     this.match.allies?.render(dt, alpha);
     this.droneVisuals?.render(dt, alpha);
     if (this.match.ctf && this.ctfObjectives) this.ctfObjectives.update(dt, this.match.ctf);
+    this.dominioPontos?.update(dt);
+    this.dominioHud.update(dt);
     this.online?.render(dt, now);
     this.nameplates.update(this.mech);
     if (this.mech.alive && this.killCam.overridesRig) this.killCam.release();
@@ -1566,7 +1589,7 @@ export class Game {
     const squad = this.match.allies;
     let alliesAlive = 0;
     if (squad) for (const m of squad.mechs) if (m.alive) alliesAlive++;
-    this.squadHUD.update(dt, !!squad && this.playing && this.mech.alive && !this.hangarView, squad?.order ?? 'follow', alliesAlive, squad?.mechs.length ?? 0);
+    this.squadHUD.update(dt, !!squad && this.gameMode !== 'dominio' && this.playing && this.mech.alive && !this.hangarView, squad?.order ?? 'follow', alliesAlive, squad?.mechs.length ?? 0);
     this.shieldVisuals.begin();
     if (!this.hangarView) { this.shieldVisuals.update(this.mech); if(this.online?.joined)this.online.remotes.forEach(this.drawShield);else for(const bot of this.bots.mechs)this.shieldVisuals.update(bot); }
     this.shieldVisuals.end();

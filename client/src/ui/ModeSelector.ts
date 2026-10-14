@@ -2,6 +2,7 @@
  * ModeSelector — Modos reais da simulação (Arena, Sobrevivência e CTF).
  *
  * Permite selecionar entre:
+ *  - 'dominio': Pontos de controle A–E (seu time contra as IAs).
  *  - 'deathmatch': Todos contra todos em rodadas de 5 min.
  *  - 'survival': Modo Sobrevivência em fases/ondas contra hordas rebeldes.
  *  - 'ctf': Captura de bandeiras no treino solo.
@@ -39,6 +40,7 @@ const MODE_INFO: Record<GameMode, GameModeInfo> = {
     description: 'Enfrente hordas progressivas de andróides e mechs rebeldes.',
   },
   ctf: { id: 'ctf', label: 'CAPTURE A BANDEIRA', short: 'BANDEIRA', badge: 'TREINO SOLO', description: 'Roube a bandeira vermelha e retorne à base azul. Vitória com 3 capturas.' },
+  dominio: { id: 'dominio', label: 'DOMÍNIO', short: 'DOMÍNIO', badge: 'POR PONTOS', description: 'Domine os cinco pontos da Arena com seus aliados contra as IAs rebeldes. Vence quem chegar a 400 pontos.' },
 };
 export const GAME_MODES: GameModeInfo[] = Object.values(MODE_INFO);
 

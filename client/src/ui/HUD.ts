@@ -170,6 +170,27 @@ export class HUD {
     this.cta.textContent = '[ clique para jogar de novo ]';
   }
 
+  /** Fim do Domínio: o placar final e o convite para jogar de novo (a barra de cima já mostra os pontos). */
+  setDominioEnd(vencedor: 'blue' | 'red' | null, azul: number, vermelho: number): void {
+    const titulo = vencedor === 'blue' ? 'VITÓRIA' : vencedor === 'red' ? 'DERROTA' : 'EMPATE';
+    this.missionStatus.hidden = false;
+    this.missionStatus.classList.toggle('clear', vencedor === 'blue');
+    this.setMissionText(`DOMÍNIO ENCERRADO · ${titulo}`);
+    this.missionSummary.hidden = false;
+    this.missionSummary.textContent = `${titulo}\nAZUL ${azul} × ${vermelho} VERMELHO`;
+    this.cta.textContent = '[ clique para jogar de novo ]';
+  }
+
+  /** Nova partida do Domínio: some o fim da partida anterior. */
+  resetDominio(): void {
+    this.shownMission = '';
+    this.missionSummary.hidden = true;
+    this.missionSummary.textContent = '';
+    this.missionStatus.hidden = true;
+    this.missionStatus.classList.remove('clear');
+    this.setReady(document.documentElement.classList.contains('touch'));
+  }
+
   setMissionWave(wave: number, total: number, title: string, waves: number): void {
     this.missionStatus.classList.remove('clear');
     this.setMissionText(`ONDA ${wave}/${waves} · ${title.toUpperCase()} · 0/${total}`);

@@ -15,6 +15,10 @@ describe('modo da partida', () => {
   it('aceita o modo CTF', () => {
     expect(gameModeFromSearch('?modo=ctf')).toBe('ctf');
   });
+
+  it('aceita o modo Domínio (pontos de controle)', () => {
+    expect(gameModeFromSearch('?modo=dominio')).toBe('dominio');
+  });
 });
 
 describe('atalho de bancada ?onda=', () => {
