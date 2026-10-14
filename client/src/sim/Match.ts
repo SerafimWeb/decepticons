@@ -11,6 +11,7 @@ import { DroneSystem } from '../combat/DroneSystem';
 import { FireRing, type RingSides } from '../combat/FireRing';
 import { Round } from '../combat/Round';
 import { hitDamage, rangeFactor, type Flame, type WeaponStats } from '../combat/weapons';
+import type { TaticaId } from '../combat/taticas';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
 import { ZoneSystem } from '../combat/Zone';
 import { PALETTE } from '../core/palette';
@@ -122,6 +123,8 @@ export interface MatchOptions {
    * com `allies: false` (o servidor, o online) os aliados do esquadrão ficam de fora. Sobrevivência e CTF têm o pool e os times deles.
    */
   squad?: EsquadraoSpec;
+  /** A **tática** do esquadrão aliado (ordem P122): a formação e o leash. Ausente = `centro`. */
+  tatica?: TaticaId | null;
 }
 
 /**
@@ -305,6 +308,7 @@ export class Match {
             particles: o.particles,
             respawner: this.respawner,
             escort: this.players,
+            tatica: o.tatica,
             paint: PALETTE.playerPaint,
             visor: PALETTE.green,
             spawns: pontos(escolta.mechs),

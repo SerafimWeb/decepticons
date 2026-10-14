@@ -14,6 +14,7 @@ import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { PERSONA_LABELS, type Difficulty, type Persona } from '../core/Settings';
 import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BOT_SKILLS, BotController, type BotSkill, type SquadOrder, MECH_PROFILE, PERSONAS } from './BotController';
 import { escolherRearguarda } from './tatica';
+import { parametrosDaTatica, type TaticaId } from './taticas';
 import type { CombatSystem } from './CombatSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
 import { weapon, type Tier, type WeaponId } from './weapons';
@@ -115,6 +116,8 @@ export interface BotSystemOptions {
   androidKits?: readonly (BotKit | undefined)[];
   /** Potências do painel (por arma e por clã); sem isso, o padrão do jogo. */
   power?: PowerSpec;
+  /** A **tática** do esquadrão aliado (ordem P122): a formação e o leash que ele obedece. Ausente = `centro`. */
+  tatica?: TaticaId | null;
 }
 
 /** Rádio do clã, para a tela: `from` avistou `target` (primeiro contato; no máximo um aviso a cada `RADIO_CALLOUT_S`). */
@@ -193,6 +196,8 @@ export class BotSystem {
     this.particles = o.particles;
     const waypoints = o.waypoints.map(([x, z]) => new THREE.Vector3(x, 0, z));
     const seed = o.seed ?? 1;
+    // A tática do esquadrão (P122): só vale no lado aliado (escolta); os rebeldes não têm tática do jogador.
+    const tatica = parametrosDaTatica(o.escort ? o.tatica : null);
     const place = (mech: MechBase, [x, z]: readonly [number, number]) => {
       mech.spawn(o.physics, new THREE.Vector3(x, 0, z));
       mech.applyFacing(Math.atan2(x, z), 0); // nasce olhando para o centro da arena
@@ -209,6 +214,10 @@ export class BotSystem {
       const titan = !android && !!kit?.chassi && ehTita(kit.chassi);
       const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, skill, android ? ANDROID_PROFILE : titan ? BOSS_PROFILE : MECH_PROFILE, persona);
       brain.escortSide = i % 2 ? 1 : -1;
+      if (o.escort) {
+        brain.formationWidth = tatica.formacaoLargura; // a tática do jogador manda na formação aliada (ordem P122)
+        brain.leash = tatica.leash;
+      }
       brain.useSecondary = !!kit?.secundaria;
       brain.home.copy(home);
       if (o.respawn !== false) {

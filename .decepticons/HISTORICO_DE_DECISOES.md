@@ -1,3 +1,11 @@
+## [2026-10-14] Táticas do esquadrão: o jogador escolhe como o time joga (Qwen, P122 passo 1)
+
+**Situação:** o Comandante quer escolher/desenhar táticas prontas (flanco, centro, recuar com gatilho, proteger um aliado, distração) **por missão**, e citou o `combat/tatica.ts` que eu tinha acabado de criar.
+
+**Decisões:** (1) a tática vira **dado do jogador** (`combat/taticas.ts`) e quem obedece é o **esquadrão aliado** — a formação e o leash —, **não** mais uma regra dentro do `BotController`. (2) O catálogo tem **5** táticas: **três prontas** (centro, flanco, proteger) e **duas reservadas** (recuar com gatilho, distrair) que **se declaram não prontas**, porque o gatilho "se X, recua para Y" depende da **missão** (P99) — e a lista não mente sobre o que faz (R13). (3) Sem tática, o jogo é o `centro`: o **golden do esquadrão padrão continua batendo**. (4) Nesta etapa a escolha é o **link `?tatica=`**; o **seletor na tela** (SquadPanel) e o **por missão** ficam para o passo seguinte.
+
+**Quem decidiu:** o Comandante pediu o catálogo e o "por missão"; o recorte (três prontas, duas reservadas declaradas, escolha por link primeiro) é a minha leitura estratégica para entregar já algo honesto e testável.
+
 ## [2026-10-14] A mira assenta, cada arma no seu tempo — amplitude em zero (Qwen, P121 passo 1)
 
 **Situação:** o Comandante quer as miras "casadas" (a da ponta da arma com a do alvo) e cada arma com tempo de mirar, alcance e amplitude próprios.

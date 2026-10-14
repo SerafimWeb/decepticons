@@ -5,6 +5,10 @@
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
 
+## Táticas do esquadrão — Qwen, 14/10 (P122, passo 1)
+
+**REAL na simulação (falta o seletor na tela e o playtest):** `combat/taticas.ts` traz o **catálogo** (PELO CENTRO, PELOS FLANCOS e PROTEGER **prontas**; RECUAR SE… e DISTRAIR **reservadas**) e o **esquadrão aliado** obedece — a tática manda na **formação** e no **leash** (`BotController.formationWidth`/`leash`). Escolhe-se por **`?tatica=`**; sem tática, o jogo é o `centro` (o teste-golden do esquadrão padrão bate). 8 testes. **Falta:** o seletor dentro da partida (SquadPanel), o gatilho "se X, recua" e o distrair (dependem das missões, P99).
+
 ## Perfil de mira por arma — Qwen, 14/10 (P121, passo 1)
 
 **REAL na simulação e no DOM (falta o playtest do dono — mira é sensação):** cada arma tem o seu **tempo de mirar** (`combat/aim.ts`: linha 0,5 s / média 0,32 s / perto 0,18 s; corte, chama e rotatória não assentam) e a mira **abre e fecha** conforme o gatilho (o `--aim-open` do HUD a faz crescer). A **amplitude está em 0**: o **acerto não mudou** — é só o desenho da mira. 8 testes. **Falta:** o julgamento do dono e, se ele quiser, ligar a dispersão (`aimSpread`, uma linha por arma).
