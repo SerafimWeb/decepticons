@@ -5,6 +5,10 @@
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
 
+## Perfil de mira por arma — Qwen, 14/10 (P121, passo 1)
+
+**REAL na simulação e no DOM (falta o playtest do dono — mira é sensação):** cada arma tem o seu **tempo de mirar** (`combat/aim.ts`: linha 0,5 s / média 0,32 s / perto 0,18 s; corte, chama e rotatória não assentam) e a mira **abre e fecha** conforme o gatilho (o `--aim-open` do HUD a faz crescer). A **amplitude está em 0**: o **acerto não mudou** — é só o desenho da mira. 8 testes. **Falta:** o julgamento do dono e, se ele quiser, ligar a dispersão (`aimSpread`, uma linha por arma).
+
 ## Canhão de cerco: carga mais rápida e com espera — Qwen, 14/10 (P124)
 
 **REAL na simulação (falta o playtest do dono — a carga é sensação de tiro):** o cerco do Colossus-V4 carrega em **2,4 s** (era 3) e **segura a carga** — completar não dispara; a arma fica pronta (anel cheio) e o tiro sai **ao soltar o gatilho** (flag `chargeHold` na arma). O **trilho** segue sem espera. 5 testes novos em `ChargeTimer.test.ts` (7 no total). O **bot** do V4 não muda (atira sem carga, na cadência da arma). Ou seja: a **regra** está provada; a **sensação** só o dono julga.

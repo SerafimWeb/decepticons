@@ -1691,6 +1691,8 @@ export class Game {
     const giro = ativo ? this.player.spinLevel : 0;
     // O medidor em volta da mira serve às duas armas de fluxo: a rotação do cano da rotatória e o combustível do lança-chamas.
     this.hud.setSpin(Math.max(giro, ativo ? this.player.fuelLevel : 0));
+    // Mira aberta (ordem P121): a mira cresce enquanto a arma não assentou — cada arma no seu tempo.
+    this.hud.setAimOpen(ativo ? this.player.aimOpen : 0);
     this.audio.setRotarySpin(giro);
     this.audio.setFlame(ativo && this.mech.status.flaming);
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
