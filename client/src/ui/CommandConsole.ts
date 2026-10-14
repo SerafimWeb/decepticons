@@ -67,6 +67,8 @@ export interface ConsoleHooks {
    * inimigos; missões: o pool delas), ou `null`; `personalizado` marca o botão quando há um esquadrão salvo.
    */
   esquadrao?: { abrir: () => void; indisponivel: () => string | null; personalizado: () => boolean };
+  /** A janela ARSENAL (fase 4C, `ui/ArsenalPanel.ts`): as fichas das armas e dos chassis. Só leitura, abre sempre. */
+  arsenal?: { abrir: () => void };
   /** A janela Campanha (fase 4B, `ui/CampaignPanel.ts`): `abrir` a mostra; `indisponivel` diz por que não abre (online: o servidor manda os inimigos), ou `null`. */
   campanha?: { abrir: () => void; indisponivel: () => string | null };
   /** A janela do servidor (P93, `ui/ServerPanel.ts`): `abrir` a mostra; `indisponivel` diz por que não abre (build sem servidor), ou `null`. */
@@ -132,6 +134,9 @@ export class CommandConsole {
       botao.addEventListener('click', () => {
         if (!this.hooks.cameras?.indisponivel()) this.hooks.cameras?.abrir();
       });
+    }
+    for (const botao of root.querySelectorAll<HTMLElement>('[data-arsenal-open]')) {
+      botao.addEventListener('click', () => this.hooks.arsenal?.abrir());
     }
     for (const botao of root.querySelectorAll<HTMLElement>('[data-campanha-open]')) {
       botao.addEventListener('click', () => {
@@ -480,7 +485,7 @@ export class CommandConsole {
 
 /** Uma janela por cima do console (Configurações, sala online, calibração do mouse): o Enter é dela, não do console. */
 function algoPorCima(): boolean {
-  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #campanha-modal:not(.hidden), #campanha-fim, #server-modal:not(.hidden), #cameras-modal:not(.hidden)');
+  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #campanha-modal:not(.hidden), #campanha-fim, #arsenal-modal:not(.hidden), #server-modal:not(.hidden), #cameras-modal:not(.hidden)');
 }
 
 function barra(rotulo: string, valor: string, fracao: number, alerta = false): HTMLElement[] {
