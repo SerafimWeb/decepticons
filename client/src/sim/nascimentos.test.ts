@@ -18,6 +18,7 @@ import {
   EXTRAS_ALIADOS,
   EXTRAS_INIMIGOS,
   nascimentosDoEsquadrao,
+  PONTOS_DOS_TITAS,
   type Ponto,
   TECHNICIAN_SPAWNS,
 } from './nascimentos';
@@ -131,6 +132,62 @@ describe('pontos extras da Arena', () => {
   });
 });
 
+describe('pontos dos titãs (P108)', () => {
+  it('são quatro, únicos, longe do jogador, longe uns dos outros e dos pontos fixos, fora das zonas de cura', () => {
+    expect(PONTOS_DOS_TITAS).toHaveLength(4);
+    expect(new Set(chaves(PONTOS_DOS_TITAS)).size).toBe(4);
+    for (const [i, p] of PONTOS_DOS_TITAS.entries()) {
+      expect(dist(p, JOGADOR), `${p}`).toBeGreaterThanOrEqual(60);
+      for (const q of PONTOS_DOS_TITAS.slice(i + 1)) expect(dist(p, q), `${p} e ${q}`).toBeGreaterThanOrEqual(30);
+      for (const f of SPAWN_POINTS) expect(dist(p, f), `${p} e o fixo ${f}`).toBeGreaterThanOrEqual(14);
+      for (const z of ARENA_ZONES) expect(dist(p, [z.x, z.z]), `${p}`).toBeGreaterThan(z.radius);
+      expect(Math.abs(p[0])).toBeLessThanOrEqual(90);
+      expect(Math.abs(p[1])).toBeLessThanOrEqual(90);
+    }
+  });
+
+  it('a alocação dá os pontos dos titãs na ordem, só na Arena, e recusa mais que o mapa comporta', () => {
+    const n = nascimentosDoEsquadrao({ ...ZERO, mechs: 1, titas: 2 }, 'arena');
+    expect(n.titas).toEqual([PONTOS_DOS_TITAS[0], PONTOS_DOS_TITAS[1]]);
+    expect(n.mechs).toEqual([BOT_SPAWNS[0]]);
+    expect(nascimentosDoEsquadrao(ZERO, 'arena').titas).toEqual([]);
+    expect(() => nascimentosDoEsquadrao({ ...ZERO, titas: 5 }, 'arena')).toThrow(/titã/);
+    expect(() => nascimentosDoEsquadrao({ ...ZERO, titas: 1 }, 'bunker')).toThrow(/titã/);
+    expect(capacidadeDoMapa('arena').titas).toBe(4);
+  });
+
+  describe('contra a arena de verdade (física)', () => {
+    beforeAll(async () => {
+      await RAPIER.init();
+    });
+
+    it('cabe o Colossus-V4 em pé em cada ponto (cilindro de 10 m de raio e 21 m de altura), sem encostar em nada fixo', async () => {
+      const physics = await PhysicsWorld.create();
+      try {
+        const match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: DEFAULT_SETTINGS, debris: false });
+        physics.step();
+        const raio = 10;
+        const altura = 21;
+        const base = 0.5;
+        const forma = new RAPIER.Cylinder((altura - base) / 2, raio);
+        const fixo = (c: RAPIER.Collider) => {
+          const corpo = c.parent();
+          return !corpo || corpo.isFixed();
+        };
+        for (const [x, z] of PONTOS_DOS_TITAS) {
+          const batida = match.physics.world.intersectionWithShape({ x, y: base + (altura - base) / 2, z }, { x: 0, y: 0, z: 0, w: 1 }, forma, undefined, undefined, undefined, undefined, fixo);
+          expect(batida, `o ponto ${x},${z} encosta em algo da arena`).toBeNull();
+        }
+        // E o teste enxerga: o ponto de um prédio não cabe o titã.
+        const dentro = match.physics.world.intersectionWithShape({ x: -28, y: 3, z: -35 }, { x: 0, y: 0, z: 0, w: 1 }, forma, undefined, undefined, undefined, undefined, fixo);
+        expect(dentro).not.toBeNull();
+      } finally {
+        physics.world.free();
+      }
+    });
+  });
+});
+
 describe('alocar os pontos de um esquadrão', () => {
   it('passando dos fixos, o inimigo pega os extras na ordem e o aliado os dele (nenhum ponto repete)', () => {
     const n = nascimentosDoEsquadrao({ mechs: 5, androids: 4, tecnicos: 2, aliadosMechs: 4, aliadosAndroids: 2 }, 'arena');
@@ -182,7 +239,7 @@ describe('pontos do Bunker', () => {
   });
 
   it('comporta os 11 pontos livres e recusa o 12º', () => {
-    expect(capacidadeDoMapa('bunker')).toEqual({ inimigos: 11, aliados: 11, total: 11 });
+    expect(capacidadeDoMapa('bunker')).toEqual({ inimigos: 11, aliados: 11, total: 11, titas: 0 });
     const cheio = nascimentosDoEsquadrao({ mechs: 4, androids: 3, tecnicos: 1, aliadosMechs: 2, aliadosAndroids: 1 }, 'bunker');
     const t = todos(cheio);
     expect(t).toHaveLength(11);

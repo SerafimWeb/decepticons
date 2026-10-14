@@ -252,3 +252,44 @@ describe('a carga que a partida pesa', () => {
     expect(e.chave()).toContain('m:pm');
   });
 });
+
+describe('editor do esquadrão: os titãs (P108)', () => {
+  it('trocar o chassi de um inimigo para titã vale, com a arma de fábrica do titã; o nome padrão já é o do chassi no plano', () => {
+    const e = editor(esq([mech(), mech()]));
+    expect(e.editar('inimigo', 0, { chassi: 'colossusv4' })).toBeNull();
+    expect(e.lista('inimigo')[0]).toEqual({ papel: 'mech', chassi: 'colossusv4' });
+    // Plasma não serve ao V4 (só o canhão de cerco): a troca de arma é descartada.
+    e.editar('inimigo', 0, { arma: { id: 'plasma', tier: 0 } });
+    expect(e.lista('inimigo')[0]!.arma).toBeUndefined();
+  });
+
+  it('o terceiro titã é recusado com o motivo, e o robô fica como estava', () => {
+    const e = editor(esq([mech({ chassi: 'colossusv4' }), mech({ chassi: 'colossus01' }), mech({ nome: 'COMUM' })]));
+    const recusa = e.editar('inimigo', 2, { chassi: 'colossusv4' });
+    expect(recusa).toMatch(/Já há 2 titãs: o teto é 2/);
+    expect(e.lista('inimigo')[2]).toEqual({ papel: 'mech', nome: 'COMUM' });
+    // Trocar um titã por outro titã não conta como um a mais.
+    expect(e.editar('inimigo', 0, { chassi: 'colossus01' })).toBeNull();
+    expect(e.lista('inimigo')[0]!.chassi).toBe('colossus01');
+  });
+
+  it('no Bunker nenhum titã entra, e a recusa diz para escolher a Cidade Neon', () => {
+    const e = new EsquadraoEditor(esq([mech()]), 'bunker');
+    expect(e.editar('inimigo', 0, { chassi: 'colossus01' })).toMatch(/Cidade Neon/);
+    expect(e.lista('inimigo')[0]).toEqual({ papel: 'mech' });
+    expect(e.limites.titas).toBe(0);
+  });
+
+  it('do lado aliado o titã não pega (o contrato o troca por Vector-09)', () => {
+    const e = editor(esq([], [mech()]));
+    e.editar('aliado', 0, { chassi: 'colossusv4' });
+    expect(e.lista('aliado')[0]).toEqual({ papel: 'mech' });
+  });
+
+  it('a conta de carga e o aviso de excesso enxergam o titã', () => {
+    const sem = editor(esq([mech()])).carga.peso;
+    const com = editor(esq([mech({ chassi: 'colossusv4' })])).carga.peso;
+    expect(com).toBeGreaterThan(sem);
+    expect(new EsquadraoEditor(esq([mech({ chassi: 'colossusv4' })]), 'bunker').excessos.join(' ')).toMatch(/titãs/);
+  });
+});

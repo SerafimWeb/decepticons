@@ -1,7 +1,7 @@
 import { TIERS, weapon, type Tier, type WeaponId } from '../combat/weapons';
 import { DIFFICULTY_LABELS, PERSONA_LABELS, type Difficulty, type EnemyNames, type Persona } from '../core/Settings';
 import { withoutParam } from '../core/url';
-import { CHASSIS, CHASSIS_PAPEL, type ChassisId } from '../entities/chassis';
+import { CHASSIS, CHASSIS_PAPEL, ehTita, type ChassisId } from '../entities/chassis';
 import type { MapId } from '../environment/Bunker';
 import {
   armasDoBot,
@@ -282,7 +282,8 @@ export class SquadPanel {
       );
       const chassi: ChassisId = bot.chassi ?? 'vector09';
       campos.push(
-        campo('Chassi', selecao('squad-campo-chassi', 'chassi', CHASSIS_DOS_BOTS.map((c) => opcao(c, CHASSIS[c].name, chassi))), `${CHASSIS_PAPEL[chassi]} Vida ${CHASSIS[chassi].maxModuleHealth.torso}, ${CHASSIS[chassi].moveSpeed} m/s.`),
+        // Os titãs (P108) só do lado dos inimigos e onde o mapa os comporta (a Cidade Neon); o que o robô já é continua na lista.
+        campo('Chassi', selecao('squad-campo-chassi', 'chassi', CHASSIS_DOS_BOTS.filter((c) => !ehTita(c) || c === chassi || (s.lado === 'inimigo' && this.editor.limites.titas > 0)).map((c) => opcao(c, CHASSIS[c].name, chassi))), `${CHASSIS_PAPEL[chassi]} Vida ${CHASSIS[chassi].maxModuleHealth.torso}, ${CHASSIS[chassi].moveSpeed} m/s.`),
       );
       const fabrica = CHASSIS[chassi].loadout.primary;
       const armas: readonly WeaponId[] = armasDoBot(chassi);
@@ -429,9 +430,14 @@ export class SquadPanel {
       case 'persona':
         this.editor.editar(s.lado, s.i, { persona: v as Persona });
         break;
-      case 'chassi':
-        this.editor.editar(s.lado, s.i, { chassi: v as ChassisId });
+      case 'chassi': {
+        const recusa = this.editor.editar(s.lado, s.i, { chassi: v as ChassisId });
+        if (recusa) {
+          this.msg = recusa;
+          this.aviso.classList.add('aviso');
+        }
         break;
+      }
       case 'arma': {
         const atual = this.editor.lista(s.lado)[s.i]?.arma;
         this.editor.editar(s.lado, s.i, { arma: v ? { id: v as WeaponId, tier: atual?.tier ?? 0 } : undefined });

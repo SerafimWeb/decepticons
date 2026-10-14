@@ -1,7 +1,7 @@
 import { weapon, type Tier, type WeaponId } from '../combat/weapons';
 import { NAME_MAX } from '../core/botNames';
 import { DEFAULT_SETTINGS, type Difficulty, type EnemyNames, type Persona } from '../core/Settings';
-import { ARM_SLOTS, CHASSIS, type ChassisId } from '../entities/chassis';
+import { ARM_SLOTS, CHASSIS, ehTita, type ChassisId } from '../entities/chassis';
 import type { MapId } from '../environment/Bunker';
 import type { Foes } from './Match';
 import { ALLY_COUNT, capacidadeDoMapa, type Contagem, nascimentosDoEsquadrao, type Ponto } from './nascimentos';
@@ -64,11 +64,12 @@ export interface EsquadraoSpec {
 // ─── O que um robô do esquadrão pode ser ──────────────────────────────────────
 
 /**
- * Os chassis que um bot pilota: os Mechs (tamanho 2). Ficam de fora o andróide (é um papel, não um chassi) e o Colossus (é o chefe da
- * Sobrevivência, com perfil de cerco próprio). Os de malha importada entram com o **corpo procedural do Vector-09** e os números do
- * próprio chassi: o servidor não carrega `.glb` (`MECHS_IMPORTADOS.md`), então o bot tem a vida e o passo do Lancer, mas a silhueta de um Mech médio.
+ * Os chassis que um bot pilota: os Mechs (tamanho 2) **e os titãs** (Colossus-01 e Colossus-V4, tamanhos 3 e 4; P108, 13/10: "quero lutar contra eles
+ * como um pequeno andróide para sentir a comparação do tamanho"). Fica de fora só o andróide (é um papel, não um chassi). Os de malha importada
+ * entram com o **corpo procedural do Vector-09** no servidor (sem `.glb`, `MECHS_IMPORTADOS.md`) e com a malha no cliente.
+ * **Os titãs só valem do lado dos inimigos, na Arena, e até `LIMITES_DO_ESQUADRAO.titas`** (cabem nos `PONTOS_DOS_TITAS`, custam CPU e desenho).
  */
-export const CHASSIS_DOS_BOTS: readonly ChassisId[] = (Object.keys(CHASSIS) as ChassisId[]).filter((id) => id !== 'android' && id !== 'colossus01' && id !== 'colossusv4');
+export const CHASSIS_DOS_BOTS: readonly ChassisId[] = (Object.keys(CHASSIS) as ChassisId[]).filter((id) => id !== 'android');
 
 export const ehChassiDoBot = (id: unknown): id is ChassisId => typeof id === 'string' && (CHASSIS_DOS_BOTS as readonly string[]).includes(id);
 
@@ -81,8 +82,15 @@ export function armaServeAoBot(id: WeaponId): boolean {
   return w.kind === 'energy' && !w.spin && !w.flame && !w.wave && !w.guide && !w.barrage && w.chargeTime === undefined;
 }
 
-/** As armas que cabem na mão principal do chassi e que o bot sabe usar, na ordem do catálogo. */
+/**
+ * A arma de fábrica do titã quando é bot: o **chefe da Sobrevivência segue com plasma** (`COLOSSUS_BOSS_STATS`, equilibrado em 29/09) e o V4 com o **canhão de
+ * cerco**, que o bot atira como projétil comum na cadência da arma (4,5 s), sem a carga de 3 s do jogador (`combat/titaBot.ts` limita o dano dele).
+ */
+export const ARMA_DO_TITA: Readonly<Record<'colossus01' | 'colossusv4', WeaponId>> = { colossus01: 'plasma', colossusv4: 'siege' };
+
+/** As armas que cabem na mão principal do chassi e que o bot sabe usar, na ordem do catálogo. O titã só tem a de fábrica. */
 export function armasDoBot(chassi: ChassisId): readonly WeaponId[] {
+  if (ehTita(chassi)) return [ARMA_DO_TITA[chassi as 'colossus01' | 'colossusv4']];
   return ARM_SLOTS[chassi].right.filter(armaServeAoBot);
 }
 
@@ -114,6 +122,8 @@ export const LIMITES_DO_ESQUADRAO = {
   inimigos: 24,
   aliados: 12,
   tecnicos: 2,
+  /** Titãs (P108): inimigos, na Arena. Um titã de 20 m e 1.900 de torso já é a partida inteira; dois é o teto. */
+  titas: 2,
   /** Inimigos e aliados juntos (mais o jogador: a sala inteira). */
   total: 32,
 } as const;
@@ -123,6 +133,8 @@ export const LIMITES_DO_ESQUADRAO = {
  * o técnico não atira. É o que o editor soma para dizer se a partida vai pesar (`nivelDeCarga`).
  */
 export const PESO_DO_PAPEL: Readonly<Record<PapelDoBot, number>> = { mech: 1, android: 0.6, technician: 0.5 };
+/** O titã pesa mais que um Mech: a malha de 20 m e a cápsula grande (soma ao peso do Mech que ele também é). */
+export const PESO_EXTRA_DO_TITA = 1.5;
 
 export type NivelDeCarga = 'leve' | 'media' | 'alta' | 'extrema';
 
@@ -139,6 +151,8 @@ export interface Limites {
   inimigos: number;
   aliados: number;
   tecnicos: number;
+  /** Titãs inimigos (P108): 0 no Bunker. */
+  titas: number;
   total: number;
 }
 
@@ -149,6 +163,7 @@ export function limitesDoMapa(mapa: MapId = 'arena'): Limites {
     inimigos: Math.min(LIMITES_DO_ESQUADRAO.inimigos, cap.inimigos),
     aliados: Math.min(LIMITES_DO_ESQUADRAO.aliados, cap.aliados),
     tecnicos: LIMITES_DO_ESQUADRAO.tecnicos,
+    titas: Math.min(LIMITES_DO_ESQUADRAO.titas, cap.titas),
     total: Math.min(LIMITES_DO_ESQUADRAO.total, cap.total),
   };
 }
@@ -159,6 +174,8 @@ export interface Resumo {
   tecnicos: number;
   aliadosMechs: number;
   aliadosAndroids: number;
+  /** Quantos dos `mechs` inimigos são titãs (P108). */
+  titas: number;
   inimigos: number;
   aliados: number;
   total: number;
@@ -173,9 +190,10 @@ export function resumoDoEsquadrao(spec: EsquadraoSpec): Resumo {
   const tecnicos = conta(spec.inimigos, 'technician');
   const aliadosMechs = conta(spec.aliados, 'mech');
   const aliadosAndroids = conta(spec.aliados, 'android');
-  const peso = [...spec.inimigos, ...spec.aliados].reduce((soma, b) => soma + PESO_DO_PAPEL[b.papel], 0);
+  const titas = spec.inimigos.filter((b) => b.papel === 'mech' && !!b.chassi && ehTita(b.chassi)).length;
+  const peso = [...spec.inimigos, ...spec.aliados].reduce((soma, b) => soma + PESO_DO_PAPEL[b.papel], 0) + titas * PESO_EXTRA_DO_TITA;
   return {
-    mechs, androids, tecnicos, aliadosMechs, aliadosAndroids,
+    mechs, androids, tecnicos, aliadosMechs, aliadosAndroids, titas,
     inimigos: spec.inimigos.length,
     aliados: spec.aliados.length,
     total: spec.inimigos.length + spec.aliados.length,
@@ -191,6 +209,8 @@ export function excessosDoEsquadrao(spec: EsquadraoSpec, mapa: MapId = 'arena'):
   if (r.inimigos > lim.inimigos) out.push(`inimigos: ${r.inimigos} de no máximo ${lim.inimigos}`);
   if (r.aliados > lim.aliados) out.push(`aliados: ${r.aliados} de no máximo ${lim.aliados}`);
   if (r.tecnicos > lim.tecnicos) out.push(`técnicos: ${r.tecnicos} de no máximo ${lim.tecnicos}`);
+  if (r.titas > lim.titas) out.push(lim.titas === 0 ? 'titãs: este mapa não comporta nenhum' : `titãs: ${r.titas} de no máximo ${lim.titas}`);
+  if (spec.aliados.some((b) => b.papel === 'mech' && !!b.chassi && ehTita(b.chassi))) out.push('titãs só lutam do lado dos inimigos');
   if (r.total > lim.total) out.push(`no total: ${r.total} de no máximo ${lim.total}`);
   return out;
 }
@@ -221,7 +241,8 @@ export function sanearBot(raw: unknown, lado: LadoDoBot = 'inimigo'): BotSpec | 
   if (ehDificuldade(r.dificuldade) && r.papel !== 'technician') bot.dificuldade = r.dificuldade;
   if (r.papel !== 'mech') return bot;
   if (ehPersona(r.persona) && r.persona !== 'soldado') bot.persona = r.persona;
-  const chassi = ehChassiDoBot(r.chassi) ? r.chassi : 'vector09';
+  // O titã só luta do lado dos inimigos (P108): o do lado aliado volta ao Vector-09.
+  const chassi = ehChassiDoBot(r.chassi) && !(lado === 'aliado' && ehTita(r.chassi)) ? r.chassi : 'vector09';
   if (chassi !== 'vector09') bot.chassi = chassi;
   const a = r.arma as Partial<ArmaDoBot> | null | undefined;
   if (a && typeof a === 'object' && typeof a.id === 'string' && ehNivel(a.tier) && (armasDoBot(chassi) as readonly string[]).includes(a.id)) {
@@ -245,8 +266,11 @@ export function sanearEsquadrao(raw: unknown, mapa: MapId = 'arena'): EsquadraoS
   const r = raw as Record<string, unknown>;
   const lim = limitesDoMapa(mapa);
   let tecnicos = 0;
+  let titas = 0;
   const inimigos = lista(r.inimigos, 'inimigo')
     .filter((b) => b.papel !== 'technician' || ++tecnicos <= lim.tecnicos)
+    // Titãs além do teto do mapa (nenhum no Bunker) saem do fim, como os técnicos.
+    .filter((b) => !(b.papel === 'mech' && b.chassi && ehTita(b.chassi)) || ++titas <= lim.titas)
     .slice(0, lim.inimigos);
   const aliados = lista(r.aliados, 'aliado').slice(0, lim.aliados);
   while (inimigos.length + aliados.length > lim.total) {
@@ -350,6 +374,7 @@ function lerBot(texto: string, lado: LadoDoBot): BotSpec | null {
       if (!bruto.persona) return null;
     } else if (tag === 'c') {
       if (!ehChassiDoBot(valor)) return null;
+      if (lado === 'aliado' && ehTita(valor)) return null; // o titã só luta do lado dos inimigos
       bruto.chassi = valor;
     } else if (tag === 'w') {
       const m = /^([a-z]+)-([0-2])$/.exec(valor);
@@ -433,6 +458,11 @@ const ROTULO_DO_NOME: Readonly<Record<LadoDoBot, Readonly<Record<PapelDoBot, str
   aliado: { mech: 'ALIADO', android: 'ESCUDEIRO', technician: 'TÉCNICO' },
 };
 
+/** O nome de um titã sem apelido: o do chassi, e "-2" para o segundo da mesma partida. */
+export function nomePadraoDoTita(chassi: ChassisId, indice: number): string {
+  return indice === 0 ? CHASSIS[chassi].name : `${CHASSIS[chassi].name}-${indice + 1}`;
+}
+
 export function nomePadraoDoBot(lado: LadoDoBot, papel: PapelDoBot, indice: number, nomes: EnemyNames): string {
   const lista: readonly string[] =
     lado === 'aliado' ? (papel === 'mech' ? nomes.allies : []) : papel === 'mech' ? nomes.mechs : papel === 'android' ? nomes.androids : nomes.technicians;
@@ -446,22 +476,33 @@ export function nomePadraoDoBot(lado: LadoDoBot, papel: PapelDoBot, indice: numb
  */
 export function planejarEsquadrao(spec: EsquadraoSpec, mapa: MapId, nomes: EnemyNames): PlanoDoEsquadrao {
   const r = resumoDoEsquadrao(spec);
-  const contagem: Contagem = { mechs: r.mechs, androids: r.androids, tecnicos: r.tecnicos, aliadosMechs: r.aliadosMechs, aliadosAndroids: r.aliadosAndroids };
+  const contagem: Contagem = { mechs: r.mechs - r.titas, titas: r.titas, androids: r.androids, tecnicos: r.tecnicos, aliadosMechs: r.aliadosMechs, aliadosAndroids: r.aliadosAndroids };
   const pontos = nascimentosDoEsquadrao(contagem, mapa);
-  const monta = (lado: LadoDoBot, bots: readonly BotSpec[], papel: PapelDoBot, locais: readonly Ponto[]): SlotDoPlano[] =>
-    bots
+  const monta = (lado: LadoDoBot, bots: readonly BotSpec[], papel: PapelDoBot, locais: readonly Ponto[], titas: readonly Ponto[] = []): SlotDoPlano[] => {
+    // Os titãs saem do mesmo esquadrão, na ordem dele, mas nascem nos pontos deles; os outros Mechs seguem os seus (e o nome padrão conta só os não titãs).
+    let iNormal = 0;
+    let iTita = 0;
+    const doChassi = new Map<ChassisId, number>();
+    return bots
       .filter((b) => b.papel === papel)
-      .map((b, i) => ({
-        ponto: locais[i]!,
-        nome: b.nome ?? nomePadraoDoBot(lado, papel, i, nomes),
-        persona: b.persona ?? 'soldado',
-        chassi: b.chassi ?? 'vector09',
-        arma: b.arma ?? null,
-        dificuldade: b.dificuldade ?? null,
-      }));
+      .map((b) => {
+        const tita = papel === 'mech' && !!b.chassi && ehTita(b.chassi);
+        const k = tita ? iTita++ : iNormal++;
+        const nDoChassi = tita ? (doChassi.get(b.chassi!) ?? 0) : 0;
+        if (tita) doChassi.set(b.chassi!, nDoChassi + 1);
+        return {
+          ponto: tita ? titas[k]! : locais[k]!,
+          nome: b.nome ?? (tita ? nomePadraoDoTita(b.chassi!, nDoChassi) : nomePadraoDoBot(lado, papel, k, nomes)),
+          persona: b.persona ?? 'soldado',
+          chassi: b.chassi ?? 'vector09',
+          arma: b.arma ?? null,
+          dificuldade: b.dificuldade ?? null,
+        };
+      });
+  };
   return {
     inimigos: {
-      mechs: monta('inimigo', spec.inimigos, 'mech', pontos.mechs),
+      mechs: monta('inimigo', spec.inimigos, 'mech', pontos.mechs, pontos.titas),
       androids: monta('inimigo', spec.inimigos, 'android', pontos.androids),
       tecnicos: monta('inimigo', spec.inimigos, 'technician', pontos.tecnicos),
     },

@@ -389,6 +389,9 @@ export const CHASSIS_PAPEL: Readonly<Record<ChassisId, string>> = {
  * É o que decide como o chassi vê as classes de arma (`combat/weaponClass.ts`): num gigante as pesadas dos Mechs são as leves.
  * `Record` de propósito: chassi novo que não declara o tamanho não compila. Ninguém é de tamanho 4 ainda.
  */
+/** O chassi é um titã (tamanho 3 ou 4: os Colossus)? Os titãs têm regras próprias de bot (`sim/esquadrao.ts`, `combat/titaBot.ts`). */
+export const ehTita = (id: ChassisId): boolean => CHASSIS_SIZE[id] >= 3;
+
 export const CHASSIS_SIZE: Readonly<Record<ChassisId, RobotSize>> = {
   android: 1,
   vector09: 2,
