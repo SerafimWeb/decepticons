@@ -1,8 +1,18 @@
 # ESTADO ATUAL — CYBERMECH
 
+## EM BRANCH — NÃO ESTÁ NO AR: fluidez da câmera junto à cobertura — Codex, 14/10 (P109)
+
+**Autorização do Comandante:** “sim, prossiga”, sobre executar a referência do PR #297. Branch `codex/fluidez-camera`, isolado em `.tmp/wt-codex-fluidez`, base `900d277`. Três sessões válidas de cinco minutos na Vega 11, 53.798 quadros: p99 16,9 ms em todas; três pausas >300 ms nas duas primeiras, nenhuma >50 ms na terceira. Zero programas novos e erros de página. Uma sessão que ficou no banco foi descartada; as repetições contam e encerram esse menu no quadro seguinte. Dados e limites em `medicoes/FLUIDEZ_CAMERA.md`/`.json`.
+
+**Primeiro ajuste:** `ThirdPersonCamera` recolhe imediatamente e recupera distância exponencialmente (~90% em 0,19 s), sem novo filtro sobre posição do piloto ou orientação do mouse. Zero desenho/rede/física novos, um escalar por câmera; uma exponencial por quadro apenas durante recuperação. Seis testes passam, incluindo Rapier real; o teste de saída reprova a versão anterior. Na Arena, maior passo de afastamento de 0,50→0,42 m junto ao prédio e 2,55→0,75 m na barricada fina. Capturas/vídeo em `arte/camera-cobertura-*codex.*`; vídeo controlado a 0,5×, não prova de FPS. Typecheck verde; suíte completa é exigida pelo hook do push. Não é ganho de FPS nem homologação de 60 FPS.
+
+**Disponibilidade:** este registro fica “em branch” até o merge do PR da frente `codex/fluidez-camera`; a confirmação de publicação acompanha o PR. Depois, conferir na Arena em terceira pessoa (`V`), saindo lateralmente de uma cobertura com a parede atrás do Mech. Playtest do dono e demais chassis pendentes.
+
+**Próxima sessão começa com:** resultados desse ensaio e um setor da Arena como prova de acabamento; não alterar simulação/rede ou UI/áudio em paralelo. A P109 continua em operação.
+
 ## Referência de qualidade MechArena — Codex, 13/10 (P109)
 
-**EM BRANCH — NÃO ESTÁ NO AR até o merge do PR `codex/mecharena-meta`.** Após esse merge, apenas o registro documental está entregue; a meta de qualidade continua em operação. O dono trouxe seis prints e reforçou que quer alcançar a qualidade de fluidez, movimento, tiros e cenários. Referências preservadas em `referencias/mecharena/2026-10-13-*.png`; análise e critérios em `REFERENCIA_VISUAL.md` §7. É complemento da P109 e do HUD já entregue, não outra frente concorrente.
+**Registro documental entregue na `main` pelo PR #297.** A meta de qualidade continua em operação. O dono trouxe seis prints e reforçou que quer alcançar a qualidade de fluidez, movimento, tiros e cenários. Referências preservadas em `referencias/mecharena/2026-10-13-*.png`; análise e critérios em `REFERENCIA_VISUAL.md` §7. É complemento da P109 e do HUD já entregue, não outra frente concorrente.
 
 **Próxima sessão começa com:** medir C3 no build atualizado e registrar um percurso de movimento/tiro; depois elevar um setor da Arena como referência de qualidade. O ensaio antigo não homologa 60 FPS. Escala visual não prova tamanho jogável; prints não provam física ou latência. Vídeos antigos indisponíveis em `.tmp/referencias/` nesta máquina. Nenhuma implementação de gameplay/render neste corte, zero custo no jogo e nenhuma melhora de desempenho reivindicada. Preservar simulação/rede do Claude e UI/áudio do Gemini; não há despacho automático a outros agentes.
 

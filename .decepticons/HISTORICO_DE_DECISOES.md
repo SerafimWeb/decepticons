@@ -1,3 +1,9 @@
+## [2026-10-14] Fluidez medida e recuperação da câmera sem tranco (Codex, P109)
+
+**Autorização:** “sim, prossiga” com a referência do #297. Três sessões válidas de cinco minutos (Vega 11, 1280×720, média/bloom) ficaram em p99 16,9 ms; as duas primeiras tiveram pausas >300 ms. Uma amostra pausada pelo banco foi descartada, e o coletor passou a retomar esse menu e contar pausas. Não atribuir melhora sobre 09/10 nem homologar 60 FPS; o ensaio é outro e a causa dos picos ainda não está isolada.
+
+**Decisão de implementação:** corrigir um tranco comprovável da terceira pessoa: recolher diante de obstáculo imediatamente e recuperar afastamento exponencialmente (90% em ~0,19 s). Preservar orientação do mouse e acompanhamento do piloto, a regra de tiro e o raio físico existente. Um escalar por câmera e uma exponencial só durante a recuperação; nenhuma alocação, draw call ou consulta física adicional por quadro. Seis testes (incluindo Rapier real) passam; a versão antiga falha no teste de saída. Ensaio visual separado da coleta de FPS, pois screenshots alteram carga. Evidência/limites em `medicoes/FLUIDEZ_CAMERA.md`; homologação e playtest continuam pendentes.
+
 ## [2026-10-13] MechArena: uma arena como referência de qualidade (Codex, P109)
 
 **Pedido:** alcançar a qualidade de jogabilidade, fluidez, movimento, tiros e cenários, com seis novos prints. Evidência e texto literal em `REFERENCIA_VISUAL.md` §7; arquivos preservados no repositório.

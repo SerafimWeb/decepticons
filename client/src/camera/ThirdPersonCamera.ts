@@ -5,6 +5,7 @@ import { aimFromCamera } from './aim';
 const _euler = new THREE.Euler();
 const _pivot = new THREE.Vector3();
 const _dir = new THREE.Vector3();
+const RECOVERY_RATE = 12; // volta 90% da distância em ~0,19 s, independente do FPS
 
 /** Over-the-shoulder. Puxa a câmera para perto se houver algo no caminho. */
 export class ThirdPersonCamera implements CameraMode {
@@ -19,14 +20,19 @@ export class ThirdPersonCamera implements CameraMode {
   private readonly offset = new THREE.Vector3(1.8, 0.6, 7.5);
   private readonly pivotHeight = 4.4;
   private zoom = 1;
+  private distance = -1;
 
   constructor(private readonly ctx: CameraContext) {}
+
+  enter(): void {
+    this.distance = -1;
+  }
 
   onWheel(deltaY: number): void {
     this.zoom = THREE.MathUtils.clamp(this.zoom + Math.sign(deltaY) * 0.12, 0.6, 1.8);
   }
 
-  update(_dt: number, aim: AimState): void {
+  update(dt: number, aim: AimState): void {
     const { camera, look, mech, physics } = this.ctx;
     const q = camera.quaternion.setFromEuler(_euler.set(look.pitch, look.yaw, 0, 'YXZ'));
 
@@ -41,8 +47,12 @@ export class ThirdPersonCamera implements CameraMode {
     _dir.divideScalar(len);
 
     const hit = physics.raycast(_pivot, _dir, len + 0.4, mech.collider);
-    const dist = hit ? Math.max(0.5, hit.distance - 0.4) : len;
-    camera.position.copy(_pivot).addScaledVector(_dir, dist);
+    const limit = hit ? Math.max(0.5, hit.distance - 0.4) : len;
+    // Obstáculo novo recolhe a câmera na hora; sair da cobertura recupera a distância aos poucos.
+    // Só o braço da câmera é amortecido: posição do piloto e rotação do mouse continuam imediatas.
+    if (this.distance < 0 || limit <= this.distance || limit - this.distance < 0.0001) this.distance = limit;
+    else this.distance += (limit - this.distance) * (1 - Math.exp(-RECOVERY_RATE * Math.max(0, dt)));
+    camera.position.copy(_pivot).addScaledVector(_dir, this.distance);
 
     aimFromCamera(this.ctx, aim);
   }

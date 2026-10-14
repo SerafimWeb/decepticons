@@ -1,0 +1,301 @@
+{
+  "revision": "900d277be85fbeb05e5097117c3268f0bb6bce2b",
+  "method": "Vega 11, Edge headless, 1280x720, ratio 1, media, bloom, 3x300s após 10s; build baseline congelado antes da alteração da câmera. Sessões 2/3 retomam o banco no quadro seguinte; sessão 1 não abriu banco. Inclui intervalo de fim de rodada. Não é homologação.",
+  "samples": 53798,
+  "cases": [
+    {
+      "round": 1,
+      "boot": {
+        "ms": 7848.299999999814,
+        "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+        "timer": true,
+        "enemies": 4,
+        "allies": 2,
+        "chassi": "default",
+        "settings": {
+          "quality": "media",
+          "difficulty": "normal"
+        },
+        "memory": 62435164
+      },
+      "before": {
+        "freeMiB": 861,
+        "totalMiB": 6092
+      },
+      "after": {
+        "freeMiB": 748,
+        "totalMiB": 6092
+      },
+      "frame": {
+        "n": 17880,
+        "p50": 16.699999999982538,
+        "p95": 16.80000000000291,
+        "p99": 16.900000000023283,
+        "max": 400.20000000001164
+      },
+      "cpu": {
+        "n": 17880,
+        "p50": 5.599999999627471,
+        "p95": 7.6000000005587935,
+        "p99": 9.200000000186265,
+        "max": 36.200000000186265
+      },
+      "gpu": {
+        "n": 17835,
+        "p50": 12.02208,
+        "p95": 14.0144,
+        "p99": 15.83264,
+        "max": 25.89692
+      },
+      "draws": {
+        "n": 17880,
+        "p50": 73,
+        "p95": 128,
+        "p99": 134,
+        "max": 138
+      },
+      "stalls": {
+        "50": 4,
+        "100": 2,
+        "300": 2
+      },
+      "distance": 1279.8936661378862,
+      "aliveFrames": 17880,
+      "disjoint": 0,
+      "links": 55,
+      "playing": true,
+      "resources": {
+        "geometries": 203,
+        "textures": 33
+      },
+      "ratio": 1,
+      "bloom": true,
+      "newPrograms": 0,
+      "errors": [],
+      "session": 1
+    },
+    {
+      "session": 2,
+      "boot": {
+        "ms": 4489,
+        "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+        "timer": true,
+        "enemies": 4,
+        "allies": 2,
+        "build": "v1.vector09.plasma-0.rockets-0",
+        "settings": {
+          "quality": "media",
+          "difficulty": "normal"
+        },
+        "memory": 33132497
+      },
+      "before": {
+        "freeMiB": 976,
+        "totalMiB": 6092
+      },
+      "after": {
+        "freeMiB": 915,
+        "totalMiB": 6092
+      },
+      "frame": {
+        "n": 17940,
+        "p50": 16.69999999999709,
+        "p95": 16.80000000000291,
+        "p99": 16.89999999999418,
+        "max": 383.5
+      },
+      "cpu": {
+        "n": 17940,
+        "p50": 5.799999998882413,
+        "p95": 7.800000000745058,
+        "p99": 9.399999998509884,
+        "max": 55.40000000037253
+      },
+      "gpu": {
+        "n": 17935,
+        "p50": 11.92432,
+        "p95": 13.6248,
+        "p99": 15.2144,
+        "max": 272.35372
+      },
+      "draws": {
+        "n": 17940,
+        "p50": 76,
+        "p95": 127,
+        "p99": 135,
+        "max": 144
+      },
+      "stalls": {
+        "50": 2,
+        "100": 1,
+        "300": 1
+      },
+      "distance": 2531.359753082732,
+      "aliveFrames": 17759,
+      "pausedFrames": 2,
+      "bankDismissals": 2,
+      "disjoint": 0,
+      "links": 55,
+      "playing": true,
+      "gameRound": 1,
+      "resources": {
+        "geometries": 203,
+        "textures": 33
+      },
+      "ratio": 1,
+      "bloom": true,
+      "newPrograms": 0,
+      "errors": []
+    },
+    {
+      "session": 3,
+      "boot": {
+        "ms": 1853,
+        "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+        "timer": true,
+        "enemies": 4,
+        "allies": 2,
+        "build": "v1.vector09.plasma-0.rockets-0",
+        "settings": {
+          "quality": "media",
+          "difficulty": "normal"
+        },
+        "memory": 57250408
+      },
+      "before": {
+        "freeMiB": 909,
+        "totalMiB": 6092
+      },
+      "after": {
+        "freeMiB": 1103,
+        "totalMiB": 6092
+      },
+      "frame": {
+        "n": 17978,
+        "p50": 16.69999999999709,
+        "p95": 16.80000000000291,
+        "p99": 16.89999999999418,
+        "max": 50
+      },
+      "cpu": {
+        "n": 17978,
+        "p50": 5.699999999254942,
+        "p95": 7.599999999627471,
+        "p99": 9.399999998509884,
+        "max": 50.899999998509884
+      },
+      "gpu": {
+        "n": 17978,
+        "p50": 12.06368,
+        "p95": 13.54048,
+        "p99": 14.9536,
+        "max": 27.86204
+      },
+      "draws": {
+        "n": 17978,
+        "p50": 68,
+        "p95": 131,
+        "p99": 141,
+        "max": 146
+      },
+      "stalls": {
+        "50": 0,
+        "100": 0,
+        "300": 0
+      },
+      "distance": 1145.45613767359,
+      "aliveFrames": 17978,
+      "pausedFrames": 1,
+      "bankDismissals": 1,
+      "disjoint": 0,
+      "links": 55,
+      "playing": true,
+      "gameRound": 2,
+      "resources": {
+        "geometries": 203,
+        "textures": 33
+      },
+      "ratio": 1,
+      "bloom": true,
+      "newPrograms": 0,
+      "errors": []
+    }
+  ],
+  "discarded": [
+    {
+      "reason": "Banco VORCARIS deixou a simulação pausada; excluído das estatísticas de combate.",
+      "round": 1,
+      "boot": {
+        "ms": 2132.4000000003725,
+        "gpu": "ANGLE (AMD, AMD Radeon(TM) RX Vega 11 Graphics (0x000015DD) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+        "browser": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+        "timer": true,
+        "enemies": 4,
+        "allies": 2,
+        "chassi": "default",
+        "settings": {
+          "quality": "media",
+          "difficulty": "normal"
+        },
+        "memory": 57519134
+      },
+      "before": {
+        "freeMiB": 957,
+        "totalMiB": 6092
+      },
+      "after": {
+        "freeMiB": 941,
+        "totalMiB": 6092
+      },
+      "frame": {
+        "n": 17900,
+        "p50": 16.69999999999709,
+        "p95": 16.80000000000291,
+        "p99": 16.90000000000873,
+        "max": 149.90000000000873
+      },
+      "cpu": {
+        "n": 17900,
+        "p50": 5.599999999627471,
+        "p95": 7.900000000372529,
+        "p99": 9.700000001117587,
+        "max": 64
+      },
+      "gpu": {
+        "n": 17849,
+        "p50": 12.23424,
+        "p95": 14.58524,
+        "p99": 16.38316,
+        "max": 23.091
+      },
+      "draws": {
+        "n": 17900,
+        "p50": 76,
+        "p95": 131,
+        "p99": 132,
+        "max": 137
+      },
+      "stalls": {
+        "50": 2,
+        "100": 1,
+        "300": 0
+      },
+      "distance": 1231.3927621443515,
+      "aliveFrames": 17900,
+      "disjoint": 0,
+      "links": 55,
+      "playing": false,
+      "resources": {
+        "geometries": 203,
+        "textures": 33
+      },
+      "ratio": 1,
+      "bloom": true,
+      "newPrograms": 0,
+      "errors": []
+    }
+  ]
+}

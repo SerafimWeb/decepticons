@@ -3,7 +3,13 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
-Última revisão: 2026-10-13 (Qwen: a linha do Colossus-V4 e o estado do site — o deploy está congelado em 12/10 22:03 GMT, ver `ESTADO_ATUAL`. Revisão anterior: 2026-10-09, Codex — consistência documental, sem novo playtest público)
+Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
+
+## Recuperação da câmera junto à cobertura — Codex, 14/10 (P109)
+
+**PARCIAL:** a terceira pessoa recupera gradualmente a distância ao sair de uma parede; obstáculo novo ainda recolhe a câmera imediatamente. Orientação do mouse e acompanhamento da posição do piloto sem novo filtro. Seis testes passam, incluindo parede real no Rapier, equivalência temporal a 30/60/144 Hz e regressão que reprova a versão anterior. Comparação de cena real com posições prescritas em `medicoes/FLUIDEZ_CAMERA.md`. Falta julgamento do dono em partida e outros chassis; sem reivindicar ganho de FPS. Entrega/publicação deste corte: ver PR da frente `codex/fluidez-camera` e `ESTADO_ATUAL.md`.
+
+**C3 atualizada, ainda PARCIAL:** três sessões válidas de cinco minutos na Vega 11, build `900d277`, 1280×720/qualidade média/bloom, 53.798 quadros. p95/p99 16,8/16,9 ms nas três; três pausas >300 ms distribuídas nas duas primeiras, nenhuma >50 ms na terceira. Zero programas novos e erros de página. Uma sessão inicial pausada pelo banco foi descartada e repetida. Isso caracteriza a base, não prova 60 FPS estáveis nem ganho da correção de câmera. Dados em `medicoes/FLUIDEZ_CAMERA.json`.
 
 ## C2 — chassi escolhido preparado antes de exibir (Codex, 10/10)
 
