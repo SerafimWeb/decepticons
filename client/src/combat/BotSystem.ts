@@ -58,6 +58,8 @@ export interface BotKit {
   chassi?: ChassisId;
   /** Troca a arma principal (a secundária sai: o bot só atira a principal). */
   arma?: { id: WeaponId; tier: Tier } | null;
+  /** A arma da mão esquerda (P108 b): o bot passa a atirá-la também, com a cadência dela. Ausente = só a principal, como sempre. */
+  secundaria?: { id: WeaponId; tier: Tier } | null;
   dificuldade?: Difficulty | null;
 }
 
@@ -206,6 +208,7 @@ export class BotSystem {
       const titan = !android && !!kit?.chassi && ehTita(kit.chassi);
       const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, skill, android ? ANDROID_PROFILE : titan ? BOSS_PROFILE : MECH_PROFILE, persona);
       brain.escortSide = i % 2 ? 1 : -1;
+      brain.useSecondary = !!kit?.secundaria;
       if (o.respawn !== false) {
         o.respawner.track(mech, titan ? TITA_RESPAWN_S : BOT_RESPAWN_S, () => {
           if (o.respawnAtHome) mech.respawn(home);
@@ -235,7 +238,11 @@ export class BotSystem {
       const base = kit?.chassi ? statsDoBot(kit.chassi) : VECTOR09_STATS;
       if (kit?.arma) {
         const { metalShield } = base.loadout;
-        return poweredStats({ ...base, loadout: { ...(metalShield ? { metalShield } : {}), primary: armaDoBot(kit.arma.id, kit.arma.tier, kit.chassi ?? 'vector09'), secondary: null } }, power, 'mechs');
+        const secondary = kit.secundaria ? armaDoBot(kit.secundaria.id, kit.secundaria.tier, kit.chassi ?? 'vector09') : null;
+        return poweredStats({ ...base, loadout: { ...(metalShield ? { metalShield } : {}), primary: armaDoBot(kit.arma.id, kit.arma.tier, kit.chassi ?? 'vector09'), secondary } }, power, 'mechs');
+      }
+      if (kit?.secundaria) {
+        return poweredStats({ ...base, loadout: { ...base.loadout, secondary: armaDoBot(kit.secundaria.id, kit.secundaria.tier, kit.chassi ?? 'vector09') } }, power, 'mechs');
       }
       return kit?.chassi ? poweredStats(base, power, 'mechs') : mechStats;
     };
@@ -533,6 +540,14 @@ export class BotSystem {
       mech.fixedUpdate(input, dt);
       // Técnico no alcance: o conserto é regra do tick (quem escolhe o Mech é o cérebro).
       if (brain instanceof TechnicianController && brain.repairTarget) brain.repairTarget.repair(REPAIR_RATE * this.repairScale * dt);
+      // A arma da mão esquerda (P108 b): sai da boca da mão esquerda, na direção da mira, com a cadência e o calor dela.
+      if (brain instanceof BotController && brain.wantsToFireSecondary && mech.loadout.secondary) {
+        const w2 = mech.loadout.secondary;
+        mech.simMuzzle(_muzzle, 'leftHand');
+        this.projectiles.fire(_muzzle, brain.shotDir, mech.collider, true, w2);
+        this.particles.burst(_muzzle, brain.shotDir, { count: 6, color: MUZZLE_COLOR, speed: 10, life: 0.12, spread: 0.5, gravity: 0 });
+        mech.onFireMount('leftHand', w2);
+      }
       if (!brain.wantsToFire) continue;
       // Motosserra: o corte é regra do combate (sem projétil).
       if (mech.loadout.primary.kind === 'melee') {

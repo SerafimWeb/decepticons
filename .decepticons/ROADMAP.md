@@ -204,7 +204,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] **Uma chave só para o servidor (P106):** a sessão de uma conta `is_admin` vale em `/admin/*`, no mural e em `/metricas`; o login de admin do Hangar guarda a sessão (Claude, 13/10) #rede
 - [x] **Fase 4A e 4B · A campanha (P27, P54, P107):** `sim/campanha.ts` (etapas com mapa, modo, esquadrão e meta; link `?campanha=`), a janela CAMPANHA no monitor COMANDO (fábrica, editar cópia, salvar com nome, copiar link), a faixa da etapa e o painel do fim dentro da partida; a Operação Neon de fábrica. Offline (Claude, 13/10) #modos
 - [x] **Os Colossus como bots inimigos (P108 a):** `CHASSIS_DOS_BOTS` com os titãs (até 2, só inimigos, só Arena), `combat/titaBot.ts`, `PONTOS_DOS_TITAS` medidos pela física, volta em 60 s (Claude, 13/10) #modos
-- [ ] **A ficha do bot como a do Hangar (P108 b):** arma secundária, módulo e layout de ataques no `BotSpec`, no link `?esquadrao=` e na janela (Claude, `sim/`; `ui/` pela cobertura do Gemini) #modos
+- [x] **A mão esquerda do bot (P108 b):** `BotSpec.secundaria` no contrato, no link `?esquadrao=`, na IA (atira junto, com a cadência e o calor dela) e na ficha (Claude, 13/10) #modos
+- [ ] **Ombros, módulo e layout de ataques do bot (P108 c):** a ficha só deve oferecer o que a IA sabe usar; o módulo primeiro (a IA liga a barreira ao levar dano de frente) #modos
 - [ ] **Fase 4C · Arsenal, chassis e Evolução:** as telas Arsenal e chassis (potências por chassi) e Evolução (o registro de ordens e o placar de resultado) (P27, P54; `PAINEL_ADMIN.md` §8) #ux
 - [ ] **Fase 5 · Pendências do Gemini e do Codex (P94):** a branch `gemini/game-hq`, os itens `(Gemini)` do roadmap e o que for de código das frentes C2 a C5 do Codex (`PAINEL_ADMIN.md` §8) #ux
 - [x] Mira fina (1 px, 38 px, translúcida, ajustável) e menos luz nos tiros (faíscas, clarões, bloom ajustável): medido −46% de brilho somado pelo tiro (Claude, 11/10) #ux

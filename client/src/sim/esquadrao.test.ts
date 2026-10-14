@@ -6,6 +6,7 @@ import {
   ARMA_DO_TITA,
   armaServeAoBot,
   armasDoBot,
+  armasSecundariasDoBot,
   type BotSpec,
   CHASSIS_DOS_BOTS,
   chaveDoEsquadrao,
@@ -361,7 +362,7 @@ describe('o plano que a partida monta', () => {
 
   it('o esquadrão padrão nasce nos pontos de sempre, com os nomes e as personalidades de sempre', () => {
     const p = planejarEsquadrao(esquadraoPadrao(), 'arena', NOMES);
-    expect(p.inimigos.mechs).toEqual([{ ponto: BOT_SPAWNS[0], nome: 'CLAWD', persona: 'brabo', chassi: 'vector09', arma: null, dificuldade: null }]);
+    expect(p.inimigos.mechs).toEqual([{ ponto: BOT_SPAWNS[0], nome: 'CLAWD', persona: 'brabo', chassi: 'vector09', arma: null, secundaria: null, dificuldade: null }]);
     expect(p.inimigos.androids.map((s) => [s.ponto, s.nome])).toEqual([[ANDROID_SPAWNS[0], 'KUEN'], [ANDROID_SPAWNS[1], 'DIPSIK']]);
     expect(p.inimigos.tecnicos.map((s) => [s.ponto, s.nome])).toEqual([[TECHNICIAN_SPAWNS[0], 'ENTRÓPICO']]);
     expect(p.aliados.mechs.map((s) => [s.ponto, s.nome, s.arma?.id])).toEqual([[ALLY_SPAWNS[0], 'ESCOLTA·PLASMA', undefined], [ALLY_SPAWNS[1], 'SUPRESSOR·EMP', 'emp']]);
@@ -413,5 +414,47 @@ describe('o plano que a partida monta', () => {
     const todos: ChassisId[] = [...CHASSIS_DOS_BOTS];
     const p = planejarEsquadrao(esq(todos.map((chassi) => mech({ chassi }))), 'arena', NOMES);
     expect(p.inimigos.mechs.map((s) => s.chassi)).toEqual(todos);
+  });
+});
+
+describe('a arma da mão esquerda do bot (P108 b)', () => {
+  const doVector = (extra: Partial<BotSpec>): BotSpec => ({ papel: 'mech', ...extra });
+
+  it('as armas da esquerda são as do encaixe esquerdo que o bot sabe atirar; o titã e o andróide não têm', () => {
+    const v = armasSecundariasDoBot('vector09');
+    expect(v.length).toBeGreaterThan(0);
+    for (const a of v) expect(armaServeAoBot(a), a).toBe(true);
+    expect(armasSecundariasDoBot('colossusv4')).toEqual([]);
+    expect(armasSecundariasDoBot('colossus01')).toEqual([]);
+    expect(armasSecundariasDoBot('android')).toEqual([]);
+  });
+
+  it('o saneamento guarda a secundária válida e descarta a que o chassi não aceita ou o bot não sabe atirar', () => {
+    const arma = armasSecundariasDoBot('vector09')[0]!;
+    expect(sanearBot(doVector({ secundaria: { id: arma, tier: 1 } }))).toEqual({ papel: 'mech', secundaria: { id: arma, tier: 1 } });
+    expect(sanearBot(doVector({ secundaria: { id: 'rotary', tier: 0 } }))).toEqual({ papel: 'mech' }); // gira o cano
+    expect(sanearBot(doVector({ secundaria: { id: 'flamer', tier: 0 } }))).toEqual({ papel: 'mech' });
+    expect(sanearBot(doVector({ secundaria: { id: arma, tier: 3 as never } }))).toEqual({ papel: 'mech' });
+    expect(sanearBot(doVector({ secundaria: 'plasma' as never }))).toEqual({ papel: 'mech' });
+    expect(sanearBot({ papel: 'mech', chassi: 'colossusv4', secundaria: { id: arma, tier: 0 } })).toEqual({ papel: 'mech', chassi: 'colossusv4' });
+    // Só o Mech tem mão esquerda de bot.
+    expect(sanearBot({ papel: 'android', secundaria: { id: arma, tier: 0 } })).toEqual({ papel: 'android' });
+  });
+
+  it('o link leva a secundária e a recusa quando não vale (nada é aplicado pela metade)', () => {
+    const arma = armasSecundariasDoBot('vector09')[0]!;
+    const e: EsquadraoSpec = { v: ESQUADRAO_VERSAO, inimigos: [doVector({ persona: 'brabo', arma: { id: 'plasma', tier: 1 }, secundaria: { id: arma, tier: 2 }, nome: 'DOIS' })], aliados: [] };
+    const chave = chaveDoEsquadrao(e);
+    expect(chave).toContain(`s${arma}-2`);
+    expect(lerChaveDoEsquadrao(chave)).toEqual(e);
+    for (const ruim of ['q1.m:srotary-0.-', 'q1.m:splasma.-', 'q1.m:splasma-3.-', 'q1.a:splasma-0.-', 'q1.m:ccolossusv4:splasma-0.-', 'q1.m:s' + arma + '-0:s' + arma + '-1.-']) {
+      expect(lerChaveDoEsquadrao(ruim), ruim).toBeNull();
+    }
+  });
+
+  it('o plano leva a secundária (ou null) para a partida', () => {
+    const arma = armasSecundariasDoBot('vector09')[0]!;
+    const plano = planejarEsquadrao({ v: ESQUADRAO_VERSAO, inimigos: [doVector({ secundaria: { id: arma, tier: 1 } }), doVector({})], aliados: [] }, 'arena', DEFAULT_SETTINGS.names);
+    expect(plano.inimigos.mechs.map((s) => s.secundaria)).toEqual([{ id: arma, tier: 1 }, null]);
   });
 });
