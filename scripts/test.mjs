@@ -30,7 +30,11 @@ if (!args.some((a) => /^--(max-?workers|pool|no-file-parallelism)/.test(a))) {
   }
 }
 const cli = resolve('node_modules', 'vitest', 'vitest.mjs');
-const result = spawnSync(process.execPath, [cli, ...(args.length ? args : ['run'])], {
+// [R17, 14/10] Sem subcomando o Vitest entra em watch e o gate do push (`npm run check`) trava para sempre.
+// Com pouca memória o `--maxWorkers` era empurrado e `args.length` deixava de ser 0, e o `run` do padrão se perdia.
+// O subcomando passa a ser sempre explícito: `run` quando o pedido não traz `run`, `watch` nem `dev`.
+const subcomando = args.some((a) => a === 'run' || a === 'watch' || a === 'dev');
+const result = spawnSync(process.execPath, [cli, ...(subcomando ? args : ['run', ...args])], {
   stdio: 'inherit',
   env: { ...process.env, TEMP: TMP, TMP, TMPDIR: TMP },
 });

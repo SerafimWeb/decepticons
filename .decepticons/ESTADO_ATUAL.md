@@ -15,6 +15,8 @@
 
 **Não feito nesta frente (declarado):** o **ícone da arma no kill feed** — o evento de abate não carrega a arma que matou, então isso pede `sim/` e protocolo; fica para um corte próprio. Visto em Chrome headless por software; **falta em GPU real e o julgamento do Comandante** (R13).
 
+**Achado (R17), corrigido de passagem:** o `scripts/test.mjs` empurra `--maxWorkers` quando a memória livre é pouca e, com isso, deixava de passar o subcomando `run` — o Vitest entrava em **watch** e o `npm run check` (o gate do push) **travava para sempre**. Agora o subcomando é sempre explícito (`run`, salvo se o pedido trouxer `run`, `watch` ou `dev`). Afetava qualquer máquina com a memória livre abaixo do padrão por worker — inclusive a do dono em dia cheio.
+
 **Próxima frente da P109:** a **3 — morrer e voltar** (painel "seu algoz" + escolha do ponto de nascimento, inclui a P98). A **P119** (inteligência tática dos bots) foi registrada e é a de maior efeito percebido no combate.
 
 ## O modo Domínio: dominar os cinco pontos da Arena, offline, com bots que capturam e guardam — Claude, 14/10 (PR `claude/dominio`, ordens P112 e P111)
