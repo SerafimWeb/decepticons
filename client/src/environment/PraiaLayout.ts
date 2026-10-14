@@ -18,7 +18,7 @@ import type { Agua } from '../combat/Agua';
 export interface BlocoDaPraia {
   x: number; y: number; z: number;
   w: number; h: number; d: number;
-  kind: 'areia' | 'mar' | 'aco' | 'concreto' | 'luz' | 'escotilha';
+  kind: 'areia' | 'duna' | 'mar' | 'rua' | 'predio' | 'vidro' | 'aco' | 'concreto' | 'luz' | 'escotilha';
   rx?: number; rz?: number;
   /** Sem `solid`, o bloco é só desenho (marcação, luz) e não ganha colisor. */
   solid?: boolean;
@@ -85,9 +85,43 @@ export function praiaEstruturas(): readonly BlocoDaPraia[] {
   ];
 }
 
+/** As **dunas**: montes baixos de areia na beira da praia (o degrau entre a areia firme e o mar), com inclinação. */
+export function praiaDunas(): readonly BlocoDaPraia[] {
+  const dunas: BlocoDaPraia[] = [];
+  for (const z of [-52, -4, 48]) {
+    dunas.push({ x: 26, y: 0.7, z, w: 44, h: 1.4, d: 26, kind: 'duna', rz: 0.05, solid: true });
+    dunas.push({ x: 46, y: 0.35, z: z + 10, w: 30, h: 0.7, d: 18, kind: 'duna', rz: -0.04, solid: true });
+  }
+  return dunas;
+}
+
+/**
+ * A **cidade costeira**: quadras baixas (prédios de 2 a 4 andares) e as **ruas** entre elas, no lado de dentro
+ * (longe do mar). Deixa corredores onde a missão acontece — e cada bloco é cobertura.
+ */
+export function praiaCidade(): readonly BlocoDaPraia[] {
+  const cidade: BlocoDaPraia[] = [];
+  // As ruas (só desenho): três vias ao longo da praia, entre as quadras.
+  for (const x of [138, 172, 208]) cidade.push({ x, y: 0.12, z: 0, w: 7, h: 0.24, d: 130, kind: 'rua' });
+  // As quadras: prédios baixos dos dois lados, deixando o meio (z = 0) livre para a estação e a avenida da orla.
+  const quadras: readonly (readonly [number, number, number, number, number])[] = [
+    // x, z, largura, profundidade, altura
+    [152, -44, 22, 24, 10], [152, 44, 22, 24, 8],
+    [188, -50, 24, 20, 12], [188, 50, 24, 20, 10],
+    [226, -44, 22, 24, 9], [226, 44, 22, 24, 12],
+    [130, 16, 16, 18, 7], [130, -16, 16, 18, 7],
+  ];
+  for (const [x, z, w, d, h] of quadras) {
+    cidade.push({ x, y: h / 2, z, w, h, d, kind: 'predio', solid: true });
+    // As janelas (só desenho): uma faixa clara na fachada voltada para o mar (x menor), onde o sol bate.
+    cidade.push({ x: x - w / 2 - 0.2, y: h * 0.55, z, w: 0.4, h: h * 0.5, d: d * 0.7, kind: 'vidro' });
+  }
+  return cidade;
+}
+
 /** Todo o cenário, na ordem em que o construtor desenha. */
 export function praiaBlocks(): readonly BlocoDaPraia[] {
-  return [...praiaChao(), ...praiaEstruturas()];
+  return [...praiaChao(), ...praiaDunas(), ...praiaEstruturas(), ...praiaCidade()];
 }
 
 /**
@@ -101,4 +135,12 @@ export const PRAIA_SPAWNS: readonly (readonly [number, number])[] = [
   [110, 0],
   [70, -34],
   [30, 26],
+  [150, -24],
+  [120, 34],
+  [92, 10],
+  [62, 44],
+  [40, -30],
+  [96, -44],
+  [138, 52],
+  [178, 22],
 ];

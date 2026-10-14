@@ -1,3 +1,11 @@
+## [2026-10-14] A praia abre no jogo: o mar de fim de tarde, a cidade e o afogamento (Qwen, P126 passo 3)
+
+**Situação:** o Comandante pediu o construtor com identidade — "um cenário caprichado... a praia, uma cidade costeira, prédios baixos, ruas, dunas, o mar com um movimento bonito de pequenas ondas, azulzinho bem clarinho, areia branquinha, um belo contraste... fim de tarde, céu do azul para o rosado, com o sol no horizonte se pondo".
+
+**Decisões:** (1) o mapa **abre** por `?mapa=praia`: o `MapId` entra, o `Arena` monta a praia e o `Match` usa os nascimentos dela. (2) **As ondas animam na GPU** (um `uniform` de tempo num `onBeforeCompile`), não por quadro na CPU — o único desenho que anima custa zero de CPU (G4/G12). (3) **A praia traz as luzes dela** (uma hemisférica cálida + uma direcional baixa como sol): o `Arena` não monta as luzes neon nesse caso (nem o céu nem a névoa), para o fim de tarde ser o dele. (4) **O afogamento ligou**: a `Agua` do passo 1 roda no tick e freia pelo `moveSpeedScale` — que **só o CTF usava** (outro modo), então não há conflito. (5) A identidade visual: areia branca, mar claro, cidade quente com janelas acesas na fachada do sol, e as dunas.
+
+**Quem decidiu:** o Comandante descreveu a cena; as escolhas técnicas (GPU, as luzes próprias, reusar o `moveSpeedScale`) são minhas. **O veredito estético é dele** — eu não leio imagem; as capturas estão em `arte/`.
+
 ## [2026-10-14] O layout da praia em dado puro — o desenho antes da geometria (Qwen, P126 passo 2)
 
 **Situação:** o passo 1 entregou a **regra da água**; faltava o **cenário**. Para não repetir a segunda rodada do Bunker, o desenho vem **antes** da geometria.

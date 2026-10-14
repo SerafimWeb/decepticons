@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A praia dos cabos ABRE no jogo: o mar de fim de tarde e a cidade costeira — Qwen, 14/10 (PR `qwen/o-mapa-da-praia`, ordem P126, passo 3)
+
+**Passo 3 — o construtor e a fiação.** O mapa **existe e abre** por **`?mapa=praia`**.
+
+**O que o Comandante vê (a identidade que ele pediu):**
+- **Fim de tarde:** o **céu do azul ao rosado** (uma textura de degradê na tela) com o **sol se pondo no horizonte**, sobre o mar, com halo; a **névoa quente** come o fundo; a luz é uma **hemisférica cálida** + uma **direcional baixa fazendo o papel de sol** (a praia tem as luzes dela; a Arena e o Bunker seguem com as de sempre).
+- **O mar azulzinho bem clarinho** com **ondas pequenas** — o deslocamento e a normal são calculados **na GPU** (um `uniform` de tempo; **custo de CPU zero**, G4/G12) — contra a **areia branquinha** das dunas e da praia.
+- **A cidade costeira:** prédios **baixos** (2 a 4 andares), **ruas** correndo ao longo da orla e **janelas** acesas na fachada voltada para o mar (onde o sol bate).
+- A **passarela alta** (a segunda via), a **ESTAÇÃO DE CABOS** e a **escotilha** no pé (a saída do **P123**), como no layout.
+
+**A fiação:** o `MapId` ganhou `'praia'` (`environment/Bunker.ts` + `mapFromSearch`); o `Arena` monta a praia quando é ela (`new Praia(scene, physics)`, sem as luzes do neon); a **capacidade** e os **nascimentos** do mapa entram em `sim/nascimentos.ts` (14 pontos, o jogador no primeiro); `MAPA_NOME` = **PRAIA DOS CABOS**; e o **afogamento está ligado** — a `Agua` do passo 1 roda no tick (o mar **freia** pelo `moveSpeedScale` e **afoga** depois de 3 s). O mar anima no `Arena.update`, chamado pelo `Game`.
+
+**Custo:** o mar é o único desenho por quadro, e anima na GPU; a água custa ≤ 4 contas por Mech por tick, só no mapa da praia.
+
+**Visto:** as **capturas** `arte/praia-p126-qwen.jpg` (em jogo, terceira pessoa) e `arte/praia-p126-tatica-qwen.jpg` (a câmera tática, o mapa inteiro) — headless, **sem erro de página** (o shader do mar compila). **O julgamento estético é do Comandante** (eu não leio imagem).
+
+**Falta (R13):** a **missão** de defender/retomar a estação (e "proteger os cidadãos e a cidade"), as **zonas** de cura/resfriamento da praia (hoje ela fica sem zonas), a bancada de medição da ficha (< 310 colisores) e o **teste de partida** da água (G14).
+
 ## A praia dos cabos: o layout do cenário, em dado puro — Qwen, 14/10 (PR `qwen/praia-layout`, ordem P126, passo 2)
 
 **Continuação do passo 1** (a regra da água, no ar pelo **#309**). Passo 2: **o desenho do cenário**, em **dado puro** (`environment/PraiaLayout.ts`), no caminho do `BunkerLayout.ts` — o construtor e a física leem a lista, e os testes conferem o desenho **sem montar 3D** (a lição do Bunker: contrato antes da geometria).

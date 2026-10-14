@@ -68,10 +68,25 @@ describe('o layout da PRAIA DOS CABOS (P126)', () => {
     expect(Math.abs(escotilha!.x - PRAIA_ESTACAO.x)).toBeLessThan(40);
   });
 
-  it('só desenho não tem colisor: toda peça é sólida, menos a luz', () => {
+  it('só desenho não tem colisor: as ruas, as janelas e a luz; todo o resto é sólido', () => {
+    const soDesenho = new Set(['luz', 'rua', 'vidro']);
     for (const b of praiaBlocks()) {
-      if (b.kind === 'luz') expect(b.solid, 'a luz').not.toBe(true);
+      if (soDesenho.has(b.kind)) expect(b.solid, b.kind).not.toBe(true);
       else expect(b.solid, b.kind).toBe(true);
+    }
+  });
+
+  it('a cidade costeira: quadras baixas (até 4 andares), ruas correndo ao longo da praia e as janelas voltadas para o mar', () => {
+    const predios = praiaBlocks().filter((b) => b.kind === 'predio');
+    expect(predios.length).toBeGreaterThanOrEqual(6);
+    for (const p of predios) expect(p.h, 'prédio baixo').toBeLessThanOrEqual(16); // 2 a 4 andares
+    const ruas = praiaBlocks().filter((b) => b.kind === 'rua');
+    expect(ruas.length).toBeGreaterThanOrEqual(2);
+    for (const r of ruas) expect(r.d, 'a rua corre ao longo da praia').toBeGreaterThan(r.w);
+    // Cada prédio tem a janela na fachada voltada para o mar (x menor: o lado do sol).
+    for (const p of predios) {
+      const janela = praiaBlocks().find((b) => b.kind === 'vidro' && b.z === p.z && b.x < p.x);
+      expect(janela, `janela do prédio em x=${p.x}`).toBeDefined();
     }
   });
 

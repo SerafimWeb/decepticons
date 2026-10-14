@@ -5,7 +5,9 @@
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
 
-**Passo 2 — o layout (`environment/PraiaLayout.ts`, em dado puro, 9 testes):** **480 × 140 m** (mais que o dobro da Arena), o **fundo do mar em degraus** (2/5/9/14 m), a **água** (`PRAIA_AGUA`), as **duas vias** (areia e passarela alta) e a **ESTAÇÃO DE CABOS** com a **escotilha** (a saída do P123) no pé; 6 nascimentos secos. **Falta:** o **construtor** (geometria e colisores), o `MapId` `praia` e a missão.
+**Passo 3 — o mapa (REAL no jogo, visto em captura headless; falta o playtest):** `?mapa=praia` **abre** — o construtor (`environment/Praia.ts`) monta a cena e os colisores do layout, com o **fim de tarde** (céu do azul ao rosado, o **sol no horizonte**), o **mar claro com ondas pequenas animadas na GPU** (custo de CPU zero), a **cidade costeira** (prédios baixos, ruas, janelas) e as **dunas**; e o **afogamento está ligado** (o mar freia e afoga). Capturas: `arte/praia-p126-qwen.jpg` e `-tatica-`; **sem erro de página**. **Falta:** a **missão**, as **zonas** da praia, a bancada de colisores (< 310) e o **teste de partida** da água (G14).
+
+**Passo 2 — o layout (`environment/PraiaLayout.ts`, em dado puro, 10 testes):** **480 × 140 m** (mais que o dobro da Arena), o **fundo do mar em degraus** (2/5/9/14 m), a **água** (`PRAIA_AGUA`), as **duas vias** (areia e passarela alta), a **cidade costeira** e a **ESTAÇÃO DE CABOS** com a **escotilha** (a saída do P123) no pé; 14 nascimentos secos.
 
 ## A água da praia: freia e afoga — Qwen, 14/10 (P126, passo 1)
 

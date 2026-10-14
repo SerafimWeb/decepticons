@@ -1560,6 +1560,8 @@ export class Game {
     this.droneVisuals?.render(dt, alpha);
     if (this.match.ctf && this.ctfObjectives) this.ctfObjectives.update(dt, this.match.ctf);
     this.dominioPontos?.update(dt);
+    // O mapa que anima (o mar da praia, P126): nos outros, o `Arena.update` não faz nada.
+    this.match.arena.update(dt);
     this.dominioHud.update(dt);
     this.online?.render(dt, now);
     this.nameplates.update(dt, this.mech);
