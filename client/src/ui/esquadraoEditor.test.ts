@@ -293,3 +293,34 @@ describe('editor do esquadrão: os titãs (P108)', () => {
     expect(new EsquadraoEditor(esq([mech({ chassi: 'colossusv4' })]), 'bunker').excessos.join(' ')).toMatch(/titãs/);
   });
 });
+
+describe('editor do esquadrão: a mão esquerda (P108 b)', () => {
+  it('escolher a arma da esquerda guarda, o nível troca sem mudar a arma, e "nenhuma" tira', () => {
+    const e = editor(esq([mech()]));
+    expect(e.editar('inimigo', 0, { secundaria: { id: 'arc', tier: 0 } })).toBeNull();
+    expect(e.lista('inimigo')[0]!.secundaria).toEqual({ id: 'arc', tier: 0 });
+    e.editarNivelSecundaria('inimigo', 0, 2);
+    expect(e.lista('inimigo')[0]!.secundaria).toEqual({ id: 'arc', tier: 2 });
+    e.editar('inimigo', 0, { secundaria: undefined });
+    expect(e.lista('inimigo')[0]!.secundaria).toBeUndefined();
+    // Nível de quem não tem arma na esquerda não faz nada.
+    e.editarNivelSecundaria('inimigo', 0, 1);
+    expect(e.lista('inimigo')[0]!.secundaria).toBeUndefined();
+  });
+
+  it('trocar para um chassi que não aceita a arma da esquerda larga a arma (o titã não tem mão esquerda de bot)', () => {
+    const e = editor(esq([mech({ secundaria: { id: 'arc', tier: 0 } })]));
+    e.editar('inimigo', 0, { chassi: 'colossus01' });
+    expect(e.lista('inimigo')[0]).toEqual({ papel: 'mech', chassi: 'colossus01' });
+  });
+
+  it('a descrição do robô diz a arma da esquerda', () => {
+    const d = descreverBot(mech({ arma: { id: 'plasma', tier: 0 }, secundaria: { id: 'arc', tier: 1 } }), 'inimigo', 0, NOMES);
+    expect(d.linha).toMatch(/esq\./);
+  });
+
+  it('o link do editor leva a esquerda', () => {
+    const e = editor(esq([mech({ secundaria: { id: 'arc', tier: 1 } })]));
+    expect(chaveDoEsquadrao(e.esquadrao)).toContain('sarc-1');
+  });
+});

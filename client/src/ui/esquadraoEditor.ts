@@ -119,6 +119,7 @@ export function descreverBot(bot: BotSpec, lado: Lado, indiceNoPapel: number, no
     if (persona !== 'soldado') partes.push(PERSONA_LABELS[persona].label.toLowerCase());
     if (bot.chassi) partes.push(CHASSIS[bot.chassi].name);
     if (bot.arma) partes.push(nomeDaArma(bot.arma.id, bot.arma.tier));
+    if (bot.secundaria) partes.push(`esq. ${nomeDaArma(bot.secundaria.id, bot.secundaria.tier)}`);
   }
   if (bot.dificuldade && bot.papel !== 'technician') partes.push(DIFFICULTY_LABELS[bot.dificuldade].toLowerCase());
   return { nome, linha: partes.join(' · ') };
@@ -233,7 +234,7 @@ export class EsquadraoEditor {
    * Muda campos de um robô. Um campo com `undefined` volta ao padrão. O robô passa pelo contrato de novo: trocar o chassi larga a arma que
    * ele não aceita, e persona, chassi e arma de quem não é Mech não pegam.
    */
-  editar(lado: Lado, i: number, mudanca: { nome?: string | undefined; persona?: Persona | undefined; chassi?: BotSpec['chassi']; arma?: BotSpec['arma']; dificuldade?: BotSpec['dificuldade'] }): string | null {
+  editar(lado: Lado, i: number, mudanca: { nome?: string | undefined; persona?: Persona | undefined; chassi?: BotSpec['chassi']; arma?: BotSpec['arma']; secundaria?: BotSpec['secundaria']; dificuldade?: BotSpec['dificuldade'] }): string | null {
     const l = this.ref(lado);
     const atual = l[i];
     if (!atual) return null;
@@ -255,6 +256,12 @@ export class EsquadraoEditor {
   editarNivel(lado: Lado, i: number, tier: Tier): void {
     const atual = this.ref(lado)[i];
     if (atual?.arma) this.editar(lado, i, { arma: { id: atual.arma.id, tier } });
+  }
+
+  /** Troca o nível da arma da mão esquerda sem mudar qual é. */
+  editarNivelSecundaria(lado: Lado, i: number, tier: Tier): void {
+    const atual = this.ref(lado)[i];
+    if (atual?.secundaria) this.editar(lado, i, { secundaria: { id: atual.secundaria.id, tier } });
   }
 
   limparLado(lado: Lado): void {

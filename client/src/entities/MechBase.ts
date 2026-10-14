@@ -521,6 +521,14 @@ export abstract class MechBase {
     return this.triggers.secondary.some((m) => this.modules[MOUNT_PART[m]] > 0);
   }
 
+  /**
+   * A mão esquerda pode atirar? (o bot com arma secundária, P108 b) Arma na mão, braço inteiro, sem superaquecer nem estar atordoado. Vale em qualquer layout de
+   * gatilhos (no Marauder a esquerda atira no botão principal e `canFireSecondary` diria que não).
+   */
+  get canFireLeftHand(): boolean {
+    return this.alive && this.loadout.secondary !== null && !this.heatSink.overheated && this.status.canAct && this.modules.leftArm > 0;
+  }
+
   /** Onde o encaixe está no mundo, pelo desenho (render). Para efeitos e para o tiro do jogador local. */
   mountWorldPosition(mount: MountId, target: THREE.Vector3): THREE.Vector3 {
     return mountNode(this.rig, mount).getWorldPosition(target);

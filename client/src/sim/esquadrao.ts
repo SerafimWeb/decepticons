@@ -49,6 +49,11 @@ export interface BotSpec {
   chassi?: ChassisId;
   /** A arma principal (a do botão principal). Padrão: a de fábrica do chassi. Só as de `armasDoBot`. */
   arma?: ArmaDoBot;
+  /**
+   * A arma da **mão esquerda** (P108 b: "configurar o outro Mech como eu configuro o meu no Hangar"). Padrão: nenhuma (o bot só atira a principal, como sempre).
+   * Só as de `armasSecundariasDoBot` (as do encaixe esquerdo do chassi que o bot sabe atirar). Ombro, módulo e layout de ataques ficam para depois: dependem da IA.
+   */
+  secundaria?: ArmaDoBot;
   /** Dificuldade própria. Padrão: a da partida (Configurações). */
   dificuldade?: Difficulty;
 }
@@ -92,6 +97,12 @@ export const ARMA_DO_TITA: Readonly<Record<'colossus01' | 'colossusv4', WeaponId
 export function armasDoBot(chassi: ChassisId): readonly WeaponId[] {
   if (ehTita(chassi)) return [ARMA_DO_TITA[chassi as 'colossus01' | 'colossusv4']];
   return ARM_SLOTS[chassi].right.filter(armaServeAoBot);
+}
+
+/** As armas que cabem na **mão esquerda** do chassi e que o bot sabe atirar (a mesma regra da principal: energia simples). O titã não tem mão esquerda de bot. */
+export function armasSecundariasDoBot(chassi: ChassisId): readonly WeaponId[] {
+  if (ehTita(chassi)) return [];
+  return ARM_SLOTS[chassi].left.filter((id) => armaServeAoBot(id));
 }
 
 const TIERS: readonly Tier[] = [0, 1, 2];
@@ -248,6 +259,10 @@ export function sanearBot(raw: unknown, lado: LadoDoBot = 'inimigo'): BotSpec | 
   if (a && typeof a === 'object' && typeof a.id === 'string' && ehNivel(a.tier) && (armasDoBot(chassi) as readonly string[]).includes(a.id)) {
     bot.arma = { id: a.id, tier: a.tier };
   }
+  const s2 = r.secundaria as Partial<ArmaDoBot> | null | undefined;
+  if (s2 && typeof s2 === 'object' && typeof s2.id === 'string' && ehNivel(s2.tier) && (armasSecundariasDoBot(chassi) as readonly string[]).includes(s2.id)) {
+    bot.secundaria = { id: s2.id, tier: s2.tier };
+  }
   return bot;
 }
 
@@ -337,6 +352,7 @@ function chaveDoBot(b: BotSpec): string {
   if (b.persona) campos.push(`p${LETRA_DA_PERSONA[b.persona]}`);
   if (b.chassi) campos.push(`c${b.chassi}`);
   if (b.arma) campos.push(`w${b.arma.id}-${b.arma.tier}`);
+  if (b.secundaria) campos.push(`s${b.secundaria.id}-${b.secundaria.tier}`);
   if (b.dificuldade) campos.push(`d${LETRA_DA_DIFICULDADE[b.dificuldade]}`);
   if (b.nome) campos.push(`n${nomeParaTexto(b.nome)}`);
   return campos.join(':');
@@ -380,6 +396,10 @@ function lerBot(texto: string, lado: LadoDoBot): BotSpec | null {
       const m = /^([a-z]+)-([0-2])$/.exec(valor);
       if (!m) return null;
       bruto.arma = { id: m[1], tier: Number(m[2]) };
+    } else if (tag === 's') {
+      const m = /^([a-z]+)-([0-2])$/.exec(valor);
+      if (!m) return null;
+      bruto.secundaria = { id: m[1], tier: Number(m[2]) };
     } else if (tag === 'd') {
       bruto.dificuldade = deLetra(LETRA_DA_DIFICULDADE, valor);
       if (!bruto.dificuldade) return null;
@@ -390,10 +410,12 @@ function lerBot(texto: string, lado: LadoDoBot): BotSpec | null {
     } else return null;
   }
   // Persona, chassi e arma só existem no Mech; arma que não cabe no chassi ou que o bot não sabe usar recusa a chave.
-  if (papel !== 'mech' && (bruto.persona || bruto.chassi || bruto.arma)) return null;
+  if (papel !== 'mech' && (bruto.persona || bruto.chassi || bruto.arma || bruto.secundaria)) return null;
   if (papel === 'technician' && bruto.dificuldade) return null;
   const arma = bruto.arma as ArmaDoBot | undefined;
   if (arma && !(armasDoBot((bruto.chassi as ChassisId | undefined) ?? 'vector09') as readonly string[]).includes(arma.id)) return null;
+  const sec = bruto.secundaria as ArmaDoBot | undefined;
+  if (sec && !(armasSecundariasDoBot((bruto.chassi as ChassisId | undefined) ?? 'vector09') as readonly string[]).includes(sec.id)) return null;
   return sanearBot(bruto, lado);
 }
 
@@ -437,6 +459,8 @@ export interface SlotDoPlano {
   chassi: ChassisId;
   /** `null` = a arma de fábrica do chassi. */
   arma: ArmaDoBot | null;
+  /** `null` = nenhuma arma na mão esquerda (o bot só atira a principal). */
+  secundaria: ArmaDoBot | null;
   /** `null` = a dificuldade da partida. */
   dificuldade: Difficulty | null;
 }
@@ -496,6 +520,7 @@ export function planejarEsquadrao(spec: EsquadraoSpec, mapa: MapId, nomes: Enemy
           persona: b.persona ?? 'soldado',
           chassi: b.chassi ?? 'vector09',
           arma: b.arma ?? null,
+          secundaria: b.secundaria ?? null,
           dificuldade: b.dificuldade ?? null,
         };
       });

@@ -1,10 +1,12 @@
 import { TIERS, weapon, type Tier, type WeaponId } from '../combat/weapons';
 import { DIFFICULTY_LABELS, PERSONA_LABELS, type Difficulty, type EnemyNames, type Persona } from '../core/Settings';
 import { withoutParam } from '../core/url';
+import { armaDoBot, statsDoBot } from '../combat/titaBot';
 import { CHASSIS, CHASSIS_PAPEL, ehTita, type ChassisId } from '../entities/chassis';
 import type { MapId } from '../environment/Bunker';
 import {
   armasDoBot,
+  armasSecundariasDoBot,
   CHASSIS_DOS_BOTS,
   type EsquadraoSpec,
   nomePadraoDoBot,
@@ -285,17 +287,33 @@ export class SquadPanel {
         // Os titãs (P108) só do lado dos inimigos e onde o mapa os comporta (a Cidade Neon); o que o robô já é continua na lista.
         campo('Chassi', selecao('squad-campo-chassi', 'chassi', CHASSIS_DOS_BOTS.filter((c) => !ehTita(c) || c === chassi || (s.lado === 'inimigo' && this.editor.limites.titas > 0)).map((c) => opcao(c, CHASSIS[c].name, chassi))), `${CHASSIS_PAPEL[chassi]} Vida ${CHASSIS[chassi].maxModuleHealth.torso}, ${CHASSIS[chassi].moveSpeed} m/s.`),
       );
-      const fabrica = CHASSIS[chassi].loadout.primary;
+      // A arma de fábrica do ROBÔ (não a do Hangar): o Colossus-01 bot usa o plasma do chefe e o canhão de cerco do V4 sai com o dano limitado (combat/titaBot.ts).
+      const fabrica = statsDoBot(chassi).loadout.primary;
       const armas: readonly WeaponId[] = armasDoBot(chassi);
       const arma = bot.arma?.id ?? '';
       const nivel = String(bot.arma?.tier ?? fabrica.tier);
-      const w = bot.arma ? weapon(bot.arma.id, bot.arma.tier) : fabrica;
+      const w = bot.arma ? armaDoBot(bot.arma.id, bot.arma.tier, chassi) : fabrica;
       const linhaArma = el('div', 'squad-par');
       linhaArma.append(
         selecao('squad-campo-arma', 'arma', [opcao('', `De fábrica: ${fabrica.name}`, arma), ...armas.map((a) => opcao(a, weapon(a).name, arma))]),
         selecao('squad-campo-nivel', 'nivel', NIVEIS.map((t) => opcao(String(t), TIERS[t]?.label ?? '', nivel)), !bot.arma),
       );
       campos.push(campo('Arma principal', linhaArma, `${nomeDaArma(w.id, w.tier)}: dano ${w.damage}, ótimo a ${w.optimalRange} m, ${(1 / w.fireInterval).toFixed(1).replace('.', ',')} tiros/s. O robô ataca de onde a arma rende.`));
+      // A mão esquerda (P108 b): como no Hangar, uma segunda arma que atira junto, com a cadência dela. Só o que o encaixe esquerdo do chassi aceita e o bot sabe atirar.
+      const esquerdas = armasSecundariasDoBot(chassi);
+      if (esquerdas.length) {
+        const sec = bot.secundaria?.id ?? '';
+        const nivel2 = String(bot.secundaria?.tier ?? 0);
+        const w2 = bot.secundaria ? armaDoBot(bot.secundaria.id, bot.secundaria.tier, chassi) : null;
+        const linhaEsq = el('div', 'squad-par');
+        linhaEsq.append(
+          selecao('squad-campo-secundaria', 'secundaria', [opcao('', 'Nenhuma (só a principal)', sec), ...esquerdas.map((a) => opcao(a, weapon(a).name, sec))]),
+          selecao('squad-campo-nivel2', 'nivel2', NIVEIS.map((t) => opcao(String(t), TIERS[t]?.label ?? '', nivel2)), !bot.secundaria),
+        );
+        campos.push(
+          campo('Mão esquerda', linhaEsq, w2 ? `${nomeDaArma(w2.id, w2.tier)}: dano ${w2.damage}, alcance ${w2.maxRange} m, ${(1 / w2.fireInterval).toFixed(1).replace('.', ',')} tiros/s. Atira junto com a principal, no próprio ritmo; quem soma armas esquenta mais.` : 'Sem arma na esquerda: o robô atira só a principal.'),
+        );
+      }
     }
     if (bot.papel !== 'technician') {
       const dif = bot.dificuldade ?? '';
@@ -445,6 +463,14 @@ export class SquadPanel {
       }
       case 'nivel':
         this.editor.editarNivel(s.lado, s.i, Number(v) as Tier);
+        break;
+      case 'secundaria': {
+        const atual = this.editor.lista(s.lado)[s.i]?.secundaria;
+        this.editor.editar(s.lado, s.i, { secundaria: v ? { id: v as WeaponId, tier: atual?.tier ?? 0 } : undefined });
+        break;
+      }
+      case 'nivel2':
+        this.editor.editarNivelSecundaria(s.lado, s.i, Number(v) as Tier);
         break;
       case 'dificuldade':
         this.editor.editar(s.lado, s.i, { dificuldade: (v || undefined) as Difficulty | undefined });

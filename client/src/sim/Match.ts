@@ -229,7 +229,7 @@ export class Match {
     this.combat.sameSide = (a, b) => this.sameSide(a, b);
     this.respawner = new Respawner(this.spawnPoints);
     this.crush = new CrushRule(this.combat);
-    const kitDe = (s: SlotDoPlano): BotKit => ({ chassi: s.chassi, arma: s.arma, dificuldade: s.dificuldade });
+    const kitDe = (s: SlotDoPlano): BotKit => ({ chassi: s.chassi, arma: s.arma, secundaria: s.secundaria, dificuldade: s.dificuldade });
     const pontos = (l: readonly SlotDoPlano[]) => l.map((s) => s.ponto);
     const nomes = (l: readonly SlotDoPlano[]) => l.map((s) => s.nome);
     const rebeldes = plano?.inimigos;
