@@ -5,6 +5,10 @@
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
 
+## Tática de esquadrão: papéis por arma e retaguarda — Qwen, 14/10 (P119, passo 1)
+
+**REAL (testado na simulação; falta o playtest do dono):** `combat/tatica.ts` dá **papel** ao robô pela arma (arma de linha, ≥90 m = `apoio`); com 3+ lutadores e algum de perto, o primeiro `apoio` fica de **retaguarda** no setor de nascimento e **não persegue**. É só **posição**: nenhuma regra de tiro, dano ou token mudou, e o esquadrão de fábrica (plasma) segue idêntico (o teste-golden `esquadraoPadrao.test.ts` bate tick a tick). 11 testes. **Falta:** o jogo em equipe mais fundo (cobertura, flanco, ataque conjunto) e uma partida jogada pelo dono (R13).
+
 ## Leitura do combate — Qwen, 14/10 (P109 frente 2)
 
 **REAL (visto em Chrome headless por software; falta em GPU real e o playtest do dono):** números de dano flutuantes sobre o inimigo (pool fixo de 24, offline e online, sem byte novo de protocolo; `ui/DamageNumbers.ts`), a plaqueta do inimigo com **barra de vida** (o torso) e **distância** ("35m") redesenhada só em degraus de 5% / 5 m (`ui/Nameplates.ts`), e **"RECARREGANDO"** ao lado da mira quando o carregador (foguetes) está vazio. 13 testes. **Não feito:** o **ícone da arma no kill feed** (o evento de abate não carrega a arma; pede `sim/` + protocolo).

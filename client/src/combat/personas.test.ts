@@ -9,7 +9,7 @@ import type { MechInput } from '../entities/MechBase';
 import { Vector09 } from '../entities/Vector09';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { MECH_PROFILE, PERSONAS } from './BotController';
-import { BotSystem } from './BotSystem';
+import { BotSystem, type BotKit } from './BotSystem';
 import { CombatSystem } from './CombatSystem';
 import { ProjectileSystem } from './ProjectileSystem';
 import { Respawner } from './Respawner';
@@ -23,7 +23,7 @@ const IDLE: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, d
  * Arena aberta com o jogador parado no centro (imortal: a vida volta a cada tick) e Mechs rebeldes em
  * volta. `playerYaw`: para onde o jogador olha (π olha para +Z). Conta, a cada tick, quantos atiraram.
  */
-async function arena(spawns: [number, number][], personas: Persona[], maxAttackers = Infinity, playerYaw = 0) {
+async function arena(spawns: [number, number][], personas: Persona[], maxAttackers = Infinity, playerYaw = 0, kits?: BotKit[]) {
   const physics = await PhysicsWorld.create();
   physics.addStaticBox(new THREE.Vector3(0, -1, 0), new THREE.Vector3(600, 2, 600));
   const combat = new CombatSystem(destructibles, debris, particles);
@@ -34,7 +34,7 @@ async function arena(spawns: [number, number][], personas: Persona[], maxAttacke
   player.applyFacing(playerYaw, 0);
   combat.register(player);
   const respawner = new Respawner([[0, 200]]);
-  const bots = new BotSystem({ scene: new THREE.Scene(), physics, combat, projectiles, particles, respawner, spawns, waypoints: spawns, seed: 3, personas });
+  const bots = new BotSystem({ scene: new THREE.Scene(), physics, combat, projectiles, particles, respawner, spawns, waypoints: spawns, seed: 3, personas, kits });
   bots.targets = [player];
   bots.maxAttackers = maxAttackers;
   physics.step();
@@ -138,6 +138,38 @@ describe('diretor de ataque: não caem todos em cima', () => {
     const [manso, brabo] = s.bots.mechs;
     expect(s.firedBy.get(brabo) ?? 0).toBeGreaterThan(0);
     expect(s.firedBy.get(manso) ?? 0).toBe(0);
+  });
+});
+
+describe('tática de esquadrão (P119): a retaguarda segura o setor em vez de rushar', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  const linha: [number, number][] = [
+    [0, -20], // escopeta (assalto), perto do jogador
+    [0, -70], // trilho (apoio), longe
+    [20, -20], // escopeta (assalto)
+  ];
+  const kits: BotKit[] = [
+    { arma: { id: 'shotgun', tier: 0 } },
+    { arma: { id: 'railgun', tier: 0 } },
+    { arma: { id: 'shotgun', tier: 0 } },
+  ];
+
+  it('o de arma de linha fica de guarda e não chega perto; os de perto entram', async () => {
+    const s = await arena(linha, ['soldado', 'soldado', 'soldado'], 2, 0, kits);
+    s.run(8);
+    expect(s.bots.brainOf(s.bots.mechs[1]!)!.rearguard).toBe(true);
+    expect(s.dist(1)).toBeGreaterThan(45); // segura o setor de nascimento
+    expect(s.dist(0)).toBeLessThan(45); // entra
+    expect(s.dist(2)).toBeLessThan(45); // entra
+  });
+
+  it('sem arma de linha no esquadrão, ninguém fica de guarda (o jogo de sempre não muda)', async () => {
+    const s = await arena(linha, ['soldado', 'soldado', 'soldado'], 2);
+    s.run(2);
+    for (const m of s.bots.mechs) expect(s.bots.brainOf(m)!.rearguard).toBe(false);
   });
 });
 

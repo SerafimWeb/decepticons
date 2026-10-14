@@ -6,6 +6,7 @@ import type { Difficulty, Persona } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { setLocalMove, turnToward, wrapAngle, yawOf } from './steer';
+import { papelTatico, type PapelTatico } from './tatica';
 
 export type SquadOrder = 'follow' | 'focus' | 'hold';
 export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat' | 'cool' | 'stalk' | 'search';
@@ -202,6 +203,23 @@ export class BotController {
   wantsToFire = false;
   /** Atira também a arma da mão esquerda (P108 b)? Quem liga é o `BotSystem`, quando o esquadrão deu uma arma secundária ao robô. */
   useSecondary = false;
+  /**
+   * Papel na organização do esquadrão (P119), tirado da arma principal: arma de **linha** = `apoio` (segura a linha de
+   * tiro); arma de perto, média, corpo a corpo ou perfil `steady` = `assalto`. É o que decide quem fica de retaguarda.
+   */
+  get papel(): PapelTatico {
+    const w = this.mech.loadout.primary;
+    if (this.profile.melee || this.profile.steady || w.kind === 'melee') return 'assalto';
+    return papelTatico(w.optimalRange, false);
+  }
+  /**
+   * Retaguarda (P119): segura o **setor de nascimento** (`home`) e não persegue — troca tiro com quem chega ao seu
+   * alcance, em vez de todos largarem o posto para rushar o alvo. Quem liga é o `BotSystem`; uma ordem explícita de
+   * `hold` (o Domínio) vale mais que isto, e ali a retaguarda segue o posto mandado.
+   */
+  rearguard = false;
+  /** O setor da retaguarda (o ponto de nascimento). */
+  readonly home = new THREE.Vector3();
   /** Quer atirar a arma da mão esquerda neste tick (mesma mira de `shotDir`). */
   wantsToFireSecondary = false;
   state: BotState = 'patrol';
@@ -742,7 +760,7 @@ export class BotController {
       this.focusTarget = null;
     }
     const leader = this.leader;
-    if (this.order === 'follow' && leader?.alive && this.state !== 'retreat' &&
+    if (this.order === 'follow' && !this.rearguard && leader?.alive && this.state !== 'retreat' &&
         (this.state === 'patrol' || !this.targetVisible || this.flatDistance(leader.simPosition) > 36)) {
       const p = leader.simPosition;
       const side = this.escortSide * 7;
@@ -753,11 +771,13 @@ export class BotController {
       faceYaw = this.targetVisible && this.target ? this.yawTo(this.target.simPosition) :
         _move.lengthSq() > 0 ? yawOf(_move.x, _move.z) : leader.yaw;
     }
-    if (this.order === 'hold' && this.state !== 'retreat') {
-      const distance = this.flatDistance(this.guardPoint);
-      // Pode trocar tiros em torno do posto; não abandona a área perseguindo um alvo distante.
+    // Posto: a ordem explícita de `hold` (o Domínio) manda no ponto que ela deu; senão, a retaguarda (P119) segura o
+    // setor de nascimento. Nos dois casos o bot troca tiro em volta do posto e não o abandona perseguindo um alvo longe.
+    const post = this.order === 'hold' ? this.guardPoint : this.rearguard ? this.home : null;
+    if (post && this.state !== 'retreat') {
+      const distance = this.flatDistance(post);
       if (distance > 10 || !this.targetVisible || this.state === 'chase' || this.state === 'patrol') {
-        if (distance > 3) this.towards(this.guardPoint);
+        if (distance > 3) this.towards(post);
         else _move.set(0, 0, 0);
         if (this.targetVisible && this.target) faceYaw = this.yawTo(this.target.simPosition);
       }

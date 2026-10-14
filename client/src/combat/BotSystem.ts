@@ -13,6 +13,7 @@ import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { PERSONA_LABELS, type Difficulty, type Persona } from '../core/Settings';
 import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BOT_SKILLS, BotController, type BotSkill, type SquadOrder, MECH_PROFILE, PERSONAS } from './BotController';
+import { escolherRearguarda } from './tatica';
 import type { CombatSystem } from './CombatSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
 import { weapon, type Tier, type WeaponId } from './weapons';
@@ -209,6 +210,7 @@ export class BotSystem {
       const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, skill, android ? ANDROID_PROFILE : titan ? BOSS_PROFILE : MECH_PROFILE, persona);
       brain.escortSide = i % 2 ? 1 : -1;
       brain.useSecondary = !!kit?.secundaria;
+      brain.home.copy(home);
       if (o.respawn !== false) {
         o.respawner.track(mech, titan ? TITA_RESPAWN_S : BOT_RESPAWN_S, () => {
           if (o.respawnAtHome) mech.respawn(home);
@@ -284,6 +286,13 @@ export class BotSystem {
     });
     this.mechs = this.bots.map((b) => b.mech);
     for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0, side: 0 });
+    // Tática de esquadrão (P119): com 3 ou mais lutadores e algum de arma de perto, o primeiro de arma de linha fica
+    // de **retaguarda** — segura o setor de nascimento e troca tiro com quem chega, em vez de largar tudo para rushar.
+    // No esquadrão aliado (escolta) não vale: lá a formação é a do líder, e um bot de guarda quebraria o comboio.
+    if (!o.escort) {
+      const idx = escolherRearguarda(this.fighters.map((f) => f.brain.papel));
+      if (idx >= 0) this.fighters[idx]!.brain.rearguard = true;
+    }
   }
 
   /** Só muda os bots que cruzam o limite; mantém a vida dos demais e os técnicos. */
