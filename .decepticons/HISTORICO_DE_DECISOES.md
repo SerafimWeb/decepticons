@@ -1,3 +1,11 @@
+## [2026-10-14] O Domínio é dado + regra pura + bots que seguram posto, offline primeiro (Claude, P112)
+
+**Situação:** o Comandante quer o modo de dominar as bases (como o principal do MechArena) e disse que a boa jogabilidade é "atirar, se esconder, esquivar, combate, fuga, captura, sem ficar parado".
+
+**Decisões:** (1) **regra pura e testada** (`Dominio.ts`), sem saber quantos pontos o mapa tem: seis pontos ou um mapa maior é outra lista (`dominioMapa.ts`). (2) **Os bots jogam o objetivo, não só atiram:** cada um escolhe um ponto (espalhando o esquadrão e deixando um de guarda) e **segura posto** com a ordem `hold` que o `BotController` já tinha: nenhum comportamento novo de IA, só quem manda onde. (3) **Cada lado nasce e renasce na sua base** (o ponto mais longe dos inimigos, `Respawner.setTeams`), para o mapa não virar o caos do deathmatch. (4) **Offline primeiro:** o servidor é todos contra todos; o online pede times na sala (P81). (5) **Os números de equilíbrio** (400 pontos, 8 min, 12 m, 8 s por captura) são propostas minhas, em constantes de `Dominio.ts`, para o playtest do Comandante ajustar.
+
+**Quem decidiu:** Claude (o Comandante pediu o modo; os números e o desenho são abertos a ajuste).
+
 ## [2026-10-14] A marca "em desenvolvimento" não esconde robô que o Comandante já usa (Claude, P118)
 
 **Situação:** a flag `status: 'oficina'` (painel admin, Gemini) trancava o Marauder, o Bastion e o Quadra-V2 atrás de login para todo mundo, inclusive o dono; as armas que só eles carregam (sônico, lança-chamas) pareciam ter sumido.

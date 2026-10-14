@@ -30,7 +30,7 @@ export const MODOS_DO_MAPA: Readonly<Record<MapId, readonly GameMode[]>> = {
 export const MAPAS: readonly MapId[] = ['arena', 'bunker'];
 export const MODOS: readonly GameMode[] = ['deathmatch', 'survival', 'ctf'];
 export const MAPA_NOME: Readonly<Record<MapId, string>> = { arena: 'CIDADE NEON', bunker: 'BUNKER' };
-export const MODO_NOME: Readonly<Record<GameMode, string>> = { deathmatch: 'DEATHMATCH', survival: 'SOBREVIVÊNCIA', ctf: 'CAPTURAR A BANDEIRA' };
+export const MODO_NOME: Readonly<Record<GameMode, string>> = { deathmatch: 'DEATHMATCH', survival: 'SOBREVIVÊNCIA', ctf: 'CAPTURAR A BANDEIRA', dominio: 'DOMÍNIO' };
 
 export const LIMITES_DA_CAMPANHA = {
   /** Etapas por campanha: o link cabe (cada etapa leva o esquadrão) e a campanha cabe numa sessão. */
@@ -147,7 +147,7 @@ export function campanhasDeFabrica(): CampanhaSpec[] {
 // ─── O link: ?campanha=c1~…&etapa=2 ───────────────────────────────────────────
 
 const LETRA_DO_MAPA: Readonly<Record<MapId, string>> = { arena: 'a', bunker: 'b' };
-const LETRA_DO_MODO: Readonly<Record<GameMode, string>> = { deathmatch: 'd', survival: 's', ctf: 'c' };
+const LETRA_DO_MODO: Readonly<Record<GameMode, string>> = { deathmatch: 'd', survival: 's', ctf: 'c', dominio: 'm' };
 
 function chaveDaEtapa(e: EtapaDaCampanha): string {
   const abates = e.modo === 'deathmatch' ? String(sanearAbates(e.abates)) : '';

@@ -4,7 +4,7 @@ export interface PlayReport {
   v: 1;
   id: string;
   release: string;
-  mode: "deathmatch" | "survival" | "ctf";
+  mode: "deathmatch" | "survival" | "ctf" | "dominio";
   online: boolean;
   build: string;
   assisted: boolean;
@@ -29,7 +29,7 @@ export function parsePlayReport(raw: unknown): PlayReport | null {
     typeof r.build !== "string" ||
     r.build.length > 80 ||
     !/^[a-zA-Z0-9.-]+$/.test(r.build) ||
-    !["deathmatch", "survival", "ctf"].includes(String(r.mode)) ||
+    !["deathmatch", "survival", "ctf", "dominio"].includes(String(r.mode)) ||
     !["completed", "abandoned"].includes(String(r.outcome)) ||
     typeof r.online !== "boolean" ||
     typeof r.assisted !== "boolean"

@@ -44,6 +44,13 @@ export interface UnidadeMapa {
   readonly stats: { readonly name: string };
 }
 
+/** Um ponto de controle como o minimapa o lê (estrutural: o estado vivo do `Dominio`). */
+export interface PontoDoMapa {
+  readonly def: { readonly letra: string; readonly x: number; readonly z: number };
+  readonly control: number;
+  readonly disputado: boolean;
+}
+
 /** A planta do mapa (fixa) que o minimapa desenha por baixo: paredes e as zonas de cura e resfriamento. */
 export interface PlantaMinimapa {
   readonly caixas: readonly RadarCaixa[];
@@ -76,6 +83,8 @@ export class Minimapa {
   private acumulado = 0;
   private planta: PlantaMinimapa = { caixas: [], zonas: [] };
   private cone: CanvasGradient | null = null;
+  /** Domínio: os pontos A–E, desenhados com a cor de quem os leva (os além do alcance ficam presos na borda, como bússola). */
+  private pontosDeControle: readonly PontoDoMapa[] | null = null;
 
   /** `root`: a moldura (hexágono) onde o canvas entra; o CSS dá o tamanho. */
   constructor(private readonly root: HTMLElement) {
@@ -87,6 +96,11 @@ export class Minimapa {
   setPlanta(planta: PlantaMinimapa): void {
     this.planta = planta;
     this.acumulado = 1;
+  }
+
+  /** Liga os pontos de controle do Domínio (ou desliga, com `null`). */
+  setPontos(pontos: readonly PontoDoMapa[] | null): void {
+    this.pontosDeControle = pontos;
   }
 
   /** Mostra ou esconde a moldura inteira (fora da partida, no Hangar, morto ou cego, ela some). */
@@ -166,6 +180,7 @@ export class Minimapa {
     }
     g.restore();
 
+    if (this.pontosDeControle) this.desenharPontos(this.pontosDeControle, ex, ez, yaw, k, raioUtil, centro);
     for (const a of aliados) this.desenharUnidade(a, ex, ez, yaw, k, raioUtil, centro, '#00e5ff', 3);
     for (const i of inimigos) this.desenharUnidade(i, ex, ez, yaw, k, raioUtil, centro, '#ff2d3d', i.stats.name.startsWith('ANDRÓIDE') ? 2.4 : 3.6);
 
@@ -189,6 +204,31 @@ export class Minimapa {
     g.lineTo(centro + 4.5, centro + 4);
     g.closePath();
     g.fill();
+  }
+
+  private desenharPontos(pontos: readonly PontoDoMapa[], ex: number, ez: number, yaw: number, k: number, raioUtil: number, centro: number): void {
+    const g = this.g!;
+    const p = this.ponto;
+    g.font = '700 10px Consolas, "Courier New", monospace';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    for (const c of pontos) {
+      paraMinimapa(c.def.x - ex, c.def.z - ez, yaw, k, raioUtil, p);
+      const cor = c.control > 0.001 ? '#00e5ff' : c.control < -0.001 ? '#ff2d3d' : '#cfd8dc';
+      const r = p.borda ? 6 : 8;
+      g.globalAlpha = p.borda ? 0.75 : 1;
+      g.fillStyle = 'rgba(5, 14, 18, 0.85)';
+      g.strokeStyle = c.disputado ? '#ffb300' : cor;
+      g.lineWidth = 2;
+      g.beginPath();
+      g.arc(centro + p.x, centro + p.y, r, 0, Math.PI * 2);
+      g.fill();
+      g.stroke();
+      g.fillStyle = cor;
+      g.fillText(c.def.letra, centro + p.x, centro + p.y + 0.5);
+    }
+    g.globalAlpha = 1;
+    g.lineWidth = 1;
   }
 
   private desenharUnidade(u: UnidadeMapa, ex: number, ez: number, yaw: number, k: number, raioUtil: number, centro: number, cor: string, r: number): void {

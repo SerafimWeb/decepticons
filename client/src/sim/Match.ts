@@ -30,7 +30,11 @@ import {
   type CtfScore,
   type CtfTeam,
 } from './CaptureTheFlag';
-import { esquadraoDeFoes, planejarEsquadrao, sanearEsquadrao, type EsquadraoSpec, type SlotDoPlano } from './esquadrao';
+import { Dominio, type DominioLado, type DominioPlacar, type DominioPonto } from './Dominio';
+import { atribuirPontos } from './DominioObjetivos';
+import { NASCIMENTOS_DO_DOMINIO, PONTOS_DO_DOMINIO } from './dominioMapa';
+import { ehTita } from '../entities/chassis';
+import { esquadraoDeFoes, planejarEsquadrao, sanearEsquadrao, type EsquadraoSpec, type PlanoDoEsquadrao, type SlotDoPlano } from './esquadrao';
 import type { GameMode } from './gameMode';
 import { ALLY_COUNT, ANDROID_SPAWNS, BOT_SPAWNS, COLOSSUS_SPAWN } from './nascimentos';
 import {
@@ -54,6 +58,16 @@ export const CTF_DEFENDER_SPAWNS: readonly (readonly [number, number])[] = [
   [68, -72],
   [72, -62],
 ];
+/** De quanto em quanto tempo (s) os bots do Domínio refazem a escolha do ponto em que vão (`DominioObjetivos`). */
+const DOMINIO_REPLANEJA_S = 2;
+/** O Domínio leva cada lado para a sua base: o jogador e os aliados no canto azul, os rebeldes no vermelho (os titãs mantêm os pontos deles). */
+function levarParaAsBases(plano: PlanoDoEsquadrao): void {
+  const { blue, red } = NASCIMENTOS_DO_DOMINIO;
+  let r = 0;
+  for (const s of [...plano.inimigos.mechs.filter((m) => !ehTita(m.chassi)), ...plano.inimigos.androids, ...plano.inimigos.tecnicos]) s.ponto = red[r++ % red.length]!;
+  let b = 1; // o ponto 0 azul é o do jogador
+  for (const s of [...plano.aliados.mechs, ...plano.aliados.androids]) s.ponto = blue[b++ % blue.length]!;
+}
 /** Piloto nasce ao lado do mastro: área segura legível, sem sobrepor a bandeira. */
 const CTF_PLAYER_OFFSET_X = 5;
 /** Tiros no ar de uma vez: 64 no jogo de sempre (3 Mechs de IA) e mais 4 por Mech de IA a partir do quarto (esquadrão, P91). */
@@ -153,6 +167,15 @@ export class Match {
   readonly waves: SurvivalWaves | null;
   /** Regra pura de bandeiras, presente apenas no modo CTF. */
   readonly ctf: CaptureTheFlag | null;
+  /** Regra pura dos pontos de controle, presente apenas no modo Domínio. */
+  readonly dominio: Dominio | null;
+  /** Para onde cada bot do Domínio foi mandado (índice do ponto; -1 nenhum), na ordem de `bots.mechs` e `allies.mechs`. */
+  private readonly rumoRed: number[] = [];
+  private readonly rumoBlue: number[] = [];
+  private readonly rumoNovo: number[] = [];
+  private readonly cargaDosPontos: number[] = PONTOS_DO_DOMINIO.map(() => 0);
+  private readonly pontosV3 = PONTOS_DO_DOMINIO.map((p) => new THREE.Vector3(p.x, 0, p.z));
+  private replanejaEm = 0;
   /** Pisão: robô grande andando na direção de um pequeno encostado. */
   readonly crush: CrushRule;
   /** Zonas de cura e resfriamento (vantagem tática de posicionamento, igual para os dois lados). */
@@ -191,6 +214,10 @@ export class Match {
   onCtfCapture?: (team: CtfTeam, blue: number, red: number) => void;
   onCtfProgress?: (timeLeft: number, blue: Readonly<CtfScore>, red: Readonly<CtfScore>) => void;
   onCtfEnd?: (winner: CtfTeam | null, blue: Readonly<CtfScore>, red: Readonly<CtfScore>) => void;
+  /** Eventos do Domínio; a tela e o som assinam sem entrar na simulação. */
+  onDominioDono?: (ponto: DominioPonto, antes: DominioLado | null, depois: DominioLado | null) => void;
+  onDominioProgresso?: (tempoRestante: number, azul: Readonly<DominioPlacar>, vermelho: Readonly<DominioPlacar>) => void;
+  onDominioFim?: (vencedor: DominioLado | null, azul: Readonly<DominioPlacar>, vermelho: Readonly<DominioPlacar>) => void;
 
   /** O mundo físico da partida (o multiplayer põe nele os robôs remotos, só para colisão). */
   readonly physics: PhysicsWorld;
@@ -200,13 +227,14 @@ export class Match {
   constructor(o: MatchOptions) {
     const survival = o.mode === 'survival';
     const ctf = o.mode === 'ctf';
+    const dominio = o.mode === 'dominio';
     this.physics = o.physics;
-    this.round = survival || ctf ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
+    this.round = survival || ctf || dominio ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
     this.scene = o.scene;
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
     this.destructibles.onBreak = (id, at) => this.onPropBroken?.(id, at);
-    const bunker = o.map === 'bunker' && !survival && !ctf;
+    const bunker = o.map === 'bunker' && !survival && !ctf && !dominio;
     this.spawnPoints = bunker ? BUNKER_SPAWNS : SPAWN_POINTS;
     this.zones = bunker ? new ZoneSystem([]) : new ZoneSystem();
     this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : 'arena');
@@ -219,6 +247,7 @@ export class Match {
     const semAliados = o.allies === false;
     const pedido = o.squad ?? esquadraoDeFoes(o.foes, semAliados ? 0 : ALLY_COUNT);
     const plano = arenaMode ? planejarEsquadrao(sanearEsquadrao(semAliados ? { ...pedido, aliados: [] } : pedido, mapa), mapa, o.foes.names) : null;
+    if (dominio && plano) levarParaAsBases(plano);
     // O pool de tiros cresce com os Mechs que atiram (cada um solta uma rajada por vez): sem isso, num esquadrão grande o tiro some (G5).
     const atiradores = plano ? plano.inimigos.mechs.length + plano.aliados.mechs.length : 0;
     this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles, PROJETEIS_BASE + PROJETEIS_POR_MECH * Math.max(0, atiradores - MECHS_DO_JOGO_BASE));
@@ -321,6 +350,23 @@ export class Match {
         })
       : null;
     if (this.ctf) for (const bot of this.bots.mechs) this.ctf.register(bot, 'red');
+    this.dominio = dominio
+      ? new Dominio(PONTOS_DO_DOMINIO, {
+          onDono: (p, antes, depois) => this.onDominioDono?.(p, antes, depois),
+          onProgresso: (tempo, azul, vermelho) => this.onDominioProgresso?.(tempo, azul, vermelho),
+          onFim: (vencedor, azul, vermelho) => this.onDominioFim?.(vencedor, azul, vermelho),
+        })
+      : null;
+    if (this.dominio) {
+      for (const bot of this.bots.mechs) this.dominio.register(bot, 'red');
+      if (this.allies) for (const aliado of this.allies.mechs) this.dominio.register(aliado, 'blue');
+      this.respawner.setTeams(NASCIMENTOS_DO_DOMINIO, (m) => this.dominio?.ladoDe(m));
+      this.rumoRed.length = this.bots.mechs.length;
+      this.rumoRed.fill(-1);
+      this.rumoBlue.length = this.allies?.mechs.length ?? 0;
+      this.rumoBlue.fill(-1);
+      this.rumoNovo.length = Math.max(this.rumoRed.length, this.rumoBlue.length);
+    }
 
     // As regras ficam aqui; a tela e o som só ouvem os eventos.
     this.projectiles.onHit = (hit, dir, damage, owner, w, distance) => {
@@ -359,6 +405,7 @@ export class Match {
     this.combat.onMechKilled = (dead, at, killer) => {
       this.round.recordKill(dead, killer);
       this.ctf?.onKilled(dead, killer);
+      this.dominio?.onKilled(dead, killer);
       if (this.waves && this.bots.mechs.includes(dead) && this.waves.recordEnemyKilled()) {
         this.projectiles.clear();
         this.rockets.clear();
@@ -376,7 +423,9 @@ export class Match {
   addPlayer(mech: MechBase, name: string, spawnIndex = this.players.length, onRespawn?: () => void, team: CtfTeam = 'blue'): void {
     const [x, z] = this.ctf
       ? [CTF_BASES[team].x + (team === 'blue' ? CTF_PLAYER_OFFSET_X : -CTF_PLAYER_OFFSET_X), CTF_BASES[team].z]
-      : this.spawnPoints[spawnIndex % this.spawnPoints.length]!;
+      : this.dominio
+        ? NASCIMENTOS_DO_DOMINIO[team][0]!
+        : this.spawnPoints[spawnIndex % this.spawnPoints.length]!;
     mech.spawn(this.physics, this._spawn.set(x, 0, z));
     this.scene.add(mech.root);
     mech.onDashImpact = (collider, dir) => this.destructibles.demolish(collider, dir);
@@ -393,6 +442,7 @@ export class Match {
     this.round.register(mech, name);
     this.players.push(mech);
     this.ctf?.register(mech, team);
+    this.dominio?.register(mech, team);
     this.refreshEnemyTargets();
   }
 
@@ -409,6 +459,7 @@ export class Match {
     this.respawner.untrack(mech);
     this.round.unregister(mech);
     this.ctf?.unregister(mech);
+    this.dominio?.unregister(mech);
     this.scene.remove(mech.root);
     mech.despawn(this.physics);
     this.refreshEnemyTargets();
@@ -627,22 +678,62 @@ export class Match {
       this.barrage.fixedUpdate(dt);
       this.physics.step();
       this.ctf?.fixedUpdate(dt);
+      this.dominio?.fixedUpdate(dt);
+      this.dirigirOsBots(dt);
     }
     if (this.round.fixedUpdate(dt) !== 'started') return false;
     this.restart();
     return true;
   }
 
+  /**
+   * Domínio: a cada `DOMINIO_REPLANEJA_S` cada bot (os rebeldes e os aliados) escolhe o ponto em que vai (capturar ou guardar,
+   * `DominioObjetivos.atribuirPontos`) e recebe a ordem de **segurar posto** ali: trocam tiro em volta do posto e não o abandonam
+   * perseguindo quem está longe. Só manda ordem a quem mudou de ponto (ou perdeu a ordem). Custo: ≤ 40 bots × 5 pontos a cada 2 s.
+   */
+  private dirigirOsBots(dt: number): void {
+    const d = this.dominio;
+    if (!d || d.ended) return;
+    this.replanejaEm -= dt;
+    if (this.replanejaEm > 0) return;
+    this.replanejaEm = DOMINIO_REPLANEJA_S;
+    this.dirigirLado(d, 'red', this.bots, this.rumoRed);
+    if (this.allies) this.dirigirLado(d, 'blue', this.allies, this.rumoBlue);
+  }
+
+  private dirigirLado(d: Dominio, lado: DominioLado, sistema: BotSystem, rumo: number[]): void {
+    const mechs = sistema.mechs;
+    atribuirPontos(d.pontos, lado, mechs, rumo, this.rumoNovo, this.cargaDosPontos);
+    for (let i = 0; i < mechs.length; i++) {
+      const novo = this.rumoNovo[i]!;
+      const cerebro = sistema.brainOf(mechs[i]!);
+      if (!cerebro || novo < 0) {
+        rumo[i] = novo;
+        continue;
+      }
+      if (novo !== rumo[i] || cerebro.order !== 'hold') cerebro.receiveOrder('hold', this.pontosV3[novo]!, null);
+      rumo[i] = novo;
+    }
+  }
+
   /** Recomeça o objetivo usando os mesmos corpos físicos e pools. */
   restartMission(): void {
-    if (!this.waves && !this.ctf) return;
+    if (!this.waves && !this.ctf && !this.dominio) return;
     this.players.forEach((m, i) => {
       const [x, z] = this.ctf
         ? [CTF_BASES.blue.x + CTF_PLAYER_OFFSET_X, CTF_BASES.blue.z]
-        : this.spawnPoints[i % this.spawnPoints.length]!;
+        : this.dominio
+          ? NASCIMENTOS_DO_DOMINIO.blue[0]!
+          : this.spawnPoints[i % this.spawnPoints.length]!;
       m.respawn(this._spawn.set(x, 0, z));
     });
-    if (this.ctf) this.bots.respawnAll();
+    if (this.ctf || this.dominio) this.bots.respawnAll();
+    if (this.dominio) {
+      this.allies?.respawnAll();
+      this.rumoRed.fill(-1);
+      this.rumoBlue.fill(-1);
+      this.replanejaEm = 0;
+    }
     this.projectiles.clear();
     this.rockets.clear();
     this.barrage.clear();
@@ -651,6 +742,7 @@ export class Match {
     this.round.resetScores();
     this.waves?.reset();
     this.ctf?.reset();
+    this.dominio?.reset();
   }
 
   private applyWaveRoster(plan: WavePlan | null): void {
