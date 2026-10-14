@@ -1,17 +1,28 @@
 /**
- * A parte pura da publicação do site pelo PC do Comandante (13/10, P105: "publicação automática, facilitada, eficiente e gratuita; não quero pagar o GitHub"):
+ * A parte pura da publicação do site pelo PC do Comandante (13/10, P105: "publicação automática, facilitada, eficiente e gratuita; não quer pagar o GitHub"):
  * ler a configuração, travar o destino, montar os comandos, decidir se há o que publicar e conferir o que chegou. Nada aqui abre rede, disco ou processo:
  * quem roda (`scripts/publicar-site.mjs`) injeta isso, e `server/publicarSite.test.ts` cobre tudo.
  *
  * **A configuração fica fora do repositório** (R2/R10: nenhum host, usuário ou caminho do servidor no git): um JSON na pasta de dados do servidor (a mesma do
  * `contas.db`, que a atualização automática nunca apaga): `{ "host": "…", "port": 65002, "user": "…", "path": "/home/<usuario>/domains/selvamkt.com.br/public_html/cybermech", "key": "~/.ssh/id_ed25519" }`.
  * **Trava (a mesma do deploy do Actions):** o destino tem de terminar em `/public_html/cybermech`; a raiz do domínio é o site real da Selva MKT.
+ *
+ * **O envio em duas fases (14/10, a lição do site meio publicado):** o pacote sobe INTEIRO para dentro do destino, a soma dele no servidor é conferida contra a do
+ * PC e **só então** ele é extraído. Antes, o `tar` do PC extraía no servidor enquanto transmitia (um cano só): quando a conexão era cortada no meio, o `index.html`
+ * novo já tinha aterrissado e os `assets/` de nome com hash não — o jogo abria com 404 em todos os scripts. Um arquivo inteiro e conferido não tem meio caminho.
+ *
+ * **Duas fases, três comandos:** o `tar` empacota no PC (o pacote sai FORA da pasta do site, senão entraria nele mesmo), `cat >` sobe o arquivo, `sha256sum` confere
+ * a soma no servidor e `tar -xzf` extrai. Cada argumento é um item de lista: nada passa por shell local; do outro lado só o caminho validado é tocado.
  */
 
 /** O destino é só o que o site do jogo usa: letras, números, ponto, hífen, sublinhado e barra (nada que o shell remoto interprete). */
 const CAMINHO_SEGURO = /^\/[A-Za-z0-9._\-/]+$/;
 const HOST_SEGURO = /^[A-Za-z0-9.\-]+$/;
 const USUARIO_SEGURO = /^[A-Za-z0-9._\-]+$/;
+
+/** O pacote montado no PC (um nível acima da pasta do site) e o nome com que ele espera no servidor, já dentro do destino. */
+export const PACOTE_DO_SITE = 'site-pacote.tgz';
+export const PACOTE_NO_SERVIDOR = '.publicar-site.tgz';
 
 /**
  * Valida a configuração. Devolve `{ ok: true, cfg }` ou `{ ok: false, erros }` (frases para a tela, sem repetir valor nenhum).
@@ -41,18 +52,25 @@ export function validarConfig(bruto) {
 }
 
 /**
- * Os dois programas do envio: `tar` empacota a pasta do site e o `ssh` desempacota no destino (a máquina do Comandante é Windows e não tem `rsync`).
- * Só espelha o que há (não apaga o que saiu do build: apagar é decisão à parte, e nunca fora da pasta do jogo). Cada argumento é um item de lista: nada passa por shell local.
+ * Os comandos do envio em duas fases. O `tar` roda no PC (com o `cwd` na pasta do site: o tar do Git trata "D:\\pasta" como "máquina D"), empacota a pasta e
+ * escreve o pacote **um nível acima dela** (`../`, senão o pacote entraria dentro de si mesmo); o `ssh` sobe o arquivo, confere a soma e, por último, extrai.
+ * Só espelha o que há (não apaga o que saiu do build: apagar é decisão à parte, e nunca fora da pasta do jogo).
  * @param {{ host: string, user: string, port: number, path: string, key?: string }} cfg
  * @param {string} pastaDoSite a pasta montada (`.tmp/site`)
  */
 export function comandosDeEnvio(cfg, pastaDoSite) {
   const ssh = ['-p', String(cfg.port), '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=20', '-o', 'StrictHostKeyChecking=yes'];
   if (cfg.key) ssh.push('-i', cfg.key);
+  const noServidor = `${cfg.path}/${PACOTE_NO_SERVIDOR}`;
   return {
-    // O tar roda com `cwd` na pasta do site (`pastaDoSite`): o tar do Git trata "D:\\pasta" como "máquina D".
-    empacotar: { programa: 'tar', args: ['-czf', '-', '.'], cwd: pastaDoSite },
-    desempacotar: { programa: 'ssh', args: [...ssh, `${cfg.user}@${cfg.host}`, `mkdir -p '${cfg.path}' && cd '${cfg.path}' && tar -xzf -`] },
+    empacotar: { programa: 'tar', args: ['-czf', `../${PACOTE_DO_SITE}`, '.'], cwd: pastaDoSite },
+    // O pacote sobe pelo `stdin` do ssh (o chamador manda os bytes do arquivo): nenhum caminho de shell local.
+    enviarPacote: { programa: 'ssh', args: [...ssh, `${cfg.user}@${cfg.host}`, `cat > '${noServidor}'`] },
+    // O `cd` não é enfeite: o `sha256sum` imprime o caminho que recebeu, e `lerSomas` guarda a linha como ela sai — então o nome tem de ser o do arquivo,
+    // igual ao da extração, senão a conferência compara chaves diferentes e reprova um pacote que chegou certo (achado no primeiro teste real, 14/10).
+    conferirPacote: { programa: 'ssh', args: [...ssh, `${cfg.user}@${cfg.host}`, `cd '${cfg.path}' && sha256sum '${PACOTE_NO_SERVIDOR}'`] },
+    // Extrai o arquivo JÁ conferido e apaga o pacote; limpa o pacote só depois de extrair (falhou, fica para a investigação).
+    extrair: { programa: 'ssh', args: [...ssh, `${cfg.user}@${cfg.host}`, `cd '${cfg.path}' && tar -xzf '${PACOTE_NO_SERVIDOR}' && rm -f '${PACOTE_NO_SERVIDOR}'`] },
     conferir: (arquivos) => ({ programa: 'ssh', args: [...ssh, `${cfg.user}@${cfg.host}`, `cd '${cfg.path}' && sha256sum ${arquivos.map((a) => `'${a}'`).join(' ')}`] }),
   };
 }
@@ -68,13 +86,33 @@ export function lerSomas(saida) {
   return m;
 }
 
-/** Os arquivos que dizem se o site novo chegou (a landing, o jogo, o painel e o `.htaccess`). */
+/**
+ * Os arquivos que dizem se o site novo chegou (a landing, o jogo, o painel e o `.htaccess`). Quem chama junta a esta lista os `assets/` que o próprio
+ * `jogar/index.html` pede (`assetsDoJogo`): era exatamente o que faltava quando o site caiu (14/10) e a conferência de então não olhava para eles.
+ */
 export const ARQUIVOS_DE_CONFERENCIA = ['index.html', 'jogar/index.html', 'sala-de-controle/index.html', '.htaccess'];
+
+/**
+ * Os `assets/` que o jogo publicado pede (o que o navegador baixa para abrir a página), na ordem em que aparecem, sem repetir. Devolve o caminho **a partir da raiz do
+ * site** — os endereços do `jogar/index.html` são relativos a ele (`./assets/x.js` é `jogar/assets/x.js` na raiz); foi assim que a conferência reprovou um pacote
+ * que chegou certo no primeiro teste real (14/10: ela procurava `assets/x.js` na raiz). Nome estranho não entra: a lista vai para dentro de um comando remoto,
+ * então só passam letras, números, ponto, sublinhado, hífen e barra.
+ * @param {string} html o `jogar/index.html` montado no PC
+ * @param {string} pasta onde a página mora, a partir da raiz do site (`jogar`)
+ */
+export function assetsDoJogo(html, pasta = 'jogar') {
+  const raiz = /^[A-Za-z0-9._/-]+$/.test(pasta) ? pasta.replace(/\/+$/, '') : 'jogar';
+  const nomes = new Set();
+  for (const m of String(html).matchAll(/(?:src|href)="\.\/(assets\/[^"]+)"/g)) {
+    if (/^assets\/[A-Za-z0-9._/-]+$/.test(m[1])) nomes.add(`${raiz}/${m[1]}`);
+  }
+  return [...nomes];
+}
 
 /** O que o PC montou contra o que o servidor tem: `ok` só se todos os arquivos conferem. */
 export function compararSomas(local, remoto) {
-  const diferentes = ARQUIVOS_DE_CONFERENCIA.filter((a) => !local[a] || local[a] !== remoto[a]);
-  return { ok: diferentes.length === 0, diferentes };
+  const diferentes = Object.keys(local).filter((a) => !local[a] || local[a] !== remoto[a]);
+  return { ok: diferentes.length === 0 && Object.keys(local).length > 0, diferentes };
 }
 
 /**

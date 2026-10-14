@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARQUIVOS_DE_CONFERENCIA, comandosDeEnvio, compararSomas, devePublicar, lerSomas, validarConfig } from '../scripts/publicarSite.mjs';
+import { ARQUIVOS_DE_CONFERENCIA, PACOTE_DO_SITE, PACOTE_NO_SERVIDOR, assetsDoJogo, comandosDeEnvio, compararSomas, devePublicar, lerSomas, validarConfig } from '../scripts/publicarSite.mjs';
 
 const BOA = { host: 'servidor.exemplo.com', port: 65002, user: 'u123', path: '/home/u123/domains/selvamkt.com.br/public_html/cybermech', key: '~/.ssh/id_ed25519', url: 'https://www.selvamkt.com.br/cybermech/', gameServer: 'wss://jogo.selvamkt.com.br' };
 const hash = (c: string) => c.repeat(64).slice(0, 64);
@@ -46,32 +46,68 @@ describe('publicar o site pelo PC (sem o GitHub Actions): a configuração e a t
   });
 });
 
-describe('o envio: tar e ssh, cada argumento separado (nada passa por shell local)', () => {
+describe('o envio em duas fases: empacota no PC, sobe o arquivo inteiro, confere a soma e só então extrai', () => {
   const r = validarConfig(BOA);
   const cfg = r.ok ? r.cfg : (null as never);
 
-  it('empacota a pasta do site (com o cwd nela) e desempacota no destino, só dentro dele', () => {
+  it('empacota a pasta do site com o cwd nela e escreve o pacote FORA dela (senão o pacote entraria em si mesmo)', () => {
+    expect(comandosDeEnvio(cfg, 'D:/projeto/.tmp/site').empacotar).toEqual({ programa: 'tar', args: ['-czf', `../${PACOTE_DO_SITE}`, '.'], cwd: 'D:/projeto/.tmp/site' });
+  });
+
+  it('sobe o pacote pelo stdin do ssh, confere a soma dele lá e só então extrai — tudo dentro do destino validado', () => {
     const c = comandosDeEnvio(cfg, 'D:/projeto/.tmp/site');
-    expect(c.empacotar).toEqual({ programa: 'tar', args: ['-czf', '-', '.'], cwd: 'D:/projeto/.tmp/site' });
-    expect(c.desempacotar.programa).toBe('ssh');
-    const a = c.desempacotar.args;
-    expect(a.slice(0, 2)).toEqual(['-p', '65002']);
-    expect(a).toContain('BatchMode=yes'); // nunca pergunta senha: ou a chave vale, ou falha
-    expect(a).toContain('StrictHostKeyChecking=yes'); // só o servidor que já conhecemos
-    expect(a[a.indexOf('-i') + 1]).toBe('~/.ssh/id_ed25519');
-    expect(a.at(-2)).toBe('u123@servidor.exemplo.com');
-    expect(a.at(-1)).toBe(`mkdir -p '${BOA.path}' && cd '${BOA.path}' && tar -xzf -`);
-    // O comando remoto só mexe no destino validado: não há `--delete`, `rm` nem caminho fora dele.
-    expect(a.at(-1)).not.toMatch(/rm |--delete|\.\.\/|\/home\/u123\/domains\/selvamkt.com.br\/public_html'/);
+    for (const passo of [c.enviarPacote, c.conferirPacote, c.extrair]) {
+      expect(passo.programa).toBe('ssh');
+      expect(passo.args.slice(0, 2)).toEqual(['-p', '65002']);
+      expect(passo.args).toContain('BatchMode=yes'); // nunca pergunta senha: ou a chave vale, ou falha
+      expect(passo.args).toContain('StrictHostKeyChecking=yes'); // só o servidor que já conhecemos
+      expect(passo.args[passo.args.indexOf('-i') + 1]).toBe('~/.ssh/id_ed25519');
+      expect(passo.args.at(-2)).toBe('u123@servidor.exemplo.com');
+    }
+    expect(c.enviarPacote.args.at(-1)).toBe(`cat > '${BOA.path}/${PACOTE_NO_SERVIDOR}'`);
+    // A conferência entra na pasta antes do sha256sum: ele imprime o caminho que recebeu e `lerSomas` guarda a linha como ela sai — nome nu, igual ao
+    // que a extração usa. Com o caminho inteiro, a chave não bate com o nome do arquivo e a publicação reprova um pacote que chegou certo (14/10).
+    expect(c.conferirPacote.args.at(-1)).toBe(`cd '${BOA.path}' && sha256sum '${PACOTE_NO_SERVIDOR}'`);
+    expect(lerSomas(`${'a'.repeat(64)}  ${PACOTE_NO_SERVIDOR}\n`)[PACOTE_NO_SERVIDOR]).toBe('a'.repeat(64));
+    // A extração apaga o pacote SÓ depois de extrair (falhou, ele fica para a investigação) e anda só dentro do destino.
+    expect(c.extrair.args.at(-1)).toBe(`cd '${BOA.path}' && tar -xzf '${PACOTE_NO_SERVIDOR}' && rm -f '${PACOTE_NO_SERVIDOR}'`);
+    for (const passo of [c.enviarPacote, c.conferirPacote, c.extrair]) {
+      expect(passo.args.at(-1)).not.toMatch(/--delete|\.\.\/|\/public_html'|\/public_html /);
+    }
   });
 
   it('sem chave configurada, não manda -i (o ssh usa as chaves do usuário); a conferência lê os checksums dos arquivos-chave no destino', () => {
     const sem = validarConfig({ ...BOA, key: undefined });
     const cfgSem = sem.ok ? sem.cfg : (null as never);
-    expect(comandosDeEnvio(cfgSem, 'x').desempacotar.args).not.toContain('-i');
+    expect(comandosDeEnvio(cfgSem, 'x').extrair.args).not.toContain('-i');
     const conf = comandosDeEnvio(cfg, 'x').conferir(ARQUIVOS_DE_CONFERENCIA);
     expect(conf.programa).toBe('ssh');
     expect(conf.args.at(-1)).toBe(`cd '${BOA.path}' && sha256sum 'index.html' 'jogar/index.html' 'sala-de-controle/index.html' '.htaccess'`);
+  });
+});
+
+describe('o que o navegador pede para abrir o jogo entra na conferência (a falha de 14/10)', () => {
+  const HTML = `<!doctype html><html><head>
+    <script type="module" crossorigin src="./assets/index-MEyQz7SO.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/preload-helper-CV_M1NlO.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-Z07u_NGl.css">
+    <link rel="stylesheet" crossorigin href="./assets/index-Z07u_NGl.css">
+    <link rel="icon" href="data:,">
+  </head><body></body></html>`;
+
+  it('tira do index.html os assets do jogo, sem repetir, na ordem em que o navegador os pede e com o caminho a partir da raiz do site', () => {
+    // O `index.html` do jogo mora em `jogar/`: o `./assets/x.js` dele é `jogar/assets/x.js` na raiz do site (era o erro de 14/10: a conferência
+    // procurava `assets/x.js` na raiz, o servidor dizia "No such file or directory" e reprovava um pacote que chegou certo).
+    expect(assetsDoJogo(HTML)).toEqual(['jogar/assets/index-MEyQz7SO.js', 'jogar/assets/preload-helper-CV_M1NlO.js', 'jogar/assets/index-Z07u_NGl.css']);
+    expect(assetsDoJogo(HTML, 'outra/pasta/')).toEqual(['outra/pasta/assets/index-MEyQz7SO.js', 'outra/pasta/assets/preload-helper-CV_M1NlO.js', 'outra/pasta/assets/index-Z07u_NGl.css']);
+    expect(assetsDoJogo(HTML, 'pasta torta; rm -rf /')).toEqual(['jogar/assets/index-MEyQz7SO.js', 'jogar/assets/preload-helper-CV_M1NlO.js', 'jogar/assets/index-Z07u_NGl.css']);
+  });
+
+  it('ignora endereço que não é asset local (o data:, um site de fora) e o que tem caractere que o shell remoto poderia interpretar', () => {
+    const sujo = `<script src="https://outro.exemplo/x.js"></script><img src="./assets/foto.png"><script src="./assets/a b.js"></script><script src="./assets/a'b.js"></script><script src="./assets/a;b.js"></script>`;
+    expect(assetsDoJogo(sujo)).toEqual(['jogar/assets/foto.png']);
+    expect(assetsDoJogo('')).toEqual([]);
+    expect(assetsDoJogo('<script src="./assets/index.js"></script>')).toEqual(['jogar/assets/index.js']);
   });
 });
 

@@ -1,5 +1,24 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O site caiu: 404 em TODOS os assets do jogo, e o envio não deixa mais o site meio publicado — Qwen, 14/10 (queixa do Comandante; branch `qwen/publicacao-inteira`)
+
+**A queixa (14/10, 17:47 no relógio do PC):** o jogo não abria — `GET https://selvamkt.com.br/cybermech/jogar/assets/index-MEyQz7SO.js net::ERR_ABORTED 404`, e o `preload-helper-CV_M1NlO.js` idem.
+
+**O que estava no ar (conferido por HTTP, não deduzido):** o `jogar/index.html` era o do build **novo** (`a814ed1`; pede `index-MEyQz7SO.js`, `preload-helper-CV_M1NlO.js`, `index-Z07u_NGl.css`) e o servidor só tinha os assets do build **anterior** (`index-BOvfq4FF.js`, `preload-helper-B29ClwWa.js`, `Game-BW1jyODX.js` — todos 200). Ou seja: **`index.html` novo, `assets/` velhos** — o jogo carrega a página e todos os scripts 404.
+
+**A causa:** o envio do site era **um cano só**: o `tar` do PC escrevia dentro do `ssh`, e o `tar` do servidor **extraía enquanto recebia**, direto na pasta pública. Uma conexão cortada no meio extraía parte do pacote (o `index.html` novo aterrissou; os `assets/`, não) e — como o envio antigo não conferia nada antes de extrair — o site ficava **meio publicado**. A publicação que morria assim **não deixava rastro**: o processo é lançado pelo WMI e o console dele não ia a lugar nenhum; o `publicar-site.log` mostra `enviando para o servidor (tentativa 1/5)…` às 20:13:39 e 20:33:04 UTC **sem uma linha depois** (nem sucesso, nem falha, nem "nova tentativa"). As rodadas de ~20:22 e ~20:42 não deixaram linha nenhuma (o único caminho que sai sem escrever no log é a **trava**, "já há uma publicação rodando"), é o que explica o site ter ficado fora do ar ~40 min com as rodadas de 10 min rodando. O publicador das 20:52:49 publicou `a814ed1` em 5 s e **o jogo voltou** — sem ninguém apertar nada.
+
+**O que mudou (este PR):** o envio agora tem **duas fases**. O PC empacota o site **num arquivo** (`tar`, fora da pasta do site), **sobe o arquivo inteiro** para dentro do destino (`cat >` pelo `ssh`), **confere a soma dele no servidor** (`sha256sum`) e **só então extrai** — e no fim confere por checksum que o servidor tem os mesmos arquivos do PC. Qualquer passo que falhe (inclusive a conferência final) **refaz o ciclo inteiro**, até 5 tentativas. Uma conexão cortada agora **não muda nada no ar**.
+- **A conferência passou a olhar o que o navegador baixa:** além de `index.html`, `jogar/index.html`, `sala-de-controle/index.html` e `.htaccess`, ela lê do próprio `jogar/index.html` os `assets/` que a página pede (`assetsDoJogo`, puro e testado). Era exatamente o buraco por onde o site caiu, e ninguém conferia.
+- **Limite de tempo em cada passo pelo `ssh`** (240 s no envio e na extração, 60 s na conferência): conexão pendurada vira **erro + nova tentativa** em vez de espera infinita (a que segurava a trava e travava as rodadas seguintes).
+- **O console do publicador lançado pelo WMI** agora é anexado em `<worktree>\.tmp\servidor\publicar-site-console.log` (era o buraco: um erro não tratado não deixava rastro).
+- **Aviso no log** quando o HEAD publicado **não é a `origin/main`**: publicar do branch em que a pasta está põe código não mergeado no ar, e aconteceu hoje — o publish das 20:02:35 foi do `8cb80d5`, o HEAD da **pasta principal** (que estava no branch `qwen/o-mapa-da-praia`), e não da `main`. Fica registrado como decisão em aberto (recusar?).
+- **Testes:** `server/publicarSite.test.ts` → **12 ✓** (o contrato dos comandos de duas fases, a sanidade da lista de assets lidos do HTML e o resto como estava). `DEPLOY.md` atualizado com o fluxo e a lição.
+
+**Falta no PC (precisa do Comandante, PowerShell como administrador):** a tarefa "CYBERMECH atualizar" está com **limite `PT5M`**; o `DEPLOY.md` prevê **20 min** (`.\scripts\servidor-atualizar.ps1`, uma vez, aplica). Uma rodada que passe de 5 min é **cortada no meio** pelo Agendador (houve rodada de 4 min 34 s medida hoje, com o `typecheck` + testes do servidor) — o marcador `reinicio-pendente` cobre o reinício do servidor, mas a rodada cortada **não chega a lançar o publicador**.
+
+**Onde ver:** `www.selvamkt.com.br/cybermech/jogar/` — o jogo voltou às 17:53 (local) com `PUBLICADO: a814ed1` no `publicar-site.log`, e os três assets do `index.html` publicado respondem.
+
 ## A praia dos cabos ABRE no jogo: o mar de fim de tarde e a cidade costeira — Qwen, 14/10 (PR `qwen/o-mapa-da-praia`, ordem P126, passo 3)
 
 **Passo 3 — o construtor e a fiação.** O mapa **existe e abre** por **`?mapa=praia`**.
@@ -1782,9 +1801,10 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Aliados na Arena online (rede) | **Feito offline** (30/09, ver ÚLTIMA SESSÃO FEZ). Falta só o servidor: `ArenaRoom.ts` desliga `allies` de propósito porque o roster de rede não sabe descrever um aliado pros outros jogadores ainda (ficariam invisíveis, fora de sincronia). `STATUS_REAL.md` marca AUSENTE no online até o roster aprender. |
 | Vídeo promocional por prompt/botões no `/mesa` | **Feito (29/09):** a mesa já tinha o formulário; ganhou "gerar por IA" (escreve o roteiro a partir de uma frase, ancorado nos fatos do projeto) e a cena `clipe` (mistura gameplay real gravado no F9 com as cenas desenhadas, cortado por `ffmpeg`). Ver `.decepticons/FERRAMENTAS.md`. |
 | Gerenciar as imagens do site sem código (deletar, reordenar, trocar) | Pedido do dono (29/09), depois de achar 3 fotos idênticas na landing (causa real: `capture()` falhando em silêncio — corrigido no mesmo PR, agora falha alto e nunca mais publica foto errada) e pedir um carrossel: **o carrossel entrou** (`scripts/landing.mjs`, gira sozinho entre as capturas que existirem). O que falta é maior — um jeito de escolher/ordenar/remover imagens sem editar `SHOTS` no código. Hoje as capturas são 100% automáticas (o robô entra no jogo e fotografa a cada deploy); um painel de curadoria manual é uma ferramenta nova, não uma correção. Não iniciado; precisa de decisão (onde mora a lista — arquivo versionado editável por formulário local, ou algo mais) antes de construir. |
+| **Publicar de um branch põe código não mergeado no ar (14/10, Qwen)** | O `npm run publicar-site` publica o **HEAD da pasta onde roda** — é assim que o atualizador publica a `main` da worktree do servidor, e é o que permite publicar à mão de qualquer pasta. O risco ficou visível hoje: o publish das **20:02:35** (14/10) foi do `8cb80d5`, o HEAD da **pasta principal**, que estava no branch `qwen/o-mapa-da-praia`, e não da `main` — o log passou a avisar quando isso acontece, mas **avisar não impede**. **Decidir:** (a) recusar publicar quando o HEAD não é a `origin/main` (com `--forcar` para quem sabe o que faz — recomendado, alinha com a regra 14: só o merge publica); (b) deixar como está, agora com o aviso no log; (c) publicar sempre a `origin/main` (a pasta não escolhe mais, `--se-mudou` compara com ela). |
 
 ## BLOQUEIOS
-- Nenhum.
+- Nenhum (o site voltou ao ar em 14/10, 17:53).
 
 ## PRÓXIMA SESSÃO COMEÇA COM
 
