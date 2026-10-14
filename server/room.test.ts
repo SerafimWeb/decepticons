@@ -677,13 +677,16 @@ describe('Lança-chamas online: o servidor aplica o cone, a bandeira vai na rede
     room.dispose();
   });
 
-  it('o servidor recusa o lança-chamas num chassi leve (Vector-09) e aceita nos pesados', async () => {
+  it('o lança-chamas agora é aceito em qualquer Mech (P120); o que não cabe (arma de ombro na mão) é recusado', async () => {
     const room = await ArenaRoom.create('CHAMA');
     const ok = new FakePeer();
     room.receive(ok, join('Dan', CHAMA));
     expect(ok.of(MSG.WELCOME)).toHaveLength(1);
+    const leve = new FakePeer();
+    room.receive(leve, join('Ana', 'v1.vector09.flamer-0.rockets-0'));
+    expect(leve.of(MSG.WELCOME)).toHaveLength(1);
     const ruim = new FakePeer();
-    room.receive(ruim, join('Ana', 'v1.vector09.flamer-0.rockets-0'));
+    room.receive(ruim, join('Bia', 'v1.vector09.sonic-0.rockets-0')); // o sônico é só de ombro, e o Vector-09 não tem ombros
     expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
     expect(ruim.of(MSG.REJECT).length).toBeGreaterThan(0);
     room.dispose();
@@ -727,18 +730,21 @@ describe('Armas de aço online: o tiro de cada uma vira evento de tiro e o dano 
     room.dispose();
   });
 
-  it('o servidor recusa o canhão pesado num chassi leve (Vector-09) e aceita nos pesados; o automático vai em ambos', async () => {
+  it('o canhão pesado agora é aceito em qualquer Mech (P120); o automático vai em ambos; o que não cabe é recusado', async () => {
     const room = await ArenaRoom.create('ACO');
     const ok = new FakePeer();
     room.receive(ok, join('Dan', CANHAO));
     expect(ok.of(MSG.WELCOME)).toHaveLength(1);
     const leve = new FakePeer();
     room.receive(leve, join('Ana', 'v1.vector09.cannon-0.rockets-0'));
-    expect(leve.of(MSG.WELCOME)).toHaveLength(0);
-    expect(leve.of(MSG.REJECT).length).toBeGreaterThan(0);
+    expect(leve.of(MSG.WELCOME)).toHaveLength(1);
     const auto = new FakePeer();
     room.receive(auto, join('Bia', AUTOMATICO));
     expect(auto.of(MSG.WELCOME)).toHaveLength(1);
+    const ruim = new FakePeer();
+    room.receive(ruim, join('Caio', 'v1.vector09.siege-0.rockets-0')); // o cerco é de tamanho 3: não cabe num Mech de tamanho 2
+    expect(ruim.of(MSG.WELCOME)).toHaveLength(0);
+    expect(ruim.of(MSG.REJECT).length).toBeGreaterThan(0);
     room.dispose();
   });
 

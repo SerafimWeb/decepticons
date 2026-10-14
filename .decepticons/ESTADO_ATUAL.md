@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Todos os robôs, todas as armas (as possíveis): a curadoria virou contrato — Qwen, 14/10 (PR `qwen/armas-do-contrato`, ordem P120)
+
+**Ordem do Comandante (14/10):** "quero que todos os robôs possam usar todas as armas" e, logo depois, o limite: "é só das que sejam possíveis mesmo, não precisa inventar nova regra que estrague algo mais correto anterior".
+
+**O que mudou (`entities/chassis.ts`):** `ARM_SLOTS` deixou de ser uma **lista escolhida a dedo** por chassi e passou a ser o **contrato** — cada braço oferece **toda** arma que caiba pelo **tipo de encaixe** (`fitsMount`) e pelo **tamanho do chassi** (`fitsSize`), menos as regras de **disparo** que já são do jogo (`combat/Armament.ts`) e **não mudaram**:
+- o braço **direito** é o gatilho **principal** (energia, munição e a chama) — **não** leva o corte (o principal chamaria um projétil no lugar da serra) nem a chuva de mísseis (a salva é do secundário);
+- o braço **esquerdo**, nos chassis comuns, é o gatilho **secundário** (mísseis, corte e onda) — **não** acende chama nem gira o cano da rotatória; no **Marauder** (duas mãos no principal) vale o mesmo do direito.
+
+**O que o Comandante vê agora no Hangar:** o **lança-chamas** e o **canhão pesado** em **todo Mech** (Vector-09, Arara, Gênesis, Quadra, Onça, Bastion, Marauder) e o **canhão** também na mão esquerda; o **Andróide** com as cinco armas **leves** (blaster, motosserra, escopeta, elétrica, EMP); o **Colossus-01** também com o **canhão de cerco** (tamanho 3); e o **foguete** passou a ser possível na mão direita (o principal sabe lançar munição, como já sabia na Onça). **O que não é possível segue fora**, como ele pediu: o **canhão sônico é só de ombro** (e só o Marauder tem ombros), o **Lancer** traz a arma na própria malha, o **V4** só o de tamanho 3, e a regra de tamanho (P82) e o peso continuam valendo.
+
+**Testes:** os que fixavam a curadoria antiga foram atualizados para o contrato (`loadout.test.ts` 56, `weaponClass.test.ts` 20, `esquadrao.test.ts` 48, `mountKinds.test.ts` 11) e o **golden do esquadrão padrão** continua batendo — o jogo de fábrica não mudou uma vírgula.
+
+**Efeito colateral aceito:** os bots (que leem `ARM_SLOTS`) ganham o **canhão pesado** como opção no Esquadrão; o resto continua barrado por `armaServeAoBot`.
+
+**Onde ver:** Hangar → trocar de chassi (ex.: Vector-09) → a lista de armas do braço agora traz o **lança-chamas** e o **canhão pesado**. **Falta (R13):** o playtest e o julgamento do Comandante sobre a lista (ele ajusta numa linha).
+
 ## Os bots ganham papel: o de arma de linha fica de retaguarda e não rusha — Qwen, 14/10 (PR `qwen/bots-taticos`, ordem P119, passo 1)
 
 **Ordem do Comandante (14/10):** "os npcs e bots inimigos [estão] meio burros ainda... não se organizaram bem para ataque nem defesa... poderiam ter mais critério e técnica, não apenas correr e rushar". Este é o passo 1 da P119.

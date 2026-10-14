@@ -98,11 +98,12 @@ describe('o tamanho de cada chassi e o que cada encaixe oferece', () => {
     }
   });
 
-  it('o gigante só oferece as pesadas dos Mechs (que para ele são as leves): canhão, trilho e lança-chamas na mão principal; canhão, trilho e chuva na outra', () => {
-    expect(armOptions('right', 'colossus01')).toEqual(['railgun', 'flamer', 'cannon']);
-    expect(armOptions('left', 'colossus01')).toEqual(['railgun', 'barrage', 'cannon']);
+  it('o gigante oferece as pesadas dos Mechs (que para ele são leves) e o canhão de cerco, o pesado do tamanho dele', () => {
+    expect(armOptions('right', 'colossus01')).toEqual(['flamer', 'cannon', 'siege', 'railgun']);
+    expect(armOptions('left', 'colossus01')).toEqual(['cannon', 'siege', 'railgun', 'barrage']);
     for (const slot of ['right', 'left'] as const) {
-      for (const id of armOptions(slot, 'colossus01')) expect(classFor(id, CHASSIS_SIZE.colossus01), id).toBe('light');
+      // As armas dos Mechs são leves para ele; o canhão de cerco (tamanho 3) é a pesada dele.
+      for (const id of armOptions(slot, 'colossus01')) expect(classFor(id, CHASSIS_SIZE.colossus01), id).toBe(id === 'siege' ? 'heavy' : 'light');
     }
   });
 
@@ -148,8 +149,11 @@ describe('o Hangar agrupa as armas pela classe que o chassi enxerga', () => {
     }
   });
 
-  it('no Colossus tudo vem como LEVE (as pesadas dos Mechs); grupo vazio não aparece', () => {
-    expect(armGroups('right', 'colossus01')).toEqual([{ cls: 'light', ids: ['railgun', 'flamer', 'cannon'] }]);
+  it('no Colossus as pesadas dos Mechs vêm como LEVE (e o cerco, tamanho 3, como PESADA); grupo vazio não aparece', () => {
+    expect(armGroups('right', 'colossus01')).toEqual([
+      { cls: 'light', ids: ['flamer', 'cannon', 'railgun'] },
+      { cls: 'heavy', ids: ['siege'] },
+    ]);
     expect(armGroups('shoulders', 'vector09')).toEqual([]); // sem ombros, sem grupo
   });
 
