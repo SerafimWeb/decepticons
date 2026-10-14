@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Os bots ganham papel: o de arma de linha fica de retaguarda e não rusha — Qwen, 14/10 (PR `qwen/bots-taticos`, ordem P119, passo 1)
+
+**Ordem do Comandante (14/10):** "os npcs e bots inimigos [estão] meio burros ainda... não se organizaram bem para ataque nem defesa... poderiam ter mais critério e técnica, não apenas correr e rushar". Este é o passo 1 da P119.
+
+**O que mudou (só posição — nenhuma regra de tiro, dano, token ou balance):**
+- **`combat/tatica.ts` (novo, puro):** a arma vira **faixa** pelo alcance ótimo — **curta** (≤20: escopeta, lança-chamas, gelo, sônico), **média** (21–89: plasma, automático, elétrica, EMP, rotatória) e **linha** (≥90: canhão pesado, trilho, cerco) — e daí o **papel**: arma de perto/média/corpo a corpo = `assalto`; arma de linha = `apoio`.
+- **Retaguarda:** com **3+** lutadores e algum `assalto`, o primeiro `apoio` fica de **guarda do setor de nascimento** — troca tiro com quem chega ao seu alcance (até ~75 m) e **não persegue**, em vez de largar o posto para rushar. Um esquadrão **só** de arma de linha **não** para (senão ficaria todo parado).
+- **O corte é acima do plasma (60):** o esquadrão de fábrica (plasma = média) luta **exatamente como antes** — o teste-golden `esquadraoPadrao.test.ts` prova (as quatro partidas batem tick a tick). Só esquadrões que o Comandante monta com arma de linha ganham a retaguarda.
+- Uma ordem explícita de `hold` (o **Domínio**) **vale mais**: lá a retaguarda segue o ponto mandado, como os outros.
+
+**Testes (11 novos):** `tatica.test.ts` (9: as faixas, o papel, o corte do plasma e a escolha da retaguarda, inclusive "esquadrão só de longa não para") e 2 no `personas.test.ts` (o de trilho fica a > 45 m do alvo e não fecha; os de escopeta entram; sem arma de linha, ninguém fica de guarda). Suíte de IA inteira verde.
+
+**Custo:** zero por tick além de uma comparação (o `papel` lê a arma); nada alocado; determinístico.
+
+**Falta (R13):** o **jogo em equipe** mais fundo — quem cobre, quem flanqueia, atacar em conjunto — e o uso da arma na faixa **pelo grupo**. E o **playtest do Comandante**: só ele diz se o bando ficou com "critério e técnica".
+
+**Onde ver:** Arena com um esquadrão que misture **canhão pesado/trilho/cerco** com armas de perto (PILOTOS → ESQUADRÃO): o de arma de linha fica no setor dele trocando tiro; os de perto vêm para cima.
+
 ## A leitura do combate: números de dano, plaqueta com vida e distância, e "RECARREGANDO" — Qwen, 14/10 (PR `qwen/leitura-do-combate`, P109 frente 2)
 
 **Ordem do Comandante (14/10):** "por enquanto quero que todos os robôs possam usar todas as armas… mas antes quero dar máxima roleplay, jogabilidade, interatividade e emoção aos combates" — e, na triagem, escolheu começar pela **frente 2 da P109** (a leitura do combate). No mesmo recado vieram duas ordens novas: os **bots ainda parecem burros** (P119) e a liberação de armas é **só do que já é possível**, sem regra nova (P120).

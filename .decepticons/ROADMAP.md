@@ -268,6 +268,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] Morrer e voltar (P109, frente 3; inclui a P98): painel "seu algoz" com a ficha do matador e escolha do ponto de nascimento na contagem de reaparecer (Claude) #ux
 - [ ] Cenário com cobertura e cor por zona (P109, frente 4): contêineres, rampas e muretas instanciados e cor por região da Arena, dentro do estilo neon (Codex) #cenarios
 - [~] Modo Domínio, pontos de controle A–E (P109 frente 5 e P112, 14/10): offline pronto (`?modo=dominio`: regra pura testada, bots que capturam e guardam, bases, barra de pontos, feixes de luz, minimapa; Claude); faltam o online (`OBJECTIVE_STATE` e times na sala, P81), a campanha e o playtest #modos
+- [~] Inteligência tática dos bots (P119, 14/10): passo 1 — papel por arma (curta/média/linha) e a **retaguarda** que segura o setor de nascimento em vez de rushar (`combat/tatica.ts`, 11 testes; só posição, o esquadrão padrão de plasma segue idêntico; Qwen); faltam o jogo em equipe (cobertura, flanco, ataque conjunto) e o playtest do dono #ia
 - [ ] Ficha da arma na lista do Hangar com dano, alcance ótimo e recarga (P109; nunca "potência" nem estrelas: não é pay-to-win) #ux
 
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)

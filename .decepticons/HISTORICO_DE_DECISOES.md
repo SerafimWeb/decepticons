@@ -1,3 +1,11 @@
+## [2026-10-14] Os bots ganham papel e retaguarda — a arma de linha segura o setor, o resto entra (Qwen, P119 passo 1)
+
+**Situação:** o Comandante achou os bots "meio burros, bagunçados, que só correm e rusham" e pediu critério e técnica no ataque e na defesa.
+
+**Decisões:** (1) **papel pela arma** (`combat/tatica.ts`): só a arma de **linha** (≥90 m: canhão pesado, trilho, cerco) vira `apoio`; a **média** (o plasma, padrão do jogo) fica `assalto` — o corte em 90 é justamente para o plasma (60) **não** virar apoio, e assim o jogo aprovado não muda. (2) **Retaguarda:** com 3+ lutadores e algum de perto, o primeiro `apoio` segura o setor de nascimento e não persegue; esquadrão só de longa **não** para (senão fica todo parado). (3) É **só posição**: nenhuma regra de tiro, dano, token ou balance mudou — o teste-golden do esquadrão padrão continua batendo. (4) A ordem explícita de `hold` (o Domínio) tem precedência.
+
+**Quem decidiu:** Qwen (a ordem é do Comandante; o corte da faixa em 90 m e o tamanho mínimo de esquadrão em 3 são proposta minha, ajustáveis numa linha).
+
 ## [2026-10-14] A leitura do combate: número de dano, barra e distância na plaqueta, "RECARREGANDO" (Qwen, P109 frente 2)
 
 **Situação:** o Comandante escolheu começar a P109 pela **frente 2** (a leitura do combate) e, no mesmo recado, pediu **inteligência tática nos bots** (a P119) e travou a liberação de armas no **que já é possível** (a P120).
