@@ -54,6 +54,7 @@ import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
 import { PlayerController } from '../player/PlayerController';
 import { DamageIndicator } from '../ui/DamageIndicator';
+import { DamageNumbers } from '../ui/DamageNumbers';
 import { StatusBadges } from '../ui/StatusBadges';
 import { TargetPanel } from '../ui/TargetPanel';
 import { StatusHud } from './statusHud';
@@ -156,6 +157,8 @@ const _aimDir = new THREE.Vector3();
 const BLAST_COLOR = new THREE.Color(3.2, 1.3, 0.25);
 const SMOKE_COLOR = GLOW.smoke;
 const _aimFrom = new THREE.Vector3();
+/** Onde nasce o número de dano flutuante (a cabeça do alvo). */
+const _dmgPos = new THREE.Vector3();
 
 /**
  * O jogo no navegador: monta a partida (`sim/Match`, a simulação que o servidor também vai rodar) e
@@ -235,6 +238,7 @@ export class Game {
   private readonly online: OnlineSession | null;
   private readonly netStatus = document.createElement('div');
   private readonly damageIndicator = new DamageIndicator();
+  private readonly damageNumbers = new DamageNumbers();
   private readonly targetPanel = new TargetPanel();
   /** Estados do jogador (fogo, choque, gelo) na tela e no som: os indicadores e as bordas são do Gemini, a ponte é `core/statusHud.ts`. */
   private readonly statusBadges = new StatusBadges(document.getElementById('hud')!);
@@ -581,7 +585,15 @@ export class Game {
         scene: this.scene,
         onStatus: (s) => this.showNet(s),
         onBank: (reply) => this.acceptBank(reply),
-        onDamage: (amount) => this.playTelemetry.hit(amount),
+        onDamage: (amount, hit) => {
+          this.playTelemetry.hit(amount);
+          // Número de dano flutuante online (frente 2): o servidor manda o valor; o alvo dá o lugar.
+          if (hit) {
+            _dmgPos.copy(hit.position);
+            _dmgPos.y += hit.stats.height * 0.7;
+            this.damageNumbers.show(this.camera, _dmgPos, amount);
+          }
+        },
         onRoundEnd: () => this.playTelemetry.finish('completed'),
         onKill: (killer, dead, mine) => {
           this.killFeed.push(killer, dead, mine);
@@ -1094,6 +1106,12 @@ export class Game {
         this.playTelemetry.hit(e.result.applied);
         // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar)
         this.audio.playHit();
+        // Número de dano flutuante (frente 2): nasce no corpo do alvo, sobe e some.
+        if (e.mech !== mech) {
+          _dmgPos.copy(e.mech.position);
+          _dmgPos.y += e.mech.stats.height * 0.7;
+          this.damageNumbers.show(this.camera, _dmgPos, e.result.applied, e.result.partDestroyed);
+        }
       }
       if (e.mech === mech) {
         this.hud.showDamage();
@@ -1534,7 +1552,7 @@ export class Game {
     this.dominioPontos?.update(dt);
     this.dominioHud.update(dt);
     this.online?.render(dt, now);
-    this.nameplates.update(this.mech);
+    this.nameplates.update(dt, this.mech);
     if (this.mech.alive && this.killCam.overridesRig) this.killCam.release();
     if (this.spectatorCam.overridesRig) {
       this.spectatorCam.update(dt);
@@ -1648,6 +1666,7 @@ export class Game {
     this.bankTerminal.updateBoost(this.mech.alive ? (this.online ? this.bankOnlineBoost : this.mech.combatBoost.secondsLeft) : 0, this.playing && !this.hangarView, this.online ? this.bankOnlineMultiplier : this.mech.combatBoost.damageMultiplier);
     this.hud.setRespawn(this.respawner.timeLeft(this.mech), this.killCam.active);
     this.killFeed.update(dt);
+    this.damageNumbers.update(dt);
     this.onboarding.update(dt);
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
     // Nos últimos 3 s do intervalo: RODADA N · 3 · 2 · 1 (só leitura do relógio da rodada; ninguém é segurado no lugar).
@@ -1655,6 +1674,8 @@ export class Game {
     // Só o gatilho de carregador (foguetes) tem pips para esvaziar; serra e arma de energia ficam cheios.
     const noMagazine = this.mech.loadout.secondary?.kind !== 'ammo';
     this.hud.setRockets(noMagazine ? 4 : this.player.launcher.ammo, noMagazine ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);
+    // "RECARREGANDO" ao lado da mira: o carregador (foguetes) está vazio e enchendo (frente 2).
+    this.hud.setReloading(!noMagazine && this.player.launcher.ammo === 0);
     this.hud.setHeat(this.mech.heat, this.mech.overheated, this.mech.coolingBoost);
     // Estados (choque, fogo, gelo) e rotação do cano: parado na pausa ou morto, o zumbido e os indicadores se calam.
     const ativo = this.playing && this.mech.alive && !this.hangarView;

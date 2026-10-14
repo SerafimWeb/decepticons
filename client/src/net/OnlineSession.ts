@@ -68,7 +68,7 @@ export interface OnlineSessionOptions {
   scene: THREE.Scene;
   onStatus?: (s: OnlineStatus) => void;
   onBank?: (reply: BankReply) => void;
-  onDamage?: (amount: number) => void;
+  onDamage?: (amount: number, hit?: MechBase) => void;
   onRoundEnd?: () => void;
   onKill?: (killer: string | null, dead: string, meInvolved: boolean) => void;
   /** Placar do jogador local (o servidor não conta a rodada offline; a gente conta pelos eventos KILL). */
@@ -388,7 +388,7 @@ export class OnlineSession implements Pilot {
       const e = b.list[i]!;
       if (e.kind === EVENT.HIT) this.flinchFrom(e);
       if (e.kind === EVENT.SHOT) this.remoteShot(e);
-      else if (e.kind === EVENT.HIT && e.other === this.myId && e.unit !== this.myId) this.o.onDamage?.(e.amount);
+      else if (e.kind === EVENT.HIT && e.other === this.myId && e.unit !== this.myId) this.o.onDamage?.(e.amount, this.remotes.get(e.unit)?.mech);
       else if (e.kind === EVENT.KILL) {
         const dead = e.unit === this.myId ? 'VOCÊ' : (this.names.get(e.unit) ?? 'INIMIGO');
         const killer = e.other === NO_UNIT ? null : e.other === this.myId ? 'VOCÊ' : (this.names.get(e.other) ?? null);

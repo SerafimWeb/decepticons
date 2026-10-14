@@ -4,34 +4,56 @@ import type { MechBase } from '../entities/MechBase';
 
 /** Só mostra o nome de quem está até esta distância (m). */
 const MAX_DIST = 90;
-/**
- * Altura do nome na tela (fração da altura da vista; o sprite não diminui com a distância). O texto
- * ocupa ~70% da textura: ~15 px de letra numa tela de 720 linhas.
- */
-const HEIGHT = 0.03;
 /** Textura pequena, perto do tamanho em que aparece: nítida, sem mipmap borrando a letra. */
 const W = 256;
-const H = 32;
+/** Duas faixas: o nome em cima, a barra de vida e a distância embaixo. */
+const H = 48;
+const NAME_BAND = 30;
+const BAR_Y = 33;
+const BAR_H = 9;
+const PAD = 8;
+/** Espaço à direita da barra para a distância ("999m"). */
+const DIST_W = 46;
+/** Altura do sprite na tela (fração da altura da vista). Mantém o nome do tamanho de antes, agora com a barra embaixo. */
+const HEIGHT = 0.048;
+/** Regeneração da textura: só quando a vida (degrau de 5%) ou a distância (degrau de 5 m) mudam, e no máximo a cada tanto. */
+const REDRAW_S = 0.12;
 const FONT = '"Share Tech Mono", Consolas, "Courier New", monospace';
 const ENEMY = '#ff4a55';
 const TECH = '#ffe14d';
 const ALLY = '#39ff6a';
 
-/** Textura do nome: o nome na cor do lado e a personalidade (depois do "·") em branco, com contorno escuro. */
-function nameTexture(label: string, color: string): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = W;
-  c.height = H;
-  const g = c.getContext('2d')!;
-  const [name, persona] = label.split('·');
+/** A vida em degraus de 5% (0 a 20): a barra salta de degrau em degrau, não a cada pixel de dano. */
+export function hpBucketOf(ratio: number): number {
+  const r = Number.isFinite(ratio) ? Math.max(0, Math.min(1, ratio)) : 0;
+  return Math.round(r * 20);
+}
+
+/** A distância em degraus de 5 m: "35m" muda devagar, sem redesenhar a cada passo. */
+export function distBucketOf(meters: number): number {
+  const m = Number.isFinite(meters) ? Math.max(0, meters) : 0;
+  return Math.round(m / 5) * 5;
+}
+
+/** Desenha a plaqueta inteira: nome (e personalidade) na cor do lado e, embaixo, a barra de vida e a distância. */
+function drawPlate(
+  g: CanvasRenderingContext2D,
+  name: string,
+  persona: string,
+  color: string,
+  hp01: number,
+  distM: number,
+): void {
+  g.clearRect(0, 0, W, H);
   g.textBaseline = 'middle';
   g.lineJoin = 'round';
+
+  // ── Nome e personalidade, centrados na faixa de cima ──
   g.font = `700 22px ${FONT}`;
-  const nameW = g.measureText(name!).width;
+  const nameW = g.measureText(name).width;
   g.font = `400 16px ${FONT}`;
   const personaW = persona ? g.measureText(` ${persona}`).width : 0;
   const x0 = Math.round((W - nameW - personaW) / 2);
-  // Contorno escuro em vez de brilho: lê sobre o céu e sobre o neon sem borrar.
   const draw = (text: string, x: number, font: string, fill: string, y: number) => {
     g.font = font;
     g.lineWidth = 4;
@@ -40,51 +62,108 @@ function nameTexture(label: string, color: string): THREE.CanvasTexture {
     g.fillStyle = fill;
     g.fillText(text, x, y);
   };
-  draw(name!, x0, `700 22px ${FONT}`, color, H / 2);
-  if (persona) draw(` ${persona}`, x0 + nameW, `400 16px ${FONT}`, '#eef2e8', H / 2 + 1);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.generateMipmaps = false;
-  tex.minFilter = THREE.LinearFilter;
-  tex.magFilter = THREE.LinearFilter;
-  return tex;
+  const nameY = NAME_BAND / 2;
+  draw(name, x0, `700 22px ${FONT}`, color, nameY);
+  if (persona) draw(` ${persona}`, x0 + nameW, `400 16px ${FONT}`, '#eef2e8', nameY + 1);
+
+  // ── Barra de vida (fundo escuro + preenchimento na cor do lado) ──
+  const barW = W - PAD * 2 - DIST_W;
+  g.fillStyle = 'rgba(0,0,0,0.72)';
+  g.fillRect(PAD, BAR_Y, barW, BAR_H);
+  g.fillStyle = color;
+  g.fillRect(PAD + 1, BAR_Y + 1, Math.max(0, (barW - 2) * hp01), BAR_H - 2);
+  g.strokeStyle = 'rgba(255,255,255,0.28)';
+  g.lineWidth = 1;
+  g.strokeRect(PAD + 0.5, BAR_Y + 0.5, barW - 1, BAR_H - 1);
+
+  // ── Distância à direita da barra ──
+  g.font = `400 14px ${FONT}`;
+  g.textAlign = 'right';
+  g.lineWidth = 3;
+  g.strokeStyle = 'rgba(0,0,0,0.85)';
+  g.strokeText(`${distM}m`, W - PAD, BAR_Y + BAR_H / 2);
+  g.fillStyle = '#eef2e8';
+  g.fillText(`${distM}m`, W - PAD, BAR_Y + BAR_H / 2);
+  g.textAlign = 'left';
+}
+
+interface Plate {
+  mech: MechBase;
+  sprite: THREE.Sprite;
+  texture: THREE.CanvasTexture;
+  ctx: CanvasRenderingContext2D;
+  name: string;
+  persona: string;
+  color: string;
+  hpBucket: number;
+  distBucket: number;
+  since: number;
 }
 
 /**
- * Nome sobre a cabeça de cada IA rebelde (dono, 25/09: "quero que mostre os nomes nos bots"; depois:
- * "estão muito grandes e meio borrados"): vermelho para os de combate, amarelo para o técnico, com a
- * personalidade menor. Sprite de tamanho fixo na tela, escondido atrás de prédios (sem ver através de
- * parede), só até 90 m e só com o bot vivo. Textura pequena e sem mipmap: letra nítida.
- * Custo: um sprite por bot (≤ 7 draw calls), só a posição muda por quadro; texturas feitas uma vez.
+ * Plaqueta sobre a cabeça de cada IA (dono, 25/09: "quero que mostre os nomes nos bots"; frente 2 da P109:
+ * "nome + barra + distância sobre o inimigo, como no MechArena"). Vermelho para os de combate, amarelo para
+ * o técnico, verde para os aliados, com a personalidade menor. Sprite de tamanho fixo na tela, escondido
+ * atrás de prédios (sem ver através de parede), só até 90 m e só com o bot vivo.
+ *
+ * Custo (G4/G5): um sprite por robô (≤ 32 draw calls num esquadrão cheio), só a posição muda por quadro.
+ * A textura é redesenhada **só quando a vida cruza um degrau de 5% ou a distância um degrau de 5 m**, e no
+ * máximo a cada `REDRAW_S` por robô — parado e com vida cheia, nada é redesenhado.
  */
 export class Nameplates {
-  private readonly plates: { mech: MechBase; sprite: THREE.Sprite }[] = [];
+  private readonly plates: Plate[] = [];
 
   /** `allies` (30/09): segundo grupo opcional, nome em verde — o mesmo Mech nunca está nos dois. */
   constructor(scene: THREE.Scene, bots: BotSystem, allies?: BotSystem) {
     const add = (system: BotSystem, color: string) => {
       for (const mech of system.mechs) {
-        const map = nameTexture(system.nameOf(mech), system.technicianOf(mech) ? TECH : color);
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map, sizeAttenuation: false, depthWrite: false, toneMapped: false, transparent: true }));
+        const [name, persona] = system.nameOf(mech).split('·');
+        const side = system.technicianOf(mech) ? TECH : color;
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d')!;
+        drawPlate(ctx, name!, persona ?? '', side, 1, 0);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.generateMipmaps = false;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, sizeAttenuation: false, depthWrite: false, toneMapped: false, transparent: true }));
         sprite.scale.set((HEIGHT * W) / H, HEIGHT, 1);
         sprite.renderOrder = 10;
         sprite.visible = false;
         scene.add(sprite);
-        this.plates.push({ mech, sprite });
+        this.plates.push({ mech, sprite, texture, ctx, name: name!, persona: persona ?? '', color: side, hpBucket: -1, distBucket: -1, since: 0 });
       }
     };
     add(bots, ENEMY);
     if (allies) add(allies, ALLY);
   }
 
-  /** Por quadro: acompanha a cabeça de cada bot (posição de render). */
-  update(player: MechBase): void {
+  /** Por quadro: acompanha a cabeça de cada bot (posição de render) e atualiza a barra/distância quando mudam. */
+  update(dt: number, player: MechBase): void {
     const p = player.position;
-    for (const { mech, sprite } of this.plates) {
+    for (const plate of this.plates) {
+      const { mech, sprite } = plate;
       const m = mech.position;
-      const near = (m.x - p.x) ** 2 + (m.z - p.z) ** 2 < MAX_DIST * MAX_DIST;
+      const d2 = (m.x - p.x) ** 2 + (m.z - p.z) ** 2;
+      const near = d2 < MAX_DIST * MAX_DIST;
       sprite.visible = mech.alive && near;
-      if (sprite.visible) sprite.position.set(m.x, m.y + mech.stats.height + 0.5, m.z);
+      if (!sprite.visible) continue;
+      sprite.position.set(m.x, m.y + mech.stats.height + 0.5, m.z);
+
+      plate.since -= dt;
+      const maxTorso = mech.stats.maxModuleHealth.torso || 1;
+      const hp = hpBucketOf(mech.modules.torso / maxTorso);
+      const dist = distBucketOf(Math.sqrt(d2));
+      if ((hp !== plate.hpBucket || dist !== plate.distBucket) && plate.since <= 0) {
+        plate.hpBucket = hp;
+        plate.distBucket = dist;
+        plate.since = REDRAW_S;
+        drawPlate(plate.ctx, plate.name, plate.persona, plate.color, hp / 20, dist);
+        plate.texture.needsUpdate = true;
+      }
     }
   }
 }

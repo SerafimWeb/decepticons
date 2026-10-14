@@ -1,5 +1,22 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A leitura do combate: números de dano, plaqueta com vida e distância, e "RECARREGANDO" — Qwen, 14/10 (PR `qwen/leitura-do-combate`, P109 frente 2)
+
+**Ordem do Comandante (14/10):** "por enquanto quero que todos os robôs possam usar todas as armas… mas antes quero dar máxima roleplay, jogabilidade, interatividade e emoção aos combates" — e, na triagem, escolheu começar pela **frente 2 da P109** (a leitura do combate). No mesmo recado vieram duas ordens novas: os **bots ainda parecem burros** (P119) e a liberação de armas é **só do que já é possível**, sem regra nova (P120).
+
+**Feito (frente 2):**
+- **Números de dano flutuantes** (`ui/DamageNumbers.ts`): o dano que **você** aplica sobe do corpo do inimigo e some ("16"; laranja e maior quando arranca uma parte). Pool fixo de 24 nós no DOM; por acerto escreve um nó (texto, posição, classe) e a subida é animação de CSS — nada roda por quadro além do contador de vida dos que estão na tela (G4/G5). Offline pelo `Match.onMechHit` (quando o atirador é o jogador) e **online** pelo `EVENT.HIT` do servidor (a `OnlineSession` passa o alvo no `onDamage`; **sem byte novo de protocolo**).
+- **Plaqueta com barra de vida e distância** (`ui/Nameplates.ts`): embaixo do nome, a **barra de vida** (o torso, na cor do lado) e a **distância em metros** ("35m"). Continua sprite 3D (escondida atrás de prédio); a textura é redesenhada **só quando a vida cruza um degrau de 5% ou a distância um degrau de 5 m**, e no máximo a cada 0,12 s por robô — parado e com vida cheia, nada é redesenhado.
+- **"RECARREGANDO" ao lado da mira** (HUD + `index.html` + `styles.css`): aparece quando o carregador da mão esquerda (foguetes) está vazio e enchendo. Só escreve no DOM quando muda.
+
+**Testes (13 novos):** `DamageNumbers.test.ts` (8: o número nunca é 0; o pool fixo; projeta no centro; marca o crítico; não gasta nó atrás da câmera nem fora da tela; reaproveita em círculo; some no tempo de vida) e `Nameplates.test.ts` (5: os degraus de vida de 5% e de distância de 5 m, com os cortes e o número inválido).
+
+**Custo:** zero por quadro; a plaqueta custa uma projeção por robô por quadro (como antes) e um redesenho esporádico; cada número custa uma projeção no acerto.
+
+**Não feito nesta frente (declarado):** o **ícone da arma no kill feed** — o evento de abate não carrega a arma que matou, então isso pede `sim/` e protocolo; fica para um corte próprio. Visto em Chrome headless por software; **falta em GPU real e o julgamento do Comandante** (R13).
+
+**Próxima frente da P109:** a **3 — morrer e voltar** (painel "seu algoz" + escolha do ponto de nascimento, inclui a P98). A **P119** (inteligência tática dos bots) foi registrada e é a de maior efeito percebido no combate.
+
 ## O modo Domínio: dominar os cinco pontos da Arena, offline, com bots que capturam e guardam — Claude, 14/10 (PR `claude/dominio`, ordens P112 e P111)
 
 **Ordem do Comandante (14/10):** "quero adicionar modalidade de jogo de dominar as 5 ou 6 bases do jogo" (e, do mesmo recado, o ciclo "atirar, se esconder, esquivar, combate, fuga, captura, sem ficar parado e sem morrer de primeira").

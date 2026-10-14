@@ -1,3 +1,11 @@
+## [2026-10-14] A leitura do combate: número de dano, barra e distância na plaqueta, "RECARREGANDO" (Qwen, P109 frente 2)
+
+**Situação:** o Comandante escolheu começar a P109 pela **frente 2** (a leitura do combate) e, no mesmo recado, pediu **inteligência tática nos bots** (a P119) e travou a liberação de armas no **que já é possível** (a P120).
+
+**Decisões:** (1) os números de dano são **DOM com pool fixo** (não sprite 3D): a subida é animação de CSS e o JavaScript só cria e esconde — o mais barato. (2) A plaqueta continua **sprite 3D** (preserva o esconder-se atrás de prédio, que é feature); a barra e a distância entram na **mesma textura**, redesenhada só em degraus (5% de vida, 5 m de distância) e limitada a 0,12 s por robô. (3) O **ícone da arma no kill feed** fica de fora: o evento de abate não carrega a arma que matou; fazê-lo toca `sim/` e o protocolo — corte próprio. (4) "RECARREGANDO" só para o **carregador** (foguetes): as armas de energia têm calor, não recarga.
+
+**Quem decidiu:** Qwen (o Comandante escolheu a frente e a regra; o desenho do número e da plaqueta é implementação).
+
 ## [2026-10-14] O Domínio é dado + regra pura + bots que seguram posto, offline primeiro (Claude, P112)
 
 **Situação:** o Comandante quer o modo de dominar as bases (como o principal do MechArena) e disse que a boa jogabilidade é "atirar, se esconder, esquivar, combate, fuga, captura, sem ficar parado".

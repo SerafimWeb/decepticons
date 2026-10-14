@@ -83,6 +83,7 @@ export class HUD {
   private readonly modeLabel = $('mode');
   private readonly hitmarker = $('hitmarker');
   private readonly hitLabel = $('hit-label');
+  private readonly reloadLabel = $('reload-label');
   private readonly damageVignette = $('damage-vignette');
   private readonly death = $('death');
   private readonly deathTimer = $('death-timer');
@@ -91,6 +92,7 @@ export class HUD {
   private hitTimer = 0;
   private labelTimer = 0;
   private damageTimer = 0;
+  private shownReloading = false;
   private kills = 0;
   private deaths = 0;
   private shownRespawn = '';
@@ -315,6 +317,13 @@ export class HUD {
   /** Mira acesa: um inimigo vivo está sob ela. */
   setOnTarget(on: boolean): void {
     this.crosshair.classList.toggle('on-target', on);
+  }
+
+  /** Carregador vazio enchendo: "RECARREGANDO" ao lado da mira (frente 2). Só escreve no DOM quando muda. */
+  setReloading(reloading: boolean): void {
+    if (reloading === this.shownReloading) return;
+    this.shownReloading = reloading;
+    this.reloadLabel.classList.toggle('show', reloading);
   }
 
   setPaused(paused: boolean): void {
