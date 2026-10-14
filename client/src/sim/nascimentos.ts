@@ -22,6 +22,15 @@ export const ALLY_COUNT = ALLY_SPAWNS.length;
 export const COLOSSUS_SPAWN = [SPAWN_POINTS[7]!] as const;
 
 /**
+ * Onde os titãs inimigos nascem (13/10, P108: "quero colocar os Colossus 3 e 4 no time adversário"). Um Colossus-V4 tem 20 m de altura e 5 m de raio: nenhum
+ * ponto dos outros papéis tem folga para ele. Estes são de chão livre para um cilindro de **10 m de raio e 21 m de altura** (a cápsula do titã mais 5 m de folga)
+ * em volta, a 60 m ou mais do nascimento do jogador, a 14 m ou mais de qualquer ponto fixo e fora das zonas de cura e resfriamento, e **na ordem de espalhamento**
+ * (o primeiro é o mais longe do jogador; cada seguinte, o mais longe dos anteriores). Só na Arena: o Bunker não tem onde pôr um titã.
+ * `nascimentos.test.ts` confere cada um contra a arena de verdade (física).
+ */
+export const PONTOS_DOS_TITAS: readonly Ponto[] = [[-85, -85], [85, 85], [-85, 85], [55, -55]];
+
+/**
  * Pontos extras dos inimigos (12/10, P91: "mais bots, além dos 3 do padrão"). Chão livre num anel de 55 a 100 m do nascimento do
  * jogador, a 14 m ou mais de qualquer ponto fixo e a 5 m ou mais de prédio, barricada, plataforma, rampa e da torre Serafim, fora das
  * zonas de cura e de resfriamento (ninguém nasce de graça numa vantagem). Na ordem de espalhamento: o primeiro é o mais longe de todos
@@ -51,11 +60,15 @@ export interface Contagem {
   tecnicos: number;
   aliadosMechs: number;
   aliadosAndroids: number;
+  /** Quantos titãs (P108). Não entram em `mechs`: têm pontos próprios (`PONTOS_DOS_TITAS`). Ausente = 0. */
+  titas?: number;
 }
 
 /** Onde cada corpo nasce, na ordem do esquadrão. */
 export interface Nascimentos {
   mechs: Ponto[];
+  /** Os titãs inimigos (P108), cada um no seu ponto de `PONTOS_DOS_TITAS`. */
+  titas: Ponto[];
   androids: Ponto[];
   tecnicos: Ponto[];
   aliadosMechs: Ponto[];
@@ -68,6 +81,8 @@ export interface Capacidade {
   aliados: number;
   /** Inimigos e aliados juntos (no Bunker, os pontos são de todos). */
   total: number;
+  /** Quantos titãs (P108): os pontos de `PONTOS_DOS_TITAS` na Arena; nenhum no Bunker. */
+  titas: number;
 }
 
 /**
@@ -78,9 +93,10 @@ const CAPACIDADE_ARENA: Capacidade = {
   inimigos: EXTRAS_INIMIGOS.length,
   aliados: EXTRAS_ALIADOS.length,
   total: EXTRAS_INIMIGOS.length + EXTRAS_ALIADOS.length,
+  titas: PONTOS_DOS_TITAS.length,
 };
 /** O Bunker tem 12 pontos no total e o primeiro é do jogador: os outros 11 são de quem nasce com ele. */
-const CAPACIDADE_BUNKER: Capacidade = { inimigos: BUNKER_SPAWNS.length - 1, aliados: BUNKER_SPAWNS.length - 1, total: BUNKER_SPAWNS.length - 1 };
+const CAPACIDADE_BUNKER: Capacidade = { inimigos: BUNKER_SPAWNS.length - 1, aliados: BUNKER_SPAWNS.length - 1, total: BUNKER_SPAWNS.length - 1, titas: 0 };
 
 export const capacidadeDoMapa = (mapa: MapId): Capacidade => (mapa === 'bunker' ? CAPACIDADE_BUNKER : CAPACIDADE_ARENA);
 
@@ -98,6 +114,7 @@ function nascimentosDaArena(c: Contagem): Nascimentos {
   const aliadosMechs = aliado(ALLY_SPAWNS, c.aliadosMechs);
   return {
     mechs: inimigo(BOT_SPAWNS, c.mechs),
+    titas: PONTOS_DOS_TITAS.slice(0, c.titas ?? 0),
     androids: inimigo(ANDROID_SPAWNS, c.androids),
     tecnicos: inimigo(TECHNICIAN_SPAWNS, c.tecnicos),
     aliadosMechs,
@@ -141,7 +158,7 @@ function nascimentosDoBunker(c: Contagem): Nascimentos {
   const mechs = pegar(BUNKER_PREFERIDOS.mechs, c.mechs);
   const androids = pegar(BUNKER_PREFERIDOS.androids, c.androids);
   const tecnicos = pegar(BUNKER_PREFERIDOS.tecnicos, c.tecnicos);
-  return { mechs, androids, tecnicos, aliadosMechs, aliadosAndroids: pegar([], c.aliadosAndroids) };
+  return { mechs, titas: [], androids, tecnicos, aliadosMechs, aliadosAndroids: pegar([], c.aliadosAndroids) };
 }
 
 /**
@@ -150,7 +167,9 @@ function nascimentosDoBunker(c: Contagem): Nascimentos {
  */
 export function nascimentosDoEsquadrao(c: Contagem, mapa: MapId): Nascimentos {
   const cap = capacidadeDoMapa(mapa);
-  const inimigos = c.mechs + c.androids + c.tecnicos;
+  const titas = c.titas ?? 0;
+  if (titas > cap.titas) throw new Error(`o esquadrão pede ${titas} titã(s) e o mapa comporta ${cap.titas}`);
+  const inimigos = c.mechs + c.androids + c.tecnicos + titas;
   const aliados = c.aliadosMechs + c.aliadosAndroids;
   if (inimigos > cap.inimigos || aliados > cap.aliados || inimigos + aliados > cap.total) {
     throw new Error(`o esquadrão (${inimigos} inimigos, ${aliados} aliados) não cabe no mapa (${cap.inimigos}, ${cap.aliados}, ${cap.total})`);

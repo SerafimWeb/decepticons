@@ -1,6 +1,6 @@
 import { TIERS, weapon, type Tier, type WeaponId } from '../combat/weapons';
 import { DIFFICULTY_LABELS, PERSONA_LABELS, type EnemyNames, type Persona } from '../core/Settings';
-import { CHASSIS } from '../entities/chassis';
+import { CHASSIS, ehTita } from '../entities/chassis';
 import type { MapId } from '../environment/Bunker';
 import {
   type BotSpec,
@@ -233,12 +233,22 @@ export class EsquadraoEditor {
    * Muda campos de um robô. Um campo com `undefined` volta ao padrão. O robô passa pelo contrato de novo: trocar o chassi larga a arma que
    * ele não aceita, e persona, chassi e arma de quem não é Mech não pegam.
    */
-  editar(lado: Lado, i: number, mudanca: { nome?: string | undefined; persona?: Persona | undefined; chassi?: BotSpec['chassi']; arma?: BotSpec['arma']; dificuldade?: BotSpec['dificuldade'] }): void {
+  editar(lado: Lado, i: number, mudanca: { nome?: string | undefined; persona?: Persona | undefined; chassi?: BotSpec['chassi']; arma?: BotSpec['arma']; dificuldade?: BotSpec['dificuldade'] }): string | null {
     const l = this.ref(lado);
     const atual = l[i];
-    if (!atual) return;
+    if (!atual) return null;
     const novo = sanearBot({ ...atual, ...mudanca }, lado);
-    if (novo) l[i] = novo;
+    if (!novo) return null;
+    // O titã (P108) tem teto por mapa (nenhum no Bunker): trocar para um titã sem vaga é recusado com o motivo, e o robô fica como estava.
+    const virouTita = !!novo.chassi && ehTita(novo.chassi) && !(atual.chassi && ehTita(atual.chassi));
+    if (virouTita && lado === 'inimigo') {
+      const lim = this.limites.titas;
+      const jaTem = l.filter((b) => b.papel === 'mech' && !!b.chassi && ehTita(b.chassi)).length;
+      if (lim === 0) return 'Este mapa não comporta titãs (o Bunker é apertado demais): escolha a Cidade Neon.';
+      if (jaTem >= lim) return `Já há ${jaTem} titã${jaTem === 1 ? '' : 's'}: o teto é ${lim}. Troque um deles antes.`;
+    }
+    l[i] = novo;
+    return null;
   }
 
   /** Troca o nível da arma sem mudar qual é (a ficha tem um seletor de nível). */

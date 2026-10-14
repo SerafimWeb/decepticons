@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { GLOW, PALETTE } from '../core/palette';
 import type { MechBase } from '../entities/MechBase';
 import { Android } from '../entities/Android';
-import { ANDROID_STATS, CHASSIS, COLOSSUS_BOSS_STATS, VECTOR09_STATS, type ChassisId } from '../entities/chassis';
+import { ANDROID_STATS, COLOSSUS_BOSS_STATS, ehTita, VECTOR09_STATS, type ChassisId } from '../entities/chassis';
+import { armaDoBot, statsDoBot, TITA_RESPAWN_S } from './titaBot';
 import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
 import { ImportedMech } from '../entities/ImportedMech';
 import type { MechRig } from '../entities/MechBase';
@@ -201,10 +202,12 @@ export class BotSystem {
       const persona = PERSONAS[(!android && o.personas?.[i]) || 'soldado'];
       const ownSkill = !!kit?.dificuldade;
       const skill = kit?.dificuldade ? BOT_SKILLS[kit.dificuldade] : o.skill ?? BOT_SKILL_NORMAL;
-      const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, skill, android ? ANDROID_PROFILE : MECH_PROFILE, persona);
+      // O titã (P108) luta como o chefe: de longe, sem correr, com o giro lento como fraqueza; e volta devagar depois de abatido.
+      const titan = !android && !!kit?.chassi && ehTita(kit.chassi);
+      const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, skill, android ? ANDROID_PROFILE : titan ? BOSS_PROFILE : MECH_PROFILE, persona);
       brain.escortSide = i % 2 ? 1 : -1;
       if (o.respawn !== false) {
-        o.respawner.track(mech, BOT_RESPAWN_S, () => {
+        o.respawner.track(mech, titan ? TITA_RESPAWN_S : BOT_RESPAWN_S, () => {
           if (o.respawnAtHome) mech.respawn(home);
           brain.reset();
         });
@@ -229,10 +232,10 @@ export class BotSystem {
     // O corpo de cada Mech: sem kits, o de sempre (e o supressor nos aliados de índice ímpar); com kits, o que o esquadrão pediu.
     const statsDoMech = (i: number, kit: BotKit | undefined) => {
       if (!o.kits) return o.escort && i % 2 ? suppressionStats : mechStats;
-      const base = kit?.chassi ? CHASSIS[kit.chassi] : VECTOR09_STATS;
+      const base = kit?.chassi ? statsDoBot(kit.chassi) : VECTOR09_STATS;
       if (kit?.arma) {
         const { metalShield } = base.loadout;
-        return poweredStats({ ...base, loadout: { ...(metalShield ? { metalShield } : {}), primary: weapon(kit.arma.id, kit.arma.tier), secondary: null } }, power, 'mechs');
+        return poweredStats({ ...base, loadout: { ...(metalShield ? { metalShield } : {}), primary: armaDoBot(kit.arma.id, kit.arma.tier, kit.chassi ?? 'vector09'), secondary: null } }, power, 'mechs');
       }
       return kit?.chassi ? poweredStats(base, power, 'mechs') : mechStats;
     };

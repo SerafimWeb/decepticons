@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { WEAPON_IDS } from '../combat/weapons';
 import { DEFAULT_SETTINGS, sanitizeSettings } from '../core/Settings';
-import { CHASSIS, type ChassisId } from '../entities/chassis';
+import { CHASSIS, ehTita, type ChassisId } from '../entities/chassis';
 import {
+  ARMA_DO_TITA,
   armaServeAoBot,
   armasDoBot,
   type BotSpec,
@@ -21,13 +22,15 @@ import {
   limitesDoMapa,
   limparNome,
   nomePadraoDoBot,
+  nomePadraoDoTita,
   PESO_DO_PAPEL,
+  PESO_EXTRA_DO_TITA,
   planejarEsquadrao,
   resumoDoEsquadrao,
   sanearBot,
   sanearEsquadrao,
 } from './esquadrao';
-import { ALLY_SPAWNS, ANDROID_SPAWNS, BOT_SPAWNS, EXTRAS_ALIADOS, EXTRAS_INIMIGOS, TECHNICIAN_SPAWNS } from './nascimentos';
+import { ALLY_SPAWNS, ANDROID_SPAWNS, BOT_SPAWNS, EXTRAS_ALIADOS, EXTRAS_INIMIGOS, PONTOS_DOS_TITAS, TECHNICIAN_SPAWNS } from './nascimentos';
 
 const mech = (extra: Partial<BotSpec> = {}): BotSpec => ({ papel: 'mech', ...extra });
 const android = (extra: Partial<BotSpec> = {}): BotSpec => ({ papel: 'android', ...extra });
@@ -61,13 +64,19 @@ describe('o esquadrão padrão é o jogo de hoje', () => {
 });
 
 describe('o que um robô pode ser', () => {
-  it('os chassis dos bots são os Mechs: sem o andróide e sem o Colossus', () => {
+  it('os chassis dos bots são os Mechs e os titãs (P108): só o andróide, que é um papel, fica de fora', () => {
     expect(CHASSIS_DOS_BOTS).toContain('vector09');
     expect(CHASSIS_DOS_BOTS).toContain('marauder');
+    expect(CHASSIS_DOS_BOTS).toContain('colossus01');
+    expect(CHASSIS_DOS_BOTS).toContain('colossusv4');
     expect(CHASSIS_DOS_BOTS).not.toContain('android');
-    expect(CHASSIS_DOS_BOTS).not.toContain('colossus01');
-    expect(CHASSIS_DOS_BOTS.length).toBeGreaterThanOrEqual(8);
-    for (const id of CHASSIS_DOS_BOTS) expect(CHASSIS[id].maxJumps, id).toBeGreaterThan(0);
+    expect(CHASSIS_DOS_BOTS.length).toBeGreaterThanOrEqual(10);
+    // Os Mechs pulam; os titãs não (e só eles).
+    for (const id of CHASSIS_DOS_BOTS) {
+      if (ehTita(id)) expect(CHASSIS[id].maxJumps, id).toBe(0);
+      else expect(CHASSIS[id].maxJumps, id).toBeGreaterThan(0);
+    }
+    expect(CHASSIS_DOS_BOTS.filter(ehTita).sort()).toEqual(['colossus01', 'colossusv4']);
     expect(ehChassiDoBot('onca')).toBe(true);
     expect(ehChassiDoBot('android')).toBe(false);
     expect(ehChassiDoBot('naoexiste')).toBe(false);
@@ -84,8 +93,84 @@ describe('o que um robô pode ser', () => {
     for (const id of CHASSIS_DOS_BOTS) {
       const armas = armasDoBot(id);
       expect(armas.length, id).toBeGreaterThan(0);
-      for (const a of armas) expect(armaServeAoBot(a), `${id}:${a}`).toBe(true);
+      // O titã é a exceção declarada: tem só a arma de fábrica, que o bot atira como projétil comum (`combat/titaBot.ts`).
+      if (!ehTita(id)) for (const a of armas) expect(armaServeAoBot(a), `${id}:${a}`).toBe(true);
     }
+  });
+
+  it('o titã só tem a arma de fábrica: plasma no chefe (Colossus-01) e o canhão de cerco no V4', () => {
+    expect(armasDoBot('colossus01')).toEqual(['plasma']);
+    expect(armasDoBot('colossusv4')).toEqual(['siege']);
+    expect(ARMA_DO_TITA).toEqual({ colossus01: 'plasma', colossusv4: 'siege' });
+    // Outra arma no titã é descartada; a de fábrica fica.
+    expect(sanearBot({ papel: 'mech', chassi: 'colossusv4', arma: { id: 'plasma', tier: 0 } })).toEqual({ papel: 'mech', chassi: 'colossusv4' });
+    expect(sanearBot({ papel: 'mech', chassi: 'colossusv4', arma: { id: 'siege', tier: 1 } })).toEqual({ papel: 'mech', chassi: 'colossusv4', arma: { id: 'siege', tier: 1 } });
+  });
+});
+
+describe('os titãs no esquadrão (P108)', () => {
+  const tita = (chassi: 'colossus01' | 'colossusv4' = 'colossusv4', extra: Partial<BotSpec> = {}): BotSpec => ({ papel: 'mech', chassi, ...extra });
+  const esq = (inimigos: BotSpec[], aliados: BotSpec[] = []): EsquadraoSpec => ({ v: ESQUADRAO_VERSAO, inimigos, aliados });
+
+  it('o limite é de dois titãs na Arena e nenhum no Bunker; o que passa sai do fim', () => {
+    expect(LIMITES_DO_ESQUADRAO.titas).toBe(2);
+    expect(limitesDoMapa('arena').titas).toBe(2);
+    expect(limitesDoMapa('bunker').titas).toBe(0);
+    const tres = esq([tita('colossusv4'), { papel: 'mech' }, tita('colossus01'), tita('colossusv4'), { papel: 'android' }]);
+    const arena = sanearEsquadrao(tres, 'arena');
+    expect(arena.inimigos.map((b) => b.chassi ?? b.papel)).toEqual(['colossusv4', 'mech', 'colossus01', 'android']);
+    const bunker = sanearEsquadrao(tres, 'bunker');
+    expect(bunker.inimigos.map((b) => b.chassi ?? b.papel)).toEqual(['mech', 'android']);
+    expect(excessosDoEsquadrao(tres, 'arena').join(' ')).toMatch(/titãs: 3 de no máximo 2/);
+    expect(excessosDoEsquadrao(esq([tita()]), 'bunker').join(' ')).toMatch(/não comporta nenhum/);
+    expect(excessosDoEsquadrao(esq([tita(), tita('colossus01')]), 'arena')).toEqual([]);
+  });
+
+  it('o titã só luta do lado dos inimigos: do lado aliado o saneamento o troca por Vector-09 e a chave é recusada', () => {
+    const s = sanearEsquadrao(esq([], [tita('colossus01'), { papel: 'mech' }]), 'arena');
+    expect(s.aliados.map((b) => b.chassi)).toEqual([undefined, undefined]);
+    expect(lerChaveDoEsquadrao('q1.-.m:ccolossus01')).toBeNull();
+    expect(excessosDoEsquadrao(esq([], [tita()]), 'arena').join(' ')).toMatch(/só lutam do lado dos inimigos/);
+  });
+
+  it('o link leva os titãs: a chave vai e volta com chassi e apelido', () => {
+    const e = esq([tita('colossusv4', { nome: 'GOLIAS', persona: 'brabo' }), { papel: 'android' }, tita('colossus01')], [{ papel: 'mech' }]);
+    const volta = lerChaveDoEsquadrao(chaveDoEsquadrao(e));
+    expect(volta).toEqual(e);
+    expect(esquadraoDoLink(`?esquadrao=${chaveDoEsquadrao(e)}`)).toEqual(e);
+    // Três titãs na chave passam do teto: recusada por inteiro.
+    expect(lerChaveDoEsquadrao('q1.m:ccolossusv4,m:ccolossusv4,m:ccolossus01.-')).toBeNull();
+  });
+
+  it('o titã pesa mais que um Mech na conta de carga e conta nos inimigos uma vez só', () => {
+    const e = esq([tita(), { papel: 'mech' }]);
+    const r = resumoDoEsquadrao(e);
+    expect(r.titas).toBe(1);
+    expect(r.mechs).toBe(2);
+    expect(r.inimigos).toBe(2);
+    expect(r.peso).toBe(PESO_DO_PAPEL.mech * 2 + PESO_EXTRA_DO_TITA);
+    expect(resumoDoEsquadrao(esquadraoPadrao()).titas).toBe(0);
+  });
+
+  it('o plano põe cada titã no ponto dele (na ordem) e os outros Mechs nos pontos de sempre, com o nome do chassi', () => {
+    const e = esq([{ papel: 'mech' } as BotSpec, tita('colossusv4'), { papel: 'mech' } as BotSpec, tita('colossus01', { nome: 'MURALHA' })]);
+    const plano = planejarEsquadrao(e, 'arena', DEFAULT_SETTINGS.names);
+    const m = plano.inimigos.mechs;
+    expect(m.map((s) => s.chassi)).toEqual(['vector09', 'colossusv4', 'vector09', 'colossus01']);
+    expect(m[0]!.ponto).toEqual(BOT_SPAWNS[0]);
+    expect(m[2]!.ponto).toEqual(BOT_SPAWNS[1]);
+    expect(m[1]!.ponto).toEqual(PONTOS_DOS_TITAS[0]);
+    expect(m[3]!.ponto).toEqual(PONTOS_DOS_TITAS[1]);
+    expect(m[1]!.nome).toBe('COLOSSUS-V4');
+    expect(m[3]!.nome).toBe('MURALHA');
+    expect(nomePadraoDoTita('colossusv4', 1)).toBe('COLOSSUS-V4-2');
+    // O primeiro Mech comum continua com o nome de sempre (o titã não gasta o índice dele).
+    expect(m[0]!.nome).toBe(DEFAULT_SETTINGS.names.mechs[0]);
+    expect(m[2]!.nome).toBe(DEFAULT_SETTINGS.names.mechs[1]);
+  });
+
+  it('no Bunker o plano recusa o titã (quem chama passa por sanearEsquadrao antes)', () => {
+    expect(() => planejarEsquadrao(esq([tita()]), 'bunker', DEFAULT_SETTINGS.names)).toThrow(/titã/);
   });
 });
 
@@ -110,7 +195,10 @@ describe('limpar um robô (nada vindo de fora é confiado)', () => {
   it('lixo vira nada (ou o padrão do campo), nunca uma exceção', () => {
     for (const lixo of [null, undefined, 7, 'mech', [], { papel: 'tanque' }, { papel: 3 }, {}]) expect(sanearBot(lixo), JSON.stringify(lixo)).toBeNull();
     expect(sanearBot({ papel: 'mech', persona: 'bravo', chassi: 'android', arma: 'plasma', dificuldade: 'impossivel' })).toEqual({ papel: 'mech' });
-    expect(sanearBot({ papel: 'mech', chassi: 'colossus01' })).toEqual({ papel: 'mech' });
+    // O Colossus agora é chassi de bot inimigo (P108); do lado aliado ele volta ao Vector-09.
+    expect(sanearBot({ papel: 'mech', chassi: 'colossus01' })).toEqual({ papel: 'mech', chassi: 'colossus01' });
+    expect(sanearBot({ papel: 'mech', chassi: 'colossus01' }, 'aliado')).toEqual({ papel: 'mech' });
+    expect(sanearBot({ papel: 'mech', chassi: 'colossusv4', nome: 'GIGANTE' }, 'aliado')).toEqual({ papel: 'mech', nome: 'GIGANTE' });
   });
 
   it('arma que o bot não sabe usar, ou que não cabe no chassi, ou de nível que não existe, é descartada', () => {
@@ -235,7 +323,7 @@ describe('o link do esquadrão', () => {
     const recusadas = [
       '', 'lixo', 'q1', 'q1.m', 'q1.m.m.m', 'q2.m.m', 'Q1.m.m',
       'q1.x.-', 'q1.m,.-', 'q1.,m.-', 'q1.m,,m.-',
-      'q1.m:pz.-', 'q1.m:cnaoexiste.-', 'q1.m:candroid.-', 'q1.m:ccolossus01.-', 'q1.m:wnada-0.-', 'q1.m:wplasma-3.-', 'q1.m:wplasma.-',
+      'q1.m:pz.-', 'q1.m:cnaoexiste.-', 'q1.m:candroid.-', 'q1.-.m:ccolossus01', 'q1.-.m:ccolossusv4', 'q1.m:wnada-0.-', 'q1.m:wplasma-3.-', 'q1.m:wplasma.-',
       'q1.m:wrotary-0.-', 'q1.m:wchainsaw-0.-', 'q1.m:wrailgun-0.-',
       'q1.m:dz.-', 'q1.m:pb:pb.-', 'q1.m:q.-', 'q1.m:.-', 'q1.m:n.-', 'q1.m:n***.-', 'q1.m:n!!.-',
       'q1.a:pb.-', 'q1.a:cvector09.-', 'q1.a:wplasma-0.-', 'q1.t:dn.-',
