@@ -43,7 +43,7 @@ export const TEATROS: readonly Teatro[] = [
   },
   {
     id: 'cabos', nome: 'ESTAÇÃO DE CABOS', lugar: 'Fortaleza · CE', lat: -3.73, lon: -38.52, recurso: 'dados', mapa: 'praia',
-    modos: ['deathmatch'], resumo: 'Onde os cabos submarinos do Atlântico Sul chegam ao Brasil.', proposta: false, lado: 'direita',
+    modos: ['deathmatch', 'survival'], resumo: 'Onde os cabos submarinos do Atlântico Sul chegam ao Brasil.', proposta: false, lado: 'direita',
   },
   {
     id: 'barragem', nome: 'BARRAGEM', lugar: 'Foz do Iguaçu · PR', lat: -25.41, lon: -54.59, recurso: 'energia',
