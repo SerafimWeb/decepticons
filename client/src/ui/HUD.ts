@@ -93,6 +93,7 @@ export class HUD {
   private labelTimer = 0;
   private damageTimer = 0;
   private shownReloading = false;
+  private shownAimOpen = -1;
   private kills = 0;
   private deaths = 0;
   private shownRespawn = '';
@@ -324,6 +325,14 @@ export class HUD {
     if (reloading === this.shownReloading) return;
     this.shownReloading = reloading;
     this.reloadLabel.classList.toggle('show', reloading);
+  }
+
+  /** Mira aberta (ordem P121): a mira cresce enquanto a arma ainda não assentou. Só escreve quando muda. */
+  setAimOpen(open: number): void {
+    const o = Math.round(Math.max(0, Math.min(1, open)) * 20) / 20;
+    if (o === this.shownAimOpen) return;
+    this.shownAimOpen = o;
+    this.crosshair.style.setProperty('--aim-open', String(o));
   }
 
   setPaused(paused: boolean): void {

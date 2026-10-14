@@ -271,6 +271,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [~] Inteligência tática dos bots (P119, 14/10): passo 1 — papel por arma (curta/média/linha) e a **retaguarda** que segura o setor de nascimento em vez de rushar (`combat/tatica.ts`, 11 testes; só posição, o esquadrão padrão de plasma segue idêntico; Qwen); faltam o jogo em equipe (cobertura, flanco, ataque conjunto) e o playtest do dono #ia
 - [x] Todos os robôs, todas as armas que o contrato permite (P120, 14/10): a curadoria de `ARM_SLOTS` virou contrato (tipo de encaixe × tamanho), sem tocar nas regras de disparo; lança-chamas e canhão pesado em todo Mech, o Andróide com as leves, o Colossus-01 com o cerco (Qwen) #mechs #combate
 - [x] Canhão de cerco com carga mais rápida e com espera (P124, 14/10): carrega em 2,4 s e **segura a carga** — o tiro sai ao soltar o gatilho, no momento escolhido (`combat/ChargeTimer.ts`, flag `chargeHold` na arma); o trilho segue como era (Qwen) #combate
+- [~] Sistema de mira: perfil por arma — a mira assenta (P121, 14/10): tempo de mirar por arma (linha 0,5 s / média 0,32 s / perto 0,18 s) e a mira abre e fecha com o gatilho (`combat/aim.ts`, 8 testes); a **amplitude em 0** (o acerto não muda); falta o playtest e, se o dono quiser, ligar a dispersão (Qwen) #combate
 - [ ] Ficha da arma na lista do Hangar com dano, alcance ótimo e recarga (P109; nunca "potência" nem estrelas: não é pay-to-win) #ux
 
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)

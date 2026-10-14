@@ -94,7 +94,8 @@ html, body {
   top: 50%;
   width: var(--reticle-px);
   height: var(--reticle-px);
-  transform: translate(-50%, -50%);
+  /* A mira **abre** enquanto a arma não assentou (ordem P121): --aim-open vai de 0 (firme) a 1 (recém-erguida). */
+  transform: translate(-50%, -50%) scale(calc(1 + var(--aim-open, 0) * 0.28));
   color: var(--accent);
   opacity: var(--reticle-opacity);
   pointer-events: none;

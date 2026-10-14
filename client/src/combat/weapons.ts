@@ -122,6 +122,18 @@ export interface WeaponStats {
    * **soltar** o gatilho. Sem isto, a carga dispara na hora do completo e soltar cancela.
    */
   chargeHold?: boolean;
+  /**
+   * Perfil de mira (ordem P121): tempo (s) para a mira **assentar** com esta arma na mão. Sem declarar, vale a conta por
+   * faixa (`combat/aim.ts`: a arma de linha assenta mais devagar, a de perto quase na hora). Corpo a corpo, chama e o giro
+   * de cano não assentam (0).
+   */
+  aimTime?: number;
+  /**
+   * Amplitude da mira **aberta**, em radianos (ordem P121): a dispersão máxima antes de assentar, que fecha a zero com a
+   * mira firme. **Hoje toda arma está em 0** — a mira assenta só no desenho, sem mexer no acerto validado; ligar é uma
+   * linha por arma.
+   */
+  aimSpread?: number;
   /** Sobrecarga térmica adicional no impacto, sem atrasar o resfriamento. */
   empHeat?: number;
   /** Silhueta visual do tiro, sem alterar colisão. */

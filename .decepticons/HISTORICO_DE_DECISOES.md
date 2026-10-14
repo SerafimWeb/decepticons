@@ -1,3 +1,13 @@
+## [2026-10-14] A mira assenta, cada arma no seu tempo — amplitude em zero (Qwen, P121 passo 1)
+
+**Situação:** o Comandante quer as miras "casadas" (a da ponta da arma com a do alvo) e cada arma com tempo de mirar, alcance e amplitude próprios.
+
+**Achado:** a **convergência já existe** — o tiro sai da boca da arma apontado para o ponto sob a mira (`PlayerController.aimFrom`), então cai onde a mira aponta. O que faltava era o **perfil por arma**.
+
+**Decisões:** (1) o **tempo de mirar** vem do dado da arma (`aimTime`) ou, sem ele, da faixa pelo alcance (`combat/aim.ts`: linha 0,5 s, média 0,32 s, perto 0,18 s); corte, chama e rotatória não assentam. (2) O "assentar" é do **desenho da mira** (a mira cresce enquanto não assentou) — **a amplitude fica em 0**, porque qualquer dispersão mexe no **acerto validado** e o Comandante não pediu para punir tiro corrido; ligar é uma linha por arma (`aimSpread`). (3) Só o **jogador**: os bots têm a mira deles (`aimErrorRad`), intacta. (4) É **sensação de mira**: a regra está testada, o veredito é do playtest dele.
+
+**Quem decidiu:** o Comandante pediu o perfil; a leitura "amplitude zero primeiro" é decisão de engenheiro minha, registrada e reversível numa linha.
+
 ## [2026-10-14] O canhão de cerco carrega e espera — "ficando carregada e pronta pra atirar" (Qwen, P124)
 
 **Situação:** o Comandante achou o cerco do Colossus-V4 "lento e fraco demais" e pediu, além de carga mais rápida, que a arma **possa ser carregada sem disparar**, ficando pronta para o momento escolhido.

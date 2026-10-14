@@ -1,5 +1,24 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Perfil de mira por arma: a mira assenta, cada arma no seu tempo — Qwen, 14/10 (PR `qwen/mira-por-arma`, ordem P121, passo 1)
+
+**Ordem do Comandante (14/10):** "melhorar nosso sistema de mira, pra combinar a mira da ponta da arma com a mira no alvo... Cada arma deve ter o seu tempo pra mirar, alcance, amplitude".
+
+**O que há:**
+- **A convergência já existia** (verificada no código): o tiro sai da **boca da arma** e é apontado para o **ponto sob a mira** (`PlayerController.aimFrom`), então cai onde a mira aponta — não havia o que "casar" por baixo.
+- **O que faltava e entrou — o perfil por arma** (`combat/aim.ts`): cada arma tem o seu **tempo de mirar** (a de linha **0,5 s**; a média **0,32 s**; a de perto **0,18 s**; corpo a corpo, chama e rotatória **não assentam** — a rotatória já tem o tempo no giro do cano). A mira **abre** ao erguer/trocar de arma e **fecha** com o gatilho firme (soltar desassenta na metade do tempo).
+- **A amplitude está em ZERO (decisão de engenheiro, registrada):** o "assentar" é do **desenho da mira**, sem tocar em onde o tiro cai — o **acerto validado não muda**. Ligar a dispersão é **uma linha por arma** (`aimSpread`).
+
+**Onde mora:** `combat/aim.ts` (puro, **8 testes**), `combat/Armament.ts` (o assentar por gatilho + a dispersão composta com o giro do cano), `player/PlayerController.ts` (a leitura), `ui/HUD.ts` + `styles.css` (a mira **cresce** enquanto não assentou, via `--aim-open`) e `core/Game.ts` (a ligação).
+
+**Custo:** uma comparação por mão por tick; nada alocado.
+
+**Visto:** **não** em partida — é **sensação de mira** e só o playtest do Comandante julga (R13); a regra está provada nos testes.
+
+**Falta:** o julgamento dele e, se ele sentir falta de punir tiro corrido, **abrir a amplitude** (uma linha por arma).
+
+**Onde ver:** no jogo, com uma **arma de linha** (canhão/trilho) na mão: segure o gatilho e veja a mira **fechar**; com a **escopeta**, ela já nasce firme.
+
 ## O canhão de cerco agora carrega e ESPERA — Qwen, 14/10 (PR `qwen/cerco-com-espera`, ordem P124)
 
 **Ordem do Comandante (14/10):** "achei uma arma lenta e fraca demais, poderia ser um pouco mais rápido o carregamento, e ela pode ser carregada E NÃO DISPARAR, e esperar pra disparar em outro momento melhor, ficando carregada e pronta pra atirar".

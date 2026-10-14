@@ -89,6 +89,8 @@ export class PlayerController {
 
   /** Rotação do cano da metralhadora rotatória, de 0 a 1 (o medidor da mira e o zumbido leem daqui). */
   get spinLevel(): number { return this.armament.spinLevel; }
+  /** Quanto a mira está **aberta** (0 = firme): o HUD usa para o tamanho da mira (ordem P121). */
+  get aimOpen(): number { return this.armament.aimOpen; }
 
   /** Combustível do lança-chamas, de 0 a 1 (0 = tanque cheio e parado: nada a mostrar; na trava, o quanto da recarga passou). */
   get fuelLevel(): number { return this.armament.fuelLevel; }
