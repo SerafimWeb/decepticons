@@ -1,3 +1,15 @@
+## [2026-10-13] A mão esquerda do bot: configurar só o que a IA sabe usar (Claude, P108 passo b)
+
+**Situação:** o Comandante quer configurar os outros Mechs "como no Hangar". O `BotSpec` tinha só a arma principal.
+
+**Decisões:**
+1. **A ficha só oferece o que a IA usa.** Uma opção que a IA ignora é uma ficha que mente (R13). Por isso este passo é só a **mão esquerda**: o bot passa a atirá-la de verdade. Ombros, módulo e layout ficam para o passo c, quando a IA souber usá-los.
+2. **A mesma regra de arma da principal** (energia simples): foguetes e chuva de mísseis, que têm munição e regra de gatilho própria (`Armament.ts`), não entram na esquerda do bot.
+3. **O tiro da esquerda sai junto, na mesma mira e no ritmo da arma dela**, sem rajada nem fila de vaga: o bot que soma armas esquenta mais, como o jogador. **Rejeitado:** reaproveitar o `Armament` do jogador no bot (traz a regra de gatilho inteira para uma IA que só decide "atira ou não").
+4. **`canFireLeftHand` novo em vez de `canFireSecondary`:** o segundo depende do layout de gatilhos e no Marauder a esquerda atira no botão principal.
+5. **A ficha mostra os números do robô** (o canhão de cerco do V4 a 60% do dano, o plasma do chefe no Colossus-01), não os do Hangar: mostrar 360 de dano quando o bot dá 216 era a ficha mentindo.
+
+
 ## [2026-10-13] O HUD de combate segue o MechArena na informação e o CYBERMECH na linguagem (Claude, P109)
 
 **Situação:** o Comandante viu oito quadros do MechArena e quer o jogo "ainda mais bonito, melhor de jogar, mais interessante e gostoso de ficar horas", sem o pay-to-win deles. Comparados os quadros com o jogo de hoje (captura da mesma tela), a distância maior era o **HUD da partida**: sem minimapa, a vida em seis linhas de texto e três medidores do centro de baixo sobrepostos.

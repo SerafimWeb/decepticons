@@ -396,3 +396,60 @@ describe('os titãs como bots inimigos (P108)', () => {
     expect(match.allies!.mechs[0]!.stats.height).toBeLessThan(6);
   });
 });
+
+describe('a mão esquerda do bot atira de verdade (P108 b)', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+  afterEach(() => {
+    for (const p of abertas.splice(0)) p.world.free();
+  });
+
+  /** Quantos tiros de cada arma saíram da partida: o que o `ProjectileSystem` recebeu, por id. */
+  async function contando(bot: BotSpec, segundos: number) {
+    const p = await partida(esq([bot], []), {}, true);
+    const porArma: Record<string, number> = {};
+    const projeteis = p.match.projectiles as unknown as { fire: (...a: unknown[]) => unknown };
+    const original = projeteis.fire.bind(projeteis);
+    projeteis.fire = (...a: unknown[]) => {
+      const w = a[4] as { id: string };
+      porArma[w.id] = (porArma[w.id] ?? 0) + 1;
+      return original(...a);
+    };
+    p.run(segundos);
+    return { ...p, porArma };
+  }
+
+  it('com uma arma na esquerda o robô atira as duas, cada uma na cadência dela; sem ela, só a principal (o jogo de sempre)', async () => {
+    const sem = await contando(mech({ arma: { id: 'plasma', tier: 0 } }), 25);
+    expect(sem.porArma.plasma ?? 0).toBeGreaterThan(0);
+    expect(sem.porArma.arc ?? 0, 'sem secundária não pode sair tiro da esquerda').toBe(0);
+    const com = await contando(mech({ arma: { id: 'plasma', tier: 0 }, secundaria: { id: 'arc', tier: 0 } }), 25);
+    expect(com.porArma.plasma ?? 0).toBeGreaterThan(0);
+    expect(com.porArma.arc ?? 0).toBeGreaterThan(0);
+    // A cadência é a da arma: nunca mais que um tiro a cada fireInterval (0,45 s) em 25 s.
+    expect(com.porArma.arc!).toBeLessThanOrEqual(Math.ceil(25 / 0.45) + 1);
+    expect(com.acertos()).toBeGreaterThan(0);
+  }, 120_000);
+
+  it('o calor da esquerda entra no Mech (quem soma armas esquenta mais)', async () => {
+    const um = await partida(esq([mech({ arma: { id: 'plasma', tier: 0 } })], []), {}, true);
+    const dois = await partida(esq([mech({ arma: { id: 'plasma', tier: 0 }, secundaria: { id: 'arc', tier: 0 } })], []), {}, true);
+    let maximoUm = 0;
+    let maximoDois = 0;
+    for (let i = 0; i < Math.round(20 / FIXED_DT); i++) {
+      um.match.step(FIXED_DT);
+      dois.match.step(FIXED_DT);
+      maximoUm = Math.max(maximoUm, um.match.bots.mechs[0]!.heat);
+      maximoDois = Math.max(maximoDois, dois.match.bots.mechs[0]!.heat);
+    }
+    expect(maximoDois).toBeGreaterThan(maximoUm);
+  }, 120_000);
+
+  it('o esquadrão salvo com a secundária nasce com ela na mão (loadout.secondary) e o aliado também pode levar uma', async () => {
+    const { match } = await partida(esq([mech({ secundaria: { id: 'arc', tier: 1 } })], [mech({ secundaria: { id: 'blaster', tier: 0 } })]));
+    expect(match.bots.mechs[0]!.loadout.secondary?.id).toBe('arc');
+    expect(match.bots.mechs[0]!.loadout.secondary?.tier).toBe(1);
+    expect(match.allies!.mechs[0]!.loadout.secondary?.id).toBe('blaster');
+  });
+});

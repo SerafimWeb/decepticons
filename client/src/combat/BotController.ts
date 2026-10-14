@@ -200,6 +200,10 @@ export class BotController {
   /** Direção do tiro deste tick, válida quando `wantsToFire`. */
   readonly shotDir = new THREE.Vector3();
   wantsToFire = false;
+  /** Atira também a arma da mão esquerda (P108 b)? Quem liga é o `BotSystem`, quando o esquadrão deu uma arma secundária ao robô. */
+  useSecondary = false;
+  /** Quer atirar a arma da mão esquerda neste tick (mesma mira de `shotDir`). */
+  wantsToFireSecondary = false;
   state: BotState = 'patrol';
   /**
    * Vaga de ataque (o diretor do `BotSystem` distribui; sem diretor, sempre tem): sem ela o bot espera
@@ -274,6 +278,7 @@ export class BotController {
   private retreatTimer = 0;
   private retreatCooldown = 0;
   private fireCooldown = 0;
+  private secondaryCooldown = 0;
   private burstLeft: number;
   private stuckTimer = STUCK_CHECK_S;
   private readonly stuckFrom = new THREE.Vector3();
@@ -389,6 +394,7 @@ export class BotController {
     this.sinceSeen = Infinity;
     this.burstLeft = this.burstSize();
     this.fireCooldown = 0;
+    this.secondaryCooldown = 0;
     this.retreatTimer = 0;
     this.tokenHeld = 0;
     this.tokenWait = 0;
@@ -411,6 +417,7 @@ export class BotController {
   think(dt: number, targets: readonly MechBase[]): MechInput {
     const cmd = this.input;
     this.wantsToFire = false;
+    this.wantsToFireSecondary = false;
     cmd.jump = false;
     cmd.dash = false;
     if (!this.mech.alive) {
@@ -835,6 +842,7 @@ export class BotController {
   private aimAndFire(dt: number): void {
     const m = this.mech;
     this.fireCooldown -= dt;
+    this.secondaryCooldown -= dt;
     const t = this.target;
     const engaged = this.state === 'chase' || this.state === 'attack' || this.state === 'retreat';
     if (!t || !engaged || !this.targetVisible || this.visibleFor < this.skill.reactionS) {
@@ -866,7 +874,12 @@ export class BotController {
 
     const facingOff = Math.abs(wrapAngle(this.yawTo(tp) - this.yaw));
     if (this.hasToken) this.tokenHeld += dt;
-    if (dist > FIRE_RANGE || facingOff > FIRE_CONE_RAD || this.fireCooldown > 0 || !m.canFirePrimary || !this.hasToken) return;
+    const naMira = !(dist > FIRE_RANGE || facingOff > FIRE_CONE_RAD || !this.hasToken);
+    const primario = naMira && this.fireCooldown <= 0 && m.canFirePrimary;
+    // A mão esquerda (P108 b) tem a cadência e o alcance da arma dela e atira junto, na mesma mira; sem arma secundária no esquadrão, nada disto roda.
+    const w2 = this.useSecondary ? m.loadout.secondary : null;
+    const secundario = !!w2 && naMira && this.secondaryCooldown <= 0 && m.canFireLeftHand && dist <= w2.maxRange;
+    if (!primario && !secundario) return;
 
     // Erro de mira: gira a direção um pouco em yaw e em pitch.
     _dir.normalize();
@@ -882,6 +895,11 @@ export class BotController {
     _dir.x = x;
     _dir.y += (this.rand() * 2 - 1) * err;
     this.shotDir.copy(_dir.normalize());
+    if (secundario) {
+      this.wantsToFireSecondary = true;
+      this.secondaryCooldown = Math.max(this.secondaryCooldown, -dt) + w2!.fireInterval;
+    }
+    if (!primario) return;
     this.wantsToFire = true;
 
     this.burstLeft--;
