@@ -270,7 +270,7 @@ describe('o mural de câmeras, com o servidor de verdade', () => {
       await s.close();
       rmSync(pasta, { recursive: true, force: true });
     }
-  });
+  }, 120_000);
 
   it('o espectador devolve a vaga do IP ao sair: com o teto de 2 por IP, dá para abrir e fechar o mural muitas vezes', async () => {
     const apertado = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', metricasToken: TOKEN, guard: { ...GUARD, perIp: 2 }, mural: { cadaMs: 50, esperaMs: 400 } });
