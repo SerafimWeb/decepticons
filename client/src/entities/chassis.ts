@@ -1,7 +1,7 @@
-import type { MountKind } from '../combat/mountKinds';
+import { fitsMount, type MountKind } from '../combat/mountKinds';
 import { SHOULDER_TRIGGERS, SPLIT_SHOULDER_TRIGGERS } from '../combat/mounts';
 import { fitsSize, type RobotSize } from '../combat/weaponClass';
-import { weapon, type WeaponId } from '../combat/weapons';
+import { WEAPON_IDS, weapon, type WeaponId } from '../combat/weapons';
 import type { MechStats } from './MechBase';
 
 /**
@@ -415,30 +415,55 @@ export interface ArmSlots {
 }
 /** O tipo de encaixe de cada ranhura do Hangar (`combat/mountKinds.ts`): as duas mãos são braço, os dois lançadores são ombro. */
 export const SLOT_KIND: Readonly<Record<keyof ArmSlots, MountKind>> = { right: 'arm', left: 'arm', shoulders: 'shoulder' };
-/** Engate de energia compartilhado; massa/nível ainda limitam cada montagem. */
+/**
+ * **A curadoria saiu; entrou o contrato** (ordem P120, 14/10/2026: "é só das que sejam possíveis mesmo, não precisa
+ * inventar nova regra que estrague algo mais correto anterior"). Antes cada chassi tinha uma lista escolhida a dedo;
+ * agora o Hangar oferece, em cada braço, **toda** arma que o **contrato** já permite — o tipo de encaixe (`fitsMount`) e o
+ * tamanho do chassi (`fitsSize`) — menos as regras de **disparo** que já são do jogo (`combat/Armament.ts`) e não mudam:
+ * o braço direito é o gatilho **principal** (energia, munição e a chama do lança-chamas) e o esquerdo, nos chassis comuns,
+ * é o **secundário** (mísseis, corte e onda, mas **não** a chama nem o giro de cano da rotatória). O que **não** cabe
+ * continua fora: o canhão sônico é só de ombro (e só o Marauder tem ombros) e o escudo do Lancer fica no lugar do braço.
+ * A regra de quem leva o quê (P77, P19, P82) **não mudou** — mudou só quem é *oferecido*.
+ */
 const ENERGY_ARMS: readonly WeaponId[] = ['plasma', 'blaster', 'shotgun', 'railgun', 'emp', 'arc', 'cryo', 'autocannon'];
-const SUPPORT_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rockets', 'barrage'];
-/** Armas do gatilho principal, mão direita (e a esquerda nos chassis de duas mãos no gatilho): a rotatória gira o cano e só existe aí. */
-const PRIMARY_ARMS: readonly WeaponId[] = [...ENERGY_ARMS, 'rotary'];
-/** O lança-chamas e o canhão pesado (6 t) só nos pesados (dono, 09/10 e 11/10; `ARMAS_ELEMENTAIS.md`): Colossus, Onça, Bastion e Marauder. */
-const HEAVY_PRIMARY_ARMS: readonly WeaponId[] = [...PRIMARY_ARMS, 'flamer', 'cannon'];
-/** O canhão pesado também vai no braço esquerdo dos pesados (atira no botão 2, como qualquer arma de energia); o lança-chamas não (o fluxo é do gatilho principal). */
-const HEAVY_SUPPORT_ARMS: readonly WeaponId[] = [...SUPPORT_ARMS, 'cannon'];
-/** Só as armas que o tamanho do robô sabe carregar (`fitsSize`): num gigante, as pesadas dos Mechs; no tamanho 2, tudo. */
-const fitSize = (list: readonly WeaponId[], size: RobotSize): readonly WeaponId[] => list.filter((id) => fitsSize(id, size));
+/** A arma é de corte (corpo a corpo): só o gatilho **secundário** sabe aplicá-la; no principal, viraria um projétil. */
+const ehCorte = (id: WeaponId) => weapon(id).kind === 'melee';
+/** A arma acende chama: o fluxo mora no gatilho principal (`combat/Armament.ts`). */
+const ehChama = (id: WeaponId) => weapon(id).flame !== undefined;
+/** A arma gira o cano: o desvio da rajada mora no gatilho principal. */
+const ehGiro = (id: WeaponId) => weapon(id).spin !== undefined;
+/** A chuva de mísseis é do gatilho **secundário** (a salva e o aviso no chão saem dele): não vai no principal. */
+const ehChuva = (id: WeaponId) => weapon(id).barrage !== undefined;
+
+/** O braço **direito** (gatilho principal): tudo o que caiba no encaixe e no tamanho, menos o que o principal não dispara. */
+const armasDoBracoDireito = (size: RobotSize): readonly WeaponId[] =>
+  WEAPON_IDS.filter((id) => fitsMount(id, 'arm') && fitsSize(id, size) && !ehCorte(id) && !ehChuva(id));
+
+/**
+ * O braço **esquerdo**: nos chassis de duas mãos armadas (`SPLIT_SHOULDER_TRIGGERS`, o Marauder) é um segundo gatilho
+ * principal e vale o mesmo do direito; nos outros é o gatilho **secundário** — que sabe cortar e lançar a chuva, mas não
+ * acende chama nem gira cano.
+ */
+const armasDoBracoEsquerdo = (size: RobotSize, primarioDuplo: boolean): readonly WeaponId[] =>
+  WEAPON_IDS.filter((id) => {
+    if (!fitsMount(id, 'arm') || !fitsSize(id, size)) return false;
+    if (primarioDuplo) return !ehCorte(id) && !ehChuva(id);
+    return ehCorte(id) || (!ehChama(id) && !ehGiro(id));
+  });
 export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
-  vector09: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
-  android: { right: ['blaster'], left: ['chainsaw'] },
-  colossus01: { right: fitSize(HEAVY_PRIMARY_ARMS, CHASSIS_SIZE.colossus01), left: fitSize(HEAVY_SUPPORT_ARMS, CHASSIS_SIZE.colossus01) },
+  vector09: { right: armasDoBracoDireito(CHASSIS_SIZE.vector09), left: armasDoBracoEsquerdo(CHASSIS_SIZE.vector09, false) },
+  android: { right: armasDoBracoDireito(CHASSIS_SIZE.android), left: armasDoBracoEsquerdo(CHASSIS_SIZE.android, false) },
+  colossus01: { right: armasDoBracoDireito(CHASSIS_SIZE.colossus01), left: armasDoBracoEsquerdo(CHASSIS_SIZE.colossus01, false) },
   // O titã só tem as armas de tamanho 3 (o canhão de cerco, nas duas mãos): as dos Mechs não cabem nele.
-  colossusv4: { right: ['siege'], left: ['siege'] },
-  arara: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
-  onca: { right: [...HEAVY_PRIMARY_ARMS, 'rockets'], left: HEAVY_SUPPORT_ARMS },
-  genesis01: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
+  colossusv4: { right: armasDoBracoDireito(CHASSIS_SIZE.colossusv4), left: armasDoBracoEsquerdo(CHASSIS_SIZE.colossusv4, false) },
+  arara: { right: armasDoBracoDireito(CHASSIS_SIZE.arara), left: armasDoBracoEsquerdo(CHASSIS_SIZE.arara, false) },
+  onca: { right: armasDoBracoDireito(CHASSIS_SIZE.onca), left: armasDoBracoEsquerdo(CHASSIS_SIZE.onca, false) },
+  genesis01: { right: armasDoBracoDireito(CHASSIS_SIZE.genesis01), left: armasDoBracoEsquerdo(CHASSIS_SIZE.genesis01, false) },
+  // O Lancer-L1 traz a arma na própria malha e o escudo no braço esquerdo: a curadoria dele é da MALHA, não da regra.
   lancerL1: { right: ENERGY_ARMS, left: [] },
-  lr7lBastion: { right: HEAVY_PRIMARY_ARMS, left: HEAVY_SUPPORT_ARMS },
-  quadraV2: { right: PRIMARY_ARMS, left: SUPPORT_ARMS },
-  marauder: { right: HEAVY_PRIMARY_ARMS, left: HEAVY_PRIMARY_ARMS, shoulders: ['rockets', 'barrage', 'sonic', 'seeker'] },
+  lr7lBastion: { right: armasDoBracoDireito(CHASSIS_SIZE.lr7lBastion), left: armasDoBracoEsquerdo(CHASSIS_SIZE.lr7lBastion, false) },
+  quadraV2: { right: armasDoBracoDireito(CHASSIS_SIZE.quadraV2), left: armasDoBracoEsquerdo(CHASSIS_SIZE.quadraV2, false) },
+  marauder: { right: armasDoBracoDireito(CHASSIS_SIZE.marauder), left: armasDoBracoEsquerdo(CHASSIS_SIZE.marauder, true), shoulders: ['rockets', 'barrage', 'sonic', 'seeker'] },
 };
 
 /** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */

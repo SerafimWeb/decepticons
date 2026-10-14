@@ -1,3 +1,11 @@
+## [2026-10-14] A curadoria das armas virou contrato — todo robô leva o que o encaixe já aceita (Qwen, P120)
+
+**Situação:** o Comandante quer "todos os robôs com todas as armas", com o limite explícito: *"é só das que sejam possíveis mesmo, não precisa inventar nova regra que estrague algo mais correto anterior"*.
+
+**Decisões:** (1) `ARM_SLOTS` passa a ser o **contrato** (`fitsMount` × `fitsSize`), não uma lista escolhida a dedo. (2) As **regras de disparo** (`combat/Armament.ts`) **não** mudam: o principal não corta (chamaria um projétil) nem lança a chuva; o secundário não acende chama nem gira cano. (3) **Uma exceção de curadoria fica declarada**: o **Lancer** traz a arma na própria malha (o direito dele é a lista de energia, o esquerdo é o escudo) — é limite da **malha**, não da regra. (4) O **andróide** (tamanho 1) ganha as armas **leves**; o **V4** (tamanho 4) segue só com o de tamanho 3; a regra de tamanho P82 e o peso valem. (5) O **canhão de cerco** (tamanho 3) passa a caber no Colossus-01 (tamanho 3), pela própria regra de tamanho — a confirmar com o dono. (6) Efeito colateral aceito: os **bots** ganham o canhão pesado no Esquadrão (leem a mesma lista, filtrada por `armaServeAoBot`).
+
+**Quem decidiu:** o Comandante (a ordem e o limite "só o possível"); Qwen executou o contrato e o ponto 5 é proposta minha, ajustável numa linha.
+
 ## [2026-10-14] Os bots ganham papel e retaguarda — a arma de linha segura o setor, o resto entra (Qwen, P119 passo 1)
 
 **Situação:** o Comandante achou os bots "meio burros, bagunçados, que só correm e rusham" e pediu critério e técnica no ataque e na defesa.

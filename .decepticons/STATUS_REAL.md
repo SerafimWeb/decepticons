@@ -5,6 +5,10 @@
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
 
+## Todos os robôs, todas as armas (as possíveis) — Qwen, 14/10 (P120)
+
+**REAL (testado; falta o playtest do dono):** `ARM_SLOTS` virou **contrato** — cada braço oferece toda arma que caiba pelo tipo de encaixe e pelo tamanho do chassi, menos as regras de **disparo** (o principal não corta nem lança chuva; o secundário não acende chama nem gira cano). O **lança-chamas** e o **canhão pesado** agora vão em **todo Mech**; o **Andróide** leva as cinco armas leves; o **Colossus-01** leva também o **canhão de cerco**. O **canhão sônico** continua só no Marauder (é de ombro) e o **Lancer** segue com a arma da malha. Testes de armas/encaixes atualizados e o **golden do esquadrão padrão** intacto. **Nota:** os bots também ganham o canhão pesado no Esquadrão (leem a mesma lista, filtrada por `armaServeAoBot`).
+
 ## Tática de esquadrão: papéis por arma e retaguarda — Qwen, 14/10 (P119, passo 1)
 
 **REAL (testado na simulação; falta o playtest do dono):** `combat/tatica.ts` dá **papel** ao robô pela arma (arma de linha, ≥90 m = `apoio`); com 3+ lutadores e algum de perto, o primeiro `apoio` fica de **retaguarda** no setor de nascimento e **não persegue**. É só **posição**: nenhuma regra de tiro, dano ou token mudou, e o esquadrão de fábrica (plasma) segue idêntico (o teste-golden `esquadraoPadrao.test.ts` bate tick a tick). 11 testes. **Falta:** o jogo em equipe mais fundo (cobertura, flanco, ataque conjunto) e uma partida jogada pelo dono (R13).

@@ -122,9 +122,12 @@ describe('editor do esquadrão: o modelo', () => {
     const e = editor(esq([mech({ chassi: 'onca', arma: { id: 'cannon', tier: 0 } }), mech({ chassi: 'onca', arma: { id: 'plasma', tier: 1 } })], []));
     e.editar('inimigo', 0, { chassi: 'vector09' });
     e.editar('inimigo', 1, { chassi: 'vector09' });
-    // O canhão pesado só vai nos pesados; o plasma vai em todos (o chassi padrão não aparece: é o de sempre).
-    expect(e.lista('inimigo')[0]).toEqual(mech());
+    // Agora todo Mech aceita o canhão pesado (P120): trocar entre Mechs não larga nada (o chassi de fábrica não aparece).
+    expect(e.lista('inimigo')[0]).toEqual(mech({ arma: { id: 'cannon', tier: 0 } }));
     expect(e.lista('inimigo')[1]).toEqual(mech({ arma: { id: 'plasma', tier: 1 } }));
+    // O titã só leva a arma de fábrica: o canhão cai.
+    e.editar('inimigo', 0, { chassi: 'colossusv4' });
+    expect(e.lista('inimigo')[0]).toEqual(mech({ chassi: 'colossusv4' }));
   });
 
   it('só o Mech tem personalidade, chassi e arma; o técnico não tem dificuldade; arma que o bot não usa não pega', () => {
