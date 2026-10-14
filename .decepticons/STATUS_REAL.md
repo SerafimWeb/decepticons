@@ -5,6 +5,8 @@
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
 
+**Passo 2 — o layout (`environment/PraiaLayout.ts`, em dado puro, 9 testes):** **480 × 140 m** (mais que o dobro da Arena), o **fundo do mar em degraus** (2/5/9/14 m), a **água** (`PRAIA_AGUA`), as **duas vias** (areia e passarela alta) e a **ESTAÇÃO DE CABOS** com a **escotilha** (a saída do P123) no pé; 6 nascimentos secos. **Falta:** o **construtor** (geometria e colisores), o `MapId` `praia` e a missão.
+
 ## A água da praia: freia e afoga — Qwen, 14/10 (P126, passo 1)
 
 **REAL no código e nos testes (ainda **sem mapa** que a use):** `combat/Agua.ts` traz o **contrato da água** — a **fundura** pelos pés, o **freio** (até 0,35× a velocidade, pelo `MechBase.moveSpeedScale` que já existe) e o **afogamento** (3 s e 8/s no casco). **7 testes**. **Falta:** a **geometria** (a praia e o fundo do mar que desce), o `MapId` `praia`, a **missão** e o playtest — e é com o mapa que a regra ganha o **teste de partida** (G14).

@@ -1,3 +1,11 @@
+## [2026-10-14] O layout da praia em dado puro — o desenho antes da geometria (Qwen, P126 passo 2)
+
+**Situação:** o passo 1 entregou a **regra da água**; faltava o **cenário**. Para não repetir a segunda rodada do Bunker, o desenho vem **antes** da geometria.
+
+**Decisões:** (1) o cenário é **dado puro** (`environment/PraiaLayout.ts`), como o `BunkerLayout.ts`: o construtor e a física leem a lista, e os testes conferem o desenho **sem 3D**. (2) **480 × 140 m** (2,4× a Arena), dentro da ficha `cenario-cabos.md` — residente, o maior que cabe sem streaming. (3) O **afundamento** é geometria: o **fundo do mar desce em degraus** (2/5/9/14 m), e a física de sempre afunda; a `Agua` cobra o preço. (4) **Duas vias** (areia e passarela alta), a **escotilha** no pé da estação (a saída do P123) e **6 nascimentos secos** — cada um ligado a um teste.
+
+**Quem decidiu:** o Comandante pediu o cenário; "dado antes da geometria" é a decisão de engenharia (a lição do Bunker).
+
 ## [2026-10-14] A água da praia: freia e afoga — o contrato antes do cenário (Qwen, P126 passo 1)
 
 **Situação:** o Comandante passou para o Qwen a tarefa do Codex (sem créditos) e pediu o **cenário maior da praia dos cabos** (Fortaleza), com **mar** — "que os mechs possam entrar na água e ir afundando" — e a narrativa de defender os cabos.
