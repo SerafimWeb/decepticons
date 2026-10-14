@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Os três robôs saem do cadeado e as armas de som e fogo voltam a aparecer — Claude, 14/10 (PR `claude/hangar-liberado`, ordem P118)
+
+**A queixa do Comandante (14/10):** "a arma de som, fogo, entre outras, não está aparecendo no hangar... e os últimos 3 robôs estão com um cadeado e pedindo login e senha" (LR-7L Bastion, Quadra-V2 e Marauder, "OFICINA (clique p/ admin)").
+- **Causa única:** os três tinham `status: 'oficina'` em `entities/chassis.ts` (a flag "em desenvolvimento" do painel admin do Gemini, que esconde o robô atrás de login). A marca **saiu dos três**; o mecanismo do admin continua para o próximo robô em desenvolvimento.
+- **Por que sumiam as armas:** o **canhão sônico é só de ombro** e o único robô com ombros é o **Marauder**; o **lança-chamas** só nos pesados (Colossus, Onça, **Bastion**, **Marauder**). O Comandante estava com o Colossus-01 e, com Marauder e Bastion trancados, parecia que as armas não existiam. **A regra de quem leva o quê não mudou** (P19, P77, P82 são decisões dele); se ele quiser som e fogo em todos os robôs, é mudar `ARM_SLOTS` e `WEAPON_MOUNTS` (e o teste que fixa a regra).
+- **Do Codex (créditos acabaram):** o PR #298 (câmera) e o #299 (registro) já estavam na `main`. Fechei o que não pede GPU real: a vulnerabilidade `source-map-js` (opção 8 de `PROXIMAS_OPCOES_CODEX.md`) com `npm audit fix` (0 vulnerabilidades). **Ficam com o Codex** (pedem janela de GPU real): C2 (preparação do Hangar e remotos), C3 (homologação em GPU integrada), C5 (cobertura e cor do cenário) e C6 (efeito 3D de choque).
+- **Registradas** as ordens P110 a P117 do Comandante (ver `ORDENS_DO_COMANDO.md`): o ciclo de combate (P111), o **Domínio** (P112; regra, atribuição dos bots, mapa e bases escritos e testados no branch `claude/dominio`, **ainda fora da `main`**), a voz do narrador no ElevenLabs (P113, falta a chave de API), cenários maiores (P114), melhoria contínua (P115), a próxima leva de robôs (P116) e a autorização permanente de limpar bagunça (P117). A política (P110) foi renumerada: o número antigo colidia.
+
+**Próxima sessão começa com:** ligar o Domínio ao `Match` (modo `dominio`, nascimentos por lado, bots indo aos pontos), depois o HUD dos pontos, os feixes de luz no mapa e a entrada no seletor de modos.
+
 ## ÚLTIMA SESSÃO FEZ: fluidez da câmera junto à cobertura — Codex, 14/10 (P109, PR #298)
 
 **Autorização do Comandante:** “sim, prossiga”, sobre executar a referência do PR #297. Branch `codex/fluidez-camera`, isolado em `.tmp/wt-codex-fluidez`, base `900d277`. Três sessões válidas de cinco minutos na Vega 11, 53.798 quadros: p99 16,9 ms em todas; três pausas >300 ms nas duas primeiras, nenhuma >50 ms na terceira. Zero programas novos e erros de página. Uma sessão que ficou no banco foi descartada; as repetições contam e encerram esse menu no quadro seguinte. Dados e limites em `medicoes/FLUIDEZ_CAMERA.md`/`.json`.
