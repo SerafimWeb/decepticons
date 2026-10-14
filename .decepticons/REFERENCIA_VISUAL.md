@@ -1,5 +1,7 @@
 # REFERÊNCIA VISUAL — o que o MechArena nos mostra
 
+> **Leitura por data:** as tabelas das seções 3–4 são o retrato de 07/10, não o inventário atual. Atmosfera, sombras de contato, janelas e caudas de tiro já receberam entregas. Para a referência de 13/10 e o próximo corte, ver §7; estado de funcionalidades em `STATUS_REAL.md`.
+
 > Pedido do dono (07/10/2026): ele gravou a tela do MechArena rodando e pediu que o projeto olhasse "a qualidade
 > que eles chegaram: gráficos, jogabilidade, armas, cenários". Este arquivo guarda o que foi visto, o que serve para
 > o CYBERMECH e o que não serve. Quem for mexer em visual, efeito, HUD ou cenário lê isto antes (Passo Zero, item 11).
@@ -123,3 +125,43 @@ Acompanhamento no `ROADMAP.md` (frente `#cenarios`); estado real de cada passo e
 | **5. Pontos de controle e ficha da arma** | modo A–E (posse por proximidade, placar por tempo de posse), minimapa com as letras, dano/alcance/recarga na lista do Hangar | regra no `Match` com teste (G14) e estado de objetivo na rede | depende da decisão 5 da folha de decisões do Comandante (a escolta vem antes?) |
 
 **O que o Comandante pode ajustar agora:** (a) se o minimapa deve mostrar só quem está à vista; (b) se o modo de pontos de controle entra antes ou depois da escolta (P99); (c) se quer o retrato do piloto na vida (pede arte).
+
+## 7. Seis prints: alcançar a qualidade de movimento, combate e cenários (13/10, Codex, P109)
+
+**Pedido literal:** “andei assistindo uns videos do mech arena, e percebi que eles tem uma jogabilidade, uma fluidez muito boa, movimentação, mecanicas, fisica dos tiros, etc, e cenarios grandes e muito elaborados. quero alcançar o nivel deles. vou colar aqui uns prints”. Complemento à P109, sem duplicar a ordem nem reiniciar o HUD já entregue.
+
+**Evidência:** seis imagens fornecidas pelo dono, preservadas em `referencias/mecharena/2026-10-13-01.png` a `06.png`, na ordem do chat. São referência de análise, não assets do jogo. Nesta sessão a pasta local `.tmp/referencias/` não existia; os vídeos antigos não foram revistos. A fluidez é o relato do dono; um quadro não comprova velocidade, trajetória, resposta ao comando, FPS sustentado nem implementação física do concorrente. O contador visível não é benchmark comparável.
+
+| Print | O que é observável | Aplicação ao nosso jogo |
+|---|---|---|
+| 1 — Skyship 11 e seleção | Estruturas vermelhas grandes, céu além da plataforma, mapa comprido e cinco silhuetas distintas | Separar área jogável de horizonte visual; oferecer marcos para orientação e leitura do papel de cada chassi |
+| 2 — convés | Piso amarelo de circulação, coberturas claras, volumes vermelhos ao fundo; alvo marcado a 67 m | Contraste entre chão, cobertura e unidade. Cobertura com função tática, não só decoração |
+| 3 — arena com passarelas | Cruzamento entre piso inferior e passarela, rampas, alturas e caminhos laterais; alvo a 48 m | Rotas alternativas e vantagem de altura com acesso e contrajogo; conferir câmera sob passarela |
+| 4 — corredor rochoso | Passagem estreita enquadra alvo a 41 m; descarga amarela e proteção azul envolvem o Mech | Efeito com identidade e centro de mira legível; a imagem não estabelece a física do disparo |
+| 5 — pódio | Três corpos muito distintos, plataformas, estandartes e iluminação que destacam os robôs | Silhueta e apresentação do resultado; acabamento de fim de partida após resolver o combate |
+| 6 — escudo frontal | Barreira translúcida delimitada, rampas, caixas e indicação de recarga perto da mira | Visual mostrar o volume efetivamente protegido e recarga; evitar brilho que esconda o alvo |
+
+### 7.1 Distância real até a meta
+
+- **Fluidez:** `medicoes/RENDER_C3.md` mediu combate em 09/10 na Vega 11: p50/p95/p99 de **33,4/66,6/100 ms**, com duas travadas >300 ms. Amostra curta e RAM pressionada; não representa uma medição do build de hoje. Exige nova linha de base controlada antes de atribuir a causa ou prometer 60 FPS.
+- **Movimento:** o projeto já possui tick fixo, interpolação, dash, pulo e câmeras. Existência de sistemas não atesta boa sensação: avaliar arrancada, parada, strafe, giro, apoio dos pés, colisão da câmera e transições de altura em movimento. Preservar resposta imediata; peso deve vir também da pose, passada e áudio, sem introduzir atraso de input por estética.
+- **Tiro:** já há rastros, impactos por família, tremor por arma e efeitos elementais. Conferir a cadeia completa **comando → saída da boca → trajetória → impacto → reação → som/retorno de acerto**. A compensação de latência continua AUSENTE em `STATUS_REAL.md`; contrato de justiça e teste com dois clientes pertencem à frente de simulação/rede. Não tratar toda arma como projétil balístico nem aplicar rewind indiscriminadamente.
+- **Cenário:** a Arena tem `halfSize = 100` (200 m de lado em `environment/Arena.ts`); o Bunker possui quatro pisos e limitações registradas. Área física maior não garante riqueza ou ritmo. As capturas mostram profundidade, marcos, cobertura e circulação; não permitem calcular o tamanho dos mapas do concorrente.
+- **Base visual:** `Arena.ts` já usa `Atmosphere` e `BuildingWindows`; `Game.ts` liga `ShadowBlobs`. Reaproveitar essas entregas e o HUD da §6. Os textos antigos das §§3–4 sobre ausência dessas peças são históricos.
+
+### 7.2 Primeiro alvo: uma arena como referência de qualidade
+
+Proposta de execução para concretizar a meta, sem alterar `VISAO.md` ou assumir trabalho de sessões externas. Evoluir **uma arena existente** até o dono aprovar a experiência; só então replicar o padrão. A ordem de movimento/tiro/arte abaixo complementa a frente de HUD da §6.
+
+| Etapa | Entrega verificável | Aceite e custo a conferir |
+|---|---|---|
+| A — medir fluidez | Mesma versão, GPU integrada, 1280×720, resolução interna declarada, montagem e esquadrão fixos; três sessões de 5 min após aquecimento, com movimento e tiro. Registrar também primeiro uso a frio | p50/p95/p99, travadas >50/100/300 ms, CPU/GPU quando disponíveis, RAM, draws e tempo até jogar. **Alvos propostos**, não resultados: 60 FPS; p95 ≤20 ms, p99 ≤33,3 ms; zero travadas >100 ms após aquecimento. Ambiente ocupado deve ser identificado, sem encerrar processos alheios |
+| B — pilotar e atirar | Percurso repetível: arrancar/parar, strafe mirando, dash, rampa, curva junto de parede; disparar três famílias existentes contra alvo parado e móvel | Clipe do mesmo percurso antes/depois e julgamento do dono; boca/impacto coerentes e câmera sem atravessar cobertura. Testes de simulação se a regra mudar. Animação e efeitos com pools e tetos, sem novas alocações no frame |
+| C — arena acabada | Rota central, flancos e altura útil, cobertura na escala dos chassis, marcos por setor, kit consistente de chão/parede/rampa/contêiner e horizonte decorativo | Capturas fixas e percurso em movimento; testar spawn, rampas, câmera, tiros e navegação de bots antes de detalhar. Medir deslocamento até contato e caminhos sem cobertura. Instanciamento por setor/tipo; colisores simples só onde há interação, custo de CPU/física medido |
+| D — experiência online | Dois clientes, atraso/jitter/perda controlados, confronto entre aquilo que o piloto viu e o acerto decidido pelo servidor | Relatório por arma e condição; correções visíveis, tempo de retorno, banda e tick. Compensação depende de contrato de autoridade/justiça; manter limites de rede existentes |
+
+**Direção de arte:** preservar identidade neon, mas tornar volumes e superfícies legíveis com luz, contraste e materiais consistentes. Usar detalhe grande que ajuda orientação; não depender de bloom para desenhar o cenário. Sombras pré-calculadas, atlas e LOD são candidatos a ensaio, não características comprovadas do MechArena nem tecnologias aprovadas sem medida.
+
+**Próximo corte Codex:** etapa A (retomar C3 no build atualizado) e percurso da etapa B para registrar problemas concretos; depois um setor da Arena como prova da etapa C, coordenado com a frente de cenário da §6. Não ampliar mapa nem introduzir novas regras de combate neste registro. Cada implementação futura fecha com check, captura/clipe, custo e caminho no site.
+
+**Resultado desta sessão:** referência preservada e critérios definidos; nenhum ganho de FPS, alteração de mapa, mecânica ou equivalência ao MechArena foi entregue. A P109 continua em operação.

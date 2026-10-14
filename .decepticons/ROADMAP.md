@@ -297,6 +297,9 @@ Ver `VISAO.md`, seção "Mundo grande, integrado". Aqui só destravamos com joga
 
 ## 💡 IDEIAS
 
+- [x] Complemento da P109: seis prints do MechArena preservados e analisados, critérios de fluidez/movimento/tiro/cenário em `REFERENCIA_VISUAL.md` §7 (Codex, 13/10; documentação, sem ganho de desempenho) #cenarios
+- [ ] P109: validar uma arena como referência de qualidade, seguindo as etapas A–D de `REFERENCIA_VISUAL.md` §7; começar por nova medição C3 e percurso de movimento/tiro, reaproveitando o HUD existente #jogabilidade
+
 - [x] Clareza da montagem (peso por encaixe e nível), treino coerente com a carga e seletor sincronizado com os modos da simulação (Codex, direção autorizada 06/10) #ux
 - [ ] Revisar utilidade/cobertura dos testes por frente; execução por impacto durante edição e gate completo nas entregas, sem usar contagem como garantia (Codex, pergunta do dono 06/10) #base
 - [x] Canhão de trilho carregável e lançador EMP, com MK I–III, carga, montagem e miras próprias (Codex, pedido 06/10) #combate
