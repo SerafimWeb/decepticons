@@ -10,12 +10,21 @@ describe('mapHref: o link do seletor de mapa', () => {
     return mapFromSearch(u.search, online, modo);
   };
 
-  it('oferece a Arena e o Bunker, nessa ordem', () => {
-    expect(MAPS.map((m) => m.id)).toEqual(['arena', 'bunker']);
+  it('oferece a Arena, o Bunker e a Praia, nessa ordem', () => {
+    expect(MAPS.map((m) => m.id)).toEqual(['arena', 'bunker', 'praia']);
   });
 
   it('o link do Bunker abre o Bunker', () => {
     expect(abre(mapHref('https://exemplo.test/cybermech/jogar/', 'bunker'))).toBe('bunker');
+  });
+
+  it('o link da Praia abre a Praia (a ESTAÇÃO DE CABOS, P126)', () => {
+    const href = mapHref('https://exemplo.test/cybermech/jogar/?sala=ARENA&modo=ctf', 'praia');
+    const u = new URL(href);
+    expect(u.searchParams.get('mapa')).toBe('praia');
+    expect(u.searchParams.has('sala')).toBe(false);
+    expect(u.searchParams.has('modo')).toBe(false);
+    expect(abre(href)).toBe('praia');
   });
 
   it('sai da sala online e do modo atual: sem isso o jogo ignora o mapa e continua na arena', () => {

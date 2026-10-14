@@ -84,7 +84,9 @@ describe('as missões do teatro de operações', () => {
     expect(estadoDoTeatro(t('bunker'), 'arena', 'deathmatch')).toBe('disponivel');
     expect(estadoDoTeatro(t('bunker'), 'arena', 'survival')).toBe('outro-modo');
     expect(estadoDoTeatro(t('arena'), 'bunker', 'deathmatch')).toBe('disponivel');
-    expect(estadoDoTeatro(t('cabos'), 'arena', 'deathmatch')).toBe('em-breve');
+    // A ESTAÇÃO DE CABOS abre o mapa da praia (P126): a missão saiu do "EM BREVE".
+    expect(estadoDoTeatro(t('cabos'), 'arena', 'deathmatch')).toBe('disponivel');
+    expect(estadoDoTeatro(t('cabos'), 'praia', 'deathmatch')).toBe('aqui');
   });
 });
 
