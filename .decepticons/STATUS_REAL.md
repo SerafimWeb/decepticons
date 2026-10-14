@@ -5,6 +5,10 @@
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
 
+## Morrer e voltar: o painel "seu algoz" — Qwen, 14/10 (P109 frente 3, passo 1)
+
+**REAL no CSS e no DOM (visto em página de teste headless; falta morrer numa partida de verdade):** ao morrer, o `ui/AlgozPanel.ts` mostra o **nome**, o **chassi**, a **vida do torso** e as **armas com o dano** do matador durante o contador de renascimento. A leitura é pura e testada (`algozViewOf`, 4 testes). **Falta:** a **escolha do ponto de nascimento** (a outra metade da frente 3) e o painel no **online** (o evento de abate do servidor traz só nomes). Captura: `arte/painel-do-algoz-qwen.jpg`.
+
 ## Todos os robôs, todas as armas (as possíveis) — Qwen, 14/10 (P120)
 
 **REAL (testado; falta o playtest do dono):** `ARM_SLOTS` virou **contrato** — cada braço oferece toda arma que caiba pelo tipo de encaixe e pelo tamanho do chassi, menos as regras de **disparo** (o principal não corta nem lança chuva; o secundário não acende chama nem gira cano). O **lança-chamas** e o **canhão pesado** agora vão em **todo Mech**; o **Andróide** leva as cinco armas leves; o **Colossus-01** leva também o **canhão de cerco**. O **canhão sônico** continua só no Marauder (é de ombro) e o **Lancer** segue com a arma da malha. Testes de armas/encaixes atualizados e o **golden do esquadrão padrão** intacto. **Nota:** os bots também ganham o canhão pesado no Esquadrão (leem a mesma lista, filtrada por `armaServeAoBot`).

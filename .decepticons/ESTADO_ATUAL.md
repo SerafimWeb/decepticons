@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Morrer e voltar: o painel "seu algoz" — Qwen, 14/10 (PR `qwen/painel-do-algoz`, P109 frente 3)
+
+**Frente 3 da P109** ("morrer e voltar"; inclui a P98/killcam). Passo 1: **ao morrer, a tela diz quem te matou.**
+
+**O que há:** durante o contador de renascimento, um painel sob o "ABATIDO" com o **nome** do matador, o **chassi**, a **vida do torso** com que ele ficou (barra que muda de cor: verde / âmbar / vermelho) e as **armas dele com o dano** ("CANHÃO PESADO · 90") — a segunda mão, a secundária e o escudo físico inclusive, sem repetir quando as duas mãos levam a mesma arma. Convive com o contador e com a câmera de abate, que já existiam.
+
+**Onde mora:** `ui/AlgozPanel.ts` — a leitura é **pura e testável** (`algozViewOf`), o DOM mora na classe; o `Game` liga no `onMechKilled` (offline, quando o matador é um bot) e esconde quando o jogador renasce.
+
+**Custo:** zero por tick/quadro; escreve no DOM **só quando o conteúdo muda**; o `replaceChildren` da lista de armas só roda na morte.
+
+**Visto:** o CSS real e o DOM real numa página de teste headless — **a captura é `arte/painel-do-algoz-qwen.jpg`**. **Falta (R13):** morrer numa partida de verdade (o painel só aparece na morte, o que a captura automática do site não alcança) e o painel no **online** (o evento de abate do servidor traz só os nomes; ligar o matador remoto é um corte próprio).
+
+**Falta na frente 3:** a **escolha do ponto de nascimento** na contagem (a outra metade da frente).
+
 ## Todos os robôs, todas as armas (as possíveis): a curadoria virou contrato — Qwen, 14/10 (PR `qwen/armas-do-contrato`, ordem P120)
 
 **Ordem do Comandante (14/10):** "quero que todos os robôs possam usar todas as armas" e, logo depois, o limite: "é só das que sejam possíveis mesmo, não precisa inventar nova regra que estrague algo mais correto anterior".
