@@ -1,5 +1,24 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O canhão de cerco agora carrega e ESPERA — Qwen, 14/10 (PR `qwen/cerco-com-espera`, ordem P124)
+
+**Ordem do Comandante (14/10):** "achei uma arma lenta e fraca demais, poderia ser um pouco mais rápido o carregamento, e ela pode ser carregada E NÃO DISPARAR, e esperar pra disparar em outro momento melhor, ficando carregada e pronta pra atirar".
+
+**O que mudou:**
+- **Carga mais rápida:** 3 s → **2,4 s** (o ciclo cai de ~7,5 s para ~6,9 s).
+- **Segura a carga (`chargeHold`):** completar a carga **não dispara** — a arma fica **carregada e pronta** (o anel de carga da mira fica cheio) e o tiro sai **ao soltar o gatilho**, no momento que o piloto escolher. Soltar antes de completar perde a carga parcial; travada (recarregando ou superaquecida), a carga **espera onde está**.
+- **Só o cerco:** o **trilho** segue como era (completar dispara; soltar perde). A mecânica é uma flag na arma (`chargeHold`), não um caminho novo de tiro.
+
+**Onde mora:** `combat/ChargeTimer.ts` (o modo com espera), `combat/Armament.ts` (passa a flag nas duas mãos e no secundário) e `combat/weapons.ts` (o cerco declara `chargeHold` e a carga nova). O **bot** do V4 **não muda** (atira sem carga, na cadência da arma).
+
+**Testes:** `ChargeTimer.test.ts` foi de 2 para **7** (completar não dispara e fica pronta; segurar continua esperando; soltar dispara e consome; soltar antes perde; travada espera; sem `hold` nada muda; e a arma declara `chargeHold`). 28 verdes com o `Armament`.
+
+**Custo:** zero por tick além de uma comparação; nada alocado.
+
+**Visto:** **não** em partida — a carga é uma **sensação de tiro**, e só o playtest do Comandante diz se ficou boa (R13); a regra está provada nos testes de simulação. **Falta:** o julgamento dele e o resto da ordem **P125** (impacto, shape e cauda do tiro).
+
+**Onde ver:** Hangar → **COLOSSUS-V4** → mão: **segure** o gatilho (o anel de carga enche) — **não atira**; **solte** no momento que quiser.
+
 ## Morrer e voltar: o painel "seu algoz" — Qwen, 14/10 (PR `qwen/painel-do-algoz`, P109 frente 3)
 
 **Frente 3 da P109** ("morrer e voltar"; inclui a P98/killcam). Passo 1: **ao morrer, a tela diz quem te matou.**

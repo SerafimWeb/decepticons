@@ -5,6 +5,10 @@
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
 
+## Canhão de cerco: carga mais rápida e com espera — Qwen, 14/10 (P124)
+
+**REAL na simulação (falta o playtest do dono — a carga é sensação de tiro):** o cerco do Colossus-V4 carrega em **2,4 s** (era 3) e **segura a carga** — completar não dispara; a arma fica pronta (anel cheio) e o tiro sai **ao soltar o gatilho** (flag `chargeHold` na arma). O **trilho** segue sem espera. 5 testes novos em `ChargeTimer.test.ts` (7 no total). O **bot** do V4 não muda (atira sem carga, na cadência da arma). Ou seja: a **regra** está provada; a **sensação** só o dono julga.
+
 ## Morrer e voltar: o painel "seu algoz" — Qwen, 14/10 (P109 frente 3, passo 1)
 
 **REAL no CSS e no DOM (visto em página de teste headless; falta morrer numa partida de verdade):** ao morrer, o `ui/AlgozPanel.ts` mostra o **nome**, o **chassi**, a **vida do torso** e as **armas com o dano** do matador durante o contador de renascimento. A leitura é pura e testada (`algozViewOf`, 4 testes). **Falta:** a **escolha do ponto de nascimento** (a outra metade da frente 3) e o painel no **online** (o evento de abate do servidor traz só nomes). Captura: `arte/painel-do-algoz-qwen.jpg`.

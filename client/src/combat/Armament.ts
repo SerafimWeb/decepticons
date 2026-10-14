@@ -151,7 +151,7 @@ export class Armament {
           continue;
         }
         this.burning[i] = false;
-        if (!w || !this.charge[i]!.step(dt, held, timer.ready && m.canFireMount(mount), w.chargeTime)) continue;
+        if (!w || !this.charge[i]!.step(dt, held, timer.ready && m.canFireMount(mount), w.chargeTime, w.chargeHold)) continue;
         if (button === 1 ? firedOn1 : firedOn2) {
           timer.shot(w.fireInterval / 2);
           continue;
@@ -192,7 +192,7 @@ export class Armament {
         sink.rocket(mount, s, volley++);
         m.onFireMount(mount, s);
       }
-    } else if (this.charge[2]!.step(dt, secondary, this.side.ready, s.chargeTime)) {
+    } else if (this.charge[2]!.step(dt, secondary, this.side.ready, s.chargeTime, s.chargeHold)) {
       if (s.kind === 'melee') {
         sink.melee(s);
         m.onFireSecondary();
