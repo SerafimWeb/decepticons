@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Referência de qualidade MechArena — Codex, 13/10 (P109)
+
+**EM BRANCH — NÃO ESTÁ NO AR até o merge do PR `codex/mecharena-meta`.** Após esse merge, apenas o registro documental está entregue; a meta de qualidade continua em operação. O dono trouxe seis prints e reforçou que quer alcançar a qualidade de fluidez, movimento, tiros e cenários. Referências preservadas em `referencias/mecharena/2026-10-13-*.png`; análise e critérios em `REFERENCIA_VISUAL.md` §7. É complemento da P109 e do HUD já entregue, não outra frente concorrente.
+
+**Próxima sessão começa com:** medir C3 no build atualizado e registrar um percurso de movimento/tiro; depois elevar um setor da Arena como referência de qualidade. O ensaio antigo não homologa 60 FPS. Escala visual não prova tamanho jogável; prints não provam física ou latência. Vídeos antigos indisponíveis em `.tmp/referencias/` nesta máquina. Nenhuma implementação de gameplay/render neste corte, zero custo no jogo e nenhuma melhora de desempenho reivindicada. Preservar simulação/rede do Claude e UI/áudio do Gemini; não há despacho automático a outros agentes.
+
+**Achado R17:** §§3–4 de `REFERENCIA_VISUAL.md` ainda descreviam ausências de 07/10 (atmosfera, sombras, janelas, caudas). Incluída advertência temporal e estado recente no §7; não refazer sistemas que já existem.
+
+**Verificação:** `npm run check` verde, 184 arquivos/1.836 testes, typecheck, build, budgets, boot, bocas e site; seis imagens copiadas sem alteração, SHA-256 conferido. Isso valida o registro e a base, não a qualidade de jogabilidade proposta.
+
 ## A ficha do bot ganhou a mão esquerda: o segundo bloqueio da P108 — Claude, 13/10 (PR `claude/ficha-do-bot`, ordem P108 passo b)
 
 **Queixa do Comandante (13/10):** "na ficha, não consigo configurar completamente os outros Mechs, igual consigo customizar o meu no Hangar". O que o Hangar tem e o bot não tinha: arma principal (já havia), **arma da mão esquerda**, ombros, módulo, layout de ataques. Este passo entrega a **mão esquerda**, de ponta a ponta; o resto fica declarado (abaixo).

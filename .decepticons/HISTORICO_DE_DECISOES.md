@@ -1,3 +1,9 @@
+## [2026-10-13] MechArena: uma arena como referência de qualidade (Codex, P109)
+
+**Pedido:** alcançar a qualidade de jogabilidade, fluidez, movimento, tiros e cenários, com seis novos prints. Evidência e texto literal em `REFERENCIA_VISUAL.md` §7; arquivos preservados no repositório.
+
+**Decisão de registro:** complementar a P109 existente, preservar a direção de arte e distinguir observação estática de sensação relatada. As tabelas de 07/10 não são o inventário de hoje. Proposta: medição controlada → percurso de movimento/tiro → arena acabada → validação online, reaproveitando o HUD entregue. Metas numéricas do §7 são propostas de aceite, não resultados nem benchmark do concorrente. Nenhuma regra de gameplay, teto de jogadores ou `VISAO.md` alterados; zero custo de execução. O placar não melhora por documentar.
+
 ## [2026-10-13] A mão esquerda do bot: configurar só o que a IA sabe usar (Claude, P108 passo b)
 
 **Situação:** o Comandante quer configurar os outros Mechs "como no Hangar". O `BotSpec` tinha só a arma principal.
