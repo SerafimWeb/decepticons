@@ -79,3 +79,47 @@ Esta última não existe aqui e é a maior diferença de sensação online; o pr
 5. **Material dos robôs:** luz e cor por peça dentro das regras de `ESTILO_ROBOS.md`.
 
 Acompanhamento no `ROADMAP.md` (frente `#cenarios`); estado real de cada passo em `STATUS_REAL.md`.
+
+## 6. Segunda rodada (13/10/2026): oito quadros do MechArena em partida (ordem P109)
+
+> O Comandante assistiu a gameplays do MechArena e mandou oito quadros (pranchas em `referencias/mecharena/gameplay-13-10-*.jpg`): "os caras
+> evoluíram MUITO a interface, os gráficos, layout e jogabilidade... está muito bom! porém, pay to win... quero evoluir nosso cybermech pra
+> ficar ainda mais bonito, melhor de jogar, mais interessante e gostoso de ficar horas na nossa arena". **Mesmo limite da seção 2:** são
+> quadros de um vídeo de 33 min do YouTube (a barra do player aparece em alguns), **não movimento nem som**; a sensação do tiro, do dash e do
+> ritmo segue inferida. A decisão de 07/10 continua de pé: **elevar dentro do estilo neon** antes de trocar de direção de arte.
+
+### 6.1 O que os quadros mostram, elemento por elemento, e onde estamos
+
+| Elemento | O que o MechArena faz (quadros) | CYBERMECH em 13/10 | Decisão |
+|---|---|---|---|
+| **Minimapa** (1, 2, 4, 6) | Canto de cima à esquerda, em hexágono ou círculo: inimigos em vermelho, aliados em azul, e as letras A–E no modo de pontos | Só no console de início (1 Hz, norte fixo); **na partida, nada** | **Feito:** `ui/Minimapa.ts`, de frente-para-cima, 75 m, 12 Hz, paredes, zonas e pontos presos na borda para dar a direção |
+| **Vida de relance** (1, 2, 4, 6) | Barra larga embaixo no centro, número grande, camada de escudo, retrato do piloto, três abas de habilidade | Seis barras de texto (`█░`) no canto de cima e três medidores miúdos no centro, **sobrepostos** (`ATQ 2 ·` em cima de `FOGUETES`) | **Feito:** `ui/Vitals.ts`, a barra é o **torso** (decide a morte) com o número, âmbar abaixo de 50% e vermelho pulsando abaixo de 25%, e as outras cinco partes em pílulas. **Falta:** retrato do piloto e a camada do escudo de energia |
+| **Cartões de arma** (1, 2, 4, 6) | Um por clique, com a tecla de recarga, a munição ou a carga, e "RELOADING" ao lado da mira, por arma | O carregador de foguetes e o calor; **o nome da arma do Ataque 1 não aparecia em lugar nenhum** | **Feito em parte:** cartões ATAQUE 1 e 2 com nome e nível (MK), carregador e calor; acendem com o gatilho apertado. **Falta:** "RECARREGANDO" ao lado da mira |
+| **Anéis de dash e de habilidade** (1, 2, 4, 6, 8) | Anéis com a contagem regressiva e a tecla | Barra horizontal "DASH" | **Feito:** anel do dash que enche e acende. O anel do módulo/escudo fica para a frente 2 |
+| **Plaqueta no inimigo** (1, 2, 4, 6, 8) | Nome, barra de vida, ícones de módulo e **distância** ("35m"); colchetes vermelhos na mira | Nome e personalidade, sem barra e sem distância; o painel do alvo (seis partes) fica à direita | **Frente 2** |
+| **Números de dano flutuantes** (2, 4, 6) | "2.8k", "3.8k", "90.1k" sobem do alvo; "×6" é o combo | O marcador na mira e o som | **Frente 2.** Custo: pool de até ~24 nós, só os vivos |
+| **Kill feed** (1, 6) | Três linhas no canto de cima à direita, com o ícone da arma | Existe (`KillFeed`), sem ícone de arma | **Frente 2** (baixo custo) |
+| **Escolha de robô e de ponto de nascimento** (3) | Três robôs do esquadrão em cartões (os já usados, riscados em vermelho) e o mapa com os pontos: "Select a Mech and a Spawn Point" | Renasce no mesmo lugar, com texto de contagem | **Frente 3** |
+| **"Seu algoz"** (5) | Painel de quem te matou: nome, robô e vida, as armas com o dano, os quatro módulos; "Deploying in… 3" | Câmera de abate offline (segue o bot que matou) e "RENASCENDO EM 3.2 s" | **Frente 3.** É a P98 (killcam) com a ficha do matador; o dado já existe (o `Round` sabe quem matou, a montagem do bot é conhecida) |
+| **Modo de pontos de controle** (4, 6) | Cinco pontos A–E, dois times, placar por posse (86 × 88), relógio no topo | Deathmatch, Sobrevivência e CTF (treino offline) | **Frente 5.** É o modo principal deles e o que faz o mapa inteiro virar alvo. Pede regra no `Match` e `OBJECTIVE_STATE` na rede, sem arte nova |
+| **Ficha da arma no Hangar** (7) | Poder, Dano, Alcance ótimo, Recarga, nível e estrelas, "Equipar" | Lista por classe; a ficha completa mora na landing e na oficina | Dano, alcance ótimo e recarga na própria lista (frente 5). **Não copiar:** Poder e estrelas |
+| **Cenário e cor** (1, 2, 4, 6, 8) | Ambientes **fechados e coloridos**: painéis amarelo, azul e vermelho, tijolo, letreiros, lanternas, jardineiras; chão com marcas; luz que modela os volumes; sombra suave sob os robôs | Arena aberta de 200 m, escura, com contorno neon; o Bunker é fechado mas quase monocromático. A atmosfera (07/10), a sombra de contato (08/10), as janelas e a cauda do tiro já entraram | **Frente 4:** cobertura (contêineres, rampas, muretas) e cor por zona, sem sombra dinâmica |
+
+### 6.2 O que NÃO copiar
+
+- **Potência e estrelas que sobem com dinheiro** ("Power Rating 1753", "Lvl. 4 ★★★★★★", "Consumo de energia 16/32", uma lista de 453 itens com raridade): é o que o Comandante chama de pay-to-win. Aqui o Hangar é igual para todos (`GAME_DESIGN.md`, "Não é pay-to-win"); a progressão libera **jeito**, nunca **poder**.
+- **"Report Cheater" na tela de morte:** depende de contas e moderação (P47); não é HUD.
+- **O mapa inteiro como radar, sempre:** o minimapa daqui mostra só o que está a 75 m. Perfeita informação de onde todo mundo está tiraria o jogo furtivo (P23); a escolha é do Comandante (`HISTORICO_DE_DECISOES.md`, 13/10).
+- **A paleta clara de desenho animado:** o cenário deles é diurno e saturado; o nosso segue neon sobre escuro. Cor por zona e cobertura sim, trocar a direção de arte não (decisão de 07/10).
+
+### 6.3 Plano: cinco frentes, um PR pequeno cada, na ordem em que o Comandante enxerga
+
+| Frente | O que entra | Custo (G4, G5, G12) | Estado |
+|---|---|---|---|
+| **1. HUD de combate** | minimapa, vida do torso e partes, cartões de arma, anel de dash, topo sem sobreposição | um canvas ~150 px a 12 Hz; o resto é DOM escrito só quando muda | **feito** (`claude/referencia-mecharena`) |
+| **2. Leitura do combate** | números de dano flutuantes, plaqueta com barra de vida e distância, "recarregando" ao lado da mira, ícone da arma no kill feed | pool fixo de nós; projeção só dos vivos e próximos | próxima |
+| **3. Morrer e voltar** | painel "seu algoz" com a ficha do matador, escolha do ponto de nascimento na contagem (a P98 entra aqui) | tela de DOM; nenhum custo na partida | |
+| **4. Cenário** | contêineres, rampas e muretas instanciados, cor por região da Arena, mais cobertura no Bunker | `InstancedMesh` por tipo; sem draw call por prop | |
+| **5. Pontos de controle e ficha da arma** | modo A–E (posse por proximidade, placar por tempo de posse), minimapa com as letras, dano/alcance/recarga na lista do Hangar | regra no `Match` com teste (G14) e estado de objetivo na rede | depende da decisão 5 da folha de decisões do Comandante (a escolta vem antes?) |
+
+**O que o Comandante pode ajustar agora:** (a) se o minimapa deve mostrar só quem está à vista; (b) se o modo de pontos de controle entra antes ou depois da escolta (P99); (c) se quer o retrato do piloto na vida (pede arte).

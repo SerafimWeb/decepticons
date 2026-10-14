@@ -111,49 +111,212 @@ html, body {
 }
 /* O traço fica em 1 px qualquer que seja o tamanho da mira. */
 .weapon-reticle path { vector-effect: non-scaling-stroke; }
-/* Carregador de foguetes (ui/HUD.setRockets): 4 pips; o que está recarregando enche pela --fill. */
-#rockets {
+/* ───── HUD de combate: minimapa, vida, armas e dash (ui/Minimapa.ts, ui/Vitals.ts, ui/HUD.ts) ─────
+   Quatro cantos, uma função cada: em cima à esquerda o minimapa (para onde olhar), embaixo no centro a vida e o dash (como estou),
+   embaixo à direita as armas e o calor (o que posso fazer), em cima à direita a câmera e os avisos. A linguagem é a do resto do jogo:
+   terminal verde, âmbar no aviso, vermelho no perigo, molduras cortadas em ângulo. */
+#hud-esq {
   position: absolute;
-  bottom: 52px;
+  top: 12px;
+  left: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: clamp(128px, 14vw, 172px);
+}
+#minimapa {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle, rgba(5, 14, 18, 0.55), rgba(5, 14, 18, 0.82));
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+#minimapa[hidden] { display: none; }
+#minimapa .mm-canvas { position: absolute; inset: 0; }
+#minimapa .mm-moldura { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: rgba(0, 229, 255, 0.75); stroke-width: 1.5; }
+#minimapa .mm-moldura polygon { vector-effect: non-scaling-stroke; }
+/* A velocidade, uma linha sob o minimapa (a leitura que `scripts/site.mjs` confere: "VEL x"). */
+#stats {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-shadow: 0 1px 3px #000, 0 0 2px #000;
+  white-space: pre;
+}
+
+#dock-centro {
+  position: absolute;
   left: 50%;
+  bottom: 22px;
   transform: translateX(-50%);
   display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  letter-spacing: 2px;
-  color: var(--hot);
+  align-items: flex-end;
+  gap: 14px;
 }
-#rockets .pips { display: flex; gap: 4px; width: 180px; }
+#vitals { width: clamp(270px, 32vw, 430px); text-shadow: 0 1px 3px #000, 0 0 2px #000; }
+#vitals .vt-cabeca {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 3px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--muted);
+}
+#vitals .vt-cabeca b { color: var(--ink); font-size: 12px; letter-spacing: 3px; white-space: nowrap; }
+#vitals .vt-barra {
+  --cor: var(--accent);
+  position: relative;
+  height: 24px;
+  background: rgba(4, 8, 6, 0.78);
+  border-block: 1px solid color-mix(in srgb, var(--cor) 60%, transparent);
+  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+#vitals .vt-barra[data-tom='atencao'] { --cor: var(--warn); }
+#vitals .vt-barra[data-tom='critico'] { --cor: var(--alert); }
+#vitals .vt-enchimento {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--cor) 50%, #000), var(--cor));
+  transform-origin: left;
+  transition: transform 0.18s ease-out;
+}
+#vitals .vt-barra[data-tom='critico'] .vt-enchimento { animation: vt-pulso 0.7s ease-in-out infinite alternate; }
+@keyframes vt-pulso { from { opacity: 1; } to { opacity: 0.5; } }
+/* Régua: um traço a cada 10% da vida do torso, para a barra ler como instrumento e não como faixa lisa. */
+#vitals .vt-barra::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0, 0, 0, 0.5) calc(10% - 1px) 10%);
+}
+#vitals .vt-numero {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #fff;
+  text-shadow: 0 1px 3px #000, 0 0 6px #000;
+}
+#vitals .vt-partes { display: flex; gap: 4px; margin-top: 4px; }
+#vitals .vt-partes i {
+  --cor: var(--accent);
+  --f: 1;
+  position: relative;
+  flex: 1;
+  padding: 2px 0 6px;
+  text-align: center;
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--cor);
+  background: rgba(4, 8, 6, 0.7);
+}
+#vitals .vt-partes i::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: calc(var(--f) * 100%); background: var(--cor); }
+#vitals .vt-partes i[data-tom='atencao'] { --cor: var(--warn); }
+#vitals .vt-partes i[data-tom='critico'] { --cor: var(--alert); }
+#vitals .vt-partes i[data-tom='morta'] { --cor: #5a6560; text-decoration: line-through; }
+
+/* Dash: um anel que enche (ui/HUD.update escreve --p, de 0 a 1); pronto, acende em laranja. */
+#dash {
+  --p: 1;
+  --cor: #6d7c72;
+  position: relative;
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 14px;
+}
+#dash[hidden] { display: none; }
+#dash.ready { --cor: var(--hot); }
+#dash .ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--cor) calc(var(--p) * 360deg), rgba(255, 255, 255, 0.1) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+}
+#dash.ready .ring { filter: drop-shadow(0 0 5px var(--hot)); }
+#dash .ico { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; font-weight: 700; color: var(--cor); }
+#dash.ready .ico { text-shadow: 0 0 8px var(--hot); }
+#dash .label {
+  position: absolute;
+  left: 50%;
+  bottom: -15px;
+  transform: translateX(-50%);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-shadow: 0 1px 3px #000;
+}
+
+/* Armas e calor: dois cartões (Ataque 1 e Ataque 2) e a barra de calor, no canto de baixo à direita. */
+#dock-direita {
+  position: absolute;
+  right: 14px;
+  bottom: 22px;
+  width: clamp(190px, 20vw, 250px);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-shadow: 0 1px 3px #000, 0 0 2px #000;
+}
+#dock-direita .arma {
+  --cor: var(--hot);
+  padding: 5px 14px 6px 12px;
+  background: rgba(4, 8, 6, 0.72);
+  border-left: 3px solid var(--cor);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+#dock-direita .arma[hidden] { display: none; }
+#dock-direita .arma.ativa { background: rgba(255, 138, 31, 0.24); }
+#dock-direita .topo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 10px; letter-spacing: 2px; color: var(--cor); }
+#dock-direita .tecla { flex: 0 0 auto; font-size: 9px; letter-spacing: 1px; color: var(--muted); }
+#dock-direita .nome { margin-top: 1px; font-size: 13px; font-weight: 700; letter-spacing: 1px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Carregador de foguetes (ui/HUD.setRockets): 4 pips; o que está recarregando enche pela --fill. */
+#rockets .pips { display: flex; gap: 4px; margin-top: 4px; }
 #rockets .pips i {
   --fill: 1;
   flex: 1;
-  height: 8px;
+  height: 7px;
   border: 1px solid var(--hot);
   background: linear-gradient(90deg, var(--hot) calc(var(--fill) * 100%), transparent 0);
 }
 #rockets.off { opacity: 0.3; }
-/* Os três medidores do centro de baixo (foguetes, calor, dash) têm a coluna do rótulo fixa: as barras ficam alinhadas e o rótulo lê sobre qualquer cenário. */
-#dash .label, #heat .label, #rockets .label { flex: 0 0 98px; text-align: right; text-shadow: 0 1px 3px #000, 0 0 2px #000; }
-
 /* Calor da arma (ui/HUD.setHeat): enche a cada tiro; vermelho perto do limite; superaquecida, pisca. */
 #heat {
-  position: absolute;
-  bottom: 76px;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 12px;
+  gap: 8px;
+  padding: 0 12px 0 4px;
+  font-size: 10px;
   letter-spacing: 2px;
   color: #b9c4bc;
 }
-#heat .bar { width: 180px; height: 6px; border: 1px solid #5a6560; background: rgba(0, 0, 0, 0.5); }
+#heat .label { flex: 0 0 auto; }
+#heat .bar { flex: 1; height: 6px; border: 1px solid #5a6560; background: rgba(0, 0, 0, 0.5); }
 #heat .fill { height: 100%; background: var(--hot); transform-origin: left; transform: scaleX(0); }
 #heat.high { color: var(--alert); }
 #heat.high .fill { background: var(--alert); box-shadow: 0 0 8px var(--alert); }
 #heat.over { color: var(--alert); animation: blink 0.4s steps(2) infinite; }
+
+/* Em cima à direita: o rótulo da câmera e o botão CFTV lado a lado (antes se sobrepunham). */
+#barra-topo { position: absolute; top: 12px; right: 14px; display: flex; align-items: center; gap: 10px; }
+#mode { font-size: 13px; letter-spacing: 2px; color: var(--hot); text-shadow: 0 0 6px var(--hot); }
+/* Cabeça destruída (Blind Mode): o instrumental some, o resto continua. */
+#hud.blind #hud-esq, #hud.blind #vitals { display: none; }
+/* Tela estreita (celular): o placar de abates e mortes sai da vida (o botão PLACAR mostra), para o nome do Mech caber numa linha. */
+@media (max-width: 900px) { #vitals .vt-placar { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  #vitals .vt-barra[data-tom='critico'] .vt-enchimento { animation: none; }
+}
 .tc-fire.over { border-color: var(--alert); background: rgba(255, 45, 61, 0.25); font-size: 12px; }
 
 /* Vinheta da marca (brand/BrandSplash.ts): emblema acende, letreiro sobe, tudo some em ~1,9 s. */
@@ -384,18 +547,6 @@ html, body {
   100% { transform: scale(1); opacity: 1; }
 }
 
-#stats {
-  position: absolute;
-  top: 12px;
-  left: 14px;
-  padding: 6px 10px;
-  border-left: 2px solid rgba(57, 255, 106, 0.55);
-  background: rgba(6, 8, 10, 0.5);
-  font-size: 13px;
-  letter-spacing: 1px;
-  text-shadow: 0 0 6px var(--accent), 0 1px 2px #000;
-  white-space: pre;
-}
 
 /* Painel do alvo sob a mira: as partes, o calor e as bandeiras que já vêm no estado da rede (0 B a mais). */
 #target-panel {
@@ -441,10 +592,7 @@ html, body {
 #mission-status.clear { color: var(--hot); border-color: var(--hot); text-shadow: 0 0 10px var(--hot); }
 #mission-status.ctf { border-color: rgba(0, 229, 255, 0.7); box-shadow: inset 4px 0 #00e5ff, inset -4px 0 #ff2d3d; }
 
-/* Blind Mode: quando a cabeça é destruída */
-#hud.blind #stats {
-  display: none;
-}
+/* Blind Mode: quando a cabeça é destruída (o instrumental some: ver o HUD de combate) */
 
 #hud.blind #crosshair {
   animation: jitter 0.08s infinite alternate ease-in-out;
@@ -618,42 +766,6 @@ html, body {
 .calib-input { width: 96px; background: #0e1210; border: 1px solid rgba(57, 255, 106, 0.5); color: var(--accent); font: inherit; padding: 4px 6px; }
 .calib-check { font-size: 13px; color: var(--ink); cursor: pointer; }
 
-#mode {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  font-size: 13px;
-  letter-spacing: 2px;
-  color: var(--hot);
-  text-shadow: 0 0 6px var(--hot);
-}
-
-#dash {
-  position: absolute;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  letter-spacing: 2px;
-  color: #a2ada5;
-}
-#dash .bar {
-  width: 180px;
-  height: 8px;
-  border: 1px solid #5a6560;
-  background: rgba(0, 0, 0, 0.5);
-}
-#dash .fill {
-  height: 100%;
-  background: #555;
-  transform-origin: left;
-}
-#dash.ready { color: var(--hot); text-shadow: 0 0 8px var(--hot); }
-#dash.ready .bar { border-color: var(--hot); }
-#dash.ready .fill { background: var(--hot); box-shadow: 0 0 10px var(--hot); }
 
 /* A tela de início e de pausa é o console de comando: estilos na seção "Console de comando", no fim do arquivo. */
 /* Atrás da pausa o jogo é só cenário: o HUD da partida e o painel de desempenho ficam escondidos. */
@@ -1372,6 +1484,11 @@ html.hangar-open #hud, html.hangar-open #debug-panel, html.hangar-open .net-stat
 
 /* HUD no toque: a câmera aparece no botão CAM, e o canto de cima é da pausa. */
 .touch #mode { display: none; }
+.touch #hud-esq { width: clamp(96px, 12vw, 120px); }
+/* Os botões de tela já dizem ATQ 1, ATQ 2 e DASH: o cartão de arma e a tecla não se repetem. Ficam o carregador e o calor, em tira, sobre a vida. */
+.touch #atq1, .touch #rockets .topo, .touch #rockets .nome, .touch #dash .label { display: none; }
+.touch #dock-direita { right: auto; left: 50%; transform: translateX(-50%); bottom: 84px; width: min(200px, 26vw); }
+.touch #dock-direita .arma { padding: 0; background: none; border-left: 0; clip-path: none; }
 .touch #debug-panel { bottom: auto; top: 114px; right: var(--tc-edge-r); }
 
 /* Pausa no toque: instruções do toque no lugar das do teclado; sem calibração de mouse. */
@@ -1391,21 +1508,23 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   .settings-tab { padding: 8px 4px; font-size: 10px; letter-spacing: 1px; }
   .settings-body { padding: 12px 14px; gap: 14px; }
   .btn-terminal { margin-top: 8px; padding: 6px 12px; font-size: 12px; }
-  #stats { top: 8px; left: 10px; font-size: 10px; }
+  #hud-esq { top: 8px; left: 10px; width: 104px; }
+  #stats { font-size: 9px; }
   #target-panel { right: 10px; font-size: 10px; }
   #mode { font-size: 11px; }
-  #dash { bottom: 10px; font-size: 11px; }
-  #rockets { bottom: 28px; font-size: 10px; }
-  #heat { bottom: 46px; font-size: 10px; }
-  #heat .bar { width: 110px; }
-  #dash .bar { width: 110px; }
-  #rockets .pips { width: 110px; }
+  #dock-centro { bottom: 10px; gap: 10px; }
+  #vitals { width: 230px; }
+  #vitals .vt-barra { height: 18px; }
+  #vitals .vt-numero { font-size: 12px; }
+  #dash { width: 42px; height: 42px; margin-bottom: 12px; }
+  #dash .ico { font-size: 17px; }
+  #dock-direita { bottom: 10px; width: 170px; }
 }
 /* --- Kill Feed --- */
 /* Abaixo do rótulo da câmera (#mode); no toque, à esquerda do botão de pausa. */
 #kill-feed {
   position: absolute;
-  top: 36px;
+  top: 52px;
   right: 14px;
   display: flex;
   flex-direction: column;
@@ -2505,9 +2624,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 
 /* ─── Botão CFTV (HUD) ─── */
 .btn-cftv {
-  position: absolute;
-  top: 14px;
-  right: 14px;
+  position: relative;
   padding: 6px 12px;
   background: rgba(12, 16, 20, 0.85);
   border: 1px solid var(--accent);

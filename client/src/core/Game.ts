@@ -79,7 +79,7 @@ import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassi
 import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
 import { ImportedMech } from '../entities/ImportedMech';
 import { IMPORTED_CHASSIS, preloadMechAsset, tryInstantiateMechRig } from '../entities/importedMechAssets';
-import type { Loadout, WeaponId, WeaponStats } from '../combat/weapons';
+import { TIERS, type Loadout, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { EsquadraoStore } from './EsquadraoStore';
@@ -96,7 +96,8 @@ import { EtapaEmCurso } from './EtapaEmCurso';
 import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha';
 import { ServerPanel } from '../ui/ServerPanel';
 import { CameraWall } from '../ui/CameraWall';
-import { plantaDaArena } from '../ui/TacticalRadar';
+import { plantaDaArena, plantaDoBunker } from '../ui/TacticalRadar';
+import { Minimapa, plantaComZonas } from '../ui/Minimapa';
 import { MuralCliente } from '../net/mural';
 import { AdminCliente, TokenDoDono } from '../net/admin';
 import { PALETTE } from './palette';
@@ -125,7 +126,13 @@ import { DailyChallenges } from '../ui/DailyChallenges';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
 const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', chainsaw: 'MOTOSSERRA' };
-const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : 'ATQ 2 · ' + (HUD_NAME[l.secondary.id] ?? l.secondary.name.toUpperCase()));
+/** O nome da arma no cartão do HUD, com o nível: "CANHÃO DE PLASMA MK I". */
+const weaponLabel = (w: WeaponStats): string => `${HUD_NAME[w.id] ?? w.name.toUpperCase()} ${TIERS[w.tier]!.label}`;
+const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : weaponLabel(l.secondary));
+const primaryLabel = (l: Loadout): string => weaponLabel(l.primary);
+
+/** Sem aliados (online, ou uma partida sem esquadrão aliado): a lista vazia que o minimapa lê. */
+const SEM_ALIADOS: readonly MechBase[] = [];
 
 /** Onde os braços do Mech do Hangar estão na tela (reaproveitados por quadro). */
 const _hotRight = { x: 0, y: 0 };
@@ -209,6 +216,12 @@ export class Game {
   private readonly assist: AimAssist;
   private readonly player: PlayerController;
   private readonly hud = new HUD();
+  /** O radar do canto de cima à esquerda (12 Hz, só com a partida em andamento). `remotos` é a lista reaproveitada dos Mechs de outros jogadores. */
+  private readonly minimapa = new Minimapa(document.getElementById('minimapa')!);
+  private readonly remotos: MechBase[] = [];
+  private readonly juntarRemoto = (r: { readonly mech: MechBase }): void => {
+    this.remotos.push(r.mech);
+  };
   private readonly modeSelector = new ModeSelector();
   private readonly missionHud = new MissionHUD();
   readonly ctfHud = new CtfHud();
@@ -585,6 +598,7 @@ export class Game {
         document.body.append(this.netStatus);
       }
     }
+    this.hud.setPrimaryLabel(primaryLabel(this.mech.loadout));
     this.hud.setSecondaryLabel(secondaryLabel(this.mech.loadout));
     this.assist = new AimAssist(physics, this.mech, this.bots.mechs);
 
@@ -759,6 +773,7 @@ export class Game {
     const mural = new MuralCliente(enderecoDoServidor, tokenDoDono.ler, { estado: (e) => parede?.estado(e), quadro: (q) => parede?.quadro(q) });
     // As salas online são da Arena: se o jogo local está no Bunker, o mural não desenha as paredes de outro mapa por cima.
     const plantaOnline = mapa === 'arena' ? plantaDaArena(this.match.arena.occluders) : [];
+    this.minimapa.setPlanta(plantaComZonas(mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(this.match.arena.occluders), mapa === 'arena'));
     parede = new CameraWall({
       mural,
       planta: () => plantaOnline,
@@ -896,6 +911,7 @@ export class Game {
     this.activeBuild = this.hangar.key;
     this.mech.equip(poweredLoadout(loadout, this.power.current, 'player'), keepHeat);
     this.player.rearm();
+    this.hud.setPrimaryLabel(primaryLabel(this.mech.loadout));
     this.hud.setSecondaryLabel(secondaryLabel(this.mech.loadout));
   }
 
@@ -1628,6 +1644,17 @@ export class Game {
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
     this.offscreen.update(this.camera, this.bots, this.mech);
     this.touch.setOverheated(this.mech.overheated);
+    // Minimapa (12 Hz): só com a partida em andamento, vivo e com a cabeça inteira (cego não vê o radar).
+    this.minimapa.setVisivel(ativo && !this.mech.isBlind);
+    if (this.minimapa.pronto(dt)) {
+      let inimigos: readonly MechBase[] = this.bots.mechs;
+      if (this.online?.joined) {
+        this.remotos.length = 0;
+        this.online.remotes.forEach(this.juntarRemoto);
+        inimigos = this.remotos;
+      }
+      this.minimapa.desenhar(this.rig.look.yaw, this.mech, inimigos, this.match.allies?.mechs ?? SEM_ALIADOS);
+    }
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.player.firing, this.player.secondaryHeld, this.player.secondaryHeld && !this.player.firing ? this.player.secondaryCharge : this.player.primaryCharge);
     // A onda sônica: os anéis andam e leem a cópia do quadro (a cópia só roda enquanto há anel vivo, na arena ou no Hangar).
     this.waveRings.update(dt);
@@ -1651,6 +1678,7 @@ export class Game {
   }
 
   private onResize(): void {
+    this.minimapa.medir();
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
