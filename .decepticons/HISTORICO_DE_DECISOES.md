@@ -1,3 +1,11 @@
+## [2026-10-14] O canhão de cerco carrega e espera — "ficando carregada e pronta pra atirar" (Qwen, P124)
+
+**Situação:** o Comandante achou o cerco do Colossus-V4 "lento e fraco demais" e pediu, além de carga mais rápida, que a arma **possa ser carregada sem disparar**, ficando pronta para o momento escolhido.
+
+**Decisões:** (1) a carga caiu de 3 s para **2,4 s**; (2) a arma passa a **segurar a carga** — completar **não dispara**, e o tiro sai **ao soltar o gatilho** (a leitura padrão de "carregada e pronta pra atirar"); (3) é uma **flag na arma** (`chargeHold`), não um caminho novo de tiro: **só o cerco** a usa; o **trilho** segue como era (completar dispara, soltar perde); (4) travada (recarregando/superaquecida) a carga **espera onde está**, e soltar antes de completar perde a carga parcial; (5) o **bot** do V4 não muda (atira sem carga, na cadência da arma) — nenhum número de bot foi tocado.
+
+**Quem decidiu:** o Comandante (a ordem); Qwen executou a leitura do "carregada e pronta pra atirar" como soltar-para-atirar, que é a mais padrão — a confirmar no playtest.
+
 ## [2026-10-14] Ao morrer, a tela diz quem te matou — o painel "seu algoz" (Qwen, P109 frente 3 passo 1)
 
 **Situação:** a frente 3 da P109 é "morrer e voltar" (inclui a P98/killcam); o MechArena mostra um painel de quem te matou. Passo 1: o painel.
