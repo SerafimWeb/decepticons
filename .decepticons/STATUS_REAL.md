@@ -5,6 +5,10 @@
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)
 
+## Leitura do combate — Qwen, 14/10 (P109 frente 2)
+
+**REAL (visto em Chrome headless por software; falta em GPU real e o playtest do dono):** números de dano flutuantes sobre o inimigo (pool fixo de 24, offline e online, sem byte novo de protocolo; `ui/DamageNumbers.ts`), a plaqueta do inimigo com **barra de vida** (o torso) e **distância** ("35m") redesenhada só em degraus de 5% / 5 m (`ui/Nameplates.ts`), e **"RECARREGANDO"** ao lado da mira quando o carregador (foguetes) está vazio. 13 testes. **Não feito:** o **ícone da arma no kill feed** (o evento de abate não carrega a arma; pede `sim/` + protocolo).
+
 ## Recuperação da câmera junto à cobertura — Codex, 14/10 (P109)
 
 **PARCIAL:** a terceira pessoa recupera gradualmente a distância ao sair de uma parede; obstáculo novo ainda recolhe a câmera imediatamente. Orientação do mouse e acompanhamento da posição do piloto sem novo filtro. Seis testes passam, incluindo parede real no Rapier, equivalência temporal a 30/60/144 Hz e regressão que reprova a versão anterior. Comparação de cena real com posições prescritas em `medicoes/FLUIDEZ_CAMERA.md`. Falta julgamento do dono em partida e outros chassis; sem reivindicar ganho de FPS. Entregue na `main` e publicado: PR #298, `886d149`, 14/10 às 01:14 (Brasília), checksum conferido. Check completo verde: 1.842 testes.

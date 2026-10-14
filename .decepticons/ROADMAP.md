@@ -264,7 +264,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Agressão recompensada (P96):** o abate **encostado** (pisão/serra) devolve energia ou alivia calor — só se passar no `combat/balance.ts` (`QUIMICA_DO_JOGO.md` § 5 #11) #combate #modos
 
 - [x] HUD de combate (ordem P109, 13/10): minimapa da partida de frente-para-cima (75 m, 12 Hz), vida do torso em barra com número e as cinco partes em pílulas, cartões ATAQUE 1 e 2 com nome e nível, anel de dash, rótulo da câmera e CFTV lado a lado; `ui/Minimapa.ts`, `ui/Vitals.ts` e 14 testes (Claude) #ux
-- [ ] Leitura de combate (P109, frente 2): números de dano flutuantes sobre o alvo, plaqueta com barra de vida e distância, "recarregando" ao lado da mira, ícone da arma no kill feed (Claude) #ux
+- [x] Leitura de combate (P109, frente 2, 14/10): números de dano flutuantes sobre o alvo (pool fixo, offline e online), plaqueta com barra de vida e distância, "recarregando" ao lado da mira; `ui/DamageNumbers.ts` + `ui/Nameplates.ts`, 13 testes (Qwen). Falta o ícone da arma no kill feed (pede `sim/` + protocolo) #ux
 - [ ] Morrer e voltar (P109, frente 3; inclui a P98): painel "seu algoz" com a ficha do matador e escolha do ponto de nascimento na contagem de reaparecer (Claude) #ux
 - [ ] Cenário com cobertura e cor por zona (P109, frente 4): contêineres, rampas e muretas instanciados e cor por região da Arena, dentro do estilo neon (Codex) #cenarios
 - [~] Modo Domínio, pontos de controle A–E (P109 frente 5 e P112, 14/10): offline pronto (`?modo=dominio`: regra pura testada, bots que capturam e guardam, bases, barra de pontos, feixes de luz, minimapa; Claude); faltam o online (`OBJECTIVE_STATE` e times na sala, P81), a campanha e o playtest #modos
