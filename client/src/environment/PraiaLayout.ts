@@ -155,3 +155,15 @@ export const PRAIA_SPAWNS: readonly (readonly [number, number])[] = [
   [138, 52],
   [178, 22],
 ];
+
+/**
+ * Onde as **ondas rebeldes** nascem na missão em ondas da praia: a **ponta oeste, seca e longe da estação** — o jogador
+ * defende a estação (a leste) e as ondas vêm pela areia. Cada ponto é de chão seco e livre de prédio, contêiner e duna
+ * (o `PraiaLayout.test.ts` confere). A ordem é a dos papéis: os Mechs primeiro, os andróides depois.
+ */
+export const PRAIA_INIMIGOS: readonly (readonly [number, number])[] = [
+  [70, 30], [62, -30], [90, 10], [70, -42], [96, -40], [64, 54],
+];
+
+/** Onde o **Colossus da última onda** nasce na praia: areia seca e aberta, com folga para o titã, longe da estação. */
+export const PRAIA_TITA: readonly [number, number] = [85, 0];

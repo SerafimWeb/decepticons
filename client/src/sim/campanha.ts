@@ -22,11 +22,11 @@ export const CAMPANHA_VERSAO = 1;
 export const PARAM_DA_CAMPANHA = 'campanha';
 export const PARAM_DA_ETAPA = 'etapa';
 
-/** Os modos de cada mapa (o Bunker é só do Deathmatch, como em `mapFromSearch`; `ui/theater.ts` tem de concordar, e o teste confere). */
+/** Os modos de cada mapa (o Bunker é só do Deathmatch; a praia abre o Deathmatch e as ondas — `mapFromSearch` manda os CTF/Domínio para a Arena; `ui/theater.ts` tem de concordar, e o teste confere). */
 export const MODOS_DO_MAPA: Readonly<Record<MapId, readonly GameMode[]>> = {
   arena: ['deathmatch', 'survival', 'ctf'],
   bunker: ['deathmatch'],
-  praia: ['deathmatch'],
+  praia: ['deathmatch', 'survival'],
 };
 export const MAPAS: readonly MapId[] = ['arena', 'bunker', 'praia'];
 export const MODOS: readonly GameMode[] = ['deathmatch', 'survival', 'ctf'];

@@ -19,7 +19,7 @@ import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
-import { PRAIA_AGUA, PRAIA_SPAWNS, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { PRAIA_AGUA, PRAIA_INIMIGOS, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
 import { danoDeAfogamento, fatorDeVelocidade, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
@@ -244,7 +244,8 @@ export class Match {
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
     this.destructibles.onBreak = (id, at) => this.onPropBroken?.(id, at);
     const bunker = o.map === 'bunker' && !survival && !ctf && !dominio;
-    const praia = o.map === 'praia' && !survival && !ctf && !dominio;
+    // A praia abre o Deathmatch e as **ondas** (a defesa da estação, P126): os CTF/Domínio continuam na Arena.
+    const praia = o.map === 'praia' && !ctf && !dominio;
     this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : SPAWN_POINTS;
     this.zones = bunker ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
     this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : 'arena');
@@ -293,13 +294,14 @@ export class Match {
             androidKits: rebeldes.androids.map(kitDe),
           }
         : {
-            spawns: ctf ? CTF_DEFENDER_SPAWNS : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
-            androidSpawns: ctf ? [] : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
+            // Na praia as ondas nascem na areia, longe da estação (o jogador defende a estação); na Arena, nos pontos de sempre.
+            spawns: ctf ? CTF_DEFENDER_SPAWNS : praia ? PRAIA_INIMIGOS.slice(0, SURVIVAL_MAX_MECHS) : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
+            androidSpawns: ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
             technicianSpawns: [],
             personas: o.foes.enemyPersonas,
             names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
           }),
-      bossSpawn: survival ? COLOSSUS_SPAWN[0] : undefined,
+      bossSpawn: survival ? (praia ? PRAIA_TITA : COLOSSUS_SPAWN[0]) : undefined,
       respawn: !survival,
       respawnAtHome: ctf,
       waypoints: this.spawnPoints,

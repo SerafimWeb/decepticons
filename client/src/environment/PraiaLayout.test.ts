@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PRAIA_AGUA, PRAIA_ESTACAO, PRAIA_EXTENSAO, PRAIA_FUNDURA_MAXIMA, PRAIA_SPAWNS, PRAIA_ZONES, praiaBlocks, praiaChao, praiaEstruturas } from './PraiaLayout';
+import { PRAIA_AGUA, PRAIA_ESTACAO, PRAIA_EXTENSAO, PRAIA_FUNDURA_MAXIMA, PRAIA_INIMIGOS, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES, praiaBlocks, praiaChao, praiaEstruturas } from './PraiaLayout';
 
 describe('o layout da PRAIA DOS CABOS (P126)', () => {
   const blocos = praiaBlocks();
@@ -122,6 +122,22 @@ describe('o layout da PRAIA DOS CABOS (P126)', () => {
         const dentro =
           Math.abs(z.x - b.x) <= b.w / 2 && Math.abs(z.z - b.z) <= b.d / 2;
         expect(dentro, `zona ${z.kind} em ${z.x},${z.z} dentro de ${b.kind} em ${b.x},${b.z}`).toBe(false);
+      }
+    }
+  });
+
+  it('as ondas rebeldes nascem na areia seca e livre, longe da estação que o jogador defende', () => {
+    expect(PRAIA_INIMIGOS.length).toBeGreaterThanOrEqual(6); // os Mechs (3 da onda cheia) + os andróides (3)
+    const construcoes = new Set(['predio', 'concreto', 'aco', 'escotilha', 'duna']);
+    for (const [x, z] of [...PRAIA_INIMIGOS, PRAIA_TITA]) {
+      expect(x, 'seca: fora do mar').toBeGreaterThan(PRAIA_AGUA.maxX);
+      expect(Math.abs(x) + 10).toBeLessThanOrEqual(metadeX);
+      expect(Math.abs(z) + 5).toBeLessThanOrEqual(metadeZ);
+      expect(Math.hypot(x - PRAIA_ESTACAO.x, z - PRAIA_ESTACAO.z), 'longe da estação').toBeGreaterThan(40);
+      for (const b of praiaBlocks()) {
+        if (!construcoes.has(b.kind)) continue;
+        const fora = Math.abs(x - b.x) > b.w / 2 + 2 || Math.abs(z - b.z) > b.d / 2 + 2;
+        expect(fora, `spawn ${x},${z} perto de ${b.kind} em ${b.x},${b.z}`).toBe(true);
       }
     }
   });

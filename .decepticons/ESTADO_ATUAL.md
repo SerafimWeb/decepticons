@@ -1,5 +1,24 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A ESTAÇÃO DE CABOS ganha a missão: as ondas rebeldes vêm do mar pela areia — Qwen, 14/10 (branch `qwen/estacao-defesa`, P126 passo 5)
+
+**A ordem (14/10):** "a fase da praia funcionou. mas precisa continuar evoluindo e melhorando ela".
+
+**O que o Comandante vê:** a **ESTAÇÃO DE CABOS** agora tem **missão**, não só combate livre: escolha **SOBREVIVÊNCIA** (no console ou na pausa, com o mapa da praia) e as **ondas rebeldes vêm pela areia**, da ponta oeste, enquanto você defende a **estação** (a leste). O mar continua freando e afogando quem entra nele — e a água passou a ter o **teste de partida** (G14) que faltava.
+
+**O que mudou:**
+- `environment/Bunker.ts` (`mapFromSearch`) + `sim/campanha.ts` + `ui/theater.ts`: a **praia abre o Deathmatch e as ondas** (o CTF/Domínio e o online seguem na Arena) — as três fontes concordam, e o teste confere.
+- `environment/PraiaLayout.ts`: as **ondas nascem na areia, longe da estação** (`PRAIA_INIMIGOS`, 6 pontos secos e livres) e o **Colossus** num ponto aberto (`PRAIA_TITA`).
+- `sim/Match.ts`: a praia é reconhecida **também no modo em ondas**; o roster e o boss usam os pontos da praia.
+- `environment/Praia.ts`: o céu da praia ficou tolerante a **ambiente sem DOM** (testes/servidor): sem tela, a cor fica sólida.
+- **Testes:** `sim/Match.praia.test.ts` (**3**: o jogador nasce na escotilha; **a água freia — G14**; as ondas nascem na areia, longe da estação), `PraiaLayout.test` (os spawns das ondas) e `Bunker.test` (a fiação do mapa). `npm run check` verde (**1956 testes**).
+
+**Visto:** `arte/estacao-defesa-qwen.jpg` e `arte/estacao-defesa-tatica-qwen.jpg` (a praia na missão; headless, **0 erro de página**). **O julgamento é do Comandante.**
+
+**Onde ele testa:** `www.selvamkt.com.br/cybermech/jogar/?modo=survival&mapa=praia` — ou no console: ESTAÇÃO DE CABOS → **SOBREVIVÊNCIA**.
+
+**Falta (R13) — o núcleo:** a **defesa da estação** completa — o **núcleo** (estrutura com vida própria), o **contraataque** (retomar o raio após o núcleo cair) e o **técnico** que o conserta (`fichas/ataque-e-defesa.md` § 2.2). Seguem também a bancada de colisores (< 310) e o **P123** (o Mech saindo da escotilha).
+
 ## A ESTAÇÃO DE CABOS vira fase jogável: o cenário entra no console e a praia ganha as zonas — Qwen, 14/10 (branch `qwen/estacao-de-cabos`, P126 passo 4)
 
 **A ordem (14/10):** "continue no desenvolvimento do cybermech, **implantar a fase ESTAÇÃO DE CABOS**. quero jogar nela".

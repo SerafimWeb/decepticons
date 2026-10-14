@@ -1,3 +1,11 @@
+## [2026-10-14] A ESTAÇÃO DE CABOS ganha a missão em ondas — a praia vira o campo da defesa (Qwen, P126 passo 5)
+
+**Situação:** a fase já abria no console (passo 4), mas só no Deathmatch — **sem objetivo**. Faltava a missão que a ficha pede (`fichas/ataque-e-defesa.md` § 2.2: ondas cujo alvo é a estação).
+
+**Decisões:** (1) **as ondas rodam na praia** — a primeira etapa da defesa: o **diretor de ondas que já existe** (`sim/SurvivalWaves.ts`), na areia, em vez de um modo novo de uma vez; o **núcleo com vida própria** e o **contraataque** ficam para o passo seguinte, declarados (R13). (2) **`mapFromSearch` abre a praia ao `survival`** (o Deathmatch e as ondas; o CTF/Domínio e o online continuam na Arena), e `MODOS_DO_MAPA` e o teatro concordam — o teste confere as três fontes. (3) **As ondas nascem na areia, na ponta oeste, longe da estação** (`PRAIA_INIMIGOS`) e o **Colossus da última onda** num ponto aberto (`PRAIA_TITA`): o jogador defende a estação (a leste) e os rebeldes vêm pela areia — quem entra no mar afunda e afoga. (4) **G14:** entrou o **teste de partida da água** que faltava (no mar, o Mech perde velocidade de verdade) e um teste de que as ondas nascem na praia. (5) O **céu da praia ficou tolerante a ambiente sem DOM** (testes/servidor): sem tela, a cor do céu fica sólida.
+
+**Quem decidiu:** o Comandante disse *"a fase da praia funcionou. mas precisa continuar evoluindo e melhorando ela"*; o recorte (ondas primeiro, núcleo/contraataque depois) é a minha leitura para entregar jogável já, reusando o diretor testado.
+
 ## [2026-10-14] A ESTAÇÃO DE CABOS vira fase jogável: o cenário entra no console e a praia ganha as zonas (Qwen, P126 passo 4)
 
 **Situação:** o mapa da praia já abria por `?mapa=praia` (passo 3), mas a fase **não existia para o jogador**: o teatro de operações do console (`ui/theater.ts`) mostrava a **ESTAÇÃO DE CABOS** como **"EM BREVE"** (a entrada `cabos` sem `mapa` e sem `modos`), o mapa **não aparecia em seletor nenhum**, e a praia era o único cenário **sem zonas** de cura/resfriamento (o `Match` montava `ZoneSystem([])` nela).

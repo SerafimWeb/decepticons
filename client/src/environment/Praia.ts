@@ -32,8 +32,9 @@ const ACESOS: ReadonlySet<BlocoDaPraia['kind']> = new Set(['vidro', 'luz'] as co
 /** Onde o sol está (o horizonte, sobre o mar): a direção e a altura da luz-chave. */
 const SOL = new THREE.Vector3(-1, 0.28, -0.35).normalize();
 
-/** Um céu de fim de tarde: do azul profundo no alto ao rosado no horizonte (uma textura esticada na tela). */
-function ceuDoFimDeTarde(): THREE.CanvasTexture {
+/** Um céu de fim de tarde: do azul profundo no alto ao rosado no horizonte (uma textura esticada na tela). Sem tela (testes/servidor), devolve `null` e o céu fica a cor sólida. */
+function ceuDoFimDeTarde(): THREE.CanvasTexture | null {
+  if (typeof document === 'undefined') return null;
   const c = document.createElement('canvas');
   c.width = 8;
   c.height = 256;
@@ -56,7 +57,7 @@ export class Praia {
   private readonly ondas = { value: 0 };
 
   constructor(scene: THREE.Scene, physics: PhysicsWorld) {
-    scene.background = ceuDoFimDeTarde();
+    scene.background = ceuDoFimDeTarde() ?? new THREE.Color(0x6f8fc0);
     scene.fog = new THREE.FogExp2(0xe9b489, 0.0026); // névoa quente: o sol poente come o fundo
     scene.add(new THREE.HemisphereLight(0xffd7ae, 0xb98f63, 1.05));
     const sol = new THREE.DirectionalLight(0xffb066, 1.5);
