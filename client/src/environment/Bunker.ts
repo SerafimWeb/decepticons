@@ -4,10 +4,12 @@ import { bunkerBlocks } from './BunkerLayout';
 
 export { bunkerBlocks, BUNKER_LEVELS, BUNKER_LIFTS, BUNKER_SPAWNS } from './BunkerLayout';
 
-export type MapId = 'arena' | 'bunker';
+export type MapId = 'arena' | 'bunker' | 'praia';
 /** Online e missões mantêm o mapa contratado com o servidor/objetivos. */
 export function mapFromSearch(search: string, online: boolean, mode: string): MapId {
-  return !online && mode === 'deathmatch' && new URLSearchParams(search).get('mapa') === 'bunker' ? 'bunker' : 'arena';
+  if (online || mode !== 'deathmatch') return 'arena';
+  const mapa = new URLSearchParams(search).get('mapa');
+  return mapa === 'bunker' ? 'bunker' : mapa === 'praia' ? 'praia' : 'arena';
 }
 
 /** Bunker escavado: duas submissões instanciadas; geometria e colisão estáticas. */

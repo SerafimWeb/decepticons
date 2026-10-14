@@ -19,6 +19,8 @@ import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
+import { PRAIA_AGUA, PRAIA_SPAWNS } from '../environment/PraiaLayout';
+import { danoDeAfogamento, fatorDeVelocidade, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
@@ -184,6 +186,10 @@ export class Match {
   /** Zonas de cura e resfriamento (vantagem tática de posicionamento, igual para os dois lados). */
   readonly zones: ZoneSystem;
   private readonly spawnPoints: readonly (readonly [number, number])[];
+  /** A água do mapa (P126), quando é a praia: freia e afoga quem entra no mar. `null` nos outros mapas. */
+  private readonly agua: Agua | null = null;
+  /** Há quanto tempo cada Mech está com os pés na água (o afogamento) — rascunho reaproveitado, sem alocar (G4). */
+  private readonly afogando = new Map<MechBase, number>();
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
   readonly pilots: Pilot[] = [];
   /** Mechs de gente (os bots caçam estes). */
@@ -238,15 +244,18 @@ export class Match {
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
     this.destructibles.onBreak = (id, at) => this.onPropBroken?.(id, at);
     const bunker = o.map === 'bunker' && !survival && !ctf && !dominio;
-    this.spawnPoints = bunker ? BUNKER_SPAWNS : SPAWN_POINTS;
-    this.zones = bunker ? new ZoneSystem([]) : new ZoneSystem();
-    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : 'arena');
+    const praia = o.map === 'praia' && !survival && !ctf && !dominio;
+    this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : SPAWN_POINTS;
+    this.zones = bunker || praia ? new ZoneSystem([]) : new ZoneSystem();
+    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : 'arena');
+    // A água da praia (P126): o mar freia e afoga quem entra nele. Nos outros mapas não há água.
+    this.agua = praia ? PRAIA_AGUA : null;
     this.fx = o.particles;
     // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
     // estourar o teto de 8 personagens da sala (G11). Sobrevivência e CTF não usam esquadrão (pool e times próprios).
     const arenaMode = !survival && !ctf;
-    const mapa: MapId = bunker ? 'bunker' : 'arena';
+    const mapa: MapId = bunker ? 'bunker' : praia ? 'praia' : 'arena';
     const semAliados = o.allies === false;
     const pedido = o.squad ?? esquadraoDeFoes(o.foes, semAliados ? 0 : ALLY_COUNT);
     const plano = arenaMode ? planejarEsquadrao(sanearEsquadrao(semAliados ? { ...pedido, aliados: [] } : pedido, mapa), mapa, o.foes.names) : null;
@@ -676,6 +685,8 @@ export class Match {
       this.zones.fixedUpdate(dt, this.players);
       this.zones.fixedUpdate(dt, this.bots.mechs);
       if (this.allies) this.zones.fixedUpdate(dt, this.allies.mechs);
+      // A água (P126): o mar da praia freia e afoga quem está com os pés dentro. Nos outros mapas, `agua` é nulo.
+      this.aplicarAgua(dt);
       this.respawner.fixedUpdate(dt);
       this.projectiles.fixedUpdate(dt);
       this.rockets.fixedUpdate(dt);
@@ -691,7 +702,34 @@ export class Match {
   }
 
   /**
-   * Domínio: a cada `DOMINIO_REPLANEJA_S` cada bot (os rebeldes e os aliados) escolhe o ponto em que vai (capturar ou guardar,
+   * A água do mapa (P126): quem está com os pés dentro do mar **freia** (o `MechBase.moveSpeedScale`, que já existia) e,
+   * passado o tempo de afogar, **perde vida** no casco. Sem o mapa da praia (`agua` nulo), não roda nada. Custo: ≤ 4
+   * contas por Mech por tick, sem alocar (o acumulado vive num `Map` reaproveitado).
+   */
+  private aplicarAgua(dt: number): void {
+    const a = this.agua;
+    if (!a) return;
+    this.aguaEm(dt, a, this.players);
+    this.aguaEm(dt, a, this.bots.mechs);
+    if (this.allies) this.aguaEm(dt, a, this.allies.mechs);
+  }
+
+  private aguaEm(dt: number, a: Agua, mechs: readonly MechBase[]): void {
+    for (const m of mechs) {
+      const p = m.simPosition;
+      const fundura = m.alive ? funduraEm(a, p.x, p.z, p.y) : 0;
+      const naAgua = fundura > 0.05;
+      m.moveSpeedScale = naAgua ? fatorDeVelocidade(fundura) : 1;
+      if (!naAgua && !this.afogando.has(m)) continue; // seco e sem histórico: nada a fazer (caminho barato)
+      const t = passoDoAfogamento(naAgua ? this.afogando.get(m) ?? 0 : 0, dt, naAgua);
+      if (naAgua) this.afogando.set(m, t);
+      else this.afogando.delete(m);
+      const dano = danoDeAfogamento(a, t, dt);
+      if (dano > 0) m.damagePart('torso', dano);
+    }
+  }
+
+  /**
    * `DominioObjetivos.atribuirPontos`) e recebe a ordem de **segurar posto** ali: trocam tiro em volta do posto e não o abandonam
    * perseguindo quem está longe. Só manda ordem a quem mudou de ponto (ou perdeu a ordem). Custo: ≤ 40 bots × 5 pontos a cada 2 s.
    */

@@ -9,6 +9,7 @@ import { buildingBands } from './BuildingBands';
 import type { DestructibleDef, Destructibles } from './Destructibles';
 import { SerafimTower } from './SerafimTower';
 import { Bunker, type MapId } from './Bunker';
+import { Praia } from './Praia';
 
 interface BlockDef {
   x: number;
@@ -73,6 +74,10 @@ export class Arena {
   readonly occluders: Occluder[] = [];
   /** Prédio Serafim: a base do time, no canto oposto ao Banco VORCARIS. */
   readonly serafim: SerafimTower | null;
+  /** O mapa da praia (P126), quando é ele: quem anima o mar por quadro é o `update`. */
+  readonly praia: Praia | null = null;
+  /** Tempo acumulado, só para as ondas do mar. */
+  private tempo = 0;
 
   private readonly boxGeo = new THREE.BoxGeometry(1, 1, 1);
   private readonly solidMat = new THREE.MeshStandardMaterial({ color: PALETTE.steel, metalness: 0.3, roughness: 0.8 });
@@ -83,6 +88,13 @@ export class Arena {
     destructibles: Destructibles,
     map: MapId = 'arena',
   ) {
+    if (map === 'praia') {
+      // A praia traz o céu do fim de tarde, a luz do sol poente e o cenário dela (`environment/Praia.ts`): nada daqui.
+      this.serafim = null;
+      this.praia = new Praia(scene, physics);
+      return;
+    }
+
     scene.background = buildSkyTexture();
     scene.fog = new THREE.FogExp2(PALETTE.fog, 0.0095);
 
@@ -107,6 +119,13 @@ export class Arena {
     this.buildPlatform();
     this.buildSkyline();
     this.buildZones();
+  }
+
+  /** Por quadro: só o mapa que anima faz algo (o mar da praia); os outros são estáticos e não custam nada. */
+  update(dt: number): void {
+    if (!this.praia) return;
+    this.tempo += dt;
+    this.praia.update(this.tempo);
   }
 
   /**
