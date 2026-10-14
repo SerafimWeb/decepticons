@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PRAIA_AGUA, PRAIA_ESTACAO, PRAIA_EXTENSAO, PRAIA_FUNDURA_MAXIMA, PRAIA_SPAWNS, praiaBlocks, praiaChao, praiaEstruturas } from './PraiaLayout';
+import { PRAIA_AGUA, PRAIA_ESTACAO, PRAIA_EXTENSAO, PRAIA_FUNDURA_MAXIMA, PRAIA_SPAWNS, PRAIA_ZONES, praiaBlocks, praiaChao, praiaEstruturas } from './PraiaLayout';
 
 describe('o layout da PRAIA DOS CABOS (P126)', () => {
   const blocos = praiaBlocks();
@@ -105,5 +105,24 @@ describe('o layout da PRAIA DOS CABOS (P126)', () => {
   it('nenhum ponto de nascimento serve a dois corpos (a regra dos nascimentos)', () => {
     const vistos = new Set(PRAIA_SPAWNS.map(([x, z]) => `${x},${z}`));
     expect(vistos.size).toBe(PRAIA_SPAWNS.length);
+  });
+
+  it('as zonas de cura e resfriamento ficam em areia seca e livre (fora de prédio, contêiner e dunas)', () => {
+    expect(PRAIA_ZONES.length).toBeGreaterThanOrEqual(2);
+    expect(PRAIA_ZONES.some((z) => z.kind === 'heal')).toBe(true);
+    expect(PRAIA_ZONES.some((z) => z.kind === 'cool')).toBe(true);
+    // Sólidos que uma zona não pode ter no meio (o chão de areia e o mar ficam de fora: é onde elas ficam).
+    const construcoes = new Set(['predio', 'concreto', 'aco', 'escotilha', 'duna']);
+    for (const z of PRAIA_ZONES) {
+      expect(z.x, 'seca: fora do mar').toBeGreaterThan(PRAIA_AGUA.maxX);
+      expect(Math.abs(z.x)).toBeLessThanOrEqual(metadeX - z.radius);
+      expect(Math.abs(z.z)).toBeLessThanOrEqual(metadeZ - z.radius);
+      for (const b of praiaBlocks()) {
+        if (!construcoes.has(b.kind)) continue;
+        const dentro =
+          Math.abs(z.x - b.x) <= b.w / 2 && Math.abs(z.z - b.z) <= b.d / 2;
+        expect(dentro, `zona ${z.kind} em ${z.x},${z.z} dentro de ${b.kind} em ${b.x},${b.z}`).toBe(false);
+      }
+    }
   });
 });

@@ -1,5 +1,25 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A ESTAÇÃO DE CABOS vira fase jogável: o cenário entra no console e a praia ganha as zonas — Qwen, 14/10 (branch `qwen/estacao-de-cabos`, P126 passo 4)
+
+**A ordem (14/10):** "continue no desenvolvimento do cybermech, **implantar a fase ESTAÇÃO DE CABOS**. quero jogar nela".
+
+**O que o Comandante vê:** o **teatro de operações** do console (tela inicial) agora mostra a **ESTAÇÃO DE CABOS** **acesa** — **disponível**, não mais **EM BREVE** — e o botão **ir** dela abre a **PRAIA DOS CABOS** (`?mapa=praia`). O mapa também entrou no **seletor** de mapa (`PRAIA DOS CABOS`). E a praia **deixou de ser o único cenário sem zonas**: ganhou uma **zona de cura** no caminho para a estação e uma de **resfriamento** na areia do meio (a mesma regra da Arena, igual para os dois lados).
+
+**O que mudou:**
+- `ui/theater.ts`: a entrada `cabos` ganhou `mapa: 'praia'` e `modos: ['deathmatch']` (o pin sai do "EM BREVE"; `estadoDoTeatro` vira `disponivel`/`aqui`).
+- `ui/MapLinks.ts`: a Praia entra em `MAPS`; o `mapHref` trata os **dois mapas só-offline** (Bunker e Praia) — tira `sala`, `servidor` e `modo` para o jogo abrir o mapa certo (e não cair na Arena).
+- `environment/PraiaLayout.ts` + `sim/Match.ts`: as **zonas da ficha** (`PRAIA_ZONES`) — cura em `(155, 0)` e resfriamento em `(95, 32)`, longe de prédio e contêiner; o `Match` as monta no mapa da praia (antes: `ZoneSystem([])`).
+- Testes: `theater.test` (a estação sai do "EM BREVE"), `MapLinks.test` (o link da praia abre a praia) e o novo **"as zonas ficam em areia seca e livre"** (`PraiaLayout.test`). O `npm run check` passou (SMOKE OK, budget ok, site ok).
+
+**Visto:** as capturas `arte/estacao-de-cabos-console-qwen.jpg` (o console com o pin aceso), `arte/estacao-de-cabos-qwen.jpg` (a praia em jogo) e `arte/estacao-de-cabos-tatica-qwen.jpg`; headless, **0 erro de página**. **O julgamento visual é do Comandante** (eu não leio imagem).
+
+**Onde ele testa:** `www.selvamkt.com.br/cybermech/jogar/` → abrir o **console** (tela inicial) → **ESTAÇÃO DE CABOS** no mapa-múndi → **ir** (ou direto: `?mapa=praia`).
+
+**Falta (R13) — a missão, o próximo passo:** a **missão** de defender/retomar a estação (o **núcleo** com vida própria, as **ondas** com alvo no núcleo, o **contraataque** — `fichas/ataque-e-defesa.md`) toca `sim/` e o HUD, que são o **contrato do Claude** (P99: "regra → Claude, HUD → Gemini, cenário → Codex"). Seguem também a **bancada de colisores** da ficha (< 310) e o **teste de partida** da água (G14).
+
+**DECISÃO EM ABERTO (para o Comandante):** assumo eu (Qwen) a **missão** do núcleo em `sim/`/HUD — como fiz no cenário do Codex (14/10, "pegue a tarefa do codex") —, ou fica para o **Claude**, que é o dono desse caminho? Recomendação: eu tomo agora (o Codex segue sem créditos, o `sim` da praia já é meu desde a P126 e a ficha é minha autoria), com o desenho que o `HISTORICO_DE_DECISOES.md` de hoje registra (núcleo com vida própria, técnico conserta devagar).
+
 ## O site caiu: 404 em TODOS os assets do jogo, e o envio não deixa mais o site meio publicado — Qwen, 14/10 (queixa do Comandante; branch `qwen/publicacao-inteira`)
 
 **A queixa (14/10, 17:47 no relógio do PC):** o jogo não abria — `GET https://selvamkt.com.br/cybermech/jogar/assets/index-MEyQz7SO.js net::ERR_ABORTED 404`, e o `preload-helper-CV_M1NlO.js` idem.

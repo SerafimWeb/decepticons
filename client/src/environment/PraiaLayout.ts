@@ -1,4 +1,5 @@
 import type { Agua } from '../combat/Agua';
+import type { ZoneDef } from '../combat/Zone';
 
 /**
  * A PRAIA DOS CABOS (ordem P126, Fortaleza · CE): o **layout** do cenário comprido, em **dado puro** — o mesmo caminho do
@@ -43,6 +44,16 @@ export const PRAIA_ESTACAO = { x: 200, z: 0 } as const;
 
 /** A meta do mar (m de fundura no fim do mapa): o fundo desce em degraus até aqui. */
 export const PRAIA_FUNDURA_MAXIMA = 14;
+
+/**
+ * As **zonas de vantagem tática** da praia (ficha `cenario-cabos.md` § 2: "uma zona de cura/resfriamento junto à estação"): a mesma regra da
+ * Arena (`combat/Zone.ts`), igual para os dois lados. Uma **cura** no caminho para a estação e um **resfriamento** na areia do meio, longe de
+ * prédio e contêiner — a escolta para ali, conserta e respira. O `PraiaLayout.test.ts` confere que as duas ficam em chão seco e livre.
+ */
+export const PRAIA_ZONES: readonly ZoneDef[] = [
+  { x: 155, z: 0, radius: 12, kind: 'heal' },
+  { x: 95, z: 32, radius: 12, kind: 'cool' },
+];
 
 /**
  * O chão: a **areia** (seca) e o **fundo do mar**, que desce em degraus de `x = 0` para o mar. Cada degrau é um bloco mais

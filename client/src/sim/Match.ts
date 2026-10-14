@@ -19,7 +19,7 @@ import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
-import { PRAIA_AGUA, PRAIA_SPAWNS } from '../environment/PraiaLayout';
+import { PRAIA_AGUA, PRAIA_SPAWNS, PRAIA_ZONES } from '../environment/PraiaLayout';
 import { danoDeAfogamento, fatorDeVelocidade, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
@@ -246,7 +246,7 @@ export class Match {
     const bunker = o.map === 'bunker' && !survival && !ctf && !dominio;
     const praia = o.map === 'praia' && !survival && !ctf && !dominio;
     this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : SPAWN_POINTS;
-    this.zones = bunker || praia ? new ZoneSystem([]) : new ZoneSystem();
+    this.zones = bunker ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
     this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : 'arena');
     // A água da praia (P126): o mar freia e afoga quem entra nele. Nos outros mapas não há água.
     this.agua = praia ? PRAIA_AGUA : null;
