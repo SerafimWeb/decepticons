@@ -1,3 +1,7 @@
+## [2026-10-14] Câmera publicada e registro de entrega fechado (Codex, P109)
+
+PR #298 mergeado em `886d149` depois do check local completo (185 arquivos/1.842 testes). Publicação pelo PC confirmada às 01:14 de Brasília, com checksum dos quatro arquivos de entrada; usada a exceção `--sem-ci` documentada em `DEPLOY.md`, porque o Actions segue bloqueado por cobrança. A câmera está disponível na Arena; a P109 e a homologação de fluidez continuam abertas. Este registro fecha o estado da entrega, sem alterar código ou declarar playtest humano feito.
+
 ## [2026-10-14] Fluidez medida e recuperação da câmera sem tranco (Codex, P109)
 
 **Autorização:** “sim, prossiga” com a referência do #297. Três sessões válidas de cinco minutos (Vega 11, 1280×720, média/bloom) ficaram em p99 16,9 ms; as duas primeiras tiveram pausas >300 ms. Uma amostra pausada pelo banco foi descartada, e o coletor passou a retomar esse menu e contar pausas. Não atribuir melhora sobre 09/10 nem homologar 60 FPS; o ensaio é outro e a causa dos picos ainda não está isolada.

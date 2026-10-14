@@ -1,12 +1,12 @@
 # ESTADO ATUAL — CYBERMECH
 
-## EM BRANCH — NÃO ESTÁ NO AR: fluidez da câmera junto à cobertura — Codex, 14/10 (P109)
+## ÚLTIMA SESSÃO FEZ: fluidez da câmera junto à cobertura — Codex, 14/10 (P109, PR #298)
 
 **Autorização do Comandante:** “sim, prossiga”, sobre executar a referência do PR #297. Branch `codex/fluidez-camera`, isolado em `.tmp/wt-codex-fluidez`, base `900d277`. Três sessões válidas de cinco minutos na Vega 11, 53.798 quadros: p99 16,9 ms em todas; três pausas >300 ms nas duas primeiras, nenhuma >50 ms na terceira. Zero programas novos e erros de página. Uma sessão que ficou no banco foi descartada; as repetições contam e encerram esse menu no quadro seguinte. Dados e limites em `medicoes/FLUIDEZ_CAMERA.md`/`.json`.
 
-**Primeiro ajuste:** `ThirdPersonCamera` recolhe imediatamente e recupera distância exponencialmente (~90% em 0,19 s), sem novo filtro sobre posição do piloto ou orientação do mouse. Zero desenho/rede/física novos, um escalar por câmera; uma exponencial por quadro apenas durante recuperação. Seis testes passam, incluindo Rapier real; o teste de saída reprova a versão anterior. Na Arena, maior passo de afastamento de 0,50→0,42 m junto ao prédio e 2,55→0,75 m na barricada fina. Capturas/vídeo em `arte/camera-cobertura-*codex.*`; vídeo controlado a 0,5×, não prova de FPS. Typecheck verde; suíte completa é exigida pelo hook do push. Não é ganho de FPS nem homologação de 60 FPS.
+**Primeiro ajuste:** `ThirdPersonCamera` recolhe imediatamente e recupera distância exponencialmente (~90% em 0,19 s), sem novo filtro sobre posição do piloto ou orientação do mouse. Zero desenho/rede/física novos, um escalar por câmera; uma exponencial por quadro apenas durante recuperação. Seis testes passam, incluindo Rapier real; o teste de saída reprova a versão anterior. Na Arena, maior passo de afastamento de 0,50→0,42 m junto ao prédio e 2,55→0,75 m na barricada fina. Capturas/vídeo em `arte/camera-cobertura-*codex.*`; vídeo controlado a 0,5×, não prova de FPS. Check completo verde: 185 arquivos/1.842 testes, typecheck, build, budgets, boot, bocas e site. Não é ganho de FPS nem homologação de 60 FPS.
 
-**Disponibilidade:** este registro fica “em branch” até o merge do PR da frente `codex/fluidez-camera`; a confirmação de publicação acompanha o PR. Depois, conferir na Arena em terceira pessoa (`V`), saindo lateralmente de uma cobertura com a parede atrás do Mech. Playtest do dono e demais chassis pendentes.
+**Disponibilidade comprovada:** PR #298 mergeado na `main` (`886d149`); site publicado pelo PC em 14/10 às 01:14 (Brasília), com checksum dos quatro arquivos de entrada conferido. Conferir em `https://www.selvamkt.com.br/cybermech/jogar/?mapa=arena`, terceira pessoa (`V`), saindo lateralmente de uma cobertura com a parede atrás do Mech. Playtest do dono e demais chassis pendentes.
 
 **Próxima sessão começa com:** resultados desse ensaio e um setor da Arena como prova de acabamento; não alterar simulação/rede ou UI/áudio em paralelo. A P109 continua em operação.
 
