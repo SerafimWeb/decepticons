@@ -2,8 +2,13 @@
  * `npm run publicar-site` — publica o site (landing, sala de controle, oficina e o jogo) em `www.selvamkt.com.br/cybermech/` **a partir do PC do Comandante, de graça,
  * sem o GitHub Actions** (13/10, P105: "publicação automática, facilitada, eficiente e gratuita; não quero pagar o GitHub").
  *
- * Monta o site (`npm run site`), empacota com `tar` e desempacota no destino por `ssh` (a máquina é Windows e não tem `rsync`), e **confere o que chegou por checksum, pelo
- * próprio SSH** (daqui o endereço público às vezes nem responde: o TLS é resetado pela VPN; ver `.decepticons/DEPLOY.md`). Só então marca a versão como publicada.
+ * Monta o site (`npm run site`), empacota **num arquivo** e sobe esse arquivo para dentro do destino, confere a soma dele lá e **só então** extrai — e depois confere
+ * por checksum, pelo próprio ssh, que o servidor tem os mesmos arquivos que o PC (daqui o endereço público às vezes nem responde: o TLS é resetado pela VPN; ver
+ * `.decepticons/DEPLOY.md`). Só então marca a versão como publicada.
+ *
+ * **Por que não extrair enquanto transmite (14/10, o site caiu):** o envio antigo era um cano só (`tar` do PC → `ssh` que extraía no servidor). Uma conexão cortada no
+ * meio deixava o `index.html` novo aterrissado e os `assets/` (nome com hash) não — o jogo abria com 404 em todos os scripts, e a rodada seguinte não consertava (a
+ * trava de uma publicação viva segurava as outras). Com o pacote inteiro e conferido por soma antes da extração, uma conexão cortada não muda nada no ar.
  *
  *   npm run publicar-site                    monta e publica agora
  *   npm run publicar-site -- --se-mudou      só se o código mudou desde a última publicação (o atualizador do PC chama assim, a cada 10 min)
@@ -14,16 +19,20 @@
  * **A configuração fica fora do repositório** (R2/R10), na pasta de dados do servidor: `deploy-site.json` (ver `scripts/publicarSite.mjs`). **Trava:** o destino termina em
  * `/public_html/cybermech`; a raiz do domínio é o site real da Selva MKT. A lógica pura (validar, montar os comandos, comparar) está em `publicarSite.mjs` e é testada.
  */
-import { spawn, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { ARQUIVOS_DE_CONFERENCIA, compararSomas, comandosDeEnvio, devePublicar, lerSomas, validarConfig } from './publicarSite.mjs';
+import { ARQUIVOS_DE_CONFERENCIA, PACOTE_DO_SITE, PACOTE_NO_SERVIDOR, assetsDoJogo, comandosDeEnvio, compararSomas, devePublicar, lerSomas, validarConfig } from './publicarSite.mjs';
 
 const RAIZ = resolve(import.meta.dirname, '..');
 const argv = process.argv.slice(2);
 const tem = (f) => argv.includes(f);
+
+/** O tempo máximo de cada passo pelo ssh: o normal é levar segundos; passou disso, é a Hostinger segurando a conexão (o corte tem de virar erro, não espera infinita). */
+const TEMPO_DO_ENVIO = 240_000;
+const TEMPO_DA_CONFERENCIA = 60_000;
 
 /** A pasta de dados do servidor: a da tarefa (`CYBERMECH_DADOS`) ou `.tmp/servidor` da pasta PRINCIPAL do projeto (a worktree é descartável; a configuração não). */
 function pastaDeDados() {
@@ -81,6 +90,9 @@ if (!cfgLida.ok) {
 }
 const cfg = { ...cfgLida.cfg, key: cfgLida.cfg.key ? expandir(cfgLida.cfg.key) : undefined };
 
+/** Publicar do branch em que a pasta está põe código não mergeado no ar: vale a pena dizer isso na linha do log, já que a versão publicada é o HEAD da pasta. */
+const naMain = spawnSync('git', ['rev-parse', 'origin/main'], { cwd: RAIZ, encoding: 'utf8' }).stdout.trim();
+
 // Uma publicação por vez (o atualizador roda a cada 10 min e a montagem pode passar disso): a trava de arquivo vale 25 min.
 const TRAVA = join(DADOS, 'publicar-site.trava');
 if (existsSync(TRAVA) && Date.now() - Number(readFileSync(TRAVA, 'utf8').split(' ')[1] ?? 0) < 25 * 60_000) {
@@ -92,6 +104,7 @@ const soltarTrava = () => rmSync(TRAVA, { force: true });
 process.on('exit', soltarTrava);
 
 const PASTA = resolve(RAIZ, '.tmp', 'site');
+const PACOTE = resolve(RAIZ, '.tmp', PACOTE_DO_SITE);
 const sha = (arquivo) => createHash('sha256').update(readFileSync(arquivo)).digest('hex');
 
 function montar() {
@@ -119,63 +132,94 @@ function programa(nome) {
   return achado && existsSync(achado) ? achado : nome;
 }
 
-/** Empacota a pasta e desempacota no destino pelo ssh (um pipe: o `tar` escreve, o `ssh` lê). Devolve true se tudo saiu com 0. */
-function enviar() {
-  const c = comandosDeEnvio(cfg, PASTA);
-  return new Promise((ok) => {
-    // O tar roda DENTRO da pasta do site (cwd): o tar do Git trata "D:\\caminho" como "máquina D" e falha.
-    const empacotar = spawn(programa(c.empacotar.programa), c.empacotar.args, { cwd: PASTA, stdio: ['ignore', 'pipe', 'inherit'] });
-    const desempacotar = spawn(programa(c.desempacotar.programa), c.desempacotar.args, { stdio: ['pipe', 'inherit', 'pipe'] });
-    let erro = '';
-    desempacotar.stderr.on('data', (d) => (erro += d));
-    empacotar.stdout.pipe(desempacotar.stdin);
-    let codigos = [null, null];
-    const fim = () => {
-      if (codigos[0] === null || codigos[1] === null) return;
-      if (codigos[0] !== 0 || codigos[1] !== 0) log(`envio falhou (tar ${codigos[0]}, ssh ${codigos[1]}): ${erro.trim().slice(0, 300)}`);
-      ok(codigos[0] === 0 && codigos[1] === 0);
-    };
-    empacotar.on('exit', (c0) => ((codigos[0] = c0 ?? 1), fim()));
-    desempacotar.on('exit', (c1) => ((codigos[1] = c1 ?? 1), fim()));
-    empacotar.on('error', () => ((codigos[0] = 1), fim()));
-    desempacotar.on('error', () => ((codigos[1] = 1), fim()));
-  });
+/** Roda um passo pelo ssh e devolve `{ codigo, saida }` (nunca lança: o que der errado é para o log, não para uma tela que ninguém vê). */
+function ssh({ programa: prog, args }, entrada, tempo = TEMPO_DO_ENVIO) {
+  const r = spawnSync(programa(prog), args, { input: entrada, encoding: 'utf8', timeout: tempo, maxBuffer: 64 * 1024 * 1024 });
+  return { codigo: r.status ?? 1, saida: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim(), erro: r.error ? String(r.error.message) : '' };
 }
 
-function conferir() {
+/** Empacota a pasta do site no arquivo do pacote (o `tar` roda com o `cwd` nela; a saída fica um nível acima, fora do que ele empacota). */
+function empacotar() {
+  const c = comandosDeEnvio(cfg, PASTA).empacotar;
+  rmSync(PACOTE, { force: true });
+  const r = spawnSync(programa(c.programa), c.args, { cwd: c.cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  if (r.status !== 0 || !existsSync(PACOTE)) {
+    log(`empacotar o site falhou (código ${r.status}); o site no ar não foi tocado:\n${(r.stdout + r.stderr).split('\n').slice(-10).join('\n')}`);
+    return false;
+  }
+  return true;
+}
+
+/** Os arquivos que dizem se o site novo chegou: os de sempre mais os `assets/` que o próprio `jogar/index.html` pede (o que o navegador baixa: era o que faltava no 14/10). */
+function arquivosDeConferencia() {
+  const jogar = join(PASTA, 'jogar', 'index.html');
+  const assets = existsSync(jogar) ? assetsDoJogo(readFileSync(jogar, 'utf8')) : [];
+  return [...ARQUIVOS_DE_CONFERENCIA, ...assets];
+}
+
+function conferir(arquivos) {
   const local = {};
-  for (const a of ARQUIVOS_DE_CONFERENCIA) if (existsSync(join(PASTA, a))) local[a] = sha(join(PASTA, a));
-  const c = comandosDeEnvio(cfg, PASTA).conferir(ARQUIVOS_DE_CONFERENCIA);
-  const r = spawnSync(programa(c.programa), c.args, { encoding: 'utf8', timeout: 60_000 });
-  if (r.status !== 0) return { ok: false, diferentes: ['(não consegui ler o destino)'] };
-  return compararSomas(local, lerSomas(r.stdout));
+  for (const a of arquivos) if (existsSync(join(PASTA, a))) local[a] = sha(join(PASTA, a));
+  const c = comandosDeEnvio(cfg, PASTA).conferir(arquivos);
+  const r = ssh(c, undefined, TEMPO_DA_CONFERENCIA);
+  if (r.codigo !== 0) return { ok: false, diferentes: [`(o servidor não confirmou: ${r.saida.split('\n')[0] || 'sem resposta'})`] };
+  return compararSomas(local, lerSomas(r.saida));
+}
+
+/**
+ * O envio em duas fases, com nova tentativa de ponta a ponta: o pacote sobe, a soma dele no servidor tem de ser a do PC e só então ele é extraído; no fim, a
+ * conferência dos arquivos serviço por serviço. Qualquer passo que falhe (incluindo a conferência final) refaz o ciclo inteiro — um arquivo inteiro e conferido
+ * não tem meio caminho, e o site no ar só muda dentro do `tar -xzf` do pacote conferido.
+ */
+async function publicar() {
+  const somaLocal = sha(PACOTE);
+  const arquivos = arquivosDeConferencia();
+  const c = comandosDeEnvio(cfg, PASTA);
+  for (let tentativa = 1; tentativa <= 5; tentativa++) {
+    if (tentativa > 1) {
+      const espera = tentativa * 12;
+      log(`nova tentativa (${tentativa}/5) em ${espera} s (a proteção anti-abuso da Hostinger às vezes derruba a conexão)`);
+      await dorme(espera * 1000);
+    }
+    log(`enviando para o servidor (tentativa ${tentativa}/5)…`);
+    const subiu = ssh(c.enviarPacote, readFileSync(PACOTE));
+    if (subiu.codigo !== 0) {
+      log(`o pacote não subiu (código ${subiu.codigo}): ${subiu.erro || subiu.saida.slice(0, 300)}`);
+      continue;
+    }
+    const soma = ssh(c.conferirPacote);
+    const noServidor = lerSomas(soma.saida)[PACOTE_NO_SERVIDOR];
+    if (soma.codigo !== 0 || noServidor !== somaLocal) {
+      log(`o pacote chegou diferente do PC (${soma.codigo !== 0 ? 'não consegui ler a soma' : 'soma diferente'}); o site no ar não foi tocado`);
+      continue;
+    }
+    const extraiu = ssh(c.extrair);
+    if (extraiu.codigo !== 0) {
+      log(`a extração falhou (código ${extraiu.codigo}): ${extraiu.saida.slice(0, 300)}`);
+      continue;
+    }
+    const conf = conferir(arquivos);
+    if (conf.ok) {
+      log(`pacote conferido por soma no servidor e extraído (${arquivos.length} arquivos)`);
+      return true;
+    }
+    log(`ATENÇÃO: o envio terminou, mas o servidor não tem os mesmos arquivos (diferentes: ${conf.diferentes.join(', ')}); refazendo`);
+  }
+  return false;
 }
 
 if (!montar()) process.exit(1);
+if (!empacotar()) process.exit(1);
 if (tem('--so-montar')) {
-  log('site montado em .tmp/site (--so-montar: não enviei)');
+  log(`site montado em .tmp/site (--so-montar: não enviei; o pacote é .tmp/${PACOTE_DO_SITE})`);
   process.exit(0);
 }
+if (naMain && naMain !== head) log(`nota: publicando o HEAD desta pasta (${head.slice(0, 7)}), que não é a origin/main (${naMain.slice(0, 7)}) — confira se é isso mesmo`);
 
-let enviado = false;
-for (let tentativa = 1; tentativa <= 5 && !enviado; tentativa++) {
-  if (tentativa > 1) {
-    const espera = tentativa * 12;
-    log(`nova tentativa (${tentativa}/5) em ${espera} s (a proteção anti-abuso da Hostinger às vezes derruba a conexão)`);
-    await dorme(espera * 1000);
-  }
-  log(`enviando para o servidor (tentativa ${tentativa}/5)…`);
-  enviado = await enviar();
-}
-if (!enviado) {
-  log('NÃO PUBLICOU: o envio falhou 5 vezes; o site no ar ficou como estava');
+if (!(await publicar())) {
+  log('NÃO PUBLICOU: o servidor não recebeu a mesma versão do PC; o site no ar ficou como estava');
   process.exit(2);
-}
-const conf = conferir();
-if (!conf.ok) {
-  log(`ATENÇÃO: o envio terminou, mas o servidor não tem os mesmos arquivos (diferentes: ${conf.diferentes.join(', ')}); não marco como publicado`);
-  process.exit(4);
 }
 writeFileSync(`${MARCA}.tmp`, head);
 renameSync(`${MARCA}.tmp`, MARCA);
-log(`PUBLICADO: ${head.slice(0, 7)} no ar (conferido por checksum: ${ARQUIVOS_DE_CONFERENCIA.join(', ')})`);
+log(`PUBLICADO: ${head.slice(0, 7)} no ar (conferido por checksum: ${arquivosDeConferencia().join(', ')})`);
