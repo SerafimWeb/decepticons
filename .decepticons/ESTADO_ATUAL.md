@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A praia dos cabos: o layout do cenário, em dado puro — Qwen, 14/10 (PR `qwen/praia-layout`, ordem P126, passo 2)
+
+**Continuação do passo 1** (a regra da água, no ar pelo **#309**). Passo 2: **o desenho do cenário**, em **dado puro** (`environment/PraiaLayout.ts`), no caminho do `BunkerLayout.ts` — o construtor e a física leem a lista, e os testes conferem o desenho **sem montar 3D** (a lição do Bunker: contrato antes da geometria).
+
+**O que o layout diz (o que o cenário FAZ):**
+- **480 × 140 m** — mais que o **dobro da Arena** (200 m): a **fase maior** da fila, seguindo a ficha `cenario-cabos.md` (residente, o maior que cabe **sem streaming**).
+- **A praia:** areia seca na metade de cá; dali para o mar o **fundo desce em degraus** (2, 5, 9 e **14 m**) — é isso que afunda o Mech, e a `combat/Agua.ts` (passo 1) cobra o freio e o afogamento.
+- **A água:** `PRAIA_AGUA` cobre a metade do mar, com a superfície no nível da areia.
+- **As duas vias:** a **areia** (baixa e exposta) e a **passarela alta** de 8 m (longa e coberta) — a decisão que o Comandante pediu ("jogadas mais interessantes").
+- **A ESTAÇÃO DE CABOS** na ponta seca: o prédio de 14 m e a **escotilha no pé** — a **saída do P123** (o Mech sai de dentro da estrutura).
+- **Os nascimentos:** 6 pontos, todos na parte **seca** e sem repetir.
+
+**Testes:** `PraiaLayout.test.ts` (**9**) — o comprimento, a água dentro do mapa, os degraus que **descem** (cada um mais fundo), a areia no nível da água, as duas vias, a estação com a escotilha no pé, quem tem colisor (tudo, menos a luz) e os nascimentos secos e únicos.
+
+**Falta (R13):** o **construtor** do mapa (a geometria desenhada + os colisores estáticos, com as medidas da ficha: **< 310 colisores** e a bancada em `medicoes/`), o **`MapId` `praia`** (com os limites de esquadrão e a capacidade), a **missão** (defender/retomar a estação) e o **teste de partida** da água (G14).
+
 ## A praia dos cabos: a água que freia e afoga — Qwen, 14/10 (PR `qwen/agua-da-praia`, ordem P126, passo 1)
 
 **Ordem do Comandante (14/10):** "pode construir, pegue a tarefa do codex pois ele ta sem credito hoje. quero criar um cenário maior, mais amplo, baseado na **praia onde chegam os cabos de internet em Fortaleza**... uma fase com a praia, o mar (inclusive que os **mechs possam entrar na água e ir afundando**), cenário comprido, bem maior que os do Bunker ou Cidade Neon", com a narrativa de **defender os cabos** das fake news.
