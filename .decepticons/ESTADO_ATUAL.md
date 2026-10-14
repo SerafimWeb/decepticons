@@ -1,5 +1,20 @@
 # ESTADO ATUAL — CYBERMECH
 
+## Táticas do esquadrão: o jogador escolhe como o time joga — Qwen, 14/10 (PR `qwen/taticas-do-esquadrao`, ordem P122, passo 1)
+
+**Ordem do Comandante (14/10):** "quero poder 'desenhar' ou escolher entre táticas pre selecionadas (atacar pelos flancos, pelo centro, recuar para tal ponto se alguma coisa acontecer, proteger algum dos nossos, usar táticas de distração...), dependendo de cada missão".
+
+**O que há:**
+- **`combat/taticas.ts` (novo, puro):** o **catálogo** de 5 táticas, cada uma com nome, descrição e **parâmetros** (a largura da formação e o *leash*). **Prontas:** **PELO CENTRO** (o de sempre), **PELOS FLANCOS** (formação aberta — ataca pelos lados) e **PROTEGER** (formação apertada — não larga você). **Reservadas** (`pronta: false`): **RECUAR SE…** e **DISTRAIR** — dependem do **gatilho por missão** (P99) e **se declaram não prontas**, em vez de mentir (R13).
+- **Quem obedece é o esquadrão aliado:** a tática manda na **largura da formação** e no **leash** dos aliados (`BotController.formationWidth` / `leash`, setados pelo `BotSystem` quando há escolta). **Nenhum rebelde** muda, e sem tática o jogo é o `centro` — o **teste-golden do esquadrão padrão** continua batendo.
+- **A escolha:** o link **`?tatica=flanco`** (lido no `Game` e passado ao `Match`). **Falta:** o **seletor na tela** (SquadPanel) e o **por missão** (a campanha) — o passo seguinte.
+
+**Custo:** nenhum por tick (a tática é lida uma vez, na montagem do esquadrão); nada alocado.
+
+**Onde ver:** `www.selvamkt.com.br/cybermech/jogar/?tatica=flanco` (o esquadrão aliado abre a formação e ataca pelos lados) e `?tatica=proteger` (gruda em você).
+
+**Falta (R13):** o seletor na tela, o gatilho "se X, recua" e o distrair — os dois últimos dependem das missões.
+
 ## Perfil de mira por arma: a mira assenta, cada arma no seu tempo — Qwen, 14/10 (PR `qwen/mira-por-arma`, ordem P121, passo 1)
 
 **Ordem do Comandante (14/10):** "melhorar nosso sistema de mira, pra combinar a mira da ponta da arma com a mira no alvo... Cada arma deve ter o seu tempo pra mirar, alcance, amplitude".

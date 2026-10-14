@@ -248,6 +248,10 @@ export class BotController {
   /** Escolta acompanha o líder; a lista do time determina quem pode ser líder. */
   leader: MechBase | null = null;
   escortSide = 1;
+  /** Largura lateral da formação de escolta (m): a **tática** do esquadrão manda (ordem P122). */
+  formationWidth = 7;
+  /** O esquadrão não deixa o líder passar desta distância (m): a tática manda (menor = mais colado). */
+  leash = 36;
   order: SquadOrder = 'follow';
   private focusTarget: MechBase | null = null;
   private readonly guardPoint = new THREE.Vector3();
@@ -761,9 +765,9 @@ export class BotController {
     }
     const leader = this.leader;
     if (this.order === 'follow' && !this.rearguard && leader?.alive && this.state !== 'retreat' &&
-        (this.state === 'patrol' || !this.targetVisible || this.flatDistance(leader.simPosition) > 36)) {
+        (this.state === 'patrol' || !this.targetVisible || this.flatDistance(leader.simPosition) > this.leash)) {
       const p = leader.simPosition;
-      const side = this.escortSide * 7;
+      const side = this.escortSide * this.formationWidth;
       _goal.set(p.x + Math.sin(leader.yaw) * 9 + Math.cos(leader.yaw) * side, p.y,
         p.z + Math.cos(leader.yaw) * 9 - Math.sin(leader.yaw) * side);
       if (this.flatDistance(_goal) > 3) this.towards(_goal);

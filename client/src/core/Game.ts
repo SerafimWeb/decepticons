@@ -86,6 +86,7 @@ import { TIERS, type Loadout, type WeaponId, type WeaponStats } from '../combat/
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { EsquadraoStore } from './EsquadraoStore';
+import { PARAM_DA_TATICA, taticaDeTexto } from '../combat/taticas';
 import { esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
 import { ALLY_COUNT } from '../sim/nascimentos';
 import { SquadPanel } from '../ui/SquadPanel';
@@ -431,6 +432,8 @@ export class Game {
       foes,
       power,
       ...(online || !this.squad.current ? {} : { squad: this.squad.current }),
+      // A tática do esquadrão aliado (ordem P122): vem do link `?tatica=`; sem ela, o esquadrão entra pelo centro.
+      tatica: taticaDeTexto(new URLSearchParams(location.search).get(PARAM_DA_TATICA)),
       // Os bots do esquadrão com chassi de malha importada (Marauder, Lancer...) nascem com o corpo certo, não como Vector-09.
       rigDoChassi: (id) => {
         const a = IMPORTED_CHASSIS[id];
