@@ -1,3 +1,11 @@
+## [2026-10-14] A marca "em desenvolvimento" não esconde robô que o Comandante já usa (Claude, P118)
+
+**Situação:** a flag `status: 'oficina'` (painel admin, Gemini) trancava o Marauder, o Bastion e o Quadra-V2 atrás de login para todo mundo, inclusive o dono; as armas que só eles carregam (sônico, lança-chamas) pareciam ter sumido.
+
+**Decisões:** (1) a marca sai dos três; o painel admin segue para robôs que de fato estejam em desenvolvimento. (2) **Não** se ampliou quem leva som e fogo: a regra é do Comandante (P19, P77, P82) e fica como está até ele pedir; o caminho é `ARM_SLOTS` e `WEAPON_MOUNTS`. (3) `npm audit fix` (vulnerabilidade só de ferramenta de build, `source-map-js`): feito, 0 restantes.
+
+**Quem decidiu:** Claude.
+
 ## [2026-10-14] Câmera publicada e registro de entrega fechado (Codex, P109)
 
 PR #298 mergeado em `886d149` depois do check local completo (185 arquivos/1.842 testes). Publicação pelo PC confirmada às 01:14 de Brasília, com checksum dos quatro arquivos de entrada; usada a exceção `--sem-ci` documentada em `DEPLOY.md`, porque o Actions segue bloqueado por cobrança. A câmera está disponível na Arena; a P109 e a homologação de fluidez continuam abertas. Este registro fecha o estado da entrega, sem alterar código ou declarar playtest humano feito.
