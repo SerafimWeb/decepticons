@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A praia dos cabos: a água que freia e afoga — Qwen, 14/10 (PR `qwen/agua-da-praia`, ordem P126, passo 1)
+
+**Ordem do Comandante (14/10):** "pode construir, pegue a tarefa do codex pois ele ta sem credito hoje. quero criar um cenário maior, mais amplo, baseado na **praia onde chegam os cabos de internet em Fortaleza**... uma fase com a praia, o mar (inclusive que os **mechs possam entrar na água e ir afundando**), cenário comprido, bem maior que os do Bunker ou Cidade Neon", com a narrativa de **defender os cabos** das fake news.
+
+**Passo 1 — a regra da água (`combat/Agua.ts`, novo, puro e testado):** a água de um mapa é um **retângulo** com uma **superfície** (y). O que ela faz:
+- **Fundura:** a distância da superfície aos **pés** do Mech (0 fora do retângulo, ou na/sobre a linha d'água).
+- **Freia:** o fator cai de 1 (seco) até **0,35** a 2,5 m de fundura — e entra no **`MechBase.moveSpeedScale`**, que **já existia** (nenhuma física nova).
+- **Afoga:** o tempo com os pés na água acumula (zera ao sair) e, passados **3 s**, tira **8 de dano por segundo** do casco.
+O **afundamento** em si é **geometria**: o **fundo do mar desce** e a física de sempre leva o Mech para baixo ao entrar no mar.
+
+**Isto é o contrato da água** (regra 5: contrato antes de paralelizar — a lição do Bunker). A **geometria** (a praia, o fundo do mar que desce, o mar desenhado) e a **missão** (defender/retomar a estação, com o **P123** — o Mech saindo da escotilha) vêm no passo seguinte, sobre a ficha `fichas/cenario-cabos.md` (~500 m, o maior que cabe **sem streaming**).
+
+**Narrativa:** segue a trava do próprio projeto (`UNIVERSO.md` § 2 e P110): **alegoria sem nomes reais**, na **campanha/cooperativo** — **nunca** no balanço do PvP.
+
+**Custo:** 4 contas por Mech por tick, e só em mapa com água; nada alocado.
+
+**Falta (R13):** a geometria, o `MapId` `praia`, a missão e o playtest — e é **com o mapa** que a regra ganha o **teste de partida** (G14).
+
 ## Táticas do esquadrão: o jogador escolhe como o time joga — Qwen, 14/10 (PR `qwen/taticas-do-esquadrao`, ordem P122, passo 1)
 
 **Ordem do Comandante (14/10):** "quero poder 'desenhar' ou escolher entre táticas pre selecionadas (atacar pelos flancos, pelo centro, recuar para tal ponto se alguma coisa acontecer, proteger algum dos nossos, usar táticas de distração...), dependendo de cada missão".
