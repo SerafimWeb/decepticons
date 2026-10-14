@@ -713,6 +713,39 @@ html, body {
 }
 #death-timer { margin-top: 8px; font-size: 14px; letter-spacing: 3px; color: var(--accent); }
 
+/* Painel "seu algoz" (ui/AlgozPanel.ts): quem te matou, em que robô, com quanta vida e com que armas. */
+#algoz-panel {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  transform: translate(-50%, -50%);
+  min-width: 240px;
+  padding: 10px 16px 12px;
+  text-align: center;
+  background: rgba(6, 8, 10, 0.82);
+  border: 1px solid rgba(255, 74, 85, 0.6);
+  box-shadow: 0 0 18px rgba(255, 45, 61, 0.3);
+  pointer-events: none;
+}
+#algoz-panel[hidden] { display: none; }
+#algoz-panel .ag-titulo { font-size: 11px; letter-spacing: 4px; color: var(--alert); }
+#algoz-panel .ag-nome { font-size: 20px; letter-spacing: 2px; color: #f2f7ee; margin-top: 2px; }
+#algoz-panel .ag-chassi { font-size: 11px; letter-spacing: 2px; color: #9aa3a0; margin-top: 2px; }
+#algoz-panel .ag-vida-box { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+#algoz-panel .ag-barra {
+  flex: 1;
+  height: 6px;
+  transform-origin: left center;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: transform 0.2s;
+}
+#algoz-panel .ag-barra[data-tom='atencao'] { background: var(--hot); }
+#algoz-panel .ag-barra[data-tom='critico'] { background: var(--alert); }
+#algoz-panel .ag-vida { font-size: 11px; letter-spacing: 1px; color: #c9cfcb; }
+#algoz-panel .ag-armas { list-style: none; margin: 8px 0 0; padding: 0; font-size: 11px; letter-spacing: 1px; color: #dfe4e0; }
+#algoz-panel .ag-armas li { padding: 1px 0; }
+
 /* Rodada: relógio no topo e placar (Tab segurado ou intervalo). Criados por ui/RoundHud.ts. */
 .round-clock {
   position: absolute;

@@ -54,6 +54,7 @@ import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
 import { PlayerController } from '../player/PlayerController';
 import { DamageIndicator } from '../ui/DamageIndicator';
+import { AlgozPanel, algozViewOf } from '../ui/AlgozPanel';
 import { DamageNumbers } from '../ui/DamageNumbers';
 import { StatusBadges } from '../ui/StatusBadges';
 import { TargetPanel } from '../ui/TargetPanel';
@@ -239,6 +240,8 @@ export class Game {
   private readonly netStatus = document.createElement('div');
   private readonly damageIndicator = new DamageIndicator();
   private readonly damageNumbers = new DamageNumbers();
+  /** Painel "seu algoz" (frente 3 da P109): quem te matou, em que robô e com que armas, durante o contador. */
+  private readonly algoz = new AlgozPanel();
   private readonly targetPanel = new TargetPanel();
   /** Estados do jogador (fogo, choque, gelo) na tela e no som: os indicadores e as bordas são do Gemini, a ponte é `core/statusHud.ts`. */
   private readonly statusBadges = new StatusBadges(document.getElementById('hud')!);
@@ -1148,7 +1151,11 @@ export class Game {
       // Aviso de abate e de sequência (P96): abater aliado (fogo amigo) não conta; morrer zera.
       if (dead === mech) this.sequencia.zerar();
       else if (killer === mech && !(this.match.allies?.mechs ?? []).includes(dead)) this.hud.killBanner.showKill(deadName, this.sequencia.abate(performance.now() / 1000));
-      if (!this.online && dead === mech && killer && killer !== mech) this.killCam.start(killer, at);
+      if (!this.online && dead === mech && killer && killer !== mech) {
+        this.killCam.start(killer, at);
+        // Painel "seu algoz" (frente 3 da P109): a ficha do matador enquanto o contador corre.
+        this.algoz.show(algozViewOf(killer, killerName ?? 'INIMIGO'));
+      }
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
       // Abater um aliado (fogo amigo) não conta para a meta da etapa.
       if (killer === mech && dead !== mech && !(this.match.allies?.mechs ?? []).includes(dead)) this.abateNaCampanha();
@@ -1665,6 +1672,7 @@ export class Game {
     }
     this.bankTerminal.updateBoost(this.mech.alive ? (this.online ? this.bankOnlineBoost : this.mech.combatBoost.secondsLeft) : 0, this.playing && !this.hangarView, this.online ? this.bankOnlineMultiplier : this.mech.combatBoost.damageMultiplier);
     this.hud.setRespawn(this.respawner.timeLeft(this.mech), this.killCam.active);
+    if (this.mech.alive) this.algoz.hide();
     this.killFeed.update(dt);
     this.damageNumbers.update(dt);
     this.onboarding.update(dt);

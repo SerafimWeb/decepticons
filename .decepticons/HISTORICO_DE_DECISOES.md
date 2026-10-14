@@ -1,3 +1,11 @@
+## [2026-10-14] Ao morrer, a tela diz quem te matou — o painel "seu algoz" (Qwen, P109 frente 3 passo 1)
+
+**Situação:** a frente 3 da P109 é "morrer e voltar" (inclui a P98/killcam); o MechArena mostra um painel de quem te matou. Passo 1: o painel.
+
+**Decisões:** (1) o dado **já existe** no cliente (o matador é um `MechBase` vivo) — nada de rede, nada novo por tick. (2) A leitura é **pura** (`algozViewOf`) e o DOM é uma classe à parte (`AlgozPanel`), que **só escreve quando o conteúdo muda** — o padrão do HUD. (3) Fica **offline** por ora: o evento de abate do servidor traz só os nomes dos pilotos, sem o Mech/menta do matador; ligar o painel no online pede o `id` da unidade no `KILL` (corte próprio). (4) A **escolha do ponto de nascimento** (a outra metade da frente) não entra aqui.
+
+**Quem decidiu:** Qwen (a frente é do Comandante; escopo do passo é meu).
+
 ## [2026-10-14] A curadoria das armas virou contrato — todo robô leva o que o encaixe já aceita (Qwen, P120)
 
 **Situação:** o Comandante quer "todos os robôs com todas as armas", com o limite explícito: *"é só das que sejam possíveis mesmo, não precisa inventar nova regra que estrague algo mais correto anterior"*.
