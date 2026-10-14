@@ -9,6 +9,19 @@
 4. **`canFireLeftHand` novo em vez de `canFireSecondary`:** o segundo depende do layout de gatilhos e no Marauder a esquerda atira no botão principal.
 5. **A ficha mostra os números do robô** (o canhão de cerco do V4 a 60% do dano, o plasma do chefe no Colossus-01), não os do Hangar: mostrar 360 de dano quando o bot dá 216 era a ficha mentindo.
 
+
+## [2026-10-13] O HUD de combate segue o MechArena na informação e o CYBERMECH na linguagem (Claude, P109)
+
+**Situação:** o Comandante viu oito quadros do MechArena e quer o jogo "ainda mais bonito, melhor de jogar, mais interessante e gostoso de ficar horas", sem o pay-to-win deles. Comparados os quadros com o jogo de hoje (captura da mesma tela), a distância maior era o **HUD da partida**: sem minimapa, a vida em seis linhas de texto e três medidores do centro de baixo sobrepostos.
+
+**Decisões:**
+1. **Copiar a informação, não o desenho.** O MechArena tem minimapa, vida de relance, cartões de arma e anéis de habilidade; o CYBERMECH ganhou os quatro, na linguagem que já tem (terminal verde, âmbar no aviso, vermelho no perigo, molduras em ângulo). A direção de arte neon sobre escuro não mudou (decisão de 07/10).
+2. **A barra de vida é o torso**, e não a soma das partes: o torso zerado destrói o Mech (`damage.ts`); as outras cinco partes tiram capacidade e viram pílulas. É a leitura que diz "quanto falta para morrer".
+3. **O minimapa gira com a câmera e tem alcance (75 m).** Frente-para-cima é o que dá a direção do perigo sem pensar; o alcance limitado é o que impede o radar de virar informação perfeita. Quem passa do alcance fica preso na borda, esmaecido. **Em aberto:** filtrar por visão, se o Comandante quiser o jogo furtivo (P23) protegido.
+4. **Nada de potência, estrela ou nível comprado.** O Comandante nomeou o pay-to-win deles como o defeito; `GAME_DESIGN.md` já o proibia. A ficha da arma no Hangar mostrará dano, alcance e recarga, nunca "poder".
+5. **Plano em cinco frentes, um PR cada** (`REFERENCIA_VISUAL.md` § 6.3): HUD (feito), leitura de combate, morrer e voltar, cenário, pontos de controle. A ordem entre o modo de pontos e a escolta (P99) é do Comandante (decisão 5 da folha de decisões).
+
+**Quem decidiu:** Claude (o Comandante deu a direção e o veto ao pay-to-win; as escolhas 1 a 3 são de desenho e estão abertas a ajuste).
 ## [2026-10-13] Os Colossus como bots inimigos: arma própria, dano do cerco limitado e teto de dois (Claude, P108 passo a)
 
 **Situação:** o Comandante aprovou a P108: colocar os titãs de tamanho 3 e 4 no time adversário e lutar contra eles de andróide. O contrato os excluía de propósito.

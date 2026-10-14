@@ -263,6 +263,13 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] **Autonomia visível (P96):** perfil de configurações salvo com nome, **código de build curto** (`CM-V9-SNIPER`) e a dica "teste isto" depois de perder; tudo local, nunca vantagem (`QUIMICA_DO_JOGO.md` § 5 #10) #ux
 - [ ] **Agressão recompensada (P96):** o abate **encostado** (pisão/serra) devolve energia ou alivia calor — só se passar no `combat/balance.ts` (`QUIMICA_DO_JOGO.md` § 5 #11) #combate #modos
 
+- [x] HUD de combate (ordem P109, 13/10): minimapa da partida de frente-para-cima (75 m, 12 Hz), vida do torso em barra com número e as cinco partes em pílulas, cartões ATAQUE 1 e 2 com nome e nível, anel de dash, rótulo da câmera e CFTV lado a lado; `ui/Minimapa.ts`, `ui/Vitals.ts` e 14 testes (Claude) #ux
+- [ ] Leitura de combate (P109, frente 2): números de dano flutuantes sobre o alvo, plaqueta com barra de vida e distância, "recarregando" ao lado da mira, ícone da arma no kill feed (Claude) #ux
+- [ ] Morrer e voltar (P109, frente 3; inclui a P98): painel "seu algoz" com a ficha do matador e escolha do ponto de nascimento na contagem de reaparecer (Claude) #ux
+- [ ] Cenário com cobertura e cor por zona (P109, frente 4): contêineres, rampas e muretas instanciados e cor por região da Arena, dentro do estilo neon (Codex) #cenarios
+- [ ] Modo de pontos de controle A–E (P109, frente 5): posse por proximidade, placar por tempo de posse, minimapa com as letras; regra no `Match` e `OBJECTIVE_STATE` na rede (Claude) #modos
+- [ ] Ficha da arma na lista do Hangar com dano, alcance ótimo e recarga (P109; nunca "potência" nem estrelas: não é pay-to-win) #ux
+
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
 - [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo
 - [ ] Decisões do dono sobre o universo (`UNIVERSO.md`, seção 7) #universo
