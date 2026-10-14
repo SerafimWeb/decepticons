@@ -1,5 +1,27 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O HUD de combate ganhou minimapa, vida em barra, cartões de arma e anel de dash — Claude, 13/10 (PR `claude/referencia-mecharena`, ordem P109, frente 1 de 5)
+
+**Ordem do Comandante (13/10):** assistiu a gameplays do MechArena e mandou oito quadros: "evoluíram MUITO a interface, os gráficos, layout e jogabilidade... porém, pay to win... quero evoluir nosso cybermech pra ficar ainda mais bonito, melhor de jogar, mais interessante e gostoso de ficar horas na nossa arena". **Análise (o que eles têm, onde estamos, o que não copiar) e o plano em cinco frentes:** `REFERENCIA_VISUAL.md` § 6. As oito pranchas estão em `referencias/mecharena/gameplay-13-10-*.jpg`.
+
+**Feito agora (frente 1, o HUD):** a maior distância entre os quadros e o jogo era o HUD da partida, e ele vira quatro cantos com uma função cada.
+- **Minimapa** (`ui/Minimapa.ts`), em cima à esquerda: hexágono com a planta do mapa **girada para onde você olha** (o que está na frente sobe), 75 m de alcance, inimigos em vermelho, aliados em ciano, zonas de cura e resfriamento, e quem está além do alcance preso na borda só para dar a direção. A velocidade ficou sob ele (`#stats`, que o `site.mjs` ainda lê).
+- **Vida** (`ui/Vitals.ts`), embaixo no centro: uma barra larga com o **torso** (é o que decide a morte, `damage.ts`) e o número grande, âmbar abaixo de 50%, vermelha pulsando abaixo de 25%, e **cinco pílulas** com as outras partes (cabeça, braços, pernas; riscada quando destruída). Nome do Mech e abates/mortes moram aqui. Substitui as seis barras de texto do canto.
+- **Anel do dash**, à esquerda da vida: enche com a recarga e acende em laranja quando pronto. O titã de escala 4 (sem dash) esconde o anel em vez de mostrar NaN.
+- **Armas**, embaixo à direita: cartões **ATAQUE 1** e **ATAQUE 2** com a tecla, o nome da arma e o nível (**"CANHÃO DE PLASMA MK I"**; o nome da arma do Ataque 1 não aparecia em lugar nenhum), o carregador dos foguetes e a barra de calor; o cartão **acende com o gatilho apertado**.
+- **Em cima à direita:** o rótulo da câmera e o botão CFTV lado a lado (antes se sobrepunham; o feed desceu 16 px).
+- **Custo:** o minimapa é um canvas de ~150 px redesenhado a 12 Hz só com a partida em andamento (~40 retângulos, até ~40 pontos, **sem alocação por quadro**: o degradê do cone nasce uma vez e a lista de Mechs remotos é reaproveitada); o painel de vida escreve no DOM só o que mudou, a 10 Hz. G4 e G5 respeitados; G1/G2 intactos (nada na simulação).
+- **Testes:** `Vitals.test.ts` (cor por faixa, partes riscadas, "só escreve o que mudou") e `Minimapa.test.ts` (a frente sobe em qualquer rumo, a direita vai para a direita, o ponto além do alcance fica preso na borda, sem NaN). 14 testes.
+- **Visto:** Chrome headless por software, **Arena, Bunker e celular deitado (844×390)**, sem erro de página; o estado crítico (vida a 20%, parte destruída, âmbar) foi forçado no DOM só para conferir o CSS. Capturas **antes e depois** em `arte/hud-combate-antes-claude.jpg`, `-depois-`, `-critico-`, `-bunker-`, `-toque-`.
+- **Ainda não visto (R13):** em GPU real, numa partida longa, e o **julgamento do Comandante** (o desenho é dele). **Falta nesta frente:** "RECARREGANDO" ao lado da mira, o retrato do piloto e a camada do escudo de energia na barra.
+
+**Decisões minhas, em aberto (o Comandante ajusta):** (1) o minimapa mostra **todo robô a 75 m, mesmo atrás de parede**, como um radar; se isso tirar o jogo furtivo (P23), filtrar por visão é uma linha em `desenhar`; (2) a barra grande é o **torso** e não a soma das partes; (3) em tela estreita (celular) o placar de abates e mortes sai da vida (o botão PLACAR mostra); (4) no celular os cartões de arma e o rótulo SHIFT somem (os botões de tela já dizem ATQ 1, ATQ 2 e DASH), ficam o carregador e o calor.
+
+**Achados (R17):** o rótulo da câmera e o CFTV se sobrepunham em cima à direita; os três medidores do centro de baixo se sobrepunham (`ATQ 2 ·` em cima de `FOGUETES`): corrigidos pelo layout novo. **Não mexi:** no celular o botão CFTV continua sob o botão de pausa e o feed de rádio cobre o relógio da rodada (existia antes; fica para a passada de celular, UI-5). **Território:** `ui/`, `styles.css` e `index.html` são do Gemini, que está sem créditos (P94/P107 põem o Claude na cobertura).
+
+**O que vem (frentes 2 a 5, no `ROADMAP.md`):** leitura de combate (números de dano flutuantes, plaqueta com barra e distância), morrer e voltar (painel "seu algoz", ponto de nascimento, a P98), cenário com cobertura e cor por zona, e o modo de pontos de controle A–E.
+
+**Próxima sessão começa com:** a **frente 2**, os números de dano flutuantes e a plaqueta com barra de vida e distância sobre o inimigo (`ui/Nameplates.ts` ganha a barra; um módulo novo para os números, com pool fixo).
 ## Os dois Colossus podem ser inimigos no esquadrão: o andróide contra o titã — Claude, 13/10 (PR `claude/esquadrao-titas`, ordem P108 passo a)
 
 **Ordem do Comandante (13/10, aprovada):** "quero que os titãs Colossus tamanho 3 e 4 possam ser selecionados, para eu colocar no time adversário e lutar contra eles como um pequeno andróide, para sentir a comparação do tamanho; batalhas épicas de combate e estratégia". Os **quatro bloqueios** do diagnóstico do Qwen, resolvidos:

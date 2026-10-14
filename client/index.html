@@ -26,7 +26,12 @@
         <div id="hitmarker"></div>
         <div id="hit-label"></div>
       </div>
-      <div id="stats"></div>
+      <div id="hud-esq">
+        <div id="minimapa" hidden>
+          <svg class="mm-moldura" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon points="25.5,1 74.5,1 99,50 74.5,99 25.5,99 1,50" /></svg>
+        </div>
+        <div id="stats"></div>
+      </div>
       <div id="target-panel" hidden>
         <div id="target-name"></div>
         <div id="target-body"></div>
@@ -40,20 +45,33 @@
         <div class="title">ABATIDO</div>
         <div id="death-timer"></div>
       </div>
-      <div id="mode"></div>
-      <div id="dash">
-        <span class="label">DASH</span>
-        <div class="bar"><div class="fill" id="dash-fill"></div></div>
+      <div id="barra-topo">
+        <div id="mode"></div>
+        <button id="btn-cftv" class="btn-cftv" type="button" title="Alternar Câmeras de Vigilância / CFTV">[ 📹 CFTV ]</button>
       </div>
-      <div id="heat">
-        <span class="label">CALOR</span>
-        <div class="bar"><div class="fill" id="heat-fill"></div></div>
+      <div id="dock-centro">
+        <div id="dash">
+          <div class="ring"></div>
+          <span class="ico">»</span>
+          <span class="label">SHIFT</span>
+        </div>
+        <div id="vitals"></div>
       </div>
-      <div id="rockets">
-        <span class="label">ATQ 2</span>
-        <span class="pips"><i></i><i></i><i></i><i></i></span>
+      <div id="dock-direita">
+        <div id="atq1" class="arma">
+          <div class="topo"><span class="label">ATAQUE 1</span><span class="tecla">CLIQUE</span></div>
+          <div class="nome"></div>
+        </div>
+        <div id="rockets" class="arma">
+          <div class="topo"><span class="label">ATAQUE 2</span><span class="tecla">CLIQUE DIR · Q</span></div>
+          <div class="nome"></div>
+          <span class="pips"><i></i><i></i><i></i><i></i></span>
+        </div>
+        <div id="heat">
+          <span class="label">CALOR</span>
+          <div class="bar"><div class="fill" id="heat-fill"></div></div>
+        </div>
       </div>
-      <button id="btn-cftv" class="btn-cftv" type="button" title="Alternar Câmeras de Vigilância / CFTV">[ 📹 CFTV ]</button>
       <div id="onboarding"></div>
     </div>
 

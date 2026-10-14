@@ -4,6 +4,7 @@ import type { MechBase, MechPart } from '../entities/MechBase';
 import { KillBanner } from './KillBanner';
 import { NetHud } from './NetHud';
 import { RoundOverlay } from './RoundOverlay';
+import { Vitals } from './Vitals';
 import { WeaponReticle, reticleWeapon } from './WeaponReticle';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -74,8 +75,9 @@ export class HUD {
   private readonly crosshair = $('crosshair');
   private readonly reticle = new WeaponReticle(this.crosshair);
   private readonly dash = $('dash');
-  private readonly dashFill = $('dash-fill');
   private readonly stats = $('stats');
+  private readonly vitals = new Vitals($('vitals'));
+  private readonly atq1 = $('atq1');
   private readonly missionStatus = $('mission-status');
   private readonly missionSummary = $('round-summary');
   private readonly modeLabel = $('mode');
@@ -92,6 +94,10 @@ export class HUD {
   private kills = 0;
   private deaths = 0;
   private shownRespawn = '';
+  private shownDash = -1;
+  private shownSpeed = '';
+  private shownPrimaryHeld = false;
+  private shownSecondaryHeld = false;
   private shownMission = '';
   private ctfNoticeTimer = 0;
   private ctfProgressText = '';
@@ -204,8 +210,14 @@ export class HUD {
   setSecondaryLabel(text: string | null): void {
     // Sem arma no braço esquerdo (o escudo do Lancer): o bloco some em vez de escrever FOGUETES apagado.
     this.rockets.hidden = text === null;
-    const label = this.rockets.querySelector('.label');
-    if (label && text !== null) label.textContent = text;
+    const nome = this.rockets.querySelector('.nome');
+    if (nome && text !== null) nome.textContent = text;
+  }
+
+  /** Nome da arma do Ataque 1 (o clique) no cartão de armas, com o nível (MK). */
+  setPrimaryLabel(text: string): void {
+    const nome = this.atq1.querySelector('.nome');
+    if (nome) nome.textContent = text;
   }
 
   setRockets(ammo: number, reload: number, available: boolean): void {
@@ -355,9 +367,24 @@ export class HUD {
       this.crosshair.style.top = `${cursorY}px`;
     }
 
-    const ready = mech.dashReadiness;
-    this.dashFill.style.transform = `scaleX(${ready})`;
-    this.dash.classList.toggle('ready', ready >= 1);
+    // O anel do dash: 50 passos bastam para o olho, e o DOM só é escrito quando o passo muda. Robô sem dash (o titã) dá NaN: o anel some.
+    const r = mech.dashReadiness;
+    const ready = Number.isFinite(r) ? Math.round(Math.max(0, Math.min(1, r)) * 50) / 50 : -2;
+    if (ready !== this.shownDash) {
+      this.shownDash = ready;
+      this.dash.hidden = ready === -2;
+      this.dash.style.setProperty('--p', String(Math.max(0, ready)));
+      this.dash.classList.toggle('ready', ready >= 1);
+    }
+    // O gatilho apertado acende o cartão da arma.
+    if (primaryHeld !== this.shownPrimaryHeld) {
+      this.shownPrimaryHeld = primaryHeld;
+      this.atq1.classList.toggle('ativa', primaryHeld);
+    }
+    if (secondaryHeld !== this.shownSecondaryHeld) {
+      this.shownSecondaryHeld = secondaryHeld;
+      this.rockets.classList.toggle('ativa', secondaryHeld);
+    }
 
     if (this.hitTimer > 0) {
       this.hitTimer -= dt;
@@ -374,23 +401,21 @@ export class HUD {
 
     this.textTimer -= dt;
     if (this.textTimer > 0) return;
-    this.textTimer = 0.2;
+    this.textTimer = 0.1;
 
     if (isBlind) {
+      this.shownSpeed = '';
       this.stats.textContent = '';
       return;
     }
 
     const speed = Math.hypot(mech.velocity.x, mech.velocity.z);
-    let integrity = '';
-    for (const [part, label] of INTEGRITY_ROWS) {
-      integrity += `\n${label} ${integrityBar(mech.modules[part], mech.stats.maxModuleHealth[part])}`;
+    // Velocidade sob o minimapa; vida, partes e placar moram no painel de baixo (`Vitals`).
+    const vel = `VEL ${speed.toFixed(1)} m/s`;
+    if (vel !== this.shownSpeed) {
+      this.shownSpeed = vel;
+      this.stats.textContent = vel;
     }
-    this.stats.textContent =
-      `${mech.stats.name}\n` +
-      `VEL    ${speed.toFixed(1).padStart(5)} m/s\n` +
-      `ABATES ${this.kills.toString().padStart(5)}\n` +
-      `MORTES ${this.deaths.toString().padStart(5)}\n` +
-      integrity;
+    this.vitals.update(mech, this.kills, this.deaths);
   }
 }
