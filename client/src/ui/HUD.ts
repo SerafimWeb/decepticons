@@ -102,6 +102,8 @@ export class HUD {
   private shownPrimaryHeld = false;
   private shownSecondaryHeld = false;
   private shownMission = '';
+  /** Quantas ondas tem a missão (vem de `setMissionWave`): a barra de cima mostra "ONDA 2/6", não um 5 fixo. */
+  private missionWaves = 6;
   private ctfNoticeTimer = 0;
   private ctfProgressText = '';
 
@@ -195,13 +197,14 @@ export class HUD {
   }
 
   setMissionWave(wave: number, total: number, title: string, waves: number): void {
+    this.missionWaves = waves;
     this.missionStatus.classList.remove('clear');
     this.setMissionText(`ONDA ${wave}/${waves} · ${title.toUpperCase()} · 0/${total}`);
   }
 
   setMissionProgress(wave: number, killed: number, total: number, elapsedS: number): void {
     this.missionStatus.classList.remove('clear');
-    this.setMissionText(`ONDA ${wave}/5 · ALVOS ${killed}/${total} · ${Math.floor(elapsedS)} s`);
+    this.setMissionText(`ONDA ${wave}/${this.missionWaves} · ALVOS ${killed}/${total} · ${Math.floor(elapsedS)} s`);
   }
 
   showMissionClear(wave: number, elapsedS: number): void {

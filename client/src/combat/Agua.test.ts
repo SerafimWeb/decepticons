@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FUNDURA_QUE_FREIA, FATOR_MINIMO, danoDeAfogamento, fatorDeVelocidade, funduraEm, passoDoAfogamento, type Agua } from './Agua';
+import { FUNDURA_QUE_FREIA, FATOR_MINIMO, danoDeAfogamento, fatorDeVelocidade, fundoParaAfogar, funduraEm, passoDoAfogamento, type Agua } from './Agua';
 
 const MAR: Agua = { minX: -260, maxX: -60, minZ: -70, maxZ: 70, superficie: 0, afogarS: 3, danoPorSegundo: 8 };
 const DT = 1 / 60;
@@ -25,6 +25,21 @@ describe('a água da praia (P126)', () => {
       expect(fatorDeVelocidade(FUNDURA_QUE_FREIA / 2)).toBeCloseTo(1 - (1 - FATOR_MINIMO) / 2);
       expect(fatorDeVelocidade(FUNDURA_QUE_FREIA)).toBe(FATOR_MINIMO);
       expect(fatorDeVelocidade(1e3)).toBe(FATOR_MINIMO); // não passa do mínimo
+    });
+  });
+
+  describe('vadear não afoga (P127)', () => {
+    it('sem `afogaDesde`, qualquer água que molha já conta (o comportamento do passo 1)', () => {
+      expect(fundoParaAfogar(MAR, 0.04)).toBe(false); // úmido, não é água
+      expect(fundoParaAfogar(MAR, 0.06)).toBe(true);
+    });
+
+    it('com `afogaDesde`, o raso só freia e o fundo afoga', () => {
+      const praia: Agua = { ...MAR, afogaDesde: 1.4 };
+      expect(fundoParaAfogar(praia, 0.8)).toBe(false); // vadeando: freia (o fator vale), mas não afoga
+      expect(fatorDeVelocidade(0.8)).toBeLessThan(1);
+      expect(fundoParaAfogar(praia, 1.4)).toBe(true);
+      expect(fundoParaAfogar(praia, 5)).toBe(true);
     });
   });
 

@@ -48,6 +48,17 @@ export class PhysicsWorld {
     return this.world.createCollider(desc);
   }
 
+  /**
+   * Terreno de altura (a praia, P127): UM colisor estático para o chão inteiro, em vez de centenas de caixas. A grade tem
+   * `celulasX` × `celulasZ` células e `(celulasX + 1) × (celulasZ + 1)` alturas, na ordem do Rapier: **`alturas[ix * (celulasZ + 1) + iz]`**
+   * (a coluna é o X, a linha é o Z; medido em `PhysicsWorld.test.ts`). `centro` é o meio da grade em planta, e `tamanho` a extensão
+   * dela em X e Z. As alturas valem em metros (a escala vertical é 1).
+   */
+  addStaticHeightfield(celulasX: number, celulasZ: number, alturas: Float32Array, tamanho: { x: number; z: number }, centro: { x: number; z: number }): RAPIER.Collider {
+    const desc = RAPIER.ColliderDesc.heightfield(celulasZ, celulasX, alturas, { x: tamanho.x, y: 1, z: tamanho.z }).setTranslation(centro.x, 0, centro.z);
+    return this.world.createCollider(desc);
+  }
+
   removeCollider(collider: RAPIER.Collider): void {
     this.world.removeCollider(collider, true);
   }

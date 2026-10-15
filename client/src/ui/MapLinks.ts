@@ -4,7 +4,7 @@ import type { MapId } from '../environment/Bunker';
 export const MAPS: readonly { id: MapId; label: string; hint: string }[] = [
   { id: 'arena', label: 'ARENA', hint: 'A cidade neon' },
   { id: 'bunker', label: 'BUNKER', hint: 'Mapa de quatro andares, treino offline contra bots (sai da sala online)' },
-  { id: 'praia', label: 'PRAIA DOS CABOS', hint: 'A estação de cabos, o mar e a cidade costeira (offline, sai da sala online)' },
+  { id: 'praia', label: 'PRAIA DOS CABOS', hint: 'A orla de Fortaleza: porto, Ponte Metálica e a estação de cabos (offline, sai da sala online)' },
 ];
 
 /**

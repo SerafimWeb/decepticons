@@ -101,7 +101,8 @@ import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha'
 import { ServerPanel } from '../ui/ServerPanel';
 import { CameraWall } from '../ui/CameraWall';
 import { plantaDaArena, plantaDoBunker } from '../ui/TacticalRadar';
-import { Minimapa, plantaComZonas } from '../ui/Minimapa';
+import { Minimapa, plantaComZonas, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
+import { PraiaHud } from '../ui/PraiaHud';
 import { MuralCliente } from '../net/mural';
 import { AdminCliente, TokenDoDono } from '../net/admin';
 import { PALETTE } from './palette';
@@ -227,6 +228,8 @@ export class Game {
   private readonly hud = new HUD();
   /** O radar do canto de cima à esquerda (12 Hz, só com a partida em andamento). `remotos` é a lista reaproveitada dos Mechs de outros jogadores. */
   private readonly minimapa = new Minimapa(document.getElementById('minimapa')!);
+  /** O HUD da praia (a faixa da costa, o marcador da estação, o lugar e a água): só existe no mapa da praia (P127). */
+  private praiaHud: PraiaHud | null = null;
   private readonly remotos: MechBase[] = [];
   private readonly juntarRemoto = (r: { readonly mech: MechBase }): void => {
     this.remotos.push(r.mech);
@@ -656,6 +659,7 @@ export class Game {
       (enabled) => {
         this.bloomPass.enabled = enabled;
         this.refractWaves = enabled;
+        this.match.arena.praia?.setDetalhe(enabled); // o último degrau do rebaixamento também tira as nuvens e o ruído do mar
       },
     );
     // Hangar: enquanto está aberto, o desenho troca a arena pelo galpão (o jogo está pausado).
@@ -797,8 +801,11 @@ export class Game {
     const mural = new MuralCliente(enderecoDoServidor, tokenDoDono.ler, { estado: (e) => parede?.estado(e), quadro: (q) => parede?.quadro(q) });
     // As salas online são da Arena: se o jogo local está no Bunker, o mural não desenha as paredes de outro mapa por cima.
     const plantaOnline = mapa === 'arena' ? plantaDaArena(this.match.arena.occluders) : [];
-    this.minimapa.setPlanta(plantaComZonas(mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(this.match.arena.occluders), mapa === 'arena'));
-    this.minimapa.setPontos(this.match.dominio?.pontos ?? null);
+    const naPraia = this.match.arena.praia !== null;
+    this.minimapa.setPlanta(naPraia ? plantaDaPraiaNoMinimapa() : plantaComZonas(mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(this.match.arena.occluders), mapa === 'arena'));
+    // Na praia a estação é o objetivo: o ponto E do minimapa aponta para ela de qualquer lugar do mapa (preso na borda quando longe).
+    this.minimapa.setPontos(naPraia ? pontoDaEstacao() : this.match.dominio?.pontos ?? null);
+    if (naPraia) this.praiaHud = new PraiaHud(document.getElementById('hud')!);
     parede = new CameraWall({
       mural,
       planta: () => plantaOnline,
@@ -1004,6 +1011,7 @@ export class Game {
     this.setPixelRatio(quality === 'media' ? 1 : quality === 'baixa' ? 0.75 : maxPixelRatio());
     this.bloomPass.enabled = quality !== 'baixa';
     this.refractWaves = quality !== 'baixa';
+    this.match.arena.praia?.setDetalhe(quality !== 'baixa');
     this.quality.setAdaptive(quality === 'auto');
   }
 
@@ -1366,6 +1374,7 @@ export class Game {
     if (this.missionEnded) {
       this.missionEnded = false;
       this.match.restartMission();
+      this.praiaHud?.reset();
       this.player.launcher.refill();
       this.hud.setScore(0, 0);
       if (this.gameMode === 'ctf') this.hud.resetCtf();
@@ -1714,6 +1723,15 @@ export class Game {
       }
       this.minimapa.desenhar(this.rig.look.yaw, this.mech, inimigos, this.match.allies?.mechs ?? SEM_ALIADOS);
     }
+    this.praiaHud?.update(dt, {
+      ativo,
+      eu: { x: this.mech.simPosition.x, z: this.mech.simPosition.z, alive: this.mech.alive },
+      inimigos: this.bots.mechs,
+      agua: this.match.estadoDaAgua(this.mech),
+      camera: this.camera,
+      largura: window.innerWidth,
+      altura: window.innerHeight,
+    });
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.player.firing, this.player.secondaryHeld, this.player.secondaryHeld && !this.player.firing ? this.player.secondaryCharge : this.player.primaryCharge);
     // A onda sônica: os anéis andam e leem a cópia do quadro (a cópia só roda enquanto há anel vivo, na arena ou no Hangar).
     this.waveRings.update(dt);

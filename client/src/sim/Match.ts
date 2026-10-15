@@ -19,8 +19,8 @@ import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
-import { PRAIA_AGUA, PRAIA_INIMIGOS, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
-import { danoDeAfogamento, fatorDeVelocidade, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
+import { PRAIA_AGUA, PRAIA_ASSALTO, PRAIA_INIMIGOS, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { danoDeAfogamento, fatorDeVelocidade, FUNDURA_MOLHADA, fundoParaAfogar, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
@@ -304,7 +304,8 @@ export class Match {
       bossSpawn: survival ? (praia ? PRAIA_TITA : COLOSSUS_SPAWN[0]) : undefined,
       respawn: !survival,
       respawnAtHome: ctf,
-      waypoints: this.spawnPoints,
+      // Na praia de 640 m as ondas marcham para os portões da estação (patrulham a rota de assalto): sem isso vagariam por pontos espalhados.
+      waypoints: survival && praia ? PRAIA_ASSALTO : this.spawnPoints,
       power: o.power,
     });
     const escolta = plano?.aliados;
@@ -720,15 +721,28 @@ export class Match {
     for (const m of mechs) {
       const p = m.simPosition;
       const fundura = m.alive ? funduraEm(a, p.x, p.z, p.y) : 0;
-      const naAgua = fundura > 0.05;
-      m.moveSpeedScale = naAgua ? fatorDeVelocidade(fundura) : 1;
-      if (!naAgua && !this.afogando.has(m)) continue; // seco e sem histórico: nada a fazer (caminho barato)
-      const t = passoDoAfogamento(naAgua ? this.afogando.get(m) ?? 0 : 0, dt, naAgua);
-      if (naAgua) this.afogando.set(m, t);
+      // Molhado freia; só o fundo (`afogaDesde`) conta tempo de afogamento: o raso é uma via lenta, não uma armadilha.
+      const molhado = fundura > FUNDURA_MOLHADA;
+      m.moveSpeedScale = molhado ? fatorDeVelocidade(fundura) : 1;
+      const fundo = fundoParaAfogar(a, fundura);
+      if (!fundo && !this.afogando.has(m)) continue; // seco (ou raso) e sem histórico: nada a fazer (caminho barato)
+      const t = passoDoAfogamento(fundo ? this.afogando.get(m) ?? 0 : 0, dt, fundo);
+      if (fundo) this.afogando.set(m, t);
       else this.afogando.delete(m);
       const dano = danoDeAfogamento(a, t, dt);
       if (dano > 0) m.damagePart('torso', dano);
     }
+  }
+
+  /**
+   * Para o HUD da praia: a fundura em que os pés de `mech` estão (0 em terra ou fora do mapa da praia) e quantos segundos ele já passou no
+   * fundo (o relógio do afogamento). Barato (uma conta e uma busca no `Map`), chamado a cada quadro com o jogador no mar.
+   */
+  estadoDaAgua(mech: MechBase): { fundura: number; afogandoS: number; afogarS: number; afogaDesde: number } {
+    const a = this.agua;
+    if (!a) return { fundura: 0, afogandoS: 0, afogarS: 0, afogaDesde: FUNDURA_MOLHADA };
+    const p = mech.simPosition;
+    return { fundura: mech.alive ? funduraEm(a, p.x, p.z, p.y) : 0, afogandoS: this.afogando.get(mech) ?? 0, afogarS: a.afogarS, afogaDesde: a.afogaDesde ?? FUNDURA_MOLHADA };
   }
 
   /**

@@ -1,0 +1,58 @@
+{
+  "data": "2026-10-15",
+  "tela": "1280x720",
+  "render": "SwiftShader (sem GPU: só contagem, não tempo)",
+  "vistas": {
+    "geral": {
+      "desenhos": 50,
+      "triangulos": 86493,
+      "construcaoMs": 110
+    },
+    "mar": {
+      "desenhos": 57,
+      "triangulos": 88331,
+      "construcaoMs": 71
+    },
+    "praia": {
+      "desenhos": 60,
+      "triangulos": 89855,
+      "construcaoMs": 157
+    },
+    "orla": {
+      "desenhos": 59,
+      "triangulos": 89819,
+      "construcaoMs": 69
+    },
+    "avenida": {
+      "desenhos": 59,
+      "triangulos": 89819,
+      "construcaoMs": 106
+    },
+    "ponte": {
+      "desenhos": 50,
+      "triangulos": 87069,
+      "construcaoMs": 60
+    },
+    "porto": {
+      "desenhos": 39,
+      "triangulos": 74682,
+      "construcaoMs": 55
+    },
+    "estacao": {
+      "desenhos": 44,
+      "triangulos": 71432,
+      "construcaoMs": 73
+    },
+    "pateo": {
+      "desenhos": 43,
+      "triangulos": 71066,
+      "construcaoMs": 81
+    },
+    "rua": {
+      "desenhos": 47,
+      "triangulos": 86337,
+      "construcaoMs": 94
+    }
+  },
+  "errosDePagina": []
+}

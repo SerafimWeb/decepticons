@@ -23,7 +23,15 @@ export interface Agua {
   readonly afogarS: number;
   /** Dano por segundo no casco depois de afogar. */
   readonly danoPorSegundo: number;
+  /**
+   * Fundura mínima (m) para o tempo de afogamento correr (P127): abaixo dela é só **vadear** — freia, mas não afoga. Sem ela, qualquer
+   * água que molha (`FUNDURA_MOLHADA`) já conta: era o comportamento do passo 1, e os mapas que não declaram nada seguem assim.
+   */
+  readonly afogaDesde?: number;
 }
+
+/** Abaixo disto (m) o pé está só úmido: não freia nem conta como água. */
+export const FUNDURA_MOLHADA = 0.05;
 
 /** Fundura a partir da qual a água já freia o máximo (m). */
 export const FUNDURA_QUE_FREIA = 2.5;
@@ -42,6 +50,11 @@ export function fatorDeVelocidade(fundura: number): number {
   if (f <= 0) return 1;
   const t = Math.min(1, f / FUNDURA_QUE_FREIA);
   return 1 - (1 - FATOR_MINIMO) * t;
+}
+
+/** A água está funda o bastante para afogar (e não só para vadear) com os pés a `fundura` m dela? */
+export function fundoParaAfogar(a: Agua, fundura: number): boolean {
+  return fundura > FUNDURA_MOLHADA && fundura >= (a.afogaDesde ?? FUNDURA_MOLHADA);
 }
 
 /** Acumulado de tempo dentro da água: soma com os pés molhados, **zera** ao sair. */
