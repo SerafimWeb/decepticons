@@ -25,6 +25,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { CameraRig } from '../camera/CameraRig';
 import { KillCam } from '../camera/KillCam';
+import { camerasDoMapa } from '../camera/camerasDoMapa';
 import { SpectatorCam } from '../camera/SpectatorCam';
 import { SpectatorHUD } from '../ui/SpectatorHUD';
 import type { CameraModeId } from '../camera/CameraMode';
@@ -543,6 +544,8 @@ export class Game {
       this.toggleSpectatorCam();
     });
     this.spectatorCam = new SpectatorCam(this.camera, physics, this.match.arena.occluders, {
+      // As câmeras do cenário (P148): cada mapa tem as suas (antes todos usavam as da Arena).
+      fixedCameras: camerasDoMapa(this.match.arena.mapa),
       getDrones: () => this.match.drones?.drones ?? [],
       getDynamicMechs: () => {
         const list: MechBase[] = [];
@@ -1519,6 +1522,7 @@ export class Game {
     } else {
       if (this.killCam.active) this.killCam.cancel();
       this.spectatorCam.start(0);
+      if (!this.spectatorCam.isSpectating) return; // nenhum alvo (mapa sem câmeras e sem drones nem Mechs vivos): nada de painel vazio
       this.spectatorHud.setVisible(true);
       this.spectatorHud.setLabel(this.spectatorCam.currentTargetLabel);
       this.btnCftv?.classList.add('active');

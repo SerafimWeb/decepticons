@@ -383,7 +383,7 @@ export class HUD {
   }
 
   setMode(mode: CameraMode): void {
-    this.modeLabel.textContent = `CAM ${mode.label}  [V]`;
+    this.modeLabel.textContent = `VISTA ${mode.label}  [V]`;
     this.cursorMode = !mode.pointerLock;
     if (!this.cursorMode) {
       this.crosshair.style.left = '50%';
