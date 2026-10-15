@@ -1,5 +1,22 @@
 # ESTADO ATUAL — CYBERMECH
 
+## AUDITORIA PARA A ENTREGA DO TESTE: a `main` está no ar e verde, e o quadrado preto não reproduz nem em GPU real — Claude, 15/10 (branch `claude/auditoria-entrega`, P140)
+
+**A ordem (15/10):** "dar sequência nas pendências… entregarmos o jogo para teste. Faça auditoria completa do que ainda falta, se há erros, bugs, e seja breve."
+
+**Verificado agora:** `main` em `3f0a7dd`, **publicada** (`.tmp/servidor/publicar-site.log`: "PUBLICADO: 3f0a7dd… conferido por checksum"); `npm run check` **verde** (209 arquivos, 2.062 testes, build, smoke, `mech:bocas`, site); nenhum branch aberto sem PR (a casa foi limpa em 15/10, P117). O único arquivo sujo era `.qwen/settings.json` (não é meu; não toquei).
+
+**Bugs:** **um aberto, o quadrado preto (P130/P136) — não reproduziu.** O Qwen não lê imagem, então a causa nunca foi vista; olhei as 21 vistas da P128 (SwiftShader) e **o jogo de verdade numa GPU real** (AMD Radeon RX Vega 11, nascimento e câmera): sem quadrado preto. As hipóteses estáticas que revi no código não se confirmaram: a textura de sombra é RG8 com filtro linear (portátil, sem `OES_texture_float_linear`), a sombra de contato é um disco com alfa. **Falta:** o Comandante dizer **onde** (chão, parede, céu, flutuando) **e/ou** o teste de 10 s (qualidade baixa nas Configurações: sumiu = luz desenhada; ficou = geometria/material). Sem isso não há o que consertar — fechar no escuro seria chute.
+
+**Medido (fecha o "GPU integrada NÃO MEDIDO" da P128):** Vega 11 (integrada), 1280×720, vsync desligado, jogo real: **alta 63 fps (p50 13,5 ms, p95 33 ms)**; **baixa 108 fps (p50 8 ms, p95 21 ms)**; 0 erro de página. O p95 de 33 ms na alta é o que o jogador sente como engasgo; a média passa do limite do rebaixamento automático (50 fps), então ele **não** entra sozinho. Ferramenta nova: `medicoes/praia-gpu.mjs` (`npm run build` antes). **Achado de ferramenta:** a bancada `praia.mjs` sai **preta** numa GPU real (o canvas fica zerado, alfa 0) — é da bancada (renderiza um quadro só), não do jogo; para GPU real use o `praia-gpu.mjs`.
+
+**O que falta para o teste (por quem destrava):**
+- **O Comandante:** P136 (onde está o quadrado), P131 (o texto da lore e as cores dos times — a maior frente aberta), P133 (decidir o fluxo do primeiro minuto: Hangar → jogo direto, mapa depois).
+- **As equipes, sem ele:** P137 (céu: sol vermelho se pondo à esquerda, lua cheia do outro lado, luz geral mais baixa — cuidado: colide com as sombras assadas da P128), P138 (coqueiros destrutíveis: adereço destrutível não pode ser malha fundida; pede ficha), P139 (UX/UI da fase), o **roleplay da P128** (voz do SOC, rádio, relatório pós-incidente — o PR `claude/praia-soc`).
+- **Fora do alcance de máquina:** nenhuma sessão de teste com gente (CAPACIDADE.md), e a entrada online leva 59 s com a máquina sem memória (P28).
+
+**Próxima sessão começa com:** o que o Comandante responder sobre o quadrado preto; sem resposta, o `claude/praia-soc` (roleplay).
+
 ## A PRAIA DOS CABOS: a CSP bloqueava a fonte do título (bug meu), a barra dos NPCs encurtou, e quatro ordens novas — Qwen, 15/10 (branch `qwen/cabos-csp-e-barra`, P135-P139)
 
 **A ordem (15/10), do Comandante:** (a) o **quadrado preto continua** na fase dos cabos; (b) a **barra de vida dos NPCs está comprida e poluindo o visual do combate**; (c) a **Estação de Cabos ainda merece mais qualidade UX/UI**; (d) **os coqueiros e os elementos menores do cenário devem poder ser destruídos**; (e) **as cores**: o sol **vermelho se pondo no horizonte à esquerda** da praia, e uma **lua cheia branca-azulada nascendo do outro lado, alinhada** ao sol, com a **luminosidade geral mais baixa**.
