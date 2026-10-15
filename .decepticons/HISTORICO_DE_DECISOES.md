@@ -1,3 +1,16 @@
+## [2026-10-15] A migração para cybermech.online vai ao ar; o endereço antigo ganha o redirecionamento 301 (Claude, P142)
+
+**Situação:** o código da migração estava pronto desde as 17:12, num branch local de **outra sessão do Claude**, sem PR (à espera de o site existir na Hostinger). Enquanto isso esta sessão entregou quatro PRs, e **todos saíram para o endereço antigo** (o atualizador do PC publica a cada `main` nova com a configuração que tinha, e o código da `main` ainda travava na pasta antiga). O Comandante viu: *"você ainda enviou pro endereço antigo, redirecione para cybermech.online"*.
+
+**Decisões:**
+1. **Reaproveitar o commit da outra sessão** (cherry-pick, autoria preservada), não refazer: o código estava certo e os conflitos eram só nos documentos.
+2. **A ordem que a outra sessão deixou escrita, cumprida:** a pasta nova existia → apontar o `deploy-site.json` → publicar **do branch** e conferir no ar (`--verify`, e abrir o jogo no endereço novo com a GPU real) → só então mergear. Com o merge antes da configuração, o atualizador recusaria o caminho antigo e o site pararia; com a configuração antes do merge, o código antigo recusa a pasta nova (falha fechada), e **nada mais sai para o endereço antigo** nesse intervalo.
+3. **O 301 volta a valer** (a decisão de hoje, "troca direta, sem redirecionamento", dizia "se um dia aparecer link divulgado, um 301 é barato"): o Comandante pediu "redirecione" e um link antigo (aba aberta, favorito, a landing da Selva) agora leva ao jogo certo, com o caminho e os parâmetros. **Sem apagar nada:** o `.htaccess` antigo ficou como `.htaccess.antigo`; uma linha `RedirectMatch` cobre a pasta. Apagar os arquivos velhos da conta da Selva fica para a ordem expressa dele.
+4. **Mexer na pasta antiga foi uma exceção pontual e restrita** (um comando SSH com o caminho fixado e conferido, `mv` sem sobrescrever): o publicador **continua travado** na pasta nova, e é isso que protege a conta da Selva.
+5. **O servidor de jogo não mudou** (`jogo.selvamkt.com.br`): funciona do endereço novo porque não filtra `Origin`; o nome novo depende da zona na Cloudflare, que é do Comandante.
+
+**Por que registrar:** a **duplicação** — duas sessões no mesmo assunto, uma com o trabalho parado num branch sem PR. As regras 12 e 15 do `AGENTS.md` existem para isso: **antes de começar (ou de ser cobrado por) uma tarefa, olhar `git worktree list` e `git branch`**; foi isso que achou o commit. E uma lição de processo: **uma mudança de destino do deploy precisa ser feita junto com a configuração**, porque o atualizador publica a cada `main` com o que a configuração disser.
+
 ## [2026-10-15] O jogo muda para o domínio próprio, cybermech.online, e a trava do publicador se inverte (Claude, P142)
 
 **Situação:** o Comandante registrou `cybermech.online` (e escolheu o nome por servir "como link e como bandeira") e pediu para migrar o jogo e **tirar de `selvamkt.com.br`**. Disse que não há links divulgados nem jogadores: o jogo ainda está saindo do laboratório.

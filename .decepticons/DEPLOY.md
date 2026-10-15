@@ -7,6 +7,8 @@
 ## SITE DO PROJETO (cliente estático)
 
 **Endereço:** `https://cybermech.online/` (decisão do dono em 15/10/2026: domínio próprio do jogo, site na raiz, **público**; até então era `www.selvamkt.com.br/cybermech/`, decisão de 23/09. Sem jogadores nem links divulgados na época, a troca foi direta, sem redirecionamento).
+**Migração de 15/10 (P142), o que ficou no servidor:** o site está em `domains/cybermech.online/public_html` (o `deploy-site.json` aponta para lá). O **endereço antigo só redireciona**: na pasta `selvamkt.com.br/public_html/cybermech/` o `.htaccess` tem uma linha `RedirectMatch 301 ^/cybermech/?(.*)$ https://cybermech.online/$1` (o caminho e os parâmetros seguem), e o `.htaccess` de antes ficou como `.htaccess.antigo`. **Nada foi apagado** lá; para desfazer, troque o `.htaccess` pelo `.htaccess.antigo` (pelo gerenciador de arquivos da Hostinger ou por SSH). O publicador **não escreve** nessa pasta antiga (a trava só aceita a nova): o redirecionamento foi posto uma vez, à mão, com o caminho conferido. O **servidor de jogo** segue em `jogo.selvamkt.com.br` até o Comandante pôr a zona `cybermech.online` na Cloudflare.
+
 - `/`: landing do jogo, para quem vai jogar (`scripts/landing.mjs`; os destaques vêm da seção VITRINE do `GAME_DESIGN.md`).
 - `/sala-de-controle/`: o case do desenvolvimento (`scripts/painel.mjs --site`; até 25/09 era `/bastidores/`, que agora leva para lá): equipe, fluxo, protocolo, evolução, mapa da campanha, frentes, diário e entregas.
 - `/jogar/`: o jogo (build do Vite com `base: './'`, funciona em qualquer subpasta).
