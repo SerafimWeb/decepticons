@@ -1,15 +1,15 @@
 /**
- * Site do projeto (público). Destino: DEPLOY.md.
- *   /cybermech/             landing do jogo (scripts/landing.mjs)
- *   /cybermech/sala-de-controle/  o case do desenvolvimento (scripts/painel.mjs --site)
- *   /cybermech/bastidores/  o endereço antigo: página que leva para a sala de controle
- *   /cybermech/metricas/    métricas privadas do dono (scripts/metricas.mjs): só abre com o token do servidor
- *   /cybermech/jogar/       o jogo (vite build)
- *   /cybermech/capturas/    imagens do jogo, feitas jogando o build (só com --capturas)
+ * Site do projeto (público), na raiz de cybermech.online. Destino: DEPLOY.md.
+ *   /                  landing do jogo (scripts/landing.mjs)
+ *   /sala-de-controle/ o case do desenvolvimento (scripts/painel.mjs --site)
+ *   /bastidores/       o endereço antigo: página que leva para a sala de controle
+ *   /metricas/         métricas privadas do dono (scripts/metricas.mjs): só abre com o token do servidor
+ *   /jogar/            o jogo (vite build)
+ *   /capturas/         imagens do jogo, feitas jogando o build (só com --capturas)
  *
  * Uso: npm run site                  → monta .tmp/site/ (G15: nada fora do projeto)
  *      npm run site -- --capturas    → idem, e antes entra no jogo headless e fotografa (o deploy usa)
- *      npm run site -- --check       → monta e testa no Chrome headless, servido em /cybermech/
+ *      npm run site -- --check       → monta e testa no Chrome headless, servido na raiz (como em produção)
  *                                      com os MESMOS cabeçalhos que o .htaccess aplica no servidor
  *      node scripts/site.mjs --verify <url> → confere o site publicado (roda no deploy)
  */
@@ -27,7 +27,7 @@ const argv = process.argv.slice(2);
  * Cabeçalhos de segurança: fonte única para o .htaccess e para o servidor de teste local.
  * CSP: 'wasm-unsafe-eval' é obrigatório para o Rapier; 'unsafe-inline' cobre o script e o
  * style do painel; as fontes do painel vêm do Google Fonts.
- * Sem HSTS: vale para o domínio inteiro (selvamkt.com.br), então é decisão do dono do domínio.
+ * Sem HSTS por enquanto: o domínio é só do jogo, então dá para ligar depois que o HTTPS estiver estável (decisão do dono do domínio).
  */
 /**
  * Origem do servidor de jogo, liberada no `connect-src` para a página poder perguntar o status dele
@@ -189,7 +189,7 @@ async function build() {
   console.log(`site    ${OUT}  (landing na raiz, sala-de-controle/, metricas/ privada, jogo em jogar/, ${wasm.length} .wasm)`);
 }
 
-/** Servidor estático em /cybermech/ com os cabeçalhos do .htaccess, só para o teste local. */
+/** Servidor estático em `prefix` (a raiz, como em produção) com os cabeçalhos do .htaccess, só para o teste local. */
 function serve(prefix) {
   return new Promise((ok) => {
     const server = createServer((req, res) => {
@@ -421,7 +421,7 @@ const CTA_READY = () => document.getElementById('cta')?.textContent === '[ cliqu
 async function capture() {
   const dir = join(OUT, 'capturas');
   mkdirSync(dir, { recursive: true });
-  const prefix = '/cybermech/';
+  const prefix = '/';
   const server = await serve(prefix);
   let browser;
   try {
@@ -501,7 +501,7 @@ async function capture() {
 }
 
 async function check() {
-  const prefix = '/cybermech/';
+  const prefix = '/';
   const server = await serve(prefix);
   const base = `http://127.0.0.1:${server.address().port}${prefix}`;
   const failures = [];
@@ -636,7 +636,7 @@ async function check() {
 async function verify(url) {
   const root = url.endsWith('/') ? url : `${url}/`;
   const failures = [];
-  // Mesmo cuidado do deploy do CAPTIA no selvamkt: UA de navegador, e desafio da Cloudflare ao
+  // UA de navegador (como no deploy do CAPTIA), e desafio da Cloudflare ao
   // IP do runner não é falha do site (só não dá para verificar do CI).
   const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
   const get = async (u, method = 'GET') => {
@@ -656,7 +656,7 @@ async function verify(url) {
   if (!home.headers.get('content-security-policy')?.includes('wasm-unsafe-eval')) failures.push(`${root}: sem a CSP do .htaccess`);
   // Anti-cópia: a página publicada tem de trazer o CSS que impede selecionar o texto.
   if (!/user-select:\s*none/.test(homeText)) failures.push(`${root}: a landing saiu sem a camada anti-cópia (texto selecionável)`);
-  // O selvamkt.com.br responde 200 com uma página HTML para arquivo inexistente: status não basta.
+  // A hospedagem responde 200 com uma página HTML para arquivo inexistente: status não basta.
   const shop = await get(`${root}oficina/`);
   if (!(await shop.text()).includes('Oficina · CYBERMECH')) failures.push(`${root}oficina/: não é a oficina`);
   const control = await get(`${root}sala-de-controle/`);

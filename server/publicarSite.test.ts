@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ARQUIVOS_DE_CONFERENCIA, PACOTE_DO_SITE, PACOTE_NO_SERVIDOR, assetsDoJogo, comandosDeEnvio, compararSomas, devePublicar, lerSomas, validarConfig } from '../scripts/publicarSite.mjs';
 
-const BOA = { host: 'servidor.exemplo.com', port: 65002, user: 'u123', path: '/home/u123/domains/selvamkt.com.br/public_html/cybermech', key: '~/.ssh/id_ed25519', url: 'https://www.selvamkt.com.br/cybermech/', gameServer: 'wss://jogo.selvamkt.com.br' };
+const BOA = { host: 'servidor.exemplo.com', port: 65002, user: 'u123', path: '/home/u123/domains/cybermech.online/public_html', key: '~/.ssh/id_ed25519', url: 'https://cybermech.online/', gameServer: 'wss://jogo.cybermech.online' };
 const hash = (c: string) => c.repeat(64).slice(0, 64);
 
 describe('publicar o site pelo PC (sem o GitHub Actions): a configuração e a trava do destino', () => {
@@ -10,17 +10,17 @@ describe('publicar o site pelo PC (sem o GitHub Actions): a configuração e a t
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.cfg).toEqual({ host: BOA.host, user: 'u123', port: 65002, path: BOA.path, key: '~/.ssh/id_ed25519', url: BOA.url, gameServer: BOA.gameServer });
     // key, url e gameServer são opcionais; a porta padrão é a do ssh.
-    const minima = validarConfig({ host: 'h.exemplo.com', user: 'u', path: '/home/u/domains/x/public_html/cybermech' });
+    const minima = validarConfig({ host: 'h.exemplo.com', user: 'u', path: '/home/u/domains/cybermech.online/public_html' });
     expect(minima.ok && minima.cfg.port).toBe(22);
   });
 
-  it('A TRAVA: o destino tem de terminar em /public_html/cybermech (a raiz do domínio é o site real da Selva MKT)', () => {
-    for (const path of ['/home/u123/domains/selvamkt.com.br/public_html', '/home/u123/domains/selvamkt.com.br/public_html/', '/home/u123/domains/selvamkt.com.br/public_html/captia', '/home/u123/domains/selvamkt.com.br/public_html/cybermech/..', '/', '/home/u123/public_html/cybermech2']) {
+  it('A TRAVA: o destino tem de terminar em /domains/cybermech.online/public_html (a pasta de outro domínio da conta, como o selvamkt.com.br, é o site real da Selva MKT)', () => {
+    for (const path of ['/home/u123/domains/selvamkt.com.br/public_html', '/home/u123/domains/selvamkt.com.br/public_html/cybermech', '/home/u123/domains/selvamkt.com.br/public_html/captia', '/home/u123/domains/cybermech.online', '/home/u123/domains/cybermech.online/public_html/..', '/home/u123/domains/cybermech.online/public_html/cybermech', '/home/u123/domains/evil-cybermech.online/public_html', '/home/u123/domains/cybermech.online.evil/public_html', '/home/u123/public_html', '/']) {
       const r = validarConfig({ ...BOA, path });
       expect(r.ok, path).toBe(false);
     }
-    const r = validarConfig({ ...BOA, path: '/home/u123/domains/selvamkt.com.br/public_html' });
-    expect(!r.ok && r.erros.join(' ')).toMatch(/public_html\/cybermech/);
+    const r = validarConfig({ ...BOA, path: '/home/u123/domains/selvamkt.com.br/public_html/cybermech' });
+    expect(!r.ok && r.erros.join(' ')).toMatch(/domains\/cybermech\.online\/public_html/);
   });
 
   it('recusa o que o shell remoto poderia interpretar: aspas, espaços, ponto e vírgula, cifrão, crase, quebras de linha no host, usuário, caminho e chave', () => {
@@ -28,7 +28,7 @@ describe('publicar o site pelo PC (sem o GitHub Actions): a configuração e a t
     for (const ruim of ruins) {
       expect(validarConfig({ ...BOA, host: ruim }).ok, `host ${JSON.stringify(ruim)}`).toBe(false);
       expect(validarConfig({ ...BOA, user: ruim }).ok, `user ${JSON.stringify(ruim)}`).toBe(false);
-      expect(validarConfig({ ...BOA, path: `/home/${ruim}/public_html/cybermech` }).ok, `path ${JSON.stringify(ruim)}`).toBe(false);
+      expect(validarConfig({ ...BOA, path: `/home/${ruim}/domains/cybermech.online/public_html` }).ok, `path ${JSON.stringify(ruim)}`).toBe(false);
     }
     expect(validarConfig({ ...BOA, key: '/c/x"y' }).ok).toBe(false);
   });
@@ -38,7 +38,7 @@ describe('publicar o site pelo PC (sem o GitHub Actions): a configuração e a t
     expect(validarConfig('texto').ok).toBe(false);
     expect(validarConfig({}).ok).toBe(false);
     for (const port of [0, -1, 70000, 'abc', 1.5]) expect(validarConfig({ ...BOA, port }).ok, `porta ${port}`).toBe(false);
-    expect(validarConfig({ ...BOA, url: 'http://www.selvamkt.com.br/cybermech/' }).ok).toBe(false);
+    expect(validarConfig({ ...BOA, url: 'http://cybermech.online/' }).ok).toBe(false);
     expect(validarConfig({ ...BOA, gameServer: 'ftp://x' }).ok).toBe(false);
     const r = validarConfig({ ...BOA, host: 'segredo; rm -rf' });
     expect(r.ok).toBe(false);
@@ -72,7 +72,7 @@ describe('o envio em duas fases: empacota no PC, sobe o arquivo inteiro, confere
     // A extração apaga o pacote SÓ depois de extrair (falhou, ele fica para a investigação) e anda só dentro do destino.
     expect(c.extrair.args.at(-1)).toBe(`cd '${BOA.path}' && tar -xzf '${PACOTE_NO_SERVIDOR}' && rm -f '${PACOTE_NO_SERVIDOR}'`);
     for (const passo of [c.enviarPacote, c.conferirPacote, c.extrair]) {
-      expect(passo.args.at(-1)).not.toMatch(/--delete|\.\.\/|\/public_html'|\/public_html /);
+      expect(passo.args.at(-1)).not.toMatch(/--delete|\.\.\/|selvamkt/);
     }
   });
 

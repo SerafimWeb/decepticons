@@ -60,7 +60,7 @@
 - [x] HUD do próprio Mech (6 partes), borda de dano, tela "ABATIDO", abates/mortes #ux
 - [x] Painel de missão do projeto, gerado deste arquivo #base
 - [x] Painel no visual de HUD cyberpunk das antigas (Shadowrun, BattleTech): mapa hexagonal, slots críticos, ficha técnica do Mech lida do código #base
-- [x] Site do projeto: jogo + painel em selvamkt.com.br/cybermech, publicado a cada merge ("build do dia") #base
+- [x] Site do projeto: jogo + painel em cybermech.online, publicado a cada merge ("build do dia") #base
 - [x] Rodada de 5 min com placar (Tab), intervalo de 10 s e reinício automático com a arena restaurada #jogabilidade
 - [x] Blind Mode (cabeça destruída) #ux
 - [x] Níveis de dificuldade: fácil, normal (a de hoje, aprovada pelo dono) e difícil, trocáveis durante a partida #ia

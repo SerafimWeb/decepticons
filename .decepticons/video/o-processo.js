@@ -20,7 +20,7 @@ window.ROTEIRO = {
   marca: {
     estudio: 'SERAFIM WEB',
     jogo: 'CYBERMECH',
-    site: 'www.selvamkt.com.br/cybermech',
+    site: 'cybermech.online',
     rodape: 'CYBERMECH · COMO ESTE JOGO É FEITO',
   },
 
@@ -207,7 +207,7 @@ window.ROTEIRO = {
       modelo: 'final',
       segundos: 4.2,
       titulo: 'JOGUE AGORA',
-      endereco: 'www.selvamkt.com.br/cybermech',
+      endereco: 'cybermech.online',
       linha: 'ABRE NO NAVEGADOR, SEM INSTALAR · ENTRADA LIVRE, SEM CADASTRO',
       assinatura: 'UM JOGO SERAFIM WEB',
     },

@@ -14,7 +14,7 @@ const revision = (() => {try{return execFileSync('git',['rev-parse','--short=12'
 export default defineConfig({
   define: { __CYBERMECH_REVISION__: JSON.stringify(revision) },
   root: 'client',
-  // Caminhos relativos: o mesmo build roda na raiz (smoke) e em subpasta (selvamkt.com.br/cybermech/jogar/).
+  // Caminhos relativos: o mesmo build roda na raiz (smoke) e em subpasta (cybermech.online/jogar/).
   base: './',
   plugins: [wasm()],
   resolve: { alias: [RAPIER_BROWSER] },

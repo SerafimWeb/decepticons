@@ -1,5 +1,27 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O JOGO ESTÁ NO AR EM cybermech.online, e o endereço antigo só redireciona — Claude, 15/10 (branch `claude/migra-dominio-online`, P142; o código é do commit `3f6c3ee`, de uma sessão anterior do Claude)
+
+**A ordem do Comandante (15/10):** registrou `cybermech.online` e pediu para migrar e tirar de `selvamkt.com.br`; depois, vendo que os merges do dia ainda saíam para o endereço antigo: *"já alterei o domínio para cybermech.online, você está atualizado com isso? o git está enviando certo para esse endereço? … redirecione para cybermech.online"*.
+
+**O que aconteceu (e a lição):** havia **duas sessões do Claude** no assunto. Uma deixou o **código da migração** commitado num branch local, sem PR (`claude/dominio-cybermech-online`, 17:12: a trava do publicador invertida, o site na raiz, o diagnóstico com o host novo e os documentos), à espera de o site existir na Hostinger. A outra (esta) seguiu entregando, e **os merges continuaram saindo para o endereço antigo** (o atualizador do PC publica a cada `main` nova com a configuração que tinha). Esta sessão **reaproveitou o commit** (cherry-pick, sem refazer; os conflitos eram só nos documentos) e fez os passos que faltavam. **O git (GitHub) nunca esteve errado:** o que mudou foi só o destino do **publicador do site** (SSH para a Hostinger).
+
+**Feito agora (verificado, não suposto):**
+1. A pasta `domains/cybermech.online/public_html` **já existia** (o Comandante adicionou o site na Hostinger) e já tinha uma publicação de teste.
+2. O **`deploy-site.json`** (fora do git, `.tmp/servidor/`) agora aponta para a pasta nova e o `url` para `https://cybermech.online/` (cópia da configuração antiga: `deploy-site.json.bak-selvamkt-15-10`); `--configurar` aceita na trava nova.
+3. **Publicado deste branch** (`6657b1b` = a `main` com os coqueiros, o primeiro acesso, o pôr do sol e a migração) e **conferido por checksum no servidor**; `site.mjs --verify https://cybermech.online/` deu **"publicado ok"**.
+4. **No navegador de verdade, com a GPU real, no endereço novo:** `/jogar/` carrega em ~9 s, a tela de primeiro acesso aparece, a fonte do título carrega, a partida anda (o relógio da rodada muda), **zero erro de CSP e de rede** (só um beacon do Google Analytics abortado pelo navegador de teste). A landing, `/jogar/`, `/sala-de-controle/` e o `www.` respondem 200; `http` leva a `https` (301); o `.wasm` sai com o tipo certo.
+5. **O endereço antigo agora só redireciona** (301; o caminho e os parâmetros seguem: `…/cybermech/jogar/?mapa=praia` → `https://cybermech.online/jogar/?mapa=praia`): o `.htaccess` da pasta antiga virou `.htaccess.antigo` e o novo tem uma linha `RedirectMatch`. **Nada foi apagado**; para desfazer, trocar o `.htaccess` pelo `.htaccess.antigo`.
+
+**A publicação automática daqui para a frente:** o atualizador do PC publica a cada `main` nova **com o código da `main`**. Enquanto este PR não é mergeado, o código antigo recusa a pasta nova (falha fechada: **nenhuma publicação sai para o endereço antigo**, que era o pedido); **depois do merge**, o próximo ciclo (≤ 10 min) publica no endereço novo. **A conferir depois do merge:** o `PUBLICADO:` da `main` nova em `.tmp/servidor/publicar-site.log` (a regra: não dizer que a automação funciona sem ver o resultado).
+
+**Falta (R13):**
+1. **O servidor de jogo** segue em `wss://jogo.selvamkt.com.br`: o jogo online funciona a partir do endereço novo (o servidor aceita qualquer origem), mas ele ainda vive sob o domínio antigo. Para `jogo.cybermech.online` o Comandante precisa pôr a zona `cybermech.online` na Cloudflare e criar o hostname no túnel; depois trocar o `gameServer` no `deploy-site.json` e republicar, **com 0 jogadores** (`DEPLOY.md`).
+2. **Tirar de vez** os arquivos antigos da pasta `cybermech/` da conta da Selva e o `jogo.` antigo do túnel: **só com a ordem do Comandante** (hoje o redirecionamento cobre).
+3. **HSTS** segue desligado (decisão do dono do domínio). O **Google Analytics** (`G-2CCHDCEC7X`) já está na página e a CSP o permite; se o painel dele filtra por domínio, o `cybermech.online` precisa constar lá.
+
+**Próxima sessão começa com:** conferir o `PUBLICADO:` automático depois do merge, e o servidor de jogo no domínio novo (a Cloudflare é do Comandante).
+
 ## O PÔR DO SOL VERMELHO, A LUA CHEIA NASCENDO E O HUD LEGÍVEL SOBRE O CÉU — Claude, 15/10 (branch `claude/ceu-e-hud`, P137 + P139 parte 1)
 
 **As ordens:** (P137, 15/10) *"as cores ainda precisam melhorar… espero que o sol esteja se pondo, vermelho, no horizonte, isso vai diminuir a luminosidade geral… o lado esquerdo da praia terá o sol se pondo… uma lua cheia branca-azulada nascendo do outro lado, alinhada ao sol, com a luminosidade geral mais baixa"*; (P139, 15/10) *"melhorar UI desse cenário em geral"*.

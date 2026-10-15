@@ -1,5 +1,5 @@
 /**
- * Métricas (/cybermech/metricas/): a página privada do dono. Mostra de onde vêm as conexões, quantas entram, quantas são
+ * Métricas (/metricas/): a página privada do dono. Mostra de onde vêm as conexões, quantas entram, quantas são
  * recusadas e por quê, a partir de `GET /metricas` do servidor de jogo (contrato em `shared/net/telemetry.ts`).
  *
  * **Privada de verdade:** o servidor só responde com o token do dono (`metricas-token.txt`, na pasta de dados do servidor, `CYBERMECH_DADOS`, no PC dele);

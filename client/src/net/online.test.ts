@@ -20,11 +20,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe('M4: endereço do jogo online', () => {
   it('sem ?sala=, offline; com sala no próprio PC, o servidor local; fora dele, pede o servidor', () => {
-    expect(onlineConfig('', 'www.selvamkt.com.br')).toBeNull();
+    expect(onlineConfig('', 'cybermech.online')).toBeNull();
     expect(onlineConfig('?sala=casa&nome=Dan', 'localhost')).toEqual({ url: 'ws://localhost:2567/?sala=CASA', room: 'CASA', name: 'Dan', explicitName: true });
-    expect(onlineConfig('?sala=casa', 'www.selvamkt.com.br')).toMatchObject({ error: expect.stringContaining('servidor') });
+    expect(onlineConfig('?sala=casa', 'cybermech.online')).toMatchObject({ error: expect.stringContaining('servidor') });
     // Endereço do túnel copiado do navegador (https) vira wss.
-    expect(onlineConfig('?sala=x&servidor=https://abc.trycloudflare.com', 'www.selvamkt.com.br')).toMatchObject({ url: 'wss://abc.trycloudflare.com/?sala=X', room: 'X' });
+    expect(onlineConfig('?sala=x&servidor=https://abc.trycloudflare.com', 'cybermech.online')).toMatchObject({ url: 'wss://abc.trycloudflare.com/?sala=X', room: 'X' });
     expect(onlineConfig('?sala=<b>', 'localhost')).toMatchObject({ error: expect.any(String) });
   });
 });

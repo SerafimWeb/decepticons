@@ -1,5 +1,5 @@
 /**
- * `npm run publicar-site` — publica o site (landing, sala de controle, oficina e o jogo) em `www.selvamkt.com.br/cybermech/` **a partir do PC do Comandante, de graça,
+ * `npm run publicar-site` — publica o site (landing, sala de controle, oficina e o jogo) em `cybermech.online` **a partir do PC do Comandante, de graça,
  * sem o GitHub Actions** (13/10, P105: "publicação automática, facilitada, eficiente e gratuita; não quero pagar o GitHub").
  *
  * Monta o site (`npm run site`), empacota **num arquivo** e sobe esse arquivo para dentro do destino, confere a soma dele lá e **só então** extrai — e depois confere
@@ -17,7 +17,7 @@
  *   npm run publicar-site -- --configurar    diz o que falta na configuração (nunca mostra valor)
  *
  * **A configuração fica fora do repositório** (R2/R10), na pasta de dados do servidor: `deploy-site.json` (ver `scripts/publicarSite.mjs`). **Trava:** o destino termina em
- * `/public_html/cybermech`; a raiz do domínio é o site real da Selva MKT. A lógica pura (validar, montar os comandos, comparar) está em `publicarSite.mjs` e é testada.
+ * `/domains/cybermech.online/public_html`; a pasta de outro domínio (em especial a do selvamkt.com.br, o site real da Selva MKT) é recusada. A lógica pura (validar, montar os comandos, comparar) está em `publicarSite.mjs` e é testada.
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -59,7 +59,7 @@ const expandir = (p) => (p.startsWith('~') ? join(homedir(), p.slice(1)) : p);
 
 function lerConfig() {
   const arquivo = join(DADOS, 'deploy-site.json');
-  if (!existsSync(arquivo)) return { ok: false, erros: [`falta o arquivo de configuração (${arquivo}); crie um JSON com host, port, user, path (termina em /public_html/cybermech) e key`] };
+  if (!existsSync(arquivo)) return { ok: false, erros: [`falta o arquivo de configuração (${arquivo}); crie um JSON com host, port, user, path (termina em /domains/cybermech.online/public_html) e key`] };
   let bruto;
   try {
     bruto = JSON.parse(readFileSync(arquivo, 'utf8').replace(/^﻿/, ''));

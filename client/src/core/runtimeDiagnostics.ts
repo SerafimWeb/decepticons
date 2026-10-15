@@ -5,7 +5,7 @@ export const runtimeDiagnostics = new Diagnostics(
     ? "local"
     : __CYBERMECH_REVISION__,
   (body) => {
-    if (!["www.selvamkt.com.br", "selvamkt.com.br"].includes(location.hostname))
+    if (!["cybermech.online", "www.cybermech.online"].includes(location.hostname))
       return;
     void fetch(SERAFIM_ERROR_ENDPOINT, {
       method: "POST",
