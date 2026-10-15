@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PRAIA_ESTACAO, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { PRAIA_ESTACAO, PRAIA_PIER, PRAIA_ZONES } from '../environment/PraiaLayout';
 import { PRAIA_LIMITES } from '../environment/PraiaTerreno';
 import { paraMinimapa, plantaDaPraiaNoMinimapa, pontoDaEstacao, type PontoMapa } from './Minimapa';
 import { caixasDaPraia, fonteDoRadar, ROTULOS_DA_PRAIA } from './TacticalRadar';
@@ -19,8 +19,8 @@ describe('o radar e o minimapa conhecem a praia (P127)', () => {
     }
     // O prédio da estação está lá.
     expect(caixas.some((c) => c.x0 < PRAIA_ESTACAO.x && c.x1 > PRAIA_ESTACAO.x && c.z0 < PRAIA_ESTACAO.z && c.z1 > PRAIA_ESTACAO.z)).toBe(true);
-    // O tabuleiro do píer (comprido e baixo, 0,7 m) não fecha caminho: não entra.
-    expect(caixas.some((c) => c.z1 - c.z0 > 60 && c.x1 - c.x0 < 12)).toBe(false);
+    // O tabuleiro do píer (comprido e baixo, 0,7 m) se anda por cima, não fecha caminho: não entra na planta.
+    expect(caixas.some((c) => c.x0 > PRAIA_PIER.x - 6 && c.x1 < PRAIA_PIER.x + 6 && c.z1 - c.z0 > 40)).toBe(false);
   });
 
   it('o radar do console recebe o mapa retangular da praia, com o mar, as zonas e os marcos (antes desenhava a planta vazia da Arena)', () => {
