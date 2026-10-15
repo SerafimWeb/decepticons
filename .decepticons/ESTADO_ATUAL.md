@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A PRAIA DOS CABOS: a CSP bloqueava a fonte do título (bug meu), a barra dos NPCs encurtou, e quatro ordens novas — Qwen, 15/10 (branch `qwen/cabos-csp-e-barra`, P135-P139)
+
+**A ordem (15/10), do Comandante:** (a) o **quadrado preto continua** na fase dos cabos; (b) a **barra de vida dos NPCs está comprida e poluindo o visual do combate**; (c) a **Estação de Cabos ainda merece mais qualidade UX/UI**; (d) **os coqueiros e os elementos menores do cenário devem poder ser destruídos**; (e) **as cores**: o sol **vermelho se pondo no horizonte à esquerda** da praia, e uma **lua cheia branca-azulada nascendo do outro lado, alinhada** ao sol, com a **luminosidade geral mais baixa**.
+
+**Consertado agora — dois bugs, um deles meu:**
+1. **A fonte do título não carregava em produção, e eu introduzi isso na P135.** O Comandante viu no DevTools: `Loading the font '…/fonts/Azonix.otf' violates … "font-src https://fonts.gstatic.com"`. A **CSP** do site só permitia o Google Fonts, e o `.otf` é servido **pelo próprio site** — o navegador bloqueava e o título caía na monoespaçada. `scripts/site.mjs` passou a ter **`font-src 'self' https://fonts.gstatic.com`**. **Lição:** fonte própria exige CSP própria; o teste de contrato do site não cobre `font-src`.
+2. **A barra de vida dos NPCs** (`ui/Nameplates.ts`): era **194 px de 256** (quase a largura inteira da plaqueta), 9 px de altura e com moldura branca — "comprida e presente". Agora: **no máximo 96 px, centrada sob o nome, 5 px de altura e sem a moldura**.
+
+**Registrado, não feito (P136 a P139):** o **quadrado preto** (P136 — **precisa de olhos**; eu não leio imagem; o registro traz os quatro suspeitos e um **teste de 10 s** que divide a causa em dois: baixar a qualidade desliga a luz desenhada — se sumir, é luz; se ficar, é geometria/material); o **céu com o sol vermelho e a lua cheia** (P137, com o alerta de que baixar a luz colide com as sombras assadas da P128); os **coqueiros destrutíveis** (P138, que pede ficha própria — adereço destrutível não pode ser malha fundida); e a **rodada de UX/UI da fase** (P139).
+
 ## O PAINEL PERDE O "TEATRO" E O NOME DO JOGO APARECE — e o Comandante abre três frentes novas — Qwen, 15/10 (branch `qwen/painel-e-nomes`, P130/P131/P132)
 
 **A ordem (15/10), quatro pedidos numa mensagem:** (1) um **bug visual** na praia ("enormes quadrados pretos… em vários locais"); (2) a **nomenclatura, o universo e as cores dos times**; (3) **melhorias na tela do painel**; (4) a **pergunta sobre o processo** ("estamos fazendo certo? mais profissional e econômico?").
