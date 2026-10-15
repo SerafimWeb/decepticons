@@ -44,6 +44,7 @@ As specs completas estão em `PROTOCOLO_UNIVERSAL.md`; este é só o índice.
 - **G11–G13:** metas de rede (≤ 8 KB/s de download por jogador, estado a 20 Hz), requisito mínimo = GPU integrada, servidor autoritativo com reconexão.
 - **G14:** uma simulação só (`shared/`); **toda regra de gameplay tem teste de simulação** (modelo: `client/src/entities/MechBase.test.ts`).
 - **G15 (regra do dono):** nada salvo fora da pasta do projeto. Temporários, experimentos, capturas e repositórios de teste vão só para `.tmp/` (ignorado pelo git), nunca para o temp do sistema, outra pasta ou outro drive.
+- **Shader novo ou efeito aditivo (P130/P136):** a base de todo `pow`/`sqrt`/`log` em GLSL leva `max(…, 0.0)` ou `clamp` (o teste `ShadersSemNaN` trava) e o bloom tem rede de segurança (`fx/bloomSeguro.ts`): um NaN num pixel vira tela preta. **Só a GPU real vê isso** (o SwiftShader do smoke e do CI não): antes de entregar efeito visual, `npm run build && node .decepticons/medicoes/varrer-nan.mjs` (FERRAMENTAS.md § 4.1).
 - **R2:** nada de secret em arquivo versionado. **R3:** nada de `_v2`, `_old`, `_bkp`.
 - **R13:** o que não funciona de ponta a ponta fica marcado como DEMO ou AUSENTE em `STATUS_REAL.md`.
 - **R17:** achou bug ou desalinhamento durante a tarefa? Corrija se for barato e seguro; senão, registre.

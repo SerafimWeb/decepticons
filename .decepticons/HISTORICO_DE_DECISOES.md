@@ -1,3 +1,16 @@
+## [2026-10-15] O quadrado preto era NaN: um `pow` de base negativa na cortina das zonas, espalhado pelo bloom (Claude, P130/P136)
+
+**Situação:** três rodadas (Qwen, Qwen, eu) sem achar a causa do "enorme quadrado preto" da praia. O Qwen não lê imagem; eu li as capturas, mas na bancada (SwiftShader, 1280×720) e no jogo em 1280×720 **não aparecia**. O Comandante trouxe a pista (aparece quando está atrás de prédio ou coqueiro; sumiu com a qualidade baixa) e o print (janela de 1549×925, DevTools aberto).
+
+**Decisões:**
+1. **Reproduzir no hardware e no tamanho de janela do Comandante, não no mais cômodo.** Com o jogo de verdade, `--use-angle=d3d11` (GPU Vega 11 desta máquina) e 1549×925, a tela preta apareceu em ~1 de cada 5 sessões. **A auditoria anterior (P140) dizia "não reproduziu": estava errada para a janela dele**, e foi corrigida no mesmo dia.
+2. **Medir o buffer, não olhar a tela:** `readRenderTargetPixels` do alvo HDR e contagem de pixels não finitos (`varrer-nan.mjs`). Foi o que transformou "1 sessão em 5" em "197 de 216 poses" e permitiu o bisect de objetos.
+3. **A regra de shader (AGENTS.md):** a base de todo `pow`/`sqrt`/`log` em GLSL leva `max(…, 0.0)` ou `clamp` (`ShadersSemNaN.test.ts`); a normal por derivada passa por `normalSegura`.
+4. **Defesa em profundidade:** o high-pass do bloom limpa NaN/infinito (`fx/bloomSeguro.ts`), porque um efeito novo de qualquer frente pode reabrir o buraco e um NaN num pixel não pode virar a tela inteira.
+5. **Portão antes de entregar efeito visual:** `varrer-nan.mjs` numa GPU real (o SwiftShader do smoke e do CI não vê NaN). `?depurar` expõe `window.__game` só para ele.
+
+**Por que registrar:** a lição não é o `pow`; é que **uma bancada que não roda no hardware do dono não pode dizer "não reproduz"**. O erro mais caro (três rodadas) foi aceitar o ambiente mais cômodo como prova. A P128 tinha dito "shader novo só vale depois de a bancada rodar" — a bancada rodou, e era a bancada errada.
+
 ## [2026-10-15] A fonte do título era bloqueada pela CSP do site (erro meu), e a barra dos NPCs encurtou (Qwen, P135/P136)
 
 **Situação:** o Comandante abriu o DevTools e trouxe a prova: `Loading the font '…/fonts/Azonix.otf' violates the following Content Security Policy directive: "font-src https://fonts.gstatic.com"`. **A Azonix que eu pus na P135 não carregava em produção** — o navegador bloqueava o arquivo. Junto, pediu quatro coisas (o quadrado preto que continua, a barra de vida dos NPCs comprida demais, mais UX/UI na Estação de Cabos, coqueiros destrutíveis e o céu com o sol vermelho e a lua cheia).

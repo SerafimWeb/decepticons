@@ -63,7 +63,7 @@ varying vec3 vCor;
 void main() {
   float r2 = dot(vUv, vUv);
   if (r2 > 1.0) discard;
-  float halo = pow(1.0 - sqrt(r2), 2.6);
+  float halo = pow(max(1.0 - sqrt(max(r2, 0.0)), 0.0), 2.6);
   float miolo = exp(-r2 * 22.0);
   gl_FragColor = vec4(vCor * (halo * 0.38 + miolo * 0.6), 1.0);
 }
@@ -92,7 +92,7 @@ varying vec3 vCor;
 void main() {
   float r = length(vUv);
   if (r > 1.0) discard;
-  float a = pow(1.0 - r, 1.7);
+  float a = pow(max(1.0 - r, 0.0), 1.7);
   gl_FragColor = vec4(vCor * a, 1.0);
 }
 `;

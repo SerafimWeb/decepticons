@@ -21,7 +21,7 @@ float costaEm(float x) { return -36.0 + 6.5 * sin(x / 61.0 + 0.8) + 3.2 * sin(x 
 float funduraDoMar(vec2 p) {
   float s = costaEm(p.x) - p.y;
   if (s <= 0.0) return 0.0;
-  return ${(PRAIA_FUNDURA_MAXIMA + NIVEL_DO_MAR).toFixed(2)} * tanh(pow(s / 44.0, 1.2));
+  return ${(PRAIA_FUNDURA_MAXIMA + NIVEL_DO_MAR).toFixed(2)} * tanh(pow(max(s / 44.0, 0.0), 1.2));
 }
 `;
 
@@ -82,7 +82,7 @@ void main() {
   // O reflexo do céu: mais forte de raspão (fresnel). Reflete o mesmo céu do domo.
   vec3 R = reflect(-V, N);
   R.y = abs(R.y);
-  float fres = 0.05 + 0.95 * pow(1.0 - max(dot(N, V), 0.0), 4.0);
+  float fres = 0.05 + 0.95 * pow(max(1.0 - max(dot(N, V), 0.0), 0.0), 4.0);
   cor = mix(cor, ceuCor(normalize(R)), clamp(fres * 0.85, 0.0, 1.0));
   alfa = mix(alfa, 1.0, fres * 0.6);
 

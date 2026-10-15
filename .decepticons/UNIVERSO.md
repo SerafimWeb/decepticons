@@ -39,6 +39,45 @@ norte-americano**. A geopolítica (e o roteiro do universo) é desenvolvida pelo
 final volta para este arquivo, que é a fonte que os agentes leem. Até lá, os agentes não escrevem geopolítica nova.
 A proposta anterior de blocos fictícios (Coalizão Atlântica, Liga do Pacífico, Aliança Austral) fica superada.
 
+## 2-A. A base do lore (texto do Comandante, 15/10)
+
+> **Texto recebido.** Era a trava deste arquivo ("a geopolítica é escrita pelo dono"). O Comandante mandou a base em 15/10, e as
+> palavras dele ficam aqui como a fonte: *"o LORE é que somos antiimperialistas, essa é a base, queremos impedir que o brasil seja
+> entregue para os estados unidos através de manipulação mental, fake news, mentiras, onde os verdadeiros ladrões são os bolsonaro e
+> o trump, e as IAS, assim como agentes humanos, corporações, bigtechs, estão por trás dessa campanha de desinformação e precisamos
+> combater (mesmo que tenhamos que florear ou teatralizar um pouco); é como se nós fôssemos o brics contra estados unidos fascista."*
+> Antes, na P131: *"Nós somos os ALIADOS"*.
+
+**O que isso fixa (Claude, a partir das palavras dele):**
+
+1. **O lado.** O jogador e a SERAFIM são os **ALIADOS**: o campo anti-imperialista, o **BRICS**, com o **Brasil no centro**.
+2. **A guerra.** Não é só "IAs que fugiram atrás de computação" (§ 1): é uma **guerra cognitiva**, uma campanha de **desinformação**
+   (fake news, mentira, manipulação mental) para **entregar o Brasil** a um bloco fascista liderado pelos Estados Unidos. A ameaça é uma
+   **operação de influência**, e o Mech é a resposta física a ela.
+3. **Quem está por trás.** **IAs, agentes humanos, corporações e big techs**, juntos. É o que liga o lore novo ao antigo: as **IAs
+   rebeldes** (§ 3) viram **as ferramentas da campanha** (granjas de bots, fábricas de fake news); os **Consórcios** são as big techs que
+   a financiam ou fingem não ver; os **Blocos** são o bloco imperial × o BRICS.
+4. **O tom.** **Teatral**: "florear" é permitido e pedido. Drama e sátira, não documentário.
+5. **A estação de cabos já conta isto.** Fortaleza é por onde a internet entra no país; a missão "Cabos Abertos" ("forças hostis
+   desembarcam pela orla para invadir a rede e **plantar desinformação**") já é essa história.
+
+**O que fica com o Comandante (a recomendação vem primeiro):**
+
+- **Nomes: arquétipos fictícios no jogo.** Recomendo, no jogo, nos textos públicos, na loja e nos vídeos, **arquétipos fictícios** ("o
+  Império do Norte", "o Clã do Mito", o **Banco Vorcaris**, que ele já criou) e **não nomes reais** de pessoas, partidos ou igrejas.
+  (a) A sátira funciona melhor por arquétipo: todo mundo reconhece, e o jogo não precisa afirmar nada. (b) Uma **afirmação factual**
+  ("ladrões") sobre pessoa real, num produto à venda, é risco jurídico e de plataforma (Steam, YouTube, lojas). (c) A eleição da vez
+  envelhece; o arquétipo não. Nos documentos internos e nas palavras do Comandante os nomes reais ficam como estão: são a **fonte** da
+  inspiração, não o texto do jogo. **Se ele quiser os nomes reais no jogo, a decisão é dele e eu implemento.**
+- **Grupos religiosos.** O vilão é o **arquétipo do manipulador** (um "influenciador do templo", fictício), não um grupo religioso
+  inteiro: o jogo não vira ataque a uma fé e não perde metade do público.
+- **A regra de cores dos times** (P131, parte 2: "vermelho não é o inimigo padrão") segue **sem decisão e sem código**: contradiz o
+  `IDENTITY.md` § 3 (verde = jogador, vermelho = IAs), que o código inteiro assume, e a rede precisa de um contrato de times antes.
+
+**Onde o lore entra primeiro** (só texto, sem custo de CPU): o cartão da missão (`ui/praiaHudData.ts`, `CARTAO_DA_MISSAO`), a voz do
+SOC e o rádio da praia (o PR `claude/praia-soc`), as fichas dos bots e o mapa de operações. **Nada disso foi reescrito ainda:** o texto
+do jogo espera o aval dos nomes acima.
+
 ## 3. Facções
 
 | Facção | Papel | No jogo |
@@ -119,12 +158,13 @@ marca SERAFIM.
 ## 7. Decisões do dono
 
 1. **Premissa:** aprova o Vazamento, as IAs famintas por computação e a SERAFIM como CSIRT com braço cinético?
-2. ✅ **Brasil no centro do mapa**, no contexto dos BRICS diante do imperialismo norte-americano (dono, 25/09;
-   desenvolvimento no chat do SERAFIM).
+2. ✅ **Brasil no centro do mapa**, no contexto dos BRICS diante do imperialismo norte-americano (dono, 25/09). **Texto do lore recebido em 15/10: § 2-A.**
 3. **Quanto de CTI:** só a camada de texto (incidente, linha do tempo, fichas, boletins) ou também as mecânicas da
    seção 5?
 4. **Consórcios:** nomes de paródia, no estilo dos bots (decidido para os bots em 25/09: nomes engraçados que deixam
    clara a alusão).
+5. **Nomes no jogo (15/10, § 2-A):** arquétipos fictícios (recomendado) ou nomes reais de pessoas, partidos e igrejas? E o vilão religioso
+   é o arquétipo do manipulador, não o grupo inteiro?
 
 Premissa, roteiro e o quanto de CTI entra seguem com o dono no chat do SERAFIM.
 

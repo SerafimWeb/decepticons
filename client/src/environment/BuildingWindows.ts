@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PALETTE } from '../core/palette';
+import { GLSL_NORMAL_SEGURA } from './glslSeguro';
 
 /**
  * Janelas acesas nos prédios da Arena, desenhadas no próprio shader do material (zero geometria, zero textura, zero draw
@@ -35,6 +36,7 @@ const VERTEX_BODY = 'vWindowPos = (modelMatrix * vec4(transformed, 1.0)).xyz;';
 const FRAGMENT_DECLARATIONS = `varying vec3 vWindowPos;
 uniform vec3 windowColor;
 uniform vec3 windowSodium;
+${GLSL_NORMAL_SEGURA}
 float windowHash(vec2 c) { return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.5453); }`;
 
 /**
@@ -42,7 +44,7 @@ float windowHash(vec2 c) { return fract(sin(dot(c, vec2(127.1, 311.7))) * 43758.
  * eixo x ou z, e sem janela no teto. O sorteio de cada janela vem da célula no mundo: prédios vizinhos não repetem o padrão.
  */
 const FRAGMENT_BODY = `{
-  vec3 faceN = abs(normalize(cross(dFdx(vWindowPos), dFdy(vWindowPos))));
+  vec3 faceN = abs(normalSegura(cross(dFdx(vWindowPos), dFdy(vWindowPos))));
   float alongX = step(faceN.z, faceN.x);
   float across = mix(vWindowPos.x, vWindowPos.z, alongX);
   vec2 cell = vec2(floor(across / ${num(WINDOWS.pitch)}), floor(vWindowPos.y / ${num(WINDOWS.floor)}));

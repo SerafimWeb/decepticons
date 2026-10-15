@@ -1,5 +1,31 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O QUADRADO PRETO ACABOU: era NaN na cortina das zonas, espalhado pelo bloom — e o Comandante decidiu o lore e o primeiro acesso — Claude, 15/10 (branch `claude/quadrado-preto`, P130/P136 + P131/P133/P141)
+
+**A mensagem do Comandante (15/10):** a tela preta com o print (nascimento, qualidade automática, DevTools aberto); a teoria dele ("tem a ver com objetos na renderização: é quando estou atrás dos prédios e dos coqueiros"); o teste de 10 s que eu pedi, feito por ele ("baixei a qualidade e os quadros pretos não apareceram mais"); o **lore** ("somos antiimperialistas, o BRICS contra os Estados Unidos fascista…"); o **fluxo de primeiro acesso** ("chegando já numa partida… configurar pouco a pouco"); a pergunta do **ranking e login**; e duas ordens repetidas (**detonar os coqueiros**, melhorar a **UI do cenário**).
+
+**Corrigi o que disse na auditoria anterior (P140):** "o quadrado preto não reproduziu" valia para a janela de 1280×720. **Reproduziu** com a janela dele (**1549×925**, qualidade alta) na GPU real desta máquina (AMD Vega 11): em ~1 de cada 5 sessões a tela inteira do 3D ficava preta e o HUD continuava por cima, e **ficava assim até algo redimensionar os alvos de render** (o rebaixamento automático de qualidade — o "dei um passo e saiu").
+
+**A causa (provada, não suposta):** a **cortina de luz das zonas de cura e de resfriamento** (`PraiaZonas.ts`) fazia `pow(1.0 - vAlt, 2.2)`. `vAlt` vai de 0 (pé) a 1 (topo), mas nos **pixels da borda de cima** o MSAA avalia o pixel fora do triângulo e o `vAlt` sai um fio acima de 1: `1.0 - vAlt` fica negativo, e `pow` de base negativa é **NaN**. O **bloom** (UnrealBloomPass) lê esse NaN e o espalha pelas mipmaps: o buffer inteiro vira NaN (1.432.825 de 1.432.825 pixels) e o tom vira preto. Por isso "só aparece quando estou por trás dos prédios e coqueiros": aparece quando **a borda de cima de uma cortina está na tela**, e a orientação inicial da câmera muda de sessão para sessão; e por isso a qualidade baixa "curava": ela desliga as cortinas **e** o bloom. **Por que ninguém via:** o SwiftShader (o smoke, o CI e a bancada `praia.mjs`) não mostra NaN; só a GPU de verdade.
+
+**Como achei (para a próxima vez):** (1) a bancada `praia.mjs` sai preta numa GPU real, então usei o **jogo de verdade** com `--use-angle=d3d11` e a janela do Comandante; (2) 1 de ~5 sessões pretejava, então **li o buffer HDR** (`readRenderTargetPixels`) e contei pixels não finitos: na sessão preta, 600 pixels NaN numa linha fina na borda; (3) **varri poses de câmera**: 197 de 216 com NaN; (4) um **bisect** (esconder um objeto de cada vez) apontou a malha aditiva de 328 vértices — as cortinas — e o shader dela tinha o `pow`.
+
+**O que mudou (G3/G14):**
+- **Raiz:** os 6 `pow` de base não protegida da praia (a cortina das zonas e a **coluna de luz do objetivo**, que tinha o mesmo defeito; os halos, as poças, as cáusticas, o fresnel do mar) e as 6 `normalize(cross(dFdx…))` das fachadas e janelas (`normalSegura`, `environment/glslSeguro.ts`).
+- **Defesa em profundidade:** `fx/bloomSeguro.ts` — o high-pass do bloom troca NaN/infinito por zero (teste por bits do expoente, que vale com qualquer otimização de ponto flutuante) e os negativos por zero. **Medido:** com o shader defeituoso de volta **e** a rede ligada, o NaN fica em ≤ 1.258 pixels de 1.432.825 (0,09%), em vez da tela inteira.
+- **Trava:** `environment/ShadersSemNaN.test.ts` varre todo GLSL de `environment/`, `fx/`, `entities/`, `camera/` e `ui/` e exige `max`/`clamp`/`abs` na base de todo `pow`/`sqrt`/`log` (e `clamp` no `acos`/`asin`, e `normalSegura` na normal por derivada). **Mutação feita:** o `pow` original da cortina de volta, e o teste caiu. `fx/bloomSeguro.test.ts` (6): encaixa no high-pass do three instalado e **falha alto** se uma versão futura do three mudar a leitura.
+- **Ferramenta:** `.decepticons/medicoes/varrer-nan.mjs` (depois do `npm run build`) varre o mapa numa GPU real contando pixels não finitos: **antes 148 de 240 poses com NaN (até 1.066 pixels por quadro); depois 0 de 480** (10 pontos do mapa × 48 poses, 1549×925, qualidade alta). `?depurar` na URL expõe `window.__game` só para essa ferramenta (só leitura e câmera).
+
+**Custo (G4/G5/G12):** nenhum por quadro de CPU. GPU: um `max`/`clamp` por pixel dos efeitos aditivos e uma comparação de bits por canal no high-pass do bloom (que já lê a textura): irrelevante (Vega 11, alta: 63 fps antes e depois dentro do ruído).
+
+**Visto:** `arte/praia-alta-sem-preto-claude.jpg` (qualidade alta, 1549×925, GPU real); oito sessões seguidas sem preto depois da correção (eram ~1 em 5). **O julgamento é do Comandante.**
+
+**Onde ele confere:** `?mapa=praia` em qualidade **alta** (Configurações → Gráficos), andar pela orla e pela **zona de cura** (a roda verde com a cruz): nenhum retângulo preto. Se aparecer, mande a captura **e o tamanho da janela**.
+
+**Registrado (R17), sem código ainda:** o **lore** (P131) está em `UNIVERSO.md` § 2-A; a **decisão do primeiro acesso** (P133) e a pergunta do **ranking e login** (P141) estão em `ORDENS_DO_COMANDO.md`; **coqueiros destrutíveis** (P138) e **UI do cenário** (P139) foram reiteradas.
+
+**Próxima sessão começa com:** o PR `claude/coqueiros-destrutiveis` (P138, a regra de simulação com teste), depois `claude/primeiro-acesso` (P133: o jogador novo cai direto numa partida; `RANKING_E_LOGIN.md`, P141).
+
 ## AUDITORIA PARA A ENTREGA DO TESTE: a `main` está no ar e verde, e o quadrado preto não reproduz nem em GPU real — Claude, 15/10 (branch `claude/auditoria-entrega`, P140)
 
 **A ordem (15/10):** "dar sequência nas pendências… entregarmos o jogo para teste. Faça auditoria completa do que ainda falta, se há erros, bugs, e seja breve."

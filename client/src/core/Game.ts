@@ -43,6 +43,7 @@ import type { DebrisSystem } from '../environment/DebrisSystem';
 import { CtfObjectives } from '../environment/CtfObjectives';
 import { DominioPontos } from '../environment/DominioPontos';
 import { DamageVisuals } from '../fx/DamageVisuals';
+import { protegerBloom } from '../fx/bloomSeguro';
 import { FlameVisuals } from '../fx/FlameVisuals';
 import { FireRingVisuals } from '../fx/FireRingVisuals';
 import { FrameCopyPass } from '../fx/FrameCopyPass';
@@ -410,6 +411,7 @@ export class Game {
     this.composer.addPass(this.renderPass);
     this.composer.addPass(this.frameCopy); // desligada até haver onda no ar (custo zero)
     this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.85, 0.5, 0.9);
+    protegerBloom(this.bloomPass); // um NaN num pixel não vira mais a tela preta (P130/P136)
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
     window.addEventListener('resize', () => this.onResize());
