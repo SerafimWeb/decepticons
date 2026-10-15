@@ -12,6 +12,24 @@
 
 **O que eu não fiz:** nada de lore inventada e nada de mexer na regra de cores por conta própria — as duas dependem da palavra dele.
 
+## A CASA EM ORDEM: a janela ARSENAL entra na main, 196 branches mergeados são apagados — Qwen, 15/10 (branch `qwen/limpeza-de-branches`, P129/P117)
+
+**A ordem (15/10):** "sim, resolva os prs detectados" — depois do benchmark (P129), com a autorização permanente de limpar bagunça (P117).
+
+**1. O ARSENAL voltou ao ar (PR #319).** Havia **um único branch não mergeado** em todo o repositório: `claude/arsenal`, parado **2 dias e sem PR** (regra 15) — a janela ARSENAL da fase 4C (a ficha das 17 armas e dos 11 chassis, só leitura, no monitor COMANDO). **O código é do Claude**; nada foi reescrito. Trazida a `main` para dentro, o conflito era só de documento (as duas entradas novas) e da **fiação do `Game.ts`** (a união: `CHASSIS_DOS_BOTS`, que a janela usa, mais a tática do esquadrão que entrou depois). Achados corrigidos no caminho (R17): uma **frase duplicada** no `PAINEL_ADMIN.md` §8 e **dois testes que afirmavam o catálogo de 13/10** — a P120 (14/10) liberou o canhão de cerco nos dois titãs e passou a derivar os encaixes, e a P124 (14/10) baixou a carga do cerco de 3 s para 2,4 s. Os testes foram atualizados **mantendo a intenção**, sem afrouxar asserção.
+
+**2. A limpeza dos branches (por que o próximo agente não achou o dele).** Havia **69 branches remotos para uma `main`** e **173 branches locais**. Foram apagados:
+
+- **68 branches remotos**, todos **já mergeados** na `main` (a lista e o SHA de cada um estão em **`.tmp/branches-mergeados.txt`**, para qualquer um recriar pelo SHA se precisar). Sobrou **só a `main`**.
+- **128 branches locais** mergeados; **34 preservados** porque estão presos em worktrees (o Git recusa apagar branch em uso).
+- **Se você tinha um branch e ele sumiu: ele estava mergeado** — o trabalho dele está na `main`. Recriar: `git branch <nome> <sha>` com o SHA do arquivo acima.
+
+**Achado que fica aberto (R13):** **4 worktrees têm trabalho não commitado** (arquivos sujos, 0 commits à frente da `main`): `wt-claude-fase5` (8), `wt-codex-bunker` (12), `wt-codex-bunker-evolution` (21), `wt-codex-bunker-vertical` (5). **Nada foi apagado** — mas esse trabalho **só existe naquelas pastas** (é o mesmo caso do `claude/arsenal` antes de hoje). As outras 34 worktrees estão limpas e podem ser removidas (lembrar de **desfazer a junção `node_modules` antes**, ou a remoção apaga a `node_modules` real — o acidente de 04/10).
+
+**Custo:** zero no jogo (nenhuma linha de código do jogo mudou; PR #319 já foi ao ar com a janela ARSENAL).
+
+**Onde ele confere:** `git branch -r` mostra só a `main`; `?comandante=1` → monitor COMANDO → **ARSENAL**.
+
 ## O BENCHMARK DE MERCADO: o CYBERMECH contra as seis referências de mech — Qwen, 15/10 (branch `qwen/benchmark-mercado`, P129)
 
 **A ordem (15/10):** "pegue essa orientação para fazermos um **benchmark antes de lançarmos nosso game**". A orientação é o mapeamento de seis concorrentes/referências do gênero que o Comandante trouxe do chat (`benchmark_cybermech.json` e a matriz comparativa: plataforma, sensação de massa, loop de combate, dores do jogador e lacunas de mercado).
