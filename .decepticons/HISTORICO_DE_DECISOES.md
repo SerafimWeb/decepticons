@@ -1,3 +1,13 @@
+## [2026-10-15] Um branch local guardava as palavras do Comandante e nunca virou PR (Qwen, P108)
+
+**Situação:** fechando a limpeza dos branches, sobrou **um branch local não mergeado** — `qwen/p108-aprovado`, de 13/10, com **um commit de duas linhas**: a aprovação do **P108** (os Colossus tamanho 3 e 4 selecionáveis). Era **trabalho que só existia nesta máquina**: nunca teve PR, nunca foi empurrado.
+
+**Decisão:** **resgatar o que era único e declarar o branch morto.** O que valia não era o status (a `main` já evoluiu além dele) — eram **as palavras do Comandante**, que a `main` **não tinha**: *"quero que os titas colossus tamanho 3 e 4 possam ser selecionados sim… pra sentir a comparação do tamanho; quero possibilitar batalhas epicas de real combate e estrategia"*. Isso entrou na linha do **P108** em `ORDENS_DO_COMANDO.md` — o **porquê** da ordem (o **contraste de escala**) passa a ficar onde a equipe lê, e não só na memória de um agente. O branch foi apagado.
+
+**Achado junto (R13):** as **4 worktrees com trabalho não commitado** guardam **mais do que sujeira** — a `wt-claude-fase5` tem uma **funcionalidade inteira** (a sala ao vivo 3D: `client/src/core/salaAoVivo.ts`, `salaAoVivo.test.ts`, `client/src/ui/SalaAoVivo3D.ts` e duas capturas, além de `Game.ts`, `styles.css` e `CameraWall.ts`); as três do Codex têm mudanças em `BotSystem`, `Respawner`, `MechBase`, `medicoes/` e documentos. **Nada foi apagado nem commitado por mim** — é trabalho de outros agentes, e **commitar o trabalho alheio por eles seria assinar o que não é meu**; fica **declarado** para eles ou para o Comandante decidirem.
+
+**Por que isto merece registro:** é o **segundo caso igual no mesmo dia** (o primeiro foi o `claude/arsenal`) — **trabalho pronto que existe só numa pasta local e não chega a ninguém**. A regra 15 existe exatamente para isto; o que faltou foi a disciplina de abrir o PR no mesmo dia em que se empurra o branch.
+
 ## [2026-10-15] O painel perde o "teatro" e o nome do jogo; a lore e as cores dos times ficam para o Comandante (Qwen, P130/P131/P132)
 
 **Situação:** o Comandante pediu quatro coisas numa mensagem: um **bug visual** na praia (quadrados pretos), a **nomenclatura/universo/lore com as cores dos times**, **melhorias na tela do painel** e uma **pergunta sobre o processo** (se o jeito de commitar/PR/deploy é o certo).
