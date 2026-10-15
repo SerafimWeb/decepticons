@@ -16,9 +16,17 @@ interface Entry {
 export class Respawner {
   private readonly entries: Entry[] = [];
   private readonly points: THREE.Vector3[];
+  /** Domínio: cada lado renasce nos pontos da sua base, o mais longe dos inimigos vivos (os do mesmo lado não contam). */
+  private teams: { points: Record<'blue' | 'red', THREE.Vector3[]>; sideOf: (m: MechBase) => 'blue' | 'red' | undefined } | null = null;
 
   constructor(spawnPoints: readonly (readonly [number, number])[]) {
     this.points = spawnPoints.map(([x, z]) => new THREE.Vector3(x, 0, z));
+  }
+
+  /** Liga o nascimento por lado (só o Domínio): `sideOf` diz de que lado é cada Mech; sem lado, vale a lista de sempre. */
+  setTeams(points: Record<'blue' | 'red', readonly (readonly [number, number])[]>, sideOf: (m: MechBase) => 'blue' | 'red' | undefined): void {
+    const v = (l: readonly (readonly [number, number])[]) => l.map(([x, z]) => new THREE.Vector3(x, 0, z));
+    this.teams = { points: { blue: v(points.blue), red: v(points.red) }, sideOf };
   }
 
   track(mech: MechBase, delayS: number, onRespawn?: (mech: MechBase) => void): void {
@@ -52,12 +60,15 @@ export class Respawner {
   }
 
   private farthestPoint(self: MechBase): THREE.Vector3 {
-    let best = this.points[0]!;
+    const side = this.teams?.sideOf(self);
+    const points = side ? this.teams!.points[side] : this.points;
+    let best = points[0]!;
     let bestGap = -1;
-    for (const p of this.points) {
+    for (const p of points) {
       let nearest = Infinity;
       for (const e of this.entries) {
         if (e.mech === self || !e.mech.alive) continue;
+        if (side && this.teams!.sideOf(e.mech) === side) continue;
         const s = e.mech.simPosition;
         nearest = Math.min(nearest, (p.x - s.x) ** 2 + (p.z - s.z) ** 2);
       }

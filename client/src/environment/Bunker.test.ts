@@ -26,6 +26,11 @@ describe('Bunker: mapa físico compartilhado', () => {
     expect(mapFromSearch('?mapa=bunker', true, 'deathmatch')).toBe('arena');
     expect(mapFromSearch('?mapa=bunker', false, 'ctf')).toBe('arena');
     expect(mapFromSearch('?mapa=desconhecido', false, 'deathmatch')).toBe('arena');
+    // A praia (P126): Deathmatch e as ondas (a defesa da estação); os CTF/Domínio e o online continuam na Arena.
+    expect(mapFromSearch('?mapa=praia', false, 'deathmatch')).toBe('praia');
+    expect(mapFromSearch('?mapa=praia', false, 'survival')).toBe('praia');
+    expect(mapFromSearch('?mapa=praia', false, 'ctf')).toBe('arena');
+    expect(mapFromSearch('?mapa=praia', true, 'deathmatch')).toBe('arena');
   });
   it('tem quatro andares separados, poço aberto e nascimentos no fundo', async () => {
     const physics = await PhysicsWorld.create();

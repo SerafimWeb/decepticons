@@ -1,4 +1,5 @@
 import { ChargeTimer } from './ChargeTimer';
+import { aimSpreadOf, aimTimeOf, settleSpread, settleStep } from './aim';
 import type { MechBase } from '../entities/MechBase';
 import { type MountId } from './mounts';
 import { NO_SPREAD, spreadAt, type Spread } from './spread';
@@ -50,6 +51,8 @@ export class Armament {
   private readonly hands = [new FireTimer(), new FireTimer()];
   /** A mão está com o botão dela apertado neste tick (o cano gira e a chama acende só então). */
   private readonly held = [false, false];
+  /** Quanto a mira já assentou em cada gatilho (0 = aberta, 1 = firme): a identidade de mira da arma (ordem P121). */
+  private readonly aimLevel = [0, 0, 0];
   /** Cadência do gatilho secundário quando ele não é de carregador (serra, arma de energia). */
   private readonly side = new FireTimer();
   private readonly charge = [new ChargeTimer(), new ChargeTimer(), new ChargeTimer()];
@@ -93,6 +96,7 @@ export class Armament {
     this.primaryLaunchers = [new RocketLauncher(this.mech.loadout.primary), new RocketLauncher(this.mech.loadout.offhand ?? this.mech.loadout.primary)];
     for (const t of this.hands) t.reset();
     for (const s of this.spin) s.reset();
+    this.aimLevel[0] = this.aimLevel[1] = this.aimLevel[2] = 0; // arma nova: a mira abre e assenta de novo (ordem P121)
     this.refuel();
     this.mech.status.spinning = false;
     this.side.reset();
@@ -134,6 +138,8 @@ export class Armament {
         }
         const held = button === 1 ? fire : secondary;
         this.held[i] = held;
+        // A mira assenta segurando o gatilho (cada arma no seu tempo, ordem P121); soltar desassenta.
+        this.aimLevel[i] = w ? settleStep(this.aimLevel[i]!, dt, held, aimTimeOf(w)) : 1;
         // O cano da rotatória gira enquanto o gatilho está apertado e a mão pode atirar; solto ou travado, vai parando.
         const spin = this.spin[i]!;
         if (w?.spin) spin.step(dt, held && m.canFireMount(mount), w.spin);
@@ -151,7 +157,7 @@ export class Armament {
           continue;
         }
         this.burning[i] = false;
-        if (!w || !this.charge[i]!.step(dt, held, timer.ready && m.canFireMount(mount), w.chargeTime)) continue;
+        if (!w || !this.charge[i]!.step(dt, held, timer.ready && m.canFireMount(mount), w.chargeTime, w.chargeHold)) continue;
         if (button === 1 ? firedOn1 : firedOn2) {
           timer.shot(w.fireInterval / 2);
           continue;
@@ -159,7 +165,7 @@ export class Armament {
         if (w.kind === 'ammo') {
           if (!this.primaryLaunchers[i]!.tryFire()) continue;
           sink.rocket(mount, w, i);
-        } else sink.projectile(mount, w, this.spreadFor(w, spin));
+        } else sink.projectile(mount, w, this.spreadFor(w, spin, this.aimLevel[i]!));
         m.onFireMount(mount, w);
         timer.shot(spin.interval(w));
         if (button === 1) firedOn1 = true;
@@ -192,7 +198,7 @@ export class Armament {
         sink.rocket(mount, s, volley++);
         m.onFireMount(mount, s);
       }
-    } else if (this.charge[2]!.step(dt, secondary, this.side.ready, s.chargeTime)) {
+    } else if (this.charge[2]!.step(dt, secondary, this.side.ready, s.chargeTime, s.chargeHold)) {
       if (s.kind === 'melee') {
         sink.melee(s);
         m.onFireSecondary();
@@ -211,10 +217,16 @@ export class Armament {
     m.weaponCharging = this.primaryCharge > 0 || this.secondaryCharge > 0;
   }
 
-  /** O desvio deste tiro: o cone da rotatória cresce com a rotação do cano; as outras armas vão retas. */
-  private spreadFor(w: WeaponStats, spin: SpinUp): Readonly<Spread> {
-    if (!w.spin) return NO_SPREAD;
-    return spreadAt(this.shots++, w.spin.spread * spin.level, this.spread);
+  /** O desvio deste tiro: o cone da rotatória cresce com a rotação do cano, e a mira aberta (P121) soma a sua amplitude; as outras armas vão retas. */
+  private spreadFor(w: WeaponStats, spin: SpinUp, aimNivel: number): Readonly<Spread> {
+    const cone = (w.spin ? w.spin.spread * spin.level : 0) + settleSpread(aimSpreadOf(w), aimNivel);
+    if (cone <= 0) return NO_SPREAD;
+    return spreadAt(this.shots++, cone, this.spread);
+  }
+
+  /** Quanto a mira principal está **aberta** (0 = firme). Arma sem tempo de mira (corte, chama, rotatória): 0. */
+  get aimOpen(): number {
+    return aimTimeOf(this.mech.loadout.primary) > 0 ? 1 - this.aimLevel[0]! : 0;
   }
 
   private newLauncher(): RocketLauncher {

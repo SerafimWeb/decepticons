@@ -75,7 +75,7 @@ export class PlayMetrics {
         !/^[a-zA-Z0-9.-]{1,40}$/.test(g.release) ||
         typeof g.build !== "string" ||
         g.build.length > 80 ||
-        !["deathmatch", "survival", "ctf"].includes(g.mode) ||
+        !["deathmatch", "survival", "ctf", "dominio"].includes(g.mode) ||
         typeof g.assisted !== "boolean" ||
         typeof g.online !== "boolean"
       )

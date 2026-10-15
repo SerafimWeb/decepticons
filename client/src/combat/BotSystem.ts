@@ -13,6 +13,8 @@ import type { ParticleSystem } from '../fx/ParticleSystem';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { PERSONA_LABELS, type Difficulty, type Persona } from '../core/Settings';
 import { ANDROID_PROFILE, BOSS_PROFILE, BOT_SKILL_NORMAL, BOT_SKILLS, BotController, type BotSkill, type SquadOrder, MECH_PROFILE, PERSONAS } from './BotController';
+import { escolherRearguarda } from './tatica';
+import { parametrosDaTatica, type TaticaId } from './taticas';
 import type { CombatSystem } from './CombatSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
 import { weapon, type Tier, type WeaponId } from './weapons';
@@ -114,6 +116,8 @@ export interface BotSystemOptions {
   androidKits?: readonly (BotKit | undefined)[];
   /** Potências do painel (por arma e por clã); sem isso, o padrão do jogo. */
   power?: PowerSpec;
+  /** A **tática** do esquadrão aliado (ordem P122): a formação e o leash que ele obedece. Ausente = `centro`. */
+  tatica?: TaticaId | null;
 }
 
 /** Rádio do clã, para a tela: `from` avistou `target` (primeiro contato; no máximo um aviso a cada `RADIO_CALLOUT_S`). */
@@ -192,6 +196,8 @@ export class BotSystem {
     this.particles = o.particles;
     const waypoints = o.waypoints.map(([x, z]) => new THREE.Vector3(x, 0, z));
     const seed = o.seed ?? 1;
+    // A tática do esquadrão (P122): só vale no lado aliado (escolta); os rebeldes não têm tática do jogador.
+    const tatica = parametrosDaTatica(o.escort ? o.tatica : null);
     const place = (mech: MechBase, [x, z]: readonly [number, number]) => {
       mech.spawn(o.physics, new THREE.Vector3(x, 0, z));
       mech.applyFacing(Math.atan2(x, z), 0); // nasce olhando para o centro da arena
@@ -208,7 +214,12 @@ export class BotSystem {
       const titan = !android && !!kit?.chassi && ehTita(kit.chassi);
       const brain = new BotController(mech, o.physics, waypoints, seed * 1000 + i, skill, android ? ANDROID_PROFILE : titan ? BOSS_PROFILE : MECH_PROFILE, persona);
       brain.escortSide = i % 2 ? 1 : -1;
+      if (o.escort) {
+        brain.formationWidth = tatica.formacaoLargura; // a tática do jogador manda na formação aliada (ordem P122)
+        brain.leash = tatica.leash;
+      }
       brain.useSecondary = !!kit?.secundaria;
+      brain.home.copy(home);
       if (o.respawn !== false) {
         o.respawner.track(mech, titan ? TITA_RESPAWN_S : BOT_RESPAWN_S, () => {
           if (o.respawnAtHome) mech.respawn(home);
@@ -284,6 +295,13 @@ export class BotSystem {
     });
     this.mechs = this.bots.map((b) => b.mech);
     for (const bot of this.bots) if (bot.brain instanceof BotController) this.fighters.push({ bot, brain: bot.brain, key: 0, side: 0 });
+    // Tática de esquadrão (P119): com 3 ou mais lutadores e algum de arma de perto, o primeiro de arma de linha fica
+    // de **retaguarda** — segura o setor de nascimento e troca tiro com quem chega, em vez de largar tudo para rushar.
+    // No esquadrão aliado (escolta) não vale: lá a formação é a do líder, e um bot de guarda quebraria o comboio.
+    if (!o.escort) {
+      const idx = escolherRearguarda(this.fighters.map((f) => f.brain.papel));
+      if (idx >= 0) this.fighters[idx]!.brain.rearguard = true;
+    }
   }
 
   /** Só muda os bots que cruzam o limite; mantém a vida dos demais e os técnicos. */

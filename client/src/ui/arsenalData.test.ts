@@ -44,10 +44,12 @@ describe('as fichas das armas (a janela ARSENAL)', () => {
     }
   });
 
-  it('o canhão de cerco é só dos titãs, com a carga de 3 s anotada', () => {
+  it('o canhão de cerco é só dos titãs, com a carga anotada', () => {
     const cerco = fichas.find((f) => f.id === 'siege')!;
-    expect(cerco.chassis).toEqual(['colossusv4']);
-    expect(cerco.notas.join(' ')).toMatch(/carrega 3 s/);
+    // Os dois titãs o levam desde a P120 (14/10); nenhum Mech comum cabe nele.
+    expect(cerco.chassis).toEqual(['colossus01', 'colossusv4']);
+    // A P124 (14/10) baixou a carga de 3 s para 2,4 s (e ela espera o soltar do gatilho).
+    expect(cerco.notas.join(' ')).toMatch(/carrega 2,4 s/);
   });
 
   it('as notas dizem só o que a arma tem de próprio', () => {
@@ -103,6 +105,9 @@ describe('as fichas dos chassis', () => {
     const v = fichas.find((f) => f.id === 'vector09')!;
     const a = fichas.find((f) => f.id === 'android')!;
     expect(v.direita.length).toBeGreaterThan(a.direita.length);
-    expect(a.esquerda).toEqual([weapon('chainsaw').name]);
+    // Desde a P120 (14/10) o encaixe oferece tudo o que cabe no tamanho, menos o que o gatilho não dispara:
+    // o andróide ganhou as armas leves na esquerda, e o **corte** (a motosserra) continua sendo só do gatilho secundário.
+    expect(a.esquerda).toContain(weapon('chainsaw').name);
+    expect(a.direita).not.toContain(weapon('chainsaw').name);
   });
 });

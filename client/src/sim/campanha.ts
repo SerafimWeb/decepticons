@@ -22,15 +22,16 @@ export const CAMPANHA_VERSAO = 1;
 export const PARAM_DA_CAMPANHA = 'campanha';
 export const PARAM_DA_ETAPA = 'etapa';
 
-/** Os modos de cada mapa (o Bunker é só do Deathmatch, como em `mapFromSearch`; `ui/theater.ts` tem de concordar, e o teste confere). */
+/** Os modos de cada mapa (o Bunker é só do Deathmatch; a praia abre o Deathmatch e as ondas — `mapFromSearch` manda os CTF/Domínio para a Arena; `ui/theater.ts` tem de concordar, e o teste confere). */
 export const MODOS_DO_MAPA: Readonly<Record<MapId, readonly GameMode[]>> = {
   arena: ['deathmatch', 'survival', 'ctf'],
   bunker: ['deathmatch'],
+  praia: ['deathmatch', 'survival'],
 };
-export const MAPAS: readonly MapId[] = ['arena', 'bunker'];
+export const MAPAS: readonly MapId[] = ['arena', 'bunker', 'praia'];
 export const MODOS: readonly GameMode[] = ['deathmatch', 'survival', 'ctf'];
-export const MAPA_NOME: Readonly<Record<MapId, string>> = { arena: 'CIDADE NEON', bunker: 'BUNKER' };
-export const MODO_NOME: Readonly<Record<GameMode, string>> = { deathmatch: 'DEATHMATCH', survival: 'SOBREVIVÊNCIA', ctf: 'CAPTURAR A BANDEIRA' };
+export const MAPA_NOME: Readonly<Record<MapId, string>> = { arena: 'CIDADE NEON', bunker: 'BUNKER', praia: 'PRAIA DOS CABOS' };
+export const MODO_NOME: Readonly<Record<GameMode, string>> = { deathmatch: 'DEATHMATCH', survival: 'SOBREVIVÊNCIA', ctf: 'CAPTURAR A BANDEIRA', dominio: 'DOMÍNIO' };
 
 export const LIMITES_DA_CAMPANHA = {
   /** Etapas por campanha: o link cabe (cada etapa leva o esquadrão) e a campanha cabe numa sessão. */
@@ -146,8 +147,8 @@ export function campanhasDeFabrica(): CampanhaSpec[] {
 
 // ─── O link: ?campanha=c1~…&etapa=2 ───────────────────────────────────────────
 
-const LETRA_DO_MAPA: Readonly<Record<MapId, string>> = { arena: 'a', bunker: 'b' };
-const LETRA_DO_MODO: Readonly<Record<GameMode, string>> = { deathmatch: 'd', survival: 's', ctf: 'c' };
+const LETRA_DO_MAPA: Readonly<Record<MapId, string>> = { arena: 'a', bunker: 'b', praia: 'p' };
+const LETRA_DO_MODO: Readonly<Record<GameMode, string>> = { deathmatch: 'd', survival: 's', ctf: 'c', dominio: 'm' };
 
 function chaveDaEtapa(e: EtapaDaCampanha): string {
   const abates = e.modo === 'deathmatch' ? String(sanearAbates(e.abates)) : '';

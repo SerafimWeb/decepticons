@@ -4,10 +4,14 @@ import { bunkerBlocks } from './BunkerLayout';
 
 export { bunkerBlocks, BUNKER_LEVELS, BUNKER_LIFTS, BUNKER_SPAWNS } from './BunkerLayout';
 
-export type MapId = 'arena' | 'bunker';
-/** Online e missões mantêm o mapa contratado com o servidor/objetivos. */
+export type MapId = 'arena' | 'bunker' | 'praia';
+/** Online e missões mantêm o mapa contratado com o servidor/objetivos. O Bunker é só do Deathmatch; a praia abre o Deathmatch e as ondas. */
 export function mapFromSearch(search: string, online: boolean, mode: string): MapId {
-  return !online && mode === 'deathmatch' && new URLSearchParams(search).get('mapa') === 'bunker' ? 'bunker' : 'arena';
+  if (online) return 'arena';
+  const mapa = new URLSearchParams(search).get('mapa');
+  if (mapa === 'praia') return mode === 'deathmatch' || mode === 'survival' ? 'praia' : 'arena';
+  if (mapa === 'bunker') return mode === 'deathmatch' ? 'bunker' : 'arena';
+  return 'arena';
 }
 
 /** Bunker escavado: duas submissões instanciadas; geometria e colisão estáticas. */

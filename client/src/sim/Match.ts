@@ -11,6 +11,7 @@ import { DroneSystem } from '../combat/DroneSystem';
 import { FireRing, type RingSides } from '../combat/FireRing';
 import { Round } from '../combat/Round';
 import { hitDamage, rangeFactor, type Flame, type WeaponStats } from '../combat/weapons';
+import type { TaticaId } from '../combat/taticas';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
 import { ZoneSystem } from '../combat/Zone';
 import { PALETTE } from '../core/palette';
@@ -18,6 +19,9 @@ import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
+import { PRAIA_AGUA, PRAIA_ASSALTO, PRAIA_INIMIGOS, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { dentroDoComplexo, NUCLEO, NucleoDaEstacao, pesoDoInvasor } from './NucleoDaEstacao';
+import { danoDeAfogamento, fatorDeVelocidade, FUNDURA_MOLHADA, fundoParaAfogar, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
@@ -30,7 +34,11 @@ import {
   type CtfScore,
   type CtfTeam,
 } from './CaptureTheFlag';
-import { esquadraoDeFoes, planejarEsquadrao, sanearEsquadrao, type EsquadraoSpec, type SlotDoPlano } from './esquadrao';
+import { Dominio, type DominioLado, type DominioPlacar, type DominioPonto } from './Dominio';
+import { atribuirPontos } from './DominioObjetivos';
+import { NASCIMENTOS_DO_DOMINIO, PONTOS_DO_DOMINIO } from './dominioMapa';
+import { ehTita } from '../entities/chassis';
+import { esquadraoDeFoes, planejarEsquadrao, sanearEsquadrao, type EsquadraoSpec, type PlanoDoEsquadrao, type SlotDoPlano } from './esquadrao';
 import type { GameMode } from './gameMode';
 import { ALLY_COUNT, ANDROID_SPAWNS, BOT_SPAWNS, COLOSSUS_SPAWN } from './nascimentos';
 import {
@@ -54,6 +62,16 @@ export const CTF_DEFENDER_SPAWNS: readonly (readonly [number, number])[] = [
   [68, -72],
   [72, -62],
 ];
+/** De quanto em quanto tempo (s) os bots do Domínio refazem a escolha do ponto em que vão (`DominioObjetivos`). */
+const DOMINIO_REPLANEJA_S = 2;
+/** O Domínio leva cada lado para a sua base: o jogador e os aliados no canto azul, os rebeldes no vermelho (os titãs mantêm os pontos deles). */
+function levarParaAsBases(plano: PlanoDoEsquadrao): void {
+  const { blue, red } = NASCIMENTOS_DO_DOMINIO;
+  let r = 0;
+  for (const s of [...plano.inimigos.mechs.filter((m) => !ehTita(m.chassi)), ...plano.inimigos.androids, ...plano.inimigos.tecnicos]) s.ponto = red[r++ % red.length]!;
+  let b = 1; // o ponto 0 azul é o do jogador
+  for (const s of [...plano.aliados.mechs, ...plano.aliados.androids]) s.ponto = blue[b++ % blue.length]!;
+}
 /** Piloto nasce ao lado do mastro: área segura legível, sem sobrepor a bandeira. */
 const CTF_PLAYER_OFFSET_X = 5;
 /** Tiros no ar de uma vez: 64 no jogo de sempre (3 Mechs de IA) e mais 4 por Mech de IA a partir do quarto (esquadrão, P91). */
@@ -108,6 +126,8 @@ export interface MatchOptions {
    * com `allies: false` (o servidor, o online) os aliados do esquadrão ficam de fora. Sobrevivência e CTF têm o pool e os times deles.
    */
   squad?: EsquadraoSpec;
+  /** A **tática** do esquadrão aliado (ordem P122): a formação e o leash. Ausente = `centro`. */
+  tatica?: TaticaId | null;
 }
 
 /**
@@ -120,6 +140,14 @@ const _flameAt = new THREE.Vector3();
 const _flameTo = new THREE.Vector3();
 /** O "acerto" que o cone entrega ao CombatSystem: um objeto só, reescrito a cada alvo (nada alocado por pulso). */
 const _flameHit: PhysicsHit = { point: new THREE.Vector3(), normal: new THREE.Vector3(0, 1, 0), distance: 0, collider: undefined as unknown as RAPIER.Collider };
+
+/** O que o HUD da praia lê da água sob os pés de um Mech (`Match.estadoDaAgua`). */
+export interface EstadoDaAgua {
+  fundura: number;
+  afogandoS: number;
+  afogarS: number;
+  afogaDesde: number;
+}
 
 export class Match {
   readonly debris: DebrisSystem;
@@ -153,11 +181,26 @@ export class Match {
   readonly waves: SurvivalWaves | null;
   /** Regra pura de bandeiras, presente apenas no modo CTF. */
   readonly ctf: CaptureTheFlag | null;
+  /** Regra pura dos pontos de controle, presente apenas no modo Domínio. */
+  readonly dominio: Dominio | null;
+  /** Para onde cada bot do Domínio foi mandado (índice do ponto; -1 nenhum), na ordem de `bots.mechs` e `allies.mechs`. */
+  private readonly rumoRed: number[] = [];
+  private readonly rumoBlue: number[] = [];
+  private readonly rumoNovo: number[] = [];
+  private readonly cargaDosPontos: number[] = PONTOS_DO_DOMINIO.map(() => 0);
+  private readonly pontosV3 = PONTOS_DO_DOMINIO.map((p) => new THREE.Vector3(p.x, 0, p.z));
+  private replanejaEm = 0;
   /** Pisão: robô grande andando na direção de um pequeno encostado. */
   readonly crush: CrushRule;
   /** Zonas de cura e resfriamento (vantagem tática de posicionamento, igual para os dois lados). */
   readonly zones: ZoneSystem;
   private readonly spawnPoints: readonly (readonly [number, number])[];
+  /** A água do mapa (P126), quando é a praia: freia e afoga quem entra no mar. `null` nos outros mapas. */
+  private readonly agua: Agua | null = null;
+  /** Há quanto tempo cada Mech está com os pés na água (o afogamento) — rascunho reaproveitado, sem alocar (G4). */
+  private readonly afogando = new Map<MechBase, number>();
+  /** O núcleo da estação (P127): a "integridade da rede" que a missão em ondas da praia defende. `null` nos outros mapas e modos. */
+  readonly nucleo: NucleoDaEstacao | null = null;
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
   readonly pilots: Pilot[] = [];
   /** Mechs de gente (os bots caçam estes). */
@@ -191,6 +234,10 @@ export class Match {
   onCtfCapture?: (team: CtfTeam, blue: number, red: number) => void;
   onCtfProgress?: (timeLeft: number, blue: Readonly<CtfScore>, red: Readonly<CtfScore>) => void;
   onCtfEnd?: (winner: CtfTeam | null, blue: Readonly<CtfScore>, red: Readonly<CtfScore>) => void;
+  /** Eventos do Domínio; a tela e o som assinam sem entrar na simulação. */
+  onDominioDono?: (ponto: DominioPonto, antes: DominioLado | null, depois: DominioLado | null) => void;
+  onDominioProgresso?: (tempoRestante: number, azul: Readonly<DominioPlacar>, vermelho: Readonly<DominioPlacar>) => void;
+  onDominioFim?: (vencedor: DominioLado | null, azul: Readonly<DominioPlacar>, vermelho: Readonly<DominioPlacar>) => void;
 
   /** O mundo físico da partida (o multiplayer põe nele os robôs remotos, só para colisão). */
   readonly physics: PhysicsWorld;
@@ -200,25 +247,33 @@ export class Match {
   constructor(o: MatchOptions) {
     const survival = o.mode === 'survival';
     const ctf = o.mode === 'ctf';
+    const dominio = o.mode === 'dominio';
     this.physics = o.physics;
-    this.round = survival || ctf ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
+    this.round = survival || ctf || dominio ? new Round(Number.POSITIVE_INFINITY) : o.roundS === undefined ? new Round() : new Round(o.roundS);
     this.scene = o.scene;
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
     this.destructibles.onBreak = (id, at) => this.onPropBroken?.(id, at);
-    const bunker = o.map === 'bunker' && !survival && !ctf;
-    this.spawnPoints = bunker ? BUNKER_SPAWNS : SPAWN_POINTS;
-    this.zones = bunker ? new ZoneSystem([]) : new ZoneSystem();
-    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : 'arena');
+    const bunker = o.map === 'bunker' && !survival && !ctf && !dominio;
+    // A praia abre o Deathmatch e as **ondas** (a defesa da estação, P126): os CTF/Domínio continuam na Arena.
+    const praia = o.map === 'praia' && !ctf && !dominio;
+    this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : SPAWN_POINTS;
+    this.zones = bunker ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
+    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : 'arena');
+    // A água da praia (P126): o mar freia e afoga quem entra nele. Nos outros mapas não há água.
+    this.agua = praia ? PRAIA_AGUA : null;
+    // A missão em ondas da praia defende a estação: os rebeldes que entram nos muros drenam o núcleo; a estação cair é perder a missão.
+    this.nucleo = praia && survival ? new NucleoDaEstacao() : null;
     this.fx = o.particles;
     // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
     // estourar o teto de 8 personagens da sala (G11). Sobrevivência e CTF não usam esquadrão (pool e times próprios).
     const arenaMode = !survival && !ctf;
-    const mapa: MapId = bunker ? 'bunker' : 'arena';
+    const mapa: MapId = bunker ? 'bunker' : praia ? 'praia' : 'arena';
     const semAliados = o.allies === false;
     const pedido = o.squad ?? esquadraoDeFoes(o.foes, semAliados ? 0 : ALLY_COUNT);
     const plano = arenaMode ? planejarEsquadrao(sanearEsquadrao(semAliados ? { ...pedido, aliados: [] } : pedido, mapa), mapa, o.foes.names) : null;
+    if (dominio && plano) levarParaAsBases(plano);
     // O pool de tiros cresce com os Mechs que atiram (cada um solta uma rajada por vez): sem isso, num esquadrão grande o tiro some (G5).
     const atiradores = plano ? plano.inimigos.mechs.length + plano.aliados.mechs.length : 0;
     this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles, PROJETEIS_BASE + PROJETEIS_POR_MECH * Math.max(0, atiradores - MECHS_DO_JOGO_BASE));
@@ -252,16 +307,18 @@ export class Match {
             androidKits: rebeldes.androids.map(kitDe),
           }
         : {
-            spawns: ctf ? CTF_DEFENDER_SPAWNS : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
-            androidSpawns: ctf ? [] : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
+            // Na praia as ondas nascem na areia, longe da estação (o jogador defende a estação); na Arena, nos pontos de sempre.
+            spawns: ctf ? CTF_DEFENDER_SPAWNS : praia ? PRAIA_INIMIGOS.slice(0, SURVIVAL_MAX_MECHS) : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
+            androidSpawns: ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
             technicianSpawns: [],
             personas: o.foes.enemyPersonas,
             names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
           }),
-      bossSpawn: survival ? COLOSSUS_SPAWN[0] : undefined,
+      bossSpawn: survival ? (praia ? PRAIA_TITA : COLOSSUS_SPAWN[0]) : undefined,
       respawn: !survival,
       respawnAtHome: ctf,
-      waypoints: this.spawnPoints,
+      // Na praia de 640 m as ondas marcham para os portões da estação (patrulham a rota de assalto): sem isso vagariam por pontos espalhados.
+      waypoints: survival && praia ? PRAIA_ASSALTO : this.spawnPoints,
       power: o.power,
     });
     const escolta = plano?.aliados;
@@ -276,6 +333,7 @@ export class Match {
             particles: o.particles,
             respawner: this.respawner,
             escort: this.players,
+            tatica: o.tatica,
             paint: PALETTE.playerPaint,
             visor: PALETTE.green,
             spawns: pontos(escolta.mechs),
@@ -305,7 +363,10 @@ export class Match {
           onRoster: (plan) => this.applyWaveRoster(plan),
           onWaveStart: (plan) => this.onWaveStart?.(plan.wave, plan.mechs + plan.androids + (plan.boss ? 1 : 0), plan.mechs, plan.androids, plan.title, SURVIVAL_WAVE_PLANS.length),
           onWaveProgress: (wave, killed, total, elapsedS) => this.onWaveProgress?.(wave, killed, total, elapsedS),
-          onWaveClear: (wave, elapsedS) => this.onWaveClear?.(wave, elapsedS),
+          onWaveClear: (wave, elapsedS) => {
+            this.nucleo?.curar(NUCLEO.curaPorOnda); // a onda eliminada devolve um pouco da rede
+            this.onWaveClear?.(wave, elapsedS);
+          },
           onMissionEnd: (survived, stats) => this.onMissionEnd?.(survived, this.waves?.wave ?? 1, stats),
         }, o.startWave)
       : null;
@@ -321,6 +382,23 @@ export class Match {
         })
       : null;
     if (this.ctf) for (const bot of this.bots.mechs) this.ctf.register(bot, 'red');
+    this.dominio = dominio
+      ? new Dominio(PONTOS_DO_DOMINIO, {
+          onDono: (p, antes, depois) => this.onDominioDono?.(p, antes, depois),
+          onProgresso: (tempo, azul, vermelho) => this.onDominioProgresso?.(tempo, azul, vermelho),
+          onFim: (vencedor, azul, vermelho) => this.onDominioFim?.(vencedor, azul, vermelho),
+        })
+      : null;
+    if (this.dominio) {
+      for (const bot of this.bots.mechs) this.dominio.register(bot, 'red');
+      if (this.allies) for (const aliado of this.allies.mechs) this.dominio.register(aliado, 'blue');
+      this.respawner.setTeams(NASCIMENTOS_DO_DOMINIO, (m) => this.dominio?.ladoDe(m));
+      this.rumoRed.length = this.bots.mechs.length;
+      this.rumoRed.fill(-1);
+      this.rumoBlue.length = this.allies?.mechs.length ?? 0;
+      this.rumoBlue.fill(-1);
+      this.rumoNovo.length = Math.max(this.rumoRed.length, this.rumoBlue.length);
+    }
 
     // As regras ficam aqui; a tela e o som só ouvem os eventos.
     this.projectiles.onHit = (hit, dir, damage, owner, w, distance) => {
@@ -359,6 +437,7 @@ export class Match {
     this.combat.onMechKilled = (dead, at, killer) => {
       this.round.recordKill(dead, killer);
       this.ctf?.onKilled(dead, killer);
+      this.dominio?.onKilled(dead, killer);
       if (this.waves && this.bots.mechs.includes(dead) && this.waves.recordEnemyKilled()) {
         this.projectiles.clear();
         this.rockets.clear();
@@ -376,7 +455,9 @@ export class Match {
   addPlayer(mech: MechBase, name: string, spawnIndex = this.players.length, onRespawn?: () => void, team: CtfTeam = 'blue'): void {
     const [x, z] = this.ctf
       ? [CTF_BASES[team].x + (team === 'blue' ? CTF_PLAYER_OFFSET_X : -CTF_PLAYER_OFFSET_X), CTF_BASES[team].z]
-      : this.spawnPoints[spawnIndex % this.spawnPoints.length]!;
+      : this.dominio
+        ? NASCIMENTOS_DO_DOMINIO[team][0]!
+        : this.spawnPoints[spawnIndex % this.spawnPoints.length]!;
     mech.spawn(this.physics, this._spawn.set(x, 0, z));
     this.scene.add(mech.root);
     mech.onDashImpact = (collider, dir) => this.destructibles.demolish(collider, dir);
@@ -393,6 +474,7 @@ export class Match {
     this.round.register(mech, name);
     this.players.push(mech);
     this.ctf?.register(mech, team);
+    this.dominio?.register(mech, team);
     this.refreshEnemyTargets();
   }
 
@@ -409,6 +491,7 @@ export class Match {
     this.respawner.untrack(mech);
     this.round.unregister(mech);
     this.ctf?.unregister(mech);
+    this.dominio?.unregister(mech);
     this.scene.remove(mech.root);
     mech.despawn(this.physics);
     this.refreshEnemyTargets();
@@ -597,7 +680,8 @@ export class Match {
    */
   step(dt: number): boolean {
     if (this.round.playing) {
-      this.waves?.fixedUpdate(dt, this.players.some((player) => player.alive));
+      // A missão falha se o jogador cai OU se a estação cai (o núcleo chegou a zero no tick anterior).
+      this.waves?.fixedUpdate(dt, this.players.some((player) => player.alive) && !this.nucleo?.caiu);
       if (this.waves?.ended) return false;
       // Fogo, choque e gelo: o tempo corre e o dano por segundo sai ANTES dos pilotos, para a velocidade e as travas do tick já usarem o
       // estado atualizado. Mesma ordem no servidor e no jogo offline (G14).
@@ -621,28 +705,138 @@ export class Match {
       this.zones.fixedUpdate(dt, this.players);
       this.zones.fixedUpdate(dt, this.bots.mechs);
       if (this.allies) this.zones.fixedUpdate(dt, this.allies.mechs);
+      // A água (P126): o mar da praia freia e afoga quem está com os pés dentro. Nos outros mapas, `agua` é nulo.
+      this.aplicarAgua(dt);
       this.respawner.fixedUpdate(dt);
       this.projectiles.fixedUpdate(dt);
       this.rockets.fixedUpdate(dt);
       this.barrage.fixedUpdate(dt);
       this.physics.step();
       this.ctf?.fixedUpdate(dt);
+      this.dominio?.fixedUpdate(dt);
+      this.dirigirOsBots(dt);
+      this.drenarONucleo(dt);
     }
     if (this.round.fixedUpdate(dt) !== 'started') return false;
     this.restart();
     return true;
   }
 
+  /**
+   * O núcleo da estação (P127): soma o peso dos rebeldes vivos **dentro dos muros** do complexo (Mech 1, andróide meio, Colossus 4) e o
+   * núcleo drena (ou, sem invasor, se recompõe). Sem o núcleo (outros mapas e modos), não roda nada. Custo: um laço sobre os rebeldes
+   * (≤ 8), sem alocar.
+   */
+  private drenarONucleo(dt: number): void {
+    const n = this.nucleo;
+    if (!n) return;
+    let peso = 0;
+    for (const m of this.bots.mechs) {
+      if (!m.alive) continue;
+      const p = m.simPosition;
+      if (dentroDoComplexo(p.x, p.z)) peso += pesoDoInvasor(m.stats.name);
+    }
+    n.fixedUpdate(dt, peso);
+  }
+
+  /**
+   * A água do mapa (P126): quem está com os pés dentro do mar **freia** (o `MechBase.moveSpeedScale`, que já existia) e,
+   * passado o tempo de afogar, **perde vida** no casco. Sem o mapa da praia (`agua` nulo), não roda nada. Custo: ≤ 4
+   * contas por Mech por tick, sem alocar (o acumulado vive num `Map` reaproveitado).
+   */
+  private aplicarAgua(dt: number): void {
+    const a = this.agua;
+    if (!a) return;
+    this.aguaEm(dt, a, this.players);
+    this.aguaEm(dt, a, this.bots.mechs);
+    if (this.allies) this.aguaEm(dt, a, this.allies.mechs);
+  }
+
+  private aguaEm(dt: number, a: Agua, mechs: readonly MechBase[]): void {
+    for (const m of mechs) {
+      const p = m.simPosition;
+      const fundura = m.alive ? funduraEm(a, p.x, p.z, p.y) : 0;
+      // Molhado freia; só o fundo (`afogaDesde`) conta tempo de afogamento: o raso é uma via lenta, não uma armadilha.
+      const molhado = fundura > FUNDURA_MOLHADA;
+      m.moveSpeedScale = molhado ? fatorDeVelocidade(fundura) : 1;
+      const fundo = fundoParaAfogar(a, fundura);
+      if (!fundo && !this.afogando.has(m)) continue; // seco (ou raso) e sem histórico: nada a fazer (caminho barato)
+      const t = passoDoAfogamento(fundo ? this.afogando.get(m) ?? 0 : 0, dt, fundo);
+      if (fundo) this.afogando.set(m, t);
+      else this.afogando.delete(m);
+      const dano = danoDeAfogamento(a, t, dt);
+      if (dano > 0) m.damagePart('torso', dano);
+    }
+  }
+
+  /**
+   * Para o HUD da praia: a fundura em que os pés de `mech` estão (0 em terra ou fora do mapa da praia) e quantos segundos ele já passou no
+   * fundo (o relógio do afogamento). Barato (uma conta e uma busca no `Map`), chamado a cada quadro: escreve em `fora` (sem alocar, G4).
+   */
+  estadoDaAgua(mech: MechBase, fora: EstadoDaAgua = { fundura: 0, afogandoS: 0, afogarS: 0, afogaDesde: FUNDURA_MOLHADA }): EstadoDaAgua {
+    const a = this.agua;
+    if (!a) {
+      fora.fundura = 0;
+      fora.afogandoS = 0;
+      fora.afogarS = 0;
+      fora.afogaDesde = FUNDURA_MOLHADA;
+      return fora;
+    }
+    const p = mech.simPosition;
+    fora.fundura = mech.alive ? funduraEm(a, p.x, p.z, p.y) : 0;
+    fora.afogandoS = this.afogando.get(mech) ?? 0;
+    fora.afogarS = a.afogarS;
+    fora.afogaDesde = a.afogaDesde ?? FUNDURA_MOLHADA;
+    return fora;
+  }
+
+  /**
+   * `DominioObjetivos.atribuirPontos`) e recebe a ordem de **segurar posto** ali: trocam tiro em volta do posto e não o abandonam
+   * perseguindo quem está longe. Só manda ordem a quem mudou de ponto (ou perdeu a ordem). Custo: ≤ 40 bots × 5 pontos a cada 2 s.
+   */
+  private dirigirOsBots(dt: number): void {
+    const d = this.dominio;
+    if (!d || d.ended) return;
+    this.replanejaEm -= dt;
+    if (this.replanejaEm > 0) return;
+    this.replanejaEm = DOMINIO_REPLANEJA_S;
+    this.dirigirLado(d, 'red', this.bots, this.rumoRed);
+    if (this.allies) this.dirigirLado(d, 'blue', this.allies, this.rumoBlue);
+  }
+
+  private dirigirLado(d: Dominio, lado: DominioLado, sistema: BotSystem, rumo: number[]): void {
+    const mechs = sistema.mechs;
+    atribuirPontos(d.pontos, lado, mechs, rumo, this.rumoNovo, this.cargaDosPontos);
+    for (let i = 0; i < mechs.length; i++) {
+      const novo = this.rumoNovo[i]!;
+      const cerebro = sistema.brainOf(mechs[i]!);
+      if (!cerebro || novo < 0) {
+        rumo[i] = novo;
+        continue;
+      }
+      if (novo !== rumo[i] || cerebro.order !== 'hold') cerebro.receiveOrder('hold', this.pontosV3[novo]!, null);
+      rumo[i] = novo;
+    }
+  }
+
   /** Recomeça o objetivo usando os mesmos corpos físicos e pools. */
   restartMission(): void {
-    if (!this.waves && !this.ctf) return;
+    if (!this.waves && !this.ctf && !this.dominio) return;
     this.players.forEach((m, i) => {
       const [x, z] = this.ctf
         ? [CTF_BASES.blue.x + CTF_PLAYER_OFFSET_X, CTF_BASES.blue.z]
-        : this.spawnPoints[i % this.spawnPoints.length]!;
+        : this.dominio
+          ? NASCIMENTOS_DO_DOMINIO.blue[0]!
+          : this.spawnPoints[i % this.spawnPoints.length]!;
       m.respawn(this._spawn.set(x, 0, z));
     });
-    if (this.ctf) this.bots.respawnAll();
+    if (this.ctf || this.dominio) this.bots.respawnAll();
+    if (this.dominio) {
+      this.allies?.respawnAll();
+      this.rumoRed.fill(-1);
+      this.rumoBlue.fill(-1);
+      this.replanejaEm = 0;
+    }
     this.projectiles.clear();
     this.rockets.clear();
     this.barrage.clear();
@@ -650,7 +844,9 @@ export class Match {
     this.destructibles.restoreAll();
     this.round.resetScores();
     this.waves?.reset();
+    this.nucleo?.reset();
     this.ctf?.reset();
+    this.dominio?.reset();
   }
 
   private applyWaveRoster(plan: WavePlan | null): void {

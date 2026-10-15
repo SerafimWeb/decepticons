@@ -1,5 +1,371 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O BENCHMARK DE MERCADO: o CYBERMECH contra as seis referências de mech — Qwen, 15/10 (branch `qwen/benchmark-mercado`, P129)
+
+**A ordem (15/10):** "pegue essa orientação para fazermos um **benchmark antes de lançarmos nosso game**". A orientação é o mapeamento de seis concorrentes/referências do gênero que o Comandante trouxe do chat (`benchmark_cybermech.json` e a matriz comparativa: plataforma, sensação de massa, loop de combate, dores do jogador e lacunas de mercado).
+
+**O que o documento entrega:** `.decepticons/BENCHMARK.md` — as seis referências (War Robots, Mech Arena, MechWarrior MW5/MWO, Armored Core VI, Hawken, Vox Machinae) como **pauta**, e a **coluna do CYBERMECH como estado real** (`STATUS_REAL.md` e o código, R13). O mapeamento do Comandante descrevia o nosso jogo **como se já fosse o alvo** (a nossa coluna lá é promessa); o documento separa **o que existe do que é promessa**. Os benchmarks técnicos entram **medidos e com fonte**, refazíveis por comando.
+
+**Os três achados que importam:**
+1. **Não temos rotação independente de torso e pernas** — `MechBase.applyFacing` gira a **raiz inteira** (pernas junto); o torso só inclina (`pitch × 0,25`) e leva o *tranco* do tiro. É justamente a "divisória de águas" que o próprio mapeamento cita entre jogo genérico e jogo respeitado. **Lacuna de maior peso de mercado** — e prometer isso hoje seria mentira (R13).
+2. **Falta o número de GPU numa máquina integrada** — a pendência de R13 que se repete em toda entrega visual (`PRAIA.md`, `BUNKER.md`, `REFERENCIA_VISUAL.md` § 7.2 etapa A). É o número de que a promessa "roda em qualquer navegador" (G8/G12) depende: sem ele, não há como afirmar performance no material de lançamento.
+3. **O que ganhamos de todos os seis** é verdadeiro e vendável: **fricção zero** (sem instalar, sem conta), **sem pay-to-win** (o "nunca" do `VISAO.md` é posicionamento, não só princípio) e **profundidade sem pesadez** (calor crítico + dano por parte do MechWarrior, com acesso de site) — onde ninguém do gênero está.
+
+**Números medidos (15/10, refazíveis):** `npm run smoke` → **JS 447,4 / Wasm 719,4 KB gzip** (tetos 500/900), boot **6,4 a 7,1 s** em duas execuções, headless/SwiftShader (não é GPU real). `dist/`: 33 arquivos, 32,26 MB, dos quais **25,87 MB são os 8 robôs `.glb`**, que carregam **por robô** (`importedMechAssets.ts`), não no boot. Desenhos da praia **44–52** (teto 67), Bunker 18–67; triângulos 133.885–134.661 (praia); colisores 167 (teto 310); **2.050 testes em 208 arquivos**. `npm run check` verde.
+
+**Nenhuma linha de jogo mudou** — é documento. A instrução do anexo ("validar escopo técnico", "priorizar a separação pernas/torso no loop de inputs") virou recomendação, não código, porque a rotação de torso/pernas **não existe** e é decisão do Comandante (§ 6 do documento).
+
+**Decisões que o benchmark devolve ao Comandante (R13):** (1) **medir a GPU numa integrada** antes de afirmar performance no lançamento — método pronto em `medicoes/BUNKER.md`; (2) **decidir sobre a rotação de torso e pernas** (custa `MechBase.ts` + animação + protocolo de rede); (3) **se o posicionamento anti-pay-to-win vira página pública** — hoje só o documento interno; a régua da `politica-paginas-publicas.md` corta os bytes e a matriz de lacunas, deixa o posicionamento (§ 7 do documento).
+
+**Onde ele confere:** `.decepticons/BENCHMARK.md`; e refaz as contas com `npm run smoke` e `node .decepticons/medicoes/praia.mjs`.
+
+**Falta (R13):** os **fatos de terceiros não foram auditados** (sem acesso a cada jogo daqui) — ficam como pauta do Comandante, com as duas inconsistências marcadas *(a conferir)* (o desenvolvedor do Hawken; o `id` que mistura Vox Machinae e Custom Mech Wars); a **GPU numa integrada** segue **não medida** (o item nº 1 acima); a página pública do posicionamento (se ele quiser) é o PR seguinte.
+
+## A PRAIA DOS CABOS ganha luz, sombra e vida: sombras assadas, a base da estação como posto de defesa, halos de luz, zonas desenhadas, gente, pipas e cáusticas — Claude, 15/10 (branch `claude/praia-luz-e-vida`, P128)
+
+**A ordem (15/10):** "ok, mais uma rodada de qualidade no visual da estação cabos. continue melhorando e evoluindo esse cenario e **roleplay** dele". **Este PR é a metade do visual e da vida do cenário; a metade do roleplay (a voz do SOC, o rádio, o relatório pós-incidente, as placas) vem em PR separado** (`claude/praia-soc`): é texto e interface, outro risco e outro revisor.
+
+**O que o Comandante vê:**
+- **Sombra no chão, de verdade.** Coqueiros, guarda-sóis, postes, barracas, jangadas, hotéis e muros jogam sombra longa de fim de tarde (fria, só sobre a luz direta) e o pé de cada parede escurece (oclusão de ambiente). É uma textura assada **uma vez** na carga (~150 ms), lida pelo chão e por todos os materiais: nenhuma luz com sombra (que dobraria o custo da cena).
+- **A base da estação é um posto avançado em estado de defesa:** duas **torres de vigia** com holofote, cinco **refletores** de 14 m, barreiras **HESCO** e de concreto, sacos de areia, os **carretéis de cabo submarino** (o que a estação guarda), tenda de campanha, geradores, a picape, as **bandeiras verdes** da SERAFIM e as câmeras de CFTV dos portões — no lugar das nove caixas de concreto iguais do pátio (que também são a cobertura da defesa).
+- **Luz de começo de noite, desenhada:** 309 **halos** (poste, refletor, torre de vigia, o **varal de lâmpadas** de cada barraca, semáforo, o farol, o aviso vermelho que **pisca** nas antenas, nas boias e nas lanchas rebeldes), 86 **poças de luz** no chão (sob cada poste, na frente das barracas e a grande dos refletores no pátio), os **feixes** dos refletores até o pátio e **os holofotes das torres de vigia, que varrem o mar e a areia**. Tudo some com a distância até a câmera (ninguém fica dentro de um clarão).
+- **As zonas de cura e de resfriamento agora aparecem:** existiam na regra (`combat/Zone.ts`) e na praia **ninguém as via**. Cada uma é um chão com o **aro no raio exato da regra (12 m)**, ondas que saem do centro (cura, verde, com uma cruz) ou entram nele (resfriamento, ciano, com um floco), e uma **cortina de luz baixa com faíscas** que a mostra de longe, do calçadão.
+- **A orla tem vida:** 34 passantes no calçadão (alguns correndo), 6 ciclistas na ciclovia, 10 caminhantes na beira d'água, 16 banhistas no mar raso e 8 **pipas** no céu — e **na missão em ondas a orla está evacuada** (sem gente e sem pipa: os rebeldes desembarcam numa praia abandonada).
+- **A história no cenário:** três **lanchas de desembarque rebeldes** encalhadas na areia, o **navio lançador de cabos** da SERAFIM e a **nau de comando rebelde** (o C2 das IAs, luzes vermelhas que piscam) no horizonte; empilhadeiras e caminhões no cais; espreguiçadeiras e toalhas ao lado dos guarda-sóis, rede de vôlei, bancos, lixeiras, pontos de ônibus, semáforos, touceiras da restinga, algas na linha de maré e **cáusticas** (a rede de luz que o sol desenha) no fundo raso.
+
+**Como é feito (G3, G14):** módulos independentes ligados em `Praia.ts` por chamadas: `PraiaSombras.ts` (as sombras e a oclusão em **dado puro**, a textura RG de 1280×480), `PraiaMontador.ts` + `PraiaGeometriasCena.ts` + `PraiaAderecosCena.ts` (25 tipos novos de adereço e onde ficam), `PraiaAderecosMalha.ts` (os adereços viram **malhas estáticas fundidas por material**: de ~30 desenhos para 6, o que abriu orçamento de desenho para o resto), `PraiaLuzesDados.ts` + `PraiaLuzes.ts` (a luz: dado puro e desenho), `PraiaZonas.ts`, `PraiaGente.ts` (a gente e as pipas: **todo o caminho, o passo e a altura do chão são contas do vertex shader**, nada em JS por quadro) e `PraiaUniformes.ts` (o tempo e a sombra compartilhados). No `Game`, **uma linha**: `setCivis(false)` quando a partida tem o núcleo (a missão da praia).
+
+**Custo (G4/G5/G12):** **CPU por quadro: três rotações** (o farol e os dois holofotes) e o tempo; a gente, as pipas, as luzes e as zonas são GPU. **Desenhos: 44 a 52 por vista** (limite da ficha: 67); **triângulos: 134 mil a 135 mil** (eram 71 a 90 mil: os adereços da cena, a gente e as luzes somam ~45 mil; o mapa é ~11× o poço do Bunker); **colisores: 167** (162 caixas + 4 paredes + o chão; teto 310). A qualidade baixa e o rebaixamento automático **desligam as poças, os feixes, os holofotes e as cortinas** (os halos e o chão das zonas ficam: é a informação). **Não medido (R13):** o tempo de GPU numa integrada (a bancada é SwiftShader): a mistura aditiva dos halos e das poças é custo de preenchimento, a verificar em máquina fraca.
+
+**Testes:** 2.050 no `npm test` (eram 1.993): `PraiaSombras` (8), `PraiaLuzesDados` (8: as luzes ficam junto da camada de brilho da geometria; só os avisos piscam), `PraiaLuzes` (7: cinco desenhos, qualidade baixa, os holofotes giram), `PraiaGente` (8: ninguém atravessa quiosque, barraca, lancha nem o complexo da estação; **mutação feita: as pistas do calçadão levadas para dentro dos quiosques, e o teste caiu**), `PraiaZonas` (3: o aro é o raio da regra), `Praia.test` (+1: a luz, as zonas e a gente são desenhos próprios; a missão evacua a orla), e os testes de layout e de radar seguiram verdes com o pátio novo.
+
+**Visto:** `arte/praia-<vista>-luz-claude.jpg` (a bancada, 21 vistas) e `arte/praia-jogo-livre-luz-claude.jpg`, `arte/praia-jogo-missao-luz-claude.jpg` (o jogo de verdade, com o HUD); headless, **0 erro de página**. A bancada pegou dois erros que o teste em Node não vê (o `vColor` do three r186 é `vec4`; um quadro no plano do chão tem a face para baixo): **lição:** shader novo só vale depois de a bancada rodar. **O julgamento é do Comandante.**
+
+**Onde ele testa:** `?mapa=praia` (a orla com gente, luz e as zonas), `?modo=survival&mapa=praia` (a orla evacuada; as lanchas e os navios) ou, no console, ESTAÇÃO DE CABOS → ir. Dica: ande até o calçadão (x ≈ 20, o meio do mapa) para ver a zona de **cura** e olhe para o mar para ver as lanchas rebeldes e os dois navios.
+
+**Falta (R13):** (1) o **roleplay** — voz do SOC, rádio, relatório pós-incidente com MTTR, placas, som de ambiente — é o PR seguinte; (2) a **GPU integrada** (acima); (3) a gente é **cenário**: não bloqueia, não leva dano e não reage ao combate (some só na missão); (4) a câmera **tática** ainda não tem *occluders* na praia; (5) o P123 (o Mech *saindo* da escotilha) segue sendo só a placa no chão; (6) a cobertura do pátio mudou (HESCO, barreiras e carretéis no lugar das nove caixas): **só o playtest** dirá se o pátio ficou fácil ou difícil demais.
+
+**Próxima sessão começa com:** o PR `claude/praia-soc` (a voz do SOC no jogo) — ver a seção do roleplay em `ORDENS_DO_COMANDO.md` (P128).
+
+## A ESTAÇÃO DE CABOS agora CAI: o núcleo — a rede que a missão defende — drena com os invasores e a missão falha se ela cair — Claude, 14/10 (branch `claude/nucleo-da-estacao`, P127 passo 2)
+
+**A ordem:** a mesma do PR anterior ("melhorar na íntegra… fase completa") — e o ponto que ficou **em aberto** pelo Qwen e por mim: a estação era o objetivo **marcado**, não uma estrutura que cai. Eu assumi (era a "DECISÃO EM ABERTO" do Qwen: regra de simulação é contrato do Claude).
+
+**O que o Comandante vê:** a missão em ondas da praia tem **objetivo de verdade**. A **REDE DA ESTAÇÃO** (o núcleo, 1000 de vida) aparece numa barra sob a faixa da costa e no marcador da estação (**ESTAÇÃO 87%**). **Rebelde que entra nos muros do complexo drena a rede** (Mech pesa 1; andróide, meio; o Colossus, 4): três Mechs derrubam a estação em ~48 s, o Colossus sozinho em ~36 s — então não basta sobreviver, **é preciso expulsar quem entrou**. Sem invasor lá dentro por 6 s, a rede **se recompõe** devagar; **cada onda eliminada devolve 150**. A estação reage: o **centro de dados apaga as janelas** (e o que sobra vira alarme vermelho), a **fita de luz do muro** e a **coluna de luz** do objetivo passam do ciano ao vermelho. Há **alertas** ("INVASORES NA ESTAÇÃO · EXPULSE-OS", "ESTAÇÃO A 75/50/25%", "A ESTAÇÃO CAIU"). **A missão falha se a rede chegar a zero** — mesmo com o jogador vivo ("ESTAÇÃO PERDIDA · ONDA n · A ESTAÇÃO DE CABOS CAIU: A REDE FOI INVADIDA").
+
+**Como é feito (G14, regra com teste):** `sim/NucleoDaEstacao.ts` (regra pura: vida, peso do invasor, dreno, espera, recomposição, cura por onda) + `Match` (soma o peso dos rebeldes vivos **dentro do complexo** a cada tick e passa ao núcleo; a falha entra no mesmo `SurvivalWaves.fixedUpdate` que já encerrava a missão quando o jogador cai). **Só na missão em ondas da praia** (`nucleo` é `null` no combate livre e na Arena). O HUD (`PraiaHud` + `AlertaDoNucleo`, regra pura) e os shaders leem a fração por um uniforme (`Praia.setNucleo`). Reaproveitei os objetos do quadro do HUD e do estado da água: **nada é alocado por quadro** (G4).
+
+**Custo:** por tick, um laço sobre os rebeldes vivos (≤ 8) e uma soma; **na GPU, um uniforme**. Nada por quadro no HUD além do que já era (o DOM só escreve quando a porcentagem ou o estado muda).
+
+**Testes:** `NucleoDaEstacao.test` (**9**: dreno proporcional ao peso, 48 s/36 s, espera e recomposição, cura por onda, queda definitiva, o complexo), `Match.praia.test` (+**5**: só na missão da praia; o invasor drena e fora dos muros não; **a estação cai e a missão falha com o jogador vivo**; a onda eliminada devolve vida; a missão nova levanta a estação), `praiaHudData.test` (+**3**: os alertas). `npm run check` verde.
+
+**Visto:** `arte/praia-nucleo-inteiro-claude.jpg` e `praia-nucleo-ataque-claude.jpg` (a missão na onda 5, parado na escotilha: a barra da rede a 100% e depois a 91% com o marcador em alerta); headless, 0 erro de página. **O julgamento é do Comandante.**
+
+**Onde ele testa:** `?modo=survival&mapa=praia` — deixe os rebeldes chegarem aos portões e veja a **REDE DA ESTAÇÃO** cair; **expulse-os** para ela se recompor. `&onda=5` pula direto para as ondas fortes.
+
+**Falta (R13):** da ficha `ataque-e-defesa.md` § 2.2: o **contraataque** (o núcleo cai e a missão vira "retomar o raio", em vez de acabar) e o **técnico que conserta o núcleo** — **AUSENTES**; o **dano por tiro no núcleo** (hoje a rede cai pela **presença** dos invasores, a regra de proximidade que o Domínio já usa; os rebeldes não atiram na estrutura) — decisão registrada; a **sirene** de alerta (só texto e cor); o playtest e o equilíbrio dos números (1000 / 7 por peso / 14 de recomposição / 150 por onda são o meu palpite de engenheiro — o Comandante ajusta jogando).
+
+## A PRAIA DOS CABOS ao longo do mapa inteiro: 640 m de orla, porto, Ponte Metálica e a estação murada — Claude, 14/10 (branch `claude/praia-comprida`, P127)
+
+**A ordem (14/10):** "a fase ESTAÇÃO DOS CABOS ainda ta muito simplificada. precisamos melhorar ela na íntegra, adicionar qualidade gráfica, UX UI, cenário, elementos, etc. MINHA ideia inicial era que a praia fosse **ao longo do cenário**, e não num só lado. **fase grande, completa**".
+
+**O que o Comandante vê (reconstruído do zero, não remendado):**
+- **A praia corre pelos 640 m do mapa** (240 m de largura; 3,5× a área da Arena). O mar fica de um lado, a cidade do outro, e a linha d'água **ondula** (baías e pontas). Do mar para dentro: **mar → praia** (areia branca, dunas, barracas, guarda-sóis, jangadas, torres de salva-vidas) **→ calçadão** (a pedra portuguesa em ondas e a ciclovia vermelha) **→ Av. Beira-Mar** (quatro faixas, canteiro de coqueiros, carros e ônibus) **→ cidade** (hotéis de até 34 m na frente, prédios baixos atrás, seis ruas que cortam para o mar, telhados com caixa-d'água e ar-condicionado).
+- **Três marcos guiam quem joga:** a **oeste, o PORTO** (cais com o navio atracado, dois guindastes, o pátio de contêineres em corredores de 10 m e o **farol** com o feixe que gira); no **meio, a PONTE METÁLICA** (o píer de 100 m, a via alta de 2,6 m sobre o mar, com rampa, guarda-corpo e pilares); a **leste, a ESTAÇÃO DE CABOS** — o complexo murado (portão da avenida, portão do mar, portão de trás; muro com fita de luz ciano), com o **centro de dados** (janelas em fita acesas), o domo do radar, as parabólicas, o mastro de antenas com aviso vermelho e a **escotilha** (a saída do jogador, com as listras de aviso). **Três cabos luminosos** saem do mar, cruzam a areia, entram pelo portão e chegam ao prédio, com pulsos de dado correndo por eles; uma **coluna de luz ciano** sobe da estação e marca o objetivo de qualquer ponto da orla.
+- **O chão é de verdade:** o fundo do mar **desce em rampa suave** (até 14 m; nunca mais íngreme que 17°) — o Mech entra andando e vai afundando, sem degrau, e sai pelo mesmo caminho. **Vadear não afoga:** até o joelho (1,4 m) o Mech só anda mais devagar; no fundo, depois de 3 s, perde casco. O terreno é **um colisor de altura** (e as dunas são relevo, não caixas): a malha desenhada e a física leem a **mesma função** (`PraiaTerreno.ts`).
+- **O visual (o Comandante pediu "qualidade gráfica"):** o céu do fim de tarde é um **domo de verdade** (o antigo era uma textura esticada na tela: o horizonte rosa ficava no pé da tela, olhasse a câmera para onde olhasse) com o **sol sobre o mar**, o brilho do poente e **nuvens** que derivam; o **mar** é um shader na GPU (cor pela fundura — turquesa clarinho na beira, azul fundo no largo —, ondas, espuma no lavado e na arrebentação, o reflexo do céu e o caminho de brilho do sol); a areia tem grão e as marolas do vento; as fachadas têm **janelas, lajes e vidro refletindo o sol** do lado do mar; contêineres nervurados; **131 coqueiros** que balançam ao vento, velas que tremulam, **18 gaivotas** em voo, boias piscando — tudo animado **na GPU**, custo de CPU zero.
+- **A interface da fase (UX/UI):** a **faixa da costa** (embaixo do banner da missão) mostra os 640 m numa linha — o porto, a ponte, a estação, **você** e os inimigos a até 260 m; o **marcador da ESTAÇÃO** sobre o alvo, com a distância, **preso à borda da tela** quando ele sai dela; o **anúncio do lugar** a cada mudança ("PONTE METÁLICA", "AV. BEIRA-MAR"...); o **aviso da água** (vadeando / "FUNDO · AFOGA EM 2,0 s · SAIA DO MAR", barra do relógio e uma névoa azul nas bordas); o **cartão da missão** ("OPERAÇÃO CABOS ABERTOS", a história em três linhas curtas, alegoria sem nomes reais) ao começar. O **minimapa** da partida e o **radar do console** passaram a conhecer a praia (antes desenhavam a planta da Arena, **vazia** — o radar do console assumia um quadrado de 200 m): o mapa retangular com o mar, as zonas, os marcos com nome e o **E da estação** preso à borda como bússola. O console escrevia "ARENA" no radar da praia (corrigido: `MAPA_NOME`), e a barra de cima mostrava "ONDA 2/5" com um 5 fixo numa missão de seis ondas (corrigido).
+- **A missão funciona numa praia de 640 m (G14):** sem rota, as ondas rebeldes patrulhariam pontos espalhados e nunca chegariam. Agora **marcham pela areia, pelo calçadão e pela avenida até os portões da estação** (`PRAIA_ASSALTO`): a onda 1 chega em ~20 s, e o **Colossus** atravessa a avenida inteira (medido: ~50 s do ponto de nascimento ao portão). Quatro zonas de cura/resfriamento (uma no pátio da estação).
+
+**O que mudou no código (módulos novos, ligados por callback — G3):** `environment/PraiaTerreno.ts` (a função de altura, a costa, as dunas, as cores do chão), `PraiaLayout.ts` (reescrito: blocos, rota de assalto, zonas, nascimentos), `PraiaAderecos.ts` (coqueiros, barracas, carros, guindastes... e quais bloqueiam), `PraiaColisores.ts` (a lista que vai ao Rapier e aos testes), `PraiaCeu.ts`, `PraiaMar.ts`, `PraiaChao.ts`, `PraiaMateriais.ts`, `PraiaGeometrias.ts`, `PraiaVida.ts`, `Praia.ts` (o construtor), `ui/PraiaHud.ts` + `ui/praiaHudData.ts` (a interface, com a regra pura separada). Pequenos ganchos: `PhysicsWorld.addStaticHeightfield`, `Agua.afogaDesde`, `Match.estadoDaAgua`, `TacticalRadar`/`Minimapa` (mapa retangular, mar, marcos), `Praia.setDetalhe` (qualidade baixa e o rebaixamento automático tiram as nuvens e o ruído do mar).
+
+**Custo (G4/G5/G12):** **CPU por quadro: zero** na cena (o `update` escreve UM número; o resto é GPU) — o HUD escreve no DOM só o que mudou (5 Hz na faixa; o marcador só quando anda meio pixel) e não aloca. **Colisores: 135** (130 sólidos + 4 paredes + o chão), contra o teto de 310 da ficha. **Desenhos: 39–60 por vista** e **70 a 90 mil triângulos** (a faixa de desenhos do Bunker é 18–67; os triângulos são mais, porque o mapa é muito maior — ver `medicoes/PRAIA.md`). O que **não** medi: tempo de GPU numa integrada (a bancada é SwiftShader) — fica como pendência honesta (R13).
+
+**Testes (57 novos ou refeitos):** `PraiaTerreno.test` (**8**: costa, rampa, dunas, colisor = função), `PraiaLayout.test` (**15**: ruas e vias livres para o Colossus, portões, nascimentos/ondas/zonas em chão plano e livre, teto de colisores), `Praia.test` (**8**: o construtor e as geometrias, desenhos e triângulos), `Match.praia.test` (**6**: a água freia e só o fundo afoga, **a rampa do píer sobe sem pular**, a onda marcha para a estação), `praiaHudData.test` (**13**), `TacticalRadar.praia.test` (**5**: radar e minimapa), `Agua.test` (+2). **`npm run check` verde** (1993 testes em 201 arquivos, SMOKE OK, JS 430,9 / 500 KB gzip, Wasm 719 / 900 KB).
+
+**Visto:** capturas em `arte/praia-*-claude.jpg` (a bancada, dez vistas) e `arte/praia-jogo-*-claude.jpg` (o jogo de verdade, com o HUD); headless, **0 erro de página**. **O julgamento é do Comandante** (eu não leio gosto: só confiro que renderiza e que a regra vale).
+
+**Onde ele testa:** `www.selvamkt.com.br/cybermech/jogar/?modo=survival&mapa=praia` (a missão em ondas) ou `?mapa=praia` (o combate livre) — ou no console: ESTAÇÃO DE CABOS → ir. Teclas: **V** muda a câmera; **M**/**B** abre o briefing.
+
+**Falta (R13):** (1) o **núcleo** da estação — **entregue no passo 2 (seção acima, `claude/nucleo-da-estacao`)**: a rede que cai com os invasores e faz a missão falhar; seguem **ausentes** o contraataque e o técnico que conserta (`fichas/ataque-e-defesa.md` § 2.2); (2) o **playtest** do Comandante e a medição de **GPU numa integrada** (p50/p95 como no `medicoes/BUNKER.md`); (3) a câmera **tática** não tem *occluders* na praia (um hotel pode tapar a visão dela; a de 3ª pessoa não tem esse problema); (4) o P123 (o Mech *saindo* da escotilha) segue sendo só a placa no chão; (5) a bancada de colisores da ficha ficou **contada pelo teste** (135 < 310), mas sem o medidor de CPU por tick com 32 corpos.
+
+## A ESTAÇÃO DE CABOS ganha a missão: as ondas rebeldes vêm do mar pela areia — Qwen, 14/10 (branch `qwen/estacao-defesa`, P126 passo 5)
+
+**A ordem (14/10):** "a fase da praia funcionou. mas precisa continuar evoluindo e melhorando ela".
+
+**O que o Comandante vê:** a **ESTAÇÃO DE CABOS** agora tem **missão**, não só combate livre: escolha **SOBREVIVÊNCIA** (no console ou na pausa, com o mapa da praia) e as **ondas rebeldes vêm pela areia**, da ponta oeste, enquanto você defende a **estação** (a leste). O mar continua freando e afogando quem entra nele — e a água passou a ter o **teste de partida** (G14) que faltava.
+
+**O que mudou:**
+- `environment/Bunker.ts` (`mapFromSearch`) + `sim/campanha.ts` + `ui/theater.ts`: a **praia abre o Deathmatch e as ondas** (o CTF/Domínio e o online seguem na Arena) — as três fontes concordam, e o teste confere.
+- `environment/PraiaLayout.ts`: as **ondas nascem na areia, longe da estação** (`PRAIA_INIMIGOS`, 6 pontos secos e livres) e o **Colossus** num ponto aberto (`PRAIA_TITA`).
+- `sim/Match.ts`: a praia é reconhecida **também no modo em ondas**; o roster e o boss usam os pontos da praia.
+- `environment/Praia.ts`: o céu da praia ficou tolerante a **ambiente sem DOM** (testes/servidor): sem tela, a cor fica sólida.
+- **Testes:** `sim/Match.praia.test.ts` (**3**: o jogador nasce na escotilha; **a água freia — G14**; as ondas nascem na areia, longe da estação), `PraiaLayout.test` (os spawns das ondas) e `Bunker.test` (a fiação do mapa). `npm run check` verde (**1956 testes**).
+
+**Visto:** `arte/estacao-defesa-qwen.jpg` e `arte/estacao-defesa-tatica-qwen.jpg` (a praia na missão; headless, **0 erro de página**). **O julgamento é do Comandante.**
+
+**Onde ele testa:** `www.selvamkt.com.br/cybermech/jogar/?modo=survival&mapa=praia` — ou no console: ESTAÇÃO DE CABOS → **SOBREVIVÊNCIA**.
+
+**Falta (R13) — o núcleo:** a **defesa da estação** completa — o **núcleo** (estrutura com vida própria), o **contraataque** (retomar o raio após o núcleo cair) e o **técnico** que o conserta (`fichas/ataque-e-defesa.md` § 2.2). Seguem também a bancada de colisores (< 310) e o **P123** (o Mech saindo da escotilha).
+
+## A ESTAÇÃO DE CABOS vira fase jogável: o cenário entra no console e a praia ganha as zonas — Qwen, 14/10 (branch `qwen/estacao-de-cabos`, P126 passo 4)
+
+**A ordem (14/10):** "continue no desenvolvimento do cybermech, **implantar a fase ESTAÇÃO DE CABOS**. quero jogar nela".
+
+**O que o Comandante vê:** o **teatro de operações** do console (tela inicial) agora mostra a **ESTAÇÃO DE CABOS** **acesa** — **disponível**, não mais **EM BREVE** — e o botão **ir** dela abre a **PRAIA DOS CABOS** (`?mapa=praia`). O mapa também entrou no **seletor** de mapa (`PRAIA DOS CABOS`). E a praia **deixou de ser o único cenário sem zonas**: ganhou uma **zona de cura** no caminho para a estação e uma de **resfriamento** na areia do meio (a mesma regra da Arena, igual para os dois lados).
+
+**O que mudou:**
+- `ui/theater.ts`: a entrada `cabos` ganhou `mapa: 'praia'` e `modos: ['deathmatch']` (o pin sai do "EM BREVE"; `estadoDoTeatro` vira `disponivel`/`aqui`).
+- `ui/MapLinks.ts`: a Praia entra em `MAPS`; o `mapHref` trata os **dois mapas só-offline** (Bunker e Praia) — tira `sala`, `servidor` e `modo` para o jogo abrir o mapa certo (e não cair na Arena).
+- `environment/PraiaLayout.ts` + `sim/Match.ts`: as **zonas da ficha** (`PRAIA_ZONES`) — cura em `(155, 0)` e resfriamento em `(95, 32)`, longe de prédio e contêiner; o `Match` as monta no mapa da praia (antes: `ZoneSystem([])`).
+- Testes: `theater.test` (a estação sai do "EM BREVE"), `MapLinks.test` (o link da praia abre a praia) e o novo **"as zonas ficam em areia seca e livre"** (`PraiaLayout.test`). O `npm run check` passou (SMOKE OK, budget ok, site ok).
+
+**Visto:** as capturas `arte/estacao-de-cabos-console-qwen.jpg` (o console com o pin aceso), `arte/estacao-de-cabos-qwen.jpg` (a praia em jogo) e `arte/estacao-de-cabos-tatica-qwen.jpg`; headless, **0 erro de página**. **O julgamento visual é do Comandante** (eu não leio imagem).
+
+**Onde ele testa:** `www.selvamkt.com.br/cybermech/jogar/` → abrir o **console** (tela inicial) → **ESTAÇÃO DE CABOS** no mapa-múndi → **ir** (ou direto: `?mapa=praia`).
+
+**Falta (R13) — a missão, o próximo passo:** a **missão** de defender/retomar a estação (o **núcleo** com vida própria, as **ondas** com alvo no núcleo, o **contraataque** — `fichas/ataque-e-defesa.md`) toca `sim/` e o HUD, que são o **contrato do Claude** (P99: "regra → Claude, HUD → Gemini, cenário → Codex"). Seguem também a **bancada de colisores** da ficha (< 310) e o **teste de partida** da água (G14).
+
+**DECISÃO EM ABERTO (para o Comandante):** assumo eu (Qwen) a **missão** do núcleo em `sim/`/HUD — como fiz no cenário do Codex (14/10, "pegue a tarefa do codex") —, ou fica para o **Claude**, que é o dono desse caminho? Recomendação: eu tomo agora (o Codex segue sem créditos, o `sim` da praia já é meu desde a P126 e a ficha é minha autoria), com o desenho que o `HISTORICO_DE_DECISOES.md` de hoje registra (núcleo com vida própria, técnico conserta devagar).
+
+## O site caiu: 404 em TODOS os assets do jogo, e o envio não deixa mais o site meio publicado — Qwen, 14/10 (queixa do Comandante; branch `qwen/publicacao-inteira`)
+
+**A queixa (14/10, 17:47 no relógio do PC):** o jogo não abria — `GET https://selvamkt.com.br/cybermech/jogar/assets/index-MEyQz7SO.js net::ERR_ABORTED 404`, e o `preload-helper-CV_M1NlO.js` idem.
+
+**O que estava no ar (conferido por HTTP, não deduzido):** o `jogar/index.html` era o do build **novo** (`a814ed1`; pede `index-MEyQz7SO.js`, `preload-helper-CV_M1NlO.js`, `index-Z07u_NGl.css`) e o servidor só tinha os assets do build **anterior** (`index-BOvfq4FF.js`, `preload-helper-B29ClwWa.js`, `Game-BW1jyODX.js` — todos 200). Ou seja: **`index.html` novo, `assets/` velhos** — o jogo carrega a página e todos os scripts 404.
+
+**A causa:** o envio do site era **um cano só**: o `tar` do PC escrevia dentro do `ssh`, e o `tar` do servidor **extraía enquanto recebia**, direto na pasta pública. Uma conexão cortada no meio extraía parte do pacote (o `index.html` novo aterrissou; os `assets/`, não) e — como o envio antigo não conferia nada antes de extrair — o site ficava **meio publicado**. A publicação que morria assim **não deixava rastro**: o processo é lançado pelo WMI e o console dele não ia a lugar nenhum; o `publicar-site.log` mostra `enviando para o servidor (tentativa 1/5)…` às 20:13:39 e 20:33:04 UTC **sem uma linha depois** (nem sucesso, nem falha, nem "nova tentativa"). As rodadas de ~20:22 e ~20:42 não deixaram linha nenhuma (o único caminho que sai sem escrever no log é a **trava**, "já há uma publicação rodando"), é o que explica o site ter ficado fora do ar ~40 min com as rodadas de 10 min rodando. O publicador das 20:52:49 publicou `a814ed1` em 5 s e **o jogo voltou** — sem ninguém apertar nada.
+
+**O que mudou (este PR):** o envio agora tem **duas fases**. O PC empacota o site **num arquivo** (`tar`, fora da pasta do site), **sobe o arquivo inteiro** para dentro do destino (`cat >` pelo `ssh`), **confere a soma dele no servidor** (`sha256sum`) e **só então extrai** — e no fim confere por checksum que o servidor tem os mesmos arquivos do PC. Qualquer passo que falhe (inclusive a conferência final) **refaz o ciclo inteiro**, até 5 tentativas. Uma conexão cortada agora **não muda nada no ar**.
+- **A conferência passou a olhar o que o navegador baixa:** além de `index.html`, `jogar/index.html`, `sala-de-controle/index.html` e `.htaccess`, ela lê do próprio `jogar/index.html` os `assets/` que a página pede (`assetsDoJogo`, puro e testado). Era exatamente o buraco por onde o site caiu, e ninguém conferia.
+- **Limite de tempo em cada passo pelo `ssh`** (240 s no envio e na extração, 60 s na conferência): conexão pendurada vira **erro + nova tentativa** em vez de espera infinita (a que segurava a trava e travava as rodadas seguintes).
+- **O console do publicador lançado pelo WMI** agora é anexado em `<worktree>\.tmp\servidor\publicar-site-console.log` (era o buraco: um erro não tratado não deixava rastro).
+- **Aviso no log** quando o HEAD publicado **não é a `origin/main`**: publicar do branch em que a pasta está põe código não mergeado no ar, e aconteceu hoje — o publish das 20:02:35 foi do `8cb80d5`, o HEAD da **pasta principal** (que estava no branch `qwen/o-mapa-da-praia`), e não da `main`. Fica registrado como decisão em aberto (recusar?).
+- **Testes:** `server/publicarSite.test.ts` → **12 ✓** (o contrato dos comandos de duas fases, a sanidade da lista de assets lidos do HTML e o resto como estava). `DEPLOY.md` atualizado com o fluxo e a lição.
+
+**Falta no PC (precisa do Comandante, PowerShell como administrador):** a tarefa "CYBERMECH atualizar" está com **limite `PT5M`**; o `DEPLOY.md` prevê **20 min** (`.\scripts\servidor-atualizar.ps1`, uma vez, aplica). Uma rodada que passe de 5 min é **cortada no meio** pelo Agendador (houve rodada de 4 min 34 s medida hoje, com o `typecheck` + testes do servidor) — o marcador `reinicio-pendente` cobre o reinício do servidor, mas a rodada cortada **não chega a lançar o publicador**.
+
+**Onde ver:** `www.selvamkt.com.br/cybermech/jogar/` — o jogo voltou às 17:53 (local) com `PUBLICADO: a814ed1` no `publicar-site.log`, e os três assets do `index.html` publicado respondem.
+
+## A praia dos cabos ABRE no jogo: o mar de fim de tarde e a cidade costeira — Qwen, 14/10 (PR `qwen/o-mapa-da-praia`, ordem P126, passo 3)
+
+**Passo 3 — o construtor e a fiação.** O mapa **existe e abre** por **`?mapa=praia`**.
+
+**O que o Comandante vê (a identidade que ele pediu):**
+- **Fim de tarde:** o **céu do azul ao rosado** (uma textura de degradê na tela) com o **sol se pondo no horizonte**, sobre o mar, com halo; a **névoa quente** come o fundo; a luz é uma **hemisférica cálida** + uma **direcional baixa fazendo o papel de sol** (a praia tem as luzes dela; a Arena e o Bunker seguem com as de sempre).
+- **O mar azulzinho bem clarinho** com **ondas pequenas** — o deslocamento e a normal são calculados **na GPU** (um `uniform` de tempo; **custo de CPU zero**, G4/G12) — contra a **areia branquinha** das dunas e da praia.
+- **A cidade costeira:** prédios **baixos** (2 a 4 andares), **ruas** correndo ao longo da orla e **janelas** acesas na fachada voltada para o mar (onde o sol bate).
+- A **passarela alta** (a segunda via), a **ESTAÇÃO DE CABOS** e a **escotilha** no pé (a saída do **P123**), como no layout.
+
+**A fiação:** o `MapId` ganhou `'praia'` (`environment/Bunker.ts` + `mapFromSearch`); o `Arena` monta a praia quando é ela (`new Praia(scene, physics)`, sem as luzes do neon); a **capacidade** e os **nascimentos** do mapa entram em `sim/nascimentos.ts` (14 pontos, o jogador no primeiro); `MAPA_NOME` = **PRAIA DOS CABOS**; e o **afogamento está ligado** — a `Agua` do passo 1 roda no tick (o mar **freia** pelo `moveSpeedScale` e **afoga** depois de 3 s). O mar anima no `Arena.update`, chamado pelo `Game`.
+
+**Custo:** o mar é o único desenho por quadro, e anima na GPU; a água custa ≤ 4 contas por Mech por tick, só no mapa da praia.
+
+**Visto:** as **capturas** `arte/praia-p126-qwen.jpg` (em jogo, terceira pessoa) e `arte/praia-p126-tatica-qwen.jpg` (a câmera tática, o mapa inteiro) — headless, **sem erro de página** (o shader do mar compila). **O julgamento estético é do Comandante** (eu não leio imagem).
+
+**Falta (R13):** a **missão** de defender/retomar a estação (e "proteger os cidadãos e a cidade"), as **zonas** de cura/resfriamento da praia (hoje ela fica sem zonas), a bancada de medição da ficha (< 310 colisores) e o **teste de partida** da água (G14).
+
+## A praia dos cabos: o layout do cenário, em dado puro — Qwen, 14/10 (PR `qwen/praia-layout`, ordem P126, passo 2)
+
+**Continuação do passo 1** (a regra da água, no ar pelo **#309**). Passo 2: **o desenho do cenário**, em **dado puro** (`environment/PraiaLayout.ts`), no caminho do `BunkerLayout.ts` — o construtor e a física leem a lista, e os testes conferem o desenho **sem montar 3D** (a lição do Bunker: contrato antes da geometria).
+
+**O que o layout diz (o que o cenário FAZ):**
+- **480 × 140 m** — mais que o **dobro da Arena** (200 m): a **fase maior** da fila, seguindo a ficha `cenario-cabos.md` (residente, o maior que cabe **sem streaming**).
+- **A praia:** areia seca na metade de cá; dali para o mar o **fundo desce em degraus** (2, 5, 9 e **14 m**) — é isso que afunda o Mech, e a `combat/Agua.ts` (passo 1) cobra o freio e o afogamento.
+- **A água:** `PRAIA_AGUA` cobre a metade do mar, com a superfície no nível da areia.
+- **As duas vias:** a **areia** (baixa e exposta) e a **passarela alta** de 8 m (longa e coberta) — a decisão que o Comandante pediu ("jogadas mais interessantes").
+- **A ESTAÇÃO DE CABOS** na ponta seca: o prédio de 14 m e a **escotilha no pé** — a **saída do P123** (o Mech sai de dentro da estrutura).
+- **Os nascimentos:** 6 pontos, todos na parte **seca** e sem repetir.
+
+**Testes:** `PraiaLayout.test.ts` (**9**) — o comprimento, a água dentro do mapa, os degraus que **descem** (cada um mais fundo), a areia no nível da água, as duas vias, a estação com a escotilha no pé, quem tem colisor (tudo, menos a luz) e os nascimentos secos e únicos.
+
+**Falta (R13):** o **construtor** do mapa (a geometria desenhada + os colisores estáticos, com as medidas da ficha: **< 310 colisores** e a bancada em `medicoes/`), o **`MapId` `praia`** (com os limites de esquadrão e a capacidade), a **missão** (defender/retomar a estação) e o **teste de partida** da água (G14).
+
+## A praia dos cabos: a água que freia e afoga — Qwen, 14/10 (PR `qwen/agua-da-praia`, ordem P126, passo 1)
+
+**Ordem do Comandante (14/10):** "pode construir, pegue a tarefa do codex pois ele ta sem credito hoje. quero criar um cenário maior, mais amplo, baseado na **praia onde chegam os cabos de internet em Fortaleza**... uma fase com a praia, o mar (inclusive que os **mechs possam entrar na água e ir afundando**), cenário comprido, bem maior que os do Bunker ou Cidade Neon", com a narrativa de **defender os cabos** das fake news.
+
+**Passo 1 — a regra da água (`combat/Agua.ts`, novo, puro e testado):** a água de um mapa é um **retângulo** com uma **superfície** (y). O que ela faz:
+- **Fundura:** a distância da superfície aos **pés** do Mech (0 fora do retângulo, ou na/sobre a linha d'água).
+- **Freia:** o fator cai de 1 (seco) até **0,35** a 2,5 m de fundura — e entra no **`MechBase.moveSpeedScale`**, que **já existia** (nenhuma física nova).
+- **Afoga:** o tempo com os pés na água acumula (zera ao sair) e, passados **3 s**, tira **8 de dano por segundo** do casco.
+O **afundamento** em si é **geometria**: o **fundo do mar desce** e a física de sempre leva o Mech para baixo ao entrar no mar.
+
+**Isto é o contrato da água** (regra 5: contrato antes de paralelizar — a lição do Bunker). A **geometria** (a praia, o fundo do mar que desce, o mar desenhado) e a **missão** (defender/retomar a estação, com o **P123** — o Mech saindo da escotilha) vêm no passo seguinte, sobre a ficha `fichas/cenario-cabos.md` (~500 m, o maior que cabe **sem streaming**).
+
+**Narrativa:** segue a trava do próprio projeto (`UNIVERSO.md` § 2 e P110): **alegoria sem nomes reais**, na **campanha/cooperativo** — **nunca** no balanço do PvP.
+
+**Custo:** 4 contas por Mech por tick, e só em mapa com água; nada alocado.
+
+**Falta (R13):** a geometria, o `MapId` `praia`, a missão e o playtest — e é **com o mapa** que a regra ganha o **teste de partida** (G14).
+
+## Táticas do esquadrão: o jogador escolhe como o time joga — Qwen, 14/10 (PR `qwen/taticas-do-esquadrao`, ordem P122, passo 1)
+
+**Ordem do Comandante (14/10):** "quero poder 'desenhar' ou escolher entre táticas pre selecionadas (atacar pelos flancos, pelo centro, recuar para tal ponto se alguma coisa acontecer, proteger algum dos nossos, usar táticas de distração...), dependendo de cada missão".
+
+**O que há:**
+- **`combat/taticas.ts` (novo, puro):** o **catálogo** de 5 táticas, cada uma com nome, descrição e **parâmetros** (a largura da formação e o *leash*). **Prontas:** **PELO CENTRO** (o de sempre), **PELOS FLANCOS** (formação aberta — ataca pelos lados) e **PROTEGER** (formação apertada — não larga você). **Reservadas** (`pronta: false`): **RECUAR SE…** e **DISTRAIR** — dependem do **gatilho por missão** (P99) e **se declaram não prontas**, em vez de mentir (R13).
+- **Quem obedece é o esquadrão aliado:** a tática manda na **largura da formação** e no **leash** dos aliados (`BotController.formationWidth` / `leash`, setados pelo `BotSystem` quando há escolta). **Nenhum rebelde** muda, e sem tática o jogo é o `centro` — o **teste-golden do esquadrão padrão** continua batendo.
+- **A escolha:** o link **`?tatica=flanco`** (lido no `Game` e passado ao `Match`). **Falta:** o **seletor na tela** (SquadPanel) e o **por missão** (a campanha) — o passo seguinte.
+
+**Custo:** nenhum por tick (a tática é lida uma vez, na montagem do esquadrão); nada alocado.
+
+**Onde ver:** `www.selvamkt.com.br/cybermech/jogar/?tatica=flanco` (o esquadrão aliado abre a formação e ataca pelos lados) e `?tatica=proteger` (gruda em você).
+
+**Falta (R13):** o seletor na tela, o gatilho "se X, recua" e o distrair — os dois últimos dependem das missões.
+
+## Perfil de mira por arma: a mira assenta, cada arma no seu tempo — Qwen, 14/10 (PR `qwen/mira-por-arma`, ordem P121, passo 1)
+
+**Ordem do Comandante (14/10):** "melhorar nosso sistema de mira, pra combinar a mira da ponta da arma com a mira no alvo... Cada arma deve ter o seu tempo pra mirar, alcance, amplitude".
+
+**O que há:**
+- **A convergência já existia** (verificada no código): o tiro sai da **boca da arma** e é apontado para o **ponto sob a mira** (`PlayerController.aimFrom`), então cai onde a mira aponta — não havia o que "casar" por baixo.
+- **O que faltava e entrou — o perfil por arma** (`combat/aim.ts`): cada arma tem o seu **tempo de mirar** (a de linha **0,5 s**; a média **0,32 s**; a de perto **0,18 s**; corpo a corpo, chama e rotatória **não assentam** — a rotatória já tem o tempo no giro do cano). A mira **abre** ao erguer/trocar de arma e **fecha** com o gatilho firme (soltar desassenta na metade do tempo).
+- **A amplitude está em ZERO (decisão de engenheiro, registrada):** o "assentar" é do **desenho da mira**, sem tocar em onde o tiro cai — o **acerto validado não muda**. Ligar a dispersão é **uma linha por arma** (`aimSpread`).
+
+**Onde mora:** `combat/aim.ts` (puro, **8 testes**), `combat/Armament.ts` (o assentar por gatilho + a dispersão composta com o giro do cano), `player/PlayerController.ts` (a leitura), `ui/HUD.ts` + `styles.css` (a mira **cresce** enquanto não assentou, via `--aim-open`) e `core/Game.ts` (a ligação).
+
+**Custo:** uma comparação por mão por tick; nada alocado.
+
+**Visto:** **não** em partida — é **sensação de mira** e só o playtest do Comandante julga (R13); a regra está provada nos testes.
+
+**Falta:** o julgamento dele e, se ele sentir falta de punir tiro corrido, **abrir a amplitude** (uma linha por arma).
+
+**Onde ver:** no jogo, com uma **arma de linha** (canhão/trilho) na mão: segure o gatilho e veja a mira **fechar**; com a **escopeta**, ela já nasce firme.
+
+## O canhão de cerco agora carrega e ESPERA — Qwen, 14/10 (PR `qwen/cerco-com-espera`, ordem P124)
+
+**Ordem do Comandante (14/10):** "achei uma arma lenta e fraca demais, poderia ser um pouco mais rápido o carregamento, e ela pode ser carregada E NÃO DISPARAR, e esperar pra disparar em outro momento melhor, ficando carregada e pronta pra atirar".
+
+**O que mudou:**
+- **Carga mais rápida:** 3 s → **2,4 s** (o ciclo cai de ~7,5 s para ~6,9 s).
+- **Segura a carga (`chargeHold`):** completar a carga **não dispara** — a arma fica **carregada e pronta** (o anel de carga da mira fica cheio) e o tiro sai **ao soltar o gatilho**, no momento que o piloto escolher. Soltar antes de completar perde a carga parcial; travada (recarregando ou superaquecida), a carga **espera onde está**.
+- **Só o cerco:** o **trilho** segue como era (completar dispara; soltar perde). A mecânica é uma flag na arma (`chargeHold`), não um caminho novo de tiro.
+
+**Onde mora:** `combat/ChargeTimer.ts` (o modo com espera), `combat/Armament.ts` (passa a flag nas duas mãos e no secundário) e `combat/weapons.ts` (o cerco declara `chargeHold` e a carga nova). O **bot** do V4 **não muda** (atira sem carga, na cadência da arma).
+
+**Testes:** `ChargeTimer.test.ts` foi de 2 para **7** (completar não dispara e fica pronta; segurar continua esperando; soltar dispara e consome; soltar antes perde; travada espera; sem `hold` nada muda; e a arma declara `chargeHold`). 28 verdes com o `Armament`.
+
+**Custo:** zero por tick além de uma comparação; nada alocado.
+
+**Visto:** **não** em partida — a carga é uma **sensação de tiro**, e só o playtest do Comandante diz se ficou boa (R13); a regra está provada nos testes de simulação. **Falta:** o julgamento dele e o resto da ordem **P125** (impacto, shape e cauda do tiro).
+
+**Onde ver:** Hangar → **COLOSSUS-V4** → mão: **segure** o gatilho (o anel de carga enche) — **não atira**; **solte** no momento que quiser.
+
+## Morrer e voltar: o painel "seu algoz" — Qwen, 14/10 (PR `qwen/painel-do-algoz`, P109 frente 3)
+
+**Frente 3 da P109** ("morrer e voltar"; inclui a P98/killcam). Passo 1: **ao morrer, a tela diz quem te matou.**
+
+**O que há:** durante o contador de renascimento, um painel sob o "ABATIDO" com o **nome** do matador, o **chassi**, a **vida do torso** com que ele ficou (barra que muda de cor: verde / âmbar / vermelho) e as **armas dele com o dano** ("CANHÃO PESADO · 90") — a segunda mão, a secundária e o escudo físico inclusive, sem repetir quando as duas mãos levam a mesma arma. Convive com o contador e com a câmera de abate, que já existiam.
+
+**Onde mora:** `ui/AlgozPanel.ts` — a leitura é **pura e testável** (`algozViewOf`), o DOM mora na classe; o `Game` liga no `onMechKilled` (offline, quando o matador é um bot) e esconde quando o jogador renasce.
+
+**Custo:** zero por tick/quadro; escreve no DOM **só quando o conteúdo muda**; o `replaceChildren` da lista de armas só roda na morte.
+
+**Visto:** o CSS real e o DOM real numa página de teste headless — **a captura é `arte/painel-do-algoz-qwen.jpg`**. **Falta (R13):** morrer numa partida de verdade (o painel só aparece na morte, o que a captura automática do site não alcança) e o painel no **online** (o evento de abate do servidor traz só os nomes; ligar o matador remoto é um corte próprio).
+
+**Falta na frente 3:** a **escolha do ponto de nascimento** na contagem (a outra metade da frente).
+
+## Todos os robôs, todas as armas (as possíveis): a curadoria virou contrato — Qwen, 14/10 (PR `qwen/armas-do-contrato`, ordem P120)
+
+**Ordem do Comandante (14/10):** "quero que todos os robôs possam usar todas as armas" e, logo depois, o limite: "é só das que sejam possíveis mesmo, não precisa inventar nova regra que estrague algo mais correto anterior".
+
+**O que mudou (`entities/chassis.ts`):** `ARM_SLOTS` deixou de ser uma **lista escolhida a dedo** por chassi e passou a ser o **contrato** — cada braço oferece **toda** arma que caiba pelo **tipo de encaixe** (`fitsMount`) e pelo **tamanho do chassi** (`fitsSize`), menos as regras de **disparo** que já são do jogo (`combat/Armament.ts`) e **não mudaram**:
+- o braço **direito** é o gatilho **principal** (energia, munição e a chama) — **não** leva o corte (o principal chamaria um projétil no lugar da serra) nem a chuva de mísseis (a salva é do secundário);
+- o braço **esquerdo**, nos chassis comuns, é o gatilho **secundário** (mísseis, corte e onda) — **não** acende chama nem gira o cano da rotatória; no **Marauder** (duas mãos no principal) vale o mesmo do direito.
+
+**O que o Comandante vê agora no Hangar:** o **lança-chamas** e o **canhão pesado** em **todo Mech** (Vector-09, Arara, Gênesis, Quadra, Onça, Bastion, Marauder) e o **canhão** também na mão esquerda; o **Andróide** com as cinco armas **leves** (blaster, motosserra, escopeta, elétrica, EMP); o **Colossus-01** também com o **canhão de cerco** (tamanho 3); e o **foguete** passou a ser possível na mão direita (o principal sabe lançar munição, como já sabia na Onça). **O que não é possível segue fora**, como ele pediu: o **canhão sônico é só de ombro** (e só o Marauder tem ombros), o **Lancer** traz a arma na própria malha, o **V4** só o de tamanho 3, e a regra de tamanho (P82) e o peso continuam valendo.
+
+**Testes:** os que fixavam a curadoria antiga foram atualizados para o contrato (`loadout.test.ts` 56, `weaponClass.test.ts` 20, `esquadrao.test.ts` 48, `mountKinds.test.ts` 11) e o **golden do esquadrão padrão** continua batendo — o jogo de fábrica não mudou uma vírgula.
+
+**Efeito colateral aceito:** os bots (que leem `ARM_SLOTS`) ganham o **canhão pesado** como opção no Esquadrão; o resto continua barrado por `armaServeAoBot`.
+
+**Onde ver:** Hangar → trocar de chassi (ex.: Vector-09) → a lista de armas do braço agora traz o **lança-chamas** e o **canhão pesado**. **Falta (R13):** o playtest e o julgamento do Comandante sobre a lista (ele ajusta numa linha).
+
+## Os bots ganham papel: o de arma de linha fica de retaguarda e não rusha — Qwen, 14/10 (PR `qwen/bots-taticos`, ordem P119, passo 1)
+
+**Ordem do Comandante (14/10):** "os npcs e bots inimigos [estão] meio burros ainda... não se organizaram bem para ataque nem defesa... poderiam ter mais critério e técnica, não apenas correr e rushar". Este é o passo 1 da P119.
+
+**O que mudou (só posição — nenhuma regra de tiro, dano, token ou balance):**
+- **`combat/tatica.ts` (novo, puro):** a arma vira **faixa** pelo alcance ótimo — **curta** (≤20: escopeta, lança-chamas, gelo, sônico), **média** (21–89: plasma, automático, elétrica, EMP, rotatória) e **linha** (≥90: canhão pesado, trilho, cerco) — e daí o **papel**: arma de perto/média/corpo a corpo = `assalto`; arma de linha = `apoio`.
+- **Retaguarda:** com **3+** lutadores e algum `assalto`, o primeiro `apoio` fica de **guarda do setor de nascimento** — troca tiro com quem chega ao seu alcance (até ~75 m) e **não persegue**, em vez de largar o posto para rushar. Um esquadrão **só** de arma de linha **não** para (senão ficaria todo parado).
+- **O corte é acima do plasma (60):** o esquadrão de fábrica (plasma = média) luta **exatamente como antes** — o teste-golden `esquadraoPadrao.test.ts` prova (as quatro partidas batem tick a tick). Só esquadrões que o Comandante monta com arma de linha ganham a retaguarda.
+- Uma ordem explícita de `hold` (o **Domínio**) **vale mais**: lá a retaguarda segue o ponto mandado, como os outros.
+
+**Testes (11 novos):** `tatica.test.ts` (9: as faixas, o papel, o corte do plasma e a escolha da retaguarda, inclusive "esquadrão só de longa não para") e 2 no `personas.test.ts` (o de trilho fica a > 45 m do alvo e não fecha; os de escopeta entram; sem arma de linha, ninguém fica de guarda). Suíte de IA inteira verde.
+
+**Custo:** zero por tick além de uma comparação (o `papel` lê a arma); nada alocado; determinístico.
+
+**Falta (R13):** o **jogo em equipe** mais fundo — quem cobre, quem flanqueia, atacar em conjunto — e o uso da arma na faixa **pelo grupo**. E o **playtest do Comandante**: só ele diz se o bando ficou com "critério e técnica".
+
+**Onde ver:** Arena com um esquadrão que misture **canhão pesado/trilho/cerco** com armas de perto (PILOTOS → ESQUADRÃO): o de arma de linha fica no setor dele trocando tiro; os de perto vêm para cima.
+
+## A leitura do combate: números de dano, plaqueta com vida e distância, e "RECARREGANDO" — Qwen, 14/10 (PR `qwen/leitura-do-combate`, P109 frente 2)
+
+**Ordem do Comandante (14/10):** "por enquanto quero que todos os robôs possam usar todas as armas… mas antes quero dar máxima roleplay, jogabilidade, interatividade e emoção aos combates" — e, na triagem, escolheu começar pela **frente 2 da P109** (a leitura do combate). No mesmo recado vieram duas ordens novas: os **bots ainda parecem burros** (P119) e a liberação de armas é **só do que já é possível**, sem regra nova (P120).
+
+**Feito (frente 2):**
+- **Números de dano flutuantes** (`ui/DamageNumbers.ts`): o dano que **você** aplica sobe do corpo do inimigo e some ("16"; laranja e maior quando arranca uma parte). Pool fixo de 24 nós no DOM; por acerto escreve um nó (texto, posição, classe) e a subida é animação de CSS — nada roda por quadro além do contador de vida dos que estão na tela (G4/G5). Offline pelo `Match.onMechHit` (quando o atirador é o jogador) e **online** pelo `EVENT.HIT` do servidor (a `OnlineSession` passa o alvo no `onDamage`; **sem byte novo de protocolo**).
+- **Plaqueta com barra de vida e distância** (`ui/Nameplates.ts`): embaixo do nome, a **barra de vida** (o torso, na cor do lado) e a **distância em metros** ("35m"). Continua sprite 3D (escondida atrás de prédio); a textura é redesenhada **só quando a vida cruza um degrau de 5% ou a distância um degrau de 5 m**, e no máximo a cada 0,12 s por robô — parado e com vida cheia, nada é redesenhado.
+- **"RECARREGANDO" ao lado da mira** (HUD + `index.html` + `styles.css`): aparece quando o carregador da mão esquerda (foguetes) está vazio e enchendo. Só escreve no DOM quando muda.
+
+**Testes (13 novos):** `DamageNumbers.test.ts` (8: o número nunca é 0; o pool fixo; projeta no centro; marca o crítico; não gasta nó atrás da câmera nem fora da tela; reaproveita em círculo; some no tempo de vida) e `Nameplates.test.ts` (5: os degraus de vida de 5% e de distância de 5 m, com os cortes e o número inválido).
+
+**Custo:** zero por quadro; a plaqueta custa uma projeção por robô por quadro (como antes) e um redesenho esporádico; cada número custa uma projeção no acerto.
+
+**Não feito nesta frente (declarado):** o **ícone da arma no kill feed** — o evento de abate não carrega a arma que matou, então isso pede `sim/` e protocolo; fica para um corte próprio. Visto em Chrome headless por software; **falta em GPU real e o julgamento do Comandante** (R13).
+
+**Achado (R17), corrigido de passagem:** o `scripts/test.mjs` empurra `--maxWorkers` quando a memória livre é pouca e, com isso, deixava de passar o subcomando `run` — o Vitest entrava em **watch** e o `npm run check` (o gate do push) **travava para sempre**. Agora o subcomando é sempre explícito (`run`, salvo se o pedido trouxer `run`, `watch` ou `dev`). Afetava qualquer máquina com a memória livre abaixo do padrão por worker — inclusive a do dono em dia cheio.
+
+**Próxima frente da P109:** a **3 — morrer e voltar** (painel "seu algoz" + escolha do ponto de nascimento, inclui a P98). A **P119** (inteligência tática dos bots) foi registrada e é a de maior efeito percebido no combate.
+
+**Onde ver:** Arena (ou Bunker), partida offline — a **plaqueta** de cada robô agora traz a barra de vida e a distância em metros; ao **acertar**, o número sobe do corpo do inimigo. Captura em jogo: `.decepticons/arte/leitura-do-combate-qwen.jpg` (a plaqueta sobre os bots; o número aparece atirando).
+
+## O modo Domínio: dominar os cinco pontos da Arena, offline, com bots que capturam e guardam — Claude, 14/10 (PR `claude/dominio`, ordens P112 e P111)
+
+**Ordem do Comandante (14/10):** "quero adicionar modalidade de jogo de dominar as 5 ou 6 bases do jogo" (e, do mesmo recado, o ciclo "atirar, se esconder, esquivar, combate, fuga, captura, sem ficar parado e sem morrer de primeira").
+- **Como jogar:** `?modo=dominio` ou o botão **DOMÍNIO** na mesa de operação do console. Você e seus aliados (azul) contra as IAs rebeldes (vermelho). Cinco pontos A–E, de A (sua base) a E (a deles). Ficar dentro do círculo de 12 m captura (mais gente, mais rápido); os dois lados no ponto o deixam **disputado** (ninguém avança); para tomar um ponto do inimigo primeiro se neutraliza. Cada ponto dominado dá 1 ponto por segundo; vence quem chega a **400** ou quem tem mais em **8 min** (abates desempatam).
+- **O que há:** barra em cima no centro (pontos, os cinco hexágonos que enchem e mudam de cor, relógio, aviso "PONTO B CAPTURADO / PERDIDO"), **feixe de luz e letra** de cada ponto no mapa, os pontos no **minimapa** (os além do alcance ficam presos na borda, como bússola), fim de partida com VITÓRIA/DERROTA.
+- **Os bots jogam o objetivo:** a cada 2 s cada bot (rebeldes e aliados) escolhe um ponto (`DominioObjetivos`: o mais perto, espalhando o esquadrão, deixando um de guarda em cada ponto que já é seu e indo tomar os outros) e **segura posto** ali: troca tiro em volta e não abandona o ponto perseguindo quem está longe. Quem morre renasce **na base do próprio lado**, o ponto mais longe dos inimigos.
+- **Arquitetura (G3):** módulos novos e independentes (`sim/Dominio.ts`, `DominioObjetivos.ts`, `dominioMapa.ts`; `environment/DominioPontos.ts`; `ui/DominioHud.ts`), ligados no `Match` e no `Game.ts` por callbacks. O mapa é **dado** (`PONTOS_DO_DOMINIO`): seis pontos ou um mapa maior (P114) é só outra lista. Mexi pouco no que existia: `Respawner.setTeams` (nascimento por lado), `Minimapa.setPontos`, o tipo de modo e o contrato de telemetria (`PlayReport.mode` aceita `dominio`, no cliente e no servidor).
+- **Custo:** regra por tick = uma passada de ≤ 40 unidades × 5 pontos, sem alocação; atribuição dos bots a cada 2 s (≤ 40 × 5 contas); desenho: 15 objetos (3 por ponto), geometrias e texturas compartilhadas, só cores por quadro. G1/G2: sem sorteio nem relógio de parede.
+- **Testes (49 novos):** `Dominio.test.ts` (18: capturar, disputar, neutralizar, pontuar, vencer, empatar, reiniciar), `DominioObjetivos.test.ts` (11), `dominioMapa.test.ts` (5, **com a física da arena**: cada ponto e cada nascimento cabe um Mech grande), `Match.dominio.test.ts` (6: partida inteira com bots, nascimento por base, postos, renascimento, reinício) e os de tipos.
+- **Visto:** Chrome headless por software, sem erro de página (`arte/dominio-jogo-claude.jpg`, `dominio-console-claude.jpg`). **Não visto (R13):** uma partida inteira jogada, o equilíbrio (400 pontos, 8 min, 12 m e 8 s por captura são **números meus**, ajustáveis em `Dominio.ts`), e o **julgamento do Comandante**.
+- **Falta:** **online** (o servidor é todos contra todos; pede times na sala, P81, e `OBJECTIVE_STATE`), **campanha** (o modo ainda não é etapa), **voz do narrador** (P113: "Ponto Alfa capturado"; falta a chave do ElevenLabs), um **mapa maior** (P114) e o **sexto ponto** se o Comandante quiser seis.
+- **Decisões minhas, em aberto:** o jogador e os aliados começam em cima do ponto A (começam dominando o seu), como os rebeldes no E; as teclas de ordem do esquadrão (1 a 3) ficam desligadas no Domínio (os aliados obedecem aos pontos); o Domínio não aparece na lista de modos da missão do mapa (a campanha e o console concordam hoje em três).
+
+**Próxima sessão começa com:** o playtest do Comandante no Domínio e o que ele pedir de ajuste (ritmo, tempos, número de pontos); depois a voz do narrador (P113), a campanha, e o online com times (P81).
+
+## Os três robôs saem do cadeado e as armas de som e fogo voltam a aparecer — Claude, 14/10 (PR `claude/hangar-liberado`, ordem P118)
+
+**A queixa do Comandante (14/10):** "a arma de som, fogo, entre outras, não está aparecendo no hangar... e os últimos 3 robôs estão com um cadeado e pedindo login e senha" (LR-7L Bastion, Quadra-V2 e Marauder, "OFICINA (clique p/ admin)").
+- **Causa única:** os três tinham `status: 'oficina'` em `entities/chassis.ts` (a flag "em desenvolvimento" do painel admin do Gemini, que esconde o robô atrás de login). A marca **saiu dos três**; o mecanismo do admin continua para o próximo robô em desenvolvimento.
+- **Por que sumiam as armas:** o **canhão sônico é só de ombro** e o único robô com ombros é o **Marauder**; o **lança-chamas** só nos pesados (Colossus, Onça, **Bastion**, **Marauder**). O Comandante estava com o Colossus-01 e, com Marauder e Bastion trancados, parecia que as armas não existiam. **A regra de quem leva o quê não mudou** (P19, P77, P82 são decisões dele); se ele quiser som e fogo em todos os robôs, é mudar `ARM_SLOTS` e `WEAPON_MOUNTS` (e o teste que fixa a regra).
+- **Do Codex (créditos acabaram):** o PR #298 (câmera) e o #299 (registro) já estavam na `main`. Fechei o que não pede GPU real: a vulnerabilidade `source-map-js` (opção 8 de `PROXIMAS_OPCOES_CODEX.md`) com `npm audit fix` (0 vulnerabilidades). **Ficam com o Codex** (pedem janela de GPU real): C2 (preparação do Hangar e remotos), C3 (homologação em GPU integrada), C5 (cobertura e cor do cenário) e C6 (efeito 3D de choque).
+- **Registradas** as ordens P110 a P117 do Comandante (ver `ORDENS_DO_COMANDO.md`): o ciclo de combate (P111), o **Domínio** (P112; regra, atribuição dos bots, mapa e bases escritos e testados no branch `claude/dominio`, **ainda fora da `main`**), a voz do narrador no ElevenLabs (P113, falta a chave de API), cenários maiores (P114), melhoria contínua (P115), a próxima leva de robôs (P116) e a autorização permanente de limpar bagunça (P117). A política (P110) foi renumerada: o número antigo colidia.
+
+**Próxima sessão começa com:** ligar o Domínio ao `Match` (modo `dominio`, nascimentos por lado, bots indo aos pontos), depois o HUD dos pontos, os feixes de luz no mapa e a entrada no seletor de modos.
+
+## ÚLTIMA SESSÃO FEZ: fluidez da câmera junto à cobertura — Codex, 14/10 (P109, PR #298)
+
+**Autorização do Comandante:** “sim, prossiga”, sobre executar a referência do PR #297. Branch `codex/fluidez-camera`, isolado em `.tmp/wt-codex-fluidez`, base `900d277`. Três sessões válidas de cinco minutos na Vega 11, 53.798 quadros: p99 16,9 ms em todas; três pausas >300 ms nas duas primeiras, nenhuma >50 ms na terceira. Zero programas novos e erros de página. Uma sessão que ficou no banco foi descartada; as repetições contam e encerram esse menu no quadro seguinte. Dados e limites em `medicoes/FLUIDEZ_CAMERA.md`/`.json`.
+
+**Primeiro ajuste:** `ThirdPersonCamera` recolhe imediatamente e recupera distância exponencialmente (~90% em 0,19 s), sem novo filtro sobre posição do piloto ou orientação do mouse. Zero desenho/rede/física novos, um escalar por câmera; uma exponencial por quadro apenas durante recuperação. Seis testes passam, incluindo Rapier real; o teste de saída reprova a versão anterior. Na Arena, maior passo de afastamento de 0,50→0,42 m junto ao prédio e 2,55→0,75 m na barricada fina. Capturas/vídeo em `arte/camera-cobertura-*codex.*`; vídeo controlado a 0,5×, não prova de FPS. Check completo verde: 185 arquivos/1.842 testes, typecheck, build, budgets, boot, bocas e site. Não é ganho de FPS nem homologação de 60 FPS.
+
+**Disponibilidade comprovada:** PR #298 mergeado na `main` (`886d149`); site publicado pelo PC em 14/10 às 01:14 (Brasília), com checksum dos quatro arquivos de entrada conferido. Conferir em `https://www.selvamkt.com.br/cybermech/jogar/?mapa=arena`, terceira pessoa (`V`), saindo lateralmente de uma cobertura com a parede atrás do Mech. Playtest do dono e demais chassis pendentes.
+
+**Próxima sessão começa com:** resultados desse ensaio e um setor da Arena como prova de acabamento; não alterar simulação/rede ou UI/áudio em paralelo. A P109 continua em operação.
+
+## Referência de qualidade MechArena — Codex, 13/10 (P109)
+
+**Registro documental entregue na `main` pelo PR #297.** A meta de qualidade continua em operação. O dono trouxe seis prints e reforçou que quer alcançar a qualidade de fluidez, movimento, tiros e cenários. Referências preservadas em `referencias/mecharena/2026-10-13-*.png`; análise e critérios em `REFERENCIA_VISUAL.md` §7. É complemento da P109 e do HUD já entregue, não outra frente concorrente.
+
+**Próxima sessão começa com:** medir C3 no build atualizado e registrar um percurso de movimento/tiro; depois elevar um setor da Arena como referência de qualidade. O ensaio antigo não homologa 60 FPS. Escala visual não prova tamanho jogável; prints não provam física ou latência. Vídeos antigos indisponíveis em `.tmp/referencias/` nesta máquina. Nenhuma implementação de gameplay/render neste corte, zero custo no jogo e nenhuma melhora de desempenho reivindicada. Preservar simulação/rede do Claude e UI/áudio do Gemini; não há despacho automático a outros agentes.
+
+**Achado R17:** §§3–4 de `REFERENCIA_VISUAL.md` ainda descreviam ausências de 07/10 (atmosfera, sombras, janelas, caudas). Incluída advertência temporal e estado recente no §7; não refazer sistemas que já existem.
+
+**Verificação:** `npm run check` verde, 184 arquivos/1.836 testes, typecheck, build, budgets, boot, bocas e site; seis imagens copiadas sem alteração, SHA-256 conferido. Isso valida o registro e a base, não a qualidade de jogabilidade proposta.
+
 ## A janela ARSENAL: as armas e os chassis lado a lado — Claude, 13/10 (PR `claude/arsenal`, ordem P107, fase 4C)
 
 **Ordem (P27/P54, P107):** "as telas Arsenal e chassis (potências por chassi) e Evolução". O que entra e o que **não** entra, dito claro:
@@ -11,6 +377,7 @@
 - **Testes:** `arsenalData.test.ts` (cobertura total, números do catálogo, DPS só do tiro simples, ordem leve→pesada, o canhão de cerco só do V4, notas, a classe por tamanho; chassis: tamanho, vida, bot), `CommandConsole.test.ts` (a janela mora fora dos monitores e o console não dá Enter por trás dela).
 - **Visto no navegador (headless por software):** o monitor COMANDO fica com 9 itens e **sem rolagem em 1280×720**; a aba ARMAS lista as 17; o filtro PESADA mostra as 5 pesadas; a aba CHASSIS lista os 11 e só o andróide não é chassi de bot; o Esc fecha. Capturas: `.decepticons/arte/arsenal-armas-claude.jpg`, `arsenal-chassis-claude.jpg`, `comando-com-arsenal-claude.jpg`.
 - **Como o Comandante vê:** `?comandante=1` → monitor COMANDO → **ARSENAL**.
+- **Integrado em 15/10 (Qwen, PR `qwen/arsenal-na-main`):** o branch ficou 2 dias parado e **sem PR** (regra 15); nada foi reescrito — a `main` foi trazida para dentro do branch e o conflito era só de documento (as duas entradas novas) e da **fiação do `Game.ts`** (a união: `CHASSIS_DOS_BOTS`, que a janela usa, mais a tática do esquadrão que entrou depois). Achado corrigido no caminho (R17): uma frase duplicada na linha do 4C em `PAINEL_ADMIN.md`.
 
 ## A ficha do bot ganhou a mão esquerda: o segundo bloqueio da P108 — Claude, 13/10 (PR `claude/ficha-do-bot`, ordem P108 passo b)
 
@@ -1575,9 +1942,10 @@ Regras no `AGENTS.md` ("Trabalho com vários agentes"). Um branch por tarefa a p
 | Aliados na Arena online (rede) | **Feito offline** (30/09, ver ÚLTIMA SESSÃO FEZ). Falta só o servidor: `ArenaRoom.ts` desliga `allies` de propósito porque o roster de rede não sabe descrever um aliado pros outros jogadores ainda (ficariam invisíveis, fora de sincronia). `STATUS_REAL.md` marca AUSENTE no online até o roster aprender. |
 | Vídeo promocional por prompt/botões no `/mesa` | **Feito (29/09):** a mesa já tinha o formulário; ganhou "gerar por IA" (escreve o roteiro a partir de uma frase, ancorado nos fatos do projeto) e a cena `clipe` (mistura gameplay real gravado no F9 com as cenas desenhadas, cortado por `ffmpeg`). Ver `.decepticons/FERRAMENTAS.md`. |
 | Gerenciar as imagens do site sem código (deletar, reordenar, trocar) | Pedido do dono (29/09), depois de achar 3 fotos idênticas na landing (causa real: `capture()` falhando em silêncio — corrigido no mesmo PR, agora falha alto e nunca mais publica foto errada) e pedir um carrossel: **o carrossel entrou** (`scripts/landing.mjs`, gira sozinho entre as capturas que existirem). O que falta é maior — um jeito de escolher/ordenar/remover imagens sem editar `SHOTS` no código. Hoje as capturas são 100% automáticas (o robô entra no jogo e fotografa a cada deploy); um painel de curadoria manual é uma ferramenta nova, não uma correção. Não iniciado; precisa de decisão (onde mora a lista — arquivo versionado editável por formulário local, ou algo mais) antes de construir. |
+| **Publicar de um branch põe código não mergeado no ar (14/10, Qwen)** | O `npm run publicar-site` publica o **HEAD da pasta onde roda** — é assim que o atualizador publica a `main` da worktree do servidor, e é o que permite publicar à mão de qualquer pasta. O risco ficou visível hoje: o publish das **20:02:35** (14/10) foi do `8cb80d5`, o HEAD da **pasta principal**, que estava no branch `qwen/o-mapa-da-praia`, e não da `main` — o log passou a avisar quando isso acontece, mas **avisar não impede**. **Decidir:** (a) recusar publicar quando o HEAD não é a `origin/main` (com `--forcar` para quem sabe o que faz — recomendado, alinha com a regra 14: só o merge publica); (b) deixar como está, agora com o aviso no log; (c) publicar sempre a `origin/main` (a pasta não escolhe mais, `--se-mudou` compara com ela). |
 
 ## BLOQUEIOS
-- Nenhum.
+- Nenhum (o site voltou ao ar em 14/10, 17:53).
 
 ## PRÓXIMA SESSÃO COMEÇA COM
 

@@ -41,6 +41,7 @@ import { Android } from '../entities/Android';
 import type { MechBase } from '../entities/MechBase';
 import type { DebrisSystem } from '../environment/DebrisSystem';
 import { CtfObjectives } from '../environment/CtfObjectives';
+import { DominioPontos } from '../environment/DominioPontos';
 import { DamageVisuals } from '../fx/DamageVisuals';
 import { FlameVisuals } from '../fx/FlameVisuals';
 import { FireRingVisuals } from '../fx/FireRingVisuals';
@@ -53,6 +54,8 @@ import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
 import { PlayerController } from '../player/PlayerController';
 import { DamageIndicator } from '../ui/DamageIndicator';
+import { AlgozPanel, algozViewOf } from '../ui/AlgozPanel';
+import { DamageNumbers } from '../ui/DamageNumbers';
 import { StatusBadges } from '../ui/StatusBadges';
 import { TargetPanel } from '../ui/TargetPanel';
 import { StatusHud } from './statusHud';
@@ -83,6 +86,7 @@ import { TIERS, type Loadout, type WeaponId, type WeaponStats } from '../combat/
 import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { EsquadraoStore } from './EsquadraoStore';
+import { PARAM_DA_TATICA, taticaDeTexto } from '../combat/taticas';
 import { CHASSIS_DOS_BOTS, esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
 import { ALLY_COUNT } from '../sim/nascimentos';
 import { SquadPanel } from '../ui/SquadPanel';
@@ -98,7 +102,8 @@ import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha'
 import { ServerPanel } from '../ui/ServerPanel';
 import { CameraWall } from '../ui/CameraWall';
 import { plantaDaArena, plantaDoBunker } from '../ui/TacticalRadar';
-import { Minimapa, plantaComZonas } from '../ui/Minimapa';
+import { Minimapa, plantaComZonas, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
+import { novoQuadroDaPraia, PraiaHud, type QuadroDaPraia } from '../ui/PraiaHud';
 import { MuralCliente } from '../net/mural';
 import { AdminCliente, TokenDoDono } from '../net/admin';
 import { PALETTE } from './palette';
@@ -123,6 +128,7 @@ import { OnlineLobby } from '../ui/OnlineLobby';
 import { ModeSelector } from '../ui/ModeSelector';
 import { MissionHUD } from '../ui/MissionHUD';
 import { CtfHud } from '../ui/CtfHud';
+import { DominioHud, avisoDoPonto } from '../ui/DominioHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
@@ -155,6 +161,8 @@ const _aimDir = new THREE.Vector3();
 const BLAST_COLOR = new THREE.Color(3.2, 1.3, 0.25);
 const SMOKE_COLOR = GLOW.smoke;
 const _aimFrom = new THREE.Vector3();
+/** Onde nasce o número de dano flutuante (a cabeça do alvo). */
+const _dmgPos = new THREE.Vector3();
 
 /**
  * O jogo no navegador: monta a partida (`sim/Match`, a simulação que o servidor também vai rodar) e
@@ -204,6 +212,8 @@ export class Game {
   private readonly round: Round;
   /** Bandeiras, bases e zonas holográficas: cinco draw calls, somente no modo CTF. */
   private readonly ctfObjectives: CtfObjectives | null;
+  private readonly dominioPontos: DominioPontos | null;
+  private readonly dominioHud = new DominioHud();
   private readonly roundHud: RoundHud;
   private readonly mech: MechBase;
   private readonly rig: CameraRig;
@@ -219,6 +229,10 @@ export class Game {
   private readonly hud = new HUD();
   /** O radar do canto de cima à esquerda (12 Hz, só com a partida em andamento). `remotos` é a lista reaproveitada dos Mechs de outros jogadores. */
   private readonly minimapa = new Minimapa(document.getElementById('minimapa')!);
+  /** O HUD da praia (a faixa da costa, o marcador da estação, o lugar e a água): só existe no mapa da praia (P127). */
+  private praiaHud: PraiaHud | null = null;
+  /** O quadro que o HUD da praia lê, reaproveitado a cada frame (G4). */
+  private praiaQuadro: QuadroDaPraia | null = null;
   private readonly remotos: MechBase[] = [];
   private readonly juntarRemoto = (r: { readonly mech: MechBase }): void => {
     this.remotos.push(r.mech);
@@ -232,6 +246,9 @@ export class Game {
   private readonly online: OnlineSession | null;
   private readonly netStatus = document.createElement('div');
   private readonly damageIndicator = new DamageIndicator();
+  private readonly damageNumbers = new DamageNumbers();
+  /** Painel "seu algoz" (frente 3 da P109): quem te matou, em que robô e com que armas, durante o contador. */
+  private readonly algoz = new AlgozPanel();
   private readonly targetPanel = new TargetPanel();
   /** Estados do jogador (fogo, choque, gelo) na tela e no som: os indicadores e as bordas são do Gemini, a ponte é `core/statusHud.ts`. */
   private readonly statusBadges = new StatusBadges(document.getElementById('hud')!);
@@ -421,6 +438,8 @@ export class Game {
       foes,
       power,
       ...(online || !this.squad.current ? {} : { squad: this.squad.current }),
+      // A tática do esquadrão aliado (ordem P122): vem do link `?tatica=`; sem ela, o esquadrão entra pelo centro.
+      tatica: taticaDeTexto(new URLSearchParams(location.search).get(PARAM_DA_TATICA)),
       // Os bots do esquadrão com chassi de malha importada (Marauder, Lancer...) nascem com o corpo certo, não como Vector-09.
       rigDoChassi: (id) => {
         const a = IMPORTED_CHASSIS[id];
@@ -434,6 +453,8 @@ export class Game {
       ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY, allies: false } : {}),
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets, barrage: this.barrage } = this.match);
+    // A missão em ondas da praia (a estação sob ataque): a orla está evacuada, sem banhistas, ciclistas nem pipas.
+    if (this.match.nucleo) this.match.arena.praia?.setCivis(false);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     if (this.match.arena.serafim) {
       addBankSign(this.scene);
@@ -449,6 +470,7 @@ export class Game {
       } else this.acceptBank(this.bankAccount.redeem(code, this.mech, this.bankTick));
     }, () => { this.hud.setPaused(true); this.resume(); });
     this.ctfObjectives = this.match.ctf ? new CtfObjectives(this.scene) : null;
+    this.dominioPontos = this.match.dominio ? new DominioPontos(this.scene, this.match.dominio) : null;
     // O piloto escolhe o chassi (Hangar): qualquer um em CHASSIS, sempre nas cores do jogador. O andróide
     // tem classe própria (ferramenta, sem blueprint); os de malha importada (`IMPORTED_CHASSIS`) usam o
     // rig pré-carregado no boot (síncrono a essa altura — deu tempo de sobra); os outros passam pelo
@@ -577,7 +599,15 @@ export class Game {
         scene: this.scene,
         onStatus: (s) => this.showNet(s),
         onBank: (reply) => this.acceptBank(reply),
-        onDamage: (amount) => this.playTelemetry.hit(amount),
+        onDamage: (amount, hit) => {
+          this.playTelemetry.hit(amount);
+          // Número de dano flutuante online (frente 2): o servidor manda o valor; o alvo dá o lugar.
+          if (hit) {
+            _dmgPos.copy(hit.position);
+            _dmgPos.y += hit.stats.height * 0.7;
+            this.damageNumbers.show(this.camera, _dmgPos, amount);
+          }
+        },
         onRoundEnd: () => this.playTelemetry.finish('completed'),
         onKill: (killer, dead, mine) => {
           this.killFeed.push(killer, dead, mine);
@@ -625,6 +655,7 @@ export class Game {
     this.recorder = new GameRecorder(this.renderer.domElement, this.audio);
     if (this.gameMode === 'survival') this.hud.setMissionMode(true);
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
+    else if (this.gameMode === 'dominio') this.dominioHud.mostrar(true);
     else this.hud.setMissionMode(false);
     this.hud.setBuild(`CYBERMECH ${import.meta.env.VITE_BUILD ?? 'dev'} · © ${new Date().getFullYear()} SERAFIM WEB`);
 
@@ -633,6 +664,7 @@ export class Game {
       (enabled) => {
         this.bloomPass.enabled = enabled;
         this.refractWaves = enabled;
+        this.match.arena.praia?.setDetalhe(enabled); // o último degrau do rebaixamento também tira as nuvens e o ruído do mar
       },
     );
     // Hangar: enquanto está aberto, o desenho troca a arena pelo galpão (o jogo está pausado).
@@ -735,7 +767,7 @@ export class Game {
     const allies = (): readonly MechBase[] => this.match.allies?.mechs ?? [];
     // Janela do esquadrão (P91): offline, na Arena e no Bunker. Online o servidor manda os inimigos; as missões têm o pool delas.
     const esquadraoIndisponivel = (): string | null =>
-      online ? 'Online, quem manda nos inimigos é o servidor.' : this.gameMode !== 'deathmatch' ? 'O esquadrão vale no combate livre (Arena e Bunker); as missões têm o pool delas.' : null;
+      online ? 'Online, quem manda nos inimigos é o servidor.' : this.gameMode !== 'deathmatch' && this.gameMode !== 'dominio' ? 'O esquadrão vale no combate livre (Arena e Bunker) e no Domínio; as missões têm o pool delas.' : null;
     const squadPanel = new SquadPanel({
       store: this.squad,
       padrao: () => esquadraoDeFoes(this.settings.value, ALLY_COUNT),
@@ -776,7 +808,14 @@ export class Game {
     const mural = new MuralCliente(enderecoDoServidor, tokenDoDono.ler, { estado: (e) => parede?.estado(e), quadro: (q) => parede?.quadro(q) });
     // As salas online são da Arena: se o jogo local está no Bunker, o mural não desenha as paredes de outro mapa por cima.
     const plantaOnline = mapa === 'arena' ? plantaDaArena(this.match.arena.occluders) : [];
-    this.minimapa.setPlanta(plantaComZonas(mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(this.match.arena.occluders), mapa === 'arena'));
+    const naPraia = this.match.arena.praia !== null;
+    this.minimapa.setPlanta(naPraia ? plantaDaPraiaNoMinimapa() : plantaComZonas(mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(this.match.arena.occluders), mapa === 'arena'));
+    // Na praia a estação é o objetivo: o ponto E do minimapa aponta para ela de qualquer lugar do mapa (preso na borda quando longe).
+    this.minimapa.setPontos(naPraia ? pontoDaEstacao() : this.match.dominio?.pontos ?? null);
+    if (naPraia) {
+      this.praiaHud = new PraiaHud(document.getElementById('hud')!);
+      this.praiaQuadro = novoQuadroDaPraia(this.camera);
+    }
     parede = new CameraWall({
       mural,
       planta: () => plantaOnline,
@@ -983,6 +1022,7 @@ export class Game {
     this.setPixelRatio(quality === 'media' ? 1 : quality === 'baixa' ? 0.75 : maxPixelRatio());
     this.bloomPass.enabled = quality !== 'baixa';
     this.refractWaves = quality !== 'baixa';
+    this.match.arena.praia?.setDetalhe(quality !== 'baixa');
     this.quality.setAdaptive(quality === 'auto');
   }
 
@@ -1091,6 +1131,12 @@ export class Game {
         this.playTelemetry.hit(e.result.applied);
         // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar)
         this.audio.playHit();
+        // Número de dano flutuante (frente 2): nasce no corpo do alvo, sobe e some.
+        if (e.mech !== mech) {
+          _dmgPos.copy(e.mech.position);
+          _dmgPos.y += e.mech.stats.height * 0.7;
+          this.damageNumbers.show(this.camera, _dmgPos, e.result.applied, e.result.partDestroyed);
+        }
       }
       if (e.mech === mech) {
         this.hud.showDamage();
@@ -1127,7 +1173,11 @@ export class Game {
       // Aviso de abate e de sequência (P96): abater aliado (fogo amigo) não conta; morrer zera.
       if (dead === mech) this.sequencia.zerar();
       else if (killer === mech && !(this.match.allies?.mechs ?? []).includes(dead)) this.hud.killBanner.showKill(deadName, this.sequencia.abate(performance.now() / 1000));
-      if (!this.online && dead === mech && killer && killer !== mech) this.killCam.start(killer, at);
+      if (!this.online && dead === mech && killer && killer !== mech) {
+        this.killCam.start(killer, at);
+        // Painel "seu algoz" (frente 3 da P109): a ficha do matador enquanto o contador corre.
+        this.algoz.show(algozViewOf(killer, killerName ?? 'INIMIGO'));
+      }
       if (killer === mech && dead !== mech) this.vibrate([25, 40, 25]);
       // Abater um aliado (fogo amigo) não conta para a meta da etapa.
       if (killer === mech && dead !== mech && !(this.match.allies?.mechs ?? []).includes(dead)) this.abateNaCampanha();
@@ -1160,7 +1210,7 @@ export class Game {
       this.telemetry.enviar('partida_terminada');
       this.playTelemetry.finish('completed');
       this.missionEnded = true;
-      this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds);
+      this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds, this.match.nucleo?.caiu === true);
       this.setPlaying(false);
       this.input.exitLock();
       if (this.campanha) {
@@ -1189,6 +1239,17 @@ export class Game {
         this.campanha.fimDaBandeira(winner);
         this.campanhaHud?.fim();
       }
+    };
+    // Domínio: a barra de pontos, o aviso de cada ponto que muda de dono e o fim da partida (a regra é do `Match`; aqui só a tela).
+    this.match.onDominioProgresso = (tempo, azul, vermelho) => this.dominioHud.quadro(this.match.dominio!.pontos, tempo, azul, vermelho);
+    this.match.onDominioDono = (ponto, antes, depois) => this.dominioHud.avisar(avisoDoPonto(ponto.def.letra, antes, depois));
+    this.match.onDominioFim = (vencedor, azul, vermelho) => {
+      this.telemetry.enviar('partida_terminada');
+      this.playTelemetry.finish('completed');
+      this.missionEnded = true;
+      this.hud.setDominioEnd(vencedor, Math.floor(azul.pontos), Math.floor(vermelho.pontos));
+      this.setPlaying(false);
+      this.input.exitLock();
     };
     this.match.onPropBroken = (_id, center) => {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
@@ -1277,9 +1338,11 @@ export class Game {
       }
       if (!this.playing) return;
       if (!Object.values(this.settings.value.keys).includes(code)) {
-        if (code === 'Digit1') this.squadHUD.command('follow');
-        if (code === 'Digit2') this.squadHUD.command('focus');
-        if (code === 'Digit3') this.squadHUD.command('hold');
+        if (this.gameMode !== 'dominio') {
+          if (code === 'Digit1') this.squadHUD.command('follow');
+          if (code === 'Digit2') this.squadHUD.command('focus');
+          if (code === 'Digit3') this.squadHUD.command('hold');
+        }
       }
       if (code === this.settings.value.keys.camera) this.switchCamera();
       else if (code === 'Escape' && !rig.mode.pointerLock) this.setPlaying(false);
@@ -1322,9 +1385,11 @@ export class Game {
     if (this.missionEnded) {
       this.missionEnded = false;
       this.match.restartMission();
+      this.praiaHud?.reset();
       this.player.launcher.refill();
       this.hud.setScore(0, 0);
       if (this.gameMode === 'ctf') this.hud.resetCtf();
+      else if (this.gameMode === 'dominio') this.hud.resetDominio();
       else this.hud.resetMission();
     }
     // Primeira partida da sessão: vinheta da marca (o clique é o gesto que libera o som). O mouse já
@@ -1514,8 +1579,12 @@ export class Game {
     this.match.allies?.render(dt, alpha);
     this.droneVisuals?.render(dt, alpha);
     if (this.match.ctf && this.ctfObjectives) this.ctfObjectives.update(dt, this.match.ctf);
+    this.dominioPontos?.update(dt);
+    // O mapa que anima (o mar da praia, P126): nos outros, o `Arena.update` não faz nada.
+    this.match.arena.update(dt);
+    this.dominioHud.update(dt);
     this.online?.render(dt, now);
-    this.nameplates.update(this.mech);
+    this.nameplates.update(dt, this.mech);
     if (this.mech.alive && this.killCam.overridesRig) this.killCam.release();
     if (this.spectatorCam.overridesRig) {
       this.spectatorCam.update(dt);
@@ -1570,7 +1639,7 @@ export class Game {
     const squad = this.match.allies;
     let alliesAlive = 0;
     if (squad) for (const m of squad.mechs) if (m.alive) alliesAlive++;
-    this.squadHUD.update(dt, !!squad && this.playing && this.mech.alive && !this.hangarView, squad?.order ?? 'follow', alliesAlive, squad?.mechs.length ?? 0);
+    this.squadHUD.update(dt, !!squad && this.gameMode !== 'dominio' && this.playing && this.mech.alive && !this.hangarView, squad?.order ?? 'follow', alliesAlive, squad?.mechs.length ?? 0);
     this.shieldVisuals.begin();
     if (!this.hangarView) { this.shieldVisuals.update(this.mech); if(this.online?.joined)this.online.remotes.forEach(this.drawShield);else for(const bot of this.bots.mechs)this.shieldVisuals.update(bot); }
     this.shieldVisuals.end();
@@ -1628,7 +1697,9 @@ export class Game {
     }
     this.bankTerminal.updateBoost(this.mech.alive ? (this.online ? this.bankOnlineBoost : this.mech.combatBoost.secondsLeft) : 0, this.playing && !this.hangarView, this.online ? this.bankOnlineMultiplier : this.mech.combatBoost.damageMultiplier);
     this.hud.setRespawn(this.respawner.timeLeft(this.mech), this.killCam.active);
+    if (this.mech.alive) this.algoz.hide();
     this.killFeed.update(dt);
+    this.damageNumbers.update(dt);
     this.onboarding.update(dt);
     this.roundHud.update(dt, this.round, this.input.isDown('Tab') || this.input.virtualBoard);
     // Nos últimos 3 s do intervalo: RODADA N · 3 · 2 · 1 (só leitura do relógio da rodada; ninguém é segurado no lugar).
@@ -1636,6 +1707,8 @@ export class Game {
     // Só o gatilho de carregador (foguetes) tem pips para esvaziar; serra e arma de energia ficam cheios.
     const noMagazine = this.mech.loadout.secondary?.kind !== 'ammo';
     this.hud.setRockets(noMagazine ? 4 : this.player.launcher.ammo, noMagazine ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);
+    // "RECARREGANDO" ao lado da mira: o carregador (foguetes) está vazio e enchendo (frente 2).
+    this.hud.setReloading(!noMagazine && this.player.launcher.ammo === 0);
     this.hud.setHeat(this.mech.heat, this.mech.overheated, this.mech.coolingBoost);
     // Estados (choque, fogo, gelo) e rotação do cano: parado na pausa ou morto, o zumbido e os indicadores se calam.
     const ativo = this.playing && this.mech.alive && !this.hangarView;
@@ -1643,6 +1716,8 @@ export class Game {
     const giro = ativo ? this.player.spinLevel : 0;
     // O medidor em volta da mira serve às duas armas de fluxo: a rotação do cano da rotatória e o combustível do lança-chamas.
     this.hud.setSpin(Math.max(giro, ativo ? this.player.fuelLevel : 0));
+    // Mira aberta (ordem P121): a mira cresce enquanto a arma não assentou — cada arma no seu tempo.
+    this.hud.setAimOpen(ativo ? this.player.aimOpen : 0);
     this.audio.setRotarySpin(giro);
     this.audio.setFlame(ativo && this.mech.status.flaming);
     if (this.mech.heatState !== 'normal') this.onboarding.trigger('heat');
@@ -1658,6 +1733,25 @@ export class Game {
         inimigos = this.remotos;
       }
       this.minimapa.desenhar(this.rig.look.yaw, this.mech, inimigos, this.match.allies?.mechs ?? SEM_ALIADOS);
+    }
+    if (this.praiaHud && this.praiaQuadro) {
+      const q = this.praiaQuadro;
+      q.ativo = ativo;
+      q.eu.x = this.mech.simPosition.x;
+      q.eu.z = this.mech.simPosition.z;
+      q.eu.alive = this.mech.alive;
+      q.inimigos = this.bots.mechs;
+      this.match.estadoDaAgua(this.mech, q.agua);
+      const rede = this.match.nucleo;
+      q.nucleo.presente = rede !== null;
+      if (rede) {
+        q.nucleo.fracao = rede.fracao;
+        q.nucleo.pressao = rede.pressao;
+        this.match.arena.praia?.setNucleo(rede.fracao); // o centro de dados apaga as janelas conforme a rede cai
+      }
+      q.largura = window.innerWidth;
+      q.altura = window.innerHeight;
+      this.praiaHud.update(dt, q);
     }
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.player.firing, this.player.secondaryHeld, this.player.secondaryHeld && !this.player.firing ? this.player.secondaryCharge : this.player.primaryCharge);
     // A onda sônica: os anéis andam e leem a cópia do quadro (a cópia só roda enquanto há anel vivo, na arena ou no Hangar).

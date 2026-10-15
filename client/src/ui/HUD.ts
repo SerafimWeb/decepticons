@@ -83,6 +83,7 @@ export class HUD {
   private readonly modeLabel = $('mode');
   private readonly hitmarker = $('hitmarker');
   private readonly hitLabel = $('hit-label');
+  private readonly reloadLabel = $('reload-label');
   private readonly damageVignette = $('damage-vignette');
   private readonly death = $('death');
   private readonly deathTimer = $('death-timer');
@@ -91,6 +92,8 @@ export class HUD {
   private hitTimer = 0;
   private labelTimer = 0;
   private damageTimer = 0;
+  private shownReloading = false;
+  private shownAimOpen = -1;
   private kills = 0;
   private deaths = 0;
   private shownRespawn = '';
@@ -99,6 +102,8 @@ export class HUD {
   private shownPrimaryHeld = false;
   private shownSecondaryHeld = false;
   private shownMission = '';
+  /** Quantas ondas tem a missão (vem de `setMissionWave`): a barra de cima mostra "ONDA 2/6", não um 5 fixo. */
+  private missionWaves = 6;
   private ctfNoticeTimer = 0;
   private ctfProgressText = '';
 
@@ -170,14 +175,36 @@ export class HUD {
     this.cta.textContent = '[ clique para jogar de novo ]';
   }
 
+  /** Fim do Domínio: o placar final e o convite para jogar de novo (a barra de cima já mostra os pontos). */
+  setDominioEnd(vencedor: 'blue' | 'red' | null, azul: number, vermelho: number): void {
+    const titulo = vencedor === 'blue' ? 'VITÓRIA' : vencedor === 'red' ? 'DERROTA' : 'EMPATE';
+    this.missionStatus.hidden = false;
+    this.missionStatus.classList.toggle('clear', vencedor === 'blue');
+    this.setMissionText(`DOMÍNIO ENCERRADO · ${titulo}`);
+    this.missionSummary.hidden = false;
+    this.missionSummary.textContent = `${titulo}\nAZUL ${azul} × ${vermelho} VERMELHO`;
+    this.cta.textContent = '[ clique para jogar de novo ]';
+  }
+
+  /** Nova partida do Domínio: some o fim da partida anterior. */
+  resetDominio(): void {
+    this.shownMission = '';
+    this.missionSummary.hidden = true;
+    this.missionSummary.textContent = '';
+    this.missionStatus.hidden = true;
+    this.missionStatus.classList.remove('clear');
+    this.setReady(document.documentElement.classList.contains('touch'));
+  }
+
   setMissionWave(wave: number, total: number, title: string, waves: number): void {
+    this.missionWaves = waves;
     this.missionStatus.classList.remove('clear');
     this.setMissionText(`ONDA ${wave}/${waves} · ${title.toUpperCase()} · 0/${total}`);
   }
 
   setMissionProgress(wave: number, killed: number, total: number, elapsedS: number): void {
     this.missionStatus.classList.remove('clear');
-    this.setMissionText(`ONDA ${wave}/5 · ALVOS ${killed}/${total} · ${Math.floor(elapsedS)} s`);
+    this.setMissionText(`ONDA ${wave}/${this.missionWaves} · ALVOS ${killed}/${total} · ${Math.floor(elapsedS)} s`);
   }
 
   showMissionClear(wave: number, elapsedS: number): void {
@@ -185,11 +212,12 @@ export class HUD {
     this.setMissionText(`ONDA ${wave} ELIMINADA · ${elapsedS.toFixed(1)} s`);
   }
 
-  setMissionEnd(survived: boolean, waveReached: number, kills: number, seconds: number): void {
+  setMissionEnd(survived: boolean, waveReached: number, kills: number, seconds: number, estacaoCaiu = false): void {
     this.missionStatus.classList.toggle('clear', survived);
-    this.setMissionText(survived ? 'MISSÃO CONCLUÍDA' : `MISSÃO FALHOU · ONDA ${waveReached}`);
+    this.setMissionText(survived ? 'MISSÃO CONCLUÍDA' : estacaoCaiu ? `ESTAÇÃO PERDIDA · ONDA ${waveReached}` : `MISSÃO FALHOU · ONDA ${waveReached}`);
     this.missionSummary.hidden = false;
-    this.missionSummary.textContent = `${survived ? 'TODAS AS ONDAS ELIMINADAS' : 'UNIDADE DE COMBATE PERDIDA'}\n${kills} ABATES · ${seconds.toFixed(1)} s`;
+    const motivo = survived ? 'TODAS AS ONDAS ELIMINADAS' : estacaoCaiu ? 'A ESTAÇÃO DE CABOS CAIU: A REDE FOI INVADIDA' : 'UNIDADE DE COMBATE PERDIDA';
+    this.missionSummary.textContent = `${motivo}\n${kills} ABATES · ${seconds.toFixed(1)} s`;
     this.cta.textContent = '[ clique para tentar de novo ]';
   }
 
@@ -294,6 +322,21 @@ export class HUD {
   /** Mira acesa: um inimigo vivo está sob ela. */
   setOnTarget(on: boolean): void {
     this.crosshair.classList.toggle('on-target', on);
+  }
+
+  /** Carregador vazio enchendo: "RECARREGANDO" ao lado da mira (frente 2). Só escreve no DOM quando muda. */
+  setReloading(reloading: boolean): void {
+    if (reloading === this.shownReloading) return;
+    this.shownReloading = reloading;
+    this.reloadLabel.classList.toggle('show', reloading);
+  }
+
+  /** Mira aberta (ordem P121): a mira cresce enquanto a arma ainda não assentou. Só escreve quando muda. */
+  setAimOpen(open: number): void {
+    const o = Math.round(Math.max(0, Math.min(1, open)) * 20) / 20;
+    if (o === this.shownAimOpen) return;
+    this.shownAimOpen = o;
+    this.crosshair.style.setProperty('--aim-open', String(o));
   }
 
   setPaused(paused: boolean): void {

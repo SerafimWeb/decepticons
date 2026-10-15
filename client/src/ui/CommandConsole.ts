@@ -3,6 +3,7 @@ import type { MechPart } from '../entities/MechBase';
 import type { Difficulty } from '../core/Settings';
 import { PERSONA_LABELS } from '../core/Settings';
 import type { LoadoutSpec } from '../hangar/loadout';
+import { MAPA_NOME } from '../sim/campanha';
 import type { GameMode } from '../sim/gameMode';
 import {
   acaoDaTecla,
@@ -160,7 +161,7 @@ export class CommandConsole {
     });
     this.radar = new TacticalRadar(root.querySelector('#mon-radar')!, hooks.radar);
     const mapaNome = root.querySelector('#radar-mapa');
-    if (mapaNome) mapaNome.textContent = hooks.mapa === 'bunker' ? 'BUNKER' : 'ARENA';
+    if (mapaNome) mapaNome.textContent = MAPA_NOME[hooks.mapa];
 
     // Os atalhos aparecem desenhados nos botões (o CSS escreve o `data-tecla` como uma tecla); no toque não há teclado.
     const online = root.querySelector<HTMLElement>('#btn-online');

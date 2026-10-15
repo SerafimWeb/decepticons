@@ -115,8 +115,25 @@ export interface WeaponStats {
   mass: number;
   /** Só na chuva de mísseis: o desenho da chuva. `damage` e `blastRadius` são os de CADA bomba. */
   barrage?: Barrage;
-  /** Carga contínua antes do tiro; soltar, perder braço ou superaquecer cancela. */
+  /** Carga contínua antes do tiro; soltar, perder braço ou superaquecer cancela (o trilho). */
   chargeTime?: number;
+  /**
+   * A arma **segura a carga** (o canhão de cerco, ordem P124): completar não dispara — fica pronta, e o tiro sai ao
+   * **soltar** o gatilho. Sem isto, a carga dispara na hora do completo e soltar cancela.
+   */
+  chargeHold?: boolean;
+  /**
+   * Perfil de mira (ordem P121): tempo (s) para a mira **assentar** com esta arma na mão. Sem declarar, vale a conta por
+   * faixa (`combat/aim.ts`: a arma de linha assenta mais devagar, a de perto quase na hora). Corpo a corpo, chama e o giro
+   * de cano não assentam (0).
+   */
+  aimTime?: number;
+  /**
+   * Amplitude da mira **aberta**, em radianos (ordem P121): a dispersão máxima antes de assentar, que fecha a zero com a
+   * mira firme. **Hoje toda arma está em 0** — a mira assenta só no desenho, sem mexer no acerto validado; ligar é uma
+   * linha por arma.
+   */
+  aimSpread?: number;
   /** Sobrecarga térmica adicional no impacto, sem atrasar o resfriamento. */
   empHeat?: number;
   /** Silhueta visual do tiro, sem alterar colisão. */
@@ -264,9 +281,11 @@ const BASE: Record<WeaponId, WeaponBase> = {
   /**
    * Canhão de cerco (dono, 12/10: "futuramente faremos versões das armas para o tamanho 3 e 4" — a primeira delas; e
    * no mesmo dia: "crie a arma dele, uma arma poderosa, de tiro único, que demora pra carregar, mas é um tremendo tiro").
-   * **A versão de tamanho 3 do canhão pesado, agora de CARGA**: segura o gatilho **3 s** (`chargeTime`, a mesma mecânica do
-   * trilho — soltar, perder o braço ou superaquecer cancela) e solta **um obus de 360**, com 5 m de explosão, a 240 m/s.
-   * Derruba um torso de Mech (300) **num tiro só**, e um Colossus-01 (1 200) em quatro; o ciclo é de ~7,5 s (3 s de carga
+   * **A versão de tamanho 3 do canhão pesado, agora de CARGA:** segura o gatilho **2,4 s** (`chargeTime`) e solta **um obus de
+   * 360**, com 5 m de explosão, a 240 m/s. **Com espera** (`chargeHold`, ordem P124 do Comandante): completar a carga **não
+   * dispara** — a arma fica carregada e pronta, e o tiro sai ao **soltar o gatilho**, no momento escolhido (era 3 s e
+   * disparava sozinha ao completar).
+   * Derruba um torso de Mech (300) **num tiro só**, e um Colossus-01 (1 200) em quatro; o ciclo é de ~6,9 s (2,4 s de carga
    * + 4,5 s entre tiros) e o calor de um tiro é 0,9 do dissipador: é arma de um tiro por vez, não de pressão. Para um robô
    * de tamanho 4 ela é uma arma **leve** (a pesada do tamanho N é a leve do N+1, a conta do weaponClass.ts); para um de
    * tamanho 3 é **pesada**; um Mech comum (tamanho 2) não a carrega. Natureza balistica, o mesmo aço.
@@ -277,7 +296,7 @@ const BASE: Record<WeaponId, WeaponBase> = {
     magazine: 0, reload: 0, speed: 240,
     optimalRange: 140, maxRange: 400, minFactor: 0.7,
     blastRadius: 5, mass: 12, tracer: 'shell',
-    chargeTime: 3,
+    chargeTime: 2.4, chargeHold: true,
   },
   /**
    * Canhão automático (dono, 11/10: "armas de tiros menores e sequenciais de metal"). **Projéteis de aço em sequência firme, sem esperar o cano

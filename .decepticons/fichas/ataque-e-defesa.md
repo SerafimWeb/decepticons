@@ -35,6 +35,8 @@ não descoberta no meio.
 
 ### 2.2 DEFESA DE BASE — segurar; se cair, retomar
 
+> **Atualização 14/10 (Claude, P127 passo 2) — o que já existe:** na ESTAÇÃO DE CABOS a missão em ondas tem o **núcleo com vida própria** (`sim/NucleoDaEstacao.ts`, decisão 2 da folha) e os atacantes **marcham para ele** (a rota de assalto). A vida cai pela **presença** dos invasores dentro dos muros (regra de proximidade, como o Domínio), não por tiro, e **a missão falha quando ele cai**. **Ainda não existem:** o **contraataque** (o núcleo cai e a missão vira "retomar o raio") e o **técnico que conserta** o núcleo.
+
 - **O objetivo:** manter o **nosso núcleo** de pé por **N ondas**.
 - **Estágios:**
   1. **Preparação (15 s):** o jogador se posiciona. As barricadas são **as do cenário** (já colocadas) — não há

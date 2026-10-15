@@ -1,5 +1,6 @@
 import { SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
+import { PRAIA_SPAWNS } from '../environment/PraiaLayout';
 
 /** Um ponto de nascimento (x, z) no chão da arena. */
 export type Ponto = readonly [number, number];
@@ -97,8 +98,10 @@ const CAPACIDADE_ARENA: Capacidade = {
 };
 /** O Bunker tem 12 pontos no total e o primeiro é do jogador: os outros 11 são de quem nasce com ele. */
 const CAPACIDADE_BUNKER: Capacidade = { inimigos: BUNKER_SPAWNS.length - 1, aliados: BUNKER_SPAWNS.length - 1, total: BUNKER_SPAWNS.length - 1, titas: 0 };
+/** A praia (P126) é o mapa maior: os pontos dela, menos o do jogador, são de quem nasce com ele. */
+const CAPACIDADE_PRAIA: Capacidade = { inimigos: PRAIA_SPAWNS.length - 1, aliados: PRAIA_SPAWNS.length - 1, total: PRAIA_SPAWNS.length - 1, titas: 0 };
 
-export const capacidadeDoMapa = (mapa: MapId): Capacidade => (mapa === 'bunker' ? CAPACIDADE_BUNKER : CAPACIDADE_ARENA);
+export const capacidadeDoMapa = (mapa: MapId): Capacidade => (mapa === 'bunker' ? CAPACIDADE_BUNKER : mapa === 'praia' ? CAPACIDADE_PRAIA : CAPACIDADE_ARENA);
 
 /**
  * Os pontos da Arena: cada papel usa primeiro os fixos (o jogo de hoje) e o que passar sai dos extras, os inimigos de um lado
@@ -162,6 +165,16 @@ function nascimentosDoBunker(c: Contagem): Nascimentos {
 }
 
 /**
+ * Os nascimentos de um mapa cujos pontos são uma **lista simples** (a praia, P126): o jogador no primeiro ponto e os
+ * outros na ordem — cada ponto é de um corpo só, como a regra exige.
+ */
+function nascimentosDaLista(c: Contagem, pontos: readonly Ponto[]): Nascimentos {
+  let i = 1; // o ponto 0 é do jogador
+  const pega = (n: number): Ponto[] => pontos.slice(i, (i += n));
+  return { mechs: pega(c.mechs), titas: [], androids: pega(c.androids), tecnicos: pega(c.tecnicos), aliadosMechs: pega(c.aliadosMechs), aliadosAndroids: pega(c.aliadosAndroids) };
+}
+
+/**
  * Onde cada corpo do esquadrão nasce. Passar da capacidade do mapa é erro de quem chama (o esquadrão passa por
  * `sanearEsquadrao`, que corta no limite do mapa antes): a Arena avisa em vez de empilhar dois robôs no mesmo chão.
  */
@@ -174,5 +187,5 @@ export function nascimentosDoEsquadrao(c: Contagem, mapa: MapId): Nascimentos {
   if (inimigos > cap.inimigos || aliados > cap.aliados || inimigos + aliados > cap.total) {
     throw new Error(`o esquadrão (${inimigos} inimigos, ${aliados} aliados) não cabe no mapa (${cap.inimigos}, ${cap.aliados}, ${cap.total})`);
   }
-  return mapa === 'bunker' ? nascimentosDoBunker(c) : nascimentosDaArena(c);
+  return mapa === 'bunker' ? nascimentosDoBunker(c) : mapa === 'praia' ? nascimentosDaLista(c, PRAIA_SPAWNS) : nascimentosDaArena(c);
 }
