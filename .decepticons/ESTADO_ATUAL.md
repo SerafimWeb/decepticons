@@ -1,5 +1,27 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O PRIMEIRO ACESSO CAI NUMA PARTIDA: título, uma frase, JOGAR e "mais opções", com a cena por trás — e o plano de ranking e login — Claude, 15/10 (branch `claude/primeiro-acesso`, P133/P141)
+
+**A decisão do Comandante (15/10):** *"o fluxo de primeiro acesso tem que ser chegando já numa partida, e se gostar, vai continuar jogando e configurar pouco a pouco… (temos que organizar esse lance do ranking e login também né?)"*
+
+**O que o jogador novo vê (antes × depois):** antes, **seis monitores** (mapa-múndi, radar, o seu Mech, pilotos, carreira, rede, configurações) mais o seletor de operação — "o painel do mapa que assusta" (`arte/primeiro-acesso-antes-claude.jpg`). Agora, **o título CYBERMECH sobre a partida já montada** (a cena, o Mech dele, os bots), uma frase ("Entre direto na partida. O robô, as armas e o resto você ajusta depois, no seu ritmo."), o botão verde **JOGAR** e **MAIS OPÇÕES ▸**, e a linha das teclas (`arte/primeiro-acesso-depois-claude.jpg`; no celular na horizontal: `primeiro-acesso-celular-claude.jpg`). **Uma ação primária por tela** (o princípio 1 da `AUDITORIA_INTERFACE.md`). **MAIS OPÇÕES** abre o console completo **sem** começar a partida; jogar ou pedir "mais opções" grava a marca, e **da segunda visita em diante o console é o completo**.
+
+**Quem NÃO cai nela:** quem já jogou ou mexeu (a progressão do piloto, as dicas vistas, o Hangar, o nome, a campanha, o esquadrão, as potências, o modo Comandante): o dono e os testadores seguem vendo o console completo. **Achado no caminho:** o `SettingsStore` grava as configurações **em todo boot**, então elas não servem de sinal de "já jogou" (a minha primeira versão tratava todo mundo como veterano; só a captura mostrou). `?console=1` força o completo; `?primeira=1` força o enxuto (para fotografar e testar).
+
+**Como é feito (G3):** `ui/primeiroAcesso.ts` (a regra pura: o endereço e o armazenamento decidem) + `CommandConsole` (aplica a classe `cc-primeira`, mostra a frase e o "mais opções"; no primeiro acesso a espera de carregamento só sai, e **os monitores, o radar e o relógio nem acendem**) + o CSS (a grade enxuta convive com a tela de carregamento: o botão não pula quando o jogo fica pronto) + duas linhas no `index.html`. O `Game` não mudou.
+
+**Custo:** **menos** CPU no primeiro minuto (o mapa, o radar e o relógio do console não rodam enquanto ele não pede "mais opções"). Nenhum desenho novo.
+
+**Testes:** `primeiroAcesso.test.ts` (6: sem nada guardado = primeira; as configurações não contam; cada sinal de jogo anterior basta sozinho; `?console` e `?primeira`; sem armazenamento), `CommandConsole.test.ts` (+4: o HTML e o CSS da tela enxuta). **No navegador de verdade (11 conferências):** visitante novo cai na enxuta, "mais opções" acende o completo e não joga, jogar grava a marca, a próxima visita é o completo, quem tem progressão salva vê o completo, `?console`/`?primeira`.
+
+**O plano de ranking e login:** `RANKING_E_LOGIN.md` (P141) — o que existe (contas SQLite só do dono; apelido, progressão e montagem só no navegador; sem ranking, sem clã de jogador), as camadas C0 a C5, a ordem dos PRs e **as seis decisões do Comandante** com recomendação em cada. Entraram na tabela das decisões do alto de `ORDENS_DO_COMANDO.md` (#8 ranking e login, #9 nomes no jogo).
+
+**Onde ele confere:** abrir `/jogar/` numa **janela anônima** (sem nada salvo): a tela enxuta. Clicar em **MAIS OPÇÕES** para ver o console completo. No navegador de sempre ele continua vendo o completo (já jogou).
+
+**Falta (R13):** (1) o resto do "pouco a pouco" — **nome, clã, convite, trocar robô e arma, evoluir** — depende do ranking e da conta (o plano); o primeiro convite ("gostou? dê um nome ao seu piloto") entra com o apelido (PR 2 do plano); (2) a partida que o novato recebe é a **padrão** (Deathmatch na Cidade Neon): trocar o padrão para a praia (a fase mais bonita) é decisão do Comandante; (3) **não medi** o efeito no funil (ninguém de fora jogou ainda); (4) a tela enxuta **não esconde** a pausa depois do primeiro jogo na mesma sessão: o Esc no meio da primeira partida mostra a enxuta de novo (de propósito: ele ainda não pediu o resto).
+
+**Próxima sessão começa com:** o **apelido** (C1 do plano: o campo na pausa, o filtro, o placar) e a **legibilidade do HUD da praia sobre o céu claro** (P139); e as respostas do Comandante às decisões #8 e #9.
+
 ## OS COQUEIROS SE QUEBRAM A TIRO — e os guarda-sóis, bancos, lixeiras e espreguiçadeiras — Claude, 15/10 (branch `claude/coqueiros-destrutiveis`, P138)
 
 **A ordem:** *"quero poder detonar os coqueiros"* (15/10; antes: "os coqueiros devem poder ser destruídos, assim como os elementos menores do cenário").

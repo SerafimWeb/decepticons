@@ -1,3 +1,18 @@
+## [2026-10-15] O primeiro acesso é a tela enxuta sobre a partida; o console completo vem por pedido e a partir da segunda visita (Claude, P133/P141)
+
+**Situação:** o Comandante decidiu que o primeiro acesso "tem que ser chegando já numa partida" e que o resto (nome, clã, robô, arma, evolução) se configura "pouco a pouco, enquanto sobe no ranking". O primeiro minuto era um console de sete painéis, com o mapa-múndi à frente: a coisa que ele mesmo chamou de "o painel do mapa que assusta".
+
+**Decisões:**
+1. **A tela enxuta, não um pulo cego.** Navegador exige um clique para travar o mouse e liberar o áudio: não dá para "cair" na partida sem ele. Então o console fica como **tela de espera por cima da partida já montada** (título, frase, JOGAR, "mais opções"), com a cena visível por trás. Uma ação primária por tela (`AUDITORIA_INTERFACE.md`).
+2. **A marca é a de quem jogou, não a das configurações.** O `SettingsStore` grava em **todo boot**, então `cybermech.settings.v1` existe antes de o console nascer: usá-la como sinal fazia todo visitante parecer veterano (a primeira versão errou assim; a captura em armazenamento limpo mostrou). Valem a progressão do piloto, as dicas vistas, o Hangar, o nome, a campanha, o esquadrão, as potências e o modo Comandante.
+3. **Ligar o console completo é por pedido** ("MAIS OPÇÕES") **e na segunda visita**; no primeiro acesso os monitores, o radar e o relógio **nem acendem** (CPU para a partida).
+4. **O dono nunca cai nela por engano** (os sinais de veterano) e tem os atalhos `?console` e `?primeira`.
+5. **Ranking e login são um plano antes de código** (`RANKING_E_LOGIN.md`): cinco camadas, cada uma opcional, e seis decisões que são do Comandante. Nada de formulário na porta.
+
+**Alternativas descartadas:** pular o console por completo e iniciar a partida sozinha (o navegador não deixa travar o mouse sem clique); mostrar o console completo só depois da primeira morte (a morte é o pior momento para um painel de sete telas); um tutorial por cima do console (mais uma camada onde o objetivo é tirar camadas).
+
+**Por que registrar:** o próximo agente que mexer no console precisa saber que há **dois** layouts (enxuto e completo) e que o enxuto só nasce com a marca ausente; e que as configurações não servem de sinal.
+
 ## [2026-10-15] Os coqueiros se quebram a tiro com a caixa-alvo como SENSOR: o tiro acerta, o Mech e a IA atravessam (Claude, P138)
 
 **Situação:** o Comandante pediu duas vezes para "detonar os coqueiros" (e os elementos menores). Os adereços da praia são malhas **fundidas por material** (P128: de ~30 desenhos para 6), com sombra **assada** no chão, e **sem colisor** (o Mech e o tiro atravessavam).

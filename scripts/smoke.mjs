@@ -134,6 +134,20 @@ try {
     .waitForFunction(() => !document.getElementById('overlay').classList.contains('cc-espera'), null, { timeout: 10_000 })
     .then(() => true, () => false);
   if (!ligou) fail('o console de comando não ligou: o #overlay ficou na tela de carregamento (cc-espera) com o jogo pronto');
+  // Primeiro acesso (P133): o navegador do smoke nasce sem nada salvo, então cai na tela enxuta (o título, a frase, JOGAR e "mais opções", sem os
+  // monitores). Confere isso e pede "mais opções": dali em diante valem as checagens do console completo, que seguem abaixo.
+  const enxuta = await page.evaluate(() => ({
+    classes: document.getElementById('overlay').className,
+    teatro: getComputedStyle(document.getElementById('mon-teatro')).display,
+    mais: !document.getElementById('cc-mais').hidden && getComputedStyle(document.getElementById('cc-mais')).display !== 'none',
+    frase: !document.getElementById('cc-pitch').hidden && getComputedStyle(document.getElementById('cc-pitch')).display !== 'none',
+  }));
+  if (!/cc-primeira/.test(enxuta.classes)) fail(`o primeiro acesso não caiu na tela enxuta (classes: ${enxuta.classes})`);
+  if (enxuta.teatro !== 'none') fail('a tela enxuta mostra o monitor do mapa (devia estar escondido: o jogador novo cai na partida, não no painel)');
+  if (!enxuta.mais || !enxuta.frase) fail('a tela enxuta sem a frase ou sem o "mais opções"');
+  await page.locator('#cc-mais').click();
+  await page.waitForTimeout(300);
+  if (!(await page.locator('#overlay').isVisible())) fail('"mais opções" começou a partida (devia só abrir o console completo)');
   const cc = await page.evaluate(() => ({
     grade: getComputedStyle(document.getElementById('overlay')).display,
     pins: document.querySelectorAll('#mon-teatro .pin').length,

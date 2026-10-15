@@ -3564,6 +3564,73 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .cc-carga i::after { content: ''; display: block; width: calc(var(--p, 0) * 100%); height: 100%; background: #3f8f5f; transition: width 0.25s ease-out; }
 .cc-carga span { min-height: 14px; font: 700 calc(11px * var(--k)) / 1.4 'Consolas', 'Courier New', monospace; letter-spacing: 1px; text-align: center; color: #5d6f64; }
 
+/* ─── Primeiro acesso (P133, decisão do Comandante em 15/10): o console enxuto ───────────────────────────────────────
+   Quem nunca jogou não vê o painel inteiro (seis monitores e o seletor de operação: "o painel do mapa que assusta"): vê o título, uma frase,
+   o botão JOGAR e "mais opções", com a cena da partida por trás (o fundo é uma sombra, não um painel opaco). Os monitores só acendem se ele
+   pedir (`CommandConsole.abrirConsoleCompleto`); da segunda visita em diante o console é o completo. A classe `cc-primeira` convive com a
+   `cc-espera` (a tela de carregamento): a grade é a mesma, então o título e o botão não pulam quando o jogo fica pronto. */
+.cc-pitch, .cc-mais { display: none; }
+#overlay.console.cc-primeira {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'top'
+    '.'
+    'deck';
+  background:
+    radial-gradient(80% 60% at 50% 100%, rgba(6, 8, 10, 0.78), transparent 72%),
+    linear-gradient(180deg, rgba(6, 8, 10, 0.86) 0%, rgba(6, 8, 10, 0.2) 34%, rgba(6, 8, 10, 0.16) 58%, rgba(6, 8, 10, 0.7) 100%);
+}
+#overlay.console.cc-primeira .mon,
+#overlay.console.cc-primeira .cc-row,
+#overlay.console.cc-primeira .cc-ops,
+#overlay.console.cc-primeira .cc-sala,
+#overlay.console.cc-primeira .cc-flags,
+#overlay.console.cc-primeira .cc-top::before { display: none !important; }
+#overlay.console.cc-primeira .cc-top { justify-content: center; padding-top: clamp(14px, 5vh, 54px); }
+#overlay.console.cc-primeira h1 {
+  font-size: calc(clamp(34px, 6.2vw, 92px) * var(--k));
+  text-shadow: 0 0 28px rgba(57, 255, 106, 0.45), 0 2px 12px #000;
+}
+#overlay.console.cc-primeira .cc-deck {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 0 14px clamp(18px, 6vh, 56px);
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+#overlay.console.cc-primeira .cc-launch { grid-column: 1 !important; }
+#overlay.console.cc-primeira .cc-pitch,
+#overlay.console.cc-primeira .cc-mais { display: block; }
+#overlay.console.cc-primeira .cc-pitch {
+  margin: 0;
+  max-width: 46ch;
+  text-align: center;
+  font: 600 calc(clamp(13px, 1.25vw, 18px) * var(--k)) / 1.45 'Consolas', 'Courier New', monospace;
+  color: #e4ece7;
+  text-shadow: 0 1px 8px #000, 0 0 2px #000;
+}
+#overlay.console.cc-primeira .cc-mais {
+  margin: 0;
+  padding: 8px 18px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid #3a444c;
+  border-radius: 4px;
+  color: #b9c5cc;
+  font: 600 calc(11px * var(--k)) / 1 'Consolas', 'Courier New', monospace;
+  letter-spacing: 3px;
+  cursor: pointer;
+}
+#overlay.console.cc-primeira .cc-mais:hover { color: var(--accent); border-color: var(--accent); }
+#overlay.console.cc-primeira .cc-info { align-items: center; text-align: center; }
+/* Carregando: nada da frase nem do "mais opções" (o botão ainda está apagado) e o rótulo diz o que carrega: a partida. */
+#overlay.console.cc-primeira.cc-espera .cc-pitch,
+#overlay.console.cc-primeira.cc-espera .cc-mais { display: none !important; }
+#overlay.console.cc-primeira.cc-espera::before { content: 'CARREGANDO A PARTIDA'; }
+
 /* Balão de ajuda dentro de um monitor (hoje: ligar a mesa de vídeo): cobre a tela do monitor enquanto está aberto. */
 .cmd-ajuda { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; overflow: auto; background: #05080b; border: 1px solid var(--hot); }
 .cmd-ajuda[hidden] { display: none; }
