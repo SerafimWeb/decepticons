@@ -1,0 +1,113 @@
+{
+  "data": "2026-10-15",
+  "tela": "1280x720",
+  "render": "SwiftShader (sem GPU: só contagem, não tempo)",
+  "vistas": {
+    "geral": {
+      "desenhos": 48,
+      "triangulos": 134513,
+      "construcaoMs": 395
+    },
+    "mar": {
+      "desenhos": 51,
+      "triangulos": 134649,
+      "construcaoMs": 230
+    },
+    "praia": {
+      "desenhos": 52,
+      "triangulos": 134661,
+      "construcaoMs": 1476
+    },
+    "orla": {
+      "desenhos": 51,
+      "triangulos": 134625,
+      "construcaoMs": 387
+    },
+    "avenida": {
+      "desenhos": 51,
+      "triangulos": 134625,
+      "construcaoMs": 434
+    },
+    "ponte": {
+      "desenhos": 47,
+      "triangulos": 134657,
+      "construcaoMs": 817
+    },
+    "porto": {
+      "desenhos": 44,
+      "triangulos": 133885,
+      "construcaoMs": 302
+    },
+    "estacao": {
+      "desenhos": 50,
+      "triangulos": 134609,
+      "construcaoMs": 400
+    },
+    "pateo": {
+      "desenhos": 50,
+      "triangulos": 134609,
+      "construcaoMs": 246
+    },
+    "rua": {
+      "desenhos": 45,
+      "triangulos": 134357,
+      "construcaoMs": 248
+    },
+    "barraca": {
+      "desenhos": 49,
+      "triangulos": 134601,
+      "construcaoMs": 829
+    },
+    "portao": {
+      "desenhos": 51,
+      "triangulos": 134625,
+      "construcaoMs": 391
+    },
+    "cais": {
+      "desenhos": 44,
+      "triangulos": 133885,
+      "construcaoMs": 492
+    },
+    "hatch": {
+      "desenhos": 50,
+      "triangulos": 134609,
+      "construcaoMs": 229
+    },
+    "sombra": {
+      "desenhos": 47,
+      "triangulos": 134657,
+      "construcaoMs": 420
+    },
+    "pierfim": {
+      "desenhos": 46,
+      "triangulos": 134393,
+      "construcaoMs": 266
+    },
+    "zona": {
+      "desenhos": 47,
+      "triangulos": 134657,
+      "construcaoMs": 249
+    },
+    "zonapatio": {
+      "desenhos": 50,
+      "triangulos": 134609,
+      "construcaoMs": 418
+    },
+    "gente": {
+      "desenhos": 51,
+      "triangulos": 134625,
+      "construcaoMs": 268
+    },
+    "banhistas": {
+      "desenhos": 46,
+      "triangulos": 134393,
+      "construcaoMs": 447
+    },
+    "pipas": {
+      "desenhos": 46,
+      "triangulos": 134393,
+      "construcaoMs": 366
+    }
+  },
+  "errosDePagina": []
+}

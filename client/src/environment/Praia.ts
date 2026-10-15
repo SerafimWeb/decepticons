@@ -3,14 +3,19 @@ import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { mulberry32 } from '../core/rng';
 import { COR_DA_NEVOA, DIRECAO_DO_SOL, PraiaCeu } from './PraiaCeu';
 import { criarChao } from './PraiaChao';
-import { praiaAderecos, type Adereco, type TipoDeAdereco } from './PraiaAderecos';
+import { praiaAderecos } from './PraiaAderecos';
+import { montarAderecos } from './PraiaAderecosMalha';
+import { PraiaGente } from './PraiaGente';
+import { PraiaLuzes } from './PraiaLuzes';
+import { PraiaZonas } from './PraiaZonas';
+import { criarUniformes } from './PraiaUniformes';
+import { SOMBRA_AREA, texturaDeSombras } from './PraiaSombras';
 import { praiaColisores } from './PraiaColisores';
-import { camadasDoTipo } from './PraiaGeometrias';
 import { PRAIA_ESTACAO, PRAIA_FAROL, praiaBlocks, type BlocoDaPraia } from './PraiaLayout';
 import { COR_DO_BLOCO, E_PISO, materialDoModo, materialSemLuz, MODO_DO_BLOCO, type ModoDeMaterial } from './PraiaMateriais';
 import { PraiaMar } from './PraiaMar';
-import { gradeDoTerreno, NIVEL_DO_MAR, PRAIA_LIMITES } from './PraiaTerreno';
-import { criarGaivotas, materialDaCamada } from './PraiaVida';
+import { gradeDoTerreno, PRAIA_LIMITES } from './PraiaTerreno';
+import { criarGaivotas } from './PraiaVida';
 
 /**
  * A **PRAIA DOS CABOS** (ordens P126 e P127, Fortaleza · CE): o construtor do cenário. Lê o **layout em dado** (`PraiaLayout.ts`,
@@ -20,8 +25,11 @@ import { criarGaivotas, materialDaCamada } from './PraiaVida';
  *
  * **A identidade visual (o pedido do Comandante):** fim de tarde — o céu do azul ao rosado com o sol sobre o mar; areia branquinha contra
  * o mar azulzinho claro; a cidade costeira de prédios baixos e hotéis; coqueiros, barracas, jangadas. O mapa é UM desenho por material:
- * os blocos agrupam por tipo (11 desenhos) e cada adereço é uma malha instanciada (uma por camada). Veja `PraiaLayout.ts` para o desenho
- * do mapa (a praia ao longo dos 640 m, o porto a oeste, a Ponte Metálica no meio, a estação a leste).
+ * os blocos agrupam por tipo (11 desenhos) e os adereços viram malhas estáticas fundidas por material (`PraiaAderecosMalha.ts`, 6 desenhos).
+ * O que é de acabamento entra por módulo próprio, ligado aqui (G3): a sombra assada (`PraiaSombras.ts`, lida pelo chão e pelos materiais),
+ * a luz desenhada (`PraiaLuzes.ts`: halos, poças, feixes e holofotes), o chão das zonas de cura e resfriamento (`PraiaZonas.ts`) e a gente
+ * e as pipas (`PraiaGente.ts`, evacuadas na missão). Veja `PraiaLayout.ts` para o desenho do mapa (a praia ao longo dos 640 m, o porto a
+ * oeste, a Ponte Metálica no meio, a estação a leste).
  */
 
 /** A densidade da névoa: o fim do mapa (a 600 m) some quase todo, e o horizonte do mar encontra o céu. */
@@ -39,42 +47,62 @@ const EIXO_Y = new THREE.Vector3(0, 1, 0);
 const EIXO_Z = new THREE.Vector3(0, 0, 1);
 
 export class Praia {
-  /** O uniforme de tempo (a única coisa que muda por quadro): mar, nuvens, palmas, velas, gaivotas e o feixe do farol leem dele. */
-  private readonly tempo = { value: 0 };
+  /**
+   * Os uniformes que a praia inteira divide (`PraiaUniformes.ts`): o **tempo** (a única coisa que muda por quadro: o mar, as nuvens, as palmas, as
+   * velas, as gaivotas e o feixe do farol leem dele), o **detalhe** (qualidade baixa, G12), a vida do **núcleo** da estação e a **sombra** assada.
+   */
+  private readonly u = criarUniformes();
   private feixeDoFarol: THREE.Object3D | null = null;
-  /** 1 = céu e mar com todo o detalhe (nuvens, ruído da água); 0 = qualidade baixa: só o degradê e as ondas (G12). */
-  private readonly detalhe = { value: 1 };
-  /** A vida do núcleo da estação (1 = inteira): as janelas e a fita do centro de dados e o feixe de luz reagem a ela. */
-  private readonly nucleo = { value: 1 };
+  /** Os brilhos desenhados: halos, poças de luz, feixes e os holofotes que giram (`PraiaLuzes.ts`). */
+  private readonly brilhos: PraiaLuzes;
+  /** O chão das quatro zonas de cura e de resfriamento (`PraiaZonas.ts`). */
+  private readonly zonas: PraiaZonas;
+  /** Quem passeia, pedala, nada e solta pipa na orla (`PraiaGente.ts`); evacuada na missão em ondas. */
+  private readonly gente: PraiaGente;
 
   constructor(scene: THREE.Scene, physics: PhysicsWorld) {
     scene.fog = new THREE.FogExp2(COR_DA_NEVOA, DENSIDADE_DA_NEVOA);
     this.luzes(scene);
-    new PraiaCeu(scene, this.tempo, this.detalhe);
-    new PraiaMar(scene, this.tempo, this.detalhe);
-    criarChao(scene);
+    // A sombra do sol assada no chão (uma vez por processo): o terreno e os pisos leem a mesma textura.
+    this.u.sombra.value = texturaDeSombras();
+    this.u.sombraArea.value.set(SOMBRA_AREA.minX, SOMBRA_AREA.minZ, 1 / SOMBRA_AREA.tamX, 1 / SOMBRA_AREA.tamZ);
+    new PraiaCeu(scene, this.u.tempo, this.u.detalhe);
+    new PraiaMar(scene, this.u.tempo, this.u.detalhe);
+    criarChao(scene, this.u);
     this.fisica(physics);
     this.blocos(scene);
-    this.aderecos(scene);
+    const aderecos = praiaAderecos();
+    montarAderecos(scene, this.u, aderecos);
+    this.brilhos = new PraiaLuzes(scene, this.u, aderecos);
+    this.zonas = new PraiaZonas(scene, this.u);
+    this.gente = new PraiaGente(scene, this.u.tempo);
     this.horizonte(scene);
     this.feixes(scene);
-    criarGaivotas(scene, this.tempo);
+    criarGaivotas(scene, this.u.tempo);
   }
 
   /** Por quadro: só o tempo (um número) e o giro do feixe do farol. Chamado pelo `Arena.update`. */
   update(elapsed: number): void {
-    this.tempo.value = elapsed;
+    this.u.tempo.value = elapsed;
     if (this.feixeDoFarol) this.feixeDoFarol.rotation.y = elapsed * 0.55;
+    this.brilhos.update(elapsed);
   }
 
   /** O núcleo da estação mudou (0 a 1): o centro de dados apaga as janelas e o alarme vira vermelho conforme a rede cai. */
   setNucleo(fracao: number): void {
-    this.nucleo.value = Math.max(0, Math.min(1, fracao));
+    this.u.nucleo.value = Math.max(0, Math.min(1, fracao));
+  }
+
+  /** `false`: a orla está evacuada (a missão em ondas da estação): ninguém passeia, pedala ou nada, e o céu fica sem pipa. */
+  setCivis(visivel: boolean): void {
+    this.gente.setCivis(visivel);
   }
 
   /** Liga ou desliga o detalhe caro do céu e do mar (as nuvens e o ruído da água): a qualidade baixa e o rebaixamento automático desligam. */
   setDetalhe(alto: boolean): void {
-    this.detalhe.value = alto ? 1 : 0;
+    this.u.detalhe.value = alto ? 1 : 0;
+    this.brilhos.setDetalhe(alto);
+    this.zonas.setDetalhe(alto);
   }
 
   /** As luzes do fim de tarde: o céu quente, o sol baixo sobre o mar e a luz fria que vem de dentro (do lado oposto ao sol). */
@@ -126,7 +154,7 @@ export class Praia {
     }
     for (const [chave, lista] of grupos) {
       const semLuz = chave === 'marca' || chave === 'luz' || chave === 'cabo';
-      const material = semLuz ? materialSemLuz(chave as 'marca' | 'luz' | 'cabo', this.tempo) : materialDoModo(chave as ModoDeMaterial, this.tempo, lista.some((b) => E_PISO.has(b.kind)), this.nucleo);
+      const material = semLuz ? materialSemLuz(chave as 'marca' | 'luz' | 'cabo', this.u) : materialDoModo(chave as ModoDeMaterial, this.u, lista.some((b) => E_PISO.has(b.kind)));
       const malha = new THREE.InstancedMesh(geo, material, lista.length);
       lista.forEach((b, i) => {
         _pos.set(b.x, b.y, b.z);
@@ -144,32 +172,6 @@ export class Praia {
     }
   }
 
-  /** Os adereços: cada tipo vira um `InstancedMesh` por camada (a mesma geometria para todas as instâncias). */
-  private aderecos(scene: THREE.Scene): void {
-    const porTipo = new Map<TipoDeAdereco, Adereco[]>();
-    for (const a of praiaAderecos()) {
-      const lista = porTipo.get(a.tipo) ?? [];
-      lista.push(a);
-      porTipo.set(a.tipo, lista);
-    }
-    const sobreAAgua = new Set<TipoDeAdereco>(['boia', 'barco']);
-    for (const [tipo, lista] of porTipo) {
-      for (const camada of camadasDoTipo(tipo)) {
-        const material = materialDaCamada(camada.material, this.tempo, camada.material === 'brilho' && (tipo === 'antena' || tipo === 'boia'));
-        const malha = new THREE.InstancedMesh(camada.geo, material, lista.length);
-        lista.forEach((a, i) => {
-          _pos.set(a.x, (a.y ?? 0) + (sobreAAgua.has(a.tipo) ? NIVEL_DO_MAR : 0), a.z);
-          const e = a.escala ?? 1;
-          _quat.setFromAxisAngle(EIXO_Y, a.giro);
-          malha.setMatrixAt(i, _mat.compose(_pos, _quat, _esc.set(e, e, e)));
-          if (camada.tinta) malha.setColorAt(i, new THREE.Color(a.cor ?? 0xffffff));
-        });
-        malha.computeBoundingSphere();
-        scene.add(malha);
-      }
-    }
-  }
-
   /** O horizonte da cidade: torres longe, atrás da cidade e nas pontas da orla (só desenho, na névoa). */
   private horizonte(scene: THREE.Scene): void {
     const rand = mulberry32(4417);
@@ -182,7 +184,7 @@ export class Praia {
     for (let i = 0; i < 12; i++) {
       for (const lado of [-1, 1]) lista.push({ x: lado * (350 + rand() * 90), z: 50 + rand() * 110, w: 22 + rand() * 14, d: 22 + rand() * 14, h: 26 + rand() * 60, cor: pasteis[Math.floor(rand() * pasteis.length)]! });
     }
-    const malha = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), materialDoModo('predio', this.tempo, false), lista.length);
+    const malha = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), materialDoModo('predio', this.u, false), lista.length);
     lista.forEach((b, i) => {
       malha.setMatrixAt(i, _mat.compose(_pos.set(b.x, b.h / 2, b.z), _quat.identity(), _esc.set(b.w, b.h, b.d)));
       malha.setColorAt(i, new THREE.Color(b.cor));
@@ -199,7 +201,7 @@ export class Praia {
     const coluna = new THREE.Mesh(
       new THREE.CylinderGeometry(2.4, 4.2, 150, 16, 1, true),
       new THREE.ShaderMaterial({
-        uniforms: { uTempo: this.tempo, uNucleo: this.nucleo },
+        uniforms: { uTempo: this.u.tempo, uNucleo: this.u.nucleo },
         vertexShader: 'varying float vAlt; void main(){ vAlt = position.y / 150.0 + 0.5; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
         // A coluna é ciano com a rede inteira e vira vermelha (e mais forte, como alarme) quando o núcleo cai.
         fragmentShader: 'varying float vAlt; uniform float uTempo; uniform float uNucleo; void main(){ float a = pow(1.0 - vAlt, 1.6) * (0.5 + 0.08 * sin(uTempo * 2.0) + (1.0 - uNucleo) * 0.25); vec3 c = mix(vec3(1.5, 0.2, 0.15), vec3(0.4, 1.5, 1.5), smoothstep(0.25, 0.65, uNucleo)); gl_FragColor = vec4(c, a); }',
