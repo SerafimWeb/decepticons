@@ -191,3 +191,40 @@ it('a tela de carregamento esconde os monitores com display none (guarda do boot
     expect(fonte, 'algoPorCima conhece a janela do esquadrão').toContain('#squad-modal:not(.hidden)');
   });
 });
+
+describe('console de comando: o primeiro acesso (P133)', () => {
+  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+
+  it('a frase e o "mais opções" moram na mesa (fora dos monitores), nascem escondidos, e ficam em volta do botão verde', () => {
+    const deck = html.slice(html.indexOf('<footer class="cc-deck">'), html.indexOf('</footer>', html.indexOf('<footer class="cc-deck">')));
+    expect(deck).toContain('id="cc-pitch"');
+    expect(deck).toContain('id="cc-mais"');
+    expect(deck).toMatch(/id="cc-pitch" hidden/);
+    expect(deck).toMatch(/id="cc-mais" hidden/);
+    // A ordem na mesa: a frase, o botão de jogar, o "mais opções" (a tela enxuta é uma coluna só).
+    expect(deck.indexOf('id="cc-pitch"')).toBeLessThan(deck.indexOf('id="cta"'));
+    expect(deck.indexOf('id="cta"')).toBeLessThan(deck.indexOf('id="cc-mais"'));
+  });
+
+  it('o "mais opções" não tem tecla de atalho (o Enter é do botão verde) e os atalhos seguem aparecendo uma vez só', () => {
+    const mais = html.slice(html.indexOf('id="cc-mais"'), html.indexOf('</button>', html.indexOf('id="cc-mais"')));
+    expect(mais).not.toContain('data-tecla');
+  });
+
+  it('o CSS da tela enxuta esconde os monitores, a fileira de listas e a seleção de operação, e mostra a frase e o "mais opções"', () => {
+    const bloco = css.slice(css.indexOf('Primeiro acesso (P133'), css.indexOf('Balão de ajuda dentro de um monitor'));
+    expect(bloco.length).toBeGreaterThan(500);
+    for (const alvo of ['.mon', '.cc-row', '.cc-ops']) expect(bloco).toContain(`#overlay.console.cc-primeira ${alvo}`);
+    expect(bloco).toMatch(/\.cc-pitch, \.cc-mais \{ display: none; \}/); // por padrão escondidos (o jogador comum e o dono não os veem)
+    expect(bloco).toMatch(/#overlay\.console\.cc-primeira \.cc-pitch,\s*#overlay\.console\.cc-primeira \.cc-mais \{ display: block; \}/);
+    // Na carga (cc-espera) a grade é a mesma: o botão não pula quando o jogo fica pronto.
+    expect(bloco).toContain('#overlay.console.cc-primeira .cc-launch { grid-column: 1 !important; }');
+    expect(bloco).toContain("content: 'CARREGANDO A PARTIDA'");
+  });
+
+  it('o fundo da tela enxuta deixa a cena da partida aparecer (é uma sombra, não um painel opaco)', () => {
+    const bloco = css.slice(css.indexOf('#overlay.console.cc-primeira {'), css.indexOf('#overlay.console.cc-primeira .mon,'));
+    expect(bloco).not.toMatch(/var\(--cc-wall/); // o console completo pinta a parede; a enxuta, não
+    expect(bloco).toMatch(/rgba\(6, 8, 10, 0\.2\)/);
+  });
+});

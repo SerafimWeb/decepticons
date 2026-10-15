@@ -18,6 +18,7 @@ import {
   sondarMesa,
   type PilotoNaPartida,
 } from './consoleData';
+import { ehPrimeiroAcesso, PRIMEIRA_KEY, type Armazem } from './primeiroAcesso';
 import { TacticalRadar, type RadarQuadro } from './TacticalRadar';
 import { WorldMap } from './WorldMap';
 
@@ -94,6 +95,8 @@ export class CommandConsole {
   private readonly mundo: WorldMap;
   private timer: ReturnType<typeof setInterval> | null = null;
   private comandante: boolean;
+  /** Primeiro acesso (P133): a tela enxuta, sem os monitores, até o jogador pedir "mais opções" ou começar a jogar. */
+  private primeira = false;
   /** O jogo já ficou pronto e as telas acenderam (a tela de carregamento saiu). */
   private ligado = false;
   /** A espera de assentamento do botão pronto (`ASSENTA_MS`). */
@@ -108,6 +111,8 @@ export class CommandConsole {
     if (modo.gravar === '1') gravar(COMANDANTE_KEY, '1');
     else if (modo.gravar === 'apagar') gravar(COMANDANTE_KEY, null);
     this.comandante = modo.ligado;
+    this.primeira = ehPrimeiroAcesso(location.search, armazemDoNavegador());
+    if (this.primeira) this.prepararPrimeiroAcesso();
 
     for (const el of root.querySelectorAll<HTMLElement>('.mon, .cc-ops, .cc-flags')) {
       el.addEventListener('click', (e) => e.stopPropagation());
@@ -303,7 +308,9 @@ export class CommandConsole {
       if (!pronto || this.ligado) return;
       this.assenta = setTimeout(() => {
         this.assenta = null;
-        this.ligar();
+        // No primeiro acesso só sai da espera: os monitores (e o radar, e o relógio) nem acendem, e a CPU fica para a partida.
+        if (this.primeira) this.root.classList.remove('cc-espera');
+        else this.ligar();
       }, ASSENTA_MS);
     };
     new MutationObserver(sincronizar).observe(cta, { childList: true, characterData: true, subtree: true });
@@ -377,6 +384,37 @@ export class CommandConsole {
     this.root.querySelectorAll<HTMLElement>('.mon').forEach((m, i) => m.style.setProperty('--i', String(i)));
     this.root.classList.add('cc-ligando');
     setTimeout(() => this.root.classList.remove('cc-ligando'), 2600);
+  }
+
+  /**
+   * O PRIMEIRO ACESSO (P133): a tela enxuta (o título, a frase, JOGAR e "mais opções"). Um clique no resto da tela é "jogar" (o `Game` escuta o
+   * overlay): dali em diante a próxima visita já é a do console completo. "MAIS OPÇÕES" não joga: acende os monitores.
+   */
+  private prepararPrimeiroAcesso(): void {
+    this.root.classList.add('cc-primeira');
+    const pitch = this.root.querySelector<HTMLElement>('#cc-pitch');
+    const mais = this.root.querySelector<HTMLElement>('#cc-mais');
+    if (pitch) pitch.hidden = false;
+    if (mais) {
+      mais.hidden = false;
+      mais.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.abrirConsoleCompleto();
+      });
+    }
+    this.root.addEventListener('click', () => {
+      if (this.primeira && !this.root.classList.contains('cc-carregando')) gravar(PRIMEIRA_KEY, '1');
+    });
+  }
+
+  /** "Mais opções": o console completo, agora e nas próximas visitas. */
+  private abrirConsoleCompleto(): void {
+    if (!this.primeira) return;
+    this.primeira = false;
+    gravar(PRIMEIRA_KEY, '1');
+    this.root.classList.remove('cc-primeira');
+    for (const id of ['#cc-pitch', '#cc-mais']) this.root.querySelector<HTMLElement>(id)?.setAttribute('hidden', '');
+    this.ligar();
   }
 
   /** Hora local na barra do topo (muda a cada minuto; o texto só é trocado quando muda). */
@@ -505,6 +543,15 @@ function barra(rotulo: string, valor: string, fracao: number, alerta = false): H
 }
 
 const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ','));
+
+/** O `localStorage`, se o navegador deixar usar (senão `null`: o primeiro acesso conta como primeiro). */
+function armazemDoNavegador(): Armazem | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage;
+  } catch {
+    return null;
+  }
+}
 
 function ler(chave: string): string | null {
   try {
