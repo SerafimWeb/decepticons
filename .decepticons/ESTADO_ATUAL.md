@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O PAINEL PERDE O "TEATRO" E O NOME DO JOGO APARECE — e o Comandante abre três frentes novas — Qwen, 15/10 (branch `qwen/painel-e-nomes`, P130/P131/P132)
+
+**A ordem (15/10), quatro pedidos numa mensagem:** (1) um **bug visual** na praia ("enormes quadrados pretos… em vários locais"); (2) a **nomenclatura, o universo e as cores dos times**; (3) **melhorias na tela do painel**; (4) a **pergunta sobre o processo** ("estamos fazendo certo? mais profissional e econômico?").
+
+**Feito agora (P132, três dos quatro itens do painel):** **TEATRO DE OPERAÇÕES → MAPA DE OPERAÇÕES** (`client/index.html`); o **caractere solto antes de "CIDADE NEON"** era um `◆ ` que o CSS punha no pino da **sede** (`.pin-sede .pin-nome::before`) — a regra saiu (`styles.css`); e o **cabeçalho perdeu "um jogo SERAFIM WEB"**, com a **SALA DE COMANDO** passando a dizer **CYBERMECH** (o `IDENTITY.md` § 1 documentava as duas coisas e foi corrigido junto — R17). **Ficaram de fora, de propósito:** o **VORCARIS × SERAFIM** (é escolher lado na ficção → P131) e os **identificadores internos** (`mon-teatro`, `.teatro-screen`, o tipo `Teatro`), que não aparecem na tela.
+
+**Registrado, não resolvido:**
+- **P130 — o bug dos quadrados pretos.** **Eu não leio imagem**: as duas capturas do Comandante não foram interpretadas. Suspeitos, na ordem, olhando o que a **P128** acrescentou: a **oclusão assada** (`PraiaSombras`) aplicada à parede inteira, os **quadros aditivos** dos halos/poças/feixes, as **cáusticas** e as **cortinas das zonas**, o shader das **janelas**. **Precisa:** o Comandante dizer **onde** (chão? parede? céu? flutuando?) ou o **Claude** (autor da P128, que lê imagem) reproduzir na bancada.
+- **P131 — a lore e as cores dos times.** Ordem grande, e **supera o "de lado" da P101 (13/10)**. A regra nova (**vermelho não é o inimigo padrão**; times por vermelho/verde/azul/amarelo/branco/preto) **contradiz** o `IDENTITY.md` § 3 ("verde = jogador, vermelho = IAs"), que o código inteiro assume (`palette.ts`, HUD, plaquetas, projéteis, radar) e que a **rede** precisa (o time de hoje é "você × IA"). A lore em si **espera o texto do Comandante** (`UNIVERSO.md` § 2: a geopolítica é escrita por ele). **É a maior frente aberta do projeto.**
+
+**O que eu não fiz:** nada de lore inventada e nada de mexer na regra de cores por conta própria — as duas dependem da palavra dele.
+
+**Segunda leva (mesma sessão):** o Comandante mandou mais — **ir direto do Hangar para o jogo** (P133), o **tutorial de onboarding com as narradoras** (P134, "anote para futuramente"), **evoluir a UI do mapa** (P135) e a **fonte Azonix no título**. **Feito agora:** a **fonte** — a Azonix entrou só no `h1` do console (`client/public/fonts/Azonix.otf`, **12 KB**; o `IDENTITY.md` § 3 registra a **exceção** à regra "sem webfont"). O resto ficou registrado com estado.
+
+**Dois efeitos colaterais que as guardas pegaram — e é a resposta concreta à pergunta dele sobre o processo:** tirar a linha `.studio` do cabeçalho **quebrou duas coisas**: (a) o **teste de contrato do HTML** (`CommandConsole.test.ts`), que exige o lugar de cada módulo do console; e (b) mais grave, o **`PowerSettings`**, que **anciava o aviso das potências ajustadas naquela linha** — o aviso **deixaria de aparecer, em silêncio**, e ninguém veria. Reancorei em `.cc-brand h1`. Ou seja: **a trava não é burocracia; nesta sessão ela pegou um bug real que eu mesmo introduzi** — e o custo do check (uns minutos) foi menor que o de publicar o console sem o aviso.
+
 ## A CASA EM ORDEM: a janela ARSENAL entra na main, 196 branches mergeados são apagados — Qwen, 15/10 (branch `qwen/limpeza-de-branches`, P129/P117)
 
 **A ordem (15/10):** "sim, resolva os prs detectados" — depois do benchmark (P129), com a autorização permanente de limpar bagunça (P117).

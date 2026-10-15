@@ -22,7 +22,9 @@ describe('console de comando: o HTML', () => {
       expect(consoleHtml.includes(`id="${id}"`), `falta o id ${id}`).toBe(true);
     }
     expect(consoleHtml, 'o HUD põe a assinatura da versão em .menu-foot').toMatch(/class="[^"]*\bmenu-foot\b/);
-    expect(consoleHtml, 'as Potências avisam logo depois de .studio').toMatch(/class="studio"/);
+    // O aviso das Potências (`PowerSettings`) se ancora no título do console. Ele ancorava em `.studio`,
+    // que saiu do cabeçalho na P132 (o Comandante tirou o "um jogo SERAFIM WEB" da pausa).
+    expect(consoleHtml, 'as Potências se ancoram no título (.cc-brand h1)').toMatch(/class="cc-brand"[^>]*>\s*<h1>/);
   });
 
   it('o título e o botão verde ficam fora dos monitores: clicar neles continua sendo "jogar" (é o que o teste do site clica)', () => {
