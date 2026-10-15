@@ -1,3 +1,18 @@
+## [2026-10-15] Os coqueiros se quebram a tiro com a caixa-alvo como SENSOR: o tiro acerta, o Mech e a IA atravessam (Claude, P138)
+
+**Situação:** o Comandante pediu duas vezes para "detonar os coqueiros" (e os elementos menores). Os adereços da praia são malhas **fundidas por material** (P128: de ~30 desenhos para 6), com sombra **assada** no chão, e **sem colisor** (o Mech e o tiro atravessavam).
+
+**Decisões:**
+1. **A caixa-alvo é um sensor do Rapier** (`addStaticSensorBox`), não um sólido. Um colisor sólido a cada 13 m no calçadão **quebraria as vias livres** que o `PraiaLayout.test` garante ao Colossus e emperraria a rota dos bots. O tiro e a explosão acertam o sensor; o Mech (`IGNORE_DEBRIS` + `EXCLUDE_SENSORS`), a câmera, a mira e a visão da IA (`raycast` padrão e `firstColliderOnRay`) o ignoram. **Medido:** sem a flag o sensor segura o Mech.
+2. **A regra fica no `Destructibles`** (alvos externos: vida, dano, restauração), a mesma que valia para as barricadas; o **desenho é de quem registra** (`PraiaDestrutiveis`). Nenhuma regra nova de combate: o `CombatSystem` não mudou.
+3. **Sumir sem refazer a malha:** guardar a faixa de vértices de cada adereço quebrável e **descê-la 3 km**; devolver pela cópia guardada. Nenhum desenho novo (o teto da ficha é 67).
+4. **A sombra assada também some:** recálculo **local** (a janela em volta), igual ao cálculo completo; sem isso o chão guardaria a sombra de um coqueiro que não existe.
+5. **Só o que não tem luz nem é a defesa da estação:** poste, semáforo, refletor e as barreiras do pátio ficam (a luz desenhada e a cobertura da missão dependem deles).
+
+**Alternativas descartadas:** colisor sólido (quebra as vias); uma malha instanciada por coqueiro (+2 desenhos e refaz o orçamento da P128); zerar a posição dos vértices (um shader que soma deslocamento por vértice deixaria cacos no centro do mundo: descer 3 km é à prova disso).
+
+**Por que registrar:** o desenho "sensor + faixa de vértices + janela de sombra" serve para qualquer adereço novo que deva cair: é uma linha em `DESTRUTIVEIS`.
+
 ## [2026-10-15] O quadrado preto era NaN: um `pow` de base negativa na cortina das zonas, espalhado pelo bloom (Claude, P130/P136)
 
 **Situação:** três rodadas (Qwen, Qwen, eu) sem achar a causa do "enorme quadrado preto" da praia. O Qwen não lê imagem; eu li as capturas, mas na bancada (SwiftShader, 1280×720) e no jogo em 1280×720 **não aparecia**. O Comandante trouxe a pista (aparece quando está atrás de prédio ou coqueiro; sumiu com a qualidade baixa) e o print (janela de 1549×925, DevTools aberto).

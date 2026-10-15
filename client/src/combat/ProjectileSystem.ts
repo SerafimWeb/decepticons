@@ -174,7 +174,7 @@ export class ProjectileSystem {
       const step = Math.min(speed * dt, p.weapon.maxRange - p.traveled);
       if (step <= 0) { this.kill(p); continue; }
       _dir.copy(p.velocity).divideScalar(speed);
-      const hit = this.physics.raycast(p.pos, _dir, step, p.owner);
+      const hit = this.physics.raycast(p.pos, _dir, step, p.owner, true); // `true`: o tiro também acerta as caixas-alvo (coqueiros, P138)
 
       if (hit) {
         // O resultado do raycast é reaproveitado: copia antes que o onHit dispare outro.

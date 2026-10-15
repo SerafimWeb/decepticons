@@ -91,7 +91,7 @@ export class Arena {
     if (map === 'praia') {
       // A praia traz o céu do fim de tarde, a luz do sol poente e o cenário dela (`environment/Praia.ts`): nada daqui.
       this.serafim = null;
-      this.praia = new Praia(scene, physics);
+      this.praia = new Praia(scene, physics, destructibles);
       return;
     }
 

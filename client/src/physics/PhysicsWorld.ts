@@ -5,6 +5,9 @@ import * as THREE from 'three';
 export const FIXED_DT = 1 / 60;
 export const WORLD_GRAVITY = 25;
 
+/** O filtro de quase toda consulta: sem destroços (corpos dinâmicos) e sem caixas-alvo (sensores): só o cenário que de fato bloqueia. */
+const EXCLUI_DINAMICOS_E_ALVOS = RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC | RAPIER.QueryFilterFlags.EXCLUDE_SENSORS;
+
 export interface PhysicsHit {
   point: THREE.Vector3;
   normal: THREE.Vector3;
@@ -49,6 +52,17 @@ export class PhysicsWorld {
   }
 
   /**
+   * Caixa-ALVO: um colisor **sensor** (P138: os coqueiros e os adereços pequenos que se quebram a tiro). O tiro (`raycast` com
+   * `incluiAlvos`) e a explosão o acertam; **o Mech não esbarra nele** (o controlador de personagem ignora sensores), e a câmera, a mira,
+   * a rota e a visão da IA também não: a praia segue com as vias livres que o `PraiaLayout.test` garante para um Colossus.
+   */
+  addStaticSensorBox(center: THREE.Vector3, size: THREE.Vector3, rotation?: THREE.Quaternion): RAPIER.Collider {
+    const desc = RAPIER.ColliderDesc.cuboid(size.x / 2, size.y / 2, size.z / 2).setTranslation(center.x, center.y, center.z).setSensor(true);
+    if (rotation) desc.setRotation(rotation);
+    return this.world.createCollider(desc);
+  }
+
+  /**
    * Terreno de altura (a praia, P127): UM colisor estático para o chão inteiro, em vez de centenas de caixas. A grade tem
    * `celulasX` × `celulasZ` células e `(celulasX + 1) × (celulasZ + 1)` alturas, na ordem do Rapier: **`alturas[ix * (celulasZ + 1) + iz]`**
    * (a coluna é o X, a linha é o Z; medido em `PhysicsWorld.test.ts`). `centro` é o meio da grade em planta, e `tamanho` a extensão
@@ -66,13 +80,15 @@ export class PhysicsWorld {
   /**
    * Raycast de jogo (tiro, mira, câmera). `dir` precisa estar normalizado.
    * Ignora corpos dinâmicos: destroços são só cosméticos e nunca bloqueiam tiro nem mira
-   * (o servidor nem terá destroços).
+   * (o servidor nem terá destroços). **As caixas-alvo (sensores, `addStaticSensorBox`) só contam com `incluiAlvos`**: o tiro e o míssil as
+   * acertam; a câmera, a mira, a rota e a visão da IA seguem sem vê-las.
    */
   raycast(
     origin: THREE.Vector3,
     dir: THREE.Vector3,
     maxDist: number,
     exclude?: RAPIER.Collider,
+    incluiAlvos = false,
   ): PhysicsHit | null {
     this.rayOrigin.x = origin.x;
     this.rayOrigin.y = origin.y;
@@ -84,7 +100,7 @@ export class PhysicsWorld {
       this.ray,
       maxDist,
       true,
-      RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC,
+      incluiAlvos ? RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC : EXCLUI_DINAMICOS_E_ALVOS,
       undefined,
       exclude,
     );
@@ -110,7 +126,7 @@ export class PhysicsWorld {
     this.rayDir.x = 0;
     this.rayDir.y = -1;
     this.rayDir.z = 0;
-    const hit = this.world.castRay(this.ray, maxDist, true, RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC | RAPIER.QueryFilterFlags.EXCLUDE_KINEMATIC);
+    const hit = this.world.castRay(this.ray, maxDist, true, EXCLUI_DINAMICOS_E_ALVOS | RAPIER.QueryFilterFlags.EXCLUDE_KINEMATIC);
     return hit ? fromY - hit.timeOfImpact : null;
   }
 
@@ -130,7 +146,7 @@ export class PhysicsWorld {
     this.rayDir.x = dir.x;
     this.rayDir.y = dir.y;
     this.rayDir.z = dir.z;
-    const hit = this.world.castRay(this.ray, maxDist, true, RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC, undefined, exclude);
+    const hit = this.world.castRay(this.ray, maxDist, true, EXCLUI_DINAMICOS_E_ALVOS, undefined, exclude);
     return hit?.collider ?? null;
   }
 

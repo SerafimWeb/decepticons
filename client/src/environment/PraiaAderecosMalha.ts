@@ -48,12 +48,61 @@ function instancia(camada: Camada, a: Adereco): THREE.BufferGeometry {
 }
 
 /**
+ * Onde, numa malha fundida, ficam os vértices de UM adereço (P138): é o que deixa um coqueiro **sumir sem refazer a malha**. `esconderFaixa`
+ * joga esses vértices para baixo do mundo (o triângulo some, sem custo de desenho) e `mostrarFaixa` os devolve exatamente.
+ */
+export interface FaixaDeVertices {
+  malha: THREE.Mesh;
+  inicio: number;
+  quantidade: number;
+  escondida?: boolean;
+  original?: Float32Array;
+}
+
+export interface AderecosMontados {
+  malhas: THREE.Mesh[];
+  /** As faixas de cada adereço pedido em `registrar` (vazio para os demais). */
+  faixas: Map<Adereco, FaixaDeVertices[]>;
+}
+
+/** O quanto `esconderFaixa` desce os vértices (m): bem abaixo do fundo do mar mais fundo. */
+const ABAIXO_DO_MUNDO = 3000;
+
+/** Esconde os vértices da faixa (os joga para baixo do mundo). Guarda a altura de cada um para `mostrarFaixa`. */
+export function esconderFaixa(f: FaixaDeVertices): void {
+  if (f.escondida) return;
+  const posicao = f.malha.geometry.attributes.position as THREE.BufferAttribute;
+  const v = posicao.array as Float32Array;
+  f.original = v.slice(f.inicio * 3, (f.inicio + f.quantidade) * 3);
+  for (let i = 0; i < f.quantidade; i++) v[(f.inicio + i) * 3 + 1]! -= ABAIXO_DO_MUNDO;
+  posicao.addUpdateRange(f.inicio * 3, f.quantidade * 3);
+  posicao.needsUpdate = true;
+  f.escondida = true;
+}
+
+/** Devolve os vértices ao lugar de fábrica (exatamente: usa a cópia guardada, não soma de volta). */
+export function mostrarFaixa(f: FaixaDeVertices): void {
+  if (!f.escondida || !f.original) return;
+  const posicao = f.malha.geometry.attributes.position as THREE.BufferAttribute;
+  (posicao.array as Float32Array).set(f.original, f.inicio * 3);
+  posicao.addUpdateRange(f.inicio * 3, f.quantidade * 3);
+  posicao.needsUpdate = true;
+  f.escondida = false;
+  f.original = undefined;
+}
+
+/**
  * Monta os adereços de `lista` na `scene`: uma malha por material. Devolve as malhas (os testes contam os desenhos).
  * Os materiais compartilham o tempo (`u.tempo`): as palmas, as velas e os brilhos leem dele.
  */
 export function montarAderecos(scene: THREE.Scene, u: UniformesDaPraia, lista: readonly Adereco[]): THREE.Mesh[] {
+  return montarAderecosComFaixas(scene, u, lista).malhas;
+}
+
+/** Como `montarAderecos`, e guarda onde ficam os vértices dos adereços para os quais `registrar` devolve `true` (os que se quebram). */
+export function montarAderecosComFaixas(scene: THREE.Scene, u: UniformesDaPraia, lista: readonly Adereco[], registrar?: (a: Adereco) => boolean): AderecosMontados {
   const camadasDoTipoMemo = new Map<TipoDeAdereco, Camada[]>();
-  const grupos = new Map<string, { material: MaterialDaCamada; pisca: boolean; geos: THREE.BufferGeometry[] }>();
+  const grupos = new Map<string, { material: MaterialDaCamada; pisca: boolean; geos: THREE.BufferGeometry[]; vertices: number; pedidos: { a: Adereco; inicio: number; quantidade: number }[] }>();
   for (const a of lista) {
     let camadas = camadasDoTipoMemo.get(a.tipo);
     if (!camadas) {
@@ -65,14 +114,19 @@ export function montarAderecos(scene: THREE.Scene, u: UniformesDaPraia, lista: r
       const chave = pisca ? 'brilho-pisca' : camada.material;
       let grupo = grupos.get(chave);
       if (!grupo) {
-        grupo = { material: camada.material, pisca, geos: [] };
+        grupo = { material: camada.material, pisca, geos: [], vertices: 0, pedidos: [] };
         grupos.set(chave, grupo);
       }
-      grupo.geos.push(instancia(camada, a));
+      const peca = instancia(camada, a);
+      const n = peca.attributes.position!.count;
+      if (registrar?.(a)) grupo.pedidos.push({ a, inicio: grupo.vertices, quantidade: n });
+      grupo.vertices += n;
+      grupo.geos.push(peca);
     }
   }
   const malhas: THREE.Mesh[] = [];
-  for (const { material, pisca, geos } of grupos.values()) {
+  const faixas = new Map<Adereco, FaixaDeVertices[]>();
+  for (const { material, pisca, geos, pedidos } of grupos.values()) {
     const g = mergeGeometries(geos, false);
     if (!g) throw new Error('PraiaAderecosMalha: as peças de um material não têm os mesmos atributos');
     for (const peca of geos) peca.dispose();
@@ -80,6 +134,11 @@ export function montarAderecos(scene: THREE.Scene, u: UniformesDaPraia, lista: r
     const malha = new THREE.Mesh(g, materialDaCamada(material, u.tempo, pisca));
     scene.add(malha);
     malhas.push(malha);
+    for (const p of pedidos) {
+      const lista = faixas.get(p.a) ?? [];
+      lista.push({ malha, inicio: p.inicio, quantidade: p.quantidade });
+      faixas.set(p.a, lista);
+    }
   }
-  return malhas;
+  return { malhas, faixas };
 }

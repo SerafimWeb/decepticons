@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { DIRECAO_DO_SOL } from './PraiaCeu';
-import { praiaAderecos, type Adereco } from './PraiaAderecos';
+import { chaveDoAdereco, praiaAderecos, type Adereco } from './PraiaAderecos';
 import { praiaColisores } from './PraiaColisores';
 import { PRAIA_LIMITES } from './PraiaTerreno';
 
@@ -38,6 +38,8 @@ type P = readonly [number, number];
 export interface Poligono {
   pontos: readonly P[];
   d: number;
+  /** A chave (`chaveDoAdereco`) do adereço que projeta este polígono, quando é um adereço: é o que deixa apagar a sombra de um coqueiro quebrado (P138). */
+  dono?: string;
 }
 
 export interface Oclusores {
@@ -136,6 +138,13 @@ function fatias(base: readonly P[], y0: number, y1: number): Poligono[] {
 
 /** As sombras de um adereço que NÃO é sólido (os sólidos entram pelos colisores): coqueiro, guarda-sol, poste e o telhado da barraca. */
 function sombrasDoAdereco(a: Adereco, saida: Poligono[]): void {
+  const antes = saida.length;
+  poligonosDoAdereco(a, saida);
+  const dono = chaveDoAdereco(a);
+  for (let i = antes; i < saida.length; i++) saida[i]!.dono = dono;
+}
+
+function poligonosDoAdereco(a: Adereco, saida: Poligono[]): void {
   const e = a.escala ?? 1;
   const [dx, dz] = DIRECAO_DA_SOMBRA;
   const base: P = [a.x, a.z];
@@ -188,14 +197,14 @@ export function oclusoresDaPraia(): Oclusores {
   }
   for (const a of praiaAderecos()) {
     sombrasDoAdereco(a, sombras);
-    if (a.tipo === 'palmeira') ao.push(elipse(a.x, a.z, 1.0 * (a.escala ?? 1), 1.0 * (a.escala ?? 1), 0.4, 8));
+    if (a.tipo === 'palmeira') ao.push({ ...elipse(a.x, a.z, 1.0 * (a.escala ?? 1), 1.0 * (a.escala ?? 1), 0.4, 8), dono: chaveDoAdereco(a) });
   }
   return { sombras, ao };
 }
 
 /** Preenche um polígono convexo num plano de `largura × altura` texels, no canal, com a densidade (composição pelo máximo). */
-function preenche(plano: Uint8Array, largura: number, altura: number, poligono: Poligono): void {
-  const pts = poligono.pontos.map(([x, z]) => [(x - SOMBRA_AREA.minX) / SOMBRA_RES_M, (z - SOMBRA_AREA.minZ) / SOMBRA_RES_M] as const);
+function preenche(plano: Uint8Array, largura: number, altura: number, poligono: Poligono, origemI = 0, origemJ = 0): void {
+  const pts = poligono.pontos.map(([x, z]) => [(x - SOMBRA_AREA.minX) / SOMBRA_RES_M - origemI, (z - SOMBRA_AREA.minZ) / SOMBRA_RES_M - origemJ] as const);
   if (pts.length < 3) return;
   let minJ = Infinity;
   let maxJ = -Infinity;
@@ -266,25 +275,154 @@ export interface DadosDeSombra {
 }
 
 let memorizado: DadosDeSombra | null = null;
+let oclusoresMemo: Oclusores | null = null;
+const oclusoresDoMapa = (): Oclusores => (oclusoresMemo ??= oclusoresDaPraia());
 
-export function dadosDeSombra(): DadosDeSombra {
-  if (memorizado) return memorizado;
+/** O desfoque (raio e passos) de cada camada: a penumbra do sol (~1 m) e a da oclusão. O alcance dele diz o tamanho da janela de `recalculaJanela`. */
+const DESFOQUE_SOL = { raio: 1, passos: 2 } as const;
+const DESFOQUE_AO = { raio: 3, passos: 2 } as const;
+const ALCANCE_DO_DESFOQUE = Math.max(DESFOQUE_SOL.raio * DESFOQUE_SOL.passos, DESFOQUE_AO.raio * DESFOQUE_AO.passos);
+
+/** O cálculo completo, sem memória: as duas camadas intercaladas, sem os adereços de `ocultos` (as chaves dos quebrados). Puro e determinístico. */
+export function dadosCompletos(ocultosDe: ReadonlySet<string> = new Set()): Uint8Array {
   const n = SOMBRA_LARGURA * SOMBRA_ALTURA;
   const sol = new Uint8Array(n);
   const oclusao = new Uint8Array(n);
-  const { sombras, ao } = oclusoresDaPraia();
-  for (const p of sombras) preenche(sol, SOMBRA_LARGURA, SOMBRA_ALTURA, p);
-  for (const p of ao) preenche(oclusao, SOMBRA_LARGURA, SOMBRA_ALTURA, p);
-  desfoca(sol, SOMBRA_LARGURA, SOMBRA_ALTURA, 1, 2); // penumbra de ~1 m
-  desfoca(oclusao, SOMBRA_LARGURA, SOMBRA_ALTURA, 3, 2);
+  const { sombras, ao } = oclusoresDoMapa();
+  for (const p of sombras) if (!p.dono || !ocultosDe.has(p.dono)) preenche(sol, SOMBRA_LARGURA, SOMBRA_ALTURA, p);
+  for (const p of ao) if (!p.dono || !ocultosDe.has(p.dono)) preenche(oclusao, SOMBRA_LARGURA, SOMBRA_ALTURA, p);
+  desfoca(sol, SOMBRA_LARGURA, SOMBRA_ALTURA, DESFOQUE_SOL.raio, DESFOQUE_SOL.passos); // penumbra de ~1 m
+  desfoca(oclusao, SOMBRA_LARGURA, SOMBRA_ALTURA, DESFOQUE_AO.raio, DESFOQUE_AO.passos);
   const dados = new Uint8Array(n * 2);
   for (let i = 0; i < n; i++) {
     dados[i * 2] = sol[i]!;
     dados[i * 2 + 1] = oclusao[i]!;
   }
-  memorizado = { largura: SOMBRA_LARGURA, altura: SOMBRA_ALTURA, dados };
+  return dados;
+}
+
+export function dadosDeSombra(): DadosDeSombra {
+  if (memorizado) return memorizado;
+  memorizado = { largura: SOMBRA_LARGURA, altura: SOMBRA_ALTURA, dados: dadosCompletos() };
   return memorizado;
 }
+
+// ─── Sombra que some junto com o adereço quebrado (P138) ──────────────────────────────────────────────────────
+/** As chaves dos adereços quebrados agora: a sombra e a oclusão deles não valem. */
+const ocultos = new Set<string>();
+
+/** A caixa (em texels, inclusive) onde os polígonos do dono `chave` caem; `null` se ele não projeta nada. */
+function pegadaDe(chave: string): { i0: number; j0: number; i1: number; j1: number } | null {
+  let i0 = Infinity;
+  let j0 = Infinity;
+  let i1 = -Infinity;
+  let j1 = -Infinity;
+  const { sombras, ao } = oclusoresDoMapa();
+  for (const lista of [sombras, ao]) {
+    for (const p of lista) {
+      if (p.dono !== chave) continue;
+      for (const [x, z] of p.pontos) {
+        const i = (x - SOMBRA_AREA.minX) / SOMBRA_RES_M;
+        const j = (z - SOMBRA_AREA.minZ) / SOMBRA_RES_M;
+        if (i < i0) i0 = i;
+        if (i > i1) i1 = i;
+        if (j < j0) j0 = j;
+        if (j > j1) j1 = j;
+      }
+    }
+  }
+  return i0 === Infinity ? null : { i0: Math.floor(i0), j0: Math.floor(j0), i1: Math.ceil(i1), j1: Math.ceil(j1) };
+}
+
+/** A caixa dos texels de um polígono (para saber se ele toca uma janela). */
+function caixaDoPoligono(p: Poligono): { i0: number; j0: number; i1: number; j1: number } {
+  let i0 = Infinity;
+  let j0 = Infinity;
+  let i1 = -Infinity;
+  let j1 = -Infinity;
+  for (const [x, z] of p.pontos) {
+    const i = (x - SOMBRA_AREA.minX) / SOMBRA_RES_M;
+    const j = (z - SOMBRA_AREA.minZ) / SOMBRA_RES_M;
+    if (i < i0) i0 = i;
+    if (i > i1) i1 = i;
+    if (j < j0) j0 = j;
+    if (j > j1) j1 = j;
+  }
+  return { i0, j0, i1, j1 };
+}
+
+/**
+ * Recalcula **só a janela** em volta de uma pegada (e não os 600 mil texels do mapa): a janela de escrita é a pegada mais o alcance do desfoque
+ * (onde o valor pode mudar), e a de cálculo é essa mais outro alcance (o contexto que o desfoque precisa para dar o mesmo número do cálculo
+ * completo). Poucos milissegundos, no tiro que quebra um coqueiro.
+ */
+function recalculaJanela(pegada: { i0: number; j0: number; i1: number; j1: number }): void {
+  const dados = dadosDeSombra().dados;
+  const trava = (v: number, max: number): number => Math.max(0, Math.min(max, v));
+  const a = ALCANCE_DO_DESFOQUE;
+  const z = {
+    i0: trava(pegada.i0 - a, SOMBRA_LARGURA - 1),
+    j0: trava(pegada.j0 - a, SOMBRA_ALTURA - 1),
+    i1: trava(pegada.i1 + a, SOMBRA_LARGURA - 1),
+    j1: trava(pegada.j1 + a, SOMBRA_ALTURA - 1),
+  };
+  const w = {
+    i0: trava(z.i0 - a, SOMBRA_LARGURA - 1),
+    j0: trava(z.j0 - a, SOMBRA_ALTURA - 1),
+    i1: trava(z.i1 + a, SOMBRA_LARGURA - 1),
+    j1: trava(z.j1 + a, SOMBRA_ALTURA - 1),
+  };
+  const lw = w.i1 - w.i0 + 1;
+  const lh = w.j1 - w.j0 + 1;
+  const sol = new Uint8Array(lw * lh);
+  const oclusao = new Uint8Array(lw * lh);
+  const { sombras, ao } = oclusoresDoMapa();
+  const toca = (p: Poligono): boolean => {
+    const c = caixaDoPoligono(p);
+    return c.i1 >= w.i0 - 1 && c.i0 <= w.i1 + 2 && c.j1 >= w.j0 - 1 && c.j0 <= w.j1 + 2;
+  };
+  for (const p of sombras) if ((!p.dono || !ocultos.has(p.dono)) && toca(p)) preenche(sol, lw, lh, p, w.i0, w.j0);
+  for (const p of ao) if ((!p.dono || !ocultos.has(p.dono)) && toca(p)) preenche(oclusao, lw, lh, p, w.i0, w.j0);
+  desfoca(sol, lw, lh, DESFOQUE_SOL.raio, DESFOQUE_SOL.passos);
+  desfoca(oclusao, lw, lh, DESFOQUE_AO.raio, DESFOQUE_AO.passos);
+  for (let j = z.j0; j <= z.j1; j++) {
+    for (let i = z.i0; i <= z.i1; i++) {
+      const k = (j * SOMBRA_LARGURA + i) * 2;
+      const l = (j - w.j0) * lw + (i - w.i0);
+      dados[k] = sol[l]!;
+      dados[k + 1] = oclusao[l]!;
+    }
+  }
+  if (textura) textura.needsUpdate = true;
+}
+
+/** O adereço se quebrou: some a sombra e a oclusão dele do chão (só a janela em volta). */
+export function ocultarSombrasDe(a: Adereco): void {
+  const chave = chaveDoAdereco(a);
+  if (ocultos.has(chave)) return;
+  ocultos.add(chave);
+  const pegada = pegadaDe(chave);
+  if (pegada) recalculaJanela(pegada);
+}
+
+/** O adereço voltou (rodada nova): a sombra dele volta. */
+export function mostrarSombrasDe(a: Adereco): void {
+  const chave = chaveDoAdereco(a);
+  if (!ocultos.delete(chave)) return;
+  const pegada = pegadaDe(chave);
+  if (pegada) recalculaJanela(pegada);
+}
+
+/** Uma partida nova no mesmo processo: nenhum adereço está quebrado, e o chão volta a ser o do carregamento (cálculo completo, só se algo estava oculto). */
+export function restaurarSombras(): void {
+  if (ocultos.size === 0) return;
+  ocultos.clear();
+  dadosDeSombra().dados.set(dadosCompletos());
+  if (textura) textura.needsUpdate = true;
+}
+
+/** Quantos adereços estão com a sombra apagada agora (para os testes). */
+export const sombrasOcultas = (): number => ocultos.size;
 
 /** O valor (0 a 1) da sombra do sol e da oclusão em (x, z) do mundo, lido dos dados (para os testes e para quem precisar na CPU). */
 export function sombraEm(x: number, z: number): { sol: number; ao: number } {

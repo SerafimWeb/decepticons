@@ -30,7 +30,7 @@ const MAX_CLIMB_ANGLE = (50 * Math.PI) / 180;
 const WALL_NORMAL_Y = Math.cos(MAX_CLIMB_ANGLE);
 /** Ao refazer um movimento travado no chão, afasta este tanto (m) do piso; o snap devolve no tick seguinte. */
 const UNSTICK_LIFT = 0.002;
-const IGNORE_DEBRIS = RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC;
+const IGNORE_DEBRIS = RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC | RAPIER.QueryFilterFlags.EXCLUDE_SENSORS; // destroço e caixa-alvo (sensor) não empurram o Mech
 
 /** Partes com vida independente (dano localizado). */
 export type MechPart = 'torso' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';

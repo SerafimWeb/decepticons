@@ -219,6 +219,8 @@ export class Match {
   onExplosion?: (at: THREE.Vector3) => void;
   /** Barricada quebrou (o servidor manda `PROP_BROKEN` com o `id`; o cliente aplica a mesma no visual). */
   onPropBroken?: (id: number, at: THREE.Vector3) => void;
+  /** Um alvo externo (um coqueiro, um guarda-sol: P138) caiu em `at`; `peso` é o tamanho do abalo (uma barricada vale 1). Só offline. */
+  onAlvoQuebrado?: (at: THREE.Vector3, peso: number) => void;
   /** Rodada nova começou (todos já estão de volta aos pontos de nascimento). */
   onRoundStart?: () => void;
   /**
@@ -254,6 +256,7 @@ export class Match {
     this.debris = o.debris === false ? (new NoDebris() as unknown as DebrisSystem) : new DebrisSystem(o.scene, o.physics);
     this.destructibles = new Destructibles(o.scene, o.physics, this.debris, o.particles);
     this.destructibles.onBreak = (id, at) => this.onPropBroken?.(id, at);
+    this.destructibles.onAlvoQuebrado = (at, peso) => this.onAlvoQuebrado?.(at, peso);
     const bunker = o.map === 'bunker' && !survival && !ctf && !dominio;
     // A praia abre o Deathmatch e as **ondas** (a defesa da estação, P126): os CTF/Domínio continuam na Arena.
     const praia = o.map === 'praia' && !ctf && !dominio;
