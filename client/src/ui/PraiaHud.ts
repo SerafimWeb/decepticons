@@ -86,7 +86,10 @@ export class PraiaHud {
   private textoDaAgua = '';
   private nivelDaAgua = '';
   private distanciaMostrada = '';
-  private visivel = true;
+  /** Nasce escondido (a `raiz` nasce `hidden`): o primeiro `setVisivel(true)` o mostra. */
+  private visivel = false;
+  /** O `#hud` inteiro: ganha a classe `hud-praia` enquanto este HUD está à vista (o escurecimento do topo, P139). */
+  private readonly pai: HTMLElement;
   /** Objetos reaproveitados a cada quadro (G4): o lugar do marcador, o aviso da água e a última posição escrita no DOM. */
   private readonly marca: MarcadorNaTela = { x: 0, y: 0, naBorda: false };
   private readonly aviso: AvisoDeAgua = { nivel: 'seco', progresso: 0, texto: '' };
@@ -95,6 +98,7 @@ export class PraiaHud {
   private marcaNaBorda = false;
 
   constructor(hud: HTMLElement) {
+    this.pai = hud;
     this.raiz = el('div', 'praia-hud', hud);
     this.raiz.hidden = true;
 
@@ -152,6 +156,7 @@ export class PraiaHud {
     if (v === this.visivel) return;
     this.visivel = v;
     this.raiz.hidden = !v;
+    this.pai.classList.toggle('hud-praia', v);
   }
 
   /** Uma partida nova: o anúncio do lugar e o cartão da missão voltam a valer. */

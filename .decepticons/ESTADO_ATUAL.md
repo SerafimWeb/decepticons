@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O PÔR DO SOL VERMELHO, A LUA CHEIA NASCENDO E O HUD LEGÍVEL SOBRE O CÉU — Claude, 15/10 (branch `claude/ceu-e-hud`, P137 + P139 parte 1)
+
+**As ordens:** (P137, 15/10) *"as cores ainda precisam melhorar… espero que o sol esteja se pondo, vermelho, no horizonte, isso vai diminuir a luminosidade geral… o lado esquerdo da praia terá o sol se pondo… uma lua cheia branca-azulada nascendo do outro lado, alinhada ao sol, com a luminosidade geral mais baixa"*; (P139, 15/10) *"melhorar UI desse cenário em geral"*.
+
+**O que o Comandante vê:** o céu da praia virou **um fim de tarde de dois lados** (`arte/praia-ceu-antes-claude.jpg` → `praia-ceu-depois-claude.jpg`). Do lado do sol (à **esquerda** de quem olha o mar a partir da estação) o **sol vermelho toca o horizonte**: disco, halo e o **caminho de luz vermelho** no mar. Do outro lado do mar, **alinhada com ele**, a **lua cheia branco-azulada nasce** (`praia-lua-claude.jpg`): disco com os "mares", halo frio e o caminho de luz prateado na água. O céu desce do vermelho-magenta ao violeta e ao azul-marinho (frio do lado da lua); as nuvens acendem em vermelho por baixo. **A luminosidade geral baixou**: o hemisfério, o sol e a névoa mais escuros; o sol tinge de vermelho as faces voltadas para o mar; a luz fria vem da lua; as sombras assadas seguem, e os halos, poças e holofotes da P128 ganharam presença no ambiente mais baixo. **O HUD ficou legível** (`praia-hud-legivel-claude.jpg`): o relógio da rodada, a visão da câmera e os marcos da faixa da costa sumiam sobre o céu rosado; agora o topo ganha um degradê escuro e suave (só com o HUD da praia à vista), os textos ganham sombra de verdade e os marcos crescem de 9 para 10,5 px.
+
+**Como é feito (G3):** `PraiaCeu.ts` (`DIRECAO_DO_SOL` rente ao horizonte, `DIRECAO_DA_LUZ_DO_SOL` mais alta para a luz não zerar o brilho das faces de cima, `DIRECAO_DA_LUA`, a névoa mais escura; o `GLSL_CEU` ganhou o degradê de dois lados e o halo da lua; o disco da lua só é calculado perto dela), `PraiaMar.ts` (a água mais escura, o caminho de luz do sol em vermelho e o da lua prateado), `Praia.ts` (as luzes) e, no HUD, `PraiaHud` (a classe `hud-praia` no `#hud`) + o CSS. **As sombras assadas não mudaram** (a conta lê só o x e o z do sol, e a razão entre eles ficou).
+
+**Custo (G4/G5/G12):** zero de CPU por quadro. GPU: o disco da lua (só nos pixels perto dela; liso na qualidade baixa), um brilho a mais no mar e algumas contas no degradê do céu; **a mesma contagem de luzes** (duas direcionais + o hemisfério) e **nenhum desenho novo**. **Medida (Vega 11, 1280×720, vsync desligado):** a máquina está compartilhada (25 processos `node` de outros agentes) e a mesma medida oscila de 39 a 57 fps entre rodadas iguais; **não consegui isolar um custo** e **não afirmo que não há**: a verificação limpa é o A/B alternado (FERRAMENTAS § 4) numa máquina calma.
+
+**Verificado:** `varrer-nan.mjs` na GPU real: **0 de 480 poses com NaN** (os shaders novos passam a regra `max`/`clamp`); `npm test` (o `ShadersSemNaN` guarda os `pow` novos); sem erro de página.
+
+**Onde ele confere:** `?mapa=praia`: olhar o mar a partir da estação (o sol vermelho à esquerda, a lua à direita) e da beira d'água; ver o HUD do topo sobre o céu.
+
+**Falta (R13):** (1) só a GPU desta máquina (Vega 11) foi vista; (2) o equilíbrio entre claro e escuro é gosto do Comandante: um número só (a intensidade do hemisfério e do sol em `Praia.luzes`) o sobe ou desce; (3) a lua cai **atrás de um navio** de alguns pontos de vista (o navio rebelde está no mesmo rumo): mudar o azimute dela em `DIRECAO_DA_LUA` resolve; (4) as demais melhorias de UI/UX da fase (P139) — o primeiro minuto da missão, o cartão, o aviso da água — esperam o Comandante dizer o que mais incomoda.
+
+**Próxima sessão começa com:** as respostas do Comandante às decisões #8 e #9 (ranking e login; nomes no jogo), o **apelido** (C1 do plano de `RANKING_E_LOGIN.md`) e o roleplay da P128 (a voz do SOC), que espera o aval dos nomes.
+
 ## O PRIMEIRO ACESSO CAI NUMA PARTIDA: título, uma frase, JOGAR e "mais opções", com a cena por trás — e o plano de ranking e login — Claude, 15/10 (branch `claude/primeiro-acesso`, P133/P141)
 
 **A decisão do Comandante (15/10):** *"o fluxo de primeiro acesso tem que ser chegando já numa partida, e se gostar, vai continuar jogando e configurar pouco a pouco… (temos que organizar esse lance do ranking e login também né?)"*

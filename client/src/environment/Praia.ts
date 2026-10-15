@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { mulberry32 } from '../core/rng';
-import { COR_DA_NEVOA, DIRECAO_DO_SOL, PraiaCeu } from './PraiaCeu';
+import { COR_DA_NEVOA, DIRECAO_DA_LUA, DIRECAO_DA_LUZ_DO_SOL, PraiaCeu } from './PraiaCeu';
 import { criarChao } from './PraiaChao';
 import { praiaAderecos } from './PraiaAderecos';
 import { montarAderecosComFaixas } from './PraiaAderecosMalha';
@@ -113,12 +113,14 @@ export class Praia {
 
   /** As luzes do fim de tarde: o céu quente, o sol baixo sobre o mar e a luz fria que vem de dentro (do lado oposto ao sol). */
   private luzes(scene: THREE.Scene): void {
-    scene.add(new THREE.HemisphereLight(0xffe4cc, 0xb99a70, 0.8));
-    const sol = new THREE.DirectionalLight(0xffb878, 1.9);
-    sol.position.copy(DIRECAO_DO_SOL).multiplyScalar(220);
+    // O fim de tarde com o sol vermelho no horizonte e a lua cheia nascendo (P137): a luz geral desce (o céu rosado e o chão escuro), o sol
+    // tinge de vermelho as faces voltadas para o mar, e a lua dá a luz fria do outro lado e de dentro (a que vem de trás da cidade).
+    scene.add(new THREE.HemisphereLight(0xffbfa0, 0x5f4a44, 0.52));
+    const sol = new THREE.DirectionalLight(0xff7a40, 1.5);
+    sol.position.copy(DIRECAO_DA_LUZ_DO_SOL).multiplyScalar(220);
     scene.add(sol);
-    const frio = new THREE.DirectionalLight(0x9db8e8, 0.5);
-    frio.position.set(70, 60, 120);
+    const frio = new THREE.DirectionalLight(0xa4bfff, 0.46);
+    frio.position.copy(DIRECAO_DA_LUA).multiplyScalar(220).add(new THREE.Vector3(30, 70, 120));
     scene.add(frio);
   }
 

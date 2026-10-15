@@ -1,3 +1,16 @@
+## [2026-10-15] O céu da praia ganha dois astros e a luz geral desce; o HUD ganha o degradê do topo (Claude, P137 + P139)
+
+**Situação:** o Comandante pediu "o sol se pondo, vermelho, no horizonte… a lua cheia branca-azulada nascendo do outro lado, alinhada ao sol, com a luminosidade geral mais baixa", e "melhorar a UI desse cenário". O Qwen tinha registrado a P137 com um alerta: baixar a luz colide com as sombras assadas da P128.
+
+**Decisões:**
+1. **O disco do sol e a luz do sol são duas direções.** O disco (`DIRECAO_DO_SOL`) toca o horizonte, mas a **luz** (`DIRECAO_DA_LUZ_DO_SOL`) sai mais alta, na mesma direção em planta: com a luz também rente, as faces de cima ficam sem sol direto e o mapa vira uma silhueta. Assim as faces voltadas para o mar ficam vermelhas e o resto cai na luz do céu.
+2. **As sombras assadas não colidem:** a conta lê só o x e o z do sol (e o comprimento da sombra é fixo, `COMPRIMENTO_DA_SOMBRA`); a razão entre o x e o z foi mantida, então nada foi recalculado. (O alerta da P137 não se confirmou.)
+3. **O céu é de dois lados** (a quente do sol, a fria da lua, pelo azimute), calculado na GPU como antes; o disco da lua só é calculado perto dela (o resto do céu não paga) e é liso na qualidade baixa.
+4. **A lua cuida da luz fria:** a segunda direcional, que vinha de dentro da cidade, passa a vir do rumo da lua (somada a uma componente para cima e para dentro): a mesma contagem de luzes, nenhum desenho novo.
+5. **O HUD:** a legibilidade vem de um degradê escuro no topo (classe `hud-praia` no `#hud`, só com o HUD da praia à vista) e de sombra de texto, não de mudar a cor dos elementos (a identidade neon fica).
+
+**Por que registrar:** o "um número só sobe ou desce o claro" (a intensidade do hemisfério e do sol em `Praia.luzes`) é a alavanca de gosto; o resto é estrutura. **O custo de GPU não foi isolado** (a máquina está compartilhada); a verificação limpa é o A/B alternado.
+
 ## [2026-10-15] O primeiro acesso é a tela enxuta sobre a partida; o console completo vem por pedido e a partir da segunda visita (Claude, P133/P141)
 
 **Situação:** o Comandante decidiu que o primeiro acesso "tem que ser chegando já numa partida" e que o resto (nome, clã, robô, arma, evolução) se configura "pouco a pouco, enquanto sobe no ranking". O primeiro minuto era um console de sete painéis, com o mapa-múndi à frente: a coisa que ele mesmo chamou de "o painel do mapa que assusta".
