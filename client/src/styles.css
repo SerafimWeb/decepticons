@@ -4198,6 +4198,22 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 }
 .praia-alvo b { margin-top: 3px; font-size: 10px; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 6px #000; }
 .praia-alvo span { font-size: 12px; color: var(--ink); text-shadow: 0 0 6px #000; }
+
+/* Legibilidade sobre o céu claro (P139, 15/10: "melhorar a UI desse cenário em geral"): os textos de cima (o relógio da rodada, a visão da câmera, os
+   marcos da faixa da costa) eram brilho colorido sobre um céu rosado, e sumiam. Um degradê escuro e suave no topo e uma sombra de texto de verdade.
+   A classe `hud-praia` entra no #hud com o HUD da praia à vista (`PraiaHud.setVisivel`); nos outros mapas nada muda. */
+#hud.hud-praia::before {
+  content: '';
+  position: absolute; left: 0; right: 0; top: 0;
+  height: clamp(110px, 21vh, 200px);
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(3, 6, 12, 0.62) 0%, rgba(3, 6, 12, 0.3) 55%, rgba(3, 6, 12, 0) 100%);
+}
+#hud.hud-praia .round-clock, #hud.hud-praia #mode { text-shadow: 0 1px 2px #000, 0 0 8px rgba(0, 0, 0, 0.9); }
+#hud.hud-praia .pf-marco { font-size: 10.5px; color: #cfd8dc; text-shadow: 0 1px 2px #000, 0 0 6px #000; }
+#hud.hud-praia .pf-marco.pf-estacao { color: var(--cyan); }
+#hud.hud-praia .pf-marco.pf-porto { color: var(--hot); }
+#hud.hud-praia .praia-alvo b, #hud.hud-praia .praia-alvo span { text-shadow: 0 1px 2px #000, 0 0 6px #000; }
 .praia-alvo.borda { opacity: 0.85; }
 
 /* A rede da estação (o núcleo, ui/PraiaHud.ts): a barra sob a faixa da costa, o alerta e o marcador mudam de cor com o estado. */

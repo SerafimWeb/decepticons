@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLSL_RUIDO } from './PraiaGlsl';
-import { COR_DA_NEVOA, DIRECAO_DO_SOL, GLSL_CEU } from './PraiaCeu';
+import { COR_DA_NEVOA, DIRECAO_DA_LUA, DIRECAO_DO_SOL, GLSL_CEU } from './PraiaCeu';
 import { NIVEL_DO_MAR, PRAIA_FUNDURA_MAXIMA } from './PraiaTerreno';
 
 /**
@@ -70,10 +70,10 @@ void main() {
   vec3 N = normalize(vec3(-g.x * 3.0, 1.0, -g.y * 3.0));
 
   // A cor pela fundura: turquesa na beira, azul fundo no largo.
-  vec3 raso = srgb(vec3(0.50, 0.92, 0.88));
-  vec3 medio = srgb(vec3(0.10, 0.64, 0.80));
-  vec3 fundo = srgb(vec3(0.04, 0.34, 0.62));
-  vec3 abismo = srgb(vec3(0.02, 0.20, 0.45));
+  vec3 raso = srgb(vec3(0.40, 0.78, 0.76));
+  vec3 medio = srgb(vec3(0.08, 0.50, 0.66));
+  vec3 fundo = srgb(vec3(0.03, 0.25, 0.50));
+  vec3 abismo = srgb(vec3(0.015, 0.14, 0.34));
   vec3 cor = mix(raso, medio, smoothstep(0.1, 3.2, fundura));
   cor = mix(cor, fundo, smoothstep(2.5, 8.0, fundura));
   cor = mix(cor, abismo, smoothstep(7.0, 13.0, fundura));
@@ -89,8 +89,12 @@ void main() {
   // O caminho de brilho do sol: o ponto brilhante da luz batendo na água, com a luz larga em volta.
   vec3 H = normalize(uSolDir + V);
   float spec = pow(max(dot(N, H), 0.0), 420.0) * 3.2 + pow(max(dot(N, H), 0.0), 30.0) * 0.16;
-  cor += vec3(1.0, 0.78, 0.5) * spec;
-  alfa = max(alfa, min(1.0, spec));
+  cor += vec3(1.0, 0.42, 0.16) * spec;
+  // O caminho de luz da lua: fino, prateado e frio.
+  vec3 H2 = normalize(uLuaDir + V);
+  float spec2 = pow(max(dot(N, H2), 0.0), 300.0) * 1.5 + pow(max(dot(N, H2), 0.0), 40.0) * 0.05;
+  cor += vec3(0.62, 0.76, 1.0) * spec2;
+  alfa = max(alfa, min(1.0, spec + spec2));
 
   // A espuma: o lavado da onda na beira e a linha de arrebentação logo adiante.
   float ruido = uDetalhe > 0.5 ? vn(p * 0.9 + uTempo * 0.25) : 0.6;
@@ -116,7 +120,7 @@ export class PraiaMar {
       fragmentShader: FRAGMENTO,
       uniforms: THREE.UniformsUtils.merge([
         THREE.UniformsLib.fog,
-        { uTempo: tempo, uDetalhe: detalhe, uSolDir: { value: DIRECAO_DO_SOL }, uNevoa: { value: new THREE.Color(COR_DA_NEVOA) } },
+        { uTempo: tempo, uDetalhe: detalhe, uSolDir: { value: DIRECAO_DO_SOL }, uLuaDir: { value: DIRECAO_DA_LUA }, uNevoa: { value: new THREE.Color(COR_DA_NEVOA) } },
       ]),
       transparent: true,
       depthWrite: false,
