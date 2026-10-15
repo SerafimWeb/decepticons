@@ -78,6 +78,9 @@ A proposta anterior de blocos fictícios (Coalizão Atlântica, Liga do Pacífic
 SOC e o rádio da praia (o PR `claude/praia-soc`), as fichas dos bots e o mapa de operações. **Nada disso foi reescrito ainda:** o texto
 do jogo espera o aval dos nomes acima.
 
+> **Campanhas e chefes (P147, 15/10):** o arco em cinco capítulos que usa esta base (cabos, granja de bots, algoritmo, sanção financeira, persona gerada) está em
+> `CAMPANHAS_E_CHEFES.md`. O lore (aqui) é a fonte; o desenho dos capítulos (lá) é o que vira código.
+
 ## 3. Facções
 
 | Facção | Papel | No jogo |

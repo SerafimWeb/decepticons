@@ -1,5 +1,18 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A CAMPANHA TEM DESENHO: cinco capítulos, cada chefe um problema de organização, ligados ao mundo real — Claude, 15/10 (branch `claude/campanhas-e-chefes`, P147; só documentos)
+
+**A ordem do Comandante (15/10):** *"melhorar nosso storytelling, criar campanhas que tenham um chefe e tenhamos que nos organizar pra lutar contra ele, diferentes chefes, diferentes desafios, tentando remeter pelo menos um pouco à vida real e à geopolítica internacional sempre em mira"* — e, sobre os nomes: *"você pode usar o que achar melhor"*.
+
+**Feito (só texto, sem custo de CPU):**
+1. **`CAMPANHAS_E_CHEFES.md` (novo):** o arco **OPERAÇÃO CABOS ABERTOS** em cinco capítulos. Cada chefe é **um problema de organização** (uma regra que obriga o grupo a se dividir e se comunicar), com o fio do mundo real: **1 · O ARROMBADOR** (a Colossus: cabos submarinos), **2 · A GRANJA** (fazendas de bots; o interior só para andróide, P149), **3 · O ALGORITMO** (plataformas e datacenters: a isca de raiva cura o chefe; quatro linhas de resfriamento a cortar juntas), **4 · O BANCO VORCARIS** (sanções financeiras: o cofre congela a munição, e as chaves de rota do BRICS a devolvem), **5 · O MITO DE VIDRO** (persona gerada + dependência de satélite; soma das regras dos quatro). Quatro papéis (LINHA, CORTE, SINAL, BASE), a forma igual de cada capítulo (cartão, campo, chefe, virada, fim) e a **ordem de construção em 8 PRs** (o primeiro, o Capítulo 1, é possível já: a Colossus em três fases, três nós do cabo, barra do chefe).
+2. **Nomes: arquétipos fictícios** (os que o Comandante liberou): "Império do Norte", "Clã do Mito", "Banco Vorcaris", "o Algoritmo", "a Granja". Religião fica fora do alvo: o manipulador é o influenciador, nunca uma fé inteira.
+3. `UNIVERSO.md` aponta para o documento; `ROADMAP.md` ganha o item (#universo #modos); a ordem **P147** passa a 🟡 (desenho escrito).
+
+**Falta (R13):** o Comandante **ler e cortar** (§ 5 do documento: a ordem dos capítulos, o vilão final, trocar de corpo na base, offline antes do online). **Nada disto está construído**; a Colossus como chefe de três fases é o primeiro PR de código.
+
+**Próxima sessão começa com:** a resposta do Comandante ao § 5; se ele disser "pode", o Capítulo 1.
+
 ## AS CÂMERAS DO CENÁRIO FUNCIONAM NA PRAIA: o CFTV era da Arena e agora cada mapa tem as suas — Claude, 15/10 (branch `claude/cftv-por-mapa`, P148)
 
 **A ordem do Comandante (15/10, com uma foto da tela):** *"tem 2 botões no header à direita, ambos falando da câmera. Mas eu nunca consegui usar câmeras do cenário (só 1ª e 3ª pessoa ou visão de drone por cima do meu próprio robô), não consegui ver câmeras de nenhum prédio ou portaria."*
