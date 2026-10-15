@@ -10,11 +10,14 @@ import type { MaterialDaCamada } from './PraiaGeometrias';
 
 const DECLARA_VERTICE = /* glsl */ `
 uniform float uTempo;
+attribute float aFase;
+attribute float aOnda; // a distância do mastro, no pano da bandeira
+// A fase do balanço: das malhas fundidas (aFase, calculada do lugar de cada adereço) ou, numa instanciada, do lugar da instância.
 float faseDaInstancia() {
 #ifdef USE_INSTANCING
   return instanceMatrix[3].x * 0.21 + instanceMatrix[3].z * 0.13;
 #else
-  return 0.0;
+  return aFase;
 #endif
 }
 `;
@@ -24,6 +27,9 @@ const BALANCO: Readonly<Partial<Record<MaterialDaCamada, string>>> = {
   folha: /* glsl */ `
     float fase = faseDaInstancia();
     float alt = smoothstep(3.0, 10.5, position.y);
+    // O capim da restinga (rasteiro, até ~1,5 m): balança junto, bem de leve.
+    float rasteiro = (1.0 - smoothstep(1.2, 2.5, position.y)) * smoothstep(0.1, 0.9, position.y);
+    transformed.x += sin(uTempo * 2.1 + fase * 1.7 + position.x * 0.9) * 0.11 * rasteiro;
     transformed.x += sin(uTempo * 1.4 + fase) * 0.24 * alt;
     transformed.z += cos(uTempo * 1.1 + fase * 1.3) * 0.18 * alt;
     transformed.y += sin(uTempo * 3.1 + fase + position.x * 1.7) * 0.07 * smoothstep(8.0, 11.0, position.y);
@@ -31,6 +37,13 @@ const BALANCO: Readonly<Partial<Record<MaterialDaCamada, string>>> = {
   vela: /* glsl */ `
     float fase = faseDaInstancia();
     transformed.x += sin(uTempo * 2.2 + position.y * 1.6 + fase) * 0.14 * smoothstep(1.0, 4.7, position.y);
+  `,
+  // A bandeira ondula a partir do mastro: o pano é um plano em xy (o mastro em x = 0); quanto mais longe, mais ele vai e vem em z.
+  bandeira: /* glsl */ `
+    float fase = faseDaInstancia();
+    float longe = smoothstep(0.0, 2.8, aOnda);
+    transformed += normal * sin(uTempo * 3.4 - aOnda * 2.2 + fase) * 0.3 * longe; // ao longo da normal do pano (mundo)
+    transformed.y += sin(uTempo * 2.6 - aOnda * 1.7 + fase) * 0.06 * longe;
   `,
 };
 

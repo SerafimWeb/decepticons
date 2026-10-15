@@ -1,4 +1,5 @@
 import { mulberry32 } from '../core/rng';
+import { aderecosDeCena } from './PraiaAderecosCena';
 import { PRAIA_PIER, PRAIA_FAROL, PRAIA_RUAS_X, PRAIA_CABOS_X } from './PraiaLayout';
 import { costaEm, PRAIA_LIMITES } from './PraiaTerreno';
 
@@ -13,7 +14,14 @@ import { costaEm, PRAIA_LIMITES } from './PraiaTerreno';
 
 export type TipoDeAdereco =
   | 'palmeira' | 'guardasol' | 'jangada' | 'barraca' | 'torre' | 'quiosque' | 'poste' | 'carro' | 'onibus' | 'boia' | 'rocha'
-  | 'barco' | 'guindaste' | 'farol' | 'antena' | 'parabolica' | 'radome' | 'navio';
+  | 'barco' | 'guindaste' | 'farol' | 'antena' | 'parabolica' | 'radome' | 'navio'
+  // A cena (rodada de luz e de roleplay): a base da estação, a praia e a calçada, o porto e o mar.
+  | 'refletor' | 'vigia' | 'carretel' | 'hesco' | 'barreira' | 'saco' | 'tenda' | 'gerador' | 'caminhonete' | 'bandeira' | 'cftv'
+  | 'cadeira' | 'toalha' | 'rede' | 'banco' | 'lixeira' | 'ponto' | 'semaforo' | 'touceira' | 'alga'
+  | 'empilhadeira' | 'caminhao' | 'lancha' | 'navioDeCabos' | 'navioRebelde';
+
+/** Os tipos que flutuam: ficam na altura d'água (`NIVEL_DO_MAR`), não na do chão. A malha e as luzes leem a mesma lista. */
+export const TIPOS_QUE_FLUTUAM: ReadonlySet<TipoDeAdereco> = new Set<TipoDeAdereco>(['boia', 'barco', 'navioDeCabos', 'navioRebelde']);
 
 export interface Adereco {
   tipo: TipoDeAdereco;
@@ -52,7 +60,30 @@ export const COLISORES_DOS_ADERECOS: Readonly<Partial<Record<TipoDeAdereco, read
   farol: [{ x: 0, y: 19, z: 0, w: 8.5, h: 38, d: 8.5 }],
   antena: [{ x: 0, y: 23, z: 0, w: 4.4, h: 46, d: 4.4 }],
   navio: [{ x: 0, y: 1, z: 0, w: 104, h: 14, d: 26 }, { x: -36, y: 20, z: 0, w: 18, h: 24, d: 22 }],
+  refletor: [{ x: 0, y: 7, z: 0, w: 1.8, h: 14, d: 1.8 }],
+  vigia: [{ x: 0, y: 4.5, z: 0, w: 4.2, h: 9, d: 4.2 }],
+  carretel: [{ x: 0, y: 1.6, z: 0, w: 1.9, h: 3.2, d: 3.2 }],
+  hesco: [{ x: 0, y: 1.2, z: 0, w: 2.4, h: 2.4, d: 1.1 }],
+  barreira: [{ x: 0, y: 0.58, z: 0, w: 3.2, h: 1.15, d: 0.8 }],
+  saco: [{ x: 0, y: 0.47, z: 0, w: 4, h: 0.94, d: 0.8 }],
+  tenda: [{ x: 0, y: 1.95, z: 0, w: 8.6, h: 3.9, d: 6.6 }],
+  gerador: [{ x: 0, y: 1.1, z: 0, w: 3.6, h: 2.2, d: 1.7 }],
+  caminhonete: [{ x: -0.1, y: 1.1, z: 0, w: 5.4, h: 2.2, d: 2.2 }],
+  empilhadeira: [{ x: 0, y: 1.15, z: 0.1, w: 1.6, h: 2.3, d: 3.4 }],
+  caminhao: [{ x: 0.85, y: 2, z: 0, w: 14.6, h: 3.8, d: 2.6 }],
+  lancha: [{ x: 0, y: 0.9, z: 0, w: 7.3, h: 1.8, d: 2.8 }],
 };
+
+/**
+ * As lâmpadas da festa das barracas (a luz de varal sob o beiral): onde cada uma fica, em coordenadas locais da barraca. A geometria
+ * (o brilho de cada bulbo) e o halo de cada uma (`PraiaLuzes.ts`) leem esta lista: as duas coisas nunca se desencontram.
+ */
+export const LAMPADAS_DA_BARRACA: readonly (readonly [number, number, number])[] = (() => {
+  const l: [number, number, number][] = [];
+  for (let i = 0; i < 9; i++) l.push([-4.2 + i * 1.05, 3.2 - 0.34 * Math.sin((Math.PI * i) / 8), -2.7]); // o varal da frente, com a barriga
+  for (const x of [-4.2, 4.2]) for (let i = 1; i < 5; i++) l.push([x, 3.2 - 0.3 * Math.sin((Math.PI * i) / 5), -2.7 + i * 1.08]); // os varais das laterais
+  return l;
+})();
 
 const arredonda = (n: number): number => Math.round(n * 10) / 10;
 
@@ -154,9 +185,7 @@ function mar(rand: () => number): Adereco[] {
   for (const [x, z] of [[-150, -66], [-30, -74], [60, -64], [132, -80], [204, -70], [-210, -90]] as const) {
     out.push({ tipo: 'barco', x, z, giro: rand() * Math.PI * 2, cor: CORES_DE_JANGADA[Math.floor(rand() * CORES_DE_JANGADA.length)]! });
   }
-  out.push({ tipo: 'navio', x: 190, z: -210, giro: Math.PI / 2, escala: 1.5, solido: false });
-  out.push({ tipo: 'navio', x: -110, z: -300, giro: 0, escala: 2, solido: false });
-  return out;
+  return out; // os navios do horizonte (o de cabos e a nau rebelde) estão na cena: PraiaAderecosCena.ts
 }
 
 function pedras(rand: () => number): Adereco[] {
@@ -193,7 +222,11 @@ function marcos(): Adereco[] {
 /** Todos os adereços, na ordem em que o construtor monta. */
 export function praiaAderecos(): readonly Adereco[] {
   const rand = mulberry32(31415);
-  return [...marcos(), ...barracas(), ...guardaSois(rand), ...jangadas(rand), ...palmeiras(rand), ...postes(), ...carros(rand), ...mar(rand), ...pedras(rand)];
+  const sois = guardaSois(rand);
+  return [
+    ...marcos(), ...barracas(), ...sois, ...jangadas(rand), ...palmeiras(rand), ...postes(), ...carros(rand), ...mar(rand), ...pedras(rand),
+    ...aderecosDeCena({ guardaSois: sois, barracasX: PRAIA_BARRACAS_X }),
+  ];
 }
 
 /** Uma caixa sólida em coordenadas do mundo: o centro, o tamanho e o giro em Y. */

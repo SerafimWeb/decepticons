@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { DIRECAO_DO_SOL } from './PraiaCeu';
-import { GLSL_RUIDO } from './PraiaGlsl';
+import { GLSL_RUIDO, GLSL_SOMBRA_DECLARA, glslSombraAplica } from './PraiaGlsl';
+import type { UniformesDaPraia } from './PraiaUniformes';
 import type { TipoDeBloco } from './PraiaLayout';
 
 /**
@@ -220,8 +221,8 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
 /** Quem se desenha por cima do chão (pista, calçada, marcas...): precisa de um empurrão de profundidade para não brigar com o terreno. */
 export const E_PISO = new Set<TipoDeBloco>(['asfalto', 'calcada', 'patio', 'ciclovia', 'escotilha', 'marca', 'luz', 'cabo']);
 
-/** Um material padrão da praia para o `modo`; o shader recebe o sol e o tempo. */
-export function materialDoModo(modo: ModoDeMaterial, tempo: { value: number }, piso: boolean, nucleo: { value: number } = { value: 1 }): THREE.MeshStandardMaterial {
+/** Um material padrão da praia para o `modo`; o shader recebe o sol, o tempo, a vida do núcleo e — se `piso` — a sombra assada do chão. */
+export function materialDoModo(modo: ModoDeMaterial, u: UniformesDaPraia, piso: boolean): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial({ roughness: modo === 'conteiner' ? 0.6 : modo === 'predio' ? 0.78 : 0.93, metalness: modo === 'conteiner' ? 0.25 : 0.03 });
   if (piso) {
     m.polygonOffset = true;
@@ -230,21 +231,27 @@ export function materialDoModo(modo: ModoDeMaterial, tempo: { value: number }, p
   }
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uSolDir = { value: DIRECAO_DO_SOL };
-    shader.uniforms.uTempo = tempo;
-    shader.uniforms.uNucleo = nucleo;
+    shader.uniforms.uTempo = u.tempo;
+    shader.uniforms.uNucleo = u.nucleo;
+    if (piso) {
+      shader.uniforms.uSombra = u.sombra;
+      shader.uniforms.uSombraArea = u.sombraArea;
+    }
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>\n${VERTICE_DECLARA}`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>\n${VERTICE_CORPO}`);
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\n${FRAGMENTO_DECLARA}`)
+      .replace('#include <common>', `#include <common>\n${FRAGMENTO_DECLARA}${piso ? GLSL_SOMBRA_DECLARA : ''}`)
       .replace('#include <color_fragment>', `#include <color_fragment>\n{ ${MODOS[modo]} }`);
+    // A sombra do sol assada no chão: depois da luz (e da oclusão do material), antes de somar o que o piso reflete.
+    if (piso) shader.fragmentShader = shader.fragmentShader.replace('#include <aomap_fragment>', `#include <aomap_fragment>\n${glslSombraAplica('vMundo')}`);
   };
-  m.customProgramCacheKey = () => `cybermech-praia-${modo}`;
+  m.customProgramCacheKey = () => `cybermech-praia-${modo}${piso ? '-piso' : ''}`;
   return m;
 }
 
 /** O material dos desenhos sem luz (marcas de pista, luzes, cabos): cor chapada (acima de 1 acende no bloom), com os cabos pulsando. */
-export function materialSemLuz(kind: 'marca' | 'luz' | 'cabo', tempo: { value: number }): THREE.MeshBasicMaterial {
+export function materialSemLuz(kind: 'marca' | 'luz' | 'cabo', u: UniformesDaPraia): THREE.MeshBasicMaterial {
   const m = new THREE.MeshBasicMaterial({ color: 0xffffff });
   m.polygonOffset = true;
   m.polygonOffsetFactor = kind === 'marca' ? -3 : -4;
@@ -252,7 +259,7 @@ export function materialSemLuz(kind: 'marca' | 'luz' | 'cabo', tempo: { value: n
   if (kind === 'cabo') {
     // O dado que corre pelo cabo: pulsos de luz que andam do mar para a estação (o `x` do mundo não conta: o cabo corre em z).
     m.onBeforeCompile = (shader) => {
-      shader.uniforms.uTempo = tempo;
+      shader.uniforms.uTempo = u.tempo;
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vMundo;')
         .replace('#include <begin_vertex>', `#include <begin_vertex>\n${VERTICE_CORPO.replace('vCentro = (modelMatrix * wc).xyz;', '')}`);
@@ -261,6 +268,19 @@ export function materialSemLuz(kind: 'marca' | 'luz' | 'cabo', tempo: { value: n
         .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 0.55 + 0.65 * pow(0.5 + 0.5 * sin(vMundo.z * 0.22 - uTempo * 5.0), 3.0);');
     };
     m.customProgramCacheKey = () => 'cybermech-praia-cabo';
+  } else if (kind === 'marca') {
+    // A tinta da pista também fica na sombra: o mesmo mapa assado, só escurecendo a cor (sem luz para apagar).
+    m.onBeforeCompile = (shader) => {
+      shader.uniforms.uSombra = u.sombra;
+      shader.uniforms.uSombraArea = u.sombraArea;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vMundo;')
+        .replace('#include <begin_vertex>', `#include <begin_vertex>\n${VERTICE_CORPO.replace('vCentro = (modelMatrix * wc).xyz;', '')}`);
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', `#include <common>\nvarying vec3 vMundo;\n${GLSL_SOMBRA_DECLARA}`)
+        .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1.0 - 0.55 * sombraEm(vMundo.xz).r;');
+    };
+    m.customProgramCacheKey = () => 'cybermech-praia-marca';
   }
   return m;
 }

@@ -248,11 +248,7 @@ function estacao(): BlocoDaPraia[] {
   b.push({ x: 301, y: 4, z: 26, w: 8, h: 8, d: 8, kind: 'metal', solid: true });
   b.push({ x: 301, y: 4, z: 38, w: 8, h: 8, d: 8, kind: 'metal', solid: true });
   b.push({ x: 244, y: 3.2, z: 58, w: 8, h: 6.4, d: 14, kind: 'concreto', solid: true });
-  // A cobertura do pátio: caixotes, paletes e barreiras de concreto onde a defesa se abriga.
-  for (const [x, z, w, d, h] of [
-    [256, 40, 6, 3, 2.4], [272, 30, 3, 8, 2.2], [286, 22, 8, 3, 2.4], [262, 52, 5, 5, 2.6], [248, 86, 7, 3, 2.2],
-    [276, 92, 3, 6, 2.2], [300, 52, 4, 4, 2.4], [284, 40, 10, 2, 1.8], [270, 46, 2, 10, 1.8],
-  ] as const) b.push({ x, y: h / 2, z, w, h, d, kind: 'concreto', solid: true });
+  // A cobertura do pátio (HESCO, barreiras, carretéis de cabo, geradores) são adereços da cena: PraiaAderecosCena.ts.
   // Os cabos: três faixas brilhantes do mar ao prédio (só desenho). O trecho da praia e o do pátio.
   for (const cx of PRAIA_CABOS_X) {
     const zMar = costaEm(cx) - 1;

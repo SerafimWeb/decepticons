@@ -5,6 +5,7 @@
  *
  *   node .decepticons/medicoes/praia.mjs                 # fotos em .tmp/fotos-praia/ e o JSON em medicoes/
  *   node .decepticons/medicoes/praia.mjs --arte          # as fotos vão para .decepticons/arte/praia-<vista>-claude.jpg
+ *   node .decepticons/medicoes/praia.mjs --arte --sufixo luz   # ... praia-<vista>-luz-claude.jpg (uma rodada nova sem trocar as fotos da anterior)
  *   node .decepticons/medicoes/praia.mjs --vistas orla,porto
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -13,6 +14,7 @@ import { createServer } from 'vite';
 
 const args = process.argv.slice(2);
 const arte = args.includes('--arte');
+const sufixo = args.includes('--sufixo') ? `-${args[args.indexOf('--sufixo') + 1]}` : '';
 const vistasPedidas = args.includes('--vistas') ? new Set(args[args.indexOf('--vistas') + 1].split(',')) : null;
 
 const TMP = resolve('.tmp', 'captura');
@@ -35,6 +37,17 @@ const VISTAS = {
   estacao: { cam: '236,8,-12', mira: '280,10,50', fov: 70 },
   pateo: { cam: '256,7,10', mira: '288,9,60', fov: 70 },
   rua: { cam: '20,6,44', mira: '20,8,110', fov: 70 },
+  barraca: { cam: '40,4.5,-30', mira: '46,3,-13', fov: 62 },
+  portao: { cam: '200,8,27', mira: '250,8,30', fov: 70 },
+  cais: { cam: '-225,9,-20', mira: '-272,4,-40', fov: 70 },
+  hatch: { cam: '262,8.5,-2', mira: '282,9,50', fov: 66 },
+  sombra: { cam: '120,4,-26', mira: '-60,6,-10', fov: 72 },
+  pierfim: { cam: '-72,8,-70', mira: '-70,4,-104', fov: 66 },
+  zona: { cam: '34,6,-4', mira: '20,0,11', fov: 72 },
+  zonapatio: { cam: '240,13,6', mira: '252,0,30', fov: 66 },
+  gente: { cam: '-30,2.4,9.4', mira: '60,1.6,11', fov: 62 },
+  banhistas: { cam: '0,2.6,-24', mira: '0,0,-42', fov: 66 },
+  pipas: { cam: '-70,2,-18', mira: '-60,40,-38', fov: 62 },
 };
 
 const server = await createServer({ configFile: resolve('vite.config.ts'), logLevel: 'error', server: { port: 5199, strictPort: false, open: false } });
@@ -67,7 +80,7 @@ try {
     const erro = await page.evaluate(() => window.__erro);
     if (erro) throw new Error(`vista ${nome}: ${erro}`);
     await page.waitForTimeout(300);
-    await page.screenshot({ path: join(saida, arte ? `praia-${nome}-claude.jpg` : `${nome}.jpg`), type: 'jpeg', quality: 86 });
+    await page.screenshot({ path: join(saida, arte ? `praia-${nome}${sufixo}-claude.jpg` : `${nome}.jpg`), type: 'jpeg', quality: 86 });
     const info = await page.evaluate(() => window.__info);
     medidas[nome] = { desenhos: info.calls, triangulos: info.triangles, construcaoMs: info.construcaoMs };
     console.log(`${nome}: ${info.calls} desenhos, ${info.triangles} triângulos, construção ${info.construcaoMs} ms`);

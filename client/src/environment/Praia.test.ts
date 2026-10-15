@@ -27,7 +27,7 @@ describe('o construtor da PRAIA DOS CABOS (P127)', () => {
 
   it('monta sem tela (Node, sem GL): o servidor e os testes montam o mesmo mapa', async () => {
     const { scene } = await montar();
-    expect(scene.children.length).toBeGreaterThan(30);
+    expect(scene.children.length).toBeGreaterThan(20);
     expect(scene.fog).not.toBeNull();
   });
 
@@ -42,14 +42,19 @@ describe('o construtor da PRAIA DOS CABOS (P127)', () => {
     expect(physics.world.colliders.len(), 'colisores estáticos').toBeLessThan(TETO_DE_COLISORES);
   });
 
-  it('cada adereço é UM desenho por camada (instanciado), não um por coqueiro', async () => {
+  it('todos os adereços juntos são poucos desenhos: uma malha estática por material, não um desenho por coqueiro', async () => {
     const { scene } = await montar();
-    const instanciadas = scene.children.filter((o) => (o as THREE.InstancedMesh).isInstancedMesh) as THREE.InstancedMesh[];
-    expect(instanciadas.length).toBeGreaterThan(20);
     const palmeiras = praiaAderecos().filter((a) => a.tipo === 'palmeira').length;
     expect(palmeiras).toBeGreaterThan(100); // há muitas...
-    // ...e mesmo assim o conjunto delas é a mesma malha: nenhuma malha instanciada tem mais instâncias do que adereços do mesmo tipo.
-    expect(Math.max(...instanciadas.map((m) => m.count))).toBeGreaterThanOrEqual(palmeiras);
+    // ...e as folhas delas (e as de todo o resto que balança) são UMA malha, com a fase do balanço por vértice.
+    const comFase = scene.children.filter((o) => (o as THREE.Mesh).isMesh && (o as THREE.Mesh).geometry.attributes.aFase) as THREE.Mesh[];
+    expect(comFase.length).toBeGreaterThanOrEqual(3);
+    expect(comFase.length).toBeLessThanOrEqual(8);
+    const folhas = comFase.find((m) => (m.material as THREE.Material).side === THREE.DoubleSide && m.geometry.attributes.position!.count > 10_000)!;
+    expect(folhas, 'a malha das folhas').toBeDefined();
+    // As palmas não balançam juntas: a fase muda de um coqueiro para outro.
+    const fase = folhas.geometry.attributes.aFase!.array as Float32Array;
+    expect(new Set(Array.from(fase.slice(0, 40_000))).size).toBeGreaterThan(20);
   });
 
   it('o único que muda por quadro é o tempo (o mar, as nuvens e as palmas leem dele): update não cria nada', async () => {
@@ -58,6 +63,32 @@ describe('o construtor da PRAIA DOS CABOS (P127)', () => {
     praia.update(12.5);
     praia.update(12.6);
     expect(scene.children.length).toBe(antes);
+  });
+
+  it('a luz, as zonas e a gente entram como desenhos próprios, e a missão em ondas evacua a orla', async () => {
+    const { praia, scene } = await montar();
+    const malhas: THREE.Mesh[] = [];
+    scene.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) malhas.push(o as THREE.Mesh);
+    });
+    const com = (atributo: string): THREE.Mesh[] => malhas.filter((m) => m.geometry.attributes[atributo]);
+    expect(com('iDados').length, 'os halos de luz: um desenho').toBe(1);
+    expect(com('iPoca').length, 'as poças de luz: um desenho').toBe(1);
+    expect(com('iInfo').length, 'o chão das zonas: um desenho').toBe(1);
+    expect(com('aRota').length, 'passantes, ciclistas e nadadores: três desenhos').toBe(3);
+    expect(com('aPipa').length, 'as pipas: um desenho').toBe(1);
+    const gente = [...com('aRota'), ...com('aPipa')];
+    expect(gente.every((m) => m.visible)).toBe(true);
+    praia.setCivis(false); // a missão em ondas: a orla está evacuada
+    expect(gente.every((m) => !m.visible)).toBe(true);
+    praia.setCivis(true);
+    expect(gente.every((m) => m.visible)).toBe(true);
+    // A qualidade baixa tira as poças de luz (acabamento) e deixa os halos e o chão das zonas (informação).
+    praia.setDetalhe(false);
+    expect(com('iPoca')[0]!.visible).toBe(false);
+    expect(com('iDados')[0]!.visible).toBe(true);
+    expect(com('iInfo')[0]!.visible).toBe(true);
+    praia.setDetalhe(true);
   });
 
   it('o detalhe caro do céu e do mar liga e desliga com a qualidade (G12)', async () => {

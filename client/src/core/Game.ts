@@ -452,6 +452,8 @@ export class Game {
       ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY, allies: false } : {}),
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets, barrage: this.barrage } = this.match);
+    // A missão em ondas da praia (a estação sob ataque): a orla está evacuada, sem banhistas, ciclistas nem pipas.
+    if (this.match.nucleo) this.match.arena.praia?.setCivis(false);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     if (this.match.arena.serafim) {
       addBankSign(this.scene);
