@@ -1,3 +1,13 @@
+## [2026-10-15] A casa em ordem: o ARSENAL sai do limbo e 196 branches mergeados são apagados (Qwen, P129/P117)
+
+**Situação:** depois do benchmark (P129), o Comandante mandou "resolva os prs detectados". O levantamento achou **0 PRs abertos**, **1 branch não mergeado** (`claude/arsenal`, 2 dias parado e sem PR) e **242 branches para uma `main`** (69 remotos + 173 locais).
+
+**Decisões:** (1) **O ARSENAL entra na `main`** (PR #319): o código é do Claude, não foi reescrito — trouxe a `main` para dentro do branch e resolvi o conflito (documentos: as duas entradas novas; `Game.ts`: a **união** dos imports — `CHASSIS_DOS_BOTS`, que a janela usa, mais a tática do esquadrão que entrou depois). (2) **Os testes que afirmavam o catálogo de 13/10 foram atualizados para o de hoje**, mantendo a intenção: a P120 liberou o canhão de cerco nos dois titãs e passou a derivar os encaixes, e a P124 baixou a carga do cerco para 2,4 s — **não é teste a consertar por conveniência; é o catálogo que mudou de propósito** (§ R13). (3) **Os 68 branches remotos já mergeados foram apagados num único push** (um `npm run check` só, em vez de 68), com a lista e o SHA de cada um guardados em **`.tmp/branches-mergeados.txt`** — qualquer branch volta por `git branch <nome> <sha>`. (4) **128 branches locais mergeados apagados**; os 34 presos em worktrees ficaram (o Git recusa apagá-los em uso). (5) **Nada foi apagado de worktree**: 4 delas têm trabalho não commitado (`wt-claude-fase5`, `wt-codex-bunker`, `wt-codex-bunker-evolution`, `wt-codex-bunker-vertical`) e isso é registrado, não resolvido — é o mesmo caso do `claude/arsenal` antes de hoje, e apagar trabalho alheio não commitado não é limpeza, é perda.
+
+**Por que a ordem importa:** apagar branch mergeado é seguro (os commits estão na `main`), mas **remover worktree com trabalho sujo é destrutivo** — e a junção `node_modules` de uma worktree, se não for desfeita antes, apaga a `node_modules` real (o acidente de 04/10). Por isso a limpeza parou onde havia risco.
+
+**Quem decidiu:** o Comandante mandou resolver (autorização permanente de limpar bagunça, P117); a régua de "limpar o seguro, registrar o arriscado" é minha.
+
 ## [2026-10-15] O benchmark de mercado: a coluna do CYBERMECH é o estado real, não o alvo (Qwen, P129)
 
 **Situação:** o Comandante mandou um mapeamento de seis concorrentes/referências de mech ("pegue essa orientação para fazermos um benchmark antes de lançarmos nosso game"). O mapeamento é bom como pauta de mercado, mas **descreve o CYBERMECH no futuro do indicativo** — a nossa coluna lá já é o alvo maduro ("rotação de torso/pernas: Sim", "locomoção física real", "calor crítico"), como se o jogo fosse pronto.
