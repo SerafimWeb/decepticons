@@ -56,8 +56,11 @@ export class DebrisSystem {
     return this.pieces.length;
   }
 
-  /** Quebra um bloco (centro/tamanho) numa grade de pedaços empurrados em `dir`. */
-  shatter(center: THREE.Vector3, size: THREE.Vector3, dir: THREE.Vector3, force = 10): void {
+  /**
+   * Quebra um bloco (centro/tamanho) numa grade de pedaços empurrados em `dir`. `cores` (P138: madeira e folha de um coqueiro, a lona de um
+   * guarda-sol) tinge cada pedaço com uma delas, em vez do metal quente de uma barricada.
+   */
+  shatter(center: THREE.Vector3, size: THREE.Vector3, dir: THREE.Vector3, force = 10, cores?: readonly THREE.Color[]): void {
     let nx = THREE.MathUtils.clamp(Math.round(size.x / 1.4), 1, 6);
     let ny = THREE.MathUtils.clamp(Math.round(size.y / 1.1), 1, 3);
     let nz = THREE.MathUtils.clamp(Math.round(size.z / 1.4), 1, 6);
@@ -86,14 +89,15 @@ export class DebrisSystem {
               2 + Math.random() * 5 + iy * 1.5,
               dir.z * f + out.z * 3,
             ),
-            Math.random() < 0.2,
+            cores ? false : Math.random() < 0.2,
+            cores ? cores[Math.floor(Math.random() * cores.length)] : undefined,
           );
         }
       }
     }
   }
 
-  private spawn(pos: THREE.Vector3, size: THREE.Vector3, vel: THREE.Vector3, hot: boolean): void {
+  private spawn(pos: THREE.Vector3, size: THREE.Vector3, vel: THREE.Vector3, hot: boolean, cor?: THREE.Color): void {
     if (this.pieces.length >= MAX_PIECES) this.removeAt(this.oldestIndex());
 
     const world = this.physics.world;
@@ -112,7 +116,7 @@ export class DebrisSystem {
 
     const index = this.pieces.length;
     this.pieces.push({ body, size: size.clone(), dirty: true, born: this.spawned++ });
-    this.mesh.setColorAt(index, hot ? HOT_COLOR : _c.copy(METAL_COLOR).multiplyScalar(0.7 + Math.random() * 0.6));
+    this.mesh.setColorAt(index, hot ? HOT_COLOR : _c.copy(cor ?? METAL_COLOR).multiplyScalar(0.7 + Math.random() * 0.6));
     this.mesh.count = this.pieces.length;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
   }

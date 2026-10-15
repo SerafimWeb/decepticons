@@ -1257,6 +1257,11 @@ export class Game {
       const falloff = 1 - center.distanceTo(mech.position) / 60;
       if (falloff > 0) rig.addShake(0.55 * falloff);
     };
+    // Um coqueiro ou guarda-sol que cai treme a câmera bem menos que uma barricada, e só de perto.
+    this.match.onAlvoQuebrado = (center, peso) => {
+      const falloff = 1 - center.distanceTo(mech.position) / 40;
+      if (falloff > 0) rig.addShake(0.55 * peso * falloff);
+    };
 
     const overlay = document.getElementById('overlay')!;
     // pointerdown vem antes do click: o jeito de entrar (dedo ou mouse) escolhe o modo.

@@ -43,6 +43,8 @@ export interface Adereco {
 export interface CaixaLocal {
   x: number; y: number; z: number;
   w: number; h: number; d: number;
+  /** Só nas caixas-alvo (P138): o quanto o TOPO da caixa se inclina para o +x local (rad), como o tronco do coqueiro. */
+  inclina?: number;
 }
 
 /** Quais tipos bloqueiam passagem, e com que caixas. Os outros (palmeira, guarda-sol, poste...) são enfeite. */
@@ -73,6 +75,78 @@ export const COLISORES_DOS_ADERECOS: Readonly<Partial<Record<TipoDeAdereco, read
   caminhao: [{ x: 0.85, y: 2, z: 0, w: 14.6, h: 3.8, d: 2.6 }],
   lancha: [{ x: 0, y: 0.9, z: 0, w: 7.3, h: 1.8, d: 2.8 }],
 };
+
+/**
+ * O que se QUEBRA A TIRO (P138, "quero poder detonar os coqueiros… e os elementos menores do cenário"): a vida, o abalo da câmera e as
+ * caixas-alvo de cada tipo, em coordenadas locais do adereço (antes do giro e da escala). **A caixa é um sensor** (`addStaticSensorBox`): o tiro e
+ * a explosão a acertam, o Mech, a câmera e a rota dos bots a atravessam, então as vias livres do `PraiaLayout.test` seguem valendo. Um coqueiro
+ * tem duas caixas (o tronco, que se inclina até 1,7 m no alto, e a copa, que abre 4,6 m): acertar qualquer uma tira da mesma vida.
+ *
+ * Só o que **não tem luz nem é a defesa da estação**: as luminárias (poste, semáforo, refletor) e as barreiras do pátio (HESCO, sacos, concreto)
+ * ficam de pé, porque a luz desenhada e a cobertura do pátio dependem delas.
+ */
+export interface DestrutivelDef {
+  vida: number;
+  /** O tamanho do abalo da câmera quando cai (1 = uma barricada). */
+  peso: number;
+  caixas: readonly CaixaLocal[];
+}
+
+export const DESTRUTIVEIS: Readonly<Partial<Record<TipoDeAdereco, DestrutivelDef>>> = {
+  palmeira: {
+    vida: 70,
+    peso: 0.35,
+    caixas: [
+      // O tronco: uma caixa fina inclinada do pé (0, 0) ao alto (1,7; 10,5), como o tubo da malha (`PraiaGeometrias.palmeira`).
+      { x: 0.85, y: 5.25, z: 0, w: 1.1, h: Math.hypot(1.7, 10.5), d: 1.0, inclina: Math.atan2(1.7, 10.5) },
+      // A copa: o miolo das palmas (o quadrado inscrito no círculo de 4,6 m), onde estão as folhas de verdade.
+      { x: 1.7, y: 9.9, z: 0, w: 6.6, h: 2.4, d: 6.6 },
+    ],
+  },
+  guardasol: {
+    vida: 25,
+    peso: 0.12,
+    caixas: [
+      { x: 0, y: 1.25, z: 0, w: 0.3, h: 2.5, d: 0.3 },
+      { x: 0, y: 2.65, z: 0, w: 2.9, h: 0.7, d: 2.9 },
+    ],
+  },
+  banco: { vida: 35, peso: 0.1, caixas: [{ x: 0, y: 0.55, z: -0.05, w: 2.0, h: 1.1, d: 0.7 }] },
+  lixeira: { vida: 20, peso: 0.08, caixas: [{ x: 0, y: 0.5, z: 0, w: 0.85, h: 1.0, d: 0.85 }] },
+  cadeira: { vida: 12, peso: 0.06, caixas: [{ x: 0, y: 0.45, z: -0.05, w: 0.9, h: 0.95, d: 1.9 }] },
+};
+
+/** Uma caixa-alvo no mundo: o centro, o tamanho (já na escala) e o giro em Y (o sinal é o do `Quaternion.setFromAxisAngle(Y, giro)` do three). */
+export interface CaixaNoMundo {
+  x: number; y: number; z: number;
+  w: number; h: number; d: number;
+  giro: number;
+  /** A inclinação do topo para o +x local (rad), antes do giro: só o tronco do coqueiro. */
+  inclina: number;
+}
+
+/** As caixas-alvo de `a` no mundo (vazio se o tipo não se quebra): gira cada centro local em torno do pé do adereço e aplica a escala. */
+export function caixasDoAdereco(a: Adereco): CaixaNoMundo[] {
+  const def = DESTRUTIVEIS[a.tipo];
+  if (!def) return [];
+  const e = a.escala ?? 1;
+  const c = Math.cos(a.giro);
+  const s = Math.sin(a.giro);
+  return def.caixas.map((b) => ({
+    // A rotação de `Quaternion.setFromAxisAngle(Y, g)`: x' = x·cos + z·sin, z' = −x·sin + z·cos.
+    x: a.x + e * (b.x * c + b.z * s),
+    y: (a.y ?? 0) + e * b.y,
+    z: a.z + e * (-b.x * s + b.z * c),
+    w: b.w * e,
+    h: b.h * e,
+    d: b.d * e,
+    giro: a.giro,
+    inclina: b.inclina ?? 0,
+  }));
+}
+
+/** A chave estável de um adereço (o tipo e o lugar): os adereços não têm id, e o mapa é determinístico (semente fixa). */
+export const chaveDoAdereco = (a: Pick<Adereco, 'tipo' | 'x' | 'z'>): string => `${a.tipo}@${a.x},${a.z}`;
 
 /**
  * As lâmpadas da festa das barracas (a luz de varal sob o beiral): onde cada uma fica, em coordenadas locais da barraca. A geometria

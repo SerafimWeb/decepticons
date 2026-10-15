@@ -94,7 +94,7 @@ export class RocketSystem {
       const step = speed * dt;
       _dir.copy(r.velocity).divideScalar(speed);
       if (r.target) this.steer(r, r.target, dt);
-      const hit = this.physics.raycast(r.pos, _dir, step, r.owner);
+      const hit = this.physics.raycast(r.pos, _dir, step, r.owner, true); // `true`: o míssil também acerta as caixas-alvo (coqueiros, P138)
       if (hit) {
         // Um pouco antes da superfície: a explosão não nasce dentro da parede.
         _at.copy(hit.point).addScaledVector(_dir, -0.2);

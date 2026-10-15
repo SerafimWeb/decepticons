@@ -1,14 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { chaveDoAdereco, praiaAderecos } from './PraiaAderecos';
 import { PRAIA_ESTACAO, PRAIA_COMPLEXO, praiaBlocks } from './PraiaLayout';
 import {
   cantos,
   casco,
   COMPRIMENTO_DA_SOMBRA,
   DIRECAO_DA_SOMBRA,
+  dadosCompletos,
   dadosDeSombra,
+  mostrarSombrasDe,
   oclusoresDaPraia,
+  ocultarSombrasDe,
+  restaurarSombras,
   SOMBRA_ALTURA,
+  SOMBRA_AREA,
   SOMBRA_LARGURA,
+  SOMBRA_RES_M,
+  sombrasOcultas,
   sombraDoPrisma,
   sombraEm,
   texturaDeSombras,
@@ -123,3 +131,103 @@ describe('as sombras assadas da praia (P127, rodada de luz)', () => {
     expect(s.sol).toBeGreaterThan(0.3);
   });
 });
+
+describe('a sombra some junto com o coqueiro quebrado (P138)', () => {
+  // Um coqueiro do meio do calçadão, longe dos outros e de qualquer sólido.
+  const palma = praiaAderecos().find((a) => a.tipo === 'palmeira' && Math.abs(a.x) < 40 && a.z > 5 && a.z < 6)!;
+
+  afterEach(() => restaurarSombras());
+
+  it('há um coqueiro de teste, e a sombra e a oclusão dele existem no chão', () => {
+    expect(palma).toBeDefined();
+    const c = dadosDeSombra().dados;
+    const copa = copaDaSombra(palma);
+    const k = (Math.floor((copa[1] - SOMBRA_AREA.minZ) / SOMBRA_RES_M) * SOMBRA_LARGURA + Math.floor((copa[0] - SOMBRA_AREA.minX) / SOMBRA_RES_M)) * 2;
+    expect(c[k]!, 'a copa joga sombra').toBeGreaterThan(40);
+  });
+
+  it('ocultar apaga a sombra e a oclusão dele (só nele) e mostrar as devolve', () => {
+    const antes = dadosDeSombra().dados.slice();
+    const copa = copaDaSombra(palma);
+    const sombraAntes = sombraEm(copa[0], copa[1]).sol;
+    ocultarSombrasDe(palma);
+    expect(sombrasOcultas()).toBe(1);
+    // (Os coqueiros vizinhos também sombreiam esse ponto: some a parte dele, não a de todos.)
+    expect(sombraEm(copa[0], copa[1]).sol, 'a sombra da copa diminui').toBeLessThan(sombraAntes - 0.1);
+    expect(sombraEm(palma.x, palma.z).ao, 'a oclusão do pé some').toBeLessThan(0.1);
+    // Mudou algo, e só perto dele.
+    const depois = dadosDeSombra().dados;
+    let mudou = 0;
+    let longe = 0;
+    for (let k = 0; k < depois.length; k += 2) {
+      if (depois[k] === antes[k] && depois[k + 1] === antes[k + 1]) continue;
+      mudou++;
+      const i = (k / 2) % SOMBRA_LARGURA;
+      const j = Math.floor(k / 2 / SOMBRA_LARGURA);
+      const x = SOMBRA_AREA.minX + i * SOMBRA_RES_M;
+      const z = SOMBRA_AREA.minZ + j * SOMBRA_RES_M;
+      if (Math.hypot(x - palma.x, z - palma.z) > 45) longe++; // a sombra do coqueiro tem ~35 m
+    }
+    expect(mudou).toBeGreaterThan(30);
+    expect(longe, 'nada muda a mais de 45 m do coqueiro').toBe(0);
+    mostrarSombrasDe(palma);
+    expect(sombrasOcultas()).toBe(0);
+    const volta = dadosDeSombra().dados;
+    let maior = 0;
+    for (let k = 0; k < volta.length; k++) maior = Math.max(maior, Math.abs(volta[k]! - antes[k]!));
+    expect(maior, 'voltou ao do carregamento (no máximo 1 de diferença de arredondamento)').toBeLessThanOrEqual(1);
+  });
+
+  it('a janela local dá o mesmo número do cálculo completo sem o coqueiro (no máximo 1 de arredondamento)', () => {
+    ocultarSombrasDe(palma);
+    const incremental = dadosDeSombra().dados;
+    const completo = dadosCompletos(new Set([chaveDoAdereco(palma)]));
+    let maior = 0;
+    for (let k = 0; k < completo.length; k++) maior = Math.max(maior, Math.abs(incremental[k]! - completo[k]!));
+    expect(maior).toBeLessThanOrEqual(1);
+  });
+
+  it('dois coqueiros vizinhos quebrados não se atrapalham, e restaurar tudo devolve o chão do carregamento', () => {
+    const vizinha = praiaAderecos().find((a) => a.tipo === 'palmeira' && a !== palma && Math.hypot(a.x - palma.x, a.z - palma.z) < 40)!;
+    expect(vizinha).toBeDefined();
+    const antes = dadosDeSombra().dados.slice();
+    ocultarSombrasDe(palma);
+    ocultarSombrasDe(vizinha);
+    const completo = dadosCompletos(new Set([chaveDoAdereco(palma), chaveDoAdereco(vizinha)]));
+    let maior = 0;
+    for (let k = 0; k < completo.length; k++) maior = Math.max(maior, Math.abs(dadosDeSombra().dados[k]! - completo[k]!));
+    expect(maior).toBeLessThanOrEqual(1);
+    restaurarSombras();
+    expect(sombrasOcultas()).toBe(0);
+    expect(Array.from(dadosDeSombra().dados)).toEqual(Array.from(antes));
+  });
+
+  it('quebrar duas vezes ou mostrar sem ter quebrado não faz nada', () => {
+    const antes = dadosDeSombra().dados.slice();
+    mostrarSombrasDe(palma);
+    expect(Array.from(dadosDeSombra().dados)).toEqual(Array.from(antes));
+    ocultarSombrasDe(palma);
+    const uma = dadosDeSombra().dados.slice();
+    ocultarSombrasDe(palma);
+    expect(Array.from(dadosDeSombra().dados)).toEqual(Array.from(uma));
+    expect(sombrasOcultas()).toBe(1);
+  });
+
+  it('a textura é a mesma lista de bytes: o que muda no dado chega à GPU no próximo quadro', () => {
+    const t = texturaDeSombras();
+    expect(t.image.data).toBe(dadosDeSombra().dados);
+    const v = t.version;
+    ocultarSombrasDe(palma);
+    expect(t.version).toBeGreaterThan(v);
+  });
+});
+
+/** O ponto (x, z) do chão onde a copa de `a` joga a sombra (o fim da sombra do tronco): o mesmo cálculo de `sombrasDoAdereco`. */
+function copaDaSombra(a: { x: number; z: number; giro: number; escala?: number }): [number, number] {
+  const e = a.escala ?? 1;
+  const [dx, dz] = DIRECAO_DA_SOMBRA;
+  const topoX = a.x + 1.7 * e * Math.cos(a.giro);
+  const topoZ = a.z - 1.7 * e * Math.sin(a.giro);
+  const d = COMPRIMENTO_DA_SOMBRA * 10.5 * e;
+  return [topoX + dx * d + dx * 0.4, topoZ + dz * d + dz * 0.4];
+}

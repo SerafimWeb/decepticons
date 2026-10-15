@@ -120,4 +120,18 @@ describe('MechBase: movimento', () => {
     });
     expect(withDebris.positions).toEqual(clean.positions);
   });
+
+  it('as caixas-alvo (sensores: coqueiros e adereços que se quebram a tiro, P138) não seguram o Mech; o sólido de verdade segura', async () => {
+    // O Mech corre para -z (moveYaw 0): uma caixa no caminho, a 10 m. O sensor atravessa; o bloco, não.
+    const livre = await simulate(new THREE.Vector3(0, 0, 0), input(0), 180);
+    const comSensor = await simulate(new THREE.Vector3(0, 0, 0), input(0), 180, (physics) => {
+      physics.addStaticSensorBox(new THREE.Vector3(0, 3, -10), new THREE.Vector3(4, 6, 1.5));
+    });
+    expect(comSensor.positions, 'o sensor não muda o trajeto').toEqual(livre.positions);
+    const comBloco = await simulate(new THREE.Vector3(0, 0, 0), input(0), 180, (physics) => {
+      physics.addStaticBox(new THREE.Vector3(0, 3, -10), new THREE.Vector3(4, 6, 1.5));
+    });
+    expect(comBloco.positions.at(-1)!.z, 'o bloco o para antes de z = -10').toBeGreaterThan(-10);
+    expect(livre.positions.at(-1)!.z, 'sem nada ele passa de z = -10').toBeLessThan(-10);
+  });
 });

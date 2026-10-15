@@ -4,7 +4,9 @@ import { mulberry32 } from '../core/rng';
 import { COR_DA_NEVOA, DIRECAO_DO_SOL, PraiaCeu } from './PraiaCeu';
 import { criarChao } from './PraiaChao';
 import { praiaAderecos } from './PraiaAderecos';
-import { montarAderecos } from './PraiaAderecosMalha';
+import { montarAderecosComFaixas } from './PraiaAderecosMalha';
+import { ehDestrutivel, PraiaDestrutiveis } from './PraiaDestrutiveis';
+import type { Destructibles } from './Destructibles';
 import { PraiaGente } from './PraiaGente';
 import { PraiaLuzes } from './PraiaLuzes';
 import { PraiaZonas } from './PraiaZonas';
@@ -60,7 +62,10 @@ export class Praia {
   /** Quem passeia, pedala, nada e solta pipa na orla (`PraiaGente.ts`); evacuada na missão em ondas. */
   private readonly gente: PraiaGente;
 
-  constructor(scene: THREE.Scene, physics: PhysicsWorld) {
+  /** Os coqueiros e os adereços pequenos que se quebram a tiro (P138); `null` sem `Destructibles` (a bancada, os testes de cenário). */
+  readonly destrutiveis: PraiaDestrutiveis | null;
+
+  constructor(scene: THREE.Scene, physics: PhysicsWorld, destructibles?: Destructibles) {
     scene.fog = new THREE.FogExp2(COR_DA_NEVOA, DENSIDADE_DA_NEVOA);
     this.luzes(scene);
     // A sombra do sol assada no chão (uma vez por processo): o terreno e os pisos leem a mesma textura.
@@ -72,7 +77,8 @@ export class Praia {
     this.fisica(physics);
     this.blocos(scene);
     const aderecos = praiaAderecos();
-    montarAderecos(scene, this.u, aderecos);
+    const montados = montarAderecosComFaixas(scene, this.u, aderecos, destructibles ? ehDestrutivel : undefined);
+    this.destrutiveis = destructibles ? new PraiaDestrutiveis(destructibles, aderecos, montados.faixas) : null;
     this.brilhos = new PraiaLuzes(scene, this.u, aderecos);
     this.zonas = new PraiaZonas(scene, this.u);
     this.gente = new PraiaGente(scene, this.u.tempo);
