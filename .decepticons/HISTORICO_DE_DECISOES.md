@@ -8,6 +8,10 @@
 
 **Quem decidiu:** o Comandante pediu; a separação entre "o que dá para fazer sem inventar" e "o que precisa da palavra dele" é minha.
 
+**Mesma sessão — a fonte e o que as guardas pegaram (P133/P134/P135).** (1) **A Azonix no título** foi pedido explícito dele ("no título do game CYBERMECH, use a font azonix.otf"): entrou **só no `h1` do console** (`client/public/fonts/Azonix.otf`, **12 KB**) e o `IDENTITY.md` § 3, que dizia "**sem webfont**", ganhou a **exceção registrada** — uma família, um uso, 12 KB. (2) **Tirar o `.studio` do cabeçalho quebrou duas coisas, e as duas guardas funcionaram:** o **teste de contrato do HTML** acusou, e o **`PowerSettings` ancorava o aviso das potências ajustadas naquela linha** — o aviso **sumiria em silêncio** (o teste pegou de raspão, procurando o mesmo `class="studio"`). **Decisão:** reancorar o aviso em `.cc-brand h1` e atualizar o contrato, em vez de manter uma linha morta só para o teste passar — o HTML manda, o teste segue. (3) **Registradas sem construir:** P133 (o primeiro minuto: **Hangar → jogar** e a entrada direta no jogo, sem o mapa assustar de primeira) e P134 (**tutorial de onboarding** com a Claudia, a Katya, a Duda e a Mary J, no padrão do `serafimcybersimulator` — "anote para futuramente", palavras dele). (4) **P135 deixa a evolução da UI do mapa em aberto:** é desenho, e o Comandante julga por olho.
+
+**Por que isto importa para a pergunta dele sobre o processo:** o custo que ele sente (as horas por resposta, os processos que ele não entende) tem uma parte que **se paga**: nesta mesma sessão a trava pegou um aviso que teria desaparecido do jogo sem ninguém notar. O que **não** se paga é rodar o check inteiro para trocar uma palavra num `.md` — isso é o que dá para cortar.
+
 ## [2026-10-15] A casa em ordem: o ARSENAL sai do limbo e 196 branches mergeados são apagados (Qwen, P129/P117)
 
 **Situação:** depois do benchmark (P129), o Comandante mandou "resolva os prs detectados". O levantamento achou **0 PRs abertos**, **1 branch não mergeado** (`claude/arsenal`, 2 dias parado e sem PR) e **242 branches para uma `main`** (69 remotos + 173 locais).

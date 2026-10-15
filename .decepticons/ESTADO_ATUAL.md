@@ -12,6 +12,10 @@
 
 **O que eu não fiz:** nada de lore inventada e nada de mexer na regra de cores por conta própria — as duas dependem da palavra dele.
 
+**Segunda leva (mesma sessão):** o Comandante mandou mais — **ir direto do Hangar para o jogo** (P133), o **tutorial de onboarding com as narradoras** (P134, "anote para futuramente"), **evoluir a UI do mapa** (P135) e a **fonte Azonix no título**. **Feito agora:** a **fonte** — a Azonix entrou só no `h1` do console (`client/public/fonts/Azonix.otf`, **12 KB**; o `IDENTITY.md` § 3 registra a **exceção** à regra "sem webfont"). O resto ficou registrado com estado.
+
+**Dois efeitos colaterais que as guardas pegaram — e é a resposta concreta à pergunta dele sobre o processo:** tirar a linha `.studio` do cabeçalho **quebrou duas coisas**: (a) o **teste de contrato do HTML** (`CommandConsole.test.ts`), que exige o lugar de cada módulo do console; e (b) mais grave, o **`PowerSettings`**, que **anciava o aviso das potências ajustadas naquela linha** — o aviso **deixaria de aparecer, em silêncio**, e ninguém veria. Reancorei em `.cc-brand h1`. Ou seja: **a trava não é burocracia; nesta sessão ela pegou um bug real que eu mesmo introduzi** — e o custo do check (uns minutos) foi menor que o de publicar o console sem o aviso.
+
 ## A CASA EM ORDEM: a janela ARSENAL entra na main, 196 branches mergeados são apagados — Qwen, 15/10 (branch `qwen/limpeza-de-branches`, P129/P117)
 
 **A ordem (15/10):** "sim, resolva os prs detectados" — depois do benchmark (P129), com a autorização permanente de limpar bagunça (P117).

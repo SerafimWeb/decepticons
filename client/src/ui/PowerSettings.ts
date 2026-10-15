@@ -184,7 +184,7 @@ export class PowerSettings {
   /** Aviso na pausa quando a partida roda com potências ajustadas (para ninguém esquecer que mexeu). */
   private flagPause(): void {
     const n = this.store.changes;
-    const after = document.querySelector('#overlay .studio');
+    const after = document.querySelector('#overlay .cc-brand h1');
     if (!n || !after) return;
     const flag = document.createElement('p');
     flag.className = 'power-flag';

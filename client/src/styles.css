@@ -363,9 +363,7 @@ html, body {
   #brand-splash.on, #brand-splash.on * { animation-duration: 0.01s !important; opacity: 1 !important; }
 }
 
-/* Assinatura do estúdio e build na pausa. */
-#overlay .studio { margin: -14px 0 18px; font-size: 10px; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; }
-#overlay .studio b { color: var(--ink); font-weight: 600; }
+/* Assinatura da versão (build) na pausa. A linha `.studio` ("um jogo SERAFIM WEB") saiu do cabeçalho na P132. */
 #overlay .build-tag { margin: 0; font-size: 10px; letter-spacing: 1px; color: #56605a; }
 
 /* Linha do servidor na pausa (ui/ServerStatus.ts): no fluxo da coluna de jogar, logo abaixo dos botões. */
@@ -2910,8 +2908,9 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   pointer-events: none;
 }
 .cc-brand { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; min-width: 0; }
-#overlay.console h1 { margin: 0; font-size: calc(clamp(20px, 2.3vw, 32px) * var(--k)); letter-spacing: 6px; color: var(--accent); text-shadow: 0 0 14px rgba(57, 255, 106, 0.55); }
-#overlay.console .studio { margin: 0; }
+/* Azonix só no título do jogo (P135): uma família, um uso, 12 KB. O resto segue na monoespaçada do sistema. */
+@font-face { font-family: 'Azonix'; src: url('/fonts/Azonix.otf') format('opentype'); font-display: swap; }
+#overlay.console h1 { margin: 0; font-family: 'Azonix', 'Consolas', 'Courier New', monospace; font-size: calc(clamp(20px, 2.3vw, 32px) * var(--k)); letter-spacing: 6px; color: var(--accent); text-shadow: 0 0 14px rgba(57, 255, 106, 0.55); }
 .cc-brand .power-flag { margin: 0; font-size: calc(9px * var(--k)); }
 .cc-sala { margin: 0; font-size: calc(11px * var(--k)); letter-spacing: 5px; color: #8b97a0; white-space: nowrap; }
 .cc-sala b { color: var(--alert); font-weight: 700; }

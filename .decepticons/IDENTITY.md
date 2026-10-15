@@ -44,9 +44,9 @@ Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 | Jogador | `#e0a21a` amarelo de perigo, visor verde |
 | IAs rebeldes | `#8c1f22` vermelho escuro, visor vermelho |
 
-**Leitura de combate acima de tudo:** verde é sempre do jogador e vermelho sempre das IAs; a cidade pode usar todas as cores. **Nunca só azul e roxo.** Nova cor entra primeiro no `palette.ts` / `:root`, nunca solta no código.
+**Leitura de combate acima de tudo:** verde é sempre do jogador e vermelho sempre das IAs; a cidade pode usar todas as cores. **Nunca só azul e roxo.** Nova cor entra primeiro no `palette.ts` / `:root`, nunca solta no código. **Em revisão (P131, 15/10):** o Comandante decidiu que **os times passam a ser identificados por cor** (vermelho, verde, azul, amarelo, branco e preto) e que **o vermelho deixa de ser o inimigo padrão** — a regra acima vale até esta ordem ser executada.
 
-**Fonte:** monoespaçada do sistema (`Consolas`, `Courier New`), sem webfont para não pesar o carregamento.
+**Fonte:** monoespaçada do sistema (`Consolas`, `Courier New`). **Uma exceção (P135, 15/10):** o **título do jogo** usa a **Azonix** (`client/public/fonts/Azonix.otf`, 12 KB, só o `h1` do console) — o resto segue sem webfont para não pesar o carregamento.
 **Render:** brilho via bloom HDR (cores > 1.0 passam do limiar); geometria procedural e Mechs GLB importados, conforme MECHS_IMPORTADOS.md.
 
 ---
