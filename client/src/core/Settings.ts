@@ -4,6 +4,7 @@
  * jogador (localStorage), que é dado de fora: `sanitizeSettings` valida e limita campo a campo.
  */
 
+import { NARRACOES, type Narracao } from '../audio/falas';
 import { BOT_NAMES, NAME_MAX } from './botNames';
 
 /** Ações do teclado que o jogador pode trocar. O valor é `KeyboardEvent.code` (posição física). */
@@ -68,6 +69,8 @@ export interface GameSettings {
   showPerf: boolean;
   /** Volume mestre do áudio (0 a 1) */
   volume: number;
+  /** A voz do narrador (P146): um sotaque, `mix` (um por fala) ou `off`. Vale na hora. */
+  narracao: Narracao;
   keys: Record<KeyAction, string>;
 }
 
@@ -108,6 +111,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   maxAttackers: 2,
   showPerf: false,
   volume: 0.8,
+  narracao: 'br',
   keys: Object.freeze({
     forward: 'KeyW',
     back: 'KeyS',
@@ -242,6 +246,7 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     maxAttackers: Math.round(num(r.maxAttackers, d.maxAttackers, LIMITS.maxAttackers.min, LIMITS.maxAttackers.max) * 2) / 2,
     showPerf: typeof r.showPerf === 'boolean' ? r.showPerf : d.showPerf,
     volume: num(r.volume, d.volume, LIMITS.volume.min, LIMITS.volume.max),
+    narracao: NARRACOES.includes(r.narracao as Narracao) ? (r.narracao as Narracao) : d.narracao,
     keys,
   };
 }

@@ -95,6 +95,8 @@ import { SquadPanel } from '../ui/SquadPanel';
 import { SequenciaDeAbates } from '../combat/killStreak';
 import { bootProgresso } from './bootProgress';
 import { locucaoDoNavegador } from '../ui/locucao';
+import { chaveDaRodada, chaveDaSequencia, falaGerada, narracaoDaUrl } from '../audio/falas';
+import { Narrador, type PlayerDeVoz } from '../audio/Narrador';
 import { ArsenalPanel } from '../ui/ArsenalPanel';
 import { CampaignPanel } from '../ui/CampaignPanel';
 import { CampaignRunHud } from '../ui/CampaignRunHud';
@@ -288,6 +290,8 @@ export class Game {
   private campanhaHud: CampaignRunHud | null = null;
   /** A sequência de abates do jogador (P96): alimenta o aviso de abate. Só da tela (G1/G2). */
   private readonly sequencia = new SequenciaDeAbates();
+  /** O narrador (P146): a voz e o sotaque das falas de partida. */
+  private readonly narrador: Narrador;
   /** O "COMBATE!" da primeira rodada já apareceu (ao entrar na partida)? */
   private aberturaFeita = false;
   private appliedQuality: QualityPreset | null = null;
@@ -616,7 +620,7 @@ export class Game {
         onRoundEnd: () => this.playTelemetry.finish('completed'),
         onKill: (killer, dead, mine) => {
           this.killFeed.push(killer, dead, mine);
-          if (dead === 'VOCÊ') { this.playTelemetry.death(); this.sequencia.zerar(); }
+          if (dead === 'VOCÊ') { this.playTelemetry.death(); this.sequencia.zerar(); this.narrador.dizer('voce_morreu', 3); }
           else if (killer === 'VOCÊ') { this.playTelemetry.kill(); this.hud.killBanner.showKill(dead, this.sequencia.abate(performance.now() / 1000)); }
         },
         onScore: (kills, deaths) => this.hud.setScore(kills, deaths),
@@ -742,10 +746,33 @@ export class Game {
     new PowerSettings(this.power);
     this.settings.onChange((s) => this.applySettings(s));
     // O aviso de abate (P96) e a abertura da rodada (3·2·1·COMBATE!) só avisam; o som é do AudioSystem e a voz, do navegador (um contexto de áudio só).
-    this.hud.killBanner.som = (streak) => this.audio.playKillStreak(streak);
+    // O narrador (P146): clipes do `npm run vozes` (um por fala e sotaque, o jogador escolhe); sem clipe, a fala em português cai na voz do navegador.
     const locucao = locucaoDoNavegador(() => this.audio.enabled, () => this.settings.value.volume);
+    const vozes: PlayerDeVoz = {
+      pronto: (n) => this.audio.temAmostra(`voz:${n}`),
+      pedir: (n, url) => this.audio.pedirVoz(`voz:${n}`, url),
+      tocar: (n, ganho) => this.audio.tocarVoz(`voz:${n}`, ganho),
+    };
+    this.narrador = new Narrador({
+      player: vozes,
+      narracao: () => narracaoDaUrl() ?? this.settings.value.narracao,
+      gerada: (sotaque, chave) => falaGerada(sotaque, chave),
+      base: import.meta.env.BASE_URL,
+      agora: () => performance.now() / 1000,
+      sorteio: () => Math.random(),
+      reserva: (texto) => locucao.falar(texto),
+    });
+    this.narrador.preparar();
+    this.hud.killBanner.som = (streak) => {
+      this.audio.playKillStreak(streak);
+      const chave = chaveDaSequencia(streak);
+      if (chave) this.narrador.dizer(chave, 2);
+    };
     this.hud.roundOverlay.som = { contagem: () => this.audio.playCountdownBeep(false), combate: () => this.audio.playCountdownBeep(true) };
-    this.hud.roundOverlay.falar = (texto) => void locucao.falar(texto);
+    this.hud.roundOverlay.anunciar = (e) => {
+      const chave = e.tipo === 'combate' ? 'combate' : chaveDaRodada(e.rodada);
+      if (chave) this.narrador.dizer(chave, 3);
+    };
 
     // O mapa (Arena ou Bunker) se escolhe no mapa-múndi do console; aqui fica só o modo.
     this.modeSelector.attachTo(document.getElementById('menu-mode'));
@@ -1176,7 +1203,7 @@ export class Game {
       const isPlayerInvolved = dead === mech || killer === mech;
       this.killFeed.push(killerName, deadName, isPlayerInvolved);
       // Aviso de abate e de sequência (P96): abater aliado (fogo amigo) não conta; morrer zera.
-      if (dead === mech) this.sequencia.zerar();
+      if (dead === mech) { this.sequencia.zerar(); this.narrador.dizer('voce_morreu', 3); }
       else if (killer === mech && !(this.match.allies?.mechs ?? []).includes(dead)) this.hud.killBanner.showKill(deadName, this.sequencia.abate(performance.now() / 1000));
       if (!this.online && dead === mech && killer && killer !== mech) {
         this.killCam.start(killer, at);
@@ -1207,11 +1234,13 @@ export class Game {
     };
     this.match.onWaveStart = (wave, total, _mechs, _androids, title, waves) => {
       this.hud.setMissionWave(wave, total, title, waves);
+      if (wave >= 2) this.narrador.dizer('hostis_chegando', 1);
       this.audio.playAmbientBram();
     };
     this.match.onWaveProgress = (wave, killed, total, elapsedS) => this.hud.setMissionProgress(wave, killed, total, elapsedS);
     this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
     this.match.onMissionEnd = (survived, waveReached, stats) => {
+      if (this.match.nucleo) this.narrador.dizer(survived ? 'estacao_segura' : 'rede_caiu', 3);
       this.telemetry.enviar('partida_terminada');
       this.playTelemetry.finish('completed');
       this.missionEnded = true;

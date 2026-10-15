@@ -43,10 +43,10 @@ describe('a contagem de abertura lê o relógio do intervalo', () => {
     const bipes: number[] = [];
     const falas: string[] = [];
     o.som = { contagem: (n) => bipes.push(n), combate: () => undefined };
-    o.falar = (t) => falas.push(t);
+    o.anunciar = (e) => falas.push(`${e.tipo}:${e.rodada}`);
     for (const t of [9, 5, 3, 2.9, 2.5, 2.01, 1.9, 1.5, 1.0, 0.5, 0.01]) o.contar(t, 4);
     expect(bipes).toEqual([3, 2, 1]);
-    expect(falas).toEqual(['Rodada 4']);
+    expect(falas).toEqual(['rodada:4']);
     expect(o.currentText).toBe('1');
   });
 
@@ -68,11 +68,11 @@ describe('a contagem de abertura lê o relógio do intervalo', () => {
     let toques = 0;
     const falas: string[] = [];
     o.som = { contagem: () => undefined, combate: () => toques++ };
-    o.falar = (t) => falas.push(t);
+    o.anunciar = (e) => falas.push(`${e.tipo}:${e.rodada}`);
     o.combate(2);
     expect(o.currentText).toBe('COMBATE!');
     expect(toques).toBe(1);
-    expect(falas).toEqual(['Combate!']);
+    expect(falas).toEqual(['combate:2']);
     vi.advanceTimersByTime(COMBATE_NA_TELA_MS + 1);
     expect(o.currentText).toBe('');
   });

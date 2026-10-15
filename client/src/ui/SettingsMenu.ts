@@ -13,6 +13,7 @@ import {
   type Settings,
 } from '../core/Settings';
 
+import { NARRACOES, ROTULO_DA_NARRACAO, type Narracao } from '../audio/falas';
 import { attachSettingsTabs, isSettingsTab, type SettingsTab } from './settingsTabs';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -41,6 +42,7 @@ export class SettingsMenu {
   private readonly chkShowPerf = $('setting-showperf') as HTMLInputElement;
   private readonly sliderVolume = $('setting-volume') as HTMLInputElement;
   private readonly valVolume = $('val-volume');
+  private readonly selNarracao = $('setting-narracao') as HTMLSelectElement;
 
   private readonly tabs: { select(tab: SettingsTab): void };
   private remappingAction: KeyAction | null = null;
@@ -97,6 +99,8 @@ export class SettingsMenu {
     this.selDiff.innerHTML = (['facil', 'normal', 'dificil'] as Difficulty[])
       .map((d) => `<option value="${d}">${DIFFICULTY_LABELS[d]}</option>`)
       .join('');
+
+    for (const n of NARRACOES) this.selNarracao.append(new Option(ROTULO_DA_NARRACAO[n], n));
   }
 
   private wireEvents(): void {
@@ -164,6 +168,10 @@ export class SettingsMenu {
 
     this.selDiff.addEventListener('change', () => {
       this.settings.update({ difficulty: this.selDiff.value as Difficulty });
+    });
+
+    this.selNarracao.addEventListener('change', () => {
+      this.settings.update({ narracao: this.selNarracao.value as Narracao });
     });
 
     this.chkShowPerf.addEventListener('change', () => {
@@ -285,6 +293,7 @@ export class SettingsMenu {
 
     this.sliderVolume.value = s.volume.toString();
     this.valVolume.textContent = `${Math.round(s.volume * 100)}%`;
+    this.selNarracao.value = s.narracao;
 
     for (const { action } of KEY_ACTIONS) {
       if (this.remappingAction === action) continue;

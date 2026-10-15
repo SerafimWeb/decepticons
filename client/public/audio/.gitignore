@@ -24,3 +24,7 @@
 !hit.mp3
 !step_mech.mp3
 !step_heavy.mp3
+
+# As falas do narrador (P146): geradas pelo `npm run vozes`, pequenas, e carregadas sob demanda.
+!vozes/
+!vozes/**

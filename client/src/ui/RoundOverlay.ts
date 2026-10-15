@@ -3,7 +3,7 @@
  * Vocabulário e textos centralizados para facilitar localização (ex: CTI/SERAFIM).
  *
  * **A contagem é só da tela** (G1/G2): ela lê o relógio do intervalo que a `Round` já tem (os últimos 3 s antes da rodada seguinte) e não segura ninguém no lugar.
- * Quem toca os sons e fala é de fora (`som`, `falar`): o `Game` liga ao `AudioSystem`. Antes cada bipe criava um contexto de áudio novo, e o navegador limita quantos existem.
+ * Quem toca os sons e fala é de fora (`som`, `anunciar`): o `Game` liga ao `AudioSystem`. Antes cada bipe criava um contexto de áudio novo, e o navegador limita quantos existem.
  *
  * Custo: zero por quadro além de uma comparação (`contar` só mexe no DOM quando o número muda).
  */
@@ -45,8 +45,8 @@ export class RoundOverlay {
   public lastStats: RoundStatsSummary | null = null;
   /** Quem toca os sons da abertura; `null` = mudo. */
   public som: SonsDaAbertura | null = null;
-  /** Quem fala ("Rodada 2", "Combate!"); `null` = sem locução. */
-  public falar: ((texto: string) => void) | null = null;
+  /** Quem anuncia a rodada e o combate (o narrador, P146: escolhe a fala, a voz e o sotaque); `null` = sem voz. */
+  public anunciar: ((evento: { tipo: 'rodada' | 'combate'; rodada: number }) => void) | null = null;
 
   constructor(parent?: HTMLElement) {
     if (typeof document === 'undefined') return;
@@ -90,7 +90,7 @@ export class RoundOverlay {
       return;
     }
     if (n === this.numeroAtual) return;
-    if (this.numeroAtual === null) this.falar?.(`Rodada ${proximaRodada}`);
+    if (this.numeroAtual === null) this.anunciar?.({ tipo: 'rodada', rodada: proximaRodada });
     this.numeroAtual = n;
     this.mostrar(`${n}`, proximaRodada);
     this.som?.contagem(n);
@@ -101,7 +101,7 @@ export class RoundOverlay {
     this.numeroAtual = null;
     this.mostrar('COMBATE!', rodada);
     this.som?.combate();
-    this.falar?.('Combate!');
+    this.anunciar?.({ tipo: 'combate', rodada });
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = setTimeout(() => this.parar(), COMBATE_NA_TELA_MS);
   }

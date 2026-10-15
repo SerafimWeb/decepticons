@@ -1,0 +1,30 @@
+{
+  "_nota": "O catálogo das falas do narrador (P146). Uma fonte só: o jogo (client/src/audio/falas.ts) e o gerador de vozes (scripts/vozes.mjs, `npm run vozes`) leem este arquivo. Sotaque = a VOZ (vozes.config.json); o texto de ru e cn é inglês, dito por uma voz com sotaque russo ou chinês. Frases originais: nada das falas de marcas conhecidas de luta.",
+  "modelo": "eleven_multilingual_v2",
+  "estilos": {
+    "grave": { "stability": 0.4, "similarity_boost": 0.8, "style": 0.65, "use_speaker_boost": true },
+    "grito": { "stability": 0.28, "similarity_boost": 0.8, "style": 0.8, "use_speaker_boost": true },
+    "seco": { "stability": 0.55, "similarity_boost": 0.8, "style": 0.3, "use_speaker_boost": true }
+  },
+  "falas": [
+    { "chave": "rodada_1", "estilo": "grave", "texto": { "br": "Rodada um", "en": "Round one", "ru": "Round one", "cn": "Round one" } },
+    { "chave": "rodada_2", "estilo": "grave", "texto": { "br": "Rodada dois", "en": "Round two", "ru": "Round two", "cn": "Round two" } },
+    { "chave": "rodada_3", "estilo": "grave", "texto": { "br": "Rodada três", "en": "Round three", "ru": "Round three", "cn": "Round three" } },
+    { "chave": "rodada_4", "estilo": "grave", "texto": { "br": "Rodada quatro", "en": "Round four", "ru": "Round four", "cn": "Round four" } },
+    { "chave": "rodada_5", "estilo": "grave", "texto": { "br": "Rodada cinco", "en": "Round five", "ru": "Round five", "cn": "Round five" } },
+    { "chave": "rodada_6", "estilo": "grave", "texto": { "br": "Rodada seis", "en": "Round six", "ru": "Round six", "cn": "Round six" } },
+    { "chave": "rodada_7", "estilo": "grave", "texto": { "br": "Rodada sete", "en": "Round seven", "ru": "Round seven", "cn": "Round seven" } },
+    { "chave": "rodada_8", "estilo": "grave", "texto": { "br": "Rodada oito", "en": "Round eight", "ru": "Round eight", "cn": "Round eight" } },
+    { "chave": "rodada_9", "estilo": "grave", "texto": { "br": "Rodada nove", "en": "Round nine", "ru": "Round nine", "cn": "Round nine" } },
+    { "chave": "combate", "estilo": "grito", "texto": { "br": "Combate!", "en": "Fight!", "ru": "Fight!", "cn": "Fight!" } },
+    { "chave": "abate_2", "estilo": "grito", "texto": { "br": "Abate duplo!", "en": "Double kill!", "ru": "Double kill!", "cn": "Double kill!" } },
+    { "chave": "abate_3", "estilo": "grito", "texto": { "br": "Frenesi de abates!", "en": "Killing frenzy!", "ru": "Killing frenzy!", "cn": "Killing frenzy!" } },
+    { "chave": "abate_4", "estilo": "grito", "texto": { "br": "Massacre!", "en": "Rampage!", "ru": "Rampage!", "cn": "Rampage!" } },
+    { "chave": "abate_5", "estilo": "grito", "texto": { "br": "Imparável!", "en": "Unstoppable!", "ru": "Unstoppable!", "cn": "Unstoppable!" } },
+    { "chave": "abate_6", "estilo": "grito", "texto": { "br": "Lendário!", "en": "Legendary!", "ru": "Legendary!", "cn": "Legendary!" } },
+    { "chave": "voce_morreu", "estilo": "grave", "texto": { "br": "Você morreu.", "en": "You die.", "ru": "You die.", "cn": "You die." } },
+    { "chave": "hostis_chegando", "estilo": "seco", "texto": { "br": "Hostis chegando.", "en": "Hostiles incoming.", "ru": "Hostiles incoming.", "cn": "Hostiles incoming." } },
+    { "chave": "estacao_segura", "estilo": "grave", "texto": { "br": "Estação segura.", "en": "Station secure.", "ru": "Station secure.", "cn": "Station secure." } },
+    { "chave": "rede_caiu", "estilo": "grave", "texto": { "br": "A rede caiu. Missão perdida.", "en": "The network is down. Mission failed.", "ru": "The network is down. Mission failed.", "cn": "The network is down. Mission failed." } }
+  ]
+}
