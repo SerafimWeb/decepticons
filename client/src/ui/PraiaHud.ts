@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PRAIA_COMPLEXO, PRAIA_ESTACAO } from '../environment/PraiaLayout';
-import { AnunciadorDeLugar, avisoDeAgua, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
+import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
 
 /**
  * O HUD da PRAIA DOS CABOS (P127): o que um mapa de 640 m pede e os outros não. Quatro peças, todas só no mapa da praia:
@@ -29,9 +29,25 @@ export interface QuadroDaPraia {
   /** Inimigos vivos (qualquer lista de robôs: só `x`, `z` e `alive` importam). */
   inimigos: readonly { alive: boolean; simPosition: { x: number; z: number } }[];
   agua: { fundura: number; afogandoS: number; afogarS: number; afogaDesde: number };
+  /** O núcleo da estação (a rede): `presente` é falso fora da missão em ondas. */
+  nucleo: { presente: boolean; fracao: number; pressao: number };
   camera: THREE.Camera;
   largura: number;
   altura: number;
+}
+
+/** O quadro que o jogo reaproveita a cada frame (G4: nada de objeto novo por quadro): `Game` escreve nele e chama `update`. */
+export function novoQuadroDaPraia(camera: THREE.Camera): QuadroDaPraia {
+  return {
+    ativo: false,
+    eu: { x: 0, z: 0, alive: false },
+    inimigos: [],
+    agua: { fundura: 0, afogandoS: 0, afogarS: 0, afogaDesde: 0.05 },
+    nucleo: { presente: false, fracao: 1, pressao: 0 },
+    camera,
+    largura: 0,
+    altura: 0,
+  };
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, classe: string, pai?: HTMLElement, texto?: string): HTMLElementTagNameMap[K] {
@@ -56,6 +72,13 @@ export class PraiaHud {
   private readonly alvo: HTMLElement;
   private readonly alvoDistancia: HTMLElement;
   private readonly anunciador = new AnunciadorDeLugar();
+  private readonly alertaDoNucleo = new AlertaDoNucleo();
+  private readonly nucleo: HTMLElement;
+  private readonly nucleoPct: HTMLElement;
+  private readonly nucleoBarra: HTMLElement;
+  private readonly alvoNome: HTMLElement;
+  private nucleoMostrado = -1;
+  private nucleoClasse = '';
   private periodo = 0;
   private zonaS = 0;
   private cartaoS = 0;
@@ -97,6 +120,13 @@ export class PraiaHud {
     }
     this.euNaFaixa = el('b', 'pf-eu', this.faixa);
 
+    // A rede da estação (o núcleo): uma barra fina sob a faixa, só na missão em ondas.
+    this.nucleo = el('div', 'praia-nucleo', this.raiz);
+    this.nucleo.hidden = true;
+    el('span', '', this.nucleo, 'REDE DA ESTAÇÃO');
+    this.nucleoPct = el('b', '', this.nucleo, '100%');
+    this.nucleoBarra = el('i', '', el('div', 'pn-barra', this.nucleo));
+
     this.zona = el('div', 'praia-zona', this.raiz);
 
     this.cartao = el('div', 'praia-cartao', this.raiz);
@@ -113,7 +143,7 @@ export class PraiaHud {
 
     this.alvo = el('div', 'praia-alvo', this.raiz);
     el('i', '', this.alvo);
-    el('b', '', this.alvo, 'ESTAÇÃO');
+    this.alvoNome = el('b', '', this.alvo, 'ESTAÇÃO');
     this.alvoDistancia = el('span', '', this.alvo);
   }
 
@@ -127,6 +157,8 @@ export class PraiaHud {
   /** Uma partida nova: o anúncio do lugar e o cartão da missão voltam a valer. */
   reset(): void {
     this.anunciador.reset();
+    this.alertaDoNucleo.reset();
+    this.nucleoMostrado = -1;
     this.mostradoCartao = false;
     this.cartaoS = 0;
     this.cartao.hidden = true;
@@ -147,10 +179,14 @@ export class PraiaHud {
       if (this.cartaoS <= 0) this.cartao.hidden = true;
     }
 
+    // O núcleo da estação: o alerta (invasores, 75/50/25%, a queda) toma o lugar do anúncio do lugar, em vermelho.
+    const rede = q.nucleo;
+    const alerta = rede.presente ? this.alertaDoNucleo.atualiza(rede.fracao, rede.pressao) : null;
     // O anúncio do lugar: aparece e some sozinho (a animação é do CSS; aqui só o texto e o relógio).
-    const novo = this.anunciador.atualiza(q.eu.x, q.eu.z, dt);
+    const novo = alerta ?? this.anunciador.atualiza(q.eu.x, q.eu.z, dt);
     if (novo) {
       this.zona.textContent = novo;
+      this.zona.classList.toggle('alerta', alerta !== null);
       this.zona.classList.remove('on');
       void this.zona.offsetWidth; // reinicia a animação de entrada
       this.zona.classList.add('on');
@@ -158,6 +194,25 @@ export class PraiaHud {
     } else if (this.zonaS > 0) {
       this.zonaS -= dt;
       if (this.zonaS <= 0) this.zona.classList.remove('on');
+    }
+
+    if (rede.presente) {
+      this.nucleo.hidden = false;
+      const pct = Math.round(rede.fracao * 100);
+      const classe = rede.pressao > 0 ? 'ataque' : rede.fracao < 0.35 ? 'critico' : '';
+      if (pct !== this.nucleoMostrado) {
+        this.nucleoMostrado = pct;
+        this.nucleoPct.textContent = `${pct}%`;
+        this.alvoNome.textContent = `ESTAÇÃO ${pct}%`;
+        this.nucleoBarra.style.transform = `scaleX(${rede.fracao.toFixed(3)})`;
+      }
+      if (classe !== this.nucleoClasse) {
+        this.nucleoClasse = classe;
+        this.nucleo.dataset.estado = classe;
+        this.alvo.dataset.estado = classe;
+      }
+    } else if (!this.nucleo.hidden) {
+      this.nucleo.hidden = true;
     }
 
     // O aviso da água, a cada quadro enquanto há água (uma comparação), com o DOM só quando muda.

@@ -4057,7 +4057,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .pf-inimigo[hidden] { display: none; }
 
 .praia-zona {
-  position: absolute; top: 108px; left: 50%; transform: translateX(-50%); opacity: 0; white-space: nowrap;
+  position: absolute; top: 126px; left: 50%; transform: translateX(-50%); opacity: 0; white-space: nowrap;
   font-size: 15px; letter-spacing: 4px; color: var(--ink); text-shadow: 0 0 10px rgba(0, 0, 0, 0.9), 0 0 14px rgba(0, 229, 255, 0.5);
 }
 .praia-zona::before { content: '// '; color: var(--cyan); }
@@ -4070,7 +4070,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 }
 
 .praia-cartao {
-  position: absolute; top: 170px; left: 50%; transform: translateX(-50%); width: min(500px, 80vw);
+  position: absolute; top: 168px; left: 50%; transform: translateX(-50%); width: min(500px, 80vw);
   padding: 10px 14px; border-left: 3px solid var(--cyan); background: rgba(6, 8, 10, 0.74);
   animation: praia-cartao-anim 8s ease-out forwards;
 }
@@ -4110,3 +4110,21 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .praia-alvo b { margin-top: 3px; font-size: 10px; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 6px #000; }
 .praia-alvo span { font-size: 12px; color: var(--ink); text-shadow: 0 0 6px #000; }
 .praia-alvo.borda { opacity: 0.85; }
+
+/* A rede da estação (o núcleo, ui/PraiaHud.ts): a barra sob a faixa da costa, o alerta e o marcador mudam de cor com o estado. */
+.praia-nucleo { position: absolute; top: 98px; left: 50%; transform: translateX(-50%); width: min(560px, 58vw); display: flex; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 6px #000; }
+.praia-nucleo[hidden] { display: none; }
+.praia-nucleo b { min-width: 40px; text-align: right; color: var(--ink); }
+.pn-barra { flex: 1; height: 6px; border: 1px solid rgba(0, 229, 255, 0.55); background: rgba(5, 14, 18, 0.72); }
+.pn-barra i { display: block; height: 100%; background: var(--cyan); transform-origin: left; box-shadow: 0 0 8px var(--cyan); transition: transform 0.25s; }
+.praia-nucleo[data-estado='ataque'] { color: var(--warn); }
+.praia-nucleo[data-estado='ataque'] .pn-barra i { background: var(--warn); box-shadow: 0 0 8px var(--warn); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
+.praia-nucleo[data-estado='critico'] { color: var(--alert); }
+.praia-nucleo[data-estado='critico'] .pn-barra i { background: var(--alert); box-shadow: 0 0 10px var(--alert); }
+.praia-zona.alerta { color: var(--alert); text-shadow: 0 0 10px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 45, 61, 0.7); }
+.praia-zona.alerta::before { color: var(--alert); }
+.praia-alvo[data-estado='ataque'] i { border-color: var(--warn); background: rgba(255, 225, 77, 0.25); box-shadow: 0 0 12px var(--warn); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
+.praia-alvo[data-estado='ataque'] b { color: var(--warn); }
+.praia-alvo[data-estado='critico'] i { border-color: var(--alert); background: rgba(255, 45, 61, 0.28); box-shadow: 0 0 12px var(--alert); }
+.praia-alvo[data-estado='critico'] b { color: var(--alert); }
+@keyframes praia-pulso { from { opacity: 0.55; } to { opacity: 1; } }

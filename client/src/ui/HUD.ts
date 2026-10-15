@@ -212,11 +212,12 @@ export class HUD {
     this.setMissionText(`ONDA ${wave} ELIMINADA · ${elapsedS.toFixed(1)} s`);
   }
 
-  setMissionEnd(survived: boolean, waveReached: number, kills: number, seconds: number): void {
+  setMissionEnd(survived: boolean, waveReached: number, kills: number, seconds: number, estacaoCaiu = false): void {
     this.missionStatus.classList.toggle('clear', survived);
-    this.setMissionText(survived ? 'MISSÃO CONCLUÍDA' : `MISSÃO FALHOU · ONDA ${waveReached}`);
+    this.setMissionText(survived ? 'MISSÃO CONCLUÍDA' : estacaoCaiu ? `ESTAÇÃO PERDIDA · ONDA ${waveReached}` : `MISSÃO FALHOU · ONDA ${waveReached}`);
     this.missionSummary.hidden = false;
-    this.missionSummary.textContent = `${survived ? 'TODAS AS ONDAS ELIMINADAS' : 'UNIDADE DE COMBATE PERDIDA'}\n${kills} ABATES · ${seconds.toFixed(1)} s`;
+    const motivo = survived ? 'TODAS AS ONDAS ELIMINADAS' : estacaoCaiu ? 'A ESTAÇÃO DE CABOS CAIU: A REDE FOI INVADIDA' : 'UNIDADE DE COMBATE PERDIDA';
+    this.missionSummary.textContent = `${motivo}\n${kills} ABATES · ${seconds.toFixed(1)} s`;
     this.cta.textContent = '[ clique para tentar de novo ]';
   }
 
