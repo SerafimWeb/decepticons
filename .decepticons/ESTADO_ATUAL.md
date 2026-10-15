@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O PAINEL PERDE O "TEATRO" E O NOME DO JOGO APARECE — e o Comandante abre três frentes novas — Qwen, 15/10 (branch `qwen/painel-e-nomes`, P130/P131/P132)
+
+**A ordem (15/10), quatro pedidos numa mensagem:** (1) um **bug visual** na praia ("enormes quadrados pretos… em vários locais"); (2) a **nomenclatura, o universo e as cores dos times**; (3) **melhorias na tela do painel**; (4) a **pergunta sobre o processo** ("estamos fazendo certo? mais profissional e econômico?").
+
+**Feito agora (P132, três dos quatro itens do painel):** **TEATRO DE OPERAÇÕES → MAPA DE OPERAÇÕES** (`client/index.html`); o **caractere solto antes de "CIDADE NEON"** era um `◆ ` que o CSS punha no pino da **sede** (`.pin-sede .pin-nome::before`) — a regra saiu (`styles.css`); e o **cabeçalho perdeu "um jogo SERAFIM WEB"**, com a **SALA DE COMANDO** passando a dizer **CYBERMECH** (o `IDENTITY.md` § 1 documentava as duas coisas e foi corrigido junto — R17). **Ficaram de fora, de propósito:** o **VORCARIS × SERAFIM** (é escolher lado na ficção → P131) e os **identificadores internos** (`mon-teatro`, `.teatro-screen`, o tipo `Teatro`), que não aparecem na tela.
+
+**Registrado, não resolvido:**
+- **P130 — o bug dos quadrados pretos.** **Eu não leio imagem**: as duas capturas do Comandante não foram interpretadas. Suspeitos, na ordem, olhando o que a **P128** acrescentou: a **oclusão assada** (`PraiaSombras`) aplicada à parede inteira, os **quadros aditivos** dos halos/poças/feixes, as **cáusticas** e as **cortinas das zonas**, o shader das **janelas**. **Precisa:** o Comandante dizer **onde** (chão? parede? céu? flutuando?) ou o **Claude** (autor da P128, que lê imagem) reproduzir na bancada.
+- **P131 — a lore e as cores dos times.** Ordem grande, e **supera o "de lado" da P101 (13/10)**. A regra nova (**vermelho não é o inimigo padrão**; times por vermelho/verde/azul/amarelo/branco/preto) **contradiz** o `IDENTITY.md` § 3 ("verde = jogador, vermelho = IAs"), que o código inteiro assume (`palette.ts`, HUD, plaquetas, projéteis, radar) e que a **rede** precisa (o time de hoje é "você × IA"). A lore em si **espera o texto do Comandante** (`UNIVERSO.md` § 2: a geopolítica é escrita por ele). **É a maior frente aberta do projeto.**
+
+**O que eu não fiz:** nada de lore inventada e nada de mexer na regra de cores por conta própria — as duas dependem da palavra dele.
+
 ## O BENCHMARK DE MERCADO: o CYBERMECH contra as seis referências de mech — Qwen, 15/10 (branch `qwen/benchmark-mercado`, P129)
 
 **A ordem (15/10):** "pegue essa orientação para fazermos um **benchmark antes de lançarmos nosso game**". A orientação é o mapeamento de seis concorrentes/referências do gênero que o Comandante trouxe do chat (`benchmark_cybermech.json` e a matriz comparativa: plataforma, sensação de massa, loop de combate, dores do jogador e lacunas de mercado).

@@ -10,7 +10,7 @@
 **Nome público:** CYBERMECH (até 25/09: "Cyber-Mech Protocol"; o dono tirou o "Protocol")
 **Codinome interno:** DECEPTICONS (nome da pasta e da memória `.decepticons/`)
 **Cliente:** projeto próprio
-**Estúdio:** SERAFIM WEB. Marca discreta: vinheta de abertura (uma vez, pulável, nunca no meio do combate), "um jogo SERAFIM WEB" na pausa, © na versão e nos rodapés. Arquivos em `client/public/brand/` (emblema de `serafim13/vetorserafim.png` e letreiro)
+**Estúdio:** SERAFIM WEB. Marca discreta: vinheta de abertura (uma vez, pulável, nunca no meio do combate) e © na versão e nos rodapés. Arquivos em `client/public/brand/` (emblema de `serafim13/vetorserafim.png` e letreiro)
 **Propósito:** shooter de Mechs multiplayer que roda no navegador, leve o bastante para muitos jogadores simultâneos em hardware comum.
 **URL de produção:** `https://www.selvamkt.com.br/cybermech/` (jogo em `/jogar/`; ver `DEPLOY.md`)
 **Início:** 2026-09-23

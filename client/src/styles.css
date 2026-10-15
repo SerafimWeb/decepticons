@@ -3012,7 +3012,6 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   white-space: nowrap;
 }
 .pin-a-esquerda .pin-nome { left: auto; right: 11px; border-left: 0; border-right: 2px solid currentColor; }
-.pin-sede .pin-nome::before { content: '◆ '; color: var(--accent); }
 .pin-aqui { color: var(--accent); }
 .pin-aqui .pin-core { background: var(--accent); box-shadow: 0 0 12px var(--accent); }
 .pin-aqui .pin-ring { border: 1.5px dashed var(--accent); animation: pin-gira 8s linear infinite; }
