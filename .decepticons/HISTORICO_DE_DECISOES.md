@@ -1,3 +1,16 @@
+## [2026-10-15] A campanha é uma sequência de chefes que cobram organização, e cada um carrega um fio do mundo real (Claude, P147)
+
+**Situação:** o Comandante pediu campanhas com chefe, diferentes desafios, e a vida real e a geopolítica "sempre em mira". O que existia: uma missão (a praia: escolta, defesa, núcleo), a Sobrevivência com a Colossus na onda 6, a Dominação, e o lore (`UNIVERSO.md` § 2-A).
+
+**Decisões (propostas ao Comandante, que lê e corta):**
+1. **Chefe = problema de organização, não esponja de vida.** Cada chefe tem uma regra que o jogador sozinho não resolve (derrubar as pernas e segurar; ignorar a isca e cortar quatro linhas ao mesmo tempo; capturar chaves que devolvem a munição). É o que "nos organizar" pede, e reusa o que o código já tem (dano por parte, núcleo, ordens ao esquadrão, captura).
+2. **Cinco capítulos, um fio do real em cada um:** cabos submarinos, fazendas de bots, plataformas e datacenters, sanções financeiras, persona gerada e dependência de satélite. **Arquétipos fictícios** no jogo (liberados pelo Comandante); a fonte factual fica só nos documentos internos.
+3. **Offline antes do online:** o esquadrão de bots já obedece às ordens; o chefe cooperativo online espera o contrato de times (P81).
+4. **A vitória é soberania, não "derrotar o vilão":** cada capítulo acende uma rota do BRICS no mapa de operações; o desbloqueio é cosmético (nunca poder, `PUBLICACAO_E_MONETIZACAO.md`).
+5. **Um capítulo por PR, cada um jogável sozinho**, com a regra do chefe como módulo puro de simulação e teste (G14).
+
+**Por que registrar:** o desenho é grande e cada capítulo custa uma sessão; sem o documento, o próximo agente reinventaria o arco.
+
 ## [2026-10-15] O servidor só atende as páginas do jogo (trava de origem), e o servidor de jogo muda de domínio quando a Cloudflare chegar (Claude, P143 e P144)
 
 **Situação:** o Comandante, com o jogo no ar em `cybermech.online`, perguntou o que falta para "publicar tranquilo" e quis trazer o servidor de jogo para o domínio próprio. A leitura do servidor mostrou que ele **não filtrava `Origin`** (CORS `*` em tudo, WebSocket aceito de qualquer página), e a leitura do DNS mostrou que `cybermech.online` usa os servidores de nome da Hostinger, **não** a Cloudflare.
