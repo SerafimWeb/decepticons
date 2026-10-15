@@ -172,6 +172,18 @@ PR #298 mergeado em `886d149` depois do check local completo (185 arquivos/1.842
 
 **Decisão de registro:** complementar a P109 existente, preservar a direção de arte e distinguir observação estática de sensação relatada. As tabelas de 07/10 não são o inventário de hoje. Proposta: medição controlada → percurso de movimento/tiro → arena acabada → validação online, reaproveitando o HUD entregue. Metas numéricas do §7 são propostas de aceite, não resultados nem benchmark do concorrente. Nenhuma regra de gameplay, teto de jogadores ou `VISAO.md` alterados; zero custo de execução. O placar não melhora por documentar.
 
+## [2026-10-13] O ARSENAL é só leitura e a Evolução não se duplica (Claude, fase 4C)
+
+**Situação:** a fase 4C pedia "as telas Arsenal e chassis (potências por chassi) e Evolução".
+
+**Decisões:**
+1. **Arsenal e chassis numa janela só, de leitura, com os números do catálogo** (nenhum copiado): comparar armas e chassis é o que faltava; editar números já tem casa (Configurações → Avançado → Potências), e uma segunda tela de edição seria a papelada de novo.
+2. **A Evolução não vira tela do jogo.** O registro de ordens e o placar de resultado moram na Sala de Controle (site), com o link no COMANDO; duplicar engordaria o pacote do jogador (o JS está em 404 KB de 500) e criaria dois lugares para manter. Se o Comandante quiser, é pedido novo.
+3. **"Potências por chassi" fica de fora** e vai para o ROADMAP: é regra de equilíbrio nova (vida e passo por chassi), não uma tela.
+4. **O Esc passou a valer de qualquer foco** nas janelas Campanha e Arsenal (o ouvido fica no documento enquanto estão abertas): a janela refaz os botões a cada clique e o foco se perdia.
+
+**Integração (Qwen, 15/10, PR `qwen/arsenal-na-main`):** o branch ficou 2 dias no ar **sem PR** (regra 15). Nenhum código foi reescrito: trouxe a `main` para dentro do branch, resolvi o conflito (documentos: as duas entradas; `Game.ts`: a união dos imports — `CHASSIS_DOS_BOTS` que a janela usa + a tática do esquadrão que entrou depois) e corrigi uma frase duplicada no `PAINEL_ADMIN.md` §8. A decisão de produto (o Arsenal é de leitura e a Evolução não se duplica) é do Claude.
+
 ## [2026-10-13] A mão esquerda do bot: configurar só o que a IA sabe usar (Claude, P108 passo b)
 
 **Situação:** o Comandante quer configurar os outros Mechs "como no Hangar". O `BotSpec` tinha só a arma principal.

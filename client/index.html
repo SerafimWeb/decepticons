@@ -191,6 +191,7 @@
           <div class="mon-screen">
             <ul class="cmd-lista">
               <li><button type="button" data-settings-open="avancado"><b>POTÊNCIAS</b><span id="cmd-potencias">armas e clãs</span></button></li>
+              <li id="cmd-arsenal"><button type="button" data-arsenal-open title="Todas as armas e todos os chassis, lado a lado, com os números do jogo"><b>ARSENAL</b><span>armas e chassis</span></button></li>
               <li id="cmd-sala"><a href="../sala-de-controle/" target="_blank" rel="noopener"><b>SALA DE CONTROLE</b><span>ordens, placar, evolução</span></a></li>
               <li id="cmd-oficina"><a href="../oficina/" target="_blank" rel="noopener"><b>OFICINA</b><span>números, testes, arquitetura</span></a></li>
               <li id="cmd-mesa"><a href="http://127.0.0.1:4199/.tmp/video/editor.html" target="_blank" rel="noopener" title="A mesa é local: só liga nesta máquina, com npm run mesa"><b>MESA DE VÍDEO</b><span>local · npm run mesa</span></a></li>
@@ -233,6 +234,7 @@
     <!-- Janela do esquadrão (ui/SquadPanel.ts): o Comandante monta quem luta contra e ao lado do jogador -->
     <div id="squad-modal" class="hidden"></div>
     <div id="campanha-modal" class="hidden"></div>
+    <div id="arsenal-modal" class="hidden"></div>
     <!-- Janela do servidor (ui/ServerPanel.ts): estado, gráficos, salas, log e as ações do dono -->
     <div id="server-modal" class="hidden"></div>
     <!-- Janela de câmeras ao vivo (ui/CameraWall.ts): um radar por partida aberta no servidor -->

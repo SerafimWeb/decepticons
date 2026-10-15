@@ -102,13 +102,14 @@ export class CampaignPanel {
     root.addEventListener('click', (e) => this.clique(e));
     root.addEventListener('change', (e) => this.mudanca(e));
     root.addEventListener('input', (e) => this.entrada(e));
-    root.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        e.stopPropagation();
-        this.fechar();
-      }
-    });
   }
+
+  /** O Esc fecha de onde estiver o foco (a janela refaz os botões a cada clique e o foco se perde): o ouvido fica no documento enquanto ela está aberta. */
+  private readonly aoTeclar = (e: KeyboardEvent): void => {
+    if (e.key !== 'Escape') return;
+    e.stopPropagation();
+    this.fechar();
+  };
 
   get isOpen(): boolean {
     return this.aberta;
@@ -119,6 +120,7 @@ export class CampaignPanel {
     if (!this.root.id || this.o.indisponivel() !== null) return false;
     this.msg = '';
     this.aberta = true;
+    document.addEventListener('keydown', this.aoTeclar, true);
     this.root.classList.remove('hidden');
     this.desenhar();
     this.root.querySelector<HTMLElement>('.camp-jogar')?.focus();
@@ -126,6 +128,7 @@ export class CampaignPanel {
   }
 
   fechar(): void {
+    document.removeEventListener('keydown', this.aoTeclar, true);
     this.aberta = false;
     this.root.classList.add('hidden');
   }

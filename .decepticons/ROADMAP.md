@@ -206,7 +206,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] **Os Colossus como bots inimigos (P108 a):** `CHASSIS_DOS_BOTS` com os titãs (até 2, só inimigos, só Arena), `combat/titaBot.ts`, `PONTOS_DOS_TITAS` medidos pela física, volta em 60 s (Claude, 13/10) #modos
 - [x] **A mão esquerda do bot (P108 b):** `BotSpec.secundaria` no contrato, no link `?esquadrao=`, na IA (atira junto, com a cadência e o calor dela) e na ficha (Claude, 13/10) #modos
 - [ ] **Ombros, módulo e layout de ataques do bot (P108 c):** a ficha só deve oferecer o que a IA sabe usar; o módulo primeiro (a IA liga a barreira ao levar dano de frente) #modos
-- [ ] **Fase 4C · Arsenal, chassis e Evolução:** as telas Arsenal e chassis (potências por chassi) e Evolução (o registro de ordens e o placar de resultado) (P27, P54; `PAINEL_ADMIN.md` §8) #ux
+- [x] **Fase 4C · ARSENAL (armas e chassis):** a janela só de leitura no monitor COMANDO, com os números do catálogo; a Evolução é a Sala de Controle do site (já linkada no COMANDO), sem duplicar (Claude, 13/10) #ux
+- [ ] **Potências por chassi (P27/P54):** multiplicar vida e passo por chassi, como já se faz por arma e por clã; regra de equilíbrio nova, decisão do Comandante #modos
 - [ ] **Fase 5 · Pendências do Gemini e do Codex (P94):** a branch `gemini/game-hq`, os itens `(Gemini)` do roadmap e o que for de código das frentes C2 a C5 do Codex (`PAINEL_ADMIN.md` §8) #ux
 - [x] Mira fina (1 px, 38 px, translúcida, ajustável) e menos luz nos tiros (faíscas, clarões, bloom ajustável): medido −46% de brilho somado pelo tiro (Claude, 11/10) #ux
 - [x] **Efeito visual do estado no corpo do inimigo:** o casco ganha a cor do estado (azul-gelo, laranja que tremula, azul elétrico, amarelo) e o corpo solta vapor, chama, faíscas e estrelas; o dono não percebeu o congelamento (P62; Claude, 11/10) #combate

@@ -125,6 +125,19 @@ it('a tela de carregamento esconde os monitores com display none (guarda do boot
     for (const m of monitores) expect(m.includes('id="squad-modal"'), 'a janela dentro de um monitor').toBe(false);
   });
 
+  it('o arsenal (fase 4C): o item do monitor COMANDO abre a janela, que mora fora dos monitores e começa fechada; o console não dá Enter por trás dela', () => {
+    const comando = monitores.find((m) => m.includes('id="mon-comando"'))!;
+    expect(comando).toMatch(/<li id="cmd-arsenal"><button type="button" data-arsenal-open/);
+    expect([...consoleHtml.matchAll(/data-arsenal-open/g)]).toHaveLength(1);
+    expect(consoleHtml).toContain('<div id="arsenal-modal" class="hidden"></div>');
+    for (const m of monitores) expect(m.includes('id="arsenal-modal"'), 'a janela dentro de um monitor').toBe(false);
+    const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/#arsenal-modal\s*\{[^}]*position:\s*fixed/);
+    expect(css).toMatch(/#arsenal-modal\.hidden\s*\{\s*display:\s*none/);
+    const fonte = readFileSync(new URL('./CommandConsole.ts', import.meta.url), 'utf8');
+    expect(fonte, 'algoPorCima conhece a janela do arsenal').toContain('#arsenal-modal:not(.hidden)');
+  });
+
   it('a campanha (fase 4B): o item do monitor COMANDO abre a janela, que mora fora dos monitores e começa fechada; o console não dá Enter por trás dela nem do painel do fim', () => {
     const comando = monitores.find((m) => m.includes('id="mon-comando"'))!;
     expect(comando).toMatch(/<li id="cmd-campanha"><button type="button" data-campanha-open/);

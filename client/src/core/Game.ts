@@ -87,12 +87,13 @@ import { poweredLoadout, poweredStats } from '../tuning/power';
 import { PowerStore } from '../tuning/PowerStore';
 import { EsquadraoStore } from './EsquadraoStore';
 import { PARAM_DA_TATICA, taticaDeTexto } from '../combat/taticas';
-import { esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
+import { CHASSIS_DOS_BOTS, esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
 import { ALLY_COUNT } from '../sim/nascimentos';
 import { SquadPanel } from '../ui/SquadPanel';
 import { SequenciaDeAbates } from '../combat/killStreak';
 import { bootProgresso } from './bootProgress';
 import { locucaoDoNavegador } from '../ui/locucao';
+import { ArsenalPanel } from '../ui/ArsenalPanel';
 import { CampaignPanel } from '../ui/CampaignPanel';
 import { CampaignRunHud } from '../ui/CampaignRunHud';
 import { CampanhaStore } from './CampanhaStore';
@@ -795,6 +796,8 @@ export class Game {
       base: () => location.origin + location.pathname,
     });
     this.ligarCampanha(mapa, !!online);
+    // Janela ARSENAL (fase 4C): só leitura, as fichas das armas e dos chassis; abre sempre (offline e online).
+    const arsenal = new ArsenalPanel({ chassisDeBot: CHASSIS_DOS_BOTS });
     // Janela do servidor (P93): o endereço é o do jogo online (o público do build, ou o do próprio PC); sem ele, o item se apaga.
     const enderecoDoServidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
     const tokenDoDono = new TokenDoDono(browserStorage(), enderecoDoServidor);
@@ -832,6 +835,7 @@ export class Game {
       som: () => this.audio.playUiTransition(),
       esquadrao: { abrir: () => void squadPanel.abrir(), indisponivel: esquadraoIndisponivel, personalizado: () => this.squad.custom },
       campanha: { abrir: () => void campanhaPanel.abrir(), indisponivel: campanhaIndisponivel },
+      arsenal: { abrir: () => void arsenal.abrir() },
       servidor: { abrir: () => void painelDoServidor.abrir(), indisponivel: () => (enderecoDoServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
       cameras: { abrir: () => void parede?.abrir(), indisponivel: () => (mural.temServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
       radar: fonteDoRadar(mapa, this.match.arena.halfSize, this.match.arena.occluders, () => this.mech, () => this.bots.mechs, allies),

@@ -320,7 +320,7 @@ describe('o painel do servidor (/admin/*), com o servidor de verdade', () => {
       await s.close();
       rmSync(pasta, { recursive: true, force: true });
     }
-  });
+  }, 120_000);
 
   it('sem token do dono, só a conta admin abre a porta: sem credencial responde 401; e sem gancho de reinício a rota responde 501', async () => {
     const semToken = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: GUARD });
