@@ -1,5 +1,26 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O BENCHMARK DE MERCADO: o CYBERMECH contra as seis referências de mech — Qwen, 15/10 (branch `qwen/benchmark-mercado`, P129)
+
+**A ordem (15/10):** "pegue essa orientação para fazermos um **benchmark antes de lançarmos nosso game**". A orientação é o mapeamento de seis concorrentes/referências do gênero que o Comandante trouxe do chat (`benchmark_cybermech.json` e a matriz comparativa: plataforma, sensação de massa, loop de combate, dores do jogador e lacunas de mercado).
+
+**O que o documento entrega:** `.decepticons/BENCHMARK.md` — as seis referências (War Robots, Mech Arena, MechWarrior MW5/MWO, Armored Core VI, Hawken, Vox Machinae) como **pauta**, e a **coluna do CYBERMECH como estado real** (`STATUS_REAL.md` e o código, R13). O mapeamento do Comandante descrevia o nosso jogo **como se já fosse o alvo** (a nossa coluna lá é promessa); o documento separa **o que existe do que é promessa**. Os benchmarks técnicos entram **medidos e com fonte**, refazíveis por comando.
+
+**Os três achados que importam:**
+1. **Não temos rotação independente de torso e pernas** — `MechBase.applyFacing` gira a **raiz inteira** (pernas junto); o torso só inclina (`pitch × 0,25`) e leva o *tranco* do tiro. É justamente a "divisória de águas" que o próprio mapeamento cita entre jogo genérico e jogo respeitado. **Lacuna de maior peso de mercado** — e prometer isso hoje seria mentira (R13).
+2. **Falta o número de GPU numa máquina integrada** — a pendência de R13 que se repete em toda entrega visual (`PRAIA.md`, `BUNKER.md`, `REFERENCIA_VISUAL.md` § 7.2 etapa A). É o número de que a promessa "roda em qualquer navegador" (G8/G12) depende: sem ele, não há como afirmar performance no material de lançamento.
+3. **O que ganhamos de todos os seis** é verdadeiro e vendável: **fricção zero** (sem instalar, sem conta), **sem pay-to-win** (o "nunca" do `VISAO.md` é posicionamento, não só princípio) e **profundidade sem pesadez** (calor crítico + dano por parte do MechWarrior, com acesso de site) — onde ninguém do gênero está.
+
+**Números medidos (15/10, refazíveis):** `npm run smoke` → **JS 447,4 / Wasm 719,4 KB gzip** (tetos 500/900), boot **6,4 a 7,1 s** em duas execuções, headless/SwiftShader (não é GPU real). `dist/`: 33 arquivos, 32,26 MB, dos quais **25,87 MB são os 8 robôs `.glb`**, que carregam **por robô** (`importedMechAssets.ts`), não no boot. Desenhos da praia **44–52** (teto 67), Bunker 18–67; triângulos 133.885–134.661 (praia); colisores 167 (teto 310); **2.050 testes em 208 arquivos**. `npm run check` verde.
+
+**Nenhuma linha de jogo mudou** — é documento. A instrução do anexo ("validar escopo técnico", "priorizar a separação pernas/torso no loop de inputs") virou recomendação, não código, porque a rotação de torso/pernas **não existe** e é decisão do Comandante (§ 6 do documento).
+
+**Decisões que o benchmark devolve ao Comandante (R13):** (1) **medir a GPU numa integrada** antes de afirmar performance no lançamento — método pronto em `medicoes/BUNKER.md`; (2) **decidir sobre a rotação de torso e pernas** (custa `MechBase.ts` + animação + protocolo de rede); (3) **se o posicionamento anti-pay-to-win vira página pública** — hoje só o documento interno; a régua da `politica-paginas-publicas.md` corta os bytes e a matriz de lacunas, deixa o posicionamento (§ 7 do documento).
+
+**Onde ele confere:** `.decepticons/BENCHMARK.md`; e refaz as contas com `npm run smoke` e `node .decepticons/medicoes/praia.mjs`.
+
+**Falta (R13):** os **fatos de terceiros não foram auditados** (sem acesso a cada jogo daqui) — ficam como pauta do Comandante, com as duas inconsistências marcadas *(a conferir)* (o desenvolvedor do Hawken; o `id` que mistura Vox Machinae e Custom Mech Wars); a **GPU numa integrada** segue **não medida** (o item nº 1 acima); a página pública do posicionamento (se ele quiser) é o PR seguinte.
+
 ## A PRAIA DOS CABOS ganha luz, sombra e vida: sombras assadas, a base da estação como posto de defesa, halos de luz, zonas desenhadas, gente, pipas e cáusticas — Claude, 15/10 (branch `claude/praia-luz-e-vida`, P128)
 
 **A ordem (15/10):** "ok, mais uma rodada de qualidade no visual da estação cabos. continue melhorando e evoluindo esse cenario e **roleplay** dele". **Este PR é a metade do visual e da vida do cenário; a metade do roleplay (a voz do SOC, o rádio, o relatório pós-incidente, as placas) vem em PR separado** (`claude/praia-soc`): é texto e interface, outro risco e outro revisor.
