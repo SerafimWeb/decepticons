@@ -1,3 +1,15 @@
+## [2026-10-15] O servidor só atende as páginas do jogo (trava de origem), e o servidor de jogo muda de domínio quando a Cloudflare chegar (Claude, P143 e P144)
+
+**Situação:** o Comandante, com o jogo no ar em `cybermech.online`, perguntou o que falta para "publicar tranquilo" e quis trazer o servidor de jogo para o domínio próprio. A leitura do servidor mostrou que ele **não filtrava `Origin`** (CORS `*` em tudo, WebSocket aceito de qualquer página), e a leitura do DNS mostrou que `cybermech.online` usa os servidores de nome da Hostinger, **não** a Cloudflare.
+
+**Decisões:**
+1. **Trava de origem no servidor** (`server/origem.ts`): WebSocket e `/conta/*` só da página do jogo, da rede local e de `CYBERMECH_ORIGENS`; sem `Origin` passa (não é navegador). O motivo é concreto: um site de terceiros usaria o navegador do visitante para testar senhas no nosso login, e o servidor veria o IP da vítima.
+2. **Não restringir o CORS do `/admin/*` nem de `/status` agora:** o painel tem token e régua de falhas, e o status é público de propósito. Menos superfície mexida na mesma noite em que o domínio muda.
+3. **O servidor de jogo só muda para `jogo.cybermech.online` quando a zona estiver na Cloudflare** (ação do Comandante, passo a passo no `DEPLOY.md`); o nome velho sai do túnel por último, e a troca do `gameServer` se publica com **0 jogadores**.
+4. **HSTS continua desligado** (a decisão é do dono do domínio, registrada na migração); entra depois de uma semana de Cloudflare sem problema.
+
+**Por que registrar:** quem for tentar "apertar a borda" depois precisa saber que o CORS aberto do painel e do status é **escolha**, e que a lista de origens tem uma variável de ambiente.
+
 ## [2026-10-15] A migração para cybermech.online vai ao ar; o endereço antigo ganha o redirecionamento 301 (Claude, P142)
 
 **Situação:** o código da migração estava pronto desde as 17:12, num branch local de **outra sessão do Claude**, sem PR (à espera de o site existir na Hostinger). Enquanto isso esta sessão entregou quatro PRs, e **todos saíram para o endereço antigo** (o atualizador do PC publica a cada `main` nova com a configuração que tinha, e o código da `main` ainda travava na pasta antiga). O Comandante viu: *"você ainda enviou pro endereço antigo, redirecione para cybermech.online"*.

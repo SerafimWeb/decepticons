@@ -83,6 +83,32 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
    - No topo da tela aparece `ONLINE · SALA ARENA · 42 ms · 2 pilotos`. Sem `servidor` fora do PC do servidor, o
      jogo avisa e joga offline.
 
+**Mover o servidor de jogo para `jogo.cybermech.online` (P144, 15/10): o passo a passo do Comandante.** O túnel
+`cybermech` **já existe** e serve `jogo.selvamkt.com.br`; falta pôr a zona nova na Cloudflare, porque o túnel só publica
+nomes de uma zona que esteja lá. Hoje o DNS de `cybermech.online` está nos servidores de nome da **Hostinger**
+(`hermes` e `artemis.dns-parking.com`), não na Cloudflare. Nada abaixo mexe no `selvamkt.com.br`.
+1. **Cloudflare → Add a site → `cybermech.online` → plano Free.** Ela lê a zona e mostra o que achou. A zona de hoje
+   (lida pela API da Hostinger em 15/10, nada alterado): `@` ALIAS → `cybermech.online.cdn.hstgr.net`; `www` CNAME →
+   `www.cybermech.online.cdn.hstgr.net`; `ftp` A → `82.25.73.129`; `autodiscover` e `autoconfig` CNAME →
+   `*.mail.hostinger.com`; `MX` 5 `mx1.hostinger.com` e 10 `mx2.hostinger.com`; `TXT` SPF
+   `v=spf1 include:_spf.mail.hostinger.com ~all`. Confira que **todos** entraram (o `@` pode aparecer como CNAME: está certo, a
+   Cloudflare "achata" o apelido). **Marque todos como "DNS only" (nuvem cinza):** o site continua exatamente como está e o
+   tráfego vai direto à Hostinger.
+2. **Hostinger → Domínios → `cybermech.online` → Nameservers → alterar** para os dois que a Cloudflare mostrou (o domínio é
+   da Hostinger, não do registro.br). Propaga em minutos a algumas horas; o site segue no ar o tempo todo.
+3. **Túnel:** Zero Trust → Networks → Tunnels → `cybermech` → Public hostname → Add: `jogo.cybermech.online` →
+   `http://localhost:2567`, **WebSocket ligado**. **Não remova** o `jogo.selvamkt.com.br` ainda.
+4. **Avise o Claude.** Ele troca o `gameServer` do `.tmp/servidor/deploy-site.json` para `wss://jogo.cybermech.online`,
+   publica com **0 jogadores**, confere (`/status` e entrar numa sala) e só então o nome velho sai do túnel.
+5. **Proteções da Cloudflare (todas grátis), com o `jogo.` já respondendo:** SSL/TLS → **Full (strict)** · **Always Use HTTPS** ·
+   TLS mínimo 1.2 · Security → **Bot Fight Mode** (se o smoke headless ou o monitor forem barrados no `jogo.`, crie exceção
+   de IP) · WAF → **rate limiting** em `jogo.cybermech.online/conta/*` (o plano grátis dá uma regra: 10 pedidos por 10 s por IP →
+   bloquear) · **Turnstile** no cadastro, quando a conta de jogador abrir (P145) · **DNSSEC** (a Cloudflare gera o DS; cole na
+   Hostinger) · **HSTS** só depois de uma semana sem problema (o site também ainda não manda o cabeçalho).
+6. **No servidor (já no código, P143):** o WebSocket e as rotas `/conta/*` só aceitam a página do jogo
+   (`https://cybermech.online` e `www`), a máquina local e a rede de casa (`server/origem.ts`). Outra origem (um domínio de
+   teste, um beta) entra por **`CYBERMECH_ORIGENS="https://beta.exemplo,https://outro.exemplo"`** nas variáveis da tarefa do servidor.
+
 **Servidor público 24 h no PC de casa (26/09): quem abre o site clica em "Jogar online" e entra.**
 O túnel rápido (`trycloudflare.com`) muda de endereço toda vez que sobe: serve para teste, não para o público. Para
 um endereço fixo, o túnel nomeado da Cloudflare (grátis, sem abrir porta, sem mostrar o IP de casa), que exige um
