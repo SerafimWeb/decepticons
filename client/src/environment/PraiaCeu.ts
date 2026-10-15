@@ -24,15 +24,15 @@ export const COR_DA_NEVOA = 0xeebf94;
 export const GLSL_CEU = /* glsl */ `
 uniform vec3 uSolDir;
 uniform vec3 uNevoa;
-vec3 srgb(vec3 c) { return pow(c, vec3(2.2)); }
+vec3 srgb(vec3 c) { return pow(max(c, vec3(0.0)), vec3(2.2)); }
 vec3 ceuCor(vec3 d) {
   float t = clamp(d.y, 0.0, 1.0);
   vec3 c = mix(uNevoa, srgb(vec3(0.97, 0.62, 0.48)), smoothstep(0.0, 0.05, t));
   c = mix(c, srgb(vec3(0.55, 0.62, 0.84)), smoothstep(0.04, 0.34, t));
   c = mix(c, srgb(vec3(0.16, 0.34, 0.66)), smoothstep(0.26, 0.9, t));
   float cs = max(dot(d, uSolDir), 0.0);
-  c += vec3(1.0, 0.5, 0.18) * pow(cs, 4.0) * 0.36;
-  c += vec3(1.0, 0.72, 0.38) * pow(cs, 14.0) * 0.2 + vec3(1.0, 0.74, 0.42) * pow(cs, 120.0) * 0.7;
+  c += vec3(1.0, 0.5, 0.18) * pow(max(cs, 0.0), 4.0) * 0.36;
+  c += vec3(1.0, 0.72, 0.38) * pow(max(cs, 0.0), 14.0) * 0.2 + vec3(1.0, 0.74, 0.42) * pow(max(cs, 0.0), 120.0) * 0.7;
   return c;
 }
 `;

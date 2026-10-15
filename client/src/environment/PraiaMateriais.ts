@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { DIRECAO_DO_SOL } from './PraiaCeu';
+import { GLSL_NORMAL_SEGURA } from './glslSeguro';
 import { GLSL_RUIDO, GLSL_SOMBRA_DECLARA, glslSombraAplica } from './PraiaGlsl';
 import type { UniformesDaPraia } from './PraiaUniformes';
 import type { TipoDeBloco } from './PraiaLayout';
@@ -76,7 +77,8 @@ uniform vec3 uSolDir;
 uniform float uTempo;
 uniform float uNucleo;
 ${GLSL_RUIDO}
-vec3 srgb(vec3 c) { return pow(c, vec3(2.2)); }
+${GLSL_NORMAL_SEGURA}
+vec3 srgb(vec3 c) { return pow(max(c, vec3(0.0)), vec3(2.2)); }
 `;
 
 /** O corpo do fragmento de cada modo: mexe em `diffuseColor` (e, nas janelas, em `totalEmissiveRadiance`). */
@@ -87,7 +89,7 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
     diffuseColor.rgb *= g * chao;
   `,
   predio: /* glsl */ `
-    vec3 nf = normalize(cross(dFdx(vMundo), dFdy(vMundo)));
+    vec3 nf = normalSegura(cross(dFdx(vMundo), dFdy(vMundo)));
     vec3 fa = abs(nf);
     float lateral = step(fa.y, 0.5);
     float alongX = step(fa.z, fa.x);
@@ -121,7 +123,7 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
   `,
   tecnico: /* glsl */ `
     // A sala dos cabos: um centro de dados — parede de ardósia com janelas em fita acesas em ciano (o neon do jogo).
-    vec3 nf = normalize(cross(dFdx(vMundo), dFdy(vMundo)));
+    vec3 nf = normalSegura(cross(dFdx(vMundo), dFdy(vMundo)));
     vec3 fa = abs(nf);
     float lateral = step(fa.y, 0.5);
     float alongX = step(fa.z, fa.x);
@@ -144,7 +146,7 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
     totalEmissiveRadiance += luz * faixa * acesa * (1.0 - 0.7 * lado) * 1.25;
   `,
   muro: /* glsl */ `
-    vec3 nf = normalize(cross(dFdx(vMundo), dFdy(vMundo)));
+    vec3 nf = normalSegura(cross(dFdx(vMundo), dFdy(vMundo)));
     vec3 fa = abs(nf);
     float lateral = step(fa.y, 0.5);
     float across = mix(vMundo.x, vMundo.z, step(fa.z, fa.x));
@@ -159,7 +161,7 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
   `,
   deque: /* glsl */ `
     // O tabuleiro de ferro do píer: chapas com costura a cada 2,4 m, ferrugem em manchas.
-    vec3 nf = normalize(cross(dFdx(vMundo), dFdy(vMundo)));
+    vec3 nf = normalSegura(cross(dFdx(vMundo), dFdy(vMundo)));
     float topo = step(0.5, abs(nf.y)) * step(0.0, nf.y);
     float c = abs(fract(vMundo.z / 2.4) - 0.5);
     float costura = smoothstep(0.465, 0.5, c);
@@ -168,7 +170,7 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
     diffuseColor.rgb = ferro * (1.0 - 0.32 * costura * topo) * (0.9 + 0.14 * vn(vMundo.xz * 1.6));
   `,
   conteiner: /* glsl */ `
-    vec3 nf = normalize(cross(dFdx(vMundo), dFdy(vMundo)));
+    vec3 nf = normalSegura(cross(dFdx(vMundo), dFdy(vMundo)));
     vec3 fa = abs(nf);
     float lateral = step(fa.y, 0.5);
     float alongX = step(fa.z, fa.x);
@@ -265,7 +267,7 @@ export function materialSemLuz(kind: 'marca' | 'luz' | 'cabo', u: UniformesDaPra
         .replace('#include <begin_vertex>', `#include <begin_vertex>\n${VERTICE_CORPO.replace('vCentro = (modelMatrix * wc).xyz;', '')}`);
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vMundo;\nuniform float uTempo;')
-        .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 0.55 + 0.65 * pow(0.5 + 0.5 * sin(vMundo.z * 0.22 - uTempo * 5.0), 3.0);');
+        .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 0.55 + 0.65 * pow(clamp(0.5 + 0.5 * sin(vMundo.z * 0.22 - uTempo * 5.0), 0.0, 1.0), 3.0);');
     };
     m.customProgramCacheKey = () => 'cybermech-praia-cabo';
   } else if (kind === 'marca') {

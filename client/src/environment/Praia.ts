@@ -204,7 +204,7 @@ export class Praia {
         uniforms: { uTempo: this.u.tempo, uNucleo: this.u.nucleo },
         vertexShader: 'varying float vAlt; void main(){ vAlt = position.y / 150.0 + 0.5; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
         // A coluna é ciano com a rede inteira e vira vermelha (e mais forte, como alarme) quando o núcleo cai.
-        fragmentShader: 'varying float vAlt; uniform float uTempo; uniform float uNucleo; void main(){ float a = pow(1.0 - vAlt, 1.6) * (0.5 + 0.08 * sin(uTempo * 2.0) + (1.0 - uNucleo) * 0.25); vec3 c = mix(vec3(1.5, 0.2, 0.15), vec3(0.4, 1.5, 1.5), smoothstep(0.25, 0.65, uNucleo)); gl_FragColor = vec4(c, a); }',
+        fragmentShader: 'varying float vAlt; uniform float uTempo; uniform float uNucleo; void main(){ float a = pow(clamp(1.0 - vAlt, 0.0, 1.0), 1.6) * (0.5 + 0.08 * sin(uTempo * 2.0) + (1.0 - uNucleo) * 0.25); vec3 c = mix(vec3(1.5, 0.2, 0.15), vec3(0.4, 1.5, 1.5), smoothstep(0.25, 0.65, uNucleo)); gl_FragColor = vec4(c, a); }',
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,

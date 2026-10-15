@@ -180,6 +180,17 @@ editado quadro a quadro**: corrigir é roteiro → exportar de novo.
 
 **Onde estão os scripts:** `.tmp/ferramentas/` desta máquina (`medir-travadas.mjs`, `medir-quadros.mjs`, `capturar-arena.mjs`), fora do git (G15). Se forem úteis a outro agente, vale promovê-los a `scripts/` com teste.
 
+### 4.1 NaN na GPU real: a tela preta que só a GPU de verdade mostra (`medicoes/varrer-nan.mjs`, P130/P136, 15/10)
+
+**Quando:** depois de mexer em **shader de efeito** (halo, cortina, névoa, água, céu, janela, qualquer `ShaderMaterial` ou `onBeforeCompile`) e **antes de entregar**. O SwiftShader (smoke, CI, bancada `praia.mjs`) **não vê NaN**; um NaN num pixel só vira um retângulo preto quando o bloom o espalha.
+
+```bash
+npm run build && node .decepticons/medicoes/varrer-nan.mjs                       # 10 pontos do mapa × 48 poses; sai com 1 se achar pixel não finito
+node .decepticons/medicoes/varrer-nan.mjs --w 1549 --h 925 --q alta --bloom      # a janela do Comandante; --bloom mede com o bloom LIGADO (prova a rede de segurança)
+```
+
+**Como funciona:** serve o `dist/`, abre `?mapa=praia&depurar` (o `main.ts` expõe `window.__game` só com esse parâmetro), teletransporta o Mech (`mech.respawn`), gira a câmera (`rig.look`) e lê o buffer HDR da cena. **Armadilhas:** (1) precisa do Chrome com `--use-angle=d3d11` e uma GPU (a desta máquina é a AMD Vega 11); (2) a bancada `praia.mjs` **sai preta** numa GPU real (o canvas fica zerado): não a use para isso; (3) o problema era **intermitente** (a orientação inicial da câmera muda por sessão), então um "não deu nada" de uma sessão só não prova; a varredura de poses prova. **Se achar NaN:** esconda um objeto de cada vez (`scene.traverse` + `visible = false`) e veja qual derruba a contagem — foi assim que a cortina das zonas apareceu.
+
 ## 5. Considerações conhecidas (não são bug novo se você achar de novo)
 
 - **Mech parado afunda lentamente no chão, sem limite** (achado 29/09, não corrigido). Reproduz

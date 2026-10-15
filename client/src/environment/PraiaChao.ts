@@ -83,7 +83,7 @@ export function criarChao(scene: THREE.Scene, u: UniformesDaPraia): THREE.Mesh {
             vec2 q = w * 0.85;
             float a1 = sin(q.x * 1.3 + uTempo * 0.9 + sin(q.y * 1.1 - uTempo * 0.7));
             float a2 = sin(q.y * 1.7 - uTempo * 0.8 + sin(q.x * 0.9 + uTempo * 0.6));
-            float rede = pow(1.0 - abs(a1 * a2), 7.0);
+            float rede = pow(max(1.0 - abs(a1 * a2), 0.0), 7.0);
             diffuseColor.rgb += vec3(0.55, 0.85, 0.8) * rede * k * 0.6;
           }
         }`,

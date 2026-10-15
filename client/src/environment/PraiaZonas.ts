@@ -111,12 +111,15 @@ varying float vDist;
 float hash(float n) { return fract(sin(n) * 43758.5453); }
 void main() {
   vec3 cor = mix(uCura, uFrio, vTipo);
-  float base = pow(1.0 - vAlt, 2.2) * 0.22;
+  // vAlt vai de 0 (pé) a 1 (topo), mas nos pixels de borda do topo ele sai um fio acima de 1 (o MSAA avalia o pixel fora do triângulo):
+  // sem o clamp, 1 - vAlt fica negativo, o pow dá NaN e o bloom espalha esse NaN pela tela inteira (o "quadrado preto", P130/P136).
+  float alt = clamp(vAlt, 0.0, 1.0);
+  float base = pow(max(1.0 - alt, 0.0), 2.2) * 0.22;
   // Faíscas: 36 fios ao redor; cada um tem a sua fase e sobe (cura) ou desce (resfriamento) com o tempo.
   float fio = floor((vAng + 3.14159) / 6.28318 * 36.0);
   float sobe = mix(1.0, -1.0, vTipo);
-  float faisca = smoothstep(0.86, 1.0, sin(vAlt * 7.0 * 6.28318 * 0.25 + hash(fio + vFase * 31.0) * 40.0 - sobe * uTempo * 1.7));
-  float a = (base + faisca * (1.0 - vAlt) * 0.5) * smoothstep(3.0, 16.0, vDist); // de dentro da zona, a cortina não cobre a tela
+  float faisca = smoothstep(0.86, 1.0, sin(alt * 7.0 * 6.28318 * 0.25 + hash(fio + vFase * 31.0) * 40.0 - sobe * uTempo * 1.7));
+  float a = (base + faisca * (1.0 - alt) * 0.5) * smoothstep(3.0, 16.0, vDist); // de dentro da zona, a cortina não cobre a tela
   gl_FragColor = vec4(cor * a, 1.0);
 }
 `;
