@@ -76,6 +76,8 @@ export class Arena {
   readonly serafim: SerafimTower | null;
   /** O mapa da praia (P126), quando é ele: quem anima o mar por quadro é o `update`. */
   readonly praia: Praia | null = null;
+  /** Qual mapa este cenário é (o CFTV escolhe as câmeras por ele: `camera/camerasDoMapa.ts`). */
+  readonly mapa: MapId;
   /** Tempo acumulado, só para as ondas do mar. */
   private tempo = 0;
 
@@ -88,6 +90,7 @@ export class Arena {
     destructibles: Destructibles,
     map: MapId = 'arena',
   ) {
+    this.mapa = map;
     if (map === 'praia') {
       // A praia traz o céu do fim de tarde, a luz do sol poente e o cenário dela (`environment/Praia.ts`): nada daqui.
       this.serafim = null;

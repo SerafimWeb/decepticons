@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## AS CÂMERAS DO CENÁRIO FUNCIONAM NA PRAIA: o CFTV era da Arena e agora cada mapa tem as suas — Claude, 15/10 (branch `claude/cftv-por-mapa`, P148)
+
+**A ordem do Comandante (15/10, com uma foto da tela):** *"tem 2 botões no header à direita, ambos falando da câmera. Mas eu nunca consegui usar câmeras do cenário (só 1ª e 3ª pessoa ou visão de drone por cima do meu próprio robô), não consegui ver câmeras de nenhum prédio ou portaria."*
+
+**A causa:** o CFTV (`camera/SpectatorCam.ts`, do Gemini, 11/10) tinha **uma lista só de câmeras fixas, com as coordenadas da Arena** (topo do Prédio Serafim em `76, 58.5, 38`...), e o `Game.ts` não passava as do mapa. Na praia o botão levava a pontos que não existem lá (mar vazio). As câmeras de CFTV nos portões da estação (P128) eram só postes de enfeite.
+
+**Feito:**
+1. **`camera/camerasDoMapa.ts`:** cada mapa declara as suas. **Praia: 11** (os **6 postes de CFTV dos portões**, as 2 torres de vigia, o teto da estação, 2 hotéis da Beira-Mar, um perto de onde o Colossus nasce), **Arena: as 5 de sempre**, **bunker: nenhuma** (só drones e Mechs). A lista dos postes (`PRAIA_CFTV` em `PraiaLayout.ts`) é **a mesma** que desenha o poste (`PraiaAderecosCena.ts`) e liga a câmera: a que o jogador vê no portão é a que ele liga. O `Arena` passou a expor `mapa`.
+2. **Os dois botões:** o rótulo virou **"VISTA 3ª PESSOA [V]"** (muda a vista do seu robô) e o botão **"[ 📹 CÂMERAS DO LOCAL · C ]"** (liga as câmeras do cenário). Sem nenhum alvo o botão não abre mais o painel vazio (`Game.toggleSpectatorCam`).
+3. **Teste (`camerasDoMapa.test.ts`, 7), com mutação à mão (6 quebras, 6 pegas):** nenhuma câmera nasce dentro de parede ou de torre; cada poste tem a câmera na frente da lente e a lente aponta para onde ela olha; **a visão fica livre nos primeiros 12 m**; todas dentro do mapa, a mais de 8 m do alvo.
+4. **A captura com a GPU real achou o que o teste da primeira versão não via** (`.decepticons/arte/cftv-praia-*.png`): a câmera da torre estava **dentro do corpo da torre**, as portarias da muralha oeste olhavam para o **muro de 4,6 m** (mais alto que o poste), e o teto e o hotel mostravam **o chão do próprio telhado**. Corrigi (as portarias olham para dentro do pátio, para quem entra; a torre e os telhados ficam na borda) e **o teste de visão livre trava os quatro**.
+
+**Custo de CPU:** nenhum a mais (as posições nascem uma vez; o `SpectatorCam` só lê).
+
+**Falta (R13):** o Comandante conferir no site; **o CFTV da Arena e dos portões não mostra o que o poste "vê" de verdade** (é a câmera do jogo posta no ponto, não um feed num monitor); os **prédios de interior para andróides** (P149, outra ordem).
+
+**Próxima sessão começa com:** o apelido (P145) e o documento de campanhas e chefes (P147).
+
 ## PUBLICAR COM TRANQUILIDADE: a trava de origem no servidor, o passo a passo da Cloudflare e sete ordens novas — Claude, 15/10 (branch `claude/publicar-tranquilo`, P143 a P149)
 
 **As ordens do Comandante (15/10, depois de ver o jogo no ar):** *"o que mais precisamos fazer pra publicar tranquilo? o que devo fazer na Cloudflare? quais proteções ainda temos que aplicar e o que falta implementar? login não vi... ranking..."*, tirar o servidor de `jogo.selvamkt` para o domínio próprio, **sons** melhores com os créditos do ElevenLabs e voz de início de combate, **campanhas com chefe** ligadas à geopolítica real, e (já com o jogo aberto) **câmeras do cenário que não funcionam** e **prédios só para andróides, com porta**. Todas registradas em `ORDENS_DO_COMANDO.md` (P143 a P149).

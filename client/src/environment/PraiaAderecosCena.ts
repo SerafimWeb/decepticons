@@ -1,6 +1,6 @@
 import { mulberry32 } from '../core/rng';
 import type { Adereco } from './PraiaAderecos';
-import { PRAIA_RUAS_X } from './PraiaLayout';
+import { PRAIA_CFTV, PRAIA_RUAS_X } from './PraiaLayout';
 import { alturaDoChao, costaEm, PRAIA_DUNAS } from './PraiaTerreno';
 
 /**
@@ -63,7 +63,7 @@ function baseDaEstacao(): Adereco[] {
   // As bandeiras verdes da SERAFIM nos portões e na frente do prédio, e as câmeras de CFTV.
   for (const [x, z] of [[247.2, 4.6], [268.8, 4.6], [238.2, 15.2], [238.2, 38.8], [268.8, 98.2], [293.2, 98.2]] as const) noPatio('bandeira', x, z, 0, { cor: VERDE_DA_BANDEIRA });
   noPatio('bandeira', 288, 47, 0, { cor: VERDE_DA_BANDEIRA, escala: 1.4 });
-  for (const [x, z, g] of [[249, 3.4, 0.8], [267, 3.4, 2.3], [237.6, 14.6, 0.4], [237.6, 39.4, 2.7], [272, 97.6, 1.2], [290, 97.6, 1.9]] as const) noPatio('cftv', x, z, g);
+  for (const p of PRAIA_CFTV) noPatio('cftv', p.x, p.z, p.giro);
   return out;
 }
 

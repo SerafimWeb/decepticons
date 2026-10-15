@@ -70,6 +70,40 @@ export const PRAIA_PIER = { x: -70, zRampa: -14, zTabuleiro: -38, zFim: -100, la
 /** O farol (com o feixe que gira): o marco do oeste, na esquina do cais com o começo da praia. */
 export const PRAIA_FAROL = { x: -236, z: -2 } as const;
 
+/** Um poste de CFTV da estação: onde fica (x, z), o nome no letreiro do CFTV, para onde a lente olha (x, z) e o giro do adereço (a lente aponta para o alvo). */
+export interface PostoDeCftv {
+  readonly x: number;
+  readonly z: number;
+  readonly nome: string;
+  readonly alvo: readonly [number, number];
+  readonly giro: number;
+}
+
+/** O giro do adereço que faz a lente (o +x local do poste) apontar de (x, z) para o alvo: o +x local gira para (cos g, -sin g). */
+function giroPara(x: number, z: number, alvo: readonly [number, number]): number {
+  return Math.round(Math.atan2(-(alvo[1] - z), alvo[0] - x) * 100) / 100;
+}
+
+function posto(x: number, z: number, nome: string, alvo: readonly [number, number]): PostoDeCftv {
+  return { x, z, nome, alvo, giro: giroPara(x, z, alvo) };
+}
+
+/**
+ * Os postes de CFTV da estação (P148): os portões do mar e do sul e as portarias do portão oeste. **Uma lista só:** o adereço
+ * (`PraiaAderecosCena.ts`) desenha o poste e a câmera do botão CFTV (`camera/camerasDoMapa.ts`) liga a mesma, então a câmera que o jogador
+ * vê no portão é a que ele consegue ligar, e a lente aponta para onde a câmera olha. Os do mar e do sul olham **para fora**, pela abertura do muro
+ * (a praia por onde a rede é invadida; a rua de trás); os do portão oeste olham **para dentro**, para quem entra (o muro oeste, de 4,6 m, fica
+ * mais alto que o poste e só deixa ver a avenida pela abertura de 22 m, onde o poste não está).
+ */
+export const PRAIA_CFTV: readonly PostoDeCftv[] = [
+  posto(249, 3.4, 'PORTÃO DO MAR · OESTE', [249, -30]),
+  posto(267, 3.4, 'PORTÃO DO MAR · LESTE', [267, -30]),
+  posto(237.6, 14.6, 'PORTÃO OESTE · ENTRADA 1', [268, 30]),
+  posto(237.6, 39.4, 'PORTÃO OESTE · ENTRADA 2', [268, 34]),
+  posto(272, 97.6, 'PORTÃO SUL · OESTE', [272, 118]),
+  posto(290, 97.6, 'PORTÃO SUL · LESTE', [290, 118]),
+];
+
 /** O que o mapa chama cada pedaço (para a faixa de local do HUD). */
 export function localEm(x: number, z: number): string {
   if (Math.abs(x - PRAIA_PIER.x) < PRAIA_PIER.largura / 2 + 8 && z < PRAIA_PIER.zRampa && z > PRAIA_PIER.zFim - 12) return 'PONTE METÁLICA';
