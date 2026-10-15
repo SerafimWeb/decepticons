@@ -40,3 +40,9 @@ de fragmento, e o `fetch` buscaria só o pedaço antes dele.
 Explosão, dash, pouso, foguetes, alarme de calor, motosserra, sirene de onda, bipe de contagem e
 vinheta de onda limpa continuam vindo do gerador procedural do `AudioSystem`. Para trocar qualquer
 um por sample, siga as duas etapas acima.
+
+## As vozes do narrador (P146)
+
+As falas ("Rodada um", "Combate!", "Killing frenzy!", "Você morreu"...) **não** entram por `loadSample`: ficam em `vozes/<sotaque>/<chave>.mp3` (`br`, `en`, `ru`, `cn`), são geradas por
+`npm run vozes` (ElevenLabs) e o jogo só pede as que o manifesto `client/src/audio/vozesGeradas.json` lista (o gerador o reescreve). A pasta `vozes/` já está liberada no `.gitignore`.
+Passo a passo, custo e a chave (só em variável de ambiente): `.decepticons/VOZES_E_SONS.md`.

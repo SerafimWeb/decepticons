@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A VOZ DO NARRADOR: catálogo de falas em quatro sotaques, o `npm run vozes` e o narrador no jogo — Claude, 15/10 (branch `claude/narrador-vozes`, P146)
+
+**A ordem do Comandante (15/10):** *"no ElevenLabs, principalmente os comandos e frases de início da partida, round 1, etc, killing frenzy, you die… com sotaque russo, chinês, inglês, brasileiro, tipo uma boa voz de narrador do Mortal Kombat; os sons das armas, eu enviei diversos sons de referência"*.
+
+**Feito:**
+1. **`falas.json` (catálogo único):** 19 falas (rodada 1 a 9, combate, abates 2 a 6, você morreu, hostis chegando, estação segura, rede caiu) em `br` (português), `en` e `ru`/`cn` (o mesmo inglês: **o sotaque é da voz**). Frases originais (nada das falas de marcas de luta). Cabe com folga no plano grátis (menos de 500 caracteres por sotaque).
+2. **`Narrador` (`audio/Narrador.ts`):** escolhe o clipe e o sotaque, não sobrepõe (prioridade: rodada, combate e morte 3; abate 2; hostis 1), não repete a mesma fala em 1,2 s, tem o **modo mistura** (um sotaque por fala, entre os já carregados). Só da tela (G1/G2). Os clipes (~20 KB) são pedidos sob demanda e **só os que o manifesto `vozesGeradas.json` lista**: sem 404 a cada abertura.
+3. **A escolha do jogador:** Configurações > Gráficos e som > **Voz do narrador** (Brasileiro, Inglês, Sotaque russo, Sotaque chinês, Mistura, Sem narrador; padrão Brasileiro); `?narrador=ru` na URL força.
+4. **Os gatilhos no `Game.ts`:** "Rodada N" e "Combate!" (o `RoundOverlay` passou a emitir o evento em vez do texto), sequência de abates 2+, "você morreu" (offline e online), "hostis chegando" (onda 2 em diante), "estação segura" / "rede caiu" (missão com núcleo). **Sem clipe, só "Rodada N" e "Combate!" falam** (na voz do navegador, como antes); o resto fica mudo: a voz robótica anunciando cada abate seria pior que o silêncio.
+5. **`npm run vozes`:** `--listar` (as vozes da conta), `--biblioteca` (procura), `--custo` (não gasta), `--gerar --sim` (gasta, uma vez por frase, com teto de 3.000 caracteres), `--manifesto` (para quem gera no site do ElevenLabs). **A chave só em `ELEVENLABS_API_KEY`** (R2), nunca impressa; erro da API nunca a carrega.
+6. **Testes:** catálogo (8), narrador (12, **4 mutações pegas**), gerador e comando de ponta a ponta (12), configurações (+4 asserções).
+
+**Falta (R13):** (a) **gerar as vozes**: o Comandante põe a chave na janela e escolhe uma voz por sotaque (hoje só o inglês tem, a do P113; guia em `VOZES_E_SONS.md`); (b) o gerador **não foi testado contra a API real** (sem chave aqui); (c) **os sons de arma:** as referências **não chegaram a esta máquina** (nenhum áudio novo no projeto; o Claude não ouve áudio) — largar em `.tmp/SOUNDS/armas/`, um por arma, e o Claude apara, normaliza, converte e registra (o `ffmpeg` está instalado); (d) os efeitos de arma gerados por texto no ElevenLabs (`/v1/sound-generation`) como alternativa: decisão do Comandante.
+
+**Próxima sessão começa com:** se a chave e as vozes vieram, gerar e conferir no jogo; senão, o apelido (P145).
+
 ## A CAMPANHA TEM DESENHO: cinco capítulos, cada chefe um problema de organização, ligados ao mundo real — Claude, 15/10 (branch `claude/campanhas-e-chefes`, P147; só documentos)
 
 **A ordem do Comandante (15/10):** *"melhorar nosso storytelling, criar campanhas que tenham um chefe e tenhamos que nos organizar pra lutar contra ele, diferentes chefes, diferentes desafios, tentando remeter pelo menos um pouco à vida real e à geopolítica internacional sempre em mira"* — e, sobre os nomes: *"você pode usar o que achar melhor"*.

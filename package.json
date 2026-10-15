@@ -22,6 +22,7 @@
     "painel": "node scripts/painel.mjs",
     "site": "node scripts/site.mjs",
     "publicar-site": "node scripts/publicar-site.mjs",
+    "vozes": "node scripts/vozes.mjs",
     "mech:inspecionar": "node scripts/inspecionar-mech.mjs",
     "mech:bocas": "node scripts/medir-bocas.mjs",
     "server": "node scripts/server.mjs",

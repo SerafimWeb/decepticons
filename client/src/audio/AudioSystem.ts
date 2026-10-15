@@ -163,6 +163,40 @@ export class AudioSystem {
   }
 
 
+  // ── Vozes do narrador (P146: o `Narrador` decide o que dizer; aqui só carrega e toca) ──────────────────
+
+  /** Clipes de voz já pedidos (o 404 de uma fala ainda não gerada não se repete). */
+  private readonly vozesPedidas = new Set<string>();
+
+  /** O clipe de voz já está decodificado e pronto? */
+  temAmostra(name: string): boolean {
+    return this.samples.has(name);
+  }
+
+  /** Pede um clipe de voz uma vez. Um 404 (a fala ainda não foi gerada pelo `npm run vozes`) é silencioso: sem `console.warn` a cada fala. */
+  pedirVoz(name: string, url: string): void {
+    if (this.vozesPedidas.has(name)) return;
+    this.vozesPedidas.add(name);
+    fetch(url)
+      .then((res) => (res.ok ? res.arrayBuffer() : null))
+      .then((data) => {
+        if (!data) return;
+        if (this.ctx) {
+          this.ctx.decodeAudioData(data).then((buf) => this.samples.set(name, buf)).catch(() => {});
+        } else {
+          this.pendingBuffers.set(name, data);
+        }
+      })
+      .catch(() => {});
+  }
+
+  /** Toca um clipe de voz com o ganho dado e devolve a duração em segundos (0 = não tocou: sem contexto, som desligado ou clipe ainda não carregado). */
+  tocarVoz(name: string, gain = 1): number {
+    const buffer = this.samples.get(name);
+    if (!buffer || !this.playSample(name, gain)) return 0;
+    return buffer.duration;
+  }
+
   /** Contexto e saída com o volume mestre, para sons fora da partida (vinheta da marca). Null antes do primeiro gesto. */
   get output(): { ctx: AudioContext; out: AudioNode } | null {
     return this.ctx && this.masterGain && this.enabled ? { ctx: this.ctx, out: this.masterGain } : null;

@@ -1,0 +1,7 @@
+{
+  "_nota": "As falas que já têm .mp3 em client/public/audio/vozes/<sotaque>/. É o `npm run vozes` quem reescreve este arquivo (lista a pasta depois de gerar). Fica dentro do bundle de propósito: o jogo só pede os clipes que existem e não gera 404 a cada abertura.",
+  "br": [],
+  "en": [],
+  "ru": [],
+  "cn": []
+}

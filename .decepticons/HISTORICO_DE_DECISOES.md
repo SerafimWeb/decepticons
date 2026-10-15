@@ -1,3 +1,16 @@
+## [2026-10-15] O narrador é um módulo de tela com clipes gerados: sotaque é a voz, o manifesto vai no bundle e a voz do navegador só cobre a abertura (Claude, P146)
+
+**Situação:** o Comandante quer vozes de narrador de luta, com sotaque russo, chinês, inglês e brasileiro, geradas no ElevenLabs. O jogo já falava "Rodada N" e "Combate!" pela voz do navegador (`speechSynthesis`, pt-BR).
+
+**Decisões:**
+1. **Sotaque é da voz, não do texto:** `ru` e `cn` falam o mesmo inglês que `en`, por uma voz com aquele sotaque. Uma fonte só (`falas.json`) para o jogo e para o gerador; o catálogo é pequeno (menos de 500 caracteres por sotaque).
+2. **O jogo só pede o que o manifesto lista** (`vozesGeradas.json`, dentro do bundle, reescrito pelo `npm run vozes`): sem arquivo gerado não há 404 a cada abertura (o `AudioSystem` já tinha o aprendizado de 28/09: o fallback silencioso esconde arquivo faltando).
+3. **A voz do navegador só cobre "Rodada N" e "Combate!"** (era assim antes). Abate, morte e missão ficam **mudos** sem clipe: a voz robótica anunciando cada abate seria pior que o silêncio, e o Comandante já disse que os sons estão fracos.
+4. **A chave do ElevenLabs só em variável de ambiente; o custo aparece antes; `--sim` para gastar; nada se gera duas vezes; teto de caracteres.** O crédito é dele e o risco de gasto acidental é real num script que chama uma API paga.
+5. **Os sons de arma esperam as referências** (não chegaram a esta máquina, e o Claude não ouve áudio): o caminho é largar em `.tmp/SOUNDS/armas/`, e o Claude aparar, normalizar e registrar; quem julga o som é o ouvido do Comandante.
+
+**Por que registrar:** quem for adicionar uma fala (um capítulo de campanha, um aviso novo) precisa saber que é uma linha no `falas.json` + `npm run vozes`, e que a voz de reserva é de propósito só da abertura.
+
 ## [2026-10-15] A campanha é uma sequência de chefes que cobram organização, e cada um carrega um fio do mundo real (Claude, P147)
 
 **Situação:** o Comandante pediu campanhas com chefe, diferentes desafios, e a vida real e a geopolítica "sempre em mira". O que existia: uma missão (a praia: escolta, defesa, núcleo), a Sobrevivência com a Colossus na onda 6, a Dominação, e o lore (`UNIVERSO.md` § 2-A).

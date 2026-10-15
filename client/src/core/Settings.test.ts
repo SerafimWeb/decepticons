@@ -46,6 +46,10 @@ describe('Settings', () => {
     expect(s.value.fovOffset).toBe(0); // tipo errado → padrão
     expect(s.value.quality).toBe('auto'); // valor desconhecido → padrão
     expect(s.value.volume).toBe(LIMITS.volume.max); // volume limitado a 1
+    expect(s.value.narracao).toBe('br'); // sem o campo → o padrão (narrador brasileiro)
+    expect(new Settings(memoryStorage('{"narracao": "klingon"}')).value.narracao).toBe('br'); // sotaque que não existe → padrão
+    expect(new Settings(memoryStorage('{"narracao": "ru"}')).value.narracao).toBe('ru'); // sotaque válido é mantido
+    expect(new Settings(memoryStorage('{"narracao": "off"}')).value.narracao).toBe('off');
     expect(s.value.invertY).toBe(true); // campo válido é mantido
     expect(s.value.keys.jump).toBe('Space'); // tecla do sistema não pode
     expect(s.value.keys.dash).toBe('Shift'); // os dois Shifts valem
