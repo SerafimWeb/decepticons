@@ -1,3 +1,17 @@
+## [2026-10-15] O jogo muda para o domínio próprio, cybermech.online, e a trava do publicador se inverte (Claude, P142)
+
+**Situação:** o Comandante registrou `cybermech.online` (e escolheu o nome por servir "como link e como bandeira") e pediu para migrar o jogo e **tirar de `selvamkt.com.br`**. Disse que não há links divulgados nem jogadores: o jogo ainda está saindo do laboratório.
+
+**Decisões:**
+1. **Troca direta, sem redirecionamento e sem endereço em paralelo.** A primeira proposta (301 e dois nomes do servidor juntos) existia para não quebrar link e partida em curso; com zero dos dois, só acrescentava passo e chance de erro. Se um dia aparecer link divulgado, um 301 em `selvamkt.com.br/cybermech/` é barato.
+2. **A trava se inverte, não some.** Antes: o destino tinha de **terminar em `/public_html/cybermech`** (a raiz da conta era o site da Selva). Agora: tem de terminar em **`/domains/cybermech.online/public_html`**, e qualquer pasta de outro domínio da conta é recusada (testes em `server/publicarSite.test.ts`, incluindo `evil-cybermech.online` e `.../public_html/..`). O perigo agora é publicar por engano na pasta do `selvamkt.com.br`.
+3. **O site sai na raiz.** O build já era de caminhos relativos (`base: './'`), então nada do jogo mudou; o `npm run site -- --check` e as capturas passam a servir na raiz, igual à produção. O código do cliente só tinha dois pontos presos ao domínio antigo: o filtro de host do diagnóstico de erros (`runtimeDiagnostics.ts`, que ficaria mudo no host novo) e o rótulo de caminho do relatório.
+4. **Conferido, não suposto:** o servidor de jogo **não filtra `Origin`** (só há CORS `*` nas rotas `/admin`) e o endpoint de erros do Serafim13 (`sinal-erro`) também aceita qualquer origem: nenhum dos dois precisa mudar para aceitar o domínio novo.
+5. **Ordem que evita erro:** (a) adicionar o site na Hostinger; (b) apontar o `deploy-site.json` (fora do repositório) para a pasta nova; (c) **publicar do próprio branch e conferir no ar** com `site.mjs --verify`; (d) só então mergear. O motivo do (c) antes do (d): o atualizador do PC publica a cada `main` nova, e com a configuração antiga a trava nova recusa (falha fechada, sem dano, mas o site ficaria parado).
+6. **O servidor de jogo muda depois:** o túnel da Cloudflare só aceita nome numa zona que esteja na Cloudflare, então `jogo.cybermech.online` pede os nameservers do domínio novo na Cloudflare (registros do site em "DNS only", como na decisão de 26/09). O `jogo.selvamkt.com.br` sai do túnel no fim.
+
+**Por que registrar:** a decisão de 23/09 (`/cybermech` na conta da Selva) e a de 26/09 (servidor no mesmo domínio) estão revogadas por esta. **Sem HSTS por enquanto**: o domínio é só do jogo e dá para ligar depois, mas HSTS não se desfaz rápido.
+
 ## [2026-10-15] O céu da praia ganha dois astros e a luz geral desce; o HUD ganha o degradê do topo (Claude, P137 + P139)
 
 **Situação:** o Comandante pediu "o sol se pondo, vermelho, no horizonte… a lua cheia branca-azulada nascendo do outro lado, alinhada ao sol, com a luminosidade geral mais baixa", e "melhorar a UI desse cenário". O Qwen tinha registrado a P137 com um alerta: baixar a luz colide com as sombras assadas da P128.

@@ -12,7 +12,7 @@
 **Cliente:** projeto próprio
 **Estúdio:** SERAFIM WEB. Marca discreta: vinheta de abertura (uma vez, pulável, nunca no meio do combate) e © na versão e nos rodapés. Arquivos em `client/public/brand/` (emblema de `serafim13/vetorserafim.png` e letreiro)
 **Propósito:** shooter de Mechs multiplayer que roda no navegador, leve o bastante para muitos jogadores simultâneos em hardware comum.
-**URL de produção:** `https://www.selvamkt.com.br/cybermech/` (jogo em `/jogar/`; ver `DEPLOY.md`)
+**URL de produção:** `https://cybermech.online/` (jogo em `/jogar/`; ver `DEPLOY.md`)
 **Início:** 2026-09-23
 
 ---
@@ -61,7 +61,7 @@ Fonte canônica das cores de UI: variáveis em `client/src/styles.css`.
 | Física | Rapier3D 0.20 SIMD (Wasm): character controller cinemático |
 | Servidor | Node + ws, simulação autoritativa compartilhada a 60 Hz; snapshots a 20 Hz |
 | Persistência | Contas em node:sqlite; métricas agregadas em JSON; progressão ainda no navegador |
-| Deploy | site estático na Hostinger (`selvamkt.com.br/cybermech/`) por rsync/SSH a cada merge na `main` |
+| Deploy | site estático na Hostinger (`cybermech.online`) por rsync/SSH a cada merge na `main` |
 | CI | hooks git locais (`.githooks/`) + GitHub Actions (`ci.yml`, ubuntu-24.04) em `SerafimWeb/decepticons` (privado) |
 | Node | `>=22.12.0` (requisito de node:sqlite) |
 

@@ -67,7 +67,7 @@ export function parseStatus(raw: unknown): ServerStatus | null {
 
 /**
  * Endereço do status a partir do endereço do servidor de jogo (`VITE_GAME_SERVER` ou `&servidor=`):
- * `wss://jogo.selvamkt.com.br` → `https://jogo.selvamkt.com.br/status`. Aceita `ws`, `wss`, `http` e
+ * `wss://jogo.cybermech.online` → `https://jogo.cybermech.online/status`. Aceita `ws`, `wss`, `http` e
  * `https` (o dono cola o endereço do túnel dos dois jeitos); qualquer outra coisa devolve `null`.
  */
 export function statusUrl(gameServer: string | undefined | null): string | null {

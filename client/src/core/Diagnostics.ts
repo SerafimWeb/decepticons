@@ -77,7 +77,7 @@ export class Diagnostics {
         severity: origin === "boot" ? "fatal" : "error",
         message: scrub(err instanceof Error ? err.message : String(err)),
         stack: err instanceof Error ? scrub(err.stack ?? "") : undefined,
-        path: "/cybermech/jogar/",
+        path: "/jogar/",
         metadata: this.snapshot(),
       });
     } catch {

@@ -1,5 +1,5 @@
 /**
- * Landing do jogo (raiz do site, /cybermech/): para quem vai jogar. O que é, como está, o que tem,
+ * Landing do jogo (raiz do site, cybermech.online): para quem vai jogar. O que é, como está, o que tem,
  * controles, o compromisso "sem pay-to-win" e o que está sendo construído. A sala de controle (o case do
  * desenvolvimento) ficam em scripts/painel.mjs.
  *
@@ -491,7 +491,7 @@ if (net && onlinePhase) {
       <div class="read frame"><span class="k">no seu aparelho</span><span class="v">0 decisões</span><span class="d">dano, calor e quem caiu saem do servidor: o seu Mech desenha, não julga</span></div>
     </div>
     <p>${ONLINE ? '<a class="play-btn online" href="./jogar/?sala=ARENA" data-evento="click_online">[ JOGAR ONLINE AGORA ]</a>' : '<span class="rules-note">O servidor público entra no ar em breve: hoje o online roda em teste, num PC.</span>'}</p>
-    <p class="milestone frame">🎯 <strong>Primeira sessão online ponta a ponta:</strong> 26/09/2026, dois aparelhos do dono jogaram juntos na mesma sala pelo túnel público (<code>jogo.selvamkt.com.br</code>). Agora o servidor fica no ar 24 h; convide alguém e testem juntos.</p>
+    <p class="milestone frame">🎯 <strong>Primeira sessão online ponta a ponta:</strong> 26/09/2026, dois aparelhos do dono jogaram juntos na mesma sala pelo túnel público. Agora o servidor fica no ar 24 h; convide alguém e testem juntos.</p>
     <p class="rules-note">${ready} de ${onlinePhase.items.length} etapas prontas. A conta da rede é medida pelos ${net.tests} testes de orçamento a cada entrega: se a sala cheia não couber na meta, a versão não sai.</p>
   </section>`;
 }

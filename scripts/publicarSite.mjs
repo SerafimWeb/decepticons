@@ -4,8 +4,9 @@
  * quem roda (`scripts/publicar-site.mjs`) injeta isso, e `server/publicarSite.test.ts` cobre tudo.
  *
  * **A configuração fica fora do repositório** (R2/R10: nenhum host, usuário ou caminho do servidor no git): um JSON na pasta de dados do servidor (a mesma do
- * `contas.db`, que a atualização automática nunca apaga): `{ "host": "…", "port": 65002, "user": "…", "path": "/home/<usuario>/domains/selvamkt.com.br/public_html/cybermech", "key": "~/.ssh/id_ed25519" }`.
- * **Trava (a mesma do deploy do Actions):** o destino tem de terminar em `/public_html/cybermech`; a raiz do domínio é o site real da Selva MKT.
+ * `contas.db`, que a atualização automática nunca apaga): `{ "host": "…", "port": 65002, "user": "…", "path": "/home/<usuario>/domains/cybermech.online/public_html", "key": "~/.ssh/id_ed25519" }`.
+ * **Trava (a mesma do deploy do Actions):** o destino tem de terminar em `/domains/cybermech.online/public_html`, a raiz do domínio do jogo (desde 15/10 o site mora no domínio
+ * próprio, e não mais em `selvamkt.com.br/cybermech/`). A pasta de qualquer outro domínio da conta, em especial a do `selvamkt.com.br` (o site real da Selva MKT), é recusada.
  *
  * **O envio em duas fases (14/10, a lição do site meio publicado):** o pacote sobe INTEIRO para dentro do destino, a soma dele no servidor é conferida contra a do
  * PC e **só então** ele é extraído. Antes, o `tar` do PC extraía no servidor enquanto transmitia (um cano só): quando a conexão era cortada no meio, o `index.html`
@@ -17,6 +18,8 @@
 
 /** O destino é só o que o site do jogo usa: letras, números, ponto, hífen, sublinhado e barra (nada que o shell remoto interprete). */
 const CAMINHO_SEGURO = /^\/[A-Za-z0-9._\-/]+$/;
+/** A única pasta em que o site do jogo pode ser publicado: a raiz do `cybermech.online` na conta da Hostinger. */
+export const PASTA_DO_SITE = '/domains/cybermech.online/public_html';
 const HOST_SEGURO = /^[A-Za-z0-9.\-]+$/;
 const USUARIO_SEGURO = /^[A-Za-z0-9._\-]+$/;
 
@@ -40,7 +43,7 @@ export function validarConfig(bruto) {
   if (!user || !USUARIO_SEGURO.test(user)) erros.push('"user" falta ou tem caractere estranho');
   if (!Number.isInteger(porta) || porta < 1 || porta > 65535) erros.push('"port" tem de ser um número de 1 a 65535');
   if (!caminho || !CAMINHO_SEGURO.test(caminho)) erros.push('"path" falta ou tem caractere estranho');
-  else if (!caminho.endsWith('/public_html/cybermech')) erros.push('"path" tem de terminar em /public_html/cybermech (a raiz do domínio é o site real da Selva MKT: nunca publicar fora dela)');
+  else if (!caminho.endsWith(PASTA_DO_SITE)) erros.push(`"path" tem de terminar em ${PASTA_DO_SITE} (a pasta de outro domínio da conta, como a raiz do selvamkt.com.br, é o site real da Selva MKT: nunca publicar nela)`);
   const chave = texto('key');
   if (chave && /[\0\n\r"']/.test(chave)) erros.push('"key" tem caractere estranho');
   const url = texto('url');

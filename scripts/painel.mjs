@@ -4,7 +4,7 @@
  *
  * Uso: npm run painel            → gera .tmp/painel/painel.html (G15: nada fora do projeto)
  *      node scripts/painel.mjs --check → só valida o ROADMAP e a VITRINE do GAME_DESIGN (roda no npm run check)
- *      node scripts/painel.mjs --site --out <arquivo> → versão do site (/cybermech/sala-de-controle/)
+ *      node scripts/painel.mjs --site --out <arquivo> → versão do site (/sala-de-controle/)
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -18,7 +18,7 @@ const CHECK = argv.includes('--check');
 const SITE = argv.includes('--site');
 const OUT = resolve(argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : '.tmp/painel/painel.html');
 // No site, os links são relativos; no arquivo local, apontam para o site publicado.
-const BASE = SITE ? '../' : (process.env.SITE_URL || 'https://www.selvamkt.com.br/cybermech/').replace(/\/?$/, '/');
+const BASE = SITE ? '../' : (process.env.SITE_URL || 'https://cybermech.online/').replace(/\/?$/, '/');
 
 // ---------- validação ----------
 

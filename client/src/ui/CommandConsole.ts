@@ -154,7 +154,7 @@ export class CommandConsole {
         if (!this.hooks.esquadrao?.indisponivel()) this.hooks.esquadrao?.abrir();
       });
     }
-    // A Sala de Controle e a Oficina só existem no site (`/cybermech/sala-de-controle/`, `/oficina/`): no `npm run dev` o link daria em nada.
+    // A Sala de Controle e a Oficina só existem no site (`/sala-de-controle/`, `/oficina/`): no `npm run dev` o link daria em nada.
     if (!location.pathname.includes('/jogar')) for (const id of ['#cmd-sala', '#cmd-oficina']) root.querySelector<HTMLElement>(id)!.hidden = true;
 
     this.mundo = new WorldMap(root.querySelector('#mon-teatro')!, {

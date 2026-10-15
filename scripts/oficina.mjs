@@ -1,5 +1,5 @@
 /**
- * Oficina (/cybermech/oficina/): a bancada de testes do jogo. Mechs, armas e defesas medidos pela mesma
+ * Oficina (/oficina/): a bancada de testes do jogo. Mechs, armas e defesas medidos pela mesma
  * simulação do jogo (client/src/combat/balance.ts: tick fixo de 60 Hz, calor, cadência, carregador),
  * a cada versão. Nenhum número é digitado aqui: tudo sai do TypeScript do jogo (dados.mjs → jogo()), e o selo de
  * cada recurso, do quadro STATUS_REAL.md (dados.mjs → statusReal()).

@@ -29,7 +29,7 @@
 
 | Casa | O que exige | O que dá | Hoje no projeto |
 |---|---|---|---|
-| **Site próprio** (`selvamkt.com.br/cybermech/`) | — | Controle total, dono do jogador, o case da agência junto | ✅ **No ar**, publicado a cada merge na `main` |
+| **Site próprio** (`cybermech.online`) | — | Controle total, dono do jogador, o case da agência junto | ✅ **No ar**, publicado a cada merge na `main` |
 | **Portais de jogos web** (CrazyGames, Poki, GameDistribution, Y8, Newgrounds) | Integrar o **SDK do portal** (anúncio nas pausas), rodar em *iframe*, **jogável sozinho** (sem depender do nosso servidor), sem link externo, celular funcionando | O **tráfego que um multiplayer novo não tem** e receita por anúncio (repartição do portal) | O jogo é leve e **o modo offline com bots já existe** (o portal exige justamente isso). Falta o SDK — item aberto em `ROADMAP` `#negocio` |
 | **itch.io** | Só publicar (HTML5 "jogar no navegador") | Casa grátis, público indie/dev, devlog, caixa de apoio; **não traz tráfego sozinho** | Nada feito. É o passo mais barato de todos (horas, não semanas) |
 | **Steam** | **Binário desktop** (wrapper Electron/Tauri do nosso cliente — a Steam não roda HTML5 no navegador), **US$ 100 por app** (recuperável), 30% de taxa, página de loja, wishlist e revisão; **venda dentro do jogo tem de passar pela Steam Wallet** (não dá Stripe) | Alcance de PC, crédito de "jogo de verdade", Workshop, comunidade | **Ruim no começo** (decisão de 23/09): cobrar para entrar esvazia as salas. Volta à mesa depois do § 5 etapa 5 |
@@ -136,7 +136,7 @@ O vídeo existe (`.tmp/video/o-processo.webm`, 52 s) e o roteiro está em `FERRA
 
 ```
 Um shooter de Mechs multiplayer que roda direto no navegador — feito por um estúdio e quatro agentes de IA.
-Jogue agora, sem instalar e sem criar conta: www.selvamkt.com.br/cybermech
+Jogue agora, sem instalar e sem criar conta: cybermech.online
 
 Neste vídeo, o processo: como um pedido do dono do projeto vira ordem registrada, PR, teste verde e jogo no ar
 em minutos. Quatro agentes, territórios separados, e o CI decidindo — nada entra sem o check passar.
@@ -147,7 +147,7 @@ em minutos. Quatro agentes, territórios separados, e o CI decidindo — nada en
 · sem pay-to-win: o que se vende, um dia, é aparência — nunca dano ou vida
 
 CYBERMECH é um jogo SERAFIM WEB.
-Jogue: www.selvamkt.com.br/cybermech
+Jogue: cybermech.online
 ```
 
 **Hashtags e tags:** `#CYBERMECH #mech #gamedev #indiegame #webgl #typescript #brasil`; nas tags: `mech game`,

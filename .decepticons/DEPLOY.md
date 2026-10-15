@@ -6,20 +6,20 @@
 
 ## SITE DO PROJETO (cliente estático)
 
-**Endereço:** `https://www.selvamkt.com.br/cybermech/` (decisão do dono em 2026-09-23: caminho `/cybermech`, **público**).
-- `/cybermech/`: landing do jogo, para quem vai jogar (`scripts/landing.mjs`; os destaques vêm da seção VITRINE do `GAME_DESIGN.md`).
-- `/cybermech/sala-de-controle/`: o case do desenvolvimento (`scripts/painel.mjs --site`; até 25/09 era `/bastidores/`, que agora leva para lá): equipe, fluxo, protocolo, evolução, mapa da campanha, frentes, diário e entregas.
-- `/cybermech/jogar/`: o jogo (build do Vite com `base: './'`, funciona em qualquer subpasta).
-- `/cybermech/capturas/`: três imagens do jogo feitas pelo próprio deploy (`site.mjs --capturas`): entra no build headless, joga ~20 s e fotografa as três câmeras. Viram a capa da landing e a prévia do link (og:image). Se falharem, a landing sai sem imagens e o log avisa.
+**Endereço:** `https://cybermech.online/` (decisão do dono em 15/10/2026: domínio próprio do jogo, site na raiz, **público**; até então era `www.selvamkt.com.br/cybermech/`, decisão de 23/09. Sem jogadores nem links divulgados na época, a troca foi direta, sem redirecionamento).
+- `/`: landing do jogo, para quem vai jogar (`scripts/landing.mjs`; os destaques vêm da seção VITRINE do `GAME_DESIGN.md`).
+- `/sala-de-controle/`: o case do desenvolvimento (`scripts/painel.mjs --site`; até 25/09 era `/bastidores/`, que agora leva para lá): equipe, fluxo, protocolo, evolução, mapa da campanha, frentes, diário e entregas.
+- `/jogar/`: o jogo (build do Vite com `base: './'`, funciona em qualquer subpasta).
+- `/capturas/`: três imagens do jogo feitas pelo próprio deploy (`site.mjs --capturas`): entra no build headless, joga ~20 s e fotografa as três câmeras. Viram a capa da landing e a prévia do link (og:image). Se falharem, a landing sai sem imagens e o log avisa.
 - **O que vai a público (decisão do dono em 24/09: bastidores às claras):** as páginas são geradas, nenhum documento interno vai inteiro. Dos bastidores saem só os títulos do `HISTORICO`, a divisão de trabalho e as pendências por pessoa do `ESTADO_ATUAL`, o `ROADMAP` e números do git e dos PRs. Nunca secrets, host, usuário ou caminho do servidor. O `--check` reprova o codinome interno em qualquer página pública.
 - **Dados das páginas** (`scripts/site/dados.mjs`): a lista de PRs vem do GitHub (`gh` com `GH_TOKEN` no CI, permissão `pull-requests: read`); sem acesso, cai para o git. A evolução lê cada merge da `main` com `git grep`, por isso o checkout do CI é com `fetch-depth: 0`.
-- **Nunca na raiz do domínio:** a raiz do `selvamkt.com.br` é o site real da Selva MKT. O CAPTIA já fica em `/captia/` na mesma conta.
+- **O `selvamkt.com.br` não é deste projeto:** é o site real da Selva MKT, e o CAPTIA fica em `/captia/` nele; os dois moram na mesma conta Hostinger. O publicador só escreve em `domains/cybermech.online/public_html` e **recusa qualquer outra pasta** (a trava é do código e dos testes, não de quem configura).
 - **Nome:** `cybermech`, nunca `decepticons` (marca da Hasbro; ver `IDENTITY.md`).
 
 **Como vai ao ar ("build do dia"):** cada merge na `main` com o `check` verde dispara o job `deploy` do `.github/workflows/ci.yml`:
 `npm run site -- --capturas` (monta `.tmp/site/` e fotografa o jogo) → rsync por SSH para a Hostinger → `node scripts/site.mjs --verify <SITE_URL>`.
 - Mesmo padrão do deploy do CAPTIA nesta conta Hostinger: SSH na **porta 65002**, **5 tentativas** com espera crescente (a proteção anti-abuso da Hostinger às vezes derruba a conexão do runner).
-- **Trava de segurança:** o `rsync --delete` apaga no servidor o que não existe localmente. O job se recusa a rodar se `DEPLOY_PATH` não terminar em `/public_html/cybermech/`, para nunca apagar o site real.
+- **Trava de segurança:** o `rsync --delete` apaga no servidor o que não existe localmente. O job se recusa a rodar se `DEPLOY_PATH` não terminar em `/domains/cybermech.online/public_html/`, para nunca apagar o site de outro domínio da conta.
 - **Verificação:** landing, `/oficina/`, `/sala-de-controle/` (e `/bastidores/` levando para ela), `/metricas/` (privada, com `noindex`) e `/jogar/` com o conteúdo certo (o servidor responde 200 até para arquivo inexistente), doctype e `<meta charset>` no início, a CSP aplicada e o `.wasm` servido como `application/wasm` e comprimido; capa ausente só avisa. Se a Cloudflare desafiar o IP do runner, o job avisa e não falha (conferir no navegador).
 
 **Minutos do CI (13/10/2026, Qwen, a pedido do Comandante):** o repositório é **privado**, então os minutos do Actions são **medidos** — o plano gratuito dá ~**2.000 min/mês** e a cota estourou (12/10, o "job de 2 s"). O que consome: **cada PR** dispara o `check` (que termina com smoke/bocas/site no Chrome headless — vários minutos) e **cada merge na `main`** dispara o `check` de novo **mais** o `deploy`. Com quatro agentes abrindo PRs o dia todo e merges frequentes, o volume passa da cota. **Duas travas entraram no `ci.yml`:** (1) PR/merge que só mexe em `*.md` **não roda a suíte pesada** — o job ainda termina verde, para o `npm run publicar` (que espera a linha `check`) continuar valendo; (2) `concurrency` **cancela a execução anterior** quando o mesmo PR recebe outro push. O consumo real está em **GitHub → Settings → Billing → Actions** (relatório por workflow/dia).
@@ -30,7 +30,7 @@
 
 - **Automático:** o atualizador do PC (a tarefa "CYBERMECH atualizar", a cada 10 min) lança o publicador **solto** (pelo WMI, como o ajudante de reinício: a tarefa tem 5 min de limite, montar o site leva mais) **a cada versão nova da `main`**, com `--se-mudou`. Merge na `main` → o servidor atualiza e reinicia → o site é montado e enviado, em poucos minutos, **sem ninguém apertar nada**. O que ele fez fica em `.tmp/servidor/publicar-site.log`.
 - **À mão:** `npm run publicar-site` (sempre publica), `-- --capturas` (também fotografa o jogo para a landing; as fotos ficam guardadas em `.tmp/servidor/site-capturas/` e voltam nas montagens seguintes, que não abrem o Chrome), `-- --so-montar` (não envia), `-- --configurar` (diz o que falta na configuração, **sem mostrar valor**).
-- **A configuração fica fora do repositório (R2/R10):** `deploy-site.json` na pasta de dados do servidor (`.tmp/servidor/`, a mesma do `contas.db`, que a atualização nunca apaga): `host`, `port`, `user`, `path` e `key` (a chave SSH do PC; a Hostinger já a conhece), mais `url`/`gameServer` opcionais. **A trava é a do job:** `path` tem de terminar em `/public_html/cybermech` (a raiz é o site real da Selva MKT); host, usuário e caminho só aceitam letras, números, ponto, hífen, sublinhado e barra (nada que o shell remoto interprete). O envio **espelha sem apagar** o que saiu do build (apagar é decisão à parte, e nunca fora de `cybermech/`).
+- **A configuração fica fora do repositório (R2/R10):** `deploy-site.json` na pasta de dados do servidor (`.tmp/servidor/`, a mesma do `contas.db`, que a atualização nunca apaga): `host`, `port`, `user`, `path` e `key` (a chave SSH do PC; a Hostinger já a conhece), mais `url`/`gameServer` opcionais. **A trava é a do job:** `path` tem de terminar em `/domains/cybermech.online/public_html` (a pasta de outro domínio da conta é recusada); host, usuário e caminho só aceitam letras, números, ponto, hífen, sublinhado e barra (nada que o shell remoto interprete). O envio **espelha sem apagar** o que saiu do build (apagar é decisão à parte, e nunca fora de `cybermech/`).
 - **Merge sem o CI do GitHub:** `npm run publicar -- --titulo "..." --corpo .tmp/pr.md --sem-ci` não espera o `check` do Actions (a prova é o `npm run check` do hook do push, que barra o push se falhar), aceita o PR `CLEAN` ou `UNSTABLE` (o check vermelho é a cobrança, não o código), mergeia e **só apaga o branch remoto depois de confirmar `MERGED`**. Conflito ou atraso em relação à `main` continuam barrando.
 - **Primeira publicação real (13/10, 15:50):** 8cbe837 no ar em **66 s** (montar com capturas + enviar: 4 s), conferida por checksum; o bundle servido já tinha o `COLOSSUS-V4` e a névoa de calor. O site estava congelado desde 12/10 22:03.
 - **O disparo automático (13/10, 16:24):** depois do merge do #289 o atualizador reiniciou o servidor em `55ba67c` e, na rodada seguinte, lançou o publicador sozinho: **`PUBLICADO: 55ba67c` em 25 s** (as capturas guardadas voltam sem abrir o Chrome). Um detalhe: a rodada que **traz** o código novo roda o script **antigo** do atualizador (o PowerShell já o leu), então uma mudança no próprio `atualizar-e-reiniciar.ps1` só vale da rodada seguinte em diante.
@@ -39,10 +39,10 @@
 
 | Nome | Tipo | Valor |
 |---|---|---|
-| `SITE_URL` | variável | `https://www.selvamkt.com.br/cybermech/`: liga o job de deploy |
+| `SITE_URL` | variável | `https://cybermech.online/`: liga o job de deploy |
 | `DEPLOY_HOST` | secret | o mesmo host SSH do CAPTIA (hPanel → Acesso SSH) |
 | `DEPLOY_USER` | secret | o mesmo usuário SSH do CAPTIA |
-| `DEPLOY_PATH` | secret | `/home/<usuário>/domains/selvamkt.com.br/public_html/cybermech/` |
+| `DEPLOY_PATH` | secret | `/home/<usuário>/domains/cybermech.online/public_html/` |
 | `DEPLOY_SSH_KEY` | secret | chave privada de deploy (recomendado: uma chave só deste projeto, com a pública cadastrada no hPanel) |
 
 No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/...`). Use `MSYS_NO_PATHCONV=1 gh secret set DEPLOY_PATH -R SerafimWeb/decepticons` (lição do CAPTIA).
@@ -51,9 +51,9 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
 - `AddType application/wasm .wasm`. O LiteSpeed da Hostinger comprime JS, CSS e HTML sozinho (brotli), **mas não o `.wasm`**: o build gera um `.wasm.gz` (735 KB em vez de 2,2 MB), e o `.htaccess` de `jogar/assets/` entrega essa versão a quem aceita gzip, com `Content-Type: application/wasm` e `Content-Encoding: gzip`. A regra foi testada numa pasta isolada no servidor antes de entrar, e o `--verify` reprova `.wasm` sem compressão.
 - CSP com `'wasm-unsafe-eval'` (o Rapier precisa), `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`.
 - `index.html` sem cache; `jogar/assets/` (nomes com hash) com cache de 1 ano, `immutable`.
-- **Sem HSTS:** vale para o domínio inteiro (`selvamkt.com.br`), então é decisão do dono do domínio, não deste projeto.
+- **Sem HSTS por enquanto:** o domínio agora é só do jogo, então dá para ligar depois que o HTTPS estiver estável (decisão do dono; HSTS não se desfaz rápido no navegador).
 
-**Teste antes de ir ao ar:** `npm run site -- --check` (dentro do `npm run check`) serve `.tmp/site/` em `/cybermech/` com **os mesmos cabeçalhos** e abre bastidores, landing → "Entrar no cockpit" → jogo no Chrome headless. Reprova: violação de CSP, recurso faltando, link interno quebrado, página fora de UTF-8 ou em modo quirks, codinome interno.
+**Teste antes de ir ao ar:** `npm run site -- --check` (dentro do `npm run check`) serve `.tmp/site/` na raiz (como em produção) com **os mesmos cabeçalhos** e abre bastidores, landing → "Entrar no cockpit" → jogo no Chrome headless. Reprova: violação de CSP, recurso faltando, link interno quebrado, página fora de UTF-8 ou em modo quirks, codinome interno.
 
 ---
 
@@ -73,10 +73,10 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
    `cloudflared tunnel --url http://localhost:2567` dá um endereço `https://….trycloudflare.com`; o jogo usa o
    mesmo endereço com `wss://`. O endereço muda a cada vez que o túnel sobe.
 5. **Jogar (M4, 26/09):** o endereço do jogo com `?sala=` entra online.
-   - No próprio PC do servidor: `https://www.selvamkt.com.br/cybermech/jogar/?sala=ARENA&servidor=ws://localhost:2567&nome=Dan`
+   - No próprio PC do servidor: `https://cybermech.online/jogar/?sala=ARENA&servidor=ws://localhost:2567&nome=Dan`
      (ou `npm run dev` e `http://localhost:5173/?sala=ARENA`).
    - Pela internet: suba o túnel e todo mundo abre
-     `https://www.selvamkt.com.br/cybermech/jogar/?sala=ARENA&servidor=https://….trycloudflare.com&nome=SeuNome`
+     `https://cybermech.online/jogar/?sala=ARENA&servidor=https://….trycloudflare.com&nome=SeuNome`
      (o jogo troca o `https://` por `wss://`).
    - No topo da tela aparece `ONLINE · SALA ARENA · 42 ms · 2 pilotos`. Sem `servidor` fora do PC do servidor, o
      jogo avisa e joga offline.
@@ -268,7 +268,7 @@ Cliente e servidor moram na mesma zona; as proteções abaixo garantem que um n�
     primeira subida e guarda em `metricas-token.txt` na pasta de dados (`CYBERMECH_DADOS`; em produção `D:\DECEPTICONS\.tmp\servidor\`; ou use a variável `CYBERMECH_METRICAS_TOKEN`,
     com 16+ caracteres). Sem token e sem pasta de dados a rota nem existe (404). Compara em tempo constante e corta a
     força bruta: 30 tentativas por 10 min por IP (429, até para o token certo).
-  - **A página:** `https://www.selvamkt.com.br/cybermech/metricas/` (sem link em menu nenhum, `noindex`, sem Google
+  - **A página:** `https://cybermech.online/metricas/` (sem link em menu nenhum, `noindex`, sem Google
     Analytics). Cole o token uma vez; ele fica só naquele navegador e **só para aquele servidor** (um link com
     `?servidor=` apontando para outro lugar nunca recebe o token guardado). Mostra hoje/7 dias, o funil, 14 dias e a
     tabela de países dos últimos 30 dias. **O arquivo fica na pasta de dados** (`CYBERMECH_DADOS`), junto do `contas.db`: em produção, `D:\DECEPTICONS\.tmp\servidor\metricas-token.txt` (até 04/10 ele ficava na pasta de onde o código roda; a pasta de dados foi separada do código). O log (`servidor.log`) diz o caminho exato na subida ("métricas privadas ligadas: o token está em …"), sem escrever o token. Só existe depois que o servidor **novo** subir pela primeira vez.

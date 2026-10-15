@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## EM BRANCH — NÃO ESTÁ NO AR: o jogo muda para cybermech.online (migração do endereço) — Claude, 15/10 (branch `claude/dominio-cybermech-online`, P142)
+
+**A ordem do Comandante (15/10):** registrou `cybermech.online` e pediu para migrar e tirar de `selvamkt.com.br`; sem links nem jogadores, "da forma mais inteligente, estratégica e fácil possível, sem erros". Decisão e motivos: topo do `HISTORICO_DE_DECISOES.md`.
+
+**O que este branch muda (passo 1, o código):** o site sai na **raiz** de `cybermech.online`; a trava do publicador (`scripts/publicarSite.mjs`, o `ci.yml` e `server/publicarSite.test.ts`) só aceita `/domains/cybermech.online/public_html`; o diagnóstico de erros aceita o host novo; teste local e capturas servem na raiz; `DEPLOY.md`, `AGENTS.md`, `IDENTITY.md` e os demais docs vivos apontam para o endereço novo (os registros históricos ficam como estavam).
+
+**O que falta, e quem faz (nada disto está feito ainda):**
+1. **Comandante + MCP da Hostinger** (precisa recarregar o VS Code: as ferramentas não carregaram nesta sessão, e conferir o `API_TOKEN`): adicionar `cybermech.online` como site extra do plano e confirmar que a pasta `domains/cybermech.online/public_html` existe.
+2. **Claude:** apontar o `deploy-site.json` (fora do repositório, em `.tmp/servidor/`), publicar **deste branch**, conferir com `node scripts/site.mjs --verify https://cybermech.online/` e só então mergear (se mergear antes, o atualizador do PC recusa o caminho antigo: falha fechada, mas o site para).
+3. **Servidor de jogo:** zona `cybermech.online` na Cloudflare, `jogo.cybermech.online` no túnel, `gameServer` no `deploy-site.json` e republicar; **com 0 jogadores**. O `DEPLOY.md` ainda descreve `jogo.selvamkt.com.br` até esse passo.
+4. **Por último:** tirar o site da pasta `cybermech/` da Selva e o `jogo.` antigo do túnel.
+
+**Daqui não consigo abrir o site publicado** se a VPN resetar o TLS (memória de 10/10): a conferência pelo `--verify` é por checksum no servidor; a visual é do Comandante.
+
+**Próxima sessão começa com:** o passo 1 acima (a Hostinger); o PR `claude/coqueiros-destrutiveis` (P138) e o `claude/primeiro-acesso` (P133) seguem na fila.
+
 ## O PÔR DO SOL VERMELHO, A LUA CHEIA NASCENDO E O HUD LEGÍVEL SOBRE O CÉU — Claude, 15/10 (branch `claude/ceu-e-hud`, P137 + P139 parte 1)
 
 **As ordens:** (P137, 15/10) *"as cores ainda precisam melhorar… espero que o sol esteja se pondo, vermelho, no horizonte, isso vai diminuir a luminosidade geral… o lado esquerdo da praia terá o sol se pondo… uma lua cheia branca-azulada nascendo do outro lado, alinhada ao sol, com a luminosidade geral mais baixa"*; (P139, 15/10) *"melhorar UI desse cenário em geral"*.

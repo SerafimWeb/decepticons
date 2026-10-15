@@ -97,10 +97,10 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           # O --delete apaga no servidor o que não existe aqui: com o caminho errado apagaria o site
-          # real do selvamkt.com.br. Só publica numa pasta que termina em /public_html/cybermech/.
+          # real da Selva MKT (selvamkt.com.br). Só publica na raiz do cybermech.online: .../domains/cybermech.online/public_html/.
           case "$DEPLOY_PATH" in
-            */public_html/cybermech/) ;;
-            *) echo "::error::DEPLOY_PATH precisa terminar em /public_html/cybermech/"; exit 1 ;;
+            */domains/cybermech.online/public_html/) ;;
+            *) echo "::error::DEPLOY_PATH precisa terminar em /domains/cybermech.online/public_html/"; exit 1 ;;
           esac
           printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > deploy_key
           chmod 600 deploy_key

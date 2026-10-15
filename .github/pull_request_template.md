@@ -5,7 +5,7 @@
 <!-- Por frame ou por tick, com número quando der (G4/G5). "Nenhum no jogo" também é resposta. -->
 
 ## Como testar no site
-<!-- Passos em www.selvamkt.com.br/cybermech/jogar/ depois do merge (o deploy leva uns 3 minutos). -->
+<!-- Passos em cybermech.online/jogar/ depois do merge (o deploy leva uns 3 minutos). -->
 
 ## Checklist
 - [ ] `npm run check` verde
