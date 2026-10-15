@@ -91,7 +91,7 @@
 - [x] Bastidores com a atividade da equipe: commits por agente, mapa de calor por hora, fluxo de commits e entregas, pedidos do dono atendidos (tudo do git e dos PRs) #negocio
 - [x] Arma secundária: foguetes no braço esquerdo (botão direito ou Q; FOGUETE no toque), 4 no carregador, dano em área #combate
 - [x] Som dos foguetes: disparo e voo (Gemini) #som
-- [~] Narrador do jogo (ordem P146, 15/10): 19 falas em 4 sotaques (br, en, ru, cn) e modo mistura, escolha em Configurações, `npm run vozes` com o ElevenLabs, 34 testes (Claude); **falta gerar as vozes** (a chave e a voz de cada sotaque são do Comandante) #som
+- [~] Narrador do jogo (ordem P146, 15/10): 19 falas em 4 sotaques (br, en, ru, cn) e modo mistura, escolha em Configurações, `npm run vozes` com o ElevenLabs, 34 testes (Claude); **vozes escolhidas e "combate" gerado nos 4 sotaques; faltam 72 clipes** (`npm run vozes -- --gerar --sim`, comando do Comandante) #som
 - [ ] Sons de arma a partir das referências do Comandante (P146): largar em `.tmp/SOUNDS/armas/`, o Claude apara, normaliza, converte e registra; decidir quais armas usam efeito gerado #som
 - [x] Arsenal em três níveis de poder (MK I, II, III) com a mesma regra; dano recalibrado com metas de tempo para derrubar travadas por teste; calor do Mech compartilhado entre as armas; plasma perde força com a distância #combate
 - [x] Projeto do Hangar (chassi, encaixes, carga, níveis, dissipador) e a seção dele na página do jogo, com o arsenal lido do código #mechs

@@ -1,3 +1,15 @@
+## [2026-10-15] As vozes do narrador: uma por sotaque, escolhidas da conta do Comandante; a geração em lote fica com ele (Claude, P146)
+
+**Situação:** o Comandante colou a chave do ElevenLabs e mandou usar. A lista de vozes da conta mostrou que a voz do narrador do P113 é **brasileira** (Eliel), e que a conta já tem vozes com os sotaques pedidos.
+
+**Decisões:**
+1. **br = Eliel** (a voz que ele próprio escolheu), **en = Chuck Miller** (grave e rouco: narrador de luta), **ru = Dracula** (sotaque russo), **cn = Adam** (robótico, mandarim de Pequim). Escolha do Claude, por rótulo e descrição (**não ouvida**): trocar é um id no `vozes.config.json` e `--refazer`.
+2. **Provar a API com 4 clipes antes de gerar tudo** (26 caracteres): a chave e o formato da chamada funcionam.
+3. **O lote de 72 clipes foi negado pelo classificador de segurança e o Claude não contornou.** O comando é do Comandante (`npm run vozes -- --gerar --sim`); o custo é de 901 caracteres.
+4. **A chave no chat é um vazamento de baixo risco, mas real:** vai para o histórico da conversa. Ela foi usada só como variável de ambiente de um comando, nunca gravada. Recomenda-se girá-la depois de gerar.
+
+**Por que registrar:** quem for trocar uma voz precisa saber de onde vieram os ids, que não foram ouvidas por quem escolheu, e que o lote não foi gerado por um bloqueio, não por esquecimento.
+
 ## [2026-10-15] O narrador é um módulo de tela com clipes gerados: sotaque é a voz, o manifesto vai no bundle e a voz do navegador só cobre a abertura (Claude, P146)
 
 **Situação:** o Comandante quer vozes de narrador de luta, com sotaque russo, chinês, inglês e brasileiro, geradas no ElevenLabs. O jogo já falava "Rodada N" e "Combate!" pela voz do navegador (`speechSynthesis`, pt-BR).
