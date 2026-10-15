@@ -52,7 +52,9 @@ const HEADERS = {
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    'font-src https://fonts.gstatic.com',
+    // 'self' (P135, 15/10): a fonte Azonix do título do jogo é servida pelo próprio site. Sem o 'self',
+    // o navegador bloqueia o .otf e o título cai na monoespaçada do sistema (visto no DevTools do Comandante).
+    "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https://www.googletagmanager.com https://*.google-analytics.com",
     // Multiplayer (M4): o servidor no próprio PC (ws://localhost) ou por túnel/hospedagem (wss://).
     // O `http://localhost` e a origem do túnel são o `GET /status` que a página usa para dizer se há gente jogando.

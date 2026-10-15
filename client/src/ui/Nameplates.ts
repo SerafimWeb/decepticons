@@ -9,8 +9,10 @@ const W = 256;
 /** Duas faixas: o nome em cima, a barra de vida e a distância embaixo. */
 const H = 48;
 const NAME_BAND = 30;
-const BAR_Y = 33;
-const BAR_H = 9;
+const BAR_Y = 36;
+const BAR_H = 5;
+/** A barra de vida não passa disso, centrada sob o nome (P136, 15/10): o Comandante a achou comprida demais e poluindo o combate. */
+const BAR_MAX_W = 96;
 const PAD = 8;
 /** Espaço à direita da barra para a distância ("999m"). */
 const DIST_W = 46;
@@ -67,14 +69,14 @@ function drawPlate(
   if (persona) draw(` ${persona}`, x0 + nameW, `400 16px ${FONT}`, '#eef2e8', nameY + 1);
 
   // ── Barra de vida (fundo escuro + preenchimento na cor do lado) ──
-  const barW = W - PAD * 2 - DIST_W;
-  g.fillStyle = 'rgba(0,0,0,0.72)';
-  g.fillRect(PAD, BAR_Y, barW, BAR_H);
+  // Discreta (P136, 15/10): metade da largura, centrada sob o nome, mais baixa e sem a moldura branca — a
+  // barra comprida em cada NPC pesava no visual do combate (palavras do Comandante).
+  const barW = Math.min(W - PAD * 2 - DIST_W, BAR_MAX_W);
+  const barX = Math.round((W - barW) / 2);
+  g.fillStyle = 'rgba(0,0,0,0.5)';
+  g.fillRect(barX, BAR_Y, barW, BAR_H);
   g.fillStyle = color;
-  g.fillRect(PAD + 1, BAR_Y + 1, Math.max(0, (barW - 2) * hp01), BAR_H - 2);
-  g.strokeStyle = 'rgba(255,255,255,0.28)';
-  g.lineWidth = 1;
-  g.strokeRect(PAD + 0.5, BAR_Y + 0.5, barW - 1, BAR_H - 1);
+  g.fillRect(barX + 1, BAR_Y + 1, Math.max(0, (barW - 2) * hp01), BAR_H - 2);
 
   // ── Distância à direita da barra ──
   g.font = `400 14px ${FONT}`;
