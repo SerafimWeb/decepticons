@@ -9,16 +9,17 @@ import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { Match } from './Match';
+import { NUCLEO } from './NucleoDaEstacao';
 
 const IDLE: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
 const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
 const abertas: PhysicsWorld[] = [];
 
 /** A missão em ondas da praia (a defesa da estação, P126/P127), sem tela: o jogador nasce na escotilha; o mar freia e afoga só o fundo. */
-async function partidaDaPraia() {
+async function partidaDaPraia(extra: { mode?: 'survival' | 'deathmatch'; damage?: boolean } = {}) {
   const physics = await PhysicsWorld.create();
   abertas.push(physics);
-  const match = new Match({ physics, scene: new THREE.Scene(), map: 'praia', mode: 'survival', particles: NO_FX, foes: DEFAULT_SETTINGS, debris: false, allies: false });
+  const match = new Match({ physics, scene: new THREE.Scene(), map: 'praia', mode: extra.mode ?? 'survival', damage: extra.damage, particles: NO_FX, foes: DEFAULT_SETTINGS, debris: false, allies: false });
   const player = new Vector09();
   match.addPlayer(player, 'VOCÊ');
   const entrada = { ...IDLE };
@@ -115,5 +116,68 @@ describe('a praia no Match (P126/P127): a defesa da estação em ondas, a orla a
     for (const [x, z] of PRAIA_ASSALTO) expect(Math.hypot(x - PRAIA_ESTACAO.x, z - PRAIA_ESTACAO.z)).toBeLessThan(80);
     // O mapa jogável é o do tamanho certo (nada saiu pela parede invisível).
     for (const m of vivos) expect(m.simPosition.x).toBeLessThan(PRAIA_LIMITES.maxX);
+  });
+});
+
+describe('o núcleo da estação na missão em ondas da praia (P127): a defesa de verdade', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+  afterEach(() => {
+    while (abertas.length) abertas.pop()!.world.free();
+  });
+
+  it('só a missão em ondas da praia tem núcleo: o combate livre e a Arena não', async () => {
+    expect((await partidaDaPraia()).match.nucleo).not.toBeNull();
+    expect((await partidaDaPraia({ mode: 'deathmatch' })).match.nucleo).toBeNull();
+  });
+
+  it('o rebelde que entra nos muros drena o núcleo; fora deles, não', async () => {
+    const { match, run } = await partidaDaPraia({ damage: false });
+    run(4); // a onda 1 entra: dois andróides
+    const [a, b] = match.bots.mechs.filter((m) => m.alive);
+    expect(a && b).toBeTruthy();
+    // Fora do complexo (ainda na areia, longe): nada drena.
+    expect(match.nucleo!.vida).toBe(NUCLEO.vidaMax);
+    // Um deles entra no pátio: a rede começa a cair (andróide pesa meio).
+    a!.respawn(new THREE.Vector3(262, 0, 40));
+    run(2);
+    expect(match.nucleo!.pressao).toBeGreaterThan(0);
+    expect(match.nucleo!.vida).toBeLessThan(NUCLEO.vidaMax);
+  });
+
+  it('a estação cai: com o jogador a salvo, os invasores derrubam a rede e a missão FALHA (o jogador não precisa morrer)', async () => {
+    const { match, player, run } = await partidaDaPraia({ damage: false });
+    let fim: { survived: boolean } | null = null;
+    match.onMissionEnd = (survived) => {
+      fim = { survived };
+    };
+    run(4);
+    const vivos = match.bots.mechs.filter((m) => m.alive);
+    for (const m of vivos) m.respawn(new THREE.Vector3(262, 0, 40)); // todos dentro do complexo
+    // O dano está desligado: o jogador não morre, e os invasores ficam lá drenando.
+    run(260);
+    expect(player.alive).toBe(true);
+    expect(match.nucleo!.caiu).toBe(true);
+    expect(match.waves!.phase).toBe('failed');
+    expect(fim).toEqual({ survived: false });
+  });
+
+  it('cada onda eliminada devolve vida à rede', async () => {
+    const { match, run } = await partidaDaPraia({ damage: false });
+    run(4);
+    match.nucleo!.vida = 500;
+    // Os abates da onda (o diretor conta cada um): ao último, a onda está eliminada.
+    while (match.waves!.phase === 'active') match.waves!.recordEnemyKilled();
+    expect(match.waves!.phase).toBe('clear');
+    expect(match.nucleo!.vida).toBeGreaterThanOrEqual(500 + NUCLEO.curaPorOnda - 1);
+  });
+
+  it('a missão nova levanta a estação de novo', async () => {
+    const { match, run } = await partidaDaPraia({ damage: false });
+    run(4);
+    match.nucleo!.vida = 100;
+    match.restartMission();
+    expect(match.nucleo!.vida).toBe(NUCLEO.vidaMax);
   });
 });

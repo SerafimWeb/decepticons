@@ -136,12 +136,53 @@ function escreve(fora: AvisoDeAgua, nivel: AvisoDeAgua['nivel'], progresso: numb
   return fora;
 }
 
+/** As frações de vida do núcleo que disparam o alerta de "a rede está caindo", do maior para o menor. */
+export const LIMIARES_DO_NUCLEO = [0.75, 0.5, 0.25] as const;
+
+/**
+ * O alerta do núcleo da estação: devolve o texto **uma vez** quando há o que avisar — os invasores entraram no complexo, a rede
+ * passou de um limiar para baixo (75%, 50%, 25%) ou a estação caiu. Recompor a rede (acima de 90%) rearma os limiares. O `PraiaHud`
+ * mostra o texto; aqui só mora a regra.
+ */
+export class AlertaDoNucleo {
+  private ultimoLimiar = 1;
+  private pressaoAntes = 0;
+  private caiu = false;
+
+  atualiza(fracao: number, pressao: number): string | null {
+    if (fracao <= 0) {
+      if (this.caiu) return null;
+      this.caiu = true;
+      return 'A ESTAÇÃO CAIU';
+    }
+    if (fracao > 0.9) this.ultimoLimiar = 1;
+    let texto: string | null = null;
+    for (const l of LIMIARES_DO_NUCLEO) {
+      if (fracao <= l && l < this.ultimoLimiar) {
+        this.ultimoLimiar = l;
+        texto = `ESTAÇÃO A ${Math.round(l * 100)}% · EXPULSE OS INVASORES`;
+        break;
+      }
+    }
+    if (texto === null && pressao > 0 && this.pressaoAntes === 0) texto = 'INVASORES NA ESTAÇÃO · EXPULSE-OS';
+    this.pressaoAntes = pressao;
+    return texto;
+  }
+
+  /** Missão nova: os limiares e a queda voltam a valer. */
+  reset(): void {
+    this.ultimoLimiar = 1;
+    this.pressaoAntes = 0;
+    this.caiu = false;
+  }
+}
+
 /** O cartão de missão da praia (mostrado uma vez, ao começar): a história em três linhas curtas — alegoria, sem nomes reais. */
 export const CARTAO_DA_MISSAO = {
   titulo: 'OPERAÇÃO CABOS ABERTOS',
   linhas: [
     'Os cabos submarinos de Fortaleza trazem a internet para o país.',
     'Forças hostis desembarcam pela orla para invadir a rede e plantar desinformação.',
-    'Segure a ESTAÇÃO DE CABOS: elimine as ondas e proteja a liberdade da informação.',
+    'Segure a ESTAÇÃO: expulse quem entrar nos muros e elimine as ondas. Rede caída, missão perdida.',
   ],
 } as const;

@@ -73,6 +73,7 @@ varying vec3 vMundo;
 varying vec3 vCentro;
 uniform vec3 uSolDir;
 uniform float uTempo;
+uniform float uNucleo;
 ${GLSL_RUIDO}
 vec3 srgb(vec3 c) { return pow(c, vec3(2.2)); }
 `;
@@ -128,7 +129,8 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
     vec2 dentro = vec2(fract(across / 4.0), fract(vMundo.y / 4.0));
     float faixa = step(0.3, dentro.y) * step(dentro.y, 0.78) * step(0.05, dentro.x) * step(dentro.x, 0.95) * lateral;
     vec2 id = cel + vec2(alongX * 41.0, 0.0);
-    float acesa = step(0.16, h21(id));
+    // O núcleo (a integridade da rede) manda: quanto mais cai, mais janelas apagam e o que resta vira alarme vermelho.
+    float acesa = step(0.16 + (1.0 - uNucleo) * 0.84, h21(id));
     float lado = clamp(dot(nf, uSolDir) * 1.6, 0.0, 1.0);
     vec3 parede = diffuseColor.rgb * (0.9 + 0.2 * vn(vMundo.xz * 0.5 + vMundo.y * 0.4)) * (0.82 + 0.18 * smoothstep(0.0, 4.0, vMundo.y));
     vec3 vidro = mix(srgb(vec3(0.03, 0.09, 0.13)), srgb(vec3(0.55, 0.62, 0.7)), lado * 0.45);
@@ -137,6 +139,7 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
     cor = mix(cor, teto, step(0.5, fa.y) * step(0.0, nf.y));
     diffuseColor.rgb = cor;
     vec3 luz = mix(srgb(vec3(0.15, 0.85, 1.0)), srgb(vec3(1.0, 0.92, 0.75)), step(0.86, h21(id + 4.0)));
+    luz = mix(srgb(vec3(1.0, 0.12, 0.08)), luz, smoothstep(0.25, 0.65, uNucleo));
     totalEmissiveRadiance += luz * faixa * acesa * (1.0 - 0.7 * lado) * 1.25;
   `,
   muro: /* glsl */ `
@@ -150,7 +153,8 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
     // A fita de luz ciano no alto do muro: o perímetro da estação aceso (a marca do complexo).
     float fita = lateral * step(4.0, vMundo.y) * step(vMundo.y, 4.28);
     diffuseColor.rgb = mix(diffuseColor.rgb * baixo * g * (1.0 - 0.14 * pilar), srgb(vec3(0.05, 0.16, 0.2)), fita);
-    totalEmissiveRadiance += srgb(vec3(0.12, 0.85, 1.0)) * fita * 1.3;
+    vec3 corDaFita = mix(srgb(vec3(1.0, 0.15, 0.1)), srgb(vec3(0.12, 0.85, 1.0)), smoothstep(0.25, 0.65, uNucleo));
+    totalEmissiveRadiance += corDaFita * fita * 1.3;
   `,
   deque: /* glsl */ `
     // O tabuleiro de ferro do píer: chapas com costura a cada 2,4 m, ferrugem em manchas.
@@ -217,7 +221,7 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
 export const E_PISO = new Set<TipoDeBloco>(['asfalto', 'calcada', 'patio', 'ciclovia', 'escotilha', 'marca', 'luz', 'cabo']);
 
 /** Um material padrão da praia para o `modo`; o shader recebe o sol e o tempo. */
-export function materialDoModo(modo: ModoDeMaterial, tempo: { value: number }, piso: boolean): THREE.MeshStandardMaterial {
+export function materialDoModo(modo: ModoDeMaterial, tempo: { value: number }, piso: boolean, nucleo: { value: number } = { value: 1 }): THREE.MeshStandardMaterial {
   const m = new THREE.MeshStandardMaterial({ roughness: modo === 'conteiner' ? 0.6 : modo === 'predio' ? 0.78 : 0.93, metalness: modo === 'conteiner' ? 0.25 : 0.03 });
   if (piso) {
     m.polygonOffset = true;
@@ -227,6 +231,7 @@ export function materialDoModo(modo: ModoDeMaterial, tempo: { value: number }, p
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uSolDir = { value: DIRECAO_DO_SOL };
     shader.uniforms.uTempo = tempo;
+    shader.uniforms.uNucleo = nucleo;
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', `#include <common>\n${VERTICE_DECLARA}`)
       .replace('#include <begin_vertex>', `#include <begin_vertex>\n${VERTICE_CORPO}`);

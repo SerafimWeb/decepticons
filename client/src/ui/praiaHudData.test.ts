@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FUNDURA_MOLHADA } from '../combat/Agua';
 import { PRAIA_ESTACAO, PRAIA_PIER } from '../environment/PraiaLayout';
 import { PRAIA_LIMITES } from '../environment/PraiaTerreno';
-import { AnunciadorDeLugar, avisoDeAgua, CARTAO_DA_MISSAO, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MarcadorNaTela } from './praiaHudData';
+import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, CARTAO_DA_MISSAO, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MarcadorNaTela } from './praiaHudData';
 
 const MARGENS = { topo: 100, base: 120, esq: 24, dir: 24 };
 const saida = (): MarcadorNaTela => ({ x: 0, y: 0, naBorda: false });
@@ -116,6 +116,40 @@ describe('o aviso da água', () => {
     const b = avisoDeAgua(3, 4, 3, DESDE, agua());
     expect(b.progresso).toBe(1);
     expect(b.texto).toContain('AFOGANDO');
+  });
+});
+
+describe('o alerta do núcleo da estação', () => {
+  it('avisa uma vez quando os invasores entram, e de novo só depois de uma calma', () => {
+    const a = new AlertaDoNucleo();
+    expect(a.atualiza(1, 0)).toBeNull(); // tudo calmo
+    expect(a.atualiza(1, 1)).toBe('INVASORES NA ESTAÇÃO · EXPULSE-OS');
+    expect(a.atualiza(0.98, 1)).toBeNull(); // continua: sem repetir
+    expect(a.atualiza(0.98, 0)).toBeNull(); // expulsos
+    expect(a.atualiza(0.98, 0.5)).toBe('INVASORES NA ESTAÇÃO · EXPULSE-OS'); // entraram de novo
+  });
+
+  it('cada limiar (75%, 50%, 25%) avisa uma vez, na descida; recompor a rede rearma', () => {
+    const a = new AlertaDoNucleo();
+    expect(a.atualiza(0.8, 0)).toBeNull();
+    expect(a.atualiza(0.74, 1)).toBe('ESTAÇÃO A 75% · EXPULSE OS INVASORES');
+    expect(a.atualiza(0.7, 1)).toBeNull();
+    expect(a.atualiza(0.49, 1)).toBe('ESTAÇÃO A 50% · EXPULSE OS INVASORES');
+    expect(a.atualiza(0.2, 1)).toBe('ESTAÇÃO A 25% · EXPULSE OS INVASORES'); // pulou direto para baixo do 25%
+    expect(a.atualiza(0.1, 1)).toBeNull();
+    // A rede se recompõe até quase cheia: os limiares voltam a valer.
+    expect(a.atualiza(0.95, 0)).toBeNull();
+    expect(a.atualiza(0.7, 1)).toBe('ESTAÇÃO A 75% · EXPULSE OS INVASORES');
+  });
+
+  it('a queda avisa uma vez e para por aí; a missão nova rearma tudo', () => {
+    const a = new AlertaDoNucleo();
+    expect(a.atualiza(0, 3)).toBe('A ESTAÇÃO CAIU');
+    expect(a.atualiza(0, 3)).toBeNull();
+    a.reset();
+    expect(a.atualiza(0, 3)).toBe('A ESTAÇÃO CAIU');
+    a.reset();
+    expect(a.atualiza(1, 0)).toBeNull();
   });
 });
 

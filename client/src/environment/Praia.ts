@@ -44,6 +44,8 @@ export class Praia {
   private feixeDoFarol: THREE.Object3D | null = null;
   /** 1 = céu e mar com todo o detalhe (nuvens, ruído da água); 0 = qualidade baixa: só o degradê e as ondas (G12). */
   private readonly detalhe = { value: 1 };
+  /** A vida do núcleo da estação (1 = inteira): as janelas e a fita do centro de dados e o feixe de luz reagem a ela. */
+  private readonly nucleo = { value: 1 };
 
   constructor(scene: THREE.Scene, physics: PhysicsWorld) {
     scene.fog = new THREE.FogExp2(COR_DA_NEVOA, DENSIDADE_DA_NEVOA);
@@ -63,6 +65,11 @@ export class Praia {
   update(elapsed: number): void {
     this.tempo.value = elapsed;
     if (this.feixeDoFarol) this.feixeDoFarol.rotation.y = elapsed * 0.55;
+  }
+
+  /** O núcleo da estação mudou (0 a 1): o centro de dados apaga as janelas e o alarme vira vermelho conforme a rede cai. */
+  setNucleo(fracao: number): void {
+    this.nucleo.value = Math.max(0, Math.min(1, fracao));
   }
 
   /** Liga ou desliga o detalhe caro do céu e do mar (as nuvens e o ruído da água): a qualidade baixa e o rebaixamento automático desligam. */
@@ -119,7 +126,7 @@ export class Praia {
     }
     for (const [chave, lista] of grupos) {
       const semLuz = chave === 'marca' || chave === 'luz' || chave === 'cabo';
-      const material = semLuz ? materialSemLuz(chave as 'marca' | 'luz' | 'cabo', this.tempo) : materialDoModo(chave as ModoDeMaterial, this.tempo, lista.some((b) => E_PISO.has(b.kind)));
+      const material = semLuz ? materialSemLuz(chave as 'marca' | 'luz' | 'cabo', this.tempo) : materialDoModo(chave as ModoDeMaterial, this.tempo, lista.some((b) => E_PISO.has(b.kind)), this.nucleo);
       const malha = new THREE.InstancedMesh(geo, material, lista.length);
       lista.forEach((b, i) => {
         _pos.set(b.x, b.y, b.z);
@@ -192,9 +199,10 @@ export class Praia {
     const coluna = new THREE.Mesh(
       new THREE.CylinderGeometry(2.4, 4.2, 150, 16, 1, true),
       new THREE.ShaderMaterial({
-        uniforms: { uTempo: this.tempo },
+        uniforms: { uTempo: this.tempo, uNucleo: this.nucleo },
         vertexShader: 'varying float vAlt; void main(){ vAlt = position.y / 150.0 + 0.5; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-        fragmentShader: 'varying float vAlt; uniform float uTempo; void main(){ float a = pow(1.0 - vAlt, 1.6) * (0.5 + 0.08 * sin(uTempo * 2.0)) ; gl_FragColor = vec4(vec3(0.25, 1.0, 1.0) * 1.5, a); }',
+        // A coluna é ciano com a rede inteira e vira vermelha (e mais forte, como alarme) quando o núcleo cai.
+        fragmentShader: 'varying float vAlt; uniform float uTempo; uniform float uNucleo; void main(){ float a = pow(1.0 - vAlt, 1.6) * (0.5 + 0.08 * sin(uTempo * 2.0) + (1.0 - uNucleo) * 0.25); vec3 c = mix(vec3(1.5, 0.2, 0.15), vec3(0.4, 1.5, 1.5), smoothstep(0.25, 0.65, uNucleo)); gl_FragColor = vec4(c, a); }',
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,

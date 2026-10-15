@@ -20,6 +20,7 @@ import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
 import { PRAIA_AGUA, PRAIA_ASSALTO, PRAIA_INIMIGOS, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { dentroDoComplexo, NUCLEO, NucleoDaEstacao, pesoDoInvasor } from './NucleoDaEstacao';
 import { danoDeAfogamento, fatorDeVelocidade, FUNDURA_MOLHADA, fundoParaAfogar, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
@@ -140,6 +141,14 @@ const _flameTo = new THREE.Vector3();
 /** O "acerto" que o cone entrega ao CombatSystem: um objeto só, reescrito a cada alvo (nada alocado por pulso). */
 const _flameHit: PhysicsHit = { point: new THREE.Vector3(), normal: new THREE.Vector3(0, 1, 0), distance: 0, collider: undefined as unknown as RAPIER.Collider };
 
+/** O que o HUD da praia lê da água sob os pés de um Mech (`Match.estadoDaAgua`). */
+export interface EstadoDaAgua {
+  fundura: number;
+  afogandoS: number;
+  afogarS: number;
+  afogaDesde: number;
+}
+
 export class Match {
   readonly debris: DebrisSystem;
   readonly destructibles: Destructibles;
@@ -190,6 +199,8 @@ export class Match {
   private readonly agua: Agua | null = null;
   /** Há quanto tempo cada Mech está com os pés na água (o afogamento) — rascunho reaproveitado, sem alocar (G4). */
   private readonly afogando = new Map<MechBase, number>();
+  /** O núcleo da estação (P127): a "integridade da rede" que a missão em ondas da praia defende. `null` nos outros mapas e modos. */
+  readonly nucleo: NucleoDaEstacao | null = null;
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
   readonly pilots: Pilot[] = [];
   /** Mechs de gente (os bots caçam estes). */
@@ -251,6 +262,8 @@ export class Match {
     this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : 'arena');
     // A água da praia (P126): o mar freia e afoga quem entra nele. Nos outros mapas não há água.
     this.agua = praia ? PRAIA_AGUA : null;
+    // A missão em ondas da praia defende a estação: os rebeldes que entram nos muros drenam o núcleo; a estação cair é perder a missão.
+    this.nucleo = praia && survival ? new NucleoDaEstacao() : null;
     this.fx = o.particles;
     // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
@@ -350,7 +363,10 @@ export class Match {
           onRoster: (plan) => this.applyWaveRoster(plan),
           onWaveStart: (plan) => this.onWaveStart?.(plan.wave, plan.mechs + plan.androids + (plan.boss ? 1 : 0), plan.mechs, plan.androids, plan.title, SURVIVAL_WAVE_PLANS.length),
           onWaveProgress: (wave, killed, total, elapsedS) => this.onWaveProgress?.(wave, killed, total, elapsedS),
-          onWaveClear: (wave, elapsedS) => this.onWaveClear?.(wave, elapsedS),
+          onWaveClear: (wave, elapsedS) => {
+            this.nucleo?.curar(NUCLEO.curaPorOnda); // a onda eliminada devolve um pouco da rede
+            this.onWaveClear?.(wave, elapsedS);
+          },
           onMissionEnd: (survived, stats) => this.onMissionEnd?.(survived, this.waves?.wave ?? 1, stats),
         }, o.startWave)
       : null;
@@ -664,7 +680,8 @@ export class Match {
    */
   step(dt: number): boolean {
     if (this.round.playing) {
-      this.waves?.fixedUpdate(dt, this.players.some((player) => player.alive));
+      // A missão falha se o jogador cai OU se a estação cai (o núcleo chegou a zero no tick anterior).
+      this.waves?.fixedUpdate(dt, this.players.some((player) => player.alive) && !this.nucleo?.caiu);
       if (this.waves?.ended) return false;
       // Fogo, choque e gelo: o tempo corre e o dano por segundo sai ANTES dos pilotos, para a velocidade e as travas do tick já usarem o
       // estado atualizado. Mesma ordem no servidor e no jogo offline (G14).
@@ -698,10 +715,28 @@ export class Match {
       this.ctf?.fixedUpdate(dt);
       this.dominio?.fixedUpdate(dt);
       this.dirigirOsBots(dt);
+      this.drenarONucleo(dt);
     }
     if (this.round.fixedUpdate(dt) !== 'started') return false;
     this.restart();
     return true;
+  }
+
+  /**
+   * O núcleo da estação (P127): soma o peso dos rebeldes vivos **dentro dos muros** do complexo (Mech 1, andróide meio, Colossus 4) e o
+   * núcleo drena (ou, sem invasor, se recompõe). Sem o núcleo (outros mapas e modos), não roda nada. Custo: um laço sobre os rebeldes
+   * (≤ 8), sem alocar.
+   */
+  private drenarONucleo(dt: number): void {
+    const n = this.nucleo;
+    if (!n) return;
+    let peso = 0;
+    for (const m of this.bots.mechs) {
+      if (!m.alive) continue;
+      const p = m.simPosition;
+      if (dentroDoComplexo(p.x, p.z)) peso += pesoDoInvasor(m.stats.name);
+    }
+    n.fixedUpdate(dt, peso);
   }
 
   /**
@@ -736,13 +771,23 @@ export class Match {
 
   /**
    * Para o HUD da praia: a fundura em que os pés de `mech` estão (0 em terra ou fora do mapa da praia) e quantos segundos ele já passou no
-   * fundo (o relógio do afogamento). Barato (uma conta e uma busca no `Map`), chamado a cada quadro com o jogador no mar.
+   * fundo (o relógio do afogamento). Barato (uma conta e uma busca no `Map`), chamado a cada quadro: escreve em `fora` (sem alocar, G4).
    */
-  estadoDaAgua(mech: MechBase): { fundura: number; afogandoS: number; afogarS: number; afogaDesde: number } {
+  estadoDaAgua(mech: MechBase, fora: EstadoDaAgua = { fundura: 0, afogandoS: 0, afogarS: 0, afogaDesde: FUNDURA_MOLHADA }): EstadoDaAgua {
     const a = this.agua;
-    if (!a) return { fundura: 0, afogandoS: 0, afogarS: 0, afogaDesde: FUNDURA_MOLHADA };
+    if (!a) {
+      fora.fundura = 0;
+      fora.afogandoS = 0;
+      fora.afogarS = 0;
+      fora.afogaDesde = FUNDURA_MOLHADA;
+      return fora;
+    }
     const p = mech.simPosition;
-    return { fundura: mech.alive ? funduraEm(a, p.x, p.z, p.y) : 0, afogandoS: this.afogando.get(mech) ?? 0, afogarS: a.afogarS, afogaDesde: a.afogaDesde ?? FUNDURA_MOLHADA };
+    fora.fundura = mech.alive ? funduraEm(a, p.x, p.z, p.y) : 0;
+    fora.afogandoS = this.afogando.get(mech) ?? 0;
+    fora.afogarS = a.afogarS;
+    fora.afogaDesde = a.afogaDesde ?? FUNDURA_MOLHADA;
+    return fora;
   }
 
   /**
@@ -799,6 +844,7 @@ export class Match {
     this.destructibles.restoreAll();
     this.round.resetScores();
     this.waves?.reset();
+    this.nucleo?.reset();
     this.ctf?.reset();
     this.dominio?.reset();
   }

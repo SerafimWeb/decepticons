@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A ESTAÇÃO DE CABOS agora CAI: o núcleo — a rede que a missão defende — drena com os invasores e a missão falha se ela cair — Claude, 14/10 (branch `claude/nucleo-da-estacao`, P127 passo 2)
+
+**A ordem:** a mesma do PR anterior ("melhorar na íntegra… fase completa") — e o ponto que ficou **em aberto** pelo Qwen e por mim: a estação era o objetivo **marcado**, não uma estrutura que cai. Eu assumi (era a "DECISÃO EM ABERTO" do Qwen: regra de simulação é contrato do Claude).
+
+**O que o Comandante vê:** a missão em ondas da praia tem **objetivo de verdade**. A **REDE DA ESTAÇÃO** (o núcleo, 1000 de vida) aparece numa barra sob a faixa da costa e no marcador da estação (**ESTAÇÃO 87%**). **Rebelde que entra nos muros do complexo drena a rede** (Mech pesa 1; andróide, meio; o Colossus, 4): três Mechs derrubam a estação em ~48 s, o Colossus sozinho em ~36 s — então não basta sobreviver, **é preciso expulsar quem entrou**. Sem invasor lá dentro por 6 s, a rede **se recompõe** devagar; **cada onda eliminada devolve 150**. A estação reage: o **centro de dados apaga as janelas** (e o que sobra vira alarme vermelho), a **fita de luz do muro** e a **coluna de luz** do objetivo passam do ciano ao vermelho. Há **alertas** ("INVASORES NA ESTAÇÃO · EXPULSE-OS", "ESTAÇÃO A 75/50/25%", "A ESTAÇÃO CAIU"). **A missão falha se a rede chegar a zero** — mesmo com o jogador vivo ("ESTAÇÃO PERDIDA · ONDA n · A ESTAÇÃO DE CABOS CAIU: A REDE FOI INVADIDA").
+
+**Como é feito (G14, regra com teste):** `sim/NucleoDaEstacao.ts` (regra pura: vida, peso do invasor, dreno, espera, recomposição, cura por onda) + `Match` (soma o peso dos rebeldes vivos **dentro do complexo** a cada tick e passa ao núcleo; a falha entra no mesmo `SurvivalWaves.fixedUpdate` que já encerrava a missão quando o jogador cai). **Só na missão em ondas da praia** (`nucleo` é `null` no combate livre e na Arena). O HUD (`PraiaHud` + `AlertaDoNucleo`, regra pura) e os shaders leem a fração por um uniforme (`Praia.setNucleo`). Reaproveitei os objetos do quadro do HUD e do estado da água: **nada é alocado por quadro** (G4).
+
+**Custo:** por tick, um laço sobre os rebeldes vivos (≤ 8) e uma soma; **na GPU, um uniforme**. Nada por quadro no HUD além do que já era (o DOM só escreve quando a porcentagem ou o estado muda).
+
+**Testes:** `NucleoDaEstacao.test` (**9**: dreno proporcional ao peso, 48 s/36 s, espera e recomposição, cura por onda, queda definitiva, o complexo), `Match.praia.test` (+**5**: só na missão da praia; o invasor drena e fora dos muros não; **a estação cai e a missão falha com o jogador vivo**; a onda eliminada devolve vida; a missão nova levanta a estação), `praiaHudData.test` (+**3**: os alertas). `npm run check` verde.
+
+**Visto:** `arte/praia-nucleo-inteiro-claude.jpg` e `praia-nucleo-ataque-claude.jpg` (a missão na onda 5, parado na escotilha: a barra da rede a 100% e depois a 91% com o marcador em alerta); headless, 0 erro de página. **O julgamento é do Comandante.**
+
+**Onde ele testa:** `?modo=survival&mapa=praia` — deixe os rebeldes chegarem aos portões e veja a **REDE DA ESTAÇÃO** cair; **expulse-os** para ela se recompor. `&onda=5` pula direto para as ondas fortes.
+
+**Falta (R13):** da ficha `ataque-e-defesa.md` § 2.2: o **contraataque** (o núcleo cai e a missão vira "retomar o raio", em vez de acabar) e o **técnico que conserta o núcleo** — **AUSENTES**; o **dano por tiro no núcleo** (hoje a rede cai pela **presença** dos invasores, a regra de proximidade que o Domínio já usa; os rebeldes não atiram na estrutura) — decisão registrada; a **sirene** de alerta (só texto e cor); o playtest e o equilíbrio dos números (1000 / 7 por peso / 14 de recomposição / 150 por onda são o meu palpite de engenheiro — o Comandante ajusta jogando).
+
 ## A PRAIA DOS CABOS ao longo do mapa inteiro: 640 m de orla, porto, Ponte Metálica e a estação murada — Claude, 14/10 (branch `claude/praia-comprida`, P127)
 
 **A ordem (14/10):** "a fase ESTAÇÃO DOS CABOS ainda ta muito simplificada. precisamos melhorar ela na íntegra, adicionar qualidade gráfica, UX UI, cenário, elementos, etc. MINHA ideia inicial era que a praia fosse **ao longo do cenário**, e não num só lado. **fase grande, completa**".
@@ -22,7 +40,7 @@
 
 **Onde ele testa:** `www.selvamkt.com.br/cybermech/jogar/?modo=survival&mapa=praia` (a missão em ondas) ou `?mapa=praia` (o combate livre) — ou no console: ESTAÇÃO DE CABOS → ir. Teclas: **V** muda a câmera; **M**/**B** abre o briefing.
 
-**Falta (R13):** (1) o **núcleo** da estação — a estrutura com vida própria que as ondas atacam, o contraataque e o técnico que a conserta (`fichas/ataque-e-defesa.md` § 2.2): hoje a estação é **o objetivo marcado**, não ainda uma estrutura que cai; é o **próximo PR** (a regra de proximidade, no `Match`, com HUD); (2) o **playtest** do Comandante e a medição de **GPU numa integrada** (p50/p95 como no `medicoes/BUNKER.md`); (3) a câmera **tática** não tem *occluders* na praia (um hotel pode tapar a visão dela; a de 3ª pessoa não tem esse problema); (4) o P123 (o Mech *saindo* da escotilha) segue sendo só a placa no chão; (5) a bancada de colisores da ficha ficou **contada pelo teste** (135 < 310), mas sem o medidor de CPU por tick com 32 corpos.
+**Falta (R13):** (1) o **núcleo** da estação — **entregue no passo 2 (seção acima, `claude/nucleo-da-estacao`)**: a rede que cai com os invasores e faz a missão falhar; seguem **ausentes** o contraataque e o técnico que conserta (`fichas/ataque-e-defesa.md` § 2.2); (2) o **playtest** do Comandante e a medição de **GPU numa integrada** (p50/p95 como no `medicoes/BUNKER.md`); (3) a câmera **tática** não tem *occluders* na praia (um hotel pode tapar a visão dela; a de 3ª pessoa não tem esse problema); (4) o P123 (o Mech *saindo* da escotilha) segue sendo só a placa no chão; (5) a bancada de colisores da ficha ficou **contada pelo teste** (135 < 310), mas sem o medidor de CPU por tick com 32 corpos.
 
 ## A ESTAÇÃO DE CABOS ganha a missão: as ondas rebeldes vêm do mar pela areia — Qwen, 14/10 (branch `qwen/estacao-defesa`, P126 passo 5)
 
