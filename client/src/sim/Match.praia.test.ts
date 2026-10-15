@@ -3,7 +3,8 @@ import * as THREE from 'three';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import type { MechInput } from '../entities/MechBase';
-import { PRAIA_AGUA, PRAIA_ESTACAO, PRAIA_SPAWNS } from '../environment/PraiaLayout';
+import { PRAIA_AGUA, PRAIA_ASSALTO, PRAIA_COMPLEXO, PRAIA_ESCOTILHA, PRAIA_ESTACAO, PRAIA_PIER, PRAIA_SPAWNS } from '../environment/PraiaLayout';
+import { costaEm, faixaEm, PRAIA_LIMITES } from '../environment/PraiaTerreno';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
@@ -13,21 +14,22 @@ const IDLE: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, d
 const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
 const abertas: PhysicsWorld[] = [];
 
-/** A missão em ondas da praia (a defesa da estação, P126), sem tela: o jogador nasce na boca da escotilha e o mar freia/afoga. */
+/** A missão em ondas da praia (a defesa da estação, P126/P127), sem tela: o jogador nasce na escotilha; o mar freia e afoga só o fundo. */
 async function partidaDaPraia() {
   const physics = await PhysicsWorld.create();
   abertas.push(physics);
   const match = new Match({ physics, scene: new THREE.Scene(), map: 'praia', mode: 'survival', particles: NO_FX, foes: DEFAULT_SETTINGS, debris: false, allies: false });
   const player = new Vector09();
   match.addPlayer(player, 'VOCÊ');
-  match.pilots.push({ fixedUpdate: (dt) => player.fixedUpdate(IDLE, dt) });
+  const entrada = { ...IDLE };
+  match.pilots.push({ fixedUpdate: (dt) => player.fixedUpdate(entrada, dt) });
   const run = (s: number): void => {
     for (let i = 0; i < Math.round(s / FIXED_DT); i++) match.step(FIXED_DT);
   };
-  return { match, player, run };
+  return { match, player, run, entrada };
 }
 
-describe('a praia no Match (P126): a defesa da estação em ondas', () => {
+describe('a praia no Match (P126/P127): a defesa da estação em ondas, a orla ao longo de 640 m', () => {
   beforeAll(async () => {
     await RAPIER.init();
   });
@@ -35,34 +37,83 @@ describe('a praia no Match (P126): a defesa da estação em ondas', () => {
     while (abertas.length) abertas.pop()!.world.free();
   });
 
-  it('o jogador nasce na areia seca, na boca da escotilha (o mapa reconhecido é a praia, mesmo no modo em ondas)', async () => {
+  it('o jogador nasce em terra firme, na escotilha da estação (o mapa reconhecido é a praia, mesmo no modo em ondas)', async () => {
     const { player } = await partidaDaPraia();
-    // Nasce no primeiro ponto (a boca da escotilha da estação) e do lado seco.
     expect(player.simPosition.x).toBeCloseTo(PRAIA_SPAWNS[0]![0], 0);
-    expect(player.simPosition.x).toBeGreaterThan(PRAIA_AGUA.maxX);
-    expect(Math.abs(player.simPosition.z)).toBeLessThan(2);
+    expect(player.simPosition.z).toBeCloseTo(PRAIA_ESCOTILHA.z, 0);
+    expect(faixaEm(player.simPosition.x, player.simPosition.z)).not.toBe('mar');
+    expect(player.simPosition.x).toBeGreaterThan(PRAIA_COMPLEXO.minX); // dentro do complexo
   });
 
-  it('a água da praia freia de verdade na partida (G14): no mar, o Mech perde velocidade', async () => {
+  it('o chão aguenta o Mech parado: quem nasce na escotilha não afunda nem cai pelo terreno', async () => {
     const { player, run } = await partidaDaPraia();
-    expect(player.moveSpeedScale).toBeCloseTo(1, 5); // na areia seca, sem freio
-    // Joga o Mech no mar (do lado do afogamento) e o deixa afundar: a água freia.
-    player.respawn(new THREE.Vector3(-120, 0, 0));
-    run(2);
-    expect(player.simPosition.x).toBeLessThan(PRAIA_AGUA.maxX); // está dentro do mar
-    expect(player.moveSpeedScale).toBeLessThan(1); // a água freia
+    run(3);
+    expect(player.simPosition.y).toBeGreaterThan(-0.2);
+    expect(player.simPosition.y).toBeLessThan(0.3);
   });
 
-  it('as ondas rebeldes nascem na areia, longe da estação que o jogador defende', async () => {
-    const { match, run } = await partidaDaPraia();
-    // O briefing dura 3 s e a onda 1 não nasce antes disso; os pontos das ondas são os da praia (não os da Arena).
+  it('a água freia de verdade na partida (G14): no mar fundo, o Mech perde velocidade', async () => {
+    const { player, run } = await partidaDaPraia();
+    expect(player.moveSpeedScale).toBeCloseTo(1, 5); // em terra, sem freio
+    // Joga o Mech mar adentro (80 m da costa) e o deixa afundar até o fundo: a água freia.
+    player.respawn(new THREE.Vector3(0, 0, costaEm(0) - 80));
+    run(3);
+    expect(player.simPosition.y).toBeLessThan(PRAIA_AGUA.superficie - 5); // desceu até o fundo
+    expect(player.moveSpeedScale).toBeLessThan(0.5); // a água freia forte lá no fundo
+  });
+
+  it('vadear não afoga, o fundo afoga: no raso (< 1,4 m) o Mech só anda devagar; no fundo, depois de 3 s, perde casco', async () => {
+    const raso = await partidaDaPraia();
+    // A 5 m da costa a água dá ~1 m: joelho.
+    raso.player.respawn(new THREE.Vector3(0, 0, costaEm(0) - 5));
+    raso.run(2);
+    const funduraRasa = raso.match.estadoDaAgua(raso.player).fundura;
+    expect(funduraRasa).toBeGreaterThan(0.4);
+    expect(funduraRasa).toBeLessThan(PRAIA_AGUA.afogaDesde!);
+    expect(raso.player.moveSpeedScale).toBeLessThan(1); // freia
+    const torsoAntes = raso.player.modules.torso;
+    raso.run(6);
+    expect(raso.player.modules.torso, 'vadeando não machuca').toBe(torsoAntes);
+
+    const fundo = await partidaDaPraia();
+    fundo.player.respawn(new THREE.Vector3(0, 0, costaEm(0) - 20)); // 20 m: ~5 m de fundura
+    fundo.run(1);
+    expect(fundo.match.estadoDaAgua(fundo.player).fundura).toBeGreaterThan(PRAIA_AGUA.afogaDesde!);
+    const antes = fundo.player.modules.torso;
+    fundo.run(6); // passa dos 3 s
+    expect(fundo.player.modules.torso, 'no fundo, depois de 3 s, afoga').toBeLessThan(antes);
+    expect(fundo.match.estadoDaAgua(fundo.player).afogandoS).toBeGreaterThan(3);
+  });
+
+  it('a Ponte Metálica: a rampa sobe sem pular e o Mech chega ao tabuleiro de 2,6 m sobre o mar', async () => {
+    const { player, run, entrada } = await partidaDaPraia();
+    // Na areia, de frente para a rampa (o mar fica no -z), andando para o mar.
+    player.respawn(new THREE.Vector3(PRAIA_PIER.x, 0, PRAIA_PIER.zRampa + 6));
+    entrada.moveZ = 1;
+    run(8);
+    expect(player.simPosition.y, 'subiu ao tabuleiro').toBeGreaterThan(PRAIA_PIER.topo - 0.5);
+    expect(player.simPosition.z, 'andou para o mar').toBeLessThan(PRAIA_PIER.zTabuleiro);
+    expect(player.alive).toBe(true);
+  });
+
+  it('as ondas rebeldes nascem em terra firme, longe da estação que o jogador defende, e vêm para ela (a rota de assalto)', async () => {
+    const { match, player, run } = await partidaDaPraia();
     expect(match.bots.mechs.every((m) => !m.alive)).toBe(true);
     run(4); // passa o briefing: a onda 1 entra
     const vivos = match.bots.mechs.filter((m) => m.alive);
     expect(vivos.length).toBeGreaterThan(0);
     for (const m of vivos) {
-      expect(m.simPosition.x).toBeGreaterThan(PRAIA_AGUA.maxX); // nascem na areia
-      expect(m.simPosition.x).toBeLessThan(PRAIA_ESTACAO.x - 40); // longe da estação
+      expect(faixaEm(m.simPosition.x, m.simPosition.z)).not.toBe('mar');
+      expect(Math.hypot(m.simPosition.x - PRAIA_ESTACAO.x, m.simPosition.z - PRAIA_ESTACAO.z), 'longe da estação').toBeGreaterThan(120);
     }
+    const distancia = (): number => Math.min(...vivos.filter((m) => m.alive).map((m) => Math.hypot(m.simPosition.x - player.simPosition.x, m.simPosition.z - player.simPosition.z)));
+    const antes = distancia();
+    run(40);
+    // Em 40 s os rebeldes marcharam para os portões: a distância até quem defende encolheu bastante (não ficaram vagando).
+    expect(distancia(), 'a onda marcha para a estação').toBeLessThan(antes - 60);
+    // E todos os pontos da rota de assalto ficam perto da estação.
+    for (const [x, z] of PRAIA_ASSALTO) expect(Math.hypot(x - PRAIA_ESTACAO.x, z - PRAIA_ESTACAO.z)).toBeLessThan(80);
+    // O mapa jogável é o do tamanho certo (nada saiu pela parede invisível).
+    for (const m of vivos) expect(m.simPosition.x).toBeLessThan(PRAIA_LIMITES.maxX);
   });
 });

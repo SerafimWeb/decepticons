@@ -9,6 +9,8 @@
 > e o próprio teste do teatro trava isso (`theater.test.ts`: "só a estação de cabos tem o lugar confirmado; o resto é
 > proposta"). A ordem **P99** (12/10) pediu **cenários maiores**; este é o primeiro a ganhar ficha.
 
+> **Atualização 14/10 (P127, Claude) — o que o mapa virou:** a ficha propunha ~500 × ~140 m com a estação na ponta seca; o Comandante pediu **a praia ao longo do cenário** e uma **fase grande e completa**, e o mapa saiu com **640 × 240 m**: a orla corre pelo eixo X (mar de um lado, cidade do outro), com o **porto** a oeste, a **Ponte Metálica** no meio e a **estação** murada a leste. Os **tetos desta ficha continuam valendo** e o teste confere: **135 colisores** (< 310; o chão é UM colisor de altura), nenhuma luz nova, nada por quadro na CPU, residente (sem streaming). As duas vias da § 2 viraram **três** (areia, calçadão e avenida) mais a via alta da ponte. Bancada em `medicoes/PRAIA.md`; o desenho, em `environment/PraiaLayout.ts` e `PraiaTerreno.ts`.
+
 ## 1. Por que a ficha vem antes de construir
 
 O Bunker ensinou o custo de construir primeiro e conversar depois: ele nasceu, o dono jogou e pediu outra coisa — mais

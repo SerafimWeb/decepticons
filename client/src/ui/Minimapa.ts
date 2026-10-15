@@ -1,5 +1,7 @@
 import { ARENA_ZONES } from '../combat/Zone';
-import type { RadarCaixa } from './TacticalRadar';
+import { PRAIA_ESTACAO, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { pontosDaCosta } from '../environment/PraiaTerreno';
+import { caixasDaPraia, type RadarCaixa } from './TacticalRadar';
 
 /** Quantos metros do mundo cabem do centro do minimapa até a borda (o campo de visão do radar do Mech). */
 export const RAIO_M = 75;
@@ -55,11 +57,23 @@ export interface PontoDoMapa {
 export interface PlantaMinimapa {
   readonly caixas: readonly RadarCaixa[];
   readonly zonas: readonly { readonly x: number; readonly z: number; readonly radius: number; readonly kind: 'heal' | 'cool' }[];
+  /** A linha d'água (a praia), de oeste a leste: o mar é pintado do lado de z negativo dela. */
+  readonly mar?: readonly (readonly [number, number])[];
 }
 
 /** Planta da Arena: os prédios e as duas zonas. O Bunker não tem zonas e usa a planta térrea. */
 export function plantaComZonas(caixas: readonly RadarCaixa[], arena: boolean): PlantaMinimapa {
   return { caixas, zonas: arena ? ARENA_ZONES : [] };
+}
+
+/** A planta da praia (P127): o que bloqueia o Mech, as zonas e o mar. */
+export function plantaDaPraiaNoMinimapa(): PlantaMinimapa {
+  return { caixas: caixasDaPraia(), zonas: PRAIA_ZONES, mar: pontosDaCosta() };
+}
+
+/** A estação como um "ponto" do minimapa (a letra E, em ciano): fora do alcance, fica presa na borda e mostra a direção do objetivo. */
+export function pontoDaEstacao(): readonly PontoDoMapa[] {
+  return [{ def: { letra: 'E', x: PRAIA_ESTACAO.x, z: PRAIA_ESTACAO.z }, control: 1, disputado: false }];
 }
 
 /**
@@ -159,6 +173,22 @@ export class Minimapa {
     g.rotate(yaw);
     g.scale(k, k);
     g.translate(-ex, -ez);
+    const mar = this.planta.mar;
+    if (mar && mar.length > 1) {
+      // O mar: do lado de z negativo da linha d'água até 200 m além dela (basta para a janela de 120 m do radar).
+      g.fillStyle = 'rgba(0, 150, 220, 0.2)';
+      g.beginPath();
+      g.moveTo(mar[0]![0], mar[0]![1] - 200);
+      for (const [mx, mz] of mar) g.lineTo(mx, mz);
+      g.lineTo(mar[mar.length - 1]![0], mar[mar.length - 1]![1] - 200);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = 'rgba(120, 220, 255, 0.7)';
+      g.lineWidth = 1 / k;
+      g.beginPath();
+      mar.forEach(([mx, mz], i) => (i === 0 ? g.moveTo(mx, mz) : g.lineTo(mx, mz)));
+      g.stroke();
+    }
     for (const z of this.planta.zonas) {
       g.fillStyle = z.kind === 'heal' ? 'rgba(57, 255, 106, 0.16)' : 'rgba(0, 229, 255, 0.16)';
       g.strokeStyle = z.kind === 'heal' ? 'rgba(57, 255, 106, 0.6)' : 'rgba(0, 229, 255, 0.6)';

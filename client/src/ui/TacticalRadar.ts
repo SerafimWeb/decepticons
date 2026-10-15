@@ -1,5 +1,8 @@
 import type { MapId } from '../environment/Bunker';
 import { bunkerBlocks } from '../environment/BunkerLayout';
+import { pegada, praiaColisores } from '../environment/PraiaColisores';
+import { PRAIA_ESTACAO, PRAIA_PIER, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { pontosDaCosta, PRAIA_LIMITES } from '../environment/PraiaTerreno';
 import { ARENA_ZONES } from '../combat/Zone';
 import { SERAFIM_TOWER } from '../environment/SerafimTower';
 import { escalaTipografica } from './escala';
@@ -20,8 +23,16 @@ export interface RadarUnidade {
 /** O que o radar desenha: a planta (fixa por mapa) e onde estão as unidades agora. */
 export interface RadarQuadro {
   mapa: MapId;
-  /** Metade do lado da área mostrada, em metros. */
+  /** Metade do lado da área mostrada (em x), em metros. */
   meia: number;
+  /** Metade da área em z, para um mapa retangular (a praia, 640 × 240 m); sem isto, o mapa é quadrado. */
+  meiaZ?: number;
+  /** As zonas de cura e de resfriamento do mapa (sem isto, a Arena usa as dela). */
+  zonas?: readonly { x: number; z: number; radius: number; kind: 'heal' | 'cool' }[];
+  /** A linha d'água, de oeste a leste (a praia): o mar é pintado do lado de z negativo dela. */
+  mar?: readonly (readonly [number, number])[];
+  /** Os marcos do mapa com nome (o porto, a ponte, a estação). */
+  rotulos?: readonly { x: number; z: number; texto: string; cor: string }[];
   caixas: readonly RadarCaixa[];
   voce: (RadarUnidade & { yaw: number }) | null;
   /** Vários pilotos de uma vez (o mural de câmeras, P88: uma sala vista de fora): triângulos verdes, sem o cone de visão. */
@@ -43,6 +54,26 @@ export function plantaDoBunker(): RadarCaixa[] {
     .filter((b) => b.solid && b.y < 10 && b.h >= 3)
     .map((b) => ({ x0: b.x - b.w / 2, z0: b.z - b.d / 2, x1: b.x + b.w / 2, z1: b.z + b.d / 2 }));
 }
+
+/**
+ * A planta da praia (P127): tudo que bloqueia o Mech de pé — prédios, muros, contêineres, barracas, o navio, os guindastes — visto de cima.
+ * O tabuleiro alto do píer (que se anda por cima) e o que é muito baixo ficam de fora: a planta mostra o que fecha caminho.
+ */
+export function caixasDaPraia(): RadarCaixa[] {
+  return praiaColisores()
+    .filter((c) => c.y - c.h / 2 < 7 && c.h >= 1.4 && !c.rx)
+    .map((c) => {
+      const [x0, z0, x1, z1] = pegada(c);
+      return { x0, z0, x1, z1 };
+    });
+}
+
+/** Os marcos com nome da praia no radar do console. */
+export const ROTULOS_DA_PRAIA = [
+  { x: -270, z: -30, texto: 'PORTO', cor: 'rgba(255, 138, 31, 0.9)' },
+  { x: PRAIA_PIER.x, z: -92, texto: 'PONTE', cor: 'rgba(0, 229, 255, 0.85)' },
+  { x: PRAIA_ESTACAO.x - 8, z: PRAIA_ESTACAO.z, texto: 'ESTAÇÃO', cor: 'rgba(57, 255, 106, 0.95)' },
+] as const;
 
 /** A planta da Arena: os prédios e a torre, vistos de cima (a mesma que o radar do console desenha; o mural de câmeras usa para todas as salas). */
 export function plantaDaArena(predios: readonly CaixaLida[]): RadarCaixa[] {
@@ -75,12 +106,15 @@ export function fonteDoRadar(
   aliados: () => readonly UnidadeLida[],
 ): () => RadarQuadro {
   let caixas: RadarCaixa[] | null = null;
+  const praia = mapa === 'praia';
+  const mar = praia ? pontosDaCosta() : undefined;
   return () => {
-    caixas ??= mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(predios);
+    caixas ??= praia ? caixasDaPraia() : mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(predios);
     const eu = voce();
     return {
       mapa,
-      meia,
+      meia: praia ? PRAIA_LIMITES.maxX : meia,
+      ...(praia ? { meiaZ: PRAIA_LIMITES.maxZ, zonas: PRAIA_ZONES, mar, rotulos: ROTULOS_DA_PRAIA } : {}),
       caixas,
       voce: eu.alive ? { x: eu.simPosition.x, z: eu.simPosition.z, yaw: eu.yaw } : null,
       aliados: aliados().filter((m) => m.alive).map((m) => ({ x: m.simPosition.x, z: m.simPosition.z })),
@@ -158,49 +192,68 @@ export class TacticalRadar {
     const { g, w, h } = this;
     if (!g || !w || !h) return;
     const q = this.quadro();
-    const lado = Math.min(w, h) - 16;
-    const k = lado / (q.meia * 2);
+    // O mapa cabe inteiro na tela: quadrado (Arena, Bunker) ou retangular (a praia, 640 × 240 m): vale a escala do lado que aperta.
+    const meiaZ = q.meiaZ ?? q.meia;
+    const k = Math.min((w - 16) / (q.meia * 2), (h - 16) / (meiaZ * 2));
+    const larguraDoMapa = q.meia * 2 * k;
+    const alturaDoMapa = meiaZ * 2 * k;
     const ox = w / 2;
     const oy = h / 2;
     const X = (x: number) => ox + x * k;
     const Y = (z: number) => oy + z * k;
     g.clearRect(0, 0, w, h);
 
-    // Anéis de distância (de 25 em 25 m) e a cruz do centro.
+    // O mar (a praia): pintado do lado de z negativo da linha d'água, com a linha mais viva por cima.
+    if (q.mar && q.mar.length > 1) {
+      g.fillStyle = 'rgba(0, 150, 220, 0.2)';
+      g.beginPath();
+      g.moveTo(X(q.mar[0]![0]), Y(-meiaZ));
+      for (const [mx, mz] of q.mar) g.lineTo(X(mx), Y(mz));
+      g.lineTo(X(q.mar[q.mar.length - 1]![0]), Y(-meiaZ));
+      g.closePath();
+      g.fill();
+      g.strokeStyle = 'rgba(120, 220, 255, 0.65)';
+      g.lineWidth = 1;
+      g.beginPath();
+      q.mar.forEach(([mx, mz], i) => (i === 0 ? g.moveTo(X(mx), Y(mz)) : g.lineTo(X(mx), Y(mz))));
+      g.stroke();
+    }
+
+    // Anéis de distância (de 25 em 25 m; num mapa grande, de 100 em 100) e a cruz do centro.
+    const passoDoAnel = q.meia > 150 ? 100 : 25;
     g.strokeStyle = 'rgba(0, 229, 255, 0.10)';
     g.lineWidth = 1;
-    for (let r = 25; r <= q.meia * 1.42; r += 25) {
+    for (let r = passoDoAnel; r <= q.meia * 1.42; r += passoDoAnel) {
       g.beginPath();
       g.arc(ox, oy, r * k, 0, Math.PI * 2);
       g.stroke();
     }
     g.beginPath();
-    g.moveTo(ox - lado / 2, oy);
-    g.lineTo(ox + lado / 2, oy);
-    g.moveTo(ox, oy - lado / 2);
-    g.lineTo(ox, oy + lado / 2);
+    g.moveTo(ox - larguraDoMapa / 2, oy);
+    g.lineTo(ox + larguraDoMapa / 2, oy);
+    g.moveTo(ox, oy - alturaDoMapa / 2);
+    g.lineTo(ox, oy + alturaDoMapa / 2);
     g.stroke();
     // Borda da área de jogo, a distância de dois anéis e o norte (a frente do Mech com yaw 0 é -z: o alto da tela).
     g.strokeStyle = 'rgba(0, 229, 255, 0.35)';
-    g.strokeRect(X(-q.meia) + 0.5, Y(-q.meia) + 0.5, q.meia * 2 * k, q.meia * 2 * k);
+    g.strokeRect(X(-q.meia) + 0.5, Y(-meiaZ) + 0.5, larguraDoMapa, alturaDoMapa);
     g.font = `${9 * this.k}px Consolas, "Courier New", monospace`;
     g.textAlign = 'left';
     g.fillStyle = 'rgba(0, 229, 255, 0.45)';
     // Só o anel de 50 m ganha número (o de 100 m cairia em cima da zona de cura, no canto).
-    g.fillText('50 m', ox + 50 * k * 0.707 + 3, oy - 50 * k * 0.707 - 3);
+    if (q.mapa === 'arena') g.fillText('50 m', ox + 50 * k * 0.707 + 3, oy - 50 * k * 0.707 - 3);
     g.textAlign = 'center';
     g.fillStyle = 'rgba(0, 229, 255, 0.85)';
-    g.fillText('N', ox, Y(-q.meia) - 4 > 10 ? Y(-q.meia) - 4 : Y(-q.meia) + 11);
+    g.fillText('N', ox, Y(-meiaZ) - 4 > 10 ? Y(-meiaZ) - 4 : Y(-meiaZ) + 11);
 
-    if (q.mapa === 'arena') {
-      for (const z of ARENA_ZONES) {
-        g.fillStyle = z.kind === 'heal' ? 'rgba(57, 255, 106, 0.12)' : 'rgba(0, 229, 255, 0.12)';
-        g.strokeStyle = z.kind === 'heal' ? 'rgba(57, 255, 106, 0.55)' : 'rgba(0, 229, 255, 0.55)';
-        g.beginPath();
-        g.arc(X(z.x), Y(z.z), z.radius * k, 0, Math.PI * 2);
-        g.fill();
-        g.stroke();
-      }
+    const zonas = q.zonas ?? (q.mapa === 'arena' ? ARENA_ZONES : []);
+    for (const z of zonas) {
+      g.fillStyle = z.kind === 'heal' ? 'rgba(57, 255, 106, 0.12)' : 'rgba(0, 229, 255, 0.12)';
+      g.strokeStyle = z.kind === 'heal' ? 'rgba(57, 255, 106, 0.55)' : 'rgba(0, 229, 255, 0.55)';
+      g.beginPath();
+      g.arc(X(z.x), Y(z.z), z.radius * k, 0, Math.PI * 2);
+      g.fill();
+      g.stroke();
     }
 
     g.fillStyle = 'rgba(0, 229, 255, 0.10)';
@@ -212,10 +265,11 @@ export class TacticalRadar {
       g.strokeRect(Math.round(x) + 0.5, Math.round(y) + 0.5, Math.round((c.x1 - c.x0) * k), Math.round((c.z1 - c.z0) * k));
     }
 
-    if (q.mapa === 'arena') {
+    const rotulos = q.rotulos ?? (q.mapa === 'arena' ? ROTULOS_ARENA : []);
+    if (rotulos.length > 0) {
       g.font = `700 ${9 * this.k}px Consolas, "Courier New", monospace`;
       g.textAlign = 'center';
-      for (const r of ROTULOS_ARENA) {
+      for (const r of rotulos) {
         g.fillStyle = r.cor;
         g.fillText(r.texto, X(r.x), Y(r.z) - 2);
       }
