@@ -2,7 +2,7 @@
 
 > **Ordem do Comandante (15/10):** *"no ElevenLabs, principalmente os comandos e frases de início da partida, round 1, etc, killing frenzy, you die,
 > esse tipo de coisa, com sotaque russo, chinês, inglês, brasileiro, etc, tipo uma boa voz de narrador do Mortal Kombat; os sons das armas, eu enviei
-> diversos sons de referência"*. Antes: *"os SONS estão bem merdas ainda"*. **Estado:** o **narrador está no jogo** (PARCIAL: falta gerar as vozes);
+> diversos sons de referência"*. Antes: *"os SONS estão bem merdas ainda"*. **Estado:** o **narrador está no jogo** e as **4 vozes estão escolhidas**; só "combate" foi gerado nos 4 sotaques (os outros 72 clipes esperam um comando seu, § 2);
 > os **sons de arma esperam as referências** (não chegaram a esta máquina). Claude, 15/10.
 
 ## 1. O que está pronto
@@ -24,7 +24,7 @@
    `$env:ELEVENLABS_API_KEY = "sua-chave"` (some ao fechar a janela).
 2. **Escolher uma voz por sotaque.** `npm run vozes -- --listar` mostra as vozes **da sua conta** (id, nome, sotaque); `npm run vozes -- --biblioteca "russian"` procura na biblioteca
    pública (melhor esforço; adicione a voz que gostar à sua coleção no site do ElevenLabs e confirme com `--listar`). Ponha os ids em `scripts/vozes.config.json`
-   (`br`, `en`, `ru`, `cn`). Hoje só o `en` tem voz: a do narrador que você escolheu em 14/10 (`y3X5crcIDtFawPx7bcNq`, P113). **Sotaque sem voz é pulado.**
+   (`br`, `en`, `ru`, `cn`). As vozes de hoje, todas da **sua conta** (escolhidas pelo Claude em 15/10; troque quando quiser): **`br` Eliel** (brasileiro, grave e comandante: é o narrador que você escolheu em 14/10, P113, `y3X5…`), **`en` Chuck Miller** (americano, grave e rouco: o tom de narrador de luta), **`ru` Dracula** (sotaque russo, grave e sombrio) e **`cn` Adam** (robótico, mandarim de Pequim). Alternativas já listadas em `scripts/vozes.config.json`. **Sotaque sem voz é pulado.**
    *Dica de voz:* para o tom de narrador de luta, procure vozes graves e dramáticas ("deep", "narrator", "trailer"); o gerador já usa estabilidade baixa e estilo alto
    (`falas.json` > `estilos`), que dão a ênfase teatral.
 3. **Ver o custo antes:** `npm run vozes -- --custo` (não gasta nada). O catálogo inteiro tem **menos de 500 caracteres por sotaque**: os quatro sotaques cabem folgados no plano grátis.

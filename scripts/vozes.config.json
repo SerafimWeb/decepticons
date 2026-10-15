@@ -1,10 +1,10 @@
 {
   "_nota": "A voz de cada sotaque do narrador (P146). O id de uma voz não é segredo (a CHAVE da API é, e fica só em ELEVENLABS_API_KEY). Voz vazia = o sotaque é pulado. Escolha com `npm run vozes -- --listar` (as da sua conta) ou `--biblioteca <busca>`: o sotaque é da voz, o texto de ru e cn é inglês.",
   "vozes": {
-    "br": { "voz": "", "descricao": "narrador brasileiro, grave e dramático, em português" },
-    "en": { "voz": "y3X5crcIDtFawPx7bcNq", "descricao": "o narrador que o Comandante escolheu em 14/10 (P113), em inglês" },
-    "ru": { "voz": "", "descricao": "inglês com sotaque russo, grave e dramático" },
-    "cn": { "voz": "", "descricao": "inglês com sotaque chinês, grave e dramático" }
+    "br": { "voz": "y3X5crcIDtFawPx7bcNq", "descricao": "Eliel - Deep, Gravelly and Commanding (brasileiro): o narrador que o Comandante escolheu em 14/10 (P113). Alternativa brasileira da conta: Lucas - Deep & Profound Narrator (GIuLCSVfgJaUuh7hYOY8)" },
+    "en": { "voz": "HIGUfNOdjuWQwwapnTRW", "descricao": "Chuck Miller - Deep, Raspy, American: o tom de narrador de luta. Alternativas da conta: Brian - Deep, Resonant (nPczCjzI2devNBz1zQrb), Adam - Dominant, Firm (pNInz6obpgDQGcFmaJgB), Harry - Fierce Warrior (SOYHLrjzK2X1ezoPC6cr)" },
+    "ru": { "voz": "XjdmlV0OFXfXE6Mg2Sb7", "descricao": "Dracula - Orlok inspired (sotaque russo, grave e sombrio), falando inglês" },
+    "cn": { "voz": "MwQXU20wCONBtEfjFukj", "descricao": "Adam - Robotic, Smooth and Calm (sotaque de Pequim, mandarim), falando inglês: casa com as IAs" }
   },
   "saida": "mp3_44100_128"
 }

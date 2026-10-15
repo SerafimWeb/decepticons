@@ -1,5 +1,20 @@
 # ESTADO ATUAL — CYBERMECH
 
+## AS VOZES DO NARRADOR ESCOLHIDAS E A API PROVADA: "combate" sai nos quatro sotaques — Claude, 15/10 (branch `claude/vozes-geradas`, P146)
+
+**A ordem do Comandante (15/10):** colou a chave do ElevenLabs no chat: *"usa aí"*.
+
+**Feito:**
+1. **`--listar` com a chave da conta** (a chave só como variável de ambiente do comando, nunca em arquivo): as vozes da conta incluem **Eliel (brasileiro)**, que **é** o narrador que ele escolheu em 14/10 (P113, `y3X5…`); eu tinha escrito que era inglês: **corrigido**. A conta também tem Chuck Miller (americano, grave e rouco), Dracula (sotaque russo) e Adam (robótico, mandarim de Pequim).
+2. **Uma voz por sotaque em `scripts/vozes.config.json`:** `br` Eliel, `en` Chuck Miller, `ru` Dracula, `cn` Adam (alternativas anotadas no mesmo arquivo; trocar é mudar um id e rodar com `--refazer`).
+3. **A API provada de ponta a ponta:** `--gerar --sim --so combate` gerou **4 clipes** (0,65 a 0,88 s) e atualizou o manifesto; o jogo já os toca ("Combate!" com a voz do sotaque escolhido). Custo: 26 caracteres.
+4. **A geração dos outros 72 clipes (901 caracteres) foi BARRADA** pelo classificador de segurança do Claude Code; **não contornei**. O Comandante roda `npm run vozes -- --gerar --sim` na própria janela (com `$env:ELEVENLABS_API_KEY`), ou libera a permissão.
+5. **Segurança:** a chave foi colada no chat, então está no histórico da conversa (arquivo local do Claude Code). **Girar a chave** no site do ElevenLabs depois de gerar é o certo. Conferi: ela **não está** em nenhum arquivo rastreado, nem novo, do projeto.
+
+**Falta (R13):** os 72 clipes; **ninguém ouviu no jogo** ainda (o Claude não ouve áudio; o ouvido é do Comandante: `/jogar/?narrador=br`); os sons de arma (15 referências já chegaram: PR seguinte).
+
+**Próxima sessão começa com:** os sons de arma (`.tmp/SOUNDS/ARMAS/`), depois o apelido (P145).
+
 ## A VOZ DO NARRADOR: catálogo de falas em quatro sotaques, o `npm run vozes` e o narrador no jogo — Claude, 15/10 (branch `claude/narrador-vozes`, P146)
 
 **A ordem do Comandante (15/10):** *"no ElevenLabs, principalmente os comandos e frases de início da partida, round 1, etc, killing frenzy, you die… com sotaque russo, chinês, inglês, brasileiro, tipo uma boa voz de narrador do Mortal Kombat; os sons das armas, eu enviei diversos sons de referência"*.
