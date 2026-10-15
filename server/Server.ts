@@ -16,6 +16,7 @@ import { ArenaRoom, type Peer } from './ArenaRoom';
 import { Contas } from './contas';
 import { clientCountry, clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
 import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
+import { corsDoPedido, origemPermitida, origensExtras } from './origem';
 import { bancoDeContas, pastaDados } from './dados';
 import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
 import { Telemetria } from './telemetria';
@@ -112,6 +113,8 @@ export async function startServer(
     /** Régua de tentativas de `/conta/entrar` e `/conta/criar` (padrão: 8 a cada 10 min por IP). Testes
      * que fazem muitas chamadas do mesmo IP alargam para não confundir rate limit com o que estão testando. */
     limiteLogin?: Partial<typeof LIMITE_LOGIN_DEFAULTS>;
+    /** Origens extras (além do jogo no ar e da rede local) que podem abrir o WebSocket e as rotas de conta. Padrão: `CYBERMECH_ORIGENS` (`origem.ts`). */
+    origens?: string[];
     /**
      * Pasta dos números que sobrevivem ao reinício (`telemetria.json`) e do token das métricas. Padrão: `CYBERMECH_DADOS`, ou
      * `.tmp/servidor/` ao lado do código (gitignored; `server/dados.ts`).
@@ -274,6 +277,7 @@ export async function startServer(
     }
   };
   const limiteLogin = new LimiteLogin(opts.limiteLogin);
+  const origens = opts.origens ?? origensExtras(process.env.CYBERMECH_ORIGENS);
 
   const http = createServer(async (req, res) => {
     const path = (req.url ?? '/').split('?')[0];
@@ -383,10 +387,20 @@ export async function startServer(
       res.end();
       return;
     }
+    // Rotas de conta: só as páginas do jogo (e a rede local) podem chamá-las; o CORS devolve a origem do pedido, nunca `*`.
+    const cors = corsDoPedido(req.headers.origin, origens);
+    if (
+      (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH || path === CONTA_SAIR_PATH || path === CONTA_EU_PATH) &&
+      !origemPermitida(req.headers.origin, origens)
+    ) {
+      res.writeHead(403, { 'content-type': 'application/json; charset=utf-8', ...cors });
+      res.end(JSON.stringify({ erro: 'origem não permitida' }));
+      return;
+    }
     if (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH) {
       if (req.method === 'OPTIONS') {
         res.writeHead(204, {
-          'access-control-allow-origin': '*',
+          ...cors,
           'access-control-allow-methods': 'POST, OPTIONS',
           'access-control-allow-headers': 'content-type',
         });
@@ -394,19 +408,19 @@ export async function startServer(
         return;
       }
       if (req.method !== 'POST') {
-        res.writeHead(405, { 'access-control-allow-origin': '*' });
+        res.writeHead(405, { ...cors });
         res.end();
         return;
       }
       const ip = clientIp(req.socket.remoteAddress, req.headers['cf-connecting-ip']);
       if (!limiteLogin.permitir(ip)) {
-        res.writeHead(429, { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' });
+        res.writeHead(429, { 'content-type': 'application/json; charset=utf-8', ...cors });
         res.end(JSON.stringify({ erro: 'tentativas demais; espere um pouco' }));
         return;
       }
       const corpo = await lerCorpoLimitado(req, 1024);
       const enviarJson = (codigo: number, dados: unknown) => {
-        res.writeHead(codigo, { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' });
+        res.writeHead(codigo, { 'content-type': 'application/json; charset=utf-8', ...cors });
         res.end(JSON.stringify(dados));
       };
       if (corpo === 'grande') {
@@ -448,7 +462,7 @@ export async function startServer(
     if (path === CONTA_SAIR_PATH && (req.method === 'POST' || req.method === 'OPTIONS')) {
       if (req.method === 'OPTIONS') {
         res.writeHead(204, {
-          'access-control-allow-origin': '*',
+          ...cors,
           'access-control-allow-methods': 'POST, OPTIONS',
           'access-control-allow-headers': `content-type, ${SESSAO_HEADER}`,
         });
@@ -457,7 +471,7 @@ export async function startServer(
       }
       const token = req.headers[SESSAO_HEADER];
       if (typeof token === 'string') contas.encerrarSessao(token);
-      res.writeHead(204, { 'access-control-allow-origin': '*' });
+      res.writeHead(204, { ...cors });
       res.end();
       return;
     }
@@ -466,7 +480,7 @@ export async function startServer(
       const conta = typeof token === 'string' ? contas.validarSessao(token) : null;
       res.writeHead(conta ? 200 : 401, {
         'content-type': 'application/json; charset=utf-8',
-        'access-control-allow-origin': '*',
+        ...cors,
         'cache-control': 'no-store',
       });
       res.end(conta ? JSON.stringify({ email: conta.email, is_admin: conta.is_admin }) : JSON.stringify({ erro: 'sem sessão' }));
@@ -527,7 +541,12 @@ export async function startServer(
     res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8' });
     res.end(`CYBERMECH · servidor de jogo · ${rooms.size} sala(s)\n`);
   });
-  const wss = new WebSocketServer({ server: http, maxPayload: MAX_MESSAGE });
+  // Origem de fora (outro site usando o navegador do visitante) é recusada no aperto de mão, antes de ocupar vaga (`origem.ts`).
+  const wss = new WebSocketServer({
+    server: http,
+    maxPayload: MAX_MESSAGE,
+    verifyClient: ({ origin }: { origin: string }) => origemPermitida(origin || undefined, origens),
+  });
 
   wss.on('connection', (ws: WebSocket, req) => {
     const ip = clientIp(req.socket.remoteAddress, req.headers['cf-connecting-ip']);

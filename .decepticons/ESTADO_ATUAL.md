@@ -1,5 +1,20 @@
 # ESTADO ATUAL — CYBERMECH
 
+## PUBLICAR COM TRANQUILIDADE: a trava de origem no servidor, o passo a passo da Cloudflare e sete ordens novas — Claude, 15/10 (branch `claude/publicar-tranquilo`, P143 a P149)
+
+**As ordens do Comandante (15/10, depois de ver o jogo no ar):** *"o que mais precisamos fazer pra publicar tranquilo? o que devo fazer na Cloudflare? quais proteções ainda temos que aplicar e o que falta implementar? login não vi... ranking..."*, tirar o servidor de `jogo.selvamkt` para o domínio próprio, **sons** melhores com os créditos do ElevenLabs e voz de início de combate, **campanhas com chefe** ligadas à geopolítica real, e (já com o jogo aberto) **câmeras do cenário que não funcionam** e **prédios só para andróides, com porta**. Todas registradas em `ORDENS_DO_COMANDO.md` (P143 a P149).
+
+**Feito neste PR:**
+1. **Trava de origem (`server/origem.ts`, risco 6 da PRONTIDÃO):** o WebSocket (`verifyClient`, 403 no aperto de mão, antes de ocupar vaga) e as rotas `/conta/*` só aceitam a página do jogo (`https://cybermech.online` e `www`), a máquina local e a rede de casa; o que mais precisar entra por `CYBERMECH_ORIGENS`. O CORS de conta devolve a origem do pedido, nunca `*`. **Por quê:** sem isso, qualquer site podia pôr o nosso `/conta/entrar` no JavaScript e testar senhas pelos navegadores dos visitantes (o servidor veria o IP da vítima, não o do atacante). Pedido sem `Origin` (testes, `curl`, o `capacity.mjs`) passa; o teto por IP do `guard.ts` cuida deles. Custo: um teste de texto por conexão; nada por mensagem. **Testes:** `origem.test.ts` (12) e `origem-http.test.ts` (5, com servidor e WebSocket de verdade).
+2. **`DEPLOY.md`:** o passo a passo de **mover o servidor de jogo para `jogo.cybermech.online`**, com a zona de DNS atual (lida pela API da Hostinger, nada alterado) e as proteções da Cloudflare (Full strict, Bot Fight, rate limiting, Turnstile, DNSSEC).
+3. **Fato descoberto:** o DNS de `cybermech.online` está nos servidores de nome da **Hostinger**, não na Cloudflare; o túnel só publica nomes de uma zona que esteja lá. **A ação é do Comandante** (P144).
+
+**Não mexi (de propósito):** o CORS do painel `/admin/*` (protegido por token e por régua de falhas) e das rotas públicas de leitura (`/status`); o HSTS (decisão do dono do domínio).
+
+**Falta (R13):** o servidor em `jogo.cybermech.online` (depende da Cloudflare); cópia diária do `contas.db` fora de `.tmp`; política de privacidade e exclusão de conta; verificação de e-mail e "esqueci a senha"; o **apelido, o ranking e a conta de jogador** (P145); as **vozes e os sons** (P146); o **documento de campanhas e chefes** (P147); as **câmeras por mapa** (P148, PR `claude/cftv-por-mapa`); os **prédios de interior para andróides** (P149).
+
+**Próxima sessão começa com:** o PR do CFTV por mapa (P148), depois o apelido (P145).
+
 ## O JOGO ESTÁ NO AR EM cybermech.online, e o endereço antigo só redireciona — Claude, 15/10 (branch `claude/migra-dominio-online`, P142; o código é do commit `3f6c3ee`, de uma sessão anterior do Claude)
 
 **A ordem do Comandante (15/10):** registrou `cybermech.online` e pediu para migrar e tirar de `selvamkt.com.br`; depois, vendo que os merges do dia ainda saíam para o endereço antigo: *"já alterei o domínio para cybermech.online, você está atualizado com isso? o git está enviando certo para esse endereço? … redirecione para cybermech.online"*.
