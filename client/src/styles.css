@@ -1698,6 +1698,10 @@ html:not(.touch) .touch-only, .touch .mouse-only { display: none; }
   opacity: 0;
   transition: opacity 0.3s;
   text-align: center;
+  /* A dica de cada arma (P160) pode passar de 60 caracteres: largura do texto, até 90% da tela, centrada. */
+  width: max-content;
+  max-width: 90vw;
+  box-sizing: border-box;
   box-shadow: 0 0 12px rgba(255, 176, 0, 0.2);
   z-index: 1000;
 }
