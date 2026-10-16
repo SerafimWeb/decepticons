@@ -1,3 +1,14 @@
+## [2026-10-16] Cada arma tem a sua dica de primeiro uso (Claude, P160 parte 5)
+
+**Situação:** havia uma dica só para as armas de munição, "FOGUETES: DANO EM ÁREA; EXPLODA NO PÉ DO INIMIGO", e ela aparecia para a granada, o enxame
+e o cruzador também: no texto, a arma nova era o foguete (uma das causas de "parecem armas antigas", P152).
+
+**Decisões:**
+1. **Uma frase por arma, em dado** (`ui/dicasDeArma.ts`, `Record<WeaponId, …>`: o typecheck exige uma para toda arma nova) com os números **tirados da arma**
+   (o enxame diz 8, 16 ou 32 mísseis conforme o nível; a granada, o alcance), para a dica nunca contradizer o jogo.
+2. **Uma vez só, e não volta** (guardado no navegador, tolerante a falha). Com outra dica na tela, espera sem marcar. O foguete segue com a dica de sempre.
+3. **A caixa da dica cresce com o texto** (até 90% da tela): as frases passam de 60 caracteres.
+
 ## [2026-10-16] Os rebeldes lançam a arma explosiva da mão esquerda (Claude, P160 parte 4)
 
 **Situação:** o Vector-09 inimigo sai de fábrica com plasma e casulo de foguetes, mas o bot só atirava a arma principal: as explosões novas (P160 parte 1)
