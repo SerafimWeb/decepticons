@@ -1,3 +1,15 @@
+## [2026-10-16] Teste que roda `git` não pode herdar o ambiente do hook: um `git init` de teste corrompeu a config compartilhada (Claude, P155)
+
+**Situação:** o teste das pendências do Estúdio (PR #339) cria um repositório de teste dentro de `.tmp/` e roda `git init`, `git config` e `git commit` nele. Rodando **dentro do hook de push** (que herda `GIT_DIR`, `GIT_INDEX_FILE`…), esses comandos agiram no repositório **de fora**: a `.git/config` compartilhada ficou com `core.bare = true` (o `git status` das worktrees passou a falhar e a principal virou "(bare)") e com um `[user]` falso (`t@t`). Os commits e o histórico não foram tocados; o dano ficou na config e foi desfeito à mão.
+
+**Decisões:**
+1. **Todo `git` filho de teste ou de ferramenta roda sem as variáveis `GIT_*`** (`ambienteSemGit`, em `scripts/estudio.mjs`). O `pendenciasDoGit` do Estúdio também, senão a lista de pendências mostrava `git: false` dentro do hook.
+2. **O teste não usa `git config`:** a identidade vai por `-c user.email=… -c user.name=…` no próprio comando, e o `git -C <pasta>` fixa o alvo.
+3. **O teto de busca do git (`GIT_CEILING_DIRECTORIES`) fica na pasta-mãe do repositório de teste:** se o `git init` falhar em silêncio, o comando seguinte falha em vez de achar o repositório de fora.
+4. **Teste novo trava a causa:** roda o `pendenciasDoGit` com `GIT_DIR`, `GIT_INDEX_FILE` e `GIT_WORK_TREE` apontando para o lugar errado e exige a leitura certa (mutação à mão: sem o `env`, o teste falha). E o conjunto do Estúdio foi rodado com o ambiente do hook simulado, conferindo que a config compartilhada ficou **byte a byte igual**.
+
+**Por que registrar:** o teste passava na máquina e só quebrava no hook, e o estrago era no repositório de todos os agentes. Quem escrever um teste que chame `git` precisa saber que o hook de commit e o de push herdam o ambiente. Se aparecer `bare = true` ou `[user] t@t` na `.git/config`: `git config --file .git/config core.bare false` e `--unset user.email` / `user.name`.
+
 ## [2026-10-16] A voz própria entra pelo Estúdio, convertida no servidor, tratada pelo mesmo motor e protegida do gerador (Claude, P151)
 
 **Situação:** o Comandante achou o "Combate!" em português fraco e perguntou se devia gravar a própria voz. A resposta (sim) precisava virar um caminho de dois cliques, não um roteiro de arquivos.

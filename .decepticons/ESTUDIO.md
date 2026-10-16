@@ -25,7 +25,7 @@ Uma janela, abas: **SONS** · VOZES · TIROS E ARMAS · MECHS 3D. Cada aba é um
 
 ### Segurança (é um servidor de arquivos no PC do dono)
 
-Escuta **só em 127.0.0.1**; recusa `Host` e `Origin` que não sejam o dele (contra DNS rebinding e página de fora); só lê e grava **arquivos de áudio com nome simples** nas pastas dos módulos; **valida tudo antes de gravar** (e grava de forma atômica); corpo com teto de tamanho; os scripts da página só são servidos da própria pasta do Estúdio. A guarda mora **uma vez** no núcleo (`scripts/estudio.mjs`) e vale para todos os módulos. As travas têm teste com mutação.
+Escuta **só em 127.0.0.1**; recusa `Host` e `Origin` que não sejam o dele (contra DNS rebinding e página de fora); só lê e grava **arquivos de áudio com nome simples** nas pastas dos módulos; **valida tudo antes de gravar** (e grava de forma atômica); corpo com teto de tamanho; os scripts da página só são servidos da própria pasta do Estúdio. A guarda mora **uma vez** no núcleo (`scripts/estudio.mjs`) e vale para todos os módulos. As travas têm teste com mutação. O `git` que o Estúdio chama (as pendências) roda **sem as variáveis `GIT_*`** (`ambienteSemGit`): o hook de commit e o de push as herdam, e com elas o git ignora a pasta pedida. Quem escrever um teste que rode `git` faz o mesmo (e nunca usa `git config`: identidade por `-c`); ver `HISTORICO_DE_DECISOES.md`, 16/10.
 
 ## 3. Como o Estúdio cresce: o contrato de um módulo
 

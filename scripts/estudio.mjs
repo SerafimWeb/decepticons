@@ -20,9 +20,17 @@ import { acharFfmpeg } from './sonsRodar.mjs';
 
 const ESTATICOS = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 
+/**
+ * O ambiente de um `git` filho sem as variáveis GIT_*. O hook de commit e o de push herdam `GIT_DIR`, `GIT_INDEX_FILE`... e, com elas, o git ignora a pasta em que o
+ * chamamos (e um `git init` ali reinicializa o repositório de fora, como já aconteceu).
+ */
+export function ambienteSemGit(env = process.env) {
+  return Object.fromEntries(Object.entries(env).filter(([k]) => !k.toUpperCase().startsWith('GIT_')));
+}
+
 /** As mudanças ainda não commitadas (ou seja, que ainda não foram para o jogo) nos caminhos dados. Sem git, devolve `{ git: false }`. */
 export function pendenciasDoGit(raiz, caminhos) {
-  const r = spawnSync('git', ['status', '--porcelain', '--untracked-files=all', '--', ...caminhos], { cwd: raiz, encoding: 'utf8' });
+  const r = spawnSync('git', ['status', '--porcelain', '--untracked-files=all', '--', ...caminhos], { cwd: raiz, encoding: 'utf8', env: ambienteSemGit() });
   if (r.status !== 0) return { git: false, arquivos: [] };
   const arquivos = r.stdout
     .split('\n')
