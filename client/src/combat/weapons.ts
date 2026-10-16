@@ -479,7 +479,7 @@ const BASE: Record<WeaponId, WeaponBase> = {
   /**
    * Escopeta (dono, 03/10, para o Lancer: "o alcance do tiro é mais curto que o blaster e tira mais vida se estiver
    * pertinho do inimigo"; 16/10, P160: "evolua nossas armas, balísticas"). **Nove balins num cone de 3,4°** (`pellets`):
-   * de perto (até 10 m) todos pegam e o disparo bate **54** (9 × 6; 63 no MK II e 72 no MK III); de longe o cone fica mais
+   * de perto (até 8 m) todos pegam e o disparo bate **54** (9 × 6; 63 no MK II e 72 no MK III); de longe o cone fica mais
    * largo que um Mech (3 m de diâmetro aos 25 m) e só parte dos balins acerta, além da queda de cada um (25% do dano aos
    * 50 m). Era um projétil só de 52 que caía a 8% aos 45 m: a queda agora vem da geometria do cone, como numa escopeta de
    * verdade. Os balins são mais rápidos (140 m/s, eram 120). Sozinha derruba o torso de um Mech em ~4 s de perto (o plasma
@@ -495,7 +495,7 @@ const BASE: Record<WeaponId, WeaponBase> = {
     magazine: 0,
     reload: 0,
     speed: 140,
-    optimalRange: 10,
+    optimalRange: 8,
     maxRange: 50,
     minFactor: 0.25,
     blastRadius: 0,

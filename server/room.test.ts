@@ -279,11 +279,12 @@ describe('Lancer-L1 online: a escopeta no servidor', () => {
       decodeEvents(bytes, batch);
       for (let i = 0; i < batch.count; i++) if (batch.list[i]!.kind === EVENT.SHOT && batch.list[i]!.unit === me) shots.push(batch.list[i]!.index);
     }
+    // Um evento de tiro por disparo (P160: os balins nascem no servidor e no desenho de cada cliente a partir dele) e um acerto por balin, a 3 m todos no alvo.
     expect(shots).toEqual([netWeaponIndex('shotgun')]);
     const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
-    expect(hits).toHaveLength(1);
-    expect(hits[0]!.amount).toBe(hitDamage(weapon('shotgun'), 3));
-    expect(hits[0]!.amount).toBeGreaterThan(weapon('plasma').damage * 2);
+    expect(hits).toHaveLength(weapon('shotgun').pellets!.count);
+    for (const h of hits) expect(h.amount).toBe(hitDamage(weapon('shotgun'), 3));
+    expect(hits.reduce((s, h) => s + h.amount, 0)).toBeGreaterThan(weapon('plasma').damage * 2);
     room.dispose();
   });
 });

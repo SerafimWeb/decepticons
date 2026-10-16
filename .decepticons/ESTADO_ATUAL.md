@@ -2,7 +2,7 @@
 
 ## A ESCOPETA SAI EM BALINS: nove num cone, a queda vem da geometria — Claude, 16/10 (branch `claude/armas-balistica`, P160 parte 2a)
 
-**Feito:** a escopeta (`shotgun`) sai em **nove balins de 6 num cone de 3,4°** (`pellets`), nascidos no `ProjectileSystem.fire` (vale para o jogador, os bots, o servidor e o tiro de outro jogador, com **um** evento de tiro por disparo e o mesmo desenho fixo, sem sorteio). Medido com física de verdade, o disparo inteiro: **54 até 15 m**, 45 aos 20 m, 32 aos 30 m, 15 aos 40 m (só 5 balins pegam: o cone tem 4,8 m), 10 aos 50 m. Tempo para derrubar um torso de perto igual ao de antes (4,0 s / 3,2 s). Os balins que acertam juntos viram **um** número de dano e **um** som. Fichas (Hangar, ARSENAL, site) mostram "9 × 6".
+**Feito:** a escopeta (`shotgun`) sai em **nove balins de 6 num cone de 3,4°** (`pellets`), nascidos no `ProjectileSystem.fire` (vale para o jogador, os bots, o servidor e o tiro de outro jogador, com **um** evento de tiro por disparo e o mesmo desenho fixo, sem sorteio). Medido com física de verdade, o disparo inteiro: **54 até 10 m**, 45 aos 15–20 m, 32 aos 25–30 m, 15 aos 40 m (só 5 balins pegam: o cone tem 4,8 m), 10 aos 50 m. Tempo para derrubar um torso de perto igual ao de antes (4,0 s / 3,2 s). Os balins que acertam juntos viram **um** número de dano e **um** som. Fichas (Hangar, ARSENAL, site) mostram "9 × 6".
 
 **Provas:** 7 testes novos (`combat/pellets.test.ts`: nove projéteis, um evento, o primeiro no centro, todos no cone, mesmo desenho a cada disparo, pool cheio; com física, 9 de 9 a 6 m e no máximo 5 a 40 m) e os de equilíbrio da escopeta reescritos para o disparo inteiro.
 
