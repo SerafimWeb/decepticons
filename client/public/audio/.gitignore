@@ -28,3 +28,7 @@
 # As falas do narrador (P146): geradas pelo `npm run vozes`, pequenas, e carregadas sob demanda.
 !vozes/
 !vozes/**
+
+# Os sons de arma de referencia (P146): preparados por `npm run sons` a partir de scripts/sons-armas.json.
+!armas/
+!armas/**

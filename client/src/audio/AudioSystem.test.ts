@@ -42,3 +42,21 @@ describe('AudioSystem - T5 Elemental Audio & Fallbacks', () => {
     }).not.toThrow();
   });
 });
+
+describe('AudioSystem - sons de arma de referência (P146)', () => {
+  it('sem contexto ou sem amostra carregada, playArma devolve false: quem chama cai no som sintetizado (nunca fica mudo)', () => {
+    const audio = new AudioSystem();
+    for (const id of ['blaster', 'plasma', 'cannon', 'siege', 'rockets', 'seeker', 'barrage']) expect(audio.playArma(id), id).toBe(false);
+  });
+
+  it('arma sem amostra na tabela devolve false e não quebra', () => {
+    const audio = new AudioSystem();
+    for (const id of ['rotary', 'arc', 'cryo', 'flamer', 'sonic', 'nao-existe', '']) expect(audio.playArma(id), id).toBe(false);
+  });
+
+  it('o narrador: clipe de voz ainda não carregado não toca e devolve duração 0', () => {
+    const audio = new AudioSystem();
+    expect(audio.temAmostra('voz:br/combate')).toBe(false);
+    expect(audio.tocarVoz('voz:br/combate')).toBe(0);
+  });
+});

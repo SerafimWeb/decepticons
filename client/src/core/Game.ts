@@ -96,6 +96,7 @@ import { SequenciaDeAbates } from '../combat/killStreak';
 import { bootProgresso } from './bootProgress';
 import { locucaoDoNavegador } from '../ui/locucao';
 import { chaveDaRodada, chaveDaSequencia, falaGerada, narracaoDaUrl } from '../audio/falas';
+import { ARQUIVOS_DAS_ARMAS } from '../audio/armasSom';
 import { Narrador, type PlayerDeVoz } from '../audio/Narrador';
 import { ArsenalPanel } from '../ui/ArsenalPanel';
 import { CampaignPanel } from '../ui/CampaignPanel';
@@ -387,6 +388,8 @@ export class Game {
     this.audio.loadSample('hit', base + 'audio/hit.mp3');
     this.audio.loadSample('step_mech', base + 'audio/step_mech.mp3');
     this.audio.loadSample('step_heavy', base + 'audio/step_heavy.mp3');
+    // Os sons de arma de referência (P146): `npm run sons` os prepara; arma sem amostra (ou ainda carregando) cai no som sintetizado.
+    for (const nome of ARQUIVOS_DAS_ARMAS) this.audio.loadSample(nome, `${base}audio/armas/${nome}.mp3`);
 
     // --- Render ---
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
@@ -1149,11 +1152,11 @@ export class Game {
       };
     }
     // Som de disparo: o controle do jogador avisa a cada tiro de energia (bots têm o som deles, acima).
-    this.player.onShot = (w) => (w.id === 'arc' ? this.audio.playArcShot() : w.id === 'cryo' ? this.audio.playCryoShot() : w.id === 'cannon' ? this.audio.playCannonShot() : w.id === 'autocannon' ? this.audio.playAutocannonShot() : w.id === 'sonic' ? this.audio.playSonicShot() : this.audio.playShot());
+    this.player.onShot = (w) => this.audio.playArma(w.id) || (w.id === 'arc' ? this.audio.playArcShot() : w.id === 'cryo' ? this.audio.playCryoShot() : w.id === 'cannon' ? this.audio.playCannonShot() : w.id === 'autocannon' ? this.audio.playAutocannonShot() : w.id === 'sonic' ? this.audio.playSonicShot() : this.audio.playShot());
     // Peso do tiro na câmera (`combat/fireFeel.ts`): o solavanco do trilho e do foguete, o zumbido do plasma.
     this.player.onKick = (amount) => rig.addShake(amount);
-    this.player.onRocket = () => {
-      this.audio.playRocketLaunch();
+    this.player.onRocket = (w) => {
+      if (!this.audio.playArma(w.id)) this.audio.playRocketLaunch();
       this.onboarding.trigger('rockets');
     };
     this.match.onMechHit = (e) => {

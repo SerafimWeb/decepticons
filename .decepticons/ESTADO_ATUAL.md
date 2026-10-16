@@ -1,5 +1,22 @@
 # ESTADO ATUAL — CYBERMECH
 
+## OS SONS DE ARMA DE REFERÊNCIA ENTRAM NO JOGO: 15 efeitos viram 6 arquivos para 7 armas, com a página para ouvir — Claude, 15/10 (branch `claude/sons-das-armas-pr`, P146)
+
+**A ordem do Comandante (15/10):** *"adicionei os novos sons em .tmp/SOUNDS, extraia o melhor deles e adapte às nossas necessidades"*.
+
+**Feito:**
+1. **Escolha por nome e por perfil de energia** (o Claude não ouve áudio): perfil de 26 em 26 ms de cada referência, para cortar onde o som ataca e onde acaba. Achados: os originais vêm **quentes** (pico em 0 dB); o "Rocket launcher" tem **0,85 s de quase-silêncio no começo** (latência inaceitável: o corte começa depois); o "Violent sharp plasma" tem 4 s de estrondo (só o ataque cabe numa arma de 0,22 s entre tiros); o "Short burst" é uma **rajada de 3 s** (não serve para tocar a cada tiro).
+2. **`npm run sons`** (`scripts/sons.mjs` + `sonsLib.mjs`): lê `scripts/sons-armas.json`, **apara, normaliza** (média -18 dB, pico -1 dBFS), converte para **mono em mp3** e grava em `client/public/audio/armas/`: **6 arquivos, 85 KB**. Sem chave, sem crédito, só `ffmpeg` local.
+3. **No jogo:** `AudioSystem.playArma(id)` + a tabela `audio/armasSom.ts` (blaster, plasma, canhão pesado, **canhão de cerco = o mesmo estouro 22% mais grave**, foguetes, míssil teleguiado, chuva de mísseis). `PlayerController.onRocket` passou a receber a arma. **Amostra ausente ou ainda carregando cai no som sintetizado**: o jogo nunca fica mudo.
+4. **`npm run ouvir`** abre uma página (NOVO × ANTES por arma, as 4 vozes do narrador e as **referências que ficaram de fora** com sugestão de uso). A pasta dos documentos do projeto começa com ponto e o Explorador a esconde: o atalho do npm resolve.
+5. **Testes (30):** o mapa (corte, fade, destino, nível), a conta do ganho (o pico nunca passa do teto), a linha do ffmpeg, a tabela contra o catálogo de armas (o teste achou um canhão de cerco com duração maior que o arquivo: corrigido) e o `playArma` sem contexto.
+
+**Ficam de fora (de propósito):** rotatória e canhão automático (a rajada pede **som em laço enquanto o gatilho está apertado**: próximo PR), sabres, radares e bipes (o jogo não tem sabre nem aviso de míssil), railgun, arco, gelo, sônico, lança-chamas (sintetizados).
+
+**Falta (R13):** **o ouvido do Comandante** (`npm run ouvir`: aprovar, trocar o corte ou a referência de cada arma, ajustar o volume); decidir o uso das referências que sobraram.
+
+**Próxima sessão começa com:** a resposta do Comandante sobre os sons; senão, o apelido (P145).
+
 ## AS VOZES DO NARRADOR ESCOLHIDAS E A API PROVADA: "combate" sai nos quatro sotaques — Claude, 15/10 (branch `claude/vozes-geradas`, P146)
 
 **A ordem do Comandante (15/10):** colou a chave do ElevenLabs no chat: *"usa aí"*.
