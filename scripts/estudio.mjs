@@ -1,6 +1,6 @@
 /**
  * O ESTÚDIO (P150, P155): a ferramenta local onde o Comandante edita o que o jogo toca e mostra, ao lado da Mesa de vídeo (`npm run mesa`). Hoje: SONS (cortar na onda,
- * efeitos, importar, escolher o som de cada arma). Depois, no mesmo lugar: VOZES (gravar e tratar as falas do narrador), TIROS E ARMAS (cor, forma, cauda, explosão, força)
+ * efeitos, importar, escolher o som de cada arma) e VOZES (gravar e tratar as falas do narrador). Depois, no mesmo lugar: TIROS E ARMAS (cor, forma, cauda, explosão, força)
  * e MECHS 3D. Ver `.decepticons/ESTUDIO.md`: cada módulo é um arquivo de dados + validador + prévia + processador.
  *
  *   npm run estudio                    # abre http://127.0.0.1:5199 no navegador
@@ -15,13 +15,22 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, extname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { moduloSons } from './estudio/modulo-sons.mjs';
+import { moduloVozes } from './estudio/modulo-vozes.mjs';
 import { acharFfmpeg } from './sonsRodar.mjs';
 
 const ESTATICOS = { '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 
+/**
+ * O ambiente de um `git` filho sem as variáveis GIT_*. O hook de commit e o de push herdam `GIT_DIR`, `GIT_INDEX_FILE`... e, com elas, o git ignora a pasta em que o
+ * chamamos (e um `git init` ali reinicializa o repositório de fora, como já aconteceu).
+ */
+export function ambienteSemGit(env = process.env) {
+  return Object.fromEntries(Object.entries(env).filter(([k]) => !k.toUpperCase().startsWith('GIT_')));
+}
+
 /** As mudanças ainda não commitadas (ou seja, que ainda não foram para o jogo) nos caminhos dados. Sem git, devolve `{ git: false }`. */
 export function pendenciasDoGit(raiz, caminhos) {
-  const r = spawnSync('git', ['status', '--porcelain', '--untracked-files=all', '--', ...caminhos], { cwd: raiz, encoding: 'utf8' });
+  const r = spawnSync('git', ['status', '--porcelain', '--untracked-files=all', '--', ...caminhos], { cwd: raiz, encoding: 'utf8', env: ambienteSemGit() });
   if (r.status !== 0) return { git: false, arquivos: [] };
   const arquivos = r.stdout
     .split('\n')
@@ -34,8 +43,8 @@ export function pendenciasDoGit(raiz, caminhos) {
  * Cria o servidor do Estúdio (sem ouvir ainda). `origem` = a pasta das referências brutas de som; `ffmpeg` = o executável (ou `undefined`: processar e prévia
  * ficam indisponíveis). `modulos` troca a lista de módulos (os testes usam); o padrão é o de sons.
  */
-export function criarEstudio({ raiz, origem, ffmpeg, modulos }) {
-  const lista = modulos ?? [moduloSons({ raiz, origem, ffmpeg })];
+export function criarEstudio({ raiz, origem, origemVozes = join(raiz, '.tmp/SOUNDS/VOZ'), ffmpeg, modulos }) {
+  const lista = modulos ?? [moduloSons({ raiz, origem, ffmpeg }), moduloVozes({ raiz, origemVozes, ffmpeg })];
   const porId = new Map(lista.map((m) => [m.id, m]));
   const pagina = join(raiz, 'scripts/estudio/index.html');
   const pastasDoGit = lista.flatMap((m) => m.pastasDoGit ?? []);
@@ -93,13 +102,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const args = process.argv.slice(2);
   const valor = (n) => (args.includes(`--${n}`) ? args[args.indexOf(`--${n}`) + 1] : undefined);
   const origem = resolve(valor('origem') ?? join(raiz, '.tmp/SOUNDS/ARMAS'));
+  const origemVozes = resolve(valor('origem-voz') ?? join(raiz, '.tmp/SOUNDS/VOZ'));
   const ffmpeg = acharFfmpeg();
   if (!ffmpeg) console.warn('⚠ ffmpeg não encontrado: dá para cortar e ouvir, mas "Processar" e "Prévia" ficam indisponíveis (winget install Gyan.FFmpeg).');
-  const servidor = criarEstudio({ raiz, origem, ffmpeg });
+  const servidor = criarEstudio({ raiz, origem, origemVozes, ffmpeg });
   const porta = Number(valor('porta') ?? 5199);
   servidor.listen(porta, '127.0.0.1', () => {
     const endereco = `http://127.0.0.1:${servidor.address().port}/`;
-    console.log(`ESTÚDIO em ${endereco}  (Ctrl+C para fechar)\nreferências de som: ${origem}`);
+    console.log(`ESTÚDIO em ${endereco}  (Ctrl+C para fechar)\nreferências de som: ${origem}\ngravações de voz: ${origemVozes}`);
     if (!args.includes('--sem-abrir')) spawn('cmd', ['/c', 'start', '""', endereco], { stdio: 'ignore', detached: true, windowsVerbatimArguments: true }).unref();
   });
   servidor.on('error', (e) => {

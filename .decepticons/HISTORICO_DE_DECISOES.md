@@ -22,6 +22,32 @@ escurecia), o rastro de míssil era uma fila de pontinhos, o tiro de energia uma
 **Custo:** 0,45 ms por quadro sob carga extrema (170 fitas, 219 peças de explosão, 160 cartazes, 80 marcas); 9 desenhos para todos os efeitos da
 cena; nada alocado por quadro. GPU real: 0 de 192 poses com NaN com os efeitos acesos (`varrer-nan.mjs --efeitos`). JS 472,3 KB de 500.
 
+## [2026-10-16] Teste que roda `git` não pode herdar o ambiente do hook: um `git init` de teste corrompeu a config compartilhada (Claude, P155)
+
+**Situação:** o teste das pendências do Estúdio (PR #339) cria um repositório de teste dentro de `.tmp/` e roda `git init`, `git config` e `git commit` nele. Rodando **dentro do hook de push** (que herda `GIT_DIR`, `GIT_INDEX_FILE`…), esses comandos agiram no repositório **de fora**: a `.git/config` compartilhada ficou com `core.bare = true` (o `git status` das worktrees passou a falhar e a principal virou "(bare)") e com um `[user]` falso (`t@t`). Os commits e o histórico não foram tocados; o dano ficou na config e foi desfeito à mão.
+
+**Decisões:**
+1. **Todo `git` filho de teste ou de ferramenta roda sem as variáveis `GIT_*`** (`ambienteSemGit`, em `scripts/estudio.mjs`). O `pendenciasDoGit` do Estúdio também, senão a lista de pendências mostrava `git: false` dentro do hook.
+2. **O teste não usa `git config`:** a identidade vai por `-c user.email=… -c user.name=…` no próprio comando, e o `git -C <pasta>` fixa o alvo.
+3. **O teto de busca do git (`GIT_CEILING_DIRECTORIES`) fica na pasta-mãe do repositório de teste:** se o `git init` falhar em silêncio, o comando seguinte falha em vez de achar o repositório de fora.
+4. **Teste novo trava a causa:** roda o `pendenciasDoGit` com `GIT_DIR`, `GIT_INDEX_FILE` e `GIT_WORK_TREE` apontando para o lugar errado e exige a leitura certa (mutação à mão: sem o `env`, o teste falha). E o conjunto do Estúdio foi rodado com o ambiente do hook simulado, conferindo que a config compartilhada ficou **byte a byte igual**.
+
+**Por que registrar:** o teste passava na máquina e só quebrava no hook, e o estrago era no repositório de todos os agentes. Quem escrever um teste que chame `git` precisa saber que o hook de commit e o de push herdam o ambiente. Se aparecer `bare = true` ou `[user] t@t` na `.git/config`: `git config --file .git/config core.bare false` e `--unset user.email` / `user.name`.
+
+## [2026-10-16] A voz própria entra pelo Estúdio, convertida no servidor, tratada pelo mesmo motor e protegida do gerador (Claude, P151)
+
+**Situação:** o Comandante achou o "Combate!" em português fraco e perguntou se devia gravar a própria voz. A resposta (sim) precisava virar um caminho de dois cliques, não um roteiro de arquivos.
+
+**Decisões:**
+1. **Gravar dentro do Estúdio, não largar arquivo numa pasta:** o microfone no navegador (permitido em `127.0.0.1`), com a fala escrita na tela, a intenção e um medidor de nível. Um roteiro de pastas e nomes de arquivo era um obstáculo para quem só quer gritar uma palavra.
+2. **O servidor converte tudo para WAV mono 44,1 kHz:** o MediaRecorder do Chrome entrega webm **sem duração no cabeçalho**, e o que não tem duração não corta nem aparece na onda. Converter na entrada dá uma fonte limpa, e a tomada guarda a gravação intacta (dá para refazer o tratamento sem regravar).
+3. **O mesmo motor de efeitos dos sons, com a interface como um componente do núcleo:** a prévia e o mp3 final continuam sendo a mesma cadeia; o que muda é o alvo de nível (-16 dB de média, para voz) e o limite de duração (8 s, não 4). A aba SONS passou a usar o mesmo componente, para as duas não divergirem.
+4. **A voz do Comandante é protegida do gerador:** uma fala gravada por ele nunca é regerada pelo `npm run vozes`, nem com `--refazer`. Sem isso, o comando que ele mesmo vai rodar para gerar as falas restantes poderia pisar na gravação dele.
+5. **A voz gerada fica guardada (`_elevenlabs/`) e dá para voltar:** gravar por cima não pode ser um caminho sem volta.
+6. **O Voice Changer do ElevenLabs fica de fora:** gasta crédito por segundo, e o gasto de crédito é do `npm run vozes` (custo mostrado antes, chave só em variável de ambiente), não do Estúdio.
+
+**Por que registrar:** quem for mexer no narrador precisa saber que a fala gravada vence a gerada, que existe a cópia da gerada, e por que o gerador pula certas falas.
+
 ## [2026-10-16] O Estúdio vira um hub de módulos; a prévia usa o mesmo motor do arquivo final; o Estúdio não publica (Claude, P155 a P157)
 
 **Situação:** o Comandante quer um Estúdio ao lado da Mesa de vídeo: hoje de sons (importar e registrar, tom, velocidade, cortar, esticar, comprimir) e, no futuro, dos tiros, das armas e dos Mechs 3D.

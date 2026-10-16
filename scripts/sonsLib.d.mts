@@ -31,7 +31,15 @@ export interface ArmaComSom {
   maxS: number;
 }
 
-export function validarMapa(mapa: MapaDeSons): string[];
+export interface RegrasDeClipe {
+  padrao: RegExp;
+  aviso: string;
+  maxS: number;
+  rotulo: string;
+}
+export const REGRAS_DE_ARMA: RegrasDeClipe;
+export const REGRAS_DE_VOZ: RegrasDeClipe;
+export function validarMapa(mapa: MapaDeSons, regras?: RegrasDeClipe): string[];
 export function validarArmas(armas: Record<string, ArmaComSom>, idsConhecidos: readonly string[], clipes: readonly string[], duracaoDe?: (clipe: string) => number): string[];
 export function ganhoParaAlvo(mediaDb: number, picoDb: number, alvo: AlvoDeNivel): number;
 export function cadeiaBase(s: SomDeArma, caps?: CapacidadesDoFfmpeg): string[];

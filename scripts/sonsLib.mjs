@@ -5,8 +5,13 @@
  */
 import { duracaoFinal, filtrosDeEfeitos, validarEfeitos } from './efeitosLib.mjs';
 
-/** Confere o mapa de clipes: destinos únicos e em `.mp3`, corte válido, efeitos válidos, fade coerente, ganho extra limitado, alvos de nível plausíveis. Devolve os problemas (vazia = ok). */
-export function validarMapa(mapa) {
+/** As regras de um clipe de SOM DE ARMA: nome `arma_<nome>.mp3` e no máximo 4 s depois dos efeitos. */
+export const REGRAS_DE_ARMA = { padrao: /^arma_[a-z0-9_]+\.mp3$/, aviso: 'o destino tem de ser arma_<nome>.mp3', maxS: 4, rotulo: 'som de arma' };
+/** As regras de uma FALA do narrador: nome `<chave>.mp3` e no máximo 8 s depois dos efeitos ("A rede caiu. Missão perdida." tem uns 3 s). */
+export const REGRAS_DE_VOZ = { padrao: /^[a-z0-9_]+\.mp3$/, aviso: 'o destino tem de ser <chave>.mp3', maxS: 8, rotulo: 'fala' };
+
+/** Confere o mapa de clipes: destinos únicos e em `.mp3`, corte válido, efeitos válidos, fade coerente, ganho extra limitado, alvos de nível plausíveis. Devolve os problemas (vazia = ok). `regras`: de arma (padrão) ou de voz. */
+export function validarMapa(mapa, regras = REGRAS_DE_ARMA) {
   const erros = [];
   const alvo = mapa.alvo ?? {};
   if (!(alvo.media_db < alvo.pico_db) || alvo.pico_db > 0) erros.push('alvo: a média tem de ser menor que o pico e o pico não pode passar de 0 dBFS');
@@ -14,7 +19,7 @@ export function validarMapa(mapa) {
   const vistos = new Set();
   for (const s of mapa.sons ?? []) {
     const quem = s.destino ?? '(sem destino)';
-    if (!/^arma_[a-z0-9_]+\.mp3$/.test(s.destino ?? '')) erros.push(`${quem}: o destino tem de ser arma_<nome>.mp3`);
+    if (!regras.padrao.test(s.destino ?? '')) erros.push(`${quem}: ${regras.aviso}`);
     if (vistos.has(s.destino)) erros.push(`${quem}: destino repetido`);
     vistos.add(s.destino);
     if (!s.fonte || s.fonte !== String(s.fonte).replace(/[\\/]/g, '')) erros.push(`${quem}: a fonte tem de ser só o nome de um arquivo da pasta de origem`);
@@ -26,7 +31,7 @@ export function validarMapa(mapa) {
     }
     // A duração que vale é a de DEPOIS dos efeitos: a velocidade a muda.
     const dur = errosDeEfeitos.length ? s.ate - s.de : duracaoFinal(s);
-    if (dur > 4) erros.push(`${quem}: som de mais de 4 s (${dur.toFixed(2)} s depois dos efeitos) não é som de arma`);
+    if (dur > regras.maxS) erros.push(`${quem}: som de mais de ${regras.maxS} s (${dur.toFixed(2)} s depois dos efeitos) não é ${regras.rotulo}`);
     if (!(s.fade_ms >= 0) || s.fade_ms / 1000 > dur / 2) erros.push(`${quem}: o fade não pode passar de metade do corte`);
     if (s.efeitos?.fade_in_ms !== undefined && s.efeitos.fade_in_ms / 1000 > dur / 2) erros.push(`${quem}: o fade de entrada não pode passar de metade do corte`);
     if (s.ganho_db !== undefined && !(s.ganho_db >= -24 && s.ganho_db <= 12)) erros.push(`${quem}: o ganho extra tem de ficar entre -24 e +12 dB`);

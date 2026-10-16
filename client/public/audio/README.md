@@ -54,3 +54,5 @@ Comandante que estão em `.tmp/SOUNDS/ARMAS`, conforme `scripts/sons-armas.json`
 carregando, cai no som sintetizado. Para **ouvir**: `npm run ouvir`. A pasta `armas/` já está liberada no `.gitignore`; as referências brutas **não** entram no repositório.
 
 **Ajuste fino (P150, P155):** `npm run estudio` abre o Estúdio (cortar na onda, **efeitos**, **importar um som novo já registrado**, escolher o som de cada arma, ouvir no ritmo de tiro; o desenho está em `.decepticons/ESTUDIO.md`). A tabela de armas é dado (`client/src/audio/armasSom.json`); os cortes, `scripts/sons-armas.json`.
+
+**Falas gravadas por você (P151):** `npm run estudio` → aba **VOZES** grava, trata e salva em `vozes/<sotaque>/<chave>.mp3` (e no manifesto `client/src/audio/vozesGeradas.json`); a lista do que é seu fica em `scripts/vozes-gravadas.json` e o `npm run vozes` não a regera.
