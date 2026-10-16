@@ -1,5 +1,22 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O ESTÚDIO VIRA UM HUB: importar sons que já saem registrados, efeitos (tom, velocidade, compressor, eco…) e prévia com o motor real — Claude, 16/10 (branch `claude/estudio-v2`, P155 a P157)
+
+**As ordens do Comandante (16/10):** *"vamos evoluir mais essa interface do gerenciamento do som: eu enviar um novo som e ficar salvo e registrado corretamente como se tivesse sido adicionado por você; aumentar ou diminuir o pitch e a velocidade, cortar, esticar, comprimir, etc. Da mesma forma que temos a MESA pra editar vídeos, teremos também o estúdio, e futuramente editar os Mechs 3D, armas, tiros (cor, shape, cauda, explosão, força)"*.
+
+**Feito:**
+1. **Importar e registrar:** arrastar um arquivo para a página o guarda, cria **um clipe com nome único** (`arma_<nome>`, com sufixo se repetir), corta o começo, o **registra** no mapa, o **processa** e o **abre**, pronto para escolher numa arma. Arquivo corrompido é recusado e **não deixa lixo**.
+2. **Motor de efeitos (`scripts/efeitosLib.mjs`):** por clipe, **velocidade** (0,5× a 2×) ou **duração alvo**, **tom ±12 semitons independente da velocidade** (`rubberband`; sem ele, `asetrate` + `atempo`), graves, agudos, passa-alta, passa-baixa, **redução de ruído**, **saturação**, **compressor** (leve, médio, forte), **eco**, **reverso** e **fades**; tudo limitado e validado. **A prévia e o arquivo final usam a mesma cadeia** (`cadeiaBase`), e o volume é medido **depois** dos efeitos; a duração que vale (limite de 4 s, fade, duração máxima da arma) é a de **depois** da velocidade; a cauda do eco e do tempo é cortada na duração final.
+3. **Prévia (`POST /api/sons/previa`):** roda o ffmpeg com o clipe como está na tela (salvo ou não) e devolve o som, **sem gravar nada no jogo** e sem deixar arquivo; a onda do resultado aparece; "▶▶ no ritmo" usa a prévia (o som de verdade, com os efeitos).
+4. **Hub de módulos:** o núcleo (`scripts/estudio.mjs`) guarda a segurança **uma vez** (127.0.0.1, Host e Origin, nome de arquivo, teto, gravação atômica) e serve a página, os scripts e o estilo; **SONS** é `scripts/estudio/modulo-sons.mjs`; as abas **TIROS E ARMAS** e **MECHS 3D** aparecem "em breve". `scripts\ligar-estudio.cmd` (dois cliques), como a Mesa. Um painel mostra **o que ainda não foi para o jogo publicado** (lê o git) e o que dizer: **"publica os sons"**. O Estúdio **não publica** de propósito.
+5. **`ESTUDIO.md`:** a visão, o contrato de um módulo (dado + validador + prévia + processador), a segurança e o desenho de **VOZES** (gravar no navegador), **TIROS E ARMAS** (cor, forma, cauda, explosão, brilho em dado + cena do Three.js; a **força** com o relatório de equilíbrio ao lado e teste de simulação) e **MECHS 3D** (visualizador, encaixes, importar `.glb` pelo `mech:inspecionar`).
+
+**Provas:** **32 testes** (o motor de efeitos, a montagem do ffmpeg, o servidor inteiro com o ffmpeg de verdade) com **6 mutações à mão, 6 pegas**; e a **bancada `medicoes/estudio.mjs`** (17 verificações num Chrome real, com as referências reais, numa **cópia**: ela chegou a sujar a pasta real de referências na primeira versão, corrigi e removi o arquivo de teste). Capturas: `arte/estudio-de-sons-efeitos.png`.
+
+**Falta (R13):** **o Comandante usar** (o Claude não ouve áudio: a prévia, a escolha dos efeitos e o ritmo são do ouvido dele); a aba **VOZES** (gravar a própria voz no navegador, P151); o **item no console de comando** (P156); as abas **TIROS E ARMAS** e **MECHS 3D** (P157).
+
+**Próxima sessão começa com:** a aba VOZES (P151), se o Comandante confirmar a prioridade; senão, o que ele disser depois de usar o estúdio.
+
 ## MÍSSEIS LEVES, CRUZADOR, LASER E O GUIADO DE MÉDIO ALCANCE: três armas novas, o arsenal com faixas de alcance e a rede no protocolo 18 — Claude, 15/10 (branch `claude/armas-e-municoes`, P152)
 
 **A ordem do Comandante (15/10):** *"em paralelo, precisamos melhorar os estilos de armas do cybermech. quero um lançador de mísseis leve (que solte 8, 16 ou até 32 mísseis sequencialmente); raio laser de longo alcance; míssil cruzador de longo alcance; míssil guiado de médio alcance, enfim, melhorarmos nossas armas e munições. calibrar melhor o alcance, potência, tempo de recarga, etc"*.

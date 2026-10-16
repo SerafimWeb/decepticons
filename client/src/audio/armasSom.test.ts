@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { WEAPON_IDS, type WeaponId } from '../combat/weapons';
 import { AMOSTRAS_DAS_ARMAS, ARQUIVOS_DAS_ARMAS } from './armasSom';
 
-const mapa = JSON.parse(readFileSync(resolve('scripts/sons-armas.json'), 'utf8')) as { sons: { destino: string; ate: number; de: number }[] };
+const mapa = JSON.parse(readFileSync(resolve('scripts/sons-armas.json'), 'utf8')) as { sons: { destino: string; ate: number; de: number; efeitos?: { velocidade?: number } }[] };
 
 /**
  * A tabela é um DADO que o Estúdio de Sons edita (`armasSom.json`): estes testes cobram só a estrutura (o jogo não quebra nem fica mudo), nunca o gosto
@@ -32,7 +32,8 @@ describe('sons de arma de referência (P146)', () => {
       expect(a.pitch, id).toBeGreaterThanOrEqual(0.5);
       expect(a.pitch, id).toBeLessThanOrEqual(2);
       const corte = mapa.sons.find((s) => `${a.nome}.mp3` === s.destino)!;
-      expect(a.maxS, id).toBeLessThanOrEqual((corte.ate - corte.de) / a.pitch + 0.01);
+      // a duração do clipe é a de DEPOIS dos efeitos (a velocidade a muda), e a altura da arma a muda de novo
+      expect(a.maxS, id).toBeLessThanOrEqual((corte.ate - corte.de) / (corte.efeitos?.velocidade ?? 1) / a.pitch + 0.01);
       expect(a.maxS, id).toBeGreaterThanOrEqual(0.1);
     }
   });

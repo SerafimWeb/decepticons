@@ -1,10 +1,11 @@
 /**
  * O miolo do preparador de sons de arma (P146): funções puras (o teste não precisa do ffmpeg). O comando é `scripts/sons.mjs` (`npm run sons`), o estúdio é
- * `scripts/estudio-sons.mjs` (`npm run estudio`), o mapa de quais referências viram quais clipes é `scripts/sons-armas.json` e o de qual clipe toca em qual arma é
- * `client/src/audio/armasSom.json`.
+ * `scripts/estudio.mjs` (`npm run estudio`), o mapa de quais referências viram quais clipes é `scripts/sons-armas.json` e o de qual clipe toca em qual arma é
+ * `client/src/audio/armasSom.json`. Os efeitos de cada clipe (tom, velocidade, compressor...) vêm de `scripts/efeitosLib.mjs`.
  */
+import { duracaoFinal, filtrosDeEfeitos, validarEfeitos } from './efeitosLib.mjs';
 
-/** Confere o mapa de clipes: destinos únicos e em `.mp3`, corte válido, fade coerente, ganho extra limitado, alvos de nível plausíveis. Devolve os problemas (vazia = ok). */
+/** Confere o mapa de clipes: destinos únicos e em `.mp3`, corte válido, efeitos válidos, fade coerente, ganho extra limitado, alvos de nível plausíveis. Devolve os problemas (vazia = ok). */
 export function validarMapa(mapa) {
   const erros = [];
   const alvo = mapa.alvo ?? {};
@@ -17,9 +18,17 @@ export function validarMapa(mapa) {
     if (vistos.has(s.destino)) erros.push(`${quem}: destino repetido`);
     vistos.add(s.destino);
     if (!s.fonte || s.fonte !== String(s.fonte).replace(/[\\/]/g, '')) erros.push(`${quem}: a fonte tem de ser só o nome de um arquivo da pasta de origem`);
-    if (!(s.de >= 0) || !(s.ate > s.de)) erros.push(`${quem}: corte inválido (de ${s.de} até ${s.ate})`);
-    else if (s.ate - s.de > 4) erros.push(`${quem}: corte de mais de 4 s não é som de arma`);
-    if (!(s.fade_ms >= 0) || s.fade_ms / 1000 > (s.ate - s.de) / 2) erros.push(`${quem}: o fade não pode passar de metade do corte`);
+    const errosDeEfeitos = validarEfeitos(s.efeitos, quem);
+    erros.push(...errosDeEfeitos);
+    if (!(s.de >= 0) || !(s.ate > s.de)) {
+      erros.push(`${quem}: corte inválido (de ${s.de} até ${s.ate})`);
+      continue;
+    }
+    // A duração que vale é a de DEPOIS dos efeitos: a velocidade a muda.
+    const dur = errosDeEfeitos.length ? s.ate - s.de : duracaoFinal(s);
+    if (dur > 4) erros.push(`${quem}: som de mais de 4 s (${dur.toFixed(2)} s depois dos efeitos) não é som de arma`);
+    if (!(s.fade_ms >= 0) || s.fade_ms / 1000 > dur / 2) erros.push(`${quem}: o fade não pode passar de metade do corte`);
+    if (s.efeitos?.fade_in_ms !== undefined && s.efeitos.fade_in_ms / 1000 > dur / 2) erros.push(`${quem}: o fade de entrada não pode passar de metade do corte`);
     if (s.ganho_db !== undefined && !(s.ganho_db >= -24 && s.ganho_db <= 12)) erros.push(`${quem}: o ganho extra tem de ficar entre -24 e +12 dB`);
   }
   return erros;
@@ -52,24 +61,36 @@ export function ganhoParaAlvo(mediaDb, picoDb, alvo) {
   return Math.min(alvo.media_db - mediaDb, alvo.pico_db - picoDb);
 }
 
-/** Os argumentos do ffmpeg para um som: corta, aplica o ganho, fade de saída (e de entrada de 3 ms contra clique), limita o pico, mono, mp3. */
-export function argsDoFfmpeg(s, entrada, saida, ganhoDb, alvo) {
-  const dur = s.ate - s.de;
-  const fade = s.fade_ms / 1000;
-  const filtros = [
+/** A parte da cadeia que vale tanto para medir quanto para gravar: corta, fixa 44,1 kHz, aplica os efeitos e fecha na duração final (a cauda do eco e do tempo não passa dela). */
+export function cadeiaBase(s, caps = { rubberband: false }) {
+  return [
     `atrim=start=${s.de}:end=${s.ate}`,
     'asetpts=PTS-STARTPTS',
+    'aresample=44100',
+    ...filtrosDeEfeitos(s.efeitos, caps),
+    `atrim=end=${duracaoFinal(s).toFixed(3)}`,
+    'asetpts=PTS-STARTPTS',
+  ];
+}
+
+/** Os argumentos do ffmpeg para um som: corta, aplica os efeitos e o ganho, fades (entrada contra clique, saída do clipe), limita o pico, mono, mp3. */
+export function argsDoFfmpeg(s, entrada, saida, ganhoDb, alvo, caps = { rubberband: false }) {
+  const dur = duracaoFinal(s);
+  const fade = s.fade_ms / 1000;
+  const fadeIn = Math.max(0.003, (s.efeitos?.fade_in_ms ?? 0) / 1000);
+  const filtros = [
+    ...cadeiaBase(s, caps),
     `volume=${ganhoDb.toFixed(2)}dB`,
-    'afade=t=in:st=0:d=0.003',
+    `afade=t=in:st=0:d=${fadeIn.toFixed(3)}`,
     `afade=t=out:st=${Math.max(0, dur - fade).toFixed(3)}:d=${fade.toFixed(3)}`,
     `alimiter=limit=${Math.pow(10, alvo.pico_db / 20).toFixed(3)}:level=disabled`,
   ].join(',');
   return ['-hide_banner', '-nostats', '-y', '-i', entrada, '-af', filtros, '-ac', '1', '-ar', '44100', '-c:a', 'libmp3lame', '-b:a', '96k', saida];
 }
 
-/** Os argumentos da medição (pico e média) do trecho cortado, antes do ganho. */
-export function argsDaMedicao(s, entrada) {
-  return ['-hide_banner', '-nostats', '-i', entrada, '-af', `atrim=start=${s.de}:end=${s.ate},asetpts=PTS-STARTPTS,volumedetect`, '-f', 'null', '-'];
+/** Os argumentos da medição (pico e média) do trecho já com os efeitos, antes do ganho: o volume muda com compressor, saturação e eco, então tem de ser medido depois deles. */
+export function argsDaMedicao(s, entrada, caps = { rubberband: false }) {
+  return ['-hide_banner', '-nostats', '-i', entrada, '-af', `${cadeiaBase(s, caps).join(',')},volumedetect`, '-f', 'null', '-'];
 }
 
 /** Lê pico e média do texto que o `volumedetect` escreve. */

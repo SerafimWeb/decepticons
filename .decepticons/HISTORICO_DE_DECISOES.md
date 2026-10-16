@@ -1,3 +1,17 @@
+## [2026-10-16] O Estúdio vira um hub de módulos; a prévia usa o mesmo motor do arquivo final; o Estúdio não publica (Claude, P155 a P157)
+
+**Situação:** o Comandante quer um Estúdio ao lado da Mesa de vídeo: hoje de sons (importar e registrar, tom, velocidade, cortar, esticar, comprimir) e, no futuro, dos tiros, das armas e dos Mechs 3D.
+
+**Decisões:**
+1. **Hub com contrato, não uma ferramenta de som:** o núcleo guarda a segurança uma vez e cada módulo é dado + validador + prévia + processador. Quando vierem tiros e Mechs, entram no mesmo lugar, sem repetir a guarda.
+2. **A prévia e o arquivo final são a mesma cadeia de ffmpeg** (`cadeiaBase`), e o volume é medido **depois** dos efeitos. Se a prévia fosse um aproximado no navegador, o Comandante ajustaria um som e o jogo tocaria outro. Esticar, comprimir e mudar o tom mudam a duração, então **a duração que vale é a de depois dos efeitos** (limite, fade, duração máxima da arma) e a cauda do eco é cortada nela.
+3. **Importar já registra:** um arquivo que chega pelo Estúdio vira um clipe com nome único, entra no mapa, é processado e fica pronto, exatamente como o Claude faria, para não haver "arquivo solto" que o jogo não conhece. Arquivo que não é áudio é recusado sem deixar lixo.
+4. **O Estúdio não publica:** commit, PR e merge ficam com o `npm run publicar` (o `check`, o `ESTADO_ATUAL`, o painel público sem o codinome). Um botão que os pulasse arriscaria a `main`; o Estúdio só mostra o que falta publicar e o que dizer ("publica os sons").
+5. **Os testes cobram estrutura, nunca gosto**, e a **força** das armas (dano, alcance, recarga) fica **fora** do "gosto": é jogabilidade e continua com o relatório de equilíbrio e o teste de simulação (G14).
+6. **Uma bancada nunca escreve na pasta real:** a primeira versão da bancada ponta a ponta importou o arquivo de teste para as referências do Comandante; ela passou a trabalhar numa cópia.
+
+**Por que registrar:** quem for adicionar uma aba (vozes, tiros, Mechs) precisa do contrato do módulo e das razões das regras (prévia igual ao final, não publicar, estrutura e não gosto).
+
 ## [2026-10-15] Mísseis leves, cruzador e laser: o 8/16/32 é o nível do lançador, o laser é feixe por pulsos e o cruzador é uma parábola (Claude, P152)
 
 **Situação:** o Comandante pediu mais estilos de arma e de munição: um lançador de mísseis leve que solte 8, 16 ou 32 em sequência, um raio laser e um míssil cruzador de longo alcance, um guiado de médio alcance, e calibrar alcance, potência e recarga.

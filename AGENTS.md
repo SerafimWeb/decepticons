@@ -115,7 +115,7 @@ npm run check      # typecheck + testes + build + budget + boot headless (obriga
 npm run publicar -- --titulo "feat: ..." --corpo .tmp/pr.md   # push, PR, espera o CI, mergeia e limpa o branch (regra 13); `--so-pr` só abre o PR
 node scripts/gh.mjs pr list    # o gh, com fallback para a credencial do Git se o token do gh morrer
 npm run smoke:dev  # boot headless contra o dev server
-npm run estudio    # o Estúdio de Sons: cortar na onda, escolher o som de cada arma, ouvir no ritmo de tiro (só neste PC; .tmp/SOUNDS/ARMAS = as referências)
+npm run estudio    # o Estúdio (sons hoje; depois vozes, tiros e armas, Mechs 3D: .decepticons/ESTUDIO.md): cortar na onda, efeitos, importar, escolher o som de cada arma (só neste PC; dois cliques em scripts\ligar-estudio.cmd)
 npm run sons       # prepara os sons de arma (apara, normaliza, mp3) conforme scripts/sons-armas.json
 npm run vozes      # as falas do narrador no ElevenLabs (chave só em $env:ELEVENLABS_API_KEY; --custo antes de gastar)
 npm run ouvir      # abre a página para ouvir os sons e as vozes
