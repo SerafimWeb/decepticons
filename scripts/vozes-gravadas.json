@@ -1,0 +1,5 @@
+{
+  "_nota": "As falas do narrador que o Comandante GRAVOU no Estúdio (aba VOZES, P151): para cada uma, de qual tomada, que trecho e quais efeitos. O `npm run vozes` nunca regera estas falas (nem com --refazer). A gravação bruta fica em .tmp/SOUNDS/VOZ/<sotaque>/ (só neste PC); o que vai para o jogo é o mp3 em client/public/audio/vozes/<sotaque>/<chave>.mp3. EDITADO PELO ESTÚDIO.",
+  "alvo": { "media_db": -16, "pico_db": -1 },
+  "gravacoes": []
+}

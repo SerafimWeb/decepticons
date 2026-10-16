@@ -42,6 +42,13 @@ function arquivosGerados() {
   return porSotaque;
 }
 
+/** As falas que o Comandante gravou no Estúdio (`scripts/vozes-gravadas.json`): o gerador não as regera. */
+function protegidasDoEstudio() {
+  const arq = join(raiz, 'scripts/vozes-gravadas.json');
+  if (!existsSync(arq)) return new Set();
+  return new Set((lerJson(arq).gravacoes ?? []).map((g) => `${g.sotaque}/${g.chave}`));
+}
+
 function gravarManifesto() {
   const antigo = existsSync(MANIFESTO) ? lerJson(MANIFESTO) : {};
   const novo = montarManifesto(arquivosGerados(), catalogo.falas, antigo._nota ?? '');
@@ -79,7 +86,8 @@ try {
     console.log('\nPara usar uma voz da biblioteca, adicione-a à sua coleção no site do ElevenLabs e confirme com `npm run vozes -- --listar`.');
   } else if (tem('custo') || tem('gerar')) {
     const existentes = new Set(Object.entries(arquivosGerados()).flatMap(([s, cs]) => cs.map((c) => `${s}/${c}`)));
-    const plano = planejar({ falas: catalogo.falas, config, existentes, sotaques: lista('sotaque') ?? SOTAQUES, so: lista('so'), refazer: tem('refazer') });
+    const protegidas = protegidasDoEstudio();
+    const plano = planejar({ falas: catalogo.falas, config, existentes, sotaques: lista('sotaque') ?? SOTAQUES, so: lista('so'), refazer: tem('refazer'), protegidas });
     console.log(resumoDoPlano(plano));
     if (tem('gerar') && plano.fazer.length > 0) {
       const teto = Number(valor('max-caracteres') ?? 3000);

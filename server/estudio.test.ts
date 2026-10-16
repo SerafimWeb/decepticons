@@ -5,15 +5,17 @@ import type { AddressInfo } from 'node:net';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WEAPON_IDS, weapon } from '../client/src/combat/weapons';
-import { criarEstudio, pendenciasDoGit } from '../scripts/estudio.mjs';
+import { ambienteSemGit, criarEstudio, pendenciasDoGit } from '../scripts/estudio.mjs';
 import { duracaoFinal } from '../scripts/efeitosLib.mjs';
 import { validarArmas, validarMapa, type MapaDeSons } from '../scripts/sonsLib.mjs';
 import { acharFfmpeg } from '../scripts/sonsRodar.mjs';
 
+/** O ambiente sem as variáveis GIT_* que o hook do git herda (ver o teste das pendências). */
+const semGit = () => ambienteSemGit();
 const REAL = (p: string) => resolve(p);
 const lerReal = (p: string) => JSON.parse(readFileSync(REAL(p), 'utf8'));
 const ffmpeg = acharFfmpeg();
-const ARQUIVOS_DO_ESTUDIO = ['scripts/sons-armas.json', 'client/src/audio/armasSom.json', 'scripts/estudio/armas-info.json', 'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js'];
+const ARQUIVOS_DO_ESTUDIO = ['scripts/sons-armas.json', 'client/src/audio/armasSom.json', 'scripts/estudio/armas-info.json', 'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js', 'scripts/estudio/vozes.js', 'client/src/audio/falas.json', 'client/src/audio/vozesGeradas.json', 'scripts/vozes-gravadas.json'];
 
 /** Um WAV de verdade (PCM 16 bits, 8 kHz, mono): uma senoide de 1 s que decai, para o servidor ter o que listar, servir e processar sem depender de arquivo do Comandante. */
 function wavDeSenoide(segundos = 1): Buffer {
@@ -103,13 +105,13 @@ describe('Estúdio: o servidor', () => {
     expect(pagina.status).toBe(200);
     expect(pagina.tipo).toContain('text/html');
     expect(pagina.corpo.toString('utf8')).toContain('ESTÚDIO');
-    for (const [rota, tipo] of [['/estudio/nucleo.js', 'javascript'], ['/estudio/sons.js', 'javascript'], ['/estudio/estudio.css', 'css']] as const) {
+    for (const [rota, tipo] of [['/estudio/nucleo.js', 'javascript'], ['/estudio/sons.js', 'javascript'], ['/estudio/vozes.js', 'javascript'], ['/estudio/estudio.css', 'css']] as const) {
       const r = await http(porta, 'GET', rota);
       expect(r.status, rota).toBe(200);
       expect(r.tipo, rota).toContain(tipo);
     }
     const e = await estado();
-    expect(e.modulos).toEqual([{ id: 'sons', titulo: 'SONS' }]);
+    expect(e.modulos).toEqual([{ id: 'sons', titulo: 'SONS' }, { id: 'vozes', titulo: 'VOZES' }]);
     expect(e.sons.fontes.map((f: { nome: string }) => f.nome)).toEqual(['ref.wav']);
     expect(e.sons.mapa.sons.length).toBeGreaterThanOrEqual(6);
     expect(Object.keys(e.sons.armas)).toContain('blaster');
@@ -289,13 +291,17 @@ describe('Estúdio: as pendências de publicação, lidas do git', () => {
     mkdirSync(resolve('.tmp'), { recursive: true });
     const dir = mkdtempSync(join(resolve('.tmp'), 'git-teste-'));
     try {
-      const git = (...args: string[]) => spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
+      // O repositório de teste mora DENTRO do projeto (G15), e este teste também roda dentro do hook de push, que herda GIT_DIR e companhia: com elas, `git init` aqui
+      // reinicializaria o repositório de fora (o Comandante achou `bare = true` e um `[user] t@t` na config compartilhada). Por isso: ambiente sem GIT_*, o teto de
+      // busca do git na pasta-mãe (sem repositório de teste, o git falha em vez de achar o de fora) e identidade só por `-c`, nunca `git config`.
+      const ambiente = { ...semGit(), GIT_CEILING_DIRECTORIES: resolve(dir, '..') };
+      const git = (...args: string[]) => spawnSync('git', ['-C', dir, '-c', 'user.email=t@t', '-c', 'user.name=t', '-c', 'commit.gpgsign=false', ...args], { encoding: 'utf8', env: ambiente });
       if (git('init', '-q').status !== 0) return; // sem git neste computador: nada a provar
-      git('config', 'user.email', 't@t'); git('config', 'user.name', 't');
       mkdirSync(join(dir, 'audio/armas'), { recursive: true });
       writeFileSync(join(dir, 'audio/armas/velho.mp3'), 'a');
       writeFileSync(join(dir, 'config.json'), '{}');
-      git('add', '-A'); git('commit', '-q', '-m', 'base');
+      expect(git('add', '-A').status).toBe(0);
+      expect(git('commit', '-q', '-m', 'base').status).toBe(0);
       expect(pendenciasDoGit(dir, ['audio/armas', 'config.json'])).toEqual({ git: true, arquivos: [] });
       writeFileSync(join(dir, 'audio/armas/novo.mp3'), 'b'); // novo
       writeFileSync(join(dir, 'audio/armas/velho.mp3'), 'aa'); // mudado
@@ -306,6 +312,27 @@ describe('Estúdio: as pendências de publicação, lidas do git', () => {
       expect(p.arquivos.find((a) => a.arquivo.endsWith('novo.mp3'))!.situacao).toBe('??');
       expect(p.arquivos.find((a) => a.arquivo.endsWith('velho.mp3'))!.situacao).toBe('M');
     } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('dentro do hook do git (GIT_DIR e companhia herdados) lê o repositório da pasta dada, não o de fora', () => {
+    mkdirSync(resolve('.tmp'), { recursive: true });
+    const dir = mkdtempSync(join(resolve('.tmp'), 'git-teste-'));
+    const guardadas = Object.fromEntries(['GIT_DIR', 'GIT_INDEX_FILE', 'GIT_WORK_TREE'].map((k) => [k, process.env[k]]));
+    try {
+      const ambiente = { ...semGit(), GIT_CEILING_DIRECTORIES: resolve(dir, '..') };
+      const git = (...args: string[]) => spawnSync('git', ['-C', dir, '-c', 'user.email=t@t', '-c', 'user.name=t', '-c', 'commit.gpgsign=false', ...args], { encoding: 'utf8', env: ambiente });
+      if (git('init', '-q').status !== 0) return;
+      writeFileSync(join(dir, 'a.txt'), 'a');
+      // O que o hook herda: variáveis que apontam para um lugar que não é a pasta de teste. Só a LEITURA (`pendenciasDoGit`) roda com elas.
+      process.env.GIT_DIR = join(dir, 'nao-existe', '.git');
+      process.env.GIT_INDEX_FILE = join(dir, 'nao-existe', 'index');
+      process.env.GIT_WORK_TREE = join(dir, 'nao-existe');
+      const p = pendenciasDoGit(dir, ['a.txt']);
+      expect(p).toEqual({ git: true, arquivos: [{ situacao: '??', arquivo: 'a.txt' }] });
+    } finally {
+      for (const [k, v] of Object.entries(guardadas)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
       rmSync(dir, { recursive: true, force: true });
     }
   });

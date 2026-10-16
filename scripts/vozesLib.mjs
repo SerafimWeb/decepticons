@@ -12,7 +12,7 @@ export const API = 'https://api.elevenlabs.io';
  * O que gerar: uma fala por sotaque que **tem voz configurada** e ainda **não tem `.mp3`** (a menos que `refazer`). `so` limita a algumas chaves e `sotaques`
  * a alguns sotaques. Devolve também o que foi pulado e por quê, e o total de caracteres a pagar (o ElevenLabs cobra por caractere).
  */
-export function planejar({ falas, config, existentes, sotaques = SOTAQUES, so = null, refazer = false }) {
+export function planejar({ falas, config, existentes, sotaques = SOTAQUES, so = null, refazer = false, protegidas = new Set() }) {
   const fazer = [];
   const pulados = [];
   for (const fala of falas) {
@@ -21,6 +21,11 @@ export function planejar({ falas, config, existentes, sotaques = SOTAQUES, so = 
       const voz = config.vozes?.[sotaque]?.voz?.trim();
       if (!voz) {
         pulados.push({ sotaque, chave: fala.chave, motivo: 'sem voz configurada' });
+        continue;
+      }
+      // A fala que o Comandante GRAVOU (Estúdio, aba VOZES) nunca é regerada: nem com --refazer (o gerador não pisa na voz dele).
+      if (protegidas.has(`${sotaque}/${fala.chave}`)) {
+        pulados.push({ sotaque, chave: fala.chave, motivo: 'gravada por você (protegida)' });
         continue;
       }
       if (!refazer && existentes.has(`${sotaque}/${fala.chave}`)) {
@@ -72,6 +77,8 @@ export function resumoDoPlano(plano) {
   for (const [s, n] of Object.entries(porSotaque)) linhas.push(`  ${s}: ${n}`);
   const semVoz = [...new Set(plano.pulados.filter((p) => p.motivo === 'sem voz configurada').map((p) => p.sotaque))];
   if (semVoz.length > 0) linhas.push(`Sem voz configurada (pulados): ${semVoz.join(', ')}. Escolha a voz com \`npm run vozes -- --listar\` e ponha o id em scripts/vozes.config.json.`);
+  const protegidas = plano.pulados.filter((p) => p.motivo.startsWith('gravada por você')).length;
+  if (protegidas > 0) linhas.push(`Gravadas por você (protegidas, nunca regeradas, nem com --refazer): ${protegidas}.`);
   const jaExistem = plano.pulados.filter((p) => p.motivo === 'já existe').length;
   if (jaExistem > 0) linhas.push(`Já existem (pulados, sem custo): ${jaExistem}. Use --refazer para gerar de novo.`);
   return linhas.join('\n');

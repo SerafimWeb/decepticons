@@ -1,7 +1,7 @@
 # ESTÚDIO — a ferramenta local onde o Comandante edita o que o jogo toca e mostra (P150, P155)
 
 > **Ordem do Comandante (16/10):** *"vamos evoluir mais essa interface do gerenciamento do som. Quero mais opções (eu enviar um novo som e ficar salvo e registrado corretamente como se tivesse sido adicionado por você); quero também aumentar ou diminuir o pitch e velocidade do som pra editar ele, além de poder cortar, esticar, comprimir, etc. Da mesma forma que temos a MESA pra editar vídeos, teremos também o ESTÚDIO pra editar os sons, e futuramente uma forma de editar os Mechs 3D, armas, tiros (cor, shape, cauda, explosão, força, etc)."*
-> **Estado:** o módulo **SONS** está pronto (§ 2). **VOZES** é o próximo (§ 3.1). **TIROS E ARMAS** e **MECHS 3D** estão desenhados (§ 3.2 e § 3.3), não construídos. Claude, 16/10.
+> **Estado:** os módulos **SONS** (§ 2) e **VOZES** (§ 3.1) estão prontos. **TIROS E ARMAS** e **MECHS 3D** estão desenhados (§ 3.2 e § 3.3), não construídos. Claude, 16/10.
 
 ## 1. A ideia
 
@@ -25,7 +25,7 @@ Uma janela, abas: **SONS** · VOZES · TIROS E ARMAS · MECHS 3D. Cada aba é um
 
 ### Segurança (é um servidor de arquivos no PC do dono)
 
-Escuta **só em 127.0.0.1**; recusa `Host` e `Origin` que não sejam o dele (contra DNS rebinding e página de fora); só lê e grava **arquivos de áudio com nome simples** nas pastas dos módulos; **valida tudo antes de gravar** (e grava de forma atômica); corpo com teto de tamanho; os scripts da página só são servidos da própria pasta do Estúdio. A guarda mora **uma vez** no núcleo (`scripts/estudio.mjs`) e vale para todos os módulos. As travas têm teste com mutação.
+Escuta **só em 127.0.0.1**; recusa `Host` e `Origin` que não sejam o dele (contra DNS rebinding e página de fora); só lê e grava **arquivos de áudio com nome simples** nas pastas dos módulos; **valida tudo antes de gravar** (e grava de forma atômica); corpo com teto de tamanho; os scripts da página só são servidos da própria pasta do Estúdio. A guarda mora **uma vez** no núcleo (`scripts/estudio.mjs`) e vale para todos os módulos. As travas têm teste com mutação. O `git` que o Estúdio chama (as pendências) roda **sem as variáveis `GIT_*`** (`ambienteSemGit`): o hook de commit e o de push as herdam, e com elas o git ignora a pasta pedida. Quem escrever um teste que rode `git` faz o mesmo (e nunca usa `git config`: identidade por `-c`); ver `HISTORICO_DE_DECISOES.md`, 16/10.
 
 ## 3. Como o Estúdio cresce: o contrato de um módulo
 
@@ -37,9 +37,13 @@ Escuta **só em 127.0.0.1**; recusa `Host` e `Origin` que não sejam o dele (con
 
 Tecnicamente: `scripts/estudio.mjs` é o núcleo (guarda, página, arquivos estáticos, `/api/estado`, `/api/pendencias`); cada módulo é `scripts/estudio/modulo-<id>.mjs` (exporta `{ id, titulo, estado(), rotas(ctx), pastasDoGit }`) com as rotas em `/api/<id>/...`, mais `scripts/estudio/<id>.js` para a aba. A onda, o áudio, as mensagens e o painel de pendências são do `nucleo.js` e valem para todas as abas.
 
-### 3.1 Próximo: VOZES (P151)
+### 3.1 VOZES (P151): pronto
 
-A aba do narrador: as 19 falas × 4 sotaques, cada uma com a origem (ElevenLabs, **gravada por você**, vazia). **Gravar direto no navegador** (o microfone, em `127.0.0.1` é permitido), ouvir com os **mesmos efeitos** (preset "locutor": grave, compressor forte, saturação leve, eco de arena), aparar o silêncio e **salvar** como o `.mp3` da fala e no manifesto `vozesGeradas.json`. As falas gravadas ficam **protegidas** do `npm run vozes --refazer` (o gerador não pisa na sua voz). Importar uma gravação feita fora (celular) também. A alternativa do ElevenLabs "Voice Changer" (você grita e a voz do Eliel sai com a sua energia) entra como botão se o Comandante quiser.
+A aba do narrador: as **19 falas × 4 sotaques**, cada uma marcada como **● gravada por você**, **◆ voz gerada (ElevenLabs)** ou **○ sem áudio**. **Gravar direto no navegador** (o microfone; em `127.0.0.1` é permitido): a fala aparece em letras grandes, com a **intenção** (grave e firme / grito curto e explosivo / seco e tenso), um **medidor de nível** que fica vermelho se estourar, e **parada automática em 10 s**. A gravação chega como webm sem duração (é o que o MediaRecorder entrega), o servidor a **converte para WAV mono 44,1 kHz** e a guarda como **tomada numerada** (`combate-1.wav`, `combate-2.wav`...) em `.tmp/SOUNDS/VOZ/<sotaque>/`; a tomada já abre **aparada** na onda. Dá para **importar** uma gravação feita fora (celular).
+
+O tratamento usa **os mesmos efeitos dos sons** (tom, graves, agudos, passa-alta e passa-baixa, **redução de ruído**, saturação, compressor, eco...) com cinco predefinidos de voz (**Locutor grave**, **Arena**, **Rádio de comando**, **Limpo**, **Demônio**) e a **mesma prévia com o motor real**. **"Salvar como a fala do jogo"** grava `scripts/vozes-gravadas.json` (de qual tomada, que trecho, que efeitos), processa o mp3 em `client/public/audio/vozes/<sotaque>/<chave>.mp3` (nível de voz: -16 dB de média) e põe a fala no manifesto `vozesGeradas.json`: **o jogo já a toca**, sem mais nada. A voz gerada pelo ElevenLabs que estava ali fica guardada em `_elevenlabs/` e **"Voltar para a voz gerada"** a devolve, byte a byte.
+
+**A sua voz é protegida:** o `npm run vozes` (gerador do ElevenLabs) **nunca regera uma fala gravada por você**, nem com `--refazer` (e o resumo avisa quantas protegeu). Fica fora, de propósito: o botão do ElevenLabs "Voice Changer" (você grita e a voz do Eliel sai com a sua energia), que gasta crédito e fica com `npm run vozes`.
 
 ### 3.2 Depois: TIROS E ARMAS (a parte visual e de força)
 
