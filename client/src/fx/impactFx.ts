@@ -97,6 +97,7 @@ export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
   seeker: [],
   swarm: [],
   cruise: [],
+  grenade: [], // a granada explode (a explosão é a dela)
   barrage: [],
   chainsaw: [],
   flamer: [],

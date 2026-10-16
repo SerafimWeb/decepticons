@@ -32,6 +32,7 @@ const FAIXAS: Readonly<Record<WeaponId, RangeBand>> = {
   railgun: 'longo',
   laser: 'longo', // o raio laser de longo alcance (P152)
   siege: 'longo',
+  grenade: 'medio',
   cruise: 'longo', // o míssil cruzador de longo alcance (P152)
 };
 

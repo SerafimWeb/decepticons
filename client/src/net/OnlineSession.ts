@@ -463,6 +463,12 @@ export class OnlineSession implements Pilot {
       _aimPoint.copy(_o).addScaledVector(_d, hit ? hit.distance : 400);
       this.o.match.cruise.fire(_o, _d, _aimPoint, r.mech.collider, weapon('cruise'));
       r.mech.onFireSecondary();
+    } else if (id === 'grenade') {
+      // A granada de outro jogador: o evento traz a direção até a mira (como o cruzador); acha o ponto e refaz o arco e a carga (a mesma conta do servidor). Só desenho.
+      const hit = this.o.match.physics.raycast(_o, _d, 400, r.mech.collider);
+      _aimPoint.copy(_o).addScaledVector(_d, hit ? hit.distance : 400);
+      this.o.match.grenades.fire(_o, _aimPoint, r.mech.collider, weapon('grenade'));
+      r.mech.onFireSecondary();
     } else if (id === 'laser') {
       // Um pulso do laser de outro jogador: acha onde o feixe acaba e o acende (o dano é do servidor).
       this.o.match.drawBeam(_o, _d, r.mech.collider, weapon('laser'), true);

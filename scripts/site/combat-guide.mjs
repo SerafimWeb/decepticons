@@ -116,6 +116,8 @@ function linhaArma(W, id, fabrica) {
     ? `bombas, cada uma até ${un(a.blastRadius, 'm')}`
     : a.salvo
       ? `mísseis por salva, cada um com explosão de ${un(a.blastRadius, 'm')}`
+      : a.lob
+        ? `granada em arco: explosão de ${un(a.blastRadius, 'm')}, tabela na parede`
       : a.pellets
         ? 'balins por disparo, num cone: de longe só parte acerta'
       : a.kind === 'melee'

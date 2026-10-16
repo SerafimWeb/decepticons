@@ -140,6 +140,13 @@
       "tipo": "energy",
       "intervalo": 0.13,
       "aceita": true
+    },
+    {
+      "id": "grenade",
+      "nome": "Lança-granadas",
+      "tipo": "ammo",
+      "intervalo": 0.55,
+      "aceita": true
     }
   ]
 }

@@ -21,6 +21,7 @@ export const FIRE_KICK: Readonly<Record<WeaponId, number>> = {
   seeker: 0.2,
   swarm: 0.015, // um míssil a cada 0,07 s: o tremor soma numa trepidação leve durante a salva, sem coice por míssil
   cruise: 0.42, // um só a cada 8 s: o solavanco de um lançamento grande, perto do canhão pesado
+  grenade: 0.16, // o "tum" seco do lançamento, menor que o do foguete
   laser: 0.012, // ~8 pulsos por segundo: um zumbido fino e constante
   barrage: 0.28,
   railgun: 0.4,

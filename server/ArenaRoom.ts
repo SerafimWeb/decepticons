@@ -116,6 +116,8 @@ export class ArenaRoom {
     this.match.rockets.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
     this.match.barrage.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
     this.match.cruise.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
+    // A granada manda a direção até a mira (P160): o cliente acha o ponto da mira por ela e refaz o mesmo arco e a mesma carga.
+    this.match.grenades.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
     this.match.onBeam = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
     this.match.onWave = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
     this.match.onMechHit = (e) => this.hit(e.mech, e.shooter, e.result.part, e.result.applied);

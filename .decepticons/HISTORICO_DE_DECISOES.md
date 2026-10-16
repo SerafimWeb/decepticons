@@ -1,3 +1,19 @@
+## [2026-10-16] O lança-granadas: o arco regula a carga para passar por cima da cobertura, e a rede manda a direção da mira (Claude, P160 parte 2b)
+
+**Situação:** a P160 pede "balísticas" e "novos estilos, tipos, formas". Nenhuma arma do arsenal tinha gravidade.
+
+**Decisões:**
+1. **A granada cai no ponto da mira** (o lançador calcula a elevação), em vez de o jogador ter de adivinhar a queda: a mira de sempre continua valendo,
+   e a mira prevista (o arco em pontinhos e o anel) mostra o que vai sair.
+2. **Carga regulada em vez do "arco alto" de carga cheia:** com 42 m/s o arco alto para 29 m saía a 80°, subia 39 m e levava 3,9 s (a bancada mostrou);
+   quando o arco baixo bate na cobertura, sai a **menor elevação de 35° a 75° que passa limpa**, com a velocidade que faz cair no ponto.
+3. **A rede manda a direção da mira, não a de lançamento** (como o cruzador): a velocidade varia por tiro e o evento de 7 bytes não tem onde levá-la; o
+   outro cliente acha o ponto da mira pelo raio e refaz a mesma conta (a escolha do arco só olha o cenário parado, igual nos dois lados).
+4. **No chão crava, na parede tabela:** com quique de verdade no chão a granada caía 15 m além da mira; agora estoura a ~2 m, e tabelar na parede
+   continua sendo o truque.
+5. **34 de dano** (não 45): com 45 o MK III derrubava um torso em 3,7 s sozinho, contra a regra dos 4,5 s do Comandante (P111).
+6. **Protocolo 19** (`grenade` no fim de `NET_WEAPONS`); o servidor reinicia sozinho a cada `main` nova (o atualizador do PC).
+
 ## [2026-10-16] A escopeta sai em balins, de dentro do ProjectileSystem (Claude, P160 parte 2a)
 
 **Situação:** a escopeta era um projétil só de 52 que caía a 8% aos 45 m: uma "escopeta" sem chumbo. A ordem P160 pede balística e estilos de verdade.

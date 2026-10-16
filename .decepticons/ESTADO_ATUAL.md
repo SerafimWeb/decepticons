@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O LANÇA-GRANADAS: o primeiro tiro com gravidade, que sobe por cima da cobertura, e a mira prevista em arco — Claude, 16/10 (branch `claude/lanca-granadas`, P160 parte 2b, protocolo 19)
+
+**Feito:** arma nova **`grenade`** (Lança-granadas, média, 3,5 t; braço e ombros do Marauder). A granada **cai no ponto da mira**: o lançador sai no arco baixo (42 m/s) e, se a cobertura o barra, **sobe a elevação (35° a 75°) e regula a carga** para passar por cima e cair no ponto (até 80 m no plano). **Explode no robô**, **tabela na parede**, **crava no chão** e estoura 0,35 s depois (a ~2 m de onde a mira marcou). 34 de dano no centro (48 no MK III), 5 m de explosão, 4 por carga, 1,6 s por granada. Com a arma equipada, a **mira prevista**: o arco em pontinhos e o anel do tamanho da explosão. Rede: **protocolo 19** (um evento de tiro por granada, com a direção da mira; o outro cliente refaz o arco). Modelo 3D (tambor de seis câmaras), ícone, retícula, ficha, som (o do canhão, mais agudo, no Estúdio), oficina e site.
+
+**Provas:** 12 testes (`combat/grenade.test.ts` e o do servidor em `server/room.test.ts`), **12 mutações à mão, 12 pegas** (a primeira rodada achou um teste fraco: sem o ramo da granada no servidor, o tiro virava um foguete reto que também acertava; o teste agora exige a granada no sistema de granadas). Capturas: `arte/armas-granada-bancada-claude.jpg` (o arco subindo por cima do muro com a mira prevista; e sem muro) e `arte/armas-granada-gpu-claude.jpg` (no jogo, na GPU real).
+
+**Onde o Comandante confere:** Hangar → Vector-09 → braço esquerdo → **Lança-granadas** (ou os ombros do Marauder); jogando, o anel verde mostra onde cai; mirar atrás de uma barricada e ver o arco subir.
+
+**Falta (R13):** os bots não usam; ninguém jogou (os números são proposta); o desenho da granada de outro jogador é refeito pelo cliente.
+
+**Próxima sessão começa com:** o que o Comandante disser depois de jogar as partes 1, 2a e 2b da P160; depois, os bots usarem as armas novas (lançador leve, cruzador, laser, granadas).
+
 ## A ESCOPETA SAI EM BALINS: nove num cone, a queda vem da geometria — Claude, 16/10 (branch `claude/armas-balistica`, P160 parte 2a)
 
 **Feito:** a escopeta (`shotgun`) sai em **nove balins de 6 num cone de 3,4°** (`pellets`), nascidos no `ProjectileSystem.fire` (vale para o jogador, os bots, o servidor e o tiro de outro jogador, com **um** evento de tiro por disparo e o mesmo desenho fixo, sem sorteio). Medido com física de verdade, o disparo inteiro: **54 até 10 m**, 45 aos 15–20 m, 32 aos 25–30 m, 15 aos 40 m (só 5 balins pegam: o cone tem 4,8 m), 10 aos 50 m. Tempo para derrubar um torso de perto igual ao de antes (4,0 s / 3,2 s). Os balins que acertam juntos viram **um** número de dano e **um** som. Fichas (Hangar, ARSENAL, site) mostram "9 × 6".

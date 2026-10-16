@@ -147,6 +147,12 @@ export const WEAPON_LOOK: Readonly<Record<WeaponId, WeaponLook>> = {
   seeker: MISSILE('guided', 1.1, ROCKET_MUZZLE, MOTOR_GUIDED),
   swarm: MISSILE('micro', 0.55, NONE),
   cruise: MISSILE('cruise', 1.8, { ...ROCKET_MUZZLE, size: 3.4, life: 0.12 }),
+  // A granada (P160 parte 2b): a luz que pisca no corpo (verde-limão do jogador, vermelha do inimigo), a fita fina de fumaça e o "tum" do lançamento.
+  grenade: {
+    glow: { shape: BILL.star, size: 0.9, friendly: c(1.6, 2.6, 0.4), hostile: c(3.6, 0.6, 0.3) },
+    muzzle: { shape: BILL.star, size: 2.0, life: 0.08, friendly: POWDER, hostile: POWDER_HOSTILE, tongue: false },
+    hit: NONE, mark: NONE, trail: 'micro', blast: false, rail: false,
+  },
   barrage: MISSILE('rocket', 0.9),
   sonic: QUIET,
   flamer: QUIET,

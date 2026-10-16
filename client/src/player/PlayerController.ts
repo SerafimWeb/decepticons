@@ -52,6 +52,8 @@ export class PlayerController {
   beam?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
   /** Saiu um míssil cruzador: a partida o lança em arco de `origin` até o ponto da mira `target` (`CruiseSystem.fire`). */
   cruise?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3, target: THREE.Vector3) => void;
+  /** Saiu uma granada (P160): cai no ponto da mira, em arco (quem lança é a partida: `GrenadeSystem.fire`). */
+  grenade?: (w: WeaponStats, origin: THREE.Vector3, target: THREE.Vector3) => void;
   /** Teclas de cada ação (e.code), vindas das configurações. */
   keys: Readonly<Record<KeyAction, string>> = DEFAULT_SETTINGS.keys;
 
@@ -230,6 +232,8 @@ export class PlayerController {
     if (w.barrage) this.barrage.fire(_muzzle, _dir, this.rig.aim.point, this.mech.collider, w, volley, this.mech.barrageMouth(_mouth));
     // Míssil cruzador: sobe em arco e mergulha no ponto sob a mira.
     else if (w.cruise) this.cruise?.(w, _muzzle, _dir, this.rig.aim.point);
+    // Lança-granadas: o arco com gravidade que cai no ponto sob a mira.
+    else if (w.lob) this.grenade?.(w, _muzzle, this.rig.aim.point);
     // Lançador leve: cada míssil sai para a mira do instante, com o desvio dele (um ponto do cone da salva).
     else this.rockets.fire(_muzzle, applySpread(_dir, spread), this.mech.collider, w);
     // A salva do lançador leve solta dezenas de mísseis por segundo: clarão pequeno por míssil, e o som e o tranco de quatro em quatro.

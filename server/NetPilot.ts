@@ -49,10 +49,11 @@ export class NetPilot implements Pilot {
       // M5 TODO: compensação de latência (volta cápsulas ao tempo do comando)
     },
     rocket: (mount, w, volley, spread) => {
-      // A chuva e o cruzador precisam do ponto da mira (o centro da chuva, o ponto de mergulho); o míssil leve e os foguetes só da direção.
-      this.aim(mount, w.barrage !== undefined || w.cruise !== undefined);
+      // A chuva, o cruzador e a granada precisam do ponto da mira (o centro da chuva, o ponto de mergulho, onde a granada cai); o míssil leve e os foguetes só da direção.
+      this.aim(mount, w.barrage !== undefined || w.cruise !== undefined || w.lob !== undefined);
       if (w.barrage) this.match.barrage.fire(_origin, _dir, _point, this.mech.collider, w, volley);
       else if (w.cruise) this.match.cruise.fire(_origin, _dir, _point, this.mech.collider, w);
+      else if (w.lob) this.match.grenades.fire(_origin, _point, this.mech.collider, w);
       else this.match.rockets.fire(_origin, applySpread(_dir, spread), this.mech.collider, w);
     },
     melee: (w) => this.match.meleeNearest(this.mech, w),
