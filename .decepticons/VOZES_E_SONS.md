@@ -63,16 +63,16 @@ Quem julga é o seu ouvido. Trocar um som é mudar `fonte`, `de` e `ate` no `scr
 
 O ElevenLabs também gera **efeitos por texto** (`/v1/sound-generation`): serve para as armas sem referência. **Decisão do Comandante** depois de ouvir: quais ficam, quais troca, e se quer efeito gerado para as que sobraram.
 
-### 3.1 O Estúdio de Sons (para o ajuste fino)
+### 3.1 O Estúdio (para o ajuste fino)
 
-`npm run estudio` abre uma página no navegador (só neste computador: escuta em 127.0.0.1 e recusa qualquer origem de fora). Nela:
-- **Onda:** abra uma referência, **arraste na onda** para escolher o trecho (as bordas se ajustam), com **fade**, **ganho extra** e uma estimativa da normalização na audição;
-- **No ritmo da arma:** ▶▶ toca o som **repetido no intervalo de tiro da arma escolhida** (a rotatória a 0,05 s, o canhão a 2,6 s): é assim que se ouve se um tiro cobre o seguinte;
-- **Armas:** uma tabela com as 17 armas do jogo; escolha **qual clipe** toca em cada uma (qualquer clipe, para qualquer arma), o **ganho**, a **altura** (pitch: menos = mais grave e mais longo) e a **duração máxima**. Arma sem clipe usa o som sintetizado de sempre. O lança-chamas e a motosserra têm som contínuo próprio e ainda não aceitam amostra;
-- **Importar:** arraste um arquivo de áudio para a página (ele vai para `.tmp/SOUNDS/ARMAS`);
-- **Processar** roda o mesmo `ffmpeg` do `npm run sons` e grava o mp3; **SALVAR TUDO** grava `scripts/sons-armas.json` (os cortes) e `client/src/audio/armasSom.json` (a tabela de armas).
-
-Depois de salvar e processar, abra o jogo (`npm run dev`) e atire; quando estiver bom, **peça ao Claude para publicar** (a tabela é dado, o teste só cobra estrutura, nunca o gosto: nada do que você mexer trava o `npm run check`). Um corte muito fraco (ganho acima de +15 dB para chegar ao volume dos outros) aparece com aviso: sobe o chiado, corte onde o som está forte.
+`npm run estudio` (ou dois cliques em `scripts\ligar-estudio.cmd`) abre uma página no navegador, só neste computador. **O desenho completo, a segurança e o que vem depois (vozes, tiros e armas, Mechs 3D) estão em `ESTUDIO.md`.** Na aba SONS:
+- **Importar:** arraste um arquivo de áudio para a página: ele é guardado, vira **um clipe com nome próprio**, é **registrado** no mapa de sons e **processado**, e já fica aberto na tela, pronto para escolher numa arma (como se o Claude o tivesse adicionado);
+- **Onda:** arraste para cortar; bordas ajustáveis; "aparar silêncio";
+- **Efeitos por clipe:** **velocidade** (esticar e comprimir a duração, ou digitar a duração alvo), **tom** (±12 semitons, independente da velocidade), graves, agudos, passa-alta, passa-baixa, redução de ruído, saturação, **compressor**, eco, tocar ao contrário, fades; com predefinidos para começar;
+- **Prévia:** toca **como vai ficar no jogo** (o servidor roda o mesmo ffmpeg do arquivo final), sem gravar nada; a onda do resultado aparece;
+- **No ritmo da arma:** ▶▶ repete o som no intervalo de tiro da arma;
+- **Armas:** a tabela de **todas as armas do jogo** (qual clipe, ganho, altura, duração máxima);
+- **Processar / Salvar tudo**, e um aviso do que **ainda não foi para o jogo publicado** (diga ao Claude: "publica os sons").
 
 ## 4. Custo
 
