@@ -587,20 +587,22 @@ async function check() {
     // Landing na raiz: é por ela que se entra no jogo.
     await page.goto(base);
     const title = await page.title();
-    if (title !== 'CYBERMECH') failures.push(`título da raiz: "${title}"`);
+    if (title !== 'CYBERMECH — Combate de Mechs no navegador') failures.push(`título da raiz: "${title}"`);
     await pageSane(page, 'landing', failures);
     await publicPage(page, 'landing', failures);
     await antiCopy(page, 'landing', failures);
-    // Hangar: os números saem do código do jogo; se o carregamento falhar, a seção some sem erro. Aqui é erro.
-    if ((await page.locator('table.builds td.fit a').count()) < 3) failures.push('landing: a grade de montagens do Hangar sumiu (validação do Hangar não carregou)');
-    if ((await page.locator('section[aria-labelledby="hangar"] .wpn').count()) < 2) failures.push('landing: a seção do Hangar sumiu (o site não conseguiu ler o arsenal do código do jogo)');
-    // Online: o ritmo da rede sai do código (shared/net) e a contagem de etapas, do ROADMAP.
-    if ((await page.locator('section[aria-labelledby="online"] .read').count()) < 3) failures.push('landing: a seção do multiplayer sumiu (o site não leu a rede ou a fase 4 do ROADMAP)');
-    if ((await page.locator('section[aria-labelledby="horizonte"] .feature').count()) !== 5) failures.push('landing: a seção de ideias futuras sumiu ou não tem os cinco conceitos registrados');
-    if (await page.locator('section[aria-labelledby="horizonte"] .kicker').textContent() !== '// ideias em estudo · sem data prometida') failures.push('landing: ideias futuras precisam estar marcadas como estudo sem data prometida');
-    // Abertura da marca: roda na primeira visita da sessão e sai da frente sozinha (senão cobre o botão).
-    if (!(await page.evaluate(() => sessionStorage.getItem('cybermech.intro') === '1'))) failures.push('landing: a abertura da marca não rodou');
-    await page.waitForFunction(() => !document.getElementById('intro'), null, { timeout: 8000 });
+    // Cards usam o catálogo e links de montagem reais; detalhes numéricos continuam na Oficina.
+    if ((await page.locator('.mech-card a[href*="?build="]').count()) !== 3) failures.push('landing: faltam os três links de montagem do catálogo');
+    if ((await page.locator('.mode-card').count()) !== 3) failures.push('landing: faltam os modos de combate');
+    if ((await page.locator('.feature-grid li').count()) !== 6) failures.push('landing: VITRINE incompleta');
+    if (await page.locator('#intro').count()) failures.push('landing: uma vinheta bloqueia o primeiro acesso');
+    const cameras = page.locator('[data-camera]');
+    if (await cameras.count() > 1) {
+      await cameras.nth(1).click();
+      if (await cameras.nth(1).getAttribute('aria-pressed') !== 'true' || !(await page.locator('.camera-slide').nth(1).isVisible())) failures.push('landing: seletor de câmera não troca a imagem');
+    }
+    const missingArt = await page.locator('img').evaluateAll(imgs => imgs.filter(img => img.complete && !img.naturalWidth).map(img => img.src));
+    if (missingArt.length) failures.push(`landing: imagens ausentes: ${missingArt.join(', ')}`);
     await page.click('a.play-btn');
     await page.waitForURL(`${base}jogar/`);
     await page.waitForFunction(CTA_READY, null, { timeout: 60_000 });
@@ -629,7 +631,7 @@ async function check() {
   }
   // Só depois de saber que não houve falha: antes, esta linha saía junto do "❌ SITE FALHOU" e dizia
   // "ok" para um check vermelho (visto em 27/09/2026, no log do CI da `main`).
-  console.log(`site    ok: landing em ${prefix} com a abertura da marca, o Hangar e o online, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), "Entrar no cockpit" abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, texto não selecionável e sem cópia nas três páginas, celular joga pelo toque, metricas/ privada (sem token nada aparece, token errado é recusado, país hostil vira texto)`);
+  console.log(`site    ok: landing em ${prefix} com catálogo, modos e imagens reais, oficina/ com a bancada, sala-de-controle/ (e bastidores/ levando para ela), Jogar abre jogar/, física e loop sobem com a CSP, configurações salvas valem, links internos vivos, texto não selecionável e sem cópia nas três páginas, celular joga pelo toque, metricas/ privada (sem token nada aparece, token errado é recusado, país hostil vira texto)`);
 }
 
 /** Confere o site publicado: páginas no ar, .wasm com o tipo certo, CSP aplicada. */

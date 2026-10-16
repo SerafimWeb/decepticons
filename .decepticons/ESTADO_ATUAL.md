@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## LANDING E PRIMEIRO ACESSO — entrega P169 (Codex, 16/10)
+
+Branch de origem `codex/landing-primeiro-acesso`, pasta `.tmp/wt-codex-landing`; `main` fc2d1ba integrada, preservando os explosivos dos bots. A disponibilização ocorre pelo merge desta revisão na `main` e pelo publicador com checksum. Não considerar o branch isolado como publicado. Território: landing, tema/painel público, verificações do site, texto/CSS do primeiro acesso e `client/public/press/`.
+
+Landing com abertura industrial preto/amarelo, câmeras interativas, seis sistemas de combate, três chassis com números e links da montagem real, modos e guia inicial. Fotografias geradas com os rigs do Vector-09, Marauder e Colossus-V4; thumbnails de cenário são capturas existentes. A Oficina mantém as tabelas extensas. A fila interna de decisões e os trechos operacionais deixam de ser republicados; o painel local conserva esses dados. Registro literal do dono preservado.
+
+Validação inicial: `npm run check` verde (2.420 testes); desktop 1440×1000/1280×720 e celular 390×844 sem overflow, imagens ausentes ou erro JavaScript. Primeiro acesso e expansão do console conferidos. Revisão cruzada realizada; foco de teclado dos CTAs corrigido. O hook do push revalida a integração final. Provas em `medicoes/LANDING_P169.md` e `arte/*landing-codex*`. Nenhuma alteração de simulação ou rede.
+
+Próxima sessão começa pelo julgamento visual do Comandante e pela medição do funil de primeira partida; ganho de conversão/retorno ainda não medido. Caminhos: raiz de `cybermech.online` e `/jogar/?primeira`.
+
 ## OS REBELDES LANÇAM EXPLOSIVOS: salvas de foguetes e granadas contra você — Claude, 16/10 (branch `claude/bots-explosivos`, P160 parte 4)
 
 **A ordem (16/10):** *"bote pra torar na iteração das armas"*.
