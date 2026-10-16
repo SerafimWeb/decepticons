@@ -42,7 +42,8 @@ export function testAt(test: TestFire, t: number): { shots: number; damage: numb
   const i = Math.min(test.heat.length - 1, Math.max(0, Math.floor(t / test.sample)));
   return {
     shots,
-    damage: shots * test.weapon.damage,
+    // A escopeta (P160) soma os balins do disparo: o dano de um tiro é o de cada balin vezes quantos são.
+    damage: shots * test.weapon.damage * (test.weapon.pellets?.count ?? 1),
     heat: test.heat[i] ?? 0,
     locked: test.overheatAt !== null && t >= test.overheatAt && (test.heat[i] ?? 0) > 0.4,
   };

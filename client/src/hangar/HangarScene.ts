@@ -1,5 +1,6 @@
 import { ChargeTimer } from '../combat/ChargeTimer';
 import { WaveRings } from '../fx/WaveRings';
+import { TestShots } from './TestShots';
 import type { WeaponStats } from '../combat/weapons';
 import * as THREE from 'three';
 import type { MountId } from '../combat/mounts';
@@ -277,6 +278,8 @@ export class HangarScene {
   private readonly shotsPool: Shot[] = [];
   /** A onda sônica do teste de disparo: os mesmos anéis do jogo, na cena do galpão. */
   readonly waveRings = new WaveRings();
+  /** Os tiros do teste de disparo com a cara do jogo (P160): clarão, brilho, rastro, balins, arcos, explosão e feixes (`hangar/TestShots.ts`). */
+  private readonly testShots: TestShots;
   private readonly flashes: Flash[] = [];
   private test: { data: TestFire; mounts: readonly MountId[]; t: number; next: number; aimFrom: number; aimTo: number } | null = null;
   /** 0 = câmera do Hangar, 1 = câmera aberta do teste (mistura suave entre as duas). */
@@ -389,6 +392,8 @@ export class HangarScene {
       s.add(p);
     }
     s.add(this.waveRings.mesh);
+    this.testShots = new TestShots(s, this.camera, 0);
+    this.testShots.onHit = () => (this.targetMat.emissiveIntensity = 1.6);
     const shotMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xbff6ff).multiplyScalar(3) });
     for (let i = 0; i < SHOTS_POOL; i++) {
       const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.6, 6), shotMat.clone());
@@ -421,6 +426,7 @@ export class HangarScene {
    * regras do jogo). A câmera abre para mostrar o Mech e o alvo. Chame `testProgress` a cada quadro.
    */
   startTest(data: TestFire, mounts: readonly MountId[]): void {
+    this.testShots.clear();
     const aimTo = Math.atan2(-(TARGET.x - 0), -(TARGET.z - 0));
     this.test = { data, mounts, t: 0, next: 0, aimFrom: this.turntable.rotation.y, aimTo };
   }
@@ -766,24 +772,11 @@ export class HangarScene {
       this.flash(from, 0.5);
       return;
     }
-    const shot = this.shotsPool.find((s) => s.t >= s.dur);
-    if (!shot) return;
-    shot.from.copy(from);
-    // Espalha um pouco pelo alvo, de forma fixa (sem sorteio): o desenho de cada tiro muda com a ordem.
-    const k = test.data.shots.length ? this.shotsPool.indexOf(shot) : 0;
-    shot.to.set(TARGET.x + Math.sin(k * 2.3) * 0.9, TARGET_H + Math.cos(k * 1.7) * 0.9, TARGET.z + Math.sin(k * 1.1) * 0.5);
-    // O desenho do estande é um traço só por tiro: o míssil leve é pequeno e rápido (são dezenas), o cruzador grande e lento, e o laser quase instantâneo e magenta (P152).
-    const visualSpeed = w.beam ? 700 : w.salvo ? 70 : w.cruise ? 55 : w.kind === 'ammo' ? 45 : 110;
-    shot.dur = shot.from.distanceTo(shot.to) / visualSpeed;
-    shot.t = 0;
-    const mat = shot.mesh.material as THREE.MeshBasicMaterial;
-    mat.color.set(w.beam ? 0xff4be0 : w.kind === 'ammo' ? 0xffb05a : 0xbff6ff).multiplyScalar(3);
-    const thick = w.salvo ? 1.1 : w.cruise ? 3 : w.kind === 'ammo' ? 2.2 : 1;
-    shot.mesh.scale.set(thick, w.kind === 'ammo' ? 0.8 : 1, thick);
-    shot.mesh.position.copy(shot.from);
-    shot.mesh.lookAt(shot.to);
-    shot.mesh.rotateX(Math.PI / 2);
-    shot.mesh.visible = true;
+    // Cada tiro com a cara do jogo (P160): a camada de efeitos e a trajetória da família (`TestShots`). Espalha um pouco pelo alvo, de forma fixa
+    // (sem sorteio): o desenho de cada tiro muda com a ordem.
+    const k = test.next;
+    _d.set(TARGET.x + Math.sin(k * 2.3) * 0.9, TARGET_H + Math.cos(k * 1.7) * 0.9, TARGET.z + Math.sin(k * 1.1) * 0.5);
+    this.testShots.fire(from, _d, w, k);
   }
 
   private flash(at: THREE.Vector3, size: number): void {
@@ -852,6 +845,7 @@ export class HangarScene {
       }
     }
     this.updateShots(dt);
+    this.testShots.update(dt);
     this.holo.offset.y -= dt * 0.08;
     this.holoInner.offset.y += dt * 0.05;
     this.holoInner.offset.x += dt * 0.01;

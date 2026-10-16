@@ -1,3 +1,14 @@
+## [2026-10-16] O "Testar" do Hangar desenha com a camada de efeitos do jogo (Claude, P160 parte 3)
+
+**Situação:** em 15/10 o Comandante disse das armas novas: *"selecionei e implementei elas mas parece que são armas antigas"*. O "Testar" do Hangar — o
+primeiro lugar onde ele vê uma arma — desenhava todo tiro com o mesmo traço (ciano na energia, laranja na munição) e o mesmo clarão no alvo.
+
+**Decisões:**
+1. **O teste usa a mesma camada do jogo** (`WeaponFx`, `BeamVisuals`, as partículas de acerto de cada arma), num módulo próprio (`hangar/TestShots.ts`,
+   G3), com a **trajetória da família**: reta na velocidade da arma, a salva com o desvio dela, os nove balins em cone, o arco do cruzador e o arco da
+   granada. O Hangar não tem física: o tiro vai do cano ao ponto do alvo (só desenho).
+2. **Achado e corrigido (R17):** o contador de dano do teste contava um balin por disparo da escopeta (`testAt`); agora conta os nove.
+
 ## [2026-10-16] O lança-granadas: o arco regula a carga para passar por cima da cobertura, e a rede manda a direção da mira (Claude, P160 parte 2b)
 
 **Situação:** a P160 pede "balísticas" e "novos estilos, tipos, formas". Nenhuma arma do arsenal tinha gravidade.
