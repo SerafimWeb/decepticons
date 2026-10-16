@@ -7,6 +7,7 @@ import { IMPACT_FX, TRAIL_FX } from '../fx/impactFx';
 import { buildSlugGeometry, buildSteelMaterial, KINETIC, SLUG_TAIL, STEEL } from '../fx/kineticShot';
 import { MUZZLE_FX } from '../fx/muzzleFx';
 import { buildStreakGeometry, buildStreakMaterial, growingLength, STREAK_HEAD_WIDTH, streakLength } from '../fx/ShotStreak';
+import type { ShotFx } from '../fx/WeaponFx';
 import { hitDamage, weapon, type WeaponStats } from './weapons';
 
 interface Projectile {
@@ -17,10 +18,14 @@ interface Projectile {
   tail: number;
   prev: THREE.Vector3;
   pos: THREE.Vector3;
+  /** De onde saiu (o raio iônico do trilho vai daqui ao ponto do acerto). */
+  origin: THREE.Vector3;
   velocity: THREE.Vector3;
   life: number;
-  trailLife: number;
-  trail: THREE.Line;
+  /** Tiro de inimigo (cor de aviso). */
+  hostile: boolean;
+  /** O rastro em fita deste projétil no `ShotFx` (-1 = sem rastro). */
+  fxTrail: number;
   /** A arma de quem atirou (velocidade, alcance, dano e queda com a distância). */
   weapon: WeaponStats;
   /** Metros já percorridos: o plasma perde força com a distância. */
@@ -45,6 +50,8 @@ export class ProjectileSystem {
   onHit?: (hit: PhysicsHit, dir: THREE.Vector3, damage: number, owner?: RAPIER.Collider, w?: WeaponStats, distance?: number) => void;
   /** Um tiro saiu (o servidor do multiplayer manda como evento). */
   onFired?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
+  /** Quem desenha o clarão, o brilho da cabeça, o rastro e a marca (P160; só o cliente liga). */
+  fx?: ShotFx;
 
   private readonly pool: Projectile[] = [];
   private readonly friendlyMat: THREE.MeshBasicMaterial;
@@ -90,18 +97,15 @@ export class ProjectileSystem {
       const body = new THREE.Mesh(this.slugGeo, this.friendlySteel);
       body.visible = false;
       scene.add(body);
-      const trailGeo = new THREE.BufferGeometry();
-      trailGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
-      const trail = new THREE.Line(trailGeo, mat);
-      trail.visible = false;
-      trail.frustumCulled = false;
-      scene.add(trail);
       this.pool.push({
-        mesh, body, trail, trailLife: 0, tail: 0,
+        mesh, body, tail: 0,
         prev: new THREE.Vector3(),
         pos: new THREE.Vector3(),
+        origin: new THREE.Vector3(),
         velocity: new THREE.Vector3(),
         life: 0,
+        hostile: false,
+        fxTrail: -1,
         weapon: weapon('plasma'),
         traveled: 0,
       });
@@ -115,10 +119,12 @@ export class ProjectileSystem {
   fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, hostile = false, w: WeaponStats = weapon('plasma')): void {
     this.onFired?.(origin, dir, owner, w);
     let p: Projectile | undefined;
-    for (const q of this.pool) if (q.life <= 0 && q.trailLife <= 0) { p = q; break; }
+    for (const q of this.pool) if (q.life <= 0) { p = q; break; }
     if (!p) return;
     p.pos.copy(origin);
     p.prev.copy(origin);
+    p.origin.copy(origin);
+    p.hostile = hostile;
     p.velocity.copy(dir).multiplyScalar(w.speed);
     p.life = w.maxRange / w.speed;
     p.owner = owner;
@@ -139,13 +145,6 @@ export class ProjectileSystem {
         : ice ? (hostile ? this.hostileIceStreak : this.friendlyIceStreak)
         : hostile ? this.hostileStreak : this.friendlyStreak
       : hostile ? this.hostileMat : this.friendlyMat;
-    p.trail.material = hostile ? this.hostileMat : this.friendlyMat;
-    p.trail.visible = w.tracer === 'rail';
-    p.trailLife = 0;
-    const positions = p.trail.geometry.getAttribute('position');
-    positions.setXYZ(0, origin.x, origin.y, origin.z);
-    positions.setXYZ(1, origin.x, origin.y, origin.z);
-    positions.needsUpdate = true;
     if (w.tracer === 'rail') p.mesh.scale.set(0.45, 0.45, 18);
     else if (w.tracer === 'pulse') p.mesh.scale.set(2.5, 2.5, 2.5);
     else if (metal) p.mesh.scale.set(metal.tailWidth, metal.tailWidth, growingLength(p.tail, 0));
@@ -160,15 +159,12 @@ export class ProjectileSystem {
       p.body.quaternion.copy(p.mesh.quaternion);
     }
     this.muzzle(origin, dir, w);
+    p.fxTrail = this.fx ? this.fx.fired(origin, dir, w, hostile) : -1;
   }
 
   fixedUpdate(dt: number): void {
     for (const p of this.pool) {
-      if (p.life <= 0) {
-        p.trailLife = Math.max(0, p.trailLife - dt);
-        if (p.trailLife === 0) p.trail.visible = false;
-        continue;
-      }
+      if (p.life <= 0) continue;
 
       const speed = p.velocity.length();
       const step = Math.min(speed * dt, p.weapon.maxRange - p.traveled);
@@ -180,20 +176,25 @@ export class ProjectileSystem {
         // O resultado do raycast é reaproveitado: copia antes que o onHit dispare outro.
         _hitNormal.copy(hit.normal);
         _hitAt.copy(hit.point).addScaledVector(_hitNormal, 0.05);
+        // Superfície parada (colisor sem corpo: parede, chão, prédio) pode ficar com a marca do tiro; um Mech, não (a marca sairia andando).
+        const onStatic = this.fx !== undefined && (hit.collider.parent?.() ?? null) === null;
         this.onHit?.(hit, _dir, hitDamage(p.weapon, p.traveled + hit.distance), p.owner, p.weapon, p.traveled + hit.distance);
 
         // O impacto é da arma (`fx/impactFx.ts`): faíscas verdes, raios azuis, flocos de gelo, anéis de EMP ou faíscas de metal.
         for (const o of IMPACT_FX[p.weapon.id]) this.particles.burst(_hitAt, _hitNormal, o);
-        this.trailEnd(p, _hitAt);
+        if (this.fx) {
+          this.fx.impact(_hitAt, _hitNormal, p.weapon, p.hostile, onStatic);
+          this.fx.landed(p.fxTrail, p.origin, _hitAt, p.weapon, p.hostile);
+        }
         this.kill(p);
         continue;
       }
 
       p.prev.copy(p.pos);
       p.pos.addScaledVector(_dir, step);
-      this.trailEnd(p, p.pos);
       // Alguns tiros deixam um rastro de partículas no caminho (`fx/impactFx.ts`): o gelo, uma bruma de frio a cada metro e um floco pequeno a cada 3,5 m; o obus, um fiapo de fumaça a cada 3 m.
-      const trail = p.weapon.tracer === 'ice' || p.weapon.tracer === 'shell' ? TRAIL_FX[p.weapon.tracer] : undefined;
+      // Com o `fx` (o cliente), o obus deixa a fita de fumaça dele (`fx/Ribbons.ts`) no lugar dos fiapos; a bruma do gelo continua.
+      const trail = p.weapon.tracer === 'ice' || (p.weapon.tracer === 'shell' && !this.fx) ? TRAIL_FX[p.weapon.tracer] : undefined;
       if (trail) {
         for (const t of trail) {
           if (Math.floor((p.traveled + step) / t.every) === Math.floor(p.traveled / t.every)) continue;
@@ -202,7 +203,10 @@ export class ProjectileSystem {
       }
       p.traveled += step;
       p.life -= dt;
-      if (p.life <= 0) this.kill(p);
+      if (p.life <= 0) {
+        this.fx?.landed(p.fxTrail, p.origin, p.pos, p.weapon, p.hostile);
+        this.kill(p);
+      }
     }
   }
 
@@ -213,14 +217,16 @@ export class ProjectileSystem {
       if (p.body.visible) p.body.position.copy(p.mesh.position);
       // A cauda cresce com o caminho já andado: nasce na boca em vez de atravessar o robô que atirou.
       if (p.tail > 0) p.mesh.scale.z = growingLength(p.tail, p.traveled);
+      this.fx?.flying(p.fxTrail, p.mesh.position, p.weapon, p.hostile);
     }
   }
 
   /** Some com todos os projéteis em voo (rodada nova). */
   clear(): void {
     for (const p of this.pool) {
-      p.life = p.trailLife = 0;
-      p.mesh.visible = p.trail.visible = p.body.visible = false;
+      p.life = 0;
+      p.fxTrail = -1;
+      p.mesh.visible = p.body.visible = false;
     }
   }
 
@@ -239,16 +245,9 @@ export class ProjectileSystem {
     this.particles.burst(origin, _eject.copy(_side).multiplyScalar(0.9).addScaledVector(UP, 0.5), fx.casing);
   }
 
-  private trailEnd(p: Projectile, end: THREE.Vector3): void {
-    if (p.weapon.tracer !== 'rail') return;
-    const positions = p.trail.geometry.getAttribute('position');
-    positions.setXYZ(1, end.x, end.y, end.z);
-    positions.needsUpdate = true;
-  }
-
   private kill(p: Projectile): void {
-    p.trailLife = p.weapon.tracer === 'rail' ? 0.12 : 0;
     p.life = 0;
+    p.fxTrail = -1;
     p.mesh.visible = false;
     p.body.visible = false;
   }

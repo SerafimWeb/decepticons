@@ -1,6 +1,7 @@
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import type { ParticleSystem } from '../fx/ParticleSystem';
+import type { ShotFx } from '../fx/WeaponFx';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { weapon, type WeaponStats } from './weapons';
 
@@ -18,6 +19,8 @@ interface Rocket {
   target: GuideTarget | null;
   /** Ticks de voo: o rastro dos mísseis leves sai de três em três (são muitos). */
   age: number;
+  /** O rastro em fita deste míssil no `ShotFx` (-1 = sem rastro). */
+  fxTrail: number;
 }
 
 /** O que o míssil teleguiado precisa saber de um alvo: se vive e onde está (posição de simulação e altura, sem rig nem 3D: roda igual no servidor). Um `MechBase` serve. */
@@ -58,6 +61,9 @@ export class RocketSystem {
   /** Um foguete saiu (o servidor do multiplayer manda como evento). */
   onFired?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
 
+  /** Quem desenha o clarão, a fumaça e o fogo do motor em fita (P160; só o cliente liga). Com ele, o rastro de partículas sai. */
+  fx?: ShotFx;
+
   /** Quem o míssil teleguiado trava na hora do disparo (a partida escolhe: inimigo mais centrado à frente, à vista). Sem isto, voa reto. */
   acquire?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => GuideTarget | null;
 
@@ -80,10 +86,10 @@ export class RocketSystem {
       const mesh = new THREE.Mesh(geo, mat);
       mesh.visible = false;
       scene.add(mesh);
-      this.pool.push({ mesh, prev: new THREE.Vector3(), pos: new THREE.Vector3(), velocity: new THREE.Vector3(), life: 0, weapon: weapon('rockets'), target: null, age: 0 });
+      this.pool.push({ mesh, prev: new THREE.Vector3(), pos: new THREE.Vector3(), velocity: new THREE.Vector3(), life: 0, weapon: weapon('rockets'), target: null, age: 0, fxTrail: -1 });
     }
     for (let i = 0; i < MICRO_SIZE; i++) {
-      this.micro.push({ mesh: null, prev: new THREE.Vector3(), pos: new THREE.Vector3(), velocity: new THREE.Vector3(), life: 0, weapon: weapon('swarm'), target: null, age: 0 });
+      this.micro.push({ mesh: null, prev: new THREE.Vector3(), pos: new THREE.Vector3(), velocity: new THREE.Vector3(), life: 0, weapon: weapon('swarm'), target: null, age: 0, fxTrail: -1 });
     }
     // O míssil leve: um corpo fino e curto (o foguete é 0,26 x 0,9 m), o mesmo laranja quente, deitado ao longo de Z.
     this.microMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.05, 0.05, 0.55, 5).rotateX(Math.PI / 2), mat, MICRO_SIZE);
@@ -100,6 +106,7 @@ export class RocketSystem {
     if (!r) {
       if (!w.salvo) return;
       r = list.reduce((a, q) => (q.life < a.life ? q : a)); // o pool do lançador leve cheio: o míssil mais velho cede o lugar (sumir o novo seria pior)
+      this.fx?.landed(r.fxTrail, r.pos, r.pos, r.weapon, false);
     }
     r.pos.copy(origin);
     r.prev.copy(origin);
@@ -115,6 +122,7 @@ export class RocketSystem {
       r.mesh.lookAt(_look.copy(origin).add(dir));
       r.mesh.visible = true;
     }
+    r.fxTrail = this.fx ? this.fx.fired(origin, dir, w, false) : -1;
   }
 
   fixedUpdate(dt: number): void {
@@ -139,8 +147,9 @@ export class RocketSystem {
     r.prev.copy(r.pos);
     r.pos.addScaledVector(r.velocity, dt);
     r.life -= dt;
-    // O míssil leve deixa uma partícula a cada três ticks (são dezenas no ar); o foguete e o teleguiado, duas por tick.
-    if (!r.weapon.salvo || r.age++ % 3 === 0) {
+    // O míssil leve deixa uma partícula a cada três ticks (são dezenas no ar); o foguete e o teleguiado, duas por tick. Com o `fx` (o cliente), o
+    // rastro é a fita de fumaça e fogo dele, e as partículas não saem.
+    if (!this.fx && (!r.weapon.salvo || r.age++ % 3 === 0)) {
       this.particles.burst(_back.copy(r.pos).addScaledVector(_dir, -0.6), _dir.negate(), { count: r.weapon.salvo ? 1 : 2, color: r.weapon.guide ? TRAIL_GUIDED : TRAIL, speed: 3, life: r.weapon.salvo ? 0.3 : 0.35, spread: 0.4, gravity: -1 });
     }
     if (r.life <= 0) this.explode(r, _at.copy(r.pos));
@@ -152,6 +161,7 @@ export class RocketSystem {
       r.mesh.position.lerpVectors(r.prev, r.pos, alpha);
       // O teleguiado curva: o corpo acompanha a direção em que ele anda.
       if (r.weapon.guide) r.mesh.lookAt(_look.copy(r.mesh.position).add(r.velocity));
+      this.fx?.flying(r.fxTrail, r.mesh.position, r.weapon, false);
     }
     // Os mísseis leves: uma instância por míssil vivo, deitada na direção do voo.
     let n = 0;
@@ -160,6 +170,7 @@ export class RocketSystem {
       _p.lerpVectors(r.prev, r.pos, alpha);
       _q.setFromUnitVectors(Z_AXIS, _dir.copy(r.velocity).normalize());
       this.microMesh.setMatrixAt(n++, _m.compose(_p, _q, _s));
+      this.fx?.flying(r.fxTrail, _p, r.weapon, false);
     }
     this.microMesh.count = n;
     this.microMesh.instanceMatrix.needsUpdate = true;
@@ -177,9 +188,13 @@ export class RocketSystem {
     for (const r of this.pool) {
       r.life = 0;
       r.target = null;
+      r.fxTrail = -1;
       if (r.mesh) r.mesh.visible = false;
     }
-    for (const r of this.micro) r.life = 0;
+    for (const r of this.micro) {
+      r.life = 0;
+      r.fxTrail = -1;
+    }
     this.microMesh.count = 0;
   }
 
@@ -214,6 +229,8 @@ export class RocketSystem {
     r.life = 0;
     if (r.mesh) r.mesh.visible = false;
     _dir.copy(r.velocity).normalize();
+    this.fx?.landed(r.fxTrail, at, at, r.weapon, false);
+    r.fxTrail = -1;
     this.onExplode?.(at, _dir, r.owner, r.weapon);
   }
 }
