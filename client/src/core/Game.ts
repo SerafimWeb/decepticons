@@ -537,6 +537,13 @@ export class Game {
       };
       b.onLand = () => this.audio.playAndroidStep(this.nearness(b));
     }
+    // O lançamento explosivo dos bots (P160 parte 4): o som da arma, mais baixo de longe (sem clipe na tabela, fica mudo: o rastro e a explosão avisam).
+    const lancou = (b: MechBase, w: WeaponStats): void => {
+      const near = this.nearness(b);
+      if (near > 0.05) this.audio.playArma(w.id, near * 0.8);
+    };
+    this.bots.onLaunch = lancou;
+    if (this.match.allies) this.match.allies.onLaunch = lancou;
     this.roundHud = new RoundHud(this.mech, this.gameMode === 'deathmatch');
     // Botão na tela de pausa; a calibração tem camada própria e não retoma o jogo.
     new MouseCalibration(this.settings, [

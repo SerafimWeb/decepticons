@@ -18,6 +18,30 @@
 
 **Próxima sessão começa com:** o que o Comandante achar do equilíbrio dos cabos; senão, a **parte B** (o prédio com a segunda entrada e o manifestante), e o **quadro de luz** do porto (P164) ligado no `lampadas`.
 
+## LANDING E PRIMEIRO ACESSO — entrega P169 (Codex, 16/10)
+
+Branch de origem `codex/landing-primeiro-acesso`, pasta `.tmp/wt-codex-landing`; `main` fc2d1ba integrada, preservando os explosivos dos bots. A disponibilização ocorre pelo merge desta revisão na `main` e pelo publicador com checksum. Não considerar o branch isolado como publicado. Território: landing, tema/painel público, verificações do site, texto/CSS do primeiro acesso e `client/public/press/`.
+
+Landing com abertura industrial preto/amarelo, câmeras interativas, seis sistemas de combate, três chassis com números e links da montagem real, modos e guia inicial. Fotografias geradas com os rigs do Vector-09, Marauder e Colossus-V4; thumbnails de cenário são capturas existentes. A Oficina mantém as tabelas extensas. A fila interna de decisões e os trechos operacionais deixam de ser republicados; o painel local conserva esses dados. Registro literal do dono preservado.
+
+Validação inicial: `npm run check` verde (2.420 testes); desktop 1440×1000/1280×720 e celular 390×844 sem overflow, imagens ausentes ou erro JavaScript. Primeiro acesso e expansão do console conferidos. Revisão cruzada realizada; foco de teclado dos CTAs corrigido. O hook do push revalida a integração final. Provas em `medicoes/LANDING_P169.md` e `arte/*landing-codex*`. Nenhuma alteração de simulação ou rede.
+
+Próxima sessão começa pelo julgamento visual do Comandante e pela medição do funil de primeira partida; ganho de conversão/retorno ainda não medido. Caminhos: raiz de `cybermech.online` e `/jogar/?primeira`.
+
+## OS REBELDES LANÇAM EXPLOSIVOS: salvas de foguetes e granadas contra você — Claude, 16/10 (branch `claude/bots-explosivos`, P160 parte 4)
+
+**A ordem (16/10):** *"bote pra torar na iteração das armas"*.
+
+**Feito:** o Mech bot lança a arma **explosiva** da mão esquerda em **salvas** (`BotController.useExplosives`, `BotSystem.launch`): o casulo de foguetes de fábrica do Vector-09 inimigo (que nunca era usado), e o que o esquadrão der (granadas, teleguiado, lançador leve, cruzador, chuva), pelos mesmos sistemas do jogador. Dois tiros por salva, pausa de 7 s no normal (pela dificuldade e pela personalidade), mira no pé de onde o alvo vai estar, nunca de perto. O lançamento do bot toca o som da arma, mais baixo de longe. O editor de esquadrão passou a oferecer as armas explosivas na mão esquerda do bot.
+
+**Medido (90 s, jogador parado):** offline padrão, 50 explosões em vez de 3 e o jogador apanha menos (os aliados também lançam); Arena do servidor, +34% de dano. As fotos da partida padrão foram refeitas (`esquadraoPadrao.test.ts`, como o teste manda).
+
+**Provas:** 7 testes e **8 mutações à mão, 8 pegas** (`combat/botExplosivos.test.ts`: a pausa por dificuldade e personalidade, a distância mínima (também com o rebelde colado a 9 m: a mutação que tirava a regra escapou até esse teste existir), salvas de até 2 a cada 0,3 s com a pausa entre elas e nunca de perto, o mesmo jogo dá os mesmos lançamentos, desligado não lança, o esquadrão com granadas lança granadas).
+
+**Onde o Comandante confere:** jogar a Arena: os rebeldes soltam pares de foguetes (fita de fumaça e bola de fogo); um esquadrão com granadas na mão esquerda dos rebeldes (editor de esquadrão).
+
+**Próxima sessão começa com:** o que o Comandante disser jogando; os bots com o laser.
+
 ## O LANÇAMENTO DE HOJE (P168): o que está de pé, o que segura e o que é do Comandante — Claude, 16/10 (branch `claude/lancamento-lista`)
 
 **A ordem (16/10):** *"vamos lançar nosso jogo hoje ainda"*. Verificado **hoje às 14h50**, não de memória:

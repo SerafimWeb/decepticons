@@ -17,7 +17,12 @@ import { escolherRearguarda } from './tatica';
 import { parametrosDaTatica, type TaticaId } from './taticas';
 import type { CombatSystem } from './CombatSystem';
 import type { ProjectileSystem } from './ProjectileSystem';
-import { weapon, type Tier, type WeaponId } from './weapons';
+import type { BarrageSystem } from './BarrageSystem';
+import type { CruiseSystem } from './CruiseSystem';
+import type { GrenadeSystem } from './GrenadeSystem';
+import type { RocketSystem } from './RocketSystem';
+import { applySpread, spreadAt, type Spread } from './spread';
+import { weapon, type Tier, type WeaponId, type WeaponStats } from './weapons';
 import { REPAIR_RATE } from './repair';
 import { TechnicianController } from './TechnicianController';
 import type { Respawner } from './Respawner';
@@ -51,6 +56,8 @@ export const RADIO_RANGE = 80;
 const RADIO_CALLOUT_S = 8;
 
 const _muzzle = new THREE.Vector3();
+const _blastDir = new THREE.Vector3();
+const _blastSpread: Spread = { x: 0, y: 0 };
 
 /**
  * O que um robô do esquadrão tem de próprio (P91, `sim/esquadrao.ts`): o corpo (os números do chassi e a silhueta), a arma principal e a
@@ -65,7 +72,20 @@ export interface BotKit {
   dificuldade?: Difficulty | null;
 }
 
+/** Os lançadores da partida que os bots usam para as armas explosivas da mão esquerda (P160 parte 4). */
+export interface BotLaunchers {
+  rockets: RocketSystem;
+  grenades: GrenadeSystem;
+  cruise: CruiseSystem;
+  barrage: BarrageSystem;
+}
+
 export interface BotSystemOptions {
+  /**
+   * Os lançadores da partida (P160 parte 4): com eles, os Mechs bots lançam a arma **explosiva** da mão esquerda (o casulo de foguetes de fábrica do
+   * Vector-09, o teleguiado, as granadas, o lançador leve, o cruzador, a chuva) em salvas (`BotController.useExplosives`). Sem eles, só a energia.
+   */
+  launchers?: BotLaunchers;
   /**
    * O corpo de malha importada de um chassi (Marauder, Lancer, Bastion...), se o cliente tem o arquivo pronto: o esquadrão (P91) escolhe o
    * chassi, e sem isto todo bot nascia como o Vector-09 com os números do chassi certo e a silhueta errada (achado do Comandante, 13/10).
@@ -219,6 +239,8 @@ export class BotSystem {
         brain.leash = tatica.leash;
       }
       brain.useSecondary = !!kit?.secundaria;
+      // As armas explosivas da mão esquerda (P160 parte 4): o Mech bot lança a dele em salvas (o andróide e o titã seguem como estavam).
+      brain.useExplosives = !!o.launchers && !android && !titan && mech.loadout.secondary?.kind === 'ammo';
       brain.home.copy(home);
       if (o.respawn !== false) {
         o.respawner.track(mech, titan ? TITA_RESPAWN_S : BOT_RESPAWN_S, () => {
@@ -404,6 +426,26 @@ export class BotSystem {
   }
 
   /** Um bot levou tiro de um alvo que ele caça: se estava só patrulhando, vira e vai atrás. */
+  /** Um bot lançou a arma explosiva da mão esquerda (o cliente toca o som do lançamento, mais baixo de longe). */
+  onLaunch?: (mech: MechBase, w: WeaponStats) => void;
+
+  /**
+   * Um tiro da salva explosiva de `mech` (P160 parte 4), da boca da mão esquerda (`_muzzle`) até onde o cérebro mirou (`blastAim`), pelo mesmo sistema
+   * do jogador: a granada em arco, o cruzador, a chuva, o lançador leve com o desvio da salva, o foguete e o teleguiado.
+   */
+  private launch(mech: MechBase, brain: BotController, w: WeaponStats): void {
+    const l = this.o.launchers;
+    if (!l) return;
+    _blastDir.subVectors(brain.blastAim, _muzzle);
+    if (_blastDir.lengthSq() < 1e-8) return;
+    _blastDir.normalize();
+    if (w.lob) l.grenades.fire(_muzzle, brain.blastAim, mech.collider, w);
+    else if (w.cruise) l.cruise.fire(_muzzle, _blastDir, brain.blastAim, mech.collider, w);
+    else if (w.barrage) l.barrage.fire(_muzzle, _blastDir, brain.blastAim, mech.collider, w);
+    else l.rockets.fire(_muzzle, w.salvo ? applySpread(_blastDir, spreadAt(brain.blastShots++, w.salvo.cone, _blastSpread)) : _blastDir, mech.collider, w);
+    this.onLaunch?.(mech, w);
+  }
+
   onDamaged(mech: MechBase, shooter: MechBase | undefined): void {
     if (!shooter || !this.targets.includes(shooter)) return;
     this.brainOf(mech)?.alert(shooter);
@@ -562,8 +604,11 @@ export class BotSystem {
       if (brain instanceof BotController && brain.wantsToFireSecondary && mech.loadout.secondary) {
         const w2 = mech.loadout.secondary;
         mech.simMuzzle(_muzzle, 'leftHand');
-        this.projectiles.fire(_muzzle, brain.shotDir, mech.collider, true, w2);
-        this.particles.burst(_muzzle, brain.shotDir, { count: 6, color: MUZZLE_COLOR, speed: 10, life: 0.12, spread: 0.5, gravity: 0 });
+        if (w2.kind === 'ammo') this.launch(mech, brain, w2);
+        else {
+          this.projectiles.fire(_muzzle, brain.shotDir, mech.collider, true, w2);
+          this.particles.burst(_muzzle, brain.shotDir, { count: 6, color: MUZZLE_COLOR, speed: 10, life: 0.12, spread: 0.5, gravity: 0 });
+        }
         mech.onFireMount('leftHand', w2);
       }
       if (!brain.wantsToFire) continue;

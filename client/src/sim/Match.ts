@@ -110,6 +110,8 @@ export interface MatchOptions {
   power?: PowerSpec;
   /** Dano ligado (padrão). No cliente do multiplayer, desligado: quem tira vida é o servidor. */
   damage?: boolean;
+  /** Os bots lançam a arma explosiva da mão esquerda (foguetes, granadas…) em salvas (P160 parte 4). Padrão: sim. */
+  explosivos?: boolean;
   /** Duração da rodada (s). No cliente do multiplayer, infinita: a rodada é a do servidor. */
   roundS?: number;
   /** Regra da missão. `deathmatch` preserva a arena atual; os objetivos estreiam offline. */
@@ -321,6 +323,8 @@ export class Match {
     const pontos = (l: readonly SlotDoPlano[]) => l.map((s) => s.ponto);
     const nomes = (l: readonly SlotDoPlano[]) => l.map((s) => s.nome);
     const rebeldes = plano?.inimigos;
+    // Os bots lançam a arma explosiva da mão esquerda em salvas (P160 parte 4), pelos mesmos lançadores do jogador; `explosivos: false` desliga.
+    const lancadores = o.explosivos === false ? null : { rockets: this.rockets, grenades: this.grenades, cruise: this.cruise, barrage: this.barrage };
     this.bots = new BotSystem({
       rigDoChassi: o.rigDoChassi,
       scene: o.scene,
@@ -328,6 +332,7 @@ export class Match {
       combat: this.combat,
       projectiles: this.projectiles,
       particles: o.particles,
+      ...(lancadores ? { launchers: lancadores } : {}),
       respawner: this.respawner,
       ...(rebeldes
         ? {
@@ -364,6 +369,7 @@ export class Match {
             combat: this.combat,
             projectiles: this.projectiles,
             particles: o.particles,
+            ...(lancadores ? { launchers: lancadores } : {}),
             respawner: this.respawner,
             escort: this.players,
             tatica: o.tatica,

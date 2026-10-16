@@ -7,6 +7,8 @@ import type { MechBase, MechInput } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { setLocalMove, turnToward, wrapAngle, yawOf } from './steer';
 import { papelTatico, type PapelTatico } from './tatica';
+import { RocketLauncher } from './trigger';
+import type { WeaponStats } from './weapons';
 
 export type SquadOrder = 'follow' | 'focus' | 'hold';
 export type BotState = 'patrol' | 'chase' | 'attack' | 'retreat' | 'cool' | 'stalk' | 'search';
@@ -148,6 +150,25 @@ const WEAPON_RANGE_FACTOR = 1.25;
 const WEAPON_MIN_STAND_OFF = 10;
 /** Só atira com o torso apontado para o alvo dentro deste ângulo. */
 const FIRE_CONE_RAD = 0.12;
+/**
+ * A salva explosiva dos rebeldes (P160 parte 4): quantos tiros por salva (o lançador leve solta o carregador inteiro), a pausa entre salvas na dificuldade
+ * normal (s; a fácil espera mais, a difícil menos, e a personalidade agressiva encurta) e a espera depois de ver o alvo pela primeira vez.
+ */
+const VOLLEY_SHOTS = 2;
+const VOLLEY_PAUSE_S = 7;
+const VOLLEY_FIRST_S = 2.5;
+/** Abre o cone de mira da salva (a explosão perdoa um pouco de pontaria). */
+const VOLLEY_CONE_RAD = FIRE_CONE_RAD * 3;
+
+/** A pausa entre duas salvas explosivas de um bot (s): 7 s no normal, mais na fácil, menos na difícil; a personalidade agressiva encurta. */
+export function volleyPauseS(skill: BotSkill, persona: BotPersona): number {
+  return (VOLLEY_PAUSE_S * (skill.burstPauseS / BOT_SKILL_NORMAL.burstPauseS)) / persona.aggression;
+}
+
+/** A menor distância (m) a que o bot lança a arma explosiva `w`: a explosão não pode pegar ele mesmo. */
+export function volleyMinDistance(w: WeaponStats): number {
+  return w.blastRadius * 1.6 + 6;
+}
 const LOSE_TARGET_S = 2.5;
 const WAYPOINT_REACHED = 4;
 const RETREAT_S = 3;
@@ -220,8 +241,18 @@ export class BotController {
   rearguard = false;
   /** O setor da retaguarda (o ponto de nascimento). */
   readonly home = new THREE.Vector3();
-  /** Quer atirar a arma da mão esquerda neste tick (mesma mira de `shotDir`). */
+  /** Quer atirar a arma da mão esquerda neste tick (mesma mira de `shotDir`; a arma explosiva mira em `blastAim`). */
   wantsToFireSecondary = false;
+  /**
+   * Lança as armas **explosivas** da mão esquerda (foguetes, teleguiado, granadas, lançador leve, cruzador, chuva) em **salvas** (P160 parte 4): o carregador
+   * de verdade (`RocketLauncher`), a pausa entre salvas pela dificuldade e pela personalidade, e nunca perto demais (a explosão pegaria o próprio bot).
+   * Quem liga é o `BotSystem`.
+   */
+  useExplosives = false;
+  /** Onde a arma explosiva deste tick deve cair: o pé de onde o alvo vai estar quando o tiro chegar (válido com `wantsToFireSecondary`). */
+  readonly blastAim = new THREE.Vector3();
+  /** Número do tiro explosivo (o desvio da salva do lançador leve sai dele, sem sorteio). */
+  blastShots = 0;
   state: BotState = 'patrol';
   /**
    * Vaga de ataque (o diretor do `BotSystem` distribui; sem diretor, sempre tem): sem ela o bot espera
@@ -301,6 +332,13 @@ export class BotController {
   private retreatCooldown = 0;
   private fireCooldown = 0;
   private secondaryCooldown = 0;
+  /** A arma explosiva: o carregador, quantos tiros faltam na salva, a pausa até a próxima salva e o intervalo entre dois tiros dela. */
+  private launcher: RocketLauncher | null = null;
+  private volleyLeft = 0;
+  private volleyCooldown = VOLLEY_FIRST_S;
+  private volleyGap = 0;
+  /** Sorteio próprio da salva: não mexe na sequência das outras decisões do bot (as partidas de teste seguem iguais). */
+  private readonly blastRand: () => number;
   private burstLeft: number;
   private stuckTimer = STUCK_CHECK_S;
   private readonly stuckFrom = new THREE.Vector3();
@@ -319,6 +357,7 @@ export class BotController {
     public persona: BotPersona = PERSONAS.soldado,
   ) {
     this.rand = mulberry32(seed);
+    this.blastRand = mulberry32(seed ^ 0x5bd1e995);
     this.cover = new CoverSeeking(physics, mech);
     this.obstacles = new ObstacleSteering(physics, mech, seed % 2 ? -1 : 1);
     this.yaw = mech.yaw;
@@ -417,6 +456,10 @@ export class BotController {
     this.burstLeft = this.burstSize();
     this.fireCooldown = 0;
     this.secondaryCooldown = 0;
+    this.volleyLeft = 0;
+    this.volleyGap = 0;
+    this.volleyCooldown = VOLLEY_FIRST_S + this.blastRand() * 2;
+    this.launcher?.refill();
     this.retreatTimer = 0;
     this.tokenHeld = 0;
     this.tokenWait = 0;
@@ -863,10 +906,59 @@ export class BotController {
     }
   }
 
+  /**
+   * A salva explosiva (P160 parte 4). Com o alvo à vista, no alcance da arma e longe o bastante para a explosão não pegar o próprio bot, abre uma salva
+   * (dois tiros, ou o carregador inteiro do lançador leve) e solta um tiro a cada `fireInterval`, mirando **no pé de onde o alvo vai estar** quando o
+   * tiro chegar, com o erro da dificuldade em metros. Depois da salva, a pausa (7 s no normal, mais na fácil, menos na difícil e na personalidade
+   * agressiva). O carregador recarrega como o do jogador.
+   */
+  private volley(w: WeaponStats, t: MechBase, dist: number, facingOff: number): void {
+    const m = this.mech;
+    if (this.launcher?.weapon !== w) this.launcher = new RocketLauncher(w);
+    const l = this.launcher;
+    if (!m.canFireLeftHand) {
+      if (this.volleyLeft > 0) this.endVolley();
+      return;
+    }
+    if (this.volleyLeft === 0) {
+      const perto = volleyMinDistance(w);
+      const longe = Math.min(w.maxRange, VISION_RANGE);
+      if (this.volleyCooldown > 0 || !this.hasToken || dist < perto || dist > longe || facingOff > VOLLEY_CONE_RAD) return;
+      if (w.salvo ? l.ammo < w.magazine : l.ammo === 0) return;
+      this.volleyLeft = w.salvo ? w.magazine : Math.min(l.ammo, VOLLEY_SHOTS);
+      this.volleyGap = 0;
+    }
+    if (this.volleyGap > 0 || !l.tryFire()) return;
+    this.volleyLeft--;
+    this.volleyGap = w.fireInterval;
+    const tp = t.simPosition;
+    const flight = dist / w.speed;
+    const erro = this.skill.aimErrorRad * this.profile.aimErrorScale * dist;
+    this.blastAim
+      .set(tp.x, tp.y + t.stats.height * 0.2, tp.z)
+      .addScaledVector(t.velocity, flight * this.skill.leadFactor);
+    this.blastAim.x += (this.blastRand() * 2 - 1) * erro;
+    this.blastAim.z += (this.blastRand() * 2 - 1) * erro;
+    this.wantsToFireSecondary = true;
+    if (this.volleyLeft === 0) this.volleyCooldown = volleyPauseS(this.skill, this.persona);
+  }
+
+  /** Fecha a salva e começa a pausa até a próxima. */
+  private endVolley(): void {
+    this.volleyLeft = 0;
+    this.volleyCooldown = volleyPauseS(this.skill, this.persona);
+  }
+
   private aimAndFire(dt: number): void {
     const m = this.mech;
     this.fireCooldown -= dt;
     this.secondaryCooldown -= dt;
+    // O carregador da arma explosiva recarrega e as pausas da salva correm o tempo todo, com ou sem alvo.
+    this.launcher?.fixedUpdate(dt);
+    this.volleyCooldown -= dt;
+    this.volleyGap -= dt;
+    // A salva que empacou (perdeu o alvo de vista, a vaga ou o braço no meio) acaba ali: o resto não sai depois furando a pausa.
+    if (this.volleyLeft > 0 && this.volleyGap < -0.5) this.endVolley();
     const t = this.target;
     const engaged = this.state === 'chase' || this.state === 'attack' || this.state === 'retreat';
     if (!t || !engaged || !this.targetVisible || this.visibleFor < this.skill.reactionS) {
@@ -901,8 +993,10 @@ export class BotController {
     const naMira = !(dist > FIRE_RANGE || facingOff > FIRE_CONE_RAD || !this.hasToken);
     const primario = naMira && this.fireCooldown <= 0 && m.canFirePrimary;
     // A mão esquerda (P108 b) tem a cadência e o alcance da arma dela e atira junto, na mesma mira; sem arma secundária no esquadrão, nada disto roda.
-    const w2 = this.useSecondary ? m.loadout.secondary : null;
+    const w2 = this.useSecondary && m.loadout.secondary?.kind !== 'ammo' ? m.loadout.secondary : null;
     const secundario = !!w2 && naMira && this.secondaryCooldown <= 0 && m.canFireLeftHand && dist <= w2.maxRange;
+    const explosiva = this.useExplosives && m.loadout.secondary?.kind === 'ammo' ? m.loadout.secondary : null;
+    if (explosiva) this.volley(explosiva, t, dist, facingOff);
     if (!primario && !secundario) return;
 
     // Erro de mira: gira a direção um pouco em yaw e em pitch.
