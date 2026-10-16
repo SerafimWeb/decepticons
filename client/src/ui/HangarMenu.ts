@@ -74,7 +74,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   cruise: 'Munição · pesado · míssil cruzador: sobe em arco e MERGULHA no ponto da mira, até 420 m, por cima do cenário baixo · 90 de dano e 9 m de explosão · não guia: quem corre escapa · um por carga, 6 s de recarga · dois acertos nunca bastam',
   laser: 'Energia · feixe instantâneo em pulsos (6 de dano a cada 0,13 s), sem projétil para desviar · dano cheio até 180 m e 70% aos 360 m · segure a mira no alvo · o calor decide a duração do feixe (~6 s)',
   blaster: 'Energia · leve · alcance curto',
-  shotgun: 'Energia · dano alto de perto, some aos 45 m · um projétil só',
+  shotgun: 'Energia · 9 balins num cone · dano alto de perto, espalha de longe (50 m)',
   barrage: 'Munição · sobe e cai em chuva de 8 bombas num círculo de 9 m · aviso no chão',
   chainsaw: 'Corpo a corpo · só corta encostado',
   arc: WEAPON_HINT_NOVAS.arc,

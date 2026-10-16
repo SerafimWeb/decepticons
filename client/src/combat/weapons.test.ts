@@ -154,12 +154,27 @@ describe('escopeta (Lancer): dano alto de perto, alcance menor que o do blaster'
     expect(S.maxRange).toBeLessThan(B.maxRange);
   });
 
-  it('de perto bate mais que o plasma e que o blaster; longe, quase nada', () => {
-    expect(hitDamage(S, 3)).toBeGreaterThan(hitDamage(P, 3) * 2);
-    expect(hitDamage(S, 3)).toBeGreaterThan(hitDamage(B, 3) * 10);
-    expect(hitDamage(S, S.maxRange)).toBeLessThanOrEqual(Math.round(S.damage * 0.1));
+  it('de perto o disparo inteiro (os balins) bate mais que o plasma e que o blaster; longe, cada balin quase nada e o cone já não cabe num Mech', () => {
+    const disparo = (d: number) => S.pellets!.count * hitDamage(S, d);
+    expect(disparo(3)).toBeGreaterThan(hitDamage(P, 3) * 2);
+    expect(disparo(3)).toBeGreaterThan(hitDamage(B, 3) * 10);
+    expect(hitDamage(S, S.maxRange)).toBeLessThanOrEqual(Math.round(S.damage * 0.25));
     expect(hitDamage(S, 60)).toBe(hitDamage(S, S.maxRange)); // passou do alcance: não piora nem melhora
-    expect(hitDamage(S, 40)).toBeLessThan(hitDamage(P, 40));
+    // Aos 40 m o cone tem mais de 4 m de diâmetro (um Mech tem ~2 m de largura): no máximo metade dos balins pega, e o disparo bate menos que um plasma.
+    expect(2 * 40 * Math.tan(S.pellets!.cone)).toBeGreaterThan(4);
+    expect((S.pellets!.count / 2) * hitDamage(S, 40)).toBeLessThan(hitDamage(P, 40) * 1.5);
+  });
+
+  it('balins (P160): nove num cone de ~3,4°, cada um com o dano do nível; o disparo de perto fica entre 50 e 75 em todo nível', () => {
+    expect(S.pellets).toEqual({ count: 9, cone: 0.06 });
+    for (const t of [0, 1, 2] as const) {
+      const w = weapon('shotgun', t);
+      expect(w.pellets).toBe(S.pellets);
+      expect(w.pellets!.count * w.damage).toBeGreaterThanOrEqual(50);
+      expect(w.pellets!.count * w.damage).toBeLessThanOrEqual(75);
+    }
+    // Nenhuma outra arma sai em balins (a regra é da escopeta).
+    for (const id of WEAPON_IDS) if (id !== 'shotgun') expect(weapon(id).pellets, id).toBeUndefined();
   });
 
   it('sozinha, de perto, derruba o torso de um Mech mais rápido que o plasma, sem passar de 2,5 s no MK III', () => {

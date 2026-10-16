@@ -8,6 +8,7 @@ import { buildSlugGeometry, buildSteelMaterial, KINETIC, SLUG_TAIL, STEEL } from
 import { MUZZLE_FX } from '../fx/muzzleFx';
 import { buildStreakGeometry, buildStreakMaterial, growingLength, STREAK_HEAD_WIDTH, streakLength } from '../fx/ShotStreak';
 import type { ShotFx } from '../fx/WeaponFx';
+import { applySpread, spreadAt, type Spread } from './spread';
 import { hitDamage, weapon, type WeaponStats } from './weapons';
 
 interface Projectile {
@@ -39,6 +40,8 @@ const _hitNormal = new THREE.Vector3();
 const _look = new THREE.Vector3();
 const _side = new THREE.Vector3();
 const _eject = new THREE.Vector3();
+const _pellet = new THREE.Vector3();
+const _spread: Spread = { x: 0, y: 0 };
 const UP = new THREE.Vector3(0, 1, 0);
 
 /**
@@ -118,9 +121,27 @@ export class ProjectileSystem {
    */
   fire(origin: THREE.Vector3, dir: THREE.Vector3, owner?: RAPIER.Collider, hostile = false, w: WeaponStats = weapon('plasma')): void {
     this.onFired?.(origin, dir, owner, w);
+    // A escopeta (P160) sai em balins: um projétil por balin, no desenho fixo do cone (`Pellets`); um só evento de tiro e um só clarão.
+    let first: Projectile | undefined;
+    const pellets = w.pellets;
+    if (!pellets) first = this.launch(origin, dir, owner, hostile, w);
+    else {
+      for (let k = 0; k < pellets.count; k++) {
+        const p = this.launch(origin, applySpread(_pellet.copy(dir), spreadAt(k, pellets.cone, _spread)), owner, hostile, w);
+        first ??= p;
+      }
+    }
+    if (!first) return;
+    this.muzzle(origin, dir, w);
+    first.fxTrail = this.fx ? this.fx.fired(origin, dir, w, hostile) : -1;
+  }
+
+  /** Um projétil do pool sai de `origin` rumo a `dir` (unitária). Pool cheio: o tiro não sai. */
+  private launch(origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, hostile: boolean, w: WeaponStats): Projectile | undefined {
     let p: Projectile | undefined;
     for (const q of this.pool) if (q.life <= 0) { p = q; break; }
-    if (!p) return;
+    if (!p) return undefined;
+    p.fxTrail = -1;
     p.pos.copy(origin);
     p.prev.copy(origin);
     p.origin.copy(origin);
@@ -158,8 +179,7 @@ export class ProjectileSystem {
       p.body.position.copy(origin);
       p.body.quaternion.copy(p.mesh.quaternion);
     }
-    this.muzzle(origin, dir, w);
-    p.fxTrail = this.fx ? this.fx.fired(origin, dir, w, hostile) : -1;
+    return p;
   }
 
   fixedUpdate(dt: number): void {
