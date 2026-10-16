@@ -218,11 +218,98 @@
       const forte = document.createElement('b');
       forte.textContent = 'Ainda NÃO está no jogo publicado. ';
       const code = document.createElement('code');
-      code.textContent = 'publica os sons';
+      code.textContent = 'publica o estúdio';
       t.append(forte, `${p.arquivos.length} arquivo(s) mudaram neste computador (${mp3} som(ns) processado(s), ${outros} de configuração). Para ir ao ar, diga ao Claude: `, code, '.');
       caixa.replaceChildren(t);
     } catch { caixa.hidden = true; }
   }
 
-  window.Estudio = { $, r2, ctx, msg, marcarSujo, api, postJson, tocar, parar, ritmo, decodificar, ganhoDeNormalizacao, desenharForma, Onda, iniciarAbas, atualizarPendencias };
+  // ── a interface de efeitos (as abas SONS e VOZES usam a mesma) ───────────────────────────────────
+  /** Os campos de efeitos: [sufixo do id, rótulo, atributos]. O ids são `#<prefixo>-<sufixo>`: a aba SONS os tem escritos no HTML (`ef`), a aba VOZES os monta (`vz`). */
+  const CAMPOS_DE_EFEITOS = [
+    ['velocidade', 'Velocidade (×)', { min: 0.5, max: 2, step: 0.01, valor: 1 }],
+    ['alvo', 'ou duração alvo (s)', { min: 0.05, step: 0.01, valor: '' }],
+    ['pitch', 'Tom (semitons)', { min: -12, max: 12, step: 0.5, valor: 0 }],
+    ['graves', 'Graves (dB)', { min: -12, max: 12, step: 0.5, valor: 0 }],
+    ['agudos', 'Agudos (dB)', { min: -12, max: 12, step: 0.5, valor: 0 }],
+    ['passa-alta', 'Passa-alta (Hz, 0 = off)', { min: 0, max: 2000, step: 10, valor: 0 }],
+    ['passa-baixa', 'Passa-baixa (Hz, 0 = off)', { min: 0, max: 16000, step: 100, valor: 0 }],
+    ['ruido', 'Redução de ruído (dB)', { min: 0, max: 40, step: 1, valor: 0 }],
+    ['saturacao', 'Saturação (0–1)', { min: 0, max: 1, step: 0.05, valor: 0 }],
+    ['compressor', 'Compressor', { opcoes: [['', 'desligado'], ['leve', 'leve'], ['medio', 'médio'], ['forte', 'forte']] }],
+    ['eco-ms', 'Eco (ms, 0 = off)', { min: 0, max: 400, step: 10, valor: 0 }],
+    ['eco-decay', 'Eco: intensidade (0–0,8)', { min: 0, max: 0.8, step: 0.05, valor: 0.3 }],
+    ['fade-in', 'Fade de entrada (ms)', { min: 0, max: 2000, step: 5, valor: 0 }],
+    ['reverso', 'tocar ao contrário', { caixa: true }],
+  ];
+
+  /** Lê, escreve e (se pedido) monta o painel de efeitos com o prefixo de ids dado. `ler()` devolve só o que está ligado (objeto vazio = sem efeitos). */
+  function efeitosUi(p) {
+    const id = (n) => `#${p}-${n}`;
+    const num = (n) => Number($(id(n)).value) || 0;
+    return {
+      ids: CAMPOS_DE_EFEITOS.map(([n]) => id(n)),
+      ler() {
+        const e = {};
+        const vel = num('velocidade');
+        if (vel && vel !== 1) e.velocidade = r2(vel);
+        if (num('pitch')) e.pitch_st = num('pitch');
+        if (num('graves')) e.graves_db = num('graves');
+        if (num('agudos')) e.agudos_db = num('agudos');
+        if (num('passa-alta') > 0) e.passa_alta_hz = num('passa-alta');
+        if (num('passa-baixa') > 0) e.passa_baixa_hz = num('passa-baixa');
+        if (num('ruido') > 0) e.ruido_db = num('ruido');
+        if (num('saturacao') > 0) e.saturacao = num('saturacao');
+        if ($(id('compressor')).value) e.compressor = $(id('compressor')).value;
+        if (num('eco-ms') > 0) { e.eco_ms = num('eco-ms'); e.eco_decay = num('eco-decay') || 0.3; }
+        if ($(id('reverso')).checked) e.reverso = true;
+        if (num('fade-in') > 0) e.fade_in_ms = num('fade-in');
+        return e;
+      },
+      escrever(e = {}) {
+        $(id('velocidade')).value = e.velocidade ?? 1;
+        $(id('pitch')).value = e.pitch_st ?? 0;
+        $(id('graves')).value = e.graves_db ?? 0;
+        $(id('agudos')).value = e.agudos_db ?? 0;
+        $(id('passa-alta')).value = e.passa_alta_hz ?? 0;
+        $(id('passa-baixa')).value = e.passa_baixa_hz ?? 0;
+        $(id('ruido')).value = e.ruido_db ?? 0;
+        $(id('saturacao')).value = e.saturacao ?? 0;
+        $(id('compressor')).value = e.compressor || '';
+        $(id('eco-ms')).value = e.eco_ms ?? 0;
+        $(id('eco-decay')).value = e.eco_decay ?? 0.3;
+        $(id('fade-in')).value = e.fade_in_ms ?? 0;
+        $(id('reverso')).checked = Boolean(e.reverso);
+      },
+      /** Monta os campos dentro de `container` (a aba SONS não usa: os campos já estão no HTML dela). */
+      montar(container) {
+        const linha = () => { const d = document.createElement('div'); d.className = 'campos'; container.append(d); return d; };
+        let atual = linha();
+        CAMPOS_DE_EFEITOS.forEach(([n, rotulo, attr], i) => {
+          if (i > 0 && i % 5 === 0) atual = linha();
+          const label = document.createElement('label');
+          if (attr.caixa) {
+            label.style.cssText = 'flex-direction:row;align-items:center;gap:6px';
+            const c = document.createElement('input');
+            c.type = 'checkbox'; c.id = `${p}-${n}`;
+            label.append(c, ` ${rotulo}`);
+          } else if (attr.opcoes) {
+            const s = document.createElement('select');
+            s.id = `${p}-${n}`;
+            for (const [v, t] of attr.opcoes) s.append(new Option(t, v));
+            label.append(rotulo, s);
+          } else {
+            const i2 = document.createElement('input');
+            i2.type = 'number'; i2.id = `${p}-${n}`;
+            for (const k of ['min', 'max', 'step']) if (attr[k] !== undefined) i2[k] = String(attr[k]);
+            i2.value = String(attr.valor ?? '');
+            label.append(rotulo, i2);
+          }
+          atual.append(label);
+        });
+      },
+    };
+  }
+
+  window.Estudio = { $, r2, ctx, msg, marcarSujo, api, postJson, tocar, parar, ritmo, decodificar, ganhoDeNormalizacao, desenharForma, Onda, iniciarAbas, atualizarPendencias, efeitosUi };
 })();

@@ -4,7 +4,7 @@
  * Fala com `/api/sons/...` (scripts/estudio/modulo-sons.mjs). Nomes de arquivo e de clipe só entram na tela por `textContent` (nunca como HTML).
  */
 (() => {
-  const { $, r2, msg, marcarSujo, api, postJson, tocar, parar, ritmo, decodificar, ganhoDeNormalizacao, desenharForma, Onda, iniciarAbas, atualizarPendencias } = window.Estudio;
+  const { $, r2, msg, marcarSujo, api, postJson, tocar, parar, ritmo, decodificar, ganhoDeNormalizacao, desenharForma, Onda, iniciarAbas, atualizarPendencias, efeitosUi } = window.Estudio;
 
   let E = null;          // o estado de sons do servidor
   let sons = [];         // os clipes em edição
@@ -61,38 +61,11 @@
   const CAMPOS_EF = ['#ef-velocidade', '#ef-alvo', '#ef-pitch', '#ef-graves', '#ef-agudos', '#ef-passa-alta', '#ef-passa-baixa', '#ef-ruido', '#ef-saturacao', '#ef-compressor', '#ef-eco-ms', '#ef-eco-decay', '#ef-fade-in', '#ef-reverso'];
   const num = (id) => Number($(id).value) || 0;
 
-  /** Lê os efeitos da tela: só o que está ligado (o objeto vazio quer dizer "sem efeitos"). */
-  function lerEfeitos() {
-    const e = {};
-    const vel = num('#ef-velocidade');
-    if (vel && vel !== 1) e.velocidade = r2(vel);
-    if (num('#ef-pitch')) e.pitch_st = num('#ef-pitch');
-    if (num('#ef-graves')) e.graves_db = num('#ef-graves');
-    if (num('#ef-agudos')) e.agudos_db = num('#ef-agudos');
-    if (num('#ef-passa-alta') > 0) e.passa_alta_hz = num('#ef-passa-alta');
-    if (num('#ef-passa-baixa') > 0) e.passa_baixa_hz = num('#ef-passa-baixa');
-    if (num('#ef-ruido') > 0) e.ruido_db = num('#ef-ruido');
-    if (num('#ef-saturacao') > 0) e.saturacao = num('#ef-saturacao');
-    if ($('#ef-compressor').value) e.compressor = $('#ef-compressor').value;
-    if (num('#ef-eco-ms') > 0) { e.eco_ms = num('#ef-eco-ms'); e.eco_decay = num('#ef-eco-decay') || 0.3; }
-    if ($('#ef-reverso').checked) e.reverso = true;
-    if (num('#ef-fade-in') > 0) e.fade_in_ms = num('#ef-fade-in');
-    return e;
-  }
+  // A leitura e a escrita dos campos de efeitos são do núcleo (a aba VOZES usa as mesmas): aqui só se acrescenta o que é do clipe de arma.
+  const EF = efeitosUi('ef');
+  const lerEfeitos = () => EF.ler();
   function escreverEfeitos(e = {}) {
-    $('#ef-velocidade').value = e.velocidade ?? 1;
-    $('#ef-pitch').value = e.pitch_st ?? 0;
-    $('#ef-graves').value = e.graves_db ?? 0;
-    $('#ef-agudos').value = e.agudos_db ?? 0;
-    $('#ef-passa-alta').value = e.passa_alta_hz ?? 0;
-    $('#ef-passa-baixa').value = e.passa_baixa_hz ?? 0;
-    $('#ef-ruido').value = e.ruido_db ?? 0;
-    $('#ef-saturacao').value = e.saturacao ?? 0;
-    $('#ef-compressor').value = e.compressor || '';
-    $('#ef-eco-ms').value = e.eco_ms ?? 0;
-    $('#ef-eco-decay').value = e.eco_decay ?? 0.3;
-    $('#ef-fade-in').value = e.fade_in_ms ?? 0;
-    $('#ef-reverso').checked = Boolean(e.reverso);
+    EF.escrever(e);
     sincronizarAlvo();
     resumirEfeitos();
   }

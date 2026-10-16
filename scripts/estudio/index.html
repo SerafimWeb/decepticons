@@ -12,6 +12,7 @@
   <h1>ESTÚDIO</h1>
   <nav class="abas" id="abas">
     <button data-aba="sons" class="ativa">SONS</button>
+    <button data-aba="vozes">VOZES</button>
     <button data-aba="tiros" class="embreve" title="Em breve: cor, forma, cauda, explosão e força dos tiros e das armas">TIROS E ARMAS · em breve</button>
     <button data-aba="mechs" class="embreve" title="Em breve: editar os Mechs em 3D">MECHS 3D · em breve</button>
   </nav>
@@ -109,6 +110,68 @@
     </div>
   </div>
 
+  <div class="painel-aba" id="aba-vozes" hidden>
+    <div class="grade">
+      <div class="coluna-esq">
+        <section>
+          <h2>Sotaque</h2>
+          <div class="linha-botoes" id="vz-sotaques"></div>
+          <p class="dica" style="margin-top:8px">O sotaque é a voz: grave a fala do jeito que ela deve soar naquele sotaque.</p>
+        </section>
+        <section>
+          <h2>Falas do narrador</h2>
+          <p class="dica">Clique numa fala. <b>●</b> gravada por você · <b>◆</b> voz gerada (ElevenLabs) · <b>○</b> sem áudio.</p>
+          <ul id="vz-lista" class="lista" style="max-height:520px"></ul>
+        </section>
+      </div>
+      <div class="coluna-dir">
+        <section>
+          <h2>Gravar — <span id="vz-titulo" class="info">escolha uma fala</span></h2>
+          <p style="font-size:26px;margin:4px 0 2px;font-weight:700" id="vz-texto">—</p>
+          <p class="dica" id="vz-intencao"></p>
+          <div class="linha-botoes">
+            <button id="vz-gravar" class="forte">● Gravar</button>
+            <button id="vz-parar-gravacao" class="laranja" disabled>■ Parar</button>
+            <button id="vz-importar" class="pequeno">importar gravação…</button>
+            <input type="file" id="vz-arquivo" accept=".mp3,.wav,.ogg,.m4a,.flac,.aac,.webm" hidden>
+            <button id="vz-ouvir-atual" class="laranja">▶ Ouvir a fala atual</button>
+            <span class="info" id="vz-estado-gravacao"></span>
+          </div>
+          <div style="height:10px;background:#0a0e11;border:1px solid var(--linha);border-radius:6px;margin-top:10px;overflow:hidden"><div id="vz-nivel" style="height:100%;width:0;background:var(--verde)"></div></div>
+          <div class="campos">
+            <label>Tomada<select id="vz-tomadas"></select></label>
+            <button id="vz-ouvir-tomada" class="pequeno">▶ Ouvir a tomada</button>
+          </div>
+        </section>
+        <section>
+          <h2>Tratar e salvar</h2>
+          <canvas id="vz-onda" class="onda" height="170"></canvas>
+          <div class="campos">
+            <label>De (s)<input type="number" id="vz-de" min="0" step="0.01"></label>
+            <label>Até (s)<input type="number" id="vz-ate" min="0" step="0.01"></label>
+            <label>Fade no fim (ms)<input type="number" id="vz-fade" min="0" step="10" value="60"></label>
+            <label>Ganho extra (dB)<input type="number" id="vz-ganho" min="-24" max="12" step="0.5" value="0"></label>
+            <button id="vz-aparar" class="pequeno">aparar silêncio</button>
+            <span class="info" id="vz-duracao"></span>
+          </div>
+          <details class="efeitos" id="vz-painel-efeitos" open>
+            <summary>Efeitos da voz <span class="info" id="vz-resumo"></span></summary>
+            <div class="predefinidos" id="vz-predefinidos"></div>
+            <div id="vz-efeitos"></div>
+          </details>
+          <div class="linha-botoes" style="margin-top:12px">
+            <button id="vz-previa" class="forte">▶ Prévia (com efeitos)</button>
+            <button id="vz-parar" class="laranja">■ Parar</button>
+            <button id="vz-salvar" class="forte">Salvar como a fala do jogo</button>
+            <button id="vz-reverter" class="laranja">Voltar para a voz gerada</button>
+          </div>
+          <canvas id="vz-resultado" class="resultado" height="80" hidden></canvas>
+          <p class="info" id="vz-info" style="margin-top:8px"></p>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <div class="painel-aba" id="aba-tiros" hidden>
     <section class="embreve-painel">
       <h3>TIROS E ARMAS</h3>
@@ -128,10 +191,11 @@
     <h2>Mensagens</h2>
     <ul id="mensagens"></ul>
     <div id="pendencias" hidden></div>
-    <p class="info">Depois de salvar e processar: abra o jogo (<b>npm run dev</b>) e atire para conferir. Para ir ao ar no site, peça ao Claude: <b>"publica os sons"</b>.</p>
+    <p class="info">Depois de salvar e processar: abra o jogo (<b>npm run dev</b>) e confira (atire; passe a rodada com <b>?narrador=br</b>). Para ir ao ar no site, peça ao Claude: <b>"publica o estúdio"</b>.</p>
   </section>
 </main>
 <script src="/estudio/nucleo.js"></script>
 <script src="/estudio/sons.js"></script>
+<script src="/estudio/vozes.js"></script>
 </body>
 </html>

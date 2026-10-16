@@ -1,5 +1,22 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A ABA VOZES DO ESTÚDIO: gravar a própria voz, tratar e pôr no jogo, com a sua voz protegida do gerador — Claude, 16/10 (branch `claude/estudio-vozes`, P151)
+
+**A pergunta do Comandante (15/10):** *"a voz do 'combate' em português está muito ruim… será que devo gravar e enviar pra editarmos minha própria voz com efeitos?"*. Respondido que sim; agora **é só gravar no Estúdio**.
+
+**Feito:**
+1. **Gravar no navegador:** a fala em letras grandes com a intenção (grave, grito, seco), **medidor de nível** (fica vermelho se estourar), **parada automática em 10 s**, microfone **cru** (sem cancelamento de eco, supressão de ruído nem ganho automático: o tratamento é nosso). O MediaRecorder entrega **webm sem duração**: o servidor o **converte para WAV mono 44,1 kHz** (duração real) e o guarda como **tomada numerada** em `.tmp/SOUNDS/VOZ/<sotaque>/`. A tomada nova já abre **aparada**. **Importar** uma gravação feita fora também funciona.
+2. **Tratar:** **os mesmos efeitos dos sons** (a interface de efeitos virou um componente do núcleo, `efeitosUi`, e a aba SONS passou a usá-lo: uma só verdade), com **cinco predefinidos de voz** (Locutor grave, Arena, Rádio de comando, Limpo, Demônio), **redução de ruído** para microfone, e a **prévia com o motor real**.
+3. **Salvar como a fala do jogo:** grava `scripts/vozes-gravadas.json`, processa o mp3 (**-16 dB de média**, nível de voz) em `client/public/audio/vozes/<sotaque>/<chave>.mp3` e põe a fala no manifesto: **o jogo já a toca**. A voz gerada que estava ali fica em `_elevenlabs/`; **"Voltar para a voz gerada"** a devolve, byte a byte.
+4. **A sua voz é protegida:** o `npm run vozes` **nunca regera** uma fala gravada por você, **nem com `--refazer`** (o resumo avisa quantas protegeu).
+5. O validador de clipes ganhou **regras de voz** (nome `<chave>.mp3`, até 8 s depois dos efeitos; as de arma seguem com 4 s).
+
+**Provas:** **12 testes** novos do servidor (o webm do navegador convertido, a taxa e o mono do WAV, a numeração, o lixo recusado sem deixar arquivo, a validação, o processar com a cópia da voz gerada, o reverter, a prévia sem gravar nada) com **6 mutações à mão, 6 pegas**; e a **bancada `medicoes/estudio.mjs`** estendida com o **microfone de teste do Chrome**: gravar, aparar, ligar o predefinido, prévia, salvar, conferir o mp3 trocado e voltar para a voz gerada byte a byte (**29 verificações** no total, numa cópia). Captura: `arte/estudio-vozes.png`.
+
+**Falta (R13):** **o Comandante gravar** (nenhuma fala sua existe ainda; o Claude não ouve áudio: a escolha do predefinido e dos números é do ouvido dele); o **microfone real** depende da permissão do navegador (a página avisa se negada); o **Voice Changer** do ElevenLabs (gasta crédito: fica com `npm run vozes`); o **item no console de comando** (P156); as abas **TIROS E ARMAS** e **MECHS 3D** (P157).
+
+**Próxima sessão começa com:** o que o Comandante responder depois de gravar; senão, o item do Estúdio no console de comando (P156), e o apelido (P145).
+
 ## O ESTÚDIO VIRA UM HUB: importar sons que já saem registrados, efeitos (tom, velocidade, compressor, eco…) e prévia com o motor real — Claude, 16/10 (branch `claude/estudio-v2`, P155 a P157)
 
 **As ordens do Comandante (16/10):** *"vamos evoluir mais essa interface do gerenciamento do som: eu enviar um novo som e ficar salvo e registrado corretamente como se tivesse sido adicionado por você; aumentar ou diminuir o pitch e a velocidade, cortar, esticar, comprimir, etc. Da mesma forma que temos a MESA pra editar vídeos, teremos também o estúdio, e futuramente editar os Mechs 3D, armas, tiros (cor, shape, cauda, explosão, força)"*.

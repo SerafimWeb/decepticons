@@ -33,6 +33,8 @@ export function planejar(o: {
   sotaques?: readonly string[];
   so?: readonly string[] | null;
   refazer?: boolean;
+  /** `sotaque/chave` das falas gravadas pelo Comandante: nunca são regeradas. */
+  protegidas?: ReadonlySet<string>;
 }): Plano;
 
 export function montarManifesto(arquivos: Record<string, readonly string[]>, falas: readonly FalaDoCatalogo[], nota: string): Record<string, unknown>;

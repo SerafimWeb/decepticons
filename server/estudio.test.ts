@@ -13,7 +13,7 @@ import { acharFfmpeg } from '../scripts/sonsRodar.mjs';
 const REAL = (p: string) => resolve(p);
 const lerReal = (p: string) => JSON.parse(readFileSync(REAL(p), 'utf8'));
 const ffmpeg = acharFfmpeg();
-const ARQUIVOS_DO_ESTUDIO = ['scripts/sons-armas.json', 'client/src/audio/armasSom.json', 'scripts/estudio/armas-info.json', 'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js'];
+const ARQUIVOS_DO_ESTUDIO = ['scripts/sons-armas.json', 'client/src/audio/armasSom.json', 'scripts/estudio/armas-info.json', 'scripts/estudio/index.html', 'scripts/estudio/estudio.css', 'scripts/estudio/nucleo.js', 'scripts/estudio/sons.js', 'scripts/estudio/vozes.js', 'client/src/audio/falas.json', 'client/src/audio/vozesGeradas.json', 'scripts/vozes-gravadas.json'];
 
 /** Um WAV de verdade (PCM 16 bits, 8 kHz, mono): uma senoide de 1 s que decai, para o servidor ter o que listar, servir e processar sem depender de arquivo do Comandante. */
 function wavDeSenoide(segundos = 1): Buffer {
@@ -103,13 +103,13 @@ describe('Estúdio: o servidor', () => {
     expect(pagina.status).toBe(200);
     expect(pagina.tipo).toContain('text/html');
     expect(pagina.corpo.toString('utf8')).toContain('ESTÚDIO');
-    for (const [rota, tipo] of [['/estudio/nucleo.js', 'javascript'], ['/estudio/sons.js', 'javascript'], ['/estudio/estudio.css', 'css']] as const) {
+    for (const [rota, tipo] of [['/estudio/nucleo.js', 'javascript'], ['/estudio/sons.js', 'javascript'], ['/estudio/vozes.js', 'javascript'], ['/estudio/estudio.css', 'css']] as const) {
       const r = await http(porta, 'GET', rota);
       expect(r.status, rota).toBe(200);
       expect(r.tipo, rota).toContain(tipo);
     }
     const e = await estado();
-    expect(e.modulos).toEqual([{ id: 'sons', titulo: 'SONS' }]);
+    expect(e.modulos).toEqual([{ id: 'sons', titulo: 'SONS' }, { id: 'vozes', titulo: 'VOZES' }]);
     expect(e.sons.fontes.map((f: { nome: string }) => f.nome)).toEqual(['ref.wav']);
     expect(e.sons.mapa.sons.length).toBeGreaterThanOrEqual(6);
     expect(Object.keys(e.sons.armas)).toContain('blaster');

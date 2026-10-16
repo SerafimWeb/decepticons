@@ -1,3 +1,17 @@
+## [2026-10-16] A voz própria entra pelo Estúdio, convertida no servidor, tratada pelo mesmo motor e protegida do gerador (Claude, P151)
+
+**Situação:** o Comandante achou o "Combate!" em português fraco e perguntou se devia gravar a própria voz. A resposta (sim) precisava virar um caminho de dois cliques, não um roteiro de arquivos.
+
+**Decisões:**
+1. **Gravar dentro do Estúdio, não largar arquivo numa pasta:** o microfone no navegador (permitido em `127.0.0.1`), com a fala escrita na tela, a intenção e um medidor de nível. Um roteiro de pastas e nomes de arquivo era um obstáculo para quem só quer gritar uma palavra.
+2. **O servidor converte tudo para WAV mono 44,1 kHz:** o MediaRecorder do Chrome entrega webm **sem duração no cabeçalho**, e o que não tem duração não corta nem aparece na onda. Converter na entrada dá uma fonte limpa, e a tomada guarda a gravação intacta (dá para refazer o tratamento sem regravar).
+3. **O mesmo motor de efeitos dos sons, com a interface como um componente do núcleo:** a prévia e o mp3 final continuam sendo a mesma cadeia; o que muda é o alvo de nível (-16 dB de média, para voz) e o limite de duração (8 s, não 4). A aba SONS passou a usar o mesmo componente, para as duas não divergirem.
+4. **A voz do Comandante é protegida do gerador:** uma fala gravada por ele nunca é regerada pelo `npm run vozes`, nem com `--refazer`. Sem isso, o comando que ele mesmo vai rodar para gerar as falas restantes poderia pisar na gravação dele.
+5. **A voz gerada fica guardada (`_elevenlabs/`) e dá para voltar:** gravar por cima não pode ser um caminho sem volta.
+6. **O Voice Changer do ElevenLabs fica de fora:** gasta crédito por segundo, e o gasto de crédito é do `npm run vozes` (custo mostrado antes, chave só em variável de ambiente), não do Estúdio.
+
+**Por que registrar:** quem for mexer no narrador precisa saber que a fala gravada vence a gerada, que existe a cópia da gerada, e por que o gerador pula certas falas.
+
 ## [2026-10-16] O Estúdio vira um hub de módulos; a prévia usa o mesmo motor do arquivo final; o Estúdio não publica (Claude, P155 a P157)
 
 **Situação:** o Comandante quer um Estúdio ao lado da Mesa de vídeo: hoje de sons (importar e registrar, tom, velocidade, cortar, esticar, comprimir) e, no futuro, dos tiros, das armas e dos Mechs 3D.
