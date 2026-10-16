@@ -16,9 +16,9 @@ Duas coisas separadas: a **classe** da arma (o porte dela: leve, média ou pesad
 
 | Classe (no tamanho 2) | Armas |
 |---|---|
-| **Leve** | blaster, motosserra, escopeta, arma elétrica (arco), lançador EMP |
-| **Média** | canhão de plasma, arma de gelo, canhão sônico, canhão automático, metralhadora rotatória, casulo de foguetes, míssil teleguiado |
-| **Pesada** | canhão pesado, lança-chamas, canhão de trilho, chuva de mísseis |
+| **Leve** | blaster, motosserra, escopeta, arma elétrica (arco), lançador EMP, lançador de mísseis leve |
+| **Média** | canhão de plasma, arma de gelo, canhão sônico, canhão automático, metralhadora rotatória, casulo de foguetes, míssil teleguiado, raio laser |
+| **Pesada** | canhão pesado, lança-chamas, canhão de trilho, chuva de mísseis, míssil cruzador |
 
 **A regra, uma conta só:** a classe é relativa a quem carrega, e cada passo de tamanho sobe duas classes, então **a pesada do tamanho N é a leve do tamanho N+1**.
 
@@ -96,10 +96,52 @@ Teste de mutação nas regras novas (estrague a regra e veja o teste cair) é o 
 - **Mais de um gatilho por lado, ombros:** já existe (Marauder). Peito, cabeça e costas são ideia (`ROADMAP.md`).
 - **Corpo que não é bípede** (cão-robô, esteira, drone): ideia, ainda sem plano de corpo no código (`ROADMAP.md`).
 
+## Mísseis, laser e a calibragem do alcance (P152, 15/10, Claude)
+
+> *"melhorar os estilos de armas... lançador de mísseis leve (8, 16 ou até 32 sequencialmente), raio laser de longo alcance, míssil cruzador de longo alcance, míssil guiado de médio alcance... calibrar melhor o alcance, potência, tempo de recarga"* — ordem P152 do Comandante. As decisões e o porquê de cada número: `HISTORICO_DE_DECISOES.md` (15/10).
+
+**As três mecânicas novas, como modelos para a próxima arma do mesmo tipo:**
+
+- **Salva comprometida** (o lançador de mísseis leve, `swarm`): o campo `salvo` (`cone`, `onTarget`) e `tierMagazine` (o carregador cresce ×2 por nível: 8, 16, 32). A regra mora no **`RocketLauncher`** (`committed`: a salva só começa com os tubos cheios, não se cancela e só recarrega depois do último míssil) e no **`Armament`** (continua pedindo o tiro enquanto `committed`, com o botão solto). O desvio de cada míssil sai de `spreadAt(número do míssil, cone)` e o `ShotSink.rocket` ganhou o 4º parâmetro (`spread`): o jogador (`PlayerController.launch`) e o servidor (`NetPilot`) o aplicam à direção **antes** de lançar, então o evento de tiro já leva a direção com o desvio e o outro jogador desenha igual. Os mísseis vão para um pool à parte no `RocketSystem` (128, um `InstancedMesh`, rastro de uma partícula a cada três ticks). A bancada conta só a fração `onTarget` dos mísseis (como a chuva conta as bombas).
+- **Arco** (o míssil cruzador, `cruise`): `CruiseSystem` (módulo próprio, G3). O caminho é uma **parábola** do lançamento ao ponto da mira (`cruisePoint`, função pura), percorrida a velocidade constante (`cruiseRate`); o ponto de chegada é o chão (ou o telhado) sob a mira, e a mira além do alcance cai no limite dele. Um raio curto por tick acha o que está no caminho (parede, prédio mais alto que o arco, Mech), menos o dono. O jogador passa o ponto da mira pelo gancho `PlayerController.cruise`; o servidor, pelo mesmo ponto que a chuva já usa (`NetPilot.aim(..., needPoint)`); o outro jogador acha o ponto por um raio do evento de tiro.
+- **Feixe** (o raio laser, `beam`): `Match.beamPulse` acerta **na hora** o primeiro que o raio da boca encontra (`projectiles.onHit`: o mesmo caminho de defesa, parte e abate de um tiro) e `fx/BeamVisuals` acende a linha (dois `InstancedMesh`, pool de 40, acesa 0,16 s para os pulsos de 0,13 s virarem um feixe contínuo). `ShotSink.beam` é **opcional**: quem não sabe desenhar feixe recebe o pulso como projétil comum. **Um evento de tiro por pulso** (a bandeira do byte `fx` não coube: os 8 bits estão ocupados); o outro jogador acende o feixe com `Match.drawBeam`. Os bots ainda não a usam (`armaServeAoBot` exclui `beam`).
+- **Guiamento por nível** (`tierGuide`): o guiado (`seeker`) afina a curva e o alcance da trava a cada nível; o cone da trava é da mira do jogador e não muda.
+
+**O que tocar numa arma desse tipo** (além da lista da seção de cima): a ficha do ARSENAL (`ui/arsenalData.ts`, `notasDaArma`), a mira (`WeaponReticle`), os desenhos 3D de ombro e de mão (`weaponModels.ts`), o estouro (`fx/explosionScale.ts` escala pelo raio da explosão: explosão pequena e muitos mísseis não enchem as partículas), o HUD (`ui/rocketPips.ts`: carregador de mais de quatro vira fração dos quatro marcadores) e **uma linha em `FAIXAS` de `combat/calibragem.test.ts`**. Rede: `NET_WEAPONS` **no fim**, `PROTOCOL_VERSION` + 1, o `onFired` do sistema (ou `Match.onBeam`) em `server/ArenaRoom.ts` e o ramo de `net/OnlineSession.remoteShot`. Teste de ponta a ponta: `net/online.test.ts` (o outro jogador vê).
+
+**Faixas de alcance** (`rangeBandOf`, pelo alcance **máximo**): corpo a corpo até 3 m, **curto** até 60, **médio** até 200, **longo** acima. O preço do alcance é o dano por segundo: nenhuma arma de longo alcance de Mech passa o plasma (com 10% de folga), travado por `combat/calibragem.test.ts`, que também fixa a faixa de cada arma e a recarga cheia (`fullReload`, de vazio a cheio). MK I, na bancada do Vector-09 (DPS sustentado = dano por segundo com o calor e a recarga):
+
+| Arma | Classe | Faixa | Alcance ótimo / máx (m) | Dano | Cadência (s) | Recarga cheia (s) | DPS sustentado | Carga (t) |
+|---|---|---|---|---|---|---|---|---|
+| Motosserra (`chainsaw`) | LEVE | corpo a corpo | 1,2 | 4 | 0,2 | — | — | 1,5 |
+| Canhão sônico (`sonic`) | MÉDIA | curto | 10 / 22 | 20 | 1,2 | — | 17,3 | 3 |
+| Lança-chamas (`flamer`) | PESADA | curto | 17 / 36 | 10 | 0,2 | — | 35,0 | 3,5 |
+| Escopeta (`shotgun`) | LEVE | curto | 8 / 45 | 52 | 0,8 | — | 65,9 | 2 |
+| Arma de gelo (`cryo`) | MÉDIA | curto | 20 / 55 | 5 | 0,6 | — | 8,5 | 3 |
+| Metralhadora rotatória (`rotary`) | MÉDIA | médio | 35 / 95 | 5 | 0,05 | — | 42,5 | 4 |
+| Lançador EMP (`emp`) | LEVE | médio | 45 / 110 | 9 | 1,3 | — | 7,2 | 2,5 |
+| Blaster leve (`blaster`) | LEVE | médio | 25 / 120 | 4 | 0,4 | — | 10,1 | 0,5 |
+| Chuva de mísseis (`barrage`) | PESADA | médio | 120 | 30 × 8 bombas | 1 | 12,0 | 12,0 | 5 |
+| Arma elétrica (`arc`) | LEVE | médio | 50 / 130 | 7 | 0,45 | — | 15,6 | 2,5 |
+| Canhão automático (`autocannon`) | MÉDIA | médio | 50 / 140 | 10 | 0,2 | — | 35,0 | 3,5 |
+| Lançador de mísseis leve (`swarm`) | LEVE | médio | 150 | 5 × 8 (16 e 32 nos níveis) | 0,07 | 2,8 | 7,2 | 2 |
+| Míssil teleguiado (`seeker`) | MÉDIA | médio | 170 | 55 × 2 | 0,5 | 6,4 | 20,2 | 4 |
+| Canhão de plasma (`plasma`) | MÉDIA | médio | 60 / 200 | 16 | 0,22 | — | 41,6 | 3 |
+| Casulo de foguetes (`rockets`) | MÉDIA | longo | 225 | 40 × 4 | 0,3 | 8,8 | 22,7 | 4 |
+| Canhão pesado (`cannon`) | PESADA | longo | 90 / 260 | 90 | 2,6 | — | 36,0 | 6 |
+| Canhão de trilho (`railgun`) | PESADA | longo | 140 / 320 | 72 | 1,4 | — | 33,6 | 5 |
+| Raio laser (`laser`) | MÉDIA | longo | 180 / 360 | 6 | 0,13 | — | 34,8 | 4 |
+| Canhão de cerco (`siege`) | PESADA (T3) | longo | 140 / 400 | 360 | 4,5 | — | 60,0 | 12 |
+| Míssil cruzador (`cruise`) | PESADA | longo | 420 | 90 | 1 | 6,0 | 15,0 | 5 |
+
+**A regra dos 4,5 s (P111) e os mísseis:** o lançador leve e o cruzador foram calibrados contra ela (a bancada, todo nível e combo do Marauder). O lançador conta só 55% dos mísseis numa nuvem de 2,6° e vale como pressão (7 a 8 de dano por segundo, golpe de abertura de 40 a 224 se todos acertarem); o cruzador bate 90 / 108 / 126 (dois acertos nunca bastam, como o canhão pesado). **Para mudar um número sem código:** Configurações → Potências (dano, cadência, calor e alcance por arma); com código, a entrada em `BASE` (`weapons.ts`) e, se a faixa mudar, a linha de `FAIXAS` no teste.
+
+**Honestidade (R13):** ninguém jogou nem ouviu as três; os números são proposta do Claude (o ouvido e a mão são do Comandante). Os bots não usam as três. O míssil de outro jogador voa reto no desenho (o dano e a explosão são do servidor).
+
 ## O que ainda não é dado puro (honestidade)
 
 Comportamentos de arma são código. O caminho para uma arma nova ser **só dado** é uma lista de padrões de disparo (reto, em arco,
-chuva, rajada, feixe) escolhidos por um campo da arma, cada um com seu sistema testado. Hoje há dois (reto e chuva). Um editor
+chuva, rajada, feixe) escolhidos por um campo da arma, cada um com seu sistema testado. Hoje há cinco (reto, chuva, salva, arco e feixe; mais o cone do lança-chamas e da onda). Um editor
 visual que cria arma e robô sem mexer em código **não existe**; as POTÊNCIAS são o mais perto disso.
 
 ## Trilho e EMP (06/10, Codex)

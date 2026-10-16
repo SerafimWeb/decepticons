@@ -39,7 +39,45 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker' | 'siege';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker' | 'siege' | 'swarm' | 'cruise' | 'laser';
+
+/**
+ * Lançador de mísseis leve (P152: "que solte 8, 16 ou até 32 mísseis sequencialmente"): **um aperto esvazia o lançador**. Os mísseis saem um a um, a `fireInterval` de
+ * distância, e a salva **não se cancela** soltando o gatilho (fogo e esqueça: dá para desviar e virar a mira enquanto ela sai); só começa com **todos os tubos
+ * carregados** e, depois de vazio, os tubos voltam um a um (`reload` por míssil, `combat/trigger.ts`). Cada míssil vai para a mira **do momento em que sai**, com um desvio
+ * pequeno e fixo (girassol de ângulo áureo, sem sorteio: o servidor e o cliente chegam à mesma nuvem). O tamanho do lançador é o nível: `magazine` × `tierMagazine`^nível.
+ */
+export interface Salvo {
+  /** Abertura do cone (rad) em que os mísseis da salva se espalham: o desvio de cada um sai do número dele. */
+  cone: number;
+  /** Fração dos mísseis que acertam um alvo parado e de frente: a bancada de equilíbrio (`balance.ts`) conta só esta parte, senão a salva valeria como se todos acertassem. */
+  onTarget: number;
+}
+
+/**
+ * Míssil cruzador (P152: "míssil cruzador de longo alcance"): **sobe, cruza e mergulha** no ponto da mira do disparo. O caminho é uma parábola do lançamento ao ponto
+ * (função só dos dois pontos e do tempo: o servidor e o cliente chegam ao mesmo desenho), com o ápice a `apex` × a distância (entre `minApex` e `maxApex`): passa por cima do
+ * que é mais baixo que o arco e bate no que estiver no meio do caminho (um prédio alto, uma parede). Não guia: onde caiu é onde a mira estava; o alvo que corre escapa, o que
+ * está parado ou entrincheirado, não. Explode no ponto (raio grande) ou no primeiro obstáculo, e quem aplica o dano é o `CombatSystem`, como nos foguetes.
+ */
+export interface Cruise {
+  /** Altura do ápice como fração da distância (0,14 = 14 m de altura a cada 100 m). */
+  apex: number;
+  /** Altura mínima do ápice (m): num tiro curto o arco ainda sobe o bastante para ser arco. */
+  minApex: number;
+  /** Altura máxima do ápice (m): num tiro longo ele não vira satélite. */
+  maxApex: number;
+}
+
+/**
+ * Raio laser (P152: "raio laser de longo alcance"): **feixe instantâneo em pulsos**. A cada `fireInterval` de gatilho apertado sai um pulso que **acerta na hora** o primeiro
+ * que encontra (Mech, parede, caixa-alvo) até `maxRange`, sem projétil para desviar nem esperar; o dano cai com a distância como o de um tiro direto (`optimalRange` a `maxRange`,
+ * `minFactor`). Os pulsos se emendam num feixe contínuo no desenho; quem controla a duração é o calor. Cada pulso é um evento de tiro (7 bytes) para os outros jogadores desenharem.
+ */
+export interface Beam {
+  /** Segundos que o feixe de um pulso fica aceso no desenho: um pouco mais que `fireInterval`, para os pulsos seguidos parecerem uma linha só. */
+  glow: number;
+}
 
 /**
  * Chuva de mísseis: um lançamento sobe, e depois as bombas caem em volta do ponto da mira (`combat/BarrageSystem.ts`).
@@ -148,6 +186,22 @@ export interface WeaponStats {
   wave?: Wave;
   /** Só no míssil teleguiado: a trava de alvo e a curva (`Guide`). */
   guide?: Guide;
+  /** Só no lançador de mísseis leve: a salva (um aperto esvazia o lançador) e o desvio dos mísseis (`Salvo`). */
+  salvo?: Salvo;
+  /** Só no míssil cruzador: o arco de subida, cruzeiro e mergulho (`Cruise`). */
+  cruise?: Cruise;
+  /** Só no raio laser: o feixe instantâneo em pulsos (`Beam`). */
+  beam?: Beam;
+  /**
+   * Quanto o **carregador** cresce a cada nível: `magazine` × este fator elevado ao nível (2 = o dobro a cada nível: o lançador leve tem 8, 16 e 32 mísseis). Sem este campo o
+   * carregador é da arma, não do nível.
+   */
+  tierMagazine?: number;
+  /**
+   * Quanto o **guiamento** melhora a cada nível, em fração do MK I (0,2 = a curva e o alcance da trava crescem 20% no MK II e 40% no MK III): o míssil teleguiado sobe de nível
+   * enxergando mais longe e fechando a curva mais rápido. Sem este campo o guiamento é da arma, não do nível.
+   */
+  tierGuide?: number;
   /**
    * Quanto o **alcance** cresce a cada nível, em fração do MK I (0,3 = +30% no MK II e +60% no MK III; vale para o alcance ótimo e o máximo). Sem este
    * campo o alcance é da arma, não do nível. Quem declara: o lança-chamas (dono, 11/10: "tem que poder ser upado no MK II e ir mais longe").
@@ -251,17 +305,21 @@ const BASE: Record<WeaponId, WeaponBase> = {
     wave: { halfAngle: 0.45, shove: 8 }, tierRange: 0.25,
   },
   /**
-   * Míssil teleguiado (dono, 11/10): o segundo tipo de arma de ombro que **não é só mais foguete**. 55 de dano e explosão de 4,5 m (menor que a dos foguetes: ele erra menos), 2 no
-   * carregador, recarga de 3,2 s; voa a 48 m/s (devagar o bastante para quem corre perceber e desviar) até 140 m. Trava no inimigo mais centrado à frente (cone de 29° até 90 m, à
-   * vista) e curva até 2,2 rad/s: o raio de curva é de ~22 m, então um dash ou uma quina de parede ainda o enganam. Os dois ombros do Marauder soltam um cada.
+   * Míssil teleguiado (dono, 11/10; recalibrado em 15/10, P152: "míssil guiado de médio alcance"): o **guiado de médio alcance** do arsenal, o que **não é só mais foguete**.
+   * 55 de dano e explosão de 4,5 m (menor que a dos foguetes: ele erra menos), 2 no carregador, recarga de 3,2 s; voa a 52 m/s (devagar o bastante para quem corre perceber e
+   * desviar) por até 170 m (eram 140). **Trava no inimigo mais centrado à frente** (cone de 29°, **até 110 m**, eram 90, à vista) e curva até 2,3 rad/s: o raio de curva é de ~23 m,
+   * então um dash ou uma quina de parede ainda o enganam. **Os níveis afinam a guiagem** (`tierGuide`: +20% de curva e de alcance da trava por nível, MK III com 3,2 rad/s e 154 m)
+   * e esticam o voo (`tierRange`: +8%, até 197 m no MK III: o guiado fica na faixa do **médio alcance** em todo nível, `rangeBandOf`): o MK I trava a 110 m, o MK III a 154 m. Os dois ombros do Marauder soltam um cada; **também cabe no braço** (Ataque 2
+   * dos robôs pequenos), como os foguetes.
    */
   seeker: {
     id: 'seeker', name: 'Míssil teleguiado', kind: 'ammo',
     damage: 55, fireInterval: 0.5, heatPerShot: 0.2,
-    magazine: 2, reload: 3.2, speed: 48,
-    optimalRange: 140, maxRange: 140, minFactor: 1,
+    magazine: 2, reload: 3.2, speed: 52,
+    optimalRange: 170, maxRange: 170, minFactor: 1,
     blastRadius: 4.5, mass: 4,
-    guide: { turnRate: 2.2, lockRange: 90, lockHalfAngle: 0.5 },
+    guide: { turnRate: 2.3, lockRange: 110, lockHalfAngle: 0.5 },
+    tierGuide: 0.2, tierRange: 0.08,
   },
   /**
    * Canhão pesado (dono, 11/10: "quero um canhão grande, um tiro só"). **Um projétil de aço, grande e lento, que bate como um caminhão**: 90 de
@@ -473,20 +531,73 @@ const BASE: Record<WeaponId, WeaponBase> = {
     blastRadius: 0,
     mass: 1.5,
   },
+  /**
+   * Lançador de mísseis leve (dono, 15/10, P152: "um lançador de mísseis leve, que solte 8, 16 ou até 32 mísseis sequencialmente"). **Arma leve de saturação:** um aperto esvazia o
+   * lançador (`salvo`), os mísseis saem um a um a cada 0,07 s, cada um para a mira do instante em que sai, com um desvio pequeno e fixo (cone de 2,6°): varrer a mira durante a
+   * salva espalha a chuva em volta do alvo. **O nível é o tamanho do lançador: 8, 16 e 32 mísseis** (`tierMagazine`), e a recarga conta cada tubo (0,35 s × nível por míssil: 2,8 s no MK I,
+   * ~6,4 s no MK II, ~14,6 s no MK III), então o dano sustentado quase não muda de nível, e o que cresce é o **golpe de abertura** (e a carga: 2, 3 e 4 t). Cada míssil é pequeno: 5 de dano (6
+   * e 7 nos níveis) e 2,2 m de explosão, a 90 m/s por até 150 m. Sozinho não derruba nada depressa (a bancada conta só 55% dos mísseis num alvo parado: o desvio e os 150 m de alcance
+   * perdem os outros): o ponto dele é **forçar o inimigo a sair do lugar** e limpar andróides e coberturas leves, não vencer o duelo.
+   */
+  swarm: {
+    id: 'swarm', name: 'Lançador de mísseis leve', kind: 'ammo',
+    damage: 5, fireInterval: 0.07, heatPerShot: 0.012,
+    magazine: 8, reload: 0.35, speed: 90,
+    optimalRange: 150, maxRange: 150, minFactor: 1,
+    blastRadius: 2.2, mass: 2,
+    salvo: { cone: 0.045, onTarget: 0.55 },
+    tierMagazine: 2,
+  },
+  /**
+   * Míssil cruzador (dono, 15/10, P152: "míssil cruzador de longo alcance"). **O maior alcance do arsenal depois do canhão de cerco, e o único que passa por cima do cenário:** sobe
+   * em arco, cruza e **mergulha no ponto que a mira apontava** (`cruise`: o ápice a 14% da distância, entre 8 e 70 m de altura), a 120 m/s por até 420 m (3,5 s de voo a 400 m: quem
+   * vê o aviso sai do lugar, e quem corre escapa; ele não guia). **90 de dano e 9 m de explosão** (cai a zero na borda; o MK III chega a 126, o mesmo golpe do canhão pesado): bate
+   * em cheio num alvo parado ou entrincheirado e cobre o que está agrupado. Um tiro por carga, **6 s de recarga**, 0,4 de calor (os dois ombros do Marauder soltam juntos: 0,8) e 5 t (como a
+   * chuva e o trilho; o par de ombros do Marauder só aguenta o MK I): arma pesada de apoio. **Dois acertos nunca bastam** (252 no MK III, como o canhão: a regra dos 4,5 s do Comandante, P111): quatro acertos no MK I e três nos outros derrubam um
+   * torso, e uma carga a cada 6 s não decide uma luta. Natureza `explosivo`.
+   */
+  cruise: {
+    id: 'cruise', name: 'Míssil cruzador', kind: 'ammo',
+    damage: 90, fireInterval: 1, heatPerShot: 0.4,
+    magazine: 1, reload: 6, speed: 120,
+    optimalRange: 420, maxRange: 420, minFactor: 1,
+    blastRadius: 9, mass: 5,
+    cruise: { apex: 0.14, minApex: 8, maxApex: 70 },
+  },
+  /**
+   * Raio laser (dono, 15/10, P152: "raio laser de longo alcance"). **Feixe instantâneo em pulsos:** com o gatilho apertado, a cada 0,13 s um pulso de 6 de dano acerta na hora o primeiro que
+   * encontra, sem projétil para desviar (`beam`), com a queda de dano suave (cheio até 180 m, 70% aos 360 m: eram 40% aos 200 m no plasma). Os pulsos se emendam num feixe contínuo; **o
+   * calor decide quanto tempo ele dura** (0,02 por pulso, ~0,15 por segundo: ferve em ~6 s de feixe contínuo) e a **mira precisa ficar no alvo**: não adianta passar o raio de raspão. Por pulso
+   * bate menos que o plasma e sustenta menos (46 contra 73 de dano por segundo): o ganho dele é o **alcance sem espera**. Natureza `laser`: a chapa de cerâmica segura 85% dele, e o reativo, só 30% (`MetalShield.ts`).
+   */
+  laser: {
+    id: 'laser', name: 'Raio laser', kind: 'energy',
+    damage: 6, fireInterval: 0.13, heatPerShot: 0.02,
+    magazine: 0, reload: 0, speed: 5000,
+    optimalRange: 180, maxRange: 360, minFactor: 0.7,
+    blastRadius: 0, mass: 4,
+    beam: { glow: 0.16 },
+  },
 };
 
-const round = (x: number, step: number) => Math.round(x / step) * step;
+/** Arredonda para o múltiplo de `step` mais perto, sem o ruído de ponto flutuante (0,026 e não 0,026000000000000002): os números da arma se comparam e se mostram limpos. */
+const round = (x: number, step: number) => Number((Math.round(x / step) * step).toFixed(9));
 
 function atTier(b: WeaponBase, tier: Tier): WeaponStats {
   const t = TIERS[tier]!;
   // Arma que declara `tierRange` / `tierRate` ganha alcance e cadência a cada nível; as outras mantêm os do MK I (o teste de arsenal confere).
   const reach = 1 + (b.tierRange ?? 0) * tier;
   const rate = 1 + (b.tierRate ?? 0) * tier;
+  const sharp = 1 + (b.tierGuide ?? 0) * tier;
   return Object.freeze({
     ...b,
     tier,
     ...(b.tierRange ? { optimalRange: round(b.optimalRange * reach, 0.5), maxRange: round(b.maxRange * reach, 0.5) } : {}),
     ...(b.tierRate ? { fireInterval: round(b.fireInterval / rate, 0.001) } : {}),
+    ...(b.tierMagazine ? { magazine: Math.round(b.magazine * b.tierMagazine ** tier) } : {}),
+    ...(b.guide && b.tierGuide
+      ? { guide: { turnRate: Math.round(b.guide.turnRate * sharp * 100) / 100, lockRange: round(b.guide.lockRange * sharp, 0.5), lockHalfAngle: b.guide.lockHalfAngle } }
+      : {}),
     damage: Math.round(b.damage * t.damage),
     heatPerShot: round(b.heatPerShot * t.heat, 0.001),
     reload: round(b.reload * t.heat, 0.01),
@@ -516,6 +627,9 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   autocannon: 'balistico',
   sonic: 'sonico',
   seeker: 'explosivo',
+  swarm: 'explosivo',
+  cruise: 'explosivo',
+  laser: 'laser',
   chainsaw: 'corte',
 };
 
@@ -535,6 +649,36 @@ export function rangeFactor(w: WeaponStats, dist: number): number {
   if (dist <= w.optimalRange) return 1;
   if (dist >= w.maxRange) return w.minFactor;
   return 1 - ((1 - w.minFactor) * (dist - w.optimalRange)) / (w.maxRange - w.optimalRange);
+}
+
+/**
+ * Faixa de alcance (P152: "calibrar melhor o alcance"): a conversa sobre uma arma começa por **onde** ela atira. Quatro faixas pelo alcance **máximo**, para o Hangar, a ficha do
+ * Arsenal e os testes de calibragem falarem a mesma língua (`combat/calibragem.test.ts` fixa a faixa de cada arma: arma nova declara a dela no teste).
+ *
+ * - **corpo a corpo:** até 3 m (a serra);
+ * - **curto:** até 60 m (a escopeta, o gelo, o lança-chamas, o sônico: a luta de perto);
+ * - **médio:** até 200 m (o plasma, os automáticos, o arco, o EMP, a chuva, o lançador leve e o **míssil guiado**: o grosso do combate);
+ * - **longo:** acima de 200 m (os foguetes, o canhão pesado, o trilho, o **laser**, o **míssil cruzador** e o canhão de cerco: o preço do alcance é o dano por segundo, que
+ *   nenhuma arma de longo alcance de Mech passa do plasma).
+ */
+export type RangeBand = 'corpo' | 'curto' | 'medio' | 'longo';
+export const RANGE_BAND_LABEL: Readonly<Record<RangeBand, string>> = { corpo: 'corpo a corpo', curto: 'curto', medio: 'médio', longo: 'longo' };
+export const RANGE_BAND_MAX: Readonly<Record<'corpo' | 'curto' | 'medio', number>> = { corpo: 3, curto: 60, medio: 200 };
+
+/** A faixa de alcance da arma (pelo alcance máximo do nível dela). */
+export function rangeBandOf(w: WeaponStats): RangeBand {
+  if (w.maxRange <= RANGE_BAND_MAX.corpo) return 'corpo';
+  if (w.maxRange <= RANGE_BAND_MAX.curto) return 'curto';
+  if (w.maxRange <= RANGE_BAND_MAX.medio) return 'medio';
+  return 'longo';
+}
+
+/**
+ * Segundos para o carregador voltar de **vazio a cheio** (`reload` é por tiro; o lançador leve e os foguetes recarregam um a um): a conta que o jogador sente depois de gastar tudo.
+ * Arma sem carregador (energia, corpo a corpo) devolve 0: o que a freia é o calor.
+ */
+export function fullReload(w: WeaponStats): number {
+  return w.kind === 'ammo' ? Number((w.reload * w.magazine).toFixed(6)) : 0;
 }
 
 /** Dano de um tiro direto a `dist` metros, inteiro (os módulos mostram números redondos). */

@@ -1,4 +1,5 @@
 import { CLASS_LABEL, WEAPON_CLASSES, type WeaponClass } from '../combat/weaponClass';
+import { RANGE_BAND_LABEL } from '../combat/weapons';
 import { CHASSIS, type ChassisId } from '../entities/chassis';
 import { fichasDasArmas, fichasDosChassis, NATUREZA_ROTULO, type FichaDaArma, type FichaDoChassi } from './arsenalData';
 
@@ -149,7 +150,7 @@ export class ArsenalPanel {
         el('td', 'n', num(f.dano)),
         el('td', 'n', num(f.tirosPorSegundo, 2)),
         el('td', 'n', f.danoPorSegundo === null ? '—' : num(f.danoPorSegundo, 1)),
-        el('td', 'n', `${num(f.alcanceOtimo)} / ${num(f.alcanceMaximo)}`),
+        el('td', 'n', `${num(f.alcanceOtimo)} / ${num(f.alcanceMaximo)} · ${RANGE_BAND_LABEL[f.faixa]}`),
         el('td', 'n', num(f.calorPorTiro, 2)),
         el('td', 'n', num(f.massa, 1)),
         el('td', 'arsenal-notas', f.notas.join('; ') || '—'),

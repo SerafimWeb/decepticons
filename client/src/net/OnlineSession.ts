@@ -457,8 +457,19 @@ export class OnlineSession implements Pilot {
       // A onda sônica de outro jogador: só o desenho (o cone, o dano e o empurrão são do servidor). Cada ombro manda o seu evento.
       this.o.match.drawWave(_o, _d, weapon('sonic'));
       r.mech.onFireSecondary();
-    } else if (id === 'rockets' || id === 'seeker') {
+    } else if (id === 'cruise') {
+      // O cruzador de outro jogador: o evento traz a direção, não o ponto; acha onde o raio bate (o servidor fez o mesmo) e lança o arco até lá. Só desenho.
+      const hit = this.o.match.physics.raycast(_o, _d, 400, r.mech.collider);
+      _aimPoint.copy(_o).addScaledVector(_d, hit ? hit.distance : 400);
+      this.o.match.cruise.fire(_o, _d, _aimPoint, r.mech.collider, weapon('cruise'));
+      r.mech.onFireSecondary();
+    } else if (id === 'laser') {
+      // Um pulso do laser de outro jogador: acha onde o feixe acaba e o acende (o dano é do servidor).
+      this.o.match.drawBeam(_o, _d, r.mech.collider, weapon('laser'), true);
+      r.mech.onFire();
+    } else if (id === 'rockets' || id === 'seeker' || id === 'swarm') {
       // O teleguiado de outro jogador voa reto no desenho (os inimigos remotos não estão na lista da partida local); a explosão de verdade vem do servidor.
+      // O míssil do lançador leve já vem com o desvio dele na direção do evento (o servidor aplicou antes de lançar).
       this.o.match.rockets.fire(_o, _d, r.mech.collider, weapon(id));
       r.mech.onFireSecondary();
     } else {

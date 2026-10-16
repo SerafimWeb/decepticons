@@ -60,6 +60,9 @@ export const MUZZLE_FX: Readonly<Record<WeaponId, MuzzleFx | null>> = {
   emp: null,
   rockets: null,
   seeker: null,
+  swarm: null, // o lançador leve tem o clarão pequeno do `PlayerController.launch` por míssil
+  cruise: null,
+  laser: null, // o feixe se desenha sozinho (`fx/BeamVisuals.ts`), com o clarão dele na boca
   barrage: null,
   flamer: null,
   chainsaw: null,

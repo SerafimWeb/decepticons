@@ -315,3 +315,68 @@ describe('escudo por toque', () => {
     s.physics.world.free();
   });
 });
+
+describe('as armas novas (P152) no jogador local: o lançador leve, o cruzador e o laser', () => {
+  const coolSwarm = (): WeaponStats => Object.freeze({ ...weapon('swarm'), heatPerShot: 0 });
+
+  it('um toque no Ataque 2 solta a salva de 8 mísseis pelo sistema de foguetes, cada um com o desvio dele em volta da mira, e o som sai de quatro em quatro', async () => {
+    const { input, aim, rockets, rains, run, rocketSounds, kicks } = await jogador({ primary: weapon('plasma'), secondary: coolSwarm() });
+    input.mouseDown2 = true;
+    run(1 / 60);
+    input.mouseDown2 = false; // soltou: a salva segue
+    run(1);
+    expect(rockets).toHaveLength(8);
+    expect(rains).toHaveLength(0);
+    expect(rockets.every((s) => s.w.id === 'swarm')).toBe(true);
+    expect(aimedAt(rockets[0]!, aim.point)).toBeGreaterThan(0.99999); // o primeiro vai reto
+    const cone = Math.cos(weapon('swarm').salvo!.cone + 0.01);
+    for (const s of rockets) expect(aimedAt(s, aim.point)).toBeGreaterThan(cone); // todos dentro do cone
+    expect(new Set(rockets.map((s) => s.dir.toArray().map((x) => x.toFixed(5)).join(','))).size).toBeGreaterThanOrEqual(7); // e (quase) todos diferentes
+    expect(rocketSounds()).toBe(2); // o 1º e o 5º míssil: o som não repete 8 vezes em meio segundo
+    expect(kicks).toHaveLength(2);
+  });
+
+  it('os foguetes comuns seguem sem desvio e com o som a cada lançamento (o desvio e o som espaçado são só da salva)', async () => {
+    const { input, aim, rockets, run, rocketSounds } = await jogador({ primary: weapon('plasma'), secondary: Object.freeze({ ...weapon('rockets'), heatPerShot: 0 }) });
+    input.mouseDown2 = true;
+    run(1);
+    input.mouseDown2 = false;
+    expect(rockets.length).toBeGreaterThanOrEqual(3);
+    for (const s of rockets) expect(aimedAt(s, aim.point)).toBeGreaterThan(0.99999);
+    expect(rocketSounds()).toBe(rockets.length);
+  });
+
+  it('o míssil cruzador vai pelo gancho próprio com o ponto da mira, não pelo sistema de foguetes nem pelo da chuva; um som e um tranco por lançamento', async () => {
+    const { player, input, aim, rockets, rains, run, rocketSounds, kicks } = await jogador({ primary: weapon('plasma'), secondary: Object.freeze({ ...weapon('cruise'), heatPerShot: 0 }) });
+    const lancados: { w: WeaponStats; target: THREE.Vector3; origin: THREE.Vector3 }[] = [];
+    player.cruise = (w, origin, _dir, target) => lancados.push({ w, target: target.clone(), origin: origin.clone() });
+    input.mouseDown2 = true;
+    run(0.5);
+    input.mouseDown2 = false;
+    expect(lancados).toHaveLength(1);
+    expect(lancados[0]!.w.id).toBe('cruise');
+    expect(lancados[0]!.target.toArray()).toEqual(aim.point.toArray());
+    expect(rockets).toHaveLength(0);
+    expect(rains).toHaveLength(0);
+    expect(rocketSounds()).toBe(1);
+    expect(kicks).toEqual([fireKick(weapon('cruise'))]);
+  });
+
+  it('o laser sai como feixe (o gancho `beam`) na direção da mira, a cada 0,13 s e com o gatilho apertado, sem projétil; o som sai de três em três pulsos', async () => {
+    const { player, input, aim, bolts, run, sounds, kicks } = await jogador({ primary: Object.freeze({ ...weapon('laser'), heatPerShot: 0 }), secondary: null });
+    const pulsos: { w: WeaponStats; origin: THREE.Vector3; dir: THREE.Vector3 }[] = [];
+    player.beam = (w, origin, dir) => pulsos.push({ w, origin: origin.clone(), dir: dir.clone() });
+    input.mouseDown = true;
+    run(1);
+    input.mouseDown = false;
+    expect(bolts).toHaveLength(0);
+    expect(pulsos.length).toBeGreaterThanOrEqual(7);
+    expect(pulsos.length).toBeLessThanOrEqual(8);
+    expect(pulsos.every((s) => s.w.id === 'laser' && s.origin.x > 0 && aimedAt(s, aim.point) > 0.9999)).toBe(true);
+    expect(sounds()).toBe(Math.ceil(pulsos.length / 3));
+    expect(kicks).toHaveLength(pulsos.length);
+    const n = pulsos.length;
+    run(0.5);
+    expect(pulsos).toHaveLength(n); // solto, o feixe para
+  });
+});

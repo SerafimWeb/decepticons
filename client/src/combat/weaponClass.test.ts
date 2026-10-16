@@ -16,9 +16,9 @@ describe('classes de arma: leve, média e pesada (ordem P82 do Comandante)', () 
   });
 
   it('a tabela: leves, médias e pesadas (mudar uma arma de grupo é mudar uma linha e esta lista)', () => {
-    expect(ids('light').sort()).toEqual(['arc', 'blaster', 'chainsaw', 'emp', 'shotgun']);
-    expect(ids('medium').sort()).toEqual(['autocannon', 'cryo', 'plasma', 'rockets', 'rotary', 'seeker', 'sonic']);
-    expect(ids('heavy').sort()).toEqual(['barrage', 'cannon', 'flamer', 'railgun', 'siege']);
+    expect(ids('light').sort()).toEqual(['arc', 'blaster', 'chainsaw', 'emp', 'shotgun', 'swarm']);
+    expect(ids('medium').sort()).toEqual(['autocannon', 'cryo', 'laser', 'plasma', 'rockets', 'rotary', 'seeker', 'sonic']);
+    expect(ids('heavy').sort()).toEqual(['barrage', 'cannon', 'cruise', 'flamer', 'railgun', 'siege']);
   });
 
   it('as três classes têm nome de tela, no singular e no plural', () => {
@@ -99,8 +99,8 @@ describe('o tamanho de cada chassi e o que cada encaixe oferece', () => {
   });
 
   it('o gigante oferece as pesadas dos Mechs (que para ele são leves) e o canhão de cerco, o pesado do tamanho dele', () => {
-    expect(armOptions('right', 'colossus01')).toEqual(['flamer', 'cannon', 'siege', 'railgun']);
-    expect(armOptions('left', 'colossus01')).toEqual(['cannon', 'siege', 'railgun', 'barrage']);
+    expect(armOptions('right', 'colossus01')).toEqual(['flamer', 'cannon', 'siege', 'railgun', 'cruise']);
+    expect(armOptions('left', 'colossus01')).toEqual(['cannon', 'siege', 'railgun', 'barrage', 'cruise']);
     for (const slot of ['right', 'left'] as const) {
       // As armas dos Mechs são leves para ele; o canhão de cerco (tamanho 3) é a pesada dele.
       for (const id of armOptions(slot, 'colossus01')) expect(classFor(id, CHASSIS_SIZE.colossus01), id).toBe(id === 'siege' ? 'heavy' : 'light');
@@ -111,7 +111,7 @@ describe('o tamanho de cada chassi e o que cada encaixe oferece', () => {
     expect(armOptions('right', 'vector09')).toEqual(expect.arrayContaining(['plasma', 'rotary', 'railgun', 'blaster']));
     expect(armOptions('left', 'vector09')).toEqual(expect.arrayContaining(['rockets', 'barrage', 'plasma']));
     expect(armOptions('right', 'onca')).toEqual(expect.arrayContaining(['flamer', 'cannon', 'rockets', 'plasma']));
-    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic', 'seeker']);
+    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise']);
   });
 
   it('o Colossus do jogador sai da fábrica com as armas do tamanho dele (canhão pesado e chuva) e a montagem vale; o chefe segue com plasma e foguetes', () => {
@@ -151,16 +151,17 @@ describe('o Hangar agrupa as armas pela classe que o chassi enxerga', () => {
 
   it('no Colossus as pesadas dos Mechs vêm como LEVE (e o cerco, tamanho 3, como PESADA); grupo vazio não aparece', () => {
     expect(armGroups('right', 'colossus01')).toEqual([
-      { cls: 'light', ids: ['flamer', 'cannon', 'railgun'] },
+      { cls: 'light', ids: ['flamer', 'cannon', 'railgun', 'cruise'] },
       { cls: 'heavy', ids: ['siege'] },
     ]);
     expect(armGroups('shoulders', 'vector09')).toEqual([]); // sem ombros, sem grupo
   });
 
-  it('o Marauder agrupa os ombros: o sônico, os foguetes e o míssil teleguiado são médios, a chuva de mísseis é pesada', () => {
+  it('o Marauder agrupa os ombros: o lançador leve é leve; o sônico, os foguetes e o míssil teleguiado são médios; a chuva e o cruzador são pesados', () => {
     expect(armGroups('shoulders', 'marauder')).toEqual([
+      { cls: 'light', ids: ['swarm'] },
       { cls: 'medium', ids: ['rockets', 'sonic', 'seeker'] },
-      { cls: 'heavy', ids: ['barrage'] },
+      { cls: 'heavy', ids: ['barrage', 'cruise'] },
     ]);
   });
 });

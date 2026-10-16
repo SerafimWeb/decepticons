@@ -10,6 +10,12 @@ const SHAPES: Record<WeaponId, string> = {
   rockets: 'M8 17V8H17 M31 8H40V17 M40 31V40H31 M17 40H8V31 M24 5V9 M24 39V43',
   // O teleguiado trava em quem está no cone: os cantos do foguete, mais fechados, e quatro pontas que pedem o alvo no meio.
   seeker: 'M10 17V10H17 M31 10H38V17 M38 31V38H31 M17 38H10V31 M24 4V9 M24 39V44 M4 24H9 M39 24H44',
+  // O lançador leve: os cantos do foguete e pares de ticks nos quatro lados (muitos mísseis, um desvio pequeno em volta da mira).
+  swarm: 'M7 12V7H12 M36 7H41V12 M41 36V41H36 M12 41H7V36 M20 5V8 M28 5V8 M20 40V43 M28 40V43 M5 20H8 M5 28H8 M40 20H43 M40 28H43',
+  // O cruzador: o colchete largo do canhão com um arco por cima (o míssil sobe e mergulha no ponto).
+  cruise: 'M5 15V5H15 M33 5H43V15 M43 33V43H33 M15 43H5V33 M16 9Q24 3 32 9 M24 5V11',
+  // O laser: uma cruz fina e quatro diagonais curtas nos cantos (precisão: o feixe vai exatamente onde a mira está).
+  laser: 'M24 4V12 M24 36V44 M4 24H12 M36 24H44 M14 14L10 10 M34 14L38 10 M14 34L10 38 M34 34L38 38',
   barrage: 'M7 16V7H16 M32 7H41V16 M41 32V41H32 M16 41H7V32 M17 11H21 M27 11H31 M17 37H21 M27 37H31',
   chainsaw: 'M8 15L15 22L8 29 M40 15L33 22L40 29 M18 37L24 33L30 37',
   arc: 'M6 24H10L12 18L15 30L17 24 M31 24L33 18L36 30L38 24H42 M24 6V12 M24 36V42',

@@ -110,21 +110,24 @@ function inventario(game) {
 function linhaArma(W, id, fabrica) {
   const a = W.weapon(id, 0);
   const c = W.weapon(id, W.TIERS.length - 1);
-  const dano = (w) => (w.barrage ? `${w.barrage.bombs} × ${w.damage}` : `${w.damage}`);
+  // O lançador leve (P152) mostra a salva inteira: 8 × 5 no MK I, 32 × 7 no MK III (o nível é o tamanho dele).
+  const dano = (w) => (w.barrage ? `${w.barrage.bombs} × ${w.damage}` : w.salvo ? `${w.magazine} × ${w.damage}` : `${w.damage}`);
   const notaDano = a.barrage
     ? `bombas, cada uma até ${un(a.blastRadius, 'm')}`
-    : a.kind === 'melee'
-      ? 'por corte'
-      : a.empHeat
-        ? `+${pc(a.empHeat)} de calor no alvo`
-        : a.blastRadius
-          ? `explosão de ${un(a.blastRadius, 'm')}`
-          : '';
+    : a.salvo
+      ? `mísseis por salva, cada um com explosão de ${un(a.blastRadius, 'm')}`
+      : a.kind === 'melee'
+        ? 'por corte'
+        : a.empHeat
+          ? `+${pc(a.empHeat)} de calor no alvo`
+          : a.blastRadius
+            ? `explosão de ${un(a.blastRadius, 'm')}`
+            : '';
   const porSeg = Math.round((10 / a.fireInterval)) / 10;
   const cadencia = `${num(porSeg, 1)} ${a.kind === 'melee' ? (porSeg === 1 ? 'corte' : 'cortes') : porSeg === 1 ? 'tiro' : 'tiros'}/s`;
   const notaCad = [
     a.chargeTime ? `carga de ${un(a.chargeTime, 's')}` : '',
-    a.magazine ? `carregador de ${a.magazine}, +1 a cada ${un(a.reload, 's')}` : '',
+    a.magazine ? (a.salvo ? `um aperto esvazia o lançador; os tubos voltam um a um, a cada ${un(a.reload, 's')}` : `carregador de ${a.magazine}, +1 a cada ${un(a.reload, 's')}`) : '',
     a.barrage ? `sobe ${un(a.barrage.ascent, 's')} antes de cair` : '',
   ].filter(Boolean).join(' · ');
   const alcance =

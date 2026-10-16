@@ -772,12 +772,14 @@ export class HangarScene {
     // Espalha um pouco pelo alvo, de forma fixa (sem sorteio): o desenho de cada tiro muda com a ordem.
     const k = test.data.shots.length ? this.shotsPool.indexOf(shot) : 0;
     shot.to.set(TARGET.x + Math.sin(k * 2.3) * 0.9, TARGET_H + Math.cos(k * 1.7) * 0.9, TARGET.z + Math.sin(k * 1.1) * 0.5);
-    const visualSpeed = w.kind === 'ammo' ? 45 : 110;
+    // O desenho do estande é um traço só por tiro: o míssil leve é pequeno e rápido (são dezenas), o cruzador grande e lento, e o laser quase instantâneo e magenta (P152).
+    const visualSpeed = w.beam ? 700 : w.salvo ? 70 : w.cruise ? 55 : w.kind === 'ammo' ? 45 : 110;
     shot.dur = shot.from.distanceTo(shot.to) / visualSpeed;
     shot.t = 0;
     const mat = shot.mesh.material as THREE.MeshBasicMaterial;
-    mat.color.set(w.kind === 'ammo' ? 0xffb05a : 0xbff6ff).multiplyScalar(3);
-    shot.mesh.scale.set(w.kind === 'ammo' ? 2.2 : 1, w.kind === 'ammo' ? 0.8 : 1, w.kind === 'ammo' ? 2.2 : 1);
+    mat.color.set(w.beam ? 0xff4be0 : w.kind === 'ammo' ? 0xffb05a : 0xbff6ff).multiplyScalar(3);
+    const thick = w.salvo ? 1.1 : w.cruise ? 3 : w.kind === 'ammo' ? 2.2 : 1;
+    shot.mesh.scale.set(thick, w.kind === 'ammo' ? 0.8 : 1, thick);
     shot.mesh.position.copy(shot.from);
     shot.mesh.lookAt(shot.to);
     shot.mesh.rotateX(Math.PI / 2);

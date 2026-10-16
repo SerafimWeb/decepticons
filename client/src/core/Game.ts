@@ -11,6 +11,7 @@ import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
 import { addSerafimPlaque, SERAFIM_TOWER } from '../environment/SerafimTower';
 import { DroneVisuals } from '../fx/DroneVisuals';
+import { explosionScale, explosionSoundDistance } from '../fx/explosionScale';
 import { ShadowBlobs, terrainGround } from '../fx/ShadowBlobs';
 import { BankTerminal } from '../ui/BankTerminal';
 import { bankReward, nearBank, type BankReply } from '../../../shared/bank/codes';
@@ -137,7 +138,7 @@ import { DominioHud, avisoDoPonto } from '../ui/DominioHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
-const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', chainsaw: 'MOTOSSERRA' };
+const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', swarm: 'ENXAME', cruise: 'CRUZADOR', laser: 'LASER', chainsaw: 'MOTOSSERRA' };
 /** O nome da arma no cartão do HUD, com o nível: "CANHÃO DE PLASMA MK I". */
 const weaponLabel = (w: WeaponStats): string => `${HUD_NAME[w.id] ?? w.name.toUpperCase()} ${TIERS[w.tier]!.label}`;
 const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : weaponLabel(l.secondary));
@@ -211,6 +212,8 @@ export class Game {
   private readonly projectiles: ProjectileSystem;
   private readonly rockets: RocketSystem;
   private readonly barrage: BarrageSystem;
+  /** Estouros de míssil leve já ouvidos: o som sai de três em três. */
+  private microBlasts = 0;
   private readonly combat: CombatSystem;
   private readonly bots: BotSystem;
   private readonly respawner: Respawner;
@@ -594,6 +597,8 @@ export class Game {
     this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
     this.player.flame = (w, origin, dir) => this.match.flameCone(this.mech, origin, dir, w);
     this.player.wave = (w, origin, dir) => this.match.waveCone(this.mech, origin, dir, w);
+    this.player.beam = (w, origin, dir) => this.match.beamPulse(this.mech, origin, dir, w);
+    this.player.cruise = (w, origin, dir, target) => this.match.cruise.fire(origin, dir, target, this.mech.collider, w);
     this.match.onWaveFx = (origin, dir, w) => this.waveRings.spawn(origin, dir, w);
     this.netStatus.className = 'net-status';
     
@@ -1152,7 +1157,7 @@ export class Game {
       };
     }
     // Som de disparo: o controle do jogador avisa a cada tiro de energia (bots têm o som deles, acima).
-    this.player.onShot = (w) => this.audio.playArma(w.id) || (w.id === 'arc' ? this.audio.playArcShot() : w.id === 'cryo' ? this.audio.playCryoShot() : w.id === 'cannon' ? this.audio.playCannonShot() : w.id === 'autocannon' ? this.audio.playAutocannonShot() : w.id === 'sonic' ? this.audio.playSonicShot() : this.audio.playShot());
+    this.player.onShot = (w) => this.audio.playArma(w.id) || (w.id === 'arc' ? this.audio.playArcShot() : w.id === 'cryo' ? this.audio.playCryoShot() : w.id === 'cannon' ? this.audio.playCannonShot() : w.id === 'autocannon' ? this.audio.playAutocannonShot() : w.id === 'sonic' ? this.audio.playSonicShot() : w.id === 'laser' ? this.audio.playLaserShot() : this.audio.playShot());
     // Peso do tiro na câmera (`combat/fireFeel.ts`): o solavanco do trilho e do foguete, o zumbido do plasma.
     this.player.onKick = (amount) => rig.addShake(amount);
     this.player.onRocket = (w) => {
@@ -1224,12 +1229,15 @@ export class Game {
       this.killFeed.push(`◈ ${from}: CONTATO`, name, false);
     };
     // Foguete: o dano em área já foi aplicado pela partida; aqui, fogo, fumaça, tremor e som.
-    this.match.onExplosion = (at) => {
-      this.particles.burst(at, UP, { count: 70, color: BLAST_COLOR, speed: 18, life: 0.75, size: 2.2, expansion: 0.9, spread: 2.4, gravity: 2 });
-      this.particles.burst(at, UP, { count: 24, color: SMOKE_COLOR, speed: 4, life: 1.4, size: 2.7, expansion: 1.2, spread: 1.6, gravity: -1.5 });
+    this.match.onExplosion = (at, w) => {
+      // O estouro é do tamanho da explosão da arma (o foguete, de 6 m, é a medida): um míssil leve de 2,2 m solta um terço das partículas e do tremor, e o som só de três em três
+      // (uma salva de 32 estouraria 32 vezes em dois segundos); o cruzador, de 9 m, é maior que o foguete.
+      const k = explosionScale(w.blastRadius);
+      this.particles.burst(at, UP, { count: Math.round(70 * k), color: BLAST_COLOR, speed: 18 * (0.6 + 0.4 * k), life: 0.75, size: 2.2 * (0.6 + 0.4 * k), expansion: 0.9, spread: 2.4, gravity: 2 });
+      this.particles.burst(at, UP, { count: Math.round(24 * k), color: SMOKE_COLOR, speed: 4, life: 1.4, size: 2.7 * (0.6 + 0.4 * k), expansion: 1.2, spread: 1.6, gravity: -1.5 });
       const dist = at.distanceTo(mech.position);
-      if (dist < 40) rig.addShake(0.5 * (1 - dist / 40));
-      this.audio.playExplosion(dist);
+      if (dist < 40) rig.addShake(0.5 * k * (1 - dist / 40));
+      if (!w.salvo || (this.microBlasts++ % 3) === 0) this.audio.playExplosion(explosionSoundDistance(dist, k));
     };
     this.match.onRoundStart = () => {
       this.telemetry.enviar('partida_iniciada');
@@ -1657,6 +1665,7 @@ export class Game {
     this.projectiles.render(alpha);
     this.rockets.render(alpha);
     this.barrage.render(alpha);
+    this.match.cruise.render(alpha);
     this.debris.sync();
 
     const nowDashing = this.mech.isDashing;
@@ -1749,7 +1758,7 @@ export class Game {
     if (this.playing && this.gameMode === 'deathmatch' && !this.round.playing) this.hud.roundOverlay.contar(this.round.timeLeft, this.round.number + 1);
     // Só o gatilho de carregador (foguetes) tem pips para esvaziar; serra e arma de energia ficam cheios.
     const noMagazine = this.mech.loadout.secondary?.kind !== 'ammo';
-    this.hud.setRockets(noMagazine ? 4 : this.player.launcher.ammo, noMagazine ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary);
+    this.hud.setRockets(noMagazine ? 4 : this.player.launcher.ammo, noMagazine ? 1 : this.player.launcher.reloadProgress, this.mech.canFireSecondary, noMagazine ? 4 : this.player.launcher.weapon.magazine);
     // "RECARREGANDO" ao lado da mira: o carregador (foguetes) está vazio e enchendo (frente 2).
     this.hud.setReloading(!noMagazine && this.player.launcher.ammo === 0);
     this.hud.setHeat(this.mech.heat, this.mech.overheated, this.mech.coolingBoost);

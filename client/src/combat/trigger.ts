@@ -115,18 +115,29 @@ export class FuelTank {
 /**
  * Carregador de uma arma de munição (foguetes, no braço esquerdo). Regra de jogo pura (G14): roda no
  * tick fixo, sem física nem render. Recarrega um tiro por vez, continuamente, enquanto não estiver cheio.
+ *
+ * **Arma de salva** (`Salvo`, o lançador de mísseis leve): a salva só começa com **todos os tubos carregados** e, começada, vai até esvaziar, **sem precisar do gatilho** (`committed`:
+ * o `Armament` continua pedindo o tiro enquanto a salva não acaba); os tubos só voltam a recarregar depois que o último míssil saiu.
  */
 export class RocketLauncher {
   ammo: number;
   private readonly timer = new FireTimer();
   private reload = 0;
+  /** Uma salva está saindo (só nas armas com `Salvo`): ela não se cancela soltando o gatilho nem recarrega no meio. */
+  private salvoOn = false;
 
   constructor(readonly weapon: WeaponStats) {
     this.ammo = weapon.magazine;
   }
 
+  /** A salva começou e ainda não acabou: quem aciona a arma deve seguir pedindo o tiro, com o gatilho apertado ou não. */
+  get committed(): boolean {
+    return this.salvoOn;
+  }
+
   fixedUpdate(dt: number): void {
     this.timer.fixedUpdate(dt);
+    if (this.salvoOn) return; // os tubos só recarregam depois do último míssil da salva
     if (this.ammo >= this.weapon.magazine) {
       this.reload = 0;
       return;
@@ -138,11 +149,16 @@ export class RocketLauncher {
     }
   }
 
-  /** Gasta um tiro se houver e o intervalo tiver passado. */
+  /** Gasta um tiro se houver e o intervalo tiver passado. A arma de salva só começa cheia, e começada, esvazia. */
   tryFire(): boolean {
     if (this.ammo <= 0 || !this.timer.ready) return false;
+    if (this.weapon.salvo && !this.salvoOn) {
+      if (this.ammo < this.weapon.magazine) return false; // ainda recarregando os tubos: o lançador só dispara cheio
+      this.salvoOn = true;
+    }
     this.ammo--;
     this.timer.shot(this.weapon.fireInterval);
+    if (this.salvoOn && this.ammo <= 0) this.salvoOn = false; // o último míssil saiu: a salva acabou e os tubos começam a voltar
     return true;
   }
 
@@ -156,5 +172,6 @@ export class RocketLauncher {
     this.ammo = this.weapon.magazine;
     this.timer.reset();
     this.reload = 0;
+    this.salvoOn = false;
   }
 }

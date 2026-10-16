@@ -27,31 +27,40 @@ describe('míssil teleguiado: o que é', () => {
   it('é de munição (passa pelo RocketSystem), explosivo, com trava e curva; só ele tem `guide`', () => {
     expect(SEEKER.kind).toBe('ammo');
     expect(DAMAGE_TYPE.seeker).toBe('explosivo');
-    expect(SEEKER.guide).toEqual({ turnRate: 2.2, lockRange: 90, lockHalfAngle: 0.5 });
+    expect(SEEKER.guide).toEqual({ turnRate: 2.3, lockRange: 110, lockHalfAngle: 0.5 });
     for (const id of WEAPON_IDS) expect(weapon(id).guide !== undefined, id).toBe(id === 'seeker');
   });
 
-  it('55 de dano, explosão de 4,5 m (menor que a dos foguetes), 2 no carregador, recarga de 3,2 s, 48 m/s até 140 m, 4 t por lançador', () => {
-    expect([SEEKER.damage, SEEKER.blastRadius, SEEKER.magazine, SEEKER.reload, SEEKER.speed, SEEKER.maxRange, SEEKER.mass]).toEqual([55, 4.5, 2, 3.2, 48, 140, 4]);
+  it('o guiado de médio alcance (P152): 55 de dano, explosão de 4,5 m (menor que a dos foguetes), 2 no carregador, recarga de 3,2 s, 52 m/s até 170 m, 4 t por lançador', () => {
+    expect([SEEKER.damage, SEEKER.blastRadius, SEEKER.magazine, SEEKER.reload, SEEKER.speed, SEEKER.maxRange, SEEKER.mass]).toEqual([55, 4.5, 2, 3.2, 52, 170, 4]);
     expect(SEEKER.blastRadius).toBeLessThan(weapon('rockets').blastRadius);
     expect(SEEKER.speed).toBeLessThan(weapon('rockets').speed); // quem corre percebe e desvia
   });
 
-  it('os níveis sobem o dano e a carga (66 e 77; 6 e 8 t) e a trava é a mesma em todos', () => {
-    expect(([0, 1, 2] as const).map((t) => weapon('seeker', t).damage)).toEqual([55, 66, 77]);
-    expect(([0, 1, 2] as const).map((t) => weapon('seeker', t).mass)).toEqual([4, 6, 8]);
-    for (const t of [1, 2] as const) expect(weapon('seeker', t).guide).toEqual(SEEKER.guide);
+  it('os níveis sobem o dano e a carga (66 e 77; 6 e 8 t) e AFINAM a guiagem: +20% de curva (2,3, 2,76 e 3,22 rad/s) e de alcance da trava por nível, e o voo +8% (P152)', () => {
+    const nivel = (t: Tier) => weapon('seeker', t);
+    expect(([0, 1, 2] as const).map((t) => nivel(t).damage)).toEqual([55, 66, 77]);
+    expect(([0, 1, 2] as const).map((t) => nivel(t).mass)).toEqual([4, 6, 8]);
+    expect(([0, 1, 2] as const).map((t) => nivel(t).guide!.turnRate)).toEqual([2.3, 2.76, 3.22]);
+    expect(([0, 1, 2] as const).map((t) => nivel(t).guide!.lockRange)).toEqual([110, 132, 154]);
+    expect(([0, 1, 2] as const).map((t) => nivel(t).maxRange)).toEqual([170, 183.5, 197]);
+    // O cone da trava não muda de nível (é a mira do jogador que escolhe o alvo) e a trava sempre cabe no voo do míssil.
+    for (const t of [0, 1, 2] as const) {
+      expect(nivel(t).guide!.lockHalfAngle).toBe(SEEKER.guide!.lockHalfAngle);
+      expect(nivel(t).guide!.lockRange).toBeLessThanOrEqual(nivel(t).maxRange);
+    }
   });
 
-  it('é arma média de ombro e de costas: cabe só nos ombros do Marauder, não em mão nenhuma, e a rede o conhece (protocolo 16)', () => {
+  it('é arma média de ombro, de costas e (P152) de braço: nos ombros do Marauder e no Ataque 2 dos robôs pequenos; a rede o conhece desde o protocolo 16', () => {
     expect(classFor('seeker', 2)).toBe('medium');
     expect(fitsMount('seeker', 'shoulder')).toBe(true);
     expect(fitsMount('seeker', 'back')).toBe(true);
-    expect(fitsMount('seeker', 'arm')).toBe(false);
+    expect(fitsMount('seeker', 'arm')).toBe(true);
     expect(armOptions('shoulders', 'marauder')).toContain('seeker');
-    for (const slot of ['right', 'left'] as const) expect(armOptions(slot, 'marauder')).not.toContain('seeker');
+    for (const slot of ['right', 'left'] as const) expect(armOptions(slot, 'marauder')).toContain('seeker');
+    expect(armOptions('left', 'vector09')).toContain('seeker'); // o braço esquerdo dos Mechs pequenos é o Ataque 2
     expect(armGroups('shoulders', 'marauder').find((g) => g.cls === 'medium')!.ids).toContain('seeker');
-    expect(NET_WEAPONS.at(-1)).toBe('seeker');
+    expect(NET_WEAPONS).toContain('seeker');
   });
 });
 
@@ -123,16 +132,17 @@ describe('a guiagem (RocketSystem): curva até o alvo, no máximo turnRate rad/s
   const FRENTE = new THREE.Vector3(0, 0, -1);
   const angulo = (a: THREE.Vector3, b: THREE.Vector3) => Math.acos(Math.min(1, Math.max(-1, a.dot(b))));
 
-  it('nunca vira mais que turnRate x tempo: em 0,5 s, no máximo 1,1 rad (63°), mesmo com o alvo a 90° do rumo', async () => {
+  it('nunca vira mais que turnRate x tempo: em 0,5 s, no máximo 1,15 rad (66°), mesmo com o alvo a 90° do rumo', async () => {
     const { sys, voa, rumo } = await sozinho(new THREE.Vector3(60, 1, -2)); // quase de lado
     sys.fire(ORIGEM, FRENTE, undefined, SEEKER);
     voa(0.5);
     const virou = angulo(rumo(), FRENTE);
-    expect(virou).toBeLessThanOrEqual(2.2 * 0.5 + 0.02);
-    expect(virou).toBeGreaterThan(2.2 * 0.5 - 0.1); // e vira de fato, o máximo que pode
+    const giro = SEEKER.guide!.turnRate;
+    expect(virou).toBeLessThanOrEqual(giro * 0.5 + 0.02);
+    expect(virou).toBeGreaterThan(giro * 0.5 - 0.1); // e vira de fato, o máximo que pode
   });
 
-  it('o rumo vai se fechando sobre o alvo: depois de 0,6 s (29 m de voo) ele aponta (quase) direto para o centro do corpo', async () => {
+  it('o rumo vai se fechando sobre o alvo: depois de 0,6 s (31 m de voo) ele aponta (quase) direto para o centro do corpo', async () => {
     const alvo = new THREE.Vector3(14, 0, -40);
     const { sys, voa, rumo, foguete } = await sozinho(alvo);
     sys.fire(ORIGEM, FRENTE, undefined, SEEKER);
@@ -142,11 +152,11 @@ describe('a guiagem (RocketSystem): curva até o alvo, no máximo turnRate rad/s
     expect(angulo(rumo(), ate)).toBeLessThan(0.08);
   });
 
-  it('a velocidade não muda ao curvar: segue 48 m/s', async () => {
+  it('a velocidade não muda ao curvar: segue os 52 m/s da arma', async () => {
     const { sys, voa, foguete } = await sozinho(new THREE.Vector3(30, 1, -20));
     sys.fire(ORIGEM, FRENTE, undefined, SEEKER);
     voa(0.7);
-    expect(foguete().velocity.length()).toBeCloseTo(48, 3);
+    expect(foguete().velocity.length()).toBeCloseTo(SEEKER.speed, 3);
   });
 
   it('alvo morto: o míssil solta e segue em linha reta, sem mudar mais de rumo', async () => {
@@ -167,7 +177,7 @@ describe('a guiagem (RocketSystem): curva até o alvo, no máximo turnRate rad/s
     voa(0.4);
     for (const v of [...foguete().velocity.toArray(), ...foguete().pos.toArray()]) expect(Number.isFinite(v)).toBe(true);
     expect(angulo(foguete().velocity.clone().normalize(), FRENTE)).toBeGreaterThan(0.5);
-    expect(foguete().velocity.length()).toBeCloseTo(48, 3); // a volta não rouba nem cria velocidade
+    expect(foguete().velocity.length()).toBeCloseTo(SEEKER.speed, 3); // a volta não rouba nem cria velocidade
   });
 
   it('mira o centro do corpo, não os pés: um gigante de 20 m de altura puxa o míssil para cima', async () => {
@@ -211,13 +221,14 @@ describe('a trava (Match.seekTarget), com física de verdade: o inimigo mais cen
     await RAPIER.init();
   });
 
-  async function palco(enemyMechs = 0) {
+  /** `zAtirador`: onde o atirador fica (padrão 25; o 60 dá 120 m até a parede do fundo da Arena, o que a trava de 110 m precisa para ser medida). */
+  async function palco(enemyMechs = 0, zAtirador = 25) {
     const physics = await PhysicsWorld.create();
     const foes = { ...DEFAULT_SETTINGS, enemyMechs, enemyAndroids: 0, technician: false };
     const match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes, debris: false });
     const atirador = new Vector09();
     match.addPlayer(atirador, 'Atirador');
-    atirador.respawn(new THREE.Vector3(0, 0, 25));
+    atirador.respawn(new THREE.Vector3(0, 0, zAtirador));
     const alvos: Vector09[] = [];
     const alvo = (x: number, z: number): Vector09 => {
       const m = new Vector09();
@@ -232,7 +243,7 @@ describe('a trava (Match.seekTarget), com física de verdade: o inimigo mais cen
       explosoes.push(at.clone());
       original?.(at, dir, owner, w);
     };
-    const origem = new THREE.Vector3(0, 3.3, 24.5);
+    const origem = new THREE.Vector3(0, 3.3, zAtirador - 0.5);
     const frente = new THREE.Vector3(0, 0, -1);
     const dispara = (w = SEEKER, segundos = 4) => {
       physics.step();
@@ -277,12 +288,21 @@ describe('a trava (Match.seekTarget), com física de verdade: o inimigo mais cen
     expect(lado.vida(a)).toBe(a0);
     expect(Math.abs(lado.explosoes[0]!.x)).toBeLessThan(1e-6);
 
-    const longe = await palco();
-    const b = longe.alvo(4, -80); // ~105 m
+    const longe = await palco(0, 60);
+    const b = longe.alvo(8, -60); // ~120 m: além dos 110 m da trava (e perto da parede do fundo da Arena)
     const b0 = longe.vida(b);
     longe.dispara(SEEKER);
     expect(longe.vida(b)).toBe(b0);
     expect(Math.abs(longe.explosoes[0]!.x)).toBeLessThan(1e-6);
+  });
+
+  it('a trava do guiado de médio alcance (P152) chega a 110 m: um alvo a 100 m, que os 90 m de antes não pegavam, é travado e levado', async () => {
+    const perto = await palco(0, 60);
+    const a = perto.alvo(5, -40); // ~100 m, ~3° do eixo
+    const a0 = perto.vida(a);
+    perto.dispara(SEEKER);
+    expect(a0 - perto.vida(a)).toBeGreaterThan(0); // travou e curvou os 5 m laterais até o corpo
+    expect(perto.explosoes[0]!.distanceTo(new THREE.Vector3(5, 1.5, -40))).toBeLessThan(4.5 + 1.3);
   });
 
   it('uma parede no meio segura a trava (sem linha de visão): o míssil voa reto e bate na parede', async () => {

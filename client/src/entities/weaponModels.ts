@@ -110,6 +110,67 @@ function mortarPod(root: THREE.Object3D, tier: number, M: Mats): number {
   return muzzleZ;
 }
 
+/**
+ * Lançador de mísseis leve (P152): uma grade densa de tubos finos, **um tubo por míssil**: 8 no MK I (4×2), 16 no MK II (4×4) e 32 no MK III (8×4). O desenho conta os mísseis
+ * que a arma leva (o nível é o tamanho do lançador).
+ */
+function swarm(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const cols = [4, 4, 8][tier]!;
+  const rows = [2, 4, 4][tier]!;
+  const pitch = 0.1;
+  const w = cols * pitch + 0.1;
+  const h = rows * pitch + 0.1;
+  d.box(w, h, 0.55, M.armor, 0, 0, -0.35);
+  d.box(w * 1.05, h * 1.05, 0.06, M.frame, 0, 0, -0.66);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      d.cylZ(0.036, 0.04, M.glow, (c - (cols - 1) / 2) * pitch, (r - (rows - 1) / 2) * pitch, -0.69);
+    }
+  }
+  return 0.78 * LONG;
+}
+
+/** Lançador leve de ombro: a mesma grade de tubos, com a traseira fechada e o suporte embaixo para assentar na ombreira. */
+function swarmPod(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const muzzleZ = swarm(root, tier, M);
+  d.box(0.34, 0.14, 0.45, M.frame, 0, -([2, 4, 4][tier]! * 0.05 + 0.12), -0.36);
+  return muzzleZ;
+}
+
+/** Míssil cruzador (P152): um tubo único, comprido e grosso; o nível o alonga e põe anéis de reforço. */
+function cruise(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = [0.95, 1.1, 1.25][tier]!;
+  d.box(0.38, 0.36, 0.5, M.armor, 0, 0, -0.3);
+  d.cylZ(0.17, len, M.frame, 0, 0, -0.55 - len / 2);
+  for (let i = 0; i < 2 + tier; i++) d.cylZ(0.21, 0.05, M.armor, 0, 0, -0.7 - i * 0.28);
+  d.cylZ(0.2, 0.07, M.armor, 0, 0, -0.56 - len);
+  d.cylZ(0.13, 0.04, M.glow, 0, 0, -0.6 - len);
+  return (0.65 + len) * LONG;
+}
+
+/** Cruzador de ombro: o mesmo tubo, com o suporte embaixo. */
+function cruisePod(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const muzzleZ = cruise(root, tier, M);
+  d.box(0.34, 0.16, 0.6, M.frame, 0, -0.26, -0.5);
+  return muzzleZ;
+}
+
+/** Raio laser (P152): cano fino e longo com a lente na ponta e anéis de foco; o nível alonga o cano e soma anéis. */
+function laser(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = [0.95, 1.05, 1.15][tier]!;
+  d.box(0.3, 0.3, 0.5, M.armor, 0, 0, -0.3);
+  d.cylZ(0.05, len, M.frame, 0, 0, -0.55 - len / 2);
+  for (let i = 0; i < 2 + tier; i++) d.cylZ(0.12, 0.035, M.armor, 0, 0, -0.72 - i * 0.22);
+  d.cylZ(0.085, 0.05, M.glow, 0, 0, -0.56 - len);
+  d.box(0.05, 0.08, 0.3, M.frame, 0, 0.2, -0.4);
+  return (0.62 + len) * LONG;
+}
+
 /** Blaster leve (energia): corpo curto e dois canos paralelos. O nível alonga os canos e põe a mira. */
 function blaster(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -355,12 +416,17 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'sonic' ? PALETTE.pink : weapon?.id === 'seeker' ? PALETTE.cyan : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
+  const accent = weapon?.id === 'sonic' || weapon?.id === 'laser' ? PALETTE.pink : weapon?.id === 'seeker' ? PALETTE.cyan : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
-    // Lançador de ombro: o casulo de foguetes e o morteiro da chuva têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
-    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic' && weapon?.id !== 'seeker') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
-    const muzzleZ = weapon.id === 'sonic' ? sonic(root, weapon.tier, M) : weapon.id === 'barrage' ? mortarPod(root, weapon.tier, M) : pod(root, weapon.tier, M);
+    // Lançador de ombro: o casulo de foguetes, o morteiro da chuva e os lançadores leve e cruzador têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
+    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic' && weapon?.id !== 'seeker' && weapon?.id !== 'swarm' && weapon?.id !== 'cruise') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
+    const muzzleZ =
+      weapon.id === 'sonic' ? sonic(root, weapon.tier, M)
+      : weapon.id === 'barrage' ? mortarPod(root, weapon.tier, M)
+      : weapon.id === 'swarm' ? swarmPod(root, weapon.tier, M)
+      : weapon.id === 'cruise' ? cruisePod(root, weapon.tier, M)
+      : pod(root, weapon.tier, M);
     batchRigMeshes(root, []);
     return { object: root, muzzle: new THREE.Vector3(0, 0, -muzzleZ) };
   }
@@ -386,6 +452,15 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'barrage':
         muzzleZ = barrage(root, weapon.tier, M);
+        break;
+      case 'swarm':
+        muzzleZ = swarm(root, weapon.tier, M);
+        break;
+      case 'cruise':
+        muzzleZ = cruise(root, weapon.tier, M);
+        break;
+      case 'laser':
+        muzzleZ = laser(root, weapon.tier, M);
         break;
       case 'rotary':
         muzzleZ = rotary(root, weapon.tier, M);

@@ -30,7 +30,9 @@ describe('as fichas das armas (a janela ARSENAL)', () => {
   it('o DPS só existe para o tiro simples (dano ÷ intervalo); chuva, chamas, onda, rotatória e teleguiado não têm essa conta', () => {
     const plasma = fichas.find((f) => f.id === 'plasma')!;
     expect(plasma.danoPorSegundo).toBeCloseTo(weapon('plasma').damage / weapon('plasma').fireInterval, 0);
-    for (const id of ['barrage', 'flamer', 'sonic', 'rotary', 'seeker'] as const) {
+    // O lançador leve (um aperto esvazia o carregador) e o cruzador (um tiro por carga) também não: dano ÷ intervalo não é o que eles rendem. O laser, sim: pulso a pulso.
+    expect(fichas.find((f) => f.id === 'laser')!.danoPorSegundo).toBeCloseTo(weapon('laser').damage / weapon('laser').fireInterval, 0);
+    for (const id of ['barrage', 'flamer', 'sonic', 'rotary', 'seeker', 'swarm', 'cruise'] as const) {
       if (WEAPON_IDS.includes(id)) expect(fichas.find((f) => f.id === id)!.danoPorSegundo, id).toBeNull();
     }
   });
@@ -61,6 +63,12 @@ describe('as fichas das armas (a janela ARSENAL)', () => {
     expect(notasDaArma(weapon('arc')).join(' ')).toMatch(/chocado/);
     expect(notasDaArma(weapon('cryo')).join(' ')).toMatch(/gelado/);
     expect(notasDaArma(weapon('flamer')).join(' ')).toMatch(/queimando/);
+    // As armas novas (P152) dizem o que as faz diferentes, sem repetir o que já está nas colunas.
+    expect(notasDaArma(weapon('swarm')).join(' ')).toMatch(/um aperto esvazia o lançador: 8 mísseis em sequência \(16 e 32 nos níveis\)/);
+    expect(notasDaArma(weapon('swarm')).join(' ')).not.toMatch(/munição: 8 tiros/);
+    expect(notasDaArma(weapon('cruise')).join(' ')).toMatch(/sobe em arco e mergulha/);
+    expect(notasDaArma(weapon('laser')).join(' ')).toMatch(/feixe instantâneo/);
+    expect(notasDaArma(weapon('seeker')).join(' ')).toMatch(/a guiagem sobe com o nível/);
   });
 
   it('a classe depende do tamanho de quem carrega: a pesada dos Mechs é a leve do gigante, e a leve dos Mechs não cabe nele', () => {

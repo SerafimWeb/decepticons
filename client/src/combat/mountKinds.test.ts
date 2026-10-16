@@ -21,8 +21,11 @@ describe('tipos de encaixe: braço, ombro, costas, peito e cabeça (ordem P84 do
     expect(WEAPON_MOUNTS.sonic).toEqual(['shoulder']);
     expect(WEAPON_MOUNTS.rockets).toEqual(['arm', 'shoulder', 'back']);
     expect(WEAPON_MOUNTS.barrage).toEqual(['arm', 'shoulder', 'back']);
+    // Os mísseis novos (P152) são lançadores como os foguetes; o guiado também cabe no braço; o laser é arma de mão (feixe).
+    for (const id of ['swarm', 'cruise', 'seeker'] as const) expect(WEAPON_MOUNTS[id], id).toEqual(['arm', 'shoulder', 'back']);
+    expect(WEAPON_MOUNTS.laser).toEqual(['arm']);
     const soBraco = WEAPON_IDS.filter((id) => WEAPON_MOUNTS[id].length === 1 && WEAPON_MOUNTS[id][0] === 'arm').sort();
-    expect(soBraco).toEqual(['arc', 'autocannon', 'blaster', 'cannon', 'chainsaw', 'cryo', 'emp', 'flamer', 'plasma', 'railgun', 'rotary', 'shotgun', 'siege']);
+    expect(soBraco).toEqual(['arc', 'autocannon', 'blaster', 'cannon', 'chainsaw', 'cryo', 'emp', 'flamer', 'laser', 'plasma', 'railgun', 'rotary', 'shotgun', 'siege']);
   });
 
   it('arma de corte (a motosserra) só vai no braço: não existe motosserra de ombro, de costas, de peito nem de cabeça', () => {
@@ -77,8 +80,8 @@ describe('as listas de cada chassi obedecem ao contrato (ARM_SLOTS conferido con
     expect(entradas.filter((e) => e.id === 'sonic').every((e) => e.ranhura === 'shoulders')).toBe(true);
   });
 
-  it('o Marauder, o único com ombros, oferece nos ombros tudo o que cabe em ombro e já tem uma arma do tipo (foguetes, chuva e sônico)', () => {
-    expect(ARM_SLOTS.marauder.shoulders).toEqual(['rockets', 'barrage', 'sonic', 'seeker']);
+  it('o Marauder, o único com ombros, oferece nos ombros tudo o que cabe em ombro e já tem uma arma do tipo (foguetes, chuva, sônico, guiado e os dois mísseis novos)', () => {
+    expect(ARM_SLOTS.marauder.shoulders).toEqual(['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise']);
     for (const id of WEAPON_IDS.filter((x) => fitsMount(x, 'shoulder'))) expect(ARM_SLOTS.marauder.shoulders, id).toContain(id);
   });
 });

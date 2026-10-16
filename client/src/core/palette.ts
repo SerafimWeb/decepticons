@@ -63,6 +63,9 @@ export const GLOW = {
   hostileArc: new THREE.Color(3.6, 0.8, 4.0),
   friendlyIce: new THREE.Color(1.7, 2.5, 2.7),
   hostileIce: new THREE.Color(3.4, 2.6, 4.2),
+  // O raio laser (feixe, `fx/BeamVisuals.ts`): magenta do jogador (não se confunde com o plasma verde nem com a elétrica azul) e laranja-vermelho aceso do inimigo.
+  friendlyLaser: new THREE.Color(2.6, 0.45, 2.4),
+  hostileLaser: new THREE.Color(4.0, 1.1, 0.35),
   // O tiro de metal (canhão pesado e automático): o corpo é de aço (`fx/kineticShot.ts`), só a cauda quente acende.
   friendlySlug: new THREE.Color(2.4, 1.6, 0.5),
   hostileSlug: new THREE.Color(3.4, 0.7, 0.3),

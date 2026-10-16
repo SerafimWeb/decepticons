@@ -48,6 +48,10 @@ export class PlayerController {
   wave?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
   /** O lança-chamas pulsou: a partida aplica o cone de dano a partir de `origin` na direção `dir` (`Match.flameCone`). */
   flame?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
+  /** O raio laser pulsou: a partida acerta o feixe de `origin` na direção `dir` e o desenha (`Match.beamPulse`). */
+  beam?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
+  /** Saiu um míssil cruzador: a partida o lança em arco de `origin` até o ponto da mira `target` (`CruiseSystem.fire`). */
+  cruise?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3, target: THREE.Vector3) => void;
   /** Teclas de cada ação (e.code), vindas das configurações. */
   keys: Readonly<Record<KeyAction, string>> = DEFAULT_SETTINGS.keys;
 
@@ -60,16 +64,20 @@ export class PlayerController {
   private jumpQueued = false;
   private dashQueued = false;
   private spinShots = 0;
+  /** Contadores do som da salva do lançador leve e do feixe do laser: tocam de poucos em poucos (são muitos por segundo). */
+  private salvoShots = 0;
+  private beamShots = 0;
   /** A onda sônica deste aperto já fez o som e o tranco (as duas bocas dos ombros saem no mesmo tick). */
   private waveHeard = false;
   private readonly armament: Armament;
   private readonly cmd: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
   private readonly sink: ShotSink = {
     projectile: (mount, w, spread) => this.shoot(mount, w, spread),
-    rocket: (mount, w, volley) => this.launch(mount, w, volley),
+    rocket: (mount, w, volley, spread) => this.launch(mount, w, volley, spread),
     melee: (w) => this.melee?.(w),
     flame: (mount, w) => this.flameFrom(mount, w),
     wave: (mount, w) => this.waveFrom(mount, w),
+    beam: (mount, w) => this.beamFrom(mount, w),
   };
 
   constructor(
@@ -205,16 +213,30 @@ export class PlayerController {
     this.onKick?.(fireKick(w));
   }
 
-  private launch(mount: MountId, w: WeaponStats, volley: number): void {
+  /** Um pulso do raio laser de `mount`: sai da boca e vai até a mira; a partida acerta o feixe e o desenha. O som sai de três em três pulsos (são ~8 por segundo). */
+  private beamFrom(mount: MountId, w: WeaponStats): void {
+    this.mech.mountWorldPosition(mount, _muzzle);
+    this.aimFrom(_muzzle);
+    this.beam?.(w, _muzzle, _dir);
+    if ((this.beamShots++ % 3) === 0) this.onShot?.(w);
+    this.onKick?.(fireKick(w));
+  }
+
+  private launch(mount: MountId, w: WeaponStats, volley: number, spread: Readonly<Spread>): void {
     this.mech.mountWorldPosition(mount, _muzzle);
     this.aimFrom(_muzzle);
     // Chuva de mísseis: sobe e cai em volta do ponto sob a mira, em vez de ir reto até ele.
     // O desenho do lançamento sobe do morteiro das costas, se o Mech tem um (a conta da chuva usa a boca do tiro).
     if (w.barrage) this.barrage.fire(_muzzle, _dir, this.rig.aim.point, this.mech.collider, w, volley, this.mech.barrageMouth(_mouth));
-    else this.rockets.fire(_muzzle, _dir, this.mech.collider, w);
-    this.particles.burst(_muzzle, _dir, { count: 14, color: ROCKET_FLASH, speed: 8, life: 0.25, spread: 0.6, gravity: 0 });
+    // Míssil cruzador: sobe em arco e mergulha no ponto sob a mira.
+    else if (w.cruise) this.cruise?.(w, _muzzle, _dir, this.rig.aim.point);
+    // Lançador leve: cada míssil sai para a mira do instante, com o desvio dele (um ponto do cone da salva).
+    else this.rockets.fire(_muzzle, applySpread(_dir, spread), this.mech.collider, w);
+    // A salva do lançador leve solta dezenas de mísseis por segundo: clarão pequeno por míssil, e o som e o tranco de quatro em quatro.
+    const salva = w.salvo !== undefined;
+    this.particles.burst(_muzzle, _dir, salva ? { count: 3, color: ROCKET_FLASH, speed: 6, life: 0.12, spread: 0.5, gravity: 0 } : { count: 14, color: ROCKET_FLASH, speed: 8, life: 0.25, spread: 0.6, gravity: 0 });
     // Uma vez por aperto: a salva do Marauder (dois ombros) e os dois foguetes juntos pesam como um estrondo só.
-    if (volley === 0) {
+    if (volley === 0 && (!salva || (this.salvoShots++ & 3) === 0)) {
       this.onRocket?.(w);
       this.onKick?.(fireKick(w));
     }

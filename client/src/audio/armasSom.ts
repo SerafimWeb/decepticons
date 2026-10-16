@@ -25,6 +25,9 @@ export const AMOSTRAS_DAS_ARMAS: Readonly<Record<string, AmostraDeArma>> = {
   rockets: { nome: 'arma_foguete', ganho: 0.75, pitch: 1, maxS: 0.8 },
   seeker: { nome: 'arma_teleguiado', ganho: 0.8, pitch: 1, maxS: 1.3 },
   barrage: { nome: 'arma_chuva', ganho: 0.85, pitch: 1, maxS: 1.3 },
+  // O lançador leve (P152): o mesmo lançamento dos foguetes, mais agudo e curto (toca de quatro em quatro mísseis); o cruzador, o mesmo lançamento mais grave e mais longo.
+  swarm: { nome: 'arma_foguete', ganho: 0.5, pitch: 1.5, maxS: 0.3 },
+  cruise: { nome: 'arma_foguete', ganho: 0.95, pitch: 0.7, maxS: 1.2 },
 };
 
 /** Os arquivos a carregar na abertura (sem repetir: o cerco e o canhão dividem um). */

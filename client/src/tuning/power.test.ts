@@ -69,7 +69,7 @@ describe('potências: o contrato', () => {
   it('nada é confiado: lixo vira 100%, fora da faixa vai para 25% ou 400%, campo desconhecido é ignorado', () => {
     expect(powerChanges(sanitizePower(null))).toBe(0);
     expect(powerChanges(sanitizePower('p1'))).toBe(0);
-    const s = sanitizePower({ weapons: { plasma: { damage: 99, rate: -1, heat: 'x' }, laser: { damage: 2 } }, clans: { mechs: { health: 0.5 }, __proto__: { speed: 3 } } });
+    const s = sanitizePower({ weapons: { plasma: { damage: 99, rate: -1, heat: 'x' }, raiox: { damage: 2 } }, clans: { mechs: { health: 0.5 }, __proto__: { speed: 3 } } });
     expect(s.weapons.plasma.damage).toBe(4);
     expect(s.weapons.plasma.rate).toBe(0.25);
     expect(s.weapons.plasma.heat).toBe(1);
@@ -85,7 +85,7 @@ describe('potências: o contrato', () => {
     expect(powerKey(p)).toBe('p1.rockets-c80.technician-d200');
     expect(parsePowerKey(powerKey(p))).toEqual(p);
     expect(parsePowerKey('p1')).toEqual(defaultPower());
-    expect(parsePowerKey('p1.laser-d200')).toBeNull();
+    expect(parsePowerKey('p1.raiox-d200')).toBeNull();
     expect(parsePowerKey('p1.plasma-z100')).toBeNull();
     expect(parsePowerKey('<script>')).toBeNull();
     expect(parsePowerKey('')).toBeNull();
