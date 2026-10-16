@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P169 — Landing, comunicação pública e primeiro acesso (16/10, Codex)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P169 | 16/10 | "melhorando a LANDIG PAGE, e primeiros acessos"; "os textos, numeros e recursos devem sim ser relativos aos dados que ja temos do jogo"; "refinar, polir e melhorar esses textos"; "quero um visual moderno, que seja a nossa cara e personalidade"; "tente usar os próprios robôs do nosso jogo nessas imagens" | 🔧 | Codex, `codex/landing-primeiro-acesso`: landing editorial, renderizações dos modelos reais, comunicação profissional e orientação inicial. Em validação local; ainda não publicado. Referências em `.tmp/landing/` | Raiz de cybermech.online → Jogar; Mechs → Pilotar; Oficina e Bastidores |
+
 ## ⏳ DECISÕES QUE ESPERAM O COMANDANTE (12/10) — sete escolhas travam o trabalho
 
 > Cada linha é uma decisão **do Comandante**; as equipes param nela até a resposta. A recomendação está na terceira coluna e
@@ -246,6 +252,8 @@ Atualize a cada fase. Se os números não mexem, o trabalho é cosmético, mesmo
 | Jogadores simultâneos já vistos sem problema | benchmark local de 10/50/100; na internet, **nenhum teste com gente** | `CAPACIDADE.md` | uma sessão com 5 pessoas |
 
 **P109, complemento de 13/10:** referência no #297. **14/10 (Codex):** três sessões válidas/53.798 quadros: p95/p99 16,8/16,9 ms; pausas >300 ms = 2/1/0 por sessão. Maior avanço da distância de câmera por passo na barricada: **2,55→0,75 m**; no prédio: **0,50→0,42 m**. Fonte: `medicoes/FLUIDEZ_CAMERA.md` e JSONs. Ganho medido de continuidade da câmera, sem atribuir ganho de FPS. Fluidez de 60 FPS e qualidade equivalente continuam não homologadas.
+
+**P169, complemento de 16/10 (Codex):** landing verificada em 1440×1000, 1280×720 e 390×844: 0 overflow horizontal e 0 imagem ausente. Oito imagens promocionais/capturas: 644.335 bytes, sem WebGL na página. Fonte: `medicoes/LANDING_P169.md` e `arte/landing-codex-*`. **Conversão para primeira partida e retenção não medidas**; melhoria visual não é evidência de aumento desses indicadores.
 
 ## 7. Como transmitir uma ordem de melhoria substancial
 

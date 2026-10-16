@@ -1,5 +1,13 @@
 # ESTADO ATUAL — CYBERMECH
 
+## EM BRANCH — NÃO ESTÁ NO AR: landing e primeiro acesso (Codex, 16/10, P169)
+
+Branch `codex/landing-primeiro-acesso`, pasta `.tmp/wt-codex-landing`, base `origin/main` 92a5a21. PR será aberto após validação. Território: `scripts/landing.mjs`, `scripts/site/landing-style.mjs`, tema/painel público, verificações do site, texto/CSS do primeiro acesso e `client/public/press/`.
+
+Landing com abertura industrial preto/amarelo, câmeras interativas, seis sistemas de combate, três chassis com números e links da montagem real, modos e guia inicial. Fotografias geradas com os rigs do Vector-09, Marauder e Colossus-V4; thumbnails de cenário são capturas existentes. A Oficina mantém as tabelas extensas. A fila interna de decisões e os trechos operacionais deixam de ser republicados; o painel local conserva esses dados. Registro literal do dono preservado.
+
+Validação em andamento: responsividade, navegação, primeira partida e `npm run check`. Próxima sessão começa pela conclusão da prova visual, PR/merge e conferência da publicação. Nenhuma alteração de simulação ou rede.
+
 ## O LANÇAMENTO DE HOJE (P168): o que está de pé, o que segura e o que é do Comandante — Claude, 16/10 (branch `claude/lancamento-lista`)
 
 **A ordem (16/10):** *"vamos lançar nosso jogo hoje ainda"*. Verificado **hoje às 14h50**, não de memória:
