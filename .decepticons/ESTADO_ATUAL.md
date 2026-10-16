@@ -1,5 +1,20 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O ESTÚDIO DE SONS: cortar na onda, escolher o som de cada arma e ouvir no ritmo do tiro — Claude, 15/10 (branch `claude/estudio-de-sons`, P150 e P151)
+
+**As ordens do Comandante (15/10):** *"achei os sons meio ruins, tem que melhorar ainda. Se tiver como colocar uma interface onde eu possa cortar e editar os sons pra fazer o ajuste fino seria o ideal; e se puder também selecionar entre outros sons para determinadas armas"* e *"a voz do 'combate' em português está muito ruim! desmotivado, falou com medo… será que devo gravar e enviar pra editarmos minha própria voz com efeitos?"*.
+
+**Feito:**
+1. **`npm run estudio`:** uma página no navegador (só neste PC: escuta em 127.0.0.1, recusa Host e Origin de fora, só serve áudio com nome simples nas duas pastas de sons). **Onda** (arrastar para cortar, alças, fade, ganho extra, audição com a estimativa da normalização), **audição no ritmo de tiro de cada arma** (▶▶: o som repetido no intervalo da arma), **tabela das 17 armas** (qual clipe, ganho, altura, duração máxima; qualquer clipe em qualquer arma), **importar** arrastando, **Processar** (o mesmo `ffmpeg` do `npm run sons`) e **Salvar**.
+2. **A tabela de armas virou dado** (`client/src/audio/armasSom.json`; `armasSom.ts` o lê): o estúdio a edita, e os testes cobram **só estrutura** (arma que existe, clipe que existe, faixas seguras), nunca o gosto: nada que o Comandante mexer trava o `npm run check`.
+3. **Provas:** o servidor tem **9 testes** (Host e Origin de fora, caminho e extensão, salvar e recusar, importar, processar com o `ffmpeg` de verdade, os dados reais do repositório, o catálogo de armas sem divergência) e **4 mutações pegas** (a trava de Host e Origin, o nome de arquivo, a validação, a arma sem amostra). A página foi provada **de ponta a ponta num Chrome real com as referências reais**; isso achou e corrigiu: um fade maior que a metade do corte (o servidor recusava com mensagem seca: agora a página encurta o fade e avisa), o 404 do ícone e o corte fraco demais (aviso quando o ganho passa de +15 dB).
+4. **A voz do "Combate!" (P151):** respondido que **gravar a própria voz é o melhor caminho** (efeito não conserta interpretação) e a alternativa do **ElevenLabs Voice Changer** (o Comandante grita e a voz do Eliel sai com a energia dele). O roteiro das 19 falas e o caminho dos arquivos estão em `VOZES_E_SONS.md` § 6.
+5. `AGENTS.md`: os comandos `estudio`, `sons`, `vozes` e `ouvir`.
+
+**Falta (R13):** **o Comandante usar o estúdio** (a audição ao vivo no navegador dele é o que não pude provar: o Claude não ouve áudio); a **voz própria** (ele grava; o Claude monta o `npm run voz` depois de ouvir a primeira gravação); os 72 clipes de voz restantes (comando dele, `VOZES_E_SONS.md` § 2); a **rajada** (som em laço) para a rotatória e o canhão automático; lança-chamas e motosserra (som contínuo) seguem sintetizados.
+
+**Próxima sessão começa com:** o que o Comandante responder dos sons e da gravação; senão, o apelido (P145).
+
 ## O JOGO ONLINE JÁ FALA COM jogo.cybermech.online: a Cloudflare está no ar e o servidor saiu do domínio antigo — Claude, 15/10 (branch `claude/servidor-no-dominio`, P144)
 
 **A ação do Comandante (15/10):** pôs a zona `cybermech.online` na Cloudflare, trocou os nameservers (`chin` e `dom.ns.cloudflare.com`) e criou `jogo.cybermech.online` no túnel `cybermech` (proxied, nuvem laranja).

@@ -115,6 +115,10 @@ npm run check      # typecheck + testes + build + budget + boot headless (obriga
 npm run publicar -- --titulo "feat: ..." --corpo .tmp/pr.md   # push, PR, espera o CI, mergeia e limpa o branch (regra 13); `--so-pr` só abre o PR
 node scripts/gh.mjs pr list    # o gh, com fallback para a credencial do Git se o token do gh morrer
 npm run smoke:dev  # boot headless contra o dev server
+npm run estudio    # o Estúdio de Sons: cortar na onda, escolher o som de cada arma, ouvir no ritmo de tiro (só neste PC; .tmp/SOUNDS/ARMAS = as referências)
+npm run sons       # prepara os sons de arma (apara, normaliza, mp3) conforme scripts/sons-armas.json
+npm run vozes      # as falas do narrador no ElevenLabs (chave só em $env:ELEVENLABS_API_KEY; --custo antes de gastar)
+npm run ouvir      # abre a página para ouvir os sons e as vozes
 npm run mech:inspecionar -- arquivo.glb   # confere um robô importado (contrato, convenção da animação, foto) e sugere o IMPORTED_CHASSIS
 npm run mech:bocas -- marauder            # mede a boca de cada encaixe de arma do robô importado e confere com o dado do chassi (roda no check)
 npm run painel     # sala de controle (novidades, equipe, mesa do Dan, fluxo, fichas, evolução, rota, frentes, decisões) em .tmp/painel/painel.html

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { argsDaMedicao, argsDoFfmpeg, ganhoParaAlvo, lerMedicao, validarMapa, type MapaDeSons } from '../scripts/sonsLib.mjs';
+import { argsDaMedicao, argsDoFfmpeg, ganhoParaAlvo, lerMedicao, validarArmas, validarMapa, type MapaDeSons } from '../scripts/sonsLib.mjs';
 
 const MAPA = JSON.parse(readFileSync(resolve('scripts/sons-armas.json'), 'utf8')) as MapaDeSons;
 const ALVO = MAPA.alvo;
@@ -17,7 +17,12 @@ describe('preparador de sons de arma (P146): o mapa', () => {
     expect(validarMapa({ alvo: ALVO, sons: [um({}).sons[0]!, um({}).sons[0]!] }).join()).toContain('destino repetido');
     expect(validarMapa(um({ destino: 'qualquer.mp3' })).join()).toContain('arma_<nome>.mp3');
     expect(validarMapa(um({ destino: 'arma_x.wav' })).join()).toContain('arma_<nome>.mp3');
-    expect(validarMapa(um({ fonte: '' })).join()).toContain('sem fonte');
+    expect(validarMapa(um({ fonte: '' })).join()).toContain('só o nome de um arquivo');
+    expect(validarMapa(um({ fonte: '../../segredo.mp3' })).join()).toContain('só o nome de um arquivo');
+    expect(validarMapa(um({ fonte: 'a/b.mp3' })).join()).toContain('só o nome de um arquivo');
+    expect(validarMapa(um({ ganho_db: 30 })).join()).toContain('ganho extra');
+    expect(validarMapa(um({ ganho_db: -30 })).join()).toContain('ganho extra');
+    expect(validarMapa(um({ ganho_db: 3 }))).toEqual([]);
     expect(validarMapa(um({ de: 1, ate: 1 })).join()).toContain('corte inválido');
     expect(validarMapa(um({ de: -1, ate: 1 })).join()).toContain('corte inválido');
     expect(validarMapa(um({ de: 0, ate: 9 })).join()).toContain('mais de 4 s');
@@ -64,5 +69,33 @@ describe('preparador de sons de arma: a conta do ganho e a linha do ffmpeg', () 
     expect(m.join(' ')).toContain('atrim=start=0.85:end=2.25');
     expect(lerMedicao('[Parsed_volumedetect_0] mean_volume: -12.8 dB\n[Parsed_volumedetect_0] max_volume: -0.5 dB')).toEqual({ picoDb: -0.5, mediaDb: -12.8 });
     expect(lerMedicao('nada útil')).toBeNull();
+  });
+});
+
+describe('preparador de sons de arma: a tabela de armas', () => {
+  const IDS = ['blaster', 'plasma', 'cannon'];
+  const CLIPES = ['arma_a', 'arma_b'];
+  const ok = { clipe: 'arma_a', ganho: 0.8, pitch: 1, maxS: 0.5 };
+
+  it('aceita uma tabela coerente (e vazia)', () => {
+    expect(validarArmas({ blaster: ok, cannon: { ...ok, clipe: 'arma_b', pitch: 0.8, maxS: 1 } }, IDS, CLIPES, () => 1)).toEqual([]);
+    expect(validarArmas({}, IDS, CLIPES)).toEqual([]);
+  });
+
+  it('recusa arma desconhecida, clipe que não existe e valores fora da faixa', () => {
+    expect(validarArmas({ foguete_x: ok }, IDS, CLIPES).join()).toContain('o jogo não conhece');
+    expect(validarArmas({ blaster: { ...ok, clipe: 'arma_z' } }, IDS, CLIPES).join()).toContain('não existe no mapa');
+    expect(validarArmas({ blaster: { ...ok, ganho: 0 } }, IDS, CLIPES).join()).toContain('ganho');
+    expect(validarArmas({ blaster: { ...ok, ganho: 2 } }, IDS, CLIPES).join()).toContain('ganho');
+    expect(validarArmas({ blaster: { ...ok, pitch: 0.3 } }, IDS, CLIPES).join()).toContain('pitch');
+    expect(validarArmas({ blaster: { ...ok, pitch: 3 } }, IDS, CLIPES).join()).toContain('pitch');
+    expect(validarArmas({ blaster: { ...ok, maxS: 0.01 } }, IDS, CLIPES).join()).toContain('duração máxima');
+    expect(validarArmas({ blaster: { ...ok, maxS: 9 } }, IDS, CLIPES).join()).toContain('duração máxima');
+  });
+
+  it('a duração máxima não pode passar do que o clipe dura na altura dada (senão o fade do fim nunca é ouvido)', () => {
+    expect(validarArmas({ blaster: { ...ok, maxS: 1.2 } }, IDS, CLIPES, () => 1).join()).toContain('passa do que o clipe dura');
+    expect(validarArmas({ blaster: { ...ok, pitch: 0.5, maxS: 1.9 } }, IDS, CLIPES, () => 1)).toEqual([]); // grave: 1 s vira 2 s
+    expect(validarArmas({ blaster: { ...ok, pitch: 0.5, maxS: 2.2 } }, IDS, CLIPES, () => 1).join()).toContain('passa do que o clipe dura');
   });
 });
