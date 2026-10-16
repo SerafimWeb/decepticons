@@ -760,10 +760,10 @@ describe('Armas de aço online: o tiro de cada uma vira evento de tiro e o dano 
     room.dispose();
   });
 
-  it('o catálogo de tiros da rede só se acrescenta no fim (canhão, automático, sônico e teleguiado seguem a ordem; depois o lançador leve, o cruzador, o laser e o cerco) e o protocolo é o 18 ou mais', () => {
-    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(18);
+  it('o catálogo de tiros da rede só se acrescenta no fim (canhão, automático, sônico e teleguiado seguem a ordem; depois o lançador leve, o cruzador, o laser, o cerco e o lança-granadas) e o protocolo é o 19 ou mais', () => {
+    expect(PROTOCOL_VERSION).toBeGreaterThanOrEqual(19);
     expect(NET_WEAPONS.slice(10, 14)).toEqual(['cannon', 'autocannon', 'sonic', 'seeker']);
-    expect(NET_WEAPONS.slice(-4)).toEqual(['swarm', 'cruise', 'laser', 'siege']);
+    expect(NET_WEAPONS.slice(14)).toEqual(['swarm', 'cruise', 'laser', 'siege', 'grenade']);
     expect(NET_WEAPONS.slice(0, 10)).toEqual(['plasma', 'rockets', 'blaster', 'chainsaw', 'shotgun', 'barrage', 'railgun', 'emp', 'arc', 'cryo']);
   });
 });
@@ -1328,5 +1328,30 @@ describe('capacidade e energia da sala', () => {
       for(let t=0;t<30;t++) room.step();
       expect(a.lastSnapshot().units.find(u => u.id === id)?.shield).toBe(false);
     } finally { room.dispose(); }
+  });
+});
+
+describe('Lança-granadas online (P160): o servidor lança em arco e manda a direção da mira', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  it('um aperto do botão 2 manda UM evento de tiro com a direção até a mira (o outro jogador refaz o arco a partir dela) e a granada estoura no alvo a 30 m', async () => {
+    const { room, dan, me, bot, mine, yaw, pitch } = await palco('v1.vector09.plasma-0.grenade-0', 30);
+    expect(mine.mech.loadout.secondary?.id).toBe('grenade');
+    const before = lifeOf(bot.mech);
+    drive(room, dan, 1, 1, { secondary: true, yaw, pitch });
+    // A granada está no sistema de granadas do servidor (o arco com gravidade), não num foguete reto.
+    const match = room['match'];
+    expect(match.grenades.active).toBe(1);
+    drive(room, dan, 2, 120, { yaw, pitch }); // ~1 s de voo e a espoleta
+    expect(match.grenades.active).toBe(0);
+    expect(shotsOf(dan, me)).toEqual([netWeaponIndex('grenade')]);
+    const [dir] = shotDirsOf(dan, me);
+    expect(Math.abs(dir!.pitch - pitch)).toBeLessThan(0.08); // a direção da mira, não a do lançamento: o cliente acha o ponto e refaz o arco
+    const hits = hitsSeen(dan).filter((h) => h.unit === bot.id && h.other === me);
+    expect(hits.length).toBeGreaterThan(0);
+    expect(before - lifeOf(bot.mech)).toBe(hits.reduce((s, h) => s + h.amount, 0));
+    room.dispose();
   });
 });

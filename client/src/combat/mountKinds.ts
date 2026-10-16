@@ -70,6 +70,8 @@ export const WEAPON_MOUNTS: Readonly<Record<WeaponId, readonly MountKind[]>> = {
   swarm: ['arm', 'shoulder', 'back'],
   cruise: ['arm', 'shoulder', 'back'],
   laser: ['arm'],
+  // O lança-granadas (P160): na mão e nos ombros (os dois ombros do Marauder soltam juntos, como os foguetes).
+  grenade: ['arm', 'shoulder'],
 };
 
 /** A arma cabe num encaixe deste tipo? */

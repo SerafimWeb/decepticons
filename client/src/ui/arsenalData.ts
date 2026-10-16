@@ -1,3 +1,4 @@
+import { lobMaxRange } from '../combat/lob';
 import { CLASS_LABEL, classFor, WEAPON_CLASSES, WEAPON_FIT, type RobotSize, type WeaponClass } from '../combat/weaponClass';
 import { DAMAGE_TYPE, type DamageType, fullReload, rangeBandOf, type RangeBand, weapon, WEAPON_IDS, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { ARM_SLOTS, CHASSIS, CHASSIS_PAPEL, CHASSIS_SIZE, type ChassisId } from '../entities/chassis';
@@ -62,6 +63,7 @@ export function notasDaArma(w: WeaponStats): string[] {
   if (w.guide) n.push('míssil teleguiado: trava no alvo à frente');
   if (w.salvo) n.push(`um aperto esvazia o lançador: ${w.magazine} mísseis em sequência (${w.magazine * (w.tierMagazine ?? 1)} e ${w.magazine * (w.tierMagazine ?? 1) ** 2} nos níveis), só dispara com todos os tubos carregados`);
   if (w.cruise) n.push('míssil cruzador: sobe em arco e mergulha no ponto da mira, passa por cima do cenário baixo, não guia');
+  if (w.lob) n.push(`granada em arco com gravidade: cai no ponto da mira (até ${fmt(lobMaxRange(w.speed, w.lob.gravity))} m), sobe por cima da cobertura quando o arco baixo bate nela; explode no robô, tabela na parede e crava no chão (estoura ${fmt(w.lob.fuse)} s depois)`);
   if (w.beam) n.push('feixe instantâneo em pulsos: acerta na hora, o calor decide a duração');
   if (w.pellets) n.push(`${w.pellets.count} balins de ${w.damage} num cone de ${fmt((w.pellets.cone * 180) / Math.PI)}° (${w.pellets.count * w.damage} por disparo de perto; de longe o cone passa da largura de um Mech)`);
   if (w.barrage) n.push(`chuva de ${w.barrage.bombs} bombas`);
@@ -87,7 +89,7 @@ export function fichasDasArmas(): FichaDaArma[] {
   const fichas = WEAPON_IDS.map((id): FichaDaArma => {
     const w = weapon(id);
     const fit = WEAPON_FIT[id];
-    const simples = !w.spin && !w.flame && !w.wave && !w.guide && !w.barrage && !w.salvo && !w.cruise && w.kind !== 'melee';
+    const simples = !w.spin && !w.flame && !w.wave && !w.guide && !w.barrage && !w.salvo && !w.cruise && !w.lob && w.kind !== 'melee';
     return {
       id,
       nome: w.name,

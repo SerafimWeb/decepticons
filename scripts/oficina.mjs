@@ -176,11 +176,11 @@ function build() {
 
   // ---------- 5. dano × distância (uma arma por gráfico, mesma escala) ----------
   // As armas de P152 (míssil leve, guiado, laser e cruzador) entram aqui: é o gráfico em que o Comandante enxerga o alcance de cada uma na mesma escala.
-  const rangeIds = ['plasma', 'rockets', 'blaster', 'shotgun', 'railgun', 'emp', 'barrage', 'swarm', 'seeker', 'laser', 'cruise'];
+  const rangeIds = ['plasma', 'rockets', 'blaster', 'shotgun', 'railgun', 'emp', 'barrage', 'swarm', 'seeker', 'laser', 'cruise', 'grenade'];
   const rangeW = rangeIds.map((id) => W.weapon(id));
   const XMAX = Math.ceil(Math.max(...rangeW.map((w) => w.maxRange)) / 40) * 40;
   const flight = (w) =>
-    w.barrage ? `sobe ${sec(w.barrage.ascent)} e cai ${sec(w.barrage.fall)}` : w.beam ? 'acerta na hora (feixe, sem voo)' : w.cruise ? `voa em arco: ${sec(w.maxRange / w.speed)} até o fim` : `${sec(w.maxRange / w.speed)} de voo até o fim`;
+    w.barrage ? `sobe ${sec(w.barrage.ascent)} e cai ${sec(w.barrage.fall)}` : w.beam ? 'acerta na hora (feixe, sem voo)' : w.cruise ? `voa em arco: ${sec(w.maxRange / w.speed)} até o fim` : w.lob ? 'cai em arco no ponto da mira (gravidade); tabela na parede' : `${sec(w.maxRange / w.speed)} de voo até o fim`;
   const ranges = rangeW
     .map((w) => {
       const dx = [];

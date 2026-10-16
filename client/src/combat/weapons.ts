@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker' | 'siege' | 'swarm' | 'cruise' | 'laser';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker' | 'siege' | 'swarm' | 'cruise' | 'laser' | 'grenade';
 
 /**
  * Lançador de mísseis leve (P152: "que solte 8, 16 ou até 32 mísseis sequencialmente"): **um aperto esvazia o lançador**. Os mísseis saem um a um, a `fireInterval` de
@@ -100,6 +100,26 @@ export interface Barrage {
    * teórico). As outras caem em volta e pegam só a borda da explosão.
    */
   onTarget: number;
+}
+
+/**
+ * Lançamento em arco com gravidade (P160 parte 2b, o lança-granadas): a granada sai a `speed` e **cai** (`gravity`), e o lançador calcula a elevação
+ * para ela cair **no ponto da mira** (`combat/lob.ts`: o arco baixo; se o cenário barra o arco baixo, o alto, que passa por cima da cobertura).
+ * Explode no contato com um robô. **Na parede tabela** (quica de verdade: `wallBounce`), então dá para jogar numa quina; **no chão crava** (perde
+ * quase toda a velocidade: `bounce` e `friction`) e estoura `fuse` segundos depois do primeiro toque no chão — cai a ~2 m de onde a mira marcou.
+ * Sem sorteio: a mesma conta no servidor e no cliente.
+ */
+export interface Lob {
+  /** Gravidade da granada (m/s²); maior que a do mundo para o arco caber na arena. */
+  gravity: number;
+  /** No chão: fração da velocidade que volta na direção da normal (0–1). */
+  bounce: number;
+  /** No chão: fração da velocidade rente à superfície que sobra (0–1). */
+  friction: number;
+  /** Na parede (normal quase deitada): fração da velocidade na direção da normal que volta; a rente quase não perde. */
+  wallBounce: number;
+  /** Segundos entre o primeiro toque no chão e a explosão. */
+  fuse: number;
 }
 
 /**
@@ -204,6 +224,8 @@ export interface WeaponStats {
   cruise?: Cruise;
   /** Só no raio laser: o feixe instantâneo em pulsos (`Beam`). */
   beam?: Beam;
+  /** Só no lança-granadas: o arco com gravidade e o quique (`Lob`). */
+  lob?: Lob;
   /** Só na escopeta: o tiro sai em balins (`Pellets`); `damage` é o de cada balin. */
   pellets?: Pellets;
   /**
@@ -595,6 +617,23 @@ const BASE: Record<WeaponId, WeaponBase> = {
     blastRadius: 0, mass: 4,
     beam: { glow: 0.16 },
   },
+  /**
+   * Lança-granadas (dono, 16/10, P160: "pense se temos que implementar novos estilos, tipos, formas"; a parte 2b, "balísticas"). **O primeiro tiro
+   * do arsenal com gravidade de verdade:** a granada sai a 42 m/s e cai, e o lançador acha a elevação para ela **cair no ponto da mira** (até 80 m no
+   * plano, o tiro de 45°); se o arco baixo bate numa parede no caminho, ele sobe para o **arco alto, que passa por cima da cobertura** e cai atrás
+   * dela. Explode **no contato com um robô** (o acerto direto); **na parede tabela** (dá para jogar numa quina) e **no chão crava** e estoura 0,35 s
+   * depois, a ~2 m de onde a mira marcou. 34 de dano no centro (48 no MK III) e 5 m de explosão, 4 no carregador (0,55 s entre tiros), 1,6 s por granada
+   * para recarregar (cheio em 6,4 s), 3,5 t (média). Sozinho derruba um torso em mais de 4,5 s em todo nível (a regra do Comandante, P111: com 45 de dano
+   * o MK III levava 3,7 s, e com 38, 4,2 s, medido na bancada). Natureza `explosivo`.
+   */
+  grenade: {
+    id: 'grenade', name: 'Lança-granadas', kind: 'ammo',
+    damage: 34, fireInterval: 0.55, heatPerShot: 0.14,
+    magazine: 4, reload: 1.6, speed: 42,
+    optimalRange: 80, maxRange: 80, minFactor: 1,
+    blastRadius: 5, mass: 3.5,
+    lob: { gravity: 22, bounce: 0.25, friction: 0.15, wallBounce: 0.55, fuse: 0.35 },
+  },
 };
 
 /** Arredonda para o múltiplo de `step` mais perto, sem o ruído de ponto flutuante (0,026 e não 0,026000000000000002): os números da arma se comparam e se mostram limpos. */
@@ -647,6 +686,7 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   swarm: 'explosivo',
   cruise: 'explosivo',
   laser: 'laser',
+  grenade: 'explosivo',
   chainsaw: 'corte',
 };
 
