@@ -36,6 +36,20 @@ escurecia), o rastro de míssil era uma fila de pontinhos, o tiro de energia uma
 **Custo:** 0,45 ms por quadro sob carga extrema (170 fitas, 219 peças de explosão, 160 cartazes, 80 marcas); 9 desenhos para todos os efeitos da
 cena; nada alocado por quadro. GPU real: 0 de 192 poses com NaN com os efeitos acesos (`varrer-nan.mjs --efeitos`). JS 472,3 KB de 500.
 
+## [2026-10-16] O ciclo do dia é só luz, calculado do relógio da partida; o azimute do sol não muda; e o que a campanha não vai fazer (Claude, P161 a P166)
+
+**Situação:** o Comandante achou a praia clara demais para a hora do sol e com a iluminação pública acesa de dia, e pediu que a partida **comece no pôr do sol e termine em noite** em 5 minutos, com as luzes acendendo. Na mesma mensagem respondeu o `CAMPANHAS_E_CHEFES.md` e deu a história da campanha.
+
+**Decisões:**
+1. **O ciclo é visual, nunca simulação (G1/G2):** o relógio vem da missão em ondas, da rodada de 5 minutos ou do relógio do mapa, e só muda luz, céu, mar e uniformes. Nenhuma regra de jogo lê a hora do dia (os bots não veem pior de noite): se um dia ler, vira módulo de `sim/` com teste.
+2. **O azimute do sol é fixo; só a altura muda.** As sombras assadas no chão leem só o x e o z do sol; mudar o azimute exigiria assar de novo. O custo: a sombra não alonga com o pôr do sol (ela some quando o sol apaga).
+3. **A luz pública liga por adereço, com um instante por adereço**, igual no bulbo, no halo, na poça e no feixe; a sinalização fica sempre ligada. Um único número (`lampadas`, 0 a 1) manda em tudo: o quadro de luz do porto (P164) vai ligar nele.
+4. **`UniformesDaPraia` é o dono do sol, da lua, da névoa, da noite e das lâmpadas**, não constantes do módulo do céu. Regra aprendida: **`THREE.UniformsUtils.merge` clona cada uniforme**; o que se divide entre materiais entra depois dele, como o mesmo objeto (o mar lia uma cópia congelada do tempo e as ondas ficavam paradas).
+5. **Sátira exagera, fato tem fonte na ficha.** O jogo vai ensinar (Estado provedor, privatização, laicidade, manipulação): toda afirmação factual leva fonte; sem fonte é sátira, dita como sátira.
+6. **O que a campanha não faz:** criança com arma (nenhuma criança vira alvo ou arma) e personagem desenhado como evangélica (religião e quem a pratica ficam fora do alvo, a regra do `CAMPANHAS_E_CHEFES.md` § 2, que combina com o Estado laico que o Comandante defende); o rótulo "gado" fora do texto; "mulheres" fora do código do banco. **O que entra:** o manifestante dos eventos reais (Capitólio, 8 de janeiro), o manipulador/farsante como chefe e a máscara da Colossus V1 como skin de chefe, desligável (o risco jurídico e de plataforma está registrado).
+
+**Por que registrar:** quem for construir a campanha precisa saber o que o Comandante ordenou, o que ficou de fora e por quê, e que o ciclo do dia é um número só que o quadro de luz vai ligar.
+
 ## [2026-10-16] Teste que roda `git` não pode herdar o ambiente do hook: um `git init` de teste corrompeu a config compartilhada (Claude, P155)
 
 **Situação:** o teste das pendências do Estúdio (PR #339) cria um repositório de teste dentro de `.tmp/` e roda `git init`, `git config` e `git commit` nele. Rodando **dentro do hook de push** (que herda `GIT_DIR`, `GIT_INDEX_FILE`…), esses comandos agiram no repositório **de fora**: a `.git/config` compartilhada ficou com `core.bare = true` (o `git status` das worktrees passou a falhar e a principal virou "(bare)") e com um `[user]` falso (`t@t`). Os commits e o histórico não foram tocados; o dano ficou na config e foi desfeito à mão.

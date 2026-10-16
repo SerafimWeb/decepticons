@@ -7,6 +7,7 @@
  *   node .decepticons/medicoes/praia.mjs --arte          # as fotos vão para .decepticons/arte/praia-<vista>-claude.jpg
  *   node .decepticons/medicoes/praia.mjs --arte --sufixo luz   # ... praia-<vista>-luz-claude.jpg (uma rodada nova sem trocar as fotos da anterior)
  *   node .decepticons/medicoes/praia.mjs --vistas orla,porto
+ *   node .decepticons/medicoes/praia.mjs --dias 0,0.5,1 --vistas orla    # a hora do dia (P161): 0 = pôr do sol, 1 = noite; uma foto por hora (sufixo -d0, -d50, -d100)
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -15,6 +16,7 @@ import { createServer } from 'vite';
 const args = process.argv.slice(2);
 const arte = args.includes('--arte');
 const sufixo = args.includes('--sufixo') ? `-${args[args.indexOf('--sufixo') + 1]}` : '';
+const dias = args.includes('--dias') ? args[args.indexOf('--dias') + 1].split(',').map(Number) : [null];
 const vistasPedidas = args.includes('--vistas') ? new Set(args[args.indexOf('--vistas') + 1].split(',')) : null;
 
 const TMP = resolve('.tmp', 'captura');
@@ -28,6 +30,7 @@ mkdirSync(saida, { recursive: true });
 /** As vistas-chave: de cima, da beira d'água, do calçadão, da avenida, da ponte, do porto, da estação e da rua da cidade. */
 const VISTAS = {
   geral: { cam: '0,150,-70', mira: '0,0,20', fov: 60 },
+  sol: { cam: '0,8,-20', mira: '-46,9,-106', fov: 70 },
   mar: { cam: '20,12,-100', mira: '40,6,0', fov: 70 },
   praia: { cam: '-30,5.5,-24', mira: '90,6,-14', fov: 70 },
   orla: { cam: '40,7,8', mira: '140,8,16', fov: 72 },
@@ -75,15 +78,18 @@ try {
   });
   for (const [nome, v] of Object.entries(VISTAS)) {
     if (vistasPedidas && !vistasPedidas.has(nome)) continue;
-    await page.goto(`${base}@fs/${html}?cam=${v.cam}&mira=${v.mira}&fov=${v.fov}&t=3`);
+    for (const dia of dias) {
+    await page.goto(`${base}@fs/${html}?cam=${v.cam}&mira=${v.mira}&fov=${v.fov}&t=3${dia === null ? '' : `&dia=${dia}`}`);
     await page.waitForFunction(() => window.__pronto || window.__erro, null, { timeout: 120_000 });
     const erro = await page.evaluate(() => window.__erro);
     if (erro) throw new Error(`vista ${nome}: ${erro}`);
     await page.waitForTimeout(300);
-    await page.screenshot({ path: join(saida, arte ? `praia-${nome}${sufixo}-claude.jpg` : `${nome}.jpg`), type: 'jpeg', quality: 86 });
+    const hora = dia === null ? '' : `-d${Math.round(dia * 100)}`;
+    await page.screenshot({ path: join(saida, arte ? `praia-${nome}${sufixo}${hora}-claude.jpg` : `${nome}${hora}.jpg`), type: 'jpeg', quality: 86 });
     const info = await page.evaluate(() => window.__info);
-    medidas[nome] = { desenhos: info.calls, triangulos: info.triangles, construcaoMs: info.construcaoMs };
-    console.log(`${nome}: ${info.calls} desenhos, ${info.triangles} triângulos, construção ${info.construcaoMs} ms`);
+    medidas[nome + hora] = { desenhos: info.calls, triangulos: info.triangles, construcaoMs: info.construcaoMs };
+    console.log(`${nome}${hora}: ${info.calls} desenhos, ${info.triangles} triângulos, construção ${info.construcaoMs} ms`);
+    }
   }
 } finally {
   await browser?.close();

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { mulberry32 } from '../core/rng';
-import { COR_DA_NEVOA, DIRECAO_DA_LUA, DIRECAO_DA_LUZ_DO_SOL, PraiaCeu } from './PraiaCeu';
+import { faseDoDia } from './CicloDoDia';
+import { COR_DA_NEVOA, DIRECAO_DA_LUA, DIRECAO_DO_SOL, PraiaCeu } from './PraiaCeu';
 import { criarChao } from './PraiaChao';
 import { praiaAderecos } from './PraiaAderecos';
 import { montarAderecosComFaixas } from './PraiaAderecosMalha';
@@ -37,6 +38,42 @@ import { criarGaivotas } from './PraiaVida';
 /** A densidade da névoa: o fim do mapa (a 600 m) some quase todo, e o horizonte do mar encontra o céu. */
 const DENSIDADE_DA_NEVOA = 0.0024;
 
+/**
+ * As cores e intensidades do ciclo do dia (P161), do pôr do sol (começo da partida) à noite fechada. O céu **mais baixo** que antes de propósito: o Comandante achou o
+ * cenário claro demais para a hora que o sol marca (16/10). Cada par é "começo" e "fim"; o `noite` de `CicloDoDia.ts` mistura os dois.
+ */
+const CEU_DIA = new THREE.Color(0xffbfa0);
+const CEU_NOITE = new THREE.Color(0x6a82c8);
+const CHAO_DIA = new THREE.Color(0x5f4a44);
+const CHAO_NOITE = new THREE.Color(0x1b2238);
+const SOL_ALTO = new THREE.Color(0xff7a40);
+const SOL_BAIXO = new THREE.Color(0xff4a1c);
+/** A névoa passa por um crepúsculo roxo no meio do caminho (a cor do horizonte do céu da noite é a mesma). */
+const NEVOA_CREPUSCULO = new THREE.Color(0x5b3b66);
+const NEVOA_NOITE = new THREE.Color(0x0a1226);
+const HEMISFERICA_DIA = 0.34;
+const HEMISFERICA_NOITE = 0.2;
+const SOL_INTENSIDADE = 1.1;
+const LUA_INTENSIDADE_DIA = 0.22;
+const LUA_INTENSIDADE_NOITE = 0.5;
+/** A luz de ambiente (o reflexo neutro que o `Game` põe na cena, 0,25): de noite cai a um terço, senão a areia vira neve sob a lua. */
+const AMBIENTE_DIA = 0.25;
+const AMBIENTE_NOITE = 0.08;
+/** A luz do sol fica um palmo acima do disco: com a luz rente ao horizonte as faces de cima ficariam sem sol direto e o mapa viraria silhueta. */
+const LUZ_ACIMA_DO_DISCO = 0.1;
+
+/** O azimute do sol e da lua (o que **não** muda no ciclo: só a altura muda, e é por isso que as sombras assadas no chão continuam valendo). */
+const HORIZONTAL_DO_SOL = new THREE.Vector2(DIRECAO_DO_SOL.x, DIRECAO_DO_SOL.z).normalize();
+const HORIZONTAL_DA_LUA = new THREE.Vector2(DIRECAO_DA_LUA.x, DIRECAO_DA_LUA.z).normalize();
+
+/** Escreve em `saida` o vetor unitário de azimute `horizontal` e altura `y` (sem alocar). */
+function direcaoComAltura(horizontal: THREE.Vector2, y: number, saida: THREE.Vector3): THREE.Vector3 {
+  const k = Math.sqrt(Math.max(0, 1 - y * y));
+  return saida.set(horizontal.x * k, y, horizontal.y * k);
+}
+
+const _corDaNevoaDia = new THREE.Color(COR_DA_NEVOA);
+const _ajusteDaLua = new THREE.Vector3(30, 70, 120);
 const _pos = new THREE.Vector3();
 const _esc = new THREE.Vector3();
 const _quat = new THREE.Quaternion();
@@ -55,6 +92,15 @@ export class Praia {
    */
   private readonly u = criarUniformes();
   private feixeDoFarol: THREE.Object3D | null = null;
+  /** As três luzes da cena (a luz do céu, a do sol e a fria da lua) e a névoa: o ciclo do dia muda a cor e a intensidade delas (`setProgressoDoDia`). */
+  private readonly luzDoCeu = new THREE.HemisphereLight(CEU_DIA, CHAO_DIA, HEMISFERICA_DIA);
+  private readonly luzDoSol = new THREE.DirectionalLight(SOL_ALTO, SOL_INTENSIDADE);
+  private readonly luzDaLua = new THREE.DirectionalLight(0xa4bfff, LUA_INTENSIDADE_DIA);
+  private readonly nevoaDaCena: THREE.FogExp2;
+  private readonly cena: THREE.Scene;
+  /** O progresso (0 a 1) que a cena mostra agora; `-1` = nunca aplicado. */
+  private progressoDoDia = -1;
+  private readonly vetor = new THREE.Vector3();
   /** Os brilhos desenhados: halos, poças de luz, feixes e os holofotes que giram (`PraiaLuzes.ts`). */
   private readonly brilhos: PraiaLuzes;
   /** O chão das quatro zonas de cura e de resfriamento (`PraiaZonas.ts`). */
@@ -66,13 +112,15 @@ export class Praia {
   readonly destrutiveis: PraiaDestrutiveis | null;
 
   constructor(scene: THREE.Scene, physics: PhysicsWorld, destructibles?: Destructibles) {
-    scene.fog = new THREE.FogExp2(COR_DA_NEVOA, DENSIDADE_DA_NEVOA);
-    this.luzes(scene);
+    this.cena = scene;
+    this.nevoaDaCena = new THREE.FogExp2(COR_DA_NEVOA, DENSIDADE_DA_NEVOA);
+    scene.fog = this.nevoaDaCena;
+    scene.add(this.luzDoCeu, this.luzDoSol, this.luzDaLua);
     // A sombra do sol assada no chão (uma vez por processo): o terreno e os pisos leem a mesma textura.
     this.u.sombra.value = texturaDeSombras();
     this.u.sombraArea.value.set(SOMBRA_AREA.minX, SOMBRA_AREA.minZ, 1 / SOMBRA_AREA.tamX, 1 / SOMBRA_AREA.tamZ);
-    new PraiaCeu(scene, this.u.tempo, this.u.detalhe);
-    new PraiaMar(scene, this.u.tempo, this.u.detalhe);
+    new PraiaCeu(scene, this.u);
+    new PraiaMar(scene, this.u);
     criarChao(scene, this.u);
     this.fisica(physics);
     this.blocos(scene);
@@ -85,6 +133,7 @@ export class Praia {
     this.horizonte(scene);
     this.feixes(scene);
     criarGaivotas(scene, this.u.tempo);
+    this.setProgressoDoDia(0); // o começo da partida: o pôr do sol, a cidade ainda de dia
   }
 
   /** Por quadro: só o tempo (um número) e o giro do feixe do farol. Chamado pelo `Arena.update`. */
@@ -111,17 +160,35 @@ export class Praia {
     this.zonas.setDetalhe(alto);
   }
 
-  /** As luzes do fim de tarde: o céu quente, o sol baixo sobre o mar e a luz fria que vem de dentro (do lado oposto ao sol). */
-  private luzes(scene: THREE.Scene): void {
-    // O fim de tarde com o sol vermelho no horizonte e a lua cheia nascendo (P137): a luz geral desce (o céu rosado e o chão escuro), o sol
-    // tinge de vermelho as faces voltadas para o mar, e a lua dá a luz fria do outro lado e de dentro (a que vem de trás da cidade).
-    scene.add(new THREE.HemisphereLight(0xffbfa0, 0x5f4a44, 0.52));
-    const sol = new THREE.DirectionalLight(0xff7a40, 1.5);
-    sol.position.copy(DIRECAO_DA_LUZ_DO_SOL).multiplyScalar(220);
-    scene.add(sol);
-    const frio = new THREE.DirectionalLight(0xa4bfff, 0.46);
-    frio.position.copy(DIRECAO_DA_LUA).multiplyScalar(220).add(new THREE.Vector3(30, 70, 120));
-    scene.add(frio);
+  /**
+   * O ciclo do dia (P161): `progresso` de 0 (o pôr do sol, a cidade ainda de dia) a 1 (a noite fechada, as luzes acesas), calculado do relógio da partida por quem
+   * chama (`Game.ts`). Muda a altura do sol e da lua, as três luzes, a névoa e os uniformes que o céu, o mar, as fachadas e as lâmpadas desenhadas leem. Sem alocar;
+   * valor igual ao já aplicado não faz nada (tempo parado, pausa, intervalo entre rodadas).
+   */
+  setProgressoDoDia(progresso: number): void {
+    const p = Math.min(1, Math.max(0, Number.isFinite(progresso) ? progresso : 0));
+    if (Math.abs(p - this.progressoDoDia) < 0.0002) return;
+    this.progressoDoDia = p;
+    const f = faseDoDia(p);
+    const u = this.u;
+    direcaoComAltura(HORIZONTAL_DO_SOL, f.solAltura, u.solDir.value);
+    direcaoComAltura(HORIZONTAL_DA_LUA, f.luaAltura, u.luaDir.value);
+    u.noite.value = f.noite;
+    u.lampadas.value = f.lampadas;
+    // A névoa e o horizonte do céu são a mesma cor: do rosa do pôr do sol ao roxo do crepúsculo e ao azul-noite.
+    if (f.noite < 0.5) u.nevoa.value.lerpColors(_corDaNevoaDia, NEVOA_CREPUSCULO, f.noite * 2);
+    else u.nevoa.value.lerpColors(NEVOA_CREPUSCULO, NEVOA_NOITE, (f.noite - 0.5) * 2);
+    this.nevoaDaCena.color.copy(u.nevoa.value);
+    // A luz do céu fica azul e um pouco mais baixa; o sol esmaece e avermelha até sumir; a lua sobe de intensidade.
+    this.luzDoCeu.color.lerpColors(CEU_DIA, CEU_NOITE, f.noite);
+    this.luzDoCeu.groundColor.lerpColors(CHAO_DIA, CHAO_NOITE, f.noite);
+    this.luzDoCeu.intensity = HEMISFERICA_DIA + (HEMISFERICA_NOITE - HEMISFERICA_DIA) * f.noite;
+    this.luzDoSol.color.lerpColors(SOL_ALTO, SOL_BAIXO, f.noite);
+    this.luzDoSol.intensity = SOL_INTENSIDADE * f.luzDoSol;
+    this.luzDoSol.position.copy(direcaoComAltura(HORIZONTAL_DO_SOL, f.solAltura + LUZ_ACIMA_DO_DISCO, this.vetor)).multiplyScalar(220);
+    this.cena.environmentIntensity = AMBIENTE_DIA + (AMBIENTE_NOITE - AMBIENTE_DIA) * f.noite;
+    this.luzDaLua.intensity = LUA_INTENSIDADE_DIA + (LUA_INTENSIDADE_NOITE - LUA_INTENSIDADE_DIA) * f.noite;
+    this.luzDaLua.position.copy(direcaoComAltura(HORIZONTAL_DA_LUA, f.luaAltura, this.vetor)).multiplyScalar(220).add(_ajusteDaLua);
   }
 
   /** A física: o chão (UM colisor de altura), as paredes do mapa e as caixas sólidas (`praiaColisores`). */
@@ -231,8 +298,10 @@ export class Praia {
     const feixe = new THREE.Mesh(
       cone,
       new THREE.ShaderMaterial({
+        uniforms: { uLampadas: this.u.lampadas },
         vertexShader: 'varying float vD; void main(){ vD = position.x / 150.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-        fragmentShader: 'varying float vD; void main(){ float a = (1.0 - vD) * 0.22; gl_FragColor = vec4(vec3(1.0, 0.82, 0.5) * 1.6, a); }',
+        // O farol só acende com as lâmpadas da cidade (P161): de dia o leque nem aparece.
+        fragmentShader: 'varying float vD; uniform float uLampadas; void main(){ float a = (1.0 - vD) * 0.09 * smoothstep(0.35, 0.8, uLampadas); gl_FragColor = vec4(vec3(1.0, 0.82, 0.5) * 1.6, a); }',
         transparent: true,
         depthWrite: false,
         blending: THREE.AdditiveBlending,
