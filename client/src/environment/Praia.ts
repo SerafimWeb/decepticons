@@ -8,6 +8,7 @@ import { praiaAderecos } from './PraiaAderecos';
 import { montarAderecosComFaixas } from './PraiaAderecosMalha';
 import { ehDestrutivel, PraiaDestrutiveis } from './PraiaDestrutiveis';
 import type { Destructibles } from './Destructibles';
+import { PraiaCabosFx } from './PraiaCabosFx';
 import { PraiaGente } from './PraiaGente';
 import { PraiaLuzes } from './PraiaLuzes';
 import { PraiaZonas } from './PraiaZonas';
@@ -100,6 +101,11 @@ export class Praia {
   private readonly cena: THREE.Scene;
   /** O progresso (0 a 1) que a cena mostra agora; `-1` = nunca aplicado. */
   private progressoDoDia = -1;
+  /** Os letreiros de dados dos cabos (P162); `null` sem DOM (servidor, testes). */
+  private readonly cabosFx: PraiaCabosFx | null;
+  /** O que a missão diz dos três cabos (estado 0 a 3 e injeção 0 a 1), reaproveitado a cada quadro (G4). */
+  private readonly cabosEstado = [0, 0, 0];
+  private readonly cabosInjecao = [0, 0, 0];
   private readonly vetor = new THREE.Vector3();
   /** Os brilhos desenhados: halos, poças de luz, feixes e os holofotes que giram (`PraiaLuzes.ts`). */
   private readonly brilhos: PraiaLuzes;
@@ -130,6 +136,7 @@ export class Praia {
     this.brilhos = new PraiaLuzes(scene, this.u, aderecos);
     this.zonas = new PraiaZonas(scene, this.u);
     this.gente = new PraiaGente(scene, this.u.tempo);
+    this.cabosFx = PraiaCabosFx.criar(scene);
     this.horizonte(scene);
     this.feixes(scene);
     criarGaivotas(scene, this.u.tempo);
@@ -141,6 +148,20 @@ export class Praia {
     this.u.tempo.value = elapsed;
     if (this.feixeDoFarol) this.feixeDoFarol.rotation.y = elapsed * 0.55;
     this.brilhos.update(elapsed);
+    this.cabosFx?.atualiza(elapsed, this.cabosEstado, this.cabosInjecao);
+  }
+
+  /**
+   * Os três cabos de dados (P162, `CabosDeDados`): por cabo, o estado (0 livre, 1 injetando, 2 tomado, 3 cortado), a vida e a injeção (0 a 1). O brilho do cabo (shader)
+   * e o letreiro de dados leem daqui. Sem alocar.
+   */
+  setCabos(estado: ArrayLike<number>, vida: ArrayLike<number>, injecao: ArrayLike<number>): void {
+    for (let i = 0; i < 3; i++) {
+      this.cabosEstado[i] = estado[i] ?? 0;
+      this.cabosInjecao[i] = injecao[i] ?? 0;
+    }
+    this.u.cabosInj.value.set(this.cabosInjecao[0]!, this.cabosInjecao[1]!, this.cabosInjecao[2]!);
+    this.u.cabosVida.value.set(vida[0] ?? 1, vida[1] ?? 1, vida[2] ?? 1);
   }
 
   /** O núcleo da estação mudou (0 a 1): o centro de dados apaga as janelas e o alarme vira vermelho conforme a rede cai. */

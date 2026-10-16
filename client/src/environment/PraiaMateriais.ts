@@ -257,6 +257,27 @@ export function materialDoModo(modo: ModoDeMaterial, u: UniformesDaPraia, piso: 
   return m;
 }
 
+/**
+ * O brilho do cabo de dados (P162): o dado ciano que corre do mar à estação. Com a **injeção** de um andróide rebelde ele vai ficando **vermelho e piscando**; com a
+ * **vida** baixa o brilho falha; **cortado**, só um lampejo vermelho. Qual dos três cabos é, sai do x do mundo (251, 257 e 263: os limites são 254 e 260).
+ */
+const GLSL_CABO = /* glsl */ `
+  {
+    float pulso = 0.55 + 0.65 * pow(clamp(0.5 + 0.5 * sin(vMundo.z * 0.22 - uTempo * 5.0), 0.0, 1.0), 3.0);
+    float i1 = step(254.0, vMundo.x);
+    float i2 = step(260.0, vMundo.x);
+    float inj = mix(mix(uCaboInj.x, uCaboInj.y, i1), uCaboInj.z, i2);
+    float vida = mix(mix(uCaboVida.x, uCaboVida.y, i1), uCaboVida.z, i2);
+    float cortado = 1.0 - step(0.001, vida);
+    vec3 infectado = vec3(1.6, 0.14, 0.12);
+    vec3 normal = diffuseColor.rgb * pulso * mix(0.35, 1.0, smoothstep(0.0, 0.5, vida));
+    vec3 ruim = infectado * (0.6 + 0.8 * step(0.0, sin(vMundo.z * 0.5 + uTempo * 9.0)));
+    vec3 cor = mix(normal, ruim, smoothstep(0.0, 0.6, inj));
+    cor = mix(cor, infectado * 0.4 * step(0.0, sin(uTempo * 14.0 + vMundo.z * 0.1)), cortado);
+    diffuseColor.rgb = cor;
+  }
+`;
+
 /** O material dos desenhos sem luz (marcas de pista, luzes, cabos): cor chapada (acima de 1 acende no bloom), com os cabos pulsando. */
 export function materialSemLuz(kind: 'marca' | 'luz' | 'cabo', u: UniformesDaPraia): THREE.MeshBasicMaterial {
   const m = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -267,14 +288,16 @@ export function materialSemLuz(kind: 'marca' | 'luz' | 'cabo', u: UniformesDaPra
     // O dado que corre pelo cabo: pulsos de luz que andam do mar para a estação (o `x` do mundo não conta: o cabo corre em z).
     m.onBeforeCompile = (shader) => {
       shader.uniforms.uTempo = u.tempo;
+      shader.uniforms.uCaboInj = u.cabosInj;
+      shader.uniforms.uCaboVida = u.cabosVida;
       shader.vertexShader = shader.vertexShader
         .replace('#include <common>', '#include <common>\nvarying vec3 vMundo;')
         .replace('#include <begin_vertex>', `#include <begin_vertex>\n${VERTICE_CORPO.replace('vCentro = (modelMatrix * wc).xyz;', '')}`);
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vMundo;\nuniform float uTempo;')
-        .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 0.55 + 0.65 * pow(clamp(0.5 + 0.5 * sin(vMundo.z * 0.22 - uTempo * 5.0), 0.0, 1.0), 3.0);');
+        .replace('#include <common>', '#include <common>\nvarying vec3 vMundo;\nuniform float uTempo;\nuniform vec3 uCaboInj;\nuniform vec3 uCaboVida;')
+        .replace('#include <color_fragment>', `#include <color_fragment>\n${GLSL_CABO}`);
     };
-    m.customProgramCacheKey = () => 'cybermech-praia-cabo';
+    m.customProgramCacheKey = () => 'cybermech-praia-cabo-v2';
   } else if (kind === 'marca') {
     // A tinta da pista também fica na sombra: o mesmo mapa assado, só escurecendo a cor (sem luz para apagar).
     m.onBeforeCompile = (shader) => {

@@ -177,6 +177,42 @@ export class AlertaDoNucleo {
   }
 }
 
+/**
+ * Os avisos dos CABOS DE DADOS (P162): compara o estado de cada cabo no quadro anterior com o de agora (códigos de `CabosDeDados`: 0 livre, 1 injetando, 2 tomado,
+ * 3 cortado) e devolve **uma** linha curta para o anúncio do topo, ou `null` se nada mudou. Manda o mais grave: cabo tomado, depois cortado, depois liberado e, por
+ * último, o andróide que acabou de se ligar. Quem está desde o começo no mesmo estado não avisa de novo.
+ */
+export function avisoDosCabos(antes: ArrayLike<number>, depois: ArrayLike<number>): string | null {
+  let melhor: string | null = null;
+  let prioridade = 0;
+  for (let i = 0; i < depois.length; i++) {
+    const a = antes[i] ?? 0;
+    const d = depois[i] ?? 0;
+    if (a === d) continue;
+    const n = i + 1;
+    let texto: string | null = null;
+    let p = 0;
+    if (d === 2) {
+      texto = `CABO ${n} TOMADO · A REDE ESTÁ SENDO ENVENENADA`;
+      p = 4;
+    } else if (d === 3) {
+      texto = `CABO ${n} CORTADO · CONSERTE`;
+      p = 3;
+    } else if (a >= 2 && d < 2) {
+      texto = `CABO ${n} LIBERADO`;
+      p = 2;
+    } else if (a === 0 && d === 1) {
+      texto = `CABO ${n} · ANDRÓIDE LIGADO · INJETANDO DESINFORMAÇÃO`;
+      p = 1;
+    }
+    if (texto !== null && p > prioridade) {
+      melhor = texto;
+      prioridade = p;
+    }
+  }
+  return melhor;
+}
+
 /** O cartão de missão da praia (mostrado uma vez, ao começar): a história em três linhas curtas — alegoria, sem nomes reais. */
 export const CARTAO_DA_MISSAO = {
   titulo: 'OPERAÇÃO CABOS ABERTOS',
