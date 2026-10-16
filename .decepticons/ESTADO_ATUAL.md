@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## CADA ARMA COM A SUA DICA DE PRIMEIRO USO — Claude, 16/10 (branch `claude/dicas-por-arma`, P160 parte 5)
+
+**Por quê:** uma dica só ("FOGUETES: DANO EM ÁREA") aparecia para toda arma de munição, inclusive a granada, o enxame e o cruzador. No texto, a arma nova era o foguete.
+
+**Feito:** `ui/dicasDeArma.ts` (uma frase por arma, com os números da própria arma) e `Onboarding.armaEmUso`: na primeira vez que o jogador atira com uma arma, a frase dela aparece por 6 s e não volta (guardado no navegador). A caixa da dica agora cresce com o texto.
+
+**Provas:** 6 testes (`ui/dicasDeArma.test.ts`); e o jogo de verdade na GPU real: a granada mostrou "GRANADA: CAI NO ANEL VERDE (ATÉ 80 M); MIRE ATRÁS DA COBERTURA E ELA PASSA POR CIMA" e ficou gravada (`arte/armas-dica-granada-claude.jpg`).
+
+**Onde o Comandante confere:** Hangar → uma arma nova → jogar e atirar: a dica aparece na primeira vez (para ver de novo, limpar os dados do site no navegador).
+
+**Próxima sessão começa com:** o que o Comandante disser jogando as partes 1 a 5 da P160.
+
 ## CAPÍTULO 1, PARTE A: OS CABOS DE DADOS — andróides injetam, cabos são tomados ou cortados, o jogador libera e conserta; e a ficha de fatos das privatizações — Claude, 16/10 (branch `claude/cap1-cabos`, P162, P163, P166)
 
 **A ordem do Comandante (16/10):** *"privatizações de serviços públicos essenciais, eletricidade, água e esgoto, saúde, segurança, petrobras… pode prosseguir com o capítulo 1"* — e, mais cedo, os cabos como pontos de invasão (*"os inimigos precisam se conectar aos cabos… os androides precisam se conectar a algum ponto do cabo, e os outros ficam protegendo… enquanto temos que atacar e liberar o acesso e a programação orgânica das redes"*) e a fase da estação em três frentes.

@@ -617,8 +617,8 @@ export class Game {
     };
     this.player = new PlayerController(this.mech, this.input, this.rig, this.projectiles, this.particles, this.rockets, this.barrage);
     this.match.pilots.push(this.player);
-    this.player.melee = (w) => this.match.meleeNearest(this.mech, w);
-    this.player.flame = (w, origin, dir) => this.match.flameCone(this.mech, origin, dir, w);
+    this.player.melee = (w) => { this.onboarding.armaEmUso(w); this.match.meleeNearest(this.mech, w); };
+    this.player.flame = (w, origin, dir) => { this.onboarding.armaEmUso(w); this.match.flameCone(this.mech, origin, dir, w); };
     this.player.wave = (w, origin, dir) => this.match.waveCone(this.mech, origin, dir, w);
     this.player.beam = (w, origin, dir) => this.match.beamPulse(this.mech, origin, dir, w);
     this.player.cruise = (w, origin, dir, target) => this.match.cruise.fire(origin, dir, target, this.mech.collider, w);
@@ -1195,12 +1195,12 @@ export class Game {
       };
     }
     // Som de disparo: o controle do jogador avisa a cada tiro de energia (bots têm o som deles, acima).
-    this.player.onShot = (w) => this.audio.playArma(w.id) || (w.id === 'arc' ? this.audio.playArcShot() : w.id === 'cryo' ? this.audio.playCryoShot() : w.id === 'cannon' ? this.audio.playCannonShot() : w.id === 'autocannon' ? this.audio.playAutocannonShot() : w.id === 'sonic' ? this.audio.playSonicShot() : w.id === 'laser' ? this.audio.playLaserShot() : this.audio.playShot());
+    this.player.onShot = (w) => (this.onboarding.armaEmUso(w), this.audio.playArma(w.id)) || (w.id === 'arc' ? this.audio.playArcShot() : w.id === 'cryo' ? this.audio.playCryoShot() : w.id === 'cannon' ? this.audio.playCannonShot() : w.id === 'autocannon' ? this.audio.playAutocannonShot() : w.id === 'sonic' ? this.audio.playSonicShot() : w.id === 'laser' ? this.audio.playLaserShot() : this.audio.playShot());
     // Peso do tiro na câmera (`combat/fireFeel.ts`): o solavanco do trilho e do foguete, o zumbido do plasma.
     this.player.onKick = (amount) => rig.addShake(amount);
     this.player.onRocket = (w) => {
       if (!this.audio.playArma(w.id)) this.audio.playRocketLaunch();
-      this.onboarding.trigger('rockets');
+      this.onboarding.armaEmUso(w); // a dica é da arma (granada, enxame, cruzador…), não a do foguete para todas
     };
     this.match.onMechHit = (e) => {
       if (e.shooter === mech) {

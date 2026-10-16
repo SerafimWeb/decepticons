@@ -1,5 +1,10 @@
+import type { WeaponStats } from '../combat/weapons';
+import { DicasVistas } from './dicasDeArma';
+
 export class Onboarding {
   private readonly HAS_SEEN_KEY = 'cybermech.onboarding.v1';
+  /** As dicas de primeiro uso de cada arma (P160 parte 5): uma frase própria por arma, mostrada uma vez, na primeira vez que o jogador atira com ela. */
+  private readonly dicasDeArma: DicasVistas;
   private readonly root = document.getElementById('onboarding')!;
   
   private hints: Record<string, string> = {};
@@ -16,6 +21,13 @@ export class Onboarding {
       // ignora erro de restrição de localStorage
     }
 
+    let memoria: Storage | null = null;
+    try {
+      memoria = localStorage;
+    } catch {
+      // armazenamento bloqueado: a dica de cada arma vale uma vez por abertura do jogo
+    }
+    this.dicasDeArma = new DicasVistas(memoria);
     this.isTouch = document.documentElement.classList.contains('touch');
     
     // Configura dicas de acordo com a plataforma (PC vs Toque)
@@ -60,6 +72,23 @@ export class Onboarding {
         // ignora
       }
     }
+  }
+
+  /**
+   * O jogador atirou com `w`: na primeira vez, a dica própria da arma (não volta). Com outra dica na tela, espera a próxima ocasião sem marcar. O casulo de
+   * foguetes segue com a dica de sempre (`rockets`), para não aparecer duas vezes.
+   */
+  armaEmUso(w: WeaponStats): void {
+    if (w.id === 'rockets') {
+      this.trigger('rockets');
+      return;
+    }
+    const texto = this.dicasDeArma.pendente(w);
+    if (!texto || this.timer > 0) return;
+    this.dicasDeArma.marcar(w);
+    this.root.textContent = texto;
+    this.root.classList.add('show');
+    this.timer = 6;
   }
 
   update(dt: number): void {
