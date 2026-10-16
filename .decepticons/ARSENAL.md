@@ -77,6 +77,9 @@ comporta de um jeito novo** (a escopeta não precisou; a chuva de mísseis sim) 
    nas costas (`buildBackMortar`, oculto até ser equipado; o gancho é o `mountWeapons`). **Arma nova num procedural = um grupo
    oculto no rig + um ramo em `mountWeapons`**; nunca mova a boca de simulação por arma (G14, ver o comentário no rig). O Lancer
    usa a arma do `.glb` dele.
+   **A cara do tiro (P160):** uma entrada em `WEAPON_LOOK` (`fx/weaponLook.ts`, `Record`: o typecheck exige) — o brilho da cabeça do projétil,
+   o clarão da boca, o clarão do acerto, a marca que fica na parede, o rastro em fita e se o acerto explode, cada um com a cor do jogador e a de
+   aviso do inimigo (o teste `fx/WeaponFx.test.ts` trava a cor igual). Também `IMPACT_FX` (`fx/impactFx.ts`, as partículas do acerto).
 7. **Rede** (se a arma atira): `NET_WEAPONS` em `shared/net/events.ts` (**só no fim**) e `PROTOCOL_VERSION` + 1 em
    `shared/net/constants.ts`; `server/ArenaRoom.ts` (o `onFired` do sistema vira o evento de tiro) e
    `net/OnlineSession.ts` `remoteShot` (o desenho do tiro do outro jogador). **Subir o protocolo recusa quem está com a versão
@@ -137,6 +140,24 @@ Teste de mutação nas regras novas (estrague a regra e veja o teste cair) é o 
 **A regra dos 4,5 s (P111) e os mísseis:** o lançador leve e o cruzador foram calibrados contra ela (a bancada, todo nível e combo do Marauder). O lançador conta só 55% dos mísseis numa nuvem de 2,6° e vale como pressão (7 a 8 de dano por segundo, golpe de abertura de 40 a 224 se todos acertarem); o cruzador bate 90 / 108 / 126 (dois acertos nunca bastam, como o canhão pesado). **Para mudar um número sem código:** Configurações → Potências (dano, cadência, calor e alcance por arma); com código, a entrada em `BASE` (`weapons.ts`) e, se a faixa mudar, a linha de `FAIXAS` no teste.
 
 **Honestidade (R13):** ninguém jogou nem ouviu as três; os números são proposta do Claude (o ouvido e a mão são do Comandante). Os bots não usam as três. O míssil de outro jogador voa reto no desenho (o dano e a explosão são do servidor).
+
+## A cara de cada tiro: rastro, explosão, clarão e marca (P160, 16/10, Claude)
+
+O que o tiro **parece** mora em `fx/weaponLook.ts` (dado, uma linha por arma), separado do que ele **faz** (`combat/weapons.ts`); quem desenha é
+o `fx/WeaponFx.ts`, que a simulação de tiro avisa por um campo opcional (`fx` do `ProjectileSystem`, `RocketSystem`, `CruiseSystem`,
+`BarrageSystem`: `fired`, `flying`, `impact`, `landed`, `trail`). **O servidor deixa esse campo vazio e não paga nada.**
+
+| Peça | Onde | O que é |
+|---|---|---|
+| Clarão da boca, brilho da cabeça, clarão do acerto | `fx/Billboards.ts` | cartazes de luz virados para a câmera (glow, estrela de 4 pontas, aro, língua de pólvora), 1 desenho para todos |
+| Rastro em fita | `fx/Ribbons.ts` | a fumaça e o fogo do motor de foguete, míssil, cruzador, bombas da chuva e obus: fita contínua que abre, sobe e se desfaz (era uma fila de pontos) |
+| Explosão com corpo | `fx/Explosions.ts` | clarão, bola de fogo low-poly que ferve, fumaça escura de verdade, estilhaços que quicam, faíscas; escala com o `blastRadius` |
+| Marcas | `fx/Marks.ts` | queimado no chão, furo quente na parede (aro na cor do tiro que esfria), geada do gelo; clarão no asfalto e onda de choque rente ao chão |
+| Raio iônico do trilho | `fx/BeamVisuals.ts` | o feixe do laser, mais grosso e na cor do trilho (era uma linha de 1 px) |
+
+**Para mexer no visual de uma arma** (cor, tamanho do brilho, rastro, marca): só a linha dela em `WEAPON_LOOK`. A explosão de um Mech destruído é
+`WeaponFx.wreck` (do tamanho do robô). Custo medido: 0,45 ms por quadro com 170 fitas, 219 peças de explosão, 160 cartazes e 80 marcas ao mesmo
+tempo (carga extrema); nada alocado por quadro. O Estúdio (aba TIROS E ARMAS, P157) vai editar esta tabela.
 
 ## O que ainda não é dado puro (honestidade)
 

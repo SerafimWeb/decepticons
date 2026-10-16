@@ -187,7 +187,12 @@ editado quadro a quadro**: corrigir é roteiro → exportar de novo.
 ```bash
 npm run build && node .decepticons/medicoes/varrer-nan.mjs                       # 10 pontos do mapa × 48 poses; sai com 1 se achar pixel não finito
 node .decepticons/medicoes/varrer-nan.mjs --w 1549 --h 925 --q alta --bloom      # a janela do Comandante; --bloom mede com o bloom LIGADO (prova a rede de segurança)
+node .decepticons/medicoes/varrer-nan.mjs --efeitos                               # P160: acende os efeitos de arma em volta do Mech (explosões, fitas, marcas, cartazes, feixes)
 ```
+
+**Efeito de arma novo (P160):** shader que só aparece durante um tiro não entra na conta de uma varredura parada; use `--efeitos` (a cada 6 poses
+acende, num anel em volta do Mech, explosões no chão e no ar, a do Mech destruído, mísseis com fita, tiros com brilho e marca, o raio do trilho e o
+feixe do laser, pelo `window.__game.weaponFx`). Em 16/10: 0 de 192 poses com NaN.
 
 **Como funciona:** serve o `dist/`, abre `?mapa=praia&depurar` (o `main.ts` expõe `window.__game` só com esse parâmetro), teletransporta o Mech (`mech.respawn`), gira a câmera (`rig.look`) e lê o buffer HDR da cena. **Armadilhas:** (1) precisa do Chrome com `--use-angle=d3d11` e uma GPU (a desta máquina é a AMD Vega 11); (2) a bancada `praia.mjs` **sai preta** numa GPU real (o canvas fica zerado): não a use para isso; (3) o problema era **intermitente** (a orientação inicial da câmera muda por sessão), então um "não deu nada" de uma sessão só não prova; a varredura de poses prova. **Se achar NaN:** esconda um objeto de cada vez (`scene.traverse` + `visible = false`) e veja qual derruba a contagem — foi assim que a cortina das zonas apareceu.
 

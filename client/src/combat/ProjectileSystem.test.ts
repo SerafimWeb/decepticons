@@ -8,10 +8,13 @@ describe('projéteis rápidos e distância real do EMP',()=>{
     const lengths:number[]=[];
     const physics={raycast:(_p:THREE.Vector3,_d:THREE.Vector3,max:number)=>{lengths.push(max);return null;}};
     const scene=new THREE.Scene();const p=new ProjectileSystem(scene,physics as never,FX as never,1);
+    // O traço do trilho é o raio iônico do `ShotFx` (P160; era uma linha de 1 px): ele recebe a boca e o fim do alcance quando o tiro acaba.
+    const landed:number[][]=[];
+    p.fx={fired:()=>7,flying:()=>{},impact:()=>{},trail:()=>-1,landed:(trail,from,to)=>{landed.push([trail,from.z,to.z]);}};
     p.fire(new THREE.Vector3(),new THREE.Vector3(0,0,-1),undefined,false,{...weapon('railgun'),maxRange:10});
     p.fixedUpdate(1/60);p.fixedUpdate(1/60);
     expect(lengths).toEqual([10]);
-    expect(scene.children.some(n=>n.visible)).toBe(true); // traço ainda dura 0,12 s
+    expect(landed).toEqual([[7,0,-10]]);
     p.clear();expect(scene.children.every(n=>!n.visible)).toBe(true);
   });
   it('impacto entrega a arma e distância exatas, inclusive no disparo muito rápido',()=>{

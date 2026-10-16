@@ -1,5 +1,6 @@
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
+import type { ShotFx } from '../fx/WeaponFx';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { WeaponStats } from './weapons';
 
@@ -12,6 +13,7 @@ const FALL_HEIGHT = 55;
 const GOLDEN_ANGLE = 2.399963229728653;
 const DOWN = new THREE.Vector3(0, -1, 0);
 const _out = new THREE.Vector3();
+const UP_DIR = new THREE.Vector3(0, 1, 0);
 
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
@@ -49,6 +51,9 @@ interface Salvo {
   prevY: Float32Array;
   done: Uint8Array;
   bombs: number;
+  /** O rastro em fita do lançamento e o de cada bomba no `ShotFx` (-1 = sem rastro). */
+  fxShell: number;
+  fxBomb: Int32Array;
 }
 
 /**
@@ -65,6 +70,8 @@ export class BarrageSystem {
   onExplode?: (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
   /** Um lançamento saiu (o servidor manda como evento de tiro). */
   onFired?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
+  /** Quem desenha o clarão e os rastros em fita do lançamento e das bombas (P160; só o cliente liga). */
+  fx?: ShotFx;
 
   private readonly salvos: Salvo[] = [];
   private readonly shells: THREE.Mesh[] = [];
@@ -91,6 +98,8 @@ export class BarrageSystem {
         prevY: new Float32Array(MAX_BOMBS),
         done: new Uint8Array(MAX_BOMBS),
         bombs: 0,
+        fxShell: -1,
+        fxBomb: new Int32Array(MAX_BOMBS).fill(-1),
       });
       const shell = new THREE.Mesh(shellGeo, shellMat);
       shell.visible = false;
@@ -122,6 +131,7 @@ export class BarrageSystem {
     if (!b) return;
     this.onFired?.(origin, dir, owner, w);
     const s = this.salvos.find((q) => !q.live) ?? this.salvos.reduce((a, q) => (q.t > a.t ? q : a));
+    if (s.live) this.dropTrails(s);
     s.live = true;
     s.t = 0;
     s.weapon = w;
@@ -149,6 +159,7 @@ export class BarrageSystem {
       s.prevY[i] = s.ground[i]! + FALL_HEIGHT;
       s.done[i] = 0;
     }
+    s.fxShell = this.fx ? this.fx.fired(s.visual, UP_DIR, w, false) : -1;
   }
 
   fixedUpdate(dt: number): void {
@@ -190,7 +201,13 @@ export class BarrageSystem {
       const t = s.t + alpha / 60;
       // O lançamento sobe na vertical, à velocidade da arma, e some no alto.
       shell.visible = t < b.ascent;
-      if (shell.visible) shell.position.set(s.visual.x, s.visual.y + s.weapon.speed * t, s.visual.z);
+      if (shell.visible) {
+        shell.position.set(s.visual.x, s.visual.y + s.weapon.speed * t, s.visual.z);
+        this.fx?.flying(s.fxShell, shell.position, s.weapon, false);
+      } else if (s.fxShell >= 0) {
+        this.fx?.landed(s.fxShell, shell.position, shell.position, s.weapon, false);
+        s.fxShell = -1;
+      }
       for (let i = 0; i < s.bombs; i++) {
         if (s.done[i]) continue;
         const since = t - (b.ascent + i * b.stagger);
@@ -204,6 +221,10 @@ export class BarrageSystem {
         if (since < 0) continue;
         _p.set(s.x[i]!, ground + FALL_HEIGHT * Math.max(0, 1 - since / b.fall), s.z[i]!);
         this.bombMesh.setMatrixAt(bombs++, _m.compose(_p, _q.identity(), _s.set(1, 1, 1)));
+        if (this.fx) {
+          if (s.fxBomb[i]! < 0) s.fxBomb[i] = this.fx.trail('micro', _p);
+          this.fx.flying(s.fxBomb[i]!, _p, s.weapon, false);
+        }
       }
     }
     this.bombMesh.count = bombs;
@@ -214,7 +235,11 @@ export class BarrageSystem {
 
   /** Rodada nova: some com tudo o que está no ar, sem explodir. */
   clear(): void {
-    for (const s of this.salvos) s.live = false;
+    for (const s of this.salvos) {
+      s.live = false;
+      s.fxShell = -1;
+      s.fxBomb.fill(-1);
+    }
     for (const shell of this.shells) shell.visible = false;
     this.bombMesh.count = 0;
     this.markMesh.count = 0;
@@ -225,8 +250,23 @@ export class BarrageSystem {
     return this.salvos.reduce((n, s) => n + (s.live ? 1 : 0), 0);
   }
 
+  /** O lançamento acabou antes da hora (a vaga foi reaproveitada): os rastros se soltam. */
+  private dropTrails(s: Salvo): void {
+    if (!this.fx) return;
+    this.fx.landed(s.fxShell, s.visual, s.visual, s.weapon, false);
+    s.fxShell = -1;
+    for (let i = 0; i < MAX_BOMBS; i++) {
+      this.fx.landed(s.fxBomb[i]!, s.visual, s.visual, s.weapon, false);
+      s.fxBomb[i] = -1;
+    }
+  }
+
   private land(s: Salvo, i: number, at: THREE.Vector3): void {
     s.done[i] = 1;
+    if (this.fx) {
+      this.fx.landed(s.fxBomb[i]!, at, at, s.weapon, false);
+      s.fxBomb[i] = -1;
+    }
     this.onExplode?.(at, _out.copy(DOWN), s.owner, s.weapon); // cópia: quem ouve pode mexer na direção
   }
 }

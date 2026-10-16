@@ -1,6 +1,7 @@
 import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import type { ParticleSystem } from '../fx/ParticleSystem';
+import type { ShotFx } from '../fx/WeaponFx';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { WeaponStats } from './weapons';
 
@@ -56,6 +57,8 @@ interface Missile {
   pos: THREE.Vector3;
   /** Para onde aponta (a tangente do caminho): só desenho e o raio do trecho. */
   dir: THREE.Vector3;
+  /** O rastro em fita no `ShotFx` (-1 = sem rastro). */
+  fxTrail: number;
 }
 
 /**
@@ -71,6 +74,8 @@ export class CruiseSystem {
   onExplode?: (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
   /** Um míssil saiu (o servidor manda como evento de tiro). */
   onFired?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
+  /** Quem desenha o clarão e o rastro em fita (P160; só o cliente liga). Com ele, o rastro de partículas sai. */
+  fx?: ShotFx;
 
   private readonly pool: Missile[] = [];
   private readonly bodyMesh: THREE.InstancedMesh;
@@ -92,6 +97,7 @@ export class CruiseSystem {
         prev: new THREE.Vector3(),
         pos: new THREE.Vector3(),
         dir: new THREE.Vector3(0, 0, 1),
+        fxTrail: -1,
       });
     }
     // A silhueta de um míssil (perfil girado em volta do eixo): ponta, corpo e o afunilado da cauda, com a ponta para +Z.
@@ -127,6 +133,7 @@ export class CruiseSystem {
     if (!c) return;
     this.onFired?.(origin, dir, owner, w);
     const m = this.pool.find((q) => !q.live) ?? this.pool.reduce((a, q) => (q.u > a.u ? q : a));
+    if (m.live) this.fx?.landed(m.fxTrail, m.pos, m.pos, m.weapon, false);
     m.live = true;
     m.weapon = w;
     m.owner = owner;
@@ -147,6 +154,7 @@ export class CruiseSystem {
     m.prev.copy(origin);
     m.pos.copy(origin);
     this.tangent(m);
+    m.fxTrail = this.fx ? this.fx.fired(origin, dir, w, false) : -1;
   }
 
   fixedUpdate(dt: number): void {
@@ -172,7 +180,7 @@ export class CruiseSystem {
       this.tangent(m);
       // O rastro: fogo atrás e uma fumaça mais grossa e lenta, em dois pontos do trecho andado (a 120 m/s o míssil anda 2 m por tick: um ponto só deixaria um tracejado, não uma linha).
       _dir.copy(m.dir).negate();
-      for (let k = 0; k < 2; k++) {
+      for (let k = 0; k < (this.fx ? 0 : 2); k++) {
         _at.copy(m.pos).addScaledVector(m.dir, -1.4 - k * (len > 0 ? len * 0.5 : 0));
         this.particles.burst(_at, _dir, { count: 1, color: FIRE, speed: 4, life: 0.3, size: 2.4, spread: 0.35, gravity: 0 });
         this.particles.burst(_at, _dir, { count: 1, color: SMOKE, speed: 1.5, life: 1.1, size: 3.4, expansion: 2, spread: 0.5, gravity: -0.6 });
@@ -189,6 +197,8 @@ export class CruiseSystem {
       _p.lerpVectors(m.prev, m.pos, alpha);
       _q.setFromUnitVectors(Z_AXIS, m.dir);
       this.bodyMesh.setMatrixAt(bodies, _m.compose(_p, _q, _s.set(1, 1, 1)));
+      // A fita sai da cauda (o corpo tem 1,2 m para trás do centro).
+      if (this.fx) this.fx.flying(m.fxTrail, _at.copy(_p).addScaledVector(m.dir, -1.2), m.weapon, false);
       const pulse = 1 + 0.07 * Math.sin(m.u * 90);
       const close = 0.5 + 0.5 * (1 - m.u);
       const radius = m.weapon.blastRadius * pulse * close;
@@ -203,7 +213,10 @@ export class CruiseSystem {
 
   /** Rodada nova: some com tudo o que está no ar, sem explodir. */
   clear(): void {
-    for (const m of this.pool) m.live = false;
+    for (const m of this.pool) {
+      m.live = false;
+      m.fxTrail = -1;
+    }
     this.bodyMesh.count = 0;
     this.markMesh.count = 0;
   }
@@ -223,6 +236,8 @@ export class CruiseSystem {
 
   private land(m: Missile, at: THREE.Vector3): void {
     m.live = false;
+    this.fx?.landed(m.fxTrail, at, at, m.weapon, false);
+    m.fxTrail = -1;
     _dir.copy(m.dir);
     this.onExplode?.(at, _dir, m.owner, m.weapon); // cópia: quem ouve pode mexer na direção
   }

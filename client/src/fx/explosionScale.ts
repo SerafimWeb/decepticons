@@ -23,3 +23,14 @@ export const EXPLOSION_HEARING_M = 60;
 export function explosionSoundDistance(dist: number, scale: number): number {
   return Math.min(1, Math.max(0, dist / EXPLOSION_HEARING_M) + (1 - Math.min(1, scale)) * 0.4);
 }
+
+/**
+ * O tranco de câmera (trauma do `CameraRig.addShake`, 0 a 1) de uma explosão de escala `scale` (`explosionScale`) a `dist` metros (P160): alcança mais longe quanto maior a
+ * explosão (30 m + 30 m por escala: o foguete, 60 m; o cruzador, 84 m) e cai com o quadrado da distância, então de perto o golpe é forte e de longe só um estremecer. Antes era
+ * linear e parava aos 40 m para qualquer explosão: o cruzador a 50 m não sacudia nada.
+ */
+export function explosionShake(dist: number, scale: number): number {
+  const reach = 30 + 30 * scale;
+  const t = Math.max(0, 1 - dist / reach);
+  return Math.min(0.9, 0.6 * scale * t * t);
+}

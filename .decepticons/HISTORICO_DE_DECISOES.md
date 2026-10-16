@@ -1,3 +1,27 @@
+## [2026-10-16] A cara dos tiros: explosão com corpo, rastro em fita, clarão e marca por família de arma (Claude, P160)
+
+**Situação:** o Comandante (16/10, P160) compara o jogo com jogos 3D feitos em uma semana e os acha "mil vezes melhores". O arsenal já tem 20 armas; o
+que separava era a **sensação** de cada tiro: a explosão era só uma nuvem de pontos que somava luz (a "fumaça" também somava, então nunca
+escurecia), o rastro de míssil era uma fila de pontinhos, o tiro de energia uma risca e o trilho uma linha de 1 px; nada ficava onde o tiro batia.
+
+**Decisões:**
+1. **Visual primeiro, regra intacta:** este PR não muda dano, alcance nem cadência de nenhuma arma (nenhum teste de equilíbrio mexeu). Balística e
+   estilos novos (balins da escopeta, arco com gravidade) vêm num PR próprio, com teste de simulação.
+2. **A simulação avisa, o cliente desenha:** os sistemas de tiro ganharam um campo opcional `fx` (`ShotFx`: `fired`, `flying`, `impact`, `landed`,
+   `trail`). O servidor deixa vazio e não paga nada; com ele ligado, o rastro de partículas antigo do míssil e do obus sai (a fita o substitui) e a
+   linha de 1 px do trilho virou o raio iônico no pool de feixes do laser.
+3. **Fogo com mistura normal, não soma de luz:** a primeira versão somava luz e dez bolas de fogo sobrepostas viravam um borrão branco que cobria a
+   tela (medido na bancada). Com mistura normal o laranja satura e o bloom acende só o miolo.
+4. **Estilo low-poly mantido** (decisão de 07/10, `REFERENCIA_VISUAL.md`): bola de fogo e fumaça são poliedros de faces chapadas que fervem (a forma
+   ondula no shader), não folhas de sprite.
+5. **Marca só em superfície parada** (colisor sem corpo): num Mech a marca sairia andando. A rotatória marca a cada 3 acertos (20 tiros/s).
+6. **A cara de cada arma é dado** (`fx/weaponLook.ts`), separado da força (`combat/weapons.ts`), para o Estúdio (P157) editar sem tocar na regra; a
+   cor do inimigo continua de aviso (teste trava a cor igual à do jogador).
+7. **O tranco da explosão escala com o tamanho** (`explosionShake`): o alcance era fixo em 40 m para qualquer explosão.
+
+**Custo:** 0,45 ms por quadro sob carga extrema (170 fitas, 219 peças de explosão, 160 cartazes, 80 marcas); 9 desenhos para todos os efeitos da
+cena; nada alocado por quadro. GPU real: 0 de 192 poses com NaN com os efeitos acesos (`varrer-nan.mjs --efeitos`). JS 472,3 KB de 500.
+
 ## [2026-10-16] Teste que roda `git` não pode herdar o ambiente do hook: um `git init` de teste corrompeu a config compartilhada (Claude, P155)
 
 **Situação:** o teste das pendências do Estúdio (PR #339) cria um repositório de teste dentro de `.tmp/` e roda `git init`, `git config` e `git commit` nele. Rodando **dentro do hook de push** (que herda `GIT_DIR`, `GIT_INDEX_FILE`…), esses comandos agiram no repositório **de fora**: a `.git/config` compartilhada ficou com `core.bare = true` (o `git status` das worktrees passou a falhar e a principal virou "(bare)") e com um `[user]` falso (`t@t`). Os commits e o histórico não foram tocados; o dano ficou na config e foi desfeito à mão.

@@ -76,7 +76,9 @@ Esta última não existe aqui e é a maior diferença de sensação online; o pr
    robôs (disco instanciado). As luzes, o mapa de ambiente e o antialias já existem; o ganho está em cor e profundidade.
    Maior efeito por menor custo.
 2. **Cenário:** adereços instanciados e letreiros, para o mapa deixar de ser "caixas no escuro".
-3. **Efeitos:** rastro de tiro, anel de choque, fogo com mais corpo, desfoque de dash em qualidade alta.
+3. **Efeitos:** rastro de tiro, anel de choque, fogo com mais corpo, desfoque de dash em qualidade alta. **Feito em 16/10 (P160, Claude), menos o
+   desfoque de dash:** rastro em fita contínua (fumaça e fogo do motor), explosão com bola de fogo low-poly, fumaça escura, estilhaço, onda de choque
+   e queimado no chão, clarão e brilho por família de arma, marcas na parede e o raio do trilho (`ARSENAL.md`, "A cara de cada tiro").
 4. **Leitura:** barra e distância no nome, anel de recarga das habilidades, kill feed.
 5. **Material dos robôs:** luz e cor por peça dentro das regras de `ESTILO_ROBOS.md`.
 

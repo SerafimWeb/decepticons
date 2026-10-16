@@ -1,5 +1,28 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A CARA DOS TIROS: explosão com corpo, rastro em fita, clarão e marca por família de arma, e o Mech destruído que explode — Claude, 16/10 (branch `claude/armas-impacto`, P160 parte 1)
+
+**A ordem do Comandante (16/10):** *"use a capacidade máxima do modelo OPUS 5.5, e evolua nossas armas, balísticas, shape, cor, potência, alcance, dano, pra ficar realmente BOM o nosso jogo. pense se temos que implementar novos estilos, tipos, formas, etc. … vejo diversos jogos feitos com gpt astra, claude opus 5.5, em 3d, e acho eles ABSURDAMENTE FODAS"*.
+
+**Diagnóstico:** o arsenal já tem 20 armas; o que separava o jogo era a **sensação** de cada tiro. A explosão era só uma nuvem de pontos que somava luz (a "fumaça" também somava, então nunca escurecia), o rastro de míssil uma fila de pontinhos, todo tiro de energia a mesma risca, o trilho uma linha de 1 px, e nada ficava onde o tiro batia.
+
+**Feito (só desenho: nenhum número de arma mudou):**
+1. **Explosão com corpo** (`fx/Explosions.ts`): clarão, **bola de fogo low-poly que ferve** e esfria do amarelo ao vermelho, **fumaça escura de verdade** (mistura normal, acesa por dentro pelo fogo no começo, que sobe e se desfaz), **estilhaços em brasa** que voam, quicam e esfriam, faíscas, e no chão o **clarão no asfalto**, a **onda de choque** e o **queimado**. Escala com o raio da arma (míssil leve pequeno, cruzador grande). O **Mech destruído explode** do tamanho dele (`WeaponFx.wreck`).
+2. **Rastro em fita contínua** (`fx/Ribbons.ts`): a fumaça (que abre, ondula e sobe) e a língua de fogo do motor em foguete, teleguiado (azul-frio), míssil leve (fita fina), cruzador (fita grossa que desenha o arco), bombas da chuva e obus do canhão.
+3. **Clarão da boca, brilho da cabeça e clarão do acerto por família** (`fx/Billboards.ts`, tabela `fx/weaponLook.ts`): plasma como bola de luz verde com núcleo, metal em brasa com língua de pólvora, trilho azul, elétrica que pisca, gelo, EMP em aro; o inimigo em cor de aviso.
+4. **Marcas** (`fx/Marks.ts`): furo quente na cor do tiro que esfria, geada do gelo, queimado do laser — só em superfície parada.
+5. **Raio iônico do trilho** (era 1 px) e o **feixe do laser** com borda macia e energia correndo (`fx/BeamVisuals.ts`).
+6. **Tranco de câmera** que escala com a explosão (`explosionShake`: o cruzador a 70 m ainda sacode; antes parava aos 40 m para qualquer uma).
+7. A simulação de tiro só **avisa** (`ShotFx`, campo opcional `fx`); o servidor não monta nada. A varredura de NaN ganhou `--efeitos` (`FERRAMENTAS.md` § 4.1).
+
+**Provas:** 19 testes novos (`fx/WeaponFx.test.ts`: tetos dos pools, vida, nada de NaN nos buffers, a fita de lado para a câmera, marca só em superfície parada, cor do inimigo diferente da do jogador; `combat/shotFx.test.ts`: o contrato com os quatro sistemas de tiro, e que sem `fx` o servidor segue igual) com **23 mutações à mão, 23 pegas**; `npm run check` verde (2 357 testes); **GPU real (AMD): 0 de 192 poses com NaN com os efeitos acesos**; custo **0,45 ms por quadro sob carga extrema** (170 fitas, 219 peças de explosão, 160 cartazes, 80 marcas), 9 desenhos para todos os efeitos, nada alocado por quadro; JS **472,3 KB** de 500. Capturas: `arte/armas-impacto-bancada-claude.jpg` (15 quadros com os sistemas de verdade), `arte/armas-impacto-gpu-mech-destruido-claude.jpg` e `arte/armas-impacto-gpu-fumaca-claude.jpg` (o jogo na GPU real).
+
+**Onde o Comandante confere:** jogar e atirar com **foguetes** (botão 2 do Vector-09), **plasma**, **trilho** e **canhão**; destruir um Mech; atirar numa parede e ver a marca.
+
+**Falta (R13):** o julgamento do Comandante jogando (tamanho, cor, duração: tudo é linha de tabela); o Hangar ("Testar") ainda usa o traço de teste dele; o desfoque de dash. **Parte 2 da P160 (próximo PR):** balística e estilos novos — a **escopeta com balins de verdade** (hoje é um projétil só) e uma arma de **arco com gravidade**, com teste de simulação e a bancada de equilíbrio.
+
+**Próxima sessão começa com:** a parte 2 da P160 (balins da escopeta primeiro).
+
 ## A ABA VOZES DO ESTÚDIO: gravar a própria voz, tratar e pôr no jogo, com a sua voz protegida do gerador — Claude, 16/10 (branch `claude/estudio-vozes`, P151)
 
 **A pergunta do Comandante (15/10):** *"a voz do 'combate' em português está muito ruim… será que devo gravar e enviar pra editarmos minha própria voz com efeitos?"*. Respondido que sim; agora **é só gravar no Estúdio**.

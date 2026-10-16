@@ -11,7 +11,7 @@ import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
 import { addSerafimPlaque, SERAFIM_TOWER } from '../environment/SerafimTower';
 import { DroneVisuals } from '../fx/DroneVisuals';
-import { explosionScale, explosionSoundDistance } from '../fx/explosionScale';
+import { explosionScale, explosionShake, explosionSoundDistance } from '../fx/explosionScale';
 import { ShadowBlobs, terrainGround } from '../fx/ShadowBlobs';
 import { BankTerminal } from '../ui/BankTerminal';
 import { bankReward, nearBank, type BankReply } from '../../../shared/bank/codes';
@@ -53,6 +53,7 @@ import { WaveRings } from '../fx/WaveRings';
 import { HeatHaze } from '../fx/HeatHaze';
 import { StatusVisuals } from '../fx/StatusVisuals';
 import { ParticleSystem } from '../fx/ParticleSystem';
+import { WeaponFx } from '../fx/WeaponFx';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
 import { PlayerController } from '../player/PlayerController';
@@ -164,8 +165,6 @@ const UP = new THREE.Vector3(0, 1, 0);
 
 const _tmp = new THREE.Vector3();
 const _aimDir = new THREE.Vector3();
-const BLAST_COLOR = new THREE.Color(3.2, 1.3, 0.25);
-const SMOKE_COLOR = GLOW.smoke;
 const _aimFrom = new THREE.Vector3();
 /** Onde nasce o número de dano flutuante (a cabeça do alvo). */
 const _dmgPos = new THREE.Vector3();
@@ -325,6 +324,8 @@ export class Game {
   private serafimParty = false;
   /** Desenho dos drones da base Serafim (só quando a partida tem drones). */
   private droneVisuals: DroneVisuals | null = null;
+  /** Os efeitos de arma (P160): clarão da boca, brilho do tiro, rastro em fita, marca na parede e a explosão com corpo. */
+  private weaponFx!: WeaponFx;
   private serafimCheck = 0;
   private readonly squadHUD: SquadHUD;
   private readonly shieldVisuals = new ShieldVisuals(this.scene);
@@ -474,6 +475,9 @@ export class Game {
       addSerafimPlaque(this.scene);
     }
     this.droneVisuals = this.match.drones ? new DroneVisuals(this.scene, this.match.drones) : null;
+    this.weaponFx = new WeaponFx(this.particles, this.camera, (x, y, z) => physics.terrainY(x, z, y + 1, 40), this.match.beams);
+    for (const o of this.weaponFx.objects) this.scene.add(o);
+    this.projectiles.fx = this.rockets.fx = this.match.cruise.fx = this.barrage.fx = this.weaponFx;
     this.shadows = new ShadowBlobs(this.scene, terrainGround(physics));
     // ?serafim=festa: o LED do prédio gira as cores (o dono quer poder variar a luz).
     this.serafimParty = new URLSearchParams(location.search).get('serafim') === 'festa';
@@ -1194,6 +1198,8 @@ export class Game {
       if (e.result.partDestroyed) this.audio.playPartDestroyed();
     };
     this.match.onMechKilled = (dead, at, killer) => {
+      // P160: o Mech destruído explode de verdade (bola de fogo grande, fumaça preta, estilhaços), além dos destroços da carcaça.
+      if (!(dead instanceof Android)) this.weaponFx.wreck(at, dead.stats.height);
       const falloff = 1 - at.distanceTo(mech.position) / 70;
       if (falloff > 0) rig.addShake(0.7 * falloff);
       this.audio.playExplosion(1 - Math.max(0, falloff));
@@ -1232,11 +1238,11 @@ export class Game {
     this.match.onExplosion = (at, w) => {
       // O estouro é do tamanho da explosão da arma (o foguete, de 6 m, é a medida): um míssil leve de 2,2 m solta um terço das partículas e do tremor, e o som só de três em três
       // (uma salva de 32 estouraria 32 vezes em dois segundos); o cruzador, de 9 m, é maior que o foguete.
+      // P160: a explosão com corpo (clarão, bola de fogo, fumaça escura, estilhaços, queimado e onda de choque no chão: `fx/Explosions.ts`).
       const k = explosionScale(w.blastRadius);
-      this.particles.burst(at, UP, { count: Math.round(70 * k), color: BLAST_COLOR, speed: 18 * (0.6 + 0.4 * k), life: 0.75, size: 2.2 * (0.6 + 0.4 * k), expansion: 0.9, spread: 2.4, gravity: 2 });
-      this.particles.burst(at, UP, { count: Math.round(24 * k), color: SMOKE_COLOR, speed: 4, life: 1.4, size: 2.7 * (0.6 + 0.4 * k), expansion: 1.2, spread: 1.6, gravity: -1.5 });
+      this.weaponFx.explosion(at, w);
       const dist = at.distanceTo(mech.position);
-      if (dist < 40) rig.addShake(0.5 * k * (1 - dist / 40));
+      rig.addShake(explosionShake(dist, k));
       if (!w.salvo || (this.microBlasts++ % 3) === 0) this.audio.playExplosion(explosionSoundDistance(dist, k));
     };
     this.match.onRoundStart = () => {
@@ -1662,6 +1668,7 @@ export class Game {
       this.hangarMenu.testFrame(hs.testProgress());
     }
     this.updateAim(dt);
+    this.weaponFx.beginFrame();
     this.projectiles.render(alpha);
     this.rockets.render(alpha);
     this.barrage.render(alpha);
@@ -1739,6 +1746,7 @@ export class Game {
     }
     this.shadows.end();
     this.particles.update(dt);
+    this.weaponFx.update(dt);
 
     const near = !!this.match.arena.serafim && this.mech.alive && nearBank(this.mech.simPosition);
     if (!near) this.bankNear = false;
