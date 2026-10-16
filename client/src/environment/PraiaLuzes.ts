@@ -34,10 +34,11 @@ float pulso(float modo, float fase, float t) {
 
 const VERTICE_DO_HALO = /* glsl */ `
 attribute vec3 iCentro;
-attribute vec4 iDados; // raio, modo, fase
+attribute vec4 iDados; // raio, modo, fase, ligaEm (o instante em que a luz pública acende; -1 = sinalização, sempre ligada)
 attribute vec3 iCor;
 uniform float uTempo;
 uniform float uNevoa;
+uniform float uLampadas;
 varying vec2 vUv;
 varying vec3 vCor;
 ${GLSL_PULSO}
@@ -47,7 +48,9 @@ void main() {
   float longe = 1.0 - smoothstep(110.0, 250.0, dist);
   float perto = smoothstep(iDados.x * 1.4, iDados.x * 6.0, dist); // de perto o halo some: a câmera não fica dentro de um clarão
   float nevoa = exp(-uNevoa * uNevoa * dist * dist);
-  float k = longe * perto * nevoa * pulso(iDados.y, iDados.z, uTempo);
+  // O ciclo do dia (P161): a luz pública é um fio de brilho de dia e liga, cada uma no seu instante, quando as lâmpadas da cidade acendem.
+  float liga = iDados.w < 0.0 ? 1.0 : mix(0.08, 1.0, smoothstep(iDados.w - 0.04, iDados.w + 0.06, uLampadas));
+  float k = longe * perto * nevoa * pulso(iDados.y, iDados.z, uTempo) * liga;
   float raio = max(iDados.x, dist * 0.007);
   vUv = position.xy;
   vCor = iCor * k;
@@ -74,12 +77,14 @@ attribute vec3 iCentro;
 attribute vec2 iPoca; // raio, força
 attribute vec3 iCor;
 uniform float uNevoa;
+uniform float uLampadas;
 varying vec2 vUv;
 varying vec3 vCor;
 void main() {
   vec4 mv = modelViewMatrix * vec4(iCentro + vec3(position.x * iPoca.x, 0.0, position.y * iPoca.x), 1.0);
   float dist = -mv.z;
-  float k = (1.0 - smoothstep(120.0, 230.0, dist)) * exp(-uNevoa * uNevoa * dist * dist);
+  // A poça de luz no chão só aparece com as lâmpadas acesas (de dia o chão é o chão).
+  float k = (1.0 - smoothstep(120.0, 230.0, dist)) * exp(-uNevoa * uNevoa * dist * dist) * smoothstep(0.1, 0.7, uLampadas);
   vUv = position.xy;
   vCor = iCor * iPoca.y * k;
   gl_Position = projectionMatrix * mv;
@@ -117,14 +122,15 @@ void main() {
 const FRAGMENTO_DO_FEIXE = /* glsl */ `
 uniform vec3 uCor;
 uniform float uAlfa;
+uniform float uLampadas;
 varying float vT;
 varying vec3 vN;
 varying vec3 vV;
 varying float vDist;
 void main() {
-  float frente = pow(abs(dot(normalize(vN), normalize(vV))), 1.4);
-  // Some perto da lâmpada e perto da câmera: o feixe que passa a 5 m do rosto do jogador não pode virar um véu branco.
-  float a = uAlfa * frente * (1.0 - vT * 0.8) * smoothstep(0.0, 0.16, vT) * smoothstep(5.0, 32.0, vDist);
+  float frente = pow(max(abs(dot(normalize(vN), normalize(vV))), 0.0), 1.4);
+  // Some perto da lâmpada e perto da câmera: o feixe que passa a 5 m do rosto do jogador não pode virar um véu branco. De dia o feixe nem aparece.
+  float a = uAlfa * frente * (1.0 - vT * 0.8) * smoothstep(0.0, 0.16, vT) * smoothstep(5.0, 32.0, vDist) * smoothstep(0.35, 0.8, uLampadas);
   gl_FragColor = vec4(uCor * a, 1.0);
 }
 `;
@@ -180,9 +186,9 @@ export class PraiaLuzes {
   constructor(scene: THREE.Scene, u: UniformesDaPraia, lista: readonly Adereco[]) {
     const nevoa = scene.fog instanceof THREE.FogExp2 ? scene.fog.density : NEVOA_PADRAO;
     this.halos(scene, u, lista, nevoa);
-    this.pocas(scene, lista, nevoa);
-    this.feixes(scene, lista);
-    this.holofotesDaEstacao(scene, lista);
+    this.pocas(scene, u, lista, nevoa);
+    this.feixes(scene, u, lista);
+    this.holofotesDaEstacao(scene, u, lista);
   }
 
   /** Por quadro: gira os holofotes das torres de vigia (duas matrizes). */
@@ -203,7 +209,7 @@ export class PraiaLuzes {
     const cor = new Float32Array(n * 3);
     luzes.forEach((l, i) => {
       centro.set([l.x, l.y, l.z], i * 3);
-      dados.set([l.raio, l.modo, l.fase, 0], i * 4);
+      dados.set([l.raio, l.modo, l.fase, l.ligaEm], i * 4);
       cor.set([l.r, l.g, l.b], i * 3);
     });
     const g = quadro();
@@ -211,13 +217,13 @@ export class PraiaLuzes {
     g.setAttribute('iDados', new THREE.InstancedBufferAttribute(dados, 4));
     g.setAttribute('iCor', new THREE.InstancedBufferAttribute(cor, 3));
     g.instanceCount = n;
-    const malha = new THREE.Mesh(g, materialAditivo(VERTICE_DO_HALO, FRAGMENTO_DO_HALO, { uTempo: u.tempo, uNevoa: { value: nevoa } }));
+    const malha = new THREE.Mesh(g, materialAditivo(VERTICE_DO_HALO, FRAGMENTO_DO_HALO, { uTempo: u.tempo, uNevoa: { value: nevoa }, uLampadas: u.lampadas }));
     malha.frustumCulled = false;
     malha.renderOrder = 5;
     scene.add(malha);
   }
 
-  private pocas(scene: THREE.Scene, lista: readonly Adereco[], nevoa: number): void {
+  private pocas(scene: THREE.Scene, u: UniformesDaPraia, lista: readonly Adereco[], nevoa: number): void {
     const pocas = pocasDeLuz(lista);
     const n = pocas.length;
     const centro = new Float32Array(n * 3);
@@ -233,7 +239,7 @@ export class PraiaLuzes {
     g.setAttribute('iPoca', new THREE.InstancedBufferAttribute(dados, 2));
     g.setAttribute('iCor', new THREE.InstancedBufferAttribute(cor, 3));
     g.instanceCount = n;
-    const malha = new THREE.Mesh(g, materialAditivo(VERTICE_DA_POCA, FRAGMENTO_DA_POCA, { uNevoa: { value: nevoa } }, true));
+    const malha = new THREE.Mesh(g, materialAditivo(VERTICE_DA_POCA, FRAGMENTO_DA_POCA, { uNevoa: { value: nevoa }, uLampadas: u.lampadas }, true));
     malha.frustumCulled = false;
     malha.renderOrder = 4;
     scene.add(malha);
@@ -241,7 +247,7 @@ export class PraiaLuzes {
   }
 
   /** Os feixes parados dos refletores: do banco de lâmpadas ao pátio, num só desenho. */
-  private feixes(scene: THREE.Scene, lista: readonly Adereco[]): void {
+  private feixes(scene: THREE.Scene, u: UniformesDaPraia, lista: readonly Adereco[]): void {
     const feixes = feixesDosRefletores(lista);
     if (feixes.length === 0) return;
     const partes: THREE.BufferGeometry[] = [];
@@ -257,7 +263,7 @@ export class PraiaLuzes {
     for (const p of partes) p.dispose();
     if (!g) return;
     const c = feixes[0]!;
-    const malha = new THREE.Mesh(g, materialAditivo(VERTICE_DO_FEIXE, FRAGMENTO_DO_FEIXE, { uCor: { value: new THREE.Color(c.r, c.g, c.b) }, uAlfa: { value: c.alfa } }));
+    const malha = new THREE.Mesh(g, materialAditivo(VERTICE_DO_FEIXE, FRAGMENTO_DO_FEIXE, { uCor: { value: new THREE.Color(c.r, c.g, c.b) }, uAlfa: { value: c.alfa }, uLampadas: u.lampadas }));
     malha.frustumCulled = false;
     malha.renderOrder = 3;
     scene.add(malha);
@@ -265,12 +271,12 @@ export class PraiaLuzes {
   }
 
   /** Os holofotes das torres de vigia: um cone fino que gira (de 120 m), uma raiz por torre. */
-  private holofotesDaEstacao(scene: THREE.Scene, lista: readonly Adereco[]): void {
+  private holofotesDaEstacao(scene: THREE.Scene, u: UniformesDaPraia, lista: readonly Adereco[]): void {
     for (const h of holofotesDaEstacao(lista)) {
       const cone = coneDeFeixe(h.alcance, h.raio);
       cone.rotateZ(Math.PI / 2); // deitado, abrindo para +x
       cone.rotateZ(-0.05); // e um pouco para baixo: varre o chão, não o céu
-      const malha = new THREE.Mesh(cone, materialAditivo(VERTICE_DO_FEIXE, FRAGMENTO_DO_FEIXE, { uCor: { value: new THREE.Color(1.3, 1.25, 1.1) }, uAlfa: { value: 0.16 } }));
+      const malha = new THREE.Mesh(cone, materialAditivo(VERTICE_DO_FEIXE, FRAGMENTO_DO_FEIXE, { uCor: { value: new THREE.Color(1.3, 1.25, 1.1) }, uAlfa: { value: 0.16 }, uLampadas: u.lampadas }));
       malha.frustumCulled = false;
       malha.renderOrder = 3;
       const raiz = new THREE.Group();
