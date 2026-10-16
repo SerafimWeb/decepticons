@@ -68,7 +68,7 @@
 - [x] Tela de configurações (Gemini, sobre o contrato `core/Settings.ts`) #ux
 
 ## 🟡 FASE 3 — Vitrine e polimento
-- [~] **Landing editorial e primeiro acesso (Codex, P169, 16/10):** identidade preto/amarelo, imagens dos Mechs reais, atributos do catálogo, navegação de câmeras, textos profissionais e guia inicial; validação e publicação em andamento #ux
+- [x] **Landing editorial e primeiro acesso (Codex, P169, 16/10):** identidade preto/amarelo, imagens dos Mechs reais, atributos do catálogo, navegação de câmeras, textos profissionais e guia inicial; check completo e prova visual desktop/celular #ux
 - [x] Efeitos sonoros: tiro, impacto, passos pesados, explosão (sintetizados, sem arquivos pesados) #som
 - [x] Volume e mixagem nas configurações #som
 - [~] Controles de toque e layout para celular (Gemini no PR #17, refeito pelo Claude; o check joga num celular emulado; falta o dono confirmar num celular real) #ux

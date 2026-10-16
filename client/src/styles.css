@@ -3629,6 +3629,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 }
 #overlay.console.cc-primeira .cc-mais:hover { color: var(--accent); border-color: var(--accent); }
 #overlay.console.cc-primeira .cc-info { align-items: center; text-align: center; }
+#overlay.console.cc-primeira .cc-info .mouse-only { display: none; }
 /* Carregando: nada da frase nem do "mais opções" (o botão ainda está apagado) e o rótulo diz o que carrega: a partida. */
 #overlay.console.cc-primeira.cc-espera .cc-pitch,
 #overlay.console.cc-primeira.cc-espera .cc-mais { display: none !important; }

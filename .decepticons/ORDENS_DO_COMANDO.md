@@ -18,7 +18,7 @@
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
 |---|---|---|---|---|---|
-| P169 | 16/10 | "melhorando a LANDIG PAGE, e primeiros acessos"; "os textos, numeros e recursos devem sim ser relativos aos dados que ja temos do jogo"; "refinar, polir e melhorar esses textos"; "quero um visual moderno, que seja a nossa cara e personalidade"; "tente usar os próprios robôs do nosso jogo nessas imagens" | 🔧 | Codex, `codex/landing-primeiro-acesso`: landing editorial, renderizações dos modelos reais, comunicação profissional e orientação inicial. Em validação local; ainda não publicado. Referências em `.tmp/landing/` | Raiz de cybermech.online → Jogar; Mechs → Pilotar; Oficina e Bastidores |
+| P169 | 16/10 | "melhorando a LANDIG PAGE, e primeiros acessos"; "os textos, numeros e recursos devem sim ser relativos aos dados que ja temos do jogo"; "refinar, polir e melhorar esses textos"; "quero um visual moderno, que seja a nossa cara e personalidade"; "tente usar os próprios robôs do nosso jogo nessas imagens" | 🟡 | Codex, entrega `codex/landing-primeiro-acesso`: landing editorial, renderizações dos modelos reais, comunicação profissional e orientação inicial validadas em desktop/celular e check completo. Publicação pelo merge desta revisão; falta julgamento do Comandante e medir o funil. Provas em `medicoes/LANDING_P169.md`; referências em `.tmp/landing/` | Raiz de cybermech.online → Jogar; Mechs → Pilotar; Oficina e Bastidores |
 
 ## ⏳ DECISÕES QUE ESPERAM O COMANDANTE (12/10) — sete escolhas travam o trabalho
 

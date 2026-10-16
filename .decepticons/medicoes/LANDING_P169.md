@@ -18,6 +18,8 @@ As fotografias promocionais são produzidas por `node .decepticons/medicoes/land
 
 ## Custo e limites
 
+Validação inicial completa: `npm run check` verde, 237 arquivos e 2.420 testes, build, smoke, encaixes de armas e teste do site com CSP. A revisão cruzada identificou o foco externo recortado pelo `clip-path` dos CTAs; corrigido com contorno interno. A integração da `main` fc2d1ba preserva a entrega paralela de explosivos dos bots; o hook do push revalida o conjunto integrado.
+
 Nenhuma operação nova por frame/tick na simulação. A landing usa imagens estáticas, troca de câmera a cada 6 s (pausa por foco, hover, aba oculta e movimento reduzido) e consulta o status no intervalo já definido pelo projeto, com timeout e sem consultas sobrepostas. As demais imagens usam carregamento tardio.
 
 Isto comprova navegação, conteúdo e layout. Não mede aumento de conversão, retenção ou FPS. A homologação de jogadores simultâneos e os controles de toque continuam com as limitações do `STATUS_REAL.md`. A composição promocional não representa uma nova arena jogável.
