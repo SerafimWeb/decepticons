@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estúdio de Sons — CYBERMECH</title>
+<link rel="icon" href="data:,">
+<style>
+  :root { --fundo:#0b0f12; --painel:#141a1f; --linha:#27323a; --texto:#e6edf0; --suave:#8fa0a8; --verde:#39ff6a; --laranja:#ff9a2e; --vermelho:#ff4d5e; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:0 0 80px; background:var(--fundo); color:var(--texto); font:14px/1.45 system-ui,Segoe UI,Arial,sans-serif; }
+  header { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:10px 16px; background:#0e1418; border-bottom:1px solid var(--linha); }
+  header h1 { margin:0; font-size:16px; letter-spacing:2px; flex:1 1 220px; }
+  #aviso-sujo { color:var(--laranja); font-weight:600; min-width:150px; }
+  main { max-width:1180px; margin:0 auto; padding:16px; display:grid; gap:16px; grid-template-columns: 250px 1fr; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  section { background:var(--painel); border:1px solid var(--linha); border-radius:8px; padding:12px 14px; }
+  section h2 { margin:0 0 8px; font-size:12px; letter-spacing:2px; color:var(--verde); text-transform:uppercase; }
+  .coluna-esq { display:flex; flex-direction:column; gap:16px; }
+  .lista { max-height:280px; overflow:auto; margin:0; padding:0; list-style:none; }
+  .lista li { padding:6px 8px; border-radius:6px; cursor:pointer; display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+  .lista li:hover { background:#1b242b; }
+  .lista li.ativo { background:#173222; outline:1px solid var(--verde); }
+  .lista small { color:var(--suave); white-space:nowrap; }
+  .lista .x { color:var(--vermelho); border:0; background:none; cursor:pointer; padding:0 4px; font-weight:700; }
+  canvas { width:100%; height:170px; display:block; background:#0a0e11; border:1px solid var(--linha); border-radius:6px; cursor:crosshair; touch-action:none; }
+  .campos { display:flex; flex-wrap:wrap; gap:12px; margin:10px 0; align-items:end; }
+  label { display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--suave); }
+  input, select { background:#0a0e11; color:var(--texto); border:1px solid var(--linha); border-radius:5px; padding:6px 8px; font:inherit; }
+  input[type=number] { width:92px; }
+  input[type=text] { width:200px; }
+  button { font:inherit; font-weight:600; padding:7px 12px; border-radius:6px; border:1px solid var(--verde); background:transparent; color:var(--verde); cursor:pointer; }
+  button:hover:not(:disabled), button:focus-visible { background:var(--verde); color:#000; outline:none; }
+  button:disabled { opacity:.35; cursor:not-allowed; }
+  button.laranja { border-color:var(--laranja); color:var(--laranja); }
+  button.laranja:hover:not(:disabled) { background:var(--laranja); color:#000; }
+  button.forte { background:var(--verde); color:#000; }
+  .linha-botoes { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { padding:6px 6px; border-bottom:1px solid var(--linha); text-align:left; vertical-align:middle; }
+  th { font-size:11px; letter-spacing:1px; color:var(--suave); text-transform:uppercase; font-weight:600; }
+  td small { display:block; color:var(--suave); }
+  td input[type=number] { width:74px; }
+  td select { max-width:170px; }
+  tr.desligada td { opacity:.45; }
+  #mensagens { margin:0; padding:0; list-style:none; }
+  #mensagens li { padding:6px 10px; border-radius:6px; margin:4px 0; background:#18222a; }
+  #mensagens li.erro { background:#3a1a20; color:#ffc2c9; }
+  #mensagens li.ok { background:#16301f; color:#b8f5c8; }
+  .dica { color:var(--suave); margin:0 0 8px; font-size:13px; }
+  .info { color:var(--suave); font-size:12px; }
+  #solta { position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.7); font-size:22px; z-index:20; border:3px dashed var(--verde); }
+</style>
+</head>
+<body>
+<header>
+  <h1>ESTÚDIO DE SONS</h1>
+  <span id="aviso-sujo"></span>
+  <button id="btn-salvar" class="laranja">SALVAR TUDO</button>
+  <button id="btn-processar-tudo" class="forte">SALVAR E PROCESSAR TODOS</button>
+</header>
+<div id="solta">Solte o arquivo de áudio aqui para importar</div>
+<main>
+  <div class="coluna-esq">
+    <section>
+      <h2>Referências</h2>
+      <p class="dica">Clique para abrir na onda. <button id="btn-importar" style="padding:3px 8px">importar…</button> ou arraste um arquivo para a página.</p>
+      <input type="file" id="arquivo" accept=".mp3,.wav,.ogg,.m4a,.flac,.aac" multiple hidden>
+      <ul id="lista-fontes" class="lista"></ul>
+    </section>
+    <section>
+      <h2>Clipes do jogo</h2>
+      <p class="dica">Cada clipe é um corte de uma referência. Clique para editar.</p>
+      <ul id="lista-clipes" class="lista"></ul>
+    </section>
+  </div>
+
+  <div style="display:grid; gap:16px; align-content:start;">
+    <section>
+      <h2>Onda — <span id="nome-fonte" class="info">nenhuma referência aberta</span></h2>
+      <p class="dica">Arraste na onda para escolher o trecho; arraste as bordas para ajustar. A audição já aplica o ganho e o fade (e uma estimativa da normalização).</p>
+      <canvas id="onda" height="170"></canvas>
+      <div class="campos">
+        <label>De (s)<input type="number" id="de" min="0" step="0.01"></label>
+        <label>Até (s)<input type="number" id="ate" min="0" step="0.01"></label>
+        <label>Fade no fim (ms)<input type="number" id="fade" min="0" step="10" value="100"></label>
+        <label>Ganho extra (dB)<input type="number" id="ganho-extra" min="-24" max="12" step="0.5" value="0"></label>
+        <span class="info" id="duracao"></span>
+      </div>
+      <div class="linha-botoes">
+        <button id="btn-ouvir">▶ Trecho</button>
+        <label style="flex-direction:row;align-items:center;gap:6px">no ritmo de
+          <select id="ritmo-arma"></select>
+        </label>
+        <button id="btn-ritmo">▶▶ No ritmo</button>
+        <button id="btn-parar" class="laranja">■ Parar</button>
+      </div>
+      <div class="campos" style="margin-top:14px">
+        <label>Nome do clipe<input type="text" id="nome-clipe" placeholder="arma_meu_som"></label>
+        <button id="btn-salvar-corte">Salvar corte neste clipe</button>
+        <button id="btn-processar" class="forte">Processar (ffmpeg)</button>
+        <button id="btn-ouvir-saida" class="laranja">▶ Ouvir o processado</button>
+        <span class="info" id="resultado"></span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Armas — qual som toca em cada uma</h2>
+      <p class="dica">Escolha o clipe de cada arma, ajuste ganho, altura (pitch: menor = mais grave e mais longo) e duração máxima, e ouça <b>no ritmo de tiro da arma</b> (▶▶). Arma sem clipe usa o som sintetizado de sempre. O lança-chamas e a motosserra têm som contínuo próprio e ainda não aceitam amostra.</p>
+      <table>
+        <thead><tr><th>Arma</th><th>Clipe</th><th>Ganho</th><th>Pitch</th><th>Máx (s)</th><th>Ouvir</th></tr></thead>
+        <tbody id="tabela-armas"></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Mensagens</h2>
+      <ul id="mensagens"></ul>
+      <p class="info">Depois de salvar e processar: abra o jogo (<b>npm run dev</b>, ou o site depois de publicar) e atire. Peça ao Claude para publicar quando estiver bom.</p>
+    </section>
+  </div>
+</main>
+
+<script>
+'use strict';
+const $ = (s) => document.querySelector(s);
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+const ALVO_MEDIA = -18, ALVO_PICO = -1;
+
+let E = null;              // estado do servidor
+let sons = [];             // clipes em edição
+let armas = {};            // tabela de armas em edição
+let sujo = false;
+let fonteAtual = null;     // nome do arquivo aberto
+let buf = null;            // AudioBuffer da referência
+let sel = { de: 0, ate: 0.5 };
+let clipeAtual = null;     // destino do clipe em edição
+let picos = null;          // [min,max] por coluna de pixel
+let tocando = [];
+
+// ── mensagens e utilitários ───────────────────────────────────────────────────────────────────────
+function msg(texto, tipo) {
+  const li = document.createElement('li');
+  if (tipo) li.className = tipo;
+  li.textContent = texto;
+  const ul = $('#mensagens');
+  ul.prepend(li);
+  while (ul.children.length > 8) ul.lastChild.remove();
+}
+function marcarSujo(v = true) { sujo = v; $('#aviso-sujo').textContent = v ? '● alterações não salvas' : ''; }
+async function api(caminho, opcoes) {
+  const r = await fetch(caminho, opcoes);
+  let corpo = null;
+  try { corpo = await r.json(); } catch { /* sem corpo */ }
+  if (!r.ok) {
+    const e = new Error(corpo?.erros?.join('\n') ?? corpo?.erro ?? `erro ${r.status}`);
+    e.status = r.status;
+    throw e;
+  }
+  return corpo;
+}
+const r2 = (n) => Math.round(n * 100) / 100;
+const destinoDe = (clipe) => `${clipe}.mp3`;
+const clipeDe = (destino) => destino.replace(/\.mp3$/, '');
+
+// ── som: audição ──────────────────────────────────────────────────────────────────────────────────
+function parar() { for (const s of tocando) { try { s.stop(); } catch { /* já parou */ } } tocando = []; }
+/** Toca um trecho de `b`. `fadeMs` = fade no fim; `maxS` corta (com fade de 30 ms); `quando` = atraso em segundos. Devolve a duração real. */
+function tocar(b, { de = 0, ate = b.duration, fadeMs = 0, ganho = 1, pitch = 1, maxS = 0, quando = 0 } = {}) {
+  if (ctx.state === 'suspended') ctx.resume();
+  const src = ctx.createBufferSource();
+  src.buffer = b;
+  src.playbackRate.value = pitch;
+  const g = ctx.createGain();
+  src.connect(g).connect(ctx.destination);
+  let fim = (ate - de) / pitch;
+  let fade = fadeMs / 1000;
+  if (maxS > 0 && maxS < fim) { fim = maxS; fade = Math.max(fade, 0.03); }
+  fade = Math.min(fade, fim / 2);
+  const t0 = ctx.currentTime + quando;
+  g.gain.setValueAtTime(0, t0);
+  g.gain.linearRampToValueAtTime(ganho, t0 + 0.003);
+  if (fade > 0) { g.gain.setValueAtTime(ganho, t0 + fim - fade); g.gain.linearRampToValueAtTime(0, t0 + fim); }
+  src.start(t0, de, ate - de);
+  src.stop(t0 + fim + 0.02);
+  tocando.push(src);
+  return fim;
+}
+/** O ganho (linear) que o ffmpeg aplicaria ao trecho: média -18 dB sem passar de -1 dBFS de pico (mais o ganho extra). Estimativa para a audição. */
+function ganhoDeNormalizacao(b, de, ate, extraDb) {
+  const dados = b.getChannelData(0);
+  const i0 = Math.floor(de * b.sampleRate), i1 = Math.min(dados.length, Math.floor(ate * b.sampleRate));
+  let soma = 0, pico = 0;
+  for (let i = i0; i < i1; i++) { const v = dados[i]; soma += v * v; if (Math.abs(v) > pico) pico = Math.abs(v); }
+  const mediaDb = 20 * Math.log10(Math.sqrt(soma / Math.max(1, i1 - i0)) + 1e-9);
+  const picoDb = 20 * Math.log10(pico + 1e-9);
+  const db = Math.min(ALVO_MEDIA - mediaDb, ALVO_PICO - picoDb) + extraDb;
+  return Math.min(8, Math.pow(10, db / 20));
+}
+function ritmo(fn, intervalo, segundos = 4) {
+  parar();
+  const passo = Math.max(0.05, intervalo);
+  for (let t = 0; t < segundos; t += passo) fn(t);
+}
+
+// ── onda ──────────────────────────────────────────────────────────────────────────────────────────
+const canvas = $('#onda');
+function calcularPicos() {
+  if (!buf) { picos = null; return; }
+  const w = canvas.width, dados = buf.getChannelData(0), passo = dados.length / w;
+  picos = new Array(w);
+  for (let x = 0; x < w; x++) {
+    let mn = 1, mx = -1;
+    const a = Math.floor(x * passo), b = Math.min(dados.length, Math.floor((x + 1) * passo) + 1);
+    for (let i = a; i < b; i++) { const v = dados[i]; if (v < mn) mn = v; if (v > mx) mx = v; }
+    picos[x] = [mn, mx];
+  }
+}
+function ajustarCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(300, Math.floor(canvas.clientWidth * dpr));
+  if (canvas.width !== w) { canvas.width = w; canvas.height = Math.floor(170 * dpr); calcularPicos(); }
+}
+function desenhar() {
+  ajustarCanvas();
+  const c = canvas.getContext('2d'), w = canvas.width, h = canvas.height;
+  c.clearRect(0, 0, w, h);
+  c.fillStyle = '#0a0e11'; c.fillRect(0, 0, w, h);
+  if (!buf) { c.fillStyle = '#8fa0a8'; c.font = `${14 * (window.devicePixelRatio || 1)}px system-ui`; c.fillText('Abra uma referência na lista à esquerda', 20, h / 2); return; }
+  const dur = buf.duration, xDe = (sel.de / dur) * w, xAte = (sel.ate / dur) * w;
+  c.fillStyle = 'rgba(57,255,106,0.16)'; c.fillRect(xDe, 0, xAte - xDe, h);
+  c.fillStyle = '#4b8d62';
+  for (let x = 0; x < w; x++) {
+    const [mn, mx] = picos[x];
+    const y1 = h / 2 - mx * (h / 2 - 6), y2 = h / 2 - mn * (h / 2 - 6);
+    c.fillRect(x, y1, 1, Math.max(1, y2 - y1));
+  }
+  // régua de tempo
+  const passos = [0.05, 0.1, 0.25, 0.5, 1, 2, 5], alvo = dur / 8;
+  const passo = passos.find((p) => p >= alvo) ?? 5;
+  c.fillStyle = '#8fa0a8'; c.font = `${11 * (window.devicePixelRatio || 1)}px system-ui`;
+  for (let t = 0; t <= dur; t += passo) { const x = (t / dur) * w; c.fillRect(x, h - 14, 1, 14); c.fillText(`${r2(t)}s`, x + 3, h - 3); }
+  // alças
+  c.fillStyle = '#39ff6a'; c.fillRect(xDe - 1, 0, 2, h); c.fillRect(xAte - 1, 0, 2, h);
+  $('#duracao').textContent = `trecho: ${r2(sel.ate - sel.de)} s de ${r2(dur)} s`;
+}
+function tempoDoMouse(e) {
+  const r = canvas.getBoundingClientRect();
+  return Math.min(buf.duration, Math.max(0, ((e.clientX - r.left) / r.width) * buf.duration));
+}
+let arrasto = null;
+canvas.addEventListener('pointerdown', (e) => {
+  if (!buf) return;
+  canvas.setPointerCapture(e.pointerId);
+  const t = tempoDoMouse(e), px = (buf.duration / canvas.getBoundingClientRect().width) * 10;
+  if (Math.abs(t - sel.de) < px) arrasto = { tipo: 'de' };
+  else if (Math.abs(t - sel.ate) < px) arrasto = { tipo: 'ate' };
+  else arrasto = { tipo: 'novo', ancora: t };
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!buf || !arrasto) return;
+  const t = tempoDoMouse(e);
+  if (arrasto.tipo === 'de') sel.de = Math.min(t, sel.ate - 0.02);
+  else if (arrasto.tipo === 'ate') sel.ate = Math.max(t, sel.de + 0.02);
+  else { sel.de = Math.min(arrasto.ancora, t); sel.ate = Math.max(arrasto.ancora, t, sel.de + 0.02); }
+  campos(); desenhar(); marcarSujo();
+});
+canvas.addEventListener('pointerup', () => { if (arrasto) ajustarFade(true); arrasto = null; });
+window.addEventListener('resize', desenhar);
+
+function campos() {
+  $('#de').value = r2(sel.de); $('#ate').value = r2(sel.ate);
+}
+/** O fade não pode passar de metade do corte (o servidor recusa): em vez de dar erro, a página encurta o fade e avisa. */
+function ajustarFade(avisar = false) {
+  const maximo = Math.max(0, Math.floor((sel.ate - sel.de) * 500));
+  const atual = Number($('#fade').value) || 0;
+  if (atual > maximo) {
+    $('#fade').value = maximo;
+    if (avisar) msg(`O fade foi encurtado para ${maximo} ms: não pode passar de metade do corte (${r2(sel.ate - sel.de)} s).`);
+  }
+}
+for (const id of ['de', 'ate']) {
+  $('#' + id).addEventListener('change', () => {
+    if (!buf) return;
+    const de = Math.max(0, Number($('#de').value)), ate = Math.min(buf.duration, Number($('#ate').value));
+    if (ate > de) { sel = { de, ate }; marcarSujo(); ajustarFade(true); }
+    campos(); desenhar();
+  });
+}
+for (const id of ['fade', 'ganho-extra']) $('#' + id).addEventListener('change', () => marcarSujo());
+
+// ── referências e clipes ──────────────────────────────────────────────────────────────────────────
+async function abrirFonte(nome) {
+  parar();
+  const r = await fetch('/api/fonte/' + encodeURIComponent(nome));
+  if (!r.ok) { msg(`Não consegui abrir ${nome}`, 'erro'); return; }
+  buf = await ctx.decodeAudioData(await r.arrayBuffer());
+  fonteAtual = nome;
+  $('#nome-fonte').textContent = `${nome} (${r2(buf.duration)} s)`;
+  canvas.width = 0; // força recalcular os picos
+  listarFontes();
+}
+function listarFontes() {
+  const ul = $('#lista-fontes');
+  ul.innerHTML = '';
+  for (const f of E.fontes) {
+    const li = document.createElement('li');
+    if (f.nome === fonteAtual) li.className = 'ativo';
+    const n = document.createElement('span'); n.textContent = f.nome.replace(/-Elevenlabs/i, '').replace(/\.(mp3|wav|ogg|m4a|flac|aac)$/i, '').replace(/^WEAP/, '');
+    const d = document.createElement('small'); d.textContent = f.duracao != null ? `${f.duracao}s` : '';
+    li.append(n, d); li.title = f.nome;
+    li.addEventListener('click', async () => { await abrirFonte(f.nome); sel = { de: 0, ate: Math.min(buf.duration, 1) }; clipeAtual = null; campos(); desenhar(); listarClipes(); });
+    ul.append(li);
+  }
+  if (E.fontes.length === 0) ul.innerHTML = '<li class="info">Nenhuma referência. Importe um arquivo.</li>';
+}
+function usadoPorArma(destino) { return Object.entries(armas).filter(([, a]) => a.clipe === clipeDe(destino)).map(([id]) => id); }
+function listarClipes() {
+  const ul = $('#lista-clipes');
+  ul.innerHTML = '';
+  for (const s of sons) {
+    const li = document.createElement('li');
+    if (s.destino === clipeAtual) li.className = 'ativo';
+    const n = document.createElement('span'); n.textContent = clipeDe(s.destino);
+    const d = document.createElement('small'); d.textContent = `${r2(s.ate - s.de)}s`;
+    const x = document.createElement('button'); x.className = 'x'; x.textContent = '✕'; x.title = 'Remover este clipe';
+    x.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const quem = usadoPorArma(s.destino);
+      if (quem.length) { msg(`${clipeDe(s.destino)} é usado por: ${quem.join(', ')}. Troque o clipe dessas armas antes de remover.`, 'erro'); return; }
+      if (!confirm(`Remover o clipe ${clipeDe(s.destino)}?`)) return;
+      sons = sons.filter((x2) => x2.destino !== s.destino); marcarSujo(); listarClipes(); montarArmas();
+    });
+    li.append(n, d, x); li.title = `${s.fonte} (${s.de}–${s.ate})`;
+    li.addEventListener('click', async () => {
+      if (s.fonte !== fonteAtual) await abrirFonte(s.fonte);
+      sel = { de: s.de, ate: s.ate }; clipeAtual = s.destino;
+      $('#nome-clipe').value = clipeDe(s.destino); $('#fade').value = s.fade_ms; $('#ganho-extra').value = s.ganho_db ?? 0;
+      campos(); desenhar(); listarFontes(); listarClipes();
+    });
+    ul.append(li);
+  }
+}
+
+// ── botões do editor ──────────────────────────────────────────────────────────────────────────────
+function paramsAtuais() {
+  return { de: sel.de, ate: sel.ate, fadeMs: Number($('#fade').value) || 0, extraDb: Number($('#ganho-extra').value) || 0 };
+}
+function ouvirTrecho(quando = 0) {
+  const p = paramsAtuais();
+  tocar(buf, { de: p.de, ate: p.ate, fadeMs: p.fadeMs, ganho: ganhoDeNormalizacao(buf, p.de, p.ate, p.extraDb) * 0.8, quando });
+}
+$('#btn-ouvir').addEventListener('click', () => { if (!buf) return msg('Abra uma referência primeiro.', 'erro'); parar(); ouvirTrecho(); });
+$('#btn-parar').addEventListener('click', parar);
+$('#btn-ritmo').addEventListener('click', () => {
+  if (!buf) return msg('Abra uma referência primeiro.', 'erro');
+  const arma = E.info.find((a) => a.id === $('#ritmo-arma').value);
+  ritmo((t) => ouvirTrecho(t), arma.intervalo);
+});
+$('#btn-salvar-corte').addEventListener('click', () => {
+  if (!buf) return msg('Abra uma referência primeiro.', 'erro');
+  let nome = $('#nome-clipe').value.trim().toLowerCase().replace(/\.mp3$/, '').replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '');
+  if (!nome) return msg('Dê um nome ao clipe (ex.: arma_blaster).', 'erro');
+  if (!nome.startsWith('arma_')) nome = `arma_${nome}`;
+  ajustarFade(true);
+  const p = paramsAtuais();
+  const novo = { destino: destinoDe(nome), fonte: fonteAtual, de: r2(p.de), ate: r2(p.ate), fade_ms: Math.round(p.fadeMs), ...(p.extraDb ? { ganho_db: p.extraDb } : {}) };
+  const antigo = sons.find((s) => s.destino === novo.destino);
+  if (antigo) {
+    Object.assign(antigo, { fonte: novo.fonte, de: novo.de, ate: novo.ate, fade_ms: novo.fade_ms });
+    if (p.extraDb) antigo.ganho_db = p.extraDb; else delete antigo.ganho_db;
+  } else sons.push(novo);
+  clipeAtual = novo.destino; $('#nome-clipe').value = nome;
+  marcarSujo(); listarClipes(); montarArmas();
+  msg(`Corte salvo no clipe ${nome} (ainda falta SALVAR TUDO e Processar).`, 'ok');
+});
+
+async function salvar() {
+  const r = await api('/api/salvar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ sons, armas }) });
+  marcarSujo(false);
+  return r;
+}
+async function processar(destino) {
+  const r = await api('/api/processar', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(destino ? { destino } : {}) });
+  for (const x of r.resultados) {
+    if (x.ok) {
+      msg(`${x.destino}: ${r2(x.duracao)} s, pico ${r2(x.picoDb)} dB, média ${r2(x.mediaDb)} dB, ganho ${x.ganhoDb >= 0 ? '+' : ''}${r2(x.ganhoDb)} dB, ${r2(x.kb)} KB`, 'ok');
+      if (x.ganhoDb > 15) msg(`${x.destino}: o trecho é muito fraco (ganho de +${r2(x.ganhoDb)} dB para chegar ao volume dos outros): vai subir o chiado. Corte onde o som está forte.`, 'erro');
+    }
+    else msg(`${x.destino}: ${x.erro}`, 'erro');
+  }
+  await recarregarSaidas();
+  return r;
+}
+async function recarregarSaidas() { E.saidas = (await api('/api/estado')).saidas; montarArmas(); }
+$('#btn-salvar').addEventListener('click', async () => { try { const r = await salvar(); msg(`Salvo: ${r.sons} clipes e ${r.armas} armas. Falta processar o que mudou.`, 'ok'); } catch (e) { msg(e.message, 'erro'); } });
+$('#btn-processar').addEventListener('click', async () => {
+  if (!clipeAtual) return msg('Salve o corte num clipe antes de processar.', 'erro');
+  try { await salvar(); $('#resultado').textContent = 'processando…'; await processar(clipeAtual); $('#resultado').textContent = ''; } catch (e) { $('#resultado').textContent = ''; msg(e.message, 'erro'); }
+});
+$('#btn-processar-tudo').addEventListener('click', async () => {
+  try { await salvar(); msg('Salvo. Processando todos os clipes…'); await processar(null); } catch (e) { msg(e.message, 'erro'); }
+});
+async function bufferDaSaida(clipe) {
+  const r = await fetch(`/api/saida/${encodeURIComponent(destinoDe(clipe))}?t=${Date.now()}`);
+  if (!r.ok) throw new Error(`${clipe} ainda não foi processado: use "Processar" primeiro.`);
+  return ctx.decodeAudioData(await r.arrayBuffer());
+}
+$('#btn-ouvir-saida').addEventListener('click', async () => {
+  if (!clipeAtual) return msg('Escolha um clipe na lista.', 'erro');
+  try { parar(); const b = await bufferDaSaida(clipeDe(clipeAtual)); tocar(b, { ganho: 0.8 }); } catch (e) { msg(e.message, 'erro'); }
+});
+
+// ── tabela de armas ───────────────────────────────────────────────────────────────────────────────
+function montarArmas() {
+  const tb = $('#tabela-armas');
+  tb.innerHTML = '';
+  const clipes = sons.map((s) => clipeDe(s.destino));
+  const sel2 = $('#ritmo-arma');
+  if (!sel2.options.length) for (const a of E.info) sel2.append(new Option(`${a.nome} (${a.intervalo}s)`, a.id));
+  for (const a of E.info) {
+    const tr = document.createElement('tr');
+    if (!a.aceita) tr.className = 'desligada';
+    const cfg = armas[a.id];
+    const td0 = document.createElement('td'); td0.innerHTML = '<b></b><small></small>'; td0.querySelector('b').textContent = a.nome; td0.querySelector('small').textContent = `${a.id} · ${a.intervalo}s entre tiros`;
+    const sc = document.createElement('select');
+    sc.append(new Option('— sintetizado —', ''));
+    for (const c of clipes) sc.append(new Option(c, c));
+    sc.value = cfg?.clipe ?? ''; sc.disabled = !a.aceita;
+    const num = (campo, passo, min, max) => { const i = document.createElement('input'); i.type = 'number'; i.step = passo; i.min = min; i.max = max; i.value = cfg?.[campo] ?? ''; i.disabled = !cfg || !a.aceita; i.addEventListener('change', () => { armas[a.id][campo] = Number(i.value); marcarSujo(); }); return i; };
+    const iGanho = num('ganho', 0.05, 0.05, 1.5), iPitch = num('pitch', 0.01, 0.5, 2), iMax = num('maxS', 0.05, 0.1, 6);
+    sc.addEventListener('change', () => {
+      if (!sc.value) delete armas[a.id];
+      else {
+        const s = sons.find((x) => x.destino === destinoDe(sc.value));
+        armas[a.id] = { clipe: sc.value, ganho: armas[a.id]?.ganho ?? 0.8, pitch: armas[a.id]?.pitch ?? 1, maxS: r2(Math.min(s ? (s.ate - s.de) / (armas[a.id]?.pitch ?? 1) : 1.5, 3)) };
+      }
+      marcarSujo(); montarArmas();
+    });
+    const ouvir = async (ritmado) => {
+      const c = armas[a.id];
+      if (!c) return msg(`${a.nome} usa o som sintetizado: escolha um clipe para ouvir.`, 'erro');
+      try {
+        parar();
+        const b = await bufferDaSaida(c.clipe);
+        const uma = (t) => tocar(b, { ganho: c.ganho, pitch: c.pitch, maxS: c.maxS, quando: t });
+        if (ritmado) ritmo(uma, a.intervalo); else uma(0);
+      } catch (e) { msg(e.message, 'erro'); }
+    };
+    const tdb = document.createElement('td');
+    const b1 = document.createElement('button'); b1.textContent = '▶'; b1.disabled = !cfg; b1.addEventListener('click', () => ouvir(false));
+    const b2 = document.createElement('button'); b2.textContent = '▶▶'; b2.title = 'No ritmo de tiro da arma (4 s)'; b2.disabled = !cfg; b2.style.marginLeft = '4px'; b2.addEventListener('click', () => ouvir(true));
+    tdb.append(b1, b2);
+    const celula = (el) => { const td = document.createElement('td'); td.append(el); return td; };
+    tr.append(td0, celula(sc), celula(iGanho), celula(iPitch), celula(iMax), tdb);
+    tb.append(tr);
+  }
+}
+
+// ── importar ──────────────────────────────────────────────────────────────────────────────────────
+async function importar(arquivos) {
+  for (const f of arquivos) {
+    const nome = f.name.replace(/[^A-Za-z0-9._ ()-]+/g, '_');
+    try {
+      let r = await fetch(`/api/importar?nome=${encodeURIComponent(nome)}`, { method: 'POST', body: f });
+      if (r.status === 409 && confirm(`Já existe ${nome}. Substituir?`)) r = await fetch(`/api/importar?nome=${encodeURIComponent(nome)}&sobrescrever=1`, { method: 'POST', body: f });
+      const corpo = await r.json();
+      if (!r.ok) throw new Error(corpo.erro);
+      msg(`Importado: ${nome}`, 'ok');
+    } catch (e) { msg(`${nome}: ${e.message}`, 'erro'); }
+  }
+  E = await api('/api/estado'); listarFontes();
+}
+$('#btn-importar').addEventListener('click', () => $('#arquivo').click());
+$('#arquivo').addEventListener('change', (e) => importar([...e.target.files]));
+let arrastos = 0;
+window.addEventListener('dragenter', (e) => { e.preventDefault(); arrastos++; $('#solta').style.display = 'grid'; });
+window.addEventListener('dragleave', () => { if (--arrastos <= 0) { arrastos = 0; $('#solta').style.display = 'none'; } });
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => { e.preventDefault(); arrastos = 0; $('#solta').style.display = 'none'; importar([...e.dataTransfer.files]); });
+window.addEventListener('beforeunload', (e) => { if (sujo) { e.preventDefault(); e.returnValue = ''; } });
+
+// ── início ────────────────────────────────────────────────────────────────────────────────────────
+(async () => {
+  try {
+    E = await api('/api/estado');
+    sons = structuredClone(E.mapa.sons); armas = structuredClone(E.armas);
+    if (!E.ffmpeg) msg('ffmpeg não encontrado neste computador: dá para cortar e ouvir, mas "Processar" não funciona (winget install Gyan.FFmpeg).', 'erro');
+    listarFontes(); listarClipes(); montarArmas(); desenhar();
+    if (sons[0]) document.querySelector('#lista-clipes li')?.click();
+  } catch (e) { msg(`Não consegui falar com o estúdio: ${e.message}`, 'erro'); }
+})();
+</script>
+</body>
+</html>

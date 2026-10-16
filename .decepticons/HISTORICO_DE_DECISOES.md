@@ -1,3 +1,16 @@
+## [2026-10-15] O ajuste fino do som é de quem ouve: um estúdio local, com a tabela de armas virando dado (Claude, P150 e P151)
+
+**Situação:** o Comandante achou os sons ainda ruins e pediu uma interface para cortar, editar e escolher o som de cada arma; e achou o "Combate!" em português fraco ("com medo"). O Claude não ouve áudio: o ajuste de gosto só pode ser feito por quem ouve.
+
+**Decisões:**
+1. **Ferramenta, não palpite:** em vez de o Claude tentar adivinhar o corte ideal sem ouvir, o estúdio põe o corte, o fade, o ganho, a altura e a escolha do clipe na mão de quem ouve, com a audição **no ritmo de tiro da arma** (onde o som de arma falha: um tiro cobrindo o outro).
+2. **Servidor local, estreito e travado:** um servidor de arquivos no PC do dono é superfície de ataque (página de fora, DNS rebinding, caminho de arquivo). Escuta só em 127.0.0.1, recusa Host e Origin que não sejam dele, serve só áudio com nome simples nas duas pastas, valida tudo antes de gravar, teto de tamanho. As quatro travas têm mutação pegando.
+3. **A tabela de armas virou dado (`armasSom.json`), os testes cobram estrutura e não gosto:** se um teste travasse o `npm run check` por o dono ter escolhido outro clipe, a ferramenta de ajuste fino viraria obstáculo.
+4. **O lança-chamas e a motosserra ficam de fora** (som contínuo por laço, não por tiro): a ferramenta recusa em vez de aceitar e não tocar.
+5. **A voz em português se resolve na fonte:** gravar a própria voz (ou o Voice Changer do ElevenLabs, que mantém a entonação), não com efeito em cima de uma leitura fraca. O processador de locutor só é montado depois de ouvir uma gravação real, para os presets nascerem do som e não de chute.
+
+**Por que registrar:** quem for mexer no som precisa saber que o gosto é do Comandante e mora em `armasSom.json` e `sons-armas.json`, que os testes não o cobram, e por que o estúdio é local e travado.
+
 ## [2026-10-15] O servidor de jogo muda para jogo.cybermech.online com os dois nomes vivos; o antigo sai por ordem do Comandante (Claude, P144)
 
 **Situação:** a zona `cybermech.online` entrou na Cloudflare e o nome `jogo.` foi criado no túnel que já servia `jogo.selvamkt.com.br`.
