@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O "TESTAR" DO HANGAR COM A CARA DO JOGO: cada arma testada como ela é — Claude, 16/10 (branch `claude/hangar-testar-efeitos`, P160 parte 3)
+
+**Por quê:** em 15/10 o Comandante disse das armas novas que "pareciam armas antigas". O "Testar" do Hangar desenhava todo tiro com o mesmo traço (ciano na energia, laranja na munição).
+
+**Feito:** `hangar/TestShots.ts` passa cada tiro do teste pela camada de efeitos do jogo (clarão da boca, brilho, rastro em fita, clarão do acerto, faíscas da arma, explosão com corpo, feixe do laser, raio do trilho), na **trajetória da família**: reta na velocidade da arma, a salva do lançador leve com o desvio, os **nove balins** da escopeta em cone, o **arco** do cruzador e o **arco** da granada. O contador de dano do teste passou a contar os balins (R17).
+
+**Provas:** 8 testes (`hangar/TestShots.test.ts`: o arco da granada termina no alvo, o cruzador sobe, os nove balins em pontos diferentes, o laser na hora, o foguete com rastro e explosão, a salva espalhada, o teto do pool, o dano dos balins). Fotos do Hangar na GPU real: `arte/armas-hangar-teste-foguetes-claude.jpg`, `-enxame-`, `-escopeta-`, `-granada-`.
+
+**Onde o Comandante confere:** Hangar → escolher a arma → **▶ TESTAR · 4 S**.
+
+**Próxima sessão começa com:** os bots usarem as armas explosivas (foguetes, granadas, lançador leve) — hoje o inimigo só atira energia.
+
 ## O LANÇA-GRANADAS: o primeiro tiro com gravidade, que sobe por cima da cobertura, e a mira prevista em arco — Claude, 16/10 (branch `claude/lanca-granadas`, P160 parte 2b, protocolo 19)
 
 **Feito:** arma nova **`grenade`** (Lança-granadas, média, 3,5 t; braço e ombros do Marauder). A granada **cai no ponto da mira**: o lançador sai no arco baixo (42 m/s) e, se a cobertura o barra, **sobe a elevação (35° a 75°) e regula a carga** para passar por cima e cair no ponto (até 80 m no plano). **Explode no robô**, **tabela na parede**, **crava no chão** e estoura 0,35 s depois (a ~2 m de onde a mira marcou). 34 de dano no centro (48 no MK III), 5 m de explosão, 4 por carga, 1,6 s por granada. Com a arma equipada, a **mira prevista**: o arco em pontinhos e o anel do tamanho da explosão. Rede: **protocolo 19** (um evento de tiro por granada, com a direção da mira; o outro cliente refaz o arco). Modelo 3D (tambor de seis câmaras), ícone, retícula, ficha, som (o do canhão, mais agudo, no Estúdio), oficina e site.
