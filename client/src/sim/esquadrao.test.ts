@@ -6,6 +6,7 @@ import {
   ARMA_DO_TITA,
   armaServeAoBot,
   armasDoBot,
+  armaExplosivaDoBot,
   armasSecundariasDoBot,
   type BotSpec,
   CHASSIS_DOS_BOTS,
@@ -420,14 +421,15 @@ describe('o plano que a partida monta', () => {
 describe('a arma da mão esquerda do bot (P108 b)', () => {
   const doVector = (extra: Partial<BotSpec>): BotSpec => ({ papel: 'mech', ...extra });
 
-  it('as armas da esquerda são as do encaixe esquerdo que o bot sabe atirar; o titã não tem (o andróide tem as leves, mas não é chassi de bot)', () => {
+  it('as armas da esquerda são as do encaixe esquerdo que o bot sabe usar (energia simples e, desde a P160, as explosivas em salva); o titã não tem', () => {
     const v = armasSecundariasDoBot('vector09');
     expect(v.length).toBeGreaterThan(0);
-    for (const a of v) expect(armaServeAoBot(a), a).toBe(true);
+    for (const a of v) expect(armaServeAoBot(a) || armaExplosivaDoBot(a), a).toBe(true);
+    expect(v).toEqual(expect.arrayContaining(['rockets', 'seeker', 'grenade', 'swarm', 'barrage']));
     expect(armasSecundariasDoBot('colossusv4')).toEqual([]);
     expect(armasSecundariasDoBot('colossus01')).toEqual([]);
-    // O andróide não é chassi de bot (`CHASSIS_DOS_BOTS`); se fosse, a esquerda dele seriam as leves que o bot sabe atirar (P120).
-    expect(armasSecundariasDoBot('android')).toEqual(['arc', 'emp', 'blaster', 'shotgun']);
+    // O andróide não é chassi de bot (`CHASSIS_DOS_BOTS`); se fosse, a esquerda dele seriam as leves que o bot sabe usar (P120), com o lançador leve.
+    expect(armasSecundariasDoBot('android')).toEqual(['arc', 'emp', 'blaster', 'shotgun', 'swarm']);
   });
 
   it('o saneamento guarda a secundária válida e descarta a que o chassi não aceita ou o bot não sabe atirar', () => {

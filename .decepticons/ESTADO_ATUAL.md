@@ -1,5 +1,40 @@
 # ESTADO ATUAL — CYBERMECH
 
+## OS REBELDES LANÇAM EXPLOSIVOS: salvas de foguetes e granadas contra você — Claude, 16/10 (branch `claude/bots-explosivos`, P160 parte 4)
+
+**A ordem (16/10):** *"bote pra torar na iteração das armas"*.
+
+**Feito:** o Mech bot lança a arma **explosiva** da mão esquerda em **salvas** (`BotController.useExplosives`, `BotSystem.launch`): o casulo de foguetes de fábrica do Vector-09 inimigo (que nunca era usado), e o que o esquadrão der (granadas, teleguiado, lançador leve, cruzador, chuva), pelos mesmos sistemas do jogador. Dois tiros por salva, pausa de 7 s no normal (pela dificuldade e pela personalidade), mira no pé de onde o alvo vai estar, nunca de perto. O lançamento do bot toca o som da arma, mais baixo de longe. O editor de esquadrão passou a oferecer as armas explosivas na mão esquerda do bot.
+
+**Medido (90 s, jogador parado):** offline padrão, 50 explosões em vez de 3 e o jogador apanha menos (os aliados também lançam); Arena do servidor, +34% de dano. As fotos da partida padrão foram refeitas (`esquadraoPadrao.test.ts`, como o teste manda).
+
+**Provas:** 7 testes e **8 mutações à mão, 8 pegas** (`combat/botExplosivos.test.ts`: a pausa por dificuldade e personalidade, a distância mínima (também com o rebelde colado a 9 m: a mutação que tirava a regra escapou até esse teste existir), salvas de até 2 a cada 0,3 s com a pausa entre elas e nunca de perto, o mesmo jogo dá os mesmos lançamentos, desligado não lança, o esquadrão com granadas lança granadas).
+
+**Onde o Comandante confere:** jogar a Arena: os rebeldes soltam pares de foguetes (fita de fumaça e bola de fogo); um esquadrão com granadas na mão esquerda dos rebeldes (editor de esquadrão).
+
+**Próxima sessão começa com:** o que o Comandante disser jogando; os bots com o laser.
+
+## O LANÇAMENTO DE HOJE (P168): o que está de pé, o que segura e o que é do Comandante — Claude, 16/10 (branch `claude/lancamento-lista`)
+
+**A ordem (16/10):** *"vamos lançar nosso jogo hoje ainda"*. Verificado **hoje às 14h50**, não de memória:
+- **O site está no ar com o que está na `main`:** `cybermech.online` responde 200 e o pedaço do jogo com o ciclo do dia (`Game-BG1f9Idc.js`) no ar é **byte a byte o do build local** (`PUBLICADO: c88515b`, conferido por checksum).
+- **O servidor de jogo responde:** `https://jogo.cybermech.online/status` devolve 200 pela Cloudflare.
+- **O jogo e as armas:** 20 armas, a praia com o ciclo do dia, as missões em ondas e o esquadrão (offline) estão na `main`; o `npm run check` rodou verde no push.
+
+**O que NÃO existe, e o jogador sente:**
+1. **Login e ranking (P145):** não foram construídos. O jogo roda **anônimo**; sem ranking, o jogador não tem o que voltar para melhorar. *É a maior lacuna de retenção.*
+2. **As falas do narrador:** **4 de 76 clipes** existem (o "combate" nos 4 sotaques). O resto fica **mudo** (só "rodada" e "combate" caem na voz do navegador). Falta o Comandante rodar **`npm run vozes -- --custo`** e depois **`-- --gerar --sim`** (72 clipes), ou gravar as falas no Estúdio (aba VOZES).
+3. **Aviso de privacidade (LGPD):** **não há página** no site. O jogo manda telemetria de partida para o servidor; antes de divulgar para gente de fora precisa de um texto curto dizendo o que se guarda. *Posso escrever o rascunho; o e-mail de contato e a decisão do que guardar são do Comandante.*
+4. **O dia no online:** cada jogador vê o dia pelo relógio do próprio mapa (o servidor já manda `restanteS`; falta ligar).
+
+**O que é só do Comandante (nada disto eu consigo fazer):**
+- **Girar a chave do ElevenLabs** (foi colada no chat em 15/10) e rodar a geração das vozes.
+- **Cloudflare, no painel:** limite de requisições em `/conta/*`, Bot Fight Mode, DNSSEC; tirar `jogo.selvamkt.com.br` do túnel quando quiser (o endereço novo já funciona).
+- **Jogar e julgar:** o ciclo do dia (`?mapa=praia&dia=0.55`), o som das armas e as vozes.
+- **Divulgar:** o placar de resultado diz *"na internet, nenhum teste com gente"*: **o lançamento é o primeiro teste**. Recomendação: **lançamento brando hoje** (um grupo pequeno, com o servidor em `/status` aberto ao lado), e só depois o vídeo.
+
+**Próxima sessão começa com:** o que o Comandante responder sobre a lista acima; senão, **login e apelido (P145)** e o **aviso de privacidade**, e o capítulo 1 em fases (P162 a P165).
+
 ## O CICLO DO DIA DA PRAIA: pôr do sol no começo, noite com as luzes acesas em 5 minutos; e as ordens da campanha registradas — Claude, 16/10 (branch `claude/campanha-cabos`, P161 a P168)
 
 **As ordens do Comandante (16/10):** o cenário estava claro demais para a hora do sol e com a iluminação pública toda acesa de dia (*"o melhor seria que o cenário começasse de dia e no final do tempo já estivesse de noite… aí as luzes acendem"*); e, lendo o `CAMPANHAS_E_CHEFES.md`, **a história da campanha** (os cabos como pontos de invasão, as três frentes da estação, o quadro de luz, o banco, a máscara da Colossus, o elenco, o norte educativo). E: *"vamos lançar nosso jogo hoje ainda"*.

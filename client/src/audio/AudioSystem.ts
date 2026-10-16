@@ -168,9 +168,10 @@ export class AudioSystem {
    * (P146) Toca a amostra de referência da arma `id` (`armasSom.ts`). Devolve `false` se a arma não tem amostra ou ela ainda não carregou:
    * quem chama cai no som sintetizado de sempre, então o jogo nunca fica mudo.
    */
-  playArma(id: string): boolean {
+  /** O som da arma `id` (o clipe da tabela do Estúdio); `volume` (0–1) abaixa o de quem está longe (o lançamento de um bot, P160). */
+  playArma(id: string, volume = 1): boolean {
     const a = AMOSTRAS_DAS_ARMAS[id];
-    return a ? this.playSample(a.nome, a.ganho, a.pitch, a.maxS) : false;
+    return a ? this.playSample(a.nome, a.ganho * volume, a.pitch, a.maxS) : false;
   }
 
   // ── Vozes do narrador (P146: o `Narrador` decide o que dizer; aqui só carrega e toca) ──────────────────
