@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FUNDURA_MOLHADA } from '../combat/Agua';
 import { PRAIA_ESTACAO, PRAIA_PIER } from '../environment/PraiaLayout';
 import { PRAIA_LIMITES } from '../environment/PraiaTerreno';
-import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, CARTAO_DA_MISSAO, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MarcadorNaTela } from './praiaHudData';
+import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDosCabos, CARTAO_DA_MISSAO, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MarcadorNaTela } from './praiaHudData';
 
 const MARGENS = { topo: 100, base: 120, esq: 24, dir: 24 };
 const saida = (): MarcadorNaTela => ({ x: 0, y: 0, naBorda: false });
@@ -158,5 +158,30 @@ describe('o cartão da missão', () => {
     expect(CARTAO_DA_MISSAO.linhas).toHaveLength(3);
     expect(CARTAO_DA_MISSAO.titulo.length).toBeGreaterThan(5);
     for (const l of CARTAO_DA_MISSAO.linhas) expect(l.length).toBeLessThan(100);
+  });
+});
+
+describe('os avisos dos cabos de dados (P162)', () => {
+  it('nada mudou, nada de aviso: o estado igual ao do quadro anterior fica calado', () => {
+    expect(avisoDosCabos([0, 0, 0], [0, 0, 0])).toBeNull();
+    expect(avisoDosCabos([2, 1, 3], [2, 1, 3])).toBeNull();
+  });
+
+  it('cada mudança tem a sua linha, com o número do cabo (1 a 3)', () => {
+    expect(avisoDosCabos([0, 0, 0], [0, 1, 0])).toBe('CABO 2 · ANDRÓIDE LIGADO · INJETANDO DESINFORMAÇÃO');
+    expect(avisoDosCabos([1, 0, 0], [2, 0, 0])).toBe('CABO 1 TOMADO · A REDE ESTÁ SENDO ENVENENADA');
+    expect(avisoDosCabos([0, 0, 0], [0, 0, 3])).toBe('CABO 3 CORTADO · CONSERTE');
+    expect(avisoDosCabos([0, 2, 0], [0, 1, 0])).toBe('CABO 2 LIBERADO');
+    expect(avisoDosCabos([3, 0, 0], [0, 0, 0])).toBe('CABO 1 LIBERADO');
+  });
+
+  it('manda o mais grave quando dois mudam juntos: tomado, depois cortado, depois liberado, por último o andróide que se ligou', () => {
+    expect(avisoDosCabos([0, 0, 0], [1, 2, 3])).toBe('CABO 2 TOMADO · A REDE ESTÁ SENDO ENVENENADA');
+    expect(avisoDosCabos([0, 0, 2], [1, 3, 0])).toBe('CABO 2 CORTADO · CONSERTE');
+    expect(avisoDosCabos([0, 0, 2], [1, 0, 0])).toBe('CABO 3 LIBERADO');
+  });
+
+  it('injeção que só recua (injetando → livre) e a vida que cai sem cortar não geram aviso', () => {
+    expect(avisoDosCabos([1, 1, 1], [0, 0, 0])).toBeNull();
   });
 });

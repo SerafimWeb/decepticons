@@ -4226,6 +4226,20 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .praia-nucleo[data-estado='ataque'] .pn-barra i { background: var(--warn); box-shadow: 0 0 8px var(--warn); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
 .praia-nucleo[data-estado='critico'] { color: var(--alert); }
 .praia-nucleo[data-estado='critico'] .pn-barra i { background: var(--alert); box-shadow: 0 0 10px var(--alert); }
+/* Os cabos de dados (P162, ui/PraiaHud.ts): três células sob a rede da estação. A barra de cima é a vida do cabo; a de baixo, a injeção dos andróides rebeldes. */
+.praia-cabos { position: absolute; top: 116px; left: 50%; transform: translateX(-50%); width: min(560px, 58vw); display: flex; gap: 10px; font-size: 9px; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 6px #000; }
+.praia-cabos[hidden] { display: none; }
+.pc-cabo { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.pc-cabo span { opacity: 0.85; }
+.pc-barra { height: 3px; border: 1px solid rgba(0, 229, 255, 0.4); background: rgba(5, 14, 18, 0.72); }
+.pc-barra i { display: block; height: 100%; transform-origin: left; transition: transform 0.25s; }
+.pc-vida { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+.pc-inj { background: var(--alert); box-shadow: 0 0 6px var(--alert); }
+.pc-cabo[data-estado='injetando'] { color: var(--warn); }
+.pc-cabo[data-estado='tomado'] { color: var(--alert); }
+.pc-cabo[data-estado='tomado'] .pc-barra { border-color: rgba(255, 45, 61, 0.7); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
+.pc-cabo[data-estado='cortado'] { color: var(--alert); }
+.pc-cabo[data-estado='cortado'] span { text-decoration: line-through; }
 .praia-zona.alerta { color: var(--alert); text-shadow: 0 0 10px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 45, 61, 0.7); }
 .praia-zona.alerta::before { color: var(--alert); }
 .praia-alvo[data-estado='ataque'] i { border-color: var(--warn); background: rgba(255, 225, 77, 0.25); box-shadow: 0 0 12px var(--warn); animation: praia-pulso 0.7s ease-in-out infinite alternate; }

@@ -43,6 +43,9 @@ const dia = Number(q.get('dia') ?? 0); // a hora do dia (P161): 0 = pôr do sol,
   const t0 = performance.now();
   const praia = new Praia(scene, physics);
   const construcaoMs = performance.now() - t0;
+  // Os cabos de dados (P162): `?cabos=estado:injecao:vida,...` (estado 0 livre, 1 injetando, 2 tomado, 3 cortado) para fotografar o brilho e o letreiro.
+  const cabos = (q.get('cabos') ?? '').split(',').filter(Boolean).map((c) => c.split(':').map(Number));
+  if (cabos.length) praia.setCabos(cabos.map((c) => c[0] ?? 0), cabos.map((c) => c[2] ?? 1), cabos.map((c) => c[1] ?? 0));
   praia.update(t);
   praia.setProgressoDoDia(dia);
   camera.position.set(cx, cy, cz);

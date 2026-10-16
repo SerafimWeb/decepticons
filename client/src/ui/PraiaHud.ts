@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PRAIA_COMPLEXO, PRAIA_ESTACAO } from '../environment/PraiaLayout';
-import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
+import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDosCabos, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
 
 /**
  * O HUD da PRAIA DOS CABOS (P127): o que um mapa de 640 m pede e os outros não. Quatro peças, todas só no mapa da praia:
@@ -15,7 +15,10 @@ import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, CARTAO_DA_MISSAO, FAIXA
  * projeção, sem alocar). Fora da praia nada disto é criado.
  */
 
-const MARGENS: MargensDaTela = { topo: 118, base: 175, esq: 28, dir: 44 };
+/** Os estados do cabo de dados, na ordem dos códigos de `CabosDeDados` (o `data-estado` da célula no CSS). */
+const ESTADO_DO_CABO = ['livre', 'injetando', 'tomado', 'cortado'] as const;
+
+const MARGENS: MargensDaTela = { topo: 142, base: 175, esq: 28, dir: 44 };
 const PONTOS_DE_INIMIGO = 32;
 const PERIODO_DA_FAIXA_S = 0.2;
 const CARTAO_S = 8;
@@ -31,6 +34,8 @@ export interface QuadroDaPraia {
   agua: { fundura: number; afogandoS: number; afogarS: number; afogaDesde: number };
   /** O núcleo da estação (a rede): `presente` é falso fora da missão em ondas. */
   nucleo: { presente: boolean; fracao: number; pressao: number };
+  /** Os três cabos de dados (P162): por cabo, o estado (0 livre, 1 injetando, 2 tomado, 3 cortado), a vida e a injeção de 0 a 1. `presente` é falso fora da missão em ondas. */
+  cabos: { presente: boolean; estado: number[]; vida: number[]; injecao: number[] };
   camera: THREE.Camera;
   largura: number;
   altura: number;
@@ -44,6 +49,7 @@ export function novoQuadroDaPraia(camera: THREE.Camera): QuadroDaPraia {
     inimigos: [],
     agua: { fundura: 0, afogandoS: 0, afogarS: 0, afogaDesde: 0.05 },
     nucleo: { presente: false, fracao: 1, pressao: 0 },
+    cabos: { presente: false, estado: [0, 0, 0], vida: [1, 1, 1], injecao: [0, 0, 0] },
     camera,
     largura: 0,
     altura: 0,
@@ -77,6 +83,10 @@ export class PraiaHud {
   private readonly nucleoPct: HTMLElement;
   private readonly nucleoBarra: HTMLElement;
   private readonly alvoNome: HTMLElement;
+  /** Os três cabos de dados (P162): o painel, e por cabo a célula, a barra de vida e a de injeção. */
+  private readonly cabos: HTMLElement;
+  private readonly celulasDosCabos: { celula: HTMLElement; vida: HTMLElement; injecao: HTMLElement; pct: string }[] = [];
+  private readonly estadosDosCabos = [0, 0, 0];
   private nucleoMostrado = -1;
   private nucleoClasse = '';
   private periodo = 0;
@@ -131,6 +141,17 @@ export class PraiaHud {
     this.nucleoPct = el('b', '', this.nucleo, '100%');
     this.nucleoBarra = el('i', '', el('div', 'pn-barra', this.nucleo));
 
+    // Os cabos de dados (P162): três células sob a rede da estação, cada uma com a vida do cabo (ciano) e a injeção dos andróides (vermelho).
+    this.cabos = el('div', 'praia-cabos', this.raiz);
+    this.cabos.hidden = true;
+    for (let i = 0; i < 3; i++) {
+      const celula = el('div', 'pc-cabo', this.cabos);
+      el('span', '', celula, `CABO ${i + 1}`);
+      const vida = el('i', 'pc-vida', el('div', 'pc-barra', celula));
+      const injecao = el('i', 'pc-inj', el('div', 'pc-barra', celula));
+      this.celulasDosCabos.push({ celula, vida, injecao, pct: '' });
+    }
+
     this.zona = el('div', 'praia-zona', this.raiz);
 
     this.cartao = el('div', 'praia-cartao', this.raiz);
@@ -164,6 +185,8 @@ export class PraiaHud {
     this.anunciador.reset();
     this.alertaDoNucleo.reset();
     this.nucleoMostrado = -1;
+    this.estadosDosCabos.fill(0);
+    for (const c of this.celulasDosCabos) c.pct = '';
     this.mostradoCartao = false;
     this.cartaoS = 0;
     this.cartao.hidden = true;
@@ -186,7 +209,9 @@ export class PraiaHud {
 
     // O núcleo da estação: o alerta (invasores, 75/50/25%, a queda) toma o lugar do anúncio do lugar, em vermelho.
     const rede = q.nucleo;
-    const alerta = rede.presente ? this.alertaDoNucleo.atualiza(rede.fracao, rede.pressao) : null;
+    const alertaDaRede = rede.presente ? this.alertaDoNucleo.atualiza(rede.fracao, rede.pressao) : null;
+    const alertaDosCabos = q.cabos.presente ? avisoDosCabos(this.estadosDosCabos, q.cabos.estado) : null;
+    const alerta = alertaDaRede ?? alertaDosCabos;
     // O anúncio do lugar: aparece e some sozinho (a animação é do CSS; aqui só o texto e o relógio).
     const novo = alerta ?? this.anunciador.atualiza(q.eu.x, q.eu.z, dt);
     if (novo) {
@@ -218,6 +243,27 @@ export class PraiaHud {
       }
     } else if (!this.nucleo.hidden) {
       this.nucleo.hidden = true;
+    }
+
+    // Os cabos de dados: as três células só mexem no DOM quando o estado ou a barra (em passos de 2%) muda.
+    if (q.cabos.presente) {
+      this.cabos.hidden = false;
+      for (let i = 0; i < this.celulasDosCabos.length; i++) {
+        const c = this.celulasDosCabos[i]!;
+        const estado = q.cabos.estado[i] ?? 0;
+        const vida = Math.round((q.cabos.vida[i] ?? 1) * 50);
+        const injecao = Math.round((q.cabos.injecao[i] ?? 0) * 50);
+        const chave = `${estado}|${vida}|${injecao}`;
+        if (chave !== c.pct) {
+          c.pct = chave;
+          c.celula.dataset.estado = ESTADO_DO_CABO[estado] ?? 'livre';
+          c.vida.style.transform = `scaleX(${(vida / 50).toFixed(2)})`;
+          c.injecao.style.transform = `scaleX(${(injecao / 50).toFixed(2)})`;
+        }
+        this.estadosDosCabos[i] = estado;
+      }
+    } else if (!this.cabos.hidden) {
+      this.cabos.hidden = true;
     }
 
     // O aviso da água, a cada quadro enquanto há água (uma comparação), com o DOM só quando muda.
