@@ -63,10 +63,32 @@ Quem julga é o seu ouvido. Trocar um som é mudar `fonte`, `de` e `ate` no `scr
 
 O ElevenLabs também gera **efeitos por texto** (`/v1/sound-generation`): serve para as armas sem referência. **Decisão do Comandante** depois de ouvir: quais ficam, quais troca, e se quer efeito gerado para as que sobraram.
 
+### 3.1 O Estúdio de Sons (para o ajuste fino)
+
+`npm run estudio` abre uma página no navegador (só neste computador: escuta em 127.0.0.1 e recusa qualquer origem de fora). Nela:
+- **Onda:** abra uma referência, **arraste na onda** para escolher o trecho (as bordas se ajustam), com **fade**, **ganho extra** e uma estimativa da normalização na audição;
+- **No ritmo da arma:** ▶▶ toca o som **repetido no intervalo de tiro da arma escolhida** (a rotatória a 0,05 s, o canhão a 2,6 s): é assim que se ouve se um tiro cobre o seguinte;
+- **Armas:** uma tabela com as 17 armas do jogo; escolha **qual clipe** toca em cada uma (qualquer clipe, para qualquer arma), o **ganho**, a **altura** (pitch: menos = mais grave e mais longo) e a **duração máxima**. Arma sem clipe usa o som sintetizado de sempre. O lança-chamas e a motosserra têm som contínuo próprio e ainda não aceitam amostra;
+- **Importar:** arraste um arquivo de áudio para a página (ele vai para `.tmp/SOUNDS/ARMAS`);
+- **Processar** roda o mesmo `ffmpeg` do `npm run sons` e grava o mp3; **SALVAR TUDO** grava `scripts/sons-armas.json` (os cortes) e `client/src/audio/armasSom.json` (a tabela de armas).
+
+Depois de salvar e processar, abra o jogo (`npm run dev`) e atire; quando estiver bom, **peça ao Claude para publicar** (a tabela é dado, o teste só cobra estrutura, nunca o gosto: nada do que você mexer trava o `npm run check`). Um corte muito fraco (ganho acima de +15 dB para chegar ao volume dos outros) aparece com aviso: sobe o chiado, corte onde o som está forte.
+
 ## 4. Custo
 
 Nenhum por quadro nem por tick. Por fala: um teste de texto e uma consulta a um `Map`. Os clipes (~20 KB cada) são pedidos **uma vez, sob demanda, só do sotaque escolhido**, e só os que o manifesto lista.
 O bundle ganha dois JSON pequenos (o catálogo e o manifesto).
+
+## 6. A sua própria voz (P151)
+
+O Comandante achou o **"Combate!" em português ruim**: *"desmotivado, falou com medo"*. **Efeito não conserta interpretação**: um som fraco com reverb continua fraco. O que muda a entrega é **quem fala, e com que intenção**. Dois caminhos, que se somam:
+
+1. **Gravar você mesmo (recomendo para as falas de energia: "Combate!", "Rodada N", "Abate duplo!", "Você morreu").** Um celular serve: ambiente quieto, boca a uns 15 cm, **grite de verdade** e faça 3 tomadas de cada. Largue em `.tmp/SOUNDS/VOZ/br/<chave>.wav` (ou mp3/m4a), com a chave do catálogo (`combate`, `rodada_1`, `abate_3`, `voce_morreu`...; a lista está em `client/src/audio/falas.json`). O Claude monta o **processador de locutor**: tira o ruído, comprime, grava o grave, abaixa o tom um ou dois semitons, põe a saturação e um eco de arena, normaliza, e grava o mp3 em `client/public/audio/vozes/br/` (`npm run voz`, com presets para você ouvir no estúdio e escolher).
+2. **ElevenLabs "Voice Changer" (fala-para-fala):** você grita a fala e o ElevenLabs a **converte para a voz do Eliel** (ou de outra da conta) **mantendo a sua entonação e a sua energia**. É o caminho para ter uma voz profissional com a emoção que o texto não dá. Usa a mesma chave, e o custo é por segundo de áudio.
+
+**Roteiro de gravação** (19 falas; a intenção entre parênteses): Rodada um a nove (grave, firme, separando as sílabas) · **Combate!** (grito curto, explosivo) · Abate duplo! · Frenesi de abates! · Massacre! · Imparável! · Lendário! (cada uma mais alta que a anterior) · **Você morreu.** (grave, seco, quase sussurrado) · Hostis chegando. (alerta, tenso) · Estação segura. (aliviado, grave) · A rede caiu. Missão perdida. (derrota, pesado).
+
+*Tom do texto em si:* a voz sintetizada sai fraca com frase curta e sem contexto. Se preferir ficar com a voz do ElevenLabs para alguma fala, dá para gerar com mais ênfase (texto em maiúsculas, mais pontuação, estabilidade menor) e **escolher entre várias tomadas** no estúdio: pedido ao Claude.
 
 ## 5. Ligado a
 

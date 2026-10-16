@@ -83,6 +83,8 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
    - No topo da tela aparece `ONLINE · SALA ARENA · 42 ms · 2 pilotos`. Sem `servidor` fora do PC do servidor, o
      jogo avisa e joga offline.
 
+> **FEITO em 15/10 (P144):** a zona `cybermech.online` está na Cloudflare (nameservers `chin` e `dom.ns.cloudflare.com`), `jogo.cybermech.online` aponta para o túnel `cybermech`, e o jogo publicado fala com ele (`gameServer` do `deploy-site.json`). O nome antigo `jogo.selvamkt.com.br` ainda funciona e **só sai do túnel por ordem do Comandante**. O que está abaixo segue como registro do que foi feito e como refazer.
+
 **Mover o servidor de jogo para `jogo.cybermech.online` (P144, 15/10): o passo a passo do Comandante.** O túnel
 `cybermech` **já existe** e serve `jogo.selvamkt.com.br`; falta pôr a zona nova na Cloudflare, porque o túnel só publica
 nomes de uma zona que esteja lá. Hoje o DNS de `cybermech.online` está nos servidores de nome da **Hostinger**

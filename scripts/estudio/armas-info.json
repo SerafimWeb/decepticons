@@ -1,0 +1,145 @@
+{
+  "_nota": "As armas do jogo (id, nome, tipo e segundos entre tiros) para o Estúdio de Sons. O teste estudio-sons.test.ts confere com o catálogo: se uma arma mudar, o teste avisa. `aceita` = a arma chama o som de tiro por disparo (onShot/onRocket); o lança-chamas e a motosserra têm som contínuo próprio e ainda não aceitam amostra.",
+  "armas": [
+    {
+      "id": "rotary",
+      "nome": "Metralhadora rotatória",
+      "tipo": "energy",
+      "intervalo": 0.05,
+      "aceita": true
+    },
+    {
+      "id": "flamer",
+      "nome": "Lança-chamas",
+      "tipo": "energy",
+      "intervalo": 0.2,
+      "aceita": false
+    },
+    {
+      "id": "sonic",
+      "nome": "Canhão sônico",
+      "tipo": "energy",
+      "intervalo": 1.2,
+      "aceita": true
+    },
+    {
+      "id": "seeker",
+      "nome": "Míssil teleguiado",
+      "tipo": "ammo",
+      "intervalo": 0.5,
+      "aceita": true
+    },
+    {
+      "id": "cannon",
+      "nome": "Canhão pesado",
+      "tipo": "energy",
+      "intervalo": 2.6,
+      "aceita": true
+    },
+    {
+      "id": "siege",
+      "nome": "Canhão de cerco",
+      "tipo": "energy",
+      "intervalo": 4.5,
+      "aceita": true
+    },
+    {
+      "id": "autocannon",
+      "nome": "Canhão automático",
+      "tipo": "energy",
+      "intervalo": 0.2,
+      "aceita": true
+    },
+    {
+      "id": "arc",
+      "nome": "Arma elétrica",
+      "tipo": "energy",
+      "intervalo": 0.45,
+      "aceita": true
+    },
+    {
+      "id": "cryo",
+      "nome": "Arma de gelo",
+      "tipo": "energy",
+      "intervalo": 0.6,
+      "aceita": true
+    },
+    {
+      "id": "railgun",
+      "nome": "Canhão de trilho",
+      "tipo": "energy",
+      "intervalo": 1.4,
+      "aceita": true
+    },
+    {
+      "id": "emp",
+      "nome": "Lançador EMP",
+      "tipo": "energy",
+      "intervalo": 1.3,
+      "aceita": true
+    },
+    {
+      "id": "plasma",
+      "nome": "Canhão de plasma",
+      "tipo": "energy",
+      "intervalo": 0.22,
+      "aceita": true
+    },
+    {
+      "id": "rockets",
+      "nome": "Casulo de foguetes",
+      "tipo": "ammo",
+      "intervalo": 0.3,
+      "aceita": true
+    },
+    {
+      "id": "blaster",
+      "nome": "Blaster leve",
+      "tipo": "energy",
+      "intervalo": 0.4,
+      "aceita": true
+    },
+    {
+      "id": "shotgun",
+      "nome": "Escopeta",
+      "tipo": "energy",
+      "intervalo": 0.8,
+      "aceita": true
+    },
+    {
+      "id": "barrage",
+      "nome": "Chuva de mísseis",
+      "tipo": "ammo",
+      "intervalo": 1,
+      "aceita": true
+    },
+    {
+      "id": "chainsaw",
+      "nome": "Motosserra",
+      "tipo": "melee",
+      "intervalo": 0.2,
+      "aceita": false
+    },
+    {
+      "id": "swarm",
+      "nome": "Lançador de mísseis leve",
+      "tipo": "ammo",
+      "intervalo": 0.07,
+      "aceita": true
+    },
+    {
+      "id": "cruise",
+      "nome": "Míssil cruzador",
+      "tipo": "ammo",
+      "intervalo": 1,
+      "aceita": true
+    },
+    {
+      "id": "laser",
+      "nome": "Raio laser",
+      "tipo": "energy",
+      "intervalo": 0.13,
+      "aceita": true
+    }
+  ]
+}

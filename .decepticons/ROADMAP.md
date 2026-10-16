@@ -93,6 +93,8 @@
 - [x] Som dos foguetes: disparo e voo (Gemini) #som
 - [~] Narrador do jogo (ordem P146, 15/10): 19 falas em 4 sotaques (br, en, ru, cn) e modo mistura, escolha em Configurações, `npm run vozes` com o ElevenLabs, 34 testes (Claude); **vozes escolhidas e "combate" gerado nos 4 sotaques; faltam 72 clipes** (`npm run vozes -- --gerar --sim`, comando do Comandante) #som
 - [~] Sons de arma a partir das referências do Comandante (P146): 7 armas com amostra (`npm run sons`, `npm run ouvir`), 30 testes; **falta o ouvido do Comandante**; ficam a rotatória e o canhão automático (som em laço), os sabres e os radares (sem arma nem aviso ainda) #som
+- [~] Estúdio de Sons (ordem P150, 15/10): `npm run estudio` — cortar na onda, escolher o som de cada arma, ouvir no ritmo de tiro, importar e processar; tabela de armas virou dado; 9 testes e página provada num Chrome real (Claude); **falta o Comandante usar** #som #ux
+- [ ] Voz própria do Comandante com efeitos (ordem P151, 15/10): ele grava as falas, o Claude monta o processador de locutor (`npm run voz`); alternativa: ElevenLabs Voice Changer #som
 - [x] Arsenal em três níveis de poder (MK I, II, III) com a mesma regra; dano recalibrado com metas de tempo para derrubar travadas por teste; calor do Mech compartilhado entre as armas; plasma perde força com a distância #combate
 - [x] Projeto do Hangar (chassi, encaixes, carga, níveis, dissipador) e a seção dele na página do jogo, com o arsenal lido do código #mechs
 - [x] Calor completo do Mech: tiro (coeficiente por arma), corrida, pulo, dash e dano esquentam; parado esfria em dobro; superaquecido trava armas, pulo e dash; bots param para esfriar #combate

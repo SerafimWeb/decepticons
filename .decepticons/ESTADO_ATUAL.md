@@ -17,9 +17,39 @@
 
 **Capturas e onde o Comandante confere:** `arte/armas-novas-bancada-claude.png` (a salva, o arco e o feixe em voo, com os sistemas de verdade), `arte/armas-novas-modelos-claude.png` (o desenho 3D de cada nível: 8, 16 e 32 tubos) e `arte/armas-novas-hangar-enxame-claude.png` / `armas-novas-hangar-laser-claude.png`. **Hangar → Marauder → ombros → Lançador de mísseis leve (MK III = 32 tubos)**; **Vector-09 → braço esquerdo → Míssil cruzador**; **braço direito → Raio laser**; jogando, botão 2 (lançador, cruzador) e botão 1 (laser). Janela ARSENAL (`?comandante=1`): a faixa de cada arma ao lado do alcance.
 
-**Falta (R13):** (a) **ninguém jogou nem ouviu:** o laser usa um som sintetizado novo e o lançador leve e o cruzador reusam o do foguete (mais agudo e mais grave); o ouvido e a mão são do Comandante, e **os números são proposta** (Configurações → Potências ajusta cada arma sem código); (b) **os bots ainda não usam** as três (o bot atira o projétil comum: só energia simples); (c) as armas de mão dos robôs procedurais reaproveitam o desenho do casulo/cano (o modelo próprio das três vale no Marauder e no Hangar); (d) o míssil de **outro jogador** voa reto no desenho (o guiado já era assim) e o do lançador leve também; (e) a GPU real só viu o Hangar e a bancada de captura em software; (f) a decisão de o guiado caber no braço é minha (P77 o queria só nos ombros): reversível em `WEAPON_MOUNTS.seeker`.
+**Falta (R13):** (a) **ninguém jogou nem ouviu:** o laser usa um som sintetizado novo e o lançador leve e o cruzador reusam o clipe do foguete (mais agudo e mais grave), já na tabela de sons (`armasSom.json`), onde o Comandante troca o clipe e ajusta no Estúdio de Sons (`npm run estudio`); o ouvido e a mão são do Comandante, e **os números são proposta** (Configurações → Potências ajusta cada arma sem código); (b) **os bots ainda não usam** as três (o bot atira o projétil comum: só energia simples); (c) as armas de mão dos robôs procedurais reaproveitam o desenho do casulo/cano (o modelo próprio das três vale no Marauder e no Hangar); (d) o míssil de **outro jogador** voa reto no desenho (o guiado já era assim) e o do lançador leve também; (e) a GPU real só viu o Hangar e a bancada de captura em software; (f) a decisão de o guiado caber no braço é minha (P77 o queria só nos ombros): reversível em `WEAPON_MOUNTS.seeker`.
 
 **Próxima sessão começa com:** o veredicto do Comandante (jogar as três, ouvir, dizer o número que incomoda); depois o apelido (P145) e o documento de campanhas (P147).
+
+## O ESTÚDIO DE SONS: cortar na onda, escolher o som de cada arma e ouvir no ritmo do tiro — Claude, 15/10 (branch `claude/estudio-de-sons`, P150 e P151)
+
+**As ordens do Comandante (15/10):** *"achei os sons meio ruins, tem que melhorar ainda. Se tiver como colocar uma interface onde eu possa cortar e editar os sons pra fazer o ajuste fino seria o ideal; e se puder também selecionar entre outros sons para determinadas armas"* e *"a voz do 'combate' em português está muito ruim! desmotivado, falou com medo… será que devo gravar e enviar pra editarmos minha própria voz com efeitos?"*.
+
+**Feito:**
+1. **`npm run estudio`:** uma página no navegador (só neste PC: escuta em 127.0.0.1, recusa Host e Origin de fora, só serve áudio com nome simples nas duas pastas de sons). **Onda** (arrastar para cortar, alças, fade, ganho extra, audição com a estimativa da normalização), **audição no ritmo de tiro de cada arma** (▶▶: o som repetido no intervalo da arma), **tabela das 17 armas** (qual clipe, ganho, altura, duração máxima; qualquer clipe em qualquer arma), **importar** arrastando, **Processar** (o mesmo `ffmpeg` do `npm run sons`) e **Salvar**.
+2. **A tabela de armas virou dado** (`client/src/audio/armasSom.json`; `armasSom.ts` o lê): o estúdio a edita, e os testes cobram **só estrutura** (arma que existe, clipe que existe, faixas seguras), nunca o gosto: nada que o Comandante mexer trava o `npm run check`.
+3. **Provas:** o servidor tem **9 testes** (Host e Origin de fora, caminho e extensão, salvar e recusar, importar, processar com o `ffmpeg` de verdade, os dados reais do repositório, o catálogo de armas sem divergência) e **4 mutações pegas** (a trava de Host e Origin, o nome de arquivo, a validação, a arma sem amostra). A página foi provada **de ponta a ponta num Chrome real com as referências reais**; isso achou e corrigiu: um fade maior que a metade do corte (o servidor recusava com mensagem seca: agora a página encurta o fade e avisa), o 404 do ícone e o corte fraco demais (aviso quando o ganho passa de +15 dB).
+4. **A voz do "Combate!" (P151):** respondido que **gravar a própria voz é o melhor caminho** (efeito não conserta interpretação) e a alternativa do **ElevenLabs Voice Changer** (o Comandante grita e a voz do Eliel sai com a energia dele). O roteiro das 19 falas e o caminho dos arquivos estão em `VOZES_E_SONS.md` § 6.
+5. `AGENTS.md`: os comandos `estudio`, `sons`, `vozes` e `ouvir`.
+
+**Falta (R13):** **o Comandante usar o estúdio** (a audição ao vivo no navegador dele é o que não pude provar: o Claude não ouve áudio); a **voz própria** (ele grava; o Claude monta o `npm run voz` depois de ouvir a primeira gravação); os 72 clipes de voz restantes (comando dele, `VOZES_E_SONS.md` § 2); a **rajada** (som em laço) para a rotatória e o canhão automático; lança-chamas e motosserra (som contínuo) seguem sintetizados.
+
+**Próxima sessão começa com:** o que o Comandante responder dos sons e da gravação; senão, o apelido (P145).
+
+## O JOGO ONLINE JÁ FALA COM jogo.cybermech.online: a Cloudflare está no ar e o servidor saiu do domínio antigo — Claude, 15/10 (branch `claude/servidor-no-dominio`, P144)
+
+**A ação do Comandante (15/10):** pôs a zona `cybermech.online` na Cloudflare, trocou os nameservers (`chin` e `dom.ns.cloudflare.com`) e criou `jogo.cybermech.online` no túnel `cybermech` (proxied, nuvem laranja).
+
+**Conferido por mim antes de trocar (nada suposto):**
+1. **Nameservers** da Cloudflare ativos; o **site principal** segue respondendo (`hcdn`, "DNS only"): o MX/SPF e o resto não mudaram.
+2. `jogo.cybermech.online/status` devolve **o mesmo servidor** que o nome antigo (uptime idêntico): o túnel serve os dois.
+3. **WebSocket atrás da Cloudflare:** abre com a origem do jogo (266 ms), **é recusado** com origem de fora (a trava do P143 vale também por trás da Cloudflare) e abre sem origem (bots, `curl`).
+
+**Feito:** o `gameServer` do `deploy-site.json` (fora do git; cópia antiga ao lado) passou a `wss://jogo.cybermech.online`; o site foi **republicado e conferido por checksum** (a CSP `connect-src` é montada desse endereço). **No navegador de verdade, em `cybermech.online/jogar/`:** o bundle só tem o endereço novo (o antigo saiu), a CSP o libera, **um WebSocket sai da página e abre**, zero erro de página.
+
+**Falta (R13), tudo do Comandante e sem pressa:** (a) tirar `jogo.selvamkt.com.br` do túnel (hoje os dois nomes funcionam: nenhum jogador depende do antigo); (b) as proteções da Cloudflare: regra de limite em `/conta/*`, Bot Fight Mode e DNSSEC (passo a passo no `DEPLOY.md`); (c) só com a ordem dele, apagar os arquivos antigos de `selvamkt.com.br/cybermech/`. Nada de HSTS ainda (decisão dele; depois de uma semana sem problema).
+
+**Próxima sessão começa com:** o estúdio de sons (ordem de 15/10: cortar e editar os sons, escolher o som de cada arma) e a voz do "Combate!" em português.
 
 ## OS SONS DE ARMA DE REFERÊNCIA ENTRAM NO JOGO: 15 efeitos viram 6 arquivos para 7 armas, com a página para ouvir — Claude, 15/10 (branch `claude/sons-das-armas-pr`, P146)
 

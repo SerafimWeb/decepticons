@@ -1,9 +1,10 @@
 /**
- * O miolo do preparador de sons de arma (P146): funções puras (o teste não precisa do ffmpeg). O comando é `scripts/sons.mjs` (`npm run sons`) e o mapa de
- * quais referências viram quais sons é `scripts/sons-armas.json`.
+ * O miolo do preparador de sons de arma (P146): funções puras (o teste não precisa do ffmpeg). O comando é `scripts/sons.mjs` (`npm run sons`), o estúdio é
+ * `scripts/estudio-sons.mjs` (`npm run estudio`), o mapa de quais referências viram quais clipes é `scripts/sons-armas.json` e o de qual clipe toca em qual arma é
+ * `client/src/audio/armasSom.json`.
  */
 
-/** Confere o mapa: destinos únicos e em `.mp3`, corte válido, fade coerente, alvos de nível plausíveis. Devolve a lista de problemas (vazia = ok). */
+/** Confere o mapa de clipes: destinos únicos e em `.mp3`, corte válido, fade coerente, ganho extra limitado, alvos de nível plausíveis. Devolve os problemas (vazia = ok). */
 export function validarMapa(mapa) {
   const erros = [];
   const alvo = mapa.alvo ?? {};
@@ -15,10 +16,30 @@ export function validarMapa(mapa) {
     if (!/^arma_[a-z0-9_]+\.mp3$/.test(s.destino ?? '')) erros.push(`${quem}: o destino tem de ser arma_<nome>.mp3`);
     if (vistos.has(s.destino)) erros.push(`${quem}: destino repetido`);
     vistos.add(s.destino);
-    if (!s.fonte) erros.push(`${quem}: sem fonte`);
+    if (!s.fonte || s.fonte !== String(s.fonte).replace(/[\\/]/g, '')) erros.push(`${quem}: a fonte tem de ser só o nome de um arquivo da pasta de origem`);
     if (!(s.de >= 0) || !(s.ate > s.de)) erros.push(`${quem}: corte inválido (de ${s.de} até ${s.ate})`);
     else if (s.ate - s.de > 4) erros.push(`${quem}: corte de mais de 4 s não é som de arma`);
     if (!(s.fade_ms >= 0) || s.fade_ms / 1000 > (s.ate - s.de) / 2) erros.push(`${quem}: o fade não pode passar de metade do corte`);
+    if (s.ganho_db !== undefined && !(s.ganho_db >= -24 && s.ganho_db <= 12)) erros.push(`${quem}: o ganho extra tem de ficar entre -24 e +12 dB`);
+  }
+  return erros;
+}
+
+/**
+ * Confere a tabela de armas: cada arma tem de existir no jogo (`idsConhecidos`), apontar para um clipe que o mapa produz (`clipes`) e ter ganho, altura e duração plausíveis.
+ * A duração máxima não pode passar do que o clipe dura na altura dada (`duracaoDe(clipe)`, em segundos), senão o fade do fim nunca é ouvido.
+ */
+export function validarArmas(armas, idsConhecidos, clipes, duracaoDe = () => Infinity) {
+  const erros = [];
+  const conhecidos = new Set(idsConhecidos);
+  const existentes = new Set(clipes);
+  for (const [id, a] of Object.entries(armas ?? {})) {
+    if (!conhecidos.has(id)) erros.push(`${id}: arma que o jogo não conhece`);
+    if (!existentes.has(a.clipe)) erros.push(`${id}: o clipe "${a.clipe}" não existe no mapa de sons`);
+    if (!(a.ganho > 0 && a.ganho <= 1.5)) erros.push(`${id}: ganho entre 0 e 1,5`);
+    if (!(a.pitch >= 0.5 && a.pitch <= 2)) erros.push(`${id}: altura (pitch) entre 0,5 e 2`);
+    if (!(a.maxS >= 0.1 && a.maxS <= 6)) erros.push(`${id}: duração máxima entre 0,1 e 6 s`);
+    else if (a.maxS > duracaoDe(a.clipe) / a.pitch + 0.01) erros.push(`${id}: a duração máxima (${a.maxS} s) passa do que o clipe dura nessa altura (${(duracaoDe(a.clipe) / a.pitch).toFixed(2)} s)`);
   }
   return erros;
 }

@@ -1,14 +1,17 @@
+import tabela from './armasSom.json';
+
 /**
- * Os sons de arma de referência (P146): qual amostra toca em qual arma, e com que ganho, altura e duração máxima. Os arquivos saem de `scripts/sons-armas.json`
- * (`npm run sons`: apara e normaliza as referências do Comandante) e moram em `client/public/audio/armas/`. Só da tela (G1/G2).
+ * Os sons de arma de referência (P146): qual amostra toca em qual arma, e com que ganho, altura e duração máxima. **Os dados moram em `armasSom.json`**, que o
+ * Estúdio de Sons (`npm run estudio`) edita; os cortes dos arquivos moram em `scripts/sons-armas.json` (`npm run sons` apara e normaliza as referências do Comandante)
+ * e os `.mp3` em `client/public/audio/armas/`. Só da tela (G1/G2).
  *
- * Arma que não está aqui (rotatória, canhão automático, arco, gelo, sônico, lança-chamas...) segue com o som sintetizado de sempre; **amostra ainda não carregada
- * também cai no sintetizado** (o `AudioSystem.playArma` devolve `false`), então o jogo nunca fica mudo por causa deste arquivo.
+ * Arma que não está na tabela (rotatória, canhão automático, arco, gelo, sônico, lança-chamas...) segue com o som sintetizado de sempre; **amostra ainda não carregada
+ * também cai no sintetizado** (o `AudioSystem.playArma` devolve `false`), então o jogo nunca fica mudo por causa destes arquivos.
  */
 export interface AmostraDeArma {
   /** O nome do arquivo em `audio/armas/` (sem a extensão). */
   nome: string;
-  /** O ganho (0 a ~1,2) em cima do volume mestre. */
+  /** O ganho (0 a 1,5) em cima do volume mestre. */
   ganho: number;
   /** A altura: 1 = a do arquivo; menos que 1 fica mais grave e mais longo (o canhão de cerco). */
   pitch: number;
@@ -16,19 +19,12 @@ export interface AmostraDeArma {
   maxS: number;
 }
 
-export const AMOSTRAS_DAS_ARMAS: Readonly<Record<string, AmostraDeArma>> = {
-  blaster: { nome: 'arma_blaster', ganho: 0.8, pitch: 1, maxS: 0.55 },
-  plasma: { nome: 'arma_plasma', ganho: 0.8, pitch: 1, maxS: 0.4 },
-  cannon: { nome: 'arma_canhao', ganho: 0.9, pitch: 1, maxS: 1.8 },
-  // O canhão de cerco (360 de dano, 4,5 s entre tiros): o mesmo estouro, mais grave e mais longo.
-  siege: { nome: 'arma_canhao', ganho: 1, pitch: 0.78, maxS: 2.5 },
-  rockets: { nome: 'arma_foguete', ganho: 0.75, pitch: 1, maxS: 0.8 },
-  seeker: { nome: 'arma_teleguiado', ganho: 0.8, pitch: 1, maxS: 1.3 },
-  barrage: { nome: 'arma_chuva', ganho: 0.85, pitch: 1, maxS: 1.3 },
-  // O lançador leve (P152): o mesmo lançamento dos foguetes, mais agudo e curto (toca de quatro em quatro mísseis); o cruzador, o mesmo lançamento mais grave e mais longo.
-  swarm: { nome: 'arma_foguete', ganho: 0.5, pitch: 1.5, maxS: 0.3 },
-  cruise: { nome: 'arma_foguete', ganho: 0.95, pitch: 0.7, maxS: 1.2 },
-};
+export const AMOSTRAS_DAS_ARMAS: Readonly<Record<string, AmostraDeArma>> = Object.fromEntries(
+  Object.entries(tabela.armas as Record<string, { clipe: string; ganho: number; pitch: number; maxS: number }>).map(([id, a]) => [
+    id,
+    { nome: a.clipe, ganho: a.ganho, pitch: a.pitch, maxS: a.maxS },
+  ]),
+);
 
 /** Os arquivos a carregar na abertura (sem repetir: o cerco e o canhão dividem um). */
 export const ARQUIVOS_DAS_ARMAS: readonly string[] = [...new Set(Object.values(AMOSTRAS_DAS_ARMAS).map((a) => a.nome))];

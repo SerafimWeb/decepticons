@@ -24,6 +24,7 @@
     "publicar-site": "node scripts/publicar-site.mjs",
     "vozes": "node scripts/vozes.mjs",
     "sons": "node scripts/sons.mjs",
+    "estudio": "node scripts/estudio-sons.mjs",
     "ouvir": "node scripts/abrir.mjs .decepticons/ouvir-sons.html",
     "mech:inspecionar": "node scripts/inspecionar-mech.mjs",
     "mech:bocas": "node scripts/medir-bocas.mjs",

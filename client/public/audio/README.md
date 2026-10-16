@@ -52,3 +52,5 @@ Passo a passo, custo e a chave (só em variável de ambiente): `.decepticons/VOZ
 Ficam em `armas/` (`arma_blaster`, `arma_plasma`, `arma_canhao`, `arma_foguete`, `arma_teleguiado`, `arma_chuva`), são **preparados** por `npm run sons` (apara, normaliza e converte as referências do
 Comandante que estão em `.tmp/SOUNDS/ARMAS`, conforme `scripts/sons-armas.json`) e tocados por `AudioSystem.playArma(id)` conforme a tabela de `client/src/audio/armasSom.ts`. Arma sem amostra, ou com a amostra ainda
 carregando, cai no som sintetizado. Para **ouvir**: `npm run ouvir`. A pasta `armas/` já está liberada no `.gitignore`; as referências brutas **não** entram no repositório.
+
+**Ajuste fino (P150):** `npm run estudio` abre o Estúdio de Sons (cortar na onda, escolher o som de cada arma, ouvir no ritmo de tiro). A tabela de armas é dado (`client/src/audio/armasSom.json`); os cortes, `scripts/sons-armas.json`.

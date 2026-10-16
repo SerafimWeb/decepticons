@@ -16,6 +16,31 @@
 
 **Por que registrar:** quem for ajustar um número precisa saber por que o cruzador não tem 150, por que o lançador "fraco" é de propósito, por que o laser manda um evento por pulso e que o 8/16/32 é nível, não escolha.
 
+## [2026-10-15] O ajuste fino do som é de quem ouve: um estúdio local, com a tabela de armas virando dado (Claude, P150 e P151)
+
+**Situação:** o Comandante achou os sons ainda ruins e pediu uma interface para cortar, editar e escolher o som de cada arma; e achou o "Combate!" em português fraco ("com medo"). O Claude não ouve áudio: o ajuste de gosto só pode ser feito por quem ouve.
+
+**Decisões:**
+1. **Ferramenta, não palpite:** em vez de o Claude tentar adivinhar o corte ideal sem ouvir, o estúdio põe o corte, o fade, o ganho, a altura e a escolha do clipe na mão de quem ouve, com a audição **no ritmo de tiro da arma** (onde o som de arma falha: um tiro cobrindo o outro).
+2. **Servidor local, estreito e travado:** um servidor de arquivos no PC do dono é superfície de ataque (página de fora, DNS rebinding, caminho de arquivo). Escuta só em 127.0.0.1, recusa Host e Origin que não sejam dele, serve só áudio com nome simples nas duas pastas, valida tudo antes de gravar, teto de tamanho. As quatro travas têm mutação pegando.
+3. **A tabela de armas virou dado (`armasSom.json`), os testes cobram estrutura e não gosto:** se um teste travasse o `npm run check` por o dono ter escolhido outro clipe, a ferramenta de ajuste fino viraria obstáculo.
+4. **O lança-chamas e a motosserra ficam de fora** (som contínuo por laço, não por tiro): a ferramenta recusa em vez de aceitar e não tocar.
+5. **A voz em português se resolve na fonte:** gravar a própria voz (ou o Voice Changer do ElevenLabs, que mantém a entonação), não com efeito em cima de uma leitura fraca. O processador de locutor só é montado depois de ouvir uma gravação real, para os presets nascerem do som e não de chute.
+
+**Por que registrar:** quem for mexer no som precisa saber que o gosto é do Comandante e mora em `armasSom.json` e `sons-armas.json`, que os testes não o cobram, e por que o estúdio é local e travado.
+
+## [2026-10-15] O servidor de jogo muda para jogo.cybermech.online com os dois nomes vivos; o antigo sai por ordem do Comandante (Claude, P144)
+
+**Situação:** a zona `cybermech.online` entrou na Cloudflare e o nome `jogo.` foi criado no túnel que já servia `jogo.selvamkt.com.br`.
+
+**Decisões:**
+1. **Provar antes de trocar:** nameservers, `/status` (o mesmo servidor nos dois nomes) e o WebSocket com a origem do jogo e com origem de fora, atrás da Cloudflare. Só então o `gameServer` mudou.
+2. **Publicar com 0 jogadores e conferir no navegador de verdade** (o bundle, a CSP e uma conexão saindo da página), não só por checksum: a troca de endereço é a que quebra o online sem erro visível.
+3. **Os dois nomes ficam vivos:** o antigo só sai do túnel por ordem do Comandante (nenhum jogador depende dele; custo de manter: zero). A cópia da configuração antiga ficou ao lado do `deploy-site.json` para voltar em um comando.
+4. **O site principal continua em "DNS only":** a Cloudflare só resolve o nome e protege o `jogo.`; o site da Hostinger não ganha uma camada nova sem necessidade.
+
+**Por que registrar:** quem for mexer em DNS, túnel ou `gameServer` precisa saber que há dois nomes, qual é o definitivo e que o `gameServer` vive fora do git.
+
 ## [2026-10-15] Os sons de arma são amostras preparadas por script a partir das referências, com queda para o sintetizado (Claude, P146)
 
 **Situação:** o Comandante largou 15 efeitos de arma (gerados no ElevenLabs) e mandou extrair o melhor e adaptar. O Claude não ouve áudio.
