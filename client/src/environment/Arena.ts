@@ -124,6 +124,16 @@ export class Arena {
     this.buildZones();
   }
 
+  /** O relógio visual do mapa (s, desde que foi montado): só a praia o conta. É o que o ciclo do dia usa quando a partida não traz outro (`CicloDoDia.progressoDaPartida`). */
+  get relogioVisualS(): number {
+    return this.tempo;
+  }
+
+  /** O ciclo do dia da praia (P161): 0 = o pôr do sol, 1 = a noite fechada. Nos outros mapas não faz nada. */
+  setProgressoDoDia(progresso: number): void {
+    this.praia?.setProgressoDoDia(progresso);
+  }
+
   /** Por quadro: só o mapa que anima faz algo (o mar da praia); os outros são estáticos e não custam nada. */
   update(dt: number): void {
     if (!this.praia) return;

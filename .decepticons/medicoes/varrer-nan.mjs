@@ -9,6 +9,7 @@
  *   npm run build && node .decepticons/medicoes/varrer-nan.mjs                  # o mapa da praia, 10 posições
  *   node .decepticons/medicoes/varrer-nan.mjs --w 1549 --h 925 --q alta           # o tamanho da janela e a qualidade
  *   node .decepticons/medicoes/varrer-nan.mjs --posicoes 0,20;-200,10;250,20      # x,z de cada ponto (separados por ;)
+ *   node .decepticons/medicoes/varrer-nan.mjs --dia 1                              # a hora do dia (P161): 0 = pôr do sol, 1 = noite (o céu das estrelas, as luzes acesas)
  *   node .decepticons/medicoes/varrer-nan.mjs --efeitos                           # com os efeitos de arma acesos em volta (P160: explosão, fumaça,
  *                                                                                  # fitas, marcas, cartazes, feixes) a cada 6 poses
  *
@@ -28,6 +29,7 @@ const qualidade = opt('q', 'alta');
 const guinadas = Number(opt('yaws', '24'));
 const comBloom = args.includes('--bloom'); // mede com o bloom ligado: prova a rede de segurança (sem ela, um NaN toma a tela inteira)
 const comEfeitos = args.includes('--efeitos'); // acende os efeitos de arma em volta do Mech (P160): os shaders novos só entram na conta se estiverem na tela
+const dia = opt('dia', null); // `?dia=` do link: fixa a hora do dia da praia (P161)
 const build = opt('build', 'v1.marauder.blaster-0.blaster-0.seeker-0');
 const posicoes = opt('posicoes', '295,10;240,-20;150,15;60,-10;20,20;0,-5;-80,10;-160,-15;-240,15;-300,0')
   .split(';')
@@ -52,7 +54,7 @@ const servidor = createServer((req, res) => {
   res.end(readFileSync(arquivo));
 });
 await new Promise((r) => servidor.listen(0, r));
-const url = `http://localhost:${servidor.address().port}${BASE}/?mapa=praia&depurar&build=${build}`;
+const url = `http://localhost:${servidor.address().port}${BASE}/?mapa=praia&depurar&build=${build}${dia === null ? '' : `&dia=${dia}`}`;
 
 let navegador;
 for (const channel of ['chrome', 'msedge', undefined]) {

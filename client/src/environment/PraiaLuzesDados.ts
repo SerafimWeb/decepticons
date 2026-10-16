@@ -1,3 +1,4 @@
+import { instanteDeLigar } from './CicloDoDia';
 import { LAMPADAS_DA_BARRACA, praiaAderecos, TIPOS_QUE_FLUTUAM, type Adereco, type TipoDeAdereco } from './PraiaAderecos';
 import { alturaDoChao, NIVEL_DO_MAR } from './PraiaTerreno';
 
@@ -27,7 +28,24 @@ const AGUA: Cor = [0.5, 1.2, 0.95];
 const DOURADA: Cor = [1.6, 1.15, 0.55];
 const LARANJA: Cor = [1.5, 0.6, 0.2];
 
-/** Uma luz: o centro (m), o raio do halo (m), a cor, o modo e a fase (rad) do tempo. */
+/**
+ * Quem é **iluminação pública** (P161): acende com o fim do dia, cada uma no seu instante (`instanteDeLigar`). O resto é sinalização (o semáforo, a boia, o aviso
+ * das antenas, as luzes de navegação dos navios): fica ligado de dia e de noite, no brilho que sempre teve.
+ */
+export const TIPOS_DE_ILUMINACAO_PUBLICA: ReadonlySet<TipoDeAdereco> = new Set<TipoDeAdereco>(['poste', 'refletor', 'vigia', 'farol', 'barraca']);
+
+/**
+ * O instante em que as luzes de UM adereço acendem (`-1` = sinalização, sempre ligada). Vale por adereço, não por lâmpada: o bulbo desenhado na malha e o halo dele
+ * (e todas as lâmpadas do varal de uma barraca) ligam juntos, no mesmo instante.
+ */
+export function ligaEmDoAdereco(a: Adereco): number {
+  return TIPOS_DE_ILUMINACAO_PUBLICA.has(a.tipo) ? instanteDeLigar(a.x * 0.173 + a.z * 0.091) : -1;
+}
+
+/**
+ * Uma luz: o centro (m), o raio do halo (m), a cor, o modo e a fase (rad) do tempo. `ligaEm`: o instante (0 a 1, na escala das lâmpadas do ciclo do dia) em que
+ * a luz pública acende; `-1` = sinalização, sempre ligada.
+ */
 export interface LuzDaPraia {
   x: number;
   y: number;
@@ -38,6 +56,7 @@ export interface LuzDaPraia {
   b: number;
   modo: ModoDeLuz;
   fase: number;
+  ligaEm: number;
 }
 
 /** Uma poça de luz no chão: o centro, o raio (m), a força (0 a 1) e a cor. */
@@ -122,7 +141,7 @@ export function luzesDaPraia(lista: readonly Adereco[] = praiaAderecos()): LuzDa
       for (let i = 0; i < LAMPADAS_DA_BARRACA.length; i++) {
         const [lx, ly, lz] = LAMPADAS_DA_BARRACA[i]!;
         const [x, y, z] = pontoDoAdereco(a, lx, ly, lz);
-        out.push({ x, y, z, raio: 1.25, r: 1.2, g: 0.86, b: 0.5, modo: LUZ_RESPIRA, fase: fase + i * 0.7 });
+        out.push({ x, y, z, raio: 1.25, r: 1.2, g: 0.86, b: 0.5, modo: LUZ_RESPIRA, fase: fase + i * 0.7, ligaEm: ligaEmDoAdereco(a) });
       }
       continue;
     }
@@ -130,7 +149,7 @@ export function luzesDaPraia(lista: readonly Adereco[] = praiaAderecos()): LuzDa
     if (!fontes) continue;
     fontes.forEach((f, i) => {
       const [x, y, z] = pontoDoAdereco(a, f.x, f.y, f.z);
-      out.push({ x, y, z, raio: f.raio * e, r: f.cor[0], g: f.cor[1], b: f.cor[2], modo: f.modo, fase: fase + i * 1.9 });
+      out.push({ x, y, z, raio: f.raio * e, r: f.cor[0], g: f.cor[1], b: f.cor[2], modo: f.modo, fase: fase + i * 1.9, ligaEm: ligaEmDoAdereco(a) });
     });
   }
   return out;
