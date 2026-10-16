@@ -15,7 +15,6 @@ const w = Number(q.get('w') ?? 1280);
 const h = Number(q.get('h') ?? 720);
 const fov = Number(q.get('fov') ?? 70);
 const t = Number(q.get('t') ?? 3);
-const dia = Number(q.get('dia') ?? 0); // a hora do dia (P161): 0 = pôr do sol, 1 = noite fechada
 
 (async () => {
   const erros: string[] = [];
@@ -44,7 +43,6 @@ const dia = Number(q.get('dia') ?? 0); // a hora do dia (P161): 0 = pôr do sol,
   const praia = new Praia(scene, physics);
   const construcaoMs = performance.now() - t0;
   praia.update(t);
-  praia.setProgressoDoDia(dia);
   camera.position.set(cx, cy, cz);
   camera.lookAt(mx, my, mz);
   camera.updateMatrixWorld();

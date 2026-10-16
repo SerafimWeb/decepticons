@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import { GLSL_RUIDO } from './PraiaGlsl';
-import { GLSL_CEU } from './PraiaCeu';
+import { COR_DA_NEVOA, DIRECAO_DA_LUA, DIRECAO_DO_SOL, GLSL_CEU } from './PraiaCeu';
 import { NIVEL_DO_MAR, PRAIA_FUNDURA_MAXIMA } from './PraiaTerreno';
-import type { UniformesDaPraia } from './PraiaUniformes';
 
 /**
  * O MAR DA PRAIA DOS CABOS (P127): um plano enorme e transparente cujo shader faz tudo na GPU — **cor pela fundura** (turquesa clarinho
@@ -79,8 +78,6 @@ void main() {
   cor = mix(cor, fundo, smoothstep(2.5, 8.0, fundura));
   cor = mix(cor, abismo, smoothstep(7.0, 13.0, fundura));
   float alfa = mix(0.30, 0.97, smoothstep(0.0, 3.4, fundura));
-  // À noite a água não tem luz própria: a cor de baixo escurece (o que sobra é o reflexo do céu e da lua, logo abaixo).
-  cor *= mix(1.0, 0.1, clamp(uNoite, 0.0, 1.0));
 
   // O reflexo do céu: mais forte de raspão (fresnel). Reflete o mesmo céu do domo.
   vec3 R = reflect(-V, N);
@@ -92,7 +89,6 @@ void main() {
   // O caminho de brilho do sol: o ponto brilhante da luz batendo na água, com a luz larga em volta.
   vec3 H = normalize(uSolDir + V);
   float spec = pow(max(dot(N, H), 0.0), 420.0) * 3.2 + pow(max(dot(N, H), 0.0), 30.0) * 0.16;
-  spec *= smoothstep(-0.03, 0.04, uSolDir.y); // depois do pôr do sol não há caminho de luz do sol
   cor += vec3(1.0, 0.42, 0.16) * spec;
   // O caminho de luz da lua: fino, prateado e frio.
   vec3 H2 = normalize(uLuaDir + V);
@@ -106,7 +102,7 @@ void main() {
   float espuma = smoothstep(lavado + 0.16, lavado - 0.04, fundura) * (0.55 + 0.45 * smoothstep(0.25, 0.7, ruido));
   float arreb = 1.9 + 0.9 * sin(uTempo * 0.45 + p.x * 0.035);
   espuma = max(espuma, smoothstep(0.45, 0.0, abs(fundura - arreb)) * 0.45 * smoothstep(0.4, 0.7, ruido));
-  vec3 branco = vec3(0.86, 0.87, 0.84) * mix(1.0, 0.28, clamp(uNoite, 0.0, 1.0)); // a espuma também escurece à noite
+  vec3 branco = vec3(0.86, 0.87, 0.84);
   cor = mix(cor, branco, clamp(espuma, 0.0, 1.0));
   alfa = max(alfa, espuma);
 
@@ -118,16 +114,14 @@ void main() {
 export class PraiaMar {
   readonly malha: THREE.Mesh;
 
-  /** `u`: os uniformes da praia (o tempo, o detalhe e, do ciclo do dia, o sol, a lua, a névoa e a noite: o mar reflete o mesmo céu). */
-  constructor(scene: THREE.Scene, u: UniformesDaPraia) {
-    // `UniformsUtils.merge` CLONA cada uniforme: o que a praia divide (o tempo, o sol, a noite...) tem de entrar depois dele, como o mesmo objeto, senão o mar
-    // lê uma cópia que nunca muda (as ondas ficavam paradas no instante 0, e o ciclo do dia não chegaria à água).
-    const uniforms = THREE.UniformsUtils.merge([THREE.UniformsLib.fog]);
-    Object.assign(uniforms, { uTempo: u.tempo, uDetalhe: u.detalhe, uSolDir: u.solDir, uLuaDir: u.luaDir, uNevoa: u.nevoa, uNoite: u.noite });
+  constructor(scene: THREE.Scene, tempo: { value: number }, detalhe: { value: number }) {
     const material = new THREE.ShaderMaterial({
       vertexShader: VERTICE,
       fragmentShader: FRAGMENTO,
-      uniforms,
+      uniforms: THREE.UniformsUtils.merge([
+        THREE.UniformsLib.fog,
+        { uTempo: tempo, uDetalhe: detalhe, uSolDir: { value: DIRECAO_DO_SOL }, uLuaDir: { value: DIRECAO_DA_LUA }, uNevoa: { value: new THREE.Color(COR_DA_NEVOA) } },
+      ]),
       transparent: true,
       depthWrite: false,
       fog: true,

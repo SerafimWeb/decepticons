@@ -37,8 +37,7 @@ import type { RocketSystem } from '../combat/RocketSystem';
 import { BOT_SKILLS } from '../combat/BotController';
 import type { BotSystem } from '../combat/BotSystem';
 import type { Respawner } from '../combat/Respawner';
-import { ROUND_S, type Round } from '../combat/Round';
-import { diaFromSearch, progressoDaPartida } from '../environment/CicloDoDia';
+import type { Round } from '../combat/Round';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
 import type { MechBase } from '../entities/MechBase';
@@ -326,8 +325,6 @@ export class Game {
   private readonly shieldHUD: ShieldHUD;
   /** `?serafim=festa`: o LED do Prédio Serafim gira as cores. */
   private serafimParty = false;
-  /** O `?dia=` do link (0 a 1): fixa a hora do dia da praia (P161); `null` = o relógio da partida manda. */
-  private readonly diaFixo = diaFromSearch(location.search);
   /** Desenho dos drones da base Serafim (só quando a partida tem drones). */
   private droneVisuals: DroneVisuals | null = null;
   /** Os efeitos de arma (P160): clarão da boca, brilho do tiro, rastro em fita, marca na parede e a explosão com corpo. */
@@ -536,6 +533,13 @@ export class Game {
       };
       b.onLand = () => this.audio.playAndroidStep(this.nearness(b));
     }
+    // O lançamento explosivo dos bots (P160 parte 4): o som da arma, mais baixo de longe (sem clipe na tabela, fica mudo: o rastro e a explosão avisam).
+    const lancou = (b: MechBase, w: WeaponStats): void => {
+      const near = this.nearness(b);
+      if (near > 0.05) this.audio.playArma(w.id, near * 0.8);
+    };
+    this.bots.onLaunch = lancou;
+    if (this.match.allies) this.match.allies.onLaunch = lancou;
     this.roundHud = new RoundHud(this.mech, this.gameMode === 'deathmatch');
     // Botão na tela de pausa; a calibração tem camada própria e não retoma o jogo.
     new MouseCalibration(this.settings, [
@@ -1668,18 +1672,6 @@ export class Game {
     this.dominioPontos?.update(dt);
     // O mapa que anima (o mar da praia, P126): nos outros, o `Arena.update` não faz nada.
     this.match.arena.update(dt);
-    // O ciclo do dia da praia (P161): começa no pôr do sol e em 5 minutos de partida vira noite, com as luzes da cidade acendendo. Só desenho: nada na simulação.
-    if (this.match.arena.praia) {
-      const waves = this.match.waves;
-      this.match.arena.setProgressoDoDia(
-        this.diaFixo ??
-          progressoDaPartida({
-            missaoS: waves ? waves.missionElapsed : null,
-            rodada: { restanteS: this.match.round.timeLeft, duracaoS: ROUND_S, jogando: this.match.round.playing },
-            visualS: this.match.arena.relogioVisualS,
-          }),
-      );
-    }
     this.dominioHud.update(dt);
     this.online?.render(dt, now);
     this.nameplates.update(dt, this.mech);

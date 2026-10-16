@@ -99,10 +99,21 @@ export function armasDoBot(chassi: ChassisId): readonly WeaponId[] {
   return ARM_SLOTS[chassi].right.filter(armaServeAoBot);
 }
 
-/** As armas que cabem na **mão esquerda** do chassi e que o bot sabe atirar (a mesma regra da principal: energia simples). O titã não tem mão esquerda de bot. */
+/**
+ * As armas **explosivas** que o bot sabe lançar da mão esquerda (P160 parte 4): toda arma de munição (foguetes, teleguiado, granadas, lançador leve,
+ * cruzador, chuva), em salvas (`BotController.useExplosives`).
+ */
+export function armaExplosivaDoBot(id: WeaponId): boolean {
+  return weapon(id).kind === 'ammo';
+}
+
+/**
+ * As armas que cabem na **mão esquerda** do chassi e que o bot sabe usar: a energia simples (a mesma regra da principal) e, desde a P160 parte 4, as
+ * explosivas (em salvas). O titã não tem mão esquerda de bot.
+ */
 export function armasSecundariasDoBot(chassi: ChassisId): readonly WeaponId[] {
   if (ehTita(chassi)) return [];
-  return ARM_SLOTS[chassi].left.filter((id) => armaServeAoBot(id));
+  return ARM_SLOTS[chassi].left.filter((id) => armaServeAoBot(id) || armaExplosivaDoBot(id));
 }
 
 const TIERS: readonly Tier[] = [0, 1, 2];

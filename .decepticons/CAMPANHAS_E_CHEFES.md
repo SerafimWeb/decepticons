@@ -7,41 +7,6 @@
 > Base do lore: `UNIVERSO.md` § 2-A (somos os **ALIADOS**: o campo anti-imperialista, o BRICS, com o Brasil no centro; a guerra é **cognitiva**,
 > uma operação de influência para entregar o país ao **Império do Norte**). **Nomes: arquétipos fictícios** (decisão #9, reconfirmada hoje).
 
-## 0. O que o Comandante respondeu e ordenou (16/10): vale mais que o resto deste documento
-
-**As respostas do § 5.** 1) a ordem e o corte: **ok**. 2) o vilão final: **o Mito de Vidro, ou as ideias dele** (*"quero escrachar e tornar nosso jogo viral graças a contexto real ironizado"*). 3) o jogador **começa com o Vector-09; depois, quem sabe, o Marauder** (que já é avançado em relação à primeira geração de bots). 4) cooperativo: **tanto faz**; o jogador pode querer entrar online contra outros ou offline, então **a tela de entrada melhora, ou o jogo cai direto no combate por link de convite** (P167).
-
-**O sentido do jogo (P166).** Lutar contra a hegemonia imperialista e contra a **manipulação da opinião pública**: mostrar como ela funciona (desinformação sem controle, o entreguismo e o "complexo de vira-lata" como fenômeno fabricado) e que **nós lutamos para que todos tenham direitos, cresçam e se desenvolvam**: o Estado provê, o país não é uma empresa (privatização, serviço mais caro e pior sob o lucro estrangeiro), e o **Estado é laico, para que a fé possa ser exercida livremente**. O jogo ensina e desconstrói as narrativas contrárias.
-
-**A regra de redação que isso pede (de Claude, para o Comandante cortar se discordar): sátira exagera, fato é fato.** Toda **afirmação factual** que o jogo faz (as fichas do fim da missão, o rádio, os cartões) leva **uma fonte na ficha** (`fichas/`); o que não tem fonte é **sátira, dita como sátira**. Sem fonte não vira texto do jogo. Âncoras de fato que já valem: a **invasão do Capitólio dos EUA (6/1/2021)**, a **invasão das sedes dos Três Poderes em Brasília (8/1/2023)** e o papel dos **cabos submarinos** (Fortaleza é um dos pontos de chegada do Atlântico Sul, § 2). Sobre privatizações e preços de serviço: **o jogo só afirma o que tiver número e fonte** (pendência: o Comandante diz quais casos quer, e eu levanto os dados antes de escrever a ficha).
-
-### O Capítulo 1 v2: as três frentes da estação de cabos (P162, P163, P164)
-
-**Frente 1 — os cabos.** Os **três cabos da praia** têm **vida e dano** (o mesmo mecanismo dos coqueiros, P138: se quebram a tiro) e os **andróides aliados os consertam** (papel BASE). Os **vândalos** (manifestantes do Capitólio e do 8 de janeiro, ver o elenco abaixo) chegam do porto para depredá-los; cabo a zero derruba a rede (o `NucleoDaEstacao` já existe). **Os pontos de conexão:** o andróide inimigo precisa **se ligar a um ponto do cabo** para "injetar" conteúdo (propaganda, fake news sem controle, manipulação); enquanto ligado, uma barra de **INJEÇÃO** avança e os outros o protegem; **nós atacamos para desligá-lo e liberar o acesso e a programação orgânica da rede**. **O efeito de dados:** partículas sutis sobem pelo cabo com **caveiras e termos curtos** ("INJETANDO FAKE NEWS"...), legíveis a quem presta atenção, no estilo das faíscas dos tiros: um pool de billboards com teto (`fx/Billboards.ts` já tem o molde), **zero alocação por quadro**.
-
-**Frente 2 — a invasão do prédio da estação.** Os manifestantes e os humanoides inimigos tentam entrar no prédio por **duas entradas: a principal e a da rua dos fundos** (mais lados de ataque, mais pontos fracos para defender).
-
-**Frente 3 — o porto.** É onde os inimigos **chegam: saem dos contêineres** (na campanha de ondas isso fica explícito: o contêiner abre, o inimigo sai). No porto fica o **QUADRO DE LUZ DA CIDADE**: um sistema que o grupo **protege** e que **acende as luzes da cidade** (liga no `lampadas` do ciclo do dia, que já existe); se cai, a cidade apaga. **É um circuito que se repete em outras fases** com outra peça (o quadro do banco, o transformador do datacenter): a interatividade do cenário com o jogo.
-
-**Lugares só de andróide e drone (amplia a P149).** Dentro dos prédios, na **rede de esgoto** e num **elevador da plataforma**: o Mech não cabe, o andróide e o drone entram, e o cenário ganha o lado de dentro.
-
-**A hora do dia (P161, feita).** O cenário começa no **pôr do sol** e em 5 minutos vira **noite**; as luzes acendem poste por poste. O quadro de luz do porto (acima) é o que vai ligar a gameplay a esse relógio.
-
-### O capítulo do banco e o elenco (P165, P166)
-
-**Soberania e o Banco Vorcaris.** O banco (já existe na Arena, com o terminal de códigos) é **o instrumento do mal**: **dele saem os bots inimigos e ele financia os ataques**. O terminal vira o lugar do **código** do Comandante: **dinheiro e ataques** (o item "mulheres" fica fora: não vira recompensa). O **Leviatã**, o chefe avançado, **fica para discutir depois**.
-
-**A máscara da Colossus V1.** É uma **skin de chefe**: só aparece quando a Colossus V1 é o chefe (a padrão não tem), em **dado** (`skin`), **desligável**. É a caricatura do Trump (sátira de figura pública). **Risco registrado:** o § 2 deste documento tratava os nomes como arquétipos (risco jurídico e de plataforma); aqui o Comandante decidiu nomear, e **o botão de desligar a skin fica** para o caso de uma loja ou plataforma reclamar.
-
-**O elenco de NPCs: o que entra e o que não.**
-- **Entra:** o **manifestante** identificado pelo **evento real** (a invasão do Capitólio, 6/1/2021; a dos Três Poderes, 8/1/2023): camisa amarela, bandeiras, bonés, a fantasia de "patriota", em variações (o acampado, o invasor do dia 8, o invasor do Capitólio); **sem arma de fogo** (bandeira, extintor, cadeira: o vandalismo), enquanto o núcleo da ameaça continua sendo o **robô** e o **andróide**. E o **manipulador** (o influenciador, o farsante) como chefe.
-- **Não entra, por escolha de Claude (o Comandante pode contestar):** **criança com arma** (nenhuma criança vira alvo ou arma no jogo) e personagem **desenhado como evangélica** (cabelo e saia longos): o alvo da campanha é **a máquina de manipulação e os eventos políticos**; **religião e quem a pratica ficam fora do alvo**, a regra do § 2, que é a mesma do Estado laico que o Comandante defende (laico é para a fé poder ser livre). Um **farsante que usa a fé como ferramenta** (o pastor-influenciador como chefe) entra, **a conversar**.
-- **O rótulo "gado" fica fora do texto do jogo:** o visual da camisa amarela já diz.
-
-### O próximo PR da campanha
-
-O **PR 1 da § 4** (a Colossus em três fases, os três nós do cabo) agora leva: **os pontos de conexão e a injeção** (módulo puro `sim/` com teste de simulação, G14), o **dano e o reparo dos cabos**, a **segunda entrada** do prédio e o **quadro de luz** do porto, nesta ordem de corte se o PR crescer demais.
-
 ## 1. O princípio: cada chefe é um problema que um jogador sozinho não resolve
 
 Um chefe ruim é uma esponja de vida. Um chefe bom é **um problema de organização**: tem uma regra que obriga o grupo a se dividir, a se
@@ -101,7 +66,7 @@ fica **fora** do alvo: o manipulador é o **influenciador**, nunca uma fé intei
 o chefe é **uma instância pré-alocada** (G4/G5), sem `new` por quadro; efeitos de brilho do chefe passam pela `varrer-nan.mjs` (P130/P136); o custo de CPU de cada capítulo
 vai no PR. O **capítulo 1** pode sair em uma sessão; os outros pedem a decisão abaixo.
 
-## 5. O que só o Comandante decide (respondido em 16/10: ver o § 0)
+## 5. O que só o Comandante decide
 
 1. **A ordem e o corte:** os cinco capítulos, nessa ordem de **construção** (1 → 2 → 3 → 4 → 5 → 6 → 7)? Algum sai ou entra? *Recomendação:* **sim**, e o PR 1 já.
 2. **O vilão final:** **O Mito de Vidro** (a persona gerada, arquétipo do manipulador) ou outro (um **comando militar** do Império, mais sóbrio)? *Recomendação:* o Mito de Vidro:

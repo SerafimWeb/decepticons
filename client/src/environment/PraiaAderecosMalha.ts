@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TIPOS_QUE_FLUTUAM, type Adereco, type TipoDeAdereco } from './PraiaAderecos';
 import { camadasDoTipo, type Camada, type MaterialDaCamada } from './PraiaGeometrias';
-import { ligaEmDoAdereco } from './PraiaLuzesDados';
 import { NIVEL_DO_MAR } from './PraiaTerreno';
 import type { UniformesDaPraia } from './PraiaUniformes';
 import { materialDaCamada } from './PraiaVida';
@@ -45,8 +44,6 @@ function instancia(camada: Camada, a: Adereco): THREE.BufferGeometry {
   }
   // A fase do balanço, do lugar do adereço (palmas e velas não balançam juntas).
   g.setAttribute('aFase', new THREE.BufferAttribute(new Float32Array(n).fill(a.x * 0.21 + a.z * 0.13), 1));
-  // O instante em que o bulbo acende no ciclo do dia (P161); `-1` = sinalização, sempre ligada. Só as camadas de brilho leem; todas as peças de um grupo têm de ter o mesmo atributo.
-  if (camada.material === 'brilho') g.setAttribute('aLiga', new THREE.BufferAttribute(new Float32Array(n).fill(ligaEmDoAdereco(a)), 1));
   return g;
 }
 
@@ -134,7 +131,7 @@ export function montarAderecosComFaixas(scene: THREE.Scene, u: UniformesDaPraia,
     if (!g) throw new Error('PraiaAderecosMalha: as peças de um material não têm os mesmos atributos');
     for (const peca of geos) peca.dispose();
     g.computeBoundingSphere();
-    const malha = new THREE.Mesh(g, materialDaCamada(material, u.tempo, pisca, u.lampadas));
+    const malha = new THREE.Mesh(g, materialDaCamada(material, u.tempo, pisca));
     scene.add(malha);
     malhas.push(malha);
     for (const p of pedidos) {

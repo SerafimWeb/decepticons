@@ -1,25 +1,18 @@
 # ESTADO ATUAL — CYBERMECH
 
-## O CICLO DO DIA DA PRAIA: pôr do sol no começo, noite com as luzes acesas em 5 minutos; e as ordens da campanha registradas — Claude, 16/10 (branch `claude/campanha-cabos`, P161 a P168)
+## OS REBELDES LANÇAM EXPLOSIVOS: salvas de foguetes e granadas contra você — Claude, 16/10 (branch `claude/bots-explosivos`, P160 parte 4)
 
-**As ordens do Comandante (16/10):** o cenário estava claro demais para a hora do sol e com a iluminação pública toda acesa de dia (*"o melhor seria que o cenário começasse de dia e no final do tempo já estivesse de noite… aí as luzes acendem"*); e, lendo o `CAMPANHAS_E_CHEFES.md`, **a história da campanha** (os cabos como pontos de invasão, as três frentes da estação, o quadro de luz, o banco, a máscara da Colossus, o elenco, o norte educativo). E: *"vamos lançar nosso jogo hoje ainda"*.
+**A ordem (16/10):** *"bote pra torar na iteração das armas"*.
 
-**Feito (P161, no jogo):**
-1. **`environment/CicloDoDia.ts`** (puro, com teste): a curva do dia de 0 a 1 (sol de 0,085 acima do mar a −0,24; a noite fecha quando ele está bem abaixo; as lâmpadas acendem **depois** do pôr do sol), a escolha do relógio (**missão em ondas**, depois **rodada de 5 minutos**; no intervalo a noite fica fechada; Domínio, Bandeira e online usam o relógio do mapa) e o `?dia=` do link.
-2. **`Praia.setProgressoDoDia`**: muda a altura do sol e da lua (o azimute **não** muda: as sombras assadas continuam valendo), as três luzes (o sol apaga e avermelha, a hemisférica esfria, a lua sobe), a névoa (rosa → roxo → azul-noite) e a luz de ambiente. Começa **mais escura que antes** (o pedido).
-3. **O céu** ganhou o céu da noite, **estrelas** (um ramo do shader que só roda de noite), nuvens de vulto e a lua subindo; **o mar** escurece, perde o caminho de sol e a espuma apaga; **as fachadas** deixam de refletir o sol que se pôs e **acendem mais janelas** com as lâmpadas.
-4. **A iluminação pública acende poste por poste**: cada adereço público (poste, refletor, torre de vigia, varal da barraca, farol) tem **o seu instante**; o **bulbo desenhado na malha**, o **halo**, as **poças no chão**, os **feixes** dos refletores e o **farol** ligam juntos. A sinalização (aviso das antenas, boias, navios, semáforos) fica sempre ligada. De dia é só um fio de brilho.
-5. **Achado e corrigido no caminho (R17):** o mar lia uma **cópia congelada** do uniforme de tempo (`UniformsUtils.merge` clona), então as ondas ficavam paradas no instante 0. Agora leem o mesmo uniforme da praia.
+**Feito:** o Mech bot lança a arma **explosiva** da mão esquerda em **salvas** (`BotController.useExplosives`, `BotSystem.launch`): o casulo de foguetes de fábrica do Vector-09 inimigo (que nunca era usado), e o que o esquadrão der (granadas, teleguiado, lançador leve, cruzador, chuva), pelos mesmos sistemas do jogador. Dois tiros por salva, pausa de 7 s no normal (pela dificuldade e pela personalidade), mira no pé de onde o alvo vai estar, nunca de perto. O lançamento do bot toca o som da arma, mais baixo de longe. O editor de esquadrão passou a oferecer as armas explosivas na mão esquerda do bot.
 
-**Provas:** 19 testes novos (`CicloDoDia.test.ts`: a curva, o relógio, o `?dia=`, as lâmpadas públicas e a sinalização, e a praia de verdade: luzes, névoa, uniformes de céu e mar, o azimute, o bulbo e o halo no mesmo instante, valor torto); **0 NaN em 720 poses na GPU real** (`varrer-nan.mjs --dia 0 / 0.55 / 1`); a contagem de desenhos **não mudou** (51 a 52); capturas em `arte/praia-sol-d*-claude.jpg` e `arte/praia-orla-d*-claude.jpg` (d0 = pôr do sol, d55 = as luzes acendendo, d100 = noite).
+**Medido (90 s, jogador parado):** offline padrão, 50 explosões em vez de 3 e o jogador apanha menos (os aliados também lançam); Arena do servidor, +34% de dano. As fotos da partida padrão foram refeitas (`esquadraoPadrao.test.ts`, como o teste manda).
 
-**Onde o Comandante confere:** jogar a praia (`?mapa=praia`, ou o modo de ondas) e esperar; ou `?mapa=praia&dia=0`, `&dia=0.55` (as luzes acendendo) e `&dia=1` (noite).
+**Provas:** 7 testes e **8 mutações à mão, 8 pegas** (`combat/botExplosivos.test.ts`: a pausa por dificuldade e personalidade, a distância mínima (também com o rebelde colado a 9 m: a mutação que tirava a regra escapou até esse teste existir), salvas de até 2 a cada 0,3 s com a pausa entre elas e nunca de perto, o mesmo jogo dá os mesmos lançamentos, desligado não lança, o esquadrão com granadas lança granadas).
 
-**A campanha (P162 a P167): registrada, não construída.** `CAMPANHAS_E_CHEFES.md` § 0 tem agora as respostas do § 5, o Capítulo 1 em três frentes (cabos com dano e reparo, os pontos de conexão e a injeção com o efeito de dados, o prédio com duas entradas, o porto de onde os inimigos saem dos contêineres e o quadro de luz da cidade), os lugares só de andróide e drone, o capítulo do banco, a máscara da Colossus V1 como skin de chefe e o elenco. **Duas coisas que Claude não fará e o Comandante pode contestar (P166):** criança com arma e personagem desenhado como evangélica (religião fica fora do alvo, a regra do § 2); e o "mulheres" do código do banco. A regra de redação nova: **sátira exagera, fato tem fonte na ficha.**
+**Onde o Comandante confere:** jogar a Arena: os rebeldes soltam pares de foguetes (fita de fumaça e bola de fogo); um esquadrão com granadas na mão esquerda dos rebeldes (editor de esquadrão).
 
-**Falta (R13):** o julgamento do Comandante (brilho, cores e tempo do dia: são linhas de tabela em `Praia.ts`); o **relógio da rodada no online** (hoje cada jogador vê o dia pelo relógio do próprio mapa; o servidor já manda `restanteS`); o **quadro de luz do porto** (P164); a construção do capítulo 1 em fases; a tela de entrada e o link de convite (P167); login e ranking (P145).
-
-**Próxima sessão começa com:** o capítulo 1 em fases (os pontos de conexão como módulo puro com teste em `sim/`, o dano e o reparo dos cabos); e a **lista do que ainda segura o lançamento** (P168).
+**Próxima sessão começa com:** o que o Comandante disser jogando; os bots com o laser.
 
 ## O "TESTAR" DO HANGAR COM A CARA DO JOGO: cada arma testada como ela é — Claude, 16/10 (branch `claude/hangar-testar-efeitos`, P160 parte 3)
 

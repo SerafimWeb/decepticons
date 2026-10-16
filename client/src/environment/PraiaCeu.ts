@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { GLSL_RUIDO } from './PraiaGlsl';
-import type { UniformesDaPraia } from './PraiaUniformes';
 
 /**
  * O CÉU DA PRAIA DOS CABOS (P127): o fim de tarde inteiro, calculado **na GPU** — um domo que acompanha a câmera (não tem posição:
@@ -11,19 +10,22 @@ import type { UniformesDaPraia } from './PraiaUniformes';
  * é um domo de verdade: erguer a câmera mostra o azul, virar para o sol mostra o brilho, e o mar reflete o mesmo céu (o mesmo trecho
  * de GLSL, `GLSL_CEU`, é usado aqui e no `PraiaMar.ts`).
  *
- * **O ciclo do dia (P161):** o mesmo céu vira noite em 5 minutos de partida: o sol desce e some atrás do mar, o horizonte escurece do rosa ao azul-marinho, as
- * nuvens viram vulto, a lua sobe e **as estrelas** aparecem (uniformes `uSolDir`, `uLuaDir`, `uNevoa` e `uNoite`, que o `Praia.setProgressoDoDia` muda).
- *
- * **Custo:** um desenho; sem custo de CPU (uniformes). O fragmento só roda onde nada cobre o céu (o domo é desenhado por último, com profundidade no fundo);
- * 8 consultas de ruído por pixel de céu — folgado para uma GPU integrada a 720p (G12). As estrelas só rodam com a noite fechando (um ramo do shader).
+ * **Custo:** um desenho; sem custo de CPU (um uniforme de tempo). O fragmento só roda onde nada cobre o céu (o domo é desenhado por
+ * último, com profundidade no fundo); 8 consultas de ruído por pixel de céu — folgado para uma GPU integrada a 720p (G12).
  */
 
 /**
- * Para onde o sol está (um vetor unitário): sobre o mar (z negativo), um pouco a oeste (P137: "o sol se pondo, vermelho, no horizonte, do lado esquerdo da
- * praia"). Desde o ciclo do dia (P161) o que vale é o **azimute** daqui: a altura do disco sobe e desce ao longo da partida (`CicloDoDia.ts`, os uniformes da
- * praia). A conta das sombras assadas lê só o x e o z, então elas seguem valendo a partida inteira.
+ * Para onde o sol está (um vetor unitário): **tocando o horizonte**, sobre o mar (z negativo), um pouco a oeste (P137: "o sol se pondo, vermelho,
+ * no horizonte, do lado esquerdo da praia"). A conta das sombras assadas lê só o x e o z (a razão entre eles não mudou), então elas ficam como estavam.
  */
 export const DIRECAO_DO_SOL = new THREE.Vector3(-0.46, 0.03, -0.865).normalize();
+
+/**
+ * De onde vem a **luz** do sol (a que clareia as faces e sombreia): a mesma direção em planta, mas mais alta que o disco. Com a luz também rente
+ * ao horizonte, as faces de cima ficariam sem sol direto e o mapa viraria uma silhueta; assim as faces voltadas para o mar ficam vermelhas e o
+ * resto cai na luz do céu (a luminosidade geral desce, como o Comandante pediu, sem apagar).
+ */
+export const DIRECAO_DA_LUZ_DO_SOL = new THREE.Vector3(-0.46, 0.13, -0.865).normalize();
 
 /** Para onde a lua cheia nasce: do outro lado do mar (leste), um pouco mais alta que o sol, "alinhada" com ele no horizonte (P137). */
 export const DIRECAO_DA_LUA = new THREE.Vector3(0.5, 0.1, -0.86).normalize();
@@ -40,10 +42,8 @@ export const GLSL_CEU = /* glsl */ `
 uniform vec3 uSolDir;
 uniform vec3 uLuaDir;
 uniform vec3 uNevoa;
-uniform float uNoite;
 vec3 srgb(vec3 c) { return pow(max(c, vec3(0.0)), vec3(2.2)); }
-// O céu do pôr do sol (o do começo da partida). \`uNevoa\` já é a cor do horizonte do momento.
-vec3 ceuDoDia(vec3 d) {
+vec3 ceuCor(vec3 d) {
   float t = clamp(d.y, 0.0, 1.0);
   // De que lado do céu: 0 no do sol (quente), 1 no da lua (frio), pelo azimute.
   vec2 h = d.xz / max(length(d.xz), 0.001);
@@ -59,21 +59,6 @@ vec3 ceuDoDia(vec3 d) {
   float cl = max(dot(d, uLuaDir), 0.0);
   c += vec3(0.45, 0.58, 1.0) * pow(max(cl, 0.0), 6.0) * 0.1 + vec3(0.6, 0.74, 1.0) * pow(max(cl, 0.0), 70.0) * 0.2;
   return c;
-}
-// O céu da noite: o horizonte (a névoa já escura) sobe a um azul-marinho; o que sobra do sol é um resto de brasa do lado dele, que apaga primeiro.
-vec3 ceuDaNoite(vec3 d) {
-  float t = clamp(d.y, 0.0, 1.0);
-  vec3 c = mix(uNevoa, srgb(vec3(0.02, 0.035, 0.1)), smoothstep(0.0, 0.55, t));
-  float cs = max(dot(d, uSolDir), 0.0);
-  float brasa = smoothstep(0.0, 0.5, uNoite) * (1.0 - smoothstep(0.5, 1.0, uNoite)) * (1.0 - t);
-  c += vec3(0.5, 0.16, 0.07) * pow(max(cs, 0.0), 3.0) * brasa;
-  float cl = max(dot(d, uLuaDir), 0.0);
-  c += vec3(0.4, 0.52, 0.95) * pow(max(cl, 0.0), 5.0) * 0.07 * smoothstep(0.3, 1.0, uNoite);
-  return c;
-}
-// A cor do céu numa direção: do pôr do sol à noite, pelo \`uNoite\` (0 a 1).
-vec3 ceuCor(vec3 d) {
-  return mix(ceuDoDia(d), ceuDaNoite(d), clamp(uNoite, 0.0, 1.0));
 }
 `;
 
@@ -96,19 +81,8 @@ void main() {
   vec3 d = normalize(vDir);
   vec3 c = ceuCor(d);
   float cs = dot(d, uSolDir);
-  // O disco do sol, vermelho-alaranjado: acima de 1 para acender no bloom. Só acima do horizonte (depois do pôr do sol ele está debaixo d'água).
-  c += vec3(3.2, 1.0, 0.38) * smoothstep(0.99935, 0.99965, cs) * smoothstep(-0.006, 0.004, d.y);
-  // As estrelas (P161): só com a noite fechando e acima da faixa do horizonte. Uma grade de células na esfera; ~0,45% delas acende, cada uma um ponto de
-  // 2 px que cintila. Antes disso o ramo nem roda (o céu do dia não paga nada).
-  float estrelas = smoothstep(0.3, 0.8, uNoite) * smoothstep(0.03, 0.3, d.y);
-  if (estrelas > 0.0) {
-    vec3 q = d * 180.0;
-    vec3 cel = floor(q);
-    float r = fract(sin(dot(cel, vec3(127.1, 311.7, 74.7))) * 43758.5453);
-    float ponto = 1.0 - smoothstep(0.0, 0.32, length(fract(q) - 0.5));
-    float brilho = step(0.9955, r) * ponto * (0.5 + 0.9 * fract(r * 91.7)) * (0.8 + 0.2 * sin(uTempo * 2.5 + r * 60.0));
-    c += vec3(0.85, 0.92, 1.1) * brilho * estrelas;
-  }
+  // O disco do sol, vermelho-alaranjado: acima de 1 para acender no bloom.
+  c += vec3(3.2, 1.0, 0.38) * smoothstep(0.99935, 0.99965, cs);
   // A lua cheia, branco-azulada, nascendo do outro lado: o disco (2,2°, com os "mares" mais escuros) e só o lado voltado para ela.
   float cm = dot(d, uLuaDir);
   if (cm > 0.9985) {
@@ -132,9 +106,7 @@ void main() {
   float lit = clamp((n - n2) * 5.0 + 0.45 + 0.4 * max(cs, 0.0), 0.0, 1.0);
   vec3 sombra = srgb(vec3(0.26, 0.2, 0.42));
   vec3 acesa = srgb(vec3(1.0, 0.46, 0.3)) * (1.0 + 0.6 * pow(max(cs, 0.0), 3.0));
-  // De noite a nuvem é só um vulto azul, um pouco mais clara onde a lua bate.
-  vec3 nuvem = mix(mix(sombra, acesa, lit), srgb(vec3(0.09, 0.11, 0.22)) * (0.5 + 0.9 * max(dot(d, uLuaDir), 0.0)), clamp(uNoite, 0.0, 1.0));
-  c = mix(c, nuvem, dens * mask * 0.92);
+  c = mix(c, mix(sombra, acesa, lit), dens * mask * 0.92);
   }
   gl_FragColor = vec4(c, 1.0);
 }
@@ -143,18 +115,17 @@ void main() {
 export class PraiaCeu {
   readonly domo: THREE.Mesh;
 
-  /** `u`: os uniformes da praia (o tempo, o detalhe e, do ciclo do dia, o sol, a lua, a névoa e a noite: o céu lê todos, e o ciclo os muda). */
-  constructor(scene: THREE.Scene, u: UniformesDaPraia) {
+  /** `tempo`: o uniforme de tempo da praia (as nuvens derivam com ele). */
+  constructor(scene: THREE.Scene, tempo: { value: number }, detalhe: { value: number }) {
     const material = new THREE.ShaderMaterial({
       vertexShader: VERTICE,
       fragmentShader: FRAGMENTO,
       uniforms: {
-        uTempo: u.tempo,
-        uDetalhe: u.detalhe,
-        uSolDir: u.solDir,
-        uLuaDir: u.luaDir,
-        uNevoa: u.nevoa,
-        uNoite: u.noite,
+        uTempo: tempo,
+        uDetalhe: detalhe,
+        uSolDir: { value: DIRECAO_DO_SOL },
+        uLuaDir: { value: DIRECAO_DA_LUA },
+        uNevoa: { value: new THREE.Color(COR_DA_NEVOA) },
       },
       side: THREE.BackSide,
       depthWrite: false,

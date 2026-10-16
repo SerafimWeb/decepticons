@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { DIRECAO_DO_SOL } from './PraiaCeu';
 import { GLSL_NORMAL_SEGURA } from './glslSeguro';
 import { GLSL_RUIDO, GLSL_SOMBRA_DECLARA, glslSombraAplica } from './PraiaGlsl';
 import type { UniformesDaPraia } from './PraiaUniformes';
@@ -75,8 +76,6 @@ varying vec3 vCentro;
 uniform vec3 uSolDir;
 uniform float uTempo;
 uniform float uNucleo;
-uniform float uNoite;
-uniform float uLampadas;
 ${GLSL_RUIDO}
 ${GLSL_NORMAL_SEGURA}
 vec3 srgb(vec3 c) { return pow(max(c, vec3(0.0)), vec3(2.2)); }
@@ -104,10 +103,8 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
     float janela = jx * jy * lateral;
     float laje = lateral * (1.0 - smoothstep(0.0, 0.1, dentro.y)); // a laje e a sacada, uma faixa escura em cada andar
     vec2 id = cel + vec2(alongX * 41.0, 0.0);
-    // As janelas acesas (P161): de dia são poucas e fracas; conforme as lâmpadas da cidade acendem, mais janelas ligam (cada uma no seu instante).
-    float limite = mix(0.9, 0.5, uLampadas);
-    float acesa = step(limite, h21(id)) * lateral;
-    float lado = clamp(dot(nf, uSolDir) * 1.6, 0.0, 1.0) * smoothstep(-0.05, 0.05, uSolDir.y); // o quanto a fachada olha para o sol poente (sem sol, nada)
+    float acesa = step(0.74, h21(id)) * lateral;
+    float lado = clamp(dot(nf, uSolDir) * 1.6, 0.0, 1.0); // o quanto a fachada olha para o sol poente
     // A parede: o tom do prédio com um pouco de sujeira no pé e as lajes.
     float suja = 0.82 + 0.18 * smoothstep(0.0, 7.0, vMundo.y);
     vec3 parede = diffuseColor.rgb * suja * (0.94 + 0.1 * vn(vMundo.xz * 0.6 + vMundo.y * 0.4)) * (1.0 - 0.18 * laje);
@@ -122,7 +119,7 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
     diffuseColor.rgb = cor;
     // Janelas acesas (as da sombra, quentes): somem no sol.
     vec3 brilho = mix(srgb(vec3(1.0, 0.78, 0.45)), srgb(vec3(0.7, 0.9, 1.0)), step(0.9, h21(id + 9.1))) * (0.7 + 0.6 * h21(id + 5.3));
-    totalEmissiveRadiance += brilho * janela * acesa * (1.0 - 0.8 * lado) * mix(0.35, 1.7, uLampadas);
+    totalEmissiveRadiance += brilho * janela * acesa * (1.0 - 0.8 * lado) * 1.5;
   `,
   tecnico: /* glsl */ `
     // A sala dos cabos: um centro de dados — parede de ardósia com janelas em fita acesas em ciano (o neon do jogo).
@@ -137,7 +134,7 @@ const MODOS: Readonly<Record<ModoDeMaterial, string>> = {
     vec2 id = cel + vec2(alongX * 41.0, 0.0);
     // O núcleo (a integridade da rede) manda: quanto mais cai, mais janelas apagam e o que resta vira alarme vermelho.
     float acesa = step(0.16 + (1.0 - uNucleo) * 0.84, h21(id));
-    float lado = clamp(dot(nf, uSolDir) * 1.6, 0.0, 1.0) * smoothstep(-0.05, 0.05, uSolDir.y);
+    float lado = clamp(dot(nf, uSolDir) * 1.6, 0.0, 1.0);
     vec3 parede = diffuseColor.rgb * (0.9 + 0.2 * vn(vMundo.xz * 0.5 + vMundo.y * 0.4)) * (0.82 + 0.18 * smoothstep(0.0, 4.0, vMundo.y));
     vec3 vidro = mix(srgb(vec3(0.03, 0.09, 0.13)), srgb(vec3(0.55, 0.62, 0.7)), lado * 0.45);
     vec3 teto = srgb(vec3(0.34, 0.37, 0.4)) * (0.88 + 0.2 * vn(vMundo.xz * 0.6));
@@ -235,11 +232,9 @@ export function materialDoModo(modo: ModoDeMaterial, u: UniformesDaPraia, piso: 
     m.polygonOffsetUnits = -2;
   }
   m.onBeforeCompile = (shader) => {
-    shader.uniforms.uSolDir = u.solDir;
+    shader.uniforms.uSolDir = { value: DIRECAO_DO_SOL };
     shader.uniforms.uTempo = u.tempo;
     shader.uniforms.uNucleo = u.nucleo;
-    shader.uniforms.uNoite = u.noite;
-    shader.uniforms.uLampadas = u.lampadas;
     if (piso) {
       shader.uniforms.uSombra = u.sombra;
       shader.uniforms.uSombraArea = u.sombraArea;

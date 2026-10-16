@@ -47,23 +47,16 @@ const BALANCO: Readonly<Partial<Record<MaterialDaCamada, string>>> = {
   `,
 };
 
-/**
- * Cria o material de uma camada (`tipo`) para o `tempo` da praia. `pisca`: o brilho liga e desliga (aviso de antena e de boia). `lampadas` (P161): quanto da
- * iluminação pública está acesa; o bulbo de um poste só acende com ela (o atributo `aLiga` diz em que instante, `-1` = sinalização, sempre ligada).
- */
-export function materialDaCamada(tipo: MaterialDaCamada, tempo: { value: number }, pisca = false, lampadas: { value: number } = { value: 1 }): THREE.Material {
+/** Cria o material de uma camada (`tipo`) para o `tempo` da praia. `pisca`: o brilho liga e desliga (aviso de antena e de boia). */
+export function materialDaCamada(tipo: MaterialDaCamada, tempo: { value: number }, pisca = false): THREE.Material {
   if (tipo === 'brilho') {
     // O brilho passa de 1 para acender no bloom; o `pisca` liga e desliga por instância (o aviso vermelho da antena).
     const m = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(3.2, 3.2, 3.2) });
     m.onBeforeCompile = (shader) => {
       shader.uniforms.uTempo = tempo;
-      shader.uniforms.uLampadas = lampadas;
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', `#include <common>\n${DECLARA_VERTICE}\nattribute float aLiga;\nuniform float uLampadas;\nvarying float vPulso;`)
-        .replace(
-          '#include <begin_vertex>',
-          `#include <begin_vertex>\nvPulso = ${pisca ? 'step(0.0, sin(uTempo * 2.6 + faseDaInstancia() * 5.0))' : '0.88 + 0.12 * sin(uTempo * 1.7 + faseDaInstancia() * 3.0)'};\nvPulso *= aLiga < 0.0 ? 1.0 : mix(0.08, 1.0, smoothstep(aLiga - 0.04, aLiga + 0.06, uLampadas));`,
-        );
+        .replace('#include <common>', `#include <common>\n${DECLARA_VERTICE}\nvarying float vPulso;`)
+        .replace('#include <begin_vertex>', `#include <begin_vertex>\nvPulso = ${pisca ? 'step(0.0, sin(uTempo * 2.6 + faseDaInstancia() * 5.0))' : '0.88 + 0.12 * sin(uTempo * 1.7 + faseDaInstancia() * 3.0)'};`);
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\nvarying float vPulso;')
         .replace('#include <color_fragment>', `#include <color_fragment>\ndiffuseColor.rgb *= ${pisca ? '(0.12 + 0.88 * vPulso)' : 'vPulso'};`);
