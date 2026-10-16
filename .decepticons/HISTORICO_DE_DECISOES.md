@@ -1,3 +1,15 @@
+## [2026-10-15] O servidor de jogo muda para jogo.cybermech.online com os dois nomes vivos; o antigo sai por ordem do Comandante (Claude, P144)
+
+**Situação:** a zona `cybermech.online` entrou na Cloudflare e o nome `jogo.` foi criado no túnel que já servia `jogo.selvamkt.com.br`.
+
+**Decisões:**
+1. **Provar antes de trocar:** nameservers, `/status` (o mesmo servidor nos dois nomes) e o WebSocket com a origem do jogo e com origem de fora, atrás da Cloudflare. Só então o `gameServer` mudou.
+2. **Publicar com 0 jogadores e conferir no navegador de verdade** (o bundle, a CSP e uma conexão saindo da página), não só por checksum: a troca de endereço é a que quebra o online sem erro visível.
+3. **Os dois nomes ficam vivos:** o antigo só sai do túnel por ordem do Comandante (nenhum jogador depende dele; custo de manter: zero). A cópia da configuração antiga ficou ao lado do `deploy-site.json` para voltar em um comando.
+4. **O site principal continua em "DNS only":** a Cloudflare só resolve o nome e protege o `jogo.`; o site da Hostinger não ganha uma camada nova sem necessidade.
+
+**Por que registrar:** quem for mexer em DNS, túnel ou `gameServer` precisa saber que há dois nomes, qual é o definitivo e que o `gameServer` vive fora do git.
+
 ## [2026-10-15] Os sons de arma são amostras preparadas por script a partir das referências, com queda para o sintetizado (Claude, P146)
 
 **Situação:** o Comandante largou 15 efeitos de arma (gerados no ElevenLabs) e mandou extrair o melhor e adaptar. O Claude não ouve áudio.

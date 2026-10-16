@@ -1,5 +1,20 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O JOGO ONLINE JÁ FALA COM jogo.cybermech.online: a Cloudflare está no ar e o servidor saiu do domínio antigo — Claude, 15/10 (branch `claude/servidor-no-dominio`, P144)
+
+**A ação do Comandante (15/10):** pôs a zona `cybermech.online` na Cloudflare, trocou os nameservers (`chin` e `dom.ns.cloudflare.com`) e criou `jogo.cybermech.online` no túnel `cybermech` (proxied, nuvem laranja).
+
+**Conferido por mim antes de trocar (nada suposto):**
+1. **Nameservers** da Cloudflare ativos; o **site principal** segue respondendo (`hcdn`, "DNS only"): o MX/SPF e o resto não mudaram.
+2. `jogo.cybermech.online/status` devolve **o mesmo servidor** que o nome antigo (uptime idêntico): o túnel serve os dois.
+3. **WebSocket atrás da Cloudflare:** abre com a origem do jogo (266 ms), **é recusado** com origem de fora (a trava do P143 vale também por trás da Cloudflare) e abre sem origem (bots, `curl`).
+
+**Feito:** o `gameServer` do `deploy-site.json` (fora do git; cópia antiga ao lado) passou a `wss://jogo.cybermech.online`; o site foi **republicado e conferido por checksum** (a CSP `connect-src` é montada desse endereço). **No navegador de verdade, em `cybermech.online/jogar/`:** o bundle só tem o endereço novo (o antigo saiu), a CSP o libera, **um WebSocket sai da página e abre**, zero erro de página.
+
+**Falta (R13), tudo do Comandante e sem pressa:** (a) tirar `jogo.selvamkt.com.br` do túnel (hoje os dois nomes funcionam: nenhum jogador depende do antigo); (b) as proteções da Cloudflare: regra de limite em `/conta/*`, Bot Fight Mode e DNSSEC (passo a passo no `DEPLOY.md`); (c) só com a ordem dele, apagar os arquivos antigos de `selvamkt.com.br/cybermech/`. Nada de HSTS ainda (decisão dele; depois de uma semana sem problema).
+
+**Próxima sessão começa com:** o estúdio de sons (ordem de 15/10: cortar e editar os sons, escolher o som de cada arma) e a voz do "Combate!" em português.
+
 ## OS SONS DE ARMA DE REFERÊNCIA ENTRAM NO JOGO: 15 efeitos viram 6 arquivos para 7 armas, com a página para ouvir — Claude, 15/10 (branch `claude/sons-das-armas-pr`, P146)
 
 **A ordem do Comandante (15/10):** *"adicionei os novos sons em .tmp/SOUNDS, extraia o melhor deles e adapte às nossas necessidades"*.
