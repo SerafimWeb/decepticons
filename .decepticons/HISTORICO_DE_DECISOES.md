@@ -1,3 +1,19 @@
+## [2026-10-16] Os rebeldes lançam a arma explosiva da mão esquerda (Claude, P160 parte 4)
+
+**Situação:** o Vector-09 inimigo sai de fábrica com plasma e casulo de foguetes, mas o bot só atirava a arma principal: as explosões novas (P160 parte 1)
+quase nunca vinham contra o jogador. O Comandante, 16/10: *"bote pra torar na iteração das armas"*.
+
+**Decisões:**
+1. **Salvas, não fogo contínuo:** dois tiros (o lançador leve solta o carregador), pausa de 7 s no normal (a fácil espera mais, a difícil menos, a
+   personalidade agressiva encurta), carregador de verdade e nunca mais perto que 1,6 × o raio da explosão + 6 m. A salva que empaca (perdeu o alvo no
+   meio) é cancelada — achado pelo teste: ela voltava 2 s depois furando a pausa.
+2. **Mira no pé de onde o alvo vai estar**, com o erro da dificuldade em metros: a explosão pega quem fica parado, e quem se mexe desvia.
+3. **Sorteio próprio** (`blastRand`, outra semente): a salva não mexe na sequência das outras decisões do bot.
+4. **A partida padrão mudou** (a foto tick a tick do `esquadraoPadrao.test.ts` foi refeita, como o teste manda): medido em 90 s com o jogador parado,
+   no offline padrão o jogador apanha **menos** (448 contra 1 178: os aliados também lançam e limpam os rebeldes antes) e vê 50 explosões em vez de 3; na
+   Arena do servidor (3 contra 1) apanha 34% a mais. Desligar é `explosivos: false` na partida; um botão nas configurações fica para se o Comandante pedir.
+5. **O esquadrão (P91) pode dar armas explosivas aos bots** (`armaExplosivaDoBot`): granadeiros, artilheiros de cruzador, enxames.
+
 ## [2026-10-16] O "Testar" do Hangar desenha com a camada de efeitos do jogo (Claude, P160 parte 3)
 
 **Situação:** em 15/10 o Comandante disse das armas novas: *"selecionei e implementei elas mas parece que são armas antigas"*. O "Testar" do Hangar — o
