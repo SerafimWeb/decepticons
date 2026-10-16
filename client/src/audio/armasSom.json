@@ -7,6 +7,8 @@
     "siege": { "clipe": "arma_canhao", "ganho": 1, "pitch": 0.78, "maxS": 2.5 },
     "rockets": { "clipe": "arma_foguete", "ganho": 0.75, "pitch": 1, "maxS": 0.8 },
     "seeker": { "clipe": "arma_teleguiado", "ganho": 0.8, "pitch": 1, "maxS": 1.3 },
-    "barrage": { "clipe": "arma_chuva", "ganho": 0.85, "pitch": 1, "maxS": 1.3 }
+    "barrage": { "clipe": "arma_chuva", "ganho": 0.85, "pitch": 1, "maxS": 1.3 },
+    "swarm": { "clipe": "arma_foguete", "ganho": 0.5, "pitch": 1.5, "maxS": 0.3 },
+    "cruise": { "clipe": "arma_foguete", "ganho": 0.95, "pitch": 0.7, "maxS": 1.2 }
   }
 }

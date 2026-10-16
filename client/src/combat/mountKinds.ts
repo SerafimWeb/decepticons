@@ -64,7 +64,12 @@ export const WEAPON_MOUNTS: Readonly<Record<WeaponId, readonly MountKind[]>> = {
   rockets: ['arm', 'shoulder', 'back'],
   barrage: ['arm', 'shoulder', 'back'],
   sonic: ['shoulder'],
-  seeker: ['shoulder', 'back'],
+  // O guiado também cabe no braço (P152): é o Ataque 2 dos robôs pequenos, que não têm ombros; o encaixe de ombro e de costas segue sendo o dele no Marauder.
+  seeker: ['arm', 'shoulder', 'back'],
+  // Os mísseis novos (P152) são lançadores como os foguetes: braço, ombro e costas. O laser é arma de mão (feixe).
+  swarm: ['arm', 'shoulder', 'back'],
+  cruise: ['arm', 'shoulder', 'back'],
+  laser: ['arm'],
 };
 
 /** A arma cabe num encaixe deste tipo? */

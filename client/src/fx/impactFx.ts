@@ -72,6 +72,13 @@ const CANHAO: readonly BurstOptions[] = [
   { count: 1, color: FLASH, speed: 0, life: 0.14, size: 6, expansion: 2.5, gravity: 0 },
 ];
 
+/** O laser queima um ponto: fagulhas finas e quentes que saem rente à superfície e um brilho curto (8 pulsos por segundo: poucas partículas por pulso). */
+const LASER_HOT = c(2.4, 1.3, 1.0);
+const LASER_IMPACTO: readonly BurstOptions[] = [
+  { count: 4, color: LASER_HOT, speed: 14, life: 0.2, size: 1.6, spread: 1.1, gravity: 8, shape: SHAPE.streak },
+  { count: 1, color: GLOW.core, speed: 0, life: 0.1, size: 2.2, expansion: 1.4, gravity: 0 },
+];
+
 export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
   plasma: PLASMA,
   blaster: PLASMA,
@@ -88,9 +95,12 @@ export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
   sonic: [],
   rockets: [],
   seeker: [],
+  swarm: [],
+  cruise: [],
   barrage: [],
   chainsaw: [],
   flamer: [],
+  laser: LASER_IMPACTO,
 };
 
 /**

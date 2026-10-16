@@ -36,7 +36,7 @@ describe('Hangar: contrato da montagem', () => {
     expect(validateLoadout({ ...FACTORY_LOADOUT, v: 2 })).toMatchObject({ ok: false, error: 'formato' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, chassis: 'ferret' })).toMatchObject({ ok: false, error: 'chassi' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, chassis: '__proto__' })).toMatchObject({ ok: false, error: 'chassi' });
-    expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'laser', tier: 0 } })).toMatchObject({ ok: false, error: 'arma' });
+    expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'raiox', tier: 0 } })).toMatchObject({ ok: false, error: 'arma' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'plasma', tier: 3 } })).toMatchObject({ ok: false, error: 'nível' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'plasma', tier: '1' } })).toMatchObject({ ok: false, error: 'nível' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: null })).toMatchObject({ ok: false, error: 'formato' });
@@ -45,8 +45,8 @@ describe('Hangar: contrato da montagem', () => {
   it('cada braço oferece tudo o que o contrato permite (P120), sem as regras de disparo', () => {
     // O direito é o gatilho principal (energia, munição e a chama): sem corte nem chuva. O esquerdo, nos chassis comuns, é o
     // secundário: sem a chama nem o giro do cano da rotatória.
-    expect(armOptions('right')).toEqual(['rotary', 'flamer', 'cannon', 'autocannon', 'arc', 'cryo', 'railgun', 'emp', 'plasma', 'rockets', 'blaster', 'shotgun']);
-    expect(armOptions('left')).toEqual(['cannon', 'autocannon', 'arc', 'cryo', 'railgun', 'emp', 'plasma', 'rockets', 'blaster', 'shotgun', 'barrage', 'chainsaw']);
+    expect(armOptions('right')).toEqual(['rotary', 'flamer', 'seeker', 'cannon', 'autocannon', 'arc', 'cryo', 'railgun', 'emp', 'plasma', 'rockets', 'blaster', 'shotgun', 'swarm', 'cruise', 'laser']);
+    expect(armOptions('left')).toEqual(['seeker', 'cannon', 'autocannon', 'arc', 'cryo', 'railgun', 'emp', 'plasma', 'rockets', 'blaster', 'shotgun', 'barrage', 'chainsaw', 'swarm', 'cruise', 'laser']);
     // O foguete (munição) agora é possível na mão direita: o gatilho principal sabe lançá-lo, como já sabia na Onça.
     expect(validateLoadout({ ...FACTORY_LOADOUT, right: { id: 'rockets', tier: 0 } })).toMatchObject({ ok: true });
     expect(validateLoadout({ ...FACTORY_LOADOUT, left: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: true });
@@ -70,8 +70,8 @@ describe('Hangar: contrato da montagem', () => {
     const android = factorySpec('android');
     expect(android).toEqual({ v: 1, chassis: 'android', right: { id: 'blaster', tier: 0 }, left: { id: 'chainsaw', tier: 0 } });
     expect(validateLoadout(android)).toMatchObject({ ok: true, mass: 2 });
-    expect(armOptions('right', 'android')).toEqual(['arc', 'emp', 'blaster', 'shotgun']);
-    expect(armOptions('left', 'android')).toEqual(['arc', 'emp', 'blaster', 'shotgun', 'chainsaw']);
+    expect(armOptions('right', 'android')).toEqual(['arc', 'emp', 'blaster', 'shotgun', 'swarm']);
+    expect(armOptions('left', 'android')).toEqual(['arc', 'emp', 'blaster', 'shotgun', 'chainsaw', 'swarm']);
     // Arma MÉDIA de Mech não vai no andróide (é grande demais para ele); a motosserra agora é possível no secundário do Mech (P120).
     expect(validateLoadout({ ...android, right: { id: 'plasma', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     expect(validateLoadout({ ...FACTORY_LOADOUT, left: { id: 'chainsaw', tier: 0 } })).toMatchObject({ ok: true });
@@ -233,9 +233,9 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   });
 
   it('as mãos aceitam tudo o que o principal dispara (agora com o foguete, P120); blaster no ombro é recusado; plasma duplo só sem os ombros', () => {
-    expect(armOptions('right', 'marauder')).toEqual(['rotary', 'flamer', 'cannon', 'autocannon', 'arc', 'cryo', 'railgun', 'emp', 'plasma', 'rockets', 'blaster', 'shotgun']);
+    expect(armOptions('right', 'marauder')).toEqual(['rotary', 'flamer', 'seeker', 'cannon', 'autocannon', 'arc', 'cryo', 'railgun', 'emp', 'plasma', 'rockets', 'blaster', 'shotgun', 'swarm', 'cruise', 'laser']);
     expect(armOptions('left', 'marauder')).toEqual(armOptions('right', 'marauder'));
-    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic', 'seeker']);
+    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise']);
     expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 }, shoulders: null })).toMatchObject({ ok: true });
     expect(validateLoadout({ ...factory, shoulders: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     const twoPlasma = { ...factory, right: { id: 'plasma', tier: 0 }, left: { id: 'plasma', tier: 0 } } as LoadoutSpec;
@@ -273,7 +273,7 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   it('equilíbrio: nenhuma das montagens válidas do Marauder derruba o torso de um Mech em menos de 2,5 s (a meta dos dois braços juntos)', () => {
     const hands: WeaponId[] = ['blaster', 'plasma'];
     let validas = 0;
-    for (const r of hands) for (const l of [...hands, null]) for (const rt of LEVELS) for (const lt of LEVELS) for (const pod of ['rockets', 'barrage', 'sonic', 'seeker'] as const) for (const s of [null, 0, 1, 2] as const) {
+    for (const r of hands) for (const l of [...hands, null]) for (const rt of LEVELS) for (const lt of LEVELS) for (const pod of ['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise'] as const) for (const s of [null, 0, 1, 2] as const) {
       const spec: LoadoutSpec = { v: 1, chassis: 'marauder', right: { id: r, tier: rt }, left: l ? { id: l, tier: lt } : null, shoulders: s === null ? null : { id: pod, tier: s as Tier } };
       if (validateLoadout(spec).ok !== true) continue;
       validas++;

@@ -19,6 +19,9 @@ export const FIRE_KICK: Readonly<Record<WeaponId, number>> = {
   shotgun: 0.24,
   rockets: 0.2,
   seeker: 0.2,
+  swarm: 0.015, // um míssil a cada 0,07 s: o tremor soma numa trepidação leve durante a salva, sem coice por míssil
+  cruise: 0.42, // um só a cada 8 s: o solavanco de um lançamento grande, perto do canhão pesado
+  laser: 0.012, // ~8 pulsos por segundo: um zumbido fino e constante
   barrage: 0.28,
   railgun: 0.4,
   cannon: 0.46, // um tiro a cada 2,6 s: o maior solavanco do arsenal (o MK III chega a 0,6, o teto da câmera)

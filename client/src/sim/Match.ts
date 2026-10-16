@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { BarrageSystem } from '../combat/BarrageSystem';
 import { BotSystem, type BotKit, type BotSystemOptions } from '../combat/BotSystem';
 import { CombatSystem, type MechHitEvent } from '../combat/CombatSystem';
+import { CruiseSystem } from '../combat/CruiseSystem';
 import { CrushRule } from '../combat/crush';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
 import { RocketSystem } from '../combat/RocketSystem';
@@ -14,7 +15,7 @@ import { hitDamage, rangeFactor, type Flame, type WeaponStats } from '../combat/
 import type { TaticaId } from '../combat/taticas';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
 import { ZoneSystem } from '../combat/Zone';
-import { PALETTE } from '../core/palette';
+import { GLOW, PALETTE } from '../core/palette';
 import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
@@ -25,6 +26,8 @@ import { danoDeAfogamento, fatorDeVelocidade, FUNDURA_MOLHADA, fundoParaAfogar, 
 import { DebrisSystem } from '../environment/DebrisSystem';
 import { Destructibles } from '../environment/Destructibles';
 import type { ParticleSystem } from '../fx/ParticleSystem';
+import { BeamVisuals } from '../fx/BeamVisuals';
+import { IMPACT_FX } from '../fx/impactFx';
 import { drawWave } from '../fx/WaveVisuals';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
@@ -136,6 +139,8 @@ export interface MatchOptions {
  * desenha por cima (`core/Game.ts`); o servidor do multiplayer vai rodar esta mesma classe, sem
  * WebGL nem DOM (`MULTIPLAYER.md`, etapa M1). Quem quiser mostrar ou tocar algo ouve os eventos.
  */
+const _beamEnd = new THREE.Vector3();
+const _hitNormal = new THREE.Vector3();
 const _flameAt = new THREE.Vector3();
 const _flameTo = new THREE.Vector3();
 /** O "acerto" que o cone entrega ao CombatSystem: um objeto só, reescrito a cada alvo (nada alocado por pulso). */
@@ -157,6 +162,10 @@ export class Match {
   readonly rockets: RocketSystem;
   /** Chuva de mísseis (armas com `barrage`): sobe, e as bombas caem em volta da mira. */
   readonly barrage: BarrageSystem;
+  /** Míssil cruzador (armas com `cruise`): sobe em arco e mergulha no ponto da mira. */
+  readonly cruise: CruiseSystem;
+  /** Os feixes do raio laser (só desenho; a regra do pulso é `beamPulse`). */
+  readonly beams: BeamVisuals;
   readonly combat: CombatSystem;
   /** As partículas da partida (vazias no servidor): a onda sônica se desenha por aqui. */
   private readonly fx: ParticleSystem;
@@ -215,8 +224,10 @@ export class Match {
    * 8 s por time). `allied`: foi um aliado do jogador. Só tela; a regra já aconteceu dentro do `BotSystem`.
    */
   onRadio?: (from: string, target: MechBase, allied: boolean) => void;
-  /** Foguete explodiu em `at` (o dano já foi aplicado): fogo, fumaça, tremor, som. */
-  onExplosion?: (at: THREE.Vector3) => void;
+  /** Foguete explodiu em `at` (o dano já foi aplicado): fogo, fumaça, tremor, som. `w` é a arma que explodiu (o tamanho do estouro vem do raio dela). */
+  onExplosion?: (at: THREE.Vector3, w: WeaponStats) => void;
+  /** Saiu um pulso do raio laser (o servidor o transforma em evento de tiro para os outros jogadores desenharem). */
+  onBeam?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
   /** Barricada quebrou (o servidor manda `PROP_BROKEN` com o `id`; o cliente aplica a mesma no visual). */
   onPropBroken?: (id: number, at: THREE.Vector3) => void;
   /** Um alvo externo (um coqueiro, um guarda-sol: P138) caiu em `at`; `peso` é o tamanho do abalo (uma barricada vale 1). Só offline. */
@@ -282,6 +293,8 @@ export class Match {
     this.projectiles = new ProjectileSystem(o.scene, o.physics, o.particles, PROJETEIS_BASE + PROJETEIS_POR_MECH * Math.max(0, atiradores - MECHS_DO_JOGO_BASE));
     this.rockets = new RocketSystem(o.scene, o.physics, o.particles);
     this.barrage = new BarrageSystem(o.scene, o.physics);
+    this.cruise = new CruiseSystem(o.scene, o.physics, o.particles);
+    this.beams = new BeamVisuals(o.scene);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.combat.damageEnabled = o.damage !== false;
     this.combat.sameSide = (a, b) => this.sameSide(a, b);
@@ -411,7 +424,7 @@ export class Match {
     const explode = (at: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats): void => {
       this.combat.explode(at, dir, owner, w);
       this.drones?.explosion(at, w);
-      this.onExplosion?.(at);
+      this.onExplosion?.(at, w);
     };
     // Drones (06/10): só onde os aliados existem; o kamikaze explode pela mesma regra dos foguetes.
     this.drones =
@@ -428,6 +441,7 @@ export class Match {
     this.rockets.onExplode = explode;
     this.rockets.acquire = (origin, dir, owner, w) => this.seekTarget(origin, dir, owner, w);
     this.barrage.onExplode = explode;
+    this.cruise.onExplode = explode;
     this.combat.onMechHit = (e) => {
       if (this.players.includes(e.mech)) this.allies?.defend(e.mech, e.shooter);
       if (this.allies?.mechs.includes(e.mech)) this.allies.onDamaged(e.mech, e.shooter);
@@ -445,6 +459,8 @@ export class Match {
         this.projectiles.clear();
         this.rockets.clear();
         this.barrage.clear();
+        this.cruise.clear();
+        this.beams.clear();
       }
       if (this.waves && this.players.includes(dead) && this.players.every((player) => !player.alive)) this.waves.fail();
       this.onMechKilled?.(dead, at, killer);
@@ -604,6 +620,53 @@ export class Match {
     return best;
   }
 
+  /**
+   * Um pulso do raio laser (`Armament` o pede a cada `fireInterval` com o gatilho apertado): **acerta na hora o primeiro que o feixe encontra** (parede, caixa-alvo, drone ou Mech,
+   * menos quem atirou) até o alcance da arma, com o dano da distância e as defesas pelo caminho do projétil (`projectiles.onHit`: parte, abate, escudo, calor, tudo igual a um tiro).
+   * O desenho (`BeamVisuals`) acende a linha do cano até onde bateu e solta as fagulhas do impacto. O cliente online (dano desligado) só desenha. Regra da partida (G14): o mesmo
+   * código offline e no servidor; um raio por pulso e nada alocado (G4).
+   */
+  beamPulse(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
+    const b = w.beam;
+    if (!b) return;
+    this.onBeam?.(origin, dir, attacker.collider, w);
+    const hit = this.physics.raycast(origin, dir, w.maxRange, attacker.collider, true);
+    const dist = hit ? hit.distance : w.maxRange;
+    _beamEnd.copy(origin).addScaledVector(dir, dist);
+    this.beams.spawn(origin, _beamEnd, !this.players.includes(attacker), b.glow);
+    this.muzzleSpark(origin, dir, w, !this.players.includes(attacker));
+    if (!hit) return;
+    // O resultado do raycast é reaproveitado: copia o ponto e a normal antes de o acerto disparar outro raio.
+    _hitNormal.copy(hit.normal);
+    _beamEnd.copy(hit.point).addScaledVector(_hitNormal, 0.05);
+    for (const o of IMPACT_FX[w.id]) this.fx.burst(_beamEnd, _hitNormal, o);
+    if (!this.combat.damageEnabled) return;
+    this.projectiles.onHit?.(hit, dir, hitDamage(w, dist), attacker.collider, w, dist);
+  }
+
+  /**
+   * Só o desenho de um pulso de laser de outro jogador (o evento de tiro traz a direção, não onde bateu): acha onde o feixe acaba, como o servidor fez, e o acende. Sem regra
+   * nem dano (são do servidor).
+   */
+  drawBeam(origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats, hostile: boolean): void {
+    const b = w.beam;
+    if (!b) return;
+    const hit = this.physics.raycast(origin, dir, w.maxRange, owner, true);
+    const dist = hit ? hit.distance : w.maxRange;
+    _beamEnd.copy(origin).addScaledVector(dir, dist);
+    this.beams.spawn(origin, _beamEnd, hostile, b.glow);
+    this.muzzleSpark(origin, dir, w, hostile);
+    if (!hit) return;
+    _hitNormal.copy(hit.normal);
+    _beamEnd.copy(hit.point).addScaledVector(_hitNormal, 0.05);
+    for (const o of IMPACT_FX[w.id]) this.fx.burst(_beamEnd, _hitNormal, o);
+  }
+
+  /** O clarão pequeno na boca do laser: duas fagulhas na cor do feixe (oito pulsos por segundo: poucas partículas por pulso). */
+  private muzzleSpark(origin: THREE.Vector3, dir: THREE.Vector3, _w: WeaponStats, hostile: boolean): void {
+    this.fx.burst(origin, dir, { count: 2, color: hostile ? GLOW.hostileLaser : GLOW.friendlyLaser, speed: 6, life: 0.1, size: 1.8, spread: 0.3, gravity: 0 });
+  }
+
   /** Só o desenho da onda (o outro jogador a vê pelo evento de tiro, sem regra). */
   drawWave(origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats): void {
     drawWave(this.fx, origin, dir, w);
@@ -714,6 +777,8 @@ export class Match {
       this.projectiles.fixedUpdate(dt);
       this.rockets.fixedUpdate(dt);
       this.barrage.fixedUpdate(dt);
+      this.cruise.fixedUpdate(dt);
+      this.beams.update(dt);
       this.physics.step();
       this.ctf?.fixedUpdate(dt);
       this.dominio?.fixedUpdate(dt);
@@ -843,6 +908,8 @@ export class Match {
     this.projectiles.clear();
     this.rockets.clear();
     this.barrage.clear();
+    this.cruise.clear();
+    this.beams.clear();
     this.debris.clear();
     this.destructibles.restoreAll();
     this.round.resetScores();
@@ -876,6 +943,8 @@ export class Match {
     this.projectiles.clear();
     this.rockets.clear();
     this.barrage.clear();
+    this.cruise.clear();
+    this.beams.clear();
     this.debris.clear();
     this.destructibles.restoreAll();
     this.onRoundStart?.();

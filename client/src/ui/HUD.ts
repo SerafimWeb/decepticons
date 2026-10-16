@@ -3,6 +3,7 @@ import type { DamageResult } from '../combat/damage';
 import type { MechBase, MechPart } from '../entities/MechBase';
 import { KillBanner } from './KillBanner';
 import { NetHud } from './NetHud';
+import { pipFills } from './rocketPips';
 import { RoundOverlay } from './RoundOverlay';
 import { Vitals } from './Vitals';
 import { WeaponReticle, reticleWeapon } from './WeaponReticle';
@@ -248,16 +249,19 @@ export class HUD {
     if (nome) nome.textContent = text;
   }
 
-  setRockets(ammo: number, reload: number, available: boolean): void {
+  /**
+   * Os quatro marcadores do carregador do Ataque 2. `magazine` é o tamanho do carregador: acima de quatro (o lançador de mísseis leve, com 8, 16 ou 32), os marcadores mostram a
+   * **fração cheia** (cada um vale um quarto do lançador) e esvaziam durante a salva; até quatro, um marcador por tiro, e o próximo enche com a recarga.
+   */
+  setRockets(ammo: number, reload: number, available: boolean, magazine = 4): void {
     const r = Math.round(reload * 10) / 10;
     if (ammo === this.shownRockets && r === this.shownReload && available !== this.shownRocketsOff) return;
     this.shownRockets = ammo;
     this.shownReload = r;
     this.shownRocketsOff = !available;
     this.rockets.classList.toggle('off', !available);
-    this.rocketPips.forEach((pip, i) => {
-      pip.style.setProperty('--fill', i < ammo ? '1' : i === ammo ? String(r) : '0');
-    });
+    const fills = pipFills(ammo, r, magazine);
+    this.rocketPips.forEach((pip, i) => pip.style.setProperty('--fill', String(fills[i] ?? 0)));
   }
 
   private readonly heatBox = document.getElementById('heat')!;

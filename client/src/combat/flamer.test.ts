@@ -71,9 +71,9 @@ describe('lança-chamas: números e equilíbrio', () => {
     expect(calor[2]!).toBeGreaterThan(calor[0]! * 1.6);
   });
 
-  it('só quem declara tierRange/tierRate muda de alcance e de cadência com o nível (o lança-chamas e o canhão sônico, o alcance): as outras armas mantêm os do MK I', () => {
+  it('só quem declara tierRange/tierRate muda de alcance e de cadência com o nível (o lança-chamas, o canhão sônico e o míssil teleguiado, o alcance): as outras armas mantêm os do MK I', () => {
     for (const id of WEAPON_IDS) {
-      if (id === 'flamer' || id === 'sonic') continue;
+      if (id === 'flamer' || id === 'sonic' || id === 'seeker') continue;
       const a = weapon(id, 0);
       for (const t of [1, 2] as const) {
         expect(weapon(id, t).maxRange, id).toBe(a.maxRange);

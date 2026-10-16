@@ -1,3 +1,21 @@
+## [2026-10-15] Mísseis leves, cruzador e laser: o 8/16/32 é o nível do lançador, o laser é feixe por pulsos e o cruzador é uma parábola (Claude, P152)
+
+**Situação:** o Comandante pediu mais estilos de arma e de munição: um lançador de mísseis leve que solte 8, 16 ou 32 em sequência, um raio laser e um míssil cruzador de longo alcance, um guiado de médio alcance, e calibrar alcance, potência e recarga.
+
+**Decisões:**
+1. **"8, 16 ou 32" é o nível (MK I, II, III):** o lançador cresce de tamanho (`tierMagazine`, ×2 por nível) em vez de o míssil crescer em dano; o dano por míssil sobe só os +20% e +40% de sempre. Alternativa descartada: o jogador escolher o tamanho da salva (seria um segundo eixo de nível no Hangar).
+2. **Um aperto esvazia o lançador, e a salva não se cancela** (`RocketLauncher.committed`): é "fogo e esqueça". Só começa com os tubos cheios; os tubos voltam um a um depois do último míssil. Sem isso o MK III seria um foguete com carregador grande, não um lançador.
+3. **O desvio da nuvem sai do número do míssil** (`spreadAt`, girassol de ângulo áureo) e é aplicado **antes** de lançar: o evento de tiro já leva a direção com o desvio, e o outro jogador desenha igual. Nada de sorteio (G1/G2).
+4. **A bancada conta só uma fração dos mísseis** (`Salvo.onTarget`, 55%), como a chuva faz com as bombas (`Barrage.onTarget`): contar todos faria dois lançadores MK III derrubarem um torso e quebraria a regra dos 4,5 s do Comandante (P111). Por isso o lançador sozinho rende pouco (7 a 8 de dano por segundo) e vale como pressão; Configurações → Potências ajusta sem código.
+5. **O cruzador tem 90 de dano, não 150:** com os dois ombros do Marauder, 150 × 2 seriam um torso num aperto, a 400 m; 90 (126 no MK III) repete o golpe do canhão pesado e mantém "dois acertos nunca bastam". Pesa 5 t, como a chuva, senão o par de ombros não caberia no Marauder (capacidade 11 t). O alcance é o preço: 6 s de recarga e 15 de dano por segundo.
+6. **O laser é feixe instantâneo em pulsos, um evento de tiro por pulso** (7 bytes, ~54 B/s por atirador). Uma bandeira no byte `fx` (como a do lança-chamas) não coube: os 8 bits estão ocupados. O desenho fica aceso 0,16 s, mais que os 0,13 s entre pulsos, para os pulsos formarem uma linha contínua.
+7. **O míssil guiado já existia; foi recalibrado para o médio alcance** (trava de 110 m, voo de 170 m, os níveis afinam a curva e a trava com `tierGuide`) **e passou a caber no braço** (o Ataque 2 dos robôs pequenos). Reversível numa linha (`WEAPON_MOUNTS.seeker`).
+8. **Faixas de alcance** (`rangeBandOf`: corpo a corpo até 3 m, curto até 60, médio até 200, longo acima): a língua comum para falar de calibragem. Nenhuma arma de longo alcance de Mech rende mais dano por segundo que o plasma (com 10% de folga); `combat/calibragem.test.ts` fixa a faixa e a recarga cheia de cada arma, e arma nova tem de declarar as dela.
+9. **Protocolo 18:** `swarm`, `cruise` e `laser` entram no catálogo de tiros da rede, e o `siege` também: o evento do canhão de cerco saía com índice -1 e o leitor da versão 17 recusava o pacote inteiro (achado e corrigido no mesmo PR, R17).
+10. **O estouro desenhado e o som dele escalam com o raio da explosão da arma** (`fx/explosionScale.ts`): sem isso uma salva de 32 mísseis soltaria ~3.000 partículas em dois segundos. O som passa a receber a distância **normalizada**, como o contrato dele diz: o jogo passava metros, e o estouro de foguete era quase mudo (R17).
+
+**Por que registrar:** quem for ajustar um número precisa saber por que o cruzador não tem 150, por que o lançador "fraco" é de propósito, por que o laser manda um evento por pulso e que o 8/16/32 é nível, não escolha.
+
 ## [2026-10-15] O ajuste fino do som é de quem ouve: um estúdio local, com a tabela de armas virando dado (Claude, P150 e P151)
 
 **Situação:** o Comandante achou os sons ainda ruins e pediu uma interface para cortar, editar e escolher o som de cada arma; e achou o "Combate!" em português fraco ("com medo"). O Claude não ouve áudio: o ajuste de gosto só pode ser feito por quem ouve.

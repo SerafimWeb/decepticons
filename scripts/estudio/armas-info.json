@@ -119,6 +119,27 @@
       "tipo": "melee",
       "intervalo": 0.2,
       "aceita": false
+    },
+    {
+      "id": "swarm",
+      "nome": "Lançador de mísseis leve",
+      "tipo": "ammo",
+      "intervalo": 0.07,
+      "aceita": true
+    },
+    {
+      "id": "cruise",
+      "nome": "Míssil cruzador",
+      "tipo": "ammo",
+      "intervalo": 1,
+      "aceita": true
+    },
+    {
+      "id": "laser",
+      "nome": "Raio laser",
+      "tipo": "energy",
+      "intervalo": 0.13,
+      "aceita": true
     }
   ]
 }

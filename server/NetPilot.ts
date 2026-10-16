@@ -48,10 +48,12 @@ export class NetPilot implements Pilot {
       this.match.projectiles.fire(_origin, _dir, this.mech.collider, false, w);
       // M5 TODO: compensação de latência (volta cápsulas ao tempo do comando)
     },
-    rocket: (mount, w, volley) => {
-      this.aim(mount, w.barrage !== undefined);
+    rocket: (mount, w, volley, spread) => {
+      // A chuva e o cruzador precisam do ponto da mira (o centro da chuva, o ponto de mergulho); o míssil leve e os foguetes só da direção.
+      this.aim(mount, w.barrage !== undefined || w.cruise !== undefined);
       if (w.barrage) this.match.barrage.fire(_origin, _dir, _point, this.mech.collider, w, volley);
-      else this.match.rockets.fire(_origin, _dir, this.mech.collider, w);
+      else if (w.cruise) this.match.cruise.fire(_origin, _dir, _point, this.mech.collider, w);
+      else this.match.rockets.fire(_origin, applySpread(_dir, spread), this.mech.collider, w);
     },
     melee: (w) => this.match.meleeNearest(this.mech, w),
     flame: (mount, w) => {
@@ -61,6 +63,10 @@ export class NetPilot implements Pilot {
     wave: (mount, w) => {
       this.aim(mount);
       this.match.waveCone(this.mech, _origin, _dir, w);
+    },
+    beam: (mount, w) => {
+      this.aim(mount);
+      this.match.beamPulse(this.mech, _origin, _dir, w);
     },
   };
 
@@ -122,7 +128,7 @@ export class NetPilot implements Pilot {
    * mão direita (é dela que o cliente mira); a mão esquerda e os ombros ficam a metros de lado, e tiro paralelo errava o
    * alvo. Então o servidor acha onde o raio da mão direita bate (a mira, de novo) e faz cada boca apontar para lá, como
    * o jogador local faz. Um raio por tiro, nunca por tick; o chão, a parede e o outro Mech contam, o próprio Mech não.
-   * `needPoint`: a chuva de mísseis também precisa desse ponto (é o centro dela), mesmo saindo da mão direita.
+   * `needPoint`: a chuva de mísseis e o míssil cruzador também precisam desse ponto (o centro dela, o ponto de mergulho dele), mesmo saindo da mão direita.
    */
   private aim(mount: MountId, needPoint = false): void {
     const c = this.current;

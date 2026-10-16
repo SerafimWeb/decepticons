@@ -177,6 +177,50 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     b.session.dispose();
   });
 
+  /** Segura o gatilho de `a` até `ve` dizer que o outro jogador viu o tiro (a máquina cheia pode não dar nem um tick a um aperto curto de relógio real). */
+  async function espera(jogadores: Player[], ve: () => boolean, aperta: () => void, solta: () => void): Promise<boolean> {
+    aperta();
+    const t0 = performance.now();
+    let visto = false;
+    while (!visto && performance.now() - t0 < 8000) {
+      await play(jogadores, 50);
+      visto = ve();
+    }
+    solta();
+    return visto;
+  }
+
+  it('o raio laser e o lançador leve de um jogador aparecem para o outro: cada evento de tiro vira feixe ou míssil no mundo dele, só desenho (P152)', async () => {
+    const a = await player('Alfa', 'M4P', 'v1.vector09.laser-0.swarm-0', { primary: weapon('laser'), secondary: weapon('swarm') });
+    const b = await player('Bravo', 'M4P');
+    try {
+      await join([a, b], 7);
+      expect(b.match.beams.active).toBe(0);
+      expect(b.match.rockets.microActive).toBe(0);
+      // O laser (Ataque 1): o feixe do Alfa acende no mundo do Bravo.
+      expect(await espera([a, b], () => b.match.beams.active > 0, () => (a.commander.firing = true), () => (a.commander.firing = false))).toBe(true);
+      await play([a, b], 300);
+      // O lançador leve (Ataque 2): os mísseis do Alfa voam no mundo do Bravo (a salva).
+      expect(await espera([a, b], () => b.match.rockets.microActive > 0, () => (a.commander.secondaryHeld = true), () => (a.commander.secondaryHeld = false))).toBe(true);
+    } finally {
+      a.session.dispose();
+      b.session.dispose();
+    }
+  });
+
+  it('o míssil cruzador de um jogador aparece para o outro: o evento de tiro vira o arco no mundo dele, só desenho (P152)', async () => {
+    const c = await player('Carlos', 'M4Q', 'v1.vector09.plasma-0.cruise-0', { primary: weapon('plasma'), secondary: weapon('cruise') });
+    const d = await player('Dora', 'M4Q');
+    try {
+      await join([c, d], 7);
+      expect(d.match.cruise.active).toBe(0);
+      expect(await espera([c, d], () => d.match.cruise.active > 0, () => (c.commander.secondaryHeld = true), () => (c.commander.secondaryHeld = false))).toBe(true);
+    } finally {
+      c.session.dispose();
+      d.session.dispose();
+    }
+  });
+
   it('o estado do servidor (choque, gelo) chega ao próprio jogador (previsão) e aos outros, e some quando acaba', async () => {
     const a = await player('Alfa', 'M4S');
     const b = await player('Bravo', 'M4S');

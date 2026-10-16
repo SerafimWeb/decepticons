@@ -954,6 +954,30 @@ export class AudioSystem {
   }
 
   /**
+   * RAIO LASER (laser) — o zip fino de um pulso do feixe (~8 por segundo; o `PlayerController` pede de três em três): um seno que desce de 2800 a 1500 Hz em 0,07 s, com uma
+   * camada de dente de serra uma oitava abaixo. Sintetizado (sem amostra de referência ainda).
+   */
+  playLaserShot(): void {
+    const { ctx, masterGain } = this;
+    if (!ctx || !masterGain || !this.enabled) return;
+    const now = ctx.currentTime;
+    for (const [type, f0, f1, vol] of [['sine', 2800, 1500, 0.16], ['sawtooth', 1400, 750, 0.06]] as const) {
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      osc.frequency.setValueAtTime(f0, now);
+      osc.frequency.exponentialRampToValueAtTime(f1, now + 0.07);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(vol, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      osc.connect(gain);
+      gain.connect(masterGain);
+      osc.start(now);
+      osc.stop(now + 0.1);
+      osc.onended = () => gain.disconnect();
+    }
+  }
+
+  /**
    * LANÇA-CHAMAS (flamer) — laço de sopro e chama com rampa de entrada e saída.
    * Chamadas repetidas com `on = true` reusam o mesmo laço ativo.
    */

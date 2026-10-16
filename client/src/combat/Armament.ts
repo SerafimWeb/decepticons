@@ -19,14 +19,22 @@ export const AIM_RANGE = 400;
 export interface ShotSink {
   /** Saiu um projétil de energia de `mount`; `spread` é o desvio da rotatória (zero nas outras armas), a aplicar na direção da mira. */
   projectile(mount: MountId, w: WeaponStats, spread: Readonly<Spread>): void;
-  /** Saiu um foguete de `mount`; `volley` é a ordem dele na salva deste aperto do botão (0 = o primeiro). */
-  rocket(mount: MountId, w: WeaponStats, volley: number): void;
+  /**
+   * Saiu um foguete de `mount`; `volley` é a ordem dele na salva deste aperto do botão (0 = o primeiro). `spread` é o desvio do míssil do lançador leve (`Salvo`: um
+   * ponto do cone, por número de míssil; zero nas outras armas), a aplicar na direção da mira.
+   */
+  rocket(mount: MountId, w: WeaponStats, volley: number, spread: Readonly<Spread>): void;
   /** A serra cortou (corpo a corpo): quem aplica o corte é a partida. */
   melee(w: WeaponStats): void;
   /** Um pulso do lança-chamas de `mount` (a cada `fireInterval`): quem aplica o cone de dano é a partida (`Match.flameCone`). */
   flame(mount: MountId, w: WeaponStats): void;
   /** Saiu uma onda sônica de `mount` (um cone de uma vez só, com empurrão): quem aplica é a partida (`Match.waveCone`). */
   wave(mount: MountId, w: WeaponStats): void;
+  /**
+   * Saiu um pulso do raio laser de `mount` (`Beam`): acerta na hora o primeiro que o feixe encontra, e quem aplica é a partida (`Match.beamPulse`). **Opcional:** quem não sabe
+   * desenhar feixe (um teste, um bot) recebe o pulso como um projétil comum pelo `projectile`.
+   */
+  beam?(mount: MountId, w: WeaponStats): void;
 }
 
 /**
@@ -157,15 +165,18 @@ export class Armament {
           continue;
         }
         this.burning[i] = false;
-        if (!w || !this.charge[i]!.step(dt, held, timer.ready && m.canFireMount(mount), w.chargeTime, w.chargeHold)) continue;
+        // A salva do lançador leve que já começou não se cancela soltando o gatilho (`RocketLauncher.committed`): o tiro segue sendo pedido até o último míssil.
+        const pull = held || (w?.kind === 'ammo' && this.primaryLaunchers[i]!.committed);
+        if (!w || !this.charge[i]!.step(dt, pull, timer.ready && m.canFireMount(mount), w.chargeTime, w.chargeHold)) continue;
         if (button === 1 ? firedOn1 : firedOn2) {
           timer.shot(w.fireInterval / 2);
           continue;
         }
         if (w.kind === 'ammo') {
           if (!this.primaryLaunchers[i]!.tryFire()) continue;
-          sink.rocket(mount, w, i);
-        } else sink.projectile(mount, w, this.spreadFor(w, spin, this.aimLevel[i]!));
+          sink.rocket(mount, w, i, this.salvoSpread(w));
+        } else if (w.beam && sink.beam) sink.beam(mount, w);
+        else sink.projectile(mount, w, this.spreadFor(w, spin, this.aimLevel[i]!));
         m.onFireMount(mount, w);
         timer.shot(spin.interval(w));
         if (button === 1) firedOn1 = true;
@@ -183,7 +194,8 @@ export class Armament {
     else this.launcher.fixedUpdate(dt);
     this.side.fixedUpdate(dt);
     const s = l.secondary;
-    if (!s || !secondary || !m.canFireSecondary) {
+    // A salva do lançador leve que já começou segue saindo com o botão solto (`RocketLauncher.committed`).
+    if (!s || !(secondary || (s.kind === 'ammo' && this.launcher.committed)) || !m.canFireSecondary) {
       this.charge[2]!.reset();
       m.weaponCharging = this.primaryCharge > 0;
       return;
@@ -195,7 +207,7 @@ export class Armament {
       for (const mount of triggers.secondary) {
         if (mount === 'leftHand' && l.offhand !== undefined) continue; // a mão armada do Marauder já atirou no laço das mãos
         if (!m.canFireMount(mount)) continue;
-        sink.rocket(mount, s, volley++);
+        sink.rocket(mount, s, volley++, this.salvoSpread(s));
         m.onFireMount(mount, s);
       }
     } else if (this.charge[2]!.step(dt, secondary, this.side.ready, s.chargeTime, s.chargeHold)) {
@@ -208,6 +220,7 @@ export class Armament {
           if (!m.canFireMount(mount)) continue;
           // A onda sônica sai das duas bocas dos ombros ao mesmo tempo (como os foguetes); a rotatória só vai no gatilho principal (ARM_SLOTS).
           if (s.wave) sink.wave(mount, s);
+          else if (s.beam && sink.beam) sink.beam(mount, s);
           else sink.projectile(mount, s, NO_SPREAD);
           m.onFireMount(mount, s);
         }
@@ -222,6 +235,11 @@ export class Armament {
     const cone = (w.spin ? w.spin.spread * spin.level : 0) + settleSpread(aimSpreadOf(w), aimNivel);
     if (cone <= 0) return NO_SPREAD;
     return spreadAt(this.shots++, cone, this.spread);
+  }
+
+  /** O desvio do próximo míssil da salva do lançador leve (`Salvo.cone`, por número de míssil, sem sorteio); as outras armas de munição saem sem desvio. */
+  private salvoSpread(w: WeaponStats): Readonly<Spread> {
+    return w.salvo ? spreadAt(this.shots++, w.salvo.cone, this.spread) : NO_SPREAD;
   }
 
   /** Quanto a mira principal está **aberta** (0 = firme). Arma sem tempo de mira (corte, chama, rotatória): 0. */
