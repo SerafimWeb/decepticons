@@ -15,6 +15,11 @@ import * as THREE from 'three';
 export const DMG_POOL = 24;
 /** Quanto tempo o número vive na tela (s). */
 export const DMG_LIFE_S = 0.85;
+/**
+ * Acertos no mesmo alvo dentro desta janela (s) somam no mesmo número (P160): os nove balins de um disparo de escopeta viram **um** "54", não
+ * nove "6" empilhados. Curta o bastante para a rajada da rotatória (20 tiros/s, 0,05 s) continuar mostrando cada tiro.
+ */
+export const DMG_MERGE_S = 0.04;
 
 /** O texto do número: inteiro, no mínimo 1 — um acerto que passou pela defesa nunca aparece como "0". */
 export function formatDamage(applied: number): string {
@@ -33,6 +38,10 @@ const _p = new THREE.Vector3();
 export class DamageNumbers {
   private readonly slots: Slot[] = [];
   private next = 0;
+  /** O último número mostrado: de quem era o acerto e quanto já somou (para juntar os balins do mesmo disparo). */
+  private lastSlot: Slot | null = null;
+  private lastKey: object | null = null;
+  private lastTotal = 0;
 
   constructor(root: HTMLElement | null = typeof document !== 'undefined' ? document.getElementById('damage-numbers') : null) {
     if (!root) return;
@@ -49,8 +58,16 @@ export class DamageNumbers {
    * Um acerto do jogador: o número nasce no ponto do mundo (`world`) e sobe sozinho. Projeta uma vez;
    * fora da tela ou atrás da câmera, não gasta um nó.
    */
-  show(camera: THREE.Camera, world: THREE.Vector3, applied: number, crit = false): void {
+  show(camera: THREE.Camera, world: THREE.Vector3, applied: number, crit = false, key: object | null = null): void {
     if (this.slots.length === 0) return;
+    // O mesmo alvo acertado de novo dentro da janela (os balins de um disparo): soma no número que já está subindo.
+    const last = this.lastSlot;
+    if (key !== null && key === this.lastKey && last && last.live && DMG_LIFE_S - last.ttl <= DMG_MERGE_S) {
+      this.lastTotal += applied;
+      last.el.textContent = formatDamage(this.lastTotal);
+      if (crit) last.el.classList.add('crit');
+      return;
+    }
     _p.copy(world).project(camera);
     if (_p.z > 1) return; // atrás da câmera: a projeção sai espelhada
     const left = (_p.x * 0.5 + 0.5) * 100;
@@ -68,6 +85,9 @@ export class DamageNumbers {
     slot.el.className = crit ? 'dmg-number crit live' : 'dmg-number live';
     slot.ttl = DMG_LIFE_S;
     slot.live = true;
+    this.lastSlot = slot;
+    this.lastKey = key;
+    this.lastTotal = applied;
   }
 
   /** Conta a vida de quem está na tela e esconde o que venceu. Nada mais roda por quadro. */

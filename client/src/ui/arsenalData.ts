@@ -63,6 +63,7 @@ export function notasDaArma(w: WeaponStats): string[] {
   if (w.salvo) n.push(`um aperto esvazia o lançador: ${w.magazine} mísseis em sequência (${w.magazine * (w.tierMagazine ?? 1)} e ${w.magazine * (w.tierMagazine ?? 1) ** 2} nos níveis), só dispara com todos os tubos carregados`);
   if (w.cruise) n.push('míssil cruzador: sobe em arco e mergulha no ponto da mira, passa por cima do cenário baixo, não guia');
   if (w.beam) n.push('feixe instantâneo em pulsos: acerta na hora, o calor decide a duração');
+  if (w.pellets) n.push(`${w.pellets.count} balins de ${w.damage} num cone de ${fmt((w.pellets.cone * 180) / Math.PI)}° (${w.pellets.count * w.damage} por disparo de perto; de longe o cone passa da largura de um Mech)`);
   if (w.barrage) n.push(`chuva de ${w.barrage.bombs} bombas`);
   if (w.blastRadius > 0 && !w.barrage) n.push(`explode num raio de ${fmt(w.blastRadius)} m`);
   if (w.inflicts) n.push(`deixa o alvo ${ESTADO_ROTULO[w.inflicts]}`);
@@ -96,7 +97,7 @@ export function fichasDasArmas(): FichaDaArma[] {
       tipo: w.kind === 'energy' ? 'energia' : w.kind === 'ammo' ? 'munição' : 'corpo a corpo',
       dano: w.damage,
       tirosPorSegundo: Math.round((1 / w.fireInterval) * 100) / 100,
-      danoPorSegundo: simples ? Math.round((w.damage / w.fireInterval) * 10) / 10 : null,
+      danoPorSegundo: simples ? Math.round(((w.damage * (w.pellets?.count ?? 1)) / w.fireInterval) * 10) / 10 : null,
       alcanceOtimo: w.optimalRange,
       alcanceMaximo: w.maxRange,
       faixa: rangeBandOf(w),

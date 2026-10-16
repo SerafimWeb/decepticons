@@ -1,3 +1,17 @@
+## [2026-10-16] A escopeta sai em balins, de dentro do ProjectileSystem (Claude, P160 parte 2a)
+
+**Situação:** a escopeta era um projétil só de 52 que caía a 8% aos 45 m: uma "escopeta" sem chumbo. A ordem P160 pede balística e estilos de verdade.
+
+**Decisões:**
+1. **Os balins nascem no `ProjectileSystem.fire`**, não no `Armament`: os bots atiram direto pelo `ProjectileSystem` (`BotSystem`), e o desenho do tiro de
+   outro jogador também; assim o servidor, os bots e o online saem iguais com **um** evento de tiro por disparo (não nove: a rede não muda).
+2. **Desenho fixo, sem sorteio** (`spreadAt` com o número do balin, o 0 no centro): o servidor e o cliente desenham o mesmo cone (G1/G2).
+3. **A queda vem da geometria:** 9 × 6 num cone de 3,4° (cada balin cai a 25% aos 50 m). De perto o disparo bate 54 (era 52) e o tempo para derrubar um
+   torso não mudou (4,0 s MK I, 3,2 s MK II e III); entre 15 e 30 m a escopeta ficou mais forte que antes (32 aos 30 m, eram ~24) — proposta, o
+   Comandante ajusta em Potências.
+4. **Um disparo, um retorno:** os balins que acertam o mesmo alvo dentro de 0,04 s somam num número de dano (`DamageNumbers`, chave = o alvo) e o som de
+   acerto toca uma vez por tick.
+
 ## [2026-10-16] A cara dos tiros: explosão com corpo, rastro em fita, clarão e marca por família de arma (Claude, P160)
 
 **Situação:** o Comandante (16/10, P160) compara o jogo com jogos 3D feitos em uma semana e os acha "mil vezes melhores". O arsenal já tem 20 armas; o

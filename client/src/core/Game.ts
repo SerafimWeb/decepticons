@@ -326,6 +326,8 @@ export class Game {
   private droneVisuals: DroneVisuals | null = null;
   /** Os efeitos de arma (P160): clarão da boca, brilho do tiro, rastro em fita, marca na parede e a explosão com corpo. */
   private weaponFx!: WeaponFx;
+  /** O tick do último som de acerto (um por tick: os balins da escopeta acertam juntos). */
+  private hitSoundTick = -1;
   private serafimCheck = 0;
   private readonly squadHUD: SquadHUD;
   private readonly shieldVisuals = new ShieldVisuals(this.scene);
@@ -1173,13 +1175,16 @@ export class Game {
         this.hud.showHit(e.result);
         this.dailyChallenges.trackDamage(e.result.applied);
         this.playTelemetry.hit(e.result.applied);
-        // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar)
-        this.audio.playHit();
-        // Número de dano flutuante (frente 2): nasce no corpo do alvo, sobe e some.
+        // Confirmação auditiva de acerto (ouvida pelo jogador ao acertar): uma por tick, para os nove balins da escopeta (P160) não tocarem nove vezes juntos.
+        if (this.hitSoundTick !== this.bankTick) {
+          this.hitSoundTick = this.bankTick;
+          this.audio.playHit();
+        }
+        // Número de dano flutuante (frente 2): nasce no corpo do alvo, sobe e some; os balins do mesmo disparo somam num número só.
         if (e.mech !== mech) {
           _dmgPos.copy(e.mech.position);
           _dmgPos.y += e.mech.stats.height * 0.7;
-          this.damageNumbers.show(this.camera, _dmgPos, e.result.applied, e.result.partDestroyed);
+          this.damageNumbers.show(this.camera, _dmgPos, e.result.applied, e.result.partDestroyed, e.mech);
         }
       }
       if (e.mech === mech) {

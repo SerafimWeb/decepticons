@@ -111,11 +111,13 @@ function linhaArma(W, id, fabrica) {
   const a = W.weapon(id, 0);
   const c = W.weapon(id, W.TIERS.length - 1);
   // O lançador leve (P152) mostra a salva inteira: 8 × 5 no MK I, 32 × 7 no MK III (o nível é o tamanho dele).
-  const dano = (w) => (w.barrage ? `${w.barrage.bombs} × ${w.damage}` : w.salvo ? `${w.magazine} × ${w.damage}` : `${w.damage}`);
+  const dano = (w) => (w.barrage ? `${w.barrage.bombs} × ${w.damage}` : w.salvo ? `${w.magazine} × ${w.damage}` : w.pellets ? `${w.pellets.count} × ${w.damage}` : `${w.damage}`);
   const notaDano = a.barrage
     ? `bombas, cada uma até ${un(a.blastRadius, 'm')}`
     : a.salvo
       ? `mísseis por salva, cada um com explosão de ${un(a.blastRadius, 'm')}`
+      : a.pellets
+        ? 'balins por disparo, num cone: de longe só parte acerta'
       : a.kind === 'melee'
         ? 'por corte'
         : a.empHeat

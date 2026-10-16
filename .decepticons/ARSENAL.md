@@ -119,7 +119,7 @@ Teste de mutação nas regras novas (estrague a regra e veja o teste cair) é o 
 | Motosserra (`chainsaw`) | LEVE | corpo a corpo | 1,2 | 4 | 0,2 | — | — | 1,5 |
 | Canhão sônico (`sonic`) | MÉDIA | curto | 10 / 22 | 20 | 1,2 | — | 17,3 | 3 |
 | Lança-chamas (`flamer`) | PESADA | curto | 17 / 36 | 10 | 0,2 | — | 35,0 | 3,5 |
-| Escopeta (`shotgun`) | LEVE | curto | 8 / 45 | 52 | 0,8 | — | 65,9 | 2 |
+| Escopeta (`shotgun`) | LEVE | curto | 8 / 50 | 9 × 6 (balins) | 0,8 | — | 68,4 | 2 |
 | Arma de gelo (`cryo`) | MÉDIA | curto | 20 / 55 | 5 | 0,6 | — | 8,5 | 3 |
 | Metralhadora rotatória (`rotary`) | MÉDIA | médio | 35 / 95 | 5 | 0,05 | — | 42,5 | 4 |
 | Lançador EMP (`emp`) | LEVE | médio | 45 / 110 | 9 | 1,3 | — | 7,2 | 2,5 |
@@ -158,6 +158,14 @@ o `fx/WeaponFx.ts`, que a simulação de tiro avisa por um campo opcional (`fx` 
 **Para mexer no visual de uma arma** (cor, tamanho do brilho, rastro, marca): só a linha dela em `WEAPON_LOOK`. A explosão de um Mech destruído é
 `WeaponFx.wreck` (do tamanho do robô). Custo medido: 0,45 ms por quadro com 170 fitas, 219 peças de explosão, 160 cartazes e 80 marcas ao mesmo
 tempo (carga extrema); nada alocado por quadro. O Estúdio (aba TIROS E ARMAS, P157) vai editar esta tabela.
+
+### Balins da escopeta (P160 parte 2, 16/10)
+
+A escopeta sai em **nove balins num cone de 3,4°** (`pellets` na arma; `damage` é o de cada balin). Os balins nascem dentro do `ProjectileSystem.fire`,
+então valem igual para o jogador, os bots, o servidor e o desenho do tiro de outro jogador, a partir de **um** evento de tiro, num desenho fixo
+(`spreadAt` com o número do balin; sem sorteio). Medido com física de verdade, o disparo inteiro num Vector-09: **54 até 10 m**, 45 aos 15–20 m, 32 aos
+25–30 m, 15 aos 40 m e 10 aos 50 m (aos 40 m o cone tem 4,8 m e só 5 balins pegam). O tempo para derrubar um torso de perto não mudou (4,0 s no
+MK I, 3,2 s no MK II e III). No jogo, os balins que acertam o mesmo alvo juntos viram **um** número de dano e **um** som de acerto.
 
 ## O que ainda não é dado puro (honestidade)
 

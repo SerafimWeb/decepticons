@@ -102,6 +102,18 @@ export interface Barrage {
   onTarget: number;
 }
 
+/**
+ * Balins (P160, parte 2; dono, 16/10: "evolua nossas armas, balísticas, shape…"): o tiro sai como **`count` projéteis** num cone de `cone` rad em volta
+ * da mira, num desenho fixo de girassol (`spreadAt` com o número do balin: o 0 vai no centro), **sem sorteio** — o servidor, o jogador e o desenho do tiro
+ * de outro jogador saem iguais a partir do mesmo evento de tiro (um evento por disparo, não por balin). `damage` é o de **cada** balin; de perto todos
+ * pegam, e de longe o cone fica mais largo que um Mech e só uma parte acerta: a queda de dano da escopeta vem da geometria, não só da tabela.
+ */
+export interface Pellets {
+  count: number;
+  /** Abertura do cone (rad, do eixo à borda). */
+  cone: number;
+}
+
 /** Arma pronta para o combate, já no nível escolhido. Tudo em unidades do jogo (m, s, t). */
 /**
  * Metralhadora rotatória: o cano gira, e a cadência **sobe segurando o gatilho** (de `minRate` × a cadência máxima, parada, até a cadência
@@ -192,6 +204,8 @@ export interface WeaponStats {
   cruise?: Cruise;
   /** Só no raio laser: o feixe instantâneo em pulsos (`Beam`). */
   beam?: Beam;
+  /** Só na escopeta: o tiro sai em balins (`Pellets`); `damage` é o de cada balin. */
+  pellets?: Pellets;
   /**
    * Quanto o **carregador** cresce a cada nível: `magazine` × este fator elevado ao nível (2 = o dobro a cada nível: o lançador leve tem 8, 16 e 32 mísseis). Sem este campo o
    * carregador é da arma, não do nível.
@@ -464,26 +478,29 @@ const BASE: Record<WeaponId, WeaponBase> = {
   },
   /**
    * Escopeta (dono, 03/10, para o Lancer: "o alcance do tiro é mais curto que o blaster e tira mais vida se estiver
-   * pertinho do inimigo"). Um projétil só, sem balins: o custo é o de um tiro de plasma. A queima-roupa (até 8 m)
-   * bate 52; cai em linha reta até 8% aos 45 m, onde o blaster ainda alcança 120 m. Sozinha derruba o torso de um
-   * Mech em ~4 s de perto (o plasma leva ~5,7 s), mas só de perto. Números de partida: o dono ajusta em
-   * Configurações > Potências.
+   * pertinho do inimigo"; 16/10, P160: "evolua nossas armas, balísticas"). **Nove balins num cone de 3,4°** (`pellets`):
+   * de perto (até 8 m) todos pegam e o disparo bate **54** (9 × 6; 63 no MK II e 72 no MK III); de longe o cone fica mais
+   * largo que um Mech (3 m de diâmetro aos 25 m) e só parte dos balins acerta, além da queda de cada um (25% do dano aos
+   * 50 m). Era um projétil só de 52 que caía a 8% aos 45 m: a queda agora vem da geometria do cone, como numa escopeta de
+   * verdade. Os balins são mais rápidos (140 m/s, eram 120). Sozinha derruba o torso de um Mech em ~4 s de perto (o plasma
+   * leva ~5,7 s), mas só de perto. Números de partida: o dono ajusta em Configurações > Potências.
    */
   shotgun: {
     id: 'shotgun',
     name: 'Escopeta',
     kind: 'energy',
-    damage: 52,
+    damage: 6,
     fireInterval: 0.8,
     heatPerShot: 0.18,
     magazine: 0,
     reload: 0,
-    speed: 120,
+    speed: 140,
     optimalRange: 8,
-    maxRange: 45,
-    minFactor: 0.08,
+    maxRange: 50,
+    minFactor: 0.25,
     blastRadius: 0,
     mass: 2,
+    pellets: { count: 9, cone: 0.06 },
   },
   /**
    * Chuva de mísseis (dono, 04/10: "míssil que vai lançado pra cima e cai tipo uma chuva"). É arma de área, não de ponto:

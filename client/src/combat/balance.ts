@@ -98,8 +98,8 @@ export function drill(chassis: ChassisHeat, d: Drill, seconds: number, hp = Infi
       }
       if (!fired) return;
       // A chuva de mísseis conta as bombas que pegam um alvo parado no meio dela (`Barrage.onTarget`) e o lançador leve, a fração dos mísseis da salva que acerta (`Salvo.onTarget`);
-      // as outras armas, o tiro inteiro.
-      out.damage += g.w.damage * (g.w.barrage?.onTarget ?? g.w.salvo?.onTarget ?? 1);
+      // a escopeta, todos os balins (no alcance ótimo o cone cabe num Mech); as outras armas, o tiro inteiro.
+      out.damage += g.w.damage * (g.w.barrage?.onTarget ?? g.w.salvo?.onTarget ?? 1) * (g.w.pellets?.count ?? 1);
       heat.add(g.w.heatPerShot);
       d.onShot?.(t, g.w);
       if (k === 0 && d.burst && ++inBurst >= d.burst.shots) {
