@@ -17,7 +17,7 @@ describe('classes de arma: leve, média e pesada (ordem P82 do Comandante)', () 
 
   it('a tabela: leves, médias e pesadas (mudar uma arma de grupo é mudar uma linha e esta lista)', () => {
     expect(ids('light').sort()).toEqual(['arc', 'blaster', 'chainsaw', 'emp', 'shotgun', 'swarm']);
-    expect(ids('medium').sort()).toEqual(['autocannon', 'cryo', 'laser', 'plasma', 'rockets', 'rotary', 'seeker', 'sonic']);
+    expect(ids('medium').sort()).toEqual(['autocannon', 'cryo', 'grenade', 'laser', 'plasma', 'rockets', 'rotary', 'seeker', 'sonic']);
     expect(ids('heavy').sort()).toEqual(['barrage', 'cannon', 'cruise', 'flamer', 'railgun', 'siege']);
   });
 
@@ -111,7 +111,7 @@ describe('o tamanho de cada chassi e o que cada encaixe oferece', () => {
     expect(armOptions('right', 'vector09')).toEqual(expect.arrayContaining(['plasma', 'rotary', 'railgun', 'blaster']));
     expect(armOptions('left', 'vector09')).toEqual(expect.arrayContaining(['rockets', 'barrage', 'plasma']));
     expect(armOptions('right', 'onca')).toEqual(expect.arrayContaining(['flamer', 'cannon', 'rockets', 'plasma']));
-    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise']);
+    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise', 'grenade']);
   });
 
   it('o Colossus do jogador sai da fábrica com as armas do tamanho dele (canhão pesado e chuva) e a montagem vale; o chefe segue com plasma e foguetes', () => {
@@ -160,7 +160,7 @@ describe('o Hangar agrupa as armas pela classe que o chassi enxerga', () => {
   it('o Marauder agrupa os ombros: o lançador leve é leve; o sônico, os foguetes e o míssil teleguiado são médios; a chuva e o cruzador são pesados', () => {
     expect(armGroups('shoulders', 'marauder')).toEqual([
       { cls: 'light', ids: ['swarm'] },
-      { cls: 'medium', ids: ['rockets', 'sonic', 'seeker'] },
+      { cls: 'medium', ids: ['rockets', 'sonic', 'seeker', 'grenade'] },
       { cls: 'heavy', ids: ['barrage', 'cruise'] },
     ]);
   });

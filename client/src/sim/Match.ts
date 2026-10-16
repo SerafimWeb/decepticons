@@ -4,6 +4,7 @@ import { BarrageSystem } from '../combat/BarrageSystem';
 import { BotSystem, type BotKit, type BotSystemOptions } from '../combat/BotSystem';
 import { CombatSystem, type MechHitEvent } from '../combat/CombatSystem';
 import { CruiseSystem } from '../combat/CruiseSystem';
+import { GrenadeSystem } from '../combat/GrenadeSystem';
 import { CrushRule } from '../combat/crush';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
 import { RocketSystem } from '../combat/RocketSystem';
@@ -164,6 +165,8 @@ export class Match {
   readonly barrage: BarrageSystem;
   /** Míssil cruzador (armas com `cruise`): sobe em arco e mergulha no ponto da mira. */
   readonly cruise: CruiseSystem;
+  /** Lança-granadas (armas com `lob`, P160): o arco com gravidade que cai no ponto da mira, quica e estoura. */
+  readonly grenades: GrenadeSystem;
   /** Os feixes do raio laser (só desenho; a regra do pulso é `beamPulse`). */
   readonly beams: BeamVisuals;
   readonly combat: CombatSystem;
@@ -294,6 +297,7 @@ export class Match {
     this.rockets = new RocketSystem(o.scene, o.physics, o.particles);
     this.barrage = new BarrageSystem(o.scene, o.physics);
     this.cruise = new CruiseSystem(o.scene, o.physics, o.particles);
+    this.grenades = new GrenadeSystem(o.scene, o.physics);
     this.beams = new BeamVisuals(o.scene);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.combat.damageEnabled = o.damage !== false;
@@ -442,6 +446,7 @@ export class Match {
     this.rockets.acquire = (origin, dir, owner, w) => this.seekTarget(origin, dir, owner, w);
     this.barrage.onExplode = explode;
     this.cruise.onExplode = explode;
+    this.grenades.onExplode = explode;
     this.combat.onMechHit = (e) => {
       if (this.players.includes(e.mech)) this.allies?.defend(e.mech, e.shooter);
       if (this.allies?.mechs.includes(e.mech)) this.allies.onDamaged(e.mech, e.shooter);
@@ -460,6 +465,7 @@ export class Match {
         this.rockets.clear();
         this.barrage.clear();
         this.cruise.clear();
+        this.grenades.clear();
         this.beams.clear();
       }
       if (this.waves && this.players.includes(dead) && this.players.every((player) => !player.alive)) this.waves.fail();
@@ -778,6 +784,7 @@ export class Match {
       this.rockets.fixedUpdate(dt);
       this.barrage.fixedUpdate(dt);
       this.cruise.fixedUpdate(dt);
+      this.grenades.fixedUpdate(dt);
       this.beams.update(dt);
       this.physics.step();
       this.ctf?.fixedUpdate(dt);
@@ -909,6 +916,7 @@ export class Match {
     this.rockets.clear();
     this.barrage.clear();
     this.cruise.clear();
+    this.grenades.clear();
     this.beams.clear();
     this.debris.clear();
     this.destructibles.restoreAll();
@@ -944,6 +952,7 @@ export class Match {
     this.rockets.clear();
     this.barrage.clear();
     this.cruise.clear();
+    this.grenades.clear();
     this.beams.clear();
     this.debris.clear();
     this.destructibles.restoreAll();

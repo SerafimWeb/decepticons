@@ -159,6 +159,35 @@ function cruisePod(root: THREE.Object3D, tier: number, M: Mats): number {
   return muzzleZ;
 }
 
+/**
+ * Lança-granadas (P160): corpo curto, o **tambor** de seis câmaras deitado embaixo do cano (a cara de revólver grande que diz "granada", não "foguete")
+ * e um cano grosso e curto com a boca larga; o nível engrossa o tambor e põe a alça de mira.
+ */
+function grenade(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const drum = 0.19 + tier * 0.02;
+  d.box(0.32, 0.3, 0.42, M.armor, 0, 0.02, -0.26);
+  d.cylZ(drum, 0.34, M.frame, 0, -0.06, -0.62);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    d.cylZ(0.045, 0.36, M.armor, Math.cos(a) * drum * 0.66, -0.06 + Math.sin(a) * drum * 0.66, -0.62);
+  }
+  d.cylZ(0.115, 0.5, M.frame, 0, 0.1, -0.98);
+  d.cylZ(0.15, 0.07, M.armor, 0, 0.1, -1.22);
+  d.cylZ(0.09, 0.03, M.glow, 0, 0.1, -1.26);
+  if (tier >= 1) d.box(0.05, 0.1, 0.26, M.frame, 0, 0.3, -0.5);
+  if (tier >= 2) d.box(0.36, 0.05, 0.3, M.glow, 0, -0.3, -0.62);
+  return 1.28 * LONG;
+}
+
+/** Lança-granadas de ombro: o mesmo, com o suporte embaixo para assentar na ombreira. */
+function grenadePod(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const muzzleZ = grenade(root, tier, M);
+  d.box(0.34, 0.14, 0.5, M.frame, 0, -0.34, -0.45);
+  return muzzleZ;
+}
+
 /** Raio laser (P152): cano fino e longo com a lente na ponta e anéis de foco; o nível alonga o cano e soma anéis. */
 function laser(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -416,16 +445,17 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'sonic' || weapon?.id === 'laser' ? PALETTE.pink : weapon?.id === 'seeker' ? PALETTE.cyan : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : PALETTE.sodium;
+  const accent = weapon?.id === 'sonic' || weapon?.id === 'laser' ? PALETTE.pink : weapon?.id === 'seeker' ? PALETTE.cyan : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : weapon?.id === 'grenade' ? PALETTE.fluo : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
     // Lançador de ombro: o casulo de foguetes, o morteiro da chuva e os lançadores leve e cruzador têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
-    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic' && weapon?.id !== 'seeker' && weapon?.id !== 'swarm' && weapon?.id !== 'cruise') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
+    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic' && weapon?.id !== 'seeker' && weapon?.id !== 'swarm' && weapon?.id !== 'cruise' && weapon?.id !== 'grenade') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
     const muzzleZ =
       weapon.id === 'sonic' ? sonic(root, weapon.tier, M)
       : weapon.id === 'barrage' ? mortarPod(root, weapon.tier, M)
       : weapon.id === 'swarm' ? swarmPod(root, weapon.tier, M)
       : weapon.id === 'cruise' ? cruisePod(root, weapon.tier, M)
+      : weapon.id === 'grenade' ? grenadePod(root, weapon.tier, M)
       : pod(root, weapon.tier, M);
     batchRigMeshes(root, []);
     return { object: root, muzzle: new THREE.Vector3(0, 0, -muzzleZ) };
@@ -461,6 +491,9 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'laser':
         muzzleZ = laser(root, weapon.tier, M);
+        break;
+      case 'grenade':
+        muzzleZ = grenade(root, weapon.tier, M);
         break;
       case 'rotary':
         muzzleZ = rotary(root, weapon.tier, M);

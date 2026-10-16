@@ -54,6 +54,8 @@ import { HeatHaze } from '../fx/HeatHaze';
 import { StatusVisuals } from '../fx/StatusVisuals';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { WeaponFx } from '../fx/WeaponFx';
+import { LobPreview } from '../fx/LobPreview';
+import type { MountId } from '../combat/mounts';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { AimAssist } from '../player/AimAssist';
 import { PlayerController } from '../player/PlayerController';
@@ -139,7 +141,7 @@ import { DominioHud, avisoDoPonto } from '../ui/DominioHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
-const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', swarm: 'ENXAME', cruise: 'CRUZADOR', laser: 'LASER', chainsaw: 'MOTOSSERRA' };
+const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', swarm: 'ENXAME', cruise: 'CRUZADOR', grenade: 'GRANADAS', laser: 'LASER', chainsaw: 'MOTOSSERRA' };
 /** O nome da arma no cartão do HUD, com o nível: "CANHÃO DE PLASMA MK I". */
 const weaponLabel = (w: WeaponStats): string => `${HUD_NAME[w.id] ?? w.name.toUpperCase()} ${TIERS[w.tier]!.label}`;
 const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : weaponLabel(l.secondary));
@@ -166,6 +168,7 @@ const UP = new THREE.Vector3(0, 1, 0);
 const _tmp = new THREE.Vector3();
 const _aimDir = new THREE.Vector3();
 const _aimFrom = new THREE.Vector3();
+const _lobFrom = new THREE.Vector3();
 /** Onde nasce o número de dano flutuante (a cabeça do alvo). */
 const _dmgPos = new THREE.Vector3();
 
@@ -326,6 +329,8 @@ export class Game {
   private droneVisuals: DroneVisuals | null = null;
   /** Os efeitos de arma (P160): clarão da boca, brilho do tiro, rastro em fita, marca na parede e a explosão com corpo. */
   private weaponFx!: WeaponFx;
+  /** A mira do lança-granadas (P160): o arco previsto e o anel de onde a granada cai. */
+  private readonly lobPreview = new LobPreview();
   /** O tick do último som de acerto (um por tick: os balins da escopeta acertam juntos). */
   private hitSoundTick = -1;
   private serafimCheck = 0;
@@ -479,7 +484,8 @@ export class Game {
     this.droneVisuals = this.match.drones ? new DroneVisuals(this.scene, this.match.drones) : null;
     this.weaponFx = new WeaponFx(this.particles, this.camera, (x, y, z) => physics.terrainY(x, z, y + 1, 40), this.match.beams);
     for (const o of this.weaponFx.objects) this.scene.add(o);
-    this.projectiles.fx = this.rockets.fx = this.match.cruise.fx = this.barrage.fx = this.weaponFx;
+    this.scene.add(this.lobPreview.ring);
+    this.projectiles.fx = this.rockets.fx = this.match.cruise.fx = this.barrage.fx = this.match.grenades.fx = this.weaponFx;
     this.shadows = new ShadowBlobs(this.scene, terrainGround(physics));
     // ?serafim=festa: o LED do prédio gira as cores (o dono quer poder variar a luz).
     this.serafimParty = new URLSearchParams(location.search).get('serafim') === 'festa';
@@ -605,6 +611,7 @@ export class Game {
     this.player.wave = (w, origin, dir) => this.match.waveCone(this.mech, origin, dir, w);
     this.player.beam = (w, origin, dir) => this.match.beamPulse(this.mech, origin, dir, w);
     this.player.cruise = (w, origin, dir, target) => this.match.cruise.fire(origin, dir, target, this.mech.collider, w);
+    this.player.grenade = (w, origin, target) => this.match.grenades.fire(origin, target, this.mech.collider, w);
     this.match.onWaveFx = (origin, dir, w) => this.waveRings.spawn(origin, dir, w);
     this.netStatus.className = 'net-status';
     
@@ -1128,6 +1135,20 @@ export class Game {
       if (result !== 'ok') console.warn(`Hangar: preparação do modelo ${result} (segue no primeiro uso)`);
       return result === 'ok';
     };
+  }
+
+  /** A mira do lança-granadas (P160): com a arma equipada e a partida rolando, o arco previsto e o anel de onde a granada cai. */
+  private drawLobPreview(now: number): void {
+    const l = this.mech.loadout;
+    const w = l.primary.lob ? l.primary : l.offhand?.lob ? l.offhand : l.secondary?.lob ? l.secondary : null;
+    if (!w || !this.playing || this.hangarView || !this.mech.alive || this.killCam.overridesRig) {
+      this.lobPreview.hide();
+      return;
+    }
+    const mount: MountId = w === l.primary ? 'rightHand' : w === l.offhand ? 'leftHand' : (this.mech.triggers.secondary[0] ?? 'leftHand');
+    this.mech.mountWorldPosition(mount, _lobFrom);
+    const held = w === l.primary ? this.player.firing : this.player.secondaryHeld;
+    this.lobPreview.draw(this.weaponFx.bill, this.match.physics, this.match.grenades, _lobFrom, this.rig.aim.point, this.mech.collider, w, held, now / 1000);
   }
 
   private wireEvents(): void {
@@ -1678,6 +1699,8 @@ export class Game {
     this.rockets.render(alpha);
     this.barrage.render(alpha);
     this.match.cruise.render(alpha);
+    this.match.grenades.render(alpha);
+    this.drawLobPreview(now);
     this.debris.sync();
 
     const nowDashing = this.mech.isDashing;

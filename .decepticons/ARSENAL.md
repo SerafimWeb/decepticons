@@ -129,6 +129,7 @@ Teste de mutação nas regras novas (estrague a regra e veja o teste cair) é o 
 | Canhão automático (`autocannon`) | MÉDIA | médio | 50 / 140 | 10 | 0,2 | — | 35,0 | 3,5 |
 | Lançador de mísseis leve (`swarm`) | LEVE | médio | 150 | 5 × 8 (16 e 32 nos níveis) | 0,07 | 2,8 | 7,2 | 2 |
 | Míssil teleguiado (`seeker`) | MÉDIA | médio | 170 | 55 × 2 | 0,5 | 6,4 | 20,2 | 4 |
+| Lança-granadas (`grenade`) | MÉDIA | médio | 80 (no plano) | 34 | 0,55 | 6,4 | 24,9 | 3,5 |
 | Canhão de plasma (`plasma`) | MÉDIA | médio | 60 / 200 | 16 | 0,22 | — | 41,6 | 3 |
 | Casulo de foguetes (`rockets`) | MÉDIA | longo | 225 | 40 × 4 | 0,3 | 8,8 | 22,7 | 4 |
 | Canhão pesado (`cannon`) | PESADA | longo | 90 / 260 | 90 | 2,6 | — | 36,0 | 6 |
@@ -166,6 +167,17 @@ então valem igual para o jogador, os bots, o servidor e o desenho do tiro de ou
 (`spreadAt` com o número do balin; sem sorteio). Medido com física de verdade, o disparo inteiro num Vector-09: **54 até 10 m**, 45 aos 15–20 m, 32 aos
 25–30 m, 15 aos 40 m e 10 aos 50 m (aos 40 m o cone tem 4,8 m e só 5 balins pegam). O tempo para derrubar um torso de perto não mudou (4,0 s no
 MK I, 3,2 s no MK II e III). No jogo, os balins que acertam o mesmo alvo juntos viram **um** número de dano e **um** som de acerto.
+
+### Lança-granadas: o primeiro tiro com gravidade (P160 parte 2b, 16/10)
+
+`grenade` (média, 3,5 t, braço e ombros do Marauder): a granada cai (`lob` na arma: 22 m/s² de gravidade) e o lançador acha a elevação para ela **cair
+no ponto da mira** (`combat/lob.ts`). Primeiro o **arco baixo** na carga cheia (42 m/s, rápido); se o cenário o barra antes de 90% do caminho, a
+**menor elevação de 35° a 75° que passa limpa**, com a carga (a velocidade) que a faz cair no ponto — o arco por cima da cobertura sem virar um
+morteiro de 40 m (`GrenadeSystem.aimArc`). Até 80 m no plano. **Explode no robô** (acerto direto), **tabela na parede** e **crava no chão** (estoura
+0,35 s depois, a ~2 m de onde a mira marcou). 34 de dano no centro (48 no MK III), 5 m de explosão, 4 por carga, 1,6 s por granada (a regra dos 4,5 s:
+com 45 o MK III levava 3,7 s). **A mira prevista:** com a arma equipada, o arco em pontinhos e o anel do tamanho da explosão onde ela cai
+(`fx/LobPreview.ts`, a mesma conta do tiro). **Rede: protocolo 19** (o evento de tiro leva a direção até a mira, como o do cruzador; o outro cliente
+acha o ponto e refaz o arco). Os bots ainda não usam (`armaServeAoBot`: só energia).
 
 ## O que ainda não é dado puro (honestidade)
 
