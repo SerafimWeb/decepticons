@@ -52,21 +52,21 @@ com Mechs; a camada de inteligência fala a língua de CTI (incidente, TTPs, IOC
 > A landing do site (`/cybermech/`) lê esta lista. Só entra o que está REAL no `STATUS_REAL.md`: feature nova no ar
 > → uma linha aqui; feature que saiu → sai daqui. Formato: `- **Título:** frase curta para quem vai jogar.`
 
-- **Dano por parte:** arranque uma perna e o inimigo manca; as duas e ele para; destrua a cabeça e ele fica cego.
-- **Pilotos com personalidade:** o brabo vem para cima, o manso atira de longe e o fujão espera você virar de costas. Eles revezam o ataque em vez de caírem todos juntos, e dá para escolher quantos e quem são.
-- **Rodadas de 5 minutos:** todos contra todos, placar no Tab e rodada nova sozinha, com a arena inteira de novo.
-- **Seleção de Modos no Lobby:** escolha entre Arena Aberta Deathmatch ou Modo Sobrevivência por Ondas.
-- **Sobrevivência por Ondas & MissionHUD:** enfrente hordas inimigas com briefing tático, sirenes de alarme e medalhas de conquista.
-- **Capture a Bandeira (CTF HUD):** placar em tempo real entre Time Azul e Vermelho com notificações de eventos de bandeira.
+- **Dano por módulo:** ataque braços, pernas, cabeça ou torso. Cada parte tem sua própria integridade e influencia a capacidade de combate.
+- **Gestão térmica:** disparos e manobras acumulam calor. Controle o ritmo de ataque e o resfriamento para evitar o superaquecimento.
+- **Arsenal configurável:** combine armamentos e níveis MK dentro da capacidade de carga do chassi. Salve e compartilhe sua montagem por link.
+- **Mobilidade tática:** use dash, saltos e cobertura para abrir ângulos de ataque e escapar da linha de tiro.
+- **Oponentes com perfis distintos:** enfrente unidades agressivas, de apoio e de emboscada. Ajuste a composição dos esquadrões nas opções de partida.
+- **Cobertura destrutível:** barricadas se fragmentam sob ataque. Reavalie sua posição conforme a arena se transforma.
 - **Desafios Diários e Progressão:** suba o Nível de Piloto, acumule Créditos ₵ e resgate recompensas cumprindo 3 missões diárias.
 - **Cobertura que quebra:** as barricadas viram destroços; a proteção do inimigo não dura para sempre.
 - **Dash e pulo duplo:** um Mech pesado que ainda assim escapa, flanqueia e muda de altura.
 - **Três câmeras:** terceira pessoa, cockpit em primeira pessoa e visão tática de cima.
 - **Mira do seu jeito:** calibração pelo movimento real do mouse, entrada crua e teclas remapeáveis.
-- **Som feito na hora:** efeitos sintetizados pelo próprio navegador, sem arquivos pesados para baixar.
+- **Áudio de combate:** sons de armas e efeitos acompanham os disparos, impactos e alertas da partida.
 - **Foguetes no braço esquerdo:** quatro no carregador e dano em área; exploda no pé do inimigo para arrancar a perna.
 - **Calor que decide a troca de tiros:** tiro, corrida, pulo, dash e até levar tiro esquentam o Mech; parado ele esfria em dobro. Quem administra o calor causa mais dano; quem dispara tudo correndo trava.
-- **Monte e compartilhe o seu build (prévia):** escolha o nível de cada arma dentro da carga do chassi e mande o link para quem quiser jogar com a mesma montagem.
+- **Montagens compartilháveis:** configure seu Mech no Hangar e compartilhe a combinação por link.
 - **Dano que respeita a distância:** o plasma perde força depois de 60 m; chegar perto rende, mas expõe.
 - **IAs rebeldes de dois tamanhos:** Mechs blindados e andróides pequenos e ágeis que chegam perto, pulam e desviam.
 - **Motosserras e pisões:** os andróides grudam nas suas pernas com motosserras; ande para cima deles e dois passos esmagam.

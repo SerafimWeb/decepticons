@@ -1,6 +1,6 @@
 /**
- * Visual comum das páginas do site: terminal de fósforo âmbar dos anos 80/90 (Shadowrun, BattleTech).
- * Um visual só, escuro de propósito. Cada página soma o próprio CSS ao BASE_CSS.
+ * Identidade industrial do site: superfícies minerais, amarelo e leitura sem textura sobreposta.
+ * Cada página soma o próprio CSS ao BASE_CSS.
  */
 
 export const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -22,20 +22,20 @@ export const HEXGRID = encodeURIComponent(
 export const BASE_CSS = `
   :root {
     color-scheme: dark;
-    --bg: #070604; --panel: #0c0a06; --panel2: #120e07;
-    --line: rgba(255,176,0,.2); --line2: rgba(255,176,0,.38); --grid: rgba(255,176,0,.12);
-    --amber: #ffb000; --text: #ffcf70; --muted: #b8893a; --faint: #6e5424;
-    --green: #7dff72; --bone: #f2e6cf; --red: #ff5a3c;
-    --fd: 'VT323', 'Share Tech Mono', Consolas, monospace;
-    --fb: 'Share Tech Mono', Consolas, 'Courier New', monospace;
-    --fs: 'Saira Stencil One', 'Arial Black', Impact, sans-serif;
-    --glow: 0 0 6px rgba(255,176,0,.45), 0 0 18px rgba(255,176,0,.15);
+    --bg: #080b0e; --panel: #10161b; --panel2: #151d23;
+    --line: #29343b; --line2: #505e63; --grid: rgba(255,206,36,.1);
+    --amber: #ffce24; --text: #d5dce0; --muted: #a2afb8; --faint: #7f8e98;
+    --green: #7dff92; --bone: #f4f6f7; --red: #ff7467;
+    --fd: 'Arial Narrow', Impact, Consolas, sans-serif;
+    --fb: 'Segoe UI', Arial, sans-serif;
+    --fs: Impact, 'Arial Black', sans-serif;
+    --glow: none;
   }
   *, *::before, *::after { box-sizing: border-box; }
   html { background: var(--bg); -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
-    background: radial-gradient(ellipse 90% 70% at 50% 30%, #140f06 0%, var(--bg) 70%) fixed, var(--bg);
+    background: radial-gradient(ellipse 90% 70% at 50% 30%, #14202a 0%, var(--bg) 70%) fixed, var(--bg);
     color: var(--text);
     font: 400 15px/1.6 var(--fb);
     padding: 0 16px 72px;
@@ -43,10 +43,12 @@ export const BASE_CSS = `
   }
   /* CRT: linhas de varredura e vinheta por cima de tudo, sem pegar clique. */
   body::after {
+    display: none;
     content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 20;
     background: repeating-linear-gradient(to bottom, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
   }
   body::before {
+    display: none;
     content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 21;
     background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.55) 100%);
   }
@@ -163,9 +165,7 @@ const ANTI_COPY_JS = `(() => {
   }, true);
 })();`;
 
-const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Saira+Stencil+One&display=swap">`;
+const FONTS = ''; // Fontes do sistema: leitura imediata, sem dependência externa.
 
 /**
  * Documento completo. Sem o <meta charset> o navegador lê o UTF-8 como Windows-1252 e quebra todos os

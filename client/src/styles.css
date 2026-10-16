@@ -3617,6 +3617,9 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   color: #e4ece7;
   text-shadow: 0 1px 8px #000, 0 0 2px #000;
 }
+#overlay.console.cc-primeira .cc-pitch strong { display: inline-block; margin-bottom: 8px; color: var(--warn); font-size: 0.8em; letter-spacing: 3px; }
+#overlay.console.cc-primeira .cc-pitch small { display: inline-block; margin-top: 10px; font-size: 0.7em; color: #b9c5cc; }
+@media (pointer: coarse) { #overlay.console.cc-primeira .cc-pitch small { display: none; } }
 #overlay.console.cc-primeira .cc-mais {
   margin: 0;
   padding: 8px 18px;
@@ -3630,6 +3633,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 }
 #overlay.console.cc-primeira .cc-mais:hover { color: var(--accent); border-color: var(--accent); }
 #overlay.console.cc-primeira .cc-info { align-items: center; text-align: center; }
+#overlay.console.cc-primeira .cc-info .mouse-only { display: none; }
 /* Carregando: nada da frase nem do "mais opções" (o botão ainda está apagado) e o rótulo diz o que carrega: a partida. */
 #overlay.console.cc-primeira.cc-espera .cc-pitch,
 #overlay.console.cc-primeira.cc-espera .cc-mais { display: none !important; }

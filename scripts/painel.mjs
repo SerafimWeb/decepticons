@@ -56,7 +56,7 @@ const pub = (s) => s.replace(/\.decepticons\//g, '');
 // ---------- equipe ----------
 
 const TEAM = [
-  { key: 'dono', name: 'DAN', org: 'criador', role: 'Define o jogo, decide as prioridades e joga cada build no site. Nenhuma IA muda o rumo sozinha.' },
+  { key: 'dono', name: 'DAN', org: 'direção criativa', role: 'Direção de produto e game design. Define a visão, prioriza o desenvolvimento e conduz a avaliação de jogabilidade.' },
   { key: 'claude', name: 'CLAUDE', org: 'Anthropic', role: 'Arquitetura e engenharia: simulação, combate, IA dos bots, testes, CI, deploy e este site.' },
   { key: 'gemini', name: 'GEMINI', org: 'Google', role: 'Interface e som: HUD, configurações, som sintetizado e a versão para celular.' },
   { key: 'codex', name: 'CODEX', org: 'OpenAI', role: 'Visual e desempenho de render do mundo 3D (efeitos, cenário, modelos) e revisão cruzada: confere o que as outras IAs entregaram. Nenhuma IA aprova o próprio código.' },
@@ -78,10 +78,11 @@ const teamHtml = TEAM.map((t) => {
       : `<div><dt>COMMITS</dt><dd>${act.byAgent[t.key] ?? 0}</dd></div><div><dt>ENTREGAS</dt><dd>${mine.length}</dd></div>${fromGithub ? `<div><dt>LINHAS</dt><dd>+${nf(lines)}</dd></div>` : ''}`;
   return `<article class="member frame m-${t.key}">
       <header><span class="agent ${t.key}">${esc(t.org)}</span><h3>${t.name}</h3></header>
+      ${SITE ? `<img class="member-art" src="${BASE}jogar/press/${({dono:'hero',claude:'marauder',gemini:'arena',codex:'vector09',qwen:'colossus01'})[t.key]}.jpg" alt="" width="720" height="420" loading="lazy">` : ''}
       <p class="mrole">${esc(t.role)}</p>
       <dl class="mnum">${numbers}</dl>
       ${top.length ? `<p class="mfronts">frentes: ${top.map(esc).join(' · ')}</p>` : ''}
-      ${now ? `<p class="mnow"><span>agora &gt;</span> ${inline(pub(now))}</p>` : ''}
+      ${!SITE && now ? `<p class="mnow"><span>agora &gt;</span> ${inline(pub(now))}</p>` : ''}
     </article>`;
 }).join('');
 
@@ -111,14 +112,14 @@ const streamHtml = act.commits
 // ---------- da ideia ao ar ----------
 
 const FLOW = [
-  ['PEDIDO', 'Dan descreve o que quer, em português, do jeito que fala.', '“no jogo é muito rápido pra fazer essa configuração fina”'],
+  ['REQUISITO', 'A direção define o problema de experiência e o resultado esperado para o jogador.', 'Objetivo: calibrar a sensibilidade do mouse com precisão.'],
   ['PASSO ZERO', 'Antes de tocar no código, a IA lê a memória do projeto: identidade, estado, roadmap e regras.', 'ESTADO_ATUAL · ROADMAP · AGENTS'],
-  ['PASTA PRÓPRIA', 'Cada IA trabalha no seu worktree e no seu branch, a partir da main. Duas IAs nunca dividem pasta.', 'claude/calibracao-mouse'],
+  ['IMPLEMENTAÇÃO ISOLADA', 'Cada contribuição é desenvolvida em um ambiente separado, com escopo e responsabilidade definidos.', 'Controle de versão e integração rastreável.'],
   ['CÓDIGO + TESTE', `Toda regra de jogo ganha teste de simulação: hoje são ${last.tests} testes automáticos.`, 'ida e volta do cm/360 testada'],
   ['PULL REQUEST', 'O PR ganha sozinho as etiquetas da frente e do agente e segue um modelo: o que muda, custo de CPU, como testar.', 'PR #14 · jogabilidade · claude'],
-  ['CI', 'Tipos, testes, build, orçamento de download, boot num navegador sem tela e o site com os cabeçalhos reais. Vermelho não entra.', 'npm run check'],
-  ['NO AR', 'O merge publica o site sozinho, confere a produção e fotografa o jogo para a página inicial.', 'deploy em poucos minutos'],
-  ['PLAYTEST', 'Dan joga no site e conta o que sentiu. O ciclo recomeça.', '“estão atacando bem, não ficaram perdidos”'],
+  ['VALIDAÇÃO', 'Verificação de tipos, testes de simulação, compilação, orçamento de download e inicialização no navegador.', 'Validação local obrigatória antes da integração.'],
+  ['PUBLICAÇÃO', 'A integração na versão principal aciona a publicação. A transferência é conferida por checksum.', 'Distribuição automatizada pelo ambiente de produção.'],
+  ['PLAYTEST', 'A direção avalia controle, legibilidade e equilíbrio em partida. Os resultados orientam a próxima iteração.', 'Avaliação prática complementa os testes automatizados.'],
 ];
 const flowHtml = FLOW.map(
   ([title, text, sample], i) => `<li class="step frame">
@@ -451,7 +452,7 @@ const newsHtml = `<div class="news">
 
 const ownerTests = estado.pending.filter((p) => /^dono$/i.test(p.who));
 const mesaHtml =
-  estado.open.length || ownerTests.length
+  !SITE && (estado.open.length || ownerTests.length)
     ? `<section aria-labelledby="mesa">
     <span class="kicker">// aguardando o Dan</span>
     <h2 id="mesa">Na mesa do Dan</h2>
@@ -764,7 +765,7 @@ const body = `
   <section aria-labelledby="equipe">
     <span class="kicker">// esquadrão</span>
     <h2 id="equipe">A equipe</h2>
-    <p class="lede">Cada IA tem um território de arquivos e trabalha na própria pasta, para uma não desfazer o trabalho da outra. Dan decide; as IAs propõem, constroem e provam com teste.</p>
+    <p class="lede">Direção humana, desenvolvimento assistido por IA. Responsabilidades definidas, contribuições rastreáveis e revisão cruzada sustentam a evolução do Cybermech.</p>
     <div class="team">${teamHtml}</div>
     ${fromGithub ? '' : '<p class="source">Sem acesso ao GitHub neste build: entregas contadas pelo git, sem etiquetas de frente e agente.</p>'}
   </section>
@@ -779,7 +780,7 @@ const body = `
       <div class="read frame"><span class="k">Commits</span><span class="v">${act.total}</span></div>
       <div class="read frame"><span class="k">Entregas</span><span class="v">${act.merges} <small>no ar</small></span></div>
       <div class="read frame"><span class="k">Decisões registradas</span><span class="v">${log.length}</span></div>
-      <div class="read frame"><span class="k">Pedidos do Dan</span><span class="v">${asked} <small>atendidos</small></span></div>
+      <div class="read frame"><span class="k">Requisitos de produto</span><span class="v">${asked} <small>registros históricos</small></span></div>
     </div>
     <figure class="heat frame">
       <figcaption>commits por hora (horário de Brasília)</figcaption>
@@ -791,8 +792,8 @@ const body = `
 
   <section aria-labelledby="fluxo">
     <span class="kicker">// da ideia ao ar</span>
-    <h2 id="fluxo">Como um pedido vira jogo</h2>
-    <p class="lede">O caminho de toda mudança, com um exemplo real: o estande de calibração do mouse, pedido numa frase e publicado no mesmo dia.</p>
+    <h2 id="fluxo">Da direção de produto à experiência jogável</h2>
+    <p class="lede">O ciclo de desenvolvimento, ilustrado pelo estande de calibração do mouse: requisito, implementação, validação e avaliação em partida.</p>
     <ol class="flow">${flowHtml}</ol>
     <p class="loop">↺ e o ciclo recomeça no 01</p>
   </section>
@@ -842,7 +843,7 @@ const body = `
   <section aria-labelledby="entregas">
     <span class="kicker">// registro de combate</span>
     <h2 id="entregas">Entregas</h2>
-    <p class="lede">Cada linha é um pull request que passou pelo CI e foi para o ar, com quem fez e as frentes que mexeu.</p>
+    <p class="lede">Contribuições integradas à versão principal, com autoria e frentes de desenvolvimento. A integração aciona a publicação automática.</p>
     <ul class="feed frame">${prHtml}</ul>
   </section>
 
@@ -852,7 +853,21 @@ const body = `
 const html = pagina({
   title: SITE ? 'Sala de controle · CYBERMECH' : 'Painel de Missão CYBERMECH',
   description: 'Como o CYBERMECH é feito: Dan e uma equipe de IAs sob o Protocolo Serafim UM, com cada decisão, teste e entrega à vista.',
-  css: css + COMBAT_GUIDE_CSS,
+  css: css + COMBAT_GUIDE_CSS + (SITE ? `
+    .sysbar { min-height: 76px; }
+    .hero { padding: 48px 32px 28px; border: 1px solid var(--line); background: linear-gradient(90deg,#080b0ef5,#080b0ecc 52%,#080b0e55),url('../jogar/press/hero.jpg') center/cover; }
+    .hero .title { max-width: 15ch; font-family: Impact,'Arial Narrow',sans-serif; font-size: clamp(38px,5vw,68px); line-height: 1.04; }
+    .hero .title span { display: block; color: var(--bone); font-size: .55em; margin-top: 12px; }
+    .hero .pitch { max-width: 62ch; }
+    .hero .sitrep { margin-top: 20px; }
+    .hero .boot { color: var(--amber); }
+    .member { padding: 20px; gap: 16px; overflow: hidden; }
+    .member-art { width: calc(100% + 40px); max-width: none; height: 200px; object-fit: cover; object-position: center 35%; margin-inline: -20px; }
+    .member h3 { font: 38px Impact,sans-serif; }
+    .mrole { min-height: 88px; }
+    .stream .msg { font-family: Consolas,monospace; font-size: 12px; }
+    @media(max-width:600px){.hero {padding:30px 20px}.mrole{min-height:0}}
+  ` : ''),
   body,
   script,
 });

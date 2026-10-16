@@ -9,6 +9,18 @@ e o cruzador também: no texto, a arma nova era o foguete (uma das causas de "pa
 2. **Uma vez só, e não volta** (guardado no navegador, tolerante a falha). Com outra dica na tela, espera sem marcar. O foguete segue com a dica de sempre.
 3. **A caixa da dica cresce com o texto** (até 90% da tela): as frases passam de 60 caracteres.
 
+## [2026-10-16] Identidade editorial da landing e comunicação pública profissional (Codex, P169)
+
+**Ordem:** evoluir a landing e o primeiro acesso pelas cinco referências fornecidas, mantendo números reais e usando os robôs do jogo nas imagens.
+
+**Decisão:** preto mineral, amarelo de destaque, tipografia legível e composição industrial; fontes do sistema, com Azonix apenas na marca. A entrada principal abre o jogo solo sem depender da disponibilidade online; multiplayer permanece como operação explícita. A landing não antepõe uma segunda vinheta à vinheta existente no jogo.
+
+**Conteúdo:** atributos e links de montagem vêm do catálogo do jogo; estatísticas extensas ficam na Oficina. Textos de apresentação usam vocabulário de produto e engenharia. A fila interna de decisões e trechos de trabalho em andamento ficam no painel local; os registros originais e as falas do dono não são reescritos.
+
+**Imagens:** rigs reais, montados sem física, fotografados em cena promocional estática. Não são promessa de cenário jogável. Miniaturas de cenário vêm de capturas existentes, não de métricas nem jogadores fictícios. Arquivos versionados; a landing não depende de gerar arte durante o deploy.
+
+**Custo:** nenhum custo no tick ou render do jogo; imagens JPEG, lazy loading abaixo da abertura, troca de câmera a cada 6 s suspensa com foco/hover/aba oculta/redução de movimento; consulta de status a cada 20 s conforme contrato, com cancelamento e sem sobreposição.
+
 ## [2026-10-16] Os rebeldes lançam a arma explosiva da mão esquerda (Claude, P160 parte 4)
 
 **Situação:** o Vector-09 inimigo sai de fábrica com plasma e casulo de foguetes, mas o bot só atirava a arma principal: as explosões novas (P160 parte 1)
