@@ -13,6 +13,7 @@
  *    ou desconectado).
  */
 
+import { AMOSTRAS_DAS_ARMAS } from './armasSom';
 import { playBrandSting } from '../brand/sting';
 import type { StatusKind } from '../ui/status';
 
@@ -162,6 +163,15 @@ export class AudioSystem {
     return true;
   }
 
+
+  /**
+   * (P146) Toca a amostra de referência da arma `id` (`armasSom.ts`). Devolve `false` se a arma não tem amostra ou ela ainda não carregou:
+   * quem chama cai no som sintetizado de sempre, então o jogo nunca fica mudo.
+   */
+  playArma(id: string): boolean {
+    const a = AMOSTRAS_DAS_ARMAS[id];
+    return a ? this.playSample(a.nome, a.ganho, a.pitch, a.maxS) : false;
+  }
 
   // ── Vozes do narrador (P146: o `Narrador` decide o que dizer; aqui só carrega e toca) ──────────────────
 

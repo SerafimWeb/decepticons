@@ -1,0 +1,12 @@
+{
+  "_nota": "Dos 15 efeitos que o Comandante largou em .tmp/SOUNDS/ARMAS (P146), os que casam com as armas do jogo, já com o corte certo (medido por perfil de energia: onde o som realmente começa e acaba). `npm run sons` apara, normaliza (média -18 dB, pico -1 dBFS), converte para mono e grava em client/public/audio/armas/. Trocar um som = mudar `fonte`/`de`/`ate` aqui e rodar de novo. Os demais (sabres, radares, rajada, bipes) ficam na pasta de origem para as próximas armas.",
+  "alvo": { "media_db": -18, "pico_db": -1 },
+  "sons": [
+    { "destino": "arma_blaster.mp3", "fonte": "WEAPMisc-Single_shot_from_fut-Elevenlabs.mp3", "de": 0, "ate": 0.62, "fade_ms": 80, "arma": "Blaster (e o padrão das armas de energia sem som próprio)", "nota": "um tiro só, ataque imediato; cabe em 0,4 s de cadência" },
+    { "destino": "arma_plasma.mp3", "fonte": "WEAPMisc-violent_sharp_plasma-Elevenlabs.mp3", "de": 0, "ate": 0.45, "fade_ms": 140, "arma": "Plasma (0,22 s entre tiros)", "nota": "o original tem 4 s (um estrondo longo); só o ataque cabe numa arma de tiro rápido" },
+    { "destino": "arma_canhao.mp3", "fonte": "WEAPArmr-A_massive_M1_Abrams_-Elevenlabs.mp3", "de": 0, "ate": 2.0, "fade_ms": 450, "arma": "Canhão pesado e, mais grave, o canhão de cerco", "nota": "estouro com a cauda decaindo; o canhão de cerco toca o mesmo mais lento (grave)" },
+    { "destino": "arma_foguete.mp3", "fonte": "WEAPMisc-missle_launch_sound_-Elevenlabs.mp3", "de": 0, "ate": 0.9, "fade_ms": 250, "arma": "Foguetes (0,3 s entre disparos)", "nota": "ataque imediato; o outro arquivo do mesmo nome, com (1), é mais fraco" },
+    { "destino": "arma_teleguiado.mp3", "fonte": "WEAPMisc-radar-guided_missile-Elevenlabs.mp3", "de": 0, "ate": 1.5, "fade_ms": 350, "arma": "Míssil teleguiado", "nota": "lançamento com a assinatura de radar" },
+    { "destino": "arma_chuva.mp3", "fonte": "WEAPMisc-rocket_launcher_miss-Elevenlabs.mp3", "de": 0.85, "ate": 2.25, "fade_ms": 300, "arma": "Chuva de mísseis", "nota": "os primeiros 0,85 s do original são quase silêncio (latência): o corte começa onde o som ataca" }
+  ]
+}

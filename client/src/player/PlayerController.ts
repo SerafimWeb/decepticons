@@ -35,7 +35,8 @@ const _dir = new THREE.Vector3();
 export class PlayerController {
   active = false;
   /** Um foguete saiu (som). Uma vez por aperto do botão, mesmo que a salva tenha dois. */
-  onRocket?: () => void;
+  /** Um aperto de foguete, míssil ou chuva: a arma diz qual é (o som é por arma, P146). */
+  onRocket?: (w: WeaponStats) => void;
   /** Saiu um tiro de energia, de qualquer encaixe (som). */
   /** Saiu um tiro de energia do jogador (a arma que atirou, para o som certo: elétrica, plasma, rotatória). */
   onShot?: (w: WeaponStats) => void;
@@ -214,7 +215,7 @@ export class PlayerController {
     this.particles.burst(_muzzle, _dir, { count: 14, color: ROCKET_FLASH, speed: 8, life: 0.25, spread: 0.6, gravity: 0 });
     // Uma vez por aperto: a salva do Marauder (dois ombros) e os dois foguetes juntos pesam como um estrondo só.
     if (volley === 0) {
-      this.onRocket?.();
+      this.onRocket?.(w);
       this.onKick?.(fireKick(w));
     }
   }

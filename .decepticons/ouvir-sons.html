@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ouvir os sons — CYBERMECH</title>
+<style>
+  :root { --fundo:#0b0f12; --painel:#141a1f; --linha:#27323a; --texto:#e6edf0; --suave:#8fa0a8; --verde:#39ff6a; --laranja:#ff9a2e; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px 64px; background:var(--fundo); color:var(--texto); font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif; }
+  main { max-width:980px; margin:0 auto; }
+  h1 { margin:0 0 4px; font-size:22px; letter-spacing:1px; }
+  h2 { margin:32px 0 8px; font-size:15px; letter-spacing:2px; color:var(--verde); text-transform:uppercase; }
+  p.dica { color:var(--suave); margin:0 0 12px; }
+  table { width:100%; border-collapse:collapse; background:var(--painel); border:1px solid var(--linha); border-radius:8px; overflow:hidden; }
+  th, td { padding:10px 12px; border-bottom:1px solid var(--linha); text-align:left; vertical-align:middle; }
+  th { color:var(--suave); font-weight:600; font-size:12px; letter-spacing:1px; text-transform:uppercase; }
+  tr:last-child td { border-bottom:0; }
+  td.nome { font-weight:600; }
+  td small { display:block; color:var(--suave); font-weight:400; }
+  button { font:inherit; font-weight:600; padding:7px 14px; margin:2px 6px 2px 0; border-radius:6px; border:1px solid var(--verde); background:transparent; color:var(--verde); cursor:pointer; }
+  button:hover, button:focus-visible { background:var(--verde); color:#000; outline:none; }
+  button.antes { border-color:var(--laranja); color:var(--laranja); }
+  button.antes:hover, button.antes:focus-visible { background:var(--laranja); color:#000; }
+  .aviso { background:#1d2a1f; border:1px solid #2f5a36; border-radius:8px; padding:10px 14px; margin:0 0 16px; }
+  .vazio { color:var(--suave); font-style:italic; }
+  @media (max-width:640px) { th:nth-child(3), td:nth-child(3) { display:none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>OUVIR OS SONS</h1>
+  <p class="dica">Clique para ouvir. Cada botão toca na hora; clique de novo para repetir. Se um botão não faz nada, o arquivo ainda não foi gerado (rode <b>npm run sons</b> ou <b>npm run vozes</b>).</p>
+  <div class="aviso"><b>O que eu preciso que você diga:</b> quais sons você aprova, quais troca (e por qual das referências da última seção) e se o volume de algum está alto ou baixo demais. Quem julga é o seu ouvido.</div>
+
+  <h2>Sons de arma (no jogo)</h2>
+  <p class="dica"><b>Novo</b> = o que a arma toca agora. <b>Antes</b> = o que ela tocava (só existe arquivo do tiro de plasma; as outras eram sintetizadas dentro do jogo).</p>
+  <table id="armas"><thead><tr><th>Arma</th><th>Ouvir</th><th>De onde veio</th></tr></thead><tbody></tbody></table>
+
+  <h2>Vozes do narrador ("Combate!")</h2>
+  <p class="dica">O sotaque é da voz. Só "Combate!" foi gerado até agora; as outras falas saem com <b>npm run vozes -- --gerar --sim</b>.</p>
+  <table id="vozes"><thead><tr><th>Sotaque</th><th>Ouvir</th><th>Voz</th></tr></thead><tbody></tbody></table>
+
+  <h2>Referências que ficaram de fora (para as próximas armas)</h2>
+  <p class="dica">Estão em <b>.tmp/SOUNDS/ARMAS</b> (só nesta máquina). Diga qual vira o quê.</p>
+  <table id="reserva"><thead><tr><th>Arquivo</th><th>Ouvir</th><th>Sugestão</th></tr></thead><tbody></tbody></table>
+</main>
+<script>
+  const A = '../client/public/audio/';
+  const R = '../.tmp/SOUNDS/ARMAS/';
+  // slot, armas que tocam, arquivo novo, arquivo de antes (ou null), origem
+  const ARMAS = [
+    ['Blaster', 'blaster (e o padrão das armas de energia sem som próprio)', 'armas/arma_blaster.mp3', 'shot_plasma.wav', 'Single shot from futuristic (0,6 s)'],
+    ['Plasma', 'plasma', 'armas/arma_plasma.mp3', 'shot_plasma.wav', 'Violent sharp plasma (só o ataque: 0,45 s de 4 s)'],
+    ['Canhão pesado', 'canhão pesado', 'armas/arma_canhao.mp3', null, 'A massive M1 Abrams (2 s)'],
+    ['Canhão de cerco', 'canhão de cerco (o mesmo estouro, mais grave e mais longo: no jogo a altura cai 22%)', 'armas/arma_canhao.mp3', null, 'A massive M1 Abrams, mais grave'],
+    ['Foguetes', 'foguetes', 'armas/arma_foguete.mp3', null, 'Missile launch sound (0,9 s)'],
+    ['Míssil teleguiado', 'míssil teleguiado', 'armas/arma_teleguiado.mp3', null, 'Radar-guided missile (1,5 s)'],
+    ['Chuva de mísseis', 'chuva de mísseis', 'armas/arma_chuva.mp3', null, 'Rocket launcher missile (1,4 s, sem o silêncio do começo)'],
+  ];
+  const VOZES = [
+    ['Brasileiro', 'br', 'Eliel: grave e comandante (a voz do narrador que você escolheu em 14/10)'],
+    ['Inglês', 'en', 'Chuck Miller: americano, grave e rouco (tom de narrador de luta)'],
+    ['Sotaque russo', 'ru', 'Dracula (Orlok inspired): sotaque russo, grave e sombrio'],
+    ['Sotaque chinês', 'cn', 'Adam: robótico e calmo, mandarim de Pequim'],
+  ];
+  const RESERVA = [
+    ['WEAPMisc-Short_burst_from_a_f-Elevenlabs.mp3', 'Rajada: metralhadora rotatória ou canhão automático (precisa de lógica de segurar o gatilho; próximo PR)'],
+    ['WEAPSwrd-Powerful_saber_beam_-Elevenlabs.mp3', 'Sabre de energia: golpe forte (arma corpo a corpo nova)'],
+    ['WEAPSwrd-Quick_beam_saber_swi-Elevenlabs.mp3', 'Sabre de energia: golpe rápido'],
+    ['WEAPMisc-Anti_air_Radar_detec-Elevenlabs.mp3', 'Alarme de radar: aviso de míssil vindo na sua direção'],
+    ['WEAPMisc-Phalanx_CIWS_radar_l-Elevenlabs.mp3', 'Radar travando em você (aviso curto)'],
+    ['WEAPMisc-interupted_beep_soun-Elevenlabs.mp3', 'Bipe interrompido: alerta de alvo travado'],
+    ['WEAPMisc-Dark_industrial_sci--Elevenlabs.mp3', 'Industrial sombrio: interface ou chamada de missão'],
+    ['WEAPMisc-missle_launch-Elevenlabs.mp3', 'Lançamento de míssil (alternativa ao dos foguetes ou do teleguiado)'],
+    ['WEAPMisc-missle_launch_sound_-Elevenlabs (1).mp3', 'Lançamento de míssil, mais fraco (alternativa)'],
+  ];
+  let atual = null;
+  function tocar(url) {
+    if (atual) { atual.pause(); atual.currentTime = 0; }
+    atual = new Audio(encodeURI(url));
+    atual.volume = 0.9;
+    atual.play().catch(() => alert('Não achei este arquivo ainda: ' + url));
+  }
+  function botao(texto, url, classe) {
+    const b = document.createElement('button');
+    b.textContent = texto;
+    if (classe) b.className = classe;
+    b.addEventListener('click', () => tocar(url));
+    return b;
+  }
+  function linha(tabela, celulas) {
+    const tr = document.createElement('tr');
+    for (const c of celulas) {
+      const td = document.createElement('td');
+      if (c instanceof Node) td.appendChild(c); else td.innerHTML = c;
+      tr.appendChild(td);
+    }
+    document.querySelector('#' + tabela + ' tbody').appendChild(tr);
+  }
+  for (const [nome, quem, novo, antes, origem] of ARMAS) {
+    const ouvir = document.createElement('div');
+    ouvir.append(botao('▶ NOVO', A + novo));
+    if (antes) ouvir.append(botao('▶ ANTES', A + antes, 'antes')); else { const s = document.createElement('span'); s.className = 'vazio'; s.textContent = 'antes: sintetizado'; ouvir.append(s); }
+    linha('armas', ['<span class="nome">' + nome + '</span><small>' + quem + '</small>', ouvir, origem]);
+  }
+  for (const [nome, cod, voz] of VOZES) {
+    linha('vozes', ['<span class="nome">' + nome + '</span>', botao('▶ Combate!', A + 'vozes/' + cod + '/combate.mp3'), voz]);
+  }
+  for (const [arq, sugestao] of RESERVA) {
+    linha('reserva', ['<span class="nome" style="font-weight:400">' + arq.replace('-Elevenlabs', '').replace('.mp3', '') + '</span>', botao('▶ Ouvir', R + arq), sugestao]);
+  }
+</script>
+</body>
+</html>

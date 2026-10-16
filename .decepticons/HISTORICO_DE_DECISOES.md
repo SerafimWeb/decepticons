@@ -1,3 +1,16 @@
+## [2026-10-15] Os sons de arma são amostras preparadas por script a partir das referências, com queda para o sintetizado (Claude, P146)
+
+**Situação:** o Comandante largou 15 efeitos de arma (gerados no ElevenLabs) e mandou extrair o melhor e adaptar. O Claude não ouve áudio.
+
+**Decisões:**
+1. **Escolher pelo nome do pedido e pelo perfil de energia, e dizer que ninguém ouviu:** o corte de cada som (onde ataca, onde acaba) saiu da medição, não do ouvido; o ouvido é do Comandante, que tem uma página para isso (`npm run ouvir`).
+2. **Preparar por script, não à mão:** `scripts/sons-armas.json` guarda qual referência e qual trecho; `npm run sons` repete o processo (apara, normaliza a -18 dB de média e -1 dBFS de pico, mono, mp3). Trocar um som é mudar uma linha. As referências brutas **não** entram no repositório (só os 85 KB preparados).
+3. **O som é por arma, e arma sem amostra (ou com ela ainda carregando) cai no sintetizado:** nunca silêncio por causa de um arquivo.
+4. **Não ligar o que não tem lugar:** a rajada pede som em laço (a rotatória atira 20 vezes por segundo), e o jogo não tem sabre nem aviso de míssil; ligar à força seria pior que deixar o sintetizado.
+5. **O canhão de cerco reusa o estouro do canhão pesado, 22% mais grave:** um arquivo, dois pesos.
+
+**Por que registrar:** quem for trocar um som ou ligar a rajada precisa saber que o corte vem de medição e que o som de reserva existe de propósito.
+
 ## [2026-10-15] As vozes do narrador: uma por sotaque, escolhidas da conta do Comandante; a geração em lote fica com ele (Claude, P146)
 
 **Situação:** o Comandante colou a chave do ElevenLabs e mandou usar. A lista de vozes da conta mostrou que a voz do narrador do P113 é **brasileira** (Eliel), e que a conta já tem vozes com os sotaques pedidos.
