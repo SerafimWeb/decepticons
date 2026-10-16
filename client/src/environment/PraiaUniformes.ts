@@ -30,6 +30,9 @@ export interface UniformesDaPraia {
   noite: { value: number };
   /** Quanto da iluminação pública está acesa (0 a 1); cada lâmpada liga no seu instante. */
   lampadas: { value: number };
+  /** A injeção de cada um dos três cabos de dados (0 a 1) e a vida (0 a 1), para o brilho do cabo (P162): o dado que corre vira vermelho. */
+  cabosInj: { value: THREE.Vector3 };
+  cabosVida: { value: THREE.Vector3 };
 }
 
 export function criarUniformes(): UniformesDaPraia {
@@ -44,5 +47,7 @@ export function criarUniformes(): UniformesDaPraia {
     nevoa: { value: new THREE.Color(COR_DA_NEVOA) },
     noite: { value: 0 },
     lampadas: { value: 0 },
+    cabosInj: { value: new THREE.Vector3(0, 0, 0) },
+    cabosVida: { value: new THREE.Vector3(1, 1, 1) },
   };
 }

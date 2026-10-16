@@ -102,6 +102,20 @@ escurecia), o rastro de míssil era uma fila de pontinhos, o tiro de energia uma
 **Custo:** 0,45 ms por quadro sob carga extrema (170 fitas, 219 peças de explosão, 160 cartazes, 80 marcas); 9 desenhos para todos os efeitos da
 cena; nada alocado por quadro. GPU real: 0 de 192 poses com NaN com os efeitos acesos (`varrer-nan.mjs --efeitos`). JS 472,3 KB de 500.
 
+## [2026-10-16] Os cabos de dados são regra pura em `sim/`, o andróide rebelde "se liga" por proximidade, e a ficha de fatos mostra o quadro misto (Claude, P162, P163, P166)
+
+**Situação:** o Comandante deu o capítulo 1: os cabos como pontos de invasão (o andróide se liga e injeta, os outros o protegem, nós o desligamos) e pediu os casos de privatização para a ficha de fatos.
+
+**Decisões:**
+1. **A regra dos cabos é módulo puro em `sim/` (`CabosDeDados`), sem relógio nem sorteio.** O `Match` só **conta quem está perto** de cada ponto e entrega os números; assim o teste cobra a regra sem montar o jogo, e o servidor roda a mesma quando a missão em ondas for para a rede.
+2. **"Ligar-se" é estar parado perto do ponto, não uma animação nem uma ação.** Os andróides recebem a ordem `hold` do Domínio, aplicada **a cada segundo** (um por cabo, em rodízio), com o desconto do `escortSide × 6` que a ordem soma ao posto (senão metade dos andróides pararia no cabo vizinho). Um andróide que fica trocando tiro a mais de 4,5 m do ponto **não injeta**: a defesa do ponto é matar ou afastar o andróide.
+3. **Quem depreda e quem se liga são papéis diferentes:** o andróide injeta (ataque à informação), o rebelde pesado depreda (ataque à infraestrutura). Cabo **tomado** e cabo **cortado** drenam a rede; **tomado só se libera com defensor perto**, de propósito: injeção não some sozinha, é preciso ir lá.
+4. **O desempate de "qual cabo" é o de menor índice** (dois cabos a 3 m): a mesma posição dá sempre o mesmo cabo (o teste de partida pegou o caso de um jogador parado no meio de dois cabos).
+5. **O dreno extra entra no núcleo como "peso equivalente" na pressão**, para o alerta do HUD acender também quando o dano vem dos cabos, sem tocar na regra dos invasores.
+6. **A ficha de fatos mostra o quadro misto, não a tese.** O levantamento achou fatos fortes (a Enel e o apagão de 3,1 milhões de unidades; o Compaj; os inquéritos da PF e do Cade) e casos **em aberto** (a Sabesp subiu 6,11% a 6,5% no primeiro reajuste; a saúde não tem comparação com dado). O jogo mostra o que aconteceu, com fonte, e **não afirma** o que a fonte não diz (que a Petrobras "foi privatizada"; que o presídio privado é sempre pior; que a conta "subiu por causa" da venda). É mais forte contra quem desmente. **As fontes primárias ainda não foram lidas:** é o passo antes do texto final.
+
+**Por que registrar:** quem for fazer a parte B (o manifestante, a segunda entrada), o porto ou a Colossus em fases precisa saber como o andróide "se liga", que o rebelde pesado depreda, e que nenhum cartão do jogo diz mais do que a ficha.
+
 ## [2026-10-16] O ciclo do dia é só luz, calculado do relógio da partida; o azimute do sol não muda; e o que a campanha não vai fazer (Claude, P161 a P166)
 
 **Situação:** o Comandante achou a praia clara demais para a hora do sol e com a iluminação pública acesa de dia, e pediu que a partida **comece no pôr do sol e termine em noite** em 5 minutos, com as luzes acendendo. Na mesma mensagem respondeu o `CAMPANHAS_E_CHEFES.md` e deu a história da campanha.

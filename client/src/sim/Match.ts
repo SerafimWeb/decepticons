@@ -22,6 +22,7 @@ import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
 import { PRAIA_AGUA, PRAIA_ASSALTO, PRAIA_INIMIGOS, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { caboDoPonto, CABOS, CabosDeDados, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
 import { dentroDoComplexo, NUCLEO, NucleoDaEstacao, pesoDoInvasor } from './NucleoDaEstacao';
 import { danoDeAfogamento, fatorDeVelocidade, FUNDURA_MOLHADA, fundoParaAfogar, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
@@ -215,6 +216,17 @@ export class Match {
   private readonly afogando = new Map<MechBase, number>();
   /** O núcleo da estação (P127): a "integridade da rede" que a missão em ondas da praia defende. `null` nos outros mapas e modos. */
   readonly nucleo: NucleoDaEstacao | null = null;
+  /** Os três cabos de dados da estação (P162, capítulo 1): injeção dos andróides rebeldes, dano e reparo. `null` fora da missão em ondas da praia. */
+  readonly cabos: CabosDeDados | null = null;
+  /** Rascunhos reaproveitados dos cabos (G4): por cabo, quantos andróides rebeldes ligados, o peso dos depredadores e quantos defensores perto. */
+  private readonly cabosLigados = PONTOS_DOS_CABOS.map(() => 0);
+  private readonly cabosDepredadores = PONTOS_DOS_CABOS.map(() => 0);
+  private readonly cabosDefensores = PONTOS_DOS_CABOS.map(() => 0);
+  /** Para qual cabo cada andróide rebelde foi mandado (-1 nenhum), na ordem de `bots.mechs`. */
+  private readonly rumoDosCabos: number[] = [];
+  private readonly pontosDosCabos = PONTOS_DOS_CABOS.map((p) => new THREE.Vector3(p.x, 0, p.z));
+  private readonly _pontoDoCabo = new THREE.Vector3();
+  private cabosReplanejaEm = 0;
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
   readonly pilots: Pilot[] = [];
   /** Mechs de gente (os bots caçam estes). */
@@ -283,6 +295,7 @@ export class Match {
     this.agua = praia ? PRAIA_AGUA : null;
     // A missão em ondas da praia defende a estação: os rebeldes que entram nos muros drenam o núcleo; a estação cair é perder a missão.
     this.nucleo = praia && survival ? new NucleoDaEstacao() : null;
+    this.cabos = praia && survival ? new CabosDeDados() : null;
     this.fx = o.particles;
     // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
@@ -796,6 +809,8 @@ export class Match {
       this.ctf?.fixedUpdate(dt);
       this.dominio?.fixedUpdate(dt);
       this.dirigirOsBots(dt);
+      this.dirigirAndroidesAosCabos(dt);
+      this.tickDosCabos(dt);
       this.drenarONucleo(dt);
     }
     if (this.round.fixedUpdate(dt) !== 'started') return false;
@@ -817,7 +832,76 @@ export class Match {
       const p = m.simPosition;
       if (dentroDoComplexo(p.x, p.z)) peso += pesoDoInvasor(m.stats.name);
     }
-    n.fixedUpdate(dt, peso);
+    n.fixedUpdate(dt, peso, this.cabos?.drenoDaRedePorS ?? 0);
+  }
+
+  /**
+   * Os cabos de dados (P162): conta, por cabo, quem está perto do ponto de conexão e roda a regra pura (`CabosDeDados`). O **andróide rebelde** a menos de 4,5 m está
+   * ligado (injeta); o rebelde **pesado** a menos de 7 m depreda (peso do `NucleoDaEstacao`); o jogador e os aliados a menos de 6 m defendem (o andróide aliado vale dois).
+   * Custo: um laço sobre os rebeldes (≤ 8), os aliados e os jogadores, sem alocar.
+   */
+  private tickDosCabos(dt: number): void {
+    const c = this.cabos;
+    if (!c) return;
+    this.cabosLigados.fill(0);
+    this.cabosDepredadores.fill(0);
+    this.cabosDefensores.fill(0);
+    for (const m of this.bots.mechs) {
+      if (!m.alive) continue;
+      const p = m.simPosition;
+      const nome = m.stats.name;
+      if (ehAndroide(nome)) {
+        const i = caboDoPonto(p.x, p.z, CABOS.raioDaConexao);
+        if (i >= 0) this.cabosLigados[i]! += 1;
+      } else {
+        const i = caboDoPonto(p.x, p.z, CABOS.raioDeDano);
+        if (i >= 0) this.cabosDepredadores[i]! += pesoDoInvasor(nome);
+      }
+    }
+    this.contarDefensoresDosCabos(this.players);
+    if (this.allies) this.contarDefensoresDosCabos(this.allies.mechs);
+    c.fixedUpdate(dt, this.cabosLigados, this.cabosDepredadores, this.cabosDefensores);
+  }
+
+  private contarDefensoresDosCabos(mechs: readonly MechBase[]): void {
+    for (const m of mechs) {
+      if (!m.alive) continue;
+      const i = caboDoPonto(m.simPosition.x, m.simPosition.z, CABOS.raioDeReparo);
+      if (i >= 0) this.cabosDefensores[i]! += ehAndroide(m.stats.name) ? 2 : 1;
+    }
+  }
+
+  /**
+   * Manda os **andróides rebeldes** vivos aos pontos de conexão dos cabos (o 1º ao cabo 1, o 2º ao 2, o 3º ao 3, o 4º ao 1...), a cada segundo, com a mesma ordem
+   * `hold` do Domínio: ele vai até o ponto e fica por ali, trocando tiro com quem chega. É o que faz o andróide **se ligar** ao cabo. Os Mechs rebeldes seguem o
+   * comportamento de sempre (e depredam o cabo que cruzarem). A ordem soma `escortSide × 6` ao posto; aqui se desconta, para o andróide parar **no** ponto.
+   */
+  private dirigirAndroidesAosCabos(dt: number): void {
+    if (!this.cabos) return;
+    this.cabosReplanejaEm -= dt;
+    if (this.cabosReplanejaEm > 0) return;
+    this.cabosReplanejaEm = 1;
+    const mechs = this.bots.mechs;
+    if (this.rumoDosCabos.length !== mechs.length) {
+      this.rumoDosCabos.length = mechs.length;
+      this.rumoDosCabos.fill(-1);
+    }
+    let n = 0;
+    for (let i = 0; i < mechs.length; i++) {
+      const m = mechs[i]!;
+      if (!m.alive || !ehAndroide(m.stats.name)) {
+        this.rumoDosCabos[i] = -1;
+        continue;
+      }
+      const cabo = n++ % this.cabos.quantidade;
+      const cerebro = this.bots.brainOf(m);
+      if (!cerebro) continue;
+      if (cabo !== this.rumoDosCabos[i] || cerebro.order !== 'hold') {
+        const ponto = this.pontosDosCabos[cabo]!;
+        cerebro.receiveOrder('hold', this._pontoDoCabo.set(ponto.x - cerebro.escortSide * 6, 0, ponto.z), null);
+        this.rumoDosCabos[i] = cabo;
+      }
+    }
   }
 
   /**
@@ -929,6 +1013,9 @@ export class Match {
     this.round.resetScores();
     this.waves?.reset();
     this.nucleo?.reset();
+    this.cabos?.reset();
+    this.rumoDosCabos.fill(-1);
+    this.cabosReplanejaEm = 0;
     this.ctf?.reset();
     this.dominio?.reset();
   }

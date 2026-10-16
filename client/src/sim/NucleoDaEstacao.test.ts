@@ -82,6 +82,27 @@ describe('o núcleo da estação (a integridade da rede que a missão defende)',
     expect(n.fracao).toBe(1);
   });
 
+  it('o dreno dos cabos (P162) machuca a rede mesmo sem invasor, soma ao do invasor, impede a recomposição e acende a pressão do alerta', () => {
+    const n = new NucleoDaEstacao();
+    for (let i = 0; i < 60 * 10; i++) n.fixedUpdate(DT, 0, 20); // dez segundos de dois cabos tomados e nenhum invasor
+    expect(n.vida).toBeCloseTo(NUCLEO.vidaMax - 200, 0);
+    expect(n.pressao).toBeCloseTo(20 / NUCLEO.danoPorPesoPorS, 6); // o HUD acende o alerta com o peso equivalente
+    // com invasor E cabos o dano soma
+    const soma = new NucleoDaEstacao();
+    for (let i = 0; i < 60 * 10; i++) soma.fixedUpdate(DT, 1, 20);
+    expect(soma.vida).toBeCloseTo(NUCLEO.vidaMax - (NUCLEO.danoPorPesoPorS + 20) * 10, 0);
+    // a rede não se recompõe enquanto há dreno, por mais que passe a espera
+    const sem = new NucleoDaEstacao();
+    sem.vida = 500;
+    for (let i = 0; i < 60 * 30; i++) sem.fixedUpdate(DT, 0, 1);
+    expect(sem.vida).toBeLessThan(500);
+    // sem dreno e sem invasor, recompõe como sempre
+    const livre = new NucleoDaEstacao();
+    livre.vida = 500;
+    for (let i = 0; i < 60 * 30; i++) livre.fixedUpdate(DT, 0);
+    expect(livre.vida).toBeGreaterThan(500);
+  });
+
   it('o peso do invasor: Mech 1, andróide 0,5, Colossus 4', () => {
     expect(pesoDoInvasor('VECTOR-09')).toBe(1);
     expect(pesoDoInvasor('ANDRÓIDE A-1')).toBe(0.5);

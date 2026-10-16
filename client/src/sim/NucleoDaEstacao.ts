@@ -52,13 +52,17 @@ export class NucleoDaEstacao {
     return this.vida <= 0;
   }
 
-  /** Um tick: `peso` é a soma dos pesos dos invasores dentro do complexo. Com invasor, drena; sem, espera e depois recompõe. */
-  fixedUpdate(dt: number, peso: number): void {
+  /**
+   * Um tick: `peso` é a soma dos pesos dos invasores dentro do complexo. Com invasor, drena; sem, espera e depois recompõe. `drenoExtraPorS` (P162) é o que os
+   * **cabos tomados ou cortados** drenam (`CabosDeDados.drenoDaRedePorS`): conta como invasor (a rede não se recompõe enquanto há dreno) e entra na `pressao`
+   * como o peso equivalente, para o alerta do HUD acender também quando o dano vem dos cabos.
+   */
+  fixedUpdate(dt: number, peso: number, drenoExtraPorS = 0): void {
     if (this.caiu) return;
-    this.pressao = peso;
-    if (peso > 0) {
+    this.pressao = peso + drenoExtraPorS / NUCLEO.danoPorPesoPorS;
+    if (peso > 0 || drenoExtraPorS > 0) {
       this.calmaS = 0;
-      this.vida = Math.max(0, this.vida - peso * NUCLEO.danoPorPesoPorS * dt);
+      this.vida = Math.max(0, this.vida - (peso * NUCLEO.danoPorPesoPorS + drenoExtraPorS) * dt);
       return;
     }
     this.calmaS += dt;

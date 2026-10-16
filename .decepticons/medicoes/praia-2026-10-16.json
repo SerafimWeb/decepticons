@@ -3,35 +3,15 @@
   "tela": "1280x720",
   "render": "SwiftShader (sem GPU: só contagem, não tempo)",
   "vistas": {
-    "sol-d0": {
-      "desenhos": 47,
-      "triangulos": 134657,
-      "construcaoMs": 4309
+    "cabos-d72": {
+      "desenhos": 52,
+      "triangulos": 134603,
+      "construcaoMs": 1396
     },
-    "sol-d55": {
-      "desenhos": 47,
-      "triangulos": 134657,
-      "construcaoMs": 800
-    },
-    "sol-d100": {
-      "desenhos": 47,
-      "triangulos": 134657,
-      "construcaoMs": 635
-    },
-    "orla-d0": {
-      "desenhos": 51,
-      "triangulos": 134625,
-      "construcaoMs": 447
-    },
-    "orla-d55": {
-      "desenhos": 51,
-      "triangulos": 134625,
-      "construcaoMs": 383
-    },
-    "orla-d100": {
-      "desenhos": 51,
-      "triangulos": 134625,
-      "construcaoMs": 1870
+    "cabosdalinha-d72": {
+      "desenhos": 53,
+      "triangulos": 134615,
+      "construcaoMs": 672
     }
   },
   "errosDePagina": []

@@ -129,6 +129,7 @@ import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
+import { CODIGO_DO_ESTADO } from '../sim/CabosDeDados';
 import { Match } from '../sim/Match';
 import { gameModeFromSearch, waveFromSearch, type GameMode } from '../sim/gameMode';
 import { SURVIVAL_MAX_ANDROIDS, SURVIVAL_MAX_MECHS, SURVIVAL_WAVE_PLANS } from '../sim/SurvivalWaves';
@@ -1858,6 +1859,17 @@ export class Game {
         q.nucleo.fracao = rede.fracao;
         q.nucleo.pressao = rede.pressao;
         this.match.arena.praia?.setNucleo(rede.fracao); // o centro de dados apaga as janelas conforme a rede cai
+      }
+      // Os três cabos de dados (P162): o HUD mostra as células e o aviso, e a praia pinta o brilho do cabo e sobe o letreiro de dados.
+      const cabos = this.match.cabos;
+      q.cabos.presente = cabos !== null;
+      if (cabos) {
+        for (let i = 0; i < cabos.quantidade; i++) {
+          q.cabos.estado[i] = CODIGO_DO_ESTADO[cabos.estado(i)];
+          q.cabos.vida[i] = cabos.fracaoDaVida(i);
+          q.cabos.injecao[i] = cabos.injecao[i]!;
+        }
+        this.match.arena.praia?.setCabos(q.cabos.estado, q.cabos.vida, q.cabos.injecao);
       }
       q.largura = window.innerWidth;
       q.altura = window.innerHeight;
