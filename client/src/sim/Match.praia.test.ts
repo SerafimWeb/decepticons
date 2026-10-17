@@ -97,15 +97,17 @@ describe('a praia no Match (P126/P127): a defesa da estação em ondas, a orla a
     expect(player.alive).toBe(true);
   });
 
-  it('as ondas rebeldes nascem em terra firme, longe da estação que o jogador defende, e vêm para ela (a rota de assalto)', async () => {
+  it('as ondas rebeldes nascem no cais (pelos contêineres de desembarque, P164), longe da estação que o jogador defende, e vêm para ela (a rota de assalto)', async () => {
     const { match, player, run } = await partidaDaPraia();
     expect(match.bots.mechs.every((m) => !m.alive)).toBe(true);
     run(4); // passa o briefing: a onda 1 entra
     const vivos = match.bots.mechs.filter((m) => m.alive);
     expect(vivos.length).toBeGreaterThan(0);
     for (const m of vivos) {
-      expect(faixaEm(m.simPosition.x, m.simPosition.z)).not.toBe('mar');
-      expect(Math.hypot(m.simPosition.x - PRAIA_ESTACAO.x, m.simPosition.z - PRAIA_ESTACAO.z), 'longe da estação').toBeGreaterThan(120);
+      // O cais é uma laje no nível do chão (por baixo dela o terreno é mar): o rebelde está em cima dela, em pé, na ponta oeste do mapa.
+      expect(m.simPosition.x, 'no cais, no máximo 1 s depois de nascer (já andou uns 10 m para o leste)').toBeLessThan(-215);
+      expect(m.simPosition.y, 'em pé em cima da laje').toBeGreaterThan(-1);
+      expect(Math.hypot(m.simPosition.x - PRAIA_ESTACAO.x, m.simPosition.z - PRAIA_ESTACAO.z), 'longe da estação').toBeGreaterThan(400);
     }
     const distancia = (): number => Math.min(...vivos.filter((m) => m.alive).map((m) => Math.hypot(m.simPosition.x - player.simPosition.x, m.simPosition.z - player.simPosition.z)));
     const antes = distancia();

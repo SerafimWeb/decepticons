@@ -39,9 +39,16 @@ export const ARENA_ZONES: readonly ZoneDef[] = [
  * porque são listas diferentes; o custo é `zonas × mechs`, poucas dezenas de comparações por tick.
  */
 export class ZoneSystem {
+  /**
+   * As zonas têm energia? (P164) Na praia elas dependem do **quadro de luz da cidade**: com o quadro apagado (`QuadroDeLuz`), deixam de curar e de resfriar. Nos outros mapas
+   * ficam sempre ligadas.
+   */
+  energizadas = true;
+
   constructor(private readonly zones: readonly ZoneDef[] = ARENA_ZONES) {}
 
   fixedUpdate(dt: number, mechs: readonly MechBase[]): void {
+    if (!this.energizadas) return;
     for (const z of this.zones) {
       const r2 = z.radius * z.radius;
       for (const m of mechs) {

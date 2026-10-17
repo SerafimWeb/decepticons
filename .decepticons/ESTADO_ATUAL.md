@@ -14,6 +14,23 @@
 
 **Próxima sessão começa com:** o que o Comandante disser jogando; a decisão da P171 (ritmo oficial, cosmético de explosão).
 
+## CAPÍTULO 1, PARTE C: O PORTO — os contêineres de desembarque e o quadro de luz da cidade — Claude, 17/10 (branch `claude/cap1-parte-c`, P163, P164)
+
+**As ordens do Comandante:** *"o porto é onde os inimigos chegam, eles devem sair dos contêineres (e na campanha de ondas isso deve ser bem explícito)"* e *"no porto, tem que ter um botão ou chave ou sistema que devemos proteger, para acender as luzes da cidade… um tipo de circuito que podemos repetir nas diferentes fases"*.
+
+**Feito (na missão em ondas da praia):**
+1. **Os contêineres de desembarque** (`PraiaLayout.ts`, `PraiaPorto.ts`): três contêineres laranja no cais (a coluna leste do pátio, fileiras z = -48, -32 e -16), a porta para o leste. **Quando a onda entra em campo as portas se abrem para fora** (~2 s, as folhas acendem em laranja de alerta) e **os Mechs e os andróides rebeldes nascem pelas bocas deles**; entre as ondas fecham. Antes os rebeldes nasciam na areia, a ~200 m da estação; agora **a mais de 460 m**: o ritmo mudou (a massa de manifestantes chega em poucos segundos e as máquinas ~45 s depois).
+2. **O quadro de luz da cidade** (`sim/QuadroDeLuz.ts`, regra pura, G14): o armário de força na **ponta oeste do cais, a mais de 500 m da estação**. **Da onda 2 em diante o primeiro andróide vivo é o saboteiro**: atravessa o cais e o depreda (peso por tipo; um andróide sozinho leva 80 s). **A energia da cidade é a vida do quadro**: as luzes públicas (bulbos, halos, janelas, poças, feixes) viram o **ciclo do dia vezes a energia**; com o quadro **apagado a cidade fica no escuro e as zonas de cura e de resfriamento deixam de funcionar** (e o desenho delas some). O jogador que chega, sem rebelde em cima, recupera (8/s, até dois; volta a ligar com 25%).
+3. **O que o jogador vê:** o painel do armário (verde ligado, laranja trêmulo sabotado, vermelho piscando apagado), uma célula no HUD sob as portas e o aviso no topo ("QUADRO DE LUZ SOB SABOTAGEM · A CIDADE VAI AO ESCURO", "CIDADE NO ESCURO · AS ZONAS DE CURA CAÍRAM", "QUADRO DE LUZ RECUPERADO · A LUZ VOLTOU").
+
+**Provas:** **11 testes da regra pura** (inclui determinismo e invariantes sob 36 mil ticks e o interruptor das zonas); **6 de partida** (`Match.quadro.test.ts`: só a praia tem o quadro, as ondas nascem nas bocas dos contêineres, as portas abrem com a onda em campo, a onda 1 não sabota e a 2 manda o saboteiro, o quadro apagado derruba as zonas e o jogador as religa, `restartMission`); **9 do desenho e dos avisos** (a abertura andando, as folhas abrindo para o leste, o painel, as luzes da cidade sem energia mesmo de noite, as zonas que somem, o teto de desenhos); o layout (os contêineres, as bocas, o quadro). **19 de 19 mutações à mão pegas.** Capturas: `arte/praia-conteineres-c1-d100-claude.jpg` (as portas abertas, dois andróides nas bocas, à noite), `arte/praia-quadro-c1sabotado-d100-claude.jpg` e `arte/praia-quadro-c1apagado-d100-claude.jpg`.
+
+**Onde o Comandante confere:** `?modo=survival&mapa=praia`: veja as portas dos contêineres abrirem no cais quando a onda começa (vá até lá pelo calçadão) e os rebeldes saírem por elas; na onda 2 (`&onda=2`) olhe o HUD: o quadro entra sob sabotagem; corra até o armário na ponta oeste do cais (uns 40 s) e recupere. Para ver sem jogar: `praia.mjs --desembarque --vistas conteineres` e `--quadro "2:0:0" --vistas quadro`.
+
+**Falta (R13):** **o equilíbrio jogando** (o saboteiro leva 80 s; a viagem do jogador, uns 40; os rebeldes agora andam 460 m: cada número é linha de tabela); dano a tiro no quadro, nas portas e nos cabos; **a parte D (a Colossus em três fases, a barra do chefe e a máscara)**; os lugares só de andróide e drone (P149); a ficha de fato da Enel como cartão no jogo. Só offline.
+
+**Próxima sessão começa com:** a **parte D** (a Colossus), e as outras fases.
+
 ## CAPÍTULO 1, PARTE B: A INVASÃO DO PRÉDIO — o manifestante, as duas portas e a rua dos fundos — Claude, 17/10 (branch `claude/cap1-parte-b`, P163, P166)
 
 **A ordem do Comandante:** *"os mesmos manifestantes e humanoides inimigos ficam invadindo o prédio da estação, e tem que ter uma entrada principal, e também uma entrada na rua dos fundos (pra dar mais possibilidades de ataque e vulnerabilidade)"*, e *"CONTINUA SEGUINDO A PARTE B, C e a D, e melhore as outras fases"*.

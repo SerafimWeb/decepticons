@@ -10,6 +10,7 @@ import { ehDestrutivel, PraiaDestrutiveis } from './PraiaDestrutiveis';
 import type { Destructibles } from './Destructibles';
 import { PraiaCabosFx } from './PraiaCabosFx';
 import { PraiaGente } from './PraiaGente';
+import { PraiaPorto } from './PraiaPorto';
 import { PraiaPortas } from './PraiaPortas';
 import { PraiaLuzes } from './PraiaLuzes';
 import { PraiaZonas } from './PraiaZonas';
@@ -111,6 +112,14 @@ export class Praia {
   private readonly portasVisual: PraiaPortas;
   private readonly portasEstado = [0, 0];
   private readonly portasVida = [1, 1];
+  /** O porto (P164): as portas dos contêineres de desembarque e o painel do quadro de luz; o estado (0 ligado, 1 sabotado, 2 apagado) e a vida do quadro. */
+  private readonly porto: PraiaPorto;
+  private estadoDoQuadro = 0;
+  private vidaDoQuadro = 1;
+  /** A energia da cidade (0 a 1, o quadro de luz) e a fração de lâmpadas que o ciclo do dia acende: as luzes públicas são o produto das duas. */
+  private energiaDaCidade = 1;
+  private lampadasDoCiclo = 0;
+  private ultimoTempo = 0;
   private readonly vetor = new THREE.Vector3();
   /** Os brilhos desenhados: halos, poças de luz, feixes e os holofotes que giram (`PraiaLuzes.ts`). */
   private readonly brilhos: PraiaLuzes;
@@ -143,6 +152,7 @@ export class Praia {
     this.gente = new PraiaGente(scene, this.u.tempo);
     this.cabosFx = PraiaCabosFx.criar(scene);
     this.portasVisual = new PraiaPortas(scene);
+    this.porto = new PraiaPorto(scene);
     this.horizonte(scene);
     this.feixes(scene);
     criarGaivotas(scene, this.u.tempo);
@@ -156,6 +166,34 @@ export class Praia {
     this.brilhos.update(elapsed);
     this.cabosFx?.atualiza(elapsed, this.cabosEstado, this.cabosInjecao);
     this.portasVisual.atualiza(elapsed, this.portasEstado, this.portasVida);
+    const dt = Math.min(0.1, Math.max(0, elapsed - this.ultimoTempo));
+    this.ultimoTempo = elapsed;
+    this.porto.atualiza(dt, elapsed, this.estadoDoQuadro, this.vidaDoQuadro);
+  }
+
+  /** Os contêineres de desembarque do porto devem estar abertos (a onda está em campo)? (P164) As portas andam até lá em ~2 s. */
+  setDesembarque(aberto: boolean): void {
+    this.porto.setDesembarque(aberto);
+  }
+
+  /** O quadro de luz da cidade (P164, `QuadroDeLuz`): o estado (0 ligado, 1 sabotado, 2 apagado) e a vida (0 a 1) que o painel mostra. */
+  setQuadro(estado: number, vida: number): void {
+    this.estadoDoQuadro = estado;
+    this.vidaDoQuadro = vida;
+  }
+
+  /**
+   * A energia da cidade (P164, 0 a 1, a do quadro de luz): **as luzes públicas caem junto** (o ciclo do dia manda quantas acenderiam; a energia as multiplica) e, **sem energia, as zonas de cura
+   * e de resfriamento somem** (a regra é `ZoneSystem.energizadas`). A sinalização (antenas, boias, navios) não depende da cidade.
+   */
+  setEnergia(energia: number): void {
+    this.energiaDaCidade = Math.min(1, Math.max(0, Number.isFinite(energia) ? energia : 1));
+    this.aplicaAsLampadas();
+    this.zonas.setLigadas(this.energiaDaCidade > 0);
+  }
+
+  private aplicaAsLampadas(): void {
+    this.u.lampadas.value = this.lampadasDoCiclo * this.energiaDaCidade;
   }
 
   /** As duas portas do prédio (P163, `PortasDaEstacao`): por porta, o estado (0 fechada, 1 forçada, 2 arrombada) e a vida (0 a 1). Sem alocar. */
@@ -210,7 +248,8 @@ export class Praia {
     direcaoComAltura(HORIZONTAL_DO_SOL, f.solAltura, u.solDir.value);
     direcaoComAltura(HORIZONTAL_DA_LUA, f.luaAltura, u.luaDir.value);
     u.noite.value = f.noite;
-    u.lampadas.value = f.lampadas;
+    this.lampadasDoCiclo = f.lampadas;
+    this.aplicaAsLampadas();
     // A névoa e o horizonte do céu são a mesma cor: do rosa do pôr do sol ao roxo do crepúsculo e ao azul-noite.
     if (f.noite < 0.5) u.nevoa.value.lerpColors(_corDaNevoaDia, NEVOA_CREPUSCULO, f.noite * 2);
     else u.nevoa.value.lerpColors(NEVOA_CREPUSCULO, NEVOA_NOITE, (f.noite - 0.5) * 2);
