@@ -12,6 +12,8 @@ import { atividade, diario, entregas, evolucao, fichas, historicoRoadmap, marcos
 import { burnup, CHART_CSS, gantt, heatTable, pct, PM_CSS, rankBars } from './site/graficos.mjs';
 import { brDate, esc, HEXGRID, inline, pagina, topo, upper } from './site/tema.mjs';
 import { COMBAT_GUIDE_CSS, operationGuide } from './site/combat-guide.mjs';
+import { HUD_PAGE_CSS, hudCss } from './site/hud.mjs';
+import { salaSite } from './site/sala.mjs';
 
 const argv = process.argv.slice(2);
 const CHECK = argv.includes('--check');
@@ -736,7 +738,7 @@ const script = `
   })();
 `;
 
-const body = `
+const bodyLocal = `
   ${topo({ base: BASE, current: 'sala', left: `CYBERMECH // SALA DE CONTROLE`, live: `atualizado a cada entrega · ${esc(m.head)}` })}
 
   <header class="hero">
@@ -850,26 +852,17 @@ const body = `
   <footer><span>CYBERMECH © ${new Date().getFullYear()} <b>SERAFIM WEB</b> · fim da transmissão ·${SITE ? 'gerado do repositório a cada entrega' : 'gerado do ROADMAP, ESTADO, HISTORICO e git · npm run painel'}</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
 `;
 
+// No site, a sala de controle usa o sistema visual novo (scripts/site/hud.mjs e sala.mjs); o painel local segue como era.
+const sala = SITE ? salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado, fronts, fromGithub, nf, when, flow: FLOW, bodyLocal, m }) : null;
+const body = sala ? sala.body : bodyLocal;
+
 const html = pagina({
   title: SITE ? 'Sala de controle · CYBERMECH' : 'Painel de Missão CYBERMECH',
   description: 'Como o CYBERMECH é feito: Dan e uma equipe de IAs sob o Protocolo Serafim UM, com cada decisão, teste e entrega à vista.',
-  css: css + COMBAT_GUIDE_CSS + (SITE ? `
-    .sysbar { min-height: 76px; }
-    .hero { padding: 48px 32px 28px; border: 1px solid var(--line); background: linear-gradient(90deg,#080b0ef5,#080b0ecc 52%,#080b0e55),url('../jogar/press/hero.jpg') center/cover; }
-    .hero .title { max-width: 15ch; font-family: Impact,'Arial Narrow',sans-serif; font-size: clamp(38px,5vw,68px); line-height: 1.04; }
-    .hero .title span { display: block; color: var(--bone); font-size: .55em; margin-top: 12px; }
-    .hero .pitch { max-width: 62ch; }
-    .hero .sitrep { margin-top: 20px; }
-    .hero .boot { color: var(--amber); }
-    .member { padding: 20px; gap: 16px; overflow: hidden; }
-    .member-art { width: calc(100% + 40px); max-width: none; height: 200px; object-fit: cover; object-position: center 35%; margin-inline: -20px; }
-    .member h3 { font: 38px Impact,sans-serif; }
-    .mrole { min-height: 88px; }
-    .stream .msg { font-family: Consolas,monospace; font-size: 12px; }
-    @media(max-width:600px){.hero {padding:30px 20px}.mrole{min-height:0}}
-  ` : ''),
+  css: (SITE ? hudCss(BASE) + HUD_PAGE_CSS : '') + css + COMBAT_GUIDE_CSS + (SITE ? sala.css : ''),
   body,
-  script,
+  script: sala ? `${script}
+${sala.js}` : script,
 });
 
 mkdirSync(dirname(OUT), { recursive: true });

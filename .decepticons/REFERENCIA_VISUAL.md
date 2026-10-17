@@ -7,6 +7,8 @@
 > o CYBERMECH e o que não serve. Quem for mexer em visual, efeito, HUD ou cenário lê isto antes (Passo Zero, item 11).
 > O dono traz mais referências quando o agente pedir; cada uma ganha uma seção aqui.
 
+> **Checkpoint de qualidade (16/10, P170):** as explosões e os efeitos de tiro têm um ponto aprovado pelo Comandante que **não pode piorar**: `CHECKPOINTS.md` (tag `checkpoint/explosoes-v1`, a bancada `medicoes/explosoes.mjs` e a captura de referência).
+
 ## 1. Decisão do dono (07/10/2026)
 
 1. **Primeiro, elevar a qualidade dentro do estilo atual** (low-poly neon "Tron", hard-surface em blocos, tudo em código,
