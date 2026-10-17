@@ -23,10 +23,11 @@ import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
-import { PRAIA_AGUA, PRAIA_ASSALTO, PRAIA_INIMIGOS, PRAIA_MANIFESTANTES, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { PRAIA_AGUA, PRAIA_ASSALTO, PRAIA_INIMIGOS, PRAIA_MANIFESTANTES, PRAIA_QUADRO_DE_LUZ, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
 import { ehManifestante } from '../entities/chassis';
 import { caboDoPonto, CABOS, CabosDeDados, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
+import { pertoDoQuadro, QUADRO, QuadroDeLuz } from './QuadroDeLuz';
 import { dentroDoComplexo, NUCLEO, NucleoDaEstacao, pesoDoInvasor } from './NucleoDaEstacao';
 import { danoDeAfogamento, fatorDeVelocidade, FUNDURA_MOLHADA, fundoParaAfogar, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
@@ -77,6 +78,8 @@ export const CTF_DEFENDER_SPAWNS: readonly (readonly [number, number])[] = [
 const DOMINIO_REPLANEJA_S = 2;
 /** O alvo de cada vaga do pool de manifestantes (P163): 3 = a porta principal, 4 = a dos fundos, 0 e 2 = os cabos 1 e 3. A vaga 1 e a 3 nascem na rua dos fundos. */
 const ALVO_DO_MANIFESTANTE: readonly number[] = [3, 4, 0, 4, 2];
+/** O alvo do saboteiro (P164): o quadro de luz da cidade, depois dos três cabos (0 a 2) e das duas portas (3 e 4). */
+const ALVO_DO_QUADRO = 5;
 /** O Domínio leva cada lado para a sua base: o jogador e os aliados no canto azul, os rebeldes no vermelho (os titãs mantêm os pontos deles). */
 function levarParaAsBases(plano: PlanoDoEsquadrao): void {
   const { blue, red } = NASCIMENTOS_DO_DOMINIO;
@@ -243,9 +246,12 @@ export class Match {
   readonly portas: PortasDaEstacao | null = null;
   private readonly portasAtacantes = PORTAS_DA_ESTACAO.map(() => 0);
   private readonly portasDefensores = PORTAS_DA_ESTACAO.map(() => 0);
-  /** Para qual alvo cada andróide e cada manifestante foi mandado (0 a 2 = o cabo; 3 e 4 = a porta principal e a dos fundos; -1 nenhum), na ordem de `bots.mechs`. */
+  /** O quadro de luz da cidade (P164, frente 3): a energia das luzes da orla e das zonas de cura. `null` fora da missão em ondas da praia. */
+  readonly quadro: QuadroDeLuz | null = null;
+  private quadroDefensores = 0;
+  /** Para qual alvo cada andróide e cada manifestante foi mandado (0 a 2 = o cabo; 3 e 4 = a porta principal e a dos fundos; 5 = o quadro de luz; -1 nenhum), na ordem de `bots.mechs`. */
   private readonly rumoDosAlvos: number[] = [];
-  private readonly pontosDosAlvos = [...PONTOS_DOS_CABOS, ...PORTAS_DA_ESTACAO].map((p) => new THREE.Vector3(p.x, 0, p.z));
+  private readonly pontosDosAlvos = [...PONTOS_DOS_CABOS, ...PORTAS_DA_ESTACAO, PRAIA_QUADRO_DE_LUZ].map((p) => new THREE.Vector3(p.x, 0, p.z));
   private readonly _pontoDoAlvo = new THREE.Vector3();
   private cabosReplanejaEm = 0;
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
@@ -318,6 +324,7 @@ export class Match {
     this.nucleo = praia && survival ? new NucleoDaEstacao() : null;
     this.cabos = praia && survival ? new CabosDeDados() : null;
     this.portas = praia && survival ? new PortasDaEstacao() : null;
+    this.quadro = praia && survival ? new QuadroDeLuz() : null;
     this.fx = o.particles;
     // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
@@ -885,6 +892,7 @@ export class Match {
       this.dirigirOsInvasoresAosAlvos(dt);
       this.tickDosCabos(dt);
       this.tickDasPortas(dt);
+      this.tickDoQuadro(dt);
       this.drenarONucleo(dt);
     }
     if (this.round.fixedUpdate(dt) !== 'started') return false;
@@ -964,6 +972,8 @@ export class Match {
     }
     let androides = 0;
     let manifestantes = 0;
+    // O saboteiro (P164): da onda 2 em diante, o primeiro andróide vivo vai ao quadro de luz da cidade, em vez de a um cabo.
+    const haSaboteiro = (this.waves?.wave ?? 1) >= 2;
     for (let i = 0; i < mechs.length; i++) {
       const m = mechs[i]!;
       const nome = m.stats.name;
@@ -972,7 +982,10 @@ export class Match {
         const vaga = manifestantes++; // a vaga do pool (viva ou não): o lado de onde ele nasce
         if (m.alive) alvo = ALVO_DO_MANIFESTANTE[vaga % ALVO_DO_MANIFESTANTE.length]!;
       } else if (ehAndroide(nome)) {
-        if (m.alive) alvo = androides++ % this.cabos.quantidade;
+        if (m.alive) {
+          alvo = haSaboteiro && androides === 0 ? ALVO_DO_QUADRO : (androides - (haSaboteiro ? 1 : 0)) % this.cabos.quantidade;
+          androides++;
+        }
       }
       if (alvo < 0) {
         this.rumoDosAlvos[i] = -1;
@@ -1006,6 +1019,38 @@ export class Match {
     this.contarDefensoresDasPortas(this.players);
     if (this.allies) this.contarDefensoresDasPortas(this.allies.mechs);
     p.fixedUpdate(dt, this.portasAtacantes, this.portasDefensores);
+  }
+
+  /**
+   * O quadro de luz da cidade (P164): conta quem o depreda (todo rebelde a menos de 7 m, com o peso de `pesoDoInvasor`) e quem está perto para recuperá-lo (o jogador e os aliados), roda a regra
+   * pura (`QuadroDeLuz`) e **liga a energia às zonas**: com o quadro apagado, as zonas de cura e de resfriamento deixam de funcionar. Custo: um laço sobre os rebeldes, aliados e jogadores.
+   */
+  private tickDoQuadro(dt: number): void {
+    const q = this.quadro;
+    if (!q) return;
+    let atacantes = 0;
+    for (const m of this.bots.mechs) {
+      if (!m.alive) continue;
+      const p = m.simPosition;
+      if (pertoDoQuadro(p.x, p.z, QUADRO.raioDeAtaque)) atacantes += pesoDoInvasor(m.stats.name);
+    }
+    this.quadroDefensores = 0;
+    this.contarDefensoresDoQuadro(this.players);
+    if (this.allies) this.contarDefensoresDoQuadro(this.allies.mechs);
+    q.fixedUpdate(dt, atacantes, this.quadroDefensores);
+    this.zones.energizadas = !q.apagado;
+  }
+
+  private contarDefensoresDoQuadro(mechs: readonly MechBase[]): void {
+    for (const m of mechs) {
+      if (!m.alive) continue;
+      if (pertoDoQuadro(m.simPosition.x, m.simPosition.z, QUADRO.raioDeReparo)) this.quadroDefensores += ehAndroide(m.stats.name) ? 2 : 1;
+    }
+  }
+
+  /** Os contêineres de desembarque estão abertos? (P164) Quando a onda está em campo, as portas deles se abrem e os rebeldes saem; entre as ondas ficam fechadas. Só a praia. */
+  get desembarqueAberto(): boolean {
+    return this.nucleo !== null && this.waves?.phase === 'active';
   }
 
   private contarDefensoresDasPortas(mechs: readonly MechBase[]): void {
@@ -1128,6 +1173,8 @@ export class Match {
     this.nucleo?.reset();
     this.cabos?.reset();
     this.portas?.reset();
+    this.quadro?.reset();
+    this.zones.energizadas = true;
     this.rumoDosAlvos.fill(-1);
     this.cabosReplanejaEm = 0;
     this.ctf?.reset();

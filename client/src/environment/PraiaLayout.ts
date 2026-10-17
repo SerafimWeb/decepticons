@@ -207,10 +207,18 @@ function porto(): BlocoDaPraia[] {
   const cores = [0xc0392b, 0x2e6da4, 0xd98d2b, 0x3d8b5a, 0x8e5aa8, 0xc9c3b4, 0x2f3b45];
   for (const z of [-48, -32, -16, 0]) {
     for (const x of [-298, -274, -250]) {
+      // A ordem dos sorteios é a de sempre (o resto do pátio não muda); a coluna leste (x = -250) é a dos contêineres de desembarque, abaixo.
       const andares = 1 + Math.floor(rand() * 3);
-      b.push({ x: x + (rand() - 0.5) * 3, y: (andares * 2.6) / 2, z, w: 12.2, h: andares * 2.6, d: 5.2, kind: 'conteiner', solid: true, cor: cores[Math.floor(rand() * cores.length)]! });
+      const sobra = (rand() - 0.5) * 3;
+      const cor = cores[Math.floor(rand() * cores.length)]!;
+      if (x === PRAIA_DESEMBARQUE.x && (PRAIA_DESEMBARQUE.linhas as readonly number[]).includes(z)) continue;
+      b.push({ x: x + sobra, y: (andares * 2.6) / 2, z, w: 12.2, h: andares * 2.6, d: 5.2, kind: 'conteiner', solid: true, cor });
     }
   }
+  // Os contêineres de desembarque (um andar, laranja, a porta para o leste) e o armário do quadro de luz da cidade, na ponta oeste do cais.
+  const { x: dx, linhas, comprimento, profundidade, altura, cor: corDoDesembarque } = PRAIA_DESEMBARQUE;
+  for (const z of linhas) b.push({ x: dx, y: altura / 2, z, w: comprimento, h: altura, d: profundidade, kind: 'conteiner', solid: true, cor: corDoDesembarque });
+  b.push({ x: PRAIA_QUADRO_DE_LUZ.x, y: 1.5, z: PRAIA_QUADRO_DE_LUZ.z, w: 1.2, h: 3, d: 2.6, kind: 'metal', solid: true });
   return b;
 }
 
@@ -345,12 +353,23 @@ export const PRAIA_SPAWNS: readonly (readonly [number, number])[] = [
 ];
 
 /**
- * Onde as **ondas rebeldes** nascem na missão da praia: o desembarque do mar e da orla, **longe da estação** (o jogador defende
- * a leste e as ondas chegam pelas três vias: a areia, o calçadão e a avenida). A ordem é a dos papéis: Mechs primeiro, andróides depois.
+ * Os **contêineres de desembarque** do porto (P164, capítulo 1, frente 3): três contêineres laranja na coluna leste do pátio do cais (x = -250), um por fileira, com a porta voltada para
+ * o leste (a orla e a estação). **Quando a onda começa, as portas abrem e os rebeldes saem por elas** ("o porto é onde os inimigos chegam, eles devem sair dos contêineres"). Ocupam as
+ * vagas das fileiras z = -48, -32 e -16; a da frente (z = 0) fica de contêiner comum (o farol de 38 m está do lado) e a de trás (z = -64) tem as pernas do guindaste.
+ */
+export const PRAIA_DESEMBARQUE = { x: -250, linhas: [-48, -32, -16], comprimento: 12.2, profundidade: 5.2, altura: 2.6, cor: 0xd9531e } as const;
+
+/**
+ * Onde as **ondas rebeldes** nascem na missão da praia: **pelas bocas dos contêineres de desembarque**, no cais, a ponta oeste do mapa (a mais de 460 m da estação: a massa chega
+ * primeiro e as máquinas desembarcam depois). A ordem é a dos papéis: Mechs primeiro, andróides depois. Cada boca solta o primeiro rebelde na porta (5 m a leste do contêiner) e,
+ * os da segunda leva, 3 m mais à frente.
  */
 export const PRAIA_INIMIGOS: readonly (readonly [number, number])[] = [
-  [50, -26], [78, 12], [98, 28], [36, -26], [56, 13], [72, 29],
+  [-239, -48], [-239, -32], [-239, -16], [-236, -48], [-236, -32], [-236, -16],
 ];
+
+/** O **quadro de luz da cidade** (P164): o armário de força na ponta oeste do cais, a mais de 500 m da estação. A regra é `sim/QuadroDeLuz.ts`; o desenho, `PraiaPorto.ts`. */
+export const PRAIA_QUADRO_DE_LUZ = { x: -312, z: 4 } as const;
 
 /**
  * Onde os **manifestantes** nascem (P163, a missão em ondas): cinco vagas, **três pela avenida a oeste** (a entrada principal, pelo portão do pátio) e **duas pela rua dos

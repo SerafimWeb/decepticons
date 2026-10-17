@@ -63,6 +63,16 @@ const dia = Number(q.get('dia') ?? 0); // a hora do dia (P161): 0 = pôr do sol,
     a.spawn(physics, new THREE.Vector3(x, 0, z));
     scene.add(a.root);
   }
+  // O porto (P164): `?desembarque=1` abre as portas dos contêineres de desembarque e `?quadro=estado:vida:energia` pinta o quadro de luz (0 ligado, 1 sabotado, 2 apagado).
+  const quadro = (q.get('quadro') ?? '').split(':').map(Number);
+  if (quadro.length >= 2) {
+    praia.setQuadro(quadro[0] ?? 0, quadro[1] ?? 1);
+    praia.setEnergia(quadro[2] ?? 1);
+  }
+  if (q.get('desembarque') === '1') {
+    praia.setDesembarque(true);
+    for (let i = 0; i < 30; i++) praia.update(i * 0.1); // as portas andam ~2 s até abrir
+  }
   praia.update(t);
   praia.setProgressoDoDia(dia);
   camera.position.set(cx, cy, cz);

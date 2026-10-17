@@ -20,6 +20,8 @@ const cabosPedidos = args.includes('--cabos') ? args[args.indexOf('--cabos') + 1
 const portasPedidas = args.includes('--portas') ? args[args.indexOf('--portas') + 1] : null; // P163: estado:vida de cada porta, ex.: 1:0.5,2:0
 const gentePedida = args.includes('--manifestantes') ? args[args.indexOf('--manifestantes') + 1] : null; // P163: x,z;x,z
 const androidesPedidos = args.includes('--androides') ? args[args.indexOf('--androides') + 1] : null;
+const desembarquePedido = args.includes('--desembarque'); // P164: abre as portas dos contêineres de desembarque
+const quadroPedido = args.includes('--quadro') ? args[args.indexOf('--quadro') + 1] : null; // P164: estado:vida:energia do quadro de luz, ex.: 1:0.4:0.4
 const dias = args.includes('--dias') ? args[args.indexOf('--dias') + 1].split(',').map(Number) : [null];
 const vistasPedidas = args.includes('--vistas') ? new Set(args[args.indexOf('--vistas') + 1].split(',')) : null;
 
@@ -35,6 +37,8 @@ mkdirSync(saida, { recursive: true });
 const VISTAS = {
   geral: { cam: '0,150,-70', mira: '0,0,20', fov: 60 },
   cabos: { cam: '257,4.5,24', mira: '257,4,42', fov: 62 },
+  conteineres: { cam: '-221,3.6,-14', mira: '-244,2.2,-32', fov: 70 },
+  quadro: { cam: '-300,2.6,12', mira: '-312,1.8,4', fov: 64 },
   portafrente: { cam: '288,3.2,36', mira: '288,2.2,50', fov: 64 },
   portafundos: { cam: '288,3.2,93', mira: '288,2.2,78', fov: 64 },
   manifestantes: { cam: '181,1.9,14', mira: '188,1.2,27', fov: 60 },
@@ -88,7 +92,7 @@ try {
   for (const [nome, v] of Object.entries(VISTAS)) {
     if (vistasPedidas && !vistasPedidas.has(nome)) continue;
     for (const dia of dias) {
-    await page.goto(`${base}@fs/${html}?cam=${v.cam}&mira=${v.mira}&fov=${v.fov}&t=3${dia === null ? '' : `&dia=${dia}`}${cabosPedidos ? `&cabos=${cabosPedidos}` : ''}${portasPedidas ? `&portas=${portasPedidas}` : ''}${gentePedida ? `&manifestantes=${gentePedida}` : ''}${androidesPedidos ? `&androides=${androidesPedidos}` : ''}`);
+    await page.goto(`${base}@fs/${html}?cam=${v.cam}&mira=${v.mira}&fov=${v.fov}&t=3${dia === null ? '' : `&dia=${dia}`}${cabosPedidos ? `&cabos=${cabosPedidos}` : ''}${portasPedidas ? `&portas=${portasPedidas}` : ''}${gentePedida ? `&manifestantes=${gentePedida}` : ''}${androidesPedidos ? `&androides=${androidesPedidos}` : ''}${desembarquePedido ? '&desembarque=1' : ''}${quadroPedido ? `&quadro=${quadroPedido}` : ''}`);
     await page.waitForFunction(() => window.__pronto || window.__erro, null, { timeout: 120_000 });
     const erro = await page.evaluate(() => window.__erro);
     if (erro) throw new Error(`vista ${nome}: ${erro}`);

@@ -133,6 +133,7 @@ import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { CODIGO_DO_ESTADO } from '../sim/CabosDeDados';
 import { CODIGO_DO_ESTADO_DA_PORTA } from '../sim/PortasDaEstacao';
+import { CODIGO_DO_ESTADO_DO_QUADRO } from '../sim/QuadroDeLuz';
 import { Match } from '../sim/Match';
 import { gameModeFromSearch, waveFromSearch, type GameMode } from '../sim/gameMode';
 import { SURVIVAL_MAX_ANDROIDS, SURVIVAL_MAX_MECHS, SURVIVAL_WAVE_PLANS } from '../sim/SurvivalWaves';
@@ -1915,6 +1916,17 @@ export class Game {
           q.portas.vida[i] = portas.fracaoDaVida(i);
         }
         this.match.arena.praia?.setPortas(q.portas.estado, q.portas.vida);
+      }
+      // O porto (P164): o quadro de luz da cidade (a célula do HUD, o painel e a energia das luzes e das zonas) e as portas dos contêineres de desembarque, que abrem com a onda em campo.
+      const quadro = this.match.quadro;
+      q.quadro.presente = quadro !== null;
+      if (quadro) {
+        q.quadro.estado = CODIGO_DO_ESTADO_DO_QUADRO[quadro.estado()];
+        q.quadro.vida = quadro.fracaoDaVida;
+        const praia = this.match.arena.praia;
+        praia?.setQuadro(q.quadro.estado, q.quadro.vida);
+        praia?.setEnergia(quadro.energia);
+        praia?.setDesembarque(this.match.desembarqueAberto);
       }
       q.largura = window.innerWidth;
       q.altura = window.innerHeight;

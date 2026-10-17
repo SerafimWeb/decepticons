@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PRAIA_COMPLEXO, PRAIA_ESTACAO } from '../environment/PraiaLayout';
 import { PORTAS_DA_ESTACAO } from '../sim/PortasDaEstacao';
-import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDasPortas, avisoDosCabos, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
+import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDasPortas, avisoDoQuadro, avisoDosCabos, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
 
 /**
  * O HUD da PRAIA DOS CABOS (P127): o que um mapa de 640 m pede e os outros não. Quatro peças, todas só no mapa da praia:
@@ -22,8 +22,10 @@ const ESTADO_DO_CABO = ['livre', 'injetando', 'tomado', 'cortado'] as const;
 /** Os estados da porta, na ordem dos códigos de `PortasDaEstacao` (o `data-estado` da célula no CSS) e os nomes que o aviso usa. */
 const ESTADO_DA_PORTA = ['fechada', 'forcada', 'arrombada'] as const;
 const NOMES_DAS_PORTAS = PORTAS_DA_ESTACAO.map((p) => p.nome);
+/** Os estados do quadro de luz, na ordem dos códigos de `QuadroDeLuz` (o `data-estado` da célula no CSS). */
+const ESTADO_DO_QUADRO = ['ligado', 'sabotado', 'apagado'] as const;
 
-const MARGENS: MargensDaTela = { topo: 168, base: 175, esq: 28, dir: 44 };
+const MARGENS: MargensDaTela = { topo: 194, base: 175, esq: 28, dir: 44 };
 const PONTOS_DE_INIMIGO = 32;
 const PERIODO_DA_FAIXA_S = 0.2;
 const CARTAO_S = 8;
@@ -43,6 +45,8 @@ export interface QuadroDaPraia {
   cabos: { presente: boolean; estado: number[]; vida: number[]; injecao: number[] };
   /** As duas portas do prédio (P163): por porta, o estado (0 fechada, 1 forçada, 2 arrombada) e a vida de 0 a 1. `presente` é falso fora da missão em ondas. */
   portas: { presente: boolean; estado: number[]; vida: number[] };
+  /** O quadro de luz da cidade (P164): o estado (0 ligado, 1 sabotado, 2 apagado) e a vida de 0 a 1. `presente` é falso fora da missão em ondas. */
+  quadro: { presente: boolean; estado: number; vida: number };
   camera: THREE.Camera;
   largura: number;
   altura: number;
@@ -58,6 +62,7 @@ export function novoQuadroDaPraia(camera: THREE.Camera): QuadroDaPraia {
     nucleo: { presente: false, fracao: 1, pressao: 0 },
     cabos: { presente: false, estado: [0, 0, 0], vida: [1, 1, 1], injecao: [0, 0, 0] },
     portas: { presente: false, estado: [0, 0], vida: [1, 1] },
+    quadro: { presente: false, estado: 0, vida: 1 },
     camera,
     largura: 0,
     altura: 0,
@@ -99,6 +104,11 @@ export class PraiaHud {
   private readonly portas: HTMLElement;
   private readonly celulasDasPortas: { celula: HTMLElement; vida: HTMLElement; pct: string }[] = [];
   private readonly estadosDasPortas = [0, 0];
+  /** O quadro de luz da cidade (P164): a célula e a barra de vida. */
+  private readonly quadro: HTMLElement;
+  private readonly quadroVida: HTMLElement;
+  private quadroEstado = 0;
+  private quadroChave = '';
   private nucleoMostrado = -1;
   private nucleoClasse = '';
   private periodo = 0;
@@ -174,6 +184,12 @@ export class PraiaHud {
       this.celulasDasPortas.push({ celula, vida, pct: '' });
     }
 
+    // O quadro de luz da cidade (P164): uma célula sob as portas, com a vida do quadro; laranja sabotado, vermelha apagado.
+    this.quadro = el('div', 'praia-quadro', this.raiz);
+    this.quadro.hidden = true;
+    el('span', '', this.quadro, 'QUADRO DE LUZ DA CIDADE');
+    this.quadroVida = el('i', 'pc-vida', el('div', 'pc-barra', this.quadro));
+
     this.zona = el('div', 'praia-zona', this.raiz);
 
     this.cartao = el('div', 'praia-cartao', this.raiz);
@@ -209,6 +225,8 @@ export class PraiaHud {
     this.nucleoMostrado = -1;
     this.estadosDosCabos.fill(0);
     this.estadosDasPortas.fill(0);
+    this.quadroEstado = 0;
+    this.quadroChave = '';
     for (const c of this.celulasDasPortas) c.pct = '';
     for (const c of this.celulasDosCabos) c.pct = '';
     this.mostradoCartao = false;
@@ -236,7 +254,8 @@ export class PraiaHud {
     const alertaDaRede = rede.presente ? this.alertaDoNucleo.atualiza(rede.fracao, rede.pressao) : null;
     const alertaDosCabos = q.cabos.presente ? avisoDosCabos(this.estadosDosCabos, q.cabos.estado) : null;
     const alertaDasPortas = q.portas.presente ? avisoDasPortas(this.estadosDasPortas, q.portas.estado, NOMES_DAS_PORTAS) : null;
-    const alerta = alertaDaRede ?? alertaDasPortas ?? alertaDosCabos;
+    const alertaDoQuadro = q.quadro.presente ? avisoDoQuadro(this.quadroEstado, q.quadro.estado) : null;
+    const alerta = alertaDaRede ?? alertaDasPortas ?? alertaDoQuadro ?? alertaDosCabos;
     // O anúncio do lugar: aparece e some sozinho (a animação é do CSS; aqui só o texto e o relógio).
     const novo = alerta ?? this.anunciador.atualiza(q.eu.x, q.eu.z, dt);
     if (novo) {
@@ -308,6 +327,21 @@ export class PraiaHud {
       }
     } else if (!this.portas.hidden) {
       this.portas.hidden = true;
+    }
+
+    // O quadro de luz da cidade: a célula só mexe no DOM quando o estado ou a barra (em passos de 2%) muda.
+    if (q.quadro.presente) {
+      this.quadro.hidden = false;
+      const vida = Math.round(q.quadro.vida * 50);
+      const chave = `${q.quadro.estado}|${vida}`;
+      if (chave !== this.quadroChave) {
+        this.quadroChave = chave;
+        this.quadro.dataset.estado = ESTADO_DO_QUADRO[q.quadro.estado] ?? 'ligado';
+        this.quadroVida.style.transform = `scaleX(${(vida / 50).toFixed(2)})`;
+      }
+      this.quadroEstado = q.quadro.estado;
+    } else if (!this.quadro.hidden) {
+      this.quadro.hidden = true;
     }
 
     // O aviso da água, a cada quadro enquanto há água (uma comparação), com o DOM só quando muda.

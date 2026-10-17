@@ -245,6 +245,18 @@ export function avisoDasPortas(antes: ArrayLike<number>, depois: ArrayLike<numbe
   return melhor;
 }
 
+/**
+ * O aviso do QUADRO DE LUZ da cidade (P164): compara o estado do quadro no quadro anterior com o de agora (0 ligado, 1 sabotado, 2 apagado) e devolve uma linha curta, ou `null`. Manda a mais
+ * grave: apagado, depois recuperado, por último "sob sabotagem" (a primeira vez que o quadro passa a ser depredado).
+ */
+export function avisoDoQuadro(antes: number, depois: number): string | null {
+  if (antes === depois) return null;
+  if (depois === 2) return 'CIDADE NO ESCURO · AS ZONAS DE CURA CAÍRAM';
+  if (antes === 2) return 'QUADRO DE LUZ RECUPERADO · A LUZ VOLTOU';
+  if (antes === 0 && depois === 1) return 'QUADRO DE LUZ SOB SABOTAGEM · A CIDADE VAI AO ESCURO';
+  return null;
+}
+
 /** O cartão de missão da praia (mostrado uma vez, ao começar): a história em três linhas curtas — alegoria, sem nomes reais. */
 export const CARTAO_DA_MISSAO = {
   titulo: 'OPERAÇÃO CABOS ABERTOS',
