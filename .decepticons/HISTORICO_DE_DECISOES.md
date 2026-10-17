@@ -1,3 +1,15 @@
+## [2026-10-17] O jogo ganha sete línguas, com o português como texto de origem (Claude, P173)
+
+**Ordem:** colocar já o inglês, o japonês, o espanhol, o francês, o chinês e o russo (resposta à P171 (b)).
+
+**Decisões:**
+1. **O português fica no código e no HTML; as outras línguas são dicionários JSON** em `client/public/locales/`. Nenhum módulo de interface sabe de idioma (G3), nenhuma chave artificial para manter, e o texto novo nasce em português como sempre. JSON em `public/` e não módulo, porque o teto de JS (500 KB gz, ~480 hoje) não comporta seis dicionários e porque só baixa quem escolheu a língua.
+2. **Tradutor de DOM com observador, não `t()` em cada arquivo:** o jogo escreve texto em dezenas de lugares (`textContent`); o observador pega todos sem tocar neles, e a troca de língua é ao vivo (cada nó guarda o original). O custo é só fora do português. `t()` existe para o código que monta texto na mão.
+3. **Chaves com lacuna `{n}`** para o que o jogo preenche (número, nome), a tradução reordena; o valor da lacuna também é traduzido (uma volta), para `VENCEDOR: AZUL` virar `WINNER: BLUE`.
+4. **Detecção pela língua do navegador só fora de navegador de teste** (`navigator.webdriver`): o smoke e as bancadas comparam textos em português; a escolha explícita (`?lang=`, seletor) vale sempre. Quem tem o navegador em inglês já abre em inglês (o alvo da P171: EUA, Japão, Alemanha, Coreia, Reino Unido).
+5. **A cobertura é do teste:** arma nova, rótulo novo de configuração ou texto novo no `index.html` sem tradução **quebram o `npm test`**; é o que impede o dicionário de apodrecer.
+6. **Fora do alcance, declarado:** voz do narrador, canvas, fichas do Hangar, a landing; alemão e coreano (os outros mercados da reportagem) ficam como o próximo passo barato (é só um JSON novo).
+
 ## [2026-10-16] O site ganha um sistema de design e fotos cinematográficas dos Mechs reais (Claude, P172)
 
 **Ordem:** deixar a landing e as páginas "bem parecidas com as referências", com acabamento de portal de jogo, mais único.

@@ -3445,7 +3445,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 /* Sem sinal: do carregamento da página até o jogo montar o console, as telas ficam apagadas, só com a moldura e o título. */
 #overlay.cc-espera .mon-screen > * { visibility: hidden; }
 #overlay.cc-espera .mon { filter: saturate(0.35) brightness(0.8); }
-#overlay.cc-espera .mon-head h2::after { content: '· SEM SINAL'; margin-left: 8px; color: var(--mon-cor); font-size: calc(9px * var(--k)); letter-spacing: 2px; opacity: 0.7; animation: sem-sinal 1.4s steps(1) infinite; }
+#overlay.cc-espera .mon-head h2::after { content: var(--t-sem-sinal, '· SEM SINAL'); margin-left: 8px; color: var(--mon-cor); font-size: calc(9px * var(--k)); letter-spacing: 2px; opacity: 0.7; animation: sem-sinal 1.4s steps(1) infinite; }
 @keyframes sem-sinal { 50% { opacity: 0.15; } }
 
 /* IMPLANTAR: a tela escurece a partir do brilho da missão e o jogo recarrega no mapa novo. */
@@ -3538,7 +3538,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 #overlay.console.cc-espera .cta { background: #2a332d !important; box-shadow: none !important; text-shadow: none !important; color: #8fa196 !important; }
 #overlay.console.cc-espera h1 { text-shadow: none !important; }
 #overlay.console.cc-espera::before {
-  content: 'INICIALIZANDO A SALA DE COMANDO';
+  content: var(--t-inicializando, 'INICIALIZANDO A SALA DE COMANDO');
   position: absolute;
   left: 0;
   right: 0;
@@ -3637,7 +3637,15 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 /* Carregando: nada da frase nem do "mais opções" (o botão ainda está apagado) e o rótulo diz o que carrega: a partida. */
 #overlay.console.cc-primeira.cc-espera .cc-pitch,
 #overlay.console.cc-primeira.cc-espera .cc-mais { display: none !important; }
-#overlay.console.cc-primeira.cc-espera::before { content: 'CARREGANDO A PARTIDA'; }
+#overlay.console.cc-primeira.cc-espera::before { content: var(--t-carregando, 'CARREGANDO A PARTIDA'); }
+
+/* Idiomas (P173): os três textos que o CSS escreve (`content`) seguem o `lang` da página, posto por `i18n/i18n.ts`; o resto do texto vem do dicionário JSON. */
+:root:lang(en) { --t-sem-sinal: '· NO SIGNAL'; --t-inicializando: 'INITIALIZING COMMAND ROOM'; --t-carregando: 'LOADING MATCH'; }
+:root:lang(es) { --t-sem-sinal: '· SIN SEÑAL'; --t-inicializando: 'INICIALIZANDO LA SALA DE MANDO'; --t-carregando: 'CARGANDO LA PARTIDA'; }
+:root:lang(fr) { --t-sem-sinal: '· PAS DE SIGNAL'; --t-inicializando: 'INITIALISATION DE LA SALLE DE COMMANDEMENT'; --t-carregando: 'CHARGEMENT DE LA PARTIE'; }
+:root:lang(ja) { --t-sem-sinal: '· 信号なし'; --t-inicializando: '司令室を起動中'; --t-carregando: '試合を読み込み中'; }
+:root:lang(zh) { --t-sem-sinal: '· 无信号'; --t-inicializando: '正在初始化指挥室'; --t-carregando: '正在加载对局'; }
+:root:lang(ru) { --t-sem-sinal: '· НЕТ СИГНАЛА'; --t-inicializando: 'ЗАПУСК КОМАНДНОГО ЦЕНТРА'; --t-carregando: 'ЗАГРУЗКА МАТЧА'; }
 
 /* Balão de ajuda dentro de um monitor (hoje: ligar a mesa de vídeo): cobre a tela do monitor enquanto está aberto. */
 .cmd-ajuda { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; overflow: auto; background: #05080b; border: 1px solid var(--hot); }

@@ -1,9 +1,16 @@
 import './styles.css';
 import { installDiagnostics, runtimeDiagnostics } from './core/runtimeDiagnostics';
+import { iniciarIdioma, ligarSeletorIdioma } from './i18n/i18n';
 
 installDiagnostics();
 const started = performance.now();
-void import('./core/Game')
+// A língua vem antes da interface (P172): em português não custa nada; nas outras, baixa o dicionário e traduz o que já está na tela.
+void iniciarIdioma()
+  .then(() => {
+    const seletor = document.getElementById('setting-idioma');
+    if (seletor instanceof HTMLSelectElement) ligarSeletorIdioma(seletor);
+    return import('./core/Game');
+  })
   .then(({ Game }) => Game.create(document.getElementById('app')!))
   .then((game) => {
     runtimeDiagnostics.bootMs = performance.now() - started;

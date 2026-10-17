@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O JOGO FALA SETE LÍNGUAS — Claude, 17/10 (branch `claude/idiomas`, P173)
+
+**A ordem do Comandante (17/10):** *"sim, vamos JÁ colocar a opção para outras línguas (inglês, japonês, espanhol, francês, chinês, russo)"*.
+
+**Feito:**
+1. **`client/src/i18n/i18n.ts`:** o texto de origem é o português (nenhum módulo de interface precisou mudar); cada língua é um JSON em `client/public/locales/` (`{ "texto em português": "tradução" }`, com lacunas `{0}` para o que o jogo preenche). `traduzir()` é pura (busca exata, padrões com lacuna, cache de 2000); a camada de DOM traduz a página e **observa** (`MutationObserver`) o que o jogo escreve depois (HUD, avisos, menus), inclusive `title`/`aria-label`. **A troca é ao vivo** (cada nó guarda o original), sem recarregar.
+2. **Escolha:** `?lang=` do link → a escolha salva (`cybermech.lang`) → a língua do navegador (**só fora de navegador de teste**, para as bancadas e o smoke seguirem comparando português) → português. Seletor em Configurações → JOGO → *Idioma · Language* (sempre bilíngue, para quem está perdido).
+3. **445 textos por língua** (en, es, fr, ja, zh, ru): menus, configurações, controles, HUD de combate, avisos de missão, bandeira e domínio, dica de cada arma, nome das armas, modos, setores, desafios, tela de carregamento (com as dicas) e os 3 textos que o CSS escreve (`content`, por `:lang()`).
+4. **Testes (26, `i18n.test.ts`):** seis dicionários com **as mesmas chaves**, sem vazio, com as mesmas lacunas, e cada língua na sua escrita; **cobertura por teste**: a dica e o nome de **cada arma** (arma nova sem tradução quebra o teste), os rótulos das configurações, as dicas do carregamento e **todo texto do `index.html`**. Cinco mutações pegas (detecção em navegador de teste, lacuna não traduzida, ordem de especificidade, cache, margens).
+
+**Custo de CPU:** zero em português. Fora dele, um observador de mutações (o HUD troca texto, no pior caso, por quadro) e uma busca em tabela com cache; **nada na simulação** (G1/G2). Peso: o JS cresce ~3 KB; cada dicionário é um JSON de ~20–27 KB (7–9 KB com gzip) que só baixa quem escolheu a língua (G12).
+
+**Falta (R13, está em `STATUS_REAL.md` como PARCIAL):** (a) **revisão por falante nativo** (as traduções são do Claude); (b) a **voz do narrador** segue em português/sotaques; (c) textos desenhados em canvas (placas de nome, mapa-múndi) e as fichas longas do Hangar; (d) a landing do site (`scripts/site/`) continua só em português; (e) a vírgula decimal das dicas (`0,85 s`) não vira ponto em inglês.
+
+**Próxima sessão começa com:** o login (P174), o arpão magnético (P77) e as pendências recentes (bots com o laser; contadores do painel).
+
 ## O SITE VIROU PORTAL DE JOGO: sistema de design, fotos cinematográficas dos Mechs reais e as três páginas no mesmo visual — Claude, 16/10 (branch `claude/landing-referencia`, P172)
 
 **A ordem do Comandante (16/10):** *"quero bem parecido com as imagens de referência"*, depois *"falta acabamento UX e UI, mais estiloso, mais único, sair dos padrões"* + a orientação de um profissional (resumida no `DESIGN_SYSTEM_SITE.md`).
