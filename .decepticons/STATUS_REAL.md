@@ -3,6 +3,8 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
+**P172 — o site público no sistema de design novo (REAL, verificado no Chrome em 390, 1024 e 1440 px e por `site.mjs --check`; falta o julgamento do Comandante):** landing, oficina e sala de controle com a mesma identidade (`DESIGN_SYSTEM_SITE.md`); fotos dos Mechs reais do jogo (`cena-cinematica.mjs`); todos os números do código do jogo e do git. **PARCIAL / AUSENTE (R13):** o herói é foto (não 3D ao vivo); páginas próprias de Hangar/Arsenal e de Pilotos **AUSENTES** (Pilotos é recurso que o jogo não tem); as ilustrações do esquadrão são arte de referência, não foto.
+
 **P169 — landing e comunicação pública (implementação validada localmente em 16/10, Codex; publicação acompanhada em `ESTADO_ATUAL.md`):** identidade industrial, fotografias dos modelos reais, seis sistemas de combate, cards com atributos e montagens válidas do catálogo, modos e orientação inicial. Textos públicos revisados; fila de decisões e falas operacionais preservadas apenas no painel local. Capturas desktop/celular e método em `medicoes/LANDING_P169.md`. **Limites:** composição promocional não é arena nova; conversão e retenção ainda não medidas; login, ranking e campanha continuam nos estados registrados abaixo.
 
 Última revisão parcial: 2026-10-14 (Codex: P109, recuperação da câmera e medição de fluidez; demais funcionalidades não revalidadas nesta sessão. Situação de publicação: `ESTADO_ATUAL.md` e `DEPLOY.md`; o aviso de congelamento de 13/10 é histórico.)

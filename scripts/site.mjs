@@ -592,18 +592,29 @@ async function check() {
     await publicPage(page, 'landing', failures);
     await antiCopy(page, 'landing', failures);
     // Cards usam o catálogo e links de montagem reais; detalhes numéricos continuam na Oficina.
-    if ((await page.locator('.mech-card a[href*="?build="]').count()) !== 3) failures.push('landing: faltam os três links de montagem do catálogo');
+    if ((await page.locator('.mech-card a[href*="?build="]').count()) !== 4) failures.push('landing: faltam os quatro links de montagem dos chassis (Andróide, Vector-09, Colossus-01, Colossus-V4)');
+    if ((await page.locator('.mtag').count()) !== 4) failures.push('landing: faltam os rótulos dos quatro chassis na foto de escala');
     if ((await page.locator('.mode-card').count()) !== 3) failures.push('landing: faltam os modos de combate');
-    if ((await page.locator('.feature-grid li').count()) !== 6) failures.push('landing: VITRINE incompleta');
+    if ((await page.locator('.res-grid li').count()) !== 4) failures.push('landing: os quatro recursos da VITRINE não saíram (o GAME_DESIGN mudou de título?)');
+    if ((await page.locator('.wcard').count()) !== 6) failures.push('landing: faltam as seis armas do arsenal');
+    if ((await page.locator('.hg-list li').count()) !== 6 || (await page.locator('.hg-stage .mk').count()) !== 6) failures.push('landing: faltam as seis partes do hangar (lista e marcadores)');
+    if ((await page.locator('.ptw-list li').count()) !== 4) failures.push('landing: faltam os quatro compromissos de jogo limpo (GAME_DESIGN)');
     if (await page.locator('#intro').count()) failures.push('landing: uma vinheta bloqueia o primeiro acesso');
     const cameras = page.locator('[data-camera]');
     if (await cameras.count() > 1) {
       await cameras.nth(1).click();
-      if (await cameras.nth(1).getAttribute('aria-pressed') !== 'true' || !(await page.locator('.camera-slide').nth(1).isVisible())) failures.push('landing: seletor de câmera não troca a imagem');
+      const ligada = await page.locator('.camera-slide').nth(1).evaluate((e) => e.classList.contains('on'));
+      if (await cameras.nth(1).getAttribute('aria-pressed') !== 'true' || !ligada) failures.push('landing: seletor de câmera não troca a imagem');
+    }
+    // Toda imagem da página existe (as preguiçosas fora da tela não aparecem no teste de carga).
+    for (const src of await page.locator('img[src]').evaluateAll((imgs) => [...new Set(imgs.map((i) => i.src))])) {
+      const r = await page.request.get(src);
+      if (r.status() >= 400) failures.push(`landing: imagem ${src} responde HTTP ${r.status()}`);
     }
     const missingArt = await page.locator('img').evaluateAll(imgs => imgs.filter(img => img.complete && !img.naturalWidth).map(img => img.src));
     if (missingArt.length) failures.push(`landing: imagens ausentes: ${missingArt.join(', ')}`);
-    await page.click('a.play-btn');
+    // O CTA principal está na abertura: o do cabeçalho só aparece depois de rolar (nunca dois botões de jogar juntos).
+    await page.click('.hero a.play-btn');
     await page.waitForURL(`${base}jogar/`);
     await page.waitForFunction(CTA_READY, null, { timeout: 60_000 });
     await pageSane(page, 'jogo', failures);

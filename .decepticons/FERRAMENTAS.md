@@ -210,6 +210,14 @@ feixe do laser, pelo `window.__game.weaponFx`). Em 16/10: 0 de 192 poses com NaN
 
 ---
 
+## 5a. Fotos promocionais dos Mechs reais para o site (`medicoes/cena-cinematica.mjs`, P172, 16/10)
+
+**Quando:** o site precisa de imagem de Mech, de arma ou de cena (herói da landing, Hangar, régua dos chassis, cartas). **Regra:** a imagem é do **modelo real** do jogo (`client/public/models/*.glb`, o procedural do Vector-09, `weaponModels.ts`); nada de arte inventada como se fosse o jogo.
+
+**Como:** `node .decepticons/medicoes/cena-cinematica.mjs [hero duelo colossusv4 marauder vector09 hangar escala arma-rotary …]` sobe o Vite, abre o Chrome por software (SwiftShader) e grava `client/public/press/cena-<nome>.jpg`; ~10 s por foto. O aleatório das faíscas tem semente: a mesma foto sai igual. A **posição das partes na foto** (topo e base de cada Mech, os 6 pontos do Hangar) é projetada do 3D e gravada em `scripts/site/cena/<nome>.json`: a landing posiciona a régua de 20 m e os marcadores por ela, então **mexeu na câmera? Rode de novo e confira a página**.
+
+**Achados (armadilhas):** (1) o casco branco do Marauder estoura no brilho: o script escurece o tom do material (a malha continua a do jogo); (2) o nevoeiro exponencial come a foto larga (`escala` usa densidade 0,0032; o herói, 0,0105; as fichas, 0,018); (3) o Vector-09 é procedural e simples: a foto dele é sóbria, e é verdade; (4) cone de luz em `MeshBasicMaterial` aditivo parece triângulo chapado: o feixe usa sombreador com borda e ponta esmaecidas; (5) heredoc com crase quebra no Bash desta máquina, escreva o script com o Write e rode.
+
 ## 6. CI vermelho: ler o log e medir o boot (para os agentes)
 
 **Ler o log quando o token do `gh` morreu (12/10, PR do console).** `node scripts/gh.mjs pr checks <n>` funciona (cai para a credencial do Git), mas `gh api …` e `gh run …` **não**: sem token o GitHub responde **404** em repositório privado (ou **403 "API rate limit exceeded"**), e o fallback do `scripts/ghSeguro.mjs` só dispara em erro de autenticação (401, "Bad credentials"; de propósito: um 404 de verdade, como um PR que não existe, não deve ser repetido).

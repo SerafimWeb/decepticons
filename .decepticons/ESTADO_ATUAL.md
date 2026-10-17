@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O SITE VIROU PORTAL DE JOGO: sistema de design, fotos cinematográficas dos Mechs reais e as três páginas no mesmo visual — Claude, 16/10 (branch `claude/landing-referencia`, P172)
+
+**A ordem do Comandante (16/10):** *"quero bem parecido com as imagens de referência"*, depois *"falta acabamento UX e UI, mais estiloso, mais único, sair dos padrões"* + a orientação de um profissional (resumida no `DESIGN_SYSTEM_SITE.md`).
+
+**Feito:**
+1. **`DESIGN_SYSTEM_SITE.md` + `scripts/site/hud.mjs`:** paleta oficial (preto industrial, amarelo `#ffd000`, branco técnico), **Chakra Petch** (títulos) + **Barlow** (texto), hospedadas no próprio site; componentes reutilizáveis (`hudNav`, `sectionHeading`, `featureCard`, `gameButton`, `pageHero`…); revelar ao rolar, paralaxe do herói e fade entre câmeras, só CSS, com `prefers-reduced-motion`.
+2. **Fotos dos Mechs REAIS** (`.decepticons/medicoes/cena-cinematica.mjs`, ~10 s cada): Colossus-V4, Vector-09 e Marauder (os `.glb` e o procedural do jogo) num hangar com luz, névoa, brilho e faíscas; herói, duelo, a escala dos quatro chassis, o Marauder do Hangar e o desenho de cada arma. A **posição das partes na foto** (régua de 20 m, os 6 marcadores do Hangar) sai da projeção 3D e a landing posiciona os rótulos por ela. Substitui o `landing-assets.mjs` do Codex.
+3. **Landing:** herói com o Colossus de 20 m e a régua, seletor de câmeras com o que cada uma faz, quatro recursos da VITRINE, "Sem pay-to-win" (as 4 linhas do GAME_DESIGN), Hangar com os 6 módulos do Marauder (blindagem do código), os **quatro tamanhos de robô na mesma escala** (Andróide 1, Vector-09 2, Colossus-01 3 lado a lado e o Colossus-V4 4 por trás, discreto: ordem do Comandante durante a sessão), seis armas com tabela de 3 níveis, três modos, esquadrão, controles e FAQ. O botão de jogar do cabeçalho só aparece depois do herói (nunca dois CTAs juntos). Texto menor que 12 px não existe mais.
+4. **Oficina e sala de controle:** mesmo sistema. A sala ganhou cartas por IA (commits, entregas, últimas atividades), **mapa de calor por dia da semana e hora** e registro de entregas/commits **filtrável por quem fez**, tudo do git; "Como um pedido vira jogo".
+5. **Teste do site (`site.mjs --check`):** conta recursos, armas, partes do Hangar e compromissos; troca de câmera; **toda imagem da página responde 200**; o clique no CTA do herói.
+
+**Custo de CPU:** nenhum no jogo. Página: imagens estáticas, animações só de CSS (opacity/transform), um observador que desliga cada bloco depois de revelá-lo. Peso: herói 265 KB, 5 fontes ~100 KB.
+
+**Falta (R13):** (a) **o olho do Comandante**; (b) o herói é **foto**, não 3D ao vivo (decisão de custo; a foto é regenerável); (c) os modelos das armas do jogo são simples, por isso as fotos de arma são sóbrias (a arte conceitual das referências não foi usada: não é o jogo); (d) as ilustrações do esquadrão são recortes da referência do Comandante; (e) páginas próprias de **Hangar/Arsenal** com comparador e **Pilotos** (não existe no jogo) ficam para o próximo PR.
+
+**Próxima sessão começa com:** o veredito do Comandante sobre o visual; depois, o que ele apontar (a lista de (e)).
 ## O CHECKPOINT DAS EXPLOSÕES E AS LIÇÕES DO WAR ROBOTS — Claude, 16/10 (branch `claude/checkpoint-explosoes`, P170 e P171)
 
 **O Comandante (16/10, depois de jogar):** *"as explosões das armas estão ficando INCRÍVEIS! mantenha essa qualidade e marque esse ponto como um checkpoint"*; e colou a reportagem dos US$ 1 bilhão do War Robots.

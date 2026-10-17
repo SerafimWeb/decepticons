@@ -12,7 +12,8 @@ import { arquitetura, entregas, jogo, marcos, porModulo, saudeTecnica, statusRea
 import { GRAFO_CSS, grafoOficina } from './site/grafo.mjs';
 import { CHART_CSS, divergingBars, heatTable, lineChart, nf, pct, rankBars } from './site/graficos.mjs';
 import { saudeOficina } from './site/saude.mjs';
-import { esc, pagina, topo } from './site/tema.mjs';
+import { esc, pagina } from './site/tema.mjs';
+import { HUD_PAGE_CSS, hudCss, hudFooter, hudNav, limpaRotulos, pageHero } from './site/hud.mjs';
 import { COMBAT_GUIDE_CSS, WORKSHOP_SCRIPT, familiasDeNumeros, workshopGuide } from './site/combat-guide.mjs';
 
 const argv = process.argv.slice(2);
@@ -254,11 +255,7 @@ function build() {
     </div>`;
 
   return `
-  <header class="o-hero">
-    <p class="boot">&gt; bancada de testes · simulação do jogo a 60 Hz · build ${esc(m.head)}<span class="cursor" aria-hidden="true">█</span></p>
-    <h1 class="title">OFI<span>CINA</span></h1>
-    <p class="pitch">Aqui cada Mech, arma e escudo passa pela bancada antes de ir para a arena. Nenhum número é digitado: os gráficos saem da mesma simulação que roda no jogo, os robôs, as armas e os escudos são lidos do código dele, e os selos vêm do quadro de estado do projeto, tudo refeito a cada versão. É assim que o equilíbrio vira número, e a estratégia, uma escolha que dá para medir.</p>
-  </header>
+
 
   ${workshopGuide(game, status)}
   <details id="mapa" class="mapa"><summary>Explorar arquitetura e módulos do jogo</summary>${grafo.html}</details>
@@ -342,18 +339,32 @@ const css = `
   .method li::marker { content: '> '; color: var(--amber); }
 `;
 
+const hero = pageHero({
+  base: '../',
+  eyebrowText: 'ESTATÍSTICAS DE COMBATE',
+  title: 'OFICINA',
+  sub: 'DADOS QUE IMPORTAM',
+  art: 'cena-duelo.jpg',
+  pitch: 'Aqui cada Mech, arma e escudo passa pela bancada antes de ir para a arena. Nenhum número é digitado: os gráficos saem da mesma simulação que roda no jogo, os robôs, as armas e os escudos são lidos do código dele, e os selos vêm do quadro de estado do projeto, tudo refeito a cada versão. É assim que o equilíbrio vira número, e a estratégia, uma escolha que dá para medir.',
+  extra: `<div class="hero-meta"><span class="chip-tag" style="color:var(--amber)">SIMULAÇÃO A 60 HZ</span><span class="chip-tag" style="color:var(--muted)">BUILD ${esc(m.head)}</span></div>`,
+});
 const body = `
-  ${topo({ base: '../', current: 'oficina', left: 'CYBERMECH // OFICINA', live: `bancada · build ${esc(m.head)}` })}
-  ${game ? build() : '<section><h2>Bancada fora do ar</h2><p class="lede">Não foi possível ler a simulação do jogo neste build.</p></section>'}
-  <footer><span>CYBERMECH © ${new Date().getFullYear()} <b>SERAFIM WEB</b> · números gerados pela simulação do jogo</span><span>build ${esc(m.head)} · ${esc(m.generated)} BRT</span></footer>
+  ${hudNav({ base: '../', current: 'oficina' })}
+  <main id="conteudo">
+  ${hero}
+  <div class="page">
+  ${game ? limpaRotulos(build()) : '<section><h2>Bancada fora do ar</h2><p class="lede">Não foi possível ler a simulação do jogo neste build.</p></section>'}
+  </div>
+  </main>
+  ${hudFooter({ base: '../' })}
 `;
 
 const html = pagina({
   title: 'Oficina · CYBERMECH',
   description: 'A bancada de testes do CYBERMECH: robôs, armas, escudos e calor medidos pela simulação do jogo a cada versão.',
-  css,
+  css: hudCss('../') + HUD_PAGE_CSS + css,
   body,
-  script: grafo.script + '\n' + WORKSHOP_SCRIPT,
+  script: `${grafo.script}\n${WORKSHOP_SCRIPT}`,
 });
 mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, html);

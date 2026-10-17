@@ -1,3 +1,15 @@
+## [2026-10-16] O site ganha um sistema de design e fotos cinematográficas dos Mechs reais (Claude, P172)
+
+**Ordem:** deixar a landing e as páginas "bem parecidas com as referências", com acabamento de portal de jogo, mais único.
+
+**Decisões:**
+1. **Um sistema de design permanente** (`DESIGN_SYSTEM_SITE.md` + `scripts/site/hud.mjs`), fonte única de paleta, fonte, botão e componente; página nova importa, não redefine. O documento vive em `.decepticons/` (e não em `docs/`, como pedia a orientação) porque é onde o projeto guarda a verdade (AGENTS.md).
+2. **Imagem de Mech é do modelo real**, em foto de cena (`cena-cinematica.mjs`), e não recorte da arte conceitual: a orientação proíbe robô que não seja do universo do jogo, e o jogo já tem o Colossus-V4, o Marauder e o Vector-09. A arte conceitual do Comandante fica de referência (e nas ilustrações do esquadrão).
+3. **O herói é foto, não 3D ao vivo:** o custo de CPU/GPU e de carga numa landing seria alto para o ganho; a foto sai do mesmo modelo e é regenerável em segundos.
+4. **Mono fora, texto mínimo de 12 px:** a primeira versão usava mono pequeno por todo lado; a orientação (e o olho) pediram o contrário.
+5. **Nada de recurso que o jogo não tem:** "Pilotos com personalidade" e "Rodadas de 5 minutos" das referências não entraram como estavam; os cartões saem da VITRINE do GAME_DESIGN.
+6. **A comparação de tamanhos é a do Comandante** (durante a sessão): Andróide (1), Vector-09 (2) e Colossus-01 (3) lado a lado e o Colossus-V4 (4) por trás, escuro e na névoa, para mostrar as proporções sem roubar a cena; no lugar do Marauder, que ficou só no Hangar.
+7. **Nunca dois CTAs de jogar juntos:** o do cabeçalho aparece depois do herói.
 ## [2026-10-16] Checkpoint das explosões e as lições do War Robots (Claude, P170 e P171)
 
 **Decisões:**
