@@ -2,16 +2,12 @@ import * as THREE from 'three';
 import { loadWalkerAsset, WalkerVisual } from '../entities/WalkerVisual';
 
 /**
- * A DEMONSTRAÇÃO DO DRAGA-01 (P180, parte A): com `?walker` no link, o Draga anda em círculo (70 m de raio) em volta de onde o jogador nasceu e **mira o convés para ele**, em qualquer
+ * A DEMONSTRAÇÃO DO DRAGA-01 (P180, parte A): com `?walker` no link (`walkerLink.ts`), o Draga anda em círculo (70 m de raio) em volta de onde o jogador nasceu e **mira o convés para ele**, em qualquer
  * mapa. **É só desenho**: o Draga ainda não é um inimigo (não tem corpo na simulação, não atira nem recebe tiro: isso é a parte C do plano, `AMAZONIA.md` § 7). Existe para o Comandante
  * ver o robô andando no jogo de verdade e conferir a escala, o andar e as cores. Marcado como DEMO em `STATUS_REAL.md` (R13).
  *
  * G3: módulo independente, ligado em `Game.ts` por uma chamada por quadro. **Custo:** um desenho (27 mil triângulos) e 18 ossos; nada alocado por quadro (a marcha escreve numa pose única).
  */
-export function walkerFromSearch(search: string): boolean {
-  return new URLSearchParams(search).has('walker');
-}
-
 const RAIO_M = 70;
 const VELOCIDADE_MS = 2.6;
 

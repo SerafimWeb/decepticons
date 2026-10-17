@@ -40,7 +40,8 @@ import type { BotSystem } from '../combat/BotSystem';
 import type { Respawner } from '../combat/Respawner';
 import { ROUND_S, type Round } from '../combat/Round';
 import { mascaraFromSearch } from '../entities/mascaraDoChefe';
-import { WalkerDemo, walkerFromSearch } from '../debug/WalkerDemo';
+import type { WalkerDemo } from '../debug/WalkerDemo';
+import { walkerFromSearch } from '../debug/walkerLink';
 import { diaFromSearch, progressoDaPartida } from '../environment/CicloDoDia';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
@@ -347,7 +348,9 @@ export class Game {
   private readonly diaFixo = diaFromSearch(location.search);
   /** A demonstração do Draga-01 (P180, parte A): `?walker` no link. Só desenho: o Draga ainda não é um inimigo. */
   private readonly walkerQuer = walkerFromSearch(location.search);
+  /** A demonstração é carregada sob demanda (`import()`): o código do Draga não pesa no download de quem joga sem o link (`scripts/orcamentoDeJs.mjs`). */
   private walkerDemo: WalkerDemo | null = null;
+  private walkerCarregando = false;
   /** Desenho dos drones da base Serafim (só quando a partida tem drones). */
   private droneVisuals: DroneVisuals | null = null;
   /** Os efeitos de arma (P160): clarão da boca, brilho do tiro, rastro em fita, marca na parede e a explosão com corpo. */
@@ -1729,8 +1732,14 @@ export class Game {
     this.match.arena.update(dt);
     // O Draga-01 (P180, parte A, `?walker`): anda em círculo em volta de onde o jogador nasceu e mira o convés nele. Só desenho.
     if (this.walkerQuer) {
-      this.walkerDemo ??= new WalkerDemo(this.scene, this.mech.simPosition, (x, z) => this.match.physics.terrainY(x, z, 6, 40) ?? 0);
-      this.walkerDemo.update(dt, this.mech.simPosition);
+      if (!this.walkerDemo && !this.walkerCarregando) {
+        this.walkerCarregando = true;
+        const nascimento = this.mech.simPosition.clone(); // uma vez: o centro do passeio é onde o jogador nasceu
+        void import('../debug/WalkerDemo').then(({ WalkerDemo }) => {
+          this.walkerDemo = new WalkerDemo(this.scene, nascimento, (x, z) => this.match.physics.terrainY(x, z, 6, 40) ?? 0);
+        });
+      }
+      this.walkerDemo?.update(dt, this.mech.simPosition);
     }
     // O ciclo do dia da praia (P161): começa no pôr do sol e em 5 minutos de partida vira noite, com as luzes da cidade acendendo. Só desenho: nada na simulação.
     if (this.match.arena.praia) {

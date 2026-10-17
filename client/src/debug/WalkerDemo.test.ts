@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { diferencaDeAngulo, rumoDe, walkerFromSearch } from './WalkerDemo';
+import { diferencaDeAngulo, rumoDe } from './WalkerDemo';
+import { walkerFromSearch } from './walkerLink';
 
 describe('a demonstração do Draga-01 (P180, parte A): o link e a geometria do passeio', () => {
   it('só liga com ?walker no link (sozinho ou entre outros parâmetros)', () => {
