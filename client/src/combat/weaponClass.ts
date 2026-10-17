@@ -64,6 +64,7 @@ export const WEAPON_FIT: Readonly<Record<WeaponId, WeaponFit>> = {
   seeker: { class: 'medium', size: 2 },
   laser: { class: 'medium', size: 2 },
   grenade: { class: 'medium', size: 2 },
+  harpoon: { class: 'medium', size: 2 },
   swarm: { class: 'light', size: 2 },
   cruise: { class: 'heavy', size: 2 },
   flamer: { class: 'heavy', size: 2 },

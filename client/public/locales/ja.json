@@ -473,5 +473,9 @@
  "LANÇADOR DE MÍSSEIS LEVE": "軽ミサイルランチャー",
  "MÍSSIL CRUZADOR": "巡航ミサイル",
  "RAIO LASER": "レーザー光線",
- "LANÇA-GRANADAS": "グレネードランチャー"
+ "LANÇA-GRANADAS": "グレネードランチャー",
+ "Arpão magnético": "マグネティックハープーン",
+ "ARPÃO MAGNÉTICO": "マグネティックハープーン",
+ "ARPÃO": "ハープーン",
+ "ARPÃO: PRENDE O PRIMEIRO INIMIGO À VISTA (ATÉ {0} M) E O PUXA; O DASH CORTA O CABO": "ハープーン: 視界内の最初の敵(最大{0}m)を捕らえて引き寄せる。ダッシュでケーブルを切れる"
 }

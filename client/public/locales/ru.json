@@ -473,5 +473,9 @@
  "LANÇADOR DE MÍSSEIS LEVE": "ЛЁГКАЯ РАКЕТНАЯ УСТАНОВКА",
  "MÍSSIL CRUZADOR": "КРЫЛАТАЯ РАКЕТА",
  "RAIO LASER": "ЛАЗЕРНЫЙ ЛУЧ",
- "LANÇA-GRANADAS": "ГРАНАТОМЁТ"
+ "LANÇA-GRANADAS": "ГРАНАТОМЁТ",
+ "Arpão magnético": "Магнитный гарпун",
+ "ARPÃO MAGNÉTICO": "МАГНИТНЫЙ ГАРПУН",
+ "ARPÃO": "ГАРПУН",
+ "ARPÃO: PRENDE O PRIMEIRO INIMIGO À VISTA (ATÉ {0} M) E O PUXA; O DASH CORTA O CABO": "ГАРПУН: ЦЕПЛЯЕТ ПЕРВОГО ВРАГА В ПОЛЕ ЗРЕНИЯ (ДО {0} М) И ПРИТЯГИВАЕТ ЕГО; РЫВОК РВЁТ ТРОС"
 }

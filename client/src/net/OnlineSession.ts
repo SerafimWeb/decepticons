@@ -469,6 +469,10 @@ export class OnlineSession implements Pilot {
       _aimPoint.copy(_o).addScaledVector(_d, hit ? hit.distance : 400);
       this.o.match.grenades.fire(_o, _aimPoint, r.mech.collider, weapon('grenade'));
       r.mech.onFireSecondary();
+    } else if (id === 'harpoon') {
+      // O arpão de outro jogador: só o raio (o servidor prende e puxa; o puxão chega pelo estado do robô preso). Cada ombro manda o seu evento.
+      this.o.match.drawHook(_o, _d, weapon('harpoon'), r.mech.collider, true);
+      r.mech.onFireSecondary();
     } else if (id === 'laser') {
       // Um pulso do laser de outro jogador: acha onde o feixe acaba e o acende (o dano é do servidor).
       this.o.match.drawBeam(_o, _d, r.mech.collider, weapon('laser'), true);

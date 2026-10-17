@@ -235,7 +235,7 @@ describe('Marauder: duas mãos no botão principal e os lançadores dos ombros',
   it('as mãos aceitam tudo o que o principal dispara (agora com o foguete, P120); blaster no ombro é recusado; plasma duplo só sem os ombros', () => {
     expect(armOptions('right', 'marauder')).toEqual(['rotary', 'flamer', 'seeker', 'cannon', 'autocannon', 'arc', 'cryo', 'railgun', 'emp', 'plasma', 'rockets', 'blaster', 'shotgun', 'swarm', 'cruise', 'laser', 'grenade']);
     expect(armOptions('left', 'marauder')).toEqual(armOptions('right', 'marauder'));
-    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise', 'grenade']);
+    expect(armOptions('shoulders', 'marauder')).toEqual(['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise', 'grenade', 'harpoon']);
     expect(validateLoadout({ ...factory, left: { id: 'rockets', tier: 0 }, shoulders: null })).toMatchObject({ ok: true });
     expect(validateLoadout({ ...factory, shoulders: { id: 'blaster', tier: 0 } })).toMatchObject({ ok: false, error: 'encaixe' });
     const twoPlasma = { ...factory, right: { id: 'plasma', tier: 0 }, left: { id: 'plasma', tier: 0 } } as LoadoutSpec;

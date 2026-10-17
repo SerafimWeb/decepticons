@@ -35,6 +35,8 @@ export interface ShotSink {
    * desenhar feixe (um teste, um bot) recebe o pulso como um projétil comum pelo `projectile`.
    */
   beam?(mount: MountId, w: WeaponStats): void;
+  /** Saiu um arpão de `mount` (um raio que prende e puxa): quem aplica é a partida (`Match.hookShot`). Opcional: quem não tem arpão não precisa implementar. */
+  hook?(mount: MountId, w: WeaponStats): void;
 }
 
 /**
@@ -219,7 +221,8 @@ export class Armament {
           if (mount === 'leftHand' && l.offhand !== undefined) continue;
           if (!m.canFireMount(mount)) continue;
           // A onda sônica sai das duas bocas dos ombros ao mesmo tempo (como os foguetes); a rotatória só vai no gatilho principal (ARM_SLOTS).
-          if (s.wave) sink.wave(mount, s);
+          if (s.hook) sink.hook?.(mount, s);
+          else if (s.wave) sink.wave(mount, s);
           else if (s.beam && sink.beam) sink.beam(mount, s);
           else sink.projectile(mount, s, NO_SPREAD);
           m.onFireMount(mount, s);
