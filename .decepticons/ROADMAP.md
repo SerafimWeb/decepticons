@@ -315,7 +315,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 
 - [x] Idioma e conta no canto da primeira tela e da pausa (o Comandante não os achou nas Configurações) (pedido do Comandante, 17/10, P176) #ux
 
-- [ ] Landing do site em outras línguas: a faixa de idiomas no topo, os textos traduzidos e a escolha valendo no jogo (pedido do Comandante, 17/10, P178) #ux
+- [x] Landing do site em outras línguas: a faixa de idiomas no topo, os textos traduzidos e a escolha valendo no jogo (pedido do Comandante, 17/10, P178) #ux
 - [~] Lado político e pedagogia: o seletor de lado está no jogo (DEMO); faltam o Arquivo, o Relatório de Consequências e a campanha do Consórcio (`LADO_E_PEDAGOGIA.md`) (pedido do Comandante, 17/10, P179) #modos
 - [ ] Missão da Amazônia: a mineradora no rio (`fichas/cenario-amazonas.md`); o modelo do cenário é do Comandante, em outro chat (P180) #cenarios
 - [x] Arpão por peso: o robô mais leve não puxa o mais pesado (pedido do Comandante, 17/10, P181) #combate

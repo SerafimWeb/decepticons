@@ -168,7 +168,6 @@ if (typeof document !== 'undefined') {
 
   const marcarFaixa = (id) => {
     for (const b of document.querySelectorAll('.lang-strip [data-lang]')) b.setAttribute('aria-pressed', String(b.dataset.lang === id));
-    document.querySelector('.lang-strip')?.classList.toggle('sem-escolha', false);
   };
 
   const aplicar = async (id) => {
@@ -187,6 +186,7 @@ if (typeof document !== 'undefined') {
     if (!lerSalvo()) document.querySelector('.lang-strip')?.classList.add('sem-escolha');
     for (const b of document.querySelectorAll('.lang-strip [data-lang]')) {
       b.addEventListener('click', async () => {
+        document.querySelector('.lang-strip')?.classList.remove('sem-escolha');
         const feito = await aplicar(b.dataset.lang);
         void feito;
         gravar(b.dataset.lang);

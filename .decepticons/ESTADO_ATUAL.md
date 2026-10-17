@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A LANDING FALA SETE LÍNGUAS, COM A FAIXA DE IDIOMAS NO TOPO — Claude, 17/10 (branch `claude/landing-idiomas`, P178)
+
+**A ordem do Comandante (17/10):** *"idioma tem que ficar logo no início da landing, pra pessoa já selecionar o idioma nativo dele"*.
+
+**Feito:**
+1. **A faixa de idiomas é a primeira coisa da página** (`<nav class="lang-strip">`, antes da navegação): as sete línguas pelo nome nativo, a escolhida em destaque; **enquanto o visitante não escolhe, a faixa fica realçada** (o convite). Trocar traduz a página inteira na hora.
+2. **`scripts/site/idioma-landing.js`** (JavaScript puro, sem build: a landing é estática): a mesma ideia do jogo (P173), português como texto de origem, dicionário por língua com lacunas `{n}` para o que o gerador preenche (os números saem do código do jogo). Traduz os textos, `title`/`aria-label`/`alt`, o `<title>` e a descrição. **Escolha: `?lang=` → a salva → a do navegador (fora de navegador de teste) → português**; a escolha vai para `cybermech.lang`, **a mesma chave do jogo**, então quem escolhe na landing **já entra no jogo na língua dele**.
+3. **`scripts/site/locales/*.json`: 208 textos por língua** (en, es, fr, ja, zh, ru), copiados para ao lado da página pelo gerador (`scripts/landing.mjs`).
+4. **Testes (`server/idiomaLanding.test.ts`):** o tradutor da landing e o do jogo **dão a mesma resposta** (exata, padrões, lacunas traduzidas, margens, espaços quebrados, escolha da língua); os seis dicionários têm as mesmas chaves, sem vazio e com as mesmas lacunas; **a landing de verdade é montada** e confere a faixa como primeira coisa do corpo, o módulo e os dicionários ao lado, e que **90% ou mais dos textos têm tradução** (texto novo sem tradução aparece aqui antes de ir ao ar). O tradutor do jogo ganhou o mesmo fallback de espaços quebrados.
+
+**Custo de CPU/peso:** zero no jogo. Na landing: um módulo de ~4 KB e, só para quem escolhe outra língua, um JSON de ~14–22 KB; a tradução roda uma vez por troca (a página é estática, sem observador).
+
+**Falta (R13):** (a) **as traduções são da Claude e precisam de revisão por falante nativo** antes de divulgar fora do Brasil; (b) a Oficina, a Sala de controle e as demais páginas internas seguem em português; (c) as imagens com texto (as fotos de cena) não são traduzidas; (d) alemão e coreano (os outros mercados da P171) são um JSON novo cada.
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois o Arquivo e o Relatório de Consequências (P179), a missão da Amazônia (P180) quando o modelo chegar, e a linha selecionada em barra dourada nas Configurações (P182).
+
 ## DE QUE LADO VOCÊ JOGA? O SELETOR DE LADO, O ARPÃO POR PESO E O PLANO DA AMAZÔNIA — Claude, 17/10 (branch `claude/lado-e-arpao-peso`, P178 a P182)
 
 **O Comandante (17/10)** mandou, numa mensagem só, cinco ordens: o idioma logo no início da **landing** (P178); **perguntar o lado** (Aliança × Consórcio) e **ensinar** o que é o fascismo, a rede de mentiras e o medo, de modo sutil e pedagógico (P179); a **missão da Amazônia** (a mineradora no rio; o modelo é dele, em outro chat) (P180); a regra do **arpão** (o robô mais leve não puxa o mais pesado) (P181); e **referências de interface de jogos antigos** (P182).
