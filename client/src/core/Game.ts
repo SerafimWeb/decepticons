@@ -342,7 +342,7 @@ export class Game {
   private serafimParty = false;
   /** O `?dia=` do link (0 a 1): fixa a hora do dia da praia (P161); `null` = o relógio da partida manda. */
   private readonly diaFixo = diaFromSearch(location.search);
-  /** A demonstração do Draga-01 (P178, parte A): `?walker` no link. Só desenho: o Draga ainda não é um inimigo. */
+  /** A demonstração do Draga-01 (P180, parte A): `?walker` no link. Só desenho: o Draga ainda não é um inimigo. */
   private readonly walkerQuer = walkerFromSearch(location.search);
   private walkerDemo: WalkerDemo | null = null;
   /** Desenho dos drones da base Serafim (só quando a partida tem drones). */
@@ -1722,7 +1722,7 @@ export class Game {
     this.dominioPontos?.update(dt);
     // O mapa que anima (o mar da praia, P126): nos outros, o `Arena.update` não faz nada.
     this.match.arena.update(dt);
-    // O Draga-01 (P178, parte A, `?walker`): anda em círculo em volta de onde o jogador nasceu e mira o convés nele. Só desenho.
+    // O Draga-01 (P180, parte A, `?walker`): anda em círculo em volta de onde o jogador nasceu e mira o convés nele. Só desenho.
     if (this.walkerQuer) {
       this.walkerDemo ??= new WalkerDemo(this.scene, this.mech.simPosition, (x, z) => this.match.physics.terrainY(x, z, 6, 40) ?? 0);
       this.walkerDemo.update(dt, this.mech.simPosition);

@@ -5,7 +5,7 @@ import { AxisCorrectedJoint } from './importedMechRig';
 import { advancePhase, LEG_IDS, newWalkerPose, WALKER_SCALE, walkerPose, type LegId, type WalkerPose } from './walkerGait';
 
 /**
- * O DESENHO DO DRAGA-01 (ordem P178, `AMAZONIA.md` § 4): a malha riggada do Comandante (`client/public/models/draga-01.glb`, feita por `scripts/blender/rig-walker.py` a partir do
+ * O DESENHO DO DRAGA-01 (ordem P180, `AMAZONIA.md` § 4): a malha riggada do Comandante (`client/public/models/draga-01.glb`, feita por `scripts/blender/rig-walker.py` a partir do
  * "heavy industrial walker 3d model"), com 18 ossos e pele rígida por parte, movida pela marcha pura de `walkerGait.ts`. **Só desenho, só do cliente** (o servidor nunca carrega
  * `.glb`, G14): a simulação vê um corpo com os números dele e este grupo segue a posição e o rumo dele.
  *

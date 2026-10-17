@@ -1,4 +1,4 @@
-# RIG DO DRAGA-01 (o "heavy industrial walker 3d model" do Comandante, P178): constrói o esqueleto de 18 ossos, a pele RÍGIDA POR PARTE e a cor nos vértices,
+# RIG DO DRAGA-01 (o "heavy industrial walker 3d model" do Comandante, P180): constrói o esqueleto de 18 ossos, a pele RÍGIDA POR PARTE e a cor nos vértices,
 # e exporta o .glb que o jogo carrega. NÃO toca no arquivo do dono: lê a cópia e escreve onde mandarem. Reproduzível (rode de novo e sai o mesmo arquivo).
 #
 #   blender -b -P scripts/blender/rig-walker.py -- <entrada.glb> <saida.glb> [--fotos <pasta>] [--listar <classes>] [--so-classificar]

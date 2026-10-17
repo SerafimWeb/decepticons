@@ -18,7 +18,7 @@ import {
 const NENHUMA: Record<LegId, number> = { fl: 0, fr: 0, rl: 0, rr: 0 };
 const passos = (n: number): number[] => Array.from({ length: n }, (_, i) => i / n);
 
-describe('as medidas do Draga-01 (P178): 38 m, tamanho 5', () => {
+describe('as medidas do Draga-01 (P180): 38 m, tamanho 5', () => {
   it('a escala leva a altura do arquivo (0,9839) a 38 m, e a perna e o passo são metros de máquina grande', () => {
     expect(WALKER_HEIGHT_M).toBe(38);
     expect(0.9839 * WALKER_SCALE).toBeCloseTo(38, 9);
@@ -29,7 +29,7 @@ describe('as medidas do Draga-01 (P178): 38 m, tamanho 5', () => {
   });
 });
 
-describe('a marcha em quatro tempos (P178): sempre três pés no chão', () => {
+describe('a marcha em quatro tempos (P180): sempre três pés no chão', () => {
   it('a ordem dos passos é dianteira esquerda, traseira direita, dianteira direita, traseira esquerda (um quarto de ciclo entre eles)', () => {
     expect(LEG_OFFSET.fl).toBe(0);
     expect(LEG_OFFSET.rr).toBe(0.25);
@@ -130,7 +130,7 @@ describe('a marcha em quatro tempos (P178): sempre três pés no chão', () => {
   });
 });
 
-describe('a pose inteira (P178)', () => {
+describe('a pose inteira (P180)', () => {
   it('reaproveita o mesmo objeto (G4: nada novo por quadro) e é determinística', () => {
     const out = newWalkerPose();
     const a = walkerPose(0.3, 1, NENHUMA, 0.2, 5, out);

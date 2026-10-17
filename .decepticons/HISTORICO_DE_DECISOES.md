@@ -1,4 +1,4 @@
-## [2026-10-17] A Amazônia: o plano e o Draga-01 riggado (Claude, P178)
+## [2026-10-17] A Amazônia: o plano e o Draga-01 riggado (Claude, P180)
 
 **Ordem:** a próxima fase no rio Amazonas (mineradora, rio envenenado, povos indígenas expulsos), com o modelo "heavy industrial walker" do Comandante, "eu não inseri o RIG: tenho que fazer ou você faz?", e o rio limpo a montante e envenenado a jusante.
 

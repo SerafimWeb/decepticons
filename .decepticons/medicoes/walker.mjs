@@ -1,5 +1,5 @@
 /**
- * Bancada do DRAGA-01 (P178): fotografa o robô riggado do jogo (o mesmo .glb e a mesma marcha pura) de vistas-chave e em fases da marcha, ao lado do Vector-09 (a régua de escala), e mede
+ * Bancada do DRAGA-01 (P180): fotografa o robô riggado do jogo (o mesmo .glb e a mesma marcha pura) de vistas-chave e em fases da marcha, ao lado do Vector-09 (a régua de escala), e mede
  * o que ele gasta (desenhos e triângulos). Mesmo molde de `praia.mjs`: Vite dev + Chrome headless (SwiftShader: só contagem, não tempo). G15: temporários em `.tmp/`.
  *
  *   node .decepticons/medicoes/walker.mjs --vistas lado,tres-quartos            # fotos em .tmp/fotos-walker/

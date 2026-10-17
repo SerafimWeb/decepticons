@@ -23,7 +23,7 @@ const novo = (): WalkerVisual => {
   return v;
 };
 
-describe('o arquivo do Draga-01 (P178): o contrato do script de Blender e o orçamento', () => {
+describe('o arquivo do Draga-01 (P180): o contrato do script de Blender e o orçamento', () => {
   it('tem os 18 ossos, uma malha com pele, cor nos vértices e nenhuma textura', () => {
     const ossos = new Set<string>();
     let peles = 0;
@@ -66,7 +66,7 @@ describe('o arquivo do Draga-01 (P178): o contrato do script de Blender e o orç
   });
 });
 
-describe('o Draga-01 em pé (P178): 38 m, de frente para -Z, com os pés no chão', () => {
+describe('o Draga-01 em pé (P180): 38 m, de frente para -Z, com os pés no chão', () => {
   it('mede 38 m de altura, com os pés em y = 0, e o centro de apoio dos quatro pés fica na origem', () => {
     const v = novo();
     const caixa = new THREE.Box3();
@@ -121,7 +121,7 @@ describe('o Draga-01 em pé (P178): 38 m, de frente para -Z, com os pés no chã
   });
 });
 
-describe('os sentidos da animação (P178): o que a marcha pura assume, medido no rig de verdade', () => {
+describe('os sentidos da animação (P180): o que a marcha pura assume, medido no rig de verdade', () => {
   it('quadril positivo leva o pé para a frente (-Z), nas quatro pernas', () => {
     for (const id of LEG_IDS) {
       const v = novo();
@@ -239,7 +239,7 @@ describe('os sentidos da animação (P178): o que a marcha pura assume, medido n
   });
 });
 
-describe('o Draga andando (P178)', () => {
+describe('o Draga andando (P180)', () => {
   it('em passo a 3 m/s durante 20 s, nunca há mais de um pé no ar, os pés ficam rente ao chão e o casco não sai do lugar', () => {
     const v = novo();
     const dt = 1 / 60;

@@ -1,4 +1,4 @@
-# AMAZÔNIA — OPERAÇÃO RIO ENVENENADO (P178)
+# AMAZÔNIA — OPERAÇÃO RIO ENVENENADO (P180)
 
 > **A ordem do Comandante (17/10):** *"vamos já planejar e construir a próxima fase: próximo cenário, que vai ser no rio Amazonas, uma mineradora acabando com o rio, envenenando,
 > poluindo, explorando as populações indígenas e expulsando-as dos seus territórios. Há uma enorme força de defesa deles e teremos que desmantelar, invadir com androides e destruir

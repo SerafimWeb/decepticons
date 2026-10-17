@@ -1,5 +1,5 @@
 /**
- * A MARCHA DO DRAGA-01 (ordem P178, `AMAZONIA.md` § 4): o andar de um **quadrúpede pesado em quatro tempos** (dianteira esquerda, traseira direita, dianteira direita, traseira esquerda:
+ * A MARCHA DO DRAGA-01 (ordem P180, `AMAZONIA.md` § 4): o andar de um **quadrúpede pesado em quatro tempos** (dianteira esquerda, traseira direita, dianteira direita, traseira esquerda:
  * sempre três pés no chão), tudo **função pura de números**: sem Three, sem DOM, sem relógio nem sorteio (G1/G2/G14). Quem desenha (`WalkerVisual.ts`) lê a pose e escreve nos ossos.
  *
  * **Por que quatro tempos e não trote:** uma máquina de 38 m e centenas de toneladas não pode tirar duas pernas do chão ao mesmo tempo sem parecer que cai. Com a pisada de 75% do

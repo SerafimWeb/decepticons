@@ -184,9 +184,9 @@ roda `npm run mech:inspecionar` (§5) e liga no Hangar.
 - **O Quadra-V2 não tem malha própria no jogo** (a entrada dele em `IMPORTED_CHASSIS` está desligada desde o `gemini/rig-fix`): ele usa o corpo do Vector-09. `quadra-v2.glb` (14 mil triângulos, Mixamo) está em `public/models` e ninguém o carrega; `lancer-l1.glb` e `lr-7l-bastion.glb` também estão sem uso (o Lancer usa `TZLA1.glb` e o Bastion, `LR7L.glb`). Religar o Quadra é barato e é o primeiro passo para o papel de escaramuçador **parecer** diferente.
 - **Nenhum esqueleto tem osso de quarto braço.** Um robô de quatro braços, se já existe, é malha sem rig ou tem o segundo par colado no tronco.
 
-## O Draga-01 não segue este contrato (P178, 17/10, Claude)
+## O Draga-01 não segue este contrato (P180, 17/10, Claude)
 
-O **Draga-01** (o "heavy industrial walker" do Comandante) é **quadrúpede**: não tem os 11 ossos de Mixamo, antebraço nem encaixe de arma no pulso, e **não é um `IMPORTED_CHASSIS`**. Ele tem **rig próprio de 18 ossos** (`scripts/blender/rig-walker.py`), marcha própria (`entities/walkerGait.ts`) e desenho próprio (`entities/WalkerVisual.ts`, só do cliente). A decisão e as medidas estão em `AMAZONIA.md` § 4 e no `HISTORICO_DE_DECISOES.md` (17/10, P178). Quem trouxer outro robô **de quatro pernas** parte dali, não deste documento.
+O **Draga-01** (o "heavy industrial walker" do Comandante) é **quadrúpede**: não tem os 11 ossos de Mixamo, antebraço nem encaixe de arma no pulso, e **não é um `IMPORTED_CHASSIS`**. Ele tem **rig próprio de 18 ossos** (`scripts/blender/rig-walker.py`), marcha própria (`entities/walkerGait.ts`) e desenho próprio (`entities/WalkerVisual.ts`, só do cliente). A decisão e as medidas estão em `AMAZONIA.md` § 4 e no `HISTORICO_DE_DECISOES.md` (17/10, P180). Quem trouxer outro robô **de quatro pernas** parte dali, não deste documento.
 
 ## Bot com chassi importado (P91, 12/10, Claude)
 
