@@ -147,6 +147,13 @@
       "tipo": "ammo",
       "intervalo": 0.55,
       "aceita": true
+    },
+    {
+      "id": "harpoon",
+      "nome": "Arpão magnético",
+      "tipo": "energy",
+      "intervalo": 4,
+      "aceita": true
     }
   ]
 }

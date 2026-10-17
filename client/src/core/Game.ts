@@ -18,6 +18,7 @@ import { bankReward, nearBank, type BankReply } from '../../../shared/bank/codes
 import { ChargeVisuals } from '../fx/ChargeVisuals';
 import * as THREE from 'three';
 import { GLOW } from './palette';
+import { HookVisuals, hookRay } from '../fx/HookVisuals';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -85,6 +86,7 @@ import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
 import { BrandSplash } from '../brand/BrandSplash';
 import { Hangar } from '../hangar/Hangar';
+import type { LoadoutSpec } from '../hangar/loadout';
 import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
 import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
 import { ImportedMech } from '../entities/ImportedMech';
@@ -142,9 +144,13 @@ import { MissionHUD } from '../ui/MissionHUD';
 import { CtfHud } from '../ui/CtfHud';
 import { DominioHud, avisoDoPonto } from '../ui/DominioHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
+import { ContaSettings } from '../ui/ContaSettings';
+import { ContaCliente } from '../net/auth';
+import { progressoLocalDoJogo } from '../net/progressoLocal';
+import { chaveDoToken, SessaoPiloto } from '../net/sessao';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
-const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', swarm: 'ENXAME', cruise: 'CRUZADOR', grenade: 'GRANADAS', laser: 'LASER', chainsaw: 'MOTOSSERRA' };
+const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', swarm: 'ENXAME', cruise: 'CRUZADOR', grenade: 'GRANADAS', laser: 'LASER', chainsaw: 'MOTOSSERRA', harpoon: 'ARPÃO' };
 /** O nome da arma no cartão do HUD, com o nível: "CANHÃO DE PLASMA MK I". */
 const weaponLabel = (w: WeaponStats): string => `${HUD_NAME[w.id] ?? w.name.toUpperCase()} ${TIERS[w.tier]!.label}`;
 const secondaryLabel = (l: Loadout): string | null => (l.secondary === null ? null : weaponLabel(l.secondary));
@@ -200,6 +206,8 @@ export class Game {
   private readonly chargeVisuals = new ChargeVisuals(this.particles);
   /** Os anéis da onda sônica e a cópia do quadro que eles distorcem (`fx/WaveRings`): um conjunto na arena e outro no Hangar. */
   private readonly waveRings = new WaveRings();
+  /** Os cabos do arpão magnético presos agora (P77): o desenho; a regra é `match.hooks`. */
+  private readonly hookVisuals: HookVisuals;
   private readonly frameCopy = new FrameCopyPass();
   /** A refração do ar da onda liga junto com o bloom: em qualidade baixa os anéis viram um brilho fraco, sem distorção nem cópia de tela. */
   private refractWaves = true;
@@ -443,6 +451,7 @@ export class Game {
     // --- A partida (a simulação única; quantos inimigos vêm das configurações e mudam ao reiniciar) ---
     this.scene.add(this.particles.points);
     this.scene.add(this.waveRings.mesh);
+    this.hookVisuals = new HookVisuals(this.scene);
     this.scene.add(this.heatHaze.mesh);
     // Online (M4): /jogar/?sala=CODIGO[&servidor=wss://…][&nome=Dan]. A partida local fica sem bots, sem dano e sem
     // rodada própria (quem decide é o servidor); o jogo prevê o seu Mech e desenha os outros.
@@ -625,6 +634,8 @@ export class Game {
     this.player.cruise = (w, origin, dir, target) => this.match.cruise.fire(origin, dir, target, this.mech.collider, w);
     this.player.grenade = (w, origin, target) => this.match.grenades.fire(origin, target, this.mech.collider, w);
     this.match.onWaveFx = (origin, dir, w) => this.waveRings.spawn(origin, dir, w);
+    this.player.hook = (w, origin, dir, mount) => this.match.hookShot(this.mech, origin, dir, w, mount);
+    this.match.onHookFx = (from, to, _w, hostile) => hookRay(this.match.beams, from, to, hostile);
     this.netStatus.className = 'net-status';
     
     const shouldConnect = online && online.explicitName;
@@ -826,6 +837,28 @@ export class Game {
     };
 
     this.dailyChallenges.attachTo(document.getElementById('menu-profile'));
+
+    // A conta do piloto (P174): opcional, no fim da aba JOGO das Configurações. Nível, créditos, apelido e montagem seguem o piloto entre aparelhos; sem conta nada muda (o progresso é o do navegador).
+    const armazem = browserStorage();
+    const sessao = new SessaoPiloto(
+      new ContaCliente(import.meta.env.VITE_GAME_SERVER),
+      armazem,
+      progressoLocalDoJogo({
+        daily: this.dailyChallenges,
+        armazem,
+        aplicarMontagem: (json) => {
+          try {
+            this.hangar.apply(JSON.parse(json) as LoadoutSpec);
+          } catch {
+            /* montagem da conta que não vale mais: o Hangar fica como está */
+          }
+        },
+      }),
+      chaveDoToken(import.meta.env.VITE_GAME_SERVER),
+    );
+    this.dailyChallenges.onSave = () => sessao.mudou();
+    const blocoConta = document.getElementById('settings-conta');
+    if (blocoConta) void new ContaSettings(blocoConta, sessao).restaurar();
 
     // Console de comando (P86): a pausa vira a sala de comando. Os monitores só leem o jogo por estes callbacks (G3).
     const mapa = mapFromSearch(location.search, !!online, this.gameMode);
@@ -1724,6 +1757,7 @@ export class Game {
     this.barrage.render(alpha);
     this.match.cruise.render(alpha);
     this.match.grenades.render(alpha);
+    this.hookVisuals.update(this.match.hooks, this.mech, dt);
     this.drawLobPreview(now);
     this.debris.sync();
 

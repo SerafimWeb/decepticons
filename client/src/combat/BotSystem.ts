@@ -81,6 +81,8 @@ export interface BotLaunchers {
 }
 
 export interface BotSystemOptions {
+  /** Um pulso do raio laser de um bot (P175): a partida acha o primeiro alvo no feixe, dá o dano e acende o desenho (`Match.beamPulse`), o mesmo do jogador. Independe dos `launchers`. Sem ele, o bot com laser não atira. */
+  pulso?: (mech: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats) => void;
   /**
    * Os lançadores da partida (P160 parte 4): com eles, os Mechs bots lançam a arma **explosiva** da mão esquerda (o casulo de foguetes de fábrica do
    * Vector-09, o teleguiado, as granadas, o lançador leve, o cruzador, a chuva) em salvas (`BotController.useExplosives`). Sem eles, só a energia.
@@ -458,6 +460,11 @@ export class BotSystem {
     this.onLaunch?.(mech, w);
   }
 
+  /** Um pulso do laser de `mech` (P175), da boca (`_muzzle`, já posta por quem chamou) na direção que o cérebro mirou (`shotDir`, com o erro de mira da dificuldade). Sem a partida atrás (`pulso`), nada. */
+  private pulse(mech: MechBase, brain: BotController, w: WeaponStats): void {
+    this.o.pulso?.(mech, _muzzle, brain.shotDir, w);
+  }
+
   onDamaged(mech: MechBase, shooter: MechBase | undefined): void {
     if (!shooter || !this.targets.includes(shooter)) return;
     this.brainOf(mech)?.alert(shooter);
@@ -617,6 +624,7 @@ export class BotSystem {
         const w2 = mech.loadout.secondary;
         mech.simMuzzle(_muzzle, 'leftHand');
         if (w2.kind === 'ammo') this.launch(mech, brain, w2);
+        else if (w2.beam) this.pulse(mech, brain, w2);
         else {
           this.projectiles.fire(_muzzle, brain.shotDir, mech.collider, true, w2);
           this.particles.burst(_muzzle, brain.shotDir, { count: 6, color: MUZZLE_COLOR, speed: 10, life: 0.12, spread: 0.5, gravity: 0 });
@@ -632,6 +640,11 @@ export class BotSystem {
         continue;
       }
       mech.simMuzzle(_muzzle);
+      if (mech.loadout.primary.beam) {
+        this.pulse(mech, brain, mech.loadout.primary);
+        mech.onFire();
+        continue;
+      }
       this.projectiles.fire(_muzzle, brain.shotDir, mech.collider, true, mech.loadout.primary);
       this.particles.burst(_muzzle, brain.shotDir, { count: 8, color: MUZZLE_COLOR, speed: 10, life: 0.15, spread: 0.5, gravity: 0 });
       mech.onFire();

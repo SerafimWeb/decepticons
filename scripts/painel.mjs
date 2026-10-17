@@ -8,7 +8,7 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { atividade, diario, entregas, evolucao, fichas, historicoRoadmap, marcos, pedidos, pipeline, readEstado, readRoadmap, roadmapStats, vitrine } from './site/dados.mjs';
+import { atividade, conteudoPorSemana, diario, entregas, evolucao, fichas, historicoRoadmap, marcos, pedidos, pipeline, readEstado, readRoadmap, roadmapStats, vitrine } from './site/dados.mjs';
 import { burnup, CHART_CSS, gantt, heatTable, pct, PM_CSS, rankBars } from './site/graficos.mjs';
 import { brDate, esc, HEXGRID, inline, pagina, topo, upper } from './site/tema.mjs';
 import { COMBAT_GUIDE_CSS, operationGuide } from './site/combat-guide.mjs';
@@ -46,6 +46,7 @@ const estado = readEstado();
 const m = marcos();
 const { prs, fromGithub } = entregas();
 const evo = evolucao();
+const ritmo = conteudoPorSemana();
 const log = diario();
 const act = atividade(prs);
 const asked = pedidos();
@@ -211,6 +212,28 @@ const evoHtml =
     </details>
   </section>`
     : '';
+
+// ---------- ritmo de conteúdo (P175): armas e chassis por semana, do código e do git ----------
+const nf1 = (v) => v.toFixed(1).replace('.', ',');
+const ritmoHtml = ritmo.semanas.length
+  ? `<section aria-labelledby="ritmo">
+    <span class="kicker">// conteúdo · o produto é a cadência (LICOES_WAR_ROBOTS.md)</span>
+    <h2 id="ritmo">Ritmo de conteúdo</h2>
+    <p class="lede">Cada arma e cada chassi do jogo conta <strong>uma unidade</strong>, na semana em que o merge que o trouxe entrou na <code>main</code>. São ${ritmo.total} unidades; nas últimas quatro semanas completas, <strong>${nf1(ritmo.media4)} por semana</strong>. O War Robots lança ~2 por semana e um evento a cada ~6; a meta oficial ainda é decisão do Comandante.</p>
+    ${rankBars({
+      title: 'Unidades de conteúdo por semana',
+      caption: 'semana que começa em… (arma ou chassi novo na main)',
+      items: ritmo.semanas.map((w) => ({ label: `sem. de ${brDate(w.segunda)}`, value: w.n, title: w.ids.length ? w.ids.join(', ') : 'nenhuma' })),
+      fmt: (v) => String(v),
+      ariaLabel: 'Unidades de conteúdo (armas e chassis) por semana',
+    })}
+    <details class="table-view"><summary>ver o que entrou em cada semana</summary>
+      <table><thead><tr><th>semana</th><th>unidades</th><th>quais</th></tr></thead><tbody>${ritmo.semanas
+        .map((w) => `<tr><td>${brDate(w.segunda)}</td><td>${w.n}</td><td>${esc(w.ids.join(', ') || '—')}</td></tr>`)
+        .join('')}</tbody></table>
+    </details>
+  </section>`
+  : '';
 
 // ---------- mapa da campanha e frentes (do ROADMAP) ----------
 
@@ -810,6 +833,7 @@ const bodyLocal = `
   </section>
 
   ${evoHtml}
+  ${ritmoHtml}
 
   <section aria-labelledby="rota">
     <span class="kicker">// rota de operações</span>

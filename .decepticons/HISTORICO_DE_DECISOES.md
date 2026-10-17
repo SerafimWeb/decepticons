@@ -1,3 +1,51 @@
+## [2026-10-17] Os bots atiram o laser e a cadência de conteúdo vira número no painel (Claude, P175)
+
+**Ordem:** as pendências abertas recentes (a P160 deixou "os bots usarem as armas novas"; a P171 pediu "contar conteúdo como se conta código").
+
+**Decisões:**
+1. **O bot reaproveita `Match.beamPulse`, não ganha um raio próprio:** uma regra só (G14) para jogador e bot, e no servidor o pulso do bot já vira evento de tiro (`onBeam`). A opção é `pulso` do `BotSystem`, **separada dos `launchers`**: `explosivos: false` desliga o míssil, não o laser.
+2. **O laser entra como arma de energia do bot, na cadência dela**, sem o "segurar o gatilho" do jogador: o calor e a pausa da IA já cortam a rajada. Não houve ajuste de equilíbrio (o dano por pulso, 6, cai com a distância e o bot erra a mira da dificuldade).
+3. **O arpão não é arma de bot:** só há ombros no Marauder, e o bot não os tem. Fica declarado.
+4. **O ritmo de conteúdo mede o que é inequívoco: arma e chassi** (ids do código, datas do git). Mapas, pilotos e eventos ainda não entram (não há lista no código para ler). A média usa as quatro **últimas semanas completas** (a corrente fica de fora: senão ela sempre puxaria a média para baixo).
+5. **D7 e DAU/MAU não foram feitos de propósito:** exigem guardar um id por visitante, que é decisão de privacidade do Comandante (LGPD), não de engenharia.
+
+## [2026-10-17] O login do jogador: a conta guarda o progresso do navegador, sem porta e sem id local (Claude, P174)
+
+**Ordem:** *"concluamos sobre o LOGIN"* (camada C3 do `RANKING_E_LOGIN.md`).
+
+**Decisões:**
+1. **Sem "id local" aleatório, como o plano previa:** o navegador **já é** a fonte do que ele guardava (nível, créditos, apelido, montagem); a conta é uma **cópia** que o alcança. Um id a mais não resolveria nada e criaria um segundo estado para sincronizar.
+2. **A junção é "quem tem mais progresso vence por inteiro"** (nível, depois XP; empate, o último a gravar), com o apelido e a montagem do outro cobrindo os vazios. Somar créditos dos dois lados dobraria o ganho de quem joga em dois aparelhos; o plano diz "não perde nada", e perder o ganho do lado menor é o preço de não permitir esse dobro. A regra é uma função pura testada.
+3. **Rede nunca é requisito:** falha de rede não trava nem apaga nada, o token **não** é apagado quando o servidor não responde (sessão vencida e rede fora são indistinguíveis para o cliente), e **sair não apaga o progresso do aparelho**.
+4. **O progresso da conta é conforto, não verdade:** não vale para ranking (G13: só o servidor autoritativo pontua o global); quem adulterar só adultera a própria conta. Por isso o servidor valida a **forma** e os limites, não a "legitimidade".
+5. **Token por servidor** (como o do admin): um link com `?servidor=` de terceiros nunca recebe o token guardado.
+6. **Só nas Configurações, por ora:** o princípio é "nada de porta" (`RANKING_E_LOGIN.md` § 1); o convite depois da primeira partida fica como próximo passo, para não ser feito sem o olho do Comandante.
+7. **R17 (achado):** `/conta/eu` nunca respondeu ao preflight do CORS; corrigido junto, porque a rota nova depende da mesma coisa.
+
+## [2026-10-17] O arpão magnético volta, refeito sobre a main de hoje (Claude, P77 parte 3)
+
+**Ordem:** P77 (11/10): *"VARIAR as armas e tecnologias"* nos ombros; o arpão estava num porte de 12/10 que nunca entrou.
+
+**Decisões:**
+1. **Não cherry-pick:** o WIP de 12/10 conflitava em ~20 arquivos com a `main`; foi reaplicado à mão só o que valia (a regra `HookSystem`, o modelo) sobre a `main` de hoje, com os ganchos novos (`weaponLook`, `dicasDeArma`, `fireFeel`, `muzzleFx`, `impactFx`: tabelas que obrigam uma linha por arma).
+2. **Tiro de varredura, não projétil:** um raio de 45 m (58,5 no MK III: a faixa curta não muda com o nível, `calibragem.test.ts`), como o laser; o cabo é estado do `HookSystem` (pool de 8), não uma entidade física. Barato (um raycast a cada 4 s) e determinístico.
+3. **Só o servidor e o jogo offline puxam:** o cliente online só desenha o raio (G14); o puxão chega pelo estado do robô. Por isso o cabo preso de outro jogador **não** é desenhado no online (declarado como falta).
+4. **O contrajogo faz parte da arma:** dash corta, parede solta, o Colossus arrebenta o cabo (`breakRadius`), o alvo que foge estoura (125% do alcance). Sem isso o arpão seria "perdeu o controle do robô"; com isso é uma troca (um aperto a cada 4 s por juntar o inimigo).
+5. **Dano baixo de propósito (10, 2,5 por s):** o arpão junta, não mata; o valor está nas outras armas de ombro (sônica, fogo, granada, foguete).
+6. **Protocolo 20, no fim de `NET_WEAPONS`** (índices antigos intactos); um cliente 19 recusaria o tiro.
+
+## [2026-10-17] O jogo ganha sete línguas, com o português como texto de origem (Claude, P173)
+
+**Ordem:** colocar já o inglês, o japonês, o espanhol, o francês, o chinês e o russo (resposta à P171 (b)).
+
+**Decisões:**
+1. **O português fica no código e no HTML; as outras línguas são dicionários JSON** em `client/public/locales/`. Nenhum módulo de interface sabe de idioma (G3), nenhuma chave artificial para manter, e o texto novo nasce em português como sempre. JSON em `public/` e não módulo, porque o teto de JS (500 KB gz, ~480 hoje) não comporta seis dicionários e porque só baixa quem escolheu a língua.
+2. **Tradutor de DOM com observador, não `t()` em cada arquivo:** o jogo escreve texto em dezenas de lugares (`textContent`); o observador pega todos sem tocar neles, e a troca de língua é ao vivo (cada nó guarda o original). O custo é só fora do português. `t()` existe para o código que monta texto na mão.
+3. **Chaves com lacuna `{n}`** para o que o jogo preenche (número, nome), a tradução reordena; o valor da lacuna também é traduzido (uma volta), para `VENCEDOR: AZUL` virar `WINNER: BLUE`.
+4. **Detecção pela língua do navegador só fora de navegador de teste** (`navigator.webdriver`): o smoke e as bancadas comparam textos em português; a escolha explícita (`?lang=`, seletor) vale sempre. Quem tem o navegador em inglês já abre em inglês (o alvo da P171: EUA, Japão, Alemanha, Coreia, Reino Unido).
+5. **A cobertura é do teste:** arma nova, rótulo novo de configuração ou texto novo no `index.html` sem tradução **quebram o `npm test`**; é o que impede o dicionário de apodrecer.
+6. **Fora do alcance, declarado:** voz do narrador, canvas, fichas do Hangar, a landing; alemão e coreano (os outros mercados da reportagem) ficam como o próximo passo barato (é só um JSON novo).
+
 ## [2026-10-16] O site ganha um sistema de design e fotos cinematográficas dos Mechs reais (Claude, P172)
 
 **Ordem:** deixar a landing e as páginas "bem parecidas com as referências", com acabamento de portal de jogo, mais único.

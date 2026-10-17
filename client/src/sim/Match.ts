@@ -5,6 +5,8 @@ import { BotSystem, type BotKit, type BotSystemOptions } from '../combat/BotSyst
 import { CombatSystem, type MechHitEvent } from '../combat/CombatSystem';
 import { CruiseSystem } from '../combat/CruiseSystem';
 import { GrenadeSystem } from '../combat/GrenadeSystem';
+import { HookSystem } from '../combat/HookSystem';
+import type { MountId } from '../combat/mounts';
 import { CrushRule } from '../combat/crush';
 import { ProjectileSystem } from '../combat/ProjectileSystem';
 import { RocketSystem } from '../combat/RocketSystem';
@@ -154,6 +156,9 @@ const _hitNormal = new THREE.Vector3();
 const _flameAt = new THREE.Vector3();
 const _flameTo = new THREE.Vector3();
 /** O "acerto" que o cone entrega ao CombatSystem: um objeto só, reescrito a cada alvo (nada alocado por pulso). */
+const _hookEnd = new THREE.Vector3();
+const _hookFrom = new THREE.Vector3();
+const _hookTo = new THREE.Vector3();
 const _flameHit: PhysicsHit = { point: new THREE.Vector3(), normal: new THREE.Vector3(0, 1, 0), distance: 0, collider: undefined as unknown as RAPIER.Collider };
 
 /** O que o HUD da praia lê da água sob os pés de um Mech (`Match.estadoDaAgua`). */
@@ -178,6 +183,12 @@ export class Match {
   readonly grenades: GrenadeSystem;
   /** Os feixes do raio laser (só desenho; a regra do pulso é `beamPulse`). */
   readonly beams: BeamVisuals;
+  /** Os cabos do arpão presos agora (`combat/HookSystem.ts`, P77): a partida os avança no tick e o desenho lê daqui. */
+  readonly hooks: HookSystem;
+  /** Saiu um arpão (o servidor o transforma em evento de tiro para os outros jogadores desenharem). */
+  onHook?: (origin: THREE.Vector3, dir: THREE.Vector3, owner: RAPIER.Collider | undefined, w: WeaponStats) => void;
+  /** Só o cliente liga: desenha o raio do arpão, da boca (`from`) até onde ele terminou (`to`). O servidor não desenha nada. */
+  onHookFx?: (from: THREE.Vector3, to: THREE.Vector3, w: WeaponStats, hostile: boolean) => void;
   readonly combat: CombatSystem;
   /** As partículas da partida (vazias no servidor): a onda sônica se desenha por aqui. */
   private readonly fx: ParticleSystem;
@@ -325,6 +336,8 @@ export class Match {
     this.cruise = new CruiseSystem(o.scene, o.physics, o.particles);
     this.grenades = new GrenadeSystem(o.scene, o.physics);
     this.beams = new BeamVisuals(o.scene);
+    // Os cabos do arpão: quem puxa de verdade é quem tem o dano ligado (o servidor e o jogo offline); o cliente online só os desenha. A parede no meio solta o cabo.
+    this.hooks = new HookSystem((owner, target) => this.hookSight(owner, target), () => this.combat.damageEnabled);
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.combat.damageEnabled = o.damage !== false;
     this.combat.sameSide = (a, b) => this.sameSide(a, b);
@@ -344,6 +357,7 @@ export class Match {
       projectiles: this.projectiles,
       particles: o.particles,
       ...(lancadores ? { launchers: lancadores } : {}),
+      pulso: (m, origin, dir, w) => this.beamPulse(m, origin, dir, w),
       respawner: this.respawner,
       ...(rebeldes
         ? {
@@ -382,6 +396,7 @@ export class Match {
             projectiles: this.projectiles,
             particles: o.particles,
             ...(lancadores ? { launchers: lancadores } : {}),
+            pulso: (m, origin, dir, w) => this.beamPulse(m, origin, dir, w),
             respawner: this.respawner,
             escort: this.players,
             tatica: o.tatica,
@@ -497,6 +512,7 @@ export class Match {
         this.barrage.clear();
         this.cruise.clear();
         this.grenades.clear();
+        this.hooks.clear();
         this.beams.clear();
       }
       if (this.waves && this.players.includes(dead) && this.players.every((player) => !player.alive)) this.waves.fail();
@@ -699,6 +715,50 @@ export class Match {
     for (const o of IMPACT_FX[w.id]) this.fx.burst(_beamEnd, _hitNormal, o);
   }
 
+  /**
+   * Um arpão (`Armament` o pede a cada aperto do Ataque 2, um por boca de ombro): um **raio** de `maxRange` da boca; o primeiro robô à vista, **se for inimigo**, leva a mordida (o dano da arma, pelas defesas do
+   * caminho do projétil) e fica **preso** (`HookSystem`: puxado até chegar, soltar ou o dash cortar o cabo). Parede, chão, aliado e o próprio dono não prendem nada. O cliente online (dano desligado)
+   * só desenha o raio. Regra da partida (G14): a mesma offline e no servidor; um raycast por aperto, sem alocação (G4).
+   */
+  hookShot(attacker: MechBase, origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, mount: MountId): void {
+    if (!w.hook) return;
+    this.onHook?.(origin, dir, attacker.collider, w);
+    const hit = this.hookRay(origin, dir, w, attacker.collider);
+    this.onHookFx?.(origin, _hookEnd, w, !this.players.includes(attacker));
+    if (!hit || !this.combat.damageEnabled) return;
+    const target = this.combat.mechOf(hit.collider);
+    if (!target || !target.alive || !this.foesOf(attacker).some((group) => group.includes(target))) return;
+    this.projectiles.onHit?.(hit, dir, hitDamage(w, hit.distance), attacker.collider, w, hit.distance);
+    this.hooks.attach(attacker, target, w, mount);
+  }
+
+  /** O raio do arpão de `origin` na direção `dir`: o primeiro acerto (ou nada), com o ponto onde ele terminou em `_hookEnd` (o acerto, ou o alcance). */
+  private hookRay(origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, ignore: RAPIER.Collider | undefined): PhysicsHit | null {
+    const hit = this.physics.raycast(origin, dir, w.maxRange, ignore);
+    _hookEnd.copy(origin).addScaledVector(dir, hit ? hit.distance : w.maxRange);
+    return hit;
+  }
+
+  /** O alvo está à vista do dono (sem parede no meio)? Confere o cabo do arpão a cada poucos ticks. */
+  private hookSight(owner: MechBase, target: MechBase): boolean {
+    const a = owner.simPosition;
+    const b = target.simPosition;
+    _hookFrom.set(a.x, a.y + owner.stats.height * 0.6, a.z);
+    _hookTo.set(b.x - _hookFrom.x, b.y + target.stats.height * 0.5 - _hookFrom.y, b.z - _hookFrom.z);
+    const dist = _hookTo.length();
+    if (dist < 1e-3) return true;
+    _hookTo.multiplyScalar(1 / dist);
+    const wall = this.physics.raycast(_hookFrom, _hookTo, dist, owner.collider);
+    return !wall || wall.collider === target.collider || !!this.combat.mechOf(wall.collider) || wall.distance >= dist - target.stats.radius;
+  }
+
+  /** Só o desenho do raio do arpão de outro jogador (ele o vê pelo evento de tiro, sem regra): da boca até o primeiro acerto ou o alcance. */
+  drawHook(origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, ignore: RAPIER.Collider | undefined, hostile: boolean): void {
+    if (!w.hook) return;
+    this.hookRay(origin, dir, w, ignore);
+    this.onHookFx?.(origin, _hookEnd, w, hostile);
+  }
+
   /** O clarão pequeno na boca do laser: duas fagulhas na cor do feixe (oito pulsos por segundo: poucas partículas por pulso). */
   private muzzleSpark(origin: THREE.Vector3, dir: THREE.Vector3, _w: WeaponStats, hostile: boolean): void {
     this.fx.burst(origin, dir, { count: 2, color: hostile ? GLOW.hostileLaser : GLOW.friendlyLaser, speed: 6, life: 0.1, size: 1.8, spread: 0.3, gravity: 0 });
@@ -816,6 +876,7 @@ export class Match {
       this.barrage.fixedUpdate(dt);
       this.cruise.fixedUpdate(dt);
       this.grenades.fixedUpdate(dt);
+      this.hooks.fixedUpdate(dt);
       this.beams.update(dt);
       this.physics.step();
       this.ctf?.fixedUpdate(dt);
@@ -1058,6 +1119,7 @@ export class Match {
     this.barrage.clear();
     this.cruise.clear();
     this.grenades.clear();
+    this.hooks.clear();
     this.beams.clear();
     this.debris.clear();
     this.destructibles.restoreAll();
@@ -1099,6 +1161,7 @@ export class Match {
     this.barrage.clear();
     this.cruise.clear();
     this.grenades.clear();
+    this.hooks.clear();
     this.beams.clear();
     this.debris.clear();
     this.destructibles.restoreAll();

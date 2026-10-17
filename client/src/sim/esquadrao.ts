@@ -79,12 +79,12 @@ export const CHASSIS_DOS_BOTS: readonly ChassisId[] = (Object.keys(CHASSIS) as C
 export const ehChassiDoBot = (id: unknown): id is ChassisId => typeof id === 'string' && (CHASSIS_DOS_BOTS as readonly string[]).includes(id);
 
 /**
- * O bot atira o projétil comum, a cadência da arma, sem segurar o gatilho: serve a arma de energia sem rotação de cano, chama, onda, carga, feixe
- * (o laser) nem míssil guiado (`combat/weapons.ts`). As outras precisam de regras de gatilho que só o jogador usa (`Armament.ts`).
+ * O bot atira a cadência da arma, sem segurar o gatilho: o projétil comum, ou (o laser, P175) um pulso do feixe pelo `Match.beamPulse`. Serve a arma de energia sem rotação de cano,
+ * chama, onda, carga, cabo (o arpão) nem míssil guiado (`combat/weapons.ts`). As outras precisam de regras de gatilho que só o jogador usa (`Armament.ts`).
  */
 export function armaServeAoBot(id: WeaponId): boolean {
   const w = weapon(id);
-  return w.kind === 'energy' && !w.spin && !w.flame && !w.wave && !w.guide && !w.barrage && !w.beam && w.chargeTime === undefined;
+  return w.kind === 'energy' && !w.spin && !w.flame && !w.wave && !w.guide && !w.barrage && !w.hook && w.chargeTime === undefined;
 }
 
 /**

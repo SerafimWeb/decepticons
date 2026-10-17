@@ -34,6 +34,7 @@ export const DICA_DA_ARMA: Readonly<Record<WeaponId, (w: WeaponStats) => string>
   swarm: (w) => `ENXAME: UM APERTO ESVAZIA O LANÇADOR (${w.magazine} MÍSSEIS); VARRA A MIRA PELO ALVO`,
   cruise: () => 'CRUZADOR: SOBE EM ARCO E CAI NO PONTO DA MIRA; O ANEL NO CHÃO É O AVISO',
   grenade: (w) => `GRANADA: CAI NO ANEL VERDE (ATÉ ${Math.round(lobMaxRange(w.speed, w.lob?.gravity ?? 22))} M); MIRE ATRÁS DA COBERTURA E ELA PASSA POR CIMA`,
+  harpoon: (w) => `ARPÃO: PRENDE O PRIMEIRO INIMIGO À VISTA (ATÉ ${Math.round(w.maxRange)} M) E O PUXA; O DASH CORTA O CABO`,
   laser: () => 'LASER: SEGURE E MANTENHA A MIRA NO ALVO; ACERTA NA HORA, O CALOR DECIDE A DURAÇÃO',
 };
 

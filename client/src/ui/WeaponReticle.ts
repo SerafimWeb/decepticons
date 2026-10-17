@@ -13,6 +13,7 @@ const SHAPES: Record<WeaponId, string> = {
   // O lançador leve: os cantos do foguete e pares de ticks nos quatro lados (muitos mísseis, um desvio pequeno em volta da mira).
   swarm: 'M7 12V7H12 M36 7H41V12 M41 36V41H36 M12 41H7V36 M20 5V8 M28 5V8 M20 40V43 M28 40V43 M5 20H8 M5 28H8 M40 20H43 M40 28H43',
   // O cruzador: o colchete largo do canhão com um arco por cima (o míssil sobe e mergulha no ponto).
+  harpoon: 'M5 15V5H15 M33 5H43V15 M43 33V43H33 M15 43H5V33 M24 14L24 34 M18 20L24 14L30 20',
   grenade: 'M8 30Q24 6 40 30 M20 38H28 M24 34V42 M5 24H11 M37 24H43',
   cruise: 'M5 15V5H15 M33 5H43V15 M43 33V43H33 M15 43H5V33 M16 9Q24 3 32 9 M24 5V11',
   // O laser: uma cruz fina e quatro diagonais curtas nos cantos (precisão: o feixe vai exatamente onde a mira está).

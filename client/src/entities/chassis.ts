@@ -494,7 +494,7 @@ export const ARM_SLOTS: Record<ChassisId, ArmSlots> = {
   lancerL1: { right: ENERGY_ARMS, left: [] },
   lr7lBastion: { right: armasDoBracoDireito(CHASSIS_SIZE.lr7lBastion), left: armasDoBracoEsquerdo(CHASSIS_SIZE.lr7lBastion, false) },
   quadraV2: { right: armasDoBracoDireito(CHASSIS_SIZE.quadraV2), left: armasDoBracoEsquerdo(CHASSIS_SIZE.quadraV2, false) },
-  marauder: { right: armasDoBracoDireito(CHASSIS_SIZE.marauder), left: armasDoBracoEsquerdo(CHASSIS_SIZE.marauder, true), shoulders: ['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise', 'grenade'] },
+  marauder: { right: armasDoBracoDireito(CHASSIS_SIZE.marauder), left: armasDoBracoEsquerdo(CHASSIS_SIZE.marauder, true), shoulders: ['rockets', 'barrage', 'sonic', 'seeker', 'swarm', 'cruise', 'grenade', 'harpoon'] },
 };
 
 /** Chassis cujo braço esquerdo leva um escudo (sem arma): o Hangar escreve ESCUDO onde os outros escrevem VAZIO. */

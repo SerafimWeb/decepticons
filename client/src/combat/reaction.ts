@@ -6,7 +6,7 @@ import { DAMAGE_TYPE, type DamageType, type WeaponStats } from './weapons';
  *
  * - **O empurrão** (`MechBase.push`, regra de simulação: o servidor e o jogo offline aplicam igual): `PUSH_PER_DAMAGE` m/s por ponto de dano que **passou** (o escudo que
  *   absorveu tudo não empurra), por natureza do dano, até `HIT_PUSH_MAX`. O robô grande resiste mais (`push` divide pela resistência dele: o Colossus quase não sai do lugar).
- *   Pulso, som, corte e choque não empurram (o som já tem o empurrão dele; o resto não é um golpe de massa) e **o lança-chamas e a onda sônica ficam de fora** (fluxo e cone
+ *   Pulso, som, corte e choque não empurram (o som já tem o empurrão dele; o resto não é um golpe de massa) e **o lança-chamas, a onda sônica e o arpão ficam de fora** (fluxo e cone
  *   têm a regra própria).
  * - **O tranco** (`MechBase.flinch`, só desenho): o torso se joga para onde o tiro andava, até `FLINCH_MAX`, e volta sozinho em ~0,3 s.
  *
@@ -34,8 +34,8 @@ export const FLINCH_MAX = 0.14;
 export const FLINCH_DECAY = 9;
 
 /** Quanto este acerto empurra o alvo (m/s a queima-roupa, antes da resistência dele). `applied` = o dano que passou. */
-export function hitPush(w: Pick<WeaponStats, 'id' | 'flame' | 'wave'>, applied: number): number {
-  if (w.flame || w.wave || applied <= 0) return 0;
+export function hitPush(w: Pick<WeaponStats, 'id' | 'flame' | 'wave' | 'hook'>, applied: number): number {
+  if (w.flame || w.wave || w.hook || applied <= 0) return 0;
   return Math.min(HIT_PUSH_MAX, applied * PUSH_PER_DAMAGE[DAMAGE_TYPE[w.id]]);
 }
 

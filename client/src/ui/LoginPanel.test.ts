@@ -32,6 +32,24 @@ class MockNode {
     return this.children.map((c) => c.textContent).join(' ').trim();
   }
 
+  set textContent(texto: string) {
+    this._innerHTML = texto;
+    this.children = [];
+  }
+
+  /** O mínimo de `classList` que a tela usa (`toggle`), sobre o `className` do nó. */
+  readonly classList = {
+    toggle: (nome: string, ligado: boolean): void => {
+      const nomes = this.className.split(/\s+/).filter(Boolean).filter((n) => n !== nome);
+      if (ligado) nomes.push(nome);
+      this.className = nomes.join(' ');
+    },
+  };
+
+  remove(): void {
+    if (this.parentElement) this.parentElement.children = this.parentElement.children.filter((c) => c !== this);
+  }
+
   appendChild(child: MockNode): MockNode {
     child.parentElement = this;
     this.children.push(child);
@@ -265,5 +283,38 @@ describe('LoginPanel — Autenticação de Piloto (P33)', () => {
     btnLogout.click();
 
     expect(onSair).toHaveBeenCalled();
+  });
+
+  it('o blur não refaz o painel: o campo da senha e o botão seguem os mesmos nós (refazer o DOM engolia o clique em ENTRAR logo depois da senha)', () => {
+    const panel = new LoginPanel({}, parent as any);
+    const email = parent.querySelector('#login-input-email')!;
+    const senha = parent.querySelector('#login-input-senha')!;
+    const botao = parent.querySelector('#btn-login-submit')!;
+    email.value = 'errado';
+    email.dispatchEvent(new Event('input'));
+    email.dispatchEvent(new Event('blur'));
+    senha.dispatchEvent(new Event('blur'));
+    expect(parent.querySelector('#login-input-email')).toBe(email);
+    expect(parent.querySelector('#login-input-senha')).toBe(senha);
+    expect(parent.querySelector('#btn-login-submit')).toBe(botao);
+    expect(panel.getEstado().carregando).toBe(false);
+  });
+
+  it('o blur mostra o aviso do campo tocado no lugar, e digitar certo e dar blur de novo o tira', () => {
+    new LoginPanel({}, parent as any);
+    const email = parent.querySelector('#login-input-email')!;
+    email.value = 'errado';
+    email.dispatchEvent(new Event('input'));
+    email.dispatchEvent(new Event('blur'));
+    expect(parent.querySelectorAll('.field-error')).toHaveLength(1);
+    expect(parent.querySelector('.field-error')!.textContent).toBe('e-mail inválido');
+    expect(email.className).toContain('invalid');
+    // sem tocar na senha, o aviso dela não aparece
+    expect(parent.querySelector('#login-input-senha')!.className).not.toContain('invalid');
+    email.value = 'piloto@cybermech.com';
+    email.dispatchEvent(new Event('input'));
+    email.dispatchEvent(new Event('blur'));
+    expect(parent.querySelectorAll('.field-error')).toHaveLength(0);
+    expect(email.className).not.toContain('invalid');
   });
 });

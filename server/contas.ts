@@ -52,6 +52,11 @@ export class Contas {
         expira_em TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS sessoes_conta ON sessoes(conta_id);
+      CREATE TABLE IF NOT EXISTS progresso (
+        conta_id INTEGER PRIMARY KEY REFERENCES contas(id),
+        json TEXT NOT NULL,
+        atualizado_em TEXT NOT NULL
+      );
       CREATE TABLE IF NOT EXISTS configuracoes_globais (
         chave TEXT PRIMARY KEY,
         valor TEXT NOT NULL
@@ -95,6 +100,19 @@ export class Contas {
     const guardado = Buffer.from(row.hash, 'hex');
     if (guardado.length !== calculado.length || !timingSafeEqual(guardado, calculado)) return null;
     return { id: row.id, email, is_admin: row.is_admin === 1 };
+  }
+
+  /** O progresso que o navegador do piloto mandou da última vez (JSON já validado por quem gravou), ou `null` se a conta ainda não guardou nada. */
+  lerProgresso(contaId: number): string | null {
+    const row = this.db.prepare('SELECT json FROM progresso WHERE conta_id = ?').get(contaId) as { json: string } | undefined;
+    return row ? row.json : null;
+  }
+
+  /** Guarda (substituindo) o progresso da conta: `json` é o `ProgressoPiloto` já validado e normalizado. Uma linha por conta. */
+  gravarProgresso(contaId: number, json: string): void {
+    this.db
+      .prepare('INSERT INTO progresso (conta_id, json, atualizado_em) VALUES (?, ?, ?) ON CONFLICT(conta_id) DO UPDATE SET json = excluded.json, atualizado_em = excluded.atualizado_em')
+      .run(contaId, json, new Date().toISOString());
   }
 
   /** Nova sessão para a conta; devolve o token de verdade (só existe em memória — o banco guarda o hash). */

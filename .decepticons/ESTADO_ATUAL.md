@@ -18,6 +18,71 @@
 
 **Próxima sessão começa com:** a **parte C** (o porto), depois a **D** (a Colossus), e as outras fases.
 
+## OS REBELDES ATIRAM O LASER E O PAINEL CONTA O RITMO DE CONTEÚDO — Claude, 17/10 (branch `claude/bots-laser`, P175)
+
+**A ordem do Comandante (17/10):** *"…e pendências abertas recentes"*. Duas dessas pendências estavam escritas no estado e na análise do War Robots (P171).
+
+**Feito:**
+1. **O bot atira o laser** (`BotSystem`, `sim/esquadrao.ts`, `Match`): o esquadrão aceita o laser como arma do bot (`armaServeAoBot`, antes recusava feixe) e o bot manda **um pulso por `fireInterval`** pelo `Match.beamPulse` (o mesmo do jogador: acha o primeiro alvo, aplica o dano com as defesas do caminho, acende o desenho e, no servidor, vira evento de tiro para os outros clientes). Mão principal e mão esquerda. A direção é a que o cérebro mirou (com o erro de mira da dificuldade), então o bot erra como erra com plasma. Sem a partida atrás (`pulso` ausente), o bot com laser fica calado, nunca quebra.
+2. **Sala de controle → Ritmo de conteúdo** (`scripts/site/dados.mjs` `conteudoPorSemana`, `painel.mjs`, `sala.mjs`): cada **arma** e cada **chassi** do jogo conta uma unidade na semana (segunda-feira) em que o merge que o trouxe entrou na `main`; os ids saem do código, as datas do git (`--first-parent -S`). Hoje: **30 unidades, 7,3 por semana** nas semanas completas (21/09: 6, 28/09: 6, 05/10: 10, 12/10: 8 até agora). É o número que a análise do War Robots pedia ("o produto é a cadência").
+3. **Testes (+12):** `botLaser.test.ts` (6: o esquadrão aceita o laser; pulsos na principal e na esquerda com física de verdade, intervalo, dano, determinismo) e `ritmoDeConteudo.test.ts` (6: cada arma conta uma vez, semanas seguidas desde a segunda-feira, a unidade cai na semana da data, média sem a semana corrente). **8 mutações pegas** (5 no bot, 3 no ritmo).
+
+**Custo de CPU:** o bot com laser faz um raycast por pulso (7,7 por segundo enquanto atira, como o jogador); só quando o esquadrão lhe dá o laser (o padrão do jogo não muda). O painel roda no build do site (uns 40 chamadas de `git log`), nada no jogo.
+
+**Falta (R13):** (a) **D7 e DAU/MAU** no painel: pedem um id anônimo por visita (hoje a telemetria conta eventos por IP, sem pessoa); decisão do Comandante (LGPD); (b) a **meta oficial** de conteúdo (2 por semana, 1 evento a cada 6) segue com ele (P171); (c) o **bot não usa o arpão** (só há ombros no Marauder, e o bot não os tem); (d) o ritmo não conta o que não é arma nem chassi (mapas, pilotos, eventos); (e) a bancada de celular e o desenho do evento mínimo (P171).
+
+**Próxima sessão começa com:** o que o Comandante julgar (as línguas, o login, o arpão, o laser dos bots) e as decisões da P171 (ritmo oficial, inglês antes de monetização: respondida, cosmético de explosão).
+
+## O LOGIN DO JOGADOR, COMPLETO: a conta leva o progresso para outro aparelho — Claude, 17/10 (branch `claude/login`, P174)
+
+**A ordem do Comandante (17/10):** *"quero também que concluamos sobre o LOGIN"*. A conta, o limite de tentativas e o formulário já existiam, mas **nada ligava o formulário ao jogo** e a conta não guardava nada do piloto.
+
+**Feito:**
+0. **Achado e corrigido no formulário (R17):** o `LoginPanel` (nunca ligado antes) refazia o painel inteiro no `blur`, o que destruía o campo para onde o foco ia e **o botão sob o clique**: clicar em ENTRAR logo depois de digitar a senha **perdia o clique**. Agora o `blur` só mostra o aviso no lugar (`_mostrarValidacao`), com 2 testes (e uma mutação pega).
+1. **No servidor:** `GET`/`PUT /conta/progresso` (só com sessão, corpo até 8 KB, validado por `validarProgresso`: nível 1–999, XP 0–999, créditos até 1 bilhão, montagem até 4 KB, apelido pelo mesmo filtro da sala online; campo a mais do cliente é descartado); tabela `progresso` (uma linha por conta, substituída a cada `PUT`). **Achado e corrigido (R17):** `/conta/eu` não respondia ao **preflight do CORS** (o jogo em `cybermech.online` chama o servidor em outra origem com o cabeçalho da sessão); agora responde, e a rota nova também.
+2. **No cliente:** `net/sessao.ts` (`SessaoPiloto`: token por servidor, entrar/criar/sair, restaurar ao abrir, **mescla** e envio com 5 s de calma; rede fora nunca trava nem apaga nada), `net/progressoLocal.ts` (liga a sessão ao que o navegador já guardava: nível/XP/créditos, apelido, montagem; **nenhuma chave nova de progresso**), `ui/ContaSettings.ts` (o `LoginPanel`, já pronto, nas Configurações → JOGO → CONTA DO PILOTO), `DailyChallenges.snapshot/restore/onSave`, `ContaCliente.lerProgresso/gravarProgresso`.
+3. **A regra da junção** (`mesclarProgresso`, pura): quem tem **mais nível e XP vence por inteiro** (os créditos andam com o nível: somar dobraria o ganho de quem usa dois aparelhos); empate, o gravado por último; apelido e montagem do outro cobrem o que faltar. Aparelho novo recebe o da conta; convidado que jogou antes de criar a conta **não perde nada**.
+4. **Idiomas:** os textos do formulário e as mensagens de erro entraram nas seis línguas (475 textos por língua; o teste cobre a validação e as frases de estado).
+5. **Testes (+64):** `progresso.test.ts` (contrato e mescla), `conta-progresso-http.test.ts` (o servidor de verdade: 401, 400, 413, isolamento entre contas, preflight, origem), `sessao.test.ts` (21: junção nos dois sentidos, rede fora, restaurar, sair, envio com calma), `progressoLocal.test.ts` e `auth.test.ts` (o cliente). **18 mutações: 16 pegas e 2 equivalentes** (cancelar o envio ao sair e agendar sem sessão não mudam nada que se veja: sem token a sincronização não faz nada). **Prova no navegador de verdade** (`arte/login-*-claude.png`): um convidado de nível 5 (300 XP, 1234 créditos, apelido ANA) cria a conta num "aparelho"; um navegador limpo entra com ela e **recebe nível, XP, créditos e apelido**; sair não apaga nada do aparelho.
+
+**Custo de CPU/rede:** zero no jogo; uma ida ao servidor ao entrar (um `GET`, e um `PUT` se algo mudou) e **um `PUT` por janela de 5 s de calma** depois de uma mudança de progresso (pouquíssimas por partida). Servidor: um `SELECT`/`INSERT` por chamada; nenhum custo por tick (G13).
+
+**Falta (R13, em `STATUS_REAL.md`):** (a) **o olho do Comandante**; (b) o **ranking** (C4) e o **clã** (C2) do plano; (c) um convite "gostou? guarde seu progresso" depois da primeira partida (a conta só aparece nas Configurações); (d) **recuperar senha** (não há e-mail de recuperação); (e) apelido único; o apelido da conta passa a valer na caixa do lobby **depois de recarregar**; (f) as missões do dia ficam só no navegador; (g) **LGPD:** o e-mail é guardado (o mínimo); falta o "apagar minha conta".
+
+**Próxima sessão começa com:** o que o Comandante julgar do login e das línguas; depois as pendências recentes (bots com o laser; contadores do painel).
+
+## O ARPÃO MAGNÉTICO CHEGA AO JOGO: a arma que prende e puxa — Claude, 17/10 (branch `claude/arpao-no-ar`, P77 3ª parte, protocolo 20)
+
+**O que era:** o porte do arpão de 12/10 (`claude/arpao-magnetico`) nunca entrou na `main`; refeito sobre a `main` de hoje (a sessão anterior deixou o porte parcial local).
+
+**Feito:**
+1. **A arma (`harpoon`, só de ombro):** raio de 45 m que morde 10 e **prende o primeiro inimigo à vista**, puxando-o a 9 m/s por até 1,6 s; um aperto a cada 4 s; os dois ombros dividem um cabo. **Contrajogo:** o dash do alvo corta o cabo, a parede também, o Colossus (raio > 2,4 m) o arrebenta, aliado e dono nunca são presos. Regra em `combat/HookSystem.ts` (G14: a mesma offline e no servidor; só o tick fixo; pool de 8).
+2. **Ligação:** `Armament` → `PlayerController.hook` → `Match.hookShot` (jogo e `NetPilot` do servidor); `onHook` vira evento de tiro; **protocolo 20** (`harpoon` no fim de `NET_WEAPONS`); `OnlineSession` desenha o raio do arpão de outro jogador (`Match.drawHook`).
+3. **Desenho:** `fx/HookVisuals.ts` (o cabo preso, um `InstancedMesh`, pulsa; ciano o seu, vermelho o do inimigo) e o raio do disparo pelo `BeamVisuals`; modelo 3D (bobina e cano com garras), ícone do Hangar, retícula, som (`armasSom.json`), dica de primeiro uso, ficha do Arsenal e o "Testar" do Hangar.
+4. **Testes (46 novos):** `HookSystem.test.ts` (prender, `breakRadius`, cabo dividido, pool, puxar, e cada causa de soltar: tempo, chegou, dash, morte, estouro, parede, sem dano ligado), `harpoon.test.ts` (dados, Armament, `Match.hookShot` com física: parede, alcance, o primeiro à vista, aliado, cliente online, `drawHook`) e `HookVisuals.test.ts` (instâncias, cor, NaN). **13 mutações pegas** (limite do raio, dash, puxar sem dano, intervalo da parede, chegada, estouro, segundo ombro, aliado, cliente online, alcance, mordida, Armament, cor).
+
+**Custo de CPU:** um raycast por aperto (a cada 4 s) e **um raycast a cada 6 ticks por cabo preso** (no máximo 8); um `push` por tick por cabo; no desenho, dois `setMatrixAt` por cabo (uma chamada de desenho). Nenhum `new` por tick/quadro (G4/G5).
+
+**Falta (R13):** (a) **o olho do Comandante** (o puxão e o cabo); (b) o **cabo preso de outro jogador** não é desenhado no online (só o raio do disparo); (c) o **bot não usa o arpão**; (d) drone de ombro, ultrassônico e ombros para Bastion/Colossus (P77).
+
+**Próxima sessão começa com:** o login (P174) e as pendências recentes (bots com o laser; contadores do painel).
+
+## O JOGO FALA SETE LÍNGUAS — Claude, 17/10 (branch `claude/idiomas`, P173)
+
+**A ordem do Comandante (17/10):** *"sim, vamos JÁ colocar a opção para outras línguas (inglês, japonês, espanhol, francês, chinês, russo)"*.
+
+**Feito:**
+1. **`client/src/i18n/i18n.ts`:** o texto de origem é o português (nenhum módulo de interface precisou mudar); cada língua é um JSON em `client/public/locales/` (`{ "texto em português": "tradução" }`, com lacunas `{0}` para o que o jogo preenche). `traduzir()` é pura (busca exata, padrões com lacuna, cache de 2000); a camada de DOM traduz a página e **observa** (`MutationObserver`) o que o jogo escreve depois (HUD, avisos, menus), inclusive `title`/`aria-label`. **A troca é ao vivo** (cada nó guarda o original), sem recarregar.
+2. **Escolha:** `?lang=` do link → a escolha salva (`cybermech.lang`) → a língua do navegador (**só fora de navegador de teste**, para as bancadas e o smoke seguirem comparando português) → português. Seletor em Configurações → JOGO → *Idioma · Language* (sempre bilíngue, para quem está perdido).
+3. **445 textos por língua** (en, es, fr, ja, zh, ru): menus, configurações, controles, HUD de combate, avisos de missão, bandeira e domínio, dica de cada arma, nome das armas, modos, setores, desafios, tela de carregamento (com as dicas) e os 3 textos que o CSS escreve (`content`, por `:lang()`).
+4. **Testes (26, `i18n.test.ts`):** seis dicionários com **as mesmas chaves**, sem vazio, com as mesmas lacunas, e cada língua na sua escrita; **cobertura por teste**: a dica e o nome de **cada arma** (arma nova sem tradução quebra o teste), os rótulos das configurações, as dicas do carregamento e **todo texto do `index.html`**. Cinco mutações pegas (detecção em navegador de teste, lacuna não traduzida, ordem de especificidade, cache, margens).
+
+**Custo de CPU:** zero em português. Fora dele, um observador de mutações (o HUD troca texto, no pior caso, por quadro) e uma busca em tabela com cache; **nada na simulação** (G1/G2). Peso: o JS cresce ~3 KB; cada dicionário é um JSON de ~20–27 KB (7–9 KB com gzip) que só baixa quem escolheu a língua (G12).
+
+**Falta (R13, está em `STATUS_REAL.md` como PARCIAL):** (a) **revisão por falante nativo** (as traduções são do Claude); (b) a **voz do narrador** segue em português/sotaques; (c) textos desenhados em canvas (placas de nome, mapa-múndi) e as fichas longas do Hangar; (d) a landing do site (`scripts/site/`) continua só em português; (e) a vírgula decimal das dicas (`0,85 s`) não vira ponto em inglês.
+
+**Próxima sessão começa com:** o login (P174), o arpão magnético (P77) e as pendências recentes (bots com o laser; contadores do painel).
+
 ## O SITE VIROU PORTAL DE JOGO: sistema de design, fotos cinematográficas dos Mechs reais e as três páginas no mesmo visual — Claude, 16/10 (branch `claude/landing-referencia`, P172)
 
 **A ordem do Comandante (16/10):** *"quero bem parecido com as imagens de referência"*, depois *"falta acabamento UX e UI, mais estiloso, mais único, sair dos padrões"* + a orientação de um profissional (resumida no `DESIGN_SYSTEM_SITE.md`).

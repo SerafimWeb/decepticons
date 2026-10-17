@@ -33,6 +33,7 @@ const FAIXAS: Readonly<Record<WeaponId, RangeBand>> = {
   laser: 'longo', // o raio laser de longo alcance (P152)
   siege: 'longo',
   grenade: 'medio',
+  harpoon: 'curto', // o arpão: 45 m de alcance (58,5 no MK III), um cabo que junta o inimigo (P77)
   cruise: 'longo', // o míssil cruzador de longo alcance (P152)
 };
 
