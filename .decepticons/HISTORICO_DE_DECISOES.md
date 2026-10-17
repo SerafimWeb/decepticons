@@ -1,3 +1,9 @@
+## [2026-10-16] Checkpoint das explosões e as lições do War Robots (Claude, P170 e P171)
+
+**Decisões:**
+1. **Checkpoint = tag + captura + bancada + regra** (`CHECKPOINTS.md`): o ponto que o Comandante aprova fica recuperável (`git checkout checkpoint/<nome> -- arquivo`) e tem um jeito barato de comparar (a bancada refaz as capturas em software). A regra é "não regredir", não "não mexer": melhorar vale.
+2. **A reportagem vira metas, não promessa** (`LICOES_WAR_ROBOTS.md`): é comunicado da dona, em valor bruto e acumulado. O que se aproveita é o **mecanismo** (cadência de conteúdo, eventos, celular, retenção); o **pay-to-win** do War Robots continua fora (`GAME_DESIGN.md`).
+
 ## [2026-10-16] Cada arma tem a sua dica de primeiro uso (Claude, P160 parte 5)
 
 **Situação:** havia uma dica só para as armas de munição, "FOGUETES: DANO EM ÁREA; EXPLODA NO PÉ DO INIMIGO", e ela aparecia para a granada, o enxame
