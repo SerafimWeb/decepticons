@@ -35,4 +35,4 @@
 
 ## 4. O que fica para o Comandante decidir
 
-(a) se a meta de **2 unidades por semana** e **1 evento a cada 6 semanas** vira o ritmo oficial (`ROADMAP.md`); (b) se o **inglês** entra antes da monetização; (c) se **estilos de explosão e de rastro** viram o primeiro cosmético (precisa de contas, `RANKING_E_LOGIN.md`).
+(a) se a meta de **2 unidades por semana** e **1 evento a cada 6 semanas** vira o ritmo oficial (`ROADMAP.md`); (b) se o **inglês** entra antes da monetização (**respondido em 17/10: sim, e com mais cinco línguas: `ORDENS_DO_COMANDO.md` P173**); (c) se **estilos de explosão e de rastro** viram o primeiro cosmético (precisa de contas, `RANKING_E_LOGIN.md`).

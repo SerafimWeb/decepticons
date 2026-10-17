@@ -301,6 +301,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [~] A PRAIA DOS CABOS — o cenário maior com mar (P126/P114, 14/10): **a regra da água** (`combat/Agua.ts`), o **layout em dado puro** (`environment/PraiaLayout.ts`, 480 × 140 m; 10 testes) e **o mapa que abre** (`environment/Praia.ts` + `?mapa=praia`: fim de tarde com o sol no horizonte, mar claro com ondas na GPU, cidade costeira, dunas; o afogamento ligado; capturas em `arte/praia-p126-*-qwen.jpg`); faltam a **missão** (defender/retomar a estação, proteger os cidadãos), as **zonas** da praia, a bancada de colisores (< 310) e o teste de partida da água — território do Codex assumido pelo Qwen #cenarios #modos
 - [ ] Ficha da arma na lista do Hangar com dano, alcance ótimo e recarga (P109; nunca "potência" nem estrelas: não é pay-to-win) #ux
 
+- [x] Idiomas do jogo: inglês, espanhol, francês, japonês, chinês e russo (dicionário JSON + tradutor de DOM, seletor em Configurações e `?lang=`; PARCIAL: narrador, canvas, Hangar longo, landing e revisão nativa) (pedido do Comandante, 17/10, P173) #ux
+
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
 - [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo
 - [ ] Decisões do dono sobre o universo (`UNIVERSO.md`, seção 7) #universo
