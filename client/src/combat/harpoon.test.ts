@@ -25,7 +25,7 @@ describe('arpão magnético: o que é', () => {
   it('é de energia, sem projétil, com cabo (`hook`), 10 de dano, um aperto a cada 4 s, 3 t por boca', () => {
     expect(W.kind).toBe('energy');
     expect(W.speed).toBe(0);
-    expect(W.hook).toEqual({ pullSpeed: 9, hold: 1.6, arrive: 3, breakRadius: 2.4 });
+    expect(W.hook).toEqual({ pullSpeed: 9, hold: 1.6, arrive: 3 });
     expect(W.damage).toBe(10);
     expect(W.fireInterval).toBe(4);
     expect(W.mass).toBe(3);

@@ -1,3 +1,15 @@
+## [2026-10-17] O lado político entra pela pergunta, pelo custo e pela fonte; o arpão passa a obedecer ao peso (Claude, P179 e P181)
+
+**Ordem:** *"devemos perguntar se quer jogar pelos aliados antimperialistas […] ou fazer campanha para fortalecer o desmatamento, imperialismo e fascismo das elites"*, ensinando o que é o fascismo e como a mentira e o medo funcionam, *"SUTILMENTE E ELEGANTEMENTE, pedagogicamente"*; e *"robôs mais pesados não podem ser puxados por robôs mais leves"*.
+
+**Decisões:**
+1. **A pergunta existe, mas não é uma porta.** O primeiro acesso segue caindo numa partida (P133); a pergunta mora num selo do console e da pausa. O padrão é a Aliança. A pergunta automática depois da primeira rodada fica como decisão dele (`LADO_E_PEDAGOGIA.md` § 7).
+2. **Escolher o Consórcio nunca é premiado em silêncio:** o painel mostra **o discurso e o custo** (a sátira dos eufemismos) antes de valer, e, nas camadas seguintes, o fim de missão mostra o que a "operação segue" custou. Pedagogia por contraste, não sermão e não propaganda às avessas.
+3. **Ensinar é uma ficha com fonte, não uma opinião do jogo:** o Arquivo parte de estudiosos conhecidos (Eco, Paxton, Stanley, Arendt, RAND), citados para um **revisor humano conferir** antes de ir ao ar; casos reais, números e nomes **só com fonte** (a regra "sátira exagera, fato é fato" de `CAMPANHAS_E_CHEFES.md`). Sem símbolos reais do nazismo ou do fascismo: o fascismo aparece **por mecanismo e por arquétipo**.
+4. **A Amazônia é do Comandante no modelo e da Claude na lógica:** a ficha fixa o que a missão faz e os **nomes dos pontos** que o modelo precisa trazer, para ligar sem retrabalho (a lição do Bunker). Nada do modelo foi tocado.
+5. **O peso do arpão é o raio da cápsula** (o mesmo número que já decide o empurrão): igual puxa igual, o mais leve não puxa o mais pesado. Foi o dado que já existia em todos os chassis; "peso" de verdade (massa) não existe no código, e criar um agora mexeria no Hangar. O custo: os chassis de malha importada com o mesmo raio contam como do mesmo peso.
+6. **As capturas de jogos de terceiros não entram no git** (as dos jogos antigos ficam em `.tmp/referencias/`): o git guarda a leitura e o que levamos, não a arte.
+
 ## [2026-10-17] As outras fases: o circuito do quadro de luz se repete na Cidade Neon (Claude, P177, P164)
 
 **Ordem:** "melhore as outras fases além da estação cabos" e, da P164, "um circuito que podemos repetir nas diferentes fases" e "chefes especiais com contexto em cada outra fase".

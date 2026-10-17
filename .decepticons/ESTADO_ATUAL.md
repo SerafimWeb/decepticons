@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## DE QUE LADO VOCÊ JOGA? O SELETOR DE LADO, O ARPÃO POR PESO E O PLANO DA AMAZÔNIA — Claude, 17/10 (branch `claude/lado-e-arpao-peso`, P178 a P182)
+
+**O Comandante (17/10)** mandou, numa mensagem só, cinco ordens: o idioma logo no início da **landing** (P178); **perguntar o lado** (Aliança × Consórcio) e **ensinar** o que é o fascismo, a rede de mentiras e o medo, de modo sutil e pedagógico (P179); a **missão da Amazônia** (a mineradora no rio; o modelo é dele, em outro chat) (P180); a regra do **arpão** (o robô mais leve não puxa o mais pesado) (P181); e **referências de interface de jogos antigos** (P182).
+
+**Feito neste PR:**
+1. **P181, o arpão por peso (código, REAL):** `HookSystem.pesoDe` (o raio da cápsula): o alvo mais pesado que o atirador não é preso; igual e mais leve são. Substitui o limite fixo de 2,4 m (`breakRadius` saiu da arma). 4 testes e 3 mutações; a dica, o Arsenal e o Hangar dizem a regra nas sete línguas.
+2. **P179, o seletor de lado (código, DEMO):** o selo **LADO** no console e na pausa; a pergunta no estilo da placa de metal (P182); o painel **"o discurso e o custo"** para o Consórcio. Teclado (setas, Enter, Esc), traduzido, sem porta (o primeiro acesso não pergunta nada). **Não muda o combate.** Visto no navegador de verdade (`arte/lado-*-claude.png`).
+3. **Documentos de design:** `LADO_E_PEDAGOGIA.md` (a pergunta, as quatro camadas, as regras que protegem a ideia, o Arquivo e o que ensinar, as decisões dele), `fichas/fascismo-e-propaganda.md` (a base do Arquivo, **fontes a conferir por um revisor**), `fichas/cenario-amazonas.md` (a missão em cinco fases e o que o modelo dele precisa trazer) e a § 8 de `REFERENCIA_VISUAL.md` (a leitura das duas capturas e o que levamos).
+4. **O registro:** as cinco ordens em `ORDENS_DO_COMANDO.md` (P178 a P182; a P177 é de outra sessão).
+
+**Custo de CPU:** zero (HTML/CSS e um clique; a regra do arpão é uma comparação por aperto).
+
+**Falta (R13):** (a) **P178, a landing em outras línguas** (próximo PR); (b) o **Arquivo**, o **Relatório de Consequências** e a **campanha do Consórcio** (P179); (c) **a missão da Amazônia** (P180), à espera do modelo; (d) **ombros nos chassis pesados**, sem os quais o arpão por peso não rende nas mãos de um robô grande (P181); (e) a linha selecionada em barra dourada, o `‹ valor ›` e o par **SOLO / MULTI** (P182); (f) as **decisões do Comandante** em `LADO_E_PEDAGOGIA.md` § 7 (nomes reais ou arquétipos; quanto o Consórcio é jogável; o Arquivo opcional; quem revisa os textos de fato; onde publica).
+
+**Próxima sessão começa com:** a landing em outras línguas (P178).
+
 ## AS OUTRAS FASES, PARTE E: A CIDADE NEON GANHA O TRANSFORMADOR DO BANCO VORCARIS E A BARRA DO CHEFE — Claude, 17/10 (branch `claude/outras-fases`, P177, P164, P165)
 
 **A ordem do Comandante:** *"CONTINUA SEGUINDO A PARTE B, C e a D, e melhore as outras fases além da estação cabos"*, e da P164: *"um tipo de circuito que podemos repetir nas diferentes fases… além de chefes especiais com contexto em cada outra fase"*.
