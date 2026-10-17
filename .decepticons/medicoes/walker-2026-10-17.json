@@ -1,0 +1,63 @@
+{
+  "data": "2026-10-17",
+  "tela": "1280x720",
+  "render": "SwiftShader (sem GPU: só contagem, não tempo)",
+  "vistas": {
+    "lado": {
+      "desenhos": 26,
+      "triangulos": 28324,
+      "construcaoMs": 349
+    },
+    "tres-quartos": {
+      "desenhos": 26,
+      "triangulos": 28324,
+      "construcaoMs": 65
+    },
+    "lado-f0": {
+      "desenhos": 17,
+      "triangulos": 27048,
+      "construcaoMs": 92
+    },
+    "lado-f20": {
+      "desenhos": 17,
+      "triangulos": 27048,
+      "construcaoMs": 71
+    },
+    "lado-f40": {
+      "desenhos": 17,
+      "triangulos": 27048,
+      "construcaoMs": 83
+    },
+    "lado-f60": {
+      "desenhos": 17,
+      "triangulos": 27048,
+      "construcaoMs": 53
+    },
+    "tres-quartos-cflrr": {
+      "desenhos": 26,
+      "triangulos": 28324,
+      "construcaoMs": 104
+    },
+    "frente": {
+      "desenhos": 26,
+      "triangulos": 28324,
+      "construcaoMs": 66
+    },
+    "tras": {
+      "desenhos": 26,
+      "triangulos": 28324,
+      "construcaoMs": 2254
+    },
+    "cima": {
+      "desenhos": 26,
+      "triangulos": 28324,
+      "construcaoMs": 65
+    },
+    "escala": {
+      "desenhos": 26,
+      "triangulos": 28324,
+      "construcaoMs": 70
+    }
+  },
+  "errosDePagina": []
+}
