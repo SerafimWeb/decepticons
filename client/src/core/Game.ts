@@ -102,21 +102,18 @@ import { EsquadraoStore } from './EsquadraoStore';
 import { PARAM_DA_TATICA, taticaDeTexto } from '../combat/taticas';
 import { CHASSIS_DOS_BOTS, esquadraoDeFoes, PARAM_DO_ESQUADRAO, resumoDoEsquadrao } from '../sim/esquadrao';
 import { ALLY_COUNT } from '../sim/nascimentos';
-import { SquadPanel } from '../ui/SquadPanel';
 import { SequenciaDeAbates } from '../combat/killStreak';
 import { bootProgresso } from './bootProgress';
 import { locucaoDoNavegador } from '../ui/locucao';
 import { chaveDaRodada, chaveDaSequencia, falaGerada, narracaoDaUrl } from '../audio/falas';
 import { ARQUIVOS_DAS_ARMAS } from '../audio/armasSom';
 import { Narrador, type PlayerDeVoz } from '../audio/Narrador';
-import { ArsenalPanel } from '../ui/ArsenalPanel';
-import { CampaignPanel } from '../ui/CampaignPanel';
 import { CampaignRunHud } from '../ui/CampaignRunHud';
 import { CampanhaStore } from './CampanhaStore';
 import { EtapaEmCurso } from './EtapaEmCurso';
 import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha';
-import type { ServerPanel } from '../ui/ServerPanel';
-import { CameraWall } from '../ui/CameraWall';
+import type { CameraWall } from '../ui/CameraWall';
+import { abrirSobDemanda, sobDemanda } from './sobDemanda';
 import { plantaDaArena, plantaDoBunker } from '../ui/TacticalRadar';
 import { Minimapa, plantaComZonas, plantaDaAmazoniaNoMinimapa, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
 import { novoQuadroDaPraia, PraiaHud, type QuadroDaPraia } from '../ui/PraiaHud';
@@ -895,7 +892,8 @@ export class Game {
     // Janela do esquadrão (P91): offline, na Arena e no Bunker. Online o servidor manda os inimigos; as missões têm o pool delas.
     const esquadraoIndisponivel = (): string | null =>
       online ? 'Online, quem manda nos inimigos é o servidor.' : this.gameMode !== 'deathmatch' && this.gameMode !== 'dominio' ? 'O esquadrão vale no combate livre (Arena e Bunker) e no Domínio; as missões têm o pool delas.' : null;
-    const squadPanel = new SquadPanel({
+    // Os painéis do console (Esquadrão, Campanhas, Arsenal, Servidor, Câmeras) são pedaços sob demanda: baixam no primeiro clique e não pesam no JS de partida (R7).
+    const squadPanel = sobDemanda(async () => new (await import('../ui/SquadPanel')).SquadPanel({
       store: this.squad,
       padrao: () => esquadraoDeFoes(this.settings.value, ALLY_COUNT),
       nomes: () => this.settings.value.names,
@@ -904,10 +902,10 @@ export class Game {
       indisponivel: esquadraoIndisponivel,
       abrirAjustes: () => document.getElementById('btn-settings')?.click(),
       reiniciar: () => reloadWithout(PARAM_DO_ESQUADRAO),
-    });
+    }));
     // Janela Campanha (fase 4B): offline apenas. Jogar uma etapa é abrir o jogo com o link dela; o esquadrão "meu" é o salvo no aparelho, não o do link da etapa.
     const campanhaIndisponivel = (): string | null => (online ? 'Online, quem manda nos inimigos é o servidor.' : null);
-    const campanhaPanel = new CampaignPanel({
+    const campanhaPanel = sobDemanda(async () => new (await import('../ui/CampaignPanel')).CampaignPanel({
       store: this.campanhas,
       esquadraoMeu: () => new EsquadraoStore(browserStorage(), '').current,
       indisponivel: campanhaIndisponivel,
@@ -921,20 +919,15 @@ export class Game {
         }
       },
       base: () => location.origin + location.pathname,
-    });
+    }));
     this.ligarCampanha(mapa, !!online);
     // Janela ARSENAL (fase 4C): só leitura, as fichas das armas e dos chassis; abre sempre (offline e online).
-    const arsenal = new ArsenalPanel({ chassisDeBot: CHASSIS_DOS_BOTS });
+    const arsenal = sobDemanda(async () => new (await import('../ui/ArsenalPanel')).ArsenalPanel({ chassisDeBot: CHASSIS_DOS_BOTS }));
     // Janela do servidor (P93): o endereço é o do jogo online (o público do build, ou o do próprio PC); sem ele, o item se apaga.
     const enderecoDoServidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
     const tokenDoDono = new TokenDoDono(browserStorage(), enderecoDoServidor);
     const adminCliente = new AdminCliente(enderecoDoServidor, tokenDoDono.ler);
-    // A janela do servidor é do dono: o código dela (4 KB gzip) só baixa quando ele a abre, não pesa no download de quem joga (`scripts/orcamentoDeJs.mjs`).
-    let painelDoServidor: Promise<ServerPanel> | null = null;
-    const abrirJanelaDoServidor = (): void => {
-      painelDoServidor ??= import('../ui/ServerPanel').then(({ ServerPanel: Janela }) => new Janela({ cliente: adminCliente, token: tokenDoDono }));
-      void painelDoServidor.then((p) => p.abrir());
-    };
+    const painelDoServidor = sobDemanda(async () => new (await import('../ui/ServerPanel')).ServerPanel({ cliente: adminCliente, token: tokenDoDono }));
     // Câmeras ao vivo (P88): o mural de radares de todas as partidas do servidor, com o mesmo token do dono. O canal só existe com a janela aberta.
     let parede: CameraWall | null = null;
     const mural = new MuralCliente(enderecoDoServidor, tokenDoDono.ler, { estado: (e) => parede?.estado(e), quadro: (q) => parede?.quadro(q) });
@@ -953,12 +946,15 @@ export class Game {
       this.praiaHud = new PraiaHud(document.getElementById('hud')!, true);
       this.praiaQuadro = novoQuadroDaPraia(this.camera);
     }
-    parede = new CameraWall({
-      mural,
-      planta: () => plantaOnline,
-      meia: mapa === 'arena' ? this.match.arena.halfSize : 100,
-      nomes: adminCliente,
-      abrirServidor: abrirJanelaDoServidor,
+    const paredeSobDemanda = sobDemanda(async () => {
+      parede = new (await import('../ui/CameraWall')).CameraWall({
+        mural,
+        planta: () => plantaOnline,
+        meia: mapa === 'arena' ? this.match.arena.halfSize : 100,
+        nomes: adminCliente,
+        abrirServidor: () => abrirSobDemanda(painelDoServidor),
+      });
+      return parede;
     });
     const cmd = new CommandConsole({
       mapa,
@@ -970,11 +966,11 @@ export class Game {
       dificuldade: () => this.settings.value.difficulty,
       potencias: () => this.power.changes,
       som: () => this.audio.playUiTransition(),
-      esquadrao: { abrir: () => void squadPanel.abrir(), indisponivel: esquadraoIndisponivel, personalizado: () => this.squad.custom },
-      campanha: { abrir: () => void campanhaPanel.abrir(), indisponivel: campanhaIndisponivel },
-      arsenal: { abrir: () => void arsenal.abrir() },
-      servidor: { abrir: abrirJanelaDoServidor, indisponivel: () => (enderecoDoServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
-      cameras: { abrir: () => void parede?.abrir(), indisponivel: () => (mural.temServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
+      esquadrao: { abrir: () => abrirSobDemanda(squadPanel), indisponivel: esquadraoIndisponivel, personalizado: () => this.squad.custom },
+      campanha: { abrir: () => abrirSobDemanda(campanhaPanel), indisponivel: campanhaIndisponivel },
+      arsenal: { abrir: () => abrirSobDemanda(arsenal) },
+      servidor: { abrir: () => abrirSobDemanda(painelDoServidor), indisponivel: () => (enderecoDoServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
+      cameras: { abrir: () => abrirSobDemanda(paredeSobDemanda), indisponivel: () => (mural.temServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
       radar: fonteDoRadar(mapa, this.match.arena.halfSize, this.match.arena.occluders, () => this.mech, () => this.bots.mechs, allies),
     });
     this.settings.onChange(() => cmd.atualizar());
