@@ -120,6 +120,7 @@ export class ArenaRoom {
     this.match.grenades.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
     this.match.onBeam = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
     this.match.onWave = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
+    this.match.onHook = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
     this.match.onMechHit = (e) => this.hit(e.mech, e.shooter, e.result.part, e.result.applied);
     this.match.onMechKilled = (dead, _at, killer) => this.kill(dead, killer);
     this.match.onPropBroken = (id) => this.propBroken(id);

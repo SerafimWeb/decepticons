@@ -84,7 +84,7 @@ export const ehChassiDoBot = (id: unknown): id is ChassisId => typeof id === 'st
  */
 export function armaServeAoBot(id: WeaponId): boolean {
   const w = weapon(id);
-  return w.kind === 'energy' && !w.spin && !w.flame && !w.wave && !w.guide && !w.barrage && !w.beam && w.chargeTime === undefined;
+  return w.kind === 'energy' && !w.spin && !w.flame && !w.wave && !w.guide && !w.barrage && !w.beam && !w.hook && w.chargeTime === undefined;
 }
 
 /**

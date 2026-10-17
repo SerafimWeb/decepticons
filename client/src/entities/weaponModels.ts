@@ -391,6 +391,27 @@ function sonic(root: THREE.Object3D, tier: number, M: Mats): number {
   return (end + 0.1) * LONG;
 }
 
+/**
+ * Arpão magnético (ombro): um corpo curto, uma **bobina de cabo** (disco com aro luminoso) e um **cano longo com a cabeça em garra** na ponta, como um lançador de arpão de baleeiro. O nível alonga o cano e
+ * soma uma bobina. No ombro leva uma braçadeira embaixo (como os lançadores).
+ */
+function harpoon(root: THREE.Object3D, tier: number, M: Mats): number {
+  const d = pen(root);
+  const len = [0.8, 0.95, 1.1][tier]!;
+  d.box(0.34, 0.32, 0.5, M.armor, 0, 0, -0.3);
+  d.box(0.24, 0.12, 0.42, M.frame, 0, -0.23, -0.3);
+  for (let i = 0; i <= tier; i++) {
+    d.cylZ(0.17, 0.06, M.frame, 0, 0.0, -0.1 - i * 0.14);
+    d.cylZ(0.12, 0.07, M.glow, 0, 0.0, -0.1 - i * 0.14);
+  }
+  d.cylZ(0.055, len, M.frame, 0, 0, -0.55 - len / 2);
+  // A cabeça: duas garras para os lados e uma ponta.
+  const tip = 0.55 + len;
+  d.cylZ(0.08, 0.14, M.armor, 0, 0, -tip - 0.05);
+  for (const side of [-1, 1]) d.box(0.17, 0.035, 0.12, M.glow, side * 0.09, 0, -tip + 0.02);
+  return (tip + 0.15) * LONG;
+}
+
 /** Motosserra (corpo a corpo): motor e uma barra alta com dentes luminosos. O nível alonga a barra. */
 function chainsaw(root: THREE.Object3D, tier: number, M: Mats): number {
   const d = pen(root);
@@ -445,17 +466,18 @@ function mats(accent: number): Mats {
 
 function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false): WeaponModel {
   const root = new THREE.Group();
-  const accent = weapon?.id === 'sonic' || weapon?.id === 'laser' ? PALETTE.pink : weapon?.id === 'seeker' ? PALETTE.cyan : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : weapon?.id === 'grenade' ? PALETTE.fluo : PALETTE.sodium;
+  const accent = weapon?.id === 'sonic' || weapon?.id === 'laser' ? PALETTE.pink : weapon?.id === 'seeker' ? PALETTE.cyan : weapon?.id === 'arc' || weapon?.id === 'cryo' ? PALETTE.cyan : weapon?.id === 'flamer' ? PALETTE.sodium : weapon?.id === 'railgun' || weapon?.id === 'emp' || weapon?.id === 'plasma' || weapon?.id === 'blaster' || weapon?.id === 'shotgun' ? PALETTE.green : weapon?.id === 'grenade' ? PALETTE.fluo : weapon?.id === 'harpoon' ? PALETTE.cyan : PALETTE.sodium;
   const M = mats(accent);
   if (shoulder) {
     // Lançador de ombro: o casulo de foguetes, o morteiro da chuva e os lançadores leve e cruzador têm esse desenho. Sem arma (ou outra), o ombro fica limpo.
-    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic' && weapon?.id !== 'seeker' && weapon?.id !== 'swarm' && weapon?.id !== 'cruise' && weapon?.id !== 'grenade') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
+    if (weapon?.id !== 'rockets' && weapon?.id !== 'barrage' && weapon?.id !== 'sonic' && weapon?.id !== 'seeker' && weapon?.id !== 'swarm' && weapon?.id !== 'cruise' && weapon?.id !== 'grenade' && weapon?.id !== 'harpoon') return { object: new THREE.Group(), muzzle: new THREE.Vector3() };
     const muzzleZ =
       weapon.id === 'sonic' ? sonic(root, weapon.tier, M)
       : weapon.id === 'barrage' ? mortarPod(root, weapon.tier, M)
       : weapon.id === 'swarm' ? swarmPod(root, weapon.tier, M)
       : weapon.id === 'cruise' ? cruisePod(root, weapon.tier, M)
       : weapon.id === 'grenade' ? grenadePod(root, weapon.tier, M)
+      : weapon.id === 'harpoon' ? harpoon(root, weapon.tier, M)
       : pod(root, weapon.tier, M);
     batchRigMeshes(root, []);
     return { object: root, muzzle: new THREE.Vector3(0, 0, -muzzleZ) };
@@ -491,6 +513,9 @@ function build(weapon: Pick<WeaponStats, 'id' | 'tier'> | null, shoulder = false
         break;
       case 'laser':
         muzzleZ = laser(root, weapon.tier, M);
+        break;
+      case 'harpoon':
+        muzzleZ = harpoon(root, weapon.tier, M);
         break;
       case 'grenade':
         muzzleZ = grenade(root, weapon.tier, M);
