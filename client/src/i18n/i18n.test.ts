@@ -100,6 +100,15 @@ describe('traduzir: a tabela, as lacunas e o cache', () => {
     expect(traduzir('VENCEDOR: Maria')).toBe('WINNER: Maria');
   });
 
+  it('o padrão com mais texto fixo vence a composição genérica "{0} · {1}" (que só traduz as partes)', () => {
+    carregarDicionario({ 'RODADA {0} · {1}': 'ROUND {0} · {1}', '{0} · {1}': '{0} · {1}', '{0} · {1} · {2}': '{0} · {1} · {2}', 'azul': 'blue', 'verde': 'green', 'ESCALA {0}': 'SCALE {0}' });
+    expect(traduzir('RODADA 3 · azul')).toBe('ROUND 3 · blue'); // o específico, e a parte traduzida pelo que ela já sabe
+    expect(traduzir('azul · verde')).toBe('blue · green'); // sem específico: a composição traduz cada parte
+    expect(traduzir('ESCALA 3 · azul · verde')).toBe('SCALE 3 · blue · green'); // três partes, uma delas com lacuna: "ESCALA {0}" não engole a composição
+    expect(traduzir('ESCALA 3')).toBe('SCALE 3'); // sozinha, a chave com lacuna segue valendo
+    expect(traduzir('azul · fosforescente')).toBe('blue · fosforescente'); // o que não está no dicionário fica em português
+  });
+
   it('caracteres especiais da chave não viram regex', () => {
     carregarDicionario({ 'Custa (R$ {0}) + taxa?': 'Costs ($ {0}) + fee?' });
     expect(traduzir('Custa (R$ 5) + taxa?')).toBe('Costs ($ 5) + fee?');
@@ -249,5 +258,67 @@ describe('a cobertura: o que o jogo mostra e o dicionário traduz', () => {
     expect(html).toMatch(/id="btn-conta-rapido" data-settings-open="jogo" data-settings-foco="settings-conta"/);
     // o seletor das Configurações segue lá: os dois andam juntos
     expect(html).toMatch(/<select id="setting-idioma" data-i18n="nao"/);
+  });
+});
+
+describe('a cobertura das telas avançadas (auditoria de 17/10: o Hangar falava português em japonês)', () => {
+  const JA = ler('ja');
+  /** Os nomes próprios que ficam como estão (marcas, fabricantes, apelidos dos bots). */
+  const NOMES = /Forge Systems|Vanta Works|Cybermech Industries|CYBERMECH|CLAWD|BRABO|ESCOLTA|PLASMA|NEON|MK [I]+|Colossus-V4|Vector-09/g;
+  /** Traduzido de verdade: mudou, e não sobrou palavra em português (só nomes próprios e unidades). */
+  const coberto = (texto: string): boolean => {
+    carregarDicionario(JA);
+    const feito = traduzir(texto);
+    return feito !== texto && !/[A-Za-zÀ-ú]{4,}/.test(feito.replace(NOMES, ''));
+  };
+  const dicasDoHangar = JSON.parse(readFileSync(resolve(RAIZ, 'public/dicas-do-hangar.json'), 'utf8')) as Record<string, string>;
+
+  it('a dica de uma linha de cada arma no Hangar, e as frases que o encaixe junta a ela', () => {
+    const faltam = Object.entries(dicasDoHangar).filter(([, texto]) => !coberto(texto)).map(([id]) => id);
+    expect(faltam).toEqual([]);
+    for (const frase of ['· um lançador em cada ombro: a carga conta duas vezes', '· fica nas costas do Mech, apontando para cima; o antebraço fica liso', '· tamanho 3: o que é pesado nos Mechs comuns é leve para ele']) expect(coberto(frase), frase).toBe(true);
+  });
+
+  it('os textos compostos "A · B · C" do Hangar se traduzem parte a parte (o que o navegador mostra, não só o que está no código)', () => {
+    const casos = [
+      'MÉDIO · ASSALTO · Equilíbrio entre alcance e mobilidade.',
+      'LEVE · PILOTO · Pequeno e ágil; vence no combate próximo.',
+      'ESCALA 3 · CERCO · Lento e blindado; devastador de perto.',
+      'ESCALA 4 · TITÃ · O maior do jogo: passo curto, joelho dobrado e o canhão de cerco.',
+      'MÉDIO · IMPORTADO · Malha de Forge Systems.',
+      '11 t de carga · 5,3 m · EM USO',
+      '3 t de carga · 1,6 m',
+      'PADRÃO · 3,0 t',
+      '+20% dano · 4,5 t',
+      '4,0 t livres',
+      'EXCEDE 6,0 t',
+      'HANGAR · CENTRO DE MONTAGEM',
+      'BLINDAGEM · TORSO',
+      'BRAÇO DIREITO · ATAQUE 1',
+      'BRAÇOS 1 · OMBROS 2',
+      'DIREITO 1 · ESQ. + OMBROS 2',
+      'Lançador de mísseis leve · 2,0 t',
+      'DANO EM 20 S',
+    ];
+    const faltam = casos.filter((c) => !coberto(c));
+    expect(faltam).toEqual([]);
+    carregarDicionario(JA);
+    expect(traduzir('PADRÃO · 3,0 t')).not.toMatch(/[A-Za-zÀ-ú]{4,}/); // nada de português sobrando
+    expect(traduzir('MÉDIO · ASSALTO · Equilíbrio entre alcance e mobilidade.')).not.toMatch(/ASSALTO|Equilíbrio/);
+  });
+
+  it('o HUD da partida e o painel de ordens aos aliados', () => {
+    const casos = ['VISTA 3ª PESSOA  [V]', 'VISTA 1ª PESSOA  [V]', 'VISTA TÁTICA  [V]', '1 · Acompanhar', '2 · Foco', '3 · Defender', '2/2 aliados · Escolta', '1/2 aliados · Fogo concentrado', '2/2 aliados · Defesa de posição', 'Equipe: concentrar fogo', 'Equipe: defender esta posição', '◈ ESCOLTA·PLASMA: CONTATO ▸ CLAWD·BRABO'];
+    expect(casos.filter((c) => !coberto(c))).toEqual([]);
+  });
+
+  it('o Esquadrão e as Campanhas: os rótulos, os esquadrões prontos, as quantidades e o papel de cada chassi', () => {
+    const casos = [
+      'ESQUADRÃO', 'FICHA DO ROBÔ', 'Apelido', 'Personalidade', 'Chassi', 'Arma principal', 'Mão esquerda', 'Dificuldade', '[ DUPLICAR ]', '[ SALVAR E REINICIAR ]', 'PRONTOS', 'BATALHÃO', 'DUELO', 'SÓ ALIADOS', '+ ANDRÓIDE',
+      '6 de 32 robôs · 4 contra você, 2 com você', 'Tirar CLAWD·BRABO',
+      'Equilibrado: a referência. Nada excelente, nada fraco. Vida 300, 9 m/s.',
+      'CAMPANHAS', 'DE FÁBRICA', 'OPERAÇÃO NEON', '1 etapa', '4 etapas', '1/8 etapas', 'CIDADE NEON · SOBREVIVÊNCIA', 'Limpe todas as ondas · 4 inimigos · 2 aliados', '1 etapa · o link leva 50 letras', '[ + NOVA CAMPANHA ]',
+    ];
+    expect(casos.filter((c) => !coberto(c))).toEqual([]);
   });
 });

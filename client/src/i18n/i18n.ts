@@ -55,6 +55,8 @@ interface Padrao {
   /** Para cada lacuna `{n}` da tradução, qual grupo do regex a preenche (a ordem em que ela aparece na chave). */
   readonly modelo: string;
   readonly grupos: readonly number[];
+  /** Quanto texto fixo a chave tem (sem as lacunas): é o que decide quem vence entre dois padrões que servem ao mesmo texto. */
+  readonly fixo: number;
 }
 
 const LACUNA = /\{(\d+)\}/g;
@@ -81,16 +83,18 @@ export function carregarDicionario(dic: Dicionario | null): void {
     const grupos: number[] = [];
     let fonte = '';
     let fim = 0;
+    // Uma chave sem " · " não pode engolir uma composição "A · B": quem junta partes com " · " é a chave de composição ("{0} · {1}"), que traduz cada parte pelo que o dicionário já sabe.
+    const lacuna = chave.includes(' · ') ? '([\\s\\S]+?)' : '((?:(?! · )[\\s\\S])+?)';
     for (const m of chave.matchAll(LACUNA)) {
-      fonte += chave.slice(fim, m.index!).replace(ESCAPE, '\\$&') + '([\\s\\S]+?)';
+      fonte += chave.slice(fim, m.index!).replace(ESCAPE, '\\$&') + lacuna;
       grupos.push(Number(m[1]));
       fim = m.index! + m[0].length;
     }
     fonte += chave.slice(fim).replace(ESCAPE, '\\$&');
-    padroes.push({ re: new RegExp(`^${fonte}$`), modelo: valor, grupos });
+    padroes.push({ re: new RegExp(`^${fonte}$`), modelo: valor, grupos, fixo: chave.replace(LACUNA, '').length });
   }
-  // O padrão mais específico (mais texto fixo) primeiro: "ONDA {0} ELIMINADA" antes de "ONDA {0}".
-  padroes.sort((a, b) => b.re.source.length - a.re.source.length);
+  // O padrão mais específico (mais texto fixo) primeiro: "ONDA {0} ELIMINADA" antes de "ONDA {0}", e "RODADA {0} · {1}" antes da composição genérica "{0} · {1}".
+  padroes.sort((a, b) => b.fixo - a.fixo || b.re.source.length - a.re.source.length);
 }
 
 function semMargens(texto: string): [string, string, string] {
