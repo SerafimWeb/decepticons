@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P170 — O site no nível de um jogo comercial: bem parecido com as referências (16/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P170 | 16/10 | "adicionei algumas imagens de referência pra tornarmos nossas landing page melhores e mais profissionais, padrão de games famosos… quero bem parecido com as imagens de referência na pasta .tmp/landing"; depois, com um print da landing do Codex ao lado do alvo: "ainda falta alguns detalhe… um pouco mais de acabamento UX e também UI… mais estiloso e mais único e sair dos padrões", e a orientação de um profissional (direção de arte, design system permanente, Mechs reais, sem métrica inventada, nada de dois CTAs juntos) | 🟡 | Claude, `claude/landing-referencia`: sistema de design (`DESIGN_SYSTEM_SITE.md`, `scripts/site/hud.mjs`), landing nova com fotos cinematográficas dos Mechs reais (`cena-cinematica.mjs`), oficina e sala de controle no mesmo sistema. **Falta:** o olho do Comandante; páginas próprias de Hangar/Arsenal; "Pilotos" (o recurso não existe); o herói ainda é foto, não 3D ao vivo | `cybermech.online/` (rolar a página inteira), `/oficina/`, `/sala-de-controle/`; capturas em `arte/landing-claude-*.jpg`, `oficina-claude-1440.jpg`, `sala-claude-1440.jpg` |
+
 ## P169 — Landing, comunicação pública e primeiro acesso (16/10, Codex)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

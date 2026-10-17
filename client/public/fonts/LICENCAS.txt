@@ -1,0 +1,4 @@
+Fontes do site (licença SIL Open Font License 1.1, uso comercial e hospedagem própria permitidos):
+- Chakra Petch (Cadson Demak) — títulos e rótulos: https://fonts.google.com/specimen/Chakra+Petch
+- Barlow (Jeremy Tribby) — texto corrido: https://fonts.google.com/specimen/Barlow
+Os arquivos .woff2 são o subconjunto latino servido pelo Google Fonts, sem alteração.

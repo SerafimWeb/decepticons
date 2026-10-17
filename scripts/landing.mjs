@@ -1,8 +1,13 @@
-/** Landing pública: catálogo da simulação e fotografias dos modelos reais. */
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+/**
+ * Landing pública. Os números vêm do jogo (catálogo, arsenal, chassis) e as fotos são dos Mechs reais:
+ * `node .decepticons/medicoes/cena-cinematica.mjs` as produz e grava a posição dos rótulos em `scripts/site/cena/`.
+ * Direção de arte e componentes: `.decepticons/DESIGN_SYSTEM_SITE.md` e `scripts/site/hud.mjs`.
+ */
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { jogo, marcos, vitrine } from './site/dados.mjs';
+import { arsenal, jogo, marcos, pledge, vitrine } from './site/dados.mjs';
 import { esc, inline, pagina } from './site/tema.mjs';
+import { HUD_JS, featureCard, gameButton, ghost, hudCss, hudFooter, hudNav, ico, sectionHeading } from './site/hud.mjs';
 import { LANDING_CSS } from './site/landing-style.mjs';
 
 const args = process.argv.slice(2);
@@ -13,80 +18,212 @@ if (!game) throw new Error('A landing exige o catálogo real do jogo.');
 const m = marcos();
 const SITE_URL = (process.env.SITE_URL || 'https://cybermech.online/').replace(/\/?$/, '/');
 const art = (file) => `jogar/press/${file}`;
-const features = vitrine().slice(0, 6);
-const nf = (n) => n.toLocaleString('pt-BR');
+const nf = (n, d = 0) => n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const cena = (nome) => JSON.parse(readFileSync(resolve('scripts/site/cena', `${nome}.json`), 'utf8'));
+const arse = arsenal(game);
+const CH = game.chassis;
+
+/* ---------- herói: as medidas e os rótulos saem da posição real dos Mechs na foto ---------- */
+const hero = cena('hero').medidas;
+const big = hero.colossusv4;
+const small = hero.vector09;
+const metros = (n) => `${nf(n, n % 1 ? 1 : 0)} m`;
+
+/* ---------- câmeras: as capturas reais do jogo; sem elas, a arena da vitrine ---------- */
+const shots = [
+  ['tatica.jpg', 'Câmera tática', 'tactical', 'Observe a arena de cima e planeje seu deslocamento.'],
+  ['primeira-pessoa.jpg', 'Câmera de piloto', 'helmet', 'Assuma a perspectiva do piloto para alinhar os disparos.'],
+  ['capa.jpg', 'Câmera de ação', 'crosshair', 'Acompanhe o Mech e leia o espaço ao seu redor.'],
+].filter(([file]) => existsSync(join(ROOT, 'capturas', file)));
+
+/* ---------- recursos: o texto vem da VITRINE do GAME_DESIGN ---------- */
+const vit = vitrine();
+const pick = (needle) => vit.find((f) => f.title.toLowerCase().includes(needle));
+const resources = [
+  [pick('dano por módulo'), 'burst', 'cena-hero.jpg', '86% 62%', 1.9],
+  [pick('arsenal configurável'), 'wrench', 'cena-marauder.jpg', '50% 35%', 1.25],
+  [pick('oponentes'), 'octagon', 'cena-duelo.jpg', '88% 40%', 1.5],
+  [pick('gestão térmica'), 'flame', 'cena-vector09.jpg', '50% 45%', 1.2],
+].filter(([f]) => f);
+
+/* ---------- compromisso de jogo: as quatro linhas do GAME_DESIGN ---------- */
+const promise = pledge();
+const promiseHead = ['Nada que se compra ganha partida.', 'Monetização, se houver, é só estética.', 'Anúncio nunca interrompe a luta.', 'O jogo é sobre habilidade.'];
+const promiseIcon = ['xcircle', 'cube', 'bars', 'users'];
+const promiseBody = (text) => inline(text.replace(/^\*\*[^*]+\*\*\s*/, ''));
+const promiseRows = promise.slice(0, 4).map((t, i) => [promiseIcon[i], promiseHead[i], promiseBody(t)]);
+
+/* ---------- Hangar: as seis partes do Marauder, com a blindagem e a montagem de fábrica reais ---------- */
+const MAR = CH.marauder;
+const spec = game.hangar.factorySpec('marauder');
+const armaName = (slot) => game.weapons.weapon(slot.id, slot.tier).name;
+const mh = MAR.maxModuleHealth;
+const pos = cena('hangar').partes;
+const parts = [
+  ['CABEÇA', 'Sensores', `${nf(mh.head)} de blindagem. Destruída, o HUD perde os números e a mira.`, pos.head],
+  ['TORSO', 'Núcleo', `${nf(mh.torso)} de blindagem. Cada parte tem a própria integridade e muda o que o Mech consegue fazer.`, pos.torso],
+  ['BRAÇO DIREITO', armaName(spec.right), `${nf(mh.rightArm)} de blindagem. De fábrica carrega ${armaName(spec.right)}.`, pos.leftArm],
+  ['BRAÇO ESQUERDO', armaName(spec.left), `${nf(mh.leftArm)} de blindagem. De fábrica carrega ${armaName(spec.left)}.`, pos.rightArm],
+  ['PERNA DIREITA', 'Mobilidade', `${nf(mh.rightLeg)} de blindagem. ${nf(MAR.moveSpeed, 1)} m/s e dash de ${nf(MAR.dashSpeed)} m/s; perna quebrada deixa o Mech lento.`, pos.leftLeg],
+  ['PERNA ESQUERDA', 'Estabilidade', `${nf(mh.leftLeg)} de blindagem. ${nf(MAR.maxJumps)} pulos seguidos para mudar de altura e fugir da linha de tiro.`, pos.rightLeg],
+];
+
+/* ---------- chassis em escala: a foto dos três lado a lado e os links de montagem ---------- */
+const escala = Object.fromEntries(cena('escala').escala.map((e) => [e.id, e]));
 const chassis = [
   ['vector09', 'Versatilidade em combate', 'Mobilidade, plasma e foguetes. Um ponto de partida para encontrar seu estilo.'],
   ['marauder', 'Potência em múltiplos encaixes', 'Armas nos braços e nos ombros, com montagens para diferentes distâncias.'],
   ['colossusv4', 'Presença de cerco', 'Blindagem e capacidade de carga para quem prefere dominar uma posição.'],
 ];
-const shots = [
-  ['capa.jpg', 'Terceira pessoa', 'Acompanhe o Mech e leia o espaço ao seu redor.'],
-  ['primeira-pessoa.jpg', 'Primeira pessoa', 'Assuma a perspectiva do piloto para alinhar os disparos.'],
-  ['tatica.jpg', 'Visão tática', 'Observe a arena de cima e planeje seu deslocamento.'],
-].filter(([file]) => existsSync(join(ROOT, 'capturas', file)));
-const button = (label = 'JOGAR AGORA', href = './jogar/', event = 'click_cockpit') => `<a class="play-btn" href="${href}" data-evento="${event}">${label}<span aria-hidden="true">↗</span></a>`;
-const modes = [
-  ['01', 'ARENA', 'Combate sem pausa', 'Enfrente os rebeldes, use a cobertura e ataque os módulos vulneráveis.', './jogar/?modo=deathmatch', 'arena.jpg', 'SOLO'],
-  ['02', 'SOBREVIVÊNCIA', 'Defenda a estação', 'Resista às ondas de invasores na Praia dos Cabos e preserve o núcleo da estação.', './jogar/?modo=survival&mapa=praia', 'praia.jpg', 'SOLO · ONDAS'],
-  ['03', 'MULTIPLAYER', 'Entre na disputa', `Salas para até ${game.net.ROOM_SIZE} pilotos. Combate todos contra todos, com movimento e dano validados pelo servidor.`, './jogar/?sala=ARENA', 'duelo.jpg', 'ONLINE'],
-];
-const status = game.net.statusUrl ? `<p class="server-status" id="srv" role="status"><i></i><span>Consultando o servidor…</span></p>` : '';
-const body = `
-<a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
-<nav class="site-nav" aria-label="Navegação principal">
-  <a class="wordmark" href="./" aria-label="Cybermech, início"><span class="brand-symbol" aria-hidden="true">C</span><span>CYBERMECH<small>ONLINE</small></span></a>
-  <div class="nav-links"><a href="#combate">O JOGO</a><a href="#hangar">MECHS</a><a href="#modos">MODOS</a><a href="./oficina/">ARSENAL</a><a href="./sala-de-controle/" data-evento="click_como_e_feito">BASTIDORES</a></div>${button('JOGAR')}
-</nav>
-<main id="conteudo">
-<header class="landing-hero">
-  <img class="hero-art" src="${art('hero.jpg')}" width="1920" height="1080" alt="Colossus-V4 e Vector-09, modelos do Cybermech, em composição industrial" fetchpriority="high">
-  <div class="hero-shade"></div>
-  <div class="hero-content"><p class="eyebrow">COMBATE MECÂNICO NO NAVEGADOR</p>
-    <h1>CYBERMECH<span>ENTRE NO<br>COMBATE.</span></h1>
-    <p class="hero-description">Escolha sua máquina. Domine o arsenal.<br>Desmonte o adversário peça por peça.</p>
-    <div class="hero-actions">${button()}<a class="text-link" href="#combate">CONHEÇA O JOGO <span aria-hidden="true">↓</span></a></div>
-    <p class="entry-note">Grátis. Sem instalação. Sem cadastro obrigatório.</p>${status}
-  </div>
-  <div class="hero-caption"><span>COLOSSUS-V4 / VECTOR-09</span><small>Modelos reais · composição promocional</small></div>
-  <div class="hero-bottom"><span><b>01</b> ESCOLHA SEU MECH</span><span><b>02</b> CONFIGURE SEU ARSENAL</span><span><b>03</b> ENTRE NA ARENA</span></div>
-</header>
-<section class="section gameplay" aria-labelledby="combate">
-  <div class="section-copy"><p class="eyebrow">01 / VISÃO DE COMBATE</p><h2 id="combate">SEU MECH.<br><em>SUA PERSPECTIVA.</em></h2><p>Avance entre estruturas industriais, flanqueie os rebeldes e encontre o ponto fraco de cada máquina. Alterne entre três perspectivas durante a partida.</p>
-    <div class="camera-controls" role="group" aria-label="Escolher prévia de câmera">${shots.map((s, i) => `<button type="button" data-camera="${i}" aria-pressed="${i === 0}" aria-controls="camera-preview"><span>0${i + 1}</span>${s[1]}</button>`).join('')}</div>
-    <p class="small">Capturas do jogo. Mouse e teclado recomendados; controles de toque em teste.</p>
-  </div>
-  <figure class="gameplay-frame" id="camera-preview">${shots.length ? shots.map(([file, label, desc], i) => `<div class="camera-slide"${i ? ' hidden' : ''}><img src="capturas/${file}?v=${esc(m.head)}" width="1280" height="720" alt="${esc(label)}: ${esc(desc)}" loading="lazy"><figcaption><b>${label}</b><span>${desc}</span></figcaption></div>`).join('') : `<img src="${art('arena.jpg')}" width="1280" height="720" alt="Arena industrial do Cybermech" loading="lazy"><figcaption>ARENA INDUSTRIAL · CENA DO JOGO</figcaption>`}</figure>
-</section>
-<section class="section capabilities" aria-labelledby="recursos"><div class="section-heading"><div><p class="eyebrow">02 / SISTEMAS DE COMBATE</p><h2 id="recursos">CADA PEÇA <em>IMPORTA.</em></h2></div><p>Potência, mobilidade e gestão térmica.<br>O resultado depende de como você combina os três.</p></div>
-<ol class="feature-grid">${features.map((f, i) => `<li><span class="feature-index">0${i + 1} /</span><h3>${esc(f.title)}</h3><p>${inline(f.text)}</p></li>`).join('')}</ol></section>
-<section class="section roster" aria-labelledby="hangar"><div class="section-heading"><div><p class="eyebrow">03 / HANGAR</p><h2 id="hangar">ENCONTRE <em>SUA MÁQUINA.</em></h2></div><p>Chassis com perfis distintos.<br>Montagens limitadas pela capacidade de carga.</p></div>
-<div class="mech-grid">${chassis.map(([id, role, desc]) => {
-  const ch = game.chassis[id];
-  const spec = game.hangar.factorySpec(id);
-  if (!game.hangar.validateLoadout(spec).ok) throw new Error(`Montagem de divulgação inválida: ${id}`);
-  const key = game.hangar.loadoutKey(spec);
-  return `<article class="mech-card"><div class="mech-picture"><img src="${art(`${id}.jpg`)}" width="720" height="780" alt="${esc(ch.name)}, modelo real do jogo" loading="lazy"><span>TAMANHO ${game.sizes[id]}</span></div><div class="mech-info"><p class="eyebrow">${role}</p><h3>${esc(ch.name)}</h3><p>${desc}</p><dl><div><dt>BLINDAGEM DO TORSO</dt><dd>${nf(ch.maxModuleHealth.torso)}</dd></div><div><dt>CARGA DE ARMAS</dt><dd>${nf(ch.weaponCapacity)} t</dd></div></dl><a class="text-link" href="./jogar/?build=${esc(key)}" data-evento="click_cockpit">PILOTAR ${esc(ch.name)} <span aria-hidden="true">↗</span></a></div></article>`;
-}).join('')}</div><p class="small">Atributos da configuração atual do jogo. Explore as compatibilidades, níveis e comparativos na <a href="./oficina/">Oficina de armamentos</a>.</p></section>
-<section class="fair-play"><div><p class="eyebrow">COMPROMISSO DE JOGO</p><h2>HABILIDADE.<br><em>SEM PAY-TO-WIN.</em></h2></div><p>Vitórias se conquistam em combate. Nossa política de monetização é exclusivamente cosmética: aparência nunca compra dano, blindagem ou velocidade.</p></section>
-<section class="section" aria-labelledby="modos"><div class="section-heading"><div><p class="eyebrow">04 / OPERAÇÕES</p><h2 id="modos">ESCOLHA <em>SEU COMBATE.</em></h2></div><p>Comece contra a IA ou dispute uma sala online.</p></div><div class="mode-grid">${modes.map(([n, name, title, desc, href, file, tag]) => `<article class="mode-card"><img src="${art(file)}" width="1280" height="720" alt="${esc(name)} — cenário do Cybermech" loading="lazy"><div><p class="eyebrow">${n} / ${tag}</p><h3>${title}</h3><p>${desc}</p><a class="text-link" href="${href}" data-evento="${n === '03' ? 'click_online' : 'click_cockpit'}">JOGAR ${name} <span aria-hidden="true">↗</span></a></div></article>`).join('')}</div></section>
-<section class="section briefing" aria-labelledby="primeira-missao"><div><p class="eyebrow">05 / PRIMEIRA PARTIDA</p><h2 id="primeira-missao">PRONTO PARA<br><em>ASSUMIR O CONTROLE?</em></h2><p>Abra o jogo e aguarde a preparação da partida. Clique em Jogar para assumir o Mech; pressione Esc quando quiser ajustar sua montagem ou as configurações.</p>${button('ENTRAR NO COCKPIT')}</div><div><dl class="control-grid"><div><dt><kbd>W A S D</kbd></dt><dd>Movimentar</dd></div><div><dt><kbd>MOUSE</kbd></dt><dd>Mirar</dd></div><div><dt><kbd>CLIQUE</kbd></dt><dd>Ataque 1</dd></div><div><dt><kbd>CLIQUE DIR.</kbd></dt><dd>Ataque 2</dd></div><div><dt><kbd>SHIFT</kbd></dt><dd>Dash</dd></div><div><dt><kbd>ESPAÇO</kbd></dt><dd>Saltar</dd></div></dl><p class="small">Teclas padrão. Remapeamento e sensibilidade em Configurações.</p></div></section>
-<section class="section faq" aria-labelledby="perguntas"><p class="eyebrow">ANTES DE ENTRAR</p><h2 id="perguntas">INFORMAÇÕES <em>DO PILOTO.</em></h2><details><summary>Preciso criar uma conta?</summary><p>Não. Você pode começar a jogar sem cadastro. A progressão atual fica salva neste navegador.</p></details><details><summary>Posso jogar sozinho?</summary><p>Sim. Arena e Sobrevivência têm oponentes controlados pela IA e não dependem de uma sala multiplayer disponível.</p></details><details><summary>O jogo funciona no celular?</summary><p>Há controles de toque em teste. Para a experiência principal, use um computador com mouse, teclado e navegador compatível com WebGL2.</p></details><details><summary>Onde acompanho as atualizações?</summary><p>A <a href="./sala-de-controle/">Sala de Controle</a> apresenta a equipe, as entregas e o desenvolvimento. A <a href="./oficina/">Oficina</a> reúne os atributos e as análises de combate.</p></details></section>
-</main><footer class="site-footer"><a class="wordmark" href="./">CYBERMECH</a><p>© ${new Date().getFullYear()} SERAFIM WEB · Desenvolvido por Dan e uma equipe de IAs.</p><div><a href="./oficina/">Oficina</a><a href="./sala-de-controle/">Sala de Controle</a><a href="./jogar/">Jogar</a></div></footer>`;
 
-const script = `(() => {
+/* ---------- arsenal: as seis armas de braço do Vector-09 em três níveis, com o desenho real de cada uma ---------- */
+const KIND = { energy: 'Energia', ammo: 'Munição' };
+const weaponCards = ['rotary', 'flamer', 'seeker', 'cannon', 'autocannon', 'arc'].map((id) => arse.weapons.find((w) => w.id === id)).filter(Boolean);
+
+const modes = [
+  ['01', 'Arena', 'Combate sem pausa', 'Enfrente os rebeldes, use a cobertura e ataque os módulos vulneráveis.', './jogar/?modo=deathmatch', 'cena-duelo.jpg', 'Solo', '72% 50%'],
+  ['02', 'Sobrevivência', 'Defenda a estação', 'Resista às ondas de invasores na Praia dos Cabos e preserve o núcleo da estação.', './jogar/?modo=survival&mapa=praia', 'praia.jpg', 'Solo · ondas', '50% 50%'],
+  ['03', 'Multiplayer', 'Entre na disputa', `Salas para até ${game.net.ROOM_SIZE} pilotos. Combate todos contra todos, com movimento e dano validados pelo servidor.`, './jogar/?sala=ARENA', 'cena-hero.jpg', 'Online', '20% 60%'],
+];
+
+const squad = [
+  ['dan', 'Dan', 'Direção e game design', '#ffd000'],
+  ['claude', 'Claude', 'Arquitetura e engenharia', '#ff6a5a'],
+  ['gemini', 'Gemini', 'Interface e som', '#4aa3ff'],
+  ['codex', 'Codex', 'Visual e render', '#3bd68a'],
+];
+
+const body = `
+${hudNav({ base: '', current: 'inicio', status: Boolean(game.net.statusUrl) })}
+<main id="conteudo">
+<header class="hero" id="inicio">
+  <div class="hero-stage" data-parallax>
+    <img class="hero-art" src="${art('cena-hero.jpg')}" width="2400" height="1200" alt="Colossus-V4, de ${metros(CH.colossusv4.height)}, ao lado de um Vector-09 e de um Marauder num hangar industrial" fetchpriority="high">
+    <span class="dim dim-r" style="left:${(big.dir[0] + 2.4).toFixed(1)}%;top:${big.topo[1]}%;height:${(big.base[1] - big.topo[1]).toFixed(2)}%"><i>${metros(CH.colossusv4.height)}</i></span>
+    <span class="dim dim-l" style="left:${(small.esq[0] - 1.8).toFixed(1)}%;top:${small.topo[1]}%;height:${(small.base[1] - small.topo[1]).toFixed(2)}%"><i>${metros(CH.vector09.height)}</i></span>
+  </div>
+  <div class="hero-shade" aria-hidden="true"></div>
+  <p class="spec-tag"><b>${esc(CH.colossusv4.name)}</b>Torso ${nf(CH.colossusv4.maxModuleHealth.torso)} · carga ${nf(CH.colossusv4.weaponCapacity)} t</p>
+  <div class="container hero-in">
+    <div class="hero-copy">
+      <p class="eyebrow hero-eyebrow"><i aria-hidden="true"></i><span>Combate mecânico online</span></p>
+      <h1><span class="t1">CYBERMECH</span><span class="t2">ONLINE</span></h1>
+      <p class="hero-lead">Pilote um Mech de combate numa arena industrial e desmonte o inimigo peça por peça. Acesse pelo navegador, é gratuito e não precisa instalar nada.</p>
+      ${gameButton({ label: 'JOGAR AGORA', href: './jogar/', event: 'click_cockpit', variant: 'big' })}
+    </div>
+  </div>
+  <div class="hero-bar"><div class="container"><ul>
+    <li>${ico('globe', 30)}<span><b>Jogo no navegador</b>Sem instalar nada</span></li>
+    <li>${ico('users', 30)}<span><b>Online e gratuito</b>Até ${game.net.ROOM_SIZE} pilotos por sala</span></li>
+    <li>${ico('bolt', 30)}<span><b>Combate em arenas</b>Partidas contra a IA ou online</span></li>
+  </ul><small class="art-note">Render promocional dos modelos do jogo</small></div></div>
+</header>
+
+<section class="section gameplay" aria-labelledby="combate-t" id="combate">${ghost('ARENA')}<div class="container">
+  ${sectionHeading({ n: '01', label: 'Gameplay', title: 'TRÊS CÂMERAS,', em: 'UMA ARENA', id: 'combate-t', aside: '<p>Escolha sua visão, domine a arena e destrua o inimigo. Alterne entre câmera tática, câmera de ação ou visão de piloto e viva o combate do seu jeito.</p>' })}
+  <div class="gp reveal">
+    <figure class="gp-stage" id="camera-preview">
+      <div class="gp-slides">${shots.length ? shots.map(([file, label, , desc], i) => `<div class="camera-slide${i ? '' : ' on'}"><img src="capturas/${file}?v=${esc(m.head)}" width="1280" height="720" alt="${esc(label)}: ${esc(desc)}"${i ? ' loading="lazy"' : ''}></div>`).join('') : `<div class="camera-slide on"><img src="${art('arena.jpg')}" width="1280" height="720" alt="Arena industrial do Cybermech"></div>`}</div>
+      <a class="gp-play" href="./jogar/" data-evento="click_cockpit" aria-label="Jogar agora">${ico('play', 34)}</a>
+      <figcaption><b id="cam-label">${esc(shots[0]?.[1] ?? 'Arena industrial')}</b><span id="cam-desc">${esc(shots[0]?.[3] ?? 'Captura do jogo')}</span></figcaption>
+    </figure>
+    <div class="gp-tabs" role="group" aria-label="Escolher prévia de câmera">${shots.map((s, i) => `<button type="button" data-camera="${i}" aria-pressed="${i === 0}" aria-controls="camera-preview">${ico(s[2], 40)}<span><b>${s[1]}</b><small>${s[3]}</small></span><i class="bar" aria-hidden="true"></i></button>`).join('')}<p class="foot-note">Capturas do próprio jogo. Mouse e teclado recomendados; controles de toque em teste.</p></div>
+  </div>
+</div></section>
+
+<section class="section resources" aria-labelledby="recursos">${ghost('MECHS')}<div class="container">
+  ${sectionHeading({ n: '02', label: 'Recursos', title: 'O QUE VOCÊ', em: 'ENCONTRA', id: 'recursos', aside: '<span class="label">Mechs diferentes. Estratégias infinitas.</span><p>Cada máquina tem partes que se destroem, armas que se combinam e um jeito próprio de lutar.</p>' })}
+  <ol class="res-grid">${resources.map(([f, icon, img, p, z], i) => featureCard({ img: art(img), pos: p, zoom: z, icon, title: f.title, text: inline(f.text), n: `0${i + 1}` })).join('')}</ol>
+</div></section>
+
+<section class="section ptw-sec" aria-labelledby="ptw"><div class="container"><div class="ptw reveal">
+  <div class="ptw-head"><p class="label">Jogo limpo, sem vantagens injustas</p><h2 class="h2" id="ptw">SEM <em>PAY-TO-WIN</em></h2></div>
+  <ul class="ptw-list">${promiseRows.map(([icon, head, text]) => `<li><span class="ptw-ico">${ico(icon, 34)}</span><div><h3>${esc(head)}</h3><p>${text}</p></div></li>`).join('')}</ul>
+</div></div></section>
+
+<section class="section hangar" id="hangar" aria-labelledby="hangar-t">${ghost('HANGAR')}<div class="container">
+  ${sectionHeading({ n: '03', label: 'Hangar', title: 'MONTE O', em: 'SEU MECH', id: 'hangar-t', aside: '<span class="label">Armas / módulos / chassis</span><p>Todo poder pesa: a montagem tem de caber na carga do chassi, e a luta decide quem vence. Os números abaixo são os do código do jogo.</p>' })}
+  <div class="hg-grid">
+    <div class="hg-stage reveal" id="hg-stage"><img src="${art('cena-hangar.jpg')}" width="1000" height="1000" alt="${esc(MAR.name)} no hangar, com as seis partes numeradas" loading="lazy">${parts.map((p, i) => `<button type="button" class="mk" data-part="${i}" style="left:${p[3][0]}%;top:${p[3][1]}%" aria-label="${p[0]}">${i + 1}</button>`).join('')}<p class="stage-cap"><b>${esc(MAR.name)}</b> · ${nf(MAR.height, 1)} m · carga ${nf(MAR.weaponCapacity)} t</p></div>
+    <ol class="hg-list">${parts.map((p, i) => `<li class="reveal" data-part="${i}"><span class="n">${i + 1}</span><div><h3>${p[0]} <span>${esc(p[1])}</span></h3><p>${esc(p[2])}</p></div></li>`).join('')}</ol>
+  </div>
+</div></section>
+
+<section class="section lineup" aria-labelledby="chassis-t"><div class="lineup-photo reveal">
+  <img src="${art('cena-escala.jpg')}" width="2400" height="800" alt="Vector-09, Marauder e Colossus-V4 lado a lado, na mesma escala" loading="lazy">
+  ${chassis.map(([id]) => { const e = escala[id]; return `<span class="ruler" style="left:${(e.dir[0] + 1.6).toFixed(1)}%;top:${e.topo[1]}%;height:${(e.base[1] - e.topo[1]).toFixed(2)}%"><i>${metros(CH[id].height)}</i></span>`; }).join('')}
+</div><div class="container">
+  ${sectionHeading({ n: '04', label: 'Chassis', title: 'ESCOLHA', em: 'O CHASSI', id: 'chassis-t', aside: '<span class="label">Mesma régua, tamanhos diferentes</span><p>Cada chassi tem blindagem, velocidade e carga próprias. A foto mostra os três na mesma escala.</p>' })}
+  <div class="mech-grid">${chassis.map(([id, role, desc]) => {
+    const ch = CH[id];
+    const s = game.hangar.factorySpec(id);
+    if (!game.hangar.validateLoadout(s).ok) throw new Error(`Montagem de divulgação inválida: ${id}`);
+    const key = game.hangar.loadoutKey(s);
+    return `<article class="mech-card panel reveal"><p class="label">Tamanho ${game.sizes[id]} · ${esc(role)}</p><h3>${esc(ch.name)}</h3><p class="desc">${desc}</p><dl><div><dt>Altura</dt><dd>${metros(ch.height)}</dd></div><div><dt>Torso</dt><dd>${nf(ch.maxModuleHealth.torso)}</dd></div><div><dt>Carga</dt><dd>${nf(ch.weaponCapacity)} t</dd></div></dl><a class="text-link" href="./jogar/?build=${esc(key)}" data-evento="click_cockpit">Pilotar ${esc(ch.name)} ${ico('arrowUR', 18)}</a></article>`;
+  }).join('')}</div>
+</div></section>
+
+<section class="section arsenal" id="arsenal" aria-labelledby="arsenal-t">${ghost('ARSENAL')}<div class="container">
+  ${sectionHeading({ n: '05', label: 'Arsenal', title: 'TRÊS NÍVEIS', em: 'DE PODER', id: 'arsenal-t', aside: '<span class="label">Mesmas regras. Mais combinações.</span><p>Cada arma tem três níveis, com características únicas. Todos os números vêm da mesma simulação do jogo.</p>' })}
+  <div class="w-grid">${weaponCards.map((w) => `<article class="wcard panel reveal"><header><img src="${art(`cena-arma-${w.id}.jpg`)}" width="640" height="420" alt="${esc(w.name)}, modelo do jogo" loading="lazy"><div><h3>${esc(w.name)}</h3><p class="label">${KIND[w.kind] ?? w.kind} · ${w.class} · ${w.slot}</p></div></header>
+    <table><thead><tr><th></th>${w.tiers.map((t) => `<th>${esc(t.label)}</th>`).join('')}</tr></thead><tbody>
+      <tr class="big"><th>Dano por tiro</th>${w.tiers.map((t) => `<td>${nf(t.damage)}</td>`).join('')}</tr>
+      <tr><th>Cadência</th>${w.tiers.map((t) => `<td>${nf(t.rate, 1)}/s</td>`).join('')}</tr>
+      <tr><th>Calor por tiro</th>${w.tiers.map((t) => `<td>${nf(t.heat * 100)}%</td>`).join('')}</tr>
+      <tr><th>Dano sustentado</th>${w.tiers.map((t) => `<td>${nf(t.dps)}</td>`).join('')}</tr>
+      <tr><th>Massa</th>${w.tiers.map((t) => `<td>${nf(t.mass, 1)} t</td>`).join('')}</tr>
+    </tbody></table></article>`).join('')}</div>
+  <p class="foot-note">Medido no Vector-09, contra o torso do mesmo robô, com todos os tiros no alvo. Veja os outros chassis e o resto do arsenal na <a href="./oficina/">Oficina</a>.</p>
+</div></section>
+
+<section class="section modes" id="modos" aria-labelledby="modos-t"><div class="container">
+  ${sectionHeading({ n: '06', label: 'Operações', title: 'ESCOLHA', em: 'SEU COMBATE', id: 'modos-t', aside: '<p>Comece contra a IA ou dispute uma sala online.</p>' })}
+  <div class="mode-grid">${modes.map(([n, name, title, desc, href, file, tag, p]) => `<article class="mode-card reveal"><img src="${art(file)}" width="1280" height="720" alt="${esc(name)}, cenário do Cybermech" loading="lazy" style="object-position:${p}"><div class="mode-body"><p class="label">${n} / ${tag}</p><h3>${title}</h3><p class="desc">${desc}</p><a class="text-link" href="${href}" data-evento="${n === '03' ? 'click_online' : 'click_cockpit'}">Jogar ${name} ${ico('arrowUR', 18)}</a></div></article>`).join('')}</div>
+</div></section>
+
+<section class="section squad" aria-labelledby="esquadra">${ghost('ESQUADRÃO')}<div class="container">
+  ${sectionHeading({ n: '07', label: 'Esquadrão', title: 'UM COMANDANTE.', em: 'UMA ESQUADRA DE IAs.', id: 'esquadra', aside: '<p>Cada IA trabalha no próprio território de arquivos e prova o que entrega com testes. Ninguém muda o rumo sem o aval do Comandante.</p>' })}
+  <ul class="squad-grid">${squad.map(([id, name, role, c]) => `<li class="reveal" style="--c:${c}"><img src="${art(`eq-${id}.jpg`)}" width="350" height="232" alt="" loading="lazy"><div><h3>${name}</h3><p class="label">${role}</p></div></li>`).join('')}</ul>
+  <p class="squad-cta">${gameButton({ label: 'Conheça a esquadra e acompanhe o desenvolvimento', href: './sala-de-controle/', event: 'click_como_e_feito', variant: 'ghost' })}</p>
+</div></section>
+
+<section class="section briefing" aria-labelledby="primeira-missao"><div class="container brief-grid"><div class="reveal">${sectionHeading({ n: '08', label: 'Primeira partida', title: 'PRONTO PARA', em: 'ASSUMIR O CONTROLE?', id: 'primeira-missao' })}<p class="lead">Abra o jogo e aguarde a preparação da partida. Clique em Jogar para assumir o Mech; pressione Esc quando quiser ajustar sua montagem ou as configurações.</p>${gameButton({ label: 'ENTRAR NO COCKPIT', href: './jogar/', event: 'click_cockpit', variant: 'big' })}</div>
+  <div class="reveal"><dl class="control-grid panel"><div><dt><kbd>W A S D</kbd></dt><dd>Movimentar</dd></div><div><dt><kbd>Mouse</kbd></dt><dd>Mirar</dd></div><div><dt><kbd>Clique</kbd></dt><dd>Ataque 1</dd></div><div><dt><kbd>Clique dir.</kbd></dt><dd>Ataque 2</dd></div><div><dt><kbd>Shift</kbd></dt><dd>Dash</dd></div><div><dt><kbd>Espaço</kbd></dt><dd>Saltar</dd></div></dl><p class="foot-note">Teclas padrão. Remapeamento e sensibilidade em Configurações.</p></div></div></section>
+
+<section class="section faq" aria-labelledby="perguntas"><div class="container narrow">${sectionHeading({ n: '09', label: 'Antes de entrar', title: 'INFORMAÇÕES', em: 'DO PILOTO', id: 'perguntas' })}
+  <details><summary>Preciso criar uma conta?</summary><p>Não. Você pode começar a jogar sem cadastro. A progressão atual fica salva neste navegador.</p></details>
+  <details><summary>Posso jogar sozinho?</summary><p>Sim. Arena e Sobrevivência têm oponentes controlados pela IA e não dependem de uma sala multiplayer disponível.</p></details>
+  <details><summary>O jogo funciona no celular?</summary><p>Há controles de toque em teste. Para a experiência principal, use um computador com mouse, teclado e navegador compatível com WebGL2.</p></details>
+  <details><summary>Onde acompanho as atualizações?</summary><p>O <a href="./sala-de-controle/">Esquadrão</a> apresenta a equipe, as entregas e o desenvolvimento. A <a href="./oficina/">Oficina</a> reúne os atributos e as análises de combate.</p></details></div></section>
+</main>
+${hudFooter({ base: '' })}`;
+
+const script = `${HUD_JS}
+(() => {
+  const root = document.documentElement;
+  const hero = document.querySelector('.hero');
+  if (hero && 'IntersectionObserver' in window) { root.classList.add('home'); new IntersectionObserver(([e]) => root.classList.toggle('past-hero', !e.isIntersecting), { rootMargin: '-80px 0px 0px 0px' }).observe(hero); }
   const buttons = [...document.querySelectorAll('[data-camera]')];
   const slides = [...document.querySelectorAll('.camera-slide')];
+  const label = document.getElementById('cam-label'), desc = document.getElementById('cam-desc');
   let current = 0, timer;
   const area = document.querySelector('.gameplay');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const show = (index) => { current = index; slides.forEach((s, i) => s.hidden = i !== index); buttons.forEach((b, i) => b.setAttribute('aria-pressed', String(i === index))); };
-  const pause = () => clearInterval(timer);
-  const resume = () => { pause(); if (slides.length > 1 && !reduced.matches && !document.hidden && !area.matches(':hover, :focus-within')) timer = setInterval(() => show((current + 1) % slides.length), 6000); };
+  const show = (index) => {
+    current = index;
+    slides.forEach((s, i) => { s.classList.toggle('on', i === index); const img = s.querySelector('img'); if (i === index && img?.loading === 'lazy') img.loading = 'eager'; });
+    buttons.forEach((b, i) => { b.setAttribute('aria-pressed', String(i === index)); b.classList.remove('run'); if (i === index) { void b.offsetWidth; b.classList.add('run'); } });
+    const b = buttons[index]; if (b) { if (label) label.textContent = b.querySelector('b').textContent; if (desc) desc.textContent = b.querySelector('small').textContent; }
+  };
+  const pause = () => { clearInterval(timer); buttons.forEach((b) => b.classList.add('still')); };
+  const resume = () => { clearInterval(timer); buttons.forEach((b) => b.classList.remove('still')); if (slides.length > 1 && !reduced.matches && !document.hidden && !area.matches(':hover, :focus-within')) timer = setInterval(() => show((current + 1) % slides.length), 6500); };
   buttons.forEach((b, i) => b.addEventListener('click', () => { show(i); pause(); }));
   area.addEventListener('mouseenter', pause); area.addEventListener('mouseleave', resume);
   area.addEventListener('focusin', pause); area.addEventListener('focusout', () => setTimeout(resume, 0));
-  reduced.addEventListener('change', resume); document.addEventListener('visibilitychange', resume); resume();
+  reduced.addEventListener('change', resume); document.addEventListener('visibilitychange', resume); show(0); resume();
+  const parts = [...document.querySelectorAll('[data-part]')];
+  const light = (i, on) => parts.forEach((p) => p.dataset.part === String(i) && p.classList.toggle('on', on));
+  parts.forEach((p) => { const i = p.dataset.part; p.addEventListener('mouseenter', () => light(i, true)); p.addEventListener('mouseleave', () => light(i, false)); p.addEventListener('focus', () => light(i, true)); p.addEventListener('blur', () => light(i, false)); });
   const statusUrl = ${JSON.stringify(game.net.statusUrl)};
   if (statusUrl) {
     const status = document.querySelector('#srv'); let pending = false;
@@ -94,15 +231,15 @@ const script = `(() => {
       if (document.hidden || pending) return; pending = true;
       const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 7000);
       try { const response = await fetch(statusUrl, { cache: 'no-store', credentials: 'omit', signal: controller.signal }); if (!response.ok) throw Error(); const data = await response.json(); if (!Number.isInteger(data.players) || data.players < 0) throw Error();
-        status.dataset.state = 'online'; status.querySelector('span').textContent = data.players ? data.players + (data.players === 1 ? ' piloto online' : ' pilotos online') : 'Servidor online · entre na arena';
-      } catch { status.dataset.state = 'unknown'; status.querySelector('span').textContent = 'Não foi possível consultar o servidor · modo solo disponível'; }
+        status.dataset.state = 'online'; status.querySelector('span').textContent = data.players ? data.players + (data.players === 1 ? ' piloto online' : ' pilotos online') : 'Servidor online';
+      } catch { status.dataset.state = 'unknown'; status.querySelector('span').textContent = 'Modo solo disponível'; }
       finally { clearTimeout(timeout); pending = false; }
     }; ask(); setInterval(ask, ${game.net.statusPollS * 1000}); document.addEventListener('visibilitychange', ask);
   }
   const url = ${JSON.stringify(game.net.eventoUrl)};
   if (url) { const aba = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); const send = (nome) => { try { const body = JSON.stringify({ nome, aba }); if (navigator.sendBeacon) navigator.sendBeacon(url, new Blob([body], {type:'text/plain'})); else fetch(url, {method:'POST', body, keepalive:true}).catch(() => {}); } catch {} }; send('landing_view'); document.querySelectorAll('[data-evento]').forEach(el => el.addEventListener('click', () => send(el.dataset.evento))); }
 })();`;
-const html = pagina({ title: 'CYBERMECH — Combate de Mechs no navegador', description: 'Pilote seu Mech, configure o arsenal e entre no combate. Grátis, direto no navegador, sem instalação e sem pay-to-win.', css: LANDING_CSS, body, script, og: { url: SITE_URL, image: `${SITE_URL}${art('hero.jpg')}` } });
+const html = pagina({ title: 'CYBERMECH — Combate de Mechs no navegador', description: 'Pilote seu Mech, configure o arsenal e entre no combate. Grátis, direto no navegador, sem instalação e sem pay-to-win.', css: hudCss('') + LANDING_CSS, body, script, og: { url: SITE_URL, image: `${SITE_URL}${art('cena-hero.jpg')}` } });
 mkdirSync(ROOT, { recursive: true });
 writeFileSync(OUT, html);
-console.log(`landing ${OUT}: catálogo real, ${features.length} destaques, ${shots.length} câmeras`);
+console.log(`landing ${OUT}: catálogo real, ${resources.length} recursos, ${weaponCards.length} armas, ${shots.length} câmeras`);

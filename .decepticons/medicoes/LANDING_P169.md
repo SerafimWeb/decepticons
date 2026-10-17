@@ -6,7 +6,9 @@ Referências visuais: cinco imagens fornecidas pelo dono em `.tmp/landing/`. Ide
 
 `scripts/landing.mjs` lê os atributos de `jogo()`, valida as montagens com `validateLoadout` e gera os links com `loadoutKey`. Os seis destaques vêm da VITRINE do `GAME_DESIGN.md`. Não anuncia conta, ranking ou campanha ainda ausentes.
 
-As fotografias promocionais são produzidas por `node .decepticons/medicoes/landing-assets.mjs`: rigs reais do jogo, cena industrial separada, Three.js, sem alteração dos modelos ou da iluminação da partida. A abertura identifica a composição promocional. Arena e primeira pessoa vieram do cache de capturas do site; a Praia veio de `arte/praia-orla-d55-claude.jpg`. Os oito JPEGs em `client/public/press/` somam 644.335 bytes; a abertura tem 131.756 bytes. Não há modelos 3D carregados na landing.
+> **Atualização (P170, 16/10):** a landing foi refeita; as fotos agora vêm de `node .decepticons/medicoes/cena-cinematica.mjs` (o `landing-assets.mjs` saiu). Este relatório fica como registro da primeira versão.
+
+As fotografias promocionais foram produzidas por `node .decepticons/medicoes/landing-assets.mjs` (removido): rigs reais do jogo, cena industrial separada, Three.js, sem alteração dos modelos ou da iluminação da partida. A abertura identifica a composição promocional. Arena e primeira pessoa vieram do cache de capturas do site; a Praia veio de `arte/praia-orla-d55-claude.jpg`. Os oito JPEGs em `client/public/press/` somam 644.335 bytes; a abertura tem 131.756 bytes. Não há modelos 3D carregados na landing.
 
 ## Prova visual e funcional
 

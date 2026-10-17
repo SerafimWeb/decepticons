@@ -1,3 +1,15 @@
+## [2026-10-16] O site ganha um sistema de design e fotos cinematográficas dos Mechs reais (Claude, P170)
+
+**Ordem:** deixar a landing e as páginas "bem parecidas com as referências", com acabamento de portal de jogo, mais único.
+
+**Decisões:**
+1. **Um sistema de design permanente** (`DESIGN_SYSTEM_SITE.md` + `scripts/site/hud.mjs`), fonte única de paleta, fonte, botão e componente; página nova importa, não redefine. O documento vive em `.decepticons/` (e não em `docs/`, como pedia a orientação) porque é onde o projeto guarda a verdade (AGENTS.md).
+2. **Imagem de Mech é do modelo real**, em foto de cena (`cena-cinematica.mjs`), e não recorte da arte conceitual: a orientação proíbe robô que não seja do universo do jogo, e o jogo já tem o Colossus-V4, o Marauder e o Vector-09. A arte conceitual do Comandante fica de referência (e nas ilustrações do esquadrão).
+3. **O herói é foto, não 3D ao vivo:** o custo de CPU/GPU e de carga numa landing seria alto para o ganho; a foto sai do mesmo modelo e é regenerável em segundos.
+4. **Mono fora, texto mínimo de 12 px:** a primeira versão usava mono pequeno por todo lado; a orientação (e o olho) pediram o contrário.
+5. **Nada de recurso que o jogo não tem:** "Pilotos com personalidade" e "Rodadas de 5 minutos" das referências não entraram como estavam; os cartões saem da VITRINE do GAME_DESIGN.
+6. **Nunca dois CTAs de jogar juntos:** o do cabeçalho aparece depois do herói.
+
 ## [2026-10-16] Cada arma tem a sua dica de primeiro uso (Claude, P160 parte 5)
 
 **Situação:** havia uma dica só para as armas de munição, "FOGUETES: DANO EM ÁREA; EXPLODA NO PÉ DO INIMIGO", e ela aparecia para a granada, o enxame
