@@ -1,3 +1,15 @@
+## [2026-10-17] A landing ganha idiomas com um módulo próprio, igual ao do jogo (Claude, P178)
+
+**Ordem:** *"idioma tem que ficar logo no início da landing, pra pessoa já selecionar o idioma nativo dele"*.
+
+**Decisões:**
+1. **A faixa é a primeira coisa da página**, antes da navegação, com os nomes nativos (a pessoa acha a língua dela sem ler nenhuma outra): o visitante estrangeiro que não lê português precisa **reconhecer** a própria língua, não procurar a palavra "idioma". Enquanto ele não escolhe, a faixa fica realçada.
+2. **Um módulo de JavaScript puro, não o do jogo:** a landing é uma página estática gerada por script, sem passar pelo build do Vite; trazer o tradutor em TypeScript pediria um segundo empacotamento. Em vez disso o módulo da landing é **a mesma conta, escrita à mão, e um teste os compara** (G14: uma regra só): se um dia divergirem, o `npm test` quebra.
+3. **A mesma chave de armazenamento do jogo (`cybermech.lang`):** a landing e `/jogar/` são a mesma origem; quem escolhe na landing entra no jogo na língua dele sem pedir de novo.
+4. **O dicionário é da landing, separado do do jogo:** os textos de marketing não pesam no jogo, e os do jogo não pesam na landing. As chaves que o gerador monta com número do código (`{0} de blindagem…`, `Tamanho {0} · {1} m`) são **padrões com lacuna**, para a landing não quebrar quando o número mudar.
+5. **O teste da landing é um trinco, não uma trava dura:** 90% de cobertura (texto novo de outra sessão não derruba o `npm test` por uma frase), com a lista do que falta na mensagem de erro.
+6. **Páginas internas (Oficina, Sala de controle) ficam em português:** são para a equipe e para quem acompanha o desenvolvimento; traduzi-las é decisão futura.
+
 ## [2026-10-17] O lado político entra pela pergunta, pelo custo e pela fonte; o arpão passa a obedecer ao peso (Claude, P179 e P181)
 
 **Ordem:** *"devemos perguntar se quer jogar pelos aliados antimperialistas […] ou fazer campanha para fortalecer o desmatamento, imperialismo e fascismo das elites"*, ensinando o que é o fascismo e como a mentira e o medo funcionam, *"SUTILMENTE E ELEGANTEMENTE, pedagogicamente"*; e *"robôs mais pesados não podem ser puxados por robôs mais leves"*.

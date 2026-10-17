@@ -118,7 +118,9 @@ function traduzirMiolo(miolo: string, fundo: number): string | undefined {
       return posicao >= 0 ? valores[posicao]! : '';
     });
   }
-  return undefined;
+  // O gerador de uma página pode quebrar a linha dentro de um texto: tenta de novo com os espaços juntos.
+  const junto = miolo.replace(/\s+/g, ' ');
+  return junto !== miolo ? traduzirMiolo(junto, fundo) : undefined;
 }
 
 /** O texto na língua atual (o próprio texto, se não houver tradução). Preserva os espaços das pontas. */

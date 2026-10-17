@@ -3,7 +3,7 @@
  * `node .decepticons/medicoes/cena-cinematica.mjs` as produz e grava a posição dos rótulos em `scripts/site/cena/`.
  * Direção de arte e componentes: `.decepticons/DESIGN_SYSTEM_SITE.md` e `scripts/site/hud.mjs`.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { arsenal, jogo, marcos, pledge, vitrine } from './site/dados.mjs';
 import { esc, inline, pagina } from './site/tema.mjs';
@@ -96,7 +96,15 @@ const squad = [
   ['codex', 'Codex', 'Visual e render', '#3bd68a'],
 ];
 
+/* ---------- o idioma logo no início (P178): a faixa de idiomas, antes de tudo; `site/idioma-landing.js` a liga ---------- */
+const IDIOMAS_DA_FAIXA = [['pt', 'Português'], ['en', 'English'], ['es', 'Español'], ['fr', 'Français'], ['ja', '日本語'], ['zh', '中文'], ['ru', 'Русский']];
+const faixaDeIdiomas = `<nav class="lang-strip" aria-label="Idioma · Language" data-i18n="nao">
+  <span class="lang-ic" aria-hidden="true">🌐 Idioma · Language</span>
+  ${IDIOMAS_DA_FAIXA.map(([id, nome]) => `<button type="button" data-lang="${id}" aria-pressed="${id === 'pt'}">${nome}</button>`).join('\n  ')}
+</nav>`;
+
 const body = `
+${faixaDeIdiomas}
 ${hudNav({ base: '', current: 'inicio', status: Boolean(game.net.statusUrl) })}
 <main id="conteudo">
 <header class="hero" id="inicio">
@@ -242,7 +250,11 @@ const script = `${HUD_JS}
   const url = ${JSON.stringify(game.net.eventoUrl)};
   if (url) { const aba = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); const send = (nome) => { try { const body = JSON.stringify({ nome, aba }); if (navigator.sendBeacon) navigator.sendBeacon(url, new Blob([body], {type:'text/plain'})); else fetch(url, {method:'POST', body, keepalive:true}).catch(() => {}); } catch {} }; send('landing_view'); document.querySelectorAll('[data-evento]').forEach(el => el.addEventListener('click', () => send(el.dataset.evento))); }
 })();`;
-const html = pagina({ title: 'CYBERMECH — Combate de Mechs no navegador', description: 'Pilote seu Mech, configure o arsenal e entre no combate. Grátis, direto no navegador, sem instalação e sem pay-to-win.', css: hudCss('') + LANDING_CSS, body, script, og: { url: SITE_URL, image: `${SITE_URL}${art('cena-hero.jpg')}` } });
+const html = pagina({ title: 'CYBERMECH — Combate de Mechs no navegador', description: 'Pilote seu Mech, configure o arsenal e entre no combate. Grátis, direto no navegador, sem instalação e sem pay-to-win.', css: hudCss('') + LANDING_CSS, body: `${body}\n<script type="module" src="idioma.js"></script>`, script, og: { url: SITE_URL, image: `${SITE_URL}${art('cena-hero.jpg')}` } });
 mkdirSync(ROOT, { recursive: true });
 writeFileSync(OUT, html);
+// O idioma (P178): o módulo e os dicionários da landing ficam ao lado da página (`idioma.js`, `locales/<id>.json`).
+copyFileSync(resolve('scripts/site/idioma-landing.js'), join(ROOT, 'idioma.js'));
+mkdirSync(join(ROOT, 'locales'), { recursive: true });
+for (const f of readdirSync(resolve('scripts/site/locales'))) if (f.endsWith('.json')) copyFileSync(resolve('scripts/site/locales', f), join(ROOT, 'locales', f));
 console.log(`landing ${OUT}: catálogo real, ${resources.length} recursos, ${weaponCards.length} armas, ${shots.length} câmeras`);

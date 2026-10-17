@@ -3,6 +3,8 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
+**P178 — a landing em sete línguas (REAL, visto no navegador de verdade em japonês e russo; falta revisão por falante nativo):** faixa de idiomas no topo, página traduzida na hora, escolha compartilhada com o jogo. **PARCIAL:** as traduções são da Claude; Oficina, Sala de controle e as imagens com texto seguem em português.
+
 **P179 — o seletor de lado (DEMO, visto no navegador de verdade, em português e inglês, com teclado):** o selo **LADO** no console completo e na pausa abre a pergunta "de que lado você joga?" (Aliança ou Consórcio) e, para o Consórcio, o painel do **discurso e do custo**. **DEMO:** a escolha é guardada e aparece no selo, mas **não muda o combate nem os textos das missões**; o Arquivo, o Relatório de Consequências e a campanha do Consórcio **não existem** (`LADO_E_PEDAGOGIA.md`). **P181 — arpão por peso (REAL, 4 testes e 3 mutações):** o robô mais leve não puxa o mais pesado (peso = raio da cápsula). **PARCIAL:** só o Marauder tem ombros; o arpão não rende nas mãos de um robô pesado até os chassis pesados ganharem ombros. **P180 — a missão da Amazônia: AUSENTE** (só a ficha; o modelo é do Comandante, em outro chat).
 
 **P176 — idioma e conta no canto da primeira tela (REAL, visto no navegador de verdade em português e japonês; falta o olho do Comandante):** o seletor de língua e **[ CONTA ]** ficam no canto da primeira tela e da pausa; antes, só em Configurações → JOGO. **PARCIAL:** o arpão magnético só aparece no **Marauder**, na lista de ombros do Hangar (regra de chassi), sem aviso em outro lugar.
