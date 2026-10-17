@@ -200,6 +200,12 @@ feixe do laser, pelo `window.__game.weaponFx`). Em 16/10: 0 de 192 poses com NaN
 
 Fotografa a **Arena real** (`Arena.ts` com o transformador do banco, o mesmo pipeline de render do jogo) de vistas-chave, nos três estados do transformador, e mede desenhos e triângulos. Mesmo molde de `praia.mjs` (Vite dev + Chrome headless, SwiftShader: só contagem, não tempo). `node .decepticons/medicoes/arena.mjs --vistas banco,cidade --quadro "2:0:0"` (o estado:vida:energia do transformador; 0 ligado, 1 sabotado, 2 apagado); `--chefe "-8,-16"` põe o Colossus com a máscara (`--sem-mascara` a tira); `--arte --sufixo e1` grava em `arte/`. **Para o HUD no jogo de verdade** (a célula do transformador e a barra do chefe), abra `?modo=survival&mapa=arena&onda=6` no Chrome headless, clique em `#cta` e espere ~30 s (o SwiftShader roda a ~0,25× do tempo).
 
+### 4.3 O Draga-01: o script de rig e a bancada (`scripts/blender/rig-walker.py`, `medicoes/walker.mjs`, P180, 17/10)
+
+**O rig** (Blender sem janela, em `D:\blender\blender.exe`): `blender -b -P scripts/blender/rig-walker.py -- <entrada.glb> <saida.glb> [--fotos <pasta>] [--listar <classes>] [--so-classificar]`. Lê a **cópia** do modelo, classifica as peças soltas em ossos, mede as juntas, monta os 18 ossos com pele rígida e cor nos vértices e exporta. `--so-classificar --fotos <pasta>` só fotografa a classificação (uma cor por osso) para conferir antes de exportar. **Cuidado, armadilha achada em 17/10: no Blender `-b` use SEMPRE caminho absoluto para as fotos e as saídas**: um relativo caiu em `C:\.tmp\` (fora do projeto, G15); o script usa `os.path.abspath`, mas quem chamar `bpy.ops.render.render` com caminho próprio tem de passar absoluto. Defina `TEMP`/`TMP` para `.tmp/captura` ao rodar.
+
+**A bancada:** `node .decepticons/medicoes/walker.mjs --vistas lado,tres-quartos` fotografa o Draga (o mesmo `.glb` e a mesma marcha do jogo) ao lado do Vector-09 (a régua de escala); `--fases 0,0.2,0.4,0.6` uma foto por fase da marcha; `--colapso fl,rr` pernas caídas; `--arte --sufixo a1` grava em `arte/`. **Para ver no jogo de verdade:** `?walker` no link (o Draga anda em círculo à sua frente). **O rig se testa em Node** (`WalkerVisual.test.ts` carrega o `.glb` real: o `GLTFLoader` roda sem navegador quando o arquivo não tem textura).
+
 ## 5. Considerações conhecidas (não são bug novo se você achar de novo)
 
 - **Mech parado afunda lentamente no chão, sem limite** (achado 29/09, não corrigido). Reproduz

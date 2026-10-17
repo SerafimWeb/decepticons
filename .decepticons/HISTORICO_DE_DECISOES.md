@@ -1,3 +1,20 @@
+## [2026-10-17] A Amazônia: o plano e o Draga-01 riggado (Claude, P180)
+
+**Ordem:** a próxima fase no rio Amazonas (mineradora, rio envenenado, povos indígenas expulsos), com o modelo "heavy industrial walker" do Comandante, "eu não inseri o RIG: tenho que fazer ou você faz?", e o rio limpo a montante e envenenado a jusante.
+
+**Decisões:**
+1. **O rig é do Claude, por script de Blender reproduzível** (`scripts/blender/rig-walker.py`), não manual no Blender do Comandante: ele não precisa mexer, e o arquivo sai igual toda vez. O original em `MODELOS 3D` nunca é tocado.
+2. **O Draga é quadrúpede e não segue o contrato do `MECHS_IMPORTADOS.md`** (11 ossos Mixamo, antebraço, encaixe de arma): ele ganha o próprio (18 ossos nomeados pelo papel: `fl_coxa`, `deck`, `radar`…). Forçar um quadrúpede num rig bípede seria mentira no código.
+3. **Pele rígida por parte, não pele macia:** o arquivo é uma malha de 537 peças soltas de máquina; cada uma vai inteira a um osso (peso 1). A junta não amassa, o custo é o de um desenho e a classificação (por posição) se confere em foto.
+4. **Cor nos vértices, sem textura:** o arquivo vinha cinza; um material só, cor por peça e sujeira para baixo. O download não cresce (984 KB) e o desenho segue sendo um.
+5. **Marcha de quatro tempos, pisada de 75%:** uma máquina de 38 m não tira dois pés do chão sem parecer cair; o passo (5 m) casa com a velocidade para o pé não escorregar. É função pura (G14), testada sem navegador.
+6. **O desenho é só do cliente:** o servidor nunca carrega `.glb` (G14). O Draga vai ser um chefe com **corpo na simulação** (cápsula e números próprios, como o Colossus) e o `WalkerVisual` segue a posição e o rumo dele; as pernas viram os módulos de dano da esquerda e da direita.
+7. **O rio é o termômetro da fase:** a mecânica central pedida pelo Comandante vira uma função pura `limpezaDoRio(x)` e um uniforme no shader da água, sem custo por quadro (parte B).
+8. **A vilã é arquétipo** (AURUM, Grupo Vorcaris), nunca empresa real; os fatos entram só com fonte (`fichas/fatos-mineracao-amazonia.md`, a escrever).
+9. **O teto de JS passa a ser por fase (muda uma trava do projeto: o Comandante pode vetar).** O `smoke` somava **todo** o JS em 500 KB gzip, e a `main` já estava em ~499,8 KB: o Draga (2,4 KB) estourou o push (501,7 KB), e o mapa da Amazônia (dezenas de KB) estouraria de novo. Subir o teto mandaria o código da Amazônia a quem joga a Cidade Neon. **Agora são dois orçamentos** (`scripts/orcamentoDeJs.mjs`, testado em `server/orcamentoDeJs.test.ts`): **de partida** (o `index`, o que ele cita e os imports estáticos de cada um: o que todo jogador baixa; **o teto de 500 KB segue o mesmo**) e **sob demanda** (os pedaços que só um `import()` de dentro do jogo carrega: cada um até 150 KB gzip). O Draga entra como pedaço sob demanda (`WalkerDemo`, 2,4 KB), e o mapa da Amazônia vai pelo mesmo caminho. **Provado no build de produção:** sem `?walker` nada do Draga é baixado; com ele, o pedaço e o `.glb` chegam com 200. **Risco:** a classificação lê o código gerado (sem plugin); se o formato do pacote mudar, o teste do pedaço real (`WalkerDemo-*` fora da partida) acusa. **A folga da partida é de 0,1 KB**: o próximo código de uso geral volta a estourar; cabe ao Comandante decidir se o teto sobe ou se algo sai.
+
+**Por que registrar:** quem for fazer o mapa, a defesa ou a invasão precisa saber que o Draga é quadrúpede de rig próprio, que o rio é o placar visível e que o desenho é só do cliente.
+
 ## [2026-10-17] A landing ganha idiomas com um módulo próprio, igual ao do jogo (Claude, P178)
 
 **Ordem:** *"idioma tem que ficar logo no início da landing, pra pessoa já selecionar o idioma nativo dele"*.

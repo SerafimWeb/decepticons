@@ -1,7 +1,8 @@
 /**
  * Smoke test (Protocolo Serafim UM — R15 + R7): roda sobre o build de produção em dist/.
  *
- *  1. Performance budget: JS (gzip) e Wasm (gzip) dentro dos limites.
+ *  1. Performance budget: JS (gzip) e Wasm (gzip) dentro dos limites. O JS tem dois tetos (`scripts/orcamentoDeJs.mjs`, P180): o **de partida** (500 KB, o que todo jogador baixa)
+ *     e o de cada pedaço **sob demanda** (o que só baixa quem entra numa fase: o Draga-01, e depois o mapa da Amazônia).
  *  2. Boot real num Chrome/Edge headless (WebGL via SwiftShader): a física (Rapier)
  *     inicializa, o Game monta e o loop de render roda sem erro no console.
  *
@@ -15,6 +16,7 @@ import { mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { createServer, preview } from 'vite';
+import { chunksDePartida, entradaDoHtml, JS_PARTIDA_KB, JS_SOB_DEMANDA_KB } from './orcamentoDeJs.mjs';
 
 // Nada fora da pasta do projeto: o perfil temporário do Chrome e os artefatos do Playwright
 // vão para .tmp/smoke/ (zerada a cada execução). Precisa vir antes do import do Playwright,
@@ -26,7 +28,8 @@ process.env.TEMP = process.env.TMP = process.env.TMPDIR = TMP;
 const { chromium } = await import('playwright-core');
 
 // Budgets em bytes gzip. Wasm tem limite próprio: ver HISTORICO_DE_DECISOES (2026-09-23).
-const JS_BUDGET = 500 * 1024;
+const JS_BUDGET = JS_PARTIDA_KB * 1024; // o JS de partida: tudo o que o jogador baixa para abrir o jogo
+const JS_LAZY_BUDGET = JS_SOB_DEMANDA_KB * 1024; // cada pedaço sob demanda
 const WASM_BUDGET = 900 * 1024;
 const BOOT_TIMEOUT_MS = 30_000;
 
@@ -45,13 +48,26 @@ if (!DEV) {
     console.error('❌ dist/assets não existe. Rode `npm run build` antes do smoke.');
     process.exit(1);
   }
-  const gz = (ext) =>
-    files.filter((f) => f.endsWith(ext)).reduce((sum, f) => sum + gzipSync(readFileSync(join(assetsDir, f))).length, 0);
-  const jsGz = gz('.js');
+  const gzDe = (f) => gzipSync(readFileSync(join(assetsDir, f))).length;
+  const gz = (ext) => files.filter((f) => f.endsWith(ext)).reduce((sum, f) => sum + gzDe(f), 0);
   const wasmGz = gz('.wasm');
-  console.log(`budget  JS   ${kb(jsGz).padStart(10)} / ${kb(JS_BUDGET)}`);
+  // O JS se divide em "de partida" (o que todo jogador baixa) e "sob demanda" (só quem entra na fase). Sem achar a entrada no index.html, tudo é de partida (a regra antiga).
+  const jsFiles = files.filter((f) => f.endsWith('.js'));
+  const codigos = new Map(jsFiles.map((f) => [f, readFileSync(join(assetsDir, f), 'utf8')]));
+  let entrada = null;
+  try {
+    entrada = entradaDoHtml(readFileSync(join('dist', 'index.html'), 'utf8'));
+  } catch {
+    entrada = null;
+  }
+  const partida = entrada && codigos.has(entrada) ? chunksDePartida(codigos, entrada) : new Set(jsFiles);
+  const jsGz = jsFiles.filter((f) => partida.has(f)).reduce((sum, f) => sum + gzDe(f), 0);
+  const lazy = jsFiles.filter((f) => !partida.has(f)).map((f) => [f, gzDe(f)]);
+  console.log(`budget  JS   ${kb(jsGz).padStart(10)} / ${kb(JS_BUDGET)}  (de partida: ${[...partida].length} pedaços)`);
+  for (const [f, g] of lazy) console.log(`budget  JS sob demanda ${kb(g).padStart(8)} / ${kb(JS_LAZY_BUDGET)}  ${f}`);
   console.log(`budget  Wasm ${kb(wasmGz).padStart(10)} / ${kb(WASM_BUDGET)}`);
-  if (jsGz > JS_BUDGET) fail(`JS gzip ${kb(jsGz)} acima do budget de ${kb(JS_BUDGET)}`);
+  if (jsGz > JS_BUDGET) fail(`JS de partida gzip ${kb(jsGz)} acima do budget de ${kb(JS_BUDGET)}`);
+  for (const [f, g] of lazy) if (g > JS_LAZY_BUDGET) fail(`JS sob demanda ${f} gzip ${kb(g)} acima do budget de ${kb(JS_LAZY_BUDGET)} por pedaço`);
   if (wasmGz > WASM_BUDGET) fail(`Wasm gzip ${kb(wasmGz)} acima do budget de ${kb(WASM_BUDGET)}`);
 }
 
