@@ -12,14 +12,3 @@ export const WEAPON_ICON_NOVAS: Record<NewWeaponId, string> = {
     '<path d="M12 2v20M2 12h20M5 5l14 14M19 5L5 19" /><path d="M12 6l-2-2M12 6l2-2M12 18l-2 2M12 18l2 2M6 12l-2-2M6 12l-2 2M18 12l2-2M18 12l2 2" />',
 };
 
-/** Dicas de uma linha em português no tom das de WEAPON_HINT. */
-export const WEAPON_HINT_NOVAS: Record<NewWeaponId, string> = {
-  rotary:
-    'Energia · a cadência sobe de 3 a 20 tiros/s segurando o gatilho · espalhamento abre com a aceleração · o calor é o freio',
-  arc:
-    'Energia · projétil elétrico rápido · aplica Chocado (−35% de velocidade); tiro na cabeça ou 3 acertos seguidos atordoa 0,8 s',
-  flamer:
-    'Combustível · fluxo contínuo em cone de 30 m (MK II 39 m, MK III 48 m) · 10 de dano por pulso (50/s) em todos os que estão nele, que ficam Queimando (6/s + calor) · cada nível dá mais alcance, mais pulsos por segundo e mais dano · 6 s de chama, 4 s de recarga · esquenta quem atira · apagado por gelo',
-  cryo:
-    'Energia · projétil criogênico de alcance curto (55 m) · aplica Gelado (−15% de velocidade/acúmulo até 3x); 3 acúmulos congelam por 1,5 s (+20% dano); apagado por fogo · num aliado, esfria (tira calor e apaga o fogo, sem dano)',
-};

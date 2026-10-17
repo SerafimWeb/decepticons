@@ -1,9 +1,17 @@
+## [2026-10-17] As dicas de arma do Hangar saem do pacote de JS para um JSON (Claude, P182)
+
+**Problema:** o orçamento de JS (R7, 500 KB gzip) estava em 500,03 KB com o `‹ valor ›`; qualquer módulo novo, de qualquer agente, quebraria o `npm run check`. Subir o orçamento não era o caminho (R7 é do protocolo).
+
+**Decisão:** as 22 dicas de uma linha das armas da tela do Hangar (3,5 KB de texto, `WEAPON_HINT` + `WEAPON_HINT_NOVAS`) moram em `client/public/dicas-do-hangar.json` e chegam por um `fetch` na primeira abertura do Hangar (`ui/dicasDoHangar.ts`; sem rede, a dica fica vazia e a próxima abertura tenta de novo). O pacote caiu para **498,49 KB** (folga de 1,5 KB). `dicasDoHangar.test.ts` guarda a regra que o `Record` do TypeScript dava: uma dica por arma do jogo, nenhuma repetida. **Quem for acrescentar texto estático longo ao pacote deve fazer o mesmo** (JSON em `public/`), e não gastar a folga.
+
+**Achado (R17, ainda aberto):** essas 22 dicas **não estão nos dicionários das seis línguas** (a frase do Hangar é montada com sufixos, e a busca é pelo texto inteiro): o Hangar fala português em qualquer idioma. Agora que o texto é dado, o caminho é traduzir cada dica no arquivo; fica registrado no `ESTADO_ATUAL.md`.
+
 ## [2026-10-17] O `‹ valor ›` veste o select, não o substitui (Claude, P182)
 
 **Ordem:** *"veja esses exemplos de interface de jogos antigos, eu acho muito boas!"*.
 
 **Decisões:**
-1. **O select continua sendo a fonte:** o `‹ valor ›` é um espelho com setas sobre um `<select>` escondido. O `SettingsMenu` e o `EnemySettings` leem e escrevem `select.value` há meses, e as bancadas e os testes dependem disso: trocar o elemento seria reescrever os dois e arriscar o que funciona. O custo é uma interceptação de `value` e `selectedIndex` na instância (para o espelho ver o que o código escreve sem evento).
+1. **O select continua sendo a fonte:** o `‹ valor ›` é um espelho com setas sobre um `<select>` escondido. O `SettingsMenu` e o `EnemySettings` leem e escrevem `select.value` há meses, e as bancadas e os testes dependem disso: trocar o elemento seria reescrever os dois e arriscar o que funciona. O custo é uma interceptação de `value` na instância (para o espelho ver o que o código escreve sem evento).
 2. **Passo circular:** nos menus de arcade o último valor volta ao primeiro; menos cliques para quem quer o valor "do outro lado".
 3. **Só poucos valores viram passo (até 8):** o idioma (sete línguas, a pessoa quer ver a lista) e números grandes ficam como lista.
 4. **A barra dourada é a linha sob o mouse ou com o foco**, não uma "seleção" guardada: as Configurações não têm linha selecionada, têm linha em foco. É o que a referência faz no teclado e no controle.

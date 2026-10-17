@@ -31,30 +31,19 @@ export function ligarPasso(select: HTMLSelectElement): HTMLElement | null {
 
   const conjunto = document.createElement('span');
   conjunto.className = 'passo';
-  conjunto.setAttribute('role', 'group');
-  const rotulo = (select.closest('.setting-row')?.querySelector('label') ?? (select.id ? document.querySelector(`label[for="${select.id}"]`) : null))?.textContent?.trim();
-  if (rotulo) conjunto.setAttribute('aria-label', rotulo);
 
-  const seta = (texto: string, direcao: -1 | 1, nome: string): HTMLButtonElement => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'passo-seta';
-    b.textContent = texto;
-    b.setAttribute('aria-label', nome);
-    b.addEventListener('click', (e) => {
-      e.stopPropagation();
-      passar(direcao);
-    });
-    return b;
-  };
-  const valor = document.createElement('span');
-  valor.className = 'passo-valor';
-  valor.setAttribute('aria-live', 'polite');
-  conjunto.append(seta('‹', -1, 'Valor anterior'), valor, seta('›', 1, 'Próximo valor'));
+  conjunto.innerHTML =
+    '<button type="button" class="passo-seta" aria-label="Valor anterior">‹</button><span class="passo-valor"></span><button type="button" class="passo-seta" aria-label="Próximo valor">›</button>';
+  const valor = conjunto.children[1]!;
+  conjunto.addEventListener('click', (e) => {
+    const botao = (e.target as Element).closest('button');
+    if (!botao) return;
+    e.stopPropagation();
+    passar(botao === conjunto.firstChild ? -1 : 1);
+  });
 
   const atualizar = (): void => {
-    const texto = rotuloDoPasso(select);
-    if (valor.textContent !== texto) valor.textContent = texto;
+    valor.textContent = rotuloDoPasso(select);
   };
   const passar = (direcao: -1 | 1): void => {
     const i = proximoIndice(select.selectedIndex, select.options.length, direcao);
@@ -70,21 +59,16 @@ export function ligarPasso(select: HTMLSelectElement): HTMLElement | null {
     }
   });
 
-  // O jogo escreve `select.value` e `select.selectedIndex` direto (sem evento): o espelho acompanha pela propriedade da própria instância.
-  for (const nome of ['value', 'selectedIndex'] as const) {
-    const original = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, nome);
-    if (!original?.get || !original.set) continue;
-    Object.defineProperty(select, nome, {
-      configurable: true,
-      get() {
-        return original.get!.call(select);
-      },
-      set(v: never) {
-        original.set!.call(select, v);
-        atualizar();
-      },
-    });
-  }
+  // O jogo escreve `select.value` direto (sem evento): o espelho acompanha pela propriedade da própria instância.
+  const original = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!;
+  Object.defineProperty(select, 'value', {
+    configurable: true,
+    get: () => original.get!.call(select) as string,
+    set(v: string) {
+      original.set!.call(select, v);
+      atualizar();
+    },
+  });
   // Opções que chegam depois, e o texto delas traduzido: o observador refaz o rótulo.
   new MutationObserver(atualizar).observe(select, { childList: true, subtree: true, characterData: true });
 

@@ -9,7 +9,11 @@
 2. **A linha selecionada em barra dourada com chevron** (`❯`) nas Configurações: a linha sob o mouse ou com o foco, como na referência (barra dourada de ponta a ponta, texto escuro, o passo em fundo escuro).
 3. **Testes (`Passo.test.ts`, 8):** o passo circular, o rótulo, o limite de opções, o estilo e a ligação (o select do idioma não vira passo). **Prova no navegador de verdade** (`arte/interface-passo-*-claude.png`): os nove passos existem, o select está escondido e **acompanha** (clique, duas voltas, mudança por código, seta do teclado) e a troca para o japonês **refaz o texto** dos passos.
 
-**Custo de CPU:** zero fora do clique (um observador de opções por seletor, que só dispara quando o texto das opções muda).
+4. **Orçamento de JS (R7): o pacote chegou a 500,03 KB (limite 500).** As dicas de arma do Hangar saíram do código para `public/dicas-do-hangar.json` (carregado ao abrir o Hangar): **498,49 KB**, folga de 1,5 KB. Texto estático longo novo vai para JSON em `public/`, não para o pacote (`HISTORICO_DE_DECISOES.md`).
+
+**Custo de CPU:** zero fora do clique (um observador de opções por seletor, que só dispara quando o texto das opções muda) e um `fetch` de 3,5 KB na primeira abertura do Hangar.
+
+**Achado aberto (R17):** as 22 dicas de arma do Hangar **não têm tradução** nas seis línguas (o Hangar fala português em qualquer idioma): traduzir cada dica em `public/dicas-do-hangar.json` + dicionários, e o teste de cobertura passa a checar.
 
 **Falta (R13):** (a) o par **SOLO / MULTI** na primeira tela (a anotação dele sobre "2Players"); (b) a **placa** (borda forte, rebites) no console e na pausa; (c) a linha em barra dourada **no console** (as listas de operação); (d) o **olho do Comandante**: se a "pele" agradar, (a) a (c) seguem; se ele quiser mais perto da chapa dos jogos antigos, é só CSS.
 
