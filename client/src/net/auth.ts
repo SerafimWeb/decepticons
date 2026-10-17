@@ -3,11 +3,14 @@ import {
   CONTA_CRIAR_PATH,
   CONTA_ENTRAR_PATH,
   CONTA_EU_PATH,
+  CONTA_PROGRESSO_PATH,
   CONTA_SAIR_PATH,
   CONFIG_PATH,
   ADMIN_CONFIG_PATH,
   type ContaResposta,
+  type ProgressoPiloto,
   SESSAO_HEADER,
+  validarProgresso,
 } from '../../../shared/net/auth';
 
 /**
@@ -57,6 +60,41 @@ export class ContaCliente {
       return typeof dados?.email === 'string' ? { email: dados.email, is_admin: dados.is_admin === true } : null;
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * O progresso que a conta guarda (P174). `{ progresso: null }` = a conta ainda não guardou nada; `null` = não deu para saber (sem sessão, sem servidor, rede): quem chama não
+   * mexe em nada. Nunca lança. O que volta passa pelo mesmo contrato do servidor (`validarProgresso`): um servidor estranho não injeta lixo no navegador.
+   */
+  async lerProgresso(token: string): Promise<{ progresso: ProgressoPiloto | null } | null> {
+    if (!this.base || !token) return null;
+    try {
+      const res = await fetch(this.base + CONTA_PROGRESSO_PATH, { headers: { [SESSAO_HEADER]: token }, mode: 'cors', cache: 'no-store' });
+      if (!res.ok) return null;
+      const dados = (await res.json()) as { progresso?: unknown } | null;
+      if (!dados || dados.progresso === undefined) return null;
+      if (dados.progresso === null) return { progresso: null };
+      const lido = validarProgresso(dados.progresso);
+      return lido ? { progresso: lido } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Guarda o progresso na conta (substitui o anterior). `false` = não gravou (sem sessão, sem servidor, recusado); nunca lança. */
+  async gravarProgresso(token: string, progresso: ProgressoPiloto): Promise<boolean> {
+    if (!this.base || !token) return false;
+    try {
+      const res = await fetch(this.base + CONTA_PROGRESSO_PATH, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', [SESSAO_HEADER]: token },
+        body: JSON.stringify(progresso),
+        mode: 'cors',
+      });
+      return res.ok;
+    } catch {
+      return false;
     }
   }
 

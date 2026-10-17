@@ -81,6 +81,23 @@ export class DailyChallenges {
     this._checkDailyReset();
   }
 
+  /** O progresso mudou (XP, créditos, recompensa): a conta do piloto agenda o envio (`net/sessao.ts`, P174). Não dispara em `restore`. */
+  onSave?: () => void;
+
+  /** O que a conta do piloto guarda (os desafios do dia ficam só no navegador). */
+  snapshot(): { nivel: number; xp: number; creditos: number } {
+    return { nivel: this.data.level, xp: this.data.xp, creditos: this.data.credits };
+  }
+
+  /** A conta tinha mais progresso: aplica nível, XP e créditos (limitados ao que o jogo aceita), salva no navegador e redesenha. Não chama `onSave` (não é mudança do jogador). */
+  restore(p: { nivel: number; xp: number; creditos: number }): void {
+    this.data.level = Math.max(1, Math.floor(p.nivel));
+    this.data.xp = Math.min(XP_PER_LEVEL - 1, Math.max(0, Math.floor(p.xp)));
+    this.data.credits = Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(p.creditos)));
+    this._persist();
+    this._updateUi();
+  }
+
   get level(): number { return this.data.level; }
   get xp(): number { return this.data.xp; }
   get credits(): number { return this.data.credits; }
@@ -198,6 +215,11 @@ export class DailyChallenges {
   }
 
   private _saveData(): void {
+    this._persist();
+    this.onSave?.();
+  }
+
+  private _persist(): void {
     if (typeof localStorage !== 'undefined') {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));

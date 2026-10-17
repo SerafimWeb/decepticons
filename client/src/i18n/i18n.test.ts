@@ -2,8 +2,10 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { WEAPON_IDS, weapon } from '../combat/weapons';
+import { validarEmail, validarSenha } from '../../../shared/net/auth';
 import { DICAS_DO_BOOT } from '../core/bootProgress';
 import { DIFFICULTY_LABELS, KEY_ACTIONS, PERSONA_LABELS, QUALITY_LABELS } from '../core/Settings';
+import { TEXTO_CONVIDADO, TEXTO_GUARDANDO, TEXTO_LOGADO } from '../ui/ContaSettings';
 import { DICA_DA_ARMA } from '../ui/dicasDeArma';
 import { IDIOMAS, carregarDicionario, idiomaInicial, idiomaValido, t, traduzir, type Dicionario } from './i18n';
 
@@ -189,6 +191,11 @@ describe('a cobertura: o que o jogo mostra e o dicionário traduz', () => {
     const textos = [...Object.values(QUALITY_LABELS), ...Object.values(DIFFICULTY_LABELS), ...KEY_ACTIONS.map((k) => k.label), ...personas];
     const faltam = textos.filter((x) => !coberto(x));
     expect(faltam).toEqual([]);
+  });
+
+  it('a conta do piloto: as frases de estado e as mensagens de validação (a tela de login é a que o jogador novo lê para guardar o progresso)', () => {
+    const textos = [TEXTO_CONVIDADO, TEXTO_LOGADO, TEXTO_GUARDANDO, validarEmail('x')!, validarSenha(1)!, validarSenha('curta')!, validarSenha('x'.repeat(100))!];
+    expect(textos.filter((t) => !coberto(t))).toEqual([]);
   });
 
   it('as dicas da tela de carregamento (a primeira coisa que um jogador novo lê)', () => {
