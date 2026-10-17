@@ -7,6 +7,16 @@
       "desenhos": 41,
       "triangulos": 108933,
       "construcaoMs": 318
+    },
+    "cabecadochefe-d30": {
+      "desenhos": 66,
+      "triangulos": 135837,
+      "construcaoMs": 467
+    },
+    "chefe-d30": {
+      "desenhos": 68,
+      "triangulos": 135981,
+      "construcaoMs": 433
     }
   },
   "errosDePagina": []

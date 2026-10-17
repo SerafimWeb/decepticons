@@ -25,7 +25,8 @@ import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
 import { PRAIA_AGUA, PRAIA_ASSALTO, PRAIA_INIMIGOS, PRAIA_MANIFESTANTES, PRAIA_QUADRO_DE_LUZ, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
 import { ehManifestante } from '../entities/chassis';
-import { caboDoPonto, CABOS, CabosDeDados, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
+import { caboDoPonto, CABOS, CabosDeDados, CODIGO_DO_ESTADO, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
+import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
 import { pertoDoQuadro, QUADRO, QuadroDeLuz } from './QuadroDeLuz';
 import { dentroDoComplexo, NUCLEO, NucleoDaEstacao, pesoDoInvasor } from './NucleoDaEstacao';
@@ -80,6 +81,8 @@ const DOMINIO_REPLANEJA_S = 2;
 const ALVO_DO_MANIFESTANTE: readonly number[] = [3, 4, 0, 4, 2];
 /** O alvo do saboteiro (P164): o quadro de luz da cidade, depois dos três cabos (0 a 2) e das duas portas (3 e 4). */
 const ALVO_DO_QUADRO = 5;
+/** O alvo do chefe quando os três cabos já caíram (P165): a porta principal do prédio. */
+const ALVO_DA_PORTA_PRINCIPAL = 3;
 /** O Domínio leva cada lado para a sua base: o jogador e os aliados no canto azul, os rebeldes no vermelho (os titãs mantêm os pontos deles). */
 function levarParaAsBases(plano: PlanoDoEsquadrao): void {
   const { blue, red } = NASCIMENTOS_DO_DOMINIO;
@@ -129,6 +132,8 @@ export interface MatchOptions {
   mode?: GameMode;
   /** Onda em que a missão começa (1 a 6). É o atalho de bancada `?onda=`; fora do intervalo, começa na 1. */
   startWave?: number;
+  /** O chefe da missão (o Colossus) veste a máscara (P165)? Padrão sim; `Game` passa o `?mascara=` do link (`0` a tira). */
+  bossMask?: boolean;
   /**
    * Aliados na Arena normal (30/09). Padrão ligado offline; o servidor (`ArenaRoom.ts`) passa `false`
    * de propósito — o roster de rede (`shared/net`) ainda não sabe descrever um aliado pros outros
@@ -253,6 +258,8 @@ export class Match {
   private readonly rumoDosAlvos: number[] = [];
   private readonly pontosDosAlvos = [...PONTOS_DOS_CABOS, ...PORTAS_DA_ESTACAO, PRAIA_QUADRO_DE_LUZ].map((p) => new THREE.Vector3(p.x, 0, p.z));
   private readonly _pontoDoAlvo = new THREE.Vector3();
+  /** Os códigos de estado dos três cabos (0 livre a 3 cortado), refeitos a cada replanejamento: o chefe escolhe o cabo que ainda não caiu. */
+  private readonly estadosDosCabosDoChefe = [0, 0, 0];
   private cabosReplanejaEm = 0;
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
   readonly pilots: Pilot[] = [];
@@ -386,6 +393,7 @@ export class Match {
             names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
           }),
       bossSpawn: survival ? (praia ? PRAIA_TITA : COLOSSUS_SPAWN[0]) : undefined,
+      ...(o.bossMask === undefined ? {} : { mascaraDoChefe: o.bossMask }),
       respawn: !survival,
       respawnAtHome: ctf,
       // Na praia de 640 m as ondas marcham para os portões da estação (patrulham a rota de assalto): sem isso vagariam por pontos espalhados.
@@ -981,6 +989,13 @@ export class Match {
       if (ehManifestante(nome)) {
         const vaga = manifestantes++; // a vaga do pool (viva ou não): o lado de onde ele nasce
         if (m.alive) alvo = ALVO_DO_MANIFESTANTE[vaga % ALVO_DO_MANIFESTANTE.length]!;
+      } else if (nome.startsWith('COLOSSUS')) {
+        // O chefe (P165, parte D): vai ao cabo mais perto que ainda não foi cortado e o depreda (peso 4); com os três cortados, vai à porta principal do prédio.
+        if (m.alive) {
+          for (let k = 0; k < this.estadosDosCabosDoChefe.length; k++) this.estadosDosCabosDoChefe[k] = CODIGO_DO_ESTADO[this.cabos.estado(k)];
+          const cabo = alvoDoChefe(m.simPosition.x, m.simPosition.z, this.estadosDosCabosDoChefe);
+          alvo = cabo >= 0 ? cabo : ALVO_DA_PORTA_PRINCIPAL;
+        }
       } else if (ehAndroide(nome)) {
         if (m.alive) {
           alvo = haSaboteiro && androides === 0 ? ALVO_DO_QUADRO : (androides - (haSaboteiro ? 1 : 0)) % this.cabos.quantidade;

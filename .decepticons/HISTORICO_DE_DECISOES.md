@@ -1,3 +1,16 @@
+## [2026-10-17] A Colossus em três fases, a barra do chefe e a máscara (Claude, P165, P147)
+
+**Ordem:** a parte D do capítulo 1 ("CONTINUA SEGUINDO A PARTE B, C e a D") e a máscara da Colossus V1 só como chefe (P165).
+
+**Decisões:**
+1. **As fases saem do dano por parte que já existe**, não de um sistema novo: `faseDoChefe` lê a vida das pernas e do tronco (anda, manca, rasteja, caiu). Uma regra só (G14), pura e testável.
+2. **Só o chefe rasteja** (`MechBase.crawls`, 30% da velocidade): num Mech comum, perna destruída segue como torre imóvel, que é a regra de equilíbrio de sempre. O rastejo é o que faz "pernas caídas" virar **outra luta** em vez de fim de luta.
+3. **O alvo do titã é o cabo mais perto ainda de pé**, e com os três cortados a porta principal. **O jogador pode kitar** (afastar o titã dos cabos atirando e correndo): fica permitido, é estratégia, e o rastejo a 30% a torna viável.
+4. **A máscara é 1,3× a cabeça e desligável (`?mascara=0`)**: a caricatura de figura pública é sátira política que o Comandante pediu, e o **risco jurídico e de plataforma** segue registrado (`CAMPANHAS_E_CHEFES.md` § 0). O botão de desligar é o que protege o jogo se uma loja reclamar. Só desenho: não toca colisão, vida nem arma.
+5. **A barra do chefe diz a regra da fase numa linha**: o jogador entende o problema sem ler manual.
+
+**Por que registrar:** quem for equilibrar o chefe (vida, 30% do rastejo, peso 4 nos cabos são linhas de tabela) ou levar a missão para a rede precisa saber que a fase é derivada do dano e que o rastejo é só do chefe.
+
 ## [2026-10-17] Entrega só conta quando o dono a acha: o idioma e a conta vão para o canto da primeira tela (Claude, P176)
 
 **Ordem:** *"nao achei o arpao no hangar, nem a mudança das linguas, nem login"*.

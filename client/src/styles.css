@@ -4280,6 +4280,17 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .praia-quadro[data-estado='sabotado'] .pc-vida { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
 .praia-quadro[data-estado='apagado'] { color: var(--alert); }
 .praia-quadro[data-estado='apagado'] .pc-barra { border-color: rgba(255, 45, 61, 0.7); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
+/* A barra do chefe (P165, ui/PraiaHud.ts): o Colossus em campo. O título leva a fase; a barra é o tronco; as duas pernas acendem e apagam; a regra da fase vai numa linha. */
+.praia-chefe { position: absolute; top: 196px; left: 50%; transform: translateX(-50%); width: min(620px, 64vw); display: flex; flex-direction: column; gap: 3px; align-items: stretch; font-size: 10px; letter-spacing: 2px; color: var(--alert); text-shadow: 0 0 6px #000; }
+.praia-chefe[hidden] { display: none; }
+.praia-chefe b { color: var(--ink); text-align: center; font-size: 11px; letter-spacing: 3px; }
+.pcf-barra { height: 8px; border: 1px solid rgba(255, 45, 61, 0.7); background: rgba(20, 5, 8, 0.78); }
+.pcf-barra i { display: block; height: 100%; background: var(--alert); transform-origin: left; box-shadow: 0 0 10px var(--alert); transition: transform 0.2s; }
+.pcf-pernas { display: flex; gap: 8px; justify-content: center; font-size: 9px; }
+.pcf-pernas span { padding: 1px 8px; border: 1px solid rgba(255, 255, 255, 0.55); color: var(--ink); }
+.pcf-pernas span.caida { border-color: rgba(255, 45, 61, 0.8); color: var(--alert); text-decoration: line-through; opacity: 0.8; }
+.praia-chefe p { margin: 0; text-align: center; color: var(--warn); letter-spacing: 1px; font-size: 10px; }
+.praia-chefe[data-fase='rasteja'] .pcf-barra { animation: praia-pulso 0.7s ease-in-out infinite alternate; }
 .praia-zona.alerta { color: var(--alert); text-shadow: 0 0 10px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 45, 61, 0.7); }
 .praia-zona.alerta::before { color: var(--alert); }
 .praia-alvo[data-estado='ataque'] i { border-color: var(--warn); background: rgba(255, 225, 77, 0.25); box-shadow: 0 0 12px var(--warn); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
