@@ -120,6 +120,20 @@ escurecia), o rastro de míssil era uma fila de pontinhos, o tiro de energia uma
 **Custo:** 0,45 ms por quadro sob carga extrema (170 fitas, 219 peças de explosão, 160 cartazes, 80 marcas); 9 desenhos para todos os efeitos da
 cena; nada alocado por quadro. GPU real: 0 de 192 poses com NaN com os efeitos acesos (`varrer-nan.mjs --efeitos`). JS 472,3 KB de 500.
 
+## [2026-10-17] O manifestante é um andróide mais fraco no mesmo pool, as portas são regra pura, e só a praia pede manifestantes (Claude, P163, P166)
+
+**Situação:** o Comandante pediu a invasão do prédio por **duas entradas** e os manifestantes dos eventos reais como NPC.
+
+**Decisões:**
+1. **O manifestante é uma variante do `Android`** (`tool: 'bandeira'`, `MANIFESTANTE_STATS`), **não uma entidade nova nem uma multidão sem física**: reaproveita o cérebro corpo a corpo, o tiro, o dano por parte, o placar e os testes de partida. O preço, dito: o pool da missão soma **13 personagens**, mais que os **8 character controllers** que o G11 pede para uma sala. Vale **offline**; **a missão online terá de caber no teto** (ou o manifestante vira agente leve sem controller).
+2. **Sem arma de fogo, sem rosto:** a "arma" é a pancada de bandeira (**metade** da motosserra, o mesmo `WeaponStats` com `damage: 2`), e o desenho é genérico (pele, boné e camisa amarela, bandeira verde com losango): ninguém é retratado.
+3. **As portas são a mesma ideia dos cabos** (regra pura em `sim/`, o `Match` só conta quem está perto): vida, dano por presença com peso por tipo, conserto de quem defende, **dreno da rede quando arrombada**. Porta forçada **não se recompõe sozinha**, de propósito: é preciso ir lá.
+4. **Cada vaga do pool de manifestantes tem o alvo dela** (a vaga decide o lado de onde nasce: avenida ou rua dos fundos), e não a posição de quem está vivo: o grupo dos fundos vai à porta dos fundos sempre, sem atravessar o complexo.
+5. **O plano da onda só vale com o pool**: `totalDaOnda(plano, comManifestantes)`. A Arena e o Bunker têm o mesmo plano de ondas e **não** têm manifestantes; sem isto o `Match` da Arena lançava "Pool da missão não cobre o plano da onda" (o teste existente pegou).
+6. **Lição de teste:** com o jogador longe, os rebeldes da onda zeram a rede da estação em ~48 s e a missão **acaba** (os bots são desativados) antes de uma porta ceder. Teste de porta mantém a rede cheia a cada segundo, e o dreno das portas é medido **sem os invasores** e **sem os cabos já tomados** (o primeiro teste dele passava só com o dreno dos invasores: a mutação "as portas não entram no dreno" escapou até ele ser reforçado).
+
+**Por que registrar:** quem for fazer a parte C (o porto) e a D (a Colossus), ou levar a missão para a rede, precisa saber que o manifestante divide o pool dos andróides, quem decide o alvo de cada vaga e que o teto de personagens está estourado de propósito offline.
+
 ## [2026-10-16] Os cabos de dados são regra pura em `sim/`, o andróide rebelde "se liga" por proximidade, e a ficha de fatos mostra o quadro misto (Claude, P162, P163, P166)
 
 **Situação:** o Comandante deu o capítulo 1: os cabos como pontos de invasão (o andróide se liga e injeta, os outros o protegem, nós o desligamos) e pediu os casos de privatização para a ficha de fatos.

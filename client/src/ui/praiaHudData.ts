@@ -213,6 +213,38 @@ export function avisoDosCabos(antes: ArrayLike<number>, depois: ArrayLike<number
   return melhor;
 }
 
+/**
+ * Os avisos das PORTAS do prédio (P163): compara o estado de cada porta no quadro anterior com o de agora (0 fechada, 1 forçada, 2 arrombada) e devolve **uma** linha curta, ou
+ * `null`. Manda a mais grave: arrombada, depois recuperada, por último "sob ataque" (a primeira vez que a porta passa a ser forçada).
+ */
+export function avisoDasPortas(antes: ArrayLike<number>, depois: ArrayLike<number>, nomes: readonly string[]): string | null {
+  let melhor: string | null = null;
+  let prioridade = 0;
+  for (let i = 0; i < depois.length; i++) {
+    const a = antes[i] ?? 0;
+    const d = depois[i] ?? 0;
+    if (a === d) continue;
+    const nome = nomes[i] ?? `PORTA ${i + 1}`;
+    let texto: string | null = null;
+    let p = 0;
+    if (d === 2) {
+      texto = `${nome} ARROMBADA · INVASORES DENTRO`;
+      p = 3;
+    } else if (a === 2) {
+      texto = `${nome} RECUPERADA`;
+      p = 2;
+    } else if (a === 0 && d === 1) {
+      texto = `${nome} SOB ATAQUE`;
+      p = 1;
+    }
+    if (texto !== null && p > prioridade) {
+      melhor = texto;
+      prioridade = p;
+    }
+  }
+  return melhor;
+}
+
 /** O cartão de missão da praia (mostrado uma vez, ao começar): a história em três linhas curtas — alegoria, sem nomes reais. */
 export const CARTAO_DA_MISSAO = {
   titulo: 'OPERAÇÃO CABOS ABERTOS',

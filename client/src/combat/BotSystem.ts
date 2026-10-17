@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLOW, PALETTE } from '../core/palette';
 import type { MechBase } from '../entities/MechBase';
 import { Android } from '../entities/Android';
-import { ANDROID_STATS, COLOSSUS_BOSS_STATS, ehTita, VECTOR09_STATS, type ChassisId } from '../entities/chassis';
+import { ANDROID_STATS, COLOSSUS_BOSS_STATS, ehManifestante, ehTita, MANIFESTANTE_STATS, VECTOR09_STATS, type ChassisId } from '../entities/chassis';
 import { armaDoBot, statsDoBot, TITA_RESPAWN_S } from './titaBot';
 import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
 import { ImportedMech } from '../entities/ImportedMech';
@@ -117,6 +117,8 @@ export interface BotSystemOptions {
   spawns: readonly (readonly [number, number])[];
   /** Onde cada andróide rebelde (escala 1) nasce (x, z): um por ponto. */
   androidSpawns?: readonly (readonly [number, number])[];
+  /** Onde nascem os **manifestantes** (P163, missão em ondas da praia): o vândalo humano que depreda os cabos e arromba as portas. Sem isto, não há manifestantes. */
+  manifestanteSpawns?: readonly (readonly [number, number])[];
   /** Onde cada andróide técnico nasce (x, z): conserta os Mechs rebeldes, não atira. */
   technicianSpawns?: readonly (readonly [number, number])[];
   /** Onde o Colossus (escala 3) nasce (x, z): um só, com perfil de cerco. Sem isto, a missão não tem boss. */
@@ -288,6 +290,11 @@ export class BotSystem {
 
     // Andróides: sementes depois das dos Mechs.
     (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(o.names?.androids ?? BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true, o.androidKits?.[i]));
+    // Os manifestantes (P163): corpo de andróide, mais fraco, camisa amarela e bandeira; o cérebro é o do andróide (corpo a corpo). Sementes depois das dos andróides.
+    const manifestanteStats = poweredStats(MANIFESTANTE_STATS, power, 'androids');
+    (o.manifestanteSpawns ?? []).forEach((p, i) =>
+      fighter(new Android({ paint: 0xf2c230, tool: 'bandeira', stats: manifestanteStats }), p, `MANIFESTANTE ${i + 1}`, o.spawns.length + (o.androidSpawns?.length ?? 0) + i, true),
+    );
     // O Colossus (escala 3), quando a missão tem boss: nasce no ponto dedicado, com o perfil de cerco e sem
     // personalidade de piloto (não é um rebelde, é uma máquina). Entra no pool como os outros: nada é criado no tick.
     if (o.bossSpawn) {
@@ -373,9 +380,10 @@ export class BotSystem {
    * Ativa um recorte do pool por tipo e guarda o restante. Usado apenas entre ondas, nunca cria ou
    * remove objetos. Devolve quantos inimigos ficaram ativos para a regra conferir seu teto.
    */
-  setRoster(mechCount: number, androidCount: number, bossCount = 0): number {
+  setRoster(mechCount: number, androidCount: number, bossCount = 0, manifestanteCount = 0): number {
     let mechs = 0;
     let androids = 0;
+    let manifestantes = 0;
     let active = 0;
     for (const { mech, brain, home, beam } of this.bots) {
       if (!(brain instanceof BotController)) {
@@ -385,7 +393,11 @@ export class BotSystem {
       }
       // O Colossus tem vaga própria: não é um Mech rebelde, e é a onda que decide se ele entra.
       const android = mech instanceof Android;
-      const enabled = mech === this.bossMech ? bossCount > 0 : android ? androids++ < androidCount : mechs++ < mechCount;
+      const enabled = mech === this.bossMech
+        ? bossCount > 0
+        : android
+          ? ehManifestante(mech.stats.name) ? manifestantes++ < manifestanteCount : androids++ < androidCount
+          : mechs++ < mechCount;
       if (!enabled) {
         mech.deactivate();
         continue;

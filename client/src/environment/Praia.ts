@@ -10,6 +10,7 @@ import { ehDestrutivel, PraiaDestrutiveis } from './PraiaDestrutiveis';
 import type { Destructibles } from './Destructibles';
 import { PraiaCabosFx } from './PraiaCabosFx';
 import { PraiaGente } from './PraiaGente';
+import { PraiaPortas } from './PraiaPortas';
 import { PraiaLuzes } from './PraiaLuzes';
 import { PraiaZonas } from './PraiaZonas';
 import { criarUniformes } from './PraiaUniformes';
@@ -106,6 +107,10 @@ export class Praia {
   /** O que a missão diz dos três cabos (estado 0 a 3 e injeção 0 a 1), reaproveitado a cada quadro (G4). */
   private readonly cabosEstado = [0, 0, 0];
   private readonly cabosInjecao = [0, 0, 0];
+  /** As duas portas do prédio da estação (P163): o desenho e o estado (0 fechada, 1 forçada, 2 arrombada) e a vida de cada uma. */
+  private readonly portasVisual: PraiaPortas;
+  private readonly portasEstado = [0, 0];
+  private readonly portasVida = [1, 1];
   private readonly vetor = new THREE.Vector3();
   /** Os brilhos desenhados: halos, poças de luz, feixes e os holofotes que giram (`PraiaLuzes.ts`). */
   private readonly brilhos: PraiaLuzes;
@@ -137,6 +142,7 @@ export class Praia {
     this.zonas = new PraiaZonas(scene, this.u);
     this.gente = new PraiaGente(scene, this.u.tempo);
     this.cabosFx = PraiaCabosFx.criar(scene);
+    this.portasVisual = new PraiaPortas(scene);
     this.horizonte(scene);
     this.feixes(scene);
     criarGaivotas(scene, this.u.tempo);
@@ -149,6 +155,15 @@ export class Praia {
     if (this.feixeDoFarol) this.feixeDoFarol.rotation.y = elapsed * 0.55;
     this.brilhos.update(elapsed);
     this.cabosFx?.atualiza(elapsed, this.cabosEstado, this.cabosInjecao);
+    this.portasVisual.atualiza(elapsed, this.portasEstado, this.portasVida);
+  }
+
+  /** As duas portas do prédio (P163, `PortasDaEstacao`): por porta, o estado (0 fechada, 1 forçada, 2 arrombada) e a vida (0 a 1). Sem alocar. */
+  setPortas(estado: ArrayLike<number>, vida: ArrayLike<number>): void {
+    for (let i = 0; i < 2; i++) {
+      this.portasEstado[i] = estado[i] ?? 0;
+      this.portasVida[i] = vida[i] ?? 1;
+    }
   }
 
   /**

@@ -103,7 +103,8 @@ describe('o núcleo da estação (a integridade da rede que a missão defende)',
     expect(livre.vida).toBeGreaterThan(500);
   });
 
-  it('o peso do invasor: Mech 1, andróide 0,5, Colossus 4', () => {
+  it('o peso do invasor: Mech 1, andróide 0,5, manifestante 0,4, Colossus 4', () => {
+    expect(pesoDoInvasor('MANIFESTANTE 2')).toBe(0.4);
     expect(pesoDoInvasor('VECTOR-09')).toBe(1);
     expect(pesoDoInvasor('ANDRÓIDE A-1')).toBe(0.5);
     expect(pesoDoInvasor('COLOSSUS-01')).toBe(4);

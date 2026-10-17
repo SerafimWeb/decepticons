@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { SURVIVAL_WAVE_PLANS, SurvivalWaves, WAVE_BRIEFING_S, WAVE_CLEAR_S } from './SurvivalWaves';
+import { SURVIVAL_MAX_MANIFESTANTES, SURVIVAL_WAVE_PLANS, SurvivalWaves, totalDaOnda, WAVE_BRIEFING_S, WAVE_CLEAR_S } from './SurvivalWaves';
 
 describe('máquina de Ondas', () => {
   it('avança deterministicamente pelas seis hordas e conclui a missão', () => {
@@ -12,7 +12,7 @@ describe('máquina de Ondas', () => {
     for (const plan of SURVIVAL_WAVE_PLANS) {
       waves.fixedUpdate((plan.wave === 1 ? WAVE_BRIEFING_S : WAVE_CLEAR_S) + 0.001, true);
       expect(waves.phase).toBe('active');
-      expect(waves.total).toBe(plan.mechs + plan.androids + (plan.boss ? 1 : 0));
+      expect(waves.total).toBe(plan.mechs + plan.androids + (plan.boss ? 1 : 0)); // sem o pool de manifestantes (a Arena), o plano é o de sempre
       for (let i = 0; i < waves.total; i++) waves.recordEnemyKilled();
     }
 
@@ -45,6 +45,21 @@ describe('máquina de Ondas', () => {
     waves.recordEnemyKilled();
     expect(waves.phase).toBe('completed');
     expect(end).toHaveBeenCalledWith(true, expect.objectContaining({ wavesCleared: 6 }));
+  });
+
+  it('na praia (com o pool de manifestantes) cada onda conta os manifestantes no total, e nenhum plano passa do pool', () => {
+    const waves = new SurvivalWaves({ onRoster: () => {} }, 1, true);
+    for (const plan of SURVIVAL_WAVE_PLANS) {
+      waves.fixedUpdate((plan.wave === 1 ? WAVE_BRIEFING_S : WAVE_CLEAR_S) + 0.001, true);
+      expect(waves.total).toBe(plan.mechs + plan.androids + (plan.manifestantes ?? 0) + (plan.boss ? 1 : 0));
+      expect(waves.total).toBe(totalDaOnda(plan, true));
+      for (let i = 0; i < waves.total; i++) waves.recordEnemyKilled();
+    }
+    expect(waves.phase).toBe('completed');
+    for (const plan of SURVIVAL_WAVE_PLANS) expect(plan.manifestantes ?? 0).toBeLessThanOrEqual(SURVIVAL_MAX_MANIFESTANTES);
+    // a onda 1 é a dos cabos: só andróides (os manifestantes entram a partir da 2)
+    expect(SURVIVAL_WAVE_PLANS[0]!.manifestantes ?? 0).toBe(0);
+    expect(SURVIVAL_WAVE_PLANS[1]!.manifestantes).toBeGreaterThan(0);
   });
 
   it('encerra quando todos os pilotos caem e preserva as estatísticas', () => {

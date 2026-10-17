@@ -1,3 +1,4 @@
+import { ehManifestante } from '../entities/chassis';
 import { PRAIA_COMPLEXO } from '../environment/PraiaLayout';
 
 /**
@@ -24,9 +25,10 @@ export const NUCLEO = {
   curaPorOnda: 150,
 } as const;
 
-/** O peso de um invasor: o Mech vale 1, o andróide meio, o Colossus quatro (o chefe derruba a rede em 36 s sozinho). */
+/** O peso de um invasor: o Mech vale 1, o andróide meio, o manifestante quatro décimos (P163: gente, mais fraco), o Colossus quatro (o chefe derruba a rede em 36 s sozinho). */
 export function pesoDoInvasor(nome: string): number {
   if (nome.startsWith('ANDR')) return 0.5;
+  if (ehManifestante(nome)) return 0.4;
   if (nome.startsWith('COLOSSUS')) return 4;
   return 1;
 }

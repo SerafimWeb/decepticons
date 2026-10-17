@@ -130,6 +130,7 @@ import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { CODIGO_DO_ESTADO } from '../sim/CabosDeDados';
+import { CODIGO_DO_ESTADO_DA_PORTA } from '../sim/PortasDaEstacao';
 import { Match } from '../sim/Match';
 import { gameModeFromSearch, waveFromSearch, type GameMode } from '../sim/gameMode';
 import { SURVIVAL_MAX_ANDROIDS, SURVIVAL_MAX_MECHS, SURVIVAL_WAVE_PLANS } from '../sim/SurvivalWaves';
@@ -1870,6 +1871,16 @@ export class Game {
           q.cabos.injecao[i] = cabos.injecao[i]!;
         }
         this.match.arena.praia?.setCabos(q.cabos.estado, q.cabos.vida, q.cabos.injecao);
+      }
+      // As duas portas do prédio (P163): o HUD mostra as células e o aviso, e a praia pinta a porta (laranja forçada, vermelha e aberta arrombada).
+      const portas = this.match.portas;
+      q.portas.presente = portas !== null;
+      if (portas) {
+        for (let i = 0; i < portas.quantidade; i++) {
+          q.portas.estado[i] = CODIGO_DO_ESTADO_DA_PORTA[portas.estado(i)];
+          q.portas.vida[i] = portas.fracaoDaVida(i);
+        }
+        this.match.arena.praia?.setPortas(q.portas.estado, q.portas.vida);
       }
       q.largura = window.innerWidth;
       q.altura = window.innerHeight;

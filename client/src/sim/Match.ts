@@ -21,8 +21,10 @@ import type { GameSettings } from '../core/Settings';
 import type { MechBase } from '../entities/MechBase';
 import { Arena, SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
-import { PRAIA_AGUA, PRAIA_ASSALTO, PRAIA_INIMIGOS, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { PRAIA_AGUA, PRAIA_ASSALTO, PRAIA_INIMIGOS, PRAIA_MANIFESTANTES, PRAIA_SPAWNS, PRAIA_TITA, PRAIA_ZONES } from '../environment/PraiaLayout';
+import { ehManifestante } from '../entities/chassis';
 import { caboDoPonto, CABOS, CabosDeDados, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
+import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
 import { dentroDoComplexo, NUCLEO, NucleoDaEstacao, pesoDoInvasor } from './NucleoDaEstacao';
 import { danoDeAfogamento, fatorDeVelocidade, FUNDURA_MOLHADA, fundoParaAfogar, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
@@ -48,7 +50,9 @@ import type { GameMode } from './gameMode';
 import { ALLY_COUNT, ANDROID_SPAWNS, BOT_SPAWNS, COLOSSUS_SPAWN } from './nascimentos';
 import {
   SURVIVAL_MAX_ANDROIDS,
+  SURVIVAL_MAX_MANIFESTANTES,
   SURVIVAL_MAX_MECHS,
+  totalDaOnda,
   SURVIVAL_WAVE_PLANS,
   SurvivalWaves,
   type MissionStats,
@@ -69,6 +73,8 @@ export const CTF_DEFENDER_SPAWNS: readonly (readonly [number, number])[] = [
 ];
 /** De quanto em quanto tempo (s) os bots do Domínio refazem a escolha do ponto em que vão (`DominioObjetivos`). */
 const DOMINIO_REPLANEJA_S = 2;
+/** O alvo de cada vaga do pool de manifestantes (P163): 3 = a porta principal, 4 = a dos fundos, 0 e 2 = os cabos 1 e 3. A vaga 1 e a 3 nascem na rua dos fundos. */
+const ALVO_DO_MANIFESTANTE: readonly number[] = [3, 4, 0, 4, 2];
 /** O Domínio leva cada lado para a sua base: o jogador e os aliados no canto azul, os rebeldes no vermelho (os titãs mantêm os pontos deles). */
 function levarParaAsBases(plano: PlanoDoEsquadrao): void {
   const { blue, red } = NASCIMENTOS_DO_DOMINIO;
@@ -222,10 +228,14 @@ export class Match {
   private readonly cabosLigados = PONTOS_DOS_CABOS.map(() => 0);
   private readonly cabosDepredadores = PONTOS_DOS_CABOS.map(() => 0);
   private readonly cabosDefensores = PONTOS_DOS_CABOS.map(() => 0);
-  /** Para qual cabo cada andróide rebelde foi mandado (-1 nenhum), na ordem de `bots.mechs`. */
-  private readonly rumoDosCabos: number[] = [];
-  private readonly pontosDosCabos = PONTOS_DOS_CABOS.map((p) => new THREE.Vector3(p.x, 0, p.z));
-  private readonly _pontoDoCabo = new THREE.Vector3();
+  /** As duas portas do prédio da estação (P163, frente 2): a principal e a dos fundos. `null` fora da missão em ondas da praia. */
+  readonly portas: PortasDaEstacao | null = null;
+  private readonly portasAtacantes = PORTAS_DA_ESTACAO.map(() => 0);
+  private readonly portasDefensores = PORTAS_DA_ESTACAO.map(() => 0);
+  /** Para qual alvo cada andróide e cada manifestante foi mandado (0 a 2 = o cabo; 3 e 4 = a porta principal e a dos fundos; -1 nenhum), na ordem de `bots.mechs`. */
+  private readonly rumoDosAlvos: number[] = [];
+  private readonly pontosDosAlvos = [...PONTOS_DOS_CABOS, ...PORTAS_DA_ESTACAO].map((p) => new THREE.Vector3(p.x, 0, p.z));
+  private readonly _pontoDoAlvo = new THREE.Vector3();
   private cabosReplanejaEm = 0;
   /** Rodam antes de tudo, a cada tick (na ordem em que entraram). */
   readonly pilots: Pilot[] = [];
@@ -296,6 +306,7 @@ export class Match {
     // A missão em ondas da praia defende a estação: os rebeldes que entram nos muros drenam o núcleo; a estação cair é perder a missão.
     this.nucleo = praia && survival ? new NucleoDaEstacao() : null;
     this.cabos = praia && survival ? new CabosDeDados() : null;
+    this.portas = praia && survival ? new PortasDaEstacao() : null;
     this.fx = o.particles;
     // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
@@ -348,6 +359,7 @@ export class Match {
             // Na praia as ondas nascem na areia, longe da estação (o jogador defende a estação); na Arena, nos pontos de sempre.
             spawns: ctf ? CTF_DEFENDER_SPAWNS : praia ? PRAIA_INIMIGOS.slice(0, SURVIVAL_MAX_MECHS) : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
             androidSpawns: ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
+            manifestanteSpawns: praia && !ctf ? PRAIA_MANIFESTANTES.slice(0, SURVIVAL_MAX_MANIFESTANTES) : [],
             technicianSpawns: [],
             personas: o.foes.enemyPersonas,
             names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
@@ -400,14 +412,14 @@ export class Match {
     this.waves = survival
       ? new SurvivalWaves({
           onRoster: (plan) => this.applyWaveRoster(plan),
-          onWaveStart: (plan) => this.onWaveStart?.(plan.wave, plan.mechs + plan.androids + (plan.boss ? 1 : 0), plan.mechs, plan.androids, plan.title, SURVIVAL_WAVE_PLANS.length),
+          onWaveStart: (plan) => this.onWaveStart?.(plan.wave, totalDaOnda(plan, praia), plan.mechs, plan.androids, plan.title, SURVIVAL_WAVE_PLANS.length),
           onWaveProgress: (wave, killed, total, elapsedS) => this.onWaveProgress?.(wave, killed, total, elapsedS),
           onWaveClear: (wave, elapsedS) => {
             this.nucleo?.curar(NUCLEO.curaPorOnda); // a onda eliminada devolve um pouco da rede
             this.onWaveClear?.(wave, elapsedS);
           },
           onMissionEnd: (survived, stats) => this.onMissionEnd?.(survived, this.waves?.wave ?? 1, stats),
-        }, o.startWave)
+        }, o.startWave, praia)
       : null;
     if (this.waves) this.bots.setRoster(0, 0);
     this.ctf = ctf
@@ -809,8 +821,9 @@ export class Match {
       this.ctf?.fixedUpdate(dt);
       this.dominio?.fixedUpdate(dt);
       this.dirigirOsBots(dt);
-      this.dirigirAndroidesAosCabos(dt);
+      this.dirigirOsInvasoresAosAlvos(dt);
       this.tickDosCabos(dt);
+      this.tickDasPortas(dt);
       this.drenarONucleo(dt);
     }
     if (this.round.fixedUpdate(dt) !== 'started') return false;
@@ -832,7 +845,7 @@ export class Match {
       const p = m.simPosition;
       if (dentroDoComplexo(p.x, p.z)) peso += pesoDoInvasor(m.stats.name);
     }
-    n.fixedUpdate(dt, peso, this.cabos?.drenoDaRedePorS ?? 0);
+    n.fixedUpdate(dt, peso, (this.cabos?.drenoDaRedePorS ?? 0) + (this.portas?.drenoDaRedePorS ?? 0));
   }
 
   /**
@@ -872,35 +885,73 @@ export class Match {
   }
 
   /**
-   * Manda os **andróides rebeldes** vivos aos pontos de conexão dos cabos (o 1º ao cabo 1, o 2º ao 2, o 3º ao 3, o 4º ao 1...), a cada segundo, com a mesma ordem
-   * `hold` do Domínio: ele vai até o ponto e fica por ali, trocando tiro com quem chega. É o que faz o andróide **se ligar** ao cabo. Os Mechs rebeldes seguem o
-   * comportamento de sempre (e depredam o cabo que cruzarem). A ordem soma `escortSide × 6` ao posto; aqui se desconta, para o andróide parar **no** ponto.
+   * Manda os invasores aos seus alvos (a cada segundo, com a mesma ordem `hold` do Domínio: ele vai até o ponto e fica por ali, trocando tiro com quem chega):
+   *  - os **andróides rebeldes** vivos aos **pontos de conexão dos cabos** (o 1º ao cabo 1, o 2º ao 2, o 3º ao 3, o 4º ao 1...): é o que faz o andróide **se ligar**;
+   *  - os **manifestantes**, pela vaga do pool (cada vaga nasce num lado, `PRAIA_MANIFESTANTES`): **entrada principal**, **dos fundos**, cabo 1, **dos fundos**, cabo 3.
+   * Os Mechs rebeldes seguem o comportamento de sempre (e depredam o cabo ou forçam a porta que cruzarem). A ordem soma `escortSide × 6` ao posto; aqui se desconta,
+   * para o invasor parar **no** ponto.
    */
-  private dirigirAndroidesAosCabos(dt: number): void {
+  private dirigirOsInvasoresAosAlvos(dt: number): void {
     if (!this.cabos) return;
     this.cabosReplanejaEm -= dt;
     if (this.cabosReplanejaEm > 0) return;
     this.cabosReplanejaEm = 1;
     const mechs = this.bots.mechs;
-    if (this.rumoDosCabos.length !== mechs.length) {
-      this.rumoDosCabos.length = mechs.length;
-      this.rumoDosCabos.fill(-1);
+    if (this.rumoDosAlvos.length !== mechs.length) {
+      this.rumoDosAlvos.length = mechs.length;
+      this.rumoDosAlvos.fill(-1);
     }
-    let n = 0;
+    let androides = 0;
+    let manifestantes = 0;
     for (let i = 0; i < mechs.length; i++) {
       const m = mechs[i]!;
-      if (!m.alive || !ehAndroide(m.stats.name)) {
-        this.rumoDosCabos[i] = -1;
+      const nome = m.stats.name;
+      let alvo = -1;
+      if (ehManifestante(nome)) {
+        const vaga = manifestantes++; // a vaga do pool (viva ou não): o lado de onde ele nasce
+        if (m.alive) alvo = ALVO_DO_MANIFESTANTE[vaga % ALVO_DO_MANIFESTANTE.length]!;
+      } else if (ehAndroide(nome)) {
+        if (m.alive) alvo = androides++ % this.cabos.quantidade;
+      }
+      if (alvo < 0) {
+        this.rumoDosAlvos[i] = -1;
         continue;
       }
-      const cabo = n++ % this.cabos.quantidade;
       const cerebro = this.bots.brainOf(m);
       if (!cerebro) continue;
-      if (cabo !== this.rumoDosCabos[i] || cerebro.order !== 'hold') {
-        const ponto = this.pontosDosCabos[cabo]!;
-        cerebro.receiveOrder('hold', this._pontoDoCabo.set(ponto.x - cerebro.escortSide * 6, 0, ponto.z), null);
-        this.rumoDosCabos[i] = cabo;
+      if (alvo !== this.rumoDosAlvos[i] || cerebro.order !== 'hold') {
+        const ponto = this.pontosDosAlvos[alvo]!;
+        cerebro.receiveOrder('hold', this._pontoDoAlvo.set(ponto.x - cerebro.escortSide * 6, 0, ponto.z), null);
+        this.rumoDosAlvos[i] = alvo;
       }
+    }
+  }
+
+  /**
+   * As portas do prédio (P163): conta quem as força (todo rebelde a menos de 7 m, com o peso de `pesoNaPorta`) e quem está perto para recuperá-las (o jogador e os aliados),
+   * e roda a regra pura (`PortasDaEstacao`). Custo: um laço sobre os rebeldes (≤ 13 com os manifestantes), os aliados e os jogadores, sem alocar.
+   */
+  private tickDasPortas(dt: number): void {
+    const p = this.portas;
+    if (!p) return;
+    this.portasAtacantes.fill(0);
+    this.portasDefensores.fill(0);
+    for (const m of this.bots.mechs) {
+      if (!m.alive) continue;
+      const pos = m.simPosition;
+      const i = portaDoPonto(pos.x, pos.z, PORTAS.raioDeAtaque);
+      if (i >= 0) this.portasAtacantes[i]! += pesoNaPorta(m.stats.name);
+    }
+    this.contarDefensoresDasPortas(this.players);
+    if (this.allies) this.contarDefensoresDasPortas(this.allies.mechs);
+    p.fixedUpdate(dt, this.portasAtacantes, this.portasDefensores);
+  }
+
+  private contarDefensoresDasPortas(mechs: readonly MechBase[]): void {
+    for (const m of mechs) {
+      if (!m.alive) continue;
+      const i = portaDoPonto(m.simPosition.x, m.simPosition.z, PORTAS.raioDeReparo);
+      if (i >= 0) this.portasDefensores[i]! += ehAndroide(m.stats.name) ? 2 : 1;
     }
   }
 
@@ -1014,7 +1065,8 @@ export class Match {
     this.waves?.reset();
     this.nucleo?.reset();
     this.cabos?.reset();
-    this.rumoDosCabos.fill(-1);
+    this.portas?.reset();
+    this.rumoDosAlvos.fill(-1);
     this.cabosReplanejaEm = 0;
     this.ctf?.reset();
     this.dominio?.reset();
@@ -1022,10 +1074,11 @@ export class Match {
 
   private applyWaveRoster(plan: WavePlan | null): void {
     const boss = plan?.boss ? 1 : 0;
-    const active = this.bots.setRoster(plan?.mechs ?? 0, plan?.androids ?? 0, boss);
+    const manifestantes = this.nucleo ? plan?.manifestantes ?? 0 : 0; // só a praia traz o pool de manifestantes (o núcleo existe só lá)
+    const active = this.bots.setRoster(plan?.mechs ?? 0, plan?.androids ?? 0, boss, manifestantes);
     if (plan) {
       this.bots.maxAttackers = plan.maxAttackers;
-      if (active !== plan.mechs + plan.androids + boss) throw new Error('Pool da missão não cobre o plano da onda');
+      if (active !== plan.mechs + plan.androids + manifestantes + boss) throw new Error('Pool da missão não cobre o plano da onda');
     }
   }
 

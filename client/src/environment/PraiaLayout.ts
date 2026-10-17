@@ -352,6 +352,14 @@ export const PRAIA_INIMIGOS: readonly (readonly [number, number])[] = [
   [50, -26], [78, 12], [98, 28], [36, -26], [56, 13], [72, 29],
 ];
 
+/**
+ * Onde os **manifestantes** nascem (P163, a missão em ondas): cinco vagas, **três pela avenida a oeste** (a entrada principal, pelo portão do pátio) e **duas pela rua dos
+ * fundos**, atrás do muro norte da estação (a entrada dos fundos, pelo portão de trás). A ordem é a do pool: cada vaga tem o seu alvo em `Match` (a porta ou o cabo).
+ */
+export const PRAIA_MANIFESTANTES: readonly (readonly [number, number])[] = [
+  [182, 26], [281, 111], [188, 31], [288, 111], [176, 21],
+];
+
 /** Onde o **Colossus da última onda** nasce: o meio da avenida aberta, a oeste, de onde ele vem andando pela orla. */
 export const PRAIA_TITA: readonly [number, number] = [-20, 27];
 
