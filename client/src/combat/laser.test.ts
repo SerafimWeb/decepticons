@@ -71,7 +71,7 @@ describe('raio laser: o que é (P152)', () => {
     expect(armOptions('shoulders', 'marauder')).not.toContain('laser');
     expect(armOptions('right', 'android')).not.toContain('laser');
     expect(armOptions('right', 'colossus01')).not.toContain('laser');
-    expect(armaServeAoBot('laser')).toBe(false);
+    expect(armaServeAoBot('laser')).toBe(true); // o bot atira o laser em pulsos pelo `Match.beamPulse` (P175)
   });
 
   it('montagens: o Vector-09 leva o laser em qualquer nível no braço direito (8 t no MK III); a Arara-B1 (pequena) não aguenta o MK III', () => {

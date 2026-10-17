@@ -346,6 +346,7 @@ export class Match {
       projectiles: this.projectiles,
       particles: o.particles,
       ...(lancadores ? { launchers: lancadores } : {}),
+      pulso: (m, origin, dir, w) => this.beamPulse(m, origin, dir, w),
       respawner: this.respawner,
       ...(rebeldes
         ? {
@@ -383,6 +384,7 @@ export class Match {
             projectiles: this.projectiles,
             particles: o.particles,
             ...(lancadores ? { launchers: lancadores } : {}),
+            pulso: (m, origin, dir, w) => this.beamPulse(m, origin, dir, w),
             respawner: this.respawner,
             escort: this.players,
             tatica: o.tatica,

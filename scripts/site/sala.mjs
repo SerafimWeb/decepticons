@@ -78,7 +78,7 @@ export function salaSite({ BASE, TEAM, act, prs, log, asked, last, stats, estado
   /* ---------- o resto da página: o markup antigo, por id ---------- */
   const grab = (id) => bodyLocal.match(new RegExp(`<section aria-labelledby="${id}">[\\s\\S]*?</section>`))?.[0] ?? '';
   const combatNav = bodyLocal.match(/<nav class="combat-nav"[\s\S]*?<\/nav>/)?.[0] ?? '';
-  const rest = ['validar-build', 'proximas-decisoes', 'novidades', 'mesa', 'fichas', 'protocolo', 'evolucao', 'rota', 'gestao', 'frentes', 'diario', 'entregas'].map(grab).join('\n');
+  const rest = ['validar-build', 'proximas-decisoes', 'novidades', 'mesa', 'fichas', 'protocolo', 'evolucao', 'ritmo', 'rota', 'gestao', 'frentes', 'diario', 'entregas'].map(grab).join('\n');
 
   const body = `
   ${hudNav({ base: BASE, current: 'sala' })}
