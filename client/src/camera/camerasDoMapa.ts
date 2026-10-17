@@ -12,6 +12,8 @@ export function camerasDoMapa(mapa: MapId): readonly FixedCameraPoint[] {
   if (mapa === 'praia') return camerasDaPraia();
   // O bunker é um interior: o CFTV fica só com os drones e os Mechs até ele ganhar câmeras próprias.
   if (mapa === 'bunker') return [];
+  // A Amazônia (P180) ainda não tem postes de CFTV (as torres da margem vão ganhar câmeras com a defesa, parte D): só os drones e os Mechs.
+  if (mapa === 'amazonia') return [];
   return DEFAULT_FIXED_CAMERAS;
 }
 

@@ -12,6 +12,8 @@ import {
   LIMITES_DA_CAMPANHA,
   lerChaveDaCampanha,
   linkDaEtapa,
+  MAPA_NOME,
+  MAPAS,
   MODOS,
   MODOS_DO_MAPA,
   objetivoDaEtapa,
@@ -51,6 +53,13 @@ describe('sanear: o que vale e o que é cortado', () => {
     expect(sanearEtapa(etapa({ mapa: 'bunker', modo: 'survival' }))).toBeNull();
     expect(sanearEtapa(etapa({ mapa: 'bunker', modo: 'ctf' }))).toBeNull();
     expect(sanearEtapa(etapa({ mapa: 'bunker', modo: 'deathmatch' }))).not.toBeNull();
+    // a Amazônia (P180) também só abre o Deathmatch por enquanto (as missões dela vêm nas partes C a E)
+    expect(sanearEtapa(etapa({ mapa: 'amazonia', modo: 'survival' }))).toBeNull();
+    expect(sanearEtapa(etapa({ mapa: 'amazonia', modo: 'ctf' }))).toBeNull();
+    expect(sanearEtapa(etapa({ mapa: 'amazonia', modo: 'deathmatch' }))).not.toBeNull();
+    expect(MAPAS).toContain('amazonia');
+    expect(MODOS_DO_MAPA.amazonia).toEqual(['deathmatch']);
+    expect(MAPA_NOME.amazonia).toBe('AMAZÔNIA · RIO VIVO');
     expect(sanearEtapa({ mapa: 'lua', modo: 'survival', esquadrao: esquadraoPadrao() })).toBeNull();
     expect(sanearEtapa({ mapa: 'arena', modo: 'xadrez', esquadrao: esquadraoPadrao() })).toBeNull();
     expect(sanearEtapa(null)).toBeNull();
@@ -175,6 +184,24 @@ describe('jogar uma etapa é abrir o jogo com o link dela', () => {
       expect(esquadraoDoLink(busca), tituloDaEtapa(e)).toEqual(e.esquadrao);
       expect(campanhaDoLink(busca)).toEqual({ campanha: op, etapa: i + 1 });
     });
+  });
+
+  it('toda etapa viaja pelo link e abre o mapa dela: a Praia (p) e a Amazônia (z) também, não só a Cidade Neon e o Bunker', () => {
+    const mapas = ['arena', 'bunker', 'praia', 'amazonia'] as const;
+    for (const mapa of mapas) {
+      const c: CampanhaSpec = { v: 1, nome: 'Teatro', etapas: [etapa({ mapa: 'arena', modo: 'deathmatch' }), etapa({ mapa, modo: 'deathmatch', abates: 15 })] };
+      const chave = chaveDaCampanha(c);
+      expect(lerChaveDaCampanha(chave), mapa).toEqual(sanearCampanha(c));
+      const busca = linkDaEtapa(c, 2);
+      expect(mapFromSearch(busca, false, gameModeFromSearch(busca)), mapa).toBe(mapa);
+      expect(campanhaDoLink(busca), mapa).toEqual({ campanha: sanearCampanha(c), etapa: 2 });
+    }
+    // a Praia também abre as ondas (Sobrevivência); a Amazônia só o Deathmatch
+    const praiaEmOndas: CampanhaSpec = { v: 1, etapas: [etapa({ mapa: 'praia', modo: 'survival' })] };
+    expect(lerChaveDaCampanha(chaveDaCampanha(praiaEmOndas))).toEqual(praiaEmOndas);
+    const busca = linkDaEtapa(praiaEmOndas, 1);
+    expect(mapFromSearch(busca, false, gameModeFromSearch(busca))).toBe('praia');
+    expect(lerChaveDaCampanha(chaveDaCampanha({ v: 1, etapas: [etapa({ mapa: 'amazonia', modo: 'deathmatch' })] }).replace('zd', 'zs'))).toBeNull();
   });
 
   it('etapa que não existe devolve texto vazio (nenhum link a abrir)', () => {

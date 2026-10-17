@@ -4,13 +4,14 @@ import { bunkerBlocks } from './BunkerLayout';
 
 export { bunkerBlocks, BUNKER_LEVELS, BUNKER_LIFTS, BUNKER_SPAWNS } from './BunkerLayout';
 
-export type MapId = 'arena' | 'bunker' | 'praia';
-/** Online e missões mantêm o mapa contratado com o servidor/objetivos. O Bunker é só do Deathmatch; a praia abre o Deathmatch e as ondas. */
+export type MapId = 'arena' | 'bunker' | 'praia' | 'amazonia';
+/** Online e missões mantêm o mapa contratado com o servidor/objetivos. O Bunker é só do Deathmatch; a praia abre o Deathmatch e as ondas; a Amazônia (P180) abre o Deathmatch (as missões dela vêm nas próximas partes). */
 export function mapFromSearch(search: string, online: boolean, mode: string): MapId {
   if (online) return 'arena';
   const mapa = new URLSearchParams(search).get('mapa');
   if (mapa === 'praia') return mode === 'deathmatch' || mode === 'survival' ? 'praia' : 'arena';
   if (mapa === 'bunker') return mode === 'deathmatch' ? 'bunker' : 'arena';
+  if (mapa === 'amazonia') return mode === 'deathmatch' ? 'amazonia' : 'arena';
   return 'arena';
 }
 

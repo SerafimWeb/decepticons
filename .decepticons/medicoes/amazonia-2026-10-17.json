@@ -1,0 +1,53 @@
+{
+  "data": "2026-10-17",
+  "tela": "1280x720",
+  "render": "SwiftShader (sem GPU: só contagem, não tempo)",
+  "vistas": {
+    "geral": {
+      "desenhos": 50,
+      "triangulos": 168148,
+      "construcaoMs": 455
+    },
+    "aldeia": {
+      "desenhos": 55,
+      "triangulos": 226748,
+      "construcaoMs": 341
+    },
+    "rio": {
+      "desenhos": 43,
+      "triangulos": 144114,
+      "construcaoMs": 394
+    },
+    "draga": {
+      "desenhos": 37,
+      "triangulos": 108344,
+      "construcaoMs": 278
+    },
+    "montante": {
+      "desenhos": 47,
+      "triangulos": 193560,
+      "construcaoMs": 550
+    },
+    "jusante": {
+      "desenhos": 29,
+      "triangulos": 123590,
+      "construcaoMs": 572
+    },
+    "mina": {
+      "desenhos": 39,
+      "triangulos": 112382,
+      "construcaoMs": 1437
+    },
+    "planta": {
+      "desenhos": 42,
+      "triangulos": 138562,
+      "construcaoMs": 342
+    },
+    "lagoa": {
+      "desenhos": 31,
+      "triangulos": 102772,
+      "construcaoMs": 757
+    }
+  },
+  "errosDePagina": []
+}

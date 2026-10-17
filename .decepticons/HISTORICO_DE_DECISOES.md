@@ -1,3 +1,21 @@
+## [2026-10-17] A Amazônia, parte B: o rio e o mapa (Claude, P180)
+
+**Ordem:** "continua iterando até concluir essas pendências": o cenário do rio, bem maior que o que temos, eficiente, com o rio limpo acima do Draga e envenenado depois dele.
+
+**Decisões:**
+1. **O terreno é uma função pura única** (`alturaDoTerreno`), lida pela malha e pelo colisor de altura: o que se vê é o que se pisa (G14), e a grade é uma só para os dois. **24 pedaços de 300 m, um nível de detalhe só** (o plano falava em três; com o alcance de 1.500 m o terreno inteiro dá ≤ 120 mil triângulos, e níveis a mais custariam emenda e código sem ganho medido). Encosta máxima de 0,50, medida na grade inteira.
+2. **O rio é o termômetro por UM uniforme** (a frente): o shader da água, o do chão, o da folhagem e o das estruturas leem o mesmo número; `limpezaDoRio` é a mesma conta em JS (pura, testada) e em GLSL (a string é travada por teste). A banda do veneno é de 70 m de cada lado (não é uma parede).
+3. **A floresta tem dois níveis por pedaço de 300 m** (a árvore de 52 triângulos até 260 m, o bloco de 10 até 1.050 m) e **rareia em volta da mina e da planta** (o desmatamento é a história da fase).
+4. **Mapas grandes carregam sob demanda** (`mapasSobDemanda.ts`): o registro é o único que o pacote de partida enxerga. O `ServerPanel` também passou a ser sob demanda para devolver folga ao teto de partida (**497,2 / 500 KB**): é a mesma política de dois tetos da parte A (o Comandante pode vetar).
+5. **O Draga na Amazônia anda rio acima a 2,6 m/s e para a 240 m da aldeia** (~9 minutos): a frente do rio vai com ele. Responde, para esta fase, a decisão em aberto 0 do `AMAZONIA.md` (a Draga **anda desde o começo**); o Comandante ainda pode mudar.
+6. **A câmera do mapa:** a do jogo (800 m) cortava o mapa de 2.400 m e deixava o céu preto; o mapa agora traz o `alcanceDaCamera` (1.500 m) e o domo de 1.200 m cabe dentro dele. **Lição:** **a bancada tinha a câmera dela e não via o que o jogo via**; o céu preto só apareceu no jogo real. Agora a bancada usa o mesmo alcance, e `medicoes/amazonia-jogo.mjs` fotografa o jogo.
+
+**Bugs achados pelos testes e consertados:** (a) `THREE.UniformsUtils.merge` copia o valor de cada uniforme: a água e a lagoa nunca leriam a frente nem o tempo (hoje os uniformes do mapa entram por referência, e um teste confere que são o mesmo objeto); (b) a chave da campanha só lia os mapas `a` e `b`, e o link da etapa só levava `mapa=` para o Bunker (uma etapa na Praia abria a Cidade Neon); agora lê `abpz` e leva o mapa de todos os que não são a Cidade Neon.
+
+**Prova:** mutação à mão, 71 mutações, **69 pegas**; as 2 que escapam são equivalentes (a guarda de declive da floresta é redundante com a fórmula de densidade; a guarda do nascimento do jogador é redundante com a da aldeia). Elas ficam no código por segurança contra mudança futura de layout.
+
+**Por que registrar:** quem for fazer o Draga com corpo (C), a defesa (D) ou a invasão (E) precisa saber que o rio lê UMA frente, que o mapa é sob demanda, que a câmera do mapa é maior e que o orçamento de contagem tem folga de 9% no pior ponto (a aldeia).
+
 ## [2026-10-17] O idioma se audita no navegador, e a composição "A · B" traduz parte a parte (Claude, P173)
 
 **Problema:** o Comandante quer o jogo no idioma nativo de quem chega. O teste de cobertura (que lê o código) dava tudo verde, mas **o Hangar falava português em japonês**: o texto que o jogo monta (colando "MÉDIO", "ASSALTO" e a descrição com " · ") nunca é uma chave do dicionário, e o teste só olhava as partes.

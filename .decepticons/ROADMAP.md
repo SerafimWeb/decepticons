@@ -319,7 +319,9 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 
 - [x] Landing do site em outras línguas: a faixa de idiomas no topo, os textos traduzidos e a escolha valendo no jogo (pedido do Comandante, 17/10, P178) #ux
 - [~] Lado político e pedagogia: o seletor de lado e o Arquivo (seis fichas, sete línguas) estão no jogo; faltam o Relatório de Consequências e a campanha do Consórcio (`LADO_E_PEDAGOGIA.md`) (pedido do Comandante, 17/10, P179) #modos
-- [ ] Missão da Amazônia: a mineradora no rio (`fichas/cenario-amazonas.md`); o modelo do cenário é do Comandante, em outro chat (P180) #cenarios
+- [x] Amazônia, parte B: o rio e o mapa (P180, 17/10): o mapa `amazonia` de 2.400 × 900 m (terreno em 24 pedaços de 300 m com um colisor de altura, 6.594 árvores instanciadas em dois níveis de detalhe, estruturas fundidas numa malha, água num shader só), **o rio como termômetro** (a frente: limpo a montante, morto a jusante, lida por 4 shaders) com o Draga-01 descendo o leito; carregado sob demanda (`mapasSobDemanda.ts`); **29 a 55 desenhos e 102 a 227 mil triângulos medidos** (tetos 70 e 250 mil), 58 colisores; `?mapa=amazonia&modo=deathmatch`, seletor de mapas, missão RIO VIVO no mapa-múndi, campanha, radar e minimapa; 69 de 71 mutações à mão pegas. DEMO: só Deathmatch offline, o Draga é só desenho #cenarios
+- [ ] Amazônia, partes C a E: o Draga com corpo (as quatro pernas), a defesa e os geradores do escudo, a invasão com androides e a cura do rio (`AMAZONIA.md`, P180) #cenarios
+- [ ] Missão da Amazônia: a mineradora no rio (`fichas/cenario-amazonas.md`); o texto, o rádio e o Relatório de Consequências (P180) #cenarios
 - [x] Arpão por peso: o robô mais leve não puxa o mais pesado (pedido do Comandante, 17/10, P181) #combate
 - [~] Interfaces de jogos antigas: **feito** a linha em barra dourada e o `‹ valor ›` nas Configurações e o par SOLO / MULTI na primeira tela; falta a placa no console (`REFERENCIA_VISUAL.md` § 8) (pedido do Comandante, 17/10, P182) #ux
 - [ ] Ombros nos chassis pesados (Bastion, Onça, Colossus), para o arpão render nas mãos de um robô grande (P77, P181) #combate
