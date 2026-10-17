@@ -4,7 +4,7 @@
 
 **Decisões:**
 1. **Não cherry-pick:** o WIP de 12/10 conflitava em ~20 arquivos com a `main`; foi reaplicado à mão só o que valia (a regra `HookSystem`, o modelo) sobre a `main` de hoje, com os ganchos novos (`weaponLook`, `dicasDeArma`, `fireFeel`, `muzzleFx`, `impactFx`: tabelas que obrigam uma linha por arma).
-2. **Tiro de varredura, não projétil:** um raio de 55 m, como o laser; o cabo é estado do `HookSystem` (pool de 8), não uma entidade física. Barato (um raycast a cada 4 s) e determinístico.
+2. **Tiro de varredura, não projétil:** um raio de 45 m (58,5 no MK III: a faixa curta não muda com o nível, `calibragem.test.ts`), como o laser; o cabo é estado do `HookSystem` (pool de 8), não uma entidade física. Barato (um raycast a cada 4 s) e determinístico.
 3. **Só o servidor e o jogo offline puxam:** o cliente online só desenha o raio (G14); o puxão chega pelo estado do robô. Por isso o cabo preso de outro jogador **não** é desenhado no online (declarado como falta).
 4. **O contrajogo faz parte da arma:** dash corta, parede solta, o Colossus arrebenta o cabo (`breakRadius`), o alvo que foge estoura (125% do alcance). Sem isso o arpão seria "perdeu o controle do robô"; com isso é uma troca (um aperto a cada 4 s por juntar o inimigo).
 5. **Dano baixo de propósito (10, 2,5 por s):** o arpão junta, não mata; o valor está nas outras armas de ombro (sônica, fogo, granada, foguete).

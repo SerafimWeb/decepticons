@@ -653,7 +653,7 @@ const BASE: Record<WeaponId, WeaponBase> = {
     lob: { gravity: 22, bounce: 0.25, friction: 0.15, wallBounce: 0.55, fuse: 0.35 },
   },
   /**
-   * Arpão magnético (dono, 11/10; revivido em 16/10, P77/P160): o terceiro tipo de arma de ombro que não é só mais dano. **Prende e puxa**: um tiro de varredura de até 55 m (60% a mais no MK III)
+   * Arpão magnético (dono, 11/10; revivido em 16/10, P77/P160): o terceiro tipo de arma de ombro que não é só mais dano. **Prende e puxa**: um tiro de varredura de até 45 m (30% a mais no MK III, 58,5 m: a faixa curta, como pede `calibragem.test.ts`)
    * que morde (10 de dano) e arrasta o inimigo a 9 m/s por até 1,6 s, até ele chegar a 3 m. O dash corta o cabo, uma parede também, e o Colossus o arrebenta; os dois ombros prendem o mesmo alvo
    * com um cabo só. Um aperto a cada 4 s: é o que **junta** o inimigo para a onda sônica, o anel de fogo, as granadas e os foguetes, não o que mata.
    */
@@ -661,9 +661,9 @@ const BASE: Record<WeaponId, WeaponBase> = {
     id: 'harpoon', name: 'Arpão magnético', kind: 'energy',
     damage: 10, fireInterval: 4, heatPerShot: 0.15,
     magazine: 0, reload: 0, speed: 0,
-    optimalRange: 40, maxRange: 55, minFactor: 1,
+    optimalRange: 35, maxRange: 45, minFactor: 1,
     blastRadius: 0, mass: 3,
-    hook: { pullSpeed: 9, hold: 1.6, arrive: 3, breakRadius: 2.4 }, tierRange: 0.2,
+    hook: { pullSpeed: 9, hold: 1.6, arrive: 3, breakRadius: 2.4 }, tierRange: 0.15,
   },
 };
 

@@ -19,7 +19,7 @@ const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
 
 /**
  * Dono, 11/10: *"vamos VARIAR as armas e tecnologias"* nos ombros. O arpão magnético (P77, revivido na P160) é o terceiro tipo de arma de ombro que não é só mais dano: **prende e puxa**.
- * Um tiro de varredura (sem projétil) de até 55 m que morde (10 de dano) e arrasta o inimigo a 9 m/s por até 1,6 s; as regras do cabo estão em `HookSystem.test.ts`.
+ * Um tiro de varredura (sem projétil) de até 45 m que morde (10 de dano) e arrasta o inimigo a 9 m/s por até 1,6 s; as regras do cabo estão em `HookSystem.test.ts`.
  */
 describe('arpão magnético: o que é', () => {
   it('é de energia, sem projétil, com cabo (`hook`), 10 de dano, um aperto a cada 4 s, 3 t por boca', () => {
@@ -32,8 +32,8 @@ describe('arpão magnético: o que é', () => {
     expect(DAMAGE_TYPE.harpoon).toBe('balistico');
   });
 
-  it('o nível dá mais alcance (+20% por nível: 55 / 66 / 77 m) e o cabo é o mesmo', () => {
-    expect(([0, 1, 2] as const).map((t) => weapon('harpoon', t).maxRange)).toEqual([55, 66, 77]);
+  it('o nível dá mais alcance (+15% por nível: 45 / 51,5 / 58,5 m, sempre na faixa curta) e o cabo é o mesmo', () => {
+    expect(([0, 1, 2] as const).map((t) => weapon('harpoon', t).maxRange)).toEqual([45, 51.5, 58.5]);
     expect(weapon('harpoon', 2).hook).toEqual(W.hook);
   });
 
@@ -171,13 +171,13 @@ describe('Match.hookShot: prende o primeiro inimigo à vista, com física de ver
     expect(raios[0]!.hostile).toBe(false);
   });
 
-  it('além do alcance (55 m) o raio não chega: nada prende, ninguém leva dano, e o raio acende até o fim do alcance', async () => {
+  it('além do alcance (45 m) o raio não chega: nada prende, ninguém leva dano, e o raio acende até o fim do alcance', async () => {
     const { match, alvo, vida, atira, raios, origem } = await palco(70);
     const antes = vida(alvo);
     atira();
     expect(match.hooks.count).toBe(0);
     expect(vida(alvo)).toBe(antes);
-    expect(raios[0]!.to.distanceTo(origem)).toBeCloseTo(55, 3);
+    expect(raios[0]!.to.distanceTo(origem)).toBeCloseTo(45, 3);
   });
 
   it('uma parede no meio segura o raio: o alvo atrás não é preso nem ferido, e o raio acaba na parede', async () => {

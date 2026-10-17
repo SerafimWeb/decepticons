@@ -71,7 +71,7 @@ const WEAPON_HINT: Record<WeaponId, string> = {
   rockets: 'Munição · explosão em área · recarga automática',
   seeker: 'Munição · guiado de médio alcance (Ataque 2; nos ombros, um míssil em cada) · TRAVA no inimigo mais centrado à frente (29°, até 110 m, à vista) e CURVA até ele; quem corre reto é perseguido, quem se abriga ou usa o dash ainda desvia · cada nível afina a curva e alarga a trava (MK III: 154 m) · explosão em área · recarga automática',
   swarm: 'Munição · leve · UM APERTO ESVAZIA o lançador: 8 mísseis (MK I), 16 (MK II) ou 32 (MK III), um a cada 0,07 s, com um desvio pequeno · 5 de dano e 2,2 m de explosão por míssil · só dispara com todos os tubos carregados · satura e força o inimigo a sair do lugar',
-  harpoon: 'Energia · ombro · ARPÃO: prende o primeiro inimigo à vista (55 m) e o PUXA até você · o dash corta o cabo, parede também · 10 de dano · um aperto a cada 4 s',
+  harpoon: 'Energia · ombro · ARPÃO: prende o primeiro inimigo à vista (45 m) e o PUXA até você · o dash corta o cabo, parede também · 10 de dano · um aperto a cada 4 s',
   grenade: 'Munição · médio · lança-granadas: a granada sai em ARCO e cai no ponto da mira (até 80 m); passa por cima da cobertura · explode no robô, tabela na parede, crava no chão · 34 de dano, 5 m de explosão · 4 por carga',
   cruise: 'Munição · pesado · míssil cruzador: sobe em arco e MERGULHA no ponto da mira, até 420 m, por cima do cenário baixo · 90 de dano e 9 m de explosão · não guia: quem corre escapa · um por carga, 6 s de recarga · dois acertos nunca bastam',
   laser: 'Energia · feixe instantâneo em pulsos (6 de dano a cada 0,13 s), sem projétil para desviar · dano cheio até 180 m e 70% aos 360 m · segure a mira no alvo · o calor decide a duração do feixe (~6 s)',

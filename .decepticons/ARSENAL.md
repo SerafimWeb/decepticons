@@ -118,7 +118,7 @@ Teste de mutação nas regras novas (estrague a regra e veja o teste cair) é o 
 |---|---|---|---|---|---|---|---|---|
 | Motosserra (`chainsaw`) | LEVE | corpo a corpo | 1,2 | 4 | 0,2 | — | — | 1,5 |
 | Canhão sônico (`sonic`) | MÉDIA | curto | 10 / 22 | 20 | 1,2 | — | 17,3 | 3 |
-| Arpão magnético (`harpoon`) | MÉDIA | curto | 40 / 55 | 10 | 4 | — | 2,5 | 3 |
+| Arpão magnético (`harpoon`) | MÉDIA | curto | 35 / 45 | 10 | 4 | — | 2,5 | 3 |
 | Lança-chamas (`flamer`) | PESADA | curto | 17 / 36 | 10 | 0,2 | — | 35,0 | 3,5 |
 | Escopeta (`shotgun`) | LEVE | curto | 8 / 50 | 9 × 6 (balins) | 0,8 | — | 68,4 | 2 |
 | Arma de gelo (`cryo`) | MÉDIA | curto | 20 / 55 | 5 | 0,6 | — | 8,5 | 3 |
@@ -241,7 +241,7 @@ Toda arma declara a natureza do dano em `DAMAGE_TYPE` (`client/src/combat/weapon
 
 ### Arpão magnético: o primeiro tiro que prende (P77 parte 3, 17/10)
 
-`harpoon` (média, 3 t, **só nos ombros** do Marauder): o terceiro tipo de arma de ombro que não é só mais dano. Um **tiro de varredura** (sem projétil, um raio até 55 m; 66 / 77 m nos níveis) que **morde** (10 de dano, pelas defesas do caminho do projétil) e **prende o primeiro inimigo à vista**: `combat/HookSystem.ts` o **puxa** para o atirador a 9 m/s (`MechBase.push`, o mesmo empurrão do canhão sônico, para dentro) por até 1,6 s, até ele chegar a 3 m. Um aperto a cada 4 s (os dois ombros no mesmo tick; no mesmo alvo dividem **um** cabo e o puxão não dobra).
+`harpoon` (média, 3 t, **só nos ombros** do Marauder): o terceiro tipo de arma de ombro que não é só mais dano. Um **tiro de varredura** (sem projétil, um raio até 45 m; 51,5 / 58,5 m nos níveis) que **morde** (10 de dano, pelas defesas do caminho do projétil) e **prende o primeiro inimigo à vista**: `combat/HookSystem.ts` o **puxa** para o atirador a 9 m/s (`MechBase.push`, o mesmo empurrão do canhão sônico, para dentro) por até 1,6 s, até ele chegar a 3 m. Um aperto a cada 4 s (os dois ombros no mesmo tick; no mesmo alvo dividem **um** cabo e o puxão não dobra).
 
 **Contrajogo (o que o torna justo):** o **dash do alvo corta o cabo**; uma **parede** que entre no meio o solta (conferida a cada 6 ticks, um raycast); o alvo que passa de 125% do alcance o estoura; e o robô de **raio maior que 2,4 m arrebenta o cabo na hora** (o Colossus não é puxado, só mordido). Aliado e o próprio dono nunca são presos. O pool tem 8 cabos (G5).
 
