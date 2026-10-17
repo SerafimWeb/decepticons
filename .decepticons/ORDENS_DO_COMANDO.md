@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P176 — "Não achei": o idioma, a conta e o arpão precisam ser achados (17/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P176 | 17/10 | "**nao achei o arpao no hangar, nem a mudança das linguas, nem login**" (depois de #353, #354 e #355 no ar) | 🟡 | **Conferido no navegador de verdade, no site de produção (build `bbbc1d8`, sessão limpa): os três estavam no ar, mas escondidos.** O idioma e a conta ficavam **dois níveis abaixo** (Explorar hangar e modos → Ajustar → aba JOGO → rolar), e o arpão **só aparece no Marauder, dentro da lista de ombros**. **Feito:** (1) **o idioma e a conta vão para o canto da primeira tela** (e da pausa): um seletor de língua e o botão **[ CONTA ]** (abre as Configurações já rolada até a conta); (2) o seletor do canto e o das Configurações andam juntos. **Sem mudança de regra no arpão:** o caminho está abaixo. **Se ainda não aparecer:** é página velha em cache (Ctrl+F5) ou o jogo rodando de uma pasta local sem a `main`; o rodapé da primeira tela mostra a versão (`…-gbbbc1d8` ou mais nova). | **Idioma e conta:** abra o jogo: o seletor e **[ CONTA ]** estão no canto de cima, à direita. **Arpão:** **[ EXPLORAR HANGAR E MODOS ▸ ]** → HANGAR → chassi **MARAUDER** (o último da lista da esquerda) → o bloco **03 OMBROS · ATAQUE 2** → a lista "Ombros · Ataque 2" → **Arpão magnético**. Capturas: `arte/atalhos-*-claude.png` e `arte/producao-hangar-ombros-claude.png`. |
+
 ## P175 — As pendências abertas recentes (17/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

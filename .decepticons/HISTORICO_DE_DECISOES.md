@@ -11,6 +11,16 @@
 
 **Por que registrar:** quem for equilibrar o chefe (vida, 30% do rastejo, peso 4 nos cabos são linhas de tabela) ou levar a missão para a rede precisa saber que a fase é derivada do dano e que o rastejo é só do chefe.
 
+## [2026-10-17] Entrega só conta quando o dono a acha: o idioma e a conta vão para o canto da primeira tela (Claude, P176)
+
+**Ordem:** *"nao achei o arpao no hangar, nem a mudança das linguas, nem login"*.
+
+**Decisões:**
+1. **Antes de mexer, conferir o que um visitante vê** (navegador de verdade no site de produção, não o repositório): estava tudo no ar. O defeito era de **descoberta**, não de entrega. Registrado porque a regra 16 do `AGENTS.md` ("toda entrega visível fecha com o caminho para vê-la") foi cumprida no papel (o caminho estava no PR) e falhou na prática: o caminho tinha quatro passos, e o primeiro acesso é de propósito uma tela de uma ação só.
+2. **Idioma e conta vão para o canto da primeira tela e da pausa, discretos** (um seletor e um botão pequenos): não quebram o princípio de "uma ação primária por tela" (`AUDITORIA_INTERFACE.md`), porque não competem com *CLIQUE PARA JOGAR*. O princípio "nada de porta" (`RANKING_E_LOGIN.md` § 1) segue: o botão **[ CONTA ]** só abre um bloco opcional.
+3. **Dois seletores de idioma, uma escolha:** o conjunto de seletores é do módulo de idioma, então qualquer lugar novo que queira o seletor só chama `ligarSeletorIdioma`.
+4. **O arpão não ganhou atalho:** só o Marauder tem ombros (regra de chassi, P77); mudar isso é decisão de design do Comandante, não conserto de visibilidade. Fica como falta declarada.
+
 ## [2026-10-17] Os bots atiram o laser e a cadência de conteúdo vira número no painel (Claude, P175)
 
 **Ordem:** as pendências abertas recentes (a P160 deixou "os bots usarem as armas novas"; a P171 pediu "contar conteúdo como se conta código").

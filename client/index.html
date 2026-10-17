@@ -81,6 +81,10 @@
     <!-- Console de comando (P86): a tela de início e de pausa. Cada monitor mostra um assunto e abre a tela dele; a mesa embaixo
          escolhe a operação e põe em combate. Os monitores barram o clique (CommandConsole.ts); o resto da sala continua sendo "jogar". -->
     <div id="overlay" class="console cc-espera cc-carregando">
+      <nav class="cc-atalhos" aria-label="Idioma e conta">
+        <select id="idioma-rapido" data-i18n="nao" aria-label="Idioma · Language"></select>
+        <button type="button" id="btn-conta-rapido" data-settings-open="jogo" data-settings-foco="settings-conta" title="Criar conta ou entrar para guardar o progresso">[ CONTA ]</button>
+      </nav>
       <div class="cc-carga" id="cc-carga" role="progressbar" aria-label="Carregando" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i><span id="cc-dica"></span></div>
       <header class="cc-top menu-brand">
         <div class="cc-brand">
