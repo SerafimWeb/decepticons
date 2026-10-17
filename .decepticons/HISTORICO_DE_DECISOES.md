@@ -1,4 +1,4 @@
-## [2026-10-16] O site ganha um sistema de design e fotos cinematográficas dos Mechs reais (Claude, P170)
+## [2026-10-16] O site ganha um sistema de design e fotos cinematográficas dos Mechs reais (Claude, P172)
 
 **Ordem:** deixar a landing e as páginas "bem parecidas com as referências", com acabamento de portal de jogo, mais único.
 
@@ -9,6 +9,11 @@
 4. **Mono fora, texto mínimo de 12 px:** a primeira versão usava mono pequeno por todo lado; a orientação (e o olho) pediram o contrário.
 5. **Nada de recurso que o jogo não tem:** "Pilotos com personalidade" e "Rodadas de 5 minutos" das referências não entraram como estavam; os cartões saem da VITRINE do GAME_DESIGN.
 6. **Nunca dois CTAs de jogar juntos:** o do cabeçalho aparece depois do herói.
+## [2026-10-16] Checkpoint das explosões e as lições do War Robots (Claude, P170 e P171)
+
+**Decisões:**
+1. **Checkpoint = tag + captura + bancada + regra** (`CHECKPOINTS.md`): o ponto que o Comandante aprova fica recuperável (`git checkout checkpoint/<nome> -- arquivo`) e tem um jeito barato de comparar (a bancada refaz as capturas em software). A regra é "não regredir", não "não mexer": melhorar vale.
+2. **A reportagem vira metas, não promessa** (`LICOES_WAR_ROBOTS.md`): é comunicado da dona, em valor bruto e acumulado. O que se aproveita é o **mecanismo** (cadência de conteúdo, eventos, celular, retenção); o **pay-to-win** do War Robots continua fora (`GAME_DESIGN.md`).
 
 ## [2026-10-16] Cada arma tem a sua dica de primeiro uso (Claude, P160 parte 5)
 

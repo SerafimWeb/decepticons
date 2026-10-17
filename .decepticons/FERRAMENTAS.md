@@ -210,7 +210,7 @@ feixe do laser, pelo `window.__game.weaponFx`). Em 16/10: 0 de 192 poses com NaN
 
 ---
 
-## 5a. Fotos promocionais dos Mechs reais para o site (`medicoes/cena-cinematica.mjs`, P170, 16/10)
+## 5a. Fotos promocionais dos Mechs reais para o site (`medicoes/cena-cinematica.mjs`, P172, 16/10)
 
 **Quando:** o site precisa de imagem de Mech, de arma ou de cena (herói da landing, Hangar, régua dos chassis, cartas). **Regra:** a imagem é do **modelo real** do jogo (`client/public/models/*.glb`, o procedural do Vector-09, `weaponModels.ts`); nada de arte inventada como se fosse o jogo.
 

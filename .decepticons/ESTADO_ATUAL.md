@@ -1,6 +1,6 @@
 # ESTADO ATUAL — CYBERMECH
 
-## O SITE VIROU PORTAL DE JOGO: sistema de design, fotos cinematográficas dos Mechs reais e as três páginas no mesmo visual — Claude, 16/10 (branch `claude/landing-referencia`, P170)
+## O SITE VIROU PORTAL DE JOGO: sistema de design, fotos cinematográficas dos Mechs reais e as três páginas no mesmo visual — Claude, 16/10 (branch `claude/landing-referencia`, P172)
 
 **A ordem do Comandante (16/10):** *"quero bem parecido com as imagens de referência"*, depois *"falta acabamento UX e UI, mais estiloso, mais único, sair dos padrões"* + a orientação de um profissional (resumida no `DESIGN_SYSTEM_SITE.md`).
 
@@ -16,6 +16,15 @@
 **Falta (R13):** (a) **o olho do Comandante**; (b) o herói é **foto**, não 3D ao vivo (decisão de custo; a foto é regenerável); (c) os modelos das armas do jogo são simples, por isso as fotos de arma são sóbrias (a arte conceitual das referências não foi usada: não é o jogo); (d) as ilustrações do esquadrão são recortes da referência do Comandante; (e) páginas próprias de **Hangar/Arsenal** com comparador e **Pilotos** (não existe no jogo) ficam para o próximo PR.
 
 **Próxima sessão começa com:** o veredito do Comandante sobre o visual; depois, o que ele apontar (a lista de (e)).
+## O CHECKPOINT DAS EXPLOSÕES E AS LIÇÕES DO WAR ROBOTS — Claude, 16/10 (branch `claude/checkpoint-explosoes`, P170 e P171)
+
+**O Comandante (16/10, depois de jogar):** *"as explosões das armas estão ficando INCRÍVEIS! mantenha essa qualidade e marque esse ponto como um checkpoint"*; e colou a reportagem dos US$ 1 bilhão do War Robots.
+
+**Feito:** (1) **checkpoint** `checkpoint/explosoes-v1` (tag no `54c6972`), `CHECKPOINTS.md` (o que faz o olhar, a prova guardada, os 4 passos de conferência e a regra de não regredir) e a bancada versionada `medicoes/explosoes.mjs`; (2) `LICOES_WAR_ROBOTS.md`: a reportagem em números e o que muda no que fazemos (cadência de ~2 unidades de conteúdo por semana e um evento a cada ~6 semanas, celular primeiro, Brasil como volume, retenção como número, copiar o mecanismo e não o pay-to-win, estilos de explosão como primeiro cosmético).
+
+**Falta:** a decisão do Comandante sobre o ritmo oficial, o inglês e o primeiro cosmético (`LICOES_WAR_ROBOTS.md` § 4); contar conteúdo e D7/DAU-MAU no painel; o arpão magnético (P77) está num porte parcial local (`claude/arpao-no-ar`, não empurrado).
+
+**Próxima sessão começa com:** o que o Comandante decidir; senão, o desenho do evento mínimo.
 
 ## CADA ARMA COM A SUA DICA DE PRIMEIRO USO — Claude, 16/10 (branch `claude/dicas-por-arma`, P160 parte 5)
 

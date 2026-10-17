@@ -68,7 +68,7 @@
 - [x] Tela de configurações (Gemini, sobre o contrato `core/Settings.ts`) #ux
 
 ## 🟡 FASE 3 — Vitrine e polimento
-- [x] **Site no nível de portal de jogo (Claude, P170, 16/10):** sistema de design permanente, fotos cinematográficas dos Mechs reais, landing/oficina/sala de controle no mesmo visual; falta o olho do Comandante, Hangar/Arsenal próprios e Pilotos #ux
+- [x] **Site no nível de portal de jogo (Claude, P172, 16/10):** sistema de design permanente, fotos cinematográficas dos Mechs reais, landing/oficina/sala de controle no mesmo visual; falta o olho do Comandante, Hangar/Arsenal próprios e Pilotos #ux
 - [x] **Landing editorial e primeiro acesso (Codex, P169, 16/10):** identidade preto/amarelo, imagens dos Mechs reais, atributos do catálogo, navegação de câmeras, textos profissionais e guia inicial; check completo e prova visual desktop/celular #ux
 - [x] Efeitos sonoros: tiro, impacto, passos pesados, explosão (sintetizados, sem arquivos pesados) #som
 - [x] Volume e mixagem nas configurações #som

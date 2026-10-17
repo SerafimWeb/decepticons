@@ -2,7 +2,7 @@
 
 > **Fonte única da identidade visual do site público** (landing `/`, `/oficina/`, `/sala-de-controle/` e as páginas que vierem).
 > Quem vai criar ou mexer numa página lê isto **antes**; o código dos tokens e dos componentes é `scripts/site/hud.mjs`
-> (e `landing-style.mjs`, `sala.mjs`). Nasceu em 16/10/2026 (P170, Claude) da direção de arte do Comandante: as cinco
+> (e `landing-style.mjs`, `sala.mjs`). Nasceu em 16/10/2026 (P172, Claude) da direção de arte do Comandante: as cinco
 > referências em `.tmp/landing/` (só nesta máquina) e a orientação de um profissional, resumida aqui.
 > O jogo em si (HUD de combate, Hangar) tem a linguagem própria dele e **não** segue este arquivo.
 
@@ -122,6 +122,6 @@ Eventos de métrica: só os quatro que o servidor aceita (`landing_view`, `click
 
 ## 12. Páginas já no sistema e o que falta
 
-- **Feito (P170):** landing, oficina (`pageHero` + `HUD_PAGE_CSS`), sala de controle (esquadrão com cartas por IA, atividade com mapa de calor e registro filtrável, "como um pedido vira jogo").
+- **Feito (P172):** landing, oficina (`pageHero` + `HUD_PAGE_CSS`), sala de controle (esquadrão com cartas por IA, atividade com mapa de calor e registro filtrável, "como um pedido vira jogo").
 - **Mapa das referências do Comandante:** *Hangar + Arsenal* → seções 03 e 05 da landing; *Dados que importam* → oficina; *Esquadrão* e *Atividade* → sala de controle.
 - **Falta:** página própria de Hangar/Arsenal com comparador; "Pilotos" (não existe como recurso: só entra quando o jogo tiver); render em movimento do herói (hoje é foto); fotos de armas com mais detalhe (os modelos das armas ainda são simples).
