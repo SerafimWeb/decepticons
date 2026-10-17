@@ -14,6 +14,7 @@ import {
   MAR,
   passoDaGrade,
   projetar,
+  RECURSO_NOME,
   TEATROS,
   TERRA,
   type Vista,
@@ -87,6 +88,22 @@ describe('as missões do teatro de operações', () => {
     // A ESTAÇÃO DE CABOS abre o mapa da praia (P126): a missão saiu do "EM BREVE".
     expect(estadoDoTeatro(t('cabos'), 'arena', 'deathmatch')).toBe('disponivel');
     expect(estadoDoTeatro(t('cabos'), 'praia', 'deathmatch')).toBe('aqui');
+    // O RIO VIVO abre o mapa da Amazônia (P180), só no Deathmatch por enquanto.
+    expect(estadoDoTeatro(t('rio'), 'arena', 'deathmatch')).toBe('disponivel');
+    expect(estadoDoTeatro(t('rio'), 'arena', 'survival')).toBe('outro-modo');
+    expect(estadoDoTeatro(t('rio'), 'amazonia', 'deathmatch')).toBe('aqui');
+    expect(estadoDoTeatro(t('arena'), 'amazonia', 'deathmatch')).toBe('disponivel');
+  });
+
+  it('o RIO VIVO (P180) é a missão da água: no Pará, longe de todas as outras, com o mapa e o modo certos', () => {
+    const rio = TEATROS.find((x) => x.id === 'rio')!;
+    expect(rio.mapa).toBe('amazonia');
+    expect(rio.modos).toEqual(['deathmatch']);
+    expect(rio.recurso).toBe('agua');
+    expect(RECURSO_NOME.agua).toBe('ÁGUA');
+    expect(rio.proposta, 'o lugar ainda é proposta até o Comandante confirmar').toBe(true);
+    expect(rio.lat).toBeLessThan(0);
+    expect(rio.lon).toBeLessThan(-50);
   });
 });
 

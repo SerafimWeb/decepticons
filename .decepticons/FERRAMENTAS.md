@@ -206,6 +206,11 @@ Fotografa a **Arena real** (`Arena.ts` com o transformador do banco, o mesmo pip
 
 **A bancada:** `node .decepticons/medicoes/walker.mjs --vistas lado,tres-quartos` fotografa o Draga (o mesmo `.glb` e a mesma marcha do jogo) ao lado do Vector-09 (a régua de escala); `--fases 0,0.2,0.4,0.6` uma foto por fase da marcha; `--colapso fl,rr` pernas caídas; `--arte --sufixo a1` grava em `arte/`. **Para ver no jogo de verdade:** `?walker` no link (o Draga anda em círculo à sua frente). **O rig se testa em Node** (`WalkerVisual.test.ts` carrega o `.glb` real: o `GLTFLoader` roda sem navegador quando o arquivo não tem textura).
 
+### 4.4 A bancada da Amazônia e o jogo real (`medicoes/amazonia.mjs`, `medicoes/amazonia-jogo.mjs`, P180 parte B, 17/10)
+
+**A bancada** (mesmo molde de `praia.mjs`: Vite dev + Chrome headless, SwiftShader, só contagem): `node .decepticons/medicoes/amazonia.mjs --vistas geral,aldeia,rio,draga,jusante,mina,planta,lagoa` fotografa o mapa real (o mesmo `Amazonia.ts`) e mede desenhos e triângulos; `--frente 1000` põe a frente do rio onde se pedir (o rio curado até lá); `--sem-draga`; `--arte --sufixo b1` grava em `arte/`. **A câmera da bancada tem o mesmo alcance da do jogo** (1.500 m; só a vista `geral`, sem névoa, passa disso).
+**O jogo real:** `node .decepticons/medicoes/amazonia-jogo.mjs 6,12,24 b1` abre `?mapa=amazonia&modo=deathmatch` no jogo de verdade (câmera, HUD e névoa dele), fotografa nos segundos pedidos e lista o que o navegador baixou sob demanda (o mapa e o Draga). **Por que existe:** em 17/10 o céu saía preto no jogo e a bancada, com câmera própria, não mostrava; **bug de câmera ou de HUD só se prova no jogo real**. O pitch da câmera muda entre execuções (não há mouse com trava): tire vários quadros e escolha o que mostra o horizonte.
+
 ## 5. Considerações conhecidas (não são bug novo se você achar de novo)
 
 - **Mech parado afunda lentamente no chão, sem limite** (achado 29/09, não corrigido). Reproduz

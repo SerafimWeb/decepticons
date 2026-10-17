@@ -28,6 +28,7 @@ import { ehManifestante } from '../entities/chassis';
 import { caboDoPonto, CABOS, CabosDeDados, CODIGO_DO_ESTADO, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
 import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
+import { AMAZONIA_SPAWNS } from '../environment/AmazoniaLayout';
 import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA } from '../environment/ArenaLayout';
 import { QUADRO, QuadroDeLuz } from './QuadroDeLuz';
 import { dentroDoComplexo, NUCLEO, NucleoDaEstacao, pesoDoInvasor } from './NucleoDaEstacao';
@@ -326,9 +327,11 @@ export class Match {
     const bunker = o.map === 'bunker' && !survival && !ctf && !dominio;
     // A praia abre o Deathmatch e as **ondas** (a defesa da estação, P126): os CTF/Domínio continuam na Arena.
     const praia = o.map === 'praia' && !ctf && !dominio;
-    this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : SPAWN_POINTS;
-    this.zones = bunker ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
-    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : 'arena', { transformador: survival && !praia });
+    // A Amazônia (P180) abre só o Deathmatch por enquanto (a missão dela vem nas próximas partes).
+    const amazonia = o.map === 'amazonia' && !ctf && !dominio && !survival;
+    this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : amazonia ? AMAZONIA_SPAWNS : SPAWN_POINTS;
+    this.zones = bunker || amazonia ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
+    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : 'arena', { transformador: survival && !praia });
     // A água da praia (P126): o mar freia e afoga quem entra nele. Nos outros mapas não há água.
     this.agua = praia ? PRAIA_AGUA : null;
     // A missão em ondas da praia defende a estação: os rebeldes que entram nos muros drenam o núcleo; a estação cair é perder a missão.
@@ -341,7 +344,7 @@ export class Match {
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
     // estourar o teto de 8 personagens da sala (G11). Sobrevivência e CTF não usam esquadrão (pool e times próprios).
     const arenaMode = !survival && !ctf;
-    const mapa: MapId = bunker ? 'bunker' : praia ? 'praia' : 'arena';
+    const mapa: MapId = bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : 'arena';
     const semAliados = o.allies === false;
     const pedido = o.squad ?? esquadraoDeFoes(o.foes, semAliados ? 0 : ALLY_COUNT);
     const plano = arenaMode ? planejarEsquadrao(sanearEsquadrao(semAliados ? { ...pedido, aliados: [] } : pedido, mapa), mapa, o.foes.names) : null;

@@ -24,6 +24,11 @@ describe('camerasDoMapa (P148)', () => {
     expect(camerasDoMapa('bunker')).toEqual([]);
   });
 
+  it('a Amazônia (P180) ainda não tem postes de CFTV: só os drones e os Mechs (as torres da margem ganham câmera com a defesa, parte D)', () => {
+    expect(camerasDoMapa('amazonia')).toEqual([]);
+    expect(camerasDoMapa('amazonia')).not.toBe(DEFAULT_FIXED_CAMERAS); // as câmeras da cidade não vão para a floresta
+  });
+
   describe('praia', () => {
     const cams = camerasDoMapa('praia');
 

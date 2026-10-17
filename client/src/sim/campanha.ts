@@ -27,10 +27,11 @@ export const MODOS_DO_MAPA: Readonly<Record<MapId, readonly GameMode[]>> = {
   arena: ['deathmatch', 'survival', 'ctf'],
   bunker: ['deathmatch'],
   praia: ['deathmatch', 'survival'],
+  amazonia: ['deathmatch'],
 };
-export const MAPAS: readonly MapId[] = ['arena', 'bunker', 'praia'];
+export const MAPAS: readonly MapId[] = ['arena', 'bunker', 'praia', 'amazonia'];
 export const MODOS: readonly GameMode[] = ['deathmatch', 'survival', 'ctf'];
-export const MAPA_NOME: Readonly<Record<MapId, string>> = { arena: 'CIDADE NEON', bunker: 'BUNKER', praia: 'PRAIA DOS CABOS' };
+export const MAPA_NOME: Readonly<Record<MapId, string>> = { arena: 'CIDADE NEON', bunker: 'BUNKER', praia: 'PRAIA DOS CABOS', amazonia: 'AMAZÔNIA · RIO VIVO' };
 export const MODO_NOME: Readonly<Record<GameMode, string>> = { deathmatch: 'DEATHMATCH', survival: 'SOBREVIVÊNCIA', ctf: 'CAPTURAR A BANDEIRA', dominio: 'DOMÍNIO' };
 
 export const LIMITES_DA_CAMPANHA = {
@@ -147,7 +148,7 @@ export function campanhasDeFabrica(): CampanhaSpec[] {
 
 // ─── O link: ?campanha=c1~…&etapa=2 ───────────────────────────────────────────
 
-const LETRA_DO_MAPA: Readonly<Record<MapId, string>> = { arena: 'a', bunker: 'b', praia: 'p' };
+const LETRA_DO_MAPA: Readonly<Record<MapId, string>> = { arena: 'a', bunker: 'b', praia: 'p', amazonia: 'z' };
 const LETRA_DO_MODO: Readonly<Record<GameMode, string>> = { deathmatch: 'd', survival: 's', ctf: 'c', dominio: 'm' };
 
 function chaveDaEtapa(e: EtapaDaCampanha): string {
@@ -156,7 +157,7 @@ function chaveDaEtapa(e: EtapaDaCampanha): string {
 }
 
 function lerEtapa(texto: string): EtapaDaCampanha | null {
-  const m = /^([ab])([dsc])(\d{1,2})?!(q[0-9]+\.[^~!]+)$/.exec(texto);
+  const m = /^([abpz])([dsc])(\d{1,2})?!(q[0-9]+\.[^~!]+)$/.exec(texto);
   if (!m) return null;
   const mapa = (Object.keys(LETRA_DO_MAPA) as MapId[]).find((k) => LETRA_DO_MAPA[k] === m[1]);
   const modo = (Object.keys(LETRA_DO_MODO) as GameMode[]).find((k) => LETRA_DO_MODO[k] === m[2]);
@@ -172,7 +173,7 @@ function lerEtapa(texto: string): EtapaDaCampanha | null {
 
 /**
  * A campanha em texto curto, para link e para guardar: `c1~<nome>~<etapa>~<etapa>…`. O nome vai em base64 de URL (`-` se não tem). Cada etapa é
- * `<mapa><modo><abates>!<esquadrão>`: mapa `a` Cidade Neon ou `b` Bunker, modo `d` Deathmatch (com a meta de abates), `s` Sobrevivência ou `c` Bandeira, e a chave
+ * `<mapa><modo><abates>!<esquadrão>`: mapa `a` Cidade Neon, `b` Bunker, `p` Praia dos Cabos ou `z` Amazônia, modo `d` Deathmatch (com a meta de abates), `s` Sobrevivência ou `c` Bandeira, e a chave
  * do esquadrão (`q1.…`): `c1~-~as!q1.…~bd6!q1.…` é uma campanha sem nome com uma Sobrevivência na Cidade Neon e um Deathmatch de 6 abates no Bunker.
  */
 export function chaveDaCampanha(spec: CampanhaSpec): string {
@@ -218,7 +219,7 @@ export function linkDaEtapa(campanha: CampanhaSpec, n: number): string {
   if (!etapa) return '';
   const q = new URLSearchParams();
   q.set('modo', etapa.modo);
-  if (etapa.mapa === 'bunker') q.set('mapa', 'bunker');
+  if (etapa.mapa !== 'arena') q.set('mapa', etapa.mapa); // a Cidade Neon é o padrão do link; os outros mapas dizem o nome
   q.set('esquadrao', chaveDoEsquadrao(etapa.esquadrao));
   q.set(PARAM_DA_CAMPANHA, chaveDaCampanha(limpa));
   q.set(PARAM_DA_ETAPA, String(n));
