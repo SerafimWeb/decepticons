@@ -1,5 +1,15 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O CHECKPOINT DAS EXPLOSÕES E AS LIÇÕES DO WAR ROBOTS — Claude, 16/10 (branch `claude/checkpoint-explosoes`, P170 e P171)
+
+**O Comandante (16/10, depois de jogar):** *"as explosões das armas estão ficando INCRÍVEIS! mantenha essa qualidade e marque esse ponto como um checkpoint"*; e colou a reportagem dos US$ 1 bilhão do War Robots.
+
+**Feito:** (1) **checkpoint** `checkpoint/explosoes-v1` (tag no `54c6972`), `CHECKPOINTS.md` (o que faz o olhar, a prova guardada, os 4 passos de conferência e a regra de não regredir) e a bancada versionada `medicoes/explosoes.mjs`; (2) `LICOES_WAR_ROBOTS.md`: a reportagem em números e o que muda no que fazemos (cadência de ~2 unidades de conteúdo por semana e um evento a cada ~6 semanas, celular primeiro, Brasil como volume, retenção como número, copiar o mecanismo e não o pay-to-win, estilos de explosão como primeiro cosmético).
+
+**Falta:** a decisão do Comandante sobre o ritmo oficial, o inglês e o primeiro cosmético (`LICOES_WAR_ROBOTS.md` § 4); contar conteúdo e D7/DAU-MAU no painel; o arpão magnético (P77) está num porte parcial local (`claude/arpao-no-ar`, não empurrado).
+
+**Próxima sessão começa com:** o que o Comandante decidir; senão, o desenho do evento mínimo.
+
 ## CADA ARMA COM A SUA DICA DE PRIMEIRO USO — Claude, 16/10 (branch `claude/dicas-por-arma`, P160 parte 5)
 
 **Por quê:** uma dica só ("FOGUETES: DANO EM ÁREA") aparecia para toda arma de munição, inclusive a granada, o enxame e o cruzador. No texto, a arma nova era o foguete.
