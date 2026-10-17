@@ -1,0 +1,101 @@
+{
+ "rotulos": {
+  "titulo": "ARCHIVE",
+  "sub": "what the game teaches",
+  "oQueE": "WHAT IT IS",
+  "comoAparece": "HOW IT SHOWS UP",
+  "comoSeDefender": "HOW TO DEFEND YOURSELF",
+  "fontes": "SOURCES",
+  "satira": "DECLARED SATIRE · CLAIMS NO FACT",
+  "fechar": "[ CLOSE ]"
+ },
+ "fichas": [
+  {
+   "id": "fascismo",
+   "nome": "FASCISM",
+   "lema": "what it is and how it shows up",
+   "oQueE": "A mass politics that promises national rebirth against an imagined decline, exalts a leader and a \"pure\" people, and treats part of society as an internal enemy. It uses lies and violence as method, allied with elites who profit from the order it imposes.",
+   "comoAparece": [
+    "Cult of a mythic past: \"things were better back then\"",
+    "Contempt for truth and for science",
+    "An internal enemy always at hand",
+    "The dominant group claims to be persecuted",
+    "The law binds the enemy, not the ally",
+    "Attacks on the press, universities and schools"
+   ],
+   "comoSeDefender": "Name the mechanism, not the label (\"that is an invented enemy\"). Check the source and who pays. Distrust urgency and tailor-made anger. Protect those who investigate and teach.",
+   "fonte": "Eco, \"Ur-Fascism\" (1995) · Paxton, The Anatomy of Fascism (2004) · Stanley, How Fascism Works (2018) · Arendt, The Origins of Totalitarianism (1951)"
+  },
+  {
+   "id": "rede",
+   "nome": "THE NETWORK OF LIES",
+   "lema": "from the money to the headline",
+   "oQueE": "The machine that manufactures and spreads lies at scale. It is not one liar: it is a chain.",
+   "comoAparece": [
+    "The chain: who pays, the agency, the influencer, the account network, the headline",
+    "The same sentence in many accounts at the same time",
+    "Emotional urgency: \"share before they delete it\"",
+    "No source, or a source that cites itself",
+    "The same target of hatred in every version"
+   ],
+   "comoSeDefender": "Stop before you share. Look for the origin. Be wary of synchrony. Prefer those who correct their mistakes over those who never do.",
+   "fonte": "Paul and Matthews, \"The Russian Firehose of Falsehood Propaganda Model\", RAND (2016): the volume-and-repetition model, useful as a general mechanism"
+  },
+  {
+   "id": "lucro",
+   "nome": "WHO PROFITS",
+   "lema": "the interests behind it",
+   "oQueE": "The question that clears the smoke: who does this serve? Behind much political conflict lies an economic interest the speeches never mention: extraction, rent-seeking, the sale of security and arms, the attention economy.",
+   "comoAparece": [
+    "The speech talks about values: family, homeland, order, \"development\"",
+    "The decision delivers a profit to someone",
+    "The bill is almost never read aloud"
+   ],
+   "comoSeDefender": "Follow the money: who pays for the campaign, who gains from the law, who owns the channel. Compare the speech with what the decision delivers.",
+   "fonte": "General mechanism. The game cites no number without a public source (INPE/PRODES and MapBiomas, for deforestation)."
+  },
+  {
+   "id": "medo",
+   "nome": "KEEPING FEAR ALIVE",
+   "lema": "fear as government",
+   "oQueE": "Fear as a method of government: keep people frightened so that they accept what they would not accept calmly.",
+   "comoAparece": [
+    "An invented internal enemy",
+    "Moral panic: a hand-picked topic takes over the whole conversation",
+    "Security as spectacle: force is shown, results are not",
+    "While everyone watches the fear, the wallet and the land change owners"
+   ],
+   "comoSeDefender": "Ask what really changed (prices, rights, land) while everyone was looking the other way. Tailor-made fear is a sign.",
+   "fonte": "Stanley (2018) · Eco (1995) · Cohen, Folk Devils and Moral Panics (1972)"
+  },
+  {
+   "id": "midia",
+   "nome": "THE BOUGHT MEDIA",
+   "lema": "the agenda and the silence have an owner",
+   "oQueE": "What information becomes when ownership is concentrated and advertising pays the bills: the agenda and the silence have an owner.",
+   "comoAparece": [
+    "Opinion dressed up as news",
+    "What goes unsaid: the story that disappears",
+    "Repetition that looks like consensus",
+    "Selective criticism: one side is investigated, the other only commented on"
+   ],
+   "comoSeDefender": "Tell news, opinion and propaganda apart. Read sources with more than one owner. Look for the reporting, not just the headline.",
+   "fonte": "General mechanism of the political economy of communication (Herman and Chomsky, Manufacturing Consent, 1988). In the game the media is an archetype, the \"Full Truth Network\": satire, not a portrait."
+  },
+  {
+   "id": "incoerencias",
+   "nome": "THE INCONSISTENCIES",
+   "lema": "the mirror of the archetypes",
+   "satira": true,
+   "oQueE": "This is satire, and the game says so. It claims nothing about any real person: it is the mirror of the archetypes.",
+   "comoAparece": [
+    "The \"patriot\" who sells the country for a good contract",
+    "The \"anti-state\" figure who lives on tax breaks and subsidies",
+    "The \"defender of life\" who cuts hospital beds",
+    "The \"liberal\" who asks for censorship when the subject is themselves"
+   ],
+   "comoSeDefender": "Compare what is said with what is done: inconsistency is the first sign that the speech serves something else.",
+   "fonte": "Declared satire: no claim of fact."
+  }
+ ]
+}

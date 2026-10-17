@@ -1,0 +1,101 @@
+{
+ "rotulos": {
+  "titulo": "ARQUIVO",
+  "sub": "o que o jogo ensina",
+  "oQueE": "O QUE É",
+  "comoAparece": "COMO APARECE",
+  "comoSeDefender": "COMO SE DEFENDER",
+  "fontes": "FONTES",
+  "satira": "SÁTIRA DECLARADA · NÃO AFIRMA FATO",
+  "fechar": "[ FECHAR ]"
+ },
+ "fichas": [
+  {
+   "id": "fascismo",
+   "nome": "O FASCISMO",
+   "lema": "o que é e como se manifesta",
+   "oQueE": "Uma política de massas que promete renascimento contra um declínio imaginado, exalta um líder e um povo \"puro\" e trata parte da sociedade como inimigo interno. Usa a mentira e a violência como método, em aliança com elites que lucram com a ordem que ele impõe.",
+   "comoAparece": [
+    "Culto a um passado mítico: \"antigamente é que era bom\"",
+    "Desprezo pela verdade e pela ciência",
+    "Um inimigo interno sempre à mão",
+    "O grupo dominante se diz perseguido",
+    "A lei vale para o inimigo, não para o aliado",
+    "Ataque à imprensa, às universidades e às escolas"
+   ],
+   "comoSeDefender": "Nomeie o mecanismo, não o rótulo (\"isso é um inimigo inventado\"). Cheque a fonte e quem paga. Desconfie da urgência e da raiva sob medida. Proteja quem investiga e ensina.",
+   "fonte": "Eco, \"Ur-Fascism\" (1995) · Paxton, The Anatomy of Fascism (2004) · Stanley, How Fascism Works (2018) · Arendt, The Origins of Totalitarianism (1951)"
+  },
+  {
+   "id": "rede",
+   "nome": "A REDE DE MENTIRAS",
+   "lema": "do dinheiro à manchete",
+   "oQueE": "A máquina que fabrica e espalha a mentira em escala. Não é um mentiroso: é uma cadeia.",
+   "comoAparece": [
+    "A cadeia: quem paga, a agência, o influenciador, a rede de contas, a manchete",
+    "A mesma frase em muitas contas ao mesmo tempo",
+    "Urgência emocional: \"compartilhe antes que apaguem\"",
+    "Sem fonte, ou uma fonte que cita a si mesma",
+    "O mesmo alvo de ódio em todas as versões"
+   ],
+   "comoSeDefender": "Pare antes de repassar. Procure a origem. Estranhe a sincronia. Prefira quem corrige o erro a quem nunca se corrige.",
+   "fonte": "Paul e Matthews, \"The Russian Firehose of Falsehood Propaganda Model\", RAND (2016): o modelo de volume e repetição, útil como mecanismo geral"
+  },
+  {
+   "id": "lucro",
+   "nome": "QUEM LUCRA",
+   "lema": "os interesses por trás",
+   "oQueE": "A pergunta que desfaz a fumaça: a quem serve? Por trás de muita disputa política há um interesse econômico que o discurso não diz: a extração, o rentismo, a venda de segurança e de armas, a economia da atenção.",
+   "comoAparece": [
+    "O discurso fala de valores: família, pátria, ordem, \"desenvolvimento\"",
+    "A decisão entrega um lucro a alguém",
+    "A conta quase nunca é feita em voz alta"
+   ],
+   "comoSeDefender": "Siga o dinheiro: quem paga a campanha, quem ganha com a lei, quem é dono do canal. Compare o discurso com o que a decisão entrega.",
+   "fonte": "Mecanismo geral. O jogo não cita número sem fonte pública (INPE/PRODES e MapBiomas, para o desmatamento)."
+  },
+  {
+   "id": "medo",
+   "nome": "A MANUTENÇÃO DO MEDO",
+   "lema": "o medo como governo",
+   "oQueE": "O medo como método de governo: manter as pessoas assustadas para que aceitem o que não aceitariam calmas.",
+   "comoAparece": [
+    "Um inimigo interno inventado",
+    "O pânico moral: um tema escolhido a dedo toma toda a conversa",
+    "A segurança como espetáculo: mostra-se força, não resultado",
+    "Enquanto todos olham o medo, o bolso e a terra mudam de dono"
+   ],
+   "comoSeDefender": "Pergunte o que mudou de verdade (preço, direito, terra) enquanto todos olhavam para outro lado. Medo sob medida é sinal.",
+   "fonte": "Stanley (2018) · Eco (1995) · Cohen, Folk Devils and Moral Panics (1972)"
+  },
+  {
+   "id": "midia",
+   "nome": "A MÍDIA COMPRADA",
+   "lema": "a pauta e o silêncio têm dono",
+   "oQueE": "O que a informação vira quando a propriedade é concentrada e a publicidade paga a conta: a pauta e o silêncio têm dono.",
+   "comoAparece": [
+    "Opinião vestida de notícia",
+    "O que não é dito: a pauta que some",
+    "A repetição que faz parecer consenso",
+    "A crítica seletiva: um lado é apurado, o outro é só comentado"
+   ],
+   "comoSeDefender": "Separe notícia, opinião e propaganda. Leia fontes de mais de um dono. Procure a apuração, não só o título.",
+   "fonte": "Mecanismo geral da economia política da comunicação (Herman e Chomsky, Manufacturing Consent, 1988). No jogo a mídia é um arquétipo, a \"Rede Verdade Plena\": sátira, não retrato."
+  },
+  {
+   "id": "incoerencias",
+   "nome": "AS INCOERÊNCIAS",
+   "lema": "o espelho dos arquétipos",
+   "satira": true,
+   "oQueE": "Isto é sátira, e o jogo diz que é. Não afirma nada sobre pessoa real: é o espelho dos arquétipos.",
+   "comoAparece": [
+    "O \"patriota\" que vende o país por um bom contrato",
+    "O \"contra o Estado\" que vive de isenção e de subsídio",
+    "O \"defensor da vida\" que corta o leito do hospital",
+    "O \"liberal\" que pede censura quando o assunto é ele"
+   ],
+   "comoSeDefender": "Compare o que se diz com o que se faz: a incoerência é o primeiro sinal de que o discurso serve a outra coisa.",
+   "fonte": "Sátira declarada: nenhuma afirmação de fato."
+  }
+ ]
+}

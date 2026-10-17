@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O ARQUIVO: SEIS FICHAS QUE ENSINAM, NAS SETE LÍNGUAS — Claude, 17/10 (branch `claude/arquivo`, P179 camada 2)
+
+**O Comandante (17/10):** *"devemos explicar o que são [o nazifascismo] e como se manifestam, a rede de mentiras, os interesses obtusos por trás das elites, a manutenção do medo […] pelo menos SUTILMENTE E ELEGANTEMENTE, pedagogicamente"*. A camada 1 (o seletor de lado) já estava no ar; esta é a camada 2 do `LADO_E_PEDAGOGIA.md`.
+
+**Feito:**
+1. **O Arquivo** (`ui/ArquivoPanel.ts`): o chip **ARQUIVO ▸** (console completo e pausa, ao lado do selo do lado) abre a placa com a lista das **seis fichas** à esquerda (a marcada em barra dourada com chevron) e a ficha à direita: **o que é, como aparece, como se defender e as fontes**. Setas do teclado (circular), Esc fecha, Enter não vira "jogar", sem rolagem em 1280×720. A ficha 6, **as incoerências**, é **sátira declarada** e a tela avisa ("SÁTIRA DECLARADA · NÃO AFIRMA FATO"). **Opcional, nunca uma porta** (P133): não aparece sozinho.
+2. **Sete línguas, em arquivos:** `client/public/arquivo/<língua>.json` (pt, en, es, fr, ja, zh, ru); língua sem arquivo cai no inglês e depois no português. **Fora do pacote de JS:** o conteúdo é JSON e o **painel é um pedaço sob demanda** (`import()` no clique do chip, 1,65 KB gzip), por causa do orçamento de partida (499,6 / 500 KB).
+3. **Testes (`ArquivoPanel.test.ts`, 10):** o JSON quebrado não passa; seis fichas na mesma ordem e com o mesmo número de sinais em todas as línguas; só as incoerências são sátira; toda ficha tem fonte; teto de tamanho (cabe sem rolagem); **nenhum nome de político ou bilionário vivo em nenhuma língua**; a ligação (chip, `import()`, tecla). **Prova no navegador de verdade** (`arte/arquivo-*-claude.png`): abre, setas, circular, Esc, japonês carrega o arquivo dele, só o `pt.json` é pedido antes.
+4. **De passagem (R17):** `algoPorCima` agora inclui o `.lado-modal` (o seletor de lado e o Arquivo): as teclas do console não valem com eles por cima.
+
+**Custo de CPU:** zero fora do clique (um `fetch` de 3,5 KB na primeira abertura de cada língua e o pedaço de 1,65 KB).
+
+**O que o Comandante precisa saber (R13):** (a) **as fontes estão citadas de memória** (Eco 1995, Paxton 2004, Stanley 2018, Arendt 1951, RAND 2016, Cohen 1972, Herman e Chomsky 1988): **um revisor humano confere título, ano e trecho antes de a tela ir ao ar**; (b) **nenhum caso real nem número** entra sem fonte que o Comandante dê; (c) as traduções (es, fr, ja, zh, ru) são minhas e **pedem falante nativo**; (d) o **orçamento de JS de partida está em 499,6 / 500 KB**: texto longo vai para JSON em `public/`, recurso opcional vira `import()`; quem estourar o teto trava o `npm run check` de todos.
+
+**Falta:** o **Relatório de Consequências** (fim da missão com números lidos de ficha) e a **campanha do Consórcio** (P179 camadas 3 e 4); o Arquivo como **primeira pergunta depois da primeira rodada** segue decisão do Comandante (`LADO_E_PEDAGOGIA.md` § 7.6).
+
+**Próxima sessão começa com:** o que o Comandante julgar (o texto das fichas é dele); depois o Relatório de Consequências, a Amazônia (P180) e os ombros dos chassis pesados (P181).
+
 ## O PAR SOLO / MULTI NA PRIMEIRA TELA — Claude, 17/10 (branch `claude/solo-multi`, P182)
 
 **O Comandante (17/10):** na segunda captura dos jogos antigos ele escreveu à mão **MULTI** sobre o "2Players". A primeira tela dos jogos antigos é uma pergunta de duas respostas grandes.
