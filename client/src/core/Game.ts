@@ -39,6 +39,7 @@ import { BOT_SKILLS } from '../combat/BotController';
 import type { BotSystem } from '../combat/BotSystem';
 import type { Respawner } from '../combat/Respawner';
 import { ROUND_S, type Round } from '../combat/Round';
+import { mascaraFromSearch } from '../entities/mascaraDoChefe';
 import { diaFromSearch, progressoDaPartida } from '../environment/CicloDoDia';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
@@ -132,6 +133,7 @@ import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { CODIGO_DO_ESTADO } from '../sim/CabosDeDados';
+import { CODIGO_DA_FASE, faseDoChefe } from '../sim/FasesDoChefe';
 import { CODIGO_DO_ESTADO_DA_PORTA } from '../sim/PortasDaEstacao';
 import { CODIGO_DO_ESTADO_DO_QUADRO } from '../sim/QuadroDeLuz';
 import { Match } from '../sim/Match';
@@ -484,6 +486,7 @@ export class Game {
       mode: this.gameMode,
       map: mapFromSearch(location.search, !!online, this.gameMode),
       startWave: waveFromSearch(location.search, SURVIVAL_WAVE_PLANS.length),
+      bossMask: mascaraFromSearch(location.search), // a máscara do chefe (P165): `?mascara=0` a tira
       // allies: false online — os inimigos locais já vão a 0 (o servidor manda o estado de verdade);
       // um aliado sem ninguém pra lutar, fora de sincronia com o servidor, não serve pra nada aqui.
       ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY, allies: false } : {}),
@@ -1927,6 +1930,15 @@ export class Game {
         praia?.setQuadro(q.quadro.estado, q.quadro.vida);
         praia?.setEnergia(quadro.energia);
         praia?.setDesembarque(this.match.desembarqueAberto);
+      }
+      // O chefe (P165): a barra no topo (a fase, o tronco, as duas pernas e a regra) só com o Colossus em campo.
+      const chefe = this.match.bots.chefe;
+      q.chefe.presente = chefe !== null;
+      if (chefe) {
+        q.chefe.fracao = chefe.modules.torso / chefe.stats.maxModuleHealth.torso;
+        q.chefe.fase = CODIGO_DA_FASE[faseDoChefe(chefe.modules)];
+        q.chefe.pernas[0] = chefe.modules.leftLeg > 0;
+        q.chefe.pernas[1] = chefe.modules.rightLeg > 0;
       }
       q.largura = window.innerWidth;
       q.altura = window.innerHeight;

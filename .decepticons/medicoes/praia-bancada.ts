@@ -7,7 +7,10 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { PhysicsWorld } from '../../client/src/physics/PhysicsWorld';
 import { Praia } from '../../client/src/environment/Praia';
 import { Android } from '../../client/src/entities/Android';
-import { ANDROID_STATS, MANIFESTANTE_STATS } from '../../client/src/entities/chassis';
+import { ANDROID_STATS, COLOSSUS_BOSS_STATS, MANIFESTANTE_STATS } from '../../client/src/entities/chassis';
+import { aplicarMascaraDoChefe, mascaraFromSearch } from '../../client/src/entities/mascaraDoChefe';
+import { COLOSSUS_01_BLUEPRINT } from '../../client/src/entities/mechBlueprint';
+import { Vector09 } from '../../client/src/entities/Vector09';
 
 const q = new URLSearchParams(location.search);
 const num = (k: string, d: number[]): number[] => (q.get(k) ? q.get(k)!.split(',').map(Number) : d);
@@ -72,6 +75,13 @@ const dia = Number(q.get('dia') ?? 0); // a hora do dia (P161): 0 = pôr do sol,
   if (q.get('desembarque') === '1') {
     praia.setDesembarque(true);
     for (let i = 0; i < 30; i++) praia.update(i * 0.1); // as portas andam ~2 s até abrir
+  }
+  // O chefe (P165): `?chefe=x,z` põe o Colossus-01 na cena, com a máscara (a menos que o link traga `?mascara=0`). Para fotografar a cabeça e a barra de fases no jogo de verdade, `?modo=survival&onda=6`.
+  for (const [x, z] of lugares('chefe')) {
+    const chefe = new Vector09({ stats: COLOSSUS_BOSS_STATS, blueprint: COLOSSUS_01_BLUEPRINT });
+    chefe.spawn(physics, new THREE.Vector3(x, 0, z));
+    if (mascaraFromSearch(location.search)) aplicarMascaraDoChefe(chefe.root);
+    scene.add(chefe.root);
   }
   praia.update(t);
   praia.setProgressoDoDia(dia);

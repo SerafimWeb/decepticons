@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PRAIA_COMPLEXO, PRAIA_ESTACAO } from '../environment/PraiaLayout';
+import { avisoDoChefe, CODIGO_DA_FASE, TEXTOS_DA_FASE, type FaseDoChefe } from '../sim/FasesDoChefe';
 import { PORTAS_DA_ESTACAO } from '../sim/PortasDaEstacao';
 import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDasPortas, avisoDoQuadro, avisoDosCabos, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
 
@@ -22,6 +23,8 @@ const ESTADO_DO_CABO = ['livre', 'injetando', 'tomado', 'cortado'] as const;
 /** Os estados da porta, na ordem dos códigos de `PortasDaEstacao` (o `data-estado` da célula no CSS) e os nomes que o aviso usa. */
 const ESTADO_DA_PORTA = ['fechada', 'forcada', 'arrombada'] as const;
 const NOMES_DAS_PORTAS = PORTAS_DA_ESTACAO.map((p) => p.nome);
+/** A fase do chefe pelo código de `CODIGO_DA_FASE` (1 anda, 2 manca, 3 rasteja). */
+const FASE_PELO_CODIGO: Readonly<Record<number, FaseDoChefe>> = Object.fromEntries(Object.entries(CODIGO_DA_FASE).map(([nome, codigo]) => [codigo, nome as FaseDoChefe]));
 /** Os estados do quadro de luz, na ordem dos códigos de `QuadroDeLuz` (o `data-estado` da célula no CSS). */
 const ESTADO_DO_QUADRO = ['ligado', 'sabotado', 'apagado'] as const;
 
@@ -47,6 +50,8 @@ export interface QuadroDaPraia {
   portas: { presente: boolean; estado: number[]; vida: number[] };
   /** O quadro de luz da cidade (P164): o estado (0 ligado, 1 sabotado, 2 apagado) e a vida de 0 a 1. `presente` é falso fora da missão em ondas. */
   quadro: { presente: boolean; estado: number; vida: number };
+  /** O chefe da missão, o Colossus (P165): a vida do tronco (0 a 1), a fase (1 anda, 2 manca, 3 rasteja) e se cada perna está de pé. `presente` é falso sem ele em campo. */
+  chefe: { presente: boolean; fracao: number; fase: number; pernas: boolean[] };
   camera: THREE.Camera;
   largura: number;
   altura: number;
@@ -63,6 +68,7 @@ export function novoQuadroDaPraia(camera: THREE.Camera): QuadroDaPraia {
     cabos: { presente: false, estado: [0, 0, 0], vida: [1, 1, 1], injecao: [0, 0, 0] },
     portas: { presente: false, estado: [0, 0], vida: [1, 1] },
     quadro: { presente: false, estado: 0, vida: 1 },
+    chefe: { presente: false, fracao: 1, fase: 1, pernas: [true, true] },
     camera,
     largura: 0,
     altura: 0,
@@ -109,6 +115,14 @@ export class PraiaHud {
   private readonly quadroVida: HTMLElement;
   private quadroEstado = 0;
   private quadroChave = '';
+  /** A barra do chefe (P165): o título com a fase, a barra do tronco, as duas pernas e a regra dita numa linha. */
+  private readonly chefe: HTMLElement;
+  private readonly chefeTitulo: HTMLElement;
+  private readonly chefeBarra: HTMLElement;
+  private readonly chefePernas: HTMLElement[] = [];
+  private readonly chefeRegra: HTMLElement;
+  private chefeChave = '';
+  private faseDoChefe = 0;
   private nucleoMostrado = -1;
   private nucleoClasse = '';
   private periodo = 0;
@@ -190,6 +204,15 @@ export class PraiaHud {
     el('span', '', this.quadro, 'QUADRO DE LUZ DA CIDADE');
     this.quadroVida = el('i', 'pc-vida', el('div', 'pc-barra', this.quadro));
 
+    // A barra do chefe (P165): só enquanto o Colossus está em campo. O título leva a fase; a regra da fase vem numa linha (o jogador entende o problema sem ler manual).
+    this.chefe = el('div', 'praia-chefe', this.raiz);
+    this.chefe.hidden = true;
+    this.chefeTitulo = el('b', '', this.chefe, 'COLOSSUS-01');
+    this.chefeBarra = el('i', '', el('div', 'pcf-barra', this.chefe));
+    const pernas = el('div', 'pcf-pernas', this.chefe);
+    for (const nome of ['PERNA ESQ', 'PERNA DIR']) this.chefePernas.push(el('span', '', pernas, nome));
+    this.chefeRegra = el('p', '', this.chefe);
+
     this.zona = el('div', 'praia-zona', this.raiz);
 
     this.cartao = el('div', 'praia-cartao', this.raiz);
@@ -227,6 +250,8 @@ export class PraiaHud {
     this.estadosDasPortas.fill(0);
     this.quadroEstado = 0;
     this.quadroChave = '';
+    this.faseDoChefe = 0;
+    this.chefeChave = '';
     for (const c of this.celulasDasPortas) c.pct = '';
     for (const c of this.celulasDosCabos) c.pct = '';
     this.mostradoCartao = false;
@@ -255,7 +280,10 @@ export class PraiaHud {
     const alertaDosCabos = q.cabos.presente ? avisoDosCabos(this.estadosDosCabos, q.cabos.estado) : null;
     const alertaDasPortas = q.portas.presente ? avisoDasPortas(this.estadosDasPortas, q.portas.estado, NOMES_DAS_PORTAS) : null;
     const alertaDoQuadro = q.quadro.presente ? avisoDoQuadro(this.quadroEstado, q.quadro.estado) : null;
-    const alerta = alertaDaRede ?? alertaDasPortas ?? alertaDoQuadro ?? alertaDosCabos;
+    const faseAgora = q.chefe.presente ? q.chefe.fase : 0;
+    const alertaDoChefe = avisoDoChefe(this.faseDoChefe, faseAgora);
+    this.faseDoChefe = faseAgora;
+    const alerta = alertaDaRede ?? alertaDoChefe ?? alertaDasPortas ?? alertaDoQuadro ?? alertaDosCabos;
     // O anúncio do lugar: aparece e some sozinho (a animação é do CSS; aqui só o texto e o relógio).
     const novo = alerta ?? this.anunciador.atualiza(q.eu.x, q.eu.z, dt);
     if (novo) {
@@ -342,6 +370,24 @@ export class PraiaHud {
       this.quadroEstado = q.quadro.estado;
     } else if (!this.quadro.hidden) {
       this.quadro.hidden = true;
+    }
+
+    // A barra do chefe: só mexe no DOM quando a fase, as pernas ou a barra (em passos de 1%) mudam.
+    if (q.chefe.presente) {
+      this.chefe.hidden = false;
+      const pct = Math.round(q.chefe.fracao * 100);
+      const chave = `${q.chefe.fase}|${pct}|${q.chefe.pernas[0] ? 1 : 0}${q.chefe.pernas[1] ? 1 : 0}`;
+      if (chave !== this.chefeChave) {
+        this.chefeChave = chave;
+        const fase = FASE_PELO_CODIGO[q.chefe.fase] ?? 'anda';
+        this.chefeTitulo.textContent = `COLOSSUS-01 · FASE ${q.chefe.fase} DE 3 · ${TEXTOS_DA_FASE[fase].rotulo}`;
+        this.chefeRegra.textContent = TEXTOS_DA_FASE[fase].regra;
+        this.chefe.dataset.fase = fase;
+        this.chefeBarra.style.transform = `scaleX(${(pct / 100).toFixed(2)})`;
+        this.chefePernas.forEach((p, i) => p.classList.toggle('caida', !q.chefe.pernas[i]));
+      }
+    } else if (!this.chefe.hidden) {
+      this.chefe.hidden = true;
     }
 
     // O aviso da água, a cada quadro enquanto há água (uma comparação), com o DOM só quando muda.

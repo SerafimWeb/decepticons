@@ -7,6 +7,7 @@ import { armaDoBot, statsDoBot, TITA_RESPAWN_S } from './titaBot';
 import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
 import { ImportedMech } from '../entities/ImportedMech';
 import type { MechRig } from '../entities/MechBase';
+import { aplicarMascaraDoChefe } from '../entities/mascaraDoChefe';
 import { COLOSSUS_01_BLUEPRINT } from '../entities/mechBlueprint';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
@@ -119,6 +120,8 @@ export interface BotSystemOptions {
   spawns: readonly (readonly [number, number])[];
   /** Onde cada andróide rebelde (escala 1) nasce (x, z): um por ponto. */
   androidSpawns?: readonly (readonly [number, number])[];
+  /** O chefe da missão (o Colossus) veste a **máscara** (P165, `entities/mascaraDoChefe.ts`)? Padrão: sim; o `?mascara=0` do link a tira. Só o chefe: o Colossus do Hangar não. */
+  mascaraDoChefe?: boolean;
   /** Onde nascem os **manifestantes** (P163, missão em ondas da praia): o vândalo humano que depreda os cabos e arromba as portas. Sem isto, não há manifestantes. */
   manifestanteSpawns?: readonly (readonly [number, number])[];
   /** Onde cada andróide técnico nasce (x, z): conserta os Mechs rebeldes, não atira. */
@@ -306,6 +309,8 @@ export class BotSystem {
         stats: poweredStats(COLOSSUS_BOSS_STATS, power, 'mechs'),
         blueprint: COLOSSUS_01_BLUEPRINT,
       });
+      boss.crawls = true; // com as duas pernas caídas ele rasteja (a terceira fase, `sim/FasesDoChefe.ts`) em vez de virar uma torre imóvel
+      if (o.mascaraDoChefe ?? true) aplicarMascaraDoChefe(boss.root);
       const home = place(boss, o.bossSpawn);
       const brain = new BotController(boss, o.physics, waypoints, seed * 1000 + 900, o.skill ?? BOT_SKILL_NORMAL, BOSS_PROFILE, PERSONAS.soldado);
       this.bots.push({ mech: boss, brain, name: 'COLOSSUS-01', home });
@@ -358,6 +363,12 @@ export class BotSystem {
       }
     }
     this.directorTimer = 0;
+  }
+
+  /** O chefe da missão (o Colossus), se está em campo e vivo; senão `null`. O HUD e as regras do capítulo leem daqui. */
+  get chefe(): MechBase | null {
+    const b = this.bossMech;
+    return b && b.alive && !this.reserves.has(b) ? b : null;
   }
 
   isReserved(mech: MechBase): boolean {

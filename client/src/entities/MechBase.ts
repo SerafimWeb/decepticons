@@ -35,6 +35,8 @@ const IGNORE_DEBRIS = RAPIER.QueryFilterFlags.EXCLUDE_DYNAMIC | RAPIER.QueryFilt
 
 /** Partes com vida independente (dano localizado). */
 export type MechPart = 'torso' | 'head' | 'leftArm' | 'rightArm' | 'leftLeg' | 'rightLeg';
+/** A velocidade de quem rasteja (as duas pernas destruídas), em fração da velocidade do Mech: 30%. Só vale para quem tem `crawls` (o chefe). */
+export const MOBILIDADE_RASTEJANDO = 0.3;
 const PARTS: readonly MechPart[] = ['torso', 'head', 'leftArm', 'rightArm', 'leftLeg', 'rightLeg'];
 export type MechModules = Record<MechPart, number>;
 
@@ -211,6 +213,8 @@ export abstract class MechBase {
   /** Modificador temporário de regra (CTF: portador da bandeira corre a 85%; o dash não muda). */
   moveSpeedScale = 1;
   readonly modules: MechModules;
+  /** Rasteja com as duas pernas destruídas (só o chefe, P165) em vez de virar uma torre imóvel. Decisão do `BotSystem`, não do corpo. */
+  crawls = false;
   yaw = 0;
   pitch = 0;
   grounded = false;
@@ -442,11 +446,14 @@ export abstract class MechBase {
     return this.rig.thrusters;
   }
 
-  /** Uma perna destruída = -50% velocidade; as duas = imóvel (torre estática). */
+  /**
+   * Uma perna destruída = -50% velocidade; as duas = imóvel (torre estática) — **a não ser que o Mech rasteje** (`crawls`, só o chefe, P165): aí ele segue a 30% da velocidade, de
+   * perna caída, atirando. É a terceira fase da Colossus (`sim/FasesDoChefe.ts`).
+   */
   get mobility(): number {
     const l = this.modules.leftLeg > 0;
     const r = this.modules.rightLeg > 0;
-    return l && r ? 1 : l || r ? 0.5 : 0;
+    return l && r ? 1 : l || r ? 0.5 : this.crawls ? MOBILIDADE_RASTEJANDO : 0;
   }
 
   /** Cabeça destruída ativa o Blind Mode (a implementar no HUD). */
