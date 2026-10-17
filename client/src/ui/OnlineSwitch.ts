@@ -14,6 +14,7 @@ export class OnlineSwitch {
     btn.id = 'btn-online';
     btn.type = 'button';
     btn.className = 'btn-terminal';
+    btn.dataset.online = online ? 'sim' : 'nao';
     btn.textContent = online ? '[ JOGAR OFFLINE ]' : '[ JOGAR ONLINE ]';
     btn.title = online ? 'Sair da sala e jogar contra os bots, sem internet' : 'Entrar na sala online com quem estiver jogando agora';
     

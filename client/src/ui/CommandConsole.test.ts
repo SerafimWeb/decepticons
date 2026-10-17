@@ -229,3 +229,30 @@ describe('console de comando: o primeiro acesso (P133)', () => {
     expect(bloco).toMatch(/rgba\(6, 8, 10, 0\.2\)/);
   });
 });
+
+describe('o par SOLO / MULTI da primeira tela (P182)', () => {
+  const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
+  const consola = readFileSync(new URL('./CommandConsole.ts', import.meta.url), 'utf8');
+  const chave = readFileSync(new URL('./OnlineSwitch.ts', import.meta.url), 'utf8');
+
+  it('o HTML tem o MULTI e a nota do SOLO, escondidos (o console só mostra com servidor), entre o botão verde e o "explorar"', () => {
+    const deck = consoleHtml.slice(consoleHtml.indexOf('<footer class="cc-deck">'));
+    expect(deck).toMatch(/<small class="cc-solo" id="cc-solo" hidden>/);
+    expect(deck).toMatch(/<button type="button" class="cc-multi" id="btn-multi" hidden>/);
+    expect(deck.indexOf('id="cta"')).toBeLessThan(deck.indexOf('id="btn-multi"'));
+    expect(deck.indexOf('id="btn-multi"')).toBeLessThan(deck.indexOf('id="cc-mais"'));
+  });
+
+  it('o MULTI delega ao botão do online do monitor (a regra de entrar fica num lugar só) e só existe fora de uma sala', () => {
+    expect(consola).toMatch(/online\?\.dataset\.online !== 'nao'/);
+    expect(consola).toMatch(/multi\.addEventListener\('click', \(e\) => \{\s*e\.stopPropagation\(\);[^}]*online\.click\(\);/);
+    expect(chave).toContain("btn.dataset.online = online ? 'sim' : 'nao'");
+  });
+
+  it('o CSS mostra o par só na tela enxuta e fora da carga, e a barra dourada é a do foco ou do mouse', () => {
+    expect(css).toMatch(/\.cc-solo, \.cc-multi \{ display: none; \}/);
+    expect(css).toMatch(/#overlay\.console\.cc-primeira \.cc-multi:not\(\[hidden\]\) \{\s*display: flex;/);
+    expect(css).toMatch(/\.cc-multi:hover, #overlay\.console\.cc-primeira \.cc-multi:focus-visible \{[^}]*linear-gradient\(90deg, #6b3f00, #ffb31f/);
+    expect(css).toContain('#overlay.console.cc-primeira.cc-espera .cc-solo, #overlay.console.cc-primeira.cc-espera .cc-multi { display: none !important; }');
+  });
+});

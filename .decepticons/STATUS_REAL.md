@@ -3,7 +3,7 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
-**P182 — a interface dos jogos antigos nas Configurações (REAL, visto no navegador de verdade; falta o olho do Comandante):** a linha em barra dourada com chevron (sob o mouse ou com o foco) e o `‹ valor ›` no lugar das listas de poucos valores (nove). **AUSENTE:** o par SOLO / MULTI na primeira tela, a placa no console e a barra dourada nas listas do console.
+**P182 — a interface dos jogos antigos nas Configurações (REAL, visto no navegador de verdade; falta o olho do Comandante):** a linha em barra dourada com chevron (sob o mouse ou com o foco) e o `‹ valor ›` no lugar das listas de poucos valores (nove). **O par SOLO / MULTI na primeira tela (REAL, visto no navegador de verdade, com servidor no build):** o MULTI abre o lobby online (nada muda na regra de entrar). **AUSENTE:** a placa (borda forte, rebites) no console e na pausa, e a barra dourada nas listas do console.
 
 **P178 — a landing em sete línguas (REAL, visto no navegador de verdade em japonês e russo; falta revisão por falante nativo):** faixa de idiomas no topo, página traduzida na hora, escolha compartilhada com o jogo. **PARCIAL:** as traduções são da Claude; Oficina, Sala de controle e as imagens com texto seguem em português.
 

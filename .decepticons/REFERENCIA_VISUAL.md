@@ -203,7 +203,7 @@ Proposta de execução para concretizar a meta, sem alterar `VISAO.md` ou assumi
 |---|---|---|
 | 1 | **O seletor de lado** (a pergunta "de que lado você joga?", `LADO_E_PEDAGOGIA.md`) feito **no estilo da placa**: a primeira aplicação da referência | feito em 17/10 (P179/P182) |
 | 2 | a **linha selecionada** (barra + chevron) e o **seletor `‹ valor ›`** nas Configurações | **feito em 17/10 (P182):** `ui/Passo.ts`; nove `‹ valor ›` nas Configurações, a linha sob o mouse ou com o foco em barra dourada com chevron |
-| 3 | o par **`SOLO` / `MULTI`** na primeira tela | plano |
+| 3 | o par **`SOLO` / `MULTI`** na primeira tela | **feito em 17/10 (P182):** o botão verde é o SOLO; o MULTI é a chapa azul fria embaixo, que acende em barra dourada e abre o lobby online (só com servidor, fora de sala; tecla O) |
 | 4 | a **placa** no console e na pausa | plano |
 
 **O que o Comandante confere:** o seletor de lado. Se a "pele" agradar, os itens 2 a 4 seguem na ordem; se ele quiser mais perto da chapa dos jogos antigos (rebites, relevo), é **só CSS** e se ajusta com a captura na mão.

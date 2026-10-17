@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O PAR SOLO / MULTI NA PRIMEIRA TELA — Claude, 17/10 (branch `claude/solo-multi`, P182)
+
+**O Comandante (17/10):** na segunda captura dos jogos antigos ele escreveu à mão **MULTI** sobre o "2Players". A primeira tela dos jogos antigos é uma pergunta de duas respostas grandes.
+
+**Feito:**
+1. **A primeira tela agora tem o par.** O botão verde segue sendo o **SOLO** (com a nota "SOLO · contra os bots" embaixo) e, logo abaixo, a chapa azul fria **MULTI** ("online, com outros pilotos", tecla O) que **acende em barra dourada** sob o mouse ou com o foco. Clicar abre o lobby online (`OnlineLobby`), pelo mesmo botão que o monitor da REDE já usa: a regra de entrar online continua num lugar só (`OnlineSwitch`). Só aparece com servidor no build e fora de uma sala; some quando o console completo acende (o monitor da REDE já tem o botão: nada repetido). Textos nas sete línguas.
+2. **Provado no navegador de verdade** (`arte/primeira-tela-solo-multi-claude.png`, `arte/primeira-tela-multi-dourado-claude.png`): o par aparece na primeira visita, o clique abre o lobby sem "jogar" por baixo, fechar volta ao par, o japonês traduz, "EXPLORAR HANGAR E MODOS" faz o par sumir, zero erros. Teste (`CommandConsole.test.ts`): o HTML, a delegação do clique e o CSS.
+
+**Custo de CPU:** zero (um botão e um clique; a tela enxuta já não acende os monitores).
+
+**Falta (R13):** (a) a **placa** (borda forte, rebites) no console e na pausa; (b) a barra dourada nas **listas do console**; (c) o **olho do Comandante** sobre o par: o MULTI pode ir ao lado do botão verde em vez de embaixo (só CSS).
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois o Arquivo (P179), a Amazônia (P180) e os ombros dos chassis pesados (P181); as dicas de arma do Hangar sem tradução (entrada abaixo).
+
 ## A INTERFACE DOS JOGOS ANTIGOS NAS CONFIGURAÇÕES: A LINHA EM BARRA DOURADA E O `‹ VALOR ›` — Claude, 17/10 (branch `claude/interface-antiga`, P182)
 
 **O Comandante (17/10):** *"veja esses exemplos de interface de jogos antigos, eu acho muito boas!"* (duas capturas do Aero Fighters; `REFERENCIA_VISUAL.md` § 8 tem a leitura e o que levamos). *"continue iterando"*.
@@ -15,7 +29,7 @@
 
 **Achado aberto (R17):** as 22 dicas de arma do Hangar **não têm tradução** nas seis línguas (o Hangar fala português em qualquer idioma): traduzir cada dica em `public/dicas-do-hangar.json` + dicionários, e o teste de cobertura passa a checar.
 
-**Falta (R13):** (a) o par **SOLO / MULTI** na primeira tela (a anotação dele sobre "2Players"); (b) a **placa** (borda forte, rebites) no console e na pausa; (c) a linha em barra dourada **no console** (as listas de operação); (d) o **olho do Comandante**: se a "pele" agradar, (a) a (c) seguem; se ele quiser mais perto da chapa dos jogos antigos, é só CSS.
+**Falta (R13):** (a) o par **SOLO / MULTI** na primeira tela (a anotação dele sobre "2Players"): *feito na entrada acima*; (b) a **placa** (borda forte, rebites) no console e na pausa; (c) a linha em barra dourada **no console** (as listas de operação); (d) o **olho do Comandante**: se a "pele" agradar, (a) a (c) seguem; se ele quiser mais perto da chapa dos jogos antigos, é só CSS.
 
 **Próxima sessão começa com:** o que o Comandante julgar; depois SOLO / MULTI (P182), o Arquivo (P179) e a Amazônia (P180).
 

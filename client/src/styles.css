@@ -3709,6 +3709,46 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 #overlay.console.cc-primeira.cc-espera .cc-mais { display: none !important; }
 #overlay.console.cc-primeira.cc-espera::before { content: var(--t-carregando, 'CARREGANDO A PARTIDA'); }
 
+/* O par SOLO / MULTI (P182, REFERENCIA_VISUAL.md § 8): a primeira pergunta dos jogos antigos é de duas respostas ("1 PLAYER / 2 PLAYERS"). O botão verde é o SOLO; o MULTI é a
+   chapa azul fria embaixo, que acende em barra dourada sob o mouse ou com o foco (a linha selecionada da referência). Só na tela enxuta, e só quando há servidor. */
+.cc-solo, .cc-multi { display: none; }
+#overlay.console.cc-primeira .cc-solo:not([hidden]) {
+  display: block;
+  margin: -4px 0 0;
+  color: #9fb4c4;
+  font: 700 calc(10px * var(--k)) / 1 'Consolas', 'Courier New', monospace;
+  letter-spacing: 3px;
+  text-shadow: 0 1px 6px #000;
+}
+#overlay.console.cc-primeira .cc-multi:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: clamp(250px, 24vw, 380px);
+  margin-top: 4px;
+  padding: 11px 22px;
+  background: linear-gradient(180deg, #2f5f86, #173650 55%, #0e2234);
+  border: 2px solid #8fb6d6;
+  border-radius: 6px;
+  color: #fff;
+  font: 700 calc(clamp(14px, 1.25vw, 19px) * var(--k)) / 1.1 'Consolas', 'Courier New', monospace;
+  letter-spacing: 5px;
+  text-shadow: 1px 1px 0 #000;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.25), inset 0 -3px 0 rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+.cc-multi small { color: #bcd3e6; font-size: 0.62em; font-weight: 600; letter-spacing: 2px; }
+#overlay.console.cc-primeira .cc-multi:hover, #overlay.console.cc-primeira .cc-multi:focus-visible {
+  background: linear-gradient(90deg, #6b3f00, #ffb31f 38%, #ffb31f 62%, #6b3f00);
+  border-color: #fff;
+  color: #1a0f00;
+  text-shadow: none;
+  outline: none;
+}
+.cc-multi:hover small, .cc-multi:focus-visible small { color: #3a2300; }
+#overlay.console.cc-primeira.cc-espera .cc-solo, #overlay.console.cc-primeira.cc-espera .cc-multi { display: none !important; }
+
 /* Idiomas (P173): os três textos que o CSS escreve (`content`) seguem o `lang` da página, posto por `i18n/i18n.ts`; o resto do texto vem do dicionário JSON. */
 :root:lang(en) { --t-sem-sinal: '· NO SIGNAL'; --t-inicializando: 'INITIALIZING COMMAND ROOM'; --t-carregando: 'LOADING MATCH'; }
 :root:lang(es) { --t-sem-sinal: '· SIN SEÑAL'; --t-inicializando: 'INICIALIZANDO LA SALA DE MANDO'; --t-carregando: 'CARGANDO LA PARTIDA'; }
