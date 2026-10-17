@@ -1,5 +1,24 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A INTERFACE DOS JOGOS ANTIGOS NAS CONFIGURAÇÕES: A LINHA EM BARRA DOURADA E O `‹ VALOR ›` — Claude, 17/10 (branch `claude/interface-antiga`, P182)
+
+**O Comandante (17/10):** *"veja esses exemplos de interface de jogos antigos, eu acho muito boas!"* (duas capturas do Aero Fighters; `REFERENCIA_VISUAL.md` § 8 tem a leitura e o que levamos). *"continue iterando"*.
+
+**Feito:**
+1. **`ui/Passo.ts`: o seletor `‹ valor ›`.** Veste um `<select>` que **continua existindo, escondido**: o jogo segue lendo e escrevendo `select.value`, ouvindo `change`; o `‹ valor ›` espelha o que o select diz (por clique, pelas setas do teclado, por mudança de código e pelo texto traduzido) e o muda com **um passo, circular**, sem abrir lista. Nove nas Configurações: qualidade, dificuldade, narrador, quantidades e personalidades dos inimigos. **O idioma fica como lista** (sete línguas).
+2. **A linha selecionada em barra dourada com chevron** (`❯`) nas Configurações: a linha sob o mouse ou com o foco, como na referência (barra dourada de ponta a ponta, texto escuro, o passo em fundo escuro).
+3. **Testes (`Passo.test.ts`, 8):** o passo circular, o rótulo, o limite de opções, o estilo e a ligação (o select do idioma não vira passo). **Prova no navegador de verdade** (`arte/interface-passo-*-claude.png`): os nove passos existem, o select está escondido e **acompanha** (clique, duas voltas, mudança por código, seta do teclado) e a troca para o japonês **refaz o texto** dos passos.
+
+4. **Orçamento de JS (R7): o pacote chegou a 500,03 KB (limite 500).** As dicas de arma do Hangar saíram do código para `public/dicas-do-hangar.json` (carregado ao abrir o Hangar): **498,49 KB**, folga de 1,5 KB. Texto estático longo novo vai para JSON em `public/`, não para o pacote (`HISTORICO_DE_DECISOES.md`).
+
+**Custo de CPU:** zero fora do clique (um observador de opções por seletor, que só dispara quando o texto das opções muda) e um `fetch` de 3,5 KB na primeira abertura do Hangar.
+
+**Achado aberto (R17):** as 22 dicas de arma do Hangar **não têm tradução** nas seis línguas (o Hangar fala português em qualquer idioma): traduzir cada dica em `public/dicas-do-hangar.json` + dicionários, e o teste de cobertura passa a checar.
+
+**Falta (R13):** (a) o par **SOLO / MULTI** na primeira tela (a anotação dele sobre "2Players"); (b) a **placa** (borda forte, rebites) no console e na pausa; (c) a linha em barra dourada **no console** (as listas de operação); (d) o **olho do Comandante**: se a "pele" agradar, (a) a (c) seguem; se ele quiser mais perto da chapa dos jogos antigos, é só CSS.
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois SOLO / MULTI (P182), o Arquivo (P179) e a Amazônia (P180).
+
 ## AMAZÔNIA, PARTE A: O DRAGA-01 ANDA — o plano, o rig e a marcha do quadrúpede — Claude, 17/10 (branch `claude/amazonia-mina`, P180)
 
 **A ordem do Comandante:** *"vamos já planejar e construir a próxima fase: o rio Amazonas, uma mineradora acabando com o rio… Já criei o modelo (`heavy industrial walker 3d model`): é um mech maior que o Colossus v4, então o cenário precisa ser bem maior… faça sua melhor versão desse modelo: ele deve se mexer (eu não inseri o RIG: tenho que fazer ou você faz?)"* e *"acima desse super mech o rio é limpo e vivo, e depois dessa máquina o rio fica poluído, sujo, com óleo e envenenado"*. **Resposta: o rig é meu; o Comandante não precisa rigar.**

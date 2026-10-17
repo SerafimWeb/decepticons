@@ -202,7 +202,7 @@ Proposta de execução para concretizar a meta, sem alterar `VISAO.md` ou assumi
 | # | Entrega | Estado |
 |---|---|---|
 | 1 | **O seletor de lado** (a pergunta "de que lado você joga?", `LADO_E_PEDAGOGIA.md`) feito **no estilo da placa**: a primeira aplicação da referência | feito em 17/10 (P179/P182) |
-| 2 | a **linha selecionada** (barra + chevron) e o **seletor `‹ valor ›`** nas Configurações | plano |
+| 2 | a **linha selecionada** (barra + chevron) e o **seletor `‹ valor ›`** nas Configurações | **feito em 17/10 (P182):** `ui/Passo.ts`; nove `‹ valor ›` nas Configurações, a linha sob o mouse ou com o foco em barra dourada com chevron |
 | 3 | o par **`SOLO` / `MULTI`** na primeira tela | plano |
 | 4 | a **placa** no console e na pausa | plano |
 

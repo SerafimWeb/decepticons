@@ -996,6 +996,20 @@ a.btn-terminal { display: inline-block; text-decoration: none; }
   align-items: center;
   gap: 10px;
 }
+
+/* A linha selecionada em barra dourada com chevron, como nas interfaces de jogos antigas (P182, REFERENCIA_VISUAL.md § 8): a linha sob o mouse ou com o foco. */
+.settings-box .setting-row { position: relative; padding: 5px 10px 5px 26px; margin: 0 -10px; }
+.settings-box .setting-row::before { content: '❯'; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); opacity: 0; color: #fff; font-size: 14px; text-shadow: 1px 1px 0 #000; }
+.settings-box .setting-row:hover, .settings-box .setting-row:focus-within { background: linear-gradient(90deg, #6b3f00, #ffb31f 38%, #ffb31f 62%, #6b3f00); color: #1a0f00; }
+.settings-box .setting-row:hover::before, .settings-box .setting-row:focus-within::before { opacity: 1; }
+.settings-box .setting-row:hover .setting-val, .settings-box .setting-row:focus-within .setting-val { color: #1a0f00; }
+.settings-box .setting-row:hover .passo, .settings-box .setting-row:focus-within .passo { border-color: #1a0f00; background: rgba(26, 15, 0, 0.78); }
+
+/* O `‹ valor ›` (P182): a opção com poucos valores troca por um passo, sem abrir lista. */
+.passo { display: inline-flex; align-items: stretch; border: 1px solid var(--accent); background: #06080a; }
+.passo-seta { width: 26px; padding: 0; border: 0; background: transparent; color: var(--accent); font: 800 17px/1 'Consolas', 'Courier New', monospace; cursor: pointer; }
+.passo-seta:hover, .passo-seta:focus-visible { background: var(--accent); color: var(--bg); outline: none; }
+.passo-valor { min-width: 96px; padding: 4px 10px; text-align: center; color: #fff; font-weight: 700; letter-spacing: 1px; font-size: 13px; }
 .setting-val {
   min-width: 50px;
   text-align: right;
