@@ -592,7 +592,8 @@ async function check() {
     await publicPage(page, 'landing', failures);
     await antiCopy(page, 'landing', failures);
     // Cards usam o catálogo e links de montagem reais; detalhes numéricos continuam na Oficina.
-    if ((await page.locator('.mech-card a[href*="?build="]').count()) !== 3) failures.push('landing: faltam os três links de montagem do catálogo');
+    if ((await page.locator('.mech-card a[href*="?build="]').count()) !== 4) failures.push('landing: faltam os quatro links de montagem dos chassis (Andróide, Vector-09, Colossus-01, Colossus-V4)');
+    if ((await page.locator('.mtag').count()) !== 4) failures.push('landing: faltam os rótulos dos quatro chassis na foto de escala');
     if ((await page.locator('.mode-card').count()) !== 3) failures.push('landing: faltam os modos de combate');
     if ((await page.locator('.res-grid li').count()) !== 4) failures.push('landing: os quatro recursos da VITRINE não saíram (o GAME_DESIGN mudou de título?)');
     if ((await page.locator('.wcard').count()) !== 6) failures.push('landing: faltam as seis armas do arsenal');

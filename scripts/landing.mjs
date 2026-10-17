@@ -70,11 +70,14 @@ const parts = [
 
 /* ---------- chassis em escala: a foto dos três lado a lado e os links de montagem ---------- */
 const escala = Object.fromEntries(cena('escala').escala.map((e) => [e.id, e]));
+// Os quatro tamanhos de robô do jogo, do menor ao maior (CHASSIS_SIZE): o 4 é o gigante, que a foto mostra por trás dos outros.
 const chassis = [
+  ['android', 'Pequeno e ágil', 'Um robô autônomo do tamanho de uma pessoa: rápido, frágil, com blaster e motosserra.'],
   ['vector09', 'Versatilidade em combate', 'Mobilidade, plasma e foguetes. Um ponto de partida para encontrar seu estilo.'],
-  ['marauder', 'Potência em múltiplos encaixes', 'Armas nos braços e nos ombros, com montagens para diferentes distâncias.'],
-  ['colossusv4', 'Presença de cerco', 'Blindagem e capacidade de carga para quem prefere dominar uma posição.'],
+  ['colossus01', 'Máquina de cerco', 'Vida enorme, quase não anda e não faz dash: um chassi para dominar uma posição.'],
+  ['colossusv4', 'O gigante', 'Blindagem e capacidade de carga de outra escala: o maior chassi do jogo.'],
 ];
+const NOME = { android: 'Andróide', vector09: 'Vector-09', colossus01: 'Colossus-01', colossusv4: 'Colossus-V4' };
 
 /* ---------- arsenal: as seis armas de braço do Vector-09 em três níveis, com o desenho real de cada uma ---------- */
 const KIND = { energy: 'Energia', ammo: 'Munição' };
@@ -150,10 +153,10 @@ ${hudNav({ base: '', current: 'inicio', status: Boolean(game.net.statusUrl) })}
 </div></section>
 
 <section class="section lineup" aria-labelledby="chassis-t"><div class="lineup-photo reveal">
-  <img src="${art('cena-escala.jpg')}" width="2400" height="800" alt="Vector-09, Marauder e Colossus-V4 lado a lado, na mesma escala" loading="lazy">
-  ${chassis.map(([id]) => { const e = escala[id]; return `<span class="ruler" style="left:${(e.dir[0] + 1.6).toFixed(1)}%;top:${e.topo[1]}%;height:${(e.base[1] - e.topo[1]).toFixed(2)}%"><i>${metros(CH[id].height)}</i></span>`; }).join('')}
+  <img src="${art('cena-escala.jpg')}" width="2400" height="800" alt="Andróide, Vector-09 e Colossus-01 lado a lado, na mesma escala, com o Colossus-V4 por trás" loading="lazy">
+  ${chassis.map(([id]) => { const e = escala[id]; const atras = id === 'colossusv4'; const x = e.base[0].toFixed(1); const y = atras ? Math.max(e.topo[1] - 2, 2).toFixed(1) : (e.base[1] + 2.4).toFixed(1); return `<p class="mtag${atras ? ' back' : ''}" style="left:${x}%;top:${y}%"><b>${NOME[id]}</b><span>Tamanho ${game.sizes[id]} · ${metros(CH[id].height)}</span></p>`; }).join('')}
 </div><div class="container">
-  ${sectionHeading({ n: '04', label: 'Chassis', title: 'ESCOLHA', em: 'O CHASSI', id: 'chassis-t', aside: '<span class="label">Mesma régua, tamanhos diferentes</span><p>Cada chassi tem blindagem, velocidade e carga próprias. A foto mostra os três na mesma escala.</p>' })}
+  ${sectionHeading({ n: '04', label: 'Chassis', title: 'ESCOLHA', em: 'O CHASSI', id: 'chassis-t', aside: '<span class="label">Mesma régua, tamanhos diferentes</span><p>Do andróide de 1,6 m ao gigante de 20 m: cada chassi tem blindagem, velocidade e carga próprias. A foto mostra os quatro na mesma escala, com o maior ao fundo.</p>' })}
   <div class="mech-grid">${chassis.map(([id, role, desc]) => {
     const ch = CH[id];
     const s = game.hangar.factorySpec(id);

@@ -8,7 +8,8 @@
 3. **O herói é foto, não 3D ao vivo:** o custo de CPU/GPU e de carga numa landing seria alto para o ganho; a foto sai do mesmo modelo e é regenerável em segundos.
 4. **Mono fora, texto mínimo de 12 px:** a primeira versão usava mono pequeno por todo lado; a orientação (e o olho) pediram o contrário.
 5. **Nada de recurso que o jogo não tem:** "Pilotos com personalidade" e "Rodadas de 5 minutos" das referências não entraram como estavam; os cartões saem da VITRINE do GAME_DESIGN.
-6. **Nunca dois CTAs de jogar juntos:** o do cabeçalho aparece depois do herói.
+6. **A comparação de tamanhos é a do Comandante** (durante a sessão): Andróide (1), Vector-09 (2) e Colossus-01 (3) lado a lado e o Colossus-V4 (4) por trás, escuro e na névoa, para mostrar as proporções sem roubar a cena; no lugar do Marauder, que ficou só no Hangar.
+7. **Nunca dois CTAs de jogar juntos:** o do cabeçalho aparece depois do herói.
 ## [2026-10-16] Checkpoint das explosões e as lições do War Robots (Claude, P170 e P171)
 
 **Decisões:**

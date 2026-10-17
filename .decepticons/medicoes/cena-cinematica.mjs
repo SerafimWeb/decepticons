@@ -7,7 +7,7 @@
  *   node .decepticons/medicoes/cena-cinematica.mjs hero duelo    → só essas
  *
  * Fotos (`cena-<nome>.jpg`): hero (2400×1200), duelo (1280×720), colossusv4 / marauder / vector09 (720×780, fichas),
- * hangar (1000×1000), escala (2400×800, os três chassis lado a lado) e arma-<id> (640×420, o desenho real da arma).
+ * hangar (1000×1000), escala (2400×800: Andróide, Vector-09 e Colossus-01 lado a lado e o Colossus-V4 por trás) e arma-<id> (640×420, o desenho real da arma).
  * A posição das partes, das medidas e dos chassis na foto sai em `scripts/site/cena/<nome>.json` (a landing posiciona os rótulos por ela).
  * Saída em `client/public/press/`. Renderiza por software (SwiftShader): leva alguns minutos, uma vez.
  */
@@ -44,6 +44,8 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { CHASSIS } from '/src/entities/chassis.ts';
 import { Vector09 } from '/src/entities/Vector09.ts';
+import { Android } from '/src/entities/Android.ts';
+import { COLOSSUS_01_BLUEPRINT } from '/src/entities/mechBlueprint.ts';
 import { weaponModel } from '/src/entities/weaponModels.ts';
 import { ImportedMech } from '/src/entities/ImportedMech.ts';
 import { IMPORTED_CHASSIS, whenMechAssetReady, tryInstantiateMechRig } from '/src/entities/importedMechAssets.ts';
@@ -65,17 +67,21 @@ document.body.append(renderer.domElement);
 const scene = new THREE.Scene();
 const FOG = 0x0a1118;
 scene.background = new THREE.Color(0x05080c);
-scene.fog = new THREE.FogExp2(FOG, shot === 'hero' ? 0.0105 : shot === 'escala' ? 0.0032 : 0.018);
+scene.fog = new THREE.FogExp2(FOG, shot === 'hero' ? 0.0105 : shot === 'escala' ? 0.0075 : 0.018);
 scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 scene.environmentIntensity = 0.32;
 
 /* ---------- os Mechs do jogo ---------- */
-async function mech(id) {
+async function mech(id, escurece = 1) {
   const config = IMPORTED_CHASSIS[id];
   let model;
   if (config) {
     await whenMechAssetReady(config.url, CHASSIS[id].height, config);
     model = new ImportedMech(CHASSIS[id], tryInstantiateMechRig(config.url, CHASSIS[id].height), CHASSIS[id].loadout);
+  } else if (id === 'android') {
+    model = new Android({ stats: CHASSIS.android, loadout: CHASSIS.android.loadout });
+  } else if (id === 'colossus01') {
+    model = new Vector09({ stats: CHASSIS.colossus01, loadout: CHASSIS.colossus01.loadout, blueprint: COLOSSUS_01_BLUEPRINT });
   } else {
     model = new Vector09({ stats: CHASSIS[id], loadout: CHASSIS[id].loadout });
   }
@@ -84,7 +90,8 @@ async function mech(id) {
     if (!o.isMesh) return;
     o.castShadow = true; o.receiveShadow = true;
     // casco branco do Marauder estoura no brilho: escurece o tom do material (a malha continua a do jogo)
-    if (id === 'marauder' && o.material?.color) { o.material = o.material.clone(); o.material.color.multiplyScalar(0.5); }
+    const tom = (id === 'marauder' ? 0.5 : 1) * escurece;
+    if (tom !== 1 && o.material?.color) { o.material = o.material.clone(); o.material.color.multiplyScalar(tom); }
   });
   return model;
 }
@@ -206,14 +213,19 @@ if (shot === 'hero') {
   camera.position.set(mx * 0.4, 1.4 + mx * 0.26, mx * dist); camera.fov = 30; camera.lookAt(0, 1.4, 0);
   scene.fog.density = 0.05;
 } else if (shot === 'escala') {
-  hall(-36);
-  const ids = ['vector09', 'marauder', 'colossusv4']; const xs = [-21, -8, 10]; const lista = [];
-  for (let i = 0; i < ids.length; i++) { const m = place(await mech(ids[i]), xs[i], 0, ids[i] === 'colossusv4' ? 0.18 : Math.PI + 0.35); lista.push([ids[i], m]); }
-  key(0xffb766, 3, [-16, 26, 40], [-2, 6, 0]); key(0x4fb4ff, 3.2, [30, 20, -20], [0, 8, 0], false); key(0xff9a3a, 1.2, [-30, 10, 10], [-10, 4, 0], false);
+  // a comparação: Andróide (tamanho 1), Vector-09 (2) e Colossus-01 (3) lado a lado, e o Colossus-V4 (4) por trás, discreto
+  hall(-40);
+  const lista = [];
+  const colocar = async (id, x, z, rot, escurece = 1) => { const m = place(await mech(id, escurece), x, z, rot); lista.push([id, m]); return m; };
+  await colocar('colossusv4', -1, -40, 0.12, 0.5);          // por trás, escuro e na névoa: a escala, sem roubar a cena
+  await colocar('colossus01', 14, 2, Math.PI + 0.22);
+  await colocar('vector09', -5, 5, Math.PI + 0.4);
+  await colocar('android', -13, 8, Math.PI + 0.3);
+  key(0xffb766, 3, [-16, 26, 40], [-4, 6, 0]); key(0x4fb4ff, 3.2, [30, 20, -20], [0, 8, 0], false); key(0xff9a3a, 1.2, [-30, 10, 10], [-10, 4, 0], false);
   scene.add(new THREE.HemisphereLight(0x6f8fb0, 0x2a1d12, 0.55));
-  halo(2, 9, -22, 90, 0xff9a3a, 0.5);
-  sparks(-2, 0.2, 4, 300, 22, 0.16);
-  camera.position.set(0, 3.6, 84); camera.fov = 18.5; camera.lookAt(-2, 9, 0);
+  halo(0, 13, -43, 120, 0xff9a3a, 0.7);
+  sparks(-2, 0.2, 6, 260, 16, 0.16);
+  camera.position.set(0, 3.4, 62); camera.fov = 21; camera.lookAt(0.5, 8.5, 0);
   info.escala = lista.map(([id, m]) => ({ id, ...medida(m) }));
 } else if (shot === 'hangar') {
   hall(-40);

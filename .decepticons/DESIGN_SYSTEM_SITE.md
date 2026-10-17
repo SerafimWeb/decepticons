@@ -79,9 +79,9 @@ Eventos de métrica: só os quatro que o servidor aceita (`landing_view`, `click
 
 ## 7. Imagem
 
-- **Hero, hangar, régua dos chassis, armas e cartas**: fotos de `node .decepticons/medicoes/cena-cinematica.mjs` — os `.glb` e os Mechs procedurais do jogo
+- **Hero, hangar, escala dos chassis (Andróide, Vector-09 e Colossus-01 lado a lado, Colossus-V4 por trás e discreto), armas e cartas**: fotos de `node .decepticons/medicoes/cena-cinematica.mjs` — os `.glb` e os Mechs procedurais do jogo
   num hangar com luz, névoa, brilho e faíscas. A posição das partes e das medidas na foto sai em `scripts/site/cena/*.json` e a página **posiciona rótulos por ela**
-  (a régua de 20 m do Colossus, os seis marcadores do Hangar). Mexeu na cena? Rode o script de novo e confira a página.
+  (a régua de 20 m do Colossus no herói, os rótulos dos quatro chassis na foto de escala, os seis marcadores do Hangar). Mexeu na cena? Rode o script de novo e confira a página.
 - **Capturas de gameplay** (`capturas/`, seção de câmeras): feitas jogando o build; sempre rotuladas "Capturas do próprio jogo".
 - **Ilustrações do esquadrão** (`eq-*.jpg`): arte de referência do Comandante, recortada; é ilustração, não foto de pessoa.
 - Imagem pesada abaixo da primeira dobra: `loading="lazy"`; a do herói: `fetchpriority="high"`. Tamanhos fixos (`width`/`height`) para não pular o layout.
