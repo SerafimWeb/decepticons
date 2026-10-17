@@ -86,4 +86,7 @@
 
 ## 7. Como isto entra no jogo (resumo)
 
+**O Arquivo está no jogo (17/10, P179).** As seis fichas viraram versões **curtas** (o que é, como aparece, como se defender, a fonte) em `client/public/arquivo/<língua>.json`, uma por língua (pt, en, es, fr, ja, zh, ru). **Esta ficha é a fonte de verdade:** mudou um texto aqui, muda lá nas sete línguas, e o teste `ArquivoPanel.test.ts` confere a forma (seis fichas, mesmo número de sinais em toda língua, só as incoerências como sátira, nenhum nome de pessoa viva). A ficha 6 (as incoerências) é **sátira declarada** e o jogo avisa na tela. As traduções são de Claude e **pedem revisão de falante nativo**, como as da landing.
+
+
 Em `LADO_E_PEDAGOGIA.md` § 4: dicas de carregamento, rádio do SOC, fim de missão (Relatório de Consequências) e o Arquivo opcional. **Nenhum sermão no meio da partida.**

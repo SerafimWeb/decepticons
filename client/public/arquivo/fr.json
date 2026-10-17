@@ -1,0 +1,101 @@
+{
+ "rotulos": {
+  "titulo": "ARCHIVE",
+  "sub": "ce que le jeu enseigne",
+  "oQueE": "CE QUE C'EST",
+  "comoAparece": "COMMENT ÇA SE MONTRE",
+  "comoSeDefender": "COMMENT SE DÉFENDRE",
+  "fontes": "SOURCES",
+  "satira": "SATIRE ASSUMÉE · N'AFFIRME AUCUN FAIT",
+  "fechar": "[ FERMER ]"
+ },
+ "fichas": [
+  {
+   "id": "fascismo",
+   "nome": "LE FASCISME",
+   "lema": "ce que c'est et comment il se manifeste",
+   "oQueE": "Une politique de masse qui promet une renaissance nationale contre un déclin imaginaire, exalte un chef et un peuple « pur » et traite une partie de la société en ennemi intérieur. Elle use du mensonge et de la violence comme méthode, alliée à des élites qui profitent de l'ordre qu'elle impose.",
+   "comoAparece": [
+    "Culte d'un passé mythique : « c'était mieux avant »",
+    "Mépris de la vérité et de la science",
+    "Un ennemi intérieur toujours sous la main",
+    "Le groupe dominant se dit persécuté",
+    "La loi vaut pour l'ennemi, pas pour l'allié",
+    "Attaques contre la presse, les universités et les écoles"
+   ],
+   "comoSeDefender": "Nommez le mécanisme, pas l'étiquette (« c'est un ennemi inventé »). Vérifiez la source et qui paie. Méfiez-vous de l'urgence et de la colère sur mesure. Protégez ceux qui enquêtent et enseignent.",
+   "fonte": "Eco, « Ur-Fascism » (1995) · Paxton, The Anatomy of Fascism (2004) · Stanley, How Fascism Works (2018) · Arendt, The Origins of Totalitarianism (1951)"
+  },
+  {
+   "id": "rede",
+   "nome": "LE RÉSEAU DE MENSONGES",
+   "lema": "de l'argent à la une",
+   "oQueE": "La machine qui fabrique et diffuse le mensonge à grande échelle. Ce n'est pas un menteur : c'est une chaîne.",
+   "comoAparece": [
+    "La chaîne : qui paie, l'agence, l'influenceur, le réseau de comptes, la une",
+    "La même phrase sur de nombreux comptes en même temps",
+    "Urgence émotionnelle : « partagez avant qu'ils ne suppriment »",
+    "Pas de source, ou une source qui se cite elle-même",
+    "La même cible de haine dans toutes les versions"
+   ],
+   "comoSeDefender": "Arrêtez-vous avant de partager. Cherchez l'origine. Méfiez-vous de la synchronie. Préférez ceux qui corrigent leurs erreurs à ceux qui ne le font jamais.",
+   "fonte": "Paul et Matthews, « The Russian Firehose of Falsehood Propaganda Model », RAND (2016) : le modèle du volume et de la répétition, utile comme mécanisme général"
+  },
+  {
+   "id": "lucro",
+   "nome": "QUI EN PROFITE",
+   "lema": "les intérêts derrière",
+   "oQueE": "La question qui dissipe la fumée : à qui cela sert-il ? Derrière bien des querelles politiques se cache un intérêt économique que le discours ne dit pas : l'extraction, la rente, la vente de sécurité et d'armes, l'économie de l'attention.",
+   "comoAparece": [
+    "Le discours parle de valeurs : famille, patrie, ordre, « développement »",
+    "La décision rapporte un profit à quelqu'un",
+    "L'addition n'est presque jamais lue à voix haute"
+   ],
+   "comoSeDefender": "Suivez l'argent : qui finance la campagne, qui gagne avec la loi, qui possède la chaîne. Comparez le discours avec ce que la décision produit.",
+   "fonte": "Mécanisme général. Le jeu ne cite aucun chiffre sans source publique (INPE/PRODES et MapBiomas, pour la déforestation)."
+  },
+  {
+   "id": "medo",
+   "nome": "L'ENTRETIEN DE LA PEUR",
+   "lema": "la peur comme gouvernement",
+   "oQueE": "La peur comme méthode de gouvernement : garder les gens effrayés pour qu'ils acceptent ce qu'ils n'accepteraient pas calmes.",
+   "comoAparece": [
+    "Un ennemi intérieur inventé",
+    "La panique morale : un sujet choisi à la main envahit toute la conversation",
+    "La sécurité en spectacle : on montre la force, pas les résultats",
+    "Pendant que tous regardent la peur, le portefeuille et la terre changent de maître"
+   ],
+   "comoSeDefender": "Demandez ce qui a vraiment changé (prix, droits, terre) pendant que tous regardaient ailleurs. La peur sur mesure est un signal.",
+   "fonte": "Stanley (2018) · Eco (1995) · Cohen, Folk Devils and Moral Panics (1972)"
+  },
+  {
+   "id": "midia",
+   "nome": "LES MÉDIAS ACHETÉS",
+   "lema": "l'agenda et le silence ont un propriétaire",
+   "oQueE": "Ce que devient l'information quand la propriété est concentrée et que la publicité paie la facture : l'agenda et le silence ont un propriétaire.",
+   "comoAparece": [
+    "L'opinion déguisée en information",
+    "Ce qui n'est pas dit : le sujet qui disparaît",
+    "La répétition qui ressemble à un consensus",
+    "La critique sélective : un camp est enquêté, l'autre seulement commenté"
+   ],
+   "comoSeDefender": "Distinguez information, opinion et propagande. Lisez des sources de plus d'un propriétaire. Cherchez l'enquête, pas seulement le titre.",
+   "fonte": "Mécanisme général de l'économie politique de la communication (Herman et Chomsky, Manufacturing Consent, 1988). Dans le jeu, les médias sont un archétype, le « Réseau Vérité Pleine » : satire, pas portrait."
+  },
+  {
+   "id": "incoerencias",
+   "nome": "LES INCOHÉRENCES",
+   "lema": "le miroir des archétypes",
+   "satira": true,
+   "oQueE": "Ceci est de la satire, et le jeu le dit. Il n'affirme rien sur une personne réelle : c'est le miroir des archétypes.",
+   "comoAparece": [
+    "Le « patriote » qui vend le pays pour un bon contrat",
+    "Le « contre l'État » qui vit d'exonérations et de subventions",
+    "Le « défenseur de la vie » qui supprime des lits d'hôpital",
+    "Le « libéral » qui réclame la censure quand le sujet, c'est lui"
+   ],
+   "comoSeDefender": "Comparez ce qu'on dit à ce qu'on fait : l'incohérence est le premier signe que le discours sert autre chose.",
+   "fonte": "Satire assumée : aucune affirmation de fait."
+  }
+ ]
+}

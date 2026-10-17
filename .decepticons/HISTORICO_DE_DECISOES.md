@@ -1,3 +1,16 @@
+## [2026-10-17] O Arquivo: conteúdo em JSON por língua, painel sob demanda, tudo opcional (Claude, P179 camada 2)
+
+**Ordem:** mostrar o posicionamento do jogo *"SUTILMENTE E ELEGANTEMENTE, pedagogicamente"* e explicar o que é o fascismo, a rede de mentiras, os interesses das elites e a manutenção do medo.
+
+**Decisões:**
+1. **Opcional, nunca porta:** o Arquivo mora num chip no console e na pausa; não abre sozinho, não interrompe partida (P133 e a regra 5 do `LADO_E_PEDAGOGIA.md` § 3.4). Quem quer aprender abre.
+2. **Uma ficha, quatro partes:** o que é, como aparece, como se defender, a fonte. **A contramedida é a parte que ensina**: o jogador aprende a reconhecer e a agir, não a ouvir sermão. **A ficha 6 é sátira declarada e a tela diz**: a regra "sátira exagera, fato é fato" aparece para o jogador, não só no documento.
+3. **Conteúdo em `public/arquivo/<língua>.json`, não em chave de dicionário:** cada língua é um arquivo que um revisor nativo edita inteiro, sem ficar espalhado em seis dicionários carregados no boot de todo jogador. Língua sem arquivo cai no inglês, depois no português.
+4. **Painel como pedaço sob demanda (`import()`):** o JS de partida estava em 499,6 / 500 KB. O orçamento de dois tetos (`scripts/orcamentoDeJs.mjs`, P180) existe para isto: recurso opcional não pesa no download de quem não o usa. **Regra para os próximos: texto longo vai para JSON em `public/`, tela opcional vira `import()`.**
+5. **Teste como trava de conteúdo:** nenhum nome de político ou bilionário vivo em nenhuma língua (arquétipos, decisão #9 do `UNIVERSO.md`), só as incoerências como sátira, toda ficha com fonte, o mesmo número de sinais em todas as línguas (a tradução não perde nem inventa um tema).
+
+**O que a decisão não faz:** não revisa as fontes (citadas de memória; **revisor humano antes de ir ao ar**) e não traz casos reais (só com fonte dada pelo Comandante).
+
 ## [2026-10-17] O MULTI da primeira tela delega ao botão que já existe (Claude, P182)
 
 **Ordem:** a anotação do Comandante, **MULTI** sobre o "2Players" dos jogos antigos.

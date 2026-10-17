@@ -542,7 +542,7 @@ export class CommandConsole {
 
 /** Uma janela por cima do console (Configurações, sala online, calibração do mouse): o Enter é dela, não do console. */
 function algoPorCima(): boolean {
-  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #campanha-modal:not(.hidden), #campanha-fim, #arsenal-modal:not(.hidden), #server-modal:not(.hidden), #cameras-modal:not(.hidden)');
+  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #campanha-modal:not(.hidden), #campanha-fim, #arsenal-modal:not(.hidden), #server-modal:not(.hidden), #cameras-modal:not(.hidden), .lado-modal');
 }
 
 function barra(rotulo: string, valor: string, fracao: number, alerta = false): HTMLElement[] {

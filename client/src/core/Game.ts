@@ -873,6 +873,11 @@ export class Game {
     this.dailyChallenges.onSave = () => sessao.mudou();
     // O seletor de lado (P179): o selo LADO do console e a pergunta "de que lado você joga?" (a campanha do Consórcio lê `lado.atual`, no futuro).
     this.lado = new LadoSelector(armazem);
+    // O Arquivo é opcional e pesa no download: o painel é um pedaço sob demanda, baixado só no clique do chip.
+    document.getElementById('cc-arquivo')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      void import('../ui/ArquivoPanel').then((m) => m.abrirArquivo());
+    });
     const blocoConta = document.getElementById('settings-conta');
     if (blocoConta) void new ContaSettings(blocoConta, sessao).restaurar();
 
