@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P173 — O jogo em outras línguas (17/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P173 | 17/10 | "sim, vamos **JÁ** colocar a opção para outras línguas (inglês, japonês, espanhol, francês, chinês, russo)" (resposta à pergunta da P171 (b): o inglês entra antes da monetização? **Sim, e com mais cinco línguas**) | 🟡 | **Feito (Claude, 17/10).** `client/src/i18n/i18n.ts` (o tradutor), `client/public/locales/{en,es,fr,ja,zh,ru}.json` (445 textos por língua) e o seletor em Configurações → JOGO → **Idioma · Language**; o `?lang=ja` do link e a língua do navegador também escolhem. Em português **nada muda** (custo zero). Fora do alcance (PARCIAL em `STATUS_REAL.md`): a voz do narrador (gravada em português), textos desenhados em canvas (placas de nome, mapa-múndi) e as fichas longas do Hangar. | Abra o jogo, **[ AJUSTAR ]** → aba JOGO → **Idioma** e troque: a tela inteira muda na hora, sem recarregar. Ou abra `…/jogar/?lang=ja`. As capturas estão em `arte/idiomas-*-claude.png`. **O Comandante julga as traduções** (o Claude não é nativo em nenhuma das cinco: vale uma revisão por falante antes de divulgar fora do Brasil). |
+
 ## P172 — O site no nível de um jogo comercial: bem parecido com as referências (16/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
