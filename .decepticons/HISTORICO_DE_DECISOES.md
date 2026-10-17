@@ -1,3 +1,12 @@
+## [2026-10-17] O MULTI da primeira tela delega ao botão que já existe (Claude, P182)
+
+**Ordem:** a anotação do Comandante, **MULTI** sobre o "2Players" dos jogos antigos.
+
+**Decisões:**
+1. **O botão verde é o SOLO; o MULTI é uma chapa embaixo, não um segundo botão primário.** Princípio de uma ação primária por tela (`AUDITORIA_INTERFACE.md`): a pergunta tem duas respostas, mas Enter continua sendo "jogar contra os bots" (o caminho de quem acabou de chegar). O MULTI é azul frio e só acende em dourado sob o mouse ou com o foco (a linha selecionada da referência).
+2. **Delega, não duplica:** o clique chama o `#btn-online` do monitor da REDE (que abre o lobby). O estado (em sala ou não) vai em `data-online` no botão, porque o rótulo muda de língua. A regra de entrar online continua só no `OnlineSwitch`.
+3. **Só na primeira tela:** no console completo o monitor da REDE já tem o botão (nada repetido), e sem servidor no build o par não existe (não há MULTI para oferecer).
+
 ## [2026-10-17] As dicas de arma do Hangar saem do pacote de JS para um JSON (Claude, P182)
 
 **Problema:** o orçamento de JS (R7, 500 KB gzip) estava em 500,03 KB com o `‹ valor ›`; qualquer módulo novo, de qualquer agente, quebraria o `npm run check`. Subir o orçamento não era o caminho (R7 é do protocolo).

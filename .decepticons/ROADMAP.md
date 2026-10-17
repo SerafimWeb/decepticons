@@ -320,7 +320,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [~] Lado político e pedagogia: o seletor de lado está no jogo (DEMO); faltam o Arquivo, o Relatório de Consequências e a campanha do Consórcio (`LADO_E_PEDAGOGIA.md`) (pedido do Comandante, 17/10, P179) #modos
 - [ ] Missão da Amazônia: a mineradora no rio (`fichas/cenario-amazonas.md`); o modelo do cenário é do Comandante, em outro chat (P180) #cenarios
 - [x] Arpão por peso: o robô mais leve não puxa o mais pesado (pedido do Comandante, 17/10, P181) #combate
-- [~] Interfaces de jogos antigas: **feito** a linha em barra dourada e o `‹ valor ›` nas Configurações; faltam o par SOLO / MULTI na primeira tela e a placa no console (`REFERENCIA_VISUAL.md` § 8) (pedido do Comandante, 17/10, P182) #ux
+- [~] Interfaces de jogos antigas: **feito** a linha em barra dourada e o `‹ valor ›` nas Configurações e o par SOLO / MULTI na primeira tela; falta a placa no console (`REFERENCIA_VISUAL.md` § 8) (pedido do Comandante, 17/10, P182) #ux
 - [ ] Ombros nos chassis pesados (Bastion, Onça, Colossus), para o arpão render nas mãos de um robô grande (P77, P181) #combate
 
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
