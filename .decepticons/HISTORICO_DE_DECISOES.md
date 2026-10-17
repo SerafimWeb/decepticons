@@ -1,3 +1,14 @@
+## [2026-10-17] Os bots atiram o laser e a cadência de conteúdo vira número no painel (Claude, P175)
+
+**Ordem:** as pendências abertas recentes (a P160 deixou "os bots usarem as armas novas"; a P171 pediu "contar conteúdo como se conta código").
+
+**Decisões:**
+1. **O bot reaproveita `Match.beamPulse`, não ganha um raio próprio:** uma regra só (G14) para jogador e bot, e no servidor o pulso do bot já vira evento de tiro (`onBeam`). A opção é `pulso` do `BotSystem`, **separada dos `launchers`**: `explosivos: false` desliga o míssil, não o laser.
+2. **O laser entra como arma de energia do bot, na cadência dela**, sem o "segurar o gatilho" do jogador: o calor e a pausa da IA já cortam a rajada. Não houve ajuste de equilíbrio (o dano por pulso, 6, cai com a distância e o bot erra a mira da dificuldade).
+3. **O arpão não é arma de bot:** só há ombros no Marauder, e o bot não os tem. Fica declarado.
+4. **O ritmo de conteúdo mede o que é inequívoco: arma e chassi** (ids do código, datas do git). Mapas, pilotos e eventos ainda não entram (não há lista no código para ler). A média usa as quatro **últimas semanas completas** (a corrente fica de fora: senão ela sempre puxaria a média para baixo).
+5. **D7 e DAU/MAU não foram feitos de propósito:** exigem guardar um id por visitante, que é decisão de privacidade do Comandante (LGPD), não de engenharia.
+
 ## [2026-10-17] O login do jogador: a conta guarda o progresso do navegador, sem porta e sem id local (Claude, P174)
 
 **Ordem:** *"concluamos sobre o LOGIN"* (camada C3 do `RANKING_E_LOGIN.md`).

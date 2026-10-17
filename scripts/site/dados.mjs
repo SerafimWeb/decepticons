@@ -583,6 +583,67 @@ export function evolucao() {
  * sobrevive às renumerações). Base do burn-up, da linha do tempo das fases e do ritmo. Um processo git
  * para todas as versões (`cat-file --batch`): um por commit levava segundos no Windows.
  */
+let unidadesEmCache = null;
+
+/** Cada arma e cada chassi do código com a data (`AAAA-MM-DD`) do merge que o trouxe para a `main`. Cara (uma busca no git por unidade): guardada para o resto da execução. */
+function unidadesDoJogo() {
+  if (unidadesEmCache) return unidadesEmCache;
+  /** Os pares [id, linha] que `re` acha no arquivo (ou só no bloco que começa em `bloco` e vai até o fim da chave). */
+  const ids = (arquivo, re, bloco) => {
+    let txt = read(arquivo);
+    if (bloco) {
+      const i = txt.indexOf(bloco);
+      if (i < 0) return [];
+      const fim = txt.indexOf('\n}', i);
+      txt = txt.slice(i, fim < 0 ? undefined : fim);
+    }
+    return [...txt.matchAll(re)].map((m) => [m[1], m[0].trim()]);
+  };
+  const dataDoId = (arquivo, trecho) => git('log', '--first-parent', '--reverse', '--format=%cs', '-S', trecho, '--', arquivo).split('\n')[0] || null;
+  const unidades = [];
+  for (const [id] of ids('client/src/combat/weapons.ts', /^\s+id: '([a-z0-9]+)',/gm)) {
+    const data = dataDoId('client/src/combat/weapons.ts', `id: '${id}'`);
+    if (data) unidades.push({ id, tipo: 'arma', data });
+  }
+  for (const [id, linha] of ids('client/src/entities/chassis.ts', /^  ([a-z0-9]+): [A-Z][A-Z0-9_]*,/gm, 'export const CHASSIS')) {
+    const data = dataDoId('client/src/entities/chassis.ts', linha.replace(/,$/, ''));
+    if (data) unidades.push({ id, tipo: 'chassi', data });
+  }
+  unidadesEmCache = unidades;
+  return unidades;
+}
+
+/**
+ * O ritmo de conteúdo (P175; `LICOES_WAR_ROBOTS.md` § 2.1: "contar conteúdo como se conta código"): cada **arma** e cada **chassi** do jogo conta uma unidade, na **semana** (a segunda-feira dela)
+ * em que o merge que o criou entrou na `main`. Os ids saem do código (nada copiado) e a data, do histórico do git (`--first-parent -S`: a primeira entrega na `main` que traz o id). Sem git (ou
+ * sem histórico), devolve vazio. `media4` = unidades por semana nas últimas quatro semanas completas (a conta que o Comandante confere com a meta de 2 por semana, ainda por decidir).
+ */
+export function conteudoPorSemana(hoje = new Date()) {
+  const unidades = unidadesDoJogo();
+  if (!unidades.length) return { unidades, semanas: [], total: 0, media4: 0 };
+  const segunda = (iso) => {
+    const d = new Date(`${iso}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+    return d.toISOString().slice(0, 10);
+  };
+  const porSemana = new Map();
+  for (const u of unidades) {
+    const s = segunda(u.data);
+    if (!porSemana.has(s)) porSemana.set(s, []);
+    porSemana.get(s).push(u.id);
+  }
+  const primeira = [...porSemana.keys()].sort()[0];
+  const atual = segunda(hoje.toISOString().slice(0, 10));
+  const semanas = [];
+  for (let d = new Date(`${primeira}T12:00:00Z`); d.toISOString().slice(0, 10) <= atual; d.setUTCDate(d.getUTCDate() + 7)) {
+    const s = d.toISOString().slice(0, 10);
+    semanas.push({ segunda: s, n: (porSemana.get(s) ?? []).length, ids: porSemana.get(s) ?? [] });
+  }
+  const completas = semanas.filter((w) => w.segunda < atual).slice(-4);
+  const media4 = completas.length ? completas.reduce((a, w) => a + w.n, 0) / completas.length : 0;
+  return { unidades, semanas, total: unidades.length, media4 };
+}
+
 export function historicoRoadmap() {
   const path = '.decepticons/ROADMAP.md';
   const log = git('log', '--reverse', '--format=%H%x1f%cI', '--', path).split('\n').filter(Boolean);
