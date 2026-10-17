@@ -1,7 +1,7 @@
 # LADO E PEDAGOGIA — "de que lado você joga?" e como ensinar sem sermão (P179)
 
 > **Ordem do Comandante (17/10):** *"devemos perguntar se quer jogar pelos aliados antimperialistas, lutando pela justiça social e redistribuição das riquezas, ou se quer fazer campanha para fortalecer o desmatamento, imperialismo e fascismo das elites burguesas. Não temos problema de mapear o nazifascismo (e devemos explicar o que são e como se manifestam, a rede de mentiras, os interesses obtusos por trás das elites, a manutenção do medo, etc) como o maior problema que estamos enfrentando na geopolítica global atualmente (mesmo que não fiquemos citando toda hora, acho importante que pelo menos SUTILMENTE E ELEGANTEMENTE, pedagogicamente mostremos nosso posicionamento político SIM: queremos proteger os direitos dos povos CONTRA a opressão e hegemonia norte-americana; mostrar as violências e mentiras que a mídia comprada pelo capitalismo e a favor dele, mostrar as incoerências do conservadorismo, entre outras problemáticas."*
-> **Estado:** desenho escrito por Claude em 17/10. O seletor de lado (camada 1) está no jogo; o resto é plano. **Nada do que dependa de fato entra no jogo sem fonte** (§ 5).
+> **Estado:** desenho escrito por Claude em 17/10. O seletor de lado (camada 1) e o Arquivo (camada 2) estão no jogo; o resto é plano. **Nada do que dependa de fato entra no jogo sem fonte** (§ 5).
 
 ## 1. O que isto fixa, em três frases
 
@@ -41,7 +41,7 @@ O Comandante já decidiu (15/10, P133) que o primeiro acesso **cai numa partida*
 | Camada | O que muda | Estado |
 |---|---|---|
 | **1 · o lado existe** | a escolha é guardada (`cybermech.lado.v1`), aparece no selo LADO do console e da pausa, e o painel do Consórcio mostra **o discurso e o custo** (sátira dos eufemismos). **Ainda não muda o combate nem os textos das missões** | **no jogo, como DEMO** (o seletor, as duas respostas e o painel do custo) |
-| **2 · o Arquivo** | a tela opcional que ensina (§ 4) | plano |
+| **2 · o Arquivo** | a tela opcional que ensina (§ 4) | **no jogo (17/10):** o chip ARQUIVO no console e na pausa; seis fichas em `client/public/arquivo/<língua>.json` (sete línguas); texto **a conferir por revisor humano** |
 | **3 · o Relatório de Consequências** | o fim da missão mostra o que aconteceu com o rio, com os povos, com a água, com **números lidos de ficha** | plano |
 | **4 · a campanha do Consórcio** | os **objetivos invertem**: na Amazônia, a Aliança **invade** a mineradora; o Consórcio **defende** o perímetro (mesmo mapa, outra missão) | plano (`fichas/cenario-amazonas.md`) |
 
@@ -75,7 +75,7 @@ Cada tema é uma **ficha curta com fonte** em três linhas: **o que é** (uma fr
 ## 6. A ordem de construção (um PR por degrau)
 
 1. ✅ **O seletor de lado** (camada 1) e o painel de consequências do Consórcio (texto). *Entregue em 17/10, P179.*
-2. **O Arquivo**: a tela e as seis fichas (§ 4), com os textos revisados pelo Comandante.
+2. ✅ **O Arquivo**: a tela e as seis fichas (§ 4). *Entregue em 17/10, P179. Os textos pedem revisão do Comandante e a conferência das fontes.*
 3. **O Relatório de Consequências** no fim das missões.
 4. **A campanha do Consórcio** na Amazônia (objetivos invertidos), depois que o cenário existir (`fichas/cenario-amazonas.md`).
 

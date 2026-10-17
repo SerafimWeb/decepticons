@@ -11,7 +11,9 @@ import { acceptsMetalShield, armGroups, armOptions, factorySpec, hasShoulderSlot
 import { shoulderMounts } from '../combat/mounts';
 import { PRESET_COUNT } from '../hangar/Hangar';
 import { AdminPanel } from './AdminPanel';
-import { WEAPON_HINT_NOVAS, WEAPON_ICON_NOVAS } from './weaponIconsNovas';
+import { traduzir } from '../i18n/i18n';
+import { carregarDicasDoHangar, dicaDoHangar } from './dicasDoHangar';
+import { WEAPON_ICON_NOVAS } from './weaponIconsNovas';
 import { testAt, testFire, TEST_FIRE_S, type TestFire } from '../hangar/testFire';
 
 /** O que a tela pede ao jogo: abrir e fechar o galpão 3D, mostrar a montagem, girar e aplicar na hora. */
@@ -64,30 +66,8 @@ function slotMounts(chassis: ChassisId, slot: ArmSlot, layout = 0): readonly Mou
   if (slot === 'left') return ['leftHand'];
   return shoulderMounts(triggersOf(CHASSIS[chassis], layout));
 }
-const WEAPON_HINT: Record<WeaponId, string> = {
-  railgun: 'Energia · segure 0,85 s para disparar · longo alcance · muito calor',
-  emp: 'Energia · pulso lento · pouco dano e +20% de calor no alvo próximo · sem paralisia',
-  plasma: 'Energia · dano cheio até 60 m · calor por disparo',
-  rockets: 'Munição · explosão em área · recarga automática',
-  seeker: 'Munição · guiado de médio alcance (Ataque 2; nos ombros, um míssil em cada) · TRAVA no inimigo mais centrado à frente (29°, até 110 m, à vista) e CURVA até ele; quem corre reto é perseguido, quem se abriga ou usa o dash ainda desvia · cada nível afina a curva e alarga a trava (MK III: 154 m) · explosão em área · recarga automática',
-  swarm: 'Munição · leve · UM APERTO ESVAZIA o lançador: 8 mísseis (MK I), 16 (MK II) ou 32 (MK III), um a cada 0,07 s, com um desvio pequeno · 5 de dano e 2,2 m de explosão por míssil · só dispara com todos os tubos carregados · satura e força o inimigo a sair do lugar',
-  harpoon: 'Energia · ombro · ARPÃO: prende o primeiro inimigo à vista (45 m) e o PUXA até você · só puxa quem é do seu peso ou mais leve · o dash corta o cabo, parede também · 10 de dano · um aperto a cada 4 s',
-  grenade: 'Munição · médio · lança-granadas: a granada sai em ARCO e cai no ponto da mira (até 80 m); passa por cima da cobertura · explode no robô, tabela na parede, crava no chão · 34 de dano, 5 m de explosão · 4 por carga',
-  cruise: 'Munição · pesado · míssil cruzador: sobe em arco e MERGULHA no ponto da mira, até 420 m, por cima do cenário baixo · 90 de dano e 9 m de explosão · não guia: quem corre escapa · um por carga, 6 s de recarga · dois acertos nunca bastam',
-  laser: 'Energia · feixe instantâneo em pulsos (6 de dano a cada 0,13 s), sem projétil para desviar · dano cheio até 180 m e 70% aos 360 m · segure a mira no alvo · o calor decide a duração do feixe (~6 s)',
-  blaster: 'Energia · leve · alcance curto',
-  shotgun: 'Energia · 9 balins num cone · dano alto de perto, espalha de longe (50 m)',
-  barrage: 'Munição · sobe e cai em chuva de 8 bombas num círculo de 9 m · aviso no chão',
-  chainsaw: 'Corpo a corpo · só corta encostado',
-  arc: WEAPON_HINT_NOVAS.arc,
-  cryo: WEAPON_HINT_NOVAS.cryo,
-  flamer: WEAPON_HINT_NOVAS.flamer,
-  rotary: WEAPON_HINT_NOVAS.rotary,
-  sonic: 'Som · só nos ombros (Ataque 2), as duas bocas juntas · onda em cone de 22 m que EMPURRA · 20 de dano por boca, cheio até 10 m · a chapa Amortecedor segura 90% · cada nível +25% de alcance',
-  cannon: 'Aço · um obus só, grande e lento (150 m/s) · 90 de dano, um a cada 2,6 s · 4 acertos (MK I) ou 3 (MK II e III) para um torso · só os pesados o carregam',
-  siege: 'Tamanho 3 · o canhão do titã: SEGURE 3 s para carregar e solte um obus de 360 com 5 m de explosão · derruba um torso de Mech num tiro só · para o Colossus-V4 é arma LEVE · só gigantes o carregam',
-  autocannon: 'Aço · projéteis em sequência firme, 5 por segundo · 10 de dano, preciso e rápido · esquenta menos que o plasma · sem espalhamento',
-};
+/** Como a chapa metálica funciona (depois da frase própria de cada uma). Cada pedaço do texto do encaixe se traduz sozinho (`traduzir`): a frase inteira muda de caso a caso. */
+const DICA_DA_CHAPA = 'Segure o Ataque 2 (clique direito) para levantar a chapa: cobre a frente e anda mais devagar; abaixada, protege só o flanco esquerdo com metade da força. Sem energia: a chapa se desgasta e volta no conserto.';
 
 /** Ícones de traço (24×24) de cada arma. */
 const WEAPON_ICON: Record<WeaponId, string> = {
@@ -494,6 +474,7 @@ export class HangarMenu {
     document.documentElement.classList.add('hangar-open');
     this.preview.open();
     this.render();
+    void carregarDicasDoHangar().then((nova) => nova && !this.root.classList.contains('hidden') && this.render()); // as dicas das armas vêm de um JSON (R7: o orçamento de JS); a primeira abertura refaz o texto quando chegam
     this.root.querySelector<HTMLButtonElement>('.hangar-apply')?.focus({ preventScroll: true }); // sem isto o navegador rolava o painel até o botão, e o topo (os braços) abria cortado
   }
 
@@ -736,7 +717,7 @@ export class HangarMenu {
     editor.innerHTML = `
       <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ATAQUE ${slotAttack(this.selectedSlot, spec.chassis, spec.layout ?? 0) ?? '—'}</label>
       <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}${plateOptions}</select>
-      <p class="hg-hint">${plate ? `${METAL_SHIELDS[plate.id].hint}. Segure o Ataque 2 (clique direito) para levantar a chapa: cobre a frente e anda mais devagar; abaixada, protege só o flanco esquerdo com metade da força. Sem energia: a chapa se desgasta e volta no conserto.` : w ? WEAPON_HINT[w.id] + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') + (CHASSIS_SIZE[spec.chassis] >= 3 ? ' · tamanho 3: o que é pesado nos Mechs comuns é leve para ele' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
+      <p class="hg-hint">${plate ? `${traduzir(METAL_SHIELDS[plate.id].hint)}. ${traduzir(DICA_DA_CHAPA)}` : w ? traduzir(dicaDoHangar(w.id)) + (this.selectedSlot === 'shoulders' ? ` ${traduzir('· um lançador em cada ombro: a carga conta duas vezes')}` : '') + (nasCostas(w.id, this.selectedSlot) ? ` ${traduzir('· fica nas costas do Mech, apontando para cima; o antebraço fica liso')}` : '') + (CHASSIS_SIZE[spec.chassis] >= 3 ? ` ${traduzir('· tamanho 3: o que é pesado nos Mechs comuns é leve para ele')}` : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
 ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou testar. A prévia mantém a última montagem válida.</p>' : ''}
       ${["genesis01", "lancerL1", "lr7lBastion", "quadraV2"].includes(spec.chassis) ? '<p class="hg-hint">Arma integrada ao casco: a aparência deste robô ainda não muda com a seleção.</p>' : ''}<div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => { const copies = mountCopies(this.selectedSlot, spec.chassis, spec.layout ?? 0); const mass = plate ? metalShieldMass(plate.id, i as Tier) : arm ? weapon(arm.id as WeaponId, i as Tier).mass * copies : 0; const total = report.mass - (plate ? metalShieldMass(plate.id, plate.tier) : (w?.mass ?? 0) * copies) + mass; const excess = Math.max(0, total - report.capacity); const hint = excess > 1e-9 ? `EXCEDE ${num(excess, 1)} t` : `${num(report.capacity - total, 1)} t livres`; return `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}${excess > 1e-9 ? ' over' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}" title="${hint}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : plate ? `+${Math.round((METAL_SHIELD_TIERS[i]!.integrity - 1) * 100)}% chapa` : `+${Math.round((t.damage - 1) * 100)}% dano`} · ${num(mass, 1)} t</small><small>${hint}</small></button>`; }).join('')}</div>

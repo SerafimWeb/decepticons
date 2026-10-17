@@ -306,6 +306,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [~] A PRAIA DOS CABOS — o cenário maior com mar (P126/P114, 14/10): **a regra da água** (`combat/Agua.ts`), o **layout em dado puro** (`environment/PraiaLayout.ts`, 480 × 140 m; 10 testes) e **o mapa que abre** (`environment/Praia.ts` + `?mapa=praia`: fim de tarde com o sol no horizonte, mar claro com ondas na GPU, cidade costeira, dunas; o afogamento ligado; capturas em `arte/praia-p126-*-qwen.jpg`); faltam a **missão** (defender/retomar a estação, proteger os cidadãos), as **zonas** da praia, a bancada de colisores (< 310) e o teste de partida da água — território do Codex assumido pelo Qwen #cenarios #modos
 - [ ] Ficha da arma na lista do Hangar com dano, alcance ótimo e recarga (P109; nunca "potência" nem estrelas: não é pay-to-win) #ux
 
+- [x] Cobertura de idioma das telas avançadas (Hangar, Esquadrão, Campanhas e HUD em seis línguas; auditoria no navegador) (decorre do pedido do Comandante, 17/10, P173) #ux
 - [x] Idiomas do jogo: inglês, espanhol, francês, japonês, chinês e russo (dicionário JSON + tradutor de DOM, seletor em Configurações e `?lang=`; PARCIAL: narrador, canvas, Hangar longo, landing e revisão nativa) (pedido do Comandante, 17/10, P173) #ux
 
 - [x] Login do jogador completo: criar conta e entrar nas Configurações, a conta guarda nível, XP, créditos, apelido e a montagem do Hangar (`/conta/progresso`) e o convidado vira conta sem perder nada (pedido do Comandante, 17/10, P174) #rede
@@ -317,12 +318,12 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] Idioma e conta no canto da primeira tela e da pausa (o Comandante não os achou nas Configurações) (pedido do Comandante, 17/10, P176) #ux
 
 - [x] Landing do site em outras línguas: a faixa de idiomas no topo, os textos traduzidos e a escolha valendo no jogo (pedido do Comandante, 17/10, P178) #ux
-- [~] Lado político e pedagogia: o seletor de lado está no jogo (DEMO); faltam o Arquivo, o Relatório de Consequências e a campanha do Consórcio (`LADO_E_PEDAGOGIA.md`) (pedido do Comandante, 17/10, P179) #modos
+- [~] Lado político e pedagogia: o seletor de lado e o Arquivo (seis fichas, sete línguas) estão no jogo; faltam o Relatório de Consequências e a campanha do Consórcio (`LADO_E_PEDAGOGIA.md`) (pedido do Comandante, 17/10, P179) #modos
 - [x] Amazônia, parte B: o rio e o mapa (P180, 17/10): o mapa `amazonia` de 2.400 × 900 m (terreno em 24 pedaços de 300 m com um colisor de altura, 6.594 árvores instanciadas em dois níveis de detalhe, estruturas fundidas numa malha, água num shader só), **o rio como termômetro** (a frente: limpo a montante, morto a jusante, lida por 4 shaders) com o Draga-01 descendo o leito; carregado sob demanda (`mapasSobDemanda.ts`); **29 a 55 desenhos e 102 a 227 mil triângulos medidos** (tetos 70 e 250 mil), 58 colisores; `?mapa=amazonia&modo=deathmatch`, seletor de mapas, missão RIO VIVO no mapa-múndi, campanha, radar e minimapa; 69 de 71 mutações à mão pegas. DEMO: só Deathmatch offline, o Draga é só desenho #cenarios
 - [ ] Amazônia, partes C a E: o Draga com corpo (as quatro pernas), a defesa e os geradores do escudo, a invasão com androides e a cura do rio (`AMAZONIA.md`, P180) #cenarios
 - [ ] Missão da Amazônia: a mineradora no rio (`fichas/cenario-amazonas.md`); o texto, o rádio e o Relatório de Consequências (P180) #cenarios
 - [x] Arpão por peso: o robô mais leve não puxa o mais pesado (pedido do Comandante, 17/10, P181) #combate
-- [ ] Interfaces de jogos antigas: a linha selecionada em barra dourada e o `‹ valor ›` nas Configurações, o par SOLO / MULTI na primeira tela e a placa no console (`REFERENCIA_VISUAL.md` § 8) (pedido do Comandante, 17/10, P182) #ux
+- [~] Interfaces de jogos antigas: **feito** a linha em barra dourada e o `‹ valor ›` nas Configurações e o par SOLO / MULTI na primeira tela; falta a placa no console (`REFERENCIA_VISUAL.md` § 8) (pedido do Comandante, 17/10, P182) #ux
 - [ ] Ombros nos chassis pesados (Bastion, Onça, Colossus), para o arpão render nas mãos de um robô grande (P77, P181) #combate
 
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)

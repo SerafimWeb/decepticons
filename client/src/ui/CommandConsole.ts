@@ -171,6 +171,7 @@ export class CommandConsole {
     // Os atalhos aparecem desenhados nos botões (o CSS escreve o `data-tecla` como uma tecla); no toque não há teclado.
     const online = root.querySelector<HTMLElement>('#btn-online');
     if (online) online.dataset.tecla = 'O';
+    if (this.primeira) this.prepararMulti(online);
 
     this.pintarComandante();
     new MutationObserver(() => this.visibilidade()).observe(root, { attributes: true, attributeFilter: ['class'] });
@@ -407,13 +408,30 @@ export class CommandConsole {
     });
   }
 
+  /**
+   * O par SOLO / MULTI da primeira tela (P182; a anotação do Comandante sobre o "2 Players" dos jogos antigos): quem nunca jogou não vê o monitor da REDE, então o "MULTI"
+   * fica à vista sob o botão verde (que é o SOLO). Só aparece com servidor no build (existe o `#btn-online`) e fora de uma sala; o clique delega ao botão do monitor,
+   * que abre o lobby: a regra de entrar online continua num lugar só (`OnlineSwitch`).
+   */
+  private prepararMulti(online: HTMLElement | null): void {
+    const multi = this.root.querySelector<HTMLElement>('#btn-multi');
+    const solo = this.root.querySelector<HTMLElement>('#cc-solo');
+    if (!multi || !solo || online?.dataset.online !== 'nao') return;
+    multi.hidden = solo.hidden = false;
+    multi.querySelector<HTMLElement>('b')!.dataset.tecla = 'O';
+    multi.addEventListener('click', (e) => {
+      e.stopPropagation(); // clicar fora do botão é "jogar": este não é
+      online.click();
+    });
+  }
+
   /** "Mais opções": o console completo, agora e nas próximas visitas. */
   private abrirConsoleCompleto(): void {
     if (!this.primeira) return;
     this.primeira = false;
     gravar(PRIMEIRA_KEY, '1');
     this.root.classList.remove('cc-primeira');
-    for (const id of ['#cc-pitch', '#cc-mais']) this.root.querySelector<HTMLElement>(id)?.setAttribute('hidden', '');
+    for (const id of ['#cc-pitch', '#cc-mais', '#cc-solo', '#btn-multi']) this.root.querySelector<HTMLElement>(id)?.setAttribute('hidden', '');
     this.ligar();
   }
 
@@ -524,7 +542,7 @@ export class CommandConsole {
 
 /** Uma janela por cima do console (Configurações, sala online, calibração do mouse): o Enter é dela, não do console. */
 function algoPorCima(): boolean {
-  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #campanha-modal:not(.hidden), #campanha-fim, #arsenal-modal:not(.hidden), #server-modal:not(.hidden), #cameras-modal:not(.hidden)');
+  return !!document.querySelector('#settings-modal:not(.hidden), #online-lobby:not(.hidden), .calib:not([hidden]), #mission-briefing:not(.hidden), #mission-summary:not(.hidden), #hangar-modal:not(.hidden), #squad-modal:not(.hidden), #campanha-modal:not(.hidden), #campanha-fim, #arsenal-modal:not(.hidden), #server-modal:not(.hidden), #cameras-modal:not(.hidden), .lado-modal');
 }
 
 function barra(rotulo: string, valor: string, fracao: number, alerta = false): HTMLElement[] {

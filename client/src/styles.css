@@ -996,6 +996,20 @@ a.btn-terminal { display: inline-block; text-decoration: none; }
   align-items: center;
   gap: 10px;
 }
+
+/* A linha selecionada em barra dourada com chevron, como nas interfaces de jogos antigas (P182, REFERENCIA_VISUAL.md § 8): a linha sob o mouse ou com o foco. */
+.settings-box .setting-row { position: relative; padding: 5px 10px 5px 26px; margin: 0 -10px; }
+.settings-box .setting-row::before { content: '❯'; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); opacity: 0; color: #fff; font-size: 14px; text-shadow: 1px 1px 0 #000; }
+.settings-box .setting-row:hover, .settings-box .setting-row:focus-within { background: linear-gradient(90deg, #6b3f00, #ffb31f 38%, #ffb31f 62%, #6b3f00); color: #1a0f00; }
+.settings-box .setting-row:hover::before, .settings-box .setting-row:focus-within::before { opacity: 1; }
+.settings-box .setting-row:hover .setting-val, .settings-box .setting-row:focus-within .setting-val { color: #1a0f00; }
+.settings-box .setting-row:hover .passo, .settings-box .setting-row:focus-within .passo { border-color: #1a0f00; background: rgba(26, 15, 0, 0.78); }
+
+/* O `‹ valor ›` (P182): a opção com poucos valores troca por um passo, sem abrir lista. */
+.passo { display: inline-flex; align-items: stretch; border: 1px solid var(--accent); background: #06080a; }
+.passo-seta { width: 26px; padding: 0; border: 0; background: transparent; color: var(--accent); font: 800 17px/1 'Consolas', 'Courier New', monospace; cursor: pointer; }
+.passo-seta:hover, .passo-seta:focus-visible { background: var(--accent); color: var(--bg); outline: none; }
+.passo-valor { min-width: 96px; padding: 4px 10px; text-align: center; color: #fff; font-weight: 700; letter-spacing: 1px; font-size: 13px; }
 .setting-val {
   min-width: 50px;
   text-align: right;
@@ -2933,6 +2947,34 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 /* Os atalhos do canto (idioma e conta, P176) ficam por cima do cabeçalho: o selo do lado e o do Comandante recuam para não ficar embaixo deles. */
 #overlay.console:not(.cc-primeira) .cc-flags { padding-right: calc(210px * var(--k)); }
 
+/* O Arquivo (P179 camada 2): a lista das fichas à esquerda (a marcada em barra dourada) e a ficha à direita, na mesma placa do seletor de lado. Sem rolagem em 1280×720. */
+.cc-arquivo { border-color: #8fb6d6; color: #bcd3e6; background: rgba(143, 182, 214, 0.1); }
+.cc-arquivo:hover { background: #8fb6d6; color: var(--bg); }
+.lado-placa.arq-placa { width: min(1040px, 96vw); }
+.arq-corpo { display: grid; grid-template-columns: minmax(200px, 0.8fr) 2.4fr; gap: 14px; align-items: start; }
+.arq-lista { display: flex; flex-direction: column; gap: 6px; }
+.arq-item {
+  position: relative; display: flex; flex-direction: column; gap: 3px; padding: 9px 10px 9px 30px; border: 0; text-align: left; cursor: pointer; color: #dfeaf0; font-family: 'Consolas', 'Courier New', monospace;
+  background: linear-gradient(90deg, rgba(16, 64, 96, 0.95), rgba(30, 120, 170, 0.45));
+}
+.arq-nome { font: 800 13px/1.15 'Consolas', 'Courier New', monospace; letter-spacing: 1.5px; text-shadow: 1px 1px 0 #000; }
+.arq-lema { font: 500 11px/1.25 'Consolas', 'Courier New', monospace; opacity: 0.85; }
+.arq-item[aria-selected='true'] { background: linear-gradient(90deg, #6b3f00, #ffb31f 45%, #ffb31f 55%, #6b3f00); color: #1a0f00; }
+.arq-item[aria-selected='true'] .arq-nome { text-shadow: none; }
+.arq-item[aria-selected='true']::before { content: '❯'; position: absolute; left: 9px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #fff; text-shadow: 1px 1px 0 #000; }
+.arq-item:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.arq-ficha { min-width: 0; max-height: calc(100vh - 190px); overflow-y: auto; padding-right: 6px; color: #cfe0e6; font: 500 13px/1.45 'Consolas', 'Courier New', monospace; }
+.arq-ficha-nome { margin: 0 0 6px; color: #ffe9b8; font: 800 18px/1.1 'Consolas', 'Courier New', monospace; letter-spacing: 3px; }
+.arq-satira { display: inline-block; margin: 0 0 8px; padding: 3px 8px; border: 1px solid #ffb31f; color: #ffb31f; font: 800 10px/1 'Consolas', 'Courier New', monospace; letter-spacing: 2px; }
+.arq-bloco { margin-top: 8px; }
+.arq-bloco p { margin: 0; }
+.arq-rotulo { margin: 0 0 3px; padding-bottom: 3px; border-bottom: 1px solid rgba(255, 179, 31, 0.4); color: #ffb31f; font: 800 10px/1 'Consolas', 'Courier New', monospace; letter-spacing: 3px; }
+.arq-sinais { margin: 0; padding-left: 18px; }
+.arq-sinais li { margin: 1px 0; }
+.arq-fonte { margin: 10px 0 0; color: #8fa6b0; font-size: 11px; line-height: 1.4; }
+.arq-fonte b { color: #9fb2bb; }
+@media (max-width: 720px) { .arq-corpo { grid-template-columns: 1fr; } .arq-lista { flex-direction: row; flex-wrap: wrap; } .arq-item { flex: 1 1 45%; } .arq-lema { display: none; } }
+
 /* O seletor de lado (P179): a "placa" das interfaces de jogos antigos (REFERENCIA_VISUAL.md § 8). Chapa com rebites, a linha marcada em barra dourada com chevron, a outra em ciano frio, o título fora. */
 .cc-lado { border-color: var(--accent); color: var(--accent); background: rgba(57, 255, 106, 0.1); }
 .cc-lado:hover { background: var(--accent); color: var(--bg); }
@@ -3694,6 +3736,46 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 #overlay.console.cc-primeira.cc-espera .cc-pitch,
 #overlay.console.cc-primeira.cc-espera .cc-mais { display: none !important; }
 #overlay.console.cc-primeira.cc-espera::before { content: var(--t-carregando, 'CARREGANDO A PARTIDA'); }
+
+/* O par SOLO / MULTI (P182, REFERENCIA_VISUAL.md § 8): a primeira pergunta dos jogos antigos é de duas respostas ("1 PLAYER / 2 PLAYERS"). O botão verde é o SOLO; o MULTI é a
+   chapa azul fria embaixo, que acende em barra dourada sob o mouse ou com o foco (a linha selecionada da referência). Só na tela enxuta, e só quando há servidor. */
+.cc-solo, .cc-multi { display: none; }
+#overlay.console.cc-primeira .cc-solo:not([hidden]) {
+  display: block;
+  margin: -4px 0 0;
+  color: #9fb4c4;
+  font: 700 calc(10px * var(--k)) / 1 'Consolas', 'Courier New', monospace;
+  letter-spacing: 3px;
+  text-shadow: 0 1px 6px #000;
+}
+#overlay.console.cc-primeira .cc-multi:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: clamp(250px, 24vw, 380px);
+  margin-top: 4px;
+  padding: 11px 22px;
+  background: linear-gradient(180deg, #2f5f86, #173650 55%, #0e2234);
+  border: 2px solid #8fb6d6;
+  border-radius: 6px;
+  color: #fff;
+  font: 700 calc(clamp(14px, 1.25vw, 19px) * var(--k)) / 1.1 'Consolas', 'Courier New', monospace;
+  letter-spacing: 5px;
+  text-shadow: 1px 1px 0 #000;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.25), inset 0 -3px 0 rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+.cc-multi small { color: #bcd3e6; font-size: 0.62em; font-weight: 600; letter-spacing: 2px; }
+#overlay.console.cc-primeira .cc-multi:hover, #overlay.console.cc-primeira .cc-multi:focus-visible {
+  background: linear-gradient(90deg, #6b3f00, #ffb31f 38%, #ffb31f 62%, #6b3f00);
+  border-color: #fff;
+  color: #1a0f00;
+  text-shadow: none;
+  outline: none;
+}
+.cc-multi:hover small, .cc-multi:focus-visible small { color: #3a2300; }
+#overlay.console.cc-primeira.cc-espera .cc-solo, #overlay.console.cc-primeira.cc-espera .cc-multi { display: none !important; }
 
 /* Idiomas (P173): os três textos que o CSS escreve (`content`) seguem o `lang` da página, posto por `i18n/i18n.ts`; o resto do texto vem do dicionário JSON. */
 :root:lang(en) { --t-sem-sinal: '· NO SIGNAL'; --t-inicializando: 'INITIALIZING COMMAND ROOM'; --t-carregando: 'LOADING MATCH'; }

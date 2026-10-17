@@ -16,6 +16,47 @@
 
 **Por que registrar:** quem for fazer o Draga com corpo (C), a defesa (D) ou a invasão (E) precisa saber que o rio lê UMA frente, que o mapa é sob demanda, que a câmera do mapa é maior e que o orçamento de contagem tem folga de 9% no pior ponto (a aldeia).
 
+## [2026-10-17] O idioma se audita no navegador, e a composição "A · B" traduz parte a parte (Claude, P173)
+
+**Problema:** o Comandante quer o jogo no idioma nativo de quem chega. O teste de cobertura (que lê o código) dava tudo verde, mas **o Hangar falava português em japonês**: o texto que o jogo monta (colando "MÉDIO", "ASSALTO" e a descrição com " · ") nunca é uma chave do dicionário, e o teste só olhava as partes.
+
+**Decisões:**
+1. **A auditoria de idioma é feita no navegador de verdade** (abre cada tela com `?lang=ja` e lista o texto sem tradução): o que o jogador lê é o que importa, não o que está no código. `.tmp/auditar-idioma.mjs` e `auditar-jogo.mjs` (locais) são o modelo; o **teste de cobertura agora exige que nada em português sobre** (só nomes próprios e unidades), não só que "mudou".
+2. **Chaves de composição `{0} · {1}` e `{0} · {1} · {2}`** (as seis línguas): cada parte é traduzida pelo que o dicionário já sabe e a estrutura fica. Um texto composto novo não pede uma chave nova se as partes já têm.
+3. **Duas regras no motor do tradutor:** o padrão com **mais texto fixo** vence (antes: o maior regex, que contava as lacunas), e uma **chave sem " · " não engole uma composição**. Sem a segunda regra, `ESCALA {0}` e `{0} aliados` pegavam "ESCALA 3 · CERCO · …" e deixavam o resto em português, com o teste (que só via "mudou") verde.
+4. **As frases que o código cola caso a caso** (a dica da arma + o aviso dos ombros + o das costas…) **se traduzem pedaço por pedaço e se juntam** (`traduzir` no `HangarMenu`), em vez de uma chave por combinação possível.
+5. **O que fica em português de propósito:** as telas do dono (Arsenal, Estúdio, Servidor), os rótulos de acessibilidade do mapa e os nomes próprios dos robôs.
+
+## [2026-10-17] O Arquivo: conteúdo em JSON por língua, painel sob demanda, tudo opcional (Claude, P179 camada 2)
+
+**Ordem:** mostrar o posicionamento do jogo *"SUTILMENTE E ELEGANTEMENTE, pedagogicamente"* e explicar o que é o fascismo, a rede de mentiras, os interesses das elites e a manutenção do medo.
+
+**Decisões:**
+1. **Opcional, nunca porta:** o Arquivo mora num chip no console e na pausa; não abre sozinho, não interrompe partida (P133 e a regra 5 do `LADO_E_PEDAGOGIA.md` § 3.4). Quem quer aprender abre.
+2. **Uma ficha, quatro partes:** o que é, como aparece, como se defender, a fonte. **A contramedida é a parte que ensina**: o jogador aprende a reconhecer e a agir, não a ouvir sermão. **A ficha 6 é sátira declarada e a tela diz**: a regra "sátira exagera, fato é fato" aparece para o jogador, não só no documento.
+3. **Conteúdo em `public/arquivo/<língua>.json`, não em chave de dicionário:** cada língua é um arquivo que um revisor nativo edita inteiro, sem ficar espalhado em seis dicionários carregados no boot de todo jogador. Língua sem arquivo cai no inglês, depois no português.
+4. **Painel como pedaço sob demanda (`import()`):** o JS de partida estava em 499,6 / 500 KB. O orçamento de dois tetos (`scripts/orcamentoDeJs.mjs`, P180) existe para isto: recurso opcional não pesa no download de quem não o usa. **Regra para os próximos: texto longo vai para JSON em `public/`, tela opcional vira `import()`.**
+5. **Teste como trava de conteúdo:** nenhum nome de político ou bilionário vivo em nenhuma língua (arquétipos, decisão #9 do `UNIVERSO.md`), só as incoerências como sátira, toda ficha com fonte, o mesmo número de sinais em todas as línguas (a tradução não perde nem inventa um tema).
+
+**O que a decisão não faz:** não revisa as fontes (citadas de memória; **revisor humano antes de ir ao ar**) e não traz casos reais (só com fonte dada pelo Comandante).
+
+## [2026-10-17] O MULTI da primeira tela delega ao botão que já existe (Claude, P182)
+
+**Ordem:** a anotação do Comandante, **MULTI** sobre o "2Players" dos jogos antigos.
+
+**Decisões:**
+1. **O botão verde é o SOLO; o MULTI é uma chapa embaixo, não um segundo botão primário.** Princípio de uma ação primária por tela (`AUDITORIA_INTERFACE.md`): a pergunta tem duas respostas, mas Enter continua sendo "jogar contra os bots" (o caminho de quem acabou de chegar). O MULTI é azul frio e só acende em dourado sob o mouse ou com o foco (a linha selecionada da referência).
+2. **Delega, não duplica:** o clique chama o `#btn-online` do monitor da REDE (que abre o lobby). O estado (em sala ou não) vai em `data-online` no botão, porque o rótulo muda de língua. A regra de entrar online continua só no `OnlineSwitch`.
+3. **Só na primeira tela:** no console completo o monitor da REDE já tem o botão (nada repetido), e sem servidor no build o par não existe (não há MULTI para oferecer).
+
+## [2026-10-17] As dicas de arma do Hangar saem do pacote de JS para um JSON (Claude, P182)
+
+**Problema:** o orçamento de JS (R7, 500 KB gzip) estava em 500,03 KB com o `‹ valor ›`; qualquer módulo novo, de qualquer agente, quebraria o `npm run check`. Subir o orçamento não era o caminho (R7 é do protocolo).
+
+**Decisão:** as 22 dicas de uma linha das armas da tela do Hangar (3,5 KB de texto, `WEAPON_HINT` + `WEAPON_HINT_NOVAS`) moram em `client/public/dicas-do-hangar.json` e chegam por um `fetch` na primeira abertura do Hangar (`ui/dicasDoHangar.ts`; sem rede, a dica fica vazia e a próxima abertura tenta de novo). O pacote caiu para **498,49 KB** (folga de 1,5 KB). `dicasDoHangar.test.ts` guarda a regra que o `Record` do TypeScript dava: uma dica por arma do jogo, nenhuma repetida. **Quem for acrescentar texto estático longo ao pacote deve fazer o mesmo** (JSON em `public/`), e não gastar a folga.
+
+**Achado (R17, ainda aberto):** essas 22 dicas **não estão nos dicionários das seis línguas** (a frase do Hangar é montada com sufixos, e a busca é pelo texto inteiro): o Hangar fala português em qualquer idioma. Agora que o texto é dado, o caminho é traduzir cada dica no arquivo; fica registrado no `ESTADO_ATUAL.md`.
+
 ## [2026-10-17] A Amazônia: o plano e o Draga-01 riggado (Claude, P180)
 
 **Ordem:** a próxima fase no rio Amazonas (mineradora, rio envenenado, povos indígenas expulsos), com o modelo "heavy industrial walker" do Comandante, "eu não inseri o RIG: tenho que fazer ou você faz?", e o rio limpo a montante e envenenado a jusante.

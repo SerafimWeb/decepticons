@@ -182,7 +182,6 @@ export class LadoSelector {
         e.stopPropagation();
         this.marcar(info.id);
       });
-      linha.addEventListener('dblclick', () => this.confirmar());
       grupo.append(linha);
     }
     const botoes = this.el('div', 'lado-botoes');

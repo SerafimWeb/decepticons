@@ -21,6 +21,73 @@
 
 **Próxima sessão começa com:** a **parte C** (o Draga como chefe com corpo na simulação: as quatro pernas como módulos de dano, o rastejo, a barra do chefe e a derrota na aldeia), e o `fichas/fatos-mineracao-amazonia.md` (as fontes dos fatos antes de qualquer texto de missão).
 
+## IDIOMA: O HANGAR, O ESQUADRÃO, AS CAMPANHAS E O HUD DEIXAM DE FALAR PORTUGUÊS — Claude, 17/10 (branch `claude/idioma-telas`, P173)
+
+**O Comandante (17/10):** *"idioma tem que ficar logo no início […] pra pessoa já selecionar o idioma nativo dele"*. Escolhida a língua, as telas avançadas ainda caíam no português: **auditoria no navegador de verdade, em japonês** (`.tmp/auditar-idioma.mjs`, que abre cada tela e lista o texto sem tradução) achou ~250 textos no Hangar, no Esquadrão, nas Campanhas e no HUD.
+
+**Feito:**
+1. **232 textos novos em cada uma das seis línguas** (737 por língua): o Hangar inteiro (rótulos, unidades, chassis, módulos, as quatro chapas, os papéis de cada chassi), o Esquadrão, as Campanhas e o HUD da partida (a vista 1ª/3ª pessoa/tática, as ordens aos aliados, o contato).
+2. **As dicas das 22 armas do Hangar** (`public/dicas-do-hangar.json`) com tradução: o encaixe agora traduz **cada pedaço** da frase (a dica, o aviso dos ombros, o das costas, o do tamanho 3, a regra da chapa) antes de juntar, porque a frase muda caso a caso e não tem uma chave só.
+3. **Composição genérica `{0} · {1}` e `{0} · {1} · {2}`**: o jogo escreve muito texto como "MÉDIO · ASSALTO · Equilíbrio entre alcance e mobilidade." ou "PADRÃO · 3,0 t"; as chaves de composição traduzem **cada parte pelo que o dicionário já sabe** (as descrições dos chassis já estavam traduzidas e não apareciam por estarem coladas). **Duas regras novas no motor (`i18n.ts`):** (a) entre dois padrões que servem ao mesmo texto, vence o de **mais texto fixo** (antes contava o tamanho do regex, que conta cada lacuna); (b) uma chave **sem " · "** não engole uma composição (`ESCALA {0}` não pega "ESCALA 3 · CERCO · …").
+4. **Teste de cobertura que exige que nada em português sobre** (`i18n.test.ts`: só nomes próprios e unidades): as dicas, ~18 textos compostos do Hangar, o HUD, o Esquadrão e as Campanhas. **Prova no navegador de verdade:** a auditoria em japonês caiu de ~250 textos para os nomes próprios, as telas do dono e os rótulos de acessibilidade do mapa; capturas `arte/idioma-hangar-*-claude.png`.
+
+**Custo de CPU:** zero (a tradução é por mapa em memória, com cache; o JS cresce o `traduzir` do Hangar, dentro do orçamento).
+
+**Falta (R13):** (a) **revisão por falante nativo** (as traduções são minhas, como as da landing e do Arquivo); (b) as **telas do dono** (Arsenal, Estúdio, Servidor, Painel Admin) e os rótulos de acessibilidade do mapa seguem em português de propósito; (c) o **texto de rádio e de briefing das missões** não foi auditado (só abre jogando a missão); (d) a **voz do narrador** segue em português.
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois o Relatório de Consequências, a Amazônia (P180) e os ombros dos chassis pesados (P181).
+
+## O ARQUIVO: SEIS FICHAS QUE ENSINAM, NAS SETE LÍNGUAS — Claude, 17/10 (branch `claude/arquivo`, P179 camada 2)
+
+**O Comandante (17/10):** *"devemos explicar o que são [o nazifascismo] e como se manifestam, a rede de mentiras, os interesses obtusos por trás das elites, a manutenção do medo […] pelo menos SUTILMENTE E ELEGANTEMENTE, pedagogicamente"*. A camada 1 (o seletor de lado) já estava no ar; esta é a camada 2 do `LADO_E_PEDAGOGIA.md`.
+
+**Feito:**
+1. **O Arquivo** (`ui/ArquivoPanel.ts`): o chip **ARQUIVO ▸** (console completo e pausa, ao lado do selo do lado) abre a placa com a lista das **seis fichas** à esquerda (a marcada em barra dourada com chevron) e a ficha à direita: **o que é, como aparece, como se defender e as fontes**. Setas do teclado (circular), Esc fecha, Enter não vira "jogar", sem rolagem em 1280×720. A ficha 6, **as incoerências**, é **sátira declarada** e a tela avisa ("SÁTIRA DECLARADA · NÃO AFIRMA FATO"). **Opcional, nunca uma porta** (P133): não aparece sozinho.
+2. **Sete línguas, em arquivos:** `client/public/arquivo/<língua>.json` (pt, en, es, fr, ja, zh, ru); língua sem arquivo cai no inglês e depois no português. **Fora do pacote de JS:** o conteúdo é JSON e o **painel é um pedaço sob demanda** (`import()` no clique do chip, 1,65 KB gzip), por causa do orçamento de partida (499,6 / 500 KB).
+3. **Testes (`ArquivoPanel.test.ts`, 10):** o JSON quebrado não passa; seis fichas na mesma ordem e com o mesmo número de sinais em todas as línguas; só as incoerências são sátira; toda ficha tem fonte; teto de tamanho (cabe sem rolagem); **nenhum nome de político ou bilionário vivo em nenhuma língua**; a ligação (chip, `import()`, tecla). **Prova no navegador de verdade** (`arte/arquivo-*-claude.png`): abre, setas, circular, Esc, japonês carrega o arquivo dele, só o `pt.json` é pedido antes.
+4. **De passagem (R17):** `algoPorCima` agora inclui o `.lado-modal` (o seletor de lado e o Arquivo): as teclas do console não valem com eles por cima.
+
+**Custo de CPU:** zero fora do clique (um `fetch` de 3,5 KB na primeira abertura de cada língua e o pedaço de 1,65 KB).
+
+**O que o Comandante precisa saber (R13):** (a) **as fontes estão citadas de memória** (Eco 1995, Paxton 2004, Stanley 2018, Arendt 1951, RAND 2016, Cohen 1972, Herman e Chomsky 1988): **um revisor humano confere título, ano e trecho antes de a tela ir ao ar**; (b) **nenhum caso real nem número** entra sem fonte que o Comandante dê; (c) as traduções (es, fr, ja, zh, ru) são minhas e **pedem falante nativo**; (d) o **orçamento de JS de partida está em 499,6 / 500 KB**: texto longo vai para JSON em `public/`, recurso opcional vira `import()`; quem estourar o teto trava o `npm run check` de todos.
+
+**Falta:** o **Relatório de Consequências** (fim da missão com números lidos de ficha) e a **campanha do Consórcio** (P179 camadas 3 e 4); o Arquivo como **primeira pergunta depois da primeira rodada** segue decisão do Comandante (`LADO_E_PEDAGOGIA.md` § 7.6).
+
+**Próxima sessão começa com:** o que o Comandante julgar (o texto das fichas é dele); depois o Relatório de Consequências, a Amazônia (P180) e os ombros dos chassis pesados (P181).
+
+## O PAR SOLO / MULTI NA PRIMEIRA TELA — Claude, 17/10 (branch `claude/solo-multi`, P182)
+
+**O Comandante (17/10):** na segunda captura dos jogos antigos ele escreveu à mão **MULTI** sobre o "2Players". A primeira tela dos jogos antigos é uma pergunta de duas respostas grandes.
+
+**Feito:**
+1. **A primeira tela agora tem o par.** O botão verde segue sendo o **SOLO** (com a nota "SOLO · contra os bots" embaixo) e, logo abaixo, a chapa azul fria **MULTI** ("online, com outros pilotos", tecla O) que **acende em barra dourada** sob o mouse ou com o foco. Clicar abre o lobby online (`OnlineLobby`), pelo mesmo botão que o monitor da REDE já usa: a regra de entrar online continua num lugar só (`OnlineSwitch`). Só aparece com servidor no build e fora de uma sala; some quando o console completo acende (o monitor da REDE já tem o botão: nada repetido). Textos nas sete línguas.
+2. **Provado no navegador de verdade** (`arte/primeira-tela-solo-multi-claude.png`, `arte/primeira-tela-multi-dourado-claude.png`): o par aparece na primeira visita, o clique abre o lobby sem "jogar" por baixo, fechar volta ao par, o japonês traduz, "EXPLORAR HANGAR E MODOS" faz o par sumir, zero erros. Teste (`CommandConsole.test.ts`): o HTML, a delegação do clique e o CSS.
+
+**Custo de CPU:** zero (um botão e um clique; a tela enxuta já não acende os monitores).
+
+**Falta (R13):** (a) a **placa** (borda forte, rebites) no console e na pausa; (b) a barra dourada nas **listas do console**; (c) o **olho do Comandante** sobre o par: o MULTI pode ir ao lado do botão verde em vez de embaixo (só CSS).
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois o Arquivo (P179), a Amazônia (P180) e os ombros dos chassis pesados (P181); as dicas de arma do Hangar sem tradução (entrada abaixo).
+
+## A INTERFACE DOS JOGOS ANTIGOS NAS CONFIGURAÇÕES: A LINHA EM BARRA DOURADA E O `‹ VALOR ›` — Claude, 17/10 (branch `claude/interface-antiga`, P182)
+
+**O Comandante (17/10):** *"veja esses exemplos de interface de jogos antigos, eu acho muito boas!"* (duas capturas do Aero Fighters; `REFERENCIA_VISUAL.md` § 8 tem a leitura e o que levamos). *"continue iterando"*.
+
+**Feito:**
+1. **`ui/Passo.ts`: o seletor `‹ valor ›`.** Veste um `<select>` que **continua existindo, escondido**: o jogo segue lendo e escrevendo `select.value`, ouvindo `change`; o `‹ valor ›` espelha o que o select diz (por clique, pelas setas do teclado, por mudança de código e pelo texto traduzido) e o muda com **um passo, circular**, sem abrir lista. Nove nas Configurações: qualidade, dificuldade, narrador, quantidades e personalidades dos inimigos. **O idioma fica como lista** (sete línguas).
+2. **A linha selecionada em barra dourada com chevron** (`❯`) nas Configurações: a linha sob o mouse ou com o foco, como na referência (barra dourada de ponta a ponta, texto escuro, o passo em fundo escuro).
+3. **Testes (`Passo.test.ts`, 8):** o passo circular, o rótulo, o limite de opções, o estilo e a ligação (o select do idioma não vira passo). **Prova no navegador de verdade** (`arte/interface-passo-*-claude.png`): os nove passos existem, o select está escondido e **acompanha** (clique, duas voltas, mudança por código, seta do teclado) e a troca para o japonês **refaz o texto** dos passos.
+
+4. **Orçamento de JS (R7): o pacote chegou a 500,03 KB (limite 500).** As dicas de arma do Hangar saíram do código para `public/dicas-do-hangar.json` (carregado ao abrir o Hangar): **498,49 KB**, folga de 1,5 KB. Texto estático longo novo vai para JSON em `public/`, não para o pacote (`HISTORICO_DE_DECISOES.md`).
+
+**Custo de CPU:** zero fora do clique (um observador de opções por seletor, que só dispara quando o texto das opções muda) e um `fetch` de 3,5 KB na primeira abertura do Hangar.
+
+**Achado aberto (R17):** as 22 dicas de arma do Hangar **não têm tradução** nas seis línguas (o Hangar fala português em qualquer idioma): traduzir cada dica em `public/dicas-do-hangar.json` + dicionários, e o teste de cobertura passa a checar.
+
+**Falta (R13):** (a) o par **SOLO / MULTI** na primeira tela (a anotação dele sobre "2Players"): *feito na entrada acima*; (b) a **placa** (borda forte, rebites) no console e na pausa; (c) a linha em barra dourada **no console** (as listas de operação); (d) o **olho do Comandante**: se a "pele" agradar, (a) a (c) seguem; se ele quiser mais perto da chapa dos jogos antigos, é só CSS.
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois SOLO / MULTI (P182), o Arquivo (P179) e a Amazônia (P180).
+
 ## AMAZÔNIA, PARTE A: O DRAGA-01 ANDA — o plano, o rig e a marcha do quadrúpede — Claude, 17/10 (branch `claude/amazonia-mina`, P180)
 
 **A ordem do Comandante:** *"vamos já planejar e construir a próxima fase: o rio Amazonas, uma mineradora acabando com o rio… Já criei o modelo (`heavy industrial walker 3d model`): é um mech maior que o Colossus v4, então o cenário precisa ser bem maior… faça sua melhor versão desse modelo: ele deve se mexer (eu não inseri o RIG: tenho que fazer ou você faz?)"* e *"acima desse super mech o rio é limpo e vivo, e depois dessa máquina o rio fica poluído, sujo, com óleo e envenenado"*. **Resposta: o rig é meu; o Comandante não precisa rigar.**
