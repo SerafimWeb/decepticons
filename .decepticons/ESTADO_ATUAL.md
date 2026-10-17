@@ -1,5 +1,20 @@
 # ESTADO ATUAL — CYBERMECH
 
+## OS REBELDES ATIRAM O LASER E O PAINEL CONTA O RITMO DE CONTEÚDO — Claude, 17/10 (branch `claude/bots-laser`, P175)
+
+**A ordem do Comandante (17/10):** *"…e pendências abertas recentes"*. Duas dessas pendências estavam escritas no estado e na análise do War Robots (P171).
+
+**Feito:**
+1. **O bot atira o laser** (`BotSystem`, `sim/esquadrao.ts`, `Match`): o esquadrão aceita o laser como arma do bot (`armaServeAoBot`, antes recusava feixe) e o bot manda **um pulso por `fireInterval`** pelo `Match.beamPulse` (o mesmo do jogador: acha o primeiro alvo, aplica o dano com as defesas do caminho, acende o desenho e, no servidor, vira evento de tiro para os outros clientes). Mão principal e mão esquerda. A direção é a que o cérebro mirou (com o erro de mira da dificuldade), então o bot erra como erra com plasma. Sem a partida atrás (`pulso` ausente), o bot com laser fica calado, nunca quebra.
+2. **Sala de controle → Ritmo de conteúdo** (`scripts/site/dados.mjs` `conteudoPorSemana`, `painel.mjs`, `sala.mjs`): cada **arma** e cada **chassi** do jogo conta uma unidade na semana (segunda-feira) em que o merge que o trouxe entrou na `main`; os ids saem do código, as datas do git (`--first-parent -S`). Hoje: **30 unidades, 7,3 por semana** nas semanas completas (21/09: 6, 28/09: 6, 05/10: 10, 12/10: 8 até agora). É o número que a análise do War Robots pedia ("o produto é a cadência").
+3. **Testes (+12):** `botLaser.test.ts` (6: o esquadrão aceita o laser; pulsos na principal e na esquerda com física de verdade, intervalo, dano, determinismo) e `ritmoDeConteudo.test.ts` (6: cada arma conta uma vez, semanas seguidas desde a segunda-feira, a unidade cai na semana da data, média sem a semana corrente). **8 mutações pegas** (5 no bot, 3 no ritmo).
+
+**Custo de CPU:** o bot com laser faz um raycast por pulso (7,7 por segundo enquanto atira, como o jogador); só quando o esquadrão lhe dá o laser (o padrão do jogo não muda). O painel roda no build do site (uns 40 chamadas de `git log`), nada no jogo.
+
+**Falta (R13):** (a) **D7 e DAU/MAU** no painel: pedem um id anônimo por visita (hoje a telemetria conta eventos por IP, sem pessoa); decisão do Comandante (LGPD); (b) a **meta oficial** de conteúdo (2 por semana, 1 evento a cada 6) segue com ele (P171); (c) o **bot não usa o arpão** (só há ombros no Marauder, e o bot não os tem); (d) o ritmo não conta o que não é arma nem chassi (mapas, pilotos, eventos); (e) a bancada de celular e o desenho do evento mínimo (P171).
+
+**Próxima sessão começa com:** o que o Comandante julgar (as línguas, o login, o arpão, o laser dos bots) e as decisões da P171 (ritmo oficial, inglês antes de monetização: respondida, cosmético de explosão).
+
 ## O LOGIN DO JOGADOR, COMPLETO: a conta leva o progresso para outro aparelho — Claude, 17/10 (branch `claude/login`, P174)
 
 **A ordem do Comandante (17/10):** *"quero também que concluamos sobre o LOGIN"*. A conta, o limite de tentativas e o formulário já existiam, mas **nada ligava o formulário ao jogo** e a conta não guardava nada do piloto.

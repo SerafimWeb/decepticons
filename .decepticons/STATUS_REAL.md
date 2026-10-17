@@ -3,6 +3,8 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
+**P175 — bots com o laser e ritmo de conteúdo (REAL na simulação e no painel; 12 testes e 8 mutações; falta o playtest do Comandante):** o rebelde atira o laser em pulsos (principal e esquerda) quando o esquadrão lho dá; a Sala de controle mostra o ritmo de conteúdo (armas e chassis por semana). **AUSENTE:** D7 e DAU/MAU (decisão de privacidade), o bot com o arpão, mapas/pilotos/eventos no ritmo.
+
 **P174 — login do jogador (REAL: servidor, cliente e formulário ligados, 64 testes, 16 mutações pegas e prova de ponta a ponta no navegador (dois aparelhos); falta o playtest do Comandante; PARCIAL no resto do plano):** criar conta, entrar, sair, e a conta guarda nível, XP, créditos, apelido e a montagem do Hangar (`/conta/progresso`), com a junção "quem tem mais progresso vence". Em Configurações → JOGO → CONTA DO PILOTO. **AUSENTE:** ranking, clã, recuperar senha, apagar conta, apelido único, o convite pós-primeira-partida; as missões do dia não acompanham a conta. Não vale para ranking (G13).
 
 **P77 parte 3 — arpão magnético (`harpoon`) (REAL na simulação, no servidor, na rede e no Hangar, 46 testes e 13 mutações; falta o playtest do Comandante; PARCIAL no online):** prende o primeiro inimigo à vista (até 45 m) e o puxa; dash, parede e o Colossus cortam o cabo. **PARCIAL:** no online o puxão vem do servidor e o raio se vê, mas o **cabo preso de outro jogador não é desenhado**; **AUSENTE:** o bot não usa o arpão. Protocolo 20.

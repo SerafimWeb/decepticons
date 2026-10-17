@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P175 — As pendências abertas recentes (17/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P175 | 17/10 | "quero também que … **pendências abertas recentes**" (junto da P173, da P174 e do arpão) | 🟡 | **Feito (Claude, 17/10):** (1) **os rebeldes atiram o laser** (pendência da P152/P160): o bot manda um pulso por `fireInterval` pelo mesmo `Match.beamPulse` do jogador, na mão principal e na esquerda; o esquadrão pode dar o laser ao bot (`armaServeAoBot`); (2) **o painel conta o ritmo de conteúdo** (P171/`LICOES_WAR_ROBOTS.md` § 2.1): **Sala de controle → Ritmo de conteúdo**, cada arma e cada chassi do jogo é uma unidade na semana em que entrou na `main` (hoje: 30 unidades; **7,3 por semana** nas semanas completas). **Falta:** **D7 e DAU/MAU** (pedem guardar um id anônimo por visita: decisão do Comandante, LGPD); a **meta oficial** (2 por semana, 1 evento a cada 6) segue com ele (P171); o bot **não usa o arpão** (só há ombros no Marauder, e o bot não os tem); a bancada de celular e o desenho do evento mínimo (P171) | Jogue a Sobrevivência: um Mech rebelde com laser (esquadrão: Configurações → Esquadrão → arma = Raio laser) acende o feixe laranja-vermelho e fere. A sala de controle: `npm run painel` → "Ritmo de conteúdo". |
+
 ## P174 — O login do jogador, completo (17/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
