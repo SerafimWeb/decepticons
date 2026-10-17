@@ -4265,6 +4265,14 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .pp-porta[data-estado='forcada'] .pc-vida { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
 .pp-porta[data-estado='arrombada'] { color: var(--alert); }
 .pp-porta[data-estado='arrombada'] .pc-barra { border-color: rgba(255, 45, 61, 0.7); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
+/* O quadro de luz da cidade (P164, ui/PraiaHud.ts): uma célula sob as portas; a barra é a vida do quadro. Laranja sabotado, vermelha apagado. */
+.praia-quadro { position: absolute; top: 168px; left: 50%; transform: translateX(-50%); width: min(560px, 58vw); display: flex; flex-direction: column; gap: 2px; font-size: 9px; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 6px #000; }
+.praia-quadro[hidden] { display: none; }
+.praia-quadro span { opacity: 0.85; }
+.praia-quadro[data-estado='sabotado'] { color: var(--warn); }
+.praia-quadro[data-estado='sabotado'] .pc-vida { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+.praia-quadro[data-estado='apagado'] { color: var(--alert); }
+.praia-quadro[data-estado='apagado'] .pc-barra { border-color: rgba(255, 45, 61, 0.7); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
 .praia-zona.alerta { color: var(--alert); text-shadow: 0 0 10px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 45, 61, 0.7); }
 .praia-zona.alerta::before { color: var(--alert); }
 .praia-alvo[data-estado='ataque'] i { border-color: var(--warn); background: rgba(255, 225, 77, 0.25); box-shadow: 0 0 12px var(--warn); animation: praia-pulso 0.7s ease-in-out infinite alternate; }

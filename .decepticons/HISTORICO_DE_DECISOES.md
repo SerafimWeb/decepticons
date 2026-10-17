@@ -168,6 +168,19 @@ escurecia), o rastro de míssil era uma fila de pontinhos, o tiro de energia uma
 **Custo:** 0,45 ms por quadro sob carga extrema (170 fitas, 219 peças de explosão, 160 cartazes, 80 marcas); 9 desenhos para todos os efeitos da
 cena; nada alocado por quadro. GPU real: 0 de 192 poses com NaN com os efeitos acesos (`varrer-nan.mjs --efeitos`). JS 472,3 KB de 500.
 
+## [2026-10-17] O porto: os rebeldes nascem nos contêineres, e o quadro de luz liga a cidade às zonas de cura (Claude, P163, P164)
+
+**Situação:** o Comandante pediu que os inimigos saíssem dos contêineres do porto ("bem explícito") e um sistema no porto, a proteger, que acende as luzes da cidade, repetível nas outras fases.
+
+**Decisões:**
+1. **Os contêineres de desembarque ocupam vagas do pátio do cais, três em vez de quatro:** a fileira z = 0 tem o farol de 38 m do lado da boca, e a de trás (z = -64) tem as pernas do guindaste; a sonda do terreno e o teste de folga acharam os dois (os 6 pontos de nascimento antigos eram na areia, em chão plano; os novos são no cais, uma laje no nível do chão, e o teste de nascimento passou a medir a folga só em relação ao que passa da altura do joelho). Cada boca solta duas levas (os Mechs na porta, os andróides 3 m à frente).
+2. **O nascimento mudou da areia (~200 m da estação) para o cais (>460 m):** é mudança de **ritmo** assumida: os manifestantes (que nascem na avenida e na rua dos fundos) chegam em poucos segundos e as máquinas ~45 s depois. O Colossus fica na avenida até a parte D.
+3. **O quadro de luz fica a mais de 500 m da estação, de propósito:** defender os dois não cabe no mesmo jogador, e **o saboteiro** (o primeiro andróide vivo da onda 2 em diante) é o único rebelde que vai para lá. **Ele tem consequência real:** a energia multiplica as luzes (o ciclo do dia manda quantas acenderiam) e, **apagado, derruba as zonas de cura e de resfriamento** (`ZoneSystem.energizadas`): a luz da cidade é o que cura o jogador.
+4. **O circuito é uma regra pura repetível** (`QuadroDeLuz`: vida, depredador, defensor, energia): o quadro do banco e o transformador do datacenter são a mesma regra com outra peça.
+5. **Lição de teste:** `damage: false` no `Match` desliga também o `crush` (não mata ninguém); o dano de sobra para apagar o quadro precisa de um `dt` grande (um passo de 1 s a 10 de peso tira só 60 de 240); e a mutação "o saboteiro aparece já na onda 1" foi escrita por mim para provar que a onda 1 fica só nos cabos.
+
+**Por que registrar:** quem fizer a parte D (a Colossus) precisa saber que o nascimento agora é no cais e o chefe ainda não, que o quadro liga a cidade às zonas, e que o ritmo das ondas mudou de propósito.
+
 ## [2026-10-17] O manifestante é um andróide mais fraco no mesmo pool, as portas são regra pura, e só a praia pede manifestantes (Claude, P163, P166)
 
 **Situação:** o Comandante pediu a invasão do prédio por **duas entradas** e os manifestantes dos eventos reais como NPC.

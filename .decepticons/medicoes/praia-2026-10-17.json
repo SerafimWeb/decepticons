@@ -3,10 +3,10 @@
   "tela": "1280x720",
   "render": "SwiftShader (sem GPU: só contagem, não tempo)",
   "vistas": {
-    "manifestantes-d0": {
-      "desenhos": 105,
-      "triangulos": 135993,
-      "construcaoMs": 613
+    "quadro-d100": {
+      "desenhos": 41,
+      "triangulos": 108933,
+      "construcaoMs": 318
     }
   },
   "errosDePagina": []

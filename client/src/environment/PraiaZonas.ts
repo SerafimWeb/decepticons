@@ -135,6 +135,9 @@ export function zonasDaPraia(zonas: readonly ZoneDef[] = PRAIA_ZONES): ZonaDesen
 
 export class PraiaZonas {
   private readonly cortina: THREE.Mesh | null;
+  private readonly chao: THREE.Mesh;
+  private detalheAlto = true;
+  private ligadas = true;
 
   constructor(scene: THREE.Scene, u: UniformesDaPraia, zonas: readonly ZoneDef[] = PRAIA_ZONES) {
     const lista = zonasDaPraia(zonas);
@@ -172,6 +175,7 @@ export class PraiaZonas {
     chao.frustumCulled = false;
     chao.renderOrder = 2;
     scene.add(chao);
+    this.chao = chao;
 
     // As cortinas: um cilindro aberto por zona, mesclado num desenho aditivo.
     const partes: THREE.BufferGeometry[] = [];
@@ -210,6 +214,21 @@ export class PraiaZonas {
 
   /** A qualidade baixa desliga as cortinas (o chão fica: é a informação do jogo). */
   setDetalhe(alto: boolean): void {
-    if (this.cortina) this.cortina.visible = alto;
+    this.detalheAlto = alto;
+    this.atualizaAVisibilidade();
+  }
+
+  /**
+   * As zonas têm energia? (P164) Com o quadro de luz da cidade apagado, as zonas deixam de curar e de resfriar (`ZoneSystem.energizadas`) e **o desenho some junto**: o jogador vê que a
+   * zona caiu. Volta com o quadro.
+   */
+  setLigadas(ligadas: boolean): void {
+    this.ligadas = ligadas;
+    this.atualizaAVisibilidade();
+  }
+
+  private atualizaAVisibilidade(): void {
+    this.chao.visible = this.ligadas;
+    if (this.cortina) this.cortina.visible = this.ligadas && this.detalheAlto;
   }
 }

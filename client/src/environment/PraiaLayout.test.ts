@@ -7,9 +7,11 @@ import {
   PRAIA_ASSALTO,
   PRAIA_CABOS_X,
   PRAIA_COMPLEXO,
+  PRAIA_DESEMBARQUE,
   PRAIA_ESCOTILHA,
   PRAIA_ESTACAO,
   PRAIA_INIMIGOS,
+  PRAIA_QUADRO_DE_LUZ,
   PRAIA_PIER,
   PRAIA_RUA_LARGURA,
   PRAIA_RUAS_X,
@@ -160,18 +162,60 @@ describe('o layout da PRAIA DOS CABOS (P127): a praia ao longo do mapa', () => {
     }
   });
 
-  it('as ondas rebeldes e o Colossus nascem em chão livre, longe da estação que o jogador defende', () => {
+  it('as ondas rebeldes nascem no cais, pelas bocas dos contêineres de desembarque, longe da estação que o jogador defende (P164)', () => {
     expect(PRAIA_INIMIGOS.length).toBeGreaterThanOrEqual(6); // os Mechs (3 da onda cheia) + os andróides (3)
+    // O cais é uma laje no nível do chão (o colisor dele conta como "chão"); o que fecha a passagem é o que passa da altura do joelho.
+    const altos = colisores.filter((c) => c.y + c.h / 2 > 0.3);
+    const longeDosAltos = (x: number, z: number): number => Math.min(...altos.map((c) => distancia(x, z, c)));
+    const [dx0, dx1] = [-318, -228]; // o cais (x)
+    const [dz0, dz1] = [-72, 8]; // o cais (z)
     for (const [x, z] of PRAIA_INIMIGOS) {
-      expect(Math.abs(alturaDoChao(x, z))).toBeLessThan(0.05);
-      expect(faixaEm(x, z)).not.toBe('mar');
-      expect(maisPerto(x, z), `onda em ${x},${z} livre`).toBeGreaterThan(4.5);
-      expect(Math.hypot(x - PRAIA_ESTACAO.x, z - PRAIA_ESTACAO.z), 'longe da estação').toBeGreaterThan(120);
+      expect(x, `onda em ${x},${z} no cais`).toBeGreaterThan(dx0);
+      expect(x).toBeLessThan(dx1);
+      expect(z).toBeGreaterThan(dz0);
+      expect(z).toBeLessThan(dz1);
+      expect(longeDosAltos(x, z), `onda em ${x},${z} fora dos contêineres`).toBeGreaterThan(4.5);
+      expect(Math.hypot(x - PRAIA_ESTACAO.x, z - PRAIA_ESTACAO.z), 'longe da estação').toBeGreaterThan(400);
     }
+    // Cada contêiner de desembarque tem uma boca com a primeira leva (os 3 Mechs) e, à frente dela, a segunda (os 3 andróides).
+    const primeiraLeva = PRAIA_INIMIGOS.filter(([x]) => x === -239);
+    expect(primeiraLeva).toHaveLength(3);
+    expect(PRAIA_INIMIGOS.filter(([x]) => x === -236).map(([, z]) => z)).toEqual(primeiraLeva.map(([, z]) => z));
+    expect(primeiraLeva.map(([, z]) => z).sort((a, b) => a - b)).toEqual([...PRAIA_DESEMBARQUE.linhas]);
     const [tx, tz] = PRAIA_TITA;
     expect(Math.abs(alturaDoChao(tx, tz))).toBeLessThan(0.05);
     expect(maisPerto(tx, tz), 'folga do titã (raio 3,6 m)').toBeGreaterThan(5.5);
     expect(Math.hypot(tx - PRAIA_ESTACAO.x, tz - PRAIA_ESTACAO.z)).toBeGreaterThan(120);
+  });
+
+  it('os contêineres de desembarque (P164): três, laranja, um por fileira da coluna leste do pátio, a porta para o leste e a boca livre', () => {
+    const desembarque = praiaBlocks().filter((b) => b.kind === 'conteiner' && b.cor === PRAIA_DESEMBARQUE.cor);
+    expect(desembarque).toHaveLength(3);
+    expect(desembarque.map((b) => b.z).sort((a, b) => a - b)).toEqual([...PRAIA_DESEMBARQUE.linhas]);
+    for (const b of desembarque) {
+      expect(b.x).toBe(PRAIA_DESEMBARQUE.x);
+      expect(b.solid).toBe(true);
+      const porta = b.x + b.w / 2; // a face de leste
+      const boca = PRAIA_INIMIGOS.find(([x, z]) => x === -239 && z === b.z)!;
+      expect(boca, `a boca do contêiner em z ${b.z}`).toBeDefined();
+      expect(boca[0] - porta, 'a boca fica a ~5 m da porta').toBeGreaterThan(4);
+      expect(boca[0] - porta).toBeLessThan(6);
+    }
+    // o pátio comum só perdeu as vagas que os de desembarque tomaram (3 das 12): 9 contêineres de pátio, mais os 3 de desembarque
+    const todos = praiaBlocks().filter((b) => b.kind === 'conteiner' && b.z <= 0 && b.z >= -70 && b.x < -226);
+    expect(todos).toHaveLength(9 + 3);
+    expect(todos.filter((b) => b.cor !== PRAIA_DESEMBARQUE.cor)).toHaveLength(9);
+  });
+
+  it('o quadro de luz da cidade (P164) fica na ponta oeste do cais, em chão livre e a mais de 500 m da estação', () => {
+    const { x, z } = PRAIA_QUADRO_DE_LUZ;
+    expect(x).toBeLessThan(-300);
+    expect(Math.hypot(x - PRAIA_ESTACAO.x, z - PRAIA_ESTACAO.z)).toBeGreaterThan(500);
+    const armario = praiaBlocks().filter((b) => b.kind === 'metal' && b.x === x && b.z === z);
+    expect(armario).toHaveLength(1);
+    // nenhum contêiner do pátio por cima, e folga para alguém ficar ao lado (6 m, o raio de reparo)
+    const contêineres = praiaBlocks().filter((b) => b.kind === 'conteiner');
+    for (const c of contêineres) expect(Math.hypot(Math.max(Math.abs(x - c.x) - c.w / 2, 0), Math.max(Math.abs(z - c.z) - c.d / 2, 0)), 'folga do quadro').toBeGreaterThan(3);
   });
 
   it('o assalto: a rota dos rebeldes termina nos portões da estação, em chão livre', () => {
