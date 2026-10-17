@@ -297,7 +297,7 @@ export class LoginPanel {
       });
       inputEmail.addEventListener('blur', () => {
         this.emailTocado = true;
-        this._render();
+        this._mostrarValidacao();
       });
     }
 
@@ -309,7 +309,7 @@ export class LoginPanel {
       });
       inputSenha.addEventListener('blur', () => {
         this.senhaTocada = true;
-        this._render();
+        this._mostrarValidacao();
       });
     }
 
@@ -333,6 +333,38 @@ export class LoginPanel {
           void this.options.onCriar(email, senha);
         }
       });
+    }
+  }
+
+  /**
+   * Mostra (ou tira) o aviso de cada campo **sem refazer o painel**. Antes o `blur` chamava `_render()`, que troca o DOM inteiro: o campo para onde o foco ia (clicar na senha logo depois
+   * do e-mail) e o botão sob o clique (clicar em ENTRAR logo depois da senha: mousedown e mouseup caíam em nós diferentes) eram destruídos, e o clique se perdia. (P174: achado ao ligar o
+   * painel ao jogo e testar no navegador de verdade.)
+   */
+  private _mostrarValidacao(): void {
+    if (!this.containerEl) return;
+    const { emailErro, senhaErro } = this.validar();
+    const campos: Array<[string, boolean, string | null]> = [
+      ['login-input-email', this.emailTocado, emailErro],
+      ['login-input-senha', this.senhaTocada, senhaErro],
+    ];
+    for (const [id, tocado, erro] of campos) {
+      const input = this.containerEl.querySelector<HTMLInputElement>(`#${id}`);
+      const campo = input?.parentElement;
+      if (!input || !campo) continue;
+      const mostrar = tocado && erro !== null;
+      input.classList.toggle('invalid', mostrar);
+      let aviso = campo.querySelector<HTMLElement>('.field-error');
+      if (mostrar) {
+        if (!aviso) {
+          aviso = document.createElement('span');
+          aviso.className = 'field-error';
+          campo.appendChild(aviso);
+        }
+        aviso.textContent = erro;
+      } else {
+        aviso?.remove();
+      }
     }
   }
 
