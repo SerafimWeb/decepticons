@@ -2918,6 +2918,13 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .cc-brand .power-flag { margin: 0; font-size: calc(9px * var(--k)); }
 .cc-sala { margin: 0; font-size: calc(11px * var(--k)); letter-spacing: 5px; color: #8b97a0; white-space: nowrap; }
 .cc-sala b { color: var(--alert); font-weight: 700; }
+/* Atalhos do canto (P176): o idioma e a conta ficavam dois níveis abaixo (Explorar hangar → Ajustar → aba JOGO) e o Comandante não os achou. Discretos, sem competir com o botão de jogar; valem também na pausa. */
+.cc-atalhos { position: absolute; top: calc(10px * var(--k)); right: calc(14px * var(--k)); z-index: 6; display: flex; align-items: center; gap: 8px; }
+.cc-atalhos select, .cc-atalhos button { padding: 5px 8px; background: rgba(5, 8, 12, 0.72); border: 1px solid rgba(143, 161, 150, 0.45); color: #b9c8be; font: 700 calc(10px * var(--k))/1 'Consolas', 'Courier New', monospace; letter-spacing: 1.5px; cursor: pointer; }
+.cc-atalhos select:hover, .cc-atalhos button:hover { border-color: var(--accent); color: var(--accent); }
+/* Sem o jogo pronto o botão da conta não tem o que abrir; no modo Comandante o canto é do selo dele. */
+#overlay.cc-espera #btn-conta-rapido { display: none; }
+#overlay:has(#cc-chip-comandante:not([hidden])) .cc-atalhos { display: none; }
 .cc-flags { display: flex; justify-content: flex-end; min-width: 0; }
 .cc-chip { padding: 5px 10px; background: rgba(255, 138, 31, 0.12); border: 1px solid var(--hot); color: var(--hot); font: 700 calc(10px * var(--k))/1 'Consolas', 'Courier New', monospace; letter-spacing: 2px; cursor: pointer; }
 .cc-chip:hover { background: var(--hot); color: var(--bg); }

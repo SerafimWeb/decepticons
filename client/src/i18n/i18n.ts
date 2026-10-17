@@ -158,6 +158,8 @@ const textos = new WeakMap<Node, Registro>();
 const atributos = new WeakMap<Element, Map<string, Registro>>();
 let observador: MutationObserver | null = null;
 let tituloOriginal = '';
+/** Os seletores de idioma da tela (o do canto e o das Configurações): andam juntos. */
+const seletores = new Set<HTMLSelectElement>();
 
 function ignorado(no: Node): boolean {
   const pai = no.parentElement;
@@ -256,6 +258,7 @@ async function aplicar(id: IdiomaId): Promise<void> {
   traduzirDOM(document.body);
   if (atual === IDIOMA_PADRAO) desligarObservador();
   else ligarObservador();
+  for (const s of seletores) s.value = atual;
 }
 
 /** Abre o jogo na língua certa. Chame antes de montar a interface (`main.ts`); nunca lança. */
@@ -275,6 +278,7 @@ export async function trocarIdioma(id: IdiomaId): Promise<IdiomaId> {
 
 /** Liga um `<select>` à troca de língua: lista as línguas pelo próprio nome (nunca traduzido) e acompanha a escolha. */
 export function ligarSeletorIdioma(seletor: HTMLSelectElement): void {
+  seletores.add(seletor);
   seletor.replaceChildren(
     ...IDIOMAS.map((i) => {
       const o = document.createElement('option');

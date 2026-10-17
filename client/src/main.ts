@@ -7,8 +7,11 @@ const started = performance.now();
 // A língua vem antes da interface (P172): em português não custa nada; nas outras, baixa o dicionário e traduz o que já está na tela.
 void iniciarIdioma()
   .then(() => {
-    const seletor = document.getElementById('setting-idioma');
-    if (seletor instanceof HTMLSelectElement) ligarSeletorIdioma(seletor);
+    // O do canto da primeira tela e o das Configurações (P176): dois lugares para a mesma escolha.
+    for (const id of ['idioma-rapido', 'setting-idioma']) {
+      const seletor = document.getElementById(id);
+      if (seletor instanceof HTMLSelectElement) ligarSeletorIdioma(seletor);
+    }
     return import('./core/Game');
   })
   .then(({ Game }) => Game.create(document.getElementById('app')!))

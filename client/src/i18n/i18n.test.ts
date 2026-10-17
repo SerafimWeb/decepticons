@@ -223,4 +223,21 @@ describe('a cobertura: o que o jogo mostra e o dicionário traduz', () => {
     const faltam = [...textos].filter((x) => /\p{L}{3,}/u.test(x) && !SO_EM_PORTUGUES.has(x) && !FERRAMENTA_DO_DONO.test(x) && !coberto(x));
     expect(faltam).toEqual([]);
   });
+
+  it('o idioma e a conta estão no canto da primeira tela (e da pausa), não só dois níveis abaixo nas Configurações (P176: o Comandante não os achou)', () => {
+    const html = readFileSync(resolve(RAIZ, 'index.html'), 'utf8');
+    const overlay = html.indexOf('<div id="overlay"');
+    const rapido = html.indexOf('id="idioma-rapido"');
+    const conta = html.indexOf('id="btn-conta-rapido"');
+    const topo = html.indexOf('<header class="cc-top');
+    expect(overlay).toBeGreaterThan(0);
+    for (const posicao of [rapido, conta]) {
+      expect(posicao).toBeGreaterThan(overlay);
+      expect(posicao).toBeLessThan(topo);
+    }
+    expect(html).toMatch(/<select id="idioma-rapido" data-i18n="nao"/); // os nomes das línguas nunca são traduzidos
+    expect(html).toMatch(/id="btn-conta-rapido" data-settings-open="jogo" data-settings-foco="settings-conta"/);
+    // o seletor das Configurações segue lá: os dois andam juntos
+    expect(html).toMatch(/<select id="setting-idioma" data-i18n="nao"/);
+  });
 });

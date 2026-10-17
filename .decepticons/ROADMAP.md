@@ -310,6 +310,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] Os rebeldes atiram o laser (um pulso por cadência, pelo `Match.beamPulse` do jogador) e a Sala de controle conta o **ritmo de conteúdo** (armas e chassis por semana, do código e do git) (pendências da P160 e da P171, 17/10, P175) #ia
 - [ ] Retenção no painel: **D7** e **DAU/MAU** (pedem um id anônimo por visita: decisão do Comandante, LGPD) (P171/P175) #negocio
 
+- [x] Idioma e conta no canto da primeira tela e da pausa (o Comandante não os achou nas Configurações) (pedido do Comandante, 17/10, P176) #ux
+
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
 - [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo
 - [ ] Decisões do dono sobre o universo (`UNIVERSO.md`, seção 7) #universo
