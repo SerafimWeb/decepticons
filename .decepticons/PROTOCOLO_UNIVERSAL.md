@@ -11,7 +11,7 @@ Canônico: `D:\SERAFIMHUB\serafim13\protocolo-serafim-um/`. Cópia: `.decepticon
 | R1–R3 | ✅ | SSOT em `.decepticons/`, sem secrets, sem duplicata (`_v2`, etc). |
 | R4 | ⚙️ | TypeScript `strict`. Validação manual (sem alocação) na borda de rede; Zod frio. |
 | R5–R6 | — | SQLite de contas existente: migrações, backup e restauração precisam de evidência; progresso ainda local. |
-| R7 | ✅ | JS ≤ 500 KB gzip, Wasm ≤ 900 KB gzip (verificado em `npm run check`). |
+| R7 | ✅ | JS ≤ 500 KB gzip, Wasm ≤ 900 KB gzip (verificado em `npm run check`). **O JS tem dois tetos** (`scripts/orcamentoDeJs.mjs`): o **de partida** (500 KB: o que todo jogador baixa) e o **sob demanda** (150 KB por pedaço). **Como não estourar o de partida:** tela ou painel opcional entra por `import()` no clique (`core/sobDemanda.ts`, modelo: os painéis do console no `Game`); texto estático longo (dicas, fichas, listas) vai para JSON em `client/public/`, nunca para o código. Medir: `npm run build` e ler a linha `budget JS` do `npm run smoke`. |
 | R8–R15 | ✅ | Deploy (DEPLOY.md), isolamento, secrets por nome (GitHub), automação (hooks + CI), sem mentira (STATUS_REAL.md), SSOT por dado, verificação pré-push. |
 | R16 | ⚙️ | Prova no browser real (multiplayer: 2+ clientes com latência simulada). |
 | R17 | ✅ | Achados registrados, bugs corrigidos (ver FINDINGS.md). |

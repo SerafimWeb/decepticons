@@ -1,3 +1,11 @@
+## [2026-10-17] Os painéis opcionais do console saem do JS de partida (Claude, R7)
+
+**Problema:** o teto de 500 KB gzip do JS de partida estava em 499,7 KB. Cada PR que somava um módulo (o `‹ valor ›`, o Arquivo, o idioma do Hangar) empurrava o total para o limite e travava o `npm run check`; a saída honesta era emagrecer, não subir o teto (R7 é do protocolo).
+
+**Decisão:** o que só abre por clique **não entra no download de partida**. O Esquadrão, as Campanhas, o Arsenal, o Servidor do dono e as Câmeras viram pedaços sob demanda (`import()` + `sobDemanda`), no modelo que o `orcamentoDeJs.mjs` (P180) já previa para as fases. Partida: **499,7 → 486,2 KB**. **O custo:** o primeiro clique de cada painel espera o pedaço (<7 KB gzip, uma requisição); sem rede o painel não abre e o jogo avisa no console.
+
+**Regra que fica:** tela ou painel opcional = `import()`; texto estático longo = JSON em `public/`. **O que não foi feito e por quê:** o Hangar (`HangarMenu` + `HangarScene`, ~43 KB minificados) segue no pacote de partida: o `Game` o aquece no boot para o primeiro "H" não engasgar, e tirá-lo muda essa experiência; fica como a próxima alavanca, decisão de quem mede a sensação.
+
 ## [2026-10-17] O idioma se audita no navegador, e a composição "A · B" traduz parte a parte (Claude, P173)
 
 **Problema:** o Comandante quer o jogo no idioma nativo de quem chega. O teste de cobertura (que lê o código) dava tudo verde, mas **o Hangar falava português em japonês**: o texto que o jogo monta (colando "MÉDIO", "ASSALTO" e a descrição com " · ") nunca é uma chave do dicionário, e o teste só olhava as partes.

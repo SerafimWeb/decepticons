@@ -1,5 +1,20 @@
 # ESTADO ATUAL — CYBERMECH
 
+## DIETA DE JS: OS PAINÉIS OPCIONAIS DO CONSOLE SAEM DO DOWNLOAD DE PARTIDA — Claude, 17/10 (branch `claude/dieta-js`, R7)
+
+**O problema:** o JS de partida (o que todo jogador baixa para abrir o jogo) estava em **499,7 / 500 KB**: qualquer módulo novo, de qualquer agente, travaria o `npm run check` de todo mundo. Em uma semana eu tinha estourado o teto três vezes (o `‹ valor ›`, o Arquivo, o idioma).
+
+**Feito:**
+1. **Cinco painéis viram pedaços sob demanda** (`import()` no primeiro clique, `core/sobDemanda.ts`): **Esquadrão** (6,8 KB gzip), **Campanhas** (3,6), **Arsenal** (3,8), **Servidor** (6,2) e **Câmeras** (2,8). O `Game` não os importa mais de forma estática; o clique baixa o pedaço, cria o painel e abre (sem rede, avisa no console e o próximo clique tenta de novo).
+2. **JS de partida: 499,7 → 486,2 KB** (folga de **13,8 KB**). Os pedaços sob demanda ficam abaixo de 7 KB cada (teto: 150 KB).
+3. **Prova no navegador de verdade** (build de produção servido): antes do clique **nenhum** desses cinco pedaços é pedido; depois do clique cada um baixa e o painel abre; zero erros. Testes (`sobDemanda.test.ts`): a fábrica cria uma vez, o erro não fica guardado, um painel que falha não derruba o jogo, e o `Game` não importa mais os cinco de forma estática.
+
+**Custo de CPU:** menos que antes (o download e a análise do JS dos painéis só acontecem para quem os abre).
+
+**Regra para todos os agentes** (agora no `PROTOCOLO_UNIVERSAL.md`, R7): **tela ou painel opcional entra por `import()` no clique; texto estático longo vai para JSON em `public/`.** O próximo candidato, se a folga acabar: o `HangarMenu` (28 KB minificados) e o `HangarScene` (16 KB), que hoje o `Game` aquece no boot (pré-compilação de shaders): tirá-los do boot é uma decisão de experiência (o primeiro "H" passaria a esperar o pedaço), não só de bundle.
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois o Relatório de Consequências, a Amazônia (P180) e os ombros dos chassis pesados (P181).
+
 ## IDIOMA: O HANGAR, O ESQUADRÃO, AS CAMPANHAS E O HUD DEIXAM DE FALAR PORTUGUÊS — Claude, 17/10 (branch `claude/idioma-telas`, P173)
 
 **O Comandante (17/10):** *"idioma tem que ficar logo no início […] pra pessoa já selecionar o idioma nativo dele"*. Escolhida a língua, as telas avançadas ainda caíam no português: **auditoria no navegador de verdade, em japonês** (`.tmp/auditar-idioma.mjs`, que abre cada tela e lista o texto sem tradução) achou ~250 textos no Hangar, no Esquadrão, nas Campanhas e no HUD.
