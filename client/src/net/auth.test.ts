@@ -43,3 +43,70 @@ describe('ContaCliente', () => {
     vi.unstubAllGlobals();
   });
 });
+
+const progresso = { apelido: 'ANA', nivel: 4, xp: 120, creditos: 700, montagem: '{}', atualizadoEm: 1700000000000 };
+
+describe('ContaCliente: progresso do piloto (P174)', () => {
+  it('sem servidor ou sem token, nada de rede: leitura devolve null e gravação devolve false', async () => {
+    const f = vi.fn();
+    vi.stubGlobal('fetch', f);
+    const sem = new ContaCliente(undefined);
+    expect(await sem.lerProgresso('t')).toBeNull();
+    expect(await sem.gravarProgresso('t', progresso)).toBe(false);
+    const com = new ContaCliente('wss://jogo.exemplo');
+    expect(await com.lerProgresso('')).toBeNull();
+    expect(await com.gravarProgresso('', progresso)).toBe(false);
+    expect(f).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('lerProgresso manda a sessão no cabeçalho, devolve o progresso validado ou "nada guardado"', async () => {
+    const chamadas: Array<[string, RequestInit | undefined]> = [];
+    vi.stubGlobal('fetch', (async (url: string, init?: RequestInit) => {
+      chamadas.push([url, init]);
+      return { ok: true, status: 200, json: async () => ({ progresso }) } as unknown as Response;
+    }) as unknown as typeof fetch);
+    const c = new ContaCliente('wss://jogo.exemplo');
+    expect(await c.lerProgresso('tk')).toEqual({ progresso });
+    expect(chamadas[0]![0]).toBe('https://jogo.exemplo/conta/progresso');
+    expect((chamadas[0]![1]!.headers as Record<string, string>)['x-cybermech-sessao']).toBe('tk');
+    vi.stubGlobal('fetch', respostaJson({ progresso: null }));
+    expect(await c.lerProgresso('tk')).toEqual({ progresso: null });
+    vi.unstubAllGlobals();
+  });
+
+  it('um servidor que devolve lixo não injeta nada: resposta fora do contrato vira "não deu para saber" (null)', async () => {
+    const c = new ContaCliente('wss://jogo.exemplo');
+    for (const lixo of [{ progresso: { nivel: 99999 } }, { progresso: 'x' }, {}, null]) {
+      vi.stubGlobal('fetch', respostaJson(lixo));
+      expect(await c.lerProgresso('tk'), JSON.stringify(lixo)).toBeNull();
+    }
+    vi.unstubAllGlobals();
+  });
+
+  it('sessão recusada (401) ou rede fora: leitura null, gravação false, nunca lança', async () => {
+    const c = new ContaCliente('wss://jogo.exemplo');
+    vi.stubGlobal('fetch', respostaJson({ erro: 'sem sessão' }, false, 401));
+    expect(await c.lerProgresso('tk')).toBeNull();
+    expect(await c.gravarProgresso('tk', progresso)).toBe(false);
+    vi.stubGlobal('fetch', (async () => { throw new Error('offline'); }) as unknown as typeof fetch);
+    expect(await c.lerProgresso('tk')).toBeNull();
+    expect(await c.gravarProgresso('tk', progresso)).toBe(false);
+    vi.unstubAllGlobals();
+  });
+
+  it('gravarProgresso faz PUT com o JSON e a sessão e devolve true quando o servidor aceita', async () => {
+    let visto: { url: string; init: RequestInit } | null = null;
+    vi.stubGlobal('fetch', (async (url: string, init: RequestInit) => {
+      visto = { url, init };
+      return { ok: true, status: 200, json: async () => ({ progresso }) } as unknown as Response;
+    }) as unknown as typeof fetch);
+    const c = new ContaCliente('wss://jogo.exemplo');
+    expect(await c.gravarProgresso('tk', progresso)).toBe(true);
+    expect(visto!.url).toBe('https://jogo.exemplo/conta/progresso');
+    expect(visto!.init.method).toBe('PUT');
+    expect(JSON.parse(visto!.init.body as string)).toEqual(progresso);
+    expect((visto!.init.headers as Record<string, string>)['x-cybermech-sessao']).toBe('tk');
+    vi.unstubAllGlobals();
+  });
+});

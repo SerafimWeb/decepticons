@@ -7,11 +7,11 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
-import { CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, parseCredenciais, SESSAO_HEADER } from '../shared/net/auth';
+import { CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_PROGRESSO_PATH, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, PROGRESSO_MAX_BYTES, parseCredenciais, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
 import { ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
 import { type EventoEnviado, type EventoServidor, EVENTO_MAX_BYTES, EVENTO_PATH, METRICAS_HEADER, METRICAS_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
-import type { RejectReason } from '../shared/net/messages';
+import { sanitizeName, type RejectReason } from '../shared/net/messages';
 import { ArenaRoom, type Peer } from './ArenaRoom';
 import { Contas } from './contas';
 import { clientCountry, clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
@@ -390,7 +390,7 @@ export async function startServer(
     // Rotas de conta: só as páginas do jogo (e a rede local) podem chamá-las; o CORS devolve a origem do pedido, nunca `*`.
     const cors = corsDoPedido(req.headers.origin, origens);
     if (
-      (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH || path === CONTA_SAIR_PATH || path === CONTA_EU_PATH) &&
+      (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH || path === CONTA_SAIR_PATH || path === CONTA_EU_PATH || path === CONTA_PROGRESSO_PATH) &&
       !origemPermitida(req.headers.origin, origens)
     ) {
       res.writeHead(403, { 'content-type': 'application/json; charset=utf-8', ...cors });
@@ -473,6 +473,52 @@ export async function startServer(
       if (typeof token === 'string') contas.encerrarSessao(token);
       res.writeHead(204, { ...cors });
       res.end();
+      return;
+    }
+    // O navegador de outra origem (o jogo em cybermech.online, o servidor em jogo.cybermech.online) faz o preflight antes de qualquer chamada com o cabeçalho da sessão.
+    if ((path === CONTA_EU_PATH || path === CONTA_PROGRESSO_PATH) && req.method === 'OPTIONS') {
+      res.writeHead(204, {
+        ...cors,
+        'access-control-allow-methods': path === CONTA_EU_PATH ? 'GET, OPTIONS' : 'GET, PUT, OPTIONS',
+        'access-control-allow-headers': `content-type, ${SESSAO_HEADER}`,
+      });
+      res.end();
+      return;
+    }
+    // O progresso do piloto (P174): o que o navegador já guardava (apelido, nível, XP, créditos, montagem), por conta, para seguir entre aparelhos. Só com sessão; não vale para ranking (G13).
+    if (path === CONTA_PROGRESSO_PATH && (req.method === 'GET' || req.method === 'PUT')) {
+      const token = req.headers[SESSAO_HEADER];
+      const conta = typeof token === 'string' ? contas.validarSessao(token) : null;
+      const enviarJson = (codigo: number, dados: unknown) => {
+        res.writeHead(codigo, { 'content-type': 'application/json; charset=utf-8', ...cors, 'cache-control': 'no-store' });
+        res.end(JSON.stringify(dados));
+      };
+      if (!conta) {
+        enviarJson(401, { erro: 'sem sessão' });
+        return;
+      }
+      if (req.method === 'GET') {
+        const guardado = contas.lerProgresso(conta.id);
+        enviarJson(200, { progresso: guardado ? (JSON.parse(guardado) as unknown) : null });
+        return;
+      }
+      const corpo = await lerCorpoLimitado(req, PROGRESSO_MAX_BYTES);
+      if (corpo === 'grande') {
+        enviarJson(413, { erro: 'pedido grande demais' });
+        return;
+      }
+      let progresso = null;
+      try {
+        progresso = validarProgresso(JSON.parse(corpo.toString('utf8') || '{}'), sanitizeName);
+      } catch {
+        progresso = null;
+      }
+      if (!progresso) {
+        enviarJson(400, { erro: 'progresso inválido' });
+        return;
+      }
+      contas.gravarProgresso(conta.id, JSON.stringify(progresso));
+      enviarJson(200, { progresso });
       return;
     }
     if (path === CONTA_EU_PATH && req.method === 'GET') {

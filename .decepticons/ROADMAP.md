@@ -302,6 +302,9 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 
 - [x] Idiomas do jogo: inglês, espanhol, francês, japonês, chinês e russo (dicionário JSON + tradutor de DOM, seletor em Configurações e `?lang=`; PARCIAL: narrador, canvas, Hangar longo, landing e revisão nativa) (pedido do Comandante, 17/10, P173) #ux
 
+- [x] Login do jogador completo: criar conta e entrar nas Configurações, a conta guarda nível, XP, créditos, apelido e a montagem do Hangar (`/conta/progresso`) e o convidado vira conta sem perder nada (pedido do Comandante, 17/10, P174) #rede
+- [ ] Ranking online e clã (C4 e C2 do `RANKING_E_LOGIN.md`), recuperar senha e apagar conta, e o convite "guarde seu progresso" depois da primeira partida (P174) #rede
+
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
 - [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo
 - [ ] Decisões do dono sobre o universo (`UNIVERSO.md`, seção 7) #universo

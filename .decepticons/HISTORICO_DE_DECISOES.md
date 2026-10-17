@@ -1,3 +1,16 @@
+## [2026-10-17] O login do jogador: a conta guarda o progresso do navegador, sem porta e sem id local (Claude, P174)
+
+**Ordem:** *"concluamos sobre o LOGIN"* (camada C3 do `RANKING_E_LOGIN.md`).
+
+**Decisões:**
+1. **Sem "id local" aleatório, como o plano previa:** o navegador **já é** a fonte do que ele guardava (nível, créditos, apelido, montagem); a conta é uma **cópia** que o alcança. Um id a mais não resolveria nada e criaria um segundo estado para sincronizar.
+2. **A junção é "quem tem mais progresso vence por inteiro"** (nível, depois XP; empate, o último a gravar), com o apelido e a montagem do outro cobrindo os vazios. Somar créditos dos dois lados dobraria o ganho de quem joga em dois aparelhos; o plano diz "não perde nada", e perder o ganho do lado menor é o preço de não permitir esse dobro. A regra é uma função pura testada.
+3. **Rede nunca é requisito:** falha de rede não trava nem apaga nada, o token **não** é apagado quando o servidor não responde (sessão vencida e rede fora são indistinguíveis para o cliente), e **sair não apaga o progresso do aparelho**.
+4. **O progresso da conta é conforto, não verdade:** não vale para ranking (G13: só o servidor autoritativo pontua o global); quem adulterar só adultera a própria conta. Por isso o servidor valida a **forma** e os limites, não a "legitimidade".
+5. **Token por servidor** (como o do admin): um link com `?servidor=` de terceiros nunca recebe o token guardado.
+6. **Só nas Configurações, por ora:** o princípio é "nada de porta" (`RANKING_E_LOGIN.md` § 1); o convite depois da primeira partida fica como próximo passo, para não ser feito sem o olho do Comandante.
+7. **R17 (achado):** `/conta/eu` nunca respondeu ao preflight do CORS; corrigido junto, porque a rota nova depende da mesma coisa.
+
 ## [2026-10-17] O jogo ganha sete línguas, com o português como texto de origem (Claude, P173)
 
 **Ordem:** colocar já o inglês, o japonês, o espanhol, o francês, o chinês e o russo (resposta à P171 (b)).
