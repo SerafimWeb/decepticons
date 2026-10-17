@@ -583,12 +583,11 @@ export function evolucao() {
  * sobrevive às renumerações). Base do burn-up, da linha do tempo das fases e do ritmo. Um processo git
  * para todas as versões (`cat-file --batch`): um por commit levava segundos no Windows.
  */
-/**
- * O ritmo de conteúdo (P175; `LICOES_WAR_ROBOTS.md` § 2.1: "contar conteúdo como se conta código"): cada **arma** e cada **chassi** do jogo conta uma unidade, na **semana** (a segunda-feira dela)
- * em que o merge que o criou entrou na `main`. Os ids saem do código (nada copiado) e a data, do histórico do git (`--first-parent -S`: a primeira entrega na `main` que traz o id). Sem git (ou
- * sem histórico), devolve vazio. `media4` = unidades por semana nas últimas quatro semanas completas (a conta que o Comandante confere com a meta de 2 por semana, ainda por decidir).
- */
-export function conteudoPorSemana(hoje = new Date()) {
+let unidadesEmCache = null;
+
+/** Cada arma e cada chassi do código com a data (`AAAA-MM-DD`) do merge que o trouxe para a `main`. Cara (uma busca no git por unidade): guardada para o resto da execução. */
+function unidadesDoJogo() {
+  if (unidadesEmCache) return unidadesEmCache;
   /** Os pares [id, linha] que `re` acha no arquivo (ou só no bloco que começa em `bloco` e vai até o fim da chave). */
   const ids = (arquivo, re, bloco) => {
     let txt = read(arquivo);
@@ -610,6 +609,17 @@ export function conteudoPorSemana(hoje = new Date()) {
     const data = dataDoId('client/src/entities/chassis.ts', linha.replace(/,$/, ''));
     if (data) unidades.push({ id, tipo: 'chassi', data });
   }
+  unidadesEmCache = unidades;
+  return unidades;
+}
+
+/**
+ * O ritmo de conteúdo (P175; `LICOES_WAR_ROBOTS.md` § 2.1: "contar conteúdo como se conta código"): cada **arma** e cada **chassi** do jogo conta uma unidade, na **semana** (a segunda-feira dela)
+ * em que o merge que o criou entrou na `main`. Os ids saem do código (nada copiado) e a data, do histórico do git (`--first-parent -S`: a primeira entrega na `main` que traz o id). Sem git (ou
+ * sem histórico), devolve vazio. `media4` = unidades por semana nas últimas quatro semanas completas (a conta que o Comandante confere com a meta de 2 por semana, ainda por decidir).
+ */
+export function conteudoPorSemana(hoje = new Date()) {
+  const unidades = unidadesDoJogo();
   if (!unidades.length) return { unidades, semanas: [], total: 0, media4: 0 };
   const segunda = (iso) => {
     const d = new Date(`${iso}T12:00:00Z`);

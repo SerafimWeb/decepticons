@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { WEAPON_IDS } from '../client/src/combat/weapons';
 import { CHASSIS } from '../client/src/entities/chassis';
 import { conteudoPorSemana } from '../scripts/site/dados.mjs';
@@ -36,7 +36,11 @@ interface Ritmo {
 const ritmo = (hoje: string): Ritmo => conteudoPorSemana(new Date(`${hoje}T12:00:00Z`)) as Ritmo;
 
 describe.skipIf(!comHistorico)('ritmo de conteúdo: armas e chassis por semana, do código e do git', () => {
-  const r = ritmo('2026-10-17');
+  let r: Ritmo;
+  // Uma busca no git por unidade (ids do código, datas da `main`): guardada na primeira chamada; com a máquina cheia leva mais de 30 s.
+  beforeAll(() => {
+    r = ritmo('2026-10-17');
+  }, 300_000);
 
   it('toda arma do catálogo conta uma vez, e nenhuma a mais (arma nova entra no ritmo sozinha)', () => {
     const armas = r.unidades.filter((u) => u.tipo === 'arma').map((u) => u.id);
