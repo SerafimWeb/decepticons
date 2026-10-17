@@ -219,7 +219,8 @@ describe('console de comando: o primeiro acesso (P133)', () => {
     expect(bloco).toMatch(/#overlay\.console\.cc-primeira \.cc-pitch,\s*#overlay\.console\.cc-primeira \.cc-mais \{ display: block; \}/);
     // Na carga (cc-espera) a grade é a mesma: o botão não pula quando o jogo fica pronto.
     expect(bloco).toContain('#overlay.console.cc-primeira .cc-launch { grid-column: 1 !important; }');
-    expect(bloco).toContain("content: 'CARREGANDO A PARTIDA'");
+    // O texto vem de uma variável por língua (`:root:lang(xx)`, P173); o padrão, sem variável, é o português.
+    expect(bloco).toContain("content: var(--t-carregando, 'CARREGANDO A PARTIDA')");
   });
 
   it('o fundo da tela enxuta deixa a cena da partida aparecer (é uma sombra, não um painel opaco)', () => {
