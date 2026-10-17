@@ -1,3 +1,14 @@
+## [2026-10-17] O `‹ valor ›` veste o select, não o substitui (Claude, P182)
+
+**Ordem:** *"veja esses exemplos de interface de jogos antigos, eu acho muito boas!"*.
+
+**Decisões:**
+1. **O select continua sendo a fonte:** o `‹ valor ›` é um espelho com setas sobre um `<select>` escondido. O `SettingsMenu` e o `EnemySettings` leem e escrevem `select.value` há meses, e as bancadas e os testes dependem disso: trocar o elemento seria reescrever os dois e arriscar o que funciona. O custo é uma interceptação de `value` e `selectedIndex` na instância (para o espelho ver o que o código escreve sem evento).
+2. **Passo circular:** nos menus de arcade o último valor volta ao primeiro; menos cliques para quem quer o valor "do outro lado".
+3. **Só poucos valores viram passo (até 8):** o idioma (sete línguas, a pessoa quer ver a lista) e números grandes ficam como lista.
+4. **A barra dourada é a linha sob o mouse ou com o foco**, não uma "seleção" guardada: as Configurações não têm linha selecionada, têm linha em foco. É o que a referência faz no teclado e no controle.
+5. **Só CSS e um módulo:** nenhuma regra de jogo muda; a "pele" se ajusta com a captura na mão.
+
 ## [2026-10-17] A landing ganha idiomas com um módulo próprio, igual ao do jogo (Claude, P178)
 
 **Ordem:** *"idioma tem que ficar logo no início da landing, pra pessoa já selecionar o idioma nativo dele"*.

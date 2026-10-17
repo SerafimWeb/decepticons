@@ -14,6 +14,7 @@ import {
 } from '../core/Settings';
 
 import { NARRACOES, ROTULO_DA_NARRACAO, type Narracao } from '../audio/falas';
+import { ligarPasso } from './Passo';
 import { attachSettingsTabs, isSettingsTab, type SettingsTab } from './settingsTabs';
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -101,6 +102,9 @@ export class SettingsMenu {
       .join('');
 
     for (const n of NARRACOES) this.selNarracao.append(new Option(ROTULO_DA_NARRACAO[n], n));
+
+    // O `‹ valor ›` das interfaces de jogos antigas (P182): qualidade, dificuldade e narrador se trocam por um passo, sem abrir lista. O select segue sendo a fonte (escondido).
+    for (const s of [this.selQuality, this.selDiff, this.selNarracao]) ligarPasso(s);
   }
 
   private wireEvents(): void {

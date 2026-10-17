@@ -1,5 +1,6 @@
 import { NAME_MAX } from '../core/botNames';
 import { LIMITS, PERSONA_LABELS, type EnemyNames, type GameSettings, type Persona, type Settings } from '../core/Settings';
+import { ligarPasso, MAX_OPCOES_DO_PASSO } from './Passo';
 
 const PERSONAS: readonly Persona[] = ['soldado', 'brabo', 'manso', 'fujao'];
 const ATTACKERS = [1, 1.5, 2, 3, 4];
@@ -183,6 +184,8 @@ export class EnemySettings {
       ctrl.append(small);
     }
     row.append(l, ctrl);
+    // Poucos valores (as personalidades, as quantidades): o `‹ valor ›` (P182). Já na linha, para o rótulo dela virar o nome do conjunto.
+    if (control instanceof HTMLSelectElement && control.options.length <= MAX_OPCOES_DO_PASSO) ligarPasso(control);
     return row;
   }
 }
