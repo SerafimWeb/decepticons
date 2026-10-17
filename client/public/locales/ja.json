@@ -477,5 +477,8 @@
  "Arpão magnético": "マグネティックハープーン",
  "ARPÃO MAGNÉTICO": "マグネティックハープーン",
  "ARPÃO": "ハープーン",
- "ARPÃO: PRENDE O PRIMEIRO INIMIGO À VISTA (ATÉ {0} M) E O PUXA; O DASH CORTA O CABO": "ハープーン: 視界内の最初の敵(最大{0}m)を捕らえて引き寄せる。ダッシュでケーブルを切れる"
+ "ARPÃO: PRENDE O PRIMEIRO INIMIGO À VISTA (ATÉ {0} M) E O PUXA; O DASH CORTA O CABO": "ハープーン: 視界内の最初の敵(最大{0}m)を捕らえて引き寄せる。ダッシュでケーブルを切れる",
+ "[ CONTA ]": "[ アカウント ]",
+ "Criar conta ou entrar para guardar o progresso": "アカウントを作成またはログインして進行状況を保存",
+ "Idioma e conta": "言語とアカウント"
 }

@@ -111,6 +111,9 @@ export class SettingsMenu {
         e.stopPropagation();
         const tab = el.dataset.settingsOpen;
         this.open(isSettingsTab(tab) ? tab : undefined);
+        // `data-settings-foco` (o atalho da conta no canto, P176): rola a aba até o bloco pedido, que fica no fim dela.
+        const foco = el.dataset.settingsFoco;
+        if (foco) document.getElementById(foco)?.closest('.settings-section')?.scrollIntoView({ block: 'start' });
       });
     }
 

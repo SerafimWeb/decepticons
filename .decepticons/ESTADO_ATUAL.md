@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O IDIOMA E A CONTA SAEM DO FUNDO DO MENU PARA O CANTO DA PRIMEIRA TELA — Claude, 17/10 (branch `claude/atalhos-idioma-conta`, P176)
+
+**O Comandante (17/10):** *"nao achei o arpao no hangar, nem a mudança das linguas, nem login"*.
+
+**O que conferi antes de mexer:** abri o **site de produção** num navegador de verdade (sessão limpa, build `bbbc1d8`): o seletor de idioma existe e troca o jogo para o japonês na hora; o bloco da conta existe; o Marauder está destravado e o **Arpão magnético** está na lista de ombros. **Estava tudo no ar, mas escondido:** a primeira tela é a "enxuta" (P133) e só mostra *CLIQUE PARA JOGAR* e *EXPLORAR HANGAR E MODOS*; o idioma e a conta ficavam em Explorar → Ajustar → aba JOGO → rolar, e o arpão exige escolher o Marauder (o último chassi) e abrir a lista dos ombros.
+
+**Feito:** (1) **`<nav class="cc-atalhos">` no canto da primeira tela e da pausa**: o seletor de língua e o botão **[ CONTA ]**; o botão abre as Configurações na aba JOGO **já rolada até a conta** (`data-settings-foco`); (2) os dois seletores de idioma (o do canto e o das Configurações) andam juntos (`i18n.ts`: conjunto de seletores); (3) o botão some enquanto o jogo carrega (não teria o que abrir) e no modo Comandante (o canto é do selo dele); (4) traduções do botão e da dica nas seis línguas (482 textos por língua); (5) teste: o idioma e a conta estão **dentro do `#overlay`, antes do cabeçalho** (um canto que volte para o fundo do menu quebra o teste).
+
+**Custo de CPU:** zero (dois elementos de HTML e um `scrollIntoView` no clique).
+
+**Falta (R13):** (a) **o arpão continua só no Marauder, dentro da lista de ombros**: é a regra (só ele tem ombros), mas não há nada na primeira tela nem no Hangar do Vector-09 que diga isso; se o Comandante quiser, dá para pôr um aviso no cartão do chassi ou uma dica no Hangar; (b) **o olho do Comandante**: se depois do Ctrl+F5 ainda não aparecer, ele precisa dizer **onde está jogando** (site ou pasta local); (c) a landing do site (`/`) segue só em português.
+
+**Próxima sessão começa com:** o que o Comandante disser jogando; a decisão da P171 (ritmo oficial, cosmético de explosão).
+
 ## CAPÍTULO 1, PARTE C: O PORTO — os contêineres de desembarque e o quadro de luz da cidade — Claude, 17/10 (branch `claude/cap1-parte-c`, P163, P164)
 
 **As ordens do Comandante:** *"o porto é onde os inimigos chegam, eles devem sair dos contêineres (e na campanha de ondas isso deve ser bem explícito)"* e *"no porto, tem que ter um botão ou chave ou sistema que devemos proteger, para acender as luzes da cidade… um tipo de circuito que podemos repetir nas diferentes fases"*.
