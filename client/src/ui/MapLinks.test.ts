@@ -10,8 +10,17 @@ describe('mapHref: o link do seletor de mapa', () => {
     return mapFromSearch(u.search, online, modo);
   };
 
-  it('oferece a Arena, o Bunker e a Praia, nessa ordem', () => {
-    expect(MAPS.map((m) => m.id)).toEqual(['arena', 'bunker', 'praia']);
+  it('oferece a Arena, o Bunker, a Praia e a Amazônia, nessa ordem', () => {
+    expect(MAPS.map((m) => m.id)).toEqual(['arena', 'bunker', 'praia', 'amazonia']);
+  });
+
+  it('o link da Amazônia abre a Amazônia, e como o Bunker e a Praia ela só existe offline: tira a sala e o modo', () => {
+    const href = mapHref('https://exemplo.test/cybermech/jogar/?sala=ARENA&servidor=ws://x&modo=ctf', 'amazonia');
+    expect(abre(href)).toBe('amazonia');
+    const url = new URL(href);
+    expect(url.searchParams.has('sala')).toBe(false);
+    expect(url.searchParams.has('servidor')).toBe(false);
+    expect(url.searchParams.has('modo')).toBe(false);
   });
 
   it('o link do Bunker abre o Bunker', () => {

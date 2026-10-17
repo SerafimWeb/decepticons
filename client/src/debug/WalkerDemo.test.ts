@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { diferencaDeAngulo, rumoDe } from './WalkerDemo';
+import { AMAZONIA_ALDEIA, AMAZONIA_DRAGA_INICIO_X } from '../environment/AmazoniaLayout';
+import { diferencaDeAngulo, rumoDe, X_DA_PARADA_DO_DRAGA, xDoDragaNoRio } from './WalkerDemo';
 import { walkerFromSearch } from './walkerLink';
 
 describe('a demonstração do Draga-01 (P180, parte A): o link e a geometria do passeio', () => {
@@ -36,5 +37,33 @@ describe('a demonstração do Draga-01 (P180, parte A): o link e a geometria do 
     expect(diferencaDeAngulo(paraAEsquerda, rumo)).toBeGreaterThan(0);
     const paraADireita = rumoDe(5, -5);
     expect(diferencaDeAngulo(paraADireita, rumo)).toBeLessThan(0);
+  });
+});
+
+describe('o Draga-01 no rio da Amazônia (P180, parte B): o passeio rio acima pelo leito', () => {
+  it('começa onde o mapa diz (rio abaixo da aldeia) e anda rio acima a 2,6 m/s: o x só diminui', () => {
+    expect(xDoDragaNoRio(0)).toBe(AMAZONIA_DRAGA_INICIO_X);
+    expect(xDoDragaNoRio(10)).toBeCloseTo(AMAZONIA_DRAGA_INICIO_X - 26, 9);
+    let anterior = xDoDragaNoRio(0);
+    for (let t = 1; t < 400; t += 7) {
+      const x = xDoDragaNoRio(t);
+      expect(x).toBeLessThanOrEqual(anterior);
+      anterior = x;
+    }
+  });
+
+  it('para antes da aldeia e nunca entra nela (a missão protege a aldeia: o Draga nunca a alcança nesta demonstração)', () => {
+    expect(xDoDragaNoRio(1e6)).toBe(X_DA_PARADA_DO_DRAGA);
+    expect(X_DA_PARADA_DO_DRAGA - (AMAZONIA_ALDEIA.x + AMAZONIA_ALDEIA.raio)).toBeGreaterThan(150);
+    // o tempo que leva até parar: ~9 minutos (1.400 m a 2,6 m/s), uma demonstração longa o bastante para o Comandante ver o rio mudar
+    const quando = (AMAZONIA_DRAGA_INICIO_X - X_DA_PARADA_DO_DRAGA) / 2.6;
+    expect(xDoDragaNoRio(quando - 1)).toBeGreaterThan(X_DA_PARADA_DO_DRAGA);
+    expect(xDoDragaNoRio(quando)).toBeCloseTo(X_DA_PARADA_DO_DRAGA, 9);
+  });
+
+  it('tempo torto (negativo, NaN, infinito) não leva o Draga para fora do leito: vale o instante da largada', () => {
+    expect(xDoDragaNoRio(-5)).toBe(AMAZONIA_DRAGA_INICIO_X);
+    expect(xDoDragaNoRio(NaN)).toBe(AMAZONIA_DRAGA_INICIO_X);
+    expect(xDoDragaNoRio(Infinity)).toBe(AMAZONIA_DRAGA_INICIO_X);
   });
 });

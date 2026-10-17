@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import { ARENA_ZONES } from '../combat/Zone';
 import { SPAWN_POINTS } from '../environment/Arena';
+import { AMAZONIA_SPAWNS } from '../environment/AmazoniaLayout';
 import { BUNKER_SPAWNS } from '../environment/Bunker';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
@@ -245,5 +246,32 @@ describe('pontos do Bunker', () => {
     expect(t).toHaveLength(11);
     expect(new Set(chaves(t)).size).toBe(11);
     expect(() => nascimentosDoEsquadrao({ mechs: 4, androids: 3, tecnicos: 1, aliadosMechs: 2, aliadosAndroids: 2 }, 'bunker')).toThrow(/não cabe/);
+  });
+});
+
+describe('pontos da Amazônia (P180)', () => {
+  it('comporta os 11 pontos livres (o 0 é do jogador, na aldeia) e recusa o 12º', () => {
+    expect(capacidadeDoMapa('amazonia')).toEqual({ inimigos: 11, aliados: 11, total: 11, titas: 0 });
+    expect(() => nascimentosDoEsquadrao({ ...ZERO, mechs: 11 }, 'amazonia')).not.toThrow();
+    expect(() => nascimentosDoEsquadrao({ ...ZERO, mechs: 12 }, 'amazonia')).toThrow(/não cabe/);
+    expect(() => nascimentosDoEsquadrao({ ...ZERO, mechs: 6, aliadosMechs: 6 }, 'amazonia')).toThrow(/não cabe/);
+    expect(() => nascimentosDoEsquadrao({ ...ZERO, titas: 1 }, 'amazonia')).toThrow(/titã/);
+  });
+
+  it('cada corpo nasce no seu ponto da margem sul, na ordem do esquadrão, e nenhum ponto se repete nem é o do jogador', () => {
+    const n = nascimentosDoEsquadrao({ mechs: 2, androids: 3, tecnicos: 1, aliadosMechs: 1, aliadosAndroids: 2 }, 'amazonia');
+    const todos = [...n.mechs, ...n.androids, ...n.tecnicos, ...n.aliadosMechs, ...n.aliadosAndroids];
+    expect(todos).toHaveLength(9);
+    expect(n.mechs).toEqual(AMAZONIA_SPAWNS.slice(1, 3));
+    expect(n.androids).toEqual(AMAZONIA_SPAWNS.slice(3, 6));
+    expect(n.aliadosAndroids).toEqual(AMAZONIA_SPAWNS.slice(8, 10));
+    expect(new Set(chaves(todos)).size).toBe(9);
+    expect(chaves(todos)).not.toContain(chaves([AMAZONIA_SPAWNS[0]!])[0]);
+    expect(n.titas).toEqual([]);
+  });
+
+  it('é determinístico: o mesmo pedido dá os mesmos pontos', () => {
+    const c = { ...ZERO, mechs: 4, androids: 2 };
+    expect(nascimentosDoEsquadrao(c, 'amazonia')).toEqual(nascimentosDoEsquadrao(c, 'amazonia'));
   });
 });

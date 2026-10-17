@@ -12,10 +12,10 @@ import { WORLD_MASK } from './worldMask';
  * diz entra como está; o lugar que ninguém decidiu ainda leva `proposta: true` e aparece assim no mapa, até o Comandante confirmar.
  */
 
-export type Recurso = 'sede' | 'dados' | 'energia' | 'chips';
+export type Recurso = 'sede' | 'dados' | 'energia' | 'chips' | 'agua';
 
 export interface Teatro {
-  id: 'arena' | 'bunker' | 'cabos' | 'barragem' | 'chips';
+  id: 'arena' | 'bunker' | 'cabos' | 'barragem' | 'chips' | 'rio';
   nome: string;
   lugar: string;
   lat: number;
@@ -46,6 +46,10 @@ export const TEATROS: readonly Teatro[] = [
     modos: ['deathmatch', 'survival'], resumo: 'A orla de Fortaleza em 640 m: o porto, a Ponte Metálica e a estação onde os cabos do Atlântico Sul chegam. Defenda-a.', proposta: false, lado: 'direita',
   },
   {
+    id: 'rio', nome: 'RIO VIVO', lugar: 'Afluente do Amazonas · PA', lat: -3.5, lon: -53.0, recurso: 'agua', mapa: 'amazonia',
+    modos: ['deathmatch'], resumo: 'O rio, a floresta e a mina que o envenena, em 2,4 km: acima do Draga-01 a água é limpa e viva; depois dele, óleo e veneno.', proposta: true, lado: 'esquerda',
+  },
+  {
     id: 'barragem', nome: 'BARRAGEM', lugar: 'Foz do Iguaçu · PR', lat: -25.41, lon: -54.59, recurso: 'energia',
     modos: [], resumo: 'As turbinas que alimentam os datacenters do país.', proposta: true, lado: 'esquerda',
   },
@@ -55,7 +59,7 @@ export const TEATROS: readonly Teatro[] = [
   },
 ];
 
-export const RECURSO_NOME: Readonly<Record<Recurso, string>> = { sede: 'SEDE SERAFIM', dados: 'DADOS', energia: 'ENERGIA', chips: 'CHIPS' };
+export const RECURSO_NOME: Readonly<Record<Recurso, string>> = { sede: 'SEDE SERAFIM', dados: 'DADOS', energia: 'ENERGIA', chips: 'CHIPS', agua: 'ÁGUA' };
 
 /**
  * O que a missão é para a partida aberta agora: `aqui` (você está nela), `disponivel` (um clique leva até ela), `outro-modo` (existe,

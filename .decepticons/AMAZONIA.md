@@ -88,6 +88,16 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 - **O Draga é um desenho (uma malha com pele) e 27 mil triângulos**; as pernas se mexem por osso, não por geometria nova.
 - **Nada pesado por quadro:** o rio, as nuvens, as folhas e o óleo se mexem **no shader** (um uniforme de tempo e um da frente do rio). A IA e a simulação seguem a 60 Hz determinísticas.
 
+### 5.1 Como ficou na parte B (medido; a bancada é `medicoes/amazonia.mjs`, refazível)
+
+- **O terreno é uma função só** (`AmazoniaTerreno.ts`), lida pela malha **e** pelo colisor de altura: o que se vê é o que se pisa. Grade de 6 m (400 × 150 células), **24 pedaços de 300 m de 5.000 triângulos**, um nível de detalhe só (a ideia dos três níveis do plano saiu: com o alcance de 1.500 m e a névoa o terreno inteiro dá ≤ 120 mil triângulos, e três níveis custariam emenda e código). Encosta máxima de 0,50 (26,6°), medida na grade inteira.
+- **O rio** é o desenho em dado (`AmazoniaLayout.ts`: eixo que serpenteia, 78 m a montante e 140 m a jusante, leito de 5,5 m) e **uma malha com um shader**; a **frente** (`AmazoniaRio.ts`, pura, testada) é UM número que o shader da água, o do chão, o da folhagem e o das estruturas leem (a mesma curva suave em JS e em GLSL, a banda é de 70 m de cada lado: o veneno não é uma parede).
+- **A floresta:** **6.594 árvores** (`AmazoniaFloresta.ts`: determinísticas, rareiam em volta da mina e da planta, não existem no rio, na aldeia, na cava, na lagoa nem na encosta íngreme), **duas malhas instanciadas por pedaço**: a árvore de perto (52 triângulos, até 260 m) e o bloco de longe (10 triângulos, até 1.050 m); o `observar` só troca `visible` (sem alocar).
+- **As estruturas** (`AmazoniaAderecos.ts`, dado puro: **220 peças**, 53 sólidas): a aldeia (maloca grande, 13 casas, 5 canoas), a planta (3 galpões, 2 silos, 6 tanques, chaminé, esteira), a margem fortificada (cerca de 40 postes e **8 torres de vigia**), as máquinas da cava e a casa de bombas da lagoa; fundidas numa malha só.
+- **Colisores estáticos: 58** (1 de altura, 4 paredes, 53 estruturas; teto 400). **Medido na bancada** (SwiftShader: só contagem, não tempo): **29 a 55 desenhos** (teto 70) e **102 a 227 mil triângulos** (teto 250 mil; a pior vista é a aldeia, 226.748). O mapa monta em ~0,3 a 1,4 s.
+- **Sob demanda:** o código do mapa (7 KB gzip, mais o terreno) só baixa para quem o escolhe (`mapasSobDemanda.ts`); o JS de partida ficou em **497,2 / 500 KB** (o `ServerPanel` também passou a ser sob demanda: 6,2 KB).
+- **A câmera:** a do jogo vai a 800 m e o mapa tem 2.400 m: na Amazônia ela vai a **1.500 m** (`alcanceDaCamera`) e o domo do céu tem 1.200 m. **Sem isso o céu saía preto no jogo** (só o jogo real mostrou; a bancada tinha a câmera dela).
+
 ## 6. A missão (em atos)
 
 1. **O perímetro (desmantelar a defesa):** o Draga anda **rio acima** protegido por um **escudo** que três **geradores** (espalhados na margem e na mina) alimentam. Destruir os três derruba o
@@ -105,8 +115,8 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 | Parte | O que entrega | Estado |
 |---|---|---|
 | **A — o Draga** | o `.glb` riggado (script de Blender), o andar do quadrúpede (função pura, com teste), o `WalkerVisual`, a bancada de fotos e um **link de demonstração** no jogo (`?walker`) | **feita (17/10)** |
-| **B — o rio e o mapa** | o mapa `amazonia` (terreno em pedaços, floresta instanciada, o rio com a frente de limpeza), a bancada de custo e o teto de desenhos em teste | — |
-| **C — o Draga na partida** | o chefe com os números, os módulos de dano (as quatro pernas), o rastejo, a barra do chefe e a chegada à aldeia (derrota) | — |
+| **B — o rio e o mapa** | o mapa `amazonia` (terreno em pedaços, floresta instanciada, o rio com a frente de limpeza), a bancada de custo e o teto de desenhos em teste | **feita (17/10)**: `?mapa=amazonia&modo=deathmatch`; o Draga desce o leito e o rio muda com ele (DEMO) |
+| **C — o Draga na partida** | o chefe com os números, os módulos de dano (as quatro pernas), o rastejo, a barra do chefe e a chegada à aldeia (derrota) | **próxima** |
 | **D — a defesa** | os geradores do escudo, as torres, a força de defesa e o ato 1 | — |
 | **E — a invasão** | a escotilha, os androides, os núcleos e a cura do rio (atos 3 e 4) | — |
 
@@ -125,3 +135,6 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 - O arquivo do dono (`.glb` cru) fica em `D:\imagens cybermech\MODELOS 3D\`; o jogo usa a cópia riggada em `client/public/models/` (o original não é tocado).
 - Os fatos da ficha estão marcados 🟡 até ler as fontes primárias.
 - Só offline (como o capítulo 1): o online precisa do contrato de times (P81) e do teto de 8 personagens.
+- **Parte B é mapa de Deathmatch, não é fase:** não tem missão, defesa, geradores, invasão nem cura (partes C a E). O Draga que desce o leito é **só desenho** (sem corpo na simulação).
+- **O orçamento é de contagem, não de tempo:** a bancada roda em SwiftShader (sem GPU). Falta medir quadros por segundo numa GPU de verdade, integrada de preferência (G12).
+- **Do visual (parte B):** o chão visto de cima mostra um desenho de espinha de peixe (a diagonal da grade com a ondulação miúda); de perto não se vê. Sem som ambiente, sem pássaros, sem partículas de névoa ou de óleo, sem reflexo na água. A floresta troca a árvore pelo bloco a 260 m (a névoa esconde pouco: pode aparecer o estalo).

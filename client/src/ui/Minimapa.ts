@@ -1,6 +1,7 @@
 import { ARENA_ZONES } from '../combat/Zone';
 import { PRAIA_ESTACAO, PRAIA_ZONES } from '../environment/PraiaLayout';
 import { pontosDaCosta } from '../environment/PraiaTerreno';
+import { mapaCarregado } from '../environment/mapasSobDemanda';
 import { caixasDaPraia, type RadarCaixa } from './TacticalRadar';
 
 /** Quantos metros do mundo cabem do centro do minimapa até a borda (o campo de visão do radar do Mech). */
@@ -69,6 +70,11 @@ export function plantaComZonas(caixas: readonly RadarCaixa[], arena: boolean): P
 /** A planta da praia (P127): o que bloqueia o Mech, as zonas e o mar. */
 export function plantaDaPraiaNoMinimapa(): PlantaMinimapa {
   return { caixas: caixasDaPraia(), zonas: PRAIA_ZONES, mar: pontosDaCosta() };
+}
+
+/** A planta da Amazônia (P180): as estruturas sólidas (do registro de mapas sob demanda); sem zonas de cura (a missão ainda não as pede). */
+export function plantaDaAmazoniaNoMinimapa(): PlantaMinimapa {
+  return { caixas: [...(mapaCarregado('amazonia')?.caixasDaPlanta() ?? [])], zonas: [] };
 }
 
 /** A estação como um "ponto" do minimapa (a letra E, em ciano): fora do alcance, fica presa na borda e mostra a direção do objetivo. */

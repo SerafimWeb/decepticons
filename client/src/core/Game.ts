@@ -42,6 +42,7 @@ import { ROUND_S, type Round } from '../combat/Round';
 import { mascaraFromSearch } from '../entities/mascaraDoChefe';
 import type { WalkerDemo } from '../debug/WalkerDemo';
 import { walkerFromSearch } from '../debug/walkerLink';
+import { carregarMapaSeFor } from '../environment/mapasSobDemanda';
 import { diaFromSearch, progressoDaPartida } from '../environment/CicloDoDia';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
@@ -114,10 +115,10 @@ import { CampaignRunHud } from '../ui/CampaignRunHud';
 import { CampanhaStore } from './CampanhaStore';
 import { EtapaEmCurso } from './EtapaEmCurso';
 import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha';
-import { ServerPanel } from '../ui/ServerPanel';
+import type { ServerPanel } from '../ui/ServerPanel';
 import { CameraWall } from '../ui/CameraWall';
 import { plantaDaArena, plantaDoBunker } from '../ui/TacticalRadar';
-import { Minimapa, plantaComZonas, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
+import { Minimapa, plantaComZonas, plantaDaAmazoniaNoMinimapa, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
 import { novoQuadroDaPraia, PraiaHud, type QuadroDaPraia } from '../ui/PraiaHud';
 import { MuralCliente } from '../net/mural';
 import { AdminCliente, TokenDoDono } from '../net/admin';
@@ -393,6 +394,8 @@ export class Game {
       const usados = new Set([...esquadrao.inimigos, ...esquadrao.aliados].map((b) => b.chassi).filter((c): c is ChassisId => !!c && c !== chassisId));
       await Promise.all([...usados].map((c) => IMPORTED_CHASSIS[c] && whenMechAssetReady(IMPORTED_CHASSIS[c]!.url, CHASSIS[c].height, IMPORTED_CHASSIS[c]!)));
     }
+    // Um mapa grande (a Amazônia, P180) é carregado sob demanda: o código dele só baixa para quem o escolhe (`environment/mapasSobDemanda.ts`).
+    if (new URLSearchParams(location.search).get('mapa') === 'amazonia') await carregarMapaSeFor('amazonia');
     bootProgresso('jogo');
     const game = new Game(container, physics, hangar);
     await game.precompileShaders();
@@ -502,6 +505,11 @@ export class Game {
       ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY, allies: false } : {}),
     });
     ({ debris: this.debris, projectiles: this.projectiles, rockets: this.rockets, barrage: this.barrage } = this.match);
+    // O mapa grande da Amazônia (P180) enxerga mais longe que os 800 m da câmera padrão: sem isto o céu (um domo em volta da câmera) e o fundo do mapa saem pretos.
+    if (this.match.arena.amazonia) {
+      this.camera.far = this.match.arena.amazonia.alcanceDaCamera;
+      this.camera.updateProjectionMatrix();
+    }
     // A missão em ondas da praia (a estação sob ataque): a orla está evacuada, sem banhistas, ciclistas nem pipas.
     if (this.match.nucleo) this.match.arena.praia?.setCivis(false);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
@@ -916,14 +924,20 @@ export class Game {
     const enderecoDoServidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
     const tokenDoDono = new TokenDoDono(browserStorage(), enderecoDoServidor);
     const adminCliente = new AdminCliente(enderecoDoServidor, tokenDoDono.ler);
-    const painelDoServidor = new ServerPanel({ cliente: adminCliente, token: tokenDoDono });
+    // A janela do servidor é do dono: o código dela (4 KB gzip) só baixa quando ele a abre, não pesa no download de quem joga (`scripts/orcamentoDeJs.mjs`).
+    let painelDoServidor: Promise<ServerPanel> | null = null;
+    const abrirJanelaDoServidor = (): void => {
+      painelDoServidor ??= import('../ui/ServerPanel').then(({ ServerPanel: Janela }) => new Janela({ cliente: adminCliente, token: tokenDoDono }));
+      void painelDoServidor.then((p) => p.abrir());
+    };
     // Câmeras ao vivo (P88): o mural de radares de todas as partidas do servidor, com o mesmo token do dono. O canal só existe com a janela aberta.
     let parede: CameraWall | null = null;
     const mural = new MuralCliente(enderecoDoServidor, tokenDoDono.ler, { estado: (e) => parede?.estado(e), quadro: (q) => parede?.quadro(q) });
     // As salas online são da Arena: se o jogo local está no Bunker, o mural não desenha as paredes de outro mapa por cima.
     const plantaOnline = mapa === 'arena' ? plantaDaArena(this.match.arena.occluders) : [];
     const naPraia = this.match.arena.praia !== null;
-    this.minimapa.setPlanta(naPraia ? plantaDaPraiaNoMinimapa() : plantaComZonas(mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(this.match.arena.occluders), mapa === 'arena'));
+    const naAmazonia = this.match.arena.amazonia !== null;
+    this.minimapa.setPlanta(naPraia ? plantaDaPraiaNoMinimapa() : naAmazonia ? plantaDaAmazoniaNoMinimapa() : plantaComZonas(mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(this.match.arena.occluders), mapa === 'arena'));
     // Na praia a estação é o objetivo: o ponto E do minimapa aponta para ela de qualquer lugar do mapa (preso na borda quando longe).
     this.minimapa.setPontos(naPraia ? pontoDaEstacao() : this.match.dominio?.pontos ?? null);
     if (naPraia) {
@@ -939,7 +953,7 @@ export class Game {
       planta: () => plantaOnline,
       meia: mapa === 'arena' ? this.match.arena.halfSize : 100,
       nomes: adminCliente,
-      abrirServidor: () => void painelDoServidor.abrir(),
+      abrirServidor: abrirJanelaDoServidor,
     });
     const cmd = new CommandConsole({
       mapa,
@@ -954,7 +968,7 @@ export class Game {
       esquadrao: { abrir: () => void squadPanel.abrir(), indisponivel: esquadraoIndisponivel, personalizado: () => this.squad.custom },
       campanha: { abrir: () => void campanhaPanel.abrir(), indisponivel: campanhaIndisponivel },
       arsenal: { abrir: () => void arsenal.abrir() },
-      servidor: { abrir: () => void painelDoServidor.abrir(), indisponivel: () => (enderecoDoServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
+      servidor: { abrir: abrirJanelaDoServidor, indisponivel: () => (enderecoDoServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
       cameras: { abrir: () => void parede?.abrir(), indisponivel: () => (mural.temServidor ? null : 'Este build não sabe onde está o servidor de jogo.') },
       radar: fonteDoRadar(mapa, this.match.arena.halfSize, this.match.arena.occluders, () => this.mech, () => this.bots.mechs, allies),
     });
@@ -1730,13 +1744,18 @@ export class Game {
     this.dominioPontos?.update(dt);
     // O mapa que anima (o mar da praia, P126): nos outros, o `Arena.update` não faz nada.
     this.match.arena.update(dt);
-    // O Draga-01 (P180, parte A, `?walker`): anda em círculo em volta de onde o jogador nasceu e mira o convés nele. Só desenho.
-    if (this.walkerQuer) {
+    // A Amazônia (P180, parte B): a câmera leva o céu e o detalhe da floresta junto.
+    this.match.arena.observar(this.camera.position.x, this.camera.position.y, this.camera.position.z);
+    // O Draga-01 (P180, parte A, `?walker`): anda em círculo em volta de onde o jogador nasceu e mira o convés nele; **na Amazônia** ele desce o leito sozinho e a frente do rio vai com ele. Só desenho.
+    const amazonia = this.match.arena.amazonia;
+    if (this.walkerQuer || amazonia) {
       if (!this.walkerDemo && !this.walkerCarregando) {
         this.walkerCarregando = true;
         const nascimento = this.mech.simPosition.clone(); // uma vez: o centro do passeio é onde o jogador nasceu
         void import('../debug/WalkerDemo').then(({ WalkerDemo }) => {
-          this.walkerDemo = new WalkerDemo(this.scene, nascimento, (x, z) => this.match.physics.terrainY(x, z, 6, 40) ?? 0);
+          this.walkerDemo = amazonia
+            ? new WalkerDemo(this.scene, nascimento, () => 0, { modo: 'rio', aoAndar: (x) => amazonia.setFrente(x) })
+            : new WalkerDemo(this.scene, nascimento, (x, z) => this.match.physics.terrainY(x, z, 6, 40) ?? 0);
         });
       }
       this.walkerDemo?.update(dt, this.mech.simPosition);

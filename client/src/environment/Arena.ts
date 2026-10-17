@@ -11,6 +11,7 @@ import type { DestructibleDef, Destructibles } from './Destructibles';
 import { SerafimTower } from './SerafimTower';
 import { Bunker, type MapId } from './Bunker';
 import { Praia } from './Praia';
+import { exigirMapa, type InstanciaDoMapa } from './mapasSobDemanda';
 
 export interface BlockDef {
   x: number;
@@ -91,6 +92,8 @@ export class Arena {
   readonly serafim: SerafimTower | null;
   /** O mapa da praia (P126), quando é ele: quem anima o mar por quadro é o `update`. */
   readonly praia: Praia | null = null;
+  /** O mapa da Amazônia (P180), quando é ele: o rio e a floresta; o `update` anda o tempo e o `observar` segue a câmera. Vem do registro de mapas sob demanda (o código dele não mora no pacote de partida). */
+  readonly amazonia: InstanciaDoMapa | null = null;
   /** Qual mapa este cenário é (o CFTV escolhe as câmeras por ele: `camera/camerasDoMapa.ts`). */
   readonly mapa: MapId;
   /** Tempo acumulado, só para as ondas do mar. */
@@ -121,6 +124,12 @@ export class Arena {
       // A praia traz o céu do fim de tarde, a luz do sol poente e o cenário dela (`environment/Praia.ts`): nada daqui.
       this.serafim = null;
       this.praia = new Praia(scene, physics, destructibles);
+      return;
+    }
+    if (map === 'amazonia') {
+      // A Amazônia traz o céu, a névoa, o rio e a floresta (`environment/Amazonia.ts`): nada daqui.
+      this.serafim = null;
+      this.amazonia = exigirMapa('amazonia').construir(scene, physics);
       return;
     }
 
@@ -162,6 +171,11 @@ export class Arena {
     this.praia?.setProgressoDoDia(progresso);
   }
 
+  /** Onde a câmera está (a Amazônia, P180): o céu a acompanha e o detalhe da floresta segue a distância. Nos outros mapas não faz nada. */
+  observar(x: number, y: number, z: number): void {
+    this.amazonia?.observar(x, y, z);
+  }
+
   /** O painel do quadro de luz (P164): o estado (0 ligado, 1 sabotado, 2 apagado) e a vida (0 a 1). Na praia é o armário do porto; na Cidade Neon, o transformador do banco. */
   setQuadro(estado: number, vida: number): void {
     if (this.praia) this.praia.setQuadro(estado, vida);
@@ -200,6 +214,11 @@ export class Arena {
     if (this.transformador) {
       this.relogioDoTransformador += dt;
       this.transformador.atualiza(this.relogioDoTransformador, this.estadoDoTransformador, this.vidaDoTransformador);
+    }
+    if (this.amazonia) {
+      this.tempo += dt;
+      this.amazonia.update(this.tempo);
+      return;
     }
     if (!this.praia) return;
     this.tempo += dt;
