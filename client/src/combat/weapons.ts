@@ -137,7 +137,7 @@ export interface Pellets {
 /**
  * Arpão magnético (dono, 11/10: "VARIAR as armas e tecnologias" nos ombros): um **tiro de varredura** (sem projétil: um raio até `maxRange`) que prende o primeiro inimigo à vista e o **puxa**
  * para o atirador a `pullSpeed` m/s por até `hold` s (`combat/HookSystem.ts`). O cabo solta quando o alvo chega a `arrive` m de distância, quando ele usa o dash, quando
- * uma parede entra no meio ou o tempo acaba, e **nunca prende** um robô de raio maior que `breakRadius` (o Colossus arrebenta o cabo).
+ * uma parede entra no meio ou o tempo acaba. **O robô mais leve nunca puxa o mais pesado** (a regra do dono, 17/10: o arpão só rende nas mãos de um robô grande e pesado; o peso é o raio, `HookSystem.pesoDe`).
  */
 export interface HookSpec {
   /** A velocidade do puxão (m/s) sobre um alvo que não resiste; o robô maior resiste (`MechBase.push`: 1,3 m ÷ raio). */
@@ -146,8 +146,6 @@ export interface HookSpec {
   hold: number;
   /** A que distância do atirador (de superfície a superfície, m) o cabo solta: já chegou. */
   arrive: number;
-  /** O robô de raio maior que isto arrebenta o cabo na hora (m). */
-  breakRadius: number;
 }
 
 /** Arma pronta para o combate, já no nível escolhido. Tudo em unidades do jogo (m, s, t). */
@@ -654,7 +652,7 @@ const BASE: Record<WeaponId, WeaponBase> = {
   },
   /**
    * Arpão magnético (dono, 11/10; revivido em 16/10, P77/P160): o terceiro tipo de arma de ombro que não é só mais dano. **Prende e puxa**: um tiro de varredura de até 45 m (30% a mais no MK III, 58,5 m: a faixa curta, como pede `calibragem.test.ts`)
-   * que morde (10 de dano) e arrasta o inimigo a 9 m/s por até 1,6 s, até ele chegar a 3 m. O dash corta o cabo, uma parede também, e o Colossus o arrebenta; os dois ombros prendem o mesmo alvo
+   * que morde (10 de dano) e arrasta o inimigo a 9 m/s por até 1,6 s, até ele chegar a 3 m. O dash corta o cabo, uma parede também, e **só puxa quem é do mesmo peso ou mais leve que o atirador**; os dois ombros prendem o mesmo alvo
    * com um cabo só. Um aperto a cada 4 s: é o que **junta** o inimigo para a onda sônica, o anel de fogo, as granadas e os foguetes, não o que mata.
    */
   harpoon: {
@@ -663,7 +661,7 @@ const BASE: Record<WeaponId, WeaponBase> = {
     magazine: 0, reload: 0, speed: 0,
     optimalRange: 35, maxRange: 45, minFactor: 1,
     blastRadius: 0, mass: 3,
-    hook: { pullSpeed: 9, hold: 1.6, arrive: 3, breakRadius: 2.4 }, tierRange: 0.15,
+    hook: { pullSpeed: 9, hold: 1.6, arrive: 3 }, tierRange: 0.15,
   },
 };
 

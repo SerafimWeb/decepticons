@@ -1,4 +1,4 @@
-# AMAZÔNIA — OPERAÇÃO RIO ENVENENADO (P180)
+# AMAZÔNIA — OPERAÇÃO RIO VIVO (P180)
 
 > **A ordem do Comandante (17/10):** *"vamos já planejar e construir a próxima fase: próximo cenário, que vai ser no rio Amazonas, uma mineradora acabando com o rio, envenenando,
 > poluindo, explorando as populações indígenas e expulsando-as dos seus territórios. Há uma enorme força de defesa deles e teremos que desmantelar, invadir com androides e destruir
@@ -10,12 +10,19 @@
 > **Resposta sobre o rig:** quem faz sou eu (Blender sem janela, por script, reproduzível em `scripts/blender/`); o Comandante não precisa rigar. **A imagem da serpente não chegou**
 > (nem na conversa, nem nas pastas): pendência abaixo.
 >
+> **Relação com `fichas/cenario-amazonas.md` (outra sessão do Claude, 17/10, mesma ordem P180):** a ficha é o **contrato da missão** (as zonas pelo que fazem, as cinco fases, as forças, o
+> lado que muda a missão, o Relatório de Consequências) e **vale**; este documento acrescenta o que veio depois, na conversa do Comandante: **o DRAGA-01 (o modelo dele, riggado e andando)**,
+> **o rio como termômetro da fase**, o **tamanho e o orçamento do mapa** e a ordem de construção. **Uma correção de fato à ficha:** ela supunha que o modelo que o Comandante criou era o do
+> *cenário*; ele disse, no chat, que **o modelo é o do robô** (`MODELOS 3D\heavy industrial walker 3d model`), então **o cenário (a geometria) é construído em código** (§ 5), e a lista de pontos
+> nomeados da ficha (§ 5 dela: `spawn_jogador`, `torre_{n}`, `gerador_cerca`, `bomba_{n}`, `valvula_{n}`, `draga`, `territorio`…) vira o **layout do mapa em dado**, como `PraiaLayout.ts`. **O nome provisório
+> é o da ficha, OPERAÇÃO RIO VIVO** (o Comandante dá o final).
+>
 > Este documento é **a proposta de Claude**; o Comandante corta o que discordar (regra 10 do `AGENTS.md`). Modelo de redação: `CAMPANHAS_E_CHEFES.md` § 0 (**sátira exagera, fato é fato**:
 > toda afirmação factual do jogo tem fonte em `fichas/fatos-mineracao-amazonia.md`; o que não tem é sátira, dita como sátira).
 
 ## 1. A ideia numa frase
 
-**O rio é o termômetro da fase.** A montante (acima) do **DRAGA-01** o rio é limpo e vivo; a jusante (depois) ele é sujo, com óleo, espuma e veneno. O Draga **anda rio acima**, rumo à
+**O rio é o termômetro da fase.** (A ficha já previa "o rio corre limpo" quando o envenenamento para; aqui a ideia vira o placar contínuo.) A montante (acima) do **DRAGA-01** o rio é limpo e vivo; a jusante (depois) ele é sujo, com óleo, espuma e veneno. O Draga **anda rio acima**, rumo à
 **aldeia**: onde ele pisa, o rio morre. Cada peça que o jogador desmonta **cura um trecho do rio**, e o placar da fase é visível a olho nu: a água.
 
 ## 2. A história e o tom
@@ -104,6 +111,8 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 | **E — a invasão** | a escotilha, os androides, os núcleos e a cura do rio (atos 3 e 4) | — |
 
 ## 8. Decisões em aberto (do Comandante)
+
+0. **A Draga anda ou fica na margem?** A ficha (§ 4) propõe a Draga **na margem, bombeando o rio**, que "cai pelas pernas e pelo gerador"; o Comandante pediu que o modelo "**se mexa**", e este plano a faz **andar rio acima rumo à aldeia** (é o que dá o relógio da fase e o rio que muda de cor). As duas cabem: parada na margem enquanto o escudo está de pé e **marchando** quando ele cai? Proposta: **anda desde o começo**, devagar; o Comandante decide.
 
 1. **O nome:** DRAGA-01 é o nome de trabalho (a draga é a máquina real do garimpo de rio). Se o Comandante quiser que ele seja o **Leviatã** que a P165 deixou "para discutir", é troca de texto.
 2. **A imagem da serpente:** colar no chat ou largar em `D:\imagens cybermech\` (e dizer o nome): sem ela, o rio serpenteia mas não ganha o desenho da serpente.

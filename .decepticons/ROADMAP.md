@@ -248,7 +248,7 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] **Os rebeldes lançam a arma explosiva da mão esquerda (P160, parte 4): salvas de foguetes (o casulo de fábrica do Vector-09), granadas, teleguiado, lançador leve, cruzador e chuva, com carregador de verdade, pausa pela dificuldade e nunca de perto; o esquadrão pode dar essas armas aos bots** (PR `claude/bots-explosivos`) #ia
 - [x] **Uma dica de primeiro uso para cada arma (P160, parte 5): a granada, o enxame e o cruzador deixaram de dizer "FOGUETES: DANO EM ÁREA"; cada arma tem a sua frase, uma vez só, com os números da própria arma** (PR `claude/dicas-por-arma`) #ux
 - [ ] **Armas novas na mão do Comandante: jogar o lançador leve, o cruzador e o laser, ouvir o som e dizer o número que incomoda; som próprio do lançador leve e do cruzador; os bots passarem a usar o lançador leve e o laser** (`ARSENAL.md`, § Mísseis, laser e a calibragem) #combate
-- [x] **Arpão magnético (P77, 3ª parte, 17/10): prende o primeiro inimigo à vista e o puxa; o dash e a parede cortam o cabo, o Colossus o arrebenta (protocolo 20)** #combate
+- [x] **Arpão magnético (P77, 3ª parte, 17/10): prende o primeiro inimigo à vista e o puxa; o dash e a parede cortam o cabo, só puxa quem é do mesmo peso ou mais leve (a regra do peso, P181) (protocolo 20)** #combate
 - [ ] **Mais armas do botão 2 (drone de ombro, ultrassônico) e ombros para mais robôs (Bastion, Colossus); o cabo do arpão de outro jogador no online; o bot usar o arpão** (P77; custo de cada uma em `ARMAS_DE_BOTAO_2.md`) #combate
 - [ ] **Encaixes de costas e de peito** (propulsor, minas, feixe térmico, reparo): contrato novo de encaixe (`MOUNTS` cresce no fim, bocas por chassi, desenho e Hangar) antes das armas (P77) #combate
 - [x] **Gelo amigo (P78): o gelo de um aliado esfria o aliado** (tira calor e apaga o fogo, sem dano e sem congelar), com a regra de "mesmo lado" na partida (aliados da Arena offline, times do CTF e `setTeam`); fecha o combo com o anel de fogo (PR `claude/gelo-amigo`) #combate
@@ -315,6 +315,13 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [ ] Retenção no painel: **D7** e **DAU/MAU** (pedem um id anônimo por visita: decisão do Comandante, LGPD) (P171/P175) #negocio
 
 - [x] Idioma e conta no canto da primeira tela e da pausa (o Comandante não os achou nas Configurações) (pedido do Comandante, 17/10, P176) #ux
+
+- [x] Landing do site em outras línguas: a faixa de idiomas no topo, os textos traduzidos e a escolha valendo no jogo (pedido do Comandante, 17/10, P178) #ux
+- [~] Lado político e pedagogia: o seletor de lado está no jogo (DEMO); faltam o Arquivo, o Relatório de Consequências e a campanha do Consórcio (`LADO_E_PEDAGOGIA.md`) (pedido do Comandante, 17/10, P179) #modos
+- [ ] Missão da Amazônia: a mineradora no rio (`fichas/cenario-amazonas.md`); o modelo do cenário é do Comandante, em outro chat (P180) #cenarios
+- [x] Arpão por peso: o robô mais leve não puxa o mais pesado (pedido do Comandante, 17/10, P181) #combate
+- [ ] Interfaces de jogos antigas: a linha selecionada em barra dourada e o `‹ valor ›` nas Configurações, o par SOLO / MULTI na primeira tela e a placa no console (`REFERENCIA_VISUAL.md` § 8) (pedido do Comandante, 17/10, P182) #ux
+- [ ] Ombros nos chassis pesados (Bastion, Onça, Colossus), para o arpão render nas mãos de um robô grande (P77, P181) #combate
 
 ## 🟣 FASE 6 — Universo, fichas e comunicação (do combate para a história)
 - [x] Proposta do universo: IAs rebeldes famintas por computação, SERAFIM como resposta a incidentes, geopolítica de chips, energia e dados, termos de CTI (`UNIVERSO.md`) #universo

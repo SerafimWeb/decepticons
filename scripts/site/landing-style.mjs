@@ -1,5 +1,15 @@
 /** CSS próprio da landing (soma-se ao `hudCss`). Imagens estáticas e animação só de CSS: nada de WebGL nem laço por frame. */
 export const LANDING_CSS = `
+/* ---------- a faixa de idiomas (P178): a primeira coisa da página, para o visitante escolher a língua dele ---------- */
+.lang-strip{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:4px 6px;padding:6px max(24px,calc((100vw - 1280px)/2 + 40px));background:#07090c;border-bottom:1px solid rgba(255,208,0,.2);font:600 12px/1 var(--fh,sans-serif);letter-spacing:.06em}
+.lang-strip .lang-ic{margin-right:auto;color:var(--faint,#8a8f98);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}
+.lang-strip button{padding:7px 11px;border:1px solid transparent;border-radius:3px;background:transparent;color:#cfd3da;font:inherit;cursor:pointer}
+.lang-strip button:hover{color:#fff;border-color:rgba(255,208,0,.45)}
+.lang-strip button[aria-pressed="true"]{background:var(--amber,#ffd000);border-color:var(--amber,#ffd000);color:#090b0f}
+.lang-strip button:focus-visible{outline:2px solid var(--amber,#ffd000);outline-offset:2px}
+.lang-strip.sem-escolha{background:linear-gradient(90deg,#07090c,#191400)}
+.lang-strip.sem-escolha .lang-ic{color:var(--amber,#ffd000)}
+@media (max-width:640px){.lang-strip{justify-content:center}.lang-strip .lang-ic{width:100%;margin:0 0 2px;text-align:center}}
 .section{overflow-x:clip}
 .foot-note{margin:22px 0 0;font-size:15px;color:var(--faint)}
 .foot-note a,.faq a{color:var(--amber)}

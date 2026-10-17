@@ -149,6 +149,7 @@ import { CtfHud } from '../ui/CtfHud';
 import { DominioHud, avisoDoPonto } from '../ui/DominioHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
 import { ContaSettings } from '../ui/ContaSettings';
+import { LadoSelector } from '../ui/LadoSelector';
 import { ContaCliente } from '../net/auth';
 import { progressoLocalDoJogo } from '../net/progressoLocal';
 import { chaveDoToken, SessaoPiloto } from '../net/sessao';
@@ -212,6 +213,8 @@ export class Game {
   private readonly waveRings = new WaveRings();
   /** Os cabos do arpão magnético presos agora (P77): o desenho; a regra é `match.hooks`. */
   private readonly hookVisuals: HookVisuals;
+  /** De que lado o jogador joga (P179): hoje só a escolha, o selo e o painel do custo; a campanha lê daqui. */
+  readonly lado: LadoSelector;
   private readonly frameCopy = new FrameCopyPass();
   /** A refração do ar da onda liga junto com o bloom: em qualidade baixa os anéis viram um brilho fraco, sem distorção nem cópia de tela. */
   private refractWaves = true;
@@ -865,6 +868,8 @@ export class Game {
       chaveDoToken(import.meta.env.VITE_GAME_SERVER),
     );
     this.dailyChallenges.onSave = () => sessao.mudou();
+    // O seletor de lado (P179): o selo LADO do console e a pergunta "de que lado você joga?" (a campanha do Consórcio lê `lado.atual`, no futuro).
+    this.lado = new LadoSelector(armazem);
     const blocoConta = document.getElementById('settings-conta');
     if (blocoConta) void new ContaSettings(blocoConta, sessao).restaurar();
 

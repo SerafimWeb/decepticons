@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { SHOVE_DECAY, type MechBase } from '../entities/MechBase';
-import { HOOK_POOL, HookSystem, SNAP_RANGE, type HookEnd } from './HookSystem';
+import { HOOK_POOL, HookSystem, pesoDe, SNAP_RANGE, type HookEnd } from './HookSystem';
 import { weapon } from './weapons';
 
 const W = weapon('harpoon');
@@ -58,11 +58,27 @@ describe('arpão: prender', () => {
     expect(prendeu()).toBe(1);
   });
 
-  it('robô de raio maior que `breakRadius` arrebenta o cabo na hora (o Colossus não é puxado); o limite exato ainda prende', () => {
+  it('o robô mais leve não puxa o mais pesado (dono, 17/10): alvo de raio maior que o do atirador não é preso; igual e mais leve são', () => {
     const { hooks } = sistema();
-    expect(hooks.attach(fake(0, 0), fake(0, -30, HOOK.breakRadius + 0.01), W, 'rightShoulder')).toBe(false);
+    const dono = fake(0, 0, 1.3); // um Mech médio
+    expect(hooks.attach(dono, fake(0, -30, 1.6), W, 'rightShoulder'), 'mais pesado (Onça)').toBe(false);
+    expect(hooks.attach(dono, fake(0, -30, 3.6), W, 'rightShoulder'), 'titã').toBe(false);
     expect(hooks.count).toBe(0);
-    expect(hooks.attach(fake(0, 0), fake(0, -30, HOOK.breakRadius), W, 'rightShoulder')).toBe(true);
+    expect(hooks.attach(dono, fake(0, -30, 1.3), W, 'rightShoulder'), 'do mesmo peso').toBe(true);
+    expect(hooks.attach(dono, fake(5, -30, 1.0), W, 'rightShoulder'), 'mais leve (Arara)').toBe(true);
+    expect(hooks.attach(dono, fake(9, -30, 0.36), W, 'rightShoulder'), 'andróide').toBe(true);
+  });
+
+  it('o grande puxa o pequeno, mas o pequeno não puxa o grande (a assimetria que faz o arpão render só nas mãos de um robô pesado)', () => {
+    const { hooks } = sistema();
+    const titã = fake(0, 0, 3.6);
+    const mech = fake(0, -30, 1.3);
+    expect(hooks.attach(titã, mech, W, 'rightShoulder')).toBe(true);
+    expect(hooks.attach(mech, titã, W, 'rightShoulder')).toBe(false);
+  });
+
+  it('o peso é o raio da cápsula', () => {
+    expect(pesoDe(fake(0, 0, 1.6))).toBe(1.6);
   });
 
   it('ninguém prende a si mesmo, nem prende ou é preso morto', () => {

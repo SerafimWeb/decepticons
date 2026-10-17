@@ -169,3 +169,41 @@ Proposta de execução para concretizar a meta, sem alterar `VISAO.md` ou assumi
 **Próximo corte Codex:** etapa A (retomar C3 no build atualizado) e percurso da etapa B para registrar problemas concretos; depois um setor da Arena como prova da etapa C, coordenado com a frente de cenário da §6. Não ampliar mapa nem introduzir novas regras de combate neste registro. Cada implementação futura fecha com check, captura/clipe, custo e caminho no site.
 
 **Resultado desta sessão:** referência preservada e critérios definidos; nenhum ganho de FPS, alteração de mapa, mecânica ou equivalência ao MechArena foi entregue. A P109 continua em operação.
+
+## 8. Interfaces de jogos antigos (17/10, P182): a "chapa" com linha selecionada em barra dourada
+
+> O Comandante mandou duas capturas de um jogo de tiro de arcade (Aero Fighters, Hamster/Success, versão de 2025) e escreveu: *"veja esses exemplos de interface de jogos antigos, eu acho muito boas!"*. Na segunda, ele escreveu à mão **MULTI** sobre a linha "2Players". **As capturas ficam só nesta máquina** (`.tmp/referencias/aero-fighters-opcoes.png` e `aero-fighters-menu-jogadores.png`): são arte de terceiros e não entram no git (como os vídeos da § 1). Aqui ficam **a leitura e o que levamos**.
+
+### 8.1 O que as duas telas fazem (elemento por elemento)
+
+| Elemento | O que se vê | Por que funciona |
+|---|---|---|
+| **A placa** | painel central em **chapa metálica rebitada**, cantos chanfrados com parafusos, interior escuro e liso; o título (`Options`, `Select Number of Players`) **fica fora/em cima** da placa | o painel **parece um objeto**: separa o menu do fundo, qualquer fundo; o interior escuro dá contraste ao texto |
+| **A linha selecionada** | uma **barra horizontal** em degradê **dourado/laranja** por toda a largura do painel, com um **chevron vazado** (❯) à esquerda | impossível errar o que está selecionado, de longe e com o canto do olho; teclado e controle sem mouse |
+| **A linha não selecionada** | texto **branco, grosso, com contorno escuro**; no menu de jogadores, a barra **fria (azul)** com a **mesma forma** da dourada | **duas temperaturas, uma forma**: quente = aqui, frio = disponível |
+| **A linha de opção** | `Rótulo` à esquerda, `‹  valor  ›` na coluna da direita (setas brancas) | trocar um valor **é um passo (esquerda/direita)**, sem abrir lista; cabe em qualquer controle |
+| **A lista curta** | de **4 a 9 linhas**, grandes, espaçadas; ações (`Reset to Default`, `controller`, `License`) como linhas centrais, sem moldura | nada de rolagem: o que cabe é o que importa (o princípio 7 da `AUDITORIA_INTERFACE.md`) |
+| **Os botões de saída** | dois botões **de metal em relevo** (`Close`, `Quit Game`) **fora da placa**, embaixo | a saída é sempre a mesma coisa, no mesmo lugar |
+| **O tipo** | sem serifa, **negrito**, **contorno escuro** de 2 px | legível sobre céu claro, chapa texturizada ou qualquer cena |
+| **O "MULTI"** (a anotação dele) | `1Player` / `MULTI` como as duas respostas da pergunta "quantos jogadores" | a **primeira pergunta do jogo é uma só, com duas respostas grandes** |
+
+### 8.2 O que levamos, e o que NÃO
+
+**Levamos a estrutura, não a pele.** A direção de arte continua a de 07/10 (neon, baixo-poli, § 1): **nada de céu azul, logotipo ou chapa idêntica** (arte do Hamster). O que vira nosso:
+
+1. **A linha selecionada em barra + chevron** (`▸`), em nosso laranja (`--hot`) sobre o fundo escuro, com a linha **não selecionada em ciano frio** da mesma forma. Vale para o console, as listas e as Configurações.
+2. **O seletor `‹ valor ›`** no lugar de `<select>` quando há **poucos valores** (qualidade, dificuldade, narrador, idioma): um clique, sem lista.
+3. **A placa** (painel de borda forte, cantos chanfrados, "parafusos" desenhados em CSS) para **perguntas de uma tela só**: o lado, o modo.
+4. **A primeira pergunta com duas respostas grandes**: o "quantos jogadores" dele vira **`SOLO` / `MULTI`** (offline contra os bots × online) onde hoje existe o par `[ JOGAR ONLINE ]` / `[ JOGAR OFFLINE ]` (`OnlineSwitch`).
+5. **O contorno escuro no texto** onde ele cai sobre a cena (já temos nos nomes dos Mechs).
+
+### 8.3 A ordem (cada item é CSS/HTML, sem custo de CPU na partida)
+
+| # | Entrega | Estado |
+|---|---|---|
+| 1 | **O seletor de lado** (a pergunta "de que lado você joga?", `LADO_E_PEDAGOGIA.md`) feito **no estilo da placa**: a primeira aplicação da referência | feito em 17/10 (P179/P182) |
+| 2 | a **linha selecionada** (barra + chevron) e o **seletor `‹ valor ›`** nas Configurações | plano |
+| 3 | o par **`SOLO` / `MULTI`** na primeira tela | plano |
+| 4 | a **placa** no console e na pausa | plano |
+
+**O que o Comandante confere:** o seletor de lado. Se a "pele" agradar, os itens 2 a 4 seguem na ordem; se ele quiser mais perto da chapa dos jogos antigos (rebites, relevo), é **só CSS** e se ajusta com a captura na mão.
