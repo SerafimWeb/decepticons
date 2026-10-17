@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { PRAIA_COMPLEXO, PRAIA_ESTACAO } from '../environment/PraiaLayout';
-import { avisoDoChefe, CODIGO_DA_FASE, TEXTOS_DA_FASE, type FaseDoChefe } from '../sim/FasesDoChefe';
+import { avisoDoChefe, CODIGO_DA_FASE, regraDaFase, TEXTOS_DA_FASE, type FaseDoChefe } from '../sim/FasesDoChefe';
 import { PORTAS_DA_ESTACAO } from '../sim/PortasDaEstacao';
 import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDasPortas, avisoDoQuadro, avisoDosCabos, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
 
@@ -143,9 +143,16 @@ export class PraiaHud {
   private marcaY = -1e9;
   private marcaNaBorda = false;
 
-  constructor(hud: HTMLElement) {
+  /**
+   * `soMissao` (P164, parte E): o HUD de **missão** da Cidade Neon, sem o que é só da praia (a faixa da costa, a rede da estação, os cabos, as portas, o cartão, a água e o marcador da estação).
+   * Mostra o que a missão tem em qualquer mapa: o **transformador** (o quadro de luz), a **barra do chefe** e os avisos no topo.
+   */
+  constructor(
+    hud: HTMLElement,
+    private readonly soMissao = false,
+  ) {
     this.pai = hud;
-    this.raiz = el('div', 'praia-hud', hud);
+    this.raiz = el('div', soMissao ? 'praia-hud praia-hud--missao' : 'praia-hud', hud);
     this.raiz.hidden = true;
 
     this.faixa = el('div', 'praia-faixa', this.raiz);
@@ -201,7 +208,7 @@ export class PraiaHud {
     // O quadro de luz da cidade (P164): uma célula sob as portas, com a vida do quadro; laranja sabotado, vermelha apagado.
     this.quadro = el('div', 'praia-quadro', this.raiz);
     this.quadro.hidden = true;
-    el('span', '', this.quadro, 'QUADRO DE LUZ DA CIDADE');
+    el('span', '', this.quadro, soMissao ? 'TRANSFORMADOR · BANCO VORCARIS' : 'QUADRO DE LUZ DA CIDADE');
     this.quadroVida = el('i', 'pc-vida', el('div', 'pc-barra', this.quadro));
 
     // A barra do chefe (P165): só enquanto o Colossus está em campo. O título leva a fase; a regra da fase vem numa linha (o jogador entende o problema sem ler manual).
@@ -238,7 +245,7 @@ export class PraiaHud {
     if (v === this.visivel) return;
     this.visivel = v;
     this.raiz.hidden = !v;
-    this.pai.classList.toggle('hud-praia', v);
+    if (!this.soMissao) this.pai.classList.toggle('hud-praia', v);
   }
 
   /** Uma partida nova: o anúncio do lugar e o cartão da missão voltam a valer. */
@@ -264,8 +271,10 @@ export class PraiaHud {
     this.setVisivel(ligado);
     if (!ligado) return;
 
-    // O cartão da missão: uma vez, ao começar a jogar.
-    if (!this.mostradoCartao) {
+    // O cartão da missão (a história da praia; a Cidade Neon não tem): uma vez, ao começar a jogar.
+    if (this.soMissao) {
+      this.cartao.hidden = true;
+    } else if (!this.mostradoCartao) {
       this.mostradoCartao = true;
       this.cartaoS = CARTAO_S;
       this.cartao.hidden = false;
@@ -285,7 +294,7 @@ export class PraiaHud {
     this.faseDoChefe = faseAgora;
     const alerta = alertaDaRede ?? alertaDoChefe ?? alertaDasPortas ?? alertaDoQuadro ?? alertaDosCabos;
     // O anúncio do lugar: aparece e some sozinho (a animação é do CSS; aqui só o texto e o relógio).
-    const novo = alerta ?? this.anunciador.atualiza(q.eu.x, q.eu.z, dt);
+    const novo = alerta ?? (this.soMissao ? null : this.anunciador.atualiza(q.eu.x, q.eu.z, dt));
     if (novo) {
       this.zona.textContent = novo;
       this.zona.classList.toggle('alerta', alerta !== null);
@@ -381,7 +390,7 @@ export class PraiaHud {
         this.chefeChave = chave;
         const fase = FASE_PELO_CODIGO[q.chefe.fase] ?? 'anda';
         this.chefeTitulo.textContent = `COLOSSUS-01 · FASE ${q.chefe.fase} DE 3 · ${TEXTOS_DA_FASE[fase].rotulo}`;
-        this.chefeRegra.textContent = TEXTOS_DA_FASE[fase].regra;
+        this.chefeRegra.textContent = regraDaFase(fase, this.soMissao ? 'transformador' : 'cabos'); // na Cidade Neon não há cabos: o titã vai ao transformador do banco
         this.chefe.dataset.fase = fase;
         this.chefeBarra.style.transform = `scaleX(${(pct / 100).toFixed(2)})`;
         this.chefePernas.forEach((p, i) => p.classList.toggle('caida', !q.chefe.pernas[i]));
@@ -389,6 +398,9 @@ export class PraiaHud {
     } else if (!this.chefe.hidden) {
       this.chefe.hidden = true;
     }
+
+    // Daqui para baixo é só da praia (a água, o marcador da estação, a faixa da costa).
+    if (this.soMissao) return;
 
     // O aviso da água, a cada quadro enquanto há água (uma comparação), com o DOM só quando muda.
     const aviso = avisoDeAgua(q.agua.fundura, q.agua.afogandoS, q.agua.afogarS, q.agua.afogaDesde, this.aviso);

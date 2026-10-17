@@ -70,6 +70,12 @@ export function patchWindowShader(shader: { vertexShader: string; fragmentShader
     .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>\n${FRAGMENT_BODY}`);
 }
 
+/** Os dois uniformes de cor das janelas (guardados em `material.userData.janelas`): quem escurece a cidade (a energia do transformador) escala as duas cores. */
+export interface JanelasDoPredio {
+  windowColor: { value: THREE.Color };
+  windowSodium: { value: THREE.Color };
+}
+
 /**
  * Põe janelas acesas, na cor `accent` do prédio, num material de prédio já clonado (o clone é de cada prédio: a câmera
  * o torna translúcido atrás do Mech, e as janelas somem junto porque a emissão sai com a mesma opacidade).
@@ -83,5 +89,6 @@ export function windowedBuildingMaterial(material: THREE.MeshStandardMaterial, a
     patchWindowShader(shader);
   };
   material.customProgramCacheKey = () => 'cybermech-building-windows-v1';
+  material.userData.janelas = { windowColor, windowSodium } satisfies JanelasDoPredio;
   return material;
 }

@@ -496,7 +496,7 @@ export class Game {
     if (this.match.nucleo) this.match.arena.praia?.setCivis(false);
     ({ combat: this.combat, respawner: this.respawner, bots: this.bots, round: this.round } = this.match);
     if (this.match.arena.serafim) {
-      addBankSign(this.scene);
+      this.match.arena.registraLuzes(addBankSign(this.scene)); // a placa do banco cai junto com o transformador (P164, parte E)
       addSerafimPlaque(this.scene);
     }
     this.droneVisuals = this.match.drones ? new DroneVisuals(this.scene, this.match.drones) : null;
@@ -916,6 +916,10 @@ export class Game {
     this.minimapa.setPontos(naPraia ? pontoDaEstacao() : this.match.dominio?.pontos ?? null);
     if (naPraia) {
       this.praiaHud = new PraiaHud(document.getElementById('hud')!);
+      this.praiaQuadro = novoQuadroDaPraia(this.camera);
+    } else if (this.match.quadro) {
+      // A missão em ondas da Cidade Neon (P164, parte E): o HUD só de missão (o transformador do banco, a barra do chefe e os avisos), sem o que é da praia.
+      this.praiaHud = new PraiaHud(document.getElementById('hud')!, true);
       this.praiaQuadro = novoQuadroDaPraia(this.camera);
     }
     parede = new CameraWall({
@@ -1926,10 +1930,10 @@ export class Game {
       if (quadro) {
         q.quadro.estado = CODIGO_DO_ESTADO_DO_QUADRO[quadro.estado()];
         q.quadro.vida = quadro.fracaoDaVida;
-        const praia = this.match.arena.praia;
-        praia?.setQuadro(q.quadro.estado, q.quadro.vida);
-        praia?.setEnergia(quadro.energia);
-        praia?.setDesembarque(this.match.desembarqueAberto);
+        // Na praia é o armário do porto; na Cidade Neon, o transformador do banco: a Arena sabe qual desenhar e o que escurecer.
+        this.match.arena.setQuadro(q.quadro.estado, q.quadro.vida);
+        this.match.arena.setEnergia(quadro.energia);
+        this.match.arena.praia?.setDesembarque(this.match.desembarqueAberto);
       }
       // O chefe (P165): a barra no topo (a fase, o tronco, as duas pernas e a regra) só com o Colossus em campo.
       const chefe = this.match.bots.chefe;

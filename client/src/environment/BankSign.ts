@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import { PALETTE } from '../core/palette';
-/** Desenho estático sobre a fachada existente. Criado só no navegador, fora da simulação. */
-export function addBankSign(scene: THREE.Scene): void {
+/**
+ * Desenho estático sobre a fachada existente. Criado só no navegador, fora da simulação. Devolve as cores que acendem a placa e o contorno da porta: o **transformador do banco**
+ * (P164, parte E) as escurece com a energia (`Arena.registraLuzes`).
+ */
+export function addBankSign(scene: THREE.Scene): THREE.Color[] {
   const canvas = document.createElement('canvas'); canvas.width = 1536; canvas.height = 384;
   const ctx = canvas.getContext('2d')!;
   ctx.strokeStyle = '#438cff'; ctx.lineWidth = 8;
@@ -21,4 +24,5 @@ export function addBankSign(scene: THREE.Scene): void {
   const door = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 5.8), new THREE.MeshBasicMaterial({ color: PALETTE.bankBlue, transparent: true, opacity: 0.15, depthWrite: false }));
   door.position.set(-28, 3, -26.8); scene.add(door);
   box(4, 0.08, -28, 0.12, -25);
+  return [light.color, (plate.material as THREE.MeshBasicMaterial).color];
 }

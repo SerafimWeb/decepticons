@@ -196,6 +196,10 @@ feixe do laser, pelo `window.__game.weaponFx`). Em 16/10: 0 de 192 poses com NaN
 
 **Como funciona:** serve o `dist/`, abre `?mapa=praia&depurar` (o `main.ts` expõe `window.__game` só com esse parâmetro), teletransporta o Mech (`mech.respawn`), gira a câmera (`rig.look`) e lê o buffer HDR da cena. **Armadilhas:** (1) precisa do Chrome com `--use-angle=d3d11` e uma GPU (a desta máquina é a AMD Vega 11); (2) a bancada `praia.mjs` **sai preta** numa GPU real (o canvas fica zerado): não a use para isso; (3) o problema era **intermitente** (a orientação inicial da câmera muda por sessão), então um "não deu nada" de uma sessão só não prova; a varredura de poses prova. **Se achar NaN:** esconda um objeto de cada vez (`scene.traverse` + `visible = false`) e veja qual derruba a contagem — foi assim que a cortina das zonas apareceu.
 
+### 4.2 A bancada da Cidade Neon (`medicoes/arena.mjs`, P177, 17/10)
+
+Fotografa a **Arena real** (`Arena.ts` com o transformador do banco, o mesmo pipeline de render do jogo) de vistas-chave, nos três estados do transformador, e mede desenhos e triângulos. Mesmo molde de `praia.mjs` (Vite dev + Chrome headless, SwiftShader: só contagem, não tempo). `node .decepticons/medicoes/arena.mjs --vistas banco,cidade --quadro "2:0:0"` (o estado:vida:energia do transformador; 0 ligado, 1 sabotado, 2 apagado); `--chefe "-8,-16"` põe o Colossus com a máscara (`--sem-mascara` a tira); `--arte --sufixo e1` grava em `arte/`. **Para o HUD no jogo de verdade** (a célula do transformador e a barra do chefe), abra `?modo=survival&mapa=arena&onda=6` no Chrome headless, clique em `#cta` e espere ~30 s (o SwiftShader roda a ~0,25× do tempo).
+
 ## 5. Considerações conhecidas (não são bug novo se você achar de novo)
 
 - **Mech parado afunda lentamente no chão, sem limite** (achado 29/09, não corrigido). Reproduz
