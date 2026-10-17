@@ -17,6 +17,9 @@ const args = process.argv.slice(2);
 const arte = args.includes('--arte');
 const sufixo = args.includes('--sufixo') ? `-${args[args.indexOf('--sufixo') + 1]}` : '';
 const cabosPedidos = args.includes('--cabos') ? args[args.indexOf('--cabos') + 1] : null; // P162: estado:injecao:vida de cada cabo, ex.: 1:0.6:1,2:1:0.7,3:0:0
+const portasPedidas = args.includes('--portas') ? args[args.indexOf('--portas') + 1] : null; // P163: estado:vida de cada porta, ex.: 1:0.5,2:0
+const gentePedida = args.includes('--manifestantes') ? args[args.indexOf('--manifestantes') + 1] : null; // P163: x,z;x,z
+const androidesPedidos = args.includes('--androides') ? args[args.indexOf('--androides') + 1] : null;
 const dias = args.includes('--dias') ? args[args.indexOf('--dias') + 1].split(',').map(Number) : [null];
 const vistasPedidas = args.includes('--vistas') ? new Set(args[args.indexOf('--vistas') + 1].split(',')) : null;
 
@@ -32,6 +35,9 @@ mkdirSync(saida, { recursive: true });
 const VISTAS = {
   geral: { cam: '0,150,-70', mira: '0,0,20', fov: 60 },
   cabos: { cam: '257,4.5,24', mira: '257,4,42', fov: 62 },
+  portafrente: { cam: '288,3.2,36', mira: '288,2.2,50', fov: 64 },
+  portafundos: { cam: '288,3.2,93', mira: '288,2.2,78', fov: 64 },
+  manifestantes: { cam: '181,1.9,14', mira: '188,1.2,27', fov: 60 },
   cabosdalinha: { cam: '257,6,2', mira: '257,2,40', fov: 66 },
   sol: { cam: '0,8,-20', mira: '-46,9,-106', fov: 70 },
   mar: { cam: '20,12,-100', mira: '40,6,0', fov: 70 },
@@ -82,7 +88,7 @@ try {
   for (const [nome, v] of Object.entries(VISTAS)) {
     if (vistasPedidas && !vistasPedidas.has(nome)) continue;
     for (const dia of dias) {
-    await page.goto(`${base}@fs/${html}?cam=${v.cam}&mira=${v.mira}&fov=${v.fov}&t=3${dia === null ? '' : `&dia=${dia}`}${cabosPedidos ? `&cabos=${cabosPedidos}` : ''}`);
+    await page.goto(`${base}@fs/${html}?cam=${v.cam}&mira=${v.mira}&fov=${v.fov}&t=3${dia === null ? '' : `&dia=${dia}`}${cabosPedidos ? `&cabos=${cabosPedidos}` : ''}${portasPedidas ? `&portas=${portasPedidas}` : ''}${gentePedida ? `&manifestantes=${gentePedida}` : ''}${androidesPedidos ? `&androides=${androidesPedidos}` : ''}`);
     await page.waitForFunction(() => window.__pronto || window.__erro, null, { timeout: 120_000 });
     const erro = await page.evaluate(() => window.__erro);
     if (erro) throw new Error(`vista ${nome}: ${erro}`);

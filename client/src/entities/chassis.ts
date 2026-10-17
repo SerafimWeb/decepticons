@@ -99,6 +99,37 @@ export const ANDROID_STATS: MechStats = {
 };
 
 /**
+ * O **MANIFESTANTE** (P163/P166, capítulo 1): o vândalo humano que invade a estação junto com as máquinas, no elenco dos **eventos reais** que o Comandante pediu (a invasão
+ * do Capitólio, 6/1/2021; a das sedes dos Três Poderes, 8/1/2023): **camisa amarela, boné e bandeira**, **sem arma de fogo**. Corpo de andróide, mas **mais fraco e mais lento**
+ * (cai com um tiro certeiro no tronco), e a "arma" é a pancada de bandeira, **metade da motosserra** (10 de dano por segundo, só encostado). **O que ele faz de errado é o número:**
+ * chega em grupo, **depreda os cabos** e **arromba as portas** da estação (`PortasDaEstacao.ts`). O nome vem do piloto (`MANIFESTANTE`), e é por ele que as regras o reconhecem.
+ */
+export const MANIFESTANTE_STATS: MechStats = {
+  ...ANDROID_STATS,
+  name: 'MANIFESTANTE',
+  moveSpeed: 7.2,
+  groundAccel: 70,
+  maxJumps: 1,
+  dashCooldown: 3.2,
+  radius: 0.4,
+  height: 1.75,
+  loadout: { primary: { ...weapon('chainsaw'), name: 'Pancada de bandeira', damage: 2 }, secondary: null },
+  maxModuleHealth: {
+    torso: 22,
+    head: 9,
+    leftArm: 11,
+    rightArm: 11,
+    leftLeg: 13,
+    rightLeg: 13,
+  },
+};
+
+/** O piloto é um manifestante? O nome é `MANIFESTANTE` (o pool da missão em ondas e as regras do cabo e da porta leem daqui). */
+export function ehManifestante(nome: string): boolean {
+  return nome.startsWith('MANIFESTANTE');
+}
+
+/**
  * Andróide pilotado pelo jogador (dono, 25/09: "também quero poder jogar com andróides menores e ter a
  * impressão de que estou combatendo um Mech bem maior"). O mesmo corpo de 1,6 m e a mesma agilidade do
  * rebelde, mas 3× a vida (o jogador não pode cair com 2 tiros de plasma). Blaster no braço direito e

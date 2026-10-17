@@ -19,7 +19,12 @@ function buildRig(paint: number, visor: number, tool: AndroidTool, height: numbe
     visor: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: visor, emissiveIntensity: 4 }),
     thruster: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: visor, emissiveIntensity: 1 }),
     saw: new THREE.MeshStandardMaterial({ color: 0x000000, emissive: PALETTE.sodium, emissiveIntensity: 2.2 }),
+    // O manifestante (P163): pele, o verde e o amarelo da bandeira. A camisa e o boné são o casco (`paint`, amarelo).
+    pele: new THREE.MeshStandardMaterial({ color: 0xc98f66, metalness: 0, roughness: 0.8 }),
+    verde: new THREE.MeshStandardMaterial({ color: 0x1a9a45, metalness: 0, roughness: 0.9 }),
+    amarelo: new THREE.MeshStandardMaterial({ color: 0xf2c230, metalness: 0, roughness: 0.9 }),
   };
+  const humano = tool === 'bandeira';
 
   const model = new THREE.Group();
   const pelvis = group(model, 0, HIP, 0);
@@ -41,13 +46,19 @@ function buildRig(paint: number, visor: number, tool: AndroidTool, height: numbe
   const torso = group(pelvis, 0, 0.1, 0);
   const updateVapor = heatVapor(torso, 0.18, 0.31);
   box(torso, 0.46, 0.55, 0.28, M.shell, 0, 0.32, 0);
-  box(torso, 0.3, 0.05, 0.02, M.visor, 0, 0.44, -0.15);
+  if (!humano) box(torso, 0.3, 0.05, 0.02, M.visor, 0, 0.44, -0.15);
   box(torso, 0.32, 0.32, 0.14, M.frame, 0, 0.32, 0.2);
 
   // Cabeça: casco liso com a faixa do visor, como os humanoides de hoje.
   const head = group(torso, 0, 0.62, 0);
-  box(head, 0.2, 0.24, 0.22, M.shell, 0, 0.12, 0);
-  box(head, 0.18, 0.05, 0.02, M.visor, 0, 0.14, -0.115);
+  box(head, 0.2, 0.24, 0.22, humano ? M.pele : M.shell, 0, 0.12, 0);
+  if (humano) {
+    // O boné amarelo: a copa e a aba.
+    box(head, 0.23, 0.08, 0.25, M.shell, 0, 0.27, 0);
+    box(head, 0.2, 0.03, 0.12, M.shell, 0, 0.23, -0.17);
+  } else {
+    box(head, 0.18, 0.05, 0.02, M.visor, 0, 0.14, -0.115);
+  }
 
   // Braço direito: o antebraço é a ferramenta. Motosserra (combate): motor no punho e a lâmina para a
   // frente, com as bordas dos dentes acesas em laranja. Ferramenta de conserto (técnico): o antebraço antigo.
@@ -60,6 +71,13 @@ function buildRig(paint: number, visor: number, tool: AndroidTool, height: numbe
     box(rightArm, 0.05, 0.025, 0.62, M.saw, 0, -0.395, -0.52);
     box(rightArm, 0.05, 0.025, 0.62, M.saw, 0, -0.245, -0.52);
     muzzle = group(rightArm, 0, -0.32, -0.83);
+  } else if (humano) {
+    // A bandeira na mão: o mastro e o pano verde com o losango amarelo (as cores são as do pano; o resto do corpo é só a camisa amarela).
+    box(rightArm, 0.13, 0.13, 0.3, M.shell, 0, -0.32, -0.1);
+    box(rightArm, 0.04, 1.2, 0.04, M.frame, 0, 0.1, -0.3);
+    box(rightArm, 0.5, 0.34, 0.02, M.verde, 0.27, 0.5, -0.3);
+    box(rightArm, 0.22, 0.16, 0.03, M.amarelo, 0.27, 0.5, -0.3);
+    muzzle = group(rightArm, 0, -0.32, -0.3);
   } else {
     box(rightArm, 0.13, 0.13, 0.42, M.shell, 0, -0.32, -0.15);
     cyl(rightArm, 0.035, 0.12, M.visor, 0, -0.32, -0.38, Math.PI / 2);
@@ -109,9 +127,10 @@ function buildRig(paint: number, visor: number, tool: AndroidTool, height: numbe
 
 /**
  * O que vai nos antebraços: motosserra no direito (rebelde de combate), ferramenta de conserto (técnico) ou,
- * no andróide pilotado pelo jogador, blaster no direito e motosserra no esquerdo.
+ * no andróide pilotado pelo jogador, blaster no direito e motosserra no esquerdo. `bandeira` é o **manifestante** (P163): pele, boné e camisa amarela, uma bandeira na mão
+ * e nenhum visor aceso (é gente, não máquina).
  */
-export type AndroidTool = 'chainsaw' | 'repair' | 'pilot';
+export type AndroidTool = 'chainsaw' | 'repair' | 'pilot' | 'bandeira';
 
 export interface AndroidOptions {
   /** Cor do casco (padrão: branco, como os humanoides de hoje). */

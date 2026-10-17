@@ -1,0 +1,13 @@
+{
+  "data": "2026-10-17",
+  "tela": "1280x720",
+  "render": "SwiftShader (sem GPU: só contagem, não tempo)",
+  "vistas": {
+    "manifestantes-d0": {
+      "desenhos": 105,
+      "triangulos": 135993,
+      "construcaoMs": 613
+    }
+  },
+  "errosDePagina": []
+}

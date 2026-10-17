@@ -4256,6 +4256,15 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .pc-cabo[data-estado='tomado'] .pc-barra { border-color: rgba(255, 45, 61, 0.7); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
 .pc-cabo[data-estado='cortado'] { color: var(--alert); }
 .pc-cabo[data-estado='cortado'] span { text-decoration: line-through; }
+/* As portas do prédio (P163, ui/PraiaHud.ts): duas células sob os cabos; a barra é a vida da porta. Laranja forçada, vermelha arrombada. */
+.praia-portas { position: absolute; top: 142px; left: 50%; transform: translateX(-50%); width: min(560px, 58vw); display: flex; gap: 10px; font-size: 9px; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 6px #000; }
+.praia-portas[hidden] { display: none; }
+.pp-porta { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.pp-porta span { opacity: 0.85; }
+.pp-porta[data-estado='forcada'] { color: var(--warn); }
+.pp-porta[data-estado='forcada'] .pc-vida { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+.pp-porta[data-estado='arrombada'] { color: var(--alert); }
+.pp-porta[data-estado='arrombada'] .pc-barra { border-color: rgba(255, 45, 61, 0.7); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
 .praia-zona.alerta { color: var(--alert); text-shadow: 0 0 10px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 45, 61, 0.7); }
 .praia-zona.alerta::before { color: var(--alert); }
 .praia-alvo[data-estado='ataque'] i { border-color: var(--warn); background: rgba(255, 225, 77, 0.25); box-shadow: 0 0 12px var(--warn); animation: praia-pulso 0.7s ease-in-out infinite alternate; }

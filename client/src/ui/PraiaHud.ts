@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PRAIA_COMPLEXO, PRAIA_ESTACAO } from '../environment/PraiaLayout';
-import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDosCabos, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
+import { PORTAS_DA_ESTACAO } from '../sim/PortasDaEstacao';
+import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDasPortas, avisoDosCabos, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
 
 /**
  * O HUD da PRAIA DOS CABOS (P127): o que um mapa de 640 m pede e os outros não. Quatro peças, todas só no mapa da praia:
@@ -18,7 +19,11 @@ import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDosCabos, CARTAO_D
 /** Os estados do cabo de dados, na ordem dos códigos de `CabosDeDados` (o `data-estado` da célula no CSS). */
 const ESTADO_DO_CABO = ['livre', 'injetando', 'tomado', 'cortado'] as const;
 
-const MARGENS: MargensDaTela = { topo: 142, base: 175, esq: 28, dir: 44 };
+/** Os estados da porta, na ordem dos códigos de `PortasDaEstacao` (o `data-estado` da célula no CSS) e os nomes que o aviso usa. */
+const ESTADO_DA_PORTA = ['fechada', 'forcada', 'arrombada'] as const;
+const NOMES_DAS_PORTAS = PORTAS_DA_ESTACAO.map((p) => p.nome);
+
+const MARGENS: MargensDaTela = { topo: 168, base: 175, esq: 28, dir: 44 };
 const PONTOS_DE_INIMIGO = 32;
 const PERIODO_DA_FAIXA_S = 0.2;
 const CARTAO_S = 8;
@@ -36,6 +41,8 @@ export interface QuadroDaPraia {
   nucleo: { presente: boolean; fracao: number; pressao: number };
   /** Os três cabos de dados (P162): por cabo, o estado (0 livre, 1 injetando, 2 tomado, 3 cortado), a vida e a injeção de 0 a 1. `presente` é falso fora da missão em ondas. */
   cabos: { presente: boolean; estado: number[]; vida: number[]; injecao: number[] };
+  /** As duas portas do prédio (P163): por porta, o estado (0 fechada, 1 forçada, 2 arrombada) e a vida de 0 a 1. `presente` é falso fora da missão em ondas. */
+  portas: { presente: boolean; estado: number[]; vida: number[] };
   camera: THREE.Camera;
   largura: number;
   altura: number;
@@ -50,6 +57,7 @@ export function novoQuadroDaPraia(camera: THREE.Camera): QuadroDaPraia {
     agua: { fundura: 0, afogandoS: 0, afogarS: 0, afogaDesde: 0.05 },
     nucleo: { presente: false, fracao: 1, pressao: 0 },
     cabos: { presente: false, estado: [0, 0, 0], vida: [1, 1, 1], injecao: [0, 0, 0] },
+    portas: { presente: false, estado: [0, 0], vida: [1, 1] },
     camera,
     largura: 0,
     altura: 0,
@@ -87,6 +95,10 @@ export class PraiaHud {
   private readonly cabos: HTMLElement;
   private readonly celulasDosCabos: { celula: HTMLElement; vida: HTMLElement; injecao: HTMLElement; pct: string }[] = [];
   private readonly estadosDosCabos = [0, 0, 0];
+  /** As duas portas do prédio (P163): o painel, a célula e a barra de vida de cada uma. */
+  private readonly portas: HTMLElement;
+  private readonly celulasDasPortas: { celula: HTMLElement; vida: HTMLElement; pct: string }[] = [];
+  private readonly estadosDasPortas = [0, 0];
   private nucleoMostrado = -1;
   private nucleoClasse = '';
   private periodo = 0;
@@ -152,6 +164,16 @@ export class PraiaHud {
       this.celulasDosCabos.push({ celula, vida, injecao, pct: '' });
     }
 
+    // As portas do prédio (P163): duas células sob os cabos, com a vida da porta; laranja forçada, vermelha arrombada.
+    this.portas = el('div', 'praia-portas', this.raiz);
+    this.portas.hidden = true;
+    for (const p of PORTAS_DA_ESTACAO) {
+      const celula = el('div', 'pp-porta', this.portas);
+      el('span', '', celula, p.nome);
+      const vida = el('i', 'pc-vida', el('div', 'pc-barra', celula));
+      this.celulasDasPortas.push({ celula, vida, pct: '' });
+    }
+
     this.zona = el('div', 'praia-zona', this.raiz);
 
     this.cartao = el('div', 'praia-cartao', this.raiz);
@@ -186,6 +208,8 @@ export class PraiaHud {
     this.alertaDoNucleo.reset();
     this.nucleoMostrado = -1;
     this.estadosDosCabos.fill(0);
+    this.estadosDasPortas.fill(0);
+    for (const c of this.celulasDasPortas) c.pct = '';
     for (const c of this.celulasDosCabos) c.pct = '';
     this.mostradoCartao = false;
     this.cartaoS = 0;
@@ -211,7 +235,8 @@ export class PraiaHud {
     const rede = q.nucleo;
     const alertaDaRede = rede.presente ? this.alertaDoNucleo.atualiza(rede.fracao, rede.pressao) : null;
     const alertaDosCabos = q.cabos.presente ? avisoDosCabos(this.estadosDosCabos, q.cabos.estado) : null;
-    const alerta = alertaDaRede ?? alertaDosCabos;
+    const alertaDasPortas = q.portas.presente ? avisoDasPortas(this.estadosDasPortas, q.portas.estado, NOMES_DAS_PORTAS) : null;
+    const alerta = alertaDaRede ?? alertaDasPortas ?? alertaDosCabos;
     // O anúncio do lugar: aparece e some sozinho (a animação é do CSS; aqui só o texto e o relógio).
     const novo = alerta ?? this.anunciador.atualiza(q.eu.x, q.eu.z, dt);
     if (novo) {
@@ -264,6 +289,25 @@ export class PraiaHud {
       }
     } else if (!this.cabos.hidden) {
       this.cabos.hidden = true;
+    }
+
+    // As portas do prédio: as duas células só mexem no DOM quando o estado ou a barra (em passos de 2%) muda.
+    if (q.portas.presente) {
+      this.portas.hidden = false;
+      for (let i = 0; i < this.celulasDasPortas.length; i++) {
+        const c = this.celulasDasPortas[i]!;
+        const estado = q.portas.estado[i] ?? 0;
+        const vida = Math.round((q.portas.vida[i] ?? 1) * 50);
+        const chave = `${estado}|${vida}`;
+        if (chave !== c.pct) {
+          c.pct = chave;
+          c.celula.dataset.estado = ESTADO_DA_PORTA[estado] ?? 'fechada';
+          c.vida.style.transform = `scaleX(${(vida / 50).toFixed(2)})`;
+        }
+        this.estadosDasPortas[i] = estado;
+      }
+    } else if (!this.portas.hidden) {
+      this.portas.hidden = true;
     }
 
     // O aviso da água, a cada quadro enquanto há água (uma comparação), com o DOM só quando muda.

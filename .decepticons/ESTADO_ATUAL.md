@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## CAPÍTULO 1, PARTE B: A INVASÃO DO PRÉDIO — o manifestante, as duas portas e a rua dos fundos — Claude, 17/10 (branch `claude/cap1-parte-b`, P163, P166)
+
+**A ordem do Comandante:** *"os mesmos manifestantes e humanoides inimigos ficam invadindo o prédio da estação, e tem que ter uma entrada principal, e também uma entrada na rua dos fundos (pra dar mais possibilidades de ataque e vulnerabilidade)"*, e *"CONTINUA SEGUINDO A PARTE B, C e a D, e melhore as outras fases"*.
+
+**Feito (na missão em ondas da praia):**
+1. **O manifestante** (`entities/chassis.ts`, `entities/Android.ts`): o vândalo humano dos eventos reais que o Comandante pediu (o Capitólio, 6/1/2021; os Três Poderes, 8/1/2023): **camisa amarela, boné e bandeira**, pele sem rosto de ninguém, **sem arma de fogo**. Corpo de andróide, **mais fraco e mais lento** (cai com um tiro certeiro no tronco); a "arma" é a pancada de bandeira, **metade da motosserra**. Pool de 5 no `BotSystem`; os planos das ondas 2 a 6 trazem **2, 3, 3, 5 e 3**; **só na praia** (a Arena e o Bunker seguem como eram).
+2. **As duas portas do prédio** (`sim/PortasDaEstacao.ts`, regra pura, G14): a **entrada principal** (fachada sul) e a **dos fundos** (fachada norte), 400 de vida cada. Todo rebelde a menos de 7 m a **força** (Mech e manifestante 1, andróide 0,4, Colossus 4: três manifestantes arrombam uma porta em ~33 s); **arrombada, drena a rede da estação** (12/s cada) e só se **recupera** com o jogador ou um aliado perto e sem invasor em cima (8/s, até dois; volta aos 30%). Porta forçada não se recompõe sozinha.
+3. **Duas frentes ao mesmo tempo:** os manifestantes nascem **três pela avenida** (a oeste, entrada principal) e **dois pela rua dos fundos** (atrás do muro norte, entrada dos fundos); cada vaga do pool tem o alvo dela (a porta principal, a dos fundos ou um cabo) e recebe a ordem `hold` do Domínio; os andróides seguem para os cabos (parte A).
+4. **O que o jogador vê:** a porta fica **laranja e treme** forçada e, **arrombada, escura, aberta de lado e piscando em vermelho**; duas células no HUD sob os cabos e o aviso no topo ("ENTRADA DOS FUNDOS ARROMBADA · INVASORES DENTRO").
+
+**Provas:** **12 testes da regra pura** das portas (estrutura, o peso de cada invasor, a porta forçada que não se recompõe, o conserto e o teto de dois, o invasor que impede o conserto, determinismo e invariantes sob 36 mil ticks); **9 testes de partida** (`Match.portas.test.ts`: o manifestante mais fraco e sem arma de fogo, o plano das ondas, só a praia tem o pool, a onda 3 ativa os 3 com um pela rua dos fundos, a ordem `hold`, o grupo dos fundos que chega sozinho à porta, a porta que o jogador recupera, o dreno da rede isolado e o `restartMission`); **8 do desenho e dos avisos**; a Arena segue com o plano de sempre. **15 de 16 mutações à mão pegas** (a que escapou é equivalente: a guarda `defesa > 0` era redundante, porque o reparo já é zero sem defensor; uma segunda escapou na primeira rodada, o teste do dreno estava frouxo, foi reforçado e agora pega). Capturas: `arte/praia-manifestantes-b1-d0-claude.jpg` (cinco manifestantes ao lado de um andróide), `arte/praia-portafrente-b1-d60-claude.jpg` e `arte/praia-portafundos-b1-d60-claude.jpg` (a da frente forçada, a dos fundos arrombada).
+
+**Onde o Comandante confere:** `?modo=survival&mapa=praia&onda=2`: os manifestantes saem pela avenida e pela rua dos fundos; olhe o prédio pelos dois lados; deixe um grupo forçar uma porta e veja a célula do HUD mudar; chegue perto da porta, sem invasor, para recuperar. Para ver sem jogar: `praia.mjs --portas "1:0.45,2:0" --vistas portafrente,portafundos` e `--manifestantes "186,26;188.5,29" --vistas manifestantes`.
+
+**Falta (R13):** **o equilíbrio jogando** (cada número é linha de tabela em `PortasDaEstacao.ts`; os manifestantes chegam primeiro, em poucos segundos, e as máquinas depois); **o pool soma 13 personagens, mais que os 8 character controllers de uma sala (G11)**: vale offline e **a missão online terá de caber no teto**; dano a tiro nas portas e nos cabos; **a parte C (o porto: os contêineres que abrem e soltam os inimigos, e o quadro de luz)** e **a D (a Colossus em três fases, a barra do chefe e a máscara)**; os lugares só de andróide e drone (P149).
+
+**Próxima sessão começa com:** a **parte C** (o porto), depois a **D** (a Colossus), e as outras fases.
+
 ## OS REBELDES ATIRAM O LASER E O PAINEL CONTA O RITMO DE CONTEÚDO — Claude, 17/10 (branch `claude/bots-laser`, P175)
 
 **A ordem do Comandante (17/10):** *"…e pendências abertas recentes"*. Duas dessas pendências estavam escritas no estado e na análise do War Robots (P171).

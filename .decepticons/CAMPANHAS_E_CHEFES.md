@@ -17,7 +17,7 @@
 
 ### O Capítulo 1 v2: as três frentes da estação de cabos (P162, P163, P164)
 
-> **Estado (16/10): a parte A da frente 1 está no ar.** Os pontos de conexão, a injeção dos andróides, o dano e o conserto dos cabos, o dreno da rede da estação, o efeito de dados e o HUD estão construídos (`sim/CabosDeDados.ts`, P162 e P163). **Falta:** a frente 2 (o prédio com a segunda entrada), a frente 3 (o porto, os contêineres e o quadro de luz), o manifestante como NPC, os lugares só de andróide e drone (P149) e a Colossus em três fases.
+> **Estado (17/10): as frentes 1 e 2 estão no ar.** **Frente 1 (parte A, 16/10):** os pontos de conexão, a injeção dos andróides, o dano e o conserto dos cabos, o dreno da rede, o efeito de dados e o HUD (`sim/CabosDeDados.ts`, P162 e P163). **Frente 2 (parte B, 17/10):** o **manifestante** como NPC (camisa amarela, boné e bandeira, sem arma de fogo; 2, 3, 3, 5 e 3 por onda, da onda 2 à 6), as **duas portas do prédio** (principal e dos fundos, 400 de vida cada; arrombada, drena a rede), a rua dos fundos como segundo caminho de invasão, e as células e avisos no HUD (`sim/PortasDaEstacao.ts`). **Falta:** a frente 3 (o porto, os contêineres e o quadro de luz), os lugares só de andróide e drone (P149) e a Colossus em três fases.
 
 **Frente 1 — os cabos.** Os **três cabos da praia** têm **vida e dano** (o mesmo mecanismo dos coqueiros, P138: se quebram a tiro) e os **andróides aliados os consertam** (papel BASE). Os **vândalos** (manifestantes do Capitólio e do 8 de janeiro, ver o elenco abaixo) chegam do porto para depredá-los; cabo a zero derruba a rede (o `NucleoDaEstacao` já existe). **Os pontos de conexão:** o andróide inimigo precisa **se ligar a um ponto do cabo** para "injetar" conteúdo (propaganda, fake news sem controle, manipulação); enquanto ligado, uma barra de **INJEÇÃO** avança e os outros o protegem; **nós atacamos para desligá-lo e liberar o acesso e a programação orgânica da rede**. **O efeito de dados:** partículas sutis sobem pelo cabo com **caveiras e termos curtos** ("INJETANDO FAKE NEWS"...), legíveis a quem presta atenção, no estilo das faíscas dos tiros: um pool de billboards com teto (`fx/Billboards.ts` já tem o molde), **zero alocação por quadro**.
 
@@ -42,7 +42,7 @@
 
 ### O próximo PR da campanha
 
-O **PR 1 da § 4** foi partido: a **parte A (os cabos) está no ar** (16/10). **A parte B** é a **segunda entrada** do prédio e o **manifestante** como NPC; **a C**, o **porto** (os contêineres que abrem e o quadro de luz que liga no `lampadas` do ciclo do dia); **a D**, a **Colossus em três fases**. Em cada uma, módulo puro em `sim/` com teste de simulação (G14).
+O **PR 1 da § 4** foi partido: a **parte A (os cabos) está no ar** (16/10). **A parte B (no ar, 17/10)** foi a **segunda entrada** do prédio e o **manifestante** como NPC; **a C**, o **porto** (os contêineres que abrem e o quadro de luz que liga no `lampadas` do ciclo do dia); **a D**, a **Colossus em três fases**. Em cada uma, módulo puro em `sim/` com teste de simulação (G14).
 
 ## 1. O princípio: cada chefe é um problema que um jogador sozinho não resolve
 

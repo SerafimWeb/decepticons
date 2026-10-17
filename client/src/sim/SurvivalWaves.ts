@@ -11,6 +11,8 @@ export interface WavePlan {
   readonly wave: number;
   readonly mechs: number;
   readonly androids: number;
+  /** Os **manifestantes** (P163): o vândalo humano que depreda os cabos e arromba as portas da estação (só na praia; o pool tem `SURVIVAL_MAX_MANIFESTANTES`). */
+  readonly manifestantes?: number;
   /** A onda fecha a missão com o Colossus (escala 3), que ocupa uma vaga própria no pool de bots. */
   readonly boss?: boolean;
   /** Orçamento do diretor: Mech custa 1, andróide custa 0,5. */
@@ -26,15 +28,25 @@ export interface WavePlan {
  */
 export const SURVIVAL_WAVE_PLANS: readonly WavePlan[] = Object.freeze([
   Object.freeze({ wave: 1, mechs: 0, androids: 2, maxAttackers: 1, title: 'Contato inicial' }),
-  Object.freeze({ wave: 2, mechs: 1, androids: 2, maxAttackers: 1, title: 'Blindagem rebelde' }),
-  Object.freeze({ wave: 3, mechs: 1, androids: 2, maxAttackers: 1.5, title: 'Cerco tático' }),
-  Object.freeze({ wave: 4, mechs: 2, androids: 2, maxAttackers: 2, title: 'Linha de ruptura' }),
-  Object.freeze({ wave: 5, mechs: 2, androids: 3, maxAttackers: 2.5, title: 'Última resistência' }),
-  Object.freeze({ wave: 6, mechs: 0, androids: 2, boss: true, maxAttackers: 2, title: 'COLOSSUS-01 · CERCO' }),
+  Object.freeze({ wave: 2, mechs: 1, androids: 2, manifestantes: 2, maxAttackers: 1, title: 'Blindagem rebelde' }),
+  Object.freeze({ wave: 3, mechs: 1, androids: 2, manifestantes: 3, maxAttackers: 1.5, title: 'Cerco tático' }),
+  Object.freeze({ wave: 4, mechs: 2, androids: 2, manifestantes: 3, maxAttackers: 2, title: 'Linha de ruptura' }),
+  Object.freeze({ wave: 5, mechs: 2, androids: 3, manifestantes: 5, maxAttackers: 2.5, title: 'Última resistência' }),
+  Object.freeze({ wave: 6, mechs: 0, androids: 2, manifestantes: 3, boss: true, maxAttackers: 2, title: 'COLOSSUS-01 · CERCO' }),
 ]);
 
 export const SURVIVAL_MAX_MECHS = 3;
 export const SURVIVAL_MAX_ANDROIDS = 3;
+/** O pool de manifestantes da missão (P163): o maior número que um plano de onda pede. */
+export const SURVIVAL_MAX_MANIFESTANTES = 5;
+
+/**
+ * Quantos inimigos um plano de onda põe em campo: os Mechs, os andróides, o Colossus (se a onda o traz) e, **só na praia** (`comManifestantes`: é o único mapa com o pool deles),
+ * os manifestantes. Na Arena e no Bunker o plano é o de sempre.
+ */
+export function totalDaOnda(plan: WavePlan, comManifestantes = false): number {
+  return plan.mechs + plan.androids + (comManifestantes ? plan.manifestantes ?? 0 : 0) + (plan.boss ? 1 : 0);
+}
 
 export type WavePhase = 'briefing' | 'active' | 'clear' | 'completed' | 'failed';
 
@@ -79,6 +91,8 @@ export class SurvivalWaves {
   constructor(
     private readonly callbacks: SurvivalWaveCallbacks,
     private readonly firstWave = 1,
+    /** A missão traz manifestantes (a praia)? Sem isto o plano da onda vale sem eles. */
+    private readonly comManifestantes = false,
   ) {
     this.wave = this.firstWave;
     this.planIndex = this.firstWave - 1;
@@ -162,7 +176,7 @@ export class SurvivalWaves {
     this.phase = 'active';
     this.wave = plan.wave;
     this.killed = 0;
-    this.total = plan.mechs + plan.androids + (plan.boss ? 1 : 0);
+    this.total = totalDaOnda(plan, this.comManifestantes);
     this.waveElapsed = 0;
     this.progressLeft = WAVE_PROGRESS_INTERVAL_S;
     this.callbacks.onRoster(plan);
