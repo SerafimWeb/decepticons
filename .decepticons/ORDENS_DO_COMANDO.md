@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P174 — O login do jogador, completo (17/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P174 | 17/10 | "quero também que **concluamos sobre o LOGIN**" (junto da P173 e do arpão) | 🟡 | **Feito (Claude, 17/10): a camada C3 do `RANKING_E_LOGIN.md`, "o convidado vira conta sem perder nada".** Em **Configurações → JOGO → CONTA DO PILOTO** o jogador cria conta ou entra (e-mail + senha, o formulário `LoginPanel` já existia sem estar ligado a nada). O servidor guarda, **por conta**, o que o navegador já tinha: **nível, XP, créditos, apelido e a montagem do Hangar** (`GET`/`PUT /conta/progresso`, só com sessão, corpo até 8 KB, validado). Ao entrar, o progresso do navegador e o da conta se **mesclam** (quem tem mais nível e XP vence; apelido e montagem do outro cobrem o que faltar) e cada mudança depois vai para a conta com 5 s de calma. **Sair não apaga nada do aparelho.** Sem conta o jogo é igual a antes (nada de porta). **Não vale para ranking** (G13). **Falta:** o ranking (C4) e o clã (C2) do plano; um convite "gostou? guarde seu progresso" depois da primeira partida; recuperar senha; apelido único; o apelido da conta ainda não aparece no placar da sala online (só na caixa do lobby, depois de recarregar) | Abra o jogo → **[ AJUSTAR ]** → aba **JOGO** → rolar até **CONTA DO PILOTO** → **CRIAR CONTA**. Jogue, ganhe XP, **SAIR DA CONTA**; abra o jogo em **outro navegador**, entre com o mesmo e-mail: o nível volta. |
+
 ## P173 — O jogo em outras línguas (17/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

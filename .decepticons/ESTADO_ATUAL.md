@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O LOGIN DO JOGADOR, COMPLETO: a conta leva o progresso para outro aparelho — Claude, 17/10 (branch `claude/login`, P174)
+
+**A ordem do Comandante (17/10):** *"quero também que concluamos sobre o LOGIN"*. A conta, o limite de tentativas e o formulário já existiam, mas **nada ligava o formulário ao jogo** e a conta não guardava nada do piloto.
+
+**Feito:**
+0. **Achado e corrigido no formulário (R17):** o `LoginPanel` (nunca ligado antes) refazia o painel inteiro no `blur`, o que destruía o campo para onde o foco ia e **o botão sob o clique**: clicar em ENTRAR logo depois de digitar a senha **perdia o clique**. Agora o `blur` só mostra o aviso no lugar (`_mostrarValidacao`), com 2 testes (e uma mutação pega).
+1. **No servidor:** `GET`/`PUT /conta/progresso` (só com sessão, corpo até 8 KB, validado por `validarProgresso`: nível 1–999, XP 0–999, créditos até 1 bilhão, montagem até 4 KB, apelido pelo mesmo filtro da sala online; campo a mais do cliente é descartado); tabela `progresso` (uma linha por conta, substituída a cada `PUT`). **Achado e corrigido (R17):** `/conta/eu` não respondia ao **preflight do CORS** (o jogo em `cybermech.online` chama o servidor em outra origem com o cabeçalho da sessão); agora responde, e a rota nova também.
+2. **No cliente:** `net/sessao.ts` (`SessaoPiloto`: token por servidor, entrar/criar/sair, restaurar ao abrir, **mescla** e envio com 5 s de calma; rede fora nunca trava nem apaga nada), `net/progressoLocal.ts` (liga a sessão ao que o navegador já guardava: nível/XP/créditos, apelido, montagem; **nenhuma chave nova de progresso**), `ui/ContaSettings.ts` (o `LoginPanel`, já pronto, nas Configurações → JOGO → CONTA DO PILOTO), `DailyChallenges.snapshot/restore/onSave`, `ContaCliente.lerProgresso/gravarProgresso`.
+3. **A regra da junção** (`mesclarProgresso`, pura): quem tem **mais nível e XP vence por inteiro** (os créditos andam com o nível: somar dobraria o ganho de quem usa dois aparelhos); empate, o gravado por último; apelido e montagem do outro cobrem o que faltar. Aparelho novo recebe o da conta; convidado que jogou antes de criar a conta **não perde nada**.
+4. **Idiomas:** os textos do formulário e as mensagens de erro entraram nas seis línguas (475 textos por língua; o teste cobre a validação e as frases de estado).
+5. **Testes (+64):** `progresso.test.ts` (contrato e mescla), `conta-progresso-http.test.ts` (o servidor de verdade: 401, 400, 413, isolamento entre contas, preflight, origem), `sessao.test.ts` (21: junção nos dois sentidos, rede fora, restaurar, sair, envio com calma), `progressoLocal.test.ts` e `auth.test.ts` (o cliente). **18 mutações: 16 pegas e 2 equivalentes** (cancelar o envio ao sair e agendar sem sessão não mudam nada que se veja: sem token a sincronização não faz nada). **Prova no navegador de verdade** (`arte/login-*-claude.png`): um convidado de nível 5 (300 XP, 1234 créditos, apelido ANA) cria a conta num "aparelho"; um navegador limpo entra com ela e **recebe nível, XP, créditos e apelido**; sair não apaga nada do aparelho.
+
+**Custo de CPU/rede:** zero no jogo; uma ida ao servidor ao entrar (um `GET`, e um `PUT` se algo mudou) e **um `PUT` por janela de 5 s de calma** depois de uma mudança de progresso (pouquíssimas por partida). Servidor: um `SELECT`/`INSERT` por chamada; nenhum custo por tick (G13).
+
+**Falta (R13, em `STATUS_REAL.md`):** (a) **o olho do Comandante**; (b) o **ranking** (C4) e o **clã** (C2) do plano; (c) um convite "gostou? guarde seu progresso" depois da primeira partida (a conta só aparece nas Configurações); (d) **recuperar senha** (não há e-mail de recuperação); (e) apelido único; o apelido da conta passa a valer na caixa do lobby **depois de recarregar**; (f) as missões do dia ficam só no navegador; (g) **LGPD:** o e-mail é guardado (o mínimo); falta o "apagar minha conta".
+
+**Próxima sessão começa com:** o que o Comandante julgar do login e das línguas; depois as pendências recentes (bots com o laser; contadores do painel).
+
 ## O ARPÃO MAGNÉTICO CHEGA AO JOGO: a arma que prende e puxa — Claude, 17/10 (branch `claude/arpao-no-ar`, P77 3ª parte, protocolo 20)
 
 **O que era:** o porte do arpão de 12/10 (`claude/arpao-magnetico`) nunca entrou na `main`; refeito sobre a `main` de hoje (a sessão anterior deixou o porte parcial local).

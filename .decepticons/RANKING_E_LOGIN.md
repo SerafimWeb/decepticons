@@ -11,10 +11,10 @@
 
 | Peça | Onde | Estado |
 |---|---|---|
-| Contas de piloto (e-mail + senha com `scrypt`, sessão de 30 dias, só o hash do token no banco) | `server/contas.ts` (SQLite, `node:sqlite`) | **Funciona**, mas **só o dono (admin) a usa** (`client/src/net/admin.ts`); o jogador comum não tem como criar conta |
+| Contas de piloto (e-mail + senha com `scrypt`, sessão de 30 dias, só o hash do token no banco) | `server/contas.ts` (SQLite, `node:sqlite`) | **Funciona e o jogador já a usa** (P174, 17/10): Configurações → JOGO → CONTA DO PILOTO; o painel do dono segue pelo `client/src/net/admin.ts` |
 | Limite de tentativas de login (8 a cada 10 min por IP) | `server/login.ts` | Funciona |
 | Apelido para a sala online | `ui/OnlineLobby.ts` (`cybermech-name` no navegador, `?nome=` na URL) | Funciona; é só texto, **sem unicidade e sem filtro** |
-| Progressão do piloto (nível, créditos, missões diárias) | `ui/DailyChallenges.ts` (`cybermech_pilot_progression`, no navegador) | Funciona, **só local**: apagou o navegador, perdeu |
+| Progressão do piloto (nível, créditos, missões diárias) | `ui/DailyChallenges.ts` (`cybermech_pilot_progression`, no navegador) | Funciona; **com conta, nível, XP e créditos acompanham o piloto** (`net/sessao.ts`, P174); as missões do dia ficam só no navegador. Sem conta, apagou o navegador, perdeu |
 | Montagem do robô e das armas | `hangar/` (`cybermech.hangar.v1`, no navegador; link `?build=`) | Funciona, só local |
 | Métricas de partida | `server/PlayMetrics.ts`, `shared/net/playMetrics.ts` | **Agregadas**: contam partidas, não pessoas |
 | Placar da rodada | `sim/` + HUD | Só da rodada que acabou |
@@ -40,7 +40,7 @@
 1. ✅ **Primeiro acesso enxuto** (P133, `claude/primeiro-acesso`).
 2. **Apelido** (C1): um campo na pausa e no onboarding da primeira morte ("gostou? dê um nome ao seu piloto"), com o filtro. Mostra no placar da rodada.
 3. **Ranking de treino local** (C4 sem servidor): as melhores rodadas do navegador, por modo.
-4. **Contas de jogador** (C3): `/conta/criar` aberta, e a reivindicação do id local.
+4. ✅ **Contas de jogador** (C3, P174, 17/10): `/conta/criar` aberta (já era), formulário ligado nas Configurações, e a "reivindicação" do progresso do navegador: `GET`/`PUT /conta/progresso` + a mescla (`shared/net/auth.ts` `mesclarProgresso`: quem tem mais nível e XP vence). **Sem id local** (decisão: o navegador é a fonte do que ele já guardava; a conta é uma cópia que o alcança, e nada é apagado ao sair).
 5. **Ranking online** (C4): tabela, `GET /ranking`, a tela.
 6. **Clã** (C2), depois que o Comandante responder a § 5.
 

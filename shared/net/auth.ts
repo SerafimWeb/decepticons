@@ -20,6 +20,7 @@ export const CONTA_CRIAR_PATH = '/conta/criar';
 export const CONTA_ENTRAR_PATH = '/conta/entrar';
 export const CONTA_SAIR_PATH = '/conta/sair';
 export const CONTA_EU_PATH = '/conta/eu';
+export const CONTA_PROGRESSO_PATH = '/conta/progresso';
 export const CONFIG_PATH = '/config';
 export const ADMIN_CONFIG_PATH = '/admin/config';
 
@@ -69,4 +70,67 @@ export function parseCredenciais(raw: unknown): { email: string; senha: string }
   const r = raw as Record<string, unknown>;
   if (validarEmail(r.email) || validarSenha(r.senha)) return null;
   return { email: normalizarEmail(r.email as string), senha: r.senha as string };
+}
+
+// ---------------------------------------------------------------- progresso do piloto (P174)
+
+/** O teto do corpo de `PUT /conta/progresso` (bytes): o progresso é pequeno; o resto é abuso. */
+export const PROGRESSO_MAX_BYTES = 8192;
+/** A montagem do Hangar (o JSON que o navegador já guarda) vai como texto opaco: o servidor só limita o tamanho; quem a lê (o Hangar) a valida. */
+export const MONTAGEM_MAX = 4096;
+const NIVEL_MAX = 999;
+const XP_MAX = 999;
+const CREDITOS_MAX = 1_000_000_000;
+
+/**
+ * O que a conta guarda do piloto (ordem P174: "concluamos sobre o LOGIN"; `RANKING_E_LOGIN.md` C3: o convidado vira conta **sem perder nada**). É o que o navegador já tinha:
+ * apelido, nível, XP, créditos e a montagem do robô. **Nada disto vale para o ranking** (G13: só o servidor autoritativo pontua o global): é conforto entre aparelhos, e quem o
+ * adulterar só adultera a própria conta.
+ */
+export interface ProgressoPiloto {
+  apelido: string;
+  nivel: number;
+  xp: number;
+  creditos: number;
+  /** O JSON da montagem do Hangar (`cybermech.hangar.v1`), ou vazio. */
+  montagem: string;
+  /** Quando o navegador gravou (ms desde 1970): desempata quem tem o mesmo nível e XP. */
+  atualizadoEm: number;
+}
+
+const inteiro = (v: unknown, min: number, max: number): number | null =>
+  typeof v === 'number' && Number.isFinite(v) && Number.isInteger(v) && v >= min && v <= max ? v : null;
+
+/** Lê e valida o progresso (do corpo de um `PUT` ou do que o servidor guardou). `null` = fora do contrato (nada é gravado). O apelido sai pelo mesmo filtro da sala online. */
+export function validarProgresso(raw: unknown, sanitizar: (apelido: string) => string = (a) => a.trim().slice(0, 16)): ProgressoPiloto | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  const nivel = inteiro(r.nivel, 1, NIVEL_MAX);
+  const xp = inteiro(r.xp, 0, XP_MAX);
+  const creditos = inteiro(r.creditos, 0, CREDITOS_MAX);
+  const atualizadoEm = typeof r.atualizadoEm === 'number' && Number.isFinite(r.atualizadoEm) && r.atualizadoEm >= 0 ? Math.floor(r.atualizadoEm) : null;
+  if (nivel === null || xp === null || creditos === null || atualizadoEm === null) return null;
+  if (typeof r.apelido !== 'string' || typeof r.montagem !== 'string' || r.montagem.length > MONTAGEM_MAX) return null;
+  return { apelido: r.apelido ? sanitizar(r.apelido) : '', nivel, xp, creditos, montagem: r.montagem, atualizadoEm };
+}
+
+/**
+ * O convidado vira conta sem perder nada: junta o que o navegador tem (`local`) com o que a conta já guardava (`remoto`). **Quem tem mais progresso (nível, depois XP) vence
+ * por inteiro** (os créditos andam junto com o nível; somar os dois seria dobrar o ganho de quem entra em dois aparelhos); empate, o gravado por último. O apelido e a montagem
+ * do outro cobrem o que o vencedor não tem. Pura e determinística (G1).
+ */
+export function mesclarProgresso(local: ProgressoPiloto | null, remoto: ProgressoPiloto | null): ProgressoPiloto | null {
+  if (!local) return remoto;
+  if (!remoto) return local;
+  const pesoL = local.nivel * 1000 + local.xp;
+  const pesoR = remoto.nivel * 1000 + remoto.xp;
+  const venceLocal = pesoL !== pesoR ? pesoL > pesoR : local.atualizadoEm > remoto.atualizadoEm;
+  const [v, o] = venceLocal ? [local, remoto] : [remoto, local];
+  return { ...v, apelido: v.apelido || o.apelido, montagem: v.montagem || o.montagem, atualizadoEm: Math.max(local.atualizadoEm, remoto.atualizadoEm) };
+}
+
+/** Os dois progressos dizem a mesma coisa? (Para não mandar ao servidor o que ele já tem.) */
+export function progressoIgual(a: ProgressoPiloto | null, b: ProgressoPiloto | null): boolean {
+  if (!a || !b) return a === b;
+  return a.apelido === b.apelido && a.nivel === b.nivel && a.xp === b.xp && a.creditos === b.creditos && a.montagem === b.montagem;
 }

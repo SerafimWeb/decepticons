@@ -86,6 +86,7 @@ import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
 import { BrandSplash } from '../brand/BrandSplash';
 import { Hangar } from '../hangar/Hangar';
+import type { LoadoutSpec } from '../hangar/loadout';
 import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
 import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
 import { ImportedMech } from '../entities/ImportedMech';
@@ -142,6 +143,10 @@ import { MissionHUD } from '../ui/MissionHUD';
 import { CtfHud } from '../ui/CtfHud';
 import { DominioHud, avisoDoPonto } from '../ui/DominioHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
+import { ContaSettings } from '../ui/ContaSettings';
+import { ContaCliente } from '../net/auth';
+import { progressoLocalDoJogo } from '../net/progressoLocal';
+import { chaveDoToken, SessaoPiloto } from '../net/sessao';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
 const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', swarm: 'ENXAME', cruise: 'CRUZADOR', grenade: 'GRANADAS', laser: 'LASER', chainsaw: 'MOTOSSERRA', harpoon: 'ARPÃO' };
@@ -831,6 +836,28 @@ export class Game {
     };
 
     this.dailyChallenges.attachTo(document.getElementById('menu-profile'));
+
+    // A conta do piloto (P174): opcional, no fim da aba JOGO das Configurações. Nível, créditos, apelido e montagem seguem o piloto entre aparelhos; sem conta nada muda (o progresso é o do navegador).
+    const armazem = browserStorage();
+    const sessao = new SessaoPiloto(
+      new ContaCliente(import.meta.env.VITE_GAME_SERVER),
+      armazem,
+      progressoLocalDoJogo({
+        daily: this.dailyChallenges,
+        armazem,
+        aplicarMontagem: (json) => {
+          try {
+            this.hangar.apply(JSON.parse(json) as LoadoutSpec);
+          } catch {
+            /* montagem da conta que não vale mais: o Hangar fica como está */
+          }
+        },
+      }),
+      chaveDoToken(import.meta.env.VITE_GAME_SERVER),
+    );
+    this.dailyChallenges.onSave = () => sessao.mudou();
+    const blocoConta = document.getElementById('settings-conta');
+    if (blocoConta) void new ContaSettings(blocoConta, sessao).restaurar();
 
     // Console de comando (P86): a pausa vira a sala de comando. Os monitores só leem o jogo por estes callbacks (G3).
     const mapa = mapFromSearch(location.search, !!online, this.gameMode);
