@@ -28,7 +28,8 @@ import { ehManifestante } from '../entities/chassis';
 import { caboDoPonto, CABOS, CabosDeDados, CODIGO_DO_ESTADO, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
 import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
-import { pertoDoQuadro, QUADRO, QuadroDeLuz } from './QuadroDeLuz';
+import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA } from '../environment/ArenaLayout';
+import { QUADRO, QuadroDeLuz } from './QuadroDeLuz';
 import { dentroDoComplexo, NUCLEO, NucleoDaEstacao, pesoDoInvasor } from './NucleoDaEstacao';
 import { danoDeAfogamento, fatorDeVelocidade, FUNDURA_MOLHADA, fundoParaAfogar, funduraEm, passoDoAfogamento, type Agua } from '../combat/Agua';
 import { DebrisSystem } from '../environment/DebrisSystem';
@@ -251,7 +252,10 @@ export class Match {
   readonly portas: PortasDaEstacao | null = null;
   private readonly portasAtacantes = PORTAS_DA_ESTACAO.map(() => 0);
   private readonly portasDefensores = PORTAS_DA_ESTACAO.map(() => 0);
-  /** O quadro de luz da cidade (P164, frente 3): a energia das luzes da orla e das zonas de cura. `null` fora da missão em ondas da praia. */
+  /**
+   * O quadro de luz da cidade (P164, frente 3): a energia das luzes e das zonas de cura. **Na praia** é o armário do porto; **na Cidade Neon** (parte E) é o transformador do Banco Vorcaris,
+   * o mesmo circuito em outro lugar e com mais vida. `null` fora da missão em ondas.
+   */
   readonly quadro: QuadroDeLuz | null = null;
   private quadroDefensores = 0;
   /** Para qual alvo cada andróide e cada manifestante foi mandado (0 a 2 = o cabo; 3 e 4 = a porta principal e a dos fundos; 5 = o quadro de luz; -1 nenhum), na ordem de `bots.mechs`. */
@@ -324,14 +328,14 @@ export class Match {
     const praia = o.map === 'praia' && !ctf && !dominio;
     this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : SPAWN_POINTS;
     this.zones = bunker ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
-    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : 'arena');
+    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : 'arena', { transformador: survival && !praia });
     // A água da praia (P126): o mar freia e afoga quem entra nele. Nos outros mapas não há água.
     this.agua = praia ? PRAIA_AGUA : null;
     // A missão em ondas da praia defende a estação: os rebeldes que entram nos muros drenam o núcleo; a estação cair é perder a missão.
     this.nucleo = praia && survival ? new NucleoDaEstacao() : null;
     this.cabos = praia && survival ? new CabosDeDados() : null;
     this.portas = praia && survival ? new PortasDaEstacao() : null;
-    this.quadro = praia && survival ? new QuadroDeLuz() : null;
+    this.quadro = survival ? (praia ? new QuadroDeLuz() : new QuadroDeLuz(ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA)) : null;
     this.fx = o.particles;
     // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
@@ -969,7 +973,10 @@ export class Match {
    * para o invasor parar **no** ponto.
    */
   private dirigirOsInvasoresAosAlvos(dt: number): void {
-    if (!this.cabos) return;
+    if (!this.cabos) {
+      this.dirigirOsInvasoresDaArena(dt);
+      return;
+    }
     this.cabosReplanejaEm -= dt;
     if (this.cabosReplanejaEm > 0) return;
     this.cabosReplanejaEm = 1;
@@ -1017,6 +1024,49 @@ export class Match {
   }
 
   /**
+   * A Cidade Neon (P164, parte E) não tem cabos nem portas: o alvo dos invasores é o **transformador do Banco Vorcaris**. Da onda 2 em diante o **primeiro andróide vivo** é o saboteiro e o
+   * **Colossus** vai direto a ele (peso 4: apaga o de 480 em ~20 s); os outros seguem o comportamento de sempre. A ordem é a `hold` dos cabos (vai até o ponto e fica, trocando tiro com quem
+   * chega). Com o transformador **apagado** (nada mais a depredar) o invasor é solto: volta ao comportamento normal e vem atrás do jogador. A cada segundo; sem alocar.
+   */
+  private dirigirOsInvasoresDaArena(dt: number): void {
+    const q = this.quadro;
+    if (!q) return;
+    this.cabosReplanejaEm -= dt;
+    if (this.cabosReplanejaEm > 0) return;
+    this.cabosReplanejaEm = 1;
+    const mechs = this.bots.mechs;
+    if (this.rumoDosAlvos.length !== mechs.length) {
+      this.rumoDosAlvos.length = mechs.length;
+      this.rumoDosAlvos.fill(-1);
+    }
+    const haSaboteiro = (this.waves?.wave ?? 1) >= 2;
+    let androides = 0;
+    for (let i = 0; i < mechs.length; i++) {
+      const m = mechs[i]!;
+      const nome = m.stats.name;
+      if (!m.alive) {
+        this.rumoDosAlvos[i] = -1;
+        continue;
+      }
+      let vai = false;
+      if (nome.startsWith('COLOSSUS')) vai = true;
+      else if (ehAndroide(nome)) vai = haSaboteiro && androides++ === 0;
+      const cerebro = this.bots.brainOf(m);
+      if (!cerebro) continue;
+      if (vai && !q.apagado) {
+        if (this.rumoDosAlvos[i] !== ALVO_DO_QUADRO || cerebro.order !== 'hold') {
+          cerebro.receiveOrder('hold', this._pontoDoAlvo.set(q.ponto.x - cerebro.escortSide * 6, 0, q.ponto.z), null);
+          this.rumoDosAlvos[i] = ALVO_DO_QUADRO;
+        }
+      } else if (this.rumoDosAlvos[i] === ALVO_DO_QUADRO) {
+        // não é mais o saboteiro (ou o transformador caiu): volta ao comportamento de sempre
+        cerebro.receiveOrder('follow', this._pontoDoAlvo.set(m.simPosition.x, 0, m.simPosition.z), null);
+        this.rumoDosAlvos[i] = -1;
+      }
+    }
+  }
+
+  /**
    * As portas do prédio (P163): conta quem as força (todo rebelde a menos de 7 m, com o peso de `pesoNaPorta`) e quem está perto para recuperá-las (o jogador e os aliados),
    * e roda a regra pura (`PortasDaEstacao`). Custo: um laço sobre os rebeldes (≤ 13 com os manifestantes), os aliados e os jogadores, sem alocar.
    */
@@ -1047,19 +1097,19 @@ export class Match {
     for (const m of this.bots.mechs) {
       if (!m.alive) continue;
       const p = m.simPosition;
-      if (pertoDoQuadro(p.x, p.z, QUADRO.raioDeAtaque)) atacantes += pesoDoInvasor(m.stats.name);
+      if (q.perto(p.x, p.z, QUADRO.raioDeAtaque)) atacantes += pesoDoInvasor(m.stats.name);
     }
     this.quadroDefensores = 0;
-    this.contarDefensoresDoQuadro(this.players);
-    if (this.allies) this.contarDefensoresDoQuadro(this.allies.mechs);
+    this.contarDefensoresDoQuadro(q, this.players);
+    if (this.allies) this.contarDefensoresDoQuadro(q, this.allies.mechs);
     q.fixedUpdate(dt, atacantes, this.quadroDefensores);
     this.zones.energizadas = !q.apagado;
   }
 
-  private contarDefensoresDoQuadro(mechs: readonly MechBase[]): void {
+  private contarDefensoresDoQuadro(q: QuadroDeLuz, mechs: readonly MechBase[]): void {
     for (const m of mechs) {
       if (!m.alive) continue;
-      if (pertoDoQuadro(m.simPosition.x, m.simPosition.z, QUADRO.raioDeReparo)) this.quadroDefensores += ehAndroide(m.stats.name) ? 2 : 1;
+      if (q.perto(m.simPosition.x, m.simPosition.z, QUADRO.raioDeReparo)) this.quadroDefensores += ehAndroide(m.stats.name) ? 2 : 1;
     }
   }
 

@@ -4291,6 +4291,12 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .pcf-pernas span.caida { border-color: rgba(255, 45, 61, 0.8); color: var(--alert); text-decoration: line-through; opacity: 0.8; }
 .praia-chefe p { margin: 0; text-align: center; color: var(--warn); letter-spacing: 1px; font-size: 10px; }
 .praia-chefe[data-fase='rasteja'] .pcf-barra { animation: praia-pulso 0.7s ease-in-out infinite alternate; }
+/* O HUD de missão fora da praia (P164, parte E: a Cidade Neon): só o transformador, a barra do chefe e o aviso; sem a faixa da costa, a rede, os cabos, as portas, o cartão, a água e o marcador. */
+.praia-hud--missao .praia-faixa, .praia-hud--missao .praia-nucleo, .praia-hud--missao .praia-cabos, .praia-hud--missao .praia-portas,
+.praia-hud--missao .praia-cartao, .praia-hud--missao .praia-vinheta, .praia-hud--missao .praia-agua, .praia-hud--missao .praia-alvo { display: none; }
+.praia-hud--missao .praia-quadro { top: 64px; }
+.praia-hud--missao .praia-chefe { top: 94px; }
+.praia-hud--missao .praia-zona { top: 176px; }
 .praia-zona.alerta { color: var(--alert); text-shadow: 0 0 10px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 45, 61, 0.7); }
 .praia-zona.alerta::before { color: var(--alert); }
 .praia-alvo[data-estado='ataque'] i { border-color: var(--warn); background: rgba(255, 225, 77, 0.25); box-shadow: 0 0 12px var(--warn); animation: praia-pulso 0.7s ease-in-out infinite alternate; }

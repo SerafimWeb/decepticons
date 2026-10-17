@@ -13,7 +13,8 @@ import { PRAIA_QUADRO_DE_LUZ } from '../environment/PraiaLayout';
  *    Um quadro sabotado **não se recompõe sozinho**.
  *
  * Regra **pura** (G1/G2, G14): só números, sem relógio nem sorteio; roda igual no cliente e no servidor. Quem chama (\`Match\`) conta quem está perto, sem alocar. O circuito é **repetível**:
- * a mesma regra com outra peça serve ao quadro do banco, ao transformador do datacenter e a qualquer fase que pedir "uma coisa para proteger que muda o cenário".
+ * a mesma regra com outra peça serve ao quadro do banco, ao transformador do datacenter e a qualquer fase que pedir "uma coisa para proteger que muda o cenário". **Cada instância tem o seu
+ * lugar e a sua vida** (\`new QuadroDeLuz(ponto, vidaMax)\`): o do porto da praia é o padrão; o **transformador do Banco Vorcaris** da Cidade Neon (P164, parte E) é o segundo.
  */
 
 export const QUADRO = {
@@ -34,16 +35,35 @@ export type EstadoDoQuadro = 'ligado' | 'sabotado' | 'apagado';
 /** Os estados em número, para o HUD e o desenho (0 ligado, 1 sabotado, 2 apagado). */
 export const CODIGO_DO_ESTADO_DO_QUADRO: Readonly<Record<EstadoDoQuadro, number>> = { ligado: 0, sabotado: 1, apagado: 2 };
 
-/** O ponto (x, z) está a menos de `raio` do quadro? */
-export function pertoDoQuadro(x: number, z: number, raio: number): boolean {
-  const dx = x - PRAIA_QUADRO_DE_LUZ.x;
-  const dz = z - PRAIA_QUADRO_DE_LUZ.z;
+/** Onde o quadro fica no mapa (x, z em metros). */
+export interface PontoDoQuadro {
+  readonly x: number;
+  readonly z: number;
+}
+
+/** O ponto (x, z) está a menos de `raio` do quadro em `ponto` (o do porto da praia, se não vier outro)? */
+export function pertoDoQuadro(x: number, z: number, raio: number, ponto: PontoDoQuadro = PRAIA_QUADRO_DE_LUZ): boolean {
+  const dx = x - ponto.x;
+  const dz = z - ponto.z;
   return dx * dx + dz * dz < raio * raio;
 }
 
 export class QuadroDeLuz {
-  vida: number = QUADRO.vidaMax;
+  vida: number;
   private apagadoAgora = false;
+
+  /** O lugar do quadro e a vida dele: o do porto da praia (240) é o padrão. */
+  constructor(
+    readonly ponto: PontoDoQuadro = PRAIA_QUADRO_DE_LUZ,
+    readonly vidaMax: number = QUADRO.vidaMax,
+  ) {
+    this.vida = vidaMax;
+  }
+
+  /** O ponto (x, z) está a menos de `raio` deste quadro? */
+  perto(x: number, z: number, raio: number): boolean {
+    return pertoDoQuadro(x, z, raio, this.ponto);
+  }
 
   /** O quadro está apagado (vida zerada e ainda não recuperado até `voltaEm`)? */
   get apagado(): boolean {
@@ -52,17 +72,17 @@ export class QuadroDeLuz {
 
   estado(): EstadoDoQuadro {
     if (this.apagadoAgora) return 'apagado';
-    return this.vida < QUADRO.vidaMax ? 'sabotado' : 'ligado';
+    return this.vida < this.vidaMax ? 'sabotado' : 'ligado';
   }
 
   /** A vida de 0 a 1. */
   get fracaoDaVida(): number {
-    return this.vida / QUADRO.vidaMax;
+    return this.vida / this.vidaMax;
   }
 
   /** A energia da cidade (0 a 1): a vida do quadro; **zero** enquanto ele está apagado. As luzes da cidade e as zonas leem daqui. */
   get energia(): number {
-    return this.apagadoAgora ? 0 : this.vida / QUADRO.vidaMax;
+    return this.apagadoAgora ? 0 : this.vida / this.vidaMax;
   }
 
   /** Um tick: o peso de quem depreda o quadro (`atacantes`) e quantos defensores estão perto (`defensores`). */
@@ -70,15 +90,15 @@ export class QuadroDeLuz {
     if (atacantes > 0) {
       this.vida = Math.max(0, this.vida - atacantes * QUADRO.danoPorPesoPorS * dt);
       if (this.vida <= 0) this.apagadoAgora = true;
-    } else if (defensores > 0 && this.vida < QUADRO.vidaMax) {
-      this.vida = Math.min(QUADRO.vidaMax, this.vida + Math.min(defensores, QUADRO.maxReparadores) * QUADRO.reparoPorDefensorPorS * dt);
-      if (this.apagadoAgora && this.vida >= QUADRO.voltaEm * QUADRO.vidaMax) this.apagadoAgora = false;
+    } else if (defensores > 0 && this.vida < this.vidaMax) {
+      this.vida = Math.min(this.vidaMax, this.vida + Math.min(defensores, QUADRO.maxReparadores) * QUADRO.reparoPorDefensorPorS * dt);
+      if (this.apagadoAgora && this.vida >= QUADRO.voltaEm * this.vidaMax) this.apagadoAgora = false;
     }
   }
 
   /** Missão nova: inteiro e ligado. */
   reset(): void {
-    this.vida = QUADRO.vidaMax;
+    this.vida = this.vidaMax;
     this.apagadoAgora = false;
   }
 }

@@ -1,0 +1,38 @@
+{
+  "data": "2026-10-17",
+  "tela": "1280x720",
+  "render": "SwiftShader (sem GPU: só contagem, não tempo)",
+  "vistas": {
+    "chefe-q0_1_1": {
+      "desenhos": 65,
+      "triangulos": 10204,
+      "construcaoMs": 104
+    },
+    "geral": {
+      "desenhos": 66,
+      "triangulos": 9868,
+      "construcaoMs": 787
+    },
+    "transformador": {
+      "desenhos": 34,
+      "triangulos": 8576,
+      "construcaoMs": 27
+    },
+    "banco": {
+      "desenhos": 42,
+      "triangulos": 8652,
+      "construcaoMs": 90
+    },
+    "cidade": {
+      "desenhos": 55,
+      "triangulos": 8780,
+      "construcaoMs": 25
+    },
+    "chefe": {
+      "desenhos": 44,
+      "triangulos": 8664,
+      "construcaoMs": 44
+    }
+  },
+  "errosDePagina": []
+}

@@ -1,3 +1,17 @@
+## [2026-10-17] As outras fases: o circuito do quadro de luz se repete na Cidade Neon (Claude, P177, P164)
+
+**Ordem:** "melhore as outras fases além da estação cabos" e, da P164, "um circuito que podemos repetir nas diferentes fases" e "chefes especiais com contexto em cada outra fase".
+
+**Decisões:**
+1. **A primeira "outra fase" é a Cidade Neon (a Arena), não o Bunker:** a missão padrão do jogo (`campanhaPadrao`) é a sobrevivência na Arena; o Bunker só tem Deathmatch. Melhorar o que a maioria joga primeiro.
+2. **O circuito é a mesma classe, não uma cópia:** `QuadroDeLuz(ponto, vidaMax)` (o padrão é o do porto). Uma regra só (G14); o `Match` escolhe a instância por mapa. **O transformador tem 480 de vida** (o do porto, 240): é o coração da cidade, e o Colossus (peso 4) o apaga em ~20 s, o que dá ao jogador uma janela para derrubar as pernas dele.
+3. **O Colossus vai ao transformador e é solto quando ele cai:** o contexto do chefe na Arena é "ele apaga a energia do banco". Sem o que depredar, volta ao comportamento normal (senão ficaria parado em cima de um quadro morto).
+4. **Escurecer a cidade é mexer em cores, não em luzes:** as arestas, faixas e janelas são emissivas (não leem as luzes da cena), então a energia escala as cores registradas (`Arena.registraLuz`), só quando a energia muda. **O piso é 12%** para o jogador ainda ler os prédios. **A placa do banco cai junto** (é o transformador dele). Os LEDs da torre Serafim ficam de fora (a base do time tem os modos próprios).
+5. **O HUD de missão reaproveita o `PraiaHud`** (modo `soMissao`) em vez de um segundo HUD: a célula do quadro, a barra do chefe e os avisos já existiam e ficam iguais; o que é só da praia é escondido por CSS e pulado no código. A regra dita do chefe vem de `regraDaFase(fase, alvo)`: na Cidade Neon não há cabos, e dizer "ele vai cortar os cabos" ali seria mentira.
+6. **Nenhuma condição de derrota nova:** o transformador apagado derruba as zonas e a luz, não a missão (o núcleo da praia é que a perde). A missão padrão fica mais exigente; o equilíbrio jogando é pendência.
+
+**Por que registrar:** quem for levar o circuito ao Bunker, à Bandeira e ao Domínio, ou equilibrar a missão, precisa saber que a instância é por mapa, que o escurecimento é de cores registradas e que o Colossus é solto quando o quadro cai.
+
 ## [2026-10-17] A Colossus em três fases, a barra do chefe e a máscara (Claude, P165, P147)
 
 **Ordem:** a parte D do capítulo 1 ("CONTINUA SEGUINDO A PARTE B, C e a D") e a máscara da Colossus V1 só como chefe (P165).

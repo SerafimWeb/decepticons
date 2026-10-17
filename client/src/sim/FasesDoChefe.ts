@@ -28,6 +28,22 @@ export const TEXTOS_DA_FASE: Readonly<Record<FaseDoChefe, { rotulo: string; regr
   caido: { rotulo: 'CAIU', regra: '' },
 };
 
+/** O que o titã vai depredar: os **cabos** da praia ou o **transformador** do Banco Vorcaris da Cidade Neon (P164, parte E). A regra dita na barra do chefe muda com isso. */
+export type AlvoDoChefeNoMapa = 'cabos' | 'transformador';
+
+/** A regra de cada fase quando o alvo do titã é o transformador do banco (a mesma lógica, outra peça). */
+const REGRA_NO_TRANSFORMADOR: Readonly<Record<FaseDoChefe, string>> = {
+  anda: 'Ele vai apagar o transformador do banco. Derrube as pernas.',
+  manca: TEXTOS_DA_FASE.manca.regra,
+  rasteja: 'Rasteja e atira. Acabe com ele antes que o transformador caia.',
+  caido: '',
+};
+
+/** A regra da fase dita numa linha, para o alvo do mapa (os cabos da praia são o padrão). */
+export function regraDaFase(fase: FaseDoChefe, alvo: AlvoDoChefeNoMapa = 'cabos'): string {
+  return alvo === 'transformador' ? REGRA_NO_TRANSFORMADOR[fase] : TEXTOS_DA_FASE[fase].regra;
+}
+
 /** A velocidade do titã rastejando, em fração da dele: 30% (de 5 m/s, 1,5 m/s). */
 export const VELOCIDADE_DO_RASTEJO = MOBILIDADE_RASTEJANDO;
 

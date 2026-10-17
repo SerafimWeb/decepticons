@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MOBILIDADE_RASTEJANDO } from '../entities/MechBase';
 import { Vector09 } from '../entities/Vector09';
 import { PONTOS_DOS_CABOS } from './CabosDeDados';
-import { alvoDoChefe, avisoDoChefe, CODIGO_DA_FASE, faseDoChefe, TEXTOS_DA_FASE, VELOCIDADE_DO_RASTEJO } from './FasesDoChefe';
+import { alvoDoChefe, avisoDoChefe, CODIGO_DA_FASE, faseDoChefe, regraDaFase, TEXTOS_DA_FASE, VELOCIDADE_DO_RASTEJO } from './FasesDoChefe';
 
 describe('as FASES DO CHEFE (P165, parte D): anda, manca, rasteja', () => {
   it('a fase vem das pernas: as duas de pé anda; uma caída manca; as duas caídas rasteja; o tronco zerado é o fim', () => {
@@ -28,6 +28,22 @@ describe('as FASES DO CHEFE (P165, parte D): anda, manca, rasteja', () => {
     }
     expect(TEXTOS_DA_FASE.anda.regra).toContain('cabos');
     expect(TEXTOS_DA_FASE.anda.regra).toContain('pernas');
+  });
+
+  it('a regra dita muda com o alvo do mapa: nos cabos da praia fala de cabos; no transformador da Cidade Neon fala do transformador (e nunca de cabo)', () => {
+    for (const fase of ['anda', 'manca', 'rasteja'] as const) {
+      expect(regraDaFase(fase), `${fase} sem alvo = os cabos`).toBe(TEXTOS_DA_FASE[fase].regra);
+      expect(regraDaFase(fase, 'cabos')).toBe(TEXTOS_DA_FASE[fase].regra);
+      const t = regraDaFase(fase, 'transformador');
+      expect(t.length, `${fase} no transformador`).toBeGreaterThan(10);
+      expect(t.length).toBeLessThan(70); // uma linha
+      expect(t.toLowerCase()).not.toContain('cabo');
+    }
+    expect(regraDaFase('anda', 'transformador')).toContain('transformador');
+    expect(regraDaFase('anda', 'transformador')).toContain('pernas');
+    expect(regraDaFase('rasteja', 'transformador')).toContain('transformador');
+    expect(regraDaFase('manca', 'transformador'), 'a fase que manca diz o mesmo nos dois mapas').toBe(regraDaFase('manca', 'cabos'));
+    expect(regraDaFase('caido', 'transformador')).toBe('');
   });
 
   it('a velocidade de rastejo é a do corpo (30%), e o titã a usa com as duas pernas caídas, onde um Mech comum fica imóvel', () => {
