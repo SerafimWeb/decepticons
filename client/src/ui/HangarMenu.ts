@@ -11,6 +11,7 @@ import { acceptsMetalShield, armGroups, armOptions, factorySpec, hasShoulderSlot
 import { shoulderMounts } from '../combat/mounts';
 import { PRESET_COUNT } from '../hangar/Hangar';
 import { AdminPanel } from './AdminPanel';
+import { traduzir } from '../i18n/i18n';
 import { carregarDicasDoHangar, dicaDoHangar } from './dicasDoHangar';
 import { WEAPON_ICON_NOVAS } from './weaponIconsNovas';
 import { testAt, testFire, TEST_FIRE_S, type TestFire } from '../hangar/testFire';
@@ -65,6 +66,9 @@ function slotMounts(chassis: ChassisId, slot: ArmSlot, layout = 0): readonly Mou
   if (slot === 'left') return ['leftHand'];
   return shoulderMounts(triggersOf(CHASSIS[chassis], layout));
 }
+/** Como a chapa metálica funciona (depois da frase própria de cada uma). Cada pedaço do texto do encaixe se traduz sozinho (`traduzir`): a frase inteira muda de caso a caso. */
+const DICA_DA_CHAPA = 'Segure o Ataque 2 (clique direito) para levantar a chapa: cobre a frente e anda mais devagar; abaixada, protege só o flanco esquerdo com metade da força. Sem energia: a chapa se desgasta e volta no conserto.';
+
 /** Ícones de traço (24×24) de cada arma. */
 const WEAPON_ICON: Record<WeaponId, string> = {
   railgun: '<path d="M3 8h17M3 16h17M5 8v8M10 10h11M10 14h11M21 8v8" />',
@@ -713,7 +717,7 @@ export class HangarMenu {
     editor.innerHTML = `
       <label class="hg-label" for="hangar-weapon-select">${SLOT_LABEL[this.selectedSlot]} · ATAQUE ${slotAttack(this.selectedSlot, spec.chassis, spec.layout ?? 0) ?? '—'}</label>
       <select id="hangar-weapon-select"${shieldArm ? ' disabled' : ''}>${this.selectedSlot !== 'right' ? `<option value=""${arm ? '' : ' selected'}>${shieldArm ? 'ESCUDO (sem arma)' : 'VAZIO (menos carga)'}</option>` : ''}${options}${plateOptions}</select>
-      <p class="hg-hint">${plate ? `${METAL_SHIELDS[plate.id].hint}. Segure o Ataque 2 (clique direito) para levantar a chapa: cobre a frente e anda mais devagar; abaixada, protege só o flanco esquerdo com metade da força. Sem energia: a chapa se desgasta e volta no conserto.` : w ? dicaDoHangar(w.id) + (this.selectedSlot === 'shoulders' ? ' · um lançador em cada ombro: a carga conta duas vezes' : '') + (nasCostas(w.id, this.selectedSlot) ? ' · fica nas costas do Mech, apontando para cima; o antebraço fica liso' : '') + (CHASSIS_SIZE[spec.chassis] >= 3 ? ' · tamanho 3: o que é pesado nos Mechs comuns é leve para ele' : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
+      <p class="hg-hint">${plate ? `${traduzir(METAL_SHIELDS[plate.id].hint)}. ${traduzir(DICA_DA_CHAPA)}` : w ? traduzir(dicaDoHangar(w.id)) + (this.selectedSlot === 'shoulders' ? ` ${traduzir('· um lançador em cada ombro: a carga conta duas vezes')}` : '') + (nasCostas(w.id, this.selectedSlot) ? ` ${traduzir('· fica nas costas do Mech, apontando para cima; o antebraço fica liso')}` : '') + (CHASSIS_SIZE[spec.chassis] >= 3 ? ` ${traduzir('· tamanho 3: o que é pesado nos Mechs comuns é leve para ele')}` : '') : shieldArm ? 'Este braço leva o escudo e não recebe arma. O escudo ainda não bloqueia dano.' : 'Encaixe vazio: sobra carga para o resto da montagem.'}</p>
 ${!report.check.ok ? '<p class="hg-load-warning">Ajuste a carga para aplicar ou testar. A prévia mantém a última montagem válida.</p>' : ''}
       ${["genesis01", "lancerL1", "lr7lBastion", "quadraV2"].includes(spec.chassis) ? '<p class="hg-hint">Arma integrada ao casco: a aparência deste robô ainda não muda com a seleção.</p>' : ''}<div class="hg-label">NÍVEL DE POTÊNCIA</div>
       <div class="hg-tiers">${TIERS.map((t, i) => { const copies = mountCopies(this.selectedSlot, spec.chassis, spec.layout ?? 0); const mass = plate ? metalShieldMass(plate.id, i as Tier) : arm ? weapon(arm.id as WeaponId, i as Tier).mass * copies : 0; const total = report.mass - (plate ? metalShieldMass(plate.id, plate.tier) : (w?.mass ?? 0) * copies) + mass; const excess = Math.max(0, total - report.capacity); const hint = excess > 1e-9 ? `EXCEDE ${num(excess, 1)} t` : `${num(report.capacity - total, 1)} t livres`; return `<button class="hg-tier${arm?.tier === i ? ' selected' : ''}${excess > 1e-9 ? ' over' : ''}" type="button" data-tier="${i}" aria-pressed="${arm?.tier === i}" title="${hint}"${arm ? '' : ' disabled'}><b>${t.label}</b><small>${i === 0 ? 'PADRÃO' : plate ? `+${Math.round((METAL_SHIELD_TIERS[i]!.integrity - 1) * 100)}% chapa` : `+${Math.round((t.damage - 1) * 100)}% dano`} · ${num(mass, 1)} t</small><small>${hint}</small></button>`; }).join('')}</div>

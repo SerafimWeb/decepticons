@@ -1,3 +1,14 @@
+## [2026-10-17] O idioma se audita no navegador, e a composição "A · B" traduz parte a parte (Claude, P173)
+
+**Problema:** o Comandante quer o jogo no idioma nativo de quem chega. O teste de cobertura (que lê o código) dava tudo verde, mas **o Hangar falava português em japonês**: o texto que o jogo monta (colando "MÉDIO", "ASSALTO" e a descrição com " · ") nunca é uma chave do dicionário, e o teste só olhava as partes.
+
+**Decisões:**
+1. **A auditoria de idioma é feita no navegador de verdade** (abre cada tela com `?lang=ja` e lista o texto sem tradução): o que o jogador lê é o que importa, não o que está no código. `.tmp/auditar-idioma.mjs` e `auditar-jogo.mjs` (locais) são o modelo; o **teste de cobertura agora exige que nada em português sobre** (só nomes próprios e unidades), não só que "mudou".
+2. **Chaves de composição `{0} · {1}` e `{0} · {1} · {2}`** (as seis línguas): cada parte é traduzida pelo que o dicionário já sabe e a estrutura fica. Um texto composto novo não pede uma chave nova se as partes já têm.
+3. **Duas regras no motor do tradutor:** o padrão com **mais texto fixo** vence (antes: o maior regex, que contava as lacunas), e uma **chave sem " · " não engole uma composição**. Sem a segunda regra, `ESCALA {0}` e `{0} aliados` pegavam "ESCALA 3 · CERCO · …" e deixavam o resto em português, com o teste (que só via "mudou") verde.
+4. **As frases que o código cola caso a caso** (a dica da arma + o aviso dos ombros + o das costas…) **se traduzem pedaço por pedaço e se juntam** (`traduzir` no `HangarMenu`), em vez de uma chave por combinação possível.
+5. **O que fica em português de propósito:** as telas do dono (Arsenal, Estúdio, Servidor), os rótulos de acessibilidade do mapa e os nomes próprios dos robôs.
+
 ## [2026-10-17] O Arquivo: conteúdo em JSON por língua, painel sob demanda, tudo opcional (Claude, P179 camada 2)
 
 **Ordem:** mostrar o posicionamento do jogo *"SUTILMENTE E ELEGANTEMENTE, pedagogicamente"* e explicar o que é o fascismo, a rede de mentiras, os interesses das elites e a manutenção do medo.

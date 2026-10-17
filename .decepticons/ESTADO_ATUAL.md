@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## IDIOMA: O HANGAR, O ESQUADRÃO, AS CAMPANHAS E O HUD DEIXAM DE FALAR PORTUGUÊS — Claude, 17/10 (branch `claude/idioma-telas`, P173)
+
+**O Comandante (17/10):** *"idioma tem que ficar logo no início […] pra pessoa já selecionar o idioma nativo dele"*. Escolhida a língua, as telas avançadas ainda caíam no português: **auditoria no navegador de verdade, em japonês** (`.tmp/auditar-idioma.mjs`, que abre cada tela e lista o texto sem tradução) achou ~250 textos no Hangar, no Esquadrão, nas Campanhas e no HUD.
+
+**Feito:**
+1. **232 textos novos em cada uma das seis línguas** (737 por língua): o Hangar inteiro (rótulos, unidades, chassis, módulos, as quatro chapas, os papéis de cada chassi), o Esquadrão, as Campanhas e o HUD da partida (a vista 1ª/3ª pessoa/tática, as ordens aos aliados, o contato).
+2. **As dicas das 22 armas do Hangar** (`public/dicas-do-hangar.json`) com tradução: o encaixe agora traduz **cada pedaço** da frase (a dica, o aviso dos ombros, o das costas, o do tamanho 3, a regra da chapa) antes de juntar, porque a frase muda caso a caso e não tem uma chave só.
+3. **Composição genérica `{0} · {1}` e `{0} · {1} · {2}`**: o jogo escreve muito texto como "MÉDIO · ASSALTO · Equilíbrio entre alcance e mobilidade." ou "PADRÃO · 3,0 t"; as chaves de composição traduzem **cada parte pelo que o dicionário já sabe** (as descrições dos chassis já estavam traduzidas e não apareciam por estarem coladas). **Duas regras novas no motor (`i18n.ts`):** (a) entre dois padrões que servem ao mesmo texto, vence o de **mais texto fixo** (antes contava o tamanho do regex, que conta cada lacuna); (b) uma chave **sem " · "** não engole uma composição (`ESCALA {0}` não pega "ESCALA 3 · CERCO · …").
+4. **Teste de cobertura que exige que nada em português sobre** (`i18n.test.ts`: só nomes próprios e unidades): as dicas, ~18 textos compostos do Hangar, o HUD, o Esquadrão e as Campanhas. **Prova no navegador de verdade:** a auditoria em japonês caiu de ~250 textos para os nomes próprios, as telas do dono e os rótulos de acessibilidade do mapa; capturas `arte/idioma-hangar-*-claude.png`.
+
+**Custo de CPU:** zero (a tradução é por mapa em memória, com cache; o JS cresce o `traduzir` do Hangar, dentro do orçamento).
+
+**Falta (R13):** (a) **revisão por falante nativo** (as traduções são minhas, como as da landing e do Arquivo); (b) as **telas do dono** (Arsenal, Estúdio, Servidor, Painel Admin) e os rótulos de acessibilidade do mapa seguem em português de propósito; (c) o **texto de rádio e de briefing das missões** não foi auditado (só abre jogando a missão); (d) a **voz do narrador** segue em português.
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois o Relatório de Consequências, a Amazônia (P180) e os ombros dos chassis pesados (P181).
+
 ## O ARQUIVO: SEIS FICHAS QUE ENSINAM, NAS SETE LÍNGUAS — Claude, 17/10 (branch `claude/arquivo`, P179 camada 2)
 
 **O Comandante (17/10):** *"devemos explicar o que são [o nazifascismo] e como se manifestam, a rede de mentiras, os interesses obtusos por trás das elites, a manutenção do medo […] pelo menos SUTILMENTE E ELEGANTEMENTE, pedagogicamente"*. A camada 1 (o seletor de lado) já estava no ar; esta é a camada 2 do `LADO_E_PEDAGOGIA.md`.
