@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O ARPÃO MAGNÉTICO CHEGA AO JOGO: a arma que prende e puxa — Claude, 17/10 (branch `claude/arpao-no-ar`, P77 3ª parte, protocolo 20)
+
+**O que era:** o porte do arpão de 12/10 (`claude/arpao-magnetico`) nunca entrou na `main`; refeito sobre a `main` de hoje (a sessão anterior deixou o porte parcial local).
+
+**Feito:**
+1. **A arma (`harpoon`, só de ombro):** raio de 55 m que morde 10 e **prende o primeiro inimigo à vista**, puxando-o a 9 m/s por até 1,6 s; um aperto a cada 4 s; os dois ombros dividem um cabo. **Contrajogo:** o dash do alvo corta o cabo, a parede também, o Colossus (raio > 2,4 m) o arrebenta, aliado e dono nunca são presos. Regra em `combat/HookSystem.ts` (G14: a mesma offline e no servidor; só o tick fixo; pool de 8).
+2. **Ligação:** `Armament` → `PlayerController.hook` → `Match.hookShot` (jogo e `NetPilot` do servidor); `onHook` vira evento de tiro; **protocolo 20** (`harpoon` no fim de `NET_WEAPONS`); `OnlineSession` desenha o raio do arpão de outro jogador (`Match.drawHook`).
+3. **Desenho:** `fx/HookVisuals.ts` (o cabo preso, um `InstancedMesh`, pulsa; ciano o seu, vermelho o do inimigo) e o raio do disparo pelo `BeamVisuals`; modelo 3D (bobina e cano com garras), ícone do Hangar, retícula, som (`armasSom.json`), dica de primeiro uso, ficha do Arsenal e o "Testar" do Hangar.
+4. **Testes (46 novos):** `HookSystem.test.ts` (prender, `breakRadius`, cabo dividido, pool, puxar, e cada causa de soltar: tempo, chegou, dash, morte, estouro, parede, sem dano ligado), `harpoon.test.ts` (dados, Armament, `Match.hookShot` com física: parede, alcance, o primeiro à vista, aliado, cliente online, `drawHook`) e `HookVisuals.test.ts` (instâncias, cor, NaN). **13 mutações pegas** (limite do raio, dash, puxar sem dano, intervalo da parede, chegada, estouro, segundo ombro, aliado, cliente online, alcance, mordida, Armament, cor).
+
+**Custo de CPU:** um raycast por aperto (a cada 4 s) e **um raycast a cada 6 ticks por cabo preso** (no máximo 8); um `push` por tick por cabo; no desenho, dois `setMatrixAt` por cabo (uma chamada de desenho). Nenhum `new` por tick/quadro (G4/G5).
+
+**Falta (R13):** (a) **o olho do Comandante** (o puxão e o cabo); (b) o **cabo preso de outro jogador** não é desenhado no online (só o raio do disparo); (c) o **bot não usa o arpão**; (d) drone de ombro, ultrassônico e ombros para Bastion/Colossus (P77).
+
+**Próxima sessão começa com:** o login (P174) e as pendências recentes (bots com o laser; contadores do painel).
+
 ## O SITE VIROU PORTAL DE JOGO: sistema de design, fotos cinematográficas dos Mechs reais e as três páginas no mesmo visual — Claude, 16/10 (branch `claude/landing-referencia`, P172)
 
 **A ordem do Comandante (16/10):** *"quero bem parecido com as imagens de referência"*, depois *"falta acabamento UX e UI, mais estiloso, mais único, sair dos padrões"* + a orientação de um profissional (resumida no `DESIGN_SYSTEM_SITE.md`).

@@ -23,7 +23,8 @@
 // 17 (12/10): a montagem ganha o layout de gatilhos (Ataque 1 e Ataque 2: `L1` é o último grupo da chave v2 do JOIN e do roster, `hangar/loadout.ts`); um servidor da versão 16 não reconheceria a chave e recusaria a montagem.
 // 18 (15/10): o lançador de mísseis leve (`swarm`), o míssil cruzador (`cruise`) e o raio laser (`laser`) entram em `NET_WEAPONS` (um evento de tiro por míssil e por pulso de feixe, 7 bytes cada); o canhão de cerco (`siege`) também, porque o evento dele saía com índice -1 e o leitor da versão 17 recusava o pacote inteiro. Um cliente da versão 17 recusaria o tiro como evento ruim.
 // 19 (16/10): o lança-granadas (`grenade`, P160) entra em `NET_WEAPONS`; o evento de tiro leva a direção até a mira (como o do cruzador) e o cliente refaz o arco. Um cliente da versão 18 recusaria o tiro como evento ruim.
-export const PROTOCOL_VERSION = 19;
+// 20 (17/10): o arpão magnético (`harpoon`, P77) entra em `NET_WEAPONS` (o disparo é um evento de tiro por ombro; o puxão é só do servidor e chega pelo estado dos robôs); um cliente da versão 19 recusaria o tiro como evento ruim.
+export const PROTOCOL_VERSION = 20;
 
 /** Tick fixo da simulação, igual no cliente e no servidor (G1). */
 export const SIM_HZ = 60;

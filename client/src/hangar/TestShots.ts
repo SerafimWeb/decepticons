@@ -4,6 +4,7 @@ import { lobDirection, lobFlightTime, lobPoint } from '../combat/lob';
 import { applySpread, spreadAt, type Spread } from '../combat/spread';
 import type { WeaponStats } from '../combat/weapons';
 import { BeamVisuals } from '../fx/BeamVisuals';
+import { hookRay } from '../fx/HookVisuals';
 import { IMPACT_FX } from '../fx/impactFx';
 import { ParticleSystem } from '../fx/ParticleSystem';
 import { WeaponFx } from '../fx/WeaponFx';
@@ -94,6 +95,12 @@ export class TestShots {
     const dist = _d.length();
     if (dist < 1e-3) return;
     _d.multiplyScalar(1 / dist);
+    if (w.hook) {
+      // O arpão: o raio ciano acende do cano ao alvo, na hora (no teste não há robô para prender: o cabo preso só existe numa partida).
+      hookRay(this.beams, from, to, false);
+      this.fx.fired(from, _d, w, false);
+      return;
+    }
     if (w.beam) {
       // O laser: o feixe acende do cano ao alvo, na hora.
       this.beams.spawn(from, to, false, w.beam.glow);

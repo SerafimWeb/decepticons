@@ -69,6 +69,10 @@ export class NetPilot implements Pilot {
       this.aim(mount);
       this.match.beamPulse(this.mech, _origin, _dir, w);
     },
+    hook: (mount, w) => {
+      this.aim(mount);
+      this.match.hookShot(this.mech, _origin, _dir, w, mount);
+    },
   };
 
   constructor(
