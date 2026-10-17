@@ -166,7 +166,7 @@ p{color:var(--muted)}b{font-weight:700;color:inherit}a{color:inherit;transition:
 /* ---- rodapé ---- */
 .hfoot{display:flex;align-items:center;gap:36px;justify-content:space-between;max-width:1280px;margin:0 auto;padding:40px 40px 52px;border-top:1px solid rgba(255,255,255,.08);color:var(--faint);text-transform:none;letter-spacing:0}
 .hfoot p{margin:0;font:400 14px/1.6 var(--fb);color:var(--faint);max-width:46ch}
-.hfoot>div{display:flex;gap:26px}.hfoot a{text-decoration:none;font:600 14px var(--fh);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.hfoot a:hover{color:var(--amber)}
+.hfoot>div{display:flex;gap:26px}.hfoot>div a{text-decoration:none;font:600 14px var(--fh);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.hfoot>div a:hover{color:var(--amber)}
 .hfoot .hlogo{font-size:20px}.hfoot .logo-mark{width:30px;height:33px}
 /* ---- movimento: revelar ao rolar (só com JS; sem JS tudo aparece) ---- */
 .js .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s var(--ease),transform .7s var(--ease);transition-delay:var(--d,0s)}
