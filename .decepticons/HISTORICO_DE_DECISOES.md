@@ -1,3 +1,13 @@
+## [2026-10-17] Cópia de segurança do banco de contas dentro da pasta do projeto (Claude, P183)
+
+**Pergunta do Comandante:** onde ficam os logins sem Supabase? A resposta honesta incluía um achado: **o `contas.db` era um arquivo só, no PC do servidor, sem nenhuma cópia.**
+
+**Decisões:**
+1. **Cópia diária consistente (`VACUUM INTO`), as últimas 14, na pasta `backups/` ao lado do banco**, feita pelo próprio servidor (ao subir e a cada 6 h). Não depende de tarefa agendada nem de script externo: se o servidor roda, a cópia roda.
+2. **Dentro da pasta do projeto, por G15 (regra do dono):** o projeto não grava fora dela. **Consequência dita em voz alta:** a cópia não protege de o disco morrer; levar `backups/` para fora é decisão e ação do dono (`Copy-Item`), não do código.
+3. **Falha na cópia só registra:** o jogo e as contas não caem por causa de um backup que falhou.
+4. **Nada de Supabase por causa disto:** o SQLite no PC continua sendo a decisão do dono (28/09); a troca de banco (Postgres, se crescer) continua sendo mudar só o `server/contas.ts`.
+
 ## [2026-10-17] Os painéis opcionais do console saem do JS de partida (Claude, R7)
 
 **Problema:** o teto de 500 KB gzip do JS de partida estava em 499,7 KB. Cada PR que somava um módulo (o `‹ valor ›`, o Arquivo, o idioma do Hangar) empurrava o total para o limite e travava o `npm run check`; a saída honesta era emagrecer, não subir o teto (R7 é do protocolo).

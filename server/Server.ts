@@ -14,6 +14,7 @@ import { type EventoEnviado, type EventoServidor, EVENTO_MAX_BYTES, EVENTO_PATH,
 import { sanitizeName, type RejectReason } from '../shared/net/messages';
 import { ArenaRoom, type Peer } from './ArenaRoom';
 import { Contas } from './contas';
+import { fazerBackup } from './backupContas';
 import { clientCountry, clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
 import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
 import { corsDoPedido, origemPermitida, origensExtras } from './origem';
@@ -110,6 +111,8 @@ export async function startServer(
     /** Caminho do banco de contas. Padrão: `contas.db` na pasta de dados (`CYBERMECH_DADOS`, ou `.tmp/servidor/` ao lado do código;
      * gitignored, sobrevive à atualização automática). Testes passam `:memory:`. */
     dbContas?: string;
+    /** De quanto em quanto tempo o banco de contas é copiado para `backups/` (padrão: 6 h). */
+    backupCadaMs?: number;
     /** Régua de tentativas de `/conta/entrar` e `/conta/criar` (padrão: 8 a cada 10 min por IP). Testes
      * que fazem muitas chamadas do mesmo IP alargam para não confundir rate limit com o que estão testando. */
     limiteLogin?: Partial<typeof LIMITE_LOGIN_DEFAULTS>;
@@ -267,6 +270,19 @@ export async function startServer(
   const dbCaminho = opts.dbContas ?? bancoDeContas(pastaDados(codigo));
   if (dbCaminho !== ':memory:') mkdirSync(dirname(dbCaminho), { recursive: true });
   const contas = new Contas(dbCaminho);
+  // A cópia de segurança do banco (`server/backupContas.ts`): uma ao subir e outra a cada poucas horas (a do dia é substituída pela mais nova). Sem pasta de dados (testes em memória), nada em disco.
+  const fazerCopia = (): void => {
+    if (!dirDados || dbCaminho === ':memory:') return;
+    try {
+      const r = fazerBackup(contas, dirDados, new Date());
+      log(`cópia de segurança das contas: ${r.arquivo}${r.apagados.length ? ` (apaguei ${r.apagados.length} antiga${r.apagados.length === 1 ? '' : 's'})` : ''}`);
+    } catch (err) {
+      log(`não consegui fazer a cópia de segurança das contas: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  fazerCopia();
+  const backupTimer = dirDados && dbCaminho !== ':memory:' ? setInterval(fazerCopia, opts.backupCadaMs ?? 6 * 60 * 60 * 1000) : null;
+  backupTimer?.unref();
   /** P106: a sessão de uma conta admin vale onde a chave do dono vale (admin, mural, métricas). Nunca lança. */
   const sessaoDeAdmin = (token: unknown): boolean => {
     if (typeof token !== 'string' || token.length < 8 || token.length > 200) return false;
@@ -805,6 +821,7 @@ export async function startServer(
         amostrador.parar();
         mural?.parar();
         if (salvarTimer) clearInterval(salvarTimer);
+        if (backupTimer) clearInterval(backupTimer);
         gravarDados();
         for (const c of wss.clients) c.terminate();
         wss.close(() => http.close(() => resolve()));

@@ -1,5 +1,24 @@
 # ESTADO ATUAL — CYBERMECH
 
+## ONDE FICAM OS LOGINS, E A CÓPIA DE SEGURANÇA QUE NÃO EXISTIA — Claude, 17/10 (branch `claude/contas-onde`, P183)
+
+**O Comandante (17/10):** *"onde os logins serão salvos se não temos supabase? como está isso? onde estão os arquivos pra eu conferir?"*.
+
+**Resposta (o que existe de verdade):** os logins ficam em **`D:\DECEPTICONS\.tmp\servidor\contas.db`**, um arquivo SQLite no PC do servidor (`node:sqlite`, sem serviço de nuvem, decisão dele de 28/09). Guarda e-mail, o **hash `scrypt`** da senha, o **hash** do token de cada sessão e o progresso (nível, XP, créditos, apelido). O código que lê e escreve é o `server/contas.ts` (o único com SQL); as rotas, `server/Server.ts`; o contrato, `shared/net/auth.ts`. **Hoje há 1 conta** (de teste, criada às 13:12). Está tudo descrito em `DEPLOY.md` (§ "Contas: onde estão, o que guardam e como restaurar").
+
+**Achado (R17): não existia cópia de segurança.** Um arquivo corrompido ou apagado por engano levava as contas de todos os pilotos.
+
+**Feito:**
+1. **`server/backupContas.ts`:** uma cópia **consistente** (`VACUUM INTO`, não pega o banco no meio de uma escrita) por dia em `.tmp\servidor\backups\contas-AAAA-MM-DD.db`, as **últimas 14**; o `Server` a faz ao subir e a cada 6 h (a do dia é substituída pela mais nova). Falha na cópia só registra no log: o jogo não cai.
+2. **Testes (7) e 2 mutações pegas:** o nome é do dia (UTC); a retenção apaga só as mais velhas e **ignora arquivo que não é cópia**; a cópia é um banco de verdade (abre, autentica a senha, traz o progresso); a segunda rodada do dia a substitui; o servidor copia ao subir.
+3. **`DEPLOY.md`:** a tabela de onde está cada coisa, o que o banco guarda, como **restaurar** e como contar as contas sem expor e-mail. Também corrigi o texto velho ("ainda não tem tela"): a tela e a sincronização do progresso estão no ar desde 17/10.
+
+**Custo de CPU:** uma cópia de um arquivo de ~40 KB a cada 6 h.
+
+**Falta (decisão do Comandante, R13):** a cópia fica **no mesmo disco do PC** (a regra G15 impede o projeto de gravar fora da pasta dele): protege de arquivo corrompido ou apagado, **não** de o disco morrer. Levar `backups\` de vez em quando para um pen drive ou para a nuvem pessoal dele é um `Copy-Item` de arquivos pequenos. **O banco guarda e-mails** (dado pessoal, LGPD): vale uma política de privacidade na página quando o cadastro abrir ao público. O servidor de produção só passa a copiar depois de reiniciar com este código (o atualizador reinicia sozinho no merge).
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois o Relatório de Consequências e os ombros dos chassis pesados (P181). **A Amazônia (P180) está com outra sessão: não mexer.**
+
 ## DIETA DE JS: OS PAINÉIS OPCIONAIS DO CONSOLE SAEM DO DOWNLOAD DE PARTIDA — Claude, 17/10 (branch `claude/dieta-js`, R7)
 
 **O problema:** o JS de partida (o que todo jogador baixa para abrir o jogo) estava em **499,7 / 500 KB**: qualquer módulo novo, de qualquer agente, travaria o `npm run check` de todo mundo. Em uma semana eu tinha estourado o teto três vezes (o `‹ valor ›`, o Arquivo, o idioma).

@@ -256,10 +256,29 @@ vazamento do arquivo `contas.db` não dá sessão utilizável a ninguém. 30 dia
 **Rotas** (mesmo processo HTTP do `/status` e do `/evento`): `POST /conta/criar`, `POST /conta/entrar`
 (devolvem `{token, email}`), `POST /conta/sair` e `GET /conta/eu` (cabeçalho `x-cybermech-sessao`). Contrato
 em `shared/net/auth.ts`.
-**Ainda não tem tela.** A API existe e tem `client/src/net/auth.ts` (`ContaCliente`) pronta para consumir; a
-tela de criar conta/entrar é território do Gemini (`client/src/ui/`) — pendência registrada em
-`ESTADO_ATUAL.md`. Progressão do piloto (XP, créditos, missões) continua em `localStorage`; migrar para a
-conta é o próximo corte, não feito agora (decisão do dono: só o esqueleto primeiro).
+**Tela e progresso (17/10, P174):** a tela de criar conta e entrar (`ui/LoginPanel.ts`, `ui/ContaSettings.ts`) e a sincronização do progresso (`POST /conta/progresso`, `net/progressoLocal.ts`: nível, XP, créditos e apelido; vale o maior nível/XP) estão no ar.
+
+#### Contas: onde estão, o que guardam e como restaurar (17/10)
+
+**Não há Supabase nem serviço de nuvem para o jogo** (decisão do dono, 28/09: gratuito, sem serviço novo). As contas moram **num arquivo SQLite no PC do servidor**:
+
+| O quê | Onde |
+|---|---|
+| O banco (contas, sessões, progresso) | `D:\DECEPTICONS\.tmp\servidor\contas.db` (a pasta é a `CYBERMECH_DADOS` da tarefa do Windows) |
+| As cópias de segurança | `D:\DECEPTICONS\.tmp\servidor\backups\contas-AAAA-MM-DD.db` (uma por dia, as últimas 14; feitas pelo servidor ao subir e a cada 6 h, `server/backupContas.ts`) |
+| O código que lê e escreve | `server/contas.ts` (o único lugar com SQL), as rotas em `server/Server.ts`, o contrato em `shared/net/auth.ts` |
+| O que o jogador guarda no aparelho | só o **token da sessão** (`localStorage`, chave por servidor); o progresso local é copiado para a conta e vice-versa |
+
+**O que o banco guarda:** e-mail, **hash `scrypt` da senha** (nunca a senha), o **hash** do token de cada sessão (nunca o token) e o JSON do progresso. Um vazamento do arquivo não dá senha nem sessão a ninguém, mas **traz os e-mails** (dado pessoal: LGPD).
+
+**O que protege e o que NÃO protege (R13):** a cópia diária protege de arquivo **corrompido ou apagado por engano** e de uma atualização que quebre o banco. **Não protege de o disco do PC morrer ou de o PC ser perdido:** a regra G15 (nada fora da pasta do projeto) mantém as cópias no mesmo disco. **Decisão do dono, em aberto:** levar a pasta `backups\` para outro lugar de tempos em tempos (um pen drive, ou a nuvem pessoal dele): é um `Copy-Item` de arquivos de ~40 KB.
+
+**Restaurar** (o servidor precisa estar parado: o `scripts\parar-servidor.ps1` da pasta de dados, ou a tarefa do Windows parada):
+1. `Copy-Item D:\DECEPTICONS\.tmp\servidor\backups\contas-AAAA-MM-DD.db D:\DECEPTICONS\.tmp\servidor\contas.db -Force`
+2. Subir o servidor de novo; o `servidor.log` diz `cópia de segurança das contas: …` quando ele faz a primeira cópia nova.
+3. Conferir com um login (a sessão de quem já estava logado continua valendo se ela existia na cópia).
+
+**Conferir quantas contas existem sem expor e-mail:** `node --no-warnings -e "const {DatabaseSync}=require('node:sqlite');const d=new DatabaseSync('D:/DECEPTICONS/.tmp/servidor/contas.db',{readOnly:true});console.log(d.prepare('SELECT COUNT(*) n FROM contas').get())"` (em 17/10 havia **1 conta**, criada às 13:12, de teste).
 
 ### Servidor no mesmo domínio (proteção entre os dois projetos)
 

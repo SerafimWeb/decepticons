@@ -76,6 +76,11 @@ export class Contas {
     this.db.close();
   }
 
+  /** Uma cópia consistente do banco inteiro em `caminho` (que não pode existir): o `VACUUM INTO` do SQLite não pega o banco no meio de uma escrita (`server/backupContas.ts`). */
+  copiarPara(caminho: string): void {
+    this.db.exec(`VACUUM INTO '${caminho.replace(/'/g, "''")}'`);
+  }
+
   /** Cria a conta. `'existe'` se o e-mail já está cadastrado (mensagem que a UI pode mostrar direto —
    * diferente da mensagem de login, que nunca diz se o e-mail existe). */
   async criar(email: string, senha: string): Promise<{ ok: true; conta: Conta } | { ok: false; motivo: 'existe' }> {
