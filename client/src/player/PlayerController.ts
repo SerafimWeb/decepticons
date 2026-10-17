@@ -46,6 +46,8 @@ export class PlayerController {
   melee?: (w: WeaponStats) => void;
   /** Uma onda sônica saiu: a partida aplica o cone com empurrão e desenha (`Match.waveCone`). */
   wave?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
+  /** Um arpão saiu: a partida prende o inimigo à vista e o puxa (`Match.hookShot`). */
+  hook?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3, mount: MountId) => void;
   /** O lança-chamas pulsou: a partida aplica o cone de dano a partir de `origin` na direção `dir` (`Match.flameCone`). */
   flame?: (w: WeaponStats, origin: THREE.Vector3, dir: THREE.Vector3) => void;
   /** O raio laser pulsou: a partida acerta o feixe de `origin` na direção `dir` e o desenha (`Match.beamPulse`). */
@@ -71,6 +73,8 @@ export class PlayerController {
   private beamShots = 0;
   /** A onda sônica deste aperto já fez o som e o tranco (as duas bocas dos ombros saem no mesmo tick). */
   private waveHeard = false;
+  /** O arpão deste aperto já fez o som e o tranco (os dois ombros saem no mesmo tick). */
+  private hookHeard = false;
   private readonly armament: Armament;
   private readonly cmd: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
   private readonly sink: ShotSink = {
@@ -79,6 +83,7 @@ export class PlayerController {
     melee: (w) => this.melee?.(w),
     flame: (mount, w) => this.flameFrom(mount, w),
     wave: (mount, w) => this.waveFrom(mount, w),
+    hook: (mount, w) => this.hookFrom(mount, w),
     beam: (mount, w) => this.beamFrom(mount, w),
   };
 
@@ -170,6 +175,7 @@ export class PlayerController {
     const wantsRocket = this.input.mouseDown2 || this.input.isDown(k.secondary) || this.input.virtualRocket;
     this.secondaryHeld = a && wantsRocket;
     this.waveHeard = false;
+    this.hookHeard = false;
     this.armament.fixedUpdate(dt, this.firing, this.secondaryHeld, this.sink);
   }
 
@@ -203,6 +209,17 @@ export class PlayerController {
     this.wave?.(w, _muzzle, _dir);
     if (this.waveHeard) return;
     this.waveHeard = true;
+    this.onShot?.(w);
+    this.onKick?.(fireKick(w));
+  }
+
+  /** Um arpão de `mount`: sai da boca do ombro e vai até a mira; a partida prende e puxa. O som e o tranco saem **uma vez por aperto** (os dois ombros juntos pesam como um estalo só). */
+  private hookFrom(mount: MountId, w: WeaponStats): void {
+    this.mech.mountWorldPosition(mount, _muzzle);
+    this.aimFrom(_muzzle);
+    this.hook?.(w, _muzzle, _dir, mount);
+    if (this.hookHeard) return;
+    this.hookHeard = true;
     this.onShot?.(w);
     this.onKick?.(fireKick(w));
   }

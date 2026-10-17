@@ -39,7 +39,7 @@ export const TIERS: readonly TierRule[] = [
 
 import type { StatusInflict } from './StatusEffects';
 
-export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker' | 'siege' | 'swarm' | 'cruise' | 'laser' | 'grenade';
+export type WeaponId = 'plasma' | 'rockets' | 'blaster' | 'shotgun' | 'chainsaw' | 'barrage' | 'railgun' | 'emp' | 'rotary' | 'arc' | 'cryo' | 'flamer' | 'cannon' | 'autocannon' | 'sonic' | 'seeker' | 'siege' | 'swarm' | 'cruise' | 'laser' | 'grenade' | 'harpoon';
 
 /**
  * Lançador de mísseis leve (P152: "que solte 8, 16 ou até 32 mísseis sequencialmente"): **um aperto esvazia o lançador**. Os mísseis saem um a um, a `fireInterval` de
@@ -134,6 +134,22 @@ export interface Pellets {
   cone: number;
 }
 
+/**
+ * Arpão magnético (dono, 11/10: "VARIAR as armas e tecnologias" nos ombros): um **tiro de varredura** (sem projétil: um raio até `maxRange`) que prende o primeiro inimigo à vista e o **puxa**
+ * para o atirador a `pullSpeed` m/s por até `hold` s (`combat/HookSystem.ts`). O cabo solta quando o alvo chega a `arrive` m de distância, quando ele usa o dash, quando
+ * uma parede entra no meio ou o tempo acaba, e **nunca prende** um robô de raio maior que `breakRadius` (o Colossus arrebenta o cabo).
+ */
+export interface HookSpec {
+  /** A velocidade do puxão (m/s) sobre um alvo que não resiste; o robô maior resiste (`MechBase.push`: 1,3 m ÷ raio). */
+  pullSpeed: number;
+  /** Quanto o cabo segura (s). */
+  hold: number;
+  /** A que distância do atirador (de superfície a superfície, m) o cabo solta: já chegou. */
+  arrive: number;
+  /** O robô de raio maior que isto arrebenta o cabo na hora (m). */
+  breakRadius: number;
+}
+
 /** Arma pronta para o combate, já no nível escolhido. Tudo em unidades do jogo (m, s, t). */
 /**
  * Metralhadora rotatória: o cano gira, e a cadência **sobe segurando o gatilho** (de `minRate` × a cadência máxima, parada, até a cadência
@@ -226,6 +242,8 @@ export interface WeaponStats {
   beam?: Beam;
   /** Só no lança-granadas: o arco com gravidade e o quique (`Lob`). */
   lob?: Lob;
+  /** Só no arpão magnético: o cabo que prende e puxa (`HookSpec`). */
+  hook?: HookSpec;
   /** Só na escopeta: o tiro sai em balins (`Pellets`); `damage` é o de cada balin. */
   pellets?: Pellets;
   /**
@@ -634,6 +652,19 @@ const BASE: Record<WeaponId, WeaponBase> = {
     blastRadius: 5, mass: 3.5,
     lob: { gravity: 22, bounce: 0.25, friction: 0.15, wallBounce: 0.55, fuse: 0.35 },
   },
+  /**
+   * Arpão magnético (dono, 11/10; revivido em 16/10, P77/P160): o terceiro tipo de arma de ombro que não é só mais dano. **Prende e puxa**: um tiro de varredura de até 45 m (30% a mais no MK III, 58,5 m: a faixa curta, como pede `calibragem.test.ts`)
+   * que morde (10 de dano) e arrasta o inimigo a 9 m/s por até 1,6 s, até ele chegar a 3 m. O dash corta o cabo, uma parede também, e o Colossus o arrebenta; os dois ombros prendem o mesmo alvo
+   * com um cabo só. Um aperto a cada 4 s: é o que **junta** o inimigo para a onda sônica, o anel de fogo, as granadas e os foguetes, não o que mata.
+   */
+  harpoon: {
+    id: 'harpoon', name: 'Arpão magnético', kind: 'energy',
+    damage: 10, fireInterval: 4, heatPerShot: 0.15,
+    magazine: 0, reload: 0, speed: 0,
+    optimalRange: 35, maxRange: 45, minFactor: 1,
+    blastRadius: 0, mass: 3,
+    hook: { pullSpeed: 9, hold: 1.6, arrive: 3, breakRadius: 2.4 }, tierRange: 0.15,
+  },
 };
 
 /** Arredonda para o múltiplo de `step` mais perto, sem o ruído de ponto flutuante (0,026 e não 0,026000000000000002): os números da arma se comparam e se mostram limpos. */
@@ -687,6 +718,7 @@ export const DAMAGE_TYPE: Readonly<Record<WeaponId, DamageType>> = {
   cruise: 'explosivo',
   laser: 'laser',
   grenade: 'explosivo',
+  harpoon: 'balistico',
   chainsaw: 'corte',
 };
 

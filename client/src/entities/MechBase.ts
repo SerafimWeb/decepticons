@@ -23,7 +23,8 @@ const DEFAULT_GAIT = { hip: 0.7, knee: 1.1 };
 const CONTROLLER_OFFSET = 0.05;
 const HARD_LANDING_SPEED = 14;
 /** Empurrão (`MechBase.push`): quanto da velocidade externa sobra por segundo (e^-3,5: meio segundo depois resta ~17%), e o teto da velocidade somada (m/s). */
-const SHOVE_DECAY = 3.5;
+/** A taxa (1/s) com que o empurrão decai: quem quer manter uma velocidade de puxão soma velocidade × taxa × dt por tick (`combat/HookSystem.ts`). */
+export const SHOVE_DECAY = 3.5;
 const SHOVE_MAX = 12;
 const MAX_CLIMB_ANGLE = (50 * Math.PI) / 180;
 /** Normal com y abaixo disso é parede ou teto (mais íngreme que a rampa máxima). */

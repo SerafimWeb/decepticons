@@ -98,6 +98,7 @@ export const IMPACT_FX: Readonly<Record<WeaponId, readonly BurstOptions[]>> = {
   swarm: [],
   cruise: [],
   grenade: [], // a granada explode (a explosão é a dela)
+  harpoon: [], // o arpão não tem impacto de partículas: o cabo prende (`fx/HookVisuals.ts`)
   barrage: [],
   chainsaw: [],
   flamer: [],
