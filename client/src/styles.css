@@ -4421,7 +4421,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .praia-quadro[data-estado='apagado'] { color: var(--alert); }
 .praia-quadro[data-estado='apagado'] .pc-barra { border-color: rgba(255, 45, 61, 0.7); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
 /* A barra do chefe (P165, ui/PraiaHud.ts): o Colossus em campo. O título leva a fase; a barra é o tronco; as duas pernas acendem e apagam; a regra da fase vai numa linha. */
-.praia-aldeia { position: absolute; top: 168px; left: 50%; transform: translateX(-50%); width: min(560px, 58vw); display: flex; flex-direction: column; gap: 2px; font-size: 9px; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 6px #000; }
+.praia-aldeia { margin-top: 3px; display: flex; flex-direction: column; gap: 2px; font-size: 9px; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 6px #000; }
 .praia-aldeia[hidden] { display: none; }
 .praia-aldeia span { opacity: 0.9; }
 .praia-aldeia[data-estado='ataque'] { color: var(--warn); }
@@ -4434,14 +4434,29 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .praia-chefe b { color: var(--ink); text-align: center; font-size: 11px; letter-spacing: 3px; }
 .pcf-barra { height: 8px; border: 1px solid rgba(255, 45, 61, 0.7); background: rgba(20, 5, 8, 0.78); }
 .pcf-barra i { display: block; height: 100%; background: var(--alert); transform-origin: left; box-shadow: 0 0 10px var(--alert); transition: transform 0.2s; }
-.pcf-escudo { margin: 0; text-align: center; font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px #000; }
-.pcf-escudo[hidden] { display: none; }
-.pcf-escudo[data-estado='caido'] { color: var(--warn); }
 .pcf-torres { margin: 0; text-align: center; font-size: 10px; letter-spacing: 3px; color: var(--warn); text-shadow: 0 0 6px #000; }
 .pcf-torres[hidden] { display: none; }
 .pcf-torres[data-estado='caido'] { color: var(--cyan); }
 .pcf-invasao { margin: 0; text-align: center; font-size: 10px; letter-spacing: 3px; color: var(--accent); text-shadow: 0 0 6px #000; }
 .pcf-invasao[hidden] { display: none; }
+
+/* O objetivo na tela (TERRAS RARAS, ui via environment/AmazoniaObjetivos.ts): a ordem fica na linha da missão (#mission-status); aqui a dica logo abaixo e os marcadores no mundo
+   (losango com nome e distância; fora da tela, preso na borda com uma seta). Verde = gerador (o mais perto, maior e pulsando), vermelho = o Draga, ciano = a escotilha. */
+.obj-dica { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 3; margin: 0; max-width: min(600px, 86vw); padding: 5px 14px; text-align: center; font-size: 12px; line-height: 1.35; letter-spacing: 1px; color: var(--ink); background: rgba(6, 8, 10, 0.78); border: 1px solid rgba(255, 225, 77, 0.55); border-left-width: 4px; text-shadow: 0 0 6px #000; pointer-events: none; }
+.obj-dica[hidden] { display: none; }
+.obj-marca { position: absolute; left: 0; top: 0; z-index: 2; width: 120px; margin: -11px 0 0 -60px; display: flex; flex-direction: column; align-items: center; gap: 4px; pointer-events: none; will-change: transform; color: var(--accent); }
+.obj-marca[hidden] { display: none; }
+.obj-marca::before { content: ''; display: block; width: 14px; height: 14px; transform: rotate(45deg); border: 2px solid currentColor; background: rgba(0, 0, 0, 0.35); box-shadow: 0 0 10px currentColor; }
+.obj-marca.principal::before { width: 20px; height: 20px; margin: 3px 0; background: rgba(57, 255, 106, 0.28); animation: obj-pulso 0.8s ease-in-out infinite alternate; }
+.obj-rotulo { font-size: 11px; letter-spacing: 1.5px; white-space: nowrap; color: currentColor; text-shadow: 0 1px 2px #000, 0 0 6px #000; }
+.obj-draga { color: var(--alert); }
+.obj-gerador:not(.principal) .obj-rotulo, .obj-draga:not(.principal) .obj-rotulo { display: none; } /* só o objetivo da hora leva nome e distância: os outros são só o losango (sem poluir a tela) */
+.obj-escotilha { color: var(--cyan); }
+.obj-marca.borda { opacity: 0.9; }
+.obj-seta { display: none; position: absolute; left: 50%; top: 11px; width: 0; height: 0; margin: -7px 0 0 18px; border-left: 12px solid currentColor; border-top: 7px solid transparent; border-bottom: 7px solid transparent; transform-origin: -18px 7px; filter: drop-shadow(0 0 4px #000); }
+.obj-marca.borda .obj-seta { display: block; }
+@keyframes obj-pulso { from { opacity: 0.55; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .obj-marca.principal::before { animation: none; } }
 .pcf-pernas { display: flex; gap: 8px; justify-content: center; font-size: 9px; }
 .pcf-pernas span { padding: 1px 8px; border: 1px solid rgba(255, 255, 255, 0.55); color: var(--ink); }
 .pcf-pernas span.caida { border-color: rgba(255, 45, 61, 0.8); color: var(--alert); text-decoration: line-through; opacity: 0.8; }
@@ -4452,7 +4467,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .praia-hud--missao .praia-cartao, .praia-hud--missao .praia-vinheta, .praia-hud--missao .praia-agua, .praia-hud--missao .praia-alvo { display: none; }
 .praia-hud--missao .praia-quadro { top: 64px; }
 .praia-hud--missao .praia-chefe { top: 94px; }
-.praia-hud--missao .praia-zona { top: 176px; }
+.praia-hud--missao .praia-zona { top: 228px; }
 .praia-zona.alerta { color: var(--alert); text-shadow: 0 0 10px rgba(0, 0, 0, 0.9), 0 0 16px rgba(255, 45, 61, 0.7); }
 .praia-zona.alerta::before { color: var(--alert); }
 .praia-alvo[data-estado='ataque'] i { border-color: var(--warn); background: rgba(255, 225, 77, 0.25); box-shadow: 0 0 12px var(--warn); animation: praia-pulso 0.7s ease-in-out infinite alternate; }

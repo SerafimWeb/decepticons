@@ -340,8 +340,8 @@ describe('a cobertura das telas avançadas (auditoria de 17/10: o Hangar falava 
 
   it('a missão do rio na Amazônia: o escudo e os geradores, a aldeia, os dois lados e a barra do Draga', () => {
     const casos = [
-      'TORRES DA MARGEM ARMADAS', 'TORRES DA MARGEM SEM ENERGIA', 'ESCOTILHA ABERTA · OS ANDRÓIDES ENTRAM', 'INVASÃO · CARGA 45% · 2 DE 3 DENTRO', 'ESCUDO · 3 DE 3 GERADORES', 'ESCUDO · 1 DE 3 GERADORES', 'ESCUDO CAIU', 'O escudo o protege: derrube os geradores.', 'ESCUDO DO DRAGA CAIU', 'GERADOR CAIU · RESTAM 2', 'RIO VIVO · DERRUBE OS GERADORES',
-      'RIO VIVO · DERRUBE O DRAGA-01', 'ALDEIA · DRAGA A 760 m · 5 MIN', 'ALDEIA · DRAGA A 1.200 m · PARADO', 'LADO ESQ', 'LADO DIR', 'DRAGA-01 · FASE 1 DE 3 · ANDA', 'DRAGA-01 · FASE 3 DE 3 · RASTEJA',
+      'TORRES DA MARGEM ARMADAS', 'TORRES DA MARGEM SEM ENERGIA', 'ESCOTILHA ABERTA · OS ANDRÓIDES ENTRAM', 'INVASÃO · CARGA 45% · 2 DE 3 DENTRO', 'ESCUDO DO DRAGA CAIU', 'GERADOR CAIU · RESTAM 2', 
+      'DERRUBE OS GERADORES · 1 DE 3', 'DERRUBE O DRAGA-01', 'Siga o marcador: CERCA, a 320 m.', 'Siga os marcadores verdes.', 'Derrube o Draga a tiro.', 'A Resistência corre até a escotilha. Escolte-a ou derrube o Draga a tiro.', 'A Resistência planta a carga: 45%. Proteja-a ou derrube o Draga a tiro.', 'CERCA · 320 m', 'PLANTA · 90 m', 'CAVA · 560 m', 'ESCOTILHA · 40 m', 'AMAZÔNIA · TERRAS RARAS', 'ALDEIA · DRAGA A 760 m · 5 MIN', 'ALDEIA · DRAGA A 1.200 m · PARADO', 'LADO ESQ', 'LADO DIR', 'DRAGA-01 · FASE 1 DE 3 · ANDA', 'DRAGA-01 · FASE 3 DE 3 · RASTEJA',
       'Ele marcha para a aldeia. Derrube as pernas.', 'Um lado caiu: ele manca. Derrube o outro.', 'Rasteja e atira. Acabe com ele antes que chegue à aldeia.',
       'O DRAGA ESTÁ ÀS PORTAS DA ALDEIA', 'O DRAGA ESTÁ A 500 m DA ALDEIA', 'O RIO VIVE · DRAGA-01 DERRUBADO', 'A ALDEIA CAIU · O DRAGA-01 CHEGOU', 'O DRAGA-01 CAIU ANTES DE CHEGAR À ALDEIA', 'O DRAGA-01 ALCANÇOU A ALDEIA',
     ];

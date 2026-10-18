@@ -1,3 +1,16 @@
+## [2026-10-18] O MSAA do composer sai (FXAA no lugar), o jogador nasce perto e a ordem vai para a tela (Claude, P187 a P190)
+
+**Ordem:** *"ficou meio travado, pesado… temos sempre que corrigir e melhorar o DESEMPENHO"*; *"mais de um minuto pra chegar correndo lá"*; *"melhorar a descrição dos objetivos da missão na própria tela"*; *"mude o nome do rio vivo pra terras raras"*.
+
+**Decisões:**
+1. **Medir antes de cortar.** A suspeita do Comandante (muitas árvores, mapa grande) estava errada: o cenário todo escondido ganhava ~2 ms. **A bancada na GPU real achou o MSAA 4× do alvo HDR**: ~17 dos 27 ms, em todos os mapas. Tirei o MSAA e pus um **FXAA** depois do tone mapping. A diferença visual é pequena (conferida em recortes lado a lado); o ganho é de 2,3 a 2,8×. **O requisito de GPU integrada (G12) passa a valer na Alta também**, não só na Automática.
+2. **A qualidade automática ganhou um 3º degrau (0,75×)** em vez de mudar o limiar: o limiar de 50 fps estava certo, faltava degrau para a GPU mais fraca.
+3. **O mapa continua grande; o jogador é que nasce perto.** Encurtar o mapa mexeria no terreno, na floresta, nos geradores e nas torres, e a aldeia perderia o sentido de "lá longe". O **posto avançado** resolve a corrida de 100 s para ~40 s sem tocar no cenário, e a missão fica coerente: a Resistência está na linha de frente e o Draga marcha para a aldeia atrás dela.
+4. **A ordem vem até o jogador, em vez de ele ir até o texto:** ordem curta no topo, uma dica, **marcadores no mundo com distância e seta na borda**. O texto de um quadro de ajuda ninguém lê; o losango verde com "CERCA · 320 m" todo mundo segue.
+5. **A barra do chefe parou de repetir a ordem** (a linha de regra e a de escudo saíram com o escudo de pé; a aldeia entrou na barra). Princípio "nada repetido" da `AUDITORIA_INTERFACE.md`.
+6. **Dieta de JS pelo leitor de `.glb`** (13 KB): é o maior peso que só quem abre um robô usa, e a troca é uma linha (import dinâmico), sem mudar comportamento.
+7. **Renomear a fase é só texto do jogador:** os nomes internos (`rio`, `MissaoDoRio`, `amazonia`) ficam, para não quebrar o histórico.
+
 ## [2026-10-18] O Relatório de Consequências: opcional, com fonte aberta, e a ficha corrigida pela leitura (Claude, P179 camada 3)
 
 **Ordem:** *"o fim da missão mostra o que aconteceu com o rio, com os povos, com a água, com números lidos de ficha"* (camada 3 do P179) e a pendência da ficha: ler a fonte primária antes de virar texto.

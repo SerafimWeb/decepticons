@@ -4,7 +4,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS } from '../core/Settings';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import { Vector09 } from '../entities/Vector09';
-import { AMAZONIA_RESISTENCIA } from '../environment/AmazoniaLayout';
+import { AMAZONIA_POSTO_AVANCADO, AMAZONIA_RESISTENCIA } from '../environment/AmazoniaLayout';
 import { alturaDoTerreno } from '../environment/AmazoniaTerreno';
 import { carregarChefeSeFor, carregarMapaSeFor } from '../environment/mapasSobDemanda';
 import type { ParticleSystem } from '../fx/ParticleSystem';
@@ -158,9 +158,10 @@ describe('a invasão do Draga-01 com os andróides da Resistência (P180, parte 
     expect(disparos.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('o jogador que morre renasce na aldeia (com a Resistência na partida, o "ponto mais longe dos vivos" o mandaria para o outro lado do mapa)', async () => {
+  it('o jogador que morre renasce no posto avançado (com a Resistência na partida, o "ponto mais longe dos vivos" o mandaria para o outro lado do mapa)', async () => {
     const { match, player, run } = await partida();
     run(1);
+    expect(Math.hypot(player.simPosition.x - AMAZONIA_POSTO_AVANCADO.x, player.simPosition.z - AMAZONIA_POSTO_AVANCADO.z), 'a missão começa no posto').toBeLessThan(3);
     player.damagePart('torso', 1e6);
     expect(player.alive).toBe(false);
     run(20);

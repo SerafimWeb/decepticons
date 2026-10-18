@@ -59,7 +59,7 @@ describe('sanear: o que vale e o que é cortado', () => {
     expect(sanearEtapa(etapa({ mapa: 'amazonia', modo: 'deathmatch' }))).not.toBeNull();
     expect(MAPAS).toContain('amazonia');
     expect(MODOS_DO_MAPA.amazonia).toEqual(['deathmatch', 'survival']);
-    expect(MAPA_NOME.amazonia).toBe('AMAZÔNIA · RIO VIVO');
+    expect(MAPA_NOME.amazonia).toBe('AMAZÔNIA · TERRAS RARAS');
     expect(sanearEtapa({ mapa: 'lua', modo: 'survival', esquadrao: esquadraoPadrao() })).toBeNull();
     expect(sanearEtapa({ mapa: 'arena', modo: 'xadrez', esquadrao: esquadraoPadrao() })).toBeNull();
     expect(sanearEtapa(null)).toBeNull();

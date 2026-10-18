@@ -46,7 +46,7 @@ export const TEATROS: readonly Teatro[] = [
     modos: ['deathmatch', 'survival'], resumo: 'A orla de Fortaleza em 640 m: o porto, a Ponte Metálica e a estação onde os cabos do Atlântico Sul chegam. Defenda-a.', proposta: false, lado: 'direita',
   },
   {
-    id: 'rio', nome: 'RIO VIVO', lugar: 'Afluente do Amazonas · PA', lat: -3.5, lon: -53.0, recurso: 'agua', mapa: 'amazonia',
+    id: 'rio', nome: 'TERRAS RARAS', lugar: 'Afluente do Amazonas · PA', lat: -3.5, lon: -53.0, recurso: 'agua', mapa: 'amazonia',
     modos: ['deathmatch', 'survival'], resumo: 'O rio, a floresta e a mina que o envenena, em 2,4 km: o Draga-01 desce o leito rumo à aldeia. Derrube-o antes que ele chegue: acima dele a água é limpa e viva; depois dele, óleo e veneno.', proposta: true, lado: 'esquerda',
   },
   {

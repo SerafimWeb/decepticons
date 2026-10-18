@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { AxisCorrectedJoint } from './importedMechRig';
 import { advancePhase, LEG_IDS, newWalkerPose, WALKER_SCALE, walkerPose, type LegId, type WalkerPose } from './walkerGait';
@@ -28,6 +27,7 @@ export interface WalkerAsset {
 
 /** Lê o `.glb` já em memória (o teste e o `loadWalkerAsset` passam por aqui). Falha com mensagem clara se faltar um osso. */
 export async function parseWalkerGlb(data: ArrayBuffer): Promise<WalkerAsset> {
+  const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js'); // sob demanda (dieta de JS)
   const gltf = await new GLTFLoader().parseAsync(data, '');
   const scene = gltf.scene;
   const bones = new Set<string>();

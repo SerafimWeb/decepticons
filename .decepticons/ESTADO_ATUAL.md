@@ -1,5 +1,34 @@
 # ESTADO ATUAL — CYBERMECH
 
+## TERRAS RARAS: O JOGO FICOU 2,5× MAIS RÁPIDO, A MISSÃO COMEÇA PERTO E O OBJETIVO ESTÁ NA TELA — Claude, 18/10 (branch `claude/terras-raras`, P187 a P190)
+
+**O Comandante (18/10), depois de jogar:** *"ficou meio travado, pesado… será que há muitos elementos na fase? […] demorou mais de um minuto pra eu chegar correndo lá […] temos que melhorar a descrição dos objetivos da missão na própria tela […] temos sempre que corrigir e melhorar o DESEMPENHO"* e *"mude o nome do rio vivo pra terras raras"*.
+
+**1. O que travava (medido, não suposto).** Criei a bancada na GPU de verdade (`medicoes/amazonia-gpu.mjs`, AMD Vega 11, **a janela dele: 1549×925 a 1,25× = 1936×1156 pixels**), mediu-se cada coisa por vez:
+- **Cenário não era o culpado:** com as árvores, o terreno, a água, o céu e as estruturas **todos escondidos**, o quadro só ganhava ~2 ms (de 14 a 12). 6.594 árvores, 2,4 km de mapa e 221 mil triângulos cabem folgados.
+- **O culpado: o MSAA 4× do alvo HDR do composer** (`Game.ts`): **~17 dos 27 ms de cada quadro**. O bloom, o cobertor de ondas e o tone mapping desenham tela cheia *dentro* do alvo multiamostrado e cada um paga a resolução das amostras. **Valia para todos os mapas:** a Arena também dava 22 fps na qualidade Alta.
+- **A troca:** o alvo HDR sem MSAA e um **FXAA** de uma passada depois do tone mapping (`fx/Fxaa.ts`). **Visualmente equivalente** (comparei recortes lado a lado). Custo do FXAA: ~1,5 ms.
+- **Resultado (a janela dele, qualidade Alta):** **Amazônia 27 → 66 fps** (o render do quadro, de 24-27 ms para 10,5 ms), **Arena 22 → 61 fps**, **Praia 25 → 47 fps**. Na qualidade Automática (a padrão) o jogo se estabilizava em 35 a 63 fps com engasgos de 64 ms (p95); agora a Alta já segura 60+.
+- **Mais um degrau na qualidade automática** (`core/Quality.ts`): depois de 1,0× e de desligar o bloom, **0,75×** (para GPU integrada mais fraca que a dele).
+
+**2. O mapa é grande demais para uma missão de poucos minutos: o posto avançado.** O jogador nascia na aldeia (x = -960) e o primeiro gerador ficava a 920 m: **100 s de corrida**. Agora ele nasce e renasce num **posto avançado** (`AMAZONIA_POSTO_AVANCADO`, x = -300, na margem sul): **360 m da cerca = ~40 s**, fora do alcance das torres (a mais perto fica a 205 m, elas atiram a 170); a **Resistência** nasce junto. A aldeia segue sendo o que o Draga ameaça (a barra da aldeia continua). O Deathmatch da Amazônia mantém os pontos de sempre. Teste: o posto está em terra firme, fora do alcance das torres e a menos de 450 m da cerca.
+
+**3. O objetivo na tela** (`environment/AmazoniaObjetivos.ts`, no pedaço sob demanda da Amazônia): **uma ordem no topo** (`DERRUBE OS GERADORES · 1 DE 3`, depois `DERRUBE O DRAGA-01`), **uma dica** logo abaixo (`Siga o marcador: CERCA, a 320 m.` / `A Resistência planta a carga: 45%. Proteja-a ou derrube o Draga a tiro.`) e **marcadores no mundo**: um losango sobre cada gerador (o mais perto, maior e pulsando, com nome e distância; os outros só o losango), sobre o Draga e sobre a escotilha aberta; **fora da tela o marcador gruda na borda com uma seta** apontando para onde ir, e aparece **por cima da mata**. A barra do Draga **parou de repetir a ordem** (a linha de regra e a de escudo saíram com o escudo de pé: "nada repetido") e **a célula da aldeia entrou na barra** (com as linhas novas das torres e da invasão ela ficava por cima delas: bug meu de 18/10, achado na captura).
+
+**4. Renomeado: TERRAS RARAS** (seletor, teatro, campanha, Relatório e as seis línguas).
+
+**5. Dieta de JS** (ver `ORDENS_DO_COMANDO.md` P187–P191): o leitor de `.glb` (13 KB gzip) agora só baixa quando o primeiro robô é pedido. **Pacote de partida: 486,2 de 500 KB** (estava em 498,1).
+
+**Provas:** o teste do posto (terra firme, fora das torres, < 450 m), 10 do objetivo (a ordem e a dica em cada passo, os metros, os marcadores: rótulo, destaque, gerador caído some, borda e seta, a missão parada esconde tudo), os da barra do chefe reescritos, a cobertura de idioma, e a medição na GPU salva em `medicoes/amazonia-gpu-2026-10-18.json`. Capturas do jogo de verdade na GPU: `arte/terras-raras-objetivo-claude.png`, `terras-raras-escotilha-claude.png`.
+
+**Custo de CPU:** zero a mais no tick; no quadro, até cinco projeções de marcador (texto a 4 Hz).
+
+**Onde o Comandante confere:** `…/jogar/?mapa=amazonia&modo=survival`: o jogo deve estar **fluido na Alta e na Automática**; você nasce no posto (a cerca está logo ali), a ordem e o losango verde com a distância mostram o caminho.
+
+**Falta (R13):** **o objetivo na tela só existe em TERRAS RARAS** (a praia, a Cidade Neon, a Bandeira e o Domínio ainda têm só o texto de antes: P190 fica 🟡); **a Praia ainda roda a 47 fps** na janela dele (125 mil triângulos e os shaders dela: há o que ganhar); o painel de visibilidade (P191) é o PR seguinte; o FXAA suaviza um pouco as bordas (mais que o MSAA), **o Comandante julga a olho**; a bancada mede quadros, não o toque da mão: se ainda sentir peso, diga em que ponto do mapa.
+
+**Próxima sessão começa com:** o painel de visibilidade (P191); depois o objetivo na tela dos outros modos e a Praia.
+
 ## AMAZÔNIA, PARTE F1: O RELATÓRIO DE CONSEQUÊNCIAS, E OS FATOS CONFERIDOS NA FONTE — Claude, 18/10 (branch `claude/amazonia-consequencias`, P179 camada 3 e P180)
 
 **O Comandante (17/10):** o Relatório de Consequências era a camada 3 do P179 (*"o fim da missão mostra o que aconteceu com o rio, com os povos, com a água, com números lidos de ficha"*) e a ficha de fatos da P180 pedia "ler a fonte primária antes de virar texto".

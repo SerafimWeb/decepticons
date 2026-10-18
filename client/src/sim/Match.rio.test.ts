@@ -57,7 +57,7 @@ describe('a missão do rio no Match (P180, parte C): o Draga-01 contra a aldeia'
     expect(dm.match.bots.chefe).toBeNull();
   });
 
-  it('o Draga nasce no leito, na largada, de pé e inteiro, e o jogador nasce na aldeia, a mais de 1.600 m dele', async () => {
+  it('o Draga nasce no leito, na largada, de pé e inteiro, e o jogador nasce no posto avançado, a quase 1.000 m dele (fora do alcance do canhão de 320 m)', async () => {
     const { match, player, run } = await partidaDoRio();
     run(2);
     const d = match.bots.chefe!;
@@ -65,7 +65,7 @@ describe('a missão do rio no Match (P180, parte C): o Draga-01 contra a aldeia'
     expect(Math.abs(d.simPosition.z - rioEmX(d.simPosition.x))).toBeLessThan(15);
     expect(d.modules.torso).toBe(d.stats.maxModuleHealth.torso);
     expect(Math.abs(d.simPosition.y - alturaDoTerreno(d.simPosition.x, d.simPosition.z))).toBeLessThan(2);
-    expect(d.simPosition.x - player.simPosition.x).toBeGreaterThan(1600);
+    expect(d.simPosition.x - player.simPosition.x).toBeGreaterThan(900);
   });
 
   it('o Draga marcha para o oeste (rio acima): em 20 s anda ~45 m, a missão segue em marcha e o relógio corre', async () => {

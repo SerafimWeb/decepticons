@@ -289,26 +289,32 @@ describe('o escudo do Draga-01 na barra do chefe (P180, parte D)', () => {
     m.q.chefe.pernas[1] = true;
     m.q.chefe.nome = 'DRAGA-01';
     m.q.chefe.alvo = 'aldeia';
-    return { ...m, escudoLinha: achar(m.raiz, 'pcf-escudo')!, regra: m.chefe.children.filter((f) => f.tag === 'p')[0]! };
+    return { ...m, regra: m.chefe.children.filter((f) => f.tag === 'p')[0]! };
   }
 
-  it('com o escudo de pé a barra diz quantos geradores restam e a regra é derrubá-los; sem escudo na partida a linha fica escondida', () => {
-    const { hud, q, escudoLinha, regra } = comDraga();
+  it('com o escudo de pé a barra NÃO repete a ordem (quem a diz é o objetivo na tela: a linha da missão e a dica): a regra fica escondida e não há linha de escudo; sem escudo na partida a regra da fase aparece', () => {
+    const { hud, q, regra, raiz } = comDraga();
     q.escudo.presente = false;
     hud.update(0.016, q);
-    expect(escudoLinha.hidden).toBe(true);
+    expect(regra.hidden).toBe(false);
+    expect(regra.textContent).toBe('Ele marcha para a aldeia. Derrube as pernas.');
     q.escudo.presente = true;
     q.escudo.restantes = 3;
     q.escudo.total = 3;
     hud.update(0.016, q);
-    expect(escudoLinha.hidden).toBe(false);
-    expect(escudoLinha.textContent).toBe('ESCUDO · 3 DE 3 GERADORES');
-    expect(escudoLinha.dataset.estado).toBe('de-pe');
-    expect(regra.textContent).toBe('O escudo o protege: derrube os geradores.');
+    expect(regra.hidden).toBe(true);
+    expect(achar(raiz, 'pcf-escudo')).toBeUndefined();
+  });
+
+  it('a célula da aldeia mora DENTRO da barra do chefe (a última linha): com as linhas das torres e da invasão a barra cresceu, e a célula solta ficava por cima delas (achado de 18/10)', () => {
+    const { chefe, raiz } = comDraga();
+    const aldeia = achar(raiz, 'praia-aldeia')!;
+    expect(chefe.children).toContain(aldeia);
+    expect(chefe.children.at(-1)).toBe(aldeia);
   });
 
   it('cada gerador que cai sobe o aviso no topo; o último avisa que o escudo caiu e devolve a regra da fase', () => {
-    const { hud, q, escudoLinha, regra, zona } = comDraga();
+    const { hud, q, regra, zona } = comDraga();
     q.escudo.presente = true;
     q.escudo.restantes = 3;
     q.escudo.total = 3;
@@ -316,12 +322,10 @@ describe('o escudo do Draga-01 na barra do chefe (P180, parte D)', () => {
     q.escudo.restantes = 2;
     hud.update(0.016, q);
     expect(zona.textContent).toBe('GERADOR CAIU · RESTAM 2');
-    expect(escudoLinha.textContent).toBe('ESCUDO · 2 DE 3 GERADORES');
     q.escudo.restantes = 0;
     hud.update(0.016, q);
     expect(zona.textContent).toBe('ESCUDO DO DRAGA CAIU');
-    expect(escudoLinha.textContent).toBe('ESCUDO CAIU');
-    expect(escudoLinha.dataset.estado).toBe('caido');
+    expect(regra.hidden).toBe(false);
     expect(regra.textContent).toBe('Ele marcha para a aldeia. Derrube as pernas.');
   });
 

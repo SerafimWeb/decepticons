@@ -5,7 +5,7 @@ export const MAPS: readonly { id: MapId; label: string; hint: string }[] = [
   { id: 'arena', label: 'ARENA', hint: 'A cidade neon' },
   { id: 'bunker', label: 'BUNKER', hint: 'Mapa de quatro andares, treino offline contra bots (sai da sala online)' },
   { id: 'praia', label: 'PRAIA DOS CABOS', hint: 'A orla de Fortaleza: porto, Ponte Metálica e a estação de cabos (offline, sai da sala online)' },
-  { id: 'amazonia', label: 'AMAZÔNIA · RIO VIVO', hint: 'A missão do rio: derrube o Draga-01 antes que ele chegue à aldeia, em 2,4 km de floresta e rio (offline, sai da sala online)' },
+  { id: 'amazonia', label: 'AMAZÔNIA · TERRAS RARAS', hint: 'A missão do rio: derrube o Draga-01 antes que ele chegue à aldeia, em 2,4 km de floresta e rio (offline, sai da sala online)' },
 ];
 
 /**

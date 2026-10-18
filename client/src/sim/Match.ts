@@ -28,7 +28,7 @@ import { ehManifestante } from '../entities/chassis';
 import { caboDoPonto, CABOS, CabosDeDados, CODIGO_DO_ESTADO, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
 import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
-import { AMAZONIA_RESISTENCIA, AMAZONIA_SPAWNS, rioEmX } from '../environment/AmazoniaLayout';
+import { AMAZONIA_POSTO_AVANCADO, AMAZONIA_RESISTENCIA, AMAZONIA_SPAWNS, rioEmX } from '../environment/AmazoniaLayout';
 import { exigirChefe, exigirMapa, temEscudo } from '../environment/mapasSobDemanda';
 import { EscudoDoDraga } from './EscudoDoDraga';
 import { escotilhaDoDraga, INVASAO, InvasaoDoDraga } from './InvasaoDoDraga';
@@ -358,7 +358,8 @@ export class Match {
     const praia = o.map === 'praia' && !ctf && !dominio;
     // A Amazônia (P180) abre o Deathmatch e a **missão** (a Sobrevivência: o Draga-01 marcha rumo à aldeia, parte C); o CTF e o Domínio ficam na Arena.
     const amazonia = o.map === 'amazonia' && !ctf && !dominio;
-    this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : amazonia ? AMAZONIA_SPAWNS : SPAWN_POINTS;
+    // Na missão da Amazônia (TERRAS RARAS) o jogador nasce e renasce no posto avançado (um ponto só); o Deathmatch usa os pontos ao longo da margem.
+    this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : amazonia ? (survival ? [[AMAZONIA_POSTO_AVANCADO.x, AMAZONIA_POSTO_AVANCADO.z]] : AMAZONIA_SPAWNS) : SPAWN_POINTS;
     this.zones = bunker || amazonia ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
     this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : 'arena', { transformador: survival && !praia });
     // A água da praia (P126): o mar freia e afoga quem entra nele. Nos outros mapas não há água.
@@ -403,7 +404,7 @@ export class Match {
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.combat.damageEnabled = o.damage !== false;
     this.combat.sameSide = (a, b) => this.sameSide(a, b);
-    this.respawner = new Respawner(this.rio ? [AMAZONIA_SPAWNS[0]!] : this.spawnPoints); // na missão do rio, todo mundo (jogador e Resistência) renasce na aldeia
+    this.respawner = new Respawner(this.spawnPoints); // na missão do rio o ponto é um só (o posto avançado): jogador e Resistência renascem juntos
     this.crush = new CrushRule(this.combat);
     const kitDe = (s: SlotDoPlano): BotKit => ({ chassi: s.chassi, arma: s.arma, secundaria: s.secundaria, dificuldade: s.dificuldade });
     const pontos = (l: readonly SlotDoPlano[]) => l.map((s) => s.ponto);
