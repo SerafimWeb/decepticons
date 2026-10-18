@@ -4,6 +4,7 @@ import { AMAZONIA_LIMITES } from './AmazoniaLayout';
 import { BANDA_DA_FRENTE, frenteDepoisDeCurar } from './AmazoniaRio';
 import { criarLagoa, criarRio, criarTerreno, type PedacoDoTerreno } from './AmazoniaMalha';
 import { criarCenario, type CenarioMontado } from './AmazoniaCenario';
+import { MarcadorDaEscotilha } from './AmazoniaEscotilha';
 import { Floresta } from './AmazoniaFloresta';
 import { criarUniformes, materialDaAgua, materialDaFloresta, materialDoCenario, materialDoCeu, materialDosRejeitos, materialDoTerreno, type UniformesDaAmazonia } from './AmazoniaMateriais';
 import { gradeDoMapa } from './AmazoniaTerreno';
@@ -34,6 +35,9 @@ export class Amazonia {
   /** As estruturas (a aldeia, a planta, as torres da margem, as máquinas da cava), fundidas numa malha só, e o que pesaram na física. */
   readonly cenario: CenarioMontado;
   readonly alcanceDaCamera = ALCANCE_DA_CAMERA;
+  /** A escotilha do Draga (parte E): o anel, o disco da carga e o farol; invisível até a escotilha abrir. */
+  readonly escotilha: MarcadorDaEscotilha;
+  private tempoS = 0;
   private readonly ceu: THREE.Mesh;
   private readonly cena: THREE.Scene;
 
@@ -55,6 +59,7 @@ export class Amazonia {
     criarLagoa(scene, materialDosRejeitos(this.u));
     this.fisica(physics);
     this.cenario = criarCenario(scene, physics, materialDoCenario(this.u));
+    this.escotilha = new MarcadorDaEscotilha(scene);
   }
 
   /** A física: o chão (UM colisor de altura para o mapa todo) e as paredes do limite. */
@@ -77,6 +82,12 @@ export class Amazonia {
   /** Por quadro: só o tempo (um número). Chamado pelo `Arena.update`. */
   update(elapsed: number): void {
     this.u.tempo.value = elapsed;
+    this.tempoS = elapsed;
+  }
+
+  /** A escotilha do Draga (parte E): `aberta` mostra o marcador em (x, z) com a carga plantada (0 a 1). */
+  setEscotilha(aberta: boolean, x: number, z: number, carga: number): void {
+    this.escotilha.atualizar(aberta, x, z, carga, this.tempoS);
   }
 
   /** A frente do rio (x): a montante é limpo, a jusante é morto. A água, o chão e a folhagem leem este número. */

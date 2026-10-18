@@ -134,6 +134,7 @@ import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { CODIGO_DO_ESTADO } from '../sim/CabosDeDados';
 import { distanciaAteAAldeia, marchaFromSearch, progressoDaMarcha, tempoAteAAldeiaS } from '../sim/DragaMarcha';
+import { INVASAO } from '../sim/InvasaoDoDraga';
 import { CODIGO_DA_FASE, faseDoChefe } from '../sim/FasesDoChefe';
 import { CODIGO_DO_ESTADO_DA_PORTA } from '../sim/PortasDaEstacao';
 import { CODIGO_DO_ESTADO_DO_QUADRO } from '../sim/QuadroDeLuz';
@@ -1800,6 +1801,9 @@ export class Game {
       const chefe = this.match.bots.chefe;
       if (chefe) amazonia.setFrente(chefe.simPosition.x);
       else if (this.match.rio.fase === 'vitoria') amazonia.curar(CURA_VISUAL_M_S * dt);
+      // A escotilha do Draga (parte E): o anel, o disco da carga e o farol, só com ela aberta e o Draga de pé.
+      const invasao = this.match.invasao;
+      amazonia.setEscotilha(invasao !== null && invasao.aberta && chefe !== null, this.match.escotilha.x, this.match.escotilha.z, invasao?.carga ?? 0);
     }
     // O ciclo do dia da praia (P161): começa no pôr do sol e em 5 minutos de partida vira noite, com as luzes da cidade acendendo. Só desenho: nada na simulação.
     if (this.match.arena.praia) {
@@ -2035,6 +2039,15 @@ export class Game {
       if (escudo) {
         q.escudo.restantes = escudo.geradoresVivos;
         q.escudo.total = escudo.total;
+      }
+      // A invasão do Draga (parte E): a escotilha aberta, a carga plantada e quantos andróides da Resistência estão junto dela.
+      const invasao = this.match.invasao;
+      q.invasao.presente = invasao !== null && chefe !== null;
+      if (invasao) {
+        q.invasao.aberta = invasao.aberta;
+        q.invasao.carga = invasao.carga;
+        q.invasao.dentro = invasao.plantando;
+        q.invasao.total = INVASAO.androides;
       }
       // As torres da margem (parte D2): armadas enquanto o gerador da CERCA está de pé.
       const torres = this.match.torres;

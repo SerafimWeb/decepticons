@@ -84,6 +84,12 @@ export const AMAZONIA_GUARDA: { readonly mechs: readonly (readonly [number, numb
   androids: Object.freeze([[-122, 128], [-112, 166], [4, 106], [-2, 134], [236, 120], [250, 164]] as const),
 });
 
+/**
+ * A **Resistência** (P180, parte E): os três andróides aliados que esperam na aldeia, junto de onde o jogador nasce. Quando o escudo do Draga cai e a escotilha abre, eles vão até ela plantar a carga
+ * (`sim/InvasaoDoDraga.ts`). Antes disso acompanham o jogador. Renascem na aldeia se caírem (o canhão do Draga mata um andróide por tiro). O teste confere que nenhum nasce dentro de uma estrutura.
+ */
+export const AMAZONIA_RESISTENCIA: readonly (readonly [number, number])[] = Object.freeze([[-944, -160], [-944, -200], [-978, -158]] as const);
+
 /** Onde o Draga-01 começa (x, rio abaixo da aldeia): a água a montante dele é limpa, a de jusante é morta. */
 export const AMAZONIA_DRAGA_INICIO_X = 700;
 

@@ -125,6 +125,8 @@ export interface BotSystemOptions {
   alturaDoChao?: (x: number, z: number) => number;
   /** Todos os bots seguram o posto (`BotController.rearguard`): trocam tiro em volta do ponto de nascimento e não o largam para perseguir (a força de defesa da Amazônia, P180 parte D2). */
   defensores?: boolean;
+  /** Todos os bots são **plantadores** (`BotController.plantador`): a ordem `hold` os prende ao ponto (a Resistência da Amazônia na escotilha do Draga, P180 parte E). */
+  plantadores?: boolean;
   /** Onde cada andróide rebelde (escala 1) nasce (x, z): um por ponto. */
   androidSpawns?: readonly (readonly [number, number])[];
   /** O chefe da missão (o Colossus) veste a **máscara** (P165, `entities/mascaraDoChefe.ts`)? Padrão: sim; o `?mascara=0` do link a tira. Só o chefe: o Colossus do Hangar não. */
@@ -273,6 +275,7 @@ export class BotSystem {
       brain.useExplosives = !!o.launchers && !android && !titan && mech.loadout.secondary?.kind === 'ammo';
       brain.home.copy(home);
       if (o.defensores) brain.rearguard = true;
+      if (o.plantadores) brain.plantador = true;
       if (o.respawn !== false) {
         o.respawner.track(mech, titan ? TITA_RESPAWN_S : BOT_RESPAWN_S, () => {
           if (o.respawnAtHome) mech.respawn(home);

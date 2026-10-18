@@ -34,6 +34,9 @@ const SMOKE = GLOW.smoke;
 /** O sopro de frio no aliado que o gelo amigo esfria: vapor azulado que sobe devagar (sem flocos: ele não congela). */
 const COOLED: BurstOptions = { count: 5, color: new THREE.Color(0.5, 0.85, 1.1), speed: 2.4, life: 0.8, size: 1.7, expansion: 1.2, spread: 1.1, gravity: -0.8, shape: SHAPE.puff };
 
+/** Quantas bolas de fogo a detonação por dentro solta em volta do casco. */
+const DETONACAO_BOLAS = 6;
+
 const _at = new THREE.Vector3();
 const _near = new THREE.Vector3();
 const _dir = new THREE.Vector3();
@@ -162,6 +165,24 @@ export class CombatSystem {
     if (result.killed) this.wreck(small, _dir, big);
     else if (result.partDestroyed) this.tearOff(small, result.part, _dir);
     this.onMechHit?.({ mech: small, result, shooter: big, kind: 'crush' });
+  }
+
+  /**
+   * A carga plantada por dentro (P180, parte E): derruba `alvo` de uma vez, com uma série de explosões em volta do casco, e conta o abate para `autor` (um andróide da Resistência). O dano
+   * passa pelas defesas do corpo (o escudo do Draga já caiu, senão a escotilha nem abria). Sem o dano ligado (o cliente online), nada acontece.
+   */
+  detonar(alvo: MechBase, autor?: MechBase): void {
+    if (!this.damageEnabled || !alvo.alive) return;
+    const result = alvo.damagePart('torso', alvo.stats.maxModuleHealth.torso * 10);
+    if (result.applied <= 0) return;
+    const p = alvo.simPosition;
+    for (let i = 0; i < DETONACAO_BOLAS; i++) {
+      const a = i * 2.4; // ângulo de ouro: as bolas se espalham em volta do casco sem sorteio (G1)
+      _near.set(p.x + Math.cos(a) * 9, p.y + alvo.stats.height * (0.25 + 0.1 * (i % 4)), p.z + Math.sin(a) * 9);
+      this.particles.burst(_near, UP, { count: 90, color: FIRE, speed: 24, life: 1, size: 2.4, expansion: 0.9, spread: 2.2 });
+    }
+    this.wreck(alvo, UP, autor);
+    this.onMechHit?.({ mech: alvo, result, shooter: autor });
   }
 
   /**

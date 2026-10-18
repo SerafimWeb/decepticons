@@ -124,6 +124,16 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 - **A tela:** a barra do chefe diz `TORRES DA MARGEM ARMADAS` / `TORRES DA MARGEM SEM ENERGIA`.
 - **O que o jogador sente:** cruzar o rio entre a aldeia e a cerca é **atravessar fogo de cobertura**; a saída é derrubar a CERCA (o primeiro gerador, atrás das torres) ou ir pela margem onde as torres não alcançam. O número é proposta: o Comandante ajusta em `TORRES_DE_VIGIA` e `AMAZONIA_GUARDA`.
 
+### 5.5 Como ficou na parte E (a invasão)
+
+- **A Resistência** (`AMAZONIA_RESISTENCIA`, 3 pontos junto de onde o jogador nasce): **CAIPORA, IARA e CURUPIRA**, andróides aliados (`BotSystem` com `escort` e `plantadores`, o mesmo sistema de aliados da Arena; sem drones). Acompanham o jogador; caídos, renascem na aldeia em 4 s (**na missão do rio o `Respawner` tem um ponto só, a aldeia**: com aliados na lista, o "mais longe dos vivos" mandaria quem morre para o outro lado do mapa).
+- **A escotilha** (`sim/InvasaoDoDraga.ts`, pura): abre **quando o escudo cai** e não fecha. Fica no **flanco direito do casco**, a `INVASAO.ladoDaEscotilhaM` = **13 m** do eixo (o raio do corpo é 10 m); com o Draga olhando para -X é o lado **sul**. **A carga:** cada andróide a menos de `raioDaEscotilhaM` = **8 m** soma `1/30` por segundo (**um leva 30 s; os três, ~10 s**), no máximo 3 contam; sem ninguém junto recua `1/45` por segundo. **Cheia, detona** (`CombatSystem.detonar`): o Draga cai, o abate conta, a missão vence. As folgas (8 m, parar a 1,5 m) existem porque o Draga anda 2,6 m/s e o andróide segue de trás.
+- **A ordem aos andróides** (`Match.fixedUpdateInvasao`): `hold` até a escotilha, reemitida só quando ela anda 6 m (reemitir a cada tick zera a memória de obstáculos). **`BotController.plantador`**: com `hold`, o robô **fica no ponto** (sem orbitar o alvo, sem recuar para esfriar): sem isto eles rondavam o Draga a 12 m.
+- **O canhão do Draga só mira Mechs** (`DragaController`): andróide é pequeno demais para o radar dele. **Os outros inimigos (guarda, torres) não têm essa folga.**
+- **A tela e o cenário:** a linha `INVASÃO · CARGA n% · n DE 3 DENTRO` e o aviso `ESCOTILHA ABERTA · OS ANDRÓIDES ENTRAM` (que vem antes do aviso do escudo, a ordem do que fazer agora); no cenário (`environment/AmazoniaEscotilha.ts`, sob demanda): um **anel verde** do tamanho do raio, um **disco** que cresce com a carga e um **farol** de 60 m.
+- **O que o jogador sente:** derrubar os geradores deixa de ser só tirar o escudo: **abre a porta**. A Resistência que o acompanha vira a ponta de lança; ele a escolta (a guarda a ataca no caminho) e escolhe se espera os 10 s da carga ou atira no tronco. Os números são proposta: o Comandante ajusta em `INVASAO`.
+- **Ainda não é a cura de verdade:** o rio se limpa correndo para a foz depois da vitória (só desenho); a cura com consequência (o Relatório de Consequências e o Consórcio) é a etapa seguinte.
+
 ## 6. A missão (em atos)
 
 1. **O perímetro (desmantelar a defesa):** o Draga anda **rio acima** protegido por um **escudo** que três **geradores** (espalhados na margem e na mina) alimentam. Destruir os três derruba o
@@ -134,7 +144,7 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 4. **O rio se cura:** o Draga cai e a frente de limpeza corre rio abaixo até o fim: **vitória**.
 
 **Derrota:** o Draga chegar à **aldeia** (o núcleo da fase, mesma regra de `NucleoDaEstacao`).
-**Nada disso existe ainda no código:** é o roteiro. Cada ato é **módulo puro em `sim/` com teste de simulação** (G14), como o capítulo 1.
+**Atos 1 a 3 existem no código** (partes D1, D2 e E); o ato 4 (a cura) é só desenho por ora. Cada ato é **módulo puro em `sim/` com teste de simulação** (G14), como o capítulo 1.
 
 ## 7. A ordem de construção (um PR por parte, cada um no ar)
 
@@ -145,7 +155,8 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 | **C — o Draga na partida** | o chefe com os números, os módulos de dano (as quatro pernas), o rastejo, a barra do chefe e a chegada à aldeia (derrota) | **feita (17/10)**: `?mapa=amazonia&modo=survival` é a missão do rio; derrubar o Draga vence, ele chegar à aldeia perde |
 | **D1 — o escudo e os geradores** | os três geradores (alvos destrutíveis), o escudo do Draga (90% menos dano enquanto houver gerador de pé), a barra do chefe com a contagem e os avisos | **feita (18/10)**: `?mapa=amazonia&modo=survival`; veja § 5.3 |
 | **D2 — as torres e a força de defesa** | as oito torres da margem armadas (calam com a CERCA), 3 Mechs e 6 androides de defesa que seguram o posto e dormem longe | **feita (18/10)**: `?mapa=amazonia&modo=survival`; veja § 5.4 (o JS de partida está em 493,3 de 500 KB) |
-| **E — a invasão** | a escotilha, os androides, os núcleos e a cura do rio (atos 3 e 4) | — |
+| **E — a invasão** | a escotilha, os androides da Resistência e a carga que detona o Draga por dentro (ato 3) | **feita (18/10)**: `?mapa=amazonia&modo=survival`; veja § 5.5 (o JS de partida está em 495,7 de 500 KB: a próxima parte paga com dieta) |
+| **F — a cura com consequência** | o rio curado de verdade (o que o jogador salvou, o Relatório de Consequências e o Consórcio, ato 4 e P179 camadas 3 e 4) | — |
 
 ## 8. Decisões em aberto (do Comandante)
 

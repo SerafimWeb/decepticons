@@ -843,5 +843,7 @@
  "O DRAGA-01 CAIU ANTES DE CHEGAR À ALDEIA": "DRAGA-01 在抵达村庄前倒下",
  "O DRAGA-01 ALCANÇOU A ALDEIA": "DRAGA-01 抵达了村庄",
  "TORRES DA MARGEM ARMADAS": "河岸塔楼已武装",
- "TORRES DA MARGEM SEM ENERGIA": "河岸塔楼已断电"
+ "TORRES DA MARGEM SEM ENERGIA": "河岸塔楼已断电",
+ "ESCOTILHA ABERTA · OS ANDRÓIDES ENTRAM": "舱门已开 · 机器人进入",
+ "INVASÃO · CARGA {0}% · {1} DE {2} DENTRO": "潜入 · 炸药 {0}% · {1}/{2} 个在内"
 }

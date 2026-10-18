@@ -28,9 +28,10 @@ import { ehManifestante } from '../entities/chassis';
 import { caboDoPonto, CABOS, CabosDeDados, CODIGO_DO_ESTADO, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
 import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
-import { AMAZONIA_SPAWNS, rioEmX } from '../environment/AmazoniaLayout';
+import { AMAZONIA_RESISTENCIA, AMAZONIA_SPAWNS, rioEmX } from '../environment/AmazoniaLayout';
 import { exigirChefe, exigirMapa, temEscudo } from '../environment/mapasSobDemanda';
 import { EscudoDoDraga } from './EscudoDoDraga';
+import { escotilhaDoDraga, INVASAO, InvasaoDoDraga } from './InvasaoDoDraga';
 import { TorresDeVigia } from './TorresDeVigia';
 import { MissaoDoRio } from './MissaoDoRio';
 import { posicaoNaMarcha } from './DragaMarcha';
@@ -177,6 +178,8 @@ const _flameTo = new THREE.Vector3();
 /** O "acerto" que o cone entrega ao CombatSystem: um objeto só, reescrito a cada alvo (nada alocado por pulso). */
 const _hookEnd = new THREE.Vector3();
 /** A metralhadora das torres de vigia da Amazônia (P180, parte D2): a automática de aço, de dano baixo e alcance longo (o fogo de cobertura atravessa o rio). */
+/** Os nomes dos três andróides da Resistência (P180, parte E): figuras do folclore amazônico. */
+const NOMES_DA_RESISTENCIA = ['CAIPORA', 'IARA', 'CURUPIRA'];
 const ARMA_DA_TORRE: WeaponStats = Object.freeze({ ...weapon('autocannon'), name: 'Metralhadora da torre', damage: 8, optimalRange: 110, maxRange: 190, speed: 150 });
 const _torreFrom = new THREE.Vector3();
 const _torreDir = new THREE.Vector3();
@@ -262,6 +265,13 @@ export class Match {
   readonly escudo: EscudoDoDraga | null = null;
   /** As oito torres de vigia armadas da margem (P180, parte D2): atiram atravessando o rio enquanto o gerador da CERCA estiver de pé. `null` fora da missão do rio. */
   readonly torres: TorresDeVigia | null = null;
+  /** A invasão do Draga (P180, parte E): com o escudo caído, a escotilha abre e os andróides da Resistência plantam a carga; cheia, o Draga cai por dentro. `null` fora da missão do rio e sem aliados. */
+  readonly invasao: InvasaoDoDraga | null = null;
+  /** O ponto da escotilha neste tick (só vale com a invasão aberta e o Draga de pé): o desenho e a ordem aos andróides leem daqui. */
+  readonly escotilha = { x: 0, z: 0 };
+  /** Para onde a última ordem mandou os andróides (reemitida quando a escotilha anda mais de 6 m) e quais já a receberam. */
+  private readonly escotilhaOrdenada = { x: Number.NaN, z: Number.NaN };
+  private readonly resistenciaOrdenada: boolean[] = [];
   /** Os três cabos de dados da estação (P162, capítulo 1): injeção dos andróides rebeldes, dano e reparo. `null` fora da missão em ondas da praia. */
   readonly cabos: CabosDeDados | null = null;
   /** Rascunhos reaproveitados dos cabos (G4): por cabo, quantos andróides rebeldes ligados, o peso dos depredadores e quantos defensores perto. */
@@ -393,7 +403,7 @@ export class Match {
     this.combat = new CombatSystem(this.destructibles, this.debris, o.particles);
     this.combat.damageEnabled = o.damage !== false;
     this.combat.sameSide = (a, b) => this.sameSide(a, b);
-    this.respawner = new Respawner(this.spawnPoints);
+    this.respawner = new Respawner(this.rio ? [AMAZONIA_SPAWNS[0]!] : this.spawnPoints); // na missão do rio, todo mundo (jogador e Resistência) renasce na aldeia
     this.crush = new CrushRule(this.combat);
     const kitDe = (s: SlotDoPlano): BotKit => ({ chassi: s.chassi, arma: s.arma, secundaria: s.secundaria, dificuldade: s.dificuldade });
     const pontos = (l: readonly SlotDoPlano[]) => l.map((s) => s.ponto);
@@ -470,7 +480,32 @@ export class Match {
             waypoints: this.spawnPoints,
             power: o.power,
           })
-        : null;
+        : defesa && !semAliados
+          ? new BotSystem({
+              // A Resistência (parte E): três andróides aliados na aldeia. Acompanham o jogador até a escotilha do Draga abrir; aí vão plantar a carga.
+              rigDoChassi: o.rigDoChassi,
+              scene: o.scene,
+              physics: o.physics,
+              combat: this.combat,
+              projectiles: this.projectiles,
+              particles: o.particles,
+              ...(lancadores ? { launchers: lancadores } : {}),
+              pulso: (m, origin, dir, w) => this.beamPulse(m, origin, dir, w),
+              respawner: this.respawner,
+              escort: this.players,
+              tatica: o.tatica,
+              paint: PALETTE.playerPaint,
+              visor: PALETTE.green,
+              spawns: [],
+              androidSpawns: AMAZONIA_RESISTENCIA,
+              plantadores: true,
+              names: { mechs: [], androids: NOMES_DA_RESISTENCIA },
+              alturaDoChao: (x: number, z: number) => exigirMapa('amazonia').alturaDoTerreno?.(x, z) ?? 0,
+              waypoints: this.spawnPoints,
+              power: o.power,
+            })
+          : null;
+    if (this.allies && defesa) this.invasao = new InvasaoDoDraga();
     // O inimigo caça jogador E aliado; o aliado só caça o inimigo (nunca o próprio jogador).
     this.refreshEnemyTargets();
     if (this.allies) this.allies.targets = this.bots.mechs;
@@ -537,7 +572,7 @@ export class Match {
     };
     // Drones (06/10): só onde os aliados existem; o kamikaze explode pela mesma regra dos foguetes.
     this.drones =
-      this.allies !== null && o.drones !== false && !bunker
+      this.allies !== null && o.drones !== false && !bunker && !this.rio // a Resistência da missão do rio não leva drones
         ? new DroneSystem({
             physics: o.physics,
             projectiles: this.projectiles,
@@ -842,6 +877,52 @@ export class Match {
     this.projectiles.fire(_torreFrom, _torreDir, undefined, true, ARMA_DA_TORRE);
   }
 
+  /**
+   * A invasão do Draga (parte E): acha a escotilha no flanco do casco, conta os andróides da Resistência junto dela e roda a regra (`InvasaoDoDraga`). Com a escotilha aberta, manda os
+   * andróides até lá (a ordem `hold`, reemitida quando o Draga anda mais de 6 m: reemitir a cada tick zeraria a memória de obstáculos deles). A carga cheia derruba o Draga por dentro.
+   */
+  private fixedUpdateInvasao(dt: number, chefe: MechBase | null): void {
+    const inv = this.invasao!;
+    const aliados = this.allies!;
+    const vivo = chefe !== null;
+    if (chefe) escotilhaDoDraga(chefe.simPosition.x, chefe.simPosition.z, chefe.yaw, this.escotilha);
+    let juntos = 0;
+    if (chefe && inv.aberta) {
+      const r2 = INVASAO.raioDaEscotilhaM * INVASAO.raioDaEscotilhaM;
+      for (const m of aliados.mechs) {
+        if (!m.alive || !ehAndroide(m.stats.name)) continue;
+        const dx = m.simPosition.x - this.escotilha.x;
+        const dz = m.simPosition.z - this.escotilha.z;
+        if (dx * dx + dz * dz < r2) juntos++;
+      }
+    }
+    inv.fixedUpdate(dt, this.escudo ? !this.escudo.ativo : false, vivo, juntos);
+    if (chefe && inv.aberta && !inv.detonou) {
+      const o = this.escotilhaOrdenada;
+      const longe = !(Math.abs(this.escotilha.x - o.x) < 6 && Math.abs(this.escotilha.z - o.z) < 6);
+      for (let i = 0; i < aliados.mechs.length; i++) {
+        const m = aliados.mechs[i]!;
+        if (!m.alive || !ehAndroide(m.stats.name)) {
+          this.resistenciaOrdenada[i] = false; // morreu (renasce na aldeia com a cabeça limpa): precisa da ordem de novo
+          continue;
+        }
+        if (this.resistenciaOrdenada[i] && !longe) continue;
+        const cerebro = aliados.brainOf(m);
+        if (!cerebro) continue;
+        cerebro.receiveOrder('hold', this._pontoDoAlvo.set(this.escotilha.x - cerebro.escortSide * 6, 0, this.escotilha.z), null);
+        this.resistenciaOrdenada[i] = true;
+      }
+      if (longe) {
+        o.x = this.escotilha.x;
+        o.z = this.escotilha.z;
+      }
+    }
+    if (inv.consumirDetonacao() && chefe) {
+      const autor = aliados.mechs.find((m) => m.alive && ehAndroide(m.stats.name));
+      this.combat.detonar(chefe, autor);
+    }
+  }
+
   /** Só o desenho do raio do arpão de outro jogador (ele o vê pelo evento de tiro, sem regra): da boca até o primeiro acerto ou o alcance. */
   drawHook(origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, ignore: RAPIER.Collider | undefined, hostile: boolean): void {
     if (!w.hook) return;
@@ -946,6 +1027,7 @@ export class Match {
           this.torres.ativa = this.escudo ? this.escudo.vivo(0) : false;
           this.torres.fixedUpdate(dt, this.players, (torre, alvo) => this.torreVe(torre, alvo), (torre, alvo, ex, ey) => this.torreAtira(torre, alvo, ex, ey));
         }
+        if (this.invasao && this.allies) this.fixedUpdateInvasao(dt, chefe);
         this.rio.fixedUpdate(dt, chefe ? chefe.simPosition.x : null);
         if (this.rio.terminou) return false;
       }
@@ -1302,6 +1384,13 @@ export class Match {
       m.respawn(this._spawn.set(x, 0, z));
     });
     if (this.ctf || this.dominio || this.rio) this.bots.respawnAll(); // na missão do rio, o Draga volta inteiro à largada
+    if (this.rio) {
+      this.allies?.respawnAll(); // e a Resistência, à aldeia
+      this.invasao?.reiniciar();
+      this.escotilhaOrdenada.x = Number.NaN;
+      this.escotilhaOrdenada.z = Number.NaN;
+      this.resistenciaOrdenada.fill(false);
+    }
     if (this.dominio) {
       this.allies?.respawnAll();
       this.rumoRed.fill(-1);
