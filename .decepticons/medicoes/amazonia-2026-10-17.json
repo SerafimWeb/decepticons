@@ -47,6 +47,16 @@
       "desenhos": 31,
       "triangulos": 102772,
       "construcaoMs": 757
+    },
+    "gerador": {
+      "desenhos": 28,
+      "triangulos": 60014,
+      "construcaoMs": 405
+    },
+    "geradores": {
+      "desenhos": 45,
+      "triangulos": 107738,
+      "construcaoMs": 472
     }
   },
   "errosDePagina": []

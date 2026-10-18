@@ -3,6 +3,7 @@ import { DragaMech, type VisualDoDraga } from '../entities/DragaMech';
 import { DRAGA_STATS } from '../entities/dragaStats';
 import { loadWalkerAsset, WalkerVisual } from '../entities/WalkerVisual';
 import { defaultPower, poweredStats } from '../tuning/power';
+import { defesaDaAmazonia } from './AmazoniaGeradores';
 import { AMAZONIA_DRAGA_INICIO_X, rioEmX } from './AmazoniaLayout';
 import type { ChefeCarregado } from './mapasSobDemanda';
 
@@ -24,4 +25,6 @@ export const chefeDaAmazonia: ChefeCarregado = {
     return { mech, brain: new DragaController(mech, physics, seed) };
   },
   criarVisual: async () => new WalkerVisual(await loadWalkerAsset()),
+  // A defesa (parte D): os geradores do escudo, no mesmo pedaço sob demanda do Draga.
+  defesa: defesaDaAmazonia,
 };

@@ -22,6 +22,25 @@
 
 **Próxima sessão começa com:** o **time do jogador na sala online (P81)**: é o que falta para Bandeira 2v2 online, para os lados Aliados × Consórcio (P186) e para a vitória nesses modos.
 
+## AMAZÔNIA, PARTE D1: O ESCUDO DO DRAGA E OS TRÊS GERADORES — Claude, 18/10 (branch `claude/amazonia-defesa`, P180)
+
+**O Comandante (17/10):** *"a amazônia já foi entregue em partes, prossiga"* (a parte C estava pronta e testada num branch local sem PR: **publiquei como veio, #375**, e a produção já religou nela).
+
+**O que entrou (§ 5.3 do `AMAZONIA.md`):**
+1. **Os geradores** (`environment/AmazoniaGeradores.ts`): três torres de força (CERCA, PLANTA e CAVA) que se **quebram a tiro** (`Destructibles.addExterno`, o mesmo registro dos coqueiros): 1.500 de vida cada, destroços e faíscas ao cair, seis malhas de desenho. Carregam com a missão (sob demanda).
+2. **O escudo** (`sim/EscudoDoDraga.ts`, pura): **com algum gerador de pé o Draga recebe 10% do dano**, por tiro, explosão ou dano por segundo (`DragaMech.escudo`); cai com o último e não volta (rodada nova os devolve).
+3. **A tela:** a barra do chefe diz `ESCUDO · 3 DE 3 GERADORES` (e `ESCUDO CAIU`), a regra vira "derrube os geradores", e cada queda avisa.
+4. **Idioma (o que a auditoria rigorosa achou):** a Amazônia da parte C **não tinha tradução** na barra do chefe, na aldeia, nos avisos da marcha e nos fins de missão; entraram **28 textos por língua**. **Duas correções no motor do tradutor** (`i18n.ts`): a composição aninhada passa a ter **duas voltas** ("MECH · Lançador EMP MK I") e uma chave sem " · " **não engole** um " · " na borda da lacuna ("ANDRÓIDE " + "· manso" saía meio traduzido).
+5. **Provas:** o teste de regra (11 casos, mutações de ligação pegas), o de lugar (nenhum gerador no rio nem dentro de estrutura), o do HUD e o de cobertura de idioma; captura do cenário (`arte/amazonia-gerador-d1-claude.jpg`, `amazonia-geradores-d1-claude.jpg`; a bancada ganhou as vistas `gerador` e `geradores`).
+
+**Custo de CPU:** zero por quadro (um número por tick na regra; o HUD só mexe no DOM quando a contagem muda); seis desenhos e três sensores. **JS de partida: 491,7 de 500 KB.**
+
+**Onde o Comandante confere:** `…/jogar/?mapa=amazonia&modo=survival` (a missão do rio): a barra do chefe diz `ESCUDO · 3 DE 3 GERADORES`; atire no Draga e veja o dano quase não andar; corra para leste pela margem (a cerca em x -100, a planta em x 20, a cava em x 260) e derrube as três torres de força. Para testar sem esperar: `&marcha=0.5`.
+
+**Falta (R13):** **D2:** as torres da margem armadas e a **força de defesa** (Mechs e androides); **E:** a invasão com androides e a cura de verdade; **o equilíbrio** (10%, 1.500) é proposta; **não joguei a missão até o fim a olho** (o headless roda a ~0,25× do tempo): a captura é do cenário; os fatos da ficha da mineração seguem 🟡.
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois a **D2** (as torres e a força de defesa).
+
 ## AMAZÔNIA, PARTE C: O DRAGA-01 COM CORPO — a missão do rio é jogável — Claude, 17/10 (branch `claude/amazonia-draga`, P180)
 
 **A ordem do Comandante (17/10):** *"há uma enorme força de defesa deles e teremos que desmantelar, invadir com androides e destruir por dentro"*; *"continua iterando até concluir essas pendências"*. A parte C é **o Draga-01 de verdade na partida**: com corpo, dano, marcha e a missão que ele cria.
@@ -1361,7 +1380,6 @@ O **afundamento** em si é **geometria**: o **fundo do mar desce** e a física d
 - **O que continua faltando da P108 (passo c, declarado):** **ombros** (o Marauder tem lançadores), **módulo** (barreira/esfera/anel de fogo) e **layout de ataques**. Os três dependem da **IA saber usar** (o módulo é uma habilidade que alguém tem de decidir quando ligar; o ombro e o layout mudam quais encaixes atiram em cada botão): configurar sem a IA usar seria uma ficha que mente (R13). Proposta: o módulo primeiro (a IA liga a barreira quando leva dano de frente).
 - **Como o Comandante vê:** PILOTOS → **[ ESQUADRÃO ]** → um inimigo ou aliado → **Mão esquerda**.
 
-
 ## O HUD de combate ganhou minimapa, vida em barra, cartões de arma e anel de dash — Claude, 13/10 (PR `claude/referencia-mecharena`, ordem P109, frente 1 de 5)
 
 **Ordem do Comandante (13/10):** assistiu a gameplays do MechArena e mandou oito quadros: "evoluíram MUITO a interface, os gráficos, layout e jogabilidade... porém, pay to win... quero evoluir nosso cybermech pra ficar ainda mais bonito, melhor de jogar, mais interessante e gostoso de ficar horas na nossa arena". **Análise (o que eles têm, onde estamos, o que não copiar) e o plano em cinco frentes:** `REFERENCIA_VISUAL.md` § 6. As oito pranchas estão em `referencias/mecharena/gameplay-13-10-*.jpg`.
@@ -2177,7 +2195,6 @@ O mapa segue offline por `?mapa=bunker` ou pelo link na pausa/início da Arena. 
 Dez testes focados cobrem quatro andares, pisos/spawns, rampas em duas orientações para cada transição sem pulo, galerias, linha de tiro, passagem secreta e seleção segura. `npm run check` passou sobre a main atualizada: typecheck, 893 testes em 115 arquivos, build, smoke (12,8 s), bocas e `site --check`. Build: JavaScript gzip 334,1 KB / WASM gzip 719,4 KB. Capturas e medição GPU em `medicoes/BUNKER.md`; p95 alto variável (até 62,6 ms no poço), sem homologar 60 FPS. O mapa usa dois desenhos instanciados estáticos; há teto explícito de colisores, sem atualização por tick/frame nem luz dinâmica.
 
 Próxima sessão: playtest do dono no mapa publicado. Ainda falta IA vertical, elevadores móveis e câmera tática adaptada ao poço. Acesse pelo botão `[ EXPLORAR O BUNKER // 4 NÍVEIS ]` na Arena offline ou em https://www.selvamkt.com.br/cybermech/jogar/?mapa=bunker.
-
 
 ## C2 — preparar chassi escolhido antes de exibir (Codex, 10/10)
 

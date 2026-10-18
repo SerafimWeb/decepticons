@@ -8,6 +8,8 @@ import { PhysicsWorld } from '../../client/src/physics/PhysicsWorld';
 import { ALCANCE_DA_CAMERA, Amazonia } from '../../client/src/environment/Amazonia';
 import { AMAZONIA_DRAGA_INICIO_X, rioEmX } from '../../client/src/environment/AmazoniaLayout';
 import { alturaDoTerreno } from '../../client/src/environment/AmazoniaTerreno';
+import { defesaDaAmazonia } from '../../client/src/environment/AmazoniaGeradores';
+import type { Destructibles } from '../../client/src/environment/Destructibles';
 import { Vector09 } from '../../client/src/entities/Vector09';
 import { loadWalkerAsset, WalkerVisual } from '../../client/src/entities/WalkerVisual';
 import { newWalkerPose, walkerPose } from '../../client/src/entities/walkerGait';
@@ -64,6 +66,10 @@ const tempo = Number(q.get('tempo') ?? 3);
     walkerPose(0.2, 1, { fl: 0, fr: 0, rl: 0, rr: 0 }, 0, tempo, pose);
     walker.apply(pose);
     scene.add(walker.root);
+  }
+  if (q.get('geradores') === '1') {
+    // Os geradores do escudo (P180, parte D): só o desenho (um `Destructibles` de mentira: a bancada não atira).
+    defesaDaAmazonia.criarGeradores({ scene, destructibles: { addExterno: () => 0 } as unknown as Destructibles, aoQuebrar: () => {}, aoVoltar: () => {} });
   }
   if (q.get('escala') === '1') {
     const vec = new Vector09();

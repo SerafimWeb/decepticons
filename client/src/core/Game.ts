@@ -2029,6 +2029,13 @@ export class Game {
         q.chefe.nome = chefe.stats.name;
         q.chefe.alvo = this.match.rio ? 'aldeia' : null;
       }
+      // O escudo do Draga (P180, parte D): quantos geradores ainda de pé.
+      const escudo = this.match.escudo;
+      q.escudo.presente = escudo !== null && chefe !== null;
+      if (escudo) {
+        q.escudo.restantes = escudo.geradoresVivos;
+        q.escudo.total = escudo.total;
+      }
       // A missão do rio (P180, parte C): a distância do Draga até a aldeia, o progresso da marcha e quanto falta nesse passo.
       const rio = this.match.rio;
       q.aldeia.presente = rio !== null && !rio.terminou;
@@ -2038,7 +2045,7 @@ export class Game {
         q.aldeia.progresso = progressoDaMarcha(x);
         q.aldeia.tempoS = tempoAteAAldeiaS(x, chefe.modules.leftLeg > 0, chefe.modules.rightLeg > 0, true);
       }
-      if (rio && !rio.terminou) this.hud.setMissionLinha('RIO VIVO · DERRUBE O DRAGA-01');
+      if (rio && !rio.terminou) this.hud.setMissionLinha(escudo?.ativo ? 'RIO VIVO · DERRUBE OS GERADORES' : 'RIO VIVO · DERRUBE O DRAGA-01');
       q.largura = window.innerWidth;
       q.altura = window.innerHeight;
       this.praiaHud.update(dt, q);

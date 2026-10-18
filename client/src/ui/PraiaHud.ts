@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PRAIA_COMPLEXO, PRAIA_ESTACAO } from '../environment/PraiaLayout';
 import { avisoDaMarcha } from '../sim/DragaMarcha';
+import { avisoDoEscudo, REGRA_DO_ESCUDO } from '../sim/EscudoDoDraga';
 import { avisoDoChefe, CODIGO_DA_FASE, regraDaFase, TEXTOS_DA_FASE, type AlvoDoChefeNoMapa, type FaseDoChefe } from '../sim/FasesDoChefe';
 import { PORTAS_DA_ESTACAO } from '../sim/PortasDaEstacao';
 import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDasPortas, avisoDoQuadro, avisoDosCabos, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
@@ -55,6 +56,8 @@ export interface QuadroDaPraia {
   chefe: { presente: boolean; fracao: number; fase: number; pernas: boolean[]; nome: string; alvo: AlvoDoChefeNoMapa | null };
   /** A aldeia que o Draga-01 ameaça (P180, parte C): a distância (m) até ela, o progresso da marcha (0 a 1) e quanto falta (s). `presente` é falso fora da missão do rio. */
   aldeia: { presente: boolean; distancia: number; progresso: number; tempoS: number };
+  /** O escudo do Draga-01 (P180, parte D): quantos geradores de pé e quantos são. `presente` é falso fora da missão do rio. */
+  escudo: { presente: boolean; restantes: number; total: number };
   camera: THREE.Camera;
   largura: number;
   altura: number;
@@ -72,6 +75,7 @@ export function novoQuadroDaPraia(camera: THREE.Camera): QuadroDaPraia {
     portas: { presente: false, estado: [0, 0], vida: [1, 1] },
     quadro: { presente: false, estado: 0, vida: 1 },
     chefe: { presente: false, fracao: 1, fase: 1, pernas: [true, true], nome: 'COLOSSUS-01', alvo: null },
+    escudo: { presente: false, restantes: 0, total: 0 },
     aldeia: { presente: false, distancia: 0, progresso: 0, tempoS: Infinity },
     camera,
     largura: 0,
@@ -125,6 +129,9 @@ export class PraiaHud {
   private readonly chefeBarra: HTMLElement;
   private readonly chefePernas: HTMLElement[] = [];
   private readonly chefeRegra: HTMLElement;
+  /** O escudo do Draga (P180, parte D): quantos geradores de pé, sob a regra da fase. */
+  private readonly chefeEscudo: HTMLElement;
+  private escudoRestantes = -1;
   private chefeChave = '';
   /** A célula da aldeia (P180, parte C): a distância do Draga e a barra da marcha. */
   private readonly aldeia: HTMLElement;
@@ -235,6 +242,8 @@ export class PraiaHud {
     const pernas = el('div', 'pcf-pernas', this.chefe);
     for (const nome of ['PERNA ESQ', 'PERNA DIR']) this.chefePernas.push(el('span', '', pernas, nome));
     this.chefeRegra = el('p', '', this.chefe);
+    this.chefeEscudo = el('p', 'pcf-escudo', this.chefe);
+    this.chefeEscudo.hidden = true;
 
     this.zona = el('div', 'praia-zona', this.raiz);
 
@@ -313,7 +322,10 @@ export class PraiaHud {
     // A marcha do Draga (P180, parte C): o aviso de cada distância da aldeia (1.000, 500, 250 e 100 m).
     const alertaDaAldeia = q.aldeia.presente ? avisoDaMarcha(this.aldeiaDistancia, q.aldeia.distancia) : null;
     this.aldeiaDistancia = q.aldeia.presente ? q.aldeia.distancia : Infinity;
-    const alerta = alertaDaRede ?? alertaDoChefe ?? alertaDaAldeia ?? alertaDasPortas ?? alertaDoQuadro ?? alertaDosCabos;
+    // O escudo do Draga (parte D): o aviso de cada gerador que cai e o da queda do escudo (o primeiro quadro só aprende quantos há, sem avisar).
+    const alertaDoEscudo = q.escudo.presente ? avisoDoEscudo(this.escudoRestantes < 0 ? q.escudo.restantes : this.escudoRestantes, q.escudo.restantes) : null;
+    this.escudoRestantes = q.escudo.presente ? q.escudo.restantes : -1;
+    const alerta = alertaDaRede ?? alertaDoChefe ?? alertaDoEscudo ?? alertaDaAldeia ?? alertaDasPortas ?? alertaDoQuadro ?? alertaDosCabos;
     // O anúncio do lugar: aparece e some sozinho (a animação é do CSS; aqui só o texto e o relógio).
     const novo = alerta ?? (this.soMissao ? null : this.anunciador.atualiza(q.eu.x, q.eu.z, dt));
     if (novo) {
@@ -406,13 +418,20 @@ export class PraiaHud {
     if (q.chefe.presente) {
       this.chefe.hidden = false;
       const pct = Math.round(q.chefe.fracao * 100);
-      const chave = `${q.chefe.nome}|${q.chefe.fase}|${pct}|${q.chefe.pernas[0] ? 1 : 0}${q.chefe.pernas[1] ? 1 : 0}`;
+      const escudo = q.escudo.presente ? q.escudo.restantes : -1;
+      const chave = `${q.chefe.nome}|${q.chefe.fase}|${pct}|${q.chefe.pernas[0] ? 1 : 0}${q.chefe.pernas[1] ? 1 : 0}|${escudo}`;
       if (chave !== this.chefeChave) {
         this.chefeChave = chave;
         const fase = FASE_PELO_CODIGO[q.chefe.fase] ?? 'anda';
         const alvo = q.chefe.alvo ?? (this.soMissao ? 'transformador' : 'cabos'); // na Cidade Neon não há cabos: o titã vai ao transformador do banco; o Draga vai à aldeia
         this.chefeTitulo.textContent = `${q.chefe.nome} · FASE ${q.chefe.fase} DE 3 · ${TEXTOS_DA_FASE[fase].rotulo}`;
-        this.chefeRegra.textContent = regraDaFase(fase, alvo);
+        // Com o escudo de pé a regra é uma só (derrubar os geradores); sem ele, a da fase.
+        this.chefeRegra.textContent = escudo > 0 ? REGRA_DO_ESCUDO : regraDaFase(fase, alvo);
+        this.chefeEscudo.hidden = !q.escudo.presente;
+        if (q.escudo.presente) {
+          this.chefeEscudo.textContent = escudo > 0 ? `ESCUDO · ${escudo} DE ${q.escudo.total} GERADORES` : 'ESCUDO CAIU';
+          this.chefeEscudo.dataset.estado = escudo > 0 ? 'de-pe' : 'caido';
+        }
         this.chefePernas.forEach((p, i) => (p.textContent = `${alvo === 'aldeia' ? 'LADO' : 'PERNA'} ${i === 0 ? 'ESQ' : 'DIR'}`));
         this.chefe.dataset.fase = fase;
         this.chefeBarra.style.transform = `scaleX(${(pct / 100).toFixed(2)})`;

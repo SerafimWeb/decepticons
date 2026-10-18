@@ -1,6 +1,7 @@
 import type * as THREE from 'three';
 import type { CerebroDoChefe } from '../combat/CerebroDoChefe';
 import type { MechBase } from '../entities/MechBase';
+import type { Destructibles } from './Destructibles';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
 import type { MapId } from './Bunker';
@@ -55,6 +56,33 @@ export interface CriarChefe {
   power?: PowerSpec;
 }
 
+/** O que a partida passa para montar os geradores do escudo: a cena, o registro dos alvos destrutíveis e os dois avisos para a regra (`sim/EscudoDoDraga.ts`). */
+export interface CriarGeradores {
+  scene: THREE.Scene;
+  destructibles: Destructibles;
+  /** O gerador `i` caiu (a vida zerou). */
+  aoQuebrar(i: number): void;
+  /** Rodada nova: os geradores voltaram de pé. */
+  aoVoltar(): void;
+}
+
+/** A defesa do chefe do mapa (P180, parte D): o que se monta na cena além do corpo dele. Hoje, os geradores que alimentam o escudo do Draga. */
+export interface DefesaCarregada {
+  /** Quantos geradores alimentam o escudo. */
+  readonly geradores: number;
+  /** A vida de cada um (o dano do tiro e da explosão tira daqui). */
+  readonly vidaDoGerador: number;
+  /** Monta os geradores na cena, registrados como alvos destrutíveis. Devolve os desenhos e os ids (o teste confere). */
+  criarGeradores(o: CriarGeradores): { readonly grupos: readonly THREE.Object3D[]; readonly ids: readonly number[] };
+}
+
+/** O corpo de um chefe que aceita escudo (o Draga): o multiplicador do dano que ele recebe, escrito pela partida a cada tick. */
+export interface CorpoComEscudo {
+  escudo: number;
+}
+
+export const temEscudo = (m: unknown): m is CorpoComEscudo => typeof (m as CorpoComEscudo | null)?.escudo === 'number';
+
 /** O chefe de um mapa (o Draga-01 da Amazônia, P180 parte C), carregado sob demanda: o corpo, o cérebro e o desenho só baixam para quem abre a missão. */
 export interface ChefeCarregado {
   /** Onde ele nasce (x, z) e para onde olha (yaw do Mech). */
@@ -63,6 +91,8 @@ export interface ChefeCarregado {
   criar(o: CriarChefe): { mech: MechBase; brain: CerebroDoChefe };
   /** O desenho já pronto (o `.glb` baixa aqui, só no cliente). */
   criarVisual?(): Promise<object>;
+  /** A defesa da missão (os geradores do escudo), se ela tem. */
+  readonly defesa?: DefesaCarregada;
 }
 
 const carregados = new Map<MapId, MapaCarregado>();

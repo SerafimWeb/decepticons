@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import type { DamageResult } from '../combat/damage';
 import { pernasCaidas, type PernasCaidas } from '../sim/DragaMarcha';
-import { MechBase, type MechRig, type MechStats } from './MechBase';
+import { MechBase, type MechPart, type MechRig, type MechStats } from './MechBase';
 import type { LegId } from './walkerGait';
 
 /**
@@ -52,11 +53,23 @@ export class DragaMech extends MechBase {
   private readonly caidas: PernasCaidas = { fl: 0, fr: 0, rl: 0, rr: 0 };
   /** Para onde o convés mira (yaw absoluto, como o de `MechBase.yaw`): o cérebro escreve, o desenho lê. */
   deckAim = 0;
+  /** O escudo (P180, parte D): o multiplicador do dano que o corpo recebe (1 sem escudo, 0,1 com os geradores de pé). A partida o escreve a cada tick a partir do `EscudoDoDraga`. */
+  escudo = 1;
 
   constructor(stats: MechStats, visual: VisualDoDraga | null = null) {
     super(stats, rigDoDraga(visual));
     this.visual = visual;
     this.crawls = true; // as duas pernas caídas não o deixam imóvel: ele rasteja a 30% (a fase "rasteja" do chefe)
+  }
+
+  /** O tiro e a explosão: o escudo (parte D) tira 90% enquanto houver gerador de pé. */
+  override damagePart(part: MechPart, amount: number): DamageResult {
+    return super.damagePart(part, amount * this.escudo);
+  }
+
+  /** O fogo, o choque e o gelo (dano por segundo) também passam pelo escudo: queimar o Draga com a cúpula de pé não é um atalho. */
+  override statusDamage(amount: number): DamageResult {
+    return super.statusDamage(amount * this.escudo);
   }
 
   /** A queda de cada perna agora (0 de pé, 1 caída): o que o desenho mostra. Só leitura (testes). */
