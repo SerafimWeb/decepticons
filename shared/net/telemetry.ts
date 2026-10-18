@@ -9,6 +9,7 @@
  * persistente entre sessões: cada aba sorteia um id efêmero só para não contar dois cliques do mesmo carregamento
  * como duas visitas, e ele nunca é escrito em disco nem devolvido pela leitura pública.
  */
+import { parseContextoDeEvento, type ContextoDeEvento } from './audiencia';
 
 /** Cada nome é um evento que o produto quer contar. Lista fechada: o servidor recusa qualquer outro (evita
  * que alguém injete contagem arbitrária no seu painel só mandando POST com nome inventado). */
@@ -33,12 +34,14 @@ const EVENTOS_SET = new Set<string>(EVENTOS);
 export const EVENTO_PATH = '/evento';
 /** Caminho do resumo público (contagens agregadas, sem eventos crus). */
 export const RESUMO_PATH = '/eventos/resumo';
-/** Payload maior que isto é recusado antes de tentar decodificar (G7: nunca confiar no tamanho anunciado). */
-export const EVENTO_MAX_BYTES = 256;
+/** Payload maior que isto é recusado antes de tentar decodificar (G7: nunca confiar no tamanho anunciado). 1 KB cobre a visita da audiência (P188) com folga: o pior caso (site de origem e as três marcas de campanha) tem ~400 bytes. */
+export const EVENTO_MAX_BYTES = 1024;
 
 export interface EventoEnviado {
   seq?: number;
   nome: EventoNome;
+  /** A audiência do evento (P188): a visita em `landing_view`/`boot_ok`, o canal nos passos do funil. Só categorias (`shared/net/audiencia.ts`). Contexto torto é descartado; o evento continua valendo. */
+  ctx?: ContextoDeEvento;
   /** Id efêmero da aba (sorteado no cliente a cada carregamento, nunca persistido). Serve só para o
    * servidor não contar o mesmo evento duas vezes se o navegador reenviar (`sendBeacon` às vezes duplica). */
   aba: string;
@@ -51,7 +54,8 @@ export function parseEvento(raw: unknown): EventoEnviado | null {
   if (typeof r.nome !== 'string' || !EVENTOS_SET.has(r.nome)) return null;
   if (typeof r.aba !== 'string' || r.aba.length < 4 || r.aba.length > 40 || !/^[a-z0-9]+$/i.test(r.aba)) return null;
   if (r.seq !== undefined && (typeof r.seq !== 'number' || !Number.isInteger(r.seq) || r.seq < 0 || r.seq > 2147483647)) return null;
-  return { nome: r.nome as EventoNome, aba: r.aba, ...(r.seq === undefined ? {} : { seq: r.seq as number }) };
+  const ctx = parseContextoDeEvento(r.nome, r.o);
+  return { nome: r.nome as EventoNome, aba: r.aba, ...(r.seq === undefined ? {} : { seq: r.seq as number }), ...(ctx ? { ctx } : {}) };
 }
 
 /** Resumo público: contagem por evento nas últimas 24h e desde que o servidor subiu. Só números — o que
@@ -101,6 +105,12 @@ export const EVENTOS_SERVIDOR = [
   'recusa_mensagem',
   /** Recusada na porta, pelas defesas (teto de conexões por IP ou total). */
   'recusa_limite',
+  /** A vida das contas (P187): quantas nasceram, quantas entraram, quantas falharam na senha, quantas foram apagadas e quantas baixaram os dados. Só a contagem. */
+  'conta_criada',
+  'login_ok',
+  'login_falhou',
+  'conta_apagada',
+  'dados_baixados',
 ] as const;
 export type EventoServidor = (typeof EVENTOS_SERVIDOR)[number];
 export type EventoQualquer = EventoNome | EventoServidor;

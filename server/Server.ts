@@ -7,7 +7,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
-import { CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_PROGRESSO_PATH, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, PROGRESSO_MAX_BYTES, parseCredenciais, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
+import { CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_PROGRESSO_PATH, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
 import { ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
 import { type EventoEnviado, type EventoServidor, EVENTO_MAX_BYTES, EVENTO_PATH, METRICAS_HEADER, METRICAS_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
@@ -15,7 +15,8 @@ import { sanitizeName, type RejectReason } from '../shared/net/messages';
 import { ArenaRoom, type Peer } from './ArenaRoom';
 import { Contas } from './contas';
 import { fazerBackup } from './backupContas';
-import { clientCountry, clientIp, Guard, GUARD_DEFAULTS, type GuardConfig } from './guard';
+import { Audiencia } from './Audiencia';
+import { clientCountry, clientIp, clientRegion, Guard, GUARD_DEFAULTS, ipParaLog, type GuardConfig } from './guard';
 import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
 import { corsDoPedido, origemPermitida, origensExtras } from './origem';
 import { bancoDeContas, pastaDados } from './dados';
@@ -235,6 +236,8 @@ export async function startServer(
    */
   const telemetria = new Telemetria();
   const playMetrics = new PlayMetrics();
+  /** A audiência (P188): de onde vêm as visitas e que aparelho joga, só em soma e por categoria (`server/Audiencia.ts`). */
+  const audiencia = new Audiencia();
   const codigo = resolve(import.meta.dirname, '..');
   const dirDados = opts.dirDados ?? (opts.dbContas === ':memory:' ? null : pastaDados(codigo));
   if (dirDados) log(`pasta de dados (contas.db, números, token): ${dirDados}`);
@@ -242,15 +245,18 @@ export async function startServer(
   if (arquivoDados) telemetria.carregar(lerJson(arquivoDados));
   const playFile = dirDados ? join(dirDados,'partidas.json') : null;
   if (playFile) playMetrics.load(lerJson(playFile));
+  const audienciaFile = dirDados ? join(dirDados, 'audiencia.json') : null;
+  if (audienciaFile) audiencia.carregar(lerJson(audienciaFile));
   /** Token do dono para `GET /metricas` (origem das conexões, por país e por dia). `null` = porta desligada. */
   const metricasToken = opts.metricasToken ?? (dirDados ? carregarToken(dirDados) : null);
   // Diz ONDE está o token (nunca o token): a pasta é a de onde o código do servidor roda, e o dono precisa achar o arquivo.
   if (metricasToken && dirDados) log(`métricas privadas ligadas: o token está em ${join(dirDados, TOKEN_ARQUIVO)} (ou na variável CYBERMECH_METRICAS_TOKEN)`);
   const limiteMetricas = new LimiteLogin({ teto: 30, janelaMs: 10 * 60 * 1000 });
   const gravarDados = (): void => {
-    if (!arquivoDados || (!telemetria.sujo && !playMetrics.dirty)) return;
+    if (!arquivoDados || (!telemetria.sujo && !playMetrics.dirty && !audiencia.sujo)) return;
     try {
       gravarJson(arquivoDados, telemetria.exportar());
+      if (audienciaFile && audiencia.sujo) gravarJson(audienciaFile, audiencia.exportar());
       if (playFile && playMetrics.dirty) { gravarJson(playFile,playMetrics.snapshot());playMetrics.dirty=false; }
     } catch (err) {
       telemetria.sujo = true;
@@ -377,7 +383,7 @@ export async function startServer(
         res.end();
         return;
       }
-      const body = JSON.stringify({...telemetria.metricas(),play:playMetrics.snapshot(),usuarios:contas.metricasUsuarios(),runtime:{rssMB:process.memoryUsage().rss/1048576,rooms:rooms.size,players:jogadoresAgora()}});
+      const body = JSON.stringify({...telemetria.metricas(),play:playMetrics.snapshot(),usuarios:contas.metricasUsuarios(),audiencia:audiencia.resumo(),runtime:{rssMB:process.memoryUsage().rss/1048576,rooms:rooms.size,players:jogadoresAgora()}});
       res.writeHead(200, {
         'content-type': 'application/json; charset=utf-8',
         'cache-control': 'no-store',
@@ -405,7 +411,11 @@ export async function startServer(
         res.end();
         return;
       }
-      const ok = telemetria.registrar(evento.nome, ip, Date.now(), clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']), evento.seq === undefined ? undefined : `${evento.aba}:${evento.seq}`) === 'ok';
+      const pais = clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']);
+      const eventoId = evento.seq === undefined ? undefined : `${evento.aba}:${evento.seq}`;
+      const ok = telemetria.registrar(evento.nome, ip, Date.now(), pais, eventoId) === 'ok';
+      // A audiência (P188): o contexto que o evento trouxe (só categorias) e o estado do Brasil que a Cloudflare disse. Só entra o que a régua de taxa por IP deixou contar.
+      if (ok && evento.ctx) audiencia.registrar(evento.nome, evento.ctx, clientRegion(req.socket.remoteAddress, pais, req.headers['cf-region-code']), Date.now(), eventoId);
       res.writeHead(ok ? 204 : 429, { 'access-control-allow-origin': '*' });
       res.end();
       return;
@@ -423,7 +433,7 @@ export async function startServer(
     // Rotas de conta: só as páginas do jogo (e a rede local) podem chamá-las; o CORS devolve a origem do pedido, nunca `*`.
     const cors = corsDoPedido(req.headers.origin, origens);
     if (
-      (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH || path === CONTA_SAIR_PATH || path === CONTA_EU_PATH || path === CONTA_PROGRESSO_PATH) &&
+      (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH || path === CONTA_SAIR_PATH || path === CONTA_EU_PATH || path === CONTA_PROGRESSO_PATH || path === CONTA_DADOS_PATH || path === CONTA_APAGAR_PATH || path === CONTA_MEDICAO_PATH) &&
       !origemPermitida(req.headers.origin, origens)
     ) {
       res.writeHead(403, { 'content-type': 'application/json; charset=utf-8', ...cors });
@@ -460,36 +470,50 @@ export async function startServer(
         enviarJson(413, { erro: 'pedido grande demais' });
         return;
       }
-      let credenciais: { email: string; senha: string } | null = null;
+      let json: unknown = null;
       try {
-        credenciais = parseCredenciais(JSON.parse(corpo.toString('utf8') || '{}'));
+        json = JSON.parse(corpo.toString('utf8') || '{}');
       } catch {
-        credenciais = null;
+        json = null;
       }
-      if (!credenciais) {
-        enviarJson(400, { erro: 'e-mail ou senha inválidos' });
-        return;
-      }
+      const paisDaConta = clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']);
       if (path === CONTA_CRIAR_PATH) {
-        const r = await contas.criar(credenciais.email, credenciais.senha);
+        // Criar conta exige o aceite da política de privacidade e a declaração de idade (P187, LGPD): sem as duas caixas, ou com a política velha, não cria.
+        const leitura = parseCriarConta(json);
+        if (!leitura.ok) {
+          if (leitura.motivo === 'aceite') enviarJson(400, { erro: 'aceite a política de privacidade e confirme a idade para criar a conta', codigo: 'aceite' });
+          else if (leitura.motivo === 'versao') enviarJson(409, { erro: 'a política de privacidade mudou: recarregue a página', codigo: 'versao' });
+          else enviarJson(400, { erro: 'e-mail ou senha inválidos' });
+          return;
+        }
+        const r = await contas.criar(leitura.email, leitura.senha, Date.now(), POLITICA_VERSAO);
         if (!r.ok) {
           enviarJson(409, { erro: 'este e-mail já tem conta' });
           return;
         }
         const token = contas.criarSessao(r.conta.id);
-        log(`conta criada: ${r.conta.email}`);
-        enviarJson(201, { token, email: r.conta.email });
+        // O e-mail é dado pessoal e o log fica em arquivo: o log diz só que uma conta nasceu (P187).
+        log(`conta criada (número ${r.conta.id})`);
+        contar('conta_criada', paisDaConta);
+        enviarJson(201, { token, email: r.conta.email, medir: true });
+        return;
+      }
+      const credenciais = parseCredenciais(json);
+      if (!credenciais) {
+        enviarJson(400, { erro: 'e-mail ou senha inválidos' });
         return;
       }
       // CONTA_ENTRAR_PATH: a mesma mensagem para "não existe" e "senha errada" — não ajuda ninguém a
       // descobrir por tentativa se um e-mail está cadastrado.
       const conta = await contas.autenticar(credenciais.email, credenciais.senha);
       if (!conta) {
+        contar('login_falhou', paisDaConta);
         enviarJson(401, { erro: 'e-mail ou senha incorretos' });
         return;
       }
       const token = contas.criarSessao(conta.id);
-      enviarJson(200, { token, email: conta.email });
+      contar('login_ok', paisDaConta);
+      enviarJson(200, { token, email: conta.email, medir: conta.medir });
       return;
     }
     if (path === CONTA_SAIR_PATH && (req.method === 'POST' || req.method === 'OPTIONS')) {
@@ -509,10 +533,10 @@ export async function startServer(
       return;
     }
     // O navegador de outra origem (o jogo em cybermech.online, o servidor em jogo.cybermech.online) faz o preflight antes de qualquer chamada com o cabeçalho da sessão.
-    if ((path === CONTA_EU_PATH || path === CONTA_PROGRESSO_PATH) && req.method === 'OPTIONS') {
+    if ((path === CONTA_EU_PATH || path === CONTA_PROGRESSO_PATH || path === CONTA_DADOS_PATH || path === CONTA_APAGAR_PATH || path === CONTA_MEDICAO_PATH) && req.method === 'OPTIONS') {
       res.writeHead(204, {
         ...cors,
-        'access-control-allow-methods': path === CONTA_EU_PATH ? 'GET, OPTIONS' : 'GET, PUT, OPTIONS',
+        'access-control-allow-methods': path === CONTA_EU_PATH || path === CONTA_DADOS_PATH ? 'GET, OPTIONS' : path === CONTA_PROGRESSO_PATH ? 'GET, PUT, OPTIONS' : 'POST, OPTIONS',
         'access-control-allow-headers': `content-type, ${SESSAO_HEADER}`,
       });
       res.end();
@@ -563,7 +587,72 @@ export async function startServer(
         ...cors,
         'cache-control': 'no-store',
       });
-      res.end(conta ? JSON.stringify({ email: conta.email, is_admin: conta.is_admin }) : JSON.stringify({ erro: 'sem sessão' }));
+      res.end(conta ? JSON.stringify({ email: conta.email, is_admin: conta.is_admin, medir: conta.medir }) : JSON.stringify({ erro: 'sem sessão' }));
+      return;
+    }
+    // Os direitos do titular (P187, LGPD art. 18): baixar os próprios dados, apagar a conta, escolher se a atividade é medida. Todos com a sessão da própria conta.
+    if (
+      (path === CONTA_DADOS_PATH && req.method === 'GET') ||
+      ((path === CONTA_APAGAR_PATH || path === CONTA_MEDICAO_PATH) && req.method === 'POST')
+    ) {
+      const token = req.headers[SESSAO_HEADER];
+      const conta = typeof token === 'string' ? contas.validarSessao(token) : null;
+      const enviarJson = (codigo: number, dados: unknown, extra: Record<string, string> = {}) => {
+        res.writeHead(codigo, { 'content-type': 'application/json; charset=utf-8', ...cors, 'cache-control': 'no-store', ...extra });
+        res.end(JSON.stringify(dados));
+      };
+      if (!conta) {
+        enviarJson(401, { erro: 'sem sessão' });
+        return;
+      }
+      const pais = clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']);
+      if (path === CONTA_DADOS_PATH) {
+        const dados = contas.exportarDados(conta.id);
+        if (!dados) {
+          enviarJson(404, { erro: 'conta não encontrada' });
+          return;
+        }
+        contar('dados_baixados', pais);
+        enviarJson(200, dados, { 'content-disposition': 'attachment; filename="cybermech-meus-dados.json"' });
+        return;
+      }
+      const corpo = await lerCorpoLimitado(req, 256);
+      if (corpo === 'grande') {
+        enviarJson(413, { erro: 'pedido grande demais' });
+        return;
+      }
+      let json: unknown = null;
+      try {
+        json = JSON.parse(corpo.toString('utf8') || '{}');
+      } catch {
+        json = null;
+      }
+      if (path === CONTA_MEDICAO_PATH) {
+        const ativa = parseMedicao(json);
+        if (ativa === null) {
+          enviarJson(400, { erro: 'pedido inválido' });
+          return;
+        }
+        contas.definirMedicao(conta.id, ativa);
+        enviarJson(200, { ativa });
+        return;
+      }
+      // Apagar a conta: confirma com a senha (a mesma régua de tentativas do login, por IP: uma sessão esquecida aberta não vira um jeito de adivinhar a senha) e não se desfaz.
+      const ip = clientIp(req.socket.remoteAddress, req.headers['cf-connecting-ip']);
+      if (!limiteLogin.permitir(ip)) {
+        enviarJson(429, { erro: 'tentativas demais; espere um pouco' });
+        return;
+      }
+      const senha = parseSenhaDeConfirmacao(json);
+      const confere = senha ? await contas.autenticar(conta.email, senha) : null;
+      if (!confere || confere.id !== conta.id) {
+        enviarJson(401, { erro: 'senha incorreta' });
+        return;
+      }
+      contas.apagarConta(conta.id);
+      log(`conta apagada a pedido do titular (número ${conta.id})`);
+      contar('conta_apagada', pais);
+      enviarJson(200, { apagada: true });
       return;
     }
     if (path === CONFIG_PATH && req.method === 'GET') {
@@ -657,7 +746,7 @@ export async function startServer(
     if (admit !== 'ok') {
       if (admit === 'total') rejected.total++;
       else rejected.ip++;
-      log(`recusa de ${ip}: ${admit}`);
+      log(`recusa de ${ipParaLog(ip)}: ${admit}`);
       contar('recusa_limite', pais);
       // 4013 = "tente mais tarde" (código de aplicação, aceito no navegador e no `ws` do Node).
       ws.close(4013, admit);
@@ -699,7 +788,7 @@ export async function startServer(
       if (veredito === 'cut') {
         flooded = true;
         rejected.flood++;
-        log(`corte de ${ip}: taxa alta demais`);
+        log(`corte de ${ipParaLog(ip)}: taxa alta demais`);
         // 4008 = corte por taxa (código de aplicação; o navegador só deixa a página usar 3000-4999).
         ws.close(4008, 'taxa');
         return;
@@ -709,7 +798,7 @@ export async function startServer(
         if (!descartando) {
           descartando = true;
           rejected.picos++;
-          log(`descarte de ${ip}: pico de mensagens (a conexão segue)`);
+          log(`descarte de ${ipParaLog(ip)}: pico de mensagens (a conexão segue)`);
         }
         return;
       }

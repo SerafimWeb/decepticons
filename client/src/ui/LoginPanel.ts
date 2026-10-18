@@ -11,6 +11,8 @@ import { validarEmail, validarSenha } from '../../../shared/net/auth';
  * - Estado de "carregando" enquanto aguarda a API
  * - Exibição de erros legíveis do servidor em português
  * - Estado "logado como <email>" com botão "Sair"
+ * - Criar conta exige as duas caixas (política de privacidade lida; maior de 18 anos ou com autorização de um responsável): o servidor também recusa sem elas (P187, LGPD)
+ * - Logado: "Meus dados" (LGPD art. 18): ligar/desligar o registro da atividade, baixar os dados e apagar a conta (com a senha de novo)
  * - NUNCA exibe a senha em logs
  * - NUNCA coloca dois botões de ação primária lado a lado (layout vertical único)
  * - Responsivo e pronto para dispositivos móveis
@@ -18,18 +20,35 @@ import { validarEmail, validarSenha } from '../../../shared/net/auth';
 
 export type LoginModo = 'entrar' | 'criar';
 
+/** A política de privacidade publicada no site (o jogo pode estar em outro endereço; a política é uma só). */
+export const POLITICA_URL_PADRAO = 'https://cybermech.online/privacidade/';
+
 export interface LoginPanelEstado {
   logado: boolean;
   email: string;
   modo: LoginModo;
   carregando: boolean;
   erro: string | null;
+  /** A atividade da conta é registrada? (A caixa de "Meus dados"; vem da sessão.) */
+  medir: boolean;
+  /** Logado: a confirmação de apagar a conta está aberta (pede a senha). */
+  confirmandoApagar: boolean;
+  /** Uma frase de confirmação ("Dados baixados."), em verde, acima das ações. */
+  aviso: string | null;
 }
 
 export interface LoginPanelOptions {
   onEntrar?: (email: string, senha: string) => Promise<void> | void;
   onCriar?: (email: string, senha: string) => Promise<void> | void;
   onSair?: () => Promise<void> | void;
+  /** Baixar os dados da conta (LGPD art. 18 II e V). */
+  onBaixar?: () => Promise<void> | void;
+  /** Apagar a conta com a senha digitada (LGPD art. 18 VI). */
+  onApagar?: (senha: string) => Promise<void> | void;
+  /** A pessoa ligou ou desligou o registro da atividade (LGPD art. 18 § 2). */
+  onMedicao?: (ativa: boolean) => Promise<void> | void;
+  /** Para onde vai o link "Política de Privacidade". */
+  politicaUrl?: string;
   estadoInicial?: Partial<LoginPanelEstado>;
 }
 
@@ -41,6 +60,9 @@ export class LoginPanel {
   private inputSenhaVal = '';
   private emailTocado = false;
   private senhaTocada = false;
+  private aceitePolitica = false;
+  private aceiteIdade = false;
+  private senhaApagar = '';
 
   constructor(options: LoginPanelOptions = {}, parent: HTMLElement | null = null) {
     this.options = options;
@@ -50,6 +72,9 @@ export class LoginPanel {
       modo: 'entrar',
       carregando: false,
       erro: null,
+      medir: true,
+      confirmandoApagar: false,
+      aviso: null,
       ...options.estadoInicial,
     };
     if (this.estado.email) {
@@ -75,6 +100,8 @@ export class LoginPanel {
       ...this.estado,
       ...novoEstado,
     };
+    // A frase de confirmação é de um momento: ao trocar de tela (logar, sair, outra aba) ela some, a menos que quem trocou mande outra.
+    if ((logadoMudou || modoMudou) && novoEstado.aviso === undefined) this.estado.aviso = null;
 
     if (novoEstado.email !== undefined && !this.inputEmailVal) {
       this.inputEmailVal = novoEstado.email;
@@ -100,15 +127,29 @@ export class LoginPanel {
 
   /** Define o painel como logado. */
   setLogado(email: string): void {
-    this.setEstado({ logado: true, email, carregando: false, erro: null });
+    this.senhaApagar = '';
+    this.setEstado({ logado: true, email, carregando: false, erro: null, confirmandoApagar: false });
+  }
+
+  /** A sessão diz se a atividade é medida (só redesenha quando a escolha mudou). */
+  setMedicao(medir: boolean): void {
+    if (medir !== this.estado.medir) this.setEstado({ medir });
+  }
+
+  /** Uma frase de confirmação acima das ações (`null` tira). */
+  setAviso(aviso: string | null): void {
+    this.setEstado({ aviso });
   }
 
   /** Define o painel como deslogado. */
   setDeslogado(): void {
     this.inputSenhaVal = '';
+    this.senhaApagar = '';
+    this.aceitePolitica = false;
+    this.aceiteIdade = false;
     this.emailTocado = false;
     this.senhaTocada = false;
-    this.setEstado({ logado: false, carregando: false, erro: null });
+    this.setEstado({ logado: false, carregando: false, erro: null, confirmandoApagar: false });
   }
 
   /** Valida os campos atuais conforme o contrato. */
@@ -152,6 +193,26 @@ export class LoginPanel {
     if (!this.containerEl) return;
 
     const emailExibicao = this.estado.email || 'Piloto Autenticado';
+    const politica = this._escapeHtml(this.options.politicaUrl ?? POLITICA_URL_PADRAO);
+    const carregando = this.estado.carregando;
+    const senhaOk = validarSenha(this.senhaApagar) === null;
+    // Apagar a conta não se desfaz: um clique abre a confirmação, que pede a senha de novo e tem o botão de desistir.
+    const apagar = this.estado.confirmandoApagar
+      ? `
+        <div class="login-field login-apagar">
+          <label for="login-input-apagar">CONFIRME COM A SENHA · APAGAR NÃO SE DESFAZ</label>
+          <input type="password" id="login-input-apagar" class="login-input" placeholder="••••••••" autocomplete="current-password" value="${this._escapeHtml(this.senhaApagar)}" ${carregando ? 'disabled' : ''} />
+        </div>
+        <button type="button" class="btn-login-action btn-logout" id="btn-login-apagar-confirmar" ${!senhaOk || carregando ? 'disabled' : ''}>
+          ${carregando ? 'APAGANDO…' : 'APAGAR A CONTA PARA SEMPRE'}
+        </button>
+        <button type="button" class="btn-login-action btn-login-secondary" id="btn-login-apagar-cancelar" ${carregando ? 'disabled' : ''}>
+          DESISTIR
+        </button>`
+      : `
+        <button type="button" class="btn-login-action btn-login-secondary" id="btn-login-apagar" ${carregando ? 'disabled' : ''}>
+          APAGAR MINHA CONTA
+        </button>`;
 
     this.containerEl.innerHTML = `
       <div class="login-box">
@@ -165,27 +226,64 @@ export class LoginPanel {
         </div>
 
         ${this.estado.erro ? `<div class="login-error-banner" role="alert">${this._escapeHtml(this.estado.erro)}</div>` : ''}
+        ${this.estado.aviso ? `<div class="login-aviso" role="status">${this._escapeHtml(this.estado.aviso)}</div>` : ''}
+
+        <div class="login-header-tag">// MEUS DADOS</div>
+        <label class="login-check">
+          <input type="checkbox" id="login-check-medir" ${this.estado.medir ? 'checked' : ''} ${carregando ? 'disabled' : ''} />
+          <span>Registrar minha atividade (dias jogados, minutos, abates e mortes) para as estatísticas do jogo</span>
+        </label>
+        <p class="login-hint">O que o jogo guarda e quais são os seus direitos: <a href="${politica}" target="_blank" rel="noopener">Política de Privacidade</a>.</p>
 
         <div class="login-actions-stacked">
-          <button type="button" class="btn-login-action btn-logout" id="btn-login-logout" ${this.estado.carregando ? 'disabled' : ''}>
-            ${this.estado.carregando ? 'ENCERRANDO SESSÃO…' : 'SAIR DA CONTA'}
+          <button type="button" class="btn-login-action btn-login-secondary" id="btn-login-baixar" ${carregando ? 'disabled' : ''}>
+            BAIXAR MEUS DADOS
+          </button>
+          ${apagar}
+          <button type="button" class="btn-login-action btn-logout" id="btn-login-logout" ${carregando ? 'disabled' : ''}>
+            ${carregando ? 'AGUARDE…' : 'SAIR DA CONTA'}
           </button>
         </div>
       </div>
     `;
 
-    const btnLogout = this.containerEl.querySelector<HTMLButtonElement>('#btn-login-logout');
-    if (btnLogout) {
-      btnLogout.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (this.estado.carregando) return;
-        if (this.options.onSair) {
-          void this.options.onSair();
-        } else {
-          this.setDeslogado();
-        }
-      });
-    }
+    const q = <T extends HTMLElement>(id: string) => this.containerEl!.querySelector<T>(`#${id}`);
+    q('btn-login-logout')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (this.estado.carregando) return;
+      if (this.options.onSair) void this.options.onSair();
+      else this.setDeslogado();
+    });
+    q<HTMLInputElement>('login-check-medir')?.addEventListener('change', (e) => {
+      const ativa = !!(e.target as HTMLInputElement | null)?.checked;
+      this.estado = { ...this.estado, medir: ativa };
+      void this.options.onMedicao?.(ativa);
+    });
+    q('btn-login-baixar')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (!this.estado.carregando) void this.options.onBaixar?.();
+    });
+    q('btn-login-apagar')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.senhaApagar = '';
+      this.setEstado({ confirmandoApagar: true, erro: null, aviso: null });
+    });
+    q('btn-login-apagar-cancelar')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.senhaApagar = '';
+      this.setEstado({ confirmandoApagar: false, erro: null });
+    });
+    q<HTMLInputElement>('login-input-apagar')?.addEventListener('input', (e) => {
+      this.senhaApagar = (e.target as HTMLInputElement).value;
+      // Só liga ou desliga o botão: refazer o painel a cada tecla tiraria o foco do campo.
+      const botao = q<HTMLButtonElement>('btn-login-apagar-confirmar');
+      if (botao) botao.disabled = validarSenha(this.senhaApagar) !== null || this.estado.carregando;
+    });
+    q('btn-login-apagar-confirmar')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (this.estado.carregando || validarSenha(this.senhaApagar) !== null) return;
+      void this.options.onApagar?.(this.senhaApagar);
+    });
   }
 
   private _renderDeslogado(): void {
@@ -215,6 +313,7 @@ export class LoginPanel {
 
         <form class="login-form" id="login-form-element" novalidate>
           ${this.estado.erro ? `<div class="login-error-banner" role="alert">${this._escapeHtml(this.estado.erro)}</div>` : ''}
+          ${this.estado.aviso ? `<div class="login-aviso" role="status">${this._escapeHtml(this.estado.aviso)}</div>` : ''}
 
           <div class="login-field">
             <label for="login-input-email">E-MAIL DO PILOTO</label>
@@ -244,13 +343,26 @@ export class LoginPanel {
             ${mostrarSenhaErro ? `<span class="field-error">${this._escapeHtml(senhaErro)}</span>` : ''}
           </div>
 
+          ${modoEntrar ? '' : `
+          <div class="login-consent">
+            <label class="login-check">
+              <input type="checkbox" id="login-check-politica" ${this.aceitePolitica ? 'checked' : ''} ${this.estado.carregando ? 'disabled' : ''} />
+              <span>Li e aceito a <a href="${this._escapeHtml(this.options.politicaUrl ?? POLITICA_URL_PADRAO)}" target="_blank" rel="noopener">Política de Privacidade</a>.</span>
+            </label>
+            <label class="login-check">
+              <input type="checkbox" id="login-check-idade" ${this.aceiteIdade ? 'checked' : ''} ${this.estado.carregando ? 'disabled' : ''} />
+              <span>Tenho 18 anos ou mais, ou um responsável autorizou.</span>
+            </label>
+            <p class="login-hint">Você pode baixar ou apagar tudo o que o jogo guarda da sua conta quando quiser.</p>
+          </div>`}
+
           <!-- Um único botão de ação primária por visualização (empilhado verticalmente) -->
           <div class="login-actions-stacked">
             <button
               type="submit"
               class="btn-login-action btn-submit"
               id="btn-login-submit"
-              ${!valido || this.estado.carregando ? 'disabled' : ''}
+              ${!valido || (!modoEntrar && !this._aceitou()) || this.estado.carregando ? 'disabled' : ''}
             >
               ${this.estado.carregando ? carregandoTexto : acaoTexto}
             </button>
@@ -270,6 +382,16 @@ export class LoginPanel {
     const inputEmail = this.containerEl.querySelector<HTMLInputElement>('#login-input-email');
     const inputSenha = this.containerEl.querySelector<HTMLInputElement>('#login-input-senha');
     const form = this.containerEl.querySelector<HTMLFormElement>('#login-form-element');
+    const checkPolitica = this.containerEl.querySelector<HTMLInputElement>('#login-check-politica');
+    const checkIdade = this.containerEl.querySelector<HTMLInputElement>('#login-check-idade');
+    checkPolitica?.addEventListener('change', () => {
+      this.aceitePolitica = !!checkPolitica.checked;
+      this._atualizarEstadoSubmit();
+    });
+    checkIdade?.addEventListener('change', () => {
+      this.aceiteIdade = !!checkIdade.checked;
+      this._atualizarEstadoSubmit();
+    });
 
     if (tabEntrar) {
       tabEntrar.addEventListener('click', (e) => {
@@ -319,7 +441,7 @@ export class LoginPanel {
         this.emailTocado = true;
         this.senhaTocada = true;
         const { valido } = this.validar();
-        if (!valido || this.estado.carregando) {
+        if (!valido || this.estado.carregando || (this.estado.modo === 'criar' && !this._aceitou())) {
           this._render();
           return;
         }
@@ -373,8 +495,13 @@ export class LoginPanel {
     const btnSubmit = this.containerEl.querySelector<HTMLButtonElement>('#btn-login-submit');
     const { valido } = this.validar();
     if (btnSubmit) {
-      btnSubmit.disabled = !valido || this.estado.carregando;
+      btnSubmit.disabled = !valido || (this.estado.modo === 'criar' && !this._aceitou()) || this.estado.carregando;
     }
+  }
+
+  /** As duas caixas do criar conta estão marcadas? (O servidor recusa sem elas: isto só evita o clique que não leva a nada.) */
+  private _aceitou(): boolean {
+    return this.aceitePolitica && this.aceiteIdade;
   }
 
   private _escapeHtml(str: string): string {

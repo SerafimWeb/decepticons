@@ -31,5 +31,5 @@ for ($tentativa = 1; $tentativa -le 3; $tentativa++) {
   }
   Write-Host "tentativa ${tentativa}: o servidor não respondeu em 60 s; tento de novo"
 }
-Write-Host 'FALHOU: o servidor não subiu depois de 3 tentativas; veja D:\DECEPTICONS\.tmp\servidor\servidor.log'
+Write-Host 'FALHOU: o servidor não subiu depois de 3 tentativas; veja D:\DECEPTICONS\.tmp\servidor\servidor.log (erros do Node) e a pasta registro\ (o dia a dia do servidor)'
 exit 1

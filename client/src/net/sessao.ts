@@ -23,7 +23,11 @@ export interface ServidorDeContas {
   criar(email: string, senha: string): Promise<ContaResposta | { erro: string }>;
   entrar(email: string, senha: string): Promise<ContaResposta | { erro: string }>;
   sair(token: string): Promise<void>;
-  eu(token: string): Promise<{ email: string; is_admin: boolean } | null>;
+  eu(token: string): Promise<{ email: string; is_admin: boolean; medir?: boolean } | null>;
+  /** Os direitos do titular (P187, LGPD art. 18): baixar os dados, apagar a conta, escolher se a atividade é medida. */
+  dados(token: string): Promise<{ json: string } | { erro: string }>;
+  apagar(token: string, senha: string): Promise<string | null>;
+  medicao(token: string, ativa: boolean): Promise<boolean | null>;
   lerProgresso(token: string): Promise<{ progresso: ProgressoPiloto | null } | null>;
   gravarProgresso(token: string, progresso: ProgressoPiloto): Promise<boolean>;
 }
@@ -55,11 +59,14 @@ export interface EstadoSessao {
   email: string | null;
   /** A conta já recebeu o progresso mais novo? (`false` enquanto há algo por mandar ou sem rede.) */
   sincronizado: boolean;
+  /** O jogo registra a atividade desta conta (dias, minutos, abates, mortes)? Padrão sim; a pessoa pode desligar. */
+  medir: boolean;
 }
 
 export class SessaoPiloto {
   private token: string | null = null;
   private emailAtual: string | null = null;
+  private medirAtual = true;
   private sincronizadoAgora = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private sincronizando: Promise<void> | null = null;
@@ -75,7 +82,7 @@ export class SessaoPiloto {
   ) {}
 
   get estado(): EstadoSessao {
-    return { email: this.emailAtual, sincronizado: this.sincronizadoAgora };
+    return { email: this.emailAtual, sincronizado: this.sincronizadoAgora, medir: this.medirAtual };
   }
 
   /** Abre o jogo: se há token guardado e o servidor ainda o aceita, volta logado e sincroniza; senão fica como convidado. */
@@ -88,6 +95,7 @@ export class SessaoPiloto {
     if (!eu) return;
     this.token = guardado;
     this.emailAtual = eu.email;
+    this.medirAtual = eu.medir !== false;
     this.avisar();
     await this.sincronizar();
   }
@@ -105,12 +113,48 @@ export class SessaoPiloto {
   async sair(): Promise<void> {
     const token = this.token;
     this.cancelarEnvio();
+    this.esquecerSessao();
+    if (token) await this.servidor.sair(token);
+  }
+
+  private esquecerSessao(): void {
+    this.cancelarEnvio();
     this.token = null;
     this.emailAtual = null;
+    this.medirAtual = true;
     this.sincronizadoAgora = false;
     this.apagar(this.chave);
     this.avisar();
-    if (token) await this.servidor.sair(token);
+  }
+
+  /** Baixa tudo o que o servidor guarda desta conta (o JSON já formatado e um nome de arquivo com a data). Quem chama entrega o arquivo ao navegador. */
+  async baixarDados(): Promise<{ json: string; nome: string } | { erro: string }> {
+    if (!this.token) return { erro: 'entre na conta primeiro' };
+    const r = await this.servidor.dados(this.token);
+    if ('erro' in r) return r;
+    return { json: r.json, nome: `cybermech-meus-dados-${new Date(this.agora()).toISOString().slice(0, 10)}.json` };
+  }
+
+  /**
+   * Apaga a conta de vez, confirmando com a senha. `null` = apagada (a sessão é esquecida aqui; **o progresso deste aparelho fica**: ele é do aparelho, não do servidor); senão a mensagem para a tela.
+   * Uma senha errada não esquece nada.
+   */
+  async apagarConta(senha: string): Promise<string | null> {
+    if (!this.token) return 'entre na conta primeiro';
+    const erro = await this.servidor.apagar(this.token, senha);
+    if (erro) return erro;
+    this.esquecerSessao();
+    return null;
+  }
+
+  /** A pessoa liga ou desliga o registro da atividade da conta. `true` = o servidor guardou a escolha. */
+  async definirMedicao(ativa: boolean): Promise<boolean> {
+    if (!this.token) return false;
+    const guardou = await this.servidor.medicao(this.token, ativa);
+    if (guardou === null) return false;
+    this.medirAtual = guardou;
+    this.avisar();
+    return true;
   }
 
   /** O jogo avisa que o progresso local mudou (um abate, uma recompensa): marca o instante e agenda o envio. Sem sessão, só marca (vale na hora de entrar). */
@@ -157,6 +201,7 @@ export class SessaoPiloto {
     if ('erro' in resposta) return resposta.erro;
     this.token = resposta.token;
     this.emailAtual = resposta.email;
+    this.medirAtual = resposta.medir !== false;
     this.gravar(this.chave, resposta.token);
     this.avisar();
     await this.sincronizar();

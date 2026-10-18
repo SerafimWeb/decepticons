@@ -9,12 +9,14 @@ import { arsenal, jogo, marcos, pledge, vitrine } from './site/dados.mjs';
 import { esc, inline, pagina } from './site/tema.mjs';
 import { HUD_JS, featureCard, gameButton, ghost, hudCss, hudFooter, hudNav, ico, sectionHeading } from './site/hud.mjs';
 import { LANDING_CSS } from './site/landing-style.mjs';
+import { audienciaParaLanding } from './site/audiencia-landing.mjs';
 
 const args = process.argv.slice(2);
 const OUT = resolve(args.includes('--out') ? args[args.indexOf('--out') + 1] : '.tmp/site/index.html');
 const ROOT = dirname(OUT);
 const game = await jogo();
 if (!game) throw new Error('A landing exige o catálogo real do jogo.');
+const AUDIENCIA_JS = await audienciaParaLanding();
 const m = marcos();
 const SITE_URL = (process.env.SITE_URL || 'https://cybermech.online/').replace(/\/?$/, '/');
 const art = (file) => `jogar/press/${file}`;
@@ -248,7 +250,15 @@ const script = `${HUD_JS}
     }; ask(); setInterval(ask, ${game.net.statusPollS * 1000}); document.addEventListener('visibilitychange', ask);
   }
   const url = ${JSON.stringify(game.net.eventoUrl)};
-  if (url) { const aba = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); const send = (nome) => { try { const body = JSON.stringify({ nome, aba }); if (navigator.sendBeacon) navigator.sendBeacon(url, new Blob([body], {type:'text/plain'})); else fetch(url, {method:'POST', body, keepalive:true}).catch(() => {}); } catch {} }; send('landing_view'); document.querySelectorAll('[data-evento]').forEach(el => el.addEventListener('click', () => send(el.dataset.evento))); }
+  if (url) {
+    // A audiência (P188): a mesma classificação do jogo, embutida do código-fonte (scripts/site/audiencia-landing.mjs). Só categorias: de onde veio, aparelho, idioma, novo ou recorrente.
+    const { Audiencia, lerAmbiente, armazensDoNavegador } = ${AUDIENCIA_JS};
+    const audiencia = new Audiencia(lerAmbiente(), armazensDoNavegador());
+    const aba = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    const send = (nome, o) => { try { const body = JSON.stringify(o ? { nome, aba, o } : { nome, aba }); if (navigator.sendBeacon) navigator.sendBeacon(url, new Blob([body], {type:'text/plain'})); else fetch(url, {method:'POST', body, keepalive:true}).catch(() => {}); } catch {} };
+    send('landing_view', audiencia.visita());
+    document.querySelectorAll('[data-evento]').forEach(el => el.addEventListener('click', () => send(el.dataset.evento, audiencia.funil())));
+  }
 })();`;
 const html = pagina({ title: 'CYBERMECH — Combate de Mechs no navegador', description: 'Pilote seu Mech, configure o arsenal e entre no combate. Grátis, direto no navegador, sem instalação e sem pay-to-win.', css: hudCss('') + LANDING_CSS, body: `${body}\n<script type="module" src="idioma.js"></script>`, script, og: { url: SITE_URL, image: `${SITE_URL}${art('cena-hero.jpg')}` } });
 mkdirSync(ROOT, { recursive: true });

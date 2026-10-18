@@ -6,14 +6,21 @@
     <title>CYBERMECH</title>
     <meta name="author" content="SERAFIM WEB" />
     <link rel="icon" href="data:," />
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2CCHDCEC7X"></script>
+    <!-- Google Analytics só com a escolha da pessoa (P187, LGPD): "sim" na faixa de cookies do site (cybermech.cookies, a mesma chave). Sem escolha, ou com "não", nada do Google é pedido. -->
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-2CCHDCEC7X');
+      (function () {
+        var escolha = null;
+        try { escolha = localStorage.getItem('cybermech.cookies'); } catch (e) { /* sem armazenamento: sem medição */ }
+        if (escolha !== 'sim') return;
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-2CCHDCEC7X';
+        document.head.appendChild(s);
+        gtag('js', new Date());
+        gtag('config', 'G-2CCHDCEC7X');
+      })();
     </script>
   </head>
   <body class="is-paused">

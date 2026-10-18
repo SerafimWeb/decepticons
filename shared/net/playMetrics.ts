@@ -22,6 +22,8 @@ export interface PlayReport {
   wave?: number;
   /** A missão terminou em vitória (true) ou em derrota (false); ausente nos modos sem esse desfecho. */
   won?: boolean;
+  /** O degrau da qualidade gráfica em que a rodada terminou: 0 = a mais alta; 2 = a mais baixa (o jogo rebaixa sozinho quando o aparelho não aguenta, G12). */
+  tier?: 0 | 1 | 2;
 }
 const MAP_RE = /^[a-z0-9-]{1,16}$/;
 export function parsePlayReport(raw: unknown): PlayReport | null {
@@ -78,6 +80,7 @@ export function parsePlayReport(raw: unknown): PlayReport | null {
   )
     return null;
   if (r.won !== undefined && typeof r.won !== "boolean") return null;
+  if (r.tier !== undefined && r.tier !== 0 && r.tier !== 1 && r.tier !== 2) return null;
   return {
     v: 1,
     id: r.id,
@@ -97,6 +100,7 @@ export function parsePlayReport(raw: unknown): PlayReport | null {
     ...(r.map !== undefined ? { map: r.map as string } : {}),
     ...(r.wave !== undefined ? { wave: r.wave as number } : {}),
     ...(r.won !== undefined ? { won: r.won as boolean } : {}),
+    ...(r.tier !== undefined ? { tier: r.tier as 0 | 1 | 2 } : {}),
   };
 }
 export interface PlayGroup {
@@ -130,6 +134,10 @@ export interface PlayTotals {
   /** Soma das ondas alcançadas e de quantos relatórios a trazem (a média é a divisão). */
   waves: number;
   waveReports: number;
+  /** Rodadas por duração: menos de 1 min, 1 a 5, 5 a 15, 15 a 30, 30 ou mais. */
+  dur: number[];
+  /** Rodadas por degrau de qualidade ao terminar: alta, média, baixa (só as que informaram). */
+  qual: number[];
 }
 export interface PlayDay extends PlayTotals {
   day: string;

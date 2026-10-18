@@ -1,5 +1,30 @@
 # ESTADO ATUAL — CYBERMECH
 
+## LGPD (P187) E MÉTRICAS DE NÍVEL PROFISSIONAL (P188): BAIXAR OS DADOS, APAGAR A CONTA, POLÍTICA, GOOGLE ANALYTICS COM LICENÇA, E DE ONDE VÊM AS VISITAS — Claude, 18/10 (branch `claude/lgpd-conta`)
+
+**A ordem do Comandante (18/10):** *"faça os ajustes de apagar conta, baixar dados, tudo que a LGPD obrigue, pra que estejamos todo de acordo"*.
+
+**O que entrou:**
+1. **No jogo (Configurações → Conta):** criar conta exige **aceitar a política e declarar a idade** (o servidor também; guarda quando e qual versão); logado há **Meus dados**: **baixar tudo** (JSON), **apagar a conta** (com a senha, numa transação: conta, progresso, atividade e sessões) e **desligar o registro da atividade** (apaga o que havia).
+2. **No site:** `/privacidade/` (a política), o rodapé com o link em todas as páginas e a **faixa de cookies**: o **Google Analytics só liga depois do "Aceitar"**. **Achado:** a tag estava **fixa dentro do jogo** (`client/index.html`); agora o jogo só a carrega com o "sim" guardado.
+3. **No servidor:** **IP mascarado** no log (`212.8.252.x`), **e-mail fora do log**, e o **registro técnico em arquivo por dia, apagado sozinho depois de 30 dias** (`server/registro.ts`; o painel do servidor lê dele). Novos números do dono: contas criadas, logins, falhas de senha, contas apagadas e dados baixados (só contagem).
+
+4. **A audiência (P188):** o `/metricas/` ganhou **De onde vêm** (digitou o endereço, busca, rede social, outro site, campanha `utm_*`; o funil de cada canal, os sites que mandam gente, as campanhas), **Quem chega** (novo ou recorrente, com conta ou convidado, aparelho, navegador, sistema, idioma, estado do Brasil) e **Quanto se joga** (duração das rodadas e a qualidade gráfica ao terminar). **Só categorias; sem IP, sem cidade, sem id de pessoa.** O Google Analytics **não** entrou na página: precisa da chave de serviço do dono (passos na ordem P188).
+
+**Provas:** testes do banco (aceite, exportar sem segredos, apagar só a conta certa, medição), do HTTP com o servidor de verdade (aceite exigido, versão velha, baixar, apagar com senha errada e certa, a sessão morre, a outra conta intacta, oposição, contagens, preflight, **log sem e-mail**), do cliente (corpo do criar, baixar, apagar, medição; a sessão esquece a conta apagada e **mantém o progresso do aparelho**), do painel de login (as duas caixas, "Meus dados", a confirmação de apagar que não destrói o campo ao digitar) e do registro (dia de Brasília, poda de 30 dias, nunca lança); **o check do site prova no navegador a faixa de cookies** (nada do Google antes da escolha; aceitar liga; a escolha vale na visita seguinte; recusar apaga `_ga`; o jogo não tem a tag fixa). **Mutação à mão: LGPD 32 de 32, audiência 38 de 38, faixa de cookies no navegador do check 7 de 7.** **Ponta a ponta no Chrome (a landing e o jogo reais na mesma origem, contra um servidor local):** a visita do Instagram com link marcado vira canal, site de origem e campanha na landing, o jogo herda a origem, a partida conta com conta ou convidado, a duração e a qualidade entram nas rodadas. Capturas em `.decepticons/arte/` (`lgpd-*-p187-claude.jpg`, `metricas-audiencia-p188-claude.jpg`).
+
+**Custo de CPU:** zero no tick. Um `SELECT` pequeno por visita/rodada de quem tem conta (a checagem da medição); o registro escreve uma linha por evento (a cada 10 s por sala, como o log de antes).
+
+**ATENÇÃO (R13):** o **texto da política é rascunho meu**, escrito a partir do código; **não é parecer jurídico**. **Falta o contato do encarregado** (escreva um e-mail em `.decepticons/contato-privacidade.txt` e a página o mostra) e a razão social. **Não existe recuperação de senha** (exige serviço de e-mail). O **`servidor.log` antigo** ainda tem IPs inteiros e um e-mail (só se apaga com a tarefa parada).
+
+**Onde o Comandante confere:** `cybermech.online/privacidade/`; no jogo, Configurações → Conta (criar conta mostra as duas caixas; logado mostra Meus dados); no site, a faixa de cookies na primeira visita.
+
+**Achados no caminho (R17):** o GA era fixo dentro do jogo; o e-mail ia para o log; `limparExpiradas` nunca era chamada; **a primeira partida de cada visita nunca contava em "partidas iniciadas"** (corrigido).
+
+**A pergunta do Comandante sobre o ritmo (P190) e o painel único (P189):** respondidas em `LANCAMENTO.md` (**proposta aguardando o "ok" dele**): o que impede o lançamento cabe em 6 itens; o resto fica congelado; o P81 está pausado.
+
+**Próxima sessão começa com:** o que o Comandante responder à `LANCAMENTO.md`; sem resposta, o item 1 da lista (o servidor fora do PC de trabalho) e o arquivamento do histórico antigo.
+
 ## AS MÉTRICAS DOS PILOTOS: QUANTOS ENTRAM, QUANTO JOGAM, QUEM VOLTA — Claude, 18/10 (branch `claude/metricas-usuarios`, P185)
 
 **A pergunta do Comandante (17/10):** *"tem como termos as métricas dos usuários, quantos entram, quantos minutos jogam, quantas mortes, etc? [...] depois implementarmos melhores práticas de marketing orientado pelas nossas informações de usuários?"*

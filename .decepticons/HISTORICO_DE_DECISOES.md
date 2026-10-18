@@ -1,3 +1,43 @@
+## [2026-10-18] A lista de lançamento: o resto espera (Claude, P189 e P190)
+
+**Ordem:** o Comandante perguntou por que as iterações são tão demoradas e pediu orientação para lançar logo; no mesmo recado, um painel único para controlar tudo.
+
+**Decisões (propostas; o Comandante aprova):**
+1. **O que impede o lançamento cabe em seis itens** (`LANCAMENTO.md`): servidor fora do PC de trabalho, teste com gente de fora, política revisada, "esqueci a senha", primeira partida em 1 minuto, plano dos 7 primeiros dias. **Times, o painel único, o Google Analytics na página, ranking e o resto ficam congelados.**
+2. **O painel único não é construído agora:** já foi pedido em 10/10 (P54), existe em partes, e nada nele é necessário para lançar. A ordem, quando chegar a hora: aba de tiros e armas do Estúdio, depois a ficha dos bots.
+3. **O ritmo:** uma ordem por vez com "pronto quando"; **pista rápida** (sem mutação à mão nem prova no Chrome) para o que não tem risco; mutação e prova ponta a ponta só para conta, rede, dado pessoal e dinheiro; e arquivar o histórico antigo (o `ESTADO_ATUAL.md` tem 3.001 linhas e é lido no começo de toda conversa).
+4. **O `AGENTS.md` (Passo Zero 12) passa a mandar ler o `LANCAMENTO.md`** ao escolher o que fazer a seguir.
+5. **O P81 (times na sala online) fica pausado:** não está no caminho curto.
+
+## [2026-10-18] Métricas de nível profissional: a audiência por conta própria, sem IP e sem o Google por enquanto (Claude, P188)
+
+**Ordem:** "teria como trazer as infos do google analytics pra essa página [...] pra eu saber QUEM e DE ONDE vêm as conexões, se vieram por link, se digitaram a url, se logou, se jogou sem logar [...] quanto tempo passou jogando, o IP e localização, tudo que não invada a privacidade, mas nos traga dados valiosos. quero métricas nível PROFISSIONAL".
+
+**Decisões:**
+1. **A audiência sai do nosso servidor, em categorias, e não do Google:** o Google Analytics só enxerga quem aceita cookies (a faixa nova do P187 vai derrubar a amostra) e só as páginas do site; o nosso funil enxerga a landing **e o jogo**, sem cookie. Trazer o GA para a página exige uma **chave de serviço do Google** que só o dono cria: fica como pedido dele, e eu ligo e provo ponta a ponta quando ela chegar.
+2. **IP: não. Cidade: não. Estado: sim, se a Cloudflare entregar.** O IP é dado pessoal e não ajuda em nada que se mede em soma; a política diz que não é guardado. A cidade identifica em cidade pequena. O estado do Brasil vem do `cf-region-code` (só do túnel, só as 27 siglas) e exige o dono ligar "Add visitor location headers".
+3. **Tudo é categoria de lista fechada, com teto de valores por dia:** o servidor recusa qualquer categoria que não conheça e soma o excedente em `(outros)`. Nada de texto livre, nada de id de aba (que só serve para não contar o reenvio e nunca é guardado).
+4. **"Novo ou recorrente" sem identificar ninguém:** uma **data** (o dia da primeira visita) no navegador, que **nunca é enviada**: só a faixa que ela produz ("voltou há 2 a 7 dias"). É a mesma data para todo mundo que chegou naquele dia. Está na política.
+5. **A origem acompanha a pessoa da landing até o jogo** pela aba (`sessionStorage`): quem veio do Instagram para a landing e clicou em jogar é "rede social" também no jogo, e não "interno". Sem isso o funil por canal quebrava na porta do jogo.
+6. **A classificação é uma só:** a landing é HTML estático, mas o build embute o mesmo código TypeScript do jogo (`audiencia-landing.mjs`); um teste prova que o embutido e a classe do jogo dão o mesmo resultado nos seis jeitos de chegar. Dois códigos "parecidos" fariam o painel dizer duas coisas para a mesma pessoa.
+7. **A audiência do jogo baixa sob demanda** (2 KB gz fora do JS de partida): o JS de partida estava em 496,2 / 500 KB.
+8. **O teto do corpo do evento subiu de 256 para 1024 bytes** (a visita cheia tem ~400); contexto torto é descartado e o evento continua valendo.
+9. **A qualidade gráfica ao terminar entra nas rodadas:** é o dado que diz onde o computador do jogador não dá conta (G12), o que mais importa para o requisito mínimo.
+
+## [2026-10-18] LGPD: os direitos do titular entram no jogo, e o Google Analytics passa a pedir licença (Claude, P187)
+
+**Ordem:** "faça os ajustes de apagar conta, baixar dados, tudo que a LGPD obrigue, pra que estejamos todo de acordo".
+
+**Decisões:**
+1. **Os direitos do art. 18 são botões do jogo, não e-mails:** baixar os dados, apagar a conta e desligar a medição resolvem na hora e sem depender de ninguém (e sem o dono ter de mexer no banco à mão). O que sobra para o encarregado é o que o jogo não resolve (e a página diz isso enquanto o contato não existe).
+2. **Apagar pede a senha de novo e usa a mesma régua de tentativas do login:** uma sessão esquecida aberta num PC emprestado não pode virar o apagamento (nem o jeito de adivinhar a senha) de ninguém.
+3. **Criar conta exige o aceite e a idade, no servidor também:** o servidor recusa o corpo sem as duas caixas ou com a política de outra versão, e guarda quando e qual versão a pessoa aceitou (a prova do consentimento). Quem já tinha conta fica sem aceite registrado (nulo): a política vale para elas pelo uso, e o aceite entra quando for pedido de novo.
+4. **Idade: "18 anos ou autorização do responsável":** escolha minha, conservadora (a LGPD, art. 14, pede consentimento específico de um responsável para criança); o dono confirma ou muda. **Jogar sem conta continua sem dado pessoal.**
+5. **O IP nunca vai inteiro para o log e o e-mail saiu dele:** achei `conta criada: <e-mail>` no log e IPs inteiros nas linhas de corte. Agora `212.8.252.x` (a rede aparece, a casa não) e "conta criada (número N)".
+6. **O registro técnico virou arquivo por dia, apagado depois de 30 dias, escrito pelo próprio servidor** e não pelo redirecionamento da tarefa: medi que o Windows não deixa apagar, renomear nem esvaziar um arquivo que um `>>` mantém aberto (EBUSY nas três). O `servidor.log` antigo só pode ser limpo com a tarefa parada (pendência do dono).
+7. **Google Analytics só depois do "Aceitar":** achei a tag fixa em **`client/index.html`**, ou seja, **dentro do jogo**, setando cookie em todo mundo (inclusive em quem tinha conta). A faixa do site pergunta, a escolha fica na chave `cybermech.cookies` e **o jogo só carrega o Google com o "sim"**; no jogo não há faixa (não cobre a tela de ninguém), então quem chega direto ao jogo não é medido pelo Google (as nossas contagens, sem cookie, medem).
+8. **A política é rascunho meu, escrito a partir do código (`PRIVACIDADE.md` é o inventário):** diz o que é verdade hoje e nada além. **Não é parecer jurídico**; o dono (e, de preferência, um advogado) revisa. Sem e-mail inventado: o contato do encarregado entra por um arquivo ou variável do dono.
+
 ## [2026-10-18] As métricas dos pilotos com conta: o que o servidor mede e o que fica de fora (Claude, P185)
 
 **Ordem:** "tem como termos as métricas dos usuários, quantos entram, quantos minutos jogam, quantas mortes, etc? [...] pra mapearmos e trackearmos tudo, e depois implementarmos melhores práticas de marketing orientado pelas nossas informações de usuários? quero concluir logo as partes técnicas pra poder lançar".

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CONTA_CRIAR_PATH, CONTA_EU_PATH, CONTA_PROGRESSO_PATH, CONTA_SAIR_PATH, PROGRESSO_MAX_BYTES, SESSAO_HEADER, type ProgressoPiloto } from '../shared/net/auth';
+import { ACEITE_ATUAL, CONTA_CRIAR_PATH, CONTA_EU_PATH, CONTA_PROGRESSO_PATH, CONTA_SAIR_PATH, PROGRESSO_MAX_BYTES, SESSAO_HEADER, type ProgressoPiloto } from '../shared/net/auth';
 import { startServer, type GameServer } from './Server';
 
 const progresso = (over: Partial<ProgressoPiloto> = {}): ProgressoPiloto => ({ apelido: 'ANA', nivel: 4, xp: 120, creditos: 700, montagem: '{"chassis":"marauder"}', atualizadoEm: 1700000000000, ...over });
@@ -15,7 +15,7 @@ describe('progresso do piloto na conta: GET e PUT /conta/progresso', () => {
   });
 
   async function conta(email: string): Promise<string> {
-    const r = await fetch(url(CONTA_CRIAR_PATH), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha: 'senhasegura' }) });
+    const r = await fetch(url(CONTA_CRIAR_PATH), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha: 'senhasegura', aceite: ACEITE_ATUAL }) });
     return ((await r.json()) as { token: string }).token;
   }
   const ler = (token?: string) => fetch(url(CONTA_PROGRESSO_PATH), { headers: token ? { [SESSAO_HEADER]: token } : {} });

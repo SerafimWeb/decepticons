@@ -168,6 +168,83 @@ const ANTI_COPY_JS = `(() => {
 const FONTS = ''; // Fontes do sistema: leitura imediata, sem dependência externa.
 
 /**
+ * Google Analytics **só com a escolha da pessoa** (P187, LGPD: o GA grava cookies e antes a tag carregava sempre). Nada do Google é pedido até o "Aceitar": a faixa pergunta uma vez, a
+ * resposta fica no armazenamento do navegador (`cybermech.cookies`: 'sim' ou 'nao', **a mesma chave que o jogo lê** em `client/index.html`: a escolha vale nas duas páginas) e o link
+ * "Preferências de cookies" do rodapé reabre a pergunta. Recusar (ou mudar de ideia) apaga os cookies `_ga` e desliga a medição da página.
+ */
+export const GA_ID = 'G-2CCHDCEC7X';
+export const COOKIES_CHAVE = 'cybermech.cookies';
+const COOKIES_JS = `(() => {
+  'use strict';
+  const ID = ${JSON.stringify(GA_ID)}, CHAVE = ${JSON.stringify(COOKIES_CHAVE)};
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  const ler = () => { try { return localStorage.getItem(CHAVE); } catch { return null; } };
+  const gravar = (v) => { try { localStorage.setItem(CHAVE, v); } catch { /* sem armazenamento: a escolha vale só nesta página */ } };
+  let carregado = false;
+  function ligar() {
+    window['ga-disable-' + ID] = false;
+    if (carregado) return;
+    carregado = true;
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ID;
+    document.head.appendChild(s);
+    gtag('js', new Date());
+    gtag('config', ID);
+  }
+  function desligar() {
+    window['ga-disable-' + ID] = true;
+    const partes = location.hostname.split('.');
+    const dominios = ['', ...partes.map((_, i) => '; domain=.' + partes.slice(i).join('.'))];
+    for (const c of document.cookie.split(';')) {
+      const nome = c.split('=')[0].trim();
+      if (nome === '_ga' || nome.indexOf('_ga_') === 0) for (const d of dominios) document.cookie = nome + '=; Max-Age=0; path=/' + d;
+    }
+  }
+  const faixa = () => document.getElementById('cookies');
+  const mostrar = () => { const f = faixa(); if (f) f.hidden = false; };
+  function escolher(v) {
+    gravar(v);
+    const f = faixa();
+    if (f) f.hidden = true;
+    if (v === 'sim') ligar(); else desligar();
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('cookies-sim')?.addEventListener('click', () => escolher('sim'));
+    document.getElementById('cookies-nao')?.addEventListener('click', () => escolher('nao'));
+    document.getElementById('cookies-preferencias')?.addEventListener('click', (e) => { e.preventDefault(); mostrar(); });
+    const v = ler();
+    if (v === 'sim') ligar(); else if (v !== 'nao') mostrar();
+  });
+})();`;
+
+const COOKIES_CSS = `
+  .cookies {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: center;
+    padding: 14px 16px; background: var(--panel2); border-top: 1px solid var(--amber); color: var(--text); font: 400 14px/1.5 var(--fb);
+  }
+  .cookies[hidden] { display: none; }
+  .cookies p { max-width: 72ch; }
+  .cookies a { color: var(--bone); }
+  .cookies-acoes { display: flex; gap: 10px; }
+  .cookies button { cursor: pointer; padding: 8px 18px; background: transparent; color: var(--amber); border: 1px solid var(--amber); letter-spacing: .08em; text-transform: uppercase; font-size: 12px; }
+  .cookies button:hover, .cookies button:focus-visible { background: rgba(255,206,36,.14); }
+  .cookies #cookies-sim { background: var(--amber); color: var(--bg); }
+  .cookies #cookies-sim:hover, .cookies #cookies-sim:focus-visible { background: var(--text); }
+  .rodape-legal { max-width: 1180px; margin: 28px auto 0; padding-top: 14px; border-top: 1px solid var(--line); color: var(--faint); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .rodape-legal a { color: var(--muted); }
+  @media (max-width: 560px) { .cookies { flex-direction: column; align-items: stretch; text-align: left; } .cookies-acoes { justify-content: flex-end; } }
+`;
+
+const COOKIES_HTML = `
+<div id="cookies" class="cookies" role="dialog" aria-label="Cookies e privacidade" hidden>
+  <p>Este site usa o <b>Google Analytics</b> (cookies) para saber quantas pessoas visitam e de onde vêm. <b>Só ligamos se você aceitar.</b> O jogo não usa cookies de publicidade. <a href="/privacidade/">Política de Privacidade</a></p>
+  <div class="cookies-acoes"><button type="button" id="cookies-nao">Recusar</button><button type="button" id="cookies-sim">Aceitar</button></div>
+</div>
+<div class="rodape-legal"><a href="/privacidade/">Política de Privacidade</a><a href="#" id="cookies-preferencias">Preferências de cookies</a></div>`;
+
+/**
  * Documento completo. Sem o <meta charset> o navegador lê o UTF-8 como Windows-1252 e quebra todos os
  * acentos (aconteceu no site em 24/09: o servidor mandava text/html sem charset); sem doctype, modo quirks.
  * `og` = { url, image } absolutos, para a prévia do link em redes e mensageiros.
@@ -195,21 +272,13 @@ export function pagina({ title, description, css, body, script = '', og = null, 
 <meta name="theme-color" content="#070604">${noindex ? '\n<meta name="robots" content="noindex, nofollow">' : ''}${ogTags}
 <link rel="icon" href="data:,">
 ${FONTS}
-<style>${BASE_CSS}${anticopia ? ANTI_COPY_CSS : ''}${css}</style>${noindex ? '' : `
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-2CCHDCEC7X"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-2CCHDCEC7X');
-</script>`}
+<style>${BASE_CSS}${noindex ? '' : COOKIES_CSS}${anticopia ? ANTI_COPY_CSS : ''}${css}</style>${noindex ? '' : `
+<script>${COOKIES_JS}</script>`}
 </head>
 <body>
 <div class="wrap">
 ${body}
-</div>
+</div>${noindex ? '' : COOKIES_HTML}
 ${anticopia ? `<script>${ANTI_COPY_JS}</script>\n` : ''}${script ? `<script>${script}</script>` : ''}
 </body>
 </html>

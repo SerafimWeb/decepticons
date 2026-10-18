@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clientCountry, clientIp, Guard, GUARD_DEFAULTS, normalizeIp } from './guard';
+import { clientCountry, clientIp, clientRegion, Guard, GUARD_DEFAULTS, ipParaLog, normalizeIp } from './guard';
 
 describe('a porteira do servidor de jogo', () => {
   it('teto por IP: aceita até `perIp` conexões do mesmo endereço, recusa a seguinte, e libera quando alguém sai', () => {
@@ -124,5 +124,39 @@ describe('clientCountry: o país de quem chegou, só se o outro lado é o túnel
     expect(clientCountry('203.0.113.9', 'BR')).toBe('??');
     expect(clientCountry('192.168.1.20', 'US')).toBe('??');
     expect(clientCountry(undefined, 'BR')).toBe('??');
+  });
+});
+
+describe('o IP no log (P187, LGPD): nunca inteiro', () => {
+  it('IPv4 perde o último trecho: a rede aparece, a casa não', () => {
+    expect(ipParaLog('212.8.252.70')).toBe('212.8.252.x');
+    expect(ipParaLog('185.177.124.221')).toBe('185.177.124.x');
+    expect(ipParaLog('127.0.0.1')).toBe('127.0.0.x');
+  });
+  it('IPv6 fica só com os três primeiros grupos', () => {
+    expect(ipParaLog('2804:14d:5c80:1234:abcd:1:2:3')).toBe('2804:14d:5c80:x');
+    expect(ipParaLog('::1')).toBe('0:0:0:x');
+    expect(ipParaLog('2001:db8::ff')).toBe('2001:db8:0:x');
+  });
+  it('o que não parece IP vira ?', () => {
+    expect(ipParaLog('?')).toBe('?');
+    expect(ipParaLog('')).toBe('?');
+    expect(ipParaLog('nome')).toBe('?');
+  });
+  it('nenhum resultado carrega o endereço completo', () => {
+    for (const ip of ['212.8.252.70', '2804:14d:5c80:1234:abcd:1:2:3', '10.0.0.1']) expect(ipParaLog(ip)).not.toContain(ip);
+  });
+});
+
+describe('o estado do Brasil (P188): só do túnel, só as 27 siglas', () => {
+  it('vindo do loopback (o túnel da Cloudflare): vale; de qualquer outra máquina o cabeçalho é ignorado', () => {
+    expect(clientRegion('127.0.0.1', 'BR', 'SP')).toBe('SP');
+    expect(clientRegion('::ffff:127.0.0.1', 'BR', 'rj')).toBe('RJ');
+    expect(clientRegion('203.0.113.9', 'BR', 'SP')).toBeNull(); // ninguém inventa estado para encher a tabela
+  });
+  it('só para o Brasil e só uma sigla de verdade', () => {
+    expect(clientRegion('127.0.0.1', 'US', 'SP')).toBeNull();
+    expect(clientRegion('127.0.0.1', 'BR', 'Sao Paulo')).toBeNull();
+    expect(clientRegion('127.0.0.1', 'BR', undefined)).toBeNull();
   });
 });
