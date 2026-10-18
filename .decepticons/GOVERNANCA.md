@@ -1,4 +1,4 @@
-# GOVERNANÇA — quem pode o quê, quem decide, e o que fazer quando dá errado (18/10/2026, ordem P192)
+# GOVERNANÇA — quem pode o quê, quem decide, e o que fazer quando dá errado (18/10/2026, ordem P196)
 
 > Uma página para o lançamento. **Quem aprova é o Comandante.** O que o código garante está em `AUDITORIA_SEGURANCA.md`; o que o jogo guarda de cada pessoa, em `PRIVACIDADE.md`.
 

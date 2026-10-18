@@ -8,7 +8,7 @@ import { startServer, type GameServer } from './Server';
 const TOKEN = 'token-de-teste-com-mais-de-16';
 const VISITA = { canal: 'social', host: 'instagram.com', disp: 'mobile', nav: 'chrome', so: 'android', lang: 'pt', ret: 'novo' };
 
-/** A audiência (P188) de ponta a ponta: o evento do navegador com o contexto, a Cloudflare dizendo o estado, o que o dono lê em /metricas. */
+/** A audiência (P193) de ponta a ponta: o evento do navegador com o contexto, a Cloudflare dizendo o estado, o que o dono lê em /metricas. */
 describe('audiência no servidor de verdade', () => {
   const pasta = resolve('.tmp', `teste-audiencia-${process.pid}`);
   let server: GameServer;

@@ -1,5 +1,5 @@
 /**
- * A ferramenta do dono para os privilégios (ordem P192): `npm run admin -- listar | promover <e-mail> | rebaixar <e-mail>`. **É a única porta para criar um administrador**: nenhuma rota HTTP promove ninguém,
+ * A ferramenta do dono para os privilégios (ordem P196): `npm run admin -- listar | promover <e-mail> | rebaixar <e-mail>`. **É a única porta para criar um administrador**: nenhuma rota HTTP promove ninguém,
  * então o privilégio mais alto só se concede com acesso ao PC do servidor e ao arquivo do banco (o mesmo acesso que já dá tudo). Cada promoção e rebaixamento entra na trilha de auditoria (`auditoria.ts`).
  * A lógica mora aqui (testável); `scripts/admin.mjs` só abre o banco e imprime.
  */

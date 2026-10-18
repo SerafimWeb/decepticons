@@ -25,6 +25,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import type { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 import { CameraRig } from '../camera/CameraRig';
@@ -44,7 +45,9 @@ import { ROUND_S, type Round } from '../combat/Round';
 import { mascaraFromSearch } from '../entities/mascaraDoChefe';
 import type { WalkerDemo } from '../debug/WalkerDemo';
 import { walkerFromSearch } from '../debug/walkerLink';
-import { carregarChefeSeFor, carregarMapaSeFor, exigirChefe } from '../environment/mapasSobDemanda';
+import { carregarChefeSeFor, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirMapa, type ObjetivosCarregados } from '../environment/mapasSobDemanda';
+import type { EstadoDosObjetivos } from '../environment/AmazoniaObjetivos';
+import { AMAZONIA_GERADORES } from '../environment/AmazoniaLayout';
 import { diaFromSearch, progressoDaPartida } from '../environment/CicloDoDia';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
@@ -54,6 +57,7 @@ import { CtfObjectives } from '../environment/CtfObjectives';
 import { DominioPontos } from '../environment/DominioPontos';
 import { DamageVisuals } from '../fx/DamageVisuals';
 import { protegerBloom } from '../fx/bloomSeguro';
+import { criarFxaa } from '../fx/Fxaa';
 import { FlameVisuals } from '../fx/FlameVisuals';
 import { FireRingVisuals } from '../fx/FireRingVisuals';
 import { FrameCopyPass } from '../fx/FrameCopyPass';
@@ -205,6 +209,8 @@ export class Game {
   private readonly scene = new THREE.Scene();
   private readonly camera: THREE.PerspectiveCamera;
   private readonly bloomPass: UnrealBloomPass;
+  /** O antisserrilhado da imagem final (no lugar do MSAA 4×): `fx/Fxaa.ts`. */
+  private readonly fxaaPass: ShaderPass;
 
   private readonly quality: Quality;
   private readonly input: InputManager;
@@ -341,6 +347,9 @@ export class Game {
   private missionEnded = false;
   /** O que a missão do rio deixou, para o Relatório de Consequências (P179 camada 3): só existe depois do fim dela. */
   private relatorioDoRio: ResumoDoRio | null = null;
+  /** O objetivo na tela da missão da Amazônia (a ordem, a dica e os marcadores): pedaço sob demanda, só existe nela. */
+  private objetivos: ObjetivosCarregados | null = null;
+  private estadoDosObjetivos: EstadoDosObjetivos | null = null;
   /** O galpão 3D do Hangar (feito na primeira vez que abre) e se ele está na tela no lugar da arena. */
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
@@ -389,7 +398,7 @@ export class Game {
   private last = -1;
 
   static async create(container: HTMLElement): Promise<Game> {
-    // O lançamento (P193): o público só vê os mapas liberados; o modo Comandante (?comandante=1, lembrado pelo navegador) abre todos. Antes de qualquer escolha de mapa.
+    // O lançamento (P197): o público só vê os mapas liberados; o modo Comandante (?comandante=1, lembrado pelo navegador) abre todos. Antes de qualquer escolha de mapa.
     let lembrado: string | null = null;
     try {
       lembrado = localStorage.getItem(COMANDANTE_KEY);
@@ -478,10 +487,10 @@ export class Game {
     this.scene.environmentIntensity = 0.25;
     pmrem.dispose();
 
-    // Render target HDR com MSAA -> bloom -> tone mapping/sRGB.
+    // Render target HDR (sem MSAA: ele custava ~17 dos 27 ms do quadro na GPU integrada, ver `fx/Fxaa.ts`) -> bloom -> tone mapping/sRGB -> FXAA.
     this.composer = new EffectComposer(
       this.renderer,
-      new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }),
+      new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 0 }),
     );
     this.composer.setSize(window.innerWidth, window.innerHeight);
     this.renderPass = new RenderPass(this.scene, this.camera);
@@ -491,6 +500,8 @@ export class Game {
     protegerBloom(this.bloomPass); // um NaN num pixel não vira mais a tela preta (P130/P136)
     this.composer.addPass(this.bloomPass);
     this.composer.addPass(new OutputPass());
+    this.fxaaPass = criarFxaa();
+    this.composer.addPass(this.fxaaPass);
     window.addEventListener('resize', () => this.onResize());
 
     // --- A partida (a simulação única; quantos inimigos vêm das configurações e mudam ao reiniciar) ---
@@ -746,7 +757,7 @@ export class Game {
     this.hud.setMode(this.rig.mode);
     this.hud.setReady(this.input.touchMode);
     this.telemetry = new Telemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
-    // A audiência (P188): de onde veio esta visita e que aparelho é, só em categorias (`core/Audiencia.ts`); a origem da landing chega pela aba. Baixa sob demanda (fora do JS de partida): o
+    // A audiência (P193): de onde veio esta visita e que aparelho é, só em categorias (`core/Audiencia.ts`); a origem da landing chega pela aba. Baixa sob demanda (fora do JS de partida): o
     // boot_ok sai quando ela chega; um evento do funil que acontecesse antes iria sem contexto (vale, só não entra na audiência).
     void import('./Audiencia')
       .then((m) => {
@@ -994,6 +1005,21 @@ export class Game {
       // A missão em ondas da Cidade Neon (P164, parte E): o HUD só de missão (o transformador do banco, a barra do chefe e os avisos), sem o que é da praia.
       this.praiaHud = new PraiaHud(document.getElementById('hud')!, true);
       this.praiaQuadro = novoQuadroDaPraia(this.camera);
+      // TERRAS RARAS: o objetivo na tela (a ordem do topo, a dica e os marcadores no mundo) vem do pedaço sob demanda do Draga.
+      if (this.match.rio) {
+        this.objetivos = chefeCarregado('amazonia')?.criarObjetivos?.(document.getElementById('hud')!, (texto) => this.hud.setMissionLinha(texto)) ?? null;
+        const chao = (x: number, z: number): number => exigirMapa('amazonia').alturaDoTerreno?.(x, z) ?? 0;
+        this.estadoDosObjetivos = {
+          ativo: false,
+          camera: this.camera,
+          largura: 0,
+          altura: 0,
+          eu: { x: 0, z: 0 },
+          geradores: AMAZONIA_GERADORES.map((g) => ({ nome: g.nome, x: g.x, y: chao(g.x, g.z) + 17, z: g.z, vivo: true })),
+          draga: null,
+          escotilha: { aberta: false, x: 0, y: 0, z: 0, carga: 0, dentro: 0, total: INVASAO.androides },
+        };
+      }
     }
     const paredeSobDemanda = sobDemanda(async () => {
       parede = new (await import('../ui/CameraWall')).CameraWall({
@@ -1634,6 +1660,7 @@ export class Game {
       this.missionEnded = false;
       this.relatorioDoRio = null;
       this.mostrarChipDoRelatorio(false);
+      this.objetivos?.reiniciar();
       this.match.restartMission();
       this.praiaHud?.reset();
       this.player.launcher.refill();
@@ -1770,7 +1797,7 @@ export class Game {
   }
 
   private setPlaying(playing: boolean): void {
-    // O funil (P188): a primeira partida da página conta ao começar a jogar; as seguintes contam pelo `onRoundStart`. Achado ao ligar a audiência: antes, quem jogava uma rodada só nunca virava "partida iniciada".
+    // O funil (P193): a primeira partida da página conta ao começar a jogar; as seguintes contam pelo `onRoundStart`. Achado ao ligar a audiência: antes, quem jogava uma rodada só nunca virava "partida iniciada".
     if (playing && !this.primeiraPartidaContada) {
       this.primeiraPartidaContada = true;
       this.telemetry.enviar('partida_iniciada', this.audiencia?.funil(this.contaDoFunil()));
@@ -2122,10 +2149,32 @@ export class Game {
         q.aldeia.progresso = progressoDaMarcha(x);
         q.aldeia.tempoS = tempoAteAAldeiaS(x, chefe.modules.leftLeg > 0, chefe.modules.rightLeg > 0, true);
       }
-      if (rio && !rio.terminou) this.hud.setMissionLinha(escudo?.ativo ? 'TERRAS RARAS · DERRUBE OS GERADORES' : 'TERRAS RARAS · DERRUBE O DRAGA-01');
       q.largura = window.innerWidth;
       q.altura = window.innerHeight;
       this.praiaHud.update(dt, q);
+      // O objetivo na tela (TERRAS RARAS): a ordem no topo, a dica e os marcadores (4 Hz de texto; só a projeção roda por quadro).
+      const obj = this.estadoDosObjetivos;
+      if (this.objetivos && obj && rio) {
+        obj.ativo = !rio.terminou && q.ativo && q.eu.alive;
+        obj.largura = q.largura;
+        obj.altura = q.altura;
+        obj.eu.x = q.eu.x;
+        obj.eu.z = q.eu.z;
+        for (let i = 0; i < obj.geradores.length; i++) obj.geradores[i]!.vivo = escudo?.vivo(i) ?? false;
+        if (chefe) {
+          obj.draga ??= { x: 0, y: 0, z: 0 };
+          obj.draga.x = chefe.simPosition.x;
+          obj.draga.y = chefe.simPosition.y + 24;
+          obj.draga.z = chefe.simPosition.z;
+        } else obj.draga = null;
+        obj.escotilha.aberta = invasao?.aberta ?? false;
+        obj.escotilha.x = this.match.escotilha.x;
+        obj.escotilha.z = this.match.escotilha.z;
+        obj.escotilha.y = (exigirMapa('amazonia').alturaDoTerreno?.(obj.escotilha.x, obj.escotilha.z) ?? 0) + 6;
+        obj.escotilha.carga = invasao?.carga ?? 0;
+        obj.escotilha.dentro = invasao?.plantando ?? 0;
+        this.objetivos.atualizar(dt, obj);
+      }
     }
     this.hud.update(dt, this.mech, this.input.mouseX, this.input.mouseY, this.player.firing, this.player.secondaryHeld, this.player.secondaryHeld && !this.player.firing ? this.player.secondaryCharge : this.player.primaryCharge);
     // A onda sônica: os anéis andam e leem a cópia do quadro (a cópia só roda enquanto há anel vivo, na arena ou no Hangar).

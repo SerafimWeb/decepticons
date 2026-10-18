@@ -21,7 +21,7 @@ export const CONTA_ENTRAR_PATH = '/conta/entrar';
 export const CONTA_SAIR_PATH = '/conta/sair';
 export const CONTA_EU_PATH = '/conta/eu';
 export const CONTA_PROGRESSO_PATH = '/conta/progresso';
-/** Os direitos do titular (LGPD art. 18, P187): baixar os dados da conta, apagá-la e escolher se a atividade é medida. */
+/** Os direitos do titular (LGPD art. 18, P192): baixar os dados da conta, apagá-la e escolher se a atividade é medida. */
 export const CONTA_DADOS_PATH = '/conta/dados';
 export const CONTA_APAGAR_PATH = '/conta/apagar';
 export const CONTA_MEDICAO_PATH = '/conta/medicao';

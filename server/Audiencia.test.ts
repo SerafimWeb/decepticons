@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ContextoDeEvento, Visita } from '../shared/net/audiencia';
 import { Audiencia, OUTROS } from './Audiencia';
 
-/** O agregador da audiência (P188): soma por dia, só categorias, com teto de memória. */
+/** O agregador da audiência (P193): soma por dia, só categorias, com teto de memória. */
 describe('Audiencia: perfil por página, funil por canal e a conta da partida', () => {
   /** 18/10/2026, meio-dia em Brasília. */
   const T = Date.UTC(2026, 9, 18, 15, 0);

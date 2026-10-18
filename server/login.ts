@@ -36,7 +36,7 @@ export class LimiteLogin {
 export const FALHAS_POR_CONTA_DEFAULTS = { teto: 10, janelaMs: 15 * 60 * 1000 };
 
 /**
- * O limite de falhas **por conta** (P192, autenticação): o `LimiteLogin` conta por IP, e quem tenta adivinhar a senha de UMA conta com muitos IPs passa por ele. Aqui a conta, e não o IP, é o que se
+ * O limite de falhas **por conta** (P196, autenticação): o `LimiteLogin` conta por IP, e quem tenta adivinhar a senha de UMA conta com muitos IPs passa por ele. Aqui a conta, e não o IP, é o que se
  * protege: depois de `teto` senhas erradas na janela, a conta recusa tentativas (429, mesmo com a senha certa) até a janela passar; a senha certa antes disso zera a conta. A chave é o resumo do
  * e-mail, e vale para e-mail que não existe também (senão o limite viraria um jeito de descobrir quais e-mails têm conta).
  *

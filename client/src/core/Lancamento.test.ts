@@ -4,7 +4,7 @@ import { campanhasDeFabrica } from '../sim/campanha';
 import { estadoDoTeatro, TEATROS } from '../ui/theater';
 import { aplicarLancamento, mapaLiberado, MAPAS_DO_LANCAMENTO, TODOS_OS_MAPAS } from './Lancamento';
 
-/** Os mapas do lançamento (P193): só a Cidade Neon e a Estação dos Cabos; o Bunker e a Terras Raras "em breve"; o Comandante abre tudo. */
+/** Os mapas do lançamento (P197): só a Cidade Neon e a Estação dos Cabos; o Bunker e a Terras Raras "em breve"; o Comandante abre tudo. */
 describe('mapas do lançamento', () => {
   afterEach(() => aplicarLancamento(true)); // os outros testes do projeto contam com tudo aberto
 

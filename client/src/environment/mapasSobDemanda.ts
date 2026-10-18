@@ -4,6 +4,7 @@ import type { MechBase } from '../entities/MechBase';
 import type { Destructibles } from './Destructibles';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
+import type { EstadoDosObjetivos } from './AmazoniaObjetivos';
 import type { MapId } from './Bunker';
 
 /**
@@ -91,6 +92,12 @@ export interface CorpoComEscudo {
 
 export const temEscudo = (m: unknown): m is CorpoComEscudo => typeof (m as CorpoComEscudo | null)?.escudo === 'number';
 
+/** O que o jogo pede ao painel de objetivos da missão (a ordem no topo, a dica e os marcadores no mundo): `environment/AmazoniaObjetivos.ts`. */
+export interface ObjetivosCarregados {
+  atualizar(dt: number, estado: EstadoDosObjetivos): void;
+  reiniciar(): void;
+}
+
 /** O chefe de um mapa (o Draga-01 da Amazônia, P180 parte C), carregado sob demanda: o corpo, o cérebro e o desenho só baixam para quem abre a missão. */
 export interface ChefeCarregado {
   /** Onde ele nasce (x, z) e para onde olha (yaw do Mech). */
@@ -101,6 +108,8 @@ export interface ChefeCarregado {
   criarVisual?(): Promise<object>;
   /** A defesa da missão (os geradores do escudo), se ela tem. */
   readonly defesa?: DefesaCarregada;
+  /** O objetivo na tela (TERRAS RARAS): `raiz` é o `#hud`, `aoTitulo` recebe a ordem do topo quando ela muda. */
+  criarObjetivos?(raiz: HTMLElement, aoTitulo: (texto: string) => void): ObjetivosCarregados;
 }
 
 const carregados = new Map<MapId, MapaCarregado>();

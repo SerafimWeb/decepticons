@@ -127,7 +127,7 @@ export class Contas {
     } catch {
       // Falha silenciosamente se a coluna já existir (comportamento esperado na 2ª vez).
     }
-    // P187 (LGPD): o aceite da política (quando e qual versão) e a escolha de medir ou não a atividade. Contas de antes ficam sem aceite (nulo) e com a medição ligada.
+    // P192 (LGPD): o aceite da política (quando e qual versão) e a escolha de medir ou não a atividade. Contas de antes ficam sem aceite (nulo) e com a medição ligada.
     for (const coluna of ['aceite_em TEXT', 'aceite_versao TEXT', 'medir INTEGER NOT NULL DEFAULT 1']) {
       try {
         this.db.exec(`ALTER TABLE contas ADD COLUMN ${coluna};`);
@@ -196,7 +196,7 @@ export class Contas {
       .prepare('INSERT INTO sessoes (token_hash, conta_id, criada_em, expira_em) VALUES (?, ?, ?, ?)')
       .run(hashToken(token), contaId, agora.toISOString(), expira.toISOString());
     this.registrarVisita(contaId, agora.getTime());
-    // Teto de sessões por conta (P192): as mais velhas saem. Sem ele, login repetido (script, aparelhos esquecidos) acumularia linhas sem fim.
+    // Teto de sessões por conta (P196): as mais velhas saem. Sem ele, login repetido (script, aparelhos esquecidos) acumularia linhas sem fim.
     this.db
       .prepare('DELETE FROM sessoes WHERE conta_id = ? AND token_hash NOT IN (SELECT token_hash FROM sessoes WHERE conta_id = ? ORDER BY criada_em DESC, rowid DESC LIMIT ?)')
       .run(contaId, contaId, SESSOES_MAX);
@@ -214,7 +214,7 @@ export class Contas {
   }
 
   /**
-   * Promove ou rebaixa um administrador (P192). **Só a ferramenta do dono, no PC do servidor (`npm run admin`), chama isto**: nenhuma rota HTTP promove ninguém (o privilégio mais alto só se concede com
+   * Promove ou rebaixa um administrador (P196). **Só a ferramenta do dono, no PC do servidor (`npm run admin`), chama isto**: nenhuma rota HTTP promove ninguém (o privilégio mais alto só se concede com
    * acesso ao arquivo do banco). Devolve a conta (`null` = e-mail sem conta). Efeito imediato: a sessão já aberta passa a valer como admin (ou deixa de valer).
    */
   definirAdmin(email: string, admin: boolean): { id: number; email: string; is_admin: boolean } | null {

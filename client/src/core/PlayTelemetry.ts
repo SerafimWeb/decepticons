@@ -44,7 +44,7 @@ export class PlayTelemetry {
         return null;
       }
     },
-    /** O degrau da qualidade gráfica agora (0 = o mais alto): lido ao fechar a rodada (P188). */
+    /** O degrau da qualidade gráfica agora (0 = o mais alto): lido ao fechar a rodada (P193). */
     private readonly qualidade: () => number = () => 0,
   ) {
     this.url = serverHttpUrl(server, PLAY_PATH);

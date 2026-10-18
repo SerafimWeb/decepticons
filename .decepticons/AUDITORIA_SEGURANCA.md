@@ -1,4 +1,4 @@
-# AUDITORIA DE SEGURANÇA — a arquitetura está segura para lançar? (18/10/2026, ordem P194)
+# AUDITORIA DE SEGURANÇA — a arquitetura está segura para lançar? (18/10/2026, ordem P198)
 
 > **Pergunta do Comandante:** *"faça auditoria se nossa arquitetura está segura para lançarmos"*. **Resposta curta:** o **código** está em condição de lançar (nada que bloqueie, depois das correções desta
 > auditoria); o **que bloqueia o lançamento público é operacional e é do Comandante**: o servidor de jogo e as chaves de publicação dividem o mesmo PC de trabalho (A1), e não há cópia de segurança das contas fora
@@ -44,9 +44,9 @@
 | **A2** | `GET /config` (**pública**) entregava **qualquer** chave guardada e `POST /admin/config` gravava **qualquer** chave e valor. Hoje só há uma chave (`chassis_status`), mas bastava o dono guardar outra um dia. | **Lista branca de chaves** (`CONFIG_CHAVES`), valor sempre JSON de até 4 KB, mudança e recusa entram na trilha de auditoria. |
 | **A3** | O limite de login era **só por IP**: quem tenta adivinhar a senha de **uma** conta com muitos IPs passava. | **Limite por conta:** 10 senhas erradas em 15 min trancam a conta (429, mesmo com a senha certa); vale também para o "apagar a conta" e para e-mail que não existe. |
 | **A4** | **Sessões ilimitadas** por conta (login repetido acumulava linhas sem fim). | **Teto de 10 sessões** por conta; as mais velhas saem. |
-| **A5** | **Nenhuma trilha de auditoria** ("quem apagou essa conta?", "alguém tentou entrar no painel?"); o log tinha **e-mail e IP inteiro**. | **Trilha de auditoria** (`server/auditoria.ts`, 400 dias, só o número da conta, nada de e-mail nem IP) mostrada no `/metricas/`; log com IP mascarado e sem e-mail (P187). |
+| **A5** | **Nenhuma trilha de auditoria** ("quem apagou essa conta?", "alguém tentou entrar no painel?"); o log tinha **e-mail e IP inteiro**. | **Trilha de auditoria** (`server/auditoria.ts`, 400 dias, só o número da conta, nada de e-mail nem IP) mostrada no `/metricas/`; log com IP mascarado e sem e-mail (P192). |
 | **A6** | **Administrador só por SQL manual**, sem registro. | **`npm run admin -- promover <e-mail>`** é o único caminho (nenhuma rota promove ninguém); promoção e rebaixamento entram na trilha. |
-| **A7** | O **Google Analytics carregava sempre, até dentro do jogo**, e gravava cookie sem consentimento. | Só depois do "Aceitar" (P187); no jogo, só com o "sim" guardado. |
+| **A7** | O **Google Analytics carregava sempre, até dentro do jogo**, e gravava cookie sem consentimento. | Só depois do "Aceitar" (P192); no jogo, só com o "sim" guardado. |
 
 **Risco aceito para o lançamento (com o porquê)**
 

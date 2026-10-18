@@ -12,7 +12,7 @@ import { DEFAULT_HOST, startServer } from './Server';
  * daqui; nada aparece na rede de casa nem na internet sem o túnel). Outra porta: `PORT=3000`. Rede local para os
  * outros PCs da casa: `HOST=0.0.0.0`. Detalhes e o túnel para o público em `.decepticons/DEPLOY.md`.
  */
-/** O registro técnico (P187): um arquivo por dia em `<dados>/registro/`, apagado sozinho depois de 30 dias (`registro.ts`). O `servidor.log` da tarefa fica só com o que o próprio Node escreve. */
+/** O registro técnico (P192): um arquivo por dia em `<dados>/registro/`, apagado sozinho depois de 30 dias (`registro.ts`). O `servidor.log` da tarefa fica só com o que o próprio Node escreve. */
 const registro = new Registro(join(pastaDados(resolve(import.meta.dirname, '..')), REGISTRO_PASTA));
 registro.podar();
 setInterval(() => registro.podar(), 6 * 60 * 60 * 1000).unref();

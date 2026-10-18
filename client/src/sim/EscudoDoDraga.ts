@@ -74,9 +74,6 @@ export class EscudoDoDraga {
   }
 }
 
-/** A regra dita na barra do chefe enquanto o escudo está de pé (no lugar da regra da fase): o jogador entende o problema sem ler manual. */
-export const REGRA_DO_ESCUDO = 'O escudo o protege: derrube os geradores.';
-
 /** O aviso da tela quando um gerador cai (`antes` e `depois` são os geradores de pé): o que resta, ou a queda do escudo. Sem queda, `null`. */
 export function avisoDoEscudo(antes: number, depois: number): string | null {
   if (!(depois < antes)) return null;

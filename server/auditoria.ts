@@ -1,5 +1,5 @@
 /**
- * A trilha de auditoria interna (ordem P192, 18/10): **quem fez o quê de sensível**, num arquivo que só acrescenta. É a resposta a "quem apagou essa conta?", "quem mudou essa configuração?", "alguém tentou
+ * A trilha de auditoria interna (ordem P196, 18/10): **quem fez o quê de sensível**, num arquivo que só acrescenta. É a resposta a "quem apagou essa conta?", "quem mudou essa configuração?", "alguém tentou
  * entrar no painel?". Fica fora do `Server.ts` para o teste bater direto no algoritmo.
  *
  * **O que entra:** conta criada e apagada (e a tentativa de apagar com a senha errada), dados baixados, escolha da medição alterada, configuração global mudada, acesso (e tentativa recusada) às portas do dono

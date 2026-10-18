@@ -1,5 +1,5 @@
 /**
- * O registro técnico do servidor (P187, LGPD): o que o servidor conta de si mesmo (salas, conexões, recusas, avisos), **um arquivo por dia** (`registro/servidor-AAAA-MM-DD.log`, dia de Brasília)
+ * O registro técnico do servidor (P192, LGPD): o que o servidor conta de si mesmo (salas, conexões, recusas, avisos), **um arquivo por dia** (`registro/servidor-AAAA-MM-DD.log`, dia de Brasília)
  * e **apagado sozinho depois de 30 dias**.
  *
  * **Por que não o `servidor.log`:** esse é o arquivo para onde a tarefa do Windows redireciona a saída do processo (`cmd /c ... >> servidor.log`); enquanto o servidor roda, o Windows não deixa

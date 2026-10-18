@@ -11,7 +11,7 @@ import { validarEmail, validarSenha } from '../../../shared/net/auth';
  * - Estado de "carregando" enquanto aguarda a API
  * - Exibição de erros legíveis do servidor em português
  * - Estado "logado como <email>" com botão "Sair"
- * - Criar conta exige as duas caixas (política de privacidade lida; maior de 18 anos ou com autorização de um responsável): o servidor também recusa sem elas (P187, LGPD)
+ * - Criar conta exige as duas caixas (política de privacidade lida; maior de 18 anos ou com autorização de um responsável): o servidor também recusa sem elas (P192, LGPD)
  * - Logado: "Meus dados" (LGPD art. 18): ligar/desligar o registro da atividade, baixar os dados e apagar a conta (com a senha de novo)
  * - NUNCA exibe a senha em logs
  * - NUNCA coloca dois botões de ação primária lado a lado (layout vertical único)

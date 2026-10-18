@@ -1,6 +1,6 @@
 # ESTADO ATUAL — CYBERMECH
 
-## O LANÇAMENTO: AUDITORIA DE SEGURANÇA, PRIVILÉGIOS, TRILHA DE AUDITORIA, GOVERNANÇA E OS MAPAS FECHADOS — Claude, 18/10 (branch `claude/lancamento-seguranca`, P192 a P194)
+## O LANÇAMENTO: AUDITORIA DE SEGURANÇA, PRIVILÉGIOS, TRILHA DE AUDITORIA, GOVERNANÇA E OS MAPAS FECHADOS — Claude, 18/10 (branch `claude/lancamento-seguranca`, P196 a P198)
 
 **O Comandante congelou o escopo** (`LANCAMENTO.md`) e pediu: acesso, privilégio, autenticação, auditoria interna, observabilidade, governança, **lançar só com CIDADE NEON e ESTAÇÃO DOS CABOS**, "Rio Vivo" virar "Terras Raras" e **uma auditoria de segurança**.
 
@@ -8,7 +8,7 @@
 1. **`AUDITORIA_SEGURANCA.md`:** 1.368 pedidos hostis contra um servidor de verdade (0 falhas, `.decepticons/medicoes/abuso-servidor.mjs`), `npm audit` (0 vulnerabilidades), segredos, rotas, autenticação, privilégios. **Conclusão: o código está em condição de lançar; o que bloqueia o público é operacional e do Comandante: A1 (servidor e chaves de publicação no mesmo PC de trabalho) e A13 (cópia das contas no mesmo disco).**
 2. **Corrigido:** a configuração global só aceita chaves conhecidas; **limite de falhas por conta** (10 em 15 min, login e apagar); **teto de 10 sessões** por conta; **trilha de auditoria** de 400 dias, sem e-mail nem IP, na seção "Auditoria interna" do `/metricas/`; **`npm run admin`** como único caminho para administrador.
 3. **`GOVERNANCA.md`:** a matriz de privilégios, quem é dono de quê, como uma regra muda, o que se guarda e por quanto tempo, e o que fazer quando dá errado (servidor caído, token vazado, vazamento de dados com o aviso à ANPD).
-4. **Mapas do lançamento:** só CIDADE NEON e ESTAÇÃO DOS CABOS livres; **Bunker e TERRAS RARAS "EM BREVE"** (o modo Comandante abre todos); "Rio Vivo" virou "Terras Raras" em tudo.
+4. **Mapas do lançamento:** só CIDADE NEON e ESTAÇÃO DOS CABOS livres; **Bunker e TERRAS RARAS "EM BREVE"** (o modo Comandante abre todos). O renome de "Rio Vivo" para "Terras Raras" outra sessão já tinha feito (P187): aqui só se conferiu que nada ficou para trás.
 
 **Provas:** 16 testes de segurança de acesso com o servidor de verdade; **mutação à mão: 20 de 20** (só na segurança de acesso, por ordem do Comandante); 6 testes do bloqueio de mapas; o abuso medido.
 
@@ -16,7 +16,36 @@
 
 **Próxima sessão começa com:** o que o Comandante decidir sobre o servidor (item 8 de `LANCAMENTO.md`); nada novo antes disso.
 
-## LGPD (P187) E MÉTRICAS DE NÍVEL PROFISSIONAL (P188): BAIXAR OS DADOS, APAGAR A CONTA, POLÍTICA, GOOGLE ANALYTICS COM LICENÇA, E DE ONDE VÊM AS VISITAS — Claude, 18/10 (branch `claude/lgpd-conta`)
+## TERRAS RARAS: O JOGO FICOU 2,5× MAIS RÁPIDO, A MISSÃO COMEÇA PERTO E O OBJETIVO ESTÁ NA TELA — Claude, 18/10 (branch `claude/terras-raras`, P187 a P190)
+
+**O Comandante (18/10), depois de jogar:** *"ficou meio travado, pesado… será que há muitos elementos na fase? […] demorou mais de um minuto pra eu chegar correndo lá […] temos que melhorar a descrição dos objetivos da missão na própria tela […] temos sempre que corrigir e melhorar o DESEMPENHO"* e *"mude o nome do rio vivo pra terras raras"*.
+
+**1. O que travava (medido, não suposto).** Criei a bancada na GPU de verdade (`medicoes/amazonia-gpu.mjs`, AMD Vega 11, **a janela dele: 1549×925 a 1,25× = 1936×1156 pixels**), mediu-se cada coisa por vez:
+- **Cenário não era o culpado:** com as árvores, o terreno, a água, o céu e as estruturas **todos escondidos**, o quadro só ganhava ~2 ms (de 14 a 12). 6.594 árvores, 2,4 km de mapa e 221 mil triângulos cabem folgados.
+- **O culpado: o MSAA 4× do alvo HDR do composer** (`Game.ts`): **~17 dos 27 ms de cada quadro**. O bloom, o cobertor de ondas e o tone mapping desenham tela cheia *dentro* do alvo multiamostrado e cada um paga a resolução das amostras. **Valia para todos os mapas:** a Arena também dava 22 fps na qualidade Alta.
+- **A troca:** o alvo HDR sem MSAA e um **FXAA** de uma passada depois do tone mapping (`fx/Fxaa.ts`). **Visualmente equivalente** (comparei recortes lado a lado). Custo do FXAA: ~1,5 ms.
+- **Resultado (a janela dele, qualidade Alta):** **Amazônia 27 → 66 fps** (o render do quadro, de 24-27 ms para 10,5 ms), **Arena 22 → 61 fps**, **Praia 25 → 47 fps**. Na qualidade Automática (a padrão) o jogo se estabilizava em 35 a 63 fps com engasgos de 64 ms (p95); agora a Alta já segura 60+.
+- **Mais um degrau na qualidade automática** (`core/Quality.ts`): depois de 1,0× e de desligar o bloom, **0,75×** (para GPU integrada mais fraca que a dele).
+
+**2. O mapa é grande demais para uma missão de poucos minutos: o posto avançado.** O jogador nascia na aldeia (x = -960) e o primeiro gerador ficava a 920 m: **100 s de corrida**. Agora ele nasce e renasce num **posto avançado** (`AMAZONIA_POSTO_AVANCADO`, x = -300, na margem sul): **360 m da cerca = ~40 s**, fora do alcance das torres (a mais perto fica a 205 m, elas atiram a 170); a **Resistência** nasce junto. A aldeia segue sendo o que o Draga ameaça (a barra da aldeia continua). O Deathmatch da Amazônia mantém os pontos de sempre. Teste: o posto está em terra firme, fora do alcance das torres e a menos de 450 m da cerca.
+
+**3. O objetivo na tela** (`environment/AmazoniaObjetivos.ts`, no pedaço sob demanda da Amazônia): **uma ordem no topo** (`DERRUBE OS GERADORES · 1 DE 3`, depois `DERRUBE O DRAGA-01`), **uma dica** logo abaixo (`Siga o marcador: CERCA, a 320 m.` / `A Resistência planta a carga: 45%. Proteja-a ou derrube o Draga a tiro.`) e **marcadores no mundo**: um losango sobre cada gerador (o mais perto, maior e pulsando, com nome e distância; os outros só o losango), sobre o Draga e sobre a escotilha aberta; **fora da tela o marcador gruda na borda com uma seta** apontando para onde ir, e aparece **por cima da mata**. A barra do Draga **parou de repetir a ordem** (a linha de regra e a de escudo saíram com o escudo de pé: "nada repetido") e **a célula da aldeia entrou na barra** (com as linhas novas das torres e da invasão ela ficava por cima delas: bug meu de 18/10, achado na captura).
+
+**4. Renomeado: TERRAS RARAS** (seletor, teatro, campanha, Relatório e as seis línguas).
+
+**5. Dieta de JS** (ver `ORDENS_DO_COMANDO.md` P192–P195): o leitor de `.glb` (13 KB gzip) agora só baixa quando o primeiro robô é pedido. **Pacote de partida: 486,2 de 500 KB** (estava em 498,1).
+
+**Provas:** o teste do posto (terra firme, fora das torres, < 450 m), 10 do objetivo (a ordem e a dica em cada passo, os metros, os marcadores: rótulo, destaque, gerador caído some, borda e seta, a missão parada esconde tudo), os da barra do chefe reescritos, a cobertura de idioma, e a medição na GPU salva em `medicoes/amazonia-gpu-2026-10-18.json`. Capturas do jogo de verdade na GPU: `arte/terras-raras-objetivo-claude.png`, `terras-raras-escotilha-claude.png`.
+
+**Custo de CPU:** zero a mais no tick; no quadro, até cinco projeções de marcador (texto a 4 Hz).
+
+**Onde o Comandante confere:** `…/jogar/?mapa=amazonia&modo=survival`: o jogo deve estar **fluido na Alta e na Automática**; você nasce no posto (a cerca está logo ali), a ordem e o losango verde com a distância mostram o caminho.
+
+**Falta (R13):** **o objetivo na tela só existe em TERRAS RARAS** (a praia, a Cidade Neon, a Bandeira e o Domínio ainda têm só o texto de antes: P190 fica 🟡); **a Praia ainda roda a 47 fps** na janela dele (125 mil triângulos e os shaders dela: há o que ganhar); o painel de visibilidade (P191) é o PR seguinte; o FXAA suaviza um pouco as bordas (mais que o MSAA), **o Comandante julga a olho**; a bancada mede quadros, não o toque da mão: se ainda sentir peso, diga em que ponto do mapa.
+
+**Próxima sessão começa com:** o painel de visibilidade (P191); depois o objetivo na tela dos outros modos e a Praia.
+
+## LGPD (P192) E MÉTRICAS DE NÍVEL PROFISSIONAL (P193): BAIXAR OS DADOS, APAGAR A CONTA, POLÍTICA, GOOGLE ANALYTICS COM LICENÇA, E DE ONDE VÊM AS VISITAS — Claude, 18/10 (branch `claude/lgpd-conta`)
 
 **A ordem do Comandante (18/10):** *"faça os ajustes de apagar conta, baixar dados, tudo que a LGPD obrigue, pra que estejamos todo de acordo"*.
 
@@ -25,7 +54,7 @@
 2. **No site:** `/privacidade/` (a política), o rodapé com o link em todas as páginas e a **faixa de cookies**: o **Google Analytics só liga depois do "Aceitar"**. **Achado:** a tag estava **fixa dentro do jogo** (`client/index.html`); agora o jogo só a carrega com o "sim" guardado.
 3. **No servidor:** **IP mascarado** no log (`212.8.252.x`), **e-mail fora do log**, e o **registro técnico em arquivo por dia, apagado sozinho depois de 30 dias** (`server/registro.ts`; o painel do servidor lê dele). Novos números do dono: contas criadas, logins, falhas de senha, contas apagadas e dados baixados (só contagem).
 
-4. **A audiência (P188):** o `/metricas/` ganhou **De onde vêm** (digitou o endereço, busca, rede social, outro site, campanha `utm_*`; o funil de cada canal, os sites que mandam gente, as campanhas), **Quem chega** (novo ou recorrente, com conta ou convidado, aparelho, navegador, sistema, idioma, estado do Brasil) e **Quanto se joga** (duração das rodadas e a qualidade gráfica ao terminar). **Só categorias; sem IP, sem cidade, sem id de pessoa.** O Google Analytics **não** entrou na página: precisa da chave de serviço do dono (passos na ordem P188).
+4. **A audiência (P193):** o `/metricas/` ganhou **De onde vêm** (digitou o endereço, busca, rede social, outro site, campanha `utm_*`; o funil de cada canal, os sites que mandam gente, as campanhas), **Quem chega** (novo ou recorrente, com conta ou convidado, aparelho, navegador, sistema, idioma, estado do Brasil) e **Quanto se joga** (duração das rodadas e a qualidade gráfica ao terminar). **Só categorias; sem IP, sem cidade, sem id de pessoa.** O Google Analytics **não** entrou na página: precisa da chave de serviço do dono (passos na ordem P193).
 
 **Provas:** testes do banco (aceite, exportar sem segredos, apagar só a conta certa, medição), do HTTP com o servidor de verdade (aceite exigido, versão velha, baixar, apagar com senha errada e certa, a sessão morre, a outra conta intacta, oposição, contagens, preflight, **log sem e-mail**), do cliente (corpo do criar, baixar, apagar, medição; a sessão esquece a conta apagada e **mantém o progresso do aparelho**), do painel de login (as duas caixas, "Meus dados", a confirmação de apagar que não destrói o campo ao digitar) e do registro (dia de Brasília, poda de 30 dias, nunca lança); **o check do site prova no navegador a faixa de cookies** (nada do Google antes da escolha; aceitar liga; a escolha vale na visita seguinte; recusar apaga `_ga`; o jogo não tem a tag fixa). **Mutação à mão: LGPD 32 de 32, audiência 38 de 38, faixa de cookies no navegador do check 7 de 7.** **Ponta a ponta no Chrome (a landing e o jogo reais na mesma origem, contra um servidor local):** a visita do Instagram com link marcado vira canal, site de origem e campanha na landing, o jogo herda a origem, a partida conta com conta ou convidado, a duração e a qualidade entram nas rodadas. Capturas em `.decepticons/arte/` (`lgpd-*-p187-claude.jpg`, `metricas-audiencia-p188-claude.jpg`).
 
@@ -37,7 +66,7 @@
 
 **Achados no caminho (R17):** o GA era fixo dentro do jogo; o e-mail ia para o log; `limparExpiradas` nunca era chamada; **a primeira partida de cada visita nunca contava em "partidas iniciadas"** (corrigido).
 
-**O Comandante congelou o escopo (18/10, P190 a P194):** a lista de lançamento está em `LANCAMENTO.md` (10 itens: auditoria de segurança, acesso e privilégio, autenticação, trilha de auditoria, analytics e observabilidade, governança, mapas do lançamento, servidor fora do PC de trabalho, teste com gente de fora, política revisada). **No lançamento só CIDADE NEON e ESTAÇÃO DOS CABOS (a Praia dos Cabos) ficam livres; Bunker e TERRAS RARAS (a Amazônia, ex-"Rio Vivo") ficam "EM BREVE".** O P81 e o painel único estão congelados.
+**O Comandante congelou o escopo (18/10, P194 a P198):** a lista de lançamento está em `LANCAMENTO.md` (10 itens: auditoria de segurança, acesso e privilégio, autenticação, trilha de auditoria, analytics e observabilidade, governança, mapas do lançamento, servidor fora do PC de trabalho, teste com gente de fora, política revisada). **No lançamento só CIDADE NEON e ESTAÇÃO DOS CABOS (a Praia dos Cabos) ficam livres; Bunker e TERRAS RARAS (a Amazônia, ex-"Rio Vivo") ficam "EM BREVE".** O P81 e o painel único estão congelados.
 
 **Próxima sessão começa com:** `LANCAMENTO.md` item 1 (a auditoria de segurança) e, em seguida, os itens 2 a 7 (privilégio, autenticação, trilha de auditoria, observabilidade, governança, mapas do lançamento).
 

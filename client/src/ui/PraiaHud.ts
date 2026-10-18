@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { PRAIA_COMPLEXO, PRAIA_ESTACAO } from '../environment/PraiaLayout';
 import { avisoDaMarcha } from '../sim/DragaMarcha';
-import { avisoDoEscudo, REGRA_DO_ESCUDO } from '../sim/EscudoDoDraga';
+import { avisoDoEscudo } from '../sim/EscudoDoDraga';
 import { avisoDaEscotilha } from '../sim/InvasaoDoDraga';
 import { avisoDoChefe, CODIGO_DA_FASE, regraDaFase, TEXTOS_DA_FASE, type AlvoDoChefeNoMapa, type FaseDoChefe } from '../sim/FasesDoChefe';
 import { PORTAS_DA_ESTACAO } from '../sim/PortasDaEstacao';
@@ -136,8 +136,6 @@ export class PraiaHud {
   private readonly chefeBarra: HTMLElement;
   private readonly chefePernas: HTMLElement[] = [];
   private readonly chefeRegra: HTMLElement;
-  /** O escudo do Draga (P180, parte D): quantos geradores de pé, sob a regra da fase. */
-  private readonly chefeEscudo: HTMLElement;
   /** As torres da margem (parte D2): armadas ou sem energia. */
   private readonly chefeTorres: HTMLElement;
   /** A invasão (parte E): a carga plantada e os andróides junto da escotilha; escondida com a escotilha fechada. */
@@ -240,12 +238,6 @@ export class PraiaHud {
     el('span', '', this.quadro, soMissao ? 'TRANSFORMADOR · BANCO VORCARIS' : 'QUADRO DE LUZ DA CIDADE');
     this.quadroVida = el('i', 'pc-vida', el('div', 'pc-barra', this.quadro));
 
-    // A aldeia (P180, parte C): a distância do Draga-01 até ela e a barra da marcha (enche de verde a vermelho), só na missão do rio.
-    this.aldeia = el('div', 'praia-aldeia', this.raiz);
-    this.aldeia.hidden = true;
-    this.aldeiaTexto = el('span', '', this.aldeia);
-    this.aldeiaBarra = el('i', 'pc-vida', el('div', 'pc-barra', this.aldeia));
-
     // A barra do chefe (P165): só enquanto o Colossus está em campo. O título leva a fase; a regra da fase vem numa linha (o jogador entende o problema sem ler manual).
     this.chefe = el('div', 'praia-chefe', this.raiz);
     this.chefe.hidden = true;
@@ -254,12 +246,16 @@ export class PraiaHud {
     const pernas = el('div', 'pcf-pernas', this.chefe);
     for (const nome of ['PERNA ESQ', 'PERNA DIR']) this.chefePernas.push(el('span', '', pernas, nome));
     this.chefeRegra = el('p', '', this.chefe);
-    this.chefeEscudo = el('p', 'pcf-escudo', this.chefe);
-    this.chefeEscudo.hidden = true;
     this.chefeTorres = el('p', 'pcf-torres', this.chefe);
     this.chefeTorres.hidden = true;
     this.chefeInvasao = el('p', 'pcf-invasao', this.chefe);
     this.chefeInvasao.hidden = true;
+    // A aldeia (P180, parte C): a distância do Draga-01 até ela e a barra da marcha (enche de verde a vermelho), só na missão do rio. **Dentro da barra do chefe** (a última linha), não solta na tela:
+    // com as linhas das torres e da invasão a barra cresceu e a célula solta ficava por cima delas (achado de 18/10).
+    this.aldeia = el('div', 'praia-aldeia', this.chefe);
+    this.aldeia.hidden = true;
+    this.aldeiaTexto = el('span', '', this.aldeia);
+    this.aldeiaBarra = el('i', 'pc-vida', el('div', 'pc-barra', this.aldeia));
 
     this.zona = el('div', 'praia-zona', this.raiz);
 
@@ -447,13 +443,10 @@ export class PraiaHud {
         const fase = FASE_PELO_CODIGO[q.chefe.fase] ?? 'anda';
         const alvo = q.chefe.alvo ?? (this.soMissao ? 'transformador' : 'cabos'); // na Cidade Neon não há cabos: o titã vai ao transformador do banco; o Draga vai à aldeia
         this.chefeTitulo.textContent = `${q.chefe.nome} · FASE ${q.chefe.fase} DE 3 · ${TEXTOS_DA_FASE[fase].rotulo}`;
-        // Com o escudo de pé a regra é uma só (derrubar os geradores); sem ele, a da fase.
-        this.chefeRegra.textContent = escudo > 0 ? REGRA_DO_ESCUDO : regraDaFase(fase, alvo);
-        this.chefeEscudo.hidden = !q.escudo.presente;
-        if (q.escudo.presente) {
-          this.chefeEscudo.textContent = escudo > 0 ? `ESCUDO · ${escudo} DE ${q.escudo.total} GERADORES` : 'ESCUDO CAIU';
-          this.chefeEscudo.dataset.estado = escudo > 0 ? 'de-pe' : 'caido';
-        }
+        // Com o escudo de pé a ordem é uma só (derrubar os geradores) e quem a diz é o objetivo na tela (a linha da missão e a dica): a barra não repete (nada repetido, AUDITORIA_INTERFACE.md).
+        // Sem o escudo, a regra da fase.
+        this.chefeRegra.hidden = escudo > 0;
+        if (escudo <= 0) this.chefeRegra.textContent = regraDaFase(fase, alvo);
         this.chefeTorres.hidden = !q.torres.presente;
         if (q.torres.presente) {
           this.chefeTorres.textContent = q.torres.ativas ? 'TORRES DA MARGEM ARMADAS' : 'TORRES DA MARGEM SEM ENERGIA';

@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { runnerImport } from 'vite';
 
 // Uso: node .decepticons/medicoes/abuso-servidor.mjs  (da raiz do projeto; sobe um servidor de teste na porta 2597 com dados em .tmp/fuzz-dados e o derruba no fim).
-// Abuso contra um servidor de verdade (auditoria de segurança P194): requisições HTTP malformadas e frames de WebSocket lixo. O servidor tem de SOBREVIVER (responder /status depois) e nunca vazar erro interno.
+// Abuso contra um servidor de verdade (auditoria de segurança P198): requisições HTTP malformadas e frames de WebSocket lixo. O servidor tem de SOBREVIVER (responder /status depois) e nunca vazar erro interno.
 const dados = resolve('.tmp/fuzz-dados');
 rmSync(dados, { recursive: true, force: true });
 mkdirSync(dados, { recursive: true });

@@ -10,7 +10,7 @@ import { Contas, SESSOES_MAX } from './contas';
 import { FalhasPorConta } from './login';
 import { startServer, type GameServer } from './Server';
 
-/** A segurança de acesso do lançamento (P192): privilégio, autenticação e a trilha de auditoria. */
+/** A segurança de acesso do lançamento (P196): privilégio, autenticação e a trilha de auditoria. */
 const raiz = resolve('.tmp', `teste-seguranca-${process.pid}`);
 afterAll(() => rmSync(raiz, { recursive: true, force: true }));
 const TOKEN = 'token-de-teste-com-mais-de-16';

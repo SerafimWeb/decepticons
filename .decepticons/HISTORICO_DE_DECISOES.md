@@ -1,4 +1,4 @@
-## [2026-10-18] Segurança de acesso para o lançamento: auditoria, privilégio, trilha e os mapas fechados (Claude, P192 a P194)
+## [2026-10-18] Segurança de acesso para o lançamento: auditoria, privilégio, trilha e os mapas fechados (Claude, P196 a P198)
 
 **Ordem:** "congele o escopo [...] controle de acesso, privilégio, autenticação, métricas para auditoria interna, analytics, observabilidade, governança [...] lançar com apenas a fase estação dos cabos, cidade neon livres [...] troque o nome rio vivo para terras raras; faça auditoria se nossa arquitetura está segura".
 
@@ -9,26 +9,39 @@
 4. **A trilha de auditoria guarda só o número da conta** (nunca e-mail nem IP) por 400 dias e mostra a recusa à porta do dono, não só o acesso: o que interessa a quem audita é a tentativa que falhou.
 5. **A configuração global só aceita chaves conhecidas** (antes a rota pública entregava qualquer nome guardado).
 6. **Os mapas fechados são de produto, não de segurança:** o jogo roda no navegador de quem joga. Liberar a Terras Raras é acrescentar o id em `MAPAS_DO_LANCAMENTO`. O Bunker, que o Comandante não citou, ficou fechado (a Operação Neon perde a etapa dele em vez de rodar noutro mapa com o título errado); basta uma linha para abrir.
-7. **"Rio Vivo" virou "Terras Raras"** em todo o jogo, nos dicionários das seis línguas e nos documentos de estado; o histórico antigo manteve o nome da época.
-8. **Mutação à mão só onde errar custa caro** (ordem P191): nesta rodada, 20 mutações na segurança de acesso (e nenhuma no bloqueio de mapas, que é regra de produto com teste comum).
+7. **O renome de "Rio Vivo" para "Terras Raras" já tinha sido feito por outra sessão (P187)** na mesma tarde, com o mesmo resultado (jogo, seis línguas, documentos de estado): a minha cópia foi descartada na junção e ficou a dela. **As ordens P187 a P190 da LGPD e das métricas, e as P191 a P194 deste dia, foram renumeradas para P192 a P198** porque a outra sessão registrou P187 a P191 sem saber das minhas (o pedido do painel único foi fundido no P191 dela).
+8. **Mutação à mão só onde errar custa caro** (ordem P195): nesta rodada, 20 mutações na segurança de acesso (e nenhuma no bloqueio de mapas, que é regra de produto com teste comum).
 
-## [2026-10-18] A lista de lançamento: o resto espera (Claude, P189 e P190)
+## [2026-10-18] O MSAA do composer sai (FXAA no lugar), o jogador nasce perto e a ordem vai para a tela (Claude, P187 a P190)
+
+**Ordem:** *"ficou meio travado, pesado… temos sempre que corrigir e melhorar o DESEMPENHO"*; *"mais de um minuto pra chegar correndo lá"*; *"melhorar a descrição dos objetivos da missão na própria tela"*; *"mude o nome do rio vivo pra terras raras"*.
+
+**Decisões:**
+1. **Medir antes de cortar.** A suspeita do Comandante (muitas árvores, mapa grande) estava errada: o cenário todo escondido ganhava ~2 ms. **A bancada na GPU real achou o MSAA 4× do alvo HDR**: ~17 dos 27 ms, em todos os mapas. Tirei o MSAA e pus um **FXAA** depois do tone mapping. A diferença visual é pequena (conferida em recortes lado a lado); o ganho é de 2,3 a 2,8×. **O requisito de GPU integrada (G12) passa a valer na Alta também**, não só na Automática.
+2. **A qualidade automática ganhou um 3º degrau (0,75×)** em vez de mudar o limiar: o limiar de 50 fps estava certo, faltava degrau para a GPU mais fraca.
+3. **O mapa continua grande; o jogador é que nasce perto.** Encurtar o mapa mexeria no terreno, na floresta, nos geradores e nas torres, e a aldeia perderia o sentido de "lá longe". O **posto avançado** resolve a corrida de 100 s para ~40 s sem tocar no cenário, e a missão fica coerente: a Resistência está na linha de frente e o Draga marcha para a aldeia atrás dela.
+4. **A ordem vem até o jogador, em vez de ele ir até o texto:** ordem curta no topo, uma dica, **marcadores no mundo com distância e seta na borda**. O texto de um quadro de ajuda ninguém lê; o losango verde com "CERCA · 320 m" todo mundo segue.
+5. **A barra do chefe parou de repetir a ordem** (a linha de regra e a de escudo saíram com o escudo de pé; a aldeia entrou na barra). Princípio "nada repetido" da `AUDITORIA_INTERFACE.md`.
+6. **Dieta de JS pelo leitor de `.glb`** (13 KB): é o maior peso que só quem abre um robô usa, e a troca é uma linha (import dinâmico), sem mudar comportamento.
+7. **Renomear a fase é só texto do jogador:** os nomes internos (`rio`, `MissaoDoRio`, `amazonia`) ficam, para não quebrar o histórico.
+
+## [2026-10-18] A lista de lançamento: o resto espera (Claude, P191 e P194)
 
 **Ordem:** o Comandante perguntou por que as iterações são tão demoradas e pediu orientação para lançar logo; no mesmo recado, um painel único para controlar tudo.
 
-**Decisões (o Comandante aprovou o rumo no mesmo dia, P191 a P194: escopo congelado, mutação só onde errar custa caro, lançar com Cidade Neon e Estação dos Cabos, "Rio Vivo" vira "Terras Raras"):**
+**Decisões (o Comandante aprovou o rumo no mesmo dia, P195 a P198: escopo congelado, mutação só onde errar custa caro, lançar com Cidade Neon e Estação dos Cabos, "Rio Vivo" vira "Terras Raras", feito pela outra sessão):**
 1. **O que impede o lançamento cabe em seis itens** (`LANCAMENTO.md`): servidor fora do PC de trabalho, teste com gente de fora, política revisada, "esqueci a senha", primeira partida em 1 minuto, plano dos 7 primeiros dias. **Times, o painel único, o Google Analytics na página, ranking e o resto ficam congelados.**
 2. **O painel único não é construído agora:** já foi pedido em 10/10 (P54), existe em partes, e nada nele é necessário para lançar. A ordem, quando chegar a hora: aba de tiros e armas do Estúdio, depois a ficha dos bots.
 3. **O ritmo:** uma ordem por vez com "pronto quando"; **pista rápida** (sem mutação à mão nem prova no Chrome) para o que não tem risco; mutação e prova ponta a ponta só para conta, rede, dado pessoal e dinheiro; e arquivar o histórico antigo (o `ESTADO_ATUAL.md` tem 3.001 linhas e é lido no começo de toda conversa).
 4. **O `AGENTS.md` (Passo Zero 12) passa a mandar ler o `LANCAMENTO.md`** ao escolher o que fazer a seguir.
 5. **O P81 (times na sala online) fica pausado:** não está no caminho curto.
 
-## [2026-10-18] Métricas de nível profissional: a audiência por conta própria, sem IP e sem o Google por enquanto (Claude, P188)
+## [2026-10-18] Métricas de nível profissional: a audiência por conta própria, sem IP e sem o Google por enquanto (Claude, P193)
 
 **Ordem:** "teria como trazer as infos do google analytics pra essa página [...] pra eu saber QUEM e DE ONDE vêm as conexões, se vieram por link, se digitaram a url, se logou, se jogou sem logar [...] quanto tempo passou jogando, o IP e localização, tudo que não invada a privacidade, mas nos traga dados valiosos. quero métricas nível PROFISSIONAL".
 
 **Decisões:**
-1. **A audiência sai do nosso servidor, em categorias, e não do Google:** o Google Analytics só enxerga quem aceita cookies (a faixa nova do P187 vai derrubar a amostra) e só as páginas do site; o nosso funil enxerga a landing **e o jogo**, sem cookie. Trazer o GA para a página exige uma **chave de serviço do Google** que só o dono cria: fica como pedido dele, e eu ligo e provo ponta a ponta quando ela chegar.
+1. **A audiência sai do nosso servidor, em categorias, e não do Google:** o Google Analytics só enxerga quem aceita cookies (a faixa nova do P192 vai derrubar a amostra) e só as páginas do site; o nosso funil enxerga a landing **e o jogo**, sem cookie. Trazer o GA para a página exige uma **chave de serviço do Google** que só o dono cria: fica como pedido dele, e eu ligo e provo ponta a ponta quando ela chegar.
 2. **IP: não. Cidade: não. Estado: sim, se a Cloudflare entregar.** O IP é dado pessoal e não ajuda em nada que se mede em soma; a política diz que não é guardado. A cidade identifica em cidade pequena. O estado do Brasil vem do `cf-region-code` (só do túnel, só as 27 siglas) e exige o dono ligar "Add visitor location headers".
 3. **Tudo é categoria de lista fechada, com teto de valores por dia:** o servidor recusa qualquer categoria que não conheça e soma o excedente em `(outros)`. Nada de texto livre, nada de id de aba (que só serve para não contar o reenvio e nunca é guardado).
 4. **"Novo ou recorrente" sem identificar ninguém:** uma **data** (o dia da primeira visita) no navegador, que **nunca é enviada**: só a faixa que ela produz ("voltou há 2 a 7 dias"). É a mesma data para todo mundo que chegou naquele dia. Está na política.
@@ -38,7 +51,7 @@
 8. **O teto do corpo do evento subiu de 256 para 1024 bytes** (a visita cheia tem ~400); contexto torto é descartado e o evento continua valendo.
 9. **A qualidade gráfica ao terminar entra nas rodadas:** é o dado que diz onde o computador do jogador não dá conta (G12), o que mais importa para o requisito mínimo.
 
-## [2026-10-18] LGPD: os direitos do titular entram no jogo, e o Google Analytics passa a pedir licença (Claude, P187)
+## [2026-10-18] LGPD: os direitos do titular entram no jogo, e o Google Analytics passa a pedir licença (Claude, P192)
 
 **Ordem:** "faça os ajustes de apagar conta, baixar dados, tudo que a LGPD obrigue, pra que estejamos todo de acordo".
 

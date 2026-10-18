@@ -14,7 +14,7 @@ export function mapFromSearch(search: string, online: boolean, mode: string): Ma
   if (mapa === 'praia') id = mode === 'deathmatch' || mode === 'survival' ? 'praia' : 'arena';
   else if (mapa === 'bunker') id = mode === 'deathmatch' ? 'bunker' : 'arena';
   else if (mapa === 'amazonia') id = mode === 'deathmatch' || mode === 'survival' ? 'amazonia' : 'arena';
-  // O lançamento (P193): um mapa que ainda não foi liberado cai na Cidade Neon (`core/Lancamento.ts`).
+  // O lançamento (P197): um mapa que ainda não foi liberado cai na Cidade Neon (`core/Lancamento.ts`).
   return mapaLiberado(id) ? id : 'arena';
 }
 

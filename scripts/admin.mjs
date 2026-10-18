@@ -1,5 +1,5 @@
 /**
- * `npm run admin -- listar | promover <e-mail> | rebaixar <e-mail>`: o único jeito de criar (ou tirar) um administrador (ordem P192; lógica e testes em `server/adminContas.ts`).
+ * `npm run admin -- listar | promover <e-mail> | rebaixar <e-mail>`: o único jeito de criar (ou tirar) um administrador (ordem P196; lógica e testes em `server/adminContas.ts`).
  * Rode **na pasta principal do projeto, no PC do servidor** (ela aponta para `.tmp/servidor`, onde está o banco de contas de produção), ou diga a pasta com `CYBERMECH_DADOS`.
  * A pessoa precisa ter criado a conta antes. O efeito é imediato: a sessão que ela já tem aberta passa a valer como administrador (ou deixa de valer).
  */

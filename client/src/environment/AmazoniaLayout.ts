@@ -85,10 +85,17 @@ export const AMAZONIA_GUARDA: { readonly mechs: readonly (readonly [number, numb
 });
 
 /**
- * A **Resistência** (P180, parte E): os três andróides aliados que esperam na aldeia, junto de onde o jogador nasce. Quando o escudo do Draga cai e a escotilha abre, eles vão até ela plantar a carga
- * (`sim/InvasaoDoDraga.ts`). Antes disso acompanham o jogador. Renascem na aldeia se caírem (o canhão do Draga mata um andróide por tiro). O teste confere que nenhum nasce dentro de uma estrutura.
+ * O **posto avançado** da Resistência (TERRAS RARAS): onde o jogador nasce e renasce na missão, **na margem sul, a 360 m da cerca** (o primeiro gerador), fora do alcance das torres (a mais perto fica a
+ * 205 m; elas atiram a 170). Antes ele nascia na aldeia, a 920 m do primeiro gerador: mais de um minuto de corrida numa missão de poucos minutos (o Comandante, 18/10). A aldeia segue sendo o que o
+ * Draga-01 ameaça: o jogador a defende de longe. O teste confere que o posto está em terra firme, fora do alcance das torres e a menos de 450 m da cerca.
  */
-export const AMAZONIA_RESISTENCIA: readonly (readonly [number, number])[] = Object.freeze([[-944, -160], [-944, -200], [-978, -158]] as const);
+export const AMAZONIA_POSTO_AVANCADO = Object.freeze({ x: -300, z: -156 });
+
+/**
+ * A **Resistência** (P180, parte E): os três andróides aliados que esperam no posto avançado, junto de onde o jogador nasce. Quando o escudo do Draga cai e a escotilha abre, eles vão até ela plantar a carga
+ * (`sim/InvasaoDoDraga.ts`). Antes disso acompanham o jogador. Renascem no posto se caírem (o canhão do Draga só mira Mechs, mas a guarda e as torres mirariam andróides). O teste confere que nenhum nasce dentro de uma estrutura.
+ */
+export const AMAZONIA_RESISTENCIA: readonly (readonly [number, number])[] = Object.freeze([[-282, -138], [-318, -134], [-300, -178]] as const);
 
 /** Onde o Draga-01 começa (x, rio abaixo da aldeia): a água a montante dele é limpa, a de jusante é morta. */
 export const AMAZONIA_DRAGA_INICIO_X = 700;

@@ -127,7 +127,7 @@ const mech = (chassi?: BotSpec['chassi'], persona?: BotSpec['persona']): BotSpec
  * treino no Bunker contra andróides, a Cidade Neon contra Marauder e Lancer (os corpos importados, com aliados), a Bandeira, e a Sobrevivência de fechamento.
  */
 export function campanhasDeFabrica(): CampanhaSpec[] {
-  // O lançamento (P193): a etapa de um mapa ainda fechado (a OPERAÇÃO NEON abre no Bunker) sai da campanha, em vez de rodar noutro mapa com o título errado.
+  // O lançamento (P197): a etapa de um mapa ainda fechado (a OPERAÇÃO NEON abre no Bunker) sai da campanha, em vez de rodar noutro mapa com o título errado.
   return todasAsDeFabrica()
     .map((c) => ({ ...c, etapas: c.etapas.filter((e) => mapaLiberado(e.mapa)) }))
     .filter((c) => c.etapas.length > 0);

@@ -237,7 +237,7 @@ export async function startServer(
    */
   const telemetria = new Telemetria();
   const playMetrics = new PlayMetrics();
-  /** A audiência (P188): de onde vêm as visitas e que aparelho joga, só em soma e por categoria (`server/Audiencia.ts`). */
+  /** A audiência (P193): de onde vêm as visitas e que aparelho joga, só em soma e por categoria (`server/Audiencia.ts`). */
   const audiencia = new Audiencia();
   const codigo = resolve(import.meta.dirname, '..');
   const dirDados = opts.dirDados ?? (opts.dbContas === ':memory:' ? null : pastaDados(codigo));
@@ -302,7 +302,7 @@ export async function startServer(
   faxinar();
   const faxinaTimer = setInterval(faxinar, 6 * 60 * 60 * 1000);
   faxinaTimer.unref();
-  // A trilha de auditoria (P192): quem fez o quê de sensível, sem e-mail nem IP (`server/auditoria.ts`). Acesso repetido ao mesmo lugar pelo mesmo ator conta uma vez a cada 10 minutos (o painel consulta a toda hora).
+  // A trilha de auditoria (P196): quem fez o quê de sensível, sem e-mail nem IP (`server/auditoria.ts`). Acesso repetido ao mesmo lugar pelo mesmo ator conta uma vez a cada 10 minutos (o painel consulta a toda hora).
   const auditoria = new Auditoria(dirDados ? join(dirDados, AUDITORIA_PASTA) : null);
   auditoria.podar();
   const ultimaAuditoria = new Map<string, number>();
@@ -448,7 +448,7 @@ export async function startServer(
       const pais = clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']);
       const eventoId = evento.seq === undefined ? undefined : `${evento.aba}:${evento.seq}`;
       const ok = telemetria.registrar(evento.nome, ip, Date.now(), pais, eventoId) === 'ok';
-      // A audiência (P188): o contexto que o evento trouxe (só categorias) e o estado do Brasil que a Cloudflare disse. Só entra o que a régua de taxa por IP deixou contar.
+      // A audiência (P193): o contexto que o evento trouxe (só categorias) e o estado do Brasil que a Cloudflare disse. Só entra o que a régua de taxa por IP deixou contar.
       if (ok && evento.ctx) audiencia.registrar(evento.nome, evento.ctx, clientRegion(req.socket.remoteAddress, pais, req.headers['cf-region-code']), Date.now(), eventoId);
       res.writeHead(ok ? 204 : 429, { 'access-control-allow-origin': '*' });
       res.end();
@@ -512,7 +512,7 @@ export async function startServer(
       }
       const paisDaConta = clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']);
       if (path === CONTA_CRIAR_PATH) {
-        // Criar conta exige o aceite da política de privacidade e a declaração de idade (P187, LGPD): sem as duas caixas, ou com a política velha, não cria.
+        // Criar conta exige o aceite da política de privacidade e a declaração de idade (P192, LGPD): sem as duas caixas, ou com a política velha, não cria.
         const leitura = parseCriarConta(json);
         if (!leitura.ok) {
           if (leitura.motivo === 'aceite') enviarJson(400, { erro: 'aceite a política de privacidade e confirme a idade para criar a conta', codigo: 'aceite' });
@@ -526,7 +526,7 @@ export async function startServer(
           return;
         }
         const token = contas.criarSessao(r.conta.id);
-        // O e-mail é dado pessoal e o log fica em arquivo: o log diz só que uma conta nasceu (P187).
+        // O e-mail é dado pessoal e o log fica em arquivo: o log diz só que uma conta nasceu (P192).
         log(`conta criada (número ${r.conta.id})`);
         contar('conta_criada', paisDaConta);
         auditar({ ator: `conta:${r.conta.id}`, acao: 'conta_criada', alvo: `conta:${r.conta.id}` });
@@ -540,7 +540,7 @@ export async function startServer(
       }
       // CONTA_ENTRAR_PATH: a mesma mensagem para "não existe" e "senha errada" — não ajuda ninguém a
       // descobrir por tentativa se um e-mail está cadastrado.
-      // O limite por CONTA (P192): senhas demais erradas, de onde vierem, trancam a conta por 15 min (a senha certa nem é conferida).
+      // O limite por CONTA (P196): senhas demais erradas, de onde vierem, trancam a conta por 15 min (a senha certa nem é conferida).
       if (falhasPorConta.bloqueada(credenciais.email)) {
         enviarJson(429, { erro: 'tentativas demais nesta conta; espere um pouco' });
         return;
@@ -632,7 +632,7 @@ export async function startServer(
       res.end(conta ? JSON.stringify({ email: conta.email, is_admin: conta.is_admin, medir: conta.medir }) : JSON.stringify({ erro: 'sem sessão' }));
       return;
     }
-    // Os direitos do titular (P187, LGPD art. 18): baixar os próprios dados, apagar a conta, escolher se a atividade é medida. Todos com a sessão da própria conta.
+    // Os direitos do titular (P192, LGPD art. 18): baixar os próprios dados, apagar a conta, escolher se a atividade é medida. Todos com a sessão da própria conta.
     if (
       (path === CONTA_DADOS_PATH && req.method === 'GET') ||
       ((path === CONTA_APAGAR_PATH || path === CONTA_MEDICAO_PATH) && req.method === 'POST')

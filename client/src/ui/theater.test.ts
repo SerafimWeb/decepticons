@@ -88,7 +88,7 @@ describe('as missões do teatro de operações', () => {
     // A ESTAÇÃO DE CABOS abre o mapa da praia (P126): a missão saiu do "EM BREVE".
     expect(estadoDoTeatro(t('cabos'), 'arena', 'deathmatch')).toBe('disponivel');
     expect(estadoDoTeatro(t('cabos'), 'praia', 'deathmatch')).toBe('aqui');
-    // O TERRAS RARAS abre o mapa da Amazônia (P180): o Deathmatch e a missão do rio (a Sobrevivência); a Bandeira não existe lá.
+    // TERRAS RARAS abre o mapa da Amazônia (P180): o Deathmatch e a missão do rio (a Sobrevivência); a Bandeira não existe lá.
     expect(estadoDoTeatro(t('rio'), 'arena', 'deathmatch')).toBe('disponivel');
     expect(estadoDoTeatro(t('rio'), 'arena', 'survival')).toBe('disponivel');
     expect(estadoDoTeatro(t('rio'), 'arena', 'ctf')).toBe('outro-modo');
@@ -96,7 +96,7 @@ describe('as missões do teatro de operações', () => {
     expect(estadoDoTeatro(t('arena'), 'amazonia', 'deathmatch')).toBe('disponivel');
   });
 
-  it('o TERRAS RARAS (P180) é a missão da água: no Pará, longe de todas as outras, com o mapa e o modo certos', () => {
+  it('TERRAS RARAS (P180) é a missão da água: no Pará, longe de todas as outras, com o mapa e o modo certos', () => {
     const rio = TEATROS.find((x) => x.id === 'rio')!;
     expect(rio.mapa).toBe('amazonia');
     expect(rio.modos).toEqual(['deathmatch', 'survival']);
