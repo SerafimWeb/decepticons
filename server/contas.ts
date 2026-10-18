@@ -16,6 +16,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
+import { diaDe } from './telemetria';
 
 const scrypt = promisify(scryptCb);
 
@@ -30,6 +31,47 @@ export interface Conta {
   email: string;
   is_admin: boolean;
 }
+
+/** O que uma partida de um piloto com conta soma ao dia dele (os números que o navegador declarou: métrica de produto, nunca placar nem recompensa). */
+export interface PartidaDaConta {
+  segundos: number;
+  abates: number;
+  mortes: number;
+}
+
+/** Quantos pilotos da coorte voltaram: `coorte` entrou naquele dia, `voltaram` apareceu de novo N dias depois. */
+export interface Retencao {
+  coorte: number;
+  voltaram: number;
+}
+
+/** O que o dono vê dos pilotos com conta (P185): só contagens, nunca e-mail nem identificador. */
+export interface MetricasUsuarios {
+  /** O primeiro dia medido: antes dele não se sabe quem voltou (as contas mais velhas ficam fora da retenção). */
+  desde: string | null;
+  contas: number;
+  /** Contas criadas por dia (os últimos 30). */
+  novasPorDia: Record<string, number>;
+  /** Pilotos com conta que abriram o jogo (entraram) hoje, nos últimos 7 e nos últimos 30 dias. */
+  ativos: { dia: number; semana: number; mes: number };
+  /** Os que de fato jogaram uma rodada (a visita sem partida não conta). */
+  jogaram: { dia: number; semana: number; mes: number };
+  /** Minutos jogados por piloto que jogou, nos últimos 30 dias. */
+  minutosPorJogador: number;
+  retencao: { d1: Retencao; d7: Retencao };
+  /** O dia a dia (os últimos 14): quem entrou, quem jogou, os minutos e as rodadas. */
+  porDia: { dia: string; ativos: number; jogaram: number; minutos: number; partidas: number; abates: number; mortes: number }[];
+}
+
+/** Soma `n` dias a um AAAA-MM-DD (aritmética de calendário, sem fuso: o dia já é o de Brasília). */
+export function diaMais(dia: string, n: number): string {
+  const d = new Date(`${dia}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Atividade mais antiga guardada (um dia por conta por dia de uso: sem poda a tabela cresceria para sempre). */
+const ATIVIDADE_DIAS = 400;
 
 export class Contas {
   private readonly db: DatabaseSync;
@@ -61,6 +103,16 @@ export class Contas {
         chave TEXT PRIMARY KEY,
         valor TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS atividade (
+        conta_id INTEGER NOT NULL REFERENCES contas(id),
+        dia TEXT NOT NULL,
+        segundos INTEGER NOT NULL DEFAULT 0,
+        partidas INTEGER NOT NULL DEFAULT 0,
+        abates INTEGER NOT NULL DEFAULT 0,
+        mortes INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (conta_id, dia)
+      );
+      CREATE INDEX IF NOT EXISTS atividade_dia ON atividade(dia);
     `);
     
     // Migração de schema em tempo real: garante que contas criadas antes da tabela
@@ -83,12 +135,12 @@ export class Contas {
 
   /** Cria a conta. `'existe'` se o e-mail já está cadastrado (mensagem que a UI pode mostrar direto —
    * diferente da mensagem de login, que nunca diz se o e-mail existe). */
-  async criar(email: string, senha: string): Promise<{ ok: true; conta: Conta } | { ok: false; motivo: 'existe' }> {
+  async criar(email: string, senha: string, now = Date.now()): Promise<{ ok: true; conta: Conta } | { ok: false; motivo: 'existe' }> {
     const ja = this.db.prepare('SELECT id FROM contas WHERE email = ?').get(email);
     if (ja) return { ok: false, motivo: 'existe' };
     const sal = randomBytes(SAL_BYTES);
     const hash = (await scrypt(senha, sal, HASH_BYTES)) as Buffer;
-    const agora = new Date().toISOString();
+    const agora = new Date(now).toISOString();
     const r = this.db.prepare('INSERT INTO contas (email, hash, sal, criada_em, is_admin) VALUES (?, ?, ?, ?, 0)').run(email, hash.toString('hex'), sal.toString('hex'), agora);
     return { ok: true, conta: { id: Number(r.lastInsertRowid), email, is_admin: false } };
   }
@@ -121,13 +173,14 @@ export class Contas {
   }
 
   /** Nova sessão para a conta; devolve o token de verdade (só existe em memória — o banco guarda o hash). */
-  criarSessao(contaId: number): string {
+  criarSessao(contaId: number, now = Date.now()): string {
     const token = randomBytes(TOKEN_BYTES).toString('hex');
-    const agora = new Date();
+    const agora = new Date(now);
     const expira = new Date(agora.getTime() + SESSAO_DIAS * 24 * 60 * 60 * 1000);
     this.db
       .prepare('INSERT INTO sessoes (token_hash, conta_id, criada_em, expira_em) VALUES (?, ?, ?, ?)')
       .run(hashToken(token), contaId, agora.toISOString(), expira.toISOString());
+    this.registrarVisita(contaId, agora.getTime());
     return token;
   }
 
@@ -152,10 +205,84 @@ export class Contas {
   }
 
   /** Sessões vencidas juntam sem limpeza (nenhum dado sensível nelas — só o hash — mas não custa varrer).
-   * Chamado de vez em quando pelo servidor, nunca no laço de 60 Hz. */
-  limparExpiradas(): number {
-    const r = this.db.prepare('DELETE FROM sessoes WHERE expira_em < ?').run(new Date().toISOString());
+   * Chamado de vez em quando pelo servidor, nunca no laço de 60 Hz. A atividade de mais de 400 dias também sai. */
+  limparExpiradas(now = Date.now()): number {
+    const r = this.db.prepare('DELETE FROM sessoes WHERE expira_em < ?').run(new Date(now).toISOString());
+    this.db.prepare('DELETE FROM atividade WHERE dia < ?').run(diaMais(diaDe(now), -ATIVIDADE_DIAS));
     return Number(r.changes);
+  }
+
+  /** O piloto abriu o jogo com a conta hoje (entrou, criou a conta ou voltou com a sessão guardada). Uma linha por conta por dia; repetir no mesmo dia não faz nada. */
+  registrarVisita(contaId: number, now = Date.now()): void {
+    this.db.prepare('INSERT OR IGNORE INTO atividade (conta_id, dia) VALUES (?, ?)').run(contaId, diaDe(now));
+  }
+
+  /** Uma rodada do piloto com conta: soma ao dia dele (a visita do dia nasce junto). */
+  registrarPartida(contaId: number, p: PartidaDaConta, now = Date.now()): void {
+    this.db
+      .prepare(
+        `INSERT INTO atividade (conta_id, dia, segundos, partidas, abates, mortes) VALUES (?, ?, ?, 1, ?, ?)
+         ON CONFLICT(conta_id, dia) DO UPDATE SET segundos = segundos + excluded.segundos, partidas = partidas + 1, abates = abates + excluded.abates, mortes = mortes + excluded.mortes`,
+      )
+      .run(contaId, diaDe(now), Math.round(p.segundos), Math.round(p.abates), Math.round(p.mortes));
+  }
+
+  /** Os números do dono sobre os pilotos com conta (P185). Leitura leve (alguns índices, meses de dados): só a porta privada `/metricas` chama, nunca o laço de 60 Hz. */
+  metricasUsuarios(now = Date.now()): MetricasUsuarios {
+    const hoje = diaDe(now);
+    const n = (sql: string, ...args: (string | number)[]): number => Number((this.db.prepare(sql).get(...args) as { n: number | null }).n ?? 0);
+    const desde = (this.db.prepare('SELECT MIN(dia) AS d FROM atividade').get() as { d: string | null }).d;
+    const quantos = (dias: number, soJogaram: boolean): number =>
+      n(
+        `SELECT COUNT(DISTINCT conta_id) AS n FROM atividade WHERE dia > ? AND dia <= ?${soJogaram ? ' AND partidas > 0' : ''}`,
+        diaMais(hoje, -dias),
+        hoje,
+      );
+    const novasPorDia: Record<string, number> = {};
+    for (const l of this.db
+      .prepare(`SELECT date(criada_em, '-3 hours') AS dia, COUNT(*) AS n FROM contas GROUP BY dia HAVING dia > ? ORDER BY dia`)
+      .all(diaMais(hoje, -30)) as { dia: string; n: number }[])
+      novasPorDia[l.dia] = Number(l.n);
+    const segundos30 = n('SELECT SUM(segundos) AS n FROM atividade WHERE dia > ? AND dia <= ?', diaMais(hoje, -30), hoje);
+    const jogaram30 = quantos(30, true);
+    // Retenção clássica: dos que criaram a conta no dia X, quantos abriram o jogo de novo no dia X+N. Só entram as contas criadas depois de a medição começar
+    // (antes disso não havia como saber quem voltou) e as coortes cujo dia X+N já passou.
+    const retencao = (dias: number): Retencao => {
+      if (!desde) return { coorte: 0, voltaram: 0 };
+      const l = this.db
+        .prepare(
+          `SELECT COUNT(*) AS coorte, COALESCE(SUM(EXISTS (SELECT 1 FROM atividade a WHERE a.conta_id = c.id AND a.dia = date(c.dia0, ?))), 0) AS voltaram
+           FROM (SELECT id, date(criada_em, '-3 hours') AS dia0 FROM contas) c WHERE c.dia0 >= ? AND c.dia0 > ? AND c.dia0 <= ?`,
+        )
+        .get(`+${dias} days`, desde, diaMais(hoje, -30), diaMais(hoje, -dias)) as { coorte: number; voltaram: number };
+      return { coorte: Number(l.coorte), voltaram: Number(l.voltaram) };
+    };
+    const porDia = (
+      this.db
+        .prepare(
+          `SELECT dia, COUNT(*) AS ativos, SUM(partidas > 0) AS jogaram, SUM(segundos) AS segundos, SUM(partidas) AS partidas, SUM(abates) AS abates, SUM(mortes) AS mortes
+           FROM atividade WHERE dia > ? AND dia <= ? GROUP BY dia ORDER BY dia`,
+        )
+        .all(diaMais(hoje, -14), hoje) as { dia: string; ativos: number; jogaram: number; segundos: number; partidas: number; abates: number; mortes: number }[]
+    ).map((l) => ({
+      dia: l.dia,
+      ativos: Number(l.ativos),
+      jogaram: Number(l.jogaram),
+      minutos: Math.round(Number(l.segundos) / 60),
+      partidas: Number(l.partidas),
+      abates: Number(l.abates),
+      mortes: Number(l.mortes),
+    }));
+    return {
+      desde,
+      contas: this.total(),
+      novasPorDia,
+      ativos: { dia: quantos(1, false), semana: quantos(7, false), mes: quantos(30, false) },
+      jogaram: { dia: quantos(1, true), semana: quantos(7, true), mes: jogaram30 },
+      minutosPorJogador: jogaram30 ? Math.round((segundos30 / 60 / jogaram30) * 10) / 10 : 0,
+      retencao: { d1: retencao(1), d7: retencao(7) },
+      porDia,
+    };
   }
 
   /** Lê uma configuração global pela chave (retorna o valor gravado ou nulo) */

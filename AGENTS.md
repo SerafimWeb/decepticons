@@ -27,6 +27,7 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 10. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
 11. Vai mexer em visual, efeito, HUD, cenário ou iluminação? Leia `.decepticons/REFERENCIA_VISUAL.md` antes: o alvo de qualidade que o dono apontou (MechArena), o que já existe no render e a ordem combinada. Os vídeos de referência ficam em `.tmp/referencias/` (só nesta máquina); no git ficam as pranchas. **Página do site (landing, oficina, sala de controle):** leia `.decepticons/DESIGN_SYSTEM_SITE.md` antes (paleta, tipografia, componentes, o que evitar) e importe de `scripts/site/hud.mjs`. **Tela, menu ou HUD:** leia também `.decepticons/AUDITORIA_INTERFACE.md` (os achados e os sete princípios: uma ação primária por tela, nada repetido, nada de informação de desenvolvedor para o jogador, menu sem rolagem em 1280×720).
 12. Vai escolher o que fazer a seguir, ou o dono perguntou "o que falta?" Leia `.decepticons/ORDENS_DO_COMANDO.md`: toda ordem dele, o estado de cada missão e o placar de resultado.
+13. Vai guardar, medir ou enviar algo ligado a uma conta, a um IP ou a uma pessoa (métrica, log, tabela nova)? Leia `.decepticons/PRIVACIDADE.md` antes: o inventário do que já é guardado e o que falta para a política (LGPD). Dado pessoal novo entra no inventário no mesmo PR.
 
 ## O QUE É
 

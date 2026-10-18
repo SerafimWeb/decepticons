@@ -283,6 +283,17 @@ export async function startServer(
   fazerCopia();
   const backupTimer = dirDados && dbCaminho !== ':memory:' ? setInterval(fazerCopia, opts.backupCadaMs ?? 6 * 60 * 60 * 1000) : null;
   backupTimer?.unref();
+  // A faxina das sessões vencidas e da atividade de mais de 400 dias (P185): ao subir e a cada 6 horas; nada disso corre no laço de 60 Hz.
+  const faxinar = (): void => {
+    try {
+      contas.limparExpiradas();
+    } catch (err) {
+      log(`não consegui varrer sessões e atividade vencidas: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  faxinar();
+  const faxinaTimer = setInterval(faxinar, 6 * 60 * 60 * 1000);
+  faxinaTimer.unref();
   /** P106: a sessão de uma conta admin vale onde a chave do dono vale (admin, mural, métricas). Nunca lança. */
   const sessaoDeAdmin = (token: unknown): boolean => {
     if (typeof token !== 'string' || token.length < 8 || token.length > 200) return false;
@@ -302,7 +313,7 @@ export async function startServer(
     if (path === PLAY_PATH) {
       res.setHeader('access-control-allow-origin','*');
       res.setHeader('cache-control','no-store');
-      if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-methods':'POST, OPTIONS','access-control-allow-headers':'content-type'});res.end();return;}
+      if(req.method==='OPTIONS'){res.writeHead(204,{'access-control-allow-methods':'POST, OPTIONS','access-control-allow-headers':`content-type, ${SESSAO_HEADER}`});res.end();return;}
       if(req.method!=='POST'){res.writeHead(405);res.end();return;}
       const body=await lerCorpoLimitado(req,1024);
       if(body==='grande'){res.writeHead(413);res.end();return;}
@@ -310,7 +321,13 @@ export async function startServer(
       if(!report||!parseLoadoutKey(report.build)){res.writeHead(400);res.end();return;}
       const ip=clientIp(req.socket.remoteAddress,req.headers['cf-connecting-ip']);
       if(telemetria.registrar('partida_resumo',ip,Date.now(),clientCountry(req.socket.remoteAddress,req.headers['cf-ipcountry']),'play:'+report.id)==='taxa'){res.writeHead(429);res.end();return;}
-      playMetrics.record(report);res.writeHead(204);res.end();return;
+      // Com a sessão de uma conta (P185), a rodada também entra na atividade do piloto; sem sessão (ou com uma vencida) ela vale como a de um convidado. O reenvio da mesma rodada não conta duas vezes.
+      const sessaoDaPartida=req.headers[SESSAO_HEADER];
+      const dona=typeof sessaoDaPartida==='string'?contas.validarSessao(sessaoDaPartida):null;
+      const repetida=playMetrics.jaVisto(report.id);
+      playMetrics.record(report,Date.now(),!!dona);
+      if(dona&&!repetida)contas.registrarPartida(dona.id,{segundos:report.seconds,abates:report.kills,mortes:report.deaths});
+      res.writeHead(204);res.end();return;
     }
     if (path === STATUS_PATH) {
       const body = status();
@@ -360,7 +377,7 @@ export async function startServer(
         res.end();
         return;
       }
-      const body = JSON.stringify({...telemetria.metricas(),play:playMetrics.snapshot(),runtime:{rssMB:process.memoryUsage().rss/1048576,rooms:rooms.size,players:jogadoresAgora()}});
+      const body = JSON.stringify({...telemetria.metricas(),play:playMetrics.snapshot(),usuarios:contas.metricasUsuarios(),runtime:{rssMB:process.memoryUsage().rss/1048576,rooms:rooms.size,players:jogadoresAgora()}});
       res.writeHead(200, {
         'content-type': 'application/json; charset=utf-8',
         'cache-control': 'no-store',
@@ -540,6 +557,7 @@ export async function startServer(
     if (path === CONTA_EU_PATH && req.method === 'GET') {
       const token = req.headers[SESSAO_HEADER];
       const conta = typeof token === 'string' ? contas.validarSessao(token) : null;
+      if (conta) contas.registrarVisita(conta.id);
       res.writeHead(conta ? 200 : 401, {
         'content-type': 'application/json; charset=utf-8',
         ...cors,
@@ -834,6 +852,7 @@ export async function startServer(
         mural?.parar();
         if (salvarTimer) clearInterval(salvarTimer);
         if (backupTimer) clearInterval(backupTimer);
+        clearInterval(faxinaTimer);
         gravarDados();
         for (const c of wss.clients) c.terminate();
         wss.close(() => http.close(() => resolve()));

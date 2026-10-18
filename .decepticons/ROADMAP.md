@@ -173,6 +173,8 @@
 - [ ] M5: compensação de latência; precisa de decisão de projeto antes do código (`FINDINGS.md`, seção M5) #combate
 - [x] **Reconexão automática do online (G13, P184 b, 18/10):** a conexão que cai volta sozinha em ~15 s (0,3, 0,7, 1,5, 3, 5 e 5 s), com o aviso `RECONECTANDO (n/6)` no canto; a recusa não reconecta; o servidor de verdade cai e volta nos testes; 10 de 10 mutações #rede
 - [ ] M6: entrada pelo link com código da sala + apelido (a reconexão está feita acima) #rede
+- [x] **Métricas dos pilotos com conta (P185, 18/10):** o servidor mede por conta os dias ativos (DAU/WAU/MAU), quem de fato jogou, os minutos por piloto, abates e mortes por dia e a retenção D1/D7; e, para todos, as rodadas por dia e por mapa e modo, a onda alcançada e a vitória das missões (`/metricas` e a página `/metricas/`); atividade guardada por 400 dias; **só contagens no painel** (`server/contas.ts`, `PlayMetrics.ts`; `PRIVACIDADE.md`) #negocio
+- [ ] **Privacidade antes de lançar (P185, LGPD; decisão do dono):** a política e a página dela (linkada na conta e no rodapé), a base legal da atividade por conta e do Google Analytics, o prazo do log com IP, e **os botões "apagar minha conta" e "baixar meus dados"** (proposta pronta em `PRIVACIDADE.md` § 4) #negocio
 - [ ] Telas do online: apelido, código da sala, jogadores, placar e ping (Gemini) #ux
 - [ ] Medir banda por sala e tick do servidor contra as metas do G11 e do G14 #desempenho
 

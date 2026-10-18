@@ -2,20 +2,83 @@ import {
   type PlayReport,
   type PlayGroup,
   type PlaySummary,
+  type PlayDay,
+  type PlayMapGroup,
+  type PlayTotals,
 } from "../shared/net/playMetrics";
-/** Agrega sem guardar identificadores: até 128 combinações por processo/arquivo. */
+import { diaDe } from "./telemetria";
+/** Os dias de total guardados (o mesmo prazo das contagens por dia da telemetria) e os mapas×modos diferentes. */
+const DIAS_TETO = 120;
+const MAPAS_TETO = 24;
+const RE_DIA = /^\d{4}-\d{2}-\d{2}$/;
+const MODOS = ["deathmatch", "survival", "ctf", "dominio"];
+const TOTAIS: (keyof PlayTotals)[] = [
+  "reports",
+  "completed",
+  "seconds",
+  "kills",
+  "deaths",
+  "logged",
+  "won",
+  "lost",
+  "waves",
+  "waveReports",
+];
+const totaisVazios = (): PlayTotals => ({
+  reports: 0,
+  completed: 0,
+  seconds: 0,
+  kills: 0,
+  deaths: 0,
+  logged: 0,
+  won: 0,
+  lost: 0,
+  waves: 0,
+  waveReports: 0,
+});
+const totaisValidos = (g: PlayTotals): boolean =>
+  TOTAIS.every(
+    (k) => typeof g[k] === "number" && Number.isFinite(g[k]) && g[k] >= 0,
+  );
+/** Soma uma rodada nos totais de um recorte. */
+function somar(t: PlayTotals, r: PlayReport, logged: boolean): void {
+  t.reports++;
+  t.completed += Number(r.outcome === "completed");
+  t.seconds += r.seconds;
+  t.kills += r.kills;
+  t.deaths += r.deaths;
+  t.logged += Number(logged);
+  if (r.won !== undefined) {
+    if (r.won) t.won++;
+    else t.lost++;
+  }
+  if (r.wave !== undefined) {
+    t.waves += r.wave;
+    t.waveReports++;
+  }
+}
+/** Agrega sem guardar identificadores: até 128 combinações por processo/arquivo, 120 dias e 24 mapas. */
 export class PlayMetrics {
   private readonly groups = new Map<string, PlayGroup>();
+  private readonly days = new Map<string, PlayDay>();
+  private readonly maps = new Map<string, PlayMapGroup>();
   private readonly seen = new Map<string, number>();
   droppedGroups = 0;
   dirty = false;
-  record(r: PlayReport, now = Date.now()): boolean {
+  /** Este relatório já foi contado (o navegador reenvia quando a rede falha no meio)? */
+  jaVisto(id: string): boolean {
+    return this.seen.has(id);
+  }
+  /** `logged`: o relatório veio de uma conta (o servidor viu uma sessão válida); só entra na contagem, nunca no que se guarda. */
+  record(r: PlayReport, now = Date.now(), logged = false): boolean {
     for (const [id, t] of this.seen)
       if (now - t > 86400000) this.seen.delete(id);
     if (this.seen.has(r.id)) return false;
     if (this.seen.size >= 4096)
       this.seen.delete(this.seen.keys().next().value!);
     this.seen.set(r.id, now);
+    this.somarDia(r, now, logged);
+    this.somarMapa(r, logged);
     const key = [r.release, r.mode, r.build, r.assisted, r.online].join("|");
     let g = this.groups.get(key);
     if (!g) {
@@ -58,10 +121,38 @@ export class PlayMetrics {
     this.dirty = true;
     return true;
   }
+  private somarDia(r: PlayReport, now: number, logged: boolean): void {
+    const day = diaDe(now);
+    let d = this.days.get(day);
+    if (!d) {
+      d = { day, ...totaisVazios() };
+      this.days.set(day, d);
+      if (this.days.size > DIAS_TETO)
+        this.days.delete([...this.days.keys()].sort()[0]!);
+    }
+    somar(d, r, logged);
+    this.dirty = true;
+  }
+  private somarMapa(r: PlayReport, logged: boolean): void {
+    if (r.map === undefined) return;
+    const key = r.map + "|" + r.mode;
+    let m = this.maps.get(key);
+    if (!m) {
+      if (this.maps.size >= MAPAS_TETO) return;
+      m = { map: r.map, mode: r.mode, ...totaisVazios() };
+      this.maps.set(key, m);
+    }
+    somar(m, r, logged);
+    this.dirty = true;
+  }
   snapshot(): PlaySummary {
     return {
       groups: [...this.groups.values()].map((g) => ({ ...g })),
       droppedGroups: this.droppedGroups,
+      days: [...this.days.values()]
+        .sort((a, b) => (a.day < b.day ? -1 : 1))
+        .map((d) => ({ ...d })),
+      maps: [...this.maps.values()].map((m) => ({ ...m })),
     };
   }
   load(raw: unknown): void {
@@ -75,7 +166,7 @@ export class PlayMetrics {
         !/^[a-zA-Z0-9.-]{1,40}$/.test(g.release) ||
         typeof g.build !== "string" ||
         g.build.length > 80 ||
-        !["deathmatch", "survival", "ctf", "dominio"].includes(g.mode) ||
+        !MODOS.includes(g.mode) ||
         typeof g.assisted !== "boolean" ||
         typeof g.online !== "boolean"
       )
@@ -103,6 +194,25 @@ export class PlayMetrics {
         { ...g },
       );
     }
+    // Arquivos de antes dos totais por dia e por mapa não os trazem: começam do zero (nada quebra).
+    if (Array.isArray(r.days))
+      for (const d of r.days.slice(-DIAS_TETO)) {
+        if (!d || typeof d.day !== "string" || !RE_DIA.test(d.day)) continue;
+        if (!totaisValidos(d)) continue;
+        this.days.set(d.day, { ...d });
+      }
+    if (Array.isArray(r.maps))
+      for (const m of r.maps.slice(0, MAPAS_TETO)) {
+        if (
+          !m ||
+          typeof m.map !== "string" ||
+          !/^[a-z0-9-]{1,16}$/.test(m.map) ||
+          !MODOS.includes(m.mode) ||
+          !totaisValidos(m)
+        )
+          continue;
+        this.maps.set(m.map + "|" + m.mode, { ...m });
+      }
     this.droppedGroups =
       typeof r.droppedGroups === "number" && Number.isFinite(r.droppedGroups)
         ? Math.max(0, r.droppedGroups)

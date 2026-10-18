@@ -10,6 +10,19 @@
 5. **Nascer no chão** é do mapa, não do bot (`alturaDoChao`, a altura do terreno): o raio na física **não serve** para achar o chão no nascimento (o pipeline de consultas do Rapier é vazio antes do primeiro passo).
 6. **Os números são proposta** (dano 8, rajada de 4, 170 m, 3 Mechs e 6 androides): o Comandante ajusta em `TORRES_DE_VIGIA` e `AMAZONIA_GUARDA`.
 
+## [2026-10-18] As métricas dos pilotos com conta: o que o servidor mede e o que fica de fora (Claude, P185)
+
+**Ordem:** "tem como termos as métricas dos usuários, quantos entram, quantos minutos jogam, quantas mortes, etc? [...] pra mapearmos e trackearmos tudo, e depois implementarmos melhores práticas de marketing orientado pelas nossas informações de usuários? quero concluir logo as partes técnicas pra poder lançar".
+
+**Decisões:**
+1. **O que é "usuário" aqui: a conta.** Retenção (quem volta) e usuários únicos (DAU/WAU/MAU) só se medem com um identificador que dure de um dia para o outro. O convidado **continua anônimo** (só contagens: o dono decidiu isso em 28/09 e 04/10 e nada aqui o desfaz); quem **criou conta** passa a ter a atividade registrada. **Isto é dado pessoal novo** e vai ao ar antes da política de privacidade existir: registrei o inventário (`PRIVACIDADE.md`) e o que falta (política, "apagar a conta", "baixar meus dados") como pendência do dono, sem esconder.
+2. **Uma linha por conta por dia** (`atividade`): abriu o jogo, rodadas, segundos, abates, mortes. É o mínimo que responde as perguntas dele (quantos entram, quantos minutos, quantas mortes) e a retenção; nada de linha por rodada nem de histórico de montagens (cresceria sem fim e não responde nada que o dono perguntou). Apaga com 400 dias.
+3. **A sessão vai junto da rodada**, no cabeçalho, e **só para o servidor dono do token** (a mesma chave por servidor da sessão: um link com `?servidor=` apontando para outro lugar não recebe o token guardado). Sem sessão, ou com sessão vencida, a rodada vale como a de um convidado: nada se perde, só deixa de ser de alguém.
+4. **O painel mostra só contagens:** o bloco `usuarios` não leva e-mail nem número de conta (teste confere).
+5. **A retenção é a clássica, do dia exato** (D1 = o dia seguinte, D7 = o sétimo) e **só das contas criadas depois de a medição começar**: sem atividade registrada antes, uma conta velha contaria como "não voltou" e derrubaria o número. As coortes cujo dia ainda não passou ficam de fora.
+6. **O que mais interessa a este jogo e entrou:** o **mapa**, a **onda** em que a rodada parou (onde a Sobrevivência perde gente) e a **vitória ou derrota** das missões (a Amazônia vence-se?). Opcionais no contrato: o navegador antigo continua valendo.
+7. **De fora, de propósito:** o **chassi por conta** (a montagem já está nos resumos por montagem), o **lado** (P186, ainda não existe) e a vitória em **Bandeira e Domínio** (o cliente ainda não sabe o time do jogador no online: P81). O servidor também passou a **varrer sessões vencidas e atividade velha** ao subir e a cada 6 h: `limparExpiradas` existia e ninguém a chamava.
+
 ## [2026-10-18] Os geradores do escudo são alvos destrutíveis, e o escudo é um multiplicador no corpo do Draga (Claude, P180 parte D1)
 
 **Ordem:** *"há uma enorme força de defesa deles e teremos que desmantelar"* + *"a amazônia já foi entregue em partes, prossiga"*.
@@ -922,7 +935,6 @@ PR #298 mergeado em `886d149` depois do check local completo (185 arquivos/1.842
 3. **O tiro da esquerda sai junto, na mesma mira e no ritmo da arma dela**, sem rajada nem fila de vaga: o bot que soma armas esquenta mais, como o jogador. **Rejeitado:** reaproveitar o `Armament` do jogador no bot (traz a regra de gatilho inteira para uma IA que só decide "atira ou não").
 4. **`canFireLeftHand` novo em vez de `canFireSecondary`:** o segundo depende do layout de gatilhos e no Marauder a esquerda atira no botão principal.
 5. **A ficha mostra os números do robô** (o canhão de cerco do V4 a 60% do dano, o plasma do chefe no Colossus-01), não os do Hangar: mostrar 360 de dano quando o bot dá 216 era a ficha mentindo.
-
 
 ## [2026-10-13] O HUD de combate segue o MechArena na informação e o CYBERMECH na linguagem (Claude, P109)
 
@@ -2091,7 +2103,6 @@ Oficina prioriza catálogo/defesas/comandos antes da arquitetura; Sala de Contro
 
 CI verde e merge 444bb09 confirmados. Memória passa a registrar a implementação na main, removendo a indicação antiga de branch ainda a publicar. Capacidade local continua distinta de homologação online; servidor público offline preservado. Nenhuma mudança de gameplay neste fechamento.
 
-
 ## [2026-10-06] Energia, observabilidade e escala com evidência (Codex)
 
 Pedido do dono: concluir melhorias abertas, instrumentar experiência, medir equilíbrio, implementar energia/barreira e orientar expansão por playtest; perguntou pelo Serafim UM e por 10/50/100 jogadores. AGENTS e IDENTITY corrigem stack obsoleta (Colyseus planejado → Node/ws real, SQLite e Node 22.12+); PROTOCOLO_UNIVERSAL adapta regras a simulação, carga, privacidade, cheats e critérios de capacidade. Referência PROTOCOLO_SERAFIM_UM preservada.
@@ -2099,7 +2110,6 @@ Pedido do dono: concluir melhorias abertas, instrumentar experiência, medir equ
 Barreira frontal é módulo extra de 2 t: mantém armas, 100 de energia, 20/s enquanto ligada, absorção 1:1 de dano frontal, regeneração 12/s após 2 s. E remapeável e botão de toque. Esfera e escudo físico continuam pendentes. Montagens v1 continuam válidas; v2 explicita módulo. Protocolo 5 usa bit livre para escudo e 1 byte de energia por destinatário/snapshot; unidade permanece 19 B. Testes expuseram que bots somavam às 8 vagas humanas; agora cedem vagas, ficam fora do roster/snapshot e não renascem na reserva. Orçamento de rede manteve a margem anterior.
 
 Instrumentação sem SDK por quadro: erro de boot/JS/WebGL com versão → Serafim13; resumo local/servidor por versão, modo, montagem, online e uso de cheats/potências. Limites, persistência, dados autodeclarados e lacunas em OBSERVABILIDADE.md. Benchmark reproduzível só em localhost; baseline e medição após ajuste em CAPACIDADE.md. Não foi tocado o servidor público offline.
-
 
 ## [2026-10-06] Inicialização previsível da medição de bocas (Codex)
 
@@ -2571,7 +2581,6 @@ de fora até o login existir).
 **Achado de quebra (R17):** o prazo de 4 s da sondagem estava armado também durante a leitura do corpo. No boot do jogo (Wasm + arena) a thread principal trava alguns segundos, o temporizador dispara depois e abortava o corpo de uma resposta que **já tinha chegado** — a tela dizia "sem contagem" sem motivo. O prazo agora é desarmado quando a resposta chega; há teste para isso.
 **Quem decidiu:** dono (o pedido); Claude (HTTP em vez de WebSocket, dados agregados, os três estados, origem exata na CSP).
 
-
 ## [2026-09-28] Integração Híbrida de Áudio Real e Procedural (Gemini)
 **Contexto**: O cliente forneceu áudios renderizados (ElevenLabs) para armas, ambiente, passos e UI, pedindo integração prioritária da vinheta.
 **Decisão**: O `AudioSystem` foi refatorado para suportar arquivos de áudio `.mp3` e `.wav` usando buffers via rede `fetch` sem bloquear a thread. Manteve-se o sistema procedural original, ativado automaticamente como fallback. Isso reduz o custo de CPU caso o arquivo não seja carregado ou atrase e garante alta resiliência à aplicação online.
@@ -2820,7 +2829,6 @@ O dono registrou cinco conceitos para evolução do CYBERMECH: capacidade de map
 - **Leitura:** o hover isola as ligações do módulo e mostra a dica; legenda das frentes e da equipe; tabela alternativa com tudo.
 **Custo:** SVG inline na oficina (0 no jogo, 0 no bundle); sem biblioteca.
 **Quem decidiu:** dono (o formato e a composição); Qwen (o desenho e a leitura).
-
 
 ## [2026-09-26] 🎯 MARCO — Primeira sessão multiplayer real, e a VISÃO daqui pra frente
 **Achado (dono):** "consegui conectar 2 aparelhos online na mesma sala!!!!!!!! CONGRATS! isso deve ser celebrado e devidamente registrado nas landing pages."
@@ -3628,12 +3636,10 @@ O smoke passou a reprovar menos de 10 draw calls, e comprovadamente reprovava a 
 **Por que importa:** possibilita jogar a build para lives/vídeos com a tela limpa, sem perder acesso imediato à instrumentação técnica.
 **Quem decidiu:** Gemini (assinou como "Codex" porque o protocolo só previa Claude e Codex; corrigido pelo Claude na integração), cruzando com a necessidade de separar DOM da simulação no G3.
 
-
 ## [2026-09-23] Qualidade adaptativa e degraus de degradação (G12)
 **Decisão:** implementada a classe `Quality` para medir o tempo de frame. Se cair de 50 FPS na média de 2 segundos, degrada a qualidade primeiro reduzindo o `pixelRatio` para 1.0 e depois desligando o `UnrealBloomPass`. A qualidade não é restaurada se o FPS voltar a subir, para evitar flutuações irritantes.
 **Por que importa:** G12 exige a proteção para rodar em hardware fraco (integrated GPU).
 **Quem decidiu:** Gemini (assinou como "Codex"; corrigido pelo Claude na integração), com base nas restrições de G12. Testes garantiram que pequenas perdas não disparam falsos positivos, e que o tier é mantido.
-
 
 ## [2026-09-23] Conta do GitHub renomeada: Remoratrader → SerafimWeb
 **Fato:** ao abrir o primeiro PR, o GitHub devolveu `SerafimWeb/decepticons`. O token do `gh` autentica como `SerafimWeb` (usuário, não organização): a conta foi renomeada. O `gh auth status` ainda mostrava o nome antigo, guardado no login.

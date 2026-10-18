@@ -20,6 +20,28 @@
 
 **Próxima sessão começa com:** a **E** (a invasão com androides e a cura do rio); depois o Relatório de Consequências e o Consórcio (P179 camadas 3 e 4).
 
+## AS MÉTRICAS DOS PILOTOS: QUANTOS ENTRAM, QUANTO JOGAM, QUEM VOLTA — Claude, 18/10 (branch `claude/metricas-usuarios`, P185)
+
+**A pergunta do Comandante (17/10):** *"tem como termos as métricas dos usuários, quantos entram, quantos minutos jogam, quantas mortes, etc? [...] depois implementarmos melhores práticas de marketing orientado pelas nossas informações de usuários?"*
+
+**Resposta curta: sim, e agora o servidor mede.** Já existiam as contagens anônimas (visitas, cliques, partidas, país, pico). **O que entrou:**
+1. **Por conta:** a tabela `atividade` (uma linha por conta por dia: abriu o jogo, rodadas, segundos, abates, mortes). Dela saem **DAU/WAU/MAU**, **quem de fato jogou**, **minutos por piloto**, contas novas por dia e a **retenção D1 e D7**. Alimentada pela rodada que o navegador manda **com a sessão** e por abrir o jogo com a sessão guardada.
+2. **Para todos (com e sem conta):** rodadas, minutos, abates e mortes **por dia** e **por mapa e modo**, a **onda** em que a rodada parou e a **vitória ou derrota** das missões (o relatório de partida ganhou `map`, `wave` e `won`, opcionais).
+3. **A tela do dono:** `/metricas/` ganhou **Pilotos com conta** e **O que se joga**; o `/metricas` traz o bloco `usuarios`. **Só contagens: nenhum e-mail nem número de conta.**
+4. **A faxina:** o servidor passou a varrer sessões vencidas e atividade de mais de 400 dias ao subir e a cada 6 h (`limparExpiradas` existia e ninguém chamava).
+
+**Provas:** testes de conta (cenário com dia de Brasília e virada às 03:00 UTC, retenção do dia exato, banco vazio, faxina), de agregação (tetos, reenvio, arquivo antigo), HTTP de ponta a ponta com o servidor de verdade (conta + rodada com sessão, reenvio, sessão inventada, preflight, visita) e do cliente (a sessão só vai ao servidor dono dela). **Mutação à mão: 32 de 32 pegas.** **E ponta a ponta no navegador** (o fio do `Game.ts`, sem teste de unidade): o jogo de verdade no Chrome, com a sessão de uma conta, na Amazônia (`marcha=0.95`) e na Praia (Sobrevivência) mandou ao servidor local `map`, `wave`, `won` e a sessão; o `/metricas` mostrou 1 piloto que jogou, 3 rodadas, 4 min, por mapa e dia (captura: `.decepticons/arte/metricas-pilotos-p185-claude.jpg`, com os números dessa prova).
+
+**Custo de CPU:** zero no tick e no quadro do jogo. O cliente soma dois números por rodada (onda, desfecho); o servidor faz um `INSERT` pequeno por rodada de quem tem conta e um por abertura do jogo; a leitura (`metricasUsuarios`) só roda quando o dono abre o `/metricas`.
+
+**ATENÇÃO (privacidade, R13):** a atividade por conta é **dado pessoal novo**. **O jogo ainda não tem política de privacidade, "apagar minha conta" nem "baixar meus dados"**, e o Google Analytics já está nas páginas. O inventário do que é guardado está em `PRIVACIDADE.md`; **antes de trazer jogadores o dono precisa decidir e publicar a política** (a proposta técnica de apagar/exportar está lá, construo quando ele mandar).
+
+**Falta:** o chassi e o lado por conta; vitória em Bandeira e Domínio (precisa do time do jogador no online, P81); o que o marketing faz com os números (só vale com jogadores medidos).
+
+**Onde o Comandante confere:** `cybermech.online/metricas/` (token em `.tmp/servidor/metricas-token.txt`, ou entrando com a conta de admin): seções **Pilotos com conta** e **O que se joga**. **Os números só começam a encher depois que o site e o servidor atualizarem** e pilotos com conta jogarem; antes disso as seções mostram zeros.
+
+**Próxima sessão começa com:** o **time do jogador na sala online (P81)**: é o que falta para Bandeira 2v2 online, para os lados Aliados × Consórcio (P186) e para a vitória nesses modos.
+
 ## AMAZÔNIA, PARTE D1: O ESCUDO DO DRAGA E OS TRÊS GERADORES — Claude, 18/10 (branch `claude/amazonia-defesa`, P180)
 
 **O Comandante (17/10):** *"a amazônia já foi entregue em partes, prossiga"* (a parte C estava pronta e testada num branch local sem PR: **publiquei como veio, #375**, e a produção já religou nela).
@@ -1378,7 +1400,6 @@ O **afundamento** em si é **geometria**: o **fundo do mar desce** e a física d
 - **O que continua faltando da P108 (passo c, declarado):** **ombros** (o Marauder tem lançadores), **módulo** (barreira/esfera/anel de fogo) e **layout de ataques**. Os três dependem da **IA saber usar** (o módulo é uma habilidade que alguém tem de decidir quando ligar; o ombro e o layout mudam quais encaixes atiram em cada botão): configurar sem a IA usar seria uma ficha que mente (R13). Proposta: o módulo primeiro (a IA liga a barreira quando leva dano de frente).
 - **Como o Comandante vê:** PILOTOS → **[ ESQUADRÃO ]** → um inimigo ou aliado → **Mão esquerda**.
 
-
 ## O HUD de combate ganhou minimapa, vida em barra, cartões de arma e anel de dash — Claude, 13/10 (PR `claude/referencia-mecharena`, ordem P109, frente 1 de 5)
 
 **Ordem do Comandante (13/10):** assistiu a gameplays do MechArena e mandou oito quadros: "evoluíram MUITO a interface, os gráficos, layout e jogabilidade... porém, pay to win... quero evoluir nosso cybermech pra ficar ainda mais bonito, melhor de jogar, mais interessante e gostoso de ficar horas na nossa arena". **Análise (o que eles têm, onde estamos, o que não copiar) e o plano em cinco frentes:** `REFERENCIA_VISUAL.md` § 6. As oito pranchas estão em `referencias/mecharena/gameplay-13-10-*.jpg`.
@@ -2194,7 +2215,6 @@ O mapa segue offline por `?mapa=bunker` ou pelo link na pausa/início da Arena. 
 Dez testes focados cobrem quatro andares, pisos/spawns, rampas em duas orientações para cada transição sem pulo, galerias, linha de tiro, passagem secreta e seleção segura. `npm run check` passou sobre a main atualizada: typecheck, 893 testes em 115 arquivos, build, smoke (12,8 s), bocas e `site --check`. Build: JavaScript gzip 334,1 KB / WASM gzip 719,4 KB. Capturas e medição GPU em `medicoes/BUNKER.md`; p95 alto variável (até 62,6 ms no poço), sem homologar 60 FPS. O mapa usa dois desenhos instanciados estáticos; há teto explícito de colisores, sem atualização por tick/frame nem luz dinâmica.
 
 Próxima sessão: playtest do dono no mapa publicado. Ainda falta IA vertical, elevadores móveis e câmera tática adaptada ao poço. Acesse pelo botão `[ EXPLORAR O BUNKER // 4 NÍVEIS ]` na Arena offline ou em https://www.selvamkt.com.br/cybermech/jogar/?mapa=bunker.
-
 
 ## C2 — preparar chassi escolhido antes de exibir (Codex, 10/10)
 
