@@ -2031,6 +2031,10 @@ export class Game {
         q.escudo.restantes = escudo.geradoresVivos;
         q.escudo.total = escudo.total;
       }
+      // As torres da margem (parte D2): armadas enquanto o gerador da CERCA está de pé.
+      const torres = this.match.torres;
+      q.torres.presente = torres !== null && chefe !== null;
+      if (torres) q.torres.ativas = torres.ativa;
       // A missão do rio (P180, parte C): a distância do Draga até a aldeia, o progresso da marcha e quanto falta nesse passo.
       const rio = this.match.rio;
       q.aldeia.presente = rio !== null && !rio.terminou;

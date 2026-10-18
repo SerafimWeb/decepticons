@@ -58,6 +58,8 @@ export interface QuadroDaPraia {
   aldeia: { presente: boolean; distancia: number; progresso: number; tempoS: number };
   /** O escudo do Draga-01 (P180, parte D): quantos geradores de pé e quantos são. `presente` é falso fora da missão do rio. */
   escudo: { presente: boolean; restantes: number; total: number };
+  /** As torres de vigia armadas da margem (P180, parte D2): se estão alimentadas (o gerador da CERCA de pé). `presente` é falso fora da missão do rio. */
+  torres: { presente: boolean; ativas: boolean };
   camera: THREE.Camera;
   largura: number;
   altura: number;
@@ -76,6 +78,7 @@ export function novoQuadroDaPraia(camera: THREE.Camera): QuadroDaPraia {
     quadro: { presente: false, estado: 0, vida: 1 },
     chefe: { presente: false, fracao: 1, fase: 1, pernas: [true, true], nome: 'COLOSSUS-01', alvo: null },
     escudo: { presente: false, restantes: 0, total: 0 },
+    torres: { presente: false, ativas: false },
     aldeia: { presente: false, distancia: 0, progresso: 0, tempoS: Infinity },
     camera,
     largura: 0,
@@ -131,6 +134,8 @@ export class PraiaHud {
   private readonly chefeRegra: HTMLElement;
   /** O escudo do Draga (P180, parte D): quantos geradores de pé, sob a regra da fase. */
   private readonly chefeEscudo: HTMLElement;
+  /** As torres da margem (parte D2): armadas ou sem energia. */
+  private readonly chefeTorres: HTMLElement;
   private escudoRestantes = -1;
   private chefeChave = '';
   /** A célula da aldeia (P180, parte C): a distância do Draga e a barra da marcha. */
@@ -244,6 +249,8 @@ export class PraiaHud {
     this.chefeRegra = el('p', '', this.chefe);
     this.chefeEscudo = el('p', 'pcf-escudo', this.chefe);
     this.chefeEscudo.hidden = true;
+    this.chefeTorres = el('p', 'pcf-torres', this.chefe);
+    this.chefeTorres.hidden = true;
 
     this.zona = el('div', 'praia-zona', this.raiz);
 
@@ -419,7 +426,8 @@ export class PraiaHud {
       this.chefe.hidden = false;
       const pct = Math.round(q.chefe.fracao * 100);
       const escudo = q.escudo.presente ? q.escudo.restantes : -1;
-      const chave = `${q.chefe.nome}|${q.chefe.fase}|${pct}|${q.chefe.pernas[0] ? 1 : 0}${q.chefe.pernas[1] ? 1 : 0}|${escudo}`;
+      const torres = q.torres.presente ? (q.torres.ativas ? 1 : 0) : -1;
+      const chave = `${q.chefe.nome}|${q.chefe.fase}|${pct}|${q.chefe.pernas[0] ? 1 : 0}${q.chefe.pernas[1] ? 1 : 0}|${escudo}|${torres}`;
       if (chave !== this.chefeChave) {
         this.chefeChave = chave;
         const fase = FASE_PELO_CODIGO[q.chefe.fase] ?? 'anda';
@@ -431,6 +439,11 @@ export class PraiaHud {
         if (q.escudo.presente) {
           this.chefeEscudo.textContent = escudo > 0 ? `ESCUDO · ${escudo} DE ${q.escudo.total} GERADORES` : 'ESCUDO CAIU';
           this.chefeEscudo.dataset.estado = escudo > 0 ? 'de-pe' : 'caido';
+        }
+        this.chefeTorres.hidden = !q.torres.presente;
+        if (q.torres.presente) {
+          this.chefeTorres.textContent = q.torres.ativas ? 'TORRES DA MARGEM ARMADAS' : 'TORRES DA MARGEM SEM ENERGIA';
+          this.chefeTorres.dataset.estado = q.torres.ativas ? 'de-pe' : 'caido';
         }
         this.chefePernas.forEach((p, i) => (p.textContent = `${alvo === 'aldeia' ? 'LADO' : 'PERNA'} ${i === 0 ? 'ESQ' : 'DIR'}`));
         this.chefe.dataset.fase = fase;

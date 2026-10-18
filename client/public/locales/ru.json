@@ -841,5 +841,7 @@
  "O RIO VIVE · DRAGA-01 DERRUBADO": "РЕКА ЖИВА · DRAGA-01 УНИЧТОЖЕН",
  "A ALDEIA CAIU · O DRAGA-01 CHEGOU": "ДЕРЕВНЯ ПАЛА · DRAGA-01 ДОШЁЛ",
  "O DRAGA-01 CAIU ANTES DE CHEGAR À ALDEIA": "DRAGA-01 ПАЛ, НЕ ДОЙДЯ ДО ДЕРЕВНИ",
- "O DRAGA-01 ALCANÇOU A ALDEIA": "DRAGA-01 ДОШЁЛ ДО ДЕРЕВНИ"
+ "O DRAGA-01 ALCANÇOU A ALDEIA": "DRAGA-01 ДОШЁЛ ДО ДЕРЕВНИ",
+ "TORRES DA MARGEM ARMADAS": "БАШНИ НА БЕРЕГУ ВООРУЖЕНЫ",
+ "TORRES DA MARGEM SEM ENERGIA": "БАШНИ НА БЕРЕГУ БЕЗ ЭНЕРГИИ"
 }
