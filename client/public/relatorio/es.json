@@ -1,0 +1,65 @@
+{
+ "rotulos": {
+  "titulo": "INFORME DE CONSECUENCIAS",
+  "sub": "RÍO VIVO",
+  "aconteceuNome": "QUÉ PASÓ",
+  "aconteceuLema": "lo que hiciste en el río",
+  "ficcaoNome": "QUÉ ES FICCIÓN",
+  "ficcaoLema": "lo que el juego inventó",
+  "quando": "CUÁNDO",
+  "fonte": "FUENTE",
+  "nota": "LO QUE ESTO NO DICE",
+  "fechar": "[ CERRAR ]"
+ },
+ "linhas": {
+  "venceuDentro": "El Draga-01 cayó desde dentro: la carga plantada por los androides de la Resistencia lo destruyó.",
+  "venceuTiro": "El Draga-01 cayó a tiros, antes de llegar a la aldea.",
+  "aldeiaSalva": "La aldea sigue en pie.",
+  "rioVenceu": "El río vuelve a correr limpio, aguas abajo.",
+  "perdeu": "El Draga-01 llegó a la aldea.",
+  "aldeiaCaiu": "La aldea cayó.",
+  "rioPerdeu": "El veneno sigue río abajo.",
+  "geradores": "{n} de {total} generadores del escudo desmantelados.",
+  "resistencia": "{n} de {total} androides de la Resistencia en pie.",
+  "tempo": "Tiempo de misión: {t}."
+ },
+ "fatos": [
+  {
+   "id": "mercurio",
+   "nome": "EL MERCURIO EN EL CABELLO Y EN EL PESCADO",
+   "lema": "tres aldeas munduruku, en el Tapajós",
+   "texto": "En 2019, Fiocruz y WWF-Brasil evaluaron a 200 personas de tres aldeas munduruku de la Tierra Indígena Sawré Muybu, en el Tapajós medio (Pará). Encontraron mercurio en todos los participantes, y el 57,9 % estaba por encima de 6 µg/g en el cabello, el límite de seguridad de agencias de salud reconocidas internacionalmente. En la aldea más afectada por el garimpo, cerca de 9 de cada 10 personas superaban el límite. El mercurio llega por el pescado: el 96 % comía pescado con regularidad y todas las muestras de pescado tenían mercurio.",
+   "quando": "Recogida de datos del 29/10 al 9/11/2019 · nota técnica de noviembre de 2020",
+   "fonte": "ENSP/Fiocruz y WWF-Brasil, nota técnica «Impacto del mercurio en la salud del pueblo indígena Munduruku, cuenca del Tapajós» (nov. 2020, en portugués)",
+   "link": "https://wwfbr.awsassets.panda.org/downloads/wwfbr_2020_nt_impacto_mercurio_saude_povo_indigena_munduruku_v2__2___1_.pdf",
+   "nota": "Es un estudio de tres aldeas: no representa a todo el pueblo Munduruku ni a todo el pescado de la Amazonía."
+  },
+  {
+   "id": "garimpo",
+   "nome": "EL GARIMPO EN TIERRAS INDÍGENAS",
+   "lema": "632 % en once años",
+   "texto": "Según MapBiomas, de 2010 a 2021 el área de garimpo (minería de oro) dentro de tierras indígenas creció un 632 % y llegó a casi 20 mil hectáreas en 2021. La tierra indígena más afectada fue la Kayapó, con 11.542 hectáreas tomadas por el garimpo hasta 2021. En todo el país, el garimpo pasó de 99 mil a 196 mil hectáreas en el mismo período.",
+   "quando": "2010 a 2021 · divulgado en 2022",
+   "fonte": "MapBiomas, divulgación del mapeo anual de la minería (mapbiomas.org, en portugués)",
+   "link": "https://mapbiomas.org/916-da-area-garimpada-no-brasil-ficam-no-bioma-amazonia",
+   "nota": "La cifra mide el área ocupada por el garimpo, no si es legal o ilegal."
+  },
+  {
+   "id": "yanomami",
+   "nome": "LA EMERGENCIA YANOMAMI",
+   "lema": "20 de enero de 2023",
+   "texto": "El 20 de enero de 2023, el Ministerio de Salud de Brasil declaró una Emergencia de Salud Pública de Importancia Nacional en el territorio Yanomami, ante la crisis de desasistencia sanitaria que afectaba al pueblo, y organizó un Centro de Operaciones de Emergencias (COE-Yanomami) para coordinar la respuesta.",
+   "quando": "20 de enero de 2023",
+   "fonte": "Ministerio de Salud, Portaria GM/MS n.º 28, de 20 de enero de 2023 (en portugués)",
+   "link": "https://bvsms.saude.gov.br/bvs/saudelegis/gm/2023/prt0028_20_01_2023.html",
+   "nota": "El juego no cita cifras de muertes: las fuentes difieren en el período y en el grupo. Tampoco afirma que el garimpo sea la única causa de la crisis."
+  }
+ ],
+ "ficcao": [
+  "El Draga-01, el escudo, los generadores, las torres, los androides y la Resistencia son invención del juego.",
+  "La minera es un arquetipo (AURUM, Grupo Vorcaris): no se retrata a ninguna empresa real.",
+  "Los números del juego (vida, daño, tiempo de carga) son de equilibrio, no de hecho.",
+  "En el juego el río se cura en minutos. Es un gesto de victoria, no ciencia: cuánto tarda en recuperarse un río contaminado es asunto de especialistas, y el juego no afirma que sea rápido.",
+  "Los hechos de las otras pestañas vienen de estudios y documentos públicos, con la fuente al lado. Lo que aquí no tiene fuente es ficción."
+ ]
+}

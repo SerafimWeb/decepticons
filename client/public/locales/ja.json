@@ -845,5 +845,7 @@
  "TORRES DA MARGEM ARMADAS": "岸の塔は武装中",
  "TORRES DA MARGEM SEM ENERGIA": "岸の塔は電力停止",
  "ESCOTILHA ABERTA · OS ANDRÓIDES ENTRAM": "ハッチ開放 · アンドロイド突入",
- "INVASÃO · CARGA {0}% · {1} DE {2} DENTRO": "侵入 · 爆薬 {0}% · {1}/{2} 体が内部"
+ "INVASÃO · CARGA {0}% · {1} DE {2} DENTRO": "侵入 · 爆薬 {0}% · {1}/{2} 体が内部",
+ "RELATÓRIO ▸": "報告書 ▸",
+ "O que a missão deixou no rio e o que isso tem de real": "ミッションが川に残したものと、そこにある現実"
 }

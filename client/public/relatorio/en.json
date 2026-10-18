@@ -1,0 +1,65 @@
+{
+ "rotulos": {
+  "titulo": "CONSEQUENCES REPORT",
+  "sub": "LIVING RIVER",
+  "aconteceuNome": "WHAT HAPPENED",
+  "aconteceuLema": "what you did on the river",
+  "ficcaoNome": "WHAT IS FICTION",
+  "ficcaoLema": "what the game made up",
+  "quando": "WHEN",
+  "fonte": "SOURCE",
+  "nota": "WHAT THIS DOES NOT SAY",
+  "fechar": "[ CLOSE ]"
+ },
+ "linhas": {
+  "venceuDentro": "Draga-01 fell from the inside: the charge planted by the Resistance androids destroyed it.",
+  "venceuTiro": "Draga-01 was shot down before it reached the village.",
+  "aldeiaSalva": "The village still stands.",
+  "rioVenceu": "The river runs clean again, downstream.",
+  "perdeu": "Draga-01 reached the village.",
+  "aldeiaCaiu": "The village has fallen.",
+  "rioPerdeu": "The poison keeps flowing downstream.",
+  "geradores": "{n} of {total} shield generators dismantled.",
+  "resistencia": "{n} of {total} Resistance androids still standing.",
+  "tempo": "Mission time: {t}."
+ },
+ "fatos": [
+  {
+   "id": "mercurio",
+   "nome": "MERCURY IN HAIR AND FISH",
+   "lema": "three Munduruku villages, on the Tapajós",
+   "texto": "In 2019, Fiocruz and WWF-Brazil assessed 200 people in three Munduruku villages of the Sawré Muybu Indigenous Land, on the middle Tapajós (Pará). They found mercury in every participant, and 57.9% were above 6 µg/g in hair, the safety limit set by internationally recognized health agencies. In the village most affected by gold mining, about 9 in 10 people were above the limit. The mercury arrives through fish: 96% ate fish regularly, and every fish sample contained mercury.",
+   "quando": "Data collected 29 Oct to 9 Nov 2019 · technical note, November 2020",
+   "fonte": "ENSP/Fiocruz and WWF-Brasil, technical note “Impact of mercury on the health of the Munduruku Indigenous people, Tapajós basin” (Nov. 2020, in Portuguese)",
+   "link": "https://wwfbr.awsassets.panda.org/downloads/wwfbr_2020_nt_impacto_mercurio_saude_povo_indigena_munduruku_v2__2___1_.pdf",
+   "nota": "It is a study of three villages: it does not represent the whole Munduruku people or all fish in the Amazon."
+  },
+  {
+   "id": "garimpo",
+   "nome": "GOLD MINING ON INDIGENOUS LANDS",
+   "lema": "632% in eleven years",
+   "texto": "According to MapBiomas, from 2010 to 2021 the area of gold mining (garimpo) inside Indigenous lands grew 632%, reaching almost 20,000 hectares in 2021. The hardest-hit land was Kayapó, with 11,542 hectares taken by mining through 2021. Nationwide, mining went from 99,000 to 196,000 hectares in the same period.",
+   "quando": "2010 to 2021 · released in 2022",
+   "fonte": "MapBiomas, release of the annual mining mapping (mapbiomas.org, in Portuguese)",
+   "link": "https://mapbiomas.org/916-da-area-garimpada-no-brasil-ficam-no-bioma-amazonia",
+   "nota": "The figure measures the area occupied by mining, not whether it is legal or illegal."
+  },
+  {
+   "id": "yanomami",
+   "nome": "THE YANOMAMI EMERGENCY",
+   "lema": "20 January 2023",
+   "texto": "On 20 January 2023, Brazil’s Ministry of Health declared a Public Health Emergency of National Importance in the Yanomami territory, in the face of the crisis of missing health care that affected the people, and organized an Emergency Operations Center (COE-Yanomami) to coordinate the response.",
+   "quando": "20 January 2023",
+   "fonte": "Ministry of Health, Ordinance GM/MS No. 28 of 20 January 2023 (in Portuguese)",
+   "link": "https://bvsms.saude.gov.br/bvs/saudelegis/gm/2023/prt0028_20_01_2023.html",
+   "nota": "The game cites no death counts: sources differ on the period and the group. Nor does it claim that mining is the only cause of the crisis."
+  }
+ ],
+ "ficcao": [
+  "Draga-01, the shield, the generators, the towers, the androids and the Resistance are inventions of the game.",
+  "The mining company is an archetype (AURUM, Vorcaris Group): no real company is portrayed.",
+  "The game’s numbers (health, damage, charge time) are for balance, not fact.",
+  "In the game the river heals in minutes. That is a victory gesture, not science: how long a contaminated river takes to recover is a matter for specialists, and the game does not claim it is quick.",
+  "The facts in the other tabs come from studies and public documents, with the source beside them. What has no source here is fiction."
+ ]
+}

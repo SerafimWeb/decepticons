@@ -330,7 +330,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] Amazônia, parte D1: o escudo do Draga e os três geradores destrutíveis, a barra do chefe com a contagem (`AMAZONIA.md` § 5.3, P180) #cenarios
 - [x] Amazônia, parte D2: as oito torres da margem armadas (calam com a CERCA) e a força de defesa de 3 Mechs e 6 androides que seguram o posto e dormem longe (`AMAZONIA.md` § 5.4, P180) #cenarios
 - [x] Amazônia, parte E: a invasão (a Resistência de 3 andróides planta a carga na escotilha do Draga, o canhão só mira Mechs; `AMAZONIA.md` § 5.5, P180) #cenarios
-- [ ] Amazônia, parte F: a cura com consequência (o Relatório de Consequências e o Consórcio, P179 camadas 3 e 4; **o pacote de partida está a 4,3 KB do teto: pagar com dieta**) #cenarios
+- [x] Amazônia, parte F1: o Relatório de Consequências (o chip depois da missão, três fatos com fonte conferida e o que é ficção; `AMAZONIA.md` § 7, `fichas/fatos-mineracao-amazonia.md` § 0; P179 camada 3) #cenarios
+- [ ] Amazônia, parte F2: a campanha do Consórcio (objetivos invertidos, P179 camada 4) e a cura com consequência; abrir a portaria Yanomami, a nota do MapBiomas sobre o Madeira e o laudo de Barcarena; revisão humana dos textos (**o pacote de partida está a 4,1 KB do teto: pagar com dieta**) #cenarios
 - [ ] Missão da Amazônia: a mineradora no rio (`fichas/cenario-amazonas.md`); o texto, o rádio e o Relatório de Consequências (P180) #cenarios
 - [x] Arpão por peso: o robô mais leve não puxa o mais pesado (pedido do Comandante, 17/10, P181) #combate
 - [~] Interfaces de jogos antigas: **feito** a linha em barra dourada e o `‹ valor ›` nas Configurações e o par SOLO / MULTI na primeira tela; falta a placa no console (`REFERENCIA_VISUAL.md` § 8) (pedido do Comandante, 17/10, P182) #ux

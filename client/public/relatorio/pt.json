@@ -1,0 +1,65 @@
+{
+ "rotulos": {
+  "titulo": "RELATÓRIO DE CONSEQUÊNCIAS",
+  "sub": "RIO VIVO",
+  "aconteceuNome": "O QUE ACONTECEU",
+  "aconteceuLema": "o que você fez no rio",
+  "ficcaoNome": "O QUE É FICÇÃO",
+  "ficcaoLema": "o que o jogo inventou",
+  "quando": "QUANDO",
+  "fonte": "FONTE",
+  "nota": "O QUE ISTO NÃO DIZ",
+  "fechar": "[ FECHAR ]"
+ },
+ "linhas": {
+  "venceuDentro": "O Draga-01 caiu por dentro: a carga plantada pelos andróides da Resistência o destruiu.",
+  "venceuTiro": "O Draga-01 caiu a tiro, antes de chegar à aldeia.",
+  "aldeiaSalva": "A aldeia segue de pé.",
+  "rioVenceu": "O rio volta a correr limpo, rio abaixo.",
+  "perdeu": "O Draga-01 chegou à aldeia.",
+  "aldeiaCaiu": "A aldeia caiu.",
+  "rioPerdeu": "O veneno segue rio abaixo.",
+  "geradores": "{n} de {total} geradores do escudo desmantelados.",
+  "resistencia": "{n} de {total} andróides da Resistência de pé.",
+  "tempo": "Tempo de missão: {t}."
+ },
+ "fatos": [
+  {
+   "id": "mercurio",
+   "nome": "O MERCÚRIO NO CABELO E NO PEIXE",
+   "lema": "três aldeias munduruku, no Tapajós",
+   "texto": "Em 2019, a Fiocruz e o WWF-Brasil avaliaram 200 pessoas de três aldeias munduruku da Terra Indígena Sawré Muybu, no médio Tapajós (PA). Acharam mercúrio em todos os participantes, e 57,9% estavam acima de 6 µg/g no cabelo, o limite de segurança de agências de saúde reconhecidas internacionalmente. Na aldeia mais atingida pelo garimpo, cerca de 9 em cada 10 pessoas passavam do limite. O mercúrio chega pelo peixe: 96% comiam peixe regularmente, e todas as amostras de peixe tinham mercúrio.",
+   "quando": "Coleta de 29/10 a 9/11/2019 · nota técnica de novembro de 2020",
+   "fonte": "ENSP/Fiocruz e WWF-Brasil, Nota Técnica «Impacto do mercúrio na saúde do povo indígena Munduruku, na bacia do Tapajós» (nov. 2020)",
+   "link": "https://wwfbr.awsassets.panda.org/downloads/wwfbr_2020_nt_impacto_mercurio_saude_povo_indigena_munduruku_v2__2___1_.pdf",
+   "nota": "É um estudo de três aldeias: não representa todo o povo Munduruku nem todo peixe da Amazônia."
+  },
+  {
+   "id": "garimpo",
+   "nome": "O GARIMPO EM TERRAS INDÍGENAS",
+   "lema": "632% em onze anos",
+   "texto": "Segundo o MapBiomas, de 2010 a 2021 a área de garimpo dentro de terras indígenas cresceu 632% e chegou a quase 20 mil hectares em 2021. A terra indígena mais atingida foi a Kayapó, com 11.542 hectares tomados pelo garimpo até 2021. No país todo, o garimpo passou de 99 mil para 196 mil hectares no mesmo período.",
+   "quando": "2010 a 2021 · divulgado em 2022",
+   "fonte": "MapBiomas, divulgação do mapeamento anual da mineração (mapbiomas.org)",
+   "link": "https://mapbiomas.org/916-da-area-garimpada-no-brasil-ficam-no-bioma-amazonia",
+   "nota": "O número mede a área ocupada pelo garimpo, não se ele é legal ou ilegal."
+  },
+  {
+   "id": "yanomami",
+   "nome": "A EMERGÊNCIA YANOMAMI",
+   "lema": "20 de janeiro de 2023",
+   "texto": "Em 20 de janeiro de 2023, o Ministério da Saúde declarou Emergência em Saúde Pública de Importância Nacional no território Yanomami, diante da crise de desassistência sanitária que atingia o povo, e organizou o Centro de Operações de Emergências (COE-Yanomami) para coordenar a resposta.",
+   "quando": "20 de janeiro de 2023",
+   "fonte": "Ministério da Saúde, Portaria GM/MS nº 28, de 20 de janeiro de 2023",
+   "link": "https://bvsms.saude.gov.br/bvs/saudelegis/gm/2023/prt0028_20_01_2023.html",
+   "nota": "O jogo não cita número de mortes: as fontes divergem no recorte e no ano. Também não afirma que o garimpo é a única causa da crise."
+  }
+ ],
+ "ficcao": [
+  "O Draga-01, o escudo, os geradores, as torres, os andróides e a Resistência são invenção do jogo.",
+  "A mineradora é um arquétipo (AURUM, Grupo Vorcaris): nenhuma empresa real é retratada.",
+  "Os números do jogo (vida, dano, tempo de carga) são de equilíbrio, não de fato.",
+  "No jogo o rio se cura em minutos. É gesto de vitória, não ciência: quanto tempo leva a recuperação de um rio contaminado é assunto de especialistas, e o jogo não afirma que seja rápida.",
+  "Os fatos das outras abas vêm de estudos e documentos públicos, com a fonte ao lado. O que não tem fonte aqui é ficção."
+ ]
+}

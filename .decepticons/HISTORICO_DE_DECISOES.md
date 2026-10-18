@@ -1,3 +1,15 @@
+## [2026-10-18] O Relatório de Consequências: opcional, com fonte aberta, e a ficha corrigida pela leitura (Claude, P179 camada 3)
+
+**Ordem:** *"o fim da missão mostra o que aconteceu com o rio, com os povos, com a água, com números lidos de ficha"* (camada 3 do P179) e a pendência da ficha: ler a fonte primária antes de virar texto.
+
+**Decisões:**
+1. **O Relatório é um chip, não uma tela que abre sozinha.** A regra do Comandante é "nenhuma partida é interrompida por sermão" e "nada de porta": o chip aparece (e pisca) quando a missão acaba, e quem quer abre. O ensino mora **entre** as partidas.
+2. **Só entra o que foi lido na fonte, e o jogo diz o limite de cada fato** ("O QUE ISTO NÃO DIZ"): estudo de três aldeias não é "o povo"; o número do MapBiomas mede área, não legalidade; a portaria não atribui cada morte ao garimpo. **A ficha de fatos ganhou o § 0 com a conferência** e **corrigiu três erros meus de 17/10** (625% era 632%; "570" e "495 (92%)" eram contas diferentes; o estudo Munduruku era de três aldeias).
+3. **Número de mortes Yanomami fora, de propósito:** os "570" e os "495 (92%)" divergem no recorte (menores de 5 anos ou todas as idades), no ano e na fonte (Sumaúma, documento do Senado, ofício da PF, Cimi). **Entra a declaração de emergência** (🟡+: o título, o número e a data estão em fontes oficiais; o texto da portaria não abriu). Quando alguém abrir o ofício, o número pode voltar com a fonte certa.
+4. **Uma trava de teste liga o jogo à ficha:** cada endereço de fonte do jogo tem de estar na ficha, e todo fato tem `https`, data e "o que isto não diz". Assim a regra "fato tem fonte" não depende de memória.
+5. **A honestidade sobre a cura:** a aba "O QUE É FICÇÃO" diz que o rio se curar em minutos é gesto de vitória, não ciência, e que o jogo não afirma que a recuperação seja rápida (a ficha pedia isso).
+6. **Conteúdo em JSON por língua, painel sob demanda** (a mesma receita do Arquivo): zero no JS de partida além do chip. **As seis traduções são minhas e pedem a revisão de uma pessoa de fora**, como o Arquivo.
+
 ## [2026-10-18] A invasão: a Resistência planta a carga, o canhão só mira Mechs e o "hold" vira para valer (Claude, P180 parte E)
 
 **Ordem:** *"invadir com andróides e destruir por dentro"* + *"prossiga"*.
