@@ -1068,6 +1068,8 @@ export class Game {
       this.lobby.hide();
     } else if (s.state === 'recusado') {
       this.lobby.setConnecting(true, `RECUSADO: ${s.reason || 'erro'}`);
+    } else if (s.state === 'reconectando') {
+      this.lobby.hide(); // a queda não cobre a tela: o mundo segue (parado) e o aviso fica no canto, até a volta
     } else {
       this.lobby.setConnecting(true, 'CONEXÃO CAIU');
     }
@@ -1077,11 +1079,13 @@ export class Game {
         ? `ONLINE · SALA ${s.room} · ${s.rttMs} ms · ${s.players} piloto${s.players === 1 ? '' : 's'}`
         : s.state === 'conectando'
           ? `ONLINE · CONECTANDO À SALA ${s.room}…`
-          : s.state === 'recusado'
+          : s.state === 'reconectando'
+            ? `ONLINE · CONEXÃO CAIU · RECONECTANDO (${s.tentativa}/${s.de})…`
+            : s.state === 'recusado'
             ? `ONLINE · RECUSADO (${s.reason === 'cheia' ? 'sala cheia' : s.reason === 'versao' ? 'versão diferente: recarregue' : s.reason === 'montagem' ? 'montagem inválida' : 'erro'})`
             : 'ONLINE · CONEXÃO CAIU: recarregue a página';
     this.netStatus.textContent = text;
-    this.netStatus.classList.toggle('bad', s.state === 'recusado' || s.state === 'caiu');
+    this.netStatus.classList.toggle('bad', s.state === 'recusado' || s.state === 'caiu' || s.state === 'reconectando');
     // Nem chegou a entrar (servidor desligado, PC do servidor fora do ar): avisa e volta ao jogo offline.
     if (s.state === 'caiu' && !this.online?.joined) {
       this.netStatus.textContent = 'SERVIDOR ONLINE FORA DO AR · voltando ao jogo offline…';

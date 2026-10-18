@@ -1,6 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { startServer, type GameServer } from '../../../server/Server';
 import { weapon, type Loadout } from '../combat/weapons';
 import { DEFAULT_SETTINGS } from '../core/Settings';
@@ -10,8 +10,9 @@ import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { Match } from '../sim/Match';
+import { NetClient } from './NetClient';
 import { onlineConfig } from './onlineConfig';
-import { OnlineSession, rotariesOf } from './OnlineSession';
+import { OnlineSession, RECONEXAO_PADRAO_MS, rotariesOf, type OnlineStatus } from './OnlineSession';
 
 const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
 const MECH_BUILD = 'v1.vector09.plasma-0.rockets-0';
@@ -411,4 +412,226 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     } finally {a.session.dispose();b.session.dispose();}
   });
 
+});
+
+describe('G13: a conexão que cai volta sozinha (o online caía e pedia para recarregar a página, 17/10)', () => {
+  beforeAll(async () => {
+    await RAPIER.init();
+  });
+
+  /** Um jogador online contra o servidor `url`, com as esperas de reconexão do teste, guardando cada estado que a sessão anuncia. */
+  async function jogador(url: string, nome: string, extra: { build?: string; reconexaoMs?: readonly number[] } = {}) {
+    const physics = await PhysicsWorld.create();
+    const match = new Match({
+      physics,
+      scene: new THREE.Scene(),
+      particles: NO_FX,
+      foes: { ...DEFAULT_SETTINGS, enemyMechs: 0, enemyAndroids: 0, technician: false },
+      debris: false,
+      damage: false,
+      roundS: Number.POSITIVE_INFINITY,
+    });
+    const me = new Vector09();
+    match.addPlayer(me, 'VOCÊ');
+    match.respawner.untrack(me);
+    const commander = { command: { ...IDLE }, firing: false, secondaryHeld: false };
+    match.pilots.push({ fixedUpdate: (dt) => me.fixedUpdate(commander.command, dt) });
+    const estados: OnlineStatus[] = [];
+    const session = new OnlineSession({
+      url,
+      room: 'G13A',
+      name: nome,
+      build: extra.build ?? MECH_BUILD,
+      match,
+      me,
+      commander,
+      makeUnit: (e) => (e.kind === 'android' || e.kind === 'technician' ? new Android() : new Vector09()),
+      scene: new THREE.Scene(),
+      onStatus: (s) => estados.push({ ...s }),
+      ...(extra.reconexaoMs ? { reconexaoMs: extra.reconexaoMs } : {}),
+    });
+    match.pilots.push(session);
+    return { match, me, session, estados };
+  }
+  type Jogador = Awaited<ReturnType<typeof jogador>>;
+
+  /** Joga em tempo real (o tick fixo e o desenho por quadro, como no navegador) até a condição valer ou o tempo acabar. */
+  async function ate(j: Jogador, cond: () => boolean, ms = 10000): Promise<boolean> {
+    const t0 = performance.now();
+    let last = t0;
+    let acc = 0;
+    while (performance.now() - t0 < ms) {
+      if (cond()) return true;
+      const now = performance.now();
+      acc += (now - last) / 1000;
+      last = now;
+      while (acc >= FIXED_DT) {
+        j.match.step(FIXED_DT);
+        acc -= FIXED_DT;
+      }
+      j.session.render(1 / 60, now);
+      await sleep(5);
+    }
+    return cond();
+  }
+
+  /** Sobe um servidor de novo no MESMO endereço (a porta do que acabou de cair pode levar um instante para sair do sistema). */
+  async function subir(porta: number): Promise<GameServer> {
+    const t0 = performance.now();
+    for (;;) {
+      try {
+        return await startServer({ port: porta, host: '127.0.0.1', dbContas: ':memory:' });
+      } catch (e) {
+        if (performance.now() - t0 > 8000) throw e;
+        await sleep(100);
+      }
+    }
+  }
+
+  it('o servidor cai e volta no mesmo endereço: a sessão avisa "reconectando" (tentativa n de m), entra na sala de novo e vê os robôs de novo', async () => {
+    let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    const porta = servidor.port;
+    const j = await jogador(`ws://127.0.0.1:${porta}/?sala=G13A`, 'Volta', { reconexaoMs: [100, 200, 300, 500, 800, 1200] });
+    try {
+      expect(await ate(j, () => j.session.joined && j.session.remotes.size >= 6)).toBe(true);
+      const idAntes = j.session.myId;
+      await servidor.close();
+      expect(await ate(j, () => j.estados.some((s) => s.state === 'reconectando'), 5000), 'avisou que está reconectando').toBe(true);
+      expect(j.session.joined, 'caiu da sala: sem id').toBe(false);
+      expect(j.session.remotes.size, 'os robôs da sala velha saíram da cena').toBe(0);
+      const aviso = j.estados.find((s) => s.state === 'reconectando')!;
+      expect(aviso.tentativa).toBeGreaterThanOrEqual(1);
+      expect(aviso.de).toBe(6);
+      servidor = await subir(porta);
+      expect(await ate(j, () => j.session.joined && j.session.remotes.size >= 6, 15000), 'voltou para a sala e viu os robôs').toBe(true);
+      expect(j.estados.at(-1)!.state).toBe('na sala');
+      expect(j.session.myId).toBeGreaterThanOrEqual(0);
+      expect(j.estados.some((s) => s.state === 'caiu'), 'nunca chegou a desistir').toBe(false);
+      void idAntes;
+    } finally {
+      j.session.dispose();
+      await servidor.close();
+    }
+  }, 40000);
+
+  it('duas quedas seguidas: a segunda também reconecta com as tentativas inteiras (o contador volta a zero quando a sala volta)', async () => {
+    let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    const porta = servidor.port;
+    const j = await jogador(`ws://127.0.0.1:${porta}/?sala=G13A`, 'DuasVezes', { reconexaoMs: [100, 150] });
+    try {
+      expect(await ate(j, () => j.session.joined)).toBe(true);
+      for (let queda = 1; queda <= 2; queda++) {
+        await servidor.close();
+        expect(await ate(j, () => j.estados.at(-1)?.state === 'reconectando', 5000), `queda ${queda}`).toBe(true);
+        servidor = await subir(porta);
+        expect(await ate(j, () => j.session.joined, 15000), `voltou da queda ${queda}`).toBe(true);
+      }
+      expect(j.estados.some((s) => s.state === 'caiu')).toBe(false);
+      // a tentativa que o aviso mostra recomeça em 1 a cada queda
+      expect(j.estados.filter((s) => s.state === 'reconectando' && s.tentativa === 1).length).toBeGreaterThanOrEqual(2);
+    } finally {
+      j.session.dispose();
+      await servidor.close();
+    }
+  }, 60000);
+
+  it('esgotadas as tentativas com o servidor fora do ar, o estado fica "caiu" (aí o jogador recarrega) e nada mais é tentado', async () => {
+    const servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    const j = await jogador(`ws://127.0.0.1:${servidor.port}/?sala=G13A`, 'Desiste', { reconexaoMs: [50, 80] });
+    try {
+      expect(await ate(j, () => j.session.joined)).toBe(true);
+      await servidor.close();
+      const chegou = await ate(j, () => j.estados.at(-1)?.state === 'caiu', 8000);
+      expect(chegou, JSON.stringify(j.estados.map((s) => [s.state, s.tentativa]))).toBe(true);
+      const quantos = j.estados.length;
+      await sleep(600);
+      expect(j.estados.length, 'depois de desistir não anuncia mais nada').toBe(quantos);
+      expect(j.estados.filter((s) => s.state === 'reconectando').length).toBe(2);
+    } finally {
+      j.session.dispose();
+    }
+  }, 30000);
+
+  it('quem foi recusado (montagem inválida) NÃO reconecta: a resposta do servidor não muda tentando de novo', async () => {
+    const servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    const j = await jogador(`ws://127.0.0.1:${servidor.port}/?sala=G13A`, 'Recusado', { build: 'lixo', reconexaoMs: [50, 80] });
+    try {
+      expect(await ate(j, () => j.estados.some((s) => s.state === 'recusado'), 8000)).toBe(true);
+      await sleep(500);
+      expect(j.estados.some((s) => s.state === 'reconectando')).toBe(false);
+      expect(j.estados.at(-1)!.state).toBe('recusado');
+    } finally {
+      j.session.dispose();
+      await servidor.close();
+    }
+  }, 30000);
+
+  it('encerrar a sessão durante a espera cancela a reconexão: nenhuma conexão nova chega ao servidor que volta', async () => {
+    let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    const porta = servidor.port;
+    const j = await jogador(`ws://127.0.0.1:${porta}/?sala=G13A`, 'Sai', { reconexaoMs: [600, 600] });
+    try {
+      expect(await ate(j, () => j.session.joined)).toBe(true);
+      await servidor.close();
+      expect(await ate(j, () => j.estados.some((s) => s.state === 'reconectando'), 5000)).toBe(true);
+      j.session.dispose(); // sai de propósito no meio da espera de 600 ms
+      servidor = await subir(porta);
+      await sleep(1500);
+      expect(servidor.guard.connections, 'ninguém reconectou').toBe(0);
+    } finally {
+      await servidor.close();
+    }
+  }, 30000);
+
+  it('as esperas de fábrica somam ~15 s (G13) e a primeira é quase imediata', () => {
+    const total = RECONEXAO_PADRAO_MS.reduce((a, b) => a + b, 0);
+    expect(total).toBeGreaterThan(12_000);
+    expect(total).toBeLessThanOrEqual(18_000);
+    expect(RECONEXAO_PADRAO_MS[0]).toBeLessThanOrEqual(500);
+    for (let i = 1; i < RECONEXAO_PADRAO_MS.length; i++) expect(RECONEXAO_PADRAO_MS[i]!).toBeGreaterThanOrEqual(RECONEXAO_PADRAO_MS[i - 1]!);
+  });
+});
+
+describe('NetClient: o fim da conexão é avisado UMA vez, venha o error, o close ou os dois (o navegador manda os dois; o Node dos testes às vezes só o error)', () => {
+  /** Um WebSocket de mentira que, ao nascer, falha como o de verdade: com o que o teste mandar. */
+  function falso(eventos: ('error' | 'close')[]) {
+    return class {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      readyState = 0;
+      binaryType = '';
+      onopen: (() => void) | null = null;
+      onmessage: ((e: unknown) => void) | null = null;
+      onclose: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      constructor() {
+        queueMicrotask(() => {
+          for (const e of eventos) (e === 'error' ? this.onerror : this.onclose)?.();
+        });
+      }
+      send(): void {}
+      close(): void {}
+    };
+  }
+  const avisos = async (eventos: ('error' | 'close')[]): Promise<number> => {
+    vi.stubGlobal('WebSocket', falso(eventos));
+    try {
+      let n = 0;
+      new NetClient('ws://x', { closed: () => n++ });
+      await sleep(20);
+      return n;
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  };
+
+  it('error e depois close (o navegador): um aviso só', async () => {
+    expect(await avisos(['error', 'close'])).toBe(1);
+  });
+  it('só error numa conexão que não abriu (recusada): um aviso', async () => {
+    expect(await avisos(['error'])).toBe(1);
+  });
+  it('só close: um aviso', async () => {
+    expect(await avisos(['close'])).toBe(1);
+  });
 });

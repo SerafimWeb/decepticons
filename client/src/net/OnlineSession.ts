@@ -44,13 +44,22 @@ export interface AimSource {
 }
 
 export interface OnlineStatus {
-  state: 'conectando' | 'na sala' | 'recusado' | 'caiu';
+  state: 'conectando' | 'na sala' | 'recusado' | 'caiu' | 'reconectando';
   room: string;
   rttMs: number;
   /** Pessoas na sala (sem contar os bots). */
   players: number;
   reason?: string;
+  /** Só em `reconectando`: a tentativa de agora (de 1) e quantas há ao todo. */
+  tentativa?: number;
+  de?: number;
 }
+
+/**
+ * Quanto esperar (ms) antes de cada nova tentativa quando a conexão cai (G13: "reconexão ~15 s"): a primeira é quase na hora (um soluço da VPN ou do túnel), e as seguintes
+ * dão tempo ao servidor de voltar. Somam ~15,5 s; esgotadas, o estado fica `caiu` e o jogador recarrega.
+ */
+export const RECONEXAO_PADRAO_MS: readonly number[] = [300, 700, 1500, 3000, 5000, 5000];
 
 export interface OnlineSessionOptions {
   url: string;
@@ -73,6 +82,8 @@ export interface OnlineSessionOptions {
   onKill?: (killer: string | null, dead: string, meInvolved: boolean) => void;
   /** Placar do jogador local (o servidor não conta a rodada offline; a gente conta pelos eventos KILL). */
   onScore?: (kills: number, deaths: number) => void;
+  /** As esperas entre as tentativas de reconexão (ms); o padrão é `RECONEXAO_PADRAO_MS`. Vazio desliga a reconexão. */
+  reconexaoMs?: readonly number[];
 }
 
 /** Linha do placar do multiplayer, montada só com os eventos KILL vindos do servidor. */
@@ -150,7 +161,11 @@ export class OnlineSession implements Pilot {
   /** Tiros desenhados do fluxo da rotatória dos outros (um por vez no desvio dela; diagnóstico e teste). */
   streamShots = 0;
   readonly remotes = new Map<number, Remote>();
-  private readonly client: NetClient;
+  private client!: NetClient;
+  /** Reconexão (G13): a tentativa de agora (0 = conectado ou nunca caiu), o relógio da próxima e se a sessão foi encerrada de propósito. */
+  private tentativa = 0;
+  private temporizador: ReturnType<typeof setTimeout> | null = null;
+  private encerrada = false;
   private readonly names = new Map<number, string>();
   /** Placar acumulado por unidade (só monta com os KILL do servidor; nunca invade a simulação). */
   private readonly scores = new Map<number, { kills: number; deaths: number }>();
@@ -170,32 +185,85 @@ export class OnlineSession implements Pilot {
   redeemBank(code: string): boolean { return this.joined && this.client.redeemBank(code); }
 
   constructor(private readonly o: OnlineSessionOptions) {
-    this.client = new NetClient(o.url, {
+    this.conectar();
+    this.status();
+  }
+
+  /** Abre a conexão (a primeira vez e cada reconexão): um `NetClient` novo, com o `JOIN` de sempre. Os eventos de um cliente velho (já substituído) são ignorados. */
+  private conectar(): void {
+    const o = this.o;
+    const cliente: NetClient = new NetClient(o.url, {
       bank: (reply) => o.onBank?.(reply),
       welcome: (m) => {
+        if (cliente !== this.client) return;
         this.myId = m.id;
         this.state = 'na sala';
+        this.tentativa = 0;
         this.status();
       },
-      roster: (entries) => this.onRoster(entries),
-      snapshot: (s) => this.onSnapshot(s),
-      events: (b) => this.onEvents(b),
+      roster: (entries) => cliente === this.client && this.onRoster(entries),
+      snapshot: (s) => cliente === this.client && this.onSnapshot(s),
+      events: (b) => cliente === this.client && this.onEvents(b),
       pong: (ms) => {
+        if (cliente !== this.client) return;
         this.rttMs = ms;
         this.status();
       },
       reject: (reason) => {
+        if (cliente !== this.client) return;
         this.state = 'recusado';
         this.reason = reason;
         this.status();
       },
       closed: () => {
-        if (this.state !== 'recusado') this.state = 'caiu';
-        this.status();
+        if (cliente === this.client) this.aoFechar();
       },
     });
-    this.client.join(o.name, o.build);
+    this.client = cliente;
+    cliente.join(o.name, o.build);
+  }
+
+  /**
+   * A conexão fechou. Recusa (versão, sala cheia, montagem) não se repete: é a resposta do servidor. Qualquer outra queda (a VPN trocou, o túnel soluçou, o servidor travou
+   * ou reiniciou, a porteira cortou um pico) é reconectada com as esperas de `reconexaoMs`; a sessão velha é limpa (os robôs dos outros somem, o placar zera: o
+   * servidor trata a volta como um piloto novo).
+   */
+  private aoFechar(): void {
+    if (this.encerrada || this.state === 'recusado') {
+      this.status();
+      return;
+    }
+    this.limparSessao();
+    const esperas = this.o.reconexaoMs ?? RECONEXAO_PADRAO_MS;
+    if (this.tentativa >= esperas.length) {
+      this.state = 'caiu';
+      this.status();
+      return;
+    }
+    const espera = esperas[this.tentativa]!;
+    this.tentativa++;
+    this.state = 'reconectando';
     this.status();
+    this.temporizador = setTimeout(() => {
+      this.temporizador = null;
+      if (!this.encerrada) this.conectar();
+    }, espera);
+  }
+
+  /** Esquece a sala que caiu: o estado do servidor, a previsão guardada, os robôs dos outros e o placar. Fica pronto para um `welcome` novo. */
+  private limparSessao(): void {
+    this.myId = -1;
+    this.humans = 0;
+    this.buffered = 0;
+    this.histTick.fill(-1);
+    this.correction.set(0, 0, 0);
+    this.newest = -1;
+    for (const s of this.snaps) s.tick = -1;
+    this.clockOffset = Number.NaN;
+    for (const id of [...this.remotes.keys()]) this.removeRemote(id);
+    this.names.clear();
+    this.scores.clear();
+    this.o.onScore?.(0, 0);
   }
 
   /** Na sala e recebendo o estado. */
@@ -288,6 +356,9 @@ export class OnlineSession implements Pilot {
 
   /** Sai da sala e tira os robôs dos outros da cena. */
   dispose(): void {
+    this.encerrada = true;
+    if (this.temporizador) clearTimeout(this.temporizador);
+    this.temporizador = null;
     this.client.close();
     for (const id of [...this.remotes.keys()]) this.removeRemote(id);
   }
@@ -508,7 +579,14 @@ export class OnlineSession implements Pilot {
   }
 
   private status(): void {
-    this.o.onStatus?.({ state: this.state, room: this.o.room, rttMs: this.rttMs, players: this.humans, reason: this.reason });
+    this.o.onStatus?.({
+      state: this.state,
+      room: this.o.room,
+      rttMs: this.rttMs,
+      players: this.humans,
+      reason: this.reason,
+      ...(this.state === 'reconectando' ? { tentativa: this.tentativa, de: (this.o.reconexaoMs ?? RECONEXAO_PADRAO_MS).length } : {}),
+    });
   }
 }
 
