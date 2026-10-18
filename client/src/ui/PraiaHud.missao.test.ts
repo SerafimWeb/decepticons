@@ -334,3 +334,32 @@ describe('o escudo do Draga-01 na barra do chefe (P180, parte D)', () => {
     expect(zona.textContent).not.toContain('GERADOR CAIU');
   });
 });
+
+describe('as torres da margem na barra do chefe (P180, parte D2)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('document', { createElement: (tag: string) => new No(tag) });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('a linha diz se as torres estão armadas ou sem energia (a cor muda), e fica escondida sem torres na partida', () => {
+    const m = montar(true);
+    m.q.chefe.presente = true;
+    m.q.chefe.nome = 'DRAGA-01';
+    m.q.chefe.alvo = 'aldeia';
+    const linha = achar(m.raiz, 'pcf-torres')!;
+    m.hud.update(0.016, m.q);
+    expect(linha.hidden).toBe(true);
+    m.q.torres.presente = true;
+    m.q.torres.ativas = true;
+    m.hud.update(0.016, m.q);
+    expect(linha.hidden).toBe(false);
+    expect(linha.textContent).toBe('TORRES DA MARGEM ARMADAS');
+    expect(linha.dataset.estado).toBe('de-pe');
+    m.q.torres.ativas = false;
+    m.hud.update(0.016, m.q);
+    expect(linha.textContent).toBe('TORRES DA MARGEM SEM ENERGIA');
+    expect(linha.dataset.estado).toBe('caido');
+  });
+});

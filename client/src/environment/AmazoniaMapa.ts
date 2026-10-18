@@ -1,6 +1,7 @@
 import { Amazonia } from './Amazonia';
 import { aderecosDaAmazonia } from './AmazoniaAderecos';
 import { AMAZONIA_ALDEIA, AMAZONIA_LIMITES, AMAZONIA_MINA, AMAZONIA_PLANTA, AMAZONIA_REJEITOS } from './AmazoniaLayout';
+import { alturaDoTerreno } from './AmazoniaTerreno';
 import type { CaixaDaPlanta, MapaCarregado } from './mapasSobDemanda';
 
 /**
@@ -30,4 +31,5 @@ export const mapaDaAmazonia: MapaCarregado = {
     { x: AMAZONIA_REJEITOS.x, z: AMAZONIA_REJEITOS.z + 85, texto: 'REJEITOS', cor: 'rgba(255, 45, 61, 0.9)' },
   ],
   meia: { x: AMAZONIA_LIMITES.maxX, z: AMAZONIA_LIMITES.maxZ },
+  alturaDoTerreno,
 };

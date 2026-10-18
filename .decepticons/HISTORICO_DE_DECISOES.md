@@ -1,3 +1,15 @@
+## [2026-10-18] A defesa da Amazônia: torres que calam com a CERCA, guarda que segura o posto e dorme longe (Claude, P180 parte D2)
+
+**Ordem:** *"há uma enorme força de defesa deles e teremos que desmantelar"* + *"a amazônia já foi entregue em partes, prossiga"*.
+
+**Decisões:**
+1. **As torres são regra pura, não robôs** (`TorresDeVigia`): um laço de 8 e uma semente; **um raio de visada só quando uma está pronta para atirar**. Robô com cérebro seria 8 character controllers parados: o plano (§ 6) já dizia "regra pura, estáticas e baratas".
+2. **As torres calam com a CERCA** (o primeiro gerador), **não com o escudo inteiro**: o jogador tem uma escolha (cruzar sob fogo, ou ir à cerca primeiro) e o gerador que ele já tem de derrubar passa a pagar duas vezes. O Draga e as torres ficam acoplados só pelo `Match` (o gerador 0).
+3. **A guarda segura o posto e não renasce** (`defensores`, que liga o modo retaguarda que a praia já tinha): o Draga é o relógio da missão, e uma defesa que corre atrás do jogador o tira dos geradores, que é o ponto. Derrubado, fica derrubado: desmantelar é o verbo.
+4. **A guarda DORME** (420 m, 6 s depois do último motivo): é o que paga os 9 robôs; o chefe fica de fora (a marcha dele não pode parar). **A regra é de custo, não de jogo:** quem está a mais de 420 m nem vê a guarda.
+5. **Nascer no chão** é do mapa, não do bot (`alturaDoChao`, a altura do terreno): o raio na física **não serve** para achar o chão no nascimento (o pipeline de consultas do Rapier é vazio antes do primeiro passo).
+6. **Os números são proposta** (dano 8, rajada de 4, 170 m, 3 Mechs e 6 androides): o Comandante ajusta em `TORRES_DE_VIGIA` e `AMAZONIA_GUARDA`.
+
 ## [2026-10-18] As métricas dos pilotos com conta: o que o servidor mede e o que fica de fora (Claude, P185)
 
 **Ordem:** "tem como termos as métricas dos usuários, quantos entram, quantos minutos jogam, quantas mortes, etc? [...] pra mapearmos e trackearmos tudo, e depois implementarmos melhores práticas de marketing orientado pelas nossas informações de usuários? quero concluir logo as partes técnicas pra poder lançar".

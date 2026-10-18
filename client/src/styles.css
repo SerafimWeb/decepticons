@@ -4428,6 +4428,9 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .pcf-escudo { margin: 0; text-align: center; font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px #000; }
 .pcf-escudo[hidden] { display: none; }
 .pcf-escudo[data-estado='caido'] { color: var(--warn); }
+.pcf-torres { margin: 0; text-align: center; font-size: 10px; letter-spacing: 3px; color: var(--warn); text-shadow: 0 0 6px #000; }
+.pcf-torres[hidden] { display: none; }
+.pcf-torres[data-estado='caido'] { color: var(--cyan); }
 .pcf-pernas { display: flex; gap: 8px; justify-content: center; font-size: 9px; }
 .pcf-pernas span { padding: 1px 8px; border: 1px solid rgba(255, 255, 255, 0.55); color: var(--ink); }
 .pcf-pernas span.caida { border-color: rgba(255, 45, 61, 0.8); color: var(--alert); text-decoration: line-through; opacity: 0.8; }

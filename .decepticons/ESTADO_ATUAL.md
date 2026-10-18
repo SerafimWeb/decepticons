@@ -1,5 +1,25 @@
 # ESTADO ATUAL — CYBERMECH
 
+## AMAZÔNIA, PARTE D2: AS TORRES ARMADAS E A FORÇA DE DEFESA — Claude, 18/10 (branch `claude/amazonia-guarda`, P180)
+
+**O Comandante (17/10):** *"há uma enorme força de defesa deles e teremos que desmantelar"*; *"a amazônia já foi entregue em partes, prossiga"*. A D1 deu os geradores sozinhos; a D2 põe **quem os defende**.
+
+**O que entrou (`AMAZONIA.md` § 5.4):**
+1. **As oito torres de vigia da margem ficaram armadas** (`sim/TorresDeVigia.ts`, regra pura): cada uma, com um alvo a até **170 m** e a visada livre, solta uma **rajada de 4 tiros** (0,16 s entre eles) a cada **2,4 s**, com erro de mira sorteado de uma semente (determinístico) e começo escalonado (as oito não atiram juntas). O tiro é um projétil sem dono (dano 8, alcance 190): **fogo de cobertura que atravessa o rio**. **Calam quando o gerador da CERCA cai** (é ele que as alimenta): o jogador escolhe entre cruzar sob fogo e ir derrubá-la.
+2. **A força de defesa** (`AMAZONIA_GUARDA`): **3 Mechs e 6 androides** em volta dos geradores, do lado norte do rio. **Seguram o posto** (não correm atrás do jogador nem para a aldeia) e **não renascem**: derrubado, fica derrubado. O Draga marcha sem a escolta de ninguém.
+3. **Dormem** (`BotSystem`): sem alvo a **420 m** e sem dano, a guarda **não pensa nem anda** (zero CPU por tick); acorda com um alvo mais perto, ou com dano, e fica acordada **6 s** depois do último motivo. **O chefe nunca dorme** (a marcha dele é o relógio da missão).
+4. **Nascem no chão** (`BotSystem.alturaDoChao`): o mapa de relevo não admite y = 0 (o robô nascia enterrado e os androides caíam do mundo: 9 ms por tick; agora **~3,2 ms**).
+5. **A tela:** a barra do chefe ganhou a linha `TORRES DA MARGEM ARMADAS` / `TORRES DA MARGEM SEM ENERGIA` (muda de cor). **Idioma:** 2 textos novos por língua nas seis línguas; o teste de cobertura os cobre.
+6. **Provas:** 7 testes da regra das torres e 8 da partida (a guarda existe e segura o posto, não renasce, a torre atira e acerta, cala sem a CERCA, não atira a 1.000 m, o Mech da guarda troca tiro, a guarda dorme e acorda); **3 mutações à mão pegas** (torres sempre ligadas, sem sono, sono que nunca acorda por perto). O teste "o Draga atira" do `Match.rio` passou a contar só os tiros do canhão dele (as torres também atiram em quem anda no leito).
+
+**Custo de CPU:** por tick, as torres são um laço de 8 e **um raio só quando uma está pronta para atirar**; a guarda (9 robôs) dorme longe, e perto custa o que um bot custa; a missão inteira **~3,2 ms por tick**. **JS de partida: 493,3 de 500 KB** (a regra das torres, o sono e a fiação do `Match` somaram 1,6 KB; folga 6,7 KB): a E carrega sob demanda.
+
+**Onde o Comandante confere:** `…/jogar/?mapa=amazonia&modo=survival`: ande até a margem sul do rio, de frente para o norte, para sentir o fogo das torres (a cerca em x -100, a planta em x 20, a cava em x 260); derrube a CERCA e as torres calam (a linha da barra do chefe vira `SEM ENERGIA`); os Mechs e androides só se mexem quando você chega a menos de 420 m. Para testar sem esperar: `&marcha=0.5`.
+
+**Falta (R13):** **E:** a invasão com androides e a cura de verdade; **o equilíbrio** (dano 8, rajada de 4 a cada 2,4 s, 170 m, 3 Mechs e 6 androides) é **proposta**, não validado com jogadores; **não joguei a defesa até o fim a olho** (o headless roda a ~0,25× do tempo) e **não fotografei a guarda de perto**; **as torres não têm som, clarão de boca nem desenho de tiro próprios** (usam o projétil comum); o aviso do alto da tela **não** diz que a CERCA derrubou as torres (a linha da barra do chefe diz; o aviso do gerador que caiu ocupa o alto).
+
+**Próxima sessão começa com:** a **E** (a invasão com androides e a cura do rio); depois o Relatório de Consequências e o Consórcio (P179 camadas 3 e 4).
+
 ## AS MÉTRICAS DOS PILOTOS: QUANTOS ENTRAM, QUANTO JOGAM, QUEM VOLTA — Claude, 18/10 (branch `claude/metricas-usuarios`, P185)
 
 **A pergunta do Comandante (17/10):** *"tem como termos as métricas dos usuários, quantos entram, quantos minutos jogam, quantas mortes, etc? [...] depois implementarmos melhores práticas de marketing orientado pelas nossas informações de usuários?"*

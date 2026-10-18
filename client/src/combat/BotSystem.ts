@@ -121,6 +121,10 @@ export interface BotSystemOptions {
   visor?: number;
   /** Onde cada Mech rebelde (escala 2) nasce (x, z): um por ponto. */
   spawns: readonly (readonly [number, number])[];
+  /** A altura do chão em (x, z): cada bot nasce **no chão do ponto** em vez de em y = 0 (num mapa de relevo, como a Amazônia, y = 0 enterra o robô ou o faz cair do mundo: P180 parte D2). */
+  alturaDoChao?: (x: number, z: number) => number;
+  /** Todos os bots seguram o posto (`BotController.rearguard`): trocam tiro em volta do ponto de nascimento e não o largam para perseguir (a força de defesa da Amazônia, P180 parte D2). */
+  defensores?: boolean;
   /** Onde cada andróide rebelde (escala 1) nasce (x, z): um por ponto. */
   androidSpawns?: readonly (readonly [number, number])[];
   /** O chefe da missão (o Colossus) veste a **máscara** (P165, `entities/mascaraDoChefe.ts`)? Padrão: sim; o `?mascara=0` do link a tira. Só o chefe: o Colossus do Hangar não. */
@@ -176,7 +180,16 @@ interface Bot {
   ownSkill?: boolean;
   /** Feixe de conserto (só técnicos): 2 pontos atualizados no render, sem alocar. */
   beam?: THREE.Line;
+  /** A defesa (P180 parte D2): segundos que ainda fica acordada (um alvo chegou perto ou ela levou dano); zero = dorme. */
+  vigia?: number;
+  /** A vida somada da última vez que olhou, para saber se levou dano. */
+  vidaVista?: number;
 }
+
+/** Até onde (m) um alvo acorda a defesa: além do alcance das torres e de qualquer arma do jogador de fábrica. */
+const ACORDA_ATE_M = 420;
+/** Quanto a defesa fica acordada depois do último motivo (s). */
+const ACORDADA_S = 6;
 
 const BEAM_COLOR = new THREE.Color(PALETTE.fluo).multiplyScalar(3);
 const _beamTo = new THREE.Vector3();
@@ -235,11 +248,12 @@ export class BotSystem {
     // A tática do esquadrão (P122): só vale no lado aliado (escolta); os rebeldes não têm tática do jogador.
     const tatica = parametrosDaTatica(o.escort ? o.tatica : null);
     const place = (mech: MechBase, [x, z]: readonly [number, number]) => {
-      mech.spawn(o.physics, new THREE.Vector3(x, 0, z));
+      const y = o.alturaDoChao ? o.alturaDoChao(x, z) : 0;
+      mech.spawn(o.physics, new THREE.Vector3(x, y, z));
       mech.applyFacing(Math.atan2(x, z), 0); // nasce olhando para o centro da arena
       o.scene.add(mech.root);
       o.combat.register(mech);
-      return new THREE.Vector3(x, 0, z);
+      return new THREE.Vector3(x, y, z);
     };
     const fighter = (mech: MechBase, p: readonly [number, number], name: string, i: number, android: boolean, kit?: BotKit) => {
       const home = place(mech, p);
@@ -258,6 +272,7 @@ export class BotSystem {
       // As armas explosivas da mão esquerda (P160 parte 4): o Mech bot lança a dele em salvas (o andróide e o titã seguem como estavam).
       brain.useExplosives = !!o.launchers && !android && !titan && mech.loadout.secondary?.kind === 'ammo';
       brain.home.copy(home);
+      if (o.defensores) brain.rearguard = true;
       if (o.respawn !== false) {
         o.respawner.track(mech, titan ? TITA_RESPAWN_S : BOT_RESPAWN_S, () => {
           if (o.respawnAtHome) mech.respawn(home);
@@ -618,6 +633,19 @@ export class BotSystem {
     this.onRadio?.(from.name, target);
   }
 
+  /** O robô da defesa pode continuar parado neste tick? Sim se nenhum alvo está a `ACORDA_ATE_M` e ele não levou dano nos últimos `ACORDADA_S` s. */
+  private dormindo(bot: Bot, dt: number): boolean {
+    const m = bot.mech.modules;
+    const vida = m.torso + m.head + m.leftArm + m.rightArm + m.leftLeg + m.rightLeg;
+    if (bot.vidaVista !== undefined && vida < bot.vidaVista) bot.vigia = ACORDADA_S;
+    bot.vidaVista = vida;
+    const limite = ACORDA_ATE_M * ACORDA_ATE_M;
+    for (const t of this.targets) if (t.alive && t.simPosition.distanceToSquared(bot.mech.simPosition) < limite) bot.vigia = ACORDADA_S;
+    if ((bot.vigia ?? 0) <= 0) return true;
+    bot.vigia! -= dt;
+    return false;
+  }
+
   fixedUpdate(dt: number): void {
     if (this.pendingOrder) {
       this.order = this.pendingOrder;
@@ -635,6 +663,8 @@ export class BotSystem {
     for (const bot of this.bots) {
       const { mech, brain } = bot;
       if (!mech.alive) continue;
+      // A defesa dorme enquanto ninguém chega perto (zero CPU por tick: sem pensar, sem andar) e acorda com um alvo a ACORDA_ATE_M ou com dano.
+      if (this.o.defensores && brain instanceof BotController && this.dormindo(bot, dt)) continue; // o chefe (o Draga) nunca dorme: a marcha dele é o relógio da missão
       if (brain instanceof BotController && this.o.escort) {
         let leader: MechBase | null = null;
         let distance = Infinity;

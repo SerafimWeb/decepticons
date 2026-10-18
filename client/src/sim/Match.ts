@@ -14,7 +14,7 @@ import { Respawner } from '../combat/Respawner';
 import { DroneSystem } from '../combat/DroneSystem';
 import { FireRing, type RingSides } from '../combat/FireRing';
 import { Round } from '../combat/Round';
-import { hitDamage, rangeFactor, type Flame, type WeaponStats } from '../combat/weapons';
+import { hitDamage, rangeFactor, weapon, type Flame, type WeaponStats } from '../combat/weapons';
 import type { TaticaId } from '../combat/taticas';
 import type { PhysicsHit } from '../physics/PhysicsWorld';
 import { ZoneSystem } from '../combat/Zone';
@@ -29,8 +29,9 @@ import { caboDoPonto, CABOS, CabosDeDados, CODIGO_DO_ESTADO, ehAndroide, PONTOS_
 import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
 import { AMAZONIA_SPAWNS, rioEmX } from '../environment/AmazoniaLayout';
-import { exigirChefe, temEscudo } from '../environment/mapasSobDemanda';
+import { exigirChefe, exigirMapa, temEscudo } from '../environment/mapasSobDemanda';
 import { EscudoDoDraga } from './EscudoDoDraga';
+import { TorresDeVigia } from './TorresDeVigia';
 import { MissaoDoRio } from './MissaoDoRio';
 import { posicaoNaMarcha } from './DragaMarcha';
 import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA } from '../environment/ArenaLayout';
@@ -175,6 +176,10 @@ const _flameAt = new THREE.Vector3();
 const _flameTo = new THREE.Vector3();
 /** O "acerto" que o cone entrega ao CombatSystem: um objeto só, reescrito a cada alvo (nada alocado por pulso). */
 const _hookEnd = new THREE.Vector3();
+/** A metralhadora das torres de vigia da Amazônia (P180, parte D2): a automática de aço, de dano baixo e alcance longo (o fogo de cobertura atravessa o rio). */
+const ARMA_DA_TORRE: WeaponStats = Object.freeze({ ...weapon('autocannon'), name: 'Metralhadora da torre', damage: 8, optimalRange: 110, maxRange: 190, speed: 150 });
+const _torreFrom = new THREE.Vector3();
+const _torreDir = new THREE.Vector3();
 const _hookFrom = new THREE.Vector3();
 const _hookTo = new THREE.Vector3();
 const _flameHit: PhysicsHit = { point: new THREE.Vector3(), normal: new THREE.Vector3(0, 1, 0), distance: 0, collider: undefined as unknown as RAPIER.Collider };
@@ -255,6 +260,8 @@ export class Match {
   readonly rio: MissaoDoRio | null = null;
   /** O escudo do Draga-01 (P180, parte D): três geradores que se quebram a tiro; de pé, o Draga leva 90% menos dano. `null` fora da missão do rio. */
   readonly escudo: EscudoDoDraga | null = null;
+  /** As oito torres de vigia armadas da margem (P180, parte D2): atiram atravessando o rio enquanto o gerador da CERCA estiver de pé. `null` fora da missão do rio. */
+  readonly torres: TorresDeVigia | null = null;
   /** Os três cabos de dados da estação (P162, capítulo 1): injeção dos andróides rebeldes, dano e reparo. `null` fora da missão em ondas da praia. */
   readonly cabos: CabosDeDados | null = null;
   /** Rascunhos reaproveitados dos cabos (G4): por cabo, quantos andróides rebeldes ligados, o peso dos depredadores e quantos defensores perto. */
@@ -358,6 +365,7 @@ export class Match {
     // O escudo do Draga (parte D): os geradores nascem na cena como alvos destrutíveis (o mesmo registro dos coqueiros); o último a cair derruba o escudo. A defesa vem do chefe do mapa (sob demanda).
     const defesa = amazonia && survival ? exigirChefe('amazonia').defesa : undefined;
     this.escudo = defesa ? new EscudoDoDraga(defesa.geradores) : null;
+    this.torres = defesa ? new TorresDeVigia(defesa.torres, 17) : null;
     if (defesa && this.escudo) {
       const escudo = this.escudo;
       defesa.criarGeradores({ scene: o.scene, destructibles: this.destructibles, aoQuebrar: (i) => escudo.quebrar(i), aoVoltar: () => escudo.reiniciar() });
@@ -416,13 +424,15 @@ export class Match {
         : {
             // Na praia as ondas nascem na areia, longe da estação (o jogador defende a estação); na Arena, nos pontos de sempre.
             // Na Amazônia (P180, parte C) o Draga-01 é o único inimigo da missão: a defesa dele (Mechs, androides, torres) vem na parte D.
-            spawns: amazonia ? [] : ctf ? CTF_DEFENDER_SPAWNS : praia ? PRAIA_INIMIGOS.slice(0, SURVIVAL_MAX_MECHS) : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
-            androidSpawns: amazonia || ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
+            spawns: amazonia ? defesa?.guarda.mechs ?? [] : ctf ? CTF_DEFENDER_SPAWNS : praia ? PRAIA_INIMIGOS.slice(0, SURVIVAL_MAX_MECHS) : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
+            androidSpawns: amazonia ? defesa?.guarda.androids ?? [] : ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
             manifestanteSpawns: praia && !ctf ? PRAIA_MANIFESTANTES.slice(0, SURVIVAL_MAX_MANIFESTANTES) : [],
             technicianSpawns: [],
             personas: o.foes.enemyPersonas,
             names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
           }),
+      // A força de defesa da Amazônia (parte D2) segura o posto em volta dos geradores: não corre atrás do jogador e não renasce.
+      ...(defesa ? { defensores: true, alturaDoChao: (x: number, z: number) => exigirMapa('amazonia').alturaDoTerreno?.(x, z) ?? 0 } : {}),
       bossSpawn: survival && !amazonia ? (praia ? PRAIA_TITA : COLOSSUS_SPAWN[0]) : undefined,
       ...(amazonia && survival
         ? { chefeDoMapa: 'amazonia' as const, visualDoChefe: o.visualDoChefe ?? null, ...(o.marcha ? { chefeNascimento: { x: posicaoNaMarcha(o.marcha), z: rioEmX(posicaoNaMarcha(o.marcha)) } } : {}) }
@@ -803,6 +813,35 @@ export class Match {
     return !wall || wall.collider === target.collider || !!this.combat.mechOf(wall.collider) || wall.distance >= dist - target.stats.radius;
   }
 
+  /** A torre `torre` enxerga o jogador `alvo`? Um raio da boca ao peito dele: o barranco do rio e as estruturas escondem quem anda no leito (é a cobertura natural). */
+  private torreVe(torre: number, alvo: number): boolean {
+    const p = this.torres!.pontos[torre]!;
+    const a = this.players[alvo]!;
+    const b = a.simPosition;
+    _torreFrom.set(p.x, p.y, p.z);
+    _torreDir.set(b.x - p.x, b.y + a.stats.height * 0.5 - p.y, b.z - p.z);
+    const dist = _torreDir.length();
+    if (dist < 1e-3) return true;
+    _torreDir.multiplyScalar(1 / dist);
+    const parede = this.physics.raycast(_torreFrom, _torreDir, dist);
+    return !parede || parede.collider === a.collider || !!this.combat.mechOf(parede.collider) || parede.distance >= dist - a.stats.radius;
+  }
+
+  /** A torre `torre` solta um tiro hostil no jogador `alvo`, com o desvio de mira (`ex` em torno do eixo vertical, `ey` na altura; rad) que a regra sorteou. */
+  private torreAtira(torre: number, alvo: number, ex: number, ey: number): void {
+    const p = this.torres!.pontos[torre]!;
+    const a = this.players[alvo]!;
+    const b = a.simPosition;
+    _torreFrom.set(p.x, p.y, p.z);
+    _torreDir.set(b.x - p.x, b.y + a.stats.height * 0.5 - p.y, b.z - p.z).normalize();
+    const c = Math.cos(ex);
+    const s = Math.sin(ex);
+    const dx = _torreDir.x * c - _torreDir.z * s;
+    const dz = _torreDir.x * s + _torreDir.z * c;
+    _torreDir.set(dx, _torreDir.y + ey, dz).normalize();
+    this.projectiles.fire(_torreFrom, _torreDir, undefined, true, ARMA_DA_TORRE);
+  }
+
   /** Só o desenho do raio do arpão de outro jogador (ele o vê pelo evento de tiro, sem regra): da boca até o primeiro acerto ou o alcance. */
   drawHook(origin: THREE.Vector3, dir: THREE.Vector3, w: WeaponStats, ignore: RAPIER.Collider | undefined, hostile: boolean): void {
     if (!w.hook) return;
@@ -902,6 +941,11 @@ export class Match {
         const chefe = this.bots.chefe;
         // O escudo: o corpo do Draga recebe 10% do dano enquanto houver gerador de pé (um número por tick).
         if (this.escudo && chefe && temEscudo(chefe)) chefe.escudo = this.escudo.fator;
+        // As torres da margem: o gerador da CERCA (o primeiro) as alimenta; derrubado, elas calam. A visão é um raio na física e só roda quando uma torre está pronta para atirar.
+        if (this.torres) {
+          this.torres.ativa = this.escudo ? this.escudo.vivo(0) : false;
+          this.torres.fixedUpdate(dt, this.players, (torre, alvo) => this.torreVe(torre, alvo), (torre, alvo, ex, ey) => this.torreAtira(torre, alvo, ex, ey));
+        }
         this.rio.fixedUpdate(dt, chefe ? chefe.simPosition.x : null);
         if (this.rio.terminou) return false;
       }

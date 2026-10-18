@@ -116,6 +116,14 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 - **A tela:** a barra do chefe ganha a linha `ESCUDO · 3 DE 3 GERADORES` (vira `ESCUDO CAIU`), a regra dela é "O escudo o protege: derrube os geradores." enquanto ele estiver de pé, a linha da missão pede os geradores, e cada gerador que cai sobe o aviso (`GERADOR CAIU · RESTAM 2`, `ESCUDO DO DRAGA CAIU`).
 - **A ordem do jogador:** o Draga larga em x = 700 e anda 2,6 m/s; o jogador, na aldeia (x -960), corre ~1.300 m até a cava. **A defesa em si (as torres armadas, os Mechs e os androides) é a parte D2**: hoje os geradores estão sozinhos.
 
+### 5.4 Como ficou na parte D2 (as torres armadas e a força de defesa)
+
+- **As torres** (`sim/TorresDeVigia.ts`, pura; as oito de `TORRES_DA_MARGEM`, com a boca do canhão 5 m fora da cabine): `TORRES_DE_VIGIA` = **alcance 170 m, rajada de 4 tiros, 0,16 s entre os tiros, 2,4 s de espera, erro máximo de mira 0,035 rad**. A visada é **um raio na física, só quando a torre está pronta para atirar** (o barranco do rio e as estruturas escondem quem anda no leito: é a cobertura natural). O tiro é a **automática de aço** com dano 8 e alcance 190, **sem dono**, que acerta o jogador (e quem estiver no caminho). **As torres só atiram enquanto o gerador da CERCA (o primeiro) está de pé**; derrubado, calam e não voltam.
+- **A força de defesa** (`AMAZONIA_GUARDA`): **3 Mechs** (x -82, 46 e 282) e **6 androides** (x -122, -112, 4, -2, 236 e 250), todos do lado norte do rio, junto aos geradores. É o `BotSystem` com `defensores` ligado: **seguram o posto** (o mesmo modo da retaguarda), **não renascem**, e o Draga é o único que marcha. Nascem **no chão do ponto** (`alturaDoChao`, a altura do terreno do mapa: y = 0 enterrava os Mechs e derrubava os androides do mundo).
+- **O sono:** sem alvo a **420 m** (além do alcance das torres e das armas de fábrica) e sem dano nos últimos **6 s**, o robô da defesa **não pensa nem anda**: custa o teste de distância e mais nada. **O chefe nunca dorme.** Medido: a missão inteira custa ~3,2 ms por tick (sem o sono e sem o chão certo eram 9 ms).
+- **A tela:** a barra do chefe diz `TORRES DA MARGEM ARMADAS` / `TORRES DA MARGEM SEM ENERGIA`.
+- **O que o jogador sente:** cruzar o rio entre a aldeia e a cerca é **atravessar fogo de cobertura**; a saída é derrubar a CERCA (o primeiro gerador, atrás das torres) ou ir pela margem onde as torres não alcançam. O número é proposta: o Comandante ajusta em `TORRES_DE_VIGIA` e `AMAZONIA_GUARDA`.
+
 ## 6. A missão (em atos)
 
 1. **O perímetro (desmantelar a defesa):** o Draga anda **rio acima** protegido por um **escudo** que três **geradores** (espalhados na margem e na mina) alimentam. Destruir os três derruba o
@@ -136,7 +144,7 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 | **B — o rio e o mapa** | o mapa `amazonia` (terreno em pedaços, floresta instanciada, o rio com a frente de limpeza), a bancada de custo e o teto de desenhos em teste | **feita (17/10)**: `?mapa=amazonia&modo=deathmatch`; o Draga desce o leito e o rio muda com ele (DEMO) |
 | **C — o Draga na partida** | o chefe com os números, os módulos de dano (as quatro pernas), o rastejo, a barra do chefe e a chegada à aldeia (derrota) | **feita (17/10)**: `?mapa=amazonia&modo=survival` é a missão do rio; derrubar o Draga vence, ele chegar à aldeia perde |
 | **D1 — o escudo e os geradores** | os três geradores (alvos destrutíveis), o escudo do Draga (90% menos dano enquanto houver gerador de pé), a barra do chefe com a contagem e os avisos | **feita (18/10)**: `?mapa=amazonia&modo=survival`; veja § 5.3 |
-| **D2 — as torres e a força de defesa** | as oito torres da margem armadas, os Mechs e andróides de defesa | **próxima** (o que for só da missão carrega sob demanda: o JS de partida está em 491,7 de 500 KB) |
+| **D2 — as torres e a força de defesa** | as oito torres da margem armadas (calam com a CERCA), 3 Mechs e 6 androides de defesa que seguram o posto e dormem longe | **feita (18/10)**: `?mapa=amazonia&modo=survival`; veja § 5.4 (o JS de partida está em 493,3 de 500 KB) |
 | **E — a invasão** | a escotilha, os androides, os núcleos e a cura do rio (atos 3 e 4) | — |
 
 ## 8. Decisões em aberto (do Comandante)
