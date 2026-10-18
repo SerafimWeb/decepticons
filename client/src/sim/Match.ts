@@ -29,6 +29,8 @@ import { caboDoPonto, CABOS, CabosDeDados, CODIGO_DO_ESTADO, ehAndroide, PONTOS_
 import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
 import { AMAZONIA_SPAWNS, rioEmX } from '../environment/AmazoniaLayout';
+import { exigirChefe, temEscudo } from '../environment/mapasSobDemanda';
+import { EscudoDoDraga } from './EscudoDoDraga';
 import { MissaoDoRio } from './MissaoDoRio';
 import { posicaoNaMarcha } from './DragaMarcha';
 import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA } from '../environment/ArenaLayout';
@@ -251,6 +253,8 @@ export class Match {
   readonly nucleo: NucleoDaEstacao | null = null;
   /** A missão do rio (P180, parte C): o Draga-01 marcha rumo à aldeia; só na Amazônia, no modo Sobrevivência. */
   readonly rio: MissaoDoRio | null = null;
+  /** O escudo do Draga-01 (P180, parte D): três geradores que se quebram a tiro; de pé, o Draga leva 90% menos dano. `null` fora da missão do rio. */
+  readonly escudo: EscudoDoDraga | null = null;
   /** Os três cabos de dados da estação (P162, capítulo 1): injeção dos andróides rebeldes, dano e reparo. `null` fora da missão em ondas da praia. */
   readonly cabos: CabosDeDados | null = null;
   /** Rascunhos reaproveitados dos cabos (G4): por cabo, quantos andróides rebeldes ligados, o peso dos depredadores e quantos defensores perto. */
@@ -351,6 +355,13 @@ export class Match {
     this.rio = amazonia && survival
       ? new MissaoDoRio((sobreviveu, r) => this.onMissionEnd?.(sobreviveu, 1, { wavesCleared: sobreviveu ? 1 : 0, kills: r.abates, damageDealt: r.danoCausado, survivalSeconds: r.segundos }))
       : null;
+    // O escudo do Draga (parte D): os geradores nascem na cena como alvos destrutíveis (o mesmo registro dos coqueiros); o último a cair derruba o escudo. A defesa vem do chefe do mapa (sob demanda).
+    const defesa = amazonia && survival ? exigirChefe('amazonia').defesa : undefined;
+    this.escudo = defesa ? new EscudoDoDraga(defesa.geradores) : null;
+    if (defesa && this.escudo) {
+      const escudo = this.escudo;
+      defesa.criarGeradores({ scene: o.scene, destructibles: this.destructibles, aoQuebrar: (i) => escudo.quebrar(i), aoVoltar: () => escudo.reiniciar() });
+    }
     this.fx = o.particles;
     // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
@@ -889,6 +900,8 @@ export class Match {
       // A missão do rio (P180, parte C): o Draga caiu (vitória) ou chegou à aldeia (derrota); acabou, o mundo congela como nas ondas.
       if (this.rio) {
         const chefe = this.bots.chefe;
+        // O escudo: o corpo do Draga recebe 10% do dano enquanto houver gerador de pé (um número por tick).
+        if (this.escudo && chefe && temEscudo(chefe)) chefe.escudo = this.escudo.fator;
         this.rio.fixedUpdate(dt, chefe ? chefe.simPosition.x : null);
         if (this.rio.terminou) return false;
       }
