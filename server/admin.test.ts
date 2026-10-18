@@ -66,8 +66,12 @@ describe('avaliar: o veredito sobre a última hora', () => {
     const base = { jogadores: 2, salas: 1, saidaKBs: 10 };
     const tick = (ms: number) => avaliar(janela(100, { ...base, tickMs: ms }), CTX).veredito;
     expect([tick(2), tick(2.01), tick(4), tick(4.01)]).toEqual(['apto', 'atencao', 'atencao', 'problema']);
-    const laco = (ms: number) => avaliar(janela(100, { lacoMs: ms }), CTX).veredito;
+    const laco = (ms: number) => avaliar(janela(100, { ...base, lacoMs: ms }), CTX).veredito;
     expect([laco(20), laco(20.5), laco(50), laco(50.5)]).toEqual(['apto', 'atencao', 'atencao', 'problema']);
+    // sem ninguém jogando na janela, o atraso do laço é do PC (P202): nunca passa de aviso, e a dica diz de quem é a culpa
+    const ocioso = avaliar(janela(100, { lacoMs: 120 }), CTX);
+    expect(ocioso.veredito).toBe('atencao');
+    expect(ocioso.checagens.find((c) => c.nome === 'Atraso do laço (p99)')?.dica).toMatch(/ninguém estava jogando/);
   });
 
   it('o tick só conta amostras com sala aberta: uma hora quase toda vazia não esconde o tick de quem jogou', () => {
@@ -77,8 +81,8 @@ describe('avaliar: o veredito sobre a última hora', () => {
   });
 
   it('o atraso do laço, a CPU e a memória também reprovam', () => {
-    expect(avaliar(janela(100, { lacoMs: 30 }), CTX).veredito).toBe('atencao');
-    expect(avaliar(janela(100, { lacoMs: 80 }), CTX).veredito).toBe('problema');
+    expect(avaliar(janela(100, { lacoMs: 30, jogadores: 1, salas: 1 }), CTX).veredito).toBe('atencao');
+    expect(avaliar(janela(100, { lacoMs: 80, jogadores: 1, salas: 1 }), CTX).veredito).toBe('problema');
     expect(avaliar(janela(100, { cpuPct: 65 }), CTX).veredito).toBe('atencao');
     expect(avaliar(janela(100, { cpuPct: 95 }), CTX).veredito).toBe('problema');
     expect(avaliar(janela(100, { rssMB: 400 }), CTX).veredito).toBe('atencao');

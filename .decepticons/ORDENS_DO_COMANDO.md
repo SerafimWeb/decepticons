@@ -14,6 +14,15 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P201 e P202 — O primeiro teste online: os bots difíceis demais e o painel do servidor (18/10, Claude)
+
+> O Comandante jogou online pela primeira vez, com uma pessoa da internet, e mandou duas capturas da janela do servidor.
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P201 | 18/10 | "fui jogar online agora pela primeira vez, uma pessoa da internet entrou, mas achamos **MUITO DIFÍCIL os bots inimigos**! não conseguimos trocar direito devido à **pressão adversária**. precisamos melhorar a **logística de controlar esse tipo de coisa através do painel admin** que só eu tenho (com meu login + superadmin)" | ✅ | **A causa:** a sala online usava o padrão de uma partida solo (3 Mechs e 2 andróides em dificuldade normal) e **não limitava os atacantes** (`maxAttackers` infinito): todos os bots atacavam duas pessoas ao mesmo tempo. **A correção:** o padrão online agora é **de iniciante** (fácil, 2 Mechs, 1 andróide, 1,5 atacantes ao mesmo tempo) e **o dono ajusta tudo no painel do servidor**: botão **REGRAS DAS SALAS** (dificuldade, Mechs, andróides, pressão; receitas INICIANTE, PADRÃO e DESAFIO). Vale na hora nas salas de pé (dificuldade, pressão e Mechs); os andróides valem nas salas novas. A porta é a do painel do servidor: **só a chave do dono ou a sessão de uma conta admin** (`PAINEL_ADMIN.md` § 7). | No jogo: `?comandante=1` → janela SERVIDOR → REGRAS DAS SALAS |
+| P202 | 18/10 | (as capturas) o painel do servidor marcou **PROBLEMA** por "atraso do laço (p99) 107,9 ms" com 0 jogadores; "fiz o teste e passou" | ✅ | **Não era o servidor:** o Node demorou a voltar a olhar a fila porque o PC estava saturado (compilações, navegador, editor, outras sessões); o TESTAR do mesmo painel, com gente de mentira, deu 15,8 ms. **Agora:** numa janela **sem ninguém jogando** o atraso do laço vira **aviso** (não "problema") e o painel diz de quem é a culpa; com gente jogando vale a régua inteira. | AVALIAR no painel |
+
 ## P187 a P191 — TERRAS RARAS: o desempenho, o ritmo, o objetivo na tela e o painel de visibilidade (18/10, Claude)
 
 > Uma mensagem do Comandante depois de jogar a fase da Amazônia trouxe cinco ordens e uma pergunta ("o que é a dieta de JS?", respondida no chat e abaixo).

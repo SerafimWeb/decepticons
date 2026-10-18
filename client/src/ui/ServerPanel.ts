@@ -443,6 +443,7 @@ export class ServerPanel {
     }
     this.acoes.replaceChildren(
       botao('[ AVALIAR ]', 'btn-terminal', 'avaliar', 'O veredito sobre a última hora e quantas salas cabem', ocupado),
+      botao('[ REGRAS DAS SALAS ]', 'btn-terminal', 'regras', 'Dificuldade, quantos bots e a pressão dos inimigos nas salas online'),
       botao('[ TESTAR ]', 'btn-terminal', 'testar', n > 0 ? 'O teste espera a sala esvaziar: há gente jogando' : 'Quatro pilotos de mentira entram pela porta do jogo e medem', ocupado || n > 0),
       botao('[ REINICIAR ]', 'btn-terminal srv-perigo', 'reiniciar', e?.supervisionado === false ? 'O servidor roda à mão: reiniciar só o desliga' : 'Salva, sai e se religa sozinho em uns segundos', ocupado),
       botao('[ SAIR DO PAINEL ]', 'btn-terminal', 'sair', 'Esquece o token neste aparelho'),
@@ -469,6 +470,8 @@ export class ServerPanel {
         this.msg = 'Token esquecido neste aparelho.';
         this.desenhar();
         return;
+      case 'regras':
+        return void import('./RegrasPanel').then((m) => new m.RegrasPanel(this.o.cliente).abrir());
       case 'avaliar':
         return void this.avaliar();
       case 'testar':

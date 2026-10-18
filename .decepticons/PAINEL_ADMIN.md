@@ -166,3 +166,17 @@ O Comandante pediu fases maiores ("as próximas fases devem ser maiores que as a
 - **O que o restrito esconde:** o pino da fase no mapa-múndi e a entrada por link; o botão do modo; o botão ou chip da tela; o robô na lista do Hangar e a arma nas listas do Hangar (**o que já está montado fica**).
 
 **Limites honestos:** (1) **não é cadeado**: esconde a interface de quem joga; quem souber ligar o modo Comandante vê tudo (as telas que mexem no servidor seguem protegidas pelo token). (2) Os **modais do console de comando** (Potências, Arsenal, Campanha, Mesa, Servidor) já só aparecem no modo Comandante; **ainda não estão no catálogo** (pendência: entrar com o seletor de "ver como jogador"). (3) **A mudança chega ao jogador na próxima abertura do jogo**, não ao vivo. (4) Só as funcionalidades que o catálogo conhece são controláveis: o que não está lá nunca some.
+
+## 7. As regras dos bots das salas online (P201, 18/10)
+
+**O pedido:** depois do primeiro teste online (o dono e uma pessoa da internet), *"MUITO DIFÍCIL os bots inimigos… não conseguimos trocar direito devido à pressão adversária… precisamos melhorar a logística de controlar esse tipo de coisa através do painel admin"*.
+
+**A causa:** `ArenaRoom` criava a partida com `DEFAULT_SETTINGS` (3 Mechs, 2 andróides, dificuldade normal, **todos atacando juntos**: o limite de atacantes da partida solo, 2, não era aplicado na sala).
+
+**Como funciona:**
+- **As regras** (`shared/regras.ts`): `dificuldade` (fácil, normal, difícil), `mechs` (0 a 3), `androides` (0 a 3) e `atacantes` (0,5 a 4, quantos atacam ao mesmo tempo: Mech vale 1, andróide ½). **O padrão é de iniciante** (fácil, 2, 1, 1,5). Três receitas: **INICIANTE** (fácil, 1, 1, 1), **PADRÃO**, **DESAFIO** (normal, 3, 2, 2).
+- **O servidor guarda** (`server/regras.ts`, `regras-online.json` na pasta de dados: sobrevive ao reinício) e **aplica**: nas salas novas ao criar; nas **salas de pé na hora** (`ArenaRoom.aplicarRegras`: dificuldade e pressão no próximo tick; Mechs na hora, o excedente vira reserva). **Os andróides só mudam nas salas novas** (a sala de pé não cria nem remove corpo; as salas vazias fecham e a próxima já nasce com a regra nova).
+- **Quem pode:** `GET /admin/regras` e `POST /admin/regras/gravar`, na mesma porta do painel do servidor: **só a chave do dono ou a sessão de uma conta admin** (a mesma régua de erros por IP). O servidor puxa qualquer número fora da faixa para o limite.
+- **A tela** (`ui/RegrasPanel.ts`, sob demanda): botão **[ REGRAS DAS SALAS ]** na janela do servidor (modo Comandante → SERVIDOR). Mostra as regras de agora, as três receitas e os ajustes; **APLICAR** grava.
+
+**Falta:** a escala por jogador (menos bots quando há mais gente, mais quando há um só), o dano dos bots e a lista de bots por sala individual; ajustar **por sala** em vez de para todas.
