@@ -35,6 +35,7 @@ import {
   type Veredito,
 } from '../shared/net/admin';
 import { PROTOCOL_VERSION, ROOM_SIZE } from '../shared/net/constants';
+import { ADMIN_VISIBILIDADE_PATH, type ConfigDeVisibilidade } from '../shared/visibilidade';
 import { tokenConfere } from './metricas';
 import { arquivosDoRegistro, REGISTRO_PASTA } from './registro';
 
@@ -420,6 +421,8 @@ export interface AdminOpcoes {
   fecharSala: (codigo: string) => boolean;
   /** A bateria de clientes de mentira (`server/autoteste.ts`). */
   testar: () => Promise<AdminTeste>;
+  /** O que os jogadores veem (P191): grava as exceções ao padrão do código; `null` = formato inválido. Sem isto, `POST /admin/visibilidade` responde 501. */
+  gravarVisibilidade?: (itens: unknown) => ConfigDeVisibilidade | null;
   /** Faz o servidor salvar e sair com o código de reinício; sem isto, `POST /admin/reiniciar` responde 501. */
   aoReiniciar?: (motivo: string) => void;
   /** O servidor roda sob a tarefa do Windows? */
@@ -440,7 +443,7 @@ const CORS = {
 } as const;
 
 const ROTAS_GET = new Set<string>([ADMIN_ESTADO_PATH, ADMIN_HISTORICO_PATH, ADMIN_LOG_PATH, ADMIN_AVALIAR_PATH]);
-const ROTAS_POST = new Set<string>([ADMIN_TESTAR_PATH, ADMIN_FECHAR_SALA_PATH, ADMIN_REINICIAR_PATH]);
+const ROTAS_POST = new Set<string>([ADMIN_TESTAR_PATH, ADMIN_FECHAR_SALA_PATH, ADMIN_REINICIAR_PATH, ADMIN_VISIBILIDADE_PATH]);
 
 export class Admin {
   private reiniciando = false;
@@ -553,6 +556,15 @@ export class Admin {
         }
         return true;
       }
+      case ADMIN_VISIBILIDADE_PATH: {
+        if (!this.o.gravarVisibilidade) return recusar(501, { erro: 'o servidor não guarda a visibilidade' });
+        const corpo = await this.corpo(req, 16_384);
+        const nova = corpo ? this.o.gravarVisibilidade(corpo.itens) : null;
+        if (!nova) return recusar(400, { erro: 'itens inválidos' });
+        this.o.anotar(`painel: visibilidade gravada (versão ${nova.versao}, ${Object.keys(nova.itens).length} exceções)`);
+        json(200, nova);
+        return true;
+      }
       case ADMIN_FECHAR_SALA_PATH: {
         const corpo = await this.corpo(req);
         const codigo = typeof corpo?.sala === 'string' ? corpo.sala.trim().toUpperCase() : '';
@@ -581,8 +593,8 @@ export class Admin {
     return false;
   }
 
-  private async corpo(req: IncomingMessage): Promise<Record<string, unknown> | null> {
-    const b = await this.o.lerCorpo(req, 1024);
+  private async corpo(req: IncomingMessage, max = 1024): Promise<Record<string, unknown> | null> {
+    const b = await this.o.lerCorpo(req, max);
     if (b === 'grande') return null;
     try {
       const j: unknown = JSON.parse(b.toString('utf8') || '{}');

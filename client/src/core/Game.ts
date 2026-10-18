@@ -1,13 +1,13 @@
 import { mapFromSearch, type MapId } from '../environment/Bunker';
 import { CommandConsole } from '../ui/CommandConsole';
-import { COMANDANTE_KEY, escalacaoDaPartida, fracoesDasPartes, lerModoComandante } from '../ui/consoleData';
+import { escalacaoDaPartida, fracoesDasPartes } from '../ui/consoleData';
 import { fonteDoRadar } from '../ui/TacticalRadar';
 import { SquadHUD } from '../ui/SquadHUD';
 import { ShieldVisuals } from '../fx/ShieldVisuals';
 import { ShieldHUD } from '../ui/ShieldHUD';
 import { runtimeDiagnostics } from './runtimeDiagnostics';
 import { PlayTelemetry } from './PlayTelemetry';
-import { aplicarLancamento, mapaLiberado } from './Lancamento';
+import { mapaLiberado } from './Lancamento';
 import type { Audiencia } from './Audiencia';
 import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
@@ -48,6 +48,7 @@ import { walkerFromSearch } from '../debug/walkerLink';
 import { carregarChefeSeFor, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirMapa, type ObjetivosCarregados } from '../environment/mapasSobDemanda';
 import type { EstadoDosObjetivos } from '../environment/AmazoniaObjetivos';
 import { AMAZONIA_GERADORES } from '../environment/AmazoniaLayout';
+import { aoMudarVisibilidade, aplicarGlobal, visibilidadeGlobal } from './Visibilidade';
 import { diaFromSearch, progressoDaPartida } from '../environment/CicloDoDia';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
@@ -398,14 +399,7 @@ export class Game {
   private last = -1;
 
   static async create(container: HTMLElement): Promise<Game> {
-    // O lançamento (P197): o público só vê os mapas liberados; o modo Comandante (?comandante=1, lembrado pelo navegador) abre todos. Antes de qualquer escolha de mapa.
-    let lembrado: string | null = null;
-    try {
-      lembrado = localStorage.getItem(COMANDANTE_KEY);
-    } catch {
-      /* sem armazenamento: o público */
-    }
-    aplicarLancamento(lerModoComandante(location.search, lembrado).ligado);
+    // O lançamento (P197): o público só vê os mapas liberados e o modo Comandante abre todos; quem decide é o painel de visibilidade (P191), criado no `main.ts` antes do jogo (`core/Lancamento.ts`).
     bootProgresso('fisica');
     const physics = await PhysicsWorld.create();
     bootProgresso('robos');
@@ -936,6 +930,9 @@ export class Game {
       e.stopPropagation();
       void import('../ui/ArquivoPanel').then((m) => m.abrirArquivo());
     });
+    // O que o jogador vê (P191): o catálogo de funcionalidades aplicado à interface (botões, chips, modos, fases) e reaplicado quando o painel de visibilidade ou o servidor mudam algo.
+    aplicarGlobal(document);
+    aoMudarVisibilidade(() => aplicarGlobal(document));
     // O Relatório de Consequências (P179 camada 3): o chip só aparece depois da missão do rio; o painel e os textos são sob demanda como o Arquivo.
     document.getElementById('cc-relatorio')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -987,6 +984,14 @@ export class Game {
     const enderecoDoServidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
     const tokenDoDono = new TokenDoDono(browserStorage(), enderecoDoServidor);
     const adminCliente = new AdminCliente(enderecoDoServidor, tokenDoDono.ler);
+    // O painel de visibilidade (P191): só no modo Comandante (o chip aparece com ele); pedaço sob demanda.
+    document.getElementById('cc-visibilidade')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      void import('../ui/VisibilidadePanel').then((m) => {
+        const v = visibilidadeGlobal();
+        if (v) new m.VisibilidadePanel(v, adminCliente).abrir();
+      });
+    });
     const painelDoServidor = sobDemanda(async () => new (await import('../ui/ServerPanel')).ServerPanel({ cliente: adminCliente, token: tokenDoDono }));
     // Câmeras ao vivo (P88): o mural de radares de todas as partidas do servidor, com o mesmo token do dono. O canal só existe com a janela aberta.
     let parede: CameraWall | null = null;

@@ -450,6 +450,8 @@ export class CommandConsole {
     const chip = this.root.querySelector<HTMLElement>('#cc-chip-comandante');
     if (mon) mon.hidden = !this.comandante;
     if (chip) chip.hidden = !this.comandante;
+    const visibilidade = this.root.querySelector<HTMLElement>('#cc-visibilidade');
+    if (visibilidade) visibilidade.hidden = !this.comandante;
   }
 
   private pintarMech(): void {
