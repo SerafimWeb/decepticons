@@ -21,15 +21,33 @@ export const CONTA_ENTRAR_PATH = '/conta/entrar';
 export const CONTA_SAIR_PATH = '/conta/sair';
 export const CONTA_EU_PATH = '/conta/eu';
 export const CONTA_PROGRESSO_PATH = '/conta/progresso';
+/** Os direitos do titular (LGPD art. 18, P187): baixar os dados da conta, apagá-la e escolher se a atividade é medida. */
+export const CONTA_DADOS_PATH = '/conta/dados';
+export const CONTA_APAGAR_PATH = '/conta/apagar';
+export const CONTA_MEDICAO_PATH = '/conta/medicao';
 export const CONFIG_PATH = '/config';
 export const ADMIN_CONFIG_PATH = '/admin/config';
 
 /** Cabeçalho que carrega o token de sessão nas chamadas autenticadas (`GET /conta/eu`, `POST /conta/sair`). */
 export const SESSAO_HEADER = 'x-cybermech-sessao';
 
+/**
+ * A versão do texto da política de privacidade (`/privacidade/`) que quem cria a conta aceita. **Mudou o texto em algo que o titular precisa saber de novo? Mude esta data junto**
+ * (e o texto em `scripts/privacidade.mjs`): a conta guarda a versão que a pessoa aceitou, e um navegador com a versão velha é mandado recarregar antes de criar conta.
+ */
+export const POLITICA_VERSAO = '2026-10-18';
+
+/** O que o formulário de criar conta manda além do e-mail e da senha: as duas caixas marcadas (política lida; maior de 18 anos ou com autorização do responsável). */
+export interface AceiteDaPolitica {
+  politica: string;
+  idade: boolean;
+}
+export const ACEITE_ATUAL: AceiteDaPolitica = { politica: POLITICA_VERSAO, idade: true };
+
 export interface CriarContaPedido {
   email: string;
   senha: string;
+  aceite: AceiteDaPolitica;
 }
 export interface EntrarPedido {
   email: string;
@@ -40,6 +58,8 @@ export interface ContaResposta {
   token: string;
   email: string;
   is_admin?: boolean;
+  /** A atividade da conta é registrada? (A pessoa pode desligar; ao entrar em outro aparelho a escolha vem junto.) */
+  medir?: boolean;
 }
 
 /** Normaliza o e-mail (minúsculas, sem espaço nas pontas) — a mesma forma usada para comparar e gravar. */
@@ -70,6 +90,45 @@ export function parseCredenciais(raw: unknown): { email: string; senha: string }
   const r = raw as Record<string, unknown>;
   if (validarEmail(r.email) || validarSenha(r.senha)) return null;
   return { email: normalizarEmail(r.email as string), senha: r.senha as string };
+}
+
+/** O corpo de `POST /conta/criar`: as credenciais **e** o aceite. `aceite`: faltou ou veio desmarcado; `versao`: o navegador tem uma política velha (recarregar). */
+export type CriarContaLeitura = { ok: true; email: string; senha: string } | { ok: false; motivo: 'dados' | 'aceite' | 'versao' };
+
+export function parseCriarConta(raw: unknown): CriarContaLeitura {
+  const cred = parseCredenciais(raw);
+  if (!cred) return { ok: false, motivo: 'dados' };
+  const a = (raw as Record<string, unknown>).aceite;
+  if (typeof a !== 'object' || a === null) return { ok: false, motivo: 'aceite' };
+  const { politica, idade } = a as Record<string, unknown>;
+  if (idade !== true || typeof politica !== 'string') return { ok: false, motivo: 'aceite' };
+  if (politica !== POLITICA_VERSAO) return { ok: false, motivo: 'versao' };
+  return { ok: true, ...cred };
+}
+
+/** O corpo de `POST /conta/apagar`: a senha de novo (apagar não se desfaz; uma sessão esquecida aberta não pode apagar a conta de ninguém). */
+export function parseSenhaDeConfirmacao(raw: unknown): string | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const s = (raw as Record<string, unknown>).senha;
+  return validarSenha(s) === null ? (s as string) : null;
+}
+
+/** O corpo de `POST /conta/medicao`: ligar ou desligar o registro da atividade da conta. */
+export function parseMedicao(raw: unknown): boolean | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const a = (raw as Record<string, unknown>).ativa;
+  return typeof a === 'boolean' ? a : null;
+}
+
+/** Tudo o que o servidor guarda de uma conta, no formato que `GET /conta/dados` devolve (o direito de acesso e a portabilidade, LGPD art. 18 II e V). */
+export interface DadosDaConta {
+  v: 1;
+  geradoEm: string;
+  nota: string;
+  conta: { email: string; criadaEm: string; aceiteEm: string | null; aceiteVersao: string | null; medirAtividade: boolean; administrador: boolean };
+  progresso: unknown | null;
+  atividade: { dia: string; segundos: number; partidas: number; abates: number; mortes: number }[];
+  sessoes: { criadaEm: string; venceEm: string }[];
 }
 
 // ---------------------------------------------------------------- progresso do piloto (P174)

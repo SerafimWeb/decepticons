@@ -354,7 +354,7 @@ export class ServerPanel {
   private desenharLog(): void {
     const pre = this.logTexto;
     const noFim = pre.scrollHeight - pre.scrollTop - pre.clientHeight < 24;
-    this.logTitulo.textContent = `LOG ${this.log ? `(${this.log.fonte === 'arquivo' ? 'servidor.log' : 'desde que subiu'})` : ''}`;
+    this.logTitulo.textContent = `LOG ${this.log ? `(${this.log.fonte === 'arquivo' ? 'registro de 30 dias' : 'desde que subiu'})` : ''}`;
     const novo = this.log?.linhas.slice(-60).join('\n') ?? '';
     if (pre.textContent !== novo) {
       pre.textContent = novo;

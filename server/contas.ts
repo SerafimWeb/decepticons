@@ -17,6 +17,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { diaDe } from './telemetria';
+import { POLITICA_VERSAO, type DadosDaConta } from '../shared/net/auth';
 
 const scrypt = promisify(scryptCb);
 
@@ -30,6 +31,8 @@ export interface Conta {
   id: number;
   email: string;
   is_admin: boolean;
+  /** A pessoa deixa o jogo registrar a atividade da conta (dias, minutos, abates, mortes)? Padrão sim; ela pode desligar (LGPD art. 18 § 2, oposição). */
+  medir: boolean;
 }
 
 /** O que uma partida de um piloto com conta soma ao dia dele (os números que o navegador declarou: métrica de produto, nunca placar nem recompensa). */
@@ -122,6 +125,14 @@ export class Contas {
     } catch {
       // Falha silenciosamente se a coluna já existir (comportamento esperado na 2ª vez).
     }
+    // P187 (LGPD): o aceite da política (quando e qual versão) e a escolha de medir ou não a atividade. Contas de antes ficam sem aceite (nulo) e com a medição ligada.
+    for (const coluna of ['aceite_em TEXT', 'aceite_versao TEXT', 'medir INTEGER NOT NULL DEFAULT 1']) {
+      try {
+        this.db.exec(`ALTER TABLE contas ADD COLUMN ${coluna};`);
+      } catch {
+        // já existe
+      }
+    }
   }
 
   close(): void {
@@ -135,28 +146,30 @@ export class Contas {
 
   /** Cria a conta. `'existe'` se o e-mail já está cadastrado (mensagem que a UI pode mostrar direto —
    * diferente da mensagem de login, que nunca diz se o e-mail existe). */
-  async criar(email: string, senha: string, now = Date.now()): Promise<{ ok: true; conta: Conta } | { ok: false; motivo: 'existe' }> {
+  async criar(email: string, senha: string, now = Date.now(), aceiteVersao: string | null = null): Promise<{ ok: true; conta: Conta } | { ok: false; motivo: 'existe' }> {
     const ja = this.db.prepare('SELECT id FROM contas WHERE email = ?').get(email);
     if (ja) return { ok: false, motivo: 'existe' };
     const sal = randomBytes(SAL_BYTES);
     const hash = (await scrypt(senha, sal, HASH_BYTES)) as Buffer;
     const agora = new Date(now).toISOString();
-    const r = this.db.prepare('INSERT INTO contas (email, hash, sal, criada_em, is_admin) VALUES (?, ?, ?, ?, 0)').run(email, hash.toString('hex'), sal.toString('hex'), agora);
-    return { ok: true, conta: { id: Number(r.lastInsertRowid), email, is_admin: false } };
+    const r = this.db
+      .prepare('INSERT INTO contas (email, hash, sal, criada_em, is_admin, aceite_em, aceite_versao) VALUES (?, ?, ?, ?, 0, ?, ?)')
+      .run(email, hash.toString('hex'), sal.toString('hex'), agora, aceiteVersao ? agora : null, aceiteVersao);
+    return { ok: true, conta: { id: Number(r.lastInsertRowid), email, is_admin: false, medir: true } };
   }
 
   /** Confere e-mail + senha. Tempo de resposta parecido para "não existe" e "senha errada" (ainda calcula
    * um scrypt mesmo sem conta, com sal fixo) — não elimina timing attack por completo, mas encarece. */
   async autenticar(email: string, senha: string): Promise<Conta | null> {
-    const row = this.db.prepare('SELECT id, hash, sal, is_admin FROM contas WHERE email = ?').get(email) as
-      | { id: number; hash: string; sal: string; is_admin: number }
+    const row = this.db.prepare('SELECT id, hash, sal, is_admin, medir FROM contas WHERE email = ?').get(email) as
+      | { id: number; hash: string; sal: string; is_admin: number; medir: number }
       | undefined;
     const sal = row ? Buffer.from(row.sal, 'hex') : randomBytes(SAL_BYTES);
     const calculado = (await scrypt(senha, sal, HASH_BYTES)) as Buffer;
     if (!row) return null;
     const guardado = Buffer.from(row.hash, 'hex');
     if (guardado.length !== calculado.length || !timingSafeEqual(guardado, calculado)) return null;
-    return { id: row.id, email, is_admin: row.is_admin === 1 };
+    return { id: row.id, email, is_admin: row.is_admin === 1, medir: row.medir !== 0 };
   }
 
   /** O progresso que o navegador do piloto mandou da última vez (JSON já validado por quem gravou), ou `null` se a conta ainda não guardou nada. */
@@ -187,11 +200,11 @@ export class Contas {
   /** A conta dona do token, se a sessão existir e não tiver expirado. */
   validarSessao(token: string): Conta | null {
     const row = this.db
-      .prepare('SELECT c.id as id, c.email as email, c.is_admin as is_admin, s.expira_em as expira_em FROM sessoes s JOIN contas c ON c.id = s.conta_id WHERE s.token_hash = ?')
-      .get(hashToken(token)) as { id: number; email: string; is_admin: number; expira_em: string } | undefined;
+      .prepare('SELECT c.id as id, c.email as email, c.is_admin as is_admin, c.medir as medir, s.expira_em as expira_em FROM sessoes s JOIN contas c ON c.id = s.conta_id WHERE s.token_hash = ?')
+      .get(hashToken(token)) as { id: number; email: string; is_admin: number; medir: number; expira_em: string } | undefined;
     if (!row) return null;
     if (new Date(row.expira_em).getTime() < Date.now()) return null;
-    return { id: row.id, email: row.email, is_admin: row.is_admin === 1 };
+    return { id: row.id, email: row.email, is_admin: row.is_admin === 1, medir: row.medir !== 0 };
   }
 
   /** Quantas contas existem (o painel do servidor mostra; nunca quem são). */
@@ -214,11 +227,79 @@ export class Contas {
 
   /** O piloto abriu o jogo com a conta hoje (entrou, criou a conta ou voltou com a sessão guardada). Uma linha por conta por dia; repetir no mesmo dia não faz nada. */
   registrarVisita(contaId: number, now = Date.now()): void {
+    if (!this.mede(contaId)) return;
     this.db.prepare('INSERT OR IGNORE INTO atividade (conta_id, dia) VALUES (?, ?)').run(contaId, diaDe(now));
+  }
+
+  /** A conta deixa a atividade ser registrada? (Conta que não existe mais: não.) */
+  private mede(contaId: number): boolean {
+    const l = this.db.prepare('SELECT medir FROM contas WHERE id = ?').get(contaId) as { medir: number } | undefined;
+    return !!l && l.medir !== 0;
+  }
+
+  /**
+   * Liga ou desliga o registro da atividade da conta (LGPD art. 18 § 2: a pessoa pode se opor). **Desligar também apaga o que já foi registrado** (não adianta parar de medir e
+   * guardar o passado). Ligar de novo recomeça do zero.
+   */
+  definirMedicao(contaId: number, medir: boolean): void {
+    this.db.prepare('UPDATE contas SET medir = ? WHERE id = ?').run(medir ? 1 : 0, contaId);
+    if (!medir) this.db.prepare('DELETE FROM atividade WHERE conta_id = ?').run(contaId);
+  }
+
+  /**
+   * Apaga a conta e **tudo** que está ligado a ela (LGPD art. 18 VI): a atividade, o progresso, as sessões e a própria conta, numa transação só (ou vai tudo ou não vai nada).
+   * As cópias de segurança do banco (`backupContas.ts`) levam até 14 dias para esquecer a conta: a política de privacidade diz isso. `false` = a conta não existia.
+   */
+  apagarConta(contaId: number): boolean {
+    this.db.exec('BEGIN');
+    try {
+      this.db.prepare('DELETE FROM atividade WHERE conta_id = ?').run(contaId);
+      this.db.prepare('DELETE FROM progresso WHERE conta_id = ?').run(contaId);
+      this.db.prepare('DELETE FROM sessoes WHERE conta_id = ?').run(contaId);
+      const r = this.db.prepare('DELETE FROM contas WHERE id = ?').run(contaId);
+      this.db.exec('COMMIT');
+      return Number(r.changes) > 0;
+    } catch (e) {
+      this.db.exec('ROLLBACK');
+      throw e;
+    }
+  }
+
+  /**
+   * Tudo que o servidor guarda desta conta (LGPD art. 18 II e V: acesso e portabilidade), num JSON que a pessoa baixa. **Sem** o hash da senha, o sal nem os hashes das sessões (são
+   * segredos do servidor, não dados da pessoa). `null` = a conta não existe.
+   */
+  exportarDados(contaId: number, now = Date.now()): DadosDaConta | null {
+    const c = this.db.prepare('SELECT email, criada_em, is_admin, medir, aceite_em, aceite_versao FROM contas WHERE id = ?').get(contaId) as
+      | { email: string; criada_em: string; is_admin: number; medir: number; aceite_em: string | null; aceite_versao: string | null }
+      | undefined;
+    if (!c) return null;
+    const progresso = this.lerProgresso(contaId);
+    const atividade = (this.db.prepare('SELECT dia, segundos, partidas, abates, mortes FROM atividade WHERE conta_id = ? ORDER BY dia').all(contaId) as DadosDaConta['atividade']).map((l) => ({
+      dia: l.dia,
+      segundos: Number(l.segundos),
+      partidas: Number(l.partidas),
+      abates: Number(l.abates),
+      mortes: Number(l.mortes),
+    }));
+    const sessoes = (this.db.prepare('SELECT criada_em, expira_em FROM sessoes WHERE conta_id = ? ORDER BY criada_em').all(contaId) as { criada_em: string; expira_em: string }[]).map((s) => ({
+      criadaEm: s.criada_em,
+      venceEm: s.expira_em,
+    }));
+    return {
+      v: 1,
+      geradoEm: new Date(now).toISOString(),
+      nota: `Tudo o que o servidor do CYBERMECH guarda sobre esta conta (política de ${POLITICA_VERSAO}). Não inclui o hash da senha nem os segredos das sessões, que não são dados seus. O que o jogo guarda só no seu navegador (apelido, configurações) está no seu aparelho. Quem joga sem conta não tem nada aqui.`,
+      conta: { email: c.email, criadaEm: c.criada_em, aceiteEm: c.aceite_em, aceiteVersao: c.aceite_versao, medirAtividade: c.medir !== 0, administrador: c.is_admin === 1 },
+      progresso: progresso ? (JSON.parse(progresso) as unknown) : null,
+      atividade,
+      sessoes,
+    };
   }
 
   /** Uma rodada do piloto com conta: soma ao dia dele (a visita do dia nasce junto). */
   registrarPartida(contaId: number, p: PartidaDaConta, now = Date.now()): void {
+    if (!this.mede(contaId)) return;
     this.db
       .prepare(
         `INSERT INTO atividade (conta_id, dia, segundos, partidas, abates, mortes) VALUES (?, ?, ?, 1, ?, ?)

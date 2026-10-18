@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
-import { CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH } from '../shared/net/auth';
+import { ACEITE_ATUAL, CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH } from '../shared/net/auth';
 import { startServer, type GameServer } from './Server';
 
 const JOGO = 'https://cybermech.online';
@@ -45,7 +45,7 @@ describe('trava de origem do servidor', () => {
   });
 
   it('conta: origem de fora leva 403 e nenhuma conta nasce', async () => {
-    const r = await post(server.port, CONTA_CRIAR_PATH, DE_FORA, { email: 'fora@x.com', senha: 'senhasegura' });
+    const r = await post(server.port, CONTA_CRIAR_PATH, DE_FORA, { email: 'fora@x.com', senha: 'senhasegura', aceite: ACEITE_ATUAL });
     expect(r.status).toBe(403);
     expect(r.headers.get('access-control-allow-origin')).toBeNull();
     // se tivesse criado, entrar com a senha certa devolveria 200
@@ -54,16 +54,16 @@ describe('trava de origem do servidor', () => {
   });
 
   it('conta: o jogo no ar passa e recebe a PRÓPRIA origem no CORS, nunca o asterisco', async () => {
-    const r = await post(server.port, CONTA_CRIAR_PATH, JOGO, { email: 'dentro@x.com', senha: 'senhasegura' });
+    const r = await post(server.port, CONTA_CRIAR_PATH, JOGO, { email: 'dentro@x.com', senha: 'senhasegura', aceite: ACEITE_ATUAL });
     expect(r.status).toBe(201);
     expect(r.headers.get('access-control-allow-origin')).toBe(JOGO);
     expect(r.headers.get('vary')).toContain('origin');
   });
 
   it('conta: origem extra da configuração passa; sem origem (não é navegador) passa', async () => {
-    const extra = await post(server.port, CONTA_CRIAR_PATH, 'https://beta.exemplo', { email: 'beta@x.com', senha: 'senhasegura' });
+    const extra = await post(server.port, CONTA_CRIAR_PATH, 'https://beta.exemplo', { email: 'beta@x.com', senha: 'senhasegura', aceite: ACEITE_ATUAL });
     expect(extra.status).toBe(201);
-    const semOrigem = await post(server.port, CONTA_CRIAR_PATH, undefined, { email: 'curl@x.com', senha: 'senhasegura' });
+    const semOrigem = await post(server.port, CONTA_CRIAR_PATH, undefined, { email: 'curl@x.com', senha: 'senhasegura', aceite: ACEITE_ATUAL });
     expect(semOrigem.status).toBe(201);
   });
 

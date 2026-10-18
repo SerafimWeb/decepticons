@@ -2,7 +2,7 @@ import { mkdirSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CONTA_CRIAR_PATH, CONTA_EU_PATH, SESSAO_HEADER } from '../shared/net/auth';
+import { ACEITE_ATUAL, CONTA_CRIAR_PATH, CONTA_EU_PATH, SESSAO_HEADER } from '../shared/net/auth';
 import { PLAY_PATH } from '../shared/net/playMetrics';
 import { METRICAS_HEADER, METRICAS_PATH } from '../shared/net/telemetry';
 import type { MetricasUsuarios } from './contas';
@@ -50,7 +50,7 @@ describe('atividade dos pilotos com conta no servidor de verdade', () => {
     rmSync(pasta, { recursive: true, force: true });
     mkdirSync(pasta, { recursive: true });
     server = await startServer({ port: 0, host: '127.0.0.1', dbContas: banco, dirDados: pasta, metricasToken: TOKEN, guard: { perIp: 100, total: 200, msgs: 200, burst: 200 }, limiteLogin: { teto: 1000 } });
-    const r = await fetch(url(CONTA_CRIAR_PATH), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'piloto@x.com', senha: 'senhasegura' }) });
+    const r = await fetch(url(CONTA_CRIAR_PATH), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'piloto@x.com', senha: 'senhasegura', aceite: ACEITE_ATUAL }) });
     token = ((await r.json()) as { token: string }).token;
   });
   afterAll(async () => {

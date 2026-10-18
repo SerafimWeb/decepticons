@@ -1,8 +1,13 @@
 import { serverHttpUrl } from '../../../shared/net/serverUrl';
 import {
+  ACEITE_ATUAL,
+  type AceiteDaPolitica,
+  CONTA_APAGAR_PATH,
   CONTA_CRIAR_PATH,
+  CONTA_DADOS_PATH,
   CONTA_ENTRAR_PATH,
   CONTA_EU_PATH,
+  CONTA_MEDICAO_PATH,
   CONTA_PROGRESSO_PATH,
   CONTA_SAIR_PATH,
   CONFIG_PATH,
@@ -32,8 +37,9 @@ export class ContaCliente {
     this.base = url ? url.replace(/\/$/, '') : null;
   }
 
+  /** Criar a conta já manda o aceite da política: o formulário só chama isto com as duas caixas marcadas (o servidor recusa sem elas). */
   criar(email: string, senha: string): Promise<ContaResposta | ContaErro> {
-    return this.postCredenciais(CONTA_CRIAR_PATH, email, senha);
+    return this.postCredenciais(CONTA_CRIAR_PATH, email, senha, ACEITE_ATUAL);
   }
 
   entrar(email: string, senha: string): Promise<ContaResposta | ContaErro> {
@@ -51,13 +57,63 @@ export class ContaCliente {
 
   /** Confere se o token ainda vale, e devolve o e-mail (e se é admin) se sim. `null` = sem sessão (token ruim, expirado, ou
    * sem servidor) — nunca lança. */
-  async eu(token: string): Promise<{ email: string; is_admin: boolean } | null> {
+  async eu(token: string): Promise<{ email: string; is_admin: boolean; medir: boolean } | null> {
     if (!this.base || !token) return null;
     try {
       const res = await fetch(this.base + CONTA_EU_PATH, { headers: { [SESSAO_HEADER]: token }, mode: 'cors', cache: 'no-store' });
       if (!res.ok) return null;
       const dados = await res.json();
-      return typeof dados?.email === 'string' ? { email: dados.email, is_admin: dados.is_admin === true } : null;
+      return typeof dados?.email === 'string' ? { email: dados.email, is_admin: dados.is_admin === true, medir: dados.medir !== false } : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Os dados da conta, para baixar (LGPD art. 18 II e V). `json` já vem formatado para quem abrir o arquivo. Nunca lança.
+   */
+  async dados(token: string): Promise<{ json: string } | ContaErro> {
+    if (!this.base || !token) return { erro: 'sem servidor' };
+    try {
+      const res = await fetch(this.base + CONTA_DADOS_PATH, { headers: { [SESSAO_HEADER]: token }, mode: 'cors', cache: 'no-store' });
+      if (!res.ok) return { erro: res.status === 401 ? 'sessão vencida: entre de novo' : 'não deu para baixar os dados' };
+      return { json: JSON.stringify(await res.json(), null, 2) };
+    } catch {
+      return { erro: 'servidor fora do ar' };
+    }
+  }
+
+  /** Apaga a conta (LGPD art. 18 VI), confirmando com a senha. `null` = apagada; senão a mensagem para a tela. Nunca lança. */
+  async apagar(token: string, senha: string): Promise<string | null> {
+    if (!this.base || !token) return 'sem servidor';
+    try {
+      const res = await fetch(this.base + CONTA_APAGAR_PATH, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', [SESSAO_HEADER]: token },
+        body: JSON.stringify({ senha }),
+        mode: 'cors',
+      });
+      if (res.ok) return null;
+      const dados = await res.json().catch(() => null);
+      return (dados && typeof dados.erro === 'string' && dados.erro) || 'não deu para apagar a conta';
+    } catch {
+      return 'servidor fora do ar';
+    }
+  }
+
+  /** Liga ou desliga o registro da atividade da conta (LGPD art. 18 § 2). Devolve a escolha que o servidor guardou, ou `null` se não deu. Nunca lança. */
+  async medicao(token: string, ativa: boolean): Promise<boolean | null> {
+    if (!this.base || !token) return null;
+    try {
+      const res = await fetch(this.base + CONTA_MEDICAO_PATH, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', [SESSAO_HEADER]: token },
+        body: JSON.stringify({ ativa }),
+        mode: 'cors',
+      });
+      if (!res.ok) return null;
+      const dados = await res.json().catch(() => null);
+      return dados && typeof dados.ativa === 'boolean' ? dados.ativa : null;
     } catch {
       return null;
     }
@@ -127,18 +183,18 @@ export class ContaCliente {
     }
   }
 
-  private async postCredenciais(path: string, email: string, senha: string): Promise<ContaResposta | ContaErro> {
+  private async postCredenciais(path: string, email: string, senha: string, aceite?: AceiteDaPolitica): Promise<ContaResposta | ContaErro> {
     if (!this.base) return { erro: 'sem servidor' };
     try {
       const res = await fetch(this.base + path, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, senha }),
+        body: JSON.stringify(aceite ? { email, senha, aceite } : { email, senha }),
         mode: 'cors',
       });
       const dados = await res.json().catch(() => null);
       if (!res.ok) return { erro: (dados && typeof dados.erro === 'string' && dados.erro) || 'não deu para completar' };
-      if (dados && typeof dados.token === 'string' && typeof dados.email === 'string') return { token: dados.token, email: dados.email, is_admin: dados.is_admin === true };
+      if (dados && typeof dados.token === 'string' && typeof dados.email === 'string') return { token: dados.token, email: dados.email, is_admin: dados.is_admin === true, medir: dados.medir !== false };
       return { erro: 'resposta inesperada do servidor' };
     } catch {
       return { erro: 'servidor fora do ar' };

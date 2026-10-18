@@ -30,3 +30,28 @@ describe('Telemetry (emissor de métricas)', () => {
     expect(a['aba']).not.toBe(b['aba']);
   });
 });
+
+describe('Telemetry: o contexto da audiência (P188)', () => {
+  it('o corpo leva o contexto em "o" quando há; sem contexto, o corpo é o de sempre', () => {
+    const corpos: string[] = [];
+    vi.stubGlobal('navigator', {
+      sendBeacon: (_url: string, blob: Blob) => {
+        void blob.text().then((t) => corpos.push(t));
+        return true;
+      },
+    });
+    const t = new Telemetry('wss://jogo.selvamkt.com.br');
+    t.enviar('boot_ok', { canal: 'social', disp: 'mobile' });
+    t.enviar('hangar_aberto');
+    return new Promise<void>((ok) =>
+      setTimeout(() => {
+        vi.unstubAllGlobals();
+        const [a, b] = corpos.map((c) => JSON.parse(c) as Record<string, unknown>);
+        expect(a).toMatchObject({ nome: 'boot_ok', seq: 0, o: { canal: 'social', disp: 'mobile' } });
+        expect(b).toMatchObject({ nome: 'hangar_aberto', seq: 1 });
+        expect(b).not.toHaveProperty('o');
+        ok();
+      }, 50),
+    );
+  });
+});

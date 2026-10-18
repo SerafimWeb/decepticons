@@ -24,6 +24,8 @@ const TOTAIS: (keyof PlayTotals)[] = [
   "waves",
   "waveReports",
 ];
+/** A faixa da duração: menos de 1 min, 1 a 5, 5 a 15, 15 a 30, 30 ou mais. */
+export const faixaDeDuracao = (segundos: number): number => (segundos < 60 ? 0 : segundos < 300 ? 1 : segundos < 900 ? 2 : segundos < 1800 ? 3 : 4);
 const totaisVazios = (): PlayTotals => ({
   reports: 0,
   completed: 0,
@@ -35,11 +37,17 @@ const totaisVazios = (): PlayTotals => ({
   lost: 0,
   waves: 0,
   waveReports: 0,
+  dur: [0, 0, 0, 0, 0],
+  qual: [0, 0, 0],
 });
 const totaisValidos = (g: PlayTotals): boolean =>
   TOTAIS.every(
     (k) => typeof g[k] === "number" && Number.isFinite(g[k]) && g[k] >= 0,
   );
+/** Arquivos de antes das faixas não as trazem (ou as trazem tortas): voltam a zero, nada quebra. */
+const faixasLidas = (v: unknown, n: number): number[] =>
+  Array.isArray(v) && v.length === n && v.every((x) => typeof x === "number" && Number.isFinite(x) && x >= 0) ? [...(v as number[])] : new Array<number>(n).fill(0);
+const comFaixas = <T extends PlayTotals>(g: T): T => ({ ...g, dur: faixasLidas(g.dur, 5), qual: faixasLidas(g.qual, 3) });
 /** Soma uma rodada nos totais de um recorte. */
 function somar(t: PlayTotals, r: PlayReport, logged: boolean): void {
   t.reports++;
@@ -56,6 +64,8 @@ function somar(t: PlayTotals, r: PlayReport, logged: boolean): void {
     t.waves += r.wave;
     t.waveReports++;
   }
+  t.dur[faixaDeDuracao(r.seconds)]!++;
+  if (r.tier !== undefined) t.qual[r.tier]!++;
 }
 /** Agrega sem guardar identificadores: até 128 combinações por processo/arquivo, 120 dias e 24 mapas. */
 export class PlayMetrics {
@@ -199,7 +209,7 @@ export class PlayMetrics {
       for (const d of r.days.slice(-DIAS_TETO)) {
         if (!d || typeof d.day !== "string" || !RE_DIA.test(d.day)) continue;
         if (!totaisValidos(d)) continue;
-        this.days.set(d.day, { ...d });
+        this.days.set(d.day, comFaixas(d));
       }
     if (Array.isArray(r.maps))
       for (const m of r.maps.slice(0, MAPAS_TETO)) {
@@ -211,7 +221,7 @@ export class PlayMetrics {
           !totaisValidos(m)
         )
           continue;
-        this.maps.set(m.map + "|" + m.mode, { ...m });
+        this.maps.set(m.map + "|" + m.mode, comFaixas(m));
       }
     this.droppedGroups =
       typeof r.droppedGroups === "number" && Number.isFinite(r.droppedGroups)

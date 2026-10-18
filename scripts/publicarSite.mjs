@@ -93,7 +93,7 @@ export function lerSomas(saida) {
  * Os arquivos que dizem se o site novo chegou (a landing, o jogo, o painel e o `.htaccess`). Quem chama junta a esta lista os `assets/` que o próprio
  * `jogar/index.html` pede (`assetsDoJogo`): era exatamente o que faltava quando o site caiu (14/10) e a conferência de então não olhava para eles.
  */
-export const ARQUIVOS_DE_CONFERENCIA = ['index.html', 'jogar/index.html', 'sala-de-controle/index.html', '.htaccess'];
+export const ARQUIVOS_DE_CONFERENCIA = ['index.html', 'jogar/index.html', 'sala-de-controle/index.html', 'privacidade/index.html', '.htaccess'];
 
 /**
  * Os `assets/` que o jogo publicado pede (o que o navegador baixa para abrir a página), na ordem em que aparecem, sem repetir. Devolve o caminho **a partir da raiz do

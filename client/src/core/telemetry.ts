@@ -26,9 +26,10 @@ export class Telemetry {
     this.aba = randomId();
   }
 
-  enviar(nome: EventoNome): void {
+  /** `contexto`: a audiência do evento (a visita em `landing_view`/`boot_ok`, o canal nos passos do funil): só categorias, ver `shared/net/audiencia.ts`. */
+  enviar(nome: EventoNome, contexto?: object): void {
     if (!this.url) return;
-    const corpo = JSON.stringify({ nome, aba: this.aba, seq: this.sequence++ });
+    const corpo = JSON.stringify({ nome, aba: this.aba, seq: this.sequence++, ...(contexto ? { o: contexto } : {}) });
     try {
       if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
         // Blob sem "application/json" explícito: fica como envio "simples" do CORS, sem preflight.

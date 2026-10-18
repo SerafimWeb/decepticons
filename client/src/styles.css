@@ -2729,6 +2729,71 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   box-shadow: 0 0 16px var(--hot);
 }
 
+/* P187 (LGPD): o aceite da política ao criar a conta e o bloco "Meus dados" da conta logada */
+.login-consent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.login-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  letter-spacing: 0.5px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.login-check input[type='checkbox'] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.login-check a,
+.login-hint a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.login-hint {
+  margin: 4px 0 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+.login-aviso {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: rgba(57, 255, 106, 0.1);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 12px;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.login-apagar {
+  margin-top: 4px;
+}
+
+.btn-login-secondary {
+  border-color: rgba(57, 255, 106, 0.4);
+  color: var(--muted);
+  box-shadow: none;
+  font-size: 12px;
+  padding: 10px 16px;
+}
+
 /* ─── Botão CFTV (HUD) ─── */
 .btn-cftv {
   position: relative;

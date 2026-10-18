@@ -4,6 +4,7 @@
  *   /sala-de-controle/ o case do desenvolvimento (scripts/painel.mjs --site)
  *   /bastidores/       o endereço antigo: página que leva para a sala de controle
  *   /metricas/         métricas privadas do dono (scripts/metricas.mjs): só abre com o token do servidor
+ *   /privacidade/      a política de privacidade (scripts/privacidade.mjs; LGPD)
  *   /jogar/            o jogo (vite build)
  *   /capturas/         imagens do jogo, feitas jogando o build (só com --capturas)
  *
@@ -179,6 +180,8 @@ async function build() {
   run('node', ['scripts/oficina.mjs', '--out', join(OUT, 'oficina', 'index.html')]);
   // Privada: sem link em nenhum menu, fora da busca, e só mostra algo com o token do servidor (DEPLOY.md).
   run('node', ['scripts/metricas.mjs', '--out', join(OUT, 'metricas', 'index.html')]);
+  // Pública e indexável: a política de privacidade (P187, LGPD), linkada do rodapé de todas as páginas, da faixa de cookies e da tela de criar conta do jogo.
+  run('node', ['scripts/privacidade.mjs', '--out', join(OUT, 'privacidade', 'index.html')]);
   writeFileSync(join(OUT, '.htaccess'), htaccess());
   writeFileSync(join(GAME, 'assets', '.htaccess'), ASSETS_HTACCESS);
   const wasm = readdirSync(join(GAME, 'assets')).filter((f) => f.endsWith('.wasm'));
@@ -294,6 +297,88 @@ async function antiCopy(page, name, failures) {
 }
 
 /**
+ * Privacidade (P187, LGPD): a política existe, diz a versão e os direitos; a faixa de cookies **pergunta antes** de qualquer pedido ao Google (nada de gtag antes do "Aceitar"); aceitar liga a medição e
+ * a escolha vale na próxima visita; "Preferências de cookies" reabre a pergunta; recusar apaga os cookies `_ga` e desliga a medição; e o jogo (`jogar/`) só carrega o Google com o "sim" guardado.
+ */
+async function privacidadePage(browser, base, failures) {
+  const { runnerImport } = await import('vite');
+  const { POLITICA_VERSAO } = (await runnerImport(resolve('shared/net/auth.ts'), { configFile: false, logLevel: 'silent' })).module;
+  const ctx = await browser.newContext();
+  try {
+    const page = await ctx.newPage();
+    const google = [];
+    await page.route(/googletagmanager\.com|google-analytics\.com/, (r) => {
+      google.push(r.request().url());
+      return r.abort();
+    });
+    page.on('pageerror', (e) => failures.push(`privacidade: ${e.message}`));
+    await page.goto(`${base}privacidade/`);
+    if ((await page.title()) !== 'Política de Privacidade · CYBERMECH') failures.push(`título da política: "${await page.title()}"`);
+    await pageSane(page, 'privacidade', failures);
+    // textContent e não innerText: o CSS põe o rótulo da versão em maiúsculas e o innerText devolve o que se vê.
+    const texto = await page.evaluate(() => document.body.textContent);
+    for (const trecho of [`Versão ${POLITICA_VERSAO}`, 'Baixar meus dados', 'Apagar minha conta', 'Registrar minha atividade', 'ANPD', 'Google Analytics', 'Cloudflare', '30 dias', '400 dias'])
+      if (!texto.includes(trecho)) failures.push(`política: faltou "${trecho}"`);
+    if (await page.locator('meta[name="robots"]').count()) failures.push('política: a página pública saiu com meta robots (precisa ser achada)');
+    // 1) Antes da escolha: a faixa aparece e o Google não é pedido.
+    await page.waitForSelector('#cookies:not([hidden])', { timeout: 5000 }).catch(() => failures.push('cookies: a faixa não apareceu na primeira visita'));
+    if (google.length) failures.push(`cookies: o Google foi pedido ANTES da escolha (${google[0]})`);
+    // 2) Aceitar: a faixa some, a escolha fica guardada e o Google passa a ser pedido.
+    await page.click('#cookies-sim');
+    await page.waitForFunction(() => localStorage.getItem('cybermech.cookies') === 'sim', null, { timeout: 5000 }).catch(() => failures.push('cookies: o "sim" não ficou guardado'));
+    await page.waitForTimeout(500);
+    if (!google.length) failures.push('cookies: depois do "Aceitar" o Google não foi pedido');
+    if (!(await page.locator('#cookies').isHidden())) failures.push('cookies: a faixa ficou na tela depois da escolha');
+    // 3) Na visita seguinte: sem faixa, e a medição liga sozinha.
+    const antes = google.length;
+    await page.reload();
+    await page.waitForTimeout(500);
+    if (!(await page.locator('#cookies').isHidden())) failures.push('cookies: a faixa voltou mesmo com a escolha guardada');
+    if (google.length <= antes) failures.push('cookies: com o "sim" guardado a medição não ligou na visita seguinte');
+    // 4) Mudar de ideia: o rodapé reabre a pergunta; recusar apaga os cookies do Google e desliga.
+    await page.click('#cookies-preferencias');
+    if (!(await page.locator('#cookies').isVisible())) failures.push('cookies: "Preferências de cookies" não reabriu a faixa');
+    await page.evaluate(() => { document.cookie = '_ga=GA1.1.1.1; path=/'; document.cookie = '_ga_ABC=GS1.1.1; path=/'; });
+    await page.click('#cookies-nao');
+    const sobrou = await page.evaluate(() => document.cookie.split(';').map((c) => c.split('=')[0].trim()).filter((n) => n === '_ga' || n.startsWith('_ga_')));
+    if (sobrou.length) failures.push(`cookies: recusar não apagou ${sobrou.join(', ')}`);
+    if ((await page.evaluate(() => localStorage.getItem('cybermech.cookies'))) !== 'nao') failures.push('cookies: o "não" não ficou guardado');
+    const depois = google.length;
+    await page.reload();
+    await page.waitForTimeout(500);
+    if (google.length !== depois) failures.push('cookies: com o "não" guardado o Google foi pedido');
+    if (!(await page.locator('#cookies').isHidden())) failures.push('cookies: a faixa voltou depois do "não"');
+    // 5) O jogo respeita a mesma escolha: nada de tag fixa, só o carregamento condicionado.
+    const jogo = await (await page.request.get(`${base}jogar/`)).text();
+    if (/<script[^>]+src="https:\/\/www\.googletagmanager\.com/.test(jogo)) failures.push('jogo: a tag do Google está fixa na página (carrega sem escolha)');
+    if (!jogo.includes('cybermech.cookies')) failures.push('jogo: não lê a escolha de cookies do site');
+    // 5b) O jogo de verdade, aberto de três jeitos: sem escolha e com "não" o Google NÃO é pedido; com "sim" é (a escolha do site vale no jogo).
+    for (const [escolha, esperado] of [[null, false], ['nao', false], ['sim', true]]) {
+      const c = await browser.newContext();
+      try {
+        const g = await c.newPage();
+        const pedidos = [];
+        await g.route(/googletagmanager\.com|google-analytics\.com/, (r) => {
+          pedidos.push(r.request().url());
+          return r.abort();
+        });
+        if (escolha) await g.addInitScript((v) => localStorage.setItem('cybermech.cookies', v), escolha);
+        await g.goto(`${base}jogar/`, { waitUntil: 'domcontentloaded' });
+        await g.waitForTimeout(1500);
+        if (!!pedidos.length !== esperado) failures.push(`jogo: com a escolha de cookies "${escolha ?? 'nenhuma'}" o Google ${pedidos.length ? 'foi pedido' : 'não foi pedido'} (devia ${esperado ? 'ser pedido' : 'ficar quieto'})`);
+      } finally {
+        await c.close();
+      }
+    }
+    // 6) As páginas públicas levam o link da política; a privada de métricas não carrega faixa nem Google.
+    await page.goto(base);
+    if (!(await page.locator('a[href="/privacidade/"]').count())) failures.push('landing: sem link para a política de privacidade');
+  } finally {
+    await ctx.close();
+  }
+}
+
+/**
  * Métricas (privada): contra um servidor de mentira que responde no formato REAL do contrato (os números vêm do `Telemetria`
  * de verdade). Prova: sem token nada aparece; token errado é recusado; token certo mostra cartões, funil, dias e países;
  * o token fica guardado só para aquele servidor; nome de país hostil vira texto, nunca HTML; a página não entra em busca
@@ -320,6 +405,17 @@ async function metricasPage(browser, base, failures) {
   const report = {v:1,id:'site-check-normal',release:'site-check',mode:'deathmatch',online:false,build:'v2.vector09.plasma-0.rockets-0.-.frontal',assisted:false,outcome:'completed',seconds:60,frames:3600,slowFrames:36,kills:2,deaths:1,damage:100,firstKillS:12};
   play.record(report); play.record({...report,id:'site-check-assisted',assisted:true});
   corpo.play = play.snapshot();
+  // A audiência (P188): o agregador de verdade, alimentado com visitas de canais diferentes; depois um nome de site com HTML, que um servidor comprometido poderia mandar.
+  const { Audiencia } = await load('server/Audiencia.ts');
+  const aud = new Audiencia();
+  const v = (canal, host, extra = {}) => ({ tipo: 'visita', visita: { canal, ...(host ? { host } : {}), disp: 'desktop', nav: 'chrome', so: 'windows', lang: 'pt', ret: 'novo', ...extra } });
+  aud.registrar('landing_view', v('social', 'instagram.com'), 'SP', agora);
+  aud.registrar('landing_view', v('busca', 'google.com', { nav: 'firefox' }), null, agora);
+  aud.registrar('landing_view', v('direto', undefined, { disp: 'mobile', ret: 'd2-7' }), null, agora);
+  aud.registrar('boot_ok', v('social', 'instagram.com'), 'SP', agora);
+  aud.registrar('partida_iniciada', { tipo: 'funil', funil: { canal: 'social', conta: 'logado' } }, null, agora);
+  corpo.audiencia = aud.resumo();
+  corpo.audiencia.dias.at(-1).perfil.landing.host['<img src=x onerror=window.__xss2=1>'] = 3;
   corpo.dias.at(-1).eventos.boot_ok['<img src=x onerror=window.__xss=1>'] = 1; // um servidor comprometido não vira HTML na tela
   const servidor = createServer((req, res) => {
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': tel.METRICAS_HEADER };
@@ -358,6 +454,16 @@ async function metricasPage(browser, base, failures) {
     if (paises.length < 3) failures.push(`métricas: a tabela de países saiu com ${paises.length} linhas`);
     if (!/Brasil/.test(paises[0] ?? '')) failures.push(`métricas: o país que mais joga devia ser o Brasil, veio "${paises[0]}"`);
     if ((await page.locator('#paises img').count()) || (await page.evaluate(() => window.__xss))) failures.push('métricas: um nome de país com HTML virou HTML na tela');
+    // A audiência: de onde vêm (o funil por canal), os sites que mandam, quem chega, o estado, e nenhum HTML vindo do servidor.
+    const origem = await page.locator('#tab-origem').textContent();
+    if (!origem.includes('rede social') || !origem.includes('busca') || !origem.includes('direto')) failures.push('métricas: a tabela de origem não mostra os canais');
+    if ((await page.locator('#tab-origem tbody tr').count()) !== 3) failures.push('métricas: a tabela de origem devia ter uma linha por canal (3)');
+    if (!(await page.locator('#tab-sites').textContent()).includes('instagram.com')) failures.push('métricas: os sites que mandam visita não chegaram');
+    if ((await page.locator('#quem .barra').count()) < 6) failures.push('métricas: faltam as barras de quem chega (novo ou recorrente, conta, aparelho, navegador, sistema, idioma)');
+    if (!(await page.locator('#quem').textContent()).includes('com conta')) failures.push('métricas: a partida com conta não aparece em "quem chega"');
+    if (!(await page.locator('#tab-uf').textContent()).includes('SP')) failures.push('métricas: o estado (SP) não chegou à tabela');
+    if ((await page.locator('#tab-sites img').count()) || (await page.evaluate(() => window.__xss2))) failures.push('métricas: um nome de site com HTML virou HTML na tela');
+    if (!(await page.locator('#ga-nota').textContent()).includes('ainda não está ligado')) failures.push('métricas: a nota do Google Analytics sumiu');
     const guardados = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('cybermech.metricas.token')));
     if (guardados.length !== 1 || !guardados[0].includes('127.0.0.1')) failures.push(`métricas: o token devia ficar guardado para aquele servidor só: ${JSON.stringify(guardados)}`);
     // Volta sozinha com o token guardado; um link para outro servidor não recebe o token guardado; "esquecer" apaga.
@@ -591,6 +697,10 @@ async function check() {
     await pageSane(page, 'landing', failures);
     await publicPage(page, 'landing', failures);
     await antiCopy(page, 'landing', failures);
+    // A audiência (P188): a landing embute a classificação da visita e manda a visita no landing_view e o canal nos cliques (o endereço do servidor vem do build: o código está lá mesmo sem ele).
+    const fonteDaLanding = await (await page.request.get(base)).text();
+    for (const trecho of ["send('landing_view', audiencia.visita())", 'audiencia.funil()', 'armazensDoNavegador', 'classificarOrigem'])
+      if (!fonteDaLanding.includes(trecho)) failures.push(`landing: a audiência não está embutida (faltou "${trecho}")`);
     // Cards usam o catálogo e links de montagem reais; detalhes numéricos continuam na Oficina.
     if ((await page.locator('.mech-card a[href*="?build="]').count()) !== 4) failures.push('landing: faltam os quatro links de montagem dos chassis (Andróide, Vector-09, Colossus-01, Colossus-V4)');
     if ((await page.locator('.mtag').count()) !== 4) failures.push('landing: faltam os rótulos dos quatro chassis na foto de escala');
@@ -629,6 +739,7 @@ async function check() {
     await page.close();
     await mobile(browser, `${base}jogar/`, failures);
     await metricasPage(browser, base, failures);
+    await privacidadePage(browser, base, failures);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {
@@ -678,6 +789,10 @@ async function verify(url) {
   const metricasHtml = await metricas.text();
   if (!metricasHtml.includes('Métricas · CYBERMECH')) failures.push(`${root}metricas/: não é a página de métricas`);
   if (!/<meta name="robots" content="noindex/.test(metricasHtml)) failures.push(`${root}metricas/: a página privada saiu sem noindex`);
+  const priv = await get(`${root}privacidade/`);
+  const privHtml = await priv.text();
+  if (!privHtml.includes('Política de Privacidade · CYBERMECH')) failures.push(`${root}privacidade/: não é a política de privacidade`);
+  if (/<meta name="robots" content="noindex/.test(privHtml)) failures.push(`${root}privacidade/: a política saiu com noindex`);
   const old = await get(`${root}bastidores/`);
   if (!(await old.text()).includes('sala-de-controle/')) failures.push(`${root}bastidores/: não leva para a sala de controle`);
   const cover = await get(`${root}capturas/capa.jpg`, 'HEAD');

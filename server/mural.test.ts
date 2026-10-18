@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
-import { CONTA_CRIAR_PATH } from '../shared/net/auth';
+import { ACEITE_ATUAL, CONTA_CRIAR_PATH } from '../shared/net/auth';
 import { ADMIN_ESTADO_PATH, ADMIN_HEADER } from '../shared/net/admin';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION, ROOM_SIZE } from '../shared/net/constants';
@@ -247,7 +247,7 @@ describe('o mural de câmeras, com o servidor de verdade', () => {
     const s = await startServer({ port: 0, host: '127.0.0.1', dbContas: banco, dirDados: pasta, metricasToken: TOKEN, guard: GUARD, mural: { cadaMs: 50, esperaMs: 400 } });
     try {
       const criar = async (email: string) => {
-        const r = await fetch(`http://127.0.0.1:${s.port}${CONTA_CRIAR_PATH}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha: 'senhasegura' }) });
+        const r = await fetch(`http://127.0.0.1:${s.port}${CONTA_CRIAR_PATH}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha: 'senhasegura', aceite: ACEITE_ATUAL }) });
         expect(r.status).toBe(201);
         return (await r.json()).token as string;
       };

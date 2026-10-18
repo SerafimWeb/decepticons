@@ -60,6 +60,9 @@ const css = `
   .nota { padding: 16px 18px; border: 1px solid var(--line); background: var(--panel); display: grid; gap: 8px; font-size: 14px; }
   .nota ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
   details.tabela summary { cursor: pointer; color: var(--amber); }
+  .quem { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px; }
+  .quem h3 { font: 400 12px/1.3 var(--fb); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+  .quem .barra { grid-template-columns: minmax(90px, 140px) 1fr auto; }
 `;
 
 const body = `
@@ -94,6 +97,28 @@ const body = `
       <p class="lede">As rodadas que os navegadores declararam (com e sem conta), por mapa e modo e por dia. A <b>onda</b> é a média da mais alta que cada rodada alcançou (missões e Sobrevivência); vitória e derrota só existem nas missões. Números declarados pelo cliente: medem o jogo, não valem como placar.</p>
       <div class="rolavel"><table class="paises" id="tab-mapas"></table></div>
       <div class="rolavel"><table class="paises" id="tab-jogo-dias"></table></div>
+    </section>
+    <section aria-labelledby="h-origem">
+      <h2 id="h-origem">De onde vêm · últimos 30 dias</h2>
+      <p class="lede">Como a pessoa chegou: <b>digitou o endereço</b> ou usou um favorito (direto), veio de uma <b>busca</b>, de uma <b>rede social</b>, de <b>outro site</b> ou de um <b>link marcado por nós</b> (campanha). A origem da landing acompanha a pessoa até o jogo. Só categorias: nenhuma pessoa, nenhum IP.</p>
+      <div class="rolavel"><table class="paises" id="tab-origem"></table></div>
+      <div class="rolavel"><table class="paises" id="tab-sites"></table></div>
+      <div class="rolavel"><table class="paises" id="tab-campanhas"></table></div>
+    </section>
+    <section aria-labelledby="h-quem">
+      <h2 id="h-quem">Quem chega · últimos 30 dias</h2>
+      <p class="lede">O jeito de quem abre o jogo, por categorias (nunca por pessoa): novo ou recorrente, com conta ou convidado, aparelho, navegador, sistema e idioma. <b>Recorrente</b> vem de uma data guardada no próprio navegador (a da primeira visita), que nunca é enviada.</p>
+      <div class="quem" id="quem"></div>
+      <div class="rolavel"><table class="paises" id="tab-uf"></table></div>
+    </section>
+    <section aria-labelledby="h-tempo">
+      <h2 id="h-tempo">Quanto se joga e em que condição · últimos 30 dias</h2>
+      <p class="lede">Duração das rodadas (declarada pelo navegador) e a qualidade gráfica em que terminaram: o jogo rebaixa sozinho quando o aparelho não aguenta (G12), então quem termina em "baixa" mostra onde o computador não dá conta.</p>
+      <div class="quem" id="tempo"></div>
+    </section>
+    <section aria-labelledby="h-ga">
+      <h2 id="h-ga">Google Analytics</h2>
+      <p class="lede" id="ga-nota">O Google Analytics <b>ainda não está ligado a esta página</b>. Ele só enxerga quem aceita os cookies (a faixa do site) e as páginas do site, não o jogo inteiro; o que importa mais já sai acima, sem cookie. Para ver o resto dele (cidade, tempo no site) <a href="https://analytics.google.com" rel="noopener" target="_blank">abra o painel do Google</a>.</p>
     </section>
     <section aria-labelledby="h-funil">
       <h2 id="h-funil">Funil · últimos 7 dias</h2>
@@ -265,7 +290,7 @@ const js = `(() => {
     t.append(corpo);
   }
 
-  const pct = (a, b) => (b > 0 ? Math.round(100 * a / b) + '%' : '—');
+  const pct = (a, b) => (b > 0 ? Math.round(100 * Number(a || 0) / b) + '%' : '—');
   const tabela = (id, cabecalho, linhas, vazio) => {
     const t = $(id); t.replaceChildren();
     const cab = el('tr'); for (const h of cabecalho) cab.append(el('th', null, h));
@@ -325,6 +350,83 @@ const js = `(() => {
       'Ainda sem rodadas por dia.');
   }
 
+  const ROTULOS = {
+    canal: { direto: 'direto (digitou o endereço)', busca: 'busca', social: 'rede social', site: 'outro site', campanha: 'campanha (link marcado)', interno: 'interno' },
+    disp: { desktop: 'computador', mobile: 'celular', tablet: 'tablet' },
+    nav: { chrome: 'Chrome', edge: 'Edge', firefox: 'Firefox', safari: 'Safari', opera: 'Opera', samsung: 'Samsung Internet', outro: 'outro' },
+    so: { windows: 'Windows', mac: 'macOS', linux: 'Linux', android: 'Android', ios: 'iOS', chromeos: 'ChromeOS', outro: 'outro' },
+    lang: { pt: 'português', en: 'inglês', es: 'espanhol', fr: 'francês', ja: 'japonês', zh: 'chinês', ru: 'russo', outro: 'outro' },
+    ret: { novo: 'novo (primeira visita)', d1: 'voltou 1 dia depois', 'd2-7': 'voltou em 2 a 7 dias', 'd8-30': 'voltou em 8 a 30 dias', 'd31+': 'voltou depois de 30 dias' },
+    conta: { logado: 'com conta', convidado: 'convidado' },
+  };
+  const rot = (dim, v) => (ROTULOS[dim] && ROTULOS[dim][v]) || v;
+  const ordem = (obj, ref) => Object.entries(obj || {}).sort((a, b) => (ref ? ref.indexOf(a[0]) - ref.indexOf(b[0]) : b[1] - a[1]));
+  /** Os últimos n dias que o servidor mandou (a audiência), do mais novo para trás: o servidor já corta em 120. */
+  const diasAud = (m, n) => {
+    const limite = diaAtras(n - 1);
+    return (m.audiencia && Array.isArray(m.audiencia.dias) ? m.audiencia.dias : []).filter((d) => d && typeof d.dia === 'string' && d.dia >= limite);
+  };
+  const juntar = (alvo, origem) => { for (const [k, n] of Object.entries(origem || {})) alvo[k] = (alvo[k] || 0) + (Number(n) || 0); return alvo; };
+  const perfilSomado = (dias, pagina, dim) => dias.reduce((acc, d) => juntar(acc, d.perfil && d.perfil[pagina] && d.perfil[pagina][dim]), {});
+  /** Barras de uma categoria: rótulo, barra proporcional ao maior e o número com a fatia do total. */
+  function barras(caixa, titulo, dados, dim, ref) {
+    const total = Object.values(dados).reduce((a, b) => a + b, 0);
+    const bloco = el('div'); bloco.append(el('h3', null, titulo));
+    const g = el('div', { class: 'barras' });
+    const linhas = ordem(dados, ref);
+    const max = Math.max(1, ...linhas.map((l) => l[1]));
+    if (!linhas.length) g.append(el('p', { class: 'd' }, 'Ainda sem dados.'));
+    for (const [v, n] of linhas.slice(0, 12)) {
+      const linha = el('div', { class: 'barra' });
+      const trilho = el('div', { class: 'trilho' }); const b = el('i'); b.style.width = (100 * n / max) + '%'; trilho.append(b);
+      const num = el('span', { class: 'n' }, N(n)); num.append(el('small', null, ' ' + pct(n, total)));
+      linha.append(el('span', null, rot(dim, v)), trilho, num); g.append(linha);
+    }
+    bloco.append(g); caixa.append(bloco);
+  }
+  const PASSOS = ['landing_view', 'click_cockpit', 'boot_ok', 'partida_iniciada', 'partida_terminada'];
+  const CANAIS = ['direto', 'busca', 'social', 'site', 'campanha'];
+
+  function audiencia(m) {
+    const dias = diasAud(m, 30);
+    // De onde vêm: o funil de cada canal, com a conversão de cada passo.
+    const porCanal = {};
+    for (const d of dias) for (const [canal, passos] of Object.entries(d.funil || {})) juntar((porCanal[canal] ||= {}), passos);
+    const canais = Object.keys(porCanal).sort((a, b) => CANAIS.indexOf(a) - CANAIS.indexOf(b));
+    tabela('tab-origem', ['canal', 'visitas na landing', 'cliques em jogar', 'abriram o jogo', 'iniciaram partida', 'terminaram', 'visita → clique', 'jogo → partida'],
+      canais.map((c) => { const f = porCanal[c]; return [rot('canal', c), N(f.landing_view), N((f.click_cockpit || 0) + (f.click_online || 0)), N(f.boot_ok), N(f.partida_iniciada), N(f.partida_terminada), pct((f.click_cockpit || 0) + (f.click_online || 0), f.landing_view), pct(f.partida_iniciada, f.boot_ok)]; }),
+      'Ainda sem visitas com origem (o navegador novo manda; os antigos não).');
+    // Os sites que mandam gente e as campanhas.
+    const hosts = dias.reduce((acc, d) => juntar(juntar(acc, d.perfil && d.perfil.landing && d.perfil.landing.host), d.perfil && d.perfil.jogo && d.perfil.jogo.host), {});
+    tabela('tab-sites', ['site que mandou a visita', 'visitas'], ordem(hosts).slice(0, 15).map(([h, n]) => [h, N(n)]), 'Ainda nenhum site mandou visita.');
+    const camp = (dim) => dias.reduce((acc, d) => juntar(juntar(acc, d.perfil && d.perfil.landing && d.perfil.landing[dim]), d.perfil && d.perfil.jogo && d.perfil.jogo[dim]), {});
+    const cs = camp('utm_campaign'); const fs = camp('utm_source'); const ms = camp('utm_medium');
+    const linhasCamp = [];
+    for (const [nome, mapa] of [['campanha', cs], ['fonte', fs], ['meio', ms]]) for (const [v, n] of ordem(mapa).slice(0, 8)) linhasCamp.push([nome, v, N(n)]);
+    tabela('tab-campanhas', ['marca do link', 'valor', 'visitas'], linhasCamp, 'Nenhum link marcado (utm_source, utm_medium, utm_campaign) foi aberto ainda.');
+    // Quem chega: o perfil de quem abre o jogo (e, sem jogo, o da landing).
+    const pagina = dias.some((d) => d.perfil && d.perfil.jogo) ? 'jogo' : 'landing';
+    const caixa = $('quem'); caixa.replaceChildren();
+    barras(caixa, 'novo ou recorrente', perfilSomado(dias, pagina, 'ret'), 'ret', ['novo', 'd1', 'd2-7', 'd8-30', 'd31+']);
+    const conta = dias.reduce((acc, d) => juntar(acc, d.conta), {});
+    barras(caixa, 'partidas iniciadas: com conta ou convidado', conta, 'conta', ['logado', 'convidado']);
+    barras(caixa, 'aparelho', perfilSomado(dias, pagina, 'disp'), 'disp');
+    barras(caixa, 'navegador', perfilSomado(dias, pagina, 'nav'), 'nav');
+    barras(caixa, 'sistema', perfilSomado(dias, pagina, 'so'), 'so');
+    barras(caixa, 'idioma do navegador', perfilSomado(dias, pagina, 'lang'), 'lang');
+    const ufs = dias.reduce((acc, d) => juntar(juntar(acc, d.perfil && d.perfil.landing && d.perfil.landing.uf), d.perfil && d.perfil.jogo && d.perfil.jogo.uf), {});
+    tabela('tab-uf', ['estado (Brasil)', 'visitas'], ordem(ufs).slice(0, 27).map(([u, n]) => [u, N(n)]), 'Sem estados ainda: a Cloudflare só manda o estado quando "Add visitor location headers" está ligado (Rules → Managed Transforms).');
+    // Quanto se joga: a duração das rodadas e a qualidade em que terminaram.
+    const d30 = (m.play && Array.isArray(m.play.days) ? m.play.days : []).filter((d) => d.day >= diaAtras(29));
+    const soma = (campo, n) => Array.from({ length: n }, (_, i) => d30.reduce((s, d) => s + ((Array.isArray(d[campo]) && Number(d[campo][i])) || 0), 0));
+    const dur = soma('dur', 5); const qual = soma('qual', 3);
+    const cx = $('tempo'); cx.replaceChildren();
+    barras(cx, 'duração da rodada', Object.fromEntries(['menos de 1 min', '1 a 5 min', '5 a 15 min', '15 a 30 min', '30 min ou mais'].map((r, i) => [r, dur[i]])), 'dur', ['menos de 1 min', '1 a 5 min', '5 a 15 min', '15 a 30 min', '30 min ou mais']);
+    barras(cx, 'qualidade gráfica ao terminar', Object.fromEntries(['alta', 'média (resolução menor)', 'baixa (sem brilho)'].map((r, i) => [r, qual[i]])), 'qual', ['alta', 'média (resolução menor)', 'baixa (sem brilho)']);
+    const rodadas = d30.reduce((s, d) => s + (d.reports || 0), 0); const seg = d30.reduce((s, d) => s + (d.seconds || 0), 0);
+    if (rodadas) cx.append(el('p', { class: 'd' }, 'Média: ' + (seg / rodadas / 60).toFixed(1).replace('.', ',') + ' min por rodada, em ' + N(rodadas) + ' rodadas.'));
+  }
+
   /** Confere o que veio do servidor: o painel não confia nem no servidor dele. */
   function valido(m) {
     return m && typeof m === 'object' && Array.isArray(m.dias) && m.total && typeof m.total === 'object' &&
@@ -358,7 +460,7 @@ const js = `(() => {
     if (m === null) { $('painel').hidden = true; return estado('O servidor respondeu, mas não com métricas: é provavelmente uma versão antiga. Atualize e reinicie o servidor (DEPLOY.md, seção 04/10).', true); }
     if (!valido(m)) { $('painel').hidden = true; return estado('Resposta do servidor em formato inesperado.', true); }
     guardar(token); $('token').value = '';
-    cartoes(m); pilotos(m); oQueSeJoga(m); funil(m); porDia(m); porPais(m);
+    cartoes(m); pilotos(m); oQueSeJoga(m); audiencia(m); funil(m); porDia(m); porPais(m);
     const table=$('partidas');table.replaceChildren();const header=el('tr');for(const text of ['Versão / modo / montagem','Origem','Assistência','Rodadas','Concluídas','Quadros lentos','Abates / mortes'])header.append(el('th',null,text));table.append(header);
     const groups=Array.isArray(m.play?.groups)?m.play.groups.slice(0,128):[];
     for(const g of groups){const row=el('tr');const values=[String(g.release)+' / '+String(g.mode)+' / '+String(g.build),g.online?'Online':'Offline',g.assisted?'Assistida':'Normal',N(g.reports),N(g.completed),g.frames>0?(100*g.slowFrames/g.frames).toFixed(1)+'%':'—',N(g.kills)+' / '+N(g.deaths)];for(const value of values)row.append(el('td',null,value));table.append(row);}
