@@ -738,7 +738,7 @@ export class Game {
       return allies.queueOrder(order, this.mech.simPosition, target);
     };
     this.activeBuild = this.hangar.key;
-    this.playTelemetry = new PlayTelemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, () => ({mode:this.gameMode,online:!!this.online,build:this.activeBuild,release:runtimeDiagnostics.release,assisted:(!this.online && (this.power.changes>0||this.squad.custom))||this.mech.combatBoost.damageMultiplier>1||this.bankOnlineBoost>0}));
+    this.playTelemetry = new PlayTelemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, () => ({mode:this.gameMode,online:!!this.online,build:this.activeBuild,release:runtimeDiagnostics.release,map:mapFromSearch(location.search,!!this.online,this.gameMode),assisted:(!this.online && (this.power.changes>0||this.squad.custom))||this.mech.combatBoost.damageMultiplier>1||this.bankOnlineBoost>0}));
     this.recorder = new GameRecorder(this.renderer.domElement, this.audio);
     if (this.gameMode === 'survival') this.hud.setMissionMode(true);
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
@@ -1379,11 +1379,16 @@ export class Game {
       if (wave >= 2) this.narrador.dizer('hostis_chegando', 1);
       this.audio.playAmbientBram();
     };
-    this.match.onWaveProgress = (wave, killed, total, elapsedS) => this.hud.setMissionProgress(wave, killed, total, elapsedS);
+    this.match.onWaveProgress = (wave, killed, total, elapsedS) => {
+      this.playTelemetry.onda(wave);
+      this.hud.setMissionProgress(wave, killed, total, elapsedS);
+    };
     this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
     this.match.onMissionEnd = (survived, waveReached, stats) => {
       if (this.match.nucleo) this.narrador.dizer(survived ? 'estacao_segura' : 'rede_caiu', 3);
       this.telemetry.enviar('partida_terminada');
+      this.playTelemetry.onda(waveReached);
+      this.playTelemetry.desfecho(survived);
       this.playTelemetry.finish('completed');
       this.missionEnded = true;
       if (this.match.rio) {

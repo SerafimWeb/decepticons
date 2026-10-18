@@ -1,5 +1,27 @@
 # ESTADO ATUAL — CYBERMECH
 
+## AS MÉTRICAS DOS PILOTOS: QUANTOS ENTRAM, QUANTO JOGAM, QUEM VOLTA — Claude, 18/10 (branch `claude/metricas-usuarios`, P185)
+
+**A pergunta do Comandante (17/10):** *"tem como termos as métricas dos usuários, quantos entram, quantos minutos jogam, quantas mortes, etc? [...] depois implementarmos melhores práticas de marketing orientado pelas nossas informações de usuários?"*
+
+**Resposta curta: sim, e agora o servidor mede.** Já existiam as contagens anônimas (visitas, cliques, partidas, país, pico). **O que entrou:**
+1. **Por conta:** a tabela `atividade` (uma linha por conta por dia: abriu o jogo, rodadas, segundos, abates, mortes). Dela saem **DAU/WAU/MAU**, **quem de fato jogou**, **minutos por piloto**, contas novas por dia e a **retenção D1 e D7**. Alimentada pela rodada que o navegador manda **com a sessão** e por abrir o jogo com a sessão guardada.
+2. **Para todos (com e sem conta):** rodadas, minutos, abates e mortes **por dia** e **por mapa e modo**, a **onda** em que a rodada parou e a **vitória ou derrota** das missões (o relatório de partida ganhou `map`, `wave` e `won`, opcionais).
+3. **A tela do dono:** `/metricas/` ganhou **Pilotos com conta** e **O que se joga**; o `/metricas` traz o bloco `usuarios`. **Só contagens: nenhum e-mail nem número de conta.**
+4. **A faxina:** o servidor passou a varrer sessões vencidas e atividade de mais de 400 dias ao subir e a cada 6 h (`limparExpiradas` existia e ninguém chamava).
+
+**Provas:** testes de conta (cenário com dia de Brasília e virada às 03:00 UTC, retenção do dia exato, banco vazio, faxina), de agregação (tetos, reenvio, arquivo antigo), HTTP de ponta a ponta com o servidor de verdade (conta + rodada com sessão, reenvio, sessão inventada, preflight, visita) e do cliente (a sessão só vai ao servidor dono dela). **Mutação à mão: 32 de 32 pegas.** **E ponta a ponta no navegador** (o fio do `Game.ts`, sem teste de unidade): o jogo de verdade no Chrome, com a sessão de uma conta, na Amazônia (`marcha=0.95`) e na Praia (Sobrevivência) mandou ao servidor local `map`, `wave`, `won` e a sessão; o `/metricas` mostrou 1 piloto que jogou, 3 rodadas, 4 min, por mapa e dia (captura: `.decepticons/arte/metricas-pilotos-p185-claude.jpg`, com os números dessa prova).
+
+**Custo de CPU:** zero no tick e no quadro do jogo. O cliente soma dois números por rodada (onda, desfecho); o servidor faz um `INSERT` pequeno por rodada de quem tem conta e um por abertura do jogo; a leitura (`metricasUsuarios`) só roda quando o dono abre o `/metricas`.
+
+**ATENÇÃO (privacidade, R13):** a atividade por conta é **dado pessoal novo**. **O jogo ainda não tem política de privacidade, "apagar minha conta" nem "baixar meus dados"**, e o Google Analytics já está nas páginas. O inventário do que é guardado está em `PRIVACIDADE.md`; **antes de trazer jogadores o dono precisa decidir e publicar a política** (a proposta técnica de apagar/exportar está lá, construo quando ele mandar).
+
+**Falta:** o chassi e o lado por conta; vitória em Bandeira e Domínio (precisa do time do jogador no online, P81); o que o marketing faz com os números (só vale com jogadores medidos).
+
+**Onde o Comandante confere:** `cybermech.online/metricas/` (token em `.tmp/servidor/metricas-token.txt`, ou entrando com a conta de admin): seções **Pilotos com conta** e **O que se joga**. **Os números só começam a encher depois que o site e o servidor atualizarem** e pilotos com conta jogarem; antes disso as seções mostram zeros.
+
+**Próxima sessão começa com:** o **time do jogador na sala online (P81)**: é o que falta para Bandeira 2v2 online, para os lados Aliados × Consórcio (P186) e para a vitória nesses modos.
+
 ## AMAZÔNIA, PARTE C: O DRAGA-01 COM CORPO — a missão do rio é jogável — Claude, 17/10 (branch `claude/amazonia-draga`, P180)
 
 **A ordem do Comandante (17/10):** *"há uma enorme força de defesa deles e teremos que desmantelar, invadir com androides e destruir por dentro"*; *"continua iterando até concluir essas pendências"*. A parte C é **o Draga-01 de verdade na partida**: com corpo, dano, marcha e a missão que ele cria.

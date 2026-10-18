@@ -16,7 +16,14 @@ export interface PlayReport {
   deaths: number;
   damage: number;
   firstKillS: number | null;
+  /** O mapa jogado (P185). Opcional: o navegador antigo não manda. */
+  map?: string;
+  /** A onda mais alta que a rodada alcançou (missões e Sobrevivência). */
+  wave?: number;
+  /** A missão terminou em vitória (true) ou em derrota (false); ausente nos modos sem esse desfecho. */
+  won?: boolean;
 }
+const MAP_RE = /^[a-z0-9-]{1,16}$/;
 export function parsePlayReport(raw: unknown): PlayReport | null {
   if (typeof raw !== "object" || raw === null) return null;
   const r = raw as Record<string, unknown>;
@@ -60,6 +67,17 @@ export function parsePlayReport(raw: unknown): PlayReport | null {
       r.firstKillS > (r.seconds as number) + 1)
   )
     return null;
+  if (r.map !== undefined && (typeof r.map !== "string" || !MAP_RE.test(r.map)))
+    return null;
+  if (
+    r.wave !== undefined &&
+    (typeof r.wave !== "number" ||
+      !Number.isInteger(r.wave) ||
+      r.wave < 0 ||
+      r.wave > 999)
+  )
+    return null;
+  if (r.won !== undefined && typeof r.won !== "boolean") return null;
   return {
     v: 1,
     id: r.id,
@@ -76,6 +94,9 @@ export function parsePlayReport(raw: unknown): PlayReport | null {
     deaths: r.deaths as number,
     damage: r.damage as number,
     firstKillS: r.firstKillS as number | null,
+    ...(r.map !== undefined ? { map: r.map as string } : {}),
+    ...(r.wave !== undefined ? { wave: r.wave as number } : {}),
+    ...(r.won !== undefined ? { won: r.won as boolean } : {}),
   };
 }
 export interface PlayGroup {
@@ -95,7 +116,33 @@ export interface PlayGroup {
   firstKills: number;
   firstKillSeconds: number;
 }
+/** Os totais de um recorte (um dia, um mapa): só contagens, nenhuma identificação. */
+export interface PlayTotals {
+  reports: number;
+  completed: number;
+  seconds: number;
+  kills: number;
+  deaths: number;
+  /** Quantos relatórios vieram de uma conta (com a sessão); os outros são de convidados. */
+  logged: number;
+  won: number;
+  lost: number;
+  /** Soma das ondas alcançadas e de quantos relatórios a trazem (a média é a divisão). */
+  waves: number;
+  waveReports: number;
+}
+export interface PlayDay extends PlayTotals {
+  day: string;
+}
+export interface PlayMapGroup extends PlayTotals {
+  map: string;
+  mode: string;
+}
 export interface PlaySummary {
   groups: PlayGroup[];
   droppedGroups: number;
+  /** O total por dia (horário de Brasília, os últimos 120): quanto se joga por dia, com e sem conta. */
+  days?: PlayDay[];
+  /** O total por mapa e modo (até 24): onde se joga, onde se vence, até que onda se chega. */
+  maps?: PlayMapGroup[];
 }

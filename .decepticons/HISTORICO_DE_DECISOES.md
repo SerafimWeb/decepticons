@@ -1,3 +1,16 @@
+## [2026-10-18] As métricas dos pilotos com conta: o que o servidor mede e o que fica de fora (Claude, P185)
+
+**Ordem:** "tem como termos as métricas dos usuários, quantos entram, quantos minutos jogam, quantas mortes, etc? [...] pra mapearmos e trackearmos tudo, e depois implementarmos melhores práticas de marketing orientado pelas nossas informações de usuários? quero concluir logo as partes técnicas pra poder lançar".
+
+**Decisões:**
+1. **O que é "usuário" aqui: a conta.** Retenção (quem volta) e usuários únicos (DAU/WAU/MAU) só se medem com um identificador que dure de um dia para o outro. O convidado **continua anônimo** (só contagens: o dono decidiu isso em 28/09 e 04/10 e nada aqui o desfaz); quem **criou conta** passa a ter a atividade registrada. **Isto é dado pessoal novo** e vai ao ar antes da política de privacidade existir: registrei o inventário (`PRIVACIDADE.md`) e o que falta (política, "apagar a conta", "baixar meus dados") como pendência do dono, sem esconder.
+2. **Uma linha por conta por dia** (`atividade`): abriu o jogo, rodadas, segundos, abates, mortes. É o mínimo que responde as perguntas dele (quantos entram, quantos minutos, quantas mortes) e a retenção; nada de linha por rodada nem de histórico de montagens (cresceria sem fim e não responde nada que o dono perguntou). Apaga com 400 dias.
+3. **A sessão vai junto da rodada**, no cabeçalho, e **só para o servidor dono do token** (a mesma chave por servidor da sessão: um link com `?servidor=` apontando para outro lugar não recebe o token guardado). Sem sessão, ou com sessão vencida, a rodada vale como a de um convidado: nada se perde, só deixa de ser de alguém.
+4. **O painel mostra só contagens:** o bloco `usuarios` não leva e-mail nem número de conta (teste confere).
+5. **A retenção é a clássica, do dia exato** (D1 = o dia seguinte, D7 = o sétimo) e **só das contas criadas depois de a medição começar**: sem atividade registrada antes, uma conta velha contaria como "não voltou" e derrubaria o número. As coortes cujo dia ainda não passou ficam de fora.
+6. **O que mais interessa a este jogo e entrou:** o **mapa**, a **onda** em que a rodada parou (onde a Sobrevivência perde gente) e a **vitória ou derrota** das missões (a Amazônia vence-se?). Opcionais no contrato: o navegador antigo continua valendo.
+7. **De fora, de propósito:** o **chassi por conta** (a montagem já está nos resumos por montagem), o **lado** (P186, ainda não existe) e a vitória em **Bandeira e Domínio** (o cliente ainda não sabe o time do jogador no online: P81). O servidor também passou a **varrer sessões vencidas e atividade velha** ao subir e a cada 6 h: `limparExpiradas` existia e ninguém a chamava.
+
 ## [2026-10-17] A Amazônia, parte C: o Draga-01 com corpo e a missão do rio (Claude, P180)
 
 **Ordem:** "continua iterando até concluir essas pendências": o chefe de verdade, a marcha até a aldeia e o que o jogador faz.
