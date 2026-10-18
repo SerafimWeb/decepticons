@@ -49,7 +49,7 @@ As specs completas estão em `PROTOCOLO_UNIVERSAL.md`; este é só o índice.
 - **Funcionalidade nova nasce RESTRITA (P191):** botão, tela, modo, fase, robô ou arma nova entra no catálogo `client/src/core/funcionalidades.ts` com `padrao: 'restrito'` e `data-func` no elemento; o Comandante a libera no painel de visibilidade (chip VISIBILIDADE ▸, modo Comandante) quando estiver pronta. Robô e arma saem de `CHASSIS` e `WEAPON_IDS` já públicos: restrinja no catálogo se for novo.
 - **R2:** nada de secret em arquivo versionado. **R3:** nada de `_v2`, `_old`, `_bkp`.
 - **R13:** o que não funciona de ponta a ponta fica marcado como DEMO ou AUSENTE em `STATUS_REAL.md`.
-- **R17:** achou bug ou desalinhamento durante a tarefa? Corrija se for barato e seguro; senão, registre.
+- **R17:** achou bug ou desalinhamento durante a tarefa? Corrija se for barato e seguro; senão, registre. **Higiene (P200):** código, documento ou dado sem uso na área que o PR tocou sai no mesmo PR; número que o site publica (testes, módulos) vem do repositório, nunca digitado.
 
 ## TRABALHO COM VÁRIOS AGENTES (Claude, Codex, Gemini, Qwen…)
 
