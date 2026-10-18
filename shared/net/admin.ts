@@ -91,7 +91,7 @@ export interface AdminHistorico {
 }
 
 export interface AdminLog {
-  /** `arquivo`: o `servidor.log` da tarefa (tudo o que o servidor escreveu); `memoria`: só o que o servidor guardou desde que subiu. */
+  /** `arquivo`: o registro técnico de 30 dias (`registro/servidor-AAAA-MM-DD.log`) ou, sem ele, o `servidor.log` da tarefa; `memoria`: só o que o servidor guardou desde que subiu. */
   fonte: 'arquivo' | 'memoria';
   linhas: string[];
 }

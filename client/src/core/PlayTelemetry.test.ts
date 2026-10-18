@@ -90,6 +90,23 @@ describe('PlayTelemetry: o que a rodada leva ao servidor', () => {
     expect(cabecalhos[SESSAO_HEADER]).toBeUndefined();
   });
 
+  it('a rodada leva o degrau da qualidade gráfica em que terminou (lido no fim, não no começo), preso entre 0 e 2', async () => {
+    let degrau = 0;
+    const t = new PlayTelemetry(SERVIDOR, () => ({ mode: 'survival', online: false, build: BUILD, release: 'teste' }), undefined, () => degrau);
+    for (let i = 0; i < 5; i++) t.frame(16);
+    degrau = 2; // o jogo rebaixou a qualidade durante a rodada
+    t.finish('completed');
+    expect((await enviado(0)).corpo.tier).toBe(2);
+    degrau = 9; // valor absurdo: preso em 2
+    rodada(new PlayTelemetry(SERVIDOR, () => ({ mode: 'survival', online: false, build: BUILD, release: 'teste' }), undefined, () => degrau));
+    expect((await enviado(1)).corpo.tier).toBe(2);
+    degrau = Number.NaN;
+    rodada(new PlayTelemetry(SERVIDOR, () => ({ mode: 'survival', online: false, build: BUILD, release: 'teste' }), undefined, () => degrau));
+    expect((await enviado(2)).corpo.tier).toBe(0);
+    rodada(novo()); // sem a função de qualidade, 0
+    expect((await enviado(3)).corpo.tier).toBe(0);
+  });
+
   it('o armazenamento do navegador quebrado não derruba o envio: vai como convidado', async () => {
     vi.stubGlobal('localStorage', {
       getItem: () => {

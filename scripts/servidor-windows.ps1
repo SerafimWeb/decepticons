@@ -76,6 +76,6 @@ Start-ScheduledTask -TaskName $nome
 Write-Host "Pronto: o servidor sobe com o Windows e reinicia se cair."
 Write-Host "Pasta de onde ele roda: $raiz"
 Write-Host "Pasta de dados (contas.db, números, token): $Dados"
-Write-Host "Log: $Dados\servidor.log"
+Write-Host "Log do Node (erros): $Dados\servidor.log; o registro do dia a dia (30 dias): $Dados\registro\"
 Write-Host "Token das métricas: $Dados\metricas-token.txt (criado quando o servidor sobe pela primeira vez)"
 Write-Host "Para o PC não dormir na tomada: powercfg /change standby-timeout-ac 0"

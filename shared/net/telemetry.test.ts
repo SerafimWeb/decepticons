@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { EVENTOS, EVENTOS_SERVIDOR, PAIS_DESCONHECIDO, parseEvento, parseMetricas, parsePais, parseResumo, resumoVazio } from './telemetry';
+import { EVENTO_MAX_BYTES, EVENTOS, EVENTOS_SERVIDOR, PAIS_DESCONHECIDO, parseEvento, parseMetricas, parsePais, parseResumo, resumoVazio } from './telemetry';
 
 describe('telemetria de produto: só a lista fechada passa', () => {
   it('aceita um evento conhecido com aba válida', () => {
@@ -116,5 +116,30 @@ describe('parseMetricas: o painel não confia nem no servidor dele', () => {
     const m = parseMetricas({ ...boa(), total: { boot_ok: 2.9 }, dias: [{ ...boa().dias[0], pico: -4 }] });
     expect(m?.total.boot_ok).toBe(2);
     expect(m?.dias[0]?.pico).toBe(0);
+  });
+});
+
+describe('parseEvento: o contexto da audiência (P188)', () => {
+  const visita = { canal: 'social', host: 'instagram.com', disp: 'mobile', nav: 'chrome', so: 'android', lang: 'pt', ret: 'novo' };
+  it('a visita em landing_view e boot_ok, o canal nos passos do funil', () => {
+    expect(parseEvento({ nome: 'landing_view', aba: 'abcd1234', o: visita })?.ctx).toEqual({ tipo: 'visita', visita });
+    expect(parseEvento({ nome: 'boot_ok', aba: 'abcd1234', o: visita })?.ctx).toEqual({ tipo: 'visita', visita });
+    expect(parseEvento({ nome: 'partida_iniciada', aba: 'abcd1234', o: { canal: 'busca', conta: 'logado' } })?.ctx).toEqual({ tipo: 'funil', funil: { canal: 'busca', conta: 'logado' } });
+  });
+  it('contexto torto é descartado e o evento continua valendo (o clique conta, só não entra na audiência)', () => {
+    for (const o of [{ ...visita, canal: 'inventado' }, 'texto', 5, null, { ...visita, host: 'Tem Espaço' }]) {
+      const e = parseEvento({ nome: 'landing_view', aba: 'abcd1234', o });
+      expect(e, JSON.stringify(o)).not.toBeNull();
+      expect(e).not.toHaveProperty('ctx');
+    }
+  });
+  it('evento que não leva contexto ignora o que vier em "o"; sem "o" o evento é o de sempre', () => {
+    expect(parseEvento({ nome: 'hangar_aberto', aba: 'abcd1234', o: { canal: 'busca' } })).toEqual({ nome: 'hangar_aberto', aba: 'abcd1234' });
+    expect(parseEvento({ nome: 'boot_ok', aba: 'abcd1234' })).toEqual({ nome: 'boot_ok', aba: 'abcd1234' });
+  });
+  it('o teto do corpo cobre a visita mais cheia (site de origem e as três marcas de campanha)', () => {
+    const cheia = { nome: 'boot_ok', aba: 'a'.repeat(40), seq: 2147483647, o: { canal: 'campanha', host: 'a'.repeat(59) + 'b', us: 'u'.repeat(32), um: 'm'.repeat(32), uc: 'c'.repeat(32), disp: 'tablet', nav: 'samsung', so: 'chromeos', lang: 'outro', ret: 'd8-30' } };
+    expect(parseEvento(cheia)?.ctx).toBeDefined();
+    expect(JSON.stringify(cheia).length).toBeLessThan(EVENTO_MAX_BYTES);
   });
 });

@@ -7,6 +7,7 @@ import { ShieldVisuals } from '../fx/ShieldVisuals';
 import { ShieldHUD } from '../ui/ShieldHUD';
 import { runtimeDiagnostics } from './runtimeDiagnostics';
 import { PlayTelemetry } from './PlayTelemetry';
+import type { Audiencia } from './Audiencia';
 import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
 import { addSerafimPlaque, SERAFIM_TOWER } from '../environment/SerafimTower';
@@ -346,6 +347,11 @@ export class Game {
   /** Métricas de produto (dono, 28/09): poucos eventos de funil, nunca por quadro. */
   private readonly telemetry: Telemetry;
   private readonly playTelemetry: PlayTelemetry;
+  private audiencia: Audiencia | null = null;
+  /** A primeira partida desta página já foi contada no funil? (O `onRoundStart` só dispara nas rodadas SEGUINTES: sem isto a primeira nunca entrava no "partidas iniciadas".) */
+  private primeiraPartidaContada = false;
+  /** O piloto está com a conta aberta? (Para o funil: partida de quem tem conta e de quem joga de convidado.) */
+  private contaDoFunil: () => 'logado' | 'convidado' = () => 'convidado';
   private activeBuild = '';
   private readonly shieldHUD: ShieldHUD;
   /** `?serafim=festa`: o LED do Prédio Serafim gira as cores. */
@@ -731,7 +737,14 @@ export class Game {
     this.hud.setMode(this.rig.mode);
     this.hud.setReady(this.input.touchMode);
     this.telemetry = new Telemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
-    this.telemetry.enviar('boot_ok');
+    // A audiência (P188): de onde veio esta visita e que aparelho é, só em categorias (`core/Audiencia.ts`); a origem da landing chega pela aba. Baixa sob demanda (fora do JS de partida): o
+    // boot_ok sai quando ela chega; um evento do funil que acontecesse antes iria sem contexto (vale, só não entra na audiência).
+    void import('./Audiencia')
+      .then((m) => {
+        this.audiencia = new m.Audiencia(m.lerAmbiente(), m.armazensDoNavegador());
+        this.telemetry.enviar('boot_ok', this.audiencia.visita());
+      })
+      .catch(() => this.telemetry.enviar('boot_ok'));
     this.shieldHUD = new ShieldHUD(this.input);
     this.squadHUD = new SquadHUD();
     this.squadHUD.onOrder = order => {
@@ -742,7 +755,7 @@ export class Game {
       return allies.queueOrder(order, this.mech.simPosition, target);
     };
     this.activeBuild = this.hangar.key;
-    this.playTelemetry = new PlayTelemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, () => ({mode:this.gameMode,online:!!this.online,build:this.activeBuild,release:runtimeDiagnostics.release,map:mapFromSearch(location.search,!!this.online,this.gameMode),assisted:(!this.online && (this.power.changes>0||this.squad.custom))||this.mech.combatBoost.damageMultiplier>1||this.bankOnlineBoost>0}));
+    this.playTelemetry = new PlayTelemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, () => ({mode:this.gameMode,online:!!this.online,build:this.activeBuild,release:runtimeDiagnostics.release,map:mapFromSearch(location.search,!!this.online,this.gameMode),assisted:(!this.online && (this.power.changes>0||this.squad.custom))||this.mech.combatBoost.damageMultiplier>1||this.bankOnlineBoost>0}), undefined, () => this.quality.currentTier);
     this.recorder = new GameRecorder(this.renderer.domElement, this.audio);
     if (this.gameMode === 'survival') this.hud.setMissionMode(true);
     else if (this.gameMode === 'ctf') this.hud.setCtfMode(true);
@@ -895,6 +908,7 @@ export class Game {
       chaveDoToken(import.meta.env.VITE_GAME_SERVER),
     );
     this.dailyChallenges.onSave = () => sessao.mudou();
+    this.contaDoFunil = () => (sessao.estado.email ? 'logado' : 'convidado');
     // O seletor de lado (P179): o selo LADO do console e a pergunta "de que lado você joga?" (a campanha do Consórcio lê `lado.atual`, no futuro).
     this.lado = new LadoSelector(armazem);
     // O Arquivo é opcional e pesa no download: o painel é um pedaço sob demanda, baixado só no clique do chip.
@@ -1382,7 +1396,7 @@ export class Game {
       if (!w.salvo || (this.microBlasts++ % 3) === 0) this.audio.playExplosion(explosionSoundDistance(dist, k));
     };
     this.match.onRoundStart = () => {
-      this.telemetry.enviar('partida_iniciada');
+      this.telemetry.enviar('partida_iniciada', this.audiencia?.funil(this.contaDoFunil()));
       this.startRound();
     };
     this.match.onWaveStart = (wave, total, _mechs, _androids, title, waves) => {
@@ -1397,7 +1411,7 @@ export class Game {
     this.match.onWaveClear = (wave, elapsedS) => this.hud.showMissionClear(wave, elapsedS);
     this.match.onMissionEnd = (survived, waveReached, stats) => {
       if (this.match.nucleo) this.narrador.dizer(survived ? 'estacao_segura' : 'rede_caiu', 3);
-      this.telemetry.enviar('partida_terminada');
+      this.telemetry.enviar('partida_terminada', this.audiencia?.funil(this.contaDoFunil()));
       this.playTelemetry.onda(waveReached);
       this.playTelemetry.desfecho(survived);
       this.playTelemetry.finish('completed');
@@ -1441,7 +1455,7 @@ export class Game {
     };
     this.match.onCtfProgress = (timeLeft, blue, red) => this.hud.setCtfProgress(timeLeft, blue.captures, red.captures);
     this.match.onCtfEnd = (winner, blue, red) => {
-      this.telemetry.enviar('partida_terminada');
+      this.telemetry.enviar('partida_terminada', this.audiencia?.funil(this.contaDoFunil()));
       this.playTelemetry.finish('completed');
       this.missionEnded = true;
       this.hud.setCtfEnd(winner, blue.captures, red.captures, blue.kills, red.kills);
@@ -1456,7 +1470,7 @@ export class Game {
     this.match.onDominioProgresso = (tempo, azul, vermelho) => this.dominioHud.quadro(this.match.dominio!.pontos, tempo, azul, vermelho);
     this.match.onDominioDono = (ponto, antes, depois) => this.dominioHud.avisar(avisoDoPonto(ponto.def.letra, antes, depois));
     this.match.onDominioFim = (vencedor, azul, vermelho) => {
-      this.telemetry.enviar('partida_terminada');
+      this.telemetry.enviar('partida_terminada', this.audiencia?.funil(this.contaDoFunil()));
       this.playTelemetry.finish('completed');
       this.missionEnded = true;
       this.hud.setDominioEnd(vencedor, Math.floor(azul.pontos), Math.floor(vermelho.pontos));
@@ -1747,6 +1761,11 @@ export class Game {
   }
 
   private setPlaying(playing: boolean): void {
+    // O funil (P188): a primeira partida da página conta ao começar a jogar; as seguintes contam pelo `onRoundStart`. Achado ao ligar a audiência: antes, quem jogava uma rodada só nunca virava "partida iniciada".
+    if (playing && !this.primeiraPartidaContada) {
+      this.primeiraPartidaContada = true;
+      this.telemetry.enviar('partida_iniciada', this.audiencia?.funil(this.contaDoFunil()));
+    }
     // A primeira rodada abre com COMBATE! quando a partida começa de verdade (depois da vinheta); as seguintes abrem pelo `onRoundStart`.
     if (playing && !this.aberturaFeita && this.gameMode === 'deathmatch' && !this.online && this.round.playing) {
       this.aberturaFeita = true;

@@ -44,6 +44,8 @@ export class PlayTelemetry {
         return null;
       }
     },
+    /** O degrau da qualidade gráfica agora (0 = o mais alto): lido ao fechar a rodada (P188). */
+    private readonly qualidade: () => number = () => 0,
   ) {
     this.url = serverHttpUrl(server, PLAY_PATH);
     try {
@@ -112,6 +114,7 @@ export class PlayTelemetry {
       firstKillS: this.firstKillS === null ? null : Math.round(this.firstKillS),
       ...(this.wave !== null ? { wave: this.wave } : {}),
       ...(this.won !== null ? { won: this.won } : {}),
+      tier: Math.max(0, Math.min(2, Math.trunc(this.qualidade()) || 0)) as 0 | 1 | 2,
     };
     try {
       const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? "[]");

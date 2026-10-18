@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_SAIR_PATH, SESSAO_HEADER } from '../shared/net/auth';
+import { ACEITE_ATUAL, CONTA_CRIAR_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_SAIR_PATH, SESSAO_HEADER } from '../shared/net/auth';
 import { startServer, type GameServer } from './Server';
 
 async function post(port: number, path: string, body: unknown) {
@@ -23,7 +23,7 @@ describe('rotas de conta: criar, entrar, sair, eu', () => {
   });
 
   it('cria conta, recebe token, e /conta/eu confirma a sessão', async () => {
-    const r = await post(server.port, CONTA_CRIAR_PATH, { email: 'dan@x.com', senha: 'senhasegura' });
+    const r = await post(server.port, CONTA_CRIAR_PATH, { email: 'dan@x.com', senha: 'senhasegura', aceite: ACEITE_ATUAL });
     expect(r.status).toBe(201);
     const { token, email } = await r.json();
     expect(email).toBe('dan@x.com');
@@ -35,13 +35,13 @@ describe('rotas de conta: criar, entrar, sair, eu', () => {
   });
 
   it('e-mail repetido recusa com 409', async () => {
-    await post(server.port, CONTA_CRIAR_PATH, { email: 'repetido@x.com', senha: 'senhasegura' });
-    const r = await post(server.port, CONTA_CRIAR_PATH, { email: 'repetido@x.com', senha: 'outrasenha' });
+    await post(server.port, CONTA_CRIAR_PATH, { email: 'repetido@x.com', senha: 'senhasegura', aceite: ACEITE_ATUAL });
+    const r = await post(server.port, CONTA_CRIAR_PATH, { email: 'repetido@x.com', senha: 'outrasenha', aceite: ACEITE_ATUAL });
     expect(r.status).toBe(409);
   });
 
   it('entrar com a senha certa devolve token; senha errada devolve 401', async () => {
-    await post(server.port, CONTA_CRIAR_PATH, { email: 'entra@x.com', senha: 'senhasegura' });
+    await post(server.port, CONTA_CRIAR_PATH, { email: 'entra@x.com', senha: 'senhasegura', aceite: ACEITE_ATUAL });
     const ok = await post(server.port, CONTA_ENTRAR_PATH, { email: 'entra@x.com', senha: 'senhasegura' });
     expect(ok.status).toBe(200);
     const ruim = await post(server.port, CONTA_ENTRAR_PATH, { email: 'entra@x.com', senha: 'senhaerrada' });
@@ -56,7 +56,7 @@ describe('rotas de conta: criar, entrar, sair, eu', () => {
   });
 
   it('sair invalida a sessão', async () => {
-    const criado = await post(server.port, CONTA_CRIAR_PATH, { email: 'sai@x.com', senha: 'senhasegura' });
+    const criado = await post(server.port, CONTA_CRIAR_PATH, { email: 'sai@x.com', senha: 'senhasegura', aceite: ACEITE_ATUAL });
     const { token } = await criado.json();
     const sair = await fetch(`http://127.0.0.1:${server.port}${CONTA_SAIR_PATH}`, { method: 'POST', headers: { [SESSAO_HEADER]: token } });
     expect(sair.status).toBe(204);
@@ -67,7 +67,7 @@ describe('rotas de conta: criar, entrar, sair, eu', () => {
   it('e-mail ou senha fora do contrato: 400, nada criado', async () => {
     const semSenha = await post(server.port, CONTA_CRIAR_PATH, { email: 'x@x.com' });
     expect(semSenha.status).toBe(400);
-    const senhaCurta = await post(server.port, CONTA_CRIAR_PATH, { email: 'x2@x.com', senha: 'curta' });
+    const senhaCurta = await post(server.port, CONTA_CRIAR_PATH, { email: 'x2@x.com', senha: 'curta', aceite: ACEITE_ATUAL });
     expect(senhaCurta.status).toBe(400);
   });
 

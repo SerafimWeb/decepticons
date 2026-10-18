@@ -28,6 +28,10 @@ function servidorFalso(inicial: { progresso: ProgressoPiloto | null; sessaoValid
     chamadas: [] as string[],
     gravados: [] as ProgressoPiloto[],
     erroAoEntrar: null as string | null,
+    medir: true,
+    erroAoApagar: null as string | null,
+    senhasDeApagar: [] as string[],
+    dadosErro: null as string | null,
   };
   const api: ServidorDeContas = {
     async criar(email) {
@@ -43,7 +47,22 @@ function servidorFalso(inicial: { progresso: ProgressoPiloto | null; sessaoValid
     },
     async eu() {
       s.chamadas.push('eu');
-      return s.sessaoValida && s.rede ? { email: 'ana@x.com', is_admin: false } : null;
+      return s.sessaoValida && s.rede ? { email: 'ana@x.com', is_admin: false, medir: s.medir } : null;
+    },
+    async dados() {
+      s.chamadas.push('dados');
+      return s.dadosErro ? { erro: s.dadosErro } : { json: '{"v":1}' };
+    },
+    async apagar(_t, senha) {
+      s.chamadas.push('apagar');
+      s.senhasDeApagar.push(senha);
+      return s.erroAoApagar;
+    },
+    async medicao(_t, ativa) {
+      s.chamadas.push('medicao');
+      if (!s.rede) return null;
+      s.medir = ativa;
+      return ativa;
     },
     async lerProgresso() {
       s.chamadas.push('ler');
@@ -98,7 +117,7 @@ describe('criar e entrar: o convidado vira conta sem perder nada', () => {
   it('conta nova (a conta ainda não guardou nada): guarda o token, manda o progresso do navegador e fica sincronizado', async () => {
     const { sessao, servidor, local, armazem } = montar();
     expect(await sessao.criar('ana@x.com', 'senhasegura')).toBeNull();
-    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: true });
+    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: true, medir: true });
     expect(armazem.getItem(CHAVE)).toBe('tk-novo');
     expect(servidor.gravados).toHaveLength(1);
     expect(servidor.gravados[0]).toMatchObject({ nivel: 2, xp: 100, creditos: 500, apelido: 'EU' });
@@ -109,7 +128,7 @@ describe('criar e entrar: o convidado vira conta sem perder nada', () => {
     const { sessao, servidor, local, armazem } = montar();
     servidor.erroAoEntrar = 'e-mail ou senha incorretos';
     expect(await sessao.entrar('ana@x.com', 'errada123')).toBe('e-mail ou senha incorretos');
-    expect(sessao.estado).toEqual({ email: null, sincronizado: false });
+    expect(sessao.estado).toEqual({ email: null, sincronizado: false, medir: true });
     expect(armazem.getItem(CHAVE)).toBeNull();
     expect(servidor.chamadas).toEqual(['entrar']);
     expect(local.aplicados).toHaveLength(0);
@@ -157,7 +176,7 @@ describe('falha de rede nunca trava nem apaga nada', () => {
     const { sessao, servidor, local } = montar(servidorFalso({ progresso: null, rede: false }));
     // `entrar` responde (o servidor falso responde), mas ler o progresso não: a sessão vale e o progresso local segue intacto.
     await sessao.entrar('ana@x.com', 'senhasegura');
-    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: false });
+    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: false, medir: true });
     expect(local.aplicados).toHaveLength(0);
     expect(servidor.gravados).toHaveLength(0);
   });
@@ -211,7 +230,7 @@ describe('restaurar: o jogo abriu', () => {
     const { sessao, servidor, armazem } = montar();
     armazem.setItem(CHAVE, 'tk-velho');
     await sessao.restaurar();
-    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: true });
+    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: true, medir: true });
     expect(servidor.chamadas).toEqual(['eu', 'ler', 'gravar']);
   });
 
@@ -233,7 +252,7 @@ describe('sair', () => {
     await sessao.sair();
     expect(servidor.chamadas).toContain('sair');
     expect(armazem.getItem(CHAVE)).toBeNull();
-    expect(sessao.estado).toEqual({ email: null, sincronizado: false });
+    expect(sessao.estado).toEqual({ email: null, sincronizado: false, medir: true });
     expect(local.atual).toMatchObject({ nivel: 2, xp: 100, creditos: 500 });
   });
 
@@ -305,5 +324,57 @@ describe('onMudou: a tela é avisada', () => {
     expect(vistos[0]).toEqual(['ana@x.com', false]);
     expect(vistos).toContainEqual(['ana@x.com', true]);
     expect(vistos.at(-1)).toEqual([null, false]);
+  });
+});
+
+describe('os direitos do titular na sessão (P187, LGPD art. 18)', () => {
+  it('baixar os dados: sem sessão não chama o servidor; com sessão devolve o JSON e um nome com a data', async () => {
+    const { sessao, servidor, tempo } = montar();
+    expect(await sessao.baixarDados()).toEqual({ erro: 'entre na conta primeiro' });
+    expect(servidor.chamadas).toEqual([]);
+    await sessao.criar('ana@x.com', 'senhasegura');
+    tempo(Date.UTC(2026, 9, 18, 12));
+    expect(await sessao.baixarDados()).toEqual({ json: '{"v":1}', nome: 'cybermech-meus-dados-2026-10-18.json' });
+    servidor.dadosErro = 'não deu para baixar os dados';
+    expect(await sessao.baixarDados()).toEqual({ erro: 'não deu para baixar os dados' });
+  });
+
+  it('apagar a conta: senha errada não esquece nada; senha certa esquece a sessão e o token, mas deixa o progresso do aparelho', async () => {
+    const { sessao, servidor, local, armazem } = montar();
+    expect(await sessao.apagarConta('senhasegura')).toBe('entre na conta primeiro');
+    await sessao.criar('ana@x.com', 'senhasegura');
+    servidor.erroAoApagar = 'senha incorreta';
+    expect(await sessao.apagarConta('errada-errada')).toBe('senha incorreta');
+    expect(sessao.estado.email).toBe('ana@x.com');
+    expect(armazem.getItem(CHAVE)).toBe('tk-novo');
+    servidor.erroAoApagar = null;
+    expect(await sessao.apagarConta('senhasegura')).toBeNull();
+    expect(servidor.senhasDeApagar).toEqual(['errada-errada', 'senhasegura']);
+    expect(sessao.estado).toEqual({ email: null, sincronizado: false, medir: true });
+    expect(armazem.getItem(CHAVE)).toBeNull();
+    expect(local.atual).not.toBeNull(); // o progresso do navegador continua do aparelho
+    expect(servidor.chamadas).not.toContain('sair'); // a conta já não existe: não há sessão a encerrar
+  });
+
+  it('a medição: guarda a escolha no servidor e na tela; sem rede nada muda; entrar de novo traz a escolha de volta', async () => {
+    const { sessao, servidor } = montar();
+    expect(await sessao.definirMedicao(false)).toBe(false); // sem sessão
+    await sessao.criar('ana@x.com', 'senhasegura');
+    expect(sessao.estado.medir).toBe(true);
+    expect(await sessao.definirMedicao(false)).toBe(true);
+    expect(sessao.estado.medir).toBe(false);
+    expect(servidor.medir).toBe(false);
+    servidor.rede = false;
+    expect(await sessao.definirMedicao(true)).toBe(false);
+    expect(sessao.estado.medir).toBe(false); // sem rede a escolha não mudou
+    servidor.rede = true;
+    await sessao.sair();
+    expect(sessao.estado.medir).toBe(true); // convidado: padrão
+    await sessao.restaurar(); // sem token guardado: nada
+    const outro = montar();
+    outro.servidor.medir = false;
+    outro.armazem.setItem(CHAVE, 'tk-guardado');
+    await outro.sessao.restaurar();
+    expect(outro.sessao.estado.medir).toBe(false); // ao abrir o jogo em outro aparelho, a escolha da conta vale
   });
 });

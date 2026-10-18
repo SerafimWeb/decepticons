@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PlayMetrics } from "./PlayMetrics";
+import { faixaDeDuracao, PlayMetrics } from "./PlayMetrics";
 import { parsePlayReport, type PlayReport } from "../shared/net/playMetrics";
 const r: PlayReport = {
   v: 1,
@@ -112,5 +112,48 @@ describe("o mapa, a onda e o desfecho da rodada (P185)", () => {
     });
     expect(torto.snapshot().days!.map((d) => d.day)).toEqual(["2026-10-01"]);
     expect(torto.snapshot().maps).toHaveLength(1);
+  });
+});
+
+describe("duração e qualidade das rodadas (P188)", () => {
+  const DIA = Date.parse("2026-10-18T15:00:00Z");
+  it("a faixa de duração: os limites são 1, 5, 15 e 30 minutos", () => {
+    const f = (s: number) => faixaDeDuracao(s);
+    expect([0, 59, 60, 299, 300, 899, 900, 1799, 1800, 86400].map(f)).toEqual([0, 0, 1, 1, 2, 2, 3, 3, 4, 4]);
+  });
+  it("soma a duração e a qualidade por dia e por mapa; rodada sem degrau não conta na qualidade", () => {
+    const m = new PlayMetrics();
+    m.record({ ...r, id: "faixa-001", seconds: 30, map: "arena", tier: 0 }, DIA);
+    m.record({ ...r, id: "faixa-002", seconds: 120, map: "arena", tier: 2 }, DIA);
+    m.record({ ...r, id: "faixa-003", seconds: 2000, map: "arena" }, DIA);
+    const s = m.snapshot();
+    expect(s.days![0]!.dur).toEqual([1, 1, 0, 0, 1]);
+    expect(s.days![0]!.qual).toEqual([1, 0, 1]);
+    expect(s.maps![0]!.dur).toEqual([1, 1, 0, 0, 1]);
+    expect(s.maps![0]!.qual).toEqual([1, 0, 1]);
+  });
+  it("o degrau é 0, 1 ou 2 (o resto derruba o relatório) e fica fora do relatório que não o trouxe", () => {
+    expect(parsePlayReport({ ...r, tier: 2 })).toMatchObject({ tier: 2 });
+    for (const tier of [3, -1, 1.5, "1", null]) expect(parsePlayReport({ ...r, tier }), String(tier)).toBeNull();
+    expect("tier" in parsePlayReport(r)!).toBe(false);
+  });
+  it("arquivo de antes das faixas carrega com zeros; faixa torta também; e o que foi salvo volta igual", () => {
+    const m = new PlayMetrics();
+    m.record({ ...r, id: "salvar-faixa", map: "arena", tier: 1 }, DIA);
+    const cheio = JSON.parse(JSON.stringify(m.snapshot()));
+    const n = new PlayMetrics();
+    n.load(cheio);
+    expect(n.snapshot()).toEqual(m.snapshot());
+    const antigo = JSON.parse(JSON.stringify(cheio));
+    delete antigo.days[0].dur;
+    delete antigo.days[0].qual;
+    antigo.maps[0].dur = [1, 2];
+    antigo.maps[0].qual = [-1, 0, 0];
+    const o = new PlayMetrics();
+    o.load(antigo);
+    expect(o.snapshot().days![0]!.dur).toEqual([0, 0, 0, 0, 0]);
+    expect(o.snapshot().days![0]!.qual).toEqual([0, 0, 0]);
+    expect(o.snapshot().maps![0]!.dur).toEqual([0, 0, 0, 0, 0]);
+    expect(o.snapshot().maps![0]!.qual).toEqual([0, 0, 0]);
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { ACEITE_ATUAL, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_MEDICAO_PATH, SESSAO_HEADER } from '../../../shared/net/auth';
 import { ContaCliente } from './auth';
 
 const respostaJson = (body: unknown, ok = true, status = ok ? 200 : 400): typeof fetch =>
@@ -16,7 +17,7 @@ describe('ContaCliente', () => {
   it('criar conta com sucesso devolve token e e-mail', async () => {
     const c = new ContaCliente('wss://jogo.selvamkt.com.br');
     vi.stubGlobal('fetch', respostaJson({ token: 'abc', email: 'a@b.com', is_admin: false }));
-    expect(await c.criar('a@b.com', 'senhasegura')).toEqual({ token: 'abc', email: 'a@b.com', is_admin: false });
+    expect(await c.criar('a@b.com', 'senhasegura')).toEqual({ token: 'abc', email: 'a@b.com', is_admin: false, medir: true });
     vi.unstubAllGlobals();
   });
 
@@ -37,7 +38,7 @@ describe('ContaCliente', () => {
   it('eu(): token válido devolve o e-mail, inválido devolve null', async () => {
     const c = new ContaCliente('wss://jogo.selvamkt.com.br');
     vi.stubGlobal('fetch', respostaJson({ email: 'a@b.com', is_admin: false }));
-    expect(await c.eu('token-valido')).toEqual({ email: 'a@b.com', is_admin: false });
+    expect(await c.eu('token-valido')).toEqual({ email: 'a@b.com', is_admin: false, medir: true });
     vi.stubGlobal('fetch', respostaJson({ erro: 'sem sessão' }, false, 401));
     expect(await c.eu('token-invalido')).toBeNull();
     vi.unstubAllGlobals();
@@ -107,6 +108,82 @@ describe('ContaCliente: progresso do piloto (P174)', () => {
     expect(visto!.init.method).toBe('PUT');
     expect(JSON.parse(visto!.init.body as string)).toEqual(progresso);
     expect((visto!.init.headers as Record<string, string>)['x-cybermech-sessao']).toBe('tk');
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('ContaCliente: aceite e direitos do titular (P187, LGPD)', () => {
+  type Chamada = { url: string; init: RequestInit };
+  const espiao = (corpo: unknown, ok = true, status = 200) => {
+    const chamadas: Chamada[] = [];
+    vi.stubGlobal('fetch', (async (url: string, init: RequestInit) => {
+      chamadas.push({ url, init });
+      return { ok, status, json: async () => corpo } as unknown as Response;
+    }) as unknown as typeof fetch);
+    return chamadas;
+  };
+  const SERVIDOR = 'wss://jogo.exemplo';
+
+  it('criar manda o aceite da política; entrar não manda', async () => {
+    const c = new ContaCliente(SERVIDOR);
+    const a = espiao({ token: 't', email: 'a@b.com' });
+    await c.criar('a@b.com', 'senhasegura');
+    expect(a[0]!.url).toBe('https://jogo.exemplo' + CONTA_CRIAR_PATH);
+    expect(JSON.parse(a[0]!.init.body as string)).toEqual({ email: 'a@b.com', senha: 'senhasegura', aceite: ACEITE_ATUAL });
+    const b = espiao({ token: 't', email: 'a@b.com' });
+    await c.entrar('a@b.com', 'senhasegura');
+    expect(b[0]!.url).toBe('https://jogo.exemplo' + CONTA_ENTRAR_PATH);
+    expect(JSON.parse(b[0]!.init.body as string)).toEqual({ email: 'a@b.com', senha: 'senhasegura' });
+    vi.unstubAllGlobals();
+  });
+
+  it('dados: manda a sessão, devolve o JSON formatado; 401 diz para entrar de novo; sem token nem rede', async () => {
+    const c = new ContaCliente(SERVIDOR);
+    const a = espiao({ v: 1, conta: { email: 'a@b.com' } });
+    const r = await c.dados('tk');
+    expect(a[0]!.url).toBe('https://jogo.exemplo' + CONTA_DADOS_PATH);
+    expect((a[0]!.init.headers as Record<string, string>)[SESSAO_HEADER]).toBe('tk');
+    expect(r).toEqual({ json: JSON.stringify({ v: 1, conta: { email: 'a@b.com' } }, null, 2) });
+    espiao({ erro: 'sem sessão' }, false, 401);
+    expect(await c.dados('tk')).toEqual({ erro: 'sessão vencida: entre de novo' });
+    const f = espiao({});
+    expect(await c.dados('')).toEqual({ erro: 'sem servidor' });
+    expect(await new ContaCliente(undefined).dados('tk')).toEqual({ erro: 'sem servidor' });
+    expect(f).toHaveLength(0);
+    vi.stubGlobal('fetch', (async () => { throw new Error('x'); }) as unknown as typeof fetch);
+    expect(await c.dados('tk')).toEqual({ erro: 'servidor fora do ar' });
+    vi.unstubAllGlobals();
+  });
+
+  it('apagar: manda a senha e a sessão; null = apagada; a mensagem do servidor volta como está; nunca lança', async () => {
+    const c = new ContaCliente(SERVIDOR);
+    const a = espiao({ apagada: true });
+    expect(await c.apagar('tk', 'senhasegura')).toBeNull();
+    expect(a[0]!.url).toBe('https://jogo.exemplo' + CONTA_APAGAR_PATH);
+    expect(a[0]!.init.method).toBe('POST');
+    expect(JSON.parse(a[0]!.init.body as string)).toEqual({ senha: 'senhasegura' });
+    expect((a[0]!.init.headers as Record<string, string>)[SESSAO_HEADER]).toBe('tk');
+    espiao({ erro: 'senha incorreta' }, false, 401);
+    expect(await c.apagar('tk', 'errada-errada')).toBe('senha incorreta');
+    espiao(null, false, 500);
+    expect(await c.apagar('tk', 'x'.repeat(8))).toBe('não deu para apagar a conta');
+    vi.stubGlobal('fetch', (async () => { throw new Error('x'); }) as unknown as typeof fetch);
+    expect(await c.apagar('tk', 'senhasegura')).toBe('servidor fora do ar');
+    expect(await c.apagar('', 'senhasegura')).toBe('sem servidor');
+    vi.unstubAllGlobals();
+  });
+
+  it('medição: devolve a escolha que o servidor guardou, ou null quando não deu', async () => {
+    const c = new ContaCliente(SERVIDOR);
+    const a = espiao({ ativa: false });
+    expect(await c.medicao('tk', false)).toBe(false);
+    expect(a[0]!.url).toBe('https://jogo.exemplo' + CONTA_MEDICAO_PATH);
+    expect(JSON.parse(a[0]!.init.body as string)).toEqual({ ativa: false });
+    espiao({ erro: 'x' }, false, 400);
+    expect(await c.medicao('tk', true)).toBeNull();
+    espiao({ ativa: 'talvez' });
+    expect(await c.medicao('tk', true)).toBeNull();
+    expect(await c.medicao('', true)).toBeNull();
     vi.unstubAllGlobals();
   });
 });

@@ -36,6 +36,7 @@ import {
 } from '../shared/net/admin';
 import { PROTOCOL_VERSION, ROOM_SIZE } from '../shared/net/constants';
 import { tokenConfere } from './metricas';
+import { arquivosDoRegistro, REGISTRO_PASTA } from './registro';
 
 /** O arquivo de log que a tarefa do Windows escreve na pasta de dados (`servidor-windows.ps1`). */
 export const LOG_ARQUIVO = 'servidor.log';
@@ -247,10 +248,17 @@ export function fimDoArquivo(caminho: string, bytes = LOG_BYTES): string | null 
   }
 }
 
-/** As últimas linhas do log da tarefa (`servidor.log`) ou, sem ele, as que o servidor guardou desde que subiu. */
+/**
+ * As últimas linhas do registro técnico (`registro/servidor-AAAA-MM-DD.log`, o dia de hoje e, se ele ainda é curto, o de antes), ou do log da tarefa (`servidor.log`, de antes do registro
+ * existir) ou, sem arquivo nenhum, as que o servidor guardou desde que subiu.
+ */
 export function lerFimDoLog(dirDados: string | null, memoria: readonly string[]): AdminLog {
+  const pastaRegistro = dirDados ? join(dirDados, REGISTRO_PASTA) : null;
+  const doRegistro = pastaRegistro ? arquivosDoRegistro(pastaRegistro).slice(-2) : [];
   const arquivo = dirDados ? join(dirDados, LOG_ARQUIVO) : null;
-  const texto = arquivo && existsSync(arquivo) ? fimDoArquivo(arquivo) : null;
+  let texto: string | null = null;
+  if (pastaRegistro && doRegistro.length) texto = doRegistro.map((n) => fimDoArquivo(join(pastaRegistro, n)) ?? '').join('\n');
+  else if (arquivo && existsSync(arquivo)) texto = fimDoArquivo(arquivo);
   if (texto !== null) {
     // O Windows escreve \r\n; o aviso do SQLite do Node (experimental) é ruído que o dono não precisa ver a cada subida.
     const linhas = texto.split(/\r?\n/).filter((l) => l.length > 0 && !l.startsWith('(Use `node --trace-warnings') && !l.includes('ExperimentalWarning: SQLite'));

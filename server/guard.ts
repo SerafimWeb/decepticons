@@ -16,6 +16,7 @@
  * A alocação é toda por conexão (uma vez na entrada, uma vez na saída). Nada por mensagem: o `allow()` só mexe em
  * contadores da própria conexão.
  */
+import { parseUf } from '../shared/net/audiencia';
 import { PAIS_DESCONHECIDO, parsePais } from '../shared/net/telemetry';
 
 export interface GuardConfig {
@@ -125,6 +126,32 @@ export function clientIp(remote: string | undefined, header: string | string[] |
  */
 export function clientCountry(remote: string | undefined, header: string | string[] | undefined): string {
   return isLoopback(remote) ? parsePais(header) : PAIS_DESCONHECIDO;
+}
+
+/**
+ * O estado do Brasil (UF) de quem chegou, do cabeçalho `cf-region-code` da Cloudflare (precisa do "Add visitor location headers" ligado), com a regra de confiança do país: só vale vindo do
+ * túnel local. Só as 27 siglas, só para o Brasil; nunca cidade. `null` = não deu para saber.
+ */
+export function clientRegion(remote: string | undefined, pais: string, header: string | string[] | undefined): string | null {
+  return isLoopback(remote) ? parseUf(pais, header) : null;
+}
+
+/**
+ * O endereço como ele pode aparecer no **log** (P187, LGPD: o IP é dado pessoal e o log fica em arquivo): IPv4 com o último trecho mascarado (`212.8.252.x`, a rede e não a casa),
+ * IPv6 só com os três primeiros grupos (`2804:14d:5c80:x`). Basta para ver de qual rede veio um abuso; o endereço inteiro vive só na memória (o teto por IP e o balde de taxa).
+ */
+export function ipParaLog(ip: string): string {
+  const v4 = /^(\d{1,3}\.\d{1,3}\.\d{1,3})\.\d{1,3}$/.exec(ip);
+  if (v4) return `${v4[1]}.x`;
+  if (ip.includes(':')) {
+    // Expande o `::` para os três primeiros grupos serem os verdadeiros (`2001:db8::ff` começa por 2001:db8:0).
+    const [esq = '', dir = ''] = ip.split('::');
+    const antes = esq ? esq.split(':') : [];
+    const depois = ip.includes('::') && dir ? dir.split(':') : [];
+    const grupos = ip.includes('::') ? [...antes, ...Array(Math.max(0, 8 - antes.length - depois.length)).fill('0'), ...depois] : antes;
+    return `${grupos.slice(0, 3).join(':')}:x`;
+  }
+  return '?';
 }
 
 /** IPv6 mapeado (`::ffff:1.2.3.4`) vira `1.2.3.4`; o resto passa igual. */

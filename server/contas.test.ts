@@ -209,3 +209,74 @@ it('o diaMais atravessa mês e ano', () => {
   expect(diaMais('2026-01-01', -1)).toBe('2025-12-31');
   expect(diaMais('2026-10-18', -30)).toBe('2026-09-18');
 });
+
+describe('direitos do titular no banco (P187, LGPD art. 18)', () => {
+  let contas: Contas;
+  afterEach(() => contas?.close());
+  const NOW = Date.UTC(2026, 9, 18, 15, 0);
+  async function conta(email: string, aceite: string | null = '2026-10-18'): Promise<number> {
+    const r = await contas.criar(email, 'senhasegura', NOW, aceite);
+    if (!r.ok) throw new Error('deveria ter criado');
+    contas.criarSessao(r.conta.id, NOW);
+    return r.conta.id;
+  }
+
+  it('o aceite grava a data e a versão; conta sem aceite (de antes da política) fica nula e medida', async () => {
+    contas = new Contas(':memory:');
+    const a = await conta('a@x.com');
+    const b = await conta('b@x.com', null);
+    const da = contas.exportarDados(a, NOW)!;
+    expect(da.conta).toMatchObject({ aceiteVersao: '2026-10-18', aceiteEm: new Date(NOW).toISOString(), medirAtividade: true });
+    expect(contas.exportarDados(b, NOW)!.conta).toMatchObject({ aceiteVersao: null, aceiteEm: null, medirAtividade: true });
+  });
+
+  it('exportar traz tudo da conta e nada de segredo; conta que não existe devolve nulo', async () => {
+    contas = new Contas(':memory:');
+    const id = await conta('dados@x.com');
+    contas.gravarProgresso(id, JSON.stringify({ apelido: 'ANA', nivel: 3 }));
+    contas.registrarPartida(id, { segundos: 90, abates: 2, mortes: 1 }, NOW);
+    const d = contas.exportarDados(id, NOW)!;
+    expect(d.v).toBe(1);
+    expect(d.geradoEm).toBe(new Date(NOW).toISOString());
+    expect(d.progresso).toEqual({ apelido: 'ANA', nivel: 3 });
+    expect(d.atividade).toEqual([{ dia: '2026-10-18', segundos: 90, partidas: 1, abates: 2, mortes: 1 }]);
+    expect(d.sessoes).toHaveLength(1);
+    expect(Object.keys(d.conta).sort()).toEqual(['aceiteEm', 'aceiteVersao', 'administrador', 'criadaEm', 'email', 'medirAtividade']);
+    expect(contas.exportarDados(9999, NOW)).toBeNull();
+  });
+
+  it('apagar leva a conta, o progresso, a atividade e as sessões, só dessa conta; apagar de novo diz que não havia', async () => {
+    contas = new Contas(':memory:');
+    const a = await conta('apaga@x.com');
+    const b = await conta('fica@x.com');
+    contas.gravarProgresso(a, '{"x":1}');
+    contas.gravarProgresso(b, '{"y":2}');
+    contas.registrarPartida(a, { segundos: 10, abates: 0, mortes: 0 }, NOW);
+    expect(contas.apagarConta(a)).toBe(true);
+    expect(contas.exportarDados(a, NOW)).toBeNull();
+    expect(contas.lerProgresso(a)).toBeNull();
+    expect(contas.total()).toBe(1);
+    expect(contas.exportarDados(b, NOW)!.progresso).toEqual({ y: 2 });
+    expect(contas.exportarDados(b, NOW)!.sessoes).toHaveLength(1);
+    expect(contas.apagarConta(a)).toBe(false);
+    expect(contas.metricasUsuarios(NOW).contas).toBe(1);
+  });
+
+  it('desligar a medição apaga o que havia e impede o registro (visita e rodada); ligar de novo recomeça do zero', async () => {
+    contas = new Contas(':memory:');
+    const id = await conta('mede@x.com');
+    contas.registrarPartida(id, { segundos: 60, abates: 1, mortes: 0 }, NOW);
+    expect(contas.metricasUsuarios(NOW).jogaram.dia).toBe(1);
+    contas.definirMedicao(id, false);
+    expect(contas.metricasUsuarios(NOW).ativos.dia).toBe(0);
+    contas.registrarVisita(id, NOW);
+    contas.registrarPartida(id, { segundos: 60, abates: 1, mortes: 0 }, NOW);
+    expect(contas.metricasUsuarios(NOW).ativos.dia).toBe(0);
+    expect(contas.validarSessao(contas.criarSessao(id, NOW))!.medir).toBe(false);
+    contas.definirMedicao(id, true);
+    contas.registrarVisita(id, NOW);
+    const m = contas.metricasUsuarios(NOW);
+    expect(m.ativos.dia).toBe(1);
+    expect(m.jogaram.dia).toBe(0); // recomeçou do zero: a rodada de antes não voltou
+  });
+});
