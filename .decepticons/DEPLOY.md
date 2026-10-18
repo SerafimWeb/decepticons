@@ -69,11 +69,12 @@ No Git Bash, `gh secret set` corrompe caminhos (`/home/...` vira `D:/Git/home/..
    `CYBERMECH · servidor de jogo em ws://localhost:2567/?sala=ARENA`. Outra porta: `PORT=3000 npm run server`
    (no PowerShell, `$env:PORT=3000; npm run server`).
 2. A cada 10 s o servidor mostra as salas abertas, os jogadores e o tempo médio do tick (meta: até 2 ms).
-3. **Rede de casa:** os outros computadores usam `ws://IP-DESTE-PC:2567`. Na primeira vez, o Windows pergunta se
+3. **Rede de casa (sem VPN, para testar dois PCs):** os outros computadores usam `ws://IP-DESTE-PC:2567` (ligue o servidor com `HOST=0.0.0.0`; o padrão é só localhost, para o túnel). Na primeira vez, o Windows pergunta se
    libera o Node no firewall: libere só para redes privadas.
 4. **Pela internet (playtest):** Cloudflare Tunnel, sem abrir porta nem mostrar o IP:
    `cloudflared tunnel --url http://localhost:2567` dá um endereço `https://….trycloudflare.com`; o jogo usa o
    mesmo endereço com `wss://`. O endereço muda a cada vez que o túnel sobe.
+4b. **Cortes por taxa alta e picos (18/10, P184).** A porteira (`server/guard.ts`) limita cada conexão a 60 mensagens por segundo (o cliente manda ~31), com folga de 120 para picos. **Acima disso a mensagem é descartada e a conexão segue**; só o abuso de verdade (o descarte acumulado passa de 600, caindo 60 por segundo) corta (código 4008, `corte de <ip>: taxa alta demais` no log). Um pico aparece como `descarte de <ip>: pico de mensagens (a conexão segue)`. **Por quê:** o PC do servidor é o mesmo em que se trabalha, e quando ele fica sem memória o laço do Node congela por segundos (o `tick` do log é uma média móvel: 298 e 1.093 ms são travadas de segundos); as mensagens de todos chegam juntas na volta, e antes um jogador bem-comportado era cortado por isso. **Se a conexão cair mesmo assim,** olhe, nesta ordem: (1) o `jogo.cybermech.online/status` responde? (um 502 da Cloudflare é o túnel fora do ar: **o túnel cai quando a VPN do PC do servidor muda**); (2) a memória livre do PC do servidor (menos de 1 GB: feche o IDE e os navegadores); (3) o `servidor.log`.
 5. **Jogar (M4, 26/09):** o endereço do jogo com `?sala=` entra online.
    - No próprio PC do servidor: `https://cybermech.online/jogar/?sala=ARENA&servidor=ws://localhost:2567&nome=Dan`
      (ou `npm run dev` e `http://localhost:5173/?sala=ARENA`).
