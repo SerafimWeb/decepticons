@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O PRIMEIRO TESTE ONLINE: OS BOTS DIFÍCEIS DEMAIS, AS REGRAS NO PAINEL E O "PROBLEMA" QUE ERA O PC — Claude, 18/10 (branch `claude/regras-online`, P201 e P202)
+
+**O Comandante (18/10), depois de jogar online com uma pessoa da internet:** *"achamos MUITO DIFÍCIL os bots inimigos… não conseguimos trocar direito devido à pressão adversária… precisamos melhorar a logística de controlar esse tipo de coisa através do painel admin que só eu tenho"*; e a janela do servidor marcava PROBLEMA ("atraso do laço (p99) 107,9 ms").
+
+**1. A causa dos bots difíceis (achada no código):** a sala online usava o padrão de uma partida solo (3 Mechs e 2 andróides, dificuldade normal) e **a sala não aplicava o limite de atacantes** (`maxAttackers` ficava infinito): **todos os bots atacavam duas pessoas ao mesmo tempo**. É o oposto do jogo solo, que limita a 2.
+**2. O que mudou:** o padrão online agora é **de iniciante** (fácil, 2 Mechs, 1 andróide, 1,5 atacantes juntos) e **o dono ajusta no painel**: janela SERVIDOR → **[ REGRAS DAS SALAS ]**: dificuldade, Mechs, andróides, pressão; receitas INICIANTE / PADRÃO / DESAFIO; **APLICAR** vale na hora nas salas de pé (dificuldade, pressão e Mechs; os andróides valem nas salas novas). Guardado no servidor (`regras-online.json`), sobrevive ao reinício. **Porta:** só a chave do dono ou a sessão de uma conta admin (`PAINEL_ADMIN.md` § 7).
+**3. O "PROBLEMA" do painel não era o servidor** (`server/admin.ts`): o Node demorou a olhar a fila porque o **PC estava saturado** (as compilações, os testes das duas sessões, o navegador); o TESTAR, com gente de mentira, deu 15,8 ms. **Agora, numa janela sem ninguém jogando, o atraso do laço vira aviso (não problema)** e o painel diz que foi outro programa; com gente jogando vale a régua inteira.
+
+**Provas:** 5 testes (o padrão de iniciante e as receitas, o que vem de fora é puxado para os limites, o armazém em arquivo e o aviso às salas, a sala nova e a sala de pé aplicando, as rotas do dono com o servidor de verdade: 401 sem chave, o POST puxa para os limites e o GET devolve o que vale).
+
+**Falta (R13):** **não vi a janela REGRAS DAS SALAS no navegador** (testes, tipos e o servidor de verdade, sim): o Comandante confere; **o efeito sobre o jogo online (a sensação de dificuldade) é do Comandante julgar**: os números de iniciante são proposta; falta escalar por quantidade de gente, ajustar **por sala** e o dano dos bots; os andróides só mudam nas salas novas; a conta "superadmin" é o `is_admin` que já existia (nenhum papel novo).
+
+**Onde o Comandante confere:** jogue online (`ARENA`), abra `?comandante=1` → COMANDO → SERVIDOR → **[ REGRAS DAS SALAS ]**, escolha INICIANTE ou DESAFIO e APLICAR: a sala de pé muda sem reiniciar.
+
+**Próxima sessão começa com:** o que o Comandante julgar depois do segundo teste online.
+
 ## AS PENDÊNCIAS DO LANÇAMENTO: O QUE O COMANDANTE DECIDIU, O E-MAIL DO ENCARREGADO E O PASSO A PASSO DO QUE SÓ ELE FAZ — Claude, 18/10 (branch `claude/pendencias-lancamento`, P199 e P200)
 
 **O Comandante (18/10), respondendo à lista do que faltava:** manter o servidor neste PC por ora (ele está terminando o jogo para deixar o PC só como servidor); o e-mail do encarregado é `volkov@serafimweb.com`; quer as orientações da Cloudflare e como criar a chave do Google; "já estou divulgando, conclua as pendências"; e pediu para manter tudo limpo, enxuto e com boas práticas, perguntando se a contagem de "mais de 3.500 testes" estava duplicada e se há algum bug que torna as conversas longas e caras.

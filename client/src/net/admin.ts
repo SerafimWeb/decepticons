@@ -22,6 +22,7 @@ import {
   lerTeste,
 } from '../../../shared/net/admin';
 import { serverHttpUrl } from '../../../shared/net/serverUrl';
+import { ADMIN_REGRAS_GRAVAR_PATH, ADMIN_REGRAS_PATH, lerRegrasDaResposta, type RegrasOnline } from '../../../shared/regras';
 import { ADMIN_VISIBILIDADE_PATH, lerConfig, type ConfigDeVisibilidade, type EstadoDeVisibilidade } from '../../../shared/visibilidade';
 import { parseStatus, STATUS_PATH, type ServerStatus } from '../../../shared/net/status';
 
@@ -77,6 +78,10 @@ export class AdminCliente {
   avaliar = (): Promise<Resposta<AdminAvaliacao>> => this.chamar(ADMIN_AVALIAR_PATH, lerAvaliacao);
   testar = (): Promise<Resposta<AdminTeste>> => this.chamar(ADMIN_TESTAR_PATH, lerTeste, { metodo: 'POST', esperaMs: ESPERA_TESTE_MS });
   fecharSala = (sala: string): Promise<Resposta<true>> => this.chamar(ADMIN_FECHAR_SALA_PATH, (r) => ((r as { ok?: unknown } | null)?.ok === true ? true : null), { metodo: 'POST', corpo: { sala } });
+  /** As regras dos bots das salas online (P199): o que o servidor usa agora. */
+  regras = (): Promise<Resposta<RegrasOnline>> => this.chamar(ADMIN_REGRAS_PATH, lerRegrasDaResposta);
+  /** Grava as regras (o servidor puxa o que passar dos limites) e devolve as que valem. Salas de pé recebem na hora. */
+  gravarRegras = (r: RegrasOnline): Promise<Resposta<RegrasOnline>> => this.chamar(ADMIN_REGRAS_GRAVAR_PATH, lerRegrasDaResposta, { metodo: 'POST', corpo: r });
   /** Grava o que os jogadores veem (P191): só as exceções ao padrão do código. Devolve a configuração nova do servidor. */
   gravarVisibilidade = (itens: Record<string, EstadoDeVisibilidade>): Promise<Resposta<ConfigDeVisibilidade>> =>
     this.chamar(ADMIN_VISIBILIDADE_PATH, (r) => ((r as { itens?: unknown } | null)?.itens ? lerConfig(r) : null), { metodo: 'POST', corpo: { itens } });

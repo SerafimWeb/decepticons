@@ -4,7 +4,9 @@ import type RAPIER from '@dimforge/rapier3d-simd-compat';
 import * as THREE from 'three';
 import { MOUNTS, type MountId } from '../client/src/combat/mounts';
 import type { WeaponStats } from '../client/src/combat/weapons';
+import { BOT_SKILLS } from '../client/src/combat/BotController';
 import { DEFAULT_SETTINGS } from '../client/src/core/Settings';
+import { REGRAS_SEM_LIMITE, type RegrasOnline } from '../shared/regras';
 import { Android } from '../client/src/entities/Android';
 import { CHASSIS, PILOT_ANDROID_STATS } from '../client/src/entities/chassis';
 import type { MechBase, MechPart } from '../client/src/entities/MechBase';
@@ -99,17 +101,25 @@ export class ArenaRoom {
   /** Sala fechada: o mundo físico foi liberado; mensagens e saídas que ainda chegarem são ignoradas. */
   private disposed = false;
 
-  static async create(code: string): Promise<ArenaRoom> {
-    return new ArenaRoom(code, await PhysicsWorld.create());
+  /** O servidor sempre passa as regras do dono; quem chama sem elas (os testes e as bancadas) fica com a sala antiga, sem limite de atacantes. */
+  static async create(code: string, regras: RegrasOnline = REGRAS_SEM_LIMITE): Promise<ArenaRoom> {
+    return new ArenaRoom(code, await PhysicsWorld.create(), regras);
   }
+
+  /** As regras dos bots desta sala (P199): quantos Mechs a sala usa; a dificuldade e a pressão vão direto no `BotSystem`. */
+  private regras: RegrasOnline;
 
   private constructor(
     readonly code: string,
     private readonly physics: PhysicsWorld,
+    regras: RegrasOnline,
   ) {
+    this.regras = regras;
     // allies: false — o roster de rede ainda não sabe descrever um aliado pros outros jogadores
     // (AUSENTE no multiplayer, ver Match.ts e STATUS_REAL.md); a Arena offline já tem aliado.
-    this.match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: DEFAULT_SETTINGS, debris: false, allies: false });
+    // O pool de Mechs é sempre o cheio (3): quantos entram em campo é a regra (`aplicarRegras`); os andróides são os da regra e valem a partir desta sala.
+    this.match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: { ...DEFAULT_SETTINGS, enemyMechs: 3, enemyAndroids: regras.androides }, debris: false, allies: false });
+    this.aplicarRegras(regras);
     // Eventos para os clientes desenharem o que o servidor decidiu: cada tiro (o cliente faz o projétil visual)
     // e cada abate (lista de abates).
     this.match.projectiles.onFired = (origin, dir, owner, w) => this.shot(owner, origin, dir, w);
@@ -376,8 +386,18 @@ export class ArenaRoom {
     return id;
   }
 
+  /**
+   * As regras do dono (P199), na hora e com a sala de pé: a dificuldade e a pressão valem no próximo tick; o número de Mechs vale já (o excedente vira reserva). Os andróides só mudam nas salas novas.
+   */
+  aplicarRegras(r: RegrasOnline): void {
+    this.regras = r;
+    this.match.bots.setSkill(BOT_SKILLS[r.dificuldade]);
+    this.match.bots.maxAttackers = r.atacantes;
+    if (!this.disposed && this.units.length > 0) this.broadcastRoster();
+  }
+
   private broadcastRoster(): void {
-    this.match.bots.setMechCapacity(ROOM_SIZE - this.humans.size);
+    this.match.bots.setMechCapacity(Math.min(ROOM_SIZE - this.humans.size, this.regras.mechs));
     const entries: RosterEntry[] = this.units.filter(u => !this.match.bots.isReserved(u.mech)).map(({ id, kind, name, build }) => ({ id, kind, name, build }));
     const bytes = encodeRoster(this.w, entries);
     for (const h of this.humans.values()) h.peer.send(bytes);

@@ -22,6 +22,7 @@ import { FalhasPorConta, LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
 import { corsDoPedido, origemPermitida, origensExtras } from './origem';
 import { VISIBILIDADE_PATH } from '../shared/visibilidade';
 import { ArmazemDeVisibilidade } from './visibilidade';
+import { ArmazemDeRegras } from './regras';
 import { bancoDeContas, pastaDados } from './dados';
 import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
 import { Telemetria } from './telemetria';
@@ -128,6 +129,8 @@ export async function startServer(
      * Testes que passam `dbContas: ':memory:'` ficam sem pasta (nada em disco) a menos que passem esta.
      */
     dirDados?: string;
+    /** As regras dos bots de quando ainda não há arquivo (os testes passam as da sala antiga); padrão: as de iniciante. */
+    regrasIniciais?: import('../shared/regras').RegrasOnline;
     /** Token da porta privada `GET /metricas`. Sem ele e sem pasta de dados, a porta fica desligada (404). */
     metricasToken?: string;
     /** De quanto em quanto tempo grava os números em disco, se mudaram (padrão 60 s). */
@@ -182,7 +185,7 @@ export async function startServer(
     if (open) return Promise.resolve(open);
     let p = creating.get(code);
     if (!p) {
-      p = ArenaRoom.create(code).then((room) => {
+      p = ArenaRoom.create(code, regras.atual()).then((room) => {
         // A sala de teste do painel (`TESTE-…`) fica fora dos números de produto.
         if (!ehSalaDeTeste(code)) {
           room.onEntrou = (peer) => {
@@ -330,6 +333,11 @@ export async function startServer(
     }
   };
   const visibilidade = new ArmazemDeVisibilidade(dirDados);
+  const regras = new ArmazemDeRegras(dirDados, opts.regrasIniciais);
+  regras.aoMudar((r) => {
+    for (const sala of rooms.values()) sala.aplicarRegras(r);
+    log(`regras das salas online: ${r.dificuldade}, ${r.mechs} Mech(s), ${r.androides} andróide(s), ${r.atacantes} atacante(s) ao mesmo tempo`);
+  });
   /** Quem está batendo à porta do dono: o número da conta (sessão de uma conta, no cabeçalho da sessão ou no das métricas), o dono (a chave do servidor) ou ninguém conhecido. */
   const atorDoPedido = (req: { headers: Record<string, string | string[] | undefined> }): string => {
     for (const h of [SESSAO_HEADER, METRICAS_HEADER]) {
@@ -917,6 +925,7 @@ export async function startServer(
   admin = new Admin({
     token: metricasToken,
     contaAdmin: sessaoDeAdmin,
+    regras: { atual: () => regras.atual(), gravar: (x) => regras.gravar(x) },
     gravarVisibilidade: (itens) => {
       statusAt = 0; // o /status leva a visibilidade: a próxima resposta já traz a nova
       return visibilidade.gravar(itens);

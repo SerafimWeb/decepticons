@@ -4521,6 +4521,8 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .vis-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 6px; border-left: 3px solid transparent; font-size: 12px; color: var(--ink); }
 .vis-linha.mudou { border-left-color: var(--warn); }
 .vis-linha.restrito .vis-nome { color: var(--warn); }
+.vis-esq { display: flex; flex-direction: column; gap: 1px; }
+.vis-ajuda { font-size: 10px; color: var(--muted); }
 .vis-seg { display: inline-flex; }
 .vis-opcao { padding: 2px 10px; font-size: 10px; letter-spacing: 1px; color: var(--muted); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer; }
 .vis-opcao[aria-pressed='true'].publico { color: #000; background: var(--accent); border-color: var(--accent); }

@@ -35,6 +35,7 @@ import {
   type Veredito,
 } from '../shared/net/admin';
 import { PROTOCOL_VERSION, ROOM_SIZE } from '../shared/net/constants';
+import { ADMIN_REGRAS_GRAVAR_PATH, ADMIN_REGRAS_PATH, type RegrasOnline } from '../shared/regras';
 import { ADMIN_VISIBILIDADE_PATH, type ConfigDeVisibilidade } from '../shared/visibilidade';
 import { tokenConfere } from './metricas';
 import { arquivosDoRegistro, REGISTRO_PASTA } from './registro';
@@ -334,7 +335,15 @@ export function avaliar(amostras: readonly AdminAmostra[], ctx: ContextoDaAvalia
   const tick = comSala.map((a) => a.tickMs);
   if (tick.length) checagens.push(checar('Tempo do tick (p95 da pior sala)', pct(tick, 95), 'ms', METAS.tickMs, 'Cada sala tem 16,7 ms por tick; acima de 4 ms o jogo perde o compasso com poucas salas. Veja a CPU e o atraso do laço.'));
   else checagens.push({ nome: 'Tempo do tick (p95 da pior sala)', valor: 'sem sala aberta na janela', limite: `até ${METAS.tickMs.ok} ms`, resultado: 'ok', dica: 'Rode TESTAR para medir com uma sala de verdade.' });
-  checagens.push(checar('Atraso do laço (p99)', pct(amostras.map((a) => a.lacoMs), 99), 'ms', METAS.lacoMs, 'O Node demorou a voltar a olhar o servidor: outro programa pesado na máquina, ou a CPU saturada.'));
+  // O atraso do laço de uma janela SEM ninguém jogando é quase sempre outro programa pesado na máquina (o dono compilando, o navegador, o editor): vira aviso, não "problema" (18/10: o painel marcou PROBLEMA
+  // com 0 jogadores e o teste de verdade passou). Com gente jogando na janela, vale a régua inteira, sobre as amostras dessa gente.
+  const lacoComGente = amostras.filter((a) => a.jogadores > 0).map((a) => a.lacoMs);
+  const lacoCheck = checar('Atraso do laço (p99)', pct(lacoComGente.length ? lacoComGente : amostras.map((a) => a.lacoMs), 99), 'ms', METAS.lacoMs, 'O Node demorou a voltar a olhar o servidor: outro programa pesado na máquina, ou a CPU saturada.');
+  if (!lacoComGente.length && lacoCheck.resultado === 'falha') {
+    lacoCheck.resultado = 'atencao';
+    lacoCheck.dica = 'O Node demorou a voltar a olhar o servidor, mas **ninguém estava jogando** na janela: foi outro programa pesado na máquina (compilação, navegador, editor), não o jogo. O TESTAR mede com gente de verdade.';
+  }
+  checagens.push(lacoCheck);
   checagens.push(checar('CPU (média, de um núcleo)', media(amostras.map((a) => a.cpuPct)), '%', METAS.cpuPct, 'O servidor usa metade de um núcleo ou mais: com mais salas, pede outra máquina ou menos bots por sala.', (x) => String(Math.round(x))));
   const rss = amostras.map((a) => a.rssMB);
   checagens.push(checar('Memória (RSS atual)', rss.length ? rss[rss.length - 1]! : 0, 'MB', METAS.rssMB, 'O PC de casa tem pouca memória livre: acima de 500 MB o Windows começa a trocar e o tick atrasa.', (x) => String(Math.round(x))));
@@ -421,6 +430,8 @@ export interface AdminOpcoes {
   fecharSala: (codigo: string) => boolean;
   /** A bateria de clientes de mentira (`server/autoteste.ts`). */
   testar: () => Promise<AdminTeste>;
+  /** As regras dos bots das salas online (P199): ler e gravar (o servidor valida e puxa para os limites). Sem isto, as rotas respondem 501. */
+  regras?: { atual: () => RegrasOnline; gravar: (x: unknown) => RegrasOnline };
   /** O que os jogadores veem (P191): grava as exceções ao padrão do código; `null` = formato inválido. Sem isto, `POST /admin/visibilidade` responde 501. */
   gravarVisibilidade?: (itens: unknown) => ConfigDeVisibilidade | null;
   /** Faz o servidor salvar e sair com o código de reinício; sem isto, `POST /admin/reiniciar` responde 501. */
@@ -442,8 +453,8 @@ const CORS = {
   'access-control-allow-headers': `content-type, ${ADMIN_HEADER}`,
 } as const;
 
-const ROTAS_GET = new Set<string>([ADMIN_ESTADO_PATH, ADMIN_HISTORICO_PATH, ADMIN_LOG_PATH, ADMIN_AVALIAR_PATH]);
-const ROTAS_POST = new Set<string>([ADMIN_TESTAR_PATH, ADMIN_FECHAR_SALA_PATH, ADMIN_REINICIAR_PATH, ADMIN_VISIBILIDADE_PATH]);
+const ROTAS_GET = new Set<string>([ADMIN_ESTADO_PATH, ADMIN_HISTORICO_PATH, ADMIN_LOG_PATH, ADMIN_AVALIAR_PATH, ADMIN_REGRAS_PATH]);
+const ROTAS_POST = new Set<string>([ADMIN_TESTAR_PATH, ADMIN_FECHAR_SALA_PATH, ADMIN_REINICIAR_PATH, ADMIN_VISIBILIDADE_PATH, ADMIN_REGRAS_GRAVAR_PATH]);
 
 export class Admin {
   private reiniciando = false;
@@ -554,6 +565,19 @@ export class Admin {
         } finally {
           this.testando = false;
         }
+        return true;
+      }
+      case ADMIN_REGRAS_PATH:
+        if (!this.o.regras) return recusar(501, { erro: 'o servidor não guarda as regras' });
+        json(200, this.o.regras.atual());
+        return true;
+      case ADMIN_REGRAS_GRAVAR_PATH: {
+        if (!this.o.regras) return recusar(501, { erro: 'o servidor não guarda as regras' });
+        const corpo = await this.corpo(req);
+        if (!corpo) return recusar(400, { erro: 'regras inválidas' });
+        const novas = this.o.regras.gravar(corpo);
+        this.o.anotar(`painel: regras das salas online gravadas (${novas.dificuldade}, ${novas.mechs} Mech(s), ${novas.androides} andróide(s), ${novas.atacantes} atacante(s))`);
+        json(200, novas);
         return true;
       }
       case ADMIN_VISIBILIDADE_PATH: {

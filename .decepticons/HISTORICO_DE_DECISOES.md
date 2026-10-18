@@ -1,3 +1,14 @@
+## [2026-10-18] As regras dos bots online são do dono, no painel; o padrão online é de iniciante (Claude, P201 e P202)
+
+**Ordem:** *"MUITO DIFÍCIL os bots inimigos… pressão adversária… controlar esse tipo de coisa através do painel admin que só eu tenho"*.
+
+**Decisões:**
+1. **A causa estava no código, não no gosto:** a sala online não aplicava o limite de atacantes. Corrigir o padrão (iniciante: fácil, 2 Mechs, 1 andróide, 1,5 atacantes) **e** dar o controle ao dono: o próximo teste pode pedir o contrário.
+2. **As regras moram no servidor, não no jogador:** é a autoridade da sala (G13). O painel só as lê e as grava, pela porta que já exige a chave do dono ou uma conta admin (a mesma régua de erros por IP). **Nenhum papel novo de "superadmin":** o `is_admin` que já existe é o dono.
+3. **Aplica ao vivo onde dá:** dificuldade, pressão e número de Mechs trocam na sala de pé; os andróides só nas salas novas (a sala não cria nem remove corpo no meio da partida: G4/G5). Dizer isso na tela é melhor do que fingir que vale tudo na hora.
+4. **Três receitas de um clique** (INICIANTE, PADRÃO, DESAFIO): o dono está testando com gente de verdade e quer trocar de postura sem pensar em quatro números.
+5. **O alarme do painel é o de quem opera:** "PROBLEMA" com 0 jogadores, por causa do PC saturado, levou o dono a duvidar do servidor. Sem gente jogando, o atraso do laço é aviso e a dica diz de quem é a culpa.
+
 ## [2026-10-18] As pendências do lançamento: o que o Comandante decidiu e o que ficou com ele (Claude, P199 e P200)
 
 **Ordem:** *"por enquanto vamos manter assim… email é volkov@serafimweb.com… me passe as orientações pra enviar ao cloudflare… me ensine como criar a chave… temos que sempre manter limpo tudo… conclua as pendências. não precisa ficar procurando problema ou inventando mais trabalho"*.

@@ -11,6 +11,7 @@ import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { Match } from '../sim/Match';
 import { NetClient } from './NetClient';
+import { REGRAS_SEM_LIMITE } from '../../../shared/regras';
 import { onlineConfig } from './onlineConfig';
 import { OnlineSession, RECONEXAO_PADRAO_MS, rotariesOf, type OnlineStatus } from './OnlineSession';
 
@@ -34,7 +35,7 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
   let server: GameServer;
   beforeAll(async () => {
     await RAPIER.init();
-    server = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    server = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
   });
   afterAll(async () => {
     await server.close();
@@ -480,7 +481,7 @@ describe('G13: a conexão que cai volta sozinha (o online caía e pedia para rec
     const t0 = performance.now();
     for (;;) {
       try {
-        return await startServer({ port: porta, host: '127.0.0.1', dbContas: ':memory:' });
+        return await startServer({ port: porta, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
       } catch (e) {
         if (performance.now() - t0 > 8000) throw e;
         await sleep(100);
@@ -489,7 +490,7 @@ describe('G13: a conexão que cai volta sozinha (o online caía e pedia para rec
   }
 
   it('o servidor cai e volta no mesmo endereço: a sessão avisa "reconectando" (tentativa n de m), entra na sala de novo e vê os robôs de novo', async () => {
-    let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
     const porta = servidor.port;
     const j = await jogador(`ws://127.0.0.1:${porta}/?sala=G13A`, 'Volta', { reconexaoMs: [100, 200, 300, 500, 800, 1200] });
     try {
@@ -515,7 +516,7 @@ describe('G13: a conexão que cai volta sozinha (o online caía e pedia para rec
   }, 40000);
 
   it('duas quedas seguidas: a segunda também reconecta com as tentativas inteiras (o contador volta a zero quando a sala volta)', async () => {
-    let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
     const porta = servidor.port;
     const j = await jogador(`ws://127.0.0.1:${porta}/?sala=G13A`, 'DuasVezes', { reconexaoMs: [100, 150] });
     try {
@@ -536,7 +537,7 @@ describe('G13: a conexão que cai volta sozinha (o online caía e pedia para rec
   }, 60000);
 
   it('esgotadas as tentativas com o servidor fora do ar, o estado fica "caiu" (aí o jogador recarrega) e nada mais é tentado', async () => {
-    const servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    const servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
     const j = await jogador(`ws://127.0.0.1:${servidor.port}/?sala=G13A`, 'Desiste', { reconexaoMs: [50, 80] });
     try {
       expect(await ate(j, () => j.session.joined)).toBe(true);
@@ -553,7 +554,7 @@ describe('G13: a conexão que cai volta sozinha (o online caía e pedia para rec
   }, 30000);
 
   it('quem foi recusado (montagem inválida) NÃO reconecta: a resposta do servidor não muda tentando de novo', async () => {
-    const servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    const servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
     const j = await jogador(`ws://127.0.0.1:${servidor.port}/?sala=G13A`, 'Recusado', { build: 'lixo', reconexaoMs: [50, 80] });
     try {
       expect(await ate(j, () => j.estados.some((s) => s.state === 'recusado'), 8000)).toBe(true);
@@ -567,7 +568,7 @@ describe('G13: a conexão que cai volta sozinha (o online caía e pedia para rec
   }, 30000);
 
   it('encerrar a sessão durante a espera cancela a reconexão: nenhuma conexão nova chega ao servidor que volta', async () => {
-    let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:' });
+    let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
     const porta = servidor.port;
     const j = await jogador(`ws://127.0.0.1:${porta}/?sala=G13A`, 'Sai', { reconexaoMs: [600, 600] });
     try {
