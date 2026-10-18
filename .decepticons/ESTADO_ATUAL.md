@@ -14,13 +14,13 @@
 
 **Provas:** testes do corpo no chão de verdade (anda os 1.550 m em ~10 minutos, segue o rio, perna caída = metade da velocidade, canhão com erro de mira determinístico, visada, alcance), da missão, da partida inteira (derrota, vitória, recomeço, o jogador morrendo, o placar) e do HUD. **Mutação à mão: 59 de 60 pegas** (a que escapa é equivalente). **Visto no jogo de verdade** (Chrome sem GPU, `arte/amazonia-missao-draga-c1-claude.jpg` e `amazonia-missao-fim-c1-claude.jpg`): a barra do Draga, a célula da aldeia, os avisos, as pernas amarelas do Draga entre as árvores perto da aldeia, e a derrota quando ele cruza a linha.
 
-**Custo de CPU:** por tick, o Draga é um `MechBase` a mais (um character controller) e o cérebro faz uma conta de rumo e um laço sobre os alvos (≤ 8); quando atira, um raio. **O JS de partida subiu para 499,2 / 500 KB** (a folga é de 0,8 KB): **as partes D e E TÊM de carregar sob demanda**, senão o push barra.
+**Custo de CPU:** por tick, o Draga é um `MechBase` a mais (um character controller) e o cérebro faz uma conta de rumo e um laço sobre os alvos (≤ 8); quando atira, um raio. **O JS de partida está em 490,7 / 500 KB** (a parte C pagou ~2 KB de HUD, fases e a fiação do `Match`; a dieta de JS da `main`, P-dieta, tinha devolvido a folga: antes de somar, 499,2): **o que a parte D e a E trouxerem só da missão deve carregar sob demanda** (a folga é de 9,3 KB).
 
 **Onde o Comandante confere:** **`cybermech.online/jogar/?mapa=amazonia&modo=survival`** (o seletor de mapas, AMAZÔNIA · RIO VIVO, leva direto): você nasce na aldeia e o Draga está a 1.650 m, marchando para lá. Para ver o fim rápido: **`&marcha=0.9`** (ele chega à aldeia em ~2 minutos: derrube-o antes ou veja a derrota).
 
 **Falta (R13):** **ainda não é a fase inteira**: sem **escudo, geradores, torres, força de defesa** (parte D) e sem **invasão com androides nem cura de verdade** (parte E). Os números de equilíbrio (tronco 4.800, pernas 1.600, o canhão de cerco que mata um Vector-09 em um tiro certeiro) são **de partida, não validados com jogadores**. O Draga **não tem som de passo nem de tiro próprios, nem explosão ao cair** (ele some como os outros Mechs). **A floresta densa esconde o Draga do chão** (só se vê acima das copas, no rio e nas clareiras). **Não medido em GPU de verdade.** **A imagem da serpente não chegou.**
 
-**Próxima sessão começa com:** a **parte D** (os geradores do escudo, as torres da margem, a força de defesa e o ato 1), **carregada sob demanda** (a folga de JS é de 0,8 KB).
+**Próxima sessão começa com:** a **parte D** (os geradores do escudo, as torres da margem, a força de defesa e o ato 1), **carregada sob demanda** (a folga de JS é de 9,3 KB).
 
 ## IDIOMA, SEGUNDA RODADA: OS MODOS DE JOGO (A PRAIA, A BANDEIRA, O DOMÍNIO) — Claude, 17/10 (branch `claude/idioma-modos`, P173)
 

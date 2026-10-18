@@ -128,7 +128,7 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 | **A — o Draga** | o `.glb` riggado (script de Blender), o andar do quadrúpede (função pura, com teste), o `WalkerVisual`, a bancada de fotos e um **link de demonstração** no jogo (`?walker`) | **feita (17/10)** |
 | **B — o rio e o mapa** | o mapa `amazonia` (terreno em pedaços, floresta instanciada, o rio com a frente de limpeza), a bancada de custo e o teto de desenhos em teste | **feita (17/10)**: `?mapa=amazonia&modo=deathmatch`; o Draga desce o leito e o rio muda com ele (DEMO) |
 | **C — o Draga na partida** | o chefe com os números, os módulos de dano (as quatro pernas), o rastejo, a barra do chefe e a chegada à aldeia (derrota) | **feita (17/10)**: `?mapa=amazonia&modo=survival` é a missão do rio; derrubar o Draga vence, ele chegar à aldeia perde |
-| **D — a defesa** | os geradores do escudo, as torres, a força de defesa e o ato 1 | **próxima** (e **tem de carregar sob demanda**: o JS de partida está em 499,2 de 500 KB) |
+| **D — a defesa** | os geradores do escudo, as torres, a força de defesa e o ato 1 | **próxima** (o que for só da missão carrega sob demanda: o JS de partida está em 490,7 de 500 KB) |
 | **E — a invasão** | a escotilha, os androides, os núcleos e a cura do rio (atos 3 e 4) | — |
 
 ## 8. Decisões em aberto (do Comandante)
