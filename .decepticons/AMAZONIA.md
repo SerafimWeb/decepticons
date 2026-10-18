@@ -1,4 +1,4 @@
-# AMAZÔNIA — OPERAÇÃO RIO VIVO (P180)
+# AMAZÔNIA — OPERAÇÃO TERRAS RARAS (P180; chamada RIO VIVO até 18/10, quando o Comandante a renomeou: P187)
 
 > **A ordem do Comandante (17/10):** *"vamos já planejar e construir a próxima fase: próximo cenário, que vai ser no rio Amazonas, uma mineradora acabando com o rio, envenenando,
 > poluindo, explorando as populações indígenas e expulsando-as dos seus territórios. Há uma enorme força de defesa deles e teremos que desmantelar, invadir com androides e destruir
@@ -133,6 +133,13 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 - **A tela e o cenário:** a linha `INVASÃO · CARGA n% · n DE 3 DENTRO` e o aviso `ESCOTILHA ABERTA · OS ANDRÓIDES ENTRAM` (que vem antes do aviso do escudo, a ordem do que fazer agora); no cenário (`environment/AmazoniaEscotilha.ts`, sob demanda): um **anel verde** do tamanho do raio, um **disco** que cresce com a carga e um **farol** de 60 m.
 - **O que o jogador sente:** derrubar os geradores deixa de ser só tirar o escudo: **abre a porta**. A Resistência que o acompanha vira a ponta de lança; ele a escolta (a guarda a ataca no caminho) e escolhe se espera os 10 s da carga ou atira no tronco. Os números são proposta: o Comandante ajusta em `INVASAO`.
 - **Ainda não é a cura de verdade:** o rio se limpa correndo para a foz depois da vitória (só desenho); a cura com consequência (o Relatório de Consequências e o Consórcio) é a etapa seguinte.
+
+### 5.6 O ritmo e o objetivo na tela (18/10, P188 a P190)
+
+- **O posto avançado** (`AMAZONIA_POSTO_AVANCADO`, x -300, z -156): o jogador **nasce e renasce aqui** na missão (a lista de pontos da missão tem um só). **360 m da cerca = ~40 s** (antes, nascendo na aldeia, 920 m = 100 s: o Comandante, "mais de um minuto pra chegar correndo lá"). **Fora do alcance das torres** (a mais perto a 205 m; elas atiram a 170) e **a Resistência nasce junto**. O Deathmatch da Amazônia mantém os pontos da margem. O mapa **não encolheu**: encolhê-lo mexeria em terreno, floresta, geradores e torres, e a aldeia perderia o sentido de "lá longe".
+- **O tempo da missão:** a corrida (40 s) + os três geradores (~90 s de tiro e ~40 s entre eles) + a Resistência a pé até o Draga (~60 s) + a carga (10 s) = **~4 a 5 minutos**; o Draga leva 10 minutos para chegar à aldeia (o teto).
+- **O objetivo na tela** (`environment/AmazoniaObjetivos.ts`, pedaço sob demanda): a **ordem** no topo (a linha da missão), a **dica** abaixo e os **marcadores**. A regra da ordem é `textosDoObjetivo` (pura, com teste): escudo de pé → `DERRUBE OS GERADORES · n DE 3` e a dica diz **qual** gerador e a **quantos metros**; escudo caído → `DERRUBE O DRAGA-01` e a dica diz o que a Resistência faz (corre até a escotilha / planta a carga: n%). Os marcadores são do HUD (por cima da mata): losango verde no gerador (o mais perto, maior e pulsando, com nome e distância), vermelho no Draga, ciano na escotilha; **fora da tela, presos na borda com uma seta**. **Custo:** texto a 4 Hz, até 5 projeções por quadro, nada aloca.
+- **A barra do Draga** parou de repetir a ordem (a regra e a linha de escudo saíram com o escudo de pé) e **abriga a célula da aldeia** (a última linha).
 
 ## 6. A missão (em atos)
 

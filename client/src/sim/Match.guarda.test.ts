@@ -126,6 +126,7 @@ describe('a força de defesa e as torres da Amazônia no Match (P180, parte D2)'
     const { match, run, levar } = await partida();
     const guarda = match.bots.mechs.find((m) => m !== match.bots.chefe && m.stats.radius > 1)!;
     const espiao = vi.spyOn(guarda, 'fixedUpdate');
+    levar(-960, -180); // longe de tudo (o posto avançado, onde o jogador nasce, já está a menos de 420 m de um Mech da guarda)
     run(3);
     expect(espiao, 'o jogador está a ~900 m: a guarda dorme').toHaveBeenCalledTimes(0);
     // um alvo chega a menos de 420 m: ela acorda

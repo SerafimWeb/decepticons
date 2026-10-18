@@ -14,6 +14,20 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P187 a P191 — TERRAS RARAS: o desempenho, o ritmo, o objetivo na tela e o painel de visibilidade (18/10, Claude)
+
+> Uma mensagem do Comandante depois de jogar a fase da Amazônia trouxe cinco ordens e uma pergunta ("o que é a dieta de JS?", respondida no chat e abaixo).
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P187 | 18/10 | "**mude o nome do rio vivo pra terras raras**" | ✅ | A fase se chama **TERRAS RARAS** no seletor de mapas, no teatro de operações, na campanha e no Relatório (e nas seis línguas). O fim de missão continua "O RIO VIVE" (é a frase da vitória, não o nome da fase). | Seletor de mapas: AMAZÔNIA · TERRAS RARAS |
+| P188 | 18/10 | "tentei jogar na fase TERRAS RARAS, mas ficou **meio travado, pesado**… será que há muitos elementos na fase? o tamanho do cenário? as árvores? […] **temos sempre que corrigir e melhorar o DESEMPENHO**, não deixando itens ou detalhes que reduzam, travem, ou estraguem a experiência do jogo dinâmico" | ✅ (e permanente) | **Medido na GPU de verdade (AMD Vega 11, a janela dele, 1936×1156 pixels):** o cenário **não** era o problema (esconder árvores, terreno, água, céu e estruturas tudo junto tirava só ~2 ms). **O culpado era o MSAA 4× do alvo HDR do composer: ~17 dos 27 ms de cada quadro, em TODOS os mapas** (a Arena também dava 22 fps). Trocado por FXAA: **Amazônia 27 → 66 fps, Arena 22 → 61, Praia 25 → 47**. Mais um degrau na qualidade automática. | `medicoes/amazonia-gpu.mjs --matriz`; jogue qualquer mapa na qualidade Alta ou Automática |
+| P189 | 18/10 | "será que a fase da terras raras está GRANDE demais? […] demorou **mais de um minuto pra eu chegar correndo lá**, e em uma fase limitada em 5 minutos, passar 1 ou mais só pra chegar no ponto parece exagero" | ✅ | O jogador agora nasce e renasce num **posto avançado** a 360 m do primeiro gerador (antes, a aldeia a 920 m: 100 s de corrida); a **Resistência** nasce junto. A aldeia segue sendo o que o Draga ameaça. | Abra `?mapa=amazonia&modo=survival`: o primeiro gerador está a ~40 s |
+| P190 | 18/10 | "temos que **melhorar a descrição dos objetivos da missão na própria tela do jogo** (a maioria dos jogadores não quer ler, apenas jogar, então temos que facilitar e trazer a orientação até eles do que fazer para passar de fase)" | 🟡 | **TERRAS RARAS tem o objetivo na tela:** uma ordem no topo (`DERRUBE OS GERADORES · 1 DE 3`, depois `DERRUBE O DRAGA-01`), uma dica logo abaixo e **marcadores no mundo** (losango com nome e distância; fora da tela, preso na borda com seta). A barra do chefe parou de repetir a ordem. **Falta:** os outros mapas e modos (praia, Cidade Neon, Bandeira, Domínio). | Jogue a missão da Amazônia |
+| P191 | 18/10 | "quero também um **painel COMPLETO DE TUDO**, de todas as configurações, todos os modais disponíveis, pra eu poder selecionar o que os jogadores normais veem na tela (quais robôs, armas, fases, detalhes) e quais eu mantenho **secretos/restritos ao admin, em estágio de teste/desenvolvimento** (tipo o botão "lado", "arquivo")… quando estiverem prontos aparecem na interface aberta dos usuários online" | 🟡 | Em andamento (PR seguinte): o painel de visibilidade. | — |
+
+**A pergunta do Comandante ("dieta de JS: temos que reduzir algo?"):** o teto de 500 KB é o **download que todo jogador faz para abrir o jogo** (comprimido); estava em 498 de 500, sem folga para a próxima novidade. **Dieta = tirar do download inicial o que só quem usa precisa**, sem perder nada: o leitor de modelos 3D (13 KB) agora só baixa quando o primeiro robô é pedido. **O pacote de partida caiu para 486 de 500 KB** (folga de 14 KB). Não reduziu nenhum recurso. Não tem relação com a fluidez dentro da partida (isso é a GPU, o P188).
+
 ## P178 a P182 — A landing em outras línguas, o lado político, a Amazônia, o arpão por peso e as interfaces de jogos antigos (17/10, Claude)
 
 > Uma mensagem só do Comandante (com duas capturas do Aero Fighters) trouxe cinco ordens. Cada uma tem a sua linha.

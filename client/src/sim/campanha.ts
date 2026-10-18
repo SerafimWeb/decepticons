@@ -31,7 +31,7 @@ export const MODOS_DO_MAPA: Readonly<Record<MapId, readonly GameMode[]>> = {
 };
 export const MAPAS: readonly MapId[] = ['arena', 'bunker', 'praia', 'amazonia'];
 export const MODOS: readonly GameMode[] = ['deathmatch', 'survival', 'ctf'];
-export const MAPA_NOME: Readonly<Record<MapId, string>> = { arena: 'CIDADE NEON', bunker: 'BUNKER', praia: 'PRAIA DOS CABOS', amazonia: 'AMAZÔNIA · RIO VIVO' };
+export const MAPA_NOME: Readonly<Record<MapId, string>> = { arena: 'CIDADE NEON', bunker: 'BUNKER', praia: 'PRAIA DOS CABOS', amazonia: 'AMAZÔNIA · TERRAS RARAS' };
 export const MODO_NOME: Readonly<Record<GameMode, string>> = { deathmatch: 'DEATHMATCH', survival: 'SOBREVIVÊNCIA', ctf: 'CAPTURAR A BANDEIRA', dominio: 'DOMÍNIO' };
 
 export const LIMITES_DA_CAMPANHA = {

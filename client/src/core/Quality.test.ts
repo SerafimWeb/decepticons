@@ -59,14 +59,15 @@ describe('Quality', () => {
     const setBloom = vi.fn();
     const quality = new Quality(setPixelRatio, setBloom);
 
-    // Simula 3 ciclos de degradação
+    // Simula 5 ciclos de degradação (o teto são 3 degraus)
     const dt = 1 / 40;
-    for (let i = 0; i < 260; i++) {
+    for (let i = 0; i < 420; i++) {
       quality.update(dt);
     }
 
-    expect(quality.currentTier).toBe(2);
-    expect(setPixelRatio).toHaveBeenCalledTimes(1); // Foi chamado uma vez no tier 1
+    expect(quality.currentTier).toBe(3);
+    expect(setPixelRatio).toHaveBeenCalledTimes(2); // 1,0 no degrau 1 e 0,75 no degrau 3
+    expect(setPixelRatio).toHaveBeenLastCalledWith(0.75);
     expect(setBloom).toHaveBeenCalledTimes(1);      // Foi chamado uma vez no tier 2
   });
 

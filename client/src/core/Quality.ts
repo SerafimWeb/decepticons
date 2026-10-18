@@ -9,7 +9,7 @@ export class Quality {
   private tier = 0;
   /** Desligado quando o jogador fixa a qualidade nas configurações. */
   private adaptive = true;
-  private readonly maxTiers = 2;
+  private readonly maxTiers = 3;
 
   // Em segundos
   private readonly checkInterval = 2.0;
@@ -59,6 +59,9 @@ export class Quality {
     } else if (this.tier === 2) {
       // Degrau 2: Desligar Bloom
       this.setBloom(false);
+    } else if (this.tier === 3) {
+      // Degrau 3: a imagem em 3/4 da resolução (a GPU integrada fraca; 16/10: 0,75 sem bloom custava ~6 ms por quadro no 1936×1156 do Comandante)
+      this.setPixelRatio(0.75);
     }
   }
 

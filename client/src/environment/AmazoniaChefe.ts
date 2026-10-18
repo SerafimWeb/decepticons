@@ -5,6 +5,7 @@ import { loadWalkerAsset, WalkerVisual } from '../entities/WalkerVisual';
 import { defaultPower, poweredStats } from '../tuning/power';
 import { defesaDaAmazonia } from './AmazoniaGeradores';
 import { AMAZONIA_DRAGA_INICIO_X, rioEmX } from './AmazoniaLayout';
+import { ObjetivosDaMissao } from './AmazoniaObjetivos';
 import type { ChefeCarregado } from './mapasSobDemanda';
 
 /**
@@ -27,4 +28,6 @@ export const chefeDaAmazonia: ChefeCarregado = {
   criarVisual: async () => new WalkerVisual(await loadWalkerAsset()),
   // A defesa (parte D): os geradores do escudo, no mesmo pedaço sob demanda do Draga.
   defesa: defesaDaAmazonia,
+  // O objetivo na tela (TERRAS RARAS): a ordem do topo, a dica e os marcadores sobre os geradores, o Draga e a escotilha.
+  criarObjetivos: (raiz, aoTitulo) => new ObjetivosDaMissao(raiz, aoTitulo),
 };

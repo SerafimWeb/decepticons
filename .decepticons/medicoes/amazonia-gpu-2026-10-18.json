@@ -1,0 +1,130 @@
+{
+ "data": "2026-10-18",
+ "marcha": "0.5",
+ "mapa": "amazonia",
+ "gpu": "AMD Vega 11 (ANGLE D3D11), sem vsync",
+ "resultados": {
+  "amazonia/alta@1549x925x1.25": {
+   "parado": {
+    "quadros": 391,
+    "fps": 65.1,
+    "p50": 12.2,
+    "p95": 32.4,
+    "p99": 53.1,
+    "pior": 68,
+    "acima33ms": 16,
+    "desenhos": 44,
+    "triangulos": 132519
+   },
+   "andando": {
+    "quadros": 335,
+    "fps": 55.6,
+    "p50": 16.7,
+    "p95": 34.6,
+    "p99": 45.5,
+    "pior": 48.5,
+    "acima33ms": 22,
+    "desenhos": 48,
+    "triangulos": 136349
+   },
+   "noMeioDoMapa": {
+    "quadros": 358,
+    "fps": 59.5,
+    "p50": 13,
+    "p95": 31.6,
+    "p99": 43.9,
+    "pior": 515,
+    "acima33ms": 9,
+    "desenhos": 133,
+    "triangulos": 204563
+   },
+   "matriz": {
+    "agora (FXAA, sem MSAA, bloom, ratio 1.25)": {
+     "fps": 65.4,
+     "p95": 29.4,
+     "renderMs": 10.5,
+     "rodadas": [
+      10.5,
+      9.5,
+      17,
+      10.2,
+      10.8
+     ]
+    },
+    "sem FXAA (sem nenhum AA)": {
+     "fps": 69.2,
+     "p95": 25.5,
+     "renderMs": 9.3,
+     "rodadas": [
+      19.6,
+      9.3,
+      10.3,
+      8.2,
+      7.7
+     ]
+    },
+    "com MSAA 4 (o que era antes), sem FXAA": {
+     "fps": 32.2,
+     "p95": 47.7,
+     "renderMs": 24,
+     "rodadas": [
+      28.5,
+      24.5,
+      22.2,
+      23.7,
+      24
+     ]
+    },
+    "agora, sem bloom": {
+     "fps": 82.2,
+     "p95": 29.1,
+     "renderMs": 6.6,
+     "rodadas": [
+      14.7,
+      7.9,
+      6.6,
+      6,
+      6.2
+     ]
+    },
+    "agora, ratio 1.0": {
+     "fps": 84.3,
+     "p95": 20.6,
+     "renderMs": 8.2,
+     "rodadas": [
+      13.9,
+      7.5,
+      8.2,
+      4.2,
+      8.6
+     ]
+    },
+    "agora, ratio 0.85": {
+     "fps": 85.8,
+     "p95": 15.4,
+     "renderMs": 8.2,
+     "rodadas": [
+      8.2,
+      17,
+      8.2,
+      5.9,
+      6.5
+     ]
+    },
+    "agora, ratio 0.75 sem bloom": {
+     "fps": 104.2,
+     "p95": 13.8,
+     "renderMs": 6.1,
+     "rodadas": [
+      5.9,
+      8.1,
+      5.3,
+      7.3,
+      6.1
+     ]
+    }
+   },
+   "erros": []
+  }
+ }
+}

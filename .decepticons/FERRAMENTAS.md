@@ -211,6 +211,21 @@ Fotografa a **Arena real** (`Arena.ts` com o transformador do banco, o mesmo pip
 **A bancada** (mesmo molde de `praia.mjs`: Vite dev + Chrome headless, SwiftShader, só contagem): `node .decepticons/medicoes/amazonia.mjs --vistas geral,aldeia,rio,draga,jusante,mina,planta,lagoa` fotografa o mapa real (o mesmo `Amazonia.ts`) e mede desenhos e triângulos; `--frente 1000` põe a frente do rio onde se pedir (o rio curado até lá); `--sem-draga`; `--arte --sufixo b1` grava em `arte/`. **A câmera da bancada tem o mesmo alcance da do jogo** (1.500 m; só a vista `geral`, sem névoa, passa disso).
 **O jogo real:** `node .decepticons/medicoes/amazonia-jogo.mjs 6,12,24 b1` abre `?mapa=amazonia&modo=deathmatch` no jogo de verdade (câmera, HUD e névoa dele), fotografa nos segundos pedidos e lista o que o navegador baixou sob demanda (o mapa e o Draga). **Por que existe:** em 17/10 o céu saía preto no jogo e a bancada, com câmera própria, não mostrava; **bug de câmera ou de HUD só se prova no jogo real**. O pitch da câmera muda entre execuções (não há mouse com trava): tire vários quadros e escolha o que mostra o horizonte.
 
+### 4.6 A bancada de GPU de verdade (`medicoes/amazonia-gpu.mjs`, P188, 18/10): onde o quadro gasta
+
+**Quando:** o Comandante diz "travou/pesou" e você precisa saber **por quê** (cenário? pós-processamento? CPU?). Serve ao `dist/` (`npm run build` antes), abre `?mapa=<mapa>&modo=<modo>&depurar` no Chrome/Edge do sistema com GPU de verdade e **sem limite de quadros nem vsync** (o fps é a capacidade da máquina).
+
+```bash
+node .decepticons/medicoes/amazonia-gpu.mjs --telas 1549x925@1.25 --qualidades alta,media,baixa   # a janela do Comandante (1549×925 com a escala 1,25 = 1936×1156 pixels)
+node .decepticons/medicoes/amazonia-gpu.mjs --telas 1549x925@1.25 --qualidades alta --matriz --rodadas 5   # a conta do pós-processamento: MSAA, FXAA, bloom e escala, em rodadas alternadas, com a MEDIANA
+node .decepticons/medicoes/amazonia-gpu.mjs --so-alta --experimentos                              # esconde uma categoria do cenário por vez (árvores, terreno, água, estruturas, céu)
+node .decepticons/medicoes/amazonia-gpu.mjs --mapa arena --modo deathmatch --telas 1549x925@1.25   # a mesma conta nos outros mapas
+```
+
+**O que o jogo expõe (`?depurar`):** `window.__game` com `renderer`, `scene`, `composer`, `bloomPass`, `fxaaPass`, `quality`, `mech`, `rig`. A bancada instala um cronômetro em volta de `composer.render` + `gl.finish()`: o **custo de GPU do quadro sem o resto da partida** (o fps cru mistura a GPU com a CPU e oscila com a máquina). **Armadilhas:** (1) **o iGPU divide a máquina com o navegador e o editor abertos**: o fps de uma rodada só varia de 17 a 35; alterne as configurações em rodadas e fique com a **mediana** (`--rodadas 5`), senão a conclusão sai errada; (2) a **escala do Windows muda tudo**: o jogo renderiza `janela × escala` pixels (1,25× em 1549×925 são 2,2 milhões de pixels, 2,4× os de 1280×720): meça na janela do dono, não em 720p; (3) trocar `rt.samples` em tempo de execução pede `rt.dispose()`.
+
+**O achado de 18/10 (a causa de "travado", provada):** MSAA 4× no alvo HDR de meia precisão = **24-27 ms** de GPU por quadro na Vega 11 (a 1936×1156), contra **10,5 ms** sem ele (+1,5 ms do FXAA). **Todo mapa.** O cenário da Amazônia inteiro escondido tirava só ~2 ms. Registro: `medicoes/amazonia-gpu-2026-10-18.json`.
+
 ### 4.5 A missão do rio e a câmera do jogo com o mouse (P180, parte C)
 
 **Para ver o fim da missão sem esperar dez minutos:** `?mapa=amazonia&modo=survival&marcha=0.9` (de 0 a 0,95: quanto da marcha o Draga já andou). **Para fotografar o jogo com a câmera virada:** o **Pointer Lock funciona no Chrome sem janela**, então `page.mouse.move` gira a câmera do jogo de verdade: **cada ponto do mouse são 0,0008 rad** (a `BASE_SENSITIVITY`) e **mover para a direita vira para a direita** (o rumo cresce no sentido horário a partir do norte, -Z). O Playwright entrega os eventos mesmo com o ponteiro fora da janela. **A mata esconde o Draga do chão:** para vê-lo, olhe do rio, de uma clareira (a aldeia) ou acima das copas; a bancada (`amazonia.mjs --vistas draga`) o mostra de cima do rio.

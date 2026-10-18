@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import type { MechRig, RigJoint } from './MechBase';
 import { createWeaponMounts, type PodSide } from './weaponMount';
@@ -164,6 +163,8 @@ export interface ImportedMechAsset {
  * (`importedMechAssets.ts` cacheia) e depois use `instantiateImportedMechRig` pra cada Mech novo.
  */
 export async function preloadImportedMechAsset(url: string, options: ImportedRigOptions): Promise<ImportedMechAsset> {
+  // O leitor de .glb pesa 13 KB gzip: só baixa quando o primeiro modelo é pedido (dieta de JS, 18/10), não no pacote de partida.
+  const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
   const gltf = await new GLTFLoader().loadAsync(url);
   const scene = gltf.scene;
   scene.updateMatrixWorld(true);
