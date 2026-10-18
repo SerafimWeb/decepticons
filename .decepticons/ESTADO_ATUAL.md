@@ -1,5 +1,17 @@
 # ESTADO ATUAL — CYBERMECH
 
+## A PRODUÇÃO ESTAVA 2,5 H NO CÓDIGO VELHO: A VERIFICAÇÃO DO ATUALIZADOR REPROVAVA NO ESCURO — Claude, 17/10 (branch `claude/atualizador-log`)
+
+**O que achei (e provei de ponta a ponta):** depois dos merges #371 e #372, o servidor de produção **não atualizou**: o `atualizacao.log` mostrava seis `FALHOU (testes de server/ e shared/)`. Os mesmos testes passavam na minha worktree. Fiquei quieto e a rodada seguinte **verificou em 40 s e religou no código novo** (protocolo 20); a primeira cópia do banco de contas apareceu em `D:\DECEPTICONS\.tmp\servidor\backups\contas-2026-10-18.db` (abre e traz a conta). **Causa:** o meu barulho (check do push, navegador, auditorias) e duas rodadas se atropelando em `.tmp/vitest`, não código quebrado.
+
+**Feito:** o atualizador deixava a saída do teste que falhou se perder (`stdio: 'inherit'`). Agora grava as **últimas 40 linhas** no `atualizacao.log` quando um comando falha (`ultimasLinhas` em `scripts/atualizador.mjs`, 3 testes). O servidor só passa a usar isto depois da próxima atualização que ele verificar. `DEPLOY.md` ganhou a seção do episódio e a regra de operação: **depois de cada merge, ficar quieto** (sem check, sem suíte, sem navegador) até o log mostrar `servidor religou no código novo`.
+
+**Custo de CPU:** zero.
+
+**Falta (R13):** o atualizador **pode** reprovar de novo sob carga: a verificação roda os testes da máquina inteira numa máquina compartilhada. Uma saída mais robusta (repetir a verificação uma vez antes de desistir, ou rodar só em janela de silêncio) é decisão de quem opera a máquina; deixei só a **visibilidade**, que é o que faltava para decidir.
+
+**Próxima sessão começa com:** o que o Comandante julgar. **A Amazônia (P180) está com outra sessão: não mexer.**
+
 ## IDIOMA, SEGUNDA RODADA: OS MODOS DE JOGO (A PRAIA, A BANDEIRA, O DOMÍNIO) — Claude, 17/10 (branch `claude/idioma-modos`, P173)
 
 **Por que:** a auditoria do Hangar deixou claro que o teste de cobertura não via o que o jogo monta na tela. Auditei **no navegador, em japonês, cada modo** (sobrevivência, bandeira, domínio e a praia, **nunca a Amazônia: está com outra sessão**). Os três primeiros já estavam limpos; **a missão da praia (Cabos Abertos) tinha ~15 textos na tela e dezenas nos avisos**.

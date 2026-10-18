@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { atualizar, type Operacoes, type Pendencia, type Resultado } from '../scripts/atualizador.mjs';
+import { atualizar, ultimasLinhas, type Operacoes, type Pendencia, type Resultado } from '../scripts/atualizador.mjs';
 
 /**
  * O atualizador do servidor no PC de casa. As operações são de mentira e anotam a ordem em que foram chamadas: o que
@@ -303,5 +303,24 @@ describe('atualizador do servidor: rodada cortada pelo limite de tempo do Agenda
     const p = palco({ lockMudou: true, naoPara: true });
     expect(atualizar(p.op)).toBe(2);
     expect(p.armazenada()).toBeNull();
+  });
+});
+
+describe('atualizador do servidor: a saída de um comando que falhou fica no log (17/10: a verificação falhava e o log não dizia qual teste)', () => {
+  it('guarda só as últimas linhas, sem cores do terminal e sem linhas vazias', () => {
+    const saida = ['\u001b[31m FAIL \u001b[39m server/x.test.ts', '', '  AssertionError: esperava 1', '', 'Test Files  1 failed | 48 passed'].join('\n');
+    expect(ultimasLinhas(saida, 2)).toBe('  AssertionError: esperava 1\nTest Files  1 failed | 48 passed');
+    expect(ultimasLinhas(saida, 10)).toBe(' FAIL  server/x.test.ts\n  AssertionError: esperava 1\nTest Files  1 failed | 48 passed');
+  });
+
+  it('saída vazia ou ausente não quebra o atualizador (devolve texto vazio)', () => {
+    expect(ultimasLinhas('', 40)).toBe('');
+    expect(ultimasLinhas(undefined as unknown as string, 40)).toBe('');
+    expect(ultimasLinhas('\n\n', 40)).toBe('');
+  });
+
+  it('quantidade absurda (0 ou negativa) ainda devolve ao menos a última linha', () => {
+    expect(ultimasLinhas('a\nb\nc', 0)).toBe('c');
+    expect(ultimasLinhas('a\nb\nc', -5)).toBe('c');
   });
 });

@@ -30,3 +30,6 @@ export interface Pendencia {
 
 /** 0 = atualizou e verificou; 1 = nada novo; 2 = recusou ou falhou (e voltou ao anterior). */
 export function atualizar(op: Operacoes): 0 | 1 | 2;
+
+/** As últimas `n` linhas de uma saída de comando, sem as cores do terminal e sem linhas vazias (o que o atualizador grava no log quando a verificação falha). */
+export function ultimasLinhas(texto: string, n: number): string;

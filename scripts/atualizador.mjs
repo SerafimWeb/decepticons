@@ -36,6 +36,21 @@
  * @property {() => void} limparPendencia
  */
 
+/**
+ * As últimas `n` linhas de uma saída de comando, sem as cores do terminal e sem linhas vazias: o que o atualizador grava no `atualizacao.log` quando a verificação falha. Antes a saída ia para o
+ * console da tarefa agendada e se perdia (17/10: a produção ficou 2,5 h no código velho e o log só dizia "FALHOU (testes de server/ e shared/)", sem dizer qual teste).
+ * @param {string} texto
+ * @param {number} n
+ */
+export function ultimasLinhas(texto, n) {
+  const limpas = String(texto ?? '')
+    .replace(/\x1b\[[0-9;]*[A-Za-z]/g, '')
+    .split(/\r?\n/)
+    .map((l) => l.trimEnd())
+    .filter((l) => l.trim() !== '');
+  return limpas.slice(-Math.max(1, n)).join('\n');
+}
+
 /** Uma verificação que ficou pela metade: `de` = último código verificado, `para` = o puxado, `feito` = passos concluídos.
  * @typedef {{ de: string, para: string, feito: string[] }} Pendencia
  */
