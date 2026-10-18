@@ -34,6 +34,25 @@
 
 **Próxima sessão começa com:** o que o Comandante julgar. **A Amazônia (P180) está com outra sessão: não mexer.**
 
+## O ONLINE VOLTA SOZINHO QUANDO CAI, E O QUE FALTA PARA LANÇAR — Claude, 18/10 (branch `claude/reconexao-online`, P184 b)
+
+**O Comandante (17/10 à noite):** *"consegui conectar 2 pcs diferentes na mesma sala da arena! deu certo!"* (a correção da porteira, P184); e pediu **as métricas dos usuários** (P185), **a ideia dos lados Aliados × Consórcio** (P186) e que **o online funcione por inteiro antes de tudo**.
+
+**O que entrou (`client/src/net/OnlineSession.ts`, `NetClient.ts`):** **reconexão automática (G13)**: quando a conexão cai (a VPN trocou, o túnel soluçou, o servidor travou ou reiniciou, a porteira cortou), a sessão limpa a sala velha, avisa **"ONLINE · CONEXÃO CAIU · RECONECTANDO (n/6)"** no canto (o mundo segue; nada cobre a tela) e tenta de novo com esperas de **0,3, 0,7, 1,5, 3, 5 e 5 s** (~15 s); volta à sala como piloto novo (a previsão reposiciona o Mech). **Recusa** (versão, sala cheia, montagem) **não reconecta**; seis falhas seguidas viram "caiu: recarregue". **Achado de caminho:** o `NetClient` só avisava o fim da conexão no `close`, e uma conexão recusada só dá `error` em alguns ambientes (o Node dos testes): agora avisa **uma vez**, venha o que vier. **Testes:** o servidor de verdade cai e volta no mesmo endereço (a sessão reconecta e vê os robôs), duas quedas seguidas, esgotar as tentativas, recusa sem reconexão, encerrar cancela, e o aviso único do `NetClient`; **mutação à mão: 10 de 10**.
+
+**O que falta para o online ser lançado (a lista honesta, do `ROADMAP.md` e do `STATUS_REAL.md`):**
+1. ✅ **Dois PCs, VPNs diferentes, mesma sala** (provado pelo Comandante, 17/10) e ✅ **reconexão automática** (esta entrega).
+2. **Times na sala online (P81)**: dois amigos no mesmo time; é o contrato de que o CTF 2v2 online e os **lados Aliados × Consórcio** (P186, `LADO_E_PEDAGOGIA.md` § 3.5) dependem. **É o próximo passo técnico.**
+3. **Métricas dos usuários (P185):** retenção, usuários únicos e tempo por conta (a primeira fatia entra a seguir).
+4. **Jogador remoto desenhado com o chassi da montagem dele** (hoje todo humano aparece como Vector-09 para os outros).
+5. **Homologar online com rede real e carga** (capacidade, latência e perda, duração prolongada) antes de prometer escala; **o PC do servidor é o de trabalho e tem 6 GB**: para o lançamento o servidor precisa de **máquina própria** (decisão e custo dele; ver `DEPLOY.md`).
+6. **Ranking e a política de privacidade (LGPD)** antes de trazer público.
+7. Já em dia: login, contas, cópia de segurança do banco, mural, porteira tolerante a picos.
+
+**Onde o Comandante confere:** derrube a conexão de propósito (trocando a VPN, ou desligando e ligando a rede por alguns segundos) com a partida aberta: o canto mostra **RECONECTANDO (1/6)…** e o jogo **volta à sala sozinho**; recarregar a página só é preciso depois de seis falhas.
+
+**Falta (R13):** **não testei com a VPN dele** (só com o servidor de verdade nos testes); o placar da sessão **zera** na volta (o servidor trata como piloto novo); o jogador volta **no ponto de nascimento** da sala; a partida em andamento no servidor (a rodada) segue sem ele durante a queda.
+
 ## O ONLINE CAÍA PARA QUEM JOGA POR VPN: A PORTEIRA DESCARTA O PICO EM VEZ DE CORTAR — Claude, 17/10 (branch `claude/guard-rajada`, P184)
 
 **O relato do Comandante (17/10):** *"não tô conseguindo jogar online, dá erro e cai a conexão... não consigo jogar CONTRA meu outro PC usando VPNs diferentes"*.

@@ -171,7 +171,8 @@
 - [x] M5 (parcial): o servidor emite `EVENT.HIT` (quem levou, de quem, parte e dano aplicado), com teste de simulação #combate
 - [~] M5: completar retorno de `EVENT.HIT`: dano recebido já consumido em `OnlineSession.onEvents`; marcador de acerto do atirador ainda pendente (auditoria Codex, 09/10) #ux
 - [ ] M5: compensação de latência; precisa de decisão de projeto antes do código (`FINDINGS.md`, seção M5) #combate
-- [ ] M6: entrada pelo link com código da sala + apelido; reconexão automática (G13) #rede
+- [x] **Reconexão automática do online (G13, P184 b, 18/10):** a conexão que cai volta sozinha em ~15 s (0,3, 0,7, 1,5, 3, 5 e 5 s), com o aviso `RECONECTANDO (n/6)` no canto; a recusa não reconecta; o servidor de verdade cai e volta nos testes; 10 de 10 mutações #rede
+- [ ] M6: entrada pelo link com código da sala + apelido (a reconexão está feita acima) #rede
 - [ ] Telas do online: apelido, código da sala, jogadores, placar e ping (Gemini) #ux
 - [ ] Medir banda por sala e tick do servidor contra as metas do G11 e do G14 #desempenho
 

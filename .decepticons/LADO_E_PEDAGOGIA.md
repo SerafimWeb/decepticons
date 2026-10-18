@@ -45,6 +45,34 @@ O Comandante já decidiu (15/10, P133) que o primeiro acesso **cai numa partida*
 | **3 · o Relatório de Consequências** | o fim da missão mostra o que aconteceu com o rio, com os povos, com a água, com **números lidos de ficha** | plano |
 | **4 · a campanha do Consórcio** | os **objetivos invertem**: na Amazônia, a Aliança **invade** a mineradora; o Consórcio **defende** o perímetro (mesmo mapa, outra missão) | plano (`fichas/cenario-amazonas.md`) |
 
+### 3.5 A assimetria jogável dos lados (a ideia do Comandante de 17/10, P186): camada 5
+
+**A ideia, nas palavras dele (resumo fiel):** na seleção do time o jogador escolhe **ALIADOS** (flexíveis e com benefícios técnicos no campo: o Hangar inteiro, **conquistam recursos**, e **a arma mais poderosa do jogo é deles**, que **se recarrega com os restos de batalha**, coletados e transformados em munição por **humanoides** de cada time) ou **CONSÓRCIO** (financiado por megacorporações, militares e elites: **chassis fechados e padronizados**, **sem trocar arma nem equipar**, poucos benefícios no campo, **recursos ilimitados**).
+
+| | **ALIADOS** | **CONSÓRCIO** |
+|---|---|---|
+| **Máquina** | o Hangar aberto: qualquer chassi, qualquer arma, montagem salva | **uma lista curta de chassis padronizados**, cada um com a arma de fábrica; o Hangar fica trancado |
+| **Recursos** | **conquistados** no campo (pontos, zonas, o que se coleta) | **ilimitados**: reposição e reaparecimento sem custo |
+| **Munição** | a **melhor linha de armas**, que **se recarrega com os restos de batalha** (destroços); **humanoides** coletam e produzem a munição do time | munição de fábrica, sem coleta: simples e constante |
+| **Benefícios no campo** | técnicos (flexibilidade, a arma que se recarrega) | poucos: a vantagem é **volume e reposição** |
+| **Papel de equipe** | os humanoides (androides) viram **logística**: coletar destroços e produzir munição **é um trabalho de alguém do time** | os androides são **infantaria/ruído** (sem logística) |
+
+**Por que a ideia é boa:** é uma **assimetria com identidade** (os povos são engenhosos e frágeis; as elites são padronizadas e fartas) que **ensina pela jogabilidade** o que o Arquivo ensina por texto (§ 4), e dá ao Aliado um papel de apoio que **ainda não existe** (os androides coletores). **O que ela exige que ainda não existe:** (1) **times na sala online** (P81: time no JOIN e no roster, fogo amigo, HUD de time); (2) **uma lista de chassis fechados** e o **Hangar trancado por lado** (o contrato do `loadout` já valida a montagem: a trava é uma regra a mais ali, no servidor); (3) **uma economia de recursos** (placar de recursos do time, o que se conquista, o que se gasta) e **a munição de destroços** (um tipo de arma com o carregador ligado a um **estoque do time**, e o androide coletor/fábrica); (4) **o equilíbrio**: a assimetria só vale se as duas pontas ganham partidas.
+
+**Os riscos (a franqueza que o Comandante pede):**
+1. **Tamanho:** são três sistemas novos (times, economia, munição coletada) ao mesmo tempo, **antes do primeiro lançamento**. O online que existe (todos contra todos na mesma sala) já funciona; a assimetria é a **segunda onda**.
+2. **Equilíbrio:** "ilimitado" contra "melhor arma" é a conta mais difícil do jogo; **sem medida de partida real** (e as métricas, P185) o número será chute. Recomendo **começar pelo Consórcio como o lado simples** e deixar a economia dos Aliados para depois.
+3. **A tentação do "pay to win" invertido:** o lado com a melhor arma exige **mais coordenação** (a logística); isso precisa **ser divertido** (o papel do coletor), e não uma tarefa chata que o time empurra para o mais novo.
+4. **Matchmaking:** lados assimétricos pedem **vagas por lado** (quantos Aliados e quantos do Consórcio na sala de 8) e uma regra para quando um lado está vazio (bots).
+
+**A ordem que eu proponho (cada degrau entrega algo sozinho):**
+1. **Times na sala online (P81)**, com o lado como **rótulo de time**: Aliados × Consórcio na mesma sala, cores e placar, **sem nada de economia**. É o que **destrava** o CTF 2v2 online e dá o contrato de rede de que o resto depende.
+2. **O Consórcio padronizado:** a lista curta de chassis fechados e o Hangar trancado para ele (a regra no servidor, com teste). Aliados seguem como hoje.
+3. **A munição de destroços** e o **androide coletor** (a arma que se recarrega, o estoque do time, a produção), com os recursos do Aliado.
+4. **O equilíbrio com dados** (as métricas por lado, P185): corrigir os números com partidas reais.
+
+**O nome "Consórcio" (o Comandante não tem certeza):** o texto do jogo (seis línguas, o Arquivo, os painéis) **já usa "Consórcio"**, então trocar depois custa uma rodada de tradução. Alternativas, todas arquétipos fictícios (a regra do § 3.4): **"o Conglomerado"** (mais seco, menos eufemístico), **"a Diretoria"** (sátira corporativa pura), **"o Protocolo"** (frio, militar: "Protocolo de Segurança"), **"o Contrato"** (os "contratos de segurança" do § 3.1). **Recomendação:** manter "Consórcio" no lançamento (já existe, funciona nas sete línguas) e **testar o nome com jogadores** antes de trocar; a troca é só texto e um arquivo de traduções.
+
 ### 3.4 As regras que protegem a ideia (e o produto)
 
 1. **Escolher o Consórcio nunca é premiado em silêncio.** A vitória do Consórcio existe (o jogo não é manipulador às avessas), e **o custo também**: o Relatório de Consequências mostra o rio, as pessoas e o que o discurso escondia. É pedagogia por **contraste**.
@@ -78,6 +106,7 @@ Cada tema é uma **ficha curta com fonte** em três linhas: **o que é** (uma fr
 2. ✅ **O Arquivo**: a tela e as seis fichas (§ 4). *Entregue em 17/10, P179. Os textos pedem revisão do Comandante e a conferência das fontes.*
 3. **O Relatório de Consequências** no fim das missões.
 4. **A campanha do Consórcio** na Amazônia (objetivos invertidos), depois que o cenário existir (`fichas/cenario-amazonas.md`).
+5. **A assimetria jogável dos lados** (§ 3.5, P186): primeiro os times na sala online (P81), depois o Consórcio padronizado, depois a economia e a munição de destroços dos Aliados.
 
 ## 7. O que só o Comandante decide
 

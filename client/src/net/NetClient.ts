@@ -64,8 +64,19 @@ export class NetClient {
     this.ws.onmessage = (e) => {
       if (e.data instanceof ArrayBuffer) this.receive(new Uint8Array(e.data));
     };
-    this.ws.onclose = () => this.on.closed?.();
-    this.ws.onerror = () => {};
+    // `closed` dispara UMA vez: no navegador uma conexão que falha dá `error` e depois `close`, e em alguns ambientes (o Node dos testes) a recusa só dá `error`.
+    this.ws.onclose = () => this.fechou();
+    this.ws.onerror = () => {
+      if (!this.isOpen) this.fechou();
+    };
+  }
+
+  private jaFechou = false;
+
+  private fechou(): void {
+    if (this.jaFechou) return;
+    this.jaFechou = true;
+    this.on.closed?.();
   }
 
   get isOpen(): boolean {
