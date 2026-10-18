@@ -10,6 +10,19 @@ import { gzipSync } from 'node:zlib';
 
 const read = (path) => readFileSync(resolve(path), 'utf8').replace(/\r\n/g, '\n');
 
+/** O histórico de decisões inteiro: o vivo e os arquivados (`arquivo/historico-*.md`, do mais novo ao mais velho, a ordem de antes de arquivar). */
+function historicoCompleto() {
+  const dir = '.decepticons/arquivo';
+  const arquivados = existsSync(dir)
+    ? readdirSync(dir)
+        .filter((f) => /^historico-.*\.md$/.test(f))
+        .sort()
+        .reverse()
+        .map((f) => read(`${dir}/${f}`).split('<!-- arquivo -->')[1] ?? '')
+    : [];
+  return [read('.decepticons/HISTORICO_DE_DECISOES.md'), ...arquivados].join('\n');
+}
+
 /** Sem shell: argumentos em lista. Fora de um repositório git (ou comando que falha), devolve vazio. */
 export function git(...args) {
   try {
@@ -516,7 +529,7 @@ export function atividade(prs) {
 
 /** Pedidos do dono atendidos: entradas do cofre que nasceram de um pedido ou relato dele. */
 export function pedidos() {
-  const entries = read('.decepticons/HISTORICO_DE_DECISOES.md').split(/^## \[/m).slice(1);
+  const entries = historicoCompleto().split(/^## \[/m).slice(1);
   return entries.filter((e) => /pedido do dono|sintoma \(dono|\(pedido do dono|pedido do dono/i.test(e)).length;
 }
 
@@ -542,7 +555,7 @@ export function fichas() {
 export function diario() {
   // Assuntos internos de conta e acesso ficam fora da página pública.
   const INTERNO = /conta do github|mesma conta github/i;
-  return [...read('.decepticons/HISTORICO_DE_DECISOES.md').matchAll(/^## \[(\d{4}-\d{2}-\d{2})\]\s+(.+)$/gm)]
+  return [...historicoCompleto().matchAll(/^## \[(\d{4}-\d{2}-\d{2})\]\s+(.+)$/gm)]
     .map((m) => ({ date: m[1], title: m[2].trim() }))
     .filter((e) => !INTERNO.test(e.title));
 }
