@@ -306,6 +306,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [~] A PRAIA DOS CABOS — o cenário maior com mar (P126/P114, 14/10): **a regra da água** (`combat/Agua.ts`), o **layout em dado puro** (`environment/PraiaLayout.ts`, 480 × 140 m; 10 testes) e **o mapa que abre** (`environment/Praia.ts` + `?mapa=praia`: fim de tarde com o sol no horizonte, mar claro com ondas na GPU, cidade costeira, dunas; o afogamento ligado; capturas em `arte/praia-p126-*-qwen.jpg`); faltam a **missão** (defender/retomar a estação, proteger os cidadãos), as **zonas** da praia, a bancada de colisores (< 310) e o teste de partida da água — território do Codex assumido pelo Qwen #cenarios #modos
 - [ ] Ficha da arma na lista do Hangar com dano, alcance ótimo e recarga (P109; nunca "potência" nem estrelas: não é pay-to-win) #ux
 
+- [x] Cópia de segurança do banco de contas: uma por dia (as últimas 14) em `.tmp/servidor/backups/`, feita pelo servidor; falta levar para fora do disco (decisão do dono) (pergunta do Comandante, 17/10, P183) #rede
+- [x] Dieta de JS: os painéis opcionais do console (Esquadrão, Campanhas, Arsenal, Servidor, Câmeras) viram pedaços sob demanda; JS de partida 499,7 → 486,2 KB (R7) #desempenho
 - [x] Cobertura de idioma das telas avançadas (Hangar, Esquadrão, Campanhas e HUD em seis línguas; auditoria no navegador) (decorre do pedido do Comandante, 17/10, P173) #ux
 - [x] Idiomas do jogo: inglês, espanhol, francês, japonês, chinês e russo (dicionário JSON + tradutor de DOM, seletor em Configurações e `?lang=`; PARCIAL: narrador, canvas, Hangar longo, landing e revisão nativa) (pedido do Comandante, 17/10, P173) #ux
 

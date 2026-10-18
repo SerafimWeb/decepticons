@@ -15,6 +15,31 @@
 
 **Por que registrar:** quem for fazer a defesa (D) e a invasão (E) precisa saber que o Draga é um `MechBase` com dois módulos de perna, que a missão tem módulo próprio e que **o pacote de partida não tem mais folga**.
 
+## [2026-10-17] Auditar o idioma também por modo de jogo, e deixar o arpão do Onça para o Comandante (Claude, P173/P181)
+
+**Decisões:**
+1. **A auditoria de idioma roda em cada modo** (`?lang=ja&modo=…`, jogando alguns segundos), não só nas telas do console: a missão da praia tinha dezenas de textos em português que nenhuma tela de menu mostra. A Amazônia fica de fora (outra sessão).
+2. **Constantes viram chave inteira** ("CIDADE NO ESCURO · AS ZONAS DE CURA CAÍRAM"), **o que tem número vira padrão** ("CABO {0} TOMADO · …"): a tradução da frase inteira sai melhor que parte a parte; a composição `{0} · {1}` fica para o que o código cola.
+3. **Ombros no Onça não entram sem o olho do Comandante:** o encaixe de ombro do Marauder é medido no desenho importado; o Onça é procedural, então precisaria de encaixe, boca e lançador desenhados. Hoje o arpão é do Marauder (que puxa qualquer médio e mais leve); o Onça (raio 1,6) seria o melhor usuário, mas é decisão visual dele.
+
+## [2026-10-17] Cópia de segurança do banco de contas dentro da pasta do projeto (Claude, P183)
+
+**Pergunta do Comandante:** onde ficam os logins sem Supabase? A resposta honesta incluía um achado: **o `contas.db` era um arquivo só, no PC do servidor, sem nenhuma cópia.**
+
+**Decisões:**
+1. **Cópia diária consistente (`VACUUM INTO`), as últimas 14, na pasta `backups/` ao lado do banco**, feita pelo próprio servidor (ao subir e a cada 6 h). Não depende de tarefa agendada nem de script externo: se o servidor roda, a cópia roda.
+2. **Dentro da pasta do projeto, por G15 (regra do dono):** o projeto não grava fora dela. **Consequência dita em voz alta:** a cópia não protege de o disco morrer; levar `backups/` para fora é decisão e ação do dono (`Copy-Item`), não do código.
+3. **Falha na cópia só registra:** o jogo e as contas não caem por causa de um backup que falhou.
+4. **Nada de Supabase por causa disto:** o SQLite no PC continua sendo a decisão do dono (28/09); a troca de banco (Postgres, se crescer) continua sendo mudar só o `server/contas.ts`.
+
+## [2026-10-17] Os painéis opcionais do console saem do JS de partida (Claude, R7)
+
+**Problema:** o teto de 500 KB gzip do JS de partida estava em 499,7 KB. Cada PR que somava um módulo (o `‹ valor ›`, o Arquivo, o idioma do Hangar) empurrava o total para o limite e travava o `npm run check`; a saída honesta era emagrecer, não subir o teto (R7 é do protocolo).
+
+**Decisão:** o que só abre por clique **não entra no download de partida**. O Esquadrão, as Campanhas, o Arsenal, o Servidor do dono e as Câmeras viram pedaços sob demanda (`import()` + `sobDemanda`), no modelo que o `orcamentoDeJs.mjs` (P180) já previa para as fases. Partida: **499,7 → 486,2 KB**. **O custo:** o primeiro clique de cada painel espera o pedaço (<7 KB gzip, uma requisição); sem rede o painel não abre e o jogo avisa no console.
+
+**Regra que fica:** tela ou painel opcional = `import()`; texto estático longo = JSON em `public/`. **O que não foi feito e por quê:** o Hangar (`HangarMenu` + `HangarScene`, ~43 KB minificados) segue no pacote de partida: o `Game` o aquece no boot para o primeiro "H" não engasgar, e tirá-lo muda essa experiência; fica como a próxima alavanca, decisão de quem mede a sensação.
+
 ## [2026-10-17] A Amazônia, parte B: o rio e o mapa (Claude, P180)
 
 **Ordem:** "continua iterando até concluir essas pendências": o cenário do rio, bem maior que o que temos, eficiente, com o rio limpo acima do Draga e envenenado depois dele.

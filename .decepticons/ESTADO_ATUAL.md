@@ -22,6 +22,54 @@
 
 **Próxima sessão começa com:** a **parte D** (os geradores do escudo, as torres da margem, a força de defesa e o ato 1), **carregada sob demanda** (a folga de JS é de 0,8 KB).
 
+## IDIOMA, SEGUNDA RODADA: OS MODOS DE JOGO (A PRAIA, A BANDEIRA, O DOMÍNIO) — Claude, 17/10 (branch `claude/idioma-modos`, P173)
+
+**Por que:** a auditoria do Hangar deixou claro que o teste de cobertura não via o que o jogo monta na tela. Auditei **no navegador, em japonês, cada modo** (sobrevivência, bandeira, domínio e a praia, **nunca a Amazônia: está com outra sessão**). Os três primeiros já estavam limpos; **a missão da praia (Cabos Abertos) tinha ~15 textos na tela e dezenas nos avisos**.
+
+**Feito:** **74 textos novos nas seis línguas** (811 por língua): o HUD da praia (porto, ponte, estação, rede, cabos, portas, quadro de luz, a água), os avisos (cabo tomado, cortado, liberado, porta arrombada, cidade no escuro…), o briefing da missão, o chefe (fase, pernas, as três falas), a bandeira (`// PILOTO …`, `// RETORNADA À BASE`), o domínio, as conquistas, o briefing e o terminal do Banco Vorcaris, o "arraste os botões" do toque e o respawn. **Prova no navegador:** a auditoria em japonês de praia e sobrevivência só devolve nomes próprios (`arte/idioma-praia-ja-claude.png`). O teste de cobertura ganhou os 70 casos. **De passagem:** o arpão em japonês tinha dois termos (ハープーン e アンカー銃); ficou ハープーン nos dois.
+
+**Sobre o arpão nos chassis pesados (P181), a conclusão depois de ler o código:** todos os médios têm o mesmo "peso" (raio 1,3), então o Marauder puxa qualquer médio e mais leve (regra "do seu peso ou mais leve"); **só o Onça (1,6) e os titãs (3,6 e 5) são mais pesados, e não têm encaixe de ombro** (o encaixe do Marauder é medido no desenho importado, `shoulderPods`). Dar ombros ao Onça exige encaixe procedural e o desenho do lançador: **é trabalho visual que precisa do olho do Comandante**; fica como decisão dele (abaixo).
+
+**Custo de CPU:** zero.
+
+**Falta (R13):** (a) revisão nativa das traduções; (b) o texto do rádio e do briefing das missões por onda e a tela final de cada modo (só aparecem jogando até o fim); (c) **decisão do Comandante:** ombros no Onça para ele ser o melhor usuário do arpão (trabalho visual), ou deixar o arpão para o Marauder.
+
+**Próxima sessão começa com:** o que o Comandante julgar. **A Amazônia (P180) está com outra sessão: não mexer.**
+
+## ONDE FICAM OS LOGINS, E A CÓPIA DE SEGURANÇA QUE NÃO EXISTIA — Claude, 17/10 (branch `claude/contas-onde`, P183)
+
+**O Comandante (17/10):** *"onde os logins serão salvos se não temos supabase? como está isso? onde estão os arquivos pra eu conferir?"*.
+
+**Resposta (o que existe de verdade):** os logins ficam em **`D:\DECEPTICONS\.tmp\servidor\contas.db`**, um arquivo SQLite no PC do servidor (`node:sqlite`, sem serviço de nuvem, decisão dele de 28/09). Guarda e-mail, o **hash `scrypt`** da senha, o **hash** do token de cada sessão e o progresso (nível, XP, créditos, apelido). O código que lê e escreve é o `server/contas.ts` (o único com SQL); as rotas, `server/Server.ts`; o contrato, `shared/net/auth.ts`. **Hoje há 1 conta** (de teste, criada às 13:12). Está tudo descrito em `DEPLOY.md` (§ "Contas: onde estão, o que guardam e como restaurar").
+
+**Achado (R17): não existia cópia de segurança.** Um arquivo corrompido ou apagado por engano levava as contas de todos os pilotos.
+
+**Feito:**
+1. **`server/backupContas.ts`:** uma cópia **consistente** (`VACUUM INTO`, não pega o banco no meio de uma escrita) por dia em `.tmp\servidor\backups\contas-AAAA-MM-DD.db`, as **últimas 14**; o `Server` a faz ao subir e a cada 6 h (a do dia é substituída pela mais nova). Falha na cópia só registra no log: o jogo não cai.
+2. **Testes (7) e 2 mutações pegas:** o nome é do dia (UTC); a retenção apaga só as mais velhas e **ignora arquivo que não é cópia**; a cópia é um banco de verdade (abre, autentica a senha, traz o progresso); a segunda rodada do dia a substitui; o servidor copia ao subir.
+3. **`DEPLOY.md`:** a tabela de onde está cada coisa, o que o banco guarda, como **restaurar** e como contar as contas sem expor e-mail. Também corrigi o texto velho ("ainda não tem tela"): a tela e a sincronização do progresso estão no ar desde 17/10.
+
+**Custo de CPU:** uma cópia de um arquivo de ~40 KB a cada 6 h.
+
+**Falta (decisão do Comandante, R13):** a cópia fica **no mesmo disco do PC** (a regra G15 impede o projeto de gravar fora da pasta dele): protege de arquivo corrompido ou apagado, **não** de o disco morrer. Levar `backups\` de vez em quando para um pen drive ou para a nuvem pessoal dele é um `Copy-Item` de arquivos pequenos. **O banco guarda e-mails** (dado pessoal, LGPD): vale uma política de privacidade na página quando o cadastro abrir ao público. O servidor de produção só passa a copiar depois de reiniciar com este código (o atualizador reinicia sozinho no merge).
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois o Relatório de Consequências e os ombros dos chassis pesados (P181). **A Amazônia (P180) está com outra sessão: não mexer.**
+
+## DIETA DE JS: OS PAINÉIS OPCIONAIS DO CONSOLE SAEM DO DOWNLOAD DE PARTIDA — Claude, 17/10 (branch `claude/dieta-js`, R7)
+
+**O problema:** o JS de partida (o que todo jogador baixa para abrir o jogo) estava em **499,7 / 500 KB**: qualquer módulo novo, de qualquer agente, travaria o `npm run check` de todo mundo. Em uma semana eu tinha estourado o teto três vezes (o `‹ valor ›`, o Arquivo, o idioma).
+
+**Feito:**
+1. **Cinco painéis viram pedaços sob demanda** (`import()` no primeiro clique, `core/sobDemanda.ts`): **Esquadrão** (6,8 KB gzip), **Campanhas** (3,6), **Arsenal** (3,8), **Servidor** (6,2) e **Câmeras** (2,8). O `Game` não os importa mais de forma estática; o clique baixa o pedaço, cria o painel e abre (sem rede, avisa no console e o próximo clique tenta de novo).
+2. **JS de partida: 499,7 → 486,2 KB** (folga de **13,8 KB**). Os pedaços sob demanda ficam abaixo de 7 KB cada (teto: 150 KB).
+3. **Prova no navegador de verdade** (build de produção servido): antes do clique **nenhum** desses cinco pedaços é pedido; depois do clique cada um baixa e o painel abre; zero erros. Testes (`sobDemanda.test.ts`): a fábrica cria uma vez, o erro não fica guardado, um painel que falha não derruba o jogo, e o `Game` não importa mais os cinco de forma estática.
+
+**Custo de CPU:** menos que antes (o download e a análise do JS dos painéis só acontecem para quem os abre).
+
+**Regra para todos os agentes** (agora no `PROTOCOLO_UNIVERSAL.md`, R7): **tela ou painel opcional entra por `import()` no clique; texto estático longo vai para JSON em `public/`.** O próximo candidato, se a folga acabar: o `HangarMenu` (28 KB minificados) e o `HangarScene` (16 KB), que hoje o `Game` aquece no boot (pré-compilação de shaders): tirá-los do boot é uma decisão de experiência (o primeiro "H" passaria a esperar o pedaço), não só de bundle.
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois o Relatório de Consequências, a Amazônia (P180) e os ombros dos chassis pesados (P181).
+
 ## AMAZÔNIA, PARTE B: O RIO E O MAPA — o cenário de 2,4 km com o rio como termômetro — Claude, 17/10 (branch `claude/amazonia-mapa`, P180)
 
 **A ordem do Comandante (17/10):** *"vamos já planejar e construir a próxima fase: o rio Amazonas, uma mineradora acabando com o rio… o cenário precisa ser bem maior… manter a eficiência e a contenção de consumo"* e *"acima desse super mech o rio é limpo e vivo, e depois dessa máquina o rio fica poluído, sujo, com óleo e envenenado"*; depois, *"continua iterando até concluir essas pendências"*.
