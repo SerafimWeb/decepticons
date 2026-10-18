@@ -22,7 +22,7 @@
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, lstatSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { atualizar } from './atualizador.mjs';
+import { atualizar, ultimasLinhas } from './atualizador.mjs';
 
 const RAIZ = resolve(import.meta.dirname, '..');
 const LOG = resolve(RAIZ, '.tmp', 'servidor', 'atualizacao.log');
@@ -40,7 +40,16 @@ function tarefa(acao) {
 
 const codigo = atualizar({
   git: (...args) => spawnSync('git', args, { cwd: RAIZ, encoding: 'utf8' }),
-  executar: (comando, args) => spawnSync(comando, args, { cwd: RAIZ, stdio: 'inherit', shell: true }).status,
+  executar: (comando, args) => {
+    // A saída continua indo para o console da tarefa, mas agora também fica uma cópia do fim dela no log quando o comando falha (qual teste caiu?).
+    const r = spawnSync(comando, args, { cwd: RAIZ, encoding: 'utf8', shell: true, maxBuffer: 128 * 1024 * 1024 });
+    if (r.stdout) process.stdout.write(r.stdout);
+    if (r.stderr) process.stderr.write(r.stderr);
+    if (r.status !== 0) {
+      appendFileSync(LOG, `[${new Date().toISOString()}] "${comando} ${args.join(' ')}" falhou (código ${r.status}); o fim da saída:\n${ultimasLinhas(`${r.stdout ?? ''}\n${r.stderr ?? ''}`, 40)}\n`);
+    }
+    return r.status;
+  },
   log(linha) {
     const texto = `[${new Date().toISOString()}] ${linha}`;
     console.log(texto);

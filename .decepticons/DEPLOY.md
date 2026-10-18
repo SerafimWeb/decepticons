@@ -238,6 +238,14 @@ deve listar as duas tarefas.
 
 **Rodada cortada no meio da verificação (09/10, noite): o código ficava em disco e o servidor no velho.** O marcador `reinicio-pendente` só nasce depois da verificação, então uma rodada cortada antes dela deixava a seguinte ver "nada novo". Agora o atualizador grava `.tmp\wt-servidor-prod\.tmp\servidor\verificacao-pendente.json` (`de`, `para`, `feito`) assim que puxa o código e **retoma de onde parou** na rodada seguinte (o typecheck que passou não se repete); falhou, volta para `de`. Para saber se há verificação pela metade: esse arquivo existe, e o `atualizacao.log` mostra "retomando a verificação cortada". Reinício à mão (0 jogadores): `.\scripts\parar-servidor.ps1`; se disser "a porta continua ocupada", **confira a porta de novo antes de concluir** (sob falta de memória o servidor leva mais de 100 s para sair) e só então `.\scripts\ligar-servidor.ps1`. Vigiar o servidor: uma consulta ao `/status` por minuto, nunca a cada poucos segundos.
 
+### 17/10: a verificação do atualizador reprovava "no escuro" e o servidor ficou 2,5 h no código velho (Claude)
+
+**O que aconteceu:** depois dos merges das contas (#371) e do idioma (#372), o `atualizacao.log` registrou **seis** `FALHOU (testes de server/ e shared/) — voltando para ce46b79` (duas delas com 12 s de diferença: duas rodadas se atropelando em `.tmp/vitest`), e a produção seguiu no código velho. Os mesmos testes (`node scripts/test.mjs run --no-isolate server shared`) passavam na worktree de desenvolvimento. Na primeira rodada **em silêncio** (sem `npm run check`, sem navegador na máquina) a verificação passou em **40 s** e o servidor religou no código novo em 1 min (protocolo 20; a primeira cópia do banco de contas apareceu em `backups\`).
+
+**Causa:** concorrência de CPU e de pasta com o trabalho dos agentes na mesma máquina, não código quebrado. **O que ficou ruim:** o `executar` do atualizador usava `stdio: 'inherit'`, então a saída do teste que falhou ia para o console da tarefa agendada e **se perdia**: o log dizia que falhou, não qual teste.
+
+**O que mudou:** `scripts/atualizar-servidor.mjs` agora captura a saída e, quando um comando falha, grava no `atualizacao.log` **as últimas 40 linhas** dele (`ultimasLinhas`, com teste). **Regra de operação:** depois de cada merge, **ficar quieto** (sem `npm run check`, sem suíte, sem captura de navegador) até o log mostrar `servidor religou no código novo`.
+
 ### Contas de piloto (login, Claude 28/09 — só o esqueleto: criar conta, entrar, sair)
 
 **Banco:** SQLite embutido do Node (`node:sqlite`, sem dependência nova — depois da dor do dia com o binário
