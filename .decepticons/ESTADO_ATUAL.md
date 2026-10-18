@@ -1,5 +1,22 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O ONLINE CAÍA PARA QUEM JOGA POR VPN: A PORTEIRA DESCARTA O PICO EM VEZ DE CORTAR — Claude, 17/10 (branch `claude/guard-rajada`, P184)
+
+**O relato do Comandante (17/10):** *"não tô conseguindo jogar online, dá erro e cai a conexão... não consigo jogar CONTRA meu outro PC usando VPNs diferentes"*.
+
+**O que o `servidor.log` mostra:** quatro cortes **"taxa alta demais"**, dois deles dos IPs **212.8.252.70** e **185.177.124.221** (as duas VPNs do teste), com o servidor saudável no momento do corte; e o tempo médio do tick com picos de **298 e 1.093 ms** (uma média móvel: são travadas de segundos). **O PC do servidor é o mesmo em que se trabalha** e tem 6 GB com ~400 MB livres (o processo do servidor estava com 11 MB na memória, paginado): quando o laço do Node congela, as mensagens de todos chegam juntas na volta, e a porteira cortava **no primeiro excesso**. Quem jogava pela VPN (mais jitter) era o primeiro a cair.
+
+**Corrigido (`server/guard.ts`):** o excesso de mensagens passa a ser **descartado** (nada é decodificado: custo de uma conta) e a conexão segue; só o **abuso de verdade** corta (o descarte acumulado passa de 600, caindo 60 por segundo: uma inundação cai em instantes, uma travada de segundos não). A folga subiu de 30 para 120 mensagens. O log passa a dizer `descarte de <ip>: pico de mensagens (a conexão segue)`. **Testes:** o balde (veredito ok/descarte/corte, o pico que passa, a inundação cortada, o excesso sustentado cortado e o leve nunca), o servidor de verdade (um pico de 45 mensagens não derruba; 80 derrubam); **mutação à mão: 7 de 7**.
+
+**O que o código não resolve (e o que fazer):**
+1. **O túnel da Cloudflare cai quando a VPN do PC do servidor muda** (o `jogo.cybermech.online` devolveu **502** por um tempo hoje: o túnel estava fora): não troque a VPN do PC do servidor com gente jogando; se o jogador é este mesmo PC, prefira outro PC como cliente.
+2. **Memória do PC do servidor:** com menos de 1 GB livre o servidor trava por segundos. Feche o IDE e os navegadores enquanto joga, e **peça-me para não rodar teste nem build pesado enquanto você joga** (os meus testes e o `npm run check` do push usam todo o processador e a memória).
+3. **Testar dois PCs sem VPN:** pela rede de casa (`HOST=0.0.0.0`, `ws://IP-DESTE-PC:2567`; ver `DEPLOY.md`).
+
+**Onde o Comandante confere:** depois do merge o atualizador reinicia o servidor (~1 minuto fora): jogue de dois PCs na mesma sala (`?sala=ARENA`); se algum pico passar, o `servidor.log` mostra `descarte de ...` e **ninguém cai**.
+
+**Falta (R13):** **não provei com a VPN dele** (só com o teste do servidor de verdade e a leitura do log): se ainda cair, o próximo passo é gravar no log o motivo do fechamento de cada conexão (código e quem fechou). Não mexi no túnel nem na prioridade do processo do servidor (o Windows negou: ele roda como serviço).
+
 ## IDIOMA, SEGUNDA RODADA: OS MODOS DE JOGO (A PRAIA, A BANDEIRA, O DOMÍNIO) — Claude, 17/10 (branch `claude/idioma-modos`, P173)
 
 **Por que:** a auditoria do Hangar deixou claro que o teste de cobertura não via o que o jogo monta na tela. Auditei **no navegador, em japonês, cada modo** (sobrevivência, bandeira, domínio e a praia, **nunca a Amazônia: está com outra sessão**). Os três primeiros já estavam limpos; **a missão da praia (Cabos Abertos) tinha ~15 textos na tela e dezenas nos avisos**.
