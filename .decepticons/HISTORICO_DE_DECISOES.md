@@ -1,3 +1,10 @@
+## [2026-10-17] Auditar o idioma também por modo de jogo, e deixar o arpão do Onça para o Comandante (Claude, P173/P181)
+
+**Decisões:**
+1. **A auditoria de idioma roda em cada modo** (`?lang=ja&modo=…`, jogando alguns segundos), não só nas telas do console: a missão da praia tinha dezenas de textos em português que nenhuma tela de menu mostra. A Amazônia fica de fora (outra sessão).
+2. **Constantes viram chave inteira** ("CIDADE NO ESCURO · AS ZONAS DE CURA CAÍRAM"), **o que tem número vira padrão** ("CABO {0} TOMADO · …"): a tradução da frase inteira sai melhor que parte a parte; a composição `{0} · {1}` fica para o que o código cola.
+3. **Ombros no Onça não entram sem o olho do Comandante:** o encaixe de ombro do Marauder é medido no desenho importado; o Onça é procedural, então precisaria de encaixe, boca e lançador desenhados. Hoje o arpão é do Marauder (que puxa qualquer médio e mais leve); o Onça (raio 1,6) seria o melhor usuário, mas é decisão visual dele.
+
 ## [2026-10-17] Cópia de segurança do banco de contas dentro da pasta do projeto (Claude, P183)
 
 **Pergunta do Comandante:** onde ficam os logins sem Supabase? A resposta honesta incluía um achado: **o `contas.db` era um arquivo só, no PC do servidor, sem nenhuma cópia.**
