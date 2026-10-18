@@ -15,6 +15,24 @@
 
 **Por que registrar:** quem for fazer a defesa (D) e a invasão (E) precisa saber que o Draga é um `MechBase` com dois módulos de perna, que a missão tem módulo próprio e que **o pacote de partida tem 9,3 KB de folga (490,7 de 500)**.
 
+## [2026-10-17] O atualizador do servidor passa a guardar o fim da saída quando a verificação falha (Claude)
+
+**Problema:** a verificação (typecheck + testes de `server/` e `shared/`) reprovou seis vezes e a produção ficou 2,5 h no código velho; o log só dizia "FALHOU", porque a saída ia para o console de uma tarefa agendada. Descobri a causa (concorrência com o trabalho dos agentes) por silêncio e tentativa, não por evidência.
+
+**Decisão:** gravar as **últimas 40 linhas** da saída do comando que falhou no `atualizacao.log` (`ultimasLinhas`, testado). **Não** mudei a política (continua uma tentativa por rodada, voltando ao código verificado se falhar), porque repetir ou esperar silêncio é um trade-off de operação que cabe a quem usa a máquina: com a saída no log, o próximo episódio mostra qual teste caiu e por quê.
+
+## [2026-10-17] A porteira descarta o pico em vez de cortar a conexão (Claude, P184)
+
+**Ordem:** "não tô conseguindo jogar online, dá erro e cai a conexão... não consigo jogar CONTRA meu outro PC usando VPNs diferentes".
+
+**Diagnóstico (do `servidor.log`):** quatro "corte de ...: taxa alta demais", dois deles de IPs de VPN, com o servidor saudável; o `tickMs` (média móvel de 2%) em 298 e 1.093 ms, ou seja, travadas de segundos do laço; PC do servidor com ~400 MB livres de 6 GB.
+
+**Decisão:** a porteira **descarta** a mensagem quando o balde esvazia e só **corta** quando o descarte vira abuso (`dropCut` = 600, caindo `msgs` por segundo); a folga subiu de 30 para 120. **Por quê:** o corte no primeiro excesso punia quem esperava o servidor (as mensagens de todos chegam juntas depois de uma travada), e o jogador de VPN, com mais jitter, caía primeiro. Descartar custa uma conta (nada é decodificado) e perder um pacote de entrada só faz a previsão se corrigir; a inundação de verdade ainda cai em instantes (mil mensagens de uma vez cortam em ~700).
+
+**Não resolvido por código:** o túnel da Cloudflare cai com a VPN do PC do servidor (502), e o PC do servidor é o mesmo da bancada de trabalho (memória). Está no `DEPLOY.md` § 4b.
+
+**Prova:** testes do balde e do servidor de verdade; mutação à mão, 7 de 7.
+
 ## [2026-10-17] Auditar o idioma também por modo de jogo, e deixar o arpão do Onça para o Comandante (Claude, P173/P181)
 
 **Decisões:**

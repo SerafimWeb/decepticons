@@ -1237,15 +1237,32 @@ describe('M3: defesas do servidor (mesmo domínio da Selva MKT, DEPLOY.md)', () 
     }
   });
 
-  it('taxa por conexão: quem manda mais que o balde aguenta é derrubado', async () => {
-    const s = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 10, total: 10, msgs: 10, burst: 5 } });
+  it('taxa por conexão: quem inunda o servidor (muito além do balde) é derrubado', async () => {
+    const s = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 10, total: 10, msgs: 10, burst: 5, dropCut: 20 } });
     try {
       const c = open(s.port, 'FLUD');
       await c.opened;
-      // Dispara mais que o balde (nominal 10 + folga 5 = 15) de uma vez, tudo binário.
-      for (let i = 0; i < 30; i++) c.ws.send(new Uint8Array([0]));
+      // Dispara muito mais que o balde (nominal 10 + folga 5 = 15) mais o descarte tolerado (20) de uma vez, tudo binário.
+      for (let i = 0; i < 80; i++) c.ws.send(new Uint8Array([0]));
       expect(await c.closed).toBe(4008);
       expect(s.guard.rejected.flood).toBe(1);
+    } finally {
+      await s.close();
+    }
+  });
+
+  it('um pico passageiro (o servidor travou e tudo chegou junto) perde o excesso mas NÃO derruba a conexão (o que cortava os jogadores de VPN em 18/10)', async () => {
+    const s = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 10, total: 10, msgs: 10, burst: 5, dropCut: 100 } });
+    try {
+      const c = open(s.port, 'PICO');
+      await c.opened;
+      // 45 mensagens de uma vez: 15 passam, 30 são descartadas (abaixo do 100 tolerado).
+      for (let i = 0; i < 45; i++) c.ws.send(new Uint8Array([0]));
+      await new Promise((r) => setTimeout(r, 400));
+      expect(c.ws.readyState, 'a conexão segue aberta').toBe(c.ws.OPEN);
+      expect(s.guard.rejected.flood, 'ninguém foi cortado').toBe(0);
+      expect(s.guard.rejected.picos, 'o pico foi registrado uma vez').toBe(1);
+      c.ws.close();
     } finally {
       await s.close();
     }
