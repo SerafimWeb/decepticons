@@ -37,6 +37,11 @@ const DIAS_GUARDADOS = 120;
 /** Países diferentes por evento e por dia (o mundo tem ~250; acima disso o resto vai para `??`). */
 const PAISES_TETO = 80;
 
+/** O dia (AAAA-MM-DD) de um instante, no horário de Brasília: o mesmo recorte de todas as contagens por dia. */
+export function diaDe(now: number): string {
+  return new Date(now + FUSO_MS).toISOString().slice(0, 10);
+}
+
 type Balde = { tokens: number; refilled: number };
 type Dia = Record<string, Record<string, number>>;
 
@@ -180,7 +185,7 @@ export class Telemetria {
   }
 
   private diaDe(now: number): string {
-    return new Date(now + FUSO_MS).toISOString().slice(0, 10);
+    return diaDe(now);
   }
 
   private noDia(nome: EventoQualquer, pais: string, now: number): void {

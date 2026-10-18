@@ -21,7 +21,7 @@ Histórico: 20 rodadas locais. Fila: 12 resumos, validade 24 h, tentativa a cada
 1. Confirmar um erro controlado chegando ao Serafim13 e atribuído à versão certa; configurar/validar alertas, responsáveis e recuperação.
 2. Quando autorizado retomar servidor, publicar versão compatível, validar métricas remotas e disponibilidade por monitor externo, sem confundir site disponível com jogo disponível.
 3. Medir dispositivos/rede reais, erros por sessão, falhas de entrada, reconexão e latência p95/p99. CAPACIDADE.md contém só a caracterização local.
-4. Definir política explícita para identificação entre sessões antes de retenção D1/D7. GA instalado não prova cobertura, consentimento ou qualidade da coleta.
+4. ~~Definir política explícita para identificação entre sessões antes de retenção D1/D7.~~ **Decidido (P185, 18/10):** a identificação entre sessões é **a conta** (a pessoa criou o login); o convidado continua anônimo. A retenção D1/D7, o DAU/WAU/MAU e os minutos por piloto saem da tabela `atividade` (`server/contas.ts`), no bloco `usuarios` do `/metricas`. **Falta a política de privacidade** (`PRIVACIDADE.md`). GA instalado não prova cobertura, consentimento ou qualidade da coleta.
 5. Evoluir retenção/agregação e entrega conforme volume; testes de restauração de SQLite/métricas e runbook de incidente. Não foi criado serviço duplicado de erros em paralelo ao Serafim13.
 
 Validação atual: testes de scrub/limites, simulação de escudo, HTTP com relatório válido/inválido/excessivo, deduplicação e reinício; prova de exportação no navegador. Ver PLAYTEST.md para usar os números sem substituir julgamento do jogador.

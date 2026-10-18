@@ -82,6 +82,19 @@ const body = `
       <h2 id="h-agora">Agora</h2>
       <div class="cards" id="cards"></div>
     </section>
+    <section aria-labelledby="h-pilotos">
+      <h2 id="h-pilotos">Pilotos com conta</h2>
+      <p class="lede">Quem criou conta: quantos abrem o jogo, quantos jogam de fato, por quanto tempo e se voltam. <b>Só contagens</b> (nenhum e-mail, nenhum identificador aqui). Quem joga como convidado não entra nestes números: aparece só nos totais de rodadas logo abaixo.</p>
+      <div class="cards" id="pilotos"></div>
+      <p class="lede" id="pilotos-desde"></p>
+      <details class="tabela"><summary>ver o dia a dia dos pilotos</summary><div class="rolavel"><table class="paises" id="tab-pilotos"></table></div></details>
+    </section>
+    <section aria-labelledby="h-jogo">
+      <h2 id="h-jogo">O que se joga</h2>
+      <p class="lede">As rodadas que os navegadores declararam (com e sem conta), por mapa e modo e por dia. A <b>onda</b> é a média da mais alta que cada rodada alcançou (missões e Sobrevivência); vitória e derrota só existem nas missões. Números declarados pelo cliente: medem o jogo, não valem como placar.</p>
+      <div class="rolavel"><table class="paises" id="tab-mapas"></table></div>
+      <div class="rolavel"><table class="paises" id="tab-jogo-dias"></table></div>
+    </section>
     <section aria-labelledby="h-funil">
       <h2 id="h-funil">Funil · últimos 7 dias</h2>
       <p class="lede">Da visita à partida. Cada barra é o total do passo; o número pequeno é quanto sobrou do passo anterior.</p>
@@ -252,6 +265,66 @@ const js = `(() => {
     t.append(corpo);
   }
 
+  const pct = (a, b) => (b > 0 ? Math.round(100 * a / b) + '%' : '—');
+  const tabela = (id, cabecalho, linhas, vazio) => {
+    const t = $(id); t.replaceChildren();
+    const cab = el('tr'); for (const h of cabecalho) cab.append(el('th', null, h));
+    const cabeca = el('thead'); cabeca.append(cab); t.append(cabeca);
+    const corpo = el('tbody');
+    if (!linhas.length) { const tr = el('tr'); tr.append(el('td', { colspan: String(cabecalho.length) }, vazio)); corpo.append(tr); }
+    for (const l of linhas) { const tr = el('tr'); l.forEach((x) => tr.append(el('td', null, x))); corpo.append(tr); }
+    t.append(corpo);
+  };
+  /** Os dias de calendário (Brasília) de hoje para trás: o "hoje" e o "há n dias" no mesmo fuso do servidor. */
+  const diaAtras = (i) => new Date(Date.now() - 3 * 3600e3 - i * 86400e3).toISOString().slice(0, 10);
+
+  function pilotos(m) {
+    const u = m.usuarios;
+    const caixa = $('pilotos'); caixa.replaceChildren();
+    if (!u || typeof u !== 'object') {
+      $('pilotos-desde').textContent = 'Este servidor ainda não manda os números dos pilotos: é uma versão antiga. Atualize e reinicie o servidor.';
+      tabela('tab-pilotos', ['dia'], [], 'Sem dados.');
+      return;
+    }
+    const novas = u.novasPorDia || {};
+    let novas7 = 0; for (let i = 0; i < 7; i++) novas7 += novas[diaAtras(i)] || 0;
+    const ativos = u.ativos || {}; const jogaram = u.jogaram || {};
+    const ret = (r) => { const x = r || {}; return [pct(x.voltaram, x.coorte), N(x.voltaram) + ' de ' + N(x.coorte) + ' voltaram. ']; };
+    const lista = [
+      ['contas criadas', N(u.contas), N(novas[diaAtras(0)] || 0) + ' hoje · ' + N(novas7) + ' nos últimos 7 dias'],
+      ['abriram o jogo hoje', N(ativos.dia), N(ativos.semana) + ' em 7 dias · ' + N(ativos.mes) + ' em 30 dias'],
+      ['jogaram hoje', N(jogaram.dia), N(jogaram.semana) + ' em 7 dias · ' + N(jogaram.mes) + ' em 30 dias (entrar sem jogar não conta)'],
+      ['minutos por piloto', Number(u.minutosPorJogador || 0).toLocaleString('pt-BR'), 'média de quem jogou, nos últimos 30 dias'],
+      ['voltaram no dia seguinte', ret(u.retencao && u.retencao.d1)[0], ret(u.retencao && u.retencao.d1)[1] + 'D1: das contas criadas nos últimos 30 dias (com o dia seguinte já passado)'],
+      ['voltaram em 7 dias', ret(u.retencao && u.retencao.d7)[0], ret(u.retencao && u.retencao.d7)[1] + 'D7: abriram o jogo de novo 7 dias depois de criar a conta'],
+    ];
+    for (const [k, v, d] of lista) {
+      const c = el('div', { class: 'card' });
+      c.append(el('span', { class: 'k' }, k), el('span', { class: 'v' }, v), el('span', { class: 'd' }, d));
+      caixa.append(c);
+    }
+    $('pilotos-desde').textContent = u.desde ? 'Medindo desde ' + u.desde + ': a retenção só vale para contas criadas depois disso.' : 'Ainda sem nenhuma atividade de conta registrada.';
+    const dias = Array.isArray(u.porDia) ? u.porDia.slice().reverse() : [];
+    tabela('tab-pilotos', ['dia', 'abriram o jogo', 'jogaram', 'minutos', 'rodadas', 'abates', 'mortes', 'abates por morte'],
+      dias.map((d) => [d.dia, N(d.ativos), N(d.jogaram), N(d.minutos), N(d.partidas), N(d.abates), N(d.mortes), d.mortes > 0 ? (d.abates / d.mortes).toFixed(2) : '—']),
+      'Ainda sem atividade de pilotos com conta.');
+  }
+
+  function oQueSeJoga(m) {
+    const p = m.play || {};
+    const mapas = Array.isArray(p.maps) ? p.maps.slice().sort((a, b) => b.reports - a.reports) : [];
+    tabela('tab-mapas', ['mapa · modo', 'rodadas', 'concluídas', 'minutos', 'abates / mortes', 'vitórias / derrotas', 'onda média', 'com conta'],
+      mapas.map((g) => [
+        g.map + ' · ' + g.mode, N(g.reports), pct(g.completed, g.reports), N(Math.round(g.seconds / 60)), N(g.kills) + ' / ' + N(g.deaths),
+        g.won + g.lost > 0 ? N(g.won) + ' / ' + N(g.lost) : '—', g.waveReports > 0 ? (g.waves / g.waveReports).toFixed(1) : '—', pct(g.logged, g.reports),
+      ]),
+      'Ainda sem rodadas com mapa (o navegador novo manda o mapa; os antigos não).');
+    const dias = Array.isArray(p.days) ? p.days.slice(-14).reverse() : [];
+    tabela('tab-jogo-dias', ['dia', 'rodadas', 'minutos jogados', 'com conta', 'abates', 'mortes'],
+      dias.map((d) => [d.day, N(d.reports), N(Math.round(d.seconds / 60)), pct(d.logged, d.reports), N(d.kills), N(d.deaths)]),
+      'Ainda sem rodadas por dia.');
+  }
+
   /** Confere o que veio do servidor: o painel não confia nem no servidor dele. */
   function valido(m) {
     return m && typeof m === 'object' && Array.isArray(m.dias) && m.total && typeof m.total === 'object' &&
@@ -285,7 +358,7 @@ const js = `(() => {
     if (m === null) { $('painel').hidden = true; return estado('O servidor respondeu, mas não com métricas: é provavelmente uma versão antiga. Atualize e reinicie o servidor (DEPLOY.md, seção 04/10).', true); }
     if (!valido(m)) { $('painel').hidden = true; return estado('Resposta do servidor em formato inesperado.', true); }
     guardar(token); $('token').value = '';
-    cartoes(m); funil(m); porDia(m); porPais(m);
+    cartoes(m); pilotos(m); oQueSeJoga(m); funil(m); porDia(m); porPais(m);
     const table=$('partidas');table.replaceChildren();const header=el('tr');for(const text of ['Versão / modo / montagem','Origem','Assistência','Rodadas','Concluídas','Quadros lentos','Abates / mortes'])header.append(el('th',null,text));table.append(header);
     const groups=Array.isArray(m.play?.groups)?m.play.groups.slice(0,128):[];
     for(const g of groups){const row=el('tr');const values=[String(g.release)+' / '+String(g.mode)+' / '+String(g.build),g.online?'Online':'Offline',g.assisted?'Assistida':'Normal',N(g.reports),N(g.completed),g.frames>0?(100*g.slowFrames/g.frames).toFixed(1)+'%':'—',N(g.kills)+' / '+N(g.deaths)];for(const value of values)row.append(el('td',null,value));table.append(row);}

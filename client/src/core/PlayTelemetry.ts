@@ -3,11 +3,14 @@ import {
   parsePlayReport,
   type PlayReport,
 } from "../../../shared/net/playMetrics";
+import { SESSAO_HEADER } from "../../../shared/net/auth";
 import { serverHttpUrl } from "../../../shared/net/serverUrl";
+import { chaveDoToken } from "../net/sessao";
 const KEY = "cybermech.playtests.v1";
 const QUEUE = "cybermech.playtests.pending.v1";
 type Context = Pick<PlayReport, "mode" | "online" | "build" | "release"> & {
   assisted?: boolean;
+  map?: string;
 };
 type Pending = { at: number; report: PlayReport };
 /** Só acumula números durante jogo; serialização/envio ao fechar rodada, fora da simulação. */
@@ -20,14 +23,27 @@ export class PlayTelemetry {
   private deaths = 0;
   private damage = 0;
   private firstKillS: number | null = null;
+  private wave: number | null = null;
+  private won: boolean | null = null;
   private assisted = false;
   private running = false;
   private flushing = false;
   private readonly url: string | null;
   private readonly pending: Pending[] = [];
+  /**
+   * `sessao`: o token da conta do piloto, se houver (P185: o servidor soma a rodada à atividade da conta). Por padrão é o que o navegador guardou **para este servidor**: um link com
+   * `?servidor=` apontando para outro lugar nunca recebe o token (a mesma regra da sessão em `net/sessao.ts`).
+   */
   constructor(
     server: string | undefined,
     private readonly context: () => Context,
+    private readonly sessao: () => string | null = () => {
+      try {
+        return localStorage.getItem(chaveDoToken(server));
+      } catch {
+        return null;
+      }
+    },
   ) {
     this.url = serverHttpUrl(server, PLAY_PATH);
     try {
@@ -71,6 +87,14 @@ export class PlayTelemetry {
   cheat(): void {
     this.assisted = true;
   }
+  /** A onda em que a rodada está (fica a mais alta que ela alcançou). */
+  onda(n: number): void {
+    if (Number.isInteger(n) && n >= 0 && n <= 999 && (this.wave === null || n > this.wave)) this.wave = n;
+  }
+  /** A missão acabou: vitória ou derrota. */
+  desfecho(won: boolean): void {
+    this.won = won;
+  }
   finish(outcome: PlayReport["outcome"]): void {
     if (!this.running) return;
     const report: PlayReport = {
@@ -86,6 +110,8 @@ export class PlayTelemetry {
       deaths: this.deaths,
       damage: Math.round(this.damage),
       firstKillS: this.firstKillS === null ? null : Math.round(this.firstKillS),
+      ...(this.wave !== null ? { wave: this.wave } : {}),
+      ...(this.won !== null ? { won: this.won } : {}),
     };
     try {
       const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? "[]");
@@ -106,6 +132,8 @@ export class PlayTelemetry {
       this.damage =
         0;
     this.firstKillS = null;
+    this.wave = null;
+    this.won = null;
     this.assisted = false;
     void this.flush();
   }
@@ -124,9 +152,12 @@ export class PlayTelemetry {
           this.pending.shift();
           continue;
         }
+        const token = this.sessao();
         const r = await fetch(this.url, {
           method: "POST",
-          headers: { "content-type": "text/plain" },
+          headers: token
+            ? { "content-type": "text/plain", [SESSAO_HEADER]: token }
+            : { "content-type": "text/plain" },
           body: JSON.stringify(p.report),
           keepalive: true,
           signal: AbortSignal.timeout(3000),
