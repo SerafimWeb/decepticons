@@ -1,5 +1,22 @@
 # ESTADO ATUAL — CYBERMECH
 
+## AS PENDÊNCIAS DO LANÇAMENTO: O QUE O COMANDANTE DECIDIU, O E-MAIL DO ENCARREGADO E O PASSO A PASSO DO QUE SÓ ELE FAZ — Claude, 18/10 (branch `claude/pendencias-lancamento`, P199 e P200)
+
+**O Comandante (18/10), respondendo à lista do que faltava:** manter o servidor neste PC por ora (ele está terminando o jogo para deixar o PC só como servidor); o e-mail do encarregado é `volkov@serafimweb.com`; quer as orientações da Cloudflare e como criar a chave do Google; "já estou divulgando, conclua as pendências"; e pediu para manter tudo limpo, enxuto e com boas práticas, perguntando se a contagem de "mais de 3.500 testes" estava duplicada e se há algum bug que torna as conversas longas e caras.
+
+**O que entrou:**
+1. **O e-mail do encarregado** em `.decepticons/contato-privacidade.txt` (versionado): a política `/privacidade/` passa a mostrá-lo nos dois lugares em que o contato aparece.
+2. **`LANCAMENTO.md § 6`:** o passo a passo do monitor externo (A14), da Cloudflare (estado do visitante e HSTS) e da chave de serviço do Google, com o estado de cada pendência.
+3. **A contagem de testes está certa, não duplicou:** o Vitest rodou **3.284 testes em 310 arquivos** (o check de hoje, antes do #385); o site mostra 3.265 (sala de controle) e 3.252 (oficina) porque cada página conta as linhas `it(` com uma regex um pouco diferente; são 312 arquivos de teste e os 7 nomes repetidos estão em pastas diferentes. **"3.500" não aparece em nenhuma página nem documento** do repositório.
+4. **Por que as conversas pesam (medido, não é bug de código):** os 5 documentos vivos somam **1,7 MB** (`ESTADO_ATUAL` 638 KB e 3.134 linhas, `HISTORICO` 645 KB e 3.852, `ORDENS` 192 KB, `STATUS_REAL` 156 KB, `ROADMAP` 90 KB); cada PR edita os cinco e briga no topo com os outros agentes; o check do push roda em silêncio de 6 a 10 min numa máquina compartilhada e reprova por carga. **Proposta, que espera o "pode" dele:** arquivar o que tem mais de 30 dias em `.decepticons/arquivo/` (o painel lê ESTADO e HISTORICO e passaria a ler o arquivo também).
+5. **A regra de higiene (P200)** entrou no R17 do `AGENTS.md`: o que ficou sem uso na área que o PR tocou sai no mesmo PR.
+
+**Não feito, e por quê:** o `servidor.log` antigo (1 e-mail e 16 IPs de rede) **segue como estava**. O Windows o trava com o servidor no ar (EBUSY) e **parar a tarefa não derruba o servidor** (verificado: o uptime não zerou; ele sobe por um ajudante do WMI). Nada foi alterado e o servidor não foi reiniciado. O servidor novo não escreve nada pessoal nesse arquivo.
+
+**Falta (dele):** conta no monitor externo; ligar a opção na Cloudflare; a chave do Google; razão social/CNPJ e o nome do encarregado na política; "esqueci a senha" (sem serviço de e-mail, lança avisando que a senha não se recupera); 5 a 10 pessoas de fora.
+
+**Próxima sessão começa com:** o "arquivar" do Comandante, se vier; senão, olhar as métricas dos primeiros jogadores de verdade.
+
 ## O PAINEL DE VISIBILIDADE: O QUE OS JOGADORES VEEM E O QUE FICA EM TESTE — Claude, 18/10 (branch `claude/visibilidade`, P191)
 
 **O Comandante (18/10):** *"um painel COMPLETO DE TUDO… pra eu poder selecionar o que os jogadores normais veem na tela (quais robôs, armas, fases, detalhes) e quais eu mantenho secretos/restritos ao admin, em estágio de teste… (tipo o botão "lado", "arquivo")"*.

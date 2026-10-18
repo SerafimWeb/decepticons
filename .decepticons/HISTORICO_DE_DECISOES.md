@@ -1,3 +1,14 @@
+## [2026-10-18] As pendências do lançamento: o que o Comandante decidiu e o que ficou com ele (Claude, P199 e P200)
+
+**Ordem:** *"por enquanto vamos manter assim… email é volkov@serafimweb.com… me passe as orientações pra enviar ao cloudflare… me ensine como criar a chave… temos que sempre manter limpo tudo… conclua as pendências. não precisa ficar procurando problema ou inventando mais trabalho"*.
+
+**Decisões:**
+1. **A1 mantido:** o servidor segue no PC de trabalho até o Comandante terminar o jogo; o risco é dele e está dito em `AUDITORIA_SEGURANCA.md` (A1). As travas de hoje (porteira, limite por conta, cópia de segurança, atualizador) não mudam.
+2. **O e-mail do encarregado fica em arquivo versionado** (`contato-privacidade.txt`): o repositório é privado e a página pública já o publica de qualquer forma.
+3. **Parar a tarefa "CYBERMECH servidor" não para o servidor** (descoberto ao tentar mascarar o `servidor.log` antigo: o uptime não zerou). Ele sobe por um ajudante do WMI. A instrução de limpeza do `DEPLOY.md` § 4c foi corrigida; o log antigo segue como estava até o servidor ser parado de verdade.
+4. **Não arquivar os documentos grandes sem o "pode" do Comandante:** ele pediu para não mexer em arquivos além do necessário, e o painel lê `ESTADO_ATUAL` e `HISTORICO`. A medida (1,7 MB nos 5 documentos vivos) e a proposta estão no `ESTADO_ATUAL.md`.
+5. **Higiene permanente (P200):** código, documento ou dado sem uso na área que o PR tocou sai no mesmo PR; números que o site publica (testes, módulos) saem do repositório, nunca digitados. Entrou no R17 do `AGENTS.md`.
+
 ## [2026-10-18] A visibilidade: um catálogo no código, as exceções no servidor, e o em-desenvolvimento nasce restrito (Claude, P191)
 
 **Ordem:** *"um painel COMPLETO DE TUDO… selecionar o que os jogadores normais veem… quais mantenho secretos/restritos ao admin, em estágio de teste/desenvolvimento (tipo o botão lado, arquivo)"*.

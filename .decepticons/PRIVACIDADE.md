@@ -54,8 +54,8 @@
 ## 5. O que falta (decisão e trabalho do dono)
 
 1. **Revisar o texto da política** (rascunho meu, a partir deste inventário) e dizer se concorda com as escolhas: **18 anos ou autorização do responsável**; **30 dias** de registro; **400 dias** de atividade; **14 dias** de backups. De preferência, com um advogado.
-2. **Contato do encarregado:** um e-mail em `.decepticons/contato-privacidade.txt` (uma linha) e a **razão social/CNPJ** da SERAFIM WEB, para a seção 1 da política.
-3. **Limpar o `servidor.log` antigo** (IPs inteiros e 1 e-mail): com a tarefa "CYBERMECH servidor" parada, apagar o arquivo (`DEPLOY.md` § 4c).
+2. **Contato do encarregado:** o e-mail está em `.decepticons/contato-privacidade.txt` (feito em 18/10) e a política o mostra; **falta a razão social/CNPJ** da SERAFIM WEB e o nome do encarregado, para a seção 1 da política.
+3. **Limpar o `servidor.log` antigo** (hoje: 1 e-mail e 16 IPs de rede): com o **processo** do servidor parado, apagar o arquivo (`DEPLOY.md` § 4c). **Parar a tarefa não basta** (tentado em 18/10: o servidor seguiu no ar, EBUSY).
 4. **Recuperação de senha e verificação de e-mail:** não existem; exigem um serviço de e-mail transacional (decisão e custo dele).
 5. **Corrigir o e-mail da conta:** não existe (exige a verificação do item 4).
 6. **Idiomas:** o painel de conta e a política só em português.

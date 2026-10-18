@@ -43,3 +43,26 @@ sons e vozes prontos), o **Hangar**, as **Configurações** e o painel do servid
 3. **Uma ordem por vez**, cada uma com "pronto quando"; mensagem com várias ordens vira uma fila e a primeira anda.
 4. **Menos custo de leitura por conversa:** arquivar o que é antigo do `ESTADO_ATUAL.md` (3.000 linhas), do `HISTORICO_DE_DECISOES.md` (3.800) e da `ORDENS_DO_COMANDO.md` em `.decepticons/arquivo/`.
 5. **O PC:** enquanto o item 8 não sai, **avisar quando for jogar** e **não trocar a VPN do PC do servidor com gente jogando**.
+
+## 6. O passo a passo do que só o Comandante faz (18/10)
+
+**Estado:** A1 mantido (o servidor segue neste PC até o jogo ficar pronto); A13 reconhecida (a cópia de segurança fica no mesmo disco); **e-mail do encarregado: feito** (`volkov@serafimweb.com`); **faltam** os quatro abaixo, a razão social/CNPJ e o nome do encarregado na política, e "esqueci a senha" (sem serviço de e-mail, o lançamento avisa que a senha não se recupera).
+
+**A. Monitor externo (A14).** É um serviço **de fora** que visita o jogo e o site a cada 5 min e manda e-mail se não responderem. Tem que ser de fora porque a página de métricas mora no mesmo PC do servidor: se o PC desligar, ela não avisa ninguém. Com o UptimeRobot (grátis):
+1. Criar a conta em uptimerobot.com e confirmar o e-mail.
+2. **Add New Monitor** → tipo **HTTP(s) - Keyword**; nome "CYBERMECH servidor"; URL `https://jogo.cybermech.online/status`; palavra-chave `protocol` ("Alert when keyword does not exist"); intervalo 5 min; contato de alerta: o e-mail dele.
+3. Um segundo monitor, tipo **HTTP(s)**, nome "CYBERMECH site", URL `https://cybermech.online/`.
+4. Se o monitor acusar 403, é a Cloudflare barrando o robô: liberar o UptimeRobot em Security → WAF.
+
+**B. Cloudflare** (dash.cloudflare.com → o domínio `cybermech.online`):
+1. **Estado do visitante:** Rules → **Managed Transforms** → ligar **"Add visitor location headers"**. O servidor lê só o `cf-region-code` (a sigla do estado, só do Brasil); cidade e coordenadas chegam junto, mas são ignoradas e nunca gravadas. O estado aparece em "De onde vêm", no `/metricas/`, a partir do dia seguinte.
+2. **HSTS:** SSL/TLS → Edge Certificates → **HTTP Strict Transport Security (HSTS)** → Enable: Max Age **6 meses**, Include subdomains **desligado**, Preload **desligado**, No-Sniff **ligado**. Só vale para os endereços que passam pela Cloudflare (nuvem laranja); se o `cybermech.online` estiver em "somente DNS" (nuvem cinza), o HSTS do site vem do `.htaccess` (uma linha no `scripts/site.mjs`; peça).
+
+**C. Chave do Google Analytics** (para trazer os números do Analytics para o `/metricas/`; o jogo já manda dados pelo código de medição `G-2CCHDCEC7X`, depois do consentimento):
+1. console.cloud.google.com → criar um projeto (ex.: "cybermech-analytics").
+2. **APIs e serviços → Biblioteca** → procurar **"Google Analytics Data API"** → **Ativar**.
+3. **IAM e administrador → Contas de serviço → Criar conta de serviço** (nome `cybermech-metricas`; **sem papéis**).
+4. Abrir a conta criada → **Chaves → Adicionar chave → Criar nova chave → JSON**: baixa um arquivo `.json`.
+5. analytics.google.com → **Administrador → Gerenciamento de acesso à propriedade → "+"** → colar o e-mail da conta de serviço (termina em `.iam.gserviceaccount.com`) com o papel **Leitor**.
+6. Administrador → **Detalhes da propriedade**: copiar o **ID da propriedade** (só números; não é o `G-…`).
+7. Guardar o `.json` em `D:\DECEPTICONS\.tmp\servidor\ga-chave.json` (**nunca** colar a chave no chat nem no git) e avisar só "chave guardada" e o ID da propriedade. **Depois disso falta ligar a leitura no código** (uma ordem à parte; fora do escopo do lançamento).
