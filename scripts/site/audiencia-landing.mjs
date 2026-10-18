@@ -1,5 +1,5 @@
 /**
- * A audiência (P188) para a landing estática: a landing não passa por bundler, mas a classificação da origem e a descrição da visita têm de ser **as mesmas** do jogo (um valor diferente
+ * A audiência (P193) para a landing estática: a landing não passa por bundler, mas a classificação da origem e a descrição da visita têm de ser **as mesmas** do jogo (um valor diferente
  * entre as duas páginas deixaria o painel do dono dizendo duas coisas para a mesma pessoa). Em vez de copiar a lógica à mão, o build da landing pega os dois arquivos TypeScript
  * (`shared/net/audiencia.ts` e `client/src/core/Audiencia.ts`), os transpila e os embute como JavaScript puro, numa função isolada (os nomes internos não colidem com os da página).
  */

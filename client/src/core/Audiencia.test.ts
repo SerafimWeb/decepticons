@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseVisita } from '../../../shared/net/audiencia';
 import { Audiencia, CHAVE_ORIGEM, CHAVE_VISITOU, hojeLocal, type Ambiente } from './Audiencia';
 
-/** A visita descrita por categorias no navegador (P188): origem, aparelho, idioma, novo ou recorrente. */
+/** A visita descrita por categorias no navegador (P193): origem, aparelho, idioma, novo ou recorrente. */
 describe('Audiencia (navegador)', () => {
   const CHROME_WIN = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
   const amb = (over: Partial<Ambiente> = {}): Ambiente => ({

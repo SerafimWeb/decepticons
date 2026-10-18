@@ -327,7 +327,7 @@ describe('onMudou: a tela é avisada', () => {
   });
 });
 
-describe('os direitos do titular na sessão (P187, LGPD art. 18)', () => {
+describe('os direitos do titular na sessão (P192, LGPD art. 18)', () => {
   it('baixar os dados: sem sessão não chama o servidor; com sessão devolve o JSON e um nome com a data', async () => {
     const { sessao, servidor, tempo } = montar();
     expect(await sessao.baixarDados()).toEqual({ erro: 'entre na conta primeiro' });

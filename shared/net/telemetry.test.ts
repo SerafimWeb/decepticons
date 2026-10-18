@@ -119,7 +119,7 @@ describe('parseMetricas: o painel não confia nem no servidor dele', () => {
   });
 });
 
-describe('parseEvento: o contexto da audiência (P188)', () => {
+describe('parseEvento: o contexto da audiência (P193)', () => {
   const visita = { canal: 'social', host: 'instagram.com', disp: 'mobile', nav: 'chrome', so: 'android', lang: 'pt', ret: 'novo' };
   it('a visita em landing_view e boot_ok, o canal nos passos do funil', () => {
     expect(parseEvento({ nome: 'landing_view', aba: 'abcd1234', o: visita })?.ctx).toEqual({ tipo: 'visita', visita });

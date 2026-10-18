@@ -251,7 +251,7 @@ const script = `${HUD_JS}
   }
   const url = ${JSON.stringify(game.net.eventoUrl)};
   if (url) {
-    // A audiência (P188): a mesma classificação do jogo, embutida do código-fonte (scripts/site/audiencia-landing.mjs). Só categorias: de onde veio, aparelho, idioma, novo ou recorrente.
+    // A audiência (P193): a mesma classificação do jogo, embutida do código-fonte (scripts/site/audiencia-landing.mjs). Só categorias: de onde veio, aparelho, idioma, novo ou recorrente.
     const { Audiencia, lerAmbiente, armazensDoNavegador } = ${AUDIENCIA_JS};
     const audiencia = new Audiencia(lerAmbiente(), armazensDoNavegador());
     const aba = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);

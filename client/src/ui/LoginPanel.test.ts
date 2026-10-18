@@ -244,7 +244,7 @@ describe('LoginPanel — Autenticação de Piloto (P33)', () => {
     inputSenha.value = 'minhasenha123';
     inputSenha.dispatchEvent(new Event('input'));
 
-    // criar conta pede as duas caixas (P187)
+    // criar conta pede as duas caixas (P192)
     const politica = parent.querySelector('#login-check-politica')!;
     const idade = parent.querySelector('#login-check-idade')!;
     politica.checked = true;
@@ -329,7 +329,7 @@ describe('LoginPanel — Autenticação de Piloto (P33)', () => {
   });
 });
 
-describe('LoginPanel — LGPD (P187): aceite ao criar e "Meus dados" na conta', () => {
+describe('LoginPanel — LGPD (P192): aceite ao criar e "Meus dados" na conta', () => {
   let parent: MockNode;
   beforeEach(() => {
     parent = (globalThis as any).document.createElement('div');

@@ -37,7 +37,7 @@ describe('POST /evento e GET /eventos/resumo: telemetria de produto pela porta H
   });
 
   it('corpo maior que o teto: 413, conexão cortada sem travar o servidor', async () => {
-    const grande = { nome: 'boot_ok', aba: 'a'.repeat(1500) }; // passa do teto de 1 KB (P188: era 256 bytes antes da audiência)
+    const grande = { nome: 'boot_ok', aba: 'a'.repeat(1500) }; // passa do teto de 1 KB (P193: era 256 bytes antes da audiência)
     const r = await post(server.port, grande);
     expect(r.status).toBe(413);
   });

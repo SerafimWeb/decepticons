@@ -282,3 +282,12 @@ quem reage a "pronto" tem que esperar o texto assentar (o `CommandConsole` esper
 **Como medir:** sirva dois builds (a `main` numa worktree em `.tmp/` e o seu) com os mesmos argumentos do smoke (`--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`, Chrome headless) e **alterne as rodadas** (a máquina oscila de 6 a 9 s na mesma `main`); esconda partes do overlay por CSS injetado depois do `DOMContentLoaded`
 para achar o culpado; o CPU por processo sai do CDP (`SystemInfo.getProcessInfo`) e o tempo de layout, estilo e script de `Performance.getMetrics`. Para simular um runner lento, sature núcleos com laços ocupados (6 de 8) e compare de novo.
 **Cuidado ao apagar a worktree de teste:** o `node_modules` dela é uma **junção** para o do projeto: remova só o atalho (`[System.IO.Directory]::Delete(caminho, $false)`, não recursivo, que falha em vez de apagar se for um diretório de verdade) e só então `git worktree remove` (AGENTS.md, regra 12).
+
+
+### 4.6 Abuso contra o servidor (auditoria de segurança, P198)
+
+`node .decepticons/medicoes/abuso-servidor.mjs` (da raiz do projeto): sobe um servidor de jogo de teste (porta 2597, dados em `.tmp/fuzz-dados`, apagados no fim) e dispara **~1.400 pedidos HTTP hostis** (métodos trocados, JSON quebrado, corpos de 100 KB, caminhos com `..` e `%00`, URL de 20 KB, cabeçalhos mentirosos), **8 pedidos crus quebrados no socket** e **7 frames de WebSocket lixo**, mais uma conexão com origem de fora. Passa quando: **nenhuma resposta 5xx, nenhum vazamento de caminho ou pilha, o `/status` responde depois, e a origem de fora é recusada**; sai com código 1 se não. Medido em 18/10: 1.368 pedidos, 0 falhas. Rode antes de um lançamento e depois de mexer em rotas HTTP.
+
+### 4.7 Os administradores (P196)
+
+`npm run admin -- listar | promover <e-mail> | rebaixar <e-mail>`: o **único** jeito de criar ou tirar um administrador (nenhuma rota promove ninguém). Rode **na pasta principal do projeto, no PC do servidor** (ou aponte a pasta com `CYBERMECH_DADOS`); a pessoa precisa ter criado a conta antes; o efeito é imediato e cada mudança entra na trilha de auditoria.

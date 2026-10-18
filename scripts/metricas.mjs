@@ -116,6 +116,11 @@ const body = `
       <p class="lede">Duração das rodadas (declarada pelo navegador) e a qualidade gráfica em que terminaram: o jogo rebaixa sozinho quando o aparelho não aguenta (G12), então quem termina em "baixa" mostra onde o computador não dá conta.</p>
       <div class="quem" id="tempo"></div>
     </section>
+    <section aria-labelledby="h-audit">
+      <h2 id="h-audit">Auditoria interna</h2>
+      <p class="lede">O que foi feito de sensível, do mais novo para o mais velho: conta criada ou apagada, dados baixados, configuração mudada, acesso (ou tentativa recusada) a esta página e ao painel do servidor, administradores promovidos, reinícios. <b>Sem e-mail e sem IP</b>: o ator e o alvo são o número da conta, "dono" ou "sistema". Guardada por 400 dias.</p>
+      <div class="rolavel"><table class="paises" id="tab-audit"></table></div>
+    </section>
     <section aria-labelledby="h-ga">
       <h2 id="h-ga">Google Analytics</h2>
       <p class="lede" id="ga-nota">O Google Analytics <b>ainda não está ligado a esta página</b>. Ele só enxerga quem aceita os cookies (a faixa do site) e as páginas do site, não o jogo inteiro; o que importa mais já sai acima, sem cookie. Para ver o resto dele (cidade, tempo no site) <a href="https://analytics.google.com" rel="noopener" target="_blank">abra o painel do Google</a>.</p>
@@ -427,6 +432,14 @@ const js = `(() => {
     if (rodadas) cx.append(el('p', { class: 'd' }, 'Média: ' + (seg / rodadas / 60).toFixed(1).replace('.', ',') + ' min por rodada, em ' + N(rodadas) + ' rodadas.'));
   }
 
+  const ACOES = { conta_criada: 'conta criada', conta_apagada: 'conta apagada', dados_baixados: 'dados baixados', medicao_alterada: 'medição alterada', admin_config: 'configuração global', admin_acesso: 'acesso às portas do dono', admin_promovido: 'administrador promovido', admin_rebaixado: 'administrador rebaixado', servidor_reiniciado: 'servidor reiniciado' };
+  function auditoriaInterna(m) {
+    const lista = Array.isArray(m.auditoria) ? m.auditoria.slice(0, 40) : [];
+    tabela('tab-audit', ['quando', 'ator', 'ação', 'alvo', 'resultado'],
+      lista.map((e) => [new Date(e.quando).toLocaleString('pt-BR'), String(e.ator), ACOES[e.acao] || String(e.acao), String(e.alvo || '—'), e.ok ? 'feito' : 'RECUSADO']),
+      'Nenhum evento sensível registrado ainda.');
+  }
+
   /** Confere o que veio do servidor: o painel não confia nem no servidor dele. */
   function valido(m) {
     return m && typeof m === 'object' && Array.isArray(m.dias) && m.total && typeof m.total === 'object' &&
@@ -460,7 +473,7 @@ const js = `(() => {
     if (m === null) { $('painel').hidden = true; return estado('O servidor respondeu, mas não com métricas: é provavelmente uma versão antiga. Atualize e reinicie o servidor (DEPLOY.md, seção 04/10).', true); }
     if (!valido(m)) { $('painel').hidden = true; return estado('Resposta do servidor em formato inesperado.', true); }
     guardar(token); $('token').value = '';
-    cartoes(m); pilotos(m); oQueSeJoga(m); audiencia(m); funil(m); porDia(m); porPais(m);
+    cartoes(m); pilotos(m); oQueSeJoga(m); audiencia(m); auditoriaInterna(m); funil(m); porDia(m); porPais(m);
     const table=$('partidas');table.replaceChildren();const header=el('tr');for(const text of ['Versão / modo / montagem','Origem','Assistência','Rodadas','Concluídas','Quadros lentos','Abates / mortes'])header.append(el('th',null,text));table.append(header);
     const groups=Array.isArray(m.play?.groups)?m.play.groups.slice(0,128):[];
     for(const g of groups){const row=el('tr');const values=[String(g.release)+' / '+String(g.mode)+' / '+String(g.build),g.online?'Online':'Offline',g.assisted?'Assistida':'Normal',N(g.reports),N(g.completed),g.frames>0?(100*g.slowFrames/g.frames).toFixed(1)+'%':'—',N(g.kills)+' / '+N(g.deaths)];for(const value of values)row.append(el('td',null,value));table.append(row);}

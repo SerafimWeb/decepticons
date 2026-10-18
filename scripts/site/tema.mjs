@@ -168,7 +168,7 @@ const ANTI_COPY_JS = `(() => {
 const FONTS = ''; // Fontes do sistema: leitura imediata, sem dependência externa.
 
 /**
- * Google Analytics **só com a escolha da pessoa** (P187, LGPD: o GA grava cookies e antes a tag carregava sempre). Nada do Google é pedido até o "Aceitar": a faixa pergunta uma vez, a
+ * Google Analytics **só com a escolha da pessoa** (P192, LGPD: o GA grava cookies e antes a tag carregava sempre). Nada do Google é pedido até o "Aceitar": a faixa pergunta uma vez, a
  * resposta fica no armazenamento do navegador (`cybermech.cookies`: 'sim' ou 'nao', **a mesma chave que o jogo lê** em `client/index.html`: a escolha vale nas duas páginas) e o link
  * "Preferências de cookies" do rodapé reabre a pergunta. Recusar (ou mudar de ideia) apaga os cookies `_ga` e desliga a medição da página.
  */

@@ -15,7 +15,7 @@
 > **o rio como termômetro da fase**, o **tamanho e o orçamento do mapa** e a ordem de construção. **Uma correção de fato à ficha:** ela supunha que o modelo que o Comandante criou era o do
 > *cenário*; ele disse, no chat, que **o modelo é o do robô** (`MODELOS 3D\heavy industrial walker 3d model`), então **o cenário (a geometria) é construído em código** (§ 5), e a lista de pontos
 > nomeados da ficha (§ 5 dela: `spawn_jogador`, `torre_{n}`, `gerador_cerca`, `bomba_{n}`, `valvula_{n}`, `draga`, `territorio`…) vira o **layout do mapa em dado**, como `PraiaLayout.ts`. **O nome provisório
-> é o da ficha, OPERAÇÃO RIO VIVO** (o Comandante dá o final).
+> é o da ficha, OPERAÇÃO TERRAS RARAS** (o Comandante dá o final).
 >
 > Este documento é **a proposta de Claude**; o Comandante corta o que discordar (regra 10 do `AGENTS.md`). Modelo de redação: `CAMPANHAS_E_CHEFES.md` § 0 (**sátira exagera, fato é fato**:
 > toda afirmação factual do jogo tem fonte em `fichas/fatos-mineracao-amazonia.md`; o que não tem é sátira, dita como sátira).

@@ -13,7 +13,7 @@ import {
 } from '../../../shared/net/audiencia';
 
 /**
- * Audiência (P188), o lado do navegador: descreve **esta visita por categorias** (de onde veio, que aparelho, que idioma, novo ou recorrente) para o servidor somar. G3: módulo independente, ligado
+ * Audiência (P193), o lado do navegador: descreve **esta visita por categorias** (de onde veio, que aparelho, que idioma, novo ou recorrente) para o servidor somar. G3: módulo independente, ligado
  * por chamada; sem DOM direto (o `lerAmbiente` é o único que toca `window`/`navigator`) e sem rede (quem envia é a `Telemetry`).
  *
  * **O que fica no navegador, e por quê não identifica ninguém:**

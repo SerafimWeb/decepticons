@@ -4,7 +4,7 @@ import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { lerFimDoLog } from './admin';
 import { arquivoDoRegistro, arquivosDoRegistro, REGISTRO_DIAS, REGISTRO_PASTA, Registro } from './registro';
 
-/** O registro técnico do servidor (P187, LGPD): um arquivo por dia, apagado sozinho depois de 30 dias. */
+/** O registro técnico do servidor (P192, LGPD): um arquivo por dia, apagado sozinho depois de 30 dias. */
 describe('Registro: um arquivo por dia e a poda dos 30 dias', () => {
   const raiz = resolve('.tmp', `teste-registro-${process.pid}`);
   let pasta: string;

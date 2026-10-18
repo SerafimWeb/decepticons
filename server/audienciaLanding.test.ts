@@ -3,7 +3,7 @@ import { audienciaParaLanding } from '../scripts/site/audiencia-landing.mjs';
 import { Audiencia, CHAVE_ORIGEM, CHAVE_VISITOU, type Ambiente } from '../client/src/core/Audiencia';
 
 /**
- * A landing é HTML estático, sem bundler: ela embute o código da audiência (P188) transpilado de `shared/net/audiencia.ts` e `client/src/core/Audiencia.ts`. Este teste prova que o código
+ * A landing é HTML estático, sem bundler: ela embute o código da audiência (P193) transpilado de `shared/net/audiencia.ts` e `client/src/core/Audiencia.ts`. Este teste prova que o código
  * embutido **faz exatamente o que a classe do jogo faz**: as duas páginas descrevem a mesma visita do mesmo jeito (senão o painel diria duas coisas para a mesma pessoa).
  */
 describe('a audiência embutida na landing', () => {

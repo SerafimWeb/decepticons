@@ -21,11 +21,30 @@ export const CONTA_ENTRAR_PATH = '/conta/entrar';
 export const CONTA_SAIR_PATH = '/conta/sair';
 export const CONTA_EU_PATH = '/conta/eu';
 export const CONTA_PROGRESSO_PATH = '/conta/progresso';
-/** Os direitos do titular (LGPD art. 18, P187): baixar os dados da conta, apagá-la e escolher se a atividade é medida. */
+/** Os direitos do titular (LGPD art. 18, P192): baixar os dados da conta, apagá-la e escolher se a atividade é medida. */
 export const CONTA_DADOS_PATH = '/conta/dados';
 export const CONTA_APAGAR_PATH = '/conta/apagar';
 export const CONTA_MEDICAO_PATH = '/conta/medicao';
 export const CONFIG_PATH = '/config';
+/**
+ * As únicas chaves da configuração global (`GET /config`, aberta ao público; `POST /admin/config`, só administrador). Antes, QUALQUER nome era lido e gravado: bastava o dono guardar algo ali um dia e
+ * a rota pública entregaria. Chave nova entra **aqui**, de propósito. O valor é sempre um JSON de até `CONFIG_VALOR_MAX` caracteres.
+ */
+export const CONFIG_CHAVES = ['chassis_status'] as const;
+export const CONFIG_VALOR_MAX = 4096;
+export function chaveDeConfigValida(c: unknown): c is (typeof CONFIG_CHAVES)[number] {
+  return typeof c === 'string' && (CONFIG_CHAVES as readonly string[]).includes(c);
+}
+/** O valor é um JSON de tamanho aceitável? (O que o administrador grava passa por aqui antes de ir para o banco.) */
+export function valorDeConfigValido(v: unknown): v is string {
+  if (typeof v !== 'string' || v.length === 0 || v.length > CONFIG_VALOR_MAX) return false;
+  try {
+    JSON.parse(v);
+    return true;
+  } catch {
+    return false;
+  }
+}
 export const ADMIN_CONFIG_PATH = '/admin/config';
 
 /** Cabeçalho que carrega o token de sessão nas chamadas autenticadas (`GET /conta/eu`, `POST /conta/sair`). */

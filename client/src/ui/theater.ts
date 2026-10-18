@@ -1,6 +1,7 @@
 import type { MapId } from '../environment/Bunker';
 import type { GameMode } from '../sim/gameMode';
 import { WORLD_MASK } from './worldMask';
+import { mapaLiberado } from '../core/Lancamento';
 
 /**
  * O teatro de operações do console de comando (dono, 11/10: "um mapa do mundo, pra mostrar onde são as missões (cenários) de forma
@@ -68,7 +69,8 @@ export const RECURSO_NOME: Readonly<Record<Recurso, string>> = { sede: 'SEDE SER
 export type EstadoTeatro = 'aqui' | 'disponivel' | 'outro-modo' | 'em-breve';
 
 export function estadoDoTeatro(t: Teatro, mapaAtual: MapId, modo: GameMode): EstadoTeatro {
-  if (!t.mapa) return 'em-breve';
+  // Sem mapa construído, ou com o mapa ainda fechado ao público (P197, `core/Lancamento.ts`): EM BREVE. Quem já está nele (modo Comandante) continua "aqui".
+  if (!t.mapa || (t.mapa !== mapaAtual && !mapaLiberado(t.mapa))) return 'em-breve';
   if (t.mapa === mapaAtual) return 'aqui';
   return t.modos.includes(modo) ? 'disponivel' : 'outro-modo';
 }

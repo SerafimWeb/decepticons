@@ -2,7 +2,7 @@
 
 > **Status:** levantamento de 17/10/2026 · **Autor:** Claude · **Etiqueta:** `#universo`
 > **O que esta ficha é:** a **única fonte** do que o jogo pode afirmar como **fato** sobre o garimpo, a mineração e o que eles fazem
-> ao rio e aos povos da Amazônia (a fase RIO VIVO, `AMAZONIA.md`). A regra é a do `CAMPANHAS_E_CHEFES.md` § 0: **sátira exagera, fato tem
+> ao rio e aos povos da Amazônia (a fase TERRAS RARAS, `AMAZONIA.md`). A regra é a do `CAMPANHAS_E_CHEFES.md` § 0: **sátira exagera, fato tem
 > fonte**. O que não está aqui **não vira texto do jogo**; o que está aqui só pode ser dito **do jeito que a coluna "O jogo pode dizer" mostra**.
 > **Franqueza:** os números abaixo vêm de **estudos de entidades públicas e de redes de pesquisa** (Fiocruz, MapBiomas, Ministério da Saúde,
 > Polícia Federal, Instituto Evandro Chagas) **relatados pela imprensa**. Eles variam conforme o ano, o território e a metodologia: **nunca somar

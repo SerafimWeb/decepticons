@@ -24,7 +24,7 @@ export interface ServidorDeContas {
   entrar(email: string, senha: string): Promise<ContaResposta | { erro: string }>;
   sair(token: string): Promise<void>;
   eu(token: string): Promise<{ email: string; is_admin: boolean; medir?: boolean } | null>;
-  /** Os direitos do titular (P187, LGPD art. 18): baixar os dados, apagar a conta, escolher se a atividade é medida. */
+  /** Os direitos do titular (P192, LGPD art. 18): baixar os dados, apagar a conta, escolher se a atividade é medida. */
   dados(token: string): Promise<{ json: string } | { erro: string }>;
   apagar(token: string, senha: string): Promise<string | null>;
   medicao(token: string, ativa: boolean): Promise<boolean | null>;

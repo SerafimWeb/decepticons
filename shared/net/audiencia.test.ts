@@ -14,7 +14,7 @@ import {
   UFS,
 } from './audiencia';
 
-/** A audiência (P188): de onde vem a visita e que tipo de aparelho joga, em categorias, sem identificar ninguém. */
+/** A audiência (P193): de onde vem a visita e que tipo de aparelho joga, em categorias, sem identificar ninguém. */
 describe('classificarOrigem: link, busca, rede social, digitou o endereço, campanha', () => {
   const cls = (referrer: string, search = '', hostProprio = 'cybermech.online') => classificarOrigem({ referrer, hostProprio, search });
 
