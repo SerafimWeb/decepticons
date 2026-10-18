@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { carregarMapaSeFor, exigirMapa, mapaCarregado } from './mapasSobDemanda';
+import { carregarChefeSeFor, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirMapa, mapaCarregado } from './mapasSobDemanda';
 
 describe('os mapas sob demanda (P180, parte B): o código do mapa grande só baixa para quem o escolhe', () => {
   // Este arquivo roda isolado (um módulo por arquivo de teste): a ordem abaixo é a de um jogo que abre.
@@ -39,5 +39,32 @@ describe('os mapas sob demanda (P180, parte B): o código do mapa grande só bai
       expect(Math.abs(r.x)).toBeLessThan(m.meia.x);
       expect(Math.abs(r.z)).toBeLessThan(m.meia.z);
     }
+  });
+});
+
+describe('os chefes sob demanda (P180, parte C): o Draga só baixa para quem abre a missão', () => {
+  it('antes de carregar, o chefe não existe: pedir sem carregar dá um erro que diz o que fazer', () => {
+    expect(chefeCarregado('amazonia')).toBeUndefined();
+    expect(() => exigirChefe('amazonia')).toThrow(/carregarChefeSeFor\("amazonia"\)/);
+  });
+
+  it('os mapas sem chefe não carregam nada (a Cidade Neon, o Bunker e a Praia não pagam pelo Draga)', async () => {
+    for (const id of ['arena', 'bunker', 'praia'] as const) {
+      await carregarChefeSeFor(id);
+      expect(chefeCarregado(id), id).toBeUndefined();
+    }
+    expect(chefeCarregado('amazonia')).toBeUndefined();
+  });
+
+  it('carregar o chefe da Amazônia o registra, com o ponto de largada e o desenho sob demanda, e é idempotente', async () => {
+    await carregarChefeSeFor('amazonia');
+    const c = chefeCarregado('amazonia')!;
+    expect(c).toBeDefined();
+    expect(exigirChefe('amazonia')).toBe(c);
+    expect(c.nascimento.x).toBe(700);
+    expect(typeof c.criar).toBe('function');
+    expect(typeof c.criarVisual).toBe('function');
+    await carregarChefeSeFor('amazonia');
+    expect(chefeCarregado('amazonia')).toBe(c);
   });
 });

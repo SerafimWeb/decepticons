@@ -211,6 +211,10 @@ Fotografa a **Arena real** (`Arena.ts` com o transformador do banco, o mesmo pip
 **A bancada** (mesmo molde de `praia.mjs`: Vite dev + Chrome headless, SwiftShader, só contagem): `node .decepticons/medicoes/amazonia.mjs --vistas geral,aldeia,rio,draga,jusante,mina,planta,lagoa` fotografa o mapa real (o mesmo `Amazonia.ts`) e mede desenhos e triângulos; `--frente 1000` põe a frente do rio onde se pedir (o rio curado até lá); `--sem-draga`; `--arte --sufixo b1` grava em `arte/`. **A câmera da bancada tem o mesmo alcance da do jogo** (1.500 m; só a vista `geral`, sem névoa, passa disso).
 **O jogo real:** `node .decepticons/medicoes/amazonia-jogo.mjs 6,12,24 b1` abre `?mapa=amazonia&modo=deathmatch` no jogo de verdade (câmera, HUD e névoa dele), fotografa nos segundos pedidos e lista o que o navegador baixou sob demanda (o mapa e o Draga). **Por que existe:** em 17/10 o céu saía preto no jogo e a bancada, com câmera própria, não mostrava; **bug de câmera ou de HUD só se prova no jogo real**. O pitch da câmera muda entre execuções (não há mouse com trava): tire vários quadros e escolha o que mostra o horizonte.
 
+### 4.5 A missão do rio e a câmera do jogo com o mouse (P180, parte C)
+
+**Para ver o fim da missão sem esperar dez minutos:** `?mapa=amazonia&modo=survival&marcha=0.9` (de 0 a 0,95: quanto da marcha o Draga já andou). **Para fotografar o jogo com a câmera virada:** o **Pointer Lock funciona no Chrome sem janela**, então `page.mouse.move` gira a câmera do jogo de verdade: **cada ponto do mouse são 0,0008 rad** (a `BASE_SENSITIVITY`) e **mover para a direita vira para a direita** (o rumo cresce no sentido horário a partir do norte, -Z). O Playwright entrega os eventos mesmo com o ponteiro fora da janela. **A mata esconde o Draga do chão:** para vê-lo, olhe do rio, de uma clareira (a aldeia) ou acima das copas; a bancada (`amazonia.mjs --vistas draga`) o mostra de cima do rio.
+
 ## 5. Considerações conhecidas (não são bug novo se você achar de novo)
 
 - **Mech parado afunda lentamente no chão, sem limite** (achado 29/09, não corrigido). Reproduz

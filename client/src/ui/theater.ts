@@ -47,7 +47,7 @@ export const TEATROS: readonly Teatro[] = [
   },
   {
     id: 'rio', nome: 'RIO VIVO', lugar: 'Afluente do Amazonas · PA', lat: -3.5, lon: -53.0, recurso: 'agua', mapa: 'amazonia',
-    modos: ['deathmatch'], resumo: 'O rio, a floresta e a mina que o envenena, em 2,4 km: acima do Draga-01 a água é limpa e viva; depois dele, óleo e veneno.', proposta: true, lado: 'esquerda',
+    modos: ['deathmatch', 'survival'], resumo: 'O rio, a floresta e a mina que o envenena, em 2,4 km: o Draga-01 desce o leito rumo à aldeia. Derrube-o antes que ele chegue: acima dele a água é limpa e viva; depois dele, óleo e veneno.', proposta: true, lado: 'esquerda',
   },
   {
     id: 'barragem', nome: 'BARRAGEM', lugar: 'Foz do Iguaçu · PR', lat: -25.41, lon: -54.59, recurso: 'energia',

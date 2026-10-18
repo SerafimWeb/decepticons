@@ -4,7 +4,7 @@ import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { ALCANCE_DA_CAMERA, Amazonia, RAIO_DO_CEU } from './Amazonia';
 import { ALCANCE_DA_FLORESTA } from './AmazoniaFloresta';
 import { aderecosDaAmazonia } from './AmazoniaAderecos';
-import { AMAZONIA_DRAGA_INICIO_X } from './AmazoniaLayout';
+import { AMAZONIA_DRAGA_INICIO_X, AMAZONIA_LIMITES } from './AmazoniaLayout';
 import { PEDACOS_X, PEDACOS_Z } from './AmazoniaMalha';
 import { GLSL_LIMPEZA } from './AmazoniaMateriais';
 import { BANDA_DA_FRENTE, limpezaDoRio } from './AmazoniaRio';
@@ -162,6 +162,21 @@ describe('o rio como termômetro (P180, parte B): a frente que os shaders leem',
     expect(t.fragmentShader).toContain('limpezaDoRio(vMundoX)');
     const arvore = mapa.floresta.pedacos[0]!.perto.material as THREE.MeshStandardMaterial;
     expect(compila(arvore).uniforms.uFrente).toBe(mapa.u.frente);
+  });
+
+  it('curar anda a frente rio abaixo (só avança, nunca recua) e para quando o rio inteiro está limpo, passando do fim do mapa com a banda', async () => {
+    const { mapa } = await montar();
+    mapa.setFrente(0);
+    mapa.curar(100);
+    expect(mapa.frente).toBe(100);
+    mapa.curar(-50);
+    mapa.curar(0);
+    mapa.curar(NaN);
+    expect(mapa.frente, 'cura negativa, zero e torta não mexem').toBe(100);
+    mapa.curar(1e9);
+    expect(mapa.frente).toBe(AMAZONIA_LIMITES.maxX + BANDA_DA_FRENTE);
+    expect(limpezaDoRio(AMAZONIA_LIMITES.maxX, mapa.frente)).toBe(1); // o fim do rio está todo limpo
+    expect(mapa.u.frente.value, 'o shader lê a frente nova').toBe(mapa.frente);
   });
 
   it('o GLSL tem a mesma curva da função de JS: a conta do shader é a do teste (se uma mudar, esta acusa)', () => {

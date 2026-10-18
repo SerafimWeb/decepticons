@@ -1,3 +1,20 @@
+## [2026-10-17] A Amazônia, parte C: o Draga-01 com corpo e a missão do rio (Claude, P180)
+
+**Ordem:** "continua iterando até concluir essas pendências": o chefe de verdade, a marcha até a aldeia e o que o jogador faz.
+
+**Decisões:**
+1. **O Draga é um `MechBase`** (como o Colossus), não uma entidade nova: ganha de graça a cápsula, o character controller, o dano por parte, o calor, o canhão, o `crawls` e o registro no combate. O `MechBase` pede um rig de bípede, então o do Draga é de **nós vazios** e o desenho de quatro pernas (`WalkerVisual`) vai por cima, injetado como interface (`VisualDoDraga`): o servidor e os testes de regra nascem sem ele.
+2. **Dois módulos de perna para quatro pernas:** cada módulo é **um lado**. O desenho mostra a perna da frente caindo de 100% a 50% da vida do módulo e a de trás de 50% a 0%; a velocidade segue a regra do `MechBase.mobility` (um lado caído 50%, os dois 30%). **Um sistema de dano novo para quatro pernas ficou de fora de propósito**: custaria mexer no HUD, na rede e em todos os testes de dano.
+3. **A missão tem módulo próprio** (`MissaoDoRio`), **não reaproveita `SurvivalWaves`**: o fim é o do Draga (cai, ou cruza a linha da aldeia), e a Sobrevivência da Amazônia não tem ondas. O fim sai pelo mesmo `onMissionEnd` das ondas, então a tela de fim e a campanha já funcionam.
+4. **A Sobrevivência na Amazônia é a missão do rio:** o link do seletor de mapas leva direto a ela (`modo=survival`); o Deathmatch do mapa é escolha do seletor de modo. A campanha aceita as duas etapas na Amazônia (e não a Bandeira).
+5. **O Draga e o rio carregam sob demanda** (`ChefeCarregado`, `carregarChefeSeFor`): o corpo, o cérebro e o desenho só baixam para quem abre a missão. **O JS de partida ficou em 490,7 / 500 KB** (a parte C pagou ~2 KB de HUD, fases e a fiação do `Match`; antes de a dieta de JS da `main` entrar, a soma dava 499,2 e a folga era de 0,8 KB): **a parte D e a E devem manter o que é só da missão sob demanda**.
+6. **`?marcha=0.8` é um recurso de teste e de jogo:** começa a missão com o Draga já andado (de 0 a 0,95). Sem ele o Comandante teria de esperar dez minutos para ver o fim; a mesma ideia do `?onda=` da Sobrevivência.
+7. **Aviso:** a floresta densa (0,82 de densidade, árvores de até 29 m) **esconde o Draga (38 m) de quem está dentro dela**; ele aparece no rio e nas clareiras. Ficou assim por ser o ambiente; se o Comandante quiser, a margem do rio ganha uma faixa menos densa.
+
+**Prova:** mutação à mão, 60 mutações, **59 pegas**. A que escapa é **equivalente** (o `depois >= antes` do aviso da marcha é redundante com o teste de cruzar a distância). Duas lições: (a) uma cápsula com raio maior que a metade da altura **trava o Rapier** (o teste do raio a pega por um limite, e o corredor de mutação precisa de um tempo máximo por rodada); (b) os dois testes que escaparam de primeira (o Draga seguir o rio e o mundo congelar no fim) só pegavam o número, não o efeito: agora o desvio máximo do eixo do rio na marcha toda é medido (5 m, teto 12) e a posição do Draga no fim.
+
+**Por que registrar:** quem for fazer a defesa (D) e a invasão (E) precisa saber que o Draga é um `MechBase` com dois módulos de perna, que a missão tem módulo próprio e que **o pacote de partida tem 9,3 KB de folga (490,7 de 500)**.
+
 ## [2026-10-17] O atualizador do servidor passa a guardar o fim da saída quando a verificação falha (Claude)
 
 **Problema:** a verificação (typecheck + testes de `server/` e `shared/`) reprovou seis vezes e a produção ficou 2,5 h no código velho; o log só dizia "FALHOU", porque a saída ia para o console de uma tarefa agendada. Descobri a causa (concorrência com o trabalho dos agentes) por silêncio e tentativa, não por evidência.

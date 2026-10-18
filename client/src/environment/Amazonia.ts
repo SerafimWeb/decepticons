@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { AMAZONIA_LIMITES } from './AmazoniaLayout';
+import { BANDA_DA_FRENTE, frenteDepoisDeCurar } from './AmazoniaRio';
 import { criarLagoa, criarRio, criarTerreno, type PedacoDoTerreno } from './AmazoniaMalha';
 import { criarCenario, type CenarioMontado } from './AmazoniaCenario';
 import { Floresta } from './AmazoniaFloresta';
@@ -85,6 +86,11 @@ export class Amazonia {
 
   get frente(): number {
     return this.u.frente.value;
+  }
+
+  /** A cura (P180): a frente anda `metros` rio abaixo, só avança e para quando o rio inteiro está limpo (a frente passou do fim do mapa com a banda). */
+  curar(metros: number): void {
+    this.setFrente(frenteDepoisDeCurar(this.frente, metros, AMAZONIA_LIMITES.maxX + BANDA_DA_FRENTE));
   }
 
   /** Onde a câmera está: o céu a acompanha (o domo não pode ficar para trás num mapa de 2.400 m). */

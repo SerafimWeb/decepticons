@@ -98,3 +98,29 @@ describe('os avisos do topo da tela quando a fase do chefe muda', () => {
     expect(avisoDoChefe(1, 0)).toBe('COLOSSUS-01 CAIU');
   });
 });
+
+describe('o Draga-01 usa as mesmas fases (P180, parte C): a regra e os avisos falam da aldeia', () => {
+  it('a regra de cada fase quando o alvo é a aldeia: marcha, manca (um lado caiu) e rasteja; a queda não diz nada', () => {
+    expect(regraDaFase('anda', 'aldeia')).toBe('Ele marcha para a aldeia. Derrube as pernas.');
+    expect(regraDaFase('manca', 'aldeia')).toContain('Um lado caiu');
+    expect(regraDaFase('rasteja', 'aldeia')).toContain('antes que chegue à aldeia');
+    expect(regraDaFase('caido', 'aldeia')).toBe('');
+    // e os outros dois alvos não mudam
+    expect(regraDaFase('anda', 'cabos')).toBe(TEXTOS_DA_FASE.anda.regra);
+    expect(regraDaFase('anda', 'transformador')).toContain('transformador');
+  });
+
+  it('os avisos levam o nome do chefe e o que caiu (um lado do Draga são duas pernas); sem nome, são os do Colossus de sempre', () => {
+    expect(avisoDoChefe(1, 2, 'DRAGA-01', 'UM LADO CAIU')).toBe('DRAGA-01 · UM LADO CAIU · ELE MANCA');
+    expect(avisoDoChefe(2, 3, 'DRAGA-01', 'UM LADO CAIU')).toBe('DRAGA-01 RASTEJA · ACABE COM ELE');
+    expect(avisoDoChefe(3, 0, 'DRAGA-01')).toBe('DRAGA-01 CAIU');
+    expect(avisoDoChefe(1, 2)).toBe('COLOSSUS-01 · UMA PERNA CAIU · ELE MANCA');
+    expect(avisoDoChefe(1, 1, 'DRAGA-01')).toBeNull();
+  });
+
+  it('a fase do chefe lê os módulos do Draga (os dois lados são o que o MechBase chama de perna esquerda e direita)', () => {
+    expect(faseDoChefe({ torso: 4800, leftLeg: 1600, rightLeg: 1600 })).toBe('anda');
+    expect(faseDoChefe({ torso: 4800, leftLeg: 0, rightLeg: 1600 })).toBe('manca');
+    expect(faseDoChefe({ torso: 4800, leftLeg: 0, rightLeg: 0 })).toBe('rasteja');
+  });
+});
