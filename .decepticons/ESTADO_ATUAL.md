@@ -21,9 +21,9 @@
 
 **Achados no caminho (R17):** o GA era fixo dentro do jogo; o e-mail ia para o log; `limparExpiradas` nunca era chamada; **a primeira partida de cada visita nunca contava em "partidas iniciadas"** (corrigido).
 
-**A pergunta do Comandante sobre o ritmo (P190) e o painel único (P189):** respondidas em `LANCAMENTO.md` (**proposta aguardando o "ok" dele**): o que impede o lançamento cabe em 6 itens; o resto fica congelado; o P81 está pausado.
+**O Comandante congelou o escopo (18/10, P190 a P194):** a lista de lançamento está em `LANCAMENTO.md` (10 itens: auditoria de segurança, acesso e privilégio, autenticação, trilha de auditoria, analytics e observabilidade, governança, mapas do lançamento, servidor fora do PC de trabalho, teste com gente de fora, política revisada). **No lançamento só CIDADE NEON e ESTAÇÃO DOS CABOS (a Praia dos Cabos) ficam livres; Bunker e TERRAS RARAS (a Amazônia, ex-"Rio Vivo") ficam "EM BREVE".** O P81 e o painel único estão congelados.
 
-**Próxima sessão começa com:** o que o Comandante responder à `LANCAMENTO.md`; sem resposta, o item 1 da lista (o servidor fora do PC de trabalho) e o arquivamento do histórico antigo.
+**Próxima sessão começa com:** `LANCAMENTO.md` item 1 (a auditoria de segurança) e, em seguida, os itens 2 a 7 (privilégio, autenticação, trilha de auditoria, observabilidade, governança, mapas do lançamento).
 
 ## AMAZÔNIA, PARTE F1: O RELATÓRIO DE CONSEQUÊNCIAS, E OS FATOS CONFERIDOS NA FONTE — Claude, 18/10 (branch `claude/amazonia-consequencias`, P179 camada 3 e P180)
 
