@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PRAIA_COMPLEXO, PRAIA_ESTACAO } from '../environment/PraiaLayout';
 import { avisoDaMarcha } from '../sim/DragaMarcha';
 import { avisoDoEscudo, REGRA_DO_ESCUDO } from '../sim/EscudoDoDraga';
+import { avisoDaEscotilha } from '../sim/InvasaoDoDraga';
 import { avisoDoChefe, CODIGO_DA_FASE, regraDaFase, TEXTOS_DA_FASE, type AlvoDoChefeNoMapa, type FaseDoChefe } from '../sim/FasesDoChefe';
 import { PORTAS_DA_ESTACAO } from '../sim/PortasDaEstacao';
 import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDasPortas, avisoDoQuadro, avisoDosCabos, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
@@ -58,6 +59,8 @@ export interface QuadroDaPraia {
   aldeia: { presente: boolean; distancia: number; progresso: number; tempoS: number };
   /** O escudo do Draga-01 (P180, parte D): quantos geradores de pé e quantos são. `presente` é falso fora da missão do rio. */
   escudo: { presente: boolean; restantes: number; total: number };
+  /** A invasão do Draga-01 (P180, parte E): a escotilha aberta, a carga plantada (0 a 1) e quantos andróides da Resistência (de `total`) estão junto dela. `presente` é falso fora da missão do rio. */
+  invasao: { presente: boolean; aberta: boolean; carga: number; dentro: number; total: number };
   /** As torres de vigia armadas da margem (P180, parte D2): se estão alimentadas (o gerador da CERCA de pé). `presente` é falso fora da missão do rio. */
   torres: { presente: boolean; ativas: boolean };
   camera: THREE.Camera;
@@ -79,6 +82,7 @@ export function novoQuadroDaPraia(camera: THREE.Camera): QuadroDaPraia {
     chefe: { presente: false, fracao: 1, fase: 1, pernas: [true, true], nome: 'COLOSSUS-01', alvo: null },
     escudo: { presente: false, restantes: 0, total: 0 },
     torres: { presente: false, ativas: false },
+    invasao: { presente: false, aberta: false, carga: 0, dentro: 0, total: 0 },
     aldeia: { presente: false, distancia: 0, progresso: 0, tempoS: Infinity },
     camera,
     largura: 0,
@@ -136,6 +140,9 @@ export class PraiaHud {
   private readonly chefeEscudo: HTMLElement;
   /** As torres da margem (parte D2): armadas ou sem energia. */
   private readonly chefeTorres: HTMLElement;
+  /** A invasão (parte E): a carga plantada e os andróides junto da escotilha; escondida com a escotilha fechada. */
+  private readonly chefeInvasao: HTMLElement;
+  private escotilhaAberta: boolean | null = null;
   private escudoRestantes = -1;
   private chefeChave = '';
   /** A célula da aldeia (P180, parte C): a distância do Draga e a barra da marcha. */
@@ -251,6 +258,8 @@ export class PraiaHud {
     this.chefeEscudo.hidden = true;
     this.chefeTorres = el('p', 'pcf-torres', this.chefe);
     this.chefeTorres.hidden = true;
+    this.chefeInvasao = el('p', 'pcf-invasao', this.chefe);
+    this.chefeInvasao.hidden = true;
 
     this.zona = el('div', 'praia-zona', this.raiz);
 
@@ -290,6 +299,7 @@ export class PraiaHud {
     this.quadroEstado = 0;
     this.quadroChave = '';
     this.faseDoChefe = 0;
+    this.escotilhaAberta = null;
     this.chefeChave = '';
     this.aldeiaChave = '';
     this.aldeiaDistancia = Infinity;
@@ -332,7 +342,10 @@ export class PraiaHud {
     // O escudo do Draga (parte D): o aviso de cada gerador que cai e o da queda do escudo (o primeiro quadro só aprende quantos há, sem avisar).
     const alertaDoEscudo = q.escudo.presente ? avisoDoEscudo(this.escudoRestantes < 0 ? q.escudo.restantes : this.escudoRestantes, q.escudo.restantes) : null;
     this.escudoRestantes = q.escudo.presente ? q.escudo.restantes : -1;
-    const alerta = alertaDaRede ?? alertaDoChefe ?? alertaDoEscudo ?? alertaDaAldeia ?? alertaDasPortas ?? alertaDoQuadro ?? alertaDosCabos;
+    // A invasão (parte E): o aviso de a escotilha abrir (vem antes do aviso do escudo: é a ordem do que fazer agora, e o escudo já cai dito na barra do chefe).
+    const alertaDaEscotilha = q.invasao.presente ? avisoDaEscotilha(this.escotilhaAberta ?? q.invasao.aberta, q.invasao.aberta) : null; // o primeiro quadro só aprende o estado, sem avisar
+    this.escotilhaAberta = q.invasao.presente ? q.invasao.aberta : null;
+    const alerta = alertaDaRede ?? alertaDoChefe ?? alertaDaEscotilha ?? alertaDoEscudo ?? alertaDaAldeia ?? alertaDasPortas ?? alertaDoQuadro ?? alertaDosCabos;
     // O anúncio do lugar: aparece e some sozinho (a animação é do CSS; aqui só o texto e o relógio).
     const novo = alerta ?? (this.soMissao ? null : this.anunciador.atualiza(q.eu.x, q.eu.z, dt));
     if (novo) {
@@ -427,7 +440,8 @@ export class PraiaHud {
       const pct = Math.round(q.chefe.fracao * 100);
       const escudo = q.escudo.presente ? q.escudo.restantes : -1;
       const torres = q.torres.presente ? (q.torres.ativas ? 1 : 0) : -1;
-      const chave = `${q.chefe.nome}|${q.chefe.fase}|${pct}|${q.chefe.pernas[0] ? 1 : 0}${q.chefe.pernas[1] ? 1 : 0}|${escudo}|${torres}`;
+      const invasao = q.invasao.presente && q.invasao.aberta ? `${Math.round(q.invasao.carga * 100)}:${q.invasao.dentro}` : '-';
+      const chave = `${q.chefe.nome}|${q.chefe.fase}|${pct}|${q.chefe.pernas[0] ? 1 : 0}${q.chefe.pernas[1] ? 1 : 0}|${escudo}|${torres}|${invasao}`;
       if (chave !== this.chefeChave) {
         this.chefeChave = chave;
         const fase = FASE_PELO_CODIGO[q.chefe.fase] ?? 'anda';
@@ -445,6 +459,8 @@ export class PraiaHud {
           this.chefeTorres.textContent = q.torres.ativas ? 'TORRES DA MARGEM ARMADAS' : 'TORRES DA MARGEM SEM ENERGIA';
           this.chefeTorres.dataset.estado = q.torres.ativas ? 'de-pe' : 'caido';
         }
+        this.chefeInvasao.hidden = !(q.invasao.presente && q.invasao.aberta);
+        if (!this.chefeInvasao.hidden) this.chefeInvasao.textContent = `INVASÃO · CARGA ${Math.round(q.invasao.carga * 100)}% · ${q.invasao.dentro} DE ${q.invasao.total} DENTRO`;
         this.chefePernas.forEach((p, i) => (p.textContent = `${alvo === 'aldeia' ? 'LADO' : 'PERNA'} ${i === 0 ? 'ESQ' : 'DIR'}`));
         this.chefe.dataset.fase = fase;
         this.chefeBarra.style.transform = `scaleX(${(pct / 100).toFixed(2)})`;

@@ -22,6 +22,8 @@ export interface InstanciaDoMapa {
   readonly frente: number;
   /** A frente do rio avança `metros` rio abaixo (a cura: o limpo toma o lugar do morto). Só desenho. */
   curar(metros: number): void;
+  /** A escotilha do chefe (P180, parte E): `aberta` mostra o marcador (anel, disco da carga e farol) em (x, z). Só desenho. */
+  setEscotilha(aberta: boolean, x: number, z: number, carga: number): void;
   /** Até onde a câmera do jogo enxerga neste mapa (m): a névoa do mapa já escondeu tudo muito antes. */
   readonly alcanceDaCamera: number;
 }

@@ -843,5 +843,7 @@
  "O DRAGA-01 CAIU ANTES DE CHEGAR À ALDEIA": "DRAGA-01 ПАЛ, НЕ ДОЙДЯ ДО ДЕРЕВНИ",
  "O DRAGA-01 ALCANÇOU A ALDEIA": "DRAGA-01 ДОШЁЛ ДО ДЕРЕВНИ",
  "TORRES DA MARGEM ARMADAS": "БАШНИ НА БЕРЕГУ ВООРУЖЕНЫ",
- "TORRES DA MARGEM SEM ENERGIA": "БАШНИ НА БЕРЕГУ БЕЗ ЭНЕРГИИ"
+ "TORRES DA MARGEM SEM ENERGIA": "БАШНИ НА БЕРЕГУ БЕЗ ЭНЕРГИИ",
+ "ESCOTILHA ABERTA · OS ANDRÓIDES ENTRAM": "ЛЮК ОТКРЫТ · АНДРОИДЫ ВХОДЯТ",
+ "INVASÃO · CARGA {0}% · {1} DE {2} DENTRO": "ВТОРЖЕНИЕ · ЗАРЯД {0}% · ВНУТРИ {1} ИЗ {2}"
 }

@@ -7,6 +7,11 @@
       "desenhos": 66,
       "triangulos": 108772,
       "construcaoMs": 479
+    },
+    "escotilha": {
+      "desenhos": 64,
+      "triangulos": 92672,
+      "construcaoMs": 294
     }
   },
   "errosDePagina": []

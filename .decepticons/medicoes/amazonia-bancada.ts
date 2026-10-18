@@ -11,6 +11,7 @@ import { alturaDoTerreno } from '../../client/src/environment/AmazoniaTerreno';
 import { defesaDaAmazonia } from '../../client/src/environment/AmazoniaGeradores';
 import type { Destructibles } from '../../client/src/environment/Destructibles';
 import { Android } from '../../client/src/entities/Android';
+import { escotilhaDoDraga } from '../../client/src/sim/InvasaoDoDraga';
 import { Vector09 } from '../../client/src/entities/Vector09';
 import { loadWalkerAsset, WalkerVisual } from '../../client/src/entities/WalkerVisual';
 import { newWalkerPose, walkerPose } from '../../client/src/entities/walkerGait';
@@ -71,6 +72,20 @@ const tempo = Number(q.get('tempo') ?? 3);
   if (q.get('geradores') === '1') {
     // Os geradores do escudo (P180, parte D): só o desenho (um `Destructibles` de mentira: a bancada não atira).
     defesaDaAmazonia.criarGeradores({ scene, destructibles: { addExterno: () => 0 } as unknown as Destructibles, aoQuebrar: () => {}, aoVoltar: () => {} });
+  }
+  if (q.get('escotilha') === '1') {
+    // A escotilha aberta do Draga (P180, parte E): o anel, o disco com 45% da carga e três andróides da Resistência junto do casco.
+    const z = rioEmX(frente);
+    const h = escotilhaDoDraga(frente, z, Math.PI / 2, { x: 0, z: 0 });
+    amazonia.setEscotilha(true, h.x, h.z, 0.45);
+    for (let i = 0; i < 3; i++) {
+      const andr = new Android();
+      const x = h.x - 3 + i * 3;
+      const zz = h.z - 2 + (i % 2) * 3;
+      andr.spawn(physics, new THREE.Vector3(x, alturaDoTerreno(x, zz) + 0.1, zz));
+      andr.applyFacing(0, 0);
+      scene.add(andr.root);
+    }
   }
   if (q.get('guarda') === '1') {
     // A força de defesa (P180, parte D2): os Mechs e androides nos postos, de frente para o rio (só o desenho: a bancada não roda a partida).

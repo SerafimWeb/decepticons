@@ -329,7 +329,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] Amazônia, parte C: o Draga-01 com corpo (P180, 17/10): um `MechBase` de 36 m com o canhão de cerco, que marcha 1.550 m pelo leito até a aldeia em ~10 minutos; os dois módulos de perna são os dois lados (a da frente cai primeiro; manca a 50%, rasteja a 30%); **a missão do rio** (`?mapa=amazonia&modo=survival`): derrubá-lo vence, ele chegar à aldeia perde; a barra do chefe, a célula da aldeia e os avisos de 1.000 a 100 m; `&marcha=0.8` testa o fim; carregado sob demanda #cenarios
 - [x] Amazônia, parte D1: o escudo do Draga e os três geradores destrutíveis, a barra do chefe com a contagem (`AMAZONIA.md` § 5.3, P180) #cenarios
 - [x] Amazônia, parte D2: as oito torres da margem armadas (calam com a CERCA) e a força de defesa de 3 Mechs e 6 androides que seguram o posto e dormem longe (`AMAZONIA.md` § 5.4, P180) #cenarios
-- [ ] Amazônia, parte E: a invasão com androides e a cura do rio (`AMAZONIA.md`, P180; **o que for só da missão, sob demanda: a folga de JS é 6,7 KB**) #cenarios
+- [x] Amazônia, parte E: a invasão (a Resistência de 3 andróides planta a carga na escotilha do Draga, o canhão só mira Mechs; `AMAZONIA.md` § 5.5, P180) #cenarios
+- [ ] Amazônia, parte F: a cura com consequência (o Relatório de Consequências e o Consórcio, P179 camadas 3 e 4; **o pacote de partida está a 4,3 KB do teto: pagar com dieta**) #cenarios
 - [ ] Missão da Amazônia: a mineradora no rio (`fichas/cenario-amazonas.md`); o texto, o rádio e o Relatório de Consequências (P180) #cenarios
 - [x] Arpão por peso: o robô mais leve não puxa o mais pesado (pedido do Comandante, 17/10, P181) #combate
 - [~] Interfaces de jogos antigas: **feito** a linha em barra dourada e o `‹ valor ›` nas Configurações e o par SOLO / MULTI na primeira tela; falta a placa no console (`REFERENCIA_VISUAL.md` § 8) (pedido do Comandante, 17/10, P182) #ux

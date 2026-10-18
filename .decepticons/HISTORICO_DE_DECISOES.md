@@ -1,3 +1,16 @@
+## [2026-10-18] A invasão: a Resistência planta a carga, o canhão só mira Mechs e o "hold" vira para valer (Claude, P180 parte E)
+
+**Ordem:** *"invadir com andróides e destruir por dentro"* + *"prossiga"*.
+
+**Decisões:**
+1. **Os andróides são aliados fixos da missão (a Resistência, 3), não o esquadrão do jogador:** a missão do rio é determinística e o esquadrão é opção de Arena; o contrato do ato 3 pede andróides, e eles têm de existir. Reuso o `BotSystem` de aliados (escolta, rádio, anéis, "quem é amigo" já ligados), em vez de um sistema novo.
+2. **A escotilha abre com o escudo caído e carrega por presença** (a regra dos cabos, ao contrário): sem tela de interação nova, o jogador vê a barra subir e a escolta. **Os dois caminhos ficam abertos** (tiro no tronco ou carga): a invasão não é obrigatória, só mais segura.
+3. **O canhão do Draga só mira Mechs** (andróide é pequeno demais para o radar de tiro). Sem isto o canhão (360 de dano, explosão de 5 m) matava os três andróides no flanco antes da carga fechar: a invasão seria quase impossível. É uma **regra de equilíbrio do chefe da C**, registrada aqui: o Comandante pode trocá-la por uma zona cega do canhão (mas aí o jogador também se protege colado ao casco).
+4. **`plantador` no `BotController`:** a ordem `hold` do Domínio deixa o robô orbitar o alvo em volta do ponto (até 10 m); o andróide da escotilha precisa **ficar**. Flag própria, sem mexer no comportamento de ninguém mais.
+5. **Respawn único na missão do rio:** com aliados na lista, o `Respawner` (que escolhe o ponto mais longe dos vivos) mandaria o jogador para o outro lado do mapa ao morrer. Um ponto só (a aldeia).
+6. **A cura de verdade fica para depois** (parte F: Relatório de Consequências e Consórcio): a E entrega o ato 3; o ato 4 segue como desenho.
+7. **O pacote de partida está a 4,3 KB do teto** (495,7 de 500): a regra da missão do rio (torres, invasão) é candidata a sair do pacote inicial.
+
 ## [2026-10-18] A defesa da Amazônia: torres que calam com a CERCA, guarda que segura o posto e dorme longe (Claude, P180 parte D2)
 
 **Ordem:** *"há uma enorme força de defesa deles e teremos que desmantelar"* + *"a amazônia já foi entregue em partes, prossiga"*.
