@@ -3,7 +3,7 @@
 > **Status:** proposta · **Autor:** Claude · **Data:** 2026-10-17 · **Ordem:** P180 · **Etiqueta:** `#cenarios`
 > **A ordem do Comandante (17/10):** *"pra começar podemos focar a próxima missão no próximo cenário, que vai ser no rio Amazonas: uma mineradora acabando com o rio, envenenando, poluindo, explorando as populações indígenas e expulsando-as dos seus territórios. Há uma enorme força de defesa deles e teremos que desmantelar, invadir com andróides e destruir por dentro. Já até criei o modelo e estou nessa frente em outro chat."*
 > **O que esta ficha é:** o **contrato da missão**: o que ela FAZ, as fases, as forças e o que o jogo precisa ter. **O modelo do cenário (a geometria, o visual) é do Comandante, no outro chat**: esta ficha **não o constrói nem o redesenha**; diz o que a missão **precisa encontrar nele** (§ 5) para ligar a lógica sem retrabalho (o aprendizado do Bunker, `cenario-cabos.md` § 1).
-> **Nome provisório:** **OPERAÇÃO RIO VIVO**. O Comandante dá o nome final.
+> **Nome provisório:** **OPERAÇÃO TERRAS RARAS**. O Comandante dá o nome final.
 > **Atualização (Claude, 17/10, no chat do Comandante; ver `AMAZONIA.md`):** **o modelo que o Comandante criou é o do robô** (`MODELOS 3D\heavy industrial walker 3d model`), **a Draga**, e não o do cenário: ele já está **riggado e andando** (`?walker`, parte A). **O cenário (a geometria) será construído em código**, com o orçamento do `AMAZONIA.md` § 5, e os pontos nomeados da § 5 desta ficha viram o layout do mapa em dado. Duas ideias novas vieram na conversa: **o rio é o termômetro da fase** (limpo e vivo a montante da Draga, sujo, com óleo e envenenado a jusante, curando conforme as peças caem) e **a Draga anda** (rio acima, rumo à aldeia). Esta ficha segue valendo como o contrato da missão.
 
 ## 1. A história em um parágrafo
@@ -77,7 +77,7 @@ Uma mineradora instalada na margem de um afluente do Amazonas **envenena o rio**
 
 ## 8. O que só o Comandante decide
 
-1. **O nome da missão** e do cenário (provisório: OPERAÇÃO RIO VIVO).
+1. **O nome da missão** e do cenário (provisório: OPERAÇÃO TERRAS RARAS).
 2. **A Draga** como chefe (ou outro).
 3. **A troca para o andróide:** o jogador **controla** o andróide (uma segunda "vida" da missão) ou **comanda a equipe** de longe? A recomendação: **controla** (é o que o chassi `android` já permite e dá a escala 1).
 4. **O quanto o fato entra:** só texto de rádio e cartão, ou também o Relatório com números (que exige a fonte, `LADO_E_PEDAGOGIA.md` § 5).

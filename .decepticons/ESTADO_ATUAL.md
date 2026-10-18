@@ -6,6 +6,8 @@
 
 **O que entrou** (`PAINEL_ADMIN.md` § 6): um **catálogo de funcionalidades** (fases, modos, botões e telas, **todos os robôs e todas as armas**) com um padrão `publico` ou `restrito`; o **servidor** guarda as exceções (`visibilidade.json`, sobrevive ao reinício; `GET /visibilidade` público, `POST /admin/visibilidade` só com a chave do dono); o **jogo** aplica (o restrito some para o jogador e aparece com o selo TESTE para o Comandante; link de fase ou modo restrito volta ao padrão); o **painel** (chip VISIBILIDADE ▸, só no modo Comandante): lista de tudo, PÚBLICO | RESTRITO em cada linha, SALVAR PARA TODOS, SÓ NESTE NAVEGADOR, VER COMO JOGADOR, RESTAURAR PADRÕES.
 
+**Fusão com o lançamento (PR #384, outra sessão):** o `Lancamento.ts` dela (a lista fixa de dois mapas) **agora pergunta ao catálogo**: a Cidade Neon e a Estação dos Cabos nascem públicas, o Bunker e a Terras Raras restritos, e **o painel é quem libera um mapa** (sem código). O pino "EM BREVE", o filtro das campanhas e o link que cai na Cidade Neon dela seguem iguais.
+
 **Mudança de comportamento a saber:** **ARQUIVO, ESCOLHA O LADO e RELATÓRIO agora nascem RESTRITOS** (são os exemplos que o Comandante deu de "em desenvolvimento"): o jogador normal **não os vê mais** até o Comandante os liberar no painel (modo Comandante: `?comandante=1`, chip VISIBILIDADE ▸, trocar para PÚBLICO, SALVAR PARA TODOS). Tudo o mais continua como estava (público).
 
 **Provas:** testes do contrato, do armazém em arquivo, das rotas com o servidor de verdade (401 sem chave, 400 com lixo, o que o dono grava aparece no GET), do catálogo (todo robô e toda arma do jogo está nele; o que está em desenvolvimento nasce restrito), da visibilidade (jogador × Comandante, exceção do servidor, cache, falhas de rede, link de fase restrita, DOM) e do painel (só as exceções vão ao servidor).
@@ -17,6 +19,22 @@
 **Onde o Comandante confere:** `…/jogar/?comandante=1` → **EXPLORAR HANGAR E MODOS ▸** → chip **VISIBILIDADE ▸** (amarelo, no canto de cima). Troque algo para RESTRITO, **VER COMO JOGADOR**, e depois **SALVAR PARA TODOS** (precisa da chave do dono: a janela SERVIDOR guarda).
 
 **Próxima sessão começa com:** o que o Comandante julgar; depois o objetivo na tela dos outros modos e mapas (P190) e a Praia abaixo de 60 fps (P188).
+
+## O LANÇAMENTO: AUDITORIA DE SEGURANÇA, PRIVILÉGIOS, TRILHA DE AUDITORIA, GOVERNANÇA E OS MAPAS FECHADOS — Claude, 18/10 (branch `claude/lancamento-seguranca`, P196 a P198)
+
+**O Comandante congelou o escopo** (`LANCAMENTO.md`) e pediu: acesso, privilégio, autenticação, auditoria interna, observabilidade, governança, **lançar só com CIDADE NEON e ESTAÇÃO DOS CABOS**, "Rio Vivo" virar "Terras Raras" e **uma auditoria de segurança**.
+
+**O que entrou:**
+1. **`AUDITORIA_SEGURANCA.md`:** 1.368 pedidos hostis contra um servidor de verdade (0 falhas, `.decepticons/medicoes/abuso-servidor.mjs`), `npm audit` (0 vulnerabilidades), segredos, rotas, autenticação, privilégios. **Conclusão: o código está em condição de lançar; o que bloqueia o público é operacional e do Comandante: A1 (servidor e chaves de publicação no mesmo PC de trabalho) e A13 (cópia das contas no mesmo disco).**
+2. **Corrigido:** a configuração global só aceita chaves conhecidas; **limite de falhas por conta** (10 em 15 min, login e apagar); **teto de 10 sessões** por conta; **trilha de auditoria** de 400 dias, sem e-mail nem IP, na seção "Auditoria interna" do `/metricas/`; **`npm run admin`** como único caminho para administrador.
+3. **`GOVERNANCA.md`:** a matriz de privilégios, quem é dono de quê, como uma regra muda, o que se guarda e por quanto tempo, e o que fazer quando dá errado (servidor caído, token vazado, vazamento de dados com o aviso à ANPD).
+4. **Mapas do lançamento:** só CIDADE NEON e ESTAÇÃO DOS CABOS livres; **Bunker e TERRAS RARAS "EM BREVE"** (o modo Comandante abre todos). O renome de "Rio Vivo" para "Terras Raras" outra sessão já tinha feito (P187): aqui só se conferiu que nada ficou para trás.
+
+**Provas:** 16 testes de segurança de acesso com o servidor de verdade; **mutação à mão: 20 de 20** (só na segurança de acesso, por ordem do Comandante); 6 testes do bloqueio de mapas; o abuso medido.
+
+**Falta (do Comandante, para o lançamento público):** o **servidor fora do PC de trabalho** (A1), a **cópia de segurança fora do PC** (A13), o **monitor externo** (A14), o **encarregado** e a política revisada, o **"esqueci a senha"**, o **HSTS** na Cloudflare e o **teste com 5 a 10 pessoas de fora**.
+
+**Próxima sessão começa com:** o que o Comandante decidir sobre o servidor (item 8 de `LANCAMENTO.md`); nada novo antes disso.
 
 ## TERRAS RARAS: O JOGO FICOU 2,5× MAIS RÁPIDO, A MISSÃO COMEÇA PERTO E O OBJETIVO ESTÁ NA TELA — Claude, 18/10 (branch `claude/terras-raras`, P187 a P190)
 
@@ -35,7 +53,7 @@
 
 **4. Renomeado: TERRAS RARAS** (seletor, teatro, campanha, Relatório e as seis línguas).
 
-**5. Dieta de JS** (ver `ORDENS_DO_COMANDO.md` P187–P191): o leitor de `.glb` (13 KB gzip) agora só baixa quando o primeiro robô é pedido. **Pacote de partida: 486,2 de 500 KB** (estava em 498,1).
+**5. Dieta de JS** (ver `ORDENS_DO_COMANDO.md` P192–P195): o leitor de `.glb` (13 KB gzip) agora só baixa quando o primeiro robô é pedido. **Pacote de partida: 486,2 de 500 KB** (estava em 498,1).
 
 **Provas:** o teste do posto (terra firme, fora das torres, < 450 m), 10 do objetivo (a ordem e a dica em cada passo, os metros, os marcadores: rótulo, destaque, gerador caído some, borda e seta, a missão parada esconde tudo), os da barra do chefe reescritos, a cobertura de idioma, e a medição na GPU salva em `medicoes/amazonia-gpu-2026-10-18.json`. Capturas do jogo de verdade na GPU: `arte/terras-raras-objetivo-claude.png`, `terras-raras-escotilha-claude.png`.
 
@@ -47,7 +65,7 @@
 
 **Próxima sessão começa com:** o painel de visibilidade (P191); depois o objetivo na tela dos outros modos e a Praia.
 
-## LGPD (P187) E MÉTRICAS DE NÍVEL PROFISSIONAL (P188): BAIXAR OS DADOS, APAGAR A CONTA, POLÍTICA, GOOGLE ANALYTICS COM LICENÇA, E DE ONDE VÊM AS VISITAS — Claude, 18/10 (branch `claude/lgpd-conta`)
+## LGPD (P192) E MÉTRICAS DE NÍVEL PROFISSIONAL (P193): BAIXAR OS DADOS, APAGAR A CONTA, POLÍTICA, GOOGLE ANALYTICS COM LICENÇA, E DE ONDE VÊM AS VISITAS — Claude, 18/10 (branch `claude/lgpd-conta`)
 
 **A ordem do Comandante (18/10):** *"faça os ajustes de apagar conta, baixar dados, tudo que a LGPD obrigue, pra que estejamos todo de acordo"*.
 
@@ -56,7 +74,7 @@
 2. **No site:** `/privacidade/` (a política), o rodapé com o link em todas as páginas e a **faixa de cookies**: o **Google Analytics só liga depois do "Aceitar"**. **Achado:** a tag estava **fixa dentro do jogo** (`client/index.html`); agora o jogo só a carrega com o "sim" guardado.
 3. **No servidor:** **IP mascarado** no log (`212.8.252.x`), **e-mail fora do log**, e o **registro técnico em arquivo por dia, apagado sozinho depois de 30 dias** (`server/registro.ts`; o painel do servidor lê dele). Novos números do dono: contas criadas, logins, falhas de senha, contas apagadas e dados baixados (só contagem).
 
-4. **A audiência (P188):** o `/metricas/` ganhou **De onde vêm** (digitou o endereço, busca, rede social, outro site, campanha `utm_*`; o funil de cada canal, os sites que mandam gente, as campanhas), **Quem chega** (novo ou recorrente, com conta ou convidado, aparelho, navegador, sistema, idioma, estado do Brasil) e **Quanto se joga** (duração das rodadas e a qualidade gráfica ao terminar). **Só categorias; sem IP, sem cidade, sem id de pessoa.** O Google Analytics **não** entrou na página: precisa da chave de serviço do dono (passos na ordem P188).
+4. **A audiência (P193):** o `/metricas/` ganhou **De onde vêm** (digitou o endereço, busca, rede social, outro site, campanha `utm_*`; o funil de cada canal, os sites que mandam gente, as campanhas), **Quem chega** (novo ou recorrente, com conta ou convidado, aparelho, navegador, sistema, idioma, estado do Brasil) e **Quanto se joga** (duração das rodadas e a qualidade gráfica ao terminar). **Só categorias; sem IP, sem cidade, sem id de pessoa.** O Google Analytics **não** entrou na página: precisa da chave de serviço do dono (passos na ordem P193).
 
 **Provas:** testes do banco (aceite, exportar sem segredos, apagar só a conta certa, medição), do HTTP com o servidor de verdade (aceite exigido, versão velha, baixar, apagar com senha errada e certa, a sessão morre, a outra conta intacta, oposição, contagens, preflight, **log sem e-mail**), do cliente (corpo do criar, baixar, apagar, medição; a sessão esquece a conta apagada e **mantém o progresso do aparelho**), do painel de login (as duas caixas, "Meus dados", a confirmação de apagar que não destrói o campo ao digitar) e do registro (dia de Brasília, poda de 30 dias, nunca lança); **o check do site prova no navegador a faixa de cookies** (nada do Google antes da escolha; aceitar liga; a escolha vale na visita seguinte; recusar apaga `_ga`; o jogo não tem a tag fixa). **Mutação à mão: LGPD 32 de 32, audiência 38 de 38, faixa de cookies no navegador do check 7 de 7.** **Ponta a ponta no Chrome (a landing e o jogo reais na mesma origem, contra um servidor local):** a visita do Instagram com link marcado vira canal, site de origem e campanha na landing, o jogo herda a origem, a partida conta com conta ou convidado, a duração e a qualidade entram nas rodadas. Capturas em `.decepticons/arte/` (`lgpd-*-p187-claude.jpg`, `metricas-audiencia-p188-claude.jpg`).
 
@@ -68,7 +86,7 @@
 
 **Achados no caminho (R17):** o GA era fixo dentro do jogo; o e-mail ia para o log; `limparExpiradas` nunca era chamada; **a primeira partida de cada visita nunca contava em "partidas iniciadas"** (corrigido).
 
-**O Comandante congelou o escopo (18/10, P190 a P194):** a lista de lançamento está em `LANCAMENTO.md` (10 itens: auditoria de segurança, acesso e privilégio, autenticação, trilha de auditoria, analytics e observabilidade, governança, mapas do lançamento, servidor fora do PC de trabalho, teste com gente de fora, política revisada). **No lançamento só CIDADE NEON e ESTAÇÃO DOS CABOS (a Praia dos Cabos) ficam livres; Bunker e TERRAS RARAS (a Amazônia, ex-"Rio Vivo") ficam "EM BREVE".** O P81 e o painel único estão congelados.
+**O Comandante congelou o escopo (18/10, P194 a P198):** a lista de lançamento está em `LANCAMENTO.md` (10 itens: auditoria de segurança, acesso e privilégio, autenticação, trilha de auditoria, analytics e observabilidade, governança, mapas do lançamento, servidor fora do PC de trabalho, teste com gente de fora, política revisada). **No lançamento só CIDADE NEON e ESTAÇÃO DOS CABOS (a Praia dos Cabos) ficam livres; Bunker e TERRAS RARAS (a Amazônia, ex-"Rio Vivo") ficam "EM BREVE".** O P81 e o painel único estão congelados.
 
 **Próxima sessão começa com:** `LANCAMENTO.md` item 1 (a auditoria de segurança) e, em seguida, os itens 2 a 7 (privilégio, autenticação, trilha de auditoria, observabilidade, governança, mapas do lançamento).
 

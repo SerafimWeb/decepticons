@@ -210,7 +210,7 @@ it('o diaMais atravessa mês e ano', () => {
   expect(diaMais('2026-10-18', -30)).toBe('2026-09-18');
 });
 
-describe('direitos do titular no banco (P187, LGPD art. 18)', () => {
+describe('direitos do titular no banco (P192, LGPD art. 18)', () => {
   let contas: Contas;
   afterEach(() => contas?.close());
   const NOW = Date.UTC(2026, 9, 18, 15, 0);

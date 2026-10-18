@@ -7,6 +7,7 @@ import { ShieldVisuals } from '../fx/ShieldVisuals';
 import { ShieldHUD } from '../ui/ShieldHUD';
 import { runtimeDiagnostics } from './runtimeDiagnostics';
 import { PlayTelemetry } from './PlayTelemetry';
+import { mapaLiberado } from './Lancamento';
 import type { Audiencia } from './Audiencia';
 import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
@@ -398,6 +399,7 @@ export class Game {
   private last = -1;
 
   static async create(container: HTMLElement): Promise<Game> {
+    // O lançamento (P197): o público só vê os mapas liberados e o modo Comandante abre todos; quem decide é o painel de visibilidade (P191), criado no `main.ts` antes do jogo (`core/Lancamento.ts`).
     bootProgresso('fisica');
     const physics = await PhysicsWorld.create();
     bootProgresso('robos');
@@ -417,7 +419,7 @@ export class Game {
     }
     // Um mapa grande (a Amazônia, P180) é carregado sob demanda: o código dele só baixa para quem o escolhe (`environment/mapasSobDemanda.ts`).
     let visualDoChefe: object | null = null;
-    if (new URLSearchParams(location.search).get('mapa') === 'amazonia') {
+    if (new URLSearchParams(location.search).get('mapa') === 'amazonia' && mapaLiberado('amazonia')) {
       await carregarMapaSeFor('amazonia');
       // A missão do rio (a Sobrevivência na Amazônia, P180 parte C) tem o Draga-01 como chefe: o corpo, o cérebro e o desenho (o .glb) só baixam para quem a abre.
       if (gameModeFromSearch(location.search) === 'survival') {
@@ -749,7 +751,7 @@ export class Game {
     this.hud.setMode(this.rig.mode);
     this.hud.setReady(this.input.touchMode);
     this.telemetry = new Telemetry(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER);
-    // A audiência (P188): de onde veio esta visita e que aparelho é, só em categorias (`core/Audiencia.ts`); a origem da landing chega pela aba. Baixa sob demanda (fora do JS de partida): o
+    // A audiência (P193): de onde veio esta visita e que aparelho é, só em categorias (`core/Audiencia.ts`); a origem da landing chega pela aba. Baixa sob demanda (fora do JS de partida): o
     // boot_ok sai quando ela chega; um evento do funil que acontecesse antes iria sem contexto (vale, só não entra na audiência).
     void import('./Audiencia')
       .then((m) => {
@@ -1800,7 +1802,7 @@ export class Game {
   }
 
   private setPlaying(playing: boolean): void {
-    // O funil (P188): a primeira partida da página conta ao começar a jogar; as seguintes contam pelo `onRoundStart`. Achado ao ligar a audiência: antes, quem jogava uma rodada só nunca virava "partida iniciada".
+    // O funil (P193): a primeira partida da página conta ao começar a jogar; as seguintes contam pelo `onRoundStart`. Achado ao ligar a audiência: antes, quem jogava uma rodada só nunca virava "partida iniciada".
     if (playing && !this.primeiraPartidaContada) {
       this.primeiraPartidaContada = true;
       this.telemetry.enviar('partida_iniciada', this.audiencia?.funil(this.contaDoFunil()));

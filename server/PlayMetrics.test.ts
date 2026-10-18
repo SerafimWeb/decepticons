@@ -115,7 +115,7 @@ describe("o mapa, a onda e o desfecho da rodada (P185)", () => {
   });
 });
 
-describe("duração e qualidade das rodadas (P188)", () => {
+describe("duração e qualidade das rodadas (P193)", () => {
   const DIA = Date.parse("2026-10-18T15:00:00Z");
   it("a faixa de duração: os limites são 1, 5, 15 e 30 minutos", () => {
     const f = (s: number) => faixaDeDuracao(s);

@@ -1,6 +1,7 @@
 import type { MapId } from '../environment/Bunker';
 import { chaveDoEsquadrao, esquadraoPadrao, excessosDoEsquadrao, lerChaveDoEsquadrao, limparNome, nomeParaTexto, sanearEsquadrao, textoParaNome, type BotSpec, type EsquadraoSpec } from './esquadrao';
 import type { GameMode } from './gameMode';
+import { mapaLiberado } from '../core/Lancamento';
 
 /**
  * A campanha (13/10, fase 4 / P27 / P54: "painel de campanhas: escolher oponentes, missões e tarefas e salvar campanhas personalizadas com nome,
@@ -126,6 +127,13 @@ const mech = (chassi?: BotSpec['chassi'], persona?: BotSpec['persona']): BotSpec
  * treino no Bunker contra andróides, a Cidade Neon contra Marauder e Lancer (os corpos importados, com aliados), a Bandeira, e a Sobrevivência de fechamento.
  */
 export function campanhasDeFabrica(): CampanhaSpec[] {
+  // O lançamento (P197): a etapa de um mapa ainda fechado (a OPERAÇÃO NEON abre no Bunker) sai da campanha, em vez de rodar noutro mapa com o título errado.
+  return todasAsDeFabrica()
+    .map((c) => ({ ...c, etapas: c.etapas.filter((e) => mapaLiberado(e.mapa)) }))
+    .filter((c) => c.etapas.length > 0);
+}
+
+function todasAsDeFabrica(): CampanhaSpec[] {
   const treino: EsquadraoSpec = sanearEsquadrao({ v: 1, inimigos: [{ papel: 'android' }, { papel: 'android' }, { papel: 'android' }], aliados: [] }, 'bunker');
   const marauderELancer: EsquadraoSpec = sanearEsquadrao(
     { v: 1, inimigos: [mech('marauder', 'brabo'), mech('lancerL1'), { papel: 'android' }, { papel: 'android' }, { papel: 'technician' }], aliados: [mech(), mech()] },

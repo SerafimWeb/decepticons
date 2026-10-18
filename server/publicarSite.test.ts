@@ -83,7 +83,7 @@ describe('o envio em duas fases: empacota no PC, sobe o arquivo inteiro, confere
     const conf = comandosDeEnvio(cfg, 'x').conferir(ARQUIVOS_DE_CONFERENCIA);
     expect(conf.programa).toBe('ssh');
     expect(conf.args.at(-1)).toBe(`cd '${BOA.path}' && sha256sum ${ARQUIVOS_DE_CONFERENCIA.map((a) => `'${a}'`).join(' ')}`);
-    expect(ARQUIVOS_DE_CONFERENCIA).toContain('privacidade/index.html'); // a política (P187) tem de chegar ao site como o resto
+    expect(ARQUIVOS_DE_CONFERENCIA).toContain('privacidade/index.html'); // a política (P192) tem de chegar ao site como o resto
   });
 });
 

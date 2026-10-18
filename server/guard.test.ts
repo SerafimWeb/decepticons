@@ -127,7 +127,7 @@ describe('clientCountry: o país de quem chegou, só se o outro lado é o túnel
   });
 });
 
-describe('o IP no log (P187, LGPD): nunca inteiro', () => {
+describe('o IP no log (P192, LGPD): nunca inteiro', () => {
   it('IPv4 perde o último trecho: a rede aparece, a casa não', () => {
     expect(ipParaLog('212.8.252.70')).toBe('212.8.252.x');
     expect(ipParaLog('185.177.124.221')).toBe('185.177.124.x');
@@ -148,7 +148,7 @@ describe('o IP no log (P187, LGPD): nunca inteiro', () => {
   });
 });
 
-describe('o estado do Brasil (P188): só do túnel, só as 27 siglas', () => {
+describe('o estado do Brasil (P193): só do túnel, só as 27 siglas', () => {
   it('vindo do loopback (o túnel da Cloudflare): vale; de qualquer outra máquina o cabeçalho é ignorado', () => {
     expect(clientRegion('127.0.0.1', 'BR', 'SP')).toBe('SP');
     expect(clientRegion('::ffff:127.0.0.1', 'BR', 'rj')).toBe('RJ');

@@ -1,7 +1,7 @@
 import { chegouAAldeia } from './DragaMarcha';
 
 /**
- * A MISSÃO DO RIO (ordem P180, parte C, `AMAZONIA.md` § 6): a regra de fim da fase **RIO VIVO**, **pura** (G1/G2, G14: só números). Dois finais, os dois do Draga-01:
+ * A MISSÃO DO RIO (ordem P180, parte C, `AMAZONIA.md` § 6): a regra de fim da fase **TERRAS RARAS**, **pura** (G1/G2, G14: só números). Dois finais, os dois do Draga-01:
  *
  *  - **VITÓRIA:** o Draga caiu (o tronco zerou). A cura do rio e a invasão com androides (partes D e E) vêm depois; por ora, derrubar o Draga é vencer.
  *  - **DERROTA:** o Draga chegou à aldeia (o corpo cruzou `LINHA_DA_ALDEIA_X`). **O jogador morrer não perde a missão** (ele renasce na aldeia: quem perde é o rio), como na praia.

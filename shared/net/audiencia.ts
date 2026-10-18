@@ -1,5 +1,5 @@
 /**
- * Audiência (P188): de onde vêm as visitas e que tipo de gente (de aparelho, não de pessoa) joga, **sem identificar ninguém**. Contrato único do que a landing, o jogo e o servidor combinam:
+ * Audiência (P193): de onde vêm as visitas e que tipo de gente (de aparelho, não de pessoa) joga, **sem identificar ninguém**. Contrato único do que a landing, o jogo e o servidor combinam:
  * as categorias fechadas, a classificação da origem (link, busca, rede social, digitou o endereço, campanha), a família do navegador e do sistema, o tipo de aparelho, o idioma e a faixa
  * "há quantos dias esta pessoa visitou pela primeira vez".
  *

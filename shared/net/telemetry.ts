@@ -34,13 +34,13 @@ const EVENTOS_SET = new Set<string>(EVENTOS);
 export const EVENTO_PATH = '/evento';
 /** Caminho do resumo público (contagens agregadas, sem eventos crus). */
 export const RESUMO_PATH = '/eventos/resumo';
-/** Payload maior que isto é recusado antes de tentar decodificar (G7: nunca confiar no tamanho anunciado). 1 KB cobre a visita da audiência (P188) com folga: o pior caso (site de origem e as três marcas de campanha) tem ~400 bytes. */
+/** Payload maior que isto é recusado antes de tentar decodificar (G7: nunca confiar no tamanho anunciado). 1 KB cobre a visita da audiência (P193) com folga: o pior caso (site de origem e as três marcas de campanha) tem ~400 bytes. */
 export const EVENTO_MAX_BYTES = 1024;
 
 export interface EventoEnviado {
   seq?: number;
   nome: EventoNome;
-  /** A audiência do evento (P188): a visita em `landing_view`/`boot_ok`, o canal nos passos do funil. Só categorias (`shared/net/audiencia.ts`). Contexto torto é descartado; o evento continua valendo. */
+  /** A audiência do evento (P193): a visita em `landing_view`/`boot_ok`, o canal nos passos do funil. Só categorias (`shared/net/audiencia.ts`). Contexto torto é descartado; o evento continua valendo. */
   ctx?: ContextoDeEvento;
   /** Id efêmero da aba (sorteado no cliente a cada carregamento, nunca persistido). Serve só para o
    * servidor não contar o mesmo evento duas vezes se o navegador reenviar (`sendBeacon` às vezes duplica). */
@@ -105,7 +105,7 @@ export const EVENTOS_SERVIDOR = [
   'recusa_mensagem',
   /** Recusada na porta, pelas defesas (teto de conexões por IP ou total). */
   'recusa_limite',
-  /** A vida das contas (P187): quantas nasceram, quantas entraram, quantas falharam na senha, quantas foram apagadas e quantas baixaram os dados. Só a contagem. */
+  /** A vida das contas (P192): quantas nasceram, quantas entraram, quantas falharam na senha, quantas foram apagadas e quantas baixaram os dados. Só a contagem. */
   'conta_criada',
   'login_ok',
   'login_falhou',

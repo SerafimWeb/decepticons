@@ -23,7 +23,7 @@ import { startServer, type GameServer } from './Server';
 const TOKEN_DONO = 'token-de-teste-com-mais-de-16';
 const SENHA = 'senhasegura';
 
-/** Os direitos do titular (P187, LGPD art. 18) de ponta a ponta, contra o servidor de verdade: aceite na criação, baixar os dados, apagar a conta, não medir a atividade, e nada de dado pessoal no log. */
+/** Os direitos do titular (P192, LGPD art. 18) de ponta a ponta, contra o servidor de verdade: aceite na criação, baixar os dados, apagar a conta, não medir a atividade, e nada de dado pessoal no log. */
 describe('LGPD: aceite, baixar os dados, apagar a conta e oposição à medição', () => {
   const pasta = resolve('.tmp', `teste-lgpd-${process.pid}`);
   const banco = resolve(pasta, 'contas.db');

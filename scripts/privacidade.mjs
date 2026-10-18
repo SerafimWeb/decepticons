@@ -1,5 +1,5 @@
 /**
- * Política de Privacidade (/privacidade/), P187: o que o CYBERMECH guarda de quem joga, para quê, por quanto tempo e como a pessoa exerce os direitos da LGPD.
+ * Política de Privacidade (/privacidade/), P192: o que o CYBERMECH guarda de quem joga, para quê, por quanto tempo e como a pessoa exerce os direitos da LGPD.
  *
  * **Fonte única do texto.** O inventário de fatos que sustenta cada linha está em `.decepticons/PRIVACIDADE.md`; quando o código passar a guardar algo novo, o texto muda **aqui**,
  * a `POLITICA_VERSAO` (`shared/net/auth.ts`) muda junto, e o inventário também. A conta guarda a versão que a pessoa aceitou ao criá-la.

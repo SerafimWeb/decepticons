@@ -55,7 +55,7 @@ describe('parseCredenciais: a mesma mensagem para os dois campos', () => {
   });
 });
 
-describe('criar conta exige o aceite da política (P187, LGPD)', () => {
+describe('criar conta exige o aceite da política (P192, LGPD)', () => {
   const base = { email: 'Dan@X.com', senha: 'senhasegura' };
   it('com as duas caixas e a política de hoje: lê e normaliza o e-mail', () => {
     expect(parseCriarConta({ ...base, aceite: ACEITE_ATUAL })).toEqual({ ok: true, email: 'dan@x.com', senha: 'senhasegura' });

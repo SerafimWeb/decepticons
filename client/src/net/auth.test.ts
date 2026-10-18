@@ -112,7 +112,7 @@ describe('ContaCliente: progresso do piloto (P174)', () => {
   });
 });
 
-describe('ContaCliente: aceite e direitos do titular (P187, LGPD)', () => {
+describe('ContaCliente: aceite e direitos do titular (P192, LGPD)', () => {
   type Chamada = { url: string; init: RequestInit };
   const espiao = (corpo: unknown, ok = true, status = 200) => {
     const chamadas: Chamada[] = [];

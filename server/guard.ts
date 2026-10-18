@@ -137,7 +137,7 @@ export function clientRegion(remote: string | undefined, pais: string, header: s
 }
 
 /**
- * O endereço como ele pode aparecer no **log** (P187, LGPD: o IP é dado pessoal e o log fica em arquivo): IPv4 com o último trecho mascarado (`212.8.252.x`, a rede e não a casa),
+ * O endereço como ele pode aparecer no **log** (P192, LGPD: o IP é dado pessoal e o log fica em arquivo): IPv4 com o último trecho mascarado (`212.8.252.x`, a rede e não a casa),
  * IPv6 só com os três primeiros grupos (`2804:14d:5c80:x`). Basta para ver de qual rede veio um abuso; o endereço inteiro vive só na memória (o teto por IP e o balde de taxa).
  */
 export function ipParaLog(ip: string): string {

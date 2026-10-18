@@ -15,8 +15,9 @@ describe('o catálogo de funcionalidades (P191)', () => {
     for (const w of WEAPON_IDS) expect(padraoDe(`arma:${w}`), w).toBe('publico');
   });
 
-  it('o que está em desenvolvimento nasce restrito (o LADO, o ARQUIVO e o RELATÓRIO); o que o catálogo não conhece nunca some do jogo', () => {
-    for (const id of ['tela:lado', 'tela:arquivo', 'tela:relatorio']) expect(padraoDe(id), id).toBe('restrito');
+  it('o que está em desenvolvimento nasce restrito (o LADO, o ARQUIVO, o RELATÓRIO e, pela política do lançamento, o Bunker e a Terras Raras); o que o catálogo não conhece nunca some do jogo', () => {
+    for (const id of ['tela:lado', 'tela:arquivo', 'tela:relatorio', 'mapa:bunker', 'mapa:amazonia']) expect(padraoDe(id), id).toBe('restrito');
+    for (const id of ['mapa:arena', 'mapa:praia']) expect(padraoDe(id), id).toBe('publico');
     expect(padraoDe('coisa:que-nao-existe')).toBe('publico');
   });
 });
@@ -40,13 +41,13 @@ describe('a visibilidade: o que o jogador vê e o que só o Comandante vê', () 
     const v = new Visibilidade(false, armazem);
     let avisos = 0;
     v.aoMudar(() => avisos++);
-    v.definir({ versao: 3, itens: { 'tela:lado': 'publico', 'mapa:amazonia': 'restrito' } });
+    v.definir({ versao: 3, itens: { 'tela:lado': 'publico', 'mapa:praia': 'restrito' } });
     expect(v.visivel('tela:lado')).toBe(true);
-    expect(v.visivel('mapa:amazonia')).toBe(false);
+    expect(v.visivel('mapa:praia')).toBe(false);
     expect(avisos).toBe(1);
     expect(guardado.has(VISIBILIDADE_CACHE_KEY)).toBe(true);
     // a próxima abertura, sem rede, lembra
-    expect(new Visibilidade(false, armazem).visivel('mapa:amazonia')).toBe(false);
+    expect(new Visibilidade(false, armazem).visivel('mapa:praia')).toBe(false);
   });
 
   it('carregar do servidor: aplica a resposta; fora do ar, resposta torta ou sem servidor, o jogo segue com o que tinha (nunca lança)', async () => {
@@ -63,13 +64,14 @@ describe('a visibilidade: o que o jogador vê e o que só o Comandante vê', () 
 
   it('o link de uma fase ou de um modo restrito volta ao padrão para o jogador; o Comandante não é filtrado', () => {
     const v = new Visibilidade(false);
-    v.definir({ versao: 1, itens: { 'mapa:amazonia': 'restrito', 'modo:ctf': 'restrito' } });
-    expect(sanearLink('?mapa=amazonia&modo=survival&lang=en', v)).toBe('modo=survival&lang=en');
+    v.definir({ versao: 1, itens: { 'mapa:praia': 'restrito', 'modo:ctf': 'restrito' } });
+    expect(sanearLink('?mapa=praia&modo=survival&lang=en', v)).toBe('modo=survival&lang=en');
+    expect(sanearLink('?mapa=amazonia&modo=survival', v)).toBe('modo=survival'); // a Terras Raras já nasce restrita (a política do lançamento, P197)
     expect(sanearLink('?modo=ctf', v)).toBe('');
-    expect(sanearLink('?mapa=praia&modo=survival', v)).toBeNull();
+    expect(sanearLink('?mapa=arena&modo=survival', v)).toBeNull();
     const dono = new Visibilidade(true);
-    dono.definir({ versao: 1, itens: { 'mapa:amazonia': 'restrito' } });
-    expect(sanearLink('?mapa=amazonia', dono)).toBeNull();
+    dono.definir({ versao: 1, itens: { 'mapa:praia': 'restrito' } });
+    expect(sanearLink('?mapa=praia', dono)).toBeNull();
   });
 
   it('o DOM: o restrito some (func-oculta) para o jogador; para o Comandante aparece com o selo (func-teste)', () => {
@@ -89,6 +91,6 @@ describe('a visibilidade: o que o jogador vê e o que só o Comandante vê', () 
 
 describe('o painel: só as exceções ao padrão vão ao servidor', () => {
   it('o que está igual ao padrão do código não é enviado; o que difere é', () => {
-    expect(excecoes({ 'tela:lado': 'restrito', 'tela:arquivo': 'publico', 'mapa:amazonia': 'restrito', 'tela:hangar': 'publico' })).toEqual({ 'tela:arquivo': 'publico', 'mapa:amazonia': 'restrito' });
+    expect(excecoes({ 'tela:lado': 'restrito', 'tela:arquivo': 'publico', 'mapa:amazonia': 'restrito', 'mapa:praia': 'restrito', 'tela:hangar': 'publico' })).toEqual({ 'tela:arquivo': 'publico', 'mapa:praia': 'restrito' });
   });
 });

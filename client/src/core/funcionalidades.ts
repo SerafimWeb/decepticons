@@ -27,10 +27,10 @@ export const NOME_DO_GRUPO: Readonly<Record<GrupoDeFuncionalidade, string>> = {
 };
 
 const fixas: readonly Funcionalidade[] = [
-  { id: 'mapa:arena', grupo: 'fases', nome: 'Cidade Neon (Arena)', padrao: 'publico', efeito: 'o pino no mapa-múndi e a entrada por link' },
-  { id: 'mapa:bunker', grupo: 'fases', nome: 'Bunker', padrao: 'publico', efeito: 'o pino no mapa-múndi e a entrada por link' },
-  { id: 'mapa:praia', grupo: 'fases', nome: 'Praia dos Cabos', padrao: 'publico', efeito: 'o pino no mapa-múndi e a entrada por link' },
-  { id: 'mapa:amazonia', grupo: 'fases', nome: 'Amazônia · Terras Raras', padrao: 'publico', efeito: 'o pino no mapa-múndi e a entrada por link' },
+  { id: 'mapa:arena', grupo: 'fases', nome: 'Cidade Neon (Arena)', padrao: 'publico', efeito: 'o pino vira EM BREVE no mapa-múndi e o link cai na Cidade Neon' },
+  { id: 'mapa:bunker', grupo: 'fases', nome: 'Bunker', padrao: 'restrito', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },
+  { id: 'mapa:praia', grupo: 'fases', nome: 'Estação dos Cabos (Praia)', padrao: 'publico', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },
+  { id: 'mapa:amazonia', grupo: 'fases', nome: 'Amazônia · Terras Raras', padrao: 'restrito', efeito: 'o pino vira EM BREVE no mapa-múndi, some das campanhas e o link cai na Cidade Neon' },
   { id: 'modo:deathmatch', grupo: 'modos', nome: 'Deathmatch', padrao: 'publico', efeito: 'o botão do modo' },
   { id: 'modo:survival', grupo: 'modos', nome: 'Sobrevivência (missões)', padrao: 'publico', efeito: 'o botão do modo' },
   { id: 'modo:ctf', grupo: 'modos', nome: 'Bandeira', padrao: 'publico', efeito: 'o botão do modo' },

@@ -18,6 +18,7 @@ import {
   trocarMapa,
   trocarModo,
 } from './campanhaEditor';
+import { mapaLiberado } from '../core/Lancamento';
 
 /** O que a janela precisa do jogo (o `Game.ts` só liga: G3). */
 export interface CampaignPanelOptions {
@@ -363,7 +364,7 @@ export class CampaignPanel {
     if (this.editavel) {
       const ed = el('div', 'camp-ed');
       ed.append(
-        seletor({ campo: 'mapa', i: String(i) }, MAPAS.map((m) => ({ valor: m, rotulo: MAPA_NOME[m] })), e.mapa, `Mapa da etapa ${i + 1}`),
+        seletor({ campo: 'mapa', i: String(i) }, MAPAS.filter((m) => m === e.mapa || mapaLiberado(m)).map((m) => ({ valor: m, rotulo: MAPA_NOME[m] })), e.mapa, `Mapa da etapa ${i + 1}`),
         seletor({ campo: 'modo', i: String(i) }, modosOferecidos(e.mapa).map((m) => ({ valor: m, rotulo: MODO_NOME[m] })), e.modo, `Modo da etapa ${i + 1}`),
       );
       if (e.modo === 'deathmatch') {
@@ -412,7 +413,7 @@ export class CampaignPanel {
     const barra = el('div', 'camp-mais');
     barra.append(
       el('span', 'squad-presets-rot', 'ACRESCENTAR'),
-      seletor({ campo: 'novo-mapa' }, MAPAS.map((m) => ({ valor: m, rotulo: MAPA_NOME[m] })), this.novo.mapa, 'Mapa da nova etapa'),
+      seletor({ campo: 'novo-mapa' }, MAPAS.filter((m) => m === this.novo.mapa || mapaLiberado(m)).map((m) => ({ valor: m, rotulo: MAPA_NOME[m] })), this.novo.mapa, 'Mapa da nova etapa'),
       seletor({ campo: 'novo-modo' }, modosOferecidos(this.novo.mapa).map((m) => ({ valor: m, rotulo: MODO_NOME[m] })), this.novo.modo, 'Modo da nova etapa'),
       seletor({ campo: 'novo-esquadrao' }, [{ valor: 'padrao', rotulo: 'ESQUADRÃO PADRÃO' }, { valor: 'meu', rotulo: 'O MEU ESQUADRÃO' }], this.novo.esquadrao, 'Esquadrão da nova etapa'),
     );

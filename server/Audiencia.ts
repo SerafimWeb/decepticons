@@ -1,5 +1,5 @@
 /**
- * Agregador da audiência (P188): de onde vêm as visitas e que tipo de aparelho joga, **só em soma e sem identificar ninguém** (contrato em `shared/net/audiencia.ts`). Fica fora do `Server.ts`
+ * Agregador da audiência (P193): de onde vêm as visitas e que tipo de aparelho joga, **só em soma e sem identificar ninguém** (contrato em `shared/net/audiencia.ts`). Fica fora do `Server.ts`
  * pelo mesmo motivo da `Telemetria`: o teste bate direto no algoritmo.
  *
  * Duas tabelas por dia (horário de Brasília):

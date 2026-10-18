@@ -31,7 +31,7 @@ describe('Telemetry (emissor de métricas)', () => {
   });
 });
 
-describe('Telemetry: o contexto da audiência (P188)', () => {
+describe('Telemetry: o contexto da audiência (P193)', () => {
   it('o corpo leva o contexto em "o" quando há; sem contexto, o corpo é o de sempre', () => {
     const corpos: string[] = [];
     vi.stubGlobal('navigator', {

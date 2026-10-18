@@ -180,7 +180,7 @@ async function build() {
   run('node', ['scripts/oficina.mjs', '--out', join(OUT, 'oficina', 'index.html')]);
   // Privada: sem link em nenhum menu, fora da busca, e só mostra algo com o token do servidor (DEPLOY.md).
   run('node', ['scripts/metricas.mjs', '--out', join(OUT, 'metricas', 'index.html')]);
-  // Pública e indexável: a política de privacidade (P187, LGPD), linkada do rodapé de todas as páginas, da faixa de cookies e da tela de criar conta do jogo.
+  // Pública e indexável: a política de privacidade (P192, LGPD), linkada do rodapé de todas as páginas, da faixa de cookies e da tela de criar conta do jogo.
   run('node', ['scripts/privacidade.mjs', '--out', join(OUT, 'privacidade', 'index.html')]);
   writeFileSync(join(OUT, '.htaccess'), htaccess());
   writeFileSync(join(GAME, 'assets', '.htaccess'), ASSETS_HTACCESS);
@@ -297,7 +297,7 @@ async function antiCopy(page, name, failures) {
 }
 
 /**
- * Privacidade (P187, LGPD): a política existe, diz a versão e os direitos; a faixa de cookies **pergunta antes** de qualquer pedido ao Google (nada de gtag antes do "Aceitar"); aceitar liga a medição e
+ * Privacidade (P192, LGPD): a política existe, diz a versão e os direitos; a faixa de cookies **pergunta antes** de qualquer pedido ao Google (nada de gtag antes do "Aceitar"); aceitar liga a medição e
  * a escolha vale na próxima visita; "Preferências de cookies" reabre a pergunta; recusar apaga os cookies `_ga` e desliga a medição; e o jogo (`jogar/`) só carrega o Google com o "sim" guardado.
  */
 async function privacidadePage(browser, base, failures) {
@@ -405,7 +405,7 @@ async function metricasPage(browser, base, failures) {
   const report = {v:1,id:'site-check-normal',release:'site-check',mode:'deathmatch',online:false,build:'v2.vector09.plasma-0.rockets-0.-.frontal',assisted:false,outcome:'completed',seconds:60,frames:3600,slowFrames:36,kills:2,deaths:1,damage:100,firstKillS:12};
   play.record(report); play.record({...report,id:'site-check-assisted',assisted:true});
   corpo.play = play.snapshot();
-  // A audiência (P188): o agregador de verdade, alimentado com visitas de canais diferentes; depois um nome de site com HTML, que um servidor comprometido poderia mandar.
+  // A audiência (P193): o agregador de verdade, alimentado com visitas de canais diferentes; depois um nome de site com HTML, que um servidor comprometido poderia mandar.
   const { Audiencia } = await load('server/Audiencia.ts');
   const aud = new Audiencia();
   const v = (canal, host, extra = {}) => ({ tipo: 'visita', visita: { canal, ...(host ? { host } : {}), disp: 'desktop', nav: 'chrome', so: 'windows', lang: 'pt', ret: 'novo', ...extra } });
@@ -415,6 +415,11 @@ async function metricasPage(browser, base, failures) {
   aud.registrar('boot_ok', v('social', 'instagram.com'), 'SP', agora);
   aud.registrar('partida_iniciada', { tipo: 'funil', funil: { canal: 'social', conta: 'logado' } }, null, agora);
   corpo.audiencia = aud.resumo();
+  corpo.auditoria = [
+    { quando: new Date(agora).toISOString(), ator: 'anonimo', acao: 'admin_acesso', alvo: 'rota:metricas', ok: false },
+    { quando: new Date(agora - 60_000).toISOString(), ator: 'dono', acao: 'admin_promovido', alvo: 'conta:3', ok: true },
+    { quando: new Date(agora - 120_000).toISOString(), ator: '<img src=x onerror=window.__xss3=1>', acao: 'conta_criada', alvo: 'conta:9', ok: true },
+  ];
   corpo.audiencia.dias.at(-1).perfil.landing.host['<img src=x onerror=window.__xss2=1>'] = 3;
   corpo.dias.at(-1).eventos.boot_ok['<img src=x onerror=window.__xss=1>'] = 1; // um servidor comprometido não vira HTML na tela
   const servidor = createServer((req, res) => {
@@ -464,6 +469,9 @@ async function metricasPage(browser, base, failures) {
     if (!(await page.locator('#tab-uf').textContent()).includes('SP')) failures.push('métricas: o estado (SP) não chegou à tabela');
     if ((await page.locator('#tab-sites img').count()) || (await page.evaluate(() => window.__xss2))) failures.push('métricas: um nome de site com HTML virou HTML na tela');
     if (!(await page.locator('#ga-nota').textContent()).includes('ainda não está ligado')) failures.push('métricas: a nota do Google Analytics sumiu');
+    const trilha = await page.locator('#tab-audit').textContent();
+    if (!trilha.includes('RECUSADO') || !trilha.includes('administrador promovido') || (await page.locator('#tab-audit tbody tr').count()) !== 3) failures.push('métricas: a trilha de auditoria não chegou à tabela');
+    if ((await page.locator('#tab-audit img').count()) || (await page.evaluate(() => window.__xss3))) failures.push('métricas: um ator da trilha com HTML virou HTML na tela');
     const guardados = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('cybermech.metricas.token')));
     if (guardados.length !== 1 || !guardados[0].includes('127.0.0.1')) failures.push(`métricas: o token devia ficar guardado para aquele servidor só: ${JSON.stringify(guardados)}`);
     // Volta sozinha com o token guardado; um link para outro servidor não recebe o token guardado; "esquecer" apaga.
@@ -697,7 +705,7 @@ async function check() {
     await pageSane(page, 'landing', failures);
     await publicPage(page, 'landing', failures);
     await antiCopy(page, 'landing', failures);
-    // A audiência (P188): a landing embute a classificação da visita e manda a visita no landing_view e o canal nos cliques (o endereço do servidor vem do build: o código está lá mesmo sem ele).
+    // A audiência (P193): a landing embute a classificação da visita e manda a visita no landing_view e o canal nos cliques (o endereço do servidor vem do build: o código está lá mesmo sem ele).
     const fonteDaLanding = await (await page.request.get(base)).text();
     for (const trecho of ["send('landing_view', audiencia.visita())", 'audiencia.funil()', 'armazensDoNavegador', 'classificarOrigem'])
       if (!fonteDaLanding.includes(trecho)) failures.push(`landing: a audiência não está embutida (faltou "${trecho}")`);

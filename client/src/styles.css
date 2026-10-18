@@ -2729,7 +2729,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   box-shadow: 0 0 16px var(--hot);
 }
 
-/* P187 (LGPD): o aceite da política ao criar a conta e o bloco "Meus dados" da conta logada */
+/* P192 (LGPD): o aceite da política ao criar a conta e o bloco "Meus dados" da conta logada */
 .login-consent {
   display: flex;
   flex-direction: column;
