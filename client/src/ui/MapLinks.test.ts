@@ -14,13 +14,15 @@ describe('mapHref: o link do seletor de mapa', () => {
     expect(MAPS.map((m) => m.id)).toEqual(['arena', 'bunker', 'praia', 'amazonia']);
   });
 
-  it('o link da Amazônia abre a Amazônia, e como o Bunker e a Praia ela só existe offline: tira a sala e o modo', () => {
+  it('o link da Amazônia abre a Amazônia na missão do rio (P180 parte C), e como o Bunker e a Praia ela só existe offline: tira a sala e o servidor', () => {
     const href = mapHref('https://exemplo.test/cybermech/jogar/?sala=ARENA&servidor=ws://x&modo=ctf', 'amazonia');
     expect(abre(href)).toBe('amazonia');
     const url = new URL(href);
     expect(url.searchParams.has('sala')).toBe(false);
     expect(url.searchParams.has('servidor')).toBe(false);
-    expect(url.searchParams.has('modo')).toBe(false);
+    expect(url.searchParams.get('modo'), 'o link leva direto à missão (Sobrevivência); o Deathmatch do mapa é escolha do seletor de modo').toBe('survival');
+    // e abre o Deathmatch da Amazônia quando o jogador o escolhe no seletor de modo
+    expect(abre('https://exemplo.test/jogar/?mapa=amazonia&modo=deathmatch')).toBe('amazonia');
   });
 
   it('o link do Bunker abre o Bunker', () => {

@@ -42,7 +42,7 @@ import { ROUND_S, type Round } from '../combat/Round';
 import { mascaraFromSearch } from '../entities/mascaraDoChefe';
 import type { WalkerDemo } from '../debug/WalkerDemo';
 import { walkerFromSearch } from '../debug/walkerLink';
-import { carregarMapaSeFor } from '../environment/mapasSobDemanda';
+import { carregarChefeSeFor, carregarMapaSeFor, exigirChefe } from '../environment/mapasSobDemanda';
 import { diaFromSearch, progressoDaPartida } from '../environment/CicloDoDia';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
@@ -136,6 +136,7 @@ import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
 import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { CODIGO_DO_ESTADO } from '../sim/CabosDeDados';
+import { distanciaAteAAldeia, marchaFromSearch, progressoDaMarcha, tempoAteAAldeiaS } from '../sim/DragaMarcha';
 import { CODIGO_DA_FASE, faseDoChefe } from '../sim/FasesDoChefe';
 import { CODIGO_DO_ESTADO_DA_PORTA } from '../sim/PortasDaEstacao';
 import { CODIGO_DO_ESTADO_DO_QUADRO } from '../sim/QuadroDeLuz';
@@ -194,6 +195,9 @@ const _dmgPos = new THREE.Vector3();
  *  - simulação em passo fixo de 60 Hz (a partida e o controle do jogador);
  *  - render (câmera, animação, partículas, HUD, som) na taxa do monitor, interpolado.
  */
+/** A velocidade com que o rio se limpa depois da vitória (m/s, só desenho): a água limpa corre da frente para a foz em ~20 s. */
+const CURA_VISUAL_M_S = 140;
+
 export class Game {
   private readonly renderer: THREE.WebGLRenderer;
   private readonly composer: EffectComposer;
@@ -395,9 +399,17 @@ export class Game {
       await Promise.all([...usados].map((c) => IMPORTED_CHASSIS[c] && whenMechAssetReady(IMPORTED_CHASSIS[c]!.url, CHASSIS[c].height, IMPORTED_CHASSIS[c]!)));
     }
     // Um mapa grande (a Amazônia, P180) é carregado sob demanda: o código dele só baixa para quem o escolhe (`environment/mapasSobDemanda.ts`).
-    if (new URLSearchParams(location.search).get('mapa') === 'amazonia') await carregarMapaSeFor('amazonia');
+    let visualDoChefe: object | null = null;
+    if (new URLSearchParams(location.search).get('mapa') === 'amazonia') {
+      await carregarMapaSeFor('amazonia');
+      // A missão do rio (a Sobrevivência na Amazônia, P180 parte C) tem o Draga-01 como chefe: o corpo, o cérebro e o desenho (o .glb) só baixam para quem a abre.
+      if (gameModeFromSearch(location.search) === 'survival') {
+        await carregarChefeSeFor('amazonia');
+        visualDoChefe = (await exigirChefe('amazonia').criarVisual?.()) ?? null;
+      }
+    }
     bootProgresso('jogo');
-    const game = new Game(container, physics, hangar);
+    const game = new Game(container, physics, hangar, visualDoChefe);
     await game.precompileShaders();
     bootProgresso('pronto');
     return game;
@@ -407,6 +419,7 @@ export class Game {
     container: HTMLElement,
     physics: PhysicsWorld,
     hangar: Hangar,
+    visualDoChefe: object | null,
   ) {
     this.hangar = hangar;
     // Carrega chassis de malha importada (assíncrono, dispara cedo — CHASSIS[id].height é a mesma
@@ -500,6 +513,8 @@ export class Game {
       map: mapFromSearch(location.search, !!online, this.gameMode),
       startWave: waveFromSearch(location.search, SURVIVAL_WAVE_PLANS.length),
       bossMask: mascaraFromSearch(location.search), // a máscara do chefe (P165): `?mascara=0` a tira
+      ...(visualDoChefe ? { visualDoChefe } : {}), // o desenho do Draga-01 (P180, parte C), já baixado
+      marcha: marchaFromSearch(location.search), // `?marcha=0.8`: a missão do rio com o Draga já 80% do caminho andado (para testar o fim)
       // allies: false online — os inimigos locais já vão a 0 (o servidor manda o estado de verdade);
       // um aliado sem ninguém pra lutar, fora de sincronia com o servidor, não serve pra nada aqui.
       ...(online ? { damage: false, roundS: Number.POSITIVE_INFINITY, allies: false } : {}),
@@ -948,7 +963,7 @@ export class Game {
     if (naPraia) {
       this.praiaHud = new PraiaHud(document.getElementById('hud')!);
       this.praiaQuadro = novoQuadroDaPraia(this.camera);
-    } else if (this.match.quadro) {
+    } else if (this.match.quadro || this.match.rio) {
       // A missão em ondas da Cidade Neon (P164, parte E): o HUD só de missão (o transformador do banco, a barra do chefe e os avisos), sem o que é da praia.
       this.praiaHud = new PraiaHud(document.getElementById('hud')!, true);
       this.praiaQuadro = novoQuadroDaPraia(this.camera);
@@ -1371,7 +1386,15 @@ export class Game {
       this.telemetry.enviar('partida_terminada');
       this.playTelemetry.finish('completed');
       this.missionEnded = true;
-      this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds, this.match.nucleo?.caiu === true);
+      if (this.match.rio) {
+        this.hud.setMissionEndTexto(
+          survived,
+          survived ? 'O RIO VIVE · DRAGA-01 DERRUBADO' : 'A ALDEIA CAIU · O DRAGA-01 CHEGOU',
+          survived ? 'O DRAGA-01 CAIU ANTES DE CHEGAR À ALDEIA' : 'O DRAGA-01 ALCANÇOU A ALDEIA',
+          stats.kills,
+          stats.survivalSeconds,
+        );
+      } else this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds, this.match.nucleo?.caiu === true);
       this.setPlaying(false);
       this.input.exitLock();
       if (this.campanha) {
@@ -1753,17 +1776,25 @@ export class Game {
     this.match.arena.observar(this.camera.position.x, this.camera.position.y, this.camera.position.z);
     // O Draga-01 (P180, parte A, `?walker`): anda em círculo em volta de onde o jogador nasceu e mira o convés nele; **na Amazônia** ele desce o leito sozinho e a frente do rio vai com ele. Só desenho.
     const amazonia = this.match.arena.amazonia;
-    if (this.walkerQuer || amazonia) {
+    // Na missão do rio o Draga é o de verdade (o corpo da partida): o passeio de demonstração só vale no Deathmatch da Amazônia e no `?walker`.
+    const demoNoRio = amazonia !== null && this.match.rio === null;
+    if (this.walkerQuer || demoNoRio) {
       if (!this.walkerDemo && !this.walkerCarregando) {
         this.walkerCarregando = true;
         const nascimento = this.mech.simPosition.clone(); // uma vez: o centro do passeio é onde o jogador nasceu
         void import('../debug/WalkerDemo').then(({ WalkerDemo }) => {
-          this.walkerDemo = amazonia
+          this.walkerDemo = demoNoRio && amazonia
             ? new WalkerDemo(this.scene, nascimento, () => 0, { modo: 'rio', aoAndar: (x) => amazonia.setFrente(x) })
             : new WalkerDemo(this.scene, nascimento, (x, z) => this.match.physics.terrainY(x, z, 6, 40) ?? 0);
         });
       }
       this.walkerDemo?.update(dt, this.mech.simPosition);
+    }
+    // A missão do rio (P180, parte C): a frente do veneno é o x do Draga de verdade; derrubado, o rio se cura correndo para a foz (só desenho; a cura de verdade, com os androides, é a parte E).
+    if (amazonia && this.match.rio) {
+      const chefe = this.match.bots.chefe;
+      if (chefe) amazonia.setFrente(chefe.simPosition.x);
+      else if (this.match.rio.fase === 'vitoria') amazonia.curar(CURA_VISUAL_M_S * dt);
     }
     // O ciclo do dia da praia (P161): começa no pôr do sol e em 5 minutos de partida vira noite, com as luzes da cidade acendendo. Só desenho: nada na simulação.
     if (this.match.arena.praia) {
@@ -1990,7 +2021,19 @@ export class Game {
         q.chefe.fase = CODIGO_DA_FASE[faseDoChefe(chefe.modules)];
         q.chefe.pernas[0] = chefe.modules.leftLeg > 0;
         q.chefe.pernas[1] = chefe.modules.rightLeg > 0;
+        q.chefe.nome = chefe.stats.name;
+        q.chefe.alvo = this.match.rio ? 'aldeia' : null;
       }
+      // A missão do rio (P180, parte C): a distância do Draga até a aldeia, o progresso da marcha e quanto falta nesse passo.
+      const rio = this.match.rio;
+      q.aldeia.presente = rio !== null && !rio.terminou;
+      if (rio && chefe) {
+        const x = chefe.simPosition.x;
+        q.aldeia.distancia = distanciaAteAAldeia(x);
+        q.aldeia.progresso = progressoDaMarcha(x);
+        q.aldeia.tempoS = tempoAteAAldeiaS(x, chefe.modules.leftLeg > 0, chefe.modules.rightLeg > 0, true);
+      }
+      if (rio && !rio.terminou) this.hud.setMissionLinha('RIO VIVO · DERRUBE O DRAGA-01');
       q.largura = window.innerWidth;
       q.altura = window.innerHeight;
       this.praiaHud.update(dt, q);

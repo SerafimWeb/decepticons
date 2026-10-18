@@ -27,7 +27,7 @@ export const MODOS_DO_MAPA: Readonly<Record<MapId, readonly GameMode[]>> = {
   arena: ['deathmatch', 'survival', 'ctf'],
   bunker: ['deathmatch'],
   praia: ['deathmatch', 'survival'],
-  amazonia: ['deathmatch'],
+  amazonia: ['deathmatch', 'survival'],
 };
 export const MAPAS: readonly MapId[] = ['arena', 'bunker', 'praia', 'amazonia'];
 export const MODOS: readonly GameMode[] = ['deathmatch', 'survival', 'ctf'];

@@ -222,6 +222,21 @@ export class HUD {
     this.cta.textContent = '[ clique para tentar de novo ]';
   }
 
+  /** O fim de uma missão que não é de ondas (a do rio, P180 parte C): o título e o motivo vêm de quem sabe a história. */
+  setMissionEndTexto(survived: boolean, titulo: string, motivo: string, kills: number, seconds: number): void {
+    this.missionStatus.classList.toggle('clear', survived);
+    this.setMissionText(titulo);
+    this.missionSummary.hidden = false;
+    this.missionSummary.textContent = `${motivo}\n${kills} ABATES · ${seconds.toFixed(1)} s`;
+    this.cta.textContent = '[ clique para tentar de novo ]';
+  }
+
+  /** A linha de cima da missão do rio: a distância do Draga e o que fazer. */
+  setMissionLinha(text: string): void {
+    this.missionStatus.classList.remove('clear');
+    this.setMissionText(text);
+  }
+
   private setMissionText(text: string): void {
     if (text === this.shownMission) return;
     this.shownMission = text;

@@ -98,6 +98,17 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 - **Sob demanda:** o código do mapa (7 KB gzip, mais o terreno) só baixa para quem o escolhe (`mapasSobDemanda.ts`); o JS de partida ficou em **497,2 / 500 KB** (o `ServerPanel` também passou a ser sob demanda: 6,2 KB).
 - **A câmera:** a do jogo vai a 800 m e o mapa tem 2.400 m: na Amazônia ela vai a **1.500 m** (`alcanceDaCamera`) e o domo do céu tem 1.200 m. **Sem isso o céu saía preto no jogo** (só o jogo real mostrou; a bancada tinha a câmera dela).
 
+### 5.2 Como ficou na parte C (a missão jogável, sem escudo nem defesa)
+
+- **A missão é a Sobrevivência da Amazônia** (`?mapa=amazonia&modo=survival`; o link do seletor de mapas já leva a ela, e o Deathmatch do mapa é escolha do seletor de modo): o jogador nasce na aldeia e o **Draga-01 é o único inimigo**. Não tem ondas, rebeldes nem quadro de luz (a defesa dele é a parte D).
+- **O corpo é um `MechBase`** (`entities/DragaMech.ts`), como o Colossus: cápsula cinemática de 36 m por 10 m, character controller, dano por parte, calor e o canhão de cerco (360 de dano a cada 4,5 s, alcance de 400 m). **Os dois módulos de perna são os dois lados** (cada lado = duas pernas do desenho): **a perna da frente cai primeiro** (de 100% a 50% de vida do módulo) e a de trás depois; um lado caído o deixa a **50%** da velocidade, os dois a **30%** (rasteja). Tronco de 4.800, pernas de 1.600, cabeça de 600 e braços de 900: **números de partida, não validados**.
+- **A marcha** (`sim/DragaMarcha.ts`, pura): ele olha para o ponto do leito 70 m rio acima e vira a 14°/s; de pernas inteiras anda os **1.550 m** até a linha da aldeia em **~10 minutos** (2,6 m/s). **Atira** em quem estiver a até 320 m com a visada livre (a primeira salva 3 s depois da largada), com erro de mira de ~2,6° e a semente do chefe (determinístico).
+- **O fim** (`sim/MissaoDoRio.ts`, pura): **vitória** se o Draga cai; **derrota** se o corpo dele cruza a linha da aldeia (90 m das últimas casas). **O jogador morrer não perde**: renasce na aldeia. Se os dois acontecem no mesmo tick, vale a vitória. Ao acabar o mundo congela e o rio **se limpa correndo para a foz** (só desenho; a cura de verdade é a parte E).
+- **A tela** (`ui/PraiaHud.ts`): a barra do chefe (`DRAGA-01 · FASE n DE 3`, os dois lados e a regra da fase), a célula **ALDEIA · DRAGA A n m · n MIN** com a barra da marcha (laranja a 50%, vermelha a 80%) e os avisos a 1.000, 500, 250 e 100 m.
+- **Para testar o fim sem esperar dez minutos:** `&marcha=0.8` (de 0 a 0,95) começa com o Draga já 80% do caminho andado; `&marcha=0.95` o deixa a 77 m da linha (perde em ~30 s sem ninguém para o derrubar).
+- **Carrega sob demanda** (`ChefeCarregado` em `mapasSobDemanda.ts`): o corpo, o cérebro e o desenho (o `.glb` de 984 KB) só baixam para quem abre a missão; o Deathmatch da Amazônia não paga por eles.
+- **A floresta esconde o Draga do chão:** de dentro da mata só se vê o que passa das copas (as árvores chegam a 29 m e o Draga tem 38). Ele aparece inteiro no rio e nas clareiras (a aldeia, a planta). É uma escolha de ambiente a conferir com o Comandante.
+
 ## 6. A missão (em atos)
 
 1. **O perímetro (desmantelar a defesa):** o Draga anda **rio acima** protegido por um **escudo** que três **geradores** (espalhados na margem e na mina) alimentam. Destruir os três derruba o
@@ -116,8 +127,8 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 |---|---|---|
 | **A — o Draga** | o `.glb` riggado (script de Blender), o andar do quadrúpede (função pura, com teste), o `WalkerVisual`, a bancada de fotos e um **link de demonstração** no jogo (`?walker`) | **feita (17/10)** |
 | **B — o rio e o mapa** | o mapa `amazonia` (terreno em pedaços, floresta instanciada, o rio com a frente de limpeza), a bancada de custo e o teto de desenhos em teste | **feita (17/10)**: `?mapa=amazonia&modo=deathmatch`; o Draga desce o leito e o rio muda com ele (DEMO) |
-| **C — o Draga na partida** | o chefe com os números, os módulos de dano (as quatro pernas), o rastejo, a barra do chefe e a chegada à aldeia (derrota) | **próxima** |
-| **D — a defesa** | os geradores do escudo, as torres, a força de defesa e o ato 1 | — |
+| **C — o Draga na partida** | o chefe com os números, os módulos de dano (as quatro pernas), o rastejo, a barra do chefe e a chegada à aldeia (derrota) | **feita (17/10)**: `?mapa=amazonia&modo=survival` é a missão do rio; derrubar o Draga vence, ele chegar à aldeia perde |
+| **D — a defesa** | os geradores do escudo, as torres, a força de defesa e o ato 1 | **próxima** (e **tem de carregar sob demanda**: o JS de partida está em 499,2 de 500 KB) |
 | **E — a invasão** | a escotilha, os androides, os núcleos e a cura do rio (atos 3 e 4) | — |
 
 ## 8. Decisões em aberto (do Comandante)
@@ -133,8 +144,8 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 ## 9. Pendências (R13)
 
 - O arquivo do dono (`.glb` cru) fica em `D:\imagens cybermech\MODELOS 3D\`; o jogo usa a cópia riggada em `client/public/models/` (o original não é tocado).
-- Os fatos da ficha estão marcados 🟡 até ler as fontes primárias.
+- Os fatos da ficha estão marcados 🟡 até ler as fontes primárias. **A ficha dos fatos da mineração e do garimpo já existe** (`fichas/fatos-mineracao-amazonia.md`, 17/10): tudo 🟡, e a expulsão dos povos ainda não foi levantada.
 - Só offline (como o capítulo 1): o online precisa do contrato de times (P81) e do teto de 8 personagens.
-- **Parte B é mapa de Deathmatch, não é fase:** não tem missão, defesa, geradores, invasão nem cura (partes C a E). O Draga que desce o leito é **só desenho** (sem corpo na simulação).
+- **Parte B era mapa de Deathmatch; a parte C o faz missão:** com o Draga como chefe de verdade. **Ainda não há** escudo, geradores, torres, força de defesa, invasão com androides nem cura de verdade (partes D e E). No Deathmatch da Amazônia o Draga que desce o leito segue sendo **só desenho** (sem corpo).
 - **O orçamento é de contagem, não de tempo:** a bancada roda em SwiftShader (sem GPU). Falta medir quadros por segundo numa GPU de verdade, integrada de preferência (G12).
 - **Do visual (parte B):** o chão visto de cima mostra um desenho de espinha de peixe (a diagonal da grade com a ondulação miúda); de perto não se vê. Sem som ambiente, sem pássaros, sem partículas de névoa ou de óleo, sem reflexo na água. A floresta troca a árvore pelo bloco a 260 m (a névoa esconde pouco: pode aparecer o estalo).

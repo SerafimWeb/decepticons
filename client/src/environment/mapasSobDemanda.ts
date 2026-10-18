@@ -1,5 +1,8 @@
 import type * as THREE from 'three';
+import type { CerebroDoChefe } from '../combat/CerebroDoChefe';
+import type { MechBase } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
+import type { PowerSpec } from '../tuning/power';
 import type { MapId } from './Bunker';
 
 /**
@@ -16,6 +19,8 @@ export interface InstanciaDoMapa {
   observar(x: number, y: number, z: number): void;
   setFrente(x: number): void;
   readonly frente: number;
+  /** A frente do rio avança `metros` rio abaixo (a cura: o limpo toma o lugar do morto). Só desenho. */
+  curar(metros: number): void;
   /** Até onde a câmera do jogo enxerga neste mapa (m): a névoa do mapa já escondeu tudo muito antes. */
   readonly alcanceDaCamera: number;
 }
@@ -39,7 +44,29 @@ export interface MapaCarregado {
   meia: { x: number; z: number };
 }
 
+/** O que o chefe do mapa precisa para nascer na partida. */
+export interface CriarChefe {
+  physics: PhysicsWorld;
+  /** O desenho do chefe, se o cliente o carregou (`criarVisual`); `null` no servidor e nos testes de regra. */
+  visual: object | null;
+  /** A semente do cérebro (G2: nada de `Math.random`). */
+  seed: number;
+  /** As potências do painel (o corpo do chefe também as lê). */
+  power?: PowerSpec;
+}
+
+/** O chefe de um mapa (o Draga-01 da Amazônia, P180 parte C), carregado sob demanda: o corpo, o cérebro e o desenho só baixam para quem abre a missão. */
+export interface ChefeCarregado {
+  /** Onde ele nasce (x, z) e para onde olha (yaw do Mech). */
+  nascimento: { x: number; z: number; yaw: number };
+  /** O corpo (um `MechBase`) e o cérebro que o `BotSystem` roda a cada tick. */
+  criar(o: CriarChefe): { mech: MechBase; brain: CerebroDoChefe };
+  /** O desenho já pronto (o `.glb` baixa aqui, só no cliente). */
+  criarVisual?(): Promise<object>;
+}
+
 const carregados = new Map<MapId, MapaCarregado>();
+const chefes = new Map<MapId, ChefeCarregado>();
 
 /** O mapa, se já foi carregado (`undefined` se não: quem pede sem carregar antes errou o roteiro). */
 export function mapaCarregado(id: MapId): MapaCarregado | undefined {
@@ -51,6 +78,26 @@ export function exigirMapa(id: MapId): MapaCarregado {
   const m = carregados.get(id);
   if (!m) throw new Error(`o mapa "${id}" não foi carregado: chame carregarMapaSeFor("${id}") antes de montar a partida`);
   return m;
+}
+
+/** O chefe do mapa, se já foi carregado. */
+export function chefeCarregado(id: MapId): ChefeCarregado | undefined {
+  return chefes.get(id);
+}
+
+/** Como o chefe é obrigatório para montar a missão: erro claro em vez de um `undefined` mais adiante. */
+export function exigirChefe(id: MapId): ChefeCarregado {
+  const c = chefes.get(id);
+  if (!c) throw new Error('o chefe do mapa "' + id + '" não foi carregado: chame carregarChefeSeFor("' + id + '") antes de montar a partida');
+  return c;
+}
+
+/** Baixa e registra o chefe do mapa, se ele tem um (hoje só a Amazônia). Idempotente; separado do mapa porque o Deathmatch não paga pelo Draga. */
+export async function carregarChefeSeFor(id: MapId): Promise<void> {
+  if (id === 'amazonia' && !chefes.has(id)) {
+    const { chefeDaAmazonia } = await import('./AmazoniaChefe');
+    chefes.set(id, chefeDaAmazonia);
+  }
 }
 
 /** Baixa e registra o código do mapa, se ele é de carga sob demanda. Idempotente; os mapas que moram no pacote de partida não fazem nada. */

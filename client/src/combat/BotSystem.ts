@@ -30,6 +30,9 @@ import type { Respawner } from './Respawner';
 import { defaultPower, poweredStats, type PowerSpec } from '../tuning/power';
 import { BOT_NAMES } from '../core/botNames';
 import { wrapAngle } from './steer';
+import type { CerebroDoChefe } from './CerebroDoChefe';
+import type { MapId } from '../environment/Bunker';
+import { exigirChefe } from '../environment/mapasSobDemanda';
 
 export const BOT_RESPAWN_S = 4;
 /** IA rebelde: vermelho, com visor e tiros vermelhos (o jogador é amarelo com verde neon). */
@@ -128,6 +131,12 @@ export interface BotSystemOptions {
   technicianSpawns?: readonly (readonly [number, number])[];
   /** Onde o Colossus (escala 3) nasce (x, z): um só, com perfil de cerco. Sem isto, a missão não tem boss. */
   bossSpawn?: readonly [number, number];
+  /** O chefe do mapa (o Draga-01 da Amazônia, P180 parte C): o mapa cujo chefe nasce no ponto dele. Vem do registro `mapasSobDemanda` (carregado antes de montar a partida). Sem isto, não há chefe de mapa. */
+  chefeDoMapa?: MapId;
+  /** O desenho do chefe do mapa (o cliente carrega antes; o servidor e os testes não passam: o corpo é só física e números). */
+  visualDoChefe?: object | null;
+  /** Onde o chefe do mapa nasce, se não for o ponto de largada do registro (o `?marcha=` do link: o Draga já andado). */
+  chefeNascimento?: { x: number; z: number };
   /** Rota de patrulha (x, z). */
   waypoints: readonly (readonly [number, number])[];
   seed?: number;
@@ -160,7 +169,7 @@ interface Fighter {
 
 interface Bot {
   mech: MechBase;
-  brain: BotController | TechnicianController;
+  brain: BotController | TechnicianController | CerebroDoChefe;
   name: string;
   home: THREE.Vector3;
   /** A dificuldade é do robô (esquadrão): a das configurações não a troca. */
@@ -314,6 +323,17 @@ export class BotSystem {
       const home = place(boss, o.bossSpawn);
       const brain = new BotController(boss, o.physics, waypoints, seed * 1000 + 900, o.skill ?? BOT_SKILL_NORMAL, BOSS_PROFILE, PERSONAS.soldado);
       this.bots.push({ mech: boss, brain, name: 'COLOSSUS-01', home });
+      this.bossMech = boss;
+    }
+    // O chefe do mapa (o Draga-01 da Amazônia, P180 parte C): corpo e cérebro vêm do registro sob demanda; ele marcha pelo leito do rio e atira, não caça nem foge.
+    if (o.chefeDoMapa) {
+      const chefe = exigirChefe(o.chefeDoMapa);
+      const { mech: boss, brain } = chefe.criar({ physics: o.physics, visual: o.visualDoChefe ?? null, seed: seed * 1000 + 900, power });
+      const nasce = o.chefeNascimento ?? chefe.nascimento;
+      const home = place(boss, [nasce.x, nasce.z]);
+      boss.applyFacing(chefe.nascimento.yaw, 0);
+      brain.reset();
+      this.bots.push({ mech: boss, brain, name: boss.stats.name, home });
       this.bossMech = boss;
     }
     // Técnicos: consertam os Mechs rebeldes; visor amarelo para o jogador achar e caçar primeiro.
@@ -472,7 +492,7 @@ export class BotSystem {
   }
 
   /** Um pulso do laser de `mech` (P175), da boca (`_muzzle`, já posta por quem chamou) na direção que o cérebro mirou (`shotDir`, com o erro de mira da dificuldade). Sem a partida atrás (`pulso`), nada. */
-  private pulse(mech: MechBase, brain: BotController, w: WeaponStats): void {
+  private pulse(mech: MechBase, brain: { readonly shotDir: THREE.Vector3 }, w: WeaponStats): void {
     this.o.pulso?.(mech, _muzzle, brain.shotDir, w);
   }
 

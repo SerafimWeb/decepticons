@@ -113,10 +113,11 @@ describe('a Amazônia no Match (P180, parte B): o Deathmatch no mapa grande', ()
   });
 });
 
-describe('o link da Amazônia (P180, parte B): ?mapa=amazonia só abre no Deathmatch offline', () => {
-  it('abre a Amazônia no Deathmatch; os outros modos e o online ficam na Cidade Neon', () => {
+describe('o link da Amazônia (P180): ?mapa=amazonia abre o Deathmatch e a missão do rio, só offline', () => {
+  it('abre a Amazônia no Deathmatch e na Sobrevivência (a missão do rio); a Bandeira, o Domínio e o online ficam na Cidade Neon', () => {
     expect(mapFromSearch('?mapa=amazonia', false, 'deathmatch')).toBe('amazonia');
-    expect(mapFromSearch('?mapa=amazonia', false, 'survival')).toBe('arena');
+    expect(mapFromSearch('?mapa=amazonia', false, 'survival')).toBe('amazonia');
+    expect(mapFromSearch('?mapa=amazonia', false, 'dominio')).toBe('arena');
     expect(mapFromSearch('?mapa=amazonia', false, 'ctf')).toBe('arena');
     expect(mapFromSearch('?mapa=amazonia', true, 'deathmatch')).toBe('arena');
     expect(mapFromSearch('?mapa=outra', false, 'deathmatch')).toBe('arena');

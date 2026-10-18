@@ -4412,6 +4412,14 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .praia-quadro[data-estado='apagado'] { color: var(--alert); }
 .praia-quadro[data-estado='apagado'] .pc-barra { border-color: rgba(255, 45, 61, 0.7); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
 /* A barra do chefe (P165, ui/PraiaHud.ts): o Colossus em campo. O título leva a fase; a barra é o tronco; as duas pernas acendem e apagam; a regra da fase vai numa linha. */
+.praia-aldeia { position: absolute; top: 168px; left: 50%; transform: translateX(-50%); width: min(560px, 58vw); display: flex; flex-direction: column; gap: 2px; font-size: 9px; letter-spacing: 2px; color: var(--cyan); text-shadow: 0 0 6px #000; }
+.praia-aldeia[hidden] { display: none; }
+.praia-aldeia span { opacity: 0.9; }
+.praia-aldeia[data-estado='ataque'] { color: var(--warn); }
+.praia-aldeia[data-estado='ataque'] .pc-vida { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+.praia-aldeia[data-estado='critico'] { color: var(--alert); }
+.praia-aldeia[data-estado='critico'] .pc-vida { background: var(--alert); box-shadow: 0 0 6px var(--alert); }
+.praia-aldeia[data-estado='critico'] .pc-barra { border-color: rgba(255, 45, 61, 0.7); animation: praia-pulso 0.7s ease-in-out infinite alternate; }
 .praia-chefe { position: absolute; top: 196px; left: 50%; transform: translateX(-50%); width: min(620px, 64vw); display: flex; flex-direction: column; gap: 3px; align-items: stretch; font-size: 10px; letter-spacing: 2px; color: var(--alert); text-shadow: 0 0 6px #000; }
 .praia-chefe[hidden] { display: none; }
 .praia-chefe b { color: var(--ink); text-align: center; font-size: 11px; letter-spacing: 3px; }

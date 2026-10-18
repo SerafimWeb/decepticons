@@ -1,5 +1,27 @@
 # ESTADO ATUAL — CYBERMECH
 
+## AMAZÔNIA, PARTE C: O DRAGA-01 COM CORPO — a missão do rio é jogável — Claude, 17/10 (branch `claude/amazonia-draga`, P180)
+
+**A ordem do Comandante (17/10):** *"há uma enorme força de defesa deles e teremos que desmantelar, invadir com androides e destruir por dentro"*; *"continua iterando até concluir essas pendências"*. A parte C é **o Draga-01 de verdade na partida**: com corpo, dano, marcha e a missão que ele cria.
+
+**O que entrou (`AMAZONIA.md` § 5.2 tem os números):**
+1. **O corpo** (`entities/DragaMech.ts`, `dragaStats.ts`): um `MechBase` como o Colossus (36 m por 10 m de cápsula, canhão de cerco no convés), com um rig vazio de bípede e o desenho de quatro pernas (`WalkerVisual`) por cima. **Os dois módulos de perna são os dois lados**; a perna da frente cai primeiro; um lado caído o deixa a 50%, os dois a 30% (rasteja).
+2. **A marcha e o cérebro** (`sim/DragaMarcha.ts`, `combat/DragaController.ts`): ele anda os 1.550 m do leito até a aldeia em ~10 minutos, vira devagar (14°/s), e atira em quem estiver a 320 m com a visada livre; tudo determinístico.
+3. **A missão** (`sim/MissaoDoRio.ts`, `Match.rio`): **`?mapa=amazonia&modo=survival`** (o seletor de mapas já leva a ela). Derrubar o Draga vence; ele chegar à linha da aldeia perde; **o jogador morrer não perde**. Sem ondas, rebeldes nem quadro de luz: o Draga é o único inimigo. **`&marcha=0.8`** começa com o Draga 80% do caminho andado (para testar o fim).
+4. **A tela:** a barra do chefe com o nome, a fase e os dois lados; a célula **ALDEIA · DRAGA A n m · n MIN** com a barra da marcha; os avisos a 1.000, 500, 250 e 100 m; o fim ("O RIO VIVE" / "A ALDEIA CAIU"); e o rio se limpando para a foz depois da vitória (só desenho).
+5. **Carregado sob demanda:** o corpo, o cérebro e o `.glb` só baixam para quem abre a missão (`ChefeCarregado`).
+6. **A ficha de fatos** (`fichas/fatos-mineracao-amazonia.md`): o que o jogo pode afirmar como fato sobre o garimpo e a mineração (o mercúrio no peixe, a emergência Yanomami, o garimpo nas terras indígenas, as dragas do Madeira, os rejeitos de Barcarena), cada um com a frase que o jogo pode dizer e a que **não** pode, as fontes e o que é sátira. **Tudo 🟡: só o resumo de uma busca; ler as fontes primárias antes de virar texto.** Nenhum fato entrou no jogo ainda; a expulsão dos povos **não foi levantada**.
+
+**Provas:** testes do corpo no chão de verdade (anda os 1.550 m em ~10 minutos, segue o rio, perna caída = metade da velocidade, canhão com erro de mira determinístico, visada, alcance), da missão, da partida inteira (derrota, vitória, recomeço, o jogador morrendo, o placar) e do HUD. **Mutação à mão: 59 de 60 pegas** (a que escapa é equivalente). **Visto no jogo de verdade** (Chrome sem GPU, `arte/amazonia-missao-draga-c1-claude.jpg` e `amazonia-missao-fim-c1-claude.jpg`): a barra do Draga, a célula da aldeia, os avisos, as pernas amarelas do Draga entre as árvores perto da aldeia, e a derrota quando ele cruza a linha.
+
+**Custo de CPU:** por tick, o Draga é um `MechBase` a mais (um character controller) e o cérebro faz uma conta de rumo e um laço sobre os alvos (≤ 8); quando atira, um raio. **O JS de partida subiu para 499,2 / 500 KB** (a folga é de 0,8 KB): **as partes D e E TÊM de carregar sob demanda**, senão o push barra.
+
+**Onde o Comandante confere:** **`cybermech.online/jogar/?mapa=amazonia&modo=survival`** (o seletor de mapas, AMAZÔNIA · RIO VIVO, leva direto): você nasce na aldeia e o Draga está a 1.650 m, marchando para lá. Para ver o fim rápido: **`&marcha=0.9`** (ele chega à aldeia em ~2 minutos: derrube-o antes ou veja a derrota).
+
+**Falta (R13):** **ainda não é a fase inteira**: sem **escudo, geradores, torres, força de defesa** (parte D) e sem **invasão com androides nem cura de verdade** (parte E). Os números de equilíbrio (tronco 4.800, pernas 1.600, o canhão de cerco que mata um Vector-09 em um tiro certeiro) são **de partida, não validados com jogadores**. O Draga **não tem som de passo nem de tiro próprios, nem explosão ao cair** (ele some como os outros Mechs). **A floresta densa esconde o Draga do chão** (só se vê acima das copas, no rio e nas clareiras). **Não medido em GPU de verdade.** **A imagem da serpente não chegou.**
+
+**Próxima sessão começa com:** a **parte D** (os geradores do escudo, as torres da margem, a força de defesa e o ato 1), **carregada sob demanda** (a folga de JS é de 0,8 KB).
+
 ## AMAZÔNIA, PARTE B: O RIO E O MAPA — o cenário de 2,4 km com o rio como termômetro — Claude, 17/10 (branch `claude/amazonia-mapa`, P180)
 
 **A ordem do Comandante (17/10):** *"vamos já planejar e construir a próxima fase: o rio Amazonas, uma mineradora acabando com o rio… o cenário precisa ser bem maior… manter a eficiência e a contenção de consumo"* e *"acima desse super mech o rio é limpo e vivo, e depois dessa máquina o rio fica poluído, sujo, com óleo e envenenado"*; depois, *"continua iterando até concluir essas pendências"*.

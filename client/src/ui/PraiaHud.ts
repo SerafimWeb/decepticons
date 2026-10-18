@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { PRAIA_COMPLEXO, PRAIA_ESTACAO } from '../environment/PraiaLayout';
-import { avisoDoChefe, CODIGO_DA_FASE, regraDaFase, TEXTOS_DA_FASE, type FaseDoChefe } from '../sim/FasesDoChefe';
+import { avisoDaMarcha } from '../sim/DragaMarcha';
+import { avisoDoChefe, CODIGO_DA_FASE, regraDaFase, TEXTOS_DA_FASE, type AlvoDoChefeNoMapa, type FaseDoChefe } from '../sim/FasesDoChefe';
 import { PORTAS_DA_ESTACAO } from '../sim/PortasDaEstacao';
 import { AlertaDoNucleo, AnunciadorDeLugar, avisoDeAgua, avisoDasPortas, avisoDoQuadro, avisoDosCabos, CARTAO_DA_MISSAO, FAIXA_ALCANCE_M, fracaoNaFaixa, MARCOS_DA_FAIXA, marcadorNaTela, textoDeDistancia, type AvisoDeAgua, type MargensDaTela, type MarcadorNaTela } from './praiaHudData';
 
@@ -51,7 +52,9 @@ export interface QuadroDaPraia {
   /** O quadro de luz da cidade (P164): o estado (0 ligado, 1 sabotado, 2 apagado) e a vida de 0 a 1. `presente` é falso fora da missão em ondas. */
   quadro: { presente: boolean; estado: number; vida: number };
   /** O chefe da missão, o Colossus (P165): a vida do tronco (0 a 1), a fase (1 anda, 2 manca, 3 rasteja) e se cada perna está de pé. `presente` é falso sem ele em campo. */
-  chefe: { presente: boolean; fracao: number; fase: number; pernas: boolean[] };
+  chefe: { presente: boolean; fracao: number; fase: number; pernas: boolean[]; nome: string; alvo: AlvoDoChefeNoMapa | null };
+  /** A aldeia que o Draga-01 ameaça (P180, parte C): a distância (m) até ela, o progresso da marcha (0 a 1) e quanto falta (s). `presente` é falso fora da missão do rio. */
+  aldeia: { presente: boolean; distancia: number; progresso: number; tempoS: number };
   camera: THREE.Camera;
   largura: number;
   altura: number;
@@ -68,7 +71,8 @@ export function novoQuadroDaPraia(camera: THREE.Camera): QuadroDaPraia {
     cabos: { presente: false, estado: [0, 0, 0], vida: [1, 1, 1], injecao: [0, 0, 0] },
     portas: { presente: false, estado: [0, 0], vida: [1, 1] },
     quadro: { presente: false, estado: 0, vida: 1 },
-    chefe: { presente: false, fracao: 1, fase: 1, pernas: [true, true] },
+    chefe: { presente: false, fracao: 1, fase: 1, pernas: [true, true], nome: 'COLOSSUS-01', alvo: null },
+    aldeia: { presente: false, distancia: 0, progresso: 0, tempoS: Infinity },
     camera,
     largura: 0,
     altura: 0,
@@ -122,6 +126,12 @@ export class PraiaHud {
   private readonly chefePernas: HTMLElement[] = [];
   private readonly chefeRegra: HTMLElement;
   private chefeChave = '';
+  /** A célula da aldeia (P180, parte C): a distância do Draga e a barra da marcha. */
+  private readonly aldeia: HTMLElement;
+  private readonly aldeiaTexto: HTMLElement;
+  private readonly aldeiaBarra: HTMLElement;
+  private aldeiaChave = '';
+  private aldeiaDistancia = Infinity;
   private faseDoChefe = 0;
   private nucleoMostrado = -1;
   private nucleoClasse = '';
@@ -211,6 +221,12 @@ export class PraiaHud {
     el('span', '', this.quadro, soMissao ? 'TRANSFORMADOR · BANCO VORCARIS' : 'QUADRO DE LUZ DA CIDADE');
     this.quadroVida = el('i', 'pc-vida', el('div', 'pc-barra', this.quadro));
 
+    // A aldeia (P180, parte C): a distância do Draga-01 até ela e a barra da marcha (enche de verde a vermelho), só na missão do rio.
+    this.aldeia = el('div', 'praia-aldeia', this.raiz);
+    this.aldeia.hidden = true;
+    this.aldeiaTexto = el('span', '', this.aldeia);
+    this.aldeiaBarra = el('i', 'pc-vida', el('div', 'pc-barra', this.aldeia));
+
     // A barra do chefe (P165): só enquanto o Colossus está em campo. O título leva a fase; a regra da fase vem numa linha (o jogador entende o problema sem ler manual).
     this.chefe = el('div', 'praia-chefe', this.raiz);
     this.chefe.hidden = true;
@@ -259,6 +275,8 @@ export class PraiaHud {
     this.quadroChave = '';
     this.faseDoChefe = 0;
     this.chefeChave = '';
+    this.aldeiaChave = '';
+    this.aldeiaDistancia = Infinity;
     for (const c of this.celulasDasPortas) c.pct = '';
     for (const c of this.celulasDosCabos) c.pct = '';
     this.mostradoCartao = false;
@@ -290,9 +308,12 @@ export class PraiaHud {
     const alertaDasPortas = q.portas.presente ? avisoDasPortas(this.estadosDasPortas, q.portas.estado, NOMES_DAS_PORTAS) : null;
     const alertaDoQuadro = q.quadro.presente ? avisoDoQuadro(this.quadroEstado, q.quadro.estado) : null;
     const faseAgora = q.chefe.presente ? q.chefe.fase : 0;
-    const alertaDoChefe = avisoDoChefe(this.faseDoChefe, faseAgora);
+    const alertaDoChefe = avisoDoChefe(this.faseDoChefe, faseAgora, q.chefe.nome, q.chefe.alvo === 'aldeia' ? 'UM LADO CAIU' : 'UMA PERNA CAIU');
     this.faseDoChefe = faseAgora;
-    const alerta = alertaDaRede ?? alertaDoChefe ?? alertaDasPortas ?? alertaDoQuadro ?? alertaDosCabos;
+    // A marcha do Draga (P180, parte C): o aviso de cada distância da aldeia (1.000, 500, 250 e 100 m).
+    const alertaDaAldeia = q.aldeia.presente ? avisoDaMarcha(this.aldeiaDistancia, q.aldeia.distancia) : null;
+    this.aldeiaDistancia = q.aldeia.presente ? q.aldeia.distancia : Infinity;
+    const alerta = alertaDaRede ?? alertaDoChefe ?? alertaDaAldeia ?? alertaDasPortas ?? alertaDoQuadro ?? alertaDosCabos;
     // O anúncio do lugar: aparece e some sozinho (a animação é do CSS; aqui só o texto e o relógio).
     const novo = alerta ?? (this.soMissao ? null : this.anunciador.atualiza(q.eu.x, q.eu.z, dt));
     if (novo) {
@@ -385,18 +406,36 @@ export class PraiaHud {
     if (q.chefe.presente) {
       this.chefe.hidden = false;
       const pct = Math.round(q.chefe.fracao * 100);
-      const chave = `${q.chefe.fase}|${pct}|${q.chefe.pernas[0] ? 1 : 0}${q.chefe.pernas[1] ? 1 : 0}`;
+      const chave = `${q.chefe.nome}|${q.chefe.fase}|${pct}|${q.chefe.pernas[0] ? 1 : 0}${q.chefe.pernas[1] ? 1 : 0}`;
       if (chave !== this.chefeChave) {
         this.chefeChave = chave;
         const fase = FASE_PELO_CODIGO[q.chefe.fase] ?? 'anda';
-        this.chefeTitulo.textContent = `COLOSSUS-01 · FASE ${q.chefe.fase} DE 3 · ${TEXTOS_DA_FASE[fase].rotulo}`;
-        this.chefeRegra.textContent = regraDaFase(fase, this.soMissao ? 'transformador' : 'cabos'); // na Cidade Neon não há cabos: o titã vai ao transformador do banco
+        const alvo = q.chefe.alvo ?? (this.soMissao ? 'transformador' : 'cabos'); // na Cidade Neon não há cabos: o titã vai ao transformador do banco; o Draga vai à aldeia
+        this.chefeTitulo.textContent = `${q.chefe.nome} · FASE ${q.chefe.fase} DE 3 · ${TEXTOS_DA_FASE[fase].rotulo}`;
+        this.chefeRegra.textContent = regraDaFase(fase, alvo);
+        this.chefePernas.forEach((p, i) => (p.textContent = `${alvo === 'aldeia' ? 'LADO' : 'PERNA'} ${i === 0 ? 'ESQ' : 'DIR'}`));
         this.chefe.dataset.fase = fase;
         this.chefeBarra.style.transform = `scaleX(${(pct / 100).toFixed(2)})`;
         this.chefePernas.forEach((p, i) => p.classList.toggle('caida', !q.chefe.pernas[i]));
       }
     } else if (!this.chefe.hidden) {
       this.chefe.hidden = true;
+    }
+
+    // A aldeia: a distância do Draga (em passos de 10 m) e a barra da marcha só mexem no DOM quando mudam.
+    if (q.aldeia.presente) {
+      this.aldeia.hidden = false;
+      const metros = Math.round(q.aldeia.distancia / 10) * 10;
+      const restante = Number.isFinite(q.aldeia.tempoS) ? `${Math.max(1, Math.ceil(q.aldeia.tempoS / 60))} MIN` : 'PARADO';
+      const chave = `${metros}|${restante}`;
+      if (chave !== this.aldeiaChave) {
+        this.aldeiaChave = chave;
+        this.aldeiaTexto.textContent = `ALDEIA · DRAGA A ${metros} m · ${restante}`;
+        this.aldeiaBarra.style.transform = `scaleX(${q.aldeia.progresso.toFixed(2)})`;
+        this.aldeia.dataset.estado = q.aldeia.progresso > 0.8 ? 'critico' : q.aldeia.progresso > 0.5 ? 'ataque' : '';
+      }
+    } else if (!this.aldeia.hidden) {
+      this.aldeia.hidden = true;
     }
 
     // Daqui para baixo é só da praia (a água, o marcador da estação, a faixa da costa).

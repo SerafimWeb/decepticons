@@ -166,3 +166,108 @@ describe('o HUD de missão fora da praia: o transformador do banco e a barra do 
     expect(raiz.hidden).toBe(true);
   });
 });
+
+describe('o HUD da missão do rio (P180, parte C): a aldeia e a barra do Draga-01', () => {
+  beforeEach(() => {
+    vi.stubGlobal('document', { createElement: (tag: string) => new No(tag) });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const doRio = () => {
+    const m = montar(true);
+    const aldeia = achar(m.raiz, 'praia-aldeia')!;
+    m.q.chefe.presente = true;
+    m.q.chefe.nome = 'DRAGA-01';
+    m.q.chefe.alvo = 'aldeia';
+    m.q.aldeia.presente = true;
+    m.q.aldeia.distancia = 1550;
+    m.q.aldeia.progresso = 0;
+    m.q.aldeia.tempoS = 596;
+    return { ...m, aldeia };
+  };
+
+  it('a célula da aldeia nasce escondida e só aparece com a missão do rio: a distância do Draga em passos de 10 m e quanto falta', () => {
+    const { hud, q, aldeia } = doRio();
+    expect(aldeia.hidden).toBe(true);
+    hud.update(0.016, q);
+    expect(aldeia.hidden).toBe(false);
+    expect(textos(aldeia)).toContain('ALDEIA · DRAGA A 1550 m · 10 MIN');
+    q.aldeia.distancia = 733;
+    q.aldeia.progresso = 0.53;
+    q.aldeia.tempoS = 280;
+    hud.update(0.016, q);
+    expect(textos(aldeia)).toContain('ALDEIA · DRAGA A 730 m · 5 MIN');
+    q.aldeia.presente = false;
+    hud.update(0.016, q);
+    expect(aldeia.hidden).toBe(true);
+  });
+
+  it('o aviso vira "perigo" ao passar de 50% e "crítico" ao passar de 80% da marcha, e a barra enche com o progresso', () => {
+    const { hud, q, aldeia } = doRio();
+    hud.update(0.016, q);
+    expect(aldeia.dataset.estado).toBe('');
+    q.aldeia.distancia = 700;
+    q.aldeia.progresso = 0.55;
+    hud.update(0.016, q);
+    expect(aldeia.dataset.estado).toBe('ataque');
+    q.aldeia.distancia = 200;
+    q.aldeia.progresso = 0.87;
+    hud.update(0.016, q);
+    expect(aldeia.dataset.estado).toBe('critico');
+    const barra = achar(aldeia, 'pc-vida')!;
+    expect(barra.style.transform).toBe('scaleX(0.87)');
+  });
+
+  it('o Draga parado (as quatro pernas caídas) mostra PARADO em vez de um tempo', () => {
+    const { hud, q, aldeia } = doRio();
+    q.aldeia.tempoS = Infinity;
+    hud.update(0.016, q);
+    expect(textos(aldeia).join(' ')).toContain('PARADO');
+  });
+
+  it('a barra do chefe leva o nome do Draga, o alvo é a aldeia e as pernas viram LADOS (cada módulo são duas pernas do desenho)', () => {
+    const { hud, q, chefe } = doRio();
+    hud.update(0.016, q);
+    expect(textos(chefe)).toContain('DRAGA-01 · FASE 1 DE 3 · ANDA');
+    expect(textos(chefe)).toContain('Ele marcha para a aldeia. Derrube as pernas.');
+    expect(textos(chefe)).toContain('LADO ESQ');
+    expect(textos(chefe)).toContain('LADO DIR');
+    expect(textos(chefe).join(' ')).not.toContain('transformador');
+    expect(textos(chefe).join(' ')).not.toContain('COLOSSUS');
+  });
+
+  it('o aviso do topo: o lado que cai e cada distância da aldeia (o do chefe vem na frente do da marcha)', () => {
+    const { hud, q, zona } = doRio();
+    hud.update(0.016, q);
+    q.aldeia.distancia = 998;
+    hud.update(0.016, q);
+    expect(zona.textContent).toBe('O DRAGA ESTÁ A 1000 m DA ALDEIA');
+    q.chefe.fase = 2;
+    q.chefe.pernas[0] = false;
+    q.aldeia.distancia = 497; // a marcha também cruzou 500 m neste quadro: o chefe manda
+    hud.update(0.016, q);
+    expect(zona.textContent).toBe('DRAGA-01 · UM LADO CAIU · ELE MANCA');
+  });
+
+  it('sem a missão do rio a Cidade Neon segue igual: o chefe é o Colossus, o alvo o transformador, as pernas são pernas', () => {
+    const { hud, q, chefe, raiz } = montar(true);
+    q.chefe.presente = true;
+    hud.update(0.016, q);
+    expect(textos(chefe)).toContain('COLOSSUS-01 · FASE 1 DE 3 · ANDA');
+    expect(textos(chefe)).toContain('PERNA ESQ');
+    expect(achar(raiz, 'praia-aldeia')!.hidden).toBe(true);
+  });
+
+  it('uma partida nova esquece a distância do Draga: o primeiro quadro depois do reset não dispara aviso', () => {
+    const { hud, q, zona } = doRio();
+    q.aldeia.distancia = 1100;
+    hud.update(0.016, q);
+    hud.reset();
+    q.aldeia.distancia = 900; // sem o reset, 1100 -> 900 cruzaria os 1.000 m
+    zona.textContent = '';
+    hud.update(0.016, q);
+    expect(zona.textContent).not.toBe('O DRAGA ESTÁ A 1000 m DA ALDEIA');
+  });
+});

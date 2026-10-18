@@ -29,7 +29,7 @@ export const TEXTOS_DA_FASE: Readonly<Record<FaseDoChefe, { rotulo: string; regr
 };
 
 /** O que o titã vai depredar: os **cabos** da praia ou o **transformador** do Banco Vorcaris da Cidade Neon (P164, parte E). A regra dita na barra do chefe muda com isso. */
-export type AlvoDoChefeNoMapa = 'cabos' | 'transformador';
+export type AlvoDoChefeNoMapa = 'cabos' | 'transformador' | 'aldeia';
 
 /** A regra de cada fase quando o alvo do titã é o transformador do banco (a mesma lógica, outra peça). */
 const REGRA_NO_TRANSFORMADOR: Readonly<Record<FaseDoChefe, string>> = {
@@ -39,9 +39,17 @@ const REGRA_NO_TRANSFORMADOR: Readonly<Record<FaseDoChefe, string>> = {
   caido: '',
 };
 
+/** A regra da fase quando o chefe é o Draga-01 e o alvo dele é a aldeia (P180, parte C): cada módulo de perna é um **lado** (duas pernas do desenho). */
+const REGRA_NA_ALDEIA: Readonly<Record<FaseDoChefe, string>> = {
+  anda: 'Ele marcha para a aldeia. Derrube as pernas.',
+  manca: 'Um lado caiu: ele manca. Derrube o outro.',
+  rasteja: 'Rasteja e atira. Acabe com ele antes que chegue à aldeia.',
+  caido: '',
+};
+
 /** A regra da fase dita numa linha, para o alvo do mapa (os cabos da praia são o padrão). */
 export function regraDaFase(fase: FaseDoChefe, alvo: AlvoDoChefeNoMapa = 'cabos'): string {
-  return alvo === 'transformador' ? REGRA_NO_TRANSFORMADOR[fase] : TEXTOS_DA_FASE[fase].regra;
+  return alvo === 'transformador' ? REGRA_NO_TRANSFORMADOR[fase] : alvo === 'aldeia' ? REGRA_NA_ALDEIA[fase] : TEXTOS_DA_FASE[fase].regra;
 }
 
 /** A velocidade do titã rastejando, em fração da dele: 30% (de 5 m/s, 1,5 m/s). */
@@ -82,10 +90,10 @@ export function alvoDoChefe(x: number, z: number, estados: ArrayLike<number>): n
 /**
  * O aviso do topo da tela quando a fase do chefe muda (códigos de \`CODIGO_DA_FASE\`): a perna que cai, o rastejo, a queda. \`null\` se nada mudou ou se foi só a entrada do chefe (de 0 a 1).
  */
-export function avisoDoChefe(antes: number, depois: number): string | null {
+export function avisoDoChefe(antes: number, depois: number, nome = 'COLOSSUS-01', queda = 'UMA PERNA CAIU'): string | null {
   if (antes === depois) return null;
-  if (depois === 0 && antes > 0) return 'COLOSSUS-01 CAIU';
-  if (depois === 3) return 'COLOSSUS-01 RASTEJA · ACABE COM ELE';
-  if (depois === 2) return 'COLOSSUS-01 · UMA PERNA CAIU · ELE MANCA';
+  if (depois === 0 && antes > 0) return `${nome} CAIU`;
+  if (depois === 3) return `${nome} RASTEJA · ACABE COM ELE`;
+  if (depois === 2) return `${nome} · ${queda} · ELE MANCA`;
   return null;
 }

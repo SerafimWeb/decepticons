@@ -5,7 +5,7 @@ export const MAPS: readonly { id: MapId; label: string; hint: string }[] = [
   { id: 'arena', label: 'ARENA', hint: 'A cidade neon' },
   { id: 'bunker', label: 'BUNKER', hint: 'Mapa de quatro andares, treino offline contra bots (sai da sala online)' },
   { id: 'praia', label: 'PRAIA DOS CABOS', hint: 'A orla de Fortaleza: porto, Ponte Metálica e a estação de cabos (offline, sai da sala online)' },
-  { id: 'amazonia', label: 'AMAZÔNIA · RIO VIVO', hint: 'O rio, a floresta e a mina que o envenena: 2,4 km, com o Draga-01 descendo o leito (offline, sai da sala online)' },
+  { id: 'amazonia', label: 'AMAZÔNIA · RIO VIVO', hint: 'A missão do rio: derrube o Draga-01 antes que ele chegue à aldeia, em 2,4 km de floresta e rio (offline, sai da sala online)' },
 ];
 
 /**
@@ -25,6 +25,8 @@ export function mapHref(href: string, destino: MapId): string {
     url.searchParams.delete('servidor');
     url.searchParams.delete('modo');
     url.searchParams.set('mapa', destino);
+    // A Amazônia (P180) é a missão do rio: o link leva direto a ela (o Deathmatch do mapa é escolha do seletor de modo).
+    if (destino === 'amazonia') url.searchParams.set('modo', 'survival');
   } else url.searchParams.delete('mapa');
   return url.href;
 }

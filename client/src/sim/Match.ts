@@ -28,7 +28,9 @@ import { ehManifestante } from '../entities/chassis';
 import { caboDoPonto, CABOS, CabosDeDados, CODIGO_DO_ESTADO, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
 import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
-import { AMAZONIA_SPAWNS } from '../environment/AmazoniaLayout';
+import { AMAZONIA_SPAWNS, rioEmX } from '../environment/AmazoniaLayout';
+import { MissaoDoRio } from './MissaoDoRio';
+import { posicaoNaMarcha } from './DragaMarcha';
 import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA } from '../environment/ArenaLayout';
 import { QUADRO, QuadroDeLuz } from './QuadroDeLuz';
 import { dentroDoComplexo, NUCLEO, NucleoDaEstacao, pesoDoInvasor } from './NucleoDaEstacao';
@@ -136,6 +138,10 @@ export interface MatchOptions {
   startWave?: number;
   /** O chefe da missão (o Colossus) veste a máscara (P165)? Padrão sim; `Game` passa o `?mascara=` do link (`0` a tira). */
   bossMask?: boolean;
+  /** O desenho do chefe do mapa (o Draga-01 da Amazônia, P180 parte C): o cliente o carrega antes (`mapasSobDemanda`); o servidor e os testes de regra não passam e o corpo nasce só com física e números. */
+  visualDoChefe?: object | null;
+  /** Quanto da marcha o Draga já andou ao começar (0 a 0,95; `?marcha=` do link): a missão do rio recomeçada no meio, para testar o fim. Padrão 0 (a largada). */
+  marcha?: number;
   /**
    * Aliados na Arena normal (30/09). Padrão ligado offline; o servidor (`ArenaRoom.ts`) passa `false`
    * de propósito — o roster de rede (`shared/net`) ainda não sabe descrever um aliado pros outros
@@ -243,6 +249,8 @@ export class Match {
   private readonly afogando = new Map<MechBase, number>();
   /** O núcleo da estação (P127): a "integridade da rede" que a missão em ondas da praia defende. `null` nos outros mapas e modos. */
   readonly nucleo: NucleoDaEstacao | null = null;
+  /** A missão do rio (P180, parte C): o Draga-01 marcha rumo à aldeia; só na Amazônia, no modo Sobrevivência. */
+  readonly rio: MissaoDoRio | null = null;
   /** Os três cabos de dados da estação (P162, capítulo 1): injeção dos andróides rebeldes, dano e reparo. `null` fora da missão em ondas da praia. */
   readonly cabos: CabosDeDados | null = null;
   /** Rascunhos reaproveitados dos cabos (G4): por cabo, quantos andróides rebeldes ligados, o peso dos depredadores e quantos defensores perto. */
@@ -327,8 +335,8 @@ export class Match {
     const bunker = o.map === 'bunker' && !survival && !ctf && !dominio;
     // A praia abre o Deathmatch e as **ondas** (a defesa da estação, P126): os CTF/Domínio continuam na Arena.
     const praia = o.map === 'praia' && !ctf && !dominio;
-    // A Amazônia (P180) abre só o Deathmatch por enquanto (a missão dela vem nas próximas partes).
-    const amazonia = o.map === 'amazonia' && !ctf && !dominio && !survival;
+    // A Amazônia (P180) abre o Deathmatch e a **missão** (a Sobrevivência: o Draga-01 marcha rumo à aldeia, parte C); o CTF e o Domínio ficam na Arena.
+    const amazonia = o.map === 'amazonia' && !ctf && !dominio;
     this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : amazonia ? AMAZONIA_SPAWNS : SPAWN_POINTS;
     this.zones = bunker || amazonia ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
     this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : 'arena', { transformador: survival && !praia });
@@ -338,7 +346,11 @@ export class Match {
     this.nucleo = praia && survival ? new NucleoDaEstacao() : null;
     this.cabos = praia && survival ? new CabosDeDados() : null;
     this.portas = praia && survival ? new PortasDaEstacao() : null;
-    this.quadro = survival ? (praia ? new QuadroDeLuz() : new QuadroDeLuz(ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA)) : null;
+    this.quadro = survival && !amazonia ? (praia ? new QuadroDeLuz() : new QuadroDeLuz(ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA)) : null;
+    // A missão do rio: o fim é o do Draga (cai: vitória; chega à aldeia: derrota), e sai pelo mesmo aviso de fim de missão das ondas.
+    this.rio = amazonia && survival
+      ? new MissaoDoRio((sobreviveu, r) => this.onMissionEnd?.(sobreviveu, 1, { wavesCleared: sobreviveu ? 1 : 0, kills: r.abates, damageDealt: r.danoCausado, survivalSeconds: r.segundos }))
+      : null;
     this.fx = o.particles;
     // O esquadrão (P91): quem nasce na Arena e no Bunker, um por um. Sem um pedido, o das configurações. Aliados (30/09, "sozinho tá
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
@@ -392,14 +404,18 @@ export class Match {
           }
         : {
             // Na praia as ondas nascem na areia, longe da estação (o jogador defende a estação); na Arena, nos pontos de sempre.
-            spawns: ctf ? CTF_DEFENDER_SPAWNS : praia ? PRAIA_INIMIGOS.slice(0, SURVIVAL_MAX_MECHS) : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
-            androidSpawns: ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
+            // Na Amazônia (P180, parte C) o Draga-01 é o único inimigo da missão: a defesa dele (Mechs, androides, torres) vem na parte D.
+            spawns: amazonia ? [] : ctf ? CTF_DEFENDER_SPAWNS : praia ? PRAIA_INIMIGOS.slice(0, SURVIVAL_MAX_MECHS) : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
+            androidSpawns: amazonia || ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
             manifestanteSpawns: praia && !ctf ? PRAIA_MANIFESTANTES.slice(0, SURVIVAL_MAX_MANIFESTANTES) : [],
             technicianSpawns: [],
             personas: o.foes.enemyPersonas,
             names: { mechs: o.foes.names.mechs, androids: o.foes.names.androids, technicians: o.foes.names.technicians },
           }),
-      bossSpawn: survival ? (praia ? PRAIA_TITA : COLOSSUS_SPAWN[0]) : undefined,
+      bossSpawn: survival && !amazonia ? (praia ? PRAIA_TITA : COLOSSUS_SPAWN[0]) : undefined,
+      ...(amazonia && survival
+        ? { chefeDoMapa: 'amazonia' as const, visualDoChefe: o.visualDoChefe ?? null, ...(o.marcha ? { chefeNascimento: { x: posicaoNaMarcha(o.marcha), z: rioEmX(posicaoNaMarcha(o.marcha)) } } : {}) }
+        : {}),
       ...(o.bossMask === undefined ? {} : { mascaraDoChefe: o.bossMask }),
       respawn: !survival,
       respawnAtHome: ctf,
@@ -446,7 +462,7 @@ export class Match {
     if (this.allies) this.allies.onRadio = (from, target) => this.onRadio?.(from, target, true);
     for (const b of this.bots.mechs) this.round.register(b, this.bots.nameOf(b));
     if (this.allies) for (const b of this.allies.mechs) this.round.register(b, this.allies.nameOf(b));
-    this.waves = survival
+    this.waves = survival && !amazonia
       ? new SurvivalWaves({
           onRoster: (plan) => this.applyWaveRoster(plan),
           onWaveStart: (plan) => this.onWaveStart?.(plan.wave, totalDaOnda(plan, praia), plan.mechs, plan.androids, plan.title, SURVIVAL_WAVE_PLANS.length),
@@ -522,6 +538,7 @@ export class Match {
       if (this.waves && e.shooter && this.players.includes(e.shooter) && this.bots.mechs.includes(e.mech)) {
         this.waves.recordDamage(e.result.applied);
       }
+      if (this.rio && e.shooter && this.players.includes(e.shooter) && this.bots.mechs.includes(e.mech)) this.rio.registrarDano(e.result.applied);
       this.onMechHit?.(e);
     };
     this.combat.onMechKilled = (dead, at, killer) => {
@@ -538,6 +555,7 @@ export class Match {
         this.beams.clear();
       }
       if (this.waves && this.players.includes(dead) && this.players.every((player) => !player.alive)) this.waves.fail();
+      if (this.rio && this.bots.mechs.includes(dead)) this.rio.registrarAbate();
       this.onMechKilled?.(dead, at, killer);
     };
   }
@@ -868,6 +886,12 @@ export class Match {
       // A missão falha se o jogador cai OU se a estação cai (o núcleo chegou a zero no tick anterior).
       this.waves?.fixedUpdate(dt, this.players.some((player) => player.alive) && !this.nucleo?.caiu);
       if (this.waves?.ended) return false;
+      // A missão do rio (P180, parte C): o Draga caiu (vitória) ou chegou à aldeia (derrota); acabou, o mundo congela como nas ondas.
+      if (this.rio) {
+        const chefe = this.bots.chefe;
+        this.rio.fixedUpdate(dt, chefe ? chefe.simPosition.x : null);
+        if (this.rio.terminou) return false;
+      }
       // Fogo, choque e gelo: o tempo corre e o dano por segundo sai ANTES dos pilotos, para a velocidade e as travas do tick já usarem o
       // estado atualizado. Mesma ordem no servidor e no jogo offline (G14).
       for (const m of this.players) this.combat.tickStatus(m, dt);
@@ -1211,7 +1235,7 @@ export class Match {
 
   /** Recomeça o objetivo usando os mesmos corpos físicos e pools. */
   restartMission(): void {
-    if (!this.waves && !this.ctf && !this.dominio) return;
+    if (!this.waves && !this.ctf && !this.dominio && !this.rio) return;
     this.players.forEach((m, i) => {
       const [x, z] = this.ctf
         ? [CTF_BASES.blue.x + CTF_PLAYER_OFFSET_X, CTF_BASES.blue.z]
@@ -1220,7 +1244,7 @@ export class Match {
           : this.spawnPoints[i % this.spawnPoints.length]!;
       m.respawn(this._spawn.set(x, 0, z));
     });
-    if (this.ctf || this.dominio) this.bots.respawnAll();
+    if (this.ctf || this.dominio || this.rio) this.bots.respawnAll(); // na missão do rio, o Draga volta inteiro à largada
     if (this.dominio) {
       this.allies?.respawnAll();
       this.rumoRed.fill(-1);
@@ -1238,6 +1262,7 @@ export class Match {
     this.destructibles.restoreAll();
     this.round.resetScores();
     this.waves?.reset();
+    this.rio?.reset();
     this.nucleo?.reset();
     this.cabos?.reset();
     this.portas?.reset();

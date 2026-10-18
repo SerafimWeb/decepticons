@@ -53,12 +53,12 @@ describe('sanear: o que vale e o que é cortado', () => {
     expect(sanearEtapa(etapa({ mapa: 'bunker', modo: 'survival' }))).toBeNull();
     expect(sanearEtapa(etapa({ mapa: 'bunker', modo: 'ctf' }))).toBeNull();
     expect(sanearEtapa(etapa({ mapa: 'bunker', modo: 'deathmatch' }))).not.toBeNull();
-    // a Amazônia (P180) também só abre o Deathmatch por enquanto (as missões dela vêm nas partes C a E)
-    expect(sanearEtapa(etapa({ mapa: 'amazonia', modo: 'survival' }))).toBeNull();
+    // a Amazônia (P180) abre o Deathmatch e a missão do rio (a Sobrevivência: o Draga-01 marcha rumo à aldeia), mas não a Bandeira
+    expect(sanearEtapa(etapa({ mapa: 'amazonia', modo: 'survival' }))).not.toBeNull();
     expect(sanearEtapa(etapa({ mapa: 'amazonia', modo: 'ctf' }))).toBeNull();
     expect(sanearEtapa(etapa({ mapa: 'amazonia', modo: 'deathmatch' }))).not.toBeNull();
     expect(MAPAS).toContain('amazonia');
-    expect(MODOS_DO_MAPA.amazonia).toEqual(['deathmatch']);
+    expect(MODOS_DO_MAPA.amazonia).toEqual(['deathmatch', 'survival']);
     expect(MAPA_NOME.amazonia).toBe('AMAZÔNIA · RIO VIVO');
     expect(sanearEtapa({ mapa: 'lua', modo: 'survival', esquadrao: esquadraoPadrao() })).toBeNull();
     expect(sanearEtapa({ mapa: 'arena', modo: 'xadrez', esquadrao: esquadraoPadrao() })).toBeNull();
@@ -201,7 +201,9 @@ describe('jogar uma etapa é abrir o jogo com o link dela', () => {
     expect(lerChaveDaCampanha(chaveDaCampanha(praiaEmOndas))).toEqual(praiaEmOndas);
     const busca = linkDaEtapa(praiaEmOndas, 1);
     expect(mapFromSearch(busca, false, gameModeFromSearch(busca))).toBe('praia');
-    expect(lerChaveDaCampanha(chaveDaCampanha({ v: 1, etapas: [etapa({ mapa: 'amazonia', modo: 'deathmatch' })] }).replace('zd', 'zs'))).toBeNull();
+    expect(lerChaveDaCampanha(chaveDaCampanha({ v: 1, etapas: [etapa({ mapa: 'amazonia', modo: 'deathmatch' })] }).replace('zd', 'zc'))).toBeNull(); // a Bandeira não existe na Amazônia
+    const rioEmOndas: CampanhaSpec = { v: 1, etapas: [etapa({ mapa: 'amazonia', modo: 'survival' })] };
+    expect(lerChaveDaCampanha(chaveDaCampanha(rioEmOndas))).toEqual(rioEmOndas); // a missão do rio viaja pelo link
   });
 
   it('etapa que não existe devolve texto vazio (nenhum link a abrir)', () => {
