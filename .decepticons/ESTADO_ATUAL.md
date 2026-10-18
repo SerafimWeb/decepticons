@@ -1,5 +1,23 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O PAINEL DE VISIBILIDADE: O QUE OS JOGADORES VEEM E O QUE FICA EM TESTE — Claude, 18/10 (branch `claude/visibilidade`, P191)
+
+**O Comandante (18/10):** *"um painel COMPLETO DE TUDO… pra eu poder selecionar o que os jogadores normais veem na tela (quais robôs, armas, fases, detalhes) e quais eu mantenho secretos/restritos ao admin, em estágio de teste… (tipo o botão "lado", "arquivo")"*.
+
+**O que entrou** (`PAINEL_ADMIN.md` § 6): um **catálogo de funcionalidades** (fases, modos, botões e telas, **todos os robôs e todas as armas**) com um padrão `publico` ou `restrito`; o **servidor** guarda as exceções (`visibilidade.json`, sobrevive ao reinício; `GET /visibilidade` público, `POST /admin/visibilidade` só com a chave do dono); o **jogo** aplica (o restrito some para o jogador e aparece com o selo TESTE para o Comandante; link de fase ou modo restrito volta ao padrão); o **painel** (chip VISIBILIDADE ▸, só no modo Comandante): lista de tudo, PÚBLICO | RESTRITO em cada linha, SALVAR PARA TODOS, SÓ NESTE NAVEGADOR, VER COMO JOGADOR, RESTAURAR PADRÕES.
+
+**Mudança de comportamento a saber:** **ARQUIVO, ESCOLHA O LADO e RELATÓRIO agora nascem RESTRITOS** (são os exemplos que o Comandante deu de "em desenvolvimento"): o jogador normal **não os vê mais** até o Comandante os liberar no painel (modo Comandante: `?comandante=1`, chip VISIBILIDADE ▸, trocar para PÚBLICO, SALVAR PARA TODOS). Tudo o mais continua como estava (público).
+
+**Provas:** testes do contrato, do armazém em arquivo, das rotas com o servidor de verdade (401 sem chave, 400 com lixo, o que o dono grava aparece no GET), do catálogo (todo robô e toda arma do jogo está nele; o que está em desenvolvimento nasce restrito), da visibilidade (jogador × Comandante, exceção do servidor, cache, falhas de rede, link de fase restrita, DOM) e do painel (só as exceções vão ao servidor).
+
+**Custo:** zero no laço do jogo; uma consulta HTTP ao abrir (1,5 s no máximo, sem travar). O painel é pedaço sob demanda.
+
+**Falta (R13):** **não é cadeado** (quem ligar o modo Comandante vê tudo); **os modais do console de comando** (Potências, Arsenal, Campanha, Mesa, Servidor) ainda não estão no catálogo; a mudança chega ao jogador **na próxima abertura do jogo**; o painel foi **visto no navegador** (`arte/visibilidade-painel-claude.png`), mas o **SALVAR PARA TODOS contra o servidor de produção** só foi exercitado com o servidor de teste (a chave do dono é do Comandante); a lista de robôs mostra os nomes do jogo (VECTOR-09…); só as funcionalidades catalogadas são controláveis.
+
+**Onde o Comandante confere:** `…/jogar/?comandante=1` → **EXPLORAR HANGAR E MODOS ▸** → chip **VISIBILIDADE ▸** (amarelo, no canto de cima). Troque algo para RESTRITO, **VER COMO JOGADOR**, e depois **SALVAR PARA TODOS** (precisa da chave do dono: a janela SERVIDOR guarda).
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois o objetivo na tela dos outros modos e mapas (P190) e a Praia abaixo de 60 fps (P188).
+
 ## TERRAS RARAS: O JOGO FICOU 2,5× MAIS RÁPIDO, A MISSÃO COMEÇA PERTO E O OBJETIVO ESTÁ NA TELA — Claude, 18/10 (branch `claude/terras-raras`, P187 a P190)
 
 **O Comandante (18/10), depois de jogar:** *"ficou meio travado, pesado… será que há muitos elementos na fase? […] demorou mais de um minuto pra eu chegar correndo lá […] temos que melhorar a descrição dos objetivos da missão na própria tela […] temos sempre que corrigir e melhorar o DESEMPENHO"* e *"mude o nome do rio vivo pra terras raras"*.

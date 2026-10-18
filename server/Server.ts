@@ -19,6 +19,8 @@ import { Audiencia } from './Audiencia';
 import { clientCountry, clientIp, clientRegion, Guard, GUARD_DEFAULTS, ipParaLog, type GuardConfig } from './guard';
 import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
 import { corsDoPedido, origemPermitida, origensExtras } from './origem';
+import { VISIBILIDADE_PATH } from '../shared/visibilidade';
+import { ArmazemDeVisibilidade } from './visibilidade';
 import { bancoDeContas, pastaDados } from './dados';
 import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
 import { Telemetria } from './telemetria';
@@ -222,7 +224,8 @@ export async function startServer(
       players += r.humanCount;
       abertas++;
     }
-    statusBody = JSON.stringify(serverStatus(players, abertas, (now - startedAt) / 1000));
+    // A visibilidade (P191) viaja no /status, que já responde com CORS em todo servidor: um servidor antigo (sem a rota própria) não faz o navegador logar erro de CORS.
+    statusBody = JSON.stringify({ ...serverStatus(players, abertas, (now - startedAt) / 1000), visibilidade: visibilidade.atual() });
     statusAt = now;
     return statusBody;
   };
@@ -309,6 +312,7 @@ export async function startServer(
       return false;
     }
   };
+  const visibilidade = new ArmazemDeVisibilidade(dirDados);
   const limiteLogin = new LimiteLogin(opts.limiteLogin);
   const origens = opts.origens ?? origensExtras(process.env.CYBERMECH_ORIGENS);
 
@@ -334,6 +338,19 @@ export async function startServer(
       playMetrics.record(report,Date.now(),!!dona);
       if(dona&&!repetida)contas.registrarPartida(dona.id,{segundos:report.seconds,abates:report.kills,mortes:report.deaths});
       res.writeHead(204);res.end();return;
+    }
+    // O que os jogadores veem (P191): público e sem token (é o que o jogo pergunta ao abrir); só o dono grava, por `/admin/visibilidade`.
+    if (path === VISIBILIDADE_PATH && (req.method === 'GET' || req.method === 'OPTIONS')) {
+      const cabecalhos = { 'access-control-allow-origin': '*', 'cache-control': 'no-store' };
+      if (req.method === 'OPTIONS') {
+        res.writeHead(204, { ...cabecalhos, 'access-control-allow-methods': 'GET, OPTIONS' });
+        res.end();
+        return;
+      }
+      const corpoVisibilidade = JSON.stringify(visibilidade.atual());
+      res.writeHead(200, { ...cabecalhos, 'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(corpoVisibilidade) });
+      res.end(corpoVisibilidade);
+      return;
     }
     if (path === STATUS_PATH) {
       const body = status();
@@ -838,6 +855,10 @@ export async function startServer(
   admin = new Admin({
     token: metricasToken,
     contaAdmin: sessaoDeAdmin,
+    gravarVisibilidade: (itens) => {
+      statusAt = 0; // o /status leva a visibilidade: a próxima resposta já traz a nova
+      return visibilidade.gravar(itens);
+    },
     amostrador,
     estado: () =>
       montarEstado(

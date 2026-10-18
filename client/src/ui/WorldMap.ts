@@ -1,6 +1,7 @@
 import type { MapId } from '../environment/Bunker';
 import type { GameMode } from '../sim/gameMode';
 import { GAME_MODES } from './ModeSelector';
+import { aplicarGlobal } from '../core/Visibilidade';
 import { mapHref } from './MapLinks';
 import {
   BRASIL,
@@ -113,7 +114,11 @@ export class WorldMap {
       pin.addEventListener('pointerenter', () => this.mostrar(t));
       pin.addEventListener('pointerleave', () => this.mostrar(this.selecionado));
       pin.addEventListener('focus', () => this.mostrar(t));
+      if (t.mapa) {
+        pin.dataset.func = `mapa:${t.mapa}`; // a fase restrita some do mapa-múndi para o jogador (P191)
+      }
       pinsHost.append(pin);
+      aplicarGlobal(pinsHost);
       this.pins.set(t.id, pin);
       // Rota de implantação: da sede da SERAFIM até cada missão.
       if (sede && t !== sede) {

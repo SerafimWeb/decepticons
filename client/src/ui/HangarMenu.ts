@@ -1,5 +1,6 @@
 import type { MountId } from '../combat/mounts';
 import { CLASS_LABEL_PLURAL } from '../combat/weaponClass';
+import { funcionalidadeVisivel } from '../core/Visibilidade';
 import { TIERS, weapon, WEAPON_IDS, type Loadout, type Tier, type WeaponId, type WeaponStats } from '../combat/weapons';
 import { reloadWithout } from '../core/url';
 import { CHASSIS, CHASSIS_SIZE, SHIELD_ARM, type ChassisId } from '../entities/chassis';
@@ -661,6 +662,8 @@ export class HangarMenu {
     const isOficina = new URLSearchParams(location.search).has('oficina');
     chassisList.innerHTML = (Object.keys(CHASSIS) as ChassisId[])
       .filter((id) => CHASSIS[id].status !== 'oficina' || isOficina || this.unlockedMechs.has(id) || true)
+      // O robô restrito pelo Comandante (painel de visibilidade, P191) some da lista; o que está montado agora fica.
+      .filter((id) => funcionalidadeVisivel(`chassi:${id.toLowerCase()}`) || id === spec.chassis || id === current.chassis)
       .map((id) => {
         const c = CHASSIS[id];
         const l = CHASSIS_LABEL[id];
@@ -709,9 +712,11 @@ export class HangarMenu {
     // Leves, médias e pesadas (P82); no gigante tudo cai em LEVES, porque a pesada dos Mechs é a leve dele. O andróide (tamanho 1) não agrupa:
     // o grupo "pesadas" dele seria o blaster.
     const grupos = armGroups(this.selectedSlot, spec.chassis);
+    // A arma restrita pelo Comandante (P191) some da lista; a que está montada agora fica.
+    const aparece = (id: WeaponId): boolean => funcionalidadeVisivel(`arma:${id}`) || id === arm?.id || id === nowArm?.id;
     const options = CHASSIS_SIZE[spec.chassis] < 2
-      ? armOptions(this.selectedSlot, spec.chassis).map(option).join('')
-      : grupos.map((g) => `<optgroup label="${CLASS_LABEL_PLURAL[g.cls]}">${g.ids.map(option).join('')}</optgroup>`).join('');
+      ? armOptions(this.selectedSlot, spec.chassis).filter(aparece).map(option).join('')
+      : grupos.map((g) => `<optgroup label="${CLASS_LABEL_PLURAL[g.cls]}">${g.ids.filter(aparece).map(option).join('')}</optgroup>`).join('');
     const shieldArm = this.selectedSlot === 'left' && shield && !acceptsMetalShield(spec.chassis);
     const editor = this.root.querySelector<HTMLElement>('#hangar-weapon-editor')!;
     editor.innerHTML = `

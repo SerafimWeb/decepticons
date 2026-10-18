@@ -22,6 +22,7 @@ import {
   lerTeste,
 } from '../../../shared/net/admin';
 import { serverHttpUrl } from '../../../shared/net/serverUrl';
+import { ADMIN_VISIBILIDADE_PATH, lerConfig, type ConfigDeVisibilidade, type EstadoDeVisibilidade } from '../../../shared/visibilidade';
 import { parseStatus, STATUS_PATH, type ServerStatus } from '../../../shared/net/status';
 
 /** Por que uma chamada não deu certo, em palavras que a tela traduz. */
@@ -76,6 +77,9 @@ export class AdminCliente {
   avaliar = (): Promise<Resposta<AdminAvaliacao>> => this.chamar(ADMIN_AVALIAR_PATH, lerAvaliacao);
   testar = (): Promise<Resposta<AdminTeste>> => this.chamar(ADMIN_TESTAR_PATH, lerTeste, { metodo: 'POST', esperaMs: ESPERA_TESTE_MS });
   fecharSala = (sala: string): Promise<Resposta<true>> => this.chamar(ADMIN_FECHAR_SALA_PATH, (r) => ((r as { ok?: unknown } | null)?.ok === true ? true : null), { metodo: 'POST', corpo: { sala } });
+  /** Grava o que os jogadores veem (P191): só as exceções ao padrão do código. Devolve a configuração nova do servidor. */
+  gravarVisibilidade = (itens: Record<string, EstadoDeVisibilidade>): Promise<Resposta<ConfigDeVisibilidade>> =>
+    this.chamar(ADMIN_VISIBILIDADE_PATH, (r) => ((r as { itens?: unknown } | null)?.itens ? lerConfig(r) : null), { metodo: 'POST', corpo: { itens } });
   reiniciar = (confirmar: boolean): Promise<Resposta<AdminReiniciar>> =>
     this.chamar(ADMIN_REINICIAR_PATH, lerReinicio, { metodo: 'POST', corpo: { confirmar } });
 

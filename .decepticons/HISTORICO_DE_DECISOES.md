@@ -1,3 +1,16 @@
+## [2026-10-18] A visibilidade: um catálogo no código, as exceções no servidor, e o em-desenvolvimento nasce restrito (Claude, P191)
+
+**Ordem:** *"um painel COMPLETO DE TUDO… selecionar o que os jogadores normais veem… quais mantenho secretos/restritos ao admin, em estágio de teste/desenvolvimento (tipo o botão lado, arquivo)"*.
+
+**Decisões:**
+1. **Catálogo no código, exceções no servidor.** O que existe e o padrão de cada coisa moram em `funcionalidades.ts` (revisável no PR, com teste); o servidor guarda **só o que o dono mudou**. Assim o catálogo cresce com o código sem migração, e um servidor sem arquivo vale os padrões.
+2. **O que está em desenvolvimento nasce RESTRITO** (a regra nova para todo agente, em `AGENTS.md`): LADO, ARQUIVO e RELATÓRIO passam a restritos **agora**, porque são os exemplos que o Comandante deu. É uma mudança de comportamento no site (o jogador deixa de vê-los) e está dita no `ESTADO_ATUAL`; basta um clique no painel para liberar.
+3. **Robôs e armas entram sozinhos, já públicos** (vêm de `CHASSIS` e `WEAPON_IDS`): o painel nunca fica desatualizado, e nada some por esquecimento.
+4. **O que já está montado fica** no Hangar mesmo se a arma ou o robô foi restringido: o jogador não perde o que tinha equipado.
+5. **Não é cadeado, e o painel diz isso.** O modo Comandante é um interruptor do navegador (decisão de 11/10); a visibilidade é a **vitrine**, não a segurança. O que mexe no servidor segue protegido pela chave do dono.
+6. **Um link restrito volta ao padrão** (Arena, Deathmatch) antes de o jogo montar, no `main.ts`, para nenhum canto do código precisar saber (o mapa e o modo vêm da URL em vários lugares).
+7. **A consulta ao servidor espera 1,5 s e não trava a largada**; a última resposta fica no navegador.
+
 ## [2026-10-18] O MSAA do composer sai (FXAA no lugar), o jogador nasce perto e a ordem vai para a tela (Claude, P187 a P190)
 
 **Ordem:** *"ficou meio travado, pesado… temos sempre que corrigir e melhorar o DESEMPENHO"*; *"mais de um minuto pra chegar correndo lá"*; *"melhorar a descrição dos objetivos da missão na própria tela"*; *"mude o nome do rio vivo pra terras raras"*.
