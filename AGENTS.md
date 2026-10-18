@@ -16,7 +16,7 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 ## PASSO ZERO — ANTES DE QUALQUER AÇÃO
 
 1. `.decepticons/IDENTITY.md`: o que é, stack, restrições
-2. `.decepticons/ESTADO_ATUAL.md`: onde parou, pendências, **divisão de trabalho entre agentes**
+2. `.decepticons/ESTADO_ATUAL.md`: onde parou, pendências, **divisão de trabalho entre agentes**. **Leia só o topo** (as primeiras seções, as mais novas); o que tem mais de dois dias mora em `.decepticons/arquivo/` (`estado-*.md`, `historico-*.md`, nada se perdeu) e se procura por busca, não por leitura inteira. O mesmo vale para o `HISTORICO_DE_DECISOES.md` e a `ORDENS_DO_COMANDO.md`.
 3. `.decepticons/ROADMAP.md`: fases
 4. `.decepticons/VISAO.md`: o norte de longo prazo (editável só pelo dono). Depois: `GAME_DESIGN.md`, o jogo, as decisões de design e o plano de viralização (Hangar: `HANGAR.md`; multiplayer: `MULTIPLAYER.md`)
 5. `.decepticons/PROTOCOLO_UNIVERSAL.md`: regras e specs de engenharia (G1–G15)
@@ -63,7 +63,7 @@ O projeto é desenvolvido em partes por agentes diferentes (hoje: Claude, Codex,
 6. **O CI decide:** PR só entra com `npm run check` verde. Teste de simulação é o árbitro técnico entre os agentes (G14). **Nunca diga que algo está pronto sem rodar o `npm run check`:** o `npm run dev` aceita código que o build rejeita (em 23/09 um CSS quebrado rodava no dev, apagava a mira e não compilava no build).
 7. **Revisão cruzada:** o PR de um agente é revisado por outro (evita a IA aprovando o próprio código). O merge é do dono, ou de quem ele autorizar (registrado no `ESTADO_ATUAL.md`).
 8. **Assine com o seu nome real** no histórico, no estado e no branch, mesmo que você não esteja listado aqui.
-9. **Passagem de bastão:** ao terminar, atualize `ESTADO_ATUAL.md` (o que foi feito, o que ficou, "próxima sessão começa com"), marque os itens no `ROADMAP.md` (cada item com a etiqueta da sua frente: é o que alimenta o painel de missão) e registre decisões no topo do `HISTORICO_DE_DECISOES.md`.
+9. **Passagem de bastão** (**curta**: a seção da sessão no `ESTADO_ATUAL` cabe em ~25 linhas e a linha da ordem em ~600 caracteres; o detalhe vai para o `HISTORICO`. Os documentos chegaram a 640 KB e todo agente os lê. Passou de ~150 KB? `npm run arquivar -- --aplicar` move o antigo, sem perder linha): ao terminar, atualize `ESTADO_ATUAL.md` (o que foi feito, o que ficou, "próxima sessão começa com"), marque os itens no `ROADMAP.md` (cada item com a etiqueta da sua frente: é o que alimenta o painel de missão) e registre decisões no topo do `HISTORICO_DE_DECISOES.md`.
 10. **Discordou de algo registrado?** Não desfaça em silêncio. Proponha em "decisões em aberto" no `ESTADO_ATUAL.md`; o dono decide.
 11. **Antes do commit, olhe o `git status`.** O hook barra arquivos de `.tmp/`, `dist/` e `node_modules/`, e barra secrets.
 12. **Dois agentes ao mesmo tempo? Cada um na sua pasta.** O Git tem um branch ativo por pasta: um `git switch` de um agente muda os arquivos do outro, e um `git add -A` leva o trabalho alheio. Quem chega depois cria um worktree dentro do projeto (G15): `git worktree add .tmp/wt-<agente> -b <agente>/<tarefa> origin/main`, liga as dependências (PowerShell: `New-Item -ItemType Junction -Path .tmp\wt-<agente>\node_modules -Target node_modules`) e trabalha só lá. **Nunca rode `npm ci` com a `node_modules` em junção:** ele apaga a pasta inteira, e por uma junção apaga a das OUTRAS worktrees (04/10 deixou o projeto sem dependências); use `npm install`, ou dê à worktree uma `node_modules` própria (`cmd /c rmdir node_modules` remove só o atalho, depois `npm ci`). (Em 24/09 Claude e Gemini trabalharam na mesma pasta; o trabalho foi separado sem perda.)
@@ -123,6 +123,7 @@ npm run vozes      # as falas do narrador no ElevenLabs (chave só em $env:ELEVE
 npm run ouvir      # abre a página para ouvir os sons e as vozes
 npm run mech:inspecionar -- arquivo.glb   # confere um robô importado (contrato, convenção da animação, foto) e sugere o IMPORTED_CHASSIS
 npm run mech:bocas -- marauder            # mede a boca de cada encaixe de arma do robô importado e confere com o dado do chassi (roda no check)
+npm run arquivar  # ensaio: quanto do ESTADO_ATUAL e do HISTORICO tem mais de dois dias; `-- --aplicar` move para .decepticons/arquivo/ sem perder linha
 npm run painel     # sala de controle (novidades, equipe, mesa do Dan, fluxo, fichas, evolução, rota, frentes, decisões) em .tmp/painel/painel.html
 npm run server     # servidor de jogo do multiplayer em ws://localhost:2567/?sala=ARENA (DEPLOY.md)
 npm run publicar-site   # monta o site e publica pelo PC (ssh + checksum), sem o Actions; `-- --capturas`, `-- --so-montar`, `-- --configurar` (DEPLOY.md)
