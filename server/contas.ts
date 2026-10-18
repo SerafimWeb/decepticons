@@ -23,6 +23,8 @@ const scrypt = promisify(scryptCb);
 
 /** 30 dias: uma sessão de jogo casual não deveria pedir senha de novo toda semana. */
 const SESSAO_DIAS = 30;
+/** Quantas sessões abertas uma conta mantém (dez aparelhos e navegadores). */
+export const SESSOES_MAX = 10;
 const SAL_BYTES = 16;
 const HASH_BYTES = 64;
 const TOKEN_BYTES = 32;
@@ -194,6 +196,10 @@ export class Contas {
       .prepare('INSERT INTO sessoes (token_hash, conta_id, criada_em, expira_em) VALUES (?, ?, ?, ?)')
       .run(hashToken(token), contaId, agora.toISOString(), expira.toISOString());
     this.registrarVisita(contaId, agora.getTime());
+    // Teto de sessões por conta (P192): as mais velhas saem. Sem ele, login repetido (script, aparelhos esquecidos) acumularia linhas sem fim.
+    this.db
+      .prepare('DELETE FROM sessoes WHERE conta_id = ? AND token_hash NOT IN (SELECT token_hash FROM sessoes WHERE conta_id = ? ORDER BY criada_em DESC, rowid DESC LIMIT ?)')
+      .run(contaId, contaId, SESSOES_MAX);
     return token;
   }
 
@@ -205,6 +211,22 @@ export class Contas {
     if (!row) return null;
     if (new Date(row.expira_em).getTime() < Date.now()) return null;
     return { id: row.id, email: row.email, is_admin: row.is_admin === 1, medir: row.medir !== 0 };
+  }
+
+  /**
+   * Promove ou rebaixa um administrador (P192). **Só a ferramenta do dono, no PC do servidor (`npm run admin`), chama isto**: nenhuma rota HTTP promove ninguém (o privilégio mais alto só se concede com
+   * acesso ao arquivo do banco). Devolve a conta (`null` = e-mail sem conta). Efeito imediato: a sessão já aberta passa a valer como admin (ou deixa de valer).
+   */
+  definirAdmin(email: string, admin: boolean): { id: number; email: string; is_admin: boolean } | null {
+    const l = this.db.prepare('SELECT id FROM contas WHERE email = ?').get(email) as { id: number } | undefined;
+    if (!l) return null;
+    this.db.prepare('UPDATE contas SET is_admin = ? WHERE id = ?').run(admin ? 1 : 0, l.id);
+    return { id: l.id, email, is_admin: admin };
+  }
+
+  /** Quem é administrador hoje (a ferramenta do dono lista; o painel nunca mostra e-mail). */
+  listarAdmins(): { id: number; email: string }[] {
+    return (this.db.prepare('SELECT id, email FROM contas WHERE is_admin = 1 ORDER BY id').all() as { id: number; email: string }[]).map((l) => ({ id: Number(l.id), email: l.email }));
   }
 
   /** Quantas contas existem (o painel do servidor mostra; nunca quem são). */

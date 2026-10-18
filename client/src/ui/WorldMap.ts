@@ -37,7 +37,7 @@ const ESTADO_TEXTO: Readonly<Record<EstadoTeatro, string>> = {
   aqui: 'VOCÊ ESTÁ AQUI',
   disponivel: 'DISPONÍVEL',
   'outro-modo': 'SÓ NO DEATHMATCH',
-  'em-breve': 'EM CONSTRUÇÃO',
+  'em-breve': 'EM BREVE',
 };
 
 export interface TeatroContexto {

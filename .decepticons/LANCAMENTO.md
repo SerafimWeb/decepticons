@@ -7,7 +7,7 @@
 ## 1. O que é "lançar"
 
 Abrir `cybermech.online` ao público: **jogo grátis no navegador**, com **dois mapas livres: CIDADE NEON (a Arena) e a ESTAÇÃO DOS CABOS (a Praia dos Cabos)**, **online na Arena**, **conta opcional** e **política de privacidade**.
-**Fechados no lançamento ("EM BREVE"): o Bunker e a TERRAS RARAS** (a Amazônia; o nome "Rio Vivo" foi trocado). Sem ranking, sem times, sem loja. Para o Comandante, o jogo abre tudo (modo Comandante).
+**Fechados no lançamento ("EM BREVE"): o Bunker e a TERRAS RARAS** (a Amazônia; o nome "Terras Raras" foi trocado). Sem ranking, sem times, sem loja. Para o Comandante, o jogo abre tudo (modo Comandante).
 
 ## 2. A lista (cada item com "pronto quando")
 
@@ -19,7 +19,7 @@ Abrir `cybermech.online` ao público: **jogo grátis no navegador**, com **dois 
 | 4 | **Auditoria interna** | Trilha de quem fez o quê de sensível (conta criada e apagada, login de administrador, mudança de configuração, leitura das métricas) | Claude | Arquivo de auditoria que só acrescenta, com prazo de guarda, sem dado pessoal além do número da conta |
 | 5 | **Analytics e observabilidade** | O que já mede (P185, P188) e o que falta para operar: alerta de servidor fora do ar, erros, capacidade | Claude + **Comandante liga o monitor externo** | O dono é avisado quando o servidor cai (monitor externo gratuito) e o `/metricas` mostra a saúde do servidor |
 | 6 | **Governança** | Quem é dono de quê, o que fazer num incidente (LGPD art. 48), como mudar uma regra | Claude escreve; **Comandante aprova** | `GOVERNANCA.md` de uma página |
-| 7 | **Mapas do lançamento** | Só CIDADE NEON e ESTAÇÃO DOS CABOS livres; Bunker e TERRAS RARAS "EM BREVE"; "Rio Vivo" vira "Terras Raras" | Claude | Um único lugar no código diz quais mapas estão liberados; o seletor, os links e a campanha respeitam; o modo Comandante abre todos |
+| 7 | **Mapas do lançamento** | Só CIDADE NEON e ESTAÇÃO DOS CABOS livres; Bunker e TERRAS RARAS "EM BREVE"; "Terras Raras" vira "Terras Raras" | Claude | Um único lugar no código diz quais mapas estão liberados; o seletor, os links e a campanha respeitam; o modo Comandante abre todos |
 | 8 | **Servidor fora do PC de trabalho** | O servidor de jogo roda no PC em que se trabalha (6 GB, ~500 MB livres): foi ele que derrubou as conexões em 17/10 | **Comandante decide onde e quanto custa** (uma VPS ou um PC dedicado 24 h); Claude instala | Máquina própria, túnel e atualização automática, **dois PCs jogam 30 minutos sem queda** |
 | 9 | **Teste com gente de fora** | O online só foi testado por dois PCs do Comandante | Comandante convida 5 a 10 pessoas; Claude olha as métricas e o log | Três sessões de ~30 min, sem queda de servidor, e a lista do que estranharam |
 | 10 | **Política revisada** | Entregue em 18/10 (P187), mas é rascunho | **Comandante** (de preferência com um advogado) | Texto revisado, e-mail do encarregado em `.decepticons/contato-privacidade.txt`, razão social/CNPJ no texto |

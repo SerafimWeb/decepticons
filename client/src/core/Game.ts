@@ -1,12 +1,13 @@
 import { mapFromSearch, type MapId } from '../environment/Bunker';
 import { CommandConsole } from '../ui/CommandConsole';
-import { escalacaoDaPartida, fracoesDasPartes } from '../ui/consoleData';
+import { COMANDANTE_KEY, escalacaoDaPartida, fracoesDasPartes, lerModoComandante } from '../ui/consoleData';
 import { fonteDoRadar } from '../ui/TacticalRadar';
 import { SquadHUD } from '../ui/SquadHUD';
 import { ShieldVisuals } from '../fx/ShieldVisuals';
 import { ShieldHUD } from '../ui/ShieldHUD';
 import { runtimeDiagnostics } from './runtimeDiagnostics';
 import { PlayTelemetry } from './PlayTelemetry';
+import { aplicarLancamento, mapaLiberado } from './Lancamento';
 import type { Audiencia } from './Audiencia';
 import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
@@ -388,6 +389,14 @@ export class Game {
   private last = -1;
 
   static async create(container: HTMLElement): Promise<Game> {
+    // O lançamento (P193): o público só vê os mapas liberados; o modo Comandante (?comandante=1, lembrado pelo navegador) abre todos. Antes de qualquer escolha de mapa.
+    let lembrado: string | null = null;
+    try {
+      lembrado = localStorage.getItem(COMANDANTE_KEY);
+    } catch {
+      /* sem armazenamento: o público */
+    }
+    aplicarLancamento(lerModoComandante(location.search, lembrado).ligado);
     bootProgresso('fisica');
     const physics = await PhysicsWorld.create();
     bootProgresso('robos');
@@ -407,7 +416,7 @@ export class Game {
     }
     // Um mapa grande (a Amazônia, P180) é carregado sob demanda: o código dele só baixa para quem o escolhe (`environment/mapasSobDemanda.ts`).
     let visualDoChefe: object | null = null;
-    if (new URLSearchParams(location.search).get('mapa') === 'amazonia') {
+    if (new URLSearchParams(location.search).get('mapa') === 'amazonia' && mapaLiberado('amazonia')) {
       await carregarMapaSeFor('amazonia');
       // A missão do rio (a Sobrevivência na Amazônia, P180 parte C) tem o Draga-01 como chefe: o corpo, o cérebro e o desenho (o .glb) só baixam para quem a abre.
       if (gameModeFromSearch(location.search) === 'survival') {
@@ -2113,7 +2122,7 @@ export class Game {
         q.aldeia.progresso = progressoDaMarcha(x);
         q.aldeia.tempoS = tempoAteAAldeiaS(x, chefe.modules.leftLeg > 0, chefe.modules.rightLeg > 0, true);
       }
-      if (rio && !rio.terminou) this.hud.setMissionLinha(escudo?.ativo ? 'RIO VIVO · DERRUBE OS GERADORES' : 'RIO VIVO · DERRUBE O DRAGA-01');
+      if (rio && !rio.terminou) this.hud.setMissionLinha(escudo?.ativo ? 'TERRAS RARAS · DERRUBE OS GERADORES' : 'TERRAS RARAS · DERRUBE O DRAGA-01');
       q.largura = window.innerWidth;
       q.altura = window.innerHeight;
       this.praiaHud.update(dt, q);

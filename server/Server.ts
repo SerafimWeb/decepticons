@@ -7,7 +7,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
-import { CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_PROGRESSO_PATH, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
+import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_PROGRESSO_PATH, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
 import { ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
 import { type EventoEnviado, type EventoServidor, EVENTO_MAX_BYTES, EVENTO_PATH, METRICAS_HEADER, METRICAS_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
@@ -17,7 +17,8 @@ import { Contas } from './contas';
 import { fazerBackup } from './backupContas';
 import { Audiencia } from './Audiencia';
 import { clientCountry, clientIp, clientRegion, Guard, GUARD_DEFAULTS, ipParaLog, type GuardConfig } from './guard';
-import { LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
+import { Auditoria, AUDITORIA_PASTA, type Acao } from './auditoria';
+import { FalhasPorConta, LIMITE_LOGIN_DEFAULTS, LimiteLogin } from './login';
 import { corsDoPedido, origemPermitida, origensExtras } from './origem';
 import { bancoDeContas, pastaDados } from './dados';
 import { carregarToken, DADOS_ARQUIVO, gravarJson, lerJson, TOKEN_ARQUIVO, tokenConfere } from './metricas';
@@ -293,6 +294,7 @@ export async function startServer(
   const faxinar = (): void => {
     try {
       contas.limparExpiradas();
+      auditoria.podar();
     } catch (err) {
       log(`não consegui varrer sessões e atividade vencidas: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -300,6 +302,21 @@ export async function startServer(
   faxinar();
   const faxinaTimer = setInterval(faxinar, 6 * 60 * 60 * 1000);
   faxinaTimer.unref();
+  // A trilha de auditoria (P192): quem fez o quê de sensível, sem e-mail nem IP (`server/auditoria.ts`). Acesso repetido ao mesmo lugar pelo mesmo ator conta uma vez a cada 10 minutos (o painel consulta a toda hora).
+  const auditoria = new Auditoria(dirDados ? join(dirDados, AUDITORIA_PASTA) : null);
+  auditoria.podar();
+  const ultimaAuditoria = new Map<string, number>();
+  const auditar = (ev: { ator: string; acao: Acao; alvo?: string; ok?: boolean }, janelaMs = 0): void => {
+    if (janelaMs > 0) {
+      const chave = `${ev.ator}|${ev.acao}|${ev.alvo ?? ''}|${ev.ok ?? true}`;
+      const agora = Date.now();
+      if (agora - (ultimaAuditoria.get(chave) ?? 0) < janelaMs) return;
+      if (ultimaAuditoria.size > 2000) ultimaAuditoria.clear();
+      ultimaAuditoria.set(chave, agora);
+    }
+    auditoria.registrar(ev);
+  };
+  const falhasPorConta = new FalhasPorConta();
   /** P106: a sessão de uma conta admin vale onde a chave do dono vale (admin, mural, métricas). Nunca lança. */
   const sessaoDeAdmin = (token: unknown): boolean => {
     if (typeof token !== 'string' || token.length < 8 || token.length > 200) return false;
@@ -309,13 +326,28 @@ export async function startServer(
       return false;
     }
   };
+  /** Quem está batendo à porta do dono: o número da conta (sessão de uma conta, no cabeçalho da sessão ou no das métricas), o dono (a chave do servidor) ou ninguém conhecido. */
+  const atorDoPedido = (req: { headers: Record<string, string | string[] | undefined> }): string => {
+    for (const h of [SESSAO_HEADER, METRICAS_HEADER]) {
+      const t = req.headers[h];
+      const c = typeof t === 'string' && t.length >= 8 && t.length <= 200 ? contas.validarSessao(t) : null;
+      if (c) return `conta:${c.id}`;
+    }
+    return metricasToken && tokenConfere(req.headers[METRICAS_HEADER], metricasToken) ? 'dono' : 'anonimo';
+  };
   const limiteLogin = new LimiteLogin(opts.limiteLogin);
   const origens = opts.origens ?? origensExtras(process.env.CYBERMECH_ORIGENS);
 
   const http = createServer(async (req, res) => {
     const path = (req.url ?? '/').split('?')[0];
     // O painel do servidor (P93): só responde com o token do dono; o que não for dele segue para as rotas abaixo.
-    if (admin && path.startsWith(ADMIN_PREFIXO) && (await admin.tratar(req, res, path))) return;
+    if (admin && path.startsWith(ADMIN_PREFIXO)) {
+      const tratou = await admin.tratar(req, res, path);
+      if (tratou) {
+        auditar({ ator: atorDoPedido(req), acao: 'admin_acesso', alvo: 'rota:admin', ok: res.statusCode < 400 }, 10 * 60_000);
+        return;
+      }
+    }
     if (path === PLAY_PATH) {
       res.setHeader('access-control-allow-origin','*');
       res.setHeader('cache-control','no-store');
@@ -379,11 +411,13 @@ export async function startServer(
         return;
       }
       if (!tokenConfere(req.headers[METRICAS_HEADER], metricasToken) && !sessaoDeAdmin(req.headers[METRICAS_HEADER])) {
+        auditar({ ator: 'anonimo', acao: 'admin_acesso', alvo: 'rota:metricas', ok: false }, 10 * 60_000);
         res.writeHead(401, { 'access-control-allow-origin': '*', 'cache-control': 'no-store' });
         res.end();
         return;
       }
-      const body = JSON.stringify({...telemetria.metricas(),play:playMetrics.snapshot(),usuarios:contas.metricasUsuarios(),audiencia:audiencia.resumo(),runtime:{rssMB:process.memoryUsage().rss/1048576,rooms:rooms.size,players:jogadoresAgora()}});
+      auditar({ ator: atorDoPedido(req), acao: 'admin_acesso', alvo: 'rota:metricas', ok: true }, 10 * 60_000);
+      const body = JSON.stringify({...telemetria.metricas(),play:playMetrics.snapshot(),usuarios:contas.metricasUsuarios(),audiencia:audiencia.resumo(),auditoria:auditoria.recentes(40),runtime:{rssMB:process.memoryUsage().rss/1048576,rooms:rooms.size,players:jogadoresAgora()}});
       res.writeHead(200, {
         'content-type': 'application/json; charset=utf-8',
         'cache-control': 'no-store',
@@ -495,6 +529,7 @@ export async function startServer(
         // O e-mail é dado pessoal e o log fica em arquivo: o log diz só que uma conta nasceu (P187).
         log(`conta criada (número ${r.conta.id})`);
         contar('conta_criada', paisDaConta);
+        auditar({ ator: `conta:${r.conta.id}`, acao: 'conta_criada', alvo: `conta:${r.conta.id}` });
         enviarJson(201, { token, email: r.conta.email, medir: true });
         return;
       }
@@ -505,12 +540,19 @@ export async function startServer(
       }
       // CONTA_ENTRAR_PATH: a mesma mensagem para "não existe" e "senha errada" — não ajuda ninguém a
       // descobrir por tentativa se um e-mail está cadastrado.
+      // O limite por CONTA (P192): senhas demais erradas, de onde vierem, trancam a conta por 15 min (a senha certa nem é conferida).
+      if (falhasPorConta.bloqueada(credenciais.email)) {
+        enviarJson(429, { erro: 'tentativas demais nesta conta; espere um pouco' });
+        return;
+      }
       const conta = await contas.autenticar(credenciais.email, credenciais.senha);
       if (!conta) {
+        falhasPorConta.falhou(credenciais.email);
         contar('login_falhou', paisDaConta);
         enviarJson(401, { erro: 'e-mail ou senha incorretos' });
         return;
       }
+      falhasPorConta.acertou(credenciais.email);
       const token = contas.criarSessao(conta.id);
       contar('login_ok', paisDaConta);
       enviarJson(200, { token, email: conta.email, medir: conta.medir });
@@ -613,6 +655,7 @@ export async function startServer(
           return;
         }
         contar('dados_baixados', pais);
+        auditar({ ator: `conta:${conta.id}`, acao: 'dados_baixados', alvo: `conta:${conta.id}` });
         enviarJson(200, dados, { 'content-disposition': 'attachment; filename="cybermech-meus-dados.json"' });
         return;
       }
@@ -634,6 +677,7 @@ export async function startServer(
           return;
         }
         contas.definirMedicao(conta.id, ativa);
+        auditar({ ator: `conta:${conta.id}`, acao: 'medicao_alterada', alvo: `medir:${ativa ? 'on' : 'off'}` });
         enviarJson(200, { ativa });
         return;
       }
@@ -643,12 +687,20 @@ export async function startServer(
         enviarJson(429, { erro: 'tentativas demais; espere um pouco' });
         return;
       }
+      if (falhasPorConta.bloqueada(conta.email)) {
+        enviarJson(429, { erro: 'tentativas demais nesta conta; espere um pouco' });
+        return;
+      }
       const senha = parseSenhaDeConfirmacao(json);
       const confere = senha ? await contas.autenticar(conta.email, senha) : null;
       if (!confere || confere.id !== conta.id) {
+        falhasPorConta.falhou(conta.email);
+        auditar({ ator: `conta:${conta.id}`, acao: 'conta_apagada', alvo: `conta:${conta.id}`, ok: false }, 10 * 60_000);
         enviarJson(401, { erro: 'senha incorreta' });
         return;
       }
+      falhasPorConta.acertou(conta.email);
+      auditar({ ator: `conta:${conta.id}`, acao: 'conta_apagada', alvo: `conta:${conta.id}` });
       contas.apagarConta(conta.id);
       log(`conta apagada a pedido do titular (número ${conta.id})`);
       contar('conta_apagada', pais);
@@ -657,7 +709,14 @@ export async function startServer(
     }
     if (path === CONFIG_PATH && req.method === 'GET') {
       const urlParams = new URL(req.url ?? '/', 'http://localhost').searchParams;
-      const configValor = contas.getConfig(urlParams.get('chave') || 'chassis_status');
+      const chaveConfig = urlParams.get('chave') || 'chassis_status';
+      // Só as chaves conhecidas (`CONFIG_CHAVES`): esta rota é pública e antes entregava QUALQUER nome guardado.
+      if (!chaveDeConfigValida(chaveConfig)) {
+        res.writeHead(400, { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*', 'cache-control': 'no-store' });
+        res.end('{}');
+        return;
+      }
+      const configValor = contas.getConfig(chaveConfig);
       res.writeHead(200, {
         'content-type': 'application/json; charset=utf-8',
         'access-control-allow-origin': '*',
@@ -684,6 +743,7 @@ export async function startServer(
       const token = req.headers[SESSAO_HEADER];
       const conta = typeof token === 'string' ? contas.validarSessao(token) : null;
       if (!conta || !conta.is_admin) {
+        auditar({ ator: conta ? `conta:${conta.id}` : 'anonimo', acao: 'admin_config', ok: false }, 10 * 60_000);
         res.writeHead(403, { 'access-control-allow-origin': '*' });
         res.end();
         return;
@@ -696,12 +756,14 @@ export async function startServer(
       }
       try {
         const payload = JSON.parse(corpo.toString('utf8'));
-        if (typeof payload.chave === 'string' && typeof payload.valor === 'string') {
+        if (chaveDeConfigValida(payload.chave) && valorDeConfigValido(payload.valor)) {
           contas.setConfig(payload.chave, payload.valor);
+          auditar({ ator: `conta:${conta.id}`, acao: 'admin_config', alvo: `config:${payload.chave}` });
           res.writeHead(200, { 'access-control-allow-origin': '*' });
           res.end('ok');
           return;
         }
+        auditar({ ator: `conta:${conta.id}`, acao: 'admin_config', ok: false }, 10 * 60_000);
       } catch {}
       res.writeHead(400, { 'access-control-allow-origin': '*' });
       res.end();
@@ -865,7 +927,13 @@ export async function startServer(
     contexto: () => ({ uptimeS: (Date.now() - startedAt) / 1000, recusasPorTaxa: rejected.flood }),
     fecharSala,
     testar: () => executarTeste({ host: '127.0.0.1', porta: port, duracaoS: opts.testeDuracaoS, tickMsDaSala: (c) => rooms.get(c)?.tickMs ?? null, fecharSala }),
-    aoReiniciar: opts.aoReiniciar,
+    // Sem gancho de reinício a rota responde 501 (o Admin olha se o gancho existe): só embrulha quando há.
+    aoReiniciar: opts.aoReiniciar
+      ? (motivo) => {
+          auditar({ ator: 'sistema', acao: 'servidor_reiniciado', alvo: 'motivo:' + motivo.replace(/[^A-Za-z0-9_.:+-]/g, '_').slice(0, 40) });
+          opts.aoReiniciar?.(motivo);
+        }
+      : undefined,
     reinicioEmMs: opts.reinicioEmMs,
     ...(opts.limiteAdmin ? { limite: new LimiteDeFalhas(opts.limiteAdmin.teto, opts.limiteAdmin.janelaMs) } : {}),
     supervisionado,

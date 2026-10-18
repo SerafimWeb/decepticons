@@ -14,6 +14,8 @@
  "MUNDO": "MONDE",
  "VOCÊ": "VOUS",
  "IAs ATACANDO": "IA À L'ATTAQUE",
+ "EM BREVE": "BIENTÔT",
+
  "EM CONSTRUÇÃO": "EN CONSTRUCTION",
  "RADAR TÁTICO": "RADAR TACTIQUE",
  "ALIADOS": "ALLIÉS",
@@ -323,7 +325,7 @@
  "DADOS": "DONNÉES",
  "ENERGIA": "ÉNERGIE",
  "CHIPS": "PUCES",
- "RIO VIVO": "FLEUVE VIVANT",
+ "TERRAS RARAS": "TERRES RARES",
  "ÁGUA": "EAU",
  "AMAZÔNIA": "AMAZONIE",
  "O rio, a floresta e a mina que o envenena, em 2,4 km: o Draga-01 desce o leito rumo à aldeia. Derrube-o antes que ele chegue: acima dele a água é limpa e viva; depois dele, óleo e veneno.": "Le fleuve, la forêt et la mine qui l’empoisonne, sur 2,4 km : le Draga-01 descend le lit du fleuve vers le village. Abattez-le avant qu’il n’arrive : en amont l’eau est propre et vivante ; après lui, pétrole et poison.",

@@ -1,3 +1,17 @@
+## [2026-10-18] Segurança de acesso para o lançamento: auditoria, privilégio, trilha e os mapas fechados (Claude, P192 a P194)
+
+**Ordem:** "congele o escopo [...] controle de acesso, privilégio, autenticação, métricas para auditoria interna, analytics, observabilidade, governança [...] lançar com apenas a fase estação dos cabos, cidade neon livres [...] troque o nome rio vivo para terras raras; faça auditoria se nossa arquitetura está segura".
+
+**Decisões:**
+1. **O código está em condição de lançar; o que bloqueia o público é operacional** (`AUDITORIA_SEGURANCA.md`): o servidor e as chaves de publicação no mesmo PC de trabalho (A1) e a cópia de segurança das contas no mesmo disco (A13). Até lá, **beta fechado**. A auditoria é do Claude, não teste de invasão por terceiro: está escrito no próprio documento.
+2. **Administrador só pelo PC do servidor** (`npm run admin`): nenhuma rota HTTP promove ninguém. O privilégio mais alto exige o mesmo acesso que já dá tudo, e cada promoção entra na trilha.
+3. **A conta, e não só o IP, é o que se protege no login:** 10 senhas erradas em 15 min trancam a conta (inclusive o "apagar a conta"). Aceito o preço (quem erra de propósito pode trancar por 15 min).
+4. **A trilha de auditoria guarda só o número da conta** (nunca e-mail nem IP) por 400 dias e mostra a recusa à porta do dono, não só o acesso: o que interessa a quem audita é a tentativa que falhou.
+5. **A configuração global só aceita chaves conhecidas** (antes a rota pública entregava qualquer nome guardado).
+6. **Os mapas fechados são de produto, não de segurança:** o jogo roda no navegador de quem joga. Liberar a Terras Raras é acrescentar o id em `MAPAS_DO_LANCAMENTO`. O Bunker, que o Comandante não citou, ficou fechado (a Operação Neon perde a etapa dele em vez de rodar noutro mapa com o título errado); basta uma linha para abrir.
+7. **"Rio Vivo" virou "Terras Raras"** em todo o jogo, nos dicionários das seis línguas e nos documentos de estado; o histórico antigo manteve o nome da época.
+8. **Mutação à mão só onde errar custa caro** (ordem P191): nesta rodada, 20 mutações na segurança de acesso (e nenhuma no bloqueio de mapas, que é regra de produto com teste comum).
+
 ## [2026-10-18] A lista de lançamento: o resto espera (Claude, P189 e P190)
 
 **Ordem:** o Comandante perguntou por que as iterações são tão demoradas e pediu orientação para lançar logo; no mesmo recado, um painel único para controlar tudo.

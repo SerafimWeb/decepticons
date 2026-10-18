@@ -1,6 +1,7 @@
 import type { MapId } from '../environment/Bunker';
 import type { GameMode } from '../sim/gameMode';
 import { WORLD_MASK } from './worldMask';
+import { mapaLiberado } from '../core/Lancamento';
 
 /**
  * O teatro de operações do console de comando (dono, 11/10: "um mapa do mundo, pra mostrar onde são as missões (cenários) de forma
@@ -46,7 +47,7 @@ export const TEATROS: readonly Teatro[] = [
     modos: ['deathmatch', 'survival'], resumo: 'A orla de Fortaleza em 640 m: o porto, a Ponte Metálica e a estação onde os cabos do Atlântico Sul chegam. Defenda-a.', proposta: false, lado: 'direita',
   },
   {
-    id: 'rio', nome: 'RIO VIVO', lugar: 'Afluente do Amazonas · PA', lat: -3.5, lon: -53.0, recurso: 'agua', mapa: 'amazonia',
+    id: 'rio', nome: 'TERRAS RARAS', lugar: 'Afluente do Amazonas · PA', lat: -3.5, lon: -53.0, recurso: 'agua', mapa: 'amazonia',
     modos: ['deathmatch', 'survival'], resumo: 'O rio, a floresta e a mina que o envenena, em 2,4 km: o Draga-01 desce o leito rumo à aldeia. Derrube-o antes que ele chegue: acima dele a água é limpa e viva; depois dele, óleo e veneno.', proposta: true, lado: 'esquerda',
   },
   {
@@ -68,7 +69,8 @@ export const RECURSO_NOME: Readonly<Record<Recurso, string>> = { sede: 'SEDE SER
 export type EstadoTeatro = 'aqui' | 'disponivel' | 'outro-modo' | 'em-breve';
 
 export function estadoDoTeatro(t: Teatro, mapaAtual: MapId, modo: GameMode): EstadoTeatro {
-  if (!t.mapa) return 'em-breve';
+  // Sem mapa construído, ou com o mapa ainda fechado ao público (P193, `core/Lancamento.ts`): EM BREVE. Quem já está nele (modo Comandante) continua "aqui".
+  if (!t.mapa || (t.mapa !== mapaAtual && !mapaLiberado(t.mapa))) return 'em-breve';
   if (t.mapa === mapaAtual) return 'aqui';
   return t.modos.includes(modo) ? 'disponivel' : 'outro-modo';
 }

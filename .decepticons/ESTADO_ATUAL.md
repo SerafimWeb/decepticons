@@ -1,5 +1,21 @@
 # ESTADO ATUAL — CYBERMECH
 
+## O LANÇAMENTO: AUDITORIA DE SEGURANÇA, PRIVILÉGIOS, TRILHA DE AUDITORIA, GOVERNANÇA E OS MAPAS FECHADOS — Claude, 18/10 (branch `claude/lancamento-seguranca`, P192 a P194)
+
+**O Comandante congelou o escopo** (`LANCAMENTO.md`) e pediu: acesso, privilégio, autenticação, auditoria interna, observabilidade, governança, **lançar só com CIDADE NEON e ESTAÇÃO DOS CABOS**, "Rio Vivo" virar "Terras Raras" e **uma auditoria de segurança**.
+
+**O que entrou:**
+1. **`AUDITORIA_SEGURANCA.md`:** 1.368 pedidos hostis contra um servidor de verdade (0 falhas, `.decepticons/medicoes/abuso-servidor.mjs`), `npm audit` (0 vulnerabilidades), segredos, rotas, autenticação, privilégios. **Conclusão: o código está em condição de lançar; o que bloqueia o público é operacional e do Comandante: A1 (servidor e chaves de publicação no mesmo PC de trabalho) e A13 (cópia das contas no mesmo disco).**
+2. **Corrigido:** a configuração global só aceita chaves conhecidas; **limite de falhas por conta** (10 em 15 min, login e apagar); **teto de 10 sessões** por conta; **trilha de auditoria** de 400 dias, sem e-mail nem IP, na seção "Auditoria interna" do `/metricas/`; **`npm run admin`** como único caminho para administrador.
+3. **`GOVERNANCA.md`:** a matriz de privilégios, quem é dono de quê, como uma regra muda, o que se guarda e por quanto tempo, e o que fazer quando dá errado (servidor caído, token vazado, vazamento de dados com o aviso à ANPD).
+4. **Mapas do lançamento:** só CIDADE NEON e ESTAÇÃO DOS CABOS livres; **Bunker e TERRAS RARAS "EM BREVE"** (o modo Comandante abre todos); "Rio Vivo" virou "Terras Raras" em tudo.
+
+**Provas:** 16 testes de segurança de acesso com o servidor de verdade; **mutação à mão: 20 de 20** (só na segurança de acesso, por ordem do Comandante); 6 testes do bloqueio de mapas; o abuso medido.
+
+**Falta (do Comandante, para o lançamento público):** o **servidor fora do PC de trabalho** (A1), a **cópia de segurança fora do PC** (A13), o **monitor externo** (A14), o **encarregado** e a política revisada, o **"esqueci a senha"**, o **HSTS** na Cloudflare e o **teste com 5 a 10 pessoas de fora**.
+
+**Próxima sessão começa com:** o que o Comandante decidir sobre o servidor (item 8 de `LANCAMENTO.md`); nada novo antes disso.
+
 ## LGPD (P187) E MÉTRICAS DE NÍVEL PROFISSIONAL (P188): BAIXAR OS DADOS, APAGAR A CONTA, POLÍTICA, GOOGLE ANALYTICS COM LICENÇA, E DE ONDE VÊM AS VISITAS — Claude, 18/10 (branch `claude/lgpd-conta`)
 
 **A ordem do Comandante (18/10):** *"faça os ajustes de apagar conta, baixar dados, tudo que a LGPD obrigue, pra que estejamos todo de acordo"*.

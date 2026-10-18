@@ -415,6 +415,11 @@ async function metricasPage(browser, base, failures) {
   aud.registrar('boot_ok', v('social', 'instagram.com'), 'SP', agora);
   aud.registrar('partida_iniciada', { tipo: 'funil', funil: { canal: 'social', conta: 'logado' } }, null, agora);
   corpo.audiencia = aud.resumo();
+  corpo.auditoria = [
+    { quando: new Date(agora).toISOString(), ator: 'anonimo', acao: 'admin_acesso', alvo: 'rota:metricas', ok: false },
+    { quando: new Date(agora - 60_000).toISOString(), ator: 'dono', acao: 'admin_promovido', alvo: 'conta:3', ok: true },
+    { quando: new Date(agora - 120_000).toISOString(), ator: '<img src=x onerror=window.__xss3=1>', acao: 'conta_criada', alvo: 'conta:9', ok: true },
+  ];
   corpo.audiencia.dias.at(-1).perfil.landing.host['<img src=x onerror=window.__xss2=1>'] = 3;
   corpo.dias.at(-1).eventos.boot_ok['<img src=x onerror=window.__xss=1>'] = 1; // um servidor comprometido não vira HTML na tela
   const servidor = createServer((req, res) => {
@@ -464,6 +469,9 @@ async function metricasPage(browser, base, failures) {
     if (!(await page.locator('#tab-uf').textContent()).includes('SP')) failures.push('métricas: o estado (SP) não chegou à tabela');
     if ((await page.locator('#tab-sites img').count()) || (await page.evaluate(() => window.__xss2))) failures.push('métricas: um nome de site com HTML virou HTML na tela');
     if (!(await page.locator('#ga-nota').textContent()).includes('ainda não está ligado')) failures.push('métricas: a nota do Google Analytics sumiu');
+    const trilha = await page.locator('#tab-audit').textContent();
+    if (!trilha.includes('RECUSADO') || !trilha.includes('administrador promovido') || (await page.locator('#tab-audit tbody tr').count()) !== 3) failures.push('métricas: a trilha de auditoria não chegou à tabela');
+    if ((await page.locator('#tab-audit img').count()) || (await page.evaluate(() => window.__xss3))) failures.push('métricas: um ator da trilha com HTML virou HTML na tela');
     const guardados = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('cybermech.metricas.token')));
     if (guardados.length !== 1 || !guardados[0].includes('127.0.0.1')) failures.push(`métricas: o token devia ficar guardado para aquele servidor só: ${JSON.stringify(guardados)}`);
     // Volta sozinha com o token guardado; um link para outro servidor não recebe o token guardado; "esquecer" apaga.

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { bunkerBlocks } from './BunkerLayout';
+import { mapaLiberado } from '../core/Lancamento';
 
 export { bunkerBlocks, BUNKER_LEVELS, BUNKER_LIFTS, BUNKER_SPAWNS } from './BunkerLayout';
 
@@ -9,10 +10,12 @@ export type MapId = 'arena' | 'bunker' | 'praia' | 'amazonia';
 export function mapFromSearch(search: string, online: boolean, mode: string): MapId {
   if (online) return 'arena';
   const mapa = new URLSearchParams(search).get('mapa');
-  if (mapa === 'praia') return mode === 'deathmatch' || mode === 'survival' ? 'praia' : 'arena';
-  if (mapa === 'bunker') return mode === 'deathmatch' ? 'bunker' : 'arena';
-  if (mapa === 'amazonia') return mode === 'deathmatch' || mode === 'survival' ? 'amazonia' : 'arena';
-  return 'arena';
+  let id: MapId = 'arena';
+  if (mapa === 'praia') id = mode === 'deathmatch' || mode === 'survival' ? 'praia' : 'arena';
+  else if (mapa === 'bunker') id = mode === 'deathmatch' ? 'bunker' : 'arena';
+  else if (mapa === 'amazonia') id = mode === 'deathmatch' || mode === 'survival' ? 'amazonia' : 'arena';
+  // O lançamento (P193): um mapa que ainda não foi liberado cai na Cidade Neon (`core/Lancamento.ts`).
+  return mapaLiberado(id) ? id : 'arena';
 }
 
 /** Bunker escavado: duas submissões instanciadas; geometria e colisão estáticas. */
