@@ -856,5 +856,21 @@
  "CERCA": "ОГРАДА",
  "PLANTA": "ЗАВОД",
  "CAVA": "КАРЬЕР",
- "ESCOTILHA": "ЛЮК"
+ "ESCOTILHA": "ЛЮК",
+ "ATUALIZAÇÃO DO SERVIDOR": "ОБНОВЛЕНИЕ СЕРВЕРА",
+ "Termine o que estiver fazendo: o servidor volta em cerca de {0} min e você reconecta sozinho.": "Завершите текущие действия: сервер вернётся примерно через {0} мин, и вы подключитесь автоматически.",
+ "CORTE EM": "ОТКЛЮЧЕНИЕ ЧЕРЕЗ",
+ "SERVIDOR REINICIANDO": "СЕРВЕР ПЕРЕЗАПУСКАЕТСЯ",
+ "Atualização em andamento. Você volta para a partida sozinho assim que ele responder.": "Идёт обновление. Как только сервер ответит, вы вернётесь в матч автоматически.",
+ "VOLTA EM ~": "ВЕРНЁТСЯ ЧЕРЕЗ ~",
+ "DEMORANDO MAIS QUE O PREVISTO": "ДОЛЬШЕ, ЧЕМ ОЖИДАЛОСЬ",
+ "O servidor ainda não voltou. Continuamos tentando a cada 5 segundos, sem você precisar fazer nada.": "Сервер ещё не вернулся. Мы пробуем каждые 5 секунд, вам ничего делать не нужно.",
+ "FORA HÁ": "НЕТ СВЯЗИ УЖЕ",
+ "CONEXÃO PERDIDA": "СОЕДИНЕНИЕ ПОТЕРЯНО",
+ "Tentando reconectar…": "Пытаемся переподключиться…",
+ "O servidor pode estar reiniciando ou fora do ar, sem previsão de volta. Continuamos tentando.": "Сервер, возможно, перезапускается или недоступен, сроков возвращения нет. Мы продолжаем попытки.",
+ "SEM CONEXÃO COM O SERVIDOR": "НЕТ СОЕДИНЕНИЯ С СЕРВЕРОМ",
+ "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "Не удалось переподключиться вовремя. Перезагрузите страницу, чтобы повторить попытку.",
+ "RECARREGAR": "ПЕРЕЗАГРУЗИТЬ",
+ "JOGAR OFFLINE ENQUANTO ISSO": "ПОКА ИГРАТЬ ОФЛАЙН"
 }

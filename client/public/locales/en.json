@@ -856,5 +856,21 @@
  "CERCA": "FENCE",
  "PLANTA": "PLANT",
  "CAVA": "PIT",
- "ESCOTILHA": "HATCH"
+ "ESCOTILHA": "HATCH",
+ "ATUALIZAÇÃO DO SERVIDOR": "SERVER UPDATE",
+ "Termine o que estiver fazendo: o servidor volta em cerca de {0} min e você reconecta sozinho.": "Finish what you're doing: the server will be back in about {0} min and you will reconnect on your own.",
+ "CORTE EM": "CUT-OFF IN",
+ "SERVIDOR REINICIANDO": "SERVER RESTARTING",
+ "Atualização em andamento. Você volta para a partida sozinho assim que ele responder.": "Update in progress. You will rejoin the match on your own as soon as it responds.",
+ "VOLTA EM ~": "BACK IN ~",
+ "DEMORANDO MAIS QUE O PREVISTO": "TAKING LONGER THAN EXPECTED",
+ "O servidor ainda não voltou. Continuamos tentando a cada 5 segundos, sem você precisar fazer nada.": "The server is not back yet. We keep trying every 5 seconds, no action needed.",
+ "FORA HÁ": "DOWN FOR",
+ "CONEXÃO PERDIDA": "CONNECTION LOST",
+ "Tentando reconectar…": "Trying to reconnect…",
+ "O servidor pode estar reiniciando ou fora do ar, sem previsão de volta. Continuamos tentando.": "The server may be restarting or offline, with no estimate of when it will be back. We keep trying.",
+ "SEM CONEXÃO COM O SERVIDOR": "NO CONNECTION TO THE SERVER",
+ "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "We could not reconnect in time. Reload the page to try again.",
+ "RECARREGAR": "RELOAD",
+ "JOGAR OFFLINE ENQUANTO ISSO": "PLAY OFFLINE MEANWHILE"
 }

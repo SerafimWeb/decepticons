@@ -856,5 +856,21 @@
  "CERCA": "CERCA",
  "PLANTA": "PLANTA",
  "CAVA": "MINA",
- "ESCOTILHA": "ESCOTILLA"
+ "ESCOTILHA": "ESCOTILLA",
+ "ATUALIZAÇÃO DO SERVIDOR": "ACTUALIZACIÓN DEL SERVIDOR",
+ "Termine o que estiver fazendo: o servidor volta em cerca de {0} min e você reconecta sozinho.": "Termina lo que estés haciendo: el servidor vuelve en unos {0} min y te reconectas solo.",
+ "CORTE EM": "CORTE EN",
+ "SERVIDOR REINICIANDO": "SERVIDOR REINICIÁNDOSE",
+ "Atualização em andamento. Você volta para a partida sozinho assim que ele responder.": "Actualización en curso. Volverás a la partida solo en cuanto responda.",
+ "VOLTA EM ~": "VUELVE EN ~",
+ "DEMORANDO MAIS QUE O PREVISTO": "TARDA MÁS DE LO PREVISTO",
+ "O servidor ainda não voltou. Continuamos tentando a cada 5 segundos, sem você precisar fazer nada.": "El servidor aún no vuelve. Seguimos intentando cada 5 segundos, sin que tengas que hacer nada.",
+ "FORA HÁ": "SIN CONEXIÓN HACE",
+ "CONEXÃO PERDIDA": "CONEXIÓN PERDIDA",
+ "Tentando reconectar…": "Intentando reconectar…",
+ "O servidor pode estar reiniciando ou fora do ar, sem previsão de volta. Continuamos tentando.": "El servidor puede estar reiniciándose o fuera de línea, sin previsión de regreso. Seguimos intentando.",
+ "SEM CONEXÃO COM O SERVIDOR": "SIN CONEXIÓN CON EL SERVIDOR",
+ "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "No pudimos reconectar a tiempo. Recarga la página para intentarlo de nuevo.",
+ "RECARREGAR": "RECARGAR",
+ "JOGAR OFFLINE ENQUANTO ISSO": "JUGAR SIN CONEXIÓN MIENTRAS TANTO"
 }

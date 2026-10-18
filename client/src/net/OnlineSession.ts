@@ -1,6 +1,6 @@
 import type { BankReply } from '../../../shared/bank/codes';
 import * as THREE from 'three';
-import { INPUTS_PER_PACKET, NO_UNIT, SIM_HZ } from '../../../shared/net/constants';
+import { CLOSE_REINICIO, INPUTS_PER_PACKET, NO_UNIT, SIM_HZ } from '../../../shared/net/constants';
 import { EVENT, type NetEvent } from '../../../shared/net/events';
 import { newNetInput } from '../../../shared/net/input';
 import { newSnapshot, type EventBatch, type RosterEntry, type Snapshot } from '../../../shared/net/messages';
@@ -53,6 +53,10 @@ export interface OnlineStatus {
   /** Só em `reconectando`: a tentativa de agora (de 1) e quantas há ao todo. */
   tentativa?: number;
   de?: number;
+  /** O servidor avisou que vai reiniciar (P204): `Date.now()` em que ele corta e em quantos segundos prevê voltar. Some quando a conexão cai. */
+  aviso?: { cortaEm: number; voltaEmS: number };
+  /** A conexão caiu: desde quando (`Date.now()`) e, se foi um reinício avisado, quando se espera a volta (`Date.now()`); `null` = sem previsão. */
+  queda?: { desde: number; previsto: number | null };
 }
 
 /**
@@ -60,6 +64,13 @@ export interface OnlineStatus {
  * dão tempo ao servidor de voltar. Somam ~15,5 s; esgotadas, o estado fica `caiu` e o jogador recarrega.
  */
 export const RECONEXAO_PADRAO_MS: readonly number[] = [300, 700, 1500, 3000, 5000, 5000];
+/**
+ * Depois das tentativas rápidas o servidor ainda pode estar reiniciando (uma atualização leva de 16 a 50 s; o PC religando, minutos): a sessão
+ * segue tentando a cada `ESPERA_LONGA_MS` por até `PERSISTENCIA_PADRAO_MS` antes de desistir (P204). Quem passa `reconexaoMs` (os testes) fica
+ * com a lista dele e desiste ao fim dela, a menos que passe `persistenciaMs`.
+ */
+export const ESPERA_LONGA_MS = 5000;
+export const PERSISTENCIA_PADRAO_MS = 10 * 60 * 1000;
 
 export interface OnlineSessionOptions {
   url: string;
@@ -84,6 +95,10 @@ export interface OnlineSessionOptions {
   onScore?: (kills: number, deaths: number) => void;
   /** As esperas entre as tentativas de reconexão (ms); o padrão é `RECONEXAO_PADRAO_MS`. Vazio desliga a reconexão. */
   reconexaoMs?: readonly number[];
+  /** Por quanto tempo seguir tentando (a cada `ESPERA_LONGA_MS`) depois da lista de `reconexaoMs`; 0 desiste ao fim da lista. O padrão é `PERSISTENCIA_PADRAO_MS` quando `reconexaoMs` não é passada. */
+  persistenciaMs?: number;
+  /** A espera entre as tentativas da insistência longa (ms); o padrão é `ESPERA_LONGA_MS`. */
+  esperaLongaMs?: number;
 }
 
 /** Linha do placar do multiplayer, montada só com os eventos KILL vindos do servidor. */
@@ -164,6 +179,10 @@ export class OnlineSession implements Pilot {
   private client!: NetClient;
   /** Reconexão (G13): a tentativa de agora (0 = conectado ou nunca caiu), o relógio da próxima e se a sessão foi encerrada de propósito. */
   private tentativa = 0;
+  /** Já esteve numa sala desta vez? Só quem esteve tem a tela de queda e a insistência longa (P204). */
+  private jaEntrou = false;
+  private aviso: { cortaEm: number; voltaEmS: number } | null = null;
+  private queda: { desde: number; previsto: number | null } | null = null;
   private temporizador: ReturnType<typeof setTimeout> | null = null;
   private encerrada = false;
   private readonly names = new Map<number, string>();
@@ -198,7 +217,15 @@ export class OnlineSession implements Pilot {
         if (cliente !== this.client) return;
         this.myId = m.id;
         this.state = 'na sala';
+        this.jaEntrou = true;
         this.tentativa = 0;
+        this.aviso = null;
+        this.queda = null;
+        this.status();
+      },
+      aviso: (m) => {
+        if (cliente !== this.client) return;
+        this.aviso = { cortaEm: Date.now() + m.segundos * 1000, voltaEmS: m.voltaEmS };
         this.status();
       },
       roster: (entries) => cliente === this.client && this.onRoster(entries),
@@ -215,8 +242,8 @@ export class OnlineSession implements Pilot {
         this.reason = reason;
         this.status();
       },
-      closed: () => {
-        if (cliente === this.client) this.aoFechar();
+      closed: (code, reason) => {
+        if (cliente === this.client) this.aoFechar(code, reason);
       },
     });
     this.client = cliente;
@@ -228,19 +255,31 @@ export class OnlineSession implements Pilot {
    * ou reiniciou, a porteira cortou um pico) é reconectada com as esperas de `reconexaoMs`; a sessão velha é limpa (os robôs dos outros somem, o placar zera: o
    * servidor trata a volta como um piloto novo).
    */
-  private aoFechar(): void {
+  private aoFechar(code = 0, reason = ''): void {
     if (this.encerrada || this.state === 'recusado') {
       this.status();
       return;
     }
     this.limparSessao();
+    const agora = Date.now();
+    // A primeira queda de uma sequência diz se foi um reinício avisado (o código 4010 do servidor, ou o aviso que veio antes) e quando se espera a volta.
+    // Quem nunca chegou a entrar (servidor desligado desde o início) não tem "queda": cai no jogo offline depressa, como sempre.
+    if (!this.queda && this.jaEntrou) {
+      const voltaEmS = code === CLOSE_REINICIO ? Number(reason) : this.aviso?.voltaEmS;
+      const avisada = code === CLOSE_REINICIO || this.aviso !== null;
+      this.queda = { desde: agora, previsto: avisada && Number.isFinite(voltaEmS) ? agora + (voltaEmS as number) * 1000 : null };
+    }
+    this.aviso = null;
     const esperas = this.o.reconexaoMs ?? RECONEXAO_PADRAO_MS;
-    if (this.tentativa >= esperas.length) {
+    const persistenciaMs = this.jaEntrou ? (this.o.persistenciaMs ?? (this.o.reconexaoMs ? 0 : PERSISTENCIA_PADRAO_MS)) : 0;
+    let espera: number;
+    if (this.tentativa < esperas.length) espera = esperas[this.tentativa]!;
+    else if (this.queda && agora - this.queda.desde < persistenciaMs) espera = this.o.esperaLongaMs ?? ESPERA_LONGA_MS;
+    else {
       this.state = 'caiu';
       this.status();
       return;
     }
-    const espera = esperas[this.tentativa]!;
     this.tentativa++;
     this.state = 'reconectando';
     this.status();
@@ -586,6 +625,8 @@ export class OnlineSession implements Pilot {
       players: this.humans,
       reason: this.reason,
       ...(this.state === 'reconectando' ? { tentativa: this.tentativa, de: (this.o.reconexaoMs ?? RECONEXAO_PADRAO_MS).length } : {}),
+      ...(this.aviso ? { aviso: this.aviso } : {}),
+      ...(this.queda && this.state !== 'na sala' ? { queda: this.queda } : {}),
     });
   }
 }
