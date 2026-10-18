@@ -1,0 +1,65 @@
+{
+ "rotulos": {
+  "titulo": "RAPPORT DE CONSÉQUENCES",
+  "sub": "FLEUVE VIVANT",
+  "aconteceuNome": "CE QUI S’EST PASSÉ",
+  "aconteceuLema": "ce que vous avez fait sur le fleuve",
+  "ficcaoNome": "CE QUI EST FICTION",
+  "ficcaoLema": "ce que le jeu a inventé",
+  "quando": "QUAND",
+  "fonte": "SOURCE",
+  "nota": "CE QUE CELA NE DIT PAS",
+  "fechar": "[ FERMER ]"
+ },
+ "linhas": {
+  "venceuDentro": "Le Draga-01 est tombé de l’intérieur : la charge posée par les androïdes de la Résistance l’a détruit.",
+  "venceuTiro": "Le Draga-01 a été abattu avant d’atteindre le village.",
+  "aldeiaSalva": "Le village tient toujours.",
+  "rioVenceu": "Le fleuve coule de nouveau propre, en aval.",
+  "perdeu": "Le Draga-01 a atteint le village.",
+  "aldeiaCaiu": "Le village est tombé.",
+  "rioPerdeu": "Le poison continue de descendre le fleuve.",
+  "geradores": "{n} générateurs du bouclier sur {total} démantelés.",
+  "resistencia": "{n} androïdes de la Résistance sur {total} encore debout.",
+  "tempo": "Durée de la mission : {t}."
+ },
+ "fatos": [
+  {
+   "id": "mercurio",
+   "nome": "LE MERCURE DANS LES CHEVEUX ET LE POISSON",
+   "lema": "trois villages munduruku, sur le Tapajós",
+   "texto": "En 2019, la Fiocruz et le WWF-Brésil ont évalué 200 personnes dans trois villages munduruku de la Terre indigène Sawré Muybu, sur le moyen Tapajós (Pará). Ils ont trouvé du mercure chez tous les participants, et 57,9 % dépassaient 6 µg/g dans les cheveux, la limite de sécurité d’agences de santé reconnues internationalement. Dans le village le plus touché par le garimpo, environ 9 personnes sur 10 dépassaient la limite. Le mercure arrive par le poisson : 96 % mangeaient du poisson régulièrement, et tous les échantillons de poisson contenaient du mercure.",
+   "quando": "Collecte du 29/10 au 9/11/2019 · note technique de novembre 2020",
+   "fonte": "ENSP/Fiocruz et WWF-Brasil, note technique « Impact du mercure sur la santé du peuple indigène Munduruku, bassin du Tapajós » (nov. 2020, en portugais)",
+   "link": "https://wwfbr.awsassets.panda.org/downloads/wwfbr_2020_nt_impacto_mercurio_saude_povo_indigena_munduruku_v2__2___1_.pdf",
+   "nota": "C’est une étude de trois villages : elle ne représente ni tout le peuple Munduruku ni tout le poisson de l’Amazonie."
+  },
+  {
+   "id": "garimpo",
+   "nome": "LE GARIMPO SUR LES TERRES INDIGÈNES",
+   "lema": "632 % en onze ans",
+   "texto": "Selon MapBiomas, de 2010 à 2021 la surface du garimpo (orpaillage) à l’intérieur des terres indigènes a augmenté de 632 % et atteint près de 20 000 hectares en 2021. La terre indigène la plus touchée est celle des Kayapó, avec 11 542 hectares pris par le garimpo jusqu’en 2021. Dans tout le pays, le garimpo est passé de 99 000 à 196 000 hectares sur la même période.",
+   "quando": "2010 à 2021 · publié en 2022",
+   "fonte": "MapBiomas, publication de la cartographie annuelle de l’exploitation minière (mapbiomas.org, en portugais)",
+   "link": "https://mapbiomas.org/916-da-area-garimpada-no-brasil-ficam-no-bioma-amazonia",
+   "nota": "Le chiffre mesure la surface occupée par le garimpo, pas s’il est légal ou illégal."
+  },
+  {
+   "id": "yanomami",
+   "nome": "L’URGENCE YANOMAMI",
+   "lema": "20 janvier 2023",
+   "texto": "Le 20 janvier 2023, le ministère brésilien de la Santé a déclaré une Urgence de santé publique d’importance nationale sur le territoire Yanomami, face à la crise d’absence d’assistance sanitaire qui frappait le peuple, et a organisé un Centre d’opérations d’urgence (COE-Yanomami) pour coordonner la réponse.",
+   "quando": "20 janvier 2023",
+   "fonte": "Ministère de la Santé, Portaria GM/MS n° 28 du 20 janvier 2023 (en portugais)",
+   "link": "https://bvsms.saude.gov.br/bvs/saudelegis/gm/2023/prt0028_20_01_2023.html",
+   "nota": "Le jeu ne cite aucun nombre de morts : les sources divergent sur la période et le groupe. Il n’affirme pas non plus que le garimpo est la seule cause de la crise."
+  }
+ ],
+ "ficcao": [
+  "Le Draga-01, le bouclier, les générateurs, les tours, les androïdes et la Résistance sont des inventions du jeu.",
+  "La société minière est un archétype (AURUM, Groupe Vorcaris) : aucune entreprise réelle n’est représentée.",
+  "Les chiffres du jeu (vie, dégâts, temps de charge) servent à l’équilibre, pas à la réalité.",
+  "Dans le jeu le fleuve guérit en quelques minutes. C’est un geste de victoire, pas de la science : le temps que met un fleuve contaminé à se rétablir relève des spécialistes, et le jeu n’affirme pas qu’il soit court.",
+  "Les faits des autres onglets viennent d’études et de documents publics, avec la source à côté. Ce qui n’a pas de source ici est de la fiction."
+ ]
+}

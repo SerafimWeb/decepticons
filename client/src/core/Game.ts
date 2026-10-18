@@ -114,6 +114,7 @@ import { CampanhaStore } from './CampanhaStore';
 import { EtapaEmCurso } from './EtapaEmCurso';
 import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha';
 import type { CameraWall } from '../ui/CameraWall';
+import type { ResumoDoRio } from '../ui/RelatorioPanel';
 import { abrirSobDemanda, sobDemanda } from './sobDemanda';
 import { plantaDaArena, plantaDoBunker } from '../ui/TacticalRadar';
 import { Minimapa, plantaComZonas, plantaDaAmazoniaNoMinimapa, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
@@ -135,6 +136,7 @@ import { defaultPower } from '../tuning/power';
 import type { RosterEntry } from '../../../shared/net/messages';
 import { CODIGO_DO_ESTADO } from '../sim/CabosDeDados';
 import { distanciaAteAAldeia, marchaFromSearch, progressoDaMarcha, tempoAteAAldeiaS } from '../sim/DragaMarcha';
+import { INVASAO } from '../sim/InvasaoDoDraga';
 import { CODIGO_DA_FASE, faseDoChefe } from '../sim/FasesDoChefe';
 import { CODIGO_DO_ESTADO_DA_PORTA } from '../sim/PortasDaEstacao';
 import { CODIGO_DO_ESTADO_DO_QUADRO } from '../sim/QuadroDeLuz';
@@ -336,6 +338,8 @@ export class Game {
   private bankOnlineMultiplier = 1;
   private playing = false;
   private missionEnded = false;
+  /** O que a missão do rio deixou, para o Relatório de Consequências (P179 camada 3): só existe depois do fim dela. */
+  private relatorioDoRio: ResumoDoRio | null = null;
   /** O galpão 3D do Hangar (feito na primeira vez que abre) e se ele está na tela no lugar da arena. */
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
@@ -912,6 +916,13 @@ export class Game {
       e.stopPropagation();
       void import('../ui/ArquivoPanel').then((m) => m.abrirArquivo());
     });
+    // O Relatório de Consequências (P179 camada 3): o chip só aparece depois da missão do rio; o painel e os textos são sob demanda como o Arquivo.
+    document.getElementById('cc-relatorio')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const resumo = this.relatorioDoRio;
+      if (resumo) void import('../ui/RelatorioPanel').then((m) => m.abrirRelatorio(resumo));
+      document.getElementById('cc-relatorio')?.classList.remove('novo');
+    });
     const blocoConta = document.getElementById('settings-conta');
     if (blocoConta) void new ContaSettings(blocoConta, sessao).restaurar();
 
@@ -1406,6 +1417,18 @@ export class Game {
       this.playTelemetry.finish('completed');
       this.missionEnded = true;
       if (this.match.rio) {
+        const escudo = this.match.escudo;
+        const aliados = this.match.allies?.mechs ?? [];
+        this.relatorioDoRio = {
+          venceu: survived,
+          porDentro: this.match.invasao?.detonou === true,
+          geradoresCaidos: escudo ? escudo.total - escudo.geradoresVivos : 0,
+          geradoresTotal: escudo?.total ?? 0,
+          androidesVivos: aliados.filter((m) => m.alive).length,
+          androidesTotal: aliados.length,
+          segundos: stats.survivalSeconds,
+        };
+        this.mostrarChipDoRelatorio(true);
         this.hud.setMissionEndTexto(
           survived,
           survived ? 'O RIO VIVE · DRAGA-01 DERRUBADO' : 'A ALDEIA CAIU · O DRAGA-01 CHEGOU',
@@ -1589,9 +1612,19 @@ export class Game {
     this.bankTerminal.reply(reply);
   }
 
+  /** O chip RELATÓRIO ▸ do console: aparece (piscando até o primeiro clique) quando a missão do rio acaba e some quando ela recomeça. */
+  private mostrarChipDoRelatorio(visivel: boolean): void {
+    const chip = document.getElementById('cc-relatorio');
+    if (!chip) return;
+    chip.hidden = !visivel;
+    chip.classList.toggle('novo', visivel);
+  }
+
   private resume(): void {
     if (this.missionEnded) {
       this.missionEnded = false;
+      this.relatorioDoRio = null;
+      this.mostrarChipDoRelatorio(false);
       this.match.restartMission();
       this.praiaHud?.reset();
       this.player.launcher.refill();
@@ -1819,6 +1852,9 @@ export class Game {
       const chefe = this.match.bots.chefe;
       if (chefe) amazonia.setFrente(chefe.simPosition.x);
       else if (this.match.rio.fase === 'vitoria') amazonia.curar(CURA_VISUAL_M_S * dt);
+      // A escotilha do Draga (parte E): o anel, o disco da carga e o farol, só com ela aberta e o Draga de pé.
+      const invasao = this.match.invasao;
+      amazonia.setEscotilha(invasao !== null && invasao.aberta && chefe !== null, this.match.escotilha.x, this.match.escotilha.z, invasao?.carga ?? 0);
     }
     // O ciclo do dia da praia (P161): começa no pôr do sol e em 5 minutos de partida vira noite, com as luzes da cidade acendendo. Só desenho: nada na simulação.
     if (this.match.arena.praia) {
@@ -2055,6 +2091,19 @@ export class Game {
         q.escudo.restantes = escudo.geradoresVivos;
         q.escudo.total = escudo.total;
       }
+      // A invasão do Draga (parte E): a escotilha aberta, a carga plantada e quantos andróides da Resistência estão junto dela.
+      const invasao = this.match.invasao;
+      q.invasao.presente = invasao !== null && chefe !== null;
+      if (invasao) {
+        q.invasao.aberta = invasao.aberta;
+        q.invasao.carga = invasao.carga;
+        q.invasao.dentro = invasao.plantando;
+        q.invasao.total = INVASAO.androides;
+      }
+      // As torres da margem (parte D2): armadas enquanto o gerador da CERCA está de pé.
+      const torres = this.match.torres;
+      q.torres.presente = torres !== null && chefe !== null;
+      if (torres) q.torres.ativas = torres.ativa;
       // A missão do rio (P180, parte C): a distância do Draga até a aldeia, o progresso da marcha e quanto falta nesse passo.
       const rio = this.match.rio;
       q.aldeia.presente = rio !== null && !rio.terminou;

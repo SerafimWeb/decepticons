@@ -239,6 +239,11 @@ export class BotController {
    * `hold` (o Domínio) vale mais que isto, e ali a retaguarda segue o posto mandado.
    */
   rearguard = false;
+  /**
+   * Plantador (P180, parte E): a ordem `hold` é **para valer**: o robô vai ao ponto e **fica nele**, sem orbitar o alvo, sem recuar para esfriar nem para se proteger (continua atirando de onde está).
+   * É o que faz o andróide da Resistência ficar junto da escotilha do Draga e plantar a carga. Quem liga é o `BotSystem`; sem ordem `hold`, não muda nada.
+   */
+  plantador = false;
   /** O setor da retaguarda (o ponto de nascimento). */
   readonly home = new THREE.Vector3();
   /** Quer atirar a arma da mão esquerda neste tick (mesma mira de `shotDir`; a arma explosiva mira em `blastAim`). */
@@ -821,15 +826,16 @@ export class BotController {
     // Posto: a ordem explícita de `hold` (o Domínio) manda no ponto que ela deu; senão, a retaguarda (P119) segura o
     // setor de nascimento. Nos dois casos o bot troca tiro em volta do posto e não o abandona perseguindo um alvo longe.
     const post = this.order === 'hold' ? this.guardPoint : this.rearguard ? this.home : null;
-    if (post && this.state !== 'retreat') {
+    const preso = this.plantador && this.order === 'hold';
+    if (post && (preso || this.state !== 'retreat')) {
       const distance = this.flatDistance(post);
-      if (distance > 10 || !this.targetVisible || this.state === 'chase' || this.state === 'patrol') {
-        if (distance > 3) this.towards(post);
+      if (preso || distance > 10 || !this.targetVisible || this.state === 'chase' || this.state === 'patrol') {
+        if (distance > (preso ? 1.5 : 3)) this.towards(post);
         else _move.set(0, 0, 0);
         if (this.targetVisible && this.target) faceYaw = this.yawTo(this.target.simPosition);
       }
     }
-    if ((this.state === 'cool' || this.state === 'retreat') && this.target &&
+    if (!preso && (this.state === 'cool' || this.state === 'retreat') && this.target &&
         this.cover.find(dt, this.target, this.targetVisible ? this.target.simPosition : this.lastSeen)) {
       if (this.flatDistance(this.cover.goal) > 2.5) this.towards(this.cover.goal);
       else _move.set(0, 0, 0);

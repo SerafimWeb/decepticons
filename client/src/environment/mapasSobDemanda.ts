@@ -22,6 +22,8 @@ export interface InstanciaDoMapa {
   readonly frente: number;
   /** A frente do rio avança `metros` rio abaixo (a cura: o limpo toma o lugar do morto). Só desenho. */
   curar(metros: number): void;
+  /** A escotilha do chefe (P180, parte E): `aberta` mostra o marcador (anel, disco da carga e farol) em (x, z). Só desenho. */
+  setEscotilha(aberta: boolean, x: number, z: number, carga: number): void;
   /** Até onde a câmera do jogo enxerga neste mapa (m): a névoa do mapa já escondeu tudo muito antes. */
   readonly alcanceDaCamera: number;
 }
@@ -43,6 +45,8 @@ export interface MapaCarregado {
   rotulos: readonly { x: number; z: number; texto: string; cor: string }[];
   /** Metade do mapa em x e em z (m): a escala do radar. */
   meia: { x: number; z: number };
+  /** A altura do terreno em (x, z), se o mapa tem relevo (a Amazônia): onde os robôs da defesa nascem. Mapas planos não declaram. */
+  alturaDoTerreno?(x: number, z: number): number;
 }
 
 /** O que o chefe do mapa precisa para nascer na partida. */
@@ -72,6 +76,10 @@ export interface DefesaCarregada {
   readonly geradores: number;
   /** A vida de cada um (o dano do tiro e da explosão tira daqui). */
   readonly vidaDoGerador: number;
+  /** As bocas das torres de vigia armadas (parte D2): x, y, z em metros, na ordem das torres da margem. */
+  readonly torres: readonly { readonly x: number; readonly y: number; readonly z: number }[];
+  /** Onde a força de defesa monta guarda: os Mechs e os andróides (x, z). */
+  readonly guarda: { readonly mechs: readonly (readonly [number, number])[]; readonly androids: readonly (readonly [number, number])[] };
   /** Monta os geradores na cena, registrados como alvos destrutíveis. Devolve os desenhos e os ids (o teste confere). */
   criarGeradores(o: CriarGeradores): { readonly grupos: readonly THREE.Object3D[]; readonly ids: readonly number[] };
 }

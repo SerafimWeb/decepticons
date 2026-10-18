@@ -74,6 +74,22 @@ export const AMAZONIA_GERADORES: readonly { readonly nome: string; readonly x: n
   Object.freeze({ nome: 'CAVA', x: 260, z: 140 }),
 ]);
 
+/**
+ * A **força de defesa** da missão do rio (P180, parte D2): onde cada Mech e cada andróide monta guarda, em volta dos três geradores (um Mech e dois andróides por gerador). Eles **seguram o
+ * posto** (`BotController.rearguard`): trocam tiro com quem chega ao alcance e não largam o gerador para correr atrás do jogador. Não renascem: derrubá-los é desmantelar a defesa. O teste
+ * confere que nenhum nasce no rio nem dentro de uma estrutura.
+ */
+export const AMAZONIA_GUARDA: { readonly mechs: readonly (readonly [number, number])[]; readonly androids: readonly (readonly [number, number])[] } = Object.freeze({
+  mechs: Object.freeze([[-82, 160], [46, 112], [282, 156]] as const),
+  androids: Object.freeze([[-122, 128], [-112, 166], [4, 106], [-2, 134], [236, 120], [250, 164]] as const),
+});
+
+/**
+ * A **Resistência** (P180, parte E): os três andróides aliados que esperam na aldeia, junto de onde o jogador nasce. Quando o escudo do Draga cai e a escotilha abre, eles vão até ela plantar a carga
+ * (`sim/InvasaoDoDraga.ts`). Antes disso acompanham o jogador. Renascem na aldeia se caírem (o canhão do Draga mata um andróide por tiro). O teste confere que nenhum nasce dentro de uma estrutura.
+ */
+export const AMAZONIA_RESISTENCIA: readonly (readonly [number, number])[] = Object.freeze([[-944, -160], [-944, -200], [-978, -158]] as const);
+
 /** Onde o Draga-01 começa (x, rio abaixo da aldeia): a água a montante dele é limpa, a de jusante é morta. */
 export const AMAZONIA_DRAGA_INICIO_X = 700;
 

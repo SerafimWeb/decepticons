@@ -334,3 +334,87 @@ describe('o escudo do Draga-01 na barra do chefe (P180, parte D)', () => {
     expect(zona.textContent).not.toContain('GERADOR CAIU');
   });
 });
+
+describe('as torres da margem na barra do chefe (P180, parte D2)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('document', { createElement: (tag: string) => new No(tag) });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('a linha diz se as torres estão armadas ou sem energia (a cor muda), e fica escondida sem torres na partida', () => {
+    const m = montar(true);
+    m.q.chefe.presente = true;
+    m.q.chefe.nome = 'DRAGA-01';
+    m.q.chefe.alvo = 'aldeia';
+    const linha = achar(m.raiz, 'pcf-torres')!;
+    m.hud.update(0.016, m.q);
+    expect(linha.hidden).toBe(true);
+    m.q.torres.presente = true;
+    m.q.torres.ativas = true;
+    m.hud.update(0.016, m.q);
+    expect(linha.hidden).toBe(false);
+    expect(linha.textContent).toBe('TORRES DA MARGEM ARMADAS');
+    expect(linha.dataset.estado).toBe('de-pe');
+    m.q.torres.ativas = false;
+    m.hud.update(0.016, m.q);
+    expect(linha.textContent).toBe('TORRES DA MARGEM SEM ENERGIA');
+    expect(linha.dataset.estado).toBe('caido');
+  });
+});
+
+describe('a invasão do Draga na barra do chefe (P180, parte E)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('document', { createElement: (tag: string) => new No(tag) });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function comDraga() {
+    const m = montar(true);
+    m.q.chefe.presente = true;
+    m.q.chefe.nome = 'DRAGA-01';
+    m.q.chefe.alvo = 'aldeia';
+    m.q.invasao.presente = true;
+    m.q.invasao.total = 3;
+    return { ...m, linha: achar(m.raiz, 'pcf-invasao')! };
+  }
+
+  it('com a escotilha fechada a linha fica escondida; aberta, mostra a carga e quantos andróides estão junto dela', () => {
+    const { hud, q, linha } = comDraga();
+    hud.update(0.016, q);
+    expect(linha.hidden).toBe(true);
+    q.invasao.aberta = true;
+    q.invasao.carga = 0.452;
+    q.invasao.dentro = 2;
+    hud.update(0.016, q);
+    expect(linha.hidden).toBe(false);
+    expect(linha.textContent).toBe('INVASÃO · CARGA 45% · 2 DE 3 DENTRO');
+    q.invasao.carga = 0.9;
+    q.invasao.dentro = 3;
+    hud.update(0.016, q);
+    expect(linha.textContent).toBe('INVASÃO · CARGA 90% · 3 DE 3 DENTRO');
+  });
+
+  it('a escotilha abrir sobe o aviso no topo, uma vez; abrir a partida já com ela aberta não avisa', () => {
+    const { hud, q, zona } = comDraga();
+    hud.update(0.016, q);
+    q.invasao.aberta = true;
+    hud.update(0.016, q);
+    expect(zona.textContent).toBe('ESCOTILHA ABERTA · OS ANDRÓIDES ENTRAM');
+    const outra = comDraga();
+    outra.q.invasao.aberta = true;
+    outra.hud.update(0.016, outra.q);
+    expect(outra.zona.textContent).not.toContain('ESCOTILHA');
+  });
+
+  it('sem invasão na partida (fora da missão do rio) a linha segue escondida mesmo com o chefe em campo', () => {
+    const { hud, q, linha } = comDraga();
+    q.invasao.presente = false;
+    q.invasao.aberta = true;
+    hud.update(0.016, q);
+    expect(linha.hidden).toBe(true);
+  });
+});

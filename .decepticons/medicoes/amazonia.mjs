@@ -39,6 +39,10 @@ const VISTAS = {
   // Os geradores do escudo do Draga (parte D): o da cerca de perto (com um Mech ao lado para dar a escala) e os três da planta ao longe.
   gerador: { cam: '-100,13,118', mira: '-100,7,143', fov: 58, geradores: true, escala: true, semDraga: true },
   geradores: { cam: '-40,60,60', mira: '80,8,140', fov: 62, geradores: true, semDraga: true },
+  // A força de defesa e as torres armadas (parte D2): a cerca com os Mechs e androides nos postos, vista da margem sul.
+  // A escotilha aberta do Draga com a carga a 45% e a Resistência junto do casco (parte E).
+  escotilha: { cam: '672,9,-14', mira: '700,6,14', fov: 66, escotilha: true },
+  guarda: { cam: '-62,9,118', mira: '-100,8,155', fov: 70, geradores: true, guarda: true, semDraga: true },
 };
 
 const server = await createServer({ configFile: resolve('vite.config.ts'), logLevel: 'error', server: { port: 5194, strictPort: false, open: false } });
@@ -66,7 +70,7 @@ try {
   });
   for (const [nome, v] of Object.entries(VISTAS)) {
     if (vistasPedidas && !vistasPedidas.has(nome)) continue;
-    const url = `${base}@fs/${html}?cam=${v.cam}&mira=${v.mira}&fov=${v.fov}${frente ? `&frente=${frente}` : ''}${semDraga ? '&draga=0' : ''}${v.semNevoa ? '&semnevoa=1' : ''}${v.escala ? '&escala=1' : ''}${v.geradores ? '&geradores=1' : ''}${v.semDraga ? '&draga=0' : ''}`;
+    const url = `${base}@fs/${html}?cam=${v.cam}&mira=${v.mira}&fov=${v.fov}${frente ? `&frente=${frente}` : ''}${semDraga ? '&draga=0' : ''}${v.semNevoa ? '&semnevoa=1' : ''}${v.escala ? '&escala=1' : ''}${v.geradores ? '&geradores=1' : ''}${v.guarda ? '&guarda=1' : ''}${v.escotilha ? '&escotilha=1' : ''}${v.semDraga ? '&draga=0' : ''}`;
     await page.goto(url);
     await page.waitForFunction(() => window.__pronto || window.__erro, null, { timeout: 180_000 });
     const erro = await page.evaluate(() => window.__erro);

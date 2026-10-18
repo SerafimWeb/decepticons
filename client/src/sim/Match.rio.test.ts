@@ -43,13 +43,13 @@ describe('a missão do rio no Match (P180, parte C): o Draga-01 contra a aldeia'
     while (abertas.length) abertas.pop()!.world.free();
   });
 
-  it('o Draga é o único inimigo: sem ondas, sem núcleo, sem quadro de luz, e a missão do rio existe só na Sobrevivência da Amazônia', async () => {
+  it('o Draga é o único chefe (a guarda de 9, parte D2, segura os geradores): sem ondas, sem núcleo, sem quadro de luz, e a missão do rio existe só na Sobrevivência da Amazônia', async () => {
     const { match } = await partidaDoRio();
     expect(match.rio).not.toBeNull();
     expect(match.waves).toBeNull();
     expect(match.nucleo).toBeNull();
     expect(match.quadro).toBeNull();
-    expect(match.bots.mechs).toHaveLength(1);
+    expect(match.bots.mechs).toHaveLength(10); // o Draga + a guarda (3 Mechs e 6 andróides, `Match.guarda.test.ts`)
     expect(match.bots.chefe?.stats.name).toBe('DRAGA-01');
     // no Deathmatch da Amazônia a missão e o chefe não existem (o passeio do Draga é só desenho)
     const dm = await partidaDoRio('deathmatch');
@@ -159,12 +159,13 @@ describe('a missão do rio no Match (P180, parte C): o Draga-01 contra a aldeia'
     const z = rioEmX(x);
     player.respawn(new THREE.Vector3(x, alturaDoTerreno(x, z), z));
     physics.step();
+    // as torres da margem (tiro sem dono) também atiram em quem anda no leito (parte D2): aqui só conta o canhão do Draga
+    const doDraga = () => disparos.filter((t) => t.owner === d.collider);
     run(2);
-    expect(disparos).toHaveLength(0); // ainda na espera de 3 s
+    expect(doDraga()).toHaveLength(0); // ainda na espera de 3 s
     run(5);
-    expect(disparos.length).toBeGreaterThanOrEqual(1);
-    expect(disparos[0]!.owner).toBe(d.collider);
-    expect(disparos[0]!.dir.x).toBeLessThan(0); // para o oeste, onde o jogador está
+    expect(doDraga().length).toBeGreaterThanOrEqual(1);
+    expect(doDraga()[0]!.dir.x).toBeLessThan(0); // para o oeste, onde o jogador está
   });
 
   it('?marcha=0,8: o Draga nasce com 80% do caminho andado (a 310 m da linha da aldeia, no leito), a missão mede a partir dali, e recomeçar volta para lá', async () => {

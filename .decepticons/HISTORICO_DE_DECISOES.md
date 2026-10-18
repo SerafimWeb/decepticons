@@ -38,6 +38,43 @@
 7. **Google Analytics só depois do "Aceitar":** achei a tag fixa em **`client/index.html`**, ou seja, **dentro do jogo**, setando cookie em todo mundo (inclusive em quem tinha conta). A faixa do site pergunta, a escolha fica na chave `cybermech.cookies` e **o jogo só carrega o Google com o "sim"**; no jogo não há faixa (não cobre a tela de ninguém), então quem chega direto ao jogo não é medido pelo Google (as nossas contagens, sem cookie, medem).
 8. **A política é rascunho meu, escrito a partir do código (`PRIVACIDADE.md` é o inventário):** diz o que é verdade hoje e nada além. **Não é parecer jurídico**; o dono (e, de preferência, um advogado) revisa. Sem e-mail inventado: o contato do encarregado entra por um arquivo ou variável do dono.
 
+## [2026-10-18] O Relatório de Consequências: opcional, com fonte aberta, e a ficha corrigida pela leitura (Claude, P179 camada 3)
+
+**Ordem:** *"o fim da missão mostra o que aconteceu com o rio, com os povos, com a água, com números lidos de ficha"* (camada 3 do P179) e a pendência da ficha: ler a fonte primária antes de virar texto.
+
+**Decisões:**
+1. **O Relatório é um chip, não uma tela que abre sozinha.** A regra do Comandante é "nenhuma partida é interrompida por sermão" e "nada de porta": o chip aparece (e pisca) quando a missão acaba, e quem quer abre. O ensino mora **entre** as partidas.
+2. **Só entra o que foi lido na fonte, e o jogo diz o limite de cada fato** ("O QUE ISTO NÃO DIZ"): estudo de três aldeias não é "o povo"; o número do MapBiomas mede área, não legalidade; a portaria não atribui cada morte ao garimpo. **A ficha de fatos ganhou o § 0 com a conferência** e **corrigiu três erros meus de 17/10** (625% era 632%; "570" e "495 (92%)" eram contas diferentes; o estudo Munduruku era de três aldeias).
+3. **Número de mortes Yanomami fora, de propósito:** os "570" e os "495 (92%)" divergem no recorte (menores de 5 anos ou todas as idades), no ano e na fonte (Sumaúma, documento do Senado, ofício da PF, Cimi). **Entra a declaração de emergência** (🟡+: o título, o número e a data estão em fontes oficiais; o texto da portaria não abriu). Quando alguém abrir o ofício, o número pode voltar com a fonte certa.
+4. **Uma trava de teste liga o jogo à ficha:** cada endereço de fonte do jogo tem de estar na ficha, e todo fato tem `https`, data e "o que isto não diz". Assim a regra "fato tem fonte" não depende de memória.
+5. **A honestidade sobre a cura:** a aba "O QUE É FICÇÃO" diz que o rio se curar em minutos é gesto de vitória, não ciência, e que o jogo não afirma que a recuperação seja rápida (a ficha pedia isso).
+6. **Conteúdo em JSON por língua, painel sob demanda** (a mesma receita do Arquivo): zero no JS de partida além do chip. **As seis traduções são minhas e pedem a revisão de uma pessoa de fora**, como o Arquivo.
+
+## [2026-10-18] A invasão: a Resistência planta a carga, o canhão só mira Mechs e o "hold" vira para valer (Claude, P180 parte E)
+
+**Ordem:** *"invadir com andróides e destruir por dentro"* + *"prossiga"*.
+
+**Decisões:**
+1. **Os andróides são aliados fixos da missão (a Resistência, 3), não o esquadrão do jogador:** a missão do rio é determinística e o esquadrão é opção de Arena; o contrato do ato 3 pede andróides, e eles têm de existir. Reuso o `BotSystem` de aliados (escolta, rádio, anéis, "quem é amigo" já ligados), em vez de um sistema novo.
+2. **A escotilha abre com o escudo caído e carrega por presença** (a regra dos cabos, ao contrário): sem tela de interação nova, o jogador vê a barra subir e a escolta. **Os dois caminhos ficam abertos** (tiro no tronco ou carga): a invasão não é obrigatória, só mais segura.
+3. **O canhão do Draga só mira Mechs** (andróide é pequeno demais para o radar de tiro). Sem isto o canhão (360 de dano, explosão de 5 m) matava os três andróides no flanco antes da carga fechar: a invasão seria quase impossível. É uma **regra de equilíbrio do chefe da C**, registrada aqui: o Comandante pode trocá-la por uma zona cega do canhão (mas aí o jogador também se protege colado ao casco).
+4. **`plantador` no `BotController`:** a ordem `hold` do Domínio deixa o robô orbitar o alvo em volta do ponto (até 10 m); o andróide da escotilha precisa **ficar**. Flag própria, sem mexer no comportamento de ninguém mais.
+5. **Respawn único na missão do rio:** com aliados na lista, o `Respawner` (que escolhe o ponto mais longe dos vivos) mandaria o jogador para o outro lado do mapa ao morrer. Um ponto só (a aldeia).
+6. **A cura de verdade fica para depois** (parte F: Relatório de Consequências e Consórcio): a E entrega o ato 3; o ato 4 segue como desenho.
+7. **O pacote de partida está a 4,3 KB do teto** (495,7 de 500): a regra da missão do rio (torres, invasão) é candidata a sair do pacote inicial.
+
+## [2026-10-18] A defesa da Amazônia: torres que calam com a CERCA, guarda que segura o posto e dorme longe (Claude, P180 parte D2)
+
+**Ordem:** *"há uma enorme força de defesa deles e teremos que desmantelar"* + *"a amazônia já foi entregue em partes, prossiga"*.
+
+**Decisões:**
+1. **As torres são regra pura, não robôs** (`TorresDeVigia`): um laço de 8 e uma semente; **um raio de visada só quando uma está pronta para atirar**. Robô com cérebro seria 8 character controllers parados: o plano (§ 6) já dizia "regra pura, estáticas e baratas".
+2. **As torres calam com a CERCA** (o primeiro gerador), **não com o escudo inteiro**: o jogador tem uma escolha (cruzar sob fogo, ou ir à cerca primeiro) e o gerador que ele já tem de derrubar passa a pagar duas vezes. O Draga e as torres ficam acoplados só pelo `Match` (o gerador 0).
+3. **A guarda segura o posto e não renasce** (`defensores`, que liga o modo retaguarda que a praia já tinha): o Draga é o relógio da missão, e uma defesa que corre atrás do jogador o tira dos geradores, que é o ponto. Derrubado, fica derrubado: desmantelar é o verbo.
+4. **A guarda DORME** (420 m, 6 s depois do último motivo): é o que paga os 9 robôs; o chefe fica de fora (a marcha dele não pode parar). **A regra é de custo, não de jogo:** quem está a mais de 420 m nem vê a guarda.
+5. **Nascer no chão** é do mapa, não do bot (`alturaDoChao`, a altura do terreno): o raio na física **não serve** para achar o chão no nascimento (o pipeline de consultas do Rapier é vazio antes do primeiro passo).
+6. **Os números são proposta** (dano 8, rajada de 4, 170 m, 3 Mechs e 6 androides): o Comandante ajusta em `TORRES_DE_VIGIA` e `AMAZONIA_GUARDA`.
+
 ## [2026-10-18] As métricas dos pilotos com conta: o que o servidor mede e o que fica de fora (Claude, P185)
 
 **Ordem:** "tem como termos as métricas dos usuários, quantos entram, quantos minutos jogam, quantas mortes, etc? [...] pra mapearmos e trackearmos tudo, e depois implementarmos melhores práticas de marketing orientado pelas nossas informações de usuários? quero concluir logo as partes técnicas pra poder lançar".

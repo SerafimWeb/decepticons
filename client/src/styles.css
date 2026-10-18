@@ -3015,6 +3015,13 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 /* O Arquivo (P179 camada 2): a lista das fichas à esquerda (a marcada em barra dourada) e a ficha à direita, na mesma placa do seletor de lado. Sem rolagem em 1280×720. */
 .cc-arquivo { border-color: #8fb6d6; color: #bcd3e6; background: rgba(143, 182, 214, 0.1); }
 .cc-arquivo:hover { background: #8fb6d6; color: var(--bg); }
+/* O Relatório de Consequências (P179 camada 3): o chip só aparece depois da missão do rio e pisca até o primeiro clique. */
+.cc-relatorio { border-color: var(--hot); color: var(--hot); background: rgba(255, 138, 31, 0.1); }
+.cc-relatorio:hover { background: var(--hot); color: var(--bg); }
+.cc-relatorio[hidden] { display: none; }
+.cc-relatorio.novo { animation: relatorio-pulso 2.4s ease-in-out infinite; }
+@keyframes relatorio-pulso { 50% { box-shadow: 0 0 0 3px rgba(255, 138, 31, 0.4); } }
+@media (prefers-reduced-motion: reduce) { .cc-relatorio.novo { animation: none; } }
 .lado-placa.arq-placa { width: min(1040px, 96vw); }
 .arq-corpo { display: grid; grid-template-columns: minmax(200px, 0.8fr) 2.4fr; gap: 14px; align-items: start; }
 .arq-lista { display: flex; flex-direction: column; gap: 6px; }
@@ -3037,6 +3044,8 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .arq-sinais { margin: 0; padding-left: 18px; }
 .arq-sinais li { margin: 1px 0; }
 .arq-fonte { margin: 10px 0 0; color: #8fa6b0; font-size: 11px; line-height: 1.4; }
+.arq-fonte a { color: #9fd8ff; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.arq-fonte a:hover { color: #fff; }
 .arq-fonte b { color: #9fb2bb; }
 @media (max-width: 720px) { .arq-corpo { grid-template-columns: 1fr; } .arq-lista { flex-direction: row; flex-wrap: wrap; } .arq-item { flex: 1 1 45%; } .arq-lema { display: none; } }
 
@@ -4493,6 +4502,11 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .pcf-escudo { margin: 0; text-align: center; font-size: 10px; letter-spacing: 3px; color: var(--cyan); text-shadow: 0 0 6px #000; }
 .pcf-escudo[hidden] { display: none; }
 .pcf-escudo[data-estado='caido'] { color: var(--warn); }
+.pcf-torres { margin: 0; text-align: center; font-size: 10px; letter-spacing: 3px; color: var(--warn); text-shadow: 0 0 6px #000; }
+.pcf-torres[hidden] { display: none; }
+.pcf-torres[data-estado='caido'] { color: var(--cyan); }
+.pcf-invasao { margin: 0; text-align: center; font-size: 10px; letter-spacing: 3px; color: var(--accent); text-shadow: 0 0 6px #000; }
+.pcf-invasao[hidden] { display: none; }
 .pcf-pernas { display: flex; gap: 8px; justify-content: center; font-size: 9px; }
 .pcf-pernas span { padding: 1px 8px; border: 1px solid rgba(255, 255, 255, 0.55); color: var(--ink); }
 .pcf-pernas span.caida { border-color: rgba(255, 45, 61, 0.8); color: var(--alert); text-decoration: line-through; opacity: 0.8; }

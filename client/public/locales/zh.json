@@ -841,5 +841,11 @@
  "O RIO VIVE · DRAGA-01 DERRUBADO": "河流得救 · DRAGA-01 已被击倒",
  "A ALDEIA CAIU · O DRAGA-01 CHEGOU": "村庄沦陷 · DRAGA-01 抵达",
  "O DRAGA-01 CAIU ANTES DE CHEGAR À ALDEIA": "DRAGA-01 在抵达村庄前倒下",
- "O DRAGA-01 ALCANÇOU A ALDEIA": "DRAGA-01 抵达了村庄"
+ "O DRAGA-01 ALCANÇOU A ALDEIA": "DRAGA-01 抵达了村庄",
+ "TORRES DA MARGEM ARMADAS": "河岸塔楼已武装",
+ "TORRES DA MARGEM SEM ENERGIA": "河岸塔楼已断电",
+ "ESCOTILHA ABERTA · OS ANDRÓIDES ENTRAM": "舱门已开 · 机器人进入",
+ "INVASÃO · CARGA {0}% · {1} DE {2} DENTRO": "潜入 · 炸药 {0}% · {1}/{2} 个在内",
+ "RELATÓRIO ▸": "报告 ▸",
+ "O que a missão deixou no rio e o que isso tem de real": "任务在河上留下了什么，其中有哪些是真实的"
 }

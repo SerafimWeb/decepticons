@@ -1,0 +1,18 @@
+{
+  "data": "2026-10-18",
+  "tela": "1280x720",
+  "render": "SwiftShader (sem GPU: só contagem, não tempo)",
+  "vistas": {
+    "guarda": {
+      "desenhos": 66,
+      "triangulos": 108772,
+      "construcaoMs": 479
+    },
+    "escotilha": {
+      "desenhos": 64,
+      "triangulos": 92672,
+      "construcaoMs": 294
+    }
+  },
+  "errosDePagina": []
+}

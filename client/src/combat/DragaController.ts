@@ -3,6 +3,7 @@ import { mulberry32 } from '../core/rng';
 import type { DragaMech } from '../entities/DragaMech';
 import type { MechBase, MechInput } from '../entities/MechBase';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
+import { ehAndroide } from '../sim/CabosDeDados';
 import { pontoDoRio, rumoPara } from '../sim/DragaMarcha';
 import type { CerebroDoChefe } from './CerebroDoChefe';
 import { wrapAngle } from './steer';
@@ -82,7 +83,10 @@ export class DragaController implements CerebroDoChefe {
     return e;
   }
 
-  /** Escolhe o alvo mais perto ao alcance e, na cadência do canhão e com a visada livre, atira. O convés gira para o alvo (o desenho lê `deckAim`). */
+  /**
+   * Escolhe o alvo mais perto ao alcance e, na cadência do canhão e com a visada livre, atira. O convés gira para o alvo (o desenho lê `deckAim`). **O canhão de cerco só mira Mechs: andróide é pequeno
+   * demais para o radar de tiro dele** (é o que deixa a Resistência chegar à escotilha, parte E; os Mechs e os andróides da guarda não têm essa folga).
+   */
   private mirar(dt: number, targets: readonly MechBase[]): void {
     const m = this.mech;
     this.fireCooldown -= dt;
@@ -91,7 +95,7 @@ export class DragaController implements CerebroDoChefe {
     let alvo: MechBase | null = null;
     let melhor = ALCANCE_DE_TIRO_DO_DRAGA_M * ALCANCE_DE_TIRO_DO_DRAGA_M;
     for (const t of targets) {
-      if (!t.alive) continue;
+      if (!t.alive || ehAndroide(t.stats.name)) continue;
       const q = t.simPosition;
       const d2 = (q.x - p.x) * (q.x - p.x) + (q.z - p.z) * (q.z - p.z);
       if (d2 < melhor) {

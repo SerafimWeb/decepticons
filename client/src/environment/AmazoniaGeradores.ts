@@ -3,7 +3,8 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { SHAPE } from '../fx/particleShapes';
 import { ESCUDO_DO_DRAGA } from '../sim/EscudoDoDraga';
 import type { AlvoExterno, CaixaAlvo, EfeitosDoAlvo } from './Destructibles';
-import { AMAZONIA_GERADORES } from './AmazoniaLayout';
+import { pontoDaTorre, TORRES_DA_MARGEM } from './AmazoniaAderecos';
+import { AMAZONIA_GERADORES, AMAZONIA_GUARDA } from './AmazoniaLayout';
 import { alturaDoTerreno } from './AmazoniaTerreno';
 import type { DefesaCarregada } from './mapasSobDemanda';
 
@@ -70,9 +71,19 @@ export interface GeradoresMontados {
   readonly ids: readonly number[];
 }
 
+/** A boca da arma de cada torre da margem: o alto da cabine (17,6 m) e 5 m para o rio, **fora** da cabine (que tem colisor de 7 m: de dentro dela todo raio bateria na própria parede). */
+export function bocasDasTorres(): { x: number; y: number; z: number }[] {
+  return TORRES_DA_MARGEM.map((_, i) => {
+    const { x, z } = pontoDaTorre(i);
+    return { x, y: alturaDoTerreno(x, z) + 17.6, z: z - 5 };
+  });
+}
+
 export const defesaDaAmazonia: DefesaCarregada = {
   geradores: AMAZONIA_GERADORES.length,
   vidaDoGerador: ESCUDO_DO_DRAGA.vidaDoGerador,
+  torres: bocasDasTorres(),
+  guarda: AMAZONIA_GUARDA,
   criarGeradores({ scene, destructibles, aoQuebrar, aoVoltar }) {
     const corpo = geometriaDoCorpo();
     const brilho = geometriaDoBrilho();
