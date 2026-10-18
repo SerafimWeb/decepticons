@@ -264,7 +264,7 @@ describe('a cobertura: o que o jogo mostra e o dicionário traduz', () => {
 describe('a cobertura das telas avançadas (auditoria de 17/10: o Hangar falava português em japonês)', () => {
   const JA = ler('ja');
   /** Os nomes próprios que ficam como estão (marcas, fabricantes, apelidos dos bots). */
-  const NOMES = /Forge Systems|Vanta Works|Cybermech Industries|CYBERMECH|CLAWD|BRABO|ESCOLTA|PLASMA|NEON|MK [I]+|Colossus-V4|Vector-09/g;
+  const NOMES = /Forge Systems|Vanta Works|Cybermech Industries|CYBERMECH|CLAWD|BRABO|ESCOLTA|PLASMA|NEON|MK [I]+|Colossus-V4|Vector-09|COLOSSUS-01|VORCARIS|DAN/g;
   /** Traduzido de verdade: mudou, e não sobrou palavra em português (só nomes próprios e unidades). */
   const coberto = (texto: string): boolean => {
     carregarDicionario(JA);
@@ -309,6 +309,24 @@ describe('a cobertura das telas avançadas (auditoria de 17/10: o Hangar falava 
 
   it('o HUD da partida e o painel de ordens aos aliados', () => {
     const casos = ['VISTA 3ª PESSOA  [V]', 'VISTA 1ª PESSOA  [V]', 'VISTA TÁTICA  [V]', '1 · Acompanhar', '2 · Foco', '3 · Defender', '2/2 aliados · Escolta', '1/2 aliados · Fogo concentrado', '2/2 aliados · Defesa de posição', 'Equipe: concentrar fogo', 'Equipe: defender esta posição', '◈ ESCOLTA·PLASMA: CONTATO ▸ CLAWD·BRABO'];
+    expect(casos.filter((c) => !coberto(c))).toEqual([]);
+  });
+
+  it('os modos de jogo: a missão da praia (Cabos Abertos), a bandeira, o domínio, as conquistas, o briefing, o banco e o respawn', () => {
+    const casos = [
+      'PORTO', 'PONTE', 'ESTAÇÃO', 'REDE DA ESTAÇÃO', 'QUADRO DE LUZ DA CIDADE', 'CABO 1', 'CABO 3', 'ENTRADA PRINCIPAL', 'ENTRADA DOS FUNDOS', 'PORTA 2', 'TRANSFORMADOR · BANCO VORCARIS', 'ESTAÇÃO 64%',
+      'VADEANDO · ANDA MAIS DEVAGAR', 'FUNDO · AFOGA EM 3.2 s · SAIA DO MAR', 'AFOGANDO · SAIA DO MAR', 'A ESTAÇÃO CAIU', 'ESTAÇÃO A 75% · EXPULSE OS INVASORES', 'INVASORES NA ESTAÇÃO · EXPULSE-OS',
+      'CABO 2 TOMADO · A REDE ESTÁ SENDO ENVENENADA', 'CABO 2 CORTADO · CONSERTE', 'CABO 2 LIBERADO', 'CABO 2 · ANDRÓIDE LIGADO · INJETANDO DESINFORMAÇÃO', 'ENTRADA PRINCIPAL ARROMBADA · INVASORES DENTRO',
+      'ENTRADA PRINCIPAL RECUPERADA', 'ENTRADA PRINCIPAL SOB ATAQUE', 'CIDADE NO ESCURO · AS ZONAS DE CURA CAÍRAM', 'QUADRO DE LUZ RECUPERADO · A LUZ VOLTOU', 'QUADRO DE LUZ SOB SABOTAGEM · A CIDADE VAI AO ESCURO',
+      'OPERAÇÃO CABOS ABERTOS', 'Os cabos submarinos de Fortaleza trazem a internet para o país.', 'Forças hostis desembarcam pela orla para invadir a rede e plantar desinformação.',
+      'Segure a ESTAÇÃO: expulse quem entrar nos muros e elimine as ondas. Rede caída, missão perdida.', 'COLOSSUS-01 · FASE 2 DE 3 · MANCA', 'PERNA ESQ', 'PERNA DIR', 'ANDA', 'RASTEJA', 'CAIU',
+      'Ele vai cortar os cabos. Derrube as pernas.', 'Uma perna caiu: ele manca. Derrube a outra.', 'Rasteja e atira. Acabe com ele antes que o último cabo caia.',
+      'BANDEIRA AZUL ROUBADA!', 'PONTO PARA O TIME VERMELHA!', '// PILOTO DAN', '// EM MOVIMENTO', '// CAPTURADA POR DAN', '// BANDEIRA ENTREGUE', '// RETORNADA À BASE', '// CAÍDA NO CAMPO DE BATALHA', 'DOMÍNIO ENCERRADO · VITÓRIA',
+      'SOBREVIVENTE SÊNIOR', 'CAÇADOR DE IAs', 'Eliminou 8 ou mais robôs rebeldes', 'DEVASTADOR DE AÇO', 'Causou 1500+ de dano total', 'VETERANO DE ONDAS', 'Resistiu a 3 ou mais ondas',
+      '// MISSÃO', 'NÍVEL DE AMEAÇA //', '[ INICIAR MISSÃO ]', 'V / V · SERVIÇOS AO PILOTO', 'BANCO VORCARIS', 'Digite seu código de autorização para receber créditos ou reforços.', 'CÓDIGO DE AUTORIZAÇÃO',
+      'Digite o código', 'RESGATAR', 'VALIDANDO AUTORIZAÇÃO…', 'Sem resposta. Tente novamente quando houver conexão.', 'VOLTAR AO COMBATE', 'A arena continua ativa durante o atendimento.', 'Combate pausado durante o atendimento.',
+      'ARRASTE OS BOTÕES', 'CABEÇA', '[ clique para tentar de novo ]', 'RENASCENDO EM 3.0 s', 'RENASCENDO EM 2.1 s · CÂMERA DE ABATE [V: SAIR]',
+    ];
     expect(casos.filter((c) => !coberto(c))).toEqual([]);
   });
 

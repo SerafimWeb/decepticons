@@ -1,5 +1,19 @@
 # ESTADO ATUAL — CYBERMECH
 
+## IDIOMA, SEGUNDA RODADA: OS MODOS DE JOGO (A PRAIA, A BANDEIRA, O DOMÍNIO) — Claude, 17/10 (branch `claude/idioma-modos`, P173)
+
+**Por que:** a auditoria do Hangar deixou claro que o teste de cobertura não via o que o jogo monta na tela. Auditei **no navegador, em japonês, cada modo** (sobrevivência, bandeira, domínio e a praia, **nunca a Amazônia: está com outra sessão**). Os três primeiros já estavam limpos; **a missão da praia (Cabos Abertos) tinha ~15 textos na tela e dezenas nos avisos**.
+
+**Feito:** **74 textos novos nas seis línguas** (811 por língua): o HUD da praia (porto, ponte, estação, rede, cabos, portas, quadro de luz, a água), os avisos (cabo tomado, cortado, liberado, porta arrombada, cidade no escuro…), o briefing da missão, o chefe (fase, pernas, as três falas), a bandeira (`// PILOTO …`, `// RETORNADA À BASE`), o domínio, as conquistas, o briefing e o terminal do Banco Vorcaris, o "arraste os botões" do toque e o respawn. **Prova no navegador:** a auditoria em japonês de praia e sobrevivência só devolve nomes próprios (`arte/idioma-praia-ja-claude.png`). O teste de cobertura ganhou os 70 casos. **De passagem:** o arpão em japonês tinha dois termos (ハープーン e アンカー銃); ficou ハープーン nos dois.
+
+**Sobre o arpão nos chassis pesados (P181), a conclusão depois de ler o código:** todos os médios têm o mesmo "peso" (raio 1,3), então o Marauder puxa qualquer médio e mais leve (regra "do seu peso ou mais leve"); **só o Onça (1,6) e os titãs (3,6 e 5) são mais pesados, e não têm encaixe de ombro** (o encaixe do Marauder é medido no desenho importado, `shoulderPods`). Dar ombros ao Onça exige encaixe procedural e o desenho do lançador: **é trabalho visual que precisa do olho do Comandante**; fica como decisão dele (abaixo).
+
+**Custo de CPU:** zero.
+
+**Falta (R13):** (a) revisão nativa das traduções; (b) o texto do rádio e do briefing das missões por onda e a tela final de cada modo (só aparecem jogando até o fim); (c) **decisão do Comandante:** ombros no Onça para ele ser o melhor usuário do arpão (trabalho visual), ou deixar o arpão para o Marauder.
+
+**Próxima sessão começa com:** o que o Comandante julgar. **A Amazônia (P180) está com outra sessão: não mexer.**
+
 ## ONDE FICAM OS LOGINS, E A CÓPIA DE SEGURANÇA QUE NÃO EXISTIA — Claude, 17/10 (branch `claude/contas-onde`, P183)
 
 **O Comandante (17/10):** *"onde os logins serão salvos se não temos supabase? como está isso? onde estão os arquivos pra eu conferir?"*.
