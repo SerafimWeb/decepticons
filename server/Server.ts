@@ -82,7 +82,7 @@ export interface GameServer {
   /** Contadores das defesas (para o teste e o log de 10 s). */
   readonly guard: {
     connections: number;
-    rejected: { total: number; ip: number; flood: number };
+    rejected: { total: number; ip: number; flood: number; picos: number };
   };
   close(): Promise<void>;
 }
@@ -152,7 +152,7 @@ export async function startServer(
     logMemoria.registrar(linha);
   };
   const guard = new Guard({ ...GUARD_DEFAULTS, ...opts.guard });
-  const rejected = { total: 0, ip: 0, flood: 0 };
+  const rejected = { total: 0, ip: 0, flood: 0, picos: 0 };
   const rooms = new Map<string, ArenaRoom>();
   const creating = new Map<string, Promise<ArenaRoom>>();
   const emptyFor = new Map<string, number>();
@@ -674,9 +674,11 @@ export async function startServer(
     // As mensagens esperam a sala ficar pronta, na ordem em que chegaram.
     const room = roomFor(code);
     let flooded = false;
+    let descartando = false;
     ws.on('message', (data, isBinary) => {
       if (!isBinary || flooded) return;
-      if (!guard.allow(bucket, performance.now())) {
+      const veredito = guard.judge(bucket, performance.now());
+      if (veredito === 'cut') {
         flooded = true;
         rejected.flood++;
         log(`corte de ${ip}: taxa alta demais`);
@@ -684,6 +686,16 @@ export async function startServer(
         ws.close(4008, 'taxa');
         return;
       }
+      if (veredito === 'drop') {
+        // Um pico (o servidor travou por segundos e tudo chegou junto): perde-se o excesso, a conexão segue. Um aviso por pico, não por mensagem.
+        if (!descartando) {
+          descartando = true;
+          rejected.picos++;
+          log(`descarte de ${ip}: pico de mensagens (a conexão segue)`);
+        }
+        return;
+      }
+      descartando = false;
       const bytes = data instanceof Buffer ? data : Buffer.concat(Array.isArray(data) ? data : [Buffer.from(data as ArrayBuffer)]);
       trafego.entradaBytes += bytes.length;
       void room.then((r) => r.receive(peer, bytes));

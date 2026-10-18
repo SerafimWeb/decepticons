@@ -6,7 +6,11 @@
  * - **Teto por IP:** um endereço não abre mais que `perIp` conexões ao mesmo tempo. Muitos clientes de casa podem
  *   sair pelo mesmo IP; o teto (padrão 4) cobre uma família inteira e ainda barra um script que abre em cascata.
  * - **Taxa por conexão:** um cliente manda até `msgs` mensagens por segundo, com folga (`burst`) para picos legítimos.
- *   Acima disso, o servidor fecha; a nossa própria conta é 30 INPUT + eventuais PING/LEAVE (bem abaixo do limite).
+ *   Acima disso o servidor **descarta** a mensagem (nada é decodificado: o custo é uma conta); só **corta** a conexão quando o descarte
+ *   vira abuso de verdade (`dropCut`: descartes acumulados, com a queda de `msgs` por segundo). A nossa própria conta é 30 INPUT + eventuais PING/LEAVE
+ *   (bem abaixo do limite). **Por que não cortar no primeiro excesso (18/10):** o PC do servidor é o mesmo em que se trabalha, e quando o laço do
+ *   Node congela por segundos (memória cheia, build, teste) as mensagens de todo mundo chegam juntas na volta: um jogador bem-comportado era derrubado
+ *   (`corte de <ip>: taxa alta demais`, os dois IPs de VPN de uma sessão de teste). Um pico de quem só estava esperando o servidor agora se perde sem derrubar ninguém.
  * - **Teto geral:** o servidor aceita no máximo `total` conexões abertas. Protege a memória e o socket do Node.
  *
  * A alocação é toda por conexão (uma vez na entrada, uma vez na saída). Nada por mensagem: o `allow()` só mexe em
@@ -23,10 +27,15 @@ export interface GuardConfig {
   msgs: number;
   /** Folga para picos legítimos (o cliente pode acumular na saída de um freeze). */
   burst: number;
+  /**
+   * Descartes que o balde vazio pode acumular antes de a conexão ser cortada. O contador cai `msgs` por segundo: quem passa da taxa por pouco e por pouco tempo
+   * (um servidor travado por segundos, uma rede que entregou tudo junto) só perde o excesso; quem inunda é cortado em instantes.
+   */
+  dropCut: number;
 }
 
 /** Padrões do servidor de casa (DEPLOY.md). Mudar aqui aparece no `.tmp/servidor/servidor.log` e no site. */
-export const GUARD_DEFAULTS: GuardConfig = { perIp: 4, total: 400, msgs: 60, burst: 30 };
+export const GUARD_DEFAULTS: GuardConfig = { perIp: 4, total: 400, msgs: 60, burst: 120, dropCut: 600 };
 
 /** Estado por conexão (o `Guard` guarda uma dessas por peer aberto). */
 export interface Peer {
@@ -36,6 +45,9 @@ export interface Peer {
   tokens: number;
   /** Última recarga (ms), para o balde saber quanto tempo passou. */
   refilled: number;
+  /** Descartes acumulados (caem `msgs` por segundo) e o instante do último: o que decide o corte. */
+  drops: number;
+  dropsAt: number;
 }
 
 /**
@@ -77,9 +89,21 @@ export class Guard {
     return true;
   }
 
-  /** Peer novo com o balde cheio (a folga toda). */
+  /**
+   * A mensagem chegou: `'ok'` (passa), `'drop'` (o balde está vazio: descarta, a conexão segue) ou `'cut'` (o descarte acumulado passou de `dropCut`: abuso, o Server fecha).
+   * O contador de descartes cai `msgs` por segundo, então só o excesso que dura (ou que é enorme) corta.
+   */
+  judge(p: Peer, now: number): 'ok' | 'drop' | 'cut' {
+    if (this.allow(p, now)) return 'ok';
+    const dt = Math.max(0, now - p.dropsAt) / 1000;
+    p.drops = Math.max(0, p.drops - dt * this.cfg.msgs) + 1;
+    p.dropsAt = now;
+    return p.drops > this.cfg.dropCut ? 'cut' : 'drop';
+  }
+
+  /** Peer novo com o balde cheio (a folga toda) e nenhum descarte. */
   peer(ip: string, now: number): Peer {
-    return { ip, tokens: this.cfg.msgs + this.cfg.burst, refilled: now };
+    return { ip, tokens: this.cfg.msgs + this.cfg.burst, refilled: now, drops: 0, dropsAt: now };
   }
 }
 
