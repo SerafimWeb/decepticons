@@ -21,6 +21,18 @@
 
 **Decisão:** gravar as **últimas 40 linhas** da saída do comando que falhou no `atualizacao.log` (`ultimasLinhas`, testado). **Não** mudei a política (continua uma tentativa por rodada, voltando ao código verificado se falhar), porque repetir ou esperar silêncio é um trade-off de operação que cabe a quem usa a máquina: com a saída no log, o próximo episódio mostra qual teste caiu e por quê.
 
+## [2026-10-18] O online volta sozinho quando cai; os lados Aliados × Consórcio ficam desenhados e esperam os times (Claude, P184 b, P185, P186)
+
+**Ordem:** o Comandante confirmou que dois PCs de VPNs diferentes jogaram na mesma sala; pediu métricas de usuários e a ideia de lados assimétricos; e **pôs o online na frente de tudo** ("concluirmos tudo necessário pro online gameplay funcionar").
+
+**Decisões:**
+1. **Reconexão automática no cliente** (`OnlineSession`): seis tentativas em ~15 s (G13), a sala velha limpa (robôs, previsão, placar), o aviso no canto, **recusa não reconecta** (a resposta do servidor não muda tentando de novo). **Por quê agora:** o Comandante viu o jogo cair e pedir para recarregar; quedas de VPN, túnel e servidor travado são o normal de um jogo em casa, e a G13 já a pedia desde o início. **O servidor não mudou:** a volta é um JOIN novo (o piloto volta no ponto de nascimento e o placar da sessão zera): guardar o piloto entre conexões (um token de retomada) é um degrau a mais que só vale se as quedas continuarem comuns depois da porteira tolerante.
+2. **O `NetClient` avisa o fim da conexão UMA vez** (no `error` de uma conexão que não abriu ou no `close`): o Node dos testes não manda o `close` de uma conexão recusada, e sem isso a reconexão nunca desistia.
+3. **Métricas (P185):** a base já existe e é anônima; o que faltava (retenção, únicos, tempo por usuário) **só se mede com a conta** e exige a política de privacidade antes de lançar (a decisão de privacidade de `shared/net/telemetry.ts` era "antes de existir login/LGPD": o login existe desde a P174).
+4. **Lados jogáveis (P186):** a ideia do Comandante virou o § 3.5 do `LADO_E_PEDAGOGIA.md` (a tabela das duas pontas, os riscos, a ordem de quatro degraus e as alternativas ao nome "Consórcio"); **não construo agora**: depende dos **times na sala online (P81)**, que são o próximo passo técnico e destravam também o CTF 2v2 online.
+
+**Prova:** 5 testes da reconexão contra o servidor de verdade e 3 do aviso único; mutação à mão, 10 de 10.
+
 ## [2026-10-17] A porteira descarta o pico em vez de cortar a conexão (Claude, P184)
 
 **Ordem:** "não tô conseguindo jogar online, dá erro e cai a conexão... não consigo jogar CONTRA meu outro PC usando VPNs diferentes".
