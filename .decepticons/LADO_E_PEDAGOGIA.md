@@ -42,7 +42,7 @@ O Comandante já decidiu (15/10, P133) que o primeiro acesso **cai numa partida*
 |---|---|---|
 | **1 · o lado existe** | a escolha é guardada (`cybermech.lado.v1`), aparece no selo LADO do console e da pausa, e o painel do Consórcio mostra **o discurso e o custo** (sátira dos eufemismos). **Ainda não muda o combate nem os textos das missões** | **no jogo, como DEMO** (o seletor, as duas respostas e o painel do custo) |
 | **2 · o Arquivo** | a tela opcional que ensina (§ 4) | **no jogo (17/10):** o chip ARQUIVO no console e na pausa; seis fichas em `client/public/arquivo/<língua>.json` (sete línguas); texto **a conferir por revisor humano** |
-| **3 · o Relatório de Consequências** | o fim da missão mostra o que aconteceu com o rio, com os povos, com a água, com **números lidos de ficha** | plano |
+| **3 · o Relatório de Consequências** | o fim da missão mostra o que aconteceu com o rio, com os povos, com a água, com **números lidos de ficha** | **no jogo (18/10):** o chip RELATÓRIO ▸ depois da missão do rio; cinco abas (o que aconteceu, **três fatos com fonte e "o que isto não diz"**, o que é ficção); sete línguas; **texto a conferir por revisor humano**; ainda não muda com o lado |
 | **4 · a campanha do Consórcio** | os **objetivos invertem**: na Amazônia, a Aliança **invade** a mineradora; o Consórcio **defende** o perímetro (mesmo mapa, outra missão) | plano (`fichas/cenario-amazonas.md`) |
 
 ### 3.5 A assimetria jogável dos lados (a ideia do Comandante de 17/10, P186): camada 5
@@ -104,7 +104,7 @@ Cada tema é uma **ficha curta com fonte** em três linhas: **o que é** (uma fr
 
 1. ✅ **O seletor de lado** (camada 1) e o painel de consequências do Consórcio (texto). *Entregue em 17/10, P179.*
 2. ✅ **O Arquivo**: a tela e as seis fichas (§ 4). *Entregue em 17/10, P179. Os textos pedem revisão do Comandante e a conferência das fontes.*
-3. **O Relatório de Consequências** no fim das missões.
+3. ✅ **O Relatório de Consequências** depois da missão do rio. *Entregue em 18/10 (parte F1 da Amazônia). Faltam os outros mapas e a versão do Consórcio.*
 4. **A campanha do Consórcio** na Amazônia (objetivos invertidos), depois que o cenário existir (`fichas/cenario-amazonas.md`).
 5. **A assimetria jogável dos lados** (§ 3.5, P186): primeiro os times na sala online (P81), depois o Consórcio padronizado, depois a economia e a munição de destroços dos Aliados.
 

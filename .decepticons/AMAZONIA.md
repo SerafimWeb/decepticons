@@ -156,7 +156,8 @@ Os **módulos de dano** são os que o jogo já tem: **as pernas da esquerda e da
 | **D1 — o escudo e os geradores** | os três geradores (alvos destrutíveis), o escudo do Draga (90% menos dano enquanto houver gerador de pé), a barra do chefe com a contagem e os avisos | **feita (18/10)**: `?mapa=amazonia&modo=survival`; veja § 5.3 |
 | **D2 — as torres e a força de defesa** | as oito torres da margem armadas (calam com a CERCA), 3 Mechs e 6 androides de defesa que seguram o posto e dormem longe | **feita (18/10)**: `?mapa=amazonia&modo=survival`; veja § 5.4 (o JS de partida está em 493,3 de 500 KB) |
 | **E — a invasão** | a escotilha, os androides da Resistência e a carga que detona o Draga por dentro (ato 3) | **feita (18/10)**: `?mapa=amazonia&modo=survival`; veja § 5.5 (o JS de partida está em 495,7 de 500 KB: a próxima parte paga com dieta) |
-| **F — a cura com consequência** | o rio curado de verdade (o que o jogador salvou, o Relatório de Consequências e o Consórcio, ato 4 e P179 camadas 3 e 4) | — |
+| **F1 — o Relatório de Consequências** | o chip RELATÓRIO ▸ depois da missão: o que aconteceu, três fatos do mundo real com fonte e o que é ficção (P179 camada 3) | **feita (18/10)**: abre depois de `?mapa=amazonia&modo=survival`; `fichas/fatos-mineracao-amazonia.md` § 0 |
+| **F2 — a cura com consequência e o Consórcio** | o rio curado de verdade e a campanha invertida (a Aliança invade, o Consórcio defende; P179 camada 4) | — |
 
 ## 8. Decisões em aberto (do Comandante)
 

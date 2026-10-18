@@ -113,6 +113,7 @@ import { CampanhaStore } from './CampanhaStore';
 import { EtapaEmCurso } from './EtapaEmCurso';
 import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha';
 import type { CameraWall } from '../ui/CameraWall';
+import type { ResumoDoRio } from '../ui/RelatorioPanel';
 import { abrirSobDemanda, sobDemanda } from './sobDemanda';
 import { plantaDaArena, plantaDoBunker } from '../ui/TacticalRadar';
 import { Minimapa, plantaComZonas, plantaDaAmazoniaNoMinimapa, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
@@ -336,6 +337,8 @@ export class Game {
   private bankOnlineMultiplier = 1;
   private playing = false;
   private missionEnded = false;
+  /** O que a missão do rio deixou, para o Relatório de Consequências (P179 camada 3): só existe depois do fim dela. */
+  private relatorioDoRio: ResumoDoRio | null = null;
   /** O galpão 3D do Hangar (feito na primeira vez que abre) e se ele está na tela no lugar da arena. */
   private hangarScene: HangarScene | null = null;
   private hangarView = false;
@@ -899,6 +902,13 @@ export class Game {
       e.stopPropagation();
       void import('../ui/ArquivoPanel').then((m) => m.abrirArquivo());
     });
+    // O Relatório de Consequências (P179 camada 3): o chip só aparece depois da missão do rio; o painel e os textos são sob demanda como o Arquivo.
+    document.getElementById('cc-relatorio')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const resumo = this.relatorioDoRio;
+      if (resumo) void import('../ui/RelatorioPanel').then((m) => m.abrirRelatorio(resumo));
+      document.getElementById('cc-relatorio')?.classList.remove('novo');
+    });
     const blocoConta = document.getElementById('settings-conta');
     if (blocoConta) void new ContaSettings(blocoConta, sessao).restaurar();
 
@@ -1393,6 +1403,18 @@ export class Game {
       this.playTelemetry.finish('completed');
       this.missionEnded = true;
       if (this.match.rio) {
+        const escudo = this.match.escudo;
+        const aliados = this.match.allies?.mechs ?? [];
+        this.relatorioDoRio = {
+          venceu: survived,
+          porDentro: this.match.invasao?.detonou === true,
+          geradoresCaidos: escudo ? escudo.total - escudo.geradoresVivos : 0,
+          geradoresTotal: escudo?.total ?? 0,
+          androidesVivos: aliados.filter((m) => m.alive).length,
+          androidesTotal: aliados.length,
+          segundos: stats.survivalSeconds,
+        };
+        this.mostrarChipDoRelatorio(true);
         this.hud.setMissionEndTexto(
           survived,
           survived ? 'O RIO VIVE · DRAGA-01 DERRUBADO' : 'A ALDEIA CAIU · O DRAGA-01 CHEGOU',
@@ -1576,9 +1598,19 @@ export class Game {
     this.bankTerminal.reply(reply);
   }
 
+  /** O chip RELATÓRIO ▸ do console: aparece (piscando até o primeiro clique) quando a missão do rio acaba e some quando ela recomeça. */
+  private mostrarChipDoRelatorio(visivel: boolean): void {
+    const chip = document.getElementById('cc-relatorio');
+    if (!chip) return;
+    chip.hidden = !visivel;
+    chip.classList.toggle('novo', visivel);
+  }
+
   private resume(): void {
     if (this.missionEnded) {
       this.missionEnded = false;
+      this.relatorioDoRio = null;
+      this.mostrarChipDoRelatorio(false);
       this.match.restartMission();
       this.praiaHud?.reset();
       this.player.launcher.refill();

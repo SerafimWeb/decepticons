@@ -1,5 +1,25 @@
 # ESTADO ATUAL — CYBERMECH
 
+## AMAZÔNIA, PARTE F1: O RELATÓRIO DE CONSEQUÊNCIAS, E OS FATOS CONFERIDOS NA FONTE — Claude, 18/10 (branch `claude/amazonia-consequencias`, P179 camada 3 e P180)
+
+**O Comandante (17/10):** o Relatório de Consequências era a camada 3 do P179 (*"o fim da missão mostra o que aconteceu com o rio, com os povos, com a água, com números lidos de ficha"*) e a ficha de fatos da P180 pedia "ler a fonte primária antes de virar texto".
+
+**O que entrou:**
+1. **O chip `RELATÓRIO ▸`** no console (ao lado do ARQUIVO): **só aparece quando a missão do rio acaba** (pisca até o primeiro clique) e some quando ela recomeça. **Nada interrompe a partida e nada abre sozinho** ("nenhuma partida é interrompida por sermão"). Carrega sob demanda, como o Arquivo: o painel (2,1 KB) e o texto (`public/relatorio/<língua>.json`, ~5 KB) só baixam no clique.
+2. **O painel** (`ui/RelatorioPanel.ts`), cinco abas no estilo do Arquivo: **O QUE ACONTECEU** (o desfecho; a aldeia; o rio; quantos geradores caíram; quantos andróides da Resistência sobraram; o tempo; "por dentro" ou "a tiro"), **três fatos do mundo real** (o mercúrio no cabelo e no peixe, o garimpo em terras indígenas, a emergência Yanomami), cada um com **a data, a fonte com o endereço (abre em outra aba) e o quadro "O QUE ISTO NÃO DIZ"**, e **O QUE É FICÇÃO** (o Draga, o escudo, a Resistência, a mineradora-arquétipo, os números de equilíbrio e **"no jogo o rio se cura em minutos: gesto de vitória, não ciência"**). **Sete línguas.**
+3. **A conferência na fonte** (`fichas/fatos-mineracao-amazonia.md` § 0): **abri o estudo Munduruku (nota técnica ENSP/Fiocruz e WWF-Brasil, nov. 2020), a página do MapBiomas e a cronologia do MPF**. **A leitura corrigiu a ficha de 17/10:** o MapBiomas diz **632%**, não 625%; o estudo Munduruku é de **200 pessoas em três aldeias** de uma terra indígena (não "do povo"); **os números de mortes Yanomami misturavam recortes** ("570" e "495 (92%)" não são a mesma conta: 495 são 92% de 538 óbitos de menores de 5 anos) e **divergem entre as fontes: o jogo não cita nenhum**; os "131 barcos queimados" e as "300 balsas" do Madeira **não estão nas fontes primárias achadas** (o MapBiomas fala em mais de 151 balsas por imagem de satélite em 25/10/2021: ler a nota antes de usar). **A portaria da emergência Yanomami ficou 🟡+** (o título, o número e a data estão em fontes oficiais, mas o texto não abriu: 403): o jogo diz **só o que o título confirma**.
+4. **A regra "fato tem fonte", com trava:** o teste exige que **cada endereço de fonte do jogo esteja registrado na ficha**, que todo fato tenha `https`, data e "o que isto não diz", que os números batam com o lido (632%, 57,9%, 200 pessoas, 6 µg/g) e que o **número de mortes Yanomami não apareça**.
+
+**Provas:** 16 testes (o formato e as sete línguas, as fontes, os números, os tetos de tamanho, as linhas de "o que aconteceu" em vitória por dentro, vitória a tiro e derrota, a ligação do chip e o painel fora do JS de partida); **5 mutações à mão pegas** (por dentro/a tiro trocados, fonte sem https, fato sem "o que não diz", vitória/derrota trocadas, recomeço sem apagar o resumo). Visto no navegador de verdade, em português e em japonês: cabe sem rolagem em 1280×720 (`arte/relatorio-aconteceu-pt-claude.png`, `relatorio-mercurio-pt-claude.png`, `relatorio-mercurio-ja-claude.png`).
+
+**Custo de CPU:** zero fora do clique. **JS de partida: 495,9 de 500 KB** (+0,25 KB: o chip e o resumo no `Game`).
+
+**Onde o Comandante confere:** jogue a missão do rio até o fim (`…/jogar/?mapa=amazonia&modo=survival&marcha=0.95` perde em ~30 s sem ninguém para derrubá-lo; ou derrube os geradores e plante a carga) e abra **EXPLORAR HANGAR E MODOS**: o chip **RELATÓRIO ▸** pisca no canto de cima, ao lado de ARQUIVO.
+
+**Falta (R13):** **os textos pedem a conferência de uma pessoa de fora** (a regra de `LADO_E_PEDAGOGIA.md` § 7.4), **inclusive as seis traduções, que são minhas**; **a portaria Yanomami** (abrir o texto), **a nota técnica do MapBiomas sobre o Madeira**, **Barcarena** (a cronologia está lida; falta o laudo) e **o factsheet dos 77% a menos de 500 m de um rio** não entraram; o relatório **não muda com o lado** (Aliança ou Consórcio): a parte do Consórcio vem com a campanha invertida; o chip mora no **console completo** (como o ARQUIVO): no menu compacto da primeira partida ele não aparece; **a cura de verdade do rio** segue só desenho.
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois a campanha do Consórcio (P179 camada 4), a dieta de JS e abrir os documentos que faltam.
+
 ## AMAZÔNIA, PARTE E: A INVASÃO — os andróides da Resistência plantam a carga no Draga — Claude, 18/10 (branch `claude/amazonia-invasao`, P180)
 
 **O Comandante (17/10):** *"há uma enorme força de defesa deles e teremos que desmantelar, invadir com andróides e destruir por dentro"*; *"prossiga"*. As partes C, D1 e D2 deram o Draga, o escudo e a defesa; a E dá **o que o jogador faz depois que a defesa cai**.
