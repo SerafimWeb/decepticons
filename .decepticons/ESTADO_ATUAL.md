@@ -1,5 +1,24 @@
 # ESTADO ATUAL — CYBERMECH
 
+## AMAZÔNIA, PARTE D1: O ESCUDO DO DRAGA E OS TRÊS GERADORES — Claude, 18/10 (branch `claude/amazonia-defesa`, P180)
+
+**O Comandante (17/10):** *"a amazônia já foi entregue em partes, prossiga"* (a parte C estava pronta e testada num branch local sem PR: **publiquei como veio, #375**, e a produção já religou nela).
+
+**O que entrou (§ 5.3 do `AMAZONIA.md`):**
+1. **Os geradores** (`environment/AmazoniaGeradores.ts`): três torres de força (CERCA, PLANTA e CAVA) que se **quebram a tiro** (`Destructibles.addExterno`, o mesmo registro dos coqueiros): 1.500 de vida cada, destroços e faíscas ao cair, seis malhas de desenho. Carregam com a missão (sob demanda).
+2. **O escudo** (`sim/EscudoDoDraga.ts`, pura): **com algum gerador de pé o Draga recebe 10% do dano**, por tiro, explosão ou dano por segundo (`DragaMech.escudo`); cai com o último e não volta (rodada nova os devolve).
+3. **A tela:** a barra do chefe diz `ESCUDO · 3 DE 3 GERADORES` (e `ESCUDO CAIU`), a regra vira "derrube os geradores", e cada queda avisa.
+4. **Idioma (o que a auditoria rigorosa achou):** a Amazônia da parte C **não tinha tradução** na barra do chefe, na aldeia, nos avisos da marcha e nos fins de missão; entraram **28 textos por língua**. **Duas correções no motor do tradutor** (`i18n.ts`): a composição aninhada passa a ter **duas voltas** ("MECH · Lançador EMP MK I") e uma chave sem " · " **não engole** um " · " na borda da lacuna ("ANDRÓIDE " + "· manso" saía meio traduzido).
+5. **Provas:** o teste de regra (11 casos, mutações de ligação pegas), o de lugar (nenhum gerador no rio nem dentro de estrutura), o do HUD e o de cobertura de idioma; captura do cenário (`arte/amazonia-gerador-d1-claude.jpg`, `amazonia-geradores-d1-claude.jpg`; a bancada ganhou as vistas `gerador` e `geradores`).
+
+**Custo de CPU:** zero por quadro (um número por tick na regra; o HUD só mexe no DOM quando a contagem muda); seis desenhos e três sensores. **JS de partida: 491,7 de 500 KB.**
+
+**Onde o Comandante confere:** `…/jogar/?mapa=amazonia&modo=survival` (a missão do rio): a barra do chefe diz `ESCUDO · 3 DE 3 GERADORES`; atire no Draga e veja o dano quase não andar; corra para leste pela margem (a cerca em x -100, a planta em x 20, a cava em x 260) e derrube as três torres de força. Para testar sem esperar: `&marcha=0.5`.
+
+**Falta (R13):** **D2:** as torres da margem armadas e a **força de defesa** (Mechs e androides); **E:** a invasão com androides e a cura de verdade; **o equilíbrio** (10%, 1.500) é proposta; **não joguei a missão até o fim a olho** (o headless roda a ~0,25× do tempo): a captura é do cenário; os fatos da ficha da mineração seguem 🟡.
+
+**Próxima sessão começa com:** o que o Comandante julgar; depois a **D2** (as torres e a força de defesa).
+
 ## AMAZÔNIA, PARTE C: O DRAGA-01 COM CORPO — a missão do rio é jogável — Claude, 17/10 (branch `claude/amazonia-draga`, P180)
 
 **A ordem do Comandante (17/10):** *"há uma enorme força de defesa deles e teremos que desmantelar, invadir com androides e destruir por dentro"*; *"continua iterando até concluir essas pendências"*. A parte C é **o Draga-01 de verdade na partida**: com corpo, dano, marcha e a missão que ele cria.

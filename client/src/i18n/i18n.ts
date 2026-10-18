@@ -57,11 +57,17 @@ interface Padrao {
   readonly grupos: readonly number[];
   /** Quanto texto fixo a chave tem (sem as lacunas): é o que decide quem vence entre dois padrões que servem ao mesmo texto. */
   readonly fixo: number;
+  /** A chave não tem " · ": então nenhuma lacuna dela pode conter um separador " · " solto (a composição "A · B" é de quem a junta, a chave "{0} · {1}"). */
+  readonly semSeparador: boolean;
 }
 
 const LACUNA = /\{(\d+)\}/g;
 const ESCAPE = /[.*+?^${}()|[\]\\]/g;
 const TETO_CACHE = 2000;
+/** Quantas voltas de tradução aninhada valem: a composição "{0} · {1}" (1ª volta) traduz cada parte, e uma parte pode ser ela mesma um padrão ("Lançador EMP MK I" = "{0} MK {1}", 2ª volta). Mais que isso o custo cresce sem ganho. */
+const PROFUNDIDADE = 2;
+/** Um " · " solto (no meio, no começo ou no fim do que a lacuna pegou); o "·" colado a nomes ("CLAWD·BRABO") não conta. */
+const SEPARADOR = /(?:^|\s)·(?:\s|$)/;
 
 let exato = new Map<string, string>();
 let padroes: Padrao[] = [];
@@ -83,15 +89,14 @@ export function carregarDicionario(dic: Dicionario | null): void {
     const grupos: number[] = [];
     let fonte = '';
     let fim = 0;
-    // Uma chave sem " · " não pode engolir uma composição "A · B": quem junta partes com " · " é a chave de composição ("{0} · {1}"), que traduz cada parte pelo que o dicionário já sabe.
-    const lacuna = chave.includes(' · ') ? '([\\s\\S]+?)' : '((?:(?! · )[\\s\\S])+?)';
+    const lacuna = '([\\s\\S]+?)';
     for (const m of chave.matchAll(LACUNA)) {
       fonte += chave.slice(fim, m.index!).replace(ESCAPE, '\\$&') + lacuna;
       grupos.push(Number(m[1]));
       fim = m.index! + m[0].length;
     }
     fonte += chave.slice(fim).replace(ESCAPE, '\\$&');
-    padroes.push({ re: new RegExp(`^${fonte}$`), modelo: valor, grupos, fixo: chave.replace(LACUNA, '').length });
+    padroes.push({ re: new RegExp(`^${fonte}$`), modelo: valor, grupos, fixo: chave.replace(LACUNA, '').length, semSeparador: !chave.includes(' · ') });
   }
   // O padrão mais específico (mais texto fixo) primeiro: "ONDA {0} ELIMINADA" antes de "ONDA {0}", e "RODADA {0} · {1}" antes da composição genérica "{0} · {1}".
   padroes.sort((a, b) => b.fixo - a.fixo || b.re.source.length - a.re.source.length);
@@ -115,6 +120,9 @@ function traduzirMiolo(miolo: string, fundo: number): string | undefined {
   for (const p of padroes) {
     const m = p.re.exec(miolo);
     if (!m) continue;
+    // Uma chave sem " · " não engole uma composição "A · B": quem junta partes com " · " é a chave "{0} · {1}", que traduz cada parte pelo que o dicionário já sabe. (O " · " pode ficar
+    // na borda da lacuna, colado ao texto fixo da chave: "ANDRÓIDE " + "· manso"; por isso o teste é no que a lacuna pegou, não na expressão.)
+    if (p.semSeparador && m.some((g, i) => i > 0 && SEPARADOR.test(g))) continue;
     // As lacunas podem ser texto traduzível (o nome de uma missão): uma volta só, sem recursão sem fim.
     const valores = p.grupos.map((_, i) => (fundo > 0 ? traduzirLacuna(m[i + 1]!, fundo - 1) : m[i + 1]!));
     return p.modelo.replace(LACUNA, (_, n: string) => {
@@ -134,7 +142,7 @@ export function traduzir(texto: string): string {
   if (guardado !== undefined) return guardado;
   const [antes, miolo, depois] = semMargens(texto);
   // Só números, tempos e símbolos (o relógio, a vida): nada a traduzir.
-  const achado = /\p{L}/u.test(miolo) ? traduzirMiolo(miolo, 1) : undefined;
+  const achado = /\p{L}/u.test(miolo) ? traduzirMiolo(miolo, PROFUNDIDADE) : undefined;
   const feito = achado === undefined ? texto : antes + achado + depois;
   if (cache.size >= TETO_CACHE) cache.clear();
   cache.set(texto, feito);

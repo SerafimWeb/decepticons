@@ -63,6 +63,17 @@ export const AMAZONIA_REJEITOS = Object.freeze({ x: 700, z: 250, rx: 95, rz: 62,
 /** **A margem fortificada** (norte do rio, de frente para o leito do Draga): a faixa da cerca e das torres. */
 export const AMAZONIA_MARGEM = Object.freeze({ minX: -260, maxX: 520 });
 
+/**
+ * Os três **geradores do escudo** do Draga-01 (P180, parte D; `AMAZONIA.md` § 6, ato 1): a **cerca** (na margem norte, atrás das torres), a **planta** (no flanco sul dela, junto à água) e a
+ * **cava** (entre a planta e a mina). Espalhados no eixo do rio para o jogador cruzar a defesa de ponta a ponta: o Draga desce de x = 700 e passa por eles na marcha. O teste confere que
+ * nenhum cai no rio nem dentro de uma estrutura sólida.
+ */
+export const AMAZONIA_GERADORES: readonly { readonly nome: string; readonly x: number; readonly z: number }[] = Object.freeze([
+  Object.freeze({ nome: 'CERCA', x: -100, z: 143 }),
+  Object.freeze({ nome: 'PLANTA', x: 20, z: 120 }),
+  Object.freeze({ nome: 'CAVA', x: 260, z: 140 }),
+]);
+
 /** Onde o Draga-01 começa (x, rio abaixo da aldeia): a água a montante dele é limpa, a de jusante é morta. */
 export const AMAZONIA_DRAGA_INICIO_X = 700;
 

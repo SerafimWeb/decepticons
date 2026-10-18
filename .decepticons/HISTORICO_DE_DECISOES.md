@@ -1,3 +1,14 @@
+## [2026-10-18] Os geradores do escudo são alvos destrutíveis, e o escudo é um multiplicador no corpo do Draga (Claude, P180 parte D1)
+
+**Ordem:** *"há uma enorme força de defesa deles e teremos que desmantelar"* + *"a amazônia já foi entregue em partes, prossiga"*.
+
+**Decisões:**
+1. **Geradores = `Destructibles.addExterno`** (o registro dos coqueiros da praia), não uma regra de proximidade como os cabos e as portas: o jogador **atira** neles (é o que "desmantelar" pede) e o tiro, a explosão e o dash já os acertam sem código novo de combate. A caixa é sensor: o Mech atravessa, as vias do mapa não mudam.
+2. **O escudo é um número no corpo do Draga** (`DragaMech.escudo`, 1 sem escudo, 0,1 com ele), aplicado em `damagePart` e `statusDamage`: **todo** caminho de dano passa por aí, então fogo, choque e explosão não são atalho. A regra de "quantos geradores restam" é pura (`EscudoDoDraga`) e o `Match` só escreve o fator a cada tick.
+3. **O escudo não volta:** a missão obriga a ir até a defesa antes de enfrentar a máquina; rodada nova devolve tudo. **10% e 1.500 são proposta** do Claude (o Comandante ajusta em `ESCUDO_DO_DRAGA`).
+4. **Publiquei a parte C da outra sessão como veio** (#375), em vez de refazê-la: o trabalho estava pronto, testado e sem PR (regra 15). A parte D1 parte da `main` já com ela.
+5. **Duas correções do motor do tradutor** que a Amazônia expôs: a composição aninhada com **duas voltas** (um padrão dentro de uma parte) e a guarda do " · " feita **no que a lacuna capturou**, não na expressão (a expressão deixava o " · " na borda passar).
+
 ## [2026-10-17] A Amazônia, parte C: o Draga-01 com corpo e a missão do rio (Claude, P180)
 
 **Ordem:** "continua iterando até concluir essas pendências": o chefe de verdade, a marcha até a aldeia e o que o jogador faz.

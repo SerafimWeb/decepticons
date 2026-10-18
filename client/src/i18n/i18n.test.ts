@@ -109,6 +109,14 @@ describe('traduzir: a tabela, as lacunas e o cache', () => {
     expect(traduzir('azul · fosforescente')).toBe('blue · fosforescente'); // o que não está no dicionário fica em português
   });
 
+  it('um padrão dentro de uma parte da composição também se traduz (duas voltas): "MECH · {arma} MK I"', () => {
+    carregarDicionario({ '{0} · {1}': '{0} · {1}', '{0} MK {1}': '{0} MK {1}', 'MECH': 'メック', 'Lançador': 'ランチャー' });
+    expect(traduzir('MECH · Lançador MK I')).toBe('メック · ランチャー MK I');
+    expect(traduzir('Lançador MK II')).toBe('ランチャー MK II');
+    // uma terceira volta não existe: nada de recursão sem fim
+    expect(traduzir('MECH · MECH · MECH')).toBe('メック · メック · メック');
+  });
+
   it('caracteres especiais da chave não viram regex', () => {
     carregarDicionario({ 'Custa (R$ {0}) + taxa?': 'Costs ($ {0}) + fee?' });
     expect(traduzir('Custa (R$ 5) + taxa?')).toBe('Costs ($ 5) + fee?');
@@ -264,7 +272,7 @@ describe('a cobertura: o que o jogo mostra e o dicionário traduz', () => {
 describe('a cobertura das telas avançadas (auditoria de 17/10: o Hangar falava português em japonês)', () => {
   const JA = ler('ja');
   /** Os nomes próprios que ficam como estão (marcas, fabricantes, apelidos dos bots). */
-  const NOMES = /Forge Systems|Vanta Works|Cybermech Industries|CYBERMECH|CLAWD|BRABO|ESCOLTA|PLASMA|NEON|MK [I]+|Colossus-V4|Vector-09|COLOSSUS-01|VORCARIS|DAN/g;
+  const NOMES = /Forge Systems|Vanta Works|Cybermech Industries|CYBERMECH|CLAWD|BRABO|ESCOLTA|PLASMA|NEON|MK [I]+|Colossus-V4|Vector-09|COLOSSUS-01|VORCARIS|DAN|DRAGA(-01)?|Draga(-01)?|Ctrl|Shift/g;
   /** Traduzido de verdade: mudou, e não sobrou palavra em português (só nomes próprios e unidades). */
   const coberto = (texto: string): boolean => {
     carregarDicionario(JA);
@@ -327,6 +335,21 @@ describe('a cobertura das telas avançadas (auditoria de 17/10: o Hangar falava 
       'Digite o código', 'RESGATAR', 'VALIDANDO AUTORIZAÇÃO…', 'Sem resposta. Tente novamente quando houver conexão.', 'VOLTAR AO COMBATE', 'A arena continua ativa durante o atendimento.', 'Combate pausado durante o atendimento.',
       'ARRASTE OS BOTÕES', 'CABEÇA', '[ clique para tentar de novo ]', 'RENASCENDO EM 3.0 s', 'RENASCENDO EM 2.1 s · CÂMERA DE ABATE [V: SAIR]',
     ];
+    expect(casos.filter((c) => !coberto(c))).toEqual([]);
+  });
+
+  it('a missão do rio na Amazônia: o escudo e os geradores, a aldeia, os dois lados e a barra do Draga', () => {
+    const casos = [
+      'ESCUDO · 3 DE 3 GERADORES', 'ESCUDO · 1 DE 3 GERADORES', 'ESCUDO CAIU', 'O escudo o protege: derrube os geradores.', 'ESCUDO DO DRAGA CAIU', 'GERADOR CAIU · RESTAM 2', 'RIO VIVO · DERRUBE OS GERADORES',
+      'RIO VIVO · DERRUBE O DRAGA-01', 'ALDEIA · DRAGA A 760 m · 5 MIN', 'ALDEIA · DRAGA A 1.200 m · PARADO', 'LADO ESQ', 'LADO DIR', 'DRAGA-01 · FASE 1 DE 3 · ANDA', 'DRAGA-01 · FASE 3 DE 3 · RASTEJA',
+      'Ele marcha para a aldeia. Derrube as pernas.', 'Um lado caiu: ele manca. Derrube o outro.', 'Rasteja e atira. Acabe com ele antes que chegue à aldeia.',
+      'O DRAGA ESTÁ ÀS PORTAS DA ALDEIA', 'O DRAGA ESTÁ A 500 m DA ALDEIA', 'O RIO VIVE · DRAGA-01 DERRUBADO', 'A ALDEIA CAIU · O DRAGA-01 CHEGOU', 'O DRAGA-01 CAIU ANTES DE CHEGAR À ALDEIA', 'O DRAGA-01 ALCANÇOU A ALDEIA',
+    ];
+    expect(casos.filter((c) => !coberto(c))).toEqual([]);
+  });
+
+  it('o Esquadrão mostra o jeito de cada robô (brabo, soldado, manso, fujão) e a arma com o nível: tudo traduzido', () => {
+    const casos = ['MECH · brabo', 'MECH · soldado', 'ANDRÓIDE · manso', 'MECH · fujao', 'Lançador EMP MK I', 'Canhão de plasma MK III', 'MECH · Lançador EMP MK I', 'Canhão de plasma MK I: dano 16, ótimo a 60 m, 4,5 tiros/s. O robô ataca de onde a arma rende.'];
     expect(casos.filter((c) => !coberto(c))).toEqual([]);
   });
 

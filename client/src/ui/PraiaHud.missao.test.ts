@@ -271,3 +271,66 @@ describe('o HUD da missão do rio (P180, parte C): a aldeia e a barra do Draga-0
     expect(zona.textContent).not.toBe('O DRAGA ESTÁ A 1000 m DA ALDEIA');
   });
 });
+
+describe('o escudo do Draga-01 na barra do chefe (P180, parte D)', () => {
+  beforeEach(() => {
+    vi.stubGlobal('document', { createElement: (tag: string) => new No(tag) });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function comDraga() {
+    const m = montar(true);
+    m.q.chefe.presente = true;
+    m.q.chefe.fracao = 1;
+    m.q.chefe.fase = 1;
+    m.q.chefe.pernas[0] = true;
+    m.q.chefe.pernas[1] = true;
+    m.q.chefe.nome = 'DRAGA-01';
+    m.q.chefe.alvo = 'aldeia';
+    return { ...m, escudoLinha: achar(m.raiz, 'pcf-escudo')!, regra: m.chefe.children.filter((f) => f.tag === 'p')[0]! };
+  }
+
+  it('com o escudo de pé a barra diz quantos geradores restam e a regra é derrubá-los; sem escudo na partida a linha fica escondida', () => {
+    const { hud, q, escudoLinha, regra } = comDraga();
+    q.escudo.presente = false;
+    hud.update(0.016, q);
+    expect(escudoLinha.hidden).toBe(true);
+    q.escudo.presente = true;
+    q.escudo.restantes = 3;
+    q.escudo.total = 3;
+    hud.update(0.016, q);
+    expect(escudoLinha.hidden).toBe(false);
+    expect(escudoLinha.textContent).toBe('ESCUDO · 3 DE 3 GERADORES');
+    expect(escudoLinha.dataset.estado).toBe('de-pe');
+    expect(regra.textContent).toBe('O escudo o protege: derrube os geradores.');
+  });
+
+  it('cada gerador que cai sobe o aviso no topo; o último avisa que o escudo caiu e devolve a regra da fase', () => {
+    const { hud, q, escudoLinha, regra, zona } = comDraga();
+    q.escudo.presente = true;
+    q.escudo.restantes = 3;
+    q.escudo.total = 3;
+    hud.update(0.016, q);
+    q.escudo.restantes = 2;
+    hud.update(0.016, q);
+    expect(zona.textContent).toBe('GERADOR CAIU · RESTAM 2');
+    expect(escudoLinha.textContent).toBe('ESCUDO · 2 DE 3 GERADORES');
+    q.escudo.restantes = 0;
+    hud.update(0.016, q);
+    expect(zona.textContent).toBe('ESCUDO DO DRAGA CAIU');
+    expect(escudoLinha.textContent).toBe('ESCUDO CAIU');
+    expect(escudoLinha.dataset.estado).toBe('caido');
+    expect(regra.textContent).toBe('Ele marcha para a aldeia. Derrube as pernas.');
+  });
+
+  it('abrir a partida já com geradores caídos (o primeiro quadro) não dispara aviso: só aprende quantos há', () => {
+    const { hud, q, zona } = comDraga();
+    q.escudo.presente = true;
+    q.escudo.restantes = 1;
+    q.escudo.total = 3;
+    hud.update(0.016, q);
+    expect(zona.textContent).not.toContain('GERADOR CAIU');
+  });
+});
