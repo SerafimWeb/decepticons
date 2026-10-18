@@ -14,6 +14,8 @@
 
 **Falta (do Comandante, para o lançamento público):** o **servidor fora do PC de trabalho** (A1), a **cópia de segurança fora do PC** (A13), o **monitor externo** (A14), o **encarregado** e a política revisada, o **"esqueci a senha"**, o **HSTS** na Cloudflare e o **teste com 5 a 10 pessoas de fora**.
 
+**No ar (conferido em 18/10, 15:08):** PR #384 na `main` (b2c6f3e); o atualizador religou o servidor no código novo e o site foi publicado e conferido por soma. Ao vivo: `GET /config?chave=segredo` → 400 (a conhecida segue 200), `/metricas` sem o token → 401 e **com o token traz o bloco `auditoria`** (o acesso do dono e a recusa do anônimo já aparecem). O atualizador recusou o deploy **duas vezes** nesse dia por `server/estudio.test.ts` (preparo acima dos 10 s do Vitest com a máquina ocupada): o `hookTimeout` agora é 30 s como o `testTimeout`.
+
 **Próxima sessão começa com:** o que o Comandante decidir sobre o servidor (item 8 de `LANCAMENTO.md`); nada novo antes disso.
 
 ## TERRAS RARAS: O JOGO FICOU 2,5× MAIS RÁPIDO, A MISSÃO COMEÇA PERTO E O OBJETIVO ESTÁ NA TELA — Claude, 18/10 (branch `claude/terras-raras`, P187 a P190)
