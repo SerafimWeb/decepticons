@@ -4505,6 +4505,29 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .pcf-invasao { margin: 0; text-align: center; font-size: 10px; letter-spacing: 3px; color: var(--accent); text-shadow: 0 0 6px #000; }
 .pcf-invasao[hidden] { display: none; }
 
+/* A visibilidade (P191): o que o Comandante segurou some para o jogador (`func-oculta`); para o Comandante, o restrito leva o selo TESTE (`func-teste`). O painel dele (`vis-*`). */
+.func-oculta { display: none !important; }
+.func-teste { position: relative; outline: 1px dashed var(--warn); outline-offset: 2px; }
+.func-teste::after { content: 'TESTE'; position: absolute; top: -7px; right: -4px; padding: 0 4px; font: 700 8px/12px monospace; letter-spacing: 1px; color: #000; background: var(--warn); pointer-events: none; }
+.cc-visibilidade { border-color: var(--warn); color: var(--warn); background: rgba(255, 225, 77, 0.1); }
+.cc-visibilidade:hover { background: var(--warn); color: var(--bg); }
+.cc-visibilidade[hidden] { display: none; }
+.vis-placa { width: min(760px, 94vw); max-height: 88vh; display: flex; flex-direction: column; gap: 8px; }
+.vis-titulo { margin: 0; text-align: center; font-size: 14px; letter-spacing: 3px; color: var(--warn); }
+.vis-lista { overflow-y: auto; max-height: 56vh; padding-right: 6px; display: flex; flex-direction: column; gap: 3px; }
+.vis-grupo { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 3px 6px; background: rgba(255, 225, 77, 0.12); font-size: 11px; letter-spacing: 2px; color: var(--warn); }
+.vis-grupo b { flex: 1; }
+.vis-mini { padding: 2px 8px; font-size: 9px; letter-spacing: 1px; color: var(--ink); background: transparent; border: 1px solid rgba(255, 255, 255, 0.3); cursor: pointer; }
+.vis-linha { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 6px; border-left: 3px solid transparent; font-size: 12px; color: var(--ink); }
+.vis-linha.mudou { border-left-color: var(--warn); }
+.vis-linha.restrito .vis-nome { color: var(--warn); }
+.vis-seg { display: inline-flex; }
+.vis-opcao { padding: 2px 10px; font-size: 10px; letter-spacing: 1px; color: var(--muted); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); cursor: pointer; }
+.vis-opcao[aria-pressed='true'].publico { color: #000; background: var(--accent); border-color: var(--accent); }
+.vis-opcao[aria-pressed='true'].restrito { color: #000; background: var(--warn); border-color: var(--warn); }
+.vis-mensagem { margin: 0; font-size: 11px; line-height: 1.4; color: var(--muted); min-height: 30px; }
+.vis-rodape { flex-wrap: wrap; justify-content: center; }
+
 /* O objetivo na tela (TERRAS RARAS, ui via environment/AmazoniaObjetivos.ts): a ordem fica na linha da missão (#mission-status); aqui a dica logo abaixo e os marcadores no mundo
    (losango com nome e distância; fora da tela, preso na borda com uma seta). Verde = gerador (o mais perto, maior e pulsando), vermelho = o Draga, ciano = a escotilha. */
 .obj-dica { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 3; margin: 0; max-width: min(600px, 86vw); padding: 5px 14px; text-align: center; font-size: 12px; line-height: 1.35; letter-spacing: 1px; color: var(--ink); background: rgba(6, 8, 10, 0.78); border: 1px solid rgba(255, 225, 77, 0.55); border-left-width: 4px; text-shadow: 0 0 6px #000; pointer-events: none; }

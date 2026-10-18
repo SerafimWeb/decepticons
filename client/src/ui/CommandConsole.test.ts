@@ -238,7 +238,7 @@ describe('o par SOLO / MULTI da primeira tela (P182)', () => {
   it('o HTML tem o MULTI e a nota do SOLO, escondidos (o console só mostra com servidor), entre o botão verde e o "explorar"', () => {
     const deck = consoleHtml.slice(consoleHtml.indexOf('<footer class="cc-deck">'));
     expect(deck).toMatch(/<small class="cc-solo" id="cc-solo" hidden>/);
-    expect(deck).toMatch(/<button type="button" class="cc-multi" id="btn-multi" hidden>/);
+    expect(deck).toMatch(/<button type="button" class="cc-multi" id="btn-multi" hidden( data-func="[^"]*")?>/);
     expect(deck.indexOf('id="cta"')).toBeLessThan(deck.indexOf('id="btn-multi"'));
     expect(deck.indexOf('id="btn-multi"')).toBeLessThan(deck.indexOf('id="cc-mais"'));
   });

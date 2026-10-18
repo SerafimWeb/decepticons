@@ -11,6 +11,7 @@
  * Custo de CPU: zero no loop de gameplay (opera apenas por interação no menu).
  */
 
+import { aplicarGlobal } from '../core/Visibilidade';
 import { gameModeFromSearch, type GameMode } from '../sim/gameMode';
 export type GameModeId = GameMode;
 
@@ -99,7 +100,7 @@ export class ModeSelector {
         <span class="menu-row-label">MODO</span>
         <div class="mode-selector-buttons" role="group" aria-label="Modo de jogo">
           ${GAME_MODES.map(
-            (m) => `<button type="button" class="btn-mode ${m.id === this.activeMode ? 'active' : ''}" data-mode="${m.id}" aria-pressed="${m.id === this.activeMode}" title="${m.label}">${m.short}</button>`
+            (m) => `<button type="button" class="btn-mode ${m.id === this.activeMode ? 'active' : ''}" data-mode="${m.id}" data-func="modo:${m.id}" aria-pressed="${m.id === this.activeMode}" title="${m.label}">${m.short}</button>`
           ).join('')}
         </div>
       </div>
@@ -107,6 +108,7 @@ export class ModeSelector {
       <p class="mode-desc" id="mode-desc"></p>
     `;
     this._paintDescription();
+    aplicarGlobal(this.containerEl); // os modos restritos somem para o jogador (P191)
 
     const buttons = this.containerEl.querySelectorAll<HTMLButtonElement>('.btn-mode');
     buttons.forEach((btn) => {

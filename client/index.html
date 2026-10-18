@@ -57,7 +57,7 @@
       <div id="algoz-panel" hidden></div>
       <div id="barra-topo">
         <div id="mode"></div>
-        <button id="btn-cftv" class="btn-cftv" type="button" title="Câmeras do local: portões, torres e prédios (tecla C)">[ 📹 CÂMERAS DO LOCAL · C ]</button>
+        <button id="btn-cftv" data-func="tela:cftv" class="btn-cftv" type="button" title="Câmeras do local: portões, torres e prédios (tecla C)">[ 📹 CÂMERAS DO LOCAL · C ]</button>
       </div>
       <div id="dock-centro">
         <div id="dash">
@@ -90,7 +90,7 @@
     <div id="overlay" class="console cc-espera cc-carregando">
       <nav class="cc-atalhos" aria-label="Idioma e conta">
         <select id="idioma-rapido" data-i18n="nao" aria-label="Idioma · Language"></select>
-        <button type="button" id="btn-conta-rapido" data-settings-open="jogo" data-settings-foco="settings-conta" title="Criar conta ou entrar para guardar o progresso">[ CONTA ]</button>
+        <button type="button" id="btn-conta-rapido" data-settings-open="jogo" data-settings-foco="settings-conta" data-func="tela:conta" title="Criar conta ou entrar para guardar o progresso">[ CONTA ]</button>
       </nav>
       <div class="cc-carga" id="cc-carga" role="progressbar" aria-label="Carregando" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i><span id="cc-dica"></span></div>
       <header class="cc-top menu-brand">
@@ -99,9 +99,10 @@
         </div>
         <p class="cc-sala">SALA DE COMANDO <b>CYBERMECH</b><span class="cc-relogio" id="cc-relogio"></span></p>
         <div class="cc-flags">
-          <button type="button" class="cc-chip cc-arquivo" id="cc-arquivo" title="O que o jogo ensina: o fascismo, a rede de mentiras, quem lucra, o medo, a mídia">ARQUIVO ▸</button>
-          <button type="button" class="cc-chip cc-lado" id="cc-lado" title="De que lado você joga?" hidden>ESCOLHA O LADO ▸</button>
-          <button type="button" class="cc-chip cc-relatorio" id="cc-relatorio" title="O que a missão deixou no rio e o que isso tem de real" hidden>RELATÓRIO ▸</button>
+          <button type="button" class="cc-chip cc-arquivo" id="cc-arquivo" data-func="tela:arquivo" title="O que o jogo ensina: o fascismo, a rede de mentiras, quem lucra, o medo, a mídia">ARQUIVO ▸</button>
+          <button type="button" class="cc-chip cc-lado" id="cc-lado" data-func="tela:lado" title="De que lado você joga?" hidden>ESCOLHA O LADO ▸</button>
+          <button type="button" class="cc-chip cc-relatorio" id="cc-relatorio" data-func="tela:relatorio" title="O que a missão deixou no rio e o que isso tem de real" hidden>RELATÓRIO ▸</button>
+          <button type="button" class="cc-chip cc-visibilidade" id="cc-visibilidade" hidden title="O que os jogadores veem: liberar ou segurar fases, modos, robôs, armas, botões e telas">VISIBILIDADE ▸</button>
           <button type="button" class="cc-chip" id="cc-chip-comandante" hidden title="Sair do modo Comandante (os monitores de ajuste somem)">MODO COMANDANTE ✕</button>
         </div>
       </header>
@@ -156,7 +157,7 @@
             <p class="sub" id="pilot-sub">VECTOR-09 // protótipo de combate</p>
             <dl class="mech-barras" id="mech-barras"></dl>
             <ul class="mech-armas" id="mech-armas"></ul>
-            <button type="button" id="btn-hangar" class="btn-terminal mon-acao" data-tecla="H">[ HANGAR ]</button>
+            <button type="button" id="btn-hangar" data-func="tela:hangar" class="btn-terminal mon-acao" data-tecla="H">[ HANGAR ]</button>
           </div>
         </div>
       </section>
@@ -168,7 +169,7 @@
             <p class="op-contagem" id="op-contagem"></p>
             <ul class="op-lista" id="op-lista"></ul>
             <div class="mon-acoes">
-              <button type="button" id="btn-esquadrao" class="btn-terminal mon-acao" data-esquadrao-open title="Quantos bots e aliados, e o chassi, a arma e o jeito de cada um">[ ESQUADRÃO ]</button>
+              <button type="button" id="btn-esquadrao" data-func="tela:esquadrao" class="btn-terminal mon-acao" data-esquadrao-open title="Quantos bots e aliados, e o chassi, a arma e o jeito de cada um">[ ESQUADRÃO ]</button>
               <button type="button" id="btn-settings" class="btn-terminal mon-acao" data-settings-open="jogo" title="Dificuldade, quantos atacam ao mesmo tempo e nomes">[ AJUSTAR ]</button>
             </div>
           </div>
@@ -238,7 +239,7 @@
           <button type="button" class="cta" id="cta" data-tecla="↵ ENTER">[ carregando física... ]</button>
         </div>
         <small class="cc-solo" id="cc-solo" hidden>SOLO · contra os bots</small>
-        <button type="button" class="cc-multi" id="btn-multi" hidden><b>MULTI</b><small>online, com outros pilotos</small></button>
+        <button type="button" class="cc-multi" id="btn-multi" hidden data-func="tela:multi"><b>MULTI</b><small>online, com outros pilotos</small></button>
         <button type="button" class="cc-mais" id="cc-mais" hidden>EXPLORAR HANGAR E MODOS ▸</button>
         <div class="cc-info menu-foot">
           <p class="menu-keys mouse-only"><b>WASD</b> mover · <b>mouse</b> mirar · <b>clique</b> ATAQUE 1: <span id="key-primary">plasma</span> · <b>clique dir. / Q</b> ATAQUE 2: <span id="key-secondary">foguetes</span> · <b>Shift</b> dash · <b>espaço</b> pulo · <b>V</b> visão 1ª/3ª · <b>C</b> CFTV · <b>Esc</b> pausa</p>

@@ -2,11 +2,15 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { mapFromSearch } from '../environment/Bunker';
 import { campanhasDeFabrica } from '../sim/campanha';
 import { estadoDoTeatro, TEATROS } from '../ui/theater';
-import { aplicarLancamento, mapaLiberado, MAPAS_DO_LANCAMENTO, TODOS_OS_MAPAS } from './Lancamento';
+import { mapaLiberado, MAPAS_DO_LANCAMENTO, TODOS_OS_MAPAS } from './Lancamento';
+import { definirVisibilidadeGlobal, Visibilidade } from './Visibilidade';
+
+/** O público (`false`) ou o Comandante (`true`) olhando o jogo: a visibilidade que o `main.ts` cria na largada. */
+const aplicarLancamento = (comandante: boolean): void => definirVisibilidadeGlobal(new Visibilidade(comandante));
 
 /** Os mapas do lançamento (P197): só a Cidade Neon e a Estação dos Cabos; o Bunker e a Terras Raras "em breve"; o Comandante abre tudo. */
 describe('mapas do lançamento', () => {
-  afterEach(() => aplicarLancamento(true)); // os outros testes do projeto contam com tudo aberto
+  afterEach(() => definirVisibilidadeGlobal(null)); // os outros testes do projeto contam com tudo aberto (sem visibilidade criada, tudo aparece)
 
   it('o padrão é tudo aberto (os testes e as bancadas não precisam saber de lançamento)', () => {
     expect(TODOS_OS_MAPAS.every((m) => mapaLiberado(m))).toBe(true);
