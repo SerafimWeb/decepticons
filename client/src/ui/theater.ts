@@ -13,10 +13,10 @@ import { mapaLiberado } from '../core/Lancamento';
  * diz entra como está; o lugar que ninguém decidiu ainda leva `proposta: true` e aparece assim no mapa, até o Comandante confirmar.
  */
 
-export type Recurso = 'sede' | 'dados' | 'energia' | 'chips' | 'agua';
+export type Recurso = 'sede' | 'dados' | 'energia' | 'chips' | 'agua' | 'poder';
 
 export interface Teatro {
-  id: 'arena' | 'bunker' | 'cabos' | 'barragem' | 'chips' | 'rio';
+  id: 'arena' | 'bunker' | 'cabos' | 'barragem' | 'chips' | 'rio' | 'janeiro';
   nome: string;
   lugar: string;
   lat: number;
@@ -39,7 +39,8 @@ export const TEATROS: readonly Teatro[] = [
     modos: ['deathmatch', 'survival', 'ctf'], resumo: 'A sede da SERAFIM e o Banco VORCARIS sob ataque das IAs rebeldes.', proposta: true, lado: 'direita',
   },
   {
-    id: 'bunker', nome: 'BUNKER', lugar: 'Brasília · DF', lat: -15.79, lon: -47.88, recurso: 'dados', mapa: 'bunker',
+    // Era em Brasília; saiu para dar lugar ao 8 DE JANEIRO (P217, 19/10): o Comandante o mandou para o Mato Grosso do Sul. Corumbá (o Pantanal, na fronteira) e não Campo Grande: a regra de 6° entre pinos (theater.test) barra a capital, a 4,9° da Foz do Iguaçu.
+    id: 'bunker', nome: 'BUNKER', lugar: 'Corumbá · MS', lat: -19.01, lon: -57.65, recurso: 'dados', mapa: 'bunker',
     modos: ['deathmatch'], resumo: 'Quatro andares de concreto e aço. Treino offline contra os bots.', proposta: true, lado: 'direita',
   },
   {
@@ -51,6 +52,11 @@ export const TEATROS: readonly Teatro[] = [
     modos: ['deathmatch', 'survival'], resumo: 'O rio, a floresta e a mina que o envenena, em 2,4 km: o Draga-01 desce o leito rumo à aldeia. Derrube-o antes que ele chegue: acima dele a água é limpa e viva; depois dele, óleo e veneno.', proposta: true, lado: 'esquerda',
   },
   {
+    // A fase do 8 de janeiro (P217): o lugar é o que o Comandante mandou (a Praça dos Três Poderes). Sem mapa ainda: "EM BREVE" até a ficha (`fichas/cenario-8-de-janeiro.md`) ser aprovada e o cenário ser construído.
+    id: 'janeiro', nome: '8 DE JANEIRO', lugar: 'Praça dos Três Poderes · Brasília · DF', lat: -15.79, lon: -47.88, recurso: 'poder',
+    modos: [], resumo: 'A Praça dos Três Poderes invadida por uma multidão de verde e amarelo: defenda os três prédios.', proposta: false, lado: 'direita',
+  },
+  {
     id: 'barragem', nome: 'BARRAGEM', lugar: 'Foz do Iguaçu · PR', lat: -25.41, lon: -54.59, recurso: 'energia',
     modos: [], resumo: 'As turbinas que alimentam os datacenters do país.', proposta: true, lado: 'esquerda',
   },
@@ -60,7 +66,7 @@ export const TEATROS: readonly Teatro[] = [
   },
 ];
 
-export const RECURSO_NOME: Readonly<Record<Recurso, string>> = { sede: 'SEDE SERAFIM', dados: 'DADOS', energia: 'ENERGIA', chips: 'CHIPS', agua: 'ÁGUA' };
+export const RECURSO_NOME: Readonly<Record<Recurso, string>> = { sede: 'SEDE SERAFIM', dados: 'DADOS', energia: 'ENERGIA', chips: 'CHIPS', agua: 'ÁGUA', poder: 'SEDE DOS PODERES' };
 
 /**
  * O que a missão é para a partida aberta agora: `aqui` (você está nela), `disponivel` (um clique leva até ela), `outro-modo` (existe,

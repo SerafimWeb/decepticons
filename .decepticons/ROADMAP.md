@@ -350,6 +350,8 @@ Ver `VISAO.md`: novidades quase toda semana, cada uma com balanço nos testes; o
 - [x] As regras dos bots das salas online no painel do servidor (dificuldade, Mechs, andróides, pressão; padrão de iniciante; P201) e o "problema" do atraso do laço sem gente jogando virar aviso (P202) #rede
 - [x] Os pilotos da sala na REDE: clicar no nome abre o Hangar dele (só ver) com o chat de texto dentro do Hangar; mensagem direta, texto limpo, teto por jogador, silenciar; restrito ao Comandante até liberar (P216) #rede
 - [x] O outro jogador vê o robô de verdade (o chassi e as armas da montagem, não o Vector-09 amarelo) e a janela das regras abre por cima da do servidor (P214, P215) #rede
+- [x] O pino do 8 DE JANEIRO em Brasília (EM BREVE), o Bunker em Corumbá · MS e a ficha da fase (a massa como dado, a conta do desempenho, as perguntas ao Comandante; P217) #cenarios
+- [ ] A fase 8 DE JANEIRO (P217, passos 2 a 5 da ficha): `sim/Multidao.ts` com teste e bancada de CPU, o desenho da massa, o mapa da Praça dos Três Poderes e a missão das cinco marchas; espera as respostas do Comandante #cenarios
 - [ ] O objetivo na tela dos outros modos e mapas (praia, Cidade Neon, Bandeira, Domínio; P194) e a Praia abaixo de 60 fps na janela do Comandante (P193) #cenarios
 - [ ] Amazônia, parte F2: a campanha do Consórcio (objetivos invertidos, P179 camada 4) e a cura com consequência; abrir a portaria Yanomami, a nota do MapBiomas sobre o Madeira e o laudo de Barcarena; revisão humana dos textos (**o pacote de partida está a 4,1 KB do teto: pagar com dieta**) #cenarios
 - [ ] Missão da Amazônia: a mineradora no rio (`fichas/cenario-amazonas.md`); o texto, o rádio e o Relatório de Consequências (P180) #cenarios
