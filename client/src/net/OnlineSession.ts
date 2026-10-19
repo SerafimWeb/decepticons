@@ -97,6 +97,10 @@ export interface OnlineSessionOptions {
   reconexaoMs?: readonly number[];
   /** Mensagem do chat de voz que o servidor mandou (`LISTA` ou `SINAL`); quem decodifica é o `VoiceChat` (P205). */
   onVoz?: (bytes: Uint8Array) => void;
+  /** A lista de pessoas da sala mudou (alguém entrou, saiu ou trocou de montagem): a lista da REDE se refaz (P216). */
+  onPilotos?: () => void;
+  /** Uma mensagem de texto direta de outro piloto (P216): o id dele e o texto (já limpo pelo servidor). */
+  onTexto?: (de: number, texto: string) => void;
   /** Entrou na sala (o seu id) ou saiu dela (`null`: a conexão caiu; volta a chamar com o id a cada reconexão). */
   onSala?: (meuId: number | null) => void;
   /** Por quanto tempo seguir tentando (a cada `ESPERA_LONGA_MS`) depois da lista de `reconexaoMs`; 0 desiste ao fim da lista. O padrão é `PERSISTENCIA_PADRAO_MS` quando `reconexaoMs` não é passada. */
@@ -236,6 +240,9 @@ export class OnlineSession implements Pilot {
       voz: (bytes) => {
         if (cliente === this.client) o.onVoz?.(bytes);
       },
+      texto: (de, texto) => {
+        if (cliente === this.client) o.onTexto?.(de, texto);
+      },
       roster: (entries) => cliente === this.client && this.onRoster(entries),
       snapshot: (s) => cliente === this.client && this.onSnapshot(s),
       events: (b) => cliente === this.client && this.onEvents(b),
@@ -317,6 +324,19 @@ export class OnlineSession implements Pilot {
   /** Manda uma mensagem do chat de voz à sala (só se já estamos nela). */
   enviarVoz(bytes: Uint8Array): void {
     if (this.joined) this.client.enviarVoz(bytes);
+  }
+
+  /** Manda uma mensagem de texto a outro piloto da sala (P216; só se já estamos nela). `true` se foi. */
+  enviarTexto(destino: number, texto: string): boolean {
+    return this.joined && this.client.enviarTexto(destino, texto);
+  }
+
+  /** As outras **pessoas** da sala agora (não os bots): id, apelido e montagem, para a lista da REDE e o Hangar do outro (P216). */
+  pilotos(): { id: number; nome: string; build: string }[] {
+    const lista: { id: number; nome: string; build: string }[] = [];
+    if (!this.joined) return lista;
+    for (const [id, r] of this.remotes) if (r.kind === 'human') lista.push({ id, nome: this.names.get(id) ?? `PILOTO ${id}`, build: r.build });
+    return lista;
   }
 
   /** O apelido de uma unidade da sala, ou `undefined`. */
@@ -439,6 +459,7 @@ export class OnlineSession implements Pilot {
     }
     for (const id of [...this.remotes.keys()]) if (!present.has(id)) this.removeRemote(id);
     this.status();
+    this.o.onPilotos?.();
   }
 
   private addRemote(e: RosterEntry): void {

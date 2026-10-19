@@ -180,9 +180,36 @@ export class HangarMenu {
   private readonly adminPanel: AdminPanel;
   private unlockedMechs: Set<ChassisId> = new Set();
   private previewChassis: ChassisId | null = null;
+  /** Visitando o Hangar de outro piloto da sala (P216): só leitura. */
+  private visitando = false;
+  /** Chamado ao fechar o Hangar de uma visita (o jogo guarda o piloto visitado e quer saber quando acabou). */
+  aoFecharVisita: (() => void) | null = null;
 
   get isAimTraining(): boolean {
     return this.aimTraining;
+  }
+
+  /**
+   * Abre o Hangar para **ver a montagem de outro piloto da sala** (P216): o galpão 3D e os painéis mostram o chassi e as armas dele, **só leitura** (nada que se clique aqui muda o seu robô; fechar
+   * volta ao seu). Devolve o contêiner onde a conversa por texto com ele é desenhada (`ui/VisitaPanel.ts`).
+   */
+  visitar(spec: LoadoutSpec): HTMLElement {
+    if (!this.isOpen) this.open();
+    this.visitando = true;
+    this.draft = copySpec(spec);
+    this.selectedSlot = 'right';
+    this.tab = 'armas';
+    this.message = '';
+    this.root.classList.add('hg-modo-visita');
+    const caixa = this.root.querySelector<HTMLElement>('#hg-visita')!;
+    caixa.hidden = false;
+    this.render();
+    return caixa;
+  }
+
+  /** Com uma visita aberta: o que se pode fazer é olhar (abas, encaixes) e sair; o resto mudaria a montagem do rascunho do visitante. */
+  private soOlhar(alvo: Element | null): boolean {
+    return this.visitando && !alvo?.closest('[data-tab-btn], [data-slot], [data-action="close"], #hg-visita');
   }
 
   constructor(
@@ -261,6 +288,7 @@ export class HangarMenu {
         <div class="hg-metric"><span>DANO EM 20 S</span><b id="hangar-damage-value"></b><small>com calor e recarga</small></div>
         <div class="hg-share"><input id="hangar-build-link" aria-label="Link da montagem" readonly><button type="button" data-action="copy">COPIAR LINK</button></div>
       </footer>
+      <aside class="hg-panel hg-visita" id="hg-visita" data-i18n="nao" hidden></aside>
       <nav class="hg-tabs" aria-label="Painéis do Hangar">
         <button type="button" data-tab-btn="chassi">CHASSI</button>
         <button type="button" data-tab-btn="armas">ARMAS</button>
@@ -287,7 +315,7 @@ export class HangarMenu {
       if (this.aimTraining || this.testing) return;
       // 1 a 4 carregam a montagem do atalho (fora de campo de texto).
       const n = Number(event.key);
-      if (n >= 1 && n <= PRESET_COUNT && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLSelectElement)) this.loadPreset(n - 1);
+      if (!this.visitando && n >= 1 && n <= PRESET_COUNT && !(event.target instanceof HTMLInputElement) && !(event.target instanceof HTMLSelectElement)) this.loadPreset(n - 1);
     });
     // Arrastar no galpão (fora dos painéis) gira o Mech no pedestal, com mouse ou dedo.
     const stage = this.root.querySelector<HTMLElement>('.hg-stage')!;
@@ -486,10 +514,28 @@ export class HangarMenu {
     this.pauseOverlay?.classList.remove('hidden');
     document.documentElement.classList.remove('hangar-open');
     this.preview.close();
+    if (this.visitando) this.encerrarVisita();
+  }
+
+  private encerrarVisita(): void {
+    this.visitando = false;
+    this.root.classList.remove('hg-modo-visita');
+    this.root.querySelector<HTMLElement>('#hg-visita')!.hidden = true;
+    this.aoFecharVisita?.();
+  }
+
+  /** Sai da visita e volta ao Hangar do próprio jogador (a janela continua aberta). */
+  sairDaVisita(): void {
+    if (!this.visitando) return;
+    this.encerrarVisita();
+    this.draft = copySpec(this.hangar.current);
+    this.message = '';
+    this.render();
   }
 
   private onClick(event: MouseEvent): void {
     const target = event.target instanceof Element ? event.target : null;
+    if (this.soOlhar(target)) return;
     const tab = target?.closest<HTMLButtonElement>('[data-tab-btn]')?.dataset.tabBtn;
     if (tab === 'chassi' || tab === 'armas' || tab === 'numeros') {
       this.tab = tab;
@@ -590,6 +636,7 @@ export class HangarMenu {
   private onChange(event: Event): void {
     const target = event.target;
     if (!(target instanceof HTMLSelectElement)) return;
+    if (this.visitando) { this.render(); return; } // o seletor volta ao que o outro piloto montou
     if (target.id === 'hangar-module-select') { this.draft = { ...this.draft, v: 2, module: target.value === 'frontal' || target.value === 'sphere' || target.value === 'fire' ? target.value : null }; this.render(); return; }
     if (target.id !== 'hangar-weapon-select') return;
     const selected = target.value as WeaponId | MetalShieldId | '';

@@ -2,21 +2,26 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## A FASE 8 DE JANEIRO: O PINO EM BRASÍLIA, O BUNKER EM CORUMBÁ E A FICHA DA MASSA — Claude, 19/10 (branch `claude/oito-de-janeiro`, P217)
 
-**O Comandante (19/10):** *"uma nova fase… 8 DE JANEIRO… milhares de manifestantes de verde e amarelo, usando cabeças de gado… vamos eliminar os golpistas na base do tiro, porrada e bomba… posicionar ela no mapa do Brasil onde está o bunker, e vamos mover o bunker para outro local na região do Mato Grosso do Sul"*.
+## OS PILOTOS NA REDE: VER O HANGAR DO OUTRO E CONVERSAR POR TEXTO SEM SAIR DO HANGAR — Claude, 19/10 (branch `claude/chat-de-texto`, P216)
 
-**1. O que foi feito (o começo, no processo do projeto: a ficha antes do polígono):** `ui/theater.ts`: o teatro **8 DE JANEIRO** (Praça dos Três Poderes · Brasília) entra **nas coordenadas onde estava o Bunker** (EM BREVE: sem mapa), com o recurso novo `poder` (SEDE DOS PODERES); o **BUNKER** vai para **Corumbá · MS** (-19,01 / -57,65). Escolhi Corumbá e não Campo Grande porque a regra do teste ("nenhum par de missões a menos de 6°") barra a capital, a 4,9° da Foz do Iguaçu.
-**2. A ficha** (`fichas/cenario-8-de-janeiro.md`, proposta): **o que a fase faz** (defender os três prédios da Praça de cinco marchas em 5 minutos, o agitador no carro de som como alvo), **a conta da massa** (o ponto novo e perigoso: milhares de figurantes **não** são Mechs; são **dado em vetores tipados**, uma grade espacial para o acerto, 2 chamadas de desenho com a animação na shader, a fase **só offline** porque a massa não cabe nos 8 KB/s por jogador), **os números de aceitação** (CPU ≤ 0,3 ms por tick, ≤ 70 desenhos e ≤ 80 mil triângulos na vista mais cheia, p50 no quadro na GPU integrada), **a regra de conteúdo** (violência estilizada sem sangue; o rótulo "gado" fora do texto; a máscara em dado com botão de desligar; sem criança nem religião como alvo; **nenhuma afirmação factual sem ficha com fonte**) e **seis perguntas ao Comandante** com a minha proposta de cada.
+**O Comandante (19/10):** *"no painel REDE, quando tiver mais de um jogador online, coloque os nomes dos jogadores ali disponíveis pra podermos clicar neles, ver o hangar deles, fazer chat por texto com eles (sem sair do hangar)"*.
 
-**Prova:** testes do teatro (Brasília e o Mato Grosso do Sul no lugar, o 8 DE JANEIRO em EM BREVE, a regra de 6° entre pinos, o lugar confirmado).
+**1. A mensagem de texto (protocolo 33 e 34, sem subir o `PROTOCOL_VERSION`):** `shared/net/texto.ts` (formato, `limparTexto`: sem controle, sem quebra de linha, sem caractere que inverte a direção, até 160 caracteres) e `server/texto.ts` (`RelayDeTexto`: **só repassa**, com o **remetente trocado pelo id de verdade**, o texto já limpo, só a **outras pessoas** da sala (bot não é destino), **6 mensagens por 10 s por jogador**, nada guardado). A sala (`ArenaRoom`) só liga o relé. Servidor velho descarta o tipo; cliente velho nunca recebe.
+**2. A lista na REDE:** `ui/RedePilotos.ts` (bundle inicial, minúscula): quando há outra pessoa na sala, cada nome vira um botão (nome, chassi, mensagens não lidas). `OnlineSession.pilotos()` entrega só pessoas.
+**3. O Hangar do outro:** `HangarMenu.visitar(spec)` abre o Hangar com a montagem dele em **só leitura** (abas e encaixes se olham; chassi, nível, módulo, presets e APLICAR ficam travados; Esc e VOLTAR AO MEU HANGAR saem). O galpão 3D mostra o robô dele.
+**4. A conversa (sem sair do Hangar):** `ui/VisitaPanel.ts` (**sob demanda**, R7) no lugar dos números: o histórico (60 linhas), o campo, ENVIAR, **SILENCIAR** (só neste cliente) e o aviso "devagar" antes de o servidor cortar. Tudo por `textContent`. O dado (`net/Conversas.ts`) mora no jogo desde o começo: a mensagem que chega com a tela fechada vira "não lida" e um **aviso curto** no canto durante a partida.
+**5. Nasce restrito:** `tela:chat` no catálogo de visibilidade (P191): só o Comandante vê a lista, a visita e os avisos até liberar no painel; quem não vê descarta a mensagem que chegar.
 
-**Falta (R13):** **a fase não existe** (só o pino e a ficha): a massa, o desenho, o mapa e a missão são os passos 2 a 5 da ficha, um PR cada; **esperam as respostas do Comandante às perguntas da ficha** (principalmente "só offline", "como se ganha", "o que é a porrada" e "pessoa estilizada ou casca"); **não vi o mapa no navegador**; as linhas de enredo "os militares não aderiram" e qualquer número de pessoas ficam fora do jogo até haver `fichas/fatos-8-de-janeiro.md`.
+**Provas:** 3 testes do texto (limpeza, formato, UTF-8 torto, grande demais), 3 do relé (remetente trocado, destinos inválidos, teto por janela), 1 com **servidor de verdade e dois jogadores** (Alfa escreve a Bravo, chega com o id e o nome certos, a lista só tem pessoas, texto sujo chega limpo, escrever a um bot não chega a ninguém), 3 das conversas e 1 do contrato do HTML e do catálogo.
 
-**Onde o Comandante confere:** console de comando → o mapa-múndi: o pino **8 DE JANEIRO** em Brasília (EM BREVE) e o **BUNKER** em Corumbá (clicar no Bunker ainda abre o mapa do Bunker).
+**Falta (R13):** **não vi a tela no navegador** (a máquina estava sem memória: só testes e tipos): o Comandante confere; **sem denúncia** e sem moderação além do teto, do tamanho e do silenciar (o chat nasce restrito por isso); **os textos da visita e da lista estão só em português** (o `aria-label` da lista já tem as seis línguas; o resto fica sob `data-i18n="nao"` até o Comandante liberar `tela:chat` ao público: traduzir antes); telas estreitas mostram só a conversa na visita; sem som de mensagem nova; sem canal da sala inteira (só mensagem direta).
 
-**Próxima sessão começa com:** as respostas do Comandante às seis perguntas da ficha; depois `sim/Multidao.ts` e a bancada de CPU (passo 2).
+**Onde o Comandante confere:** dois navegadores em `?sala=ARENA` (o dele com `?comandante=1`, o outro com outro nome): pausa → REDE → o nome do outro → o Hangar dele, a conversa ao lado. Para o outro jogador também ver: SERVIDOR → VISIBILIDADE → `tela:chat` → PÚBLICO.
+
+**Próxima sessão começa com:** o que o Comandante vir no teste de dois navegadores; depois a fase 8 DE JANEIRO (P217).
 
 ## O TESTE DO MICROFONE, O AVISO DE "SOZINHO NA VOZ", E A RESPOSTA SOBRE YOUTUBE E JUKEBOX — Claude, 19/10 (branch `claude/teste-do-microfone`, P212 e P213; P211 em andamento)
 

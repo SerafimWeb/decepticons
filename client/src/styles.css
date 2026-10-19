@@ -4691,3 +4691,48 @@ html.touch #touch-controls.editing ~ .voz-mic { display: none; }
 .voz-teste:is([data-estado='semSinal'], [data-estado='negado'], [data-estado='semAparelho'], [data-estado='emUso'], [data-estado='outra']) .voz-nivel { border-color: var(--alert); }
 .voz-teste:is([data-estado='semSinal'], [data-estado='negado'], [data-estado='semAparelho'], [data-estado='emUso'], [data-estado='outra']) #voz-teste-status { color: var(--warn); }
 .voz-eco { display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 11px; color: var(--muted); }
+
+/* ═══ Os pilotos da REDE, a visita ao Hangar de outro e o chat de texto (P216) ═══ */
+.rede-pilotos { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 100%; }
+.rede-pilotos[hidden] { display: none; }
+.rede-piloto {
+  display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 9px; cursor: pointer; font: inherit; font-size: calc(10px * var(--k)); letter-spacing: 1px;
+  color: #d7f5e6; background: rgba(8, 30, 22, 0.7); border: 1px solid rgba(110, 240, 180, 0.4);
+}
+.rede-piloto:hover, .rede-piloto:focus-visible { border-color: #8fffc8; box-shadow: 0 0 10px rgba(110, 240, 180, 0.35); }
+.rede-piloto b { font-weight: 700; }
+.rede-piloto small { font-size: 0.85em; color: #8fa29a; }
+.rede-nova { font-style: normal; font-size: 0.85em; font-weight: 700; padding: 0 5px; border-radius: 8px; color: #04140c; background: #ffd23f; }
+
+/* O aviso de mensagem nova durante a partida: um canto, 6 s, sem pegar o clique. */
+.chat-aviso {
+  position: fixed; left: 14px; bottom: 74px; z-index: 1500; max-width: min(520px, 86vw); padding: 7px 12px; pointer-events: none;
+  font: 600 12px/1.35 'JetBrains Mono', Consolas, 'Courier New', monospace; letter-spacing: 0.04em; color: #eafff4;
+  background: rgba(4, 20, 14, 0.88); border: 1px solid rgba(110, 240, 180, 0.55); opacity: 0; transform: translateY(6px); transition: opacity 0.2s, transform 0.2s;
+}
+.chat-aviso.on { opacity: 1; transform: none; }
+
+/* A visita: o Hangar só de leitura, e a conversa no lugar dos números (embaixo, ao lado do galpão). */
+.hg-visita { grid-area: readout; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; max-height: 34vh; min-height: 0; }
+.hg-visita[hidden] { display: none; }
+#hangar-modal.hg-modo-visita .hg-readout, #hangar-modal.hg-modo-visita .hg-actions, #hangar-modal.hg-modo-visita .hg-presets, #hangar-modal.hg-modo-visita .hg-tab-apply { display: none; }
+#hangar-modal.hg-modo-visita .hg-chassis-card, #hangar-modal.hg-modo-visita .hg-tier, #hangar-modal.hg-modo-visita .hg-layout-btn { cursor: default; }
+.vp-topo { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; }
+.vp-nome { font-size: 13px; letter-spacing: 0.16em; color: #eaffff; }
+.vp-ajuda { flex: 1 1 200px; font-size: 10px; letter-spacing: 0.12em; color: var(--hg-dim); }
+.vp-botao { padding: 6px 10px; font-size: 10px; letter-spacing: 0.12em; }
+.vp-botao.primario { color: #031017; background: linear-gradient(180deg, #8ff0ff, var(--hg-c2)); border-color: var(--hg-c); font-weight: 700; }
+.vp-log { flex: 1 1 auto; min-height: 70px; margin: 0; padding: 6px 8px; list-style: none; overflow-y: auto; background: rgba(3, 14, 21, 0.55); border: 1px solid rgba(106, 232, 255, 0.18); }
+.vp-linha { display: flex; gap: 8px; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.vp-linha b { flex: 0 0 auto; font-size: 10px; letter-spacing: 0.14em; color: var(--hg-c); }
+.vp-linha.meu b { color: var(--hg-warm); }
+.vp-vazio { font-size: 11px; color: var(--hg-dim); }
+.vp-form { display: flex; gap: 8px; }
+.vp-campo { flex: 1 1 auto; min-width: 0; padding: 7px 10px; font-size: 12px; color: var(--hg-ink); background: rgba(3, 14, 21, 0.75); border: 1px solid var(--hg-edge); }
+.vp-campo:disabled { opacity: 0.5; }
+.vp-aviso { min-height: 1em; font-size: 10px; letter-spacing: 0.08em; color: var(--hg-warm); }
+@media (max-width: 900px), (max-height: 540px) {
+  /* Telas estreitas: na visita a folha inteira é a conversa (o robô fica no galpão, acima). */
+  #hangar-modal.hg-modo-visita .hg-chassis, #hangar-modal.hg-modo-visita .hg-console, #hangar-modal.hg-modo-visita .hg-readout { display: none; }
+  .hg-visita { grid-area: sheet; max-height: 44vh; }
+}

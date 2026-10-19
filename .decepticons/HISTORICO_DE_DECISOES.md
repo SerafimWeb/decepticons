@@ -1,17 +1,18 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## [2026-10-19] A fase 8 DE JANEIRO começa pela ficha e pelo pino; a massa é dado, não Mechs (Claude, P217)
 
-**Ordem:** a fase do 8 de janeiro em Brasília, com milhares de manifestantes, no lugar do Bunker, que vai para o Mato Grosso do Sul.
+## [2026-10-19] O chat de texto é mensagem direta, repassada pelo servidor sem guardar nada, e nasce restrito (Claude, P216)
+
+**Ordem:** *"nomes dos jogadores… ver o hangar deles, fazer chat por texto com eles (sem sair do hangar)"*.
 
 **Decisões:**
-1. **A ficha antes do polígono:** o `fichas/README.md` e a lição do Bunker e da Praia mandam fixar **o que a fase faz** e **a conta do desempenho** antes de construir. Entrego o pino e a ficha agora e **a construção espera as respostas do Comandante** (seis perguntas, cada uma com proposta) em vez de erguer um mapa para ouvir "queria outra coisa".
-2. **A massa não é uma lista de Mechs:** milhares de corpos com física e IA individual estouram a CPU (G4/G5, G6). A multidão é **um sistema de dados** em vetores tipados, com uma grade espacial para o acerto e o desenho instanciado em 2 chamadas; **offline** primeiro, porque 3.000 figurantes sincronizados passam em ~20× o teto de rede (G11).
-3. **O Bunker vai para Corumbá, não para Campo Grande:** a regra "nenhum par de missões a menos de 6°" (`theater.test.ts`, os nomes dos marcadores não se encostam) barra a capital, a 4,9° da Foz do Iguaçu. Corumbá (o Pantanal, na fronteira) fica a ≥ 7° de todos os outros pinos, é Mato Grosso do Sul e combina com um bunker. O Comandante pode escolher outro lugar do estado desde que a regra se mantenha.
-4. **O lugar do 8 DE JANEIRO é confirmado** (`proposta: false`): foi ordem explícita do Comandante, ao contrário dos lugares que eu propus.
-5. **A regra de conteúdo é a que já existia** (`CAMPANHAS_E_CHEFES.md`): estilizado e sem sangue, o rótulo "gado" fora do texto, a máscara como dado com botão de desligar, nada de criança ou religião como alvo, e **nenhuma afirmação factual sem ficha com fonte** ("os militares não aderiram" fica 🟡 até a ficha de fatos). A fase entra **restrita** no painel de visibilidade quando existir (`mapa:janeiro`).
-6. **Risco registrado:** é uma fase em que se atira em **manifestantes de um evento real**; a máscara em dado, o botão de desligar e a fase restrita são a rede de segurança, e a decisão de manter ou mudar o tom é do Comandante (pergunta 5 da ficha).
+1. **Mensagem direta, não canal da sala:** o pedido é conversar com o piloto que se clicou; um canal aberto dobra o que moderar. Dois tipos novos (33 e 34), acima da voz (30 a 32), **sem subir o protocolo**: servidor velho descarta, cliente velho nunca recebe.
+2. **O servidor só repassa:** troca o remetente pelo id de verdade (ninguém se passa por outro), manda o texto **que ele limpou** (sem controle, sem inversão de direção, 160 caracteres), só a pessoas da sala, **6 por 10 s por jogador**, e **não guarda nada** (sem histórico em disco: nada para vazar, nada para a LGPD).
+3. **Silenciar é do cliente:** sem silêncio do lado do servidor não há estado a manter; quem silencia deixa de receber, sem avisar o outro.
+4. **Nasce restrito (`tela:chat`):** a voz foi liberada ao público sem mudo nem denúncia e ficou como risco aberto (P205); o texto repete o risco, e o painel de visibilidade existe para isto: o Comandante liberta quando achar que está pronto.
+5. **A visita ao Hangar é só leitura, no mesmo Hangar:** reaproveita o galpão 3D e os painéis (nada de uma segunda tela de montagem); as ações que mudariam o rascunho ficam travadas em um ponto só (`soOlhar`). A conversa é um pedaço sob demanda (R7); o dado, minúsculo, mora no jogo para a mensagem que chega com a tela fechada não se perder.
 
 ## [2026-10-19] O teste do microfone, o "sozinho na voz" e a jukebox só com catálogo (Claude, P212 e P213)
 
