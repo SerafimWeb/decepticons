@@ -5,6 +5,20 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## O 8 DE JANEIRO RESPONDIDO: FICHA V2, E O PEDIDO MAIOR — TODAS AS FASES E MODOS ONLINE — Claude, 19/10 (branch `claude/janeiro-respostas`, P218 e P219)
+
+**O Comandante (19/10) respondeu à ficha:** a fase pode começar só offline, **mas todas as fases e modos têm de valer online**; vence quem mantém os prédios de pé e expulsa ou neutraliza todos; as chegadas vêm de **ônibus, bueiros e lixeiras**; porrada é eliminar; os manifestantes têm cabeça de gado, há **carecas**, **rapazes de peruca loira** e **androides**; **só os androides lutam, os outros fogem**; eles sujam as mesas e os androides aliados limpam.
+
+**1. A ficha v2** (`fichas/cenario-8-de-janeiro.md`): quatro tipos de figurante, três fontes, a vitória (prédios de pé e Praça vazia depois da cota), a sujeira e os faxineiros, e a **ideia técnica que serve ao CPU e ao online de uma vez: a posição do figurante é função do tempo** (nasce com fonte, tick, tipo, alvo e semente; só *morreu* e *fugiu* são estado). Sem integração por figurante por tick, sem posição na rede (dezenas de B/s), a posição desenhada na shader.
+**2. A ordem P218** (`MULTIPLAYER.md` § 12): achei por que tudo era "só offline" (a sala só conhece Cidade Neon em Deathmatch; `Match` já recebe mapa e modo, a sala e o protocolo não) e escrevi **cinco etapas** (O1 a sala escolhe o mapa; O2 Domínio; O3 Bandeira; O4 Sobrevivência e missões; O5 campanha), uma por PR, cada uma medindo a banda.
+**3. Duas decisões minhas** (o Comandante pode contestar): o CARECA e a PERUCA entram como **tipos** (sem nome, marca ou texto de pessoa ou empresa), com botão de desligar; e os **nomes das pessoas não foram copiados** para os documentos (o painel público lê estes arquivos). **Risco registrado** (ficha § 9): caricatura de figuras públicas reais e uma fase em que se atira em manifestantes de um evento real, a seis dias do segundo turno das eleições (25/10); **recomendo um advogado antes de liberar ao público**; a fase nasce restrita.
+
+**Falta (R13):** **só documentos**: nenhuma linha de código mudou; a massa, o mapa e a missão não existem; o online por mapa (O1) é o próximo PR.
+
+**Onde o Comandante confere:** `fichas/cenario-8-de-janeiro.md` (as cinco perguntas abertas, § 8) e `MULTIPLAYER.md` § 12.
+
+**Próxima sessão começa com:** a etapa O1 (a sala escolhe o mapa: Deathmatch online nos quatro mapas), depois `sim/Multidao.ts`.
+
 ## OS PILOTOS NA REDE: VER O HANGAR DO OUTRO E CONVERSAR POR TEXTO SEM SAIR DO HANGAR — Claude, 19/10 (branch `claude/chat-de-texto`, P216)
 
 **O Comandante (19/10):** *"no painel REDE, quando tiver mais de um jogador online, coloque os nomes dos jogadores ali disponíveis pra podermos clicar neles, ver o hangar deles, fazer chat por texto com eles (sem sair do hangar)"*.

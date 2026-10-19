@@ -3,6 +3,17 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-19] A massa do 8 DE JANEIRO é função do tempo; o online por mapa e modo vira ordem geral (Claude, P218 e P219)
+
+**Ordem:** *"todas as fases devem dar pra jogar online também… todos os modos valem pra todas as fases"*, e as respostas sobre o 8 DE JANEIRO.
+
+**Decisões:**
+1. **A massa é função do tempo** (e não um estado integrado): cada figurante nasce com `(fonte, tick, tipo, alvo, semente)` e a posição em `t` é calculada. Só *morreu* e *fugiu* são estado. Isso dá o CPU baixo (sem integração por figurante, posição desenhada na shader) **e** o online barato (sem posição na rede) com o mesmo desenho; a alternativa (simular milhares de agentes e mandar posições) quebra G4/G5 e G11.
+2. **Só os androides são entidades; o resto é dado:** os rebeldes (no máximo 6 vivos) são os `Android` de hoje, com a vida, o tiro e a rede que já existem; o GADO, o CARECA e a PERUCA são linhas de um vetor.
+3. **Tipos, não pessoas:** o CARECA e a PERUCA se parecem com duas figuras públicas reais, por pedido do Comandante. O jogo recebe só o **tipo** (sem nome, marca ou texto) com botão de desligar por tipo, e os nomes **não entram nos documentos** (o painel público os lê). É a mesma precaução da skin da Colossus V1, estendida; a decisão final do tom é do Comandante.
+4. **A fase nasce restrita** e a recomendação de revisão jurídica fica escrita (ficha § 9): o segundo turno das eleições é em 25/10 e há regra de honra e eleitoral sobre representar candidatos.
+5. **O online por mapa e modo é uma ordem geral (P218), não uma exceção da fase:** o plano em cinco etapas (`MULTIPLAYER.md` § 12) começa por onde há menos protocolo novo (a sala escolher o mapa) e termina onde há mais (a campanha). O 8 DE JANEIRO é desenhado já para a etapa O4.
+
 ## [2026-10-19] O chat de texto é mensagem direta, repassada pelo servidor sem guardar nada, e nasce restrito (Claude, P216)
 
 **Ordem:** *"nomes dos jogadores… ver o hangar deles, fazer chat por texto com eles (sem sair do hangar)"*.
