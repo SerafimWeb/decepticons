@@ -3,6 +3,20 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## O TESTE DO MICROFONE, O AVISO DE "SOZINHO NA VOZ", E A RESPOSTA SOBRE YOUTUBE E JUKEBOX — Claude, 19/10 (branch `claude/teste-do-microfone`, P212 e P213; P211 em andamento)
+
+**O Comandante (19/10):** *"estou tentando testar o microfone mas não consegui! não saiu som. Seria bom ter um campo de testes?"*; só maiores de 18 na voz (P211); e uma **jukebox num prédio** com link do YouTube, "só se não pesar" (P213).
+
+**P212, feito:** a causa provável é que **sozinho na sala ninguém te ouve** e o indicador não avisava. Agora: painel **TESTAR O MICROFONE** nas Configurações (aparelho, barra de nível, "ouvir a minha voz", motivo de cada falha; para sozinho ao fechar, trocar de aba ou em 2 min), aparelho que vale também para o chat (troca no meio da voz), e o indicador diz **"NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES"**. **Provas:** Chrome com microfone falso (`voz-teste-mic.mjs`, **14 de 14**, inclusive "parar solta o microfone de verdade" e o navegador que bloqueia), **15 de 15 mutações**, foto `arte/voz-teste-microfone-claude.png`.
+
+**P213, só resposta e desenho (`RADIO_E_EMISSORES.md` § 7):** **o YouTube é problema** (o player tem de ficar visível e não separa o áudio; vem vídeo pesado; não toca no espaço; leva o IP de todo mundo perto ao Google; conteúdo sem moderação). Recomendo o terminal com **o catálogo do jogo** e "Sugerir um link". **Só entra se não pesar**: a primeira entrega tem de medir menos de 1 ms por quadro e no máximo 8 KB/s por emissor.
+
+**P211 (idade):** vem no PR seguinte (cadastro com mês e ano de nascimento; menores sem microfone nem a voz dos outros, **imposto no servidor**). **Até lá a voz segue pública a todos**: o Comandante pode fechá-la no painel de visibilidade (`tela:voz`).
+
+**Falta (R13):** (a) **P211**; (b) **decisões do Comandante** sobre a jukebox (§ 7.5: YouTube fora, catálogo e licenças, qual prédio); (c) ninguém testou a voz entre dois aparelhos reais pela internet.
+
+**Próxima sessão começa com:** o portão de idade (P211).
+
 ## A POLÍTICA DE PRIVACIDADE PASSOU A DESCREVER O CHAT DE VOZ, QUE O COMANDANTE JÁ LIBEROU AO PÚBLICO — Claude, 19/10 (branch `claude/privacidade-voz`, P205)
 
 **O que aconteceu:** o `/status` do servidor mostrava `"tela:voz":"publico"` (o Comandante soltou a voz no painel de visibilidade) **antes** de a política mudar; eu tinha deixado o texto pronto como pendência de "antes de liberar". Com a voz pública, a pendência virou lacuna: a política dizia "o IP não é guardado" e nada dizia que **os outros jogadores da sala veem o IP** nem que o **STUN do Google** o recebe.

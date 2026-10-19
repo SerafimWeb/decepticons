@@ -2,7 +2,7 @@ import type { ModoMic } from './MicController';
 import type { VoiceChat } from './VoiceChat';
 
 /** O que o HUD precisa saber do chat de voz (o `VoiceChat` serve; o teste passa um falso). */
-export type VozParaHud = Pick<VoiceChat, 'ativa' | 'estadoMic' | 'ligados' | 'semConexao' | 'falando' | 'aoBotao'> & { readonly mic: Pick<VoiceChat['mic'], 'mode' | 'mudo' | 'apertada' | 'transmitindo'> };
+export type VozParaHud = Pick<VoiceChat, 'ativa' | 'estadoMic' | 'ligados' | 'semConexao' | 'colegas' | 'falando' | 'aoBotao'> & { readonly mic: Pick<VoiceChat['mic'], 'mode' | 'mudo' | 'apertada' | 'transmitindo'> };
 
 /**
  * A linha de estado, a partir do que o jogador precisa saber: o microfone está aberto, mudo, pedindo, ou não existe. Texto puro, sem DOM (testável). Cada texto é uma chave do
@@ -26,9 +26,13 @@ export function textoDeEstado(v: VozParaHud, tecla: string, toque = false): stri
   }
 }
 
-/** Quem a rede não deixou ligar (vazio se todos ligaram). */
+/**
+ * A linha de baixo: quem a rede não deixou ligar, ou, **sozinho na voz**, o aviso de que ninguém vai ouvir (e onde testar o microfone). Sem ele o indicador dizia "MICROFONE ABERTO" a quem estava só na sala
+ * e a pessoa achava que o microfone não funcionava (P212).
+ */
 export function textoDeRede(v: VozParaHud): string {
-  return v.semConexao > 0 ? `${v.semConexao} SEM CONEXÃO` : '';
+  if (v.semConexao > 0) return `${v.semConexao} SEM CONEXÃO`;
+  return v.colegas === 0 ? 'NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES' : '';
 }
 
 /** O estado do botão de microfone da tela de toque: no ar (transmitindo), mudo, em espera (o "segurar" solto), pedindo o microfone ao navegador, ou sem microfone. */

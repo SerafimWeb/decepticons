@@ -15,6 +15,8 @@ import {
 } from '../core/Settings';
 
 import { NARRACOES, ROTULO_DA_NARRACAO, type Narracao } from '../audio/falas';
+import { listarAparelhos } from '../voice/aparelhos';
+import type { MicTest } from '../voice/MicTest';
 import { ligarPasso } from './Passo';
 import { attachSettingsTabs, isSettingsTab, type SettingsTab } from './settingsTabs';
 
@@ -49,6 +51,10 @@ export class SettingsMenu {
   private readonly selVozModo = $('setting-voz-modo') as HTMLSelectElement;
   private readonly sliderVozVolume = $('setting-voz-volume') as HTMLInputElement;
   private readonly valVozVolume = $('val-voz-volume');
+  private readonly selVozAparelho = $('setting-voz-aparelho') as HTMLSelectElement;
+  private readonly btnVozTestar = $('btn-voz-testar') as HTMLButtonElement;
+  /** O teste do microfone (P212): pedaço sob demanda, só baixa quem toca em TESTAR. */
+  private micTest: MicTest | null = null;
 
   private readonly tabs: { select(tab: SettingsTab): void };
   private remappingAction: KeyAction | null = null;
@@ -204,6 +210,15 @@ export class SettingsMenu {
       this.settings.update({ voiceVolume: val });
     });
 
+    this.selVozAparelho.addEventListener('change', () => {
+      this.settings.update({ micDevice: this.selVozAparelho.value });
+      void this.micTest?.reiniciar();
+    });
+
+    this.btnVozTestar.addEventListener('click', () => void this.alternarTesteDoMic());
+    // Trocar de aba esconde o painel: o microfone não fica aberto por trás.
+    for (const b of this.modal.querySelectorAll('.settings-tab')) b.addEventListener('click', () => this.micTest?.parar());
+
     this.chkShowPerf.addEventListener('change', () => {
       this.settings.update({ showPerf: this.chkShowPerf.checked });
     });
@@ -292,11 +307,41 @@ export class SettingsMenu {
     if (tab) this.tabs.select(tab);
     this.modal.classList.remove('hidden');
     this.render(this.settings.value);
+    void this.atualizarAparelhos();
   }
 
   close(): void {
     this.cancelRemap();
+    this.micTest?.parar();
     this.modal.classList.add('hidden');
+  }
+
+  /** O botão TESTAR / PARAR O TESTE: baixa o teste na primeira vez, e liga ou desliga. */
+  private async alternarTesteDoMic(): Promise<void> {
+    if (!this.micTest) {
+      const { MicTest } = await import('../voice/MicTest');
+      const ouvir = $('voz-ouvir') as HTMLInputElement;
+      this.micTest = new MicTest(
+        { painel: $('voz-teste'), barra: $('voz-nivel-barra'), status: $('voz-teste-status'), botao: this.btnVozTestar, ouvir },
+        () => this.settings.value.micDevice,
+        undefined,
+        () => void this.atualizarAparelhos(),
+      );
+      ouvir.addEventListener('change', () => this.micTest?.ouvirAMinhaVoz(ouvir.checked));
+    }
+    if (this.micTest.rodando) this.micTest.parar();
+    else await this.micTest.iniciar();
+  }
+
+  /** Os microfones da lista de escolha (com nome depois que o navegador deu a permissão); o salvo que sumiu continua escolhido, marcado como desconectado. */
+  private async atualizarAparelhos(): Promise<void> {
+    const todos = navigator.mediaDevices?.enumerateDevices ? await navigator.mediaDevices.enumerateDevices().catch(() => []) : [];
+    const lista = listarAparelhos(todos, (n) => `Microfone ${n}`);
+    const escolhido = this.settings.value.micDevice;
+    const sel = this.selVozAparelho;
+    sel.replaceChildren(new Option('Padrão do sistema', ''), ...lista.map((a) => new Option(a.nome, a.id)));
+    if (escolhido && !lista.some((a) => a.id === escolhido)) sel.append(new Option('Aparelho salvo (desconectado)', escolhido));
+    sel.value = escolhido;
   }
 
   private render(s: Readonly<GameSettings>): void {
@@ -328,6 +373,7 @@ export class SettingsMenu {
     this.selVozModo.value = s.voiceMode;
     this.sliderVozVolume.value = s.voiceVolume.toString();
     this.valVozVolume.textContent = `${Math.round(s.voiceVolume * 100)}%`;
+    if ([...this.selVozAparelho.options].some((o) => o.value === s.micDevice)) this.selVozAparelho.value = s.micDevice;
 
     for (const { action } of KEY_ACTIONS) {
       if (this.remappingAction === action) continue;
