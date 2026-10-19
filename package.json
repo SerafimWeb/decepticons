@@ -31,6 +31,7 @@
     "mech:bocas": "node scripts/medir-bocas.mjs",
     "server": "node scripts/server.mjs",
     "admin": "node scripts/admin.mjs",
+    "email": "node scripts/email.mjs",
     "capacity": "node scripts/capacity.mjs"
   },
   "dependencies": {

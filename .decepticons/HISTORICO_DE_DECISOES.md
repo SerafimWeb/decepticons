@@ -3,6 +3,18 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-19] O e-mail do "esqueci a senha" pelo SMTP da Hostinger, sem serviço novo (Claude, P206)
+
+**Ordem:** *"não entendi o que devo fazer. como configuro o Resend também?"* (depois de a Cloudflare perguntar que "chave" guardar). **Regra do Comandante:** simples, sem custo inicial, sem cadastro novo (memória "preferir simples, sem custo, eficiente").
+
+**Decisões:**
+1. **O Resend deixa de ser o caminho recomendado.** Pede conta nova, verificar o domínio (registros DNS na Cloudflare) e uma chave: exatamente o que o Comandante não entendeu e não precisa. Conferi no DNS: o `cybermech.online` **já tem o e-mail da Hostinger** (MX `mx1/mx2.hostinger.com` e SPF `include:_spf.mail.hostinger.com`). Basta uma caixa `nao-responda@cybermech.online` e a senha dela. O Resend fica como plano B, no mesmo contrato (`Mailer`).
+2. **Cliente SMTP escrito à mão (~100 linhas, `node:tls`), sem biblioteca.** O `nodemailer` traz uma dependência a mais para o `npm ci` do atualizador, que já tropeçou em binários presos pelo servidor no ar (DEPLOY § 4). Só TLS direto na porta 465 (a da Hostinger): o STARTTLS (587) não entrou porque ninguém precisa dele aqui e é mais um caminho para errar.
+3. **O Comandante não escreve JSON:** `npm run email -- iniciar` cria o `email.json` com a Hostinger preenchida e uma senha de exemplo que **nunca vale**; ele só troca no Bloco de Notas. `testar` manda de verdade e traduz o erro em "o que conferir".
+4. **O servidor relê o arquivo quando muda** (pelo conteúdo: a data e o tamanho enganam, `COLE_A_SENHA_AQUI` e uma senha de 17 caracteres têm o mesmo tamanho): ligar o e-mail por arquivo não pode exigir reiniciar, e reiniciar derruba quem joga.
+5. **Provado contra um servidor SMTP de mentira de verdade (um socket que fala o protocolo)**, não só com mocks: AUTH PLAIN e LOGIN, texto e HTML em japonês/russo/espanhol chegam inteiros, senha recusada, destinatário recusado, servidor mudo, porta fechada, e injeção de cabeçalho (destinatário com quebra de linha ou vírgula nem abre conexão; assunto com quebra vira texto). **O que não está provado: a Hostinger de verdade** (falta a caixa e a senha, que são do Comandante).
+6. **A política publicada passou a citar a Hostinger no lugar do Resend** (o e-mail de quem pede "esqueci a senha" é entregue por ela): mesmo conjunto de dados, só o nome do prestador; por isso a `POLITICA_VERSAO` não mudou. Se o Resend entrar um dia, o texto muda junto.
+
 ## [2026-10-19] A idade manda na voz: só maior de 18 anos, e o servidor decide (Claude, P211)
 
 **Ordem:** perguntar a idade no cadastro; menores de 18 anos sem o microfone e sem os áudios dos outros jogadores, só o áudio do jogo.
