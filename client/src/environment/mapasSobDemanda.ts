@@ -153,4 +153,9 @@ export async function carregarMapaSeFor(id: MapId): Promise<void> {
     const { mapaDaAmazonia } = await import('./AmazoniaMapa');
     carregados.set(id, mapaDaAmazonia);
   }
+  // A Praça dos Três Poderes (P217): o desenho e os colisores só baixam para quem abre o mapa; os pontos de nascimento ficam em `PracaLayout.ts` (pequeno, no pacote de partida).
+  if (id === 'janeiro' && !carregados.has(id)) {
+    const { mapaDaPraca } = await import('./PracaMapa');
+    carregados.set(id, mapaDaPraca);
+  }
 }

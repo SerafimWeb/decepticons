@@ -10,7 +10,7 @@ import { funcionalidadeVisivel } from './Visibilidade';
  * **Isto é produto, não segurança:** o jogo roda no navegador de quem joga, então quem sabe mexer na barra de endereço (`?comandante=1`) abre tudo. O que o bloqueio garante é que **ninguém esbarra** num mapa
  * que ainda não foi anunciado: o seletor, os links e as campanhas só levam aos liberados, e um link para um mapa fechado cai na Cidade Neon. Sem a visibilidade criada (os testes e as bancadas), tudo está aberto.
  */
-export const TODOS_OS_MAPAS: readonly MapId[] = ['arena', 'bunker', 'praia', 'amazonia'];
+export const TODOS_OS_MAPAS: readonly MapId[] = ['arena', 'bunker', 'praia', 'amazonia', 'janeiro'];
 /** Os mapas abertos ao público **por padrão** (o catálogo): o que o painel não mudou. */
 export const MAPAS_DO_LANCAMENTO: readonly MapId[] = TODOS_OS_MAPAS.filter((id) => padraoDe(`mapa:${id}`) === 'publico');
 

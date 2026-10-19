@@ -29,6 +29,7 @@ import { caboDoPonto, CABOS, CabosDeDados, CODIGO_DO_ESTADO, ehAndroide, PONTOS_
 import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
 import { AMAZONIA_POSTO_AVANCADO, AMAZONIA_RESISTENCIA, AMAZONIA_SPAWNS, rioEmX } from '../environment/AmazoniaLayout';
+import { PRACA_SPAWNS } from '../environment/PracaLayout';
 import { exigirChefe, exigirMapa, temEscudo } from '../environment/mapasSobDemanda';
 import { EscudoDoDraga } from './EscudoDoDraga';
 import { escotilhaDoDraga, INVASAO, InvasaoDoDraga } from './InvasaoDoDraga';
@@ -358,10 +359,12 @@ export class Match {
     const praia = o.map === 'praia' && !ctf && !dominio;
     // A Amazônia (P180) abre o Deathmatch e a **missão** (a Sobrevivência: o Draga-01 marcha rumo à aldeia, parte C); o CTF e o Domínio ficam na Arena.
     const amazonia = o.map === 'amazonia' && !ctf && !dominio;
+    // A Praça dos Três Poderes (o 8 DE JANEIRO, P217) abre o Deathmatch; a missão (a Sobrevivência, com a multidão) é o passo 5 da ficha: ela ainda cai na Arena.
+    const janeiro = o.map === 'janeiro' && !survival && !ctf && !dominio;
     // Na missão da Amazônia (TERRAS RARAS) o jogador nasce e renasce no posto avançado (um ponto só); o Deathmatch usa os pontos ao longo da margem.
-    this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : amazonia ? (survival ? [[AMAZONIA_POSTO_AVANCADO.x, AMAZONIA_POSTO_AVANCADO.z]] : AMAZONIA_SPAWNS) : SPAWN_POINTS;
-    this.zones = bunker || amazonia ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
-    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : 'arena', { transformador: survival && !praia });
+    this.spawnPoints = bunker ? BUNKER_SPAWNS : praia ? PRAIA_SPAWNS : amazonia ? (survival ? [[AMAZONIA_POSTO_AVANCADO.x, AMAZONIA_POSTO_AVANCADO.z]] : AMAZONIA_SPAWNS) : janeiro ? PRACA_SPAWNS : SPAWN_POINTS;
+    this.zones = bunker || amazonia || janeiro ? new ZoneSystem([]) : praia ? new ZoneSystem(PRAIA_ZONES) : new ZoneSystem();
+    this.arena = new Arena(o.scene, o.physics, this.destructibles, bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : janeiro ? 'janeiro' : 'arena', { transformador: survival && !praia });
     // A água da praia (P126): o mar freia e afoga quem entra nele. Nos outros mapas não há água.
     this.agua = praia ? PRAIA_AGUA : null;
     // A missão em ondas da praia defende a estação: os rebeldes que entram nos muros drenam o núcleo; a estação cair é perder a missão.
@@ -386,7 +389,7 @@ export class Match {
     // muito intenso"): só na Arena normal; o esquadrão das configurações dá a eles as vagas do pool de Mechs inimigos para não
     // estourar o teto de 8 personagens da sala (G11). Sobrevivência e CTF não usam esquadrão (pool e times próprios).
     const arenaMode = !survival && !ctf;
-    const mapa: MapId = bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : 'arena';
+    const mapa: MapId = bunker ? 'bunker' : praia ? 'praia' : amazonia ? 'amazonia' : janeiro ? 'janeiro' : 'arena';
     const semAliados = o.allies === false;
     const pedido = o.squad ?? esquadraoDeFoes(o.foes, semAliados ? 0 : ALLY_COUNT);
     const plano = arenaMode ? planejarEsquadrao(sanearEsquadrao(semAliados ? { ...pedido, aliados: [] } : pedido, mapa), mapa, o.foes.names) : null;

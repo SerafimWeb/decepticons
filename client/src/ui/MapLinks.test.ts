@@ -10,8 +10,8 @@ describe('mapHref: o link do seletor de mapa', () => {
     return mapFromSearch(u.search, online, modo);
   };
 
-  it('oferece a Arena, o Bunker, a Praia e a Amazônia, nessa ordem', () => {
-    expect(MAPS.map((m) => m.id)).toEqual(['arena', 'bunker', 'praia', 'amazonia']);
+  it('oferece a Arena, o Bunker, a Praia, a Amazônia e a Praça dos Três Poderes (o 8 DE JANEIRO), nessa ordem', () => {
+    expect(MAPS.map((m) => m.id)).toEqual(['arena', 'bunker', 'praia', 'amazonia', 'janeiro']);
   });
 
   it('o link da Amazônia abre a Amazônia na missão do rio (P180 parte C) quando se joga offline', () => {
