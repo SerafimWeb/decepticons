@@ -13,7 +13,9 @@ import { Match } from '../sim/Match';
 import { NetClient } from './NetClient';
 import { REGRAS_SEM_LIMITE } from '../../../shared/regras';
 import { onlineConfig } from './onlineConfig';
-import { OnlineSession, RECONEXAO_PADRAO_MS, rotariesOf, type OnlineStatus } from './OnlineSession';
+import { OnlineSession, RECONEXAO_PADRAO_MS, rotariesOf, type OnlineSessionOptions, type OnlineStatus } from './OnlineSession';
+import { messageType } from '../../../shared/net/messages';
+import { codificarPronto, codificarSinal, lerLista, lerSinal, VOZ } from '../../../shared/net/voz';
 
 const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
 const MECH_BUILD = 'v1.vector09.plasma-0.rockets-0';
@@ -42,7 +44,7 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
   });
 
   /** A partida local de um jogador online, como o Game monta: sem bots, sem dano, sem rodada própria. */
-  async function player(name: string, room: string, build = MECH_BUILD, loadout?: Loadout) {
+  async function player(name: string, room: string, build = MECH_BUILD, loadout?: Loadout, extras: Partial<OnlineSessionOptions> = {}) {
     const physics = await PhysicsWorld.create();
     const match = new Match({
       physics,
@@ -68,6 +70,7 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
       commander,
       makeUnit: (e) => (e.kind === 'android' || e.kind === 'technician' ? new Android() : new Vector09()),
       scene: new THREE.Scene(),
+      ...extras,
     });
     match.pilots.push(session);
     return { match, me, commander, session };
@@ -394,6 +397,39 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     a.session.dispose();
     b.session.dispose();
   });
+  it('o chat de voz pela sessão (P205): a sala avisa o id, o PRONTO de um vira a LISTA dos dois, a oferta chega ao destino com o remetente certo, o nome vem do roster e a saída avisa', async () => {
+    const sala: (number | null)[][] = [[], []];
+    const voz: Uint8Array[][] = [[], []];
+    const extras = (i: number): Partial<OnlineSessionOptions> => ({ onSala: (id) => sala[i]!.push(id), onVoz: (b) => voz[i]!.push(new Uint8Array(b)) });
+    const a = await player('Alfa', 'M4VOZ', MECH_BUILD, undefined, extras(0));
+    const b = await player('Bravo', 'M4VOZ', MECH_BUILD, undefined, extras(1));
+    await join([a, b], 7);
+    const [idA, idB] = [a.session.myId, b.session.myId];
+    expect(sala[0]).toEqual([idA]);
+    expect(sala[1]).toEqual([idB]);
+    expect(a.session.nomeDe(idB)).toBe('Bravo');
+    expect(b.session.nomeDe(idA)).toBe('Alfa');
+    const ate = async (ok: () => boolean) => {
+      const t0 = performance.now();
+      while (!ok()) {
+        if (performance.now() - t0 > 8000) throw new Error('a voz não chegou');
+        await play([a, b], 100);
+      }
+    };
+    a.session.enviarVoz(codificarPronto(true));
+    b.session.enviarVoz(codificarPronto(true));
+    const listaCom = (i: number) => voz[i]!.filter((m) => messageType(m) === VOZ.LISTA).map((m) => lerLista(m)!).some((ids) => ids.length === 2);
+    await ate(() => listaCom(0) && listaCom(1));
+    const sdp = 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\ns=-\r\n';
+    a.session.enviarVoz(codificarSinal({ id: idB, tipo: 'oferta', sdp }));
+    await ate(() => voz[1]!.some((m) => messageType(m) === VOZ.SINAL));
+    expect(lerSinal(voz[1]!.find((m) => messageType(m) === VOZ.SINAL)!)).toEqual({ id: idA, tipo: 'oferta', sdp });
+    expect(voz[0]!.some((m) => messageType(m) === VOZ.SINAL)).toBe(false);
+    a.session.dispose();
+    expect(sala[0]!.at(-1)).toBeNull();
+    b.session.dispose();
+  });
+
   it('trilho e EMP são aceitos e o outro jogador recebe carga e tiros distintos', async () => {
     const a=await player('Trilho','M4E','v1.vector09.railgun-0.emp-0',{primary:weapon('railgun'),secondary:weapon('emp')});
     const b=await player('Observador','M4E');

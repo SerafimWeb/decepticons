@@ -4566,6 +4566,28 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .praia-alvo[data-estado='critico'] b { color: var(--alert); }
 @keyframes praia-pulso { from { opacity: 0.55; } to { opacity: 1; } }
 
+/* Chat de voz (P205): o estado do seu microfone e quem está falando, no canto de baixo à esquerda. */
+.voz-hud {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  max-width: min(360px, 40vw);
+  padding: 5px 9px;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  background: linear-gradient(90deg, rgba(6, 8, 10, 0.78), rgba(6, 8, 10, 0));
+  border-left: 2px solid var(--muted);
+  text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+}
+.voz-hud[hidden] { display: none; }
+.voz-hud.voz-no-ar { color: var(--accent); border-left-color: var(--accent); }
+.voz-rede { color: var(--warn); }
+.voz-fala { color: var(--ink); min-height: 0; }
+.voz-rede:empty, .voz-fala:empty { display: none; }
+.touch .voz-hud { bottom: 96px; }
+
 /* Servidor reiniciando / conexão perdida (ui/ConnectionNotice.ts, P204): por cima do jogo, só quando o servidor avisa ou a conexão cai depois de entrar. */
 .net-aviso {
   --cor: var(--warn);

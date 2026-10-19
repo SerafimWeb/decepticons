@@ -34,9 +34,12 @@ import { ehPedidoDeMural, Mural } from './mural';
 import { Admin, Amostrador, LimiteDeFalhas, lerFimDoLog, LogEmMemoria, montarEstado, type Trafego } from './admin';
 import { ehSalaDeTeste, executarTeste } from './autoteste';
 import { ADMIN_PREFIXO } from '../shared/net/admin';
+import { ehMensagemDeVoz, VOZ_SDP_MAX } from '../shared/net/voz';
 
-/** Maior mensagem aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
+/** Maior mensagem de jogo aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
 const MAX_MESSAGE = 1024;
+/** O teto do `ws`: a sinalização de voz (um SDP de até 3 KB) passa de 1 KB; as mensagens de jogo continuam cortadas em `MAX_MESSAGE` logo abaixo (P205). */
+const MAX_MESSAGE_VOZ = VOZ_SDP_MAX + 3;
 /** Sala sem ninguém por este tempo fecha (a memória da partida volta). */
 const EMPTY_ROOM_S = 30;
 /** Sala padrão para quem entra sem código. */
@@ -878,7 +881,7 @@ export async function startServer(
   // Origem de fora (outro site usando o navegador do visitante) é recusada no aperto de mão, antes de ocupar vaga (`origem.ts`).
   const wss = new WebSocketServer({
     server: http,
-    maxPayload: MAX_MESSAGE,
+    maxPayload: MAX_MESSAGE_VOZ,
     verifyClient: ({ origin }: { origin: string }) => origemPermitida(origin || undefined, origens),
   });
 
@@ -969,6 +972,11 @@ export async function startServer(
       }
       descartando = false;
       const bytes = data instanceof Buffer ? data : Buffer.concat(Array.isArray(data) ? data : [Buffer.from(data as ArrayBuffer)]);
+      // Só a voz pode passar de 1 KB; mensagem de jogo grande demais derruba a conexão, como antes (G7).
+      if (bytes.length > MAX_MESSAGE && !ehMensagemDeVoz(bytes[0] ?? 0)) {
+        ws.close(1009, 'tamanho');
+        return;
+      }
       trafego.entradaBytes += bytes.length;
       void room.then((r) => r.receive(peer, bytes));
     });

@@ -23,6 +23,22 @@
 
 **Próxima sessão começa com:** a leitura do Google Analytics no `/metricas/` (falta o ID numérico da propriedade) e a limpeza do `servidor.log` antigo.
 
+## O CHAT DE VOZ: ÁUDIO DIRETO ENTRE OS JOGADORES, SEM SERVIDOR DE MÍDIA, SEM CUSTO E PROVADO EM CHROME DE VERDADE — Claude, 18/10 (branch `claude/voice-chat`, P205)
+
+**O Comandante (18/10):** trouxe o plano do VOICE CHAT (microfone aberto + apertar-para-falar, áudio espacial, canais ALL + TEAM, TURN a critério técnico) e, ao mandar seguir: *"quero q seja simples, sem custo inicial e eficiente"*.
+
+**O que entrou** (`VOICE_CHAT.md` tem tudo, inclusive onde o código **difere do plano** e por quê):
+1. **A voz vai direto de um navegador ao outro** (WebRTC, malha); o servidor **só repassa** a oferta e a resposta (`server/voz.ts`: 3 mensagens 30–32, o remetente é trocado pelo id de verdade, SDP conferido, teto de 30 mensagens por 10 s). **Não sobe o protocolo**, não toca no tick, não gasta banda do jogo.
+2. **Sem custo:** só o STUN público do Google (**sem TURN**: quem tem rede que barra a conexão direta fica sem voz e a tela diz "N SEM CONEXÃO"). Opus a 24 kbps **com DTX no SDP** (o plano supunha que viria sozinho: não vem).
+3. **Cliente** (`client/src/voice/`): microfone aberto com **T alternando o mudo**, ou **segurar T** (modo nas Configurações, tecla trocável); voz espacial (volume cheio até 12 m, some em 160 m, `equalpower`); quem recusa o microfone **entra como ouvinte**; reconexão da sala refaz a voz sem pedir o microfone outra vez. Indicador no canto de baixo à esquerda, seção CHAT DE VOZ nas Configurações, tudo nas 6 línguas. **Pedaço sob demanda** (3,5 + 0,7 KB gzip, só baixa quem liga a voz numa sala): o JS de partida ficou em **495,4 de 500 KB**.
+4. **Nasce RESTRITA** (`tela:voz`, regra do P191): só o modo Comandante (`?comandante=1`) vê e usa até o painel de visibilidade soltar; **é também a chave de desligar** sem republicar.
+
+**Provas:** bancada em **Chrome de verdade** (`medicoes/voz.mjs`, 26 verificações: o áudio chega nos dois sentidos, mudo e PTT cortam, **a 100 m cai a 0,40 e a 200 m some**, recusa vira ouvinte, microfone tardio entra sem renegociar, **falando ~50 pacotes/s e calado ~5 com o DTX**) + a captura do jogo real (`arte/voz-hud-jogo-claude.png`); testes de unidade, de sala e da sessão contra o servidor de verdade; **33 de 34 mutações à mão pegas** (a 34ª virou teste).
+
+**Falta (R13):** (a) **o ouvido do Comandante** (a bancada prova que o áudio chega e o volume cai; se soa bem é dele); (b) **dois aparelhos em redes diferentes** (a bancada liga dois Chrome na mesma máquina); (c) **canal TIME** (o protocolo online não tem time; entra com o CTF online); (d) **mudo por jogador**; (e) **ANTES DE LIBERAR `tela:voz`: a política de privacidade** — a voz mostra o IP aos outros jogadores da sala e o STUN do Google o recebe; o texto pronto, a troca de `POLITICA_VERSAO` e o `PRIVACIDADE.md` estão em `VOICE_CHAT.md` § 4; (f) TURN próprio só se um jogador real reclamar.
+
+**Próxima sessão começa com:** o veredicto do Comandante (testar com dois navegadores em `?comandante=1`); depois o canal TIME junto com os times online, ou o que ele mandar.
+
 ## O SERVIDOR AVISA ANTES DE REINICIAR: TELA COM CONTADOR, E O JOGO INSISTE EM VOLTAR — Claude, 18/10 (branch `claude/aviso-de-reinicio`, P204)
 
 **O Comandante (18/10):** *"será que temos que adicionar uma imagem dizendo que estamos reiniciando o servidor ou em manutenção (e dizer se temos previsão de retornar, atualizado automaticamente, com um contador na tela, e se for reinício do servidor, dizer que volta em 1 ou 2 minutos? ou potencialmente mais?)"*. Sim, e entrou.

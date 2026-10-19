@@ -15,6 +15,22 @@
 7. **Sem CNPJ, a política diz a verdade:** o controlador é uma pessoa física que desenvolve o jogo de forma independente. O que a LGPD ainda pede, o nome do encarregado, ficou para o Comandante decidir. Resend entra como destinatário (Estados Unidos). A `POLITICA_VERSAO` **não mudou** (mesmo dia, 18/10): a mudança só acrescenta um recurso que envia e-mail apenas a quem o pede; contas criadas antes da mudança não aceitaram essa linha, e isto está dito para a revisão do texto.
 8. **Não feito:** o e-mail de aviso "sua senha foi trocada" (entra com o envio ligado).
 
+## [2026-10-18] O chat de voz: direto entre os jogadores, sem custo, restrito até o Comandante soltar (Claude, P205)
+
+**Ordem:** *"prossiga com o VOICE CHAT PLANO DE IMPLEMENTAÇÃO!"* (o plano trazia as decisões do Comandante: microfone aberto + apertar-para-falar, áudio espacial, canais ALL + TEAM, TURN a critério técnico) e *"quero q seja simples, sem custo inicial e eficiente"*.
+
+**Decisões:**
+1. **WebRTC em malha, o servidor só sinaliza.** O áudio nunca passa pelo servidor do jogo: zero banda e zero CPU dele, e a voz fica fora do teto de 8 KB/s do jogo (G11). Serve para a sala de 8; SFU só se salas com mais de 5 falando virarem comuns.
+2. **Sem TURN (custo inicial zero).** Só o STUN do Google. O preço, dito: quem tem rede que barra a conexão direta fica sem voz (o plano estima ~15%, **não medido**). TURN próprio (`coturn`) só se um jogador real reclamar.
+3. **Sinalização enxuta:** o SDP sai já com os endereços (sem um candidato por mensagem): **uma oferta e uma resposta por par**, três tipos de mensagem (30–32, o plano tinha seis). O **servidor troca o remetente** em vez de validá-lo. O relé só confere a forma (`v=0`, 3 KB, tipo) e tem teto por jogador.
+4. **Tamanho de mensagem:** o `ws` aceita 3075 bytes **só para a voz**; mensagem de jogo acima de 1 KB continua derrubando a conexão (G7). Um SDP passa de 1 KB e o plano não via isso.
+5. **DTX explícito:** o plano supunha silêncio a ~0 kbps "pelo Opus"; o Chrome **não liga o DTX sozinho**. O SDP leva `usedtx=1;useinbandfec=1;maxaveragebitrate=24000` e a bancada **mede** o efeito (50 pacotes/s falando, ~5 calado).
+6. **`equalpower` em vez de HRTF** (custo em GPU e CPU integradas, G12) e queda **linear** até 160 m (o "inverse" do plano nunca silencia).
+7. **Canal TIME fora desta entrega:** o protocolo online não tem time (`allies: false`); entra junto com os times online. **Uma tecla só** (T): segura no PTT, alterna o mudo no modo aberto (com o mouse travado não dá para clicar).
+8. **Nasce restrita** (`tela:voz`, a regra do P191) e a **política de privacidade muda antes de liberar** (a voz expõe o IP aos outros jogadores e ao STUN do Google): não mexi no texto legal agora porque ninguém do público usa a voz e o texto é rascunho do Comandante revisar; deixei o texto pronto em `VOICE_CHAT.md`.
+9. **Número da ordem:** o plano dizia P158 (já tomado há dias) e outra sessão tomou P204 durante o trabalho; esta é a **P205** (a regra de conferir a `origin/main` antes do push valeu de novo).
+10. **`AGENTS.md`:** o mapa ganhou `voice/`, `server/voz.ts` e `shared/net/voz.ts`, e o Passo Zero a linha do chat de voz.
+
 ## [2026-10-18] O servidor avisa antes de reiniciar, e o jogo insiste por 10 minutos (Claude, P204)
 
 **Ordem:** *"será que temos que adicionar uma imagem dizendo que estamos reiniciando o servidor ou em manutenção… com um contador na tela… se for reinício, dizer que volta em 1 ou 2 minutos? ou potencialmente mais?"*

@@ -95,6 +95,10 @@ export interface OnlineSessionOptions {
   onScore?: (kills: number, deaths: number) => void;
   /** As esperas entre as tentativas de reconexão (ms); o padrão é `RECONEXAO_PADRAO_MS`. Vazio desliga a reconexão. */
   reconexaoMs?: readonly number[];
+  /** Mensagem do chat de voz que o servidor mandou (`LISTA` ou `SINAL`); quem decodifica é o `VoiceChat` (P205). */
+  onVoz?: (bytes: Uint8Array) => void;
+  /** Entrou na sala (o seu id) ou saiu dela (`null`: a conexão caiu; volta a chamar com o id a cada reconexão). */
+  onSala?: (meuId: number | null) => void;
   /** Por quanto tempo seguir tentando (a cada `ESPERA_LONGA_MS`) depois da lista de `reconexaoMs`; 0 desiste ao fim da lista. O padrão é `PERSISTENCIA_PADRAO_MS` quando `reconexaoMs` não é passada. */
   persistenciaMs?: number;
   /** A espera entre as tentativas da insistência longa (ms); o padrão é `ESPERA_LONGA_MS`. */
@@ -222,11 +226,15 @@ export class OnlineSession implements Pilot {
         this.aviso = null;
         this.queda = null;
         this.status();
+        o.onSala?.(m.id);
       },
       aviso: (m) => {
         if (cliente !== this.client) return;
         this.aviso = { cortaEm: Date.now() + m.segundos * 1000, voltaEmS: m.voltaEmS };
         this.status();
+      },
+      voz: (bytes) => {
+        if (cliente === this.client) o.onVoz?.(bytes);
       },
       roster: (entries) => cliente === this.client && this.onRoster(entries),
       snapshot: (s) => cliente === this.client && this.onSnapshot(s),
@@ -303,6 +311,17 @@ export class OnlineSession implements Pilot {
     this.names.clear();
     this.scores.clear();
     this.o.onScore?.(0, 0);
+    this.o.onSala?.(null);
+  }
+
+  /** Manda uma mensagem do chat de voz à sala (só se já estamos nela). */
+  enviarVoz(bytes: Uint8Array): void {
+    if (this.joined) this.client.enviarVoz(bytes);
+  }
+
+  /** O apelido de uma unidade da sala, ou `undefined`. */
+  nomeDe(id: number): string | undefined {
+    return this.names.get(id);
   }
 
   /** Na sala e recebendo o estado. */
@@ -399,6 +418,7 @@ export class OnlineSession implements Pilot {
     if (this.temporizador) clearTimeout(this.temporizador);
     this.temporizador = null;
     this.client.close();
+    this.o.onSala?.(null);
     for (const id of [...this.remotes.keys()]) this.removeRemote(id);
   }
 

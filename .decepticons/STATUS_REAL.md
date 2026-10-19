@@ -3,6 +3,8 @@
 > Regra R13: o que existe de verdade, sem enfeite. Atualize quando algo mudar de estado.
 > **REAL** = funciona de ponta a ponta · **PARCIAL** = existe mas incompleto · **DEMO** = só visual/placeholder · **AUSENTE** = não existe.
 
+**P205 — o chat de voz (REAL em Chrome de verdade entre dois navegadores na mesma máquina; PARCIAL: não provado entre redes diferentes nem ouvido pelo Comandante; RESTRITO ao modo Comandante, `tela:voz`):** voz P2P por WebRTC com o servidor só repassando a oferta e a resposta; microfone aberto ou segurar T; áudio espacial (cheio até 12 m, some em 160 m); recusa do microfone entra como ouvinte; Opus 24 kbps com DTX (medido: ~50 pacotes/s falando, ~5 calado). **AUSENTE:** canal TIME (o protocolo online não tem time), mudo por jogador, TURN (quem a rede barra fica sem voz), a política de privacidade da voz (antes de liberar). `VOICE_CHAT.md`; bancada `medicoes/voz.mjs`.
+
 **P182 — a interface dos jogos antigos nas Configurações (REAL, visto no navegador de verdade; falta o olho do Comandante):** a linha em barra dourada com chevron (sob o mouse ou com o foco) e o `‹ valor ›` no lugar das listas de poucos valores (nove). **O par SOLO / MULTI na primeira tela (REAL, visto no navegador de verdade, com servidor no build):** o MULTI abre o lobby online (nada muda na regra de entrar). **AUSENTE:** a placa (borda forte, rebites) no console e na pausa, e a barra dourada nas listas do console.
 
 **P178 — a landing em sete línguas (REAL, visto no navegador de verdade em japonês e russo; falta revisão por falante nativo):** faixa de idiomas no topo, página traduzida na hora, escolha compartilhada com o jogo. **PARCIAL:** as traduções são da Claude; Oficina, Sala de controle e as imagens com texto seguem em português.

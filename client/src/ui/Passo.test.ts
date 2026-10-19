@@ -50,9 +50,9 @@ describe('a ligação e o estilo (o que o navegador de verdade mostra)', () => {
     expect(css).toMatch(/\.settings-box \.setting-row::before\s*\{[^}]*content: '❯'/);
   });
 
-  it('as Configurações vestem a qualidade, a dificuldade e o narrador, e a lista de inimigos veste os seus', () => {
+  it('as Configurações vestem a qualidade, a dificuldade, o narrador e o microfone da voz, e a lista de inimigos veste os seus', () => {
     const menu = readFileSync(resolve(RAIZ, 'src/ui/SettingsMenu.ts'), 'utf8');
-    expect(menu).toMatch(/for \(const s of \[this\.selQuality, this\.selDiff, this\.selNarracao\]\) ligarPasso\(s\)/);
+    expect(menu).toMatch(/for \(const s of \[this\.selQuality, this\.selDiff, this\.selNarracao, this\.selVozModo\]\) ligarPasso\(s\)/);
     const inimigos = readFileSync(resolve(RAIZ, 'src/ui/EnemySettings.ts'), 'utf8');
     expect(inimigos).toMatch(/ligarPasso\(control\)/);
   });
