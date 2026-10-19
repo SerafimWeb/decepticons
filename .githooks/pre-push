@@ -5,15 +5,49 @@
 # [AGENTS.md, regra 2] Nada vai direto para a main: tudo entra por PR, com revisão e merge no GitHub.
 # A main publica o site sozinha, então um push direto pula a revisão e vai ao ar.
 # (Em 23/09 um agente fez push direto; o merge pelo GitHub não passa por este hook.)
-while read -r _local_ref _local_sha remote_ref _remote_sha; do
+sha_enviado=""
+viu_ref=0
+while read -r _local_ref local_sha remote_ref _remote_sha; do
   if [ "$remote_ref" = "refs/heads/main" ]; then
     echo "❌ PUSH BLOQUEADO: push direto na main. Crie um branch <agente>/<tarefa>, abra um PR e faça o merge pelo GitHub."
     exit 1
   fi
+  viu_ref=1
+  case "$local_sha" in
+    0000000000000000000000000000000000000000) ;; # apagar branch remoto: não sobe código nenhum
+    *) sha_enviado="$local_sha" ;;
+  esac
 done
+
+# Só apagar branch remoto (nenhum commit sobe): não há o que verificar.
+if [ "$viu_ref" = 1 ] && [ -z "$sha_enviado" ]; then
+  echo "▶ pre-push [R15]: só apaga branch remoto (nenhum commit sobe): sem check."
+  exit 0
+fi
+
+# [AGENTS.md, regra 19c] O check não se repete na MESMA árvore: um push recusado pelo GitHub (erro dele) ou refeito não custa
+# mais 10 a 15 minutos. Só vale quando o que o check olha é exatamente o que sobe: árvore limpa (nada por commitar) e a árvore
+# do commit enviado igual à do HEAD. Qualquer mudança (inclusive a junção com a main) é outra árvore e roda o check de novo.
+arvore=""
+pasta_ok=""
+if [ -n "$sha_enviado" ] && [ -z "$(git status --porcelain 2>/dev/null)" ]; then
+  arvore="$(git rev-parse "$sha_enviado^{tree}" 2>/dev/null || true)"
+  if [ -n "$arvore" ] && [ "$arvore" != "$(git rev-parse 'HEAD^{tree}' 2>/dev/null || true)" ]; then arvore=""; fi
+  [ -n "$arvore" ] && pasta_ok="$(git rev-parse --show-toplevel)/.tmp/check-ok"
+fi
+if [ -n "$arvore" ] && [ -f "$pasta_ok/$arvore" ]; then
+  echo "▶ pre-push [R15]: esta árvore ($arvore) já passou no npm run check em $(cat "$pasta_ok/$arvore"): não repito."
+  exit 0
+fi
 
 echo "▶ pre-push [R15]: npm run check"
 if ! npm run check --silent; then
   echo "❌ PUSH BLOQUEADO [R15]: npm run check falhou. Investigue antes de subir."
   exit 1
+fi
+
+if [ -n "$arvore" ]; then
+  mkdir -p "$pasta_ok"
+  date -u +%Y-%m-%dT%H:%M:%SZ > "$pasta_ok/$arvore"
+  find "$pasta_ok" -type f -mtime +7 -delete 2>/dev/null || true # o que tem mais de uma semana não vale mais
 fi

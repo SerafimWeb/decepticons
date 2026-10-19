@@ -2,12 +2,15 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+## PROCESSO MAIS LEVE E O CI VERMELHO — Claude, 19/10 (branch `claude/processo-leve`, P220)
 
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+**O Comandante (19/10):** as iterações estão "MUITO grandes… overengineered?"; pediu as 5 regras de processo leve e que eu olhasse o GitHub vermelho.
 
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+**Feito:** (1) `AGENTS.md` **regra 19**: rigor proporcional ao risco (alto: servidor + teste + até 8 mutações + 1 bancada; baixo: só o teste de sempre), sem suíte inteira à mão antes do push, cada fato escrito uma vez, o menor PR que resolve. (2) O **hook de push não repete o check na mesma árvore** (`.tmp/check-ok/`; 8 testes, 3 mutações). (3) **O vermelho do CI tinha duas causas** (detalhe no HISTORICO): o teste `estudio-vozes` (503 sem `ffmpeg` no runner) e o smoke (`localhost:2567` recusado no runner); as duas reproduzidas e corrigidas. O CI voltou a rodar (2 a 4 min).
 
+**Atenção:** o CI gasta minutos medidos; com a cota de volta, push repetido pode esgotá-la. Se parar, `publicar --sem-ci` (P105). **Falta (R13):** o verde do CI só vale quando o PR e a `main` passarem de verdade (o `npm run check` para no primeiro erro, e já apareceu um segundo vermelho atrás do primeiro).
+
+**Próxima sessão começa com:** conferir o CI da `main` depois do merge; depois o mudo por jogador (voz) ou o que o Comandante mandar.
 
 ## O E-MAIL DO "ESQUECI A SENHA" PELO SMTP DA HOSTINGER, SEM SERVIÇO NOVO — Claude, 19/10 (branch `claude/email-smtp`, P206 parte 2)
 
@@ -23,6 +26,26 @@
 **Falta (dele):** criar a caixa `nao-responda@cybermech.online` no hPanel (E-mails), `npm run email -- iniciar`, trocar a senha no Bloco de Notas e `npm run email -- testar seu@email.com` (`LANCAMENTO.md § 7`). **A política** já cita a Hostinger como quem entrega o e-mail (no lugar do Resend), sem mudar a `POLITICA_VERSAO` (mesmo conjunto de dados).
 
 **Próxima sessão começa com:** o que o `npm run email -- testar` disser; se cair no spam, o DKIM/DMARC do domínio.
+
+## A MULTIDÃO DO 8 DE JANEIRO: A SIMULAÇÃO PURA E O DESENHO NA GPU REAL (PASSOS 2 E 3 DA FICHA), VISTA NO JOGO — Claude, 19/10 (branch `claude/multidao`, P217 e P219)
+
+**O que foi feito:** `client/src/sim/Multidao.ts`, a multidão da fase como **módulo puro de simulação** (sem tela, sem Rapier, sem DOM; G1, G2, G14), e a medida de CPU (`medicoes/MULTIDAO.md`).
+
+**1. A ideia (a da ficha, § 3):** a posição de um figurante é **função do tempo**. Cada um nasce com fonte, tick, tipo, prédio-alvo e semente; a posição em qualquer tick é calculada (linha reta com um balanço de seno em parábolas por partes, sem `Math.sin`). Só o que o jogador causa é estado: `morreu(id, tick)` e `fugiu(id, tick)`. A chegada à fachada, a fuga automática depois do tempo na fachada e a saída pelo limite do mapa são **eventos agendados** (ponteiros sobre vetores ordenados).
+**2. O que ele tem:** o cronograma de chegadas por **ônibus** (grupos grandes), **bueiros** (jatos) e **lixeiras** (fios), a cota finita da fase, os tipos GADO, CARECA e PERUCA (vida, velocidade e altura próprias), os androides rebeldes **agendados** (a missão os cria), o tiro (a linha da mira contra um cilindro, com a cabeça), a explosão (mata no raio, assusta até o dobro), o susto por perto (de 6 em 6 ticks), `contarNaFachada` (o que a missão usa para desgastar a integridade), os contadores que formam a vitória (`terminou`: cota despejada e Praça vazia) e **o modo espelho** para o cliente online: só aplica os eventos do servidor, e quem entra no meio da fase recebe o estado compacto (um bit por figurante mais as fugas).
+**3. A medida:** **0,043 ms por tick** com as posições de todos recalculadas todo tick e 10 tiros por segundo (2.828 figurantes, pico de 1.465 na Praça), contra a estimativa da ficha de ≤ 0,3 ms.
+
+**4. O desenho** (`environment/MultidaoDesenho.ts`, passo 3): três malhas instanciadas (**gado** com a cabeça de chifres, **careca** de colete e bigode, **peruca** loira; só **tipos**, nenhum nome, marca ou texto) com a **posição calculada na vertex shader** a partir do tick (a mesma conta da simulação, em GLSL), o balanço do andar, o gingado de quem grita na fachada, o tombo e a correria da fuga. **As vagas de instância:** cada figurante ganha uma ao nascer e a devolve ao cair ou sair: o custo na GPU segue quem está **presente**. Cada tipo tem **botão de desligar a máscara** (`MascarasDaMultidao`).
+**5. A demonstração no jogo:** `?multidao=1` (+ `&cota=N` de 100 a 5.000, `&t=T` começa a fase no tick T, `&semente=N`), carregada sob demanda (7 KB gzip, fora do pacote de partida), na Cidade Neon: a multidão chega de ônibus, bueiros e lixeiras, marcha até três alvos a leste, para na fachada e foge; **quem chega a 6 m do jogador foge**. **É DEMO** (R13): os tiros do jogador ainda não a atingem, não há prédio nem integridade.
+**6. A GPU real** (`medicoes/multidao-gpu.mjs`, `medicoes/MULTIDAO.md`): a multidão custa **de 1,2 a 2 ms** no quadro (14 ms de 16,7 no pico, com 3.000 de cota) e **achou dois defeitos que o SwiftShader não vê:** o shader tinha **17 atributos por vértice (o limite é 16): não compilava e a multidão sumia**, e o custo seguia quem **nasceu**, não quem está presente (350 mil triângulos; as vagas cortaram para 182 mil).
+
+**Provas:** 15 testes de simulação + 9 do desenho (as três malhas, a conta dos 16 atributos, a cor empacotada, as vagas: o custo é o máximo de gente ao mesmo tempo, a fuga e o tombo chegam à vaga, quem entra no meio da fase só desenha quem está na Praça) + `ShadersSemNaN`. Os 15 de simulação: a mesma semente é a mesma multidão; a cota fecha; a mistura de tipos; a posição sem saltos e o destino no tick marcado; o ciclo completo sem jogador (todos chegam, fogem e saem; a Praça esvazia; `terminou`); pular ticks dá o mesmo que andar um a um; o tiro (de lado, de cima, errando, alcance); o gado cai com dois golpes e o ferido foge; a explosão; o susto; **o espelho chega ao mesmo lugar** que a autoridade e **quem entra no meio da fase fica igual**; o custo.
+
+**Falta (R13):** **o teto de 80 mil triângulos da ficha NÃO foi atingido** (182 mil no pico; o critério de 60 fps foi, com folga pequena: **numa GPU mais fraca falta margem**): falta o **impostor de longe**, menos caixas por figurante e o **teto da qualidade** (`limitar()` existe e é testado, mas não está ligado ao `Quality.ts`); **o `varrer-nan` (shader novo, `FERRAMENTAS.md` § 4.1) deu 0 de 480 poses com NaN, mas na Praia com a multidão da demonstração, não no mapa da fase (que não existe)**; os tiros do jogador não atingem a multidão na demonstração, e **não há mapa, prédio nem missão** (passos 4 e 5); os números de vida e velocidade são os da ficha, sem balanço de jogo; a rede não foi medida.
+
+**Onde o Comandante confere:** `/jogar/?multidao=1&cota=3000&t=9000` (em `?comandante=1` ou no PC dele): a multidão a meio caminho, já cheia; o jogador anda por entre ela e ela foge; as fotos em `.decepticons/arte/multidao-*.png`.
+
+**Próxima sessão começa com:** o impostor de longe e o teto da qualidade (para chegar ao teto de triângulos), depois o mapa da Praça (passo 4); ou o que o Comandante responder às cinco perguntas da ficha.
 
 ## A IDADE E A VOZ SÓ PARA MAIORES DE 18 ANOS — Claude, 19/10 (branch `claude/idade-e-voz`, P211)
 

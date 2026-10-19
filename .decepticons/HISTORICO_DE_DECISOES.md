@@ -1,11 +1,15 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+## [2026-10-19] Processo leve: rigor proporcional ao risco, e o CI vermelho (Claude, P220)
 
-> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+**Ordem:** as iterações estavam grandes demais ("overengineered?"); pediu as 5 regras para o processo ficar mais leve e que olhasse o GitHub vermelho.
 
-> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+**Decisões:**
+1. **Regra 19 no `AGENTS.md`** (a fonte única): risco alto leva servidor + teste + até 8 mutações + 1 bancada; risco baixo só o teste de sempre; sem suíte inteira à mão antes do push; cada fato escrito uma vez; um pedido = o menor PR. A causa medida no P211: 61 arquivos e ~1.260 linhas para "perguntar a idade", 32 mutações (todas morreram de primeira, não acharam nada), 5 bancadas e 4 pushes de ~15 min.
+2. **O hook não repete o check na mesma árvore** (`.githooks/pre-push`, cache em `.tmp/check-ok/<árvore>`). Só vale com a árvore limpa e igual à do `HEAD`, para nunca pular um check que não olhou o que sobe; check que falha não guarda nada; só apagar branch remoto não roda check (antes rodava o check inteiro). 8 testes e 3 mutações na borda.
+3. **O CI está vivo de novo (e tinha DUAS causas vermelhas, uma atrás da outra)** (a cota do mês voltou: as execuções de hoje rodam 2 a 3 min, não os 2 s da época da cobrança) e estava **vermelho por um teste só**: `estudio-vozes` esperava 400 e recebia 503, porque o servidor do Estúdio checava o `ffmpeg` **antes** de validar o pedido, e o runner não tem `ffmpeg`. Agora o pedido errado é 400 em qualquer máquina. Lição: teste que depende de ferramenta da máquina do autor passa só nela. **A segunda, atrás dessa (o `npm run check` para no primeiro erro): o smoke.** O jogo aberto em `localhost` procura o servidor em `localhost:2567` e pergunta o `/status`; nesta máquina há o servidor de produção ali (passava), no runner não há (`ERR_CONNECTION_REFUSED` no console, e o smoke reprova qualquer `console.error`). O smoke agora **recusa essa porta de propósito** (vale igual em toda máquina), ignora só essa recusa esperada e mostra a URL de qualquer outro erro (a mensagem do CI não dizia qual recurso falhou e custou uma investigação). Reproduzido antes de consertar (mesma mensagem, `@ http://localhost:2567/status`). Uma falha isolada do smoke local na primeira rodada não reapareceu em 4 seguintes (boot de 7 a 18 s conforme a carga); causa não identificada.
 
+**Risco assumido:** o CI gasta minutos medidos (repositório privado, ~2.000/mês): com ele vivo, push repetido gasta a cota e pode pará-lo de novo. A regra 19c e o `concurrency` do workflow ajudam; se a cota acabar de novo, o caminho continua sendo `publicar --sem-ci` (P105). Nunca pagar.
 
 ## [2026-10-19] O e-mail do "esqueci a senha" pelo SMTP da Hostinger, sem serviço novo (Claude, P206)
 
@@ -18,6 +22,19 @@
 4. **O servidor relê o arquivo quando muda** (pelo conteúdo: a data e o tamanho enganam, `COLE_A_SENHA_AQUI` e uma senha de 17 caracteres têm o mesmo tamanho): ligar o e-mail por arquivo não pode exigir reiniciar, e reiniciar derruba quem joga.
 5. **Provado contra um servidor SMTP de mentira de verdade (um socket que fala o protocolo)**, não só com mocks: AUTH PLAIN e LOGIN, texto e HTML em japonês/russo/espanhol chegam inteiros, senha recusada, destinatário recusado, servidor mudo, porta fechada, e injeção de cabeçalho (destinatário com quebra de linha ou vírgula nem abre conexão; assunto com quebra vira texto). **O que não está provado: a Hostinger de verdade** (falta a caixa e a senha, que são do Comandante).
 6. **A política publicada passou a citar a Hostinger no lugar do Resend** (o e-mail de quem pede "esqueci a senha" é entregue por ela): mesmo conjunto de dados, só o nome do prestador; por isso a `POLITICA_VERSAO` não mudou. Se o Resend entrar um dia, o texto muda junto.
+
+## [2026-10-19] A multidão é módulo puro com modo espelho, medida antes do desenho (Claude, P217 e P219)
+
+**Decisões:**
+1. **Simulação antes do desenho:** o número decide se a ideia da ficha (posição como função do tempo) aguenta. Deu **0,043 ms por tick**, seis vezes abaixo da conta de bolso e sete abaixo do teto: o desenho pode seguir sem redesenhar a simulação.
+2. **Dois modos no mesmo código:** a *autoridade* (servidor e jogo offline) decide tiro, explosão e susto; o *espelho* (cliente online) só aplica `morreu` e `fugiu`. O que sai do tempo (chegar, fugir ao fim da estadia, sair) é igual nos dois, então a rede não carrega posição.
+3. **O balanço do andar é um gingado, não um tremor:** a primeira versão balançava mais depressa do que o figurante andava (o teste de continuidade pegou); amplitude 0,18 m e período de 90 a 130 ticks.
+4. **O seno é por parábolas, não `Math.sin`:** só `+ − × ÷`, `floor` e `sqrt`, exatos no IEEE-754; servidor e cliente chegam no mesmo número em qualquer navegador.
+6. **O desenho é o da gente da praia, com a posição na shader:** nenhum CPU por figurante por quadro, e a mesma conta da simulação em GLSL (a multidão desenhada e a simulada nunca divergem). O `PraiaGente.ts` foi o modelo.
+7. **A GPU real achou o que o SwiftShader não vê:** o limite de **16 atributos por vértice** (o shader com 17 não compilava e a multidão sumia sem erro no smoke). As cores viraram um atributo só (RGB empacotado em float: 24 bits cabem exatos) e o teste agora trava a conta. É a segunda vez que "só a GPU real vê" (a primeira foi o NaN da praia, P130): a bancada de GPU entra no roteiro de todo efeito novo.
+8. **As vagas de instância:** o custo na GPU tem de seguir quem está **presente** e não quem nasceu (350 mil triângulos no fim da fase contra 182 mil). Cada figurante ganha uma vaga ao nascer e a devolve ao cair (depois do tombo) ou sair; a contagem desenhada é a marca d'água; só o trecho de buffer alterado vai à GPU (`addUpdateRange`).
+9. **Honestidade sobre o teto:** a ficha pôs ≤ 80 mil triângulos; o desenho chegou a 182 mil. **Não ajustei o teto para caber:** o critério que decide (o quadro de 60 fps na GPU integrada) foi atingido, mas com folga pequena, e a ficha agora diz as duas coisas. O caminho é o impostor de longe e menos caixas por figurante.
+5. **Os androides rebeldes ficam de fora do vetor:** são os `Android` que o jogo já tem (vida, tiro, rede); a multidão só agenda a chegada deles.
 
 ## [2026-10-19] A idade manda na voz: só maior de 18 anos, e o servidor decide (Claude, P211)
 

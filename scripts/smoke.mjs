@@ -98,8 +98,15 @@ try {
   const page = await browser.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+  // O jogo aberto em localhost procura o servidor de jogo em localhost:2567 (`onlineConfig.defaultServer`) e pergunta o `/status`. Quem roda o smoke pode ter um servidor ali (o PC do dono tem o de produção, e por
+  // isso passava) e o runner do CI não tem (e falhava com ERR_CONNECTION_REFUSED). O smoke recusa essa porta de propósito: vale igual em toda máquina, e só ESSA recusa esperada deixa de contar como erro.
+  const SERVIDOR_LOCAL = /^https?:\/\/(localhost|127\.0\.0\.1):2567\//;
+  await page.route(SERVIDOR_LOCAL, (r) => r.abort('connectionrefused'));
   page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(`console.error: ${m.text()}`);
+    if (m.type() !== 'error') return;
+    const onde = m.location().url;
+    if (SERVIDOR_LOCAL.test(onde) && /Failed to load resource/.test(m.text())) return;
+    errors.push(`console.error: ${m.text()}${onde ? ` @ ${onde}` : ''}`);
   });
 
   const t0 = Date.now();

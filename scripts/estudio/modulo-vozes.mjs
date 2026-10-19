@@ -126,13 +126,14 @@ export function moduloVozes({ raiz, origemVozes, ffmpeg }) {
 
     // GRAVAR: o corpo é o áudio bruto do navegador (webm/ogg/wav/mp3/m4a); vira WAV mono 44,1 kHz e uma tomada numerada.
     if (req.method === 'POST' && caminho === '/gravar') {
-      if (!ffmpeg) return responder(503, { erro: 'ffmpeg não encontrado neste computador' }), true;
       const sotaque = url.searchParams.get('sotaque') ?? '';
       const chave = url.searchParams.get('chave') ?? '';
       if (!SOTAQUES.includes(sotaque)) return responder(400, { erro: 'sotaque desconhecido' }), true;
       if (!chaves().has(chave)) return responder(400, { erro: 'fala que o catálogo não tem' }), true;
       const bytes = await lerCorpo(req, TETO_AUDIO);
       if (bytes.length < 200) return responder(400, { erro: 'gravação vazia' }), true;
+      // O pedido errado é 400 em qualquer máquina; "sem ffmpeg" (503) só vale para o pedido certo (o runner do CI não tem ffmpeg e o teste de recusa tem que passar lá também).
+      if (!ffmpeg) return responder(503, { erro: 'ffmpeg não encontrado neste computador' }), true;
       const dir = join(origemVozes, sotaque);
       mkdirSync(dir, { recursive: true });
       const tipo = String(req.headers['content-type'] ?? '').split(';')[0].trim();
