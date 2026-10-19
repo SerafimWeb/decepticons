@@ -126,11 +126,11 @@ export class VoiceChat {
       return !!t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
     };
     const aperta = (e: KeyboardEvent) => {
-      if (e.repeat || !this.noServidor || normalizeKey(e.code) !== tecla() || noCampo(e.target)) return;
-      this.mic.aoTecla(true);
+      if (e.repeat || normalizeKey(e.code) !== tecla() || noCampo(e.target)) return;
+      this.aoBotao(true);
     };
     const solta = (e: KeyboardEvent) => {
-      if (normalizeKey(e.code) === tecla()) this.mic.aoTecla(false);
+      if (normalizeKey(e.code) === tecla()) this.aoBotao(false);
     };
     const perdeuFoco = () => this.mic.soltar();
     window.addEventListener('keydown', aperta);
@@ -141,6 +141,21 @@ export class VoiceChat {
       window.removeEventListener('keyup', solta);
       window.removeEventListener('blur', perdeuFoco);
     };
+  }
+
+  /**
+   * O botão de microfone (a tecla do chat, ou o botão da tela de toque, P209: o celular não tem tecla). `down` ao apertar, `false` ao soltar. No modo "sempre aberto" apertar alterna o mudo
+   * (soltar não faz nada); no "segurar", vale enquanto apertado. **Sem microfone (recusado ou ausente) apertar só tenta pedi-lo de novo**: no celular quem negou sem querer corrige em um
+   * toque, sem recarregar o jogo, e o microfone já nasce aberto. Fora da voz, não faz nada.
+   */
+  aoBotao(down: boolean): void {
+    if (!this.noServidor) return;
+    if (!this.mic.temMic) {
+      // Sem microfone o toque só o pede (não alterna o mudo: quem toca quer ligar o microfone, e ele nasce aberto quando o navegador aceitar). O `abrirMic` já ignora o toque enquanto o navegador ainda pergunta.
+      if (down) void this.abrirMic();
+      return;
+    }
+    this.mic.aoTecla(down);
   }
 
   /**

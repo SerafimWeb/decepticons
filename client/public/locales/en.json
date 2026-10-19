@@ -897,5 +897,8 @@
  "VOLTAR PARA ENTRAR": "BACK TO SIGN IN",
  "Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.": "Done. If that e-mail has an account, the link is on its way (check spam too). It is valid for 30 minutes.",
  "a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade": "e-mail recovery is not active yet: ask for help through the contact on the Privacy page",
- "pedidos demais; espere um pouco": "too many requests; wait a moment"
+ "pedidos demais; espere um pouco": "too many requests; wait a moment",
+ "MICROFONE ABERTO": "MIC OPEN",
+ "MUDO": "MUTED",
+ "SEGURE O BOTÃO PARA FALAR": "HOLD THE BUTTON TO TALK"
 }

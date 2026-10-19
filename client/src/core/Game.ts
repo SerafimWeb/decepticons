@@ -1250,7 +1250,7 @@ export class Game {
       const [{ VoiceChat }, { VoiceHud }] = await Promise.all([import('../voice/VoiceChat'), import('../voice/VoiceHud')]);
       const voz = new VoiceChat({ enviar: (bytes) => this.online?.enviarVoz(bytes), saida: () => this.audio.output });
       voz.ligarTeclas(() => this.settings.value.keys.ptt);
-      this.vozHud = new VoiceHud(document.getElementById('hud')!, voz, (id) => this.online?.nomeDe(id), () => keyLabel(this.settings.value.keys.ptt));
+      this.vozHud = new VoiceHud(document.getElementById('hud')!, voz, (id) => this.online?.nomeDe(id), () => keyLabel(this.settings.value.keys.ptt), () => this.input.touchMode);
       this.voz = voz;
       this.aplicarVoz(this.settings.value);
       if (this.vozId !== null) voz.entrouNaSala(this.vozId);

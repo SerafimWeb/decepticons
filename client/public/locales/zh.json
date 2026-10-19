@@ -897,5 +897,8 @@
  "VOLTAR PARA ENTRAR": "返回登录",
  "Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.": "已发送。如果该邮箱有账号,链接已在路上(也请查看垃圾邮件)。有效期 30 分钟。",
  "a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade": "邮箱找回功能尚未开启:请通过隐私页面上的联系方式寻求帮助",
- "pedidos demais; espere um pouco": "请求过多;请稍候"
+ "pedidos demais; espere um pouco": "请求过多;请稍候",
+ "MICROFONE ABERTO": "麦克风已开",
+ "MUDO": "已静音",
+ "SEGURE O BOTÃO PARA FALAR": "按住按钮说话"
 }

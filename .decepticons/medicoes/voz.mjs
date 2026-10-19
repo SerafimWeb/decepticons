@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createServer, runnerImport } from 'vite';
+import { gerarWav } from './vozLib.mjs';
 
 /**
  * A bancada do CHAT DE VOZ (P205): dois ou mais Chrome de verdade, um servidor de jogo de verdade e o mesmo `NetClient` + `VoiceChat` + áudio espacial do jogo, com microfone FALSO
@@ -12,36 +13,12 @@ import { createServer, runnerImport } from 'vite';
  * G15: o Chrome e o perfil dele em `.tmp/`. Sem GPU (a página não desenha nada).
  */
 const TMP = resolve('.tmp', 'captura');
-const DADOS = resolve('.tmp', 'voz');
 mkdirSync(TMP, { recursive: true });
-mkdirSync(DADOS, { recursive: true });
 process.env.TEMP = process.env.TMP = process.env.TMPDIR = TMP;
 const { chromium } = await import('playwright-core');
 
-/** Um WAV mono de 16 bits a 48 kHz: um seno (`amp` > 0) ou silêncio. É o que o Chrome toca no lugar do microfone. */
-function wav(nome, amp, segundos) {
-  const hz = 48000;
-  const n = hz * segundos;
-  const buf = Buffer.alloc(44 + n * 2);
-  buf.write('RIFF', 0);
-  buf.writeUInt32LE(36 + n * 2, 4);
-  buf.write('WAVEfmt ', 8);
-  buf.writeUInt32LE(16, 16);
-  buf.writeUInt16LE(1, 20);
-  buf.writeUInt16LE(1, 22);
-  buf.writeUInt32LE(hz, 24);
-  buf.writeUInt32LE(hz * 2, 28);
-  buf.writeUInt16LE(2, 32);
-  buf.writeUInt16LE(16, 34);
-  buf.write('data', 36);
-  buf.writeUInt32LE(n * 2, 40);
-  for (let i = 0; i < n; i++) buf.writeInt16LE(Math.round(amp * 32767 * Math.sin((2 * Math.PI * 440 * i) / hz)), 44 + i * 2);
-  const caminho = resolve(DADOS, nome);
-  writeFileSync(caminho, buf);
-  return caminho;
-}
-const tom = wav('tom.wav', 0.5, 6);
-const silencio = wav('silencio.wav', 0, 6);
+const tom = gerarWav('tom.wav', 0.5, 6);
+const silencio = gerarWav('silencio.wav', 0, 6);
 
 const verificacoes = [];
 const medidas = {};

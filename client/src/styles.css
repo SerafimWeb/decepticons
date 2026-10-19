@@ -4586,7 +4586,8 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .voz-rede { color: var(--warn); }
 .voz-fala { color: var(--ink); min-height: 0; }
 .voz-rede:empty, .voz-fala:empty { display: none; }
-.touch .voz-hud { bottom: 96px; }
+/* No toque o indicador sobe para cima do direcional (que descansa no canto), e o botão de microfone mora sob PAUSA e PLACAR (P209). */
+.touch .voz-hud { bottom: calc(var(--tc-edge-b) + var(--tc-stick) + 8px); left: var(--tc-edge-l); max-width: 34vw; }
 
 /* Servidor reiniciando / conexão perdida (ui/ConnectionNotice.ts, P204): por cima do jogo, só quando o servidor avisa ou a conexão cai depois de entrar. */
 .net-aviso {
@@ -4646,3 +4647,35 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
   cursor: pointer;
 }
 .login-link:hover, .login-link:focus-visible { color: var(--accent); outline: none; }
+
+/* Botão de microfone da tela de toque (P209): vem depois da camada de toque no `body` e fica acima dela (z-index), senão a zona de mira engoliria o toque. Só no modo toque, com o jogo rodando e a voz ativa. */
+.voz-mic {
+  display: none;
+  position: fixed;
+  z-index: 950;
+  top: calc(max(10px, env(safe-area-inset-top)) + 104px);
+  right: var(--tc-edge-r);
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: #fff;
+  border-radius: 8px;
+  border: 1px solid rgba(57, 255, 106, 0.6);
+  background: rgba(6, 8, 10, 0.6);
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+html.touch #touch-controls.on ~ .voz-mic.ativo { display: grid; }
+html.touch #touch-controls.editing ~ .voz-mic { display: none; }
+.voz-mic[data-estado='no-ar'] { border-color: var(--accent); box-shadow: 0 0 10px rgba(57, 255, 106, 0.5); }
+.voz-mic[data-estado='mudo'] { border-color: var(--alert); color: var(--alert); }
+.voz-mic[data-estado='espera'] { opacity: 0.8; }
+.voz-mic[data-estado='sem'], .voz-mic[data-estado='pedindo'] { border-color: var(--muted); opacity: 0.65; }
+.voz-mic.pressed { background: rgba(255, 255, 255, 0.28); }
