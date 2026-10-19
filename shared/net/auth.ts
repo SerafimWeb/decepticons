@@ -25,6 +25,9 @@ export const CONTA_PROGRESSO_PATH = '/conta/progresso';
 export const CONTA_DADOS_PATH = '/conta/dados';
 export const CONTA_APAGAR_PATH = '/conta/apagar';
 export const CONTA_MEDICAO_PATH = '/conta/medicao';
+/** "Esqueci a senha" (P205): pedir o link por e-mail e, com o link, definir a senha nova. */
+export const CONTA_ESQUECI_PATH = '/conta/esqueci';
+export const CONTA_REDEFINIR_PATH = '/conta/redefinir';
 export const CONFIG_PATH = '/config';
 /**
  * As únicas chaves da configuração global (`GET /config`, aberta ao público; `POST /admin/config`, só administrador). Antes, QUALQUER nome era lido e gravado: bastava o dono guardar algo ali um dia e
@@ -211,4 +214,38 @@ export function mesclarProgresso(local: ProgressoPiloto | null, remoto: Progress
 export function progressoIgual(a: ProgressoPiloto | null, b: ProgressoPiloto | null): boolean {
   if (!a || !b) return a === b;
   return a.apelido === b.apelido && a.nivel === b.nivel && a.xp === b.xp && a.creditos === b.creditos && a.montagem === b.montagem;
+}
+
+// ---------- esqueci a senha (P205) ----------
+
+/** Por quanto tempo o link de redefinição vale (minutos). O servidor guarda só a impressão digital dele (SHA-256), e o link some ao ser usado ou vencer. */
+export const REDEFINIR_VALE_MIN = 30;
+/** O token do link: 32 bytes em base64url (43 caracteres). */
+export const REDEFINIR_TOKEN_RE = /^[A-Za-z0-9_-]{43}$/;
+/** As línguas do e-mail e da página de redefinição (as mesmas do jogo: `client/src/i18n/i18n.ts`, que tem teste de igualdade). */
+export const IDIOMAS_EMAIL = ['pt', 'en', 'es', 'fr', 'ja', 'zh', 'ru'] as const;
+export type IdiomaEmail = (typeof IDIOMAS_EMAIL)[number];
+
+/** O corpo de `POST /conta/esqueci`: o e-mail e (opcional) a língua do jogador. Língua desconhecida vira português. */
+export function parseEsqueci(raw: unknown): { email: string; lang: IdiomaEmail } | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  if (validarEmail(r.email)) return null;
+  const lang = IDIOMAS_EMAIL.find((l) => l === r.lang) ?? 'pt';
+  return { email: normalizarEmail(r.email as string), lang };
+}
+
+/** O corpo de `POST /conta/redefinir`: o token do link e a senha nova (mesma regra da senha de sempre). `senha` é a mensagem de erro para a tela quando a senha não serve. */
+export function parseRedefinir(raw: unknown): { ok: true; token: string; senha: string } | { ok: false; motivo: 'token' | 'senha'; senha?: string } {
+  if (typeof raw !== 'object' || raw === null) return { ok: false, motivo: 'token' };
+  const r = raw as Record<string, unknown>;
+  if (typeof r.token !== 'string' || !REDEFINIR_TOKEN_RE.test(r.token)) return { ok: false, motivo: 'token' };
+  const erro = validarSenha(r.senha);
+  if (erro) return { ok: false, motivo: 'senha', senha: erro };
+  return { ok: true, token: r.token, senha: r.senha as string };
+}
+
+/** O link do e-mail. O token vai depois do `#`: o fragmento não é enviado ao servidor nem no Referer, então não cai em log de ninguém. */
+export function urlDeRedefinicao(siteBase: string, token: string, lang: IdiomaEmail): string {
+  return `${siteBase.replace(/\/+$/, '')}/redefinir/?lang=${lang}#${token}`;
 }

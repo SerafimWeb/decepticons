@@ -872,5 +872,14 @@
  "SEM CONEXÃO COM O SERVIDOR": "无法连接服务器",
  "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "未能及时重新连接。请刷新页面重试。",
  "RECARREGAR": "刷新",
- "JOGAR OFFLINE ENQUANTO ISSO": "期间离线游玩"
+ "JOGAR OFFLINE ENQUANTO ISSO": "期间离线游玩",
+ "Esqueci a senha": "忘记密码",
+ "// RECUPERAR ACESSO": "// 恢复访问",
+ "Digite o e-mail da sua conta. Se ele tiver uma conta, enviamos um link para você escolher uma senha nova. O link vale 30 minutos.": "请输入账号邮箱。如果该邮箱有账号,我们会发送一个设置新密码的链接。链接 30 分钟内有效。",
+ "ENVIAR LINK": "发送链接",
+ "ENVIANDO…": "发送中…",
+ "VOLTAR PARA ENTRAR": "返回登录",
+ "Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.": "已发送。如果该邮箱有账号,链接已在路上(也请查看垃圾邮件)。有效期 30 分钟。",
+ "a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade": "邮箱找回功能尚未开启:请通过隐私页面上的联系方式寻求帮助",
+ "pedidos demais; espere um pouco": "请求过多;请稍候"
 }

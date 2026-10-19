@@ -872,5 +872,14 @@
  "SEM CONEXÃO COM O SERVIDOR": "SIN CONEXIÓN CON EL SERVIDOR",
  "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "No pudimos reconectar a tiempo. Recarga la página para intentarlo de nuevo.",
  "RECARREGAR": "RECARGAR",
- "JOGAR OFFLINE ENQUANTO ISSO": "JUGAR SIN CONEXIÓN MIENTRAS TANTO"
+ "JOGAR OFFLINE ENQUANTO ISSO": "JUGAR SIN CONEXIÓN MIENTRAS TANTO",
+ "Esqueci a senha": "Olvidé mi contraseña",
+ "// RECUPERAR ACESSO": "// RECUPERAR ACCESO",
+ "Digite o e-mail da sua conta. Se ele tiver uma conta, enviamos um link para você escolher uma senha nova. O link vale 30 minutos.": "Escribe el correo de tu cuenta. Si tiene una cuenta, te enviaremos un enlace para elegir una contraseña nueva. El enlace vale 30 minutos.",
+ "ENVIAR LINK": "ENVIAR ENLACE",
+ "ENVIANDO…": "ENVIANDO…",
+ "VOLTAR PARA ENTRAR": "VOLVER A ENTRAR",
+ "Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.": "Listo. Si ese correo tiene una cuenta, el enlace ya va en camino (revisa también el spam). Vale 30 minutos.",
+ "a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade": "la recuperación por correo aún no está activa: pide ayuda en el contacto de la página de Privacidad",
+ "pedidos demais; espere um pouco": "demasiadas solicitudes; espera un momento"
 }

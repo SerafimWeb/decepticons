@@ -72,7 +72,7 @@ const body = `
 
     <section aria-labelledby="h-quem">
       <h2 id="h-quem">1. Quem trata os seus dados</h2>
-      <p>O CYBERMECH é um jogo de navegador desenvolvido e operado pela <b>SERAFIM WEB</b> (a “gente” nesta política), controladora dos dados descritos aqui, nos termos da Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
+      <p>O CYBERMECH é um jogo de navegador independente, desenvolvido e operado por <b>uma pessoa física</b> (a “gente” nesta política; não há empresa nem CNPJ por ora), controladora dos dados descritos aqui, nos termos da Lei Geral de Proteção de Dados (Lei 13.709/2018, a LGPD).</p>
       ${contato}
     </section>
 
@@ -87,6 +87,7 @@ const body = `
               ['Você joga, com ou sem conta (no servidor)', '**Somas sem identificação:** quantas visitas, cliques e partidas por dia e por país; totais de rodadas (minutos, abates, mortes, onda alcançada, duração e qualidade gráfica ao terminar) por mapa, modo e dia; e **de onde a visita veio** (digitou o endereço, busca, rede social, outro site, link marcado) e o **nome do site** de origem, o tipo de aparelho (celular, tablet ou computador), o navegador, o sistema, o idioma, se é a primeira visita ou há quantos dias foi, e o estado do Brasil.', 'Saber se o jogo funciona e onde melhorar (legítimo interesse). São números agregados: não apontam para você.', 'Contagens por dia por 120 dias; totais de rodadas sem prazo (são só somas).'],
               ['Você joga online', 'O apelido e a montagem do robô, enquanto você está na sala.', 'Mostrar você aos outros jogadores (execução do serviço).', 'Só na memória do servidor, até você sair.'],
               ['Você cria uma conta', '**E-mail**, senha (guardada com `scrypt` e sal, nunca em texto), data de criação, a versão da política que você aceitou e quando, o progresso do piloto, e as sessões abertas (o servidor guarda só o resumo `SHA-256` do código da sessão).', 'Ter conta e levar o progresso para outro aparelho (execução do contrato); prova do seu aceite.', 'Até você apagar a conta. A sessão vence em 30 dias.'],
+              ['Você pede “Esqueci a senha”', 'O **e-mail** que você digitou e um **link de uso único** (guardamos só a impressão digital dele, nunca o link). O registro de segurança anota que o pedido foi feito, com o número da conta e sem o e-mail.', 'Devolver o acesso à sua conta (execução do serviço).', 'O link vale **30 minutos** e some ao ser usado; o registro de segurança, 400 dias.'],
               ['Você joga com conta', '**A sua atividade:** em que dias abriu o jogo, quantas rodadas, quantos segundos, abates e mortes por dia (sem o conteúdo das rodadas).', 'Saber quantos jogadores voltam e por quanto tempo jogam, para melhorar o jogo (legítimo interesse). **Você pode se opor** e desligar isto quando quiser.', 'Até 400 dias; desligar apaga o que já foi registrado.'],
               ['Você visita o site (landing, oficina)', '**Google Analytics:** cookies de medição, páginas vistas, origem do clique, cidade aproximada e tipo de aparelho, tratados pelo Google.', 'Entender quem chega ao site (**só com o seu consentimento**, na faixa de cookies).', 'Conforme a configuração do Google Analytics (no máximo 14 meses). Recusar ou mudar de ideia apaga os cookies.'],
               ['O servidor se protege', 'O **IP** fica só na memória (para limitar conexões e conter abusos) e some quando a conexão fecha. Os registros técnicos guardam eventos de segurança com o IP **mascarado** (`212.8.252.x`) e nunca o e-mail.', 'Manter o servidor no ar e impedir abuso (legítimo interesse em segurança).', 'Os registros técnicos são apagados sozinhos depois de 30 dias.'],
@@ -116,9 +117,10 @@ const body = `
         '**Cloudflare:** protege e entrega o site e leva a conexão do jogo até o servidor. Por ser o intermediário, enxerga o endereço IP de quem conecta; o servidor lê dele só o país.',
         '**Hospedagem do site (Hostinger):** guarda as páginas e os arquivos do jogo; não recebe o seu progresso nem a sua conta.',
         '**Google Analytics:** só se você aceitar os cookies do site.',
+        '**Resend (envio de e-mail):** só quando você pede “Esqueci a senha”: recebe o seu e-mail e o texto da mensagem para entregá-la, e guarda o registro de entrega pelo prazo dele.',
         '**Serafim13 (sistema de erros):** recebe os relatórios de defeito descritos acima.',
       ])}
-      <p>Cloudflare e Google podem tratar dados fora do Brasil (por exemplo, nos Estados Unidos). Essas transferências seguem a LGPD (art. 33) e os termos de proteção de dados que esses prestadores oferecem.</p>
+      <p>Cloudflare, Google e Resend podem tratar dados fora do Brasil (por exemplo, nos Estados Unidos). Essas transferências seguem a LGPD (art. 33) e os termos de proteção de dados que esses prestadores oferecem.</p>
     </section>
 
     <section aria-labelledby="h-direitos">

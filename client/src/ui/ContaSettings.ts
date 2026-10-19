@@ -1,3 +1,4 @@
+import { idiomaAtual } from '../i18n/i18n';
 import type { EstadoSessao, SessaoPiloto } from '../net/sessao';
 import { LoginPanel } from './LoginPanel';
 
@@ -9,6 +10,7 @@ import { LoginPanel } from './LoginPanel';
 export const TEXTO_CONVIDADO = 'Sem conta, o progresso fica só neste aparelho. Crie uma conta para levá-lo para outro.';
 export const TEXTO_LOGADO = 'Progresso guardado na conta.';
 export const TEXTO_GUARDANDO = 'Guardando o progresso na conta…';
+export const TEXTO_LINK_ENVIADO = 'Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.';
 export const TEXTO_APAGADA = 'Conta apagada: o servidor já não guarda nada dela. O progresso deste aparelho continua aqui.';
 
 /** Entrega um texto ao navegador como arquivo para salvar (sem rede: um Blob e um link temporário). */
@@ -46,6 +48,7 @@ export class ContaSettings {
       {
         onEntrar: (e, s) => this.abrir(() => sessao.entrar(e, s)),
         onCriar: (e, s) => this.abrir(() => sessao.criar(e, s)),
+        onEsqueci: (email) => this.esqueci(email),
         onSair: () => this.sair(),
         onBaixar: () => this.baixar(),
         onApagar: (senha) => this.apagar(senha),
@@ -72,6 +75,17 @@ export class ContaSettings {
       return;
     }
     this.mostrar(this.sessao.estado);
+  }
+
+  /** "Esqueci a senha": pede o link ao servidor, na língua do jogo. O servidor não diz se a conta existe, e a frase também não. */
+  private async esqueci(email: string): Promise<void> {
+    this.painel.setEstado({ carregando: true, erro: null, aviso: null });
+    const r = await this.sessao.esqueciSenha(email, idiomaAtual());
+    if ('erro' in r) {
+      this.painel.setEstado({ carregando: false, erro: r.erro });
+      return;
+    }
+    this.painel.setEstado({ carregando: false, aviso: TEXTO_LINK_ENVIADO });
   }
 
   private async sair(): Promise<void> {

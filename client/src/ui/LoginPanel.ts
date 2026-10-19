@@ -18,7 +18,7 @@ import { validarEmail, validarSenha } from '../../../shared/net/auth';
  * - Responsivo e pronto para dispositivos móveis
  */
 
-export type LoginModo = 'entrar' | 'criar';
+export type LoginModo = 'entrar' | 'criar' | 'esqueci';
 
 /** A política de privacidade publicada no site (o jogo pode estar em outro endereço; a política é uma só). */
 export const POLITICA_URL_PADRAO = 'https://cybermech.online/privacidade/';
@@ -40,6 +40,8 @@ export interface LoginPanelEstado {
 export interface LoginPanelOptions {
   onEntrar?: (email: string, senha: string) => Promise<void> | void;
   onCriar?: (email: string, senha: string) => Promise<void> | void;
+  /** "Esqueci a senha" (P205): pede o link de redefinição para este e-mail. */
+  onEsqueci?: (email: string) => Promise<void> | void;
   onSair?: () => Promise<void> | void;
   /** Baixar os dados da conta (LGPD art. 18 II e V). */
   onBaixar?: () => Promise<void> | void;
@@ -155,7 +157,8 @@ export class LoginPanel {
   /** Valida os campos atuais conforme o contrato. */
   validar(): { emailErro: string | null; senhaErro: string | null; valido: boolean } {
     const emailErro = validarEmail(this.inputEmailVal);
-    const senhaErro = validarSenha(this.inputSenhaVal);
+    // No "esqueci a senha" não há campo de senha: só o e-mail precisa estar certo.
+    const senhaErro = this.estado.modo === 'esqueci' ? null : validarSenha(this.inputSenhaVal);
     return {
       emailErro,
       senhaErro,
@@ -293,6 +296,29 @@ export class LoginPanel {
     const mostrarEmailErro = this.emailTocado && emailErro !== null;
     const mostrarSenhaErro = this.senhaTocada && senhaErro !== null;
 
+    if (this.estado.modo === 'esqueci') {
+      this.containerEl.innerHTML = `
+      <div class="login-box">
+        <div class="login-header-tag">// RECUPERAR ACESSO</div>
+        <form class="login-form" id="login-form-element" novalidate>
+          ${this.estado.erro ? `<div class="login-error-banner" role="alert">${this._escapeHtml(this.estado.erro)}</div>` : ''}
+          ${this.estado.aviso ? `<div class="login-aviso" role="status">${this._escapeHtml(this.estado.aviso)}</div>` : ''}
+          <p class="login-hint">Digite o e-mail da sua conta. Se ele tiver uma conta, enviamos um link para você escolher uma senha nova. O link vale 30 minutos.</p>
+          <div class="login-field">
+            <label for="login-input-email">E-MAIL DO PILOTO</label>
+            <input type="email" id="login-input-email" class="login-input ${mostrarEmailErro ? 'invalid' : ''}" placeholder="piloto@cybermech.com" autocomplete="email" value="${this._escapeHtml(this.inputEmailVal)}" ${this.estado.carregando ? 'disabled' : ''} />
+            ${mostrarEmailErro ? `<span class="field-error">${this._escapeHtml(emailErro)}</span>` : ''}
+          </div>
+          <div class="login-actions-stacked">
+            <button type="submit" class="btn-login-action btn-submit" id="btn-login-submit" ${!valido || this.estado.carregando ? 'disabled' : ''}>${this.estado.carregando ? 'ENVIANDO…' : 'ENVIAR LINK'}</button>
+          </div>
+          <button type="button" class="login-link" id="btn-login-voltar">VOLTAR PARA ENTRAR</button>
+        </form>
+      </div>`;
+      this._bindEventsDeslogado();
+      return;
+    }
+
     const modoEntrar = this.estado.modo === 'entrar';
     const acaoTexto = modoEntrar ? 'ENTRAR' : 'CRIAR CONTA';
     const carregandoTexto = modoEntrar ? 'ENTRANDO…' : 'CRIANDO CONTA…';
@@ -367,6 +393,7 @@ export class LoginPanel {
               ${this.estado.carregando ? carregandoTexto : acaoTexto}
             </button>
           </div>
+          ${modoEntrar && this.options.onEsqueci ? '<button type="button" class="login-link" id="btn-login-esqueci">Esqueci a senha</button>' : ''}
         </form>
       </div>
     `;
@@ -382,6 +409,14 @@ export class LoginPanel {
     const inputEmail = this.containerEl.querySelector<HTMLInputElement>('#login-input-email');
     const inputSenha = this.containerEl.querySelector<HTMLInputElement>('#login-input-senha');
     const form = this.containerEl.querySelector<HTMLFormElement>('#login-form-element');
+    this.containerEl.querySelector('#btn-login-esqueci')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.setEstado({ modo: 'esqueci', erro: null, aviso: null });
+    });
+    this.containerEl.querySelector('#btn-login-voltar')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.setEstado({ modo: 'entrar', erro: null, aviso: null });
+    });
     const checkPolitica = this.containerEl.querySelector<HTMLInputElement>('#login-check-politica');
     const checkIdade = this.containerEl.querySelector<HTMLInputElement>('#login-check-idade');
     checkPolitica?.addEventListener('change', () => {
@@ -447,6 +482,10 @@ export class LoginPanel {
         }
 
         const email = this.inputEmailVal.trim();
+        if (this.estado.modo === 'esqueci') {
+          void this.options.onEsqueci?.(email);
+          return;
+        }
         const senha = this.inputSenhaVal;
 
         if (this.estado.modo === 'entrar' && this.options.onEntrar) {

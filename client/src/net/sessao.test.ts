@@ -113,6 +113,31 @@ describe('chaveDoToken: uma chave por servidor', () => {
   });
 });
 
+describe('esqueci a senha (P205)', () => {
+  it('passa o e-mail e a língua ao servidor e devolve o "pedido recebido" dele, sem mexer na sessão nem no progresso', async () => {
+    const pedidos: [string, string][] = [];
+    const base = servidorFalso();
+    base.api.esqueci = async (email, lang) => {
+      pedidos.push([email, lang]);
+      return { ok: true };
+    };
+    const { sessao, armazem, local } = montar(base);
+    expect(await sessao.esqueciSenha('ana@x.com', 'en')).toEqual({ ok: true });
+    expect(pedidos).toEqual([['ana@x.com', 'en']]);
+    expect(armazem.dados.size, 'não guarda token nenhum').toBe(0);
+    expect(local.aplicados).toEqual([]);
+  });
+
+  it('o servidor sem o recurso (ou com o e-mail desligado) vira a mensagem que manda pedir ajuda pelo contato da Privacidade', async () => {
+    const { sessao } = montar(servidorFalso());
+    const r = await sessao.esqueciSenha('ana@x.com', 'pt');
+    expect('erro' in r && r.erro).toContain('contato da página de Privacidade');
+    const base = servidorFalso();
+    base.api.esqueci = async () => ({ erro: 'pedidos demais; espere um pouco' });
+    expect(await montar(base).sessao.esqueciSenha('ana@x.com', 'pt')).toEqual({ erro: 'pedidos demais; espere um pouco' });
+  });
+});
+
 describe('criar e entrar: o convidado vira conta sem perder nada', () => {
   it('conta nova (a conta ainda não guardou nada): guarda o token, manda o progresso do navegador e fica sincronizado', async () => {
     const { sessao, servidor, local, armazem } = montar();

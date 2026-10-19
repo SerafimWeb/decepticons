@@ -6,6 +6,7 @@ import {
   CONTA_CRIAR_PATH,
   CONTA_DADOS_PATH,
   CONTA_ENTRAR_PATH,
+  CONTA_ESQUECI_PATH,
   CONTA_EU_PATH,
   CONTA_MEDICAO_PATH,
   CONTA_PROGRESSO_PATH,
@@ -44,6 +45,28 @@ export class ContaCliente {
 
   entrar(email: string, senha: string): Promise<ContaResposta | ContaErro> {
     return this.postCredenciais(CONTA_ENTRAR_PATH, email, senha);
+  }
+
+  /**
+   * "Esqueci a senha" (P205): pede o link por e-mail. O servidor responde igual exista a conta ou não (nada de descobrir e-mails), então `{ ok: true }` quer dizer só "pedido recebido".
+   * `semEmail`: o servidor ainda não tem o envio de e-mail ligado. Nunca lança.
+   */
+  async esqueci(email: string, lang: string): Promise<{ ok: true } | { erro: string; semEmail?: true }> {
+    if (!this.base) return { erro: 'sem servidor' };
+    try {
+      const res = await fetch(this.base + CONTA_ESQUECI_PATH, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, lang }),
+        mode: 'cors',
+      });
+      if (res.status === 202) return { ok: true };
+      const dados = await res.json().catch(() => null);
+      if (res.status === 503 && dados?.codigo === 'sem-email') return { erro: 'a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade', semEmail: true };
+      return { erro: (dados && typeof dados.erro === 'string' && dados.erro) || 'não deu para completar' };
+    } catch {
+      return { erro: 'servidor fora do ar' };
+    }
   }
 
   async sair(token: string): Promise<void> {

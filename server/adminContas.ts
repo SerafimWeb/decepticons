@@ -5,15 +5,26 @@
  */
 import type { Auditoria } from './auditoria';
 import type { Contas } from './contas';
-import { normalizarEmail, validarEmail } from '../shared/net/auth';
+import { normalizarEmail, REDEFINIR_VALE_MIN, urlDeRedefinicao, validarEmail } from '../shared/net/auth';
 
-export const USO_ADMIN = 'uso: npm run admin -- listar | promover <e-mail> | rebaixar <e-mail>';
+export const USO_ADMIN = 'uso: npm run admin -- listar | promover <e-mail> | rebaixar <e-mail> | link-senha <e-mail>';
+/** O endereço do site que vai no link de senha gerado à mão (o mesmo do e-mail automático: `CYBERMECH_SITE_URL`). */
+export const SITE_PADRAO = 'https://cybermech.online';
 
-export function executarComandoAdmin(argv: readonly string[], contas: Contas, auditoria: Auditoria): { codigo: number; linhas: string[] } {
+export function executarComandoAdmin(argv: readonly string[], contas: Contas, auditoria: Auditoria, siteBase: string = SITE_PADRAO): { codigo: number; linhas: string[] } {
   const [cmd, bruto] = argv;
   if (cmd === 'listar') {
     const admins = contas.listarAdmins();
     return { codigo: 0, linhas: admins.length ? admins.map((a) => `conta ${a.id}: ${a.email}`) : ['nenhum administrador'] };
+  }
+  if (cmd === 'link-senha') {
+    // Para quando o e-mail automático não está ligado, ou a pessoa pediu ajuda ao dono: gera o link de redefinição (30 min, uso único) e o dono o entrega por onde conversa com ela.
+    if (!bruto || validarEmail(bruto)) return { codigo: 2, linhas: ['e-mail inválido', USO_ADMIN] };
+    const email = normalizarEmail(bruto);
+    const r = contas.pedirRedefinicao(email);
+    if (!r) return { codigo: 1, linhas: [`não existe conta com o e-mail ${email}`] };
+    auditoria.registrar({ ator: 'dono', acao: 'link_senha_gerado', alvo: `conta:${r.contaId}` });
+    return { codigo: 0, linhas: [`link de redefinição da conta ${r.contaId} (vale ${REDEFINIR_VALE_MIN} min, uma vez só; o anterior parou de valer):`, urlDeRedefinicao(siteBase, r.token, 'pt')] };
   }
   if (cmd !== 'promover' && cmd !== 'rebaixar') return { codigo: 2, linhas: [USO_ADMIN] };
   if (!bruto || validarEmail(bruto)) return { codigo: 2, linhas: ['e-mail inválido', USO_ADMIN] };
