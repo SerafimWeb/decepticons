@@ -109,15 +109,17 @@ export function fonteDoRadar(
   let caixas: RadarCaixa[] | null = null;
   const praia = mapa === 'praia';
   const amazonia = mapa === 'amazonia' ? mapaCarregado('amazonia') : undefined; // a Amazônia (P180) vem do registro de mapas sob demanda
+  const praca = mapa === 'janeiro' ? mapaCarregado('janeiro') : undefined; // a Praça dos Três Poderes (P217), também sob demanda
   const mar = praia ? pontosDaCosta() : undefined;
   return () => {
-    caixas ??= praia ? caixasDaPraia() : amazonia ? [...amazonia.caixasDaPlanta()] : mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(predios);
+    caixas ??= praia ? caixasDaPraia() : amazonia ? [...amazonia.caixasDaPlanta()] : praca ? [...praca.caixasDaPlanta()] : mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(predios);
     const eu = voce();
     return {
       mapa,
-      meia: praia ? PRAIA_LIMITES.maxX : amazonia ? amazonia.meia.x : meia,
+      meia: praia ? PRAIA_LIMITES.maxX : amazonia ? amazonia.meia.x : praca ? praca.meia.x : meia,
       ...(praia ? { meiaZ: PRAIA_LIMITES.maxZ, zonas: PRAIA_ZONES, mar, rotulos: ROTULOS_DA_PRAIA } : {}),
       ...(amazonia ? { meiaZ: amazonia.meia.z, zonas: [], rotulos: amazonia.rotulos } : {}),
+      ...(praca ? { meiaZ: praca.meia.z, zonas: [], rotulos: praca.rotulos } : {}),
       caixas,
       voce: eu.alive ? { x: eu.simPosition.x, z: eu.simPosition.z, yaw: eu.yaw } : null,
       aliados: aliados().filter((m) => m.alive).map((m) => ({ x: m.simPosition.x, z: m.simPosition.z })),

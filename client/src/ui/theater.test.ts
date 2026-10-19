@@ -79,14 +79,14 @@ describe('as missões do teatro de operações', () => {
     expect(TEATROS.filter((t) => !t.proposta).map((t) => t.id).sort()).toEqual(['cabos', 'janeiro']);
   });
 
-  it('o 8 DE JANEIRO (P217) ocupa Brasília, onde era o Bunker, e o Bunker foi para o Mato Grosso do Sul; a missão ainda não tem mapa (EM BREVE)', () => {
+  it('o 8 DE JANEIRO (P217) ocupa Brasília, onde era o Bunker, e o Bunker foi para o Mato Grosso do Sul; o mapa existe, mas nasce restrito ao Comandante (`mapa:janeiro`)', () => {
     const janeiro = TEATROS.find((x) => x.id === 'janeiro')!;
     const bunker = TEATROS.find((x) => x.id === 'bunker')!;
     expect(janeiro.lugar).toMatch(/Brasília/);
     expect(janeiro.recurso).toBe('poder');
     expect(RECURSO_NOME.poder).toBe('SEDE DOS PODERES');
-    expect(janeiro.mapa).toBeUndefined();
-    expect(estadoDoTeatro(janeiro, 'arena', 'deathmatch')).toBe('em-breve');
+    expect(janeiro.mapa).toBe('janeiro');
+    expect(janeiro.modos).toEqual(['deathmatch']); // a missão (a Sobrevivência) vem com o passo 5 da ficha
     expect(bunker.lugar).toMatch(/MS$/);
     expect(bunker.lat).toBeLessThan(-18); // o Mato Grosso do Sul fica ao sul do paralelo 17 e a oeste de Goiás
     expect(bunker.lon).toBeLessThan(-52);

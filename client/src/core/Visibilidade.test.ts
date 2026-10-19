@@ -16,7 +16,7 @@ describe('o catálogo de funcionalidades (P191)', () => {
   });
 
   it('o que está em desenvolvimento nasce restrito (o LADO, o ARQUIVO, o RELATÓRIO e, pela política do lançamento, o Bunker e a Terras Raras); o que o catálogo não conhece nunca some do jogo', () => {
-    for (const id of ['tela:lado', 'tela:arquivo', 'tela:relatorio', 'tela:voz', 'mapa:bunker', 'mapa:amazonia']) expect(padraoDe(id), id).toBe('restrito');
+    for (const id of ['tela:lado', 'tela:arquivo', 'tela:relatorio', 'tela:voz', 'mapa:bunker', 'mapa:amazonia', 'mapa:janeiro']) expect(padraoDe(id), id).toBe('restrito');
     for (const id of ['mapa:arena', 'mapa:praia']) expect(padraoDe(id), id).toBe('publico');
     expect(padraoDe('coisa:que-nao-existe')).toBe('publico');
   });
