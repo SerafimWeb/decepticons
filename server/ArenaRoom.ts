@@ -41,7 +41,9 @@ import {
   type RosterEntry,
   type UnitKind,
 } from '../shared/net/messages';
+import { VOZ } from '../shared/net/voz';
 import { NetPilot } from './NetPilot';
+import { RelayDeVoz } from './voz';
 
 /** O outro lado de uma conexão. A sala só manda bytes; o transporte (WebSocket) é do \`Server\`. */
 export interface Peer {
@@ -78,7 +80,7 @@ interface Human extends Unit {
  * que entra ganha um Mech com a montagem dele, validada aqui (G7, G13).
  *
  * Mensagens: \`JOIN\` → \`WELCOME\` e a lista de todos (\`ROSTER\`); \`INPUT\` → fila do piloto; \`PING\` → \`PONG\`;
- * \`LEAVE\` ou queda da conexão → sai da partida. A cada 3 ticks, o estado de todas as unidades para cada jogador,
+ * \`LEAVE\` ou queda da conexão → sai da partida; \`PRONTO\` e \`SINAL\` são do chat de voz (\`voz.ts\`: só repassa, o áudio não passa aqui). A cada 3 ticks, o estado de todas as unidades para cada jogador,
  * com o \`ack\` dele. Mensagem torta é ignorada: não derruba a sala.
  */
 export class ArenaRoom {
@@ -94,6 +96,8 @@ export class ArenaRoom {
   private readonly packet = newInputPacket();
   /** Eventos juntados entre dois estados (tiros e abates), mandados logo depois do estado. */
   private readonly events = newEventBatch();
+  /** A sinalização do chat de voz (P205): só repassa; o áudio vai direto entre os navegadores. */
+  private readonly voz = new RelayDeVoz<Peer>((peer, bytes) => peer.send(bytes));
   /** Alguém entrou na partida (montagem aceita). O servidor conta a origem; a sala não sabe para quê. */
   onEntrou?: (peer: Peer) => void;
   /** Alguém foi recusado, e por quê. */
@@ -217,6 +221,14 @@ export class ArenaRoom {
       case MSG.LEAVE:
         this.leave(peer);
         return;
+      case VOZ.PRONTO: {
+        const h = this.humans.get(peer);
+        if (h) this.voz.pronto(peer, h.id, bytes);
+        return;
+      }
+      case VOZ.SINAL:
+        this.voz.sinal(peer, bytes);
+        return;
     }
   }
 
@@ -225,6 +237,7 @@ export class ArenaRoom {
     if (this.disposed) return;
     const h = this.humans.get(peer);
     if (!h) return;
+    this.voz.sairDaSala(peer);
     this.humans.delete(peer);
     this.units.splice(this.units.indexOf(h), 1);
     this.match.pilots.splice(this.match.pilots.indexOf(h.pilot), 1);

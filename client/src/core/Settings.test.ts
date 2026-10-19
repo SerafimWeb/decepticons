@@ -6,6 +6,7 @@ import {
   cmPer360,
   DEFAULT_SETTINGS,
   keyLabel,
+  KEY_ACTIONS,
   LIMITS,
   MIN_CALIBRATION_COUNTS,
   sanitizeSettings,
@@ -208,5 +209,47 @@ describe('mira e brilho (dono, 11/10: "a mira está grossa e os tiros geram muit
     const css = readFileSync(new URL('../styles.css', import.meta.url), 'utf8');
     expect(css).toContain(`--reticle-scale: ${DEFAULT_SETTINGS.reticleSize};`);
     expect(css).toContain(`--reticle-opacity: ${DEFAULT_SETTINGS.reticleOpacity};`);
+  });
+});
+
+describe('Settings: o chat de voz (P205)', () => {
+  it('o padrão: voz ligada, microfone sempre aberto, 80% de volume e a tecla T', () => {
+    expect(DEFAULT_SETTINGS).toMatchObject({ voiceOn: true, voiceMode: 'sempre', voiceVolume: 0.8 });
+    expect(DEFAULT_SETTINGS.keys.ptt).toBe('KeyT');
+    expect(KEY_ACTIONS.map((k) => k.action)).toContain('ptt');
+  });
+
+  it('lixo volta ao padrão e o volume é limitado a 0 e 1; o que é válido é mantido', () => {
+    const s = new Settings(memoryStorage('{"voiceOn": "sim", "voiceMode": "klingon", "voiceVolume": 9}')).value;
+    expect(s.voiceOn).toBe(true);
+    expect(s.voiceMode).toBe('sempre');
+    expect(s.voiceVolume).toBe(LIMITS.voiceVolume.max);
+    const bom = new Settings(memoryStorage('{"voiceOn": false, "voiceMode": "ptt", "voiceVolume": 0.25}')).value;
+    expect([bom.voiceOn, bom.voiceMode, bom.voiceVolume]).toEqual([false, 'ptt', 0.25]);
+    expect(new Settings(memoryStorage('{"voiceVolume": -3}')).value.voiceVolume).toBe(LIMITS.voiceVolume.min);
+  });
+
+  it('quem já tinha configurações salvas (sem os campos de voz) ganha o padrão, sem perder o resto', () => {
+    const s = new Settings(memoryStorage('{"volume": 0.3, "keys": {"forward": "KeyI"}}')).value;
+    expect(s.volume).toBe(0.3);
+    expect(s.keys.forward).toBe('KeyI');
+    expect(s.keys.ptt).toBe('KeyT');
+    expect(s.voiceOn).toBe(true);
+  });
+
+  it('a tecla do chat pode ser trocada; as teclas do sistema não valem', () => {
+    const storage = memoryStorage();
+    const st = new Settings(storage);
+    st.update({ keys: { ...st.value.keys, ptt: 'KeyG' } });
+    expect(new Settings(storage).value.keys.ptt).toBe('KeyG');
+    expect(new Settings(memoryStorage('{"keys": {"ptt": "Escape"}}')).value.keys.ptt).toBe('KeyT');
+  });
+
+  it('o jogador liga, desliga e troca o modo, e isso é salvo', () => {
+    const storage = memoryStorage();
+    const st = new Settings(storage);
+    st.update({ voiceOn: false, voiceMode: 'ptt', voiceVolume: 0.4 });
+    const volta = new Settings(storage).value;
+    expect([volta.voiceOn, volta.voiceMode, volta.voiceVolume]).toEqual([false, 'ptt', 0.4]);
   });
 });

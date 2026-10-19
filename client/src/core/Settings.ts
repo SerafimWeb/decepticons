@@ -8,7 +8,9 @@ import { NARRACOES, type Narracao } from '../audio/falas';
 import { BOT_NAMES, NAME_MAX } from './botNames';
 
 /** Ações do teclado que o jogador pode trocar. O valor é `KeyboardEvent.code` (posição física). */
-export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera' | 'shield';
+export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera' | 'shield' | 'ptt';
+/** Como o microfone do chat de voz abre (`voice/MicController.ts`): aberto (a tecla alterna o mudo) ou só enquanto a tecla está apertada. */
+export type VoiceMode = 'sempre' | 'ptt';
 export type QualityPreset = 'auto' | 'alta' | 'media' | 'baixa';
 export type Difficulty = 'facil' | 'normal' | 'dificil';
 /** Personalidade de um Mech inimigo (os números ficam em `combat/BotController.ts`, `PERSONAS`). */
@@ -71,6 +73,11 @@ export interface GameSettings {
   volume: number;
   /** A voz do narrador (P146): um sotaque, `mix` (um por fala) ou `off`. Vale na hora. */
   narracao: Narracao;
+  /** Chat de voz online (P205): ligado entra na voz ao entrar na sala (o navegador pergunta pelo microfone). */
+  voiceOn: boolean;
+  voiceMode: VoiceMode;
+  /** Volume da voz dos outros (0 a 1), separado do volume do jogo. */
+  voiceVolume: number;
   keys: Record<KeyAction, string>;
 }
 
@@ -82,6 +89,7 @@ export const LIMITS = {
   reticleOpacity: { min: 0.3, max: 1, step: 0.05 },
   glow: { min: 0.2, max: 1.2, step: 0.05 },
   volume: { min: 0, max: 1, step: 0.05 },
+  voiceVolume: { min: 0, max: 1, step: 0.05 },
   enemyMechs: { min: 0, max: 3, step: 1 },
   enemyAndroids: { min: 0, max: 3, step: 1 },
   maxAttackers: { min: 0.5, max: 4, step: 0.5 },
@@ -112,6 +120,9 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   showPerf: false,
   volume: 0.8,
   narracao: 'br',
+  voiceOn: true,
+  voiceMode: 'sempre',
+  voiceVolume: 0.8,
   keys: Object.freeze({
     forward: 'KeyW',
     back: 'KeyS',
@@ -122,6 +133,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
     secondary: 'KeyQ',
     shield: 'Control',
     camera: 'KeyV',
+    ptt: 'KeyT',
   }),
 });
 
@@ -136,6 +148,7 @@ export const KEY_ACTIONS: readonly { action: KeyAction; label: string }[] = [
   { action: 'secondary', label: 'Ataque 2 (além do clique dir.)' },
   { action: 'camera', label: 'Trocar câmera' },
   { action: 'shield', label: 'Escudo: ligar/desligar' },
+  { action: 'ptt', label: 'Chat de voz: falar / mudo' },
 ];
 
 export const QUALITY_LABELS: Record<QualityPreset, string> = {
@@ -178,6 +191,7 @@ export function keyLabel(code: string): string {
 const QUALITIES: readonly QualityPreset[] = ['auto', 'alta', 'media', 'baixa'];
 const DIFFICULTIES: readonly Difficulty[] = ['facil', 'normal', 'dificil'];
 const PERSONAS: readonly Persona[] = ['soldado', 'brabo', 'manso', 'fujao'];
+const VOICE_MODES: readonly VoiceMode[] = ['sempre', 'ptt'];
 const ENEMY_SLOTS = 3;
 
 function num(v: unknown, fallback: number, min: number, max: number): number {
@@ -247,6 +261,9 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     showPerf: typeof r.showPerf === 'boolean' ? r.showPerf : d.showPerf,
     volume: num(r.volume, d.volume, LIMITS.volume.min, LIMITS.volume.max),
     narracao: NARRACOES.includes(r.narracao as Narracao) ? (r.narracao as Narracao) : d.narracao,
+    voiceOn: typeof r.voiceOn === 'boolean' ? r.voiceOn : d.voiceOn,
+    voiceMode: VOICE_MODES.includes(r.voiceMode as VoiceMode) ? (r.voiceMode as VoiceMode) : d.voiceMode,
+    voiceVolume: num(r.voiceVolume, d.voiceVolume, LIMITS.voiceVolume.min, LIMITS.voiceVolume.max),
     keys,
   };
 }

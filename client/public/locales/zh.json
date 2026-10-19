@@ -856,5 +856,21 @@
  "CERCA": "围栏",
  "PLANTA": "工厂",
  "CAVA": "矿坑",
- "ESCOTILHA": "舱门"
+ "ESCOTILHA": "舱门",
+ "CHAT DE VOZ": "语音聊天",
+ "Fale com os outros jogadores da sala (só online). A voz vai direto de um navegador ao outro, sem passar pelo servidor: quem está perto soa mais alto e do lado em que está.": "与房间里的其他玩家交谈（仅限在线）。语音在浏览器之间直接传输，不经过服务器：离得近的人声音更大，并且从其所在的方向传来。",
+ "Conversar por voz": "语音交谈",
+ "Microfone": "麦克风",
+ "Sempre aberto": "始终开启",
+ "Segurar para falar": "按住说话",
+ "Volume da voz dos outros": "其他玩家语音音量",
+ "Chat de voz: falar / mudo": "语音聊天：说话／静音",
+ "PEDINDO O MICROFONE…": "正在请求麦克风…",
+ "SÓ OUVINDO: MICROFONE RECUSADO": "仅收听：麦克风被拒绝",
+ "SÓ OUVINDO: SEM MICROFONE": "仅收听：没有麦克风",
+ "FALANDO": "正在说话",
+ "SEGURE [{0}] PARA FALAR": "按住 [{0}] 说话",
+ "MUDO: [{0}] ABRE": "已静音：按 [{0}] 开启",
+ "MICROFONE ABERTO: [{0}] MUDA": "麦克风已开：按 [{0}] 静音",
+ "{0} SEM CONEXÃO": "{0} 个未连接"
 }

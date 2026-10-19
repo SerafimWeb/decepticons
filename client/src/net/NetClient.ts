@@ -1,4 +1,5 @@
 import { decodeBankReply, encodeBankCode } from '../../../shared/net/bank';
+import { VOZ } from '../../../shared/net/voz';
 import type { BankReply } from '../../../shared/bank/codes';
 import { Writer } from '../../../shared/net/codec';
 import { PROTOCOL_VERSION } from '../../../shared/net/constants';
@@ -36,6 +37,8 @@ export interface NetClientEvents {
   /** Ida e volta até o servidor (ms). */
   pong(rttMs: number): void;
   reject(reason: RejectReason): void;
+  /** Uma mensagem do chat de voz (`LISTA` ou `SINAL`, `shared/net/voz.ts`): quem decodifica é o `VoiceChat`. */
+  voz(bytes: Uint8Array): void;
   closed(): void;
 }
 
@@ -100,6 +103,11 @@ export class NetClient {
     if (this.isOpen) this.send(encodePing(this.w, performance.now()));
   }
 
+  /** Uma mensagem do chat de voz, já pronta (`PRONTO` ou `SINAL`). */
+  enviarVoz(bytes: Uint8Array): void {
+    if (this.isOpen) this.send(bytes);
+  }
+
   close(): void {
     if (this.isOpen) this.send(encodeLeave(this.w));
     this.ws.close();
@@ -142,6 +150,10 @@ export class NetClient {
         if (r) this.on.reject?.(r);
         return;
       }
+      case VOZ.LISTA:
+      case VOZ.SINAL:
+        this.on.voz?.(bytes);
+        return;
     }
   }
 }

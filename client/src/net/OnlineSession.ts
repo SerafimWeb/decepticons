@@ -84,6 +84,10 @@ export interface OnlineSessionOptions {
   onScore?: (kills: number, deaths: number) => void;
   /** As esperas entre as tentativas de reconexão (ms); o padrão é `RECONEXAO_PADRAO_MS`. Vazio desliga a reconexão. */
   reconexaoMs?: readonly number[];
+  /** Mensagem do chat de voz que o servidor mandou (`LISTA` ou `SINAL`); quem decodifica é o `VoiceChat` (P205). */
+  onVoz?: (bytes: Uint8Array) => void;
+  /** Entrou na sala (o seu id) ou saiu dela (`null`: a conexão caiu; volta a chamar com o id a cada reconexão). */
+  onSala?: (meuId: number | null) => void;
 }
 
 /** Linha do placar do multiplayer, montada só com os eventos KILL vindos do servidor. */
@@ -200,6 +204,10 @@ export class OnlineSession implements Pilot {
         this.state = 'na sala';
         this.tentativa = 0;
         this.status();
+        o.onSala?.(m.id);
+      },
+      voz: (bytes) => {
+        if (cliente === this.client) o.onVoz?.(bytes);
       },
       roster: (entries) => cliente === this.client && this.onRoster(entries),
       snapshot: (s) => cliente === this.client && this.onSnapshot(s),
@@ -264,6 +272,17 @@ export class OnlineSession implements Pilot {
     this.names.clear();
     this.scores.clear();
     this.o.onScore?.(0, 0);
+    this.o.onSala?.(null);
+  }
+
+  /** Manda uma mensagem do chat de voz à sala (só se já estamos nela). */
+  enviarVoz(bytes: Uint8Array): void {
+    if (this.joined) this.client.enviarVoz(bytes);
+  }
+
+  /** O apelido de uma unidade da sala, ou `undefined`. */
+  nomeDe(id: number): string | undefined {
+    return this.names.get(id);
   }
 
   /** Na sala e recebendo o estado. */
@@ -360,6 +379,7 @@ export class OnlineSession implements Pilot {
     if (this.temporizador) clearTimeout(this.temporizador);
     this.temporizador = null;
     this.client.close();
+    this.o.onSala?.(null);
     for (const id of [...this.remotes.keys()]) this.removeRemote(id);
   }
 

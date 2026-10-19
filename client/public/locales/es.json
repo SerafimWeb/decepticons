@@ -856,5 +856,21 @@
  "CERCA": "CERCA",
  "PLANTA": "PLANTA",
  "CAVA": "MINA",
- "ESCOTILHA": "ESCOTILLA"
+ "ESCOTILHA": "ESCOTILLA",
+ "CHAT DE VOZ": "CHAT DE VOZ",
+ "Fale com os outros jogadores da sala (só online). A voz vai direto de um navegador ao outro, sem passar pelo servidor: quem está perto soa mais alto e do lado em que está.": "Habla con los demás jugadores de la sala (solo en línea). La voz va directo de un navegador a otro, sin pasar por el servidor: quien está cerca suena más fuerte y del lado en que está.",
+ "Conversar por voz": "Hablar por voz",
+ "Microfone": "Micrófono",
+ "Sempre aberto": "Siempre abierto",
+ "Segurar para falar": "Mantener para hablar",
+ "Volume da voz dos outros": "Volumen de la voz de los demás",
+ "Chat de voz: falar / mudo": "Chat de voz: hablar / silenciar",
+ "PEDINDO O MICROFONE…": "PIDIENDO EL MICRÓFONO…",
+ "SÓ OUVINDO: MICROFONE RECUSADO": "SOLO ESCUCHANDO: MICRÓFONO RECHAZADO",
+ "SÓ OUVINDO: SEM MICROFONE": "SOLO ESCUCHANDO: SIN MICRÓFONO",
+ "FALANDO": "HABLANDO",
+ "SEGURE [{0}] PARA FALAR": "MANTÉN [{0}] PARA HABLAR",
+ "MUDO: [{0}] ABRE": "SILENCIADO: [{0}] ABRE",
+ "MICROFONE ABERTO: [{0}] MUDA": "MICRÓFONO ABIERTO: [{0}] SILENCIA",
+ "{0} SEM CONEXÃO": "{0} SIN CONEXIÓN"
 }

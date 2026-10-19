@@ -14,6 +14,14 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P205 — O chat de voz (18/10, Claude)
+
+> O Comandante trouxe o plano de implementação do **VOICE CHAT** (decisões dele: microfone aberto por padrão com apertar-para-falar opcional, áudio espacial 3D, canais TODOS e TIME, TURN a critério técnico) e, ao mandar seguir: *"quero que seja simples, sem custo inicial e eficiente"*.
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P205 | 18/10 | "prossiga com o VOICE CHAT PLANO DE IMPLEMENTAÇÃO!" (o plano: voz por WebRTC entre os jogadores, microfone aberto por padrão + apertar-para-falar opcional, áudio espacial 3D, canais ALL + TEAM, TURN a critério técnico); "quero q seja simples, sem custo inicial e eficiente" | 🟡 | **Construído e provado em Chrome de verdade** (`.decepticons/VOICE_CHAT.md`; 26 verificações da bancada `medicoes/voz.mjs`): o áudio vai direto de um navegador ao outro (malha P2P) e o servidor só repassa a oferta e a resposta (`server/voz.ts`, 3 mensagens, sem subir o protocolo); microfone aberto com a tecla T alternando o mudo, ou **segurar T para falar**; voz espacial (volume cheio até 12 m, some em 160 m); quem recusa o microfone entra como ouvinte; **sem TURN pago** (só o STUN do Google, de graça); Opus a 24 kbps com DTX (**medido: 50 pacotes/s falando, 5 em silêncio**). **Nasce RESTRITA** (`tela:voz`, regra do P191): só o modo Comandante vê e usa até o painel de visibilidade soltar (também é a chave de desligar). **Falta:** o seu ouvido; dois aparelhos em redes diferentes; **canal TIME** (o protocolo online ainda não tem time); mudo por jogador; e, **antes de liberar, a política de privacidade** (a voz mostra o IP aos outros jogadores da sala e usa o STUN do Google: texto pronto em `VOICE_CHAT.md` § 4) | `?comandante=1`, entrar numa sala online com dois navegadores: o indicador no canto de baixo à esquerda; Configurações > GRÁFICOS E SOM > CHAT DE VOZ; tecla T. Captura: `arte/voz-hud-jogo-claude.png` |
+
 ## P201 e P202 — O primeiro teste online: os bots difíceis demais e o painel do servidor (18/10, Claude)
 
 > O Comandante jogou online pela primeira vez, com uma pessoa da internet, e mandou duas capturas da janela do servidor.

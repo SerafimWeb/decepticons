@@ -48,7 +48,7 @@ import { walkerFromSearch } from '../debug/walkerLink';
 import { carregarChefeSeFor, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirMapa, type ObjetivosCarregados } from '../environment/mapasSobDemanda';
 import type { EstadoDosObjetivos } from '../environment/AmazoniaObjetivos';
 import { AMAZONIA_GERADORES } from '../environment/AmazoniaLayout';
-import { aoMudarVisibilidade, aplicarGlobal, visibilidadeGlobal } from './Visibilidade';
+import { aoMudarVisibilidade, aplicarGlobal, funcionalidadeVisivel, visibilidadeGlobal } from './Visibilidade';
 import { diaFromSearch, progressoDaPartida } from '../environment/CicloDoDia';
 import { Vector09 } from '../entities/Vector09';
 import { Android } from '../entities/Android';
@@ -89,7 +89,9 @@ import { SettingsMenu } from '../ui/SettingsMenu';
 import { EnemySettings } from '../ui/EnemySettings';
 import { InputManager } from './InputManager';
 import { Quality } from './Quality';
-import { browserStorage, radiansPerCount, Settings, type GameSettings, type QualityPreset } from './Settings';
+import { browserStorage, keyLabel, radiansPerCount, Settings, type GameSettings, type QualityPreset } from './Settings';
+import { VoiceChat } from '../voice/VoiceChat';
+import { VoiceHud } from '../voice/VoiceHud';
 import { WARMUP_TIMEOUT_MS, warmUpSceneResources, warmUpShaders } from './ShaderWarmup';
 import { DebugPanel } from '../debug/DebugPanel';
 import { TouchControls } from '../ui/TouchControls';
@@ -286,6 +288,11 @@ export class Game {
   private readonly killFeed = new KillFeed();
   /** Jogo online (M4): a sessão com o servidor, ou null no jogo de sempre. */
   private readonly online: OnlineSession | null;
+  /** O chat de voz da sala online (P205): P2P, módulo à parte; null no jogo offline. */
+  private voz: VoiceChat | null = null;
+  private vozHud: VoiceHud | null = null;
+  /** Onde está o robô de um jogador da sala (a voz dele sai dali): criada uma vez, sem alocar por quadro (G4). */
+  private readonly posDoRemoto = (id: number) => this.online?.remotes.get(id)?.mech.simPosition;
   private readonly netStatus = document.createElement('div');
   private readonly damageIndicator = new DamageIndicator();
   private readonly damageNumbers = new DamageNumbers();
@@ -699,8 +706,14 @@ export class Game {
     const shouldConnect = online && online.explicitName;
 
     if (shouldConnect) {
+      const voz = new VoiceChat({ enviar: (bytes) => this.online?.enviarVoz(bytes), saida: () => this.audio.output });
+      this.voz = voz;
+      voz.ligarTeclas(() => this.settings.value.keys.ptt);
+      this.vozHud = new VoiceHud(document.getElementById('hud')!, voz, (id) => this.online?.nomeDe(id), () => keyLabel(this.settings.value.keys.ptt));
       this.online = new OnlineSession({
         ...online,
+        onVoz: (bytes) => voz.receber(bytes),
+        onSala: (id) => (id === null ? voz.saiuDaSala() : voz.entrouNaSala(id)),
         build: this.hangar.key,
         match: this.match,
         me: this.mech,
@@ -933,6 +946,7 @@ export class Game {
     // O que o jogador vê (P191): o catálogo de funcionalidades aplicado à interface (botões, chips, modos, fases) e reaplicado quando o painel de visibilidade ou o servidor mudam algo.
     aplicarGlobal(document);
     aoMudarVisibilidade(() => aplicarGlobal(document));
+    aoMudarVisibilidade(() => this.aplicarVoz(this.settings.value));
     // O Relatório de Consequências (P179 camada 3): o chip só aparece depois da missão do rio; o painel e os textos são sob demanda como o Arquivo.
     document.getElementById('cc-relatorio')?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1211,6 +1225,11 @@ export class Game {
   }
 
   /** Aplica as configurações do jogador: na largada e a cada mudança na tela de configurações. */
+  /** O chat de voz vale quando o jogador o quer (Configurações) **e** a funcionalidade está liberada (`tela:voz`, P191: nasce restrita; o Comandante a solta no painel, e a segura de novo se precisar). */
+  private aplicarVoz(s: Readonly<GameSettings>): void {
+    this.voz?.configurar(s.voiceOn && funcionalidadeVisivel('tela:voz'), s.voiceMode, s.voiceVolume);
+  }
+
   private applySettings(s: Readonly<GameSettings>): void {
     this.rig.sensitivity = radiansPerCount(s.sensitivity);
     this.input.rawInput = s.rawInput;
@@ -1227,6 +1246,7 @@ export class Game {
     if (!this.match.waves || this.match.waves.phase !== 'active') this.bots.maxAttackers = s.maxAttackers;
     this.debugPanel.setVisible(s.showPerf);
     this.audio.setVolume(s.volume);
+    this.aplicarVoz(s);
     if (s.quality !== this.appliedQuality && !this.recorder.gravando) {
       this.appliedQuality = s.quality;
       this.aplicarQualidade(s.quality);
@@ -1912,6 +1932,11 @@ export class Game {
     this.dominioHud.update(dt);
     this.online?.render(dt, now);
     this.nameplates.update(dt, this.mech);
+    if (this.voz) {
+      const p = this.mech.simPosition;
+      this.voz.atualizar(p.x, p.y, p.z, this.rig.look.yaw, this.posDoRemoto);
+      this.vozHud?.atualizar(now);
+    }
     if (this.mech.alive && this.killCam.overridesRig) this.killCam.release();
     if (this.spectatorCam.overridesRig) {
       this.spectatorCam.update(dt);

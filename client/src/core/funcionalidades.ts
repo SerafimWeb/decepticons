@@ -41,6 +41,7 @@ const fixas: readonly Funcionalidade[] = [
   { id: 'tela:cftv', grupo: 'telas', nome: 'Câmeras do local', padrao: 'publico', efeito: 'o botão CÂMERAS' },
   { id: 'tela:conta', grupo: 'telas', nome: 'Conta (entrar e criar)', padrao: 'publico', efeito: 'o botão CONTA' },
   { id: 'tela:arquivo', grupo: 'telas', nome: 'Arquivo (o que o jogo ensina)', padrao: 'restrito', efeito: 'o chip ARQUIVO' },
+  { id: 'tela:voz', grupo: 'telas', nome: 'Chat de voz (online)', padrao: 'restrito', efeito: 'a seção CHAT DE VOZ das Configurações e a voz na sala online (some junto o pedido de microfone)' },
   { id: 'tela:lado', grupo: 'telas', nome: 'Seletor de lado (Aliança ou Consórcio)', padrao: 'restrito', efeito: 'o chip ESCOLHA O LADO' },
   { id: 'tela:relatorio', grupo: 'telas', nome: 'Relatório de Consequências', padrao: 'restrito', efeito: 'o chip RELATÓRIO depois da missão' },
 ];
