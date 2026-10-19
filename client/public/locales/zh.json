@@ -15,7 +15,6 @@
  "VOCÊ": "你",
  "IAs ATACANDO": "AI 正在进攻",
  "EM BREVE": "即将推出",
-
  "EM CONSTRUÇÃO": "建设中",
  "RADAR TÁTICO": "战术雷达",
  "ALIADOS": "友军",
@@ -918,5 +917,6 @@
  "Não foi possível abrir o microfone. Escolha outro aparelho e teste de novo.": "无法打开麦克风。请选择其他设备后重新测试。",
  "Aparelho salvo (desconectado)": "已保存的设备（未连接）",
  "Microfone {0}": "麦克风 {0}",
- "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "语音中没有其他人：请在设置中测试麦克风"
+ "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "语音中没有其他人：请在设置中测试麦克风",
+ "Pilotos na sala": "房间内的飞行员"
 }
