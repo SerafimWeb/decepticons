@@ -75,8 +75,22 @@ describe('as missões do teatro de operações', () => {
     for (const t of TEATROS) expect(!!t.mapa, t.nome).toBe(t.modos.length > 0);
   });
 
-  it('só a estação de cabos (Fortaleza, registrada no UNIVERSO.md) tem o lugar confirmado; o resto é proposta', () => {
-    expect(TEATROS.filter((t) => !t.proposta).map((t) => t.id)).toEqual(['cabos']);
+  it('só a estação de cabos (Fortaleza, registrada no UNIVERSO.md) e o 8 DE JANEIRO (Brasília, mandado pelo Comandante em 19/10) têm o lugar confirmado; o resto é proposta', () => {
+    expect(TEATROS.filter((t) => !t.proposta).map((t) => t.id).sort()).toEqual(['cabos', 'janeiro']);
+  });
+
+  it('o 8 DE JANEIRO (P217) ocupa Brasília, onde era o Bunker, e o Bunker foi para o Mato Grosso do Sul; a missão ainda não tem mapa (EM BREVE)', () => {
+    const janeiro = TEATROS.find((x) => x.id === 'janeiro')!;
+    const bunker = TEATROS.find((x) => x.id === 'bunker')!;
+    expect(janeiro.lugar).toMatch(/Brasília/);
+    expect(janeiro.recurso).toBe('poder');
+    expect(RECURSO_NOME.poder).toBe('SEDE DOS PODERES');
+    expect(janeiro.mapa).toBeUndefined();
+    expect(estadoDoTeatro(janeiro, 'arena', 'deathmatch')).toBe('em-breve');
+    expect(bunker.lugar).toMatch(/MS$/);
+    expect(bunker.lat).toBeLessThan(-18); // o Mato Grosso do Sul fica ao sul do paralelo 17 e a oeste de Goiás
+    expect(bunker.lon).toBeLessThan(-52);
+    expect(Math.hypot(bunker.lat - janeiro.lat, bunker.lon - janeiro.lon)).toBeGreaterThan(6);
   });
 
   it('o estado de cada missão segue o mapa e o modo da partida aberta', () => {
