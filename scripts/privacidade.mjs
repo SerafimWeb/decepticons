@@ -67,6 +67,7 @@ const body = `
         '**Você manda nos seus dados:** baixa tudo, apaga a conta, ou desliga o registro da sua atividade, direto no jogo e na hora.',
         '**Não vendemos dados e não há publicidade.** O Google Analytics do site só liga se você aceitar.',
         '**O endereço IP não é guardado.** Ele existe só na memória do servidor enquanto você está conectado, e nos registros técnicos aparece cortado (o último trecho é mascarado).',
+        '**No chat de voz, os outros jogadores da sala podem ver o seu endereço IP**, porque a voz vai direto de um navegador ao outro (nunca passa pelo nosso servidor, e **nada é gravado**). Você liga e desliga em Configurações, e o jogo funciona sem a voz.',
       ])}
     </section>
 
@@ -86,6 +87,7 @@ const body = `
               ['Você joga, com ou sem conta (no seu aparelho)', 'Apelido, nível, créditos, montagem do robô, configurações e as últimas rodadas; **uma data** (o dia da sua primeira visita, para o jogo saber se você é novo ou voltou) e, enquanto a aba está aberta, **de onde você chegou**. Ficam no armazenamento do navegador (`localStorage` e `sessionStorage`).', 'Fazer o jogo funcionar (execução do serviço).', 'Até você limpar os dados do site no navegador. Não saem do aparelho.'],
               ['Você joga, com ou sem conta (no servidor)', '**Somas sem identificação:** quantas visitas, cliques e partidas por dia e por país; totais de rodadas (minutos, abates, mortes, onda alcançada, duração e qualidade gráfica ao terminar) por mapa, modo e dia; e **de onde a visita veio** (digitou o endereço, busca, rede social, outro site, link marcado) e o **nome do site** de origem, o tipo de aparelho (celular, tablet ou computador), o navegador, o sistema, o idioma, se é a primeira visita ou há quantos dias foi, e o estado do Brasil.', 'Saber se o jogo funciona e onde melhorar (legítimo interesse). São números agregados: não apontam para você.', 'Contagens por dia por 120 dias; totais de rodadas sem prazo (são só somas).'],
               ['Você joga online', 'O apelido e a montagem do robô, enquanto você está na sala.', 'Mostrar você aos outros jogadores (execução do serviço).', 'Só na memória do servidor, até você sair.'],
+              ['Você usa o chat de voz', 'O som do seu microfone, **enquanto você fala**, e o seu **endereço IP**, que os outros jogadores da sala podem ver, porque a conexão é direta entre os navegadores. Nada disso passa pelo nosso servidor e **nada é gravado**.', 'Conversar com quem joga com você (execução do serviço; você liga e desliga em Configurações, e o jogo funciona sem a voz).', 'Só durante a conversa; nada fica guardado.'],
               ['Você cria uma conta', '**E-mail**, senha (guardada com `scrypt` e sal, nunca em texto), data de criação, a versão da política que você aceitou e quando, o progresso do piloto, e as sessões abertas (o servidor guarda só o resumo `SHA-256` do código da sessão).', 'Ter conta e levar o progresso para outro aparelho (execução do contrato); prova do seu aceite.', 'Até você apagar a conta. A sessão vence em 30 dias.'],
               ['Você pede “Esqueci a senha”', 'O **e-mail** que você digitou e um **link de uso único** (guardamos só a impressão digital dele, nunca o link). O registro de segurança anota que o pedido foi feito, com o número da conta e sem o e-mail.', 'Devolver o acesso à sua conta (execução do serviço).', 'O link vale **30 minutos** e some ao ser usado; o registro de segurança, 400 dias.'],
               ['Você joga com conta', '**A sua atividade:** em que dias abriu o jogo, quantas rodadas, quantos segundos, abates e mortes por dia (sem o conteúdo das rodadas).', 'Saber quantos jogadores voltam e por quanto tempo jogam, para melhorar o jogo (legítimo interesse). **Você pode se opor** e desligar isto quando quiser.', 'Até 400 dias; desligar apaga o que já foi registrado.'],
@@ -117,6 +119,7 @@ const body = `
         '**Cloudflare:** protege e entrega o site e leva a conexão do jogo até o servidor. Por ser o intermediário, enxerga o endereço IP de quem conecta; o servidor lê dele só o país.',
         '**Hospedagem do site (Hostinger):** guarda as páginas e os arquivos do jogo; não recebe o seu progresso nem a sua conta.',
         '**Google Analytics:** só se você aceitar os cookies do site.',
+        '**Google (STUN, só no chat de voz):** o seu navegador pergunta a um servidor público do Google qual é o seu endereço na internet, para a voz conseguir conectar; o Google enxerga esse endereço. Só acontece com o chat de voz ligado.',
         '**Resend (envio de e-mail):** só quando você pede “Esqueci a senha”: recebe o seu e-mail e o texto da mensagem para entregá-la, e guarda o registro de entrega pelo prazo dele.',
         '**Serafim13 (sistema de erros):** recebe os relatórios de defeito descritos acima.',
       ])}
@@ -150,7 +153,7 @@ const body = `
     <section aria-labelledby="h-mudancas">
       <h2 id="h-mudancas">8. Mudanças nesta política</h2>
       <p>Quando mudarmos o que guardamos ou para quê, esta página muda, a versão e a data mudam junto, e quem for criar uma conta aceita a versão nova. A sua conta guarda a versão que você aceitou e quando. Mudanças que afetem contas já existentes serão avisadas no jogo.</p>
-      <p class="versao">Versão atual: ${esc(POLITICA_VERSAO)} (primeira versão).</p>
+      <p class="versao">Versão atual: ${esc(POLITICA_VERSAO)}. O que mudou em relação à de 18/10/2026: o chat de voz (o seu IP visto pelos outros jogadores da sala e o STUN do Google).</p>
     </section>
   </main>
 `;
