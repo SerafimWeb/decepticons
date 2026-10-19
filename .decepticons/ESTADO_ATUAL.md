@@ -2,6 +2,9 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
+
+**O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
 ## O ANALYTICS PEGAVA A PROPRIEDADE ERRADA: AGORA EXIGE O CÓDIGO DO CYBERMECH — Claude, 19/10 (branch `claude/analytics-propriedade-certa`, P207)
 
 **O Comandante (19/10):** *"já liguei a admin api, tem como você testar?"*. **Testei, e achei um problema:** o Google aceita a chave e a Admin API responde, mas a conta de serviço **só enxerga a propriedade "odpandroid"** (o app Android do Olho do Pai, no "Default Account for Firebase"), não a do CYBERMECH (`G-2CCHDCEC7X`). A regra antiga ("a única propriedade") a escolheria e o `/metricas/` mostraria números do app Android como se fossem do jogo.
@@ -14,9 +17,6 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
-
-**O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
 ## A PRAÇA DOS TRÊS PODERES: O MAPA DO 8 DE JANEIRO NO AR, COM A MULTIDÃO DESCENDO A ESPLANADA (PASSO 4 DA FICHA) — Claude, 19/10 (branch `claude/praca-mapa`, P217)
 
 **O que foi feito:** o **chão** da fase do 8 DE JANEIRO, jogável no **Deathmatch** (offline e online) e **restrito ao Comandante** (`mapa:janeiro`).
