@@ -15,7 +15,6 @@
  "VOCÊ": "ВЫ",
  "IAs ATACANDO": "ИИ АТАКУЮТ",
  "EM BREVE": "СКОРО",
-
  "EM CONSTRUÇÃO": "В РАЗРАБОТКЕ",
  "RADAR TÁTICO": "ТАКТИЧЕСКИЙ РАДАР",
  "ALIADOS": "СОЮЗНИКИ",
@@ -918,5 +917,8 @@
  "Não foi possível abrir o microfone. Escolha outro aparelho e teste de novo.": "Не удалось открыть микрофон. Выберите другое устройство и проверьте снова.",
  "Aparelho salvo (desconectado)": "Сохранённое устройство (отключено)",
  "Microfone {0}": "Микрофон {0}",
- "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "В ГОЛОСОВОМ ЧАТЕ БОЛЬШЕ НИКОГО: ПРОВЕРЬТЕ МИКРОФОН В НАСТРОЙКАХ"
+ "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "В ГОЛОСОВОМ ЧАТЕ БОЛЬШЕ НИКОГО: ПРОВЕРЬТЕ МИКРОФОН В НАСТРОЙКАХ",
+ "8 DE JANEIRO": "8 ЯНВАРЯ",
+ "SEDE DOS PODERES": "ОПЛОТ ВЛАСТИ",
+ "A Praça dos Três Poderes invadida por uma multidão de verde e amarelo: defenda os três prédios.": "Площадь трёх властей захвачена толпой в зелёном и жёлтом: защитите три здания."
 }

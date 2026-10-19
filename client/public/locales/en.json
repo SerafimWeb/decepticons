@@ -15,7 +15,6 @@
  "VOCÊ": "YOU",
  "IAs ATACANDO": "AIs ATTACKING",
  "EM BREVE": "COMING SOON",
-
  "EM CONSTRUÇÃO": "UNDER CONSTRUCTION",
  "RADAR TÁTICO": "TACTICAL RADAR",
  "ALIADOS": "ALLIES",
@@ -918,5 +917,8 @@
  "Não foi possível abrir o microfone. Escolha outro aparelho e teste de novo.": "Could not open the microphone. Choose another device and test again.",
  "Aparelho salvo (desconectado)": "Saved device (disconnected)",
  "Microfone {0}": "Microphone {0}",
- "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "NO ONE ELSE IN VOICE: TEST THE MICROPHONE IN SETTINGS"
+ "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "NO ONE ELSE IN VOICE: TEST THE MICROPHONE IN SETTINGS",
+ "8 DE JANEIRO": "JANUARY 8",
+ "SEDE DOS PODERES": "SEAT OF POWERS",
+ "A Praça dos Três Poderes invadida por uma multidão de verde e amarelo: defenda os três prédios.": "The Three Powers Plaza overrun by a crowd in green and yellow: defend the three buildings."
 }

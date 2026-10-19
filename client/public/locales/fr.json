@@ -15,7 +15,6 @@
  "VOCÊ": "VOUS",
  "IAs ATACANDO": "IA À L'ATTAQUE",
  "EM BREVE": "BIENTÔT",
-
  "EM CONSTRUÇÃO": "EN CONSTRUCTION",
  "RADAR TÁTICO": "RADAR TACTIQUE",
  "ALIADOS": "ALLIÉS",
@@ -918,5 +917,8 @@
  "Não foi possível abrir o microfone. Escolha outro aparelho e teste de novo.": "Impossible d’ouvrir le microphone. Choisissez un autre périphérique et testez à nouveau.",
  "Aparelho salvo (desconectado)": "Périphérique enregistré (déconnecté)",
  "Microfone {0}": "Microphone {0}",
- "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "PERSONNE D’AUTRE EN VOCAL : TESTEZ LE MICROPHONE DANS LES PARAMÈTRES"
+ "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "PERSONNE D’AUTRE EN VOCAL : TESTEZ LE MICROPHONE DANS LES PARAMÈTRES",
+ "8 DE JANEIRO": "8 JANVIER",
+ "SEDE DOS PODERES": "SIÈGE DES POUVOIRS",
+ "A Praça dos Três Poderes invadida por uma multidão de verde e amarelo: defenda os três prédios.": "La place des Trois Pouvoirs envahie par une foule en vert et jaune : défendez les trois bâtiments."
 }
