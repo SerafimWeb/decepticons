@@ -18,6 +18,7 @@
     "test": "node scripts/test.mjs",
     "publicar": "node scripts/publicar.mjs",
     "arquivar": "node scripts/arquivar-docs.mjs",
+    "ci:consumo": "node scripts/ciConsumo.mjs",
     "mesa": "node scripts/mesa.mjs",
     "gh": "node scripts/gh.mjs",
     "painel": "node scripts/painel.mjs",

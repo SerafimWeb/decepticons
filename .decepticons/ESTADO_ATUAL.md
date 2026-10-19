@@ -2,6 +2,10 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## O ACTIONS ECONÔMICO, SEM PERDER SINAL — Claude, 19/10 (branch `claude/ci-economico`, P222)
+
+**O Comandante (19/10):** economizar o Actions "de forma inteligente, profissional, sem miséria". **Feito:** medi antes (235 min em um dia; a cota de ~2.000 durava ~8 dias) e cortei só a repetição: o push na `main` não refaz o check na árvore que o PR já provou (`scripts/ciJaProvado.mjs`, na dúvida roda tudo), etiquetas só ao abrir, rascunho não roda, e `npm run ci:consumo` mede. O check do PR e o hook seguem completos. **Falta (R13):** só se confirma de verdade no primeiro merge depois deste PR (o job do push deve terminar em ~1 min com "já passou no check do PR"); medir de novo com `npm run ci:consumo`.
+
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
