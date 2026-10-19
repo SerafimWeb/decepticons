@@ -39,7 +39,12 @@ const empurrar = (sha: string, ref = 'refs/heads/claude/tarefa', npmSai = '0') =
 const chamadasDoNpm = () => (existsSync(LOG) ? readFileSync(LOG, 'utf8').split('\n').filter(Boolean).length : 0);
 const arvoresGuardadas = () => (existsSync(join(REPO, '.tmp', 'check-ok')) ? readdirSync(join(REPO, '.tmp', 'check-ok')) : []);
 
+// O atualizador de produção (a tarefa agendada do Windows) roda `server/` e `shared/` num ambiente SEM `bash` no PATH: o `spawnSync('bash')` devolvia 127 e **cada atualização era revertida** (19/10: o site e o
+// servidor ficaram 2 h sem publicar). O hook só roda sob o Bash do Git (é o que o `git push` usa), então sem bash não há o que testar aqui: a suíte pula (o `check` de quem empurra roda com bash e a testa).
+const temBash = spawnSync('bash', ['-c', 'exit 0']).status === 0;
+
 beforeAll(() => {
+  if (!temBash) return;
   rmSync(RAIZ, { recursive: true, force: true });
   mkdirSync(BIN, { recursive: true });
   mkdirSync(REPO, { recursive: true });
@@ -52,7 +57,7 @@ beforeAll(() => {
 });
 afterAll(() => rmSync(RAIZ, { recursive: true, force: true }));
 
-describe('hook de push: o check não se repete na mesma árvore (regra 19c)', () => {
+describe.skipIf(!temBash)('hook de push: o check não se repete na mesma árvore (regra 19c)', () => {
   it('a primeira vez roda o check e guarda a árvore; a segunda, com a mesma árvore, não roda', () => {
     const sha = git('rev-parse', 'HEAD');
     expect(empurrar(sha).status).toBe(0);
