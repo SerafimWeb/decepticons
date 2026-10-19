@@ -6,9 +6,9 @@
 
 **O Comandante (19/10):** as iterações estão "MUITO grandes… overengineered?"; pediu as 5 regras de processo leve e que eu olhasse o GitHub vermelho.
 
-**Feito:** (1) `AGENTS.md` **regra 19**: rigor proporcional ao risco (alto: servidor + teste + até 8 mutações + 1 bancada; baixo: só o teste de sempre), sem suíte inteira à mão antes do push, cada fato escrito uma vez, o menor PR que resolve. (2) O **hook de push não repete o check na mesma árvore** (`.tmp/check-ok/`; 8 testes, 3 mutações). (3) **O vermelho do CI era um teste só** (`estudio-vozes`: 503 sem `ffmpeg` no runner): a rota agora valida antes; reproduzido sem `ffmpeg` e corrigido. O CI voltou a rodar (2 a 3 min).
+**Feito:** (1) `AGENTS.md` **regra 19**: rigor proporcional ao risco (alto: servidor + teste + até 8 mutações + 1 bancada; baixo: só o teste de sempre), sem suíte inteira à mão antes do push, cada fato escrito uma vez, o menor PR que resolve. (2) O **hook de push não repete o check na mesma árvore** (`.tmp/check-ok/`; 8 testes, 3 mutações). (3) **O vermelho do CI tinha duas causas** (detalhe no HISTORICO): o teste `estudio-vozes` (503 sem `ffmpeg` no runner) e o smoke (`localhost:2567` recusado no runner); as duas reproduzidas e corrigidas. O CI voltou a rodar (2 a 4 min).
 
-**Atenção:** o CI gasta minutos medidos; com a cota de volta, push repetido pode esgotá-la. Se parar, `publicar --sem-ci` (P105). **Falta (R13):** só se vê verde de verdade quando o CI da `main` rodar depois do merge (pode haver outro passo vermelho atrás deste teste: o `npm run check` para no primeiro erro).
+**Atenção:** o CI gasta minutos medidos; com a cota de volta, push repetido pode esgotá-la. Se parar, `publicar --sem-ci` (P105). **Falta (R13):** o verde do CI só vale quando o PR e a `main` passarem de verdade (o `npm run check` para no primeiro erro, e já apareceu um segundo vermelho atrás do primeiro).
 
 **Próxima sessão começa com:** conferir o CI da `main` depois do merge; depois o mudo por jogador (voz) ou o que o Comandante mandar.
 
