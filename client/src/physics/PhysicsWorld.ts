@@ -28,10 +28,16 @@ export class PhysicsWorld {
   /** Resultado do raycast, reaproveitado a cada chamada (G4: a mira e cada projétil chamam todo quadro/tick). */
   private readonly hit: PhysicsHit = { point: new THREE.Vector3(), normal: new THREE.Vector3(), distance: 0, collider: null as unknown as RAPIER.Collider };
 
+  /** A inicialização do wasm, uma só para todos (ver `create`). */
+  private static iniciando: Promise<void> | null = null;
+
   static async create(): Promise<PhysicsWorld> {
     // O pacote compat (Node) exige init(); no browser o alias do vite.config aponta
     // para o build com .wasm separado, que já chega inicializado e não tem init().
-    await RAPIER.init?.();
+    // O `init()` do Rapier NÃO é reentrante: duas chamadas ao mesmo tempo (duas salas nascendo juntas no servidor, 19/10) instanciam o wasm duas vezes e corrompem os mundos
+    // ("unreachable" e "attempted to take ownership of Rust value while it was borrowed", em metade das vezes): uma única promessa serve a todas as chamadas.
+    PhysicsWorld.iniciando ??= Promise.resolve(RAPIER.init?.());
+    await PhysicsWorld.iniciando;
     return new PhysicsWorld();
   }
 
