@@ -1,0 +1,10 @@
+export const INTERPRETADORES: string[];
+export const ENVOLTORIOS: string[];
+export const VERBOS_PERIGOSOS_DO_GIT: string[];
+export const ARQUIVOS_DE_PERMISSOES: string[];
+export const TOLERADAS: Readonly<Record<string, string[]>>;
+export const PERMITIDAS: Readonly<Record<string, string[]>>;
+export function normalizar(permissao: string): string;
+export function motivoDeRisco(permissao: string): string | null;
+export function permissoesPerigosas(allow: readonly string[], toleradas?: readonly string[]): { permissao: string; motivo: string }[];
+export function foraDaListaFechada(arquivo: string, allow: readonly string[]): string[];
