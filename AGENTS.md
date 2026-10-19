@@ -27,6 +27,7 @@ e o ritual de sessão abaixo (Passo Zero na entrada, Encerramento na saída).
 10. Vai afirmar que uma feature funciona? Confira `.decepticons/STATUS_REAL.md`.
 11. Vai mexer em visual, efeito, HUD, cenário ou iluminação? Leia `.decepticons/REFERENCIA_VISUAL.md` antes: o alvo de qualidade que o dono apontou (MechArena), o que já existe no render e a ordem combinada. Os vídeos de referência ficam em `.tmp/referencias/` (só nesta máquina); no git ficam as pranchas. **Página do site (landing, oficina, sala de controle):** leia `.decepticons/DESIGN_SYSTEM_SITE.md` antes (paleta, tipografia, componentes, o que evitar) e importe de `scripts/site/hud.mjs`. **Tela, menu ou HUD:** leia também `.decepticons/AUDITORIA_INTERFACE.md` (os achados e os sete princípios: uma ação primária por tela, nada repetido, nada de informação de desenvolvedor para o jogador, menu sem rolagem em 1280×720).
 12. Vai escolher o que fazer a seguir, ou o dono perguntou "o que falta?" Leia `.decepticons/ORDENS_DO_COMANDO.md`: toda ordem dele, o estado de cada missão e o placar de resultado. **Leia também `.decepticons/LANCAMENTO.md` (18/10): a lista curta do que falta para lançar e o que está congelado até lá**; trabalho fora dela só com ordem expressa do dono.
+13. Vai mexer no chat de voz (microfone, ligação entre os jogadores, voz espacial)? Leia `.decepticons/VOICE_CHAT.md` antes: o que o código faz de diferente do plano original, o que foi medido e o que falta (a política de privacidade antes de liberar `tela:voz`).
 13. Vai guardar, medir ou enviar algo ligado a uma conta, a um IP ou a uma pessoa (métrica, log, tabela nova)? Leia `.decepticons/PRIVACIDADE.md` antes: o inventário do que já é guardado e o que falta para a política (LGPD). Dado pessoal novo entra no inventário no mesmo PR.
 
 ## O QUE É
@@ -82,6 +83,7 @@ client/src/
   entities/    MechBase.ts (controller, dash, dano modular, animação), chassis.ts (números dos chassis, sem 3D), Vector09.ts, Android.ts, meshKit.ts
   sim/         Match.ts (a partida inteira sem tela: o que o servidor roda; o Game desenha por cima)
   net/         adapters.ts (ponte entre a simulação e os contratos de rede)
+  voice/       VoiceChat.ts (voz P2P por WebRTC, ligada ao Game por callbacks), MicController.ts (aberto/PTT), VoiceSpatial.ts (voz espacial), VoiceHud.ts, opus.ts (DTX no SDP)
   hangar/      loadout.ts (contrato da montagem: LoadoutSpec, validateLoadout), Hangar.ts (montagem salva, link ?build=, API da tela)
   tuning/      power.ts (potências: multiplicadores por arma e por clã, link, relatório de equilíbrio), PowerStore.ts (salvas, ?potencias=)
   player/      PlayerController.ts (input/câmera -> MechInput, tiro)
@@ -93,8 +95,8 @@ client/src/
   fx/          ParticleSystem.ts
   ui/          HUD.ts (F1 esconde), CommandConsole.ts (a tela de início e de pausa: o console de comando; dados em consoleData.ts e theater.ts, mapa em WorldMap.ts)
   debug/       DebugPanel.ts (compacto sempre; ' abre o detalhado: qualidade, triângulos, memória)
-server/        servidor de jogo (M3): Server.ts (ws, salas, laço de 60 Hz), ArenaRoom.ts (a partida de uma sala), NetPilot.ts (piloto remoto), main.ts
-shared/net/    contratos do multiplayer, sem dependência do cliente: constants.ts, codec.ts, input.ts, state.ts, events.ts, messages.ts
+server/        servidor de jogo (M3): Server.ts (ws, salas, laço de 60 Hz), ArenaRoom.ts (a partida de uma sala), NetPilot.ts (piloto remoto), voz.ts (relé da sinalização do chat de voz), main.ts
+shared/net/    contratos do multiplayer, sem dependência do cliente: constants.ts, codec.ts, input.ts, state.ts, events.ts, messages.ts, voz.ts (sinalização do chat de voz)
 scripts/       smoke.mjs (budget + boot headless), test.mjs (Vitest com temp em .tmp/), landing.mjs (landing do jogo), oficina.mjs (bancada de testes), painel.mjs (sala de controle: o case),
                site/dados.mjs + site/tema.mjs + site/graficos.mjs (dados, visual e gráficos das páginas), site.mjs (site + .htaccess + capturas + teste), install-hooks.mjs,
                mapa-mundi.mjs (gera a grade e o contorno do mapa do console, do Natural Earth)

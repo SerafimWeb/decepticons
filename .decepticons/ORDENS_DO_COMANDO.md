@@ -14,6 +14,14 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P205 — O chat de voz (18/10, Claude)
+
+> O Comandante trouxe o plano de implementação do **VOICE CHAT** (decisões dele: microfone aberto por padrão com apertar-para-falar opcional, áudio espacial 3D, canais TODOS e TIME, TURN a critério técnico) e, ao mandar seguir: *"quero que seja simples, sem custo inicial e eficiente"*.
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P205 | 18/10 | "prossiga com o VOICE CHAT PLANO DE IMPLEMENTAÇÃO!" (o plano: voz por WebRTC, microfone aberto + apertar-para-falar, áudio espacial, canais ALL + TEAM, TURN a critério técnico); "quero q seja simples, sem custo inicial e eficiente" | 🟡 | **Feito e provado em Chrome de verdade** (`VOICE_CHAT.md`): a voz vai direto entre os navegadores (o servidor só repassa a oferta e a resposta), tecla T (mudo, ou segurar para falar), voz espacial, sem TURN pago. **Nasce restrita** (`tela:voz`). **Falta:** o seu ouvido, o canal TIME (o protocolo online não tem time) e a política de privacidade antes de liberar | `?comandante=1` + dois navegadores na mesma sala; Configurações > GRÁFICOS E SOM; captura `arte/voz-hud-jogo-claude.png` |
+
 ## P201 e P202 — O primeiro teste online: os bots difíceis demais e o painel do servidor (18/10, Claude)
 
 > O Comandante jogou online pela primeira vez, com uma pessoa da internet, e mandou duas capturas da janela do servidor.

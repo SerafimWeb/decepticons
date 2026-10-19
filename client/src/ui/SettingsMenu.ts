@@ -10,6 +10,7 @@ import {
   type GameSettings,
   type KeyAction,
   type QualityPreset,
+  type VoiceMode,
   type Settings,
 } from '../core/Settings';
 
@@ -44,6 +45,10 @@ export class SettingsMenu {
   private readonly sliderVolume = $('setting-volume') as HTMLInputElement;
   private readonly valVolume = $('val-volume');
   private readonly selNarracao = $('setting-narracao') as HTMLSelectElement;
+  private readonly chkVozOn = $('setting-voz-on') as HTMLInputElement;
+  private readonly selVozModo = $('setting-voz-modo') as HTMLSelectElement;
+  private readonly sliderVozVolume = $('setting-voz-volume') as HTMLInputElement;
+  private readonly valVozVolume = $('val-voz-volume');
 
   private readonly tabs: { select(tab: SettingsTab): void };
   private remappingAction: KeyAction | null = null;
@@ -60,6 +65,7 @@ export class SettingsMenu {
       secondary: $('key-secondary-bind') as HTMLButtonElement,
       camera: $('key-camera') as HTMLButtonElement,
       shield: $('key-shield') as HTMLButtonElement,
+      ptt: $('key-ptt') as HTMLButtonElement,
     };
 
     this.tabs = attachSettingsTabs(this.modal);
@@ -91,6 +97,9 @@ export class SettingsMenu {
     this.sliderVolume.min = LIMITS.volume.min.toString();
     this.sliderVolume.max = LIMITS.volume.max.toString();
     this.sliderVolume.step = LIMITS.volume.step.toString();
+    this.sliderVozVolume.min = LIMITS.voiceVolume.min.toString();
+    this.sliderVozVolume.max = LIMITS.voiceVolume.max.toString();
+    this.sliderVozVolume.step = LIMITS.voiceVolume.step.toString();
 
     // Select options
     this.selQuality.innerHTML = (['auto', 'alta', 'media', 'baixa'] as QualityPreset[])
@@ -104,7 +113,7 @@ export class SettingsMenu {
     for (const n of NARRACOES) this.selNarracao.append(new Option(ROTULO_DA_NARRACAO[n], n));
 
     // O `‹ valor ›` das interfaces de jogos antigas (P182): qualidade, dificuldade e narrador se trocam por um passo, sem abrir lista. O select segue sendo a fonte (escondido).
-    for (const s of [this.selQuality, this.selDiff, this.selNarracao]) ligarPasso(s);
+    for (const s of [this.selQuality, this.selDiff, this.selNarracao, this.selVozModo]) ligarPasso(s);
   }
 
   private wireEvents(): void {
@@ -179,6 +188,20 @@ export class SettingsMenu {
 
     this.selNarracao.addEventListener('change', () => {
       this.settings.update({ narracao: this.selNarracao.value as Narracao });
+    });
+
+    this.chkVozOn.addEventListener('change', () => {
+      this.settings.update({ voiceOn: this.chkVozOn.checked });
+    });
+
+    this.selVozModo.addEventListener('change', () => {
+      this.settings.update({ voiceMode: this.selVozModo.value as VoiceMode });
+    });
+
+    this.sliderVozVolume.addEventListener('input', () => {
+      const val = parseFloat(this.sliderVozVolume.value);
+      this.valVozVolume.textContent = `${Math.round(val * 100)}%`;
+      this.settings.update({ voiceVolume: val });
     });
 
     this.chkShowPerf.addEventListener('change', () => {
@@ -301,6 +324,10 @@ export class SettingsMenu {
     this.sliderVolume.value = s.volume.toString();
     this.valVolume.textContent = `${Math.round(s.volume * 100)}%`;
     this.selNarracao.value = s.narracao;
+    this.chkVozOn.checked = s.voiceOn;
+    this.selVozModo.value = s.voiceMode;
+    this.sliderVozVolume.value = s.voiceVolume.toString();
+    this.valVozVolume.textContent = `${Math.round(s.voiceVolume * 100)}%`;
 
     for (const { action } of KEY_ACTIONS) {
       if (this.remappingAction === action) continue;

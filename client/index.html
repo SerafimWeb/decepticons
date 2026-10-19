@@ -413,6 +413,33 @@
             </div>
           </div>
 
+          <div class="settings-section" data-tab="graficos" data-func="tela:voz">
+            <h3>CHAT DE VOZ</h3>
+            <p class="setting-hint">Fale com os outros jogadores da sala (só online). A voz vai direto de um navegador ao outro, sem passar pelo servidor: quem está perto soa mais alto e do lado em que está.</p>
+            <div class="setting-row">
+              <label for="setting-voz-on">Conversar por voz</label>
+              <div class="setting-ctrl">
+                <input type="checkbox" id="setting-voz-on" />
+              </div>
+            </div>
+            <div class="setting-row">
+              <label for="setting-voz-modo">Microfone</label>
+              <div class="setting-ctrl">
+                <select id="setting-voz-modo">
+                  <option value="sempre">Sempre aberto</option>
+                  <option value="ptt">Segurar para falar</option>
+                </select>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label for="setting-voz-volume">Volume da voz dos outros</label>
+              <div class="setting-ctrl">
+                <input type="range" id="setting-voz-volume" />
+                <span id="val-voz-volume" class="setting-val">80%</span>
+              </div>
+            </div>
+          </div>
+
           <div class="settings-section" data-tab="controles">
             <h3>REMAPEAMENTO DE TECLAS</h3>
             <div class="keys-grid">
@@ -425,6 +452,7 @@
               <div class="key-row"><span>Ataque 2 (além do clique dir.)</span><button id="key-secondary-bind" class="btn-key">[ Q ]</button></div>
               <div class="key-row"><span>Trocar câmera</span><button id="key-camera" class="btn-key">[ V ]</button></div>
               <div class="key-row"><span>Escudo: ligar/desligar</span><button id="key-shield" class="btn-key">[ Ctrl ]</button></div>
+              <div class="key-row"><span>Chat de voz: falar / mudo</span><button id="key-ptt" class="btn-key">[ T ]</button></div>
             </div>
           </div>
         </div>

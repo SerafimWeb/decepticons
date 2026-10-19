@@ -1,0 +1,150 @@
+{
+  "data": "2026-10-18",
+  "medidas": {
+    "falando": {
+      "pacotesPorSegundo": 52,
+      "kbpsComCabecalhos": 37
+    },
+    "espacial": {
+      "perto": 0.2817,
+      "meio": 0.1141,
+      "longe": 0
+    },
+    "silencio": {
+      "pacotesPorSegundo": 5.5,
+      "kbpsComCabecalhos": 1.9
+    }
+  },
+  "verificacoes": [
+    {
+      "nome": "dois navegadores se ligam por WebRTC (a sinalização passou pelo servidor, o áudio vai direto)",
+      "ok": true,
+      "detalhe": "[{\"id\":5,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":1,\"falando\":[]},{\"id\":6,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":1,\"falando\":[]}]"
+    },
+    {
+      "nome": "o microfone falso foi aceito nos dois (estado \"ativo\")",
+      "ok": true,
+      "detalhe": "ativo/ativo"
+    },
+    {
+      "nome": "o áudio de ALFA chega a BRAVO (o analisador do outro lado vê a voz)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "o áudio de BRAVO chega a ALFA",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "falando, a voz custa ~50 pacotes/s e cabe em ~40 kbps por colega (carga + cabeçalhos)",
+      "ok": true,
+      "detalhe": "52 pacotes/s, 37 kbps"
+    },
+    {
+      "nome": "mudo: ALFA aperta T e a faixa fecha",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "mudo: BRAVO deixa de ouvir ALFA",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "abrir de novo: BRAVO volta a ouvir ALFA",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "espacial: a 5 m a voz sai no volume cheio",
+      "ok": true,
+      "detalhe": "RMS 0.2817"
+    },
+    {
+      "nome": "espacial: a 100 m cai para ~40% (queda em linha reta entre 12 m e 160 m)",
+      "ok": true,
+      "detalhe": "0.41 do volume de perto"
+    },
+    {
+      "nome": "espacial: a 200 m (além do alcance) não se ouve",
+      "ok": true,
+      "detalhe": "0.000 do volume de perto"
+    },
+    {
+      "nome": "ptt: com a tecla solta o microfone não transmite",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "ptt: ALFA deixa de ouvir BRAVO",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "ptt: segurando T, ALFA ouve BRAVO",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "ptt: soltando T, ALFA deixa de ouvir",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "quem fecha a aba some da voz dos outros (a ligação é desfeita)",
+      "ok": true,
+      "detalhe": "{\"id\":6,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":0,\"semConexao\":0,\"transmitindo\":false,\"ouvindo\":0,\"falando\":[]}"
+    },
+    {
+      "nome": "microfone recusado: ainda se liga (o navegador e a sala deixam entrar como ouvinte)",
+      "ok": true,
+      "detalhe": "{\"id\":5,\"ativa\":true,\"mic\":\"negado\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":false,\"ouvindo\":1,\"falando\":[6]}"
+    },
+    {
+      "nome": "microfone recusado: o estado diz \"negado\"",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "microfone recusado: CHARLIE ouve BRAVO (a ligação sem faixa própria recebe)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "microfone recusado: BRAVO não ouve CHARLIE (ele não manda nada)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "microfone tardio: a ligação nasce antes de ele existir (o microfone ainda está pedindo)",
+      "ok": true,
+      "detalhe": "{\"id\":5,\"ativa\":true,\"mic\":\"pedindo\",\"ligados\":1,\"semConexao\":0,\"transmitindo\":false,\"ouvindo\":1,\"falando\":[]}"
+    },
+    {
+      "nome": "microfone tardio: DELTA já ouve BRAVO enquanto espera o microfone",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "microfone tardio: quando o microfone chega, BRAVO ouve DELTA sem renegociar a ligação",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "as restrições reais do microfone do jogo (eco, ruído e ganho automático) são aceitas pelo Chrome",
+      "ok": true,
+      "detalhe": "ativo/ativo"
+    },
+    {
+      "nome": "silêncio: com o DTX o microfone aberto quase não manda pacote (sem DTX seriam ~50/s)",
+      "ok": true,
+      "detalhe": "5.5 pacotes/s, 1.9 kbps"
+    },
+    {
+      "nome": "nenhum erro de página nas bancadas",
+      "ok": true,
+      "detalhe": ""
+    }
+  ]
+}
