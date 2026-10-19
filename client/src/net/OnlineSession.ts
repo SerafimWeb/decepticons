@@ -435,14 +435,26 @@ export class OnlineSession implements Pilot {
       const r = this.remotes.get(e.id);
       if (r && r.kind === e.kind && r.build === e.build) continue;
       if (r) this.removeRemote(e.id);
-      const mech = this.o.makeUnit(e);
-      mech.spawn(this.o.match.physics, HIDDEN);
-      mech.root.visible = false;
-      this.o.scene.add(mech.root);
-      this.remotes.set(e.id, { mech, kind: e.kind, build: e.build, placed: false, guns: rotariesOf(e.build), stream: 0 });
+      this.addRemote(e);
     }
     for (const id of [...this.remotes.keys()]) if (!present.has(id)) this.removeRemote(id);
     this.status();
+  }
+
+  private addRemote(e: RosterEntry): void {
+    const mech = this.o.makeUnit(e);
+    mech.spawn(this.o.match.physics, HIDDEN);
+    mech.root.visible = false;
+    this.o.scene.add(mech.root);
+    this.remotes.set(e.id, { mech, kind: e.kind, build: e.build, placed: false, guns: rotariesOf(e.build), stream: 0 });
+  }
+
+  /** O desenho do robô remoto era provisório (a malha importada ainda baixava): refaz com o desenho certo. Aparece de novo no próximo estado da sala (uma fração de segundo). */
+  refazerRemoto(id: number): void {
+    const r = this.remotes.get(id);
+    if (!r) return;
+    this.removeRemote(id);
+    this.addRemote({ id, kind: r.kind, name: this.names.get(id) ?? '', build: r.build });
   }
 
   private removeRemote(id: number): void {
