@@ -1,9 +1,9 @@
 import { createVerify, generateKeyPairSync } from 'node:crypto';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { METRICAS_HEADER, METRICAS_PATH } from '../shared/net/telemetry';
-import { detalheSeguro, ESPERA_MAX_MS, GA_CHAVE_ARQUIVO, GA_ERRO_TTL_MS, GA_PROPRIEDADE_ARQUIVO, GA_TTL_MS, GoogleAnalytics, type GaEstado } from './analytics';
+import { detalheSeguro, ESPERA_MAX_MS, GA_CHAVE_ARQUIVO, GA_MEDICAO_ID, GA_ERRO_TTL_MS, GA_PROPRIEDADE_ARQUIVO, GA_TTL_MS, GoogleAnalytics, type GaEstado } from './analytics';
 import { startServer } from './Server';
 
 /** O Analytics no `/metricas` (P207): o JWT assinado de verdade, o cache, os erros sem segredo e o servidor que nunca espera o Google. */
@@ -35,7 +35,7 @@ const RELATORIOS = {
 };
 
 /** Um Google de mentira: confere o JWT com a chave pública e responde os relatórios combinados. */
-function google(o: { agora?: () => number; tokenStatus?: number; dataStatus?: number; realtimeFalha?: boolean; admin?: unknown; demoraMs?: number; relatorios?: unknown } = {}) {
+function google(o: { agora?: () => number; tokenStatus?: number; dataStatus?: number; realtimeFalha?: boolean; admin?: unknown; fluxos?: Record<string, string[]>; demoraMs?: number; relatorios?: unknown } = {}) {
   const chamadas: { url: string; corpo: string }[] = [];
   const jwts: { cab: Record<string, unknown>; payload: Record<string, unknown>; assinaturaOk: boolean }[] = [];
   const http = (async (url: string, init: RequestInit = {}) => {
@@ -57,6 +57,11 @@ function google(o: { agora?: () => number; tokenStatus?: number; dataStatus?: nu
       const ok = createVerify('RSA-SHA256').update(`${cab}.${payload}`).verify(publicKey, Buffer.from(assinatura!, 'base64url'));
       jwts.push({ cab: JSON.parse(Buffer.from(cab!, 'base64url').toString()), payload: JSON.parse(Buffer.from(payload!, 'base64url').toString()), assinaturaOk: ok });
       return json(200, { access_token: 'token-de-teste', expires_in: 3600 });
+    }
+    if (url.includes('/dataStreams')) {
+      const id = /properties\/(\d+)\/dataStreams/.exec(url)![1]!;
+      const medicoes = (o.fluxos ?? { [PROPRIEDADE]: [GA_MEDICAO_ID] })[id] ?? [];
+      return json(200, { dataStreams: [{ type: 'ANDROID_APP_DATA_STREAM', displayName: 'app' }, ...medicoes.map((measurementId) => ({ type: 'WEB_DATA_STREAM', webStreamData: { measurementId } }))] });
     }
     if (url.includes('accountSummaries')) return json(200, o.admin ?? { accountSummaries: [{ propertySummaries: [{ property: `properties/${PROPRIEDADE}` }] }] });
     if (url.endsWith(':runRealtimeReport')) return o.realtimeFalha ? json(500, {}) : json(200, { rows: [linha([], [3])] });
@@ -165,11 +170,41 @@ describe('GoogleAnalytics: o que dá errado, dito sem segredo', () => {
     expect(await new GoogleAnalytics({ dirDados: pasta('semprop'), http: g.http }).obter()).toEqual({ estado: 'desligado', motivo: 'sem-propriedade' });
   });
 
-  it('sem o ID, descobre a propriedade quando a conta enxerga uma só; com duas, não chuta', async () => {
+  const props = (...itens: [string, string][]) => ({ accountSummaries: [{ propertySummaries: itens.map(([id, displayName]) => ({ property: `properties/${id}`, displayName })) }] });
+
+  it('sem o ID, descobre a propriedade que tem o fluxo do CYBERMECH (o código de medição do jogo), mesmo com outras ao lado', async () => {
     const uma = await new GoogleAnalytics({ dirDados: pasta('descobre'), http: google().http }).obter();
     expect(uma.estado === 'ok' && uma.relatorio.propriedade).toBe(PROPRIEDADE);
-    const duas = google({ admin: { accountSummaries: [{ propertySummaries: [{ property: 'properties/111111' }, { property: 'properties/222222' }] }] } });
-    expect(await new GoogleAnalytics({ dirDados: pasta('duas'), http: duas.http }).obter()).toEqual({ estado: 'desligado', motivo: 'sem-propriedade' });
+    const duas = google({ admin: props(['111111', 'odpandroid'], [PROPRIEDADE, 'CYBERMECH']), fluxos: { '111111': [], [PROPRIEDADE]: [GA_MEDICAO_ID, 'G-OUTRO000000'] } });
+    const r = await new GoogleAnalytics({ dirDados: pasta('duas'), http: duas.http }).obter();
+    expect(r.estado === 'ok' && r.relatorio.propriedade).toBe(PROPRIEDADE);
+  });
+
+  it('o caso real de 18/10: a conta só enxerga o app Android de outro projeto: NÃO usa os números dele, diz os nomes que enxerga e onde dar o acesso', async () => {
+    const g = google({ admin: props(['538478235', 'odpandroid']), fluxos: { '538478235': [] } });
+    const r = await new GoogleAnalytics({ dirDados: pasta('errada'), http: g.http }).obter();
+    expect(r).toEqual({ estado: 'desligado', motivo: 'propriedade-errada', vistas: ['odpandroid'] });
+    expect(g.doTipo('batchRunReports'), 'nenhum relatório da propriedade errada foi pedido').toBe(0);
+  });
+
+  it('duas propriedades com o mesmo código de medição: ambíguo, não chuta (o dono escreve o ID)', async () => {
+    const g = google({ admin: props(['111111', 'a'], ['222222', 'b']), fluxos: { '111111': [GA_MEDICAO_ID], '222222': [GA_MEDICAO_ID] } });
+    expect((await new GoogleAnalytics({ dirDados: pasta('ambigua'), http: g.http }).obter()).estado).toBe('desligado');
+    expect(g.doTipo('batchRunReports')).toBe(0);
+  });
+
+  it('o ID escrito em ga-propriedade.txt vale sem conferir o fluxo (decisão do dono), e o código de medição pode vir da variável', async () => {
+    const g = google({ admin: props(['538478235', 'odpandroid']), fluxos: { '538478235': [] } });
+    const escrito = await new GoogleAnalytics({ dirDados: pasta('escrito', { propriedade: '538478235' }), http: g.http }).obter();
+    expect(escrito.estado === 'ok' && escrito.relatorio.propriedade).toBe('538478235');
+    const outro = google({ admin: props(['333333', 'x']), fluxos: { '333333': ['G-MEUOUTRO01'] } });
+    const r = await new GoogleAnalytics({ dirDados: pasta('envmed'), env: { CYBERMECH_GA_MEDICAO: 'G-MEUOUTRO01' }, http: outro.http }).obter();
+    expect(r.estado === 'ok' && r.relatorio.propriedade).toBe('333333');
+  });
+
+  it('o código de medição do servidor é o mesmo do jogo e do site (nunca se separam)', () => {
+    expect(readFileSync(resolve('client/index.html'), 'utf8')).toContain(GA_MEDICAO_ID);
+    expect(readFileSync(resolve('scripts/site/tema.mjs'), 'utf8')).toContain(`GA_ID = '${GA_MEDICAO_ID}'`);
   });
 
   it('o ID vem do arquivo (aceita o "properties/"), da variável de ambiente, e lixo não vale', async () => {

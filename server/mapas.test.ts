@@ -14,7 +14,7 @@ const w = new Writer(256);
 const join_ = (name: string) => new Uint8Array(encodeJoin(w, { protocol: PROTOCOL_VERSION, name, build: 'v1.vector09.plasma-0.rockets-0' }));
 const GUARD = { perIp: 100, total: 200, msgs: 400, burst: 400 };
 
-async function until(ok: () => boolean, ms = 40_000) {
+async function until(ok: () => boolean, ms = 100_000) {
   const t0 = Date.now();
   while (!ok()) {
     if (Date.now() - t0 > ms) throw new Error('tempo esgotado');
@@ -71,7 +71,8 @@ describe('o mapa da sala online (P218, etapa O1): o contrato', () => {
   });
 });
 
-describe('a sala do servidor por mapa, com o servidor de verdade', () => {
+// 120 s: criar três salas de uma vez (a Praia e o Bunker são pesados) passava dos 30 s com a máquina ocupada e o atualizador de produção revertia a atualização por tempo, não por erro (19/10).
+describe('a sala do servidor por mapa, com o servidor de verdade', { timeout: 120_000 }, () => {
   let server: GameServer;
   beforeAll(async () => {
     server = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: GUARD });

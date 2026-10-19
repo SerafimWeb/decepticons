@@ -9,11 +9,11 @@ import { runnerImport } from 'vite';
 
 const load = async (p) => (await runnerImport(resolve(p), { configFile: false, logLevel: 'silent' })).module;
 const { Contas } = await load('server/contas.ts');
-const { pastaDados, bancoDeContas } = await load('server/dados.ts');
+const { pastaDadosDasFerramentas, bancoDeContas } = await load('server/dados.ts');
 const { Auditoria, AUDITORIA_PASTA } = await load('server/auditoria.ts');
 const { executarComandoAdmin } = await load('server/adminContas.ts');
 
-const dados = pastaDados(resolve('.'));
+const dados = pastaDadosDasFerramentas(resolve('.'));
 const banco = bancoDeContas(dados);
 if (!existsSync(banco)) {
   console.error(`não achei o banco de contas em ${banco}\nRode na pasta principal do projeto (no PC do servidor) ou diga a pasta com CYBERMECH_DADOS.`);

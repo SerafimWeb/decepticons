@@ -1,14 +1,25 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
+
+**Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.
 ## [2026-10-19] Economizar o Actions removendo repetição, não sinal (Claude, P223)
 
 **Ordem:** economizar de forma inteligente e profissional, sem miséria. **Medi antes** (235 min em um dia; 40% push na `main`, 38% check do PR, 22% etiquetas) e cortei só o que repete ou é desperdício: (1) o push na `main` pula o check quando a árvore é idêntica à do PR e o CI do PR passou nela (na dúvida roda tudo; decisão pura e testada, 6 mutações pegas; aplicada a merges reais: #405 pula, #403 roda); (2) etiquetas só ao abrir (o job de 6 s cobra 1 minuto); (3) rascunho não roda. **Não cortei** o check do PR nem o hook: é a segunda opinião de uma máquina limpa e achou dois defeitos escondidos por uma semana. Próximos degraus, se ainda apertar, estão no `DEPLOY.md`. `npm run ci:consumo` passa a mostrar o gasto e a projeção.
 
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
+## [2026-10-19] A descoberta da propriedade do Analytics exige o código de medição do CYBERMECH (Claude, P207)
 
-**Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.
+**Ordem:** *"já liguei a admin api, tem como você testar?"*. Testei: o Google aceitou a chave e a Admin API respondeu, **mas a única propriedade que a conta enxerga é a "odpandroid"** (o app Android do Olho do Pai), e não a do CYBERMECH.
+
+**Decisões:**
+1. **A descoberta não pega mais "a única propriedade".** Pega a que tem um fluxo web com o código de medição do jogo (`G-2CCHDCEC7X`, o mesmo do `client/index.html`; um teste confere que servidor, site e jogo não se separam). Com a regra antiga, o `/metricas/` teria mostrado os números do app Android como se fossem do jogo: **o pior defeito de um painel é mostrar um número errado com cara de certo.**
+2. **Propriedade errada é um estado dito, não um erro mudo:** "a conta só enxerga outra(s) propriedade(s) (odpandroid)", com os nomes e o caminho do conserto. Zero relatórios são pedidos à propriedade errada (o teste conta).
+3. **Escrever o ID em `ga-propriedade.txt` continua valendo sem conferir** (decisão do dono, que pode querer olhar outra propriedade), e o código de medição pode vir da variável `CYBERMECH_GA_MEDICAO`. Duas propriedades com o mesmo código: ambíguo, não chuta.
+
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
 ## [2026-10-19] O mapa da Praça dos Três Poderes: dados no pacote, desenho sob demanda, restrito (Claude, P217)
 
 **Decisões:**
