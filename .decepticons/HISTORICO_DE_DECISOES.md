@@ -3,6 +3,15 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-19] A multidão é módulo puro com modo espelho, medida antes do desenho (Claude, P217 e P219)
+
+**Decisões:**
+1. **Simulação antes do desenho:** o número decide se a ideia da ficha (posição como função do tempo) aguenta. Deu **0,043 ms por tick**, seis vezes abaixo da conta de bolso e sete abaixo do teto: o desenho pode seguir sem redesenhar a simulação.
+2. **Dois modos no mesmo código:** a *autoridade* (servidor e jogo offline) decide tiro, explosão e susto; o *espelho* (cliente online) só aplica `morreu` e `fugiu`. O que sai do tempo (chegar, fugir ao fim da estadia, sair) é igual nos dois, então a rede não carrega posição.
+3. **O balanço do andar é um gingado, não um tremor:** a primeira versão balançava mais depressa do que o figurante andava (o teste de continuidade pegou); amplitude 0,18 m e período de 90 a 130 ticks.
+4. **O seno é por parábolas, não `Math.sin`:** só `+ − × ÷`, `floor` e `sqrt`, exatos no IEEE-754; servidor e cliente chegam no mesmo número em qualquer navegador.
+5. **Os androides rebeldes ficam de fora do vetor:** são os `Android` que o jogo já tem (vida, tiro, rede); a multidão só agenda a chegada deles.
+
 ## [2026-10-19] A idade manda na voz: só maior de 18 anos, e o servidor decide (Claude, P211)
 
 **Ordem:** perguntar a idade no cadastro; menores de 18 anos sem o microfone e sem os áudios dos outros jogadores, só o áudio do jogo.

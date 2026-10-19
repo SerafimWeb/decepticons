@@ -5,6 +5,20 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## A MULTIDÃO DO 8 DE JANEIRO: A SIMULAÇÃO PURA, COM TESTE E MEDIDA (PASSO 2 DA FICHA) — Claude, 19/10 (branch `claude/multidao`, P217 e P219)
+
+**O que foi feito:** `client/src/sim/Multidao.ts`, a multidão da fase como **módulo puro de simulação** (sem tela, sem Rapier, sem DOM; G1, G2, G14), e a medida de CPU (`medicoes/MULTIDAO.md`).
+
+**1. A ideia (a da ficha, § 3):** a posição de um figurante é **função do tempo**. Cada um nasce com fonte, tick, tipo, prédio-alvo e semente; a posição em qualquer tick é calculada (linha reta com um balanço de seno em parábolas por partes, sem `Math.sin`). Só o que o jogador causa é estado: `morreu(id, tick)` e `fugiu(id, tick)`. A chegada à fachada, a fuga automática depois do tempo na fachada e a saída pelo limite do mapa são **eventos agendados** (ponteiros sobre vetores ordenados).
+**2. O que ele tem:** o cronograma de chegadas por **ônibus** (grupos grandes), **bueiros** (jatos) e **lixeiras** (fios), a cota finita da fase, os tipos GADO, CARECA e PERUCA (vida, velocidade e altura próprias), os androides rebeldes **agendados** (a missão os cria), o tiro (a linha da mira contra um cilindro, com a cabeça), a explosão (mata no raio, assusta até o dobro), o susto por perto (de 6 em 6 ticks), `contarNaFachada` (o que a missão usa para desgastar a integridade), os contadores que formam a vitória (`terminou`: cota despejada e Praça vazia) e **o modo espelho** para o cliente online: só aplica os eventos do servidor, e quem entra no meio da fase recebe o estado compacto (um bit por figurante mais as fugas).
+**3. A medida:** **0,043 ms por tick** com as posições de todos recalculadas todo tick e 10 tiros por segundo (2.828 figurantes, pico de 1.465 na Praça), contra a estimativa da ficha de ≤ 0,3 ms.
+
+**Provas:** 15 testes de simulação: a mesma semente é a mesma multidão; a cota fecha; a mistura de tipos; a posição sem saltos e o destino no tick marcado; o ciclo completo sem jogador (todos chegam, fogem e saem; a Praça esvazia; `terminou`); pular ticks dá o mesmo que andar um a um; o tiro (de lado, de cima, errando, alcance); o gado cai com dois golpes e o ferido foge; a explosão; o susto; **o espelho chega ao mesmo lugar** que a autoridade e **quem entra no meio da fase fica igual**; o custo.
+
+**Falta (R13):** **nada disto aparece no jogo**: não há desenho, mapa nem missão ligados à multidão (passos 3 a 5 da ficha); os números de vida e de velocidade são os da ficha, sem balanço de jogo (o dano das armas ainda não foi ligado); a medida é de simulação, não de GPU nem de rede.
+
+**Próxima sessão começa com:** o desenho da massa (passo 3: instanciado, posição na vertex shader com o tick, impostor de longe, a cabeça de gado) e a bancada de GPU, ou o que o Comandante responder às cinco perguntas da ficha.
+
 ## A IDADE E A VOZ SÓ PARA MAIORES DE 18 ANOS — Claude, 19/10 (branch `claude/idade-e-voz`, P211)
 
 **O Comandante (19/10):** *"no início, perguntar a IDADE pra fazer o cadastro… menores de 18 anos NÃO TÊM ACESSO ao microfone nem aos áudios dos outros jogadores, apenas o áudio do jogo."*
