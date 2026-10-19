@@ -122,10 +122,10 @@ const body = `
         '**Hospedagem do site (Hostinger):** guarda as páginas e os arquivos do jogo; não recebe o seu progresso nem a sua conta.',
         '**Google Analytics:** só se você aceitar os cookies do site.',
         '**Google (STUN, só no chat de voz):** o seu navegador pergunta a um servidor público do Google qual é o seu endereço na internet, para a voz conseguir conectar; o Google enxerga esse endereço. Só acontece com o chat de voz ligado.',
-        '**Resend (envio de e-mail):** só quando você pede “Esqueci a senha”: recebe o seu e-mail e o texto da mensagem para entregá-la, e guarda o registro de entrega pelo prazo dele.',
+        '**Hostinger (hospedagem do site e envio de e-mail):** além de guardar as páginas, é por ela que sai o e-mail do “Esqueci a senha”: recebe o seu e-mail e o texto da mensagem (o link) para entregá-la, e guarda o registro de entrega pelo prazo dela. Só acontece quando você pede.',
         '**Serafim13 (sistema de erros):** recebe os relatórios de defeito descritos acima.',
       ])}
-      <p>Cloudflare, Google e Resend podem tratar dados fora do Brasil (por exemplo, nos Estados Unidos). Essas transferências seguem a LGPD (art. 33) e os termos de proteção de dados que esses prestadores oferecem.</p>
+      <p>Cloudflare, Google e Hostinger podem tratar dados fora do Brasil (por exemplo, nos Estados Unidos). Essas transferências seguem a LGPD (art. 33) e os termos de proteção de dados que esses prestadores oferecem.</p>
     </section>
 
     <section aria-labelledby="h-direitos">

@@ -230,3 +230,23 @@ correções visíveis pedirem. **Decisão do dono.**
 ## 11. O chat de texto entre dois pilotos (P216, 19/10)
 
 Duas mensagens de tipos acima da voz (`TEXTO.ENVIAR` = 33, `TEXTO.RECEBER` = 34; `shared/net/texto.ts`), sem subir o `PROTOCOL_VERSION`. **Cliente → servidor:** `[33][id do destino][UTF-8]`; **servidor → destino:** `[34][id de quem mandou][UTF-8]`. O servidor (`server/texto.ts`, `RelayDeTexto`) só repassa: lê e **limpa** o texto (sem controle, sem quebra de linha, sem formatação invisível, no máximo 160 caracteres), confere que o destino é **outra pessoa da mesma sala**, **troca o remetente pelo id de verdade** e aplica o teto de **6 mensagens por 10 s por jogador**. **Nada é guardado.** No cliente, `net/Conversas.ts` guarda as últimas 60 linhas de cada conversa (enquanto a sala vive), as não lidas e quem está silenciado; a tela é `ui/VisitaPanel.ts` (sob demanda), aberta pelo Hangar em modo visita (`HangarMenu.visitar`). A funcionalidade é o `tela:chat` do painel de visibilidade (nasce restrita).
+
+## 12. Todas as fases e todos os modos online (P218, 19/10)
+
+**A ordem do Comandante:** *"todas as fases devem dar pra jogar online também! Não sei por que diferenciar. Todos os modos de jogo, campanha, deathmatch, coop, capture the flag, etc, valham pra todas as fases."* Hoje a sala online é **Cidade Neon em Deathmatch** e só isso.
+
+**Por que era assim (achado no código):** (1) `mapFromSearch` devolve `arena` sempre que `online` é verdadeiro e `gameModeFromSearch` não vale online (`Game.ts`: `online ? 'deathmatch' : …`); (2) `ArenaRoom` cria o `Match` sem mapa e sem modo; (3) a sala é chaveada só pelo código (`?sala=`); (4) o **estado dos modos** (bandeiras, pontos de controle, ondas, o chefe do rio, cabos e portas da praia) **não está no protocolo**: o `Snapshot` só leva Mechs. **O que já ajuda:** a simulação (`Match`) **já** recebe `map` e `mode` (inclusive `ctf` e `dominio`), e as partes que dependem do DOM (`AmazoniaObjetivos`, `PraiaCabosFx`, `DominioPontos`) são só o desenho do cliente.
+
+**As etapas (um PR cada; cada uma mede a banda, G11 ≤ 8 KB/s por jogador):**
+
+| Etapa | O que entrega | O que muda no protocolo |
+|---|---|---|
+| **O1 · a sala escolhe o mapa** ✅ (19/10) | Deathmatch online na Cidade Neon, no Bunker, na Praia e na Terras Raras | a sala passa a ser `código + mapa` (`shared/net/mapa.ts`: a conexão leva `&mapa=`, a chave interna é `CODIGO` na Cidade Neon e `CODIGO@mapa` nos outros); o `ArenaRoom` recebe o mapa e o carrega sob demanda; o cliente honra o `?mapa=` online e o link do seletor fica na sala. **Sem tipo de mensagem novo, mas `PROTOCOL_VERSION` sobe para 21** (um servidor velho ignoraria o mapa e poria o jogador na Cidade Neon enquanto o cliente monta outro chão) |
+| **O2 · Domínio online** | os cinco pontos A a E, com o dono e o progresso de cada um | um tipo de evento/estado pequeno (5 pontos) |
+| **O3 · Bandeira online (CTF)** | times, bandeiras, capturas (`ctf-plan`: simulação + online) | estado das duas bandeiras e o time no `JOIN`/roster |
+| **O4 · Sobrevivência e missões** | ondas, o chefe do rio, cabos, portas, **a multidão do 8 DE JANEIRO** | o cronograma (semente) uma vez + eventos (a ficha do 8 DE JANEIRO, § 3: a posição é função do tempo, só *morreu* e *fugiu* viajam) |
+| **O5 · campanha online** | a sequência de etapas conduzida pela sala | o índice da etapa e o resultado |
+
+**Riscos:** o servidor de produção é o PC do dono (CPU e banda): cada mapa/modo novo é uma sala a mais a 60 Hz; o painel do servidor (REGRAS, VISIBILIDADE, SALAS) precisa mostrar o mapa e o modo de cada sala; o catálogo de visibilidade (`mapa:*`, `modo:*`) hoje só filtra o cliente: um link montado à mão abre uma sala de mapa restrito (aceitável para o Deathmatch; para uma fase em desenvolvimento, o servidor deve recusar, etapa O1).
+
+**O1, o que ficou de fora (honesto):** (a) o **mural de câmeras** do Comandante ainda desenha a planta da Cidade Neon para todas as salas (`ui/cameraData.ts`: `mapa: 'arena'`): as salas dos outros mapas aparecem com a planta errada; (b) o **servidor não recusa mapa restrito** pelo painel de visibilidade (só o cliente filtra): um link montado à mão abre uma sala do mapa (custa CPU no PC do dono, não vaza nada); recusar de verdade pede identificar o Comandante na conexão; (c) o painel do servidor mostra a sala como `CODIGO@mapa` (informativo), sem coluna própria do mapa.

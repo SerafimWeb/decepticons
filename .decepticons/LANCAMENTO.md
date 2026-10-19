@@ -67,10 +67,18 @@ sons e vozes prontos), o **Hangar**, as **Configurações** e o painel do servid
 
 ## 7. Ligar o e-mail do "esqueci a senha" (só o Comandante; P206)
 
-O código está pronto e testado; falta o provedor. **Enquanto não estiver ligado**, o jogo diz que a recuperação por e-mail não está ativa e `npm run admin -- link-senha <e-mail>` (no PC do servidor) gera o link na mão. Com o Resend (grátis: 100 e-mails por dia, 3.000 por mês):
-1. Criar a conta em resend.com e confirmar o e-mail.
-2. **Domains → Add Domain** → `cybermech.online`. O Resend mostra alguns registros DNS (SPF, DKIM e um de retorno). **Copie cada um para o DNS da Cloudflare** (dash.cloudflare.com → o domínio → DNS → Add record), **em "somente DNS" (nuvem cinza)**, exatamente como o Resend mostra. Volte ao Resend e clique em **Verify** (leva de minutos a algumas horas).
-3. **API Keys → Create API Key**, permissão **Sending access**, domínio `cybermech.online`. A chave (`re_…`) aparece **uma vez só**.
-4. Guarde num arquivo, **sem colar a chave no chat**: `D:\DECEPTICONS\.tmp\servidor\email.json` com `{"provedor":"resend","chave":"re_COLE_AQUI","de":"CYBERMECH <nao-responda@cybermech.online>"}`.
-5. O servidor lê o arquivo ao subir: no próximo deploy (ou reiniciando) fica ligado. Teste: no jogo, Configurações → Conta → "Esqueci a senha" com o seu e-mail; a mensagem chega em segundos (olhe o spam na primeira vez).
+O código está pronto e testado. **Enquanto não estiver ligado**, o jogo diz que a recuperação por e-mail não está ativa e `npm run admin -- link-senha <e-mail>` (no PC do servidor) gera o link na mão.
+
+**O caminho recomendado: o e-mail da própria Hostinger. Sem serviço novo, sem cartão, sem cadastro de terceiro.** O `cybermech.online` já usa o e-mail da Hostinger (os registros MX e SPF dele apontam para lá: conferido), então basta uma caixa:
+1. No **hPanel da Hostinger** → **E-mails** → escolha o domínio `cybermech.online` → **Criar conta de e-mail** → endereço `nao-responda@cybermech.online` e uma senha forte (anote; a Hostinger só a mostra quando você a cria). Se o seu plano não tiver caixa de e-mail para esse domínio, o hPanel avisa nessa tela: me diga e eu mostro o plano B (Resend, abaixo).
+2. No PC do servidor, na pasta principal do projeto: `npm run email -- iniciar`. Ele cria o arquivo `D:\DECEPTICONS\.tmp\servidor\email.json` já preenchido com a Hostinger (`smtp.hostinger.com`, porta 465, usuário `nao-responda@cybermech.online`). **Você não escreve JSON.**
+3. Abra esse arquivo no **Bloco de Notas**, troque `COLE_A_SENHA_AQUI` pela senha da caixa e salve. (A senha fica só nesse arquivo, fora do git; **não cole no chat**.)
+4. `npm run email -- testar seu@email.com`: manda uma mensagem de verdade pelo mesmo caminho do servidor. Se falhar, ele diz o que conferir (senha, porta, limite). Se chegar no spam na primeira vez, marque "não é spam".
+5. **Pronto, sem reiniciar o servidor:** ele relê o arquivo sozinho. Teste no jogo: Configurações → Conta → "Esqueci a senha". `npm run email -- estado` mostra o que está configurado, sem mostrar a senha.
+
+**Plano B: o Resend** (grátis: 100 e-mails por dia, 3.000 por mês; exige conta e verificar o domínio): conta em resend.com → **Domains → Add Domain** → `cybermech.online` → copiar cada registro DNS que ele mostra para a **Cloudflare** (DNS → Add record, em "somente DNS"/nuvem cinza) → **Verify** → **API Keys → Create** (Sending access) → no `email.json`: `{"provedor":"resend","chave":"re_…","de":"CYBERMECH <nao-responda@cybermech.online>"}`.
+
+**Sobre a Cloudflare (a resposta que o agente dela deu):** para o e-mail da Hostinger **não há nada a fazer lá**. O MX e o SPF já estão certos. A pergunta "qual chave guardar?" dele era sobre o Resend (plano B), que você não precisa usar. A chave/senha nunca vai para a Cloudflare: fica no `email.json` do PC do servidor.
+
 **Depois de ligar**, o que falta é o e-mail de aviso "sua senha foi trocada" (boa prática de segurança; uma ordem curta) e, se quiser, o seu nome na política (a LGPD pede a identidade do encarregado).
+

@@ -7,8 +7,8 @@ export { bunkerBlocks, BUNKER_LEVELS, BUNKER_LIFTS, BUNKER_SPAWNS } from './Bunk
 
 export type MapId = 'arena' | 'bunker' | 'praia' | 'amazonia';
 /** Online e missões mantêm o mapa contratado com o servidor/objetivos. O Bunker é só do Deathmatch; a praia abre o Deathmatch e as ondas; a Amazônia (P180) abre o Deathmatch e a missão do rio (a Sobrevivência: o Draga-01 marcha rumo à aldeia). */
-export function mapFromSearch(search: string, online: boolean, mode: string): MapId {
-  if (online) return 'arena';
+export function mapFromSearch(search: string, _online: boolean, mode: string): MapId {
+  // Online também honra o `?mapa=` (P218, etapa O1): a sala do servidor é uma por código e por mapa (`shared/net/mapa.ts`); o online só joga o Deathmatch, que todos os mapas têm.
   const mapa = new URLSearchParams(search).get('mapa');
   let id: MapId = 'arena';
   if (mapa === 'praia') id = mode === 'deathmatch' || mode === 'survival' ? 'praia' : 'arena';

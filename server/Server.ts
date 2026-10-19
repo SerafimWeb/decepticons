@@ -10,7 +10,7 @@ import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
 import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_NASCIMENTO_PATH, CONTA_PROGRESSO_PATH, ehMaiorDeIdade, idadeDaConta, parseNascimento, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
 import { CLOSE_REINICIO, REINICIO_AVISO_S, REINICIO_VOLTA_EM_S, ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { CONTA_ESQUECI_PATH, CONTA_REDEFINIR_PATH, parseEsqueci, parseRedefinir, urlDeRedefinicao, type IdiomaEmail } from '../shared/net/auth';
-import { carregarMailer, EMAILS_POR_DIA, TetoDiario, type Mailer } from './email';
+import { EMAILS_POR_DIA, MailerDaPasta, TetoDiario, type Mailer } from './email';
 import { type GaEstado, GoogleAnalytics } from './analytics';
 import { emailDeRedefinicao } from './emailTextos';
 import { Writer } from '../shared/net/codec';
@@ -36,6 +36,7 @@ import { Admin, Amostrador, LimiteDeFalhas, lerFimDoLog, LogEmMemoria, montarEst
 import { ehSalaDeTeste, executarTeste } from './autoteste';
 import { ADMIN_PREFIXO } from '../shared/net/admin';
 import { ehMensagemDeVoz, VOZ_SDP_MAX } from '../shared/net/voz';
+import { chaveDaSala, mapaDaChave, mapaDoLink, type MapaOnline } from '../shared/net/mapa';
 
 /** Maior mensagem de jogo aceita de um cliente (a maior é o JOIN, ~90 bytes). Acima disso, a conexão cai (G7). */
 const MAX_MESSAGE = 1024;
@@ -111,6 +112,11 @@ export function roomCode(url: string | undefined): string | null {
   const raw = new URL(url ?? '/', 'http://x').searchParams.get('sala');
   const code = (raw ?? DEFAULT_ROOM).trim().toUpperCase().slice(0, ROOM_MAX);
   return ROOM_RE.test(code) ? code : null;
+}
+
+/** O mapa pedido na conexão (`/?sala=ARENA&mapa=praia`, P218): ausente é a Cidade Neon; um valor que não é mapa do jogo vira `null` (a conexão é recusada). */
+export function roomMapa(url: string | undefined): MapaOnline | null {
+  return mapaDoLink(new URL(url ?? '/', 'http://x').searchParams.get('mapa'));
 }
 
 /**
@@ -194,12 +200,12 @@ export async function startServer(
   /** Conexões em cada sala (contando quem ainda não mandou o JOIN): é o que decide se a sala está cheia. */
   const occupancy = new Map<string, number>();
   /** Sala pedida cheia: a próxima (ARENA, ARENA-2, ARENA-3...). Quem clica em "Jogar online" nunca fica de fora. */
-  const pickRoom = (code: string): string => {
+  const pickRoom = (code: string, mapa: MapaOnline): string => {
     const base = code.replace(/-\d+$/, '');
     let n = code === base ? 1 : Number(code.slice(base.length + 1));
     let c = code;
-    while ((occupancy.get(c) ?? 0) >= ROOM_SIZE && n < 99) c = `${base}-${++n}`.slice(0, ROOM_MAX);
-    return c;
+    while ((occupancy.get(chaveDaSala(c, mapa)) ?? 0) >= ROOM_SIZE && n < 99) c = `${base}-${++n}`.slice(0, ROOM_MAX);
+    return chaveDaSala(c, mapa);
   };
 
   const roomFor = (code: string): Promise<ArenaRoom> => {
@@ -207,7 +213,7 @@ export async function startServer(
     if (open) return Promise.resolve(open);
     let p = creating.get(code);
     if (!p) {
-      p = ArenaRoom.create(code, regras.atual()).then((room) => {
+      p = ArenaRoom.create(code, regras.atual(), mapaDaChave(code)).then((room) => {
         // A voz é só de conta de maior de idade (P211): o `PRONTO` traz o token da sessão e é aqui que ele vale ou não.
         room.definirAutorizacaoDeVoz((token) => {
           const conta = token.length >= 8 && token.length <= 200 ? contas.validarSessao(token) : null;
@@ -376,7 +382,7 @@ export async function startServer(
   };
   const limiteLogin = new LimiteLogin(opts.limiteLogin);
   // Esqueci a senha (P206): 5 pedidos por hora por IP, 3 por hora por conta (de onde vierem) e 50 e-mails por dia no total (a cota do provedor).
-  const mailer: Mailer | null = opts.mailer !== undefined ? opts.mailer : carregarMailer(dirDados, process.env, log);
+  const mailer: Mailer | null = opts.mailer !== undefined ? opts.mailer : new MailerDaPasta(dirDados, process.env, log);
   const siteUrl = opts.siteUrl ?? process.env.CYBERMECH_SITE_URL ?? 'https://cybermech.online';
   const analytics = opts.analytics !== undefined ? opts.analytics : dirDados ? new GoogleAnalytics({ dirDados, anotar: log }) : null;
   const limiteEsqueci = new LimiteLogin({ teto: 5, janelaMs: 60 * 60 * 1000, ...opts.limiteEsqueci });
@@ -385,7 +391,7 @@ export async function startServer(
   /** O trabalho do pedido (banco e envio), DEPOIS de a resposta sair: o tempo da resposta não diz se o e-mail tem conta. Nunca lança; o log diz só o número da conta. */
   const enviarLinkDeSenha = async (email: string, lang: IdiomaEmail): Promise<void> => {
     try {
-      if (!mailer || !contas.temConta(email)) return;
+      if (!mailer || mailer.configurado?.() === false || !contas.temConta(email)) return;
       if (!tetoEmail.tentar()) {
         log(`recuperação de senha: teto de ${EMAILS_POR_DIA} e-mails por dia atingido; não enviei`);
         return;
@@ -595,7 +601,7 @@ export async function startServer(
           enviarJson(400, { erro: 'e-mail inválido' });
           return;
         }
-        if (!mailer) {
+        if (!mailer || mailer.configurado?.() === false) {
           enviarJson(503, { erro: 'a recuperação por e-mail ainda não está ativa', codigo: 'sem-email' });
           return;
         }
@@ -937,6 +943,11 @@ export async function startServer(
       ws.close(1008, 'sala');
       return;
     }
+    const mapaPedido = roomMapa(req.url);
+    if (!mapaPedido) {
+      ws.close(1008, 'mapa');
+      return;
+    }
     const admit = guard.admit(ip);
     if (admit !== 'ok') {
       if (admit === 'total') rejected.total++;
@@ -948,7 +959,7 @@ export async function startServer(
       return;
     }
     if (!ehSalaDeTeste(asked)) contar('conexao_online', pais);
-    const code = pickRoom(asked);
+    const code = pickRoom(asked, mapaPedido);
     occupancy.set(code, (occupancy.get(code) ?? 0) + 1);
     let doCodigo = sockets.get(code);
     if (!doCodigo) sockets.set(code, (doCodigo = new Set()));

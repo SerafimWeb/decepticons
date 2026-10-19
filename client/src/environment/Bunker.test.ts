@@ -23,14 +23,14 @@ describe('Bunker: mapa físico compartilhado', () => {
   });
   it('não muda o mapa do servidor nem os objetivos de missões', () => {
     expect(mapFromSearch('?mapa=bunker', false, 'deathmatch')).toBe('bunker');
-    expect(mapFromSearch('?mapa=bunker', true, 'deathmatch')).toBe('arena');
+    expect(mapFromSearch('?mapa=bunker', true, 'deathmatch')).toBe('bunker'); // online também honra o mapa (P218, etapa O1)
     expect(mapFromSearch('?mapa=bunker', false, 'ctf')).toBe('arena');
     expect(mapFromSearch('?mapa=desconhecido', false, 'deathmatch')).toBe('arena');
-    // A praia (P126): Deathmatch e as ondas (a defesa da estação); os CTF/Domínio e o online continuam na Arena.
+    // A praia (P126): Deathmatch e as ondas (a defesa da estação); o CTF e o Domínio ainda caem na Arena (os mapas deles são as etapas O2 e O3 do P218).
     expect(mapFromSearch('?mapa=praia', false, 'deathmatch')).toBe('praia');
     expect(mapFromSearch('?mapa=praia', false, 'survival')).toBe('praia');
     expect(mapFromSearch('?mapa=praia', false, 'ctf')).toBe('arena');
-    expect(mapFromSearch('?mapa=praia', true, 'deathmatch')).toBe('arena');
+    expect(mapFromSearch('?mapa=praia', true, 'deathmatch')).toBe('praia'); // online também (P218, etapa O1)
   });
   it('tem quatro andares separados, poço aberto e nascimentos no fundo', async () => {
     const physics = await PhysicsWorld.create();

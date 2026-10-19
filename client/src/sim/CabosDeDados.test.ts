@@ -187,7 +187,8 @@ describe('os CABOS DE DADOS (P162/P163): injeção, dano e reparo, uma regra pur
       return JSON.stringify([c.vida, c.injecao, [0, 1, 2].map((i) => c.estado(i))]);
     };
     expect(roda()).toBe(roda());
-  });
+    // 2 rodadas de 36 mil ticks com ~650 mil `expect`: ~15 s sozinho e mais de 50 s com o conjunto inteiro em paralelo (o push de 19/10 reprovou aqui aos 30 s do padrão).
+  }, 120_000);
 });
 
 describe('quem está perto de qual ponto de conexão', () => {

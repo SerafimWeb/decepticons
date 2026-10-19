@@ -3,30 +3,25 @@ import type { MapId } from '../environment/Bunker';
 /** Os mapas que o seletor oferece, na ordem em que aparecem. */
 export const MAPS: readonly { id: MapId; label: string; hint: string }[] = [
   { id: 'arena', label: 'ARENA', hint: 'A cidade neon' },
-  { id: 'bunker', label: 'BUNKER', hint: 'Mapa de quatro andares, treino offline contra bots (sai da sala online)' },
-  { id: 'praia', label: 'PRAIA DOS CABOS', hint: 'A orla de Fortaleza: porto, Ponte Metálica e a estação de cabos (offline, sai da sala online)' },
-  { id: 'amazonia', label: 'AMAZÔNIA · TERRAS RARAS', hint: 'A missão do rio: derrube o Draga-01 antes que ele chegue à aldeia, em 2,4 km de floresta e rio (offline, sai da sala online)' },
+  { id: 'bunker', label: 'BUNKER', hint: 'Mapa de quatro andares, contra bots ou online' },
+  { id: 'praia', label: 'PRAIA DOS CABOS', hint: 'A orla de Fortaleza: porto, Ponte Metálica e a estação de cabos' },
+  { id: 'amazonia', label: 'AMAZÔNIA · TERRAS RARAS', hint: 'A missão do rio: derrube o Draga-01 antes que ele chegue à aldeia, em 2,4 km de floresta e rio (online: só o Deathmatch)' },
 ];
 
 /**
- * Os mapas que só existem offline, no Deathmatch (`mapFromSearch`): o Bunker e a Praia. Quem escolhe um deles sai da sala online e do modo
- * atual para o treino livre do mapa.
- */
-const MAPAS_SO_OFFLINE: ReadonlySet<MapId> = new Set<MapId>(['bunker', 'praia', 'amazonia']);
-
-/**
- * O endereço que leva ao mapa `destino`. O Bunker e a Praia só existem offline e no Deathmatch, então o link tira `sala`, `servidor` e `modo`:
- * quem escolhe um deles sai da sala online / do modo atual para o treino. Para a Arena, só some o `mapa`.
+ * O endereço que leva ao mapa `destino`. **Online (com `sala`)** todo mapa vale (P218, etapa O1): o link troca só o `mapa` e fica na sala (o servidor tem uma sala por código e por mapa), no Deathmatch, que é o
+ * modo online de hoje (`modo` sai). **Offline**, os mapas que não são a Arena tiram o `modo` do jogo atual: o Bunker e a Praia abrem no treino livre e a Amazônia (P180), na missão do rio.
  */
 export function mapHref(href: string, destino: MapId): string {
   const url = new URL(href);
-  if (MAPAS_SO_OFFLINE.has(destino)) {
-    url.searchParams.delete('sala');
-    url.searchParams.delete('servidor');
+  const online = url.searchParams.has('sala');
+  if (destino === 'arena') url.searchParams.delete('mapa');
+  else url.searchParams.set('mapa', destino);
+  if (online) url.searchParams.delete('modo');
+  else if (destino !== 'arena') {
     url.searchParams.delete('modo');
-    url.searchParams.set('mapa', destino);
     // A Amazônia (P180) é a missão do rio: o link leva direto a ela (o Deathmatch do mapa é escolha do seletor de modo).
     if (destino === 'amazonia') url.searchParams.set('modo', 'survival');
-  } else url.searchParams.delete('mapa');
+  }
   return url.href;
 }

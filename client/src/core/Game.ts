@@ -137,7 +137,7 @@ import { AdminCliente, TokenDoDono } from '../net/admin';
 import { PALETTE } from './palette';
 import { PilotLabels } from '../ui/PilotLabels';
 import { PowerSettings } from '../ui/PowerSettings';
-import { defaultServer, onlineConfig } from '../net/onlineConfig';
+import { defaultServer, onlineConfig, urlComMapa } from '../net/onlineConfig';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
 import { GameRecorder } from './GameRecorder';
@@ -537,7 +537,8 @@ export class Game {
     // rodada própria (quem decide é o servidor); o jogo prevê o seu Mech e desenha os outros.
     const publicServer = import.meta.env.VITE_GAME_SERVER;
     const net = onlineConfig(location.search, location.hostname, publicServer);
-    const online = net && !('error' in net) ? net : null;
+    // O mapa da sala (P218, etapa O1): o mesmo que a partida local monta (`mapFromSearch` já aplica o lançamento: mapa restrito cai na Cidade Neon), para o servidor e o cliente jogarem no mesmo chão.
+    const online = net && !('error' in net) ? { ...net, url: urlComMapa(net.url, mapFromSearch(location.search, true, 'deathmatch')) } : null;
     this.gameMode = online ? 'deathmatch' : gameModeFromSearch(location.search);
     const foes = online
       ? { ...this.settings.value, enemyMechs: 0, enemyAndroids: 0, technician: false }
