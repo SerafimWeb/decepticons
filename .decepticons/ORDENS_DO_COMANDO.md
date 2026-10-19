@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P220 — Processo mais leve e o CI vermelho (19/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P220 | 19/10 | "NOSSAS iterações continuam MUITO grandes! … rigor, mas não em excesso! será que estamos overengineered? … testes e2e só nos fluxos críticos?" e depois "quero as 5 regras que tornem o processo mais leve. prossiga. veja como está o github cheio de vermelhos" | ✅ | **Feito** (PR `claude/processo-leve`): `AGENTS.md` regra **19** (rigor proporcional ao risco, sem suíte inteira à mão, hook que não repete o check na mesma árvore, cada fato uma vez, o menor PR). **O vermelho do CI:** 1 teste (`estudio-vozes`) dava 503 porque o runner não tem `ffmpeg`; a rota agora valida o pedido antes. | `AGENTS.md` regra 19; `server/hookPrePush.test.ts` (8 testes, 3 mutações); o CI do PR e da `main` ficam verdes |
+
 ## P218 e P219 — Todas as fases e modos valem online; as respostas sobre o 8 DE JANEIRO (19/10, Claude)
 
 > O Comandante respondeu às perguntas da ficha do 8 DE JANEIRO (P217) e, na mesma mensagem, ampliou o alcance: nada de fase só offline.

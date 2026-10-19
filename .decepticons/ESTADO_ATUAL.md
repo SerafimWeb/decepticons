@@ -2,12 +2,15 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+## PROCESSO MAIS LEVE E O CI VERMELHO — Claude, 19/10 (branch `claude/processo-leve`, P220)
 
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+**O Comandante (19/10):** as iterações estão "MUITO grandes… overengineered?"; pediu as 5 regras de processo leve e que eu olhasse o GitHub vermelho.
 
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+**Feito:** (1) `AGENTS.md` **regra 19**: rigor proporcional ao risco (alto: servidor + teste + até 8 mutações + 1 bancada; baixo: só o teste de sempre), sem suíte inteira à mão antes do push, cada fato escrito uma vez, o menor PR que resolve. (2) O **hook de push não repete o check na mesma árvore** (`.tmp/check-ok/`; 8 testes, 3 mutações). (3) **O vermelho do CI era um teste só** (`estudio-vozes`: 503 sem `ffmpeg` no runner): a rota agora valida antes; reproduzido sem `ffmpeg` e corrigido. O CI voltou a rodar (2 a 3 min).
 
+**Atenção:** o CI gasta minutos medidos; com a cota de volta, push repetido pode esgotá-la. Se parar, `publicar --sem-ci` (P105). **Falta (R13):** só se vê verde de verdade quando o CI da `main` rodar depois do merge (pode haver outro passo vermelho atrás deste teste: o `npm run check` para no primeiro erro).
+
+**Próxima sessão começa com:** conferir o CI da `main` depois do merge; depois o mudo por jogador (voz) ou o que o Comandante mandar.
 
 ## O E-MAIL DO "ESQUECI A SENHA" PELO SMTP DA HOSTINGER, SEM SERVIÇO NOVO — Claude, 19/10 (branch `claude/email-smtp`, P206 parte 2)
 
