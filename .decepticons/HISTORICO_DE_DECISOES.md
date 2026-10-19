@@ -23,6 +23,19 @@
 5. **Provado contra um servidor SMTP de mentira de verdade (um socket que fala o protocolo)**, não só com mocks: AUTH PLAIN e LOGIN, texto e HTML em japonês/russo/espanhol chegam inteiros, senha recusada, destinatário recusado, servidor mudo, porta fechada, e injeção de cabeçalho (destinatário com quebra de linha ou vírgula nem abre conexão; assunto com quebra vira texto). **O que não está provado: a Hostinger de verdade** (falta a caixa e a senha, que são do Comandante).
 6. **A política publicada passou a citar a Hostinger no lugar do Resend** (o e-mail de quem pede "esqueci a senha" é entregue por ela): mesmo conjunto de dados, só o nome do prestador; por isso a `POLITICA_VERSAO` não mudou. Se o Resend entrar um dia, o texto muda junto.
 
+## [2026-10-19] A multidão é módulo puro com modo espelho, medida antes do desenho (Claude, P217 e P219)
+
+**Decisões:**
+1. **Simulação antes do desenho:** o número decide se a ideia da ficha (posição como função do tempo) aguenta. Deu **0,043 ms por tick**, seis vezes abaixo da conta de bolso e sete abaixo do teto: o desenho pode seguir sem redesenhar a simulação.
+2. **Dois modos no mesmo código:** a *autoridade* (servidor e jogo offline) decide tiro, explosão e susto; o *espelho* (cliente online) só aplica `morreu` e `fugiu`. O que sai do tempo (chegar, fugir ao fim da estadia, sair) é igual nos dois, então a rede não carrega posição.
+3. **O balanço do andar é um gingado, não um tremor:** a primeira versão balançava mais depressa do que o figurante andava (o teste de continuidade pegou); amplitude 0,18 m e período de 90 a 130 ticks.
+4. **O seno é por parábolas, não `Math.sin`:** só `+ − × ÷`, `floor` e `sqrt`, exatos no IEEE-754; servidor e cliente chegam no mesmo número em qualquer navegador.
+6. **O desenho é o da gente da praia, com a posição na shader:** nenhum CPU por figurante por quadro, e a mesma conta da simulação em GLSL (a multidão desenhada e a simulada nunca divergem). O `PraiaGente.ts` foi o modelo.
+7. **A GPU real achou o que o SwiftShader não vê:** o limite de **16 atributos por vértice** (o shader com 17 não compilava e a multidão sumia sem erro no smoke). As cores viraram um atributo só (RGB empacotado em float: 24 bits cabem exatos) e o teste agora trava a conta. É a segunda vez que "só a GPU real vê" (a primeira foi o NaN da praia, P130): a bancada de GPU entra no roteiro de todo efeito novo.
+8. **As vagas de instância:** o custo na GPU tem de seguir quem está **presente** e não quem nasceu (350 mil triângulos no fim da fase contra 182 mil). Cada figurante ganha uma vaga ao nascer e a devolve ao cair (depois do tombo) ou sair; a contagem desenhada é a marca d'água; só o trecho de buffer alterado vai à GPU (`addUpdateRange`).
+9. **Honestidade sobre o teto:** a ficha pôs ≤ 80 mil triângulos; o desenho chegou a 182 mil. **Não ajustei o teto para caber:** o critério que decide (o quadro de 60 fps na GPU integrada) foi atingido, mas com folga pequena, e a ficha agora diz as duas coisas. O caminho é o impostor de longe e menos caixas por figurante.
+5. **Os androides rebeldes ficam de fora do vetor:** são os `Android` que o jogo já tem (vida, tiro, rede); a multidão só agenda a chegada deles.
+
 ## [2026-10-19] A idade manda na voz: só maior de 18 anos, e o servidor decide (Claude, P211)
 
 **Ordem:** perguntar a idade no cadastro; menores de 18 anos sem o microfone e sem os áudios dos outros jogadores, só o áudio do jogo.

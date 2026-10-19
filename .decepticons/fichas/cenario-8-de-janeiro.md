@@ -64,7 +64,7 @@ O que isso compra:
 |---|---|---|
 | Colisores estáticos | contagem no build | **< 310**: os prédios são caixas e cascas simples (o Congresso: duas torres e duas cúpulas; os outros dois: caixas com colunata só de desenho) |
 | CPU por tick com a massa cheia | 3.000 figurantes + o jogador atirando (a medição da P91) | **≤ 0,3 ms** só da massa; **sem regressão** no resto |
-| Desenhos e triângulos na vista mais cheia | a Praça na última chegada | **≤ 70 desenhos**, **≤ 80 mil triângulos** |
+| Desenhos e triângulos na vista mais cheia | a Praça na última chegada | **≤ 70 desenhos**, **≤ 80 mil triângulos**. **Medido (19/10, `medicoes/MULTIDAO.md`): a multidão são 3 desenhos e ~182 mil triângulos no pico (31 mil do mapa + ~110 por figurante): o teto NÃO foi atingido, e o quadro (14 ms, a multidão custa 1,2 a 2 ms) cabe nos 60 fps** |
 | GPU p50 e p95 | `medicoes/amazonia-gpu.mjs` adaptado (GPU real, sem vsync, rodadas intercaladas e mediana) | **p50 dentro do quadro de 60 fps na GPU integrada** (G12); p95 **registrado, não escondido** |
 | Alocação por quadro | contador de `new` durante uma chegada | **zero** (G4/G5) |
 | Rede | o tráfego de uma sala com a massa cheia | **≤ 8 KB/s por jogador** (G11), medido com o servidor de verdade |
@@ -86,8 +86,8 @@ O que isso compra:
 
 0. **O online em todas as fases e modos (P218, `MULTIPLAYER.md` § 12):** é a ordem geral do Comandante e **vem antes** do que o 8 DE JANEIRO precisa online. O primeiro corte: **a sala escolhe o mapa** (Deathmatch nos quatro mapas online).
 1. **O pino do 8 DE JANEIRO, o Bunker em Corumbá, a ficha** ✅ (PR #402); **a ficha v2 e as ordens P218 e P219** (este PR).
-2. **`sim/Multidao.ts`** (a massa como função do tempo, **com teste de simulação**) + a bancada de CPU. Sem desenho: o número decide se a § 3 aguenta.
-3. **O desenho da massa** (instanciado, impostor, a máscara, a posição na shader) + a bancada de GPU na GPU real (`varrer-nan`, `FERRAMENTAS.md` § 4.1, porque é shader novo).
+2. **`sim/Multidao.ts`** (a massa como função do tempo, **com teste de simulação**) + a bancada de CPU. ✅ (0,043 ms por tick)
+3. **O desenho da massa** (instanciado, a posição na shader, a máscara) + a bancada de GPU na GPU real. ✅ **como demonstração** (`?multidao=1`); **falta** o impostor de longe, o teto da qualidade ligado ao `Quality.ts` e `varrer-nan` (`FERRAMENTAS.md` § 4.1, porque é shader novo).
 4. **O mapa** (a Praça e a Esplanada, residente, colisores < 310; os ônibus, os bueiros, as lixeiras, as mesas) + a captura.
 5. **A missão** (a cota de chegadas, as integridades, a sujeira e os faxineiros, os androides rebeldes, o objetivo na tela no padrão do P194) + o mapa entra no catálogo de visibilidade como **restrito** (`mapa:janeiro`): só o Comandante vê até liberar.
 6. **A missão online** (a sala da Sobrevivência, `MULTIPLAYER.md` § 12, etapa O4): o cronograma e os eventos da § 3.

@@ -1,0 +1,34 @@
+{
+ "tela": "1280x720",
+ "inicio": 4500,
+ "rodadas": 3,
+ "resumo": {
+  "0": {
+   "cota": 0,
+   "fps": 80.9,
+   "p50": 11.2,
+   "p95": 26.2,
+   "desenhos": 118,
+   "triangulos": 31357,
+   "erros": []
+  },
+  "1500": {
+   "cota": 1500,
+   "fps": 74.3,
+   "p50": 12.2,
+   "p95": 28,
+   "desenhos": 121,
+   "triangulos": 73671,
+   "erros": []
+  },
+  "3000": {
+   "cota": 3000,
+   "fps": 74.1,
+   "p50": 12.4,
+   "p95": 29.2,
+   "desenhos": 122,
+   "triangulos": 111499,
+   "erros": []
+  }
+ }
+}
