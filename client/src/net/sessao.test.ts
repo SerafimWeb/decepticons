@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProgressoPiloto } from '../../../shared/net/auth';
+import type { IdadeDaConta, ProgressoPiloto } from '../../../shared/net/auth';
 import { CHAVE_TOKEN, ENVIO_APOS_MS, SessaoPiloto, chaveDoToken, type Armazem, type ProgressoLocal, type ServidorDeContas } from './sessao';
 
 const CHAVE = 'cybermech.conta.token|https://jogo.exemplo';
@@ -32,22 +32,36 @@ function servidorFalso(inicial: { progresso: ProgressoPiloto | null; sessaoValid
     erroAoApagar: null as string | null,
     senhasDeApagar: [] as string[],
     dadosErro: null as string | null,
+    /** A faixa de idade que o servidor devolve (`undefined` = um servidor velho, que não manda). */
+    idade: undefined as IdadeDaConta | undefined,
+    nascimentosDeCriar: [] as (string | undefined)[],
+    nascimentosInformados: [] as string[],
+    erroAoInformar: null as string | null,
   };
+  const faixa = () => (s.idade ? { idade: s.idade } : {});
   const api: ServidorDeContas = {
-    async criar(email) {
+    async criar(email, _senha, nascimento) {
       s.chamadas.push('criar');
-      return s.erroAoEntrar ? { erro: s.erroAoEntrar } : { token: 'tk-novo', email };
+      s.nascimentosDeCriar.push(nascimento);
+      return s.erroAoEntrar ? { erro: s.erroAoEntrar } : { token: 'tk-novo', email, ...faixa() };
     },
     async entrar(email) {
       s.chamadas.push('entrar');
-      return s.erroAoEntrar ? { erro: s.erroAoEntrar } : { token: 'tk-entrou', email };
+      return s.erroAoEntrar ? { erro: s.erroAoEntrar } : { token: 'tk-entrou', email, ...faixa() };
     },
     async sair() {
       s.chamadas.push('sair');
     },
     async eu() {
       s.chamadas.push('eu');
-      return s.sessaoValida && s.rede ? { email: 'ana@x.com', is_admin: false, medir: s.medir } : null;
+      return s.sessaoValida && s.rede ? { email: 'ana@x.com', is_admin: false, medir: s.medir, ...faixa() } : null;
+    },
+    async nascimento(_t, nascimento) {
+      s.chamadas.push('nascimento');
+      s.nascimentosInformados.push(nascimento);
+      if (s.erroAoInformar) return { erro: s.erroAoInformar };
+      s.idade = Number(nascimento.slice(0, 4)) <= 2000 ? 'adulto' : 'menor';
+      return { idade: s.idade };
     },
     async dados() {
       s.chamadas.push('dados');
@@ -142,7 +156,7 @@ describe('criar e entrar: o convidado vira conta sem perder nada', () => {
   it('conta nova (a conta ainda não guardou nada): guarda o token, manda o progresso do navegador e fica sincronizado', async () => {
     const { sessao, servidor, local, armazem } = montar();
     expect(await sessao.criar('ana@x.com', 'senhasegura')).toBeNull();
-    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: true, medir: true });
+    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: true, medir: true, idade: 'sem-idade' });
     expect(armazem.getItem(CHAVE)).toBe('tk-novo');
     expect(servidor.gravados).toHaveLength(1);
     expect(servidor.gravados[0]).toMatchObject({ nivel: 2, xp: 100, creditos: 500, apelido: 'EU' });
@@ -153,7 +167,7 @@ describe('criar e entrar: o convidado vira conta sem perder nada', () => {
     const { sessao, servidor, local, armazem } = montar();
     servidor.erroAoEntrar = 'e-mail ou senha incorretos';
     expect(await sessao.entrar('ana@x.com', 'errada123')).toBe('e-mail ou senha incorretos');
-    expect(sessao.estado).toEqual({ email: null, sincronizado: false, medir: true });
+    expect(sessao.estado).toEqual({ email: null, sincronizado: false, medir: true, idade: 'sem-idade' });
     expect(armazem.getItem(CHAVE)).toBeNull();
     expect(servidor.chamadas).toEqual(['entrar']);
     expect(local.aplicados).toHaveLength(0);
@@ -201,7 +215,7 @@ describe('falha de rede nunca trava nem apaga nada', () => {
     const { sessao, servidor, local } = montar(servidorFalso({ progresso: null, rede: false }));
     // `entrar` responde (o servidor falso responde), mas ler o progresso não: a sessão vale e o progresso local segue intacto.
     await sessao.entrar('ana@x.com', 'senhasegura');
-    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: false, medir: true });
+    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: false, medir: true, idade: 'sem-idade' });
     expect(local.aplicados).toHaveLength(0);
     expect(servidor.gravados).toHaveLength(0);
   });
@@ -255,7 +269,7 @@ describe('restaurar: o jogo abriu', () => {
     const { sessao, servidor, armazem } = montar();
     armazem.setItem(CHAVE, 'tk-velho');
     await sessao.restaurar();
-    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: true, medir: true });
+    expect(sessao.estado).toEqual({ email: 'ana@x.com', sincronizado: true, medir: true, idade: 'sem-idade' });
     expect(servidor.chamadas).toEqual(['eu', 'ler', 'gravar']);
   });
 
@@ -277,7 +291,7 @@ describe('sair', () => {
     await sessao.sair();
     expect(servidor.chamadas).toContain('sair');
     expect(armazem.getItem(CHAVE)).toBeNull();
-    expect(sessao.estado).toEqual({ email: null, sincronizado: false, medir: true });
+    expect(sessao.estado).toEqual({ email: null, sincronizado: false, medir: true, idade: 'sem-idade' });
     expect(local.atual).toMatchObject({ nivel: 2, xp: 100, creditos: 500 });
   });
 
@@ -375,7 +389,7 @@ describe('os direitos do titular na sessão (P192, LGPD art. 18)', () => {
     servidor.erroAoApagar = null;
     expect(await sessao.apagarConta('senhasegura')).toBeNull();
     expect(servidor.senhasDeApagar).toEqual(['errada-errada', 'senhasegura']);
-    expect(sessao.estado).toEqual({ email: null, sincronizado: false, medir: true });
+    expect(sessao.estado).toEqual({ email: null, sincronizado: false, medir: true, idade: 'sem-idade' });
     expect(armazem.getItem(CHAVE)).toBeNull();
     expect(local.atual).not.toBeNull(); // o progresso do navegador continua do aparelho
     expect(servidor.chamadas).not.toContain('sair'); // a conta já não existe: não há sessão a encerrar
@@ -401,5 +415,93 @@ describe('os direitos do titular na sessão (P192, LGPD art. 18)', () => {
     outro.armazem.setItem(CHAVE, 'tk-guardado');
     await outro.sessao.restaurar();
     expect(outro.sessao.estado.medir).toBe(false); // ao abrir o jogo em outro aparelho, a escolha da conta vale
+  });
+});
+
+describe('a idade da conta na sessão (P211): decide se o chat de voz abre', () => {
+  it('convidado: sem idade e sem token de voz', () => {
+    const { sessao } = montar();
+    expect(sessao.estado.idade).toBe('sem-idade');
+    expect(sessao.tokenDaVoz()).toBeNull();
+  });
+
+  it('criar leva o nascimento ao servidor; conta de adulto entrega o token da voz', async () => {
+    const base = servidorFalso();
+    base.s.idade = 'adulto';
+    const { sessao } = montar(base);
+    expect(await sessao.criar('ana@x.com', 'senhasegura', '1990-01')).toBeNull();
+    expect(base.s.nascimentosDeCriar).toEqual(['1990-01']);
+    expect(sessao.estado.idade).toBe('adulto');
+    expect(sessao.tokenDaVoz()).toBe('tk-novo');
+  });
+
+  it('conta de menor, e conta sem idade (servidor velho ou cadastro antigo): sem token de voz, o cliente nem tenta', async () => {
+    const menor = servidorFalso();
+    menor.s.idade = 'menor';
+    const a = montar(menor);
+    await a.sessao.entrar('ana@x.com', 'senhasegura');
+    expect(a.sessao.estado.idade).toBe('menor');
+    expect(a.sessao.tokenDaVoz()).toBeNull();
+    const velho = montar(servidorFalso());
+    await velho.sessao.entrar('ana@x.com', 'senhasegura');
+    expect(velho.sessao.estado.idade).toBe('sem-idade');
+    expect(velho.sessao.tokenDaVoz()).toBeNull();
+  });
+
+  it('restaurar a sessão guardada devolve a faixa de idade', async () => {
+    const base = servidorFalso();
+    base.s.idade = 'adulto';
+    const armazem = new ArmazemFalso();
+    armazem.setItem(CHAVE, 'tk-guardado');
+    const { sessao } = montar(base, localFalso(prog()), armazem);
+    await sessao.restaurar();
+    expect(sessao.estado.idade).toBe('adulto');
+    expect(sessao.tokenDaVoz()).toBe('tk-guardado');
+  });
+
+  it('informar o nascimento de uma conta sem idade: o servidor guarda, a faixa muda na hora e o jogo é avisado', async () => {
+    const { sessao, servidor } = montar();
+    await sessao.entrar('ana@x.com', 'senhasegura');
+    const avisos: string[] = [];
+    sessao.onIdadeMudou = (e) => avisos.push(e.idade);
+    expect(await sessao.informarNascimento('1990-01')).toBeNull();
+    expect(servidor.nascimentosInformados).toEqual(['1990-01']);
+    expect(sessao.estado.idade).toBe('adulto');
+    expect(sessao.tokenDaVoz()).toBe('tk-entrou');
+    expect(avisos).toEqual(['adulto']);
+  });
+
+  it('informar sem conta, ou com o servidor recusando, devolve a mensagem e não muda nada', async () => {
+    const { sessao, servidor } = montar();
+    expect(await sessao.informarNascimento('1990-01')).toBe('entre na conta primeiro');
+    await sessao.entrar('ana@x.com', 'senhasegura');
+    servidor.erroAoInformar = 'o nascimento já foi informado e não muda';
+    expect(await sessao.informarNascimento('1990-01')).toBe('o nascimento já foi informado e não muda');
+    expect(sessao.estado.idade).toBe('sem-idade');
+  });
+
+  it('sair da conta zera a idade e o token da voz, e o jogo é avisado (a voz fecha)', async () => {
+    const base = servidorFalso();
+    base.s.idade = 'adulto';
+    const { sessao } = montar(base);
+    await sessao.entrar('ana@x.com', 'senhasegura');
+    const avisos: string[] = [];
+    sessao.onIdadeMudou = (e) => avisos.push(`${e.email}|${e.idade}`);
+    await sessao.sair();
+    expect(sessao.estado.idade).toBe('sem-idade');
+    expect(sessao.tokenDaVoz()).toBeNull();
+    expect(avisos).toEqual(['null|sem-idade']);
+  });
+
+  it('entrar como menor avisa o jogo uma vez (convidado e menor são faixas diferentes na tela), e não repete se nada mudou', async () => {
+    const base = servidorFalso();
+    base.s.idade = 'menor';
+    const { sessao } = montar(base);
+    const avisos: string[] = [];
+    sessao.onIdadeMudou = (e) => avisos.push(`${e.email}|${e.idade}`);
+    await sessao.entrar('ana@x.com', 'senhasegura');
+    await sessao.sincronizar();
+    sessao.mudou();
+    expect(avisos).toEqual(['ana@x.com|menor']);
   });
 });

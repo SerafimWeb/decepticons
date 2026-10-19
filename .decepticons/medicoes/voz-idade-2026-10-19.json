@@ -1,0 +1,155 @@
+{
+  "data": "2026-10-19",
+  "verificacoes": [
+    {
+      "nome": "o colega adulto entrou na voz sozinho e ninguém mais está ligado a ele",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "1. conta de ADULTO: a voz abre e liga ao colega",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "1. os controles da voz aparecem e nenhuma frase de bloqueio",
+      "ok": true,
+      "detalhe": "{\"controles\":true,\"frase\":\"\",\"pedidos\":1,\"indicador\":\"MICROFONE ABERTO: [T] MUDA\"}"
+    },
+    {
+      "nome": "1. o jogo pediu o microfone ao navegador",
+      "ok": true,
+      "detalhe": "1 pedido(s)"
+    },
+    {
+      "nome": "2. CONVIDADO: sem controles de voz, com a frase de \"crie uma conta\"",
+      "ok": true,
+      "detalhe": "{\"controles\":false,\"frase\":\"O chat de voz é só para quem tem conta e é maior de 18 anos. Crie uma conta na aba JOGO e informe o mês e o ano de nascimento.\",\"pedidos\":0,\"indicador\":\"\"}"
+    },
+    {
+      "nome": "2. CONVIDADO: o jogo NUNCA pediu o microfone e não há indicador de voz",
+      "ok": true,
+      "detalhe": "{\"pedidos\":0,\"indicador\":\"\"}"
+    },
+    {
+      "nome": "2. CONVIDADO: ninguém se ligou a ele (o colega segue sem ligações)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "3. conta de MENOR: sem controles de voz e com a frase dos menores de 18 anos",
+      "ok": true,
+      "detalhe": "{\"controles\":false,\"frase\":\"O chat de voz não está disponível para contas de menores de 18 anos: sem microfone e sem a voz dos outros jogadores. O áudio do jogo segue normal.\",\"pedidos\":0,\"indicador\":\"\"}"
+    },
+    {
+      "nome": "3. MENOR: o jogo NUNCA pediu o microfone e não há indicador de voz",
+      "ok": true,
+      "detalhe": "{\"pedidos\":0,\"indicador\":\"\"}"
+    },
+    {
+      "nome": "3. MENOR: ninguém se ligou a ele",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "3. MENOR: a aba da conta explica que não há chat de voz",
+      "ok": true,
+      "detalhe": "Progresso guardado na conta. // CONTA DE PILOTO 👤 LOGADO COMO menor-2@bancada.com Conta de menor de 18 anos: sem chat de voz (nem o microfone, nem a voz dos ou"
+    },
+    {
+      "nome": "4. conta SEM IDADE: sem controles e a frase pede o mês e o ano de nascimento",
+      "ok": true,
+      "detalhe": "{\"controles\":false,\"frase\":\"Informe o mês e o ano de nascimento da sua conta (aba JOGO) para liberar o chat de voz. Ele é só para maiores de 18 anos.\",\"pedidos\":0,\"indicador\":\"\"}"
+    },
+    {
+      "nome": "4. a aba JOGO mostra o pedido do mês e do ano com o botão GUARDAR A IDADE desligado",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "4. escolhidos o mês e o ano o botão liga",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "4. guardada a idade a voz abre NA HORA, sem recarregar, e liga ao colega",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "4. os controles da voz apareceram e o microfone foi pedido",
+      "ok": true,
+      "detalhe": "{\"controles\":true,\"frase\":\"\",\"pedidos\":1,\"indicador\":\"MICROFONE ABERTO: [T] MUDA\"}"
+    },
+    {
+      "nome": "4. a idade só se informa uma vez: o servidor recusa trocar (409)",
+      "ok": true,
+      "detalhe": "status 409"
+    },
+    {
+      "nome": "5. CADASTRO: sem o mês e o ano o botão CRIAR CONTA fica desligado (mesmo com e-mail, senha e as duas caixas)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO: escolhidos o mês e o ano o botão liga",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO como adulto: a conta é criada e a sessão abre",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO como adulto: a voz abre e liga ao colega",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO de um menor: o formulário aceita (a pessoa pode jogar, só não tem voz)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO como menor: a conta nasce e a tela diz que não há voz",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "5. CADASTRO como menor: o jogo não pediu o microfone e ninguém se ligou",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "6. dois adultos na bancada se ligam entre si",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "6. cliente que manda o token de um MENOR: o cliente acha que entrou (ativa), mas o servidor o deixa de fora (sem ligações, não ouve ninguém)",
+      "ok": true,
+      "detalhe": "{\"id\":6,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":0,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":0,\"falando\":[]}"
+    },
+    {
+      "nome": "6. cliente SEM token: idem",
+      "ok": true,
+      "detalhe": "{\"id\":7,\"ativa\":true,\"mic\":\"ativo\",\"ligados\":0,\"semConexao\":0,\"transmitindo\":true,\"ouvindo\":0,\"falando\":[]}"
+    },
+    {
+      "nome": "6. os adultos continuam ligados entre si e não têm ligação com os de fora",
+      "ok": true,
+      "detalhe": "colega: 1 ligação(ões)"
+    },
+    {
+      "nome": "6. os adultos não ouvem os de fora (um só colega ligado a cada adulto)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "nenhum erro de página",
+      "ok": true,
+      "detalhe": ""
+    }
+  ]
+}

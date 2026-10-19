@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createServer, runnerImport } from 'vite';
-import { gerarWav } from './vozLib.mjs';
+import { apontarJogoPara, gerarWav, guardarSessao, tokenDeConta } from './vozLib.mjs';
 
 /**
  * O TESTE DO MICROFONE E O AVISO DE "SOZINHO NA VOZ" no jogo de verdade (P212): Chrome com microfone FALSO (um tom), o jogo online numa sala **sozinho**, depois com um colega (uma página da bancada).
@@ -36,6 +36,7 @@ async function ate(fn, ms = 60000, passo = 300) {
 
 const { startServer } = (await runnerImport(resolve('server/Server.ts'), { configFile: false, logLevel: 'warn' })).module;
 const jogo = await startServer({ port: 2596, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 200, total: 400, msgs: 200, burst: 200 }, log: () => {} });
+apontarJogoPara(2596);
 const vite = await createServer({ configFile: resolve('vite.config.ts'), logLevel: 'error', server: { port: 5194, strictPort: false, open: false } });
 await vite.listen();
 const base = vite.resolvedUrls.local[0];
@@ -72,6 +73,8 @@ try {
   page.on('pageerror', (e) => erros.add(e.message));
   await page.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
   await page.addInitScript(GRAVA_FAIXAS);
+  // A voz e o teste do microfone são só de conta de maior de idade (P211): o jogador da bancada entra com uma, que o jogo restaura sozinho.
+  await guardarSessao(page, 2596, await tokenDeConta(2596, 'dan'));
   await page.goto(`${base}?sala=MICTESTE&nome=DAN&servidor=ws://127.0.0.1:2596&comandante=1`);
   await page.waitForFunction(() => document.getElementById('cta')?.textContent?.includes('jogar'), null, { timeout: 240_000, polling: 500 }).catch(() => {});
   for (let i = 0; i < 4; i++) {
@@ -88,7 +91,7 @@ try {
   const colega = await b1.newPage();
   colega.on('pageerror', (e) => erros.add(`colega: ${e.message}`));
   await colega.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
-  await colega.goto(`${base}@fs/${PAGINA}?${new URLSearchParams({ servidor: 'ws://127.0.0.1:2596', sala: 'MICTESTE', nome: 'BRAVO', dsp: '0' })}`);
+  await colega.goto(`${base}@fs/${PAGINA}?${new URLSearchParams({ servidor: 'ws://127.0.0.1:2596', sala: 'MICTESTE', nome: 'BRAVO', dsp: '0', token: await tokenDeConta(2596, 'bravo') })}`);
   const sumiu = await ate(() => page.evaluate(() => (document.querySelector('.voz-rede')?.textContent ?? 'x') === ''), 120_000);
   conferir('quando um colega entra na voz o aviso de "sozinho" some', !!sumiu);
   await colega.close();
@@ -159,6 +162,7 @@ try {
   const p2 = await b2.newPage({ viewport: { width: 1280, height: 720 } });
   p2.on('pageerror', (e) => erros.add(`bloqueado: ${e.message}`));
   await p2.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
+  await guardarSessao(p2, 2596, await tokenDeConta(2596, 'dan2'));
   await p2.goto(`${base}?comandante=1`);
   await p2.waitForFunction(() => document.getElementById('cta')?.textContent?.includes('jogar'), null, { timeout: 240_000, polling: 500 }).catch(() => {});
   await p2.evaluate(() => document.getElementById('btn-settings')?.click());

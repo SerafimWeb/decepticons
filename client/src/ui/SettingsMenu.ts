@@ -17,6 +17,7 @@ import {
 import { NARRACOES, ROTULO_DA_NARRACAO, type Narracao } from '../audio/falas';
 import { listarAparelhos } from '../voice/aparelhos';
 import type { MicTest } from '../voice/MicTest';
+import { type ElegibilidadeDaVoz, TEXTO_DA_ELEGIBILIDADE } from '../voice/elegibilidade';
 import { ligarPasso } from './Passo';
 import { attachSettingsTabs, isSettingsTab, type SettingsTab } from './settingsTabs';
 
@@ -314,6 +315,19 @@ export class SettingsMenu {
     this.cancelRemap();
     this.micTest?.parar();
     this.modal.classList.add('hidden');
+  }
+
+  /**
+   * Quem pode usar o chat de voz (P211): só conta de maior de 18 anos. Para os outros os controles somem (nem o microfone, nem o teste dele) e uma frase diz o motivo e o que fazer.
+   * O teste do microfone que estiver aberto é fechado.
+   */
+  setElegibilidadeDaVoz(e: ElegibilidadeDaVoz): void {
+    const liberada = e === 'liberada';
+    $('voz-controles').hidden = !liberada;
+    const aviso = $('voz-elegibilidade');
+    aviso.hidden = liberada;
+    aviso.textContent = liberada ? '' : TEXTO_DA_ELEGIBILIDADE[e];
+    if (!liberada) this.micTest?.parar();
   }
 
   /** O botão TESTAR / PARAR O TESTE: baixa o teste na primeira vez, e liga ou desliga. */

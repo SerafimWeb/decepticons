@@ -5,6 +5,22 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## A IDADE E A VOZ SÓ PARA MAIORES DE 18 ANOS — Claude, 19/10 (branch `claude/idade-e-voz`, P211)
+
+**O Comandante (19/10):** *"no início, perguntar a IDADE pra fazer o cadastro… menores de 18 anos NÃO TÊM ACESSO ao microfone nem aos áudios dos outros jogadores, apenas o áudio do jogo."*
+
+**O que mudou:** o **cadastro pede o mês e o ano de nascimento** (duas listas, obrigatórias na tela; guardado `AAAA-MM`, sem o dia, e o servidor devolve só a faixa: `adulto`, `menor`, `sem-idade`). **Só conta de maior de 18 anos entra na voz, e quem decide é o servidor:** o `PRONTO` da voz leva o token da sessão e o relé confere a idade (`RelayDeVoz.autorizar`, padrão negar). Convidado, conta sem idade e conta de menor ficam **sem microfone e sem ouvir os outros**: o cliente esconde os controles (e o teste do microfone), nem pede o microfone ao navegador e mostra a frase certa; o áudio do jogo segue. Quem já tinha conta informa o mês e o ano **uma vez** na aba JOGO (`POST /conta/nascimento`; a data **não muda**, 409 na segunda vez) e a voz abre na hora, sem recarregar. Maioridade conta pelo mês: quem faz 18 **neste mês** ainda não é adulto.
+
+**Junto:** política `2026-10-19.2` (e a data "em vigor" lê só o prefixo da versão), inventário `PRIVACIDADE.md`, a data no "Baixar meus dados", ação `nascimento_informado` na trilha (sem a data), tradução nas 6 línguas (e 18 frases da conta (P192) que tinham ficado só em português), o formulário da conta virou pedaço sob demanda (o JS de partida segue abaixo do teto), todas as bancadas de voz entram agora com conta de adulto (`vozLib.tokenDeConta`).
+
+**Provas:** **Chrome real, 30 de 30** (`medicoes/voz-idade.mjs`: adulto liga ao colega; convidado e menor **nunca pedem o microfone** e ninguém se liga a eles; conta sem idade informa e a voz abre na hora; cadastro pela tela como adulto e como menor; **cliente adulterado** que manda o token de um menor, ou nenhum, é recusado pelo servidor); **3.569 testes verdes** (331 arquivos), com testes novos de contrato, relé, sala com contas reais, HTTP, migração de banco antigo, sessão, formulário e i18n; **32 mutações à mão, todas pegas**. Fotos em `arte/idade-cadastro-claude.png` e `arte/idade-menor-sem-voz-claude.png`.
+
+**Limite (R13):** **a idade é declarada, não verificada**: quem mente na data entra como adulto. Verificar de verdade exigiria documento ou terceiro (custo, dado sensível). **Contas que já existiam estão "sem idade" e ficam sem voz até informarem**; a política promete avisar mudanças e o jogo ainda não tem um aviso para isso (a frase nas Configurações cumpre o papel por ora). Mudo por jogador e denúncia seguem sem existir.
+
+**Decisão do Comandante:** quer algo mais forte que a data declarada? (tem custo e pede dado sensível). Até lá a regra reduz o risco, não o elimina.
+
+**Próxima sessão começa com:** o mudo por jogador (o risco mais próximo da voz pública), ou a decisão do Comandante sobre a rádio (P210/P213).
+
 ## OS PILOTOS NA REDE: VER O HANGAR DO OUTRO E CONVERSAR POR TEXTO SEM SAIR DO HANGAR — Claude, 19/10 (branch `claude/chat-de-texto`, P216)
 
 **O Comandante (19/10):** *"no painel REDE, quando tiver mais de um jogador online, coloque os nomes dos jogadores ali disponíveis pra podermos clicar neles, ver o hangar deles, fazer chat por texto com eles (sem sair do hangar)"*.
@@ -33,11 +49,11 @@
 
 **O gate do push e a memória (mesmo PR):** dois pushes foram barrados por workers do Vitest mortos (`0xC0000409`), sem relação com o código: a **memória virtual do Windows estava no teto** (1,6 GB livres de 24) porque **seis sessões do Claude Code abertas mantinham 48 processos node dos servidores MCP da Hostinger (3,1 GB)**. **Peço ao Comandante: feche as sessões antigas do Claude Code** (é o que mais ajuda). No código, o `npm test` passou a contar a memória virtual livre e a usar 1 worker quando aperta (`CYBERMECH_WORKERS=1` força); 6 mutações pegas.
 
-**P211 (idade):** vem no PR seguinte (cadastro com mês e ano de nascimento; menores sem microfone nem a voz dos outros, **imposto no servidor**). **Até lá a voz segue pública a todos**: o Comandante pode fechá-la no painel de visibilidade (`tela:voz`).
+**P211 (idade):** feito no PR seguinte (seção acima): cadastro com mês e ano de nascimento; menores sem microfone nem a voz dos outros, **imposto no servidor**.
 
-**Falta (R13):** (a) **P211**; (b) **decisões do Comandante** sobre a jukebox (§ 7.5: YouTube fora, catálogo e licenças, qual prédio); (c) ninguém testou a voz entre dois aparelhos reais pela internet.
+**Falta (R13):** (a) ~~P211~~ (feito); (b) **decisões do Comandante** sobre a jukebox (§ 7.5: YouTube fora, catálogo e licenças, qual prédio); (c) ninguém testou a voz entre dois aparelhos reais pela internet.
 
-**Próxima sessão começa com:** o portão de idade (P211).
+**Próxima sessão começa com:** ~~o portão de idade (P211)~~ (feito).
 
 ## O SEGUNDO TESTE ONLINE: O OUTRO JOGADOR VIA TODO MUNDO COMO VECTOR-09, E A JANELA DAS REGRAS POR TRÁS DA DO SERVIDOR — Claude, 19/10 (branch `claude/online-modelos`, P214 e P215)
 

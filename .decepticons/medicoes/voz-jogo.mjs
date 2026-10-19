@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createServer, runnerImport } from 'vite';
-import { gerarWav } from './vozLib.mjs';
+import { apontarJogoPara, gerarWav, guardarSessao, tokenDeConta } from './vozLib.mjs';
 
 /**
  * Fotografa o CHAT DE VOZ no JOGO de verdade (P205, regra 16: o dono julga por olho): o jogo online aberto em `?comandante=1` (a voz nasce restrita; só o modo Comandante a vê) numa sala com um
@@ -25,6 +25,7 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const { startServer } = (await runnerImport(resolve('server/Server.ts'), { configFile: false, logLevel: 'warn' })).module;
 const jogo = soConfig ? null : await startServer({ port: 2599, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 200, total: 400, msgs: 200, burst: 200 }, log: () => {} });
+apontarJogoPara(2599);
 const vite = await createServer({ configFile: resolve('vite.config.ts'), logLevel: 'error', server: { port: 5196, strictPort: false, open: false } });
 await vite.listen();
 const base = vite.resolvedUrls.local[0];
@@ -48,12 +49,14 @@ try {
     const colega = await browser.newPage();
     colega.on('pageerror', (e) => erros.add(`colega: ${e.message}`));
     await colega.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
-    await colega.goto(`${base}@fs/${PAGINA}?${new URLSearchParams({ servidor: 'ws://127.0.0.1:2599', sala: 'VOZ', nome: 'BRAVO', dsp: '0' })}`);
+    await colega.goto(`${base}@fs/${PAGINA}?${new URLSearchParams({ servidor: 'ws://127.0.0.1:2599', sala: 'VOZ', nome: 'BRAVO', dsp: '0', token: await tokenDeConta(2599, 'bravo') })}`);
   }
 
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   page.on('pageerror', (e) => erros.add(e.message));
   await page.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
+  // A voz é só de conta de maior de idade (P211): o jogador da bancada entra com uma, que o jogo restaura sozinho.
+  if (!soConfig) await guardarSessao(page, 2599, await tokenDeConta(2599, 'dan'));
   await page.goto(soConfig ? `${base}?comandante=1` : `${base}?sala=VOZ&nome=DAN&servidor=ws://127.0.0.1:2599&comandante=1`);
   await page.waitForFunction(() => document.getElementById('cta')?.textContent?.includes('jogar'), null, { timeout: 240_000, polling: 500 }).catch(() => {});
   for (let i = 0; i < 4; i++) {

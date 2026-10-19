@@ -81,7 +81,8 @@ const fluxoComFaixa = () => {
 };
 
 /** Quem manda o quê: o teste lê as mensagens que o chat mandou ao servidor. */
-function montar(opts: { saida?: boolean } = {}) {
+function montar(opts: { saida?: boolean; token?: string | null } = {}) {
+  let token: string | null | undefined = opts.token;
   const enviadas: Uint8Array[] = [];
   let resolverMic!: (f: MediaStream) => void;
   let recusarMic!: (e: unknown) => void;
@@ -97,11 +98,12 @@ function montar(opts: { saida?: boolean } = {}) {
       });
     },
   };
-  const chat = new VoiceChat({ enviar: (b) => enviadas.push(b), saida: () => (opts.saida ? ({} as never) : null), ambiente });
+  const chat = new VoiceChat({ enviar: (b) => enviadas.push(b), saida: () => (opts.saida ? ({} as never) : null), ambiente, ...(token === undefined ? {} : { token: () => token ?? null }) });
   return {
     chat,
     enviadas,
     pedidos,
+    definirToken: (novo: string | null) => (token = novo),
     resolverMic: (f: MediaStream) => resolverMic(f),
     recusarMic: (e: unknown) => recusarMic(e),
     de: (tipo: number) => enviadas.filter((b) => messageType(b) === tipo),
@@ -124,7 +126,7 @@ describe('VoiceChat: a malha P2P (P205)', () => {
     t.chat.configurar(true, 'sempre', 0.8);
     expect(t.enviadas).toHaveLength(0);
     t.chat.entrouNaSala(5);
-    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b))).toEqual([true]);
+    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b)?.ligado)).toEqual([true]);
     expect(t.pedidos.n).toBe(1);
     expect(t.chat.ativa).toBe(true);
     expect(t.chat.estadoMic).toBe('pedindo');
@@ -148,7 +150,7 @@ describe('VoiceChat: a malha P2P (P205)', () => {
     t.chat.configurar(false, 'sempre', 0.8);
     t.chat.entrouNaSala(5);
     t.chat.configurar(true, 'sempre', 0.8);
-    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b))).toEqual([true]);
+    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b)?.ligado)).toEqual([true]);
     const { faixa, fluxo } = fluxoComFaixa();
     t.resolverMic(fluxo);
     await andar();
@@ -156,7 +158,7 @@ describe('VoiceChat: a malha P2P (P205)', () => {
     await andar();
     expect(t.pcs()).toHaveLength(1);
     t.chat.configurar(false, 'sempre', 0.8);
-    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b))).toEqual([true, false]);
+    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b)?.ligado)).toEqual([true, false]);
     expect(t.pcs()[0]!.fechada).toBe(true);
     expect(faixa.parada).toBe(true);
     expect(t.chat.ativa).toBe(false);
@@ -346,7 +348,7 @@ describe('VoiceChat: a malha P2P (P205)', () => {
     expect(t.chat.ativa).toBe(false);
     expect(t.chat.estadoMic).toBe('ativo');
     t.chat.entrouNaSala(3);
-    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b))).toEqual([true, true]);
+    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b)?.ligado)).toEqual([true, true]);
     expect(t.pedidos.n).toBe(1);
     t.chat.receber(codificarLista([3, 8]));
     await andar();
@@ -734,5 +736,44 @@ describe('VoiceChat: a malha P2P (P205)', () => {
         FakePC.prototype.createOffer = ctor;
       }
     });
+  });
+});
+
+describe('VoiceChat: só entra na voz com o token de uma conta de maior de idade (P211)', () => {
+  it('o PRONTO leva o token da sessão', () => {
+    const t = montar({ token: 'sessao-do-adulto' });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(5);
+    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b))).toEqual([{ ligado: true, token: 'sessao-do-adulto' }]);
+  });
+
+  it('sem token (convidado, menor, sem idade): não avisa o servidor, não pede o microfone e não fica na voz', () => {
+    const t = montar({ token: null });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(5);
+    expect(t.de(VOZ.PRONTO)).toHaveLength(0);
+    expect(t.pedidos.n).toBe(0);
+    expect(t.chat.estadoMic).toBe('sem');
+    expect(t.chat.colegas).toBe(0);
+  });
+
+  it('o token chega depois (a idade foi informada na sala): a próxima configuração entra na voz', () => {
+    const t = montar({ token: null });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(5);
+    expect(t.de(VOZ.PRONTO)).toHaveLength(0);
+    t.definirToken('sessao-nova');
+    t.chat.configurar(true, 'sempre', 0.8);
+    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b))).toEqual([{ ligado: true, token: 'sessao-nova' }]);
+    expect(t.pedidos.n).toBe(1);
+  });
+
+  it('o token some no meio da voz (saiu da conta): a próxima configuração tira da voz', () => {
+    const t = montar({ token: 'sessao' });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(5);
+    t.definirToken(null);
+    t.chat.configurar(true, 'sempre', 0.8);
+    expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b)?.ligado)).toEqual([true, false]);
   });
 });
