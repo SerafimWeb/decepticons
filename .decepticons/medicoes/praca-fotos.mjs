@@ -52,12 +52,12 @@ if (!browser) throw new Error('nenhum navegador');
 
 /** As vistas-chave: onde o Mech fica (x, y, z), para onde olha (yaw, pitch) e o nome da foto. `yaw`: 0 olha para -Z (norte); +π/2 para -X (oeste); -π/2 para +X (leste). */
 const VISTAS = [
-  { nome: 'a-praca', x: 62, y: 1, z: 22, yaw: Math.PI / 2 + 0.3, pitch: -0.1 },
-  { nome: 'o-congresso-da-esplanada', x: -80, y: 1, z: 0, yaw: -Math.PI / 2, pitch: 0.05 },
-  { nome: 'a-rampa-e-as-torres', x: -30, y: 1, z: 6, yaw: -Math.PI / 2 - 0.2, pitch: 0.18 },
-  { nome: 'o-planalto', x: 62, y: 1, z: -22, yaw: 0.15, pitch: -0.02 },
-  { nome: 'o-supremo', x: 78, y: 1, z: 20, yaw: Math.PI - 0.15, pitch: -0.02 },
-  { nome: 'a-esplanada-de-ponta-a-ponta', x: 100, y: 1, z: 0, yaw: Math.PI / 2, pitch: -0.04 },
+  { nome: 'a-praca', x: 66, y: 1, z: -12, yaw: Math.PI / 2 + 0.25, pitch: -0.1 },
+  { nome: 'o-congresso-da-esplanada', x: -70, y: 1, z: 0, yaw: -Math.PI / 2, pitch: 0.12 },
+  { nome: 'as-rampas-e-os-gradis', x: -46, y: 1, z: 6, yaw: -Math.PI / 2 - 0.15, pitch: 0.16 },
+  { nome: 'o-planalto', x: 62, y: 1, z: -26, yaw: 0.1, pitch: -0.02 },
+  { nome: 'o-supremo-e-a-estatua', x: 62, y: 1, z: 28, yaw: Math.PI, pitch: 0.02 },
+  { nome: 'o-telhado-do-congresso', x: 6, y: 5.2, z: 34, yaw: -Math.PI / 2 + 0.2, pitch: -0.05 },
 ];
 
 const medir = (page, ms) =>
