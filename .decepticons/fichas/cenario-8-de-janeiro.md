@@ -3,6 +3,7 @@
 > **Status:** proposta, **v2 (19/10): as respostas do Comandante entraram** · **Autor:** Claude · **Etiqueta:** `#cenarios`
 > **A ordem (P217, 19/10):** *"uma nova fase que vai girar em torno dos ataques golpistas do 8 de janeiro à sede dos poderes em Brasília. São milhares de manifestantes de verde e amarelo, usando cabeças de gado, é o mod deles. Eles são os golpistas que tentaram tomar o poder à força, mas os militares não aderiram a essa tentativa de golpe. Nós vamos chegar lá e eliminar os golpistas na base do tiro, porrada e bomba."* O pino está no mapa do console, em Brasília, **onde era o Bunker**, que foi para Corumbá · MS.
 > **As respostas (P219, 19/10):** *"pode começar só offline, mas quero que dê pro online também: todas as fases devem dar pra jogar online, todos os modos valem pra todas as fases"* (isto virou a **P218**, `MULTIPLAYER.md` § 12) · *"vencer é manter os prédios de pé e expulsar ou neutralizar todos eles (mas eles chegam toda hora em ônibus lotados, e principalmente surgem das tampas de esgoto e saem das lixeiras)"* · *"porrada é que vamos ter que eliminar eles"* · os manifestantes são **pessoas com cabeça de gado**; entre eles há **carecas idosos** e **rapazes de peruca loira** (caricaturas, § 5) e **androides** · *"os androides entram em combate conosco, os outros fogem. Eles fazem cocô em cima das mesas do palácio e nossos androides têm que limpar."*
+> **v3 (P222, 19/10): a fase é realista e compacta.** O Comandante mandou usar referências reais do dia (a trama golpista, a tentativa de golpe, a depredação), **saguões fechados onde só androides e gente entram (o Mech fica de fora)** e um mapa **menor** (224 × 160 m). **Os fatos que o jogo pode afirmar, com a fonte, estão em `fichas/fatos-8-de-janeiro.md`; onde esta ficha diz "os militares não aderiram" (§ 7), vale a correção dela: a frase NÃO vai ao jogo.** O mapa está em `environment/PracaLayout.ts`.
 > **O que esta ficha é:** o contrato da fase **antes** do primeiro polígono (`fichas/README.md`). **Nada aqui está no jogo ainda:** o pino diz EM BREVE.
 
 ## 1. A fase em uma frase
@@ -96,7 +97,7 @@ O que isso compra:
 
 **Nenhuma afirmação factual entra no jogo sem ficha com fonte** (`CAMPANHAS_E_CHEFES.md` § 0). Hoje esta fase **só afirma** o **nome** (a data), o **lugar** (a Praça dos Três Poderes, Brasília) e a **moldura narrativa do próprio jogo** (a SERAFIM defende os prédios). Ficam **🟡 sem fonte**, e portanto **fora de qualquer texto até haver `fichas/fatos-8-de-janeiro.md`**:
 
-- *"os militares não aderiram"* (a linha de enredo "os quartéis não vieram");
+- ~~*"os militares não aderiram"*~~ **(contestada: o STF condenou militares pelo planejamento da trama; a frase segura é *"o golpe não se consumou"*: `fichas/fatos-8-de-janeiro.md` § 4)**;
 - o que foi depredado e como (**a sujeira nas mesas é humor do jogo, não relato do que aconteceu**), e o **número** de pessoas (a palavra "milhares" é do Comandante e serve para a **escala visual**, não para uma cifra no jogo);
 - qualquer descrição jurídica do que ocorreu (as fontes são as decisões e os relatórios públicos; a ficha de fatos as lista).
 
