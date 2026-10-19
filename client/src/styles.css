@@ -4681,3 +4681,13 @@ html.touch #touch-controls.editing ~ .voz-mic { display: none; }
 .voz-mic[data-estado='espera'] { opacity: 0.8; }
 .voz-mic[data-estado='sem'], .voz-mic[data-estado='pedindo'] { border-color: var(--muted); opacity: 0.65; }
 .voz-mic.pressed { background: rgba(255, 255, 255, 0.28); }
+
+/* O teste do microfone nas Configurações (P212): a barra de nível ao vivo e o que ela diz. */
+.voz-teste { margin: 6px 0 2px; padding: 8px 10px; border: 1px dashed rgba(57, 255, 106, 0.35); }
+.voz-teste[hidden] { display: none; }
+.voz-nivel { height: 10px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(57, 255, 106, 0.4); }
+.voz-nivel > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 60ms linear; }
+.voz-teste[data-estado='ok'] .voz-nivel > i { box-shadow: 0 0 8px var(--accent); }
+.voz-teste:is([data-estado='semSinal'], [data-estado='negado'], [data-estado='semAparelho'], [data-estado='emUso'], [data-estado='outra']) .voz-nivel { border-color: var(--alert); }
+.voz-teste:is([data-estado='semSinal'], [data-estado='negado'], [data-estado='semAparelho'], [data-estado='emUso'], [data-estado='outra']) #voz-teste-status { color: var(--warn); }
+.voz-eco { display: flex; gap: 8px; align-items: center; margin-top: 6px; font-size: 11px; color: var(--muted); }

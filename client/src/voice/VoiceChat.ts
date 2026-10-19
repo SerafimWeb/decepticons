@@ -16,16 +16,19 @@ export type LigacaoEstado = 'conectando' | 'conectada' | 'falhou';
 /** O que o chat de voz pede ao navegador: separado para o teste trocar por um falso (o áudio de verdade só se prova num Chrome, `medicoes/voz.mjs`). */
 export interface Ambiente {
   novaConexao(cfg: RTCConfiguration): RTCPeerConnection;
-  /** O microfone; rejeita com `NotAllowedError` se o jogador recusar e `NotFoundError` se não houver. */
-  pedirMicrofone(): Promise<MediaStream>;
+  /** O microfone (`aparelho`: o `deviceId` escolhido, vazio = o padrão); rejeita com `NotAllowedError` se o jogador recusar e `NotFoundError` se não houver. */
+  pedirMicrofone(aparelho: string): Promise<MediaStream>;
 }
 
 export const AMBIENTE_DO_NAVEGADOR: Ambiente = {
   novaConexao: (cfg) => new RTCPeerConnection(cfg),
-  pedirMicrofone: () => {
+  pedirMicrofone: (aparelho) => {
     if (!navigator.mediaDevices?.getUserMedia) return Promise.reject(new DOMException('sem microfone', 'NotFoundError'));
-    // Mono (metade da banda, basta para voz); o resto é o tratamento do navegador contra eco, ruído e volume desigual.
-    return navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 }, video: false });
+    // Mono (metade da banda, basta para voz); o resto é o tratamento do navegador contra eco, ruído e volume desigual. `ideal`, não `exact`: o aparelho salvo que foi desligado cai no padrão.
+    return navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1, ...(aparelho ? { deviceId: { ideal: aparelho } } : {}) },
+      video: false,
+    });
   },
 };
 
@@ -70,6 +73,7 @@ export class VoiceChat {
   private fluxo: MediaStream | null = null;
   private geracaoMic = 0;
   private estado: EstadoMic = 'sem';
+  private aparelho = '';
 
   constructor(private readonly o: VozOpcoes) {
     this.spatial = new VoiceSpatial(o.saida);
@@ -79,13 +83,20 @@ export class VoiceChat {
 
   // ---------- o que o jogo diz ----------
 
-  /** As configurações do jogador: voz ligada, modo do microfone e volume da voz dos outros. */
-  configurar(ligada: boolean, modo: ModoMic, volume: number): void {
+  /** As configurações do jogador: voz ligada, modo do microfone, volume da voz dos outros e o aparelho do microfone (vazio = o padrão). */
+  configurar(ligada: boolean, modo: ModoMic, volume: number, aparelho = ''): void {
     this.mic.setModo(modo);
     this.spatial.setVolume(volume);
-    if (ligada === this.ligada) return;
-    this.ligada = ligada;
-    this.sincronizar();
+    const trocou = aparelho !== this.aparelho;
+    this.aparelho = aparelho;
+    if (ligada !== this.ligada) {
+      this.ligada = ligada;
+      this.sincronizar();
+    } else if (trocou && this.noServidor) {
+      // Trocou de microfone no meio da voz: solta o velho e pede o novo (as ligações recebem a faixa nova por `replaceTrack`, sem renegociar).
+      this.soltarMic();
+      void this.abrirMic();
+    }
   }
 
   /** Entrei na sala (o `WELCOME`, também a cada reconexão): se a voz está ligada, entro nela. */
@@ -198,6 +209,11 @@ export class VoiceChat {
     return this.contar('falhou');
   }
 
+  /** Quantos colegas estão na voz comigo (ligados, ligando ou sem conexão): zero é "sozinho na voz". */
+  get colegas(): number {
+    return this.lista.length;
+  }
+
   private contar(estado: LigacaoEstado): number {
     let n = 0;
     for (let i = 0; i < this.lista.length; i++) if (this.lista[i]!.estado === estado) n++;
@@ -233,7 +249,7 @@ export class VoiceChat {
     this.estado = 'pedindo';
     const geracao = this.geracaoMic;
     try {
-      const fluxo = await this.ambiente.pedirMicrofone();
+      const fluxo = await this.ambiente.pedirMicrofone(this.aparelho);
       if (geracao !== this.geracaoMic) {
         // O jogador desligou a voz enquanto o navegador perguntava: solta o microfone na hora.
         for (const t of fluxo.getTracks()) t.stop();

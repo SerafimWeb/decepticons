@@ -78,6 +78,8 @@ export interface GameSettings {
   voiceMode: VoiceMode;
   /** Volume da voz dos outros (0 a 1), separado do volume do jogo. */
   voiceVolume: number;
+  /** O microfone escolhido (`deviceId` do navegador); vazio = o padrão do sistema. */
+  micDevice: string;
   keys: Record<KeyAction, string>;
 }
 
@@ -123,6 +125,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   voiceOn: true,
   voiceMode: 'sempre',
   voiceVolume: 0.8,
+  micDevice: '',
   keys: Object.freeze({
     forward: 'KeyW',
     back: 'KeyS',
@@ -264,6 +267,7 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     voiceOn: typeof r.voiceOn === 'boolean' ? r.voiceOn : d.voiceOn,
     voiceMode: VOICE_MODES.includes(r.voiceMode as VoiceMode) ? (r.voiceMode as VoiceMode) : d.voiceMode,
     voiceVolume: num(r.voiceVolume, d.voiceVolume, LIMITS.voiceVolume.min, LIMITS.voiceVolume.max),
+    micDevice: typeof r.micDevice === 'string' && r.micDevice.length <= 256 && !/[ -]/.test(r.micDevice) ? r.micDevice : d.micDevice,
     keys,
   };
 }

@@ -438,6 +438,23 @@
                 <span id="val-voz-volume" class="setting-val">80%</span>
               </div>
             </div>
+            <div class="setting-row">
+              <label for="setting-voz-aparelho">Aparelho do microfone</label>
+              <div class="setting-ctrl">
+                <select id="setting-voz-aparelho"><option value="">Padrão do sistema</option></select>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label for="btn-voz-testar">Testar o microfone</label>
+              <div class="setting-ctrl">
+                <button type="button" id="btn-voz-testar" class="btn-terminal">[ TESTAR ]</button>
+              </div>
+            </div>
+            <div id="voz-teste" class="voz-teste" hidden>
+              <div class="voz-nivel" role="meter" aria-label="Nível do microfone"><i id="voz-nivel-barra"></i></div>
+              <p id="voz-teste-status" class="setting-hint"></p>
+              <label class="voz-eco"><input type="checkbox" id="voz-ouvir" /> Ouvir a minha voz (use fones: sem eles dá microfonia)</label>
+            </div>
           </div>
 
           <div class="settings-section" data-tab="controles">

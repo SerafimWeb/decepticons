@@ -1,6 +1,20 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-19] O teste do microfone, o "sozinho na voz" e a jukebox só com catálogo (Claude, P212 e P213)
+
+**Ordem:** o microfone testado e sem som, só maiores de 18 na voz, e a jukebox do prédio com link do YouTube, "só se não pesar".
+
+**Decisões:**
+0. **O gate do push passou a respeitar o teto de memória virtual do Windows.** Dois pushes seguidos foram barrados por workers do Vitest mortos (`0xC0000409`, `0x80000003`) em arquivos sem relação com o PR (combate): a memória virtual livre estava em 1,6 a 2 GB de 24, porque **seis sessões do Claude Code abertas mantinham 48 processos node dos servidores MCP da Hostinger (3,1 GB comprometidos)**. Os processos têm pai vivo (são das outras sessões do dono): **não os matei**. O `npm test` agora lê a memória virtual livre (PowerShell, ~0,6 s, só no Windows) e usa **1 worker** quando ela aperta; `CYBERMECH_WORKERS=N` força. 6 mutações pegas. Não contornei o hook (`--no-verify`): ele fez o trabalho dele.
+1. **O "não saiu som" tem causa provável e dois remédios.** Sozinho na sala ninguém te ouve; o indicador dizia "MICROFONE ABERTO" sem avisar. O aviso de **sozinho** corrige o engano; o **painel de teste** (nível ao vivo, volta da voz, motivo de cada falha) dá ao jogador a prova que o chat não pode dar.
+2. **O teste usa as mesmas restrições do jogo** (eco, ruído, ganho automático): é o que o chat vai ouvir. Pedaço sob demanda; **para sozinho** ao fechar, trocar de aba, esconder a página e em 2 minutos: microfone aberto esquecido é o pior defeito possível aqui.
+3. **O aparelho escolhido vale para o chat** e troca no meio da voz sem renegociar. `ideal`, não `exact`: o aparelho salvo que foi desligado cai no padrão.
+4. **Jukebox: YouTube fora, catálogo dentro.** O player oficial tem de ficar visível e não separa o áudio, traz vídeo (pesa), não toca no espaço, leva o IP de todos ao Google; um mp3 de qualquer site leva o IP ao dono do endereço. O terminal oferece **o catálogo que nós hospedamos** e **"Sugerir um link"** (só chega ao Comandante). **Confirmar o texto vigente das regras do YouTube** antes de qualquer plano com ele.
+5. **A condição do Comandante virou critério:** "só se não pesar" = a bancada mede menos de 1 ms de JS por quadro e no máximo 8 KB/s por emissor **antes** de mesclar a E1.
+6. **O servidor decide a jukebox** (catálogo, a até 4 m do terminal, uma troca a cada 20 s): é regra de gameplay (G14).
+7. **P211 não entrou neste PR de propósito:** mexe em contas, banco, relé do servidor e política, e merece o seu próprio PR e as suas provas; enquanto isso a voz fica como está e o Comandante tem a chave no painel.
+
 ## [2026-10-19] O robô de outra pessoa é o chassi da montagem dela, montado numa função pura (Claude, P214)
 
 **Ordem:** *"o outro jogador sempre me vê como vector 9 amarelo… precisamos melhorar isso"*.

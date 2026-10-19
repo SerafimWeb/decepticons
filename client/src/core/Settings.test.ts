@@ -245,6 +245,18 @@ describe('Settings: o chat de voz (P205)', () => {
     expect(new Settings(memoryStorage('{"keys": {"ptt": "Escape"}}')).value.keys.ptt).toBe('KeyT');
   });
 
+  it('o aparelho do microfone: padrão vazio, o texto válido é mantido e o lixo (tipo errado, enorme, com controle) volta ao padrão (P212)', () => {
+    expect(DEFAULT_SETTINGS.micDevice).toBe('');
+    expect(new Settings(memoryStorage('{"micDevice": "abc123"}')).value.micDevice).toBe('abc123');
+    expect(new Settings(memoryStorage('{"micDevice": 5}')).value.micDevice).toBe('');
+    expect(new Settings(memoryStorage(JSON.stringify({ micDevice: 'x'.repeat(300) }))).value.micDevice).toBe('');
+    expect(new Settings(memoryStorage(JSON.stringify({ micDevice: 'a b' }))).value.micDevice).toBe('');
+    const storage = memoryStorage();
+    const st = new Settings(storage);
+    st.update({ micDevice: 'headset' });
+    expect(new Settings(storage).value.micDevice).toBe('headset');
+  });
+
   it('o jogador liga, desliga e troca o modo, e isso é salvo', () => {
     const storage = memoryStorage();
     const st = new Settings(storage);

@@ -69,3 +69,45 @@ interface Emissor { id: string; x: number; y: number; z: number; raio: number; v
 ## 6. Relação com o chat de voz
 
 A voz (P205) continua **à parte**: é entre jogadores, direta, e a **voz de quem fala tem prioridade** (o som do mundo baixa quando alguém fala por perto, ideia para a E2). Os emissores são do mundo, não dos jogadores. Os dois usam o mesmo `AudioContext` e o mesmo jeito de espacializar.
+
+## 7. A jukebox do prédio (ordem de 19/10, P213)
+
+**O que o Comandante pediu:** um **terminal** num prédio (como o do Banco Vorcaris: o jogador chega na frente e aperta um botão), onde se cola **um link do YouTube ou de outra música**; **o prédio toca até trocarem ou mutarem**. É a "nossa rádio". E cada jogador escolhe **o que ouve**: o áudio do próprio time, o geral, a rádio, ou só os sons da partida. **Condição dele: só entra se não pesar no jogo.**
+
+### 7.1 As músicas do YouTube são problema? Sim
+
+| Problema | Por quê |
+|---|---|
+| **Regras do YouTube** | O player oficial (o único jeito permitido) tem de ficar **visível** e não pode ser usado só pelo áudio; baixar o áudio (como faz o `yt-dlp`) viola os termos. **Confira o texto vigente das regras da API antes de apostar nisto**: é onde o plano cai ou não |
+| **Pesa** | Mesmo para ouvir só a música, o player recebe **vídeo** (centenas de kbps a Mbps) e o decodifica: banda e GPU/CPU a mais **em cada jogador perto do prédio**. Falha na condição do Comandante |
+| **Não dá para tocar no espaço** | O player é um iframe de outro site: só aceita volume de 0 a 100, sem direção e sem passar pelo nosso áudio (nada de panner, filtro de parede nem mixagem) |
+| **Privacidade e CSP** | Todo jogador perto carregaria `youtube.com`: o Google vê o IP e põe cookies. Vira linha na política, consentimento de cookies e abrir a CSP do site (`frame-src`, `script-src`) |
+| **Conteúdo** | Música alheia tocada a desconhecidos (direitos), vídeos que bloqueiam o embed, anúncios no meio, conteúdo impróprio sem moderação |
+| **"Outro link" qualquer** (um mp3 de outro site) | Cada jogador perto baixaria de um endereço **escolhido por um desconhecido**: vaza o IP deles ao dono do endereço, serve de hotlink, e sem o cabeçalho CORS o Web Audio fica mudo |
+
+**Recomendação:** o terminal mostra **a lista do catálogo do jogo** (arquivos que nós hospedamos, com licença) e um botão **"Sugerir um link"** que só **manda o link para o Comandante avaliar**: nada toca sozinho. Link livre só numa fase futura e só pelo player oficial do YouTube, visível, em salas privadas e com aviso.
+
+### 7.2 O desenho
+
+- **O estado na sala:** `{ faixa (o id no catálogo), inicioTick, quem }` no `ArenaRoom` (memória; zera quando a sala esvazia). **Duas mensagens novas** (pedir a faixa; avisar a faixa), numa faixa de tipos acima das da voz, **aditivas e sem subir o protocolo**, como a voz.
+- **O servidor decide (G14):** o id tem de estar no catálogo, o jogador tem de estar a **até 4 m do terminal** (a posição é a do servidor) e há **uma troca a cada 20 s por jogador** (anti-spam). É regra de gameplay: pede teste de simulação.
+- **O cliente:** o emissor do prédio (seção 3) toca a faixa do estado da sala, no ponto `(tick atual − inicioTick)`, sincronizado pelo relógio do servidor. **PARAR** no terminal para para todos (mesmos limites); **mutar** é de cada um (a opção "Som do mundo").
+- **O terminal:** o mesmo padrão do `BankTerminal` (chegar perto, apertar a tecla ou o botão do toque, abrir o painel).
+- **Os modos de áudio de cada jogador** (uma opção nas Configurações, "O que eu ouço na sala"): **Tudo** (voz geral + rádio), **Só o time** (voz do time + rádio; precisa do canal TIME e dos times online, que ainda não existem), **Só a rádio**, **Só os sons da partida**. É mixagem: liga e desliga o barramento da voz e o do emissor no `AudioContext` do jogo.
+
+### 7.3 Vai pesar? O portão de entrada
+
+O que se espera (**estimativa, não medida**): CPU desprezível (um `<audio>` com decodificação em hardware, um panner e um filtro, e **no máximo 3 emissores ativos**); rede **só enquanto o jogador está perto**: ~64 kbps = 8 KB/s por faixa, que **soma** ao teto de 8 KB/s do jogo (G11); pedaço sob demanda; e a opção de desligar o som do mundo. **A regra que o Comandante pediu vira critério:** a primeira entrega (E1) **só é mesclada se a bancada medir**, no Chrome, que um emissor ativo custa **menos de 1 ms de JavaScript por quadro** e **no máximo 8 KB/s**. O YouTube falha no critério da rede e da GPU: está fora por isso também.
+
+### 7.4 Ordem de construção (substitui a E1 da seção 4)
+
+1. **E1:** o emissor de laço (o módulo, a regra dos 3, o espacial, a medição do portão) com **um autofalante de teste** e um arquivo seu.
+2. **E1b:** o terminal da jukebox (o estado na sala, as duas mensagens, a regra do servidor, a lista do catálogo e "Sugerir um link"), com **as faixas que você der**.
+3. **E2:** zonas (dentro e fora do prédio). **E3:** a rádio sincronizada. **E4:** os modos de áudio (o "Só o time" espera os times online).
+
+### 7.5 ⚖ O que só o Comandante decide (além da seção 5)
+
+1. **O YouTube fica de fora**, e o terminal usa o catálogo do jogo mais "Sugerir um link"? (recomendo que sim)
+2. **Quais músicas entram no catálogo e de onde** (licença).
+3. **Em qual prédio fica o terminal** (sugiro a Estação dos Cabos, o prédio de controle).
+4. Os **modos de áudio** servem como estão, ou falta algum?
