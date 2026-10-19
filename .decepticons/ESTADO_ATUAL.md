@@ -3,6 +3,22 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## O SEGUNDO TESTE ONLINE: O OUTRO JOGADOR VIA TODO MUNDO COMO VECTOR-09, E A JANELA DAS REGRAS POR TRÁS DA DO SERVIDOR — Claude, 19/10 (branch `claude/online-modelos`, P214 e P215)
+
+**O Comandante (19/10), depois do segundo teste online (Colossus V4 num PC, Marauder no outro):** *"o outro jogador sempre me vê como vector 9 amarelo… ele não me vê como outro modelo"*; e a janela REGRAS DAS SALAS abria **por trás** da do servidor.
+
+**1. A causa do robô errado (achada no código):** `Game.makeRemote` só distinguia o andróide: **toda outra pessoa virava Vector-09**, com os números do Vector-09. O servidor sempre soube o chassi (o roster leva a montagem); só o desenho errava.
+**2. O que mudou:** `net/remotoDoRoster.ts` (função pura, testável) monta o **chassi da montagem** de quem entra: a malha importada (Marauder, Colossus V4, Lancer…) quando já baixou, senão a silhueta do chassi (`BLUEPRINT_BY_CHASSIS`), sempre com as armas e **os números dele**. A malha que ainda baixa deixa o robô **pendente**: o jogo o refaz quando ela chega (`OnlineSession.refazerRemoto`), sem esperar uma nova entrada na sala.
+**3. A janela por trás:** `.vis-modal` (REGRAS e VISIBILIDADE) subiu de `z-index` 80 para 2100 (a do servidor é 2000).
+
+**Provas:** 4 testes (todo chassi chega com os números dele e a silhueta certa; a malha que baixa deixa pendente; montagem torta cai no Vector-09 de fábrica; com a malha pronta sai o `ImportedMech` com os números do Marauder).
+
+**Falta (R13):** **não vi dois navegadores jogando juntos** (testes de unidade e tipos, sim): o Comandante confere com o Marauder e o Colossus V4; o nome e a barra de vida do outro seguem como eram; a cor do Mech importado vem do arquivo (não há tinta de time nele).
+
+**Onde o Comandante confere:** dois navegadores em `?sala=ARENA`, cada um com um chassi diferente: cada um vê o outro com o modelo dele. `?comandante=1` → SERVIDOR → REGRAS DAS SALAS: abre por cima.
+
+**Próxima sessão começa com:** a lista de pilotos da REDE com o hangar deles e o chat de texto (P216), e a fase 8 DE JANEIRO (P217).
+
 ## A POLÍTICA DE PRIVACIDADE PASSOU A DESCREVER O CHAT DE VOZ, QUE O COMANDANTE JÁ LIBEROU AO PÚBLICO — Claude, 19/10 (branch `claude/privacidade-voz`, P205)
 
 **O que aconteceu:** o `/status` do servidor mostrava `"tela:voz":"publico"` (o Comandante soltou a voz no painel de visibilidade) **antes** de a política mudar; eu tinha deixado o texto pronto como pendência de "antes de liberar". Com a voz pública, a pendência virou lacuna: a política dizia "o IP não é guardado" e nada dizia que **os outros jogadores da sala veem o IP** nem que o **STUN do Google** o recebe.

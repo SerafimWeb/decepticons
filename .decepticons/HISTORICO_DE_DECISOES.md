@@ -1,6 +1,16 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-19] O robô de outra pessoa é o chassi da montagem dela, montado numa função pura (Claude, P214)
+
+**Ordem:** *"o outro jogador sempre me vê como vector 9 amarelo… precisamos melhorar isso"*.
+
+**Decisões:**
+1. **A causa estava no desenho, não na rede:** o roster já levava a montagem (`build`) de cada pessoa; o `makeRemote` do `Game` ignorava o chassi. Extraí para `net/remotoDoRoster.ts` (função pura: recebe a entrada do roster e uma função que entrega a malha pronta) para **testar sem abrir o jogo inteiro**; o `Game` só liga.
+2. **Os números do chassi também:** o remoto leva `CHASSIS[chassi]` (tamanho e colisão), não os do Vector-09; o servidor é a autoridade (G13) e já usava os números do chassi; agora o corpo desenhado no outro navegador tem o mesmo tamanho.
+3. **Malha que ainda baixa não trava e não fica errada para sempre:** entra a silhueta do chassi e o robô é refeito quando a malha chega (`refazerRemoto`), em vez de esperar a próxima mudança do roster.
+4. **A janela do dono abre por cima da do servidor:** `.vis-modal` com `z-index` 2100 (a do servidor é 2000); janela de ferramenta do dono nunca nasce atrás de outra.
+
 ## [2026-10-19] A política de privacidade descreve o chat de voz, que já estava público (Claude, P205)
 
 **O que aconteceu:** o Comandante liberou `tela:voz` no painel de visibilidade sem que a política tivesse mudado; eu tinha avisado (VOICE_CHAT.md § 4) que ela precisava mudar antes.

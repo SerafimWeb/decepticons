@@ -461,3 +461,15 @@ describe('importedMechRig: lançadores nos ombros (Marauder)', () => {
     }
   });
 });
+
+describe('o robô de outra pessoa online com a malha já baixada (P214)', () => {
+  it('com a malha pronta o outro jogador vê o Marauder de malha importada, com os números dele, e sem pendência', async () => {
+    const { criarRemoto } = await import('../net/remotoDoRoster');
+    const { factorySpec, loadoutKey } = await import('../hangar/loadout');
+    const rig = instantiateImportedMechRig(syntheticAsset({ tpose: true, armRest: ARM, weaponMounts: true }), CHASSIS.marauder.height);
+    const r = criarRemoto({ id: 9, kind: 'human', name: 'Dan', build: loadoutKey(factorySpec('marauder')) }, () => rig, () => true);
+    expect(r.mech instanceof ImportedMech).toBe(true);
+    expect(r.mech.stats).toBe(CHASSIS.marauder);
+    expect(r.pendente).toBeNull();
+  });
+});

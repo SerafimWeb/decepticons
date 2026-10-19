@@ -14,6 +14,17 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P214 a P217 — O segundo teste online: o robô errado, a janela por trás, os pilotos da REDE e o 8 DE JANEIRO (19/10, Claude)
+
+> O Comandante jogou online com o Colossus V4 e o Marauder, cada um num PC, e abriu as REGRAS DAS SALAS (P201) pela janela do servidor.
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P214 | 19/10 | "tentei jogar no online usando o colossusv4 e o marauder em cada pc, mas o outro jogador sempre me vê como **vector 9 amarelo**… ele não me vê como outro modelo no online! precisamos melhorar isso" | ✅ | **A causa:** `Game.makeRemote` desenhava toda pessoa da sala como Vector-09, menos o andróide. **A correção:** `net/remotoDoRoster.ts` monta o **chassi da montagem dela** (malha importada do Marauder, do Colossus V4…, ou a silhueta do chassi) com as armas e **os números dele** (tamanho, colisão); se a malha ainda baixa, entra a silhueta e o robô é **refeito quando ela chega** (`OnlineSession.refazerRemoto`). | Dois navegadores na mesma sala (`?sala=ARENA`), um com o Marauder e outro com o Colossus V4: cada um vê o outro com o modelo dele |
+| P215 | 19/10 | "eu clico no regra das salas, mas ela entrou **por trás do modal do servidor**" | ✅ | A janela do dono (`.vis-modal`, a das regras e a da visibilidade) tinha `z-index` 80 e a do servidor, 2000: agora 2100. | `?comandante=1` → SERVIDOR → REGRAS DAS SALAS: abre por cima |
+| P216 | 19/10 | "no painel REDE, quando tiver mais de um jogador online, coloque os nomes dos jogadores ali disponíveis pra podermos clicar neles, **ver o hangar deles, fazer chat por texto com eles (sem sair do hangar)**" | 🟡 | Em branch `claude/chat-de-texto` (próximo PR) | — |
+| P217 | 19/10 | "uma nova fase… **8 DE JANEIRO**… sede dos poderes em Brasília… milhares de manifestantes de verde e amarelo, usando cabeças de gado, é o mod deles… os golpistas que tentaram tomar o poder à força, mas os militares não aderiram… vamos chegar lá e eliminar os golpistas na base do tiro, porrada e bomba… posicionar ela no mapa do Brasil onde está o bunker, e vamos mover o bunker para outro local na região do Mato Grosso do Sul" | 🟡 | Em branco: PR próprio (o pino, o mapa, a missão) | — |
+
 ## P208 a P210 — As permissões do Qwen, a voz no celular e a rádio do mundo (19/10, Claude)
 
 > Uma mensagem do Comandante com três ordens: apertar de vez as permissões do Qwen ("toda hora vc reclama disso e não resolve!"), fazer o chat de voz funcionar bem no celular, e a visão do som no mundo (música, rádio, autofalantes).
