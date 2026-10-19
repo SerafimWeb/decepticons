@@ -1,11 +1,15 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+## [2026-10-19] Processo leve: rigor proporcional ao risco, e o CI vermelho (Claude, P220)
 
-> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+**Ordem:** as iterações estavam grandes demais ("overengineered?"); pediu as 5 regras para o processo ficar mais leve e que olhasse o GitHub vermelho.
 
-> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+**Decisões:**
+1. **Regra 19 no `AGENTS.md`** (a fonte única): risco alto leva servidor + teste + até 8 mutações + 1 bancada; risco baixo só o teste de sempre; sem suíte inteira à mão antes do push; cada fato escrito uma vez; um pedido = o menor PR. A causa medida no P211: 61 arquivos e ~1.260 linhas para "perguntar a idade", 32 mutações (todas morreram de primeira, não acharam nada), 5 bancadas e 4 pushes de ~15 min.
+2. **O hook não repete o check na mesma árvore** (`.githooks/pre-push`, cache em `.tmp/check-ok/<árvore>`). Só vale com a árvore limpa e igual à do `HEAD`, para nunca pular um check que não olhou o que sobe; check que falha não guarda nada; só apagar branch remoto não roda check (antes rodava o check inteiro). 8 testes e 3 mutações na borda.
+3. **O CI está vivo de novo (e tinha DUAS causas vermelhas, uma atrás da outra)** (a cota do mês voltou: as execuções de hoje rodam 2 a 3 min, não os 2 s da época da cobrança) e estava **vermelho por um teste só**: `estudio-vozes` esperava 400 e recebia 503, porque o servidor do Estúdio checava o `ffmpeg` **antes** de validar o pedido, e o runner não tem `ffmpeg`. Agora o pedido errado é 400 em qualquer máquina. Lição: teste que depende de ferramenta da máquina do autor passa só nela. **A segunda, atrás dessa (o `npm run check` para no primeiro erro): o smoke.** O jogo aberto em `localhost` procura o servidor em `localhost:2567` e pergunta o `/status`; nesta máquina há o servidor de produção ali (passava), no runner não há (`ERR_CONNECTION_REFUSED` no console, e o smoke reprova qualquer `console.error`). O smoke agora **recusa essa porta de propósito** (vale igual em toda máquina), ignora só essa recusa esperada e mostra a URL de qualquer outro erro (a mensagem do CI não dizia qual recurso falhou e custou uma investigação). Reproduzido antes de consertar (mesma mensagem, `@ http://localhost:2567/status`). Uma falha isolada do smoke local na primeira rodada não reapareceu em 4 seguintes (boot de 7 a 18 s conforme a carga); causa não identificada.
 
+**Risco assumido:** o CI gasta minutos medidos (repositório privado, ~2.000/mês): com ele vivo, push repetido gasta a cota e pode pará-lo de novo. A regra 19c e o `concurrency` do workflow ajudam; se a cota acabar de novo, o caminho continua sendo `publicar --sem-ci` (P105). Nunca pagar.
 
 ## [2026-10-19] O e-mail do "esqueci a senha" pelo SMTP da Hostinger, sem serviço novo (Claude, P206)
 
