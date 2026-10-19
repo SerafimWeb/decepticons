@@ -15,7 +15,6 @@
  "VOCÊ": "TÚ",
  "IAs ATACANDO": "IAs ATACANDO",
  "EM BREVE": "PRÓXIMAMENTE",
-
  "EM CONSTRUÇÃO": "EN CONSTRUCCIÓN",
  "RADAR TÁTICO": "RADAR TÁCTICO",
  "ALIADOS": "ALIADOS",
@@ -950,5 +949,6 @@
  "Conta apagada: o servidor já não guarda nada dela. O progresso deste aparelho continua aqui.": "Cuenta eliminada: el servidor ya no guarda nada de ella. El progreso de este dispositivo sigue aquí.",
  "AGUARDE…": "ESPERA…",
  "APAGANDO…": "ELIMINANDO…",
- "não deu para guardar a escolha: tente de novo": "no se pudo guardar la elección: inténtalo de nuevo"
+ "não deu para guardar a escolha: tente de novo": "no se pudo guardar la elección: inténtalo de nuevo",
+ "Pilotos na sala": "Pilotos en la sala"
 }

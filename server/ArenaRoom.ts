@@ -44,6 +44,8 @@ import {
 import { VOZ } from '../shared/net/voz';
 import { NetPilot } from './NetPilot';
 import { RelayDeVoz } from './voz';
+import { TEXTO } from '../shared/net/texto';
+import { RelayDeTexto } from './texto';
 
 /** O outro lado de uma conexão. A sala só manda bytes; o transporte (WebSocket) é do \`Server\`. */
 export interface Peer {
@@ -100,6 +102,8 @@ export class ArenaRoom {
   private readonly voz = new RelayDeVoz<Peer>((peer, bytes) => peer.send(bytes), undefined, (token) => this.autorizarVoz(token));
   /** Quem decide se uma sessão pode entrar na voz (P211: conta de maior de idade): o servidor entrega; sem ele, **ninguém** entra. */
   private autorizarVoz: (token: string) => boolean = () => false;
+  /** O chat de texto direto entre dois pilotos (P216): só repassa, sem histórico. */
+  private readonly texto = new RelayDeTexto<Peer>((peer, bytes) => peer.send(bytes));
   /** Alguém entrou na partida (montagem aceita). O servidor conta a origem; a sala não sabe para quê. */
   onEntrou?: (peer: Peer) => void;
   /** Alguém foi recusado, e por quê. */
@@ -236,7 +240,18 @@ export class ArenaRoom {
       case VOZ.SINAL:
         this.voz.sinal(peer, bytes);
         return;
+      case TEXTO.ENVIAR: {
+        const h = this.humans.get(peer);
+        if (h) this.texto.mensagem(peer, h.id, bytes, (id) => this.pessoa(id));
+        return;
+      }
     }
+  }
+
+  /** A conexão da pessoa (não bot) com este id na sala, ou `undefined`: o destino do chat de texto. */
+  private pessoa(id: number): Peer | undefined {
+    for (const h of this.humans.values()) if (h.id === id) return h.peer;
+    return undefined;
   }
 
   /** O jogador saiu (mensagem ou queda da conexão): sai da partida e da lista. */
@@ -245,6 +260,7 @@ export class ArenaRoom {
     const h = this.humans.get(peer);
     if (!h) return;
     this.voz.sairDaSala(peer);
+    this.texto.sairDaSala(peer);
     this.humans.delete(peer);
     this.units.splice(this.units.indexOf(h), 1);
     this.match.pilots.splice(this.match.pilots.indexOf(h.pilot), 1);

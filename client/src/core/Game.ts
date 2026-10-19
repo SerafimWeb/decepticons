@@ -99,7 +99,10 @@ import { loadTouchLayout, saveTouchLayout } from '../ui/touchLayout';
 import { AudioSystem } from '../audio/AudioSystem';
 import { BrandSplash } from '../brand/BrandSplash';
 import { Hangar } from '../hangar/Hangar';
-import type { LoadoutSpec } from '../hangar/loadout';
+import { parseLoadoutKey, type LoadoutSpec } from '../hangar/loadout';
+import { Conversas } from '../net/Conversas';
+import { AvisoDeMensagem, RedePilotos, type PilotoNaRede } from '../ui/RedePilotos';
+import type { VisitaPanel } from '../ui/VisitaPanel';
 import { CHASSIS, PILOT_ANDROID_STATS, type ChassisId } from '../entities/chassis';
 import { BLUEPRINT_BY_CHASSIS } from '../entities/blueprintByChassis';
 import { ImportedMech } from '../entities/ImportedMech';
@@ -298,6 +301,11 @@ export class Game {
   private vozCarregando = false;
   /** O meu id na sala (`null` fora dela): guardado porque o pedaço da voz pode chegar depois do `WELCOME`. */
   private vozId: number | null = null;
+  /** O chat de texto e a visita ao Hangar de outro piloto (P216): o dado mora aqui desde o começo; a tela (`VisitaPanel`) baixa na primeira visita. */
+  private readonly conversas = new Conversas();
+  private readonly avisoDeMensagem = new AvisoDeMensagem();
+  private redePilotos: RedePilotos | null = null;
+  private visita: VisitaPanel | null = null;
   /** Onde está o robô de um jogador da sala (a voz dele sai dali): criada uma vez, sem alocar por quadro (G4). */
   private readonly posDoRemoto = (id: number) => this.online?.remotes.get(id)?.mech.simPosition;
   private readonly netStatus = document.createElement('div');
@@ -723,7 +731,11 @@ export class Game {
           if (id === null) this.voz?.saiuDaSala();
           else if (this.voz) this.voz.entrouNaSala(id);
           else this.aplicarVoz(this.settings.value);
+          if (id === null) this.conversas.limpar();
+          this.pintarPilotos();
         },
+        onPilotos: () => this.pintarPilotos(),
+        onTexto: (de, texto) => this.receberTexto(de, texto),
         build: this.hangar.key,
         match: this.match,
         me: this.mech,
@@ -859,6 +871,9 @@ export class Game {
       },
     });
     new PilotLabels(this.hangar);
+    this.redePilotos = new RedePilotos(document.getElementById('rede-pilotos'), (p) => void this.abrirVisita(p));
+    this.conversas.ouvir(() => this.pintarPilotos());
+    this.hangarMenu.aoFecharVisita = () => this.visita?.fechar();
     new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null, document.getElementById('cc-online-slot'));
     // A linha "SERVIDOR ONLINE · 2 PILOTOS EM COMBATE" na pausa: um GET a cada 20 s, só com a pausa à vista.
     // Só o servidor público do build ou o `&servidor=` do link (o motivo do `defaultServer` ficar fora: ServerStatus.ts).
@@ -1127,6 +1142,36 @@ export class Game {
     const c = r.pendente;
     if (c) void whenMechAssetReady(IMPORTED_CHASSIS[c]!.url, CHASSIS[c].height, IMPORTED_CHASSIS[c]!).then(() => this.online?.refazerRemoto(e.id), () => undefined);
     return r.mech;
+  }
+
+  /** A lista de pilotos do monitor REDE (P216): as outras pessoas da sala, com as mensagens não lidas. */
+  private pintarPilotos(): void {
+    this.redePilotos?.atualizar(this.online?.pilotos() ?? [], (id) => this.conversas.naoLidas(id));
+    this.visita?.presencaMudou();
+  }
+
+  /** Uma mensagem de texto de outro piloto: só vale para quem enxerga o chat (o Comandante ou, liberado o `tela:chat`, todos); com a conversa aberta não vira "não lida"; durante a partida, um aviso curto. */
+  private receberTexto(de: number, texto: string): void {
+    if (!funcionalidadeVisivel('tela:chat')) return;
+    if (!this.conversas.receber(de, texto, this.visita?.visitando === de)) return;
+    if (this.visita?.visitando !== de) this.avisoDeMensagem.mostrar(this.online?.nomeDe(de) ?? 'PILOTO', texto);
+  }
+
+  /** Clicou no nome de um piloto na REDE: o Hangar abre mostrando o robô dele (só ver) com a conversa por texto ao lado (P216). */
+  private async abrirVisita(p: PilotoNaRede): Promise<void> {
+    const spec = parseLoadoutKey(p.build);
+    if (!spec || !this.online?.joined) return;
+    const caixa = this.hangarMenu.visitar(spec);
+    if (!this.visita) {
+      const { VisitaPanel } = await import('../ui/VisitaPanel');
+      this.visita ??= new VisitaPanel(caixa, {
+        conversas: this.conversas,
+        enviar: (id, texto) => this.online?.enviarTexto(id, texto) ?? false,
+        presente: (id) => !!this.online?.pilotos().some((x) => x.id === id),
+        aoSair: () => this.hangarMenu.sairDaVisita(),
+      });
+    }
+    this.visita.abrir(p.id, p.nome);
   }
 
   /** Linha de status do online, no topo: sala, ping e pessoas; ou o motivo da recusa ou da queda. */

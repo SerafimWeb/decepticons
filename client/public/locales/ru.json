@@ -15,7 +15,6 @@
  "VOCÊ": "ВЫ",
  "IAs ATACANDO": "ИИ АТАКУЮТ",
  "EM BREVE": "СКОРО",
-
  "EM CONSTRUÇÃO": "В РАЗРАБОТКЕ",
  "RADAR TÁTICO": "ТАКТИЧЕСКИЙ РАДАР",
  "ALIADOS": "СОЮЗНИКИ",
@@ -950,5 +949,6 @@
  "Conta apagada: o servidor já não guarda nada dela. O progresso deste aparelho continua aqui.": "Аккаунт удалён: сервер больше ничего о нём не хранит. Прогресс на этом устройстве остаётся здесь.",
  "AGUARDE…": "ПОДОЖДИТЕ…",
  "APAGANDO…": "УДАЛЕНИЕ…",
- "não deu para guardar a escolha: tente de novo": "не удалось сохранить выбор: попробуйте ещё раз"
+ "não deu para guardar a escolha: tente de novo": "не удалось сохранить выбор: попробуйте ещё раз",
+ "Pilotos na sala": "Пилоты в комнате"
 }

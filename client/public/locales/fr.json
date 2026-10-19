@@ -15,7 +15,6 @@
  "VOCÊ": "VOUS",
  "IAs ATACANDO": "IA À L'ATTAQUE",
  "EM BREVE": "BIENTÔT",
-
  "EM CONSTRUÇÃO": "EN CONSTRUCTION",
  "RADAR TÁTICO": "RADAR TACTIQUE",
  "ALIADOS": "ALLIÉS",
@@ -950,5 +949,6 @@
  "Conta apagada: o servidor já não guarda nada dela. O progresso deste aparelho continua aqui.": "Compte supprimé : le serveur ne conserve plus rien. La progression de cet appareil reste ici.",
  "AGUARDE…": "PATIENTEZ…",
  "APAGANDO…": "SUPPRESSION…",
- "não deu para guardar a escolha: tente de novo": "impossible d'enregistrer le choix : réessayez"
+ "não deu para guardar a escolha: tente de novo": "impossible d'enregistrer le choix : réessayez",
+ "Pilotos na sala": "Pilotes dans la salle"
 }

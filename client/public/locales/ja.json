@@ -15,7 +15,6 @@
  "VOCÊ": "あなた",
  "IAs ATACANDO": "AI 攻撃中",
  "EM BREVE": "近日公開",
-
  "EM CONSTRUÇÃO": "建設中",
  "RADAR TÁTICO": "戦術レーダー",
  "ALIADOS": "味方",
@@ -950,5 +949,6 @@
  "Conta apagada: o servidor já não guarda nada dela. O progresso deste aparelho continua aqui.": "アカウントを削除しました。サーバーにはもう何も残っていません。この端末の進行状況はそのまま残ります。",
  "AGUARDE…": "お待ちください…",
  "APAGANDO…": "削除中…",
- "não deu para guardar a escolha: tente de novo": "選択を保存できませんでした。もう一度お試しください"
+ "não deu para guardar a escolha: tente de novo": "選択を保存できませんでした。もう一度お試しください",
+ "Pilotos na sala": "ルームのパイロット"
 }

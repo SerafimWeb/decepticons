@@ -1,5 +1,6 @@
 import { decodeBankReply, encodeBankCode } from '../../../shared/net/bank';
 import { VOZ } from '../../../shared/net/voz';
+import { codificarEnviar, lerReceber, TEXTO } from '../../../shared/net/texto';
 import type { BankReply } from '../../../shared/bank/codes';
 import { Writer } from '../../../shared/net/codec';
 import { PROTOCOL_VERSION } from '../../../shared/net/constants';
@@ -41,6 +42,8 @@ export interface NetClientEvents {
   reject(reason: RejectReason): void;
   /** Uma mensagem do chat de voz (`LISTA` ou `SINAL`, `shared/net/voz.ts`): quem decodifica é o `VoiceChat`. */
   voz(bytes: Uint8Array): void;
+  /** Uma mensagem de texto direta de outro piloto (P216, `shared/net/texto.ts`): `de` é o id dele, o texto já vem limpo. */
+  texto?(de: number, texto: string): void;
   /** O servidor avisou que vai reiniciar (P204): em `segundos` ele corta e volta em cerca de `voltaEmS`. */
   aviso(m: AvisoMsg): void;
   /** `code` e `reason` são os do fechamento do WebSocket (0 e vazio quando a conexão nem abriu): `CLOSE_REINICIO` diz "reiniciando" e o motivo é o tempo de volta em segundos. */
@@ -113,6 +116,14 @@ export class NetClient {
     if (this.isOpen) this.send(bytes);
   }
 
+  /** Uma mensagem de texto direta a outro piloto da sala (P216). `false` se não há o que mandar (vazia) ou a conexão não está aberta. */
+  enviarTexto(destino: number, texto: string): boolean {
+    const bytes = this.isOpen ? codificarEnviar(destino, texto) : null;
+    if (!bytes) return false;
+    this.send(bytes);
+    return true;
+  }
+
   close(): void {
     if (this.isOpen) this.send(encodeLeave(this.w));
     this.ws.close();
@@ -164,6 +175,11 @@ export class NetClient {
       case VOZ.SINAL:
         this.on.voz?.(bytes);
         return;
+      case TEXTO.RECEBER: {
+        const t = lerReceber(bytes);
+        if (t) this.on.texto?.(t.id, t.texto);
+        return;
+      }
     }
   }
 }

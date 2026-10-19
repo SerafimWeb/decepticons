@@ -15,7 +15,6 @@
  "VOCÊ": "YOU",
  "IAs ATACANDO": "AIs ATTACKING",
  "EM BREVE": "COMING SOON",
-
  "EM CONSTRUÇÃO": "UNDER CONSTRUCTION",
  "RADAR TÁTICO": "TACTICAL RADAR",
  "ALIADOS": "ALLIES",
@@ -950,5 +949,6 @@
  "Conta apagada: o servidor já não guarda nada dela. O progresso deste aparelho continua aqui.": "Account deleted: the server no longer stores anything about it. The progress on this device stays here.",
  "AGUARDE…": "PLEASE WAIT…",
  "APAGANDO…": "DELETING…",
- "não deu para guardar a escolha: tente de novo": "couldn't save the choice: try again"
+ "não deu para guardar a escolha: tente de novo": "couldn't save the choice: try again",
+ "Pilotos na sala": "Pilots in the room"
 }
