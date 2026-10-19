@@ -1,5 +1,5 @@
 /**
- * O consumo do GitHub Actions, para decidir com número e não com susto (P222): `npm run ci:consumo [-- --desde AAAA-MM-DD] [--cota 2000]`.
+ * O consumo do GitHub Actions, para decidir com número e não com susto (P223): `npm run ci:consumo [-- --desde AAAA-MM-DD] [--cota 2000]`.
  * Lê as execuções recentes (`gh run list`, com a credencial do Git se o token do `gh` morreu), soma os minutos por workflow e evento (cada job cobra no mínimo 1 minuto, então o número é
  * **aproximado**: duração da execução arredondada para cima) e projeta quando a cota do mês acaba no ritmo do período. O ciclo de cobrança exato e o gasto oficial estão em github.com/settings/billing.
  */

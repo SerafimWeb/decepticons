@@ -1,8 +1,10 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## [2026-10-19] Economizar o Actions removendo repetição, não sinal (Claude, P222)
+## [2026-10-19] Economizar o Actions removendo repetição, não sinal (Claude, P223)
 
 **Ordem:** economizar de forma inteligente e profissional, sem miséria. **Medi antes** (235 min em um dia; 40% push na `main`, 38% check do PR, 22% etiquetas) e cortei só o que repete ou é desperdício: (1) o push na `main` pula o check quando a árvore é idêntica à do PR e o CI do PR passou nela (na dúvida roda tudo; decisão pura e testada, 6 mutações pegas; aplicada a merges reais: #405 pula, #403 roda); (2) etiquetas só ao abrir (o job de 6 s cobra 1 minuto); (3) rascunho não roda. **Não cortei** o check do PR nem o hook: é a segunda opinião de uma máquina limpa e achou dois defeitos escondidos por uma semana. Próximos degraus, se ainda apertar, estão no `DEPLOY.md`. `npm run ci:consumo` passa a mostrar o gasto e a projeção.
+
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 ## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
 

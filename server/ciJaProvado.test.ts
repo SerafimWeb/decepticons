@@ -5,7 +5,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { avaliar, decidirJaProvado } from '../scripts/ciJaProvado.mjs';
 
 /**
- * O push na main só pula o check pesado quando a árvore já passou no PR (P222). O perigo é pular o que devia rodar: por isso cada condição tem o seu teste, e qualquer dúvida roda o check.
+ * O push na main só pula o check pesado quando a árvore já passou no PR (P223). O perigo é pular o que devia rodar: por isso cada condição tem o seu teste, e qualquer dúvida roda o check.
  */
 const ok = { evento: 'push', arvore: 'a'.repeat(40), arvoreDoPai2: 'a'.repeat(40), rodadasVerdesDoPai2: 1 };
 

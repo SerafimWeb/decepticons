@@ -14,12 +14,17 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
-## P222 — Economizar o Actions com inteligência, sem miséria (19/10, Claude)
+## P223 — Economizar o Actions com inteligência, sem miséria (19/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
 |---|---|---|---|---|---|
-| P222 | 19/10 | "quero economizar sim, de forma inteligente, profissional e experiente, sem miséria, focando em melhorar o desempenho, manutenção, etc" | ✅ | **Feito** (PR `claude/ci-economico`), medido antes: 235 min num dia (cota de ~8 dias). O push na `main` não refaz o check na árvore que o PR já provou; as etiquetas só ao abrir; PR em rascunho não roda; `npm run ci:consumo` mede. O check do PR e o hook seguem completos. Detalhe em `DEPLOY.md` | `npm run ci:consumo -- --desde 2026-10-19` antes e depois: os minutos por dia caem |
+| P223 | 19/10 | "quero economizar sim, de forma inteligente, profissional e experiente, sem miséria, focando em melhorar o desempenho, manutenção, etc" | ✅ | **Feito** (PR `claude/ci-economico`), medido antes: 235 min num dia (cota de ~8 dias). O push na `main` não refaz o check na árvore que o PR já provou; as etiquetas só ao abrir; PR em rascunho não roda; `npm run ci:consumo` mede. O check do PR e o hook seguem completos. Detalhe em `DEPLOY.md` | `npm run ci:consumo -- --desde 2026-10-19` antes e depois: os minutos por dia caem |
 
+## P222 — O 8 DE JANEIRO realista, compacto, com saguões fechados (19/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P222 | 19/10 | (com uma busca de imagens do dia) "PROSSIGA!!!! faça os realistas, representando o que realmente aconteceu, use referências reais… a trama golpista, tentativa de golpe e abolição do estado de direito, incitação ao ódio, depredação do patrimônio público. A fase deve ter **ambientes fechados onde só androides e humanos entrem, e os mechs ficam fora**. O mapa não precisa ser principalmente o prédio do congresso nacional e o palácio onde houve mais ações antidemocráticas, **não precisa ser grande como o mapa do terras raras**, pra que o jogo seja mais dinâmico e jogável ali no core da confusão" | 🟡 | **O mapa v2** (`environment/PracaLayout.ts`): **224 × 160 m** (era 400 × 208), o Congresso com a laje, as **duas rampas brancas** ao telhado e o saguão no térreo, o Planalto e o Supremo com saguões, a **linha de gradis** (alguns caídos), viaturas, entulho, faixas em branco. **Os saguões são fechados e as portas têm 1,9 m: nenhum Mech passa** (o teste confere com a física; o androide entra). **A ficha de fatos** (`fichas/fatos-8-de-janeiro.md`): o que está provado e a fonte (a pesquisa de hoje, a conferir nos documentos primários). **Corrige uma frase da P217:** *"os militares não aderiram"* **não vai ao jogo**: o STF condenou militares do Exército pelo planejamento da trama (fatos § 4); o que as fontes sustentam é *"o golpe não se consumou"*. **Interpretei** "não precisa ser principalmente…" como *o mapa foca no Congresso e no Planalto e é compacto*; se era o contrário, corrija. **Falta:** a missão (a multidão entrando nos saguões, a sujeira nas mesas, os androides faxineiros e rebeldes, o Relatório com os fatos) | `?mapa=janeiro&comandante=1`; `&multidao=1&cota=2500&t=9000` |
 ## P221 — Não gastar o Actions à toa: o deploy do Actions desligado (19/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

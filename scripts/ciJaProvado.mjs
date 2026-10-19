@@ -1,5 +1,5 @@
 /**
- * O push na `main` repete o `check` que o PR já rodou na MESMA árvore? (P222, 19/10: o CI do push era 38% dos minutos do Actions de um dia de trabalho.)
+ * O push na `main` repete o `check` que o PR já rodou na MESMA árvore? (P223, 19/10: o CI do push era 38% dos minutos do Actions de um dia de trabalho.)
  *
  * O merge é um commit de junção (`gh pr merge --merge`): o segundo pai é o último commit do PR. Se a árvore da `main` é **idêntica** à árvore desse commit e o CI do PR **passou** nele, esta
  * árvore exata já foi testada numa máquina limpa: o job termina verde em segundos em vez de refazer 5 minutos. **Na dúvida roda o check inteiro** (squash ou rebase não têm segundo pai, a `main`
