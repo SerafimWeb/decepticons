@@ -226,3 +226,7 @@ correções visíveis pedirem. **Decisão do dono.**
 3. **Bots nas salas online:** completam até 8 (sala sempre cheia) ou só quando houver menos de N humanos.
 4. **Nome e código da sala:** ✅ (26/09) quem clica em "Jogar online" entra na sala pública `ARENA`; cheia, o servidor
    abre `ARENA-2`, `ARENA-3`... Sala com código próprio continua pelo link (`?sala=K7Q2`).
+
+## 11. O chat de texto entre dois pilotos (P216, 19/10)
+
+Duas mensagens de tipos acima da voz (`TEXTO.ENVIAR` = 33, `TEXTO.RECEBER` = 34; `shared/net/texto.ts`), sem subir o `PROTOCOL_VERSION`. **Cliente → servidor:** `[33][id do destino][UTF-8]`; **servidor → destino:** `[34][id de quem mandou][UTF-8]`. O servidor (`server/texto.ts`, `RelayDeTexto`) só repassa: lê e **limpa** o texto (sem controle, sem quebra de linha, sem formatação invisível, no máximo 160 caracteres), confere que o destino é **outra pessoa da mesma sala**, **troca o remetente pelo id de verdade** e aplica o teto de **6 mensagens por 10 s por jogador**. **Nada é guardado.** No cliente, `net/Conversas.ts` guarda as últimas 60 linhas de cada conversa (enquanto a sala vive), as não lidas e quem está silenciado; a tela é `ui/VisitaPanel.ts` (sob demanda), aberta pelo Hangar em modo visita (`HangarMenu.visitar`). A funcionalidade é o `tela:chat` do painel de visibilidade (nasce restrita).

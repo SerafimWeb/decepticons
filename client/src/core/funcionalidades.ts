@@ -42,6 +42,7 @@ const fixas: readonly Funcionalidade[] = [
   { id: 'tela:conta', grupo: 'telas', nome: 'Conta (entrar e criar)', padrao: 'publico', efeito: 'o botão CONTA' },
   { id: 'tela:arquivo', grupo: 'telas', nome: 'Arquivo (o que o jogo ensina)', padrao: 'restrito', efeito: 'o chip ARQUIVO' },
   { id: 'tela:voz', grupo: 'telas', nome: 'Chat de voz (online)', padrao: 'restrito', efeito: 'a seção CHAT DE VOZ das Configurações e a voz na sala online (some junto o pedido de microfone)' },
+  { id: 'tela:chat', grupo: 'telas', nome: 'Pilotos da REDE: ver o Hangar do outro e conversar por texto (online)', padrao: 'restrito', efeito: 'a lista de pilotos no monitor REDE, a visita ao Hangar de outro piloto e o chat de texto (some junto o aviso de mensagem)' },
   { id: 'tela:lado', grupo: 'telas', nome: 'Seletor de lado (Aliança ou Consórcio)', padrao: 'restrito', efeito: 'o chip ESCOLHA O LADO' },
   { id: 'tela:relatorio', grupo: 'telas', nome: 'Relatório de Consequências', padrao: 'restrito', efeito: 'o chip RELATÓRIO depois da missão' },
 ];
