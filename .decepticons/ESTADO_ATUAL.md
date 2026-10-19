@@ -5,7 +5,7 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
-## O 8 DE JANEIRO RESPONDIDO: FICHA V2, E O PEDIDO MAIOR — TODAS AS FASES E MODOS ONLINE — Claude, 19/10 (branch `claude/janeiro-respostas`, P218 e P219)
+## O 8 DE JANEIRO RESPONDIDO (FICHA V2) E A SALA ONLINE ESCOLHE O MAPA (O1 DO P218) — Claude, 19/10 (branch `claude/janeiro-respostas`, P218 e P219)
 
 **O Comandante (19/10) respondeu à ficha:** a fase pode começar só offline, **mas todas as fases e modos têm de valer online**; vence quem mantém os prédios de pé e expulsa ou neutraliza todos; as chegadas vêm de **ônibus, bueiros e lixeiras**; porrada é eliminar; os manifestantes têm cabeça de gado, há **carecas**, **rapazes de peruca loira** e **androides**; **só os androides lutam, os outros fogem**; eles sujam as mesas e os androides aliados limpam.
 
@@ -13,11 +13,15 @@
 **2. A ordem P218** (`MULTIPLAYER.md` § 12): achei por que tudo era "só offline" (a sala só conhece Cidade Neon em Deathmatch; `Match` já recebe mapa e modo, a sala e o protocolo não) e escrevi **cinco etapas** (O1 a sala escolhe o mapa; O2 Domínio; O3 Bandeira; O4 Sobrevivência e missões; O5 campanha), uma por PR, cada uma medindo a banda.
 **3. Duas decisões minhas** (o Comandante pode contestar): o CARECA e a PERUCA entram como **tipos** (sem nome, marca ou texto de pessoa ou empresa), com botão de desligar; e os **nomes das pessoas não foram copiados** para os documentos (o painel público lê estes arquivos). **Risco registrado** (ficha § 9): caricatura de figuras públicas reais e uma fase em que se atira em manifestantes de um evento real, a seis dias do segundo turno das eleições (25/10); **recomendo um advogado antes de liberar ao público**; a fase nasce restrita.
 
-**Falta (R13):** **só documentos**: nenhuma linha de código mudou; a massa, o mapa e a missão não existem; o online por mapa (O1) é o próximo PR.
+**4. O1 feito: a sala online escolhe o mapa.** `shared/net/mapa.ts` (o mapa da conexão e a chave da sala: `CODIGO` na Cidade Neon, `CODIGO@mapa` nos outros); `Server.ts` (`roomMapa`, `pickRoom` por mapa, mapa inexistente é recusado com 1008 `mapa`); `ArenaRoom` (recebe o mapa, carrega sob demanda a Terras Raras no Node e monta o `Match` nele); cliente (`mapFromSearch` honra o `?mapa=` também online; `urlComMapa` põe o mesmo mapa na conexão; o link do seletor e o IMPLANTAR do mapa-múndi ficam na sala). **`PROTOCOL_VERSION` 20 → 21** (servidor velho ignoraria o mapa e desalinharia o chão).
 
-**Onde o Comandante confere:** `fichas/cenario-8-de-janeiro.md` (as cinco perguntas abertas, § 8) e `MULTIPLAYER.md` § 12.
+**Provas:** 6 testes (o contrato, a chave da sala, o cliente e os links; **o servidor de verdade**: o mesmo código em três mapas são três salas, cada uma com o seu mapa e a sua gente; mapa inexistente recusado e nenhuma sala nasce; a Terras Raras constrói no Node e recebe gente) e três testes antigos que fixavam "online = Cidade Neon" atualizados.
 
-**Próxima sessão começa com:** a etapa O1 (a sala escolhe o mapa: Deathmatch online nos quatro mapas), depois `sim/Multidao.ts`.
+**Falta (R13):** **não vi dois navegadores jogando na Praia online** (testes, tipos e o servidor de verdade, sim); o **mural de câmeras** desenha a planta da Cidade Neon para todas as salas; o servidor **não recusa mapa restrito** (só o cliente filtra); as etapas O2 a O5 e **toda a fase 8 DE JANEIRO** (massa, mapa, missão) não existem; **o novo protocolo derruba quem estiver conectado com o cliente velho** (o jogo avisa que a versão é outra e pede para recarregar).
+
+**Onde o Comandante confere:** (1) dois navegadores em `/jogar/?sala=ARENA&mapa=praia&nome=Dan` (e `&mapa=bunker`, `&mapa=amazonia`; para a Terras Raras o mapa precisa estar liberado no painel de visibilidade, ou o `?comandante=1`): a mesma sala nos dois, no mapa escolhido; no mapa-múndi, IMPLANTAR online fica na sala; (2) `fichas/cenario-8-de-janeiro.md` (as cinco perguntas abertas, § 8) e `MULTIPLAYER.md` § 12.
+
+**Próxima sessão começa com:** `sim/Multidao.ts` (a massa como função do tempo, com teste e bancada de CPU) ou a etapa O2 (Domínio online), conforme o Comandante preferir; e as respostas às cinco perguntas abertas da ficha.
 
 ## OS PILOTOS NA REDE: VER O HANGAR DO OUTRO E CONVERSAR POR TEXTO SEM SAIR DO HANGAR — Claude, 19/10 (branch `claude/chat-de-texto`, P216)
 

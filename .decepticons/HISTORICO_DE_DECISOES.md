@@ -13,6 +13,9 @@
 3. **Tipos, não pessoas:** o CARECA e a PERUCA se parecem com duas figuras públicas reais, por pedido do Comandante. O jogo recebe só o **tipo** (sem nome, marca ou texto) com botão de desligar por tipo, e os nomes **não entram nos documentos** (o painel público os lê). É a mesma precaução da skin da Colossus V1, estendida; a decisão final do tom é do Comandante.
 4. **A fase nasce restrita** e a recomendação de revisão jurídica fica escrita (ficha § 9): o segundo turno das eleições é em 25/10 e há regra de honra e eleitoral sobre representar candidatos.
 5. **O online por mapa e modo é uma ordem geral (P218), não uma exceção da fase:** o plano em cinco etapas (`MULTIPLAYER.md` § 12) começa por onde há menos protocolo novo (a sala escolher o mapa) e termina onde há mais (a campanha). O 8 DE JANEIRO é desenhado já para a etapa O4.
+6. **A sala é uma por código e por mapa** (`CODIGO` na Cidade Neon, `CODIGO@mapa` nos outros): quem digita o mesmo código e pede outro mapa nunca cai na sala de outro chão. Os links, as salas e os painéis de sempre (Cidade Neon) não mudam de nome.
+7. **`PROTOCOL_VERSION` sobe para 21** mesmo sem mensagem nova: o significado da conexão mudou (ela leva o mapa), e um servidor da versão 20 ignoraria o pedido e desalinharia o chão do cliente em silêncio; a recusa com aviso é melhor que o jogo errado. Mesmo critério das versões 15 a 20.
+8. **O servidor não filtra mapa restrito (por ora):** só o cliente. Recusar de verdade pede identificar o Comandante na conexão (um token na URL não serve: vira log). Um link à mão abre uma sala que custa CPU, sem vazar nada; fica anotado para a etapa que precisar (uma fase em desenvolvimento).
 
 ## [2026-10-19] O chat de texto é mensagem direta, repassada pelo servidor sem guardar nada, e nasce restrito (Claude, P216)
 

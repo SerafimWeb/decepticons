@@ -1,3 +1,5 @@
+import { MAPA_PADRAO, type MapaOnline } from '../../../shared/net/mapa';
+
 /** Porta padrão do servidor de jogo (`npm run server`). */
 export const DEFAULT_SERVER_PORT = 2567;
 /** Sala de quem clica em "Jogar online" (cheia, o servidor abre ARENA-2, ARENA-3...). */
@@ -22,6 +24,14 @@ export interface OnlineConfig {
 }
 
 const ROOM_RE = /^[A-Z0-9-]{1,12}$/;
+
+/** O endereço da conexão com o mapa da sala (P218): a Cidade Neon é o padrão e não leva `mapa`; os outros pedem a sala própria deles no servidor. */
+export function urlComMapa(url: string, mapa: MapaOnline): string {
+  const u = new URL(url);
+  if (mapa === MAPA_PADRAO) u.searchParams.delete('mapa');
+  else u.searchParams.set('mapa', mapa);
+  return u.toString();
+}
 
 /**
  * Jogar online (M4): `/jogar/?sala=ARENA` entra na sala; `&servidor=wss://…` diz onde está o servidor (sem isso, o

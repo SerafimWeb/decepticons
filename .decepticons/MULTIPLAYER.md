@@ -241,10 +241,12 @@ Duas mensagens de tipos acima da voz (`TEXTO.ENVIAR` = 33, `TEXTO.RECEBER` = 34;
 
 | Etapa | O que entrega | O que muda no protocolo |
 |---|---|---|
-| **O1 · a sala escolhe o mapa** | Deathmatch online na Cidade Neon, no Bunker, na Praia e na Terras Raras | a sala passa a ser `código + mapa` (a conexão leva `&mapa=`); o `ArenaRoom` recebe o mapa; o cliente honra o `?mapa=` online; o link do mapa deixa de sair da sala. **Sem tipo de mensagem novo**; o mapa restrito segue pelo painel de visibilidade |
+| **O1 · a sala escolhe o mapa** ✅ (19/10) | Deathmatch online na Cidade Neon, no Bunker, na Praia e na Terras Raras | a sala passa a ser `código + mapa` (`shared/net/mapa.ts`: a conexão leva `&mapa=`, a chave interna é `CODIGO` na Cidade Neon e `CODIGO@mapa` nos outros); o `ArenaRoom` recebe o mapa e o carrega sob demanda; o cliente honra o `?mapa=` online e o link do seletor fica na sala. **Sem tipo de mensagem novo, mas `PROTOCOL_VERSION` sobe para 21** (um servidor velho ignoraria o mapa e poria o jogador na Cidade Neon enquanto o cliente monta outro chão) |
 | **O2 · Domínio online** | os cinco pontos A a E, com o dono e o progresso de cada um | um tipo de evento/estado pequeno (5 pontos) |
 | **O3 · Bandeira online (CTF)** | times, bandeiras, capturas (`ctf-plan`: simulação + online) | estado das duas bandeiras e o time no `JOIN`/roster |
 | **O4 · Sobrevivência e missões** | ondas, o chefe do rio, cabos, portas, **a multidão do 8 DE JANEIRO** | o cronograma (semente) uma vez + eventos (a ficha do 8 DE JANEIRO, § 3: a posição é função do tempo, só *morreu* e *fugiu* viajam) |
 | **O5 · campanha online** | a sequência de etapas conduzida pela sala | o índice da etapa e o resultado |
 
 **Riscos:** o servidor de produção é o PC do dono (CPU e banda): cada mapa/modo novo é uma sala a mais a 60 Hz; o painel do servidor (REGRAS, VISIBILIDADE, SALAS) precisa mostrar o mapa e o modo de cada sala; o catálogo de visibilidade (`mapa:*`, `modo:*`) hoje só filtra o cliente: um link montado à mão abre uma sala de mapa restrito (aceitável para o Deathmatch; para uma fase em desenvolvimento, o servidor deve recusar, etapa O1).
+
+**O1, o que ficou de fora (honesto):** (a) o **mural de câmeras** do Comandante ainda desenha a planta da Cidade Neon para todas as salas (`ui/cameraData.ts`: `mapa: 'arena'`): as salas dos outros mapas aparecem com a planta errada; (b) o **servidor não recusa mapa restrito** pelo painel de visibilidade (só o cliente filtra): um link montado à mão abre uma sala do mapa (custa CPU no PC do dono, não vaza nada); recusar de verdade pede identificar o Comandante na conexão; (c) o painel do servidor mostra a sala como `CODIGO@mapa` (informativo), sem coluna própria do mapa.

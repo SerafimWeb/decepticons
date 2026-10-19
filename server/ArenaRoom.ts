@@ -45,6 +45,8 @@ import { VOZ } from '../shared/net/voz';
 import { NetPilot } from './NetPilot';
 import { RelayDeVoz } from './voz';
 import { TEXTO } from '../shared/net/texto';
+import { MAPA_PADRAO, type MapaOnline } from '../shared/net/mapa';
+import { carregarMapaSeFor } from '../client/src/environment/mapasSobDemanda';
 import { RelayDeTexto } from './texto';
 
 /** O outro lado de uma conexão. A sala só manda bytes; o transporte (WebSocket) é do \`Server\`. */
@@ -110,8 +112,10 @@ export class ArenaRoom {
   private disposed = false;
 
   /** O servidor sempre passa as regras do dono; quem chama sem elas (os testes e as bancadas) fica com a sala antiga, sem limite de atacantes. */
-  static async create(code: string, regras: RegrasOnline = REGRAS_SEM_LIMITE): Promise<ArenaRoom> {
-    return new ArenaRoom(code, await PhysicsWorld.create(), regras);
+  static async create(code: string, regras: RegrasOnline = REGRAS_SEM_LIMITE, mapa: MapaOnline = MAPA_PADRAO): Promise<ArenaRoom> {
+    // Um mapa grande (a Terras Raras) é de carga sob demanda também no servidor: o código dele baixa antes de a partida ser montada (P218).
+    await carregarMapaSeFor(mapa);
+    return new ArenaRoom(code, await PhysicsWorld.create(), regras, mapa);
   }
 
   /** As regras dos bots desta sala (P199): quantos Mechs a sala usa; a dificuldade e a pressão vão direto no `BotSystem`. */
@@ -121,12 +125,13 @@ export class ArenaRoom {
     readonly code: string,
     private readonly physics: PhysicsWorld,
     regras: RegrasOnline,
+    readonly mapa: MapaOnline,
   ) {
     this.regras = regras;
     // allies: false — o roster de rede ainda não sabe descrever um aliado pros outros jogadores
     // (AUSENTE no multiplayer, ver Match.ts e STATUS_REAL.md); a Arena offline já tem aliado.
     // O pool de Mechs é sempre o cheio (3): quantos entram em campo é a regra (`aplicarRegras`); os andróides são os da regra e valem a partir desta sala.
-    this.match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, foes: { ...DEFAULT_SETTINGS, enemyMechs: 3, enemyAndroids: regras.androides }, debris: false, allies: false });
+    this.match = new Match({ physics, scene: new THREE.Scene(), particles: NO_FX, map: mapa, foes: { ...DEFAULT_SETTINGS, enemyMechs: 3, enemyAndroids: regras.androides }, debris: false, allies: false });
     this.aplicarRegras(regras);
     // Eventos para os clientes desenharem o que o servidor decidiu: cada tiro (o cliente faz o projétil visual)
     // e cada abate (lista de abates).
