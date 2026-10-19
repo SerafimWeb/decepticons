@@ -15,7 +15,7 @@
 
 **Provas:** 3 testes do texto (limpeza, formato, UTF-8 torto, grande demais), 3 do relé (remetente trocado, destinos inválidos, teto por janela), 1 com **servidor de verdade e dois jogadores** (Alfa escreve a Bravo, chega com o id e o nome certos, a lista só tem pessoas, texto sujo chega limpo, escrever a um bot não chega a ninguém), 3 das conversas e 1 do contrato do HTML e do catálogo.
 
-**Falta (R13):** **não vi a tela no navegador** (a máquina estava sem memória: só testes e tipos): o Comandante confere; **sem denúncia** e sem moderação além do teto, do tamanho e do silenciar (o chat nasce restrito por isso); telas estreitas mostram só a conversa na visita; sem som de mensagem nova; sem canal da sala inteira (só mensagem direta).
+**Falta (R13):** **não vi a tela no navegador** (a máquina estava sem memória: só testes e tipos): o Comandante confere; **sem denúncia** e sem moderação além do teto, do tamanho e do silenciar (o chat nasce restrito por isso); **os textos da visita e da lista estão só em português** (o `aria-label` da lista já tem as seis línguas; o resto fica sob `data-i18n="nao"` até o Comandante liberar `tela:chat` ao público: traduzir antes); telas estreitas mostram só a conversa na visita; sem som de mensagem nova; sem canal da sala inteira (só mensagem direta).
 
 **Onde o Comandante confere:** dois navegadores em `?sala=ARENA` (o dele com `?comandante=1`, o outro com outro nome): pausa → REDE → o nome do outro → o Hangar dele, a conversa ao lado. Para o outro jogador também ver: SERVIDOR → VISIBILIDADE → `tela:chat` → PÚBLICO.
 
