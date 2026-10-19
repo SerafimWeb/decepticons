@@ -1,6 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-simd-compat';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
+import { ACEITE_ATUAL, CONTA_CRIAR_PATH } from '../shared/net/auth';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION } from '../shared/net/constants';
 import { decodeWelcome, encodeJoin, encodeLeave, messageType, MSG } from '../shared/net/messages';
@@ -11,6 +12,8 @@ import { startServer, type GameServer } from './Server';
 const BUILD = 'v1.vector09.plasma-0.rockets-0';
 const SDP = 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\ns=-\r\n';
 const w = new Writer();
+/** A autorização da voz que o servidor entrega à sala (P211): aqui, o token "adulto" vale e o resto não. */
+const adulto = (token: string) => token === 'adulto';
 const join = (name: string) => new Uint8Array(encodeJoin(w, { protocol: PROTOCOL_VERSION, name, build: BUILD }));
 
 class FakePeer implements Peer {
@@ -38,12 +41,13 @@ describe('voz: a sala repassa a sinalização (P205)', () => {
 
   it('dois jogadores entram na voz, trocam oferta e resposta, e quem sai some da lista', async () => {
     const sala = await ArenaRoom.create('VOZ1');
+    sala.definirAutorizacaoDeVoz(adulto);
     const a = new FakePeer();
     const b = new FakePeer();
     sala.receive(a, join('Alfa'));
     sala.receive(b, join('Bravo'));
-    sala.receive(a, codificarPronto(true));
-    sala.receive(b, codificarPronto(true));
+    sala.receive(a, codificarPronto(true, 'adulto'));
+    sala.receive(b, codificarPronto(true, 'adulto'));
     expect(a.ultimaLista()).toEqual([a.id, b.id]);
     expect(b.ultimaLista()).toEqual([a.id, b.id]);
 
@@ -59,11 +63,12 @@ describe('voz: a sala repassa a sinalização (P205)', () => {
 
   it('quem ainda não entrou na sala (sem JOIN) não entra na voz nem manda sinal', async () => {
     const sala = await ArenaRoom.create('VOZ2');
+    sala.definirAutorizacaoDeVoz(adulto);
     const a = new FakePeer();
     const intruso = new FakePeer();
     sala.receive(a, join('Alfa'));
-    sala.receive(a, codificarPronto(true));
-    sala.receive(intruso, codificarPronto(true));
+    sala.receive(a, codificarPronto(true, 'adulto'));
+    sala.receive(intruso, codificarPronto(true, 'adulto'));
     sala.receive(intruso, codificarSinal({ id: a.id, tipo: 'oferta', sdp: SDP }));
     expect(intruso.got).toHaveLength(0);
     expect(a.ultimaLista()).toEqual([a.id]);
@@ -71,21 +76,52 @@ describe('voz: a sala repassa a sinalização (P205)', () => {
     sala.dispose();
   });
 
+  it('sala sem autorização de voz (padrão) e jogador de token de menor: ninguém entra, ninguém recebe lista (P211)', async () => {
+    const sem = await ArenaRoom.create('VOZ3');
+    const a = new FakePeer();
+    sem.receive(a, join('Alfa'));
+    sem.receive(a, codificarPronto(true, 'adulto'));
+    expect(a.of(VOZ.LISTA)).toHaveLength(0);
+    sem.dispose();
+    const sala = await ArenaRoom.create('VOZ4');
+    sala.definirAutorizacaoDeVoz(adulto);
+    const adultoPeer = new FakePeer();
+    const menor = new FakePeer();
+    sala.receive(adultoPeer, join('Adulto'));
+    sala.receive(menor, join('Menor'));
+    sala.receive(adultoPeer, codificarPronto(true, 'adulto'));
+    sala.receive(menor, codificarPronto(true, 'menor'));
+    expect(adultoPeer.ultimaLista()).toEqual([adultoPeer.id]);
+    expect(menor.of(VOZ.LISTA)).toHaveLength(0);
+    sala.receive(menor, codificarSinal({ id: adultoPeer.id, tipo: 'oferta', sdp: SDP }));
+    expect(adultoPeer.of(VOZ.SINAL)).toHaveLength(0);
+    sala.dispose();
+  });
+
   it('a voz é por sala: o sinal não atravessa para outra sala', async () => {
     const s1 = await ArenaRoom.create('VOZA');
     const s2 = await ArenaRoom.create('VOZB');
+    s1.definirAutorizacaoDeVoz(adulto);
+    s2.definirAutorizacaoDeVoz(adulto);
     const a = new FakePeer();
     const b = new FakePeer();
     s1.receive(a, join('Alfa'));
     s2.receive(b, join('Bravo'));
-    s1.receive(a, codificarPronto(true));
-    s2.receive(b, codificarPronto(true));
+    s1.receive(a, codificarPronto(true, 'adulto'));
+    s2.receive(b, codificarPronto(true, 'adulto'));
     s1.receive(a, codificarSinal({ id: b.id, tipo: 'oferta', sdp: SDP }));
     expect(b.of(VOZ.SINAL)).toHaveLength(0);
     s1.dispose();
     s2.dispose();
   });
 });
+
+/** Uma conta de verdade pelo HTTP do servidor, já com o mês e o ano de nascimento (P211): devolve o token da sessão que o `PRONTO` da voz leva. */
+async function tokenDeConta(porta: number, email: string, nascimento: string | null): Promise<string> {
+  const corpo = { email, senha: 'senhasegura', aceite: ACEITE_ATUAL, ...(nascimento ? { nascimento } : {}) };
+  const r = await fetch(`http://127.0.0.1:${porta}${CONTA_CRIAR_PATH}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corpo) });
+  return ((await r.json()) as { token: string }).token;
+}
 
 describe('voz: pela rede de verdade, com o teto de tamanho (P205)', () => {
   let server: GameServer;
@@ -128,8 +164,8 @@ describe('voz: pela rede de verdade, com o teto de tamanho (P205)', () => {
     await b.ate(() => b.de(MSG.WELCOME).length > 0);
     const idA = decodeWelcome(a.de(MSG.WELCOME)[0]!)!.id;
     const idB = decodeWelcome(b.de(MSG.WELCOME)[0]!)!.id;
-    a.ws.send(codificarPronto(true));
-    b.ws.send(codificarPronto(true));
+    a.ws.send(codificarPronto(true, await tokenDeConta(server.port, 'a@voz.com', '1990-01')));
+    b.ws.send(codificarPronto(true, await tokenDeConta(server.port, 'b@voz.com', '1985-06')));
     await b.ate(() => b.de(VOZ.LISTA).length > 0 && lerLista(b.de(VOZ.LISTA).at(-1)!)!.length === 2);
 
     const sdp = `${SDP}${'a=candidate:1 1 udp 2113937151 192.168.0.10 50000 typ host\r\n'.repeat(40)}`;

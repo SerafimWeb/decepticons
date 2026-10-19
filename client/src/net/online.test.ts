@@ -15,6 +15,7 @@ import { REGRAS_SEM_LIMITE } from '../../../shared/regras';
 import { onlineConfig } from './onlineConfig';
 import { OnlineSession, RECONEXAO_PADRAO_MS, rotariesOf, type OnlineSessionOptions, type OnlineStatus } from './OnlineSession';
 import { messageType } from '../../../shared/net/messages';
+import { ACEITE_ATUAL, CONTA_CRIAR_PATH } from '../../../shared/net/auth';
 import { codificarPronto, codificarSinal, lerLista, lerSinal, VOZ } from '../../../shared/net/voz';
 
 const NO_FX = { burst: () => {} } as unknown as ParticleSystem;
@@ -434,8 +435,13 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
         await play([a, b], 100);
       }
     };
-    a.session.enviarVoz(codificarPronto(true));
-    b.session.enviarVoz(codificarPronto(true));
+    // A voz é só de conta de maior de idade (P211): duas contas de verdade, com a idade informada, entregam o token da sessão no PRONTO.
+    const token = async (email: string) => {
+      const r = await fetch(`http://127.0.0.1:${server.port}${CONTA_CRIAR_PATH}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email, senha: 'senhasegura', aceite: ACEITE_ATUAL, nascimento: '1990-01' }) });
+      return ((await r.json()) as { token: string }).token;
+    };
+    a.session.enviarVoz(codificarPronto(true, await token('a@sessao.com')));
+    b.session.enviarVoz(codificarPronto(true, await token('b@sessao.com')));
     const listaCom = (i: number) => voz[i]!.filter((m) => messageType(m) === VOZ.LISTA).map((m) => lerLista(m)!).some((ids) => ids.length === 2);
     await ate(() => listaCom(0) && listaCom(1));
     const sdp = 'v=0\r\no=- 1 2 IN IP4 127.0.0.1\r\ns=-\r\n';

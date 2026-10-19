@@ -5,7 +5,7 @@ import { ROOM_SIZE } from './constants';
  * banda nem CPU com voz. Três mensagens, de tipos acima dos do jogo (`MSG` vai até 17), sem subir o `PROTOCOL_VERSION`: servidor velho ignora (a sala descarta o que não conhece) e
  * cliente velho nunca recebe (só quem mandou `PRONTO` ganha `LISTA` e `SINAL`).
  *
- * - `PRONTO` (cliente → servidor): `[tipo][ligado 0|1]` — entrei na voz, ou saí.
+ * - `PRONTO` (cliente → servidor): `[tipo][ligado 0|1][token da sessão, UTF-8]` — entrei na voz, ou saí. **O token da sessão da conta vai junto ao entrar (P211): o servidor só admite quem tem conta de maior de idade** (`server/voz.ts`); sem token, ou de menor, ou de conta sem idade, ou vencido, o `PRONTO` é ignorado (o jogador não recebe `LISTA` nem `SINAL`: nem ouve nem é ouvido).
  * - `LISTA` (servidor → quem está na voz): `[tipo][n][id × n]` — quem está na voz agora; é a lista, não o evento: quem chega depois recebe o mesmo.
  * - `SINAL` (os dois sentidos): `[tipo][id][oferta 0|resposta 1][SDP em UTF-8]` — a oferta ou a resposta da conexão. No envio, `id` é o **destino**; o servidor troca por
  *   **quem mandou** antes de repassar (ninguém se passa por outro: o remetente nunca é o que o cliente diz). O SDP já leva os endereços (sem "trickle"): uma oferta e uma resposta por par.
@@ -29,14 +29,26 @@ export interface Sinal {
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
-export function codificarPronto(ligado: boolean): Uint8Array {
-  return Uint8Array.of(VOZ.PRONTO, ligado ? 1 : 0);
+/** O teto do token na mensagem (o servidor aceita sessão de 8 a 200 caracteres). */
+export const VOZ_TOKEN_MAX = 200;
+
+export function codificarPronto(ligado: boolean, token = ''): Uint8Array {
+  const t = ligado ? encoder.encode(token).subarray(0, VOZ_TOKEN_MAX) : new Uint8Array(0);
+  const out = new Uint8Array(2 + t.length);
+  out[0] = VOZ.PRONTO;
+  out[1] = ligado ? 1 : 0;
+  out.set(t, 2);
+  return out;
 }
 
-/** `true` entrou, `false` saiu; `null` se a mensagem não vale. */
-export function lerPronto(bytes: Uint8Array): boolean | null {
-  if (bytes.length !== 2 || bytes[0] !== VOZ.PRONTO || bytes[1]! > 1) return null;
-  return bytes[1] === 1;
+/** `ligado`: entrou (`true`) ou saiu (`false`); `token`: a sessão da conta (vazio ao sair, ou de um cliente velho). `null` se a mensagem não vale. */
+export function lerPronto(bytes: Uint8Array): { ligado: boolean; token: string } | null {
+  if (bytes.length < 2 || bytes.length > 2 + VOZ_TOKEN_MAX || bytes[0] !== VOZ.PRONTO || bytes[1]! > 1) return null;
+  try {
+    return { ligado: bytes[1] === 1, token: decoder.decode(bytes.subarray(2)) };
+  } catch {
+    return null;
+  }
 }
 
 export function codificarLista(ids: readonly number[]): Uint8Array {

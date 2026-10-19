@@ -417,6 +417,8 @@
           <div class="settings-section" data-tab="graficos" data-func="tela:voz">
             <h3>CHAT DE VOZ</h3>
             <p class="setting-hint">Fale com os outros jogadores da sala (só online). A voz vai direto de um navegador ao outro, sem passar pelo servidor: quem está perto soa mais alto e do lado em que está.</p>
+            <p id="voz-elegibilidade" class="setting-hint voz-aviso"></p>
+            <div id="voz-controles" hidden>
             <div class="setting-row">
               <label for="setting-voz-on">Conversar por voz</label>
               <div class="setting-ctrl">
@@ -455,6 +457,7 @@
               <div class="voz-nivel" role="meter" aria-label="Nível do microfone"><i id="voz-nivel-barra"></i></div>
               <p id="voz-teste-status" class="setting-hint"></p>
               <label class="voz-eco"><input type="checkbox" id="voz-ouvir" /> Ouvir a minha voz (use fones: sem eles dá microfonia)</label>
+            </div>
             </div>
           </div>
 

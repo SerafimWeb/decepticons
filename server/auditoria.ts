@@ -17,7 +17,7 @@ export const AUDITORIA_PASTA = 'auditoria';
 export const AUDITORIA_DIAS = 400;
 const ANEL = 200;
 
-export const ACOES = ['conta_criada', 'conta_apagada', 'dados_baixados', 'medicao_alterada', 'admin_config', 'admin_acesso', 'admin_promovido', 'admin_rebaixado', 'servidor_reiniciado', 'senha_recuperacao_pedida', 'senha_redefinida', 'link_senha_gerado'] as const;
+export const ACOES = ['conta_criada', 'conta_apagada', 'dados_baixados', 'medicao_alterada', 'nascimento_informado', 'admin_config', 'admin_acesso', 'admin_promovido', 'admin_rebaixado', 'servidor_reiniciado', 'senha_recuperacao_pedida', 'senha_redefinida', 'link_senha_gerado'] as const;
 export type Acao = (typeof ACOES)[number];
 const ACOES_SET: ReadonlySet<string> = new Set(ACOES);
 

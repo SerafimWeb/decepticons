@@ -1,4 +1,4 @@
-import { validarEmail, validarSenha } from '../../../shared/net/auth';
+import { type IdadeDaConta, validarEmail, validarNascimento, validarSenha } from '../../../shared/net/auth';
 
 /**
  * LoginPanel — Interface de Autenticação (P33)
@@ -12,6 +12,7 @@ import { validarEmail, validarSenha } from '../../../shared/net/auth';
  * - Exibição de erros legíveis do servidor em português
  * - Estado "logado como <email>" com botão "Sair"
  * - Criar conta exige as duas caixas (política de privacidade lida; maior de 18 anos ou com autorização de um responsável): o servidor também recusa sem elas (P192, LGPD)
+ * - Criar conta pergunta o mês e o ano de nascimento (P211): o chat de voz é só de maior de 18 anos. Quem tem conta sem idade informada vê o mesmo par de campos logado, e informa uma vez
  * - Logado: "Meus dados" (LGPD art. 18): ligar/desligar o registro da atividade, baixar os dados e apagar a conta (com a senha de novo)
  * - NUNCA exibe a senha em logs
  * - NUNCA coloca dois botões de ação primária lado a lado (layout vertical único)
@@ -35,11 +36,16 @@ export interface LoginPanelEstado {
   confirmandoApagar: boolean;
   /** Uma frase de confirmação ("Dados baixados."), em verde, acima das ações. */
   aviso: string | null;
+  /** A faixa de idade da conta logada (P211): `sem-idade` mostra o pedido de mês e ano; `menor` mostra o aviso de que não há voz. */
+  idade: IdadeDaConta;
 }
 
 export interface LoginPanelOptions {
   onEntrar?: (email: string, senha: string) => Promise<void> | void;
-  onCriar?: (email: string, senha: string) => Promise<void> | void;
+  /** `nascimento`: `AAAA-MM`, já conferido (o botão só liga com o mês e o ano escolhidos). */
+  onCriar?: (email: string, senha: string, nascimento: string) => Promise<void> | void;
+  /** A conta logada sem idade informa o mês e o ano de nascimento (P211): `AAAA-MM`. */
+  onNascimento?: (nascimento: string) => Promise<void> | void;
   /** "Esqueci a senha" (P206): pede o link de redefinição para este e-mail. */
   onEsqueci?: (email: string) => Promise<void> | void;
   onSair?: () => Promise<void> | void;
@@ -65,6 +71,9 @@ export class LoginPanel {
   private aceitePolitica = false;
   private aceiteIdade = false;
   private senhaApagar = '';
+  /** O mês (`1` a `12`) e o ano escolhidos nas listas (texto vazio = nada escolhido). */
+  private nascMes = '';
+  private nascAno = '';
 
   constructor(options: LoginPanelOptions = {}, parent: HTMLElement | null = null) {
     this.options = options;
@@ -77,6 +86,7 @@ export class LoginPanel {
       medir: true,
       confirmandoApagar: false,
       aviso: null,
+      idade: 'sem-idade',
       ...options.estadoInicial,
     };
     if (this.estado.email) {
@@ -138,6 +148,11 @@ export class LoginPanel {
     if (medir !== this.estado.medir) this.setEstado({ medir });
   }
 
+  /** A sessão diz a faixa de idade da conta (só redesenha quando mudou). */
+  setIdade(idade: IdadeDaConta): void {
+    if (idade !== this.estado.idade) this.setEstado({ idade, erro: null });
+  }
+
   /** Uma frase de confirmação acima das ações (`null` tira). */
   setAviso(aviso: string | null): void {
     this.setEstado({ aviso });
@@ -149,6 +164,8 @@ export class LoginPanel {
     this.senhaApagar = '';
     this.aceitePolitica = false;
     this.aceiteIdade = false;
+    this.nascMes = '';
+    this.nascAno = '';
     this.emailTocado = false;
     this.senhaTocada = false;
     this.setEstado({ logado: false, carregando: false, erro: null, confirmandoApagar: false });
@@ -231,6 +248,8 @@ export class LoginPanel {
         ${this.estado.erro ? `<div class="login-error-banner" role="alert">${this._escapeHtml(this.estado.erro)}</div>` : ''}
         ${this.estado.aviso ? `<div class="login-aviso" role="status">${this._escapeHtml(this.estado.aviso)}</div>` : ''}
 
+        ${this._blocoDaIdade()}
+
         <div class="login-header-tag">// MEUS DADOS</div>
         <label class="login-check">
           <input type="checkbox" id="login-check-medir" ${this.estado.medir ? 'checked' : ''} ${carregando ? 'disabled' : ''} />
@@ -261,6 +280,15 @@ export class LoginPanel {
       const ativa = !!(e.target as HTMLInputElement | null)?.checked;
       this.estado = { ...this.estado, medir: ativa };
       void this.options.onMedicao?.(ativa);
+    });
+    this._ligarCamposDeNascimento(() => {
+      const botao = q<HTMLButtonElement>('btn-login-nascimento');
+      if (botao) botao.disabled = this._nascimento() === null || this.estado.carregando;
+    });
+    q('btn-login-nascimento')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const nasc = this._nascimento();
+      if (nasc !== null && !this.estado.carregando) void this.options.onNascimento?.(nasc);
     });
     q('btn-login-baixar')?.addEventListener('click', (e) => {
       e.preventDefault();
@@ -370,6 +398,11 @@ export class LoginPanel {
           </div>
 
           ${modoEntrar ? '' : `
+          <div class="login-field">
+            <label for="login-nasc-mes">NASCIMENTO · MÊS E ANO</label>
+            ${this._camposDeNascimento(this.estado.carregando)}
+            <p class="login-hint">Só o mês e o ano. O chat de voz é só para maiores de 18 anos; quem tem menos joga normalmente, sem a voz.</p>
+          </div>
           <div class="login-consent">
             <label class="login-check">
               <input type="checkbox" id="login-check-politica" ${this.aceitePolitica ? 'checked' : ''} ${this.estado.carregando ? 'disabled' : ''} />
@@ -427,6 +460,7 @@ export class LoginPanel {
       this.aceiteIdade = !!checkIdade.checked;
       this._atualizarEstadoSubmit();
     });
+    this._ligarCamposDeNascimento(() => this._atualizarEstadoSubmit());
 
     if (tabEntrar) {
       tabEntrar.addEventListener('click', (e) => {
@@ -491,7 +525,7 @@ export class LoginPanel {
         if (this.estado.modo === 'entrar' && this.options.onEntrar) {
           void this.options.onEntrar(email, senha);
         } else if (this.estado.modo === 'criar' && this.options.onCriar) {
-          void this.options.onCriar(email, senha);
+          void this.options.onCriar(email, senha, this._nascimento()!);
         }
       });
     }
@@ -538,9 +572,52 @@ export class LoginPanel {
     }
   }
 
-  /** As duas caixas do criar conta estão marcadas? (O servidor recusa sem elas: isto só evita o clique que não leva a nada.) */
+  /** O criar conta está completo: as duas caixas marcadas e o mês e o ano escolhidos? (O servidor recusa sem o aceite: isto só evita o clique que não leva a nada.) */
   private _aceitou(): boolean {
-    return this.aceitePolitica && this.aceiteIdade;
+    return this.aceitePolitica && this.aceiteIdade && this._nascimento() !== null;
+  }
+
+  /** O `AAAA-MM` do que está escolhido nas listas, ou `null` se falta o mês, o ano, ou não vale. */
+  private _nascimento(): string | null {
+    if (!this.nascMes || !this.nascAno) return null;
+    return validarNascimento(`${this.nascAno}-${this.nascMes.padStart(2, '0')}`);
+  }
+
+  /** As duas listas, mês e ano (números: servem a toda língua). O ano vai do atual até 100 atrás. */
+  private _camposDeNascimento(desligado: boolean): string {
+    const meses = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}" ${this.nascMes === String(i + 1) ? 'selected' : ''}>${String(i + 1).padStart(2, '0')}</option>`).join('');
+    const atual = new Date().getFullYear();
+    const anos = Array.from({ length: 101 }, (_, i) => `<option value="${atual - i}" ${this.nascAno === String(atual - i) ? 'selected' : ''}>${atual - i}</option>`).join('');
+    return `<div class="login-nasc">
+              <select id="login-nasc-mes" class="login-input" aria-label="MÊS" ${desligado ? 'disabled' : ''}><option value="">MÊS</option>${meses}</select>
+              <select id="login-nasc-ano" class="login-input" aria-label="ANO" ${desligado ? 'disabled' : ''}><option value="">ANO</option>${anos}</select>
+            </div>`;
+  }
+
+  private _ligarCamposDeNascimento(aoMudar: () => void): void {
+    const mes = this.containerEl?.querySelector<HTMLSelectElement>('#login-nasc-mes');
+    const ano = this.containerEl?.querySelector<HTMLSelectElement>('#login-nasc-ano');
+    mes?.addEventListener('change', () => {
+      this.nascMes = mes.value;
+      aoMudar();
+    });
+    ano?.addEventListener('change', () => {
+      this.nascAno = ano.value;
+      aoMudar();
+    });
+  }
+
+  /** Logado: `sem-idade` pede o mês e o ano (uma vez); `menor` explica que não há voz; `adulto` não mostra nada. */
+  private _blocoDaIdade(): string {
+    const { idade, carregando } = this.estado;
+    if (idade === 'menor') return '<p class="login-hint login-idade">Conta de menor de 18 anos: sem chat de voz (nem o microfone, nem a voz dos outros jogadores). O áudio do jogo segue normal.</p>';
+    if (idade !== 'sem-idade') return '';
+    return `<div class="login-header-tag">// IDADE</div>
+        <p class="login-hint">Informe o mês e o ano de nascimento para liberar o chat de voz. Quem tem menos de 18 anos joga sem ele. Só dá para informar uma vez.</p>
+        <div class="login-field">
+          ${this._camposDeNascimento(carregando)}
+        </div>
+        <button type="button" class="btn-login-action btn-login-secondary" id="btn-login-nascimento" ${this._nascimento() === null || carregando ? 'disabled' : ''}>GUARDAR A IDADE</button>`;
   }
 
   private _escapeHtml(str: string): string {

@@ -251,10 +251,17 @@ describe('LoginPanel — Autenticação de Piloto (P33)', () => {
     politica.dispatchEvent(new Event('change'));
     idade.checked = true;
     idade.dispatchEvent(new Event('change'));
+    // e o mês e o ano de nascimento (P211)
+    const mes = parent.querySelector('#login-nasc-mes')!;
+    mes.value = '1';
+    mes.dispatchEvent(new Event('change'));
+    const ano = parent.querySelector('#login-nasc-ano')!;
+    ano.value = '1990';
+    ano.dispatchEvent(new Event('change'));
 
     form.dispatchEvent(new Event('submit'));
 
-    expect(onCriar).toHaveBeenCalledWith('novo@cybermech.com', 'minhasenha123');
+    expect(onCriar).toHaveBeenCalledWith('novo@cybermech.com', 'minhasenha123', '1990-01');
   });
 
   it('exibe estado de carregando e desabilita o botão submit', () => {
@@ -339,6 +346,14 @@ describe('LoginPanel — LGPD (P192): aceite ao criar e "Meus dados" na conta', 
     caixa.checked = valor;
     caixa.dispatchEvent(new Event('change'));
   };
+  const nascer = (mes: string, ano: string) => {
+    const m = parent.querySelector('#login-nasc-mes')!;
+    m.value = mes;
+    m.dispatchEvent(new Event('change'));
+    const a = parent.querySelector('#login-nasc-ano')!;
+    a.value = ano;
+    a.dispatchEvent(new Event('change'));
+  };
   const preencher = () => {
     const email = parent.querySelector('#login-input-email')!;
     email.value = 'novo@cybermech.com';
@@ -359,12 +374,18 @@ describe('LoginPanel — LGPD (P192): aceite ao criar e "Meus dados" na conta', 
     marcar('#login-check-politica', true);
     expect(parent.querySelector('#btn-login-submit')!.disabled, 'só a política: ainda não').toBe(true);
     marcar('#login-check-idade', true);
+    expect(parent.querySelector('#btn-login-submit')!.disabled, 'as duas caixas, mas sem o mês e o ano: ainda não (P211)').toBe(true);
+    nascer('1', '');
+    expect(parent.querySelector('#btn-login-submit')!.disabled, 'só o mês: ainda não').toBe(true);
+    nascer('', '1990');
+    expect(parent.querySelector('#btn-login-submit')!.disabled, 'só o ano: ainda não').toBe(true);
+    nascer('1', '1990');
     expect(parent.querySelector('#btn-login-submit')!.disabled).toBe(false);
     marcar('#login-check-politica', false);
     expect(parent.querySelector('#btn-login-submit')!.disabled, 'desmarcar desliga de novo').toBe(true);
     marcar('#login-check-politica', true);
     parent.querySelector('#login-form-element')!.dispatchEvent(new Event('submit'));
-    expect(onCriar).toHaveBeenCalledWith('novo@cybermech.com', 'minhasenha123');
+    expect(onCriar).toHaveBeenCalledWith('novo@cybermech.com', 'minhasenha123', '1990-01');
   });
 
   it('entrar não pede o aceite (quem já tem conta já aceitou), e o link da política aponta para o site', () => {
@@ -396,7 +417,70 @@ describe('LoginPanel — LGPD (P192): aceite ao criar e "Meus dados" na conta', 
     expect(parent.querySelector('#login-check-idade')!.checked).toBe(false);
   });
 
-  it('logado: o bloco "Meus dados" mostra a escolha da medição e avisa quando ela muda', () => {
+  it('criar conta: o mês vai de 01 a 12 e o ano do atual até 100 atrás; o texto explica que a voz é só para maiores de 18 anos (P211)', () => {
+    const panel = new LoginPanel({}, parent as any);
+    panel.setEstado({ modo: 'criar' });
+    const html = (panel as any).containerEl.innerHTML as string;
+    expect(html).toContain('id="login-nasc-mes"');
+    expect(html).toContain('id="login-nasc-ano"');
+    expect(html).toContain('<option value="12" >12</option>');
+    expect(html).not.toContain('<option value="13"');
+    const atual = new Date().getFullYear();
+    expect(html).toContain(`<option value="${atual}" >${atual}</option>`);
+    expect(html).toContain(`<option value="${atual - 100}" >${atual - 100}</option>`);
+    expect(html).not.toContain(`<option value="${atual - 101}"`);
+    expect(html).toContain('só para maiores de 18 anos');
+  });
+
+  it('a escolha do mês e do ano sobrevive a um redesenho do painel (a mensagem de erro do servidor não apaga o que a pessoa escolheu)', () => {
+    const panel = new LoginPanel({}, parent as any);
+    panel.setEstado({ modo: 'criar' });
+    nascer('3', '2001');
+    panel.setErro('este e-mail já tem conta');
+    const html = (panel as any).containerEl.innerHTML as string;
+    expect(html).toContain('<option value="3" selected>03</option>');
+    expect(html).toContain('<option value="2001" selected>2001</option>');
+  });
+
+  it('sair da tela esquece o mês e o ano escolhidos', () => {
+    const panel = new LoginPanel({}, parent as any);
+    panel.setEstado({ modo: 'criar' });
+    nascer('3', '2001');
+    panel.setLogado('a@b.com');
+    panel.setDeslogado();
+    panel.setEstado({ modo: 'criar' });
+    expect((panel as any).containerEl.innerHTML).not.toMatch(/<option[^>]*\sselected>/);
+  });
+
+  it('logado sem idade informada: pede o mês e o ano, o botão só liga com os dois, e guardar leva o AAAA-MM', () => {
+    const onNascimento = vi.fn();
+    const panel = new LoginPanel({ onNascimento }, parent as any);
+    panel.setLogado('a@b.com');
+    expect((panel as any).containerEl.innerHTML).toContain('Informe o mês e o ano de nascimento');
+    const botao = () => parent.querySelector('#btn-login-nascimento')!;
+    expect(botao().disabled).toBe(true);
+    nascer('3', '2015');
+    expect(botao().disabled).toBe(false);
+    botao().click();
+    expect(onNascimento).toHaveBeenCalledWith('2015-03');
+  });
+
+  it('logado: a faixa de idade decide o bloco: sem idade pede, adulto não mostra nada, menor explica que não há voz', () => {
+    const panel = new LoginPanel({}, parent as any);
+    panel.setLogado('a@b.com');
+    const html = () => (panel as any).containerEl.innerHTML as string;
+    expect(parent.querySelector('#btn-login-nascimento')).not.toBeNull();
+    panel.setIdade('adulto');
+    expect(parent.querySelector('#btn-login-nascimento')).toBeNull();
+    expect(html()).not.toContain('Conta de menor');
+    expect(html()).not.toContain('// IDADE');
+    panel.setIdade('menor');
+    expect(parent.querySelector('#btn-login-nascimento')).toBeNull();
+    expect(html()).toContain('Conta de menor de 18 anos: sem chat de voz');
+    expect(html()).toContain('O áudio do jogo segue normal');
+  });
+
+  it('logado: "Meus dados" mostra a escolha da medição e avisa quando ela muda', () => {
     const onMedicao = vi.fn();
     const panel = new LoginPanel({ onMedicao }, parent as any);
     panel.setLogado('a@b.com');

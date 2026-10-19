@@ -9,11 +9,13 @@ import {
   CONTA_ESQUECI_PATH,
   CONTA_EU_PATH,
   CONTA_MEDICAO_PATH,
+  CONTA_NASCIMENTO_PATH,
   CONTA_PROGRESSO_PATH,
   CONTA_SAIR_PATH,
   CONFIG_PATH,
   ADMIN_CONFIG_PATH,
   type ContaResposta,
+  type IdadeDaConta,
   type ProgressoPiloto,
   SESSAO_HEADER,
   validarProgresso,
@@ -29,6 +31,11 @@ import {
  */
 export type ContaErro = { erro: string };
 
+/** A faixa que o servidor mandou; qualquer outra coisa (servidor velho, resposta estranha) é "sem idade": o caminho que não abre a voz. */
+function lerIdade(x: unknown): IdadeDaConta {
+  return x === 'adulto' || x === 'menor' ? x : 'sem-idade';
+}
+
 export class ContaCliente {
   private readonly base: string | null;
 
@@ -38,9 +45,9 @@ export class ContaCliente {
     this.base = url ? url.replace(/\/$/, '') : null;
   }
 
-  /** Criar a conta já manda o aceite da política: o formulário só chama isto com as duas caixas marcadas (o servidor recusa sem elas). */
-  criar(email: string, senha: string): Promise<ContaResposta | ContaErro> {
-    return this.postCredenciais(CONTA_CRIAR_PATH, email, senha, ACEITE_ATUAL);
+  /** Criar a conta já manda o aceite da política e o mês e o ano de nascimento (`AAAA-MM`, P211): o formulário só chama isto com as duas caixas marcadas e a idade escolhida (o servidor recusa sem o aceite). */
+  criar(email: string, senha: string, nascimento?: string): Promise<ContaResposta | ContaErro> {
+    return this.postCredenciais(CONTA_CRIAR_PATH, email, senha, ACEITE_ATUAL, nascimento);
   }
 
   entrar(email: string, senha: string): Promise<ContaResposta | ContaErro> {
@@ -80,13 +87,13 @@ export class ContaCliente {
 
   /** Confere se o token ainda vale, e devolve o e-mail (e se é admin) se sim. `null` = sem sessão (token ruim, expirado, ou
    * sem servidor) — nunca lança. */
-  async eu(token: string): Promise<{ email: string; is_admin: boolean; medir: boolean } | null> {
+  async eu(token: string): Promise<{ email: string; is_admin: boolean; medir: boolean; idade: IdadeDaConta } | null> {
     if (!this.base || !token) return null;
     try {
       const res = await fetch(this.base + CONTA_EU_PATH, { headers: { [SESSAO_HEADER]: token }, mode: 'cors', cache: 'no-store' });
       if (!res.ok) return null;
       const dados = await res.json();
-      return typeof dados?.email === 'string' ? { email: dados.email, is_admin: dados.is_admin === true, medir: dados.medir !== false } : null;
+      return typeof dados?.email === 'string' ? { email: dados.email, is_admin: dados.is_admin === true, medir: dados.medir !== false, idade: lerIdade(dados.idade) } : null;
     } catch {
       return null;
     }
@@ -139,6 +146,26 @@ export class ContaCliente {
       return dados && typeof dados.ativa === 'boolean' ? dados.ativa : null;
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * Informa o mês e o ano de nascimento (`AAAA-MM`) de uma conta que ainda não tem (P211): uma vez só, o servidor não deixa mudar. Devolve a faixa que ele guardou, ou a mensagem para a tela. Nunca lança.
+   */
+  async nascimento(token: string, nascimento: string): Promise<{ idade: IdadeDaConta } | ContaErro> {
+    if (!this.base || !token) return { erro: 'sem servidor' };
+    try {
+      const res = await fetch(this.base + CONTA_NASCIMENTO_PATH, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', [SESSAO_HEADER]: token },
+        body: JSON.stringify({ nascimento }),
+        mode: 'cors',
+      });
+      const dados = await res.json().catch(() => null);
+      if (!res.ok) return { erro: (dados && typeof dados.erro === 'string' && dados.erro) || 'não deu para guardar' };
+      return { idade: lerIdade(dados?.idade) };
+    } catch {
+      return { erro: 'servidor fora do ar' };
     }
   }
 
@@ -206,18 +233,18 @@ export class ContaCliente {
     }
   }
 
-  private async postCredenciais(path: string, email: string, senha: string, aceite?: AceiteDaPolitica): Promise<ContaResposta | ContaErro> {
+  private async postCredenciais(path: string, email: string, senha: string, aceite?: AceiteDaPolitica, nascimento?: string): Promise<ContaResposta | ContaErro> {
     if (!this.base) return { erro: 'sem servidor' };
     try {
       const res = await fetch(this.base + path, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(aceite ? { email, senha, aceite } : { email, senha }),
+        body: JSON.stringify(aceite ? (nascimento ? { email, senha, aceite, nascimento } : { email, senha, aceite }) : { email, senha }),
         mode: 'cors',
       });
       const dados = await res.json().catch(() => null);
       if (!res.ok) return { erro: (dados && typeof dados.erro === 'string' && dados.erro) || 'não deu para completar' };
-      if (dados && typeof dados.token === 'string' && typeof dados.email === 'string') return { token: dados.token, email: dados.email, is_admin: dados.is_admin === true, medir: dados.medir !== false };
+      if (dados && typeof dados.token === 'string' && typeof dados.email === 'string') return { token: dados.token, email: dados.email, is_admin: dados.is_admin === true, medir: dados.medir !== false, idade: lerIdade(dados.idade) };
       return { erro: 'resposta inesperada do servidor' };
     } catch {
       return { erro: 'servidor fora do ar' };
