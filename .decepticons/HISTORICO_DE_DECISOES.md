@@ -13,6 +13,17 @@
 5. **Provado contra um servidor SMTP de mentira de verdade (um socket que fala o protocolo)**, não só com mocks: AUTH PLAIN e LOGIN, texto e HTML em japonês/russo/espanhol chegam inteiros, senha recusada, destinatário recusado, servidor mudo, porta fechada, e injeção de cabeçalho (destinatário com quebra de linha ou vírgula nem abre conexão; assunto com quebra vira texto). **O que não está provado: a Hostinger de verdade** (falta a caixa e a senha, que são do Comandante).
 6. **A política publicada passou a citar a Hostinger no lugar do Resend** (o e-mail de quem pede "esqueci a senha" é entregue por ela): mesmo conjunto de dados, só o nome do prestador; por isso a `POLITICA_VERSAO` não mudou. Se o Resend entrar um dia, o texto muda junto.
 
+## [2026-10-19] O chat de texto é mensagem direta, repassada pelo servidor sem guardar nada, e nasce restrito (Claude, P216)
+
+**Ordem:** *"nomes dos jogadores… ver o hangar deles, fazer chat por texto com eles (sem sair do hangar)"*.
+
+**Decisões:**
+1. **Mensagem direta, não canal da sala:** o pedido é conversar com o piloto que se clicou; um canal aberto dobra o que moderar. Dois tipos novos (33 e 34), acima da voz (30 a 32), **sem subir o protocolo**: servidor velho descarta, cliente velho nunca recebe.
+2. **O servidor só repassa:** troca o remetente pelo id de verdade (ninguém se passa por outro), manda o texto **que ele limpou** (sem controle, sem inversão de direção, 160 caracteres), só a pessoas da sala, **6 por 10 s por jogador**, e **não guarda nada** (sem histórico em disco: nada para vazar, nada para a LGPD).
+3. **Silenciar é do cliente:** sem silêncio do lado do servidor não há estado a manter; quem silencia deixa de receber, sem avisar o outro.
+4. **Nasce restrito (`tela:chat`):** a voz foi liberada ao público sem mudo nem denúncia e ficou como risco aberto (P205); o texto repete o risco, e o painel de visibilidade existe para isto: o Comandante liberta quando achar que está pronto.
+5. **A visita ao Hangar é só leitura, no mesmo Hangar:** reaproveita o galpão 3D e os painéis (nada de uma segunda tela de montagem); as ações que mudariam o rascunho ficam travadas em um ponto só (`soOlhar`). A conversa é um pedaço sob demanda (R7); o dado, minúsculo, mora no jogo para a mensagem que chega com a tela fechada não se perder.
+
 ## [2026-10-19] O teste do microfone, o "sozinho na voz" e a jukebox só com catálogo (Claude, P212 e P213)
 
 **Ordem:** o microfone testado e sem som, só maiores de 18 na voz, e a jukebox do prédio com link do YouTube, "só se não pesar".

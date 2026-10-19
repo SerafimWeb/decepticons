@@ -15,7 +15,6 @@
  "VOCÊ": "あなた",
  "IAs ATACANDO": "AI 攻撃中",
  "EM BREVE": "近日公開",
-
  "EM CONSTRUÇÃO": "建設中",
  "RADAR TÁTICO": "戦術レーダー",
  "ALIADOS": "味方",
@@ -918,5 +917,6 @@
  "Não foi possível abrir o microfone. Escolha outro aparelho e teste de novo.": "マイクを開けませんでした。別の機器を選んでもう一度テストしてください。",
  "Aparelho salvo (desconectado)": "保存した機器（未接続）",
  "Microfone {0}": "マイク {0}",
- "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "音声チャットに他の人はいません：設定でマイクをテスト"
+ "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "音声チャットに他の人はいません：設定でマイクをテスト",
+ "Pilotos na sala": "ルームのパイロット"
 }

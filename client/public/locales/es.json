@@ -15,7 +15,6 @@
  "VOCÊ": "TÚ",
  "IAs ATACANDO": "IAs ATACANDO",
  "EM BREVE": "PRÓXIMAMENTE",
-
  "EM CONSTRUÇÃO": "EN CONSTRUCCIÓN",
  "RADAR TÁTICO": "RADAR TÁCTICO",
  "ALIADOS": "ALIADOS",
@@ -918,5 +917,6 @@
  "Não foi possível abrir o microfone. Escolha outro aparelho e teste de novo.": "No se pudo abrir el micrófono. Elige otro dispositivo y prueba de nuevo.",
  "Aparelho salvo (desconectado)": "Dispositivo guardado (desconectado)",
  "Microfone {0}": "Micrófono {0}",
- "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "NADIE MÁS EN LA VOZ: PRUEBA EL MICRÓFONO EN AJUSTES"
+ "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "NADIE MÁS EN LA VOZ: PRUEBA EL MICRÓFONO EN AJUSTES",
+ "Pilotos na sala": "Pilotos en la sala"
 }

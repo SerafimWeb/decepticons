@@ -18,6 +18,24 @@
 
 **Próxima sessão começa com:** o que o `npm run email -- testar` disser; se cair no spam, o DKIM/DMARC do domínio.
 
+## OS PILOTOS NA REDE: VER O HANGAR DO OUTRO E CONVERSAR POR TEXTO SEM SAIR DO HANGAR — Claude, 19/10 (branch `claude/chat-de-texto`, P216)
+
+**O Comandante (19/10):** *"no painel REDE, quando tiver mais de um jogador online, coloque os nomes dos jogadores ali disponíveis pra podermos clicar neles, ver o hangar deles, fazer chat por texto com eles (sem sair do hangar)"*.
+
+**1. A mensagem de texto (protocolo 33 e 34, sem subir o `PROTOCOL_VERSION`):** `shared/net/texto.ts` (formato, `limparTexto`: sem controle, sem quebra de linha, sem caractere que inverte a direção, até 160 caracteres) e `server/texto.ts` (`RelayDeTexto`: **só repassa**, com o **remetente trocado pelo id de verdade**, o texto já limpo, só a **outras pessoas** da sala (bot não é destino), **6 mensagens por 10 s por jogador**, nada guardado). A sala (`ArenaRoom`) só liga o relé. Servidor velho descarta o tipo; cliente velho nunca recebe.
+**2. A lista na REDE:** `ui/RedePilotos.ts` (bundle inicial, minúscula): quando há outra pessoa na sala, cada nome vira um botão (nome, chassi, mensagens não lidas). `OnlineSession.pilotos()` entrega só pessoas.
+**3. O Hangar do outro:** `HangarMenu.visitar(spec)` abre o Hangar com a montagem dele em **só leitura** (abas e encaixes se olham; chassi, nível, módulo, presets e APLICAR ficam travados; Esc e VOLTAR AO MEU HANGAR saem). O galpão 3D mostra o robô dele.
+**4. A conversa (sem sair do Hangar):** `ui/VisitaPanel.ts` (**sob demanda**, R7) no lugar dos números: o histórico (60 linhas), o campo, ENVIAR, **SILENCIAR** (só neste cliente) e o aviso "devagar" antes de o servidor cortar. Tudo por `textContent`. O dado (`net/Conversas.ts`) mora no jogo desde o começo: a mensagem que chega com a tela fechada vira "não lida" e um **aviso curto** no canto durante a partida.
+**5. Nasce restrito:** `tela:chat` no catálogo de visibilidade (P191): só o Comandante vê a lista, a visita e os avisos até liberar no painel; quem não vê descarta a mensagem que chegar.
+
+**Provas:** 3 testes do texto (limpeza, formato, UTF-8 torto, grande demais), 3 do relé (remetente trocado, destinos inválidos, teto por janela), 1 com **servidor de verdade e dois jogadores** (Alfa escreve a Bravo, chega com o id e o nome certos, a lista só tem pessoas, texto sujo chega limpo, escrever a um bot não chega a ninguém), 3 das conversas e 1 do contrato do HTML e do catálogo.
+
+**Falta (R13):** **não vi a tela no navegador** (a máquina estava sem memória: só testes e tipos): o Comandante confere; **sem denúncia** e sem moderação além do teto, do tamanho e do silenciar (o chat nasce restrito por isso); **os textos da visita e da lista estão só em português** (o `aria-label` da lista já tem as seis línguas; o resto fica sob `data-i18n="nao"` até o Comandante liberar `tela:chat` ao público: traduzir antes); telas estreitas mostram só a conversa na visita; sem som de mensagem nova; sem canal da sala inteira (só mensagem direta).
+
+**Onde o Comandante confere:** dois navegadores em `?sala=ARENA` (o dele com `?comandante=1`, o outro com outro nome): pausa → REDE → o nome do outro → o Hangar dele, a conversa ao lado. Para o outro jogador também ver: SERVIDOR → VISIBILIDADE → `tela:chat` → PÚBLICO.
+
+**Próxima sessão começa com:** o que o Comandante vir no teste de dois navegadores; depois a fase 8 DE JANEIRO (P217).
+
 ## O TESTE DO MICROFONE, O AVISO DE "SOZINHO NA VOZ", E A RESPOSTA SOBRE YOUTUBE E JUKEBOX — Claude, 19/10 (branch `claude/teste-do-microfone`, P212 e P213; P211 em andamento)
 
 **O Comandante (19/10):** *"estou tentando testar o microfone mas não consegui! não saiu som. Seria bom ter um campo de testes?"*; só maiores de 18 na voz (P211); e uma **jukebox num prédio** com link do YouTube, "só se não pesar" (P213).

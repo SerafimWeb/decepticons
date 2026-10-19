@@ -15,7 +15,6 @@
  "VOCÊ": "VOUS",
  "IAs ATACANDO": "IA À L'ATTAQUE",
  "EM BREVE": "BIENTÔT",
-
  "EM CONSTRUÇÃO": "EN CONSTRUCTION",
  "RADAR TÁTICO": "RADAR TACTIQUE",
  "ALIADOS": "ALLIÉS",
@@ -918,5 +917,6 @@
  "Não foi possível abrir o microfone. Escolha outro aparelho e teste de novo.": "Impossible d’ouvrir le microphone. Choisissez un autre périphérique et testez à nouveau.",
  "Aparelho salvo (desconectado)": "Périphérique enregistré (déconnecté)",
  "Microfone {0}": "Microphone {0}",
- "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "PERSONNE D’AUTRE EN VOCAL : TESTEZ LE MICROPHONE DANS LES PARAMÈTRES"
+ "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES": "PERSONNE D’AUTRE EN VOCAL : TESTEZ LE MICROPHONE DANS LES PARAMÈTRES",
+ "Pilotos na sala": "Pilotes dans la salle"
 }

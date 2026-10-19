@@ -397,6 +397,24 @@ describe('M4: o jogo online contra o servidor de verdade', () => {
     a.session.dispose();
     b.session.dispose();
   });
+  it('o chat de texto pela sessão (P216): Alfa escreve a Bravo e chega com o id e o nome certos; a lista de pilotos tem só pessoas (não os bots); texto sujo chega limpo; escrever a um bot não chega a ninguém', async () => {
+    const recebidos: { de: number; texto: string }[] = [];
+    const a = await player('Alfa', 'M4T');
+    const b = await player('Bravo', 'M4T', MECH_BUILD, undefined, { onTexto: (de, texto) => recebidos.push({ de, texto }) });
+    await join([a, b], 7);
+    expect(a.session.pilotos().map((p) => p.nome)).toEqual(['Bravo']); // 7 unidades vistas: 1 pessoa e 6 bots; a lista é só de pessoas
+    expect(a.session.enviarTexto(b.session.myId, '  oi,\n Bravo\u202E  ')).toBe(true);
+    const bot = [...a.session.remotes].find(([, r]) => r.kind === 'mech')![0];
+    expect(a.session.enviarTexto(bot, 'alô, bot')).toBe(true); // o cliente manda; o servidor descarta (o destino não é uma pessoa)
+    expect(a.session.enviarTexto(b.session.myId, '   ')).toBe(false); // vazia: nem sai
+    const t0 = performance.now();
+    while (recebidos.length < 1 && performance.now() - t0 < 6000) await play([a, b], 100);
+    await play([a, b], 300);
+    expect(recebidos).toEqual([{ de: a.session.myId, texto: 'oi, Bravo' }]);
+    expect(b.session.nomeDe(recebidos[0]!.de)).toBe('Alfa');
+    a.session.dispose();
+    b.session.dispose();
+  });
   it('o chat de voz pela sessão (P205): a sala avisa o id, o PRONTO de um vira a LISTA dos dois, a oferta chega ao destino com o remetente certo, o nome vem do roster e a saída avisa', async () => {
     const sala: (number | null)[][] = [[], []];
     const voz: Uint8Array[][] = [[], []];
