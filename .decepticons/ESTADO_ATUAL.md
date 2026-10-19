@@ -11,6 +11,8 @@
 
 **P213, só resposta e desenho (`RADIO_E_EMISSORES.md` § 7):** **o YouTube é problema** (o player tem de ficar visível e não separa o áudio; vem vídeo pesado; não toca no espaço; leva o IP de todo mundo perto ao Google; conteúdo sem moderação). Recomendo o terminal com **o catálogo do jogo** e "Sugerir um link". **Só entra se não pesar**: a primeira entrega tem de medir menos de 1 ms por quadro e no máximo 8 KB/s por emissor.
 
+**O gate do push e a memória (mesmo PR):** dois pushes foram barrados por workers do Vitest mortos (`0xC0000409`), sem relação com o código: a **memória virtual do Windows estava no teto** (1,6 GB livres de 24) porque **seis sessões do Claude Code abertas mantinham 48 processos node dos servidores MCP da Hostinger (3,1 GB)**. **Peço ao Comandante: feche as sessões antigas do Claude Code** (é o que mais ajuda). No código, o `npm test` passou a contar a memória virtual livre e a usar 1 worker quando aperta (`CYBERMECH_WORKERS=1` força); 6 mutações pegas.
+
 **P211 (idade):** vem no PR seguinte (cadastro com mês e ano de nascimento; menores sem microfone nem a voz dos outros, **imposto no servidor**). **Até lá a voz segue pública a todos**: o Comandante pode fechá-la no painel de visibilidade (`tela:voz`).
 
 **Falta (R13):** (a) **P211**; (b) **decisões do Comandante** sobre a jukebox (§ 7.5: YouTube fora, catálogo e licenças, qual prédio); (c) ninguém testou a voz entre dois aparelhos reais pela internet.

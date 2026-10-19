@@ -14,7 +14,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
 import { cpus, freemem } from 'node:os';
 import { resolve } from 'node:path';
-import { workersPelaMemoria } from './workersPelaMemoria.mjs';
+import { memoriaVirtualLivre, workersForcados, workersPelaMemoria } from './workersPelaMemoria.mjs';
 
 const TMP = resolve('.tmp', 'vitest');
 rmSync(TMP, { recursive: true, force: true });
@@ -23,9 +23,13 @@ mkdirSync(TMP, { recursive: true });
 const args = process.argv.slice(2);
 // Pouca memória livre: menos workers (ver workersPelaMemoria.mjs). Com memória de sobra (o CI), o Vitest escolhe sozinho.
 if (!args.some((a) => /^--(max-?workers|pool|no-file-parallelism)/.test(a))) {
-  const w = workersPelaMemoria(freemem(), cpus().length);
+  // `CYBERMECH_WORKERS=1` força; senão conta a memória física livre **e a virtual** (o teto do Windows: com o teto quase atingido os workers morrem com 0xC0000409).
+  const forcado = workersForcados(process.env.CYBERMECH_WORKERS);
+  const virtual = forcado === null ? memoriaVirtualLivre() : null;
+  const w = forcado ?? workersPelaMemoria(freemem(), cpus().length, virtual);
   if (w !== null) {
-    console.log(`test: pouca memória livre (${Math.round(freemem() / 1048576)} MB): limitando o Vitest a ${w} workers (mais devagar, mas sem morrer por falta de memória)`);
+    const motivo = forcado !== null ? 'CYBERMECH_WORKERS' : `pouca memória livre (${Math.round(freemem() / 1048576)} MB${virtual !== null ? `, ${Math.round(virtual / 1048576)} MB de memória virtual` : ''})`;
+    console.log(`test: ${motivo}: limitando o Vitest a ${w} worker${w === 1 ? '' : 's'} (mais devagar, mas sem morrer por falta de memória)`);
     args.push(`--maxWorkers=${w}`);
   }
 }

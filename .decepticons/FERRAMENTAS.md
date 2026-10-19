@@ -248,6 +248,7 @@ O jogo de verdade online, **sozinho** numa sala e depois com um colega (a págin
 
 ## 5. Considerações conhecidas (não são bug novo se você achar de novo)
 
+- **O gate do push morre com "Worker exited unexpectedly with exit code 0xC0000409 / 0x80000003" (19/10).** Não é o código: é a **memória virtual do Windows no teto** (RAM + arquivo de paginação; o `FreeVirtualMemory` do WMI chegou a 1,6 GB livres de 24). A causa na máquina do dono: **cada sessão do Claude Code aberta mantém 9 servidores MCP da Hostinger** (~135 MB de memória comprometida cada, com o `npx` de embrulho: 48 processos node, 3,1 GB com seis sessões abertas). **Fechar as sessões antigas libera mais que qualquer ajuste.** O `npm test` agora **conta a memória virtual livre** (`scripts/workersPelaMemoria.mjs`): com o teto apertado roda **1 worker**, e `CYBERMECH_WORKERS=1 npm run check` força. Mais devagar (~10 min), mas passa. Teste: `server/workersPelaMemoria.test.ts`.
 - **Mech parado afunda lentamente no chão, sem limite** (achado 29/09, não corrigido). Reproduz
   com qualquer Mech parado tempo suficiente; mais visível no Colossus (grande, parado mirando)
   do que no Vector-09. Causa isolada e documentada (o contorno do "engasgo do Rapier" de 23/09

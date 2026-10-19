@@ -6,6 +6,7 @@
 **Ordem:** o microfone testado e sem som, só maiores de 18 na voz, e a jukebox do prédio com link do YouTube, "só se não pesar".
 
 **Decisões:**
+0. **O gate do push passou a respeitar o teto de memória virtual do Windows.** Dois pushes seguidos foram barrados por workers do Vitest mortos (`0xC0000409`, `0x80000003`) em arquivos sem relação com o PR (combate): a memória virtual livre estava em 1,6 a 2 GB de 24, porque **seis sessões do Claude Code abertas mantinham 48 processos node dos servidores MCP da Hostinger (3,1 GB comprometidos)**. Os processos têm pai vivo (são das outras sessões do dono): **não os matei**. O `npm test` agora lê a memória virtual livre (PowerShell, ~0,6 s, só no Windows) e usa **1 worker** quando ela aperta; `CYBERMECH_WORKERS=N` força. 6 mutações pegas. Não contornei o hook (`--no-verify`): ele fez o trabalho dele.
 1. **O "não saiu som" tem causa provável e dois remédios.** Sozinho na sala ninguém te ouve; o indicador dizia "MICROFONE ABERTO" sem avisar. O aviso de **sozinho** corrige o engano; o **painel de teste** (nível ao vivo, volta da voz, motivo de cada falha) dá ao jogador a prova que o chat não pode dar.
 2. **O teste usa as mesmas restrições do jogo** (eco, ruído, ganho automático): é o que o chat vai ouvir. Pedaço sob demanda; **para sozinho** ao fechar, trocar de aba, esconder a página e em 2 minutos: microfone aberto esquecido é o pior defeito possível aqui.
 3. **O aparelho escolhido vale para o chat** e troca no meio da voz sem renegociar. `ideal`, não `exact`: o aparelho salvo que foi desligado cai no padrão.
