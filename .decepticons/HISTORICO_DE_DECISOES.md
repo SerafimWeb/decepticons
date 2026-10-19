@@ -1,5 +1,14 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## [2026-10-19] A descoberta da propriedade do Analytics exige o código de medição do CYBERMECH (Claude, P207)
+
+**Ordem:** *"já liguei a admin api, tem como você testar?"*. Testei: o Google aceitou a chave e a Admin API respondeu, **mas a única propriedade que a conta enxerga é a "odpandroid"** (o app Android do Olho do Pai), e não a do CYBERMECH.
+
+**Decisões:**
+1. **A descoberta não pega mais "a única propriedade".** Pega a que tem um fluxo web com o código de medição do jogo (`G-2CCHDCEC7X`, o mesmo do `client/index.html`; um teste confere que servidor, site e jogo não se separam). Com a regra antiga, o `/metricas/` teria mostrado os números do app Android como se fossem do jogo: **o pior defeito de um painel é mostrar um número errado com cara de certo.**
+2. **Propriedade errada é um estado dito, não um erro mudo:** "a conta só enxerga outra(s) propriedade(s) (odpandroid)", com os nomes e o caminho do conserto. Zero relatórios são pedidos à propriedade errada (o teste conta).
+3. **Escrever o ID em `ga-propriedade.txt` continua valendo sem conferir** (decisão do dono, que pode querer olhar outra propriedade), e o código de medição pode vir da variável `CYBERMECH_GA_MEDICAO`. Duas propriedades com o mesmo código: ambíguo, não chuta.
+
 ## [2026-10-19] Processo leve: rigor proporcional ao risco, e o CI vermelho (Claude, P220)
 
 **Ordem:** as iterações estavam grandes demais ("overengineered?"); pediu as 5 regras para o processo ficar mais leve e que olhasse o GitHub vermelho.

@@ -458,7 +458,13 @@ const js = `(() => {
     const nota = $('ga-nota');
     const limpar = () => { $('ga-cartoes').replaceChildren(); for (const t of ['tab-ga-canais', 'tab-ga-paises', 'tab-ga-aparelhos', 'tab-ga-dias']) $(t).replaceChildren(); };
     if (!a || typeof a !== 'object' || typeof a.estado !== 'string') { limpar(); nota.textContent = 'Este servidor é de uma versão sem o Analytics: atualize e reinicie o servidor.'; return; }
-    if (a.estado === 'desligado') { limpar(); nota.textContent = GA_NOTAS[a.motivo] || 'O Analytics está desligado neste servidor.'; return; }
+    if (a.estado === 'desligado') {
+      limpar();
+      nota.textContent = a.motivo === 'propriedade-errada'
+        ? 'A conta de serviço só enxerga outra(s) propriedade(s) (' + (Array.isArray(a.vistas) ? a.vistas.map(String).join(', ') : '?') + '), e nenhuma tem o fluxo do CYBERMECH. No Analytics, abra a propriedade do CYBERMECH, Administrador, Gerenciamento de acesso à propriedade, botão +, e dê o papel de Leitor ao e-mail da conta de serviço. (Ou ponha o ID certo em ga-propriedade.txt.)'
+        : GA_NOTAS[a.motivo] || 'O Analytics está desligado neste servidor.';
+      return;
+    }
     if (a.estado === 'carregando') { limpar(); nota.textContent = 'Pedindo os números ao Google… clique em Atualizar em alguns segundos.'; return; }
     if (a.estado === 'erro') { limpar(); nota.textContent = 'O Google não respondeu como esperado: ' + (GA_ERROS[a.motivo] || 'erro') + '. O servidor tenta de novo sozinho em 2 minutos.' + (a.detalhe ? ' (' + String(a.detalhe) + ')' : ''); return; }
     const r = a.relatorio;
