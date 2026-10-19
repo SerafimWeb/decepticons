@@ -52,7 +52,7 @@
 - **Cloudflare** (DNS, proxy do site e túnel do servidor de jogo): vê o IP de quem conecta, por ser o intermediário. O servidor de jogo só lê o país (`cf-ipcountry`) e o IP (`cf-connecting-ip`) que ele entrega.
 - **Hostinger** (hospedagem do site estático): guarda as páginas e o jogo; não recebe contas nem progresso.
 - **Serafim13** (erros do cliente publicado, só nos hostnames oficiais): mensagem e pilha, versão, contexto; e-mails e `?query`/`#hash` de URLs são removidos antes de enviar.
-- **Resend** (envio de e-mail, P206): **só** quando a pessoa pede "Esqueci a senha": recebe o e-mail dela e o texto da mensagem; guarda o registro de entrega pelo prazo dele; trata dados nos Estados Unidos. Chave em `.tmp/servidor/email.json`, fora do git; o log do servidor não leva a chave nem o e-mail.
+- **Envio de e-mail** (P206): **só** quando a pessoa pede "Esqueci a senha": o provedor recebe o e-mail dela e o texto da mensagem para entregá-la e guarda o registro de entrega pelo prazo dele. **Hoje o plano é a própria Hostinger (o mesmo e-mail do domínio, SMTP); o Resend é a alternativa** (trata dados nos Estados Unidos). Senha ou chave em `.tmp/servidor/email.json`, fora do git; o log do servidor não leva a senha, a chave nem o e-mail. **A política publicada cita a Hostinger como destinatária do e-mail (19/10); se um dia o Resend entrar no lugar, o texto (`scripts/privacidade.mjs`, seção 4) muda junto.** `POLITICA_VERSAO` não mudou: o conjunto de dados é o mesmo (o e-mail de quem pede), só o nome do prestador.
 - **ElevenLabs** (vozes do narrador): só gera as falas na máquina do dono; nada do jogador vai para lá.
 
 ## 5. O que falta (decisão e trabalho do dono)

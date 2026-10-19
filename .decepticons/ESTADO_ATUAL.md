@@ -4,26 +4,25 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## O 8 DE JANEIRO RESPONDIDO (FICHA V2) E A SALA ONLINE ESCOLHE O MAPA (O1 DO P218) — Claude, 19/10 (branch `claude/janeiro-respostas`, P218 e P219)
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-**O Comandante (19/10) respondeu à ficha:** a fase pode começar só offline, **mas todas as fases e modos têm de valer online**; vence quem mantém os prédios de pé e expulsa ou neutraliza todos; as chegadas vêm de **ônibus, bueiros e lixeiras**; porrada é eliminar; os manifestantes têm cabeça de gado, há **carecas**, **rapazes de peruca loira** e **androides**; **só os androides lutam, os outros fogem**; eles sujam as mesas e os androides aliados limpam.
 
-**1. A ficha v2** (`fichas/cenario-8-de-janeiro.md`): quatro tipos de figurante, três fontes, a vitória (prédios de pé e Praça vazia depois da cota), a sujeira e os faxineiros, e a **ideia técnica que serve ao CPU e ao online de uma vez: a posição do figurante é função do tempo** (nasce com fonte, tick, tipo, alvo e semente; só *morreu* e *fugiu* são estado). Sem integração por figurante por tick, sem posição na rede (dezenas de B/s), a posição desenhada na shader.
-**2. A ordem P218** (`MULTIPLAYER.md` § 12): achei por que tudo era "só offline" (a sala só conhece Cidade Neon em Deathmatch; `Match` já recebe mapa e modo, a sala e o protocolo não) e escrevi **cinco etapas** (O1 a sala escolhe o mapa; O2 Domínio; O3 Bandeira; O4 Sobrevivência e missões; O5 campanha), uma por PR, cada uma medindo a banda.
-**3. Duas decisões minhas** (o Comandante pode contestar): o CARECA e a PERUCA entram como **tipos** (sem nome, marca ou texto de pessoa ou empresa), com botão de desligar; e os **nomes das pessoas não foram copiados** para os documentos (o painel público lê estes arquivos). **Risco registrado** (ficha § 9): caricatura de figuras públicas reais e uma fase em que se atira em manifestantes de um evento real, a seis dias do segundo turno das eleições (25/10); **recomendo um advogado antes de liberar ao público**; a fase nasce restrita.
+## O E-MAIL DO "ESQUECI A SENHA" PELO SMTP DA HOSTINGER, SEM SERVIÇO NOVO — Claude, 19/10 (branch `claude/email-smtp`, P206 parte 2)
 
-**4. O1 feito: a sala online escolhe o mapa.** `shared/net/mapa.ts` (o mapa da conexão e a chave da sala: `CODIGO` na Cidade Neon, `CODIGO@mapa` nos outros); `Server.ts` (`roomMapa`, `pickRoom` por mapa, mapa inexistente é recusado com 1008 `mapa`); `ArenaRoom` (recebe o mapa, carrega sob demanda a Terras Raras no Node e monta o `Match` nele); cliente (`mapFromSearch` honra o `?mapa=` também online; `urlComMapa` põe o mesmo mapa na conexão; o link do seletor e o IMPLANTAR do mapa-múndi ficam na sala). **`PROTOCOL_VERSION` 20 → 21** (servidor velho ignoraria o mapa e desalinharia o chão).
+**O Comandante (19/10):** a Cloudflare perguntou que "chave" guardar e ele não entendeu; *"como configuro o Resend também?"*. **Resposta:** o Resend não é preciso. O `cybermech.online` já usa o e-mail da Hostinger (MX e SPF conferidos no DNS): basta uma caixa. Na Cloudflare **não há nada a fazer** (o agente dela se confundiu com o plano B).
 
-**Provas:** 6 testes (o contrato, a chave da sala, o cliente e os links; **o servidor de verdade**: o mesmo código em três mapas são três salas, cada uma com o seu mapa e a sua gente; mapa inexistente recusado e nenhuma sala nasce; a Terras Raras constrói no Node e recebe gente) e três testes antigos que fixavam "online = Cidade Neon" atualizados.
+**O que entrou:**
+1. **`MailerSmtp`** (`server/email.ts`): cliente SMTP de ~100 linhas com `node:tls` (TLS direto, porta 465; AUTH PLAIN ou LOGIN; UTF-8 em base64; recusa destinatário com quebra de linha ou vírgula), sem biblioteca nova. O Resend continua como alternativa.
+2. **`npm run email -- iniciar | estado | testar <e-mail>`** (`server/emailCli.ts`): cria o `email.json` com a Hostinger preenchida (senha de exemplo que nunca vale), mostra o estado sem a senha e manda uma mensagem de teste pelo mesmo caminho do servidor, com a dica do que conferir se falhar.
+3. **O servidor relê o `email.json` quando ele muda** (`MailerDaPasta`): ligar, trocar a senha ou desligar não exige reiniciar (e reiniciar derruba quem joga).
 
-**5. Um bug de produção achado no caminho (R17):** `PhysicsWorld.create()` chamava `RAPIER.init()` a cada sala, e o `init()` do Rapier **não é reentrante**: duas salas nascendo ao mesmo tempo (dois grupos de jogadores entrando no mesmo instante) instanciavam o wasm duas vezes e **corrompiam os mundos** (`unreachable` e `attempted to take ownership of Rust value while it was borrowed`, em ~50% das vezes no teste que reproduz). Agora é **uma promessa só** (`PhysicsWorld.iniciando`); 24 execuções do cenário sem nenhum erro. O teste das salas por mapa (que cria três de uma vez) é a trava.
+**Provas:** 13 testes com um **servidor SMTP de mentira de verdade** (socket que fala o protocolo e guarda o que recebeu) mais 6 da configuração e da ferramenta; **5 mutações à mão pegas** (destinatário sem validar, assunto sem tirar a quebra de linha, senha de exemplo valendo, autenticação aceitando recusa, arquivo nunca relido). **Não provado:** a Hostinger de verdade (falta a caixa e a senha).
 
-**Falta (R13):** **não vi dois navegadores jogando na Praia online** (testes, tipos e o servidor de verdade, sim); o **mural de câmeras** desenha a planta da Cidade Neon para todas as salas; o servidor **não recusa mapa restrito** (só o cliente filtra); as etapas O2 a O5 e **toda a fase 8 DE JANEIRO** (massa, mapa, missão) não existem; **o novo protocolo derruba quem estiver conectado com o cliente velho** (o jogo avisa que a versão é outra e pede para recarregar).
+**Falta (dele):** criar a caixa `nao-responda@cybermech.online` no hPanel (E-mails), `npm run email -- iniciar`, trocar a senha no Bloco de Notas e `npm run email -- testar seu@email.com` (`LANCAMENTO.md § 7`). **A política** já cita a Hostinger como quem entrega o e-mail (no lugar do Resend), sem mudar a `POLITICA_VERSAO` (mesmo conjunto de dados).
 
-**Onde o Comandante confere:** (1) dois navegadores em `/jogar/?sala=ARENA&mapa=praia&nome=Dan` (e `&mapa=bunker`, `&mapa=amazonia`; para a Terras Raras o mapa precisa estar liberado no painel de visibilidade, ou o `?comandante=1`): a mesma sala nos dois, no mapa escolhido; no mapa-múndi, IMPLANTAR online fica na sala; (2) `fichas/cenario-8-de-janeiro.md` (as cinco perguntas abertas, § 8) e `MULTIPLAYER.md` § 12.
-
-**Próxima sessão começa com:** `sim/Multidao.ts` (a massa como função do tempo, com teste e bancada de CPU) ou a etapa O2 (Domínio online), conforme o Comandante preferir; e as respostas às cinco perguntas abertas da ficha.
+**Próxima sessão começa com:** o que o `npm run email -- testar` disser; se cair no spam, o DKIM/DMARC do domínio.
 
 ## A IDADE E A VOZ SÓ PARA MAIORES DE 18 ANOS — Claude, 19/10 (branch `claude/idade-e-voz`, P211)
 
@@ -40,6 +39,7 @@
 **Decisão do Comandante:** quer algo mais forte que a data declarada? (tem custo e pede dado sensível). Até lá a regra reduz o risco, não o elimina.
 
 **Próxima sessão começa com:** o mudo por jogador (o risco mais próximo da voz pública), ou a decisão do Comandante sobre a rádio (P210/P213).
+
 ## OS PILOTOS NA REDE: VER O HANGAR DO OUTRO E CONVERSAR POR TEXTO SEM SAIR DO HANGAR — Claude, 19/10 (branch `claude/chat-de-texto`, P216)
 
 **O Comandante (19/10):** *"no painel REDE, quando tiver mais de um jogador online, coloque os nomes dos jogadores ali disponíveis pra podermos clicar neles, ver o hangar deles, fazer chat por texto com eles (sem sair do hangar)"*.

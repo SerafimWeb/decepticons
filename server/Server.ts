@@ -10,7 +10,7 @@ import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
 import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_NASCIMENTO_PATH, CONTA_PROGRESSO_PATH, ehMaiorDeIdade, idadeDaConta, parseNascimento, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
 import { CLOSE_REINICIO, REINICIO_AVISO_S, REINICIO_VOLTA_EM_S, ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { CONTA_ESQUECI_PATH, CONTA_REDEFINIR_PATH, parseEsqueci, parseRedefinir, urlDeRedefinicao, type IdiomaEmail } from '../shared/net/auth';
-import { carregarMailer, EMAILS_POR_DIA, TetoDiario, type Mailer } from './email';
+import { EMAILS_POR_DIA, MailerDaPasta, TetoDiario, type Mailer } from './email';
 import { type GaEstado, GoogleAnalytics } from './analytics';
 import { emailDeRedefinicao } from './emailTextos';
 import { Writer } from '../shared/net/codec';
@@ -382,7 +382,7 @@ export async function startServer(
   };
   const limiteLogin = new LimiteLogin(opts.limiteLogin);
   // Esqueci a senha (P206): 5 pedidos por hora por IP, 3 por hora por conta (de onde vierem) e 50 e-mails por dia no total (a cota do provedor).
-  const mailer: Mailer | null = opts.mailer !== undefined ? opts.mailer : carregarMailer(dirDados, process.env, log);
+  const mailer: Mailer | null = opts.mailer !== undefined ? opts.mailer : new MailerDaPasta(dirDados, process.env, log);
   const siteUrl = opts.siteUrl ?? process.env.CYBERMECH_SITE_URL ?? 'https://cybermech.online';
   const analytics = opts.analytics !== undefined ? opts.analytics : dirDados ? new GoogleAnalytics({ dirDados, anotar: log }) : null;
   const limiteEsqueci = new LimiteLogin({ teto: 5, janelaMs: 60 * 60 * 1000, ...opts.limiteEsqueci });
@@ -391,7 +391,7 @@ export async function startServer(
   /** O trabalho do pedido (banco e envio), DEPOIS de a resposta sair: o tempo da resposta não diz se o e-mail tem conta. Nunca lança; o log diz só o número da conta. */
   const enviarLinkDeSenha = async (email: string, lang: IdiomaEmail): Promise<void> => {
     try {
-      if (!mailer || !contas.temConta(email)) return;
+      if (!mailer || mailer.configurado?.() === false || !contas.temConta(email)) return;
       if (!tetoEmail.tentar()) {
         log(`recuperação de senha: teto de ${EMAILS_POR_DIA} e-mails por dia atingido; não enviei`);
         return;
@@ -601,7 +601,7 @@ export async function startServer(
           enviarJson(400, { erro: 'e-mail inválido' });
           return;
         }
-        if (!mailer) {
+        if (!mailer || mailer.configurado?.() === false) {
           enviarJson(503, { erro: 'a recuperação por e-mail ainda não está ativa', codigo: 'sem-email' });
           return;
         }

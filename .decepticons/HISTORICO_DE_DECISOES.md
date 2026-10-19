@@ -2,21 +2,22 @@
 
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-## [2026-10-19] A massa do 8 DE JANEIRO é função do tempo; o online por mapa e modo vira ordem geral (Claude, P218 e P219)
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-**Ordem:** *"todas as fases devem dar pra jogar online também… todos os modos valem pra todas as fases"*, e as respostas sobre o 8 DE JANEIRO.
+
+## [2026-10-19] O e-mail do "esqueci a senha" pelo SMTP da Hostinger, sem serviço novo (Claude, P206)
+
+**Ordem:** *"não entendi o que devo fazer. como configuro o Resend também?"* (depois de a Cloudflare perguntar que "chave" guardar). **Regra do Comandante:** simples, sem custo inicial, sem cadastro novo (memória "preferir simples, sem custo, eficiente").
 
 **Decisões:**
-1. **A massa é função do tempo** (e não um estado integrado): cada figurante nasce com `(fonte, tick, tipo, alvo, semente)` e a posição em `t` é calculada. Só *morreu* e *fugiu* são estado. Isso dá o CPU baixo (sem integração por figurante, posição desenhada na shader) **e** o online barato (sem posição na rede) com o mesmo desenho; a alternativa (simular milhares de agentes e mandar posições) quebra G4/G5 e G11.
-2. **Só os androides são entidades; o resto é dado:** os rebeldes (no máximo 6 vivos) são os `Android` de hoje, com a vida, o tiro e a rede que já existem; o GADO, o CARECA e a PERUCA são linhas de um vetor.
-3. **Tipos, não pessoas:** o CARECA e a PERUCA se parecem com duas figuras públicas reais, por pedido do Comandante. O jogo recebe só o **tipo** (sem nome, marca ou texto) com botão de desligar por tipo, e os nomes **não entram nos documentos** (o painel público os lê). É a mesma precaução da skin da Colossus V1, estendida; a decisão final do tom é do Comandante.
-4. **A fase nasce restrita** e a recomendação de revisão jurídica fica escrita (ficha § 9): o segundo turno das eleições é em 25/10 e há regra de honra e eleitoral sobre representar candidatos.
-5. **O online por mapa e modo é uma ordem geral (P218), não uma exceção da fase:** o plano em cinco etapas (`MULTIPLAYER.md` § 12) começa por onde há menos protocolo novo (a sala escolher o mapa) e termina onde há mais (a campanha). O 8 DE JANEIRO é desenhado já para a etapa O4.
-6. **A sala é uma por código e por mapa** (`CODIGO` na Cidade Neon, `CODIGO@mapa` nos outros): quem digita o mesmo código e pede outro mapa nunca cai na sala de outro chão. Os links, as salas e os painéis de sempre (Cidade Neon) não mudam de nome.
-7. **`PROTOCOL_VERSION` sobe para 21** mesmo sem mensagem nova: o significado da conexão mudou (ela leva o mapa), e um servidor da versão 20 ignoraria o pedido e desalinharia o chão do cliente em silêncio; a recusa com aviso é melhor que o jogo errado. Mesmo critério das versões 15 a 20.
-9. **Uma só inicialização do wasm do Rapier (bug achado pelo teste das salas por mapa):** `RAPIER.init()` não é reentrante; duas salas criadas juntas corrompiam os mundos. `PhysicsWorld.create` passa a compartilhar uma única promessa de `init`. O erro existia desde a segunda sala do servidor e só aparecia quando duas salas nasciam no mesmo instante: com o online por mapa isto deixaria de ser raro.
-8. **O servidor não filtra mapa restrito (por ora):** só o cliente. Recusar de verdade pede identificar o Comandante na conexão (um token na URL não serve: vira log). Um link à mão abre uma sala que custa CPU, sem vazar nada; fica anotado para a etapa que precisar (uma fase em desenvolvimento).
+1. **O Resend deixa de ser o caminho recomendado.** Pede conta nova, verificar o domínio (registros DNS na Cloudflare) e uma chave: exatamente o que o Comandante não entendeu e não precisa. Conferi no DNS: o `cybermech.online` **já tem o e-mail da Hostinger** (MX `mx1/mx2.hostinger.com` e SPF `include:_spf.mail.hostinger.com`). Basta uma caixa `nao-responda@cybermech.online` e a senha dela. O Resend fica como plano B, no mesmo contrato (`Mailer`).
+2. **Cliente SMTP escrito à mão (~100 linhas, `node:tls`), sem biblioteca.** O `nodemailer` traz uma dependência a mais para o `npm ci` do atualizador, que já tropeçou em binários presos pelo servidor no ar (DEPLOY § 4). Só TLS direto na porta 465 (a da Hostinger): o STARTTLS (587) não entrou porque ninguém precisa dele aqui e é mais um caminho para errar.
+3. **O Comandante não escreve JSON:** `npm run email -- iniciar` cria o `email.json` com a Hostinger preenchida e uma senha de exemplo que **nunca vale**; ele só troca no Bloco de Notas. `testar` manda de verdade e traduz o erro em "o que conferir".
+4. **O servidor relê o arquivo quando muda** (pelo conteúdo: a data e o tamanho enganam, `COLE_A_SENHA_AQUI` e uma senha de 17 caracteres têm o mesmo tamanho): ligar o e-mail por arquivo não pode exigir reiniciar, e reiniciar derruba quem joga.
+5. **Provado contra um servidor SMTP de mentira de verdade (um socket que fala o protocolo)**, não só com mocks: AUTH PLAIN e LOGIN, texto e HTML em japonês/russo/espanhol chegam inteiros, senha recusada, destinatário recusado, servidor mudo, porta fechada, e injeção de cabeçalho (destinatário com quebra de linha ou vírgula nem abre conexão; assunto com quebra vira texto). **O que não está provado: a Hostinger de verdade** (falta a caixa e a senha, que são do Comandante).
+6. **A política publicada passou a citar a Hostinger no lugar do Resend** (o e-mail de quem pede "esqueci a senha" é entregue por ela): mesmo conjunto de dados, só o nome do prestador; por isso a `POLITICA_VERSAO` não mudou. Se o Resend entrar um dia, o texto muda junto.
 
 ## [2026-10-19] A idade manda na voz: só maior de 18 anos, e o servidor decide (Claude, P211)
 
@@ -34,6 +35,7 @@
 9. **Limite assumido, e dito à pessoa e ao Comandante:** a idade é **declarada**, não verificada. Verificar de fato exige documento ou terceiro (custo e dado sensível), contra o pedido de ser simples e sem custo.
 
 **Provas:** Chrome real 30/30 (`medicoes/voz-idade.mjs`), 3.569 testes, 32 mutações à mão pegas. As bancadas de voz antigas passaram a entrar com conta de adulto (`vozLib.tokenDeConta`).
+
 ## [2026-10-19] O chat de texto é mensagem direta, repassada pelo servidor sem guardar nada, e nasce restrito (Claude, P216)
 
 **Ordem:** *"nomes dos jogadores… ver o hangar deles, fazer chat por texto com eles (sem sair do hangar)"*.
