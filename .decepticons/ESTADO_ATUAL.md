@@ -12,6 +12,9 @@
 
 **Próxima sessão começa com:** conferir o `/metricas/` depois do acesso (hoje responde "só enxerga odpandroid").
 
+## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
+
+**O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
 ## A PRAÇA DOS TRÊS PODERES: O MAPA DO 8 DE JANEIRO NO AR, COM A MULTIDÃO DESCENDO A ESPLANADA (PASSO 4 DA FICHA) — Claude, 19/10 (branch `claude/praca-mapa`, P217)
 
 **O que foi feito:** o **chão** da fase do 8 DE JANEIRO, jogável no **Deathmatch** (offline e online) e **restrito ao Comandante** (`mapa:janeiro`).

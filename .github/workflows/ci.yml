@@ -61,9 +61,11 @@ jobs:
 
   # "Build do dia": cada merge na main com check verde vai para o site (DEPLOY.md).
   # Dormente até existir a variável de repositório SITE_URL e os secrets DEPLOY_*.
+  # DESLIGADO por padrão (P221, 19/10): o site vai ao ar pelo PC do dono (`npm run publicar-site`, DEPLOY.md), de graça e já provado, e o secret DEPLOY_PATH do GitHub não bate com a trava
+  # abaixo (o job falhava vermelho). Só roda se existir a variável de repositório DEPLOY_PELO_ACTIONS = true; antes disso, confira os secrets DEPLOY_* (DEPLOY.md).
   deploy:
     needs: check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.SITE_URL != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.SITE_URL != '' && vars.DEPLOY_PELO_ACTIONS == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     concurrency:

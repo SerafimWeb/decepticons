@@ -9,6 +9,9 @@
 2. **Propriedade errada é um estado dito, não um erro mudo:** "a conta só enxerga outra(s) propriedade(s) (odpandroid)", com os nomes e o caminho do conserto. Zero relatórios são pedidos à propriedade errada (o teste conta).
 3. **Escrever o ID em `ga-propriedade.txt` continua valendo sem conferir** (decisão do dono, que pode querer olhar outra propriedade), e o código de medição pode vir da variável `CYBERMECH_GA_MEDICAO`. Duas propriedades com o mesmo código: ambíguo, não chuta.
 
+## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
+
+**Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.
 ## [2026-10-19] O mapa da Praça dos Três Poderes: dados no pacote, desenho sob demanda, restrito (Claude, P217)
 
 **Decisões:**

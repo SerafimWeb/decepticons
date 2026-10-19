@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P221 — Não gastar o Actions à toa: o deploy do Actions desligado (19/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P221 | 19/10 | "se pudermos não consumir o actions à toa, e manter o funcionamento sem ele, acho melhor né? deixar o actions pra algo mais importante? … desliga o deploy do actions, é isso?" | ✅ | **Feito** (PR `claude/actions-sem-deploy`): o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (não existe: fica "pulado", não vermelho). O secret `DEPLOY_PATH` **não foi tocado** (desligado o deploy, ele deixa de importar). O site segue pelo PC. | o CI da `main` fica sem o job `deploy` vermelho |
+
 ## P220 — Processo mais leve e o CI vermelho (19/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
