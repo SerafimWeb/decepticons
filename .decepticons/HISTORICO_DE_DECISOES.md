@@ -1,6 +1,18 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-18] O Google Analytics no /metricas/: conta de serviço assinada à mão, tudo em cache e nunca esperar o Google (Claude, P207)
+
+**Ordem:** *"ligue o metricas, quero tudo devidamente configurado na melhor e mais técnica estrutura"*.
+
+**Decisões:**
+1. **Sem biblioteca do Google.** Assinar um JWT RS256 e fazer duas chamadas HTTPS cabe em ~200 linhas com `node:crypto` e `fetch`; o SDK `googleapis` traz centenas de pacotes para o servidor que roda num PC de 6 GB (e entra no `npm audit`). O teste confere a assinatura com a chave pública, então um erro de assinatura aparece aqui e não só no Google.
+2. **O servidor fala com o Google; a página nunca.** A chave nunca vai ao navegador, e a página só desenha o estado que o servidor entrega (cada estado com a frase de "o que falta e onde").
+3. **Cache e teto de espera.** 10 min de cache (a Data API tem cota diária; ninguém precisa de segundo a segundo), 2 min depois de erro (não martelar), pedidos simultâneos juntos, e 4 s de espera máxima na primeira resposta: **o `/metricas` é a página que o Comandante abre quando algo está errado, e não pode ficar presa num Google lento.**
+4. **Só somas por categoria** (data, canal, país, aparelho). A política diz que não guardamos pessoa; o Analytics já é do Google e só enxerga quem aceitou os cookies, e a página diz isso. Nada de cidade, página ou usuário.
+5. **ID da propriedade com três caminhos** (arquivo, variável, descoberta se houver uma só) porque o Comandante mandou o `client_id` da conta de serviço no lugar do ID da propriedade (os dois são numéricos, o dele tem 21 dígitos): o código **valida** (5 a 15 dígitos) em vez de confiar, já que o ID entra no endereço do Google; e a descoberta evita pedir o número de novo.
+6. **Os arquivos são relidos** (não só na subida): colocar o `ga-propriedade.txt` vale em 30 s, sem reiniciar o servidor (e sem derrubar quem joga).
+
 ## [2026-10-18] "Esqueci a senha": link de uso único por e-mail, página própria, sem entrar sozinho (Claude, P206)
 
 **Ordem:** *"faça o esqueci a senha; não vamos dar CNPJ por enquanto pois não temos e o jogo é indie, feito por uma pessoa apenas"*.

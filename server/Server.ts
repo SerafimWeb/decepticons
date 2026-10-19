@@ -11,6 +11,7 @@ import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIA
 import { CLOSE_REINICIO, REINICIO_AVISO_S, REINICIO_VOLTA_EM_S, ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
 import { CONTA_ESQUECI_PATH, CONTA_REDEFINIR_PATH, parseEsqueci, parseRedefinir, urlDeRedefinicao, type IdiomaEmail } from '../shared/net/auth';
 import { carregarMailer, EMAILS_POR_DIA, TetoDiario, type Mailer } from './email';
+import { type GaEstado, GoogleAnalytics } from './analytics';
 import { emailDeRedefinicao } from './emailTextos';
 import { Writer } from '../shared/net/codec';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
@@ -138,6 +139,8 @@ export async function startServer(
     mailer?: Mailer | null;
     /** O endereço do site que vai no link do e-mail (padrão: `CYBERMECH_SITE_URL` ou https://cybermech.online). */
     siteUrl?: string;
+    /** O Google Analytics do `/metricas` (P207). Os testes passam um falso; o padrão lê `ga-chave.json` e `ga-propriedade.txt` na pasta de dados (`analytics.ts`). */
+    analytics?: { obter(): Promise<GaEstado> } | null;
     /** Pedidos de "esqueci a senha" por IP (padrão 5 por hora); os testes alargam. */
     limiteEsqueci?: Partial<typeof LIMITE_LOGIN_DEFAULTS>;
     /** Origens extras (além do jogo no ar e da rede local) que podem abrir o WebSocket e as rotas de conta. Padrão: `CYBERMECH_ORIGENS` (`origem.ts`). */
@@ -370,6 +373,7 @@ export async function startServer(
   // Esqueci a senha (P206): 5 pedidos por hora por IP, 3 por hora por conta (de onde vierem) e 50 e-mails por dia no total (a cota do provedor).
   const mailer: Mailer | null = opts.mailer !== undefined ? opts.mailer : carregarMailer(dirDados, process.env, log);
   const siteUrl = opts.siteUrl ?? process.env.CYBERMECH_SITE_URL ?? 'https://cybermech.online';
+  const analytics = opts.analytics !== undefined ? opts.analytics : dirDados ? new GoogleAnalytics({ dirDados, anotar: log }) : null;
   const limiteEsqueci = new LimiteLogin({ teto: 5, janelaMs: 60 * 60 * 1000, ...opts.limiteEsqueci });
   const pedidosPorConta = new FalhasPorConta({ teto: 3, janelaMs: 60 * 60 * 1000 });
   const tetoEmail = new TetoDiario();
@@ -484,7 +488,9 @@ export async function startServer(
         return;
       }
       auditar({ ator: atorDoPedido(req), acao: 'admin_acesso', alvo: 'rota:metricas', ok: true }, 10 * 60_000);
-      const body = JSON.stringify({...telemetria.metricas(),play:playMetrics.snapshot(),usuarios:contas.metricasUsuarios(),audiencia:audiencia.resumo(),auditoria:auditoria.recentes(40),runtime:{rssMB:process.memoryUsage().rss/1048576,rooms:rooms.size,players:jogadoresAgora()}});
+      // O Analytics do Google tem cache e espera curta: um Google lento nunca trava a página (analytics.ts).
+      const analyticsAgora: GaEstado = analytics ? await analytics.obter() : { estado: 'desligado', motivo: 'sem-chave' };
+      const body = JSON.stringify({...telemetria.metricas(),play:playMetrics.snapshot(),usuarios:contas.metricasUsuarios(),audiencia:audiencia.resumo(),auditoria:auditoria.recentes(40),analytics:analyticsAgora,runtime:{rssMB:process.memoryUsage().rss/1048576,rooms:rooms.size,players:jogadoresAgora()}});
       res.writeHead(200, {
         'content-type': 'application/json; charset=utf-8',
         'cache-control': 'no-store',

@@ -3,6 +3,23 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## O GOOGLE ANALYTICS DENTRO DO `/METRICAS/`: PRONTO NO CÓDIGO, FALTA UM NÚMERO — Claude, 18/10 (branch `claude/analytics-nas-metricas`, P207)
+
+**O Comandante (18/10):** *"ligue o metricas, quero tudo devidamente configurado na melhor e mais técnica estrutura"* (e mandou `100530709581858880369`, que é o **`client_id` da conta de serviço**, não o ID da propriedade do Analytics: tem 21 dígitos; o da propriedade tem 9 ou 10).
+
+**O que entrou:**
+1. **`server/analytics.ts`:** a conta de serviço (`ga-chave.json`, fora do git) assina um JWT RS256 com `node:crypto`, troca por um token de 1 hora (`analytics.readonly`) e chama a Data API (`batchRunReports` + `runRealtimeReport`). **Sem biblioteca nova.** Cache de 10 min (2 min depois de erro), pedidos simultâneos viram um só, e o `/metricas` **nunca espera o Google mais que 4 s** ("carregando" e a vez seguinte já tem). A chave e o token nunca saem (log, resposta, detalhe do erro: sequências longas viram "…").
+2. **Só somas por categoria:** as dimensões são data, canal, país, aparelho. Nada de usuário, IP, cidade ou página (o que a política promete, e o teste trava).
+3. **A página** (seção "Google Analytics"): 4 cartões (usuários e novos, sessões e engajadas, tempo médio, **no site agora**), tabelas de canal, país, aparelho e o dia a dia, e **uma frase para cada estado** (sem chave, chave ilegível, falta o ID, carregando, erro do Google com o que fazer, servidor antigo). Diz que só enxerga quem aceitou os cookies do site. Nome vindo do servidor nunca vira HTML.
+4. **O ID da propriedade:** de `ga-propriedade.txt` (só números, aceita `properties/`), da variável `CYBERMECH_GA_PROPRIEDADE`, ou **descoberto sozinho** pela Admin API **se a conta enxergar uma só** (a API tem de estar ligada no projeto; hoje não está).
+5. **De brinde:** o teste "histórico do painel" do `admin-http.test.ts` (`amostras.length > 2` sem esperar) reprovou o deploy do atualizador em 18/10 por timing sob carga; agora espera as amostras.
+
+**Provas:** 16 testes com um Google de mentira que **confere a assinatura do JWT com a chave pública**; **5 mutações à mão pegas** (sem cache de token, outro algoritmo de assinatura, sem mascarar sequências longas, sem juntar pedidos simultâneos, ID da variável sem validar); no Chrome, `site --check` desenha os cartões, as tabelas e recusa HTML vindo do servidor. **Já provado na máquina do Comandante:** a chave é válida e o Google aceitou a conta (emitiu o token).
+
+**Falta (dele), uma das duas:** (a) pôr o ID da propriedade (Analytics → Administrador → Detalhes da propriedade, 9 ou 10 dígitos) em `D:\DECEPTICONS\.tmp\servidor\ga-propriedade.txt`; ou (b) ligar a **Google Analytics Admin API** no projeto `cybermech-online` (console.cloud.google.com → APIs e serviços → Biblioteca), e o servidor descobre sozinho. O servidor relê os arquivos a cada 30 s: **não precisa reiniciar**. **Não provado ainda:** os números de verdade do Google (falta o ID).
+
+**Próxima sessão começa com:** conferir o `/metricas/` depois do ID; a limpeza do `servidor.log` antigo.
+
 ## O "ESQUECI A SENHA": LINK POR E-MAIL, PÁGINA PRÓPRIA E SEM CNPJ NA POLÍTICA — Claude, 18/10 (branch `claude/esqueci-a-senha`, P206)
 
 **O Comandante (18/10):** *"faça o esqueci a senha; não vamos dar CNPJ por enquanto pois não temos e o jogo é indie, feito por uma pessoa apenas"*.

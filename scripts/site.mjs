@@ -512,6 +512,21 @@ async function metricasPage(browser, base, failures) {
     { quando: new Date(agora - 60_000).toISOString(), ator: 'dono', acao: 'admin_promovido', alvo: 'conta:3', ok: true },
     { quando: new Date(agora - 120_000).toISOString(), ator: '<img src=x onerror=window.__xss3=1>', acao: 'conta_criada', alvo: 'conta:9', ok: true },
   ];
+  // O Analytics do Google (P207): o servidor entrega o estado; aqui vai um relatório pronto (com HTML no nome de um canal, que não pode virar HTML na tela).
+  corpo.analytics = {
+    estado: 'ok',
+    relatorio: {
+      geradoEm: new Date(agora).toISOString(),
+      propriedade: '412345678',
+      dias: 28,
+      agora: 3,
+      resumo: { usuarios: 120, novos: 80, sessoes: 150, sessoesEngajadas: 90, duracaoMediaS: 187, paginasVistas: 600 },
+      porDia: [{ dia: '2026-10-17', usuarios: 50, sessoes: 60 }, { dia: '2026-10-18', usuarios: 70, sessoes: 90 }],
+      canais: [{ nome: 'Direct', sessoes: 90, usuarios: 70 }, { nome: '<img src=x onerror=window.__xss4=1>', sessoes: 5, usuarios: 5 }],
+      paises: [{ codigo: 'BR', usuarios: 100 }, { codigo: 'US', usuarios: 15 }],
+      aparelhos: [{ nome: 'mobile', usuarios: 70 }, { nome: 'desktop', usuarios: 50 }],
+    },
+  };
   corpo.audiencia.dias.at(-1).perfil.landing.host['<img src=x onerror=window.__xss2=1>'] = 3;
   corpo.dias.at(-1).eventos.boot_ok['<img src=x onerror=window.__xss=1>'] = 1; // um servidor comprometido não vira HTML na tela
   const servidor = createServer((req, res) => {
@@ -560,7 +575,13 @@ async function metricasPage(browser, base, failures) {
     if (!(await page.locator('#quem').textContent()).includes('com conta')) failures.push('métricas: a partida com conta não aparece em "quem chega"');
     if (!(await page.locator('#tab-uf').textContent()).includes('SP')) failures.push('métricas: o estado (SP) não chegou à tabela');
     if ((await page.locator('#tab-sites img').count()) || (await page.evaluate(() => window.__xss2))) failures.push('métricas: um nome de site com HTML virou HTML na tela');
-    if (!(await page.locator('#ga-nota').textContent()).includes('ainda não está ligado')) failures.push('métricas: a nota do Google Analytics sumiu');
+    // O Analytics: os cartões com os números do Google, as tabelas, a nota com a regra dos cookies, e nada de HTML vindo do servidor.
+    const ga = await page.locator('#ga-cartoes').textContent();
+    if (!ga.includes('120') || !ga.includes('150') || !ga.includes('3 min 07 s') || !ga.includes('600')) failures.push(`métricas: os cartões do Google Analytics não mostram os números (${ga})`);
+    if ((await page.locator('#ga-cartoes .card').count()) !== 4) failures.push('métricas: o Analytics devia ter 4 cartões');
+    if (!(await page.locator('#ga-nota').textContent()).includes('aceitou os cookies')) failures.push('métricas: a nota do Analytics não diz que só enxerga quem aceitou os cookies');
+    if (!(await page.locator('#tab-ga-canais').textContent()).includes('Direct') || !(await page.locator('#tab-ga-paises').textContent()).includes('100')) failures.push('métricas: as tabelas do Analytics não chegaram');
+    if ((await page.locator('#tab-ga-canais img').count()) || (await page.evaluate(() => window.__xss4))) failures.push('métricas: um canal do Analytics com HTML virou HTML na tela');
     const trilha = await page.locator('#tab-audit').textContent();
     if (!trilha.includes('RECUSADO') || !trilha.includes('administrador promovido') || (await page.locator('#tab-audit tbody tr').count()) !== 3) failures.push('métricas: a trilha de auditoria não chegou à tabela');
     if ((await page.locator('#tab-audit img').count()) || (await page.evaluate(() => window.__xss3))) failures.push('métricas: um ator da trilha com HTML virou HTML na tela');
