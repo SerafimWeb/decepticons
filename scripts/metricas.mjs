@@ -123,7 +123,12 @@ const body = `
     </section>
     <section aria-labelledby="h-ga">
       <h2 id="h-ga">Google Analytics</h2>
-      <p class="lede" id="ga-nota">O Google Analytics <b>ainda não está ligado a esta página</b>. Ele só enxerga quem aceita os cookies (a faixa do site) e as páginas do site, não o jogo inteiro; o que importa mais já sai acima, sem cookie. Para ver o resto dele (cidade, tempo no site) <a href="https://analytics.google.com" rel="noopener" target="_blank">abra o painel do Google</a>.</p>
+      <p class="lede" id="ga-nota">Os números do Google chegam pelo servidor. <a href="https://analytics.google.com" rel="noopener" target="_blank">Abrir o painel do Google</a>.</p>
+      <div class="cards" id="ga-cartoes"></div>
+      <div class="rolavel"><table class="paises" id="tab-ga-canais"></table></div>
+      <div class="rolavel"><table class="paises" id="tab-ga-paises"></table></div>
+      <div class="rolavel"><table class="paises" id="tab-ga-aparelhos"></table></div>
+      <details class="tabela"><summary>ver o Google dia a dia</summary><div class="rolavel"><table class="paises" id="tab-ga-dias"></table></div></details>
     </section>
     <section aria-labelledby="h-funil">
       <h2 id="h-funil">Funil · últimos 7 dias</h2>
@@ -432,6 +437,51 @@ const js = `(() => {
     if (rodadas) cx.append(el('p', { class: 'd' }, 'Média: ' + (seg / rodadas / 60).toFixed(1).replace('.', ',') + ' min por rodada, em ' + N(rodadas) + ' rodadas.'));
   }
 
+  /**
+   * O Google Analytics (P207): os números vêm do servidor (server/analytics.ts), que fala com o Google com a chave da conta de serviço; esta página nunca fala com o Google nem vê chave.
+   * Cada estado do servidor tem a frase certa (o que falta e onde), porque "não aparece nada" é a pior resposta para quem está configurando.
+   */
+  const GA_NOTAS = {
+    'sem-chave': 'A chave do Google ainda não está guardada no servidor (o arquivo ga-chave.json, na pasta de dados). O passo a passo está em LANCAMENTO.md, seção 6C.',
+    'chave-ruim': 'O arquivo ga-chave.json existe, mas não é uma chave de conta de serviço do Google legível: baixe a chave JSON de novo no Google Cloud.',
+    'sem-propriedade': 'Falta o ID numérico da propriedade do Analytics: ponha só os números em ga-propriedade.txt (Analytics, Administrador, Detalhes da propriedade), ou ligue a Google Analytics Admin API no projeto do Google para o servidor descobrir sozinho.',
+  };
+  const GA_ERROS = {
+    token: 'o Google recusou a chave da conta de serviço: confira se é a chave do projeto certo e se não foi apagada',
+    api: 'a conta de serviço não enxerga a propriedade: no Analytics, Administrador, Gerenciamento de acesso, dê o papel de Leitor ao e-mail da conta de serviço',
+    cota: 'a cota do Google acabou por ora',
+    rede: 'o servidor não conseguiu falar com o Google',
+  };
+  const MIN_S = (s) => Math.floor(s / 60) + ' min ' + String(Math.round(s % 60)).padStart(2, '0') + ' s';
+  function analyticsDoGoogle(m) {
+    const a = m.analytics;
+    const nota = $('ga-nota');
+    const limpar = () => { $('ga-cartoes').replaceChildren(); for (const t of ['tab-ga-canais', 'tab-ga-paises', 'tab-ga-aparelhos', 'tab-ga-dias']) $(t).replaceChildren(); };
+    if (!a || typeof a !== 'object' || typeof a.estado !== 'string') { limpar(); nota.textContent = 'Este servidor é de uma versão sem o Analytics: atualize e reinicie o servidor.'; return; }
+    if (a.estado === 'desligado') { limpar(); nota.textContent = GA_NOTAS[a.motivo] || 'O Analytics está desligado neste servidor.'; return; }
+    if (a.estado === 'carregando') { limpar(); nota.textContent = 'Pedindo os números ao Google… clique em Atualizar em alguns segundos.'; return; }
+    if (a.estado === 'erro') { limpar(); nota.textContent = 'O Google não respondeu como esperado: ' + (GA_ERROS[a.motivo] || 'erro') + '. O servidor tenta de novo sozinho em 2 minutos.' + (a.detalhe ? ' (' + String(a.detalhe) + ')' : ''); return; }
+    const r = a.relatorio;
+    if (a.estado !== 'ok' || !r || !r.resumo) { limpar(); nota.textContent = 'Resposta do Analytics em formato inesperado.'; return; }
+    nota.textContent = 'Últimos ' + N(r.dias) + ' dias, só de quem aceitou os cookies do site (o Google não enxerga os outros): o que o servidor mede por conta própria está nas seções de cima. Números de ' + new Date(r.geradoEm).toLocaleString('pt-BR') + '.';
+    const s = r.resumo;
+    const engajadas = s.sessoes ? Math.round((100 * s.sessoesEngajadas) / s.sessoes) + '% das sessões' : 'sem sessões';
+    const caixa = $('ga-cartoes'); caixa.replaceChildren();
+    for (const [k, v, d] of [
+      ['usuários ativos', N(s.usuarios), N(s.novos) + ' novos'],
+      ['sessões', N(s.sessoes), N(s.sessoesEngajadas) + ' engajadas (' + engajadas + ')'],
+      ['tempo médio por sessão', MIN_S(s.duracaoMediaS), 'páginas vistas: ' + N(s.paginasVistas)],
+      ['no site agora', r.agora === null ? '—' : N(r.agora), r.agora === null ? 'o Google não respondeu essa parte' : 'usuários ativos nos últimos 30 minutos'],
+    ]) {
+      const c = el('div', { class: 'card' }); c.append(el('span', { class: 'k' }, k), el('span', { class: 'v' }, v), el('span', { class: 'd' }, d)); caixa.append(c);
+    }
+    const lista = (x) => (Array.isArray(x) ? x : []);
+    tabela('tab-ga-canais', ['canal (Google)', 'sessões', 'usuários'], lista(r.canais).map((c) => [String(c.nome), N(c.sessoes), N(c.usuarios)]), 'Sem canais ainda.');
+    tabela('tab-ga-paises', ['país (Google)', 'usuários'], lista(r.paises).map((p) => [rotulo(String(p.codigo)), N(p.usuarios)]), 'Sem países ainda.');
+    tabela('tab-ga-aparelhos', ['aparelho (Google)', 'usuários'], lista(r.aparelhos).map((p) => [String(p.nome), N(p.usuarios)]), 'Sem aparelhos ainda.');
+    tabela('tab-ga-dias', ['dia', 'usuários', 'sessões'], lista(r.porDia).slice().reverse().map((d) => [new Date(d.dia + 'T12:00:00').toLocaleDateString('pt-BR'), N(d.usuarios), N(d.sessoes)]), 'Sem dias ainda.');
+  }
+
   const ACOES = { conta_criada: 'conta criada', conta_apagada: 'conta apagada', dados_baixados: 'dados baixados', medicao_alterada: 'medição alterada', admin_config: 'configuração global', admin_acesso: 'acesso às portas do dono', admin_promovido: 'administrador promovido', admin_rebaixado: 'administrador rebaixado', servidor_reiniciado: 'servidor reiniciado' };
   function auditoriaInterna(m) {
     const lista = Array.isArray(m.auditoria) ? m.auditoria.slice(0, 40) : [];
@@ -473,7 +523,7 @@ const js = `(() => {
     if (m === null) { $('painel').hidden = true; return estado('O servidor respondeu, mas não com métricas: é provavelmente uma versão antiga. Atualize e reinicie o servidor (DEPLOY.md, seção 04/10).', true); }
     if (!valido(m)) { $('painel').hidden = true; return estado('Resposta do servidor em formato inesperado.', true); }
     guardar(token); $('token').value = '';
-    cartoes(m); pilotos(m); oQueSeJoga(m); audiencia(m); auditoriaInterna(m); funil(m); porDia(m); porPais(m);
+    cartoes(m); pilotos(m); oQueSeJoga(m); audiencia(m); auditoriaInterna(m); analyticsDoGoogle(m); funil(m); porDia(m); porPais(m);
     const table=$('partidas');table.replaceChildren();const header=el('tr');for(const text of ['Versão / modo / montagem','Origem','Assistência','Rodadas','Concluídas','Quadros lentos','Abates / mortes'])header.append(el('th',null,text));table.append(header);
     const groups=Array.isArray(m.play?.groups)?m.play.groups.slice(0,128):[];
     for(const g of groups){const row=el('tr');const values=[String(g.release)+' / '+String(g.mode)+' / '+String(g.build),g.online?'Online':'Offline',g.assisted?'Assistida':'Normal',N(g.reports),N(g.completed),g.frames>0?(100*g.slowFrames/g.frames).toFixed(1)+'%':'—',N(g.kills)+' / '+N(g.deaths)];for(const value of values)row.append(el('td',null,value));table.append(row);}

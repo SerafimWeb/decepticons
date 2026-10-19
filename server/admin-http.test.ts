@@ -154,6 +154,8 @@ describe('o painel do servidor (/admin/*), com o servidor de verdade', () => {
         const h = lerHistorico(await (await chamar(server.port, ADMIN_HISTORICO_PATH)).json());
         return !!h && h.amostras.some((a) => a.jogadores === 1 && a.saidaKBs > 0 && a.tickMs > 0);
       });
+      // Esperar as amostras, não supor que já há mais de duas: com a máquina ocupada o amostrador atrasa (o atualizador reprovou um deploy por isto em 18/10).
+      await until(async () => (lerHistorico(await (await chamar(server.port, ADMIN_HISTORICO_PATH)).json())?.amostras.length ?? 0) > 2);
       const h = lerHistorico(await (await chamar(server.port, ADMIN_HISTORICO_PATH)).json())!;
       expect(h.passoS).toBe(5);
       expect(h.amostras.length).toBeGreaterThan(2);
