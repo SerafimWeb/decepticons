@@ -2,6 +2,10 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
+
+**O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
+
 ## PROCESSO MAIS LEVE E O CI VERMELHO — Claude, 19/10 (branch `claude/processo-leve`, P220)
 
 **O Comandante (19/10):** as iterações estão "MUITO grandes… overengineered?"; pediu as 5 regras de processo leve e que eu olhasse o GitHub vermelho.
