@@ -13,6 +13,7 @@ import { blocosDaPraca, PRACA_LIMITES, PRACA_PREDIOS, type BlocoDaPraca } from '
 
 const COR: Readonly<Record<BlocoDaPraca['kind'], number>> = {
   pavimento: 0xb7b9b1,
+  piso: 0xd9d1bf,
   gramado: 0x4c8f45,
   asfalto: 0x35383c,
   concreto: 0xe9e7df,
@@ -76,12 +77,12 @@ class Praca implements InstanciaDoMapa {
     // A cúpula (convexa, ao norte) e a tigela (côncava, ao sul) do Congresso: só desenho sobre os volumes sólidos do layout.
     const branco = new THREE.MeshStandardMaterial({ color: 0xf4f2ea, roughness: 0.7 });
     const cupula = new THREE.Mesh(new THREE.SphereGeometry(11.5, 20, 9, 0, Math.PI * 2, 0, Math.PI / 2), branco);
-    cupula.position.set(24, 14, -48);
+    cupula.position.set(20, 14, -46);
     const tigela = new THREE.Mesh(new THREE.CylinderGeometry(12.5, 7, 5.2, 24, 1, true), branco);
-    tigela.position.set(24, 8.6, 48);
+    tigela.position.set(20, 8.6, 46);
     const fundo = new THREE.Mesh(new THREE.CircleGeometry(12.3, 24), new THREE.MeshStandardMaterial({ color: 0xc9c5b8, roughness: 0.9 }));
     fundo.rotation.x = -Math.PI / 2;
-    fundo.position.set(24, 11.15, 48);
+    fundo.position.set(20, 11.15, 46);
     for (const o of [cupula, tigela, fundo]) {
       o.frustumCulled = false;
       scene.add(o);

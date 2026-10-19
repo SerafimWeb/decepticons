@@ -1,5 +1,12 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## [2026-10-19] O 8 DE JANEIRO é fato com fonte; o mapa é compacto e os saguões barram o Mech pela geometria (Claude, P222)
+
+1. **A fase é realista, e o realismo é do que se pode provar:** `fichas/fatos-8-de-janeiro.md` separa o 🟢 (pode virar texto, com fonte) do 🟡+ (só no Relatório, com a data do balanço) e do 🟡 (fora). Nenhuma pessoa real é nomeada; nenhuma faixa de ódio é reproduzida (as do cenário são em branco).
+2. **"Os militares não aderiram" não entra:** o STF condenou militares do Exército pelo planejamento da trama. A frase que as fontes sustentam é *"o golpe não se consumou"*.
+3. **Os saguões barram o Mech sem regra especial:** a porta de 1,9 m é menor que o diâmetro do menor Mech (2,0 m) e maior que o do androide (0,7 m). Chassi novo menor que a Arara abriria a porta: o teste de física pega.
+4. **O mapa encolheu de 400 × 208 m para 224 × 160 m** (pedido do Comandante: dinâmico, "no core da confusão"); a Esplanada ficou só o pé.
+
 ## [2026-10-19] O mapa da Praça dos Três Poderes: dados no pacote, desenho sob demanda, restrito (Claude, P217)
 
 **Decisões:**

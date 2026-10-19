@@ -2,6 +2,13 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## O MAPA DO 8 DE JANEIRO REFEITO: COMPACTO, REALISTA, COM SAGUÕES QUE O MECH NÃO ATRAVESSA — Claude, 19/10 (branch `claude/praca-realista`, P222)
+
+**Feito:** o mapa v1 virou o v2 (`PracaLayout.ts`, 224 × 160 m): o pé da Esplanada com os ônibus e bueiros, a **linha de gradis** (alguns caídos) e duas viaturas, o **Congresso** (laje, **duas rampas** ao telhado, saguão, torres, cúpula e tigela), o **Planalto** e o **Supremo** com saguões, a estátua, o entulho e as faixas em branco. **Cada saguão é fechado, com portas de 1,9 m e mesas dentro** (as da sujeira): **o Mech não passa, o androide entra**. A **ficha de fatos** (`fichas/fatos-8-de-janeiro.md`) diz o que o jogo pode afirmar, com a fonte; **a frase "os militares não aderiram" ficou de fora** (militares foram condenados pela trama).
+**Provas:** 9 testes do mapa (os saguões fechados por varredura, **o Vector-09 barrado e o androide entrando**, os pontos de nascimento, a rampa, a partida no mapa). Fotos: `.decepticons/arte/praca-*.png`.
+**Falta (R13):** a **missão** (a multidão entrando pelas portas, a sujeira, os androides faxineiros e rebeldes, o objetivo na tela e o Relatório com os fatos); **os fatos vêm de buscas na web, não dos documentos primários: um revisor humano confere cada 🟢 antes de liberar**; o mapa nasce restrito (`mapa:janeiro`); o interior não tem luz própria; a arte é de caixas.
+**Onde conferir:** `/jogar/?mapa=janeiro&comandante=1` (e `&multidao=1&cota=2500&t=9000`). **Próxima sessão:** a missão.
+
 ## A PRAÇA DOS TRÊS PODERES: O MAPA DO 8 DE JANEIRO NO AR, COM A MULTIDÃO DESCENDO A ESPLANADA (PASSO 4 DA FICHA) — Claude, 19/10 (branch `claude/praca-mapa`, P217)
 
 **O que foi feito:** o **chão** da fase do 8 DE JANEIRO, jogável no **Deathmatch** (offline e online) e **restrito ao Comandante** (`mapa:janeiro`).
