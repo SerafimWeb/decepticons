@@ -3056,6 +3056,8 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 @keyframes lado-pulso { 50% { box-shadow: 0 0 0 3px rgba(57, 255, 106, 0.35); } }
 @media (prefers-reduced-motion: reduce) { .cc-lado.sem-lado { animation: none; } }
 .lado-modal { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; background: rgba(2, 5, 8, 0.82); }
+/* As janelas do dono (VISIBILIDADE, REGRAS DAS SALAS) abrem POR CIMA da janela do servidor (z-index 2000): com 80 a de regras nascia atrás dela (19/10, P214). */
+.vis-modal { z-index: 2100; }
 .lado-titulo { margin: 0; text-align: center; font: 800 clamp(18px, 3vw, 26px)/1.1 'Consolas', 'Courier New', monospace; letter-spacing: 3px; color: #fff; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
 .lado-placa {
   position: relative; width: min(640px, 94vw); padding: 18px 20px 14px;
