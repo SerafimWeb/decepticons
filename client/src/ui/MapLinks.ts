@@ -6,6 +6,7 @@ export const MAPS: readonly { id: MapId; label: string; hint: string }[] = [
   { id: 'bunker', label: 'BUNKER', hint: 'Mapa de quatro andares, contra bots ou online' },
   { id: 'praia', label: 'PRAIA DOS CABOS', hint: 'A orla de Fortaleza: porto, Ponte Metálica e a estação de cabos' },
   { id: 'amazonia', label: 'AMAZÔNIA · TERRAS RARAS', hint: 'A missão do rio: derrube o Draga-01 antes que ele chegue à aldeia, em 2,4 km de floresta e rio (online: só o Deathmatch)' },
+  { id: 'janeiro', label: '8 DE JANEIRO', hint: 'A Praça dos Três Poderes, em Brasília: a Esplanada, o Congresso, o Planalto e o Supremo (em construção)' },
 ];
 
 /**

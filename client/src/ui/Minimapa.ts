@@ -77,6 +77,11 @@ export function plantaDaAmazoniaNoMinimapa(): PlantaMinimapa {
   return { caixas: [...(mapaCarregado('amazonia')?.caixasDaPlanta() ?? [])], zonas: [] };
 }
 
+/** A planta da Praça dos Três Poderes (P217): as estruturas sólidas (do registro de mapas sob demanda); sem zonas de cura. */
+export function plantaDaPracaNoMinimapa(): PlantaMinimapa {
+  return { caixas: [...(mapaCarregado('janeiro')?.caixasDaPlanta() ?? [])], zonas: [] };
+}
+
 /** A estação como um "ponto" do minimapa (a letra E, em ciano): fora do alcance, fica presa na borda e mostra a direção do objetivo. */
 export function pontoDaEstacao(): readonly PontoDoMapa[] {
   return [{ def: { letra: 'E', x: PRAIA_ESTACAO.x, z: PRAIA_ESTACAO.z }, control: 1, disputado: false }];

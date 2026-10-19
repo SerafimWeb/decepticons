@@ -94,6 +94,8 @@ export class Arena {
   readonly praia: Praia | null = null;
   /** O mapa da Amazônia (P180), quando é ele: o rio e a floresta; o `update` anda o tempo e o `observar` segue a câmera. Vem do registro de mapas sob demanda (o código dele não mora no pacote de partida). */
   readonly amazonia: InstanciaDoMapa | null = null;
+  /** A Praça dos Três Poderes (o 8 DE JANEIRO, P217), quando é ela: estática (nada anima), vem do registro de mapas sob demanda. */
+  readonly praca: InstanciaDoMapa | null = null;
   /** Qual mapa este cenário é (o CFTV escolhe as câmeras por ele: `camera/camerasDoMapa.ts`). */
   readonly mapa: MapId;
   /** Tempo acumulado, só para as ondas do mar. */
@@ -130,6 +132,13 @@ export class Arena {
       // A Amazônia traz o céu, a névoa, o rio e a floresta (`environment/Amazonia.ts`): nada daqui.
       this.serafim = null;
       this.amazonia = exigirMapa('amazonia').construir(scene, physics);
+      return;
+    }
+
+    if (map === 'janeiro') {
+      // A Praça traz o céu, a névoa, a luz e o chão (`environment/PracaMapa.ts`): nada daqui.
+      this.serafim = null;
+      this.praca = exigirMapa('janeiro').construir(scene, physics);
       return;
     }
 

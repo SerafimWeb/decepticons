@@ -3,6 +3,16 @@
 ## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
 
 **Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.
+## [2026-10-19] O mapa da Praça dos Três Poderes: dados no pacote, desenho sob demanda, restrito (Claude, P217)
+
+**Decisões:**
+1. **O layout é dado puro e minúsculo; o desenho e os colisores são sob demanda.** O pacote de partida está em 497 KB de 500 (R7): só os pontos de nascimento, a capacidade e os limites (`PracaLayout.ts`) moram nele; `PracaMapa.ts` (1,3 KB gzip) baixa para quem abre o mapa, como a Amazônia. O servidor também o carrega sob demanda (`carregarMapaSeFor`, etapa O1).
+2. **Os nomes dos prédios são os dos poderes** (LEGISLATIVO, EXECUTIVO, JUDICIÁRIO): a proposta da ficha (pergunta 1). É a escolha que não cita instituição nem pessoa; fica **aguardando o Comandante**, e trocar é uma linha em `PRACA_PREDIOS`.
+3. **Os colisores são caixas; o redondo (cúpula e tigela) é só desenho** sobre um volume sólido: a física do jogo só tem caixas e o Mech esbarra no volume, não na curva. Abaixo de 310 colisores (o teto do Bunker, travado por teste).
+4. **A rampa do Congresso é jogo, não enfeite:** sobe da Esplanada à laje (5 m) e é por onde a multidão e o jogador sobem ao telhado; um teste sobe a rampa com um Mech de verdade (a primeira versão tinha o giro invertido e o teste de altura da laje caía dentro de um volume: o teste achou os dois).
+5. **A fonte da multidão é do mapa** (ônibus, bueiros, lixeiras com posição fixa): o cronograma (semente e tick, `sim/Multidao.ts`) diz quando cada uma despeja. A demonstração da multidão já usa as do mapa de verdade.
+6. **Nasce restrito (`mapa:janeiro`):** ninguém vê o 8 DE JANEIRO até o Comandante liberar no painel de visibilidade; é a rede de segurança da ficha (§ 9), e a missão ainda não existe.
+7. **O mapa abre só o Deathmatch por enquanto:** a Sobrevivência (a missão da ficha) cai na Cidade Neon até o passo 5; o CTF e o Domínio ficam nas etapas O2 e O3 do online (P218).
 
 ## [2026-10-19] Processo leve: rigor proporcional ao risco, e o CI vermelho (Claude, P220)
 

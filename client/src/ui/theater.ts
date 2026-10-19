@@ -53,8 +53,8 @@ export const TEATROS: readonly Teatro[] = [
   },
   {
     // A fase do 8 de janeiro (P217): o lugar é o que o Comandante mandou (a Praça dos Três Poderes). Sem mapa ainda: "EM BREVE" até a ficha (`fichas/cenario-8-de-janeiro.md`) ser aprovada e o cenário ser construído.
-    id: 'janeiro', nome: '8 DE JANEIRO', lugar: 'Praça dos Três Poderes · Brasília · DF', lat: -15.79, lon: -47.88, recurso: 'poder',
-    modos: [], resumo: 'A Praça dos Três Poderes invadida por uma multidão de verde e amarelo: defenda os três prédios.', proposta: false, lado: 'direita',
+    id: 'janeiro', nome: '8 DE JANEIRO', lugar: 'Praça dos Três Poderes · Brasília · DF', lat: -15.79, lon: -47.88, recurso: 'poder', mapa: 'janeiro',
+    modos: ['deathmatch'], resumo: 'A Praça dos Três Poderes invadida por uma multidão de verde e amarelo: defenda os três prédios.', proposta: false, lado: 'direita',
   },
   {
     id: 'barragem', nome: 'BARRAGEM', lugar: 'Foz do Iguaçu · PR', lat: -25.41, lon: -54.59, recurso: 'energia',

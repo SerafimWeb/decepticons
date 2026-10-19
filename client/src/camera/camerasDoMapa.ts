@@ -14,6 +14,8 @@ export function camerasDoMapa(mapa: MapId): readonly FixedCameraPoint[] {
   if (mapa === 'bunker') return [];
   // A Amazônia (P180) ainda não tem postes de CFTV (as torres da margem vão ganhar câmeras com a defesa, parte D): só os drones e os Mechs.
   if (mapa === 'amazonia') return [];
+  // A Praça dos Três Poderes (P217) ainda não tem postes de CFTV: só os drones e os Mechs.
+  if (mapa === 'janeiro') return [];
   return DEFAULT_FIXED_CAMERAS;
 }
 
