@@ -1,5 +1,5 @@
-import { randomBytes } from 'node:crypto';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { createHash, randomBytes } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { type Duplex } from 'node:stream';
 import { connect as tlsConnect } from 'node:tls';
 import { join } from 'node:path';
@@ -280,7 +280,7 @@ export function carregarMailer(
 }
 
 /**
- * O envio do servidor de verdade: lê `email.json` e **relê quando o arquivo muda** (data e tamanho), então o Comandante liga o e-mail salvando o arquivo, sem reiniciar o servidor
+ * O envio do servidor de verdade: lê `email.json` e **relê quando o arquivo muda** (o conteúdo), então o Comandante liga o e-mail salvando o arquivo, sem reiniciar o servidor
  * (reiniciar derruba quem joga). Custo: um `statSync` por pedido de "esqueci a senha", que é raro e já limitado por IP, conta e dia.
  */
 export class MailerDaPasta implements Mailer {
@@ -299,8 +299,8 @@ export class MailerDaPasta implements Mailer {
     let marca = this.env.CYBERMECH_EMAIL_CHAVE ? 'env' : 'sem-arquivo';
     try {
       if (this.dirDados && existsSync(join(this.dirDados, EMAIL_ARQUIVO))) {
-        const s = statSync(join(this.dirDados, EMAIL_ARQUIVO));
-        marca += `:${s.mtimeMs}:${s.size}`;
+        // O conteúdo, não a data e o tamanho: trocar COLE_A_SENHA_AQUI por uma senha de 17 caracteres não muda o tamanho, e dois salvamentos no mesmo tique do relógio têm a mesma data.
+        marca += `:${createHash('sha1').update(readFileSync(join(this.dirDados, EMAIL_ARQUIVO))).digest('hex')}`;
       }
     } catch {
       // sem acesso: trata como sem arquivo
