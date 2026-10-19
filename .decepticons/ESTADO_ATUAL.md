@@ -3,6 +3,21 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## O SERVIDOR AVISA ANTES DE REINICIAR: TELA COM CONTADOR, E O JOGO INSISTE EM VOLTAR — Claude, 18/10 (branch `claude/aviso-de-reinicio`, P204)
+
+**O Comandante (18/10):** *"será que temos que adicionar uma imagem dizendo que estamos reiniciando o servidor ou em manutenção (e dizer se temos previsão de retornar, atualizado automaticamente, com um contador na tela, e se for reinício do servidor, dizer que volta em 1 ou 2 minutos? ou potencialmente mais?)"*. Sim, e entrou.
+
+**O que entrou:**
+1. **O servidor avisa e só então corta** (`server.fecharComAviso`, usado pelo painel e pela atualização automática): com gente na sala manda o aviso `AVISO` (mensagem nova, `shared/net/messages.ts`; cliente antigo a ignora, **sem mudar o protocolo**), espera **10 s** (`REINICIO_AVISO_S`) e corta com o código **4010** e o tempo previsto de volta (**60 s**, `REINICIO_VOLTA_EM_S`: medi 16 a 50 s nos deploys de hoje). Sem ninguém, reinicia na hora.
+2. **A tela** (`ui/ConnectionNotice.ts`, frases em `ui/avisoDeConexao.ts`, nas 6 línguas): "ATUALIZAÇÃO DO SERVIDOR · corte em 0:07"; depois do corte "SERVIDOR REINICIANDO · volta em ~0:58" descendo; passou da previsão, "DEMORANDO MAIS QUE O PREVISTO · fora há …"; queda sem aviso (PC, internet, túnel) "CONEXÃO PERDIDA · fora há …", e **depois de 30 s o botão "JOGAR OFFLINE ENQUANTO ISSO"**. Quem nunca entrou na sala não ganha a tela (cai no offline em ~19 s, como sempre).
+3. **A insistência:** antes o jogo desistia em ~15 s e pedia para recarregar; agora quem já estava na sala tenta de novo **a cada 5 s por até 10 minutos** (`PERSISTENCIA_PADRAO_MS`) e volta sozinho.
+
+**Provas:** 4 testes novos no `online.test.ts` (aviso → corte 4010 → previsão → volta sozinho; queda sem aviso desiste só no fim da persistência; quem nunca entrou não insiste; sala vazia não espera), 1 no codec, 8 das frases; **2 mutações à mão pegas** (tirar a trava de "já entrou" e nunca insistir). **Ponta a ponta no Chrome contra um servidor local** (`medicoes/aviso-reinicio.mjs`, 8 de 8): o aviso conta 0:07, depois do corte 0:58, o servidor volta e a tela some sozinha, a queda sem aviso mostra o botão offline com 35 s. Capturas em `.decepticons/arte/aviso-reinicio-*-claude.jpg`.
+
+**Falta:** ver num reinício de produção de verdade (o próximo deploy com gente na sala); um aviso de **manutenção agendada** escrito pelo dono (hoje só o reinício é anunciado); o aviso na landing do site (a Hostinger não sabe do servidor).
+
+**Próxima sessão começa com:** o "esqueci a senha" e a leitura do Google Analytics nas métricas (ordem P204).
+
 ## OS DOCUMENTOS FICARAM 6× MAIS LEVES, O MONITOR É O DA CLOUDFLARE E A CHAVE DO GOOGLE JÁ FUNCIONA — Claude, 18/10 (branch `claude/arquivar-docs`, P203)
 
 **O Comandante (18/10):** *"ARQUIVAR"*; não conseguiu criar o monitor no UptimeRobot e perguntou se é grátis e se o sistema do Telegram (serafim13, BatBot) já não serve; ativou a Google Analytics Data API e deu a conta de serviço; perguntou se vale formatar um PC velho como servidor ou contratar uma VPS; e mandou prosseguir.

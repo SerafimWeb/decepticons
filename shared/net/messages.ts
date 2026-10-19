@@ -29,6 +29,8 @@ export const MSG = {
   BANK_REPLY: 16,
   /** Um quadro do mural: todas as salas, só o que o radar precisa (`shared/net/mural.ts`). */
   MURAL: 17,
+  /** O servidor avisa quem está na sala (hoje: que vai reiniciar). Cliente antigo ignora o tipo que não conhece: sem mudar o protocolo. */
+  AVISO: 18,
 } as const;
 
 /** Tipo da mensagem (primeiro byte); 0 se vazia. */
@@ -276,4 +278,34 @@ export function decodeReject(bytes: Uint8Array): RejectReason | null {
   if (r.u8() !== MSG.REJECT) return null;
   const reason = REJECT_REASONS[r.u8()];
   return r.clean && reason ? reason : null;
+}
+
+// ---------- aviso do servidor ----------
+
+/** O que o servidor avisa. `reinicio`: em `segundos` a conexão é cortada e ele volta em cerca de `voltaEmS`. */
+export const AVISO_TIPOS = ['reinicio'] as const;
+export type AvisoTipo = (typeof AVISO_TIPOS)[number];
+
+export interface AvisoMsg {
+  tipo: AvisoTipo;
+  segundos: number;
+  voltaEmS: number;
+}
+
+export function encodeAviso(w: Writer, m: AvisoMsg): Uint8Array {
+  return w
+    .reset()
+    .u8(MSG.AVISO)
+    .u8(AVISO_TIPOS.indexOf(m.tipo))
+    .u16(Math.min(0xffff, Math.max(0, Math.round(m.segundos))))
+    .u16(Math.min(0xffff, Math.max(0, Math.round(m.voltaEmS))))
+    .done();
+}
+
+export function decodeAviso(bytes: Uint8Array): AvisoMsg | null {
+  const r = reader.set(bytes);
+  if (r.u8() !== MSG.AVISO) return null;
+  const tipo = AVISO_TIPOS[r.u8()];
+  const m = { segundos: r.u16(), voltaEmS: r.u16() };
+  return r.clean && tipo ? { tipo, ...m } : null;
 }

@@ -134,8 +134,10 @@ describe('o contrato dos scripts do ajudante (um erro de digitação aqui só ap
     const gancho = main.slice(main.indexOf('aoReiniciar:'), main.indexOf('log: (line)'));
     const lancar = gancho.indexOf('soltarAjudanteDeReinicio(');
     expect(lancar).toBeGreaterThan(-1);
-    expect(lancar).toBeLessThan(gancho.indexOf('server.close()'));
-    expect(gancho.indexOf('server.close()')).toBeLessThan(gancho.indexOf('process.exit(CODIGO_REINICIO)', gancho.indexOf('.finally(')));
+    // O fechamento é `fecharComAviso()` (P204): avisa quem está jogando, espera, corta com o código de reinício e fecha.
+    expect(lancar).toBeLessThan(gancho.indexOf('server.fecharComAviso()'));
+    expect(gancho.indexOf('server.fecharComAviso()')).toBeLessThan(gancho.indexOf('process.exit(CODIGO_REINICIO)', gancho.indexOf('.finally(')));
+    expect(gancho, 'nunca o close() seco: o jogador precisa do aviso').not.toContain('server.close()');
     expect(gancho, 'a pasta de dados para o religar.log').toContain('dados: pastaDados(');
   });
 });

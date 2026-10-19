@@ -226,6 +226,10 @@ node .decepticons/medicoes/amazonia-gpu.mjs --mapa arena --modo deathmatch --tel
 
 **O achado de 18/10 (a causa de "travado", provada):** MSAA 4× no alvo HDR de meia precisão = **24-27 ms** de GPU por quadro na Vega 11 (a 1936×1156), contra **10,5 ms** sem ele (+1,5 ms do FXAA). **Todo mapa.** O cenário da Amazônia inteiro escondido tirava só ~2 ms. Registro: `medicoes/amazonia-gpu-2026-10-18.json`.
 
+### 4.7 A prova do aviso de reinício no jogo de verdade (`medicoes/aviso-reinicio.mjs`, P204, 18/10)
+
+Um servidor local (porta 2598, dados em `.tmp/aviso-dados`) + o jogo pelo Vite dev + Chrome headless: o jogador entra na sala, o servidor reinicia **com aviso** (conta 0:07, depois do corte 0:58, volta e a tela some) e depois cai **sem aviso** (o contador sobe e, com 30 s, o botão de jogar offline). 8 verificações, saída `TUDO OK`, fotos em `.decepticons/arte/aviso-reinicio-*-claude.jpg`. ~4 min e um Chrome: rode com o servidor de jogo de verdade sem ninguém jogando. Um `querySelector('.net-status')` acha o elemento do `NetHud`, vazio; o do `Game` é o segundo (use `querySelectorAll`).
+
 ### 4.5 A missão do rio e a câmera do jogo com o mouse (P180, parte C)
 
 **Para ver o fim da missão sem esperar dez minutos:** `?mapa=amazonia&modo=survival&marcha=0.9` (de 0 a 0,95: quanto da marcha o Draga já andou). **Para fotografar o jogo com a câmera virada:** o **Pointer Lock funciona no Chrome sem janela**, então `page.mouse.move` gira a câmera do jogo de verdade: **cada ponto do mouse são 0,0008 rad** (a `BASE_SENSITIVITY`) e **mover para a direita vira para a direita** (o rumo cresce no sentido horário a partir do norte, -Z). O Playwright entrega os eventos mesmo com o ponteiro fora da janela. **A mata esconde o Draga do chão:** para vê-lo, olhe do rio, de uma clareira (a aldeia) ou acima das copas; a bancada (`amazonia.mjs --vistas draga`) o mostra de cima do rio.

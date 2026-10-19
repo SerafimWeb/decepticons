@@ -5,6 +5,7 @@ import { DOWNLOAD_BUDGET, INPUT_HZ, INPUTS_PER_PACKET, MAX_INPUTS_PER_PACKET, NO
 import { EVENT, EVENT_BYTES, type EventKind } from './events';
 import { INPUT_BYTES, newNetInput, type NetInput } from './input';
 import {
+  decodeAviso,
   decodeEvents,
   decodeInputs,
   decodeJoin,
@@ -14,6 +15,7 @@ import {
   decodeRoster,
   decodeSnapshot,
   decodeWelcome,
+  encodeAviso,
   encodeEvents,
   encodeInputs,
   encodeJoin,
@@ -213,6 +215,18 @@ describe('rede: mensagens', () => {
     expect(decodePong(copy(encodePong(w, 123456, 777)))).toEqual({ clientTime: 123456, tick: 777 });
     expect(decodeReject(copy(encodeReject(w, 'cheia')))).toBe('cheia');
     expect(messageType(copy(encodePing(w, 1)))).toBe(MSG.PING);
+  });
+
+  it('aviso do servidor (P204): ida e volta, tempos limitados a 16 bits, tipo desconhecido e cauda sobrando recusam', () => {
+    const w = new Writer();
+    expect(decodeAviso(copy(encodeAviso(w, { tipo: 'reinicio', segundos: 10, voltaEmS: 60 })))).toEqual({ tipo: 'reinicio', segundos: 10, voltaEmS: 60 });
+    expect(decodeAviso(copy(encodeAviso(w, { tipo: 'reinicio', segundos: 1e9, voltaEmS: -5 })))).toEqual({ tipo: 'reinicio', segundos: 0xffff, voltaEmS: 0 });
+    const ruim = copy(encodeAviso(w, { tipo: 'reinicio', segundos: 1, voltaEmS: 1 }));
+    ruim[1] = 9; // tipo que este cliente não conhece
+    expect(decodeAviso(ruim)).toBeNull();
+    const comCauda = new Uint8Array([...copy(encodeAviso(w, { tipo: 'reinicio', segundos: 1, voltaEmS: 1 })), 0]);
+    expect(decodeAviso(comCauda)).toBeNull();
+    expect(messageType(copy(encodeAviso(w, { tipo: 'reinicio', segundos: 1, voltaEmS: 1 })))).toBe(MSG.AVISO);
   });
 
   it('eventos: cada tipo no tamanho dele, ida e volta; tipo ou parte desconhecidos recusam o pacote', () => {

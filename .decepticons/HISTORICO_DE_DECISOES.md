@@ -1,6 +1,18 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-18] O servidor avisa antes de reiniciar, e o jogo insiste por 10 minutos (Claude, P204)
+
+**Ordem:** *"será que temos que adicionar uma imagem dizendo que estamos reiniciando o servidor ou em manutenção… com um contador na tela… se for reinício, dizer que volta em 1 ou 2 minutos? ou potencialmente mais?"*
+
+**Decisões:**
+1. **Avisar com 10 s de antecedência, só se há gente na sala.** Cada deploy reinicia o servidor (até commit de documento) e já havia jogador real do outro lado; 10 s dão tempo de terminar um tiro, e sala vazia não espera nada. A atualização automática espera até 25 s a porta liberar (`parar-servidor.ps1`), então os 10 s cabem.
+2. **"Volta em cerca de 1 minuto"** (60 s), porque medi **16, 23, 28 e 50 s** entre "pedindo reinício" e "religou" hoje; **se passar, a tela diz "demorando mais que o previsto" e continua tentando** em vez de inventar um número maior. Prometer 2 minutos para um reinício de 20 s ensina o jogador a desconfiar do aviso.
+3. **Sem mudar o protocolo:** o aviso é uma mensagem nova que cliente antigo ignora, e o corte usa o código de fechamento 4010 com o tempo no motivo. Uma página velha em cache continua jogando; só não vê o contador.
+4. **A insistência longa só vale para quem já entrou numa sala** (10 min, a cada 5 s). Quem abre o link com o servidor desligado volta ao offline em ~19 s como antes, em vez de ficar preso numa tela de espera.
+5. **Queda sem aviso não tem previsão e a tela diz isso** ("sem previsão de volta"), com o tempo fora subindo e, depois de 30 s, o jogo offline à mão. Não chutar um prazo que ninguém sabe.
+6. **Não feito:** manutenção agendada escrita pelo dono e aviso na landing (a landing é estática na Hostinger e não conhece o estado do servidor).
+
 ## [2026-10-18] Arquivar os documentos vivos, o monitor da Cloudflare e o servidor que ainda fica (Claude, P203)
 
 **Ordem:** *"ARQUIVAR… é gratuito mesmo? se vc for no serafim13, BATBOT… veja se nosso sistema de avisos pelo telegram já não é melhor que uptime robot… bora limpar pra tornar mais leve… sera que compensa formatar [o PC velho]… ou logo teremos que pagar um servidor vps?"*

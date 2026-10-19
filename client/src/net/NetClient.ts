@@ -4,6 +4,7 @@ import { Writer } from '../../../shared/net/codec';
 import { PROTOCOL_VERSION } from '../../../shared/net/constants';
 import type { NetInput } from '../../../shared/net/input';
 import {
+  decodeAviso,
   decodeEvents,
   decodePong,
   decodeReject,
@@ -18,6 +19,7 @@ import {
   MSG,
   newEventBatch,
   newSnapshot,
+  type AvisoMsg,
   type EventBatch,
   type RejectReason,
   type RosterEntry,
@@ -36,7 +38,10 @@ export interface NetClientEvents {
   /** Ida e volta até o servidor (ms). */
   pong(rttMs: number): void;
   reject(reason: RejectReason): void;
-  closed(): void;
+  /** O servidor avisou que vai reiniciar (P204): em `segundos` ele corta e volta em cerca de `voltaEmS`. */
+  aviso(m: AvisoMsg): void;
+  /** `code` e `reason` são os do fechamento do WebSocket (0 e vazio quando a conexão nem abriu): `CLOSE_REINICIO` diz "reiniciando" e o motivo é o tempo de volta em segundos. */
+  closed(code: number, reason: string): void;
 }
 
 /**
@@ -65,18 +70,18 @@ export class NetClient {
       if (e.data instanceof ArrayBuffer) this.receive(new Uint8Array(e.data));
     };
     // `closed` dispara UMA vez: no navegador uma conexão que falha dá `error` e depois `close`, e em alguns ambientes (o Node dos testes) a recusa só dá `error`.
-    this.ws.onclose = () => this.fechou();
+    this.ws.onclose = (e) => this.fechou(e?.code ?? 0, e?.reason ?? '');
     this.ws.onerror = () => {
-      if (!this.isOpen) this.fechou();
+      if (!this.isOpen) this.fechou(0, '');
     };
   }
 
   private jaFechou = false;
 
-  private fechou(): void {
+  private fechou(code: number, reason: string): void {
     if (this.jaFechou) return;
     this.jaFechou = true;
-    this.on.closed?.();
+    this.on.closed?.(code, reason);
   }
 
   get isOpen(): boolean {
@@ -135,6 +140,11 @@ export class NetClient {
       case MSG.PONG: {
         const p = decodePong(bytes);
         if (p) this.on.pong?.((performance.now() - p.clientTime) >>> 0);
+        return;
+      }
+      case MSG.AVISO: {
+        const a = decodeAviso(bytes);
+        if (a) this.on.aviso?.(a);
         return;
       }
       case MSG.REJECT: {

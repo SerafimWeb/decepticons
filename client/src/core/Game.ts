@@ -152,6 +152,7 @@ import { SURVIVAL_MAX_ANDROIDS, SURVIVAL_MAX_MECHS, SURVIVAL_WAVE_PLANS } from '
 import { HangarMenu } from '../ui/HangarMenu';
 import { HangarScene } from '../hangar/HangarScene';
 import { OnlineLobby } from '../ui/OnlineLobby';
+import { ConnectionNotice } from '../ui/ConnectionNotice';
 import { ModeSelector } from '../ui/ModeSelector';
 import { MissionHUD } from '../ui/MissionHUD';
 import { CtfHud } from '../ui/CtfHud';
@@ -287,6 +288,8 @@ export class Game {
   /** Jogo online (M4): a sessão com o servidor, ou null no jogo de sempre. */
   private readonly online: OnlineSession | null;
   private readonly netStatus = document.createElement('div');
+  /** O painel "servidor reiniciando / conexão perdida" com o contador (P204): só existe no jogo online. */
+  private connectionNotice: ConnectionNotice | null = null;
   private readonly damageIndicator = new DamageIndicator();
   private readonly damageNumbers = new DamageNumbers();
   /** Painel "seu algoz" (frente 3 da P109): quem te matou, em que robô e com que armas, durante o contador. */
@@ -729,6 +732,7 @@ export class Game {
       });
       this.match.pilots.push(this.online);
       document.body.append(this.netStatus);
+      this.connectionNotice = new ConnectionNotice(document.body, { aoJogarOffline: () => reloadWithout('sala'), aoRecarregar: () => location.reload() });
     } else {
       this.online = null;
       if (online) {
@@ -1127,6 +1131,7 @@ export class Game {
   }
 
   private showNet(s: OnlineStatus): void {
+    this.connectionNotice?.atualizar(s);
     if (s.state === 'conectando') {
       this.lobby.setConnecting(true, `CONECTANDO À SALA ${s.room}…`);
     } else if (s.state === 'na sala') {
@@ -1145,7 +1150,7 @@ export class Game {
         : s.state === 'conectando'
           ? `ONLINE · CONECTANDO À SALA ${s.room}…`
           : s.state === 'reconectando'
-            ? `ONLINE · CONEXÃO CAIU · RECONECTANDO (${s.tentativa}/${s.de})…`
+            ? `ONLINE · CONEXÃO CAIU · RECONECTANDO${s.tentativa !== undefined && s.de !== undefined && s.tentativa <= s.de ? ` (${s.tentativa}/${s.de})` : ''}…`
             : s.state === 'recusado'
             ? `ONLINE · RECUSADO (${s.reason === 'cheia' ? 'sala cheia' : s.reason === 'versao' ? 'versão diferente: recarregue' : s.reason === 'montagem' ? 'montagem inválida' : 'erro'})`
             : 'ONLINE · CONEXÃO CAIU: recarregue a página';

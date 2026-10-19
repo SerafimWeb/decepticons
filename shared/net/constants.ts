@@ -53,6 +53,16 @@ export const UPLOAD_BUDGET = 2 * 1024;
 /** Moldura do WebSocket, TCP e TLS sobre cada mensagem (~20%). */
 export const WIRE_OVERHEAD = 1.2;
 
+/**
+ * Reinício do servidor com gente jogando (P204). Antes de cortar, o servidor manda o aviso `AVISO` e espera `REINICIO_AVISO_S`
+ * (dá tempo de terminar o que se faz); corta com o código `CLOSE_REINICIO` (4000 a 4999 é da aplicação) e o motivo do corte é o
+ * tempo previsto de volta, em segundos. Sem ninguém na sala, reinicia na hora. `REINICIO_VOLTA_EM_S` é o que o jogador lê como
+ * "volta em cerca de": medido nos deploys de 18/10, o servidor levou de 16 a 50 s para religar (a tela continua tentando se passar).
+ */
+export const CLOSE_REINICIO = 4010;
+export const REINICIO_AVISO_S = 10;
+export const REINICIO_VOLTA_EM_S = 60;
+
 /** Apelido: até 16 caracteres. Montagem (`loadoutKey`): até 80. Código da sala: até 12. */
 export const NAME_MAX = 16;
 export const BUILD_MAX = 80;
