@@ -3,6 +3,26 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## O "ESQUECI A SENHA": LINK POR E-MAIL, PÁGINA PRÓPRIA E SEM CNPJ NA POLÍTICA — Claude, 18/10 (branch `claude/esqueci-a-senha`, P206)
+
+**O Comandante (18/10):** *"faça o esqueci a senha; não vamos dar CNPJ por enquanto pois não temos e o jogo é indie, feito por uma pessoa apenas"*.
+
+**O que entrou:**
+1. **O pedido** (`POST /conta/esqueci`): responde **202 igual exista a conta ou não** e **antes** do trabalho (banco e envio), então nem o texto nem o tempo dizem se o e-mail tem conta. Limites: **5 por hora por IP**, **3 por hora por conta** e **50 e-mails por dia** no total (a cota grátis do Resend é 100). Sem e-mail configurado: 503 `sem-email` e o jogo diz para pedir ajuda pelo contato da Privacidade.
+2. **O link:** 32 bytes aleatórios; o banco guarda só a **impressão digital (SHA-256)**; vale **30 min** e **uma vez**; um pedido novo cancela o anterior. Ele vai **depois do `#`** (`/redefinir/?lang=pt#TOKEN`): o fragmento não vai a servidor nenhum nem no Referer.
+3. **A troca** (`POST /conta/redefinir`): confere o link, grava a senha nova (scrypt, sal novo) e **encerra todas as sessões da conta**; duas trocas com o mesmo link ao mesmo tempo, só uma passa. **Não entra sozinho:** manda voltar ao jogo e entrar com a senha nova.
+4. **A página `/redefinir/`** (`scripts/redefinir.mjs`, sete línguas, `noindex`, **sem Google nem cookies**): tira o token da barra de endereço ao abrir, valida a senha, e mostra a frase certa para link vencido, limite e servidor fora do ar. Provada no navegador sem rede de verdade (`site --check`).
+5. **No jogo:** "Esqueci a senha" no painel de login (modo novo, sem aba nem botão primário a mais), nas 6 línguas.
+6. **E-mail:** `server/email.ts` (provedor trocável; o Resend por `fetch`, sem biblioteca; chave só em `.tmp/servidor/email.json` ou `CYBERMECH_EMAIL_CHAVE`, nunca no git), textos em 7 línguas.
+7. **Sem e-mail ainda? `npm run admin -- link-senha <e-mail>`** gera o mesmo link (30 min, uso único) para o Comandante entregar à pessoa.
+8. **Auditoria:** `senha_recuperacao_pedida`, `senha_redefinida`, `link_senha_gerado`, com o número da conta, nunca o e-mail nem o token. **Política:** o controlador agora é "uma pessoa física, sem empresa nem CNPJ por ora"; nova linha na tabela e o Resend como destinatário (EUA).
+
+**Provas:** 22 testes do fluxo com o servidor de verdade (pedir → e-mail → trocar → senha velha falha, sessão antiga cai, link não serve duas vezes; resposta igual com e sem conta; limites; auditoria sem o e-mail; falha do provedor) + 5 do cliente; **5 mutações à mão pegas** (sem prazo, sem encerrar as sessões, vários links por conta, sem a trava de uso único, limite por conta frouxo).
+
+**Falta (dele):** ligar o envio de e-mail: conta no Resend, verificar o domínio `cybermech.online` e guardar a chave (`LANCAMENTO.md § 7`). **Até lá**, o jogo avisa que a recuperação por e-mail não está ativa e o `link-senha` resolve na mão. **Não feito:** e-mail de aviso "sua senha foi trocada" (boa prática; entra com o envio ligado) e o nome da pessoa na política (a LGPD pede a identidade do encarregado; ele decide).
+
+**Próxima sessão começa com:** a leitura do Google Analytics no `/metricas/` (falta o ID numérico da propriedade) e a limpeza do `servidor.log` antigo.
+
 ## O CHAT DE VOZ: ÁUDIO DIRETO ENTRE OS JOGADORES, SEM SERVIDOR DE MÍDIA, SEM CUSTO E PROVADO EM CHROME DE VERDADE — Claude, 18/10 (branch `claude/voice-chat`, P205)
 
 **O Comandante (18/10):** trouxe o plano do VOICE CHAT (microfone aberto + apertar-para-falar, áudio espacial, canais ALL + TEAM, TURN a critério técnico) e, ao mandar seguir: *"quero q seja simples, sem custo inicial e eficiente"*.

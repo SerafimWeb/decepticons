@@ -5,6 +5,7 @@
  *   /bastidores/       o endereço antigo: página que leva para a sala de controle
  *   /metricas/         métricas privadas do dono (scripts/metricas.mjs): só abre com o token do servidor
  *   /privacidade/      a política de privacidade (scripts/privacidade.mjs; LGPD)
+ *   /redefinir/        onde o link do e-mail "Esqueci a senha" cai (scripts/redefinir.mjs; noindex, sem cookies nem Analytics)
  *   /jogar/            o jogo (vite build)
  *   /capturas/         imagens do jogo, feitas jogando o build (só com --capturas)
  *
@@ -182,6 +183,8 @@ async function build() {
   run('node', ['scripts/metricas.mjs', '--out', join(OUT, 'metricas', 'index.html')]);
   // Pública e indexável: a política de privacidade (P192, LGPD), linkada do rodapé de todas as páginas, da faixa de cookies e da tela de criar conta do jogo.
   run('node', ['scripts/privacidade.mjs', '--out', join(OUT, 'privacidade', 'index.html')]);
+  // Privada e sem Analytics: a página do link de redefinição de senha (P206), com o token só depois do `#`.
+  run('node', ['scripts/redefinir.mjs', '--out', join(OUT, 'redefinir', 'index.html')]);
   writeFileSync(join(OUT, '.htaccess'), htaccess());
   writeFileSync(join(GAME, 'assets', '.htaccess'), ASSETS_HTACCESS);
   const wasm = readdirSync(join(GAME, 'assets')).filter((f) => f.endsWith('.wasm'));
@@ -273,6 +276,95 @@ async function pageSane(page, name, failures) {
   const { charset, mode } = await page.evaluate(() => ({ charset: document.characterSet, mode: document.compatMode }));
   if (charset !== 'UTF-8') failures.push(`${name}: lido como ${charset} (acentos quebrados)`);
   if (mode !== 'CSS1Compat') failures.push(`${name}: modo quirks (falta o <!doctype html>)`);
+}
+
+/**
+ * A página de redefinir a senha (P206), no navegador, **sem rede de verdade**: o HTML é gerado de novo apontando para um servidor de mentira e cada resposta da API é combinada na hora
+ * (`page.route`). Prova: o token sai da barra de endereço ao abrir; a língua vem do `?lang=`; senha curta e senhas diferentes são recusadas sem chamar o servidor; o sucesso troca a tela e
+ * manda de volta ao jogo; link vencido, limite e servidor fora do ar mostram a frase certa; a senha e o token vão no corpo do POST (nunca na URL); e a página não pede nada ao Google,
+ * não tem faixa de cookies e pede para ficar fora da busca.
+ */
+async function redefinirPage(browser, failures) {
+  const { REDEFINIR_TOKEN_RE } = (await (await import('vite')).runnerImport(resolve('shared/net/auth.ts'), { configFile: false, logLevel: 'silent' })).module;
+  const dir = resolve('.tmp', 'site-check-redefinir');
+  mkdirSync(dir, { recursive: true });
+  const arquivo = join(dir, 'index.html');
+  const r = spawnSync('node', ['scripts/redefinir.mjs', '--out', arquivo], { env: { ...process.env, VITE_GAME_SERVER: 'ws://127.0.0.1:59999' }, stdio: 'ignore', shell: process.platform === 'win32' });
+  if (r.status !== 0) {
+    failures.push('redefinir: não gerou a página de teste');
+    return;
+  }
+  const html = readFileSync(arquivo, 'utf8');
+  if (!/<meta name="robots" content="noindex/.test(html)) failures.push('redefinir: a página do link secreto saiu sem noindex');
+  if (/googletagmanager|id="cookies"/.test(html)) failures.push('redefinir: a página do link secreto tem Google ou faixa de cookies');
+  const TOKEN = 'T'.repeat(43);
+  if (!REDEFINIR_TOKEN_RE.test(TOKEN)) failures.push('redefinir: o token de teste não passa no contrato');
+  const ctx = await browser.newContext();
+  try {
+    const page = await ctx.newPage();
+    const pedidos = [];
+    const externos = [];
+    let resposta = { status: 200, corpo: { ok: true } };
+    await page.route('http://redefinir.test/**', (rt) => rt.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html }));
+    await page.route('http://127.0.0.1:59999/**', (rt) => {
+      pedidos.push({ url: rt.request().url(), metodo: rt.request().method(), corpo: rt.request().postData() });
+      return rt.fulfill({ status: resposta.status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(resposta.corpo) });
+    });
+    page.on('request', (q) => {
+      if (!/^(http:\/\/redefinir\.test|http:\/\/127\.0\.0\.1:59999|data:|about:|blob:)/.test(q.url())) externos.push(q.url());
+    });
+    page.on('pageerror', (e) => failures.push(`redefinir: ${e.message}`));
+    const texto = (sel) => page.locator(sel).textContent();
+    const enviar = async (a, b) => {
+      await page.fill('#s1', a);
+      await page.fill('#s2', b);
+      await page.click('#ok');
+    };
+
+    await page.goto(`http://redefinir.test/redefinir/?lang=en#${TOKEN}`);
+    await pageSane(page, 'redefinir', failures);
+    if ((await page.title()) !== 'Nova senha · CYBERMECH') failures.push(`redefinir: título "${await page.title()}"`);
+    if ((await page.evaluate(() => location.hash)) !== '') failures.push('redefinir: o token continua na barra de endereço (deveria sair ao abrir)');
+    if ((await texto('#titulo')) !== 'New password') failures.push(`redefinir: o ?lang=en não trocou a língua (${await texto('#titulo')})`);
+
+    await enviar('curta', 'curta');
+    if (!(await texto('#erro')).includes('8 to 72')) failures.push(`redefinir: senha curta sem a frase (${await texto('#erro')})`);
+    await enviar('senha-longa-1', 'senha-longa-2');
+    if (!(await texto('#erro')).includes('do not match')) failures.push(`redefinir: senhas diferentes sem a frase (${await texto('#erro')})`);
+    if (pedidos.length) failures.push('redefinir: chamou o servidor com a senha inválida');
+
+    resposta = { status: 400, corpo: { erro: 'x', codigo: 'token' } };
+    await enviar('senha-boa-123', 'senha-boa-123');
+    await page.waitForFunction(() => !document.getElementById('erro').hidden && document.getElementById('erro').textContent.includes('no longer valid'), null, { timeout: 5000 }).catch(() => failures.push('redefinir: link vencido sem a frase'));
+    resposta = { status: 429, corpo: { erro: 'x' } };
+    await enviar('senha-boa-123', 'senha-boa-123');
+    await page.waitForFunction(() => document.getElementById('erro').textContent.includes('Too many attempts'), null, { timeout: 5000 }).catch(() => failures.push('redefinir: limite sem a frase'));
+    resposta = { status: 500, corpo: {} };
+    await enviar('senha-boa-123', 'senha-boa-123');
+    await page.waitForFunction(() => document.getElementById('erro').textContent.includes('Could not reach'), null, { timeout: 5000 }).catch(() => failures.push('redefinir: erro do servidor sem a frase'));
+    if (await page.locator('#ok').isDisabled()) failures.push('redefinir: o botão ficou travado depois de um erro');
+
+    resposta = { status: 200, corpo: { ok: true } };
+    await enviar('senha-boa-123', 'senha-boa-123');
+    await page.waitForSelector('#feito:not([hidden])', { timeout: 5000 }).catch(() => failures.push('redefinir: o sucesso não trocou a tela'));
+    if (!(await texto('#feitoTitulo')).includes('Password changed')) failures.push('redefinir: título do sucesso');
+    if ((await page.getAttribute('#voltar', 'href')) !== '../jogar/') failures.push('redefinir: o botão de voltar não leva ao jogo');
+    const ultimo = pedidos.at(-1);
+    if (!ultimo || ultimo.metodo !== 'POST' || !ultimo.url.endsWith('/conta/redefinir')) failures.push(`redefinir: pedido torto (${ultimo?.metodo} ${ultimo?.url})`);
+    else {
+      const corpo = JSON.parse(ultimo.corpo);
+      if (corpo.token !== TOKEN || corpo.senha !== 'senha-boa-123') failures.push('redefinir: o corpo do POST não leva o token e a senha');
+      if (pedidos.some((p) => p.url.includes(TOKEN) || p.url.includes('senha-boa'))) failures.push('redefinir: o token ou a senha foram para a URL');
+    }
+    if (externos.length) failures.push(`redefinir: pediu algo fora da página e do servidor (${externos[0]})`);
+
+    // Sem token no endereço: o formulário nem aparece e a página explica.
+    await page.goto('http://redefinir.test/redefinir/?lang=pt');
+    if (!(await page.locator('#form').isHidden())) failures.push('redefinir: abriu o formulário sem token');
+    if (!(await texto('#intro')).includes('não vale mais')) failures.push('redefinir: sem token e sem a explicação');
+  } finally {
+    await ctx.close();
+  }
 }
 
 /**
@@ -748,6 +840,7 @@ async function check() {
     await mobile(browser, `${base}jogar/`, failures);
     await metricasPage(browser, base, failures);
     await privacidadePage(browser, base, failures);
+    await redefinirPage(browser, failures);
   } catch (err) {
     failures.push(err instanceof Error ? err.message : String(err));
   } finally {
@@ -801,6 +894,10 @@ async function verify(url) {
   const privHtml = await priv.text();
   if (!privHtml.includes('Política de Privacidade · CYBERMECH')) failures.push(`${root}privacidade/: não é a política de privacidade`);
   if (/<meta name="robots" content="noindex/.test(privHtml)) failures.push(`${root}privacidade/: a política saiu com noindex`);
+  const red = await get(`${root}redefinir/`);
+  const redHtml = await red.text();
+  if (!redHtml.includes('Nova senha · CYBERMECH')) failures.push(`${root}redefinir/: não é a página de redefinir a senha`);
+  if (!/<meta name="robots" content="noindex/.test(redHtml)) failures.push(`${root}redefinir/: a página do link secreto saiu sem noindex`);
   const old = await get(`${root}bastidores/`);
   if (!(await old.text()).includes('sala-de-controle/')) failures.push(`${root}bastidores/: não leva para a sala de controle`);
   const cover = await get(`${root}capturas/capa.jpg`, 'HEAD');

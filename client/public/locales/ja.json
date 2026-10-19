@@ -888,5 +888,14 @@
  "SEM CONEXÃO COM O SERVIDOR": "サーバーに接続できません",
  "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "時間内に再接続できませんでした。ページを再読み込みしてもう一度お試しください。",
  "RECARREGAR": "再読み込み",
- "JOGAR OFFLINE ENQUANTO ISSO": "それまでオフラインで遊ぶ"
+ "JOGAR OFFLINE ENQUANTO ISSO": "それまでオフラインで遊ぶ",
+ "Esqueci a senha": "パスワードを忘れた場合",
+ "// RECUPERAR ACESSO": "// アクセスの回復",
+ "Digite o e-mail da sua conta. Se ele tiver uma conta, enviamos um link para você escolher uma senha nova. O link vale 30 minutos.": "アカウントのメールアドレスを入力してください。アカウントがあれば、新しいパスワードを設定するリンクを送信します。リンクの有効期限は30分です。",
+ "ENVIAR LINK": "リンクを送信",
+ "ENVIANDO…": "送信中…",
+ "VOLTAR PARA ENTRAR": "ログインに戻る",
+ "Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.": "送信しました。そのメールアドレスにアカウントがあれば、リンクが届きます(迷惑メールもご確認ください)。有効期限は30分です。",
+ "a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade": "メールでの復旧はまだ有効ではありません。プライバシーページの連絡先にご相談ください",
+ "pedidos demais; espere um pouco": "リクエストが多すぎます。しばらくお待ちください"
 }

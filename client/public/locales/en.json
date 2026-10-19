@@ -888,5 +888,14 @@
  "SEM CONEXÃO COM O SERVIDOR": "NO CONNECTION TO THE SERVER",
  "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "We could not reconnect in time. Reload the page to try again.",
  "RECARREGAR": "RELOAD",
- "JOGAR OFFLINE ENQUANTO ISSO": "PLAY OFFLINE MEANWHILE"
+ "JOGAR OFFLINE ENQUANTO ISSO": "PLAY OFFLINE MEANWHILE",
+ "Esqueci a senha": "Forgot password",
+ "// RECUPERAR ACESSO": "// ACCOUNT RECOVERY",
+ "Digite o e-mail da sua conta. Se ele tiver uma conta, enviamos um link para você escolher uma senha nova. O link vale 30 minutos.": "Enter your account e-mail. If it has an account, we will send a link to choose a new password. The link is valid for 30 minutes.",
+ "ENVIAR LINK": "SEND LINK",
+ "ENVIANDO…": "SENDING…",
+ "VOLTAR PARA ENTRAR": "BACK TO SIGN IN",
+ "Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.": "Done. If that e-mail has an account, the link is on its way (check spam too). It is valid for 30 minutes.",
+ "a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade": "e-mail recovery is not active yet: ask for help through the contact on the Privacy page",
+ "pedidos demais; espere um pouco": "too many requests; wait a moment"
 }

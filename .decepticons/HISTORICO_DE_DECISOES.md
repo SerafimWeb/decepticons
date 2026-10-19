@@ -1,6 +1,20 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-18] "Esqueci a senha": link de uso único por e-mail, página própria, sem entrar sozinho (Claude, P206)
+
+**Ordem:** *"faça o esqueci a senha; não vamos dar CNPJ por enquanto pois não temos e o jogo é indie, feito por uma pessoa apenas"*.
+
+**Decisões:**
+1. **Resposta igual e antes do trabalho.** O pedido devolve 202 sempre e só depois consulta o banco e envia; a diferença de tempo entre "tem conta" e "não tem" era o jeito mais barato de descobrir e-mails cadastrados. Com limites por IP, por conta e por dia, porque "esqueci a senha" é a rota que um script usa para encher a caixa de alguém e a cota do provedor.
+2. **O token vai no fragmento (`#`), não na pergunta (`?`).** O fragmento não é enviado ao servidor nem no Referer: não cai no log da Cloudflare, da Hostinger nem do jogo. A página o tira da barra de endereço ao abrir.
+3. **O banco guarda só a impressão digital** (SHA-256, como as sessões). Quem lê o banco ou um backup não consegue usar um link vivo.
+4. **Trocar a senha encerra todas as sessões** da conta: quem tinha a senha velha, ou uma sessão esquecida em outro aparelho, perde o acesso. **E não entra sozinho:** voltar ao jogo e digitar a senha nova é um passo a mais que custa 10 s e evita que um link vazado vire uma sessão pronta.
+5. **Página estática própria (`/redefinir/`) em vez de abrir o jogo:** o link chega num e-mail e o jogo é um carregamento de 3D; a página é leve, sem Google nem cookies (carrega um segredo) e funciona em celular. A senha e o token vão no corpo do POST, nunca na URL.
+6. **Provedor de e-mail atrás de uma interface** (`Mailer`): o Resend hoje (grátis, uma chamada HTTPS, sem biblioteca nova), outro amanhã sem mexer no resto. **Sem chave, não finge:** o servidor responde 503 e o jogo diz para pedir ajuda; o `npm run admin -- link-senha` cobre o intervalo.
+7. **Sem CNPJ, a política diz a verdade:** o controlador é uma pessoa física que desenvolve o jogo de forma independente. O que a LGPD ainda pede, o nome do encarregado, ficou para o Comandante decidir. Resend entra como destinatário (Estados Unidos). A `POLITICA_VERSAO` **não mudou** (mesmo dia, 18/10): a mudança só acrescenta um recurso que envia e-mail apenas a quem o pede; contas criadas antes da mudança não aceitaram essa linha, e isto está dito para a revisão do texto.
+8. **Não feito:** o e-mail de aviso "sua senha foi trocada" (entra com o envio ligado).
+
 ## [2026-10-18] O chat de voz: direto entre os jogadores, sem custo, restrito até o Comandante soltar (Claude, P205)
 
 **Ordem:** *"prossiga com o VOICE CHAT PLANO DE IMPLEMENTAÇÃO!"* (o plano trazia as decisões do Comandante: microfone aberto + apertar-para-falar, áudio espacial, canais ALL + TEAM, TURN a critério técnico) e *"quero q seja simples, sem custo inicial e eficiente"*.

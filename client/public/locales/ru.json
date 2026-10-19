@@ -888,5 +888,14 @@
  "SEM CONEXÃO COM O SERVIDOR": "НЕТ СОЕДИНЕНИЯ С СЕРВЕРОМ",
  "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "Не удалось переподключиться вовремя. Перезагрузите страницу, чтобы повторить попытку.",
  "RECARREGAR": "ПЕРЕЗАГРУЗИТЬ",
- "JOGAR OFFLINE ENQUANTO ISSO": "ПОКА ИГРАТЬ ОФЛАЙН"
+ "JOGAR OFFLINE ENQUANTO ISSO": "ПОКА ИГРАТЬ ОФЛАЙН",
+ "Esqueci a senha": "Забыли пароль",
+ "// RECUPERAR ACESSO": "// ВОССТАНОВЛЕНИЕ ДОСТУПА",
+ "Digite o e-mail da sua conta. Se ele tiver uma conta, enviamos um link para você escolher uma senha nova. O link vale 30 minutos.": "Введите e-mail вашей учётной записи. Если она существует, мы отправим ссылку для выбора нового пароля. Ссылка действует 30 минут.",
+ "ENVIAR LINK": "ОТПРАВИТЬ ССЫЛКУ",
+ "ENVIANDO…": "ОТПРАВКА…",
+ "VOLTAR PARA ENTRAR": "ВЕРНУТЬСЯ КО ВХОДУ",
+ "Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.": "Готово. Если у этого e-mail есть учётная запись, ссылка уже в пути (проверьте и спам). Она действует 30 минут.",
+ "a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade": "восстановление по e-mail пока не работает: обратитесь по контакту на странице конфиденциальности",
+ "pedidos demais; espere um pouco": "слишком много запросов; подождите немного"
 }

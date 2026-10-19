@@ -9,6 +9,9 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
 import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_PROGRESSO_PATH, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
 import { CLOSE_REINICIO, REINICIO_AVISO_S, REINICIO_VOLTA_EM_S, ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
+import { CONTA_ESQUECI_PATH, CONTA_REDEFINIR_PATH, parseEsqueci, parseRedefinir, urlDeRedefinicao, type IdiomaEmail } from '../shared/net/auth';
+import { carregarMailer, EMAILS_POR_DIA, TetoDiario, type Mailer } from './email';
+import { emailDeRedefinicao } from './emailTextos';
 import { Writer } from '../shared/net/codec';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
 import { type EventoEnviado, type EventoServidor, EVENTO_MAX_BYTES, EVENTO_PATH, METRICAS_HEADER, METRICAS_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
@@ -131,6 +134,12 @@ export async function startServer(
     /** Régua de tentativas de `/conta/entrar` e `/conta/criar` (padrão: 8 a cada 10 min por IP). Testes
      * que fazem muitas chamadas do mesmo IP alargam para não confundir rate limit com o que estão testando. */
     limiteLogin?: Partial<typeof LIMITE_LOGIN_DEFAULTS>;
+    /** O envio de e-mail do "esqueci a senha" (P206). Os testes passam um falso; o padrão lê `CYBERMECH_EMAIL_CHAVE` ou `email.json` na pasta de dados (`email.ts`). `null` = sem e-mail: a rota responde 503. */
+    mailer?: Mailer | null;
+    /** O endereço do site que vai no link do e-mail (padrão: `CYBERMECH_SITE_URL` ou https://cybermech.online). */
+    siteUrl?: string;
+    /** Pedidos de "esqueci a senha" por IP (padrão 5 por hora); os testes alargam. */
+    limiteEsqueci?: Partial<typeof LIMITE_LOGIN_DEFAULTS>;
     /** Origens extras (além do jogo no ar e da rede local) que podem abrir o WebSocket e as rotas de conta. Padrão: `CYBERMECH_ORIGENS` (`origem.ts`). */
     origens?: string[];
     /**
@@ -358,6 +367,29 @@ export async function startServer(
     return metricasToken && tokenConfere(req.headers[METRICAS_HEADER], metricasToken) ? 'dono' : 'anonimo';
   };
   const limiteLogin = new LimiteLogin(opts.limiteLogin);
+  // Esqueci a senha (P206): 5 pedidos por hora por IP, 3 por hora por conta (de onde vierem) e 50 e-mails por dia no total (a cota do provedor).
+  const mailer: Mailer | null = opts.mailer !== undefined ? opts.mailer : carregarMailer(dirDados, process.env, log);
+  const siteUrl = opts.siteUrl ?? process.env.CYBERMECH_SITE_URL ?? 'https://cybermech.online';
+  const limiteEsqueci = new LimiteLogin({ teto: 5, janelaMs: 60 * 60 * 1000, ...opts.limiteEsqueci });
+  const pedidosPorConta = new FalhasPorConta({ teto: 3, janelaMs: 60 * 60 * 1000 });
+  const tetoEmail = new TetoDiario();
+  /** O trabalho do pedido (banco e envio), DEPOIS de a resposta sair: o tempo da resposta não diz se o e-mail tem conta. Nunca lança; o log diz só o número da conta. */
+  const enviarLinkDeSenha = async (email: string, lang: IdiomaEmail): Promise<void> => {
+    try {
+      if (!mailer || !contas.temConta(email)) return;
+      if (!tetoEmail.tentar()) {
+        log(`recuperação de senha: teto de ${EMAILS_POR_DIA} e-mails por dia atingido; não enviei`);
+        return;
+      }
+      const r = contas.pedirRedefinicao(email);
+      if (!r) return;
+      auditar({ ator: 'anonimo', acao: 'senha_recuperacao_pedida', alvo: `conta:${r.contaId}` });
+      const ok = await mailer.enviar({ para: email, ...emailDeRedefinicao(lang, urlDeRedefinicao(siteUrl, r.token, lang)) });
+      log(`recuperação de senha: e-mail ${ok ? 'enviado' : 'NÃO enviado'} (conta ${r.contaId})`);
+    } catch {
+      log('recuperação de senha: erro inesperado ao preparar o e-mail');
+    }
+  };
   const origens = opts.origens ?? origensExtras(process.env.CYBERMECH_ORIGENS);
 
   const http = createServer(async (req, res) => {
@@ -502,14 +534,14 @@ export async function startServer(
     // Rotas de conta: só as páginas do jogo (e a rede local) podem chamá-las; o CORS devolve a origem do pedido, nunca `*`.
     const cors = corsDoPedido(req.headers.origin, origens);
     if (
-      (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH || path === CONTA_SAIR_PATH || path === CONTA_EU_PATH || path === CONTA_PROGRESSO_PATH || path === CONTA_DADOS_PATH || path === CONTA_APAGAR_PATH || path === CONTA_MEDICAO_PATH) &&
+      (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH || path === CONTA_SAIR_PATH || path === CONTA_EU_PATH || path === CONTA_PROGRESSO_PATH || path === CONTA_DADOS_PATH || path === CONTA_APAGAR_PATH || path === CONTA_MEDICAO_PATH || path === CONTA_ESQUECI_PATH || path === CONTA_REDEFINIR_PATH) &&
       !origemPermitida(req.headers.origin, origens)
     ) {
       res.writeHead(403, { 'content-type': 'application/json; charset=utf-8', ...cors });
       res.end(JSON.stringify({ erro: 'origem não permitida' }));
       return;
     }
-    if (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH) {
+    if (path === CONTA_CRIAR_PATH || path === CONTA_ENTRAR_PATH || path === CONTA_ESQUECI_PATH || path === CONTA_REDEFINIR_PATH) {
       if (req.method === 'OPTIONS') {
         res.writeHead(204, {
           ...cors,
@@ -546,6 +578,45 @@ export async function startServer(
         json = null;
       }
       const paisDaConta = clientCountry(req.socket.remoteAddress, req.headers['cf-ipcountry']);
+      if (path === CONTA_ESQUECI_PATH) {
+        const p = parseEsqueci(json);
+        if (!p) {
+          enviarJson(400, { erro: 'e-mail inválido' });
+          return;
+        }
+        if (!mailer) {
+          enviarJson(503, { erro: 'a recuperação por e-mail ainda não está ativa', codigo: 'sem-email' });
+          return;
+        }
+        if (!limiteEsqueci.permitir(ip)) {
+          enviarJson(429, { erro: 'pedidos demais; espere um pouco' });
+          return;
+        }
+        // A mesma resposta exista a conta ou não, e ela sai ANTES do trabalho: nem o texto nem o tempo dizem se o e-mail tem conta.
+        enviarJson(202, { ok: true });
+        if (pedidosPorConta.bloqueada(p.email)) return;
+        pedidosPorConta.falhou(p.email);
+        void enviarLinkDeSenha(p.email, p.lang);
+        return;
+      }
+      if (path === CONTA_REDEFINIR_PATH) {
+        const p = parseRedefinir(json);
+        const TOKEN_RUIM = { erro: 'este link não vale mais: peça outro em "Esqueci a senha"', codigo: 'token' };
+        if (!p.ok) {
+          enviarJson(400, p.motivo === 'senha' ? { erro: p.senha, codigo: 'senha' } : TOKEN_RUIM);
+          return;
+        }
+        const r = await contas.redefinirSenha(p.token, p.senha);
+        if (!r.ok) {
+          enviarJson(400, TOKEN_RUIM);
+          return;
+        }
+        falhasPorConta.acertou(r.conta.email); // a conta destrancada: a senha nova vale já
+        log(`senha redefinida (conta ${r.conta.id}); as sessões abertas foram encerradas`);
+        auditar({ ator: `conta:${r.conta.id}`, acao: 'senha_redefinida', alvo: `conta:${r.conta.id}` });
+        enviarJson(200, { ok: true });
+        return;
+      }
       if (path === CONTA_CRIAR_PATH) {
         // Criar conta exige o aceite da política de privacidade e a declaração de idade (P192, LGPD): sem as duas caixas, ou com a política velha, não cria.
         const leitura = parseCriarConta(json);

@@ -888,5 +888,14 @@
  "SEM CONEXÃO COM O SERVIDOR": "PAS DE CONNEXION AU SERVEUR",
  "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "Nous n'avons pas pu nous reconnecter à temps. Rechargez la page pour réessayer.",
  "RECARREGAR": "RECHARGER",
- "JOGAR OFFLINE ENQUANTO ISSO": "JOUER HORS LIGNE EN ATTENDANT"
+ "JOGAR OFFLINE ENQUANTO ISSO": "JOUER HORS LIGNE EN ATTENDANT",
+ "Esqueci a senha": "Mot de passe oublié",
+ "// RECUPERAR ACESSO": "// RÉCUPÉRER L'ACCÈS",
+ "Digite o e-mail da sua conta. Se ele tiver uma conta, enviamos um link para você escolher uma senha nova. O link vale 30 minutos.": "Saisissez l'e-mail de votre compte. S'il correspond à un compte, nous enverrons un lien pour choisir un nouveau mot de passe. Le lien est valable 30 minutes.",
+ "ENVIAR LINK": "ENVOYER LE LIEN",
+ "ENVIANDO…": "ENVOI…",
+ "VOLTAR PARA ENTRAR": "RETOUR À LA CONNEXION",
+ "Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.": "C'est fait. Si cet e-mail correspond à un compte, le lien est en route (vérifiez aussi les indésirables). Il est valable 30 minutes.",
+ "a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade": "la récupération par e-mail n'est pas encore active : demandez de l'aide via le contact de la page Confidentialité",
+ "pedidos demais; espere um pouco": "trop de demandes ; patientez un instant"
 }

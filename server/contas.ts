@@ -17,7 +17,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { createHash, randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { diaDe } from './telemetria';
-import { POLITICA_VERSAO, type DadosDaConta } from '../shared/net/auth';
+import { POLITICA_VERSAO, REDEFINIR_VALE_MIN, type DadosDaConta } from '../shared/net/auth';
 
 const scrypt = promisify(scryptCb);
 
@@ -118,6 +118,14 @@ export class Contas {
         PRIMARY KEY (conta_id, dia)
       );
       CREATE INDEX IF NOT EXISTS atividade_dia ON atividade(dia);
+      -- Esqueci a senha (P206): só a impressão digital do link (SHA-256), nunca o link. Vale REDEFINIR_VALE_MIN minutos e some ao ser usado.
+      CREATE TABLE IF NOT EXISTS redefinicoes (
+        token_hash TEXT PRIMARY KEY,
+        conta_id INTEGER NOT NULL REFERENCES contas(id),
+        criada_em TEXT NOT NULL,
+        expira_em TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS redefinicoes_conta ON redefinicoes(conta_id);
     `);
     
     // Migração de schema em tempo real: garante que contas criadas antes da tabela
@@ -188,6 +196,55 @@ export class Contas {
   }
 
   /** Nova sessão para a conta; devolve o token de verdade (só existe em memória — o banco guarda o hash). */
+  /**
+   * Abre um pedido de redefinição de senha para o e-mail (P206). Devolve o token (a única vez que ele existe por inteiro: o banco guarda só a impressão digital) e a conta,
+   * ou `null` se o e-mail não tem conta. **Um pedido por conta:** o novo cancela os anteriores (o link velho para de valer). Quem chama NUNCA diz à pessoa se a conta existe.
+   */
+  temConta(email: string): boolean {
+    return this.db.prepare('SELECT 1 FROM contas WHERE email = ?').get(email) !== undefined;
+  }
+
+  pedirRedefinicao(email: string, now = Date.now()): { token: string; contaId: number } | null {
+    const conta = this.db.prepare('SELECT id FROM contas WHERE email = ?').get(email) as { id: number } | undefined;
+    if (!conta) return null;
+    const token = randomBytes(32).toString('base64url');
+    this.db.prepare('DELETE FROM redefinicoes WHERE conta_id = ?').run(conta.id);
+    this.db
+      .prepare('INSERT INTO redefinicoes (token_hash, conta_id, criada_em, expira_em) VALUES (?, ?, ?, ?)')
+      .run(hashToken(token), conta.id, new Date(now).toISOString(), new Date(now + REDEFINIR_VALE_MIN * 60_000).toISOString());
+    return { token, contaId: conta.id };
+  }
+
+  /**
+   * Troca a senha de quem tem o link. O token vale uma vez e dentro do prazo; ao trocar, **todas as sessões abertas da conta são encerradas** (quem estava com a senha velha, ou
+   * uma sessão esquecida, perde o acesso) e qualquer outro pedido pendente some. `motivo: 'token'` = link desconhecido, vencido ou já usado (a tela não diz qual).
+   */
+  async redefinirSenha(token: string, novaSenha: string, now = Date.now()): Promise<{ ok: true; conta: { id: number; email: string } } | { ok: false; motivo: 'token' }> {
+    const row = this.db
+      .prepare('SELECT r.conta_id as conta_id, r.expira_em as expira_em, c.email as email FROM redefinicoes r JOIN contas c ON c.id = r.conta_id WHERE r.token_hash = ?')
+      .get(hashToken(token)) as { conta_id: number; expira_em: string; email: string } | undefined;
+    if (!row || new Date(row.expira_em).getTime() < now) return { ok: false, motivo: 'token' };
+    const sal = randomBytes(SAL_BYTES);
+    const hash = (await scrypt(novaSenha, sal, HASH_BYTES)) as Buffer;
+    this.db.exec('BEGIN');
+    try {
+      // O token é consumido primeiro: duas redefinições com o mesmo link ao mesmo tempo, só uma passa (a outra acha a linha já apagada).
+      const usou = this.db.prepare('DELETE FROM redefinicoes WHERE token_hash = ?').run(hashToken(token));
+      if (Number(usou.changes) !== 1) {
+        this.db.exec('ROLLBACK');
+        return { ok: false, motivo: 'token' };
+      }
+      this.db.prepare('UPDATE contas SET hash = ?, sal = ? WHERE id = ?').run(hash.toString('hex'), sal.toString('hex'), row.conta_id);
+      this.db.prepare('DELETE FROM sessoes WHERE conta_id = ?').run(row.conta_id);
+      this.db.prepare('DELETE FROM redefinicoes WHERE conta_id = ?').run(row.conta_id);
+      this.db.exec('COMMIT');
+    } catch (e) {
+      this.db.exec('ROLLBACK');
+      throw e;
+    }
+    return { ok: true, conta: { id: row.conta_id, email: row.email } };
+  }
+
   criarSessao(contaId: number, now = Date.now()): string {
     const token = randomBytes(TOKEN_BYTES).toString('hex');
     const agora = new Date(now);
@@ -244,6 +301,7 @@ export class Contas {
   limparExpiradas(now = Date.now()): number {
     const r = this.db.prepare('DELETE FROM sessoes WHERE expira_em < ?').run(new Date(now).toISOString());
     this.db.prepare('DELETE FROM atividade WHERE dia < ?').run(diaMais(diaDe(now), -ATIVIDADE_DIAS));
+    this.db.prepare('DELETE FROM redefinicoes WHERE expira_em < ?').run(new Date(now).toISOString());
     return Number(r.changes);
   }
 
@@ -278,6 +336,7 @@ export class Contas {
       this.db.prepare('DELETE FROM atividade WHERE conta_id = ?').run(contaId);
       this.db.prepare('DELETE FROM progresso WHERE conta_id = ?').run(contaId);
       this.db.prepare('DELETE FROM sessoes WHERE conta_id = ?').run(contaId);
+      this.db.prepare('DELETE FROM redefinicoes WHERE conta_id = ?').run(contaId);
       const r = this.db.prepare('DELETE FROM contas WHERE id = ?').run(contaId);
       this.db.exec('COMMIT');
       return Number(r.changes) > 0;
