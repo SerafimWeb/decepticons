@@ -22,7 +22,7 @@
 
 | Onde | O que fica | Observação |
 |---|---|---|
-| `contas.db`, tabela `contas` | **e-mail**, hash da senha (scrypt com sal; a senha nunca fica em texto), data de criação, **a versão da política aceita e quando**, a escolha de medir ou não a atividade, marca de admin | dado pessoal direto (o e-mail) |
+| `contas.db`, tabela `contas` | **e-mail**, hash da senha (scrypt com sal; a senha nunca fica em texto), data de criação, **a versão da política aceita e quando**, **o mês e o ano de nascimento (`AAAA-MM`, sem o dia; P211)**, a escolha de medir ou não a atividade, marca de admin | dado pessoal direto (o e-mail) |
 | tabela `sessoes` | hash do token de sessão, conta, criação e vencimento (30 dias) | o token de verdade só existe no navegador; vencidas são varridas a cada 6 h |
 | tabela `progresso` | apelido, nível, XP, créditos, montagem (o que o navegador já guardava) | uma linha por conta |
 | tabela `atividade` (P185) | por conta e por dia: **se abriu o jogo, quantas rodadas, quantos segundos, abates e mortes** | números declarados pelo navegador (métrica de produto, nunca placar nem recompensa); apagada após **400 dias**; **a pessoa pode desligar** (apaga o que havia) |
@@ -37,13 +37,14 @@
 
 | Direito | Como | Onde no código |
 |---|---|---|
-| Confirmação e acesso (II), portabilidade (V) | **Baixar meus dados**: um JSON com a conta, o progresso, a atividade e as sessões (datas), **sem o hash da senha, o sal nem os segredos das sessões** | `GET /conta/dados`; `Contas.exportarDados` |
+| Confirmação e acesso (II), portabilidade (V) | **Baixar meus dados**: um JSON com a conta (inclui o mês e o ano de nascimento), o progresso, a atividade e as sessões (datas), **sem o hash da senha, o sal nem os segredos das sessões** | `GET /conta/dados`; `Contas.exportarDados` |
 | Eliminação (VI) | **Apagar minha conta**: pede a senha de novo (mesma régua de tentativas do login); apaga conta, progresso, atividade e sessões **numa transação**; a sessão morre | `POST /conta/apagar`; `Contas.apagarConta` |
 | Oposição (art. 18 § 2) | **Registrar minha atividade**: desligar apaga o que havia e para de registrar (visita e rodada) | `POST /conta/medicao`; `Contas.definirMedicao` |
 | Correção (III) | apelido, montagem e progresso o jogador ajusta no jogo e vão para a conta. **Corrigir o e-mail não existe** | — |
 | Revogar o consentimento (IX) | cookies: "Preferências de cookies" no rodapé; conta: apagá-la | `scripts/site/tema.mjs` |
 | Informação sobre o compartilhamento (VII) | a política, seção 4 | `scripts/privacidade.mjs` |
-| **Aceite** (art. 8) | criar conta exige as duas caixas (política lida; 18 anos ou autorização do responsável); o **servidor recusa** sem elas ou com a política de outra versão; guarda **quando e qual versão** | `parseCriarConta`; `contas.aceite_em/aceite_versao` |
+| **Idade e chat de voz** (art. 14, P211) | o cadastro pergunta o **mês e o ano de nascimento** (`POST /conta/criar`, ou `POST /conta/nascimento` para conta antiga); **uma vez só, não muda** (a trilha guarda `nascimento_informado` **sem a data**). O servidor devolve só a faixa (`adulto`, `menor`, `sem-idade`), nunca a data. **Menor de 18 anos, conta sem idade e convidado não entram na voz:** o `PRONTO` leva o token da sessão e o servidor confere a idade (`RelayDeVoz`, padrão negar); o cliente nem pede o microfone. Maior de idade = mais de 18 anos completos pelo mês (quem faz 18 neste mês ainda não é) | `shared/net/auth.ts` (`ehMaiorDeIdade`); `server/voz.ts`; `contas.nascimento`; `server/idade-http.test.ts` |
+| **Aceite** (art. 8) | criar conta exige as duas caixas (política lida; 18 anos ou autorização do responsável) e o mês e o ano de nascimento escolhidos (o servidor aceita sem, e a conta nasce "sem idade", sem voz); o **servidor recusa** sem elas ou com a política de outra versão; guarda **quando e qual versão** | `parseCriarConta`; `contas.aceite_em/aceite_versao` |
 
 ## 4. Terceiros
 

@@ -5,12 +5,13 @@ import { LoginPanel } from './LoginPanel';
 /**
  * A conta do piloto nas Configurações (ordem P174; `RANKING_E_LOGIN.md` C3). **Opcional e sem porta:** o jogo nunca pede conta; este bloco fica no fim da aba JOGO, para quem quer levar o
  * progresso (nível, créditos, apelido, montagem) para outro aparelho. Módulo independente (G3): fala só com a `SessaoPiloto` e com o `LoginPanel` (o formulário já pronto); o jogo o liga por
- * uma chamada. Texto de estado em português (o tradutor de DOM cuida das outras línguas, P173). Custo de CPU: zero fora do clique e do aviso de mudança.
+ * uma chamada, **sob demanda** (dieta de JS, P187): quem restaura a sessão na abertura é o jogo, porque a voz precisa da idade da conta antes de a tela existir. Texto de estado em português (o tradutor de DOM cuida das outras línguas, P173). Custo de CPU: zero fora do clique e do aviso de mudança.
  */
 export const TEXTO_CONVIDADO = 'Sem conta, o progresso fica só neste aparelho. Crie uma conta para levá-lo para outro.';
 export const TEXTO_LOGADO = 'Progresso guardado na conta.';
 export const TEXTO_GUARDANDO = 'Guardando o progresso na conta…';
 export const TEXTO_LINK_ENVIADO = 'Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.';
+export const TEXTO_IDADE_GUARDADA = 'Pronto: a idade foi guardada.';
 export const TEXTO_APAGADA = 'Conta apagada: o servidor já não guarda nada dela. O progresso deste aparelho continua aqui.';
 
 /** Entrega um texto ao navegador como arquivo para salvar (sem rede: um Blob e um link temporário). */
@@ -47,7 +48,8 @@ export class ContaSettings {
     this.painel = new LoginPanel(
       {
         onEntrar: (e, s) => this.abrir(() => sessao.entrar(e, s)),
-        onCriar: (e, s) => this.abrir(() => sessao.criar(e, s)),
+        onCriar: (e, s, nascimento) => this.abrir(() => sessao.criar(e, s, nascimento)),
+        onNascimento: (nascimento) => this.informarIdade(nascimento),
         onEsqueci: (email) => this.esqueci(email),
         onSair: () => this.sair(),
         onBaixar: () => this.baixar(),
@@ -58,12 +60,6 @@ export class ContaSettings {
     );
     sessao.onMudou = (e) => this.mostrar(e);
     this.mostrar(sessao.estado);
-  }
-
-  /** O jogo abriu: volta logado se a sessão guardada ainda vale. */
-  async restaurar(): Promise<void> {
-    await this.sessao.restaurar();
-    this.mostrar(this.sessao.estado);
   }
 
   private async abrir(acao: () => Promise<string | null>): Promise<void> {
@@ -118,6 +114,14 @@ export class ContaSettings {
     this.painel.setAviso(TEXTO_APAGADA);
   }
 
+  /** A conta sem idade informa o mês e o ano (P211): o servidor guarda uma vez e devolve a faixa; a sessão avisa o jogo, que abre (ou não) a voz. */
+  private async informarIdade(nascimento: string): Promise<void> {
+    this.painel.setEstado({ carregando: true, erro: null, aviso: null });
+    const erro = await this.sessao.informarNascimento(nascimento);
+    this.painel.setEstado({ carregando: false, ...(erro ? { erro } : { aviso: TEXTO_IDADE_GUARDADA }) });
+    this.painel.setIdade(this.sessao.estado.idade);
+  }
+
   private async medir(ativa: boolean): Promise<void> {
     const ok = await this.sessao.definirMedicao(ativa);
     if (!ok) this.painel.setEstado({ medir: this.sessao.estado.medir, erro: 'não deu para guardar a escolha: tente de novo' });
@@ -126,6 +130,7 @@ export class ContaSettings {
   private mostrar(e: EstadoSessao): void {
     this.status.textContent = textoDeEstado(e);
     this.painel.setMedicao(e.medir);
+    this.painel.setIdade(e.idade);
     if (e.email) {
       if (!this.painel.getEstado().logado || this.painel.getEstado().email !== e.email) this.painel.setLogado(e.email);
     } else if (this.painel.getEstado().logado) {

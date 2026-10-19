@@ -241,7 +241,7 @@ describe('direitos do titular no banco (P192, LGPD art. 18)', () => {
     expect(d.progresso).toEqual({ apelido: 'ANA', nivel: 3 });
     expect(d.atividade).toEqual([{ dia: '2026-10-18', segundos: 90, partidas: 1, abates: 2, mortes: 1 }]);
     expect(d.sessoes).toHaveLength(1);
-    expect(Object.keys(d.conta).sort()).toEqual(['aceiteEm', 'aceiteVersao', 'administrador', 'criadaEm', 'email', 'medirAtividade']);
+    expect(Object.keys(d.conta).sort()).toEqual(['aceiteEm', 'aceiteVersao', 'administrador', 'criadaEm', 'email', 'medirAtividade', 'nascimento']);
     expect(contas.exportarDados(9999, NOW)).toBeNull();
   });
 

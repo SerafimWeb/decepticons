@@ -103,6 +103,27 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 
 **Prova:** `medicoes/voz-teste-mic.mjs` (Chrome com microfone falso; 14 verificações, inclusive o caso do navegador que bloqueia o microfone); foto `arte/voz-teste-microfone-claude.png`; 15 de 15 mutações à mão pegas.
 
+## 5d. Só para maiores de 18 anos (P211, 19/10)
+
+**A ordem do Comandante:** *"no início, perguntar a IDADE pra fazer o cadastro do login. Menores de 18 anos NÃO TÊM ACESSO ao microfone nem aos áudios dos outros jogadores, apenas o áudio do jogo."*
+
+**A regra (uma só, no servidor):** só entra na voz quem tem **conta** cujo **mês e ano de nascimento** deem **mais de 18 anos completos** (`ehMaiorDeIdade`, `shared/net/auth.ts`). A precisão é o mês: quem faz 18 anos **neste mês** ainda não é adulto (o dia não se sabe, e na dúvida a voz não abre). Convidado (sem conta), conta **sem idade informada** e conta de **menor** ficam de fora: **sem microfone e sem ouvir ninguém**; o áudio do jogo segue normal.
+
+**Como o servidor impõe (o cliente só poupa a viagem):**
+- O `PRONTO` leva o **token da sessão** (`[tipo][ligado][token utf8, até 200 bytes]`). `RelayDeVoz` chama o `autorizar(token)` que a sala recebe do servidor (`room.definirAutorizacaoDeVoz`): confere a sessão no banco e a idade da conta. **Padrão: negar** (sem autorizador, ninguém entra). Quem não passa não entra na lista, não recebe `LISTA` nem `SINAL`, e ninguém recebe os dele. Quem **já estava** e manda um `PRONTO` que não vale (sessão vencida) **sai** e os outros recebem a lista nova.
+- Um cliente adulterado (que não confere a idade e manda o token de um menor, ou nenhum) é recusado do mesmo jeito: provado no Chrome (`medicoes/voz-idade.mjs`, cenário 6).
+- O cliente (`elegibilidadeDaVoz`, `vozDeveLigar`) só **esconde** os controles (voz e teste do microfone) e **nem pede o microfone** ao navegador quando a conta não é adulta; mostra a frase certa (convidado: *crie uma conta*; sem idade: *informe o mês e o ano*; menor: *sem chat de voz, o áudio do jogo segue normal*).
+
+**O cadastro e a conta:**
+- **Criar conta** pede o **mês e o ano** (duas listas; o botão só liga com os dois). O servidor guarda `AAAA-MM`, **sem o dia**, e devolve **só a faixa** (`adulto`, `menor`, `sem-idade`), nunca a data. O campo é opcional **no servidor** (um cliente velho cria a conta "sem idade") e obrigatório **na tela**.
+- **Quem já tinha conta** (ou criou por um cliente velho) vê o pedido na aba JOGO e informa **uma vez** (`POST /conta/nascimento`): **a data não muda** (o servidor responde 409 na segunda vez; uma conta de menor não vira adulta com um clique). A trilha registra `nascimento_informado` **sem a data**.
+- A data vai no arquivo de **Baixar meus dados** e some quando a conta é apagada. A política passou a `2026-10-19.2`, falando do mês e do ano de nascimento e da voz só para maiores de 18 anos; o `PRIVACIDADE.md` ganhou a linha.
+- O formulário da conta virou **pedaço sob demanda** (`import()`); quem restaura a sessão é o próprio jogo, porque a voz precisa da idade antes de a tela existir.
+
+**Prova:** `medicoes/voz-idade.mjs` (Chrome com microfone falso; adulto, convidado, menor, sem idade informando na hora, cadastro pela tela como adulto e como menor, e cliente adulterado); fotos `arte/idade-cadastro-claude.png` e `arte/idade-menor-sem-voz-claude.png`; testes de simulação em `shared/net/auth.test.ts` (as fronteiras do mês), `server/voz.test.ts`, `server/voz-sala.test.ts`, `server/idade-http.test.ts` (contas, HTTP e a sala de verdade com contas reais) e a bateria do cliente; **32 mutações à mão, todas pegas**.
+
+**Limite honesto (R13):** a idade é **declarada** pela pessoa, não verificada. Quem mente na data entra como adulto. Verificar de verdade exigiria documento ou terceiro (custo e dado sensível), contra o pedido do Comandante de ser simples e sem custo. A regra reduz o risco; **não o elimina**, e a política diz que a data é informada pela pessoa.
+
 ## 6. O que falta
 
 1. **O ouvido do Comandante:** a bancada prova que o áudio chega e que o volume cai com a distância; **se a voz soa bem** (eco, volume, o alcance de 12 a 160 m) é dele. Os números do alcance são proposta (`ALCANCE_DA_VOZ`).
@@ -113,4 +134,6 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 6. **SFU** (servidor de mídia): só se salas com mais de 5 pessoas falando virarem comuns; a malha cobre as salas de 8 com poucos falando.
 7. **Celular de verdade** (Android e, principalmente, iPhone): a seção 5b prova o botão e o toque no Chrome emulado; o áudio no Safari do iPhone **não foi provado**.
 8. ~~A política de privacidade~~ (feito em 19/10, seção 4): falta o Comandante **revisar o texto**.
-9. **Liberada:** `tela:voz` está pública (painel de visibilidade, feito pelo Comandante). Sem mudo por jogador nem denúncia (item 5): com a voz aberta a desconhecidos, é o próximo risco.
+9. **Liberada:** `tela:voz` está pública (painel de visibilidade, feito pelo Comandante), **agora só para contas de maiores de 18 anos** (seção 5d). Sem mudo por jogador nem denúncia (item 5): com a voz aberta a desconhecidos adultos, é o próximo risco.
+10. **A idade é declarada, não verificada** (seção 5d): decisão do Comandante se quer algo mais forte (tem custo).
+11. **Contas que já existiam:** estão "sem idade" e ficam sem voz até informarem o mês e o ano. A política promete avisar mudanças que afetem contas existentes e **o jogo ainda não tem um aviso para isso**: a frase na aba JOGO e nas Configurações da voz cumpre o papel por ora.

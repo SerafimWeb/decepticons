@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createServer, runnerImport } from 'vite';
-import { gerarWav } from './vozLib.mjs';
+import { gerarWav, tokenDeConta } from './vozLib.mjs';
 
 /**
  * A bancada do CHAT DE VOZ (P205): dois ou mais Chrome de verdade, um servidor de jogo de verdade e o mesmo `NetClient` + `VoiceChat` + áudio espacial do jogo, com microfone FALSO
@@ -66,7 +66,8 @@ async function abrir(browser, nome, params = {}) {
   page.on('pageerror', (e) => { erros.push(`${nome}: ${e.message}`); console.log(`  [${nome}] erro de página: ${e.message}`); });
   page.on('console', (m) => { if (m.type() === 'error' || process.env.VOZ_DEBUG) console.log(`  [${nome}] console.${m.type()}: ${m.text().slice(0, 300)}`); });
   page.on('response', (r) => { if (r.status() >= 400) console.log(`  [${nome}] HTTP ${r.status()} ${r.url().slice(0, 160)}`); });
-  const q = new URLSearchParams({ servidor: SERVIDOR, sala: 'VOZ1', nome, dsp: '0', ...params });
+  // A voz é só de conta de maior de idade (P211): cada jogador da bancada entra com a sua conta (`params.token` manda outra, para provar a recusa).
+  const q = new URLSearchParams({ servidor: SERVIDOR, sala: 'VOZ1', nome, dsp: '0', token: await tokenDeConta(2598, nome), ...params });
   await page.goto(`${base}@fs/${PAGINA}?${q}`);
   await page.waitForFunction(() => !!window.__voz, null, { timeout: Number(process.env.VOZ_ESPERA ?? 60000) });
   const j = {

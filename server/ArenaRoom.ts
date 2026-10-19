@@ -97,7 +97,9 @@ export class ArenaRoom {
   /** Eventos juntados entre dois estados (tiros e abates), mandados logo depois do estado. */
   private readonly events = newEventBatch();
   /** A sinalização do chat de voz (P205): só repassa; o áudio vai direto entre os navegadores. */
-  private readonly voz = new RelayDeVoz<Peer>((peer, bytes) => peer.send(bytes));
+  private readonly voz = new RelayDeVoz<Peer>((peer, bytes) => peer.send(bytes), undefined, (token) => this.autorizarVoz(token));
+  /** Quem decide se uma sessão pode entrar na voz (P211: conta de maior de idade): o servidor entrega; sem ele, **ninguém** entra. */
+  private autorizarVoz: (token: string) => boolean = () => false;
   /** Alguém entrou na partida (montagem aceita). O servidor conta a origem; a sala não sabe para quê. */
   onEntrou?: (peer: Peer) => void;
   /** Alguém foi recusado, e por quê. */
@@ -144,6 +146,11 @@ export class ArenaRoom {
       const kind: UnitKind = mech instanceof Vector09 ? 'mech' : this.match.bots.technicianOf(mech) ? 'technician' : 'android';
       this.units.push({ id: this.freeId(), mech, kind, name: this.match.bots.nameOf(mech), build: kind === 'mech' ? mechBuild : `bot.${kind}` });
     }
+  }
+
+  /** O servidor diz como se confere a sessão do `PRONTO` da voz (conta de maior de idade, P211). Os testes que não usam a voz não precisam. */
+  definirAutorizacaoDeVoz(f: (token: string) => boolean): void {
+    this.autorizarVoz = f;
   }
 
   get humanCount(): number {

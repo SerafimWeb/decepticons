@@ -1,6 +1,23 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-19] A idade manda na voz: só maior de 18 anos, e o servidor decide (Claude, P211)
+
+**Ordem:** perguntar a idade no cadastro; menores de 18 anos sem o microfone e sem os áudios dos outros jogadores, só o áudio do jogo.
+
+**Decisões:**
+1. **Mês e ano de nascimento, sem o dia.** É o mínimo que decide a maioridade e o jogo guarda um dado a menos (LGPD, minimização). O servidor devolve só a faixa (`adulto`, `menor`, `sem-idade`), nunca a data.
+2. **Maioridade conservadora pelo mês:** adulto se passaram **mais de 18 anos completos** (`hoje − nasceu > 18*12` meses). Quem faz 18 **neste mês** ainda não é: o dia não se sabe e, na dúvida, a voz não abre. A regra mora em `shared/net/auth.ts` (`ehMaiorDeIdade`), com teste das fronteiras.
+3. **O servidor decide, o cliente só poupa a viagem.** O `PRONTO` da voz passou a levar o token da sessão (até 200 bytes; sem mudar o `PROTOCOL_VERSION`, a voz está fora da faixa de jogo) e o relé chama o `autorizar` que a sala recebe do servidor. **Padrão negar:** sem autorizador, ninguém entra. Provado com um cliente adulterado (token de menor, ou nenhum). Quem já estava e perde a autorização (sessão vencida) **sai**.
+4. **Convidado e conta sem idade também ficam de fora** (não só o menor): a regra é "só quem provou ser adulto", o que fecha o buraco de entrar sem conta. Custa o convidado adulto não ter voz até criar conta; é a leitura segura da ordem, e o Comandante pode afrouxar.
+5. **A data não muda** (`UPDATE … WHERE nascimento IS NULL`, 409 na segunda vez): uma conta de menor não vira adulta com um clique. Quem errou fala pelo contato da política.
+6. **Cadastro: a tela exige, o servidor aceita sem.** Um cliente velho cria a conta "sem idade" (sem voz) e informa depois; recusar o cadastro por falta da data quebraria quem está com o jogo aberto na versão anterior.
+7. **O formulário da conta virou pedaço sob demanda** e a sessão é restaurada pelo próprio jogo na abertura: a voz precisa da idade antes de a tela existir, e o JS de partida estava a 3 KB do teto de 500 KB.
+8. **A política mudou de versão (`2026-10-19.2`)** e a data "em vigor" lê só o prefixo `AAAA-MM-DD`. O `split('-')` antigo daria dia e mês errados com o sufixo `.2`: corrigido e coberto por teste (`server/politicaDeVoz.test.ts`).
+9. **Limite assumido, e dito à pessoa e ao Comandante:** a idade é **declarada**, não verificada. Verificar de fato exige documento ou terceiro (custo e dado sensível), contra o pedido de ser simples e sem custo.
+
+**Provas:** Chrome real 30/30 (`medicoes/voz-idade.mjs`), 3.569 testes, 32 mutações à mão pegas. As bancadas de voz antigas passaram a entrar com conta de adulto (`vozLib.tokenDeConta`).
+
 ## [2026-10-19] O teste do microfone, o "sozinho na voz" e a jukebox só com catálogo (Claude, P212 e P213)
 
 **Ordem:** o microfone testado e sem som, só maiores de 18 na voz, e a jukebox do prédio com link do YouTube, "só se não pesar".

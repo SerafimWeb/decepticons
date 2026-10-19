@@ -37,6 +37,11 @@ export interface VozOpcoes {
   enviar(bytes: Uint8Array): void;
   /** A saída de áudio do jogo (`AudioSystem.output`); `null` até o primeiro gesto. */
   saida(): SaidaDeAudio | null;
+  /**
+   * O token da sessão de uma conta de maior de idade (P211), ou `null` sem ela. `PRONTO` o leva e o servidor confere. **Sem token não há voz nem microfone:** o chat nem pede o microfone ao navegador.
+   * Sem esta função (os testes), o chat não exige token (o servidor exige de qualquer jeito).
+   */
+  token?(): string | null;
   ambiente?: Ambiente;
   ice?: readonly RTCIceServer[];
 }
@@ -96,6 +101,9 @@ export class VoiceChat {
       // Trocou de microfone no meio da voz: solta o velho e pede o novo (as ligações recebem a faixa nova por `replaceTrack`, sem renegociar).
       this.soltarMic();
       void this.abrirMic();
+    } else {
+      // Nada de voz mudou, mas o token pode ter chegado (a idade informada na sala) ou ido embora (saiu da conta): acerta com o servidor.
+      this.sincronizar();
     }
   }
 
@@ -231,11 +239,11 @@ export class VoiceChat {
 
   /** Acerta o que o jogador quer (voz ligada e na sala) com o que o servidor sabe. */
   private sincronizar(): void {
-    const quer = this.ligada && this.naSala;
+    const quer = this.ligada && this.naSala && (this.o.token === undefined || this.o.token() !== null);
     if (quer && !this.noServidor) {
       this.noServidor = true;
       void this.abrirMic();
-      this.o.enviar(codificarPronto(true));
+      this.o.enviar(codificarPronto(true, this.o.token?.() ?? ''));
     } else if (!quer && this.noServidor) {
       this.noServidor = false;
       this.fecharTodas();

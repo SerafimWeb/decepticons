@@ -1,4 +1,4 @@
-import { mesclarProgresso, progressoIgual, type ContaResposta, type ProgressoPiloto } from '../../../shared/net/auth';
+import { mesclarProgresso, progressoIgual, type ContaResposta, type IdadeDaConta, type ProgressoPiloto } from '../../../shared/net/auth';
 import { serverHttpUrl } from '../../../shared/net/serverUrl';
 
 /**
@@ -20,10 +20,12 @@ export interface Armazem {
 
 /** O que a sessão precisa do servidor (o `ContaCliente` serve; o teste entrega um falso). */
 export interface ServidorDeContas {
-  criar(email: string, senha: string): Promise<ContaResposta | { erro: string }>;
+  criar(email: string, senha: string, nascimento?: string): Promise<ContaResposta | { erro: string }>;
   entrar(email: string, senha: string): Promise<ContaResposta | { erro: string }>;
   sair(token: string): Promise<void>;
-  eu(token: string): Promise<{ email: string; is_admin: boolean; medir?: boolean } | null>;
+  eu(token: string): Promise<{ email: string; is_admin: boolean; medir?: boolean; idade?: IdadeDaConta } | null>;
+  /** A idade (P211): informa o mês e o ano de nascimento de uma conta que ainda não tem. Uma vez só; o servidor devolve a faixa. */
+  nascimento?(token: string, nascimento: string): Promise<{ idade: IdadeDaConta } | { erro: string }>;
   /** Os direitos do titular (P192, LGPD art. 18): baixar os dados, apagar a conta, escolher se a atividade é medida. */
   dados(token: string): Promise<{ json: string } | { erro: string }>;
   apagar(token: string, senha: string): Promise<string | null>;
@@ -63,17 +65,23 @@ export interface EstadoSessao {
   sincronizado: boolean;
   /** O jogo registra a atividade desta conta (dias, minutos, abates, mortes)? Padrão sim; a pessoa pode desligar. */
   medir: boolean;
+  /** A faixa de idade da conta (P211): `adulto` abre o chat de voz; `menor` e `sem-idade` (inclui o convidado) não. */
+  idade: IdadeDaConta;
 }
 
 export class SessaoPiloto {
   private token: string | null = null;
   private emailAtual: string | null = null;
   private medirAtual = true;
+  private idadeAtual: IdadeDaConta = 'sem-idade';
   private sincronizadoAgora = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private sincronizando: Promise<void> | null = null;
   /** O que a tela precisa saber: entrou, saiu, sincronizou. */
   onMudou?: (estado: EstadoSessao) => void;
+  /** A conta entrou, saiu ou mudou de faixa de idade (P211): é o que decide se o chat de voz abre. Não repete se nada disso mudou. */
+  onIdadeMudou?: (estado: EstadoSessao) => void;
+  private conta = '|sem-idade';
 
   constructor(
     private readonly servidor: ServidorDeContas,
@@ -84,7 +92,15 @@ export class SessaoPiloto {
   ) {}
 
   get estado(): EstadoSessao {
-    return { email: this.emailAtual, sincronizado: this.sincronizadoAgora, medir: this.medirAtual };
+    return { email: this.emailAtual, sincronizado: this.sincronizadoAgora, medir: this.medirAtual, idade: this.idadeAtual };
+  }
+
+  /**
+   * O token da sessão **só para o chat de voz** (P211): o `PRONTO` o leva e o servidor confere a idade. `null` sem conta de maior de idade: o cliente nem tenta entrar na voz (o servidor confere de qualquer jeito, isto só poupa a viagem).
+   * Não sai daqui para mais nada.
+   */
+  tokenDaVoz(): string | null {
+    return this.token !== null && this.idadeAtual === 'adulto' ? this.token : null;
   }
 
   /** Abre o jogo: se há token guardado e o servidor ainda o aceita, volta logado e sincroniza; senão fica como convidado. */
@@ -98,6 +114,7 @@ export class SessaoPiloto {
     this.token = guardado;
     this.emailAtual = eu.email;
     this.medirAtual = eu.medir !== false;
+    this.idadeAtual = eu.idade ?? 'sem-idade';
     this.avisar();
     await this.sincronizar();
   }
@@ -112,8 +129,19 @@ export class SessaoPiloto {
     return (await this.servidor.esqueci?.(email, lang)) ?? { erro: 'a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade' };
   }
 
-  async criar(email: string, senha: string): Promise<string | null> {
-    return this.abrir(await this.servidor.criar(email, senha));
+  /** `nascimento`: `AAAA-MM`, o que o formulário perguntou (P211). Sem ele a conta nasce "sem idade" e a pessoa informa depois. */
+  async criar(email: string, senha: string, nascimento?: string): Promise<string | null> {
+    return this.abrir(await this.servidor.criar(email, senha, nascimento));
+  }
+
+  /** Informa o mês e o ano de nascimento de uma conta "sem idade" (P211). `null` = o servidor guardou (a faixa muda na hora); senão a mensagem para a tela. */
+  async informarNascimento(nascimento: string): Promise<string | null> {
+    if (!this.token) return 'entre na conta primeiro';
+    const r = await (this.servidor.nascimento?.(this.token, nascimento) ?? Promise.resolve({ erro: 'não deu para guardar' }));
+    if ('erro' in r) return r.erro;
+    this.idadeAtual = r.idade;
+    this.avisar();
+    return null;
   }
 
   /** Sai da conta: avisa o servidor, esquece o token. **O progresso local fica** (o aparelho continua do piloto). */
@@ -129,6 +157,7 @@ export class SessaoPiloto {
     this.token = null;
     this.emailAtual = null;
     this.medirAtual = true;
+    this.idadeAtual = 'sem-idade';
     this.sincronizadoAgora = false;
     this.apagar(this.chave);
     this.avisar();
@@ -209,6 +238,7 @@ export class SessaoPiloto {
     this.token = resposta.token;
     this.emailAtual = resposta.email;
     this.medirAtual = resposta.medir !== false;
+    this.idadeAtual = resposta.idade ?? 'sem-idade';
     this.gravar(this.chave, resposta.token);
     this.avisar();
     await this.sincronizar();
@@ -227,6 +257,10 @@ export class SessaoPiloto {
 
   private avisar(): void {
     this.onMudou?.(this.estado);
+    const conta = `${this.emailAtual ?? ''}|${this.idadeAtual}`;
+    if (conta === this.conta) return;
+    this.conta = conta;
+    this.onIdadeMudou?.(this.estado);
   }
 
   private ler(chave: string): string | null {
