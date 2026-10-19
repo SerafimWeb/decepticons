@@ -3,6 +3,21 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## O E-MAIL DO "ESQUECI A SENHA" PELO SMTP DA HOSTINGER, SEM SERVIÇO NOVO — Claude, 19/10 (branch `claude/email-smtp`, P206 parte 2)
+
+**O Comandante (19/10):** a Cloudflare perguntou que "chave" guardar e ele não entendeu; *"como configuro o Resend também?"*. **Resposta:** o Resend não é preciso. O `cybermech.online` já usa o e-mail da Hostinger (MX e SPF conferidos no DNS): basta uma caixa. Na Cloudflare **não há nada a fazer** (o agente dela se confundiu com o plano B).
+
+**O que entrou:**
+1. **`MailerSmtp`** (`server/email.ts`): cliente SMTP de ~100 linhas com `node:tls` (TLS direto, porta 465; AUTH PLAIN ou LOGIN; UTF-8 em base64; recusa destinatário com quebra de linha ou vírgula), sem biblioteca nova. O Resend continua como alternativa.
+2. **`npm run email -- iniciar | estado | testar <e-mail>`** (`server/emailCli.ts`): cria o `email.json` com a Hostinger preenchida (senha de exemplo que nunca vale), mostra o estado sem a senha e manda uma mensagem de teste pelo mesmo caminho do servidor, com a dica do que conferir se falhar.
+3. **O servidor relê o `email.json` quando ele muda** (`MailerDaPasta`): ligar, trocar a senha ou desligar não exige reiniciar (e reiniciar derruba quem joga).
+
+**Provas:** 13 testes com um **servidor SMTP de mentira de verdade** (socket que fala o protocolo e guarda o que recebeu) mais 6 da configuração e da ferramenta; **5 mutações à mão pegas** (destinatário sem validar, assunto sem tirar a quebra de linha, senha de exemplo valendo, autenticação aceitando recusa, arquivo nunca relido). **Não provado:** a Hostinger de verdade (falta a caixa e a senha).
+
+**Falta (dele):** criar a caixa `nao-responda@cybermech.online` no hPanel (E-mails), `npm run email -- iniciar`, trocar a senha no Bloco de Notas e `npm run email -- testar seu@email.com` (`LANCAMENTO.md § 7`). **A política** já cita a Hostinger como quem entrega o e-mail (no lugar do Resend), sem mudar a `POLITICA_VERSAO` (mesmo conjunto de dados).
+
+**Próxima sessão começa com:** o que o `npm run email -- testar` disser; se cair no spam, o DKIM/DMARC do domínio.
+
 ## O TESTE DO MICROFONE, O AVISO DE "SOZINHO NA VOZ", E A RESPOSTA SOBRE YOUTUBE E JUKEBOX — Claude, 19/10 (branch `claude/teste-do-microfone`, P212 e P213; P211 em andamento)
 
 **O Comandante (19/10):** *"estou tentando testar o microfone mas não consegui! não saiu som. Seria bom ter um campo de testes?"*; só maiores de 18 na voz (P211); e uma **jukebox num prédio** com link do YouTube, "só se não pesar" (P213).
