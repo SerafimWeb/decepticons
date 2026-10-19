@@ -8,10 +8,11 @@ import { dirname, join, resolve } from 'node:path';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { FIXED_DT } from '../client/src/physics/PhysicsWorld';
 import { chaveDeConfigValida, valorDeConfigValido, CONTA_APAGAR_PATH, CONTA_CRIAR_PATH, CONTA_DADOS_PATH, CONTA_ENTRAR_PATH, CONTA_EU_PATH, CONTA_MEDICAO_PATH, CONTA_PROGRESSO_PATH, CONTA_SAIR_PATH, CONFIG_PATH, ADMIN_CONFIG_PATH, POLITICA_VERSAO, PROGRESSO_MAX_BYTES, parseCredenciais, parseCriarConta, parseMedicao, parseSenhaDeConfirmacao, SESSAO_HEADER, validarProgresso } from '../shared/net/auth';
-import { ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
+import { CLOSE_REINICIO, REINICIO_AVISO_S, REINICIO_VOLTA_EM_S, ROOM_MAX, ROOM_SIZE } from '../shared/net/constants';
+import { Writer } from '../shared/net/codec';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
 import { type EventoEnviado, type EventoServidor, EVENTO_MAX_BYTES, EVENTO_PATH, METRICAS_HEADER, METRICAS_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
-import { sanitizeName, type RejectReason } from '../shared/net/messages';
+import { encodeAviso, sanitizeName, type RejectReason } from '../shared/net/messages';
 import { ArenaRoom, type Peer } from './ArenaRoom';
 import { Contas } from './contas';
 import { fazerBackup } from './backupContas';
@@ -92,6 +93,12 @@ export interface GameServer {
     connections: number;
     rejected: { total: number; ip: number; flood: number; picos: number };
   };
+  /**
+   * Fecha o servidor para reiniciar (P204): com gente na sala, avisa `gracaS` segundos antes (a tela dela conta), corta com
+   * `CLOSE_REINICIO` e o tempo previsto de volta, e então fecha de vez. Sem ninguém, não espera. É o que o painel e a
+   * atualização automática chamam no lugar de `close()`.
+   */
+  fecharComAviso(o?: { gracaS?: number; voltaEmS?: number }): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -1021,7 +1028,7 @@ export async function startServer(
     }
   }, 4);
 
-  return {
+  const servidor: GameServer = {
     port,
     host,
     amostrador,
@@ -1040,6 +1047,18 @@ export async function startServer(
       },
       rejected,
     },
+    fecharComAviso: async ({ gracaS = REINICIO_AVISO_S, voltaEmS = REINICIO_VOLTA_EM_S } = {}) => {
+      const jogando = [...sockets.values()].reduce((n, s) => n + s.size, 0);
+      if (jogando > 0 && gracaS > 0) {
+        const bytes = encodeAviso(new Writer(), { tipo: 'reinicio', segundos: gracaS, voltaEmS });
+        for (const grupo of sockets.values()) for (const ws of grupo) if (ws.readyState === ws.OPEN) ws.send(Buffer.from(bytes));
+        log(`reinício: avisei ${jogando} conexão(ões); corto em ${gracaS} s`);
+        await new Promise<void>((ok) => setTimeout(ok, gracaS * 1000));
+      }
+      for (const c of wss.clients) if (c.readyState === c.OPEN) c.close(CLOSE_REINICIO, String(voltaEmS));
+      if (wss.clients.size > 0) await new Promise<void>((ok) => setTimeout(ok, 300)); // o quadro de fechamento sai antes do `terminate`
+      await servidor.close();
+    },
     close: () =>
       new Promise<void>((resolve) => {
         clearInterval(loop);
@@ -1056,4 +1075,5 @@ export async function startServer(
         contas.close();
       }),
   };
+  return servidor;
 }

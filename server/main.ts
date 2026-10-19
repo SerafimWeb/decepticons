@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
+import { REINICIO_AVISO_S } from '../shared/net/constants';
 import { CODIGO_REINICIO } from './admin';
 import { pastaDados } from './dados';
 import { vigiarParada } from './parada';
@@ -41,7 +42,7 @@ const server = await startServer({
     setTimeout(() => process.exit(CODIGO_REINICIO), 30_000).unref(); // se o lançamento ou o fechamento travar, sai mesmo assim
     const raiz = resolve(import.meta.dirname, '..');
     void soltarAjudanteDeReinicio({ supervisionado, porta: server.port, scripts: resolve(raiz, 'scripts'), dados: pastaDados(raiz), tarefa: process.env.CYBERMECH_TAREFA, log: (l) => dizer(`[servidor] ${l}`) })
-      .then(() => server.close())
+      .then(() => server.fecharComAviso())
       .finally(() => process.exit(CODIGO_REINICIO));
   },
   log: (line) => dizer(`[servidor] ${line}`),
@@ -54,8 +55,8 @@ if (server.host === '127.0.0.1') dizer('[servidor] só localhost (túnel da Clou
 // números e sai sozinho, e quem pediu (o atualizador) o liga de novo com o código novo.
 vigiarParada(pastaDados(resolve(import.meta.dirname, '..')), () => {
   dizer('[servidor] pedido de parada (parar.flag): fechando e saindo');
-  setTimeout(() => process.exit(0), 8000).unref(); // se o fechamento travar, sai mesmo assim
-  void server.close().finally(() => process.exit(0));
+  setTimeout(() => process.exit(0), (REINICIO_AVISO_S + 8) * 1000).unref(); // o aviso aos jogadores (REINICIO_AVISO_S) + o fechamento; se travar, sai mesmo assim
+  void server.fecharComAviso().finally(() => process.exit(0));
 });
 
 // A cada 10 s: salas abertas, jogadores, tempo médio do tick (meta do G14: até 2 ms) e as defesas.

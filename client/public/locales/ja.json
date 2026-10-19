@@ -872,5 +872,21 @@
  "SEGURE [{0}] PARA FALAR": "[{0}] を押して話す",
  "MUDO: [{0}] ABRE": "ミュート中：[{0}] で解除",
  "MICROFONE ABERTO: [{0}] MUDA": "マイクON：[{0}] でミュート",
- "{0} SEM CONEXÃO": "{0}人 未接続"
+ "{0} SEM CONEXÃO": "{0}人 未接続",
+ "ATUALIZAÇÃO DO SERVIDOR": "サーバー更新",
+ "Termine o que estiver fazendo: o servidor volta em cerca de {0} min e você reconecta sozinho.": "今の操作を終えてください。サーバーは約{0}分で戻り、自動的に再接続します。",
+ "CORTE EM": "切断まで",
+ "SERVIDOR REINICIANDO": "サーバー再起動中",
+ "Atualização em andamento. Você volta para a partida sozinho assim que ele responder.": "更新中です。サーバーが応答次第、自動で試合に戻ります。",
+ "VOLTA EM ~": "復旧まで約",
+ "DEMORANDO MAIS QUE O PREVISTO": "予定より時間がかかっています",
+ "O servidor ainda não voltou. Continuamos tentando a cada 5 segundos, sem você precisar fazer nada.": "サーバーはまだ戻っていません。5秒ごとに自動で再試行します。操作は不要です。",
+ "FORA HÁ": "切断から",
+ "CONEXÃO PERDIDA": "接続が切れました",
+ "Tentando reconectar…": "再接続しています…",
+ "O servidor pode estar reiniciando ou fora do ar, sem previsão de volta. Continuamos tentando.": "サーバーが再起動中か停止中の可能性があり、復旧の見込みは不明です。再試行を続けます。",
+ "SEM CONEXÃO COM O SERVIDOR": "サーバーに接続できません",
+ "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "時間内に再接続できませんでした。ページを再読み込みしてもう一度お試しください。",
+ "RECARREGAR": "再読み込み",
+ "JOGAR OFFLINE ENQUANTO ISSO": "それまでオフラインで遊ぶ"
 }

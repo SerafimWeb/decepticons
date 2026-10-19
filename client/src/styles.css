@@ -4587,3 +4587,46 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .voz-fala { color: var(--ink); min-height: 0; }
 .voz-rede:empty, .voz-fala:empty { display: none; }
 .touch .voz-hud { bottom: 96px; }
+
+/* Servidor reiniciando / conexão perdida (ui/ConnectionNotice.ts, P204): por cima do jogo, só quando o servidor avisa ou a conexão cai depois de entrar. */
+.net-aviso {
+  --cor: var(--warn);
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  display: none;
+  place-items: center;
+  background: rgba(2, 5, 7, 0.6);
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+.net-aviso.on { display: grid; }
+.net-aviso[data-tom='espera'] { --cor: var(--hot); }
+.net-aviso[data-tom='queda'], .net-aviso[data-tom='fim'] { --cor: var(--alert); }
+.net-aviso .card {
+  width: min(460px, calc(100vw - 32px));
+  padding: 22px 24px 20px;
+  border: 1px solid var(--cor);
+  background: rgba(8, 12, 15, 0.95);
+  color: var(--ink);
+  text-align: center;
+  box-shadow: 0 0 26px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.net-aviso .titulo { margin: 0 0 10px; font-size: 15px; letter-spacing: 0.18em; color: var(--cor); }
+.net-aviso .linha { margin: 0 0 14px; font-size: 12px; line-height: 1.55; color: var(--muted); }
+.net-aviso .relogio { margin: 0 0 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.net-aviso .rotulo { font-size: 10px; letter-spacing: 0.22em; color: var(--muted); }
+.net-aviso .contador { font-size: 40px; font-weight: 700; letter-spacing: 0.06em; color: var(--cor); font-variant-numeric: tabular-nums; }
+.net-aviso .botao {
+  margin-top: 16px;
+  padding: 9px 16px;
+  border: 1px solid var(--cor);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  cursor: pointer;
+}
+.net-aviso .botao:hover, .net-aviso .botao:focus-visible { background: rgba(255, 255, 255, 0.08); outline: none; }
+.net-aviso .botao[hidden] { display: none; }
+@media (max-width: 520px) { .net-aviso .contador { font-size: 32px; } }

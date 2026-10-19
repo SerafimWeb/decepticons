@@ -457,7 +457,7 @@ describe('G13: a conexão que cai volta sozinha (o online caía e pedia para rec
   });
 
   /** Um jogador online contra o servidor `url`, com as esperas de reconexão do teste, guardando cada estado que a sessão anuncia. */
-  async function jogador(url: string, nome: string, extra: { build?: string; reconexaoMs?: readonly number[] } = {}) {
+  async function jogador(url: string, nome: string, extra: { build?: string; reconexaoMs?: readonly number[]; persistenciaMs?: number; esperaLongaMs?: number } = {}) {
     const physics = await PhysicsWorld.create();
     const match = new Match({
       physics,
@@ -486,6 +486,8 @@ describe('G13: a conexão que cai volta sozinha (o online caía e pedia para rec
       scene: new THREE.Scene(),
       onStatus: (s) => estados.push({ ...s }),
       ...(extra.reconexaoMs ? { reconexaoMs: extra.reconexaoMs } : {}),
+      ...(extra.persistenciaMs !== undefined ? { persistenciaMs: extra.persistenciaMs } : {}),
+      ...(extra.esperaLongaMs !== undefined ? { esperaLongaMs: extra.esperaLongaMs } : {}),
     });
     match.pilots.push(session);
     return { match, me, session, estados };
@@ -550,6 +552,71 @@ describe('G13: a conexão que cai volta sozinha (o online caía e pedia para rec
       await servidor.close();
     }
   }, 40000);
+
+  it('reinício avisado (P204): o aviso chega com o contador, o corte traz o código 4010 e a previsão, e a sessão insiste além da lista até o servidor voltar', async () => {
+    let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
+    const porta = servidor.port;
+    const j = await jogador(`ws://127.0.0.1:${porta}/?sala=G13A`, 'Avisado', { reconexaoMs: [50, 50], persistenciaMs: 30000, esperaLongaMs: 100 });
+    try {
+      expect(await ate(j, () => j.session.joined)).toBe(true);
+      const fechando = servidor.fecharComAviso({ gracaS: 1, voltaEmS: 45 });
+      expect(await ate(j, () => j.estados.some((s) => s.aviso !== undefined), 5000), 'o aviso chegou antes do corte').toBe(true);
+      const dado = j.estados.find((s) => s.aviso)!;
+      expect(dado.state, 'ainda conectado quando o aviso chega').toBe('na sala');
+      expect(dado.aviso!.voltaEmS).toBe(45);
+      expect(dado.aviso!.cortaEm - Date.now(), 'o corte é em ~1 s').toBeGreaterThan(0);
+      await fechando;
+      expect(await ate(j, () => j.estados.some((s) => s.queda?.previsto != null), 5000), 'a queda traz a previsão do aviso').toBe(true);
+      const queda = j.estados.find((s) => s.queda)!.queda!;
+      expect(queda.previsto! - queda.desde, 'previsto = desde + os 45 s do aviso').toBe(45_000);
+      // A lista de tentativas rápidas (2) acabou há tempo e a sessão continua tentando: nunca virou "caiu".
+      await ate(j, () => false, 1500);
+      expect(j.estados.some((s) => s.state === 'caiu')).toBe(false);
+      expect(j.estados.at(-1)!.state).toBe('reconectando');
+      servidor = await subir(porta);
+      expect(await ate(j, () => j.session.joined, 15000), 'voltou para a sala sozinha').toBe(true);
+      expect(j.estados.at(-1)!.queda, 'na sala de novo: sem queda').toBeUndefined();
+    } finally {
+      j.session.dispose();
+      await servidor.close();
+    }
+  }, 40000);
+
+  it('queda SEM aviso (PC desligou, túnel caiu): sem previsão, insiste pelo tempo da persistência e só então vira "caiu" (com a queda registrada)', async () => {
+    const servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
+    const j = await jogador(`ws://127.0.0.1:${servidor.port}/?sala=G13A`, 'Queda', { reconexaoMs: [50, 50], persistenciaMs: 700, esperaLongaMs: 100 });
+    try {
+      expect(await ate(j, () => j.session.joined)).toBe(true);
+      await servidor.close();
+      expect(await ate(j, () => j.estados.at(-1)?.state === 'caiu', 8000), 'desistiu depois da persistência').toBe(true);
+      const q = j.estados.find((s) => s.state === 'reconectando')!.queda!;
+      expect(q.previsto, 'sem aviso, sem previsão').toBeNull();
+      expect(j.estados.at(-1)!.queda, 'o "caiu" também diz desde quando').toBeDefined();
+      expect(j.estados.filter((s) => s.state === 'reconectando').length, 'tentou além das 2 da lista').toBeGreaterThan(2);
+    } finally {
+      j.session.dispose();
+    }
+  }, 30000);
+
+  it('quem nunca entrou numa sala (servidor desligado desde o início) não ganha tela de queda nem insistência: desiste ao fim da lista, como sempre', async () => {
+    const servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
+    const porta = servidor.port;
+    await servidor.close();
+    const j = await jogador(`ws://127.0.0.1:${porta}/?sala=G13A`, 'NuncaEntrou', { reconexaoMs: [50, 80], persistenciaMs: 30000, esperaLongaMs: 100 });
+    try {
+      expect(await ate(j, () => j.estados.at(-1)?.state === 'caiu', 8000)).toBe(true);
+      expect(j.estados.some((s) => s.queda !== undefined || s.aviso !== undefined), 'nenhuma tela de queda').toBe(false);
+    } finally {
+      j.session.dispose();
+    }
+  }, 30000);
+
+  it('fecharComAviso sem ninguém conectado não espera o aviso (reiniciar sala vazia é na hora)', async () => {
+    const servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });
+    const t0 = performance.now();
+    await servidor.fecharComAviso({ gracaS: 10, voltaEmS: 60 });
+    expect(performance.now() - t0).toBeLessThan(1500);
+  });
 
   it('duas quedas seguidas: a segunda também reconecta com as tentativas inteiras (o contador volta a zero quando a sala volta)', async () => {
     let servidor = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', regrasIniciais: REGRAS_SEM_LIMITE });

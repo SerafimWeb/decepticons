@@ -872,5 +872,21 @@
  "SEGURE [{0}] PARA FALAR": "MAINTENEZ [{0}] POUR PARLER",
  "MUDO: [{0}] ABRE": "COUPÉ : [{0}] OUVRE",
  "MICROFONE ABERTO: [{0}] MUDA": "MICRO OUVERT : [{0}] COUPE",
- "{0} SEM CONEXÃO": "{0} SANS CONNEXION"
+ "{0} SEM CONEXÃO": "{0} SANS CONNEXION",
+ "ATUALIZAÇÃO DO SERVIDOR": "MISE À JOUR DU SERVEUR",
+ "Termine o que estiver fazendo: o servidor volta em cerca de {0} min e você reconecta sozinho.": "Terminez ce que vous faites : le serveur revient dans environ {0} min et vous vous reconnectez tout seul.",
+ "CORTE EM": "COUPURE DANS",
+ "SERVIDOR REINICIANDO": "REDÉMARRAGE DU SERVEUR",
+ "Atualização em andamento. Você volta para a partida sozinho assim que ele responder.": "Mise à jour en cours. Vous retrouverez la partie tout seul dès qu'il répondra.",
+ "VOLTA EM ~": "RETOUR DANS ~",
+ "DEMORANDO MAIS QUE O PREVISTO": "PLUS LONG QUE PRÉVU",
+ "O servidor ainda não voltou. Continuamos tentando a cada 5 segundos, sem você precisar fazer nada.": "Le serveur n'est pas encore revenu. Nous réessayons toutes les 5 secondes, sans rien faire de votre côté.",
+ "FORA HÁ": "HORS LIGNE DEPUIS",
+ "CONEXÃO PERDIDA": "CONNEXION PERDUE",
+ "Tentando reconectar…": "Tentative de reconnexion…",
+ "O servidor pode estar reiniciando ou fora do ar, sem previsão de volta. Continuamos tentando.": "Le serveur redémarre peut-être ou est hors ligne, sans estimation de retour. Nous continuons d'essayer.",
+ "SEM CONEXÃO COM O SERVIDOR": "PAS DE CONNEXION AU SERVEUR",
+ "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "Nous n'avons pas pu nous reconnecter à temps. Rechargez la page pour réessayer.",
+ "RECARREGAR": "RECHARGER",
+ "JOGAR OFFLINE ENQUANTO ISSO": "JOUER HORS LIGNE EN ATTENDANT"
 }

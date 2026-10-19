@@ -872,5 +872,21 @@
  "SEGURE [{0}] PARA FALAR": "按住 [{0}] 说话",
  "MUDO: [{0}] ABRE": "已静音：按 [{0}] 开启",
  "MICROFONE ABERTO: [{0}] MUDA": "麦克风已开：按 [{0}] 静音",
- "{0} SEM CONEXÃO": "{0} 个未连接"
+ "{0} SEM CONEXÃO": "{0} 个未连接",
+ "ATUALIZAÇÃO DO SERVIDOR": "服务器更新",
+ "Termine o que estiver fazendo: o servidor volta em cerca de {0} min e você reconecta sozinho.": "请完成手头的操作:服务器约 {0} 分钟后恢复,你会自动重新连接。",
+ "CORTE EM": "断开倒计时",
+ "SERVIDOR REINICIANDO": "服务器重启中",
+ "Atualização em andamento. Você volta para a partida sozinho assim que ele responder.": "更新进行中。服务器一响应,你就会自动回到对局。",
+ "VOLTA EM ~": "预计恢复 ~",
+ "DEMORANDO MAIS QUE O PREVISTO": "耗时超出预期",
+ "O servidor ainda não voltou. Continuamos tentando a cada 5 segundos, sem você precisar fazer nada.": "服务器尚未恢复。我们每 5 秒自动重试,无需任何操作。",
+ "FORA HÁ": "已断开",
+ "CONEXÃO PERDIDA": "连接已断开",
+ "Tentando reconectar…": "正在尝试重新连接…",
+ "O servidor pode estar reiniciando ou fora do ar, sem previsão de volta. Continuamos tentando.": "服务器可能正在重启或已离线,暂无恢复时间预估。我们会继续尝试。",
+ "SEM CONEXÃO COM O SERVIDOR": "无法连接服务器",
+ "Não conseguimos reconectar a tempo. Recarregue a página para tentar de novo.": "未能及时重新连接。请刷新页面重试。",
+ "RECARREGAR": "刷新",
+ "JOGAR OFFLINE ENQUANTO ISSO": "期间离线游玩"
 }
