@@ -1232,7 +1232,7 @@ export class Game {
     const quer = s.voiceOn && funcionalidadeVisivel('tela:voz');
     // Só quem quer a voz e está numa sala online baixa o pedaço dela.
     if (quer && !this.voz && this.online && this.vozId !== null) void this.carregarVoz();
-    this.voz?.configurar(quer, s.voiceMode, s.voiceVolume);
+    this.voz?.configurar(quer, s.voiceMode, s.voiceVolume, s.micDevice);
   }
 
   /** Baixa o pedaço do chat de voz e o liga (uma vez): o `WELCOME` que já passou é reposto com o id guardado. Se o download falha, a próxima mudança de configuração tenta de novo. */

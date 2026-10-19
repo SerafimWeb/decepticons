@@ -6,11 +6,12 @@ import { estadoDoBotao, GLIFO_DO_BOTAO, textoDeEstado, textoDeRede, type VozPara
 
 const RAIZ = resolve(__dirname, '../..');
 
-const voz = (o: { estadoMic?: VozParaHud['estadoMic']; mode?: 'sempre' | 'ptt'; mudo?: boolean; apertada?: boolean; semConexao?: number } = {}): VozParaHud => ({
+const voz = (o: { estadoMic?: VozParaHud['estadoMic']; mode?: 'sempre' | 'ptt'; mudo?: boolean; apertada?: boolean; semConexao?: number; colegas?: number } = {}): VozParaHud => ({
   ativa: true,
   estadoMic: o.estadoMic ?? 'ativo',
   ligados: 0,
   semConexao: o.semConexao ?? 0,
+  colegas: o.colegas ?? 1,
   falando: () => new Set<number>(),
   aoBotao: () => {},
   mic: { mode: o.mode ?? 'sempre', mudo: o.mudo ?? false, apertada: o.apertada ?? false, transmitindo: false },
@@ -56,6 +57,13 @@ describe('VoiceHud: o que o jogador lê (P205)', () => {
     expect(textoDeRede(voz({ semConexao: 2 }))).toBe('2 SEM CONEXÃO');
   });
 
+  it('sozinho na voz o indicador avisa que ninguém vai ouvir e manda testar o microfone (P212: o "MICROFONE ABERTO" sozinho enganava)', () => {
+    expect(textoDeRede(voz({ colegas: 0 }))).toBe('NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES');
+    expect(textoDeRede(voz({ colegas: 1 }))).toBe('');
+    // a falha de rede tem prioridade sobre o aviso de estar sozinho
+    expect(textoDeRede(voz({ colegas: 2, semConexao: 1 }))).toBe('1 SEM CONEXÃO');
+  });
+
   it('sem microfone o modo e o mudo não importam: o estado é o do aparelho', () => {
     expect(textoDeEstado(voz({ estadoMic: 'negado', mode: 'ptt', apertada: true }), 'T')).toBe('SÓ OUVINDO: MICROFONE RECUSADO');
     expect(textoDeEstado(voz({ estadoMic: 'sem', mudo: true }), 'T')).toBe('SÓ OUVINDO: SEM MICROFONE');
@@ -77,6 +85,7 @@ describe('o chat de voz nas seis línguas (P205)', () => {
     textoDeEstado(voz({ mode: 'sempre', mudo: true }), 'T', true),
     textoDeEstado(voz({ mode: 'ptt' }), 'T', true),
     textoDeRede(voz({ semConexao: 3 })),
+    textoDeRede(voz({ colegas: 0 })),
   ];
 
   for (const { id } of IDIOMAS.filter((i) => i.id !== 'pt')) {

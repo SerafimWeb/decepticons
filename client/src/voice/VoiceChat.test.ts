@@ -85,11 +85,12 @@ function montar(opts: { saida?: boolean } = {}) {
   const enviadas: Uint8Array[] = [];
   let resolverMic!: (f: MediaStream) => void;
   let recusarMic!: (e: unknown) => void;
-  const pedidos = { n: 0 };
+  const pedidos = { n: 0, aparelhos: [] as string[] };
   const ambiente: Ambiente = {
     novaConexao: (cfg) => new FakePC(cfg) as unknown as RTCPeerConnection,
-    pedirMicrofone: () => {
+    pedirMicrofone: (aparelho) => {
       pedidos.n++;
+      pedidos.aparelhos.push(aparelho);
       return new Promise((res, rej) => {
         resolverMic = res;
         recusarMic = rej;
@@ -450,6 +451,80 @@ describe('VoiceChat: a malha P2P (P205)', () => {
     expect(ouvinte).toHaveBeenCalledWith(10, 0, 20, 1.5);
     expect(posicionar).toHaveBeenCalledTimes(1);
     expect(posicionar).toHaveBeenCalledWith(4, 1, 2, 3);
+  });
+
+  describe('o aparelho do microfone e o "sozinho na voz" (P212)', () => {
+    it('o aparelho escolhido vai no pedido do microfone ("" = o padrão)', async () => {
+      const t = montar();
+      t.chat.configurar(true, 'sempre', 0.8, 'headset-usb');
+      t.chat.entrouNaSala(1);
+      expect(t.pedidos.aparelhos).toEqual(['headset-usb']);
+      const sem = montar();
+      sem.chat.configurar(true, 'sempre', 0.8);
+      sem.chat.entrouNaSala(1);
+      expect(sem.pedidos.aparelhos).toEqual(['']);
+    });
+
+    it('trocar de microfone no meio da voz solta o velho e pede o novo; as ligações recebem a faixa nova sem renegociar', async () => {
+      const t = montar();
+      t.chat.configurar(true, 'sempre', 0.8, 'a');
+      t.chat.entrouNaSala(1);
+      const velho = fluxoComFaixa();
+      t.resolverMic(velho.fluxo);
+      await andar();
+      t.chat.receber(codificarLista([1, 4]));
+      await andar();
+      const pc = t.pcs()[0]!;
+      expect(pc.transceptores[0]!.sender.track).toBe(velho.faixa);
+      const ofertasAntes = t.de(VOZ.SINAL).length;
+      t.chat.configurar(true, 'sempre', 0.8, 'b');
+      expect(velho.faixa.parada).toBe(true);
+      expect(t.pedidos.aparelhos).toEqual(['a', 'b']);
+      const novo = fluxoComFaixa();
+      t.resolverMic(novo.fluxo);
+      await andar();
+      expect(pc.transceptores[0]!.sender.track).toBe(novo.faixa);
+      expect(t.chat.estadoMic).toBe('ativo');
+      expect(t.de(VOZ.SINAL)).toHaveLength(ofertasAntes);
+      expect(pc.fechada).toBe(false);
+    });
+
+    it('mexer em outra configuração (o volume da voz) NÃO pede o microfone de novo', async () => {
+      const t = montar();
+      t.chat.configurar(true, 'sempre', 0.8, 'a');
+      t.chat.entrouNaSala(1);
+      const { fluxo } = fluxoComFaixa();
+      t.resolverMic(fluxo);
+      await andar();
+      for (const v of [0.7, 0.6, 0.5]) t.chat.configurar(true, 'sempre', v, 'a');
+      t.chat.configurar(true, 'ptt', 0.5, 'a');
+      expect(t.pedidos.n).toBe(1);
+    });
+
+    it('trocar o aparelho com a voz desligada, ou fora da voz, não pede nada', () => {
+      const t = montar();
+      t.chat.configurar(false, 'sempre', 0.8, 'a');
+      t.chat.configurar(false, 'sempre', 0.8, 'b');
+      expect(t.pedidos.n).toBe(0);
+      t.chat.configurar(true, 'sempre', 0.8, 'b');
+      t.chat.configurar(true, 'sempre', 0.8, 'c'); // ainda fora da sala: nada a trocar
+      expect(t.pedidos.n).toBe(0);
+    });
+
+    it('colegas: zero é "sozinho na voz"; sobe com quem entra e desce com quem sai', async () => {
+      const t = montar();
+      t.chat.configurar(true, 'sempre', 0.8);
+      t.chat.entrouNaSala(5);
+      expect(t.chat.colegas).toBe(0);
+      t.chat.receber(codificarLista([5]));
+      expect(t.chat.colegas).toBe(0);
+      t.chat.receber(codificarLista([5, 9, 12]));
+      await andar();
+      expect(t.chat.colegas).toBe(2);
+      t.chat.receber(codificarLista([5, 12]));
+      await andar();
+      expect(t.chat.colegas).toBe(1);
+    });
   });
 
   describe('o botão de microfone da tela de toque (P209)', () => {

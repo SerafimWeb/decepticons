@@ -238,12 +238,17 @@ Um servidor local (porta 2598, dados em `.tmp/aviso-dados`) + o jogo pelo Vite d
 
 O jogo de verdade num **celular emulado** (Chrome com tela de toque, 915×412 deitado, `isMobile` + `hasTouch`, que liga o `(hover: none) and (pointer: coarse)` e o modo toque do jogo), online, com um colega falando (uma página da bancada) e o microfone falso. Toque de verdade: `page.touchscreen.tap` para tocar e **`Input.dispatchTouchEvent` do CDP** para **segurar** (o Playwright só sabe tocar). 12 verificações (o botão aparece, está acima da camada de mira por `elementFromPoint`, tocar alterna, segurar fala, nenhum texto cita tecla), foto em `arte/voz-celular-claude.png`, ~3 min. As três bancadas de voz geram o WAV do microfone falso pelo `vozLib.mjs` (`.tmp/voz/`). **Limite:** não é aparelho de verdade (o iPhone é o risco).
 
+### 4.10 A bancada do teste do microfone (`medicoes/voz-teste-mic.mjs`, P212, 19/10)
+
+O jogo de verdade online, **sozinho** numa sala e depois com um colega (a página da bancada), com microfone falso. Prova o aviso "ninguém mais na voz" (aparece e some), o painel das Configurações (a barra mexe, "funcionando", a lista de aparelhos ganha nome), e que **parar, fechar as Configurações e trocar de aba soltam o microfone de verdade**: a página grava toda faixa que o `getUserMedia` entrega (`addInitScript`) e a bancada confere que terminaram. Um segundo Chrome **sem** a flag `--use-fake-ui-for-media-stream` prova o caso do microfone bloqueado (o painel explica o motivo). 14 verificações, foto em `arte/voz-teste-microfone-claude.png`, ~4 min; precisa de ~400 MB livres.
+
 ### 4.5 A missão do rio e a câmera do jogo com o mouse (P180, parte C)
 
 **Para ver o fim da missão sem esperar dez minutos:** `?mapa=amazonia&modo=survival&marcha=0.9` (de 0 a 0,95: quanto da marcha o Draga já andou). **Para fotografar o jogo com a câmera virada:** o **Pointer Lock funciona no Chrome sem janela**, então `page.mouse.move` gira a câmera do jogo de verdade: **cada ponto do mouse são 0,0008 rad** (a `BASE_SENSITIVITY`) e **mover para a direita vira para a direita** (o rumo cresce no sentido horário a partir do norte, -Z). O Playwright entrega os eventos mesmo com o ponteiro fora da janela. **A mata esconde o Draga do chão:** para vê-lo, olhe do rio, de uma clareira (a aldeia) ou acima das copas; a bancada (`amazonia.mjs --vistas draga`) o mostra de cima do rio.
 
 ## 5. Considerações conhecidas (não são bug novo se você achar de novo)
 
+- **O gate do push morre com "Worker exited unexpectedly with exit code 0xC0000409 / 0x80000003" (19/10).** Não é o código: é a **memória virtual do Windows no teto** (RAM + arquivo de paginação; o `FreeVirtualMemory` do WMI chegou a 1,6 GB livres de 24). A causa na máquina do dono: **cada sessão do Claude Code aberta mantém 9 servidores MCP da Hostinger** (~135 MB de memória comprometida cada, com o `npx` de embrulho: 48 processos node, 3,1 GB com seis sessões abertas). **Fechar as sessões antigas libera mais que qualquer ajuste.** O `npm test` agora **conta a memória virtual livre** (`scripts/workersPelaMemoria.mjs`): com o teto apertado roda **1 worker**, e `CYBERMECH_WORKERS=1 npm run check` força. Mais devagar (~10 min), mas passa. Teste: `server/workersPelaMemoria.test.ts`.
 - **Mech parado afunda lentamente no chão, sem limite** (achado 29/09, não corrigido). Reproduz
   com qualquer Mech parado tempo suficiente; mais visível no Colossus (grande, parado mirando)
   do que no Vector-09. Causa isolada e documentada (o contorno do "engasgo do Rapier" de 23/09

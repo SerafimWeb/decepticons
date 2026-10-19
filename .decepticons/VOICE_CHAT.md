@@ -90,6 +90,19 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 
 **Custo no celular:** o mesmo de qualquer jogador (Opus a 24 kbps por colega falando, ~2 kbps calado; nada por tick); bateria e dados móveis valem o que vale uma chamada de voz.
 
+## 5c. Testar o microfone (P212, 19/10)
+
+**O problema:** o Comandante testou e **não saiu som**. A causa provável: **o chat de voz só toca para quem está do outro lado**, e sozinho na sala não há ninguém; além disso o indicador dizia "MICROFONE ABERTO" sem avisar que ninguém mais estava na voz, e não havia como saber se o microfone prestava.
+
+**O que há agora** (`voice/MicTest.ts`, pedaço sob demanda; Configurações > GRÁFICOS E SOM > CHAT DE VOZ):
+- **Aparelho do microfone:** a lista de aparelhos (ganha os nomes depois da permissão); a escolha vale para o chat de voz também e **troca no meio da voz sem renegociar** (`replaceTrack`). O aparelho salvo que foi desligado cai no padrão.
+- **[ TESTAR ]:** abre o microfone com **as mesmas restrições do jogo**, mostra a **barra de nível ao vivo** e diz se está captando ("Funcionando…") ou, passados 4 s sem voz, "Sem sinal". **"Ouvir a minha voz"** devolve o som (com o aviso dos fones: sem eles dá microfonia).
+- **Cada falha tem o seu texto:** o navegador bloqueou (como liberar: o cadeado ao lado do endereço), nenhum microfone, em uso por outro programa, e o resto.
+- **O microfone nunca fica aberto esquecido:** o teste **para** ao fechar as Configurações, ao trocar de aba, ao esconder a página e **sozinho depois de 2 minutos** (provado no Chrome: a faixa termina de verdade).
+- **O indicador do jogo** passou a dizer **"NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES"** quando você está só, e o aviso some quando alguém entra.
+
+**Prova:** `medicoes/voz-teste-mic.mjs` (Chrome com microfone falso; 14 verificações, inclusive o caso do navegador que bloqueia o microfone); foto `arte/voz-teste-microfone-claude.png`; 15 de 15 mutações à mão pegas.
+
 ## 6. O que falta
 
 1. **O ouvido do Comandante:** a bancada prova que o áudio chega e que o volume cai com a distância; **se a voz soa bem** (eco, volume, o alcance de 12 a 160 m) é dele. Os números do alcance são proposta (`ALCANCE_DA_VOZ`).

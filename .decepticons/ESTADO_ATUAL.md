@@ -3,6 +3,22 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## O TESTE DO MICROFONE, O AVISO DE "SOZINHO NA VOZ", E A RESPOSTA SOBRE YOUTUBE E JUKEBOX — Claude, 19/10 (branch `claude/teste-do-microfone`, P212 e P213; P211 em andamento)
+
+**O Comandante (19/10):** *"estou tentando testar o microfone mas não consegui! não saiu som. Seria bom ter um campo de testes?"*; só maiores de 18 na voz (P211); e uma **jukebox num prédio** com link do YouTube, "só se não pesar" (P213).
+
+**P212, feito:** a causa provável é que **sozinho na sala ninguém te ouve** e o indicador não avisava. Agora: painel **TESTAR O MICROFONE** nas Configurações (aparelho, barra de nível, "ouvir a minha voz", motivo de cada falha; para sozinho ao fechar, trocar de aba ou em 2 min), aparelho que vale também para o chat (troca no meio da voz), e o indicador diz **"NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES"**. **Provas:** Chrome com microfone falso (`voz-teste-mic.mjs`, **14 de 14**, inclusive "parar solta o microfone de verdade" e o navegador que bloqueia), **15 de 15 mutações**, foto `arte/voz-teste-microfone-claude.png`.
+
+**P213, só resposta e desenho (`RADIO_E_EMISSORES.md` § 7):** **o YouTube é problema** (o player tem de ficar visível e não separa o áudio; vem vídeo pesado; não toca no espaço; leva o IP de todo mundo perto ao Google; conteúdo sem moderação). Recomendo o terminal com **o catálogo do jogo** e "Sugerir um link". **Só entra se não pesar**: a primeira entrega tem de medir menos de 1 ms por quadro e no máximo 8 KB/s por emissor.
+
+**O gate do push e a memória (mesmo PR):** dois pushes foram barrados por workers do Vitest mortos (`0xC0000409`), sem relação com o código: a **memória virtual do Windows estava no teto** (1,6 GB livres de 24) porque **seis sessões do Claude Code abertas mantinham 48 processos node dos servidores MCP da Hostinger (3,1 GB)**. **Peço ao Comandante: feche as sessões antigas do Claude Code** (é o que mais ajuda). No código, o `npm test` passou a contar a memória virtual livre e a usar 1 worker quando aperta (`CYBERMECH_WORKERS=1` força); 6 mutações pegas.
+
+**P211 (idade):** vem no PR seguinte (cadastro com mês e ano de nascimento; menores sem microfone nem a voz dos outros, **imposto no servidor**). **Até lá a voz segue pública a todos**: o Comandante pode fechá-la no painel de visibilidade (`tela:voz`).
+
+**Falta (R13):** (a) **P211**; (b) **decisões do Comandante** sobre a jukebox (§ 7.5: YouTube fora, catálogo e licenças, qual prédio); (c) ninguém testou a voz entre dois aparelhos reais pela internet.
+
+**Próxima sessão começa com:** o portão de idade (P211).
+
 ## O SEGUNDO TESTE ONLINE: O OUTRO JOGADOR VIA TODO MUNDO COMO VECTOR-09, E A JANELA DAS REGRAS POR TRÁS DA DO SERVIDOR — Claude, 19/10 (branch `claude/online-modelos`, P214 e P215)
 
 **O Comandante (19/10), depois do segundo teste online (Colossus V4 num PC, Marauder no outro):** *"o outro jogador sempre me vê como vector 9 amarelo… ele não me vê como outro modelo"*; e a janela REGRAS DAS SALAS abria **por trás** da do servidor.
