@@ -1,6 +1,18 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-19] A fase 8 DE JANEIRO começa pela ficha e pelo pino; a massa é dado, não Mechs (Claude, P217)
+
+**Ordem:** a fase do 8 de janeiro em Brasília, com milhares de manifestantes, no lugar do Bunker, que vai para o Mato Grosso do Sul.
+
+**Decisões:**
+1. **A ficha antes do polígono:** o `fichas/README.md` e a lição do Bunker e da Praia mandam fixar **o que a fase faz** e **a conta do desempenho** antes de construir. Entrego o pino e a ficha agora e **a construção espera as respostas do Comandante** (seis perguntas, cada uma com proposta) em vez de erguer um mapa para ouvir "queria outra coisa".
+2. **A massa não é uma lista de Mechs:** milhares de corpos com física e IA individual estouram a CPU (G4/G5, G6). A multidão é **um sistema de dados** em vetores tipados, com uma grade espacial para o acerto e o desenho instanciado em 2 chamadas; **offline** primeiro, porque 3.000 figurantes sincronizados passam em ~20× o teto de rede (G11).
+3. **O Bunker vai para Corumbá, não para Campo Grande:** a regra "nenhum par de missões a menos de 6°" (`theater.test.ts`, os nomes dos marcadores não se encostam) barra a capital, a 4,9° da Foz do Iguaçu. Corumbá (o Pantanal, na fronteira) fica a ≥ 7° de todos os outros pinos, é Mato Grosso do Sul e combina com um bunker. O Comandante pode escolher outro lugar do estado desde que a regra se mantenha.
+4. **O lugar do 8 DE JANEIRO é confirmado** (`proposta: false`): foi ordem explícita do Comandante, ao contrário dos lugares que eu propus.
+5. **A regra de conteúdo é a que já existia** (`CAMPANHAS_E_CHEFES.md`): estilizado e sem sangue, o rótulo "gado" fora do texto, a máscara como dado com botão de desligar, nada de criança ou religião como alvo, e **nenhuma afirmação factual sem ficha com fonte** ("os militares não aderiram" fica 🟡 até a ficha de fatos). A fase entra **restrita** no painel de visibilidade quando existir (`mapa:janeiro`).
+6. **Risco registrado:** é uma fase em que se atira em **manifestantes de um evento real**; a máscara em dado, o botão de desligar e a fase restrita são a rede de segurança, e a decisão de manter ou mudar o tom é do Comandante (pergunta 5 da ficha).
+
 ## [2026-10-19] O teste do microfone, o "sozinho na voz" e a jukebox só com catálogo (Claude, P212 e P213)
 
 **Ordem:** o microfone testado e sem som, só maiores de 18 na voz, e a jukebox do prédio com link do YouTube, "só se não pesar".

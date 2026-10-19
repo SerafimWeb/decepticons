@@ -3,6 +3,21 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## A FASE 8 DE JANEIRO: O PINO EM BRASÍLIA, O BUNKER EM CORUMBÁ E A FICHA DA MASSA — Claude, 19/10 (branch `claude/oito-de-janeiro`, P217)
+
+**O Comandante (19/10):** *"uma nova fase… 8 DE JANEIRO… milhares de manifestantes de verde e amarelo, usando cabeças de gado… vamos eliminar os golpistas na base do tiro, porrada e bomba… posicionar ela no mapa do Brasil onde está o bunker, e vamos mover o bunker para outro local na região do Mato Grosso do Sul"*.
+
+**1. O que foi feito (o começo, no processo do projeto: a ficha antes do polígono):** `ui/theater.ts`: o teatro **8 DE JANEIRO** (Praça dos Três Poderes · Brasília) entra **nas coordenadas onde estava o Bunker** (EM BREVE: sem mapa), com o recurso novo `poder` (SEDE DOS PODERES); o **BUNKER** vai para **Corumbá · MS** (-19,01 / -57,65). Escolhi Corumbá e não Campo Grande porque a regra do teste ("nenhum par de missões a menos de 6°") barra a capital, a 4,9° da Foz do Iguaçu.
+**2. A ficha** (`fichas/cenario-8-de-janeiro.md`, proposta): **o que a fase faz** (defender os três prédios da Praça de cinco marchas em 5 minutos, o agitador no carro de som como alvo), **a conta da massa** (o ponto novo e perigoso: milhares de figurantes **não** são Mechs; são **dado em vetores tipados**, uma grade espacial para o acerto, 2 chamadas de desenho com a animação na shader, a fase **só offline** porque a massa não cabe nos 8 KB/s por jogador), **os números de aceitação** (CPU ≤ 0,3 ms por tick, ≤ 70 desenhos e ≤ 80 mil triângulos na vista mais cheia, p50 no quadro na GPU integrada), **a regra de conteúdo** (violência estilizada sem sangue; o rótulo "gado" fora do texto; a máscara em dado com botão de desligar; sem criança nem religião como alvo; **nenhuma afirmação factual sem ficha com fonte**) e **seis perguntas ao Comandante** com a minha proposta de cada.
+
+**Prova:** testes do teatro (Brasília e o Mato Grosso do Sul no lugar, o 8 DE JANEIRO em EM BREVE, a regra de 6° entre pinos, o lugar confirmado).
+
+**Falta (R13):** **a fase não existe** (só o pino e a ficha): a massa, o desenho, o mapa e a missão são os passos 2 a 5 da ficha, um PR cada; **esperam as respostas do Comandante às perguntas da ficha** (principalmente "só offline", "como se ganha", "o que é a porrada" e "pessoa estilizada ou casca"); **não vi o mapa no navegador**; as linhas de enredo "os militares não aderiram" e qualquer número de pessoas ficam fora do jogo até haver `fichas/fatos-8-de-janeiro.md`.
+
+**Onde o Comandante confere:** console de comando → o mapa-múndi: o pino **8 DE JANEIRO** em Brasília (EM BREVE) e o **BUNKER** em Corumbá (clicar no Bunker ainda abre o mapa do Bunker).
+
+**Próxima sessão começa com:** as respostas do Comandante às seis perguntas da ficha; depois `sim/Multidao.ts` e a bancada de CPU (passo 2).
+
 ## O TESTE DO MICROFONE, O AVISO DE "SOZINHO NA VOZ", E A RESPOSTA SOBRE YOUTUBE E JUKEBOX — Claude, 19/10 (branch `claude/teste-do-microfone`, P212 e P213; P211 em andamento)
 
 **O Comandante (19/10):** *"estou tentando testar o microfone mas não consegui! não saiu som. Seria bom ter um campo de testes?"*; só maiores de 18 na voz (P211); e uma **jukebox num prédio** com link do YouTube, "só se não pesar" (P213).
