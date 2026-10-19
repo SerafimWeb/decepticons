@@ -21,6 +21,11 @@ import { mulberry32 } from '../core/rng';
  * a missão os cria.
  */
 
+/** "Nunca aconteceu" nos tempos que o desenho lê (maior que qualquer tick). */
+export const NUNCA = 1e9;
+/** Quanto tempo o corpo caído continua na Praça, tombado, antes de sumir (ticks): o desenho lê o mesmo número. */
+export const TICKS_DO_TOMBO = 40;
+
 /** Os três tipos de figurante que andam em vetor (o androide rebelde é entidade, `androides`). */
 export const GADO = 0;
 export const CARECA = 1;
@@ -630,6 +635,27 @@ export class Multidao {
       this._naFachada[this.alvo[i]!]!++;
     }
     return this._naFachada;
+  }
+
+  /**
+   * Para o desenho: copia para `fim` (4 números: morreu em, fugiu em, saiu em, velocidade da fuga) e `fuga` (4: de onde saiu x e z, para onde corre dx e dz) o que muda por causa do jogador.
+   * `NUNCA` (1e9) onde não aconteceu, para o shader comparar com o tick sem ramos extras. Sem alocar.
+   */
+  copiarEstado(i: number, fim: Float32Array, fuga: Float32Array, o: number): void {
+    fim[o] = this.morto[i] === 1 ? (this.morreuEm[i]! < 0 ? -1 : this.morreuEm[i]!) : NUNCA;
+    fim[o + 1] = this.fugiu[i] === 1 ? this.fugaEm[i]! : NUNCA;
+    fim[o + 2] = this.fugiu[i] === 1 ? this.saiuEm[i]! : NUNCA;
+    fim[o + 3] = this.fugiu[i] === 1 ? this.fugaVel[i]! : 0;
+    fuga[o] = this.fugaX[i]!;
+    fuga[o + 1] = this.fugaZ[i]!;
+    fuga[o + 2] = this.fugaDirX[i]!;
+    fuga[o + 3] = this.fugaDirZ[i]!;
+  }
+
+  /** `i` já não está na Praça no tick `t` (morreu e o corpo já sumiu, ou saiu pelo limite do mapa)? É o que decide se quem entra no meio da fase ainda tem de ser desenhado. */
+  foraDaPraca(i: number, t: number): boolean {
+    if (this.morto[i] === 1 && (this.morreuEm[i]! < 0 || t >= this.morreuEm[i]! + TICKS_DO_TOMBO)) return true;
+    return this.fugiu[i] === 1 && t >= this.saiuEm[i]!;
   }
 
   /** Para o desenho: o tick em que `i` morreu (-1 se vivo ou se morreu antes de a entrada no meio da fase), para o tombo. */

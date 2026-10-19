@@ -45,6 +45,8 @@ import { ROUND_S, type Round } from '../combat/Round';
 import { mascaraFromSearch } from '../entities/mascaraDoChefe';
 import type { WalkerDemo } from '../debug/WalkerDemo';
 import { walkerFromSearch } from '../debug/walkerLink';
+import { multidaoFromSearch } from '../debug/multidaoLink';
+import type { MultidaoDemo } from '../debug/MultidaoDemo';
 import { carregarChefeSeFor, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirMapa, type ObjetivosCarregados } from '../environment/mapasSobDemanda';
 import type { EstadoDosObjetivos } from '../environment/AmazoniaObjetivos';
 import { AMAZONIA_GERADORES } from '../environment/AmazoniaLayout';
@@ -395,6 +397,10 @@ export class Game {
   private readonly diaFixo = diaFromSearch(location.search);
   /** A demonstração do Draga-01 (P180, parte A): `?walker` no link. Só desenho: o Draga ainda não é um inimigo. */
   private readonly walkerQuer = walkerFromSearch(location.search);
+  /** A demonstração da multidão do 8 DE JANEIRO (`?multidao`, P217): carregada sob demanda, só desenho e simulação de teste (DEMO). */
+  private readonly multidaoQuer = multidaoFromSearch(location.search);
+  private multidaoDemo: MultidaoDemo | null = null;
+  private multidaoCarregando = false;
   /** A demonstração é carregada sob demanda (`import()`): o código do Draga não pesa no download de quem joga sem o link (`scripts/orcamentoDeJs.mjs`). */
   private walkerDemo: WalkerDemo | null = null;
   private walkerCarregando = false;
@@ -1955,6 +1961,7 @@ export class Game {
     while (this.accumulator >= FIXED_DT && steps < MAX_STEPS_PER_FRAME) {
       // A partida roda o controle do jogador, os bots, os tiros e a física; entre rodadas, só o relógio.
       this.match.step(FIXED_DT);
+      this.multidaoDemo?.passo();
       this.bankTick++;
       this.accumulator -= FIXED_DT;
       steps++;
@@ -1965,6 +1972,15 @@ export class Game {
     const alpha = this.accumulator / FIXED_DT;
 
     // --- Render ---
+    if (this.multidaoQuer) {
+      if (!this.multidaoDemo && !this.multidaoCarregando) {
+        this.multidaoCarregando = true;
+        void import('../debug/MultidaoDemo').then(({ MultidaoDemo }) => {
+          this.multidaoDemo = new MultidaoDemo(this.scene, this.multidaoQuer!, () => ({ x: this.mech.simPosition.x, z: this.mech.simPosition.z }));
+        });
+      }
+      this.multidaoDemo?.desenhar(alpha);
+    }
     this.mech.render(dt, alpha);
     this.bots.render(dt, alpha);
     this.match.allies?.render(dt, alpha);
