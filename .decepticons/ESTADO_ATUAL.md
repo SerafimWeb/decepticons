@@ -4,6 +4,10 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
 
 ## O E-MAIL DO "ESQUECI A SENHA" PELO SMTP DA HOSTINGER, SEM SERVIÇO NOVO — Claude, 19/10 (branch `claude/email-smtp`, P206 parte 2)
 

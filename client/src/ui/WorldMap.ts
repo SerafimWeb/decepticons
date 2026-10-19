@@ -373,7 +373,6 @@ export class WorldMap {
         e.preventDefault();
         this.ctx.implantar(ir.href);
       });
-      if (this.ctx.online && t.mapa === 'bunker') ir.title = 'O Bunker é treino offline: sai da sala online';
       pe.append(ir);
     }
   }

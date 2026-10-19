@@ -119,7 +119,7 @@ describe('o link da Amazônia (P180): ?mapa=amazonia abre o Deathmatch e a miss�
     expect(mapFromSearch('?mapa=amazonia', false, 'survival')).toBe('amazonia');
     expect(mapFromSearch('?mapa=amazonia', false, 'dominio')).toBe('arena');
     expect(mapFromSearch('?mapa=amazonia', false, 'ctf')).toBe('arena');
-    expect(mapFromSearch('?mapa=amazonia', true, 'deathmatch')).toBe('arena');
+    expect(mapFromSearch('?mapa=amazonia', true, 'deathmatch')).toBe('amazonia'); // online também (P218, etapa O1): o Deathmatch da Terras Raras vale na sala online
     expect(mapFromSearch('?mapa=outra', false, 'deathmatch')).toBe('arena');
   });
 });
