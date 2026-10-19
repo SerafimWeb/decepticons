@@ -52,6 +52,7 @@ Máquina: o PC do Comandante (6 GB de RAM, CPU sob carga de outras sessões dura
 ## O que a medida não diz, e o que NÃO foi atingido (R13)
 
 - **O teto da ficha de ≤ 80 mil triângulos na vista mais cheia NÃO foi atingido:** a vista mais cheia manda ~182 mil (o mapa leva 31 mil e **cada figurante ~110**). O critério que decide (o quadro de 60 fps na GPU integrada) **foi** atingido, mas com folga pequena (14 ms de 16,7); **numa GPU mais fraca que esta, falta margem**. O caminho já desenhado na ficha: **placa (impostor) de longe**, menos caixas por figurante (hoje: tronco, duas pernas, dois braços e a cabeça com focinho e chifres) e o **teto da qualidade** (`limitar()` existe e é testado, mas **ainda não está ligado** ao `core/Quality.ts`).
+- **`varrer-nan` (a trava do NaN, `FERRAMENTAS.md` § 4.1):** 0 de 480 poses com pixel não finito com a multidão da demonstração na cena da Praia (`--extra "multidao=1&cota=3000&t=9000"`).
 - **A medida é da demonstração** (Cidade Neon, o jogador parado, a multidão não é atingida pelos tiros, não há prédio): o jogo da fase tem mais coisa na cena.
 - **p95 de 28 a 32 ms** com e sem a multidão: são os soluços da máquina compartilhada (editor, navegador, outras sessões), não da multidão (o p95 sem ela é igual).
 - **Os 118 a 122 desenhos incluem o jogo todo;** o teto da ficha (70 desenhos) era para a cena da fase, que ainda não existe.
