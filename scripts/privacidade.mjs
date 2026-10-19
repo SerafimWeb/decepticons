@@ -24,7 +24,8 @@ const { POLITICA_VERSAO } = await load('shared/net/auth.ts');
 const ARQUIVO_CONTATO = resolve('.decepticons', 'contato-privacidade.txt');
 const CONTATO = (process.env.CYBERMECH_CONTATO_PRIVACIDADE ?? (existsSync(ARQUIVO_CONTATO) ? readFileSync(ARQUIVO_CONTATO, 'utf8').split(/\r?\n/)[0] : '') ?? '').trim();
 const CONTATO_VALIDO = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(CONTATO);
-const [ano, mes, dia] = POLITICA_VERSAO.split('-');
+// A versão é a data (`AAAA-MM-DD`), com um sufixo `.n` quando a política muda mais de uma vez no dia.
+const [ano, mes, dia] = POLITICA_VERSAO.slice(0, 10).split('-');
 
 const css = `
   .pol { display: grid; gap: 40px; max-width: 80ch; padding-top: 30px; }
@@ -63,11 +64,12 @@ const body = `
       <h2 id="h-resumo">Em poucas palavras</h2>
       ${lista([
         '**Sem conta, o jogo não sabe quem você é.** O seu progresso fica no seu navegador; o servidor só soma números (quantas partidas, quantos minutos) sem ligar nada a uma pessoa.',
-        '**Com conta**, guardamos o seu e-mail, a sua senha (embaralhada, nunca em texto), o seu progresso e **quando e quanto você joga**, para o jogo funcionar em outro aparelho e para entendermos como melhorá-lo.',
+        '**Com conta**, guardamos o seu e-mail, a sua senha (embaralhada, nunca em texto), **o mês e o ano do seu nascimento**, o seu progresso e **quando e quanto você joga**, para o jogo funcionar em outro aparelho e para entendermos como melhorá-lo.',
         '**Você manda nos seus dados:** baixa tudo, apaga a conta, ou desliga o registro da sua atividade, direto no jogo e na hora.',
         '**Não vendemos dados e não há publicidade.** O Google Analytics do site só liga se você aceitar.',
         '**O endereço IP não é guardado.** Ele existe só na memória do servidor enquanto você está conectado, e nos registros técnicos aparece cortado (o último trecho é mascarado).',
         '**No chat de voz, os outros jogadores da sala podem ver o seu endereço IP**, porque a voz vai direto de um navegador ao outro (nunca passa pelo nosso servidor, e **nada é gravado**). Você liga e desliga em Configurações, e o jogo funciona sem a voz.',
+        '**O chat de voz é só para maiores de 18 anos.** O cadastro pergunta o mês e o ano de nascimento; contas de menores de 18 anos, contas sem a idade informada e quem joga sem conta **não têm o microfone nem ouvem os outros jogadores**: ficam só com o áudio do jogo.',
       ])}
     </section>
 
@@ -88,7 +90,7 @@ const body = `
               ['Você joga, com ou sem conta (no servidor)', '**Somas sem identificação:** quantas visitas, cliques e partidas por dia e por país; totais de rodadas (minutos, abates, mortes, onda alcançada, duração e qualidade gráfica ao terminar) por mapa, modo e dia; e **de onde a visita veio** (digitou o endereço, busca, rede social, outro site, link marcado) e o **nome do site** de origem, o tipo de aparelho (celular, tablet ou computador), o navegador, o sistema, o idioma, se é a primeira visita ou há quantos dias foi, e o estado do Brasil.', 'Saber se o jogo funciona e onde melhorar (legítimo interesse). São números agregados: não apontam para você.', 'Contagens por dia por 120 dias; totais de rodadas sem prazo (são só somas).'],
               ['Você joga online', 'O apelido e a montagem do robô, enquanto você está na sala.', 'Mostrar você aos outros jogadores (execução do serviço).', 'Só na memória do servidor, até você sair.'],
               ['Você usa o chat de voz', 'O som do seu microfone, **enquanto você fala**, e o seu **endereço IP**, que os outros jogadores da sala podem ver, porque a conexão é direta entre os navegadores. Nada disso passa pelo nosso servidor e **nada é gravado**.', 'Conversar com quem joga com você (execução do serviço; você liga e desliga em Configurações, e o jogo funciona sem a voz).', 'Só durante a conversa; nada fica guardado.'],
-              ['Você cria uma conta', '**E-mail**, senha (guardada com `scrypt` e sal, nunca em texto), data de criação, a versão da política que você aceitou e quando, o progresso do piloto, e as sessões abertas (o servidor guarda só o resumo `SHA-256` do código da sessão).', 'Ter conta e levar o progresso para outro aparelho (execução do contrato); prova do seu aceite.', 'Até você apagar a conta. A sessão vence em 30 dias.'],
+              ['Você cria uma conta', '**E-mail**, senha (guardada com `scrypt` e sal, nunca em texto), data de criação, a versão da política que você aceitou e quando, **o mês e o ano de nascimento** (sem o dia), o progresso do piloto, e as sessões abertas (o servidor guarda só o resumo `SHA-256` do código da sessão).', 'Ter conta e levar o progresso para outro aparelho (execução do contrato); prova do seu aceite; **saber se a conta é de maior de 18 anos, o que libera o chat de voz** (proteção de crianças e adolescentes). O mês e o ano só entram em uma conta uma vez e não mudam.', 'Até você apagar a conta. A sessão vence em 30 dias.'],
               ['Você pede “Esqueci a senha”', 'O **e-mail** que você digitou e um **link de uso único** (guardamos só a impressão digital dele, nunca o link). O registro de segurança anota que o pedido foi feito, com o número da conta e sem o e-mail.', 'Devolver o acesso à sua conta (execução do serviço).', 'O link vale **30 minutos** e some ao ser usado; o registro de segurança, 400 dias.'],
               ['Você joga com conta', '**A sua atividade:** em que dias abriu o jogo, quantas rodadas, quantos segundos, abates e mortes por dia (sem o conteúdo das rodadas).', 'Saber quantos jogadores voltam e por quanto tempo jogam, para melhorar o jogo (legítimo interesse). **Você pode se opor** e desligar isto quando quiser.', 'Até 400 dias; desligar apaga o que já foi registrado.'],
               ['Você visita o site (landing, oficina)', '**Google Analytics:** cookies de medição, páginas vistas, origem do clique, cidade aproximada e tipo de aparelho, tratados pelo Google.', 'Entender quem chega ao site (**só com o seu consentimento**, na faixa de cookies).', 'Conforme a configuração do Google Analytics (no máximo 14 meses). Recusar ou mudar de ideia apaga os cookies.'],
@@ -142,7 +144,7 @@ const body = `
 
     <section aria-labelledby="h-menores">
       <h2 id="h-menores">6. Crianças e adolescentes</h2>
-      <p>O CYBERMECH não é dirigido a crianças (menores de 12 anos). Para <b>criar uma conta</b>, a pessoa declara ter 18 anos ou mais, ou ter a autorização de um responsável. <b>Jogar sem conta</b> não coleta dados pessoais. Se você é responsável por um menor que criou conta sem autorização, apague a conta no jogo ou fale com o canal do encarregado.</p>
+      <p>O CYBERMECH não é dirigido a crianças (menores de 12 anos). Para <b>criar uma conta</b>, a pessoa informa o mês e o ano de nascimento e declara ter 18 anos ou mais, ou ter a autorização de um responsável. <b>Contas de menores de 18 anos não têm chat de voz</b>: sem microfone e sem ouvir os outros jogadores, só o áudio do jogo. <b>Jogar sem conta</b> não coleta dados pessoais. Se você é responsável por um menor que criou conta sem autorização, apague a conta no jogo ou fale com o canal do encarregado.</p>
     </section>
 
     <section aria-labelledby="h-seguranca">
@@ -153,7 +155,7 @@ const body = `
     <section aria-labelledby="h-mudancas">
       <h2 id="h-mudancas">8. Mudanças nesta política</h2>
       <p>Quando mudarmos o que guardamos ou para quê, esta página muda, a versão e a data mudam junto, e quem for criar uma conta aceita a versão nova. A sua conta guarda a versão que você aceitou e quando. Mudanças que afetem contas já existentes serão avisadas no jogo.</p>
-      <p class="versao">Versão atual: ${esc(POLITICA_VERSAO)}. O que mudou em relação à de 18/10/2026: o chat de voz (o seu IP visto pelos outros jogadores da sala e o STUN do Google).</p>
+      <p class="versao">Versão atual: ${esc(POLITICA_VERSAO)}. O que mudou em relação à de 19/10/2026: o cadastro pergunta o mês e o ano de nascimento, e o chat de voz passa a ser só para maiores de 18 anos. Em relação à de 18/10/2026: o chat de voz (o seu IP visto pelos outros jogadores da sala e o STUN do Google).</p>
     </section>
   </main>
 `;

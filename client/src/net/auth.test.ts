@@ -17,7 +17,7 @@ describe('ContaCliente', () => {
   it('criar conta com sucesso devolve token e e-mail', async () => {
     const c = new ContaCliente('wss://jogo.selvamkt.com.br');
     vi.stubGlobal('fetch', respostaJson({ token: 'abc', email: 'a@b.com', is_admin: false }));
-    expect(await c.criar('a@b.com', 'senhasegura')).toEqual({ token: 'abc', email: 'a@b.com', is_admin: false, medir: true });
+    expect(await c.criar('a@b.com', 'senhasegura')).toEqual({ token: 'abc', email: 'a@b.com', is_admin: false, medir: true, idade: 'sem-idade' });
     vi.unstubAllGlobals();
   });
 
@@ -38,7 +38,7 @@ describe('ContaCliente', () => {
   it('eu(): token válido devolve o e-mail, inválido devolve null', async () => {
     const c = new ContaCliente('wss://jogo.selvamkt.com.br');
     vi.stubGlobal('fetch', respostaJson({ email: 'a@b.com', is_admin: false }));
-    expect(await c.eu('token-valido')).toEqual({ email: 'a@b.com', is_admin: false, medir: true });
+    expect(await c.eu('token-valido')).toEqual({ email: 'a@b.com', is_admin: false, medir: true, idade: 'sem-idade' });
     vi.stubGlobal('fetch', respostaJson({ erro: 'sem sessão' }, false, 401));
     expect(await c.eu('token-invalido')).toBeNull();
     vi.unstubAllGlobals();
@@ -184,6 +184,48 @@ describe('ContaCliente: aceite e direitos do titular (P192, LGPD)', () => {
     espiao({ ativa: 'talvez' });
     expect(await c.medicao('tk', true)).toBeNull();
     expect(await c.medicao('', true)).toBeNull();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('ContaCliente: a idade (P211)', () => {
+  const corpoDa = (chamada: unknown) => JSON.parse(((chamada as [string, RequestInit])[1].body as string) ?? '{}') as Record<string, unknown>;
+
+  it('criar manda o nascimento junto do aceite; sem nascimento, o corpo não leva o campo', async () => {
+    const c = new ContaCliente('wss://jogo.selvamkt.com.br');
+    const f = vi.fn(respostaJson({ token: 'abc', email: 'a@b.com', idade: 'adulto' }));
+    vi.stubGlobal('fetch', f);
+    const r = await c.criar('a@b.com', 'senhasegura', '1990-01');
+    expect(r).toMatchObject({ idade: 'adulto' });
+    expect(corpoDa(vi.mocked(f).mock.calls[0])).toMatchObject({ email: 'a@b.com', nascimento: '1990-01' });
+    await c.criar('a@b.com', 'senhasegura');
+    expect('nascimento' in corpoDa(vi.mocked(f).mock.calls[1])).toBe(false);
+    vi.unstubAllGlobals();
+  });
+
+  it('a faixa que o servidor manda vale só se for adulto ou menor; qualquer outra coisa é sem-idade (nunca abre a voz por engano)', async () => {
+    const c = new ContaCliente('wss://jogo.selvamkt.com.br');
+    for (const [mandou, vale] of [['adulto', 'adulto'], ['menor', 'menor'], ['sem-idade', 'sem-idade'], ['admin', 'sem-idade'], [true, 'sem-idade'], [undefined, 'sem-idade']] as const) {
+      vi.stubGlobal('fetch', respostaJson({ email: 'a@b.com', idade: mandou }));
+      expect((await c.eu('t'))!.idade, String(mandou)).toBe(vale);
+    }
+    vi.unstubAllGlobals();
+  });
+
+  it('nascimento(): manda o AAAA-MM com a sessão e devolve a faixa; recusa vira a mensagem do servidor; sem rede nunca lança', async () => {
+    const c = new ContaCliente('wss://jogo.selvamkt.com.br');
+    const f = vi.fn(respostaJson({ idade: 'menor' }));
+    vi.stubGlobal('fetch', f);
+    expect(await c.nascimento('tk', '2015-01')).toEqual({ idade: 'menor' });
+    const [url, init] = vi.mocked(f).mock.calls[0] as [string, RequestInit];
+    expect(url).toContain('/conta/nascimento');
+    expect((init.headers as Record<string, string>)[SESSAO_HEADER]).toBe('tk');
+    expect(JSON.parse(init.body as string)).toEqual({ nascimento: '2015-01' });
+    vi.stubGlobal('fetch', respostaJson({ erro: 'o nascimento já foi informado e não muda' }, false, 409));
+    expect(await c.nascimento('tk', '1990-01')).toEqual({ erro: 'o nascimento já foi informado e não muda' });
+    vi.stubGlobal('fetch', (async () => { throw new Error('x'); }) as unknown as typeof fetch);
+    expect(await c.nascimento('tk', '1990-01')).toEqual({ erro: 'servidor fora do ar' });
+    expect(await new ContaCliente(undefined).nascimento('tk', '1990-01')).toEqual({ erro: 'sem servidor' });
     vi.unstubAllGlobals();
   });
 });

@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createServer, runnerImport } from 'vite';
-import { gerarWav } from './vozLib.mjs';
+import { apontarJogoPara, gerarWav, guardarSessao, tokenDeConta } from './vozLib.mjs';
 
 /**
  * O CHAT DE VOZ NO CELULAR (P209): o jogo de verdade num **celular emulado** (Chrome com tela de toque, 915×412 deitado, `(hover: none) and (pointer: coarse)`), online, com um colega falando (uma
@@ -37,6 +37,7 @@ async function ate(fn, ms = 60000, passo = 300) {
 
 const { startServer } = (await runnerImport(resolve('server/Server.ts'), { configFile: false, logLevel: 'warn' })).module;
 const jogo = await startServer({ port: 2597, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 200, total: 400, msgs: 200, burst: 200 }, log: () => {} });
+apontarJogoPara(2597);
 const vite = await createServer({ configFile: resolve('vite.config.ts'), logLevel: 'error', server: { port: 5195, strictPort: false, open: false } });
 await vite.listen();
 const base = vite.resolvedUrls.local[0];
@@ -59,7 +60,7 @@ try {
   const colega = await browser.newPage();
   colega.on('pageerror', (e) => erros.add(`colega: ${e.message}`));
   await colega.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
-  await colega.goto(`${base}@fs/${PAGINA}?${new URLSearchParams({ servidor: 'ws://127.0.0.1:2597', sala: 'VOZCEL', nome: 'BRAVO', dsp: '0' })}`);
+  await colega.goto(`${base}@fs/${PAGINA}?${new URLSearchParams({ servidor: 'ws://127.0.0.1:2597', sala: 'VOZCEL', nome: 'BRAVO', dsp: '0', token: await tokenDeConta(2597, 'bravo') })}`);
 
   // O celular: Chrome com tela de toque, deitado.
   const ctx = await browser.newContext({
@@ -73,6 +74,7 @@ try {
   const page = await ctx.newPage();
   page.on('pageerror', (e) => erros.add(e.message));
   await page.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
+  await guardarSessao(page, 2597, await tokenDeConta(2597, 'dan'));
   await page.goto(`${base}?sala=VOZCEL&nome=DAN&servidor=ws://127.0.0.1:2597&comandante=1`);
   await page.waitForFunction(() => document.getElementById('cta')?.textContent?.includes('jogar'), null, { timeout: 240_000, polling: 500 }).catch(() => {});
   for (let i = 0; i < 4; i++) {

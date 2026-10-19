@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { runnerImport } from 'vite';
 
 /** A pasta dos temporários das bancadas de voz (G15: dentro do projeto, ignorada pelo git). */
 export const DADOS_DA_VOZ = resolve('.tmp', 'voz');
@@ -26,4 +27,38 @@ export function gerarWav(nome, amp, segundos) {
   const caminho = resolve(DADOS_DA_VOZ, nome);
   writeFileSync(caminho, buf);
   return caminho;
+}
+
+let contasCriadas = 0;
+/**
+ * Cria uma conta pelo HTTP do servidor da bancada e devolve o token da sessão (P211: a voz é só de conta de maior de idade, e o servidor confere o token do `PRONTO`).
+ * `nascimento` é o `AAAA-MM` (padrão: adulto); `null` cria a conta "sem idade".
+ */
+export async function tokenDeConta(porta, apelido = 'bancada', nascimento = '1990-01') {
+  const { ACEITE_ATUAL } = (await runnerImport(resolve('shared/net/auth.ts'), { configFile: false, logLevel: 'silent' })).module;
+  const r = await fetch(`http://127.0.0.1:${porta}/conta/criar`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: `${apelido}-${++contasCriadas}@bancada.com`, senha: 'senhasegura', aceite: ACEITE_ATUAL, ...(nascimento ? { nascimento } : {}) }),
+  });
+  if (r.status !== 201) throw new Error(`conta de bancada não criada: ${r.status} ${await r.text()}`);
+  return (await r.json()).token;
+}
+
+/** A chave onde o jogo guarda o token da sessão para o servidor dessa porta (`chaveDoToken` do cliente). */
+export const chaveDaSessao = (porta) => `cybermech.conta.token|http://127.0.0.1:${porta}`;
+
+/** Deixa o token no navegador antes de a página abrir: o jogo restaura a sessão sozinho. O jogo só fala com o servidor de contas do `VITE_GAME_SERVER` (ver `apontarJogoPara`). */
+export const guardarSessao = (page, porta, token) =>
+  page.addInitScript(([k, v]) => {
+    try {
+      localStorage.setItem(k, v);
+    } catch {
+      /* sem armazenamento */
+    }
+  }, [chaveDaSessao(porta), token]);
+
+/** O servidor de contas do jogo vem do build (`VITE_GAME_SERVER`): a bancada o aponta para o servidor dela ANTES de subir o Vite. */
+export function apontarJogoPara(porta) {
+  process.env.VITE_GAME_SERVER = `ws://127.0.0.1:${porta}`;
 }

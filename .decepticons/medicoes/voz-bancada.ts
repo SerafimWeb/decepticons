@@ -4,7 +4,7 @@ import type { ModoMic } from '../../client/src/voice/MicController';
 
 /**
  * Parâmetros da URL: `servidor` (ws://…), `sala`, `nome`, `modo` (sempre | ptt), `mic` (normal | negar | tarde: o microfone só chega 8 s depois),
- * `dsp` (0 = sem cancelamento de eco, supressão de ruído e ganho automático: o tom puro do arquivo de teste seria "ruído" para o navegador).
+ * `token` (a sessão de uma conta: o servidor só admite na voz conta de maior de idade, P211; sem ele a bancada nem pede a voz ao servidor... ele nega), `dsp` (0 = sem cancelamento de eco, supressão de ruído e ganho automático: o tom puro do arquivo de teste seria "ruído" para o navegador).
  */
 const q = new URLSearchParams(location.search);
 const modo = (q.get('modo') ?? 'sempre') as ModoMic;
@@ -39,7 +39,7 @@ const ambiente: Ambiente = {
 };
 
 let meuId = -1;
-const chat = new VoiceChat({ enviar: (b) => cliente.enviarVoz(b), saida: () => ({ ctx, out }), ambiente });
+const chat = new VoiceChat({ enviar: (b) => cliente.enviarVoz(b), saida: () => ({ ctx, out }), ambiente, ...(q.has('token') ? { token: () => q.get('token') } : {}) });
 const cliente: NetClient = new NetClient(`${q.get('servidor')}/?sala=${q.get('sala') ?? 'VOZBANCADA'}`, {
   welcome: (m) => {
     meuId = m.id;

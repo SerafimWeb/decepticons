@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ROOM_SIZE } from './constants';
-import { codificarLista, codificarPronto, codificarSinal, ehMensagemDeVoz, lerLista, lerPronto, lerSinal, sinalValido, VOZ, VOZ_SDP_MAX } from './voz';
+import { codificarLista, codificarPronto, codificarSinal, ehMensagemDeVoz, lerLista, lerPronto, lerSinal, sinalValido, VOZ, VOZ_SDP_MAX, VOZ_TOKEN_MAX } from './voz';
 import { MSG } from './messages';
 
 const SDP = 'v=0\r\no=- 46117 2 IN IP4 127.0.0.1\r\ns=-\r\nm=audio 9 UDP/TLS/RTP/SAVPF 111\r\n';
@@ -17,11 +17,10 @@ describe('voz: o contrato de sinalização (P205)', () => {
   });
 
   it('PRONTO: ida e volta, e recusa tamanho e valor estranhos', () => {
-    expect(lerPronto(codificarPronto(true))).toBe(true);
-    expect(lerPronto(codificarPronto(false))).toBe(false);
+    expect(lerPronto(codificarPronto(true))).toEqual({ ligado: true, token: '' });
+    expect(lerPronto(codificarPronto(false))).toEqual({ ligado: false, token: '' });
     expect(lerPronto(Uint8Array.of(VOZ.PRONTO))).toBeNull();
     expect(lerPronto(Uint8Array.of(VOZ.PRONTO, 2))).toBeNull();
-    expect(lerPronto(Uint8Array.of(VOZ.PRONTO, 1, 0))).toBeNull();
     expect(lerPronto(Uint8Array.of(VOZ.LISTA, 1))).toBeNull();
   });
 
@@ -68,5 +67,27 @@ describe('voz: o contrato de sinalização (P205)', () => {
     sujo.set(m);
     sujo[m.length] = 0xff;
     expect(lerSinal(sujo)).toBeNull();
+  });
+});
+
+describe('PRONTO leva o token da sessão (P211)', () => {
+  it('o token vai e volta inteiro, também com acento; ao sair não vai token nenhum', () => {
+    expect(lerPronto(codificarPronto(true, 'abc123XYZ-token'))).toEqual({ ligado: true, token: 'abc123XYZ-token' });
+    expect(lerPronto(codificarPronto(true, 'sessão-ç'))).toEqual({ ligado: true, token: 'sessão-ç' });
+    expect(codificarPronto(false, 'abc123XYZ-token')).toHaveLength(2);
+    expect(lerPronto(codificarPronto(false, 'abc123XYZ-token'))).toEqual({ ligado: false, token: '' });
+  });
+
+  it('o teto do token: o que passa de VOZ_TOKEN_MAX é cortado ao codificar e recusado ao ler', () => {
+    expect(codificarPronto(true, 'a'.repeat(VOZ_TOKEN_MAX + 50))).toHaveLength(2 + VOZ_TOKEN_MAX);
+    expect(lerPronto(codificarPronto(true, 'a'.repeat(VOZ_TOKEN_MAX)))!.token).toHaveLength(VOZ_TOKEN_MAX);
+    const grande = new Uint8Array(2 + VOZ_TOKEN_MAX + 1).fill(97);
+    grande[0] = VOZ.PRONTO;
+    grande[1] = 1;
+    expect(lerPronto(grande)).toBeNull();
+  });
+
+  it('bytes que não são UTF-8 não passam por token', () => {
+    expect(lerPronto(Uint8Array.of(VOZ.PRONTO, 1, 0xff, 0xfe, 0xfd))).toBeNull();
   });
 });

@@ -19,7 +19,7 @@
     {
       "nome": "o painel do teste abre, a barra mexe e o texto diz \"funcionando\"",
       "ok": true,
-      "detalhe": "{\"visivel\":true,\"barra\":\"54%\",\"status\":\"Funcionando: o microfone está captando a sua voz.\",\"botao\":\"[ PARAR O TESTE ]\"}"
+      "detalhe": "{\"visivel\":true,\"barra\":\"53%\",\"status\":\"Funcionando: o microfone está captando a sua voz.\",\"botao\":\"[ PARAR O TESTE ]\"}"
     },
     {
       "nome": "o botão vira \"PARAR O TESTE\"",

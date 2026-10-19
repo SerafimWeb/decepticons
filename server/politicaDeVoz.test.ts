@@ -8,6 +8,8 @@ import { POLITICA_VERSAO } from '../shared/net/auth';
 const RAIZ = resolve(__dirname, '..');
 /** O dia em que a política passou a falar do chat de voz (P205): nenhuma versão anterior a ele pode voltar. */
 const VOZ_NA_POLITICA_DESDE = '2026-10-19';
+/** A versão em que a política passou a falar do mês e do ano de nascimento e da voz só para maiores de 18 anos (P211). */
+const IDADE_NA_POLITICA_DESDE = '2026-10-19.2';
 
 /** Gera a página `/privacidade/` de verdade (o mesmo `scripts/privacidade.mjs` do site) e devolve o HTML. */
 function paginaDaPolitica(): string {
@@ -49,5 +51,38 @@ describe('a política de privacidade fala do chat de voz (P205, 19/10)', () => {
     expect(inventario).toMatch(/\*\*Chat de voz\*\*/);
     expect(inventario).toMatch(/STUN do Google/);
     expect(inventario).toMatch(/pode ver o IP dos outros/);
+  });
+});
+
+describe('a política fala da idade e da voz só para maiores de 18 anos (P211, 19/10)', () => {
+  const html = paginaDaPolitica();
+  const texto = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+
+  it('a tabela da conta lista o mês e o ano de nascimento, e o resumo do topo diz que a voz é só para maiores de 18 anos', () => {
+    expect(texto, 'a linha "Você cria uma conta" tem o nascimento').toMatch(/Você cria uma conta .*o mês e o ano de nascimento\*? \(sem o dia\)/);
+    const resumo = texto.slice(texto.indexOf('Em poucas palavras'), texto.indexOf('1. Quem trata os seus dados'));
+    expect(resumo).toMatch(/o mês e o ano do seu nascimento/);
+    expect(resumo).toMatch(/O chat de voz é só para maiores de 18 anos/);
+    expect(resumo).toMatch(/não têm o microfone nem ouvem os outros jogadores/);
+  });
+
+  it('a seção das crianças diz que contas de menores não têm chat de voz, e o aviso de mudança cita a mudança', () => {
+    const menores = texto.slice(texto.indexOf('6. Crianças e adolescentes'), texto.indexOf('7. Segurança'));
+    expect(menores).toMatch(/Contas de menores de 18 anos não têm chat de voz/);
+    expect(menores).toMatch(/informa o mês e o ano de nascimento/);
+    expect(texto).toMatch(/em relação à de 19\/10\/2026: o cadastro pergunta o mês e o ano de nascimento/i);
+  });
+
+  it('a versão vigente não volta a ser anterior à que descreve a idade, e o inventário (PRIVACIDADE.md) tem a linha da idade', () => {
+    expect(POLITICA_VERSAO >= IDADE_NA_POLITICA_DESDE, `POLITICA_VERSAO ${POLITICA_VERSAO} é anterior a ${IDADE_NA_POLITICA_DESDE}`).toBe(true);
+    const inventario = readFileSync(resolve(RAIZ, '.decepticons/PRIVACIDADE.md'), 'utf8');
+    expect(inventario).toMatch(/\*\*Idade e chat de voz\*\*/);
+    expect(inventario).toMatch(/mês e o ano de nascimento/);
+    expect(inventario).toMatch(/nascimento_informado/);
+  });
+
+  it('a data "em vigor desde" sai do prefixo AAAA-MM-DD da versão, mesmo com o sufixo do dia', () => {
+    expect(html).toMatch(/em vigor desde \d{2}\/\d{2}\/\d{4}/);
+    expect(html).not.toMatch(/em vigor desde .*undefined|NaN/);
   });
 });

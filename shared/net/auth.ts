@@ -25,6 +25,8 @@ export const CONTA_PROGRESSO_PATH = '/conta/progresso';
 export const CONTA_DADOS_PATH = '/conta/dados';
 export const CONTA_APAGAR_PATH = '/conta/apagar';
 export const CONTA_MEDICAO_PATH = '/conta/medicao';
+/** A idade (P211): informar o mês e o ano de nascimento uma vez (quem criou a conta antes de o cadastro perguntar, ou por um cliente velho). */
+export const CONTA_NASCIMENTO_PATH = '/conta/nascimento';
 /** "Esqueci a senha" (P206): pedir o link por e-mail e, com o link, definir a senha nova. */
 export const CONTA_ESQUECI_PATH = '/conta/esqueci';
 export const CONTA_REDEFINIR_PATH = '/conta/redefinir';
@@ -57,7 +59,7 @@ export const SESSAO_HEADER = 'x-cybermech-sessao';
  * A versão do texto da política de privacidade (`/privacidade/`) que quem cria a conta aceita. **Mudou o texto em algo que o titular precisa saber de novo? Mude esta data junto**
  * (e o texto em `scripts/privacidade.mjs`): a conta guarda a versão que a pessoa aceitou, e um navegador com a versão velha é mandado recarregar antes de criar conta.
  */
-export const POLITICA_VERSAO = '2026-10-19';
+export const POLITICA_VERSAO = '2026-10-19.2';
 
 /** O que o formulário de criar conta manda além do e-mail e da senha: as duas caixas marcadas (política lida; maior de 18 anos ou com autorização do responsável). */
 export interface AceiteDaPolitica {
@@ -66,10 +68,62 @@ export interface AceiteDaPolitica {
 }
 export const ACEITE_ATUAL: AceiteDaPolitica = { politica: POLITICA_VERSAO, idade: true };
 
+// ---------------------------------------------------------------- a idade (P211)
+
+/** A maioridade: o chat de voz é só de quem a tem (ordem do Comandante, 19/10: "menores de 18 anos NÃO TEM ACESSO ao microfone nem aos áudios dos outros jogadores"). */
+export const IDADE_ADULTA = 18;
+/** Ninguém nasceu há mais disto (anos): corta o ano digitado errado. */
+export const NASCIMENTO_ANOS_MAX = 120;
+
+/**
+ * O mês e o ano de nascimento, `AAAA-MM` (**só isso**: o dia não é perguntado, é dado a menos que o jogo guarda). Devolve o texto normalizado, ou `null` se não vale (forma errada, mês fora de 1 a 12, no futuro, ou há mais de
+ * `NASCIMENTO_ANOS_MAX` anos).
+ */
+export function validarNascimento(x: unknown, agora: Date = new Date()): string | null {
+  if (typeof x !== 'string') return null;
+  const m = /^(\d{4})-(\d{2})$/.exec(x);
+  if (!m) return null;
+  const ano = Number(m[1]);
+  const mes = Number(m[2]);
+  if (mes < 1 || mes > 12) return null;
+  const hoje = agora.getUTCFullYear() * 12 + agora.getUTCMonth();
+  const nasceu = ano * 12 + (mes - 1);
+  if (nasceu > hoje || hoje - nasceu > NASCIMENTO_ANOS_MAX * 12) return null;
+  return x;
+}
+
+/**
+ * É maior de idade? **Conservador, com o mês como única precisão:** quem fez 18 anos no mês passado é adulto; quem os faz **neste mês** ainda não é (o dia exato não se sabe, e na dúvida o chat de voz não abre).
+ * Sem data (conta sem idade informada, convidado) ou data inválida: **não**.
+ */
+export function ehMaiorDeIdade(nascimento: string | null | undefined, agora: Date = new Date()): boolean {
+  const n = validarNascimento(nascimento, agora);
+  if (n === null) return false;
+  const hoje = agora.getUTCFullYear() * 12 + agora.getUTCMonth();
+  const nasceu = Number(n.slice(0, 4)) * 12 + (Number(n.slice(5, 7)) - 1);
+  return hoje - nasceu > IDADE_ADULTA * 12;
+}
+
+/** O que o jogo sabe da idade de uma conta: `adulto` (a voz abre), `menor` (nem o microfone nem a voz dos outros) ou `sem-idade` (a pessoa ainda não informou: sem voz até informar). */
+export type IdadeDaConta = 'adulto' | 'menor' | 'sem-idade';
+
+export function idadeDaConta(nascimento: string | null | undefined, agora: Date = new Date()): IdadeDaConta {
+  if (validarNascimento(nascimento, agora) === null) return 'sem-idade';
+  return ehMaiorDeIdade(nascimento, agora) ? 'adulto' : 'menor';
+}
+
+/** O corpo de `POST /conta/nascimento`: `{ nascimento: "AAAA-MM" }`. */
+export function parseNascimento(raw: unknown, agora: Date = new Date()): string | null {
+  if (typeof raw !== 'object' || raw === null) return null;
+  return validarNascimento((raw as Record<string, unknown>).nascimento, agora);
+}
+
 export interface CriarContaPedido {
   email: string;
   senha: string;
   aceite: AceiteDaPolitica;
+  /** O mês e o ano de nascimento (`AAAA-MM`): o formulário exige; o servidor aceita sem (a conta nasce "sem idade", sem voz, e a pessoa informa depois). */
+  nascimento?: string;
 }
 export interface EntrarPedido {
   email: string;
@@ -82,6 +136,8 @@ export interface ContaResposta {
   is_admin?: boolean;
   /** A atividade da conta é registrada? (A pessoa pode desligar; ao entrar em outro aparelho a escolha vem junto.) */
   medir?: boolean;
+  /** A idade da conta (P211): só a faixa, nunca a data. */
+  idade?: IdadeDaConta;
 }
 
 /** Normaliza o e-mail (minúsculas, sem espaço nas pontas) — a mesma forma usada para comparar e gravar. */
@@ -115,7 +171,7 @@ export function parseCredenciais(raw: unknown): { email: string; senha: string }
 }
 
 /** O corpo de `POST /conta/criar`: as credenciais **e** o aceite. `aceite`: faltou ou veio desmarcado; `versao`: o navegador tem uma política velha (recarregar). */
-export type CriarContaLeitura = { ok: true; email: string; senha: string } | { ok: false; motivo: 'dados' | 'aceite' | 'versao' };
+export type CriarContaLeitura = { ok: true; email: string; senha: string; nascimento?: string } | { ok: false; motivo: 'dados' | 'aceite' | 'versao' | 'nascimento' };
 
 export function parseCriarConta(raw: unknown): CriarContaLeitura {
   const cred = parseCredenciais(raw);
@@ -125,7 +181,12 @@ export function parseCriarConta(raw: unknown): CriarContaLeitura {
   const { politica, idade } = a as Record<string, unknown>;
   if (idade !== true || typeof politica !== 'string') return { ok: false, motivo: 'aceite' };
   if (politica !== POLITICA_VERSAO) return { ok: false, motivo: 'versao' };
-  return { ok: true, ...cred };
+  // O nascimento é opcional no servidor (um cliente velho cria a conta sem idade e informa depois); se vier, tem de valer.
+  const bruto = (raw as Record<string, unknown>).nascimento;
+  if (bruto === undefined || bruto === null) return { ok: true, ...cred };
+  const nascimento = validarNascimento(bruto);
+  if (nascimento === null) return { ok: false, motivo: 'nascimento' };
+  return { ok: true, ...cred, nascimento };
 }
 
 /** O corpo de `POST /conta/apagar`: a senha de novo (apagar não se desfaz; uma sessão esquecida aberta não pode apagar a conta de ninguém). */
@@ -147,7 +208,7 @@ export interface DadosDaConta {
   v: 1;
   geradoEm: string;
   nota: string;
-  conta: { email: string; criadaEm: string; aceiteEm: string | null; aceiteVersao: string | null; medirAtividade: boolean; administrador: boolean };
+  conta: { email: string; criadaEm: string; aceiteEm: string | null; aceiteVersao: string | null; nascimento: string | null; medirAtividade: boolean; administrador: boolean };
   progresso: unknown | null;
   atividade: { dia: string; segundos: number; partidas: number; abates: number; mortes: number }[];
   sessoes: { criadaEm: string; venceEm: string }[];

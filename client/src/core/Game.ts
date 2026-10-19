@@ -163,11 +163,11 @@ import { MissionHUD } from '../ui/MissionHUD';
 import { CtfHud } from '../ui/CtfHud';
 import { DominioHud, avisoDoPonto } from '../ui/DominioHud';
 import { DailyChallenges } from '../ui/DailyChallenges';
-import { ContaSettings } from '../ui/ContaSettings';
 import { LadoSelector } from '../ui/LadoSelector';
 import { ContaCliente } from '../net/auth';
 import { progressoLocalDoJogo } from '../net/progressoLocal';
 import { chaveDoToken, SessaoPiloto } from '../net/sessao';
+import { elegibilidadeDaVoz, vozDeveLigar } from '../voice/elegibilidade';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
 const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', swarm: 'ENXAME', cruise: 'CRUZADOR', grenade: 'GRANADAS', laser: 'LASER', chainsaw: 'MOTOSSERRA', harpoon: 'ARPÃO' };
@@ -294,6 +294,9 @@ export class Game {
   private readonly online: OnlineSession | null;
   /** O chat de voz da sala online (P205): P2P, módulo à parte, **pedaço sob demanda** (dieta de JS, P187: o jogador que não o liga nunca o baixa); null offline e até o pedaço chegar. */
   private voz: VoiceChat | null = null;
+  /** A conta do piloto (P174): a voz precisa dela, só abre para conta de maior de idade (P211). */
+  private sessao: SessaoPiloto | null = null;
+  private settingsMenu: SettingsMenu | null = null;
   private vozHud: VoiceHud | null = null;
   private vozCarregando = false;
   /** O meu id na sala (`null` fora dela): guardado porque o pedaço da voz pode chegar depois do `WELCOME`. */
@@ -875,7 +878,7 @@ export class Game {
     // A linha "SERVIDOR ONLINE · 2 PILOTOS EM COMBATE" na pausa: um GET a cada 20 s, só com a pausa à vista.
     // Só o servidor público do build ou o `&servidor=` do link (o motivo do `defaultServer` ficar fora: ServerStatus.ts).
     new ServerStatus(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, document.getElementById('menu-status'));
-    new SettingsMenu(this.settings);
+    this.settingsMenu = new SettingsMenu(this.settings);
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
     const esquadrao = this.squad.current && !online ? resumoDoEsquadrao(this.squad.current) : null;
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician, names: foes.names }, undefined, undefined,
@@ -977,8 +980,16 @@ export class Game {
       if (resumo) void import('../ui/RelatorioPanel').then((m) => m.abrirRelatorio(resumo));
       document.getElementById('cc-relatorio')?.classList.remove('novo');
     });
+    // A sessão volta já na abertura (a voz só abre para conta de maior de idade, P211); o formulário da conta é pedaço sob demanda (dieta de JS, P187) e se liga à sessão quando chega.
+    this.sessao = sessao;
+    sessao.onIdadeMudou = (e) => {
+      this.settingsMenu?.setElegibilidadeDaVoz(elegibilidadeDaVoz(e.email !== null, e.idade));
+      this.aplicarVoz(this.settings.value);
+    };
+    this.settingsMenu?.setElegibilidadeDaVoz(elegibilidadeDaVoz(false, 'sem-idade'));
+    void sessao.restaurar();
     const blocoConta = document.getElementById('settings-conta');
-    if (blocoConta) void new ContaSettings(blocoConta, sessao).restaurar();
+    if (blocoConta) void import('../ui/ContaSettings').then((m) => new m.ContaSettings(blocoConta, sessao));
 
     // Console de comando (P86): a pausa vira a sala de comando. Os monitores só leem o jogo por estes callbacks (G3).
     const mapa = mapFromSearch(location.search, !!online, this.gameMode);
@@ -1272,9 +1283,12 @@ export class Game {
   }
 
   /** Aplica as configurações do jogador: na largada e a cada mudança na tela de configurações. */
-  /** O chat de voz vale quando o jogador o quer (Configurações) **e** a funcionalidade está liberada (`tela:voz`, P191: nasce restrita; o Comandante a solta no painel, e a segura de novo se precisar). */
+  /**
+   * O chat de voz vale quando o jogador o quer (Configurações), a funcionalidade está liberada (`tela:voz`, P191: nasce restrita; o Comandante a solta no painel, e a segura de novo se precisar)
+   * **e a conta é de maior de 18 anos** (P211: menor, conta sem idade e convidado não têm microfone nem a voz dos outros; o servidor confere o token da sessão de novo).
+   */
   private aplicarVoz(s: Readonly<GameSettings>): void {
-    const quer = s.voiceOn && funcionalidadeVisivel('tela:voz');
+    const quer = vozDeveLigar(s.voiceOn, funcionalidadeVisivel('tela:voz'), this.sessao?.estado.idade);
     // Só quem quer a voz e está numa sala online baixa o pedaço dela.
     if (quer && !this.voz && this.online && this.vozId !== null) void this.carregarVoz();
     this.voz?.configurar(quer, s.voiceMode, s.voiceVolume, s.micDevice);
@@ -1286,7 +1300,7 @@ export class Game {
     this.vozCarregando = true;
     try {
       const [{ VoiceChat }, { VoiceHud }] = await Promise.all([import('../voice/VoiceChat'), import('../voice/VoiceHud')]);
-      const voz = new VoiceChat({ enviar: (bytes) => this.online?.enviarVoz(bytes), saida: () => this.audio.output });
+      const voz = new VoiceChat({ enviar: (bytes) => this.online?.enviarVoz(bytes), saida: () => this.audio.output, token: () => this.sessao?.tokenDaVoz() ?? null });
       voz.ligarTeclas(() => this.settings.value.keys.ptt);
       this.vozHud = new VoiceHud(document.getElementById('hud')!, voz, (id) => this.online?.nomeDe(id), () => keyLabel(this.settings.value.keys.ptt), () => this.input.touchMode);
       this.voz = voz;
