@@ -5,7 +5,7 @@
  *
  * Sem dependência do cliente (o servidor e o cliente leem o mesmo contrato); o teste confere que esta lista é a dos mapas do jogo (`core/Lancamento.ts`).
  */
-export const MAPAS_ONLINE = ['arena', 'bunker', 'praia', 'amazonia'] as const;
+export const MAPAS_ONLINE = ['arena', 'bunker', 'praia', 'amazonia', 'janeiro'] as const;
 export type MapaOnline = (typeof MAPAS_ONLINE)[number];
 
 /** O padrão: a Cidade Neon. */
