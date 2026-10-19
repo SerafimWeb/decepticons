@@ -3,6 +3,20 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## O CHAT DE VOZ NO CELULAR: UM BOTÃO DE MICROFONE NA TELA, E O DESENHO DA RÁDIO E DOS EMISSORES DE SOM — Claude, 19/10 (branch `claude/voz-celular`, P209 e P210)
+
+**O Comandante (19/10):** *"jogadores usando celular vão conseguir ouvir e falar automaticamente? como vai ser pra apertar o PTT se o celular é limitado de botões? quero maximizar a experiência"* e a visão da **música/rádio/autofalantes no mundo**.
+
+**Respondido pelo código:** no celular **ouvir já era automático** e **falar também** (microfone aberto), mas **não havia como silenciar nem segurar-para-falar** (sem tecla T). **Agora há um botão de microfone** (`VoiceHud`, CSS `.voz-mic`) só no modo toque, sob PAUSA e PLACAR, acima da camada de mira: **tocar alterna o mudo; no modo "segurar", vale com o dedo nele**; sem microfone, tocar o pede de novo (**o teste achou um defeito: o toque também alternava o mudo e o microfone nascia mudo**). O texto do toque não cita tecla (3 textos novos nas 6 línguas).
+
+**Provas:** `medicoes/voz-celular.mjs`: Chrome com tela de toque (915×412), toque de verdade pelo CDP, **12 de 12** (o botão aparece, está **por cima** da mira, tocar alterna, segurar fala, o colega aparece falando sozinho); foto `arte/voz-celular-claude.png`; testes do botão, do texto e das traduções; **11 de 11 mutações à mão pegas** (a primeira rodada deixou escapar uma por teste fraco, que reforcei, e uma equivalente, que simplifiquei no código). **Não provado em aparelho real:** o **iPhone** é o risco (áudio WebRTC no Web Audio do Safari).
+
+**P210, a rádio (só desenho, `RADIO_E_EMISSORES.md`):** a visão se resolve com **emissores de som no mundo** (autofalante em laço, rádio de prédio ou de área, só os 3 mais próximos tocam) e uma **rádio 24 h sincronizada pelo relógio** (sem servidor, sem custo); **a música do PC do jogador** (`getDisplayMedia`) só roda no computador, custa upload × ouvintes e traz direitos autorais e privacidade: **recomendo não**. Nada construído.
+
+**Falta (R13):** (a) o celular de verdade (Android, iPhone); (b) **a sua decisão** sobre a rádio (§ 5 do documento: de onde vem a música, fluxo ao vivo ou programação, a rádio que o jogador carrega); (c) tudo o que já faltava da voz (a política de privacidade antes de liberar `tela:voz`, o canal TIME).
+
+**Próxima sessão começa com:** a decisão do Comandante sobre a rádio (E1: o emissor de laço, com a voz do narrador na Estação dos Cabos), ou o teste num celular real.
+
 ## AS PERMISSÕES DOS AGENTES VIRARAM LISTA FECHADA, COM TRAVA NO `npm run check` — Claude, 19/10 (branch `claude/qwen-permissoes`, P208)
 
 **O Comandante (19/10):** *"aperte, autorizado sim, resolva esses alerta das permissoes ao qwen. toda hora vc reclama disso e nao resolve!"*. O alerta automático de segurança apontava o `.qwen/settings.json` (uma edição local, sem commit, alheia a este trabalho) por liberar `powershell *`, `cmd *` e `git *`: valem por qualquer comando, sem aprovação.

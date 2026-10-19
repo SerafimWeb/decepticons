@@ -78,6 +78,18 @@ Texto sugerido para a política:
 
 Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qualquer verificação falhar. Capturas do **jogo de verdade** em `?comandante=1` (com um colega falando, `medicoes/voz-jogo.mjs`): `arte/voz-hud-jogo-claude.png` (o indicador no canto de baixo à esquerda: "MICROFONE ABERTO: [T] MUDA" e "▶ BRAVO") e `arte/voz-configuracoes-claude.png` (Configurações > GRÁFICOS E SOM > CHAT DE VOZ, com o selo TESTE).
 
+## 5b. No celular (P209, 19/10)
+
+**Ouvir e falar sozinho?** **Ouvir: sim**, sem fazer nada: o toque em "jogar" já libera o áudio do navegador (o mesmo `AudioContext` do jogo), e a voz dos colegas toca. **Falar: sim**, no modo padrão "microfone aberto": o navegador pergunta uma vez pelo microfone e, aceito, ele transmite. **Antes do P209 faltava o resto:** no celular não existe a tecla T, então ninguém conseguia **silenciar** nem usar o **segurar para falar**.
+
+**O botão de microfone** (`voice/VoiceHud.ts`, CSS `.voz-mic`): aparece **só no modo toque**, com o jogo rodando e a voz ativa, no canto direito, **sob PAUSA e PLACAR** (a coluna do polegar direito; o direcional e os botões de combate não mudam de lugar). Fica **acima** da camada de mira (z-index): o toque chega nele. **Tocar** alterna o mudo (modo "sempre aberto"); no modo "segurar para falar" (Configurações > GRÁFICOS E SOM > CHAT DE VOZ) a voz sai **enquanto o dedo estiver nele**. O símbolo e a cor dizem o estado (no ar, mudo, em espera, pedindo, sem microfone) e o texto do indicador fala do botão, sem citar tecla.
+
+**Microfone recusado sem querer:** tocar no botão **pede o microfone de novo** (e o microfone nasce aberto), sem recarregar o jogo. Se o navegador guardou a recusa, o jogador libera nas permissões do site e toca de novo. (O teste achou um defeito aqui: o mesmo toque também alternava o mudo, e o microfone nascia mudo.)
+
+**Prova:** `medicoes/voz-celular.mjs` (Chrome com tela de toque, 915×412 deitado, toque de verdade pelo CDP, 12 verificações; foto em `arte/voz-celular-claude.png`). **Não provado em aparelho de verdade**: o **iPhone** é o risco (o Safari tem histórico de problemas com áudio WebRTC dentro do Web Audio e exige o gesto para o áudio); Android com Chrome é o caso mais provável de funcionar. Se o iPhone não tocar a voz, o caminho é tocar o fluxo direto num `<audio>` (sem o espacial) só nesse aparelho: decidir depois do teste num aparelho real.
+
+**Custo no celular:** o mesmo de qualquer jogador (Opus a 24 kbps por colega falando, ~2 kbps calado; nada por tick); bateria e dados móveis valem o que vale uma chamada de voz.
+
 ## 6. O que falta
 
 1. **O ouvido do Comandante:** a bancada prova que o áudio chega e que o volume cai com a distância; **se a voz soa bem** (eco, volume, o alcance de 12 a 160 m) é dele. Os números do alcance são proposta (`ALCANCE_DA_VOZ`).
@@ -86,6 +98,6 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 4. **Canal TIME:** depende dos times no protocolo online (hoje não existem).
 5. **Mudo por jogador e denúncia**, para quando houver gente de fora.
 6. **SFU** (servidor de mídia): só se salas com mais de 5 pessoas falando virarem comuns; a malha cobre as salas de 8 com poucos falando.
-7. **Safari/iPhone:** o `AudioContext` já nasce com o clique de jogar; não foi provado em aparelho.
+7. **Celular de verdade** (Android e, principalmente, iPhone): a seção 5b prova o botão e o toque no Chrome emulado; o áudio no Safari do iPhone **não foi provado**.
 8. **A política de privacidade** (seção 4) antes de liberar.
 9. **Liberar:** painel de visibilidade > `tela:voz` > público.

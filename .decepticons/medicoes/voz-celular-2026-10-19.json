@@ -1,0 +1,65 @@
+{
+  "data": "2026-10-19",
+  "verificacoes": [
+    {
+      "nome": "o jogo abriu em modo toque (html.touch)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "o botão de microfone aparece no toque, com a voz ativa e o jogo rodando",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "o botão está no canto de cima à direita, dentro da tela, com tamanho de dedo (≥ 44 px)",
+      "ok": true,
+      "detalhe": "{\"x\":857,\"y\":114,\"width\":44,\"height\":44}"
+    },
+    {
+      "nome": "o toque chega no botão (ele está ACIMA da camada de mira): elementFromPoint é ele",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "com o microfone aberto o botão está \"no ar\" e o texto não cita tecla",
+      "ok": true,
+      "detalhe": "{\"botao\":\"no-ar\",\"texto\":\"MICROFONE ABERTO\",\"fala\":\"▶ BRAVO\",\"glifo\":\"🎙\"}"
+    },
+    {
+      "nome": "o indicador mostra o colega falando (a voz chega no celular sozinha, sem tecla nem clique)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "tocar o botão silencia o microfone (estado \"mudo\", texto \"MUDO\")",
+      "ok": true,
+      "detalhe": "{\"botao\":\"mudo\",\"texto\":\"MUDO\",\"fala\":\"▶ BRAVO\",\"glifo\":\"🔇\"}"
+    },
+    {
+      "nome": "tocar de novo abre o microfone (estado \"no-ar\", texto \"MICROFONE ABERTO\")",
+      "ok": true,
+      "detalhe": "{\"botao\":\"no-ar\",\"texto\":\"MICROFONE ABERTO\",\"fala\":\"▶ BRAVO\",\"glifo\":\"🎙\"}"
+    },
+    {
+      "nome": "no modo \"segurar\" o botão fica em espera e o texto manda segurar o botão",
+      "ok": true,
+      "detalhe": "{\"botao\":\"espera\",\"texto\":\"SEGURE O BOTÃO PARA FALAR\",\"fala\":\"▶ BRAVO\",\"glifo\":\"🎙\"}"
+    },
+    {
+      "nome": "segurando o dedo no botão o microfone transmite (\"FALANDO\")",
+      "ok": true,
+      "detalhe": "{\"botao\":\"no-ar\",\"texto\":\"FALANDO\",\"fala\":\"▶ BRAVO\",\"glifo\":\"🎙\"}"
+    },
+    {
+      "nome": "soltando o dedo o microfone fecha de novo",
+      "ok": true,
+      "detalhe": "{\"botao\":\"espera\",\"texto\":\"SEGURE O BOTÃO PARA FALAR\",\"fala\":\"▶ BRAVO\",\"glifo\":\"🎙\"}"
+    },
+    {
+      "nome": "nenhum erro de página",
+      "ok": true,
+      "detalhe": ""
+    }
+  ]
+}

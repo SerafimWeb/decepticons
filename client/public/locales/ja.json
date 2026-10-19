@@ -897,5 +897,8 @@
  "VOLTAR PARA ENTRAR": "ログインに戻る",
  "Pronto. Se esse e-mail tiver uma conta, o link já está a caminho (confira também o spam). Ele vale 30 minutos.": "送信しました。そのメールアドレスにアカウントがあれば、リンクが届きます(迷惑メールもご確認ください)。有効期限は30分です。",
  "a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade": "メールでの復旧はまだ有効ではありません。プライバシーページの連絡先にご相談ください",
- "pedidos demais; espere um pouco": "リクエストが多すぎます。しばらくお待ちください"
+ "pedidos demais; espere um pouco": "リクエストが多すぎます。しばらくお待ちください",
+ "MICROFONE ABERTO": "マイクON",
+ "MUDO": "ミュート中",
+ "SEGURE O BOTÃO PARA FALAR": "ボタンを押して話す"
 }

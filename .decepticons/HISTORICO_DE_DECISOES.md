@@ -1,6 +1,19 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-19] A voz no celular: um botão na tela, e a rádio como emissores do mundo (Claude, P209 e P210)
+
+**Ordem:** *"jogadores usando celular vão conseguir ouvir e falar automaticamente no voice chat? como vai ser pra apertar o ptt se o celular é limitado de botões? quero maximizar a experiência dos usuários e facilitar o voice chat"* e a visão da música, rádio e autofalantes no mundo.
+
+**Decisões:**
+1. **Um botão só, na coluna do polegar direito** (sob PAUSA e PLACAR), que faz o que a tecla T faz: tocar alterna o mudo, no modo "segurar" vale com o dedo. Não mexi nos botões de combate nem criei gesto novo: o celular tem poucos botões e os do combate já ocupam o arco do polegar.
+2. **O botão vive no HUD da voz** (o pedaço sob demanda), não no `TouchControls`: a voz continua um módulo à parte (G3) e quem não a usa não baixa nada. O CSS o mostra só no modo toque, ao lado da camada de toque e **acima** dela.
+3. **Sem microfone, tocar só o pede de novo** (não alterna o mudo): o teste achou que o mesmo toque ligava o mudo e o microfone nascia mudo. A tecla do desktop passou a usar o mesmo caminho (`VoiceChat.aoBotao`).
+4. **O texto do toque não cita tecla** ("MICROFONE ABERTO", "MUDO", "SEGURE O BOTÃO PARA FALAR"); o indicador subiu para cima do direcional.
+5. **iPhone não foi provado** e está dito: a prova é um Chrome emulado com toque de verdade. O plano B (tocar o fluxo num `<audio>`, sem o espacial) só se justifica depois de um teste num aparelho real; não escrevi código às cegas.
+6. **A rádio (P210) virou desenho, não código**, porque depende de decisões do Comandante que não são técnicas (de onde vem a música, direitos). O que ele descreveu se resolve com **emissores no mundo** e uma **programação sincronizada pelo relógio** (sem servidor, sem custo); a música do PC do jogador é o caso pior (computador só, upload × ouvintes, direitos, privacidade): **recomendei não**.
+7. **As bancadas de voz** passaram a gerar o arquivo do microfone falso por um módulo comum (`vozLib.mjs`): o tom ficava só na pasta de uma worktree que já tinha sido removida.
+
 ## [2026-10-19] As permissões dos agentes: lista fechada e uma trava no check, em vez de reclamar de novo (Claude, P208)
 
 **Ordem:** *"aperte, autorizado sim, resolva esses alerta das permissoes ao qwen. toda hora vc reclama disso e nao resolve!"*

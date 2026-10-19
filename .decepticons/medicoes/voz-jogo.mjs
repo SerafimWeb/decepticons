@@ -1,6 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createServer, runnerImport } from 'vite';
+import { gerarWav } from './vozLib.mjs';
 
 /**
  * Fotografa o CHAT DE VOZ no JOGO de verdade (P205, regra 16: o dono julga por olho): o jogo online aberto em `?comandante=1` (a voz nasce restrita; só o modo Comandante a vê) numa sala com um
@@ -14,14 +15,12 @@ import { createServer, runnerImport } from 'vite';
  * SwiftShader (sem GPU): o jogo roda devagar, mas a interface é a de verdade. G15: temporários em `.tmp/`.
  */
 const TMP = resolve('.tmp', 'captura');
-const DADOS = resolve('.tmp', 'voz');
 mkdirSync(TMP, { recursive: true });
-mkdirSync(DADOS, { recursive: true });
 process.env.TEMP = process.env.TMP = process.env.TMPDIR = TMP;
 const { chromium } = await import('playwright-core');
 const saida = resolve('.decepticons', 'arte');
 const soConfig = process.argv.includes('--so-config');
-const tom = resolve(DADOS, 'tom.wav');
+const tom = gerarWav('tom.wav', 0.5, 6);
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const { startServer } = (await runnerImport(resolve('server/Server.ts'), { configFile: false, logLevel: 'warn' })).module;

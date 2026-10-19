@@ -452,6 +452,73 @@ describe('VoiceChat: a malha P2P (P205)', () => {
     expect(posicionar).toHaveBeenCalledWith(4, 1, 2, 3);
   });
 
+  describe('o botão de microfone da tela de toque (P209)', () => {
+    it('fora da voz o botão não faz nada; dentro, no modo "sempre", tocar alterna o mudo e soltar não muda nada', async () => {
+      const t = montar();
+      t.chat.aoBotao(true);
+      expect(t.chat.mic.mudo).toBe(false);
+      expect(t.pedidos.n, 'fora da voz o toque não pede o microfone').toBe(0);
+      t.chat.configurar(true, 'sempre', 0.8);
+      t.chat.entrouNaSala(1);
+      const { faixa, fluxo } = fluxoComFaixa();
+      t.resolverMic(fluxo);
+      await andar();
+      t.chat.aoBotao(true);
+      t.chat.aoBotao(false);
+      expect(faixa.enabled).toBe(false);
+      t.chat.aoBotao(true);
+      t.chat.aoBotao(false);
+      expect(faixa.enabled).toBe(true);
+    });
+
+    it('no modo "segurar" vale enquanto o dedo está no botão', async () => {
+      const t = montar();
+      t.chat.configurar(true, 'ptt', 0.8);
+      t.chat.entrouNaSala(1);
+      const { faixa, fluxo } = fluxoComFaixa();
+      t.resolverMic(fluxo);
+      await andar();
+      expect(faixa.enabled).toBe(false);
+      t.chat.aoBotao(true);
+      expect(faixa.enabled).toBe(true);
+      t.chat.aoBotao(false);
+      expect(faixa.enabled).toBe(false);
+    });
+
+    it('sem microfone (negado ou ausente) tocar pede o microfone de novo, e o toque seguinte já transmite', async () => {
+      const t = montar();
+      t.chat.configurar(true, 'sempre', 0.8);
+      t.chat.entrouNaSala(1);
+      t.recusarMic(Object.assign(new Error('x'), { name: 'NotAllowedError' }));
+      await andar();
+      expect(t.chat.estadoMic).toBe('negado');
+      expect(t.pedidos.n).toBe(1);
+      t.chat.aoBotao(true);
+      expect(t.pedidos.n).toBe(2);
+      expect(t.chat.estadoMic).toBe('pedindo');
+      const { faixa, fluxo } = fluxoComFaixa();
+      t.resolverMic(fluxo);
+      await andar();
+      expect(t.chat.estadoMic).toBe('ativo');
+      expect(faixa.enabled).toBe(true);
+    });
+
+    it('enquanto o navegador ainda pergunta, tocar não pergunta de novo; com o microfone ativo também não', async () => {
+      const t = montar();
+      t.chat.configurar(true, 'sempre', 0.8);
+      t.chat.entrouNaSala(1);
+      expect(t.chat.estadoMic).toBe('pedindo');
+      t.chat.aoBotao(true);
+      t.chat.aoBotao(false);
+      expect(t.pedidos.n).toBe(1);
+      const { fluxo } = fluxoComFaixa();
+      t.resolverMic(fluxo);
+      await andar();
+      t.chat.aoBotao(true);
+      expect(t.pedidos.n).toBe(1);
+    });
+  });
+
   describe('a tecla do chat (PTT ou mudo)', () => {
     let alvo: Emissor;
     const tecla = (tipo: 'keydown' | 'keyup', code: string, extra: object = {}) => alvo.emitir(tipo, { code, repeat: false, target: null, ...extra });
