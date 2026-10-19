@@ -1980,7 +1980,7 @@ export class Game {
       if (!this.multidaoDemo && !this.multidaoCarregando) {
         this.multidaoCarregando = true;
         void import('../debug/MultidaoDemo').then(({ MultidaoDemo }) => {
-          this.multidaoDemo = new MultidaoDemo(this.scene, this.multidaoQuer!, () => ({ x: this.mech.simPosition.x, z: this.mech.simPosition.z }));
+          this.multidaoDemo = new MultidaoDemo(this.scene, this.multidaoQuer!, () => ({ x: this.mech.simPosition.x, z: this.mech.simPosition.z }), this.match.arena.mapa);
         });
       }
       this.multidaoDemo?.desenhar(alpha);

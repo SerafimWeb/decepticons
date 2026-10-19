@@ -2,6 +2,23 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## A PRAÇA DOS TRÊS PODERES: O MAPA DO 8 DE JANEIRO NO AR, COM A MULTIDÃO DESCENDO A ESPLANADA (PASSO 4 DA FICHA) — Claude, 19/10 (branch `claude/praca-mapa`, P217)
+
+**O que foi feito:** o **chão** da fase do 8 DE JANEIRO, jogável no **Deathmatch** (offline e online) e **restrito ao Comandante** (`mapa:janeiro`).
+
+**1. O mapa** (`environment/PracaLayout.ts`, dados puros, no pacote de partida, 3 KB; `environment/PracaMapa.ts`, desenho e colisores, **sob demanda**, 1,3 KB gzip): a **Esplanada** de 270 m com os ministérios (duas fileiras de caixas brancas com faixa de vidro), a avenida e os gramados; o **Congresso** (a laje, a **rampa** que sobe a 5 m, as **torres gêmeas**, a cúpula e a tigela); a **Praça** com o monumento no meio, o espelho d'água e o canteiro de cobertura; o **Planalto** ao norte e o **Supremo** ao sul, com a colunata voltada para a Praça; o lago a leste; a cerca do limite. **Colisores: abaixo de 310** (o teto do Bunker; o teste trava). Céu e luz de fim de tarde, estáticos: nada anima, nenhuma atualização por quadro.
+**2. As fontes da multidão estão no mapa:** os dois **ônibus** parados na Esplanada, os quatro **bueiros** e as três **lixeiras** (`PRACA_FONTES`), as saídas e a frente de cada prédio (`PRACA_PREDIOS`). **Os nomes no jogo são os dos poderes** (LEGISLATIVO, EXECUTIVO, JUDICIÁRIO): a proposta da ficha (pergunta 1), sem nome de instituição nem de pessoa; **o Comandante ainda não confirmou**.
+**3. A multidão no mapa de verdade:** `?mapa=janeiro&comandante=1&multidao=1&cota=2500&t=9000`: a demonstração sai dos ônibus, bueiros e lixeiras reais e marcha até a frente dos três prédios.
+**4. Ligações:** o mapa é uma opção do seletor e do mapa-múndi (o pino **8 DE JANEIRO** agora abre o mapa, para quem o vê), entra no radar, no minimapa, no online (`MAPAS_ONLINE`, etapa O1 do P218: `?sala=X&mapa=janeiro`), no catálogo de visibilidade e nas campanhas (só o Deathmatch). As fotos: `.decepticons/arte/praca-*.png`.
+
+**Provas:** 6 testes do mapa (o teto de colisores, os pontos de nascimento livres de bloco e de parede, os três prédios e as fontes dentro do mapa, o link, **a partida montando no mapa** com o jogador de pé no chão, e **a rampa subindo com um Mech de verdade** da Esplanada até a laje) e os testes antigos que enumeravam os mapas atualizados. **Na GPU real:** de **105 a 176 fps** nas seis vistas-chave (42 a 102 desenhos; 5 a 41 mil triângulos), e de **105 a 167 fps com 2.500 de multidão** (`medicoes/praca-fotos.mjs`).
+
+**Falta (R13):** **os prédios não têm integridade e a missão não existe** (o passo 5 da ficha: as marchas, a sujeira nas mesas, os androides rebeldes e faxineiros, o objetivo na tela); o mapa só abre o **Deathmatch** (a Sobrevivência cai na Cidade Neon até a missão existir); o **mural de câmeras** do Comandante desenha a planta da Cidade Neon para qualquer sala; os ônibus, bueiros e lixeiras são **desenho e colisor**, não fontes vivas (quem despeja é o cronograma da fase); a arte é de caixas e cascas (o Codex pode refinar); o Congresso, o Planalto e o Supremo **não têm interior**; **o servidor não recusa mapa restrito** (só o cliente filtra: aceito na etapa O1).
+
+**Onde o Comandante confere:** `/jogar/?mapa=janeiro&comandante=1` (só você vê; para liberar: SERVIDOR → VISIBILIDADE → `mapa:janeiro`), e `&multidao=1&cota=2500&t=9000` para ver a multidão descendo a Esplanada; no mapa-múndi, o pino 8 DE JANEIRO. Online: dois navegadores em `?sala=ARENA&mapa=janeiro&comandante=1`.
+
+**Próxima sessão começa com:** a missão (passo 5 da ficha): a cota de chegadas ligada à `Multidao`, as integridades dos três prédios, a sujeira nas mesas e os faxineiros, os androides rebeldes e o objetivo na tela; e as respostas do Comandante às perguntas abertas da ficha.
+
 ## PROCESSO MAIS LEVE E O CI VERMELHO — Claude, 19/10 (branch `claude/processo-leve`, P220)
 
 **O Comandante (19/10):** as iterações estão "MUITO grandes… overengineered?"; pediu as 5 regras de processo leve e que eu olhasse o GitHub vermelho.

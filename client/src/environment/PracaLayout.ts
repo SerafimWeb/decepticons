@@ -39,7 +39,7 @@ export interface PredioDaPraca {
 }
 
 export const PRACA_PREDIOS: readonly PredioDaPraca[] = [
-  { id: 'legislativo', nome: 'LEGISLATIVO', frente: { x: -6, z: 0, meia: 36 }, caixa: { x0: 0, z0: -66, x1: 44, z1: 66 } },
+  { id: 'legislativo', nome: 'LEGISLATIVO', frente: { x: -28, z: 0, meia: 36 }, caixa: { x0: 0, z0: -66, x1: 44, z1: 66 } },
   { id: 'executivo', nome: 'EXECUTIVO', frente: { x: 70, z: -52, meia: 22 }, caixa: { x0: 44, z0: -82, x1: 96, z1: -60 } },
   { id: 'judiciario', nome: 'JUDICIÁRIO', frente: { x: 70, z: 52, meia: 22 }, caixa: { x0: 44, z0: 60, x1: 96, z1: 82 } },
 ];
