@@ -113,7 +113,7 @@ describe('chaveDoToken: uma chave por servidor', () => {
   });
 });
 
-describe('esqueci a senha (P205)', () => {
+describe('esqueci a senha (P206)', () => {
   it('passa o e-mail e a língua ao servidor e devolve o "pedido recebido" dele, sem mexer na sessão nem no progresso', async () => {
     const pedidos: [string, string][] = [];
     const base = servidorFalso();

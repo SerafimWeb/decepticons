@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
- * O envio de e-mail do servidor (P205, "esqueci a senha"). Hoje só uma mensagem sai daqui: o link para redefinir a senha, quando a pessoa pede.
+ * O envio de e-mail do servidor (P206, "esqueci a senha"). Hoje só uma mensagem sai daqui: o link para redefinir a senha, quando a pessoa pede.
  *
  * **Provedor trocável.** O servidor fala com uma interface (`Mailer`); o provedor de verdade é o Resend (uma chamada HTTPS com chave, sem biblioteca nova), e outro
  * entra escrevendo outra classe. **A chave nunca fica no repositório:** vem da variável `CYBERMECH_EMAIL_CHAVE` ou do arquivo `email.json` na pasta de dados do

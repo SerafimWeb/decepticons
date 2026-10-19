@@ -25,7 +25,7 @@ export const CONTA_PROGRESSO_PATH = '/conta/progresso';
 export const CONTA_DADOS_PATH = '/conta/dados';
 export const CONTA_APAGAR_PATH = '/conta/apagar';
 export const CONTA_MEDICAO_PATH = '/conta/medicao';
-/** "Esqueci a senha" (P205): pedir o link por e-mail e, com o link, definir a senha nova. */
+/** "Esqueci a senha" (P206): pedir o link por e-mail e, com o link, definir a senha nova. */
 export const CONTA_ESQUECI_PATH = '/conta/esqueci';
 export const CONTA_REDEFINIR_PATH = '/conta/redefinir';
 export const CONFIG_PATH = '/config';
@@ -216,7 +216,7 @@ export function progressoIgual(a: ProgressoPiloto | null, b: ProgressoPiloto | n
   return a.apelido === b.apelido && a.nivel === b.nivel && a.xp === b.xp && a.creditos === b.creditos && a.montagem === b.montagem;
 }
 
-// ---------- esqueci a senha (P205) ----------
+// ---------- esqueci a senha (P206) ----------
 
 /** Por quanto tempo o link de redefinição vale (minutos). O servidor guarda só a impressão digital dele (SHA-256), e o link some ao ser usado ou vencer. */
 export const REDEFINIR_VALE_MIN = 30;

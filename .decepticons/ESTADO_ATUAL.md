@@ -3,7 +3,7 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
-## O "ESQUECI A SENHA": LINK POR E-MAIL, PÁGINA PRÓPRIA E SEM CNPJ NA POLÍTICA — Claude, 18/10 (branch `claude/esqueci-a-senha`, P205)
+## O "ESQUECI A SENHA": LINK POR E-MAIL, PÁGINA PRÓPRIA E SEM CNPJ NA POLÍTICA — Claude, 18/10 (branch `claude/esqueci-a-senha`, P206)
 
 **O Comandante (18/10):** *"faça o esqueci a senha; não vamos dar CNPJ por enquanto pois não temos e o jogo é indie, feito por uma pessoa apenas"*.
 

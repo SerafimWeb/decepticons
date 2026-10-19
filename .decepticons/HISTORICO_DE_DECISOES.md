@@ -1,7 +1,7 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
-## [2026-10-18] "Esqueci a senha": link de uso único por e-mail, página própria, sem entrar sozinho (Claude, P205)
+## [2026-10-18] "Esqueci a senha": link de uso único por e-mail, página própria, sem entrar sozinho (Claude, P206)
 
 **Ordem:** *"faça o esqueci a senha; não vamos dar CNPJ por enquanto pois não temos e o jogo é indie, feito por uma pessoa apenas"*.
 

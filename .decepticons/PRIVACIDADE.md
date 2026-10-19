@@ -25,7 +25,7 @@
 | tabela `sessoes` | hash do token de sessão, conta, criação e vencimento (30 dias) | o token de verdade só existe no navegador; vencidas são varridas a cada 6 h |
 | tabela `progresso` | apelido, nível, XP, créditos, montagem (o que o navegador já guardava) | uma linha por conta |
 | tabela `atividade` (P185) | por conta e por dia: **se abriu o jogo, quantas rodadas, quantos segundos, abates e mortes** | números declarados pelo navegador (métrica de produto, nunca placar nem recompensa); apagada após **400 dias**; **a pessoa pode desligar** (apaga o que havia) |
-| tabela `redefinicoes` (P205, "esqueci a senha") | **só a impressão digital (SHA-256) do link**, a conta e o vencimento (30 min); some ao usar, ao vencer (varrida com as sessões) ou ao apagar a conta | o link de verdade só existe no e-mail e na página; um pedido novo cancela o anterior |
+| tabela `redefinicoes` (P206, "esqueci a senha") | **só a impressão digital (SHA-256) do link**, a conta e o vencimento (30 min); some ao usar, ao vencer (varrida com as sessões) ou ao apagar a conta | o link de verdade só existe no e-mail e na página; um pedido novo cancela o anterior |
 | cópia de segurança | `VACUUM INTO` do `contas.db` a cada 6 h, na pasta de dados do servidor (só no PC do servidor), **as 14 mais recentes** | tem tudo que as tabelas têm; **apagar a conta tira a pessoa das cópias em até 14 dias** |
 
 **Convidado vs conta:** o convidado continua só nas contagens (sem identificação). Só quem criou conta tem atividade registrada por conta.
@@ -50,7 +50,7 @@
 - **Cloudflare** (DNS, proxy do site e túnel do servidor de jogo): vê o IP de quem conecta, por ser o intermediário. O servidor de jogo só lê o país (`cf-ipcountry`) e o IP (`cf-connecting-ip`) que ele entrega.
 - **Hostinger** (hospedagem do site estático): guarda as páginas e o jogo; não recebe contas nem progresso.
 - **Serafim13** (erros do cliente publicado, só nos hostnames oficiais): mensagem e pilha, versão, contexto; e-mails e `?query`/`#hash` de URLs são removidos antes de enviar.
-- **Resend** (envio de e-mail, P205): **só** quando a pessoa pede "Esqueci a senha": recebe o e-mail dela e o texto da mensagem; guarda o registro de entrega pelo prazo dele; trata dados nos Estados Unidos. Chave em `.tmp/servidor/email.json`, fora do git; o log do servidor não leva a chave nem o e-mail.
+- **Resend** (envio de e-mail, P206): **só** quando a pessoa pede "Esqueci a senha": recebe o e-mail dela e o texto da mensagem; guarda o registro de entrega pelo prazo dele; trata dados nos Estados Unidos. Chave em `.tmp/servidor/email.json`, fora do git; o log do servidor não leva a chave nem o e-mail.
 - **ElevenLabs** (vozes do narrador): só gera as falas na máquina do dono; nada do jogador vai para lá.
 
 ## 5. O que falta (decisão e trabalho do dono)

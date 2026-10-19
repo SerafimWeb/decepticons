@@ -183,7 +183,7 @@ async function build() {
   run('node', ['scripts/metricas.mjs', '--out', join(OUT, 'metricas', 'index.html')]);
   // Pública e indexável: a política de privacidade (P192, LGPD), linkada do rodapé de todas as páginas, da faixa de cookies e da tela de criar conta do jogo.
   run('node', ['scripts/privacidade.mjs', '--out', join(OUT, 'privacidade', 'index.html')]);
-  // Privada e sem Analytics: a página do link de redefinição de senha (P205), com o token só depois do `#`.
+  // Privada e sem Analytics: a página do link de redefinição de senha (P206), com o token só depois do `#`.
   run('node', ['scripts/redefinir.mjs', '--out', join(OUT, 'redefinir', 'index.html')]);
   writeFileSync(join(OUT, '.htaccess'), htaccess());
   writeFileSync(join(GAME, 'assets', '.htaccess'), ASSETS_HTACCESS);
@@ -279,7 +279,7 @@ async function pageSane(page, name, failures) {
 }
 
 /**
- * A página de redefinir a senha (P205), no navegador, **sem rede de verdade**: o HTML é gerado de novo apontando para um servidor de mentira e cada resposta da API é combinada na hora
+ * A página de redefinir a senha (P206), no navegador, **sem rede de verdade**: o HTML é gerado de novo apontando para um servidor de mentira e cada resposta da API é combinada na hora
  * (`page.route`). Prova: o token sai da barra de endereço ao abrir; a língua vem do `?lang=`; senha curta e senhas diferentes são recusadas sem chamar o servidor; o sucesso troca a tela e
  * manda de volta ao jogo; link vencido, limite e servidor fora do ar mostram a frase certa; a senha e o token vão no corpo do POST (nunca na URL); e a página não pede nada ao Google,
  * não tem faixa de cookies e pede para ficar fora da busca.

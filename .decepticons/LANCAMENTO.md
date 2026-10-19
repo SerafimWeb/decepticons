@@ -65,7 +65,7 @@ sons e vozes prontos), o **Hangar**, as **Configurações** e o painel do servid
 
 **D. Servidor em outro computador (decidido em 18/10: ainda não).** Medido (`CAPACIDADE.md`): 100 jogadores em 13 salas = **26% de um núcleo, 375 MB de memória e 4,4 KiB/s por jogador**; o servidor é leve, e o que atrapalha hoje é dividir o PC com o trabalho. Um PC velho serve se tiver **4 GB de memória, disco SSD, cabo de rede** e ninguém usando; formatar costuma curar a lentidão de software, não disco falhando. Uma VPS pequena (1 vCPU, 4 GB) custa cerca de R$ 25 a 48 por mês (preço de promoção e de renovação, a confirmar) e resolve A1 e A13 de uma vez, mas exige reescrever o atualizador (feito para Windows). **Gatilho para migrar:** 20 a 30 jogadores simultâneos de verdade, ou a primeira queda por memória.
 
-## 7. Ligar o e-mail do "esqueci a senha" (só o Comandante; P205)
+## 7. Ligar o e-mail do "esqueci a senha" (só o Comandante; P206)
 
 O código está pronto e testado; falta o provedor. **Enquanto não estiver ligado**, o jogo diz que a recuperação por e-mail não está ativa e `npm run admin -- link-senha <e-mail>` (no PC do servidor) gera o link na mão. Com o Resend (grátis: 100 e-mails por dia, 3.000 por mês):
 1. Criar a conta em resend.com e confirmar o e-mail.

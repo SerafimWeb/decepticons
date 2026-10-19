@@ -24,7 +24,7 @@ import { emailDeRedefinicao } from './emailTextos';
 import { IDIOMAS } from '../client/src/i18n/i18n';
 import { startServer, type GameServer } from './Server';
 
-/** O "esqueci a senha" (P205): o fluxo inteiro contra o servidor de verdade, e cada regra de segurança que o sustenta. */
+/** O "esqueci a senha" (P206): o fluxo inteiro contra o servidor de verdade, e cada regra de segurança que o sustenta. */
 const TOKEN_DONO = 'token-de-teste-com-mais-de-16';
 const SENHA = 'senhasegura';
 const NOVA = 'senha-nova-123';

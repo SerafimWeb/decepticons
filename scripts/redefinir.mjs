@@ -1,5 +1,5 @@
 /**
- * A página de redefinir a senha (/redefinir/), P205: onde o link do e-mail "Esqueci a senha" cai. Estática, sem bundler e **sem cookies nem Google Analytics** (`noindex`):
+ * A página de redefinir a senha (/redefinir/), P206: onde o link do e-mail "Esqueci a senha" cai. Estática, sem bundler e **sem cookies nem Google Analytics** (`noindex`):
  * é a página que carrega um segredo de uso único.
  *
  * - **O token vem depois do `#`** do endereço (`/redefinir/?lang=en#TOKEN`): o fragmento não é enviado a servidor nenhum nem no Referer, então não cai em log da Cloudflare,

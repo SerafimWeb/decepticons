@@ -4609,7 +4609,7 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .net-aviso .botao[hidden] { display: none; }
 @media (max-width: 520px) { .net-aviso .contador { font-size: 32px; } }
 
-/* O link "Esqueci a senha" e o "voltar" do painel de login (P205): texto, não botão de ação (só há um botão primário por tela). */
+/* O link "Esqueci a senha" e o "voltar" do painel de login (P206): texto, não botão de ação (só há um botão primário por tela). */
 .login-link {
   display: block;
   margin: 10px auto 0;

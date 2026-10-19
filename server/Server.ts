@@ -131,7 +131,7 @@ export async function startServer(
     /** Régua de tentativas de `/conta/entrar` e `/conta/criar` (padrão: 8 a cada 10 min por IP). Testes
      * que fazem muitas chamadas do mesmo IP alargam para não confundir rate limit com o que estão testando. */
     limiteLogin?: Partial<typeof LIMITE_LOGIN_DEFAULTS>;
-    /** O envio de e-mail do "esqueci a senha" (P205). Os testes passam um falso; o padrão lê `CYBERMECH_EMAIL_CHAVE` ou `email.json` na pasta de dados (`email.ts`). `null` = sem e-mail: a rota responde 503. */
+    /** O envio de e-mail do "esqueci a senha" (P206). Os testes passam um falso; o padrão lê `CYBERMECH_EMAIL_CHAVE` ou `email.json` na pasta de dados (`email.ts`). `null` = sem e-mail: a rota responde 503. */
     mailer?: Mailer | null;
     /** O endereço do site que vai no link do e-mail (padrão: `CYBERMECH_SITE_URL` ou https://cybermech.online). */
     siteUrl?: string;
@@ -364,7 +364,7 @@ export async function startServer(
     return metricasToken && tokenConfere(req.headers[METRICAS_HEADER], metricasToken) ? 'dono' : 'anonimo';
   };
   const limiteLogin = new LimiteLogin(opts.limiteLogin);
-  // Esqueci a senha (P205): 5 pedidos por hora por IP, 3 por hora por conta (de onde vierem) e 50 e-mails por dia no total (a cota do provedor).
+  // Esqueci a senha (P206): 5 pedidos por hora por IP, 3 por hora por conta (de onde vierem) e 50 e-mails por dia no total (a cota do provedor).
   const mailer: Mailer | null = opts.mailer !== undefined ? opts.mailer : carregarMailer(dirDados, process.env, log);
   const siteUrl = opts.siteUrl ?? process.env.CYBERMECH_SITE_URL ?? 'https://cybermech.online';
   const limiteEsqueci = new LimiteLogin({ teto: 5, janelaMs: 60 * 60 * 1000, ...opts.limiteEsqueci });

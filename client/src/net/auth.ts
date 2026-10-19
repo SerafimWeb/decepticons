@@ -48,7 +48,7 @@ export class ContaCliente {
   }
 
   /**
-   * "Esqueci a senha" (P205): pede o link por e-mail. O servidor responde igual exista a conta ou não (nada de descobrir e-mails), então `{ ok: true }` quer dizer só "pedido recebido".
+   * "Esqueci a senha" (P206): pede o link por e-mail. O servidor responde igual exista a conta ou não (nada de descobrir e-mails), então `{ ok: true }` quer dizer só "pedido recebido".
    * `semEmail`: o servidor ainda não tem o envio de e-mail ligado. Nunca lança.
    */
   async esqueci(email: string, lang: string): Promise<{ ok: true } | { erro: string; semEmail?: true }> {

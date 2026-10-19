@@ -40,7 +40,7 @@ export interface LoginPanelEstado {
 export interface LoginPanelOptions {
   onEntrar?: (email: string, senha: string) => Promise<void> | void;
   onCriar?: (email: string, senha: string) => Promise<void> | void;
-  /** "Esqueci a senha" (P205): pede o link de redefinição para este e-mail. */
+  /** "Esqueci a senha" (P206): pede o link de redefinição para este e-mail. */
   onEsqueci?: (email: string) => Promise<void> | void;
   onSair?: () => Promise<void> | void;
   /** Baixar os dados da conta (LGPD art. 18 II e V). */

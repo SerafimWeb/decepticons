@@ -30,7 +30,7 @@ export interface ServidorDeContas {
   medicao(token: string, ativa: boolean): Promise<boolean | null>;
   lerProgresso(token: string): Promise<{ progresso: ProgressoPiloto | null } | null>;
   gravarProgresso(token: string, progresso: ProgressoPiloto): Promise<boolean>;
-  /** Opcional: "esqueci a senha" (P205). Um servidor sem isto responde como se o envio não estivesse ligado. */
+  /** Opcional: "esqueci a senha" (P206). Um servidor sem isto responde como se o envio não estivesse ligado. */
   esqueci?(email: string, lang: string): Promise<{ ok: true } | { erro: string; semEmail?: true }>;
 }
 
@@ -107,7 +107,7 @@ export class SessaoPiloto {
     return this.abrir(await this.servidor.entrar(email, senha));
   }
 
-  /** Pede o link de redefinição por e-mail (P205). `{ ok: true }` = o servidor recebeu o pedido (ele não diz se a conta existe). */
+  /** Pede o link de redefinição por e-mail (P206). `{ ok: true }` = o servidor recebeu o pedido (ele não diz se a conta existe). */
   async esqueciSenha(email: string, lang: string): Promise<{ ok: true } | { erro: string }> {
     return (await this.servidor.esqueci?.(email, lang)) ?? { erro: 'a recuperação por e-mail ainda não está ativa: peça ajuda pelo contato da página de Privacidade' };
   }

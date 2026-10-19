@@ -118,7 +118,7 @@ export class Contas {
         PRIMARY KEY (conta_id, dia)
       );
       CREATE INDEX IF NOT EXISTS atividade_dia ON atividade(dia);
-      -- Esqueci a senha (P205): só a impressão digital do link (SHA-256), nunca o link. Vale REDEFINIR_VALE_MIN minutos e some ao ser usado.
+      -- Esqueci a senha (P206): só a impressão digital do link (SHA-256), nunca o link. Vale REDEFINIR_VALE_MIN minutos e some ao ser usado.
       CREATE TABLE IF NOT EXISTS redefinicoes (
         token_hash TEXT PRIMARY KEY,
         conta_id INTEGER NOT NULL REFERENCES contas(id),
@@ -197,7 +197,7 @@ export class Contas {
 
   /** Nova sessão para a conta; devolve o token de verdade (só existe em memória — o banco guarda o hash). */
   /**
-   * Abre um pedido de redefinição de senha para o e-mail (P205). Devolve o token (a única vez que ele existe por inteiro: o banco guarda só a impressão digital) e a conta,
+   * Abre um pedido de redefinição de senha para o e-mail (P206). Devolve o token (a única vez que ele existe por inteiro: o banco guarda só a impressão digital) e a conta,
    * ou `null` se o e-mail não tem conta. **Um pedido por conta:** o novo cancela os anteriores (o link velho para de valer). Quem chama NUNCA diz à pessoa se a conta existe.
    */
   temConta(email: string): boolean {
