@@ -3,7 +3,7 @@
     "allow": [
       "Bash(rmdir *)",
       "Bash(git worktree *)",
-      "Bash(git fetch *)",
+      "Bash(git fetch origin)",
       "Bash(git add *)",
       "Bash(git commit *)",
       "Bash(dir *)",
@@ -12,7 +12,15 @@
       "Bash(.count)",
       "Bash(mklink *)",
       "Bash(npm run *)",
-      "Bash(timeout *)"
+      "Bash(timeout 600 npm run *)",
+      "Bash(git status)",
+      "Bash(git status --short)",
+      "Bash(git branch --list)",
+      "Bash(git branch --show-current)",
+      "Bash(git ls-remote --heads origin)",
+      "Bash(git diff --stat)",
+      "Bash(git diff --name-only)",
+      "Bash(git merge origin/main)"
     ]
   },
   "$version": 4

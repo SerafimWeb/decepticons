@@ -1,6 +1,19 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-19] As permissões dos agentes: lista fechada e uma trava no check, em vez de reclamar de novo (Claude, P208)
+
+**Ordem:** *"aperte, autorizado sim, resolva esses alerta das permissoes ao qwen. toda hora vc reclama disso e nao resolve!"*
+
+**Decisões:**
+1. **Resolver na raiz, não só no arquivo.** Tirar as linhas resolvia o alerta de hoje e o próximo agente o alargava de novo; por isso a regra virou **teste do `npm run check`** (`permissoesDosAgentes.test.ts`): interpretador com coringa, `git *` e os verbos do git que apagam, mudam ou **executam** (`fetch --upload-pack`, `config alias.x=!cmd`, `rebase --exec`) reprovam em qualquer arquivo de permissões.
+2. **Envoltório conta como o que ele envolve.** `timeout *` (que estava no padrão desde o começo) executa qualquer comando tanto quanto `powershell *`; saiu, e entrou `timeout 600 npm run *`, que vale o que `npm run *` já valia.
+3. **Lista fechada para o Qwen.** Acrescentar permissão passa a ser uma edição visível (arquivo e lista no mesmo PR), com o porquê aqui no histórico. O que ele precisa e não tem, ele **pede**.
+4. **A única exceção é do Comandante:** `git push:*` no `.claude/settings.json`, por texto exato e só nesse arquivo (o `publicar` empurra o branch do Claude).
+5. **O arquivo alargado não foi apagado em silêncio:** cópia em `.tmp/qwen-settings-local-widened-19-10.json`. A edição era local e sem commit; o Qwen que a quiser de volta pede a permissão específica.
+6. **Residual dito, não escondido:** `rmdir *`, `git worktree *`, `git commit *`, `git add *` e `npm run *` seguem porque o fluxo do `AGENTS.md` (worktree por tarefa, junção de `node_modules`) depende deles. `AGENTS.md`: regra 18 nova.
+7. **Números das ordens:** P208 a P210 (P206 e P207 eram de outras sessões); a mesma mensagem trouxe a voz no celular (P209) e a rádio do mundo (P210).
+
 ## [2026-10-18] O Google Analytics no /metricas/: conta de serviço assinada à mão, tudo em cache e nunca esperar o Google (Claude, P207)
 
 **Ordem:** *"ligue o metricas, quero tudo devidamente configurado na melhor e mais técnica estrutura"*.

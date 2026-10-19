@@ -14,6 +14,16 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P208 a P210 — As permissões do Qwen, a voz no celular e a rádio do mundo (19/10, Claude)
+
+> Uma mensagem do Comandante com três ordens: apertar de vez as permissões do Qwen ("toda hora vc reclama disso e não resolve!"), fazer o chat de voz funcionar bem no celular, e a visão do som no mundo (música, rádio, autofalantes).
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P208 | 19/10 | "aperte, autorizado sim, resolva esses alerta das permissoes ao qwen. toda hora vc reclama disso e nao resolve!" | 🟡 | **Feito (PR `claude/qwen-permissoes`):** o `.qwen/settings.json` perdeu `powershell *`, `cmd *`, `git *`, `git checkout *`, `git merge *`, `git branch *`, `timeout *` e afins e ficou com uma **lista fechada** (só o fluxo de PR e os comandos específicos de olhar o git); **uma trava no `npm run check`** (`server/permissoesDosAgentes.test.ts`, 10 mutações pegas) reprova qualquer alargamento, em qualquer arquivo de permissões de agente. Guardei o arquivo alargado em `.tmp/`. **Residual dito:** `rmdir *`, `git worktree *`, `git commit *`, `git add *`, `npm run *` seguem (o fluxo do AGENTS.md precisa) | `npm run check`; `scripts/permissoesDosAgentes.mjs` |
+| P209 | 19/10 | "jogadores usando celular vao conseguir ouvir e falar automaticamente no voice chat? como vai ser pra apertar o ptt se o celular é limitado de botoes? quero maximizar a experiencia dos usuarios e facilitar o voice chat" | 🟡 | Em andamento (PR `claude/voz-celular`): o botão de microfone na tela de toque (tocar muda o mudo; no modo "segurar", segurar fala), e a resposta do que já funciona sozinho no celular | `?comandante=1` num celular ou no modo toque do Chrome (F12 > aparelho) |
+| P210 | 19/10 | "se um jogador estiver ouvindo musica no pc, e eu me aproximar dele, quero poder ouvir a musica, ou se ele estiver ouvindo radio (assim poderemos implementar elementos como radio, ou autofalantes em loop passando uma mensagem, ou ate uma radio mesmo ao vivo 24 hs (ao entrar em determinados predios, ou numa area especifica da fase, etc)" | ⏸ | **Registrada; o desenho** (emissores de som no mundo, a "rádio que o jogador carrega", e a música do PC do jogador: viabilidade, custo e direitos autorais) **vem no PR da voz no celular** (`claude/voz-celular`). Nada construído. **Espera a sua decisão** sobre direitos da música e a fonte da rádio ao vivo | `.decepticons/RADIO_E_EMISSORES.md` (no PR seguinte) |
+
 ## P205 — O chat de voz (18/10, Claude)
 
 > O Comandante trouxe o plano de implementação do **VOICE CHAT** (decisões dele: microfone aberto por padrão com apertar-para-falar opcional, áudio espacial 3D, canais TODOS e TIME, TURN a critério técnico) e, ao mandar seguir: *"quero que seja simples, sem custo inicial e eficiente"*.

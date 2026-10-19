@@ -3,6 +3,16 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## AS PERMISSÕES DOS AGENTES VIRARAM LISTA FECHADA, COM TRAVA NO `npm run check` — Claude, 19/10 (branch `claude/qwen-permissoes`, P208)
+
+**O Comandante (19/10):** *"aperte, autorizado sim, resolva esses alerta das permissoes ao qwen. toda hora vc reclama disso e nao resolve!"*. O alerta automático de segurança apontava o `.qwen/settings.json` (uma edição local, sem commit, alheia a este trabalho) por liberar `powershell *`, `cmd *` e `git *`: valem por qualquer comando, sem aprovação.
+
+**Feito:** (1) o arquivo voltou ao padrão commitado **mais só comandos específicos de olhar o git** (`git status`, `git branch --list`, `git ls-remote --heads origin`, `git diff --stat`, `git merge origin/main`, `git fetch origin`, `timeout 600 npm run *`); saíram `powershell *`, `cmd *`, `git *`, `git checkout/merge/branch/ls-remote/fetch *` e `timeout *` (que também roda qualquer coisa). O arquivo alargado ficou em `.tmp/qwen-settings-local-widened-19-10.json`. (2) **A trava** (`scripts/permissoesDosAgentes.mjs` + `server/permissoesDosAgentes.test.ts`, 10 testes, **10 de 10 mutações pegas**): nenhum arquivo de permissões de agente pode liberar interpretador, envoltório ou verbo perigoso do git com coringa; o Qwen tem **lista fechada** (acrescentar é mexer no arquivo e na lista no mesmo PR); a única exceção do Comandante é o `git push` do Claude (o `publicar`), por texto exato e só no arquivo dele.
+
+**Falta (R13):** o que continua liberado ao Qwen por decisão do fluxo do `AGENTS.md`: `rmdir *` (`cmd /s` apaga árvore; a junção de `node_modules` é o caso), `git worktree *` (`remove --force`), `git commit *` (`--no-verify`), `git add *`, `npm run *` (qualquer script do `package.json`). Apertar mais obriga o Qwen a pedir aprovação a cada branch e cada limpeza: decisão do Comandante.
+
+**Próxima sessão começa com:** o chat de voz no celular (P209) e o desenho da rádio (P210).
+
 ## O `SERVIDOR.LOG` ANTIGO FOI LIMPO, E OS DOCUMENTOS ARQUIVADOS DE NOVO — Claude, 18/10 (branch `claude/docs-fechamento`, P204)
 
 **O Comandante (18/10):** *"pode limpar o log sim, se tiver alguém, ela tenta de novo!"*. **Feito:** com `scripts\parar-servidor.ps1` (o servidor avisa quem joga, salva e sai), o `servidor.log` teve **1 e-mail e 16 IPs de rede mascarados no lugar** (mesmo tamanho; conferido 0 e 0) e o `scripts\ligar-servidor.ps1` religou e conferiu o `/status`. O que atrapalhou antes: **`Stop-ScheduledTask` não derruba o servidor** (deixa o `node` órfão); a instrução foi corrigida no `DEPLOY.md` § 4c. **`npm run arquivar`** de novo (o ESTADO passou de 150 KB): o antigo foi para `.decepticons/arquivo/`.
