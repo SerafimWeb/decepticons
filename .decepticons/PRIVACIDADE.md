@@ -16,6 +16,7 @@
 | **Registro técnico** (`registro/servidor-AAAA-MM-DD.log`) | eventos de operação e segurança: salas, conexões, recusas, cortes. **IP mascarado** (`212.8.252.x`); **nunca o e-mail** (a linha de conta criada diz só o número) | **30 dias**, apagado sozinho (`server/registro.ts`) | a rede do IP (não a casa) |
 | **`servidor.log`** (a saída que a tarefa do Windows redireciona) | só o que o Node escreve sozinho: avisos do SQLite e quedas com erro. **O de antes de 18/10 tem 22 linhas com IP inteiro e 1 e-mail** | sem rotação (o Windows não deixa apagar com a tarefa rodando) | **pendência do dono: apagar com a tarefa parada** |
 | **Sala online** | o apelido e a montagem escolhidos, enquanto o jogador está na sala | só em memória, até sair | o apelido é digitado pelo jogador (filtrado) |
+| **Chat de voz** (P205, `VOICE_CHAT.md`) | o som do microfone **enquanto o jogador fala**, direto de um navegador ao outro (WebRTC), **sem passar pelo servidor, e nada é gravado**. Como a conexão é direta, **cada jogador da sala pode ver o IP dos outros** (nos endereços da oferta de conexão) e o **STUN do Google** (`stun.l.google.com`) vê o IP de quem entra na voz. O servidor só repassa a oferta e a resposta, sem ler | só durante a conversa; o servidor guarda só **quem está na voz**, em memória, até sair (nenhum IP, nenhum áudio) | o IP identifica em tese: vai aos outros jogadores da sala e ao Google; **não fica guardado por nós** |
 
 ## 2. Quem cria uma conta (login, P174)
 

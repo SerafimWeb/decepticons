@@ -1,6 +1,17 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## [2026-10-19] A política de privacidade descreve o chat de voz, que já estava público (Claude, P205)
+
+**O que aconteceu:** o Comandante liberou `tela:voz` no painel de visibilidade sem que a política tivesse mudado; eu tinha avisado (VOICE_CHAT.md § 4) que ela precisava mudar antes.
+
+**Decisões:**
+1. **Atualizei sem esperar nova ordem.** A voz já estava pública e a lacuna era minha pendência declarada; a liberação em si é do Comandante e não mexi nela.
+2. **O texto diz o que o código faz:** os outros jogadores da sala podem ver o IP (a conexão é direta), o STUN do Google o recebe, o áudio nunca passa pelo nosso servidor e nada é gravado. Não prometi nada que o código não cumpra.
+3. **`POLITICA_VERSAO` = `2026-10-19`:** a regra do projeto é mudar a data junto com o texto; quem criar conta aceita a versão nova. O texto continua **rascunho a revisar**, não parecer jurídico.
+4. **Um teste que renderiza a página de verdade** (`server/politicaDeVoz.test.ts`) e uma data-piso (`2026-10-19`): a política não pode voltar a ser anterior à voz.
+5. **Dito, não escondido:** a política promete avisar no jogo as mudanças que afetem contas existentes e esse aviso não existe; e a voz está aberta a convidados sem conta (menores), sem mudo por jogador nem denúncia.
+
 ## [2026-10-19] A voz no celular: um botão na tela, e a rádio como emissores do mundo (Claude, P209 e P210)
 
 **Ordem:** *"jogadores usando celular vão conseguir ouvir e falar automaticamente no voice chat? como vai ser pra apertar o ptt se o celular é limitado de botões? quero maximizar a experiência dos usuários e facilitar o voice chat"* e a visão da música, rádio e autofalantes no mundo.

@@ -3,6 +3,16 @@
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 
+## A POLÍTICA DE PRIVACIDADE PASSOU A DESCREVER O CHAT DE VOZ, QUE O COMANDANTE JÁ LIBEROU AO PÚBLICO — Claude, 19/10 (branch `claude/privacidade-voz`, P205)
+
+**O que aconteceu:** o `/status` do servidor mostrava `"tela:voz":"publico"` (o Comandante soltou a voz no painel de visibilidade) **antes** de a política mudar; eu tinha deixado o texto pronto como pendência de "antes de liberar". Com a voz pública, a pendência virou lacuna: a política dizia "o IP não é guardado" e nada dizia que **os outros jogadores da sala veem o IP** nem que o **STUN do Google** o recebe.
+
+**Feito:** (1) `/privacidade/`: um item em "Em poucas palavras", uma linha em "O que guardamos" ("Você usa o chat de voz") e o **STUN do Google** em "Com quem compartilhamos"; (2) `POLITICA_VERSAO` → `2026-10-19` (quem for criar conta aceita a versão nova; o navegador com a velha é mandado recarregar); (3) `PRIVACIDADE.md`; (4) `server/politicaDeVoz.test.ts` renderiza a página de verdade e exige o IP, o STUN, a linha da tabela e a versão (**5 de 5 mutações pegas**), para a política não voltar a ficar sem a voz.
+
+**Falta (R13):** (a) o Comandante **revisar o texto** (rascunho, não é parecer jurídico); (b) **mudo por jogador e denúncia**: a voz está aberta a desconhecidos, **inclusive a convidados sem conta (menores)**, sem moderação nenhuma; (c) a política promete avisar no jogo as mudanças que afetem contas existentes e **esse aviso não existe**: as contas antigas não foram reavisadas da versão nova (decisão do Comandante: aviso no jogo, ou aceitar que só vale para quem cria conta daqui para a frente).
+
+**Próxima sessão começa com:** o mudo por jogador (o risco mais próximo da voz pública) ou a decisão do Comandante sobre a rádio (P210).
+
 ## O CHAT DE VOZ NO CELULAR: UM BOTÃO DE MICROFONE NA TELA, E O DESENHO DA RÁDIO E DOS EMISSORES DE SOM — Claude, 19/10 (branch `claude/voz-celular`, P209 e P210)
 
 **O Comandante (19/10):** *"jogadores usando celular vão conseguir ouvir e falar automaticamente? como vai ser pra apertar o PTT se o celular é limitado de botões? quero maximizar a experiência"* e a visão da **música/rádio/autofalantes no mundo**.

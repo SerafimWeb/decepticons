@@ -50,7 +50,7 @@ Os jogadores humanos de uma sala falam com o microfone. O áudio vai **direto de
 
 - **O relé só repassa e só confere a forma:** `SINAL` precisa começar com `v=0`, caber em 3 KB e ter tipo conhecido; o destino precisa estar **na voz da mesma sala**; cada jogador tem um teto de **30 mensagens de voz por janela de 10 s** (a porteira geral da conexão continua valendo). Nada de decodificar SDP no servidor.
 - **A voz não é gravada nem guardada em lugar nenhum.** O servidor nunca a recebe.
-- **O que a voz expõe (e a política de privacidade ainda não diz):** WebRTC direto entre jogadores significa que **cada jogador da sala pode ver o IP dos outros** (nos endereços do SDP), e o **STUN do Google recebe o IP** de quem entra na voz. Hoje, sem voz, o IP só fica no servidor (mascarado nos registros). **Antes de liberar `tela:voz`:** (1) acrescentar à `/privacidade/` (`scripts/privacidade.mjs`) uma linha na tabela "O que guardamos" e uma em "Com quem compartilhamos" (texto sugerido abaixo), (2) mudar `POLITICA_VERSAO` (`shared/net/auth.ts`) e (3) atualizar `PRIVACIDADE.md`. O texto é do Comandante revisar: a política é rascunho e não é parecer jurídico.
+- **O que a voz expõe, e a política diz (19/10):** WebRTC direto entre jogadores significa que **cada jogador da sala pode ver o IP dos outros** (nos endereços do SDP), e o **STUN do Google recebe o IP** de quem entra na voz. A `/privacidade/` (`scripts/privacidade.mjs`) ganhou uma linha na tabela "O que guardamos", uma em "Com quem compartilhamos" e um item em "Em poucas palavras"; `POLITICA_VERSAO` passou a `2026-10-19` e o `PRIVACIDADE.md` ganhou a linha. **O Comandante liberou `tela:voz` ao público antes de a política mudar** (o servidor mostrava `tela:voz: publico` em 19/10); o texto é rascunho a revisar, não parecer jurídico.
 - **Chave de desligar:** o painel de visibilidade (`tela:voz`) liga e desliga a voz para todos sem republicar o jogo; o cliente reaplica quando o servidor muda.
 - **Ainda não existe** mudo por jogador nem denúncia: um jogador abusivo só se resolve pelo desligamento geral ou saindo da sala (pendência abaixo).
 
@@ -99,5 +99,5 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 5. **Mudo por jogador e denúncia**, para quando houver gente de fora.
 6. **SFU** (servidor de mídia): só se salas com mais de 5 pessoas falando virarem comuns; a malha cobre as salas de 8 com poucos falando.
 7. **Celular de verdade** (Android e, principalmente, iPhone): a seção 5b prova o botão e o toque no Chrome emulado; o áudio no Safari do iPhone **não foi provado**.
-8. **A política de privacidade** (seção 4) antes de liberar.
-9. **Liberar:** painel de visibilidade > `tela:voz` > público.
+8. ~~A política de privacidade~~ (feito em 19/10, seção 4): falta o Comandante **revisar o texto**.
+9. **Liberada:** `tela:voz` está pública (painel de visibilidade, feito pelo Comandante). Sem mudo por jogador nem denúncia (item 5): com a voz aberta a desconhecidos, é o próximo risco.

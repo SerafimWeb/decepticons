@@ -57,7 +57,7 @@ export const SESSAO_HEADER = 'x-cybermech-sessao';
  * A versão do texto da política de privacidade (`/privacidade/`) que quem cria a conta aceita. **Mudou o texto em algo que o titular precisa saber de novo? Mude esta data junto**
  * (e o texto em `scripts/privacidade.mjs`): a conta guarda a versão que a pessoa aceitou, e um navegador com a versão velha é mandado recarregar antes de criar conta.
  */
-export const POLITICA_VERSAO = '2026-10-18';
+export const POLITICA_VERSAO = '2026-10-19';
 
 /** O que o formulário de criar conta manda além do e-mail e da senha: as duas caixas marcadas (política lida; maior de 18 anos ou com autorização do responsável). */
 export interface AceiteDaPolitica {
