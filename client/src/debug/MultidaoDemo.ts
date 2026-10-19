@@ -1,6 +1,8 @@
 import type * as THREE from 'three';
 import { MultidaoDesenho } from '../environment/MultidaoDesenho';
 import { Multidao, type ConfigDaMultidao } from '../sim/Multidao';
+import { PRACA_FONTES, PRACA_PREDIOS, PRACA_SAIDAS } from '../environment/PracaLayout';
+import type { MapId } from '../environment/Bunker';
 import type { PedidoDaMultidao } from './multidaoLink';
 
 /**
@@ -13,7 +15,11 @@ import type { PedidoDaMultidao } from './multidaoLink';
  */
 
 /** O mapa de teste na Cidade Neon (200 m): dois ônibus e quatro bueiros no oeste, três lixeiras no meio, três alvos no leste, duas saídas. */
-export function configDaDemo(p: PedidoDaMultidao): ConfigDaMultidao {
+export function configDaDemo(p: PedidoDaMultidao, mapa: MapId = 'arena'): ConfigDaMultidao {
+  // No mapa do 8 DE JANEIRO (a Praça dos Três Poderes) a multidão sai dos ônibus, bueiros e lixeiras de verdade do mapa e marcha até a frente dos três prédios.
+  if (mapa === 'janeiro') {
+    return { semente: p.semente, cota: p.cota, duracaoTicks: 18_000, fontes: PRACA_FONTES, predios: PRACA_PREDIOS.map((q) => q.frente), saidas: PRACA_SAIDAS };
+  }
   return {
     semente: p.semente,
     cota: p.cota,
@@ -52,8 +58,9 @@ export class MultidaoDemo {
     scene: THREE.Scene,
     pedido: PedidoDaMultidao,
     private readonly jogador: () => { x: number; z: number },
+    mapa: MapId = 'arena',
   ) {
-    this.multidao = new Multidao(configDaDemo(pedido));
+    this.multidao = new Multidao(configDaDemo(pedido, mapa));
     this.desenho = new MultidaoDesenho(this.multidao);
     this.multidao.aoMorrer = (i) => this.desenho.aoMorrer(i);
     this.multidao.aoFugir = (i) => this.desenho.aoMudar(i);

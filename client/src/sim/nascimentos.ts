@@ -1,6 +1,7 @@
 import { SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
 import { AMAZONIA_SPAWNS } from '../environment/AmazoniaLayout';
+import { PRACA_SPAWNS } from '../environment/PracaLayout';
 import { PRAIA_SPAWNS } from '../environment/PraiaLayout';
 
 /** Um ponto de nascimento (x, z) no chão da arena. */
@@ -105,8 +106,11 @@ const CAPACIDADE_PRAIA: Capacidade = { inimigos: PRAIA_SPAWNS.length - 1, aliado
 /** A Amazônia (P180): os pontos dela, menos o do jogador, são de quem nasce com ele. */
 const CAPACIDADE_AMAZONIA: Capacidade = { inimigos: AMAZONIA_SPAWNS.length - 1, aliados: AMAZONIA_SPAWNS.length - 1, total: AMAZONIA_SPAWNS.length - 1, titas: 0 };
 
+/** A Praça dos Três Poderes (P217): os pontos dela, menos o do jogador, são de quem nasce com ele. */
+const CAPACIDADE_PRACA: Capacidade = { inimigos: PRACA_SPAWNS.length - 1, aliados: PRACA_SPAWNS.length - 1, total: PRACA_SPAWNS.length - 1, titas: 0 };
+
 export const capacidadeDoMapa = (mapa: MapId): Capacidade =>
-  mapa === 'bunker' ? CAPACIDADE_BUNKER : mapa === 'praia' ? CAPACIDADE_PRAIA : mapa === 'amazonia' ? CAPACIDADE_AMAZONIA : CAPACIDADE_ARENA;
+  mapa === 'bunker' ? CAPACIDADE_BUNKER : mapa === 'praia' ? CAPACIDADE_PRAIA : mapa === 'amazonia' ? CAPACIDADE_AMAZONIA : mapa === 'janeiro' ? CAPACIDADE_PRACA : CAPACIDADE_ARENA;
 
 /**
  * Os pontos da Arena: cada papel usa primeiro os fixos (o jogo de hoje) e o que passar sai dos extras, os inimigos de um lado
@@ -192,5 +196,5 @@ export function nascimentosDoEsquadrao(c: Contagem, mapa: MapId): Nascimentos {
   if (inimigos > cap.inimigos || aliados > cap.aliados || inimigos + aliados > cap.total) {
     throw new Error(`o esquadrão (${inimigos} inimigos, ${aliados} aliados) não cabe no mapa (${cap.inimigos}, ${cap.aliados}, ${cap.total})`);
   }
-  return mapa === 'bunker' ? nascimentosDoBunker(c) : mapa === 'praia' ? nascimentosDaLista(c, PRAIA_SPAWNS) : mapa === 'amazonia' ? nascimentosDaLista(c, AMAZONIA_SPAWNS) : nascimentosDaArena(c);
+  return mapa === 'bunker' ? nascimentosDoBunker(c) : mapa === 'praia' ? nascimentosDaLista(c, PRAIA_SPAWNS) : mapa === 'amazonia' ? nascimentosDaLista(c, AMAZONIA_SPAWNS) : mapa === 'janeiro' ? nascimentosDaLista(c, PRACA_SPAWNS) : nascimentosDaArena(c);
 }

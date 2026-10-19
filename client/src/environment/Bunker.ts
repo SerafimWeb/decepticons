@@ -5,7 +5,7 @@ import { mapaLiberado } from '../core/Lancamento';
 
 export { bunkerBlocks, BUNKER_LEVELS, BUNKER_LIFTS, BUNKER_SPAWNS } from './BunkerLayout';
 
-export type MapId = 'arena' | 'bunker' | 'praia' | 'amazonia';
+export type MapId = 'arena' | 'bunker' | 'praia' | 'amazonia' | 'janeiro';
 /** Online e missões mantêm o mapa contratado com o servidor/objetivos. O Bunker é só do Deathmatch; a praia abre o Deathmatch e as ondas; a Amazônia (P180) abre o Deathmatch e a missão do rio (a Sobrevivência: o Draga-01 marcha rumo à aldeia). */
 export function mapFromSearch(search: string, _online: boolean, mode: string): MapId {
   // Online também honra o `?mapa=` (P218, etapa O1): a sala do servidor é uma por código e por mapa (`shared/net/mapa.ts`); o online só joga o Deathmatch, que todos os mapas têm.
@@ -14,6 +14,8 @@ export function mapFromSearch(search: string, _online: boolean, mode: string): M
   if (mapa === 'praia') id = mode === 'deathmatch' || mode === 'survival' ? 'praia' : 'arena';
   else if (mapa === 'bunker') id = mode === 'deathmatch' ? 'bunker' : 'arena';
   else if (mapa === 'amazonia') id = mode === 'deathmatch' || mode === 'survival' ? 'amazonia' : 'arena';
+  // A Praça dos Três Poderes (o 8 DE JANEIRO, P217) abre o Deathmatch; a missão (a Sobrevivência) vem com o passo 5 da ficha.
+  else if (mapa === 'janeiro') id = mode === 'deathmatch' ? 'janeiro' : 'arena';
   // O lançamento (P197): um mapa que ainda não foi liberado cai na Cidade Neon (`core/Lancamento.ts`).
   return mapaLiberado(id) ? id : 'arena';
 }

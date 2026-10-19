@@ -130,7 +130,7 @@ import type { CameraWall } from '../ui/CameraWall';
 import type { ResumoDoRio } from '../ui/RelatorioPanel';
 import { abrirSobDemanda, sobDemanda } from './sobDemanda';
 import { plantaDaArena, plantaDoBunker } from '../ui/TacticalRadar';
-import { Minimapa, plantaComZonas, plantaDaAmazoniaNoMinimapa, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
+import { Minimapa, plantaComZonas, plantaDaAmazoniaNoMinimapa, plantaDaPracaNoMinimapa, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
 import { novoQuadroDaPraia, PraiaHud, type QuadroDaPraia } from '../ui/PraiaHud';
 import { MuralCliente } from '../net/mural';
 import { AdminCliente, TokenDoDono } from '../net/admin';
@@ -457,6 +457,8 @@ export class Game {
         visualDoChefe = (await exigirChefe('amazonia').criarVisual?.()) ?? null;
       }
     }
+    // A Praça dos Três Poderes (o 8 DE JANEIRO, P217) também é um mapa sob demanda: o código dele só baixa para quem o abre (liberado no painel de visibilidade ou no modo Comandante).
+    if (new URLSearchParams(location.search).get('mapa') === 'janeiro' && mapaLiberado('janeiro')) await carregarMapaSeFor('janeiro');
     bootProgresso('jogo');
     const game = new Game(container, physics, hangar, visualDoChefe);
     await game.precompileShaders();
@@ -1055,7 +1057,8 @@ export class Game {
     const plantaOnline = mapa === 'arena' ? plantaDaArena(this.match.arena.occluders) : [];
     const naPraia = this.match.arena.praia !== null;
     const naAmazonia = this.match.arena.amazonia !== null;
-    this.minimapa.setPlanta(naPraia ? plantaDaPraiaNoMinimapa() : naAmazonia ? plantaDaAmazoniaNoMinimapa() : plantaComZonas(mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(this.match.arena.occluders), mapa === 'arena'));
+    const naPraca = this.match.arena.praca !== null;
+    this.minimapa.setPlanta(naPraia ? plantaDaPraiaNoMinimapa() : naAmazonia ? plantaDaAmazoniaNoMinimapa() : naPraca ? plantaDaPracaNoMinimapa() : plantaComZonas(mapa === 'bunker' ? plantaDoBunker() : plantaDaArena(this.match.arena.occluders), mapa === 'arena'));
     // Na praia a estação é o objetivo: o ponto E do minimapa aponta para ela de qualquer lugar do mapa (preso na borda quando longe).
     this.minimapa.setPontos(naPraia ? pontoDaEstacao() : this.match.dominio?.pontos ?? null);
     if (naPraia) {
@@ -1977,7 +1980,7 @@ export class Game {
       if (!this.multidaoDemo && !this.multidaoCarregando) {
         this.multidaoCarregando = true;
         void import('../debug/MultidaoDemo').then(({ MultidaoDemo }) => {
-          this.multidaoDemo = new MultidaoDemo(this.scene, this.multidaoQuer!, () => ({ x: this.mech.simPosition.x, z: this.mech.simPosition.z }));
+          this.multidaoDemo = new MultidaoDemo(this.scene, this.multidaoQuer!, () => ({ x: this.mech.simPosition.x, z: this.mech.simPosition.z }), this.match.arena.mapa);
         });
       }
       this.multidaoDemo?.desenhar(alpha);

@@ -29,10 +29,11 @@ export const MODOS_DO_MAPA: Readonly<Record<MapId, readonly GameMode[]>> = {
   bunker: ['deathmatch'],
   praia: ['deathmatch', 'survival'],
   amazonia: ['deathmatch', 'survival'],
+  janeiro: ['deathmatch'],
 };
-export const MAPAS: readonly MapId[] = ['arena', 'bunker', 'praia', 'amazonia'];
+export const MAPAS: readonly MapId[] = ['arena', 'bunker', 'praia', 'amazonia', 'janeiro'];
 export const MODOS: readonly GameMode[] = ['deathmatch', 'survival', 'ctf'];
-export const MAPA_NOME: Readonly<Record<MapId, string>> = { arena: 'CIDADE NEON', bunker: 'BUNKER', praia: 'PRAIA DOS CABOS', amazonia: 'AMAZÔNIA · TERRAS RARAS' };
+export const MAPA_NOME: Readonly<Record<MapId, string>> = { arena: 'CIDADE NEON', bunker: 'BUNKER', praia: 'PRAIA DOS CABOS', amazonia: 'AMAZÔNIA · TERRAS RARAS', janeiro: '8 DE JANEIRO' };
 export const MODO_NOME: Readonly<Record<GameMode, string>> = { deathmatch: 'DEATHMATCH', survival: 'SOBREVIVÊNCIA', ctf: 'CAPTURAR A BANDEIRA', dominio: 'DOMÍNIO' };
 
 export const LIMITES_DA_CAMPANHA = {
@@ -156,7 +157,7 @@ function todasAsDeFabrica(): CampanhaSpec[] {
 
 // ─── O link: ?campanha=c1~…&etapa=2 ───────────────────────────────────────────
 
-const LETRA_DO_MAPA: Readonly<Record<MapId, string>> = { arena: 'a', bunker: 'b', praia: 'p', amazonia: 'z' };
+const LETRA_DO_MAPA: Readonly<Record<MapId, string>> = { arena: 'a', bunker: 'b', praia: 'p', amazonia: 'z', janeiro: 'j' };
 const LETRA_DO_MODO: Readonly<Record<GameMode, string>> = { deathmatch: 'd', survival: 's', ctf: 'c', dominio: 'm' };
 
 function chaveDaEtapa(e: EtapaDaCampanha): string {

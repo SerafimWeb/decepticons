@@ -1,0 +1,49 @@
+{
+ "tela": "1280x720",
+ "multidao": 2500,
+ "resultados": {
+  "a-praca": {
+   "fps": 105.1,
+   "p50": 7.6,
+   "p95": 22.5,
+   "desenhos": 46,
+   "triangulos": 156451
+  },
+  "o-congresso-da-esplanada": {
+   "fps": 115.7,
+   "p50": 8.5,
+   "p95": 11.6,
+   "desenhos": 106,
+   "triangulos": 166797
+  },
+  "a-rampa-e-as-torres": {
+   "fps": 118.8,
+   "p50": 8.1,
+   "p95": 11.9,
+   "desenhos": 79,
+   "triangulos": 139411
+  },
+  "o-planalto": {
+   "fps": 156.8,
+   "p50": 5.8,
+   "p95": 11.2,
+   "desenhos": 51,
+   "triangulos": 141543
+  },
+  "o-supremo": {
+   "fps": 167.4,
+   "p50": 5.4,
+   "p95": 10.8,
+   "desenhos": 51,
+   "triangulos": 143529
+  },
+  "a-esplanada-de-ponta-a-ponta": {
+   "fps": 123.6,
+   "p50": 8,
+   "p95": 10.5,
+   "desenhos": 77,
+   "triangulos": 148729
+  }
+ },
+ "erros": []
+}
