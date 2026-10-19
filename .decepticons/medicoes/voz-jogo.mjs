@@ -8,7 +8,8 @@ import { createServer, runnerImport } from 'vite';
  *   voz-hud-jogo-claude.png        o jogo com o indicador de voz no canto de baixo à esquerda (o seu microfone e quem está falando)
  *   voz-configuracoes-claude.png   Configurações > GRÁFICOS E SOM > CHAT DE VOZ (com o selo TESTE: ainda restrito)
  *
- *   node .decepticons/medicoes/voz-jogo.mjs
+ *   node .decepticons/medicoes/voz-jogo.mjs              # as duas fotos (jogo online + colega falando)
+ *   node .decepticons/medicoes/voz-jogo.mjs --so-config  # só a foto das Configurações (sem servidor, sem colega: rápido e leve)
  *
  * SwiftShader (sem GPU): o jogo roda devagar, mas a interface é a de verdade. G15: temporários em `.tmp/`.
  */
@@ -19,11 +20,12 @@ mkdirSync(DADOS, { recursive: true });
 process.env.TEMP = process.env.TMP = process.env.TMPDIR = TMP;
 const { chromium } = await import('playwright-core');
 const saida = resolve('.decepticons', 'arte');
+const soConfig = process.argv.includes('--so-config');
 const tom = resolve(DADOS, 'tom.wav');
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const { startServer } = (await runnerImport(resolve('server/Server.ts'), { configFile: false, logLevel: 'warn' })).module;
-const jogo = await startServer({ port: 2599, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 200, total: 400, msgs: 200, burst: 200 }, log: () => {} });
+const jogo = soConfig ? null : await startServer({ port: 2599, host: '127.0.0.1', dbContas: ':memory:', guard: { perIp: 200, total: 400, msgs: 200, burst: 200 }, log: () => {} });
 const vite = await createServer({ configFile: resolve('vite.config.ts'), logLevel: 'error', server: { port: 5196, strictPort: false, open: false } });
 await vite.listen();
 const base = vite.resolvedUrls.local[0];
@@ -43,35 +45,44 @@ try {
   const erros = new Set();
 
   // O colega: uma página da bancada falando um tom, na mesma sala.
-  const colega = await browser.newPage();
-  colega.on('pageerror', (e) => erros.add(`colega: ${e.message}`));
-  await colega.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
-  await colega.goto(`${base}@fs/${PAGINA}?${new URLSearchParams({ servidor: 'ws://127.0.0.1:2599', sala: 'VOZ', nome: 'BRAVO', dsp: '0' })}`);
+  if (!soConfig) {
+    const colega = await browser.newPage();
+    colega.on('pageerror', (e) => erros.add(`colega: ${e.message}`));
+    await colega.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
+    await colega.goto(`${base}@fs/${PAGINA}?${new URLSearchParams({ servidor: 'ws://127.0.0.1:2599', sala: 'VOZ', nome: 'BRAVO', dsp: '0' })}`);
+  }
 
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   page.on('pageerror', (e) => erros.add(e.message));
   await page.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
-  await page.goto(`${base}?sala=VOZ&nome=DAN&servidor=ws://127.0.0.1:2599&comandante=1`);
+  await page.goto(soConfig ? `${base}?comandante=1` : `${base}?sala=VOZ&nome=DAN&servidor=ws://127.0.0.1:2599&comandante=1`);
   await page.waitForFunction(() => document.getElementById('cta')?.textContent?.includes('jogar'), null, { timeout: 240_000, polling: 500 }).catch(() => {});
   for (let i = 0; i < 4; i++) {
     await page.click('#cta').catch(() => {});
     await page.waitForTimeout(500);
   }
   // Espera o indicador de voz mostrar o colega falando (a sala, a ligação e o áudio têm de funcionar no jogo de verdade).
-  const falou = await page
+  const falou = soConfig ? true : await page
     .waitForFunction(() => (document.querySelector('.voz-fala')?.textContent ?? '').includes('BRAVO'), null, { timeout: 180_000, polling: 500 })
     .then(() => true)
     .catch(() => false);
-  console.log(`indicador mostra BRAVO falando: ${falou}`);
-  console.log('estado:', JSON.stringify(await page.evaluate(() => ({ estado: document.querySelector('.voz-estado')?.textContent, rede: document.querySelector('.voz-rede')?.textContent, fala: document.querySelector('.voz-fala')?.textContent, escondido: document.querySelector('.voz-hud')?.hidden }))));
-  await dormir(500);
-  await page.screenshot({ path: resolve(saida, 'voz-hud-jogo-claude.png') });
+  if (!soConfig) {
+    console.log(`indicador mostra BRAVO falando: ${falou}`);
+    console.log('estado:', JSON.stringify(await page.evaluate(() => ({ estado: document.querySelector('.voz-estado')?.textContent, rede: document.querySelector('.voz-rede')?.textContent, fala: document.querySelector('.voz-fala')?.textContent, escondido: document.querySelector('.voz-hud')?.hidden }))));
+    await dormir(500);
+    await page.screenshot({ path: resolve(saida, 'voz-hud-jogo-claude.png') });
+  }
 
   // As configurações: a seção CHAT DE VOZ (com o selo TESTE).
   await page.evaluate(() => document.getElementById('btn-settings')?.click());
   await page.waitForTimeout(400);
-  await page.click('.settings-tab[data-tab="graficos"]').catch(() => {});
-  await page.waitForTimeout(400);
+  // Pelo DOM (o clique do mouse não chegava na aba com o jogo por trás) e rola até a seção da voz.
+  await page.evaluate(() => {
+    document.querySelector('.settings-tab[data-tab="graficos"]')?.click();
+    document.querySelector('.settings-section[data-tab="graficos"][data-func="tela:voz"]')?.scrollIntoView({ block: 'center' });
+  });
+  await page.waitForTimeout(500);
+  console.log('aba ativa:', await page.evaluate(() => document.querySelector('.settings-tab.active')?.textContent), '| seção da voz visível:', await page.evaluate(() => { const s = document.querySelector('.settings-section[data-func="tela:voz"]'); return !!s && getComputedStyle(s).display !== 'none'; }));
   const modal = page.locator('#settings-modal');
   await modal.screenshot({ path: resolve(saida, 'voz-configuracoes-claude.png') }).catch(async () => page.screenshot({ path: resolve(saida, 'voz-configuracoes-claude.png') }));
   console.log(`erros de página: ${erros.size}`);
@@ -80,5 +91,5 @@ try {
 } finally {
   await browser?.close();
   await vite.close();
-  await jogo.close();
+  await jogo?.close();
 }

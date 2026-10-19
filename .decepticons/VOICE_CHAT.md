@@ -21,7 +21,7 @@ Os jogadores humanos de uma sala falam com o microfone. O áudio vai **direto de
 | Tecla T: segurar (PTT) | T **segura** no modo "segurar para falar" e **alterna o mudo** no modo "sempre aberto" | Com o mouse travado no jogo não dá para clicar em botão; uma tecla só para os dois modos. Trocável em Configurações > Controles |
 | Ícone de alto-falante nas placas de nome | Uma linha no canto de baixo à esquerda com o estado do microfone e **quem está falando** | A placa de nome é canvas do `Nameplates.ts`; a linha do HUD resolve sem mexer nele |
 | Microfone pedido ao entrar | Igual, **mas só se a funcionalidade estiver liberada** | Entrou no catálogo como `restrito` (regra do P191); sem isso nenhum visitante veria o pedido de microfone |
-| Bundle ~4 KB gzip | Medido no `npm run check` (orçamento de JS no `STATUS_REAL`) | Ver seção 5 |
+| Bundle ~4 KB gzip no pacote de todos | **Pedaço sob demanda** (`import()` no `Game.ts`): **3,5 + 0,7 KB gzip**, baixados só por quem liga a voz numa sala online. O JS de partida ficou em **495,4 de 500 KB** (com a voz estática estava em 498,2: a dieta de JS, P187) | O jogador que não usa voz (o público, enquanto `tela:voz` for restrita) nunca baixa nada dela |
 
 ## 3. Como funciona
 
@@ -42,6 +42,7 @@ Os jogadores humanos de uma sala falam com o microfone. O áudio vai **direto de
 - **Um transceptor de áudio de ida e volta por ligação.** O microfone entra e sai por `replaceTrack` (apertar-para-falar, mudo, microfone que só chega depois do "permitir" do navegador) **sem renegociar**. Por isso quem **recusa o microfone entra como ouvinte** e quem o libera depois começa a falar sem refazer a ligação (provado na bancada).
 - **Áudio espacial:** cada colega passa por um `PannerNode` na posição do robô dele; o ouvinte é o seu robô, olhando para onde a câmera olha. **Volume cheio até 12 m, cai em linha reta e some em 160 m** (`ALCANCE_DA_VOZ`). Reaproveita o `AudioContext` do jogo (um contexto só).
 - **Quem fala:** um `AnalyserNode` por colega, lido a 10 Hz (só o indicador da tela; nada vai pela rede).
+- **Carregamento:** o `Game.ts` só baixa o pedaço da voz quando o jogador a quer **e** está numa sala online **e** a funcionalidade está liberada; o `WELCOME` que passou antes do download é reposto com o id guardado.
 - **Reconexão:** quando a conexão com a sala cai, as ligações fecham e, na volta, o chat entra na voz de novo **sem pedir o microfone outra vez**.
 - **Código:** `shared/net/voz.ts` (contrato), `server/voz.ts` (relé, ligado em `ArenaRoom.ts`), `client/src/voice/` (`VoiceChat`, `MicController`, `VoiceSpatial`, `VoiceHud`, `opus`), configurações em `Settings.ts` (`voiceOn`, `voiceMode`, `voiceVolume`, tecla `ptt`).
 
@@ -59,11 +60,23 @@ Texto sugerido para a política:
 
 ## 5. Provas
 
-**Testes de unidade (rodam no `npm run check`):** o contrato (6), o relé (9), a sala e a rede de verdade com o teto de tamanho (5), o Opus no SDP (5), o microfone (5), o áudio espacial (9), a malha P2P com conexão falsa (22), o HUD e as seis línguas (11) e as configurações (5).
+**Testes (rodam no `npm run check`), 81 novos:** o contrato (6), o relé (9), a sala e a rede de verdade com o teto de tamanho (5), o Opus no SDP (5), o microfone (5), o áudio espacial (9), a malha P2P com conexão falsa (27), o HUD e o texto nas seis línguas (9), as configurações (5) e a `OnlineSession` contra o servidor de verdade (1). **Mutação à mão: 34 defeitos plantados, 33 pegos**; o que escapou (a voz nascer pública em vez de restrita) virou teste do catálogo.
 
 **Bancada em Chrome de verdade (`node .decepticons/medicoes/voz.mjs`)**, com um servidor de jogo de verdade, o `NetClient`, o `VoiceChat` e o áudio espacial do jogo, e microfone falso (um arquivo de tom ou de silêncio):
 
-<<MEDIDAS>>
+| O que foi medido | Resultado |
+|---|---|
+| Dois navegadores se ligam por WebRTC (a sinalização passou pelo servidor, o áudio foi direto) | sim, nos dois sentidos |
+| Mudo (T no modo aberto) e apertar-para-falar (T segurado) | a faixa fecha e o outro lado **deixa de ouvir**; abre e ouve de novo |
+| **Voz espacial:** volume a 5 m, a 100 m e a 200 m (RMS depois do panner) | **0,282 → 0,114 (0,41×) → 0** (a queda em linha reta entre 12 e 160 m) |
+| Microfone recusado | entra como ouvinte: **ouve** o outro, o outro **não** o ouve |
+| Microfone que chega depois da ligação (8 s) | o outro passa a ouvi-lo **sem renegociar** (`replaceTrack`) |
+| Quem fecha a aba | some da voz dos outros e a ligação é desfeita |
+| Restrições reais do microfone do jogo (eco, ruído, ganho automático) | aceitas pelo Chrome |
+| **Custo na rede falando** (por colega) | **52 pacotes/s, 37 kbps** com os cabeçalhos RTP (a carga é o teto de 24 kbps) |
+| **Custo na rede calado, microfone aberto** (por colega) | **5,5 pacotes/s, 1,9 kbps** — é o DTX; sem ele seriam ~50 pacotes/s |
+
+Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qualquer verificação falhar. Capturas do **jogo de verdade** em `?comandante=1` (com um colega falando, `medicoes/voz-jogo.mjs`): `arte/voz-hud-jogo-claude.png` (o indicador no canto de baixo à esquerda: "MICROFONE ABERTO: [T] MUDA" e "▶ BRAVO") e `arte/voz-configuracoes-claude.png` (Configurações > GRÁFICOS E SOM > CHAT DE VOZ, com o selo TESTE).
 
 ## 6. O que falta
 
