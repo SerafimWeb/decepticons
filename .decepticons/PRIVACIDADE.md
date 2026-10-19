@@ -57,7 +57,7 @@
 
 1. **Revisar o texto da política** (rascunho meu, a partir deste inventário) e dizer se concorda com as escolhas: **18 anos ou autorização do responsável**; **30 dias** de registro; **400 dias** de atividade; **14 dias** de backups. De preferência, com um advogado.
 2. **Contato do encarregado:** o e-mail está em `.decepticons/contato-privacidade.txt` (feito em 18/10) e a política o mostra. **Sem CNPJ (decisão do Comandante, 18/10):** a seção 1 diz que o jogo é desenvolvido por uma pessoa física, sem empresa por ora. **Falta o nome do encarregado** (a LGPD pede a identidade); ele decide se o publica.
-3. **Limpar o `servidor.log` antigo** (hoje: 1 e-mail e 16 IPs de rede): com o **processo** do servidor parado, apagar o arquivo (`DEPLOY.md` § 4c). **Parar a tarefa não basta** (tentado em 18/10: o servidor seguiu no ar, EBUSY).
+3. **Limpar o `servidor.log` antigo:** **feito em 18/10** (o Comandante autorizou, "se tiver alguém, ela tenta de novo"). O arquivo tinha 1 e-mail e 16 IPs de rede; foram **mascarados no lugar, sem mudar o tamanho** (`212.8.252.xxx`, `xxxxxx@xxxxx.xxx`), com o servidor parado por `scripts\parar-servidor.ps1` e religado por `scripts\ligar-servidor.ps1`; conferido depois: 0 e 0. O arquivo novo só leva o que o Node escreve sozinho.
 4. **Recuperação de senha e verificação de e-mail:** não existem; exigem um serviço de e-mail transacional (decisão e custo dele).
 5. **Corrigir o e-mail da conta:** não existe (exige a verificação do item 4).
 6. **Idiomas:** o painel de conta e a política só em português.
