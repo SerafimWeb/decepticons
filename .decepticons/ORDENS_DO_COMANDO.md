@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P227 — Economia antes de seguir, o token que não pode sumir e o painel do servidor (20/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P227 | 20/10 | "nesses 500 KB, será que **tudo** é realmente fundamental estar ali? temos que ser **ECONÔMICOS, ESTRATÉGICOS E SEMPRE OTIMIZAR TUDO antes de continuar desenvolvendo**"; "o menu do servidor precisa ser evoluído também"; "**não quero re-digitar o token** no PC onde já digitei como Comandante"; "poupe trabalho e sejamos padrão PROFISSIONAL"; (sobre o mapa) "acho que o erro é porque os textos da legenda … usam espaçamento ou fontes diferentes e isso faz o mapa tiltar" | 🟡 | **Token:** o botão **[ SAIR DO PAINEL ]** (parecia "fechar") **apagava o token** do aparelho: agora é **[ FECHAR ]**, e "esquecer token" é um botão discreto com confirmação; e **sem o token do dono vale a sessão da conta de administrador** do aparelho (quem entrou uma vez não digita nada). **Painel:** a sala mostra o nome do mapa. **Tilt:** a causa é exatamente a que o Comandante apontou (a ficha de baixo muda de altura por missão e espreme o mapa): conserto no #421, medido 0 de 7; o print dele era do site antigo. **Pacote de partida:** inventário e cortes em andamento (o A1/A2 espera) | `ServerPanel` (Modo Comandante → SERVIDOR); `net/admin.ts`; o inventário do pacote no `ESTADO_ATUAL` |
+
 ## P224 — Concluir o projeto: o plano de lançamento, o `?comandante=1` e o mapa que tremia (19/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

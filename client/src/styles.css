@@ -4263,6 +4263,9 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .srv-pe .btn-terminal.off:hover { background: rgba(6, 8, 10, 0.9); color: var(--accent); box-shadow: 0 0 10px rgba(57, 255, 106, 0.2); }
 .srv-perigo { color: #ff8e98; border-color: var(--alert); box-shadow: 0 0 10px rgba(255, 45, 61, 0.2); }
 .srv-perigo:hover { background: var(--alert); color: #fff; box-shadow: 0 0 14px var(--alert); }
+.srv-discreto { opacity: 0.6; margin-left: auto; }
+.srv-discreto:hover { opacity: 1; }
+.srv-mapa { color: var(--cyan, #38e1ff); letter-spacing: 0.04em; }
 .srv-confirma { max-width: 52ch; font-size: 11.5px; line-height: 1.4; color: var(--warn); }
 
 @media (max-width: 920px) {
