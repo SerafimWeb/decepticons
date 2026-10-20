@@ -4,6 +4,8 @@
 > observabilidade, governança, tudo que for ainda necessário. Vamos lançar com apenas a fase estação dos cabos e cidade neon livres, depois vamos liberar a terras raras (troque o nome rio vivo para terras raras); faça auditoria
 > se nossa arquitetura está segura para lançarmos."* **Esta página manda na escolha do que fazer a seguir** (`AGENTS.md`, Passo Zero 12): o que não está aqui **espera o lançamento**, a menos que o Comandante peça.
 
+> **Atualização 19/10 (P224):** a ordem de hoje é lançar com **2 a 3 missões prontas, offline e online, co-op ou competitivo**: o plano e os pacotes estão em **`CAMINHO_DO_LANCAMENTO.md`**, que passa a mandar **no que diz respeito às missões**; o que esta página diz sobre segurança, privilégio, auditoria, servidor e política continua valendo.
+
 ## 1. O que é "lançar"
 
 Abrir `cybermech.online` ao público: **jogo grátis no navegador**, com **dois mapas livres: CIDADE NEON (a Arena) e a ESTAÇÃO DOS CABOS (a Praia dos Cabos)**, **online na Arena**, **conta opcional** e **política de privacidade**.
@@ -23,6 +25,8 @@ Abrir `cybermech.online` ao público: **jogo grátis no navegador**, com **dois 
 | 8 | **Servidor fora do PC de trabalho** | O servidor de jogo roda no PC em que se trabalha (6 GB, ~500 MB livres): foi ele que derrubou as conexões em 17/10 | **Comandante decide onde e quanto custa** (uma VPS ou um PC dedicado 24 h); Claude instala | Máquina própria, túnel e atualização automática, **dois PCs jogam 30 minutos sem queda** |
 | 9 | **Teste com gente de fora** | O online só foi testado por dois PCs do Comandante | Comandante convida 5 a 10 pessoas; Claude olha as métricas e o log | Três sessões de ~30 min, sem queda de servidor, e a lista do que estranharam |
 | 10 | **Política revisada** | Entregue em 18/10 (P192), mas é rascunho | **Comandante** (de preferência com um advogado) | Texto revisado, e-mail do encarregado em `.decepticons/contato-privacidade.txt`, razão social/CNPJ no texto |
+
+| 11 | **Fechar o atalho do Comandante** (P224) | O `?comandante=1` abre, no site publicado, as fases restritas para quem digitar o link. É interruptor de desenvolvimento: no lançamento se fecha com uma linha. **Dois passos juntos:** (a) escrever `"comandantePorLink": false` em `.tmp/servidor/deploy-site.json` e publicar de novo; (b) o **servidor recusar mapa restrito a quem não é administrador** (**feito:** pacote A0, P226) | O (b) está feito; **o Comandante diz "pode fechar" e o Claude faz o (a)** | `https://cybermech.online/?comandante=1` **não** mostra o IMPLANTAR do 8 DE JANEIRO, e a conta de administrador continua abrindo o modo Comandante. **Lembrete automático:** enquanto estiver aberto, cada publicação do site escreve `LEMBRETE DE LANÇAMENTO` no log (`.tmp/servidor/publicar-site.log`) |
 
 **Ordem:** 1 → 2, 3, 4 (a auditoria diz o que corrigir primeiro) → 7 (rápido) → 5 e 6; 8, 9 e 10 são do Comandante e andam em paralelo; o 9 só depois do 8.
 

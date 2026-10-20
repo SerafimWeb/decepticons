@@ -29,7 +29,7 @@ export interface Teatro {
   resumo: string;
   /** O lugar ainda não foi confirmado pelo Comandante. */
   proposta: boolean;
-  /** De que lado do marcador vai o nome (Manaus e Fortaleza estão na mesma latitude: um nome para cada lado). */
+  /** De que lado do marcador vai o nome (Fortaleza e a Terras Raras estão na mesma latitude: um nome para cada lado). */
   lado: 'esquerda' | 'direita';
 }
 
@@ -61,7 +61,8 @@ export const TEATROS: readonly Teatro[] = [
     modos: [], resumo: 'As turbinas que alimentam os datacenters do país.', proposta: true, lado: 'esquerda',
   },
   {
-    id: 'chips', nome: 'FÁBRICA DE CHIPS', lugar: 'Manaus · AM', lat: -3.12, lon: -60.02, recurso: 'chips',
+    // Era em Manaus, a 7° da TERRAS RARAS: os nomes se sobrepunham no mapa-múndi. O Comandante o mandou para o oeste (Acre, Rondônia ou Roraima, 19/10); Porto Velho, a 11° da mina e longe de todos os outros.
+    id: 'chips', nome: 'FÁBRICA DE CHIPS', lugar: 'Porto Velho · RO', lat: -8.76, lon: -63.9, recurso: 'chips',
     modos: [], resumo: 'Sala limpa e braços robóticos: o silício que as IAs querem.', proposta: true, lado: 'esquerda',
   },
 ];

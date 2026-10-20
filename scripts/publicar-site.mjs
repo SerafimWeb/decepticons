@@ -114,6 +114,8 @@ function montar() {
     // As capturas do jogo ficam guardadas para as montagens sem Chrome (a landing não perde as fotos).
     CYBERMECH_CAPTURAS_CACHE: join(DADOS, 'site-capturas'),
     ...(cfg.gameServer ? { VITE_GAME_SERVER: cfg.gameServer } : {}),
+    // O atalho `?comandante=1` no site publicado (P224): ligado enquanto se desenvolve; **no lançamento, `"comandantePorLink": false` em deploy-site.json o fecha** (só a conta de administrador abre o modo Comandante).
+    VITE_COMANDANTE_POR_LINK: cfg.comandantePorLink === false ? '0' : '1',
     ...(cfg.url ? { SITE_URL: cfg.url } : {}),
   };
   const r = spawnSync('npm', ['run', 'site', ...(tem('--capturas') ? ['--', '--capturas'] : [])], { cwd: RAIZ, env, encoding: 'utf8', shell: process.platform === 'win32', maxBuffer: 256 * 1024 * 1024 });
@@ -223,3 +225,5 @@ if (!(await publicar())) {
 writeFileSync(`${MARCA}.tmp`, head);
 renameSync(`${MARCA}.tmp`, MARCA);
 log(`PUBLICADO: ${head.slice(0, 7)} no ar (conferido por checksum: ${arquivosDeConferencia().join(', ')})`);
+// O lembrete que não depende de memória: a cada publicação, enquanto o atalho estiver aberto, o log diz o que fechar no lançamento (LANCAMENTO.md, item 11).
+if (cfg.comandantePorLink !== false) log('LEMBRETE DE LANÇAMENTO: o atalho ?comandante=1 está ABERTO no site publicado (quem digitar o link vê as fases restritas). Para fechar: "comandantePorLink": false em .tmp/servidor/deploy-site.json e publicar de novo (LANCAMENTO.md, item 11).');

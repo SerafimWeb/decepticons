@@ -2,7 +2,7 @@ import './styles.css';
 import { installDiagnostics, runtimeDiagnostics } from './core/runtimeDiagnostics';
 import { iniciarIdioma, ligarSeletorIdioma } from './i18n/i18n';
 import { definirVisibilidadeGlobal, sanearLink, Visibilidade } from './core/Visibilidade';
-import { lerModoComandante, COMANDANTE_KEY } from './ui/consoleData';
+import { decidirModoComandante } from './core/ModoComandante';
 import { browserStorage } from './core/Settings';
 import { defaultServer } from './net/onlineConfig';
 
@@ -14,15 +14,10 @@ const started = performance.now();
  */
 async function prepararVisibilidade(): Promise<void> {
   const armazem = browserStorage();
-  let lembrado: string | null = null;
-  try {
-    lembrado = armazem?.getItem(COMANDANTE_KEY) ?? null;
-  } catch {
-    /* sem armazenamento */
-  }
-  const v = new Visibilidade(lerModoComandante(location.search, lembrado).ligado, armazem);
-  definirVisibilidadeGlobal(v);
   const servidor = new URLSearchParams(location.search).get('servidor') || defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER);
+  const comandante = await decidirModoComandante(servidor);
+  const v = new Visibilidade(comandante, armazem);
+  definirVisibilidadeGlobal(v);
   if (servidor) await Promise.race([v.carregar(servidor), new Promise<boolean>((fim) => setTimeout(() => fim(false), 1500))]);
   const limpo = sanearLink(location.search, v);
   if (limpo !== null) history.replaceState(null, '', `${location.pathname}${limpo ? `?${limpo}` : ''}${location.hash}`);

@@ -1,9 +1,11 @@
 import { mulberry32 } from '../core/rng';
+import { PRACA_SPAWNS } from './PracaNascimentos';
+export { PRACA_SPAWNS };
 
 /**
  * A PRAÇA DOS TRÊS PODERES (P217 e P222, `fichas/cenario-8-de-janeiro.md`): o chão da fase do 8 DE JANEIRO, em **dados puros** (sem THREE, sem física, sem DOM: o servidor e os testes leem o mesmo
- * layout). O desenho e os colisores moram em `PracaMapa.ts`, **carregado sob demanda** (`mapasSobDemanda.ts`); este arquivo é o único que o pacote de partida enxerga (os pontos de nascimento,
- * a capacidade e os limites), e é pequeno de propósito (o teto de 500 KB de JS, R7).
+ * layout). O desenho e os colisores moram em `PracaMapa.ts`, **carregado sob demanda** (`mapasSobDemanda.ts`); só os pontos de nascimento
+ * (`PracaNascimentos.ts`) ficam no pacote de partida; este arquivo (prédios, blocos, fontes da multidão) baixa **com o mapa**, e nada do pacote de partida pode importá-lo (o teto de 500 KB de JS, R7).
  *
  * **O mapa é compacto, no núcleo da confusão** (P222: *"não precisa ser grande como a Terras Raras, para o jogo ser mais dinâmico"*): 224 × 160 m. Do oeste para o leste: o pé da Esplanada (o gramado,
  * os ministérios, o acampamento dos ônibus e dos bueiros), **a linha de gradis** (a que a multidão derruba), **o Congresso** (a laje, as **duas rampas brancas** que sobem ao telhado, o saguão no térreo,
@@ -97,29 +99,6 @@ export const PRACA_PREDIOS: readonly PredioDaPraca[] = [
       mesas: [{ x: 50, z: 63 }, { x: 50, z: 69 }, { x: 62, z: 63 }, { x: 62, z: 69 }, { x: 74, z: 63 }, { x: 74, z: 69 }],
     },
   },
-];
-
-/**
- * Onde o jogador e os rebeldes nascem no Deathmatch (o primeiro é do jogador). Todos em chão livre **fora dos saguões** (nenhum Mech nasce onde não cabe sair). O teste confere que nenhum cai
- * dentro de um bloco sólido nem colado numa parede.
- */
-export const PRACA_SPAWNS: readonly (readonly [number, number])[] = [
-  [66, -12],
-  [66, 12],
-  [54, 0],
-  [82, 0],
-  [90, -36],
-  [90, 36],
-  [54, -34],
-  [76, -34],
-  [76, 30],
-  [-10, 0],
-  [-12, 16],
-  [-12, -16],
-  [-50, 0],
-  [-72, 18],
-  [-72, -18],
-  [-96, 0],
 ];
 
 /**

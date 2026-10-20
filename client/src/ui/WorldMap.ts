@@ -129,7 +129,37 @@ export class WorldMap {
       b.addEventListener('click', () => this.zoom(b.dataset.zoom === 'mundo' ? 'mundo' : 'brasil'));
     }
     this.pintarAbas();
-    new ResizeObserver(() => this.medir()).observe(this.canvas.parentElement!);
+    new ResizeObserver(() => {
+      this.reservarAltura();
+      this.medir();
+    }).observe(this.canvas.parentElement!);
+  }
+
+  /** A largura em que a altura da ficha foi reservada (0: ainda não; a ficha só tem largura com o console à vista). */
+  private larguraReservada = 0;
+
+  /**
+   * **O mapa não pode mudar de tamanho ao passar o mouse** (19/10: "o mapa treme, como se mudasse de tamanho, pisca e volta"). A ficha de baixo tem alturas diferentes (o nome, o lugar e o resumo ocupam de 2 a 4 linhas) e o mapa ocupa o
+   * que sobra: 6 dos 7 pinos mudavam o mapa em 15 a 30 px, e cada mudança redesenhava a tela. Agora a ficha **reserva a altura da maior** (monta cada missão numa sonda invisível e mede), e o mapa fica parado.
+   */
+  private reservarAltura(): void {
+    const f = this.ficha;
+    const largura = f.offsetWidth;
+    if (largura === 0 || largura === this.larguraReservada) return;
+    this.larguraReservada = largura;
+    const sonda = document.createElement('div');
+    sonda.style.cssText = `position:absolute;left:-9999px;top:0;visibility:hidden;pointer-events:none;width:${largura}px`;
+    f.parentElement!.append(sonda);
+    let maior = 0;
+    for (const t of TEATROS) {
+      this.preencher(sonda, t);
+      maior = Math.max(maior, sonda.offsetHeight);
+    }
+    sonda.remove();
+    f.style.minHeight = `${maior}px`;
+    // com `box-sizing: content-box` o `min-height` não inclui o preenchimento: acerta pelo que a ficha realmente ocupa
+    const sobra = f.offsetHeight - maior;
+    if (sobra > 0) f.style.minHeight = `${maior - sobra}px`;
   }
 
   /** O atalho Z: troca entre o zoom BRASIL e o MUNDO. */
@@ -142,6 +172,8 @@ export class WorldMap {
     const aqui = TEATROS.find((t) => t.mapa === this.ctx.mapa);
     if (aqui) this.pins.get(aqui.id)?.style.setProperty('--ameaca', String(this.ctx.ameaca()));
     this.marcarSelecao();
+    this.larguraReservada = 0; // o estado das missões pode ter mudado (a ficha de cada uma muda de altura): mede de novo
+    this.reservarAltura();
     this.mostrar(this.selecionado);
   }
 
@@ -335,8 +367,12 @@ export class WorldMap {
 
   /** A ficha da missão no canto do mapa: onde é, o que se disputa, em que modos roda e o que fazer. */
   private mostrar(t: Teatro): void {
+    this.preencher(this.ficha, t);
+  }
+
+  /** Monta a ficha de `t` em `f` (a ficha à vista, ou a sonda que mede a altura). */
+  private preencher(f: HTMLElement, t: Teatro): void {
     const estado = estadoDoTeatro(t, this.ctx.mapa, this.ctx.modo);
-    const f = this.ficha;
     f.className = `teatro-ficha ficha-${estado}`;
     f.replaceChildren();
     const linha = (cls: string, texto: string) => {

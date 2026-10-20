@@ -2,6 +2,7 @@ import type { MapId } from '../environment/Bunker';
 import type { MechPart } from '../entities/MechBase';
 import type { Difficulty } from '../core/Settings';
 import { PERSONA_LABELS } from '../core/Settings';
+import { modoComandante } from '../core/ModoComandante';
 import type { LoadoutSpec } from '../hangar/loadout';
 import { MAPA_NOME } from '../sim/campanha';
 import type { GameMode } from '../sim/gameMode';
@@ -10,7 +11,6 @@ import {
   COMANDANTE_KEY,
   contagemInimigos,
   fichaDoMech,
-  lerModoComandante,
   MESA_COMANDO,
   MESA_URL,
   nivelDeAmeaca,
@@ -106,11 +106,8 @@ export class CommandConsole {
     private readonly hooks: ConsoleHooks,
     private readonly root: HTMLElement = document.getElementById('overlay')!,
   ) {
-    const lembrado = ler(COMANDANTE_KEY);
-    const modo = lerModoComandante(location.search, lembrado);
-    if (modo.gravar === '1') gravar(COMANDANTE_KEY, '1');
-    else if (modo.gravar === 'apagar') gravar(COMANDANTE_KEY, null);
-    this.comandante = modo.ligado;
+    // Decidido uma vez no início (`main.ts` → `core/ModoComandante.ts`): o link só vale em desenvolvimento; em produção, a conta de administrador.
+    this.comandante = modoComandante();
     this.primeira = ehPrimeiroAcesso(location.search, armazemDoNavegador());
     if (this.primeira) this.prepararPrimeiroAcesso();
 
@@ -568,14 +565,6 @@ const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).repla
 function armazemDoNavegador(): Armazem | null {
   try {
     return typeof localStorage === 'undefined' ? null : localStorage;
-  } catch {
-    return null;
-  }
-}
-
-function ler(chave: string): string | null {
-  try {
-    return localStorage.getItem(chave);
   } catch {
     return null;
   }
