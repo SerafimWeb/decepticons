@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { delimiter, join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { BASH, temBash } from './ajudaBash';
 
 /**
  * O hook de push não repete o `npm run check` na mesma árvore (AGENTS.md, regra 19c). O perigo é o inverso do que se quer: o portão pular um check que devia rodar.
@@ -39,20 +40,6 @@ const empurrar = (sha: string, ref = 'refs/heads/claude/tarefa', npmSai = '0') =
 const chamadasDoNpm = () => (existsSync(LOG) ? readFileSync(LOG, 'utf8').split('\n').filter(Boolean).length : 0);
 const arvoresGuardadas = () => (existsSync(join(REPO, '.tmp', 'check-ok')) ? readdirSync(join(REPO, '.tmp', 'check-ok')) : []);
 
-/**
- * O `bash` DO GIT (é o que o `git push` usa para rodar o hook). No Windows, `bash` solto no PATH pode ser o lançador do **WSL** (`C:\Windows\System32\bash.exe`): ele responde "ok" a `exit 0`, mas não enxerga
- * `D:\...` e devolve 127 ("No such file"). Foi o que **reverteu cada atualização de produção** (19/10: o site e o servidor ficaram 2 h sem publicar): no Git Bash do dono passava; na tarefa agendada, não.
- * Por isso aqui se acha o `bash.exe` ao lado do `git` (`<raiz>/mingw64/libexec/git-core` → `<raiz>/bin/bash.exe`); sem ele, a suíte pula.
- */
-function acharBash(): string | null {
-  if (process.platform !== 'win32') return 'bash';
-  const g = spawnSync('git', ['--exec-path'], { encoding: 'utf8' });
-  if (g.status !== 0) return null;
-  const candidato = join(resolve(g.stdout.trim(), '..', '..', '..'), 'bin', 'bash.exe');
-  return existsSync(candidato) ? candidato : null;
-}
-const BASH = acharBash() ?? 'bash';
-const temBash = acharBash() !== null && spawnSync(BASH, ['-c', 'exit 0']).status === 0;
 
 beforeAll(() => {
   if (!temBash) return;

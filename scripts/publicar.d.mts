@@ -24,3 +24,6 @@ export interface OpcoesPublicar {
 }
 
 export function publicar(ops: OperacoesPublicar, opcoes: OpcoesPublicar): Promise<{ ok: boolean; motivo?: string; pr?: number; merge?: string }>;
+
+/** O ambiente do `git push`: com `--sem-ci` liga `CYBERMECH_CHECK_COMPLETO` (o hook não pula o check da junção sem o CI). */
+export function ambienteDoPush(semCi: boolean, base?: Record<string, string | undefined>): Record<string, string | undefined>;
