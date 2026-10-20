@@ -17,7 +17,7 @@ import {
 import { NARRACOES, ROTULO_DA_NARRACAO, type Narracao } from '../audio/falas';
 import { listarAparelhos } from '../voice/aparelhos';
 import type { MicTest } from '../voice/MicTest';
-import { type ElegibilidadeDaVoz, TEXTO_DA_ELEGIBILIDADE } from '../voice/elegibilidade';
+import { type ElegibilidadeDaVoz, TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ } from '../voice/elegibilidade';
 import { ligarPasso } from './Passo';
 import { attachSettingsTabs, isSettingsTab, type SettingsTab } from './settingsTabs';
 
@@ -134,6 +134,15 @@ export class SettingsMenu {
         // `data-settings-foco` (o atalho da conta no canto, P176): rola a aba até o bloco pedido, que fica no fim dela.
         const foco = el.dataset.settingsFoco;
         if (foco) document.getElementById(foco)?.closest('.settings-section')?.scrollIntoView({ block: 'start' });
+        // O botão da voz do convidado (P226): além de rolar até a conta, deixa a aba "CRIAR CONTA" aberta (o formulário da conta chega sob demanda: espera ele aparecer).
+        if (el.dataset.contaCriar === '1') {
+          const abrirCriar = (restam: number): void => {
+            const aba = document.getElementById('tab-login-criar');
+            if (aba) aba.click();
+            else if (restam > 0) setTimeout(() => abrirCriar(restam - 1), 150);
+          };
+          abrirCriar(12);
+        }
       });
     }
 
@@ -327,6 +336,13 @@ export class SettingsMenu {
     const aviso = $('voz-elegibilidade');
     aviso.hidden = liberada;
     aviso.textContent = liberada ? '' : TEXTO_DA_ELEGIBILIDADE[e];
+    // O botão leva ao que falta: o convidado cria a conta (já na aba CRIAR CONTA), a conta sem idade informa a idade.
+    const botao = $('btn-voz-conta') as HTMLButtonElement;
+    const texto = liberada ? undefined : TEXTO_DO_BOTAO_DA_VOZ[e];
+    botao.hidden = !texto;
+    botao.textContent = texto ?? '';
+    if (e === 'convidado') botao.dataset.contaCriar = '1';
+    else delete botao.dataset.contaCriar;
     if (!liberada) this.micTest?.parar();
   }
 

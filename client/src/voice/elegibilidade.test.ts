@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IdadeDaConta } from '../../../shared/net/auth';
-import { type ElegibilidadeDaVoz, elegibilidadeDaVoz, TEXTO_DA_ELEGIBILIDADE, vozDeveLigar } from './elegibilidade';
+import { type ElegibilidadeDaVoz, elegibilidadeDaVoz, TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ, vozDeveLigar } from './elegibilidade';
 
 describe('elegibilidadeDaVoz (P211): só conta de maior de 18 anos abre o chat de voz', () => {
   it('a tabela inteira: logado × faixa de idade', () => {
@@ -42,5 +42,14 @@ describe('vozDeveLigar (P211): o jogador quer, o Comandante liberou e a conta é
   it('menor, sem idade e a sessão ainda não restaurada ficam sem voz mesmo com tudo o mais ligado', () => {
     for (const idade of ['menor', 'sem-idade', undefined] as const) expect(vozDeveLigar(true, true, idade)).toBe(false);
     expect(vozDeveLigar(true, true, 'adulto')).toBe(true);
+  });
+});
+
+describe('o botão da voz (P226): leva ao que falta', () => {
+  it('convidado cria a conta e conta sem idade informa a idade; menor e quem já pode não têm botão', () => {
+    expect(TEXTO_DO_BOTAO_DA_VOZ.convidado).toBe('[ CRIAR CONTA ]');
+    expect(TEXTO_DO_BOTAO_DA_VOZ['sem-idade']).toBe('[ INFORMAR MINHA IDADE ]');
+    expect(TEXTO_DO_BOTAO_DA_VOZ.menor, 'o menor não tem o que fazer').toBeUndefined();
+    expect(TEXTO_DO_BOTAO_DA_VOZ.liberada).toBeUndefined();
   });
 });

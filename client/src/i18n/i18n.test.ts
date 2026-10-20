@@ -6,7 +6,7 @@ import { validarEmail, validarSenha } from '../../../shared/net/auth';
 import { DICAS_DO_BOOT } from '../core/bootProgress';
 import { DIFFICULTY_LABELS, KEY_ACTIONS, PERSONA_LABELS, QUALITY_LABELS } from '../core/Settings';
 import { TEXTO_CONVIDADO, TEXTO_GUARDANDO, TEXTO_IDADE_GUARDADA, TEXTO_LOGADO } from '../ui/ContaSettings';
-import { TEXTO_DA_ELEGIBILIDADE } from '../voice/elegibilidade';
+import { TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ } from '../voice/elegibilidade';
 import { CUSTO_DO_CONSORCIO, LADOS, SELO_SEM_LADO, TEXTO_CONFIRMAR, TEXTO_CUSTO_RODAPE, TEXTO_CUSTO_TITULO, TEXTO_ELES_DIZEM, TEXTO_FECHAR, TEXTO_PERGUNTA, TEXTO_RODAPE, TEXTO_SEGUIR, TEXTO_SIGNIFICA, TEXTO_VOLTAR } from '../ui/LadoSelector';
 import { DICA_DA_ARMA } from '../ui/dicasDeArma';
 import { IDIOMAS, carregarDicionario, idiomaInicial, idiomaValido, t, traduzir, type Dicionario } from './i18n';
@@ -218,7 +218,7 @@ describe('a cobertura: o que o jogo mostra e o dicionário traduz', () => {
   });
 
   it('a idade e o chat de voz (P211): as três frases de quem não pode usar a voz, a confirmação e as mensagens do servidor (a criança lê isto no idioma dela)', () => {
-    const textos = [...Object.values(TEXTO_DA_ELEGIBILIDADE), TEXTO_IDADE_GUARDADA, 'informe o mês e o ano de nascimento', 'o nascimento já foi informado e não muda', 'não deu para guardar'];
+    const textos = [...Object.values(TEXTO_DA_ELEGIBILIDADE), ...Object.values(TEXTO_DO_BOTAO_DA_VOZ), TEXTO_IDADE_GUARDADA, 'informe o mês e o ano de nascimento', 'o nascimento já foi informado e não muda', 'não deu para guardar'];
     expect(textos.filter((x) => !coberto(x))).toEqual([]);
   });
 

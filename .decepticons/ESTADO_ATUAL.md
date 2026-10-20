@@ -7,6 +7,11 @@
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
+## JOGAR COM O MICROFONE: O CAMINHO ATÉ A VOZ — Claude, 20/10 (branch `claude/voz-conta-facil`, P227)
+
+**O Comandante (20/10):** o microfone funciona no Windows mas não conseguiu usar nem testar no jogo; aprovou as decisões pendentes da voz. **Causa:** o portão de idade escondia a voz sem dar caminho. **Feito:** botão [ CRIAR CONTA ] / [ INFORMAR MINHA IDADE ] na seção do chat de voz; Chrome real 36/36. **Para jogar com voz:** criar a conta (ou informar a idade, se a conta é antiga) em Configurações > GRÁFICOS E SOM > CHAT DE VOZ; depois TESTAR e entrar numa sala online. **Falta (R13):** mudo por jogador, aviso às contas antigas, idade no chat de texto, a prova positiva em produção (a rede daqui para o servidor está intermitente).
+
+
 ## O HOOK NÃO REFAZ O CHECK DEPOIS DE UMA JUNÇÃO PURA COM A MAIN — Claude, 19/10 (branch `claude/hook-juncao`, P225)
 
 **O Comandante (19/10):** economizar os 10 a 25 minutos do laço de push, com boas práticas. **Feito:** `scripts/juncaoJaVerificada.mjs` + o hook: depois de uma junção com a `main`, não refaz o check se a `main` entrou por cima de uma árvore já verificada e cada arquivo que mudou veio inteiro dela (ou é `.md`); mesclado dos dois lados roda tudo; `CYBERMECH_CHECK_COMPLETO=1` desliga (o `publicar --sem-ci` liga). 7 mutações pegas e a regra aplicada a junções reais. **Falta (R13):** só se confirma de verdade no próximo push depois de uma junção; os locales mesclados ainda rodam o check (próximo degrau no HISTORICO).

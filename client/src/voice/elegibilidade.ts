@@ -26,3 +26,12 @@ export const TEXTO_DA_ELEGIBILIDADE: Record<Exclude<ElegibilidadeDaVoz, 'liberad
 export function vozDeveLigar(querOJogador: boolean, liberadaPeloDono: boolean, idade: IdadeDaConta | undefined): boolean {
   return querOJogador && liberadaPeloDono && idade === 'adulto';
 }
+
+/**
+ * O botão que leva direto ao que falta (P226: o Comandante abriu a voz, só viu uma frase e não achou o formulário, no fim de outra aba): convidado cria a conta, conta sem idade informa a idade.
+ * O menor não tem botão (não há o que fazer) e quem já pode usar a voz também não.
+ */
+export const TEXTO_DO_BOTAO_DA_VOZ: Partial<Record<ElegibilidadeDaVoz, string>> = {
+  convidado: '[ CRIAR CONTA ]',
+  'sem-idade': '[ INFORMAR MINHA IDADE ]',
+};
