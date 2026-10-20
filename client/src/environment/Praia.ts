@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
+import type { InstanciaDaPraia } from './mapasSobDemanda';
 import { mulberry32 } from '../core/rng';
 import { faseDoDia } from './CicloDoDia';
 import { COR_DA_NEVOA, DIRECAO_DA_LUA, DIRECAO_DO_SOL, PraiaCeu } from './PraiaCeu';
@@ -88,7 +89,7 @@ const EIXO_X = new THREE.Vector3(1, 0, 0);
 const EIXO_Y = new THREE.Vector3(0, 1, 0);
 const EIXO_Z = new THREE.Vector3(0, 0, 1);
 
-export class Praia {
+export class Praia implements InstanciaDaPraia {
   /**
    * Os uniformes que a praia inteira divide (`PraiaUniformes.ts`): o **tempo** (a única coisa que muda por quadro: o mar, as nuvens, as palmas, as
    * velas, as gaivotas e o feixe do farol leem dele), o **detalhe** (qualidade baixa, G12), a vida do **núcleo** da estação e a **sombra** assada.

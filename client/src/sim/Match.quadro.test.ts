@@ -8,6 +8,7 @@ import { PRAIA_DESEMBARQUE, PRAIA_INIMIGOS, PRAIA_QUADRO_DE_LUZ } from '../envir
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { ehAndroide } from './CabosDeDados';
+import { carregarMapaSeFor } from '../environment/mapasSobDemanda';
 import { Match } from './Match';
 import { NUCLEO } from './NucleoDaEstacao';
 import { QUADRO } from './QuadroDeLuz';
@@ -44,6 +45,7 @@ const perto = (a: MechBase, x: number, z: number, raio: number): boolean => Math
 
 describe('o porto na missão em ondas da praia (P164): contêineres que abrem e o quadro de luz da cidade', () => {
   beforeAll(async () => {
+    await carregarMapaSeFor('praia'); // o cenário da Praia é sob demanda (P228): o jogo o baixa antes de montar a partida, o teste também
     await RAPIER.init();
   });
   afterEach(() => {

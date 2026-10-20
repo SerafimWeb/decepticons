@@ -6,6 +6,7 @@ import { ArenaQuadro } from './ArenaQuadro';
 import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VOLUME } from './ArenaLayout';
 import type { JanelasDoPredio } from './BuildingWindows';
 import { Destructibles } from './Destructibles';
+import { carregarMapaSeFor } from './mapasSobDemanda';
 import { aparenciaDoQuadro } from './PraiaPorto';
 
 const abertas: PhysicsWorld[] = [];
@@ -88,6 +89,7 @@ describe('a Arena com o transformador: a cidade escurece com a energia (P164, pa
   it('só quem pede tem o transformador: a Arena do Deathmatch, da Bandeira e do Domínio é a de sempre; o bunker e a praia ignoram o pedido', async () => {
     expect((await arena(false)).arena.transformador).toBeNull();
     expect((await arena(true)).arena.transformador).not.toBeNull();
+    await carregarMapaSeFor('praia'); // o cenário da Praia é sob demanda (P228)
     for (const mapa of ['bunker', 'praia'] as const) {
       const m = await mundo();
       expect(new Arena(m.scene, m.physics, m.destructibles, mapa, { transformador: true }).transformador, mapa).toBeNull();

@@ -10,8 +10,7 @@ import { buildingBands } from './BuildingBands';
 import type { DestructibleDef, Destructibles } from './Destructibles';
 import { SerafimTower } from './SerafimTower';
 import { Bunker, type MapId } from './Bunker';
-import { Praia } from './Praia';
-import { exigirMapa, type InstanciaDoMapa } from './mapasSobDemanda';
+import { exigirMapa, exigirPraia, type InstanciaDaPraia, type InstanciaDoMapa } from './mapasSobDemanda';
 
 export interface BlockDef {
   x: number;
@@ -91,7 +90,7 @@ export class Arena {
   /** Prédio Serafim: a base do time, no canto oposto ao Banco VORCARIS. */
   readonly serafim: SerafimTower | null;
   /** O mapa da praia (P126), quando é ele: quem anima o mar por quadro é o `update`. */
-  readonly praia: Praia | null = null;
+  readonly praia: InstanciaDaPraia | null = null;
   /** O mapa da Amazônia (P180), quando é ele: o rio e a floresta; o `update` anda o tempo e o `observar` segue a câmera. Vem do registro de mapas sob demanda (o código dele não mora no pacote de partida). */
   readonly amazonia: InstanciaDoMapa | null = null;
   /** A Praça dos Três Poderes (o 8 DE JANEIRO, P217), quando é ela: estática (nada anima), vem do registro de mapas sob demanda. */
@@ -125,7 +124,7 @@ export class Arena {
     if (map === 'praia') {
       // A praia traz o céu do fim de tarde, a luz do sol poente e o cenário dela (`environment/Praia.ts`): nada daqui.
       this.serafim = null;
-      this.praia = new Praia(scene, physics, destructibles);
+      this.praia = exigirPraia().construir(scene, physics, destructibles);
       return;
     }
     if (map === 'amazonia') {

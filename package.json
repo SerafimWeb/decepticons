@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "typecheck": "tsc",
     "smoke": "node scripts/smoke.mjs",
+    "peso": "node scripts/pesoDoPacote.mjs",
     "smoke:dev": "node scripts/smoke.mjs --dev",
     "check": "npm run typecheck && npm test && node scripts/painel.mjs --check && vite build && npm run smoke && npm run mech:bocas && node scripts/site.mjs --check",
     "prepare": "node scripts/install-hooks.mjs",

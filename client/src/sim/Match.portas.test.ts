@@ -8,6 +8,7 @@ import { Vector09 } from '../entities/Vector09';
 import { PRAIA_COMPLEXO, PRAIA_MANIFESTANTES } from '../environment/PraiaLayout';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
+import { carregarMapaSeFor } from '../environment/mapasSobDemanda';
 import { Match } from './Match';
 import { NUCLEO } from './NucleoDaEstacao';
 import { PORTAS, PORTAS_DA_ESTACAO } from './PortasDaEstacao';
@@ -45,6 +46,7 @@ const LONGE = new THREE.Vector3(236, 0, 8);
 
 describe('o manifestante (P163): o vândalo humano da missão em ondas da praia', () => {
   beforeAll(async () => {
+    await carregarMapaSeFor('praia'); // o cenário da Praia é sob demanda (P228): o jogo o baixa antes de montar a partida, o teste também
     await RAPIER.init();
   });
   afterEach(() => {

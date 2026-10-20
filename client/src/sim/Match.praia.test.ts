@@ -8,6 +8,7 @@ import { costaEm, faixaEm, PRAIA_LIMITES } from '../environment/PraiaTerreno';
 import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
+import { carregarMapaSeFor } from '../environment/mapasSobDemanda';
 import { Match } from './Match';
 import { NUCLEO } from './NucleoDaEstacao';
 
@@ -32,6 +33,7 @@ async function partidaDaPraia(extra: { mode?: 'survival' | 'deathmatch'; damage?
 
 describe('a praia no Match (P126/P127): a defesa da estação em ondas, a orla ao longo de 640 m', () => {
   beforeAll(async () => {
+    await carregarMapaSeFor('praia'); // o cenário da Praia é sob demanda (P228): o jogo o baixa antes de montar a partida, o teste também
     await RAPIER.init();
   });
   afterEach(() => {

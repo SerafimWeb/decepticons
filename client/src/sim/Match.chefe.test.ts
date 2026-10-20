@@ -8,6 +8,7 @@ import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { PONTOS_DOS_CABOS } from './CabosDeDados';
 import { faseDoChefe } from './FasesDoChefe';
+import { carregarMapaSeFor } from '../environment/mapasSobDemanda';
 import { Match } from './Match';
 import { NUCLEO } from './NucleoDaEstacao';
 import { PORTAS_DA_ESTACAO } from './PortasDaEstacao';
@@ -57,6 +58,7 @@ const noPonto = (i: number, dx = 0, dz = 0) => new THREE.Vector3(PONTOS_DOS_CABO
 
 describe('o chefe da missão, o Colossus (P165, parte D): vai aos cabos, tem fases e usa a máscara', () => {
   beforeAll(async () => {
+    await carregarMapaSeFor('praia'); // o cenário da Praia é sob demanda (P228): o jogo o baixa antes de montar a partida, o teste também
     await RAPIER.init();
   });
   afterEach(() => {
