@@ -968,5 +968,15 @@
  "Locutor militar": "軍のアナウンサー",
  "Lorde sombrio": "闇の帝王",
  "Grande Irmão": "ビッグ・ブラザー",
- "Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "ナレーション（F10）とマイクテストに適用され、チャットには適用されません。声の高さ・低音・響きを変えますが、訛りは変わりません。"
+ "Vale na narração (F8) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "ナレーション（F8）とマイクテストに適用され、チャットには適用されません。声の高さ・低音・響きを変えますが、訛りは変わりません。",
+ "VOZ: ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS PARA FALAR E OUVIR": "ボイス：話す・聞くには18歳を超えるアカウントでログインしてください",
+ "VOZ: INFORME SUA IDADE EM CONFIGURAÇÕES > JOGO PARA FALAR E OUVIR": "ボイス：話す・聞くには「設定＞ゲーム」で年齢を入力してください",
+ "VOZ DESLIGADA PARA MENORES DE 18 ANOS: SÓ O ÁUDIO DO JOGO": "18歳未満はボイスオフ：ゲーム音のみ",
+ "VOZ DESLIGADA: LIGUE \"CONVERSAR POR VOZ\" EM CONFIGURAÇÕES": "ボイスオフ：「設定」で「ボイスで会話する」をオンにしてください",
+ "NINGUÉM MAIS NA VOZ: {0} NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)": "他にボイス参加者なし：ルームの{0}人がボイスなし（18歳を超えるアカウントとボイスオンが必要です）",
+ "{0} NA SALA SEM VOZ": "ルームの{0}人がボイスなし",
+ "Diagnóstico da voz": "ボイスの診断",
+ "[ VER E COPIAR ]": "[ 表示してコピー ]",
+ "[ COPIADO ]": "[ コピーしました ]",
+ "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "2人のプレイヤー間でボイスが動かないとき：状況と最も可能性の高い原因を表示します。"
 }

@@ -30,9 +30,11 @@ export function textoDeEstado(v: VozParaHud, tecla: string, toque = false): stri
  * A linha de baixo: quem a rede não deixou ligar, ou, **sozinho na voz**, o aviso de que ninguém vai ouvir (e onde testar o microfone). Sem ele o indicador dizia "MICROFONE ABERTO" a quem estava só na sala
  * e a pessoa achava que o microfone não funcionava (P212).
  */
-export function textoDeRede(v: VozParaHud): string {
+export function textoDeRede(v: VozParaHud, foraDaVoz = 0): string {
   if (v.semConexao > 0) return `${v.semConexao} SEM CONEXÃO`;
-  return v.colegas === 0 ? 'NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES' : '';
+  // Sozinho na voz mas com gente na sala: o motivo é outro (a outra pessoa é convidado, menor ou desligou a voz), e dizer "teste o microfone" mandava a pessoa atrás do problema errado (P234).
+  if (v.colegas === 0) return foraDaVoz > 0 ? `NINGUÉM MAIS NA VOZ: ${foraDaVoz} NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)` : 'NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES';
+  return foraDaVoz > 0 ? `${foraDaVoz} NA SALA SEM VOZ` : '';
 }
 
 /** O estado do botão de microfone da tela de toque: no ar (transmitindo), mudo, em espera (o "segurar" solto), pedindo o microfone ao navegador, ou sem microfone. */
@@ -74,6 +76,8 @@ export class VoiceHud {
     private readonly nomeDe: (id: number) => string | undefined,
     private readonly tecla: () => string,
     private readonly toque: () => boolean = () => false,
+    /** Quantas pessoas da sala estão fora da voz (o jogo conta: pilotos menos os que estão na voz comigo). */
+    private readonly foraDaVoz: () => number = () => 0,
   ) {
     this.el.className = 'voz-hud';
     this.el.hidden = true;
@@ -117,7 +121,7 @@ export class VoiceHud {
     if (!ativa) return;
     const estado = textoDeEstado(this.voz, this.tecla(), this.toque());
     if (estado !== this.textoEstado) this.estado.textContent = this.textoEstado = estado;
-    const rede = textoDeRede(this.voz);
+    const rede = textoDeRede(this.voz, this.foraDaVoz());
     if (rede !== this.textoRede) this.rede.textContent = this.textoRede = rede;
     // O microfone aberto e transmitindo acende; mudo ou sem microfone apaga.
     const classe = this.voz.mic.transmitindo ? 'voz-hud voz-no-ar' : 'voz-hud';

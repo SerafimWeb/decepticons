@@ -968,5 +968,15 @@
  "Locutor militar": "Locutor del ejército",
  "Lorde sombrio": "Lord oscuro",
  "Grande Irmão": "Gran Hermano",
- "Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "Vale para la narración (F10) y la prueba del micrófono, no para el chat. Cambia el tono, los graves y el ambiente de la voz; no cambia el acento."
+ "Vale na narração (F8) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "Vale para la narración (F8) y la prueba del micrófono, no para el chat. Cambia el tono, los graves y el ambiente de la voz; no cambia el acento.",
+ "VOZ: ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS PARA FALAR E OUVIR": "VOZ: ENTRA CON UNA CUENTA DE MAYOR DE 18 AÑOS PARA HABLAR Y ESCUCHAR",
+ "VOZ: INFORME SUA IDADE EM CONFIGURAÇÕES > JOGO PARA FALAR E OUVIR": "VOZ: INDICA TU EDAD EN AJUSTES > JUEGO PARA HABLAR Y ESCUCHAR",
+ "VOZ DESLIGADA PARA MENORES DE 18 ANOS: SÓ O ÁUDIO DO JOGO": "VOZ DESACTIVADA PARA MENORES DE 18 AÑOS: SOLO EL AUDIO DEL JUEGO",
+ "VOZ DESLIGADA: LIGUE \"CONVERSAR POR VOZ\" EM CONFIGURAÇÕES": "VOZ DESACTIVADA: ACTIVA \"CONVERSAR POR VOZ\" EN AJUSTES",
+ "NINGUÉM MAIS NA VOZ: {0} NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)": "NADIE MÁS EN LA VOZ: {0} EN LA SALA SIN VOZ (NECESITAN CUENTA DE MAYOR DE 18 AÑOS Y VOZ ACTIVADA)",
+ "{0} NA SALA SEM VOZ": "{0} EN LA SALA SIN VOZ",
+ "Diagnóstico da voz": "Diagnóstico de la voz",
+ "[ VER E COPIAR ]": "[ VER Y COPIAR ]",
+ "[ COPIADO ]": "[ COPIADO AL PORTAPAPELES ]",
+ "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "Si la voz no funciona entre dos jugadores: muestra lo que está pasando y la causa más probable."
 }

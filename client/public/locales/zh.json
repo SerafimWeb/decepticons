@@ -968,5 +968,15 @@
  "Locutor militar": "军事播音员",
  "Lorde sombrio": "黑暗领主",
  "Grande Irmão": "老大哥",
- "Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "适用于旁白（F10）和麦克风测试，不适用于聊天。会改变声音的音调、低音和空间感，但不会改变口音。"
+ "Vale na narração (F8) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "适用于旁白（F8）和麦克风测试，不适用于聊天。会改变声音的音调、低音和空间感，但不会改变口音。",
+ "VOZ: ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS PARA FALAR E OUVIR": "语音：请使用年满18岁的账号登录后才能说话和收听",
+ "VOZ: INFORME SUA IDADE EM CONFIGURAÇÕES > JOGO PARA FALAR E OUVIR": "语音：请在「设置＞游戏」中填写年龄后才能说话和收听",
+ "VOZ DESLIGADA PARA MENORES DE 18 ANOS: SÓ O ÁUDIO DO JOGO": "未满18岁语音已关闭：仅有游戏音频",
+ "VOZ DESLIGADA: LIGUE \"CONVERSAR POR VOZ\" EM CONFIGURAÇÕES": "语音已关闭：请在「设置」中打开「语音交流」",
+ "NINGUÉM MAIS NA VOZ: {0} NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)": "语音中没有其他人：房间里有 {0} 人没有语音（需要年满18岁的账号并打开语音）",
+ "{0} NA SALA SEM VOZ": "房间里有 {0} 人没有语音",
+ "Diagnóstico da voz": "语音诊断",
+ "[ VER E COPIAR ]": "[ 查看并复制 ]",
+ "[ COPIADO ]": "[ 已复制 ]",
+ "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "如果两位玩家之间语音不工作：显示发生了什么以及最可能的原因。"
 }

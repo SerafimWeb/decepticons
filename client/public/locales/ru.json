@@ -968,5 +968,15 @@
  "Locutor militar": "Военный диктор",
  "Lorde sombrio": "Тёмный лорд",
  "Grande Irmão": "Большой Брат",
- "Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "Действует в озвучке (F10) и в проверке микрофона, но не в чате. Меняет высоту, басы и окружение голоса, но не акцент."
+ "Vale na narração (F8) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "Действует в озвучке (F8) и в проверке микрофона, но не в чате. Меняет высоту, басы и окружение голоса, но не акцент.",
+ "VOZ: ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS PARA FALAR E OUVIR": "ГОЛОС: ВОЙДИТЕ В АККАУНТ СТАРШЕ 18 ЛЕТ, ЧТОБЫ ГОВОРИТЬ И СЛУШАТЬ",
+ "VOZ: INFORME SUA IDADE EM CONFIGURAÇÕES > JOGO PARA FALAR E OUVIR": "ГОЛОС: УКАЖИТЕ ВОЗРАСТ В НАСТРОЙКИ > ИГРА, ЧТОБЫ ГОВОРИТЬ И СЛУШАТЬ",
+ "VOZ DESLIGADA PARA MENORES DE 18 ANOS: SÓ O ÁUDIO DO JOGO": "ГОЛОС ВЫКЛЮЧЕН ДЛЯ ТЕХ, КОМУ НЕТ 18: ТОЛЬКО ЗВУК ИГРЫ",
+ "VOZ DESLIGADA: LIGUE \"CONVERSAR POR VOZ\" EM CONFIGURAÇÕES": "ГОЛОС ВЫКЛЮЧЕН: ВКЛЮЧИТЕ «ОБЩАТЬСЯ ГОЛОСОМ» В НАСТРОЙКАХ",
+ "NINGUÉM MAIS NA VOZ: {0} NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)": "БОЛЬШЕ НИКОГО В ГОЛОСОВОМ ЧАТЕ: {0} В КОМНАТЕ БЕЗ ГОЛОСА (НУЖЕН АККАУНТ СТАРШЕ 18 ЛЕТ И ВКЛЮЧЁННЫЙ ГОЛОС)",
+ "{0} NA SALA SEM VOZ": "{0} В КОМНАТЕ БЕЗ ГОЛОСА",
+ "Diagnóstico da voz": "Диагностика голоса",
+ "[ VER E COPIAR ]": "[ ПОКАЗАТЬ И СКОПИРОВАТЬ ]",
+ "[ COPIADO ]": "[ СКОПИРОВАНО ]",
+ "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "Если голос не работает между двумя игроками: показывает, что происходит, и наиболее вероятную причину."
 }

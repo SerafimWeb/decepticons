@@ -6,10 +6,10 @@ import { acharFfmpeg } from '../../scripts/sonsRodar.mjs';
 import { apontarJogoPara, gerarWav, guardarSessao, tokenDeConta } from './vozLib.mjs';
 
 /**
- * A NARRAÇÃO NO JOGO DE VERDADE (P230): o jogo offline aberto no Chrome (microfone FALSO: um tom de 440 Hz), a tecla F10, o aparelho escolhido, a regra de idade e o arquivo baixado.
+ * A NARRAÇÃO NO JOGO DE VERDADE (P230): o jogo offline aberto no Chrome (microfone FALSO: um tom de 440 Hz), a tecla F8, o aparelho escolhido, a regra de idade e o arquivo baixado.
  * A outra bancada (`gravacao-narrada.mjs`) prova a mistura com o `GameRecorder` sozinho; esta prova a COLA no `Game.ts`, que teste unitário não alcança.
- *   1. convidado: F10 NÃO abre o microfone e diz por quê (maior de 18 anos); F9 grava só o jogo ("REC", sem narração)
- *   2. conta de adulto, jogo OFFLINE: F10 grava com a narração ("REC · NARRAÇÃO"); parar baixa o arquivo, e o tom da "voz" está nele (só nele: o arquivo do F9 do convidado não o tem)
+ *   1. convidado: F8 NÃO abre o microfone e diz por quê (maior de 18 anos); F9 grava só o jogo ("REC", sem narração)
+ *   2. conta de adulto, jogo OFFLINE: F8 grava com a narração ("REC · NARRAÇÃO"); parar baixa o arquivo, e o tom da "voz" está nele (só nele: o arquivo do F9 do convidado não o tem)
  *
  *   node .decepticons/medicoes/gravacao-narrada-jogo.mjs     # sai com 1 se algo falhar; arquivos em .tmp/gravacao-narrada-jogo/
  *
@@ -101,10 +101,10 @@ try {
   // ---------- 1. o convidado ----------
   console.log('\n--- convidado (sem conta) ---');
   const conv = await abrirJogo(null);
-  await conv.page.keyboard.press('F10');
+  await conv.page.keyboard.press('F8');
   const avisoConv = await ate(() => aviso(conv.page), 8000);
-  conferir('convidado: F10 diz que o microfone só vale para maior de 18 anos', !!avisoConv && avisoConv.includes('maior de 18'), String(avisoConv));
-  conferir('convidado: F10 não começou a gravar', (await indicador(conv.page)) === null);
+  conferir('convidado: F8 diz que o microfone só vale para maior de 18 anos', !!avisoConv && avisoConv.includes('maior de 18'), String(avisoConv));
+  conferir('convidado: F8 não começou a gravar', (await indicador(conv.page)) === null);
   await conv.page.keyboard.press('F9');
   const indF9 = await ate(() => indicador(conv.page), 10_000);
   conferir('convidado: F9 grava só o jogo (REC, sem narração)', !!indF9 && !indF9.includes('NARRAÇÃO'), String(indF9));
@@ -126,17 +126,17 @@ try {
   // a sessão é restaurada pela rede depois do carregamento: enquanto o aviso de idade aparecer, espera e tenta de novo
   let ind = null;
   for (let tentativa = 0; tentativa < 12 && !ind; tentativa++) {
-    await ad.page.keyboard.press('F10');
+    await ad.page.keyboard.press('F8');
     ind = await ate(() => indicador(ad.page), 4000);
     if (!ind) await ad.page.waitForTimeout(2500);
   }
-  conferir('adulto: F10 grava com a narração (REC · NARRAÇÃO), o microfone abriu', !!ind && ind.includes('NARRAÇÃO'), String(ind));
+  conferir('adulto: F8 grava com a narração (REC · NARRAÇÃO), o microfone abriu', !!ind && ind.includes('NARRAÇÃO'), String(ind));
   await ad.page.waitForTimeout(6000);
   await ad.page.screenshot({ path: resolve('.decepticons', 'arte', 'narracao-f10-claude.png') }); // a foto para o Comandante julgar por olho (regra 16)
   const baixouAd = ad.page.waitForEvent('download', { timeout: 90_000 }).catch(() => null);
-  await ad.page.keyboard.press('F10');
+  await ad.page.keyboard.press('F8');
   const dAd = await baixouAd;
-  conferir('adulto: F10 de novo parou e o indicador sumiu', (await indicador(ad.page)) === null);
+  conferir('adulto: F8 de novo parou e o indicador sumiu', (await indicador(ad.page)) === null);
   let arquivoAd = null;
   if (dAd) {
     arquivoAd = resolve(TMP, 'f10-adulto.webm');
@@ -162,14 +162,14 @@ try {
     const fx = await abrirJogo(await tokenDeConta(2598, `narrador-fx${tentativa}`), 'sombrio');
     let indFx = null;
     for (let i = 0; i < 12 && !indFx; i++) {
-      await fx.page.keyboard.press('F10');
+      await fx.page.keyboard.press('F8');
       indFx = await ate(() => indicador(fx.page), 4000);
       if (!indFx) await fx.page.waitForTimeout(2500);
     }
-    if (tentativa === 0) conferir('com o efeito: F10 grava com a narração', !!indFx && indFx.includes('NARRAÇÃO'), String(indFx));
+    if (tentativa === 0) conferir('com o efeito: F8 grava com a narração', !!indFx && indFx.includes('NARRAÇÃO'), String(indFx));
     await fx.page.waitForTimeout(6000);
     const baixouFx = fx.page.waitForEvent('download', { timeout: 90_000 }).catch(() => null);
-    await fx.page.keyboard.press('F10');
+    await fx.page.keyboard.press('F8');
     const dFx = await baixouFx;
     if (dFx) {
       arquivoFx = resolve(TMP, 'f10-sombrio.webm');

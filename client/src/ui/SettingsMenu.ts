@@ -55,6 +55,10 @@ export class SettingsMenu {
   private readonly selVozAparelho = $('setting-voz-aparelho') as HTMLSelectElement;
   private readonly selVozEfeito = $('setting-voz-efeito') as HTMLSelectElement;
   private readonly btnVozTestar = $('btn-voz-testar') as HTMLButtonElement;
+  private readonly btnVozDiag = $('btn-voz-diag') as HTMLButtonElement;
+  private readonly preVozDiag = $('voz-diag');
+  /** O relatório do diagnóstico da voz (P234): quem sabe montá-lo é o jogo; sem ele (fora de uma sala) o botão explica. */
+  private diagnosticoDaVoz: (() => Promise<string>) | null = null;
   /** O teste do microfone (P212): pedaço sob demanda, só baixa quem toca em TESTAR. */
   private micTest: MicTest | null = null;
   /** O que vale para esta conta na voz (P211); começa como convidado até a sessão dizer. */
@@ -228,13 +232,14 @@ export class SettingsMenu {
       void this.micTest?.reiniciar();
     });
 
-    // O efeito na voz (P231): vale na narração (F10) e na prévia do teste; com o teste ligado, a prévia troca na hora.
+    // O efeito na voz (P231): vale na narração (F8) e na prévia do teste; com o teste ligado, a prévia troca na hora.
     this.selVozEfeito.addEventListener('change', () => {
       this.settings.update({ vozEfeito: this.selVozEfeito.value as VozEfeito });
       void this.micTest?.trocarEfeito();
     });
 
     this.btnVozTestar.addEventListener('click', () => void this.alternarTesteDoMic());
+    this.btnVozDiag.addEventListener('click', () => void this.mostrarDiagnosticoDaVoz());
     // Trocar de aba esconde o painel: o microfone não fica aberto por trás.
     for (const b of this.modal.querySelectorAll('.settings-tab')) b.addEventListener('click', () => this.micTest?.parar());
 
@@ -339,6 +344,25 @@ export class SettingsMenu {
    * Quem pode usar o chat de voz (P211): só conta de maior de 18 anos. Para os outros os controles somem (nem o microfone, nem o teste dele) e uma frase diz o motivo e o que fazer.
    * O teste do microfone que estiver aberto é fechado.
    */
+  setDiagnosticoDaVoz(fn: () => Promise<string>): void {
+    this.diagnosticoDaVoz = fn;
+  }
+
+  /** O botão DIAGNÓSTICO DA VOZ: mostra o relatório e o copia para a área de transferência (a pessoa cola numa conversa). */
+  private async mostrarDiagnosticoDaVoz(): Promise<void> {
+    this.preVozDiag.hidden = false;
+    this.preVozDiag.textContent = '…';
+    const texto = this.diagnosticoDaVoz ? await this.diagnosticoDaVoz() : 'Entre numa sala online para ver o diagnóstico da voz.';
+    this.preVozDiag.textContent = texto;
+    try {
+      await navigator.clipboard.writeText(texto);
+      this.btnVozDiag.textContent = '[ COPIADO ]';
+      setTimeout(() => (this.btnVozDiag.textContent = '[ VER E COPIAR ]'), 2500);
+    } catch {
+      // sem permissão da área de transferência: o texto está na tela para copiar à mão
+    }
+  }
+
   setElegibilidadeDaVoz(e: ElegibilidadeDaVoz): void {
     this.elegibilidade = e;
     if (e !== 'liberada') this.micTest?.parar();

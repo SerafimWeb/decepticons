@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IdadeDaConta } from '../../../shared/net/auth';
-import { type ElegibilidadeDaVoz, elegibilidadeDaVoz, microfoneDaNarracaoLiberado, vozDeveLigar } from './elegibilidade';
-import { TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ } from './VozNasConfiguracoes';
+import { type ElegibilidadeDaVoz, elegibilidadeDaVoz, microfoneDaNarracaoLiberado, motivoSemVoz, vozDeveLigar } from './elegibilidade';
+import { TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ, TEXTO_SEM_VOZ } from './VozNasConfiguracoes';
 
 describe('elegibilidadeDaVoz (P211): só conta de maior de 18 anos abre o chat de voz', () => {
   it('a tabela inteira: logado × faixa de idade', () => {
@@ -63,5 +63,34 @@ describe('o botão da voz (P226): leva ao que falta', () => {
     expect(TEXTO_DO_BOTAO_DA_VOZ['sem-idade']).toBe('[ INFORMAR MINHA IDADE ]');
     expect(TEXTO_DO_BOTAO_DA_VOZ.menor, 'o menor não tem o que fazer').toBeUndefined();
     expect(TEXTO_DO_BOTAO_DA_VOZ.liberada).toBeUndefined();
+  });
+});
+
+describe('motivoSemVoz (P234): o jogo diz por que a voz não está ligada', () => {
+  it('a tabela inteira: elegibilidade × voz ligada × funcionalidade liberada', () => {
+    const eleg: ElegibilidadeDaVoz[] = ['liberada', 'convidado', 'sem-idade', 'menor'];
+    for (const e of eleg)
+      for (const voiceOn of [true, false])
+        for (const liberada of [true, false]) {
+          const esperado = !liberada ? null : e !== 'liberada' ? e : voiceOn ? null : 'desligada';
+          expect(motivoSemVoz(e, voiceOn, liberada), `${e}|voiceOn=${voiceOn}|liberada=${liberada}`).toBe(esperado);
+        }
+  });
+
+  it('só há aviso quando a voz NÃO liga: a mesma regra do vozDeveLigar, vista do outro lado', () => {
+    for (const idade of ['adulto', 'menor', 'sem-idade', undefined] as const)
+      for (const voiceOn of [true, false]) {
+        const e = idade === undefined ? 'convidado' : elegibilidadeDaVoz(true, idade);
+        const liga = vozDeveLigar(voiceOn, true, idade);
+        expect(motivoSemVoz(e, voiceOn, true) === null, `idade=${idade} voiceOn=${voiceOn}`).toBe(liga);
+      }
+  });
+
+  it('cada motivo tem a sua frase, e ela diz o que fazer ou o que vale', () => {
+    expect(Object.keys(TEXTO_SEM_VOZ).sort()).toEqual(['convidado', 'desligada', 'menor', 'sem-idade']);
+    expect(TEXTO_SEM_VOZ.convidado).toContain('CONTA DE MAIOR DE 18 ANOS');
+    expect(TEXTO_SEM_VOZ['sem-idade']).toContain('INFORME SUA IDADE');
+    expect(TEXTO_SEM_VOZ.menor).toContain('SÓ O ÁUDIO DO JOGO');
+    expect(TEXTO_SEM_VOZ.desligada).toContain('CONVERSAR POR VOZ');
   });
 });

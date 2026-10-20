@@ -4590,6 +4590,10 @@ html:not(.touch) #squad-orders { opacity: 0.6; }
 .voz-hud[hidden] { display: none; }
 .voz-hud.voz-no-ar { color: var(--accent); border-left-color: var(--accent); }
 .voz-rede { color: var(--warn); }
+/* O aviso de por que a voz não está ligada (P234): no mesmo canto do indicador, em aviso, e só aparece numa sala com outras pessoas. */
+.voz-hud.voz-aviso { color: var(--warn); border-left-color: var(--warn); }
+.voz-diag { margin: 6px 0 0; padding: 8px; max-height: 220px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 11px; line-height: 1.45; color: var(--ink); background: rgba(6, 8, 10, 0.7); border: 1px dashed var(--muted); user-select: text; }
+.voz-diag[hidden] { display: none; }
 .voz-fala { color: var(--ink); min-height: 0; }
 .voz-rede:empty, .voz-fala:empty { display: none; }
 /* No toque o indicador sobe para cima do direcional (que descansa no canto), e o botão de microfone mora sob PAUSA e PLACAR (P209). */

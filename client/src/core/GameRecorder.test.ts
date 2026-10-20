@@ -89,7 +89,7 @@ function ambienteDaGravacao(opcoes: { comAudio?: boolean } = {}) {
   return { canvas, audio, destino, fontes, eventos, elementos, microfone };
 }
 
-describe('GameRecorder: a narração, F10 (P230)', () => {
+describe('GameRecorder: a narração, F8 (P230)', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('com o microfone, a voz entra na MISTURA DA GRAVAÇÃO (o destino da gravação) e em nenhum outro lugar', () => {
