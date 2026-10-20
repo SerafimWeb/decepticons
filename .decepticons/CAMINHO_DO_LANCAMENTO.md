@@ -2,6 +2,7 @@
 
 > **A ordem do Comandante (19/10):** *"QUERO CONCLUIR O PROJETO!!! ou pelo menos concluir até um certo ponto, suficiente pra lançar com **2 ou 3 missões finalizadas disponíveis no offline e no online**, que possam ser jogadas **co-op ou competitivo**."* Este documento **substitui o escopo de 18/10** (`LANCAMENTO.md` § 1: só Cidade Neon e Estação dos Cabos, só Deathmatch online) **no que ele diz sobre missões**; o que `LANCAMENTO.md` diz sobre **segurança, privilégio, auditoria, servidor e política continua valendo** (§ 5 abaixo).
 > **Honestidade (R13):** os estados abaixo vêm de `STATUS_REAL.md`, do código e dos testes de hoje; os **tamanhos são estimativas** (um "PR" é uma entrega de ~400 linhas, regra 19-e); **não vi** nenhuma missão ser jogada por dois humanos ao mesmo tempo num servidor de verdade.
+> **Atualização 20/10 (P232):** o Comandante escolheu lançar com o que já é real (Cidade Neon + Estação dos Cabos, Deathmatch online). **Os pacotes A1 a A7 e o 8 DE JANEIRO ficam para depois do lançamento**; este plano é o roteiro da primeira atualização. O que manda agora é `LANCAMENTO.md` § 0.
 
 ## 1. O que existe hoje, por missão e por modo
 

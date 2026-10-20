@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P232 — A linha final: lançar com o que já é real (20/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P232 | 20/10 | "quero concluir pra lançar o CYBERMECH. já fizemos muita coisa! o que de fato precisamos focar agora com linha final? missões? finalizar a fase dos cabos, 8 janeiro e terras raras? ou devemos focar em apenas UMA delas pra lançar logo e depois continuamos os detalhes das outras? PROSSIGA! seja econômico, não inventa de testar tudo não, faça só o necessário pra concluirmos isso em poucas iterações e poucos PR" | 🟡 | **Decisão registrada** em `LANCAMENTO.md` § 0: lança-se com **Cidade Neon + Estação dos Cabos** (a Estação dos Cabos é a missão de vitrine); Terras Raras e 8 de Janeiro ficam EM BREVE; o co-op online (A1 a A3) vira a primeira atualização. Conferido na produção: o `?comandante=1` ainda está **aberto** e o `tela:voz` está **público**. Falta, e é do Comandante: o playtest das duas missões, o teste com gente de fora, o "pode fechar", a voz de volta a restrito, o nome do encarregado e o DKIM/DMARC | `LANCAMENTO.md` § 0 (a lista "o que falta para abrir") |
+
 ## P230 — A narração: gravar a partida com a voz de quem joga (20/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
