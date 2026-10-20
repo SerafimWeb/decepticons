@@ -960,5 +960,7 @@
  "SILENCIAR VOZ": "ОТКЛЮЧИТЬ ГОЛОС",
  "VOZ SILENCIADA": "ГОЛОС ОТКЛЮЧЁН",
  "Ouvir de novo a voz deste piloto": "Снова слышать голос этого пилота",
- "Silenciar a voz deste piloto até você sair da sala": "Отключить голос этого пилота, пока вы не выйдете из комнаты"
+ "Silenciar a voz deste piloto até você sair da sala": "Отключить голос этого пилота, пока вы не выйдете из комнаты",
+ "Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.": "Полная тишина: это устройство не передаёт звук (отключено или выключено в Windows). Выберите другое из списка.",
+ "Aparelho em uso: {0}": "Используется устройство: {0}"
 }

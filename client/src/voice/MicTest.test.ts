@@ -3,28 +3,36 @@ import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { carregarDicionario, IDIOMAS, traduzir, type Dicionario } from '../i18n/i18n';
 import { listarAparelhos } from './aparelhos';
-import { barraDoNivel, classificarFalha, DURACAO_MAXIMA_MS, ESPERA_SEM_SINAL_MS, estadoDoTeste, MicTest, nivelRms, RMS_CAPTANDO, TEXTO_DO_TESTE, type AmbienteDoTeste, type PecasDoTeste } from './MicTest';
+import { barraDoNivel, classificarFalha, DURACAO_MAXIMA_MS, ESPERA_SEM_SINAL_MS, estadoDoTeste, MicTest, nivelDaOnda, RMS_CAPTANDO, TEXTO_DO_TESTE, type AmbienteDoTeste, type PecasDoTeste } from './MicTest';
 
 const RAIZ = resolve(__dirname, '../..');
 
-/** Uma onda de bytes (silêncio em 128) com a amplitude pedida (0 a 1), em tom puro. */
-const onda = (amp: number, n = 1024): Uint8Array => Uint8Array.from({ length: n }, (_, i) => 128 + Math.round(amp * 127 * Math.sin(i / 3)));
+/** Uma onda em ponto flutuante (amostras de -1 a 1) com a amplitude pedida, em tom puro. */
+const onda = (amp: number, n = 1024): Float32Array => Float32Array.from({ length: n }, (_, i) => amp * Math.sin(i / 3));
 
 describe('MicTest: a lógica pura (P212)', () => {
-  it('nivelRms: silêncio é 0, o cheio é ~1, e a onda de meia amplitude fica entre os dois', () => {
-    expect(nivelRms(new Uint8Array(1024).fill(128))).toBe(0);
-    expect(nivelRms(new Uint8Array(0))).toBe(0);
-    expect(nivelRms(onda(1))).toBeGreaterThan(0.6);
-    expect(nivelRms(onda(0.5))).toBeLessThan(nivelRms(onda(1)));
-    expect(nivelRms(onda(0.5))).toBeGreaterThan(nivelRms(onda(0.1)));
+  it('nivelDaOnda: silêncio é 0 (RMS e pico), o cheio é ~0,7 de RMS, e a onda de meia amplitude fica entre os dois', () => {
+    expect(nivelDaOnda(new Float32Array(1024))).toEqual({ rms: 0, pico: 0 });
+    expect(nivelDaOnda(new Float32Array(0))).toEqual({ rms: 0, pico: 0 });
+    expect(nivelDaOnda(onda(1)).rms).toBeGreaterThan(0.6);
+    expect(nivelDaOnda(onda(1)).pico).toBeGreaterThan(0.99);
+    expect(nivelDaOnda(onda(0.5)).rms).toBeLessThan(nivelDaOnda(onda(1)).rms);
+    expect(nivelDaOnda(onda(0.5)).rms).toBeGreaterThan(nivelDaOnda(onda(0.1)).rms);
   });
 
+  it('nivelDaOnda enxerga voz baixinha de fone Bluetooth (RMS de 0,01), que a medição em bytes de 8 bits não via', () => {
+    const baixinha = onda(0.014); // RMS ~0,01
+    expect(nivelDaOnda(baixinha).rms).toBeGreaterThan(RMS_CAPTANDO);
+    expect(nivelDaOnda(baixinha).rms).toBeLessThan(0.0078 * 2);
+    expect(estadoDoTeste(500, nivelDaOnda(baixinha).rms)).toBe('ok');
+    expect(estadoDoTeste(ESPERA_SEM_SINAL_MS + 1, nivelDaOnda(onda(0.0015)).rms, 0.0015), 'o chiado do quarto não é voz').toBe('semSinal');
+  });
   it('barraDoNivel: em decibéis de −60 (vazio) a 0 (cheio); o silêncio é 0, a fala comum fica no meio e o cheio chega a 100', () => {
     expect(barraDoNivel(0)).toBe(0);
     expect(barraDoNivel(0.001)).toBe(0); // −60 dBFS
     expect(barraDoNivel(1)).toBe(100);
     expect(barraDoNivel(0.1)).toBe(67); // −20 dBFS
-    expect(barraDoNivel(RMS_CAPTANDO)).toBeGreaterThan(40);
+    expect(barraDoNivel(RMS_CAPTANDO)).toBeGreaterThan(25); // a barra já mostra o limite de "captando" (−42 dBFS)
     expect(barraDoNivel(5)).toBe(100);
   });
 
@@ -34,6 +42,15 @@ describe('MicTest: a lógica pura (P212)', () => {
     expect(estadoDoTeste(100, 0)).toBe('fale');
     expect(estadoDoTeste(ESPERA_SEM_SINAL_MS - 1, RMS_CAPTANDO - 0.001)).toBe('fale');
     expect(estadoDoTeste(ESPERA_SEM_SINAL_MS, RMS_CAPTANDO - 0.001)).toBe('semSinal');
+  });
+
+  it('estadoDoTeste: zero absoluto o teste inteiro é "silêncio total" (aparelho mudo no Windows), só depois da espera; qualquer chiado é "sem sinal"', () => {
+    expect(estadoDoTeste(100, 0, 0), 'cedo demais para dizer').toBe('fale');
+    expect(estadoDoTeste(ESPERA_SEM_SINAL_MS - 1, 0, 0)).toBe('fale');
+    expect(estadoDoTeste(ESPERA_SEM_SINAL_MS, 0, 0)).toBe('silencioTotal');
+    expect(estadoDoTeste(ESPERA_SEM_SINAL_MS * 5, 0, 0)).toBe('silencioTotal');
+    expect(estadoDoTeste(ESPERA_SEM_SINAL_MS, 0, 0.0001)).toBe('semSinal');
+    expect(estadoDoTeste(ESPERA_SEM_SINAL_MS, RMS_CAPTANDO, 0), 'se captou, é ok').toBe('ok');
   });
 
   it('classificarFalha: bloqueado, sem aparelho, em uso por outro programa, e o resto', () => {
@@ -65,6 +82,7 @@ describe('MicTest: a lógica pura (P212)', () => {
 
 class FaixaFalsa {
   parada = false;
+  label = 'Headset de teste';
   stop() {
     this.parada = true;
   }
@@ -72,12 +90,12 @@ class FaixaFalsa {
 
 function montar() {
   const faixa = new FaixaFalsa();
-  const fluxo = { getTracks: () => [faixa] } as unknown as MediaStream;
+  const fluxo = { getTracks: () => [faixa], getAudioTracks: () => [faixa] } as unknown as MediaStream;
   const estado = { amp: 0, agora: 0, abertos: [] as string[], fechado: 0, volta: { gain: { value: -1 }, connect: () => {} }, resolverAbrir: null as null | ((f: MediaStream) => void), recusarAbrir: null as null | ((e: unknown) => void), pendente: false };
   const quadros: (() => void)[] = [];
   const analyser = {
     fftSize: 1024,
-    getByteTimeDomainData: (a: Uint8Array) => a.set(onda(estado.amp, a.length)),
+    getFloatTimeDomainData: (a: Float32Array) => a.set(onda(estado.amp, a.length)),
     connect: () => {},
   };
   const ctx = {
@@ -111,6 +129,7 @@ function montar() {
     status: { textContent: '' as string | null },
     botao: { textContent: TEXTO_DO_TESTE.testar as string | null },
     ouvir: { checked: false },
+    aparelho: { textContent: '' as string | null },
   };
   let aparelho = '';
   let abriu = 0;
@@ -159,9 +178,10 @@ describe('MicTest: o painel (P212)', () => {
     expect(t.pecas.painel.dataset.estado).toBe('ok');
   });
 
-  it('nenhuma voz depois da espera: "sem sinal"', async () => {
+  it('só chiado, nenhuma voz, depois da espera: "sem sinal"', async () => {
     const t = montar();
     await t.teste.iniciar();
+    t.estado.amp = 0.001; // chiado do quarto: acima de zero, abaixo da voz
     t.estado.agora = ESPERA_SEM_SINAL_MS - 1;
     t.quadro();
     expect(t.pecas.painel.dataset.estado).toBe('fale');
@@ -169,6 +189,35 @@ describe('MicTest: o painel (P212)', () => {
     t.quadro();
     expect(t.pecas.painel.dataset.estado).toBe('semSinal');
     expect(t.pecas.status.textContent).toBe(TEXTO_DO_TESTE.semSinal);
+  });
+
+  it('o aparelho que o navegador abriu aparece no painel (para ver que a escolha da lista valeu), e some ao parar', async () => {
+    const t = montar();
+    await t.teste.iniciar();
+    expect(t.pecas.aparelho!.textContent).toBe('Aparelho em uso: Headset de teste');
+    t.teste.parar();
+    expect(t.pecas.aparelho!.textContent).toBe('');
+  });
+
+  it('um aparelho que entrega zero absoluto depois da espera: "silêncio total" com a frase própria (não "sem sinal")', async () => {
+    const t = montar();
+    await t.teste.iniciar();
+    t.estado.amp = 0; // zero exato, o teste inteiro
+    t.estado.agora = ESPERA_SEM_SINAL_MS + 1;
+    t.quadro();
+    expect(t.pecas.painel.dataset.estado).toBe('silencioTotal');
+    expect(t.pecas.status.textContent).toBe(TEXTO_DO_TESTE.silencioTotal);
+  });
+
+  it('um chiado (qualquer amostra acima de zero) sem voz depois da espera continua sendo "sem sinal"', async () => {
+    const t = montar();
+    await t.teste.iniciar();
+    t.estado.amp = 0.001; // chiado: pico > 0, RMS abaixo do limite
+    t.estado.agora = 100;
+    t.quadro();
+    t.estado.agora = ESPERA_SEM_SINAL_MS + 1;
+    t.quadro();
+    expect(t.pecas.painel.dataset.estado).toBe('semSinal');
   });
 
   it('parar solta o microfone, fecha o áudio, esconde o painel, zera a barra e desliga a volta da voz', async () => {

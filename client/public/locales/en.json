@@ -960,5 +960,7 @@
  "SILENCIAR VOZ": "MUTE VOICE",
  "VOZ SILENCIADA": "VOICE MUTED",
  "Ouvir de novo a voz deste piloto": "Hear this pilot's voice again",
- "Silenciar a voz deste piloto até você sair da sala": "Mute this pilot's voice until you leave the room"
+ "Silenciar a voz deste piloto até você sair da sala": "Mute this pilot's voice until you leave the room",
+ "Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.": "Total silence: this device is not delivering any sound (muted or turned off in Windows). Choose another one from the list.",
+ "Aparelho em uso: {0}": "Device in use: {0}"
 }

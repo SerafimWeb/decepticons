@@ -115,6 +115,8 @@ try {
   }));
   conferir('o painel do teste abre, a barra mexe e o texto diz "funcionando"', !!ok && painel.visivel && Number.parseInt(painel.barra, 10) > 0 && painel.status.startsWith('Funcionando'), JSON.stringify(painel));
   conferir('o botão vira "PARAR O TESTE"', painel.botao === '[ PARAR O TESTE ]');
+  const usando = await page.evaluate(() => document.getElementById('voz-teste-aparelho')?.textContent ?? '');
+  conferir('o painel diz qual aparelho o navegador abriu ("Aparelho em uso: …", P229)', usando.startsWith('Aparelho em uso: ') && usando.length > 20, usando);
   const vivasTeste = await faixasVivas(page);
   conferir('o teste abriu o microfone (uma faixa a mais, além da do chat de voz)', vivasTeste === vivasAntes + 1, `${vivasAntes} -> ${vivasTeste}`);
   const aparelhos = await page.evaluate(() => [...document.getElementById('setting-voz-aparelho').options].map((o) => o.textContent));

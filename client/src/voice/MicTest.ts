@@ -4,12 +4,16 @@
  * saber se o microfone presta. Pedaço sob demanda (a dieta de JS, P187): só baixa quem toca em TESTAR. Usa as mesmas restrições do jogo (eco, ruído e ganho automático): o teste é o que o chat vai ouvir.
  */
 
+import { abrirMicrofone } from './abrirMicrofone';
+
 /** Os textos do painel: cada um é uma chave do dicionário de idiomas (`public/locales`); o teste confere que os seis idiomas têm todas. */
 export const TEXTO_DO_TESTE = Object.freeze({
   pedindo: 'Pedindo o microfone ao navegador…',
   fale: 'Fale agora: a barra tem de se mexer.',
   ok: 'Funcionando: o microfone está captando a sua voz.',
   semSinal: 'Sem sinal: fale mais perto, ou escolha outro aparelho.',
+  silencioTotal: 'Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.',
+  usando: 'Aparelho em uso: {0}',
   negado: 'O navegador bloqueou o microfone neste site. Clique no cadeado ao lado do endereço, permita o microfone e teste de novo.',
   semAparelho: 'Nenhum microfone encontrado. Conecte um e teste de novo.',
   emUso: 'O microfone está em uso por outro programa. Feche-o e teste de novo.',
@@ -32,15 +36,20 @@ export function classificarFalha(e: unknown): FalhaDoMic {
   return 'outra';
 }
 
-/** O volume da onda (bytes de 0 a 255, o silêncio em 128): o RMS de 0 a 1. */
-export function nivelRms(onda: Uint8Array): number {
-  if (onda.length === 0) return 0;
+/**
+ * O volume da onda (amostras de -1 a 1): o RMS de 0 a 1 e o pico (a maior amostra, em módulo). **Em ponto flutuante, não em bytes:** um byte só enxerga passos de 0,0078, e um fone Bluetooth
+ * (o do Comandante) entrega voz baixinha (RMS de 0,01) que em bytes quase não aparece.
+ */
+export function nivelDaOnda(onda: Float32Array): { rms: number; pico: number } {
   let soma = 0;
+  let pico = 0;
   for (let i = 0; i < onda.length; i++) {
-    const v = (onda[i]! - 128) / 128;
+    const v = onda[i]!;
     soma += v * v;
+    const a = v < 0 ? -v : v;
+    if (a > pico) pico = a;
   }
-  return Math.sqrt(soma / onda.length);
+  return { rms: onda.length === 0 ? 0 : Math.sqrt(soma / onda.length), pico };
 }
 
 /** O RMS na barra (0 a 100): em decibéis, de −60 dBFS (vazio) a 0 dBFS (cheio); a fala normal fica entre 50 e 80. */
@@ -49,19 +58,23 @@ export function barraDoNivel(rms: number): number {
   return Math.round(Math.min(100, Math.max(0, ((db + 60) / 60) * 100)));
 }
 
-/** A partir deste RMS (~−34 dBFS) o microfone "está captando". */
-export const RMS_CAPTANDO = 0.02;
+/** A partir deste RMS (~−42 dBFS) o microfone "está captando": voz comum num fone Bluetooth passa disso; o chiado do quarto (~0,001) fica bem abaixo. Era 0,02, que deixava de fora o fone do Comandante. */
+export const RMS_CAPTANDO = 0.008;
 /** Quanto esperar a voz antes de dizer "sem sinal" (ms). */
 export const ESPERA_SEM_SINAL_MS = 4000;
 /** O teste desliga sozinho depois disto (o microfone nunca fica aberto esquecido). */
 export const DURACAO_MAXIMA_MS = 120_000;
 
-export type EstadoDoTeste = 'ok' | 'fale' | 'semSinal';
+export type EstadoDoTeste = 'ok' | 'fale' | 'semSinal' | 'silencioTotal';
 
-/** O que dizer ao jogador: já captou? ainda cedo? ou passou da espera sem sinal? */
-export function estadoDoTeste(msDesdeInicio: number, picoRms: number): EstadoDoTeste {
+/**
+ * O que dizer ao jogador: já captou? ainda cedo? passou da espera sem voz? ou o aparelho entrega **zero absoluto** (`picoAmostra === 0` o teste inteiro)? Um microfone vivo sempre tem um chiado
+ * acima de zero; zero exato é aparelho mudo ou desligado no Windows (foi o caso do "Microfone (Captain 300)" USB do Comandante), e merece uma frase própria.
+ */
+export function estadoDoTeste(msDesdeInicio: number, picoRms: number, picoAmostra = 1): EstadoDoTeste {
   if (picoRms >= RMS_CAPTANDO) return 'ok';
-  return msDesdeInicio < ESPERA_SEM_SINAL_MS ? 'fale' : 'semSinal';
+  if (msDesdeInicio < ESPERA_SEM_SINAL_MS) return 'fale';
+  return picoAmostra === 0 ? 'silencioTotal' : 'semSinal';
 }
 
 // ---------- o painel (a parte com tela) ----------
@@ -72,6 +85,8 @@ export interface PecasDoTeste {
   status: { textContent: string | null };
   botao: { textContent: string | null };
   ouvir: { checked: boolean };
+  /** Onde dizer qual aparelho abriu (o navegador diz o nome na faixa). Sem ele, procura `#voz-teste-aparelho` (a seção das Configurações). */
+  aparelho?: { textContent: string | null };
 }
 
 /** O que o teste pede ao navegador: separado para o teste de unidade trocar por um falso (o microfone de verdade só se prova num Chrome, `medicoes/voz-teste-mic.mjs`). */
@@ -84,14 +99,8 @@ export interface AmbienteDoTeste {
 }
 
 export const AMBIENTE_DO_NAVEGADOR: AmbienteDoTeste = {
-  abrir: (aparelho) => {
-    if (!navigator.mediaDevices?.getUserMedia) return Promise.reject(new DOMException('sem microfone', 'NotFoundError'));
-    // As mesmas restrições do chat de voz: o teste é o que o chat vai ouvir. `ideal` (não `exact`): o aparelho salvo que foi desligado cai no padrão em vez de falhar.
-    return navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1, ...(aparelho ? { deviceId: { ideal: aparelho } } : {}) },
-      video: false,
-    });
-  },
+  // O mesmo pedido do chat de voz (o teste é o que o chat vai ouvir): o aparelho escolhido é `exact`, e só cai no padrão se ele sumiu.
+  abrir: (aparelho) => abrirMicrofone(aparelho),
   novoContexto: () => new AudioContext(),
   quadro: (f) => requestAnimationFrame(f),
   cancelarQuadro: (id) => cancelAnimationFrame(id),
@@ -107,10 +116,12 @@ export class MicTest {
   private ctx: AudioContext | null = null;
   private volta: GainNode | null = null;
   private analyser: AnalyserNode | null = null;
-  private onda = new Uint8Array(1024);
+  private onda = new Float32Array(1024);
   private quadroId = 0;
   private inicio = 0;
   private pico = 0;
+  /** A maior amostra (em módulo) vista no teste: zero exato o tempo todo é aparelho mudo. */
+  private picoAmostra = 0;
   private barraAtual = -1;
   private textoAtual = '';
   private geracao = 0;
@@ -165,8 +176,10 @@ export class MicTest {
       this.volta = volta;
       this.inicio = this.ambiente.agora();
       this.pico = 0;
+      this.picoAmostra = 0;
       this.p.painel.dataset.estado = 'fale';
       this.dizer(TEXTO_DO_TESTE.fale);
+      this.dizerAparelho(fluxo.getAudioTracks?.()[0]?.label ?? '');
       if (typeof document !== 'undefined') document.addEventListener('visibilitychange', this.aoEsconder);
       this.aoAbrir();
       this.quadroId = this.ambiente.quadro(this.ler);
@@ -203,6 +216,7 @@ export class MicTest {
     delete this.p.painel.dataset.estado;
     this.p.ouvir.checked = false;
     this.p.botao.textContent = TEXTO_DO_TESTE.testar;
+    this.dizerAparelho('');
     this.mexerBarra(0);
   }
 
@@ -222,15 +236,16 @@ export class MicTest {
       this.parar();
       return;
     }
-    if (this.onda.length !== a.fftSize) this.onda = new Uint8Array(a.fftSize);
-    a.getByteTimeDomainData(this.onda);
-    const rms = nivelRms(this.onda);
+    if (this.onda.length !== a.fftSize) this.onda = new Float32Array(a.fftSize);
+    a.getFloatTimeDomainData(this.onda);
+    const { rms, pico } = nivelDaOnda(this.onda);
     if (rms > this.pico) this.pico = rms;
+    if (pico > this.picoAmostra) this.picoAmostra = pico;
     this.mexerBarra(barraDoNivel(rms));
-    const estado = estadoDoTeste(agora - this.inicio, this.pico);
+    const estado = estadoDoTeste(agora - this.inicio, this.pico, this.picoAmostra);
     if (this.p.painel.dataset.estado !== estado) {
       this.p.painel.dataset.estado = estado;
-      this.dizer(estado === 'ok' ? TEXTO_DO_TESTE.ok : estado === 'semSinal' ? TEXTO_DO_TESTE.semSinal : TEXTO_DO_TESTE.fale);
+      this.dizer(TEXTO_DO_TESTE[estado === 'ok' ? 'ok' : estado === 'semSinal' ? 'semSinal' : estado === 'silencioTotal' ? 'silencioTotal' : 'fale']);
     }
     this.quadroId = this.ambiente.quadro(this.ler);
   };
@@ -239,6 +254,12 @@ export class MicTest {
     if (percentual === this.barraAtual) return;
     this.barraAtual = percentual;
     this.p.barra.style.width = `${percentual}%`;
+  }
+
+  /** Diz qual aparelho o navegador abriu (o nome da faixa); vazio apaga. É o que mostra, por exemplo, que a escolha da lista valeu. */
+  private dizerAparelho(nome: string): void {
+    const el = this.p.aparelho ?? (typeof document !== 'undefined' ? document.getElementById('voz-teste-aparelho') : null);
+    if (el) el.textContent = nome ? TEXTO_DO_TESTE.usando.replace('{0}', nome) : '';
   }
 
   private dizer(texto: string): void {
