@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { decidirComandante, definirModoComandante, linkPermitido, modoComandante } from './ModoComandante';
+import { decidirComandante, lerModoComandante, linkPermitido } from './DecisaoDoComandante';
+import { definirModoComandante, modoComandante } from './ModoComandante';
 
 const base = { search: '', lembrado: null, linkPermitido: true, admin: false };
 
@@ -14,22 +15,22 @@ describe('o modo Comandante (P224): o link só em desenvolvimento; em produção
   });
 
   it('onde o link vale: liga com ?comandante=1, lembra, e desliga com =0 (como sempre foi)', () => {
-    expect(decidirComandante({ ...base, search: '?comandante=1' })).toEqual({ ligado: true, origem: 'link', gravar: '1' });
+    expect(decidirComandante({ ...base, search: '?comandante=1' })).toEqual({ ligado: true, gravar: '1' });
     expect(decidirComandante({ ...base, search: '?admin=1' }).ligado).toBe(true);
-    expect(decidirComandante({ ...base, lembrado: '1' })).toEqual({ ligado: true, origem: 'link', gravar: null });
-    expect(decidirComandante({ ...base, lembrado: '1', search: '?comandante=0' })).toEqual({ ligado: false, origem: 'nenhuma', gravar: 'apagar' });
-    expect(decidirComandante(base)).toEqual({ ligado: false, origem: 'nenhuma', gravar: null });
+    expect(decidirComandante({ ...base, lembrado: '1' })).toEqual({ ligado: true, gravar: null });
+    expect(decidirComandante({ ...base, lembrado: '1', search: '?comandante=0' })).toEqual({ ligado: false, gravar: 'apagar' });
+    expect(decidirComandante(base)).toEqual({ ligado: false, gravar: null });
   });
 
   it('onde o link NÃO vale (produção fechada): ?comandante=1 e a lembrança do navegador são ignorados, e a lembrança é apagada; quem digita o link não ganha nada', () => {
     const fechado = { ...base, linkPermitido: false };
-    expect(decidirComandante({ ...fechado, search: '?comandante=1' })).toEqual({ ligado: false, origem: 'nenhuma', gravar: null });
-    expect(decidirComandante({ ...fechado, search: '?admin=1', lembrado: '1' })).toEqual({ ligado: false, origem: 'nenhuma', gravar: 'apagar' });
+    expect(decidirComandante({ ...fechado, search: '?comandante=1' })).toEqual({ ligado: false, gravar: null });
+    expect(decidirComandante({ ...fechado, search: '?admin=1', lembrado: '1' })).toEqual({ ligado: false, gravar: 'apagar' });
     expect(decidirComandante({ ...fechado, lembrado: '1' }).ligado).toBe(false);
   });
 
   it('a conta de administrador liga o modo Comandante sem link, em qualquer lugar (e vale mesmo com o link fechado)', () => {
-    expect(decidirComandante({ ...base, linkPermitido: false, admin: true })).toEqual({ ligado: true, origem: 'conta', gravar: null });
+    expect(decidirComandante({ ...base, linkPermitido: false, admin: true })).toEqual({ ligado: true, gravar: null });
     expect(decidirComandante({ ...base, admin: true, search: '?comandante=0' }).ligado).toBe(true); // o =0 não derruba quem é administrador
   });
 
@@ -38,5 +39,19 @@ describe('o modo Comandante (P224): o link só em desenvolvimento; em produção
     definirModoComandante(true);
     expect(modoComandante()).toBe(true);
     definirModoComandante(false);
+  });
+});
+
+describe('ler o link (o que sempre valeu: ?comandante=1, ?admin=1, =0 e a lembrança do navegador)', () => {
+  it('liga com ?comandante=1 (ou ?admin=1) e manda o navegador lembrar; desliga com =0 e manda esquecer', () => {
+    expect(lerModoComandante('?comandante=1', null)).toEqual({ ligado: true, gravar: '1' });
+    expect(lerModoComandante('?admin=1', null)).toEqual({ ligado: true, gravar: '1' });
+    expect(lerModoComandante('?comandante=0', '1')).toEqual({ ligado: false, gravar: 'apagar' });
+  });
+
+  it('sem o parâmetro, vale o que o navegador lembra (e um valor estranho não liga)', () => {
+    expect(lerModoComandante('', '1')).toEqual({ ligado: true, gravar: null });
+    expect(lerModoComandante('?build=x', null)).toEqual({ ligado: false, gravar: null });
+    expect(lerModoComandante('?comandante=talvez', null)).toEqual({ ligado: false, gravar: null });
   });
 });

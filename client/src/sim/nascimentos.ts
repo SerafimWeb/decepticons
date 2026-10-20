@@ -1,7 +1,7 @@
 import { SPAWN_POINTS } from '../environment/Arena';
 import { BUNKER_SPAWNS, type MapId } from '../environment/Bunker';
 import { AMAZONIA_SPAWNS } from '../environment/AmazoniaLayout';
-import { PRACA_SPAWNS } from '../environment/PracaLayout';
+import { PRACA_SPAWNS } from '../environment/PracaNascimentos';
 import { PRAIA_SPAWNS } from '../environment/PraiaLayout';
 
 /** Um ponto de nascimento (x, z) no chão da arena. */

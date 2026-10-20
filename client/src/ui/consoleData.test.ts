@@ -9,7 +9,6 @@ import {
   escalacaoDaPartida,
   fichaDoMech,
   fracoesDasPartes,
-  lerModoComandante,
   MESA_COMANDO,
   MESA_URL,
   LINHAS_DE_PILOTOS,
@@ -20,23 +19,6 @@ import {
   type MechLido,
   type PilotoNaPartida,
 } from './consoleData';
-
-describe('modo Comandante', () => {
-  it('liga com ?comandante=1 (ou ?admin=1) e manda o navegador lembrar', () => {
-    expect(lerModoComandante('?comandante=1', null)).toEqual({ ligado: true, gravar: '1' });
-    expect(lerModoComandante('?admin=1', null)).toEqual({ ligado: true, gravar: '1' });
-  });
-
-  it('desliga com =0 e manda esquecer', () => {
-    expect(lerModoComandante('?comandante=0', '1')).toEqual({ ligado: false, gravar: 'apagar' });
-  });
-
-  it('sem o parâmetro, vale o que o navegador lembra (e um valor estranho não liga)', () => {
-    expect(lerModoComandante('', '1')).toEqual({ ligado: true, gravar: null });
-    expect(lerModoComandante('?build=x', null)).toEqual({ ligado: false, gravar: null });
-    expect(lerModoComandante('?comandante=talvez', null)).toEqual({ ligado: false, gravar: null });
-  });
-});
 
 describe('ficha do seu Mech', () => {
   it('a montagem de fábrica: Vector-09, 300 de tronco, 9 m/s, plasma e foguetes MK I', () => {

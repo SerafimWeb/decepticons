@@ -13,21 +13,8 @@ import { hasShoulderSlot, isMetalShield, validateLoadout, type ArmSpec, type Loa
 
 // ─── Modo Comandante (as telas de administração) ──────────────────────────────────────────────────────────────────────────
 
-/** Onde o navegador lembra que o modo Comandante está ligado. */
-export const COMANDANTE_KEY = 'cybermech.comandante.v1';
-
-/**
- * Liga com `?comandante=1` (ou `?admin=1`) e desliga com `=0`; sem o parâmetro, vale o que o navegador lembra. **Não é segurança:**
- * só mostra os monitores de ajuste do jogo, que não mexem em servidor nem em dado de ninguém (tudo ali já existia nas Configurações).
- * O que pedir proteção de verdade (o servidor) entra com token, no servidor (`PAINEL_ADMIN.md`, etapa E).
- */
-export function lerModoComandante(search: string, lembrado: string | null): { ligado: boolean; gravar: '1' | 'apagar' | null } {
-  const p = new URLSearchParams(search);
-  const v = p.get('comandante') ?? p.get('admin');
-  if (v === '1' || v === 'sim') return { ligado: true, gravar: '1' };
-  if (v === '0' || v === 'nao' || v === 'não') return { ligado: false, gravar: 'apagar' };
-  return { ligado: lembrado === '1', gravar: null };
-}
+// A chave mora em `core/ModoComandante.ts` e a leitura do link em `core/DecisaoDoComandante.ts` (sob demanda): nenhuma depende deste módulo grande.
+export { COMANDANTE_KEY } from '../core/ModoComandante';
 
 // ─── Ficha do seu Mech ────────────────────────────────────────────────────────────────────────────────────────────────────
 

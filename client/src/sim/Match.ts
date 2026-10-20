@@ -29,7 +29,7 @@ import { caboDoPonto, CABOS, CabosDeDados, CODIGO_DO_ESTADO, ehAndroide, PONTOS_
 import { alvoDoChefe } from './FasesDoChefe';
 import { PORTAS, PORTAS_DA_ESTACAO, PortasDaEstacao, pesoNaPorta, portaDoPonto } from './PortasDaEstacao';
 import { AMAZONIA_POSTO_AVANCADO, AMAZONIA_RESISTENCIA, AMAZONIA_SPAWNS, rioEmX } from '../environment/AmazoniaLayout';
-import { PRACA_SPAWNS } from '../environment/PracaLayout';
+import { PRACA_SPAWNS } from '../environment/PracaNascimentos';
 import { exigirChefe, exigirMapa, temEscudo } from '../environment/mapasSobDemanda';
 import { EscudoDoDraga } from './EscudoDoDraga';
 import { escotilhaDoDraga, INVASAO, InvasaoDoDraga } from './InvasaoDoDraga';
