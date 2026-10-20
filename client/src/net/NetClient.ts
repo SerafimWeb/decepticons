@@ -1,5 +1,6 @@
 import { decodeBankReply, encodeBankCode } from '../../../shared/net/bank';
 import { VOZ } from '../../../shared/net/voz';
+import { codificarCredencial } from '../../../shared/net/credencial';
 import { codificarEnviar, lerReceber, TEXTO } from '../../../shared/net/texto';
 import type { BankReply } from '../../../shared/bank/codes';
 import { Writer } from '../../../shared/net/codec';
@@ -94,7 +95,10 @@ export class NetClient {
     return this.ws.readyState === WebSocket.OPEN;
   }
 
-  join(name: string, build: string): void {
+  /** `credencial`: o token da conta (P226, A0). Vai **antes** do JOIN: é o que abre um mapa restrito (só administrador); num mapa público o servidor a descarta. */
+  join(name: string, build: string, credencial?: string | null): void {
+    const prova = credencial ? codificarCredencial(credencial) : null;
+    if (prova) this.send(prova);
     this.send(encodeJoin(this.w, { protocol: PROTOCOL_VERSION, name, build }));
   }
 

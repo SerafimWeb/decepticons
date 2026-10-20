@@ -734,6 +734,14 @@ export class Game {
     if (shouldConnect) {
       this.online = new OnlineSession({
         ...online,
+        // O token da conta abre um mapa restrito (só administrador; o servidor confere, A0). Lido do navegador a cada conexão: não espera a conta restaurar.
+        credencial: () => {
+          try {
+            return browserStorage()?.getItem(chaveDoToken(online.url)) ?? null;
+          } catch {
+            return null;
+          }
+        },
         onVoz: (bytes) => this.voz?.receber(bytes),
         onSala: (id) => {
           this.vozId = id;
@@ -1214,7 +1222,7 @@ export class Game {
     } else if (s.state === 'na sala') {
       this.lobby.hide();
     } else if (s.state === 'recusado') {
-      this.lobby.setConnecting(true, `RECUSADO: ${s.reason || 'erro'}`);
+      this.lobby.setConnecting(true, `RECUSADO: ${s.reason === 'restrito' ? 'este mapa ainda está em teste (só para o Comandante)' : s.reason || 'erro'}`);
     } else if (s.state === 'reconectando') {
       this.lobby.hide(); // a queda não cobre a tela: o mundo segue (parado) e o aviso fica no canto, até a volta
     } else {
@@ -1229,7 +1237,7 @@ export class Game {
           : s.state === 'reconectando'
             ? `ONLINE · CONEXÃO CAIU · RECONECTANDO${s.tentativa !== undefined && s.de !== undefined && s.tentativa <= s.de ? ` (${s.tentativa}/${s.de})` : ''}…`
             : s.state === 'recusado'
-            ? `ONLINE · RECUSADO (${s.reason === 'cheia' ? 'sala cheia' : s.reason === 'versao' ? 'versão diferente: recarregue' : s.reason === 'montagem' ? 'montagem inválida' : 'erro'})`
+            ? `ONLINE · RECUSADO (${s.reason === 'cheia' ? 'sala cheia' : s.reason === 'versao' ? 'versão diferente: recarregue' : s.reason === 'montagem' ? 'montagem inválida' : s.reason === 'restrito' ? 'mapa em teste' : 'erro'})`
             : 'ONLINE · CONEXÃO CAIU: recarregue a página';
     this.netStatus.textContent = text;
     this.netStatus.classList.toggle('bad', s.state === 'recusado' || s.state === 'caiu' || s.state === 'reconectando');
