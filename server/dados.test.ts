@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { EVENTO_PATH } from '../shared/net/telemetry';
-import { bancoDeContas, DADOS_VARIAVEL, pastaDados } from './dados';
+import { bancoDeContas, DADOS_VARIAVEL, pastaDados, pastaDadosDasFerramentas } from './dados';
 import { TOKEN_ARQUIVO } from './metricas';
 import { startServer } from './Server';
 
@@ -13,6 +13,41 @@ const pasta = (nome: string) => {
   mkdirSync(p, { recursive: true });
   return p;
 };
+
+describe('pastaDadosDasFerramentas: o npm run admin e o npm run email numa worktree acham os dados de produção', () => {
+  /** Uma "pasta principal" de mentira com `.tmp/servidor` e uma worktree cujo `.git` aponta para ela, do jeito que o git escreve. */
+  const montar = (nome: string, comDados = true) => {
+    const raiz = pasta(nome);
+    const principal = join(raiz, 'principal');
+    const worktree = join(raiz, 'wt');
+    mkdirSync(join(principal, '.git', 'worktrees', 'wt'), { recursive: true });
+    if (comDados) mkdirSync(join(principal, '.tmp', 'servidor'), { recursive: true });
+    mkdirSync(worktree, { recursive: true });
+    writeFileSync(join(worktree, '.git'), `gitdir: ${join(principal, '.git', 'worktrees', 'wt').replace(/\\/g, '/')}\n`);
+    return { principal, worktree };
+  };
+
+  it('numa worktree, os dados são os da pasta principal (onde está o contas.db de produção), não uma pasta vazia da worktree', () => {
+    const { principal, worktree } = montar('wt');
+    expect(pastaDadosDasFerramentas(worktree, undefined)).toBe(join(principal, '.tmp', 'servidor'));
+  });
+
+  it('a variável CYBERMECH_DADOS manda mais que tudo, e fora de worktree (ou sem dados lá) vale a pasta ao lado do código', () => {
+    const { worktree } = montar('var');
+    expect(pastaDadosDasFerramentas(worktree, resolve('.tmp', 'servidor'))).toBe(resolve('.tmp', 'servidor'));
+    const sem = montar('sem', false);
+    expect(pastaDadosDasFerramentas(sem.worktree, undefined), 'a principal ainda não tem .tmp/servidor').toBe(join(sem.worktree, '.tmp', 'servidor'));
+    const solta = pasta('solta');
+    expect(pastaDadosDasFerramentas(solta, undefined), 'pasta que não é worktree: .git ausente ou diretório').toBe(join(solta, '.tmp', 'servidor'));
+    mkdirSync(join(solta, '.git'), { recursive: true });
+    expect(pastaDadosDasFerramentas(solta, undefined), 'checkout principal (.git é pasta)').toBe(join(solta, '.tmp', 'servidor'));
+  });
+
+  it('o servidor NÃO usa isto: pastaDados ignora worktree (um servidor de teste numa worktree nunca pega o banco de produção)', () => {
+    const { worktree } = montar('servidor');
+    expect(pastaDados(worktree, undefined)).toBe(join(worktree, '.tmp', 'servidor'));
+  });
+});
 
 describe('pastaDados: onde o servidor guarda banco, números e token', () => {
   const codigo = resolve('.tmp', 'wt-servidor-prod');

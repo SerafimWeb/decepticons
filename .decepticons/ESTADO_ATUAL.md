@@ -2,17 +2,27 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
-> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
+**O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
 ## O PLANO DE LANÇAMENTO, O MAPA QUE TREMIA E O `?comandante=1` FECHÁVEL — Claude, 19/10 (branch `claude/mapa-treme`, P224)
 
 **Feito:** (1) `CAMINHO_DO_LANCAMENTO.md`: a matriz missão × modo × offline/online, os pacotes de trabalho (A0 a A7, ≈ 9 a 11 PRs para 3 missões co-op e a Bandeira), o que o Comandante ainda precisa pedir e a definição de pronto. (2) O mapa-múndi não muda mais de tamanho ao passar o mouse (`WorldMap.reservarAltura`). (3) `core/ModoComandante.ts`: o link só em desenvolvimento, no PC e no site publicado com o interruptor ligado; em produção fechada, a conta de administrador. **Provas:** 5 testes do modo Comandante; o tremor medido no navegador (6 de 7 pinos mudavam; depois, 0).
 **Falta (R13):** o **servidor recusar mapa restrito** (A0); **o interruptor está ligado** no site publicado (desligar no lançamento); a ordem das missões e o servidor fora do PC são decisões do Comandante (plano § 4).
 **Onde conferir:** o mapa-múndi do console; o plano em `.decepticons/CAMINHO_DO_LANCAMENTO.md`. **Próxima sessão:** A0, depois A1 e A2 (o co-op online).
 
-## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
+## O ANALYTICS PEGAVA A PROPRIEDADE ERRADA: AGORA EXIGE O CÓDIGO DO CYBERMECH — Claude, 19/10 (branch `claude/analytics-propriedade-certa`, P207)
 
-**O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
+**O Comandante (19/10):** *"já liguei a admin api, tem como você testar?"*. **Testei, e achei um problema:** o Google aceita a chave e a Admin API responde, mas a conta de serviço **só enxerga a propriedade "odpandroid"** (o app Android do Olho do Pai, no "Default Account for Firebase"), não a do CYBERMECH (`G-2CCHDCEC7X`). A regra antiga ("a única propriedade") a escolheria e o `/metricas/` mostraria números do app Android como se fossem do jogo.
+
+**O que entrou:** a descoberta só aceita a propriedade com um fluxo web do `G-2CCHDCEC7X` (`GA_MEDICAO_ID`; um teste confere que servidor, site e jogo usam o mesmo). Sem ela, o estado novo "propriedade-errada" diz os nomes que a conta enxerga e onde dar o acesso, e **nenhum relatório é pedido à propriedade errada**. `ga-propriedade.txt` continua valendo sem conferir. **Provas:** 7 testes novos (o caso real de hoje, ambíguo, ID escrito, código por variável, paridade do código) e **4 mutações à mão pegas**.
+
+**Falta (dele, 2 minutos):** no Analytics, abrir a propriedade do **CYBERMECH** e dar **Leitor** ao e-mail da conta de serviço (`LANCAMENTO.md § 6C`); se essa propriedade ainda não existir, criar uma com fluxo web para `cybermech.online`. O servidor percebe em 30 s, sem reiniciar.
+
+**Próxima sessão começa com:** conferir o `/metricas/` depois do acesso (hoje responde "só enxerga odpandroid").
+
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
 ## A PRAÇA DOS TRÊS PODERES: O MAPA DO 8 DE JANEIRO NO AR, COM A MULTIDÃO DESCENDO A ESPLANADA (PASSO 4 DA FICHA) — Claude, 19/10 (branch `claude/praca-mapa`, P217)
 
 **O que foi feito:** o **chão** da fase do 8 DE JANEIRO, jogável no **Deathmatch** (offline e online) e **restrito ao Comandante** (`mapa:janeiro`).

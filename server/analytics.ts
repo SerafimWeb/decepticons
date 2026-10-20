@@ -16,6 +16,8 @@ import { join } from 'node:path';
  */
 export const GA_CHAVE_ARQUIVO = 'ga-chave.json';
 export const GA_PROPRIEDADE_ARQUIVO = 'ga-propriedade.txt';
+/** O código de medição do jogo e do site (o mesmo do `client/index.html` e de `scripts/site/tema.mjs`; um teste confere que não se separam). A descoberta só aceita a propriedade que tem um fluxo com ele. */
+export const GA_MEDICAO_ID = 'G-2CCHDCEC7X';
 export const GA_DIAS = 28;
 export const GA_TTL_MS = 10 * 60_000;
 export const GA_ERRO_TTL_MS = 2 * 60_000;
@@ -24,7 +26,8 @@ const PEDIDO_TIMEOUT_MS = 8000;
 const ESCOPO = 'https://www.googleapis.com/auth/analytics.readonly';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const DATA_URL = 'https://analyticsdata.googleapis.com/v1beta';
-const ADMIN_URL = 'https://analyticsadmin.googleapis.com/v1beta/accountSummaries';
+const ADMIN_BASE = 'https://analyticsadmin.googleapis.com/v1beta';
+const ADMIN_URL = `${ADMIN_BASE}/accountSummaries`;
 const RE_PROPRIEDADE = /^\d{5,15}$/;
 
 export interface GaRelatorio {
@@ -44,6 +47,8 @@ export interface GaRelatorio {
 /** `sem-chave`: não há `ga-chave.json`; `chave-ruim`: há, mas não é uma chave de conta de serviço legível; `sem-propriedade`: falta o ID numérico da propriedade (e não deu para descobrir). */
 export type GaEstado =
   | { estado: 'desligado'; motivo: 'sem-chave' | 'chave-ruim' | 'sem-propriedade' }
+  /** A conta de serviço enxerga propriedades (`vistas`: os nomes), mas nenhuma tem o fluxo do CYBERMECH: foi dado acesso na propriedade errada. */
+  | { estado: 'desligado'; motivo: 'propriedade-errada'; vistas: string[] }
   | { estado: 'carregando' }
   | { estado: 'erro'; motivo: 'token' | 'api' | 'cota' | 'rede'; detalhe: string; desde: string }
   | { estado: 'ok'; relatorio: GaRelatorio };
@@ -93,6 +98,8 @@ export class GoogleAnalytics {
   private readonly dir: string | null;
   private token: { valor: string; expiraEm: number } | null = null;
   private descoberta: string | null = null;
+  /** Os nomes das propriedades que a conta enxerga e não são a do CYBERMECH (para dizer ao dono onde deu acesso por engano). */
+  private vistas: string[] = [];
   private cache: { estado: GaEstado; ate: number } | null = null;
   private voo: Promise<GaEstado> | null = null;
 
@@ -130,7 +137,7 @@ export class GoogleAnalytics {
       if ('motivo' in chave) return this.guardar({ estado: 'desligado', motivo: chave.motivo });
       const token = await this.tokenDeAcesso(chave);
       const propriedade = this.propriedadeConfigurada() ?? (await this.descobrirPropriedade(token));
-      if (!propriedade) return this.guardar({ estado: 'desligado', motivo: 'sem-propriedade' });
+      if (!propriedade) return this.guardar(this.vistas.length ? { estado: 'desligado', motivo: 'propriedade-errada', vistas: this.vistas } : { estado: 'desligado', motivo: 'sem-propriedade' });
       return this.guardar({ estado: 'ok', relatorio: await this.relatorio(token, propriedade) });
     } catch (e) {
       const erro = e instanceof GaErro ? e : new GaErro('rede', 'erro inesperado');
@@ -190,13 +197,36 @@ export class GoogleAnalytics {
     return r.access_token;
   }
 
-  /** Sem o ID configurado: pergunta ao Google a quais propriedades a conta tem acesso e só usa se for uma. Precisa da Admin API ligada no projeto (senão, "sem propriedade"). */
+  /**
+   * Sem o ID configurado: pergunta ao Google a quais propriedades a conta tem acesso e **só usa a que tem um fluxo com o código de medição do CYBERMECH** (`GA_MEDICAO_ID`).
+   * Antes pegava "a única propriedade", e uma conta com acesso só ao app Android de outro projeto mostraria números do app como se fossem do jogo (18/10). Se enxerga
+   * propriedades mas nenhuma é a do CYBERMECH, guarda os nomes em `vistas` para a página dizer onde o acesso foi dado por engano. Precisa da Admin API ligada no projeto
+   * (senão, "falta o ID"). Quem quiser outra propriedade escreve o ID em `ga-propriedade.txt`: o que está escrito vale, sem checar.
+   */
   private async descobrirPropriedade(token: string): Promise<string | null> {
     if (this.descoberta) return this.descoberta;
+    this.vistas = [];
+    const medicao = this.env.CYBERMECH_GA_MEDICAO?.trim() || GA_MEDICAO_ID;
+    const cab = { authorization: `Bearer ${token}` };
     try {
-      const r = (await this.pedir(ADMIN_URL, { headers: { authorization: `Bearer ${token}` } }, 'api')) as { accountSummaries?: { propertySummaries?: { property?: string }[] }[] } | null;
-      const ids = (r?.accountSummaries ?? []).flatMap((c) => (c.propertySummaries ?? []).map((p) => String(p.property ?? '').replace('properties/', ''))).filter((i) => RE_PROPRIEDADE.test(i));
-      if (ids.length === 1) this.descoberta = ids[0]!;
+      const r = (await this.pedir(ADMIN_URL, { headers: cab }, 'api')) as { accountSummaries?: { propertySummaries?: { property?: string; displayName?: string }[] }[] } | null;
+      const props = (r?.accountSummaries ?? [])
+        .flatMap((c) => c.propertySummaries ?? [])
+        .map((p) => ({ id: String(p.property ?? '').replace('properties/', ''), nome: detalheSeguro(p.displayName) }))
+        .filter((p) => RE_PROPRIEDADE.test(p.id))
+        .slice(0, 12);
+      const achadas: string[] = [];
+      for (const p of props) {
+        try {
+          const s = (await this.pedir(`${ADMIN_BASE}/properties/${p.id}/dataStreams`, { headers: cab }, 'api')) as { dataStreams?: { webStreamData?: { measurementId?: string } }[] } | null;
+          if ((s?.dataStreams ?? []).some((d) => d.webStreamData?.measurementId === medicao)) achadas.push(p.id);
+        } catch (e) {
+          if (e instanceof GaErro && e.motivo === 'rede') throw e;
+          // sem permissão para listar os fluxos desta propriedade: ela não é a nossa
+        }
+      }
+      if (achadas.length === 1) this.descoberta = achadas[0]!;
+      else if (achadas.length === 0) this.vistas = props.map((p) => p.nome || p.id);
       return this.descoberta;
     } catch (e) {
       if (e instanceof GaErro && e.motivo === 'rede') throw e;
