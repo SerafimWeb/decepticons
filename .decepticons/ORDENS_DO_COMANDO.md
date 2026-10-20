@@ -20,6 +20,13 @@
 |---|---|---|---|---|---|
 | P223 | 19/10 | "quero economizar sim, de forma inteligente, profissional e experiente, sem miséria, focando em melhorar o desempenho, manutenção, etc" | ✅ | **Feito** (PR `claude/ci-economico`), medido antes: 235 min num dia (cota de ~8 dias). O push na `main` não refaz o check na árvore que o PR já provou; as etiquetas só ao abrir; PR em rascunho não roda; `npm run ci:consumo` mede. O check do PR e o hook seguem completos. Detalhe em `DEPLOY.md` | `npm run ci:consumo -- --desde 2026-10-19` antes e depois: os minutos por dia caem |
 
+## P228 — O mudo por jogador no chat de voz (20/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P228 | 20/10 | (as decisões "sim" do P227) o mudo por jogador, o risco mais próximo da voz pública | ✅ | **Feito** (PR `claude/voz-mudo`): na lista de pilotos do monitor REDE (Esc > REDE) cada piloto tem **[ SILENCIAR VOZ ]**; silenciar desliga a faixa dele (custo zero) e o indicador de quem fala some; vale até sair da sala. Só aparece para quem está na voz. A criação do botão mora no pedaço sob demanda da voz (o pacote de partida está no teto). **Falta:** a denúncia (depende de onde a queixa chega, decisão do Comandante) | Esc > REDE com outra pessoa na voz: o botão ao lado do nome |
+
+
 ## P225 — O hook não refaz o check depois de uma junção pura com a main (19/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

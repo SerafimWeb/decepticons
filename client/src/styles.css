@@ -4702,6 +4702,12 @@ html.touch #touch-controls.editing ~ .voz-mic { display: none; }
 .rede-piloto:hover, .rede-piloto:focus-visible { border-color: #8fffc8; box-shadow: 0 0 10px rgba(110, 240, 180, 0.35); }
 .rede-piloto b { font-weight: 700; }
 .rede-piloto small { font-size: 0.85em; color: #8fa29a; }
+.rede-pilotos li { display: inline-flex; align-items: stretch; gap: 2px; }
+.rede-mudo {
+  padding: 4px 7px; cursor: pointer; font: inherit; font-size: calc(9px * var(--k)); letter-spacing: 1px; color: #9fb3aa; background: rgba(8, 30, 22, 0.55); border: 1px solid rgba(110, 240, 180, 0.25);
+}
+.rede-mudo:hover, .rede-mudo:focus-visible { color: #eafff4; border-color: #8fffc8; }
+.rede-mudo.ligado { color: #ffd23f; border-color: rgba(255, 210, 63, 0.7); background: rgba(40, 30, 4, 0.7); }
 .rede-nova { font-style: normal; font-size: 0.85em; font-weight: 700; padding: 0 5px; border-radius: 8px; color: #04140c; background: #ffd23f; }
 
 /* O aviso de mensagem nova durante a partida: um canto, 6 s, sem pegar o clique. */

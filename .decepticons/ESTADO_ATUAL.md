@@ -11,6 +11,11 @@
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
+## O MUDO POR JOGADOR NO CHAT DE VOZ — Claude, 20/10 (branch `claude/voz-mudo`, P228)
+
+**Feito:** em Esc > REDE, cada piloto tem **[ SILENCIAR VOZ ]** (aparece só para quem está na voz); silenciar desliga a faixa dele (custo zero), o indicador de quem fala some, e vale até sair da sala. 7 mutações pegas e a prova no Chrome real (`medicoes/voz-jogo.mjs`). **Falta (R13):** a denúncia (decisão do Comandante: para onde vai a queixa) e o mudo sem pausar a partida.
+
+
 ## O HOOK NÃO REFAZ O CHECK DEPOIS DE UMA JUNÇÃO PURA COM A MAIN — Claude, 19/10 (branch `claude/hook-juncao`, P225)
 
 **O Comandante (19/10):** economizar os 10 a 25 minutos do laço de push, com boas práticas. **Feito:** `scripts/juncaoJaVerificada.mjs` + o hook: depois de uma junção com a `main`, não refaz o check se a `main` entrou por cima de uma árvore já verificada e cada arquivo que mudou veio inteiro dela (ou é `.md`); mesclado dos dois lados roda tudo; `CYBERMECH_CHECK_COMPLETO=1` desliga (o `publicar --sem-ci` liga). 7 mutações pegas e a regra aplicada a junções reais. **Falta (R13):** só se confirma de verdade no próximo push depois de uma junção; os locales mesclados ainda rodam o check (próximo degrau no HISTORICO).

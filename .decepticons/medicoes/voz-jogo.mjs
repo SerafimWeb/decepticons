@@ -63,6 +63,7 @@ try {
     await page.click('#cta').catch(() => {});
     await page.waitForTimeout(500);
   }
+  let mudoOk = soConfig; // o mudo por jogador (P228) é provado abaixo, no jogo de verdade
   // Espera o indicador de voz mostrar o colega falando (a sala, a ligação e o áudio têm de funcionar no jogo de verdade).
   const falou = soConfig ? true : await page
     .waitForFunction(() => (document.querySelector('.voz-fala')?.textContent ?? '').includes('BRAVO'), null, { timeout: 180_000, polling: 500 })
@@ -73,6 +74,31 @@ try {
     console.log('estado:', JSON.stringify(await page.evaluate(() => ({ estado: document.querySelector('.voz-estado')?.textContent, rede: document.querySelector('.voz-rede')?.textContent, fala: document.querySelector('.voz-fala')?.textContent, escondido: document.querySelector('.voz-hud')?.hidden }))));
     await dormir(500);
     await page.screenshot({ path: resolve(saida, 'voz-hud-jogo-claude.png') });
+
+    // ---- o mudo por jogador (P228): o botão ao lado do piloto na lista da REDE silencia a voz dele; o indicador de quem fala some e volta ao desfazer
+    const achouBotao = await page
+      .waitForFunction(() => !!document.querySelector('#rede-pilotos [data-mudo]'), null, { timeout: 90_000, polling: 500 })
+      .then(() => true)
+      .catch(() => false);
+    const botao = () => page.evaluate(() => { const b = document.querySelector('#rede-pilotos [data-mudo]'); return b ? { texto: b.textContent, pressionado: b.getAttribute('aria-pressed') } : null; });
+    const falaBravo = () => page.evaluate(() => (document.querySelector('.voz-fala')?.textContent ?? '').includes('BRAVO'));
+    console.log('o botão de mudo aparece na lista da REDE:', achouBotao, JSON.stringify(await botao()));
+    if (achouBotao) {
+      await page.evaluate(() => document.querySelector('#rede-pilotos [data-mudo]').click());
+      await dormir(600);
+      const silenciado = await botao();
+      await dormir(3000);
+      const calou = !(await falaBravo());
+      console.log('silenciado: o botão diz', JSON.stringify(silenciado), '| o indicador de quem fala NÃO mostra o BRAVO (mesmo ele falando):', calou);
+      await page.evaluate(() => document.querySelector('#rede-pilotos [data-mudo]').click());
+      const voltou = await page
+        .waitForFunction(() => (document.querySelector('.voz-fala')?.textContent ?? '').includes('BRAVO'), null, { timeout: 30_000, polling: 300 })
+        .then(() => true)
+        .catch(() => false);
+      console.log('desfeito: o botão diz', JSON.stringify(await botao()), '| o indicador volta a mostrar o BRAVO:', voltou);
+      mudoOk = silenciado?.texto === 'VOZ SILENCIADA' && silenciado?.pressionado === 'true' && calou && voltou;
+    }
+    console.log(`MUDO POR JOGADOR (P228): ${mudoOk ? 'OK' : 'FALHOU'}`);
   }
 
   // As configurações: a seção CHAT DE VOZ (com o selo TESTE).
@@ -89,7 +115,7 @@ try {
   await modal.screenshot({ path: resolve(saida, 'voz-configuracoes-claude.png') }).catch(async () => page.screenshot({ path: resolve(saida, 'voz-configuracoes-claude.png') }));
   console.log(`erros de página: ${erros.size}`);
   for (const e of erros) console.log('  ', e);
-  process.exitCode = falou && erros.size === 0 ? 0 : 1;
+  process.exitCode = falou && mudoOk && erros.size === 0 ? 0 : 1;
 } finally {
   await browser?.close();
   await vite.close();
