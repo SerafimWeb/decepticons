@@ -171,7 +171,7 @@ import { LadoSelector } from '../ui/LadoSelector';
 import { ContaCliente } from '../net/auth';
 import { progressoLocalDoJogo } from '../net/progressoLocal';
 import { chaveDoToken, SessaoPiloto } from '../net/sessao';
-import { elegibilidadeDaVoz, microfoneDaNarracaoLiberado, vozDeveLigar } from '../voice/elegibilidade';
+import { elegibilidadeDaVoz, microfoneDaNarracaoLiberado, motivoSemVoz, type MotivoSemVoz, vozDeveLigar } from '../voice/elegibilidade';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
 const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', swarm: 'ENXAME', cruise: 'CRUZADOR', grenade: 'GRANADAS', laser: 'LASER', chainsaw: 'MOTOSSERRA', harpoon: 'ARPÃO' };
@@ -304,6 +304,9 @@ export class Game {
   private sessao: SessaoPiloto | null = null;
   private settingsMenu: SettingsMenu | null = null;
   private vozHud: VoiceHud | null = null;
+  /** O aviso de por que a voz não está ligada (P237) e o motivo que ele mostra agora. */
+  private vozAviso: HTMLElement | null = null;
+  private motivoDoAviso: MotivoSemVoz | null = null;
   /** Desenha o botão de mudo na lista da REDE: chega com o pedaço sob demanda da voz (P228). */
   private anexarMudo: ((li: HTMLElement, id: number, mudo: boolean) => void) | null = null;
   private vozCarregando = false;
@@ -905,6 +908,7 @@ export class Game {
     // Só o servidor público do build ou o `&servidor=` do link (o motivo do `defaultServer` ficar fora: ServerStatus.ts).
     new ServerStatus(new URLSearchParams(location.search).get('servidor') || import.meta.env.VITE_GAME_SERVER, document.getElementById('menu-status'));
     this.settingsMenu = new SettingsMenu(this.settings);
+    this.settingsMenu.setDiagnosticoDaVoz(() => this.diagnosticarVoz());
     // Seção "Inimigos": a contagem da partida em curso é a base do aviso de reiniciar.
     const esquadrao = this.squad.current && !online ? resumoDoEsquadrao(this.squad.current) : null;
     new EnemySettings(this.settings, { enemyMechs: foes.enemyMechs, enemyAndroids: foes.enemyAndroids, technician: foes.technician, names: foes.names }, undefined, undefined,
@@ -1178,7 +1182,7 @@ export class Game {
   }
 
   /**
-   * Liga ou desliga a gravação (F9 sem voz, F10 com a voz de quem narra, P230). Ao ligar trava a qualidade no máximo e desliga o rebaixamento automático (o "modo captura", ver acima); ao parar
+   * Liga ou desliga a gravação (F9 sem voz, F8 com a voz de quem narra, P230). Ao ligar trava a qualidade no máximo e desliga o rebaixamento automático (o "modo captura", ver acima); ao parar
    * volta tudo. A narração só abre o microfone para **conta de maior de 18 anos** (a mesma regra da voz: menor não tem microfone) e usa o aparelho escolhido nas Configurações.
    */
   private alternarGravacao(narrar: boolean): void {
@@ -1229,6 +1233,50 @@ export class Game {
     const anexar = this.anexarMudo;
     this.redePilotos?.atualizar(this.online?.pilotos() ?? [], (id) => this.conversas.naoLidas(id), voz?.ativa && anexar ? { anexar: (li, id) => anexar(li, id, voz.silenciado(id)) } : null);
     this.visita?.presencaMudou();
+    this.pintarAvisoDeVoz();
+  }
+
+  /**
+   * O aviso, no canto da tela, de por que a voz **não** está ligada para quem está numa sala com outras pessoas (P237): convidado, conta sem idade, menor, ou voz desligada. Sem ele essa pessoa
+   * ficava muda e sem saber por quê (o outro PC do Comandante, em 20/10). Some quando a voz liga. As frases são um pedaço sob demanda (o pacote de partida está no teto), e um `import()` que
+   * termina depois de outro mais novo não pode pintar o motivo velho.
+   */
+  private pintarAvisoDeVoz(): void {
+    const e = elegibilidadeDaVoz(this.sessao?.estado.email != null, this.sessao?.estado.idade ?? 'sem-idade');
+    const alguemMais = (this.online?.pilotos().length ?? 0) > 0;
+    const motivo = alguemMais && !this.voz?.ativa ? motivoSemVoz(e, this.settings.value.voiceOn, funcionalidadeVisivel('tela:voz')) : null;
+    this.motivoDoAviso = motivo;
+    if (!motivo) {
+      if (this.vozAviso) this.vozAviso.hidden = true;
+      return;
+    }
+    void import('../voice/VozNasConfiguracoes').then(({ TEXTO_SEM_VOZ }) => {
+      if (this.motivoDoAviso !== motivo) return;
+      if (!this.vozAviso) {
+        this.vozAviso = document.createElement('div');
+        this.vozAviso.className = 'voz-hud voz-aviso';
+        document.getElementById('hud')?.append(this.vozAviso);
+      }
+      this.vozAviso.textContent = TEXTO_SEM_VOZ[motivo];
+      this.vozAviso.hidden = false;
+    });
+  }
+
+  /** O relatório do botão DIAGNÓSTICO DA VOZ (Configurações): o que decide se a voz funciona, em texto para ler e colar, com a conclusão (P237). */
+  private async diagnosticarVoz(): Promise<string> {
+    const { formatarDiagnostico } = await import('../voice/Diagnostico');
+    const est = this.sessao?.estado;
+    const eleg = elegibilidadeDaVoz(est?.email != null, est?.idade ?? 'sem-idade');
+    return formatarDiagnostico({
+      agora: new Date().toISOString(),
+      navegador: navigator.userAgent,
+      online: !!this.online?.joined,
+      eleg,
+      motivo: motivoSemVoz(eleg, this.settings.value.voiceOn, funcionalidadeVisivel('tela:voz')),
+      voiceOn: this.settings.value.voiceOn,
+      pilotos: this.online?.pilotos() ?? [],
+      voz: this.voz ? await this.voz.diagnostico() : null,
+    });
   }
 
   /** Uma mensagem de texto de outro piloto: só vale para quem enxerga o chat (o Comandante ou, liberado o `tela:chat`, todos); com a conversa aberta não vira "não lida"; durante a partida, um aviso curto. */
@@ -1385,7 +1433,7 @@ export class Game {
       this.anexarMudo = anexarMudo;
       const voz = new VoiceChat({ enviar: (bytes) => this.online?.enviarVoz(bytes), saida: () => this.audio.output, token: () => this.sessao?.tokenDaVoz() ?? null });
       voz.ligarTeclas(() => this.settings.value.keys.ptt);
-      this.vozHud = new VoiceHud(document.getElementById('hud')!, voz, (id) => this.online?.nomeDe(id), () => keyLabel(this.settings.value.keys.ptt), () => this.input.touchMode);
+      this.vozHud = new VoiceHud(document.getElementById('hud')!, voz, (id) => this.online?.nomeDe(id), () => keyLabel(this.settings.value.keys.ptt), () => this.input.touchMode, () => Math.max(0, (this.online?.pilotos().length ?? 0) - voz.colegas));
       this.voz = voz;
       this.aplicarVoz(this.settings.value);
       if (this.vozId !== null) voz.entrouNaSala(this.vozId);
@@ -1774,9 +1822,9 @@ export class Game {
       // até 3x+ em telas de alta densidade) foi o que causava o soluço e o vídeo com quadros perdidos
       // relatado pelo dono em 29/09 — o próprio WebGL não aguentava o pixel count somado ao encode do
       // MediaRecorder rodando ao vivo.
-      // F9 grava a partida; F10 grava **com a sua voz** (P230, a narração: vale offline e online). A mesma tecla de cada uma também para.
-      if (code === 'F9' || code === 'F10') {
-        this.alternarGravacao(code === 'F10');
+      // F9 grava a partida; F8 grava **com a sua voz** (P230, a narração: vale offline e online). A mesma tecla de cada uma também para.
+      if (code === 'F9' || code === 'F8') {
+        this.alternarGravacao(code === 'F8');
         return;
       }
       if (code === 'KeyM' || code === 'KeyB') {

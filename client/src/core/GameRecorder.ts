@@ -12,7 +12,7 @@ import type { CadeiaDeVoz } from '../voice/EfeitosDeVoz';
  * `keys-help` da tela inicial, um indicador `● REC` aparece só enquanto grava. Nada disso é carregado ou
  * medido para quem não aperta a tecla.
  *
- * **Narração (P230, F10):** a mesma gravação com a **voz do jogador** (microfone) na mistura. O microfone entra só na gravação, **nunca na saída do jogo** (quem narra não se ouve em eco, e os
+ * **Narração (P230, F8):** a mesma gravação com a **voz do jogador** (microfone) na mistura. O microfone entra só na gravação, **nunca na saída do jogo** (quem narra não se ouve em eco, e os
  * outros sons não ganham a voz por cima). Vale offline e online. Quem abre o microfone é o `Game` (conta de maior de 18 anos, o aparelho escolhido nas Configurações); aqui só se mistura e se solta.
  *
  * **"Modo captura" (`Game.ts`, no mesmo F9):** trava a resolução no máximo e desliga o rebaixamento

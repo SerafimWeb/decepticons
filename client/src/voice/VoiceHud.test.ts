@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { carregarDicionario, IDIOMAS, traduzir, type Dicionario } from '../i18n/i18n';
 import { estadoDoBotao, GLIFO_DO_BOTAO, textoDeEstado, textoDeRede, type VozParaHud } from './VoiceHud';
+import { TEXTO_SEM_VOZ } from './VozNasConfiguracoes';
 
 const RAIZ = resolve(__dirname, '../..');
 
@@ -62,6 +63,12 @@ describe('VoiceHud: o que o jogador lê (P205)', () => {
     expect(textoDeRede(voz({ colegas: 1 }))).toBe('');
     // a falha de rede tem prioridade sobre o aviso de estar sozinho
     expect(textoDeRede(voz({ colegas: 2, semConexao: 1 }))).toBe('1 SEM CONEXÃO');
+    // P237: com gente na sala fora da voz o motivo é outro, e o texto antigo mandava a pessoa testar o microfone que estava bom
+    expect(textoDeRede(voz({ colegas: 0 }), 0)).toBe('NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES');
+    expect(textoDeRede(voz({ colegas: 0 }), 2)).toBe('NINGUÉM MAIS NA VOZ: 2 NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)');
+    expect(textoDeRede(voz({ colegas: 1 }), 1)).toBe('1 NA SALA SEM VOZ');
+    expect(textoDeRede(voz({ colegas: 1 }), 0)).toBe('');
+    expect(textoDeRede(voz({ semConexao: 2, colegas: 0 }), 3), 'a conexão que falhou vem antes').toBe('2 SEM CONEXÃO');
   });
 
   it('sem microfone o modo e o mudo não importam: o estado é o do aparelho', () => {
@@ -86,6 +93,13 @@ describe('o chat de voz nas seis línguas (P205)', () => {
     textoDeEstado(voz({ mode: 'ptt' }), 'T', true),
     textoDeRede(voz({ semConexao: 3 })),
     textoDeRede(voz({ colegas: 0 })),
+    textoDeRede(voz({ colegas: 0 }), 2),
+    textoDeRede(voz({ colegas: 1 }), 2),
+    ...Object.values(TEXTO_SEM_VOZ),
+    'Diagnóstico da voz',
+    '[ VER E COPIAR ]',
+    '[ COPIADO ]',
+    'Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.',
   ];
 
   for (const { id } of IDIOMAS.filter((i) => i.id !== 'pt')) {
@@ -94,6 +108,8 @@ describe('o chat de voz nas seis línguas (P205)', () => {
       for (const texto of textosDoHud) expect(traduzir(texto), `${id}: "${texto}"`).not.toBe(texto);
       expect(traduzir('SEGURE [Y] PARA FALAR')).toContain('[Y]');
       expect(traduzir('3 SEM CONEXÃO')).toContain('3');
+      expect(traduzir('2 NA SALA SEM VOZ')).toContain('2');
+      expect(traduzir('NINGUÉM MAIS NA VOZ: 2 NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)')).toContain('2');
     });
   }
 });

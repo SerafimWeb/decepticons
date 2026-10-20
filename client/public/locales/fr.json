@@ -968,5 +968,15 @@
  "Locutor militar": "Annonceur militaire",
  "Lorde sombrio": "Seigneur des ténèbres",
  "Grande Irmão": "Grand Frère",
- "Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "S'applique à la narration (F10) et au test du micro, pas au chat. Change la hauteur, les graves et l'ambiance de la voix, pas l'accent."
+ "Vale na narração (F8) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "S'applique à la narration (F8) et au test du micro, pas au chat. Change la hauteur, les graves et l'ambiance de la voix, pas l'accent.",
+ "VOZ: ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS PARA FALAR E OUVIR": "VOIX : CONNECTEZ-VOUS AVEC UN COMPTE DE PLUS DE 18 ANS POUR PARLER ET ÉCOUTER",
+ "VOZ: INFORME SUA IDADE EM CONFIGURAÇÕES > JOGO PARA FALAR E OUVIR": "VOIX : INDIQUEZ VOTRE ÂGE DANS PARAMÈTRES > JEU POUR PARLER ET ÉCOUTER",
+ "VOZ DESLIGADA PARA MENORES DE 18 ANOS: SÓ O ÁUDIO DO JOGO": "VOIX DÉSACTIVÉE POUR LES MOINS DE 18 ANS : SEULEMENT LE SON DU JEU",
+ "VOZ DESLIGADA: LIGUE \"CONVERSAR POR VOZ\" EM CONFIGURAÇÕES": "VOIX DÉSACTIVÉE : ACTIVEZ « CONVERSER PAR VOIX » DANS PARAMÈTRES",
+ "NINGUÉM MAIS NA VOZ: {0} NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)": "PERSONNE D’AUTRE EN VOIX : {0} DANS LA SALLE SANS VOIX (IL LEUR FAUT UN COMPTE DE PLUS DE 18 ANS ET LA VOIX ACTIVÉE)",
+ "{0} NA SALA SEM VOZ": "{0} DANS LA SALLE SANS VOIX",
+ "Diagnóstico da voz": "Diagnostic de la voix",
+ "[ VER E COPIAR ]": "[ VOIR ET COPIER ]",
+ "[ COPIADO ]": "[ COPIÉ ]",
+ "Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.": "Si la voix ne fonctionne pas entre deux joueurs : affiche ce qui se passe et la cause la plus probable."
 }

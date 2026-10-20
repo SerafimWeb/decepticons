@@ -340,7 +340,7 @@ describe('MicTest: o painel (P212)', () => {
 
 describe('o teste do microfone e o aviso de "sozinho" nas seis línguas (P212)', () => {
   afterEach(() => carregarDicionario(null));
-  const textos = [...Object.values(TEXTO_DO_TESTE).map((t) => t.replace('{0}', '1')), 'Nível do microfone', 'NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES', 'Aparelho do microfone', 'Testar o microfone', 'Ouvir a minha voz (use fones: sem eles dá microfonia)', 'Efeito na minha voz', 'Sem efeito', 'Locutor militar', 'Lorde sombrio', 'Grande Irmão', 'Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.'];
+  const textos = [...Object.values(TEXTO_DO_TESTE).map((t) => t.replace('{0}', '1')), 'Nível do microfone', 'NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES', 'Aparelho do microfone', 'Testar o microfone', 'Ouvir a minha voz (use fones: sem eles dá microfonia)', 'Efeito na minha voz', 'Sem efeito', 'Locutor militar', 'Lorde sombrio', 'Grande Irmão', 'Vale na narração (F8) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.'];
 
   for (const { id } of IDIOMAS.filter((i) => i.id !== 'pt')) {
     it(`${id}: todo texto do painel está traduzido`, () => {

@@ -459,7 +459,7 @@
                 </select>
               </div>
             </div>
-            <p class="setting-hint">Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.</p>
+            <p class="setting-hint">Vale na narração (F8) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.</p>
             <div class="setting-row">
               <label for="btn-voz-testar">Testar o microfone</label>
               <div class="setting-ctrl">
@@ -472,6 +472,14 @@
               <p id="voz-teste-aparelho" class="setting-hint"></p>
               <label class="voz-eco"><input type="checkbox" id="voz-ouvir" /> Ouvir a minha voz (use fones: sem eles dá microfonia)</label>
             </div>
+            <div class="setting-row">
+              <label for="btn-voz-diag">Diagnóstico da voz</label>
+              <div class="setting-ctrl">
+                <button type="button" id="btn-voz-diag" class="btn-terminal">[ VER E COPIAR ]</button>
+              </div>
+            </div>
+            <p class="setting-hint">Se a voz não funciona entre dois jogadores: mostra o que está acontecendo e a causa mais provável.</p>
+            <pre id="voz-diag" class="voz-diag" data-i18n="nao" hidden></pre>
             </div>
           </div>
 

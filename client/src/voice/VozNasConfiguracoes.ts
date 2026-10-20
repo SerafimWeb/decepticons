@@ -1,4 +1,4 @@
-import type { ElegibilidadeDaVoz } from './elegibilidade';
+import type { ElegibilidadeDaVoz, MotivoSemVoz } from './elegibilidade';
 import { listarAparelhos } from './aparelhos';
 
 /**
@@ -6,6 +6,14 @@ import { listarAparelhos } from './aparelhos';
  * (como o `MicTest`): o jogo o baixa em segundo plano logo depois de abrir, e as Configurações já o encontram pronto. O pacote de partida está colado no teto de 500 KB, então cada recurso
  * novo precisa nascer fora dele (P187). Nada aqui roda por quadro.
  */
+
+/** O aviso curto no canto da tela de quem está numa sala online e **fora da voz** (P237): o motivo, para a pessoa não ficar muda sem saber por quê. */
+export const TEXTO_SEM_VOZ: Readonly<Record<MotivoSemVoz, string>> = Object.freeze({
+  convidado: 'VOZ: ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS PARA FALAR E OUVIR',
+  'sem-idade': 'VOZ: INFORME SUA IDADE EM CONFIGURAÇÕES > JOGO PARA FALAR E OUVIR',
+  menor: 'VOZ DESLIGADA PARA MENORES DE 18 ANOS: SÓ O ÁUDIO DO JOGO',
+  desligada: 'VOZ DESLIGADA: LIGUE "CONVERSAR POR VOZ" EM CONFIGURAÇÕES',
+});
 
 /** A frase de cada caso (em português; o tradutor de DOM cuida das outras línguas). */
 export const TEXTO_DA_ELEGIBILIDADE: Record<Exclude<ElegibilidadeDaVoz, 'liberada'>, string> = {

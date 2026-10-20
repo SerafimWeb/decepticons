@@ -126,11 +126,21 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 
 ## 5e. Narração e efeitos na voz (P230 e P231, 20/10)
 
-**Narração (F10):** grava a partida **com a sua voz**, offline e online (`GameRecorder`). O microfone entra só na mistura da gravação, **nunca na saída do jogo** (ninguém se ouve em eco); só **conta de maior de 18 anos** (a mesma regra do chat, `microfoneDaNarracaoLiberado`); parar solta o microfone. O F9 continua sem voz.
+**Narração (F8):** grava a partida **com a sua voz**, offline e online (`GameRecorder`). O microfone entra só na mistura da gravação, **nunca na saída do jogo** (ninguém se ouve em eco); só **conta de maior de 18 anos** (a mesma regra do chat, `microfoneDaNarracaoLiberado`); parar solta o microfone. O F9 continua sem voz.
 
 **Efeitos na voz (P231):** `voice/EfeitosDeVoz.ts` (sob demanda). Cadeia de Web Audio: [deslocador de tom] → passa-altas → passa-baixas → graves → presença → distorção → compressor → (seco + eco + reverberação) → **limitador** (o teto que impede de estourar). Predefinições (tabela `PREDEFINICOES_DE_VOZ`): **Locutor militar** (sem mudar o tom; banda de rádio 280 a 3600 Hz, presença, distorção, compressor firme, eco de alto-falante de 42 ms), **Lorde sombrio** (5 semitons abaixo, graves +7 dB, metal, sala curta), **Grande Irmão** (3 semitons abaixo, compressão pesada, salão de 1,4 s). Vale na narração e na prévia do teste; **não no chat** (decisão aberta). Custo: zero fora dessas duas; ligado, a reverberação é a parte cara (~13x tempo real no pior caso medido, ou ~8% de um núcleo), e a voz atrasa de 15 a 25 ms. **Limites:** não faz sotaque; o deslocador tem um trepidar granular de 10 Hz.
 
 **Prova:** `medicoes/efeitos-de-voz.mjs` (29 verificações num `OfflineAudioContext` do Chrome), `gravacao-narrada.mjs` e `gravacao-narrada-jogo.mjs`; fotos `arte/narracao-f10-claude.png` e `arte/voz-efeito-claude.png`.
+
+## 5f. Quando a voz não funciona: o aviso e o diagnóstico (P237, 20/10)
+
+**O que o Comandante viveu:** o microfone funcionava no teste, e a voz não chegou ao outro PC ao lado. A voz **funciona** entre dois navegadores (provado), mas o jogo **não dizia por que** uma pessoa ficava fora dela.
+
+**O aviso (`pintarAvisoDeVoz` no `Game`):** numa sala com outras pessoas, enquanto a voz **não** está ligada, o canto inferior esquerdo mostra o motivo (`motivoSemVoz`, `voice/elegibilidade.ts`; as frases moram em `VozNasConfiguracoes.ts`): *convidado* (entre com uma conta de maior de 18 anos), *sem idade* (informe a idade), *menor* (só o áudio do jogo) ou *desligada* (ligue "Conversar por voz"). Some quando a voz liga. **O indicador de quem está na voz** diz também quantos da sala estão **fora** dela ("NINGUÉM MAIS NA VOZ: 1 NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)", em vez de mandar testar um microfone que estava bom).
+
+**O diagnóstico (`voice/Diagnostico.ts`, `VoiceChat.diagnostico()`):** Configurações > CHAT DE VOZ > **[ VER E COPIAR ]** monta e copia um relatório: a conta (maior de 18 anos, convidado…), o microfone (estado, aparelho, taxa de amostragem, eco/ruído/ganho, modo, mudo, transmitindo), a lista de quem o servidor diz estar na voz e, **por ligação**, o estado, a rota de rede escolhida (`host/udp → host` mesma rede, `srflx` pela internet, `relay` por retransmissor), os bytes de áudio enviados e recebidos, pacotes perdidos e o nível do áudio que chega. Fecha com a **CONCLUSÃO**, a causa mais provável na ordem em que ela costuma ser (sala, conta, voz desligada, microfone recusado, sozinho, ninguém na voz, rede que falhou, mudo, microfone que não envia, áudio que não volta). Só roda quando o jogador pede (`getStats` por ligação, uma vez).
+
+**Limite honesto:** o jogo **não tem servidor de retransmissão (TURN)**: se o roteador ou a rede de um dos lados bloquear a conexão direta, a ligação falha e a conclusão diz isso. Em casa, dois PCs na mesma rede se acham pelo endereço local (medido: menos de 1 s no Brave). **Prova:** `medicoes/voz-diagnostico.mjs` (Chrome real: convidado vê o aviso; dois adultos "Tudo certo"; adulto com convidado na sala conclui a causa) e fotos `arte/voz-aviso-claude.png`, `arte/voz-diagnostico-claude.png`.
 
 ## 6. O que falta
 

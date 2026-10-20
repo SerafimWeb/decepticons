@@ -6,7 +6,7 @@ import { acharFfmpeg } from '../../scripts/sonsRodar.mjs';
 
 /**
  * A NARRAÇÃO NO CHROME DE VERDADE (P230): o `GameRecorder` do jogo grava um canvas animado com dois tons conhecidos (o "jogo", 300 Hz, e a "voz", 1000 Hz) e o ffmpeg mede o ARQUIVO baixado.
- * Duas rodadas: com a voz (F10) e sem (F9, o controle). Prova: o arquivo tem vídeo e áudio; **a voz só está no arquivo da narração**; o jogo está nos dois; **a voz nunca chega à saída do jogo**
+ * Duas rodadas: com a voz (F8) e sem (F9, o controle). Prova: o arquivo tem vídeo e áudio; **a voz só está no arquivo da narração**; o jogo está nos dois; **a voz nunca chega à saída do jogo**
  * (o alto-falante); e o microfone é solto ao parar. O microfone aqui é um fluxo de teste (o que se prova é a MISTURA e a SOLTURA, não o hardware: o hardware real é o `mic-real.mjs`).
  *
  *   node .decepticons/medicoes/gravacao-narrada.mjs     # sai com 1 se algo falhar; arquivos em .tmp/gravacao-narrada/

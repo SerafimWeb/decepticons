@@ -3,7 +3,7 @@ import type { VozEfeito } from '../core/Settings';
 /**
  * OS EFEITOS NA VOZ (P231, ordem do Comandante em 20/10: "teria como inserirmos efeitos na minha voz? falar tipo voz de locutor militar russo, ou tipo o darth vader, ou outra voz mais imponente
  * (tipo o big brother)?"). Uma cadeia de áudio do navegador (Web Audio) entre o microfone e o destino: **muda o tom, o grave, o ambiente e a pressão da voz; não muda o sotaque** (ninguém vira russo
- * por filtro, o que dá é o timbre de rádio e de alto-falante). Vale na narração (F10) e na prévia do teste do microfone; o chat de voz não usa (decisão aberta do Comandante).
+ * por filtro, o que dá é o timbre de rádio e de alto-falante). Vale na narração (F8) e na prévia do teste do microfone; o chat de voz não usa (decisão aberta do Comandante).
  *
  * Pedaço sob demanda (a dieta de JS, P187): só baixa quem escolhe um efeito. Custo: **zero fora da narração e do teste**; ligada, é uma dúzia de nós de áudio no fio do navegador (o deslocador de tom
  * são dois atrasos modulados; a reverberação é uma convolução de ~1 s, a parte mais cara, só nas predefinições que a usam). A voz chega **~12 ms depois** com o tom mudado (o atraso médio dos dois

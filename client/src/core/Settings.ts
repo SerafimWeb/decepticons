@@ -82,7 +82,7 @@ export interface GameSettings {
   voiceVolume: number;
   /** O microfone escolhido (`deviceId` do navegador); vazio = o padrão do sistema. */
   micDevice: string;
-  /** O efeito na voz da narração (F10) e do teste do microfone. O chat de voz não usa. */
+  /** O efeito na voz da narração (F8) e do teste do microfone. O chat de voz não usa. */
   vozEfeito: VozEfeito;
   keys: Record<KeyAction, string>;
 }

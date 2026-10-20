@@ -41,6 +41,40 @@ export interface VozOpcoes {
   ice?: readonly RTCIceServer[];
 }
 
+/** Um retrato de uma ligação com um colega, para o diagnóstico (P237): se o áudio está indo e vindo e por qual rota de rede. */
+export interface DiagnosticoDeLigacao {
+  id: number;
+  estado: LigacaoEstado;
+  conexao: string;
+  ice: string;
+  /** A rota escolhida: candidato local/protocolo → candidato remoto (`host/udp → host`: mesma rede; `srflx`: pela internet; `relay`: por retransmissor). Vazio enquanto não há. */
+  rota: string;
+  /** Bytes de áudio enviados e recebidos, pacotes perdidos e o nível do áudio que chega (0 a 1; `null` se o navegador não diz). */
+  enviados: number;
+  recebidos: number;
+  perdidos: number;
+  nivel: number | null;
+}
+
+/** O que o diagnóstico (P237) pergunta ao chat: o estado do microfone e de cada ligação. */
+export interface DiagnosticoDaVoz {
+  ativa: boolean;
+  meuId: number;
+  token: boolean;
+  estadoMic: EstadoMic;
+  rotulo: string;
+  taxa: number;
+  eco: string;
+  ruido: string;
+  ganho: string;
+  modo: ModoMic;
+  mudo: boolean;
+  transmitindo: boolean;
+  /** Os ids que o servidor diz estarem na voz (a última `LISTA`), tirando o meu. */
+  naLista: number[];
+  ligacoes: DiagnosticoDeLigacao[];
+}
+
 interface Ligacao {
   id: number;
   pc: RTCPeerConnection;
@@ -74,6 +108,8 @@ export class VoiceChat {
   private geracaoMic = 0;
   private estado: EstadoMic = 'sem';
   private aparelho = '';
+  /** A última `LISTA` do servidor (quem está na voz), para o diagnóstico. */
+  private naLista: number[] = [];
 
   constructor(private readonly o: VozOpcoes) {
     this.spatial = new VoiceSpatial(o.saida);
@@ -233,6 +269,35 @@ export class VoiceChat {
     return n;
   }
 
+  /**
+   * O retrato da voz agora (P237): o microfone, o servidor e, de cada colega, o estado da ligação, a rota de rede e quanto áudio foi e voltou. Só roda quando o jogador pede o diagnóstico
+   * (`getStats` por ligação, uma vez): nada por quadro.
+   */
+  async diagnostico(): Promise<DiagnosticoDaVoz> {
+    const faixa = this.fluxo?.getAudioTracks()[0];
+    const cfg = (faixa?.getSettings?.() ?? {}) as MediaTrackSettings;
+    // o navegador diz `true`/`false` ou, nas versões novas, o nome do modo (`'all'`, `'none'`): qualquer coisa que não seja desligado vale "sim"
+    const sn = (v: unknown): string => (v === undefined ? '?' : v === false || v === 'none' ? 'não' : 'sim');
+    const ligacoes: DiagnosticoDeLigacao[] = [];
+    for (const l of this.lista) ligacoes.push(await retratar(l));
+    return {
+      ativa: this.noServidor,
+      meuId: this.meuId,
+      token: (this.o.token?.() ?? null) !== null,
+      estadoMic: this.estado,
+      rotulo: faixa?.label ?? '',
+      taxa: cfg.sampleRate ?? 0,
+      eco: sn(cfg.echoCancellation),
+      ruido: sn(cfg.noiseSuppression),
+      ganho: sn(cfg.autoGainControl),
+      modo: this.mic.mode,
+      mudo: this.mic.mudo,
+      transmitindo: this.mic.transmitindo,
+      naLista: [...this.naLista],
+      ligacoes,
+    };
+  }
+
   dispose(): void {
     this.ligada = false;
     this.sincronizar();
@@ -306,6 +371,7 @@ export class VoiceChat {
     if (!this.noServidor) return;
     const quer = new Set(ids);
     quer.delete(this.meuId);
+    this.naLista = [...quer];
     for (const id of [...this.ligacoes.keys()]) if (!quer.has(id)) this.fechar(id);
     // Quem tem o id menor oferece: nunca os dois ao mesmo tempo.
     for (const id of quer) if (!this.ligacoes.has(id) && this.meuId < id) void this.ofertar(id);
@@ -410,6 +476,33 @@ export class VoiceChat {
   private fecharTodas(): void {
     for (const id of [...this.ligacoes.keys()]) this.fechar(id);
   }
+}
+
+/** Lê as estatísticas de uma ligação (a rota escolhida e os bytes de áudio). Qualquer falha do navegador vira "sem dado": o diagnóstico nunca lança. */
+async function retratar(l: Ligacao): Promise<DiagnosticoDeLigacao> {
+  const d: DiagnosticoDeLigacao = { id: l.id, estado: l.estado, conexao: l.pc.connectionState ?? '', ice: l.pc.iceConnectionState ?? '', rota: '', enviados: 0, recebidos: 0, perdidos: 0, nivel: null };
+  try {
+    if (typeof l.pc.getStats !== 'function') return d;
+    const stats = await l.pc.getStats();
+    const porId = new Map<string, Record<string, unknown>>();
+    stats.forEach((s: Record<string, unknown>) => porId.set(String(s.id), s));
+    const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+    stats.forEach((s: Record<string, unknown>) => {
+      if (s.type === 'candidate-pair' && s.state === 'succeeded' && (s.nominated === true || s.selected === true)) {
+        const a = porId.get(String(s.localCandidateId));
+        const b = porId.get(String(s.remoteCandidateId));
+        d.rota = `${String(a?.candidateType ?? '?')}/${String(a?.protocol ?? '?')} → ${String(b?.candidateType ?? '?')}`;
+      } else if (s.type === 'outbound-rtp' && s.kind === 'audio') d.enviados += num(s.bytesSent);
+      else if (s.type === 'inbound-rtp' && s.kind === 'audio') {
+        d.recebidos += num(s.bytesReceived);
+        d.perdidos += num(s.packetsLost);
+        if (typeof s.audioLevel === 'number') d.nivel = s.audioLevel;
+      }
+    });
+  } catch {
+    // o navegador não deu as estatísticas: fica o que já se sabe
+  }
+  return d;
 }
 
 /** Espera o navegador terminar de achar os endereços (ou `ESPERA_ENDERECOS_MS`): o SDP já sai com eles, sem mandar um candidato por vez pelo servidor. */

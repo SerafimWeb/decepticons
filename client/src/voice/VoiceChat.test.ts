@@ -791,3 +791,68 @@ describe('VoiceChat: o mudo por jogador (P228)', () => {
     expect(t.chat.silenciado(8)).toBe(false);
   });
 });
+
+describe('VoiceChat.diagnostico (P237): o retrato que explica por que "não ouço ninguém"', () => {
+  beforeEach(() => {
+    FakePC.todas = [];
+  });
+
+  it('antes de entrar na voz: fora da sala, sem microfone, sem ligações', async () => {
+    const t = montar();
+    const d = await t.chat.diagnostico();
+    expect(d).toMatchObject({ ativa: false, meuId: -1, estadoMic: 'sem', naLista: [], ligacoes: [] });
+  });
+
+  it('dentro da voz: o id, o token, o microfone (rótulo e modo) e quem o servidor disse estar na voz', async () => {
+    const t = montar({ token: 'abc' });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(1);
+    const { faixa, fluxo } = fluxoComFaixa();
+    (faixa as unknown as { label: string; getSettings: () => object }).label = 'Fone (Captain 300)';
+    (faixa as unknown as { getSettings: () => object }).getSettings = () => ({ sampleRate: 16000, echoCancellation: true, noiseSuppression: false, autoGainControl: undefined });
+    t.resolverMic(fluxo);
+    await andar();
+    t.chat.receber(codificarLista([1, 3]));
+    await andar();
+    const d = await t.chat.diagnostico();
+    expect(d).toMatchObject({ ativa: true, meuId: 1, token: true, estadoMic: 'ativo', rotulo: 'Fone (Captain 300)', taxa: 16000, eco: 'sim', ruido: 'não', ganho: '?', modo: 'sempre', mudo: false, transmitindo: true });
+    expect(d.naLista, 'o meu id não entra na lista dos colegas').toEqual([3]);
+  });
+
+  it('cada ligação entra no retrato com o estado e, quando o navegador dá, a rota e os bytes de áudio', async () => {
+    const t = montar({ token: 'abc' });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(1);
+    t.chat.receber(codificarLista([1, 3]));
+    await andar();
+    const pc = t.pcs()[0] as unknown as { connectionState: string; iceConnectionState: string; getStats: () => Promise<Map<string, Record<string, unknown>>> };
+    pc.connectionState = 'connected';
+    pc.iceConnectionState = 'connected';
+    const stats = new Map<string, Record<string, unknown>>([
+      ['par', { id: 'par', type: 'candidate-pair', state: 'succeeded', nominated: true, localCandidateId: 'l', remoteCandidateId: 'r' }],
+      ['l', { id: 'l', type: 'local-candidate', candidateType: 'host', protocol: 'udp' }],
+      ['r', { id: 'r', type: 'remote-candidate', candidateType: 'srflx' }],
+      ['o', { id: 'o', type: 'outbound-rtp', kind: 'audio', bytesSent: 5000 }],
+      ['i', { id: 'i', type: 'inbound-rtp', kind: 'audio', bytesReceived: 7000, packetsLost: 2, audioLevel: 0.05 }],
+      ['v', { id: 'v', type: 'outbound-rtp', kind: 'video', bytesSent: 999999 }],
+    ]);
+    (stats as unknown as { forEach: unknown }).forEach = Map.prototype.forEach.bind(stats);
+    pc.getStats = async () => stats;
+    const d = await t.chat.diagnostico();
+    expect(d.ligacoes).toHaveLength(1);
+    expect(d.ligacoes[0]).toMatchObject({ id: 3, conexao: 'connected', ice: 'connected', rota: 'host/udp → srflx', enviados: 5000, recebidos: 7000, perdidos: 2, nivel: 0.05 });
+  });
+
+  it('um navegador que falha nas estatísticas não derruba o diagnóstico: a ligação entra sem rota e sem bytes', async () => {
+    const t = montar({ token: 'abc' });
+    t.chat.configurar(true, 'sempre', 0.8);
+    t.chat.entrouNaSala(1);
+    t.chat.receber(codificarLista([1, 3]));
+    await andar();
+    (t.pcs()[0] as unknown as { getStats: () => Promise<never> }).getStats = async () => {
+      throw new Error('sem estatística');
+    };
+    const d = await t.chat.diagnostico();
+    expect(d.ligacoes[0]).toMatchObject({ id: 3, rota: '', enviados: 0, recebidos: 0, nivel: null });
+  });
+});

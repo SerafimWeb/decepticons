@@ -1,0 +1,50 @@
+{
+ "data": "2026-10-20",
+ "verificacoes": [
+  {
+   "nome": "A. CONVIDADO: o jogo avisa na tela por que está sem voz (o que faltava ao outro PC do Comandante)",
+   "ok": true,
+   "detalhe": "\"VOZ: ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS PARA FALAR E OUVIR\""
+  },
+  {
+   "nome": "A. CONVIDADO: sem indicador de voz e o jogo nunca pediu o microfone",
+   "ok": true,
+   "detalhe": "{\"estado\":\"\",\"pedidos\":0}"
+  },
+  {
+   "nome": "B. ADULTO: o indicador de voz aparece com o microfone aberto",
+   "ok": true,
+   "detalhe": ""
+  },
+  {
+   "nome": "B. ADULTO na voz: nenhum aviso de \"sem voz\" (a voz está ligada)",
+   "ok": true,
+   "detalhe": ""
+  },
+  {
+   "nome": "B. o diagnóstico mostra a ligação com BRAVO, a rota de rede e conclui \"Tudo certo\"",
+   "ok": true,
+   "detalhe": "DIAGNÓSTICO DA VOZ · CYBERMECH · 2026-10-20T21:11:21.935Z | navegador: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 | sala online: sim · conta: maior de 18 anos · \"Conversar por voz\": sim | voz: na sala · eu = #6 · token da conta: sim | microfone: ativo · aparelho: \"Fake Default Audio Input\" · 48000 Hz · eco/ruído/ganho do navegador: sim/sim/s"
+  },
+  {
+   "nome": "B. o botão fica com o rótulo de copiado ou volta ao normal (nunca quebra)",
+   "ok": true,
+   "detalhe": "[ COPIADO ]"
+  },
+  {
+   "nome": "C. o HUD do adulto diz quantos da sala estão fora da voz (em vez de mandar testar um microfone que estava bom)",
+   "ok": true,
+   "detalhe": "\"NINGUÉM MAIS NA VOZ: 1 NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)\""
+  },
+  {
+   "nome": "C. o diagnóstico conclui que a outra pessoa precisa de conta de maior de 18 anos com a voz ligada",
+   "ok": true,
+   "detalhe": "DIAGNÓSTICO DA VOZ · CYBERMECH · 2026-10-20T21:11:30.242Z | navegador: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 | sala online: sim · conta: maior de 18 anos · \"Conversar por voz\": sim | voz: na sala · eu = #6 · token da conta: sim | microfone: ativo · aparelho: \"Fake Default Audio Input\" · 48000 Hz · eco/ruído/ganho do navegador: sim/sim/s"
+  },
+  {
+   "nome": "nenhum erro de página",
+   "ok": true,
+   "detalhe": ""
+  }
+ ]
+}
