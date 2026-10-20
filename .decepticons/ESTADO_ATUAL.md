@@ -5,6 +5,10 @@
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
+## O HSTS DO SITE: A CLOUDFLARE NÃO O COBRIA, O SITE É SERVIDO PELA HOSTINGER — Claude, 19/10 (branch `claude/hsts-do-site`, P207)
+
+**O Comandante (19/10):** *"o cloudflare também já fiz"*. **Conferi:** o `cybermech.online` (o site) responde com `Server: hcdn` (a CDN da Hostinger): **não passa pela Cloudflare**; só o `jogo.cybermech.online` passa. Logo o HSTS da Cloudflare não cobre o site (e o `jogo.` ainda não manda o cabeçalho). **Feito:** `Strict-Transport-Security: max-age=15552000` (180 dias, sem `includeSubDomains` nem `preload`) no `.htaccess` do site (`scripts/site.mjs`), conferido pelo `site --check`. Já vale quando o site for publicado. A opção "visitor location headers" da Cloudflare vale para o `jogo.` (é lá que o servidor lê o estado); aparece em "De onde vêm" quando entrarem visitas do Brasil.
+
 ## O ACTIONS ECONÔMICO, SEM PERDER SINAL — Claude, 19/10 (branch `claude/ci-economico`, P223)
 
 **O Comandante (19/10):** economizar o Actions "de forma inteligente, profissional, sem miséria". **Feito:** medi antes (235 min em um dia; a cota de ~2.000 durava ~8 dias) e cortei só a repetição: o push na `main` não refaz o check na árvore que o PR já provou (`scripts/ciJaProvado.mjs`, na dúvida roda tudo), etiquetas só ao abrir, rascunho não roda, e `npm run ci:consumo` mede. O check do PR e o hook seguem completos. **Falta (R13):** só se confirma de verdade no primeiro merge depois deste PR (o job do push deve terminar em ~1 min com "já passou no check do PR"); medir de novo com `npm run ci:consumo`.
