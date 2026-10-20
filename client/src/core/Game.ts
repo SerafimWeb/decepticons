@@ -142,7 +142,7 @@ import { PowerSettings } from '../ui/PowerSettings';
 import { defaultServer, onlineConfig, urlComMapa } from '../net/onlineConfig';
 import { OnlineSwitch } from '../ui/OnlineSwitch';
 import { ServerStatus } from '../ui/ServerStatus';
-import { GameRecorder } from './GameRecorder';
+import { type FabricaDeCadeiaDeVoz, GameRecorder } from './GameRecorder';
 import { Telemetry } from './telemetry';
 import { reloadWithout } from './url';
 import { OnlineSession, type OnlineStatus } from '../net/OnlineSession';
@@ -1192,10 +1192,10 @@ export class Game {
     void this.abrirNarracao();
   }
 
-  private comecarGravacao(microfone: MediaStream | null): void {
+  private comecarGravacao(microfone: MediaStream | null, efeito: FabricaDeCadeiaDeVoz | null = null): void {
     this.quality.setAdaptive(false);
     this.setPixelRatio(maxPixelRatio());
-    this.recorder.alternar(microfone);
+    this.recorder.alternar(microfone, efeito);
   }
 
   private async abrirNarracao(): Promise<void> {
@@ -1203,6 +1203,10 @@ export class Game {
       this.recorder.avisar('NARRAÇÃO: o microfone só vale para conta de maior de 18 anos (Configurações > JOGO).');
       return;
     }
+    // O efeito na voz (P231) é um pedaço sob demanda: se ele não baixar, a narração segue com a voz pura em vez de falhar.
+    const efeito = this.settings.value.vozEfeito;
+    const fabrica: FabricaDeCadeiaDeVoz | null =
+      efeito === 'normal' ? null : await import('../voice/EfeitosDeVoz').then((m) => (ctx: AudioContext) => m.criarCadeiaDeVoz(ctx, efeito), () => null);
     try {
       const { abrirMicrofone } = await import('../voice/abrirMicrofone');
       const microfone = await abrirMicrofone(this.settings.value.micDevice);
@@ -1210,7 +1214,7 @@ export class Game {
         for (const faixa of microfone.getTracks()) faixa.stop(); // já começou a gravar enquanto o navegador perguntava
         return;
       }
-      this.comecarGravacao(microfone);
+      this.comecarGravacao(microfone, fabrica);
     } catch {
       this.recorder.avisar('NARRAÇÃO: não consegui abrir o microfone. Teste em Configurações > GRÁFICOS E SOM > CHAT DE VOZ.');
     }

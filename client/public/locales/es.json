@@ -962,5 +962,11 @@
  "Ouvir de novo a voz deste piloto": "Volver a oír la voz de este piloto",
  "Silenciar a voz deste piloto até você sair da sala": "Silenciar la voz de este piloto hasta que salgas de la sala",
  "Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.": "Silencio total: este dispositivo no entrega sonido (silenciado o desactivado en Windows). Elige otro de la lista.",
- "Aparelho em uso: {0}": "Dispositivo en uso: {0}"
+ "Aparelho em uso: {0}": "Dispositivo en uso: {0}",
+ "Efeito na minha voz": "Efecto en mi voz",
+ "Sem efeito": "Sin efecto",
+ "Locutor militar": "Locutor del ejército",
+ "Lorde sombrio": "Lord oscuro",
+ "Grande Irmão": "Gran Hermano",
+ "Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "Vale para la narración (F10) y la prueba del micrófono, no para el chat. Cambia el tono, los graves y el ambiente de la voz; no cambia el acento."
 }

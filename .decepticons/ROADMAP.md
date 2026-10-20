@@ -110,6 +110,7 @@
 - [x] Hangar: tela de montagem com preview 3D ao vivo, armas e níveis nos braços, carga, calor, simulação de combate, gravação local e link compartilhável #ux
 - [x] Gravação nativa de gameplay em alta qualidade (F9, tecla escondida, só para o dono): captura direto do WebGL, sem OBS, com áudio do jogo (Claude, 28/09) #ux
 - [x] **Narração (P230, 20/10):** `F10` grava a partida com a voz de quem joga (offline e online; o microfone só na mistura da gravação, só conta de maior de 18 anos, aparelho escolhido nas Configurações); provado no Chrome real (Claude) #ux
+- [x] **Efeitos na voz (P231, 20/10):** Locutor militar, Lorde sombrio e Grande Irmão (cadeia de áudio sob demanda) na narração e na prévia do teste do microfone, afinável por tabela; medido no Chrome real; falta o ouvido do Comandante (Claude) #ux
 - [x] Segundo piloto selecionável no Hangar: andróide A-1 com blaster e motosserra (troca recarrega a partida) #mechs
 - [x] Hangar 2.0, camada 1: galpão 3D próprio com pedestal de holograma, o Mech girando, armas aplicadas na hora #ux
 - [x] Hangar 2.0, camada 2: interface holográfica no desenho da referência, versão de celular #ux

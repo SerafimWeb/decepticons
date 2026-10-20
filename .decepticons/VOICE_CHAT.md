@@ -124,6 +124,14 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 
 **Limite honesto (R13):** a idade é **declarada** pela pessoa, não verificada. Quem mente na data entra como adulto. Verificar de verdade exigiria documento ou terceiro (custo e dado sensível), contra o pedido do Comandante de ser simples e sem custo. A regra reduz o risco; **não o elimina**, e a política diz que a data é informada pela pessoa.
 
+## 5e. Narração e efeitos na voz (P230 e P231, 20/10)
+
+**Narração (F10):** grava a partida **com a sua voz**, offline e online (`GameRecorder`). O microfone entra só na mistura da gravação, **nunca na saída do jogo** (ninguém se ouve em eco); só **conta de maior de 18 anos** (a mesma regra do chat, `microfoneDaNarracaoLiberado`); parar solta o microfone. O F9 continua sem voz.
+
+**Efeitos na voz (P231):** `voice/EfeitosDeVoz.ts` (sob demanda). Cadeia de Web Audio: [deslocador de tom] → passa-altas → passa-baixas → graves → presença → distorção → compressor → (seco + eco + reverberação) → **limitador** (o teto que impede de estourar). Predefinições (tabela `PREDEFINICOES_DE_VOZ`): **Locutor militar** (sem mudar o tom; banda de rádio 280 a 3600 Hz, presença, distorção, compressor firme, eco de alto-falante de 42 ms), **Lorde sombrio** (5 semitons abaixo, graves +7 dB, metal, sala curta), **Grande Irmão** (3 semitons abaixo, compressão pesada, salão de 1,4 s). Vale na narração e na prévia do teste; **não no chat** (decisão aberta). Custo: zero fora dessas duas; ligado, a reverberação é a parte cara (~13x tempo real no pior caso medido, ou ~8% de um núcleo), e a voz atrasa de 15 a 25 ms. **Limites:** não faz sotaque; o deslocador tem um trepidar granular de 10 Hz.
+
+**Prova:** `medicoes/efeitos-de-voz.mjs` (29 verificações num `OfflineAudioContext` do Chrome), `gravacao-narrada.mjs` e `gravacao-narrada-jogo.mjs`; fotos `arte/narracao-f10-claude.png` e `arte/voz-efeito-claude.png`.
+
 ## 6. O que falta
 
 1. **O ouvido do Comandante:** a bancada prova que o áudio chega e que o volume cai com a distância; **se a voz soa bem** (eco, volume, o alcance de 12 a 160 m) é dele. Os números do alcance são proposta (`ALCANCE_DA_VOZ`).

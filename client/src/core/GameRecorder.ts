@@ -1,4 +1,5 @@
 import type { AudioSystem } from '../audio/AudioSystem';
+import type { CadeiaDeVoz } from '../voice/EfeitosDeVoz';
 
 /**
  * Gravação nativa de gameplay, em alta qualidade, direto do WebGL (dono: "gravando a tela no OBS e ta
@@ -27,6 +28,9 @@ import type { AudioSystem } from '../audio/AudioSystem';
  * só para os raros minutos em que o dono grava — o `captureStream(0)` + pedido manual de quadro pega o
  * conteúdo certo, no instante certo, sem esse custo permanente).
  */
+/** Quem monta o efeito na voz (`voice/EfeitosDeVoz.ts`, sob demanda) no contexto de áudio do jogo; `null` = sem efeito. */
+export type FabricaDeCadeiaDeVoz = (ctx: AudioContext) => CadeiaDeVoz | null;
+
 export class GameRecorder {
   private recorder: MediaRecorder | null = null;
   private chunks: Blob[] = [];
@@ -35,6 +39,8 @@ export class GameRecorder {
   private indicador: HTMLElement | null = null;
   /** A voz de quem narra, na mistura da gravação (só com a narração ligada). */
   private fonteMic: MediaStreamAudioSourceNode | null = null;
+  /** O efeito na voz (P231), entre o microfone e a mistura da gravação; `null` = a voz vai pura. */
+  private cadeia: CadeiaDeVoz | null = null;
   private microfone: MediaStream | null = null;
   private aviso: HTMLElement | null = null;
   private avisoTimer: ReturnType<typeof setTimeout> | undefined;
@@ -50,7 +56,7 @@ export class GameRecorder {
 
   /** Liga/desliga (a mesma tecla faz as duas coisas). Sem suporte do navegador, não faz nada — silencioso,
    * como o resto do jogo trata recurso ausente. */
-  alternar(microfone: MediaStream | null = null): void {
+  alternar(microfone: MediaStream | null = null, efeito: FabricaDeCadeiaDeVoz | null = null): void {
     if (this.gravando) {
       soltarMicrofone(microfone); // um microfone que chegou tarde (o pedido de permissão demorou) não fica aberto
       void this.parar();
@@ -62,7 +68,7 @@ export class GameRecorder {
       this.avisar('NARRAÇÃO: o áudio do jogo ainda não começou. Clique no jogo e tente de novo.');
       return;
     }
-    this.iniciar(microfone);
+    this.iniciar(microfone, efeito);
     if (!this.gravando) soltarMicrofone(microfone); // sem suporte: o microfone aberto à toa é solto na hora
   }
 
@@ -89,7 +95,7 @@ export class GameRecorder {
     this.videoTrack?.requestFrame();
   }
 
-  private iniciar(microfone: MediaStream | null): void {
+  private iniciar(microfone: MediaStream | null, efeito: FabricaDeCadeiaDeVoz | null): void {
     if (this.gravando) return;
     if (typeof this.canvas.captureStream !== 'function' || typeof MediaRecorder === 'undefined') return;
     const mime = melhorFormato();
@@ -108,7 +114,14 @@ export class GameRecorder {
       // A narração: a voz de quem joga entra na MISTURA DA GRAVAÇÃO e em nenhum outro lugar (não vai à saída do jogo).
       if (microfone) {
         this.fonteMic = ctx.createMediaStreamSource(microfone);
-        this.fonteMic.connect(this.audioDest);
+        // O efeito entra entre o microfone e a mistura; se ele falhar ao montar, a voz vai pura (um take sem efeito vale mais que um take perdido).
+        this.cadeia = montarCadeia(efeito, ctx);
+        if (this.cadeia) {
+          this.fonteMic.connect(this.cadeia.entrada);
+          this.cadeia.saida.connect(this.audioDest);
+        } else {
+          this.fonteMic.connect(this.audioDest);
+        }
         this.microfone = microfone;
       }
     }
@@ -170,6 +183,8 @@ export class GameRecorder {
   }
 
   private limparAudioDest(): void {
+    this.cadeia?.desligar();
+    this.cadeia = null;
     if (this.fonteMic) {
       try {
         this.fonteMic.disconnect();
@@ -207,6 +222,16 @@ export class GameRecorder {
   private esconderIndicador(): void {
     this.indicador?.remove();
     this.indicador = null;
+  }
+}
+
+/** Monta o efeito na voz; qualquer falha vira "sem efeito" (a voz vai pura). */
+function montarCadeia(efeito: FabricaDeCadeiaDeVoz | null, ctx: AudioContext): CadeiaDeVoz | null {
+  if (!efeito) return null;
+  try {
+    return efeito(ctx);
+  } catch {
+    return null;
   }
 }
 

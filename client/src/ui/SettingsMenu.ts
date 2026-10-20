@@ -11,6 +11,7 @@ import {
   type KeyAction,
   type QualityPreset,
   type VoiceMode,
+  type VozEfeito,
   type Settings,
 } from '../core/Settings';
 
@@ -52,6 +53,7 @@ export class SettingsMenu {
   private readonly sliderVozVolume = $('setting-voz-volume') as HTMLInputElement;
   private readonly valVozVolume = $('val-voz-volume');
   private readonly selVozAparelho = $('setting-voz-aparelho') as HTMLSelectElement;
+  private readonly selVozEfeito = $('setting-voz-efeito') as HTMLSelectElement;
   private readonly btnVozTestar = $('btn-voz-testar') as HTMLButtonElement;
   /** O teste do microfone (P212): pedaço sob demanda, só baixa quem toca em TESTAR. */
   private micTest: MicTest | null = null;
@@ -121,7 +123,7 @@ export class SettingsMenu {
     for (const n of NARRACOES) this.selNarracao.append(new Option(ROTULO_DA_NARRACAO[n], n));
 
     // O `‹ valor ›` das interfaces de jogos antigas (P182): qualidade, dificuldade e narrador se trocam por um passo, sem abrir lista. O select segue sendo a fonte (escondido).
-    for (const s of [this.selQuality, this.selDiff, this.selNarracao, this.selVozModo]) ligarPasso(s);
+    for (const s of [this.selQuality, this.selDiff, this.selNarracao, this.selVozModo, this.selVozEfeito]) ligarPasso(s);
   }
 
   private wireEvents(): void {
@@ -224,6 +226,12 @@ export class SettingsMenu {
     this.selVozAparelho.addEventListener('change', () => {
       this.settings.update({ micDevice: this.selVozAparelho.value });
       void this.micTest?.reiniciar();
+    });
+
+    // O efeito na voz (P231): vale na narração (F10) e na prévia do teste; com o teste ligado, a prévia troca na hora.
+    this.selVozEfeito.addEventListener('change', () => {
+      this.settings.update({ vozEfeito: this.selVozEfeito.value as VozEfeito });
+      void this.micTest?.trocarEfeito();
     });
 
     this.btnVozTestar.addEventListener('click', () => void this.alternarTesteDoMic());
@@ -348,6 +356,7 @@ export class SettingsMenu {
         () => this.settings.value.micDevice,
         undefined,
         () => void this.atualizarAparelhos(),
+        () => this.settings.value.vozEfeito,
       );
       ouvir.addEventListener('change', () => this.micTest?.ouvirAMinhaVoz(ouvir.checked));
     }
@@ -391,6 +400,7 @@ export class SettingsMenu {
     this.sliderVozVolume.value = s.voiceVolume.toString();
     this.valVozVolume.textContent = `${Math.round(s.voiceVolume * 100)}%`;
     if ([...this.selVozAparelho.options].some((o) => o.value === s.micDevice)) this.selVozAparelho.value = s.micDevice;
+    this.selVozEfeito.value = s.vozEfeito;
 
     for (const { action } of KEY_ACTIONS) {
       if (this.remappingAction === action) continue;

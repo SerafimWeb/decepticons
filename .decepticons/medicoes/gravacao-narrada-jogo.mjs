@@ -59,7 +59,7 @@ try {
   if (!browser) throw new Error('nenhum navegador');
 
   /** Abre o jogo offline, entra na partida (o primeiro gesto liga o áudio) e devolve a página. */
-  async function abrirJogo(token) {
+  async function abrirJogo(token, efeito = null) {
     const ctx = await browser.newContext({ acceptDownloads: true, viewport: { width: 1280, height: 720 } });
     await ctx.grantPermissions(['microphone'], { origin: new URL(base).origin });
     const page = await ctx.newPage();
@@ -68,6 +68,8 @@ try {
     page.on('console', (m) => m.type() === 'warning' && m.text().includes('GameRecorder') && console.log('console:', m.text()));
     await page.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
     if (token) await guardarSessao(page, 2598, token);
+    // O efeito na voz (P231) vem das configurações salvas do jogador: a mesma chave que o jogo lê (`Settings`).
+    if (efeito) await page.addInitScript(([k, v]) => localStorage.setItem(k, v), ['cybermech.settings.v1', JSON.stringify({ vozEfeito: efeito })]);
     await page.goto(base);
     await page.waitForFunction(() => document.getElementById('cta')?.textContent?.includes('jogar'), null, { timeout: 300_000, polling: 500 }).catch(() => {});
     for (let i = 0; i < 4; i++) {
@@ -150,10 +152,52 @@ try {
     // (`gravacao-narrada.mjs`, -77 dB). Aqui a narração tem de somar bem mais que o jogo sozinho.
     if (controle !== null) conferir('a narração soma pelo menos 12 dB sobre o F9 (o jogo sozinho)', voz - controle >= 12, `${voz} dB contra ${controle} dB (${(voz - controle).toFixed(1)} dB de folga)`);
   }
-  console.log(`\nerros de página: ${conv.erros.length + ad.erros.length}`);
-  for (const e of [...conv.erros, ...ad.erros]) console.log('  ', e);
-  conferir('nenhum erro de página', conv.erros.length + ad.erros.length === 0);
   await ad.ctx.close();
+
+  // ---------- 3. o efeito na voz (P231): a mesma narração, com "Lorde sombrio" escolhido nas configurações ----------
+  console.log('\n--- conta de adulto, efeito "sombrio" nas configurações ---');
+  let arquivoFx = null;
+  const errosFx = [];
+  for (let tentativa = 0; tentativa < 2 && !arquivoFx; tentativa++) {
+    const fx = await abrirJogo(await tokenDeConta(2598, `narrador-fx${tentativa}`), 'sombrio');
+    let indFx = null;
+    for (let i = 0; i < 12 && !indFx; i++) {
+      await fx.page.keyboard.press('F10');
+      indFx = await ate(() => indicador(fx.page), 4000);
+      if (!indFx) await fx.page.waitForTimeout(2500);
+    }
+    if (tentativa === 0) conferir('com o efeito: F10 grava com a narração', !!indFx && indFx.includes('NARRAÇÃO'), String(indFx));
+    await fx.page.waitForTimeout(6000);
+    const baixouFx = fx.page.waitForEvent('download', { timeout: 90_000 }).catch(() => null);
+    await fx.page.keyboard.press('F10');
+    const dFx = await baixouFx;
+    if (dFx) {
+      arquivoFx = resolve(TMP, 'f10-sombrio.webm');
+      await dFx.saveAs(arquivoFx);
+    }
+    errosFx.push(...fx.erros);
+    await fx.ctx.close();
+  }
+  conferir('com o efeito: parar baixou o arquivo', !!arquivoFx, arquivoFx ? 'ok' : 'sem arquivo (SwiftShader pode terminar sem quadros)');
+  if (arquivoFx && arquivoAd && ffmpeg) {
+    // O microfone de teste toca 440 Hz; "sombrio" desce 5 semitons: 440 Hz vira ~330 Hz. Compara com a narração SEM efeito (o som do jogo é o mesmo nos dois).
+    const novo = 440 * 2 ** (-5 / 12);
+    const fxNovo = nivelNaFaixa(arquivoFx, novo);
+    const adNovo = nivelNaFaixa(arquivoAd, novo);
+    const fxOrig = nivelNaFaixa(arquivoFx, 440);
+    const adOrig = nivelNaFaixa(arquivoAd, 440);
+    console.log(`\nnível em ${novo.toFixed(0)} Hz (o tom novo): com efeito ${fxNovo} dB | sem efeito ${adNovo} dB`);
+    console.log(`nível em 440 Hz (o tom original): com efeito ${fxOrig} dB | sem efeito ${adOrig} dB`);
+    conferir('com o efeito, o tom novo (330 Hz) aparece pelo menos 12 dB acima do da narração sem efeito', fxNovo - adNovo >= 12, `${(fxNovo - adNovo).toFixed(1)} dB`);
+    conferir('com o efeito, o tom original (440 Hz) cai pelo menos 12 dB abaixo do da narração sem efeito', adOrig - fxOrig >= 12, `${(adOrig - fxOrig).toFixed(1)} dB`);
+  } else {
+    console.log('(sem arquivo de uma das narrações: a comparação em frequência fica para outra rodada; a prova do gravador está em gravacao-narrada.mjs)');
+  }
+
+  const todosOsErros = [...conv.erros, ...ad.erros, ...errosFx];
+  console.log(`\nerros de página: ${todosOsErros.length}`);
+  for (const e of todosOsErros) console.log('  ', e);
+  conferir('nenhum erro de página', todosOsErros.length === 0);
 } finally {
   await browser?.close().catch(() => {});
   await vite.close();
