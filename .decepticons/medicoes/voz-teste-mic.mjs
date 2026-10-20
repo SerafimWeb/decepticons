@@ -73,6 +73,8 @@ try {
   page.on('pageerror', (e) => erros.add(e.message));
   await page.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
   await page.addInitScript(GRAVA_FAIXAS);
+  const pedidos = []; // o que o navegador baixou (o pedaço dos efeitos de voz só pode vir depois da escolha)
+  page.on('request', (r) => pedidos.push(r.url()));
   // A voz e o teste do microfone são só de conta de maior de idade (P211): o jogador da bancada entra com uma, que o jogo restaura sozinho.
   await guardarSessao(page, 2596, await tokenDeConta(2596, 'dan'));
   await page.goto(`${base}?sala=MICTESTE&nome=DAN&servidor=ws://127.0.0.1:2596&comandante=1`);
@@ -129,6 +131,28 @@ try {
   });
   await page.waitForTimeout(500);
   conferir('"ouvir a minha voz" liga sem erro', erros.size === 0, [...erros].join(' | '));
+
+  // ---- o efeito na voz (P231): o seletor, a escolha salva, o pedaço sob demanda e a prévia trocando com o teste ligado
+  const opcoesFx = await page.evaluate(() => [...document.getElementById('setting-voz-efeito').options].map((o) => `${o.value}:${o.textContent}`));
+  conferir('o seletor de efeito na voz tem os quatro (sem efeito, locutor militar, lorde sombrio, grande irmão)', opcoesFx.length === 4 && opcoesFx[0] === 'normal:Sem efeito' && opcoesFx[3] === 'irmao:Grande Irmão', JSON.stringify(opcoesFx));
+  conferir('o pedaço dos efeitos NÃO foi baixado enquanto ninguém escolheu um efeito', !pedidos.some((u) => u.includes('EfeitosDeVoz')), pedidos.filter((u) => u.includes('EfeitosDeVoz')).join(','));
+  for (const v of ['locutor', 'sombrio', 'irmao', 'normal']) {
+    await page.evaluate((valor) => {
+      const s = document.getElementById('setting-voz-efeito');
+      s.value = valor;
+      s.dispatchEvent(new Event('change', { bubbles: true }));
+    }, v);
+    await page.waitForTimeout(900);
+    const salvo = await page.evaluate(() => JSON.parse(localStorage.getItem('cybermech.settings.v1') ?? '{}').vozEfeito);
+    conferir(`escolher "${v}" com o teste ligado e "ouvir a minha voz" marcado salva a escolha`, salvo === v, String(salvo));
+    if (v === 'sombrio') {
+      await page.evaluate(() => document.getElementById('setting-voz-efeito').scrollIntoView({ block: 'center' }));
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: resolve('.decepticons', 'arte', 'voz-efeito-claude.png') });
+    }
+  }
+  conferir('depois da primeira escolha o pedaço dos efeitos foi baixado, uma vez', pedidos.filter((u) => u.includes('EfeitosDeVoz')).length >= 1, String(pedidos.filter((u) => u.includes('EfeitosDeVoz')).length));
+  conferir('trocar de efeito com o teste ligado não dá erro de página', erros.size === 0, [...erros].join(' | '));
 
   await page.evaluate(() => document.getElementById('btn-voz-testar').click());
   await page.waitForTimeout(500);

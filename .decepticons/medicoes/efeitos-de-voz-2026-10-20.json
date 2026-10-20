@@ -1,0 +1,395 @@
+{
+ "data": "2026-10-20",
+ "medidas": {
+  "tom": [
+   {
+    "semitons": -12,
+    "esperado": 250,
+    "medido": 250.0012481905934,
+    "pico": 260
+   },
+   {
+    "semitons": -7,
+    "esperado": 333.7099635425086,
+    "medido": 339.9923051740334,
+    "pico": 340.096974479756
+   },
+   {
+    "semitons": -5,
+    "esperado": 374.5767692191704,
+    "medido": 379.9978858577941,
+    "pico": 380.20373845341925
+   },
+   {
+    "semitons": -3,
+    "esperado": 420.44820762685725,
+    "medido": 420.0029726869159,
+    "pico": 419.81374533880006
+   },
+   {
+    "semitons": 3,
+    "esperado": 594.6035575013606,
+    "medido": 599.998756914393,
+    "pico": 600.2224902509524
+   }
+  ],
+  "niveis": {
+   "locutor": [
+    {
+     "entradaHz": 100,
+     "db": -14.383460056973682,
+     "dominanteHz": 99.99999567998177
+    },
+    {
+     "entradaHz": 200,
+     "db": -12.815784222702398,
+     "dominanteHz": 199.99998969784872
+    },
+    {
+     "entradaHz": 500,
+     "db": -8.831307500314015,
+     "dominanteHz": 500.00001315309123
+    },
+    {
+     "entradaHz": 1000,
+     "db": -8.695771998516218,
+     "dominanteHz": 1000.0000266849348
+    },
+    {
+     "entradaHz": 3000,
+     "db": -8.850349215090196,
+     "dominanteHz": 2999.999999999872
+    },
+    {
+     "entradaHz": 6000,
+     "db": -9.997124751440017,
+     "dominanteHz": 5999.999999999986
+    }
+   ],
+   "sombrio": [
+    {
+     "entradaHz": 100,
+     "db": -8.048026268085136,
+     "dominanteHz": 79.99995603791544
+    },
+    {
+     "entradaHz": 200,
+     "db": -12.31024753890777,
+     "dominanteHz": 147.9676782847357
+    },
+    {
+     "entradaHz": 500,
+     "db": -9.4630150304728,
+     "dominanteHz": 379.99997585786605
+    },
+    {
+     "entradaHz": 1000,
+     "db": -14.462836086805467,
+     "dominanteHz": 743.7560347459897
+    },
+    {
+     "entradaHz": 3000,
+     "db": -11.86253391870116,
+     "dominanteHz": 2240.0000069107023
+    },
+    {
+     "entradaHz": 6000,
+     "db": -10.166727877022495,
+     "dominanteHz": 4499.999963202806
+    }
+   ],
+   "irmao": [
+    {
+     "entradaHz": 100,
+     "db": -12.064680366206584,
+     "dominanteHz": 80.00161974727116
+    },
+    {
+     "entradaHz": 200,
+     "db": -13.936467380847862,
+     "dominanteHz": 159.99946345745545
+    },
+    {
+     "entradaHz": 500,
+     "db": -15.87326704043053,
+     "dominanteHz": 419.99609146532225
+    },
+    {
+     "entradaHz": 1000,
+     "db": -12.215882085290522,
+     "dominanteHz": 840.0015870924829
+    },
+    {
+     "entradaHz": 3000,
+     "db": -12.269406059851093,
+     "dominanteHz": 2519.9991198371613
+    },
+    {
+     "entradaHz": 6000,
+     "db": -15.082132704785034,
+     "dominanteHz": 5039.999708132065
+    }
+   ]
+  },
+  "lineares": {
+   "locutor": [
+    {
+     "entradaHz": 100,
+     "db": -53.94755505224818
+    },
+    {
+     "entradaHz": 200,
+     "db": -43.05931545393757
+    },
+    {
+     "entradaHz": 500,
+     "db": -33.768175048562114
+    },
+    {
+     "entradaHz": 1000,
+     "db": -32.74443643333179
+    },
+    {
+     "entradaHz": 3000,
+     "db": -31.440083584396735
+    },
+    {
+     "entradaHz": 6000,
+     "db": -43.22258559713015
+    }
+   ],
+   "sombrio": [
+    {
+     "entradaHz": 100,
+     "db": -35.244929786611856
+    },
+    {
+     "entradaHz": 200,
+     "db": -38.812796441321304
+    },
+    {
+     "entradaHz": 500,
+     "db": -42.976958128361886
+    },
+    {
+     "entradaHz": 1000,
+     "db": -43.118459480032485
+    },
+    {
+     "entradaHz": 3000,
+     "db": -41.775870925240575
+    },
+    {
+     "entradaHz": 6000,
+     "db": -47.06511887015545
+    }
+   ],
+   "irmao": [
+    {
+     "entradaHz": 100,
+     "db": -31.870791841955594
+    },
+    {
+     "entradaHz": 200,
+     "db": -35.65096880029269
+    },
+    {
+     "entradaHz": 500,
+     "db": -37.54009394058486
+    },
+    {
+     "entradaHz": 1000,
+     "db": -37.15630173553339
+    },
+    {
+     "entradaHz": 3000,
+     "db": -35.271081367507264
+    },
+    {
+     "entradaHz": 6000,
+     "db": -35.644527597691415
+    }
+   ]
+  },
+  "picos": {
+   "locutor": {
+    "seno": 0.3778795599937439,
+    "ruido": 0.6401863098144531
+   },
+   "sombrio": {
+    "seno": 0.6280809044837952,
+    "ruido": 0.7559530735015869
+   },
+   "irmao": {
+    "seno": 0.40423235297203064,
+    "ruido": 0.5434602499008179
+   }
+  },
+  "caudas": {
+   "locutor": -165.4560911194248,
+   "sombrio": -165.6253152961667,
+   "irmao": -43.0240058361132
+  },
+  "eco": {
+   "noAtraso": 0.20212480022249332,
+   "vizinhoMaximo": 0.01352031221269472
+  },
+  "latencia": {
+   "locutor": 0.01475000000000004,
+   "sombrio": 0.025000000000000022,
+   "irmao": 0.019645833333333362
+  },
+  "velocidade": {
+   "locutor": 65.01950585301543,
+   "sombrio": 26.99784017235173,
+   "irmao": 13.17349492830789
+  }
+ },
+ "verificacoes": [
+  {
+   "nome": "o deslocador de -12 semitons põe 500 Hz em 250.0 Hz (erro até 10 Hz, a grade da rampa)",
+   "ok": true,
+   "detalhe": "centroide 250.0 Hz, erro 0.0 Hz"
+  },
+  {
+   "nome": "o deslocador de -7 semitons põe 500 Hz em 333.7 Hz (erro até 10 Hz, a grade da rampa)",
+   "ok": true,
+   "detalhe": "centroide 340.0 Hz, erro 6.3 Hz"
+  },
+  {
+   "nome": "o deslocador de -5 semitons põe 500 Hz em 374.6 Hz (erro até 10 Hz, a grade da rampa)",
+   "ok": true,
+   "detalhe": "centroide 380.0 Hz, erro 5.4 Hz"
+  },
+  {
+   "nome": "o deslocador de -3 semitons põe 500 Hz em 420.4 Hz (erro até 10 Hz, a grade da rampa)",
+   "ok": true,
+   "detalhe": "centroide 420.0 Hz, erro 0.4 Hz"
+  },
+  {
+   "nome": "o deslocador de 3 semitons põe 500 Hz em 594.6 Hz (erro até 10 Hz, a grade da rampa)",
+   "ok": true,
+   "detalhe": "centroide 600.0 Hz, erro 5.4 Hz"
+  },
+  {
+   "nome": "locutor: 100 Hz sai pelo menos 10 dB abaixo de 1 kHz, em nível baixo (corta o grave: banda de rádio)",
+   "ok": true,
+   "detalhe": "-21.2 dB"
+  },
+  {
+   "nome": "locutor: 6 kHz sai pelo menos 8 dB abaixo de 1 kHz, em nível baixo (corta o agudo)",
+   "ok": true,
+   "detalhe": "-10.5 dB"
+  },
+  {
+   "nome": "locutor: realça a presença (a faixa de 3 kHz fica acima do grave de 100 Hz por pelo menos 12 dB)",
+   "ok": true,
+   "detalhe": "22.5 dB"
+  },
+  {
+   "nome": "locutor: o tom não muda (1 kHz sai em 1 kHz, com 2%)",
+   "ok": true,
+   "detalhe": "1000.0 Hz"
+  },
+  {
+   "nome": "sombrio: 1 kHz sai em ~749 Hz (5 semitons abaixo, 3%)",
+   "ok": true,
+   "detalhe": "743.8 Hz"
+  },
+  {
+   "nome": "irmão: 1 kHz sai em ~841 Hz (3 semitons abaixo, 3%)",
+   "ok": true,
+   "detalhe": "840.0 Hz"
+  },
+  {
+   "nome": "sombrio: o filtro realça o grave (100 Hz sai mais alto que 1 kHz em pelo menos 5 dB)",
+   "ok": true,
+   "detalhe": "7.9 dB"
+  },
+  {
+   "nome": "irmão: o filtro realça o grave (100 Hz sai mais alto que 1 kHz em pelo menos 3 dB)",
+   "ok": true,
+   "detalhe": "5.3 dB"
+  },
+  {
+   "nome": "locutor: nenhum tom sai mudo nem estourado (−40 a −3 dBFS na entrada de −14 dBFS)",
+   "ok": true,
+   "detalhe": "-14.4 / -12.8 / -8.8 / -8.7 / -8.9 / -10.0"
+  },
+  {
+   "nome": "locutor: o pico nunca passa de 1 (não estoura a gravação), seno e ruído a 0,9",
+   "ok": true,
+   "detalhe": "seno 0.378, ruído 0.640"
+  },
+  {
+   "nome": "locutor: a voz atrasa menos de 80 ms (a narração não sai dessincronizada do vídeo)",
+   "ok": true,
+   "detalhe": "14.8 ms"
+  },
+  {
+   "nome": "locutor: renderiza pelo menos 10x mais rápido que o tempo real (no máximo 10% de um núcleo; só durante a narração e o teste)",
+   "ok": true,
+   "detalhe": "65x"
+  },
+  {
+   "nome": "sombrio: nenhum tom sai mudo nem estourado (−40 a −3 dBFS na entrada de −14 dBFS)",
+   "ok": true,
+   "detalhe": "-8.0 / -12.3 / -9.5 / -14.5 / -11.9 / -10.2"
+  },
+  {
+   "nome": "sombrio: o pico nunca passa de 1 (não estoura a gravação), seno e ruído a 0,9",
+   "ok": true,
+   "detalhe": "seno 0.628, ruído 0.756"
+  },
+  {
+   "nome": "sombrio: a voz atrasa menos de 80 ms (a narração não sai dessincronizada do vídeo)",
+   "ok": true,
+   "detalhe": "25.0 ms"
+  },
+  {
+   "nome": "sombrio: renderiza pelo menos 10x mais rápido que o tempo real (no máximo 10% de um núcleo; só durante a narração e o teste)",
+   "ok": true,
+   "detalhe": "27x"
+  },
+  {
+   "nome": "irmao: nenhum tom sai mudo nem estourado (−40 a −3 dBFS na entrada de −14 dBFS)",
+   "ok": true,
+   "detalhe": "-12.1 / -13.9 / -15.9 / -12.2 / -12.3 / -15.1"
+  },
+  {
+   "nome": "irmao: o pico nunca passa de 1 (não estoura a gravação), seno e ruído a 0,9",
+   "ok": true,
+   "detalhe": "seno 0.404, ruído 0.543"
+  },
+  {
+   "nome": "irmao: a voz atrasa menos de 80 ms (a narração não sai dessincronizada do vídeo)",
+   "ok": true,
+   "detalhe": "19.6 ms"
+  },
+  {
+   "nome": "irmao: renderiza pelo menos 10x mais rápido que o tempo real (no máximo 10% de um núcleo; só durante a narração e o teste)",
+   "ok": true,
+   "detalhe": "13x"
+  },
+  {
+   "nome": "irmão: tem cauda de salão (energia acima de −50 dB em 0,6 a 1,0 s depois do fim)",
+   "ok": true,
+   "detalhe": "-43.0 dB"
+  },
+  {
+   "nome": "irmão: a cauda é bem mais longa que a do sombrio (pelo menos 8 dB)",
+   "ok": true,
+   "detalhe": "122.6 dB"
+  },
+  {
+   "nome": "locutor: sem reverberação (a cauda some, abaixo de −60 dB)",
+   "ok": true,
+   "detalhe": "-165.5 dB"
+  },
+  {
+   "nome": "locutor: o eco de alto-falante está lá (autocorrelação no atraso de 42 ms bem acima dos vizinhos)",
+   "ok": true,
+   "detalhe": "0.202 contra 0.014"
+  }
+ ]
+}

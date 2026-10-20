@@ -51,7 +51,7 @@ let browser;
 try {
   browser = await chromium.launch({ executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe', headless: true, args: ['--autoplay-policy=no-user-gesture-required'] });
 
-  async function rodada(comVoz, segundos) {
+  async function rodada(comVoz, segundos, efeito = 'normal') {
     const ctx = await browser.newContext({ acceptDownloads: true });
     const page = await ctx.newPage();
     page.on('pageerror', (e) => console.log('erro de página:', e.message));
@@ -59,9 +59,9 @@ try {
     await page.goto(`${base}@fs/${PAGINA}`);
     await page.waitForFunction(() => typeof window.__gravar === 'function', null, { timeout: 180_000 });
     const baixou = page.waitForEvent('download', { timeout: 60_000 });
-    const resultado = await page.evaluate(([v, s]) => window.__gravar(v, s), [comVoz, segundos]);
+    const resultado = await page.evaluate(([v, s, e]) => window.__gravar(v, s, e), [comVoz, segundos, efeito]);
     const download = await baixou;
-    const arquivo = resolve(TMP, comVoz ? 'narracao.webm' : 'controle.webm');
+    const arquivo = resolve(TMP, comVoz ? (efeito === 'normal' ? 'narracao.webm' : `narracao-${efeito}.webm`) : 'controle.webm');
     await download.saveAs(arquivo);
     await ctx.close();
     return { resultado, arquivo };
@@ -70,6 +70,7 @@ try {
   const SEG = 4;
   const com = await rodada(true, SEG);
   const sem = await rodada(false, SEG);
+  const fx = await rodada(true, SEG, 'sombrio'); // com o efeito: o tom de 1000 Hz da "voz" deve sair do arquivo em ~744 Hz (5 semitons abaixo)
   console.log('\nnarração :', JSON.stringify(com.resultado));
   console.log('controle :', JSON.stringify(sem.resultado));
 
@@ -89,6 +90,15 @@ try {
   conferir('o jogo chegou à saída (a medida funciona)', com.resultado.jogoNaSaidaDb > -60, `${com.resultado.jogoNaSaidaDb.toFixed(1)} dB em 300 Hz na saída`);
   conferir('a gravação começou e o arquivo foi baixado', com.resultado.gravando === true && sem.resultado.gravando === true && com.resultado.baixou && sem.resultado.baixou);
   conferir('parar soltou o microfone (a faixa terminou)', com.resultado.faixaDoMic === 'ended', String(com.resultado.faixaDoMic));
+  // ---- o efeito de voz (P231), pela gravação de verdade ----
+  const vozFx1000 = nivelNaFaixa(fx.arquivo, 1000);
+  const vozFx744 = nivelNaFaixa(fx.arquivo, 1000 * 2 ** (-5 / 12));
+  const jogoFx = nivelNaFaixa(fx.arquivo, 300);
+  console.log(`\ncom o efeito sombrio: 1000 Hz ${vozFx1000} dB | 744 Hz ${vozFx744} dB | jogo (300 Hz) ${jogoFx} dB`);
+  conferir('com o efeito, a voz sai do arquivo no tom mais grave (744 Hz de 1000 Hz)', vozFx744 > -45, `${vozFx744} dB em 744 Hz`);
+  conferir('com o efeito, o tom original (1000 Hz) praticamente some do arquivo (pelo menos 20 dB abaixo do tom novo)', vozFx744 - vozFx1000 >= 20, `${(vozFx744 - vozFx1000).toFixed(1)} dB de diferença`);
+  conferir('o efeito não mexe no som do jogo (300 Hz continua no arquivo, até 3 dB do normal)', Math.abs(jogoFx - jogoCom) <= 3, `${jogoFx} dB contra ${jogoCom} dB`);
+  conferir('o efeito foi desligado ao parar e o microfone foi solto', fx.resultado.faixaDoMic === 'ended' && fx.resultado.baixou, String(fx.resultado.faixaDoMic));
   conferir('o vídeo tem quadros', f.video && com.resultado.quadros > SEG * 10, `${com.resultado.quadros} quadros desenhados`);
 } finally {
   await browser?.close().catch(() => {});

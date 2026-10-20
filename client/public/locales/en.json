@@ -962,5 +962,11 @@
  "Ouvir de novo a voz deste piloto": "Hear this pilot's voice again",
  "Silenciar a voz deste piloto até você sair da sala": "Mute this pilot's voice until you leave the room",
  "Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.": "Total silence: this device is not delivering any sound (muted or turned off in Windows). Choose another one from the list.",
- "Aparelho em uso: {0}": "Device in use: {0}"
+ "Aparelho em uso: {0}": "Device in use: {0}",
+ "Efeito na minha voz": "Effect on my voice",
+ "Sem efeito": "No effect",
+ "Locutor militar": "Military announcer",
+ "Lorde sombrio": "Dark lord",
+ "Grande Irmão": "Big Brother",
+ "Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "Applies to narration (F10) and the microphone test, not to chat. It changes the pitch, bass and room of your voice; it does not change your accent."
 }

@@ -11,6 +11,8 @@ import { BOT_NAMES, NAME_MAX } from './botNames';
 export type KeyAction = 'forward' | 'back' | 'left' | 'right' | 'jump' | 'dash' | 'secondary' | 'camera' | 'shield' | 'ptt';
 /** Como o microfone do chat de voz abre (`voice/MicController.ts`): aberto (a tecla alterna o mudo) ou só enquanto a tecla está apertada. */
 export type VoiceMode = 'sempre' | 'ptt';
+/** O efeito na voz de quem narra e no teste do microfone (P231, `voice/EfeitosDeVoz.ts`): `normal` = sem efeito. */
+export type VozEfeito = 'normal' | 'locutor' | 'sombrio' | 'irmao';
 export type QualityPreset = 'auto' | 'alta' | 'media' | 'baixa';
 export type Difficulty = 'facil' | 'normal' | 'dificil';
 /** Personalidade de um Mech inimigo (os números ficam em `combat/BotController.ts`, `PERSONAS`). */
@@ -80,6 +82,8 @@ export interface GameSettings {
   voiceVolume: number;
   /** O microfone escolhido (`deviceId` do navegador); vazio = o padrão do sistema. */
   micDevice: string;
+  /** O efeito na voz da narração (F10) e do teste do microfone. O chat de voz não usa. */
+  vozEfeito: VozEfeito;
   keys: Record<KeyAction, string>;
 }
 
@@ -126,6 +130,7 @@ export const DEFAULT_SETTINGS: Readonly<GameSettings> = Object.freeze({
   voiceMode: 'sempre',
   voiceVolume: 0.8,
   micDevice: '',
+  vozEfeito: 'normal',
   keys: Object.freeze({
     forward: 'KeyW',
     back: 'KeyS',
@@ -195,6 +200,7 @@ const QUALITIES: readonly QualityPreset[] = ['auto', 'alta', 'media', 'baixa'];
 const DIFFICULTIES: readonly Difficulty[] = ['facil', 'normal', 'dificil'];
 const PERSONAS: readonly Persona[] = ['soldado', 'brabo', 'manso', 'fujao'];
 const VOICE_MODES: readonly VoiceMode[] = ['sempre', 'ptt'];
+const VOZ_EFEITOS: readonly VozEfeito[] = ['normal', 'locutor', 'sombrio', 'irmao'];
 const ENEMY_SLOTS = 3;
 
 function num(v: unknown, fallback: number, min: number, max: number): number {
@@ -268,6 +274,7 @@ export function sanitizeSettings(raw: unknown): GameSettings {
     voiceMode: VOICE_MODES.includes(r.voiceMode as VoiceMode) ? (r.voiceMode as VoiceMode) : d.voiceMode,
     voiceVolume: num(r.voiceVolume, d.voiceVolume, LIMITS.voiceVolume.min, LIMITS.voiceVolume.max),
     micDevice: typeof r.micDevice === 'string' && r.micDevice.length <= 256 && !/[ -]/.test(r.micDevice) ? r.micDevice : d.micDevice,
+    vozEfeito: VOZ_EFEITOS.includes(r.vozEfeito as VozEfeito) ? (r.vozEfeito as VozEfeito) : d.vozEfeito,
     keys,
   };
 }

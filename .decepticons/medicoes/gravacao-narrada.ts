@@ -1,4 +1,6 @@
 import { GameRecorder } from '../../client/src/core/GameRecorder';
+import { criarCadeiaDeVoz } from '../../client/src/voice/EfeitosDeVoz';
+import type { VozEfeito } from '../../client/src/core/Settings';
 import type { AudioSystem } from '../../client/src/audio/AudioSystem';
 
 /**
@@ -19,7 +21,7 @@ interface Resultado {
   baixou: boolean;
 }
 
-(window as unknown as { __gravar: unknown }).__gravar = async (comVoz: boolean, segundos: number): Promise<Resultado> => {
+(window as unknown as { __gravar: unknown }).__gravar = async (comVoz: boolean, segundos: number, efeito: VozEfeito = 'normal'): Promise<Resultado> => {
   const canvas = document.createElement('canvas');
   canvas.width = 640;
   canvas.height = 360;
@@ -81,7 +83,7 @@ interface Resultado {
     jogoMax = Math.max(jogoMax, buf[bin(FREQ_JOGO)]!);
   };
 
-  gravador.alternar(comVoz ? origemMic.stream : null);
+  gravador.alternar(comVoz ? origemMic.stream : null, efeito === 'normal' ? null : (c) => criarCadeiaDeVoz(c, efeito));
   const gravando = gravador.gravando;
   const t0 = performance.now();
   while (performance.now() - t0 < segundos * 1000) {
