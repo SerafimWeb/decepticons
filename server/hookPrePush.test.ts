@@ -55,7 +55,8 @@ beforeAll(() => {
 });
 afterAll(() => rmSync(RAIZ, { recursive: true, force: true }));
 
-describe.skipIf(!temBash)('hook de push: o check não se repete na mesma árvore (regra 19c)', () => {
+// Estes blocos rodam `git` e `bash` de verdade (um repositório e um hook por teste): no Windows, com o Defender e a máquina ocupada, 30 s não bastam e o atualizador reprovava o deploy por isso (04:36, 05:35 e 05:39 de 20/10). 120 s só aqui; o limite global continua 30 s.
+describe.skipIf(!temBash)('hook de push: o check não se repete na mesma árvore (regra 19c)', { timeout: 120_000 }, () => {
   it('a primeira vez roda o check e guarda a árvore; a segunda, com a mesma árvore, não roda', () => {
     const sha = git('rev-parse', 'HEAD');
     expect(empurrar(sha).status).toBe(0);
