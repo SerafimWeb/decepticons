@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
  * Por isso estes testes provam as bordas: só pula com a árvore limpa e igual à do HEAD, só depois de um check que passou, e qualquer mudança roda de novo.
  * Repositório temporário em `.tmp/` (G15), `git` sem as variáveis `GIT_*` do hook (senão ele mexeria no repositório de quem está empurrando) e um `npm` falso que só anota a chamada.
  */
-const HOOK = resolve('.githooks/pre-push');
+const HOOK = resolve('.githooks/pre-push').split('\\').join('/');
 const RAIZ = resolve('.tmp', `teste-hook-${process.pid}`);
 const BIN = join(RAIZ, 'bin');
 const REPO = join(RAIZ, 'repo');
@@ -33,27 +33,26 @@ const commitar = (arquivo: string, texto: string) => {
 };
 /** Roda o hook como o Git roda: com `local_ref local_sha remote_ref remote_sha` na entrada. */
 const empurrar = (sha: string, ref = 'refs/heads/claude/tarefa', npmSai = '0') => {
-  const r = spawnSync('bash', [HOOK], { cwd: REPO, encoding: 'utf8', env: ambiente({ NPM_SAI: npmSai }), input: `refs/heads/claude/tarefa ${sha} ${ref} ${ZEROS}\n` });
+  const r = spawnSync(BASH, [HOOK], { cwd: REPO, encoding: 'utf8', env: ambiente({ NPM_SAI: npmSai }), input: `refs/heads/claude/tarefa ${sha} ${ref} ${ZEROS}\n` });
   return { status: r.status, saida: `${r.stdout}${r.stderr}` };
 };
 const chamadasDoNpm = () => (existsSync(LOG) ? readFileSync(LOG, 'utf8').split('\n').filter(Boolean).length : 0);
 const arvoresGuardadas = () => (existsSync(join(REPO, '.tmp', 'check-ok')) ? readdirSync(join(REPO, '.tmp', 'check-ok')) : []);
 
-// O atualizador de produção (a tarefa agendada do Windows) roda `server/` e `shared/` num ambiente SEM `bash` no PATH: o `spawnSync('bash')` devolvia 127 e **cada atualização era revertida** (19/10: o site e o
-// servidor ficaram 2 h sem publicar). O hook só roda sob o Bash do Git (é o que o `git push` usa), então sem bash não há o que testar aqui: a suíte pula (o `check` de quem empurra roda com bash e a testa).
-// Não basta `bash -c 'exit 0'`: sob o PATH mínimo da tarefa do Windows o `bash` é o `System32\bash.exe` (o WSL), que responde 0 ali e depois devolve 127 ao receber o caminho
-// do Windows do hook, e a verificação do atualizador reprovou por isso (19/10: horas sem deploy mesmo depois da correção anterior, que só olhava `bash -c 'exit 0'`).
-// A sonda roda um script de verdade, pelo caminho do Windows, exatamente como o `empurrar` roda o hook.
-const temBash = (() => {
-  try {
-    mkdirSync(RAIZ, { recursive: true });
-    const sonda = join(RAIZ, 'sonda.sh');
-    writeFileSync(sonda, ['#!/usr/bin/env bash', 'git --version >/dev/null 2>&1 || exit 3', 'exit 0', ''].join(String.fromCharCode(10)));
-    return spawnSync('bash', [sonda]).status === 0;
-  } catch {
-    return false;
-  }
-})();
+/**
+ * O `bash` DO GIT (é o que o `git push` usa para rodar o hook). No Windows, `bash` solto no PATH pode ser o lançador do **WSL** (`C:\Windows\System32\bash.exe`): ele responde "ok" a `exit 0`, mas não enxerga
+ * `D:\...` e devolve 127 ("No such file"). Foi o que **reverteu cada atualização de produção** (19/10: o site e o servidor ficaram 2 h sem publicar): no Git Bash do dono passava; na tarefa agendada, não.
+ * Por isso aqui se acha o `bash.exe` ao lado do `git` (`<raiz>/mingw64/libexec/git-core` → `<raiz>/bin/bash.exe`); sem ele, a suíte pula.
+ */
+function acharBash(): string | null {
+  if (process.platform !== 'win32') return 'bash';
+  const g = spawnSync('git', ['--exec-path'], { encoding: 'utf8' });
+  if (g.status !== 0) return null;
+  const candidato = join(resolve(g.stdout.trim(), '..', '..', '..'), 'bin', 'bash.exe');
+  return existsSync(candidato) ? candidato : null;
+}
+const BASH = acharBash() ?? 'bash';
+const temBash = acharBash() !== null && spawnSync(BASH, ['-c', 'exit 0']).status === 0;
 
 beforeAll(() => {
   if (!temBash) return;
@@ -143,7 +142,7 @@ describe.skipIf(!temBash)('hook de push: o check não se repete na mesma árvore
   it('só apagar um branch remoto (sha zero, nenhum commit sobe) não roda check e não guarda árvore', () => {
     const antes = chamadasDoNpm();
     const guardadas = arvoresGuardadas().length;
-    const r = spawnSync('bash', [HOOK], { cwd: REPO, encoding: 'utf8', env: ambiente(), input: `(delete) ${ZEROS} refs/heads/claude/velho ${'1'.repeat(40)}\n` });
+    const r = spawnSync(BASH, [HOOK], { cwd: REPO, encoding: 'utf8', env: ambiente(), input: `(delete) ${ZEROS} refs/heads/claude/velho ${'1'.repeat(40)}\n` });
     expect(r.status).toBe(0);
     expect(`${r.stdout}${r.stderr}`).toContain('só apaga branch remoto');
     expect(chamadasDoNpm()).toBe(antes);
