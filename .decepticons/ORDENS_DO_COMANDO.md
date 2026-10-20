@@ -20,6 +20,13 @@
 |---|---|---|---|---|---|
 | P223 | 19/10 | "quero economizar sim, de forma inteligente, profissional e experiente, sem miséria, focando em melhorar o desempenho, manutenção, etc" | ✅ | **Feito** (PR `claude/ci-economico`), medido antes: 235 min num dia (cota de ~8 dias). O push na `main` não refaz o check na árvore que o PR já provou; as etiquetas só ao abrir; PR em rascunho não roda; `npm run ci:consumo` mede. O check do PR e o hook seguem completos. Detalhe em `DEPLOY.md` | `npm run ci:consumo -- --desde 2026-10-19` antes e depois: os minutos por dia caem |
 
+## P227 — Jogar com o microfone: o caminho até a voz (20/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P227 | 20/10 | "meu microfone está funcionando no windows, mas no jogo não consegui nem usar nem testar! parece que ainda falta algo. tudo SIM nas decisões… prossiga. quero JOGAR com o microfone!" | 🟡 | **O que faltava era o caminho:** o portão de idade (P211) esconde os controles da voz de convidado e de conta sem idade e deixava só uma frase mandando ir ao fim de outra aba. **Feito** (PR `claude/voz-conta-facil`): a seção do chat de voz ganhou o botão **[ CRIAR CONTA ]** (convidado, já abre o CRIAR CONTA) e **[ INFORMAR MINHA IDADE ]** (conta sem idade). Chrome real 36/36. **Falta (as decisões "sim"):** mudo por jogador, aviso para as contas antigas, a idade também no chat de texto, a prova positiva em produção. Rádio/jukebox: decisões aprovadas, construção é outra frente | **Configurações > GRÁFICOS E SOM > CHAT DE VOZ**: sem conta aparece [ CRIAR CONTA ]; depois da conta com mês e ano de nascimento aparecem TESTAR e a escolha do microfone |
+
+
 ## P225 — O hook não refaz o check depois de uma junção pura com a main (19/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

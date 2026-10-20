@@ -12,13 +12,6 @@ export function elegibilidadeDaVoz(logado: boolean, idade: IdadeDaConta): Elegib
   return idade === 'adulto' ? 'liberada' : idade;
 }
 
-/** A frase de cada caso (em português; o tradutor de DOM cuida das outras línguas). */
-export const TEXTO_DA_ELEGIBILIDADE: Record<Exclude<ElegibilidadeDaVoz, 'liberada'>, string> = {
-  convidado: 'O chat de voz é só para quem tem conta e é maior de 18 anos. Crie uma conta na aba JOGO e informe o mês e o ano de nascimento.',
-  'sem-idade': 'Informe o mês e o ano de nascimento da sua conta (aba JOGO) para liberar o chat de voz. Ele é só para maiores de 18 anos.',
-  menor: 'O chat de voz não está disponível para contas de menores de 18 anos: sem microfone e sem a voz dos outros jogadores. O áudio do jogo segue normal.',
-};
-
 /**
  * O chat de voz liga? As três condições juntas: o jogador quer (Configurações), o Comandante liberou a funcionalidade (`tela:voz`) **e a conta é de maior de 18 anos** (P211).
  * Qualquer `idade` que não seja `adulto` (inclusive a sessão ainda não restaurada, `undefined`) mantém a voz desligada: na dúvida, desligada.

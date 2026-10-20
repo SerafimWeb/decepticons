@@ -134,6 +134,7 @@ html, body {
   clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
 }
 #minimapa[hidden] { display: none; }
+#btn-voz-conta[hidden] { display: none; }
 #minimapa .mm-canvas { position: absolute; inset: 0; }
 #minimapa .mm-moldura { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: rgba(0, 229, 255, 0.75); stroke-width: 1.5; }
 #minimapa .mm-moldura polygon { vector-effect: non-scaling-stroke; }
