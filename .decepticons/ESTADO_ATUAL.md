@@ -33,7 +33,7 @@
 
 **O que entrou:** `{ timeout: 120_000 }` nos três blocos que usam `git`/`bash` de verdade (`avaliarJuncao` e o hook de ponta a ponta em `juncaoJaVerificada.test.ts`; o hook em `hookPrePush.test.ts`). O limite global (30 s) não mudou. Provado: um teste descartável confirmou que o vitest 5 aplica o `timeout` do `describe` (também com `.skipIf`) por cima do global; os 23 testes dos dois arquivos passam em 45 s.
 
-**Ainda falta (do dono, 1 minuto):** a tarefa "CYBERMECH atualizar" está registrada neste PC com **limite de 5 min** (o repositório já define 20 em `scripts/servidor-atualizar.ps1`, mas o registro antigo nunca foi refeito). Sob carga a verificação passa de 5 min, o Agendador corta a rodada, os filhos do vitest ficam vivos e a rodada seguinte, 70 s depois, atropela `.tmp/vitest` (viu-se `ENOENT` em 3 arquivos às 05:35). Aplicar: PowerShell **como administrador**, em `D:\DECEPTICONS\.tmp\wt-servidor-prod`: `.\scripts\servidor-atualizar.ps1`. Não mexi na tarefa: é configuração do Windows dele, que o `DEPLOY.md` já deixa como passo do dono.
+**Feito pelo Comandante (20/10):** rodou `.\scripts\servidor-atualizar.ps1` como administrador e a tarefa "CYBERMECH atualizar" agora tem o limite de **20 min** (`PT20M`, conferido: estado Ready, último resultado 0). Isso acaba com as rodadas cortadas em 5 min e o atropelo da pasta `.tmp/vitest`.
 
 **Próxima sessão começa com:** conferir no `atualizacao.log` que o `b102548` (e o `4728d23`, da voz) chegaram: `OK: …` e `servidor religou no código novo`; depois que o log da subida não traz mais `Cannot access 'auditoria'`.
 
