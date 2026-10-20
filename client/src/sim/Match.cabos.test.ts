@@ -7,6 +7,7 @@ import { Vector09 } from '../entities/Vector09';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { CABOS, ehAndroide, PONTOS_DOS_CABOS } from './CabosDeDados';
+import { carregarMapaSeFor } from '../environment/mapasSobDemanda';
 import { Match } from './Match';
 import { NUCLEO } from './NucleoDaEstacao';
 import { WAVE_BRIEFING_S } from './SurvivalWaves';
@@ -35,6 +36,7 @@ const androides = (m: Match): MechBase[] => m.bots.mechs.filter((b) => b.alive &
 
 describe('os cabos de dados na missão em ondas da praia (P162, capítulo 1)', () => {
   beforeAll(async () => {
+    await carregarMapaSeFor('praia'); // o cenário da Praia é sob demanda (P228): o jogo o baixa antes de montar a partida, o teste também
     await RAPIER.init();
   });
   afterEach(() => {

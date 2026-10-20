@@ -6,6 +6,7 @@ import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { PowerSpec } from '../tuning/power';
 import type { EstadoDosObjetivos } from './AmazoniaObjetivos';
 import type { MapId } from './Bunker';
+import type { QuadroDaPraia } from '../ui/PraiaHud';
 
 /**
  * OS MAPAS SOB DEMANDA (P180, parte B): o código de um mapa grande (terreno, floresta, shaders) **só baixa para quem o escolhe**. O `Game.create` pede `carregarMapaSeFor` antes de montar
@@ -112,7 +113,44 @@ export interface ChefeCarregado {
   criarObjetivos?(raiz: HTMLElement, aoTitulo: (texto: string) => void): ObjetivosCarregados;
 }
 
+/**
+ * O que o jogo usa da **Estação dos Cabos** (a Praia) montada: só o desenho. A classe `Praia` (`environment/Praia.ts`, o céu, o mar, o porto, a gente, as luzes, ~25 KB gzip) a implementa e **só baixa
+ * para quem abre esse mapa** (P228): a `Arena` e o jogo falam com esta interface, sem importar a classe. As regras da missão (cabos, portas, núcleo, quadro de luz) moram em `sim/` e ficam no pacote.
+ */
+export interface InstanciaDaPraia {
+  update(elapsed: number): void;
+  setDesembarque(aberto: boolean): void;
+  setQuadro(estado: number, vida: number): void;
+  setEnergia(energia: number): void;
+  setPortas(estado: ArrayLike<number>, vida: ArrayLike<number>): void;
+  setCabos(estado: ArrayLike<number>, vida: ArrayLike<number>, injecao: ArrayLike<number>): void;
+  setNucleo(fracao: number): void;
+  setCivis(visivel: boolean): void;
+  setDetalhe(alto: boolean): void;
+  setProgressoDoDia(progresso: number): void;
+}
+
+/** A fábrica do cenário da Praia (o que `environment/PraiaMapa.ts` entrega). */
+export interface PraiaCarregada {
+  construir(scene: THREE.Scene, physics: PhysicsWorld, destructibles?: Destructibles): InstanciaDaPraia;
+}
+
+/** O HUD da missão em ondas (o transformador, a barra do chefe, os avisos e, na praia, a costa, a rede, os cabos e as portas): `ui/PraiaHud.ts`. Só quem joga a Sobrevivência ou a Praia o baixa. */
+export interface HudDaMissao {
+  reset(): void;
+  update(dt: number, q: QuadroDaPraia): void;
+}
+
+/** A fábrica do HUD da missão e do quadro que o jogo reaproveita a cada frame (`ui/HudDaMissao.ts`). */
+export interface HudDaMissaoCarregado {
+  /** `soMissao`: o HUD da Cidade Neon, sem o que é só da praia. */
+  criar(hud: HTMLElement, soMissao: boolean): HudDaMissao;
+  novoQuadro(camera: THREE.Camera): QuadroDaPraia;
+}
+
 const carregados = new Map<MapId, MapaCarregado>();
+let praiaCarregada: PraiaCarregada | undefined;
+let hudCarregado: HudDaMissaoCarregado | undefined;
 const chefes = new Map<MapId, ChefeCarregado>();
 
 /** O mapa, se já foi carregado (`undefined` se não: quem pede sem carregar antes errou o roteiro). */
@@ -125,6 +163,23 @@ export function exigirMapa(id: MapId): MapaCarregado {
   const m = carregados.get(id);
   if (!m) throw new Error(`o mapa "${id}" não foi carregado: chame carregarMapaSeFor("${id}") antes de montar a partida`);
   return m;
+}
+
+/** A Praia, obrigatória para montar a Estação dos Cabos: erro claro em vez de um `undefined` mais adiante. */
+export function exigirPraia(): PraiaCarregada {
+  if (!praiaCarregada) throw new Error('a Praia não foi carregada: chame carregarMapaSeFor("praia") antes de montar a partida');
+  return praiaCarregada;
+}
+
+/** O HUD da missão, obrigatório para quem joga a Sobrevivência ou a Praia. */
+export function exigirHudDaMissao(): HudDaMissaoCarregado {
+  if (!hudCarregado) throw new Error('o HUD da missão não foi carregado: chame carregarHudDaMissao() antes de montar a partida');
+  return hudCarregado;
+}
+
+/** Baixa o HUD da missão (a Sobrevivência e a Praia). Idempotente; o Deathmatch da Cidade Neon não paga por ele. */
+export async function carregarHudDaMissao(): Promise<void> {
+  if (!hudCarregado) hudCarregado = (await import('../ui/HudDaMissao')).hudDaMissao;
 }
 
 /** O chefe do mapa, se já foi carregado. */
@@ -149,6 +204,8 @@ export async function carregarChefeSeFor(id: MapId): Promise<void> {
 
 /** Baixa e registra o código do mapa, se ele é de carga sob demanda. Idempotente; os mapas que moram no pacote de partida não fazem nada. */
 export async function carregarMapaSeFor(id: MapId): Promise<void> {
+  // A Estação dos Cabos (P228): o cenário (~25 KB gzip) só baixa para quem a abre; a Cidade Neon, o Bunker e os outros mapas não o carregam.
+  if (id === 'praia' && !praiaCarregada) praiaCarregada = (await import('./PraiaMapa')).praiaSobDemanda;
   if (id === 'amazonia' && !carregados.has(id)) {
     const { mapaDaAmazonia } = await import('./AmazoniaMapa');
     carregados.set(id, mapaDaAmazonia);

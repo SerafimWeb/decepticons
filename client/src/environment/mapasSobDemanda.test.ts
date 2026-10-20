@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { carregarChefeSeFor, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirMapa, mapaCarregado } from './mapasSobDemanda';
+import { carregarChefeSeFor, carregarHudDaMissao, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirHudDaMissao, exigirMapa, exigirPraia, mapaCarregado } from './mapasSobDemanda';
 
 describe('os mapas sob demanda (P180, parte B): o código do mapa grande só baixa para quem o escolhe', () => {
   // Este arquivo roda isolado (um módulo por arquivo de teste): a ordem abaixo é a de um jogo que abre.
@@ -8,12 +8,31 @@ describe('os mapas sob demanda (P180, parte B): o código do mapa grande só bai
     expect(() => exigirMapa('amazonia')).toThrow(/carregarMapaSeFor\("amazonia"\)/);
   });
 
-  it('os mapas que moram no pacote de partida não carregam nada (a Cidade Neon, o Bunker e a Praia não pagam pela Amazônia)', async () => {
-    for (const id of ['arena', 'bunker', 'praia'] as const) {
+  it('antes de carregar, a Praia e o HUD da missão não existem: pedir sem carregar dá um erro que diz o que fazer', () => {
+    expect(() => exigirPraia()).toThrow(/carregarMapaSeFor\("praia"\)/);
+    expect(() => exigirHudDaMissao()).toThrow(/carregarHudDaMissao/);
+  });
+
+  it('os mapas que moram no pacote de partida não carregam nada (a Cidade Neon e o Bunker não pagam pela Amazônia, pela Praça nem pela Praia)', async () => {
+    for (const id of ['arena', 'bunker'] as const) {
       await carregarMapaSeFor(id);
       expect(mapaCarregado(id), id).toBeUndefined();
     }
     expect(mapaCarregado('amazonia')).toBeUndefined();
+    expect(() => exigirPraia(), 'a Cidade Neon e o Bunker não carregaram a Praia').toThrow();
+  });
+
+  it('a Estação dos Cabos (P228): o cenário e o HUD da missão só baixam para quem pede, são idempotentes e montam de verdade', async () => {
+    await carregarMapaSeFor('praia');
+    const a = exigirPraia();
+    await carregarMapaSeFor('praia');
+    expect(exigirPraia(), 'idempotente').toBe(a);
+    expect(typeof a.construir).toBe('function');
+    expect(mapaCarregado('praia'), 'a Praia tem registro à parte (a interface é outra)').toBeUndefined();
+    await carregarHudDaMissao();
+    const h = exigirHudDaMissao();
+    expect(typeof h.criar).toBe('function');
+    expect(h.novoQuadro({} as never).ativo).toBe(false);
   });
 
   it('carregar a Amazônia a registra, com o que a Arena, o radar e o minimapa leem; e é idempotente', async () => {

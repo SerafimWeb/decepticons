@@ -8,6 +8,7 @@ import { ARENA_QUADRO_DE_LUZ, ARENA_QUADRO_VIDA } from '../environment/ArenaLayo
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { ehAndroide } from './CabosDeDados';
+import { carregarMapaSeFor } from '../environment/mapasSobDemanda';
 import { Match, type MatchOptions } from './Match';
 import { QUADRO } from './QuadroDeLuz';
 import { WAVE_BRIEFING_S } from './SurvivalWaves';
@@ -61,6 +62,7 @@ describe('o transformador do Banco Vorcaris na missão em ondas da Cidade Neon (
       expect(outro.match.arena.transformador, `${mode} não desenha o transformador`).toBeNull();
     }
     // a praia segue com o do porto, de 240
+    await carregarMapaSeFor('praia'); // o cenário da Praia é sob demanda (P228)
     const praia = await partida(1, 'survival', 'praia');
     expect(praia.match.quadro!.vidaMax).toBe(QUADRO.vidaMax);
     expect(praia.match.quadro!.ponto).not.toBe(ARENA_QUADRO_DE_LUZ);

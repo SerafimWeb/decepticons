@@ -47,7 +47,7 @@ import type { WalkerDemo } from '../debug/WalkerDemo';
 import { walkerFromSearch } from '../debug/walkerLink';
 import { multidaoFromSearch } from '../debug/multidaoLink';
 import type { MultidaoDemo } from '../debug/MultidaoDemo';
-import { carregarChefeSeFor, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirMapa, type ObjetivosCarregados } from '../environment/mapasSobDemanda';
+import { carregarChefeSeFor, carregarHudDaMissao, carregarMapaSeFor, chefeCarregado, exigirChefe, exigirHudDaMissao, exigirMapa, type HudDaMissao, type ObjetivosCarregados } from '../environment/mapasSobDemanda';
 import type { EstadoDosObjetivos } from '../environment/AmazoniaObjetivos';
 import { AMAZONIA_GERADORES } from '../environment/AmazoniaLayout';
 import { aoMudarVisibilidade, aplicarGlobal, funcionalidadeVisivel, visibilidadeGlobal } from './Visibilidade';
@@ -131,7 +131,7 @@ import type { ResumoDoRio } from '../ui/RelatorioPanel';
 import { abrirSobDemanda, sobDemanda } from './sobDemanda';
 import { plantaDaArena, plantaDoBunker } from '../ui/TacticalRadar';
 import { Minimapa, plantaComZonas, plantaDaAmazoniaNoMinimapa, plantaDaPracaNoMinimapa, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
-import { novoQuadroDaPraia, PraiaHud, type QuadroDaPraia } from '../ui/PraiaHud';
+import type { QuadroDaPraia } from '../ui/PraiaHud';
 import { MuralCliente } from '../net/mural';
 import { AdminCliente, TokenDoDono } from '../net/admin';
 import { PALETTE } from './palette';
@@ -280,7 +280,7 @@ export class Game {
   /** O radar do canto de cima à esquerda (12 Hz, só com a partida em andamento). `remotos` é a lista reaproveitada dos Mechs de outros jogadores. */
   private readonly minimapa = new Minimapa(document.getElementById('minimapa')!);
   /** O HUD da praia (a faixa da costa, o marcador da estação, o lugar e a água): só existe no mapa da praia (P127). */
-  private praiaHud: PraiaHud | null = null;
+  private praiaHud: HudDaMissao | null = null;
   /** O quadro que o HUD da praia lê, reaproveitado a cada frame (G4). */
   private praiaQuadro: QuadroDaPraia | null = null;
   private readonly remotos: MechBase[] = [];
@@ -459,6 +459,10 @@ export class Game {
         visualDoChefe = (await exigirChefe('amazonia').criarVisual?.()) ?? null;
       }
     }
+    // A Estação dos Cabos (a Praia) e o HUD da missão (a Sobrevivência e a Praia) também são pedaços sob demanda (P228): o Deathmatch da Cidade Neon não baixa nenhum dos dois.
+    const mapaPedido = new URLSearchParams(location.search).get('mapa');
+    if (mapaPedido === 'praia') await carregarMapaSeFor('praia');
+    if (mapaPedido === 'praia' || gameModeFromSearch(location.search) === 'survival') await carregarHudDaMissao();
     // A Praça dos Três Poderes (o 8 DE JANEIRO, P217) também é um mapa sob demanda: o código dele só baixa para quem o abre (liberado no painel de visibilidade ou no modo Comandante).
     if (new URLSearchParams(location.search).get('mapa') === 'janeiro' && mapaLiberado('janeiro')) await carregarMapaSeFor('janeiro');
     bootProgresso('jogo');
@@ -1069,12 +1073,12 @@ export class Game {
     // Na praia a estação é o objetivo: o ponto E do minimapa aponta para ela de qualquer lugar do mapa (preso na borda quando longe).
     this.minimapa.setPontos(naPraia ? pontoDaEstacao() : this.match.dominio?.pontos ?? null);
     if (naPraia) {
-      this.praiaHud = new PraiaHud(document.getElementById('hud')!);
-      this.praiaQuadro = novoQuadroDaPraia(this.camera);
+      this.praiaHud = exigirHudDaMissao().criar(document.getElementById('hud')!, false);
+      this.praiaQuadro = exigirHudDaMissao().novoQuadro(this.camera);
     } else if (this.match.quadro || this.match.rio) {
       // A missão em ondas da Cidade Neon (P164, parte E): o HUD só de missão (o transformador do banco, a barra do chefe e os avisos), sem o que é da praia.
-      this.praiaHud = new PraiaHud(document.getElementById('hud')!, true);
-      this.praiaQuadro = novoQuadroDaPraia(this.camera);
+      this.praiaHud = exigirHudDaMissao().criar(document.getElementById('hud')!, true);
+      this.praiaQuadro = exigirHudDaMissao().novoQuadro(this.camera);
       // TERRAS RARAS: o objetivo na tela (a ordem do topo, a dica e os marcadores no mundo) vem do pedaço sob demanda do Draga.
       if (this.match.rio) {
         this.objetivos = chefeCarregado('amazonia')?.criarObjetivos?.(document.getElementById('hud')!, (texto) => this.hud.setMissionLinha(texto)) ?? null;

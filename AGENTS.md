@@ -48,6 +48,7 @@ As specs completas estão em `PROTOCOLO_UNIVERSAL.md`; este é só o índice.
 - **G15 (regra do dono):** nada salvo fora da pasta do projeto. Temporários, experimentos, capturas e repositórios de teste vão só para `.tmp/` (ignorado pelo git), nunca para o temp do sistema, outra pasta ou outro drive.
 - **Shader novo ou efeito aditivo (P130/P136):** a base de todo `pow`/`sqrt`/`log` em GLSL leva `max(…, 0.0)` ou `clamp` (o teste `ShadersSemNaN` trava) e o bloom tem rede de segurança (`fx/bloomSeguro.ts`): um NaN num pixel vira tela preta. **Só a GPU real vê isso** (o SwiftShader do smoke e do CI não): antes de entregar efeito visual, `npm run build && node .decepticons/medicoes/varrer-nan.mjs` (FERRAMENTAS.md § 4.1).
 - **Funcionalidade nova nasce RESTRITA (P191):** botão, tela, modo, fase, robô ou arma nova entra no catálogo `client/src/core/funcionalidades.ts` com `padrao: 'restrito'` e `data-func` no elemento; o Comandante a libera no painel de visibilidade (chip VISIBILIDADE ▸, modo Comandante) quando estiver pronta. Robô e arma saem de `CHASSIS` e `WEAPON_IDS` já públicos: restrinja no catálogo se for novo.
+- **Pacote de partida (500 KB gzip, o que todo jogador baixa):** antes de acrescentar código de cliente, `npm run peso` (o peso estimado por arquivo-fonte). O que só alguns usam (um mapa, um modo, uma tela, um dispositivo) entra **sob demanda** (`environment/mapasSobDemanda.ts`; o `import()` dentro de um pedaço de partida, nunca no `main.ts`). O teto não sobe: cada feature paga o que acrescenta (20/10: a Estação dos Cabos saiu do pacote, −46 KB).
 - **R2:** nada de secret em arquivo versionado. **R3:** nada de `_v2`, `_old`, `_bkp`.
 - **R13:** o que não funciona de ponta a ponta fica marcado como DEMO ou AUSENTE em `STATUS_REAL.md`.
 - **R17:** achou bug ou desalinhamento durante a tarefa? Corrija se for barato e seguro; senão, registre. **Higiene (P200):** código, documento ou dado sem uso na área que o PR tocou sai no mesmo PR; número que o site publica (testes, módulos) vem do repositório, nunca digitado.
@@ -126,6 +127,7 @@ npm run check      # typecheck + testes + build + budget + boot headless (obriga
 npm run publicar -- --titulo "feat: ..." --corpo .tmp/pr.md   # push, PR, espera o CI, mergeia e limpa o branch (regra 13); `--so-pr` só abre o PR
 node scripts/gh.mjs pr list    # o gh, com fallback para a credencial do Git se o token do gh morrer
 npm run smoke:dev  # boot headless contra o dev server
+npm run peso       # o que pesa nos 500 KB do pacote de partida (gzip estimado por arquivo-fonte; monta em .tmp/peso/)
 npm run estudio    # o Estúdio (sons hoje; depois vozes, tiros e armas, Mechs 3D: .decepticons/ESTUDIO.md): cortar na onda, efeitos, importar, escolher o som de cada arma (só neste PC; dois cliques em scripts\ligar-estudio.cmd)
 npm run sons       # prepara os sons de arma (apara, normaliza, mp3) conforme scripts/sons-armas.json
 npm run vozes      # as falas do narrador no ElevenLabs (chave só em $env:ELEVENLABS_API_KEY; --custo antes de gastar); as falas que o Comandante GRAVOU no Estúdio nunca são regeradas
