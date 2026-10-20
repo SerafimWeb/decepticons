@@ -9,6 +9,8 @@ import { runtimeDiagnostics } from './runtimeDiagnostics';
 import { PlayTelemetry } from './PlayTelemetry';
 import { mapaLiberado } from './Lancamento';
 import type { Audiencia } from './Audiencia';
+import type { JaneiroJogo } from '../environment/JaneiroJogo';
+import { PRACA_PREDIOS } from '../environment/PracaLayout';
 import { BankAccount } from '../bank/BankAccount';
 import { addBankSign } from '../environment/BankSign';
 import { addSerafimPlaque, SERAFIM_TOWER } from '../environment/SerafimTower';
@@ -281,6 +283,8 @@ export class Game {
   private readonly minimapa = new Minimapa(document.getElementById('minimapa')!);
   /** O HUD da praia (a faixa da costa, o marcador da estação, o lugar e a água): só existe no mapa da praia (P127). */
   private praiaHud: HudDaMissao | null = null;
+  /** A missão do 8 DE JANEIRO na tela (P217): a multidão desenhada, as mesas sujas e o painel dos três prédios; pedaço sob demanda, só existe nessa missão. */
+  private janeiroJogo: JaneiroJogo | null = null;
   /** O quadro que o HUD da praia lê, reaproveitado a cada frame (G4). */
   private praiaQuadro: QuadroDaPraia | null = null;
   private readonly remotos: MechBase[] = [];
@@ -1095,6 +1099,12 @@ export class Game {
         };
       }
     }
+    // A missão do 8 DE JANEIRO (P217): a multidão desenhada, as mesas sujas e o painel dos três prédios; pedaço sob demanda, só quem abre essa missão o baixa.
+    if (this.match.missaoJaneiro) {
+      void import('../environment/JaneiroJogo').then(({ criarJaneiroJogo }) => {
+        this.janeiroJogo = criarJaneiroJogo(this.scene, this.match, document.getElementById('hud')!, (texto) => this.hud.setMissionLinha(texto));
+      });
+    }
     const paredeSobDemanda = sobDemanda(async () => {
       parede = new (await import('../ui/CameraWall')).CameraWall({
         mural,
@@ -1651,6 +1661,18 @@ export class Game {
           stats.kills,
           stats.survivalSeconds,
         );
+      } else if (this.match.missaoJaneiro) {
+        // O fim da missão do 8 DE JANEIRO: a nota diz como a Praça foi esvaziada (expulsar vale mais que eliminar: a força é a última saída).
+        const r = this.match.missaoJaneiro.resultado();
+        const caido = PRACA_PREDIOS[r.integridade.findIndex((v) => v <= 0)]?.nome;
+        const nota = `${r.expulsos} EXPULSOS · ${r.eliminados} ELIMINADOS · ${r.mesasLimpas} MESAS LIMPAS · ${Math.round(r.naoLetal * 100)}% NÃO LETAL`;
+        this.hud.setMissionEndTexto(
+          survived,
+          survived ? 'A PRAÇA ESVAZIOU · OS TRÊS PRÉDIOS DE PÉ' : r.causa === 'predio' && caido ? `PRÉDIO PERDIDO · ${caido}` : 'O TEMPO ACABOU COM GENTE NA PRAÇA',
+          nota,
+          stats.kills,
+          stats.survivalSeconds,
+        );
       } else this.hud.setMissionEnd(survived, waveReached, stats.kills, stats.survivalSeconds, this.match.nucleo?.caiu === true);
       this.setPlaying(false);
       this.input.exitLock();
@@ -1837,6 +1859,7 @@ export class Game {
       this.mostrarChipDoRelatorio(false);
       this.objetivos?.reiniciar();
       this.match.restartMission();
+      this.janeiroJogo?.recomecar();
       this.praiaHud?.reset();
       this.player.launcher.refill();
       this.hud.setScore(0, 0);
@@ -2042,6 +2065,7 @@ export class Game {
       }
       this.multidaoDemo?.desenhar(alpha);
     }
+    this.janeiroJogo?.desenhar(alpha);
     this.mech.render(dt, alpha);
     this.bots.render(dt, alpha);
     this.match.allies?.render(dt, alpha);

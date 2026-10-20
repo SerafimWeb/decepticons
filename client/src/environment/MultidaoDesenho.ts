@@ -377,6 +377,25 @@ export class MultidaoDesenho {
     this.soltar(i);
   }
 
+  /** A missão recomeçou (a multidão voltou ao zero): todas as vagas se soltam e ficam escondidas, e os nascimentos recomeçam do primeiro. */
+  recomecar(): void {
+    this.slotDe.fill(-1);
+    this.proximo = 0;
+    this.nFila = 0;
+    for (let t = 0; t < this.dados.length; t++) {
+      const d = this.dados[t]!;
+      d.aB.fill(NUNCA);
+      d.aFim.fill(NUNCA);
+      this.emUso[t] = 0;
+      this.nLivres[t] = 0;
+      this.marca[t] = 0;
+      this.malhas[t]!.count = 0;
+      d.min = 0;
+      d.max = Math.max(0, this.capacidade[t]! - 1);
+    }
+    this.enviar();
+  }
+
   /** O que mudou neste quadro vai à GPU: só o trecho de vagas escrito, em cada buffer. */
   private enviar(): void {
     for (const d of this.dados) {

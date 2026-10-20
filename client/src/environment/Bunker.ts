@@ -14,8 +14,8 @@ export function mapFromSearch(search: string, _online: boolean, mode: string): M
   if (mapa === 'praia') id = mode === 'deathmatch' || mode === 'survival' ? 'praia' : 'arena';
   else if (mapa === 'bunker') id = mode === 'deathmatch' ? 'bunker' : 'arena';
   else if (mapa === 'amazonia') id = mode === 'deathmatch' || mode === 'survival' ? 'amazonia' : 'arena';
-  // A Praça dos Três Poderes (o 8 DE JANEIRO, P217) abre o Deathmatch; a missão (a Sobrevivência) vem com o passo 5 da ficha.
-  else if (mapa === 'janeiro') id = mode === 'deathmatch' ? 'janeiro' : 'arena';
+  // A Praça dos Três Poderes (o 8 DE JANEIRO, P217) abre o Deathmatch e a missão (a Sobrevivência: a multidão contra os três prédios, passo 5 da ficha).
+  else if (mapa === 'janeiro') id = mode === 'deathmatch' || mode === 'survival' ? 'janeiro' : 'arena';
   // O lançamento (P197): um mapa que ainda não foi liberado cai na Cidade Neon (`core/Lancamento.ts`).
   return mapaLiberado(id) ? id : 'arena';
 }

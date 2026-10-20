@@ -111,6 +111,33 @@ describe('as vagas de instância: o custo na GPU segue quem está presente', () 
     expect(maxima).toBeLessThan(m.total * 0.7); // bem abaixo do total que nasceu
   });
 
+  it('a missão recomeçada (reiniciar + recomecar): as vagas voltam todas, ninguém fica desenhado, e os nascimentos recomeçam do primeiro como na primeira vez', () => {
+    const m = new Multidao({ ...CONFIG, cota: 600 });
+    const d = new MultidaoDesenho(m);
+    ligar(m, d);
+    for (let t = 0; t <= 6_000; t += 3) {
+      m.avancar(t);
+      d.atualizar(t);
+    }
+    m.explodir(0, 0.5, 0, 500, 999, 6_000);
+    expect(m.presentes).toBeGreaterThanOrEqual(0);
+    const antes = d.presentes;
+    expect(antes).toBeGreaterThan(0);
+    m.reiniciar();
+    d.recomecar();
+    expect(d.presentes).toBe(0);
+    expect(m.presentes).toBe(0);
+    expect(m.eliminados).toBe(0);
+    expect(m.faltamChegar).toBe(m.total);
+    expect(malhasDe(d).every((malha) => malha.count === 0)).toBe(true);
+    // a segunda rodada nasce igual à primeira: mesma semente, mesmo cronograma, mesmas vagas
+    for (let t = 0; t <= 6_000; t += 3) {
+      m.avancar(t);
+      d.atualizar(t);
+    }
+    expect(d.presentes).toBe(antes);
+  });
+
   it('o teto da qualidade (G12): no máximo a fração de cada tipo ao mesmo tempo; a simulação não muda', () => {
     const cheio = new MultidaoDesenho(new Multidao({ ...CONFIG, cota: 1500 }));
     cheio.atualizar(18_000);

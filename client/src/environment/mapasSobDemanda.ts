@@ -148,7 +148,14 @@ export interface HudDaMissaoCarregado {
   novoQuadro(camera: THREE.Camera): QuadroDaPraia;
 }
 
+/**
+ * A regra e a multidão da missão do 8 DE JANEIRO (P217, `sim/MissaoJaneiroPedaco.ts`): carregadas junto com o mapa da Praça, para a Cidade Neon não pagar por elas no pacote de partida. O
+ * `Match` as lê daqui quando monta a Sobrevivência da Praça.
+ */
+export type MissaoJaneiroCarregada = typeof import('../sim/MissaoJaneiroPedaco');
+
 const carregados = new Map<MapId, MapaCarregado>();
+let janeiroCarregado: MissaoJaneiroCarregada | undefined;
 let praiaCarregada: PraiaCarregada | undefined;
 let hudCarregado: HudDaMissaoCarregado | undefined;
 const chefes = new Map<MapId, ChefeCarregado>();
@@ -169,6 +176,12 @@ export function exigirMapa(id: MapId): MapaCarregado {
 export function exigirPraia(): PraiaCarregada {
   if (!praiaCarregada) throw new Error('a Praia não foi carregada: chame carregarMapaSeFor("praia") antes de montar a partida');
   return praiaCarregada;
+}
+
+/** A missão do 8 DE JANEIRO, obrigatória para montar a Sobrevivência da Praça: erro claro em vez de um `undefined` mais adiante. */
+export function exigirMissaoJaneiro(): MissaoJaneiroCarregada {
+  if (!janeiroCarregado) throw new Error('a missão do 8 DE JANEIRO não foi carregada: chame carregarMapaSeFor("janeiro") antes de montar a partida');
+  return janeiroCarregado;
 }
 
 /** O HUD da missão, obrigatório para quem joga a Sobrevivência ou a Praia. */
@@ -215,4 +228,6 @@ export async function carregarMapaSeFor(id: MapId): Promise<void> {
     const { mapaDaPraca } = await import('./PracaMapa');
     carregados.set(id, mapaDaPraca);
   }
+  // A missão da Praça (a multidão e a regra, P217 passo 5): o mesmo pedaço serve o cliente, o servidor e os testes.
+  if (id === 'janeiro' && !janeiroCarregado) janeiroCarregado = await import('../sim/MissaoJaneiroPedaco');
 }
