@@ -3,6 +3,7 @@ import { chmodSync, copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, w
 import { delimiter, join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { avaliarJuncao, decidirJuncao } from '../scripts/juncaoJaVerificada.mjs';
+import { BASH, temBash } from './ajudaBash';
 
 /**
  * O hook pula o check depois de uma junção PURA com a main (P224). O perigo é pular o que devia rodar, então cada condição tem o seu teste e qualquer dúvida roda o check:
@@ -209,12 +210,12 @@ describe('avaliarJuncao: o git de verdade', () => {
   });
 });
 
-describe('o hook de push com a junção pura (de ponta a ponta, com npm falso)', () => {
+describe.skipIf(!temBash)('o hook de push com a junção pura (de ponta a ponta, com npm falso)', () => {
   const HOOK = resolve('.githooks/pre-push');
   const ZEROS = '0'.repeat(40);
   const chamadasDoNpm = () => (existsSync(LOG) ? readFileSync(LOG, 'utf8').split('\n').filter(Boolean).length : 0);
   const empurrar = (sha: string, extra: Record<string, string> = {}) => {
-    const r = spawnSync('bash', [HOOK], { cwd: REPO, encoding: 'utf8', env: ambiente({ NPM_SAI: '0', ...extra }), input: `refs/heads/feat ${sha} refs/heads/feat ${ZEROS}\n` });
+    const r = spawnSync(BASH, [HOOK], { cwd: REPO, encoding: 'utf8', env: ambiente({ NPM_SAI: '0', ...extra }), input: `refs/heads/feat ${sha} refs/heads/feat ${ZEROS}\n` });
     return { status: r.status, saida: `${r.stdout}${r.stderr}` };
   };
   const copiarScriptDoHook = () => {
