@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { METRICAS_HEADER, METRICAS_PATH } from '../shared/net/telemetry';
-import { detalheSeguro, ESPERA_MAX_MS, GA_CHAVE_ARQUIVO, GA_MEDICAO_ID, GA_ERRO_TTL_MS, GA_PROPRIEDADE_ARQUIVO, GA_TTL_MS, GoogleAnalytics, type GaEstado } from './analytics';
+import { detalheSeguro, GA_CHAVE_ARQUIVO, GA_MEDICAO_ID, GA_ERRO_TTL_MS, GA_PROPRIEDADE_ARQUIVO, GA_TTL_MS, GoogleAnalytics, type GaEstado } from './analytics';
 import { startServer } from './Server';
 
 /** O Analytics no `/metricas` (P207): o JWT assinado de verdade, o cache, os erros sem segredo e o servidor que nunca espera o Google. */
@@ -150,15 +150,20 @@ describe('GoogleAnalytics: cache e pedidos simultâneos', () => {
     expect(g.doTipo('batchRunReports')).toBe(1);
   });
 
-  it('um Google lento não segura a página: passa de ESPERA_MAX_MS, responde "carregando", e a vez seguinte já tem os números', async () => {
-    const g = google({ demoraMs: ESPERA_MAX_MS + 600 });
-    const ga = new GoogleAnalytics({ dirDados: pasta('lento', { propriedade: PROPRIEDADE }), http: g.http });
+  it('um Google lento não segura a página: passa da espera máxima, responde "carregando", e a vez seguinte já tem os números', async () => {
+    // Tempos curtos e injetados (a espera máxima de 150 ms, o Google de 600 ms) e a volta por espera ativa: o teste de 4,6 s de relógio de verdade reprovou o push sob carga em 19/10.
+    const g = google({ demoraMs: 600 });
+    const ga = new GoogleAnalytics({ dirDados: pasta('lento', { propriedade: PROPRIEDADE }), http: g.http, esperaMaxMs: 150 });
     const t0 = Date.now();
     expect((await ga.obter()).estado).toBe('carregando');
-    expect(Date.now() - t0).toBeLessThan(ESPERA_MAX_MS + 400);
-    await new Promise((r) => setTimeout(r, 2600));
-    expect((await ga.obter()).estado).toBe('ok');
-  }, 20000);
+    expect(Date.now() - t0, 'respondeu logo, sem esperar o Google inteiro').toBeLessThan(550);
+    let r: GaEstado = { estado: 'carregando' };
+    for (let i = 0; i < 100 && r.estado !== 'ok'; i++) {
+      await new Promise((ok) => setTimeout(ok, 100));
+      r = await ga.obter();
+    }
+    expect(r.estado, JSON.stringify(r)).toBe('ok');
+  }, 30000);
 });
 
 describe('GoogleAnalytics: o que dá errado, dito sem segredo', () => {
