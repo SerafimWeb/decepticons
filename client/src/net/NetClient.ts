@@ -97,8 +97,7 @@ export class NetClient {
 
   /** `credencial`: o token da conta (P226, A0). Vai **antes** do JOIN: é o que abre um mapa restrito (só administrador); num mapa público o servidor a descarta. */
   join(name: string, build: string, credencial?: string | null): void {
-    const prova = credencial ? codificarCredencial(credencial) : null;
-    if (prova) this.send(prova);
+    if (credencial) this.send(codificarCredencial(credencial));
     this.send(encodeJoin(this.w, { protocol: PROTOCOL_VERSION, name, build }));
   }
 

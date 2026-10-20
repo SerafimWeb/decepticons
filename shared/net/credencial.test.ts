@@ -9,10 +9,10 @@ describe('a credencial da conexão (P226, A0)', () => {
     expect(lerCredencial(bytes)).toBe('token-da-sessao-0123456789');
   });
 
-  it('não manda o que não pode ser um token (curto ou grande demais) e não lê mensagem torta', () => {
-    expect(codificarCredencial('curto')).toBeNull();
-    expect(codificarCredencial('x'.repeat(CREDENCIAL_TOKEN_MAX + 1))).toBeNull();
-    expect(codificarCredencial('x'.repeat(CREDENCIAL_TOKEN_MAX))).not.toBeNull();
+  it('quem confere é o servidor: não lê o que não pode ser um token (curto ou grande demais) nem mensagem torta', () => {
+    expect(lerCredencial(codificarCredencial('curto'))).toBeNull();
+    expect(lerCredencial(codificarCredencial('x'.repeat(CREDENCIAL_TOKEN_MAX + 1)))).toBeNull();
+    expect(lerCredencial(codificarCredencial('x'.repeat(CREDENCIAL_TOKEN_MAX)))).toBe('x'.repeat(CREDENCIAL_TOKEN_MAX));
     expect(lerCredencial(new Uint8Array([CREDENCIAL]))).toBeNull();
     expect(lerCredencial(new Uint8Array([1, ...new TextEncoder().encode('token-de-outro-tipo-123')]))).toBeNull();
     expect(lerCredencial(new Uint8Array([CREDENCIAL, ...new Array(CREDENCIAL_TOKEN_MAX + 1).fill(97)]))).toBeNull();

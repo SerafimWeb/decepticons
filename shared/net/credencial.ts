@@ -16,12 +16,10 @@ export const CREDENCIAL_TOKEN_MAX = 200;
 export const CREDENCIAL_ESPERA_MS = 5000;
 
 const encoder = new TextEncoder();
-const decoder = new TextDecoder('utf-8', { fatal: true });
 
-/** A mensagem do cliente. `null` se o token não serve (vazio ou grande demais): nem vale mandar. */
-export function codificarCredencial(token: string): Uint8Array | null {
+/** A mensagem do cliente. Sem checar o tamanho (o pacote de partida do jogo está no teto): quem confere é o servidor, que recusa o que não for um token (`lerCredencial`). */
+export function codificarCredencial(token: string): Uint8Array {
   const corpo = encoder.encode(token);
-  if (corpo.length < 8 || corpo.length > CREDENCIAL_TOKEN_MAX) return null;
   const out = new Uint8Array(1 + corpo.length);
   out[0] = CREDENCIAL;
   out.set(corpo, 1);
@@ -37,7 +35,8 @@ export function ehCredencial(bytes: Uint8Array): boolean {
 export function lerCredencial(bytes: Uint8Array): string | null {
   if (bytes.length < 1 + 8 || bytes.length > 1 + CREDENCIAL_TOKEN_MAX || bytes[0] !== CREDENCIAL) return null;
   try {
-    return decoder.decode(bytes.subarray(1));
+    // O decodificador nasce aqui, não no topo do módulo: só o servidor lê credencial, e um `new` no topo ficaria no pacote de partida do jogo (orçamento de 500 KB).
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes.subarray(1));
   } catch {
     return null;
   }
