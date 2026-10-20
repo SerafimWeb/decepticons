@@ -1328,6 +1328,7 @@ export class Game {
       this.voz = voz;
       this.aplicarVoz(this.settings.value);
       if (this.vozId !== null) voz.entrouNaSala(this.vozId);
+      this.pintarPilotos(); // entrar na voz liga o botão de mudo da lista da REDE (P228): sem isto ele só aparecia no próximo evento da sala
     } catch {
       // O download do pedaço falhou (rede): a voz fica desligada e a próxima mudança de configuração tenta de novo.
     } finally {
