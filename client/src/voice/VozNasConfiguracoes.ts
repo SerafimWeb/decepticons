@@ -7,7 +7,7 @@ import { listarAparelhos } from './aparelhos';
  * novo precisa nascer fora dele (P187). Nada aqui roda por quadro.
  */
 
-/** O aviso curto no canto da tela de quem está numa sala online e **fora da voz** (P234): o motivo, para a pessoa não ficar muda sem saber por quê. */
+/** O aviso curto no canto da tela de quem está numa sala online e **fora da voz** (P237): o motivo, para a pessoa não ficar muda sem saber por quê. */
 export const TEXTO_SEM_VOZ: Readonly<Record<MotivoSemVoz, string>> = Object.freeze({
   convidado: 'VOZ: ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS PARA FALAR E OUVIR',
   'sem-idade': 'VOZ: INFORME SUA IDADE EM CONFIGURAÇÕES > JOGO PARA FALAR E OUVIR',

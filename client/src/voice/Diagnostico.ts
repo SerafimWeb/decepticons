@@ -2,7 +2,7 @@ import type { ElegibilidadeDaVoz, MotivoSemVoz } from './elegibilidade';
 import type { DiagnosticoDaVoz } from './VoiceChat';
 
 /**
- * O DIAGNÓSTICO DA VOZ (P234, ordem do Comandante em 20/10: o microfone funcionava no teste e a voz não chegava ao outro PC, e **nada na tela dizia por quê**). Junta num texto o que decide se a voz
+ * O DIAGNÓSTICO DA VOZ (P237, ordem do Comandante em 20/10: o microfone funcionava no teste e a voz não chegava ao outro PC, e **nada na tela dizia por quê**). Junta num texto o que decide se a voz
  * funciona (a conta, a sala, o microfone, quem está na voz e por qual rota de rede cada ligação foi) e fecha com uma **CONCLUSÃO** em português: a causa mais provável e o que fazer. O botão das
  * Configurações mostra e copia o texto para o jogador colar numa conversa. Texto puro, sem DOM e sem custo (só roda quando alguém pede); pedaço sob demanda.
  */

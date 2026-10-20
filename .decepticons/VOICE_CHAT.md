@@ -132,6 +132,16 @@ Os dados estão em `medicoes/voz-<data>.json`; a bancada sai com código 1 se qu
 
 **Prova:** `medicoes/efeitos-de-voz.mjs` (29 verificações num `OfflineAudioContext` do Chrome), `gravacao-narrada.mjs` e `gravacao-narrada-jogo.mjs`; fotos `arte/narracao-f10-claude.png` e `arte/voz-efeito-claude.png`.
 
+## 5f. Quando a voz não funciona: o aviso e o diagnóstico (P237, 20/10)
+
+**O que o Comandante viveu:** o microfone funcionava no teste, e a voz não chegou ao outro PC ao lado. A voz **funciona** entre dois navegadores (provado), mas o jogo **não dizia por que** uma pessoa ficava fora dela.
+
+**O aviso (`pintarAvisoDeVoz` no `Game`):** numa sala com outras pessoas, enquanto a voz **não** está ligada, o canto inferior esquerdo mostra o motivo (`motivoSemVoz`, `voice/elegibilidade.ts`; as frases moram em `VozNasConfiguracoes.ts`): *convidado* (entre com uma conta de maior de 18 anos), *sem idade* (informe a idade), *menor* (só o áudio do jogo) ou *desligada* (ligue "Conversar por voz"). Some quando a voz liga. **O indicador de quem está na voz** diz também quantos da sala estão **fora** dela ("NINGUÉM MAIS NA VOZ: 1 NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)", em vez de mandar testar um microfone que estava bom).
+
+**O diagnóstico (`voice/Diagnostico.ts`, `VoiceChat.diagnostico()`):** Configurações > CHAT DE VOZ > **[ VER E COPIAR ]** monta e copia um relatório: a conta (maior de 18 anos, convidado…), o microfone (estado, aparelho, taxa de amostragem, eco/ruído/ganho, modo, mudo, transmitindo), a lista de quem o servidor diz estar na voz e, **por ligação**, o estado, a rota de rede escolhida (`host/udp → host` mesma rede, `srflx` pela internet, `relay` por retransmissor), os bytes de áudio enviados e recebidos, pacotes perdidos e o nível do áudio que chega. Fecha com a **CONCLUSÃO**, a causa mais provável na ordem em que ela costuma ser (sala, conta, voz desligada, microfone recusado, sozinho, ninguém na voz, rede que falhou, mudo, microfone que não envia, áudio que não volta). Só roda quando o jogador pede (`getStats` por ligação, uma vez).
+
+**Limite honesto:** o jogo **não tem servidor de retransmissão (TURN)**: se o roteador ou a rede de um dos lados bloquear a conexão direta, a ligação falha e a conclusão diz isso. Em casa, dois PCs na mesma rede se acham pelo endereço local (medido: menos de 1 s no Brave). **Prova:** `medicoes/voz-diagnostico.mjs` (Chrome real: convidado vê o aviso; dois adultos "Tudo certo"; adulto com convidado na sala conclui a causa) e fotos `arte/voz-aviso-claude.png`, `arte/voz-diagnostico-claude.png`.
+
 ## 6. O que falta
 
 1. **O ouvido do Comandante:** a bancada prova que o áudio chega e que o volume cai com a distância; **se a voz soa bem** (eco, volume, o alcance de 12 a 160 m) é dele. Os números do alcance são proposta (`ALCANCE_DA_VOZ`).

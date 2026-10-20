@@ -304,7 +304,7 @@ export class Game {
   private sessao: SessaoPiloto | null = null;
   private settingsMenu: SettingsMenu | null = null;
   private vozHud: VoiceHud | null = null;
-  /** O aviso de por que a voz não está ligada (P234) e o motivo que ele mostra agora. */
+  /** O aviso de por que a voz não está ligada (P237) e o motivo que ele mostra agora. */
   private vozAviso: HTMLElement | null = null;
   private motivoDoAviso: MotivoSemVoz | null = null;
   /** Desenha o botão de mudo na lista da REDE: chega com o pedaço sob demanda da voz (P228). */
@@ -1235,7 +1235,7 @@ export class Game {
   }
 
   /**
-   * O aviso, no canto da tela, de por que a voz **não** está ligada para quem está numa sala com outras pessoas (P234): convidado, conta sem idade, menor, ou voz desligada. Sem ele essa pessoa
+   * O aviso, no canto da tela, de por que a voz **não** está ligada para quem está numa sala com outras pessoas (P237): convidado, conta sem idade, menor, ou voz desligada. Sem ele essa pessoa
    * ficava muda e sem saber por quê (o outro PC do Comandante, em 20/10). Some quando a voz liga. As frases são um pedaço sob demanda (o pacote de partida está no teto), e um `import()` que
    * termina depois de outro mais novo não pode pintar o motivo velho.
    */
@@ -1260,7 +1260,7 @@ export class Game {
     });
   }
 
-  /** O relatório do botão DIAGNÓSTICO DA VOZ (Configurações): o que decide se a voz funciona, em texto para ler e colar, com a conclusão (P234). */
+  /** O relatório do botão DIAGNÓSTICO DA VOZ (Configurações): o que decide se a voz funciona, em texto para ler e colar, com a conclusão (P237). */
   private async diagnosticarVoz(): Promise<string> {
     const { formatarDiagnostico } = await import('../voice/Diagnostico');
     const est = this.sessao?.estado;

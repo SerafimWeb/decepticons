@@ -66,7 +66,7 @@ describe('o botão da voz (P226): leva ao que falta', () => {
   });
 });
 
-describe('motivoSemVoz (P234): o jogo diz por que a voz não está ligada', () => {
+describe('motivoSemVoz (P237): o jogo diz por que a voz não está ligada', () => {
   it('a tabela inteira: elegibilidade × voz ligada × funcionalidade liberada', () => {
     const eleg: ElegibilidadeDaVoz[] = ['liberada', 'convidado', 'sem-idade', 'menor'];
     for (const e of eleg)

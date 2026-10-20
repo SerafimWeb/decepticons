@@ -41,7 +41,7 @@ export interface VozOpcoes {
   ice?: readonly RTCIceServer[];
 }
 
-/** Um retrato de uma ligação com um colega, para o diagnóstico (P234): se o áudio está indo e vindo e por qual rota de rede. */
+/** Um retrato de uma ligação com um colega, para o diagnóstico (P237): se o áudio está indo e vindo e por qual rota de rede. */
 export interface DiagnosticoDeLigacao {
   id: number;
   estado: LigacaoEstado;
@@ -56,7 +56,7 @@ export interface DiagnosticoDeLigacao {
   nivel: number | null;
 }
 
-/** O que o diagnóstico (P234) pergunta ao chat: o estado do microfone e de cada ligação. */
+/** O que o diagnóstico (P237) pergunta ao chat: o estado do microfone e de cada ligação. */
 export interface DiagnosticoDaVoz {
   ativa: boolean;
   meuId: number;
@@ -270,7 +270,7 @@ export class VoiceChat {
   }
 
   /**
-   * O retrato da voz agora (P234): o microfone, o servidor e, de cada colega, o estado da ligação, a rota de rede e quanto áudio foi e voltou. Só roda quando o jogador pede o diagnóstico
+   * O retrato da voz agora (P237): o microfone, o servidor e, de cada colega, o estado da ligação, a rota de rede e quanto áudio foi e voltou. Só roda quando o jogador pede o diagnóstico
    * (`getStats` por ligação, uma vez): nada por quadro.
    */
   async diagnostico(): Promise<DiagnosticoDaVoz> {

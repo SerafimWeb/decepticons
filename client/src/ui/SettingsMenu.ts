@@ -57,7 +57,7 @@ export class SettingsMenu {
   private readonly btnVozTestar = $('btn-voz-testar') as HTMLButtonElement;
   private readonly btnVozDiag = $('btn-voz-diag') as HTMLButtonElement;
   private readonly preVozDiag = $('voz-diag');
-  /** O relatório do diagnóstico da voz (P234): quem sabe montá-lo é o jogo; sem ele (fora de uma sala) o botão explica. */
+  /** O relatório do diagnóstico da voz (P237): quem sabe montá-lo é o jogo; sem ele (fora de uma sala) o botão explica. */
   private diagnosticoDaVoz: (() => Promise<string>) | null = null;
   /** O teste do microfone (P212): pedaço sob demanda, só baixa quem toca em TESTAR. */
   private micTest: MicTest | null = null;

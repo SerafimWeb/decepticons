@@ -136,7 +136,7 @@ try {
   conferir('1. ADULTO: sem o botão de conta (a voz já está liberada)', await adulto.evaluate(() => document.getElementById('btn-voz-conta').hidden));
   conferir('1. o jogo pediu o microfone ao navegador', tAdulto.pedidos >= 1, `${tAdulto.pedidos} pedido(s)`);
   conferir('1. ADULTO na voz: nenhum aviso de "sem voz" na tela (a voz está ligada)', tAdulto.aviso === '', tAdulto.aviso);
-  // P234: o botão DIAGNÓSTICO DA VOZ mostra o relatório e conclui. Com o colega ligado e falando, a conclusão é "Tudo certo".
+  // P237: o botão DIAGNÓSTICO DA VOZ mostra o relatório e conclui. Com o colega ligado e falando, a conclusão é "Tudo certo".
   const relatorio = await ate(async () => {
     await adulto.evaluate(() => document.getElementById('btn-voz-diag').click());
     await dormir(1500);
@@ -157,7 +157,7 @@ try {
   conferir('2. CONVIDADO: sem controles de voz, com a frase de "crie uma conta"', !tConv.controles && tConv.frase.includes('Crie uma conta'), JSON.stringify(tConv));
   conferir('2. CONVIDADO: o jogo NUNCA pediu o microfone e não há indicador de voz', tConv.pedidos === 0 && tConv.indicador === '', JSON.stringify({ pedidos: tConv.pedidos, indicador: tConv.indicador }));
   conferir('2. CONVIDADO: ninguém se ligou a ele (o colega segue sem ligações)', (await ligadosDoColega(colega)) === 0);
-  conferir('2. CONVIDADO: o jogo AVISA na tela por que está sem voz (P234: o outro PC do Comandante ficava mudo e sem explicação)', tConv.aviso.includes('ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS'), JSON.stringify(tConv.aviso));
+  conferir('2. CONVIDADO: o jogo AVISA na tela por que está sem voz (P237: o outro PC do Comandante ficava mudo e sem explicação)', tConv.aviso.includes('ENTRE COM UMA CONTA DE MAIOR DE 18 ANOS'), JSON.stringify(tConv.aviso));
   const botaoConv = await convidado.evaluate(() => ({ visivel: !document.getElementById('btn-voz-conta').hidden, texto: document.getElementById('btn-voz-conta').textContent }));
   conferir('2. CONVIDADO: a seção da voz tem o botão [ CRIAR CONTA ] (P226: o Comandante só via uma frase e não achava o formulário)', botaoConv.visivel && botaoConv.texto === '[ CRIAR CONTA ]', JSON.stringify(botaoConv));
   await convidado.evaluate(() => document.getElementById('btn-voz-conta').click());

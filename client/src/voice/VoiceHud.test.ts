@@ -63,7 +63,7 @@ describe('VoiceHud: o que o jogador lê (P205)', () => {
     expect(textoDeRede(voz({ colegas: 1 }))).toBe('');
     // a falha de rede tem prioridade sobre o aviso de estar sozinho
     expect(textoDeRede(voz({ colegas: 2, semConexao: 1 }))).toBe('1 SEM CONEXÃO');
-    // P234: com gente na sala fora da voz o motivo é outro, e o texto antigo mandava a pessoa testar o microfone que estava bom
+    // P237: com gente na sala fora da voz o motivo é outro, e o texto antigo mandava a pessoa testar o microfone que estava bom
     expect(textoDeRede(voz({ colegas: 0 }), 0)).toBe('NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES');
     expect(textoDeRede(voz({ colegas: 0 }), 2)).toBe('NINGUÉM MAIS NA VOZ: 2 NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)');
     expect(textoDeRede(voz({ colegas: 1 }), 1)).toBe('1 NA SALA SEM VOZ');

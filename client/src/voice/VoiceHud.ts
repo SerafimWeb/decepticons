@@ -32,7 +32,7 @@ export function textoDeEstado(v: VozParaHud, tecla: string, toque = false): stri
  */
 export function textoDeRede(v: VozParaHud, foraDaVoz = 0): string {
   if (v.semConexao > 0) return `${v.semConexao} SEM CONEXÃO`;
-  // Sozinho na voz mas com gente na sala: o motivo é outro (a outra pessoa é convidado, menor ou desligou a voz), e dizer "teste o microfone" mandava a pessoa atrás do problema errado (P234).
+  // Sozinho na voz mas com gente na sala: o motivo é outro (a outra pessoa é convidado, menor ou desligou a voz), e dizer "teste o microfone" mandava a pessoa atrás do problema errado (P237).
   if (v.colegas === 0) return foraDaVoz > 0 ? `NINGUÉM MAIS NA VOZ: ${foraDaVoz} NA SALA SEM VOZ (PRECISAM DE CONTA DE MAIOR DE 18 ANOS E VOZ LIGADA)` : 'NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES';
   return foraDaVoz > 0 ? `${foraDaVoz} NA SALA SEM VOZ` : '';
 }

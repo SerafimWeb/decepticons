@@ -32,7 +32,7 @@ const entrada = (o: Partial<EntradaDoDiagnostico> = {}): EntradaDoDiagnostico =>
   ...o,
 });
 
-describe('concluirDiagnostico (P234): a causa mais provável, na ordem em que ela costuma ser', () => {
+describe('concluirDiagnostico (P237): a causa mais provável, na ordem em que ela costuma ser', () => {
   it('fora de uma sala online: a voz só existe online (o que o Comandante perguntou)', () => {
     expect(concluirDiagnostico(entrada({ online: false, voz: null }))).toContain('só existe online');
   });
@@ -73,7 +73,7 @@ describe('concluirDiagnostico (P234): a causa mais provável, na ordem em que el
   });
 });
 
-describe('formatarDiagnostico (P234): o relatório que o jogador copia e cola', () => {
+describe('formatarDiagnostico (P237): o relatório que o jogador copia e cola', () => {
   it('traz a hora, a conta, o microfone, cada ligação com a rota e a conclusão', () => {
     const texto = formatarDiagnostico(entrada());
     expect(texto).toContain('2026-10-20T20:00:00.000Z');

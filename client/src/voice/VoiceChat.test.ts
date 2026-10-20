@@ -792,7 +792,7 @@ describe('VoiceChat: o mudo por jogador (P228)', () => {
   });
 });
 
-describe('VoiceChat.diagnostico (P234): o retrato que explica por que "não ouço ninguém"', () => {
+describe('VoiceChat.diagnostico (P237): o retrato que explica por que "não ouço ninguém"', () => {
   beforeEach(() => {
     FakePC.todas = [];
   });

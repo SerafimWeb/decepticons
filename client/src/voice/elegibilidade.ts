@@ -29,7 +29,7 @@ export function microfoneDaNarracaoLiberado(idade: IdadeDaConta | undefined): bo
 }
 
 /**
- * Por que a voz NÃO está ligada para quem está numa sala com outras pessoas (P234). Em 20/10 o Comandante testou com dois PCs lado a lado, o microfone funcionava no teste, e a voz não chegou ao
+ * Por que a voz NÃO está ligada para quem está numa sala com outras pessoas (P237). Em 20/10 o Comandante testou com dois PCs lado a lado, o microfone funcionava no teste, e a voz não chegou ao
  * outro PC: **nada na tela dizia por quê** (o outro PC não era conta de adulto, e quem não entra na voz não via nem o indicador). `null` = a voz está ligada, ou nem existe para o jogador
  * (funcionalidade ainda restrita pelo Comandante). Pura, sem DOM.
  */
