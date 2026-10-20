@@ -253,7 +253,7 @@ deve listar as duas tarefas.
 
 **Causa:** concorrência de CPU e de pasta com o trabalho dos agentes na mesma máquina, não código quebrado. **O que ficou ruim:** o `executar` do atualizador usava `stdio: 'inherit'`, então a saída do teste que falhou ia para o console da tarefa agendada e **se perdia**: o log dizia que falhou, não qual teste.
 
-**O que mudou:** `scripts/atualizar-servidor.mjs` agora captura a saída e, quando um comando falha, grava no `atualizacao.log` **as últimas 40 linhas** dele (`ultimasLinhas`, com teste). **Regra de operação:** depois de cada merge, **ficar quieto** (sem `npm run check`, sem suíte, sem captura de navegador) até o log mostrar `servidor religou no código novo`.
+**O que mudou:** `scripts/atualizar-servidor.mjs` agora captura a saída e, quando um comando falha, grava no `atualizacao.log` **as últimas 40 linhas** dele (`ultimasLinhas`, com teste). **Regra de operação:** depois de cada merge, **ficar quieto** (sem `npm run check`, sem suíte, sem captura de navegador) até o log mostrar `servidor religou no código novo`. **20/10: a verificação do atualizador agora repete (`--retry=2`) o teste que falha, e o `faxinar()` da subida do servidor roda depois de a auditoria existir** (veja `ESTADO_ATUAL.md`). Mesmo assim, a regra de ficar quieto continua valendo: o retry cobre um teste lento isolado, não uma máquina sufocada.
 
 ### Contas de piloto (login, Claude 28/09 — só o esqueleto: criar conta, entrar, sair)
 

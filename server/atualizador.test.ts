@@ -38,6 +38,8 @@ function palco(c: Cenario = {}) {
   let reinicioMarcado = false;
   const ok = (stdout = ''): Resultado => ({ status: 0, stdout });
   let npmCi = 0;
+  /** Os comandos de teste que a verificação rodou, com os argumentos. */
+  const comandosDeTeste: string[] = [];
   const op: Operacoes = {
     git(...args) {
       const a = args.join(' ');
@@ -73,6 +75,7 @@ function palco(c: Cenario = {}) {
         return falhas.includes('typecheck') ? 1 : 0;
       }
       if (a.startsWith('node scripts/test.mjs')) {
+        comandosDeTeste.push(a);
         chamadas.push('testes');
         if (corta === 'testes') throw new Error('tarefa cortada pelo Agendador');
         return falhas.includes('testes') ? 1 : 0;
@@ -103,7 +106,7 @@ function palco(c: Cenario = {}) {
   };
   /** As chamadas sem as linhas de log. */
   const sem = () => chamadas.filter((c) => !c.startsWith('log:'));
-  return { op, chamadas, sem, registro, armazenada: () => armazenada, reinicioMarcado: () => reinicioMarcado };
+  return { op, chamadas, sem, registro, comandosDeTeste, armazenada: () => armazenada, reinicioMarcado: () => reinicioMarcado };
 }
 
 describe('atualizador do servidor: o que nunca faz', () => {
@@ -140,6 +143,12 @@ describe('atualizador do servidor: sem mudança nas dependências, o servidor no
     const p = palco();
     expect(atualizar(p.op)).toBe(0);
     expect(p.sem()).toEqual(['git merge', 'typecheck', 'testes']);
+  });
+
+  it('os testes rodam com --retry=2: um teste lento sob carga (o PC do dono, 19 e 20/10) não derruba o deploy, e um que falha três vezes seguidas ainda reprova', () => {
+    const p = palco();
+    expect(atualizar(p.op)).toBe(0);
+    expect(p.comandosDeTeste).toEqual(['node scripts/test.mjs run --no-isolate --retry=2 server shared']);
   });
 
   it('typecheck ou testes falham: volta o código e o servidor nunca é parado nem religado', () => {

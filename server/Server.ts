@@ -340,12 +340,11 @@ export async function startServer(
       log(`não consegui varrer sessões e atividade vencidas: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
-  faxinar();
   const faxinaTimer = setInterval(faxinar, 6 * 60 * 60 * 1000);
   faxinaTimer.unref();
   // A trilha de auditoria (P196): quem fez o quê de sensível, sem e-mail nem IP (`server/auditoria.ts`). Acesso repetido ao mesmo lugar pelo mesmo ator conta uma vez a cada 10 minutos (o painel consulta a toda hora).
   const auditoria = new Auditoria(dirDados ? join(dirDados, AUDITORIA_PASTA) : null);
-  auditoria.podar();
+  faxinar(); // a primeira faxina (sessões vencidas e auditoria antiga) fica aqui: antes da linha acima o `auditoria` ainda não existia e a subida registrava um erro falso (18 a 20/10)
   const ultimaAuditoria = new Map<string, number>();
   const auditar = (ev: { ator: string; acao: Acao; alvo?: string; ok?: boolean }, janelaMs = 0): void => {
     if (janelaMs > 0) {

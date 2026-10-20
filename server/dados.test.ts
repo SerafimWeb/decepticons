@@ -49,6 +49,29 @@ describe('pastaDadosDasFerramentas: o npm run admin e o npm run email numa workt
   });
 });
 
+describe('a subida do servidor com pasta de dados não registra erro de faxina', () => {
+  const dir = pasta('faxina');
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('a primeira faxina (sessões vencidas e auditoria antiga) roda depois de a auditoria existir: nada de "Cannot access \'auditoria\' before initialization" no log (visto em 18, 19 e 20/10)', async () => {
+    const antes = process.env[DADOS_VARIAVEL];
+    process.env[DADOS_VARIAVEL] = dir;
+    const linhas: string[] = [];
+    let s;
+    try {
+      s = await startServer({ port: 0, host: '127.0.0.1', log: (l) => linhas.push(l) });
+    } finally {
+      if (antes === undefined) delete process.env[DADOS_VARIAVEL];
+      else process.env[DADOS_VARIAVEL] = antes;
+    }
+    try {
+      expect(linhas.filter((l) => l.includes('não consegui varrer'))).toEqual([]);
+    } finally {
+      await s.close();
+    }
+  });
+});
+
 describe('pastaDados: onde o servidor guarda banco, números e token', () => {
   const codigo = resolve('.tmp', 'wt-servidor-prod');
 

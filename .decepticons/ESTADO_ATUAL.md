@@ -11,6 +11,18 @@
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
+## O DEPLOY PARAVA POR TESTE LENTO E O LOG MENTIA NA SUBIDA — Claude, 20/10 (branch `claude/faxina-e-retry`)
+
+**O que aconteceu hoje:** o merge do HSTS (#414) levou **três ciclos** do atualizador para ir ao ar: a verificação (`test.mjs run --no-isolate server shared`) reprovou às 01:36 e às 01:51 com testes **diferentes** (timeouts de 20 a 30 s no `mural`, uma corrida de tempo no `mapas`), todos passando sozinhos em 24 s; na terceira, com a máquina quieta, passou em 2 min e o servidor religou (protocolo 21, 0 jogadores). O PC do dono estava com CPU a 92% e 420 MB de RAM livre (navegador, Antigravity, outros agentes). É o terceiro episódio igual (17/10, 19/10, 20/10).
+
+**O que entrou:**
+- **`--retry=2` na verificação do atualizador** (`scripts/atualizador.mjs`): um teste que estoura o tempo sob carga é repetido até 2 vezes; **falhar 3 vezes seguidas continua reprovando**. Provado com um teste descartável (reprova sem a opção, passa com ela) e travado em `server/atualizador.test.ts`.
+- **O aviso falso do log** `não consegui varrer sessões e atividade vencidas: Cannot access 'auditoria' before initialization`, que aparecia a cada reinício desde 18/10: o `faxinar()` rodava antes do `const auditoria`. O `try/catch` o engolia e `auditoria.podar()` rodava logo depois, então **o comportamento não mudava**; só o log mentia. A primeira faxina agora roda depois de a auditoria existir. Teste em `server/dados.test.ts` (reprovava antes do conserto).
+
+**Custo de CPU:** nenhum no jogo (nada disso corre no laço de 60 Hz). O retry só gasta tempo quando um teste falha.
+
+**Limite honesto:** o retry não cura máquina sufocada (os workers do Windows ainda morrem por falta de memória: 0xC0000409 e o `tsgo` com errno 1455 também aconteceram hoje). A regra de ficar quieto depois de um merge continua. O remédio de verdade é o PC do dono ter RAM/arquivo de paginação de sobra; decisão dele.
+
 ## O HSTS DO SITE: A CLOUDFLARE NÃO O COBRIA, O SITE É SERVIDO PELA HOSTINGER — Claude, 19/10 (branch `claude/hsts-do-site`, P207)
 
 **O Comandante (19/10):** *"o cloudflare também já fiz"*. **Conferi:** o `cybermech.online` (o site) responde com `Server: hcdn` (a CDN da Hostinger): **não passa pela Cloudflare**; só o `jogo.cybermech.online` passa. Logo o HSTS da Cloudflare não cobre o site (e o `jogo.` ainda não manda o cabeçalho). **Feito:** `Strict-Transport-Security: max-age=15552000` (180 dias, sem `includeSubDomains` nem `preload`) no `.htaccess` do site (`scripts/site.mjs`), conferido pelo `site --check`. Já vale quando o site for publicado. A opção "visitor location headers" da Cloudflare vale para o `jogo.` (é lá que o servidor lê o estado); aparece em "De onde vêm" quando entrarem visitas do Brasil.
