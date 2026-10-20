@@ -58,6 +58,8 @@ const LOG = join(RAIZ, 'npm.log');
 const ambiente = (extra: Record<string, string> = {}) => {
   const env: Record<string, string | undefined> = { ...process.env };
   for (const k of Object.keys(env)) if (k.startsWith('GIT_')) delete env[k];
+  // O `publicar --sem-ci` liga esta variável no ambiente do push (e o check roda dentro dele): sem apagá-la, o teste do atalho herdava o "check completo" e reprovava **todo** push com --sem-ci (19/10). O caso que a quer a passa em `extra`.
+  delete env.CYBERMECH_CHECK_COMPLETO;
   return { ...env, PATH: `${BIN}${delimiter}${process.env.PATH ?? ''}`, NPM_LOG: LOG, ...extra } as NodeJS.ProcessEnv;
 };
 const git = (...args: string[]) => {
