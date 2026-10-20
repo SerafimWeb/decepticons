@@ -9,6 +9,10 @@
 ## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
 
 **Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.
+## [2026-10-20] Os testes que rodam git e bash de verdade têm 120 s, não 30 (Claude)
+
+**Contexto:** o atualizador reprovou o deploy 5 vezes em 20/10; a última, com a máquina calma, por um único teste (o hook de push de ponta a ponta) que estourou 30 s entre 856. **Decisão:** 120 s só nos três blocos que sobem `git` e `bash` de verdade; o global fica em 30 s para que um teste comum travado continue aparecendo rápido. **Por que não só `--retry`:** o retry (#418) só entra no atualizador depois de uma verificação passar; o limite de um teste entra no mesmo ciclo. **Por que não pular o teste no atualizador:** ele é o que prova que o atalho do hook não pula um check que devia rodar; vale mais caro do que ausente.
+
 ## [2026-10-20] A verificação do atualizador repete o teste que falha (`--retry=2`) (Claude)
 
 **Contexto:** três reprovações seguidas do atualizador em 20/10 (e as de 17/10 e 19/10), todas por teste de servidor de verdade lento ou em corrida de tempo com a máquina do dono ocupada, nenhuma por código quebrado. **Decisão:** `--retry=2` na linha dos testes do atualizador. **Por que não mais:** o retry é por teste (não refaz o conjunto), um teste verdadeiramente quebrado falha as 3 vezes e continua barrando o deploy, e o custo é zero quando nada falha. **O que não muda:** o `npm run check` do push e o CI não ganham retry (lá um teste que falha uma vez em máquina boa é defeito a consertar, não carga). **Mesma entrega:** o `faxinar()` da subida do servidor passa a rodar depois de a auditoria existir (aviso falso no log desde 18/10).
