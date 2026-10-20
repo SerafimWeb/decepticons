@@ -16,6 +16,16 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## A LINHA FINAL: LANÇAR COM O QUE JÁ É REAL (CIDADE NEON + ESTAÇÃO DOS CABOS) — Claude, 20/10 (branch `claude/lancamento-enxuto`, P232)
+
+**O Comandante (20/10):** *"devemos focar em apenas UMA delas pra lançar logo e depois continuamos os detalhes das outras?"* **Decisão (em `LANCAMENTO.md` § 0):** sim. Lança-se com o escopo de 18/10, que o código já cumpre: só `mapa:arena` e `mapa:praia` são públicos no catálogo; a **Estação dos Cabos** é a missão de vitrine. **Terras Raras** (real offline; abre no painel sem deploy) e **8 de Janeiro** (a missão não existe, ≈ 7 PRs e revisão jurídica) ficam EM BREVE. O **co-op online** (A1 a A3 do `CAMINHO_DO_LANCAMENTO.md`) é a primeira atualização, não o lançamento. **Regra para os agentes:** nenhum mapa, missão, arma ou modo novo até o lançamento; só bloqueio, bug do playtest e ordem do Comandante.
+
+**Conferido na produção em 20/10 (R13):** o atalho `?comandante=1` está **aberto** (`deploy-site.json` sem `comandantePorLink`), a `tela:voz` está **pública** no `/status` (sem a denúncia que o `CAMINHO_DO_LANCAMENTO.md` § 5 exige), o site e o servidor respondem. O código de segurança já foi auditado (`AUDITORIA_SEGURANCA.md`); o que bloqueia o público é operacional e do Comandante.
+
+**Falta (do Comandante):** jogar uma vez a Sobrevivência da Cidade Neon e a missão da Estação dos Cabos até o fim; convidar 5 a 10 pessoas; dizer "pode fechar" (o `?comandante=1`); voltar a voz a `restrito` no painel; o nome do encarregado na política; o DKIM/DMARC (`LANCAMENTO.md` § 7B).
+
+**Próxima sessão começa com:** o que o playtest do Comandante achar (no máximo 1 PR de equilíbrio); depois o "pode fechar" (escrever `"comandantePorLink": false` em `.tmp/servidor/deploy-site.json` e publicar) e a leitura do `/metricas` no teste com gente de fora.
+
 ## A NARRAÇÃO: F10 GRAVA A PARTIDA COM A SUA VOZ — Claude, 20/10 (branch `claude/narracao`, P230)
 
 **O Comandante (20/10):** *"não consegui ouvir NO jogo. é só no online que o áudio funciona? e se eu quiser jogar offline e ir narrando?"* O chat de voz é só online (ninguém se ouve) e o F9 nunca gravou o microfone. **Feito:** **F10** grava a partida **com a voz de quem joga**, offline ou online (`GameRecorder`: o microfone entra só na mistura da gravação, nunca na saída do jogo; `Game.ts` abre o aparelho escolhido só para conta de maior de 18 anos, `microfoneDaNarracaoLiberado`; indicador "REC · NARRAÇÃO"; parar solta o microfone; sem o áudio do jogo ainda, não grava e avisa). **Provado:** 12 testes do gravador + 2 da regra, 8 de 8 mutações pegas, `medicoes/gravacao-narrada.mjs` (Chrome real, ffmpeg mede o arquivo: voz −13,5 dB na narração e −77 dB no F9; nunca na saída) e `medicoes/gravacao-narrada-jogo.mjs` (o jogo de verdade: convidado barrado com aviso, adulto grava, o tom do microfone está no arquivo). **Falta:** o Comandante gravar um take e ouvir; os efeitos de voz (P231, PR seguinte).

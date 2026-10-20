@@ -4,7 +4,30 @@
 > observabilidade, governança, tudo que for ainda necessário. Vamos lançar com apenas a fase estação dos cabos e cidade neon livres, depois vamos liberar a terras raras (troque o nome rio vivo para terras raras); faça auditoria
 > se nossa arquitetura está segura para lançarmos."* **Esta página manda na escolha do que fazer a seguir** (`AGENTS.md`, Passo Zero 12): o que não está aqui **espera o lançamento**, a menos que o Comandante peça.
 
-> **Atualização 19/10 (P224):** a ordem de hoje é lançar com **2 a 3 missões prontas, offline e online, co-op ou competitivo**: o plano e os pacotes estão em **`CAMINHO_DO_LANCAMENTO.md`**, que passa a mandar **no que diz respeito às missões**; o que esta página diz sobre segurança, privilégio, auditoria, servidor e política continua valendo.
+> **Atualização 19/10 (P224):** a ordem de hoje é lançar com **2 a 3 missões prontas, offline e online, co-op ou competitivo**: o plano e os pacotes estão em **`CAMINHO_DO_LANCAMENTO.md`**, que passa a mandar **no que diz respeito às missões**; o que esta página diz sobre segurança, privilégio, auditoria, servidor e política continua valendo. **Atualização 20/10 (P232): o lançamento é enxuto e a linha final está na § 0 abaixo; o `CAMINHO_DO_LANCAMENTO.md` fica para a primeira atualização.**
+
+## 0. A linha final (20/10, P232): lançar com o que já é real
+
+**Ordem do Comandante (20/10):** *"devemos focar em apenas UMA delas pra lançar logo e depois continuamos os detalhes das outras? … poucas iterações e poucos PR."* **Decisão: sim.** Lança-se com o escopo de 18/10, que o código já cumpre (o catálogo `funcionalidades.ts` deixa públicos só `mapa:arena` e `mapa:praia`). **A Estação dos Cabos é a missão de vitrine** (a mais completa: objetivo, portas, cabos, dia que vira noite) e a Cidade Neon é a base.
+
+| Mapa | No lançamento | Depois (atualização) |
+|---|---|---|
+| **Cidade Neon** | offline: Deathmatch, Sobrevivência (6 ondas, Colossus, transformador), Bandeira, Domínio; online: Deathmatch | co-op online (A1 + A2 do `CAMINHO_DO_LANCAMENTO.md`), Bandeira online |
+| **Estação dos Cabos** | offline: Deathmatch e a missão em ondas; online: Deathmatch | a missão em co-op online (A3) |
+| **Terras Raras** | EM BREVE (restrita) | já é real offline: o Comandante a abre no painel (`mapa:amazonia` → público, sem deploy) quando quiser; antes, medir a sala online no servidor |
+| **8 de Janeiro** | EM BREVE (restrita) | a missão não existe (≈ 7 PRs) e pede revisão jurídica antes: só depois |
+| Bunker | EM BREVE | — |
+
+**Regra para todos os agentes até o lançamento:** nenhum mapa, missão, arma ou modo novo. Só entra (a) o que bloqueia o lançamento, (b) bug que o playtest das duas missões achar, (c) o que o Comandante mandar. Os pacotes A1 a A7 do `CAMINHO_DO_LANCAMENTO.md` ficam para a primeira atualização.
+
+**O que falta para abrir (conferido em 20/10):**
+
+1. **Playtest do Comandante, uma vez:** a Sobrevivência da Cidade Neon e a missão da Estação dos Cabos até o fim, em GPU real (`STATUS_REAL.md`: "falta o olho do Comandante e o equilíbrio jogando"). O que ele estranhar vira **no máximo 1 PR** de equilíbrio. *Comandante joga; Claude corrige.*
+2. **Teste com 5 a 10 pessoas de fora** (item 9): duas sessões de ~30 min na Cidade Neon online; Claude lê `/metricas` e o log. *Comandante convida.*
+3. **Fechar o atalho `?comandante=1`** (item 11): hoje **aberto** (o `deploy-site.json` não tem `comandantePorLink`, visto em 20/10). *O Comandante diz "pode fechar"; Claude faz.*
+4. **Voz:** o `/status` do servidor mostra `tela:voz` **pública** em 20/10 (provavelmente aberta para os testes do microfone). Sem denúncia (`CAMINHO_DO_LANCAMENTO.md` § 5), **volte a `restrito`** no painel (SERVIDOR → VISIBILIDADE) antes de abrir, ou abra a voz só depois do PR da denúncia. *Comandante, no painel.*
+5. **Política e e-mail:** o nome do encarregado na política (§ 6) e o DKIM/DMARC (§ 7B), para o "esqueci a senha" não cair no spam. *Comandante.*
+6. **O servidor segue neste PC** (A1 mantido, § 6 D): nada de merge (o atualizador reinicia o servidor) com gente jogando; migrar quando chegar a 20 a 30 jogadores ao mesmo tempo.
 
 ## 1. O que é "lançar"
 
