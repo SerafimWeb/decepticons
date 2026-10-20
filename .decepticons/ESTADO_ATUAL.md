@@ -11,6 +11,14 @@
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
+## O HSTS DO SITE: A CLOUDFLARE NÃO O COBRIA, O SITE É SERVIDO PELA HOSTINGER — Claude, 19/10 (branch `claude/hsts-do-site`, P207)
+
+**O Comandante (19/10):** *"o cloudflare também já fiz"*. **Conferi:** o `cybermech.online` (o site) responde com `Server: hcdn` (a CDN da Hostinger): **não passa pela Cloudflare**; só o `jogo.cybermech.online` passa. Logo o HSTS da Cloudflare não cobre o site (e o `jogo.` ainda não manda o cabeçalho). **Feito:** `Strict-Transport-Security: max-age=15552000` (180 dias, sem `includeSubDomains` nem `preload`) no `.htaccess` do site (`scripts/site.mjs`), conferido pelo `site --check`. Já vale quando o site for publicado. A opção "visitor location headers" da Cloudflare vale para o `jogo.` (é lá que o servidor lê o estado); aparece em "De onde vêm" quando entrarem visitas do Brasil.
+
+## JOGAR COM O MICROFONE: O CAMINHO ATÉ A VOZ — Claude, 20/10 (branch `claude/voz-conta-facil`, P227)
+
+**O Comandante (20/10):** o microfone funciona no Windows mas não conseguiu usar nem testar no jogo; aprovou as decisões pendentes da voz. **Causa:** o portão de idade escondia a voz sem dar caminho. **Feito:** botão [ CRIAR CONTA ] / [ INFORMAR MINHA IDADE ] na seção do chat de voz; Chrome real 36/36. **Para jogar com voz:** criar a conta (ou informar a idade, se a conta é antiga) em Configurações > GRÁFICOS E SOM > CHAT DE VOZ; depois TESTAR e entrar numa sala online. **Falta (R13):** mudo por jogador, aviso às contas antigas, idade no chat de texto, a prova positiva em produção (a rede daqui para o servidor está intermitente).
+
 ## O MUDO POR JOGADOR NO CHAT DE VOZ — Claude, 20/10 (branch `claude/voz-mudo`, P228)
 
 **Feito:** em Esc > REDE, cada piloto tem **[ SILENCIAR VOZ ]** (aparece só para quem está na voz); silenciar desliga a faixa dele (custo zero), o indicador de quem fala some, e vale até sair da sala. 7 mutações pegas e a prova no Chrome real (`medicoes/voz-jogo.mjs`). **Falta (R13):** a denúncia (decisão do Comandante: para onde vai a queixa) e o mudo sem pausar a partida.

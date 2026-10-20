@@ -125,11 +125,13 @@ try {
 
   // ---------------------------------------------------------------- 1. conta de adulto
   const adulto = await entrar(browser, 'ADULTO', tokenAdulto);
-  const ligou = await ate(async () => (await ligadosDoColega(colega)) >= 1, 120_000);
+  const ligou = await ate(async () => (await ligadosDoColega(colega)) >= 1, 300_000);
   conferir('1. conta de ADULTO: a voz abre e liga ao colega', !!ligou);
   await abrirConfiguracoes(adulto, 'graficos');
+  await ate(() => adulto.evaluate(() => !document.getElementById('voz-controles').hidden), 60_000); // o pedaço da seção da voz chega em segundo plano
   const tAdulto = await estadoDaTela(adulto);
   conferir('1. os controles da voz aparecem e nenhuma frase de bloqueio', tAdulto.controles && tAdulto.frase === '', JSON.stringify(tAdulto));
+  conferir('1. ADULTO: sem o botão de conta (a voz já está liberada)', await adulto.evaluate(() => document.getElementById('btn-voz-conta').hidden));
   conferir('1. o jogo pediu o microfone ao navegador', tAdulto.pedidos >= 1, `${tAdulto.pedidos} pedido(s)`);
   await fecharConfiguracoes(adulto);
   await adulto.close();
@@ -143,6 +145,11 @@ try {
   conferir('2. CONVIDADO: sem controles de voz, com a frase de "crie uma conta"', !tConv.controles && tConv.frase.includes('Crie uma conta'), JSON.stringify(tConv));
   conferir('2. CONVIDADO: o jogo NUNCA pediu o microfone e não há indicador de voz', tConv.pedidos === 0 && tConv.indicador === '', JSON.stringify({ pedidos: tConv.pedidos, indicador: tConv.indicador }));
   conferir('2. CONVIDADO: ninguém se ligou a ele (o colega segue sem ligações)', (await ligadosDoColega(colega)) === 0);
+  const botaoConv = await convidado.evaluate(() => ({ visivel: !document.getElementById('btn-voz-conta').hidden, texto: document.getElementById('btn-voz-conta').textContent }));
+  conferir('2. CONVIDADO: a seção da voz tem o botão [ CRIAR CONTA ] (P226: o Comandante só via uma frase e não achava o formulário)', botaoConv.visivel && botaoConv.texto === '[ CRIAR CONTA ]', JSON.stringify(botaoConv));
+  await convidado.evaluate(() => document.getElementById('btn-voz-conta').click());
+  const levou = await ate(() => convidado.evaluate(() => document.querySelector('.settings-tab.active')?.dataset.tab === 'jogo' && document.getElementById('tab-login-criar')?.classList.contains('active') && !!document.getElementById('login-nasc-mes')), 30_000);
+  conferir('2. CONVIDADO: clicar no botão abre a aba JOGO já no CRIAR CONTA, com o mês e o ano de nascimento', !!levou);
   await fecharConfiguracoes(convidado);
   await convidado.close();
 
@@ -154,6 +161,7 @@ try {
   conferir('3. conta de MENOR: sem controles de voz e com a frase dos menores de 18 anos', !tMenor.controles && tMenor.frase.includes('menores de 18 anos') && tMenor.frase.includes('áudio do jogo segue normal'), JSON.stringify(tMenor));
   conferir('3. MENOR: o jogo NUNCA pediu o microfone e não há indicador de voz', tMenor.pedidos === 0 && tMenor.indicador === '', JSON.stringify({ pedidos: tMenor.pedidos, indicador: tMenor.indicador }));
   conferir('3. MENOR: ninguém se ligou a ele', (await ligadosDoColega(colega)) === 0);
+  conferir('3. MENOR: sem botão (não há o que fazer)', await menor.evaluate(() => document.getElementById('btn-voz-conta').hidden));
   await page_foto(menor, 'idade-menor-sem-voz-claude.png');
   await fecharConfiguracoes(menor);
   await abrirConfiguracoes(menor, 'jogo');
@@ -168,6 +176,11 @@ try {
   await abrirConfiguracoes(semIdade, 'graficos');
   const antes = await estadoDaTela(semIdade);
   conferir('4. conta SEM IDADE: sem controles e a frase pede o mês e o ano de nascimento', !antes.controles && antes.frase.includes('mês e o ano de nascimento') && antes.pedidos === 0, JSON.stringify(antes));
+  const botaoSem = await semIdade.evaluate(() => ({ visivel: !document.getElementById('btn-voz-conta').hidden, texto: document.getElementById('btn-voz-conta').textContent }));
+  conferir('4. conta SEM IDADE: a seção da voz tem o botão [ INFORMAR MINHA IDADE ]', botaoSem.visivel && botaoSem.texto === '[ INFORMAR MINHA IDADE ]', JSON.stringify(botaoSem));
+  await semIdade.evaluate(() => document.getElementById('btn-voz-conta').click());
+  const levouSem = await ate(() => semIdade.evaluate(() => document.querySelector('.settings-tab.active')?.dataset.tab === 'jogo' && !!document.getElementById('btn-login-nascimento')), 30_000);
+  conferir('4. conta SEM IDADE: clicar no botão abre a aba JOGO no pedido do mês e do ano', !!levouSem);
   await fecharConfiguracoes(semIdade);
   await abrirConfiguracoes(semIdade, 'jogo');
   const formulario = await ate(() => semIdade.evaluate(() => !!document.getElementById('btn-login-nascimento')), 60_000);
@@ -214,7 +227,7 @@ try {
     await page.selectOption('#login-nasc-mes', String(mes));
     const aindaSemAno = await page.evaluate(() => document.getElementById('btn-login-submit').disabled);
     await page.selectOption('#login-nasc-ano', String(ano));
-    const ligadoComData = !(await page.evaluate(() => document.getElementById('btn-login-submit').disabled));
+    const ligadoComData = !!(await ate(() => page.evaluate(() => !document.getElementById('btn-login-submit').disabled), 15_000, 200));
     return { page, desligadoSemData, aindaSemAno, ligadoComData };
   }
   const adultoNovo = await cadastrar('NOVOADULTO', 'novo-adulto@bancada.com', 2, 1992);

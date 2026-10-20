@@ -63,7 +63,7 @@
 
 | # | O quê | Como |
 |---|---|---|
-| **A12** | **HSTS** está desligado. | Na Cloudflare: "Always Use HTTPS" + HSTS (depois de conferir que nada do site depende de HTTP). |
+| **A12** | **HSTS** estava desligado. | **Feito em 19/10 para o site, pelo `.htaccess`** (`max-age` de 180 dias, sem `includeSubDomains` nem `preload`): o site é servido direto pela Hostinger, **sem passar pela Cloudflare**, então o HSTS da Cloudflare não o cobre. O `jogo.` (que passa pela Cloudflare) ainda não manda o cabeçalho; baixo risco. |
 | **A14** | **Sem monitor externo**: o Comandante só sabe que o servidor caiu quando alguém avisa. | Um monitor gratuito (UptimeRobot ou parecido) em `https://jogo.cybermech.online/status` e no site, com aviso por e-mail ou celular. |
 | **A17** | O **token do dono** é um só e vale em `/metricas`, `/admin/*` e no mural. | Para trocar: apagar `.tmp/servidor/metricas-token.txt` e reiniciar o servidor gera outro. Trocar se alguém que o conhecia sair. |
 | **A19** | O **`servidor.log` antigo** tem IPs inteiros e 1 e-mail (de antes de 18/10). | Com a tarefa parada, apagar o arquivo (`DEPLOY.md` § 4c). |

@@ -59,6 +59,8 @@ export interface GaOpcoes {
   http?: typeof fetch;
   agora?: () => number;
   anotar?: (linha: string) => void;
+  /** Quanto o `obter()` espera o Google antes de responder "carregando" (padrão `ESPERA_MAX_MS`; os testes encurtam para não depender do relógio da máquina). */
+  esperaMaxMs?: number;
 }
 
 interface Chave {
@@ -96,6 +98,7 @@ export class GoogleAnalytics {
   private readonly anotar: (linha: string) => void;
   private readonly env: NodeJS.ProcessEnv;
   private readonly dir: string | null;
+  private readonly esperaMaxMs: number;
   private token: { valor: string; expiraEm: number } | null = null;
   private descoberta: string | null = null;
   /** Os nomes das propriedades que a conta enxerga e não são a do CYBERMECH (para dizer ao dono onde deu acesso por engano). */
@@ -109,6 +112,7 @@ export class GoogleAnalytics {
     this.http = o.http ?? fetch;
     this.agora = o.agora ?? Date.now;
     this.anotar = o.anotar ?? (() => {});
+    this.esperaMaxMs = o.esperaMaxMs ?? ESPERA_MAX_MS;
   }
 
   /** O estado atual do Analytics para o `/metricas`. Nunca lança e nunca demora mais que `ESPERA_MAX_MS`. */
@@ -120,7 +124,7 @@ export class GoogleAnalytics {
     });
     let relogio: ReturnType<typeof setTimeout> | undefined;
     const demorou = new Promise<GaEstado>((ok) => {
-      relogio = setTimeout(() => ok(this.cache?.estado ?? { estado: 'carregando' }), ESPERA_MAX_MS);
+      relogio = setTimeout(() => ok(this.cache?.estado ?? { estado: 'carregando' }), this.esperaMaxMs);
     });
     return Promise.race([this.voo, demorou]).finally(() => clearTimeout(relogio));
   }
