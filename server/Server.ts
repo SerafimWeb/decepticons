@@ -16,7 +16,9 @@ import { emailDeRedefinicao } from './emailTextos';
 import { Writer } from '../shared/net/codec';
 import { serverStatus, STATUS_PATH } from '../shared/net/status';
 import { type EventoEnviado, type EventoServidor, EVENTO_MAX_BYTES, EVENTO_PATH, METRICAS_HEADER, METRICAS_PATH, parseEvento, RESUMO_PATH } from '../shared/net/telemetry';
-import { encodeAviso, sanitizeName, type RejectReason } from '../shared/net/messages';
+import { encodeAviso, encodeReject, sanitizeName, type RejectReason } from '../shared/net/messages';
+import { CREDENCIAL_ESPERA_MS, ehCredencial, lerCredencial } from '../shared/net/credencial';
+import { mapaRestrito } from './acessoAoMapa';
 import { ArenaRoom, type Peer } from './ArenaRoom';
 import { Contas } from './contas';
 import { fazerBackup } from './backupContas';
@@ -984,8 +986,32 @@ export async function startServer(
       close: () => ws.close(1000),
       pais,
     };
+    // MAPA RESTRITO (P226, A0): só a conta de administrador entra, e prova isso na primeira mensagem (`CREDENCIAL`). **A sala só é criada depois da prova**: quem não é admin não gasta uma sala.
+    const exigeAdmin = mapaRestrito(mapaPedido, visibilidade.atual().itens);
+    let credenciado = !exigeAdmin;
+    let liberarSala: () => void = () => {};
+    let esperaDaCredencial: ReturnType<typeof setTimeout> | null = null;
+    const limparEspera = () => {
+      if (esperaDaCredencial) clearTimeout(esperaDaCredencial);
+      esperaDaCredencial = null;
+    };
+    let recusada = false;
+    const recusarRestrito = (motivo: string) => {
+      if (recusada) return;
+      recusada = true;
+      limparEspera();
+      credenciado = false;
+      log(`recusa de ${ipParaLog(ip)}: mapa restrito ${mapaPedido} (${motivo})`);
+      auditar({ ator: 'anonimo', acao: 'admin_acesso', alvo: `mapa:${mapaPedido}`, ok: false }, 10 * 60_000);
+      peer.send(encodeReject(new Writer(8), 'restrito'));
+      ws.close(1008, 'restrito');
+    };
     // As mensagens esperam a sala ficar pronta, na ordem em que chegaram.
-    const room = roomFor(code);
+    const room: Promise<ArenaRoom> = exigeAdmin ? new Promise<ArenaRoom>((resolver) => (liberarSala = () => resolver(roomFor(code)))) : roomFor(code);
+    if (exigeAdmin) {
+      esperaDaCredencial = setTimeout(() => recusarRestrito('sem credencial'), CREDENCIAL_ESPERA_MS);
+      esperaDaCredencial.unref();
+    }
     let flooded = false;
     let descartando = false;
     ws.on('message', (data, isBinary) => {
@@ -1016,9 +1042,29 @@ export async function startServer(
         return;
       }
       trafego.entradaBytes += bytes.length;
+      // A credencial é do servidor: nunca chega à sala. Num mapa restrito é a prova de quem entra (token de uma conta de administrador); num público, é descartada.
+      if (ehCredencial(bytes)) {
+        if (exigeAdmin && !credenciado && !recusada) {
+          const token = lerCredencial(bytes);
+          const conta = token !== null && sessaoDeAdmin(token) ? contas.validarSessao(token) : null;
+          if (conta) {
+            credenciado = true;
+            limparEspera();
+            auditar({ ator: `conta:${conta.id}`, acao: 'admin_acesso', alvo: `mapa:${mapaPedido}`, ok: true }, 10 * 60_000);
+            liberarSala();
+          } else recusarRestrito('credencial inválida');
+        }
+        return;
+      }
+      // Antes da prova nada passa: quem pede o mapa restrito sem credencial é recusado na hora, com o motivo.
+      if (!credenciado) {
+        recusarRestrito('sem credencial');
+        return;
+      }
       void room.then((r) => r.receive(peer, bytes));
     });
     ws.on('close', () => {
+      limparEspera();
       release();
       void room.then((r) => r.leave(peer));
     });

@@ -1,7 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
+import { ADMIN_HEADER } from '../shared/net/admin';
 import { Writer } from '../shared/net/codec';
 import { PROTOCOL_VERSION } from '../shared/net/constants';
+import { ADMIN_VISIBILIDADE_PATH } from '../shared/visibilidade';
 import { chaveDaSala, MAPAS_ONLINE, mapaDaChave, mapaDoLink } from '../shared/net/mapa';
 import { decodeRoster, encodeJoin, messageType, MSG } from '../shared/net/messages';
 import { TODOS_OS_MAPAS } from '../client/src/core/Lancamento';
@@ -10,6 +12,7 @@ import { mapHref } from '../client/src/ui/MapLinks';
 import { urlComMapa } from '../client/src/net/onlineConfig';
 import { roomMapa, startServer, type GameServer } from './Server';
 
+const TOKEN_DO_DONO = 'token-do-dono-so-para-o-teste-0123456789';
 const w = new Writer(256);
 const join_ = (name: string) => new Uint8Array(encodeJoin(w, { protocol: PROTOCOL_VERSION, name, build: 'v1.vector09.plasma-0.rockets-0' }));
 const GUARD = { perIp: 100, total: 200, msgs: 400, burst: 400 };
@@ -75,7 +78,14 @@ describe('o mapa da sala online (P218, etapa O1): o contrato', () => {
 describe('a sala do servidor por mapa, com o servidor de verdade', { timeout: 120_000 }, () => {
   let server: GameServer;
   beforeAll(async () => {
-    server = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: GUARD });
+    server = await startServer({ port: 0, host: '127.0.0.1', dbContas: ':memory:', guard: GUARD, metricasToken: TOKEN_DO_DONO });
+    // O Bunker e a Terras Raras nascem restritos (só o administrador entra, A0/P226: `mapa-restrito.test.ts`). Aqui o assunto é a sala por mapa, então o painel os libera, como o Comandante faria.
+    const r = await fetch(`http://127.0.0.1:${server.port}${ADMIN_VISIBILIDADE_PATH}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', [ADMIN_HEADER]: TOKEN_DO_DONO },
+      body: JSON.stringify({ itens: { 'mapa:bunker': 'publico', 'mapa:amazonia': 'publico' } }),
+    });
+    expect(r.status).toBe(200);
   });
   afterAll(async () => {
     await server.close();
