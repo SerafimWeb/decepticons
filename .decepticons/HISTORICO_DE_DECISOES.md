@@ -1,11 +1,15 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
 ## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
 
 **Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.
-## [2026-10-19] O teste que roda o hook acha o `bash` do Git, nunca o `bash` solto do PATH (Claude, P224)
+## [2026-10-19] Economizar o Actions removendo repetição, não sinal (Claude, P223)
 
-**O achado:** no Windows, `bash` no PATH pode ser o **WSL**, que responde `exit 0` mas não lê caminho `D:\...` (127). O teste do hook de push passava no Git Bash do dono e **falhava na tarefa agendada**, e o atualizador reverte a atualização inteira quando um teste falha (o site ficou 2 h sem publicar). **A decisão:** o teste usa o `bash.exe` do Git (derivado do `git --exec-path`), com o caminho do hook em barras normais; sem Git, a suíte pula. A trava do atualizador (reverter ao falhar) **continua certa**: o defeito era do teste, não dela.
+**Ordem:** economizar de forma inteligente e profissional, sem miséria. **Medi antes** (235 min em um dia; 40% push na `main`, 38% check do PR, 22% etiquetas) e cortei só o que repete ou é desperdício: (1) o push na `main` pula o check quando a árvore é idêntica à do PR e o CI do PR passou nela (na dúvida roda tudo; decisão pura e testada, 6 mutações pegas; aplicada a merges reais: #405 pula, #403 roda); (2) etiquetas só ao abrir (o job de 6 s cobra 1 minuto); (3) rascunho não roda. **Não cortei** o check do PR nem o hook: é a segunda opinião de uma máquina limpa e achou dois defeitos escondidos por uma semana. Próximos degraus, se ainda apertar, estão no `DEPLOY.md`. `npm run ci:consumo` passa a mostrar o gasto e a projeção.
+
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 ## [2026-10-19] A descoberta da propriedade do Analytics exige o código de medição do CYBERMECH (Claude, P207)
 
