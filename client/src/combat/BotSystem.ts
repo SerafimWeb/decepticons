@@ -60,6 +60,7 @@ export const RADIO_RANGE = 80;
 const RADIO_CALLOUT_S = 8;
 
 const _muzzle = new THREE.Vector3();
+const _entra = new THREE.Vector3();
 const _blastDir = new THREE.Vector3();
 const _blastSpread: Spread = { x: 0, y: 0 };
 
@@ -118,6 +119,8 @@ export interface BotSystemOptions {
    * (senão o jogador não teria como distinguir quem atira nele de quem luta ao lado dele).
    */
   paint?: number;
+  /** A cor do corpo dos andróides do pool (os rebeldes da missão do 8 DE JANEIRO usam preto); sem ela, a de sempre. */
+  androidPaint?: number;
   visor?: number;
   /** Onde cada Mech rebelde (escala 2) nasce (x, z): um por ponto. */
   spawns: readonly (readonly [number, number])[];
@@ -321,7 +324,7 @@ export class BotSystem {
     });
 
     // Andróides: sementes depois das dos Mechs.
-    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats }), p, pick(o.names?.androids ?? BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true, o.androidKits?.[i]));
+    (o.androidSpawns ?? []).forEach((p, i) => fighter(new Android({ stats: androidStats, ...(o.androidPaint === undefined ? {} : { paint: o.androidPaint }) }), p, pick(o.names?.androids ?? BOT_NAMES.androids, i, 'A'), o.spawns.length + i, true, o.androidKits?.[i]));
     // Os manifestantes (P163): corpo de andróide, mais fraco, camisa amarela e bandeira; o cérebro é o do andróide (corpo a corpo). Sementes depois das dos andróides.
     const manifestanteStats = poweredStats(MANIFESTANTE_STATS, power, 'androids');
     (o.manifestanteSpawns ?? []).forEach((p, i) =>
@@ -401,6 +404,22 @@ export class BotSystem {
       }
     }
     this.directorTimer = 0;
+  }
+
+  /**
+   * Põe em campo, em (x, z), o primeiro andróide do pool que não está em campo: os rebeldes da missão do 8 DE JANEIRO (P217) chegam um a um, no cronograma da multidão, de frente para o centro
+   * e com o cérebro zerado. `false` se todos estão vivos (a missão espera uma vaga: o teto de rebeldes vivos é o tamanho do pool). Nunca cria nem remove objetos (G4/G5).
+   */
+  entrarAndroide(x: number, z: number): boolean {
+    for (const { mech, brain } of this.bots) {
+      if (!(brain instanceof BotController) || !(mech instanceof Android) || ehManifestante(mech.stats.name) || mech.alive) continue;
+      _entra.set(x, 0, z);
+      mech.respawn(_entra);
+      mech.applyFacing(Math.atan2(x, z), 0);
+      brain.reset();
+      return true;
+    }
+    return false;
   }
 
   /** O chefe da missão (o Colossus), se está em campo e vivo; senão `null`. O HUD e as regras do capítulo leem daqui. */

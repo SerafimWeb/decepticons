@@ -10,7 +10,7 @@ import { weapon } from '../combat/weapons';
 import type { ParticleSystem } from '../fx/ParticleSystem';
 import { FIXED_DT, PhysicsWorld } from '../physics/PhysicsWorld';
 import { Match } from './Match';
-import { INTEGRIDADE_MAX } from './MissaoJaneiro';
+import { INTEGRIDADE_MAX, REBELDES_MAX, type SituacaoDaPraca } from './MissaoJaneiro';
 import type { MissionStats } from './SurvivalWaves';
 
 const IDLE: MechInput = { moveX: 0, moveZ: 0, moveYaw: 0, yaw: 0, jump: false, dash: false };
@@ -183,6 +183,40 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
     expect(match.missaoJaneiro!.causa).toBe('predio');
   });
 
+  it('os androides rebeldes (o único inimigo que luta) entram no cronograma da multidão, um por vaga do pool, nunca mais que REBELDES_MAX vivos; a missão não termina com um por chegar', async () => {
+    const { match, run } = await partida();
+    const m = match.multidao!;
+    expect(match.rebeldesVivos).toBe(0);
+    const primeiro = Math.min(...m.androides.map((a) => a.tick));
+    expect(m.androides.length).toBeGreaterThan(REBELDES_MAX); // o cronograma tem mais rebeldes que vagas: o resto espera
+    run(primeiro / 60 - 2);
+    expect(match.rebeldesVivos).toBe(0);
+    run(4);
+    expect(match.rebeldesVivos).toBeGreaterThanOrEqual(1);
+    for (let s = 0; s < 6; s++) {
+      run(10);
+      expect(match.rebeldesVivos).toBeLessThanOrEqual(REBELDES_MAX);
+      expect(match.bots.mechs.filter((b) => b.alive).length).toBe(match.rebeldesVivos);
+    }
+    const situacao = (match as unknown as { situacaoDaPraca: SituacaoDaPraca }).situacaoDaPraca;
+    expect(situacao.presentes).toBe(m.presentes + match.rebeldesVivos); // eles contam na Praça
+    expect(situacao.faltamChegar).toBeGreaterThan(m.faltamChegar - 1); // e os agendados contam como por chegar
+  });
+
+  it('derrubar um androide rebelde conta no resultado e libera a vaga do pool para o próximo do cronograma', async () => {
+    const { match, run } = await partida();
+    const m = match.multidao!;
+    run(Math.min(...m.androides.map((a) => a.tick)) / 60 + 3);
+    const rebelde = match.bots.mechs.find((b) => b.alive)!;
+    expect(rebelde).toBeDefined();
+    const antes = match.rebeldesVivos;
+    rebelde.takeHit(new THREE.Vector3(rebelde.simPosition.x, rebelde.simPosition.y + 1, rebelde.simPosition.z), 1e6);
+    run(0.1);
+    expect(rebelde.alive).toBe(false);
+    expect(match.missaoJaneiro!.resultado().rebeldes).toBeGreaterThanOrEqual(1);
+    expect(match.rebeldesVivos).toBeLessThanOrEqual(antes);
+  });
+
   it('o reinício da missão volta tudo: a multidão do zero, os prédios inteiros, o relógio e o placar zerados', async () => {
     const { match, run } = await partida();
     run(30);
@@ -196,5 +230,7 @@ describe('a missão do 8 DE JANEIRO no Match (P217, passo 5): a multidão contra
     expect([...match.missaoJaneiro!.integridade]).toEqual([INTEGRIDADE_MAX, INTEGRIDADE_MAX, INTEGRIDADE_MAX]);
     expect(match.missaoJaneiro!.tempoS).toBe(0);
     expect(match.missaoJaneiro!.fase).toBe('em-curso');
+    expect(match.rebeldesVivos).toBe(0);
+    expect(match.bots.mechs.every((b) => !b.alive)).toBe(true);
   });
 });
