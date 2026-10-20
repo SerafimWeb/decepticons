@@ -169,7 +169,7 @@ import { LadoSelector } from '../ui/LadoSelector';
 import { ContaCliente } from '../net/auth';
 import { progressoLocalDoJogo } from '../net/progressoLocal';
 import { chaveDoToken, SessaoPiloto } from '../net/sessao';
-import { elegibilidadeDaVoz, vozDeveLigar } from '../voice/elegibilidade';
+import { elegibilidadeDaVoz, microfoneDaNarracaoLiberado, vozDeveLigar } from '../voice/elegibilidade';
 
 /** Nome da arma do gatilho secundário no HUD; null = não há (o braço esquerdo leva um escudo). */
 const HUD_NAME: Partial<Record<WeaponId, string>> = { rockets: 'FOGUETES', barrage: 'CHUVA', seeker: 'TELEGUIADO', swarm: 'ENXAME', cruise: 'CRUZADOR', grenade: 'GRANADAS', laser: 'LASER', chainsaw: 'MOTOSSERRA', harpoon: 'ARPÃO' };
@@ -1165,6 +1165,47 @@ export class Game {
     return r.mech;
   }
 
+  /**
+   * Liga ou desliga a gravação (F9 sem voz, F10 com a voz de quem narra, P230). Ao ligar trava a qualidade no máximo e desliga o rebaixamento automático (o "modo captura", ver acima); ao parar
+   * volta tudo. A narração só abre o microfone para **conta de maior de 18 anos** (a mesma regra da voz: menor não tem microfone) e usa o aparelho escolhido nas Configurações.
+   */
+  private alternarGravacao(narrar: boolean): void {
+    if (this.recorder.gravando) {
+      this.recorder.alternar();
+      this.aplicarQualidade(this.settings.value.quality);
+      return;
+    }
+    if (!narrar) {
+      this.comecarGravacao(null);
+      return;
+    }
+    void this.abrirNarracao();
+  }
+
+  private comecarGravacao(microfone: MediaStream | null): void {
+    this.quality.setAdaptive(false);
+    this.setPixelRatio(maxPixelRatio());
+    this.recorder.alternar(microfone);
+  }
+
+  private async abrirNarracao(): Promise<void> {
+    if (!microfoneDaNarracaoLiberado(this.sessao?.estado.idade)) {
+      this.recorder.avisar('NARRAÇÃO: o microfone só vale para conta de maior de 18 anos (Configurações > JOGO).');
+      return;
+    }
+    try {
+      const { abrirMicrofone } = await import('../voice/abrirMicrofone');
+      const microfone = await abrirMicrofone(this.settings.value.micDevice);
+      if (this.recorder.gravando) {
+        for (const faixa of microfone.getTracks()) faixa.stop(); // já começou a gravar enquanto o navegador perguntava
+        return;
+      }
+      this.comecarGravacao(microfone);
+    } catch {
+      this.recorder.avisar('NARRAÇÃO: não consegui abrir o microfone. Teste em Configurações > GRÁFICOS E SOM > CHAT DE VOZ.');
+    }
+  }
+
   /** A lista de pilotos do monitor REDE (P216): as outras pessoas da sala, com as mensagens não lidas. */
   private pintarPilotos(): void {
     // O mudo da voz (P228) só aparece para quem está na voz; o botão é desenhado pelo pedaço sob demanda da voz.
@@ -1703,14 +1744,9 @@ export class Game {
       // até 3x+ em telas de alta densidade) foi o que causava o soluço e o vídeo com quadros perdidos
       // relatado pelo dono em 29/09 — o próprio WebGL não aguentava o pixel count somado ao encode do
       // MediaRecorder rodando ao vivo.
-      if (code === 'F9') {
-        const iniciando = !this.recorder.gravando;
-        if (iniciando) {
-          this.quality.setAdaptive(false);
-          this.setPixelRatio(maxPixelRatio());
-        }
-        this.recorder.alternar();
-        if (!iniciando) this.aplicarQualidade(this.settings.value.quality);
+      // F9 grava a partida; F10 grava **com a sua voz** (P230, a narração: vale offline e online). A mesma tecla de cada uma também para.
+      if (code === 'F9' || code === 'F10') {
+        this.alternarGravacao(code === 'F10');
         return;
       }
       if (code === 'KeyM' || code === 'KeyB') {

@@ -16,6 +16,12 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## A NARRAÇÃO: F10 GRAVA A PARTIDA COM A SUA VOZ — Claude, 20/10 (branch `claude/narracao`, P230)
+
+**O Comandante (20/10):** *"não consegui ouvir NO jogo. é só no online que o áudio funciona? e se eu quiser jogar offline e ir narrando?"* O chat de voz é só online (ninguém se ouve) e o F9 nunca gravou o microfone. **Feito:** **F10** grava a partida **com a voz de quem joga**, offline ou online (`GameRecorder`: o microfone entra só na mistura da gravação, nunca na saída do jogo; `Game.ts` abre o aparelho escolhido só para conta de maior de 18 anos, `microfoneDaNarracaoLiberado`; indicador "REC · NARRAÇÃO"; parar solta o microfone; sem o áudio do jogo ainda, não grava e avisa). **Provado:** 12 testes do gravador + 2 da regra, 8 de 8 mutações pegas, `medicoes/gravacao-narrada.mjs` (Chrome real, ffmpeg mede o arquivo: voz −13,5 dB na narração e −77 dB no F9; nunca na saída) e `medicoes/gravacao-narrada-jogo.mjs` (o jogo de verdade: convidado barrado com aviso, adulto grava, o tom do microfone está no arquivo). **Falta:** o Comandante gravar um take e ouvir; os efeitos de voz (P231, PR seguinte).
+
+**Próxima sessão começa com:** os efeitos de voz (P231): módulo sob demanda com predefinições Locutor militar, Darth Vader, Big Brother e Normal, aplicado à narração e à prévia do teste do microfone; medir o tom com `OfflineAudioContext`; o ouvido que julga é o do Comandante.
+
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).

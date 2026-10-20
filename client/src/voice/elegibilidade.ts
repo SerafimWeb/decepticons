@@ -19,3 +19,11 @@ export function elegibilidadeDaVoz(logado: boolean, idade: IdadeDaConta): Elegib
 export function vozDeveLigar(querOJogador: boolean, liberadaPeloDono: boolean, idade: IdadeDaConta | undefined): boolean {
   return querOJogador && liberadaPeloDono && idade === 'adulto';
 }
+
+/**
+ * A narração (P230, F10) grava a voz do jogador no próprio arquivo, sem rede: **mesma regra do chat, por ser a mesma ordem** ("menores de 18 anos NÃO TÊM ACESSO ao microfone"). Só `adulto` abre o microfone;
+ * menor, sem idade e a sessão ainda não restaurada (`undefined`) ficam sem: na dúvida, sem. Não depende do `tela:voz` (que solta ou segura o CHAT, não o microfone do próprio jogador).
+ */
+export function microfoneDaNarracaoLiberado(idade: IdadeDaConta | undefined): boolean {
+  return idade === 'adulto';
+}
