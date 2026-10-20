@@ -1,0 +1,75 @@
+{
+  "rotulos": {
+    "titulo": "RELATÓRIO DE CONSEQUÊNCIAS",
+    "sub": "8 DE JANEIRO",
+    "aconteceuNome": "O QUE ACONTECEU",
+    "aconteceuLema": "o que você fez na Praça",
+    "ficcaoNome": "O QUE É FICÇÃO",
+    "ficcaoLema": "o que o jogo inventou",
+    "quando": "QUANDO",
+    "fonte": "FONTE",
+    "nota": "O QUE ISTO NÃO DIZ",
+    "fechar": "[ FECHAR ]"
+  },
+  "linhas": {
+    "venceu": "Os três prédios seguem de pé e a Praça esvaziou.",
+    "perdeuPredio": "Um prédio caiu: {predio}.",
+    "perdeuTempo": "O tempo acabou com gente na Praça.",
+    "expulsos": "{n} expulsos: fugiram do tiro ou do susto.",
+    "eliminados": "{n} eliminados.",
+    "rebeldes": "{n} androides rebeldes derrubados.",
+    "mesas": "{n} mesas limpas.",
+    "naoLetal": "{n}% dos que saíram da Praça foram expulsos, e não eliminados.",
+    "tempo": "Tempo de missão: {t}."
+  },
+  "fatos": [
+    {
+      "id": "o-dia",
+      "nome": "O DIA",
+      "lema": "8 de janeiro de 2023, Brasília",
+      "texto": "Em 8 de janeiro de 2023, um domingo, as sedes dos Três Poderes em Brasília (o Congresso Nacional, o Palácio do Planalto e o Supremo Tribunal Federal) foram invadidas e depredadas, uma semana depois da posse do presidente eleito. Apoiadores do governo derrotado mantinham acampamentos diante do Quartel-General do Exército desde a eleição de 2022, e muitos contestavam o resultado das urnas: a multidão partiu de lá em passeata até a Praça dos Três Poderes. À noite, o governo federal decretou intervenção na segurança pública do Distrito Federal (Decreto nº 11.377), aprovada pela Câmara no dia seguinte.",
+      "quando": "8/1/2023, um domingo",
+      "fonte": "NSC Total (e BNews, CNN Brasil; o decreto, no Senado)",
+      "link": "https://www.nsctotal.com.br/?p=7047200",
+      "nota": "Não diz quantas pessoas eram (os balanços variam), quem organizou, nem o que a polícia fez ou deixou de fazer no dia: isso não foi verificado."
+    },
+    {
+      "id": "os-danos",
+      "nome": "A CONTA DOS DANOS",
+      "lema": "o patrimônio público",
+      "texto": "Os condenados respondem solidariamente por danos na ordem de R$ 30 milhões (obras de arte, móveis históricos, estofados e aparelhos eletrônicos). Os crimes incluíram dano qualificado e deterioração de patrimônio tombado.",
+      "quando": "Balanço da PGR de julho de 2025",
+      "fonte": "Agência Brasil (e Bahia Notícias, Folha PE, JuriNews)",
+      "link": "https://agenciabrasil.ebc.com.br/justica/noticia/2025-07/stf-ja-condenou-mais-de-600-denunciados-pelo-8-de-janeiro/",
+      "nota": "Não diz o valor exato de hoje (muda a cada balanço), nem quanto já foi pago ou restaurado."
+    },
+    {
+      "id": "a-responsabilizacao",
+      "nome": "A RESPONSABILIZAÇÃO",
+      "lema": "quem invadiu",
+      "texto": "O Supremo Tribunal Federal condenou mais de 600 pessoas pelos atos de 8 de janeiro, com penas de prisão de 3 a 17 anos. Centenas de outras fecharam acordos de não persecução penal.",
+      "quando": "Balanços da PGR (julho de 2025) e do STF (agosto de 2025)",
+      "fonte": "Poder360 (e Agência Brasil, Bahia Notícias)",
+      "link": "https://www.poder360.com.br/poder-justica/stf-responsabiliza-1-190-por-atos-de-8-de-janeiro-638-foram-condenados/",
+      "nota": "Não diz o número exato (643 num balanço, 638 noutro: muda a cada balanço) nem o que aconteceu com os recursos e com a execução das penas depois de novembro de 2025: isso não foi pesquisado."
+    },
+    {
+      "id": "a-trama",
+      "nome": "A TRAMA GOLPISTA",
+      "lema": "o que foi julgado",
+      "texto": "O STF (Primeira Turma) condenou os réus da trama golpista de 2022 por crimes que incluem tentativa de abolição violenta do Estado Democrático de Direito, golpe de Estado e organização criminosa armada. O julgamento foi em núcleos, ao longo de 2025. Entre os condenados há militares do Exército e um policial federal, acusados de planejar ações táticas do plano golpista; em novembro de 2025, nove dos dez réus de um dos núcleos foram condenados e um general foi absolvido por falta de provas. O golpe não se consumou.",
+      "quando": "Julgamentos de 11/9/2025 a 16/12/2025",
+      "fonte": "Movimento Econômico (e O Povo, Correio Braziliense, InfoMoney)",
+      "link": "https://movimentoeconomico.com.br/economia/justica/2025/12/16/trama-golpista-por-unanimidade-stf-condena-cinco-reus-e-absolve-um/",
+      "nota": "Não diz que \"os militares não aderiram\": houve militares condenados pelo planejamento; as fontes sustentam que a Força, como instituição, não tomou o poder. Não cobre o que veio depois de novembro de 2025."
+    }
+  ],
+  "ficcao": [
+    "A multidão do jogo é ficção: a máscara de gado, a peruca e o careca são caricaturas de tipos, não de pessoas reais, e nenhuma pessoa real é nomeada.",
+    "Os androides rebeldes, os faxineiros e as armas são invenção do jogo.",
+    "A sujeira nas mesas é humor do jogo: não é relato do que foi destruído naquele dia.",
+    "Os números da missão (a multidão, os cinco minutos, a integridade dos prédios) são do jogo, não da história.",
+    "As faixas do cenário são em branco: o jogo não reproduz nenhum discurso de ódio.",
+    "O que não tem fonte nesta tela é ficção, ou não foi verificado e fica de fora."
+  ]
+}

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { IDIOMAS } from '../i18n/i18n';
-import { arquivosParaTentar, conteudoValido, formatarTempo, linhasDoRelatorio, type ConteudoDoRelatorio, type ResumoDoRio } from './RelatorioPanel';
+import { arquivosParaTentar, CHAVES_JANEIRO, conteudoValido, formatarTempo, linhasDaPraca, linhasDoRelatorio, type ChavesDasLinhasJaneiro, type ConteudoDoRelatorio, type ResumoDaPraca, type ResumoDoRio } from './RelatorioPanel';
 
 const RAIZ = resolve(__dirname, '../..');
 const ler = (id: string): ConteudoDoRelatorio => JSON.parse(readFileSync(resolve(RAIZ, `public/relatorio/${id}.json`), 'utf8')) as ConteudoDoRelatorio;
@@ -148,6 +148,87 @@ describe('as linhas de "o que aconteceu"', () => {
   });
 });
 
+const lerJaneiro = (id: string): ConteudoDoRelatorio<ChavesDasLinhasJaneiro> => JSON.parse(readFileSync(resolve(RAIZ, `public/relatorio/janeiro/${id}.json`), 'utf8')) as ConteudoDoRelatorio<ChavesDasLinhasJaneiro>;
+const FICHA_JANEIRO = readFileSync(resolve(RAIZ, '../.decepticons/fichas/fatos-8-de-janeiro.md'), 'utf8');
+const PRACA: ResumoDaPraca = { missao: 'janeiro', venceu: true, causa: null, predio: null, expulsos: 120, eliminados: 14, rebeldes: 6, mesasLimpas: 9, naoLetalPct: 89.55, segundos: 301.4 };
+
+describe('o Relatório da missão do 8 de Janeiro (P233): só o que a ficha de fatos libera, com a fonte', () => {
+  it('o arquivo em português vale com as chaves da Praça e não vale com as do rio (e o do rio não vale com as da Praça)', () => {
+    const praca = lerJaneiro('pt');
+    expect(conteudoValido(praca, CHAVES_JANEIRO)).toBe(true);
+    expect(conteudoValido(praca)).toBe(false);
+    expect(conteudoValido(ler('pt'), CHAVES_JANEIRO)).toBe(false);
+    expect(conteudoValido({ ...praca, linhas: { ...praca.linhas, naoLetal: '' } }, CHAVES_JANEIRO)).toBe(false);
+    expect(conteudoValido({ ...praca, fatos: [{ ...praca.fatos[0]!, link: 'http://exemplo.org/x' }] }, CHAVES_JANEIRO)).toBe(false);
+  });
+
+  it('a regra "fato tem fonte": cada fonte está na ficha de fatos do 8 de janeiro, que a marca 🟢; todo fato diz o que não diz e quando', () => {
+    const c = lerJaneiro('pt');
+    expect(c.fatos.length).toBeGreaterThanOrEqual(3);
+    for (const f of c.fatos) {
+      expect(FICHA_JANEIRO, `a ficha não cita a fonte de ${f.id}`).toContain(f.link);
+      expect(f.nota.length, f.id).toBeGreaterThan(20);
+      expect(f.quando.length, f.id).toBeGreaterThan(5);
+    }
+    expect(FICHA_JANEIRO).toMatch(/🟢/);
+  });
+
+  it('só papéis: nenhuma pessoa real é nomeada nos textos (o endereço da fonte pode ter o nome na manchete; o texto não)', () => {
+    const proibidos = /bolsonaro|lula\b|moraes|trump|putin|biden|netanyahu|\bmusk|milei|zuckerberg|bezos/i;
+    const semEnderecos = JSON.stringify(lerJaneiro('pt')).replace(/https:\/\/[^"]+/g, '');
+    expect(semEnderecos).not.toMatch(proibidos);
+  });
+
+  it('diz o que a ficha libera e nada além: "mais de 600" (sem o número exato no texto), "o golpe não se consumou", e NÃO afirma "os militares não aderiram"', () => {
+    const [dia, danos, respons, trama] = lerJaneiro('pt').fatos;
+    expect(dia!.texto).toContain('8 de janeiro de 2023');
+    expect(dia!.texto).toContain('Decreto nº 11.377');
+    expect(danos!.texto).toContain('R$ 30 milhões');
+    expect(respons!.texto).toContain('mais de 600');
+    expect(respons!.texto).not.toMatch(/\b(643|638)\b/); // o número exato muda a cada balanço: só na nota, com a data
+    expect(respons!.nota).toContain('643');
+    expect(trama!.texto).toContain('O golpe não se consumou');
+    // "os militares não aderiram" só aparece entre aspas, na nota que o desmente
+    expect(trama!.texto).not.toMatch(/não aderiram/);
+    expect(trama!.nota).toContain('"os militares não aderiram"');
+  });
+
+  it('cabe na tela sem rolagem em 1280×720 (os mesmos tetos do Relatório do rio)', () => {
+    const c = lerJaneiro('pt');
+    for (const f of c.fatos) {
+      expect(f.texto.length, f.id).toBeLessThanOrEqual(620);
+      expect(f.nota.length, f.id).toBeLessThanOrEqual(240);
+      expect(f.fonte.length, f.id).toBeLessThanOrEqual(260);
+      expect(f.quando.length, f.id).toBeLessThanOrEqual(110);
+    }
+    for (const s of c.ficcao) expect(s.length, s).toBeLessThanOrEqual(260);
+  });
+
+  it('a ficção diz o que o jogo inventou: a multidão são tipos, a sujeira é humor, os números são do jogo, e o que não tem fonte fica de fora', () => {
+    const ficcao = lerJaneiro('pt').ficcao.join(' ');
+    expect(ficcao).toMatch(/caricaturas de tipos/);
+    expect(ficcao).toMatch(/sujeira nas mesas é humor/);
+    expect(ficcao).toMatch(/números da missão/);
+    expect(ficcao).toMatch(/sem fonte|não tem fonte/);
+  });
+
+  it('as linhas de "o que aconteceu": vitória, derrota por prédio (com o nome), derrota por tempo; a nota não letal arredonda e o tempo é m:ss', () => {
+    const m = lerJaneiro('pt').linhas;
+    const venceu = linhasDaPraca(PRACA, m);
+    expect(venceu[0]).toBe('Os três prédios seguem de pé e a Praça esvaziou.');
+    expect(venceu).toContain('120 expulsos: fugiram do tiro ou do susto.');
+    expect(venceu).toContain('14 eliminados.');
+    expect(venceu).toContain('6 androides rebeldes derrubados.');
+    expect(venceu).toContain('9 mesas limpas.');
+    expect(venceu).toContain('90% dos que saíram da Praça foram expulsos, e não eliminados.');
+    expect(venceu).toContain('Tempo de missão: 5:01.');
+    const perdeu = linhasDaPraca({ ...PRACA, venceu: false, causa: 'predio', predio: 'LEGISLATIVO' }, m);
+    expect(perdeu[0]).toBe('Um prédio caiu: LEGISLATIVO.');
+    expect(linhasDaPraca({ ...PRACA, venceu: false, causa: 'tempo' }, m)[0]).toBe('O tempo acabou com gente na Praça.');
+    expect(linhasDaPraca({ ...PRACA, segundos: Number.NaN }, m).at(-1)).toBe('Tempo de missão: 0:00.');
+  });
+});
+
 describe('a ligação do Relatório (o que o navegador mostra)', () => {
   const html = readFileSync(resolve(RAIZ, 'index.html'), 'utf8');
   const game = readFileSync(resolve(RAIZ, 'src/core/Game.ts'), 'utf8');
@@ -158,6 +239,12 @@ describe('a ligação do Relatório (o que o navegador mostra)', () => {
     expect(game).toMatch(/getElementById\('cc-relatorio'\)\?\.addEventListener\('click'[\s\S]*import\('\.\.\/ui\/RelatorioPanel'\)\.then\(\(m\) => m\.abrirRelatorio\(resumo\)\)/);
     expect(game).not.toMatch(/^import (?!type).* from '\.\.\/ui\/RelatorioPanel'/m);
     expect(css).toMatch(/\.cc-relatorio\[hidden\] \{ display: none; \}/);
+  });
+
+  it('o resumo da Praça nasce no fim da missão do 8 de Janeiro, o chip abre o resumo que existir (o do rio ou o da Praça) e ele some quando a missão recomeça', () => {
+    expect(game).toMatch(/this\.relatorioDaPraca = \{ missao: 'janeiro', venceu: survived[\s\S]*this\.mostrarChipDoRelatorio\(true\)/);
+    expect(game).toMatch(/const resumo = this\.relatorioDoRio \?\? this\.relatorioDaPraca;/);
+    expect(game).toMatch(/this\.relatorioDaPraca = null;\s*this\.relatorioDoRio = null;\s*this\.mostrarChipDoRelatorio\(false\)/);
   });
 
   it('o resumo nasce no fim da missão do rio e some quando ela recomeça (o chip acompanha)', () => {
