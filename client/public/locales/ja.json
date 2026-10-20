@@ -962,5 +962,11 @@
  "Ouvir de novo a voz deste piloto": "このパイロットの声をもう一度聞く",
  "Silenciar a voz deste piloto até você sair da sala": "あなたが部屋を出るまで、このパイロットの声をミュートする",
  "Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.": "完全な無音:このデバイスは音を出力していません(Windowsでミュートまたは無効になっています)。一覧から別のデバイスを選んでください。",
- "Aparelho em uso: {0}": "使用中のデバイス:{0}"
+ "Aparelho em uso: {0}": "使用中のデバイス:{0}",
+ "Efeito na minha voz": "自分の声のエフェクト",
+ "Sem efeito": "エフェクトなし",
+ "Locutor militar": "軍のアナウンサー",
+ "Lorde sombrio": "闇の帝王",
+ "Grande Irmão": "ビッグ・ブラザー",
+ "Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.": "ナレーション（F10）とマイクテストに適用され、チャットには適用されません。声の高さ・低音・響きを変えますが、訛りは変わりません。"
 }

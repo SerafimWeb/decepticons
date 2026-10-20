@@ -198,3 +198,67 @@ describe('GameRecorder: a narração, F10 (P230)', () => {
     }
   });
 });
+
+describe('GameRecorder: o efeito na voz da narração (P231)', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  /** Uma cadeia de efeito de mentira: anota o que se ligou a ela e se foi desligada. */
+  function cadeiaFalsa() {
+    const saida = { destinos: [] as unknown[], connect(d: unknown) { saida.destinos.push(d); } };
+    const entrada = { id: 'entrada-da-cadeia' };
+    const c = { entrada, saida, desligada: 0, desligar() { c.desligada++; } };
+    return c;
+  }
+
+  it('com efeito, o microfone vai para a ENTRADA da cadeia e só a SAÍDA dela chega à mistura da gravação: a voz crua nunca vai direto', () => {
+    const a = ambienteDaGravacao();
+    const r = new GameRecorder(a.canvas, a.audio);
+    const cadeia = cadeiaFalsa();
+    r.alternar(a.microfone().fluxo, () => cadeia as never);
+    expect(a.fontes).toHaveLength(1);
+    expect(a.fontes[0]!.conectouEm, 'o microfone só alimenta o efeito').toEqual([cadeia.entrada]);
+    expect(cadeia.saida.destinos, 'só a saída do efeito vai ao destino da gravação').toEqual([a.destino]);
+    r.alternar();
+  });
+
+  it('parar desliga o efeito (e solta o microfone, como sem efeito)', () => {
+    const a = ambienteDaGravacao();
+    const r = new GameRecorder(a.canvas, a.audio);
+    const cadeia = cadeiaFalsa();
+    const mic = a.microfone();
+    r.alternar(mic.fluxo, () => cadeia as never);
+    expect(cadeia.desligada).toBe(0);
+    r.alternar();
+    expect(cadeia.desligada).toBe(1);
+    expect(mic.faixa.parada).toBe(true);
+  });
+
+  it('a fábrica é chamada com o contexto de áudio do jogo, e só quando há microfone (F9 não monta efeito nenhum)', () => {
+    const a = ambienteDaGravacao();
+    const r = new GameRecorder(a.canvas, a.audio);
+    const chamadas: unknown[] = [];
+    r.alternar(null, (ctx) => { chamadas.push(ctx); return cadeiaFalsa() as never; });
+    expect(chamadas).toHaveLength(0);
+    r.alternar();
+    r.alternar(a.microfone().fluxo, (ctx) => { chamadas.push(ctx); return cadeiaFalsa() as never; });
+    expect(chamadas).toEqual([a.audio.context]);
+    r.alternar();
+  });
+
+  it('fábrica que devolve null grava a voz pura (sem efeito)', () => {
+    const a = ambienteDaGravacao();
+    const r = new GameRecorder(a.canvas, a.audio);
+    r.alternar(a.microfone().fluxo, () => null);
+    expect(a.fontes[0]!.conectouEm).toEqual([a.destino]);
+    r.alternar();
+  });
+
+  it('fábrica que lança não perde o take: a voz vai pura e a gravação segue', () => {
+    const a = ambienteDaGravacao();
+    const r = new GameRecorder(a.canvas, a.audio);
+    r.alternar(a.microfone().fluxo, () => { throw new Error('o efeito quebrou'); });
+    expect(r.gravando).toBe(true);
+    expect(a.fontes[0]!.conectouEm).toEqual([a.destino]);
+    r.alternar();
+  });
+});

@@ -19,7 +19,7 @@
     {
       "nome": "o painel do teste abre, a barra mexe e o texto diz \"funcionando\"",
       "ok": true,
-      "detalhe": "{\"visivel\":true,\"barra\":\"52%\",\"status\":\"Funcionando: o microfone está captando a sua voz.\",\"botao\":\"[ PARAR O TESTE ]\"}"
+      "detalhe": "{\"visivel\":true,\"barra\":\"54%\",\"status\":\"Funcionando: o microfone está captando a sua voz.\",\"botao\":\"[ PARAR O TESTE ]\"}"
     },
     {
       "nome": "o botão vira \"PARAR O TESTE\"",
@@ -43,6 +43,46 @@
     },
     {
       "nome": "\"ouvir a minha voz\" liga sem erro",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "o seletor de efeito na voz tem os quatro (sem efeito, locutor militar, lorde sombrio, grande irmão)",
+      "ok": true,
+      "detalhe": "[\"normal:Sem efeito\",\"locutor:Locutor militar\",\"sombrio:Lorde sombrio\",\"irmao:Grande Irmão\"]"
+    },
+    {
+      "nome": "o pedaço dos efeitos NÃO foi baixado enquanto ninguém escolheu um efeito",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "escolher \"locutor\" com o teste ligado e \"ouvir a minha voz\" marcado salva a escolha",
+      "ok": true,
+      "detalhe": "locutor"
+    },
+    {
+      "nome": "escolher \"sombrio\" com o teste ligado e \"ouvir a minha voz\" marcado salva a escolha",
+      "ok": true,
+      "detalhe": "sombrio"
+    },
+    {
+      "nome": "escolher \"irmao\" com o teste ligado e \"ouvir a minha voz\" marcado salva a escolha",
+      "ok": true,
+      "detalhe": "irmao"
+    },
+    {
+      "nome": "escolher \"normal\" com o teste ligado e \"ouvir a minha voz\" marcado salva a escolha",
+      "ok": true,
+      "detalhe": "normal"
+    },
+    {
+      "nome": "depois da primeira escolha o pedaço dos efeitos foi baixado, uma vez",
+      "ok": true,
+      "detalhe": "1"
+    },
+    {
+      "nome": "trocar de efeito com o teste ligado não dá erro de página",
       "ok": true,
       "detalhe": ""
     },

@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import type { VozEfeito } from '../core/Settings';
+import type { CadeiaDeVoz } from './EfeitosDeVoz';
 import { carregarDicionario, IDIOMAS, traduzir, type Dicionario } from '../i18n/i18n';
 import { listarAparelhos } from './aparelhos';
 import { barraDoNivel, classificarFalha, DURACAO_MAXIMA_MS, ESPERA_SEM_SINAL_MS, estadoDoTeste, MicTest, nivelDaOnda, RMS_CAPTANDO, TEXTO_DO_TESTE, type AmbienteDoTeste, type PecasDoTeste } from './MicTest';
@@ -88,8 +90,25 @@ class FaixaFalsa {
   }
 }
 
-function montar() {
+/** A fonte do microfone dentro do contexto: guarda para onde está ligada e, como a de verdade, lança se desligarem o que não está ligado. */
+function fonteFalsa() {
+  const f = {
+    destinos: [] as unknown[],
+    connect(d: unknown) {
+      f.destinos.push(d);
+    },
+    disconnect(d: unknown) {
+      const i = f.destinos.indexOf(d);
+      if (i < 0) throw new Error('InvalidAccessError');
+      f.destinos.splice(i, 1);
+    },
+  };
+  return f;
+}
+
+function montar(opcoes: { efeito?: () => VozEfeito; cadeiaDeVoz?: AmbienteDoTeste['cadeiaDeVoz'] } = {}) {
   const faixa = new FaixaFalsa();
+  const fonte = fonteFalsa();
   const fluxo = { getTracks: () => [faixa], getAudioTracks: () => [faixa] } as unknown as MediaStream;
   const estado = { amp: 0, agora: 0, abertos: [] as string[], fechado: 0, volta: { gain: { value: -1 }, connect: () => {} }, resolverAbrir: null as null | ((f: MediaStream) => void), recusarAbrir: null as null | ((e: unknown) => void), pendente: false };
   const quadros: (() => void)[] = [];
@@ -103,7 +122,7 @@ function montar() {
     close: async () => {
       estado.fechado++;
     },
-    createMediaStreamSource: () => ({ connect: () => {} }),
+    createMediaStreamSource: () => fonte,
     createAnalyser: () => analyser,
     createGain: () => estado.volta,
     destination: {},
@@ -121,6 +140,7 @@ function montar() {
     quadro: (f) => quadros.push(f),
     cancelarQuadro: () => {},
     agora: () => estado.agora,
+    cadeiaDeVoz: opcoes.cadeiaDeVoz,
   };
   const rolagens: string[] = [];
   const pecas: PecasDoTeste & { ouvir: { checked: boolean } } = {
@@ -133,10 +153,10 @@ function montar() {
   };
   let aparelho = '';
   let abriu = 0;
-  const teste = new MicTest(pecas, () => aparelho, ambiente, () => abriu++);
+  const teste = new MicTest(pecas, () => aparelho, ambiente, () => abriu++, opcoes.efeito);
   /** Roda o próximo quadro agendado (o laço do teste). */
   const quadro = () => quadros.shift()?.();
-  return { teste, pecas, rolagens, estado, faixa, quadro, quadrosPendentes: () => quadros.length, setAparelho: (a: string) => (aparelho = a), abriu: () => abriu };
+  return { teste, pecas, rolagens, estado, faixa, fonte, analyser, quadro, quadrosPendentes: () => quadros.length, setAparelho: (a: string) => (aparelho = a), abriu: () => abriu };
 }
 
 describe('MicTest: o painel (P212)', () => {
@@ -320,7 +340,7 @@ describe('MicTest: o painel (P212)', () => {
 
 describe('o teste do microfone e o aviso de "sozinho" nas seis línguas (P212)', () => {
   afterEach(() => carregarDicionario(null));
-  const textos = [...Object.values(TEXTO_DO_TESTE).map((t) => t.replace('{0}', '1')), 'Nível do microfone', 'NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES', 'Aparelho do microfone', 'Testar o microfone', 'Ouvir a minha voz (use fones: sem eles dá microfonia)'];
+  const textos = [...Object.values(TEXTO_DO_TESTE).map((t) => t.replace('{0}', '1')), 'Nível do microfone', 'NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES', 'Aparelho do microfone', 'Testar o microfone', 'Ouvir a minha voz (use fones: sem eles dá microfonia)', 'Efeito na minha voz', 'Sem efeito', 'Locutor militar', 'Lorde sombrio', 'Grande Irmão', 'Vale na narração (F10) e no teste do microfone, não no chat. Muda o tom, o grave e o ambiente da voz; não muda o sotaque.'];
 
   for (const { id } of IDIOMAS.filter((i) => i.id !== 'pt')) {
     it(`${id}: todo texto do painel está traduzido`, () => {
@@ -328,4 +348,119 @@ describe('o teste do microfone e o aviso de "sozinho" nas seis línguas (P212)',
       for (const texto of textos) expect(traduzir(texto), `${id}: "${texto}"`).not.toBe(texto);
     });
   }
+});
+
+/** Uma cadeia de efeito de mentira: anota o que se ligou a ela e se foi desligada. */
+function cadeiaFalsa(nome: string) {
+  const saida = { destinos: [] as unknown[], connect(d: unknown) { saida.destinos.push(d); } };
+  const c = { nome, entrada: { id: `entrada-${nome}` }, saida, desligada: 0, desligar() { c.desligada++; } };
+  return c;
+}
+
+describe('MicTest: o efeito na prévia "ouvir a minha voz" (P231)', () => {
+  it('sem efeito, a voz vai direto à volta (e o nível da barra é sempre o do microfone puro)', async () => {
+    const t = montar({ efeito: () => 'normal' });
+    await t.teste.iniciar();
+    expect(t.fonte.destinos).toContain(t.analyser);
+    expect(t.fonte.destinos).toContain(t.estado.volta);
+  });
+
+  it('com efeito, o microfone vai à cadeia e só a cadeia vai à volta: a voz pura nunca toca; a barra segue medindo o microfone puro', async () => {
+    const cadeia = cadeiaFalsa('sombrio');
+    const pedidos: VozEfeito[] = [];
+    const t = montar({ efeito: () => 'sombrio', cadeiaDeVoz: async (_ctx, efeito) => { pedidos.push(efeito); return cadeia as unknown as CadeiaDeVoz; } });
+    await t.teste.iniciar();
+    await Promise.resolve(); // o pedido do efeito termina
+    expect(pedidos).toEqual(['sombrio']);
+    expect(t.fonte.destinos).toContain(cadeia.entrada);
+    expect(t.fonte.destinos, 'a voz crua não vai à volta').not.toContain(t.estado.volta);
+    expect(t.fonte.destinos, 'a barra mede o microfone puro').toContain(t.analyser);
+    expect(cadeia.saida.destinos).toEqual([t.estado.volta]);
+  });
+
+  it('trocar o efeito com o teste ligado desliga a cadeia velha e passa a tocar a nova (e "sem efeito" volta ao fio direto)', async () => {
+    let atual: VozEfeito = 'locutor';
+    const cadeias: ReturnType<typeof cadeiaFalsa>[] = [];
+    const t = montar({ efeito: () => atual, cadeiaDeVoz: async (_c, efeito) => { const c = cadeiaFalsa(efeito); cadeias.push(c); return c as unknown as CadeiaDeVoz; } });
+    await t.teste.iniciar();
+    await Promise.resolve();
+    atual = 'irmao';
+    await t.teste.trocarEfeito();
+    expect(cadeias.map((c) => c.nome)).toEqual(['locutor', 'irmao']);
+    expect(cadeias[0]!.desligada, 'a cadeia velha foi desligada').toBe(1);
+    expect(t.fonte.destinos).toContain(cadeias[1]!.entrada);
+    expect(t.fonte.destinos).not.toContain(cadeias[0]!.entrada);
+    atual = 'normal';
+    await t.teste.trocarEfeito();
+    expect(cadeias[1]!.desligada).toBe(1);
+    expect(t.fonte.destinos).toContain(t.estado.volta);
+  });
+
+  it('um efeito que chega atrasado, depois de outra troca, é descartado e desligado (o último pedido ganha)', async () => {
+    let atual: VozEfeito = 'locutor';
+    const liberar: (() => void)[] = [];
+    const cadeias: ReturnType<typeof cadeiaFalsa>[] = [];
+    const t = montar({
+      efeito: () => atual,
+      cadeiaDeVoz: (_c, efeito) =>
+        new Promise((res) => {
+          liberar.push(() => {
+            const c = cadeiaFalsa(efeito);
+            cadeias.push(c);
+            res(c as unknown as CadeiaDeVoz);
+          });
+        }),
+    });
+    await t.teste.iniciar();
+    atual = 'irmao';
+    const troca = t.teste.trocarEfeito();
+    liberar[1]!(); // o segundo pedido (irmão) chega primeiro
+    await troca;
+    liberar[0]!(); // o primeiro (locutor), atrasado
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(cadeias.map((c) => c.nome)).toEqual(['irmao', 'locutor']);
+    expect(cadeias[1]!.desligada, 'o atrasado é desligado, não ligado').toBe(1);
+    expect(t.fonte.destinos).toContain(cadeias[0]!.entrada);
+    expect(t.fonte.destinos).not.toContain(cadeias[1]!.entrada);
+  });
+
+  it('um efeito que não baixa deixa a prévia com a voz pura (e sem erro)', async () => {
+    const t = montar({ efeito: () => 'sombrio', cadeiaDeVoz: async () => { throw new Error('sem rede'); } });
+    await t.teste.iniciar();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(t.fonte.destinos).toContain(t.estado.volta);
+    expect(t.teste.rodando).toBe(true);
+  });
+
+  it('parar desliga a cadeia, e um efeito que chega depois de parar não liga nada', async () => {
+    const cadeias: ReturnType<typeof cadeiaFalsa>[] = [];
+    const liberar: (() => void)[] = [];
+    const t = montar({
+      efeito: () => 'sombrio',
+      cadeiaDeVoz: (_c, efeito) =>
+        new Promise((res) => {
+          liberar.push(() => {
+            const c = cadeiaFalsa(efeito);
+            cadeias.push(c);
+            res(c as unknown as CadeiaDeVoz);
+          });
+        }),
+    });
+    await t.teste.iniciar();
+    t.teste.parar(); // parou com o efeito ainda baixando
+    liberar[0]!();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(cadeias[0]!.desligada, 'chegou depois de parar: desligada na hora').toBe(1);
+    expect(t.fonte.destinos).not.toContain(cadeias[0]!.entrada);
+
+    const t2 = montar({ efeito: () => 'irmao', cadeiaDeVoz: async (_c, e) => { const c = cadeiaFalsa(e); cadeias.push(c); return c as unknown as CadeiaDeVoz; } });
+    await t2.teste.iniciar();
+    await Promise.resolve();
+    const c2 = cadeias[1]!;
+    t2.teste.parar();
+    expect(c2.desligada).toBe(1);
+  });
 });

@@ -4,7 +4,9 @@
  * saber se o microfone presta. Pedaço sob demanda (a dieta de JS, P187): só baixa quem toca em TESTAR. Usa as mesmas restrições do jogo (eco, ruído e ganho automático): o teste é o que o chat vai ouvir.
  */
 
+import type { VozEfeito } from '../core/Settings';
 import { abrirMicrofone } from './abrirMicrofone';
+import type { CadeiaDeVoz } from './EfeitosDeVoz';
 
 /** Os textos do painel: cada um é uma chave do dicionário de idiomas (`public/locales`); o teste confere que os seis idiomas têm todas. */
 export const TEXTO_DO_TESTE = Object.freeze({
@@ -96,6 +98,8 @@ export interface AmbienteDoTeste {
   quadro(f: () => void): number;
   cancelarQuadro(id: number): void;
   agora(): number;
+  /** A cadeia do efeito na voz (P231) que a prévia "ouvir a minha voz" toca; sem ela (ou `normal`) a voz volta pura. Separado para o teste de unidade trocar por uma falsa. */
+  cadeiaDeVoz?(ctx: AudioContext, efeito: VozEfeito): Promise<CadeiaDeVoz | null>;
 }
 
 export const AMBIENTE_DO_NAVEGADOR: AmbienteDoTeste = {
@@ -105,6 +109,8 @@ export const AMBIENTE_DO_NAVEGADOR: AmbienteDoTeste = {
   quadro: (f) => requestAnimationFrame(f),
   cancelarQuadro: (id) => cancelAnimationFrame(id),
   agora: () => performance.now(),
+  // Pedaço sob demanda: só baixa quem escolheu um efeito.
+  cadeiaDeVoz: (ctx, efeito) => (efeito === 'normal' ? Promise.resolve(null) : import('./EfeitosDeVoz').then((m) => m.criarCadeiaDeVoz(ctx, efeito))),
 };
 
 /**
@@ -115,6 +121,13 @@ export class MicTest {
   private fluxo: MediaStream | null = null;
   private ctx: AudioContext | null = null;
   private volta: GainNode | null = null;
+  /** O microfone dentro do contexto e o efeito que ele atravessa até a volta (P231). */
+  private fonteDoMic: MediaStreamAudioSourceNode | null = null;
+  private cadeia: CadeiaDeVoz | null = null;
+  /** Para onde a fonte está ligada (a entrada da cadeia ou a volta direta): é de onde ela é desligada ao trocar. */
+  private destinoDaVoz: AudioNode | null = null;
+  /** Cada religação da volta tem a sua versão: um pedido lento que termina depois de outro mais novo é descartado. */
+  private versaoDaVolta = 0;
   private analyser: AnalyserNode | null = null;
   private onda = new Float32Array(1024);
   private quadroId = 0;
@@ -136,6 +149,8 @@ export class MicTest {
     private readonly ambiente: AmbienteDoTeste = AMBIENTE_DO_NAVEGADOR,
     /** Chamado depois que o microfone abriu (a permissão saiu): com ele os aparelhos ganham nome. */
     private readonly aoAbrir: () => void = () => {},
+    /** O efeito que a prévia "ouvir a minha voz" aplica (P231); o nível da barra é sempre o do microfone puro. */
+    private readonly efeito: () => VozEfeito = () => 'normal',
   ) {}
 
   get rodando(): boolean {
@@ -169,11 +184,12 @@ export class MicTest {
       fonte.connect(analyser);
       const volta = ctx.createGain();
       volta.gain.value = this.p.ouvir.checked ? 1 : 0;
-      fonte.connect(volta);
       volta.connect(ctx.destination);
       this.ctx = ctx;
       this.analyser = analyser;
       this.volta = volta;
+      this.fonteDoMic = fonte;
+      void this.ligarVolta();
       this.inicio = this.ambiente.agora();
       this.pico = 0;
       this.picoAmostra = 0;
@@ -199,9 +215,61 @@ export class MicTest {
     if (this.volta) this.volta.gain.value = on ? 1 : 0;
   }
 
+  /**
+   * Liga o microfone à volta da voz, pelo efeito escolhido (P231): fonte → [cadeia] → volta. Sem efeito é um fio direto, na hora; com efeito espera o pedaço sob demanda baixar (a volta fica
+   * muda até lá, nunca toca a voz pura por engano). Chamar de novo troca o efeito com o teste ligado.
+   */
+  private async ligarVolta(): Promise<void> {
+    const { ctx, fonteDoMic: fonte, volta } = this;
+    if (!ctx || !fonte || !volta) return;
+    const versao = ++this.versaoDaVolta;
+    this.cadeia?.desligar();
+    this.cadeia = null;
+    if (this.destinoDaVoz) {
+      try {
+        fonte.disconnect(this.destinoDaVoz);
+      } catch {
+        // já solta
+      }
+      this.destinoDaVoz = null;
+    }
+    const efeito = this.efeito();
+    let cadeia: CadeiaDeVoz | null = null;
+    if (efeito !== 'normal' && this.ambiente.cadeiaDeVoz) {
+      try {
+        cadeia = await this.ambiente.cadeiaDeVoz(ctx, efeito);
+      } catch {
+        cadeia = null; // o efeito não baixou: a prévia segue com a voz pura
+      }
+      if (versao !== this.versaoDaVolta || this.ctx !== ctx) {
+        cadeia?.desligar(); // chegou depois de outro pedido, ou de o teste parar
+        return;
+      }
+    }
+    if (cadeia) {
+      fonte.connect(cadeia.entrada);
+      cadeia.saida.connect(volta);
+      this.cadeia = cadeia;
+      this.destinoDaVoz = cadeia.entrada;
+    } else {
+      fonte.connect(volta);
+      this.destinoDaVoz = volta;
+    }
+  }
+
+  /** Trocou o efeito com o teste ligado: a prévia passa a tocar o novo. */
+  async trocarEfeito(): Promise<void> {
+    if (this.fluxo) await this.ligarVolta();
+  }
+
   /** Desliga o teste e solta o microfone. */
   parar(): void {
     this.geracao++;
+    this.versaoDaVolta++;
+    this.cadeia?.desligar();
+    this.cadeia = null;
+    this.destinoDaVoz = null;
+    this.fonteDoMic = null;
     this.abrindo = false;
     if (this.quadroId) this.ambiente.cancelarQuadro(this.quadroId);
     this.quadroId = 0;
