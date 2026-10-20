@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IdadeDaConta } from '../../../shared/net/auth';
-import { type ElegibilidadeDaVoz, elegibilidadeDaVoz, vozDeveLigar } from './elegibilidade';
+import { type ElegibilidadeDaVoz, elegibilidadeDaVoz, microfoneDaNarracaoLiberado, vozDeveLigar } from './elegibilidade';
 import { TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ } from './VozNasConfiguracoes';
 
 describe('elegibilidadeDaVoz (P211): só conta de maior de 18 anos abre o chat de voz', () => {
@@ -43,6 +43,17 @@ describe('vozDeveLigar (P211): o jogador quer, o Comandante liberou e a conta é
   it('menor, sem idade e a sessão ainda não restaurada ficam sem voz mesmo com tudo o mais ligado', () => {
     for (const idade of ['menor', 'sem-idade', undefined] as const) expect(vozDeveLigar(true, true, idade)).toBe(false);
     expect(vozDeveLigar(true, true, 'adulto')).toBe(true);
+  });
+});
+
+describe('microfoneDaNarracaoLiberado (P230): a narração segue a mesma ordem do chat', () => {
+  it('só a conta de adulto abre o microfone; menor, sem idade e a sessão ainda não restaurada ficam sem', () => {
+    expect(microfoneDaNarracaoLiberado('adulto')).toBe(true);
+    for (const idade of ['menor', 'sem-idade', undefined] as const) expect(microfoneDaNarracaoLiberado(idade), String(idade)).toBe(false);
+  });
+
+  it('é a mesma resposta do chat de voz para quem já está liberado (uma regra, duas portas)', () => {
+    for (const idade of ['adulto', 'menor', 'sem-idade', undefined] as const) expect(microfoneDaNarracaoLiberado(idade)).toBe(vozDeveLigar(true, true, idade));
   });
 });
 

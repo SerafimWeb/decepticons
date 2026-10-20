@@ -14,6 +14,13 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P230 — A narração: gravar a partida com a voz de quem joga (20/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P230 | 20/10 | "OK, agora consegui ouvir meu microfone no teste do jogo. mas não consegui ouvir NO jogo. é só no online que o áudio funciona? e se eu quiser jogar offline e ir narrando?" | ✅ | **A resposta:** o chat de voz é **só online** (P2P com outras contas de maior de 18 anos; você nunca se ouve, o teste do microfone com "ouvir a minha voz" é a conferência) e o **F9 nunca gravou o microfone**. **Feito** (PR `claude/narracao`): **F10** grava a partida **com a sua voz**, offline ou online. O microfone entra só na mistura da gravação (nunca na saída do jogo: você não se ouve em eco), no aparelho escolhido nas Configurações, e só para **conta de maior de 18 anos** (a mesma ordem do chat: `microfoneDaNarracaoLiberado`); parar solta o microfone. Convidado ou menor: o F10 avisa no canto e não abre nada. **Provado:** 12 testes do gravador + 2 da regra, 8 de 8 mutações pegas, `.decepticons/medicoes/gravacao-narrada.mjs` (Chrome real: a voz está no arquivo da narração, −13,5 dB, e não no do F9, −77 dB; nunca chega à saída) e `gravacao-narrada-jogo.mjs` (o jogo de verdade: convidado barrado, adulto grava, o tom do microfone está no arquivo). **Cuidado de hardware:** microfone Bluetooth mãos-livres (o Padrão do fone Captain 300) soa baixinho (16 kHz) e derruba o som do fone enquanto grava; para narrar use o microfone do notebook ou um USB que funcione. | Jogar, apertar **F10** (aparece "REC · NARRAÇÃO" no canto), falar, **F10** de novo: o `.webm` baixa com o jogo e a sua voz. Sem conta de adulto, o F10 diz por quê. |
+| P231 | 20/10 | "teria como inserirmos efeitos na minha voz? falar tipo voz de locutor militar russo, ou tipo o darth vader, ou outra voz mais imponente (tipo o big brother)?" | 🟡 | **Possível, em outro PR** (depois da narração): uma cadeia de áudio no navegador (tom, filtros, distorção leve, compressor, reverberação) com predefinições **Locutor militar**, **Darth Vader**, **Big Brother** e **Normal**, aplicada à narração (F10) e à prévia do teste do microfone para você ouvir antes. **Limite honesto:** efeito muda timbre, grave e ambiente; **não cria sotaque russo**, e eu não ouço (o ouvido que julga é o seu). | Ainda não: depois do merge da narração, Configurações > CHAT DE VOZ ganha o seletor. |
+
 ## P227 — Economia antes de seguir, o token que não pode sumir e o painel do servidor (20/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

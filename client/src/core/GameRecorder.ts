@@ -11,6 +11,9 @@ import type { AudioSystem } from '../audio/AudioSystem';
  * `keys-help` da tela inicial, um indicador `● REC` aparece só enquanto grava. Nada disso é carregado ou
  * medido para quem não aperta a tecla.
  *
+ * **Narração (P230, F10):** a mesma gravação com a **voz do jogador** (microfone) na mistura. O microfone entra só na gravação, **nunca na saída do jogo** (quem narra não se ouve em eco, e os
+ * outros sons não ganham a voz por cima). Vale offline e online. Quem abre o microfone é o `Game` (conta de maior de 18 anos, o aparelho escolhido nas Configurações); aqui só se mistura e se solta.
+ *
  * **"Modo captura" (`Game.ts`, no mesmo F9):** trava a resolução no máximo e desliga o rebaixamento
  * automático de qualidade (G12) enquanto grava — sem isso, a própria gravação derruba o FPS, e a
  * qualidade adaptativa reagiria baixando a resolução no meio do take (o mesmo problema que o dono já
@@ -30,6 +33,11 @@ export class GameRecorder {
   private audioDest: MediaStreamAudioDestinationNode | null = null;
   private videoTrack: CanvasCaptureMediaStreamTrack | null = null;
   private indicador: HTMLElement | null = null;
+  /** A voz de quem narra, na mistura da gravação (só com a narração ligada). */
+  private fonteMic: MediaStreamAudioSourceNode | null = null;
+  private microfone: MediaStream | null = null;
+  private aviso: HTMLElement | null = null;
+  private avisoTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -42,9 +50,37 @@ export class GameRecorder {
 
   /** Liga/desliga (a mesma tecla faz as duas coisas). Sem suporte do navegador, não faz nada — silencioso,
    * como o resto do jogo trata recurso ausente. */
-  alternar(): void {
-    if (this.gravando) void this.parar();
-    else this.iniciar();
+  alternar(microfone: MediaStream | null = null): void {
+    if (this.gravando) {
+      soltarMicrofone(microfone); // um microfone que chegou tarde (o pedido de permissão demorou) não fica aberto
+      void this.parar();
+      return;
+    }
+    // Narração sem o áudio do jogo ainda (o primeiro gesto não aconteceu): uma gravação sem a voz seria enganosa, e o microfone aberto não teria quem o solte. Não grava, solta e avisa.
+    if (microfone && !this.audio.context) {
+      soltarMicrofone(microfone);
+      this.avisar('NARRAÇÃO: o áudio do jogo ainda não começou. Clique no jogo e tente de novo.');
+      return;
+    }
+    this.iniciar(microfone);
+    if (!this.gravando) soltarMicrofone(microfone); // sem suporte: o microfone aberto à toa é solto na hora
+  }
+
+  /** Uma frase curta no canto (4 s): é como a gravação escondida diz que não pôde fazer o que foi pedido (sem microfone, sem conta de adulto). */
+  avisar(texto: string): void {
+    if (typeof document === 'undefined') return;
+    if (!this.aviso) {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;top:48px;right:12px;z-index:9999;max-width:340px;padding:6px 10px;background:rgba(6,8,10,.9);border:1px solid #ff2d3d;border-radius:3px;font:12px/1.35 "Consolas","Courier New",monospace;letter-spacing:.5px;color:#ffd0d4;pointer-events:none;';
+      document.body.appendChild(el);
+      this.aviso = el;
+    }
+    this.aviso.textContent = texto;
+    clearTimeout(this.avisoTimer);
+    this.avisoTimer = setTimeout(() => {
+      this.aviso?.remove();
+      this.aviso = null;
+    }, 4000);
   }
 
   /** Chamado uma vez por quadro pelo `Game.frame()`, logo depois do `composer.render()`. Fora de gravação é
@@ -53,7 +89,7 @@ export class GameRecorder {
     this.videoTrack?.requestFrame();
   }
 
-  private iniciar(): void {
+  private iniciar(microfone: MediaStream | null): void {
     if (this.gravando) return;
     if (typeof this.canvas.captureStream !== 'function' || typeof MediaRecorder === 'undefined') return;
     const mime = melhorFormato();
@@ -69,6 +105,12 @@ export class GameRecorder {
       this.audioDest = ctx.createMediaStreamDestination();
       this.audio.connectRecorder(this.audioDest);
       tracks.push(...this.audioDest.stream.getAudioTracks());
+      // A narração: a voz de quem joga entra na MISTURA DA GRAVAÇÃO e em nenhum outro lugar (não vai à saída do jogo).
+      if (microfone) {
+        this.fonteMic = ctx.createMediaStreamSource(microfone);
+        this.fonteMic.connect(this.audioDest);
+        this.microfone = microfone;
+      }
     }
 
     this.chunks = [];
@@ -82,7 +124,7 @@ export class GameRecorder {
       if (e.data.size > 0) this.chunks.push(e.data);
     };
     this.recorder.start(1000); // um pedaço por segundo: um crash não perde a gravação inteira
-    this.mostrarIndicador();
+    this.mostrarIndicador(this.microfone !== null);
   }
 
   private parar(): Promise<void> {
@@ -128,20 +170,30 @@ export class GameRecorder {
   }
 
   private limparAudioDest(): void {
+    if (this.fonteMic) {
+      try {
+        this.fonteMic.disconnect();
+      } catch {
+        // já desconectado
+      }
+      this.fonteMic = null;
+    }
+    soltarMicrofone(this.microfone);
+    this.microfone = null;
     if (this.audioDest) {
       this.audio.disconnectRecorder(this.audioDest);
       this.audioDest = null;
     }
   }
 
-  private mostrarIndicador(): void {
+  private mostrarIndicador(narrando: boolean): void {
     if (typeof document === 'undefined') return;
     const el = document.createElement('div');
     el.style.cssText =
       'position:fixed;top:12px;right:12px;z-index:9999;display:flex;align-items:center;gap:6px;' +
       'padding:5px 10px;background:rgba(6,8,10,.85);border:1px solid #ff2d3d;border-radius:3px;' +
       'font:12px/1 "Consolas","Courier New",monospace;letter-spacing:1px;color:#ff2d3d;pointer-events:none;';
-    el.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#ff2d3d;animation:cm-rec-pulse 1s ease-in-out infinite"></span>REC';
+    el.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:#ff2d3d;animation:cm-rec-pulse 1s ease-in-out infinite"></span>' + (narrando ? 'REC · NARRAÇÃO' : 'REC');
     if (!document.getElementById('cm-rec-style')) {
       const style = document.createElement('style');
       style.id = 'cm-rec-style';
@@ -156,6 +208,11 @@ export class GameRecorder {
     this.indicador?.remove();
     this.indicador = null;
   }
+}
+
+/** Solta o microfone (as faixas): o microfone aberto esquecido é o pior defeito possível. */
+function soltarMicrofone(microfone: MediaStream | null): void {
+  if (microfone) for (const faixa of microfone.getTracks()) faixa.stop();
 }
 
 /** VP9 é o melhor que o Chrome grava em tempo real sem perder quadro; H.264 é o fallback mais compatível. */

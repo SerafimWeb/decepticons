@@ -28,6 +28,8 @@ aconteceu uma vez (29/09) por forçar a resolução acima desse teto — ver
 
 **Código:** `client/src/core/GameRecorder.ts` (módulo independente, ligado em `Game.ts`).
 
+**Narração (F10, P230):** a mesma gravação **com a sua voz**. Aperte **F10** (em vez do F9): o indicador diz `REC · NARRAÇÃO`; fale; **F10** de novo para parar. Funciona **offline e online**. O microfone entra só no arquivo (você não se ouve em eco no jogo) e é o aparelho escolhido em Configurações > GRÁFICOS E SOM > CHAT DE VOZ; só vale para **conta de maior de 18 anos** (convidado e menor recebem um aviso no canto). Se o microfone não abrir, o aviso diz para testá-lo ali. **Bluetooth mãos-livres** (o Padrão do fone Captain 300) soa baixinho e derruba o som do fone enquanto grava: para narrar use o microfone do notebook ou um USB. **Provas:** `node .decepticons/medicoes/gravacao-narrada.mjs` (o `GameRecorder` no Chrome real, ffmpeg mede a voz e o jogo no arquivo) e `gravacao-narrada-jogo.mjs` (o jogo de verdade, convidado e adulto).
+
 ---
 
 ## 2. Pilotar o Colossus-01
