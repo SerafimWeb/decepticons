@@ -41,7 +41,19 @@ const arvoresGuardadas = () => (existsSync(join(REPO, '.tmp', 'check-ok')) ? rea
 
 // O atualizador de produção (a tarefa agendada do Windows) roda `server/` e `shared/` num ambiente SEM `bash` no PATH: o `spawnSync('bash')` devolvia 127 e **cada atualização era revertida** (19/10: o site e o
 // servidor ficaram 2 h sem publicar). O hook só roda sob o Bash do Git (é o que o `git push` usa), então sem bash não há o que testar aqui: a suíte pula (o `check` de quem empurra roda com bash e a testa).
-const temBash = spawnSync('bash', ['-c', 'exit 0']).status === 0;
+// Não basta `bash -c 'exit 0'`: sob o PATH mínimo da tarefa do Windows o `bash` é o `System32\bash.exe` (o WSL), que responde 0 ali e depois devolve 127 ao receber o caminho
+// do Windows do hook, e a verificação do atualizador reprovou por isso (19/10: horas sem deploy mesmo depois da correção anterior, que só olhava `bash -c 'exit 0'`).
+// A sonda roda um script de verdade, pelo caminho do Windows, exatamente como o `empurrar` roda o hook.
+const temBash = (() => {
+  try {
+    mkdirSync(RAIZ, { recursive: true });
+    const sonda = join(RAIZ, 'sonda.sh');
+    writeFileSync(sonda, ['#!/usr/bin/env bash', 'git --version >/dev/null 2>&1 || exit 3', 'exit 0', ''].join(String.fromCharCode(10)));
+    return spawnSync('bash', [sonda]).status === 0;
+  } catch {
+    return false;
+  }
+})();
 
 beforeAll(() => {
   if (!temBash) return;
