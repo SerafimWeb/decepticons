@@ -20,6 +20,13 @@
 |---|---|---|---|---|---|
 | P223 | 19/10 | "quero economizar sim, de forma inteligente, profissional e experiente, sem miséria, focando em melhorar o desempenho, manutenção, etc" | ✅ | **Feito** (PR `claude/ci-economico`), medido antes: 235 min num dia (cota de ~8 dias). O push na `main` não refaz o check na árvore que o PR já provou; as etiquetas só ao abrir; PR em rascunho não roda; `npm run ci:consumo` mede. O check do PR e o hook seguem completos. Detalhe em `DEPLOY.md` | `npm run ci:consumo -- --desde 2026-10-19` antes e depois: os minutos por dia caem |
 
+## P225 — O hook não refaz o check depois de uma junção pura com a main (19/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P225 | 19/10 | "quero economizar sim de 10 a 25 minutos, faça boas práticas sempre" | ✅ | **Feito** (PR `claude/hook-juncao`): depois de uma junção com a `main`, o hook de push não refaz o `npm run check` (10 a 25 min) quando a `main` entrou por cima de uma árvore já verificada e cada arquivo que mudou veio inteiro dela (ou é `.md`); mesclado dos dois lados (locales, `ci.yml`) roda tudo. `CYBERMECH_CHECK_COMPLETO=1` desliga (o `publicar --sem-ci` liga). 7 mutações pegas | o `git push` depois de `git merge origin/main` mostra "junção da main sobre uma árvore já verificada" em segundos |
+
+
 ## P222 — O 8 DE JANEIRO realista, compacto, com saguões fechados (19/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |

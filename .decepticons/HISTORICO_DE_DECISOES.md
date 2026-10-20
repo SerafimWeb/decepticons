@@ -2,12 +2,17 @@
 
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
 ## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
 
 **Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.
-## [2026-10-19] A prova de administrador na conexão: mensagem `CREDENCIAL`, não token na URL (Claude, P226)
+## [2026-10-19] O hook confia no CI do PR depois de uma junção pura com a main (Claude, P225)
 
-**Decisão:** o servidor recusa mapa restrito a quem não é administrador, e a prova é o token da conta numa **mensagem** antes do JOIN (`shared/net/credencial.ts`, tipo 35), **não** um parâmetro do endereço do WebSocket (o endereço vai para log de proxy e histórico do navegador). A sala só é criada depois da prova (quem não é admin não gasta uma sala). Motivo de recusa novo `restrito` no fim de `REJECT_REASONS`; **sem subir o `PROTOCOL_VERSION`** (o padrão da voz e do texto: tipo novo, servidor velho descarta). **Por que:** o `?comandante=1` é só do navegador; o que protege de verdade é o servidor. Ordem do Comandante (19/10): *"sim, coloque então"*.
+**Ordem:** economizar os 10 a 25 minutos do laço (a `main` anda durante o check, o PR fica `dirty`, junta-se a `main`, o hook refaz tudo). **Decisão:** o hook pula o check quando a junção é **pura**: o primeiro pai é uma árvore já verificada aqui, o segundo pai está na `origin/main`, e **cada arquivo que difere do primeiro pai veio inteiro do segundo (ou é `.md`)**. A combinação das metades é testada pelo CI do PR numa máquina limpa (merge-ref). **Na dúvida roda tudo:** arquivo mesclado dos dois lados (locales, `ci.yml`), primeiro pai nunca verificado, segundo pai fora da `main`, commit que não é de junção, erro do `git`. Com o Actions parado (`publicar --sem-ci`) não há quem teste a combinação, então o hook roda completo (`CYBERMECH_CHECK_COMPLETO=1`). Aplicado a junções reais de hoje: a do #412 (conflito só em docs) pula; as com conflito nos locales ou no `ci.yml` rodam. **Não feito, próximo degrau:** validar os locales mesclados (JSON válido e a união das chaves) para que também pulem, que é onde a regra ainda roda check por conflito. Por boa prática, o `bash` do Git que o teste do hook usa virou um ajudante compartilhado (`server/ajudaBash.ts`).
+
 
 ## [2026-10-19] Economizar o Actions removendo repetição, não sinal (Claude, P223)
 

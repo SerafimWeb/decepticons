@@ -4,12 +4,17 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
-## O SERVIDOR RECUSA MAPA RESTRITO A QUEM NÃO É ADMINISTRADOR (PACOTE A0) — Claude, 19/10 (branch `claude/a0-mapa-restrito`, P226)
+## O HOOK NÃO REFAZ O CHECK DEPOIS DE UMA JUNÇÃO PURA COM A MAIN — Claude, 19/10 (branch `claude/hook-juncao`, P225)
 
-**O que muda:** `?sala=X&mapa=janeiro` (e Bunker, Terras Raras, o que o painel restringir) **deixou de abrir para quem digitar o link**: o jogo manda o token da conta numa mensagem nova (`CREDENCIAL`, antes do JOIN), o servidor confere que a conta é administradora **antes de criar a sala** e audita; sem isso, recusa com o motivo `restrito` (sem reconectar). **Provas:** 11 testes (sem credencial, conta comum, token inventado, admin entra, mapa público ignora a credencial, o painel restringe a Praia na hora, silêncio por 5 s); **mutação à mão pega** (aceitar qualquer sessão válida como admin: 4 testes caem). **Atenção, Comandante:** para jogar **online** num mapa restrito é preciso estar **com a conta de administrador logada** (o `?comandante=1` sozinho não abre mais a sala online; **offline** nada mudou). **Falta (R13):** o `?comandante=1` do site segue aberto até o lançamento (`LANCAMENTO.md`, item 11); a recusa aparece como "mapa em teste" na tela de conexão, sem botão para entrar na conta.
+**O Comandante (19/10):** economizar os 10 a 25 minutos do laço de push, com boas práticas. **Feito:** `scripts/juncaoJaVerificada.mjs` + o hook: depois de uma junção com a `main`, não refaz o check se a `main` entrou por cima de uma árvore já verificada e cada arquivo que mudou veio inteiro dela (ou é `.md`); mesclado dos dois lados roda tudo; `CYBERMECH_CHECK_COMPLETO=1` desliga (o `publicar --sem-ci` liga). 7 mutações pegas e a regra aplicada a junções reais. **Falta (R13):** só se confirma de verdade no próximo push depois de uma junção; os locales mesclados ainda rodam o check (próximo degrau no HISTORICO).
+
 
 ## O ACTIONS ECONÔMICO, SEM PERDER SINAL — Claude, 19/10 (branch `claude/ci-economico`, P223)
 
