@@ -112,16 +112,17 @@ export function criarJaneiroJogo(scene: THREE.Scene, match: Match, hud: HTMLElem
       cel.c.classList.toggle('jp-medio', fracao > 0.25 && fracao <= 0.55);
     }
     const sujas = [0, 0, 0].reduce((s, _, k) => s + missao.mesasSujas(k), 0);
-    const texto = `EXPULSOS ${missao.expulsos} · ELIMINADOS ${multidao.eliminados} · MESAS SUJAS ${sujas}`;
+    const texto = `EXPULSOS ${missao.expulsos} · ELIMINADOS ${multidao.eliminados} · REBELDES ${match.rebeldesVivos} · MESAS SUJAS ${sujas}`;
     if (texto !== ultimoPlacar) {
       ultimoPlacar = texto;
       placar.textContent = texto;
     }
+    const naPraca = multidao.presentes + match.rebeldesVivos;
     const linha =
       multidao.faltamChegar > 0
-        ? `DEFENDA OS TRÊS PRÉDIOS · NA PRAÇA ${multidao.presentes}`
-        : multidao.presentes > 0
-          ? `ESVAZIE A PRAÇA · ${multidao.presentes} RESTANTES`
+        ? `DEFENDA OS TRÊS PRÉDIOS · NA PRAÇA ${naPraca}`
+        : naPraca > 0
+          ? `ESVAZIE A PRAÇA · ${naPraca} RESTANTES`
           : 'A PRAÇA ESVAZIOU';
     if (linha !== ultimaLinha) {
       ultimaLinha = linha;

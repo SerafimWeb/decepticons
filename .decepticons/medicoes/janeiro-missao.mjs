@@ -4,7 +4,7 @@
  * a missão de verdade por ~50 s (o relógio da fase é o do jogo): a multidão chega, o Mech fica em frente ao Congresso e atira, e no fim derruba um prédio para ver a tela de derrota.
  *
  *   npm run build && node .decepticons/medicoes/janeiro-missao.mjs                # as fotos e a medida, 1280×720
- *   node .decepticons/medicoes/janeiro-missao.mjs --espera 30                      # quantos segundos esperar a multidão chegar (padrão 40)
+ *   node .decepticons/medicoes/janeiro-missao.mjs --espera 30                      # quantos segundos esperar a multidão chegar (padrão 75: dá tempo de os androides rebeldes chegarem)
  */
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -14,7 +14,7 @@ import { chromium } from 'playwright-core';
 const args = process.argv.slice(2);
 const arg = (nome, padrao) => (args.includes(nome) ? args[args.indexOf(nome) + 1] : padrao);
 const [W, H] = arg('--tela', '1280x720').split('x').map(Number);
-const espera = Number(arg('--espera', '40'));
+const espera = Number(arg('--espera', '75'));
 
 const RAIZ = resolve('dist');
 const BASE = '/cybermech/jogar';
@@ -82,6 +82,7 @@ const estado = (page) =>
       eliminados: m.multidao?.eliminados,
       expulsos: m.missaoJaneiro?.expulsos,
       faltamChegar: m.multidao?.faltamChegar,
+      rebeldes: m.rebeldesVivos,
     };
   });
 
@@ -106,7 +107,7 @@ for (let i = 0; i < 8; i++) {
   if (await page.evaluate(() => !!document.pointerLockElement)) break;
 }
 mkdirSync(resolve('.decepticons/arte'), { recursive: true });
-const foto = (nome) => page.screenshot({ path: resolve(`.decepticons/arte/janeiro-missao-${nome}.png`) });
+const foto = (nome) => page.screenshot({ path: resolve(`.decepticons/arte/janeiro-missao-${nome}.png`), timeout: 90_000 });
 
 console.log('começo   ', JSON.stringify(await estado(page)));
 await page.waitForTimeout(3000);
@@ -121,8 +122,33 @@ await page.evaluate(() => {
   g.rig.look.pitch = -0.05;
 });
 await page.waitForTimeout(espera * 1000);
+// Com os androides rebeldes o Mech pode ter caído e renascido na Praça: volta para a frente do Congresso antes da foto.
+await page.evaluate(() => {
+  const g = window.__game;
+  const V = g.mech.root.position.constructor;
+  g.mech.respawn(new V(-24, 1, 0));
+  g.rig.look.yaw = Math.PI / 2;
+  g.rig.look.pitch = -0.05;
+});
+await page.waitForTimeout(2500);
 console.log('chegou   ', JSON.stringify(await estado(page)));
 await foto('multidao-chegando');
+
+// Um androide rebelde (de preto, no meio da multidão) visto de perto: o Mech vai para 9 m dele, de frente.
+const viuRebelde = await page.evaluate(() => {
+  const g = window.__game;
+  const r = g.match.bots.mechs.find((m) => m.alive);
+  if (!r) return false;
+  const p = r.simPosition;
+  const V = g.mech.root.position.constructor;
+  g.mech.respawn(new V(p.x - 9, 1, p.z));
+  g.rig.look.yaw = -Math.PI / 2;
+  g.rig.look.pitch = -0.04;
+  return true;
+});
+await page.waitForTimeout(700);
+if (viuRebelde) await foto('rebelde');
+else console.log('nenhum androide rebelde em campo para fotografar');
 
 await page.mouse.down();
 await page.waitForTimeout(1800);

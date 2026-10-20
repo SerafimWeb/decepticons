@@ -23,7 +23,7 @@ const nova = () => {
   const m = new MissaoJaneiro(MESAS, (sobreviveu, r) => fins.push({ sobreviveu, r }));
   return { m, fins };
 };
-const praca = (o: Partial<SituacaoDaPraca> = {}): SituacaoDaPraca => ({ naFachada: [0, 0, 0], faltamChegar: 100, presentes: 10, eliminados: 0, ...o });
+const praca = (o: Partial<SituacaoDaPraca> = {}): SituacaoDaPraca => ({ naFachada: [0, 0, 0], faltamChegar: 100, presentes: 10, eliminados: 0, rebeldesEliminados: 0, ...o });
 /** Um figurante `i` que sempre sujaria uma mesa (e outro que nunca). */
 const quemSuja = (): number => { let i = 0; while (sorteioDoFigurante(i) >= PERCENTUAL_DE_SUJEIRA) i++; return i; };
 const quemNaoSuja = (): number => { let i = 0; while (sorteioDoFigurante(i) < PERCENTUAL_DE_SUJEIRA) i++; return i; };
@@ -75,6 +75,18 @@ describe('a missão do 8 de janeiro (P217, passo 5): como a fase acaba', () => {
     expect(fins[0]!.sobreviveu).toBe(true);
     expect(fins[0]!.r.eliminados).toBe(7);
     expect(fins[0]!.r.causa).toBeNull();
+  });
+
+  it('os androides rebeldes entram na conta da Praça: por chegar ou vivos, seguram a vitória; os derrubados vão para o placar, e não para a nota não letal', () => {
+    const { m, fins } = nova();
+    for (let k = 0; k < 5; k++) m.registrarExpulso();
+    m.fixedUpdate(DT, 1, praca({ faltamChegar: 2, presentes: 0 })); // dois rebeldes ainda por chegar
+    m.fixedUpdate(DT, 2, praca({ faltamChegar: 0, presentes: 1 })); // um em campo
+    expect(m.fase).toBe('em-curso');
+    m.fixedUpdate(DT, 3, praca({ faltamChegar: 0, presentes: 0, rebeldesEliminados: 2, eliminados: 5 }));
+    expect(m.fase).toBe('vitoria');
+    expect(fins[0]!.r.rebeldes).toBe(2);
+    expect(fins[0]!.r.naoLetal).toBeCloseTo(0.5, 6); // 5 expulsos entre 5 + 5 tirados da Praça: os 2 rebeldes derrubados ficam de fora da conta
   });
 
   it('se um prédio cai no mesmo tick em que a Praça esvazia, vale a derrota (a missão é mantê-los de pé)', () => {

@@ -41,6 +41,14 @@ export const RAIO_DO_SUSTO = 6;
 export const RAIO_DA_INVESTIDA = 2.4;
 export const DANO_DA_INVESTIDA = 30;
 
+/** Os androides rebeldes (o único inimigo que luta): quantos ficam vivos ao mesmo tempo (o pool do `BotSystem`, G11: nada é criado no tick) e as vagas em que o pool nasce (o lugar de verdade é o do ônibus, `aoEntrar`). */
+export const REBELDES_MAX = 6;
+export const PONTOS_DOS_REBELDES: readonly (readonly [number, number])[] = Array.from({ length: REBELDES_MAX }, (_, k) => {
+  const onibus = PRACA_FONTES.filter((f) => f.tipo === 'onibus');
+  const o = onibus[k % onibus.length]!;
+  return [o.x, o.z] as const;
+});
+
 /** Quantas mesas tem o saguão de cada prédio (a ordem é a de `PracaLayout`). */
 export const MESAS_POR_PREDIO: readonly number[] = PRACA_PREDIOS.map((p) => p.saguao.mesas.length);
 
@@ -57,18 +65,22 @@ export type CausaDaDerrotaJaneiro = 'predio' | 'tempo';
 export interface SituacaoDaPraca {
   /** Quantos figurantes estão na fachada de cada prédio. */
   naFachada: ArrayLike<number>;
-  /** Quantos ainda vão chegar pelas fontes. */
+  /** Quantos ainda vão chegar pelas fontes (a multidão e os androides rebeldes agendados). */
   faltamChegar: number;
-  /** Quantos estão na Praça agora (chegando, na fachada ou fugindo). */
+  /** Quantos estão na Praça agora (a multidão chegando, na fachada ou fugindo, e os androides rebeldes vivos). */
   presentes: number;
   /** Eliminados pelo jogador até agora (a multidão conta). */
   eliminados: number;
+  /** Os androides rebeldes que o jogador já derrubou (eles contam em `presentes` e em `faltamChegar` enquanto vivos ou por chegar, e não entram na nota não letal). */
+  rebeldesEliminados: number;
 }
 
 export interface ResultadoDaMissaoJaneiro {
   eliminados: number;
   expulsos: number;
   mesasLimpas: number;
+  /** Os androides rebeldes derrubados. */
+  rebeldes: number;
   segundos: number;
   /** A integridade que sobrou em cada prédio (0 a `INTEGRIDADE_MAX`). */
   integridade: readonly number[];
@@ -90,6 +102,7 @@ export class MissaoJaneiro {
   expulsos = 0;
   mesasLimpas = 0;
   private eliminados = 0;
+  private rebeldes = 0;
   /** A integridade de cada prédio. */
   readonly integridade: number[];
   /** Por prédio, as mesas sujas (1) e limpas (0): a ordem é a de `PracaLayout`. */
@@ -157,6 +170,7 @@ export class MissaoJaneiro {
       eliminados,
       expulsos: this.expulsos,
       mesasLimpas: this.mesasLimpas,
+      rebeldes: this.rebeldes,
       segundos: this.tempoS,
       integridade: this.integridade.slice(),
       naoLetal: tirados === 0 ? 1 : this.expulsos / tirados,
@@ -172,6 +186,7 @@ export class MissaoJaneiro {
     if (this.terminou) return;
     this.tempoS += dt;
     this.eliminados = praca.eliminados;
+    this.rebeldes = praca.rebeldesEliminados;
     for (let p = 0; p < this.integridade.length; p++) {
       const sujas = this.nSujas[p]!;
       if (sujas > 0) {
@@ -214,6 +229,7 @@ export class MissaoJaneiro {
     this.expulsos = 0;
     this.mesasLimpas = 0;
     this.eliminados = 0;
+    this.rebeldes = 0;
     this.integridade.fill(INTEGRIDADE_MAX);
     for (const m of this.suja) m.fill(0);
     this.nSujas.fill(0);

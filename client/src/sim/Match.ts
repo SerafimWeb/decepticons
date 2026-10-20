@@ -271,11 +271,15 @@ export class Match {
   /** O tick da missão do 8 DE JANEIRO (o relógio da multidão: o mesmo no servidor e no cliente, G2). */
   private tickJaneiro = 0;
   /** Rascunhos reaproveitados da missão (G4): a situação da Praça, onde estão os jogadores (para o susto) e quem fugiu por causa do jogador. */
-  private readonly situacaoDaPraca: SituacaoDaPraca = { naFachada: [], faltamChegar: 0, presentes: 0, eliminados: 0 };
+  private readonly situacaoDaPraca: SituacaoDaPraca = { naFachada: [], faltamChegar: 0, presentes: 0, eliminados: 0, rebeldesEliminados: 0 };
   private readonly pontosDoSusto: { x: number; z: number }[] = [];
   private fugaPeloJogador = new Uint8Array(0);
   /** O pedaço sob demanda da missão (a multidão e a regra): as constantes dela vêm daqui. `null` fora da missão. */
   private janeiroPedaco: MissaoJaneiroCarregada | null = null;
+  /** Os androides rebeldes agendados pela multidão, em ordem de chegada, e quantos já entraram em campo (G2: o cronograma é o da semente). */
+  private rebeldesAgendados: readonly { tick: number; x: number; z: number }[] = [];
+  private rebeldesEntraram = 0;
+  private rebeldesVivosN = 0;
   /** O escudo do Draga-01 (P180, parte D): três geradores que se quebram a tiro; de pé, o Draga leva 90% menos dano. `null` fora da missão do rio. */
   readonly escudo: EscudoDoDraga | null = null;
   /** As oito torres de vigia armadas da margem (P180, parte D2): atiram atravessando o rio enquanto o gerador da CERCA estiver de pé. `null` fora da missão do rio. */
@@ -396,6 +400,7 @@ export class Match {
       this.janeiroPedaco = J;
       const multidao = new J.Multidao(J.configDaMissaoJaneiro());
       this.multidao = multidao;
+      this.rebeldesAgendados = [...multidao.androides].sort((a, b) => a.tick - b.tick);
       this.fugaPeloJogador = new Uint8Array(multidao.total);
       this.missaoJaneiro = new J.MissaoJaneiro(J.MESAS_POR_PREDIO, (sobreviveu, r) =>
         this.onMissionEnd?.(sobreviveu, 1, { wavesCleared: sobreviveu ? 1 : 0, kills: r.eliminados, damageDealt: 0, survivalSeconds: r.segundos }),
@@ -474,7 +479,7 @@ export class Match {
             // Na praia as ondas nascem na areia, longe da estação (o jogador defende a estação); na Arena, nos pontos de sempre.
             // Na Amazônia (P180, parte C) o Draga-01 é o único inimigo da missão: a defesa dele (Mechs, androides, torres) vem na parte D.
             spawns: amazonia ? defesa?.guarda.mechs ?? [] : janeiro ? [] : ctf ? CTF_DEFENDER_SPAWNS : praia ? PRAIA_INIMIGOS.slice(0, SURVIVAL_MAX_MECHS) : BOT_SPAWNS.slice(0, SURVIVAL_MAX_MECHS),
-            androidSpawns: amazonia ? defesa?.guarda.androids ?? [] : janeiro ? [] : ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
+            androidSpawns: amazonia ? defesa?.guarda.androids ?? [] : janeiro ? this.janeiroPedaco!.PONTOS_DOS_REBELDES : ctf ? [] : praia ? PRAIA_INIMIGOS.slice(SURVIVAL_MAX_MECHS, SURVIVAL_MAX_MECHS + SURVIVAL_MAX_ANDROIDS) : ANDROID_SPAWNS.slice(0, SURVIVAL_MAX_ANDROIDS),
             manifestanteSpawns: praia && !ctf ? PRAIA_MANIFESTANTES.slice(0, SURVIVAL_MAX_MANIFESTANTES) : [],
             technicianSpawns: [],
             personas: o.foes.enemyPersonas,
@@ -486,6 +491,7 @@ export class Match {
       ...(amazonia && survival
         ? { chefeDoMapa: 'amazonia' as const, visualDoChefe: o.visualDoChefe ?? null, ...(o.marcha ? { chefeNascimento: { x: posicaoNaMarcha(o.marcha), z: rioEmX(posicaoNaMarcha(o.marcha)) } } : {}) }
         : {}),
+      ...(janeiro ? { androidPaint: 0x15171a } : {}), // os androides rebeldes da Praça de preto, no meio do verde e amarelo
       ...(o.bossMask === undefined ? {} : { mascaraDoChefe: o.bossMask }),
       respawn: !survival,
       respawnAtHome: ctf,
@@ -1423,6 +1429,11 @@ export class Match {
     }
   }
 
+  /** Quantos androides rebeldes estão em campo agora (a missão do 8 DE JANEIRO; 0 fora dela). O painel e os testes leem daqui. */
+  get rebeldesVivos(): number {
+    return this.rebeldesVivosN;
+  }
+
   /** O tick da missão do 8 DE JANEIRO (0 fora dela): o desenho da multidão lê daqui, e os testes sabem em que tick a multidão está. */
   get tickDaMissao(): number {
     return this.tickJaneiro;
@@ -1446,11 +1457,22 @@ export class Match {
       if (vivo && p.isDashing) multidao.explodir(p.simPosition.x, 1, p.simPosition.z, RAIO_DA_INVESTIDA, DANO_DA_INVESTIDA, t);
     }
     multidao.assustarPorPerto(pontos, RAIO_DO_SUSTO, t);
+    // Os androides rebeldes entram no cronograma da multidão, um por vaga do pool (no máximo REBELDES_MAX vivos); sem vaga, esperam a próxima.
+    const agenda = this.rebeldesAgendados;
+    while (this.rebeldesEntraram < agenda.length && agenda[this.rebeldesEntraram]!.tick <= t) {
+      const a = agenda[this.rebeldesEntraram]!;
+      if (!this.bots.entrarAndroide(a.x, a.z)) break;
+      this.rebeldesEntraram++;
+    }
+    let vivos = 0;
+    for (const m of this.bots.mechs) if (m.alive) vivos++;
+    this.rebeldesVivosN = vivos;
     const s = this.situacaoDaPraca;
     s.naFachada = multidao.contarNaFachada(t);
-    s.faltamChegar = multidao.faltamChegar;
-    s.presentes = multidao.presentes;
+    s.faltamChegar = multidao.faltamChegar + (agenda.length - this.rebeldesEntraram);
+    s.presentes = multidao.presentes + vivos;
     s.eliminados = multidao.eliminados;
+    s.rebeldesEliminados = this.rebeldesEntraram - vivos;
     missao.fixedUpdate(dt, t, s);
   }
 
@@ -1496,6 +1518,9 @@ export class Match {
       this.multidao.reiniciar();
       this.fugaPeloJogador.fill(0);
       this.tickJaneiro = 0;
+      this.rebeldesEntraram = 0;
+      this.rebeldesVivosN = 0;
+      this.bots.setRoster(0, 0); // os androides rebeldes saem de campo e voltam no cronograma
     }
     this.nucleo?.reset();
     this.cabos?.reset();
