@@ -58,6 +58,8 @@ const LOG = join(RAIZ, 'npm.log');
 const ambiente = (extra: Record<string, string> = {}) => {
   const env: Record<string, string | undefined> = { ...process.env };
   for (const k of Object.keys(env)) if (k.startsWith('GIT_')) delete env[k];
+  // O `publicar --sem-ci` liga esta variável e ela desce do check até aqui: sem limpar, o atalho se desliga e o teste da junção pura reprova só quando o dono publica (19/10).
+  delete env.CYBERMECH_CHECK_COMPLETO;
   return { ...env, PATH: `${BIN}${delimiter}${process.env.PATH ?? ''}`, NPM_LOG: LOG, ...extra } as NodeJS.ProcessEnv;
 };
 const git = (...args: string[]) => {
