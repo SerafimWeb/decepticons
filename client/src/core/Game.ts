@@ -300,6 +300,8 @@ export class Game {
   private sessao: SessaoPiloto | null = null;
   private settingsMenu: SettingsMenu | null = null;
   private vozHud: VoiceHud | null = null;
+  /** Desenha o botão de mudo na lista da REDE: chega com o pedaço sob demanda da voz (P228). */
+  private anexarMudo: ((li: HTMLElement, id: number, mudo: boolean) => void) | null = null;
   private vozCarregando = false;
   /** O meu id na sala (`null` fora dela): guardado porque o pedaço da voz pode chegar depois do `WELCOME`. */
   private vozId: number | null = null;
@@ -882,7 +884,10 @@ export class Game {
       },
     });
     new PilotLabels(this.hangar);
-    this.redePilotos = new RedePilotos(document.getElementById('rede-pilotos'), (p) => void this.abrirVisita(p));
+    this.redePilotos = new RedePilotos(document.getElementById('rede-pilotos'), (p) => void this.abrirVisita(p), (p, mudo) => {
+      this.voz?.silenciar(p.id, mudo);
+      this.pintarPilotos();
+    });
     this.conversas.ouvir(() => this.pintarPilotos());
     this.hangarMenu.aoFecharVisita = () => this.visita?.fechar();
     new OnlineSwitch(this.online !== null, defaultServer(location.hostname, import.meta.env.VITE_GAME_SERVER) !== null, document.getElementById('cc-online-slot'));
@@ -1158,7 +1163,10 @@ export class Game {
 
   /** A lista de pilotos do monitor REDE (P216): as outras pessoas da sala, com as mensagens não lidas. */
   private pintarPilotos(): void {
-    this.redePilotos?.atualizar(this.online?.pilotos() ?? [], (id) => this.conversas.naoLidas(id));
+    // O mudo da voz (P228) só aparece para quem está na voz; o botão é desenhado pelo pedaço sob demanda da voz.
+    const voz = this.voz;
+    const anexar = this.anexarMudo;
+    this.redePilotos?.atualizar(this.online?.pilotos() ?? [], (id) => this.conversas.naoLidas(id), voz?.ativa && anexar ? { anexar: (li, id) => anexar(li, id, voz.silenciado(id)) } : null);
     this.visita?.presencaMudou();
   }
 
@@ -1304,6 +1312,7 @@ export class Game {
     // Só quem quer a voz e está numa sala online baixa o pedaço dela.
     if (quer && !this.voz && this.online && this.vozId !== null) void this.carregarVoz();
     this.voz?.configurar(quer, s.voiceMode, s.voiceVolume, s.micDevice);
+    this.pintarPilotos(); // o botão do mudo aparece e some com a voz
   }
 
   /** Baixa o pedaço do chat de voz e o liga (uma vez): o `WELCOME` que já passou é reposto com o id guardado. Se o download falha, a próxima mudança de configuração tenta de novo. */
@@ -1311,13 +1320,15 @@ export class Game {
     if (this.voz || this.vozCarregando) return;
     this.vozCarregando = true;
     try {
-      const [{ VoiceChat }, { VoiceHud }] = await Promise.all([import('../voice/VoiceChat'), import('../voice/VoiceHud')]);
+      const [{ VoiceChat }, { VoiceHud }, { anexarMudo }] = await Promise.all([import('../voice/VoiceChat'), import('../voice/VoiceHud'), import('../voice/MudoNaRede')]);
+      this.anexarMudo = anexarMudo;
       const voz = new VoiceChat({ enviar: (bytes) => this.online?.enviarVoz(bytes), saida: () => this.audio.output, token: () => this.sessao?.tokenDaVoz() ?? null });
       voz.ligarTeclas(() => this.settings.value.keys.ptt);
       this.vozHud = new VoiceHud(document.getElementById('hud')!, voz, (id) => this.online?.nomeDe(id), () => keyLabel(this.settings.value.keys.ptt), () => this.input.touchMode);
       this.voz = voz;
       this.aplicarVoz(this.settings.value);
       if (this.vozId !== null) voz.entrouNaSala(this.vozId);
+      this.pintarPilotos(); // entrar na voz liga o botão de mudo da lista da REDE (P228): sem isto ele só aparecia no próximo evento da sala
     } catch {
       // O download do pedaço falhou (rede): a voz fica desligada e a próxima mudança de configuração tenta de novo.
     } finally {

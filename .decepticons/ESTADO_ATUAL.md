@@ -8,14 +8,52 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
-## O PLANO DE LANÇAMENTO, O MAPA QUE TREMIA E O `?comandante=1` FECHÁVEL — Claude, 19/10 (branch `claude/mapa-treme`, P224)
+## O DEPLOY AINDA PARAVA: O TESTE DO HOOK (GIT + BASH DE VERDADE) ESTOURAVA 30 s — Claude, 20/10 (branch `claude/timeout-dos-testes-de-hook`)
 
-**Feito:** (1) `CAMINHO_DO_LANCAMENTO.md`: a matriz missão × modo × offline/online, os pacotes de trabalho (A0 a A7, ≈ 9 a 11 PRs para 3 missões co-op e a Bandeira), o que o Comandante ainda precisa pedir e a definição de pronto. (2) O mapa-múndi não muda mais de tamanho ao passar o mouse (`WorldMap.reservarAltura`). (3) `core/ModoComandante.ts`: o link só em desenvolvimento, no PC e no site publicado com o interruptor ligado; em produção fechada, a conta de administrador. **Provas:** 7 testes do modo Comandante (a decisão, o link, a conta, o valor lido pelo jogo); o tremor medido no jogo real (Chrome, 1280×720, `hover-teste.mjs`): **6 de 7 pinos mudavam o mapa** (174 a 204 px), **depois, 0 de 7** (o mapa fica em 547×174 e a ficha em 97 px o tempo todo). **O pacote de partida (500 KB) estava em 500,0 e ia estourar:** a decisão do Comandante é **sob demanda** (só baixa com link, lembrança ou conta) e o `PracaLayout` (prédios, blocos) saiu do pacote de partida (ficaram só os 16 pontos de nascimento, `PracaNascimentos.ts`): **folga de 1,7 KB**. Regra para quem vem: nada do pacote de partida importa `PracaLayout`.
-**Falta (R13):** **o interruptor está ligado** no site publicado (desligar no lançamento); a ordem das missões e o servidor fora do PC são decisões do Comandante (plano § 4).
-**Onde conferir:** o mapa-múndi do console; o plano em `.decepticons/CAMINHO_DO_LANCAMENTO.md`. **Próxima sessão:** A1 e A2 (o co-op online; o A0, o servidor recusar mapa restrito, já está na `main`: P226).
+**O que o log do atualizador mostrou depois do #418** (`atualizacao.log`, 20/10): a verificação do `b102548` reprovou às 05:35 e às 05:39 (UTC). Na segunda, com a máquina calma, **855 de 856 testes passaram** (302 s) e o único reprovado foi `server/juncaoJaVerificada.test.ts`, o de ponta a ponta que monta um repositório e roda o hook `pre-push` com `git` e `bash` de verdade: **estourou os 30 s**. É o mesmo arquivo que reprovou às 04:36, às 05:35 e no push local. Alguns fatos que explicam a sequência: (1) o `--retry=2` do #418 **não ajuda aqui**, porque o atualizador roda o próprio código de antes do merge e a verificação reprovada volta o disco para o código velho; (2) um **limite de espera de teste vale no mesmo ciclo em que chega** (o arquivo de teste é lido depois do merge), por isso a correção é esta.
+
+**O que entrou:** `{ timeout: 120_000 }` nos três blocos que usam `git`/`bash` de verdade (`avaliarJuncao` e o hook de ponta a ponta em `juncaoJaVerificada.test.ts`; o hook em `hookPrePush.test.ts`). O limite global (30 s) não mudou. Provado: um teste descartável confirmou que o vitest 5 aplica o `timeout` do `describe` (também com `.skipIf`) por cima do global; os 23 testes dos dois arquivos passam em 45 s.
+
+**Ainda falta (do dono, 1 minuto):** a tarefa "CYBERMECH atualizar" está registrada neste PC com **limite de 5 min** (o repositório já define 20 em `scripts/servidor-atualizar.ps1`, mas o registro antigo nunca foi refeito). Sob carga a verificação passa de 5 min, o Agendador corta a rodada, os filhos do vitest ficam vivos e a rodada seguinte, 70 s depois, atropela `.tmp/vitest` (viu-se `ENOENT` em 3 arquivos às 05:35). Aplicar: PowerShell **como administrador**, em `D:\DECEPTICONS\.tmp\wt-servidor-prod`: `.\scripts\servidor-atualizar.ps1`. Não mexi na tarefa: é configuração do Windows dele, que o `DEPLOY.md` já deixa como passo do dono.
+
+**Próxima sessão começa com:** conferir no `atualizacao.log` que o `b102548` (e o `4728d23`, da voz) chegaram: `OK: …` e `servidor religou no código novo`; depois que o log da subida não traz mais `Cannot access 'auditoria'`.
+
+## O DEPLOY PARAVA POR TESTE LENTO E O LOG MENTIA NA SUBIDA — Claude, 20/10 (branch `claude/faxina-e-retry`)
+
+**O que aconteceu hoje:** o merge do HSTS (#414) levou **três ciclos** do atualizador para ir ao ar: a verificação (`test.mjs run --no-isolate server shared`) reprovou às 01:36 e às 01:51 com testes **diferentes** (timeouts de 20 a 30 s no `mural`, uma corrida de tempo no `mapas`), todos passando sozinhos em 24 s; na terceira, com a máquina quieta, passou em 2 min e o servidor religou (protocolo 21, 0 jogadores). O PC do dono estava com CPU a 92% e 420 MB de RAM livre (navegador, Antigravity, outros agentes). É o terceiro episódio igual (17/10, 19/10, 20/10).
+
+**O que entrou:**
+- **`--retry=2` na verificação do atualizador** (`scripts/atualizador.mjs`): um teste que estoura o tempo sob carga é repetido até 2 vezes; **falhar 3 vezes seguidas continua reprovando**. Provado com um teste descartável (reprova sem a opção, passa com ela) e travado em `server/atualizador.test.ts`.
+- **O aviso falso do log** `não consegui varrer sessões e atividade vencidas: Cannot access 'auditoria' before initialization`, que aparecia a cada reinício desde 18/10: o `faxinar()` rodava antes do `const auditoria`. O `try/catch` o engolia e `auditoria.podar()` rodava logo depois, então **o comportamento não mudava**; só o log mentia. A primeira faxina agora roda depois de a auditoria existir. Teste em `server/dados.test.ts` (reprovava antes do conserto).
+
+**Custo de CPU:** nenhum no jogo (nada disso corre no laço de 60 Hz). O retry só gasta tempo quando um teste falha.
+
+**Limite honesto:** o retry não cura máquina sufocada (os workers do Windows ainda morrem por falta de memória: 0xC0000409 e o `tsgo` com errno 1455 também aconteceram hoje). A regra de ficar quieto depois de um merge continua. O remédio de verdade é o PC do dono ter RAM/arquivo de paginação de sobra; decisão dele.
+
+## O HSTS DO SITE: A CLOUDFLARE NÃO O COBRIA, O SITE É SERVIDO PELA HOSTINGER — Claude, 19/10 (branch `claude/hsts-do-site`, P207)
+
+**O Comandante (19/10):** *"o cloudflare também já fiz"*. **Conferi:** o `cybermech.online` (o site) responde com `Server: hcdn` (a CDN da Hostinger): **não passa pela Cloudflare**; só o `jogo.cybermech.online` passa. Logo o HSTS da Cloudflare não cobre o site (e o `jogo.` ainda não manda o cabeçalho). **Feito:** `Strict-Transport-Security: max-age=15552000` (180 dias, sem `includeSubDomains` nem `preload`) no `.htaccess` do site (`scripts/site.mjs`), conferido pelo `site --check`. Já vale quando o site for publicado. A opção "visitor location headers" da Cloudflare vale para o `jogo.` (é lá que o servidor lê o estado); aparece em "De onde vêm" quando entrarem visitas do Brasil.
+
+## JOGAR COM O MICROFONE: O CAMINHO ATÉ A VOZ — Claude, 20/10 (branch `claude/voz-conta-facil`, P227)
+
+**O Comandante (20/10):** o microfone funciona no Windows mas não conseguiu usar nem testar no jogo; aprovou as decisões pendentes da voz. **Causa:** o portão de idade escondia a voz sem dar caminho. **Feito:** botão [ CRIAR CONTA ] / [ INFORMAR MINHA IDADE ] na seção do chat de voz; Chrome real 36/36. **Para jogar com voz:** criar a conta (ou informar a idade, se a conta é antiga) em Configurações > GRÁFICOS E SOM > CHAT DE VOZ; depois TESTAR e entrar numa sala online. **Falta (R13):** mudo por jogador, aviso às contas antigas, idade no chat de texto, a prova positiva em produção (a rede daqui para o servidor está intermitente).
+
+## O MUDO POR JOGADOR NO CHAT DE VOZ — Claude, 20/10 (branch `claude/voz-mudo`, P228)
+
+**Feito:** em Esc > REDE, cada piloto tem **[ SILENCIAR VOZ ]** (aparece só para quem está na voz); silenciar desliga a faixa dele (custo zero), o indicador de quem fala some, e vale até sair da sala. 7 mutações pegas e a prova no Chrome real (`medicoes/voz-jogo.mjs`: o botão aparece, silencia o BRAVO falando e desfaz). **A bancada achou um defeito meu:** o botão só aparecia no próximo evento da sala, porque ninguém repintava a lista ao entrar na voz; corrigido. **Falta (R13):** a denúncia (decisão do Comandante: para onde vai a queixa) e o mudo sem pausar a partida.
+
+
 ## O HOOK NÃO REFAZ O CHECK DEPOIS DE UMA JUNÇÃO PURA COM A MAIN — Claude, 19/10 (branch `claude/hook-juncao`, P225)
 
 **O Comandante (19/10):** economizar os 10 a 25 minutos do laço de push, com boas práticas. **Feito:** `scripts/juncaoJaVerificada.mjs` + o hook: depois de uma junção com a `main`, não refaz o check se a `main` entrou por cima de uma árvore já verificada e cada arquivo que mudou veio inteiro dela (ou é `.md`); mesclado dos dois lados roda tudo; `CYBERMECH_CHECK_COMPLETO=1` desliga (o `publicar --sem-ci` liga). 7 mutações pegas e a regra aplicada a junções reais. **Falta (R13):** só se confirma de verdade no próximo push depois de uma junção; os locales mesclados ainda rodam o check (próximo degrau no HISTORICO).

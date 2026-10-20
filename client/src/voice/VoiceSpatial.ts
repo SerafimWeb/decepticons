@@ -24,6 +24,8 @@ interface Par {
   x: number;
   y: number;
   z: number;
+  /** A voz que chega, para o mudo poder desligar a faixa. */
+  stream: MediaStream;
   /** O mesmo fluxo num `<audio>` mudo: o Chrome só entrega o áudio de um fluxo remoto ao Web Audio se ele também estiver num elemento de mídia (bug aberto do Chromium). */
   muda: HTMLAudioElement | null;
 }
@@ -36,6 +38,8 @@ interface Par {
 export class VoiceSpatial {
   private readonly pares = new Map<number, Par>();
   private readonly esperando = new Map<number, MediaStream>();
+  /** Quem eu silenciei (P228). Vale até sair da sala: o mesmo colega que volta à voz continua silenciado. */
+  private readonly silenciados = new Set<number>();
   private ctx: AudioContext | null = null;
   private bus: GainNode | null = null;
   private volume = 0.8;
@@ -49,6 +53,7 @@ export class VoiceSpatial {
   /** Põe a voz de um colega para tocar (se o áudio do jogo ainda não começou, espera o primeiro gesto e monta no próximo `atualizar`). */
   adicionar(id: number, stream: MediaStream): void {
     this.remover(id);
+    if (this.silenciados.has(id)) this.aplicarSilencio(stream, true);
     this.esperando.set(id, stream);
     this.montar();
   }
@@ -62,6 +67,30 @@ export class VoiceSpatial {
     p.panner.disconnect();
     p.analyser.disconnect();
     if (p.muda) p.muda.srcObject = null;
+  }
+
+  /**
+   * Silencia (ou volta a ouvir) um colega (P228). Desliga a **faixa** de áudio que chega (`enabled = false`: o navegador entrega silêncio): custo zero, nada por quadro,
+   * e o indicador de quem fala também some (a onda é silêncio). Vale também para quem ainda não chegou ao Web Audio e para o colega que sai e volta à voz.
+   */
+  silenciar(id: number, mudo: boolean): void {
+    if (mudo) this.silenciados.add(id);
+    else this.silenciados.delete(id);
+    const stream = this.pares.get(id)?.stream ?? this.esperando.get(id);
+    if (stream) this.aplicarSilencio(stream, mudo);
+  }
+
+  silenciado(id: number): boolean {
+    return this.silenciados.has(id);
+  }
+
+  /** Sai da sala: os ids de lá não valem mais, então ninguém fica silenciado por engano na próxima. */
+  limparSilencios(): void {
+    for (const id of [...this.silenciados]) this.silenciar(id, false);
+  }
+
+  private aplicarSilencio(stream: MediaStream, mudo: boolean): void {
+    for (const faixa of stream.getAudioTracks()) faixa.enabled = !mudo;
   }
 
   /** Volume da voz dos outros (0 a 1), separado do volume do jogo. */
@@ -118,6 +147,7 @@ export class VoiceSpatial {
   dispose(): void {
     for (const id of [...this.pares.keys()]) this.remover(id);
     this.esperando.clear();
+    this.silenciados.clear();
     this.bus?.disconnect();
     this.bus = null;
     this.ctx = null;
@@ -160,6 +190,6 @@ export class VoiceSpatial {
       muda.muted = true;
       void muda.play().catch(() => {});
     }
-    this.pares.set(id, { source, panner, analyser, onda: new Uint8Array(analyser.fftSize), ultimoSom: -Infinity, x: Number.NaN, y: 0, z: 0, muda });
+    this.pares.set(id, { source, panner, analyser, onda: new Uint8Array(analyser.fftSize), ultimoSom: -Infinity, x: Number.NaN, y: 0, z: 0, stream, muda });
   }
 }

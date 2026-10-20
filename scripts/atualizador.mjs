@@ -145,7 +145,8 @@ export function atualizar(op) {
     feito.push('typecheck');
     op.gravarPendencia({ de: antes, para: remoto, feito }); // se a rodada for cortada nos testes, a próxima não refaz o typecheck
   }
-  if (executar('node', ['scripts/test.mjs', 'run', '--no-isolate', 'server', 'shared']) !== 0) return voltar('testes de server/ e shared/');
+  // `--retry=2`: sob carga (o PC do dono com o navegador e outros agentes) um teste de servidor de verdade estoura o tempo ou perde uma corrida e o deploy ficava horas parado (17/10, 19/10 e 20/10: três reprovações seguidas com testes diferentes, todos passando sozinhos). Um teste que falha três vezes seguidas continua reprovando.
+  if (executar('node', ['scripts/test.mjs', 'run', '--no-isolate', '--retry=2', 'server', 'shared']) !== 0) return voltar('testes de server/ e shared/');
 
   // Verificado: o reinício passa a ser uma dívida em disco ANTES de o registro da verificação sumir. Sem isto, uma rodada cortada entre aqui
   // e o marcador que o PowerShell criava depois (11/10: a máquina sem memória levou 7 min na verificação) deixava o código novo em disco,

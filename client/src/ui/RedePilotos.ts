@@ -12,6 +12,11 @@ export interface PilotoNaRede {
   build: string;
 }
 
+/** A voz, para o mudo (P228): só existe quando se está na voz. Quem desenha o botão é o pedaço sob demanda da voz (o pacote de partida está no teto); a lista só pede e guarda o clique. */
+export interface VozNaRede {
+  anexar(li: HTMLElement, id: number): void;
+}
+
 export function nomeDoChassi(build: string): string {
   const spec = parseLoadoutKey(build);
   return spec ? CHASSIS[spec.chassis].name : '';
@@ -23,8 +28,19 @@ export class RedePilotos {
   constructor(
     private readonly lista: HTMLElement | null,
     private readonly aoClicar: (p: PilotoNaRede) => void,
+    private readonly aoSilenciar: (p: PilotoNaRede, mudo: boolean) => void = () => {},
   ) {
     lista?.addEventListener('click', (e) => {
+      // O mudo da voz (P228): o botão ao lado do nome inverte o estado dele.
+      const mudoEl = e.target instanceof Element ? e.target.closest<HTMLElement>('[data-mudo]') : null;
+      if (mudoEl) {
+        const alvo = this.atual.find((x) => String(x.id) === mudoEl.dataset.mudo);
+        if (alvo) {
+          e.stopPropagation();
+          this.aoSilenciar(alvo, mudoEl.getAttribute('aria-pressed') !== 'true');
+        }
+        return;
+      }
       const id = (e.target instanceof Element ? e.target.closest<HTMLElement>('[data-piloto]') : null)?.dataset.piloto;
       const p = this.atual.find((x) => String(x.id) === id);
       if (p) {
@@ -35,7 +51,7 @@ export class RedePilotos {
   }
 
   /** Redesenha a lista: some quando não há outra pessoa na sala. `naoLidas` diz quantas mensagens de cada uma ainda não foram vistas. */
-  atualizar(pilotos: readonly PilotoNaRede[], naoLidas: (id: number) => number): void {
+  atualizar(pilotos: readonly PilotoNaRede[], naoLidas: (id: number) => number, voz: VozNaRede | null = null): void {
     this.atual = pilotos;
     const lista = this.lista;
     if (!lista) return;
@@ -62,6 +78,7 @@ export class RedePilotos {
         b.append(nova);
       }
       li.append(b);
+      voz?.anexar(li, p.id);
       lista.append(li);
     }
   }

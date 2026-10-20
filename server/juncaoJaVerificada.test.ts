@@ -110,7 +110,8 @@ beforeAll(() => {
 });
 afterAll(() => rmSync(RAIZ, { recursive: true, force: true }));
 
-describe('avaliarJuncao: o git de verdade', () => {
+// Estes blocos rodam `git` e `bash` de verdade (um repositório e um hook por teste): no Windows, com o Defender e a máquina ocupada, 30 s não bastam e o atualizador reprovava o deploy por isso (04:36, 05:35 e 05:39 de 20/10). 120 s só aqui; o limite global continua 30 s.
+describe('avaliarJuncao: o git de verdade', { timeout: 120_000 }, () => {
   it('a main mexeu em outros arquivos (e numa nota): junção pura sobre árvore verificada, pula', () => {
     cenario();
     escrever('grande.ts', linhas(40, { 5: 'minha mudança' }));
@@ -212,7 +213,7 @@ describe('avaliarJuncao: o git de verdade', () => {
   });
 });
 
-describe.skipIf(!temBash)('o hook de push com a junção pura (de ponta a ponta, com npm falso)', () => {
+describe.skipIf(!temBash)('o hook de push com a junção pura (de ponta a ponta, com npm falso)', { timeout: 120_000 }, () => {
   const HOOK = resolve('.githooks/pre-push');
   const ZEROS = '0'.repeat(40);
   const chamadasDoNpm = () => (existsSync(LOG) ? readFileSync(LOG, 'utf8').split('\n').filter(Boolean).length : 0);

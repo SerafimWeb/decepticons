@@ -68,6 +68,9 @@ const HEADERS = {
     "form-action 'none'",
   ].join('; '),
   'X-Content-Type-Options': 'nosniff',
+  // HSTS (A12, 19/10): o navegador só abre este site por HTTPS durante 180 dias. O site é servido direto pela Hostinger (`Server: hcdn`), SEM passar pela Cloudflare, então o
+  // HSTS da Cloudflare não o cobre: tem de sair daqui. Sem `includeSubDomains` e sem `preload` (decisões que não se desfazem; o `jogo.` tem o seu próprio caminho).
+  'Strict-Transport-Security': 'max-age=15552000',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'SAMEORIGIN',
 };
@@ -900,6 +903,7 @@ async function verify(url) {
   if (!/^<!doctype html>/i.test(homeText) || !/<meta charset="utf-8">/i.test(homeText.slice(0, 1024))) failures.push(`${root}: sem doctype ou <meta charset> no início (acentos quebram)`);
   if (!/utf-8/i.test(home.headers.get('content-type') ?? '')) console.warn(`::warning::${root}: servidor sem charset no Content-Type (a página declara o seu)`);
   if (!home.headers.get('content-security-policy')?.includes('wasm-unsafe-eval')) failures.push(`${root}: sem a CSP do .htaccess`);
+  if (home.headers.get('strict-transport-security') !== 'max-age=15552000') failures.push(`${root}: sem o HSTS do .htaccess (max-age de 180 dias)`);
   // Anti-cópia: a página publicada tem de trazer o CSS que impede selecionar o texto.
   if (!/user-select:\s*none/.test(homeText)) failures.push(`${root}: a landing saiu sem a camada anti-cópia (texto selecionável)`);
   // A hospedagem responde 200 com uma página HTML para arquivo inexistente: status não basta.
