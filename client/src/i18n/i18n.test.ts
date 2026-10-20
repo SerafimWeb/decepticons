@@ -6,7 +6,7 @@ import { validarEmail, validarSenha } from '../../../shared/net/auth';
 import { DICAS_DO_BOOT } from '../core/bootProgress';
 import { DIFFICULTY_LABELS, KEY_ACTIONS, PERSONA_LABELS, QUALITY_LABELS } from '../core/Settings';
 import { TEXTO_CONVIDADO, TEXTO_GUARDANDO, TEXTO_IDADE_GUARDADA, TEXTO_LOGADO } from '../ui/ContaSettings';
-import { TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ } from '../voice/elegibilidade';
+import { TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ } from '../voice/VozNasConfiguracoes';
 import { CUSTO_DO_CONSORCIO, LADOS, SELO_SEM_LADO, TEXTO_CONFIRMAR, TEXTO_CUSTO_RODAPE, TEXTO_CUSTO_TITULO, TEXTO_ELES_DIZEM, TEXTO_FECHAR, TEXTO_PERGUNTA, TEXTO_RODAPE, TEXTO_SEGUIR, TEXTO_SIGNIFICA, TEXTO_VOLTAR } from '../ui/LadoSelector';
 import { DICA_DA_ARMA } from '../ui/dicasDeArma';
 import { IDIOMAS, carregarDicionario, idiomaInicial, idiomaValido, t, traduzir, type Dicionario } from './i18n';

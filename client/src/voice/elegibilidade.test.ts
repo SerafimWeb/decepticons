@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IdadeDaConta } from '../../../shared/net/auth';
-import { type ElegibilidadeDaVoz, elegibilidadeDaVoz, TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ, vozDeveLigar } from './elegibilidade';
+import { type ElegibilidadeDaVoz, elegibilidadeDaVoz, vozDeveLigar } from './elegibilidade';
+import { TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ } from './VozNasConfiguracoes';
 
 describe('elegibilidadeDaVoz (P211): só conta de maior de 18 anos abre o chat de voz', () => {
   it('a tabela inteira: logado × faixa de idade', () => {

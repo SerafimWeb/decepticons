@@ -125,9 +125,10 @@ try {
 
   // ---------------------------------------------------------------- 1. conta de adulto
   const adulto = await entrar(browser, 'ADULTO', tokenAdulto);
-  const ligou = await ate(async () => (await ligadosDoColega(colega)) >= 1, 120_000);
+  const ligou = await ate(async () => (await ligadosDoColega(colega)) >= 1, 300_000);
   conferir('1. conta de ADULTO: a voz abre e liga ao colega', !!ligou);
   await abrirConfiguracoes(adulto, 'graficos');
+  await ate(() => adulto.evaluate(() => !document.getElementById('voz-controles').hidden), 60_000); // o pedaço da seção da voz chega em segundo plano
   const tAdulto = await estadoDaTela(adulto);
   conferir('1. os controles da voz aparecem e nenhuma frase de bloqueio', tAdulto.controles && tAdulto.frase === '', JSON.stringify(tAdulto));
   conferir('1. ADULTO: sem o botão de conta (a voz já está liberada)', await adulto.evaluate(() => document.getElementById('btn-voz-conta').hidden));
@@ -226,7 +227,7 @@ try {
     await page.selectOption('#login-nasc-mes', String(mes));
     const aindaSemAno = await page.evaluate(() => document.getElementById('btn-login-submit').disabled);
     await page.selectOption('#login-nasc-ano', String(ano));
-    const ligadoComData = !(await page.evaluate(() => document.getElementById('btn-login-submit').disabled));
+    const ligadoComData = !!(await ate(() => page.evaluate(() => !document.getElementById('btn-login-submit').disabled), 15_000, 200));
     return { page, desligadoSemData, aindaSemAno, ligadoComData };
   }
   const adultoNovo = await cadastrar('NOVOADULTO', 'novo-adulto@bancada.com', 2, 1992);

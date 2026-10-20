@@ -15,9 +15,8 @@ import {
 } from '../core/Settings';
 
 import { NARRACOES, ROTULO_DA_NARRACAO, type Narracao } from '../audio/falas';
-import { listarAparelhos } from '../voice/aparelhos';
 import type { MicTest } from '../voice/MicTest';
-import { type ElegibilidadeDaVoz, TEXTO_DA_ELEGIBILIDADE, TEXTO_DO_BOTAO_DA_VOZ } from '../voice/elegibilidade';
+import type { ElegibilidadeDaVoz } from '../voice/elegibilidade';
 import { ligarPasso } from './Passo';
 import { attachSettingsTabs, isSettingsTab, type SettingsTab } from './settingsTabs';
 
@@ -56,6 +55,8 @@ export class SettingsMenu {
   private readonly btnVozTestar = $('btn-voz-testar') as HTMLButtonElement;
   /** O teste do microfone (P212): pedaço sob demanda, só baixa quem toca em TESTAR. */
   private micTest: MicTest | null = null;
+  /** O que vale para esta conta na voz (P211); começa como convidado até a sessão dizer. */
+  private elegibilidade: ElegibilidadeDaVoz = 'convidado';
 
   private readonly tabs: { select(tab: SettingsTab): void };
   private remappingAction: KeyAction | null = null;
@@ -331,21 +332,12 @@ export class SettingsMenu {
    * O teste do microfone que estiver aberto é fechado.
    */
   setElegibilidadeDaVoz(e: ElegibilidadeDaVoz): void {
-    const liberada = e === 'liberada';
-    $('voz-controles').hidden = !liberada;
-    const aviso = $('voz-elegibilidade');
-    aviso.hidden = liberada;
-    aviso.textContent = liberada ? '' : TEXTO_DA_ELEGIBILIDADE[e];
-    // O botão leva ao que falta: o convidado cria a conta (já na aba CRIAR CONTA), a conta sem idade informa a idade.
-    const botao = $('btn-voz-conta') as HTMLButtonElement;
-    const texto = liberada ? undefined : TEXTO_DO_BOTAO_DA_VOZ[e];
-    botao.hidden = !texto;
-    botao.textContent = texto ?? '';
-    if (e === 'convidado') botao.dataset.contaCriar = '1';
-    else delete botao.dataset.contaCriar;
-    if (!liberada) this.micTest?.parar();
+    this.elegibilidade = e;
+    if (e !== 'liberada') this.micTest?.parar();
+    // As frases, o botão e a lista de microfones são um pedaço sob demanda (o pacote de partida está no teto). Dois pedidos seguidos (convidado ao abrir, menor ao restaurar a sessão) podem
+    // terminar o `import()` fora de ordem: por isso cada um aplica o estado MAIS RECENTE (`this.elegibilidade`), não o que pediu. Último que ganha, sem depender da ordem (achado pela bancada, P227).
+    void import('../voice/VozNasConfiguracoes').then((m) => m.mostrarElegibilidade(this.elegibilidade));
   }
-
   /** O botão TESTAR / PARAR O TESTE: baixa o teste na primeira vez, e liga ou desliga. */
   private async alternarTesteDoMic(): Promise<void> {
     if (!this.micTest) {
@@ -365,13 +357,8 @@ export class SettingsMenu {
 
   /** Os microfones da lista de escolha (com nome depois que o navegador deu a permissão); o salvo que sumiu continua escolhido, marcado como desconectado. */
   private async atualizarAparelhos(): Promise<void> {
-    const todos = navigator.mediaDevices?.enumerateDevices ? await navigator.mediaDevices.enumerateDevices().catch(() => []) : [];
-    const lista = listarAparelhos(todos, (n) => `Microfone ${n}`);
-    const escolhido = this.settings.value.micDevice;
-    const sel = this.selVozAparelho;
-    sel.replaceChildren(new Option('Padrão do sistema', ''), ...lista.map((a) => new Option(a.nome, a.id)));
-    if (escolhido && !lista.some((a) => a.id === escolhido)) sel.append(new Option('Aparelho salvo (desconectado)', escolhido));
-    sel.value = escolhido;
+    const { preencherAparelhos } = await import('../voice/VozNasConfiguracoes');
+    await preencherAparelhos(this.selVozAparelho, this.settings.value.micDevice);
   }
 
   private render(s: Readonly<GameSettings>): void {
