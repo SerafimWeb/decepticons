@@ -265,8 +265,8 @@ export function decodePong(bytes: Uint8Array): { clientTime: number; tick: numbe
   return r.clean ? m : null;
 }
 
-/** Por que o servidor recusou a entrada. */
-export const REJECT_REASONS = ['cheia', 'versao', 'montagem', 'mensagem'] as const;
+/** Por que o servidor recusou a entrada. `restrito` (P226): o mapa pedido ainda não foi liberado e a conta não é de administrador (sempre no fim da lista: os índices antigos não mudam). */
+export const REJECT_REASONS = ['cheia', 'versao', 'montagem', 'mensagem', 'restrito'] as const;
 export type RejectReason = (typeof REJECT_REASONS)[number];
 
 export function encodeReject(w: Writer, reason: RejectReason): Uint8Array {

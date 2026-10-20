@@ -5,7 +5,7 @@ name: Etiquetas
 # só lê a lista de arquivos, então é seguro dar permissão de escrever etiquetas.
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [opened, reopened, ready_for_review] # não a cada push (P223): o job de 6 s cobra 1 minuto inteiro e era 24% do consumo
 
 permissions:
   contents: read

@@ -9,8 +9,8 @@ import { lerModoComandante } from '../ui/consoleData';
  *    `publicar-site` liga enquanto `deploy-site.json` não diz `"comandantePorLink": false`). **No lançamento o dono desliga com uma linha**, e o link e a lembrança passam a ser ignorados.
  * 2. **A conta de administrador:** quem entrou com uma conta `is_admin` (o servidor responde em `/conta/eu`) abre o modo Comandante **sem link**.
  *
- * **Isto continua sendo o lado do navegador** (quem controla o próprio navegador pode fingir): o que protege de verdade é o **servidor** (o token do dono nas rotas `/admin`, e, **ainda por fazer**, a
- * recusa de mapa restrito a quem não é administrador). O nome do padrão: **feature flag** (interruptor de funcionalidade), com **acesso por papel** (RBAC) validado no servidor para valer de verdade.
+ * **Isto continua sendo o lado do navegador** (quem controla o próprio navegador pode fingir): o que protege de verdade é o **servidor** (o token do dono nas rotas `/admin` e a recusa de mapa
+ * restrito a quem não é administrador, A0/P226: `CREDENCIAL` antes do JOIN). O nome do padrão: **feature flag** (interruptor de funcionalidade), com **acesso por papel** (RBAC) validado no servidor para valer de verdade.
  */
 
 /** O link e a lembrança valem aqui? Desenvolvimento e o próprio PC: sempre. O site publicado: só com `VITE_COMANDANTE_POR_LINK=1` (o lançamento o desliga). */

@@ -78,6 +78,8 @@ export interface OnlineSessionOptions {
   name: string;
   /** Montagem do Hangar (`loadoutKey`). */
   build: string;
+  /** O token da conta, lido a cada conexão (também nas reconexões): abre um mapa restrito, que só a conta de administrador entra (P226, A0). Sem conta, `null`. */
+  credencial?: () => string | null;
   /** A partida local: sem bots, sem dano (quem decide é o servidor) e sem rodada própria. */
   match: Match;
   me: MechBase;
@@ -262,7 +264,7 @@ export class OnlineSession implements Pilot {
       },
     });
     this.client = cliente;
-    cliente.join(o.name, o.build);
+    cliente.join(o.name, o.build, o.credencial?.() ?? null);
   }
 
   /**

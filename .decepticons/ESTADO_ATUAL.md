@@ -2,14 +2,30 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).
 ## O PLANO DE LANÇAMENTO, O MAPA QUE TREMIA E O `?comandante=1` FECHÁVEL — Claude, 19/10 (branch `claude/mapa-treme`, P224)
 
 **Feito:** (1) `CAMINHO_DO_LANCAMENTO.md`: a matriz missão × modo × offline/online, os pacotes de trabalho (A0 a A7, ≈ 9 a 11 PRs para 3 missões co-op e a Bandeira), o que o Comandante ainda precisa pedir e a definição de pronto. (2) O mapa-múndi não muda mais de tamanho ao passar o mouse (`WorldMap.reservarAltura`). (3) `core/ModoComandante.ts`: o link só em desenvolvimento, no PC e no site publicado com o interruptor ligado; em produção fechada, a conta de administrador. **Provas:** 5 testes do modo Comandante; o tremor medido no navegador (6 de 7 pinos mudavam; depois, 0).
-**Falta (R13):** o **servidor recusar mapa restrito** (A0); **o interruptor está ligado** no site publicado (desligar no lançamento); a ordem das missões e o servidor fora do PC são decisões do Comandante (plano § 4).
-**Onde conferir:** o mapa-múndi do console; o plano em `.decepticons/CAMINHO_DO_LANCAMENTO.md`. **Próxima sessão:** A0, depois A1 e A2 (o co-op online).
+**Falta (R13):** **o interruptor está ligado** no site publicado (desligar no lançamento); a ordem das missões e o servidor fora do PC são decisões do Comandante (plano § 4).
+**Onde conferir:** o mapa-múndi do console; o plano em `.decepticons/CAMINHO_DO_LANCAMENTO.md`. **Próxima sessão:** A1 e A2 (o co-op online; o A0, o servidor recusar mapa restrito, já está na `main`: P226).
+## O HOOK NÃO REFAZ O CHECK DEPOIS DE UMA JUNÇÃO PURA COM A MAIN — Claude, 19/10 (branch `claude/hook-juncao`, P225)
+
+**O Comandante (19/10):** economizar os 10 a 25 minutos do laço de push, com boas práticas. **Feito:** `scripts/juncaoJaVerificada.mjs` + o hook: depois de uma junção com a `main`, não refaz o check se a `main` entrou por cima de uma árvore já verificada e cada arquivo que mudou veio inteiro dela (ou é `.md`); mesclado dos dois lados roda tudo; `CYBERMECH_CHECK_COMPLETO=1` desliga (o `publicar --sem-ci` liga). 7 mutações pegas e a regra aplicada a junções reais. **Falta (R13):** só se confirma de verdade no próximo push depois de uma junção; os locales mesclados ainda rodam o check (próximo degrau no HISTORICO).
+
+
+## O ACTIONS ECONÔMICO, SEM PERDER SINAL — Claude, 19/10 (branch `claude/ci-economico`, P223)
+
+**O Comandante (19/10):** economizar o Actions "de forma inteligente, profissional, sem miséria". **Feito:** medi antes (235 min em um dia; a cota de ~2.000 durava ~8 dias) e cortei só a repetição: o push na `main` não refaz o check na árvore que o PR já provou (`scripts/ciJaProvado.mjs`, na dúvida roda tudo), etiquetas só ao abrir, rascunho não roda, e `npm run ci:consumo` mede. O check do PR e o hook seguem completos. **Falta (R13):** só se confirma de verdade no primeiro merge depois deste PR (o job do push deve terminar em ~1 min com "já passou no check do PR"); medir de novo com `npm run ci:consumo`.
+
+> **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 ## O ANALYTICS PEGAVA A PROPRIEDADE ERRADA: AGORA EXIGE O CÓDIGO DO CYBERMECH — Claude, 19/10 (branch `claude/analytics-propriedade-certa`, P207)
 

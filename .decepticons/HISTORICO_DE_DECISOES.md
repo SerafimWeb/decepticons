@@ -1,11 +1,27 @@
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
+
 ## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
 
 **Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.
 ## [2026-10-19] O `?comandante=1` é um interruptor de desenvolvimento, não a porta de produção (Claude, P224)
 
-**O que é:** um atalho de depuração do navegador (*feature flag* escondida), que só liga telas e fases restritas; nunca deu poder sobre o servidor (o `/admin` exige token). **O problema:** abre, para quem digitar, o que ainda não foi lançado (e o servidor nem recusa um mapa restrito). **A decisão:** o link só vale em desenvolvimento, no PC e no site publicado **enquanto `VITE_COMANDANTE_POR_LINK=1`** (o `publicar-site` liga; `"comandantePorLink": false` em `deploy-site.json` fecha no lançamento); **a conta de administrador abre o modo Comandante sem link, em qualquer lugar.** O que protege de verdade é o servidor: **recusar mapa restrito a quem não é admin é o pacote A0** (`CAMINHO_DO_LANCAMENTO.md`).
+**O que é:** um atalho de depuração do navegador (*feature flag* escondida), que só liga telas e fases restritas; nunca deu poder sobre o servidor (o `/admin` exige token). **O problema:** abre, para quem digitar, o que ainda não foi lançado (e o servidor não recusava um mapa restrito: **resolvido no P226**). **A decisão:** o link só vale em desenvolvimento, no PC e no site publicado **enquanto `VITE_COMANDANTE_POR_LINK=1`** (o `publicar-site` liga; `"comandantePorLink": false` em `deploy-site.json` fecha no lançamento); **a conta de administrador abre o modo Comandante sem link, em qualquer lugar.** O que protege de verdade é o servidor: **recusar mapa restrito a quem não é admin foi o pacote A0 (P226, feito)**.
+## [2026-10-19] O hook confia no CI do PR depois de uma junção pura com a main (Claude, P225)
+
+**Ordem:** economizar os 10 a 25 minutos do laço (a `main` anda durante o check, o PR fica `dirty`, junta-se a `main`, o hook refaz tudo). **Decisão:** o hook pula o check quando a junção é **pura**: o primeiro pai é uma árvore já verificada aqui, o segundo pai está na `origin/main`, e **cada arquivo que difere do primeiro pai veio inteiro do segundo (ou é `.md`)**. A combinação das metades é testada pelo CI do PR numa máquina limpa (merge-ref). **Na dúvida roda tudo:** arquivo mesclado dos dois lados (locales, `ci.yml`), primeiro pai nunca verificado, segundo pai fora da `main`, commit que não é de junção, erro do `git`. Com o Actions parado (`publicar --sem-ci`) não há quem teste a combinação, então o hook roda completo (`CYBERMECH_CHECK_COMPLETO=1`). Aplicado a junções reais de hoje: a do #412 (conflito só em docs) pula; as com conflito nos locales ou no `ci.yml` rodam. **Não feito, próximo degrau:** validar os locales mesclados (JSON válido e a união das chaves) para que também pulem, que é onde a regra ainda roda check por conflito. Por boa prática, o `bash` do Git que o teste do hook usa virou um ajudante compartilhado (`server/ajudaBash.ts`).
+
+
+## [2026-10-19] Economizar o Actions removendo repetição, não sinal (Claude, P223)
+
+**Ordem:** economizar de forma inteligente e profissional, sem miséria. **Medi antes** (235 min em um dia; 40% push na `main`, 38% check do PR, 22% etiquetas) e cortei só o que repete ou é desperdício: (1) o push na `main` pula o check quando a árvore é idêntica à do PR e o CI do PR passou nela (na dúvida roda tudo; decisão pura e testada, 6 mutações pegas; aplicada a merges reais: #405 pula, #403 roda); (2) etiquetas só ao abrir (o job de 6 s cobra 1 minuto); (3) rascunho não roda. **Não cortei** o check do PR nem o hook: é a segunda opinião de uma máquina limpa e achou dois defeitos escondidos por uma semana. Próximos degraus, se ainda apertar, estão no `DEPLOY.md`. `npm run ci:consumo` passa a mostrar o gasto e a projeção.
+
+> **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
 ## [2026-10-19] A descoberta da propriedade do Analytics exige o código de medição do CYBERMECH (Claude, P207)
 

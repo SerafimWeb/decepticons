@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { esconder, falhouPorAutenticacao, gh, tokenDoGit } from '../scripts/ghSeguro.mjs';
-import { publicar, type RespostaComando } from '../scripts/publicar.mjs';
+import { ambienteDoPush, publicar, type RespostaComando } from '../scripts/publicar.mjs';
 
 /**
  * O envio automático (10/10): `gh` que cai para a credencial do Git quando o token morre, e o `npm run publicar` que faz o ritual da regra 13
@@ -348,5 +348,13 @@ describe('ghSeguro: cai para a credencial do Git só quando o token do gh morreu
     expect(esconder('a TOK b TOK', 'TOK')).toBe('a *** b ***');
     expect(esconder(undefined, 'TOK')).toBe('');
     expect(esconder('sem token', null)).toBe('sem token');
+  });
+});
+
+describe('o ambiente do push (P224): sem CI o hook não pode pular o check da junção', () => {
+  it('com --sem-ci liga CYBERMECH_CHECK_COMPLETO; sem a opção não mexe no ambiente', () => {
+    expect(ambienteDoPush(true, { A: '1' })).toEqual({ A: '1', CYBERMECH_CHECK_COMPLETO: '1' });
+    expect(ambienteDoPush(false, { A: '1' })).toEqual({ A: '1' });
+    expect(ambienteDoPush(false, { CYBERMECH_CHECK_COMPLETO: '1' }), 'quem já pediu o completo continua pedindo').toEqual({ CYBERMECH_CHECK_COMPLETO: '1' });
   });
 });

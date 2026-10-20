@@ -66,7 +66,7 @@ O **mapa** (compacto, com os saguões que o Mech não atravessa), a **multidão*
 
 | O quê | Estado | O que falta |
 |---|---|---|
-| **Acesso ao que é restrito** (o `?comandante=1`) | **hoje é só do navegador** (`consoleData.ts`: "não é segurança"); o **servidor não recusa** um mapa restrito (`?sala=X&mapa=janeiro` abre para qualquer um) | **mudar antes do lançamento**: o link só vale em `localhost` e no build de desenvolvimento; em produção o modo Comandante vem **da conta de administrador** (validada pelo servidor), e o servidor **recusa mapa restrito a quem não é admin**. *(o primeiro passo está neste PR)* |
+| **Acesso ao que é restrito** (o `?comandante=1`) | **hoje é só do navegador** (`consoleData.ts`: "não é segurança"); o servidor **já recusa** mapa restrito a quem não é administrador (A0, P226, feito: `CREDENCIAL` antes do JOIN) | **falta fechar o link no lançamento** (`"comandantePorLink": false`, `LANCAMENTO.md` item 11); em produção o modo Comandante vem **da conta de administrador** (validada pelo servidor). |
 | Auditoria de segurança, privilégio, auditoria interna | feitas em 18/10 (`AUDITORIA_SEGURANCA.md`, `GOVERNANCA.md`) | reler depois do A2 (rede nova) |
 | Servidor fora do PC de trabalho | **aberto** (item 4 acima) | decisão do Comandante |
 | O deploy do site | **travado 2 h em 19/10** (o teste do hook, sem `bash` no PATH da tarefa agendada): corrigido no PR do atualizador | conferir que o `publicar-site.log` volta a registrar |

@@ -10,11 +10,15 @@ name: CI
 #      diff). O job ainda termina VERDE, para o `npm run publicar` (que espera a linha `check`) continuar valendo.
 #   2) `concurrency` cancela a execução anterior quando o mesmo PR recebe outro push (economiza as corridas
 #      repetidas que os agentes fazem). O `deploy` mantém a trava própria (nunca cancela um deploy no meio).
+#   3) (P223, 19/10) O push na `main` NÃO refaz o check quando a árvore é a mesma que o PR já provou verde
+#      (`scripts/ciJaProvado.mjs`: junção, árvore idêntica, execução verde do PR; na dúvida roda tudo). Era 38% dos minutos.
+#   4) PR em rascunho não roda (roda ao ficar pronto). O consumo se mede com `npm run ci:consumo`.
 # Ver DEPLOY.md § "Minutos do CI".
 on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 # As páginas do site leem a lista de PRs (equipe, entregas) com o token do próprio workflow.
 permissions:
@@ -24,6 +28,8 @@ permissions:
 
 jobs:
   check:
+    # PR em rascunho não gasta minutos: o check roda quando ele fica pronto (ready_for_review).
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     concurrency:
@@ -47,15 +53,22 @@ jobs:
             echo "so_docs=true" >> "$GITHUB_OUTPUT"
             echo "Só documentação (*.md): a suíte pesada não se aplica."
           fi
+      # Push na main: esta árvore exata já passou no check do PR? Então não repete (o job termina verde em segundos).
+      - name: Esta árvore já passou no PR?
+        id: provada
+        if: github.event_name == 'push' && steps.docs.outputs.so_docs != 'true'
+        run: node scripts/ciJaProvado.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
       - uses: actions/setup-node@v7
-        if: steps.docs.outputs.so_docs != 'true'
+        if: steps.docs.outputs.so_docs != 'true' && steps.provada.outputs.ja_provada != 'true'
         with:
           node-version: 22
           cache: npm
       - run: npm ci
-        if: steps.docs.outputs.so_docs != 'true'
+        if: steps.docs.outputs.so_docs != 'true' && steps.provada.outputs.ja_provada != 'true'
       - run: npm run check
-        if: steps.docs.outputs.so_docs != 'true'
+        if: steps.docs.outputs.so_docs != 'true' && steps.provada.outputs.ja_provada != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
 
