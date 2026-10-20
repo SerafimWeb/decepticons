@@ -26,6 +26,8 @@ Abrir `cybermech.online` ao público: **jogo grátis no navegador**, com **dois 
 | 9 | **Teste com gente de fora** | O online só foi testado por dois PCs do Comandante | Comandante convida 5 a 10 pessoas; Claude olha as métricas e o log | Três sessões de ~30 min, sem queda de servidor, e a lista do que estranharam |
 | 10 | **Política revisada** | Entregue em 18/10 (P192), mas é rascunho | **Comandante** (de preferência com um advogado) | Texto revisado, e-mail do encarregado em `.decepticons/contato-privacidade.txt`, razão social/CNPJ no texto |
 
+| 11 | **Fechar o atalho do Comandante** (P224) | O `?comandante=1` abre, no site publicado, as fases restritas para quem digitar o link. É interruptor de desenvolvimento: no lançamento se fecha com uma linha. **Dois passos juntos:** (a) escrever `"comandantePorLink": false` em `.tmp/servidor/deploy-site.json` e publicar de novo; (b) o **servidor recusar mapa restrito a quem não é administrador** (pacote A0 do `CAMINHO_DO_LANCAMENTO.md`) | Claude faz o (b); **Comandante diz "pode fechar" e o Claude faz o (a)** | `https://cybermech.online/?comandante=1` **não** mostra o IMPLANTAR do 8 DE JANEIRO, e a conta de administrador continua abrindo o modo Comandante. **Lembrete automático:** enquanto estiver aberto, cada publicação do site escreve `LEMBRETE DE LANÇAMENTO` no log (`.tmp/servidor/publicar-site.log`) |
+
 **Ordem:** 1 → 2, 3, 4 (a auditoria diz o que corrigir primeiro) → 7 (rápido) → 5 e 6; 8, 9 e 10 são do Comandante e andam em paralelo; o 9 só depois do 8.
 
 ## 3. Fora do lançamento (congelado)

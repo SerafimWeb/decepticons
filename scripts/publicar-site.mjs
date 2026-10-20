@@ -225,3 +225,5 @@ if (!(await publicar())) {
 writeFileSync(`${MARCA}.tmp`, head);
 renameSync(`${MARCA}.tmp`, MARCA);
 log(`PUBLICADO: ${head.slice(0, 7)} no ar (conferido por checksum: ${arquivosDeConferencia().join(', ')})`);
+// O lembrete que não depende de memória: a cada publicação, enquanto o atalho estiver aberto, o log diz o que fechar no lançamento (LANCAMENTO.md, item 11).
+if (cfg.comandantePorLink !== false) log('LEMBRETE DE LANÇAMENTO: o atalho ?comandante=1 está ABERTO no site publicado (quem digitar o link vê as fases restritas). Para fechar: "comandantePorLink": false em .tmp/servidor/deploy-site.json e publicar de novo (LANCAMENTO.md, item 11).');
