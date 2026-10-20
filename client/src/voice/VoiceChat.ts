@@ -1,4 +1,5 @@
 import { messageType } from '../../../shared/net/messages';
+import { abrirMicrofone } from './abrirMicrofone';
 import { codificarPronto, codificarSinal, lerLista, lerSinal, VOZ, type Sinal } from '../../../shared/net/voz';
 import { normalizeKey } from '../core/Settings';
 import { MicController, type EstadoMic, type ModoMic } from './MicController';
@@ -22,14 +23,8 @@ export interface Ambiente {
 
 export const AMBIENTE_DO_NAVEGADOR: Ambiente = {
   novaConexao: (cfg) => new RTCPeerConnection(cfg),
-  pedirMicrofone: (aparelho) => {
-    if (!navigator.mediaDevices?.getUserMedia) return Promise.reject(new DOMException('sem microfone', 'NotFoundError'));
-    // Mono (metade da banda, basta para voz); o resto é o tratamento do navegador contra eco, ruído e volume desigual. `ideal`, não `exact`: o aparelho salvo que foi desligado cai no padrão.
-    return navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1, ...(aparelho ? { deviceId: { ideal: aparelho } } : {}) },
-      video: false,
-    });
-  },
+  // O pedido único do jogo (o mesmo do teste do microfone): o aparelho escolhido é `exact`; cai no padrão só se ele sumiu (`abrirMicrofone.ts`).
+  pedirMicrofone: (aparelho) => abrirMicrofone(aparelho),
 };
 
 export interface VozOpcoes {

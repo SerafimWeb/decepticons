@@ -960,5 +960,7 @@
  "SILENCIAR VOZ": "COUPER LA VOIX",
  "VOZ SILENCIADA": "VOIX COUPÉE",
  "Ouvir de novo a voz deste piloto": "Réentendre la voix de ce pilote",
- "Silenciar a voz deste piloto até você sair da sala": "Couper la voix de ce pilote jusqu'à ce que vous quittiez la salle"
+ "Silenciar a voz deste piloto até você sair da sala": "Couper la voix de ce pilote jusqu'à ce que vous quittiez la salle",
+ "Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.": "Silence total : cet appareil ne fournit aucun son (en sourdine ou désactivé dans Windows). Choisissez-en un autre dans la liste.",
+ "Aparelho em uso: {0}": "Appareil utilisé : {0}"
 }

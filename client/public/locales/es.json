@@ -960,5 +960,7 @@
  "SILENCIAR VOZ": "SILENCIAR VOZ",
  "VOZ SILENCIADA": "VOZ SILENCIADA",
  "Ouvir de novo a voz deste piloto": "Volver a oír la voz de este piloto",
- "Silenciar a voz deste piloto até você sair da sala": "Silenciar la voz de este piloto hasta que salgas de la sala"
+ "Silenciar a voz deste piloto até você sair da sala": "Silenciar la voz de este piloto hasta que salgas de la sala",
+ "Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.": "Silencio total: este dispositivo no entrega sonido (silenciado o desactivado en Windows). Elige otro de la lista.",
+ "Aparelho em uso: {0}": "Dispositivo en uso: {0}"
 }

@@ -960,5 +960,7 @@
  "SILENCIAR VOZ": "静音语音",
  "VOZ SILENCIADA": "语音已静音",
  "Ouvir de novo a voz deste piloto": "重新听到这位飞行员的声音",
- "Silenciar a voz deste piloto até você sair da sala": "在你离开房间之前，将这位飞行员静音"
+ "Silenciar a voz deste piloto até você sair da sala": "在你离开房间之前，将这位飞行员静音",
+ "Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.": "完全静音:此设备没有输出任何声音(在 Windows 中被静音或已关闭)。请从列表中选择其他设备。",
+ "Aparelho em uso: {0}": "正在使用的设备:{0}"
 }

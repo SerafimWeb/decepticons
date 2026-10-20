@@ -960,5 +960,7 @@
  "SILENCIAR VOZ": "音声をミュート",
  "VOZ SILENCIADA": "音声ミュート中",
  "Ouvir de novo a voz deste piloto": "このパイロットの声をもう一度聞く",
- "Silenciar a voz deste piloto até você sair da sala": "あなたが部屋を出るまで、このパイロットの声をミュートする"
+ "Silenciar a voz deste piloto até você sair da sala": "あなたが部屋を出るまで、このパイロットの声をミュートする",
+ "Silêncio total: este aparelho não entrega som (mudo ou desligado no Windows). Escolha outro da lista.": "完全な無音:このデバイスは音を出力していません(Windowsでミュートまたは無効になっています)。一覧から別のデバイスを選んでください。",
+ "Aparelho em uso: {0}": "使用中のデバイス:{0}"
 }

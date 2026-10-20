@@ -1,0 +1,80 @@
+{
+  "data": "2026-10-20",
+  "verificacoes": [
+    {
+      "nome": "sozinho na voz o indicador avisa que ninguém mais está nela e manda testar o microfone",
+      "ok": true,
+      "detalhe": "NINGUÉM MAIS NA VOZ: TESTE O MICROFONE EM CONFIGURAÇÕES"
+    },
+    {
+      "nome": "o indicador de estado diz \"MICROFONE ABERTO\" (o microfone funciona; o aviso explica o silêncio)",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "quando um colega entra na voz o aviso de \"sozinho\" some",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "o painel do teste abre, a barra mexe e o texto diz \"funcionando\"",
+      "ok": true,
+      "detalhe": "{\"visivel\":true,\"barra\":\"52%\",\"status\":\"Funcionando: o microfone está captando a sua voz.\",\"botao\":\"[ PARAR O TESTE ]\"}"
+    },
+    {
+      "nome": "o botão vira \"PARAR O TESTE\"",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "o painel diz qual aparelho o navegador abriu (\"Aparelho em uso: …\", P229)",
+      "ok": true,
+      "detalhe": "Aparelho em uso: Fake Default Audio Input"
+    },
+    {
+      "nome": "o teste abriu o microfone (uma faixa a mais, além da do chat de voz)",
+      "ok": true,
+      "detalhe": "1 -> 2"
+    },
+    {
+      "nome": "depois da permissão a lista de aparelhos ganha o microfone com nome",
+      "ok": true,
+      "detalhe": "[\"Padrão do sistema\",\"Fake Audio Input 1\",\"Fake Audio Input 2\"]"
+    },
+    {
+      "nome": "\"ouvir a minha voz\" liga sem erro",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "parar o teste esconde o painel, volta o botão e desmarca \"ouvir a minha voz\"",
+      "ok": true,
+      "detalhe": "{\"escondido\":true,\"botao\":\"[ TESTAR ]\",\"ouvir\":false}"
+    },
+    {
+      "nome": "parar SOLTA o microfone de verdade (a faixa do teste termina)",
+      "ok": true,
+      "detalhe": "1 vivas, esperava 1"
+    },
+    {
+      "nome": "fechar as Configurações com o teste ligado solta o microfone",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "trocar de aba com o teste ligado solta o microfone",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "nenhum erro de página no jogo",
+      "ok": true,
+      "detalhe": ""
+    },
+    {
+      "nome": "sem permissão do navegador o painel explica o motivo em vez de ficar mudo, e o botão volta a \"testar\"",
+      "ok": true,
+      "detalhe": "{\"estado\":\"negado\",\"texto\":\"O navegador bloqueou o microfone neste site. Clique no cadeado ao lado do endereço, permita o microfone e teste de novo.\",\"botao\":\"[ TESTAR ]\"}"
+    }
+  ]
+}
