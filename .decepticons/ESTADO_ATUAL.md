@@ -4,6 +4,12 @@
 
 > **Arquivo:** o que tem mais de dois dias mora em `.decepticons/arquivo/estado-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## O PLANO DE LANÇAMENTO, O MAPA QUE TREMIA E O `?comandante=1` FECHÁVEL — Claude, 19/10 (branch `claude/mapa-treme`, P224)
+
+**Feito:** (1) `CAMINHO_DO_LANCAMENTO.md`: a matriz missão × modo × offline/online, os pacotes de trabalho (A0 a A7, ≈ 9 a 11 PRs para 3 missões co-op e a Bandeira), o que o Comandante ainda precisa pedir e a definição de pronto. (2) O mapa-múndi não muda mais de tamanho ao passar o mouse (`WorldMap.reservarAltura`). (3) `core/ModoComandante.ts`: o link só em desenvolvimento, no PC e no site publicado com o interruptor ligado; em produção fechada, a conta de administrador. **Provas:** 5 testes do modo Comandante; o tremor medido no navegador (6 de 7 pinos mudavam; depois, 0).
+**Falta (R13):** o **servidor recusar mapa restrito** (A0); **o interruptor está ligado** no site publicado (desligar no lançamento); a ordem das missões e o servidor fora do PC são decisões do Comandante (plano § 4).
+**Onde conferir:** o mapa-múndi do console; o plano em `.decepticons/CAMINHO_DO_LANCAMENTO.md`. **Próxima sessão:** A0, depois A1 e A2 (o co-op online).
+
 ## O DEPLOY DO ACTIONS DESLIGADO — Claude, 19/10 (branch `claude/actions-sem-deploy`, P221)
 
 **O Comandante (19/10):** sem gastar o Actions à toa, mantendo tudo funcionando. **Feito:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = "pulado", não vermelho); o site segue pelo PC. Secret não tocado. **Falta:** decidir se o `check` também deixa de rodar no push da `main` (é repetição do que o PR já provou; as métricas de deploy dos bastidores leem essas execuções).

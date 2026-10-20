@@ -2,6 +2,10 @@
 
 > **Arquivo:** as entradas com mais de dois dias moram em `.decepticons/arquivo/historico-*.md` (nada se perdeu; `npm run arquivar` move mais). Procure por busca, não leia inteiro.
 
+## [2026-10-19] O `?comandante=1` é um interruptor de desenvolvimento, não a porta de produção (Claude, P224)
+
+**O que é:** um atalho de depuração do navegador (*feature flag* escondida), que só liga telas e fases restritas; nunca deu poder sobre o servidor (o `/admin` exige token). **O problema:** abre, para quem digitar, o que ainda não foi lançado (e o servidor nem recusa um mapa restrito). **A decisão:** o link só vale em desenvolvimento, no PC e no site publicado **enquanto `VITE_COMANDANTE_POR_LINK=1`** (o `publicar-site` liga; `"comandantePorLink": false` em `deploy-site.json` fecha no lançamento); **a conta de administrador abre o modo Comandante sem link, em qualquer lugar.** O que protege de verdade é o servidor: **recusar mapa restrito a quem não é admin é o pacote A0** (`CAMINHO_DO_LANCAMENTO.md`).
+
 ## [2026-10-19] O deploy do Actions desligado: o site vai pelo PC (Claude, P221)
 
 **Ordem:** não gastar o Actions à toa; manter o funcionamento sem ele. **Decisão:** o job `deploy` do `ci.yml` só roda com a variável `DEPLOY_PELO_ACTIONS = true` (ausente = pulado). O `check` do PR continua (ele achou dois defeitos escondidos por uma semana); o deploy já estava redundante (o PC publica, de graça e provado) e falhava vermelho (secret `DEPLOY_PATH` fora da trava). **Não mexi em secret nem em configuração do GitHub.** Religar = conferir os secrets e criar a variável; nunca os dois publicadores juntos.

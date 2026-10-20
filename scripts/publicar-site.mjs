@@ -114,6 +114,8 @@ function montar() {
     // As capturas do jogo ficam guardadas para as montagens sem Chrome (a landing não perde as fotos).
     CYBERMECH_CAPTURAS_CACHE: join(DADOS, 'site-capturas'),
     ...(cfg.gameServer ? { VITE_GAME_SERVER: cfg.gameServer } : {}),
+    // O atalho `?comandante=1` no site publicado (P224): ligado enquanto se desenvolve; **no lançamento, `"comandantePorLink": false` em deploy-site.json o fecha** (só a conta de administrador abre o modo Comandante).
+    VITE_COMANDANTE_POR_LINK: cfg.comandantePorLink === false ? '0' : '1',
     ...(cfg.url ? { SITE_URL: cfg.url } : {}),
   };
   const r = spawnSync('npm', ['run', 'site', ...(tem('--capturas') ? ['--', '--capturas'] : [])], { cwd: RAIZ, env, encoding: 'utf8', shell: process.platform === 'win32', maxBuffer: 256 * 1024 * 1024 });

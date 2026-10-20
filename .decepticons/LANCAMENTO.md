@@ -4,6 +4,8 @@
 > observabilidade, governança, tudo que for ainda necessário. Vamos lançar com apenas a fase estação dos cabos e cidade neon livres, depois vamos liberar a terras raras (troque o nome rio vivo para terras raras); faça auditoria
 > se nossa arquitetura está segura para lançarmos."* **Esta página manda na escolha do que fazer a seguir** (`AGENTS.md`, Passo Zero 12): o que não está aqui **espera o lançamento**, a menos que o Comandante peça.
 
+> **Atualização 19/10 (P224):** a ordem de hoje é lançar com **2 a 3 missões prontas, offline e online, co-op ou competitivo**: o plano e os pacotes estão em **`CAMINHO_DO_LANCAMENTO.md`**, que passa a mandar **no que diz respeito às missões**; o que esta página diz sobre segurança, privilégio, auditoria, servidor e política continua valendo.
+
 ## 1. O que é "lançar"
 
 Abrir `cybermech.online` ao público: **jogo grátis no navegador**, com **dois mapas livres: CIDADE NEON (a Arena) e a ESTAÇÃO DOS CABOS (a Praia dos Cabos)**, **online na Arena**, **conta opcional** e **política de privacidade**.

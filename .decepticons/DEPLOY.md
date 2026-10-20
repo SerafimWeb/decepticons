@@ -385,3 +385,7 @@ A hospedagem compartilhada da Hostinger **não serve** para o servidor: não man
 Erros do cliente publicado usam o endpoint já existente do Serafim13 (sinal-erro), identificado em core/Diagnostics.ts. A CSP permite somente a origem Supabase correspondente; não há credencial no cliente. Aceitação/persistência no serviço central ainda requer verificação operacional. Resumos de partida usam /partida-metricas no servidor do jogo, com fila local limitada e leitura privada em /metricas. Ver OBSERVABILIDADE.md.
 
 O cliente desta entrega usa protocolo 5; servidor anterior será recusado por incompatibilidade. O servidor público está offline por orientação do dono e não deve ser consultado, iniciado ou atualizado nesta tarefa. Publicação do site não comprova funcionamento online.
+
+## O interruptor do `?comandante=1` no site publicado (P224, 19/10)
+
+O `publicar-site` monta o jogo com `VITE_COMANDANTE_POR_LINK=1` (o atalho `?comandante=1` vale no site publicado **enquanto se desenvolve**). **No lançamento, escreva `"comandantePorLink": false` em `.tmp/servidor/deploy-site.json` e publique de novo:** o link e a lembrança do navegador passam a ser ignorados, e **só a conta de administrador** abre o modo Comandante. No PC (`localhost`) e no `npm run dev` o atalho continua valendo.

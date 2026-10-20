@@ -14,6 +14,12 @@
 
 **Só CYBERMECH.** Ordens de outros projetos (SEDE, SERAFIM, PIPELINESTUDIO) correm nos canais deles.
 
+## P224 — Concluir o projeto: o plano de lançamento, o `?comandante=1` e o mapa que tremia (19/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P224 | 19/10 | "quero jogar nessa fase, ainda não apareceu o implantar… **mapeie as pendências e vamos planejar o que ainda preciso solicitar** pra concluirmos e entregarmos o game. essa sintaxe `?comandante=1`, **qualquer pessoa poderá ter acesso assim?** isso é um bypass? é seguro? **temos como usar isso só enquanto estou desenvolvendo e, em produção, restringir? como se chama isso?** QUERO CONCLUIR O PROJETO!!! … lançar com **2 ou 3 missões finalizadas, offline e online, co-op ou competitivo**" e, antes: "o mapa treme quando passo o mouse pelos locais" | 🟡 | **(1) O site não publicava há 2 h:** o teste do hook de push chamava `bash`, que a tarefa agendada não tem (PR #411). **(2) O mapa-múndi tremia:** 6 de 7 pinos mudavam a altura do mapa (174 a 204 px) porque a ficha de baixo muda de altura; agora ela reserva a altura da maior. **(3) O plano:** `CAMINHO_DO_LANCAMENTO.md` (o que existe por missão e modo, os pacotes de trabalho, o que o Comandante ainda precisa pedir, a definição de pronto). **(4) O `?comandante=1`:** era só do navegador ("não é segurança"): agora só vale em desenvolvimento, no PC e no site publicado **enquanto o interruptor estiver ligado**; em produção fechada, **só a conta de administrador** abre o modo Comandante. **Falta:** o **servidor recusar mapa restrito** a quem não é admin (pacote A0 do plano) | `.decepticons/CAMINHO_DO_LANCAMENTO.md`; o mapa-múndi parado ao passar o mouse; `core/ModoComandante.ts` |
+
 ## P222 — O 8 DE JANEIRO realista, compacto, com saguões fechados (19/10, Claude)
 
 | # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
