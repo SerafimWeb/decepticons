@@ -129,7 +129,7 @@ import { CampanhaStore } from './CampanhaStore';
 import { EtapaEmCurso } from './EtapaEmCurso';
 import { linkDaEtapa, PARAM_DA_CAMPANHA, PARAM_DA_ETAPA } from '../sim/campanha';
 import type { CameraWall } from '../ui/CameraWall';
-import type { ResumoDoRio } from '../ui/RelatorioPanel';
+import type { ResumoDaPraca, ResumoDoRio } from '../ui/RelatorioPanel';
 import { abrirSobDemanda, sobDemanda } from './sobDemanda';
 import { plantaDaArena, plantaDoBunker } from '../ui/TacticalRadar';
 import { Minimapa, plantaComZonas, plantaDaAmazoniaNoMinimapa, plantaDaPracaNoMinimapa, plantaDaPraiaNoMinimapa, pontoDaEstacao } from '../ui/Minimapa';
@@ -380,6 +380,8 @@ export class Game {
   private missionEnded = false;
   /** O que a missão do rio deixou, para o Relatório de Consequências (P179 camada 3): só existe depois do fim dela. */
   private relatorioDoRio: ResumoDoRio | null = null;
+  /** O que a missão do 8 DE JANEIRO deixou, para o mesmo Relatório (P233): só existe depois do fim dela. */
+  private relatorioDaPraca: ResumoDaPraca | null = null;
   /** O objetivo na tela da missão da Amazônia (a ordem, a dica e os marcadores): pedaço sob demanda, só existe nela. */
   private objetivos: ObjetivosCarregados | null = null;
   private estadoDosObjetivos: EstadoDosObjetivos | null = null;
@@ -1000,7 +1002,7 @@ export class Game {
     // O Relatório de Consequências (P179 camada 3): o chip só aparece depois da missão do rio; o painel e os textos são sob demanda como o Arquivo.
     document.getElementById('cc-relatorio')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      const resumo = this.relatorioDoRio;
+      const resumo = this.relatorioDoRio ?? this.relatorioDaPraca;
       if (resumo) void import('../ui/RelatorioPanel').then((m) => m.abrirRelatorio(resumo));
       document.getElementById('cc-relatorio')?.classList.remove('novo');
     });
@@ -1666,6 +1668,8 @@ export class Game {
         const r = this.match.missaoJaneiro.resultado();
         const caido = PRACA_PREDIOS[r.integridade.findIndex((v) => v <= 0)]?.nome;
         const nota = `${r.expulsos} EXPULSOS · ${r.eliminados} ELIMINADOS · ${r.mesasLimpas} MESAS LIMPAS · ${Math.round(r.naoLetal * 100)}% NÃO LETAL`;
+        this.relatorioDaPraca = { missao: 'janeiro', venceu: survived, causa: r.causa, predio: caido ?? null, expulsos: r.expulsos, eliminados: r.eliminados, rebeldes: r.rebeldes, mesasLimpas: r.mesasLimpas, naoLetalPct: r.naoLetal * 100, segundos: stats.survivalSeconds };
+        this.mostrarChipDoRelatorio(true);
         this.hud.setMissionEndTexto(
           survived,
           survived ? 'A PRAÇA ESVAZIOU · OS TRÊS PRÉDIOS DE PÉ' : r.causa === 'predio' && caido ? `PRÉDIO PERDIDO · ${caido}` : 'O TEMPO ACABOU COM GENTE NA PRAÇA',
@@ -1855,6 +1859,7 @@ export class Game {
   private resume(): void {
     if (this.missionEnded) {
       this.missionEnded = false;
+      this.relatorioDaPraca = null;
       this.relatorioDoRio = null;
       this.mostrarChipDoRelatorio(false);
       this.objetivos?.reiniciar();

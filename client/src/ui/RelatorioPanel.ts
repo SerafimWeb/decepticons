@@ -23,6 +23,29 @@ export interface ResumoDoRio {
   segundos: number;
 }
 
+/**
+ * O que a missão do 8 DE JANEIRO deixou (P233): o `Game` monta no fim dela. O Relatório dela vem de `relatorio/janeiro/<língua>.json` e só afirma o que a ficha de fatos (`fichas/fatos-8-de-janeiro.md`)
+ * marca como 🟢, com a fonte; **nenhuma pessoa real é nomeada**. A nota diz como a Praça foi esvaziada: expulsar vale mais que eliminar (a força é a última saída).
+ */
+export interface ResumoDaPraca {
+  missao: 'janeiro';
+  venceu: boolean;
+  /** Por que perdeu (`null` se venceu): um prédio caiu (`predio` é o nome dele) ou o tempo acabou com gente na Praça. */
+  causa: 'predio' | 'tempo' | null;
+  predio: string | null;
+  expulsos: number;
+  eliminados: number;
+  /** Os androides rebeldes derrubados. */
+  rebeldes: number;
+  mesasLimpas: number;
+  /** Quantos por cento dos que saíram da Praça foram expulsos, e não eliminados (0 a 100). */
+  naoLetalPct: number;
+  segundos: number;
+}
+
+/** O que o Relatório recebe do fim de uma missão: a do rio ou a da Praça. */
+export type ResumoDaMissao = ResumoDoRio | ResumoDaPraca;
+
 export interface RotulosDoRelatorio {
   readonly titulo: string;
   readonly sub: string;
@@ -37,6 +60,7 @@ export interface RotulosDoRelatorio {
 }
 
 export type ChavesDasLinhas = 'venceuDentro' | 'venceuTiro' | 'aldeiaSalva' | 'rioVenceu' | 'perdeu' | 'aldeiaCaiu' | 'rioPerdeu' | 'geradores' | 'resistencia' | 'tempo';
+export type ChavesDasLinhasJaneiro = 'venceu' | 'perdeuPredio' | 'perdeuTempo' | 'expulsos' | 'eliminados' | 'rebeldes' | 'mesas' | 'naoLetal' | 'tempo';
 
 export interface FatoDoRelatorio {
   readonly id: string;
@@ -51,14 +75,16 @@ export interface FatoDoRelatorio {
   readonly nota: string;
 }
 
-export interface ConteudoDoRelatorio {
+/** O arquivo de uma missão: os rótulos, as linhas de "o que aconteceu" (as chaves mudam por missão), os fatos com fonte e o que é ficção. */
+export interface ConteudoDoRelatorio<K extends string = ChavesDasLinhas> {
   readonly rotulos: RotulosDoRelatorio;
-  readonly linhas: Readonly<Record<ChavesDasLinhas, string>>;
+  readonly linhas: Readonly<Record<K, string>>;
   readonly fatos: readonly FatoDoRelatorio[];
   readonly ficcao: readonly string[];
 }
 
 const CHAVES: readonly ChavesDasLinhas[] = ['venceuDentro', 'venceuTiro', 'aldeiaSalva', 'rioVenceu', 'perdeu', 'aldeiaCaiu', 'rioPerdeu', 'geradores', 'resistencia', 'tempo'];
+export const CHAVES_JANEIRO: readonly ChavesDasLinhasJaneiro[] = ['venceu', 'perdeuPredio', 'perdeuTempo', 'expulsos', 'eliminados', 'rebeldes', 'mesas', 'naoLetal', 'tempo'];
 
 /** Os arquivos a tentar, em ordem: a língua do jogador, o inglês (a mais lida) e o português (a origem). */
 export function arquivosParaTentar(id: IdiomaId): IdiomaId[] {
@@ -68,11 +94,13 @@ export function arquivosParaTentar(id: IdiomaId): IdiomaId[] {
 const texto = (v: unknown): v is string => typeof v === 'string' && v.trim() !== '';
 
 /** O arquivo veio inteiro e no formato certo (um JSON quebrado ou antigo não pode derrubar a tela). Todo fato leva fonte **com endereço https**: sem ela, o arquivo não vale. */
-export function conteudoValido(x: unknown): x is ConteudoDoRelatorio {
-  const c = x as ConteudoDoRelatorio | null;
+export function conteudoValido(x: unknown): x is ConteudoDoRelatorio;
+export function conteudoValido<K extends string>(x: unknown, chaves: readonly K[]): x is ConteudoDoRelatorio<K>;
+export function conteudoValido(x: unknown, chaves: readonly string[] = CHAVES): boolean {
+  const c = x as ConteudoDoRelatorio<string> | null;
   if (!c || typeof c !== 'object' || !c.rotulos || !c.linhas || !Array.isArray(c.fatos) || c.fatos.length === 0 || !Array.isArray(c.ficcao) || c.ficcao.length === 0) return false;
   if (!(['titulo', 'sub', 'aconteceuNome', 'aconteceuLema', 'ficcaoNome', 'ficcaoLema', 'quando', 'fonte', 'nota', 'fechar'] as const).every((k) => texto(c.rotulos[k]))) return false;
-  if (!CHAVES.every((k) => texto(c.linhas[k]))) return false;
+  if (!chaves.every((k) => texto(c.linhas[k]))) return false;
   if (!c.ficcao.every(texto)) return false;
   return c.fatos.every((f) => texto(f.id) && texto(f.nome) && texto(f.lema) && texto(f.texto) && texto(f.quando) && texto(f.fonte) && texto(f.nota) && texto(f.link) && /^https:\/\//.test(f.link));
 }
@@ -97,21 +125,35 @@ export function linhasDoRelatorio(r: ResumoDoRio, m: Readonly<Record<ChavesDasLi
   ];
 }
 
+/** As linhas da aba "o que aconteceu" da missão do 8 DE JANEIRO: o desfecho e a conta de como a Praça foi esvaziada. Pura. */
+export function linhasDaPraca(r: ResumoDaPraca, m: Readonly<Record<ChavesDasLinhasJaneiro, string>>): string[] {
+  const desfecho = r.venceu ? m.venceu : r.causa === 'tempo' ? m.perdeuTempo : preencher(m.perdeuPredio, { predio: r.predio ?? '' });
+  return [
+    desfecho,
+    preencher(m.expulsos, { n: r.expulsos }),
+    preencher(m.eliminados, { n: r.eliminados }),
+    preencher(m.rebeldes, { n: r.rebeldes }),
+    preencher(m.mesas, { n: r.mesasLimpas }),
+    preencher(m.naoLetal, { n: Math.round(r.naoLetalPct) }),
+    preencher(m.tempo, { t: formatarTempo(r.segundos) }),
+  ];
+}
+
 export class RelatorioPanel {
-  private readonly cache = new Map<IdiomaId, ConteudoDoRelatorio>();
+  private readonly cache = new Map<string, ConteudoDoRelatorio<string>>();
   private modal: HTMLElement | null = null;
-  private conteudo: ConteudoDoRelatorio | null = null;
-  private resumo: ResumoDoRio | null = null;
+  private conteudo: ConteudoDoRelatorio<string> | null = null;
+  private resumo: ResumoDaMissao | null = null;
   private indice = 0;
   private abrindo = false;
   private readonly aoTeclar = (e: KeyboardEvent): void => this.teclado(e);
 
   /** Pede o arquivo da língua (uma vez por língua) e abre. Sem arquivo nenhum, abre o aviso de erro. */
-  async abrir(resumo: ResumoDoRio): Promise<void> {
+  async abrir(resumo: ResumoDaMissao): Promise<void> {
     if (this.abrindo || this.modal) return;
     this.abrindo = true;
     try {
-      this.conteudo = await this.carregar(idiomaAtual());
+      this.conteudo = await this.carregar(idiomaAtual(), 'missao' in resumo);
     } finally {
       this.abrindo = false;
     }
@@ -129,17 +171,20 @@ export class RelatorioPanel {
     this.modal = null;
   }
 
-  private async carregar(lingua: IdiomaId): Promise<ConteudoDoRelatorio | null> {
+  private async carregar(lingua: IdiomaId, daPraca: boolean): Promise<ConteudoDoRelatorio<string> | null> {
+    // A missão do 8 DE JANEIRO tem os arquivos dela (`relatorio/janeiro/<língua>.json`); língua sem arquivo cai no inglês e depois no português, como a do rio.
+    const pasta = daPraca ? 'janeiro/' : '';
     for (const id of arquivosParaTentar(lingua)) {
-      const guardado = this.cache.get(id);
+      const guardado = this.cache.get(pasta + id);
       if (guardado) return guardado;
       try {
-        const res = await fetch(`${import.meta.env.BASE_URL}relatorio/${id}.json`);
+        const res = await fetch(`${import.meta.env.BASE_URL}relatorio/${pasta}${id}.json`);
         if (!res.ok) continue;
         const dado: unknown = await res.json();
-        if (!conteudoValido(dado)) continue;
-        this.cache.set(id, dado);
-        return dado;
+        if (!(daPraca ? conteudoValido(dado, CHAVES_JANEIRO) : conteudoValido(dado))) continue;
+        const conteudo = dado as ConteudoDoRelatorio<string>;
+        this.cache.set(pasta + id, conteudo);
+        return conteudo;
       } catch {
         /* sem rede ou JSON quebrado: tenta o próximo da lista */
       }
@@ -155,7 +200,7 @@ export class RelatorioPanel {
   }
 
   /** As abas, na ordem: o que aconteceu, os fatos e o que é ficção (nome e lema de cada). */
-  private abas(c: ConteudoDoRelatorio): { nome: string; lema: string }[] {
+  private abas(c: ConteudoDoRelatorio<string>): { nome: string; lema: string }[] {
     return [{ nome: c.rotulos.aconteceuNome, lema: c.rotulos.aconteceuLema }, ...c.fatos.map((f) => ({ nome: f.nome, lema: f.lema })), { nome: c.rotulos.ficcaoNome, lema: c.rotulos.ficcaoLema }];
   }
 
@@ -239,7 +284,8 @@ export class RelatorioPanel {
     };
     pagina.replaceChildren(this.el('h3', 'arq-ficha-nome', abas[this.indice]?.nome ?? ''));
     if (this.indice === 0) {
-      if (this.resumo) pagina.append(lista(linhasDoRelatorio(this.resumo, c.linhas)));
+      const r = this.resumo;
+      if (r) pagina.append(lista('missao' in r ? linhasDaPraca(r, c.linhas as Readonly<Record<ChavesDasLinhasJaneiro, string>>) : linhasDoRelatorio(r, c.linhas as Readonly<Record<ChavesDasLinhas, string>>)));
     } else if (this.indice === abas.length - 1) {
       pagina.append(lista(c.ficcao));
     } else {
@@ -277,8 +323,8 @@ export class RelatorioPanel {
 
 let painel: RelatorioPanel | null = null;
 
-/** Abre o Relatório de Consequências da missão que acabou (o painel nasce na primeira vez). */
-export function abrirRelatorio(resumo: ResumoDoRio): Promise<void> {
+/** Abre o Relatório de Consequências da missão que acabou, a do rio ou a da Praça (o painel nasce na primeira vez). */
+export function abrirRelatorio(resumo: ResumoDaMissao): Promise<void> {
   painel ??= new RelatorioPanel();
   return painel.abrir(resumo);
 }

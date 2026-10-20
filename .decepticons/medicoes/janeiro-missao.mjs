@@ -166,6 +166,17 @@ await page.waitForTimeout(2500);
 await foto('derrota');
 console.log('fim      ', JSON.stringify(await estado(page)));
 
+// O Relatório de Consequências da missão (o chip RELATÓRIO ▸ do console): a aba dos fatos, com a fonte.
+const chip = await page.$('#cc-relatorio:not([hidden])');
+if (chip) {
+  await chip.click();
+  await page.waitForTimeout(1500);
+  await page.keyboard.press('ArrowDown');
+  await page.waitForTimeout(500);
+  await foto('relatorio');
+  console.log('relatório aberto');
+} else console.log('o chip RELATÓRIO não apareceu');
+
 if (erros.length) console.log('ERROS DO NAVEGADOR:', [...new Set(erros)].slice(0, 6).join(' | '));
 else console.log('0 erros de página');
 await browser.close();
