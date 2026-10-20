@@ -170,3 +170,85 @@ describe('VoiceSpatial: a voz dos colegas no espaço (P205)', () => {
     expect(elementos[0]!.srcObject).toBeNull();
   });
 });
+
+/** Um fluxo com faixas de áudio de verdade (só o `enabled` importa ao mudo). */
+const fluxoComFaixas = (n = 1) => {
+  const faixas = Array.from({ length: n }, () => ({ enabled: true }));
+  return { faixas, fluxo: { getAudioTracks: () => faixas } as unknown as MediaStream };
+};
+
+describe('VoiceSpatial: o mudo por jogador (P228)', () => {
+  afterEach(() => {
+    delete (globalThis as { Audio?: unknown }).Audio;
+  });
+
+  it('silenciar desliga a faixa que chega e voltar a ouvir a liga (custo zero: só o enabled)', () => {
+    const a = audioFalso();
+    const s = new VoiceSpatial(() => a.saida);
+    const { faixas, fluxo: f } = fluxoComFaixas(2);
+    s.adicionar(3, f);
+    s.silenciar(3, true);
+    expect(faixas.map((x) => x.enabled)).toEqual([false, false]);
+    expect(s.silenciado(3)).toBe(true);
+    s.silenciar(3, false);
+    expect(faixas.map((x) => x.enabled)).toEqual([true, true]);
+    expect(s.silenciado(3)).toBe(false);
+  });
+
+  it('quem ainda espera o áudio do jogo começar também é silenciado, e fica assim quando entra no ar', () => {
+    let saida: SaidaDeAudio | null = null;
+    const s = new VoiceSpatial(() => saida);
+    const { faixas, fluxo: f } = fluxoComFaixas();
+    s.adicionar(3, f); // esperando (sem saída de áudio)
+    s.silenciar(3, true);
+    expect(faixas[0]!.enabled).toBe(false);
+    saida = audioFalso().saida;
+    s.ouvinte(0, 0, 0, 0);
+    expect(s.quantos).toBe(1);
+    expect(faixas[0]!.enabled, 'entrar no ar não religa').toBe(false);
+  });
+
+  it('silenciar antes de o colega chegar vale quando ele chega, e silenciar um colega não mexe nos outros', () => {
+    const a = audioFalso();
+    const s = new VoiceSpatial(() => a.saida);
+    s.silenciar(5, true); // ainda não há voz do 5
+    const cinco = fluxoComFaixas();
+    const seis = fluxoComFaixas();
+    s.adicionar(5, cinco.fluxo);
+    s.adicionar(6, seis.fluxo);
+    expect(cinco.faixas[0]!.enabled).toBe(false);
+    expect(seis.faixas[0]!.enabled, 'o outro colega segue ouvido').toBe(true);
+  });
+
+  it('o colega que sai da voz e volta (outra conexão) continua silenciado', () => {
+    const a = audioFalso();
+    const s = new VoiceSpatial(() => a.saida);
+    s.adicionar(3, fluxoComFaixas().fluxo);
+    s.silenciar(3, true);
+    s.remover(3);
+    const volta = fluxoComFaixas();
+    s.adicionar(3, volta.fluxo);
+    expect(volta.faixas[0]!.enabled).toBe(false);
+    expect(s.silenciado(3)).toBe(true);
+  });
+
+  it('limparSilencios (sair da sala) volta a ouvir todo mundo e esquece quem estava silenciado', () => {
+    const a = audioFalso();
+    const s = new VoiceSpatial(() => a.saida);
+    const x = fluxoComFaixas();
+    s.adicionar(3, x.fluxo);
+    s.silenciar(3, true);
+    s.silenciar(8, true);
+    s.limparSilencios();
+    expect(x.faixas[0]!.enabled).toBe(true);
+    expect(s.silenciado(3) || s.silenciado(8)).toBe(false);
+  });
+
+  it('dispose esquece os silenciados', () => {
+    const a = audioFalso();
+    const s = new VoiceSpatial(() => a.saida);
+    s.silenciar(3, true);
+    s.dispose();
+    expect(s.silenciado(3)).toBe(false);
+  });
+});

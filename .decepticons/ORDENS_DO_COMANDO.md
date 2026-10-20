@@ -26,6 +26,13 @@
 |---|---|---|---|---|---|
 | P227 | 20/10 | "meu microfone está funcionando no windows, mas no jogo não consegui nem usar nem testar! parece que ainda falta algo. tudo SIM nas decisões… prossiga. quero JOGAR com o microfone!" | 🟡 | **O que faltava era o caminho:** o portão de idade (P211) esconde os controles da voz de convidado e de conta sem idade e deixava só uma frase mandando ir ao fim de outra aba. **Feito** (PR `claude/voz-conta-facil`): a seção do chat de voz ganhou o botão **[ CRIAR CONTA ]** (convidado, já abre o CRIAR CONTA) e **[ INFORMAR MINHA IDADE ]** (conta sem idade). Chrome real 36/36. **Falta (as decisões "sim"):** mudo por jogador, aviso para as contas antigas, a idade também no chat de texto, a prova positiva em produção. Rádio/jukebox: decisões aprovadas, construção é outra frente | **Configurações > GRÁFICOS E SOM > CHAT DE VOZ**: sem conta aparece [ CRIAR CONTA ]; depois da conta com mês e ano de nascimento aparecem TESTAR e a escolha do microfone |
 
+## P228 — O mudo por jogador no chat de voz (20/10, Claude)
+
+| # | Data | Ordem do Comandante | Estado | Onde está | Como conferir |
+|---|---|---|---|---|---|
+| P228 | 20/10 | (as decisões "sim" do P227) o mudo por jogador, o risco mais próximo da voz pública | ✅ | **Feito** (PR `claude/voz-mudo`): na lista de pilotos do monitor REDE (Esc > REDE) cada piloto tem **[ SILENCIAR VOZ ]**; silenciar desliga a faixa dele (custo zero) e o indicador de quem fala some; vale até sair da sala. Só aparece para quem está na voz. A criação do botão mora no pedaço sob demanda da voz (o pacote de partida está no teto). **Falta:** a denúncia (depende de onde a queixa chega, decisão do Comandante) | Esc > REDE com outra pessoa na voz: o botão ao lado do nome |
+
+
 
 ## P225 — O hook não refaz o check depois de uma junção pura com a main (19/10, Claude)
 

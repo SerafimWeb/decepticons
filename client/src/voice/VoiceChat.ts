@@ -120,6 +120,16 @@ export class VoiceChat {
     this.meuId = -1;
     this.noServidor = false;
     this.fecharTodas();
+    this.spatial.limparSilencios();
+  }
+
+  /** Silencia (ou volta a ouvir) a voz de um jogador da sala (P228): é o que o botão da lista da REDE chama. Vale até eu sair da sala. */
+  silenciar(id: number, mudo: boolean): void {
+    this.spatial.silenciar(id, mudo);
+  }
+
+  silenciado(id: number): boolean {
+    return this.spatial.silenciado(id);
   }
 
   /** Uma mensagem de voz do servidor (`LISTA` ou `SINAL`). */

@@ -777,3 +777,17 @@ describe('VoiceChat: só entra na voz com o token de uma conta de maior de idade
     expect(t.de(VOZ.PRONTO).map((b) => lerPronto(b)?.ligado)).toEqual([true, false]);
   });
 });
+
+describe('VoiceChat: o mudo por jogador (P228)', () => {
+  it('silenciar e silenciado vão ao espaço da voz, e sair da sala esquece quem estava silenciado (os ids de lá não valem mais)', () => {
+    const t = montar();
+    expect(t.chat.silenciado(7)).toBe(false);
+    t.chat.silenciar(7, true);
+    expect(t.chat.silenciado(7)).toBe(true);
+    t.chat.silenciar(7, false);
+    expect(t.chat.silenciado(7)).toBe(false);
+    t.chat.silenciar(8, true);
+    t.chat.saiuDaSala();
+    expect(t.chat.silenciado(8)).toBe(false);
+  });
+});
